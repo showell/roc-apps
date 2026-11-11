@@ -19,7 +19,7 @@ You'll learn two things as you read: Roc, and how a ride like this one is animat
 
 ## The problem
 
-Safari Ride shows a world in motion, seen from the rider's seat. It draws that world on the screen thirty times a second. Each drawing is a frame, one still picture, and between frames a step moves the world on, so the pictures move. Whoever is watching can take the controls at any moment.
+Safari Ride shows a world in motion, seen from the rider's seat. Thirty times a second, it puts a new picture of that world on the screen. Each picture is a frame, and between frames a step moves the world on, so the pictures move. Whoever is watching can take the controls at any moment.
 
 That's what you see. For us, it's an engineering problem, and our first job is to break it into pieces we can build one at a time. A screen shows things from a world, and those come first. We hold one frame still and get it right before anything moves, and the controls come last. That plan costs something: the first half of the book holds one frame still. In return, every piece we build stands on a piece that already works. The plan gives the problem five pieces:
 
@@ -79,7 +79,7 @@ The brackets after `app` name the two things the app hands the platform, and the
 
 Types are at the heart of every Roc program. A type says what a value holds, and the compiler checks every value against its type before the program runs. So a good way to meet a Roc program is to read its types.
 
-This chapter takes one tour across Safari Ride, with a stop for each of the five pieces from "The problem": things, the world, the rider's view, motion and the person watching. At each stop we read the types for that piece. On the way, you learn to read the types Roc programs are built from: numbers, records, tags, type variables and the types of functions. The functions come later, piece by piece.
+This chapter takes one tour across Safari Ride, with a stop for each of the five pieces from the {{chapter The problem}} chapter: things, the world, the rider's view, motion and the person watching. At each stop we read the types for that piece. On the way, you learn to read the types Roc programs are built from: numbers, records, tags, type variables and the types of functions. The functions come later, piece by piece.
 
 ### Numbers at the bottom
 
@@ -128,7 +128,7 @@ A module's main type has the module's own name, as `Billboard` and `Distance` do
 
 A `Billboard.Facing` is one of two tags, `FacesLeft` or `FacesRight`. A tag is a name the compiler knows, and a type made of tags lists every one it allows.
 
-For each frame, a thing gives the shapes that draw it, in the order they're painted. We call those shapes its sprite, and we use the word loosely. Here's the `Sprite` type:
+For each frame, a thing produces the shapes that show it, in the order they're painted. We call those shapes its sprite, and we use the word loosely. Here's the `Sprite` type:
 
 {{code Sprite.Sprite from "Sprite ::" to ").{"}}
 
@@ -154,7 +154,7 @@ The whole route from above, one stretch of road for each plan. A mark in the mid
 
 ### The rider's view
 
-The screen shows only what the rider sees. So each frame is drawn as if by a camera on the rider: it sits where the rider sits, and faces where the rider looks. Each thing takes three forms on its way to the screen, and each form is a type. First, the thing is placed on the road:
+The screen shows only what the rider sees. So each frame is produced as if by a camera on the rider: it sits where the rider sits, and faces where the rider looks. Each thing takes three forms on its way to the screen, and each form is a type. First, the thing is placed on the road:
 
 {{code Geom.Placed}}
 
@@ -168,7 +168,7 @@ A sighting keeps the kind, and adds a `Spot`: where the thing stands in the ride
 
 From the spot, we work out where the thing lands on the screen, and how big it looks there. One rule gives both: twice as far away looks half as big.
 
-The camera refuses a thing out of the rider's sight, with a tag that says why. `BehindCamera` means it's behind the camera, or too close to draw, and `BelowHorizon` means it's too far off to show over the horizon.
+The camera refuses a thing out of the rider's sight, with a tag that says why. `BehindCamera` means it's behind the camera, or too close to show, and `BelowHorizon` means it's too far off to show over the horizon.
 
 Last, the thing is rendered:
 
@@ -176,7 +176,7 @@ Last, the thing is rendered:
 
 A rendering holds the thing's sprite, and its depth: how far ahead of the camera it stands. The kind is gone, so trees, cows and towers all meet in one list of renderings.
 
-To draw the frame, the `DepthSort` module sorts that list far to near, and we paint it in that order, as a painter paints the far hills before the near trees. So nearer things cover farther ones.
+To finish the frame, the `DepthSort` module sorts that list far to near, and the platform paints it in that order, as a painter paints the far hills before the near trees. So nearer things cover farther ones.
 
 ### Motion
 
@@ -208,7 +208,7 @@ The `motion` field's type is written in place, as two tags. The tour holds the r
 
 {{code Tour.Tour from "Tour :: {" to "}.{"}}
 
-Because the tour keeps every past moment, stepping back is as quick as stepping forward: the tour takes the moment before, and the frame is drawn from it like any other.
+Because the tour keeps every past moment, stepping back is as quick as stepping forward: the tour takes the moment before, and the frame is produced from it like any other.
 
 ### Where we start
 
@@ -218,7 +218,7 @@ The rest of the book builds the pieces in order. So we start with things: what a
 
 ## Things
 
-The things beside the road are its trees, its radio towers and its animals. Here's a cow and a bull on the grass, drawn by Safari Ride's own code:
+The things beside the road are its trees, its radio towers and its animals. Here's a cow and a bull on the grass, produced by Safari Ride's own code:
 
 ```widget cow
 A cow and a bull on the grass beside the road.
@@ -228,7 +228,7 @@ The ride has a lot of animals: herds of cows, some led by a bull, herds of pigs,
 
 Every other animal is a billboard: a flat picture of its emoji, standing on the grass and turned square to the camera, like a cardboard cutout. That takes far less code than modeling an animal, and it's charming.
 
-A billboard faces left or right, and one that faces right is its emoji mirrored. That's the `Billboard` type from "The pieces as types": an emoji, a height and a facing. Each emoji was traced into polygons ahead of time, and the `EmojiStill` module holds them as plain data. The tracing itself is beyond this book.
+A billboard faces left or right, and one that faces right is its emoji mirrored. That's the `Billboard` type from the {{chapter The pieces as types}} chapter: an emoji, a height and a facing. Each emoji was traced into polygons ahead of time, and the `EmojiStill` module holds them as plain data. The tracing itself is beyond this book.
 
 A billboard animal starts from a record of the `Billboard.Species` type: its emoji, and how tall a grown one stands. A plain `:` names that type, so any module reads its fields. Here are the cow's and the bull's, from the `CowHerd` module:
 
@@ -258,9 +258,9 @@ A second function puts `is_calf` to work. It gives each cow in a herd its billbo
 
 Its answer is an `if`, which picks one of two values: a young billboard when `is_calf` says `True`, and a grown one when it says `False`. Both are cows, facing right, built from the `cow` record above. A `Billboard` is opaque, so only the `Billboard` module can build one, and `young_billboard` and `adult_billboard` are two of the ways it offers. The herd calls `cow_billboard` for every cow it places.
 
-### What drawing a thing takes
+### What a thing's sprite takes
 
-Calf, cow or bull, the ride draws a billboard the way it draws every kind of thing beside the road: with a function called `scenery_sprite`, in that kind's module. The `Billboard` module's `scenery_sprite` has a longer definition, built around a `match`, a way of choosing between tags that the next chapter teaches. So here's its annotation alone, the line that sits above the definition, from the `Billboard` module:
+Calf, cow or bull, the ride produces a billboard's sprite the way it produces the sprite of every kind of thing beside the road: with a function called `scenery_sprite`, in that kind's module. The `Billboard` module's `scenery_sprite` has a longer definition, built around a `match`, a way of choosing between tags that the next chapter teaches. So here's its annotation alone, the line that sits above the definition, from the `Billboard` module:
 
 {{signatures Billboard.scenery_sprite}}
 
@@ -272,9 +272,9 @@ A setting is a record:
 
 The `focal_length` says how strong the camera's lens is: the longer it is, the bigger everything looks, as when a camera zooms in. The `darkness` says how dark the sky is, from 0 by day to 1 at night, so everything beside the road can dim as night falls.
 
-The `spot` comes from a camera: it's what a sighting holds. So to draw the cow and the bull, the picture at the top of this chapter puts each one on the road by hand, the cow 10 metres ahead and 5 metres left of the middle, and lets a camera at the start of the road sight them. The rider's own camera comes in a later chapter.
+The `spot` comes from a camera: it's what a sighting holds. So for the cow and the bull, the picture at the top of this chapter puts each one on the road by hand, the cow 10 metres ahead and 5 metres left of the middle, and lets a camera at the start of the road sight them. The rider's own camera comes in a later chapter.
 
-What comes back is a sprite, and every sprite is a list of shapes. The cow's sprite is its emoji, drawn as polygons. Most of the ride's shapes have straight edges. At step 1,529, the ride draws 2,121 shapes on top of the sky and the grass: 868 triangles, 727 quads, 518 polygons and 8 discs. The trees' trunks are 136 of the quads.
+What comes back is a sprite, and every sprite is a list of shapes. The cow's sprite is its emoji, as polygons. Most of the ride's shapes have straight edges. At step 1,529, the ride produces 2,121 shapes on top of the sky and the grass: 868 triangles, 727 quads, 518 polygons and 8 discs. The trees' trunks are 136 of the quads.
 
 At the bends in the road stand four more kinds of billboard animal: elephants, giraffes, zebras and rhinos. They come next, with the `match` that mirrors the ones that face right.
 
@@ -296,7 +296,7 @@ Each emoji shows its animal from the side, so a billboard faces left or right, a
 
 The type is a list of tags in square brackets. A tag is a name the compiler knows, and it's a value in its own right: `FacesLeft` is a value, and so is `FacesRight`. A type made of tags is a tag union, and a value of a tag union is always exactly one of its tags. So a `Facing` is `FacesLeft` or `FacesRight`.
 
-"Things" showed the annotation of `Billboard.scenery_sprite` alone. Here's the whole function:
+The {{chapter Things}} chapter showed the annotation of `Billboard.scenery_sprite` alone. Here's the whole function:
 
 {{code Billboard.scenery_sprite}}
 
@@ -306,7 +306,7 @@ The body is a block, in braces. A block holds lines of code, where a record hold
 
 In that answer, `billboard.emoji.still()` calls the `still` function that comes with the emoji, which gives its traced still. `StillShapes.standing_still_shapes` makes shapes from it at the billboard's height, and `Sprite.from_shapes` makes those shapes a sprite. In that last record, `flip` alone is short for `flip: flip`.
 
-Every emoji is drawn facing left, so a billboard that faces right needs its emoji mirrored. The `match` makes that choice. It looks at `billboard.facing`, and each line under it takes one tag and gives back what to do: `FacesLeft` gives `AsDrawn`, and `FacesRight` gives `Mirrored`. Those two are the tags of another tag union, `StillShapes.Flip`, and `flip` names the one the `match` picks. The compiler works out the type of `flip` from where it's used.
+Every emoji faces left, so a billboard that faces right needs its emoji mirrored. The `match` makes that choice. It looks at `billboard.facing`, and each line under it takes one tag and gives back what to do: `FacesLeft` gives `AsDrawn`, and `FacesRight` gives `Mirrored`. Those two are the tags of another tag union, `StillShapes.Flip`, and `flip` names the one the `match` picks. The compiler works out the type of `flip` from where it's used.
 
 A `match` handles every tag of its type, and the compiler checks that it does. Leave out the `FacesRight` line, and the compiler stops with an error that names it:
 
@@ -317,7 +317,7 @@ Missing patterns:
         FacesRight
 ```
 
-So every billboard faces one of two ways, and the code that draws it handles both, by construction.
+So every billboard faces one of two ways, and the code that produces its sprite handles both, by construction.
 
 ### Four animals
 
@@ -325,7 +325,7 @@ The bend animals are a tag union too, with four tags:
 
 {{code BendAnimal.BendAnimal from "BendAnimal :=" to "Rhino]"}}
 
-Each tag is an animal. `BendAnimal` uses `:=`, so it's a nominal type: a new type, apart from any other tag union with the same tags. The `species_of` function turns each one into its species record, an emoji and a grown height, like the cow's in "Things":
+Each tag is an animal. `BendAnimal` uses `:=`, so it's a nominal type: a new type, apart from any other tag union with the same tags. The `species_of` function turns each one into its species record, an emoji and a grown height, like the cow's in the {{chapter Things}} chapter:
 
 {{code BendAnimal.species_of}}
 
@@ -370,17 +370,17 @@ The `Animal(animal)` line matches a bend with any animal at it, and names the an
 
 The route's plans say what lives at each bend, and most of them say `Animal(Elephant)`. Only a handful say `Animal(Giraffe)`, `Animal(Zebra)`, `Animal(Rhino)` or `DuckPond`. That's on purpose. The ride is more interesting when most of it is ordinary: the elephants are the fixture, so the rare animal is a surprise.
 
-A tag union lists everything a value can be, and a `match` handles each case. The emojis came ready-made, traced ahead of time. Next, we draw with shapes of our own: a triangle and a rectangle.
+A tag union lists everything a value can be, and a `match` handles each case. The emojis came ready-made, traced ahead of time. Next, we build shapes of our own: a triangle and a rectangle.
 
 ## Shapes
 
-A far tree in the ride is a trunk under eight triangles. So before we draw a tree, we draw its two shapes: a triangle and a rectangle.
+A far tree in the ride is a trunk under eight triangles. So before we build a tree, we build its two shapes: a triangle and a rectangle.
 
 In Safari Ride, a shape is a value that describes something to paint. The first four tags of the `Shapes` module's `Shape` type are the kinds of region the ride paints, each a region of the screen with a fill:
 
 {{code Shapes.Shapes from "Shape : [" to "Polygon({ corners :"}}
 
-Each tag carries a record, and every record ends with a `fill`, the paint for the inside. The ride draws a great many triangles, plenty of four-cornered things, a few round lights, and outlines traced from emoji and mountains, so those are its four regions. More tags follow them in the type, for other jobs, such as a line of text.
+Each tag carries a record, and every record ends with a `fill`, the paint for the inside. The ride produces a great many triangles, plenty of four-cornered things, a few round lights, and outlines traced from emoji and mountains, so those are its four regions. More tags follow them in the type, for other jobs, such as a line of text.
 
 ### A triangle
 
@@ -485,7 +485,7 @@ Three small functions read the crown's place from the outline:
 
 It takes the outline and a record, and `|outline, { tier, foliage_color }|` takes the record apart into its fields, as `Shapes.rectangle` did. The body names four values on the way, each on a line of its own: `crown_top`, `bottom_y`, `top_y` and `half_base`. A name holds its value for the rest of the body, and the last expression, the `Triangle`, is what the function gives back. Like `Distance`, `Pixels` has its own `plus`, `minus` and `scaled_by`. `scaled_by` multiplies a length by a `Fraction`, and `minus` subtracts one length from another.
 
-On the screen, `y` grows downward, as it did in "Shapes", so `plus` moves down from the tip. The triangle's first corner sits on the tree's middle line at the tier's top. The other two sit at the tier's bottom, `half_base` to either side.
+On the screen, `y` grows downward, as it did in the {{chapter Shapes}} chapter, so `plus` moves down from the tip. The triangle's first corner sits on the tree's middle line at the tier's top. The other two sit at the tier's bottom, `half_base` to either side.
 
 ### Painting the tree
 
@@ -495,7 +495,7 @@ The trunk is a rectangle:
 
 Its body works out the trunk's width, its height and its top left corner from the outline, and hands them to `Shapes.rectangle`. Its `finish` says whether the trunk is shaded, which we come to at the end of the chapter.
 
-The order of the shapes matters as much as the shapes. `tree_sprite` draws the whole tree:
+The order of the shapes matters as much as the shapes. `tree_sprite` produces the whole tree's sprite:
 
 {{code TreeShapes.tree_sprite}}
 
@@ -509,21 +509,21 @@ The last line puts the list together. `[trunk]` is a list of one shape, and `con
 
 {{code TreeShapes.tier_shape from "Triangles =>" to "Triangles =>"}}
 
-`colored_tier` is the tier with the tree's foliage color, so a far tree's tier goes straight to `tier_triangle`. The other branch draws the near tree, and the end of this chapter says what it does.
+`colored_tier` is the tier with the tree's foliage color, so a far tree's tier goes straight to `tier_triangle`. The other branch builds the near tree's tiers, and the end of this chapter says what it does.
 
 ### What you're missing
 
-Every tree 200 metres or more ahead of the camera is drawn this way: 200 metres is `cone_reach`. Nearer than that, the ride draws more. Each tier becomes a cone, which looks round and fattens as the rider passes under it, and the nearest cones are shaded. `crown_of` makes that choice, and `tier_shape` draws the cones.
+Every tree 200 metres or more ahead of the camera is built this way: 200 metres is `cone_reach`. Nearer than that, the ride builds more. Each tier becomes a cone, which looks round and fattens as the rider passes under it, and the nearest cones are shaded. `crown_of` makes that choice, and `tier_shape` builds the cones.
 
 `round_trunk_reach` is 60 metres. Within it, `trunk_finish_of` gives `Shaded` in place of `Flat`, and the trunk looks round.
 
-Cones take far more work to draw, and far off they look just like triangles, so the ride spends that work only where it shows.
+Cones take far more work to build, and far off they look just like triangles, so the ride spends that work only where it shows.
 
 So a far tree is a handful of small functions over one list of tiers. The `expect` pins the tiers, each tier becomes a triangle, and one list puts the trunk first and the tiers over it. Every tree beside the road runs through this same code, wherever it stands.
 
 ## The pipeline
 
-Every frame, every thing beside the road takes the same trip to the screen. {{chapter A far tree}} drew a tree's sprite from a setting, and this chapter follows the whole trip around that drawing, from where the tree stands on the road to its place on the screen. A tree, a cow, a radio tower, the cat, the bird and the truck each start from a place on the road and end as a rendering, a sprite with a depth, in the frame's one list. The `Pipeline` module holds the trip's types and the functions that sight and render, so we call the trip the pipeline.
+Every frame, every thing beside the road takes the same trip to the screen. In the {{chapter A far tree}} chapter, `TreeShapes.tree_sprite` takes a setting and gives back a tree's sprite. This chapter follows the trip around that function: where the setting comes from, and where the sprite goes. A tree, a cow, a radio tower, the cat, the bird and the truck each start from a place on the road and end as a rendering, a sprite with a depth, in the frame's one list. The `Pipeline` module holds the trip's types and the functions that sight and render, so we call the trip the pipeline.
 
 ```widget pipeline
 Step 1,529 of the ride, with only what came through the pipeline: its trees, critters and towers, the cat and the truck.
@@ -569,7 +569,7 @@ The screen shows what the camera sees. So for each frame, the pipeline sights ev
 
 {{code Pipeline.Sighted}}
 
-A `Spot` holds the thing's height off the ground, where its foot is in the camera's view, and which way the road runs there. The kind rides along as it was. A thing's place is measured on the road, and its spot from the camera, which moves with the rider every frame. So the two are different types. This `spot` is the one `tree_sprite` took from its setting in "A far tree".
+A `Spot` holds the thing's height off the ground, where its foot is in the camera's view, and which way the road runs there. The kind rides along as it was. A thing's place is measured on the road, and its spot from the camera, which moves with the rider every frame. So the two are different types. This `spot` is the one `tree_sprite` took from its setting in the {{chapter A far tree}} chapter.
 
 ### Refused
 
@@ -585,31 +585,31 @@ Its answer is a `Try(Pipeline.Sighted(kind), [BehindCamera])`: a sighting, or th
 |---|---|
 | `BehindCamera` | It stands behind the camera, or too close in front of it to show. |
 | `BelowHorizon` | The ground curves away with distance, so far enough off, the horizon hides all of it. |
-| `TooSmall` | It would stand too small on the screen to be worth drawing. |
+| `TooSmall` | It would stand too small on the screen to be worth showing. |
 
-The trees, the billboard critters, the cat and the bird are sighted by `Pipeline.scenery_sighting_of`, which takes all three tests. A radio tower and the truck are drawn however small they look. So a tower is sighted by `Pipeline.sighting_above_horizon_of`, which skips the `TooSmall` test, and the truck by `Pipeline.sighting_of`, which takes only the `BehindCamera` test.
+The trees, the billboard critters, the cat and the bird are sighted by `Pipeline.scenery_sighting_of`, which takes all three tests. A radio tower and the truck are kept however small they look. So a tower is sighted by `Pipeline.sighting_above_horizon_of`, which skips the `TooSmall` test, and the truck by `Pipeline.sighting_of`, which takes only the `BehindCamera` test.
 
 Here are some things from step 1,529, the frame in the picture, and what their sightings decide. `right` and `forward` place each thing's foot from the camera, in metres, and a `forward` below zero is behind it. The road bends, so a tree on a segment far ahead can stand far to one side:
 
 | What it is | `right` | `forward` | What its sighting decides |
 |---|---|---|---|
-| The cat, frozen in the road | 0.38 | 23.63 | drawn |
-| The nearest tree, a big green one | 3.45 | 21.63 | drawn |
+| The cat, frozen in the road | 0.38 | 23.63 | kept |
+| The nearest tree, a big green one | 3.45 | 21.63 | kept |
 | The nearest tree behind the camera, a gold one | -8.09 | -8.36 | `BehindCamera` |
 | The nearest tree the horizon hides, a small green one | -1,433.43 | 446.00 | `BelowHorizon` |
-| A big green tree just past it | -1,446.07 | 473.21 | drawn |
-| The radio tower past the end of the rider's segment | 20.40 | 355.61 | drawn |
-| The truck | 92.19 | 489.15 | drawn |
+| A big green tree just past it | -1,446.07 | 473.21 | kept |
+| The radio tower past the end of the rider's segment | 20.40 | 355.61 | kept |
+| The truck | 92.19 | 489.15 | kept |
 
-A small tree far off sinks below the horizon, while a taller one just past it still shows its top. Distance counts the whole way, sideways too: the hidden tree stands about 1,500 metres from the camera, and the truck about 500. Of the 214 trees on the segments in view, 136 are drawn, 30 are behind the camera, and 48 are below the horizon. Each sighting module keeps its sightings with `keep_oks`, a `List` function, which keeps the `Ok` values of a list of `Try`s and drops the `Err`s. The truck's module hands its one `Try` to `Scene`, which renders the truck only for an `Ok`.
+A small tree far off sinks below the horizon, while a taller one just past it still shows its top. Distance counts the whole way, sideways too: the hidden tree stands about 1,500 metres from the camera, and the truck about 500. Of the 214 trees on the segments in view, 136 are kept, 30 are behind the camera, and 48 are below the horizon. Each sighting module keeps its sightings with `keep_oks`, a `List` function, which keeps the `Ok` values of a list of `Try`s and drops the `Err`s. The truck's module hands its one `Try` to `Scene`, which renders the truck only for an `Ok`.
 
 ### Rendered
 
-Each sighting that's kept is rendered by `Pipeline.rendering_of`, which "Asking a kind" shows. It gives back a `Rendered`:
+Each sighting that's kept is rendered by `Pipeline.rendering_of`, which the {{chapter Asking a kind}} chapter explains. It gives back a `Rendered`:
 
 {{code Rendered.Rendered from "Rendered ::" to "of = "}}
 
-A `Rendered` holds a depth and a sprite, and those two alone. The `::` makes it opaque, as it does `Distance`. The sprite is what "Things" and "A far tree" drew from a setting, and the depth is how far ahead of the camera the thing stands. The kind has done its job by now, and it's gone: a tree's rendering and a cow's have the same type.
+A `Rendered` holds a depth and a sprite, and those two alone. The `::` makes it opaque, as it does `Distance`. The sprite is what a kind's `scenery_sprite` gives back from a setting, and the depth is how far ahead of the camera the thing stands. The kind has done its job by now, and it's gone: a tree's rendering and a cow's have the same type.
 
 In a body, as here, `Rendered.({ depth, sprite })` builds a `Rendered` by wrapping the record. Among a function's arguments, as `Billboard.(billboard)` was, the same form takes one apart.
 
@@ -648,7 +648,7 @@ The module's code shows these Roc concepts:
 | One branch, two tags | Grouping | In a `match`, `Green \| SmallGreen =>` gives both greens one color. |
 | Equality | Comparison | `is_eq : _` asks the compiler to write `==`, as it did for `Distance`, and here `==` compares tags. |
 
-`scenery_sprite` hands the height and the color to `TreeShapes.tree_sprite`, the function that drew the far tree. A module's definitions can come in any order, so the methods use values defined below them.
+`scenery_sprite` hands the height and the color to `TreeShapes.tree_sprite`, the function that produces the far tree's sprite. A module's definitions can come in any order, so the methods use values defined below them.
 
 So a kind describes a thing, and the pipeline does the rest. But the pipeline is one piece of code for every kind alike. So how does it get a height and a sprite out of a `Conifer`?
 
@@ -697,11 +697,11 @@ The message names the method the clause requires, and the type the compiler chec
 
 ### Asking for a height
 
-Sighting a thing needs its height. A far thing shows only when its top clears the horizon, and only when it stands tall enough on the screen to be worth drawing. So `Pipeline.scenery_sighting_of`, which sights the trees, the billboard critters, the cat and the bird, constrains its kind with a `where` clause of its own, to types that have a `scenery_height`:
+Sighting a thing needs its height. A far thing shows only when its top clears the horizon, and only when it stands tall enough on the screen to be worth showing. So `Pipeline.scenery_sighting_of`, which sights the trees, the billboard critters, the cat and the bird, constrains its kind with a `where` clause of its own, to types that have a `scenery_height`:
 
 {{code Pipeline.scenery_sighting_of from "where" to "where"}}
 
-A radio tower is drawn however small it looks, so a tower is sighted by `Pipeline.sighting_above_horizon_of`, which skips the size test and carries the same constraint.
+A radio tower is kept however small it looks, so a tower is sighted by `Pipeline.sighting_above_horizon_of`, which skips the size test and carries the same constraint.
 
 ### Names that say what they're for
 
