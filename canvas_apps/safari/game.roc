@@ -29,7 +29,7 @@ package
 		DepthSort,
 		Distance,
 		EarthCurve,
-		EmojiStills,
+		EmojiStill,
 		Encounter,
 		EncounterPlan,
 		EncounterPoses,

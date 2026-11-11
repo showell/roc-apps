@@ -1,12 +1,12 @@
 ## A billboard is an animal that stands in one place and always faces the
 ## camera: an emoji's still, at a height, facing left or right.
 import Distance
-import EmojiStills
+import EmojiStill
 import Sprite
 import StillShapes
 
 Billboard :: {
-	emoji : EmojiStills.EmojiStill,
+	emoji : EmojiStill,
 	height : Distance,
 	facing : Billboard.Facing,
 }.{
@@ -15,7 +15,7 @@ Billboard :: {
 	Facing : [FacesLeft, FacesRight]
 
 	## A kind of animal: its emoji, and how tall a grown one stands.
-	Species : { emoji : EmojiStills.EmojiStill, adult_height : Distance }
+	Species : { emoji : EmojiStill, adult_height : Distance }
 
 	## A grown animal of `species`.
 	adult_billboard : Billboard.Species, Billboard.Facing -> Billboard

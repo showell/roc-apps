@@ -5,7 +5,7 @@ import Across
 import Along
 import Billboard
 import Distance
-import EmojiStills
+import EmojiStill
 import Geom
 import Scatter
 import Trees
@@ -38,10 +38,10 @@ CowHerd :: { cow_count : U64, rows_behind_front : U64 }.{
 }
 
 cow : Billboard.Species
-cow = { emoji: EmojiStills.cow, adult_height: Distance.metres(1.4) }
+cow = { emoji: EmojiStill.cow, adult_height: Distance.metres(1.4) }
 
 bull : Billboard.Species
-bull = { emoji: EmojiStills.bull, adult_height: cow.adult_height.times(1.15) }
+bull = { emoji: EmojiStill.bull, adult_height: cow.adult_height.times(1.15) }
 
 ## The gap between the bull's side and the trees.
 bull_tree_gap : Distance

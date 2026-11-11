@@ -6,7 +6,7 @@ import Across
 import Along
 import Billboard
 import Distance
-import EmojiStills
+import EmojiStill
 import Geom
 
 ## The safari animals that stand at a bend.
@@ -43,10 +43,10 @@ BendAnimal := [Elephant, Giraffe, Zebra, Rhino].{
 	species_of : BendAnimal -> Billboard.Species
 	species_of = |animal|
 		match animal {
-			Elephant => { emoji: EmojiStills.elephant, adult_height: Distance.metres(2.8) }
-			Giraffe => { emoji: EmojiStills.giraffe, adult_height: Distance.metres(4.5) }
-			Zebra => { emoji: EmojiStills.zebra, adult_height: Distance.metres(1.6) }
-			Rhino => { emoji: EmojiStills.rhino, adult_height: Distance.metres(2.2) }
+			Elephant => { emoji: EmojiStill.elephant, adult_height: Distance.metres(2.8) }
+			Giraffe => { emoji: EmojiStill.giraffe, adult_height: Distance.metres(4.5) }
+			Zebra => { emoji: EmojiStill.zebra, adult_height: Distance.metres(1.6) }
+			Rhino => { emoji: EmojiStill.rhino, adult_height: Distance.metres(2.2) }
 		}
 }
 

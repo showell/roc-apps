@@ -13,7 +13,7 @@ import game.CatCrossing
 import game.Clock
 import game.Conifer
 import game.Distance
-import game.EmojiStills
+import game.EmojiStill
 import game.EncounterPlan
 import game.EncounterPoses
 import game.EncounterReaction
@@ -625,14 +625,14 @@ expect {
 	}
 	bird_stills = BirdFlight.all_poses.map(Bird.pose_still)
 	emoji_stills = [
-		EmojiStills.duck,
-		EmojiStills.elephant,
-		EmojiStills.giraffe,
-		EmojiStills.zebra,
-		EmojiStills.rhino,
-		EmojiStills.bull,
-		EmojiStills.cow,
-		EmojiStills.pig,
+		EmojiStill.duck,
+		EmojiStill.elephant,
+		EmojiStill.giraffe,
+		EmojiStill.zebra,
+		EmojiStill.rhino,
+		EmojiStill.bull,
+		EmojiStill.cow,
+		EmojiStill.pig,
 	].map(|emoji| emoji.still())
 	bird_stills.concat(emoji_stills).all(
 		|still| StillShapes.still_shapes(anchor, still).len() == still.polygons().len(),

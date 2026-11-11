@@ -119,12 +119,12 @@ Here's what each piece of it says:
 |---|---|
 | `Billboard ::` | `Billboard` names the type. The `::` makes it opaque, as it does `Distance`: only the `Billboard` module reads its fields. |
 | `{` and `}` | The curly braces hold a record type's fields together. |
-| `emoji : EmojiStills.EmojiStill,` | `emoji` names a field, and `EmojiStills.EmojiStill` names its type: the `EmojiStill` type in the `EmojiStills` module. |
+| `emoji : EmojiStill,` | `emoji` names a field, and `EmojiStill` names its type: the `EmojiStill` type in the `EmojiStill` module. |
 | `height : Distance,` | `height` names a field, and `Distance` names its type: the main type of the `Distance` module. |
 | `facing : Billboard.Facing,` | `facing` names a field, and `Billboard.Facing` names its type: the `Facing` type in the `Billboard` module. |
 | `.{` | The type's own functions and types start here, as they do in `Distance`. The listing stops here. |
 
-A module's main type has the module's own name, as `Billboard` and `Distance` do. Wherever it's used, every other type a module offers carries the module's name in front, as `EmojiStills.EmojiStill` and `Billboard.Facing` do.
+A module's main type has the module's own name, as `Billboard` and `Distance` do. Wherever it's used, every other type a module offers carries the module's name in front, as `EmojiStill` and `Billboard.Facing` do.
 
 A `Billboard.Facing` is one of two tags, `FacesLeft` or `FacesRight`. A tag is a name the compiler knows, and a type made of tags lists every one it allows.
 
@@ -228,7 +228,7 @@ The ride has a lot of animals: herds of cows, some led by a bull, herds of pigs,
 
 Every other animal is a billboard: a flat picture of its emoji, standing on the grass and turned square to the camera, like a cardboard cutout. That takes far less code than modeling an animal, and it's charming.
 
-A billboard faces left or right, and one that faces right is its emoji mirrored. That's the `Billboard` type from "The pieces as types": an emoji, a height and a facing. Each emoji was traced into polygons ahead of time, and the `EmojiStills` module holds them as plain data. The tracing itself is beyond this book.
+A billboard faces left or right, and one that faces right is its emoji mirrored. That's the `Billboard` type from "The pieces as types": an emoji, a height and a facing. Each emoji was traced into polygons ahead of time, and the `EmojiStill` module holds them as plain data. The tracing itself is beyond this book.
 
 A billboard animal starts from a record of the `Billboard.Species` type: its emoji, and how tall a grown one stands. A plain `:` names that type, so any module reads its fields. Here are the cow's and the bull's, from the `CowHerd` module:
 
@@ -1535,7 +1535,7 @@ Every pose of the cat and the bird. Click one to see it large, and click it agai
 New in this chapter:
 
 - Roc: a large table of plain data
-- Modules: `Still`, `StillShapes`, `CatStills`, `BirdStills`, `EmojiStills`
+- Modules: `Still`, `StillShapes`, `CatStills`, `BirdStills`, `EmojiStill`
 
 The stills are the least readable code in Safari Ride, and nobody is meant to read them. They're generated data, encoded as Roc, and this chapter ends with how they got made. Here's how much data each set holds:
 
@@ -1543,7 +1543,7 @@ The stills are the least readable code in Safari Ride, and nobody is meant to re
 |---|---|---|---|---|
 | `BirdStills` | Hand-drawn | 6 poses | 32 | 119 |
 | `CatStills` | Hand-drawn | 7 poses | 275 | 13,219 |
-| `EmojiStills` | Emoji-based | one for each animal by the road | 129 | 4,998 |
+| `EmojiStill` | Emoji-based | one for each animal by the road | 129 | 4,998 |
 
 The distinction matters. The cat and the bird were drawn for this game, and they have poses. The animals by the road started as emoji, and each has one picture.
 
@@ -1577,7 +1577,7 @@ So the developer wrote a baker, a small program that ran the real drawing code o
 
 The emoji-based animals took a different route. They come from Microsoft's Fluent Emoji, in its Flat style. That set draws every animal whole and from the side, where another set draws a rhino as a face, which looks wrong beside a road. A second baker read each SVG file, walked its shapes in painting order, and cut each curve into short straight lines.
 
-The bull is a hybrid. It comes from the same emoji set, but in its Color style, which is shaded. It's the only still with gradients, on 40 of its 43 polygons, which is why a polygon's fill can be `Shaded`. Its 2,212 points are nearly half of `EmojiStills`.
+The bull is a hybrid. It comes from the same emoji set, but in its Color style, which is shaded. It's the only still with gradients, on 40 of its 43 polygons, which is why a polygon's fill can be `Shaded`. Its 2,212 points are nearly half of `EmojiStill`.
 
 The Roc bird came last. Its perched pose is the logo, and Claude drew the five flight poses to match, directly as polygons, in the logo's two purples.
 
@@ -1606,9 +1606,9 @@ Where it stands isn't one of them. That's the `Geom.Placed` around it. A species
 
 {{code Billboard.Species}}
 
-The emoji is a named still, such as `EmojiStills.elephant`, and only `EmojiStills` can make one:
+The emoji is a named still, such as `EmojiStill.elephant`, and only `EmojiStill` can make one:
 
-{{code EmojiStills.EmojiStill}}
+{{code EmojiStill.EmojiStill from "EmojiStill ::" to "is_eq : _"}}
 
 So a billboard always holds a still that exists.
 
@@ -1644,7 +1644,7 @@ A giraffe, a rhino and a zebra have one bend each. They all use the same code as
 
 Each animal is a tag, and each answers with its emoji and how tall it stands. The `match` has to cover all four.
 
-To add a lion, we'd add a tag, a row here and a still in `EmojiStills`. The compiler would point at every `match` that needs the new tag.
+To add a lion, we'd add a tag, a row here and a still in `EmojiStill`. The compiler would point at every `match` that needs the new tag.
 
 These animals stand at the bends. Most of the others come in crowds.
 

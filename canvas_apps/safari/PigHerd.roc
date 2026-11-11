@@ -4,7 +4,7 @@ import Across
 import Along
 import Billboard
 import Distance
-import EmojiStills
+import EmojiStill
 import Geom
 import Scatter
 
@@ -55,7 +55,7 @@ front_row_across = Across.right_of_middle(front_row_distance)
 
 ## How every pig looks: the pig emoji, a little over a metre tall.
 pig_species : Billboard.Species
-pig_species = { emoji: EmojiStills.pig, adult_height: Distance.metres(1.1) }
+pig_species = { emoji: EmojiStill.pig, adult_height: Distance.metres(1.1) }
 
 placed_pig : { along : Along, across : Across } -> Geom.Placed(Billboard)
 placed_pig = |{ along, across }| {

@@ -6,7 +6,7 @@ import Across
 import Along
 import Billboard
 import Distance
-import EmojiStills
+import EmojiStill
 import Geom
 import lib.RgbColor
 
@@ -141,7 +141,7 @@ segment_point = |point, bend| {
 
 ## The duck's still, and how tall a duck stands.
 duck : Billboard.Species
-duck = { emoji: EmojiStills.duck, adult_height: Distance.metres(0.9) }
+duck = { emoji: EmojiStill.duck, adult_height: Distance.metres(0.9) }
 
 ## A duck on the pond, where it floats and which way it faces.
 PondDuck : { at : PondPoint, facing : Billboard.Facing }

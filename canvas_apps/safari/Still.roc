@@ -4,7 +4,7 @@
 ## still that is wider than it is tall, such as a flying bird, has x past 1.
 ## The frame is a convention, not a rule: a set of poses, such as the cat's,
 ## shares one frame so that they line up, and a pose may reach past it.
-## EmojiStills, CatStills and BirdStills hold the pictures, and StillShapes
+## EmojiStill, CatStills and BirdStills hold the pictures, and StillShapes
 ## puts them on screen.
 import lib.Fraction
 import lib.ArgbColor
