@@ -523,7 +523,7 @@ So a far tree is a handful of small functions over one list of tiers. The `expec
 
 ## The pipeline
 
-Every frame, every thing beside the road takes the same trip to the screen. "A far tree" drew a tree's sprite from a setting, and this chapter follows the whole trip around that drawing, from where the tree stands on the road to its place on the screen. A tree, a cow, a radio tower, the cat and the truck each start from a place on the road and end as a rendering, a sprite with a depth, in the frame's one list. The `Pipeline` module holds the trip's types and the functions that sight and render, so we call the trip the pipeline.
+Every frame, every thing beside the road takes the same trip to the screen. "A far tree" drew a tree's sprite from a setting, and this chapter follows the whole trip around that drawing, from where the tree stands on the road to its place on the screen. A tree, a cow, a radio tower, the cat, the bird and the truck each start from a place on the road and end as a rendering, a sprite with a depth, in the frame's one list. The `Pipeline` module holds the trip's types and the functions that sight and render, so we call the trip the pipeline.
 
 ```widget pipeline
 Step 1,529 of the ride, with only what came through the pipeline: its trees, critters and towers, the cat and the truck.
@@ -577,7 +577,7 @@ Some placed things stay off the screen, so a sighting function's answer is a `Tr
 
 {{code Pipeline.sighting_of}}
 
-Its answer is a `Try(Pipeline.Sighted(kind), [BehindCamera])`: a sighting, or the one refusal it can give. The body finds where the thing's foot lies from the rider, and the `?` after `RiderView.rider_point_ahead(rider_point)` is the refusal. That call gives back a `Try` of its own. When it's an `Err(BehindCamera)`, the `?` ends `sighting_of` right there with that `Err`. When it's an `Ok`, the `?` unwraps it, and `foot` is the point ahead. The last line wraps the spot and the kind in an `Ok`.
+Its answer is a `Try(Pipeline.Sighted(kind), [BehindCamera])`: a sighting, or the one refusal it can give. The body finds where the thing's foot lies from the rider, and the refusal comes from the `?` after `RiderView.rider_point_ahead(rider_point)`. That call gives back a `Try` of its own. When it's an `Err(BehindCamera)`, the `?` ends `sighting_of` right there with that `Err`. When it's an `Ok`, the `?` unwraps it, and `foot` is the point ahead. The last line wraps the spot and the kind in an `Ok`.
 
 `Pipeline`'s other sighting functions start from `sighting_of` and add tests of their own, so between them they refuse a thing with one of three tags:
 
@@ -601,7 +601,7 @@ Here are some things from step 1,529, the frame in the picture, and what their s
 | The radio tower past the end of the rider's segment | 20.40 | 355.61 | drawn |
 | The truck | 92.19 | 489.15 | drawn |
 
-A small tree far off sinks below the horizon, while a taller one just past it still shows its top. Of the 214 trees on the segments in view, 136 are drawn, 30 are behind the camera, and 48 are below the horizon. Each sighting module keeps its sightings with `keep_oks`, a `List` function, which keeps the `Ok` values of a list of `Try`s and drops the `Err`s. The truck's module hands its one `Try` to `Scene`, which renders the truck only for an `Ok`.
+A small tree far off sinks below the horizon, while a taller one just past it still shows its top. Distance counts the whole way, sideways too: the hidden tree stands about 1,500 metres from the camera, and the truck about 500. Of the 214 trees on the segments in view, 136 are drawn, 30 are behind the camera, and 48 are below the horizon. Each sighting module keeps its sightings with `keep_oks`, a `List` function, which keeps the `Ok` values of a list of `Try`s and drops the `Err`s. The truck's module hands its one `Try` to `Scene`, which renders the truck only for an `Ok`.
 
 ### Rendered
 
