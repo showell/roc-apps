@@ -437,7 +437,7 @@ The widths start as a list of eight plain numbers:
 
 {{code TreeShapes.tier_widths}}
 
-Square brackets make a list, and every item in a list has the same type. These eight are `F64`s, chosen by eye, from the narrow top tier to the full-width bottom one. `map` calls a function on each item of a list and gives back a list of the answers. Here we hand it `Fraction.of` by name, and `Fraction.of` turns an `F64` into a `Fraction`, so `tier_widths` is a `List(Fraction)`. `Fraction.of` crashes on a number outside 0 to 1, because a share out of range means the sum behind it is wrong.
+In a type, square brackets list tags. In a value, as here, they make a list, and every item in a list has the same type. These eight are `F64`s, chosen by eye, from the narrow top tier to the full-width bottom one. `map` calls a function on each item of a list and gives back a list of the answers. Here we hand it `Fraction.of` by name, and `Fraction.of` turns an `F64` into a `Fraction`, so `tier_widths` is a `List(Fraction)`. `Fraction.of` crashes on a number outside 0 to 1, because a share out of range means the sum behind it is wrong.
 
 ### Tops and bottoms
 
@@ -453,7 +453,7 @@ Each tier also needs a top and a bottom. They follow a rule, so a function works
 
 {{expect TreeShapes.tiers}}
 
-An `expect` is a test. Its body is a `Bool`, and `roc test` runs every `expect` in a program and reports each one that comes out `False`. This one turns each tier into a list of its three numbers, so that the table can be plain numbers. The table is the tiers, written out by hand. Change a width or the rule, and the test reports it.
+An `expect` is a test. Its body is a `Bool`, and `roc test` runs every `expect` in a program and reports each one that comes out `False`. This one turns each tier into a list of its three numbers, so that the table can be plain numbers. The table is the tiers, written out by hand. A whole number divided by 10 gives exactly the `F64` that writing the tenth gives, so `==` holds exactly. Change a width or the rule, and the test reports it.
 
 ### A triangle for each tier
 
@@ -465,7 +465,7 @@ Three small functions read the crown's place from the outline:
 
 {{signatures TreeShapes.crown_top_y TreeShapes.crown_height TreeShapes.crown_half_width}}
 
-`crown_top_y` gives the tree's tip, `height_on_screen` above its foot. The other two scale the outline's height by the crown's shares of the tree, chosen by eye. Then `tier_triangle` makes one tier:
+`crown_top_y` gives the tree's tip, `height_on_screen` above its foot. The other two scale the outline's height: the crown's height is a fixed share of the tree's height, and so is its widest half-width, both chosen by eye. Then `tier_triangle` makes one tier:
 
 {{code TreeShapes.tier_triangle}}
 
@@ -481,17 +481,15 @@ Its body works out the trunk's width, its height and its top left corner from th
 
 The order of the shapes matters as much as the shapes. `tree_sprite` draws the whole tree:
 
-{{signatures TreeShapes.tree_sprite}}
+{{code TreeShapes.tree_sprite}}
 
-Its last line puts the list together:
+It takes the tree's setting and a record, and both come apart in its bars. `dimmed_foliage` darkens the foliage's color as dusk falls. `tier_inputs_of` works out what every tier needs, the tree's outline among them, once for the whole tree. `crown_of` and `trunk_finish_of` choose how much detail the tree gets at its distance, which we come to at the end of the chapter. For a far tree, `crown` is `Triangles`, and the trunk's finish is `Flat`.
 
-{{code TreeShapes.tree_sprite from "Sprite.from_shapes" to "Sprite.from_shapes"}}
-
-`tiers.map(...)` makes one shape for each tier, top tier first. `inputs` holds what every tier needs, the outline among them, and `crown` says how to draw the crown. For a far tree, `crown` is `Triangles`, and `tier_shape` answers with `tier_triangle`'s triangle. `[trunk]` is a list of one shape, and `concat` joins two lists into one, so the trunk comes first. The platform paints a list from first to last, so the tiers land on the trunk. Each tier also lands on the tier above it and covers that tier's bottom, which is where the overlap goes. `Sprite.from_shapes` makes the list the tree's sprite.
+The last line puts the list together. `tiers.map(...)` makes one shape for each tier, top tier first, and for a far tree `tier_shape` answers with `tier_triangle`'s triangle. `[trunk]` is a list of one shape, and `concat` joins two lists into one, so the trunk comes first. The platform paints a list from first to last, so the tiers land on the trunk. Each tier also lands on the tier above it and covers that tier's bottom, which is where the overlap goes. `Sprite.from_shapes` makes the list the tree's sprite.
 
 ### What you're missing
 
-Every tree 200 metres or more ahead of the camera is drawn this way. Nearer than that, the ride draws more. Each tier becomes a cone seen from the camera, which fattens as the rider passes under it, and the nearest cones are shaded. Within 60 metres, the trunk is shaded too, so that it looks round. `crown_of` and `trunk_finish_of` make those choices, and `tier_shape` draws the cones. Cones take far more work to draw, and far off they look just like triangles, so the ride spends that work only where it shows.
+Every tree 200 metres or more ahead of the camera is drawn this way. Nearer than that, the ride draws more. Each tier becomes a cone seen from the camera, which fattens as the rider passes under it, and the nearest cones are shaded. Within 60 metres, `trunk_finish_of` gives `Shaded` in place of `Flat`, and the trunk looks round. `crown_of` and `trunk_finish_of` make those choices, and `tier_shape` draws the cones. Cones take far more work to draw, and far off they look just like triangles, so the ride spends that work only where it shows.
 
 So a far tree is a handful of small functions over one list of tiers. The `expect` pins the tiers, each tier becomes a triangle, and one list puts the trunk first and the tiers over it. Every tree beside the road runs through this same code, wherever it stands.
 
