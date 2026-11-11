@@ -572,7 +572,7 @@ This table explains the code's concepts:
 |---|---|---|
 | A type variable | Generality | `kind` in `Pipeline.Sighted(kind)` stands for whatever type the caller's sighting holds. |
 | A `where` clause | Requirement | `where [kind.scenery_sprite : kind, Sprite.Setting -> Sprite]` asks that type for a method named `scenery_sprite`, with the type after the colon. The square brackets hold a list of requirements, here just one. |
-| A method | Location | The clause looks only among a type's methods, the functions inside its braces. A function outside the braces is a plain function, private to its module. That's why `Conifer` keeps `scenery_sprite` inside, with `scenery_height`. |
+| A method | Placement | The clause looks only among a type's methods, the functions inside its braces. That's why `Conifer` keeps `scenery_sprite` inside, with `scenery_height`, while its private helpers sit outside. |
 | A method call | Dispatch | `sighting.kind` is the sighting's `kind` field, which holds a value of the type `kind`. `.scenery_sprite(...)` calls that type's method, with the value before the dot as its first argument. |
 
 The rest of the body builds the setting. A `Sprite.LensAndLight` holds the shared part of a `Sprite.Setting`, the focal length and the darkness, and the body adds the sighting's own spot. In a record, `focal_length` alone is short for `focal_length: focal_length`, a field filled from the value of the same name. `sighting.spot.foot().forward()` is how far ahead of the camera the thing's foot stands.
@@ -583,7 +583,7 @@ Each call to `rendering_of` fills `kind` with one particular type. The ride rend
 
 {{code TreeSighting.tree_renderings from "tree_renderings :" to "trees.map"}}
 
-The compiler looks inside `Conifer`'s braces, finds a `scenery_sprite` of the right type, and the call compiles. It checks every other call the same way, one type at a time. Every call gives back a `Rendered`, whatever its kind, so a frame's renderings of trees, cows and towers all go in one list. So the choice of which `scenery_sprite` runs is made when the program compiles, once for each type.
+The compiler looks inside `Conifer`'s braces, finds a `scenery_sprite` of the right type, and the call compiles. It checks every other call the same way, one type at a time. So the choice of which `scenery_sprite` runs is made when the program compiles, once for each type. Every call gives back a `Rendered`, whatever its kind, so a frame's renderings of trees, cows and towers all go in one list.
 
 Every type has to pass that check. Here a `Rock`, a kind that is just one tag, is handed to `rendering_of`. The program is a small app of its own, which uses Safari Ride's modules as its `game` package. Only `Rock` and `rock_rendering` matter here. The rest makes it an app, and the `_` names an argument it leaves unused:
 
@@ -601,7 +601,7 @@ A radio tower is drawn however small it looks, so it's sighted by `Pipeline.sigh
 
 ### Names that say what they're for
 
-Roc matches a `where` clause by the method's name and type alone, whichever type the method belongs to. Suppose the clause asked for a method called just `height`. The bird could well have one that says how high it flies, and the sighting would test the bird against the wrong number, while the compiler stays quiet. So every method the pipeline asks for starts with "scenery", which makes an accidental match unlikely.
+Roc matches a `where` clause by the method's name and type alone. Suppose the clause asked for a method called just `height`. The bird could well have one that says how high it flies, and the sighting would test the bird against the wrong number, while the compiler stays quiet. So every method the pipeline asks for starts with "scenery", which makes an accidental match unlikely.
 
 So a kind meets the pipeline with two methods inside its braces, `scenery_height` and `scenery_sprite`. The tree, the cow, the radio tower, the cat and the bird each have both, and the compiler checks every one of them when the program compiles.
 
