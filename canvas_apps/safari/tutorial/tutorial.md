@@ -562,7 +562,13 @@ The Roc idea is the `where` clause, which constrains a type variable to types th
 
 `rendering_of` takes a sighting, with the focal length and the darkness that the whole frame shares, and it gives back a rendering: the thing's sprite, and how far ahead of the camera it stands. The sprite comes from the kind, so `rendering_of` calls the kind's own `scenery_sprite` method.
 
-A sighting is a `Pipeline.Sighted(kind)`, and `kind` is a type variable, so it stands for any type at all: a number, a record or a `Conifer`. Only some types have a `scenery_sprite`. So `rendering_of` needs a constraint on `kind`: any type, as long as that type has a `scenery_sprite`.
+A rendering is a value of the `Rendered` type, which ends each thing's trip through the pipeline:
+
+{{code Rendered.Rendered from "Rendered ::" to "of = "}}
+
+A `Rendered` holds a depth and a sprite, and those two alone. `Rendered.of` builds one, and `Rendered.({ depth, sprite })` wraps the record in the opaque type, the reverse of the `Billboard.(billboard)` that opens a billboard.
+
+The sighting going in is another matter. A sighting is a `Pipeline.Sighted(kind)`, and `kind` is a type variable, so it stands for any type at all: a number, a record or a `Conifer`. Only some types have a `scenery_sprite`. So `rendering_of` needs a constraint on `kind`: any type, as long as that type has a `scenery_sprite`.
 
 Roc writes that constraint as a `where` clause, on the line after the annotation:
 
