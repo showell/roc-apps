@@ -558,7 +558,7 @@ The pipeline is written once, for every kind of thing beside the road, yet each 
 A tree, a cow, a radio tower, the cat and the bird, each rendered by `Pipeline.rendering_of`, and each at its own distance so that it shows clearly.
 ```
 
-`Pipeline.rendering_of` takes a sighting and the frame's lens and light, and it gives back a rendering: the thing's sprite, and how far ahead of the camera it stands. Only the kind knows what it looks like, so `rendering_of` asks the kind for its sprite, by calling the kind's own `scenery_sprite` method.
+`Pipeline.rendering_of` takes a sighting, with the focal length and the darkness that the whole frame shares, and it gives back a rendering: the thing's sprite, and how far ahead of the camera it stands. Only the kind knows what it looks like, so `rendering_of` asks the kind for its sprite, by calling the kind's own `scenery_sprite` method.
 
 Asking a kind for a method takes a new Roc idea. A sighting is a `Pipeline.Sighted(kind)`, and `kind` is a type variable, so it stands for any type at all: a number, a record or a `Conifer`. Only some types have a `scenery_sprite`. So `rendering_of` narrows `kind`: any type, as long as it has a `scenery_sprite`.
 
@@ -575,7 +575,7 @@ This table explains the code's concepts:
 | A method | Location | The clause looks for the method inside the type's braces. That's why `Conifer` keeps `scenery_sprite` there, with `scenery_height`. |
 | A method call | Dispatch | `sighting.kind.scenery_sprite(...)` calls the method of whichever type `kind` turns out to be. |
 
-The rest of the body builds the setting. A `Sprite.LensAndLight` holds the part of a `Sprite.Setting` that every thing in a frame shares, the focal length and the darkness, and the body adds the sighting's own spot. `sighting.spot.foot().forward()` is how far ahead of the camera the thing's foot stands.
+The rest of the body builds the setting. A `Sprite.LensAndLight` holds the shared part of a `Sprite.Setting`, the focal length and the darkness, and the body adds the sighting's own spot. In a record, `focal_length` alone is short for `focal_length: focal_length`, a field filled from the value of the same name. `sighting.spot.foot().forward()` is how far ahead of the camera the thing's foot stands.
 
 ### The compiler checks each call
 
@@ -597,11 +597,11 @@ Sighting a thing needs its height. A far thing shows only when its top clears th
 
 {{code Pipeline.scenery_sighting_of from "where" to "where"}}
 
-A thing that fails either test is refused, and the refusal is a tag that says why: `BelowHorizon` or `TooSmall`. A radio tower is drawn however small it looks, so its sighting skips the size test, but it asks for the tower's height through the same clause.
+A thing that fails either test is refused, and the refusal is a tag that says why: `BelowHorizon` or `TooSmall`. A radio tower is drawn however small it looks, so it's sighted by `Pipeline.sighting_above_horizon_of`, which skips the size test and asks for the height through the same clause.
 
 ### Names that say what they're for
 
-Roc matches a `where` clause by the method's name and type alone. Suppose the clause asked for a method called just `height`. The bird could well have one that says how high it flies, and the sighting would test the bird against the wrong number, while the compiler stays quiet. So every method the pipeline asks for starts with "scenery", and a kind meets the pipeline on purpose.
+Roc matches a `where` clause by the method's name and type alone, whichever type the method belongs to. Suppose the clause asked for a method called just `height`. The bird could well have one that says how high it flies, and the sighting would test the bird against the wrong number, while the compiler stays quiet. So every method the pipeline asks for starts with "scenery", and a kind meets the pipeline on purpose.
 
 So a kind meets the pipeline with two methods inside its braces, `scenery_height` and `scenery_sprite`. The tree, the cow, the radio tower, the cat and the bird each have both, and the compiler checks every one of them when the program compiles.
 
