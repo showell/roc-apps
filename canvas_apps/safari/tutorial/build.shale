@@ -1,4 +1,6 @@
--- budget: steps=100000000 arena_bytes=1000000000
+-- budget: steps=150000000 arena_bytes=1000000000
+-- The steps grow with the book: 94 million at eight chapters' worth of
+-- includes on 2026-11-10, past 100 million a day later.
 -- This builds the safari tutorial. It reads tutorial.md, prose with lines
 -- like `{{code CatCrossing.cat_instant_at}}`, and writes build/tutorial.md, where each
 -- such line is a fenced roc block holding that definition as the source has
