@@ -836,7 +836,7 @@ A tree passes through these types on its way to the screen:
 |---|---|
 | `Conifer` | A tree's kind: `Green`, `SmallGreen`, `Red` or `Gold` |
 | `Distance` | A length in metres, opaque like `Pixels` and an `F64` underneath |
-| `RiderView.RaisedPointAhead` | A point in front of the camera: `right` and `forward` of it, and `height` above the rider's level. `spot.base()` gives the middle of a tree's foot as one |
+| `RiderView.PointAtHeightAhead` | A point in front of the camera: `right` and `forward` of it, and `height` above the rider's level. `spot.base()` gives the middle of a tree's foot as one |
 | `Camera.Upright` | Where an upright thing lands on the screen: its `foot`, and its `height_on_screen` in `Pixels` |
 | `TreeShapes.Tier` | One layer of the crown, as fractions of the crown |
 
@@ -2443,7 +2443,7 @@ A solid thing stands each of its points through its spot. A point is an offset i
 
 The truck faces straight along the road, so its placement is one line. The headlights and the brake lights use it too:
 
-{{code TruckPlacement.raised_point}}
+{{code TruckPlacement.point_at_height}}
 
 The truck is drawn from its spot, the camera's lens and the sky's darkness:
 
@@ -2579,7 +2579,7 @@ They come on at this darkness:
 
 On this ride, that's step 3,555 of 6,746. Once on, they stay on, because from there the sky only darkens.
 
-Their `sprite` matches both tags, and an `Off` lamp is an empty sprite. When they're on, it paints two beams as wedges that fade from the lamp toward their far end. Their points are placed the way the body's are, with `TruckPlacement.raised_point`:
+Their `sprite` matches both tags, and an `Off` lamp is an empty sprite. When they're on, it paints two beams as wedges that fade from the lamp toward their far end. Their points are placed the way the body's are, with `TruckPlacement.point_at_height`:
 
 {{code TruckHeadlights.sprite}}
 
@@ -3113,7 +3113,7 @@ The points are plain records. They don't need to be opaque, since a record's typ
 
 {{code RiderView.RiderPoint}}
 
-{{code RiderView.RaisedPoint}}
+{{code RiderView.PointAtHeight}}
 
 {{module Point}}
 
@@ -3127,7 +3127,7 @@ From there to the screen is a pinhole camera, which is similar triangles. Dividi
 
 {{code Camera.project}}
 
-`project` takes a `RaisedPointAhead`, and that one is opaque. The only way to make one is to check the point against the near plane, a little ahead of the camera, so `forward` is never zero or negative by the time it's divided by.
+`project` takes a `PointAtHeightAhead`, and that one is opaque. The only way to make one is to check the point against the near plane, a little ahead of the camera, so `forward` is never zero or negative by the time it's divided by.
 
 A thing standing on the ground is projected twice, at its feet and at its head. `StillShapes.standing_anchor` calls `upright_on_screen` with a record of the height and the focal length, written right there in the call:
 
@@ -3206,7 +3206,7 @@ The near plane is one region, and cutting by it is one line:
 
 The ground's horizon is a second region, a circle round the rider.
 
-The cut can change the type of point as well as the count. The near plane takes `RaisedPoint`s and gives back `RaisedPointAhead`s, the type `project` takes, while the horizon gives back `RaisedPoint`s. That's what the type variable is for.
+The cut can change the type of point as well as the count. The near plane takes `PointAtHeight`s and gives back `PointAtHeightAhead`s, the type `project` takes, while the horizon gives back `PointAtHeight`s. That's what the type variable is for.
 
 `GroundPatch`, `GuardRail`, `TruckBody` and `TruckBrakeLights` all cut through `Camera.clipped_polygon`. `GroundPatch` first cuts its corners at the horizon, with `EarthCurve.points_before_horizon`:
 
@@ -3529,7 +3529,7 @@ Eight patterns kept turning up in the tour. They're patterns in a loose sense: s
 | Rule and timeline | One function says how far along an animation is, and a timeline, plain data, says what the animal looks like at each stage | `BirdFlight.flight_stage` and `BirdFlight.flight_timeline` |
 | The step function | A value goes in, and the next value comes out | `Rider.rider_at_next_step`, `TruckJourney.truck_progress_at_next_step`, `Tour.step_forward` |
 | The chain of limits | One value passes through independent rules, each of which can only lower it | `Throttle.next_acceleration` |
-| One record per space | Field names say which coordinate system a point is in | `RoadPoint`, `RiderPoint`, `RaisedPoint`, `Point` |
+| One record per space | Field names say which coordinate system a point is in | `RoadPoint`, `RiderPoint`, `PointAtHeight`, `Point` |
 | Rehearsal | Run the real rules on a pretend copy, read the result, and throw it away | `Coast`, `LeanSearch`, `Motorcycle.cross_bend_if_on_road` |
 
 Code that reads like configuration deserves a line of its own, because the tour kept stopping to admire it: `Pond`, `World.bending_plans`, the timelines, and `SafariApp.canvas_app`. None of them is a config format. They're ordinary Roc values, so the compiler checks them, and a tag that's misspelled is a compile-time error.

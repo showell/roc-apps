@@ -106,7 +106,7 @@ tower_shapes = |Tower.(tower), { footprint, spot, focal_length, rod_color }| {
 	} else {
 		apex = spot.foot().at_height(height_in_view(geometry, tower_height))
 		rods = [
-			leg_shapes(geometry, apex.to_raised()),
+			leg_shapes(geometry, apex.to_point_at_height()),
 			ring_shapes(geometry),
 			brace_shapes(geometry),
 		].join()
@@ -215,7 +215,11 @@ height_in_view = |geometry, height_on_tower|
 ## A corner of the tower at `height_on_tower`: drawn in toward the foot as
 ## the tower tapers, raised by the tower's lift, and lowered by the ground's
 ## drop.
-corner_at : TowerGeometry, { corner : Corner, height_on_tower : Distance } -> RiderView.RaisedPoint
+corner_at : TowerGeometry,
+{
+	corner : Corner,
+	height_on_tower : Distance,
+} -> RiderView.PointAtHeight
 corner_at = |geometry, { corner, height_on_tower }| {
 	taper_fraction = height_on_tower.ratio_to(tower_height)
 	bottom = footprint_corner(geometry.footprint, corner)
@@ -281,8 +285,8 @@ rod_quad = |{ from, to, offset_x, offset_y, color }|
 ## near plane. A rod wholly behind the near plane has no shape.
 rod_shape : TowerGeometry,
 {
-	from : RiderView.RaisedPoint,
-	to : RiderView.RaisedPoint,
+	from : RiderView.PointAtHeight,
+	to : RiderView.PointAtHeight,
 } -> Try(Shapes.Shape, [BehindCamera])
 rod_shape = |geometry, line| {
 	ahead = RiderView.line_ahead(line)?
@@ -306,7 +310,7 @@ metre_on_screen = |{ at, focal_length }| {
 }
 
 ## The four legs, from the footprint's corners up to the apex.
-leg_shapes : TowerGeometry, RiderView.RaisedPoint -> List(Shapes.Shape)
+leg_shapes : TowerGeometry, RiderView.PointAtHeight -> List(Shapes.Shape)
 leg_shapes = |geometry, apex| corners.keep_oks(
 	|corner| rod_shape(
 		geometry,

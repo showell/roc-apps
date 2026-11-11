@@ -124,7 +124,7 @@ brake_shapes = |truck, lamp_sides| {
 				near: { ahead: rear, height: brake_lamp_bottom },
 				far: { ahead: rear, height: brake_lamp_top },
 			},
-		).map(|corner| TruckPlacement.raised_point(truck.spot, corner))
+		).map(|corner| TruckPlacement.point_at_height(truck.spot, corner))
 	glow = [brake_glow(truck, lamp)].keep_oks(|shape| shape)
 	match Camera.clipped_polygon({ color: brake_color, corners: lamp }, truck.focal_length) {
 		Ok(lamp_polygon) => glow.append(lamp_polygon)
@@ -135,12 +135,12 @@ brake_shapes = |truck, lamp_sides| {
 ## The glow round a brake lamp. A lamp with a corner behind the camera has
 ## no glow; the lamp itself is cut at the near plane like the body's faces.
 brake_glow : TruckPlacement.TruckSetting,
-List(RiderView.RaisedPoint) -> Try(
+List(RiderView.PointAtHeight) -> Try(
 	Shapes.Shape,
 	[BehindCamera, TooSmall],
 )
 brake_glow = |truck, lamp_points| {
-	lamp_ahead = RiderView.raised_points_ahead(lamp_points)?
+	lamp_ahead = RiderView.points_at_height_ahead(lamp_points)?
 	on_screen = Camera.projected_points(lamp_ahead, truck.focal_length)
 	center = center_of(on_screen)
 	radius = glow_radius(on_screen, center)

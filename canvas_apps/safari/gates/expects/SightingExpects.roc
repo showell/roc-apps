@@ -124,7 +124,7 @@ right_angle_road = Fixtures.crafted_road([
 ## Where the rail's path starts and ends, as the rider sees it. Each bar joins
 ## two points of the path, and the posts follow the bars, one at each point, so
 ## a path of `n` points makes `2n - 1` quads, and the last bar ends the path.
-rail_ends : { start : RiderView.RaisedPoint, end : RiderView.RaisedPoint }
+rail_ends : { start : RiderView.PointAtHeight, end : RiderView.PointAtHeight }
 rail_ends = {
 	quads = RailSighting.rail_quads_in_view(right_angle_road, Fixtures.origin)
 	last_bar = (quads.len() - 1) / 2 - 1
@@ -375,9 +375,9 @@ rod_end = |index, end| {
 
 ## Where `point` in the rider's view lands on the screen, through the 500 px
 ## lens.
-screen_place_of : RiderView.RaisedPoint -> (F64, F64)
+screen_place_of : RiderView.PointAtHeight -> (F64, F64)
 screen_place_of = |point| {
-	ahead = RiderView.raised_point_ahead(point) ?? crash "SightingExpects: the point is past the near plane"
+	ahead = RiderView.point_at_height_ahead(point) ?? crash "SightingExpects: the point is past the near plane"
 	projected = Camera.project(ahead, Fixtures.origin_camera.focal_length)
 	(projected.x.to_f64(), projected.y.to_f64())
 }
@@ -732,7 +732,7 @@ expect
 ## `along` the segment at `position`.
 truck_point_off_road : (F64, SegmentFromRider.Position, F64), TruckShape.TruckPoint -> F64
 truck_point_off_road = |(lead, position, along), on_truck| {
-	placed = TruckPlacement.raised_point(sighted_truck_of(lead).spot, on_truck)
+	placed = TruckPlacement.point_at_height(sighted_truck_of(lead).spot, on_truck)
 	{ from_rider, road_point } = road_middle_at(position, along)
 	on_road = RoadAhead.rider_point_at(
 		Fixtures.three_segment_road,

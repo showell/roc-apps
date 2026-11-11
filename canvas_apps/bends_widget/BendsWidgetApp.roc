@@ -149,8 +149,8 @@ patch_shape = |bend, corners|
 ## The low edge of a rail's quad, which lies along the ground.
 foot_shape : ShownBend,
 {
-	low_start : RiderView.RaisedPoint,
-	low_end : RiderView.RaisedPoint,
+	low_start : RiderView.PointAtHeight,
+	low_end : RiderView.PointAtHeight,
 	..,
 } -> Shapes.Shape
 foot_shape = |bend, { low_start, low_end, .. }| {

@@ -20,10 +20,10 @@ GuardRail :: [].{
 	## the path from start to end, and its high edge runs above it.
 	RailQuad : {
 		corners : {
-			low_start : RiderView.RaisedPoint,
-			low_end : RiderView.RaisedPoint,
-			high_end : RiderView.RaisedPoint,
-			high_start : RiderView.RaisedPoint,
+			low_start : RiderView.PointAtHeight,
+			low_end : RiderView.PointAtHeight,
+			high_end : RiderView.PointAtHeight,
+			high_start : RiderView.PointAtHeight,
 		},
 		color : RgbColor,
 	}
@@ -106,17 +106,17 @@ posts = |path_points| {
 }
 
 ## A point of the path, at `height` above the ground.
-raised_point : RiderView.RiderPoint, Distance -> RiderView.RaisedPoint
-raised_point = |point, height| { right: point.right, forward: point.forward, height }
+point_at_height : RiderView.RiderPoint, Distance -> RiderView.PointAtHeight
+point_at_height = |point, height| { right: point.right, forward: point.forward, height }
 
 ## The bar from `from` to `to`, bottom edge first.
 bar : { from : RiderView.RiderPoint, to : RiderView.RiderPoint } -> GuardRail.RailQuad
 bar = |{ from, to }| {
 	corners: {
-		low_start: raised_point(from, bar_bottom),
-		low_end: raised_point(to, bar_bottom),
-		high_end: raised_point(to, bar_top),
-		high_start: raised_point(from, bar_top),
+		low_start: point_at_height(from, bar_bottom),
+		low_end: point_at_height(to, bar_bottom),
+		high_end: point_at_height(to, bar_top),
+		high_start: point_at_height(from, bar_top),
 	},
 	color: bar_color,
 }
@@ -144,10 +144,10 @@ post = |at, { previous, next }| {
 	front = { right: at.right.plus(half_right), forward: at.forward.plus(half_forward) }
 	{
 		corners: {
-			low_start: raised_point(back, Distance.zero),
-			low_end: raised_point(front, Distance.zero),
-			high_end: raised_point(front, bar_top),
-			high_start: raised_point(back, bar_top),
+			low_start: point_at_height(back, Distance.zero),
+			low_end: point_at_height(front, Distance.zero),
+			high_end: point_at_height(front, bar_top),
+			high_start: point_at_height(back, bar_top),
 		},
 		color: post_color,
 	}

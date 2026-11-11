@@ -21,14 +21,14 @@ TruckPlacement :: [].{
 
 	## Where a point on the truck stands in the rider's view, for a truck at
 	## `spot` facing along the road.
-	raised_point : Spot, TruckShape.TruckPoint -> RiderView.RaisedPoint
-	raised_point = |spot, point|
+	point_at_height : Spot, TruckShape.TruckPoint -> RiderView.PointAtHeight
+	point_at_height = |spot, point|
 		spot.standing_point({ facing: Angle.straight_ahead, offset: point })
 
 	## A face of the truck in the rider's view, every corner placed.
 	placed_face : Spot, TruckShape.TruckFace -> Camera.FlatPolygon
 	placed_face = |spot, { color, corners }| {
 		color,
-		corners: corners.map(|corner| TruckPlacement.raised_point(spot, corner)),
+		corners: corners.map(|corner| TruckPlacement.point_at_height(spot, corner)),
 	}
 }

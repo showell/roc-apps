@@ -93,15 +93,18 @@ Distance -> Try(
 )
 headlight_beam = |truck, rightward| {
 	nose = TruckShape.truck_box.nose
-	on_truck = |ahead, height| TruckPlacement.raised_point(truck.spot, { ahead, rightward, height })
+	on_truck = |ahead, height| TruckPlacement.point_at_height(
+		truck.spot,
+		{ ahead, rightward, height },
+	)
 	at_lamp = |height| on_truck(nose, height)
 	at_far_end = |height| on_truck(nose.plus(beam_length), height)
 	lamp_bottom = at_lamp(headlight_height.minus(beam_half_height_at_lamp))
 	lamp_top = at_lamp(headlight_height.plus(beam_half_height_at_lamp))
 	far_top = at_far_end(beam_far_center.plus(beam_far_half_height))
 	far_bottom = at_far_end(beam_far_center.minus(beam_far_half_height))
-	corners = RiderView.raised_points_ahead([lamp_bottom, lamp_top, far_top, far_bottom])?
-	lamp = RiderView.raised_point_ahead(at_lamp(headlight_height))?
+	corners = RiderView.points_at_height_ahead([lamp_bottom, lamp_top, far_top, far_bottom])?
+	lamp = RiderView.point_at_height_ahead(at_lamp(headlight_height))?
 	on_screen = Camera.projected_points(corners, truck.focal_length)
 	lamp_on_screen = Camera.project(lamp, truck.focal_length)
 	fill = Brush.circular_gradient({

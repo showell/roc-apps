@@ -51,7 +51,7 @@ EarthCurve :: [].{
 
 	## The outline through `points`, each lowered by the earth's curve, cut at
 	## the horizon. It is empty when all of it lies past the horizon.
-	points_before_horizon : List(RiderView.RiderPoint) -> List(RiderView.RaisedPoint)
+	points_before_horizon : List(RiderView.RiderPoint) -> List(RiderView.PointAtHeight)
 	points_before_horizon = |points|
 		RiderView.points_in_region(points.map(ground_point), region_within(horizon_distance))
 }
@@ -76,7 +76,7 @@ horizon_distance = {
 }
 
 ## A point on the ground, lowered by the earth's curve.
-ground_point : RiderView.RiderPoint -> RiderView.RaisedPoint
+ground_point : RiderView.RiderPoint -> RiderView.PointAtHeight
 ground_point = |point| {
 	right: point.right,
 	forward: point.forward,
@@ -85,7 +85,7 @@ ground_point = |point| {
 
 ## The part of the rider's view within `reach` of the rider, measured on the
 ## ground: a circle round the rider.
-region_within : Distance -> RiderView.Region(RiderView.RaisedPoint)
+region_within : Distance -> RiderView.Region(RiderView.PointAtHeight)
 region_within = |reach| {
 	corner_in_region: |point|
 		if is_within(point, reach) {
@@ -100,7 +100,7 @@ region_within = |reach| {
 }
 
 ## Whether `point` is within `reach` of the rider, measured on the ground.
-is_within : RiderView.RaisedPoint, Distance -> Bool
+is_within : RiderView.PointAtHeight, Distance -> Bool
 is_within = |point, reach| {
 	r = point.right.to_metres()
 	f = point.forward.to_metres()
@@ -115,8 +115,8 @@ is_within = |point, reach| {
 ## the circle where its squared distance equals the squared reach, a quadratic
 ## in t.
 circle_crossings : {
-	from : RiderView.RaisedPoint,
-	to : RiderView.RaisedPoint,
+	from : RiderView.PointAtHeight,
+	to : RiderView.PointAtHeight,
 	reach : Distance,
 } -> List(Fraction)
 circle_crossings = |{ from, to, reach }| {
@@ -182,7 +182,7 @@ expect EarthCurve.is_below_horizon({ point: straight_ahead(1000.0), top: Distanc
 expect !EarthCurve.is_below_horizon({ point: straight_ahead(400.0), top: Distance.metres(-0.8) })
 
 ## A point on the level of the rider, `right` and `forward` in metres.
-level_at : F64, F64 -> RiderView.RaisedPoint
+level_at : F64, F64 -> RiderView.PointAtHeight
 level_at = |right, forward| {
 	right: Distance.metres(right),
 	forward: Distance.metres(forward),
@@ -190,7 +190,7 @@ level_at = |right, forward| {
 }
 
 ## Whether a point is within a nanometre of `right` and `forward`, in metres.
-is_level_near : RiderView.RaisedPoint, (F64, F64) -> Bool
+is_level_near : RiderView.PointAtHeight, (F64, F64) -> Bool
 is_level_near = |point, (right, forward)| {
 	right_miss = (point.right.to_metres() - right).abs()
 	forward_miss = (point.forward.to_metres() - forward).abs()
@@ -198,14 +198,14 @@ is_level_near = |point, (right, forward)| {
 }
 
 ## Whether each point is near its want.
-are_near : List(RiderView.RaisedPoint), List((F64, F64)) -> Bool
+are_near : List(RiderView.PointAtHeight), List((F64, F64)) -> Bool
 are_near = |got_points, wants| {
 	is_each_near = got_points.map2(wants, is_level_near).all(|is_close| is_close)
 	got_points.len() == wants.len() and is_each_near
 }
 
 ## The polygon cut to what lies within 10 m of the rider.
-points_within_ten_metres : List(RiderView.RaisedPoint) -> List(RiderView.RaisedPoint)
+points_within_ten_metres : List(RiderView.PointAtHeight) -> List(RiderView.PointAtHeight)
 points_within_ten_metres = |polygon_points| {
 	reach = region_within(Distance.metres(10.0))
 	RiderView.points_in_region(polygon_points, reach)

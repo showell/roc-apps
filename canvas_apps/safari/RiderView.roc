@@ -1,6 +1,6 @@
 ## A point in the rider's view is measured from the rider: metres to the right,
 ## metres forward, and metres up where height matters. It is on the rider's level
-## or raised, and anywhere or at or past the near plane, the closest thing the
+## or at a height, and anywhere or at or past the near plane, the closest thing the
 ## camera can see; only a point past the near plane can go on the screen. This
 ## module cuts lines and polygons at the near plane.
 import Distance
@@ -25,47 +25,50 @@ RiderView :: [].{
 	## All three parts are signed: `right` and `forward` as on a `RiderPoint`,
 	## and a negative `height` is below that level, where the ground curves
 	## away.
-	RaisedPoint : {
+	PointAtHeight : {
 		right : Distance,
 		forward : Distance,
 		height : Distance,
 	}
 
 	## A point in the rider's view at or past the near plane, so the camera can
-	## put it on the screen. Only `raised_point_ahead`, the near-plane cut, and raising
+	## put it on the screen. Only `point_at_height_ahead`, the near-plane cut, and raising
 	## a point already in view build one.
-	RaisedPointAhead :: RiderView.RaisedPoint.{
+	PointAtHeightAhead :: RiderView.PointAtHeight.{
 
-		right : RiderView.RaisedPointAhead -> Distance
-		right = |RiderView.RaisedPointAhead.(point)| point.right
+		right : RiderView.PointAtHeightAhead -> Distance
+		right = |RiderView.PointAtHeightAhead.(point)| point.right
 
-		forward : RiderView.RaisedPointAhead -> Distance
-		forward = |RiderView.RaisedPointAhead.(point)| point.forward
+		forward : RiderView.PointAtHeightAhead -> Distance
+		forward = |RiderView.PointAtHeightAhead.(point)| point.forward
 
-		height : RiderView.RaisedPointAhead -> Distance
-		height = |RiderView.RaisedPointAhead.(point)| point.height
+		height : RiderView.PointAtHeightAhead -> Distance
+		height = |RiderView.PointAtHeightAhead.(point)| point.height
 
-		to_raised : RiderView.RaisedPointAhead -> RiderView.RaisedPoint
-		to_raised = |RiderView.RaisedPointAhead.(point)| point
+		to_point_at_height : RiderView.PointAtHeightAhead -> RiderView.PointAtHeight
+		to_point_at_height = |RiderView.PointAtHeightAhead.(point)| point
 
 		## The point at `height` instead. It is as far ahead, so still in view.
-		at_height : RiderView.RaisedPointAhead, Distance -> RiderView.RaisedPointAhead
-		at_height = |RiderView.RaisedPointAhead.(point), new_height|
-			RiderView.RaisedPointAhead.({ ..point, height: new_height })
+		at_height : RiderView.PointAtHeightAhead, Distance -> RiderView.PointAtHeightAhead
+		at_height = |RiderView.PointAtHeightAhead.(point), new_height|
+			RiderView.PointAtHeightAhead.({ ..point, height: new_height })
 
 		## The point at `right` instead. It is as far ahead, so still in view.
-		at_right : RiderView.RaisedPointAhead, Distance -> RiderView.RaisedPointAhead
-		at_right = |RiderView.RaisedPointAhead.(point), new_right|
-			RiderView.RaisedPointAhead.({ ..point, right: new_right })
+		at_right : RiderView.PointAtHeightAhead, Distance -> RiderView.PointAtHeightAhead
+		at_right = |RiderView.PointAtHeightAhead.(point), new_right|
+			RiderView.PointAtHeightAhead.({ ..point, right: new_right })
 
 		is_eq : _
 	}
 
 	## `point`, if it is at or past the near plane.
-	raised_point_ahead : RiderView.RaisedPoint -> Try(RiderView.RaisedPointAhead, [BehindCamera])
-	raised_point_ahead = |point|
+	point_at_height_ahead : RiderView.PointAtHeight -> Try(
+		RiderView.PointAtHeightAhead,
+		[BehindCamera],
+	)
+	point_at_height_ahead = |point|
 		if is_in_view(point.forward) {
-			Ok(RiderView.RaisedPointAhead.(point))
+			Ok(RiderView.PointAtHeightAhead.(point))
 		} else {
 			Err(BehindCamera)
 		}
@@ -85,9 +88,9 @@ RiderView :: [].{
 		to_rider = |RiderView.RiderPointAhead.(point)| point
 
 		## The point raised to `height`. It is as far ahead, so still in view.
-		at_height : RiderView.RiderPointAhead, Distance -> RiderView.RaisedPointAhead
+		at_height : RiderView.RiderPointAhead, Distance -> RiderView.PointAtHeightAhead
 		at_height = |RiderView.RiderPointAhead.(point), height|
-			RiderView.RaisedPointAhead.({ right: point.right, forward: point.forward, height })
+			RiderView.PointAtHeightAhead.({ right: point.right, forward: point.forward, height })
 
 		is_eq : _
 	}
@@ -103,15 +106,15 @@ RiderView :: [].{
 
 	## Every one of `points`, in order, if all of them are at or past the near
 	## plane.
-	raised_points_ahead : List(RiderView.RaisedPoint) -> Try(
-		List(RiderView.RaisedPointAhead),
+	points_at_height_ahead : List(RiderView.PointAtHeight) -> Try(
+		List(RiderView.PointAtHeightAhead),
 		[BehindCamera],
 	)
-	raised_points_ahead = |points|
+	points_at_height_ahead = |points|
 		points.fold(
 			Ok(List.with_capacity(points.len())),
 			|kept, point| {
-				ahead = RiderView.raised_point_ahead(point)?
+				ahead = RiderView.point_at_height_ahead(point)?
 				Ok(kept?.append(ahead))
 			},
 		)
@@ -119,12 +122,12 @@ RiderView :: [].{
 	## The part of the line from `from` to `to` at or past the near plane: the
 	## whole line, or the line cut where it crosses the near plane. A line
 	## with both ends behind the near plane has no such part.
-	line_ahead : {
-		from : RiderView.RaisedPoint,
-		to : RiderView.RaisedPoint,
-	} -> Try({ from : RiderView.RaisedPointAhead, to : RiderView.RaisedPointAhead }, [BehindCamera])
+	line_ahead : { from : RiderView.PointAtHeight, to : RiderView.PointAtHeight } -> Try(
+		{ from : RiderView.PointAtHeightAhead, to : RiderView.PointAtHeightAhead },
+		[BehindCamera],
+	)
 	line_ahead = |{ from, to }|
-		match (RiderView.raised_point_ahead(from), RiderView.raised_point_ahead(to)) {
+		match (RiderView.point_at_height_ahead(from), RiderView.point_at_height_ahead(to)) {
 			(Ok(start), Ok(end)) => Ok({ from: start, to: end })
 			(Ok(start), Err(BehindCamera)) =>
 				Ok({ from: start, to: near_plane_crossing({ from, to }) })
@@ -137,19 +140,19 @@ RiderView :: [].{
 	## corners lie in the region, and where its edges cross the boundary.
 	Region(point) : {
 		## `corner` as a point of the cut polygon, if it lies in the region.
-		corner_in_region : RiderView.RaisedPoint -> Try(point, [Outside]),
+		corner_in_region : RiderView.PointAtHeight -> Try(point, [Outside]),
 
 		## Where the edge from `from` to `to` crosses the region's boundary,
 		## strictly between its ends, nearest `from` first.
 		edge_crossings : {
-			from : RiderView.RaisedPoint,
-			to : RiderView.RaisedPoint,
+			from : RiderView.PointAtHeight,
+			to : RiderView.PointAtHeight,
 		} -> List(point),
 	}
 
 	## The polygon cut to what lies in `region`. Where an edge leaves the
 	## region and another comes back into it, a straight line joins them.
-	points_in_region : List(RiderView.RaisedPoint), RiderView.Region(point) -> List(point)
+	points_in_region : List(RiderView.PointAtHeight), RiderView.Region(point) -> List(point)
 	points_in_region = |polygon_points, region| {
 		next_corners = polygon_points.drop_first(1).concat(polygon_points.take_first(1))
 		edges = polygon_points.map2(next_corners, |from, to| { from, to, region })
@@ -157,15 +160,15 @@ RiderView :: [].{
 	}
 
 	## The polygon cut to what lies at or past the near plane.
-	clipped_points : List(RiderView.RaisedPoint) -> List(RiderView.RaisedPointAhead)
+	clipped_points : List(RiderView.PointAtHeight) -> List(RiderView.PointAtHeightAhead)
 	clipped_points = |polygon_points| RiderView.points_in_region(polygon_points, near_plane_region)
 
 	## The point `fraction` of the way from `from` to `to`.
 	point_between : {
-		from : RiderView.RaisedPoint,
-		to : RiderView.RaisedPoint,
+		from : RiderView.PointAtHeight,
+		to : RiderView.PointAtHeight,
 		fraction : Fraction,
-	} -> RiderView.RaisedPoint
+	} -> RiderView.PointAtHeight
 	point_between = |{ from, to, fraction }| {
 		right: from.right.plus(to.right.minus(from.right).scaled_by(fraction)),
 		forward: from.forward.plus(to.forward.minus(from.forward).scaled_by(fraction)),
@@ -184,13 +187,13 @@ is_in_view = |forward| forward >= near_plane
 
 ## Where an edge that has one end on each side crosses the near plane.
 near_plane_crossing : {
-	from : RiderView.RaisedPoint,
-	to : RiderView.RaisedPoint,
-} -> RiderView.RaisedPointAhead
+	from : RiderView.PointAtHeight,
+	to : RiderView.PointAtHeight,
+} -> RiderView.PointAtHeightAhead
 near_plane_crossing = |{ from, to }| {
 	fraction = Fraction.of(near_plane.minus(from.forward).ratio_to(to.forward.minus(from.forward)))
 	crossing = RiderView.point_between({ from, to, fraction })
-	RiderView.RaisedPointAhead.({ ..crossing, forward: near_plane })
+	RiderView.PointAtHeightAhead.({ ..crossing, forward: near_plane })
 }
 
 ## `kept_points` with what one edge of a polygon adds to it: the edge's first
@@ -198,8 +201,8 @@ near_plane_crossing = |{ from, to }| {
 ## region's boundary, in order along the edge.
 edge_points_onto : List(point),
 {
-	from : RiderView.RaisedPoint,
-	to : RiderView.RaisedPoint,
+	from : RiderView.PointAtHeight,
+	to : RiderView.PointAtHeight,
 	region : RiderView.Region(point),
 } -> List(point)
 edge_points_onto = |kept_points, { from, to, region }| {
@@ -215,10 +218,10 @@ edge_points_onto = |kept_points, { from, to, region }| {
 
 ## The part of the rider's view at or past the near plane. An edge crosses it
 ## where its two ends lie on either side of the near plane.
-near_plane_region : RiderView.Region(RiderView.RaisedPointAhead)
+near_plane_region : RiderView.Region(RiderView.PointAtHeightAhead)
 near_plane_region = {
 	corner_in_region: |point|
-		match RiderView.raised_point_ahead(point) {
+		match RiderView.point_at_height_ahead(point) {
 			Ok(ahead) => Ok(ahead)
 			Err(BehindCamera) => Err(Outside)
 		},
@@ -231,7 +234,7 @@ near_plane_region = {
 }
 
 ## A point `forward` metres straight ahead, on the rider's level.
-straight_ahead : F64 -> RiderView.RaisedPoint
+straight_ahead : F64 -> RiderView.PointAtHeight
 straight_ahead = |forward| {
 	right: Distance.zero,
 	forward: Distance.metres(forward),
@@ -239,7 +242,7 @@ straight_ahead = |forward| {
 }
 
 ## A point 2 m right, 9 m ahead and 1 m up.
-sample_point : RiderView.RaisedPoint
+sample_point : RiderView.PointAtHeight
 sample_point = {
 	right: Distance.metres(2.0),
 	forward: Distance.metres(9.0),
@@ -248,23 +251,23 @@ sample_point = {
 
 # A point past the near plane gives back each of its parts.
 expect
-	match RiderView.raised_point_ahead(sample_point) {
+	match RiderView.point_at_height_ahead(sample_point) {
 		Ok(point) =>
 			[point.right(), point.forward(), point.height()]
 				== [sample_point.right, sample_point.forward, sample_point.height]
-				and point.to_raised() == sample_point
+				and point.to_point_at_height() == sample_point
 		Err(BehindCamera) => False
 	}
 
 # A point exactly on the near plane is in view, and one short of it, at the
 # camera, or behind it is not.
-expect RiderView.raised_point_ahead(straight_ahead(0.4)).is_ok()
-expect RiderView.raised_point_ahead(straight_ahead(0.41)).is_ok()
-expect RiderView.raised_point_ahead(straight_ahead(0.39)) == Err(BehindCamera)
-expect RiderView.raised_point_ahead(straight_ahead(0.0)) == Err(BehindCamera)
-expect RiderView.raised_point_ahead(straight_ahead(-5.0)) == Err(BehindCamera)
+expect RiderView.point_at_height_ahead(straight_ahead(0.4)).is_ok()
+expect RiderView.point_at_height_ahead(straight_ahead(0.41)).is_ok()
+expect RiderView.point_at_height_ahead(straight_ahead(0.39)) == Err(BehindCamera)
+expect RiderView.point_at_height_ahead(straight_ahead(0.0)) == Err(BehindCamera)
+expect RiderView.point_at_height_ahead(straight_ahead(-5.0)) == Err(BehindCamera)
 
-# A point on the rider's level is past the near plane as a raised one is, and
+# A point on the rider's level is past the near plane as one at a height is, and
 # gives back each of its parts.
 expect {
 	on_ground = { right: sample_point.right, forward: sample_point.forward }
@@ -290,7 +293,7 @@ expect
 	}) {
 		Ok(point) =>
 			[Distance.metres(3.0), Distance.zero, Distance.metres(-1.0)].all(
-				|height| point.at_height(height).to_raised() == { ..sample_point, height },
+				|height| point.at_height(height).to_point_at_height() == { ..sample_point, height },
 			)
 		Err(BehindCamera) => False
 	}
@@ -298,24 +301,26 @@ expect
 # A list is ahead when every point is, one on the near plane included, and an
 # empty list is ahead.
 expect
-	RiderView.raised_points_ahead([10.0, 0.4, 30.0].map(straight_ahead)).map_ok(
+	RiderView.points_at_height_ahead([10.0, 0.4, 30.0].map(straight_ahead)).map_ok(
 		|points| points.map(|point| point.forward().to_metres()),
 	)
 		== Ok([10.0, 0.4, 30.0])
-expect RiderView.raised_points_ahead([10.0, 0.2, 30.0].map(straight_ahead)) == Err(BehindCamera)
-expect RiderView.raised_points_ahead([straight_ahead(0.39)]) == Err(BehindCamera)
-expect RiderView.raised_points_ahead([]) == Ok([])
+expect RiderView.points_at_height_ahead([10.0, 0.2, 30.0].map(straight_ahead)) == Err(BehindCamera)
+expect RiderView.points_at_height_ahead([straight_ahead(0.39)]) == Err(BehindCamera)
+expect RiderView.points_at_height_ahead([]) == Ok([])
 
 # Moving a point past the near plane up or sideways keeps how far ahead it is.
 expect
-	match RiderView.raised_point_ahead(sample_point) {
-		Ok(point) =>
-			point.at_height(Distance.metres(3.0)).at_right(Distance.metres(-4.0)).to_raised()
+	match RiderView.point_at_height_ahead(sample_point) {
+		Ok(point) => {
+			moved = point.at_height(Distance.metres(3.0)).at_right(Distance.metres(-4.0))
+			moved.to_point_at_height()
 				== {
 					right: Distance.metres(-4.0),
 					forward: Distance.metres(9.0),
 					height: Distance.metres(3.0),
 				}
+		}
 		Err(BehindCamera) => False
 	}
 
@@ -331,7 +336,7 @@ expect
 			forward: Distance.metres(0.8),
 			height: Distance.metres(30.0),
 		},
-	}).to_raised()
+	}).to_point_at_height()
 		== {
 			right: Distance.metres(4.0),
 			forward: Distance.metres(0.4),
@@ -378,7 +383,7 @@ expect
 			forward: Distance.metres(-1.0),
 			height: Distance.metres(1.5),
 		},
-	]).map(RiderView.RaisedPointAhead.to_raised)
+	]).map(RiderView.PointAtHeightAhead.to_point_at_height)
 		== [
 			{
 				right: Distance.metres(-1.0),

@@ -53,7 +53,7 @@ TreeShapes :: [].{
 
 	## Where the tree whose foot's middle is at `base` is on the screen,
 	## `height` tall, through a lens of `focal_length`.
-	tree_outline : RiderView.RaisedPointAhead,
+	tree_outline : RiderView.PointAtHeightAhead,
 	{
 		height : Distance,
 		focal_length : Pixels,
@@ -122,7 +122,7 @@ Tier : {
 ## tree's outline through `focal_length`, worked out once per tree from `base`
 ## and `height` for all eight tiers.
 TierInputs : {
-	base : RiderView.RaisedPointAhead,
+	base : RiderView.PointAtHeightAhead,
 	height : Distance,
 	focal_length : Pixels,
 	outline : Camera.Upright,
@@ -309,11 +309,11 @@ cone_ring_points : Tier,
 {
 	inputs : TierInputs,
 	cone_radius : Distance,
-} -> Try(List(RiderView.RaisedPointAhead), [BehindCamera])
+} -> Try(List(RiderView.PointAtHeightAhead), [BehindCamera])
 cone_ring_points = |tier, { inputs, cone_radius }| {
 	base = inputs.base
 	ring_height = height_down_crown(inputs, tier.bottom)
-	RiderView.raised_points_ahead(
+	RiderView.points_at_height_ahead(
 		ring_units.map(
 			|unit| {
 				right: base.right().plus(cone_radius.times(unit.cos)),
@@ -328,7 +328,7 @@ cone_ring_points = |tier, { inputs, cone_radius }| {
 tier_cone : Tier,
 {
 	inputs : TierInputs,
-	ring_points : List(RiderView.RaisedPointAhead),
+	ring_points : List(RiderView.PointAtHeightAhead),
 	shade : Fraction,
 } -> Shapes.Shape
 tier_cone = |tier, { inputs, ring_points, shade }| {
@@ -355,9 +355,9 @@ expect [0.0, 59.9].all(|metres| trunk_finish_of(Distance.metres(metres)) == Shad
 expect [60.0, 60.1].all(|metres| trunk_finish_of(Distance.metres(metres)) == Flat)
 
 ## The sample tree's base, the middle of its foot, at `lift` off the ground.
-sample_base : Distance -> RiderView.RaisedPointAhead
+sample_base : Distance -> RiderView.PointAtHeightAhead
 sample_base = |lift|
-	RiderView.raised_point_ahead({
+	RiderView.point_at_height_ahead({
 		right: Distance.metres(0.0),
 		forward: Distance.metres(2.0),
 		height: lift,

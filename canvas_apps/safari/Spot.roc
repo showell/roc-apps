@@ -56,7 +56,7 @@ Spot :: {
 	## The middle of the object's foot, raised as high off the ground as the
 	## object is, on the ground as it curves away: where an upright object
 	## stands.
-	base : Spot -> RiderView.RaisedPointAhead
+	base : Spot -> RiderView.PointAtHeightAhead
 	base = |spot| spot.foot().at_height(spot.lift().minus(spot.drop()))
 
 	## Where a point of a solid thing standing at the spot lands in the rider's
@@ -74,7 +74,7 @@ Spot :: {
 			rightward : Distance,
 			height : Distance,
 		},
-	} -> RiderView.RaisedPoint
+	} -> RiderView.PointAtHeight
 	standing_point = |spot, { facing, offset }| {
 		turn = spot.road_heading().plus(facing).to_radians()
 		ahead_metres = offset.ahead.to_metres()

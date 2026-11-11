@@ -18,7 +18,7 @@ Camera :: [].{
 
 	## Where a point in front of the camera lands on the screen, through a
 	## lens of `focal_length`.
-	project : RiderView.RaisedPointAhead, Pixels -> Point
+	project : RiderView.PointAtHeightAhead, Pixels -> Point
 	project = |p, focal_length| {
 		slope_right = p.right().ratio_to(p.forward())
 		slope_up = p.height().minus(eye_height).ratio_to(p.forward())
@@ -40,7 +40,7 @@ Camera :: [].{
 	Upright : { foot : Point, height_on_screen : Pixels }
 
 	## The object standing at `base`, `height` tall, on the screen.
-	upright_on_screen : RiderView.RaisedPointAhead,
+	upright_on_screen : RiderView.PointAtHeightAhead,
 	{
 		height : Distance,
 		focal_length : Pixels,
@@ -53,11 +53,11 @@ Camera :: [].{
 
 	## Each of `points` put on the screen, in order, through a lens of focal
 	## length `focal_length`.
-	projected_points : List(RiderView.RaisedPointAhead), Pixels -> List(Point)
+	projected_points : List(RiderView.PointAtHeightAhead), Pixels -> List(Point)
 	projected_points = |points, focal_length| points.map(|p| project(p, focal_length))
 
 	## A polygon of one color, in the rider's view.
-	FlatPolygon : { color : RgbColor, corners : List(RiderView.RaisedPoint) }
+	FlatPolygon : { color : RgbColor, corners : List(RiderView.PointAtHeight) }
 
 	## A polygon on screen, cut at the near plane, unless it's wholly behind the
 	## camera. What is left of a polygon of three corners or more has three or
@@ -83,10 +83,10 @@ Camera :: [].{
 }
 
 ## `point` past the near plane, which every point in these tests is.
-ahead : RiderView.RaisedPoint -> RiderView.RaisedPointAhead
-ahead = |point| RiderView.raised_point_ahead(point) ?? crash "a test's point is past the near plane"
+ahead : RiderView.PointAtHeight -> RiderView.PointAtHeightAhead
+ahead = |point| RiderView.point_at_height_ahead(point) ?? crash "a test's point is past the near plane"
 
-screen_point : RiderView.RaisedPoint -> Point
+screen_point : RiderView.PointAtHeight -> Point
 screen_point = |point| Camera.project(ahead(point), Pixels.of(800.0))
 
 expect screen_point({
