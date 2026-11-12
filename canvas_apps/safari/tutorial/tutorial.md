@@ -1017,6 +1017,64 @@ At dusk the rock darkens through `Sky.color_at_darkness`, as the grass does, and
 
 That's the far scenery: it turns with the rider and stays where it is. The road comes next, and it's the first part of the world that comes nearer.
 
+## The road
+
+The road is the first part of the world that comes nearer as the rider rides. It's ground: flat patches laid on the grass, in front of the mountains and under everything beside the road.
+
+```widget frame road
+Step 1,529 of the ride: the road and its ponds, over the grass and under the trees.
+```
+
+A patch of ground is a list of corners and a color. The road's patches all take one function:
+
+{{code GroundSighting.road_patch}}
+
+Each corner is a `RiderPoint`, a point on the ground seen from the rider, so the `GroundPatch` module can find where each corner lands on the screen and paint the patch there.
+
+### A segment's ground
+
+The route is a chain of straight segments with a bend between each one and the next. Each segment in view lays its own ground, with one function:
+
+{{code GroundSighting.ground_patches}}
+
+A segment lays up to three things: the road along it, the paving at its bend into the next segment, and a pond if it ends at one. Each comes as a list, and `join` makes them one. The two `match`es leave a part out by giving an empty list. For the segment just behind the rider, the bend's paving covers its last stretch, so that segment's road list is empty. And the last segment of the road in view, where the road in view ends, lays its road and leaves its bend for a later frame.
+
+### Along a segment
+
+The road along a segment is one patch:
+
+{{code GroundSighting.road_along}}
+
+`corner` is a function named inside the body. It uses `road`, `vantage` and `from_rider` from around it, so each call names only a chunk and an edge. A function that uses names from around it like this is a closure.
+
+The patch runs up the right edge and back down the left, so its corners go round in order. Its edges are cut into chunks of at most `road_chunk_length`, 25 metres, because the ground curves away, and a straight edge any longer would part from the curve by more than a pixel near the horizon. `U32.until(0, n)` counts from 0 up to just short of `n`, and `List.from_iter` collects the count into a list of chunk numbers.
+
+All of a segment's chunks share one patch. The platform smooths each patch's edges on its own, and where two patches met, the grass would show through as a pale seam.
+
+### At a bend
+
+Where one segment bends into the next, the two roads leave a gap on the outside of the turn. Here are three bends, seen from above:
+
+```widget bends
+Three bends from above. The paving fills the outside of each turn, and the yellow dot is its apex, where the two roads' outer edges meet.
+```
+
+The `BendInView` module works out the corner, one step at a time:
+
+| Job | Function | Its type |
+|---|---|---|
+{{types row BendInView.outer_edge Find the outer edge}}
+{{types row BendInView.outer_corner Find the corner, on the road}}
+{{types row BendInView.outer_corner_in_view See the corner from the rider}}
+
+A bend to the right has its outer edge on the left, so the paving changes sides as the road turns. An outer corner is three points: where the first road's outer edge ends, the apex, and where the next road's outer edge starts. `OuterCorner` takes the kind of point as a type variable, so the same record holds road points first and rider points after.
+
+`GroundSighting.bend_paving` lays the corner as one more patch. It starts 40 metres before the bend, `lead_in_length`, runs up the left edge, across the start of the next road, and back down the right, and its outer side takes in the corner's three points. Since the paving lays the last 40 metres of the road before the bend, it stands in for the road along the segment just behind.
+
+The ponds are ground too. A segment that ends at a pond lays two more patches, its bank and then its water.
+
+The corner has its paving. Next, the road needs a rail along its outer edge.
+
 ## The modules
 
 Safari Ride splits cleanly in two: the ride, and the view of the ride. In this chapter we map the modules on both sides, look at the thin layer of JavaScript that runs them, and open up one sighting.
@@ -1565,105 +1623,6 @@ Two tags say whether the sun is in view, so there's no `null` and no off-screen 
 {{code FrameView.frame_view_at}}
 
 Most of what `frame_view_at` calls takes the clock, and that's the hard part. The sun sinks a little with every step, and the sky's colors, the mountains and the truck's headlights all follow it. That's a lot of heavy lifting for a circle. It gets a chapter of its own, The setting sun, once things start to move.
-
-## The road
-
-A road of straight segments still has to get round its bends. Where two segments meet, something has to pave the corner and put up a rail.
-
-```widget bends
-Three bends from above. The rail changes sides with the bend, and a sharper bend pushes the apex further out.
-```
-
-Each road here is two segments, seen from above, and the white dot is where the view is from. The rail runs along the outer edge of the bend, and the yellow dot is the apex, where the outer edges of the two segments meet. The first bend turns left and the second right, so their outer edges are on opposite sides. The third is a sharper turn to the right.
-
-New in this chapter:
-
-- Roc: closures that give a repeated call a short name, `List.from_iter` with `until`
-- Modules: `BendInView`, `GroundSighting`
-
-`BendInView` knows where two segments meet. `GroundSighting` and `RailSighting` each ask it about a bend, and each answers with plain data for another module to draw.
-
-The modules around `BendInView`
-```dot
-digraph road {
-  node [shape=box, fontname="Helvetica"];
-  BendInView [style=bold];
-  GroundSighting -> BendInView [label="  asks about a bend"];
-  RailSighting -> BendInView [label="  asks about a bend"];
-  GroundSighting -> GroundPatch [label="  makes patches"];
-  GroundSighting -> Pond [label="  asks for its outlines"];
-  RailSighting -> GuardRail [label="  cuts the path into quads"];
-  GroundSighting -> RoadAhead [label="  sees road points from the rider"];
-  RailSighting -> RoadAhead [label="  sees road points from the rider"];
-  BendInView -> RoadAhead [label="  sees road points from the rider"];
-  BendInView -> Geom [label="  finds the outer edge"];
-}
-```
-
-### Get the types right
-
-A point at a bend can be measured two ways. On the road, a point is a `Geom.RoadPoint`, measured along and across the segment before the bend. From the rider, it's a `RiderView.RiderPoint`, right and forward of the camera. `RoadAhead.rider_point_at` is the one map between them. The corner is worked out on the road first, then seen from the rider, and the paving and the rail only ever take rider points.
-
-A bend is a small record:
-
-{{code BendInView.BendInView from "A bend as the rider sees it" to "}.{"}}
-
-`before` says where the first segment lies from the rider, and `bend` holds its length and its turn. The turn is positive to the right. Where the segment after lies comes from `from_rider_after`.
-
-The outer corner is three points. Its type takes the kind of point as a type variable, so the same record holds road points or rider points:
-
-{{code BendInView.OuterCorner}}
-
-Each step of the job is a signature:
-
-| Job | Function | Its type |
-|---|---|---|
-{{types row BendInView.outer_edge Find the outer edge}}
-{{types row BendInView.outer_corner Find the corner, on the road}}
-{{types row BendInView.outer_corner_in_view See the corner from the rider}}
-{{types row GroundSighting.bend_paving Pave it}}
-
-### Where two segments meet
-
-{{code BendInView.outer_edge}}
-
-A bend to the right has its outer edge on the left. That's why the rail changes sides between the first two bends.
-
-{{code BendInView.outer_corner}}
-
-All three points are measured on the segment before. `end_before` is where its outer edge ends. The next segment is turned, so its outer edge starts a little past that end and a little in from the edge: that's `start_after`, carried back onto this segment. Follow the next segment's outer edge from `start_after` until it meets this segment's outer edge, and that's the apex, the yellow dot. `along_to_apex` is measured along the road from `start_after`. For a turn under a right angle, the apex lies back from `start_after`, so `along_to_apex` comes out negative.
-
-The road is 4 metres wide, and the apex sits halfway round the turn, so at a turn of 45 degrees it lies 4 × tan(22.5°) past the end of the first segment. That's the 1.7 metres the widget shows.
-
-`outer_corner_in_view` turns the three points into the rider's view, for the paving and the rail.
-
-### Paving a corner
-
-A piece of ground is a list of corners and a color.
-
-{{code GroundSighting.road_patch}}
-
-That's what `GroundPatch` paints. It's plain data, so it can be checked with numbers. The widget counts three patches, and here's where they come from.
-
-{{code GroundSighting.road_along}}
-
-Every whole-number type has an `until`, like `U64.until`, and the `U32` one here counts from 0 up to just short of its second argument. `List.from_iter` collects that count into a list.
-
-A segment's road is one patch. Its edges are cut into chunks of 25 metres or less, which keeps each straight cut within a pixel of the curve where the road meets the horizon. The widget's two segments make two patches, and the bend makes the third.
-
-`corner` is a closure: it captures `road`, `vantage` and `from_rider`, so each call names only a chunk and an edge.
-
-{{code GroundSighting.lead_in_length}}
-
-The bend's patch also lays the last 40 metres of the road before it, so the bend's own paving is all the rider needs from a segment just behind.
-
-{{code GroundSighting.bend_paving}}
-
-The patch goes round in order: up the left edge, across the end of the next segment's first chunk, and back down the right. The side on the outside of the turn takes a detour through the outer corner's three points. `before` and `after` are two more closures, so the two lists read alike.
-
-A pond is ground too. A segment that ends at a pond adds two more patches, its bank and then its water, laid out by `Pond.pond_outlines`.
-
-The corner has its paving. Next, it needs a rail.
 
 ## Rails
 
