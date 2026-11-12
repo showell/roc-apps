@@ -18,19 +18,19 @@ You'll learn two things as you read: Roc, and how a ride like this one is animat
 
 ## A flip book
 
-Every programming language makes a bet about what a program is made of. Roc bets on values and functions. A value is a fact: a number, a name, or a record of where the rider is on the road and how fast the bike is going. A function takes values and gives back a new one. A Roc value stays exactly as it was made, for as long as the program holds it.
+Have you ever made a flip book? You draw a stick figure in the corner of every page of a notebook, and you move it a little on each page. Then you flip the pages fast, and the stick figure runs. Every drawing holds still. The motion comes from the flipping.
 
-That looks odd for a book about animation. The ride you just watched is change from start to finish. The rider rolls down the road, the sun sinks, the truck turns on its headlights, and a cat crosses in front of the bike. So how does a language whose values stay put produce a ride in constant motion?
+Safari Ride works the same way. Thirty times a second, it puts a new picture on the screen. Each picture is one page of the flip book, and we call it a frame.
 
-It works the way a flip book works. A flip book is a stack of pages, and each page is one still drawing. The motion comes from the flipping. In Safari Ride, each moment of the ride is a value: where the rider is, where the truck is, and what the clock says. One function takes a moment and gives back the next one, a new value beside the old. Another takes a moment and gives back its picture. The platform under the Roc code turns the pages: thirty times a second, it asks for the next moment and paints its picture.
+If you've written a game, you probably moved things by changing them. Each time through the game's loop, you added a little to the player's position, and the old position was gone. Roc takes another road. A Roc value stays exactly as it was made. So to move the rider on, a Roc function takes one moment of the ride and gives back a new moment, with the rider a little farther down the road. The old moment stays as it was.
 
-Values that stay put pay off in ways you can see. The same moment always gives the same next moment and the same picture, so the ride is completely deterministic: run it twice with the same keys, and every frame matches. The ride keeps the moments behind it, so stepping backward is as quick as stepping forward, and an old moment gives its picture like any other. The same idea lets this book hold a picture still beside the text, built from the ride's own code.
+A second function takes a moment and gives back its picture: the sky, the road, the cows and the trees, as a list of shapes. Under the Roc code sits the platform, the part of the program that talks to the screen. The platform does the flipping. Thirty times a second, it asks for the next moment and paints that moment's picture.
 
-The other half of Roc's bet is types. Every value has a type, and the compiler checks the whole program against its types. A type describes exactly the values that may exist. On the road, a length is a `Distance`, in metres. On the screen, a length is in `Pixels`. Both are numbers underneath, and the compiler keeps them apart, so a length on the road becomes a length on the screen only where the code says how.
+The ride keeps its old moments, so you can flip backward, too. Pause the ride, and the left arrow key steps it back a page. The same moment always gives the same picture, so you can hold one page still and study it. This book does that a lot.
 
-Throughout the book, the ride poses the problems and Roc shapes the answers. The ride asks for change, and Roc answers with a fresh value for every moment. The ride asks for things near and far, on the road and on the screen, and Roc answers with types that keep each kind of length in its place.
+Roc also checks your work. Every value has a type, which says what kind of value it is. A distance on the road is a `Distance`, and a size on the screen is in `Pixels`. Both are numbers, but they're different types, and the compiler, which turns your Roc code into a program, tells you if you mix them up.
 
-Values and functions also shape the whole program. Each moment holds just four things: the rider, the truck, the clock, and the plan for when the cat or the bird ahead starts to move. The ride derives everything else in a frame from those four and the road. The sun's place in the sky comes from the clock. The picture comes from the moment. The next chapter breaks the ride into the pieces we build.
+That's two big ideas: values that stay put, and types that keep them straight. The next chapter breaks the ride into the pieces we build.
 
 ## The problem
 
