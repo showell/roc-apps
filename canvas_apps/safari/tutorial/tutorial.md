@@ -18,17 +18,19 @@ You'll learn two things as you read: Roc, and how a ride like this one is animat
 
 ## One page
 
-Safari Ride works like a flip book. Each frame is one page, and the ride shows a new page thirty times a second. Here's one page, held still. It's step 1,529, with the cat out on the road:
+Safari Ride works like a flip book. Each frame is one page, and the ride shows a new page thirty times a second. Here's one page, held still. It's the page at step 1,529, with the cat out on the road:
 
 ```widget frame moving
 Step 1,529 of the ride, held still.
 ```
 
+This chapter makes a first pass over that page. It names the page's parts in the code, and it skips how each part is made.
+
 In the code, a frame starts as one value of the `FrameView` type:
 
 {{code FrameView.FrameView from "FrameView := {" to "}.{"}}
 
-You can read it as English for now. Four of the fields are parts of the picture you can see: the backdrop of sky and grass, with the sun when it's in view; the mountains; the road and its ponds; and the scene, which holds the things in view beside the road. The fifth field, the roll, tilts the whole frame when the bike leans. The roll belongs to the rider, so it waits for the second half of the book.
+You can read it as English for now. Four of the fields are parts of the picture you can see: the backdrop of sky and grass, with the sun when it's in view; the mountains; the road and its ponds; and the scene, which holds the things in view beside the road. The fifth field, the camera's roll, tilts the whole frame when the bike leans. The roll comes from the rider, so it waits for the second half of the book.
 
 One function gives back the view for any moment of the ride:
 
@@ -40,7 +42,7 @@ That line is a type annotation: the function's name, a colon, and its type. `fra
 
 Roc code runs on a platform, and Safari Ride's platform paints that list on the screen. So each page starts from one moment of the ride and ends as one list of shapes.
 
-This chapter is a first pass. It names the parts of one page, and it skips how each part is made. The first half of the book holds this page still and builds it part by part, starting with the things beside the road. The second half turns the pages. The chapters ahead read Roc slowly, one idea at a time, so the syntax here can wait for them. The next chapter breaks the problem into the pieces we build.
+The first half of the book holds this page still and builds it part by part, starting with the things beside the road. The second half turns the pages. The chapters ahead read Roc slowly, one idea at a time, so the syntax here can wait for them. The next chapter breaks the problem into the pieces we build.
 
 ## The problem
 
