@@ -586,7 +586,7 @@ Every frame, every thing beside the road takes the same trip to the screen. In t
 Step 1,529 of the ride, with only what came through the pipeline: its trees, critters and towers, the cat and the truck.
 ```
 
-Here's the trip. The sections below follow its boxes, from `Geom.Placed` down:
+Here's the trip:
 
 The pipeline
 ```dot
@@ -618,7 +618,7 @@ The trip starts from where a thing stands on the road:
 
 {{code Geom.Placed}}
 
-`road_point` is the thing's place on the road, a `RoadPoint` from the {{chapter Types for places}} chapter, and `lift` says how far off the ground it stands. `kind` says what the thing is. Its type is the type variable `kind`, so a placed tree is a `Geom.Placed(Conifer)`, and a placed cow is a `Geom.Placed(Billboard)`. The next chapter looks inside `Conifer`.
+`road_point` is the thing's place on the road, a `RoadPoint` from the {{chapter Types for places}} chapter, and `lift` says how far off the ground it stands. `kind` says what the thing is. Its type is the type variable `kind`, so a placed tree is a `Geom.Placed(Conifer)`, and a placed cow is a `Geom.Placed(Billboard)`.
 
 ### Sighted
 
@@ -626,7 +626,7 @@ The screen shows what the camera sees. So for each frame, the pipeline sights ev
 
 {{code Pipeline.Sighted}}
 
-The `Spot` is the thing's place seen from the camera, as the {{chapter Types for places}} chapter showed. The kind rides along as it was. This `spot` is the one `tree_sprite` took from its setting in the {{chapter A far tree}} chapter.
+The `Spot` is the thing's place seen from the camera, as the {{chapter Types for places}} chapter showed. This `spot` is the one `tree_sprite` took from its setting in the {{chapter A far tree}} chapter.
 
 ### Refused
 
@@ -634,7 +634,7 @@ Some placed things stay off the screen, so a sighting function's answer is a `Tr
 
 {{code Pipeline.sighting_of}}
 
-Its answer is a `Try(Pipeline.Sighted(kind), [BehindCamera])`: a sighting, or the one refusal it can give. The body finds where the thing's foot lies from the rider, and the refusal comes from the `?` after `RiderView.rider_point_ahead(rider_point)`. That call gives back a `Try` of its own. When it's an `Err(BehindCamera)`, the `?` ends `sighting_of` right there with that `Err`. When it's an `Ok`, the `?` unwraps it, and `foot` is the point ahead. The last line wraps the spot and the kind in an `Ok`.
+The body finds where the thing's foot lies from the rider, and the refusal comes from the `?` after `RiderView.rider_point_ahead(rider_point)`. That call gives back a `Try` of its own. When it's an `Err(BehindCamera)`, the `?` ends `sighting_of` right there with that `Err`. When it's an `Ok`, the `?` unwraps it, and `foot` is the point ahead.
 
 `Pipeline`'s other sighting functions start from `sighting_of` and add tests of their own, so between them they refuse a thing with one of three tags:
 
@@ -646,7 +646,7 @@ Its answer is a `Try(Pipeline.Sighted(kind), [BehindCamera])`: a sighting, or th
 
 The trees, the billboard critters, the cat and the bird are sighted by `Pipeline.scenery_sighting_of`, which takes all three tests. A radio tower and the truck are kept however small they look. So a tower is sighted by `Pipeline.sighting_above_horizon_of`, which skips the `TooSmall` test, and the truck by `Pipeline.sighting_of`, which takes only the `BehindCamera` test.
 
-Here are some things from step 1,529, the frame in the picture, and what their sightings decide. `right` and `forward` place each thing's foot from the camera, in metres, and a `forward` below zero is behind it. The road bends, so a tree on a segment far ahead can stand far to one side:
+Here are some things from step 1,529 and what their sightings decide. `right` and `forward` place each thing's foot from the camera, in metres, and a `forward` below zero is behind it. The road bends, so a tree on a segment far ahead can stand far to one side:
 
 | What it is | `right` | `forward` | What its sighting decides |
 |---|---|---|---|
@@ -666,7 +666,7 @@ Each sighting that's kept is rendered by `Pipeline.rendering_of`, which the {{ch
 
 {{code Rendered.Rendered from "Rendered ::" to "of = "}}
 
-A `Rendered` holds a depth and a sprite, and those two alone. The `::` makes it opaque, as it does `Distance`. The sprite is what a kind's `scenery_sprite` gives back from a setting, and the depth is how far ahead of the camera the thing stands. The kind has done its job by now, and it's gone: a tree's rendering and a cow's have the same type.
+A `Rendered` holds a depth and a sprite. The `::` makes it opaque, as it does `Distance`. The sprite is what a kind's `scenery_sprite` gives back from a setting, and the depth is how far ahead of the camera the thing stands. The kind has done its job by now, and it's gone: a tree's rendering and a cow's have the same type.
 
 In a body, as here, `Rendered.({ depth, sprite })` builds a `Rendered` by wrapping the record. Among a function's arguments, as `Billboard.(billboard)` was, the same form takes one apart.
 
