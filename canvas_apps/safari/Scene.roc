@@ -14,6 +14,7 @@ import Pipeline
 import RailSighting
 import Rendered
 import Sky
+import Sprite
 import TowerSighting
 import TreeSighting
 import Truck
@@ -60,11 +61,7 @@ Scene := {
 		birds_seen = EncounterSighting.birds_in_view(road, encounter)
 		cats_seen = EncounterSighting.cats_in_view(road, encounter)
 		trees_seen = TreeSighting.trees_in_view(road, camera)
-		trucks =
-			match TruckSighting.truck_in_view(road, { vantage, truck: facts.truck }) {
-				Ok(truck) => [Pipeline.rendering_of(truck, lens_and_light)]
-				Err(OutOfSight) => []
-			}
+		truck_fate = TruckSighting.truck_in_view(road, { vantage, truck: facts.truck })
 		{
 			trees: trees_seen.map(|tree| Pipeline.rendering_of(tree, lens_and_light)),
 			birds: birds_seen.map(|bird| Pipeline.rendering_of(bird, lens_and_light)),
@@ -75,7 +72,7 @@ Scene := {
 				|billboard| Pipeline.rendering_of(billboard, lens_and_light),
 			),
 			cats: cats_seen.map(|cat| Pipeline.rendering_of(cat, lens_and_light)),
-			trucks,
+			trucks: truck_renderings(truck_fate, lens_and_light),
 			rails: RailSighting.rail_quads_in_view(road, vantage).keep_oks(
 				|quad| GuardRail.quad_rendering(quad, lens_and_light),
 			),
@@ -105,3 +102,12 @@ Scene := {
 			].join(),
 		)
 }
+
+## The truck's renderings: one when its sighting kept it, and an empty list
+## when it is out of sight.
+truck_renderings : TruckSighting.TruckFate, Sprite.LensAndLight -> List(Rendered)
+truck_renderings = |fate, lens_and_light|
+	match fate {
+		Ok(truck) => [Pipeline.rendering_of(truck, lens_and_light)]
+		Err(OutOfSight) => []
+	}

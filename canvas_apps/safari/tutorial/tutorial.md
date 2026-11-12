@@ -302,7 +302,7 @@ The ride has a lot of animals: herds of cows, some led by a bull, herds of pigs,
 
 Every other animal is a billboard: a flat picture of its emoji, standing on the grass and turned square to the camera, like a cardboard cutout. That takes far less code than modeling an animal, and it's charming.
 
-A billboard faces left or right, and one that faces right is its emoji mirrored. That's the `Billboard` type from the {{chapter Types}} chapter: an emoji, a height and a facing. Each emoji was traced into polygons ahead of time, and the `EmojiStill` module holds them as plain data. The tracing itself is beyond this book.
+A billboard faces left or right, and one that faces right is its emoji mirrored. That's the `Billboard` type from the {{chapter Types}} chapter: an emoji, a height and a facing. Each emoji was traced into polygons ahead of time, and the `EmojiStill` module holds them as plain data.
 
 A billboard animal starts from a record of the `Billboard.Species` type: its emoji, and how tall a grown one stands. A plain `:` names that type, so any module reads its fields. Here are the cow's and the bull's, from the `CowHerd` module:
 
@@ -310,7 +310,7 @@ A billboard animal starts from a record of the `Billboard.Species` type: its emo
 
 {{code CowHerd.bull}}
 
-The bull's height comes from the cow's. `cow.adult_height` reads a field of the `cow` record, and `.times(1.15)` calls the `times` function that comes with the field's type, `Distance`. It's another way to write `Distance.times(cow.adult_height, 1.15)`. So a bull stands 15% taller than a cow.
+The bull's height comes from the cow's: `cow.adult_height` reads a field of the `cow` record, and `.times(1.15)` is a method call on that `Distance`.
 
 ### Calves
 
@@ -320,21 +320,21 @@ A herd looks better with a few calves in it. The ride's rule is simple: number a
 Twenty cows, numbered from 0. Cows 1, 5, 9, 13 and 17 are calves.
 ```
 
-How does the code pick the calves? With a function. A Roc function usually comes in two parts. On top is its type annotation: its name, a colon, and its type. Under it is its definition: its name again, an `=`, and the function itself. Here's the function that picks the calves, with a doc comment above both:
+The code picks the calves with a function:
 
 {{code CowHerd.is_calf}}
 
-The annotation says `is_calf` takes a `U64`, a whole number from zero up, and gives back a `Bool`, `True` or `False`. In the definition, `|cow_number|` names what the function takes, and what follows is its answer. `cow_number.rem_by(4)` likewise calls the `rem_by` function that comes with a `U64`, and gives the remainder after dividing by 4. Then `==` compares that remainder with 1, which gives the `Bool`. So a cow whose number leaves a remainder of 1 is a calf.
+`is_calf` takes a `U64`, a whole number from zero up, and returns a `Bool`, `True` or `False`. `cow_number.rem_by(4)` is the remainder after dividing by 4, and `==` compares it with 1, which gives the `Bool`.
 
 A second function puts `is_calf` to work. It gives each cow in a herd its billboard:
 
 {{code CowHerd.cow_billboard}}
 
-Its answer is an `if`, which picks one of two values: a young billboard when `is_calf` says `True`, and a grown one when it says `False`. Both are cows, facing right, built from the `cow` record above. A `Billboard` is opaque, so only the `Billboard` module can build one, and `young_billboard` and `adult_billboard` are two of the ways it offers. The herd calls `cow_billboard` for every cow it places.
+Its `if` picks one of two billboards: a young one when `is_calf` says `True`, and a grown one when it says `False`. A `Billboard` is opaque, so only the `Billboard` module can build one, and `young_billboard` and `adult_billboard` are two of the ways it offers. The herd calls `cow_billboard` for every cow it places.
 
 ### What a thing's sprite takes
 
-Calf, cow or bull, the ride produces a billboard's sprite the way it produces the sprite of every kind of thing beside the road: with a function called `scenery_sprite`, in that kind's module. The `Billboard` module's `scenery_sprite` has a longer definition, built around a `match`, a way of choosing between tags that the next chapter teaches. So here's its annotation alone, the line that sits above the definition, from the `Billboard` module:
+Calf, cow or bull, the ride produces a billboard's sprite the way it produces the sprite of every kind of thing beside the road: with a function called `scenery_sprite`, in that kind's module. The `Billboard` module's `scenery_sprite` has a longer definition, built around a `match`, a way of choosing between tags that the next chapter teaches. So here's its annotation alone:
 
 {{signatures Billboard.scenery_sprite}}
 
@@ -348,7 +348,7 @@ The `focal_length` says how strong the camera's lens is: the longer it is, the b
 
 The `spot` comes from a camera: it's what a sighting holds. So for the cow and the bull, the picture at the top of this chapter puts each one on the road by hand, the cow 10 metres ahead and 5 metres left of the middle, and lets a camera at the start of the road sight them. The rider's own camera comes in a later chapter.
 
-What comes back is a sprite, and every sprite is a list of shapes. The cow's sprite is its emoji, as polygons. Most of the ride's shapes have straight edges. At step 1,529, the ride produces 2,121 shapes on top of the sky and the grass: 868 triangles, 727 quads, 518 polygons and 8 discs. The trees' trunks are 136 of the quads.
+What comes back is a sprite, and every sprite is a list of shapes. The cow's sprite is its emoji, as polygons. At step 1,529, the ride produces 2,121 shapes on top of the sky and the grass: 868 triangles, 727 quads, 518 polygons and 8 discs. The trees' trunks are 136 of the quads.
 
 At the bends in the road stand four more kinds of billboard animal: elephants, giraffes, zebras and rhinos. They come next, with the `match` that mirrors the ones that face right.
 
@@ -701,7 +701,7 @@ So every thing beside the road makes the same trip: placed on the road, sighted 
 
 ## Refused
 
-Every frame, the pipeline sights each thing on the road ahead, and some of the sightings refuse. A thing behind the camera, a thing the horizon hides and a thing too small to see all stay out of the frame. This chapter is about how a Roc function gives back an answer that can fail, and how that answer travels up through the functions that ask for it.
+Every frame, the pipeline tries to sight each thing on the road ahead, and its sighting functions refuse some of them. A thing behind the camera, a thing the horizon hides and a thing too small to see all stay out of the frame. This chapter is about how a Roc function gives back an answer that can fail, and how that answer travels up through the functions that ask for it.
 
 Here are some things from step 1,529 and what their sightings decide. `right` and `forward` place each thing's foot from the camera, in metres, and a `forward` below zero is behind it. A thing less than 0.4 metres in front of the camera, short of what we call its near plane, counts as behind it too. The road bends, so a tree on a segment far ahead can stand far to one side:
 
@@ -715,9 +715,9 @@ Here are some things from step 1,529 and what their sightings decide. `right` an
 | The radio tower past the end of the rider's segment | 20.40 | 355.61 | kept |
 | The truck | 92.19 | 489.15 | kept |
 
-A small tree far off sinks below the horizon, while a taller one just past it still shows its top. The ride's ground curves on a radius of 100 km, far tighter than the earth's, so its horizon is near. Distance counts the whole way, sideways too: the hidden tree stands about 1,500 metres from the camera. Of the 214 trees on the segments in view, 136 are kept, 30 are behind the camera, and 48 are below the horizon. Those three counts make up all 214, so at this step the size test, which comes later, keeps every tree the horizon leaves in view. The table says which test refused each tree. The program itself keeps only the answer that the tree is out of sight, as the code below shows.
+A small tree far off sinks below the horizon, while a taller one just past it still shows its top. The ride's ground curves on a radius of 100 km, far tighter than the earth's, so its horizon is near. Distance counts the whole way, sideways too: the hidden tree stands about 1,500 metres from the camera. Of the 214 trees on the segments in view, 136 are kept, 30 are behind the camera, and 48 are below the horizon. Those three counts add up to all 214 trees, so at this step every tree the horizon leaves in view also passes the size test, which comes later in this chapter. The table says which test refused each tree. The program itself keeps only the answer that the tree is out of sight, as the code below shows.
 
-Each test lives in its own function, and each function asks the one below it first. Here's the stack for a radio tower, which takes the first two tests:
+Each test lives in its own function, and each function asks the one below it first. A radio tower takes two of the tests, the near plane and the horizon, so here's its stack:
 
 How a refusal travels
 ```dot
@@ -745,7 +745,7 @@ Its type ends in `Try(Pipeline.Sighted(kind), [OutOfSight])`: a sighting, or `Ou
 
 The test itself happens one level down. `RiderView.rider_point_ahead` gives back a `Try` of its own, and the `?` after it decides what happens next. When the answer is an `Ok`, the `?` unwraps it, and `foot` is the point ahead. When it's an `Err`, the `?` ends `sighting_of` right there and gives back an `Err`. So every line after the `?` runs only for a thing in front of the camera, and the body reads as one straight path.
 
-`rider_point_ahead` works on bare points, and its refusal says what's wrong with a point:
+`rider_point_ahead` works on a `RiderPoint`, a bare point seen from the rider, and its refusal says what's wrong with that point:
 
 {{signatures RiderView.rider_point_ahead}}
 
@@ -773,9 +773,9 @@ A segment holds many trees, so its sighting module asks for all of their sightin
 
 There's one truck, so `Scene` matches on its answer instead:
 
-{{code Scene.scene_in_view from "trucks =" to "Err(OutOfSight) => []"}}
+{{code Scene.truck_renderings}}
 
-The `# ...` lines stand for the rest of `scene_in_view`, the `match`'s closing brace among it, so the `match` has just these two branches. A `match` on a `Try` covers both tags, as any `match` covers every tag. An empty list leaves the truck out of the frame.
+A `match` on a `Try` covers both tags, as any `match` covers every tag. An empty list leaves the truck out of the frame.
 
 ### All through the ride
 
