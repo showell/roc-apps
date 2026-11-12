@@ -106,32 +106,32 @@ The brackets after `app` name the two things the app hands the platform, and the
 
 ## Functions
 
-Every chapter from here on reads Roc functions, so here's a short stop to take one apart. This one works out how dark the sky is at a moment of the ride:
+One more short stop comes before the first piece. Every chapter from here on reads Roc functions, so here's one taken apart. It works out how dark the sky is at a step of the ride:
 
 {{code Sky.darkness_at}}
 
 | Code | What it says |
 |---|---|
 | `##` | A doc comment: a line that describes the code under it. |
-| `darkness_at : Clock -> Fraction` | The annotation: the function's name, a colon, and its type. `darkness_at` takes a `Clock`, a moment of the ride, and gives back a `Fraction`, a number from 0 to 1. |
+| `darkness_at : Clock -> Fraction` | The annotation: the function's name, a colon, and its type. `darkness_at` takes a `Clock`, which counts the ride's steps, and gives back a `Fraction`, a number from 0 to 1. |
 | `darkness_at = \|clock\|` | The definition. The function itself starts at the first `\|`, and `clock` names what it's given. |
-| `{` and `}` | The body is a block: lines that run in order. |
+| `{` and `}` | The body is a block: names for values, then one last expression. |
 | `height = SunPath.height_at(clock)` | A name for a value, which the lines below it use. `SunPath.height_at(clock)` calls a function from the `SunPath` module. |
-| `if` and its two branches | The block's last expression. Its value is what the function gives back: one of the two calls, picked by the sun's height. |
+| `if` and its two branches | The block's last expression. Its value is what the function gives back: one of the two calls, picked by whether the sun is still up. `SunPath.height_when_set`, the sun's height once it has set, is a value from the same module. |
 
-A function with a short body can be one expression, written straight after the `|`. Here's one from the `Distance` module, which turns a number of metres into a length:
+A function with a short body can be one expression, written straight after the `|`. Here's one from the `Distance` module, which turns a number of metres, an `F64`, into a length:
 
 {{code Distance.metres}}
 
-Its body is the one expression after `|metres|`, and the next chapter shows what `Distance.(metres)` does.
+The function and what it's given share the name `metres`, and inside the body `metres` is the number. The body is the one expression after `|metres|`, and the next chapter shows what `Distance.(metres)` does.
 
-The book often shows a function's annotation alone, until its body's turn comes. A function that takes more than one thing lists them with commas:
+The book often shows a function's annotation alone, until its body's turn comes. An annotation lists the things a function takes with commas between them:
 
 {{signatures Sky.color_at_darkness}}
 
 `color_at_darkness` takes an `RgbColor` and a `Fraction`, and gives back an `RgbColor`.
 
-Back to the ride. The next chapter tours Safari Ride's types, and every function along the way has one of these two shapes.
+On to the pieces. The next chapter tours Safari Ride's types, and every function along the way has one of these two shapes.
 
 ## The pieces as types
 
@@ -152,10 +152,8 @@ Here's what its parts say:
 | `Distance ::` | `Distance` names the type. The `::` makes it opaque: only the `Distance` module reads what's inside. |
 | `F64` | What's inside: one of Roc's number types, a 64-bit floating-point number. A `Distance` is a length in metres. |
 | `.{` and `}` | The type's own functions sit between these braces. |
-| `metres : F64 -> Distance` | `metres` names a function that takes an `F64` and gives back a `Distance`. |
 | `metres = \|metres\| Distance.(metres)` | `Distance.(metres)` wraps the number it's given as a `Distance`. |
 | `to_metres = \|Distance.(d)\| d` | The other way round: `Distance.(d)` opens a `Distance`, and the function gives back the number inside. |
-| `##` | A line that starts with `##` is a doc comment, which describes the code under it, as the one above `zero` does. |
 | `is_gt` to `is_lte` | These four let `>`, `>=`, `<` and `<=` compare two lengths. |
 | `is_eq : _` | This lets `==` compare two lengths, and the `_` asks the compiler to write its definition from the number inside. |
 
@@ -245,8 +243,6 @@ Those four fields are everything the ride carries from one step to the next: the
 A step is one function's job, and its type tells the story:
 
 {{signatures RideInstant.next_or_restart}}
-
-When a function's body is long, the book shows its type annotation alone, until the body's turn comes.
 
 `next_or_restart` gives back a type written in place, in square brackets: one of two tags. A tag can carry a value, and each of these carries the next moment. `Continued` carries the moment one step on, and `Restarted` carries the ride's first moment, once the rider has finished the route.
 
