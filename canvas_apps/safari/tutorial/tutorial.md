@@ -28,11 +28,29 @@ The ride steps back one moment at a time, as easily as it went forward. That eas
 
 The answer is a flip book. Each page is a still drawing. The motion comes from the flipping.
 
-In Safari Ride, each page is a moment, and a moment is a value. One function takes a moment and gives back the next one, a new value beside the old. A second function takes a moment and gives back its picture, as a list of shapes. Under the Roc code sits the platform, the part of the program that talks to the screen, and the platform does the flipping. Thirty times a second, it asks for the next moment and paints that moment's picture.
+In Safari Ride, each page is a moment, and a moment is a value of the `RideInstant` type. Two functions do the work. Here's the first one's type annotation, the line that sits above the function itself:
 
-Every old moment stays as it was made, so the ride keeps them, and stepping back turns to an earlier page. The same moment always gives the same picture, so any page can be held still and studied, as this book does often.
+{{signatures RideInstant.next_or_restart}}
 
-Now look at how little a moment holds. It has just four things: the rider, the truck, the clock, and the plan for when the cat or the bird ahead starts to move. The ride derives everything else in a frame from those four and the road. The next chapter breaks the ride into the pieces we build.
+Read it left to right. `next_or_restart` is the function's name, and after the colon comes its type. It takes a `Route`, the whole road, and a `RideInstant`, one moment. After the arrow comes what it gives back: the next moment, tagged `Continued`, or the ride's first moment again, tagged `Restarted`, once the rider reaches the end of the road. Either way, it gives back a new moment and leaves the old one as it was.
+
+The second function gives back the picture:
+
+{{signatures FrameView.frame_view_at}}
+
+It takes the road and a moment, and gives back a `FrameView`: everything one frame shows, ready to become a list of shapes. Under the Roc code sits the platform, the part of the program that talks to the screen, and the platform does the flipping. Thirty times a second, it asks for the next moment and paints that moment's picture.
+
+The same moment always gives the same picture, so any page can be held still and studied, as this book does often. Every old moment stays as it was made, so the ride keeps them, and stepping back turns to an earlier page. Here's the function behind the step-back button you just pressed:
+
+{{code Tour.step_back}}
+
+A `Tour` holds the moment on show, and a list of the moments before it. `Tour.(tour)` opens the tour to read its fields. `step_back` takes the last moment off that list and puts it on show. The line that does it is `{ ..tour, instant: previous_instant, past_instants }`: a new record, the same as `tour` but for those two fields. The old tour stays as it was.
+
+Now look at how little a moment holds:
+
+{{code RideInstant.RideInstant from "RideInstant := {" to "}.{"}}
+
+That's four things: the rider, the truck, the clock, and the plan for when the cat or the bird ahead starts to move. The ride derives everything else in a frame from those four and the road. The next chapter breaks the ride into the pieces we build.
 
 ## The problem
 
