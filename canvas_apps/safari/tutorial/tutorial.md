@@ -104,6 +104,35 @@ The brackets after `app` name the two things the app hands the platform, and the
 
 `SafariApp.canvas_app` is the whole ride as one value, and the `WasmApp.program` function fits it to the web platform. What it gives back is the app's `program`.
 
+## Functions
+
+Every chapter from here on reads Roc functions, so here's a short stop to take one apart. This one works out how dark the sky is at a moment of the ride:
+
+{{code Sky.darkness_at}}
+
+| Code | What it says |
+|---|---|
+| `##` | A doc comment: a line that describes the code under it. |
+| `darkness_at : Clock -> Fraction` | The annotation: the function's name, a colon, and its type. `darkness_at` takes a `Clock`, a moment of the ride, and gives back a `Fraction`, a number from 0 to 1. |
+| `darkness_at = \|clock\|` | The definition. The function itself starts at the first `\|`, and `clock` names what it's given. |
+| `{` and `}` | The body is a block: lines that run in order. |
+| `height = SunPath.height_at(clock)` | A name for a value, which the lines below it use. `SunPath.height_at(clock)` calls a function from the `SunPath` module. |
+| `if` and its two branches | The block's last expression. Its value is what the function gives back: one of the two calls, picked by the sun's height. |
+
+A function with a short body can be one expression, written straight after the `|`. Here's one from the `Distance` module, which turns a number of metres into a length:
+
+{{code Distance.metres}}
+
+Its body is the one expression after `|metres|`, and the next chapter shows what `Distance.(metres)` does.
+
+The book often shows a function's annotation alone, until its body's turn comes. A function that takes more than one thing lists them with commas:
+
+{{signatures Sky.color_at_darkness}}
+
+`color_at_darkness` takes an `RgbColor` and a `Fraction`, and gives back an `RgbColor`.
+
+Back to the ride. The next chapter tours Safari Ride's types, and every function along the way has one of these two shapes.
+
 ## The pieces as types
 
 Types are at the heart of every Roc program. A type says what a value holds, and the compiler checks every value against its type. So a good way to meet a Roc program is to read its types.
@@ -124,7 +153,7 @@ Here's what its parts say:
 | `F64` | What's inside: one of Roc's number types, a 64-bit floating-point number. A `Distance` is a length in metres. |
 | `.{` and `}` | The type's own functions sit between these braces. |
 | `metres : F64 -> Distance` | `metres` names a function that takes an `F64` and gives back a `Distance`. |
-| `metres = \|metres\| Distance.(metres)` | The function itself. Between the two `\|` characters is what it's given, and `Distance.(metres)` wraps that number as a `Distance`. |
+| `metres = \|metres\| Distance.(metres)` | `Distance.(metres)` wraps the number it's given as a `Distance`. |
 | `to_metres = \|Distance.(d)\| d` | The other way round: `Distance.(d)` opens a `Distance`, and the function gives back the number inside. |
 | `##` | A line that starts with `##` is a doc comment, which describes the code under it, as the one above `zero` does. |
 | `is_gt` to `is_lte` | These four let `>`, `>=`, `<` and `<=` compare two lengths. |

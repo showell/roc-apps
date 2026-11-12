@@ -98,6 +98,7 @@ Book := [].{
 		{ chapter: "One page", slug: "one-page" },
 		{ chapter: "The problem", slug: "the-problem" },
 		{ chapter: "Platforms, packages and modules", slug: "platforms-packages-and-modules" },
+		{ chapter: "Functions", slug: "functions" },
 		{ chapter: "The pieces as types", slug: "the-pieces-as-types" },
 		{ chapter: "Things", slug: "things" },
 		{ chapter: "Billboard Critters", slug: "billboard-critters" },
