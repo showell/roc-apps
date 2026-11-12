@@ -428,7 +428,26 @@ The `Animal(animal)` line matches a bend with any animal at it, and names the an
 
 The route's plans say what lives at each bend, and most of them say `Animal(Elephant)`. Only a handful say `Animal(Giraffe)`, `Animal(Zebra)`, `Animal(Rhino)` or `DuckPond`. That's on purpose. The ride is more interesting when most of it is ordinary: the elephants are the fixture, so the rare animal is a surprise.
 
-A tag union lists everything a value can be, and a `match` handles each case. The emojis came ready-made, traced ahead of time. Next, we build shapes of our own: a triangle and a rectangle.
+A tag union lists everything a value can be, and a `match` handles each case. The emojis came ready-made, traced ahead of time. The shapes we build next each carry a record, so first, a short look at records.
+
+## Records
+
+A record groups named values, and Safari Ride passes records everywhere: a corner on the screen is a record of an `x` and a `y`, and many functions take their arguments as one record. This short chapter takes records apart, through one function. When a bird flies from one tree to another, it travels a straight line and rises in an arc over it, and this function finds where it is partway along:
+
+{{code BirdFlight.flight_location}}
+
+| Code | Term | What it says |
+|---|---|---|
+| `{ from : Animation.Location, … }` | record type | A record's type lists its fields, each with a type of its own. `flight_location` takes one record of three fields. |
+| `from`, `to`, `through` | field | A named value inside a record. |
+| `\|{ from, to, through }\|` | destructure | Takes the record apart, so each field is a constant the body can use. |
+| `{ from, to, fraction: Easing.smoothstep(through) }` | record | Builds a record. `from` alone is short for `from: from`. |
+| `on_line.lift` | field access | Reads the `lift` field of the record named `on_line`. |
+| `{ ..on_line, lift: … }` | record update | Builds a new record like `on_line`, with `lift` changed. `on_line` itself stays as it was. |
+
+An `Animation.Location` is a record too: a place on the road and a lift off the ground. So `on_line` is a location on the straight line, and the last line returns the same location, raised by the arc.
+
+Next, we build shapes of our own, a triangle and a rectangle, and each one is described by a record.
 
 ## Shapes
 
