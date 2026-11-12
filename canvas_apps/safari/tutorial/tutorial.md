@@ -666,7 +666,7 @@ Here are some things from step 1,529 and what their sightings decide. `right` an
 | The radio tower past the end of the rider's segment | 20.40 | 355.61 | kept |
 | The truck | 92.19 | 489.15 | kept |
 
-A small tree far off sinks below the horizon, while a taller one just past it still shows its top. Distance counts the whole way, sideways too: the hidden tree stands about 1,500 metres from the camera, and the truck about 500. Of the 214 trees on the segments in view, 136 are kept, 30 are behind the camera, and 48 are below the horizon. The 136 kept trees all stand at least 2 pixels tall on the screen, so at this step every tree the horizon leaves in view passes the `TooSmall` test.
+A small tree far off sinks below the horizon, while a taller one just past it still shows its top. The ride's ground curves on a radius of 100 km, far tighter than the earth's, so its horizon is near. Distance counts the whole way, sideways too: the hidden tree stands about 1,500 metres from the camera. Of the 214 trees on the segments in view, 136 are kept, 30 are behind the camera, and 48 are below the horizon. The 136 kept trees all stand at least 2 pixels tall on the screen, so at this step every tree the horizon leaves in view passes the `TooSmall` test.
 
 Each refusal starts in one function and travels up through the functions that asked for it. Here's the trip for a tree:
 
@@ -714,7 +714,7 @@ The compiler holds a function to its list. Here a sighting's type lists only `Be
 
 {{fails refusal_left_out}}
 
-The message names the tag the list leaves out. Its last paragraph explains the stacking, too: a caller can take `sighting_of`'s `[BehindCamera]` into a wider union, such as `[BehindCamera, BelowHorizon]`, but the function itself gives back only the tags its own annotation lists.
+The message names the tag the list leaves out. Its first type is `Pipeline.Sighted(kind)` written out as a record, so the two types part only in their tags. A function's list must hold every tag the function can give back, and it may hold more. That's how the tests stack: `sighting_above_horizon_of` passes up the `[BehindCamera]` that `sighting_of` gives, and its own list, `[BehindCamera, BelowHorizon]`, holds that tag and one more.
 
 `Pipeline.scenery_sighting_of` starts from `sighting_above_horizon_of` and adds the last test: a thing that would stand under 2 pixels tall on the screen is `TooSmall`. So between them the three functions refuse a thing with one of three tags:
 
