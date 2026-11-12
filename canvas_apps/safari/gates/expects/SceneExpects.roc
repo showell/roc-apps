@@ -109,7 +109,7 @@ one_segment_road = Fixtures.crafted_road([Fixtures.segment_of([])])
 
 ## A post 1 m tall, `along` the one-segment road and 1.5 m right of its middle, as
 ## a camera at `origin` sees it.
-post_sighting : F64 -> Try(Pipeline.Sighted(Post), [BehindCamera])
+post_sighting : F64 -> Try(Pipeline.Sighted(Post), [OutOfSight])
 post_sighting = |along|
 	Pipeline.sighting_of(
 		{
@@ -127,7 +127,7 @@ post_sighting = |along|
 # The near plane is 0.4 m ahead.
 expect
 	[
-		(0.39, Err(BehindCamera)),
+		(0.39, Err(OutOfSight)),
 		(0.4, Ok(Seen)),
 		(0.41, Ok(Seen)),
 	].all(|(along, outcome)| post_sighting(along).map_ok(|_| Seen) == outcome)
@@ -136,7 +136,7 @@ expect
 # 128 pixels, the smallest height drawn.
 expect
 	[
-		(Distance.metres(0.99), Err(TooSmall)),
+		(Distance.metres(0.99), Err(OutOfSight)),
 		(Distance.metres(1.0), Ok(Seen)),
 		(Distance.metres(1.01), Ok(Seen)),
 	].all(
@@ -160,7 +160,7 @@ expect
 # the line from the eye that grazes the horizon passes 3.699 m below level there.
 # A post 1.4 m tall shows its top over the horizon; one 1.2 m tall is hidden.
 expect
-	[(Distance.metres(1.2), Err(BelowHorizon)), (Distance.metres(1.4), Ok(Seen))].all(
+	[(Distance.metres(1.2), Err(OutOfSight)), (Distance.metres(1.4), Ok(Seen))].all(
 		|(height, outcome)|
 			Pipeline.sighting_above_horizon_of(
 				{
@@ -368,16 +368,22 @@ book_trees = RoadAhead.segments_in_view(book_road).join_map(
 						road_point: tree.road_point,
 					},
 				)
-				sighting = Pipeline.scenery_sighting_of(
-					tree,
-					{ road: book_road, camera: book_sighting_camera, from_rider },
-				)
+				# Each sighting function takes the tests of the one before it and
+				# adds its own, so the first of them to refuse names the test.
+				seen_from = { road: book_road, vantage: book_sighting_camera.vantage, from_rider }
+				seen_through = { road: book_road, camera: book_sighting_camera, from_rider }
 				fate =
-					match sighting {
-						Ok(_) => Drawn
-						Err(BehindCamera) => BehindCamera
-						Err(BelowHorizon) => BelowHorizon
-						Err(TooSmall) => TooSmall
+					match Pipeline.sighting_of(tree, seen_from) {
+						Err(OutOfSight) => BehindCamera
+						Ok(_) =>
+							match Pipeline.sighting_above_horizon_of(tree, seen_from) {
+								Err(OutOfSight) => BelowHorizon
+								Ok(_) =>
+									match Pipeline.scenery_sighting_of(tree, seen_through) {
+										Err(OutOfSight) => TooSmall
+										Ok(_) => Drawn
+									}
+							}
 					}
 				{
 					segments_before: in_view.index.count_before(),

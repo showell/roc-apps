@@ -206,12 +206,8 @@ WidgetPage :: [].{
 	}
 
 	## What `sighting` shows through the lens at rest under a sky `darkness`
-	## dark, or nothing if it stood behind the camera.
-	resting_lens_shapes : Try(
-		Pipeline.Sighted(kind),
-		[BehindCamera],
-	),
-	Fraction -> List(Shapes.Shape)
+	## dark, or nothing if it is out of sight.
+	resting_lens_shapes : Try(Pipeline.Sighted(kind), [OutOfSight]), Fraction -> List(Shapes.Shape)
 		where [kind.scenery_sprite : kind, Sprite.Setting -> Sprite]
 	resting_lens_shapes = |sighting, darkness|
 		match sighting {
@@ -219,7 +215,7 @@ WidgetPage :: [].{
 				lens_and_light = { focal_length: Lens.resting_focal_length, darkness }
 				Pipeline.rendering_of(sighted, lens_and_light).sprite().to_shapes()
 			}
-			Err(BehindCamera) => []
+			Err(OutOfSight) => []
 		}
 }
 

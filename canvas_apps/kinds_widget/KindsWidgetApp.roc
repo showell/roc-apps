@@ -173,7 +173,7 @@ stand_sighting = |stand| {
 		},
 	) {
 		Ok(sighting) => sighting
-		Err(BehindCamera) => crash "KindsWidgetApp.stand_sighting: each stand is ahead"
+		Err(OutOfSight) => crash "KindsWidgetApp.stand_sighting: each stand is ahead"
 	}
 }
 

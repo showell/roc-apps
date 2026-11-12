@@ -131,7 +131,7 @@ view_setting = |view| {
 			focal_length: Lens.resting_focal_length,
 			darkness: Sky.darkness_at(Clock.start),
 		}
-		Err(BehindCamera) => crash "TruckWidgetApp.view_setting: every camera faces the truck"
+		Err(OutOfSight) => crash "TruckWidgetApp.view_setting: every camera faces the truck"
 	}
 }
 

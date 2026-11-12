@@ -7,19 +7,21 @@
 ## for. A kind holds how the object looks right now, and the form around it holds
 ## where the object is.
 ##
-## A sighting can be refused, and the refusal's tag says why the object isn't
-## drawn this frame.
-## `BehindCamera` means its foot is short of the camera's near plane, as
-## `RiderView.rider_point_ahead` decides for `Pipeline.sighting_of`, and every
-## sighting takes this test.
-## `BelowHorizon` means the earth's curve hides the whole of it, as
+## A sighting can be refused with `OutOfSight`, which means the object isn't
+## drawn this frame. No caller needs to know which test refused it. Three tests
+## give it, one inside the next.
+## The near plane test refuses an object whose foot is short of the camera's
+## near plane, as `RiderView.rider_point_ahead` decides for
+## `Pipeline.sighting_of`, and every sighting takes this test.
+## The horizon test refuses an object the earth's curve hides whole, as
 ## `EarthCurve.is_below_horizon` decides for `Pipeline.sighting_above_horizon_of`,
 ## which every kind with a height takes, the towers among them.
-## `TooSmall` means it would stand less than `Pipeline.smallest_height_on_screen`
-## tall, as `Pipeline.scenery_sighting_of` decides for the trees, the
-## billboards, the cats and the birds, though not for the towers or the truck.
-## `NoTruck` means the truck is past the route's end or off the road ahead, as
-## `TruckSighting.truck_in_view` decides before it sights the truck.
+## The size test refuses an object that would stand less than
+## `Pipeline.smallest_height_on_screen` tall, as `Pipeline.scenery_sighting_of`
+## decides for the trees, the billboards, the cats and the birds, though not
+## for the towers or the truck.
+## `TruckSighting.truck_in_view` also gives `OutOfSight` when the truck is past
+## the route's end or off the road ahead, before it sights the truck.
 ## `NoPose` means a segment in view has no cat or bird, or its encounter is
 ## over, as `EncounterPoses` decides before any camera looks.
 ## `NoMidTower` means the segment is too short for a tower halfway along, as
@@ -58,11 +60,11 @@ Pipeline :: [].{
 		road : RoadAhead.RoadView,
 		vantage : Geom.Vantage,
 		from_rider : SegmentFromRider,
-	} -> Try(Pipeline.Sighted(kind), [BehindCamera])
+	} -> Try(Pipeline.Sighted(kind), [OutOfSight])
 	sighting_of = |placed, { road, vantage, from_rider }| {
 		road_point = placed.road_point
 		rider_point = RoadAhead.rider_point_at(road, { vantage, from_rider, road_point })
-		foot = RiderView.rider_point_ahead(rider_point)?
+		foot = RiderView.rider_point_ahead(rider_point) ? |BehindCamera| OutOfSight
 		road_heading = RoadAhead.road_heading_at(road, { vantage, from_rider, road_point })
 		spot = Spot.at({ lift: placed.lift, foot, road_heading })
 		Ok({ spot, kind: placed.kind })
@@ -77,14 +79,14 @@ Pipeline :: [].{
 		road : RoadAhead.RoadView,
 		vantage : Geom.Vantage,
 		from_rider : SegmentFromRider,
-	} -> Try(Pipeline.Sighted(kind), [BehindCamera, BelowHorizon])
+	} -> Try(Pipeline.Sighted(kind), [OutOfSight])
 		where [kind.scenery_height : kind -> Distance]
 	sighting_above_horizon_of = |placed, { road, vantage, from_rider }| {
 		sighting = sighting_of(placed, { road, vantage, from_rider })?
 		spot = sighting.spot
 		top = spot.lift().plus(placed.kind.scenery_height()).minus(spot.drop())
 		if EarthCurve.is_below_horizon({ point: spot.foot().to_rider(), top }) {
-			Err(BelowHorizon)
+			Err(OutOfSight)
 		} else {
 			Ok(sighting)
 		}
@@ -100,7 +102,7 @@ Pipeline :: [].{
 		road : RoadAhead.RoadView,
 		camera : Pipeline.SightingCamera,
 		from_rider : SegmentFromRider,
-	} -> Try(Pipeline.Sighted(kind), [BehindCamera, BelowHorizon, TooSmall])
+	} -> Try(Pipeline.Sighted(kind), [OutOfSight])
 		where [kind.scenery_height : kind -> Distance]
 	scenery_sighting_of = |placed, { road, camera, from_rider }| {
 		sighting = sighting_above_horizon_of(placed, { road, vantage: camera.vantage, from_rider })?
@@ -109,7 +111,7 @@ Pipeline :: [].{
 			camera.focal_length,
 		)
 		if height_on_screen < smallest_height_on_screen {
-			Err(TooSmall)
+			Err(OutOfSight)
 		} else {
 			Ok(sighting)
 		}

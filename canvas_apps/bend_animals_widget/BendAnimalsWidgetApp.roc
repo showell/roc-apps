@@ -158,7 +158,7 @@ placed_billboard_shapes = |placed|
 			)
 			rendered.sprite().to_shapes()
 		}
-		Err(BehindCamera) | Err(BelowHorizon) | Err(TooSmall) => crash "BendAnimalsWidgetApp.placed_billboard_shapes: every billboard stands in plain sight"
+		Err(OutOfSight) => crash "BendAnimalsWidgetApp.placed_billboard_shapes: every billboard stands in plain sight"
 	}
 
 ## Each billboard's shapes, from left to right, in the ride's screen.

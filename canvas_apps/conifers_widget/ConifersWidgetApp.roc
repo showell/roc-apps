@@ -80,7 +80,7 @@ right_of = |stand| {
 }
 
 ## A stand's tree as the camera sees it, on the ground `forward` down the road.
-stand_sighting : Stand -> Try(Pipeline.Sighted(Conifer), [BehindCamera])
+stand_sighting : Stand -> Try(Pipeline.Sighted(Conifer), [OutOfSight])
 stand_sighting = |stand| {
 	placed_tree : Geom.Placed(Conifer)
 	placed_tree = {
@@ -107,7 +107,7 @@ tree_shapes = |stand|
 				focal_length,
 				darkness: Sky.darkness_at(Clock.start),
 			}).to_shapes()
-		Err(BehindCamera) => crash "ConifersWidgetApp.tree_shapes: each tree stands ahead"
+		Err(OutOfSight) => crash "ConifersWidgetApp.tree_shapes: each tree stands ahead"
 	}
 
 picture_shapes : List(Shapes.Shape)
@@ -129,7 +129,7 @@ is_on_canvas = |{ x, y }|
 		and y.to_f64() <= canvas_height
 
 ## Where a stand's tree has its foot and its tip on the canvas.
-canvas_ends : Stand -> Try({ foot : Point, tip : Point }, [BehindCamera])
+canvas_ends : Stand -> Try({ foot : Point, tip : Point }, [OutOfSight])
 canvas_ends = |stand| {
 	sighting = stand_sighting(stand)?
 	outline = TreeShapes.tree_outline(
@@ -146,7 +146,7 @@ canvas_ends = |stand| {
 }
 
 ## How much of the canvas's height a stand's tree stands.
-share_of_height : Stand -> Try(F64, [BehindCamera])
+share_of_height : Stand -> Try(F64, [OutOfSight])
 share_of_height = |stand| {
 	{ foot, tip } = canvas_ends(stand)?
 	Ok((foot.y.to_f64() - tip.y.to_f64()) / canvas_height)
@@ -176,7 +176,7 @@ expect
 		|stand|
 			match stand_sighting(stand) {
 				Ok(sighting) => TreeShapes.crown_of(sighting.spot.base().forward()) == Triangles
-				Err(BehindCamera) => False
+				Err(OutOfSight) => False
 			},
 	)
 
@@ -189,7 +189,7 @@ expect
 		[gold_stand] =>
 			match share_of_height(gold_stand) {
 				Ok(share) => share >= 0.7 and share <= 0.85
-				Err(BehindCamera) => False
+				Err(OutOfSight) => False
 			}
 		_ => False
 	}
@@ -205,7 +205,7 @@ expect
 		|stand|
 			match canvas_ends(stand) {
 				Ok(ends) => (ends.foot.x.to_f64() - stand.canvas_x).abs() <= 0.000000001
-				Err(BehindCamera) => False
+				Err(OutOfSight) => False
 			},
 	)
 expect {

@@ -136,7 +136,7 @@ billboard_shapes = |placed|
 			)
 			rendered.sprite().to_shapes()
 		}
-		Err(BehindCamera) | Err(BelowHorizon) | Err(TooSmall) => []
+		Err(OutOfSight) => []
 	}
 
 ## What the camera shows of the cow `forward` down the road.

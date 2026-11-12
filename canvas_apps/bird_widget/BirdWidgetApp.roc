@@ -123,7 +123,7 @@ eye = {
 }
 
 ## `placed` as the picture's eye sees it, if it is in front of the eye.
-sighting_from_eye : Geom.Placed(kind) -> Try(Pipeline.Sighted(kind), [BehindCamera])
+sighting_from_eye : Geom.Placed(kind) -> Try(Pipeline.Sighted(kind), [OutOfSight])
 sighting_from_eye = |placed|
 	Pipeline.sighting_of(
 		placed,

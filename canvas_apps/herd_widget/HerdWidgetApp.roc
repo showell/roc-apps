@@ -121,7 +121,7 @@ placed_cow_shapes = |placed|
 			)
 			rendered.sprite().to_shapes()
 		}
-		Err(BehindCamera) | Err(BelowHorizon) | Err(TooSmall) => crash "HerdWidgetApp.placed_cow_shapes: every cow stands in plain sight"
+		Err(OutOfSight) => crash "HerdWidgetApp.placed_cow_shapes: every cow stands in plain sight"
 	}
 
 ## Each cow's shapes, from cow 0 at the left to cow 19 at the right, in the

@@ -63,7 +63,7 @@ eye = {
 
 ## The tree as the camera sees it, straight ahead on the ground `ahead` down the
 ## road.
-tree_sighting : Distance -> Try(Pipeline.Sighted(Conifer), [BehindCamera])
+tree_sighting : Distance -> Try(Pipeline.Sighted(Conifer), [OutOfSight])
 tree_sighting = |ahead| {
 	placed_tree : Geom.Placed(Conifer)
 	placed_tree = {
@@ -90,7 +90,7 @@ tree_shapes =
 				focal_length,
 				darkness: Sky.darkness_at(Clock.start),
 			}).to_shapes()
-		Err(BehindCamera) => crash "FarTreeWidgetApp.tree_shapes: the tree stands ahead of the camera"
+		Err(OutOfSight) => crash "FarTreeWidgetApp.tree_shapes: the tree stands ahead of the camera"
 	}
 
 picture_shapes : List(Shapes.Shape)
@@ -113,7 +113,7 @@ is_on_canvas = |{ x, y }|
 
 ## How much of the canvas's height the tree `ahead` down the road stands through
 ## a lens of `lens`, if its foot and its tip are both on the canvas.
-share_of_height : { ahead : Distance, lens : Pixels } -> Try(F64, [OffCanvas, BehindCamera])
+share_of_height : { ahead : Distance, lens : Pixels } -> Try(F64, [OffCanvas, OutOfSight])
 share_of_height = |{ ahead, lens }| {
 	sighting = tree_sighting(ahead)?
 	outline = TreeShapes.tree_outline(
@@ -157,7 +157,7 @@ expect
 expect
 	match share_of_height({ ahead: forward, lens: Lens.resting_focal_length.times(7.0) }) {
 		Err(OffCanvas) => True
-		Ok(_) | Err(BehindCamera) => False
+		Ok(_) | Err(OutOfSight) => False
 	}
 
 # The tree stands in the middle of the picture.
@@ -171,7 +171,7 @@ expect
 			foot = WidgetPage.canvas_point_of_screen(outline.foot)
 			(foot.x.to_f64() - WidgetPage.canvas_width / 2.0).abs() <= 0.000000001
 		}
-		Err(BehindCamera) => False
+		Err(OutOfSight) => False
 	}
 
 # The tree is drawn: a trunk and eight tiers.

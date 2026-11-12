@@ -94,7 +94,7 @@ end_tower : RoadAhead.RoadView,
 	vantage : Geom.Vantage,
 	in_view : RoadAhead.SegmentInView,
 	clock : Clock,
-} -> Try(Pipeline.Sighted(Tower), [BehindCamera, BelowHorizon])
+} -> Try(Pipeline.Sighted(Tower), [OutOfSight])
 end_tower = |road, { vantage, in_view, clock }| {
 	beacon = Beacon.at({ segment: in_view.index, place: AtEnd }, clock)
 	tower_if_ahead(
@@ -118,7 +118,7 @@ mid_tower : RoadAhead.RoadView,
 	vantage : Geom.Vantage,
 	in_view : RoadAhead.SegmentInView,
 	clock : Clock,
-} -> Try(Pipeline.Sighted(Tower), [BehindCamera, BelowHorizon, NoMidTower])
+} -> Try(Pipeline.Sighted(Tower), [OutOfSight, NoMidTower])
 mid_tower = |road, { vantage, in_view, clock }| {
 	road_point = mid_tower_point(in_view.segment.length)?
 	beacon = Beacon.at({ segment: in_view.index, place: Midway }, clock)
@@ -142,7 +142,7 @@ tower_if_ahead : RoadAhead.RoadView,
 	from_rider : SegmentFromRider,
 	road_point : Geom.RoadPoint,
 	tower : Tower,
-} -> Try(Pipeline.Sighted(Tower), [BehindCamera, BelowHorizon])
+} -> Try(Pipeline.Sighted(Tower), [OutOfSight])
 tower_if_ahead = |road, { vantage, from_rider, road_point, tower }| {
 	placed_tower : Geom.Placed(Tower)
 	placed_tower = { road_point, lift: Distance.zero, kind: tower }

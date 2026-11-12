@@ -225,7 +225,7 @@ truck_renderings = |road, { cam, facts }| {
 					{ focal_length: cam.focal_length, darkness: Sky.darkness_at(facts.clock) },
 				),
 			]
-		Err(NoTruck) | Err(BehindCamera) => []
+		Err(OutOfSight) => []
 	}
 }
 

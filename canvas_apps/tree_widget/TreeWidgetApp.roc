@@ -73,7 +73,7 @@ eye = {
 
 ## A stand's tree as the camera sees it, on the ground, if it is in front of
 ## the camera.
-stand_sighting : Stand -> Try(Pipeline.Sighted(Conifer), [BehindCamera])
+stand_sighting : Stand -> Try(Pipeline.Sighted(Conifer), [OutOfSight])
 stand_sighting = |stand| {
 	placed_tree : Geom.Placed(Conifer)
 	placed_tree = {
@@ -170,7 +170,7 @@ is_plain_to_see = |stand|
 				and foot.y.to_f64() - tip.y.to_f64() >= 30.0
 				and (foot.x.to_f64() - stand.canvas_x).abs() <= 0.000000001
 		}
-		Err(BehindCamera) => False
+		Err(OutOfSight) => False
 	}
 
 # Each tree shows one of the three things `crown_of` can say.
