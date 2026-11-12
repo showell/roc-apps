@@ -368,17 +368,15 @@ Each emoji shows its animal from the side, so a billboard faces left or right, a
 
 {{code Billboard.Facing}}
 
-The type is a list of tags in square brackets. A tag is a name the compiler knows, and it's a value in its own right: `FacesLeft` is a value, and so is `FacesRight`. A type made of tags is a tag union, and a value of a tag union is always exactly one of its tags. So a `Facing` is `FacesLeft` or `FacesRight`.
+The type is a list of tags in square brackets. A tag is a name the compiler knows, and it's a value in its own right: `FacesLeft` is a value, and so is `FacesRight`. A type made of tags is a tag union, and a value of a tag union is always exactly one of its tags.
 
 The {{chapter Things}} chapter showed the annotation of `Billboard.scenery_sprite` alone. Here's the whole function:
 
 {{code Billboard.scenery_sprite}}
 
-`|Billboard.(billboard), setting|` says what the function takes: a billboard and a setting. A `Billboard` is opaque, and `Billboard.(billboard)` opens it: it unwraps the billboard into a record named `billboard`, so the function can read `billboard.facing` and the other fields. Only the `Billboard` module can write that.
+A `Billboard` is opaque, and `Billboard.(billboard)` in the arguments opens it: it unwraps the billboard into a record named `billboard`, so the function can read `billboard.facing` and the other fields. Only the `Billboard` module can write that.
 
-The body is a block, in braces. A block holds lines of code, where a record holds fields with colons. Its first line names a value, `flip`, and its last line is the function's answer.
-
-In that answer, `billboard.emoji.still()` calls the `still` function that comes with the emoji, which gives its traced still. `StillShapes.standing_still_shapes` makes shapes from it at the billboard's height, and `Sprite.from_shapes` makes those shapes a sprite. In that last record, `flip` alone is short for `flip: flip`.
+Braces hold a block or a record: a block holds lines of code, where a record holds fields with colons. The block names `flip`, and its last expression makes the sprite. `billboard.emoji.still()` gives the emoji's traced still. `StillShapes.standing_still_shapes` makes shapes from it at the billboard's height, and `Sprite.from_shapes` makes those shapes a sprite. In that last record, `flip` alone is short for `flip: flip`.
 
 Every emoji faces left, so a billboard that faces right needs its emoji mirrored. The `match` makes that choice. It looks at `billboard.facing`, and each line under it takes one tag and gives back what to do: `FacesLeft` gives `AsDrawn`, and `FacesRight` gives `Mirrored`. Those two are the tags of another tag union, `StillShapes.Flip`, and `flip` names the one the `match` picks. The compiler works out the type of `flip` from where it's used.
 
@@ -390,8 +388,6 @@ This match expression doesn't cover all possible cases.
 Missing patterns:
         FacesRight
 ```
-
-So every billboard faces one of two ways, and the code that produces its sprite handles both, by construction.
 
 ### Four animals
 
