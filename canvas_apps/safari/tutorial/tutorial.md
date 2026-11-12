@@ -106,7 +106,7 @@ The brackets after `app` name the two things the app hands the platform, and the
 
 ## Functions
 
-One more short stop comes before the first piece. Every chapter from here on reads Roc functions, so here's one taken apart. It works out how dark the sky is at a step of the ride:
+Every chapter from here on reads Roc functions, so this short chapter takes one apart. It works out how dark the sky is at a step of the ride:
 
 {{code Sky.darkness_at}}
 
@@ -137,7 +137,7 @@ The book often shows a function's annotation alone, until its body's turn comes.
 
 `color_at_darkness` takes an `RgbColor` and a `Fraction`, and returns an `RgbColor`.
 
-On to the pieces. The next chapter tours Safari Ride's types, and every function along the way has one of these two shapes.
+The next chapter tours Safari Ride's types, and every function along the way has one of these two shapes.
 
 ## The pieces as types
 
