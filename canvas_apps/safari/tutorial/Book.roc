@@ -95,6 +95,7 @@ Book := [].{
 	slugs : List(Book.Slug)
 	slugs = [
 		{ chapter: "Introduction", slug: "introduction" },
+		{ chapter: "Roc at a glance", slug: "roc-at-a-glance" },
 		{ chapter: "The problem", slug: "the-problem" },
 		{ chapter: "Platforms, packages and modules", slug: "platforms-packages-and-modules" },
 		{ chapter: "The pieces as types", slug: "the-pieces-as-types" },

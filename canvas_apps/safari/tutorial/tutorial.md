@@ -16,6 +16,21 @@ Safari Ride is written in Roc, and this is a book about Roc. Roc is fun to read,
 
 You'll learn two things as you read: Roc, and how a ride like this one is animated. The animation is a handful of plain ideas. Each frame is one picture, and a step moves the world on before the next. Far things look small, and near things cover far ones. The book explains each of these in plain words where the ride first needs it, and the trigonometry behind them waits for a chapter of its own near the end. If you know animation already, skim those parts. If both are new to you, you'll get both at a walking pace.
 
+## Roc at a glance
+
+Every programming language makes a bet about what a program is made of. Roc bets on values and functions. A value is a fact: a number, a name, or a record of where the rider is on the road and how fast the bike is going. A function takes values and gives back a new one. A Roc value stays exactly as it was made, for as long as the program holds it.
+
+That bet looks odd for a book about animation. The ride you just watched is change from start to finish. The rider rolls down the road, the sun sinks, the truck turns on its headlights, and a cat crosses in front of the bike. An animation is change, thirty times a second. So how does a language whose values stay put produce a ride in constant motion?
+
+It works the way a flip book works. A flip book is a stack of pages, and each page is one still drawing. The motion comes from the flipping. Safari Ride holds one moment of the ride at a time, as a value: where the rider is, where the truck is, and what the clock says. One function takes that moment and gives back the next one, a new value beside the old. Another takes a moment and gives back its picture. Beneath the Roc code sits a layer called the platform, which owns the screen, and the platform paints each picture as it comes. The Roc code describes, and the platform paints.
+
+The bet pays off in ways you can see. The same moment always gives the same picture, so the ride is completely deterministic: run it twice, and every frame matches. Stepping backward is as quick as stepping forward, because the ride keeps its past moments, and an old moment gives its picture like any other. The bet is also why this book can hold a frame still beside the text. Every live picture in these pages comes from the ride's own code.
+
+The other half of Roc's bet is types. Every value has a type, and the compiler checks the whole program against its types before it runs. A type describes exactly the values that may exist. On the road, a length is a `Distance`, in metres. On the screen, a position counts `Pixels`. Both are numbers underneath, and the compiler keeps them apart, so a length and a position meet only where the code says how. When a tree stands behind the camera, the code says so with a tag, `BehindCamera`, and the compiler holds every caller to that answer.
+
+So the book has two threads, and they pull on each other. The animation asks for change, and Roc answers with a fresh value for every moment. The animation asks for things near and far, on the road and on the screen, and Roc answers with types that keep each kind of number in its place. Again and again, a problem the ride poses makes a Roc idea necessary, and the Roc idea makes the ride easier to read. The book follows those meetings, one chapter at a time.
+
+Roc's bet also shapes the whole program. The ride carries a small state from one step to the next, just four things, and derives everything else from them, fresh for every frame. The sun's place in the sky comes from the clock. The picture comes from the moment. A small carried state, with everything else derived from it, is the idea that runs through every chapter of this book. The next chapter takes the ride apart into the pieces we build, one at a time.
 
 ## The problem
 
