@@ -168,8 +168,8 @@ backdrop = {
 upright_space : Shapes.Space
 upright_space = Screen.leaned_by(Angle.upright)
 
-## The bull and the cow over the road, as the ride paints a frame: farther
-## things first, so the nearer cow is painted last.
+## The bull and the cow over the road, in paint order: farther things first,
+## so the nearer cow is painted last.
 picture_shapes : List(Shapes.Shape)
 picture_shapes = FrameView.painted_shapes({
 	backdrop,
