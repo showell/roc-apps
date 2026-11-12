@@ -884,13 +884,13 @@ The ground under the things beside the road is grass, and it's the simplest part
 Step 1,529 of the ride: its trees, and the grass they stand on.
 ```
 
-The horizon is the line halfway down the screen where the ground meets the sky. The grass fills the screen below it, and the rest of the frame, the mountains, the road and the things beside it, covers the grass. So the grass shows wherever the rest of the frame leaves it uncovered, and that one rectangle is all the grass code the ride needs.
+The horizon on the screen is the line halfway down it, where a level look from the rider lands. The grass fills the screen below it, and the rest of the frame, the mountains, the road and the things beside it, covers the grass. So the grass shows wherever the rest of the frame leaves it uncovered, and that one rectangle is all the grass code the ride needs.
 
 The `Grass` module holds the grass's color by day, as a constant:
 
 {{code Grass.grass_color}}
 
-A constant in a module carries an annotation, as a function does, and here the type is an `RgbColor`. `0x4A8F43` is the color in hex, the way a web page writes it after a `#`.
+A constant in a module carries an annotation, as a function does, and here the type is an `RgbColor`. Like `Distance`'s functions, the `Grass` module's sit inside the braces of a type named for the module, so other code calls this one `Grass.grass_color`. `0x4A8F43` is the color in hex, the way a web page writes it after a `#`.
 
 As the sun sets, the grass darkens with the sky:
 
@@ -902,7 +902,7 @@ The grass's top edge sits one pixel above the horizon:
 
 {{code Grass.grass_top_y}}
 
-`Screen.horizon_y` is the horizon, and `y` grows downward, so `minus` one pixel moves the edge up. The sky, in the next chapter, stops at the horizon, so the grass overlaps it by a pixel and the two always meet.
+`Screen.horizon_y` is the horizon, and `y` grows downward, so `minus` one pixel moves the edge up. The sky, in the next chapter, is painted before the grass and stops at the horizon, so the grass's top row covers the sky's last one and the two always meet.
 
 Here's the rectangle itself:
 
@@ -918,7 +918,7 @@ That rectangle is all the grass there is. The sky goes above it, in the next cha
 Above the grass is the sky, and in a frame the sky is two colors: one at the top of the frame and one at the horizon, with a fade between them.
 
 ```widget frame sky
-Step 1,529 of the ride: the trees, the grass, and the sky over them.
+Step 1,529 of the ride: the trees, the grass, and the day sky over them.
 ```
 
 A frame asks the `Sky` module for both colors at the ride's clock, and gets them back as one record:
@@ -937,16 +937,7 @@ The top of the sky blends from day into night, as far as the sky is dark:
 
 {{code ColorShade.color_between}}
 
-It takes one record, so every call names its three fields, and each of the color's three channels moves the same share of the way from `from` to `to`. `blend` is a function named inside the body, and the last line calls it once for each channel.
-
-The share is a `Fraction`, the `lib` package's ratio from 0 to 1. It's an opaque type, and its module builds it in two ways:
-
-| Function | For | What happens outside 0 to 1 |
-|---|---|---|
-| `Fraction.of` | a ratio that is in range by its arithmetic | it crashes, because the arithmetic behind it is wrong |
-| `Fraction.clamp` | a ratio that can rightly fall outside | it holds the ratio at 0 or 1 |
-
-Only the `Fraction` module can build a `Fraction`, and both ways keep the value in range. So every `Fraction` in the ride is from 0 to 1, by construction, and `color_between` can trust its `fraction`.
+It takes one record, so every call names its three fields. A color is three channels, its red, green and blue, and each channel moves the same share of the way from `from` to `to`. `blend` is a function named inside the body, and it takes a function as its argument: `RgbColor.red`, say, which reads one channel of a color. The last line calls `blend` once for each channel. The share is a `Fraction`, which its type keeps between 0 and 1, so `color_between` can trust it.
 
 ### The horizon
 
@@ -962,9 +953,69 @@ The horizon has the top's color, warmed toward red while the sun is near it:
 
 {{code Sky.sky_shape}}
 
-`Screen.above_horizon_rect` is the rectangle from above the top of the screen down to the horizon, 200 pixels past each side, as the grass's rectangle is. Its fill is `Linear`, a fade that runs straight down from the top of the screen to the horizon. The fade holds the top color for the first fifth of the way, `sky_top_stop`, then blends to the horizon's color.
+`Screen.above_horizon_rect` is the rectangle from above the top of the screen down to the horizon, 200 pixels past each side, as the grass's rectangle is. Its fill is `Linear`, a fill like `Brush.flat` whose color fades along a line, from `start_point` to `end_point`. Both points sit at `x` zero, so the line runs straight down, from the top of the screen to the horizon. Its `stops` say where along that line the fade begins and ends: it holds the top color for the first fifth of the way, `sky_top_stop`, then reaches the horizon's color at the end. The platform works out every color in between. `Brush.opaque_rgba` makes each color fully solid.
 
-Every function here works from the clock alone, or from colors worked out from it. So the sky at step 1,529 is the same on every run of the ride, and the second half of the book turns the clock to watch it darken. One more part of the frame darkens with it: the mountains.
+Every function here works from the clock alone, or from colors worked out from it. So the sky at step 1,529 is the same on every run of the ride. At that step the sun is still high: the sky is near its day color and the horizon has yet to warm, so the two colors match and the picture shows one pale blue. The second half of the book turns the clock to watch them part. One more part of the frame darkens with it: the mountains.
+
+## Mountains
+
+However far the rider goes, the mountains stay as far away as ever. They only turn as the rider turns. So the ride treats them as far scenery: a mountain is just a height at a direction.
+
+```widget frame mountains
+Step 1,529 of the ride: the trees, the grass, the sky, and the mountains along the horizon.
+```
+
+There are two ranges: a high one to the north, with snow on its peaks, and a lower one to the west. In front of both runs a band of low, rolling land, in the grass's own green.
+
+### Directions
+
+A direction needs a type, and so does a change of direction. `Angle.Bearing` is a direction in the world, such as north, and `Angle.Turn` is how far to turn from one direction to another. Both are opaque types around one float, and only the `Angle` module builds or opens them. Here a `Turn` is passed where a `Bearing` belongs:
+
+{{fails turn_as_bearing}}
+
+The compiler refuses it. A bearing plus a turn is a bearing, and the turn from one bearing to another is a turn, and the `Angle` module's functions keep the two apart everywhere.
+
+### A range
+
+A range is a record:
+
+{{code Skyline.MountainRange}}
+
+Its `center` is the bearing of its middle, and `half_width` is the turn from the middle to either end. `height_ceiling` is how high above the horizon it reaches at most. The two wave counts shape its ridges. Here's the north range:
+
+{{code Skyline.north_range}}
+
+A range's height at a bearing comes from one function:
+
+{{signatures Skyline.range_height}}
+
+The range is highest in its middle and falls to zero at its ends, and two waves on top of that make its ridges. The trigonometry behind it waits for the math layer chapter near the end of the book. The rolling land is one wave of its own, all the way round.
+
+### Across the screen
+
+To paint a range, the ride goes across the screen two pixels at a time, and asks which bearing each column looks along. A column is a record:
+
+{{code Skyline.SkylineColumn}}
+
+One function paints a silhouette from the columns, whichever range or land it is:
+
+{{code Skyline.silhouette}}
+
+The record it takes has a field that holds a function: `height_at`, which says how high the silhouette stands at a column. A function is a value like any other, so it can sit in a record field. `silhouette` calls `height_at(column)` for each column, finds where that height lands on the screen with `Lens.y_for_height`, and joins the tops into one region closed along `base_y`. The `if` keeps the top from dipping below `base_y`, where the grass begins.
+
+### Back to front
+
+`Skyline.skyline_shapes` calls `silhouette` three times, with a different `height_at` each time, and paints the results back to front: the west range, the north range, the north's snow, then the land:
+
+{{code Skyline.skyline_shapes}}
+
+Each `height_at` is an anonymous function written in place. The west range's asks `west_range_height` for the column's bearing. The north range's reads the height the column already holds, since the snow needs it too. The land's asks `land_height`. The snow is a `Try`: when every peak in view stands under the snowline, the snow is `Err(NoSnow)`, and the `match` gives an empty list.
+
+At dusk the rock darkens through `Sky.color_at_darkness`, as the grass does, and the land takes the grass's own color. The snow goes blue, through the same blend the sky uses:
+
+{{code Skyline.snow_color}}
+
+That's the far scenery: it turns with the rider and stays where it is. The road comes next, and it's the first part of the world that comes nearer.
 
 ## The modules
 
@@ -1514,39 +1565,6 @@ Two tags say whether the sun is in view, so there's no `null` and no off-screen 
 {{code FrameView.frame_view_at}}
 
 Most of what `frame_view_at` calls takes the clock, and that's the hard part. The sun sinks a little with every step, and the sky's colors, the mountains and the truck's headlights all follow it. That's a lot of heavy lifting for a circle. It gets a chapter of its own, The setting sun, once things start to move.
-
-## Mountains
-
-However far the rider goes, the mountains never get any closer. They only turn as the rider turns. That makes them much simpler than they look.
-
-New in this chapter:
-
-- Roc: a function in a record field
-- Modules: `Skyline`
-
-There are two ranges, one to the north with snow on its peaks, and a lower one to the west. A range is a record:
-
-{{code Skyline.MountainRange}}
-
-It's measured in bearings and pixels, not metres. There's no terrain behind it. All a mountain has is a height at a bearing:
-
-{{code Skyline.range_height}}
-
-A range is highest in its middle and falls to nothing at its ends. Two waves on top of that make the ridges. The rolling land in front of the ranges is a single wave of its own, in the same green as the grass.
-
-To draw a range, we go across the screen two pixels at a time and ask how high the skyline is at each bearing. The caller passes in `height_at`, a function in a record field, so one `silhouette` draws both ranges and the rolling land:
-
-{{code Skyline.silhouette}}
-
-`Skyline.skyline_shapes` paints them back to front:
-
-{{code Skyline.skyline_shapes}}
-
-The rock darkens with `darkness`, the same `Fraction` that darkens the sky, and the snow goes blue. `snow_color` uses the sky's own `ColorShade.color_between`:
-
-{{code Skyline.snow_color}}
-
-That's nature. Next come the things people built.
 
 ## The road
 
