@@ -666,9 +666,9 @@ Here are some things from step 1,529 and what their sightings decide. `right` an
 | The radio tower past the end of the rider's segment | 20.40 | 355.61 | kept |
 | The truck | 92.19 | 489.15 | kept |
 
-A small tree far off sinks below the horizon, while a taller one just past it still shows its top. The ride's ground curves on a radius of 100 km, far tighter than the earth's, so its horizon is near. Of the 214 trees on the segments in view, 136 are kept, 30 are behind the camera, and 48 are below the horizon.
+A small tree far off sinks below the horizon, while a taller one just past it still shows its top. The ride's ground curves on a radius of 100 km, far tighter than the earth's, so its horizon is near. Of the 214 trees on the segments in view, 136 are kept, 30 are behind the camera, and 48 are below the horizon. The 136 kept trees all stand at least 2 pixels tall on the screen, so at this step every tree the horizon leaves in view passes the size test.
 
-Each test lives in its own function, and each function asks the one below it first. Here's the stack for a radio tower:
+Each test lives in its own function, and each function asks the one below it first. Here's the stack for a radio tower, which takes the first two tests:
 
 How a refusal travels
 ```dot
@@ -696,7 +696,11 @@ Its type ends in `Try(Pipeline.Sighted(kind), [OutOfSight])`: a sighting, or `Ou
 
 The test itself happens one level down. `RiderView.rider_point_ahead` gives back a `Try` of its own, and the `?` after it decides what happens next. When the answer is an `Ok`, the `?` unwraps it, and `foot` is the point ahead. When it's an `Err`, the `?` ends `sighting_of` right there and gives back an `Err`. So every line after the `?` runs only for a thing in front of the camera, and the body reads as one straight path.
 
-`rider_point_ahead` works on bare points, and its refusal says what's wrong with a point: `BehindCamera`. A sighting's callers need only to know the thing is out of sight. So the `?` has a function after it, `|BehindCamera| OutOfSight`, and the `Err`'s tag goes through that function on its way up. The function's argument is the tag, and `BehindCamera` is the only tag `rider_point_ahead` gives, so the one pattern covers it.
+`rider_point_ahead` works on bare points, and its refusal says what's wrong with a point:
+
+{{signatures RiderView.rider_point_ahead}}
+
+A sighting's callers need only to know the thing is out of sight. So the `?` has a function after it, `|BehindCamera| OutOfSight`, and the `Err`'s tag goes through that function on its way up. The function's argument is the tag, and `BehindCamera` is the only tag `rider_point_ahead` gives, so the one pattern covers it.
 
 ### A test on top
 
@@ -716,7 +720,7 @@ A segment holds many trees, so its sighting module asks for all of their sightin
 
 {{code TreeSighting.segment_trees}}
 
-`keep_oks` is a `List` function. It calls the function it's given on each item, keeps the `Ok` values, and drops the `Err`s. So `segment_trees` gives back a plain list of sightings, and the refusals stop there.
+`scenery_sighting_of` takes a `camera`, which holds the vantage and the lens's focal length, because its size test needs the lens. `keep_oks` is a `List` function. It calls the function it's given on each item, keeps the `Ok` values, and drops the `Err`s. So `segment_trees` gives back a plain list of sightings, and the refusals stop there.
 
 There's one truck, so `Scene` matches on its answer instead:
 
