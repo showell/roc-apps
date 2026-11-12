@@ -26,23 +26,23 @@ Step 1,529 of the ride, held still.
 
 This chapter makes a first pass over that page. It names the page's parts in the code, and it skips how each part is made.
 
-In the code, a frame starts as one value of the `FrameView` type:
+In the code, a page starts as one value of the `FrameView` type:
 
 {{code FrameView.FrameView from "FrameView := {" to "}.{"}}
 
-You can read it as English for now. Four of the fields are parts of the picture you can see: the backdrop of sky and grass, with the sun when it's in view; the mountains; the road and its ponds; and the scene, which holds the things in view beside the road. The fifth field, the camera's roll, tilts the whole frame when the bike leans. The roll comes from the rider, so it waits for the second half of the book.
+You can read it as English for now. Four of the fields are parts of the picture you can see: the backdrop of sky and grass, with the sun when it's in view; the mountains; the road and its ponds; and the scene, which holds the things in view on and beside the road. The fifth field, the camera's roll, leans the whole page when the bike leans. The roll comes from the rider, so it waits for the second half of the book.
 
-One function gives back the view for any moment of the ride:
+One function gives back the `FrameView` for any moment of the ride:
 
 {{signatures FrameView.frame_view_at}}
 
-That line is a type annotation: the function's name, a colon, and its type. `frame_view_at` takes a `Route`, the whole road, and a `RideInstant`, one moment of the ride, such as step 1,529. After the arrow comes what it gives back, the moment's `FrameView`. One more function turns the view, backdrop and all, into a single list of shapes, tilted by the roll:
+That line is a type annotation: the function's name, a colon, and its type. `frame_view_at` takes a `Route`, the whole road, and a `RideInstant`, one moment of the ride, such as step 1,529. After the arrow comes what it gives back, the moment's `FrameView`. One more function turns the `FrameView`, backdrop and all, into a single list of shapes, leaned by the roll:
 
 {{signatures FrameView.leaned_shapes}}
 
 Roc code runs on a platform, and Safari Ride's platform paints that list on the screen. So each page starts from one moment of the ride and ends as one list of shapes.
 
-The first half of the book holds this page still and builds it part by part, starting with the things beside the road. The second half turns the pages. The chapters ahead read Roc slowly, one idea at a time, so the syntax here can wait for them. The next chapter breaks the problem into the pieces we build.
+The first half of the book holds this page still and builds it part by part, starting with the things beside the road. The second half turns the pages. The chapters ahead read Roc slowly, one idea at a time, so the syntax here can wait for them. The next chapter breaks the ride into the pieces we build.
 
 ## The problem
 
