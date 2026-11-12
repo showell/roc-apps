@@ -1,0 +1,79 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>One page · Safari Ride</title>
+<link rel="icon" href="data:,">
+<link rel="stylesheet" href="book.css">
+<script src="book.js" defer></script>
+</head>
+<body class="chapter">
+<header class="top-bar">
+<a class="home-link" href="https://roc.lynrummy.com/">Steve's Roc Apps</a>
+<p class="draft-notice">This is an early draft.</p>
+<a class="repo-link" href="https://github.com/showell/roc-apps">roc-apps on GitHub</a>
+</header>
+<nav class="book-nav" id="chapters" aria-label="Chapters">
+<a class="book-name" href="index.html">Safari Ride</a>
+<ol>
+<li class="part">The big picture</li><li><a href="introduction.html"><span class="number">1</span>Introduction</a></li>
+<li class="here"><a href="one-page.html"><span class="number">2</span>One page</a></li>
+<li><a href="the-problem.html"><span class="number">3</span>The problem</a></li>
+<li><a href="platforms-packages-and-modules.html"><span class="number">4</span>Platforms, packages and modules</a></li>
+<li><a href="the-pieces-as-types.html"><span class="number">5</span>The pieces as types</a></li>
+<li><a href="things.html"><span class="number">6</span>Things</a></li>
+<li><a href="billboard-critters.html"><span class="number">7</span>Billboard Critters</a></li>
+<li><a href="shapes.html"><span class="number">8</span>Shapes</a></li>
+<li><a href="a-far-tree.html"><span class="number">9</span>A far tree</a></li>
+<li><a href="types-for-places.html"><span class="number">10</span>Types for places</a></li>
+<li><a href="the-pipeline.html"><span class="number">11</span>The pipeline</a></li>
+<li><a href="nature-types.html"><span class="number">12</span>Nature types</a></li>
+<li><a href="asking-a-kind.html"><span class="number">13</span>Asking a kind</a></li>
+</ol>
+</nav>
+<main>
+<p class="book-bar"><a href="index.html">Safari Ride</a> <a href="#chapters">Chapters</a></p>
+<article>
+<p class="chapter-number">Chapter 2</p>
+<h1 id="one-page">One page</h1>
+<p>Safari Ride works like a flip book. Each frame is one page, and the ride shows a new page thirty times a second. Here&#39;s one page, held still. It&#39;s the page at step 1,529, with the cat out on the road:</p>
+<figure class="widget"><iframe class="canvas-app" src="../frame_widget/?start=moving" title="Step 1,529 of the ride, held still." loading="lazy" style="aspect-ratio: 960 / 600"></iframe><figcaption>Step 1,529 of the ride, held still.</figcaption></figure><p>This chapter makes a first pass over that page. It names the page&#39;s parts in the code, and it skips how each part is made.</p>
+<p>In the code, a page starts as one value of the <code>FrameView</code> type:</p>
+<figure class="listing"><figcaption>FrameView.roc, in FrameView</figcaption><pre><code class="language-roc"><span class="syn-comment"># ...</span>
+<span class="syn-type">FrameView</span> := {
+	<span class="syn-comment">## The sky, the sun and the grass, which everything else is painted over.</span>
+	backdrop : <span class="syn-type">FrameView.Backdrop</span>,
+
+	<span class="syn-comment">## The mountains, darkened with the sky.</span>
+	mountain_shapes : <span class="syn-type">List</span>(<span class="syn-type">Shapes.Shape</span>),
+
+	<span class="syn-comment">## The road itself and its ponds.</span>
+	ground_patch_shapes : <span class="syn-type">List</span>(<span class="syn-type">Shapes.Shape</span>),
+
+	<span class="syn-comment">## The things on and beside the road.</span>
+	scene : <span class="syn-type">Scene</span>,
+
+	<span class="syn-comment">## The camera&#39;s roll. The camera turns one way, so the whole frame, backdrop</span>
+	<span class="syn-comment">## and shapes, turns the other way by the same angle, about the screen&#39;s</span>
+	<span class="syn-comment">## centre.</span>
+	roll : <span class="syn-type">Angle.Lean</span>,
+}.{
+<span class="syn-comment"># ...</span>
+</code></pre></figure><p>You can read it as English for now. A <code># ...</code> line marks code the book leaves out. Four of the fields are parts of the picture you can see: the backdrop of sky and grass, with the sun when it&#39;s in view; the mountains; the road and its ponds; and the scene, which holds the things in view on and beside the road. The fifth field, the camera&#39;s roll, leans the whole page when the bike leans. The roll comes from the rider, so it waits for the second half of the book.</p>
+<p>One function gives back the <code>FrameView</code> for any moment of the ride:</p>
+<figure class="listing"><figcaption>FrameView.roc</figcaption><pre><code class="language-roc"><span class="syn-name">frame_view_at</span> : <span class="syn-type">Route</span>, <span class="syn-type">RideInstant</span> -&gt; <span class="syn-type">FrameView</span>
+</code></pre></figure><p>That line is a type annotation: the function&#39;s name, a colon, and its type. <code>frame_view_at</code> takes a <code>Route</code>, the whole road, and a <code>RideInstant</code>, one moment of the ride, such as the one at step 1,529. After the arrow comes what it gives back, the moment&#39;s <code>FrameView</code>. One more function turns the <code>FrameView</code>, backdrop and all, into a single list of shapes, leaned by the roll:</p>
+<figure class="listing"><figcaption>FrameView.roc</figcaption><pre><code class="language-roc"><span class="syn-name">leaned_shapes</span> : <span class="syn-type">FrameView</span> -&gt; <span class="syn-type">List</span>(<span class="syn-type">Shapes.Shape</span>)
+</code></pre></figure><p>Roc code runs on a platform, and Safari Ride&#39;s platform paints that list on the screen. So each page starts from one moment of the ride and ends as one list of shapes.</p>
+<p>The first half of the book holds this page still and builds it part by part, starting with the things beside the road. The second half turns the pages. The chapters ahead read Roc slowly, one idea at a time, so the syntax here can wait for them. The next chapter breaks the ride into the pieces we build.</p>
+
+</article>
+<nav class="turn-page" aria-label="Previous and next chapter">
+<a rel="prev" href="introduction.html"><small>Previous</small>Introduction</a>
+<a rel="next" href="the-problem.html"><small>Next</small>The problem</a>
+</nav>
+</main>
+<script src="embed.js"></script>
+</body>
+</html>

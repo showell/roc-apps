@@ -18,26 +18,27 @@
 <a class="book-name" href="index.html">Safari Ride</a>
 <ol>
 <li class="part">The big picture</li><li><a href="introduction.html"><span class="number">1</span>Introduction</a></li>
-<li><a href="the-problem.html"><span class="number">2</span>The problem</a></li>
-<li><a href="platforms-packages-and-modules.html"><span class="number">3</span>Platforms, packages and modules</a></li>
-<li class="here"><a href="the-pieces-as-types.html"><span class="number">4</span>The pieces as types</a><ol class="sections"><li><a href="the-pieces-as-types.html#numbers-at-the-bottom">Numbers at the bottom</a></li><li><a href="the-pieces-as-types.html#things">Things</a></li><li><a href="the-pieces-as-types.html#the-world">The world</a></li><li><a href="the-pieces-as-types.html#the-riders-view">The rider&#39;s view</a></li><li><a href="the-pieces-as-types.html#motion">Motion</a></li><li><a href="the-pieces-as-types.html#the-person-watching">The person watching</a></li><li><a href="the-pieces-as-types.html#where-we-start">Where we start</a></li></ol></li>
-<li><a href="things.html"><span class="number">5</span>Things</a></li>
-<li><a href="billboard-critters.html"><span class="number">6</span>Billboard Critters</a></li>
-<li><a href="shapes.html"><span class="number">7</span>Shapes</a></li>
-<li><a href="a-far-tree.html"><span class="number">8</span>A far tree</a></li>
-<li><a href="types-for-places.html"><span class="number">9</span>Types for places</a></li>
-<li><a href="the-pipeline.html"><span class="number">10</span>The pipeline</a></li>
-<li><a href="nature-types.html"><span class="number">11</span>Nature types</a></li>
-<li><a href="asking-a-kind.html"><span class="number">12</span>Asking a kind</a></li>
+<li><a href="one-page.html"><span class="number">2</span>One page</a></li>
+<li><a href="the-problem.html"><span class="number">3</span>The problem</a></li>
+<li><a href="platforms-packages-and-modules.html"><span class="number">4</span>Platforms, packages and modules</a></li>
+<li class="here"><a href="the-pieces-as-types.html"><span class="number">5</span>The pieces as types</a><ol class="sections"><li><a href="the-pieces-as-types.html#numbers-at-the-bottom">Numbers at the bottom</a></li><li><a href="the-pieces-as-types.html#things">Things</a></li><li><a href="the-pieces-as-types.html#the-world">The world</a></li><li><a href="the-pieces-as-types.html#the-riders-view">The rider&#39;s view</a></li><li><a href="the-pieces-as-types.html#motion">Motion</a></li><li><a href="the-pieces-as-types.html#the-person-watching">The person watching</a></li><li><a href="the-pieces-as-types.html#where-we-start">Where we start</a></li></ol></li>
+<li><a href="things.html"><span class="number">6</span>Things</a></li>
+<li><a href="billboard-critters.html"><span class="number">7</span>Billboard Critters</a></li>
+<li><a href="shapes.html"><span class="number">8</span>Shapes</a></li>
+<li><a href="a-far-tree.html"><span class="number">9</span>A far tree</a></li>
+<li><a href="types-for-places.html"><span class="number">10</span>Types for places</a></li>
+<li><a href="the-pipeline.html"><span class="number">11</span>The pipeline</a></li>
+<li><a href="nature-types.html"><span class="number">12</span>Nature types</a></li>
+<li><a href="asking-a-kind.html"><span class="number">13</span>Asking a kind</a></li>
 </ol>
 </nav>
 <main>
 <p class="book-bar"><a href="index.html">Safari Ride</a> <a href="#chapters">Chapters</a></p>
 <article>
-<p class="chapter-number">Chapter 4</p>
+<p class="chapter-number">Chapter 5</p>
 <h1 id="the-pieces-as-types">The pieces as types</h1>
-<p>Types are at the heart of every Roc program. A type says what a value holds, and the compiler checks every value against its type before the program runs. So a good way to meet a Roc program is to read its types.</p>
-<p>This chapter takes one tour across Safari Ride, with a stop for each of the five pieces from the <a class="chapter-link" href="the-problem.html">“The problem”</a> chapter: things, the world, the rider&#39;s view, motion and the person watching. At each stop we read the types for that piece. On the way, you learn to read the types Roc programs are built from: numbers, records, tags, type variables and the types of functions. The functions come later, piece by piece.</p>
+<p>Types are at the heart of every Roc program. A type says what a value holds, and the compiler checks every value against its type. So a good way to meet a Roc program is to read its types.</p>
+<p>This chapter takes one tour across Safari Ride, with a stop for each of the five pieces from the <a class="chapter-link" href="the-problem.html">“The problem”</a> chapter: things, the world, the rider&#39;s view, motion and the person watching. On the way, you learn to read the types Roc programs are built from: numbers, records, tags, type variables and the types of functions. The functions come later, piece by piece.</p>
 <h2 id="numbers-at-the-bottom">Numbers at the bottom <a class="section-link" href="#numbers-at-the-bottom" aria-label="Link to this section">§</a></h2>
 <p>Every type is built from smaller ones, and at the bottom are Roc&#39;s own primitive types. Safari Ride&#39;s are nearly all numbers. Here&#39;s a type built around one, <code>Distance</code>, in full:</p>
 <figure class="listing"><figcaption>Distance.roc</figcaption><pre><code class="language-roc"><span class="syn-type">Distance</span> :: <span class="syn-type">F64</span>.{
@@ -121,7 +122,7 @@
 </tr>
 <tr>
 <td><code>metres : F64 -&gt; Distance</code></td>
-<td><code>metres</code> names a function, and after the colon comes its type: it takes an <code>F64</code> and gives back a <code>Distance</code>.</td>
+<td><code>metres</code> names a function that takes an <code>F64</code> and gives back a <code>Distance</code>.</td>
 </tr>
 <tr>
 <td><code>metres = |metres| Distance.<wbr>(metres)</code></td>
@@ -145,7 +146,7 @@
 </tr>
 </tbody>
 </table>
-<p>Everywhere outside this module, a length is a <code>Distance</code>, and the compiler keeps it apart from every other number. The functions between the braces are the only ways to make a length, change one or read one. Each is a line for its type and a line for its definition. We read functions properly with the pieces that use them.</p>
+<p>Everywhere outside this module, a length is a <code>Distance</code>, and the compiler keeps it apart from every other number. The functions between the braces are the only ways to make a length, change one or read one.</p>
 <h2 id="things">Things <a class="section-link" href="#things" aria-label="Link to this section">§</a></h2>
 <figure class="widget"><iframe class="canvas-app" src="../frame_widget/?start=moving" title="Step 1,529 of the ride, held still: the frame these types describe." loading="lazy" style="aspect-ratio: 960 / 600"></iframe><figcaption>Step 1,529 of the ride, held still: the frame these types describe.</figcaption></figure><p>Every thing beside the road has a kind, and each kind is a type. A tree is a <code>Conifer</code>, a cat is a <code>Cat</code>, and a radio tower is a <code>Tower</code>. A cow is a <code>Billboard</code>, an emoji that stands on the grass, square to the rider, looking left or right:</p>
 <figure class="listing"><figcaption>Billboard.roc, in Billboard</figcaption><pre><code class="language-roc"><span class="syn-type">Billboard</span> :: {
@@ -168,10 +169,6 @@
 <td><code>Billboard</code> names the type. The <code>::</code> makes it opaque, as it does <code>Distance</code>: only the <code>Billboard</code> module reads its fields.</td>
 </tr>
 <tr>
-<td><code>{</code> and <code>}</code></td>
-<td>The curly braces hold a record type&#39;s fields together.</td>
-</tr>
-<tr>
 <td><code>emoji : EmojiStill,</code></td>
 <td><code>emoji</code> names a field, and <code>EmojiStill</code> names its type: the <code>EmojiStill</code> type in the <code>EmojiStill</code> module.</td>
 </tr>
@@ -183,19 +180,14 @@
 <td><code>facing : Billboard.<wbr>Facing,</code></td>
 <td><code>facing</code> names a field, and <code>Billboard.<wbr>Facing</code> names its type: the <code>Facing</code> type in the <code>Billboard</code> module.</td>
 </tr>
-<tr>
-<td><code>.<wbr>{</code></td>
-<td>The type&#39;s own functions and types start here, as they do in <code>Distance</code>. The listing stops here.</td>
-</tr>
 </tbody>
 </table>
 <p>A module&#39;s main type has the module&#39;s own name, as <code>Billboard</code> and <code>Distance</code> do. Wherever it&#39;s used, every other type a module offers carries the module&#39;s name in front, as <code>EmojiStill</code> and <code>Billboard.Facing</code> do.</p>
 <p>A <code>Billboard.Facing</code> is one of two tags, <code>FacesLeft</code> or <code>FacesRight</code>. A tag is a name the compiler knows, and a type made of tags lists every one it allows.</p>
-<p>For each frame, a thing produces the shapes that show it, in the order they&#39;re painted. We call those shapes its sprite, and we use the word loosely. Here&#39;s the <code>Sprite</code> type:</p>
+<p>For each frame, a thing produces the shapes that show it, in the order they&#39;re painted. We call those shapes its sprite. Here&#39;s the <code>Sprite</code> type:</p>
 <figure class="listing"><figcaption>Sprite.roc, in Sprite</figcaption><pre><code class="language-roc"><span class="syn-type">Sprite</span> :: <span class="syn-type">List</span>(<span class="syn-type">Shapes.Shape</span>).{
 <span class="syn-comment"># ...</span>
 </code></pre></figure><p>A <code>Sprite</code> is opaque, like <code>Billboard</code>, and it holds a <code>List(Shapes.Shape)</code>: a list whose items are each a <code>Shape</code>, from the <code>Shapes</code> module. Nearly every shape has straight edges. A far tree&#39;s sprite is one rectangle of trunk under eight triangles.</p>
-<p>A frame&#39;s picture is the sky and the ground, with the sprites of everything in view on top, as one list of shapes, made fresh every frame. The Roc code describes that list, and the platform paints it. Seeing works this way in the real world, too. Light brings your eyes information, and your mind makes the picture.</p>
 <h2 id="the-world">The world <a class="section-link" href="#the-world" aria-label="Link to this section">§</a></h2>
 <p>A sprite says how a thing looks. Where it stands is the world&#39;s job. The <code>World</code> module plans the road as a short list of stretches, called segments, and each segment&#39;s plan is a record of the <code>SegmentPlan</code> type:</p>
 <figure class="listing"><figcaption>World.roc</figcaption><pre><code class="language-roc"><span class="syn-comment">## One segment of the route as planned: its length and scenery, and what</span>
@@ -207,7 +199,7 @@
 	pigs : <span class="syn-type">World.PigPresence</span>,
 	bull : <span class="syn-type">CowHerd.Bull</span>,
 }
-</code></pre></figure><p>As in <code>Distance</code>, the lines that start with <code>##</code> are doc comments. A plain <code>:</code> gives the record type a short name: any record with these fields is a <code>SegmentPlan</code>, so any module can build a plan and read its fields. Here&#39;s the plan for the last stretch of road:</p>
+</code></pre></figure><p>A plain <code>:</code> gives the record type a short name: any record with these fields is a <code>SegmentPlan</code>, so any module can build a plan and read its fields. Here&#39;s the plan for the last stretch of road:</p>
 <figure class="listing"><figcaption>World.roc</figcaption><pre><code class="language-roc"><span class="syn-comment">## The route&#39;s last segment, which ends it.</span>
 <span class="syn-name">last_plan</span> : <span class="syn-type">World.SegmentPlan</span>
 <span class="syn-name">last_plan</span> = {
@@ -217,7 +209,7 @@
 	pigs: <span class="syn-type">WithPigs</span>,
 	bull: <span class="syn-type">WithBull</span>,
 }
-</code></pre></figure><p>After a value&#39;s name, a <code>:</code> gives the value its type, so the first line says <code>last_plan</code> is a <code>SegmentPlan</code>, and the rest defines it. <code>Distance.metres(300.0)</code> calls the <code>metres</code> function in the <code>Distance</code> module. Each field holds a value of its own type: 300 metres of <code>Distance</code>, and a tag for each of the others. On this stretch, a cat crosses the road. The <code>World.route</code> value is the whole road, built from the plans once, before the ride starts, and every tree, herd, pond and tower takes its place along it.</p>
+</code></pre></figure><p>After a value&#39;s name, a <code>:</code> gives the value its type, so the first line says <code>last_plan</code> is a <code>SegmentPlan</code>, and the rest defines it. <code>Distance.metres(300.0)</code> calls the <code>metres</code> function in the <code>Distance</code> module. On this stretch, a cat crosses the road. The <code>World.route</code> value is the whole road, built from the plans once, before the ride starts, and every tree, herd, pond and tower takes its place along it.</p>
 <figure class="widget"><iframe class="canvas-app" src="../route_widget/" title="The whole route from above, one stretch of road for each plan. A mark in the middle of a stretch shows that its plan has a cat cross or a bird fly." loading="lazy" style="aspect-ratio: 640 / 220"></iframe><figcaption>The whole route from above, one stretch of road for each plan. A mark in the middle of a stretch shows that its plan has a cat cross or a bird fly.</figcaption></figure><h2 id="the-riders-view">The rider&#39;s view <a class="section-link" href="#the-riders-view" aria-label="Link to this section">§</a></h2>
 <p>The screen shows only what the rider sees. So each frame is produced as if by a camera on the rider: it sits where the rider sits, and faces where the rider looks. Each thing takes three forms on its way to the screen, and each form is a type. First, the thing is placed on the road:</p>
 <figure class="listing"><figcaption>Geom.roc</figcaption><pre><code class="language-roc"><span class="syn-comment">## An object on one segment of the road, `lift` off the ground, and what</span>
@@ -242,7 +234,7 @@
 <figure class="listing"><figcaption>Rendered.roc, in Rendered</figcaption><pre><code class="language-roc"><span class="syn-type">Rendered</span> :: { depth : <span class="syn-type">Distance</span>, sprite : <span class="syn-type">Sprite</span> }.{
 <span class="syn-comment"># ...</span>
 </code></pre></figure><p>A rendering holds the thing&#39;s sprite, and its depth: how far ahead of the camera it stands. The kind is gone, so trees, cows and towers all meet in one list of renderings.</p>
-<p>To finish the frame, the <code>DepthSort</code> module sorts that list far to near, and the platform paints it in that order, as a painter paints the far hills before the near trees. So nearer things cover farther ones.</p>
+<p>To finish the frame, the <code>DepthSort</code> module sorts that list far to near, and the platform paints it in that order, as a painter paints the far hills before the near trees.</p>
 <h2 id="motion">Motion <a class="section-link" href="#motion" aria-label="Link to this section">§</a></h2>
 <p>So far the ride stands still. To set it moving, one record holds the whole ride at one moment:</p>
 <figure class="listing"><figcaption>RideInstant.roc, in RideInstant</figcaption><pre><code class="language-roc"><span class="syn-comment"># ...</span>
@@ -257,11 +249,11 @@
 <p>Those four fields are everything the ride carries from one step to the next: the rider, the truck, the clock, and the plan for when the cat or the bird ahead starts to move. We derive everything else that changes from them. The sun goes down because the clock says so.</p>
 <p>A step is one function&#39;s job, and its type tells the story:</p>
 <figure class="listing"><figcaption>RideInstant.roc</figcaption><pre><code class="language-roc"><span class="syn-name">next_or_restart</span> : <span class="syn-type">Route</span>, <span class="syn-type">RideInstant</span> -&gt; [<span class="syn-type">Continued</span>(<span class="syn-type">RideInstant</span>), <span class="syn-type">Restarted</span>(<span class="syn-type">RideInstant</span>)]
-</code></pre></figure><p>That&#39;s the function&#39;s type annotation, the line above its body. When a function&#39;s body is long, the book shows the annotation alone, until the body&#39;s turn comes. After the colon comes the function&#39;s type: the types it takes, then an arrow, then the type it gives back.</p>
-<p>The <code>next_or_restart</code> function takes the route and one moment of the ride. It gives back a type written in place, in square brackets: one of two tags. A tag can carry a value, and each of these carries the next moment. <code>Continued</code> carries the moment one step on, and <code>Restarted</code> carries the ride&#39;s first moment, once the rider has finished the route.</p>
+</code></pre></figure><p>When a function&#39;s body is long, the book shows its type annotation alone, until the body&#39;s turn comes.</p>
+<p><code>next_or_restart</code> gives back a type written in place, in square brackets: one of two tags. A tag can carry a value, and each of these carries the next moment. <code>Continued</code> carries the moment one step on, and <code>Restarted</code> carries the ride&#39;s first moment, once the rider has finished the route.</p>
 <p>Inside the step, the four fields move in a fixed order, so the moves fit together: the rider reads what the cat or bird ahead is doing, and then moves. The second half of the book reads that order line by line.</p>
 <h2 id="the-person-watching">The person watching <a class="section-link" href="#the-person-watching" aria-label="Link to this section">§</a></h2>
-<p>The controls are a handful of keys, named beside the ride. The app&#39;s model, what it keeps as it runs, is one line:</p>
+<p>The controls are a handful of keys, named beside the ride. The app&#39;s model is one line:</p>
 <figure class="listing"><figcaption>SafariApp.roc</figcaption><pre><code class="language-roc"><span class="syn-type">Model</span> : { tour : <span class="syn-type">Tour</span>, motion : [<span class="syn-type">Playing</span>, <span class="syn-type">Paused</span>] }
 </code></pre></figure><p>The <code>motion</code> field&#39;s type is written in place, as two tags. The tour holds the route, the moment on show, and every moment before it since the ride last started:</p>
 <figure class="listing"><figcaption>Tour.roc, in Tour</figcaption><pre><code class="language-roc"><span class="syn-comment"># ...</span>
@@ -273,8 +265,8 @@
 <span class="syn-comment"># ...</span>
 </code></pre></figure><p>Because the tour keeps every past moment, stepping back is as quick as stepping forward: the tour takes the moment before, and the frame is produced from it like any other.</p>
 <h2 id="where-we-start">Where we start <a class="section-link" href="#where-we-start" aria-label="Link to this section">§</a></h2>
-<p>That&#39;s five pieces, and the types for each. On the way, you&#39;ve read a number type, records, tags, a type variable and a function&#39;s type. You&#39;ve also read three ways to name a type. A <code>:</code> gives a type a short name, and any value of that shape fits it. A <code>::</code> makes a new, opaque type, and only its module reads inside it. A <code>:=</code> makes a new, nominal type, and any module reads its fields. You&#39;ll meet all of them on almost every page from here on.</p>
-<p>The rest of the book builds the pieces in order. So we start with things: what a cow, a tree or a tower is in the code, and how a thing becomes a sprite.</p>
+<p>On the way, you&#39;ve read three ways to name a type. A <code>:</code> gives a type a short name, and any value of that shape fits it. A <code>::</code> makes a new, opaque type, and only its module reads inside it. A <code>:=</code> makes a new, nominal type, and any module reads its fields.</p>
+<p>We start with things: what a cow, a tree or a tower is in the code, and how a thing becomes a sprite.</p>
 
 </article>
 <nav class="turn-page" aria-label="Previous and next chapter">

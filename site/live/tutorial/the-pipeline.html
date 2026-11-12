@@ -18,23 +18,24 @@
 <a class="book-name" href="index.html">Safari Ride</a>
 <ol>
 <li class="part">The big picture</li><li><a href="introduction.html"><span class="number">1</span>Introduction</a></li>
-<li><a href="the-problem.html"><span class="number">2</span>The problem</a></li>
-<li><a href="platforms-packages-and-modules.html"><span class="number">3</span>Platforms, packages and modules</a></li>
-<li><a href="the-pieces-as-types.html"><span class="number">4</span>The pieces as types</a></li>
-<li><a href="things.html"><span class="number">5</span>Things</a></li>
-<li><a href="billboard-critters.html"><span class="number">6</span>Billboard Critters</a></li>
-<li><a href="shapes.html"><span class="number">7</span>Shapes</a></li>
-<li><a href="a-far-tree.html"><span class="number">8</span>A far tree</a></li>
-<li><a href="types-for-places.html"><span class="number">9</span>Types for places</a></li>
-<li class="here"><a href="the-pipeline.html"><span class="number">10</span>The pipeline</a><ol class="sections"><li><a href="the-pipeline.html#placed">Placed</a></li><li><a href="the-pipeline.html#sighted">Sighted</a></li><li><a href="the-pipeline.html#refused">Refused</a></li><li><a href="the-pipeline.html#rendered">Rendered</a></li><li><a href="the-pipeline.html#one-list">One list</a></li></ol></li>
-<li><a href="nature-types.html"><span class="number">11</span>Nature types</a></li>
-<li><a href="asking-a-kind.html"><span class="number">12</span>Asking a kind</a></li>
+<li><a href="one-page.html"><span class="number">2</span>One page</a></li>
+<li><a href="the-problem.html"><span class="number">3</span>The problem</a></li>
+<li><a href="platforms-packages-and-modules.html"><span class="number">4</span>Platforms, packages and modules</a></li>
+<li><a href="the-pieces-as-types.html"><span class="number">5</span>The pieces as types</a></li>
+<li><a href="things.html"><span class="number">6</span>Things</a></li>
+<li><a href="billboard-critters.html"><span class="number">7</span>Billboard Critters</a></li>
+<li><a href="shapes.html"><span class="number">8</span>Shapes</a></li>
+<li><a href="a-far-tree.html"><span class="number">9</span>A far tree</a></li>
+<li><a href="types-for-places.html"><span class="number">10</span>Types for places</a></li>
+<li class="here"><a href="the-pipeline.html"><span class="number">11</span>The pipeline</a><ol class="sections"><li><a href="the-pipeline.html#placed">Placed</a></li><li><a href="the-pipeline.html#sighted">Sighted</a></li><li><a href="the-pipeline.html#refused">Refused</a></li><li><a href="the-pipeline.html#rendered">Rendered</a></li><li><a href="the-pipeline.html#one-list">One list</a></li></ol></li>
+<li><a href="nature-types.html"><span class="number">12</span>Nature types</a></li>
+<li><a href="asking-a-kind.html"><span class="number">13</span>Asking a kind</a></li>
 </ol>
 </nav>
 <main>
 <p class="book-bar"><a href="index.html">Safari Ride</a> <a href="#chapters">Chapters</a></p>
 <article>
-<p class="chapter-number">Chapter 10</p>
+<p class="chapter-number">Chapter 11</p>
 <h1 id="the-pipeline">The pipeline</h1>
 <p>Every frame, every thing beside the road takes the same trip to the screen. In the <a class="chapter-link" href="a-far-tree.html">“A far tree”</a> chapter, <code>TreeShapes.tree_sprite</code> takes a setting and gives back a tree&#39;s sprite. This chapter follows the trip around that function: where the setting comes from, and where the sprite goes. A tree, a cow, a radio tower, the cat, the bird and the truck each start from a place on the road and end as a rendering, a sprite with a depth, in the frame&#39;s one list. The <code>Pipeline</code> module holds the trip&#39;s types and the functions that sight and render, so we call the trip the pipeline.</p>
 <figure class="widget"><iframe class="canvas-app" src="../pipeline_widget/" title="Step 1,529 of the ride, with only what came through the pipeline: its trees, critters and towers, the cat and the truck." loading="lazy" style="aspect-ratio: 640 / 340"></iframe><figcaption>Step 1,529 of the ride, with only what came through the pipeline: its trees, critters and towers, the cat and the truck.</figcaption></figure><p>Here&#39;s the trip. The sections below follow its boxes, from <code>Geom.Placed</code> down:</p>
