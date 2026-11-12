@@ -193,7 +193,7 @@ A sighting keeps the kind, and adds a `Spot`: where the thing stands in the ride
 
 From the spot, we work out where the thing lands on the screen, and how big it looks there. One rule gives both: twice as far away looks half as big.
 
-The camera refuses a thing out of the rider's sight, with a tag that says why. `BehindCamera` means it's behind the camera, or too close to show, and `BelowHorizon` means it's too far off to show over the horizon.
+The camera refuses a thing out of the rider's sight with the tag `OutOfSight`: it's behind the camera, too close to show, or too far off to show over the horizon.
 
 Last, the thing is rendered:
 
@@ -599,7 +599,7 @@ digraph pipeline {
   finder [label="each kind's\nsighting module"];
   placed [label="Geom.Placed(kind)"];
   sighted [label="Pipeline.Sighted(kind)"];
-  refused [label="a refusal:\nBehindCamera, BelowHorizon\nor TooSmall"];
+  refused [label="a refusal:\nOutOfSight"];
   rendered [label="Rendered"];
   list [label="one list,\nfar to near"];
   finder -> placed [label="  gathers the ones\n  on the road ahead"];
@@ -652,7 +652,7 @@ So every thing beside the road makes the same trip: placed on the road, sighted 
 
 ## Refused
 
-Every frame, the pipeline sights each thing on the road ahead, and a sighting can refuse a thing: it stands behind the camera, the horizon hides it, or it's too small to show. A refusal comes with a tag that says why. This chapter is about how a Roc function gives back an answer that can fail, and how the reason travels up through the functions that ask for it.
+Every frame, the pipeline sights each thing on the road ahead, and some of the sightings refuse. A thing behind the camera, a thing the horizon hides and a thing too small to see all stay out of the frame. This chapter is about how a Roc function gives back an answer that can fail, and how that answer travels up through the functions that ask for it.
 
 Here are some things from step 1,529 and what their sightings decide. `right` and `forward` place each thing's foot from the camera, in metres, and a `forward` below zero is behind it. The road bends, so a tree on a segment far ahead can stand far to one side:
 
@@ -660,15 +660,15 @@ Here are some things from step 1,529 and what their sightings decide. `right` an
 |---|---|---|---|
 | The cat, frozen in the road | 0.38 | 23.63 | kept |
 | The nearest tree, a big green one | 3.45 | 21.63 | kept |
-| The nearest tree behind the camera, a gold one | -8.09 | -8.36 | `BehindCamera` |
-| The nearest tree the horizon hides, a small green one | -1,433.43 | 446.00 | `BelowHorizon` |
+| The nearest tree behind the camera, a gold one | -8.09 | -8.36 | out of sight: behind the camera |
+| The nearest tree the horizon hides, a small green one | -1,433.43 | 446.00 | out of sight: below the horizon |
 | A big green tree just past it | -1,446.07 | 473.21 | kept |
 | The radio tower past the end of the rider's segment | 20.40 | 355.61 | kept |
 | The truck | 92.19 | 489.15 | kept |
 
-A small tree far off sinks below the horizon, while a taller one just past it still shows its top. The ride's ground curves on a radius of 100 km, far tighter than the earth's, so its horizon is near. Distance counts the whole way, sideways too: the hidden tree stands about 1,500 metres from the camera. Of the 214 trees on the segments in view, 136 are kept, 30 are behind the camera, and 48 are below the horizon. The 136 kept trees all stand at least 2 pixels tall on the screen, so at this step every tree the horizon leaves in view passes the `TooSmall` test.
+A small tree far off sinks below the horizon, while a taller one just past it still shows its top. The ride's ground curves on a radius of 100 km, far tighter than the earth's, so its horizon is near. Of the 214 trees on the segments in view, 136 are kept, 30 are behind the camera, and 48 are below the horizon.
 
-Each refusal starts in one function and travels up through the functions that asked for it. Here's the trip for a tree:
+Each test lives in its own function, and each function asks the one below it first. Here's the stack for a radio tower:
 
 How a refusal travels
 ```dot
@@ -678,15 +678,11 @@ digraph refusal {
   ranksep=0.7;
   node [shape=box, fontname="Helvetica", fontsize=18, margin="0.25,0.12"];
   edge [fontname="Helvetica", fontsize=16];
-  segment [label="TreeSighting.segment_trees"];
-  scenery [label="Pipeline.scenery_sighting_of\nrefuses TooSmall"];
-  horizon [label="Pipeline.sighting_above_horizon_of\nrefuses BelowHorizon"];
-  sighting [label="Pipeline.sighting_of"];
-  ahead [label="RiderView.rider_point_ahead\nrefuses BehindCamera"];
-  segment -> scenery [dir=back, label="  gives back each tree's Try,\n  and keep_oks keeps the Oks"];
-  scenery -> horizon [dir=back, label="  passes up an Err"];
-  horizon -> sighting [dir=back, label="  passes up an Err"];
-  sighting -> ahead [dir=back, label="  passes up\n  an Err(BehindCamera)"];
+  horizon [label="Pipeline.sighting_above_horizon_of\ntests the horizon"];
+  sighting [label="Pipeline.sighting_of\ntests the near plane"];
+  ahead [label="RiderView.rider_point_ahead"];
+  horizon -> sighting [dir=back, label="  passes up\n  an Err(OutOfSight)"];
+  sighting -> ahead [dir=back, label="  passes up an Err(BehindCamera),\n  renamed OutOfSight"];
 }
 ```
 
@@ -696,35 +692,23 @@ A sighting function's answer is a `Try`, Roc's type for an answer that can fail.
 
 {{code Pipeline.sighting_of}}
 
-Its type ends in `Try(Pipeline.Sighted(kind), [BehindCamera])`: a sighting, or the one refusal this function gives. The last line wraps the spot and the kind in an `Ok`.
+Its type ends in `Try(Pipeline.Sighted(kind), [OutOfSight])`: a sighting, or `OutOfSight`. The last line wraps the spot and the kind in an `Ok`.
 
-The refusal itself comes from deeper down. `RiderView.rider_point_ahead` gives back a `Try` of its own, and the `?` after it decides what happens next. When the answer is an `Err(BehindCamera)`, the `?` ends `sighting_of` right there and gives back that same `Err`. When it's an `Ok`, the `?` unwraps it, and `foot` is the point ahead. So every line after the `?` runs only for a thing in front of the camera, and the body reads as one straight path.
+The test itself happens one level down. `RiderView.rider_point_ahead` gives back a `Try` of its own, and the `?` after it decides what happens next. When the answer is an `Ok`, the `?` unwraps it, and `foot` is the point ahead. When it's an `Err`, the `?` ends `sighting_of` right there and gives back an `Err`. So every line after the `?` runs only for a thing in front of the camera, and the body reads as one straight path.
 
-### Tests that stack
+`rider_point_ahead` works on bare points, and its refusal says what's wrong with a point: `BehindCamera`. A sighting's callers need only to know the thing is out of sight. So the `?` has a function after it, `|BehindCamera| OutOfSight`, and the `Err`'s tag goes through that function on its way up.
 
-The other two sighting functions each start from the one before and add a test. Here's the next one:
+### A test on top
+
+The next function asks `sighting_of` first, then makes a test of its own:
 
 {{code Pipeline.sighting_above_horizon_of}}
 
 Its `where` line says what the function needs from a kind: its height. The {{chapter Asking a kind}} chapter reads that line.
 
-The first line asks `sighting_of`, and its `?` passes a `BehindCamera` straight up. Then the function makes its own test, and `Err(BelowHorizon)` is its own refusal. So its type lists both tags, `[BehindCamera, BelowHorizon]`. Each sighting function's tag union lists every way it can fail, and a function that adds a test adds a tag.
+The first line asks `sighting_of`, and its plain `?` passes an `Err(OutOfSight)` straight up. Then the function tests the horizon, and gives back the same tag for its own refusal. So both functions have the same type after the arrow, and a caller treats the two refusals alike.
 
-The compiler holds a function to its list. Here a sighting's type lists only `BelowHorizon`, though the `?` after `sighting_of` can pass up a `BehindCamera`. The program is a small app of its own, and its `game` package is Safari Ride's own modules:
-
-{{fails refusal_left_out}}
-
-The message names the tag the list leaves out. Its first type is `Pipeline.Sighted(kind)` written out as a record, so the two types part only in their tags. A function's list must hold every tag the function can give back, and it may hold more. That's how the tests stack: `sighting_above_horizon_of` passes up the `[BehindCamera]` that `sighting_of` gives, and its own list, `[BehindCamera, BelowHorizon]`, holds that tag and one more.
-
-`Pipeline.scenery_sighting_of` starts from `sighting_above_horizon_of` and adds the last test: a thing that would stand under 2 pixels tall on the screen is `TooSmall`. So between them the three functions refuse a thing with one of three tags:
-
-| Refusal | Why |
-|---|---|
-| `BehindCamera` | It stands behind the camera, or too close in front of it to show. |
-| `BelowHorizon` | The ground curves away with distance, so far enough off, the horizon hides all of it. |
-| `TooSmall` | It would stand too small on the screen to be worth showing. |
-
-The trees, the billboard critters, the cat and the bird are sighted by `scenery_sighting_of`, which takes all three tests. A radio tower and the truck are kept however small they look. So a tower is sighted by `sighting_above_horizon_of`, which skips the `TooSmall` test, and the truck by `sighting_of`, which takes only the `BehindCamera` test.
+`Pipeline.scenery_sighting_of` stacks one more test on top in the same way: a thing that would stand under 2 pixels tall on the screen is out of sight too. The trees, the billboard critters, the cat and the bird take all three tests. A radio tower and the truck are kept however small they look, so a tower is sighted by `sighting_above_horizon_of`, and the truck by `sighting_of`.
 
 ### Where the refusals stop
 
@@ -732,27 +716,13 @@ A segment holds many trees, so its sighting module asks for all of their sightin
 
 {{code TreeSighting.segment_trees}}
 
-`scenery_sighting_of` takes a `camera`, which holds the vantage and the lens's focal length, because its size test needs the lens. `keep_oks` is a `List` function. It calls the function it's given on each item, keeps the `Ok` values, and drops the `Err`s. So `segment_trees` gives back a plain list of sightings, and the refusals stop there.
+`keep_oks` is a `List` function. It calls the function it's given on each item, keeps the `Ok` values, and drops the `Err`s. So `segment_trees` gives back a plain list of sightings, and the refusals stop there.
 
 There's one truck, so `Scene` matches on its answer instead:
 
-{{code Scene.scene_in_view from "trucks =" to "Err(NoTruck)"}}
+{{code Scene.scene_in_view from "trucks =" to "Err(OutOfSight) => []"}}
 
-The last `# ...` stands for the `match`'s closing brace and the rest of `scene_in_view`, so the `match` has just these two branches. A `match` on a `Try` covers every tag, as any `match` does. The truck's sighting can fail in two ways, and the next section shows where `NoTruck` comes from. The `Err` branch names both: a `|` between two patterns puts them in one branch. The empty list leaves the truck out of the frame.
-
-### Changing the reason
-
-`NoTruck` comes from the truck's own sighting module. Its answer has a name of its own:
-
-{{code TruckSighting.TruckFate}}
-
-Here's the function that gives it back:
-
-{{code TruckSighting.truck_in_view}}
-
-The last `?`, after `sighting_of`, passes up a `BehindCamera`, as in the other sightings. The first two have a function after them. A `?` with a function after it works like a plain `?`, except that an `Err`'s tag goes through the function on its way up. The function's argument is that tag.
-
-`RoutePlace.at_distance` refuses with `PastRouteEnd` once the truck has driven past the end of the route. `truck_in_view` gives one reason, `NoTruck`, whichever way the truck is gone from the road ahead. So the first `?`'s function turns `PastRouteEnd` into `NoTruck`, and the second turns `NotAhead` into `NoTruck`. `PastRouteEnd` is the only tag `at_distance` gives, so the one pattern covers it.
+The `# ...` lines stand for the rest of `scene_in_view`, the `match`'s closing brace among it. A `match` on a `Try` covers both tags, as any `match` covers every tag. An empty list leaves the truck out of the frame.
 
 ### All through the ride
 
@@ -767,7 +737,7 @@ The same kind of answer runs all through Safari Ride, wherever a function can co
 
 Each tag names one way its function can fail, and the ground patch has two.
 
-So a refusal is an ordinary value. A sighting gives back a `Try`, a `?` passes an `Err` up or unwraps an `Ok`, each test adds a tag to the type, and `keep_oks` or a `match` decides where the refusals stop. The kept sightings go on to be rendered. That leaves two questions from the trip, and the next two chapters answer them: what is a kind, and how does `rendering_of`, written once, get a sprite out of every kind?
+So a refusal is an ordinary value. A sighting gives back a `Try`, a `?` passes an `Err` up or unwraps an `Ok`, a function after the `?` can rename the tag on the way, and `keep_oks` or a `match` decides where the refusals stop. The kept sightings go on to be rendered. That leaves two questions from the trip, and the next two chapters answer them: what is a kind, and how does `rendering_of`, written once, get a sprite out of every kind?
 
 ## Nature types
 
@@ -967,8 +937,8 @@ A sighting also decides what doesn't get drawn. Here are more things from step 1
 |---|---|---|---|
 | The cat, frozen | 0.38 | 23.63 | drawn |
 | The nearest tree, a big green one | 3.45 | 21.63 | drawn |
-| The nearest tree behind the camera, a gold one | -8.09 | -8.36 | `BehindCamera` |
-| The nearest tree the earth's curve hides, a small green one five segments on | -1,433.43 | 446.00 | `BelowHorizon` |
+| The nearest tree behind the camera, a gold one | -8.09 | -8.36 | out of sight: behind the camera |
+| The nearest tree the earth's curve hides, a small green one five segments on | -1,433.43 | 446.00 | out of sight: below the horizon |
 | A big green tree just past it | -1,446.07 | 473.21 | drawn |
 | The radio tower past the end of the rider's segment | 20.40 | 355.61 | drawn |
 | The truck | 92.19 | 489.15 | drawn |
@@ -1335,13 +1305,13 @@ From here on, things are measured from the camera, which travels with the rider.
 
 `Pipeline.scenery_sighting_of`, from the {{chapter Refused}} chapter, puts each tree through three tests, one inside the next:
 
-1. `Pipeline.sighting_of` asks `RoadAhead.rider_point_at` where the tree's place on the road lies from the rider. The math layer chapter shows how. A tree nearer than the near plane, from the chapter A conifer, is `BehindCamera`.
-2. `Pipeline.sighting_above_horizon_of` asks whether the curve of the ground hides the whole tree. If it does, the tree is `BelowHorizon`.
-3. `scenery_sighting_of` itself measures the tree on the screen, through the camera's focal length. A tree under 2 pixels tall is `TooSmall`.
+1. `Pipeline.sighting_of` asks `RoadAhead.rider_point_at` where the tree's place on the road lies from the rider. The math layer chapter shows how. A tree nearer than the near plane, from the chapter A conifer, is `OutOfSight`.
+2. `Pipeline.sighting_above_horizon_of` asks whether the curve of the ground hides the whole tree. If it does, the tree is `OutOfSight`.
+3. `scenery_sighting_of` itself measures the tree on the screen, through the camera's focal length. A tree under 2 pixels tall is `OutOfSight`.
 
 `segment_trees` passes along `from_rider`, which says which segment of the road ahead the tree stands on, counted from the rider's. It's usually `Ahead(position)`: a segment so many ahead of the rider's.
 
-So the answer is a `Try`: a sighting, or one of those three reasons. `keep_oks`, in `segment_trees`, keeps the sightings and drops the reasons.
+So the answer is a `Try`: a sighting, or `OutOfSight`. `keep_oks`, in `segment_trees`, keeps the sightings and drops the refusals.
 
 ### Spending the detail
 
@@ -1736,7 +1706,7 @@ The ride's ground curves away, with a radius of 100 km, and everything stands on
 
 {{code EarthCurve.lowest_visible_height}}
 
-A tower hides whatever part of it is under that line, so as it gets further away, it sinks below the horizon from the bottom up. An 80-metre tower shows its tip until about 4.5 km. Once all of it is under the line, its sighting refuses it with `BelowHorizon`, as a tree too small to see is refused with `TooSmall`. The rule is the same for every kind with a height:
+A tower hides whatever part of it is under that line, so as it gets further away, it sinks below the horizon from the bottom up. An 80-metre tower shows its tip until about 4.5 km. Once all of it is under the line, its sighting refuses it as `OutOfSight`, as it does a tree too small to see. The rule is the same for every kind with a height:
 
 {{code Pipeline.sighting_above_horizon_of}}
 
