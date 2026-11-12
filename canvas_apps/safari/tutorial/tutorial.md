@@ -104,46 +104,11 @@ The brackets after `app` name the two things the app hands the platform, and the
 
 `SafariApp.canvas_app` is the whole ride as one value, and the `WasmApp.program` function fits it to the web platform. What it gives back is the app's `program`.
 
-## Functions
-
-Every chapter from here on reads Roc functions, so this short chapter takes one apart. It works out how dark the sky is at a step of the ride:
-
-{{code Sky.darkness_at}}
-
-In Roc, a function is an ordinary value, like a number. Its code is an anonymous function, and `=` gives it a name, the way `=` names any constant. Here's the function, piece by piece:
-
-| Code | Term | What it says |
-|---|---|---|
-| `##` | doc comment | Describes the code under it. |
-| `darkness_at : Clock -> Fraction` | type annotation | The function's name, a colon, and its type. `darkness_at` takes a `Clock`, which counts the ride's steps, and returns a `Fraction`, a number from 0 to 1. |
-| `->` | thin arrow | Separates what the function takes from what it returns. |
-| `darkness_at =` | constant | `=` names the function. |
-| `\|clock\|` | anonymous function | The function itself starts here. |
-| `clock` | argument | What the function is given. |
-| `{` and `}` | block | Names for values, then one last expression. The block's value is that expression's value. |
-| `height = ` | constant | A name for a value, which the lines below it use. |
-| `SunPath.height_at(clock)` | function call | Calls `height_at` from the `SunPath` module, with `clock` as its argument. |
-| `if` and its two branches | `if` expression | The block's last expression, so its value is what the function returns: one of the two calls, picked by whether the sun is still up. `SunPath.height_when_set`, the sun's height once it has set, is a constant from the same module. |
-
-A function with a short body can be one expression, written straight after the `|`. Here's one from the `Distance` module, which turns a number of metres, an `F64`, into a length:
-
-{{code Distance.metres}}
-
-The function and what it's given share the name `metres`, and inside the body `metres` is the number. The body is the one expression after `|metres|`, and the next chapter shows what `Distance.(metres)` does.
-
-The book often shows a function's annotation alone, until its body's turn comes. An annotation lists the things a function takes with commas between them:
-
-{{signatures Sky.color_at_darkness}}
-
-`color_at_darkness` takes an `RgbColor` and a `Fraction`, and returns an `RgbColor`.
-
-The next chapter tours Safari Ride's types, and every function along the way has one of these two shapes.
-
-## The pieces as types
+## Types
 
 Types are at the heart of every Roc program. A type says what a value holds, and the compiler checks every value against its type. So a good way to meet a Roc program is to read its types.
 
-This chapter takes one tour across Safari Ride, with a stop for each of the five pieces from the {{chapter The problem}} chapter: things, the world, the rider's view, motion and the person watching. On the way, you learn to read the types Roc programs are built from: numbers, records, tags, type variables and the types of functions. The functions come later, piece by piece.
+This chapter takes one tour across Safari Ride, with a stop for each of the five pieces from the {{chapter The problem}} chapter: things, the world, the rider's view, motion and the person watching. On the way, you learn to read the types Roc programs are built from: numbers, records, tags, type variables and the types of functions. The next chapter reads one function closely, and the rest come piece by piece.
 
 ### Numbers at the bottom
 
@@ -158,7 +123,9 @@ Here's what its parts say:
 | `Distance ::` | `Distance` names the type. The `::` makes it opaque: only the `Distance` module reads what's inside. |
 | `F64` | What's inside: one of Roc's number types, a 64-bit floating-point number. A `Distance` is a length in metres. |
 | `.{` and `}` | The type's own functions sit between these braces. |
-| `metres = \|metres\| Distance.(metres)` | `Distance.(metres)` wraps the number it's given as a `Distance`. |
+| `##` | A doc comment, which describes the code under it. |
+| `metres : F64 -> Distance` | The type of a function: `metres` takes an `F64` and returns a `Distance`. |
+| `metres = \|metres\| Distance.(metres)` | The function itself. `Distance.(metres)` wraps the number it's given as a `Distance`. |
 | `to_metres = \|Distance.(d)\| d` | The other way round: `Distance.(d)` opens a `Distance`, and the function gives back the number inside. |
 | `is_gt` to `is_lte` | These four let `>`, `>=`, `<` and `<=` compare two lengths. |
 | `is_eq : _` | This lets `==` compare two lengths, and the `_` asks the compiler to write its definition from the number inside. |
@@ -250,7 +217,7 @@ A step is one function's job, and its type tells the story:
 
 {{signatures RideInstant.next_or_restart}}
 
-`next_or_restart` gives back a type written in place, in square brackets: one of two tags. A tag can carry a value, and each of these carries the next moment. `Continued` carries the moment one step on, and `Restarted` carries the ride's first moment, once the rider has finished the route.
+When a function's body is long, the book shows its type annotation alone, until the body's turn comes. `next_or_restart` gives back a type written in place, in square brackets: one of two tags. A tag can carry a value, and each of these carries the next moment. `Continued` carries the moment one step on, and `Restarted` carries the ride's first moment, once the rider has finished the route.
 
 Inside the step, the four fields move in a fixed order, so the moves fit together: the rider reads what the cat or bird ahead is doing, and then moves. The second half of the book reads that order line by line.
 
@@ -270,7 +237,42 @@ Because the tour keeps every past moment, stepping back is as quick as stepping 
 
 On the way, you've read three ways to name a type. A `:` gives a type a short name, and any value of that shape fits it. A `::` makes a new, opaque type, and only its module reads inside it. A `:=` makes a new, nominal type, and any module reads its fields.
 
-We start with things: what a cow, a tree or a tower is in the code, and how a thing becomes a sprite.
+Every one of these types comes with functions, and every chapter from here on reads them. So the next chapter takes one function apart. After it, we start with things: what a cow, a tree or a tower is in the code, and how a thing becomes a sprite.
+
+## Functions
+
+Every chapter from here on reads Roc functions, so this short chapter takes one apart. It works out how dark the sky is at a step of the ride:
+
+{{code Sky.darkness_at}}
+
+In Roc, a function is an ordinary value, like a number. Its code is an anonymous function, and `=` gives it a name, the way `=` names any constant. Here's the function, piece by piece:
+
+| Code | Term | What it says |
+|---|---|---|
+| `##` | doc comment | Describes the code under it. |
+| `darkness_at : Clock -> Fraction` | type annotation | The function's name, a colon, and its type. `darkness_at` takes a `Clock`, which counts the ride's steps, and returns a `Fraction`, a number from 0 to 1. |
+| `->` | thin arrow | Separates what the function takes from what it returns. |
+| `darkness_at =` | constant | `=` names the function. |
+| `\|clock\|` | anonymous function | The function itself starts here. |
+| `clock` | argument | What the function is given. |
+| `{` and `}` | block | Names for values, then one last expression. The block's value is that expression's value. |
+| `height = ` | constant | A name for a value, which the lines below it use. |
+| `SunPath.height_at(clock)` | function call | Calls `height_at` from the `SunPath` module, with `clock` as its argument. |
+| `if` and its two branches | `if` expression | The block's last expression, so its value is what the function returns: one of the two calls, picked by whether the sun is still up. `SunPath.height_when_set`, the sun's height once it has set, is a constant from the same module. |
+
+A function with a short body can be one expression, written straight after the `|`. Here's one from the `Distance` module, which turns a number of metres, an `F64`, into a length:
+
+{{code Distance.metres}}
+
+The function and what it's given share the name `metres`, and inside the body `metres` is the number. The body is the one expression after `|metres|`, and `Distance.(metres)` wraps the number as a `Distance`.
+
+The book often shows a function's annotation alone, until its body's turn comes. An annotation lists the things a function takes with commas between them:
+
+{{signatures Sky.color_at_darkness}}
+
+`color_at_darkness` takes an `RgbColor` and a `Fraction`, and returns an `RgbColor`.
+
+The next chapter starts on the things beside the road, and every function from here on has one of these two shapes.
 
 ## Things
 
@@ -284,7 +286,7 @@ The ride has a lot of animals: herds of cows, some led by a bull, herds of pigs,
 
 Every other animal is a billboard: a flat picture of its emoji, standing on the grass and turned square to the camera, like a cardboard cutout. That takes far less code than modeling an animal, and it's charming.
 
-A billboard faces left or right, and one that faces right is its emoji mirrored. That's the `Billboard` type from the {{chapter The pieces as types}} chapter: an emoji, a height and a facing. Each emoji was traced into polygons ahead of time, and the `EmojiStill` module holds them as plain data. The tracing itself is beyond this book.
+A billboard faces left or right, and one that faces right is its emoji mirrored. That's the `Billboard` type from the {{chapter Types}} chapter: an emoji, a height and a facing. Each emoji was traced into polygons ahead of time, and the `EmojiStill` module holds them as plain data. The tracing itself is beyond this book.
 
 A billboard animal starts from a record of the `Billboard.Species` type: its emoji, and how tall a grown one stands. A plain `:` names that type, so any module reads its fields. Here are the cow's and the bull's, from the `CowHerd` module:
 

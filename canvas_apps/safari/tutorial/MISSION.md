@@ -187,7 +187,7 @@ The work is a linear pass, one chapter at a time, in book order, starting again 
 
 **The order of the pass:**
 
-1. Introduction, The problem, Platforms, The pieces as types, Things (the cow), Billboard Critters (tag unions and `match`), then the far tree (functions: a body, local names, `map`, paint order). Shapes is its own chapter before the far tree, or the far tree's opening; Steve decides when we get there. The modules and The world are open.
+1. Introduction, One page, The problem, Platforms, Types (once "The pieces as types"), Functions, Things (the cow), Billboard Critters (tag unions and `match`), then the far tree (functions: a body, local names, `map`, paint order). Shapes is its own chapter before the far tree, or the far tree's opening; Steve decides when we get there. The modules and The world are open.
 2. Nature types, Grass. Trees get only the far-tree chapter, plus a paragraph that tells the reader what the rest of the tree code does.
 3. The sun, The sky, Mountains, The road, Rails, Radio towers
 4. Stills, The elephant, the corner critters, Herds
