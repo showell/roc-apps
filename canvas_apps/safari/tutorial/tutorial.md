@@ -80,6 +80,8 @@ digraph pieces {
 | Motion | Persistence | The rider rides on, the truck drives ahead, the cat crosses the road and the sun goes down. At every step, something must carry each of them on from where it was, and the moves must fit together. The cat times its crossing to the rider coming toward it, and a cat in the road stops the rider speeding up. |
 | The person watching | Interaction | A viewer mostly sits back and watches, but they also need to pause the ride, step it forward and rewind it. So the program must give them controls they can find, and answer each one straight away. |
 
+Each of those pieces lives somewhere in the code. So before we read the first one, a short chapter shows how a Roc program is laid out: the platform it runs on, the modules it's made of, and the packages it uses.
+
 ## Platforms, packages and modules
 
 A Roc program runs on a platform, it's made of modules, and it can use packages. Those three words say where Safari Ride's code lives.
