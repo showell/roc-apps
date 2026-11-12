@@ -36,7 +36,7 @@ One function gives back the view for any moment of the ride:
 
 {{signatures FrameView.frame_view_at}}
 
-That line is a type annotation: the function's name, a colon, and its type. `frame_view_at` takes a `Route`, the whole road, and a `RideInstant`, one moment of the ride. After the arrow comes what it gives back, the moment's `FrameView`. One more function turns the view into a single list of shapes, tilted by the roll:
+That line is a type annotation: the function's name, a colon, and its type. `frame_view_at` takes a `Route`, the whole road, and a `RideInstant`, one moment of the ride, such as step 1,529. After the arrow comes what it gives back, the moment's `FrameView`. One more function turns the view, backdrop and all, into a single list of shapes, tilted by the roll:
 
 {{signatures FrameView.leaned_shapes}}
 

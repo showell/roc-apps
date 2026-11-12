@@ -29,7 +29,7 @@ import lib.Shapes
 ## order. It is nominal, not opaque: other modules read its fields, and the
 ## frame widget builds a view of some of the layers to draw them alone.
 FrameView := {
-	## What the ride's shapes are painted over.
+	## The sky, the sun and the grass, which everything else is painted over.
 	backdrop : FrameView.Backdrop,
 
 	## The mountains, darkened with the sky.
@@ -41,8 +41,9 @@ FrameView := {
 	## The things beside the road.
 	scene : Scene,
 
-	## The camera's roll. The whole frame, backdrop and shapes, turns the other
-	## way by this angle, about the screen's centre.
+	## The camera's roll. The camera turns one way, so the whole frame, backdrop
+	## and shapes, turns the other way by the same angle, about the screen's
+	## centre.
 	roll : Angle.Lean,
 }.{
 
