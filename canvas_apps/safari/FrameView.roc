@@ -29,7 +29,7 @@ import lib.Shapes
 ## order. It is nominal, not opaque: other modules read its fields, and the
 ## frame widget builds a view of some of the layers to draw them alone.
 FrameView := {
-	## What the ride is drawn over.
+	## What the ride's shapes are painted over.
 	backdrop : FrameView.Backdrop,
 
 	## The mountains, darkened as far as the sky is.

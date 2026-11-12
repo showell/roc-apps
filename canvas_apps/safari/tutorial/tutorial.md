@@ -16,41 +16,31 @@ Safari Ride is written in Roc, and this is a book about Roc. Roc is fun to read,
 
 You'll learn two things as you read: Roc, and how a ride like this one is animated. The animation is a handful of plain ideas. Each frame is one picture, and a step moves the world on before the next. Far things look small, and near things cover far ones. The book explains each of these in plain words where the ride first needs it, and the trigonometry behind them waits for a chapter of its own near the end. If you know animation already, skim those parts. If both are new to you, you'll get both at a walking pace.
 
-## A flip book
+## One page
 
-The picture below holds a real ride. The two dots are the rider and the truck on the road, and the lines of text read out where the ride is. Press play and let it run for a moment. Then pause it, and press the step-back button a few times.
+Here's one frame of Safari Ride, held still. It's step 1,529, with the cat out on the road:
 
-```widget step
-Press play, then pause, then step back.
+```widget frame moving
+Step 1,529 of the ride, held still.
 ```
 
-The ride steps back one moment at a time, as easily as it went forward. That ease comes from Roc, and it starts with a puzzle. A Roc value stays exactly as it was made, yet the ride is change from start to finish.
+In the code, a frame starts as one value of the `FrameView` type:
 
-The answer is a flip book. Each page is a still drawing. The motion comes from the flipping.
+{{code FrameView.FrameView from "FrameView := {" to "}.{"}}
 
-In Safari Ride, each page is a moment, and a moment is a value of the `RideInstant` type. Two functions do the work. Here's the first one's type annotation, the line that sits above the function itself:
+You can read it as English for now. Each field is a part of the picture you can see: the backdrop of sky, sun and grass; the mountains; the road and its ponds; the scene, which holds the things beside the road; and the roll, which tilts the whole frame when the bike leans into a bend.
 
-{{signatures RideInstant.next_or_restart}}
-
-Read it left to right. `next_or_restart` is the function's name, and after the colon comes its type. It takes a `Route`, the whole road, and a `RideInstant`, one moment. After the arrow comes what it gives back: the next moment, tagged `Continued`, or the ride's first moment again, tagged `Restarted`, once the rider reaches the end of the road. Either way, it gives back a new moment and leaves the old one as it was.
-
-The second function gives back the picture:
+One function gives back the view for any moment of the ride:
 
 {{signatures FrameView.frame_view_at}}
 
-It takes the road and a moment, and gives back a `FrameView`: everything one frame shows, ready to become a list of shapes. Under the Roc code sits the platform, the part of the program that talks to the screen, and the platform does the flipping. Thirty times a second, it asks for the next moment and paints that moment's picture.
+That line is a type annotation: the function's name, a colon, and its type. `frame_view_at` takes a `Route`, the whole road, and a `RideInstant`, one moment of the ride. After the arrow comes what it gives back, the moment's `FrameView`. One more function turns the view into a single list of shapes:
 
-The same moment always gives the same picture, so any page can be held still and studied, as this book does often. Every old moment stays as it was made, so the ride keeps them, and stepping back turns to an earlier page. Here's the function behind the step-back button you just pressed:
+{{signatures FrameView.leaned_shapes}}
 
-{{code Tour.step_back}}
+The platform under the Roc code paints that list on the screen. So a page takes one moment in and gives one list of shapes out.
 
-A `Tour` holds the moment on show, and a list of the moments before it. `Tour.(tour)` opens the tour to read its fields. `step_back` takes the last moment off that list and puts it on show. The line that does it is `{ ..tour, instant: previous_instant, past_instants }`: a new record, the same as `tour` but for those two fields. The old tour stays as it was.
-
-Now look at how little a moment holds:
-
-{{code RideInstant.RideInstant from "RideInstant := {" to "}.{"}}
-
-That's four things: the rider, the truck, the clock, and the plan for when the cat or the bird ahead starts to move. The ride derives everything else in a frame from those four and the road. The next chapter breaks the ride into the pieces we build.
+This chapter is a first pass. It names the parts of one page, and it skips how each part is made. The first half of the book holds this page still and builds it part by part, starting with the things beside the road. The second half turns the pages. The chapters ahead read Roc slowly, one idea at a time, so the syntax here can wait for them. The next chapter breaks the problem into the pieces we build.
 
 ## The problem
 
@@ -1849,6 +1839,42 @@ Pigs graze on the right of the road, near the end of a segment. The first two se
 The `match` is on the herd's two shapes. How the rider takes a herd is a separate choice, which the route makes: `Unnoticed` or `Distracting`. Only pigs can be `Distracting`, never cows. On the first two herds, the standout pig catches the rider's eye, and the rider slows down to look. That's about the rider more than the pig, so it waits for the rider's chapters.
 
 That's every critter that stands still, and the end of what we can say about one frame.
+
+## A flip book
+
+The picture below holds a real ride. The two dots are the rider and the truck on the road, and the lines of text read out where the ride is. Press play and let it run for a moment. Then pause it, and press the step-back button a few times.
+
+```widget step
+Press play, then pause, then step back.
+```
+
+The ride steps back one moment at a time, as easily as it went forward. That ease comes from Roc, and it starts with a puzzle. A Roc value stays exactly as it was made, yet the ride is change from start to finish.
+
+The answer is a flip book. Each page is a still drawing. The motion comes from the flipping.
+
+In Safari Ride, each page is a moment, and a moment is a value of the `RideInstant` type. Two functions do the work. Here's the first one's type annotation, the line that sits above the function itself:
+
+{{signatures RideInstant.next_or_restart}}
+
+Read it left to right. `next_or_restart` is the function's name, and after the colon comes its type. It takes a `Route`, the whole road, and a `RideInstant`, one moment. After the arrow comes what it gives back: the next moment, tagged `Continued`, or the ride's first moment again, tagged `Restarted`, once the rider reaches the end of the road. Either way, it gives back a new moment and leaves the old one as it was.
+
+The second function gives back the picture:
+
+{{signatures FrameView.frame_view_at}}
+
+It takes the road and a moment, and gives back a `FrameView`: everything one frame shows, ready to become a list of shapes. Under the Roc code sits the platform, the part of the program that talks to the screen, and the platform does the flipping. Thirty times a second, it asks for the next moment and paints that moment's picture.
+
+The same moment always gives the same picture, so any page can be held still and studied, as this book does often. Every old moment stays as it was made, so the ride keeps them, and stepping back turns to an earlier page. Here's the function behind the step-back button you just pressed:
+
+{{code Tour.step_back}}
+
+A `Tour` holds the moment on show, and a list of the moments before it. `Tour.(tour)` opens the tour to read its fields. `step_back` takes the last moment off that list and puts it on show. The line that does it is `{ ..tour, instant: previous_instant, past_instants }`: a new record, the same as `tour` but for those two fields. The old tour stays as it was.
+
+Now look at how little a moment holds:
+
+{{code RideInstant.RideInstant from "RideInstant := {" to "}.{"}}
+
+That's four things: the rider, the truck, the clock, and the plan for when the cat or the bird ahead starts to move. The ride derives everything else in a frame from those four and the road.
 
 ## The clock
 
