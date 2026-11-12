@@ -32,7 +32,7 @@ FrameView := {
 	## What the ride's shapes are painted over.
 	backdrop : FrameView.Backdrop,
 
-	## The mountains, darkened as far as the sky is.
+	## The mountains, darkened with the sky.
 	mountain_shapes : List(Shapes.Shape),
 
 	## The road itself and its ponds.
@@ -41,8 +41,8 @@ FrameView := {
 	## The things beside the road.
 	scene : Scene,
 
-	## The camera's roll: the whole frame, backdrop and shapes, turns by minus
-	## this about the screen's centre.
+	## The camera's roll. The whole frame, backdrop and shapes, turns the other
+	## way by this angle, about the screen's centre.
 	roll : Angle.Lean,
 }.{
 
