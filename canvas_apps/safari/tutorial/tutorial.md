@@ -30,13 +30,13 @@ In the code, a page starts as one value of the `FrameView` type:
 
 {{code FrameView.FrameView from "FrameView := {" to "}.{"}}
 
-You can read it as English for now. Four of the fields are parts of the picture you can see: the backdrop of sky and grass, with the sun when it's in view; the mountains; the road and its ponds; and the scene, which holds the things in view on and beside the road. The fifth field, the camera's roll, leans the whole page when the bike leans. The roll comes from the rider, so it waits for the second half of the book.
+You can read it as English for now. A `# ...` line marks code the book leaves out. Four of the fields are parts of the picture you can see: the backdrop of sky and grass, with the sun when it's in view; the mountains; the road and its ponds; and the scene, which holds the things in view on and beside the road. The fifth field, the camera's roll, leans the whole page when the bike leans. The roll comes from the rider, so it waits for the second half of the book.
 
 One function gives back the `FrameView` for any moment of the ride:
 
 {{signatures FrameView.frame_view_at}}
 
-That line is a type annotation: the function's name, a colon, and its type. `frame_view_at` takes a `Route`, the whole road, and a `RideInstant`, one moment of the ride, such as step 1,529. After the arrow comes what it gives back, the moment's `FrameView`. One more function turns the `FrameView`, backdrop and all, into a single list of shapes, leaned by the roll:
+That line is a type annotation: the function's name, a colon, and its type. `frame_view_at` takes a `Route`, the whole road, and a `RideInstant`, one moment of the ride, such as the one at step 1,529. After the arrow comes what it gives back, the moment's `FrameView`. One more function turns the `FrameView`, backdrop and all, into a single list of shapes, leaned by the roll:
 
 {{signatures FrameView.leaned_shapes}}
 

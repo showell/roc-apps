@@ -38,7 +38,7 @@ FrameView := {
 	## The road itself and its ponds.
 	ground_patch_shapes : List(Shapes.Shape),
 
-	## The things beside the road.
+	## The things on and beside the road.
 	scene : Scene,
 
 	## The camera's roll. The camera turns one way, so the whole frame, backdrop
