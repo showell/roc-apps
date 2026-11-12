@@ -14,18 +14,6 @@ Watch it all the way through. A motorcycle carries its rider down a long country
 
 Safari Ride is written in Roc, and this is a book about Roc. Roc is fun to read, and the book quotes the real code behind everything on the screen. If you're brand new to Roc, the [official Roc tutorial](https://www.roc-lang.org/tutorial) makes a quick first stop. The book explains each new Roc idea where the code first needs it.
 
-Here's a first taste. The ride puts one picture on the screen for each frame, and here's a picture held still, a cow and a bull on the grass beside the road:
-
-```widget cow
-A cow and a bull on the grass beside the road.
-```
-
-The last step in producing that picture is one call:
-
-{{code CowWidgetApp.picture_shapes}}
-
-A picture is a backdrop, the sky and the grass, with lists of shapes on top, far to near. `upright_space` holds the picture level. The Roc code describes the picture, and the platform paints it. The chapters ahead take each of these lists apart.
-
 You'll learn two things as you read: Roc, and how a ride like this one is animated. The animation is a handful of plain ideas. Each frame is one picture, and a step moves the world on before the next. Far things look small, and near things cover far ones. The book explains each of these in plain words where the ride first needs it, and the trigonometry behind them waits for a chapter of its own near the end. If you know animation already, skim those parts. If both are new to you, you'll get both at a walking pace.
 
 
