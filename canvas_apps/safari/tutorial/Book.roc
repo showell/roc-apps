@@ -102,7 +102,6 @@ Book := [].{
 		{ chapter: "Functions", slug: "functions" },
 		{ chapter: "Things", slug: "things" },
 		{ chapter: "Billboard Critters", slug: "billboard-critters" },
-		{ chapter: "Records", slug: "records" },
 		{ chapter: "Shapes", slug: "shapes" },
 		{ chapter: "A far tree", slug: "a-far-tree" },
 		{ chapter: "Types for places", slug: "types-for-places" },
