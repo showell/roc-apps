@@ -666,7 +666,7 @@ Here are some things from step 1,529 and what their sightings decide. `right` an
 | The radio tower past the end of the rider's segment | 20.40 | 355.61 | kept |
 | The truck | 92.19 | 489.15 | kept |
 
-A small tree far off sinks below the horizon, while a taller one just past it still shows its top. The ride's ground curves on a radius of 100 km, far tighter than the earth's, so its horizon is near. Of the 214 trees on the segments in view, 136 are kept, 30 are behind the camera, and 48 are below the horizon. The 136 kept trees all stand at least 2 pixels tall on the screen, so at this step every tree the horizon leaves in view passes the size test.
+A small tree far off sinks below the horizon, while a taller one just past it still shows its top. The ride's ground curves on a radius of 100 km, far tighter than the earth's, so its horizon is near. Distance counts the whole way, sideways too: the hidden tree stands about 1,500 metres from the camera. Of the 214 trees on the segments in view, 136 are kept, 30 are behind the camera, and 48 are below the horizon. Those three counts make up all 214, so at this step the size test, which comes later, keeps every tree the horizon leaves in view.
 
 Each test lives in its own function, and each function asks the one below it first. Here's the stack for a radio tower, which takes the first two tests:
 
@@ -708,7 +708,7 @@ The next function asks `sighting_of` first, then makes a test of its own:
 
 {{code Pipeline.sighting_above_horizon_of}}
 
-Its `where` line says what the function needs from a kind: its height. The {{chapter Asking a kind}} chapter reads that line. The ride's ground curves away from the rider, and `spot.drop()` is how far it has dropped below level at the thing's foot.
+Its `where` line says what the function needs from a kind: its height. The {{chapter Asking a kind}} chapter reads that line. A `Spot` gives its parts through methods, such as `lift()` and `foot()`. The ride's ground curves away from the rider, and `drop()` gives how far it has dropped below level at the thing's foot.
 
 The first line asks `sighting_of`, and its plain `?` passes an `Err(OutOfSight)` straight up. Then the function tests the horizon, and gives back the same tag for its own refusal. So both functions have the same type after the arrow, and a caller treats the two refusals alike.
 
