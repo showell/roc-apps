@@ -714,7 +714,7 @@ Here are some things from step 1,529 and what their sightings decide. `right` an
 | The radio tower past the end of the rider's segment | 20.40 | 355.61 | kept |
 | The truck | 92.19 | 489.15 | kept |
 
-A small tree far off sinks below the horizon, while a taller one just past it still shows its top. The ride's ground curves on a radius of 100 km, far tighter than the earth's, so its horizon is near. Distance counts the whole way, sideways too: the hidden tree stands about 1,500 metres from the camera. Of the 214 trees on the segments in view, 136 are kept, 30 are behind the camera, and 48 are below the horizon. Those three counts make up all 214, so at this step the size test, which comes later, keeps every tree the horizon leaves in view.
+A small tree far off sinks below the horizon, while a taller one just past it still shows its top. The ride's ground curves on a radius of 100 km, far tighter than the earth's, so its horizon is near. Distance counts the whole way, sideways too: the hidden tree stands about 1,500 metres from the camera. Of the 214 trees on the segments in view, 136 are kept, 30 are behind the camera, and 48 are below the horizon. Those three counts make up all 214, so at this step the size test, which comes later, keeps every tree the horizon leaves in view. The table says which test refused each tree. The program itself keeps only the answer that the tree is out of sight, as the code below shows.
 
 Each test lives in its own function, and each function asks the one below it first. Here's the stack for a radio tower, which takes the first two tests:
 
@@ -748,7 +748,7 @@ The test itself happens one level down. `RiderView.rider_point_ahead` gives back
 
 {{signatures RiderView.rider_point_ahead}}
 
-A sighting's callers need only to know the thing is out of sight. So the `?` has a function after it, `|BehindCamera| OutOfSight`, and the `Err`'s tag goes through that function on its way up. The function's argument is the tag, and `BehindCamera` is the only tag `rider_point_ahead` gives, so the one pattern covers it.
+A sighting's callers need only to know the thing is out of sight. So the `?` has a function after it, `|BehindCamera| OutOfSight`, and the `Err`'s tag goes through that function on its way up. The function's argument is written as the tag itself, a pattern like the ones a `match` lists, and `BehindCamera` is the only tag `rider_point_ahead` gives, so that one pattern covers it.
 
 ### A test on top
 
