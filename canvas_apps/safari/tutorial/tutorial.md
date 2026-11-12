@@ -115,15 +115,15 @@ In Roc, a function is an ordinary value, like a number. Its code is an anonymous
 | Code | Term | What it says |
 |---|---|---|
 | `##` | doc comment | Describes the code under it. |
-| `darkness_at : Clock -> Fraction` | type annotation | The function's name, a colon, and its type. `darkness_at` takes a `Clock`, which counts the ride's steps, and gives back a `Fraction`, a number from 0 to 1. |
-| `->` | thin arrow | Separates what the function takes from what it gives back. |
+| `darkness_at : Clock -> Fraction` | type annotation | The function's name, a colon, and its type. `darkness_at` takes a `Clock`, which counts the ride's steps, and returns a `Fraction`, a number from 0 to 1. |
+| `->` | thin arrow | Separates what the function takes from what it returns. |
 | `darkness_at =` | constant | `=` names the function. |
 | `\|clock\|` | anonymous function | The function itself starts here. |
 | `clock` | argument | What the function is given. |
 | `{` and `}` | block | Names for values, then one last expression. The block's value is that expression's value. |
 | `height = ` | constant | A name for a value, which the lines below it use. |
 | `SunPath.height_at(clock)` | function call | Calls `height_at` from the `SunPath` module, with `clock` as its argument. |
-| `if` and its two branches | `if` expression | The block's last expression, so its value is what the function gives back: one of the two calls, picked by whether the sun is still up. `SunPath.height_when_set`, the sun's height once it has set, is a constant from the same module. |
+| `if` and its two branches | `if` expression | The block's last expression, so its value is what the function returns: one of the two calls, picked by whether the sun is still up. `SunPath.height_when_set`, the sun's height once it has set, is a constant from the same module. |
 
 A function with a short body can be one expression, written straight after the `|`. Here's one from the `Distance` module, which turns a number of metres, an `F64`, into a length:
 
@@ -135,7 +135,7 @@ The book often shows a function's annotation alone, until its body's turn comes.
 
 {{signatures Sky.color_at_darkness}}
 
-`color_at_darkness` takes an `RgbColor` and a `Fraction`, and gives back an `RgbColor`.
+`color_at_darkness` takes an `RgbColor` and a `Fraction`, and returns an `RgbColor`.
 
 On to the pieces. The next chapter tours Safari Ride's types, and every function along the way has one of these two shapes.
 
