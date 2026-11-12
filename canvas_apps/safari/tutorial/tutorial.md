@@ -102,9 +102,9 @@ The brackets after `app` name the two things the app hands the platform, and the
 
 ## The pieces as types
 
-Types are at the heart of every Roc program. A type says what a value holds, and the compiler checks every value against its type before the program runs. So a good way to meet a Roc program is to read its types.
+Types are at the heart of every Roc program. A type says what a value holds, and the compiler checks every value against its type. So a good way to meet a Roc program is to read its types.
 
-This chapter takes one tour across Safari Ride, with a stop for each of the five pieces from the {{chapter The problem}} chapter: things, the world, the rider's view, motion and the person watching. At each stop we read the types for that piece. On the way, you learn to read the types Roc programs are built from: numbers, records, tags, type variables and the types of functions. The functions come later, piece by piece.
+This chapter takes one tour across Safari Ride, with a stop for each of the five pieces from the {{chapter The problem}} chapter: things, the world, the rider's view, motion and the person watching. On the way, you learn to read the types Roc programs are built from: numbers, records, tags, type variables and the types of functions. The functions come later, piece by piece.
 
 ### Numbers at the bottom
 
@@ -119,14 +119,14 @@ Here's what its parts say:
 | `Distance ::` | `Distance` names the type. The `::` makes it opaque: only the `Distance` module reads what's inside. |
 | `F64` | What's inside: one of Roc's number types, a 64-bit floating-point number. A `Distance` is a length in metres. |
 | `.{` and `}` | The type's own functions sit between these braces. |
-| `metres : F64 -> Distance` | `metres` names a function, and after the colon comes its type: it takes an `F64` and gives back a `Distance`. |
+| `metres : F64 -> Distance` | `metres` names a function that takes an `F64` and gives back a `Distance`. |
 | `metres = \|metres\| Distance.(metres)` | The function itself. Between the two `\|` characters is what it's given, and `Distance.(metres)` wraps that number as a `Distance`. |
 | `to_metres = \|Distance.(d)\| d` | The other way round: `Distance.(d)` opens a `Distance`, and the function gives back the number inside. |
 | `##` | A line that starts with `##` is a doc comment, which describes the code under it, as the one above `zero` does. |
 | `is_gt` to `is_lte` | These four let `>`, `>=`, `<` and `<=` compare two lengths. |
 | `is_eq : _` | This lets `==` compare two lengths, and the `_` asks the compiler to write its definition from the number inside. |
 
-Everywhere outside this module, a length is a `Distance`, and the compiler keeps it apart from every other number. The functions between the braces are the only ways to make a length, change one or read one. Each is a line for its type and a line for its definition. We read functions properly with the pieces that use them.
+Everywhere outside this module, a length is a `Distance`, and the compiler keeps it apart from every other number. The functions between the braces are the only ways to make a length, change one or read one.
 
 ### Things
 
@@ -143,23 +143,19 @@ Here's what each piece of it says:
 | Code | What it says |
 |---|---|
 | `Billboard ::` | `Billboard` names the type. The `::` makes it opaque, as it does `Distance`: only the `Billboard` module reads its fields. |
-| `{` and `}` | The curly braces hold a record type's fields together. |
 | `emoji : EmojiStill,` | `emoji` names a field, and `EmojiStill` names its type: the `EmojiStill` type in the `EmojiStill` module. |
 | `height : Distance,` | `height` names a field, and `Distance` names its type: the main type of the `Distance` module. |
 | `facing : Billboard.Facing,` | `facing` names a field, and `Billboard.Facing` names its type: the `Facing` type in the `Billboard` module. |
-| `.{` | The type's own functions and types start here, as they do in `Distance`. The listing stops here. |
 
 A module's main type has the module's own name, as `Billboard` and `Distance` do. Wherever it's used, every other type a module offers carries the module's name in front, as `EmojiStill` and `Billboard.Facing` do.
 
 A `Billboard.Facing` is one of two tags, `FacesLeft` or `FacesRight`. A tag is a name the compiler knows, and a type made of tags lists every one it allows.
 
-For each frame, a thing produces the shapes that show it, in the order they're painted. We call those shapes its sprite, and we use the word loosely. Here's the `Sprite` type:
+For each frame, a thing produces the shapes that show it, in the order they're painted. We call those shapes its sprite. Here's the `Sprite` type:
 
 {{code Sprite.Sprite from "Sprite ::" to ").{"}}
 
 A `Sprite` is opaque, like `Billboard`, and it holds a `List(Shapes.Shape)`: a list whose items are each a `Shape`, from the `Shapes` module. Nearly every shape has straight edges. A far tree's sprite is one rectangle of trunk under eight triangles.
-
-A frame's picture is the sky and the ground, with the sprites of everything in view on top, as one list of shapes, made fresh every frame. The Roc code describes that list, and the platform paints it. Seeing works this way in the real world, too. Light brings your eyes information, and your mind makes the picture.
 
 ### The world
 
@@ -167,11 +163,11 @@ A sprite says how a thing looks. Where it stands is the world's job. The `World`
 
 {{code World.SegmentPlan}}
 
-As in `Distance`, the lines that start with `##` are doc comments. A plain `:` gives the record type a short name: any record with these fields is a `SegmentPlan`, so any module can build a plan and read its fields. Here's the plan for the last stretch of road:
+A plain `:` gives the record type a short name: any record with these fields is a `SegmentPlan`, so any module can build a plan and read its fields. Here's the plan for the last stretch of road:
 
 {{code World.last_plan}}
 
-After a value's name, a `:` gives the value its type, so the first line says `last_plan` is a `SegmentPlan`, and the rest defines it. `Distance.metres(300.0)` calls the `metres` function in the `Distance` module. Each field holds a value of its own type: 300 metres of `Distance`, and a tag for each of the others. On this stretch, a cat crosses the road. The `World.route` value is the whole road, built from the plans once, before the ride starts, and every tree, herd, pond and tower takes its place along it.
+After a value's name, a `:` gives the value its type, so the first line says `last_plan` is a `SegmentPlan`, and the rest defines it. `Distance.metres(300.0)` calls the `metres` function in the `Distance` module. On this stretch, a cat crosses the road. The `World.route` value is the whole road, built from the plans once, before the ride starts, and every tree, herd, pond and tower takes its place along it.
 
 ```widget route
 The whole route from above, one stretch of road for each plan. A mark in the middle of a stretch shows that its plan has a cat cross or a bird fly.
@@ -201,7 +197,7 @@ Last, the thing is rendered:
 
 A rendering holds the thing's sprite, and its depth: how far ahead of the camera it stands. The kind is gone, so trees, cows and towers all meet in one list of renderings.
 
-To finish the frame, the `DepthSort` module sorts that list far to near, and the platform paints it in that order, as a painter paints the far hills before the near trees. So nearer things cover farther ones.
+To finish the frame, the `DepthSort` module sorts that list far to near, and the platform paints it in that order, as a painter paints the far hills before the near trees.
 
 ### Motion
 
@@ -217,15 +213,15 @@ A step is one function's job, and its type tells the story:
 
 {{signatures RideInstant.next_or_restart}}
 
-That's the function's type annotation, the line above its body. When a function's body is long, the book shows the annotation alone, until the body's turn comes. After the colon comes the function's type: the types it takes, then an arrow, then the type it gives back.
+When a function's body is long, the book shows its type annotation alone, until the body's turn comes.
 
-The `next_or_restart` function takes the route and one moment of the ride. It gives back a type written in place, in square brackets: one of two tags. A tag can carry a value, and each of these carries the next moment. `Continued` carries the moment one step on, and `Restarted` carries the ride's first moment, once the rider has finished the route.
+`next_or_restart` gives back a type written in place, in square brackets: one of two tags. A tag can carry a value, and each of these carries the next moment. `Continued` carries the moment one step on, and `Restarted` carries the ride's first moment, once the rider has finished the route.
 
 Inside the step, the four fields move in a fixed order, so the moves fit together: the rider reads what the cat or bird ahead is doing, and then moves. The second half of the book reads that order line by line.
 
 ### The person watching
 
-The controls are a handful of keys, named beside the ride. The app's model, what it keeps as it runs, is one line:
+The controls are a handful of keys, named beside the ride. The app's model is one line:
 
 {{code SafariApp.Model}}
 
@@ -237,9 +233,9 @@ Because the tour keeps every past moment, stepping back is as quick as stepping 
 
 ### Where we start
 
-That's five pieces, and the types for each. On the way, you've read a number type, records, tags, a type variable and a function's type. You've also read three ways to name a type. A `:` gives a type a short name, and any value of that shape fits it. A `::` makes a new, opaque type, and only its module reads inside it. A `:=` makes a new, nominal type, and any module reads its fields. You'll meet all of them on almost every page from here on.
+On the way, you've read three ways to name a type. A `:` gives a type a short name, and any value of that shape fits it. A `::` makes a new, opaque type, and only its module reads inside it. A `:=` makes a new, nominal type, and any module reads its fields.
 
-The rest of the book builds the pieces in order. So we start with things: what a cow, a tree or a tower is in the code, and how a thing becomes a sprite.
+We start with things: what a cow, a tree or a tower is in the code, and how a thing becomes a sprite.
 
 ## Things
 
