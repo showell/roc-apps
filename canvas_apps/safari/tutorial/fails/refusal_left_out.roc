@@ -13,8 +13,8 @@ sighting_left_out : Geom.Placed(kind),
 	vantage : Geom.Vantage,
 	from_rider : SegmentFromRider,
 } -> Try(Pipeline.Sighted(kind), [BelowHorizon])
-sighting_left_out = |placed, camera| {
-	sighting = Pipeline.sighting_of(placed, camera)?
+sighting_left_out = |placed, seen_from| {
+	sighting = Pipeline.sighting_of(placed, seen_from)?
 	Ok(sighting)
 }
 

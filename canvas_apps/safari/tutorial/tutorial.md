@@ -683,10 +683,10 @@ digraph refusal {
   horizon [label="Pipeline.sighting_above_horizon_of\nrefuses BelowHorizon"];
   sighting [label="Pipeline.sighting_of"];
   ahead [label="RiderView.rider_point_ahead\nrefuses BehindCamera"];
-  segment -> scenery [label="  asks for each tree,\n  keeps the Oks"];
-  scenery -> horizon [label="  asks first,\n  passes up its Err"];
-  horizon -> sighting [label="  asks first,\n  passes up its Err"];
-  sighting -> ahead [label="  asks first,\n  passes up its Err"];
+  segment -> scenery [dir=back, label="  gives back each tree's Try,\n  and keep_oks keeps the Oks"];
+  scenery -> horizon [dir=back, label="  passes up an Err"];
+  horizon -> sighting [dir=back, label="  passes up an Err"];
+  sighting -> ahead [dir=back, label="  passes up\n  an Err(BehindCamera)"];
 }
 ```
 
@@ -716,7 +716,7 @@ The compiler holds a function to its list. Here a sighting's type lists only `Be
 
 The message names the tag the list leaves out. Its last paragraph explains the stacking, too: a caller can take `sighting_of`'s `[BehindCamera]` into a wider union, such as `[BehindCamera, BelowHorizon]`, but the function itself gives back only the tags its own annotation lists.
 
-`Pipeline.scenery_sighting_of` starts from this one and adds the last test: a thing that would stand under 2 pixels tall on the screen is `TooSmall`. So between them the three functions refuse a thing with one of three tags:
+`Pipeline.scenery_sighting_of` starts from `sighting_above_horizon_of` and adds the last test: a thing that would stand under 2 pixels tall on the screen is `TooSmall`. So between them the three functions refuse a thing with one of three tags:
 
 | Refusal | Why |
 |---|---|
@@ -732,13 +732,13 @@ A segment holds many trees, so its sighting module asks for all of their sightin
 
 {{code TreeSighting.segment_trees}}
 
-`keep_oks` is a `List` function. It calls the function it's given on each item, keeps the `Ok` values, and drops the `Err`s. So `segment_trees` gives back a plain list of sightings, and the refusals stop there.
+`scenery_sighting_of` takes a `camera`, which holds the vantage and the lens's focal length, because its size test needs the lens. `keep_oks` is a `List` function. It calls the function it's given on each item, keeps the `Ok` values, and drops the `Err`s. So `segment_trees` gives back a plain list of sightings, and the refusals stop there.
 
 There's one truck, so `Scene` matches on its answer instead:
 
 {{code Scene.scene_in_view from "trucks =" to "Err(NoTruck)"}}
 
-The `# ...` lines stand for the rest of `scene_in_view`, and the `match` has just these two branches. A `match` on a `Try` covers every tag, as any `match` does. The truck's sighting can fail in two ways, so the `Err` branch names both: a `|` between two patterns puts them in one branch. The empty list leaves the truck out of the frame.
+The last `# ...` stands for the `match`'s closing brace and the rest of `scene_in_view`, so the `match` has just these two branches. A `match` on a `Try` covers every tag, as any `match` does. The truck's sighting can fail in two ways, so the `Err` branch names both: a `|` between two patterns puts them in one branch. The empty list leaves the truck out of the frame.
 
 ### Changing the reason
 
@@ -750,7 +750,9 @@ Here's the function that gives it back:
 
 {{code TruckSighting.truck_in_view}}
 
-The last `?`, after `sighting_of`, passes up a `BehindCamera`, as in the other sightings. `RoutePlace.at_distance` refuses with `PastRouteEnd` once the truck has driven past the end of the route. `truck_in_view` gives one reason, `NoTruck`, whichever way the truck is gone from the road ahead. So the function after the `?` turns `PastRouteEnd` into `NoTruck`, and the next line does the same for `NotAhead`. A `?` with a function after it works like a plain `?`, except that an `Err`'s tag goes through the function on its way up. The function's argument is that tag, and `PastRouteEnd` is the only tag `at_distance` gives, so the one pattern covers it.
+The last `?`, after `sighting_of`, passes up a `BehindCamera`, as in the other sightings. The first two have a function after them. A `?` with a function after it works like a plain `?`, except that an `Err`'s tag goes through the function on its way up. The function's argument is that tag.
+
+`RoutePlace.at_distance` refuses with `PastRouteEnd` once the truck has driven past the end of the route. `truck_in_view` gives one reason, `NoTruck`, whichever way the truck is gone from the road ahead. So the first `?`'s function turns `PastRouteEnd` into `NoTruck`, and the second turns `NotAhead` into `NoTruck`. `PastRouteEnd` is the only tag `at_distance` gives, so the one pattern covers it.
 
 ### All through the ride
 
