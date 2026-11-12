@@ -874,23 +874,23 @@ Roc matches a `where` clause by the method's name and type alone. Suppose the cl
 
 So a kind meets the pipeline with two methods inside its braces, `scenery_height` and `scenery_sprite`. The tree, the cow, the radio tower, the cat and the bird each have both, and the compiler checks both methods of every kind when the program compiles.
 
-That finishes the things beside the road. The rest of the frame is the world they stand in, and the next chapters build it from the ground up.
+That finishes how a thing beside the road reaches the frame. The rest of the frame is the world the things stand in, and the next chapters build it from the ground up.
 
 ## Grass
 
-The trees in the frame so far stand on a blank page. The grass goes under them next, and it's the simplest part of the ride: one rectangle.
+The ground under the things beside the road is grass, and it's the simplest part of the ride: one rectangle. Here's step 1,529 with only its trees and the grass under them:
 
 ```widget frame grass
 Step 1,529 of the ride: its trees, and the grass they stand on.
 ```
 
-The grass covers the bottom of the sky, and everything beside the road covers the grass. So the grass shows below the horizon wherever the rest of the frame leaves it uncovered, and that one rectangle is all the grass code the ride needs.
+The horizon is the line halfway down the screen where the ground meets the sky. The grass fills the screen below it, and the rest of the frame, the mountains, the road and the things beside it, covers the grass. So the grass shows wherever the rest of the frame leaves it uncovered, and that one rectangle is all the grass code the ride needs.
 
 The `Grass` module holds the grass's color by day, as a constant:
 
 {{code Grass.grass_color}}
 
-A constant in a module's braces carries an annotation, as a function does, and here the type is an `RgbColor`. `0x4A8F43` is the color in hex, the way a web page writes it after a `#`.
+A constant in a module carries an annotation, as a function does, and here the type is an `RgbColor`. `0x4A8F43` is the color in hex, the way a web page writes it after a `#`.
 
 As the sun sets, the grass darkens with the sky:
 
@@ -902,15 +902,69 @@ The grass's top edge sits one pixel above the horizon:
 
 {{code Grass.grass_top_y}}
 
-The horizon crosses the screen halfway down, at `Screen.horizon_y`. Starting the grass a pixel higher lays it over the sky's bottom edge, so the two meet cleanly when the frame turns.
+`Screen.horizon_y` is the horizon, and `y` grows downward, so `minus` one pixel moves the edge up. The sky, in the next chapter, stops at the horizon, so the grass overlaps it by a pixel and the two always meet.
 
 Here's the rectangle itself:
 
 {{code Grass.grass_shape}}
 
-`Screen.margin_rect` makes a rectangle from a top and a bottom, and it reaches 200 pixels past each side of the screen. The grass reaches 200 pixels below it as well. The whole frame turns when the bike leans, and the margin keeps the corners full for a lean of up to 30°.
+When the bike leans, the camera rolls with it, and the whole frame turns about the middle of the screen. A rectangle the size of the screen would turn with it and leave its corners bare. So `Screen.margin_rect` makes a rectangle from a top and a bottom that reaches `Screen.roll_margin`, 200 pixels, past each side of the screen, and the grass reaches 200 pixels below the screen too. That covers a lean of up to 30°, more than the ride ever leans.
 
-That rectangle is all the grass there is. The sky goes above it, and the next chapter starts with the one round thing in the sky: the sun.
+That rectangle is all the grass there is. The sky goes above it, in the next chapter.
+
+
+## The sky
+
+Above the grass is the sky, and in a frame the sky is two colors: one at the top of the frame and one at the horizon, with a fade between them.
+
+```widget frame sky
+Step 1,529 of the ride: the trees, the grass, and the sky over them.
+```
+
+A frame asks the `Sky` module for both colors at the ride's clock, and gets them back as one record:
+
+{{code Sky.colors_at}}
+
+`Sky.Colors` is a record of two `RgbColor`s, `top` and `horizon`. Each color has a function of its own.
+
+### The top of the sky
+
+The top of the sky blends from day into night, as far as the sky is dark:
+
+{{code Sky.sky_top_color}}
+
+`day_sky` and `night_sky` are two constants in the module, a pale blue and a deep one. `Sky.darkness_at` says how dark the sky is, as a `Fraction`. `ColorShade.color_between` does the blending:
+
+{{code ColorShade.color_between}}
+
+It takes one record, so every call names its three fields, and each of the color's three channels moves the same share of the way from `from` to `to`. `blend` is a function named inside the body, and the last line calls it once for each channel.
+
+The share is a `Fraction`, the `lib` package's ratio from 0 to 1. It's an opaque type, and its module builds it in two ways:
+
+| Function | For | What happens outside 0 to 1 |
+|---|---|---|
+| `Fraction.of` | a ratio that is in range by its arithmetic | it crashes, because the arithmetic behind it is wrong |
+| `Fraction.clamp` | a ratio that can rightly fall outside | it holds the ratio at 0 or 1 |
+
+Only the `Fraction` module can build a `Fraction`, and both ways keep the value in range. So every `Fraction` in the ride is from 0 to 1, by construction, and `color_between` can trust its `fraction`.
+
+### The horizon
+
+The horizon has the top's color, warmed toward red while the sun is near it:
+
+{{code Sky.sky_horizon_color}}
+
+`Sky.horizon_warmth_at` says how near the sun stands to the horizon, as a `Fraction`, and `horizon_warmth_at_most` holds the warmest horizon to 85% of the way to `sunset_red`, so a little of the sky's own color still shows.
+
+### The fade
+
+`Sky.sky_shape` paints the two colors as one shape:
+
+{{code Sky.sky_shape}}
+
+`Screen.above_horizon_rect` is the rectangle from above the top of the screen down to the horizon, 200 pixels past each side, as the grass's rectangle is. Its fill is `Linear`, a fade that runs straight down from the top of the screen to the horizon. The fade holds the top color for the first fifth of the way, `sky_top_stop`, then blends to the horizon's color.
+
+Every function here works from the clock alone, or from colors worked out from it. So the sky at step 1,529 is the same on every run of the ride, and the second half of the book turns the clock to watch it darken. One more part of the frame darkens with it: the mountains.
 
 ## The modules
 
@@ -1460,76 +1514,6 @@ Two tags say whether the sun is in view, so there's no `null` and no off-screen 
 {{code FrameView.frame_view_at}}
 
 Most of what `frame_view_at` calls takes the clock, and that's the hard part. The sun sinks a little with every step, and the sky's colors, the mountains and the truck's headlights all follow it. That's a lot of heavy lifting for a circle. It gets a chapter of its own, The setting sun, once things start to move.
-
-## The sky
-
-The sky changes all through the ride, but a frame only has to ask one question: what color is it right now? The answer depends only on the clock.
-
-New in this chapter:
-
-- Roc: `->` as a promise
-- Modules: `Sky`
-
-`Sky` is a set of functions that each take a clock and answer with a color.
-
-The modules around `Sky`
-```dot
-digraph sky {
-  node [shape=box, fontname="Helvetica"];
-  Sky [style=bold];
-  FrameView -> Sky [label="  asks for the colors and the darkness"];
-  Sky -> SunPath [label="  asks how high the sun is"];
-  Sky -> ColorShade [label="  blends two colors"];
-  Sky -> Fraction [label="  measures darkness and warmth"];
-  ColorShade -> Fraction [label="  takes a share of the way"];
-}
-```
-
-`Sky` sits near the bottom of the system. It imports `SunPath` and a few small types, and it knows nothing of the rider or the road. `FrameView`, above it, asks for the colors at a given clock, and for how dark the sky is.
-
-Every function in this chapter has a `->` arrow, not `=>`. That tells you the function has no effects. An effect is anything beyond working out an answer: reading a file, the time, a random number. The compiler holds the function to that. So the same clock always gives the same sky. If you don't see a `=>`, you only have to think about what the function is given.
-
-Here's the question being asked. `FrameView.frame_view_at` takes the clock from the current instant and hands it to `Sky.colors_at`, which answers both colors.
-
-{{code FrameView.frame_view_at from "sky_colors: Sky.colors_at" to "sky_colors: Sky.colors_at"}}
-
-### Two colors
-
-The sky is two colors, the top of the sky and the horizon. Here they are at five steps of the ride:
-
-| Step | Top of the sky | Horizon |
-|---|---|---|
-| 0 | `0x8ecae6` | `0x8ecae6` |
-| 2,000 | `0x86bfdb` | `0x86bfdb` |
-| 3,000 | `0x73a6c4` | `0x9a898f` |
-| 4,000 | `0x517697` | `0x9c6662` |
-| 5,000 | `0x243a5e` | `0x243a5e` |
-
-Early in the ride and at its end, the two colors match. In between, the horizon stays warmer than the top.
-
-Every color in the sky is a blend of two others, and a blend needs a ratio. `Fraction` is another small opaque type, a ratio from 0 to 1, and only its own block can build one, so a `Fraction` is always in range. It has two ways in. `Fraction.of` takes a ratio that can only be in range and crashes on anything else, because that would be a bug in the sum. `Fraction.clamp` takes a ratio that can rightly fall outside, and holds it at the nearest end.
-
-`color_between` takes one record argument, taken apart in its parameter list, so callers name every field. Each channel moves the same share of the way. An `RgbColor` is opaque, and its `red`, `green` and `blue` each answer a `U8`.
-
-{{code ColorShade.color_between}}
-
-`Sky.colors_at` answers two colors, and the function `sky_top_color` works out the first. It calls `color_between` to blend day into night, by how dark the sky is. `Sky.darkness_at` says how dark that is. It's a `Fraction` too, and The setting sun chapter works it out.
-
-{{code Sky.sky_top_color}}
-
-`sky_horizon_color` is the same sky, warmed toward red near sunset.
-
-{{code Sky.sky_horizon_color}}
-
-`Sky.sky_shape` paints the two as a gradient, down to the horizon. It stays on the top color for the first fifth of the way, then fades:
-
-{{code Sky.sky_shape from "Linear({" to "end_point: { x: Pixels.zero, y: Screen.horizon_y },"}}
-
-A color is one integer all along, `0xRRGGBB`, the form a `Brush` wants. `RgbColor.from_channels` builds one from three channels with method calls on plain numbers. Static dispatch finds `to_i64`, `shl_wrap` and `bitwise_or` on Roc's own types. That makes `from_channels` a leaf: it calls nothing of Safari Ride's own.
-
-{{code RgbColor.from_channels}}
-
-One more thing in the frame goes dark with the sky: the mountains.
 
 ## Mountains
 
