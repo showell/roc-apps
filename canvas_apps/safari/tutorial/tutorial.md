@@ -245,7 +245,7 @@ Every chapter from here on reads Roc functions, so this short chapter takes one 
 
 {{code Sky.darkness_at}}
 
-In Roc, a function is an ordinary value, like a number. Its code is an anonymous function, and `=` gives it a name, the way `=` names any constant. Here's the function, piece by piece:
+In Roc, a function is an ordinary value, like a number. Its code is an anonymous function, and `=` gives it a name. Roc calls a named value a constant: once named, it keeps its value. A constant inside a function's body gets its value afresh each time the function runs. Here's the function, piece by piece:
 
 | Code | Term | What it says |
 |---|---|---|
@@ -255,16 +255,16 @@ In Roc, a function is an ordinary value, like a number. Its code is an anonymous
 | `darkness_at =` | constant | `=` names the function. |
 | `\|clock\|` | anonymous function | The function itself starts here. |
 | `clock` | argument | What the function is given. |
-| `{` and `}` | block | Names for values, then one last expression. The block's value is that expression's value. |
+| `{` and `}` | block | Names for values, then one last expression. A block is an expression too, and its value is that last expression's value. |
 | `height = ` | constant | A name for a value, which the lines below it use. |
 | `SunPath.height_at(clock)` | function call | Calls `height_at` from the `SunPath` module, with `clock` as its argument. |
-| `if` and its two branches | `if` expression | The block's last expression, so its value is what the function returns: one of the two calls, picked by whether the sun is still up. `SunPath.height_when_set`, the sun's height once it has set, is a constant from the same module. |
+| `if` and its two branches | `if` expression | The block's last expression, so its value is what the function returns: one of the two calls, picked by whether the sun is still up. `SunPath.height_when_set`, the sun's height once it has set, is a constant from the same module. `darkness_while_up` and `darkness_after_set` are functions further down in the `Sky` module, and a module calls its own functions by their bare names. |
 
-A function with a short body can be one expression, written straight after the `|`. Here's one from the `Distance` module, which turns a number of metres, an `F64`, into a length:
+A function's body is always one expression. A block is one kind, and a short body can be a plain expression, written straight after the `|`. Here's one from the `Distance` module, which turns a number of metres, an `F64`, into a length:
 
 {{code Distance.metres}}
 
-The function and what it's given share the name `metres`, and inside the body `metres` is the number. The body is the one expression after `|metres|`, and `Distance.(metres)` wraps the number as a `Distance`.
+Inside the body, `metres` is the argument. The function itself is `Distance.metres`, so the two names stay apart. `Distance.(metres)` wraps the number as a `Distance`.
 
 The book often shows a function's annotation alone, until its body's turn comes. An annotation lists the things a function takes with commas between them:
 
@@ -272,7 +272,22 @@ The book often shows a function's annotation alone, until its body's turn comes.
 
 `color_at_darkness` takes an `RgbColor` and a `Fraction`, and returns an `RgbColor`.
 
-The next chapter starts on the things beside the road, and every function from here on has one of these two shapes.
+### Methods
+
+Many calls in the book put a value first, as in `height.minus(…)`. That's a method call. A method is a function associated with a particular type. Here's a function built from them, which works out how warm the horizon's color is, from how near the sun stands to the horizon:
+
+{{code Sky.horizon_warmth_at}}
+
+| Code | Term | What it says |
+|---|---|---|
+| `SunPath.height_at(clock)` | function call | Returns the sun's height, a `FarHeight`. |
+| `.minus(FarHeight.zero)` | method call | `FarHeight` has a `minus` method. The value before the dot is its first argument, so this is `FarHeight.minus(height, FarHeight.zero)`. |
+| `.abs()` | method call | A method whose one argument is the value before the dot. `minus` returned a `FarRise`, so this calls `FarRise.abs`. |
+| `Fraction.clamp(…).complement()` | function call, then method call | `clamp` keeps a number between 0 and 1, as a `Fraction`, and `complement` returns 1 minus it. |
+
+The compiler knows every value's type, so it turns each method call into a call of that type's own function when the program compiles. A type's methods are the functions between its `.{` and `}`, as `Distance`'s were. Even `>=` in `darkness_at` calls a method, `is_gte`.
+
+The next chapter starts on the things beside the road. Every function from here on has a block body or a one-expression body, and calls functions and methods like these.
 
 ## Things
 
