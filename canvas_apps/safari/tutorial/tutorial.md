@@ -654,7 +654,7 @@ So every thing beside the road makes the same trip: placed on the road, sighted 
 
 Every frame, the pipeline sights each thing on the road ahead, and some of the sightings refuse. A thing behind the camera, a thing the horizon hides and a thing too small to see all stay out of the frame. This chapter is about how a Roc function gives back an answer that can fail, and how that answer travels up through the functions that ask for it.
 
-Here are some things from step 1,529 and what their sightings decide. `right` and `forward` place each thing's foot from the camera, in metres, and a `forward` below zero is behind it. The road bends, so a tree on a segment far ahead can stand far to one side:
+Here are some things from step 1,529 and what their sightings decide. `right` and `forward` place each thing's foot from the camera, in metres, and a `forward` below zero is behind it. A thing less than 0.4 metres in front of the camera, short of what we call its near plane, counts as behind it too. The road bends, so a tree on a segment far ahead can stand far to one side:
 
 | What it is | `right` | `forward` | What its sighting decides |
 |---|---|---|---|
@@ -679,8 +679,8 @@ digraph refusal {
   node [shape=box, fontname="Helvetica", fontsize=18, margin="0.25,0.12"];
   edge [fontname="Helvetica", fontsize=16];
   horizon [label="Pipeline.sighting_above_horizon_of\ntests the horizon"];
-  sighting [label="Pipeline.sighting_of\ntests the near plane"];
-  ahead [label="RiderView.rider_point_ahead"];
+  sighting [label="Pipeline.sighting_of"];
+  ahead [label="RiderView.rider_point_ahead\ntests the near plane"];
   horizon -> sighting [dir=back, label="  passes up\n  an Err(OutOfSight)"];
   sighting -> ahead [dir=back, label="  passes up an Err(BehindCamera),\n  renamed OutOfSight"];
 }
@@ -696,7 +696,7 @@ Its type ends in `Try(Pipeline.Sighted(kind), [OutOfSight])`: a sighting, or `Ou
 
 The test itself happens one level down. `RiderView.rider_point_ahead` gives back a `Try` of its own, and the `?` after it decides what happens next. When the answer is an `Ok`, the `?` unwraps it, and `foot` is the point ahead. When it's an `Err`, the `?` ends `sighting_of` right there and gives back an `Err`. So every line after the `?` runs only for a thing in front of the camera, and the body reads as one straight path.
 
-`rider_point_ahead` works on bare points, and its refusal says what's wrong with a point: `BehindCamera`. A sighting's callers need only to know the thing is out of sight. So the `?` has a function after it, `|BehindCamera| OutOfSight`, and the `Err`'s tag goes through that function on its way up.
+`rider_point_ahead` works on bare points, and its refusal says what's wrong with a point: `BehindCamera`. A sighting's callers need only to know the thing is out of sight. So the `?` has a function after it, `|BehindCamera| OutOfSight`, and the `Err`'s tag goes through that function on its way up. The function's argument is the tag, and `BehindCamera` is the only tag `rider_point_ahead` gives, so the one pattern covers it.
 
 ### A test on top
 
@@ -704,11 +704,11 @@ The next function asks `sighting_of` first, then makes a test of its own:
 
 {{code Pipeline.sighting_above_horizon_of}}
 
-Its `where` line says what the function needs from a kind: its height. The {{chapter Asking a kind}} chapter reads that line.
+Its `where` line says what the function needs from a kind: its height. The {{chapter Asking a kind}} chapter reads that line. The ride's ground curves away from the rider, and `spot.drop()` is how far it has dropped below level at the thing's foot.
 
 The first line asks `sighting_of`, and its plain `?` passes an `Err(OutOfSight)` straight up. Then the function tests the horizon, and gives back the same tag for its own refusal. So both functions have the same type after the arrow, and a caller treats the two refusals alike.
 
-`Pipeline.scenery_sighting_of` stacks one more test on top in the same way: a thing that would stand under 2 pixels tall on the screen is out of sight too. The trees, the billboard critters, the cat and the bird take all three tests. A radio tower and the truck are kept however small they look, so a tower is sighted by `sighting_above_horizon_of`, and the truck by `sighting_of`.
+`Pipeline.scenery_sighting_of` stacks one more test on top in the same way: a thing that would stand under 2 pixels tall on the screen is out of sight too. The trees, the billboards, the cat and the bird take all three tests. A radio tower is kept however small it looks, so it's sighted by `sighting_above_horizon_of`. The truck takes only the near-plane test, so it's sighted by `sighting_of`.
 
 ### Where the refusals stop
 
@@ -722,7 +722,7 @@ There's one truck, so `Scene` matches on its answer instead:
 
 {{code Scene.scene_in_view from "trucks =" to "Err(OutOfSight) => []"}}
 
-The `# ...` lines stand for the rest of `scene_in_view`, the `match`'s closing brace among it. A `match` on a `Try` covers both tags, as any `match` covers every tag. An empty list leaves the truck out of the frame.
+The `# ...` lines stand for the rest of `scene_in_view`, the `match`'s closing brace among it, so the `match` has just these two branches. A `match` on a `Try` covers both tags, as any `match` covers every tag. An empty list leaves the truck out of the frame.
 
 ### All through the ride
 
