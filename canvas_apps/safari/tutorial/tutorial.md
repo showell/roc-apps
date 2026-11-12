@@ -710,7 +710,7 @@ Its `where` line says what the function needs from a kind: its height. The {{cha
 
 The first line asks `sighting_of`, and its `?` passes a `BehindCamera` straight up. Then the function makes its own test, and `Err(BelowHorizon)` is its own refusal. So its type lists both tags, `[BehindCamera, BelowHorizon]`. Each sighting function's tag union lists every way it can fail, and a function that adds a test adds a tag.
 
-The compiler holds a function to its list. Here a sighting's type lists only `BelowHorizon`, though the `?` after `sighting_of` can pass up a `BehindCamera`. The program is a small app of its own, which uses Safari Ride's modules:
+The compiler holds a function to its list. Here a sighting's type lists only `BelowHorizon`, though the `?` after `sighting_of` can pass up a `BehindCamera`. The program is a small app of its own, and its `game` package is Safari Ride's own modules:
 
 {{fails refusal_left_out}}
 
@@ -738,7 +738,7 @@ There's one truck, so `Scene` matches on its answer instead:
 
 {{code Scene.scene_in_view from "trucks =" to "Err(NoTruck)"}}
 
-The last `# ...` stands for the `match`'s closing brace and the rest of `scene_in_view`, so the `match` has just these two branches. A `match` on a `Try` covers every tag, as any `match` does. The truck's sighting can fail in two ways, so the `Err` branch names both: a `|` between two patterns puts them in one branch. The empty list leaves the truck out of the frame.
+The last `# ...` stands for the `match`'s closing brace and the rest of `scene_in_view`, so the `match` has just these two branches. A `match` on a `Try` covers every tag, as any `match` does. The truck's sighting can fail in two ways, and the next section shows where `NoTruck` comes from. The `Err` branch names both: a `|` between two patterns puts them in one branch. The empty list leaves the truck out of the frame.
 
 ### Changing the reason
 
