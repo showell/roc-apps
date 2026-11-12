@@ -628,9 +628,7 @@ The screen shows what the camera sees. So for each frame, the pipeline sights ev
 
 The `Spot` is the thing's place seen from the camera, as the {{chapter Types for places}} chapter showed. This `spot` is the one `tree_sprite` took from its setting in the {{chapter A far tree}} chapter.
 
-### Refused
-
-Some placed things stay off the screen. A sighting can refuse a thing, with a tag that says why: `BehindCamera`, `BelowHorizon` or `TooSmall`. The rest of this chapter follows the sightings that are kept.
+Some placed things stay off the screen, because a sighting can refuse a thing. The rest of this chapter follows the sightings that are kept.
 
 ### Rendered
 
@@ -688,9 +686,9 @@ The other two sighting functions each start from the one before and add a test. 
 
 Its `where` line says what the function needs from a kind: its height. The {{chapter Asking a kind}} chapter reads that line.
 
-The first line asks `sighting_of`, and its `?` passes a `BehindCamera` straight up. Then the function makes its own test, and `Err(BelowHorizon)` is its own refusal. So its type lists both tags, `[BehindCamera, BelowHorizon]`. The tag union in a `Try` names every way a function can fail, and a function that adds a test adds a tag.
+The first line asks `sighting_of`, and its `?` passes a `BehindCamera` straight up. Then the function makes its own test, and `Err(BelowHorizon)` is its own refusal. So its type lists both tags, `[BehindCamera, BelowHorizon]`. Each sighting function's tag union lists every way it can fail, and a function that adds a test adds a tag.
 
-`Pipeline.scenery_sighting_of` starts from this one and adds the last test, so between them the three functions refuse a thing with one of three tags:
+`Pipeline.scenery_sighting_of` starts from this one and adds the last test: a thing that would stand under 2 pixels tall on the screen is `TooSmall`. So between them the three functions refuse a thing with one of three tags:
 
 | Refusal | Why |
 |---|---|
@@ -712,7 +710,7 @@ There's one truck, so `Scene` matches on its answer instead:
 
 {{code Scene.scene_in_view from "trucks =" to "Err(NoTruck)"}}
 
-A `match` on a `Try` covers every tag, as any `match` does. The truck's sighting can fail in two ways, so the `Err` branch names both, and the empty list leaves the truck out of the frame.
+The `match` has just these two branches. A `match` on a `Try` covers every tag, as any `match` does. The truck's sighting can fail in two ways, so the `Err` branch names both: a `|` between two patterns puts them in one branch. The empty list leaves the truck out of the frame.
 
 ### Changing the reason
 
@@ -720,7 +718,7 @@ A `match` on a `Try` covers every tag, as any `match` does. The truck's sighting
 
 {{code TruckSighting.truck_in_view from "truck_in_view = |" to "? |NotAhead| NoTruck"}}
 
-`RoutePlace.at_distance` refuses with `PastRouteEnd` once the truck has driven past the end of the route. `truck_in_view` gives one reason for each way the truck can be gone from the road ahead, so the function after the `?` turns `PastRouteEnd` into `NoTruck`, and the next line does the same for `NotAhead`. A `?` with a function after it works like a plain `?`, except that an `Err`'s tag goes through the function on its way up.
+`RoutePlace.at_distance` refuses with `PastRouteEnd` once the truck has driven past the end of the route. `truck_in_view` gives one reason, `NoTruck`, whichever way the truck is gone from the road ahead. So the function after the `?` turns `PastRouteEnd` into `NoTruck`, and the next line does the same for `NotAhead`. A `?` with a function after it works like a plain `?`, except that an `Err`'s tag goes through the function on its way up. The function's argument is that tag, and `PastRouteEnd` is the only tag `at_distance` gives, so the one pattern covers it.
 
 ### All through the ride
 
@@ -1301,7 +1299,7 @@ From here on, things are measured from the camera, which travels with the rider.
 
 {{code Pipeline.scenery_sighting_of}}
 
-`Pipeline.scenery_sighting_of`, from the Nature types chapter, puts each tree through three tests, one inside the next:
+`Pipeline.scenery_sighting_of`, from the {{chapter Refused}} chapter, puts each tree through three tests, one inside the next:
 
 1. `Pipeline.sighting_of` asks `RoadAhead.rider_point_at` where the tree's place on the road lies from the rider. The math layer chapter shows how. A tree nearer than the near plane, from the chapter A conifer, is `BehindCamera`.
 2. `Pipeline.sighting_above_horizon_of` asks whether the curve of the ground hides the whole tree. If it does, the tree is `BelowHorizon`.
