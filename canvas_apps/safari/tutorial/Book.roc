@@ -109,6 +109,7 @@ Book := [].{
 		{ chapter: "Refused", slug: "refused" },
 		{ chapter: "Nature types", slug: "nature-types" },
 		{ chapter: "Asking a kind", slug: "asking-a-kind" },
+		{ chapter: "Grass", slug: "grass" },
 	]
 
 	## The dividers and the slugs a book is cut with.

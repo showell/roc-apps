@@ -874,6 +874,44 @@ Roc matches a `where` clause by the method's name and type alone. Suppose the cl
 
 So a kind meets the pipeline with two methods inside its braces, `scenery_height` and `scenery_sprite`. The tree, the cow, the radio tower, the cat and the bird each have both, and the compiler checks both methods of every kind when the program compiles.
 
+That finishes the things beside the road. The rest of the frame is the world they stand in, and the next chapters build it from the ground up.
+
+## Grass
+
+The trees in the frame so far stand on a blank page. The grass goes under them next, and it's the simplest part of the ride: one rectangle.
+
+```widget frame grass
+Step 1,529 of the ride: its trees, and the grass they stand on.
+```
+
+The grass covers the bottom of the sky, and everything beside the road covers the grass. So the grass shows below the horizon wherever the rest of the frame leaves it uncovered, and that one rectangle is all the grass code the ride needs.
+
+The `Grass` module holds the grass's color by day, as a constant:
+
+{{code Grass.grass_color}}
+
+A constant in a module's braces carries an annotation, as a function does, and here the type is an `RgbColor`. `0x4A8F43` is the color in hex, the way a web page writes it after a `#`.
+
+As the sun sets, the grass darkens with the sky:
+
+{{code Grass.grass_color_at}}
+
+`Sky.color_at_darkness` takes a color by day and how dark the sky is, and returns the color dimmed to match. Everything the sky lights dims through it, from the grass to the truck.
+
+The grass's top edge sits one pixel above the horizon:
+
+{{code Grass.grass_top_y}}
+
+The horizon crosses the screen halfway down, at `Screen.horizon_y`. Starting the grass a pixel higher lays it over the sky's bottom edge, so the two meet cleanly when the frame turns.
+
+Here's the rectangle itself:
+
+{{code Grass.grass_shape}}
+
+`Screen.margin_rect` makes a rectangle from a top and a bottom, and it reaches 200 pixels past each side of the screen. The grass reaches 200 pixels below it as well. The whole frame turns when the bike leans, and the margin keeps the corners full for a lean of up to 30°.
+
+That rectangle is all the grass there is. The sky goes above it, and the next chapter starts with the one round thing in the sky: the sun.
+
 ## The modules
 
 Safari Ride splits cleanly in two: the ride, and the view of the ride. In this chapter we map the modules on both sides, look at the thin layer of JavaScript that runs them, and open up one sighting.
@@ -1375,32 +1413,6 @@ Far trees are cheap. They get eight triangles and a plain trunk. A cone costs a 
 So `World` holds every tree's place for the whole ride. Each frame derives its sightings fresh, from those places and the camera, and the next frame derives them all again.
 
 Most things in a frame work this way: placed once, then sighted and rendered for each frame. The grass is simpler still.
-
-## Grass
-
-The grass is one rectangle. It paints over the bottom of the sky, and everything along the road paints over it.
-
-New in this chapter:
-
-- Modules: `Grass`
-
-`Grass` has one color by day:
-
-{{code Grass.grass_color}}
-
-The backdrop is what's behind the ride. `FrameView.backdrop_shapes` paints it as the sky, the sun and the grass, and this is the grass, its color dimmed as far as the sky is dark:
-
-{{code Grass.grass_shape}}
-
-It starts a pixel above the horizon, so the grass overlaps the sky by a pixel and the two meet cleanly:
-
-{{code Grass.grass_top_y}}
-
-It's much wider than the screen because the whole picture tilts when the rider leans, and the corners have to stay filled.
-
-That rectangle is all the grass there is. Everything along the road paints over it, so wherever the frame shows nothing else, the rider sees grass.
-
-The other big thing in the backdrop is more interesting.
 
 ## The sun
 
