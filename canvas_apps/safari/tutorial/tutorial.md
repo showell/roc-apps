@@ -18,19 +18,21 @@ You'll learn two things as you read: Roc, and how a ride like this one is animat
 
 ## A flip book
 
-Have you ever made a flip book? You draw a stick figure in the corner of every page of a notebook, and you move it a little on each page. Then you flip the pages fast, and the stick figure runs. Every drawing holds still. The motion comes from the flipping.
+The picture below holds a real ride. The two dots are the rider and the truck on the road, and the lines of text read out where the ride is. Press play and let it run for a moment. Then pause it, and press the step-back button a few times.
 
-Safari Ride works the same way. Thirty times a second, it puts a new picture on the screen. Each picture is one page of the flip book, and we call it a frame.
+```widget step
+Press play, then pause, then step back.
+```
 
-If you've written a game, you probably moved things by changing them. Each time through the game's loop, you added a little to the player's position, and the old position was gone. Roc takes another road. A Roc value stays exactly as it was made. So to move the rider on, a Roc function takes one moment of the ride and gives back a new moment, with the rider a little farther down the road. The old moment stays as it was.
+The ride steps back one moment at a time, as easily as it went forward. That ease comes from Roc, and it starts with a puzzle. A Roc value stays exactly as it was made, yet the ride is change from start to finish.
 
-A second function takes a moment and gives back its picture: the sky, the road, the cows and the trees, as a list of shapes. Under the Roc code sits the platform, the part of the program that talks to the screen. The platform does the flipping. Thirty times a second, it asks for the next moment and paints that moment's picture.
+The answer is a flip book. Each page is a still drawing. The motion comes from the flipping.
 
-The ride keeps its old moments, so you can flip backward, too. Pause the ride, and the left arrow key steps it back a page. The same moment always gives the same picture, so you can hold one page still and study it. This book does that a lot.
+In Safari Ride, each page is a moment, and a moment is a value. One function takes a moment and gives back the next one, a new value beside the old. A second function takes a moment and gives back its picture, as a list of shapes. Under the Roc code sits the platform, the part of the program that talks to the screen, and the platform does the flipping. Thirty times a second, it asks for the next moment and paints that moment's picture.
 
-Roc also checks your work. Every value has a type, which says what kind of value it is. A distance on the road is a `Distance`, and a size on the screen is in `Pixels`. Both are numbers, but they're different types, and the compiler, which turns your Roc code into a program, tells you if you mix them up.
+Every old moment stays as it was made, so the ride keeps them, and stepping back turns to an earlier page. The same moment always gives the same picture, so any page can be held still and studied, as this book does often.
 
-That's two big ideas: values that stay put, and types that keep them straight. The next chapter breaks the ride into the pieces we build.
+Now look at how little a moment holds. It has just four things: the rider, the truck, the clock, and the plan for when the cat or the bird ahead starts to move. The ride derives everything else in a frame from those four and the road. The next chapter breaks the ride into the pieces we build.
 
 ## The problem
 
