@@ -666,7 +666,29 @@ Here are some things from step 1,529 and what their sightings decide. `right` an
 | The radio tower past the end of the rider's segment | 20.40 | 355.61 | kept |
 | The truck | 92.19 | 489.15 | kept |
 
-A small tree far off sinks below the horizon, while a taller one just past it still shows its top. Distance counts the whole way, sideways too: the hidden tree stands about 1,500 metres from the camera, and the truck about 500. Of the 214 trees on the segments in view, 136 are kept, 30 are behind the camera, and 48 are below the horizon.
+A small tree far off sinks below the horizon, while a taller one just past it still shows its top. Distance counts the whole way, sideways too: the hidden tree stands about 1,500 metres from the camera, and the truck about 500. Of the 214 trees on the segments in view, 136 are kept, 30 are behind the camera, and 48 are below the horizon. The 136 kept trees all stand at least 2 pixels tall on the screen, so at this step every tree the horizon leaves in view passes the `TooSmall` test.
+
+Each refusal starts in one function and travels up through the functions that asked for it. Here's the trip for a tree:
+
+How a refusal travels
+```dot
+digraph refusal {
+  rankdir=TB;
+  nodesep=0.6;
+  ranksep=0.7;
+  node [shape=box, fontname="Helvetica", fontsize=18, margin="0.25,0.12"];
+  edge [fontname="Helvetica", fontsize=16];
+  segment [label="TreeSighting.segment_trees"];
+  scenery [label="Pipeline.scenery_sighting_of\nrefuses TooSmall"];
+  horizon [label="Pipeline.sighting_above_horizon_of\nrefuses BelowHorizon"];
+  sighting [label="Pipeline.sighting_of"];
+  ahead [label="RiderView.rider_point_ahead\nrefuses BehindCamera"];
+  segment -> scenery [label="  asks for each tree,\n  keeps the Oks"];
+  scenery -> horizon [label="  asks first,\n  passes up its Err"];
+  horizon -> sighting [label="  asks first,\n  passes up its Err"];
+  sighting -> ahead [label="  asks first,\n  passes up its Err"];
+}
+```
 
 ### An answer that can fail
 
@@ -687,6 +709,12 @@ The other two sighting functions each start from the one before and add a test. 
 Its `where` line says what the function needs from a kind: its height. The {{chapter Asking a kind}} chapter reads that line.
 
 The first line asks `sighting_of`, and its `?` passes a `BehindCamera` straight up. Then the function makes its own test, and `Err(BelowHorizon)` is its own refusal. So its type lists both tags, `[BehindCamera, BelowHorizon]`. Each sighting function's tag union lists every way it can fail, and a function that adds a test adds a tag.
+
+The compiler holds a function to its list. Here a sighting's type lists only `BelowHorizon`, though the `?` after `sighting_of` can pass up a `BehindCamera`. The program is a small app of its own, which uses Safari Ride's modules:
+
+{{fails refusal_left_out}}
+
+The message names the tag the list leaves out. Its last paragraph explains the stacking, too: a caller can take `sighting_of`'s `[BehindCamera]` into a wider union, such as `[BehindCamera, BelowHorizon]`, but the function itself gives back only the tags its own annotation lists.
 
 `Pipeline.scenery_sighting_of` starts from this one and adds the last test: a thing that would stand under 2 pixels tall on the screen is `TooSmall`. So between them the three functions refuse a thing with one of three tags:
 
@@ -710,15 +738,19 @@ There's one truck, so `Scene` matches on its answer instead:
 
 {{code Scene.scene_in_view from "trucks =" to "Err(NoTruck)"}}
 
-The `match` has just these two branches. A `match` on a `Try` covers every tag, as any `match` does. The truck's sighting can fail in two ways, so the `Err` branch names both: a `|` between two patterns puts them in one branch. The empty list leaves the truck out of the frame.
+The `# ...` lines stand for the rest of `scene_in_view`, and the `match` has just these two branches. A `match` on a `Try` covers every tag, as any `match` does. The truck's sighting can fail in two ways, so the `Err` branch names both: a `|` between two patterns puts them in one branch. The empty list leaves the truck out of the frame.
 
 ### Changing the reason
 
-`NoTruck` comes from the truck's own sighting module:
+`NoTruck` comes from the truck's own sighting module. Its answer has a name of its own:
 
-{{code TruckSighting.truck_in_view from "truck_in_view = |" to "? |NotAhead| NoTruck"}}
+{{code TruckSighting.TruckFate}}
 
-`RoutePlace.at_distance` refuses with `PastRouteEnd` once the truck has driven past the end of the route. `truck_in_view` gives one reason, `NoTruck`, whichever way the truck is gone from the road ahead. So the function after the `?` turns `PastRouteEnd` into `NoTruck`, and the next line does the same for `NotAhead`. A `?` with a function after it works like a plain `?`, except that an `Err`'s tag goes through the function on its way up. The function's argument is that tag, and `PastRouteEnd` is the only tag `at_distance` gives, so the one pattern covers it.
+Here's the function that gives it back:
+
+{{code TruckSighting.truck_in_view}}
+
+The last `?`, after `sighting_of`, passes up a `BehindCamera`, as in the other sightings. `RoutePlace.at_distance` refuses with `PastRouteEnd` once the truck has driven past the end of the route. `truck_in_view` gives one reason, `NoTruck`, whichever way the truck is gone from the road ahead. So the function after the `?` turns `PastRouteEnd` into `NoTruck`, and the next line does the same for `NotAhead`. A `?` with a function after it works like a plain `?`, except that an `Err`'s tag goes through the function on its way up. The function's argument is that tag, and `PastRouteEnd` is the only tag `at_distance` gives, so the one pattern covers it.
 
 ### All through the ride
 
