@@ -1,0 +1,25 @@
+# The sentences the book's prose keeps that hold a voice word. The rules are
+# MISSION D2 and D11: a negative in disguise ("refuses", "leaves out") still
+# says what something isn't, and a verb such as "knows" or "decides" gives code
+# a will or the wrong agent. `gates/book_negatives.shale words=voice` finds
+# every sentence of the new chapters that holds one, and each is rewritten or
+# listed here with its kind.
+#
+# fix disguised-negative: says what a thing isn't, in a positive word: "The news is what this one refuses to do."
+# fix will-giving: gives code a will, or credits the wrong agent: "the module knows which encounters ask anything of the rider".
+# keep refusal: the right agent really refuses, such as the compiler rejecting a program: "The compiler refuses it."
+# keep character: the agent is a character in the ride, whose mind the code models: "the rider decides how hard to lean".
+#
+# Each line below is `kind: the sentence`, the sentence exactly as the lint
+# prints it, and its kind is a `keep` kind.
+
+refusal: The next chapter takes the sightings that are refused.
+refusal: ## Refused
+refusal: The compiler refuses it.
+refusal: `map_ok` works on a `Try`: it applies its function to an `Ok` and leaves an `Err` as it is, so a quad wholly behind the camera stays refused, and `Scene` drops those with `keep_oks`.
+refusal: Once all of it is under the line, `Pipeline.sighting_above_horizon_of` refuses it as `OutOfSight`, as in the {{chapter Refused}} chapter.
+refusal: Its sighting has already refused a tower the horizon hides wholly, so here that case is a `crash`: a stop with a message, for a case that would be a bug.
+refusal: A rod with both ends behind it is refused.
+refusal: `Lens.far_point` says where something infinitely far off lands on the screen, and refuses with `BehindCamera` when it lies behind the camera.
+refusal: It refuses a point short of that as `BehindCamera`, and returns one at or past it as a `RiderPointAhead`.
+refusal: A single point is in view or refused, but a solid's face can be both at once.

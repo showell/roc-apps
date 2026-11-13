@@ -30,7 +30,7 @@ In the code, a page starts as one value of the `FrameView` type:
 
 {{code FrameView.FrameView from "FrameView := {" to "}.{"}}
 
-You can read it as English for now. A `# ...` line marks code the book leaves out. Four of the fields are parts of the picture you can see: the backdrop of sky and grass, with the sun when it's in view; the mountains; the road and its ponds; and the scene, which holds the things in view on and beside the road. The fifth field is the camera's roll: how far the whole page leans when the bike leans. The roll comes from the rider, so the second half of the book explains it.
+You can read it as English for now. A `# ...` line marks a gap in the quoted code. Four of the fields are parts of the picture you can see: the backdrop of sky and grass, with the sun when it's in view; the mountains; the road and its ponds; and the scene, which holds the things in view on and beside the road. The fifth field is the camera's roll: how far the whole page leans when the bike leans. The roll comes from the rider, so the second half of the book explains it.
 
 One function gives back the `FrameView` for any moment of the ride:
 
@@ -368,7 +368,7 @@ Each emoji shows its animal from the side, so a billboard faces left or right. T
 
 {{code Billboard.Facing}}
 
-The type is a list of tags in square brackets. A tag is a name the compiler knows, and it's a value in its own right: `FacesLeft` is a value, and so is `FacesRight`. A type made of tags is a tag union, and a value of a tag union is always exactly one of its tags.
+The type is a list of tags in square brackets. A tag is a value in its own right: `FacesLeft` is a value, and so is `FacesRight`. A type made of tags is a tag union, and a value of a tag union is always exactly one of its tags.
 
 The {{chapter Things}} chapter showed the annotation of `Billboard.scenery_sprite` alone. Here's the whole function:
 
@@ -1250,7 +1250,7 @@ Here's the step, whole:
 
 {{code RideInstant.next}}
 
-`next_or_restart`, from the {{chapter A flip book}} chapter, calls this step until the rider reaches the end of the road. The doc comment on `next` gives the order, and the order matters. The rider moves first, reading where the encounter ahead has got to. Then the clock ticks. Then the world answers the rider who has just moved: the truck aims at how far along the route the rider now is, and `plan_at_next_step` keeps the encounter plan, forgets it at a new segment, or makes one from this step's rider. The last line puts the four together into the next moment, and the old moment stays as it was.
+`next_or_restart`, from the {{chapter A flip book}} chapter, calls this step until the rider reaches the end of the road. The doc comment on `next` gives the order, and the order matters. The rider moves first, reading where the encounter ahead has got to. Then the clock ticks. Then the world answers the rider who has just moved: the truck aims at how far along the route the rider now is, and `plan_at_next_step` keeps the encounter plan, drops it at a new segment, or makes one from this step's rider. The last line puts the four together into the next moment, and the old moment stays as it was.
 
 The rider reads the encounter as a stage, where its animation has got to:
 
@@ -1366,7 +1366,7 @@ A tower's sighting passes `Beacon.disc` two things: the point on the screen wher
 
 {{signatures Beacon.disc}}
 
-The disc is 3 metres in radius, and see-through as far as the beacon is dim. `disc` returns `TooDim` for a beacon below a brightness of one part in fifty, and `TooSmall` for a disc whose radius comes to under half a pixel. A refused beacon is left out of the picture.
+The disc is 3 metres in radius, and see-through as far as the beacon is dim. `disc` returns `TooDim` for a beacon below a brightness of one part in fifty, and `TooSmall` for a disc whose radius comes to under half a pixel. The picture holds a disc for every other beacon.
 
 Everything `Beacon` works with comes in as arguments: a tower's key, a clock, a spot and a scale. So its tests build those values directly, apart from any tower or ride. They check the head starts, the phase, the blink and the opposite blink halfway along, and the disc's size, color and refusals.
 
@@ -2385,7 +2385,7 @@ A test's data can sit beside it as a plain definition. Here's a motorcycle to st
 
 An `expect` can use only what its module imports. `Motorcycle` imports only what stepping a motorcycle needs, so its tests build one directly. A check that needs several modules goes in `gates/expects/`, a folder of modules made only for checks. So every import of a ride module serves the ride's own code.
 
-The gate makes every `expect` count. It finds each line in the source that starts with `expect`, and each one has to print `PASS` exactly once when `roc test` runs. So an `expect` in a module left out of every test run fails the gate.
+The gate makes every `expect` count. It finds each line in the source that starts with `expect`, and each one has to print `PASS` exactly once when `roc test` runs. So an `expect` has to sit in a module that a test run reaches, or the gate fails.
 
 ### Crashes that check
 
@@ -2508,7 +2508,7 @@ The four read each other, so the order inside a step matters. As the {{chapter T
 3. The truck aims at how far along the route the rider now is.
 4. The step keeps the encounter plan, drops it at a new segment, or makes one from the rider who has just moved.
 
-The rider reacts to the cat on every step. The cat reacts to the rider once, when its plan is made, and after that it plays on the clock alone. Swap the truck's line with the rider's, and the truck aims at where the rider was a step ago. Stepping back skips the step entirely: `Tour.step_back` takes an earlier moment off its list.
+The rider reacts to the cat on every step. The cat reacts to the rider once, when its plan is made, and after that it plays on the clock alone. Swap the truck's line with the rider's, and the truck aims at where the rider was a step ago. Stepping back reuses a moment instead: `Tour.step_back` takes an earlier moment off its list.
 
 ### Where each thing comes from
 

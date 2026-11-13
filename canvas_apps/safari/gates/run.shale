@@ -191,7 +191,7 @@ const FAST_FRAME_DEPTH = "5700"
 -- widgets' checks, their one test run and their 13 wasm builds, which cost about
 -- 7 s of it, measured 2026-11-08. A cold run of the checks and the test took
 -- 23 s on 2026-11-07, before the builds.
-const CPU_BUDGET_MS = {lints = 25000, expects = 50000, widgets = 50000, tutorial = 5000, book_names = 2000, book_negatives = 1000, proof = 60000, page = 25000}
+const CPU_BUDGET_MS = {lints = 25000, expects = 50000, widgets = 50000, tutorial = 5000, book_names = 2000, book_negatives = 2000, proof = 60000, page = 25000}
 const COLD = arg("cold", "") == "1"
 const RELEASE = arg("release", "") == "1"
 
@@ -639,14 +639,18 @@ end
 -- gates/book_negatives.shale finds a negative sentence in the new chapters'
 -- prose that canvas_apps/safari/book_negatives.txt doesn't keep. The count is
 -- held at zero, so a new negative fails here until it's rewritten or kept.
+-- A second run, `words=voice`, does the same for the voice reader's words
+-- against canvas_apps/safari/book_voice.txt.
 function book_negatives()
-  local r = run({"shale", "--root", ".", BOOK_NEGATIVES, "held=0"}, {timeout_ms = 60000, tail = 100})
-  if r.ended ~= "exit" or get(r, "code", -1) ~= 0 then
-    print(trim(r.out))
-    fail("safari gates: book_negatives ended " .. r.ended .. " " .. get(r, "code", -1) .. ": the book holds a negative sentence its table doesn't keep")
-  end
-  for line in lines(r.out) do
-    if re_match(line, "^book_negatives: negative [0-9]+, ") then print(line) end
+  for words in {"negatives", "voice"} do
+    local r = run({"shale", "--root", ".", BOOK_NEGATIVES, "held=0", "words=" .. words}, {timeout_ms = 60000, tail = 100})
+    if r.ended ~= "exit" or get(r, "code", -1) ~= 0 then
+      print(trim(r.out))
+      fail("safari gates: book_negatives words=" .. words .. " ended " .. r.ended .. " " .. get(r, "code", -1) .. ": the book holds a sentence its table doesn't keep")
+    end
+    for line in lines(r.out) do
+      if re_match(line, "^book_(negatives|voice): negative [0-9]+, ") then print(line) end
+    end
   end
   return nil
 end

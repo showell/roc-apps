@@ -12,14 +12,18 @@
 --               math layer` by default: the chapters above it are the new book,
 --               and the rest is the old draft. It moves down a chapter at a
 --               time, as the pass does;
---   table       the negative sentences the book keeps, by default
---               canvas_apps/safari/book_negatives.txt;
+--   words       `negatives` by default, or `voice` for the disguised
+--               negatives and will-giving verbs of the voice reader;
+--   table       the sentences the book keeps, by default
+--               canvas_apps/safari/book_negatives.txt, or book_voice.txt for
+--               `words=voice`;
 --   held        how many unlisted negative sentences to expect, which the
 --               merge gate gives it.
 --
 -- The prose is every line above `stop_at` outside a ``` fence, except a line
 -- that starts `{{`. Inline code, between backticks, is taken out before the
--- words are read, so `doesn't` in a quoted name is never a hit. A table row's
+-- words are read, so `doesn't` in a quoted name is never a hit, and so is a
+-- link to a chapter, `{{chapter Refused}}`, whose title is no sentence's voice. A table row's
 -- cells are read one by one. A sentence ends at `.`, `!` or `?` followed by a
 -- space or the line's end, so `4.5` and `Distance.metres` stay in one.
 --
@@ -47,7 +51,6 @@ use("cookbook:roc/findings.shale")
 
 const MANUSCRIPT = arg("manuscript", "canvas_apps/safari/tutorial/tutorial.md")
 const STOP_AT = arg("stop_at", "Appendix: the patterns")
-const TABLE_FILE = arg("table", "canvas_apps/safari/book_negatives.txt")
 const HELD = arg("held", "")
 
 -- The words of D2, and their near friends: `unless`, `rather than`, `lacks`,
@@ -58,7 +61,26 @@ const NEGATIVE_WORDS = {
   "wouldn't", "shouldn't", "couldn't", "hasn't", "haven't", "hadn't", "mustn't", "needn't", "ain't",
   "unless", "rather than", "lacks", "lack", "hardly", "barely",
 }
-const NEGATIVE = "\\b(" .. join(NEGATIVE_WORDS, "|") .. ")\\b"
+
+-- The voice reader's words (MISSION, "The voice reader"): negatives in
+-- disguise (D2), and verbs that give code a will (D11). Only the third-person
+-- forms are listed, so "you know" is never a hit.
+const VOICE_WORDS = {
+  "refuses", "refused", "leaves out", "left out", "stays out", "stay out", "spares", "skips",
+  "omits", "free of", "knows", "decides", "wants", "trusts", "remembers", "forgets", "insists",
+}
+
+-- `words=voice` reads for the voice words against their own table; the
+-- default reads for the negatives.
+const WORD_SET = arg("words", "negatives")
+const WORD_SETS = {
+  negatives = {label = "book_negatives", words = NEGATIVE_WORDS, table = "canvas_apps/safari/book_negatives.txt"},
+  voice = {label = "book_voice", words = VOICE_WORDS, table = "canvas_apps/safari/book_voice.txt"},
+}
+if not has_key(WORD_SETS, WORD_SET) then fail("book_negatives: words= is negatives or voice, not `" .. WORD_SET .. "`") end
+const LABEL = WORD_SETS[WORD_SET].label
+const TABLE_FILE = arg("table", WORD_SETS[WORD_SET].table)
+const NEGATIVE = "\\b(" .. join(WORD_SETS[WORD_SET].words, "|") .. ")\\b"
 
 -- A sentence: code spans whole, and a `.`, `!` or `?` that a space doesn't
 -- follow inside it.
@@ -77,7 +99,8 @@ end
 -- The negative words in `sentence`, its code taken out, in the order they
 -- come.
 function negatives_in(sentence)
-  local plain = lower(re_replace(substitute(sentence, "’", "'", {missing_ok = true}), "`[^`]*`", " "))
+  local no_code = re_replace(substitute(sentence, "’", "'", {missing_ok = true}), "`[^`]*`", " ")
+  local plain = lower(re_replace(no_code, "\\{\\{chapter [^}]*\\}\\}", " "))
   local found = {}
   for m in re_find_all(plain, NEGATIVE) do push(found, m.group) end
   return found
@@ -117,14 +140,14 @@ function prose_negatives(text)
       end
     end
   end
-  if not is_stopped then fail("book_negatives: no heading `## " .. STOP_AT .. "` in " .. MANUSCRIPT) end
+  if not is_stopped then fail(LABEL .. ": no heading `## " .. STOP_AT .. "` in " .. MANUSCRIPT) end
   return {found = found, read_count = read_count}
 end
 
 -- The table as `{kinds, rows, by_sentence}`: `kinds` from each kind's name to
 -- `keep` or `fix`, and each row `{kind, sentence, line}`.
 function exception_table()
-  if not exists(TABLE_FILE) then fail("book_negatives: no table " .. TABLE_FILE) end
+  if not exists(TABLE_FILE) then fail(LABEL .. ": no table " .. TABLE_FILE) end
   local kinds = {}
   local rows = {}
   local by_sentence = {}
@@ -132,7 +155,7 @@ function exception_table()
   for raw in lines(read(TABLE_FILE)) do
     number = number + 1
     local l = trim(raw)
-    local at = "book_negatives: " .. TABLE_FILE .. ":" .. number .. ": "
+    local at = LABEL .. ": " .. TABLE_FILE .. ":" .. number .. ": "
     local kind = re_find(l, "^# (keep|fix) ([a-z-]+): +[^ ]")
     if kind ~= nil then
       if has_key(kinds, kind.groups[2]) then fail(at .. "the kind `" .. kind.groups[2] .. "` is defined twice") end
@@ -149,7 +172,7 @@ function exception_table()
       by_sentence[sentence] = true
     end
   end
-  if #keys(kinds) == 0 then fail("book_negatives: " .. TABLE_FILE .. " defines no kinds") end
+  if #keys(kinds) == 0 then fail(LABEL .. ": " .. TABLE_FILE .. " defines no kinds") end
   return {kinds = kinds, rows = rows, by_sentence = by_sentence}
 end
 
@@ -158,7 +181,7 @@ end
 function judged()
   local exceptions = exception_table()
   local prose = prose_negatives(read(MANUSCRIPT))
-  if prose.read_count == 0 then fail("book_negatives: no prose in " .. MANUSCRIPT .. " above `" .. STOP_AT .. "`") end
+  if prose.read_count == 0 then fail(LABEL .. ": no prose in " .. MANUSCRIPT .. " above `" .. STOP_AT .. "`") end
   local negatives = {}
   local kept = {}
   for f in prose.found do
@@ -174,7 +197,7 @@ function judged()
       push(unused, TABLE_FILE .. ":" .. row.line .. ": unused_exception: no negative sentence of the prose is `" .. row.sentence .. "`")
     end
   end
-  local summary = "book_negatives: negative " .. #negatives .. ", unused_exception " .. #unused .. ", " .. #prose.found .. " negative sentences of " .. prose.read_count .. " read above `" .. STOP_AT .. "`, " .. #exceptions.rows .. " kept in the table"
+  local summary = LABEL .. ": negative " .. #negatives .. ", unused_exception " .. #unused .. ", " .. #prose.found .. " negative sentences of " .. prose.read_count .. " read above `" .. STOP_AT .. "`, " .. #exceptions.rows .. " kept in the table"
   return {negatives = negatives, unused = unused, summary = summary}
 end
 
@@ -188,6 +211,6 @@ else
   for l in VERDICT.negatives do push(all, l) end
   for l in VERDICT.unused do push(all, l) end
   print_findings(VERDICT.summary, all)
-  if HELD ~= "" then fail("book_negatives: held at negative " .. HELD .. " and unused_exception 0") end
+  if HELD ~= "" then fail(LABEL .. ": held at negative " .. HELD .. " and unused_exception 0") end
   if #all > 0 then fail(VERDICT.summary) end
 end
