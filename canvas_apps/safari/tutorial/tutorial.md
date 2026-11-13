@@ -487,13 +487,13 @@ The crown is eight tiers, stacked from the tip down. Each tier is a record of th
 
 {{code TreeShapes.Tier}}
 
-A `Fraction` is a number from 0 to 1. `top` and `bottom` say where the tier starts and ends, as shares of the crown's height, measured down from the tip. `width` says how wide the tier's bottom is, as a share of the crown at its widest.
+`top` and `bottom` say where the tier starts and ends, as shares of the crown's height, measured down from the tip. `width` says how wide the tier's bottom is, as a share of the crown at its widest.
 
 The widths start as a list of eight plain numbers:
 
 {{code TreeShapes.tier_widths}}
 
-In a type, square brackets list tags. In a value, as here, they make a list, and every item in a list has the same type. These eight are `F64`s, chosen by eye, from the narrow top tier to the full-width bottom one.
+In a type, square brackets list tags. In a value, as here, they make a list, and every item in a list has the same type. These eight are `F64`s, chosen by eye.
 
 `map` calls a function on each item of a list and returns a list of the answers. Here we hand it `Fraction.of` by name, and `Fraction.of` turns an `F64` into a `Fraction`, so `tier_widths` is a `List(Fraction)`.
 
@@ -503,7 +503,7 @@ Each tier also needs a top and a bottom. They follow a rule, so another `map` wo
 
 {{code TreeShapes.tiers}}
 
-`map_with_index` is `map` with one more thing for the function: the item's place in the list, counting from 0. The function here is written in place, right where `map_with_index` takes it, and it returns a record. Each tier's top is a tenth of the crown lower than the top of the tier above, and its bottom is three tenths below its top, so each tier overlaps the next. `index` is a `U64`, a whole number, and `to_f64` turns it into an `F64` for the division.
+`map_with_index` is `map` with one more thing for the function: the item's place in the list, counting from 0. The function here is written in place, and returns a record. Each tier's top is a tenth of the crown lower than the top of the tier above, and its bottom is three tenths below its top, so each tier overlaps the next.
 
 ### Freezing the tiers
 
@@ -511,7 +511,7 @@ Each tier also needs a top and a bottom. They follow a rule, so another `map` wo
 
 {{expect TreeShapes.tiers}}
 
-An `expect` is a test. Its body is a `Bool`, and `roc test` runs every `expect` in a program and reports each one that comes out `False`. This one turns each tier into a list of its three numbers, so that the table can be plain numbers. The table is the tiers, written out by hand. Change a width or the rule, and the test reports it.
+An `expect` is a test. Its body is a `Bool`, and `roc test` runs every `expect` in a program and reports each one that comes out `False`. Its table is the tiers, written out by hand. Change a width or the rule, and the test reports it.
 
 ### A triangle for each tier
 
@@ -519,17 +519,17 @@ A tier is a set of shares. A triangle is corners on the screen. Between the two 
 
 {{code Camera.Upright}}
 
-The camera works the outline out from where the tree stands, by perspective. The {{chapter The math layer}} chapter, near the end of the book, explains perspective. Three small functions read the crown's place from the outline:
+The camera works the outline out from where the tree stands, by perspective, which the {{chapter The math layer}} chapter explains near the end of the book. Three small functions read the crown's place from the outline:
 
 {{signatures TreeShapes.crown_top_y TreeShapes.crown_height TreeShapes.crown_half_width}}
 
-`crown_top_y` gives the tree's tip, `height_on_screen` above its foot. The other two scale the outline's height: the crown's height is a fixed share of the tree's height, and so is its widest half-width, both chosen by eye. Then `tier_triangle` makes one tier:
+`crown_top_y` gives the tree's tip, and the other two are fixed shares of the tree's height on the screen, chosen by eye. Then `tier_triangle` makes one tier:
 
 {{code TreeShapes.tier_triangle}}
 
-It takes the outline and a record, and `|outline, { tier, foliage_color }|` takes the record apart into its fields, as `Shapes.rectangle` did. The body names four constants on the way, `crown_top`, `bottom_y`, `top_y` and `half_base`, and its last expression is the `Triangle`. Like `Distance`, `Pixels` has its own `plus`, `minus` and `scaled_by`. `scaled_by` multiplies a length by a `Fraction`, and `minus` subtracts one length from another.
+It takes the outline and a record, and `|outline, { tier, foliage_color }|` takes the record apart into its fields, as `Shapes.rectangle` did. Like `Distance`, `Pixels` has its own `plus`, `minus` and `scaled_by`, which multiplies a length by a `Fraction`.
 
-On the screen, `y` grows downward, as it did in the {{chapter Shapes}} chapter, so `plus` moves down from the tip. The triangle's first corner sits on the tree's middle line at the tier's top. The other two sit at the tier's bottom, `half_base` to either side.
+On the screen, `y` grows downward, as it did in the {{chapter Shapes}} chapter, so `plus` moves down from the tip.
 
 ### Painting the tree
 
@@ -537,33 +537,31 @@ The trunk is a rectangle:
 
 {{signatures TreeShapes.trunk_shape}}
 
-Its body works out the trunk's width, its height and its top left corner from the outline, and hands them to `Shapes.rectangle`. Its `finish` says whether the trunk is shaded, which we come to at the end of the chapter.
+It hands `Shapes.rectangle` a width, a height and a top left corner from the outline. Its `finish` says whether the trunk is shaded.
 
 `tree_sprite` produces the whole tree's sprite, and the order of its shapes matters:
 
 {{code TreeShapes.tree_sprite}}
 
-It takes the tree's setting and a record, and `|{ spot, focal_length, darkness }, { height, foliage_color }|` takes each one apart into its fields.
+The body first darkens the foliage and the trunk's brown as dusk falls. Then `tier_inputs_of` works out what every tier needs, once for the whole tree. From how far ahead the tree's foot stands, `crown_of` and `trunk_finish_of` pick how much detail it gets: for a far tree, `crown` is `Triangles`, and the trunk's finish is `Flat`. The end of the chapter says what nearer trees get.
 
-The body first darkens the foliage and the trunk's brown as dusk falls. Then `tier_inputs_of` works out what every tier needs, the tree's outline among them, once for the whole tree. `inputs.base.forward()` is how far ahead of the camera the tree's foot stands. From that distance, `crown_of` and `trunk_finish_of` choose how much detail the tree gets. For a far tree, `crown` is `Triangles`, and the trunk's finish is `Flat`. The end of the chapter says what nearer trees get.
+The last line puts the list together. `[trunk]` is a list of one shape, and `concat` joins two lists into one, so the trunk comes first. The platform paints a list from first to last, so the tiers land on the trunk. Each tier also lands on the tier above it and covers that tier's bottom, which is where the overlap goes.
 
-The last line puts the list together. `[trunk]` is a list of one shape, and `concat` joins two lists into one, so the trunk comes first. The platform paints a list from first to last, so the tiers land on the trunk. Each tier also lands on the tier above it and covers that tier's bottom, which is where the overlap goes. `Sprite.from_shapes` makes the list the tree's sprite.
-
-`tiers.map(...)` makes one shape for each tier, top tier first, with `tier_shape`. A `match` in `tier_shape` reads the crown, and its `Triangles` branch is the far tree's:
+`tiers.map(...)` makes one shape for each tier with `tier_shape`, whose `match` on the crown has a `Triangles` branch for the far tree:
 
 {{code TreeShapes.tier_shape from "Triangles =>" to "Triangles =>"}}
 
-`colored_tier` is the tier with the tree's foliage color, so a far tree's tier goes straight to `tier_triangle`. The other branch builds the near tree's tiers, and the end of this chapter says what it does.
+`colored_tier` is the tier with the tree's foliage color, so a far tree's tier goes straight to `tier_triangle`. The other branch builds the near tree's tiers.
 
 ### What you're missing
 
-`tree_sprite` builds every tree 200 metres or more ahead of the camera this way: 200 metres is `cone_reach`. Nearer than that, the ride builds more. Each tier becomes a cone, which looks round and fattens as the rider passes under it, and the nearest cones are shaded. `crown_of` makes that choice, and `tier_shape` builds the cones. A cone on the screen is the outline round its ring and its tip, which the `ConvexHull` module finds.
+`tree_sprite` builds this way every tree at least `cone_reach`, 200 metres, ahead of the camera. Nearer trees get more. Each tier becomes a cone, which looks round and fattens as the rider passes under it, and the nearest cones are shaded. `crown_of` makes that choice, and `tier_shape` builds the cones. A cone on the screen is the outline round its ring and its tip, which the `ConvexHull` module finds.
 
-`round_trunk_reach` is 60 metres. Within it, `trunk_finish_of` gives `Shaded` in place of `Flat`, and the trunk looks round.
+Within `round_trunk_reach`, 60 metres, the trunk's finish is `Shaded`, and the trunk looks round.
 
 Cones take far more work to build, and far off they look just like triangles, so the ride spends that work only where it shows.
 
-So a far tree is a handful of small functions over one list of tiers. The `expect` pins the tiers, each tier becomes a triangle, and one list puts the trunk first and the tiers over it. Every tree beside the road runs through this same code, wherever it stands. The next chapter follows the trip around that code, from a place on the road to the frame.
+So a far tree is a handful of small functions over one list of tiers. Every tree beside the road runs through this same code, wherever it stands. The next chapter follows the trip around that code, from a place on the road to the frame.
 
 ## The pipeline
 
@@ -668,7 +666,7 @@ A tree needs a height and a color. The types around it hold where it stands. So 
 
 {{module Conifer}}
 
-`Conifer :=` makes a nominal type, as `BendAnimal` is in the {{chapter Tag unions: billboard critters}} chapter: four tags, and a name that keeps them apart from any other union of the same tags. Two things about its layout matter here. The functions inside the type's braces, `scenery_height` and `scenery_sprite`, are its methods, and a value calls one with a dot: `conifer.scenery_height()`. Everything outside the braces is private to the module, such as the heights, the colors and `foliage_color`, and a call names it plainly: `foliage_color(conifer)`. In the `match`, `Green | SmallGreen =>` gives both greens one color.
+`Conifer :=` makes a nominal type, as `BendAnimal` is in the {{chapter Tag unions: billboard critters}} chapter: four tags, and a name that keeps them apart from any other union of the same tags. The functions inside the type's braces, `scenery_height` and `scenery_sprite`, are its methods, and a value calls one with a dot: `conifer.scenery_height()`. Everything outside the braces is private to the module, such as the heights, the colors and `foliage_color`, and a call names it plainly: `foliage_color(conifer)`. In the `match`, `Green | SmallGreen =>` gives both greens one color.
 
 `scenery_sprite` hands the height and the color to `TreeShapes.tree_sprite`, the function that builds the far tree's sprite. Why the two methods sit inside the braces is the rest of this chapter.
 
@@ -676,7 +674,7 @@ A tree needs a height and a color. The types around it hold where it stands. So 
 
 `rendering_of` takes a sighting, with the focal length and the darkness that the whole frame shares, and returns a `Rendered`, the thing's sprite and its depth. The sprite comes from the kind, so `rendering_of` calls the kind's own `scenery_sprite` method.
 
-The `Rendered` coming out is the same type for every kind. The sighting going in carries its kind: it's a `Pipeline.Sighted(kind)`, and `kind` is a type variable, so it stands for any type at all: a number, a record or a `Conifer`. Only some types have a `scenery_sprite`. So `rendering_of` needs a constraint on `kind`: any type, as long as that type has a `scenery_sprite`.
+The `Rendered` coming out is the same type for every kind. The sighting going in carries its kind: it's a `Pipeline.Sighted(kind)`, and `kind` is a type variable, so it stands for any type at all. Only some types have a `scenery_sprite`. So `rendering_of` needs a constraint on `kind`: any type, as long as that type has a `scenery_sprite`.
 
 Roc writes that constraint as a `where` clause, on the line after the annotation:
 
@@ -691,7 +689,7 @@ This table explains the code's concepts:
 | A method | Placement | A method is a function inside a type's braces, and only a method meets a `where` clause. So the `Conifer` module puts `scenery_sprite` inside the braces, with `scenery_height`, and its private helpers outside. |
 | A method call | Dispatch | `sighting.kind` is the sighting's `kind` field, which holds a value of the type `kind`. `.scenery_sprite(...)` calls that type's method, with the value before the dot as its first argument. |
 
-The rest of the body builds the setting. A `Sprite.LensAndLight` holds the shared part of a `Sprite.Setting`, the focal length and the darkness, and the body adds the sighting's own spot. `sighting.spot.foot().forward()` is how far ahead of the camera the thing's foot stands.
+The rest of the body builds the setting: the focal length and the darkness the frame shares, and the sighting's own spot.
 
 ### The compiler checks each call
 
@@ -699,9 +697,9 @@ Each call to `rendering_of` fills `kind` with one particular type. The ride rend
 
 {{code Scene.scene_in_view from "trees:" to "trees:"}}
 
-The compiler looks inside `Conifer`'s braces, finds a `scenery_sprite` of the right type, and the call compiles. The compiler checks every other call the same way, one type at a time. So the compiler chooses which `scenery_sprite` runs, once for each type, when the program compiles. Every call returns a `Rendered`, whatever the kind, so a frame's renderings of trees, cows and towers all go in one list.
+The compiler looks inside `Conifer`'s braces, finds a `scenery_sprite` of the right type, and the call compiles. The compiler checks every other call the same way, so it picks which `scenery_sprite` runs for each type when the program compiles. Every call returns a `Rendered`, whatever the kind, so a frame's renderings of trees, cows and towers all go in one list.
 
-Every type that fills `kind` has to pass the compiler's check. Here a program hands `rendering_of` a `Rock`, a kind that is just one tag. The program is a small app of its own, which uses Safari Ride's modules as its `game` package. Only `Rock` and `rock_rendering` matter here. The rest makes the program an app. A name that ends in `!`, such as `main!`, marks a function with effects, which the {{chapter Pure functions and effects}} chapter explains, and the `_` names an argument that `main!` leaves unused:
+Every type that fills `kind` has to pass the compiler's check. Here a program hands `rendering_of` a `Rock`, a kind that is just one tag. The program is a small app of its own, which uses Safari Ride's modules as its `game` package. Only `Rock` and `rock_rendering` matter here. A name that ends in `!`, such as `main!`, marks a function with effects, which the {{chapter Pure functions and effects}} chapter explains, and the `_` names an argument that `main!` leaves unused:
 
 {{fails kind_without_sprite}}
 
@@ -723,21 +721,19 @@ The next chapter takes the sightings that are refused.
 
 ## Errors as tag unions
 
-Every frame, the pipeline tries to sight each thing on the road ahead, and its sighting functions refuse some of them. For a thing behind the camera, a thing the horizon hides or a thing too small to see, the sighting returns an `Err`. This chapter is about how a Roc function gives back an answer that can fail, and how that answer travels up through the functions that ask for it.
+Every frame, the pipeline tries to sight each thing on the road ahead, and its sighting functions refuse some of them. For a thing behind the camera, a thing the horizon hides or a thing too small to see, the sighting returns an `Err`. This chapter follows an answer that can fail, up through the functions that ask for it.
 
-Here are some things from step 1,529 and what their sightings return. `right` and `forward` place each thing's foot from the camera, in metres, and a `forward` below zero is behind it. A thing less than 0.4 metres in front of the camera, short of what we call its near plane, counts as behind it too. The road bends, so a tree on a segment far ahead can stand far to one side:
+Here are some things from step 1,529 and what their sightings return. `right` and `forward` place each thing's foot from the camera, in metres, and a `forward` below zero is behind it. A thing less than 0.4 metres in front of the camera, short of what we call its near plane, counts as behind it too:
 
 | What it is | `right` | `forward` | Its sighting |
 |---|---|---|---|
 | The cat, frozen in the road | 0.38 | 23.63 | kept |
-| The nearest tree, a big green one | 3.45 | 21.63 | kept |
-| The nearest tree behind the camera, a gold one | -8.09 | -8.36 | out of sight: behind the camera |
-| The nearest tree the horizon hides, a small green one | -1,433.43 | 446.00 | out of sight: below the horizon |
-| A big green tree just past it | -1,446.07 | 473.21 | kept |
-| The radio tower past the end of the rider's segment | 20.40 | 355.61 | kept |
-| The truck | 92.19 | 489.15 | kept |
+| The nearest tree behind the camera | -8.09 | -8.36 | out of sight: behind the camera |
+| The nearest tree the horizon hides, a small one | -1,433.43 | 446.00 | out of sight: below the horizon |
+| A big tree just past it | -1,446.07 | 473.21 | kept |
+| The next radio tower | 20.40 | 355.61 | kept |
 
-A small tree far off sinks below the horizon, while a taller one just past it still shows its top. The ride's ground curves on a radius of 100 km, far tighter than the earth's, so its horizon is near. The horizon is measured the whole way from the camera, sideways included: the hidden tree stands about 1,500 metres off. Of the 214 trees on the segments in view, 136 are kept, 30 are behind the camera, and 48 are below the horizon. Those three counts add up to all 214 trees, so at this step every tree the horizon leaves in view also passes the size test, which comes later in this chapter. The table names the test each tree failed. The program itself returns one answer for all three, `OutOfSight`, as the code below shows.
+A small tree far off sinks below the horizon, while a taller one just past it still shows its top. The ride's ground curves on a radius of 100 km, so its horizon is near. Of the 214 trees on the segments in view, 136 are kept, 30 are behind the camera, and 48 are below the horizon. The program returns one answer for every refusal, `OutOfSight`.
 
 Each test lives in its own function, and each function asks the one below it first. A radio tower takes two of the tests, the near plane and the horizon, so here's its stack:
 
@@ -765,13 +761,13 @@ A sighting function's answer is a `Try`, Roc's type for an answer that can fail.
 
 Its type ends in `Try(Pipeline.Sighted(kind), [OutOfSight])`: a sighting, or `OutOfSight`. The last line wraps the spot and the kind in an `Ok`.
 
-The test itself happens one level down. `RiderView.rider_point_ahead` gives back a `Try` of its own, and the `?` after it handles both answers. When the answer is an `Ok`, the `?` unwraps it, and `foot` is the point ahead. When it's an `Err`, the `?` ends `sighting_of` and gives back an `Err`. So every line after the `?` runs only for a thing in front of the camera, and the body reads as one straight path.
+`RiderView.rider_point_ahead` gives back a `Try` of its own, and the `?` after it handles both answers. When the answer is an `Ok`, the `?` unwraps it, and `foot` is the point ahead. When it's an `Err`, the `?` ends `sighting_of` and gives back an `Err`. So every line after the `?` runs only for a thing in front of the camera.
 
-`rider_point_ahead` works on a `RiderPoint`, a bare point seen from the rider, and its refusal says what's wrong with that point:
+`rider_point_ahead` takes a point seen from the rider, and its refusal says what's wrong with that point:
 
 {{signatures RiderView.rider_point_ahead}}
 
-A sighting's callers treat every refusal alike, as out of sight. So the `?` has a function after it, `|BehindCamera| OutOfSight`, and the `Err`'s tag goes through that function on its way up. The function's argument is written as the tag itself, a pattern like the ones a `match` lists, and `BehindCamera` is the only tag `rider_point_ahead` gives, so that one pattern covers it.
+A sighting's callers treat every refusal alike, as out of sight. So the `?` has a function after it, `|BehindCamera| OutOfSight`, and the `Err`'s tag goes through that function on its way up. The function's argument is written as the tag itself, a pattern like the ones a `match` lists.
 
 ### A test on top
 
@@ -779,11 +775,9 @@ The next function asks `sighting_of` first, then makes a test of its own:
 
 {{code Pipeline.sighting_above_horizon_of}}
 
-Its `where` line asks the kind for its height, as in the {{chapter Where clauses: asking a kind}} chapter. A `Spot` gives its parts through methods, such as `lift()` and `foot()`. The ride's ground curves away from the rider, and `drop()` gives how far it has dropped below level at the thing's foot.
+The first line asks `sighting_of`, and its plain `?` passes an `Err(OutOfSight)` straight up. Then the function tests the horizon, with the kind's height from its `where` line, as in the {{chapter Where clauses: asking a kind}} chapter. `drop()` is how far the curving ground has dropped below level at the thing's foot. The function gives back the same tag for its own refusal, so both functions have the same type after the arrow.
 
-The first line asks `sighting_of`, and its plain `?` passes an `Err(OutOfSight)` straight up. Then the function tests the horizon, and gives back the same tag for its own refusal. So both functions have the same type after the arrow, and a caller treats the two refusals alike.
-
-`Pipeline.scenery_sighting_of` stacks one more test on top in the same way: a thing that would stand under 2 pixels tall on the screen is out of sight too. The trees, the billboards, the cat and the bird take all three tests. A radio tower is kept however small it looks, so it's sighted by `sighting_above_horizon_of`. The truck takes only the near-plane test, so it's sighted by `sighting_of`.
+`Pipeline.scenery_sighting_of` stacks one more test on top in the same way: a thing that would stand under 2 pixels tall on the screen is out of sight too. The trees, the billboards, the cat and the bird take all three tests. A radio tower is kept however small it looks, so it's sighted by `sighting_above_horizon_of`.
 
 ### Where the refusals stop
 
@@ -791,26 +785,15 @@ A segment holds many trees, so its sighting module asks for each tree's sighting
 
 {{code TreeSighting.segment_trees}}
 
-`scenery_sighting_of` takes a `camera`, which holds the vantage and the lens's focal length, because its size test needs the lens. `keep_oks` is a `List` function. It calls the function it's given on each item, keeps the `Ok` values, and drops the `Err`s. So `segment_trees` gives back a plain list of sightings, and the refusals stop there.
+`keep_oks` calls the function it's given on each item of a list, keeps the `Ok` values, and drops the `Err`s. So `segment_trees` gives back a plain list of sightings, and the refusals stop there.
 
 There's one truck, so `Scene` matches on its answer instead:
 
 {{code Scene.truck_renderings}}
 
-A `TruckFate` is the truck's sighting, a `Try`, and a `match` on a `Try` covers both tags, as any `match` covers every tag. For an `Err`, the truck's renderings are an empty list.
+A `TruckFate` is the truck's sighting, a `Try`, and the `match` covers both its tags. For an `Err`, the truck's renderings are an empty list.
 
-### All through the ride
-
-The same kind of answer runs all through Safari Ride, wherever a function can come up empty:
-
-| Job | Function | Its type |
-|---|---|---|
-{{types row RoutePlace.at_distance Find a place on the route}}
-{{types row BirdFlight.flight_from Pick a tree for the bird to fly to}}
-{{types row GroundPatch.patch_shape Shape a patch of the road}}
-{{types row Camera.clipped_polygon Cut a shape at the near plane}}
-
-Each tag names one way its function can fail, and the ground patch has two.
+### Try or crash
 
 A `Try` is for a value that can rightly be missing, such as a tree behind the camera. Other facts hold whenever the program is right, such as a share lying between 0 and 1. A fact like that is an invariant. A value that breaks one means a bug, and a made-up answer would hide the bug until it surfaced somewhere far from its cause.
 
@@ -820,7 +803,7 @@ So the program stops at once instead. `Fraction.of` makes a share from a ratio:
 
 `from_ratio` returns a `Try`, and the `match` covers both tags. For an `Err`, `crash` stops the program with a message that says which invariant broke. Use `crash` to enforce invariants.
 
-So a refusal is an ordinary value. A sighting gives back a `Try`, a `?` passes an `Err` up or unwraps an `Ok`, a function after the `?` can rename the tag on the way, and a `keep_oks` or a `match` is where the refusals stop. A value missing only through a bug gets a `crash` instead. The kept sightings go on to be rendered. The rest of the frame is the world the things stand in, and the next chapter starts with its sky and its grass.
+So a refusal is an ordinary value: a `?` passes it up, a function after the `?` can rename it, and a `keep_oks` or a `match` is where it stops. A value missing only through a bug gets a `crash` instead. The next chapter starts on the world the things stand in, with its sky and its grass.
 
 ## The sky and the grass
 
