@@ -1681,7 +1681,7 @@ It has one caller, `VehicleLimits.braking_to`. That function also holds the spee
 
 {{code Throttle.bend_limit}}
 
-The last limit, `shoulder_limit`, comes back in the Rehearsal chapter, because it runs a pretend copy of the bike forward, which is what that chapter is about. The two in the middle come from what the rider sees: `encounter_throttle` is the cat's, and `gawk_brake` the pig's. The cat's has its own chapter, so we'll take the pig first.
+The last limit, `shoulder_limit`, comes back in the {{chapter Rehearsal}} chapter, because it runs a pretend copy of the bike forward, which is what that chapter is about. The two in the middle come from what the rider sees: `encounter_throttle` is the cat's, and `gawk_brake` the pig's. The cat's has its own chapter, so we'll take the pig first.
 
 ## The rider's gaze
 
@@ -1820,10 +1820,6 @@ All through the ride, the rider follows a truck up the road. How the truck moves
 A truck from behind, from behind and to one side, and from the side.
 ```
 
-New in this chapter:
-
-- Modules: `Truck`, `TruckBody`, `TruckShape`, `TruckSighting`, `TruckPlacement`
-
 ### How to draw a truck
 
 Here's the whole job in one function. Given a sighted truck and the camera's lens, it works out the truck's setting, then draws its headlight beams, its body and its brake lights, each painted over the one before:
@@ -1851,9 +1847,9 @@ The rest of this chapter opens those pieces: what the truck looks like, and how 
 
 ### What the truck looks like
 
-The truck is blue: a dark blue body, darker blue sides, a lighter blue roof, and black tires. There's no glass, so the windshield is the body's color.
+The truck is blue: a dark blue body, darker blue sides, a lighter blue roof, and black tires. The windshield is the body's color, as if painted on.
 
-`TruckShape` says what the truck looks like, and nothing else. It doesn't know where the truck is, or that there's a road. Each part of the truck is a face, a color and its corners:
+`TruckShape` says only what the truck looks like. Where the truck is, and the road it's on, belong to other modules. Each part of the truck is a face, a color and its corners:
 
 {{code TruckShape.TruckFace}}
 
@@ -1887,11 +1883,11 @@ That shape gets to the screen in three stages:
 | Placement | Turns one point by the road's heading, carries it out from the truck's foot, and lowers it by the ground's drop |
 | Projection | Turns one whole face into a polygon on the screen |
 
-Placement works a point at a time. Projection works a face at a time, for two reasons. A face that reaches behind the camera is clipped, and clipping can cut corners off a face and add new ones, so it needs the whole outline. And the faces are sorted by depth before they're drawn, and the sort orders faces, not points.
+Placement works a point at a time. Projection works a face at a time, for two reasons. A face that reaches behind the camera is clipped, and clipping can cut corners off a face and add new ones, so it needs the whole outline. And the faces are sorted by depth before they're drawn, and the sort orders whole faces.
 
 ### Placement: one rigid body
 
-A truck doesn't bend, so every corner moves together. `TruckSighting` finds the truck on the road ahead and works out two things once: the truck's spot, and which of its lights are on.
+A truck is rigid, so every corner moves together. `TruckSighting` finds the truck on the road ahead and works out two things once: the truck's spot, and which of its lights are on.
 
 {{code Pipeline.Sighted}}
 
@@ -1919,7 +1915,7 @@ That's a truck. Next, it moves.
 
 ## The truck's motion
 
-The truck is what the rider chases. It starts 500 metres up the road, and for most of the ride the rider closes in on it, but not steadily:
+The truck is what the rider chases. It starts 500 metres up the road, and for most of the ride the rider closes in on it, unevenly:
 
 | Step | Rider, along the route | Truck, along the route | Lead |
 |---|---|---|---|
@@ -1928,11 +1924,7 @@ The truck is what the rider chases. It starts 500 metres up the road, and for mo
 | 4,000 | 4,796 metres | 5,051 metres | 255 metres |
 | 6,000 | 6,790 metres | 6,931 metres | 141 metres |
 
-The closest the rider gets is 50 metres, at step 6,374. After that the rider slows to stop at the route's end, at step 6,746. The truck doesn't wait. It drives on past the end of the route and vanishes, since nothing is drawn beyond the end. You never catch it. Some riders have complained about the darn truck, and that's the design. At least for now haha.
-
-New in this chapter:
-
-- Modules: `TruckJourney`
+The closest the rider gets is 50 metres, at step 6,374. After that the rider slows to stop at the route's end, at step 6,746. The truck drives on, past the end of the route, and vanishes, since the ride draws only what's on the route. It stays ahead to the last. Some riders have complained about the darn truck, and that's the design. At least for now haha.
 
 ### A tease, carried out by physics
 
@@ -1940,13 +1932,13 @@ The truck's driver is teasing the rider: staying ahead, but letting the rider ga
 
 Everything else is plain physics. The truck speeds up while it's short of that mark and holds its speed once it's past it. It slows for the bends, and that's mostly where the rider gains. The tease only ever speeds the truck up, so near the end the rider can get closer than the 100 metres it aims for. The truck can always pull away again, because it outdoes the rider by 10%, in both its acceleration and its top speed.
 
-### Remembered, not worked out
+### Carried from step to step
 
-The sun is worked out from the clock. `sun_direction_at` takes a clock, so you can ask about any step and get an answer, without running the ride up to it.
+The sun is worked out from the clock. `sun_direction_at` takes a clock, so you can ask about any step and get an answer at once, cold.
 
-The truck can't be worked out that way, because where it is depends on where the rider has been. So the truck is carried forward. Its step, `truck_progress_at_next_step`, takes a `TruckProgress` and returns the next one. The ride remembers four things from one step to the next, the rider, the truck, the clock and the encounter plan, and the truck is one of them.
+The truck takes more, because where it is depends on where the rider has been. So the truck is carried forward. Its step, `truck_progress_at_next_step`, takes a `TruckProgress` and returns the next one. The ride remembers four things from one step to the next, the rider, the truck, the clock and the encounter plan, and the truck is one of them.
 
-That's what makes the order of a step matter. The rider moves first, and then the truck reads where the rider has got to. The rider never reads the truck.
+That's what makes the order of a step matter. The rider moves first, and then the truck reads where the rider has got to. The reading runs one way, from the truck to the rider.
 
 ### Get the types right
 
@@ -1964,7 +1956,7 @@ A bend ahead of the truck is its own type, and so is the answer to "is there one
 
 {{code TruckJourney.NextBend}}
 
-`BendAhead` carries a `ComingBend`: how far off the bend is, and its turn, an angle. `NoBendAhead` carries nothing: the route ends before another bend, or the truck is already past the end. The only way to read a bend's distance is inside the branch where there is a bend.
+`BendAhead` carries a `ComingBend`: how far off the bend is, and its turn, an angle. `NoBendAhead` is a bare tag: the route ends before another bend, or the truck is already past the end. The only way to read a bend's distance is inside the branch where there is a bend.
 
 ### The functions
 
@@ -1985,7 +1977,7 @@ digraph truck_motion {
 
 {{code RideInstant.next from "truck = TruckJourney.truck_progress_at_next_step(" to "{ rider_distance: rider_place.distance_along(route), route },"}}
 
-That record is the whole of the chase. `TruckJourney` imports none of the rider's modules, and the rider's modules don't import `TruckJourney`. What the two share is `VehicleLimits`, the limits both keep to, which is where the truck's 10% comes from.
+That record is the whole of the chase. `TruckJourney` and the rider's modules stand apart, each importing only its own. What the two share is `VehicleLimits`, the limits both keep to, which is where the truck's 10% comes from.
 
 The step works out the tease, then looks for the next bend:
 
@@ -2021,10 +2013,6 @@ Each frame, `FrameView` builds both lamps together. It hands the sky's darkness 
 
 {{code FrameView.ride_facts from "headlights: TruckHeadlights.at(" to "brake_lights: TruckBrakeLights.at("}}
 
-New in this chapter:
-
-- Modules: `TruckHeadlights`, `TruckBrakeLights`
-
 Each kind of lamp gets a module, and each module owns two things: whether its lamp is on, and how the lamp looks. Both are `[On, Off]`, and a `Truck` holds one field per lamp:
 
 {{code Truck.Truck from "Which of" to "Truck := {"}}
@@ -2047,11 +2035,11 @@ Their `sprite` matches both tags, and an `Off` lamp is an empty sprite. When the
 
 ### The brake lights
 
-The brake lights have a twist: they don't read the light at all. They follow the truck's pace, so they're on while its last step slowed it, by day or by night:
+The brake lights have a twist: they ignore the light and follow the truck's pace, so they're on while its last step slowed it, by day or by night:
 
 {{code TruckBrakeLights.at}}
 
-Their picture works the same way as the headlights': two lamps on the back of the trailer, each with a glow around it, and nothing when they're off:
+Their picture works the same way as the headlights': two lamps on the back of the trailer, each with a glow around it, and an empty list when they're off:
 
 {{code TruckBrakeLights.sprite}}
 
@@ -2065,9 +2053,9 @@ Their picture works the same way as the headlights': two lamps on the back of th
 
 {{code Truck.scenery_sprite from "Sprite.composite([" to "truck.brake_lights.sprite(setting),"}}
 
-`TruckBody` knows nothing of the lights: they're drawn around it.
+`TruckBody` draws only the body, and the lights are drawn around it.
 
-Step the ride back past step 3,555, and the headlights go off again. Nothing turns them off; they only ever read the sky. The brake lights read the truck's last step, which the ride keeps, so they come back with it.
+Step the ride back past step 3,555, and the headlights go off again. They only ever read the sky, so the sky turns them off. The brake lights read the truck's last step, which the ride keeps, so they come back with it.
 
 ## The cat
 
