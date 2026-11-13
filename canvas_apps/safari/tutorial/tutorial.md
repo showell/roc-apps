@@ -594,7 +594,32 @@ The last line puts the list together. `[trunk]` is a list of one shape, and `con
 
 Cones take far more work to build, and far off they look just like triangles, so the ride spends that work only where it shows.
 
-So a far tree is a handful of small functions over one list of tiers. The `expect` pins the tiers, each tier becomes a triangle, and one list puts the trunk first and the tiers over it. Every tree beside the road runs through this same code, wherever it stands. The next chapter follows the trip around that code, from a place on the road to the frame.
+So a far tree is a handful of small functions over one list of tiers. The `expect` pins the tiers, each tier becomes a triangle, and one list puts the trunk first and the tiers over it. Every tree beside the road runs through this same code, wherever it stands.
+
+## Records
+
+Most of the ride's data lives in records, and the chapters ahead build and read them in a few more ways. This short chapter gathers those ways in one place, around one function.
+
+Two are familiar already. A record type lists fields and their types, as `SegmentPlan` does. And `|{ top_left, width, height, fill }|` in `Shapes.rectangle` takes a record apart, naming each of its fields.
+
+A Roc record stays as it was made, so to change a field, the code builds a new record. The motorcycle is a record of four fields: its place on the route, which way it's turned, its speed and its lean. Here's the function that stops it dead at the end of the road:
+
+{{code Motorcycle.stopped_at}}
+
+Here's the function, piece by piece:
+
+| Code | Term | What it says |
+|---|---|---|
+| `motorcycle.route_place` | field access | Reads the motorcycle's `route_place` field. |
+| `{ ..motorcycle, … }` | record update | A new record with all of `motorcycle`'s fields, except the ones it names. |
+| `route_place: { ..place, … }` | nested update | A field's new value is an update of its own. This one updates the place, and inside it the road point, so it changes `along` three records deep. |
+| `speed: Speed.at_rest` | field | The second field the update changes. |
+
+`motorcycle` itself stays as it was, and so do `place` and its road point.
+
+Patterns read records too. In a `match` branch or a function's arguments, `..` stands for the rest of a record's fields, so `{ span, .. }` takes the `span` field of a record that holds more. And `{ start_after: start, cos_turn, sin_turn }` takes the `start_after` field under a new name, `start`.
+
+The next chapter follows the trip every thing beside the road takes, from a place on the road to the frame.
 
 ## The pipeline
 
@@ -732,7 +757,7 @@ Each call to `rendering_of` fills `kind` with one particular type. The ride rend
 
 The compiler looks inside `Conifer`'s braces, finds a `scenery_sprite` of the right type, and the call compiles. The compiler checks every other call the same way, one type at a time. So the compiler chooses which `scenery_sprite` runs, once for each type, when the program compiles. Every call returns a `Rendered`, whatever the kind, so a frame's renderings of trees, cows and towers all go in one list.
 
-Every type that fills `kind` has to pass the compiler's check. Here a program hands `rendering_of` a `Rock`, a kind that is just one tag. The program is a small app of its own, which uses Safari Ride's modules as its `game` package. Only `Rock` and `rock_rendering` matter here. The rest makes the program an app. A name that ends in `!`, such as `main!`, marks a function with effects, which the {{chapter The ride instant}} chapter explains, and the `_` names an argument that `main!` leaves unused:
+Every type that fills `kind` has to pass the compiler's check. Here a program hands `rendering_of` a `Rock`, a kind that is just one tag. The program is a small app of its own, which uses Safari Ride's modules as its `game` package. Only `Rock` and `rock_rendering` matter here. The rest makes the program an app. A name that ends in `!`, such as `main!`, marks a function with effects, which the {{chapter Pure functions and effects}} chapter explains, and the `_` names an argument that `main!` leaves unused:
 
 {{fails kind_without_sprite}}
 
@@ -1075,7 +1100,7 @@ Each quad goes into the frame's depth sort on its own, at a depth that's the mea
 
 {{code GuardRail.quad_rendering}}
 
-`{ ..quad, color: … }` is a record update: a new record, like `quad` with its `color` changed, and `quad` itself stays as it was. Here the new color is the quad's own, dimmed with the sky. `map_ok` works on a `Try`: it applies its function to an `Ok` and leaves an `Err` as it is, so a quad wholly behind the camera stays refused, and `Scene` drops those with `keep_oks`.
+`{ ..quad, color: … }` is a record update, whose new color is the quad's own, dimmed with the sky. `map_ok` works on a `Try`: it applies its function to an `Ok` and leaves an `Err` as it is, so a quad wholly behind the camera stays refused, and `Scene` drops those with `keep_oks`.
 
 `rail_quads_in_view` finds each rail afresh every frame, its bars and posts from the route and the rider, and the depth sort places each one. Next come the radio towers, which go back through the pipeline as things beside the road.
 
@@ -1189,7 +1214,7 @@ Every old moment stays as it was made, so the ride keeps the ones since it last 
 
 {{code Tour.step_back}}
 
-A `Tour` holds the moment on show, and a list of the moments before it. `Tour.(tour)` opens the tour to read its fields. `step_back` takes the last moment off that list and puts it on show, with a record update: `{ ..tour, instant: previous_instant, past_instants }` is a new tour, the same as `tour` but for those two fields. The old tour stays as it was. At the ride's start the list is empty, so `last` returns `Err(ListWasEmpty)`, and the tour stays where it is.
+A `Tour` holds the moment on show, and a list of the moments before it. `Tour.(tour)` opens the tour to read its fields. `step_back` takes the last moment off that list and puts it on show, with a record update of those two fields. The old tour stays as it was. At the ride's start the list is empty, so `last` returns `Err(ListWasEmpty)`, and the tour stays where it is.
 
 ### What a moment holds
 
@@ -1197,7 +1222,33 @@ Here, once more, is everything a moment holds:
 
 {{code RideInstant.RideInstant from "RideInstant := {" to "}.{"}}
 
-That's four things: the rider, the truck, the clock, and the plan for when the cat or the bird ahead starts to move. The ride carries those four from step to step, and derives everything else in a frame from them and the road. The chapters ahead take the four in turn, starting with the simplest: the clock.
+That's four things: the rider, the truck, the clock, and the plan for when the cat or the bird ahead starts to move. The ride carries those four from step to step, and derives everything else in a frame from them and the road.
+
+## Pure functions and effects
+
+The flip book holds because the same moment always gives the same next moment, and the same picture. That rests on one Roc idea: a function's type says whether it has effects.
+
+An effect is anything beyond working out an answer: reading a key, reading the time, painting a canvas. Roc marks a function with effects twice, in its name and in its type:
+
+| Code | Term | What it says |
+|---|---|---|
+| `->` | thin arrow | A pure function. It returns an answer worked out from its arguments alone, so the same arguments always give the same answer. |
+| `=>` | thick arrow | A function with effects. It sits in the type in place of `->`. |
+| `!` | effectful function name | Ends the name of every function with effects, such as `main!`, where a Roc program with effects starts. |
+
+A `match` branch's `=>` is another use of the same symbol. Every function in Safari Ride's own code has the thin arrow. The effects live in the platform, under the ride's code: it keeps the time, reads the keys and paints the picture.
+
+### Pausing and stepping
+
+The keys still reach the ride. Mostly, Safari Ride is a screensaver: you sit back and watch it. You can also take the controls. Click the ride to give it the keyboard, and Space pauses it. While it's paused, Right moves a step forward and Left a step back, one each frame while the key is held. While it's running, each moves four steps at a time. J jumps to the next segment of the road, and R starts the ride over, running.
+
+One pure function handles all of that. It takes the model, which is the tour and whether it's paused, and a snapshot of the input, and returns the next model:
+
+{{code SafariApp.model_at_next_step from "motion = if input.key_pressed(KeySpace)" to "m.tour.step_forward()"}}
+
+Each frame, the platform reads the keys and hands the app a snapshot, a plain value. `key_pressed` says a key went down since the last frame, so one tap of Space pauses the ride once. `key_down` says a key is held, so holding Right keeps the ride moving. The same model and the same snapshot always give the same next model.
+
+So every moment of a ride follows from the road and the keys, and the ride can make any of them again. The chapters ahead take the four things a moment carries in turn, starting with the simplest: the clock.
 
 ## Opaque types: the clock
 
@@ -1277,20 +1328,6 @@ The trees and the cows stay put.
 - The lines of `RideInstant.next` run in order. Once the moments exist, the platform can paint their frames in any order.
 
 So the stepped parts need the most care.
-
-### Pure functions
-
-A Roc function with effects, such as reading a key or the time, has a name that ends in `!` and the thick arrow `=>` in its type, between what it takes and what it returns. (A `match` branch's `=>` is another use of the same symbol.) Every function in the ride's own code is pure instead: it works out an answer from what it's given, with the thin arrow, and the effects live in the platform. So the same moment always gives the same next moment, and the same picture.
-
-### Pausing and stepping
-
-Mostly, Safari Ride is a screensaver: you sit back and watch it. You can also take the controls. Click the ride to give it the keyboard, and Space pauses it. While it's paused, Right moves a step forward and Left a step back, one each frame while the key is held. While it's running, each moves four steps at a time. J jumps to the next segment of the road, and R starts the ride over, running.
-
-One function handles all of that. It takes the model, which is the tour and whether it's paused, and a snapshot of the input, and returns the next model:
-
-{{code SafariApp.model_at_next_step from "motion = if input.key_pressed(KeySpace)" to "m.tour.step_forward()"}}
-
-Each frame, the platform hands the app a snapshot of the keys, and the app reads it. `key_pressed` says a key went down since the last frame, so one tap of Space pauses the ride once. `key_down` says a key is held, so holding Right keeps the ride moving. Reading the keys is the platform's effect. The app reads the snapshot, which is a plain value.
 
 The clock-driven things come first, and the beacons are the simplest of them: they follow the clock alone.
 
@@ -1488,7 +1525,7 @@ The step works in order, and the code reads that way: decide, move, cross a bend
 
 {{code Rider.rider_at_next_step}}
 
-The `match` on the segment's ending has two tags. `Bends({ bend, .. })` takes the payload's `bend` field, and the `..` matches the rest.
+The `match` on the segment's ending has two tags. `Bends({ bend, .. })` takes the payload's `bend` field.
 
 ### Deciding
 
@@ -1532,11 +1569,7 @@ The end of a segment uses a small version of the same trying out. `cross_bend_if
 
 {{code Motorcycle.cross_bend_if_on_road}}
 
-At the end of the road, the rider stops dead, through a record update three levels deep:
-
-{{code Motorcycle.stopped_at}}
-
-`..motorcycle` keeps every field but the ones named, `route_place` is itself an update of the old place, and its `road_point` is an update of the old point.
+At the end of the road, `Motorcycle.stopped_at`, from the {{chapter Records}} chapter, stops the rider dead.
 
 ### The picture leans too
 
@@ -1648,7 +1681,7 @@ A lean further right always ends a coast further right. So each try rules out ha
 
 {{code LeanSearch.lean_correction}}
 
-A `..` in a pattern stands for the rest of the record's fields, so `Leaves({ side: Left, .. })` matches any coast off the left, whatever its count of steps. Off the left shoulder means lean more right, and off the right means more left. A coast that stays on the road compares where it ends with `aimed_across`, the road's middle. After the twelfth try, the search returns the lean halfway between the bounds it has narrowed to.
+`Leaves({ side: Left, .. })` matches any coast off the left, whatever its count of steps. Off the left shoulder means lean more right, and off the right means more left. A coast that stays on the road compares where it ends with `aimed_across`, the road's middle. After the twelfth try, the search returns the lean halfway between the bounds it has narrowed to.
 
 ### Why rehearsing is safe
 
@@ -2123,7 +2156,7 @@ Each segment holds one encounter at most: a cat crossing, a bird's flight, or a 
 
 {{code Encounter.encounter_stage}}
 
-`encounter_span` returns the cat's span or the bird's, and `{ span, .. }` takes the `span` field, and `..` stands for the rest of the record. A quiet road stays `Waiting` for good.
+`encounter_span` returns the cat's span or the bird's, and `{ span, .. }` takes its `span` field. A quiet road stays `Waiting` for good.
 
 ### Its poses
 
