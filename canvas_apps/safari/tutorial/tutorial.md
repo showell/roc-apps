@@ -2566,7 +2566,7 @@ Ask of each thing on the screen where it comes from:
 | Its headlights | Derived from the clock, through the sky's darkness |
 | Its brake lights | Derived from the truck, which says whether its last step slowed it |
 
-Every row comes from the four and the road. Even the truck, whose progress the ride carries, reaches the frame through the camera like everything else. The book set out to show one design: a small state carried from step to step, everything else derived from it, and types that allow only right states. Get the types right, and everything else follows. The appendices gather the patterns that came up along the way.
+Every row comes from the four and the road. Even the truck, whose progress the ride carries, reaches the frame through the camera like everything else. The book set out to show one design: a small state carried from step to step, everything else derived from it, and types that allow only right states. Get the types right, and everything else follows.
 
 ## Appendix: the patterns
 
