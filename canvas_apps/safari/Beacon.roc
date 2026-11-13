@@ -28,17 +28,17 @@ Beacon :: Fraction.{
 	## another.
 	TowerKey : { segment : Route.SegmentIndex, place : Beacon.TowerPlace }
 
-	## The beacon of `tower`, as it shines at `clock`.
+	## The beacon of the tower at `key`, as it shines at `clock`.
 	at : Beacon.TowerKey, Clock -> Beacon
-	at = |tower, clock| Beacon.(beacon_brightness(Beacon.blink_phase(tower, clock)))
+	at = |key, clock| Beacon.(beacon_brightness(Beacon.blink_phase(key, clock)))
 
-	## The phase of the beacon of `tower` at `clock`: how many steps into its
-	## blink it is, from 0, where it starts dark, up to one `beacon_period`. It is
-	## the steps since the ride's start, plus the beacon's head start, wrapped
-	## to one blink.
+	## The phase at `clock` of the beacon of the tower at `key`: how many steps
+	## into its blink it is, from 0, where it starts dark, up to a step short of
+	## one `beacon_period`. It is the steps since the ride's start, plus the
+	## beacon's head start, wrapped to one blink.
 	blink_phase : Beacon.TowerKey, Clock -> Steps
-	blink_phase = |tower, clock|
-		into_blink(clock.steps_since(Clock.start).plus(head_start(tower)))
+	blink_phase = |key, clock|
+		into_blink(clock.steps_since(Clock.start).plus(head_start(key)))
 
 	## A beacon blinks once in this many steps of the ride.
 	beacon_period : Steps
@@ -82,8 +82,8 @@ head_start = |{ segment, place }| {
 	}
 }
 
-## `steps` brought inside one blink: so many steps into a blink, from 0 up to
-## one `beacon_period`.
+## `steps` brought inside one blink: so many steps into a blink, from 0 up to a
+## step short of one `beacon_period`.
 into_blink : Steps -> Steps
 into_blink = |steps| steps.wrapped_to(Beacon.beacon_period)
 

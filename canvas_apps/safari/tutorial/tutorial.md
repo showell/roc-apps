@@ -1407,7 +1407,13 @@ A tower's sighting asks for its beacon with one line. Here it is for the tower p
 
 {{code TowerSighting.end_tower from "beacon = Beacon.at" to "beacon = Beacon.at"}}
 
-The record names the beacon: the segment's index, and the tower's place on it. Its type is `TowerKey`, and the tower halfway along passes `Midway` in place of `AtEnd`. The clock says when. Here's the function the line calls:
+The record names the beacon. `in_view.index` is the segment's index in the route, counting from 0, and `AtEnd` is the tower's place on it. The tower halfway along passes `Midway` instead. The record's type is a `TowerKey`:
+
+{{code Beacon.TowerPlace}}
+
+{{code Beacon.TowerKey}}
+
+The clock says when. Here's the function the line calls:
 
 {{code Beacon.at}}
 
@@ -1419,33 +1425,37 @@ The brightness comes from the beacon's phase, which counts how many steps into i
 
 {{code Beacon.blink_phase}}
 
-`clock.steps_since(Clock.start)` turns a moment into a length: the steps since the ride began. The beacon's head start goes on top, and `into_blink` brings the sum inside one blink:
+`clock.steps_since(Clock.start)` turns a moment into a length: the steps since the ride began. The beacon's head start goes on top, and that's where the second and third rules live:
+
+{{code Beacon.head_start}}
+
+`beacon_stagger` is 37 steps, so each segment's beacon starts 37 steps further into its blink than the last one's. 37 and 120 have only 1 as a common factor, so the first 120 segments' beacons all start at different points of the blink. The tower halfway along starts half a blink later than the tower at the end, so the two blink opposite each other. `half_period` is the period divided by two, so it follows the period if the period changes.
+
+`into_blink` brings a sum of steps inside one blink:
 
 {{code Beacon.into_blink}}
 
-The second segment's beacon at its end has a head start of 37 steps. At step 83 the sum is 120, a whole blink, so its phase is back to 0, dark again.
+`wrapped_to` keeps the remainder after dividing by the period. So the route's second segment, at index 1, has a beacon at its end with a head start of 37 steps. At step 83 the sum is 120, a whole blink, and its phase is back to 0.
+
+### The brightness
 
 A cosine turns the phase into a brightness:
 
 {{code Beacon.beacon_brightness}}
 
-`(1 - cos) / 2` is 0 at the start of a blink, 1 halfway through, and 0 again at the end. It stays between 0 and 1 all the way. That matters, because `Fraction.of` crashes on a ratio outside 0 to 1.
-
-### Out of step
-
-The head start comes from the beacon's `TowerKey`:
-
-{{code Beacon.head_start}}
-
-Each segment's beacon starts 37 steps further into its blink than the last one's. 37 and 120 share only the factor 1, so the first 120 segments' beacons all start at different points of the blink. The tower halfway along starts half a blink later than the tower at the end, so the two blink opposite each other. `half_period` is the period divided by two, so it follows the period if the period changes.
+`(1 - cos) / 2` is 0 at the start of a blink, 1 halfway through, and 0 again at the end. A cosine rises and falls smoothly, so the beacon eases into full brightness and out of it again. It also stays between 0 and 1 all the way, and that matters, because `Fraction.of` crashes on a ratio outside 0 to 1.
 
 The picture's two beacons belong to the first segment, whose head start is 0. Step 5,400 is 45 whole blinks into the ride, so the beacon at the end is dark there, and the one halfway along is at full brightness. A quarter of a blink later, at step 5,430, the two are equally bright. By step 5,460 they've changed places.
 
 ### A disc, or a refusal
 
-A tower hands its beacon two things: the spot on the screen where the beacon's middle lands, and how many pixels a metre spans there. The beacon returns a disc 3 metres in radius, see-through as far as it is dim. Or it returns a refusal: `TooDim` below a brightness of one part in fifty, and `TooSmall` when the disc's radius comes to under half a pixel. A refusal leaves the beacon out of the picture.
+A tower hands its beacon two things: the point on the screen where the beacon's middle lands, and how many pixels a metre spans there. The beacon returns a disc, or a refusal:
 
-So `Beacon`'s tests stand alone, apart from any tower. Its tests check the blink, the opposite blink halfway along, and the disc's size and color.
+{{signatures Beacon.disc}}
+
+The disc is 3 metres in radius, and see-through as far as the beacon is dim. `TooDim` refuses a beacon below a brightness of one part in fifty, and `TooSmall` a disc whose radius comes to under half a pixel. A refusal leaves the beacon out of the picture.
+
+Everything `Beacon` works with comes in as arguments: a tower's key, a clock, a spot and a scale. So its tests build those values directly, apart from any tower or ride. They check the head starts, the phase, the blink and the opposite blink halfway along, and the disc's size, color and refusals.
 
 A beacon goes round and round. The sun goes one way, and a lot more hangs on it.
 
