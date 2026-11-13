@@ -12,9 +12,9 @@ The ride, running as you read. Click it to give it the keyboard: Space pauses it
 
 Watch it all the way through. A motorcycle carries its rider down a long country road. Cows and pigs graze in the fields, and trees crowd the roadside. A truck runs on ahead. A cat waits by the road for its moment to cross, and a bird takes off as the rider comes near. As the sun sets behind the mountains, the truck turns on its headlights. At the end of the road the rider stops, and the ride starts over.
 
-Safari Ride is written in Roc, and this is a book about Roc. If you're brand new to Roc, the [official Roc tutorial](https://www.roc-lang.org/tutorial) makes a quick first stop. The tutorial teaches the language through small examples. This book picks up from there, with one real program: how its code is organized across many modules, and how Roc's larger ideas, such as opaque types, type variables and `where` clauses, solve the problems the ride poses. Roc is fun to read, and the book quotes the real code behind everything on the screen. The book explains each new Roc idea where the code first needs it.
+Safari Ride is written in Roc, and this is a book about Roc. If you're brand new to Roc, the [official Roc tutorial](https://www.roc-lang.org/tutorial) makes a quick first stop. The tutorial teaches the language through small examples. This book picks up from there, with one real program: how its code is organized across many modules, and how Roc's larger ideas, such as opaque types, type variables and `where` clauses, solve the problems the ride poses. The book quotes the real code behind everything on the screen. The book explains each new Roc idea where the code first needs it.
 
-You'll learn two things as you read: Roc, and how a ride like this one is animated. The animation is a handful of plain ideas. Each frame is one picture, and a step moves the world on before the next. Far things look small, and near things cover far ones. The book explains each of these in plain words where the ride first needs it, and the trigonometry behind them waits for a chapter of its own near the end. If you know animation already, skim those parts. If both are new to you, you'll get both at a walking pace.
+You'll learn two things as you read: Roc, and how a ride like this one is animated. The animation is a handful of plain ideas. Each frame is one picture, and a step moves the world on before the next. Far things look small, and near things cover far ones. The book explains each of these in plain words where the ride first needs it. A chapter near the end gives the trigonometry behind them. If you know animation already, skim those parts. If both are new to you, you'll get both at a walking pace.
 
 ## One page
 
@@ -24,13 +24,13 @@ Safari Ride works like a flip book. Each frame is one page, and the ride shows a
 Step 1,529 of the ride, held still.
 ```
 
-This chapter makes a first pass over that page. It names the page's parts in the code, and it skips how each part is made.
+This chapter makes a first pass over that page. It names the page's parts in the code. Later chapters show how each part is made.
 
 In the code, a page starts as one value of the `FrameView` type:
 
 {{code FrameView.FrameView from "FrameView := {" to "}.{"}}
 
-You can read it as English for now. A `# ...` line marks code the book leaves out. Four of the fields are parts of the picture you can see: the backdrop of sky and grass, with the sun when it's in view; the mountains; the road and its ponds; and the scene, which holds the things in view on and beside the road. The fifth field, the camera's roll, leans the whole page when the bike leans. The roll comes from the rider, so it waits for the second half of the book.
+You can read it as English for now. A `# ...` line marks code the book leaves out. Four of the fields are parts of the picture you can see: the backdrop of sky and grass, with the sun when it's in view; the mountains; the road and its ponds; and the scene, which holds the things in view on and beside the road. The fifth field is the camera's roll: how far the whole page leans when the bike leans. The roll comes from the rider, so the second half of the book explains it.
 
 One function gives back the `FrameView` for any moment of the ride:
 
@@ -42,13 +42,13 @@ That line is a type annotation: the function's name, a colon, and its type. `fra
 
 Roc code runs on a platform, and Safari Ride's platform paints that list on the screen. So each page starts from one moment of the ride and ends as one list of shapes.
 
-The first half of the book holds this page still and builds it part by part, starting with the things beside the road. The second half turns the pages. The chapters ahead read Roc slowly, one idea at a time, so the syntax here can wait for them. The next chapter breaks the ride into the pieces we build.
+The first half of the book holds this page still and reads it part by part, starting with the things beside the road. The second half turns the pages. The chapters ahead read Roc slowly, one idea at a time, so the syntax here can wait for them. The next chapter breaks the ride into the pieces we build.
 
 ## The problem
 
 Safari Ride shows a world in motion, seen from the rider's seat. Thirty times a second, it puts a new picture of that world on the screen. Each picture is a frame, and between frames a step moves the world on, so the pictures move. Whoever is watching can take the controls at any moment.
 
-That's what you see. For us, it's an engineering problem, and our first job is to break it into pieces we can build one at a time. A screen shows things from a world, and those come first. We hold one frame still and get it right before anything moves, and the controls come last. That plan costs something: the first half of the book holds one frame still. In return, every piece we build stands on a piece that already works. The plan gives the problem five pieces:
+That's what you see. For us, it's an engineering problem, and our first job is to break it into pieces we can build one at a time. A screen shows the things in a world, so the things come first. We hold one frame still and get it right before anything moves, and the controls come last. That plan costs something: the first half of the book holds one frame still. In return, every piece we build stands on a piece that already works. The plan gives the problem five pieces:
 
 The five pieces
 ```dot
@@ -102,7 +102,7 @@ A module is one file of Roc, named for what it holds. `SafariApp.roc` holds the 
 
 The brackets after `app` name the two things the app hands the platform, and the last two lines define them. `Model` is the type of what the app keeps as it runs, and here it's the one in `SafariApp`.
 
-`SafariApp.canvas_app` is the whole ride as one value, and the `WasmApp.program` function fits it to the web platform. What it gives back is the app's `program`. The next chapter reads the types inside those modules.
+`SafariApp.canvas_app` is the whole ride as one value, and the `WasmApp.program` function fits it to the web platform. Its result is the app's `program`. The next chapter reads the types inside those modules.
 
 ## Types
 
@@ -128,9 +128,9 @@ Here's what its parts say:
 | `metres = \|metres\| Distance.(metres)` | The function itself. `Distance.(metres)` wraps the number it's given as a `Distance`. |
 | `to_metres = \|Distance.(d)\| d` | The other way round: `Distance.(d)` opens a `Distance`, and the function gives back the number inside. |
 | `is_gt` to `is_lte` | These four let `>`, `>=`, `<` and `<=` compare two lengths. |
-| `is_eq : _` | This lets `==` compare two lengths, and the `_` asks the compiler to write its definition from the number inside. |
+| `is_eq : _` | This lets `==` compare two lengths, and the `_` has the compiler derive its definition from the number inside. |
 
-Everywhere outside this module, a length is a `Distance`, and the compiler keeps it apart from every other number. The functions between the braces are the only ways to make a length, change one or read one. A call such as `d.min(other)` puts the value before the dot, and the {{chapter Functions}} chapter explains how that finds the function.
+Everywhere outside this module, a length is a `Distance`, and the compiler keeps it apart from every other number. The functions between the braces are the only ways to make a length, change one or read one. A call such as `d.min(other)` puts the value before the dot, and the {{chapter Functions}} chapter explains how Roc finds the function for such a call.
 
 ### Things
 
@@ -151,11 +151,11 @@ Here's what each piece of it says:
 | `height : Distance,` | `height` names a field, and `Distance` names its type: the main type of the `Distance` module. |
 | `facing : Billboard.Facing,` | `facing` names a field, and `Billboard.Facing` names its type: the `Facing` type in the `Billboard` module. |
 
-A module's main type has the module's own name, as `Billboard` and `Distance` do. Wherever it's used, every other type a module offers carries the module's name in front, as `EmojiStill` and `Billboard.Facing` do.
+A module's main type has the module's own name, as `Billboard` and `Distance` do. Every other type a module offers carries the module's name in front wherever it's used, as `EmojiStill` and `Billboard.Facing` do.
 
-A `Billboard.Facing` is one of two tags, `FacesLeft` or `FacesRight`. A tag is a name the compiler knows, and a type made of tags lists every one it allows.
+A `Billboard.Facing` is one of two tags, `FacesLeft` or `FacesRight`. A tag is a name, and a type made of tags lists every tag a value of that type can be.
 
-For each frame, a thing produces the shapes that show it, in the order they're painted. We call those shapes its sprite. Here's the `Sprite` type:
+For each frame, a function returns the shapes that show a thing, in the order they're painted. We call those shapes its sprite. Here's the `Sprite` type:
 
 {{code Sprite.Sprite from "Sprite ::" to ").{"}}
 
@@ -163,7 +163,7 @@ A `Sprite` is opaque, like `Billboard`, and it holds a `List(Shapes.Shape)`: a l
 
 ### The world
 
-A sprite says how a thing looks. Where it stands is the world's job. The `World` module plans the road as a short list of stretches, called segments, and each segment's plan is a record of the `SegmentPlan` type:
+A sprite says how a thing looks. Where it stands is the world's job. The `World` module holds the road's plan as a short list of stretches, called segments, and each segment's plan is a record of the `SegmentPlan` type:
 
 {{code World.SegmentPlan}}
 
@@ -179,7 +179,7 @@ The whole route from above, one stretch of road for each plan. A mark in the mid
 
 ### The rider's view
 
-The screen shows only what the rider sees. So each frame is produced as if by a camera on the rider: it sits where the rider sits, and faces where the rider looks. Each thing takes three forms on its way to the screen, and each form is a type. First, the thing is placed on the road:
+The screen shows only what the rider sees. So each frame is the view of a camera on the rider, which sits where the rider sits and faces where the rider looks. Each thing takes three forms on its way to the screen, and each form is a type. First, the thing is placed on the road:
 
 {{code Geom.Placed}}
 
@@ -193,13 +193,13 @@ A sighting keeps the kind, and adds a `Spot`: where the thing stands in the ride
 
 From the spot, we work out where the thing lands on the screen, and how big it looks there. One rule gives both: twice as far away looks half as big.
 
-The camera refuses a thing out of the rider's sight with the tag `OutOfSight`: it's behind the camera, too close to show, or too far off to show over the horizon.
+A thing out of the rider's sight gets the tag `OutOfSight` in place of a sighting: it's behind the camera, too close to show, or too far off to show over the horizon.
 
 Last, the thing is rendered:
 
 {{code Rendered.Rendered from "Rendered ::" to "}.{"}}
 
-A rendering holds the thing's sprite, and its depth: how far ahead of the camera it stands. The kind is gone, so trees, cows and towers all meet in one list of renderings.
+A rendering holds the thing's sprite, and its depth: how far ahead of the camera it stands. Renderings of every kind share one type, so trees, cows and towers all meet in one list of renderings.
 
 To finish the frame, the `DepthSort` module sorts that list far to near, and the platform paints it in that order, as a painter paints the far hills before the near trees.
 
@@ -211,15 +211,15 @@ So far the ride stands still. To set it moving, one record holds the whole ride 
 
 The `:=` makes `RideInstant` nominal: a new type, apart from every other record with the same fields, as an opaque type is. Any module can read a nominal type's fields.
 
-Those four fields are everything the ride carries from one step to the next: the rider, the truck, the clock, and the plan for when the cat or the bird ahead starts to move. We derive everything else that changes from them. The sun goes down because the clock says so.
+Those four fields are everything the ride carries from one step to the next: the rider, the truck, the clock, and the plan for when the cat or the bird ahead starts to move. We derive everything else that changes from them. The sun's height, for one, is derived from the clock.
 
-A step is one function's job, and its type tells the story:
+One function makes a step:
 
 {{signatures RideInstant.next_or_restart}}
 
-When a function's body is long, the book shows its type annotation alone, until the body's turn comes. `next_or_restart` gives back a type written in place, in square brackets: one of two tags. A tag can carry a value, and each of these carries the next moment. `Continued` carries the moment one step on, and `Restarted` carries the ride's first moment, once the rider has finished the route.
+When a function's body is long, the book shows its type annotation alone, until the body's turn comes. `next_or_restart` returns a value of a type written in place, in square brackets: one of two tags. A tag can carry a value, and each of these carries the next moment. `Continued` carries the moment one step on, and `Restarted` carries the ride's first moment, once the rider has finished the route.
 
-Inside the step, the four fields move in a fixed order, so the moves fit together: the rider reads what the cat or bird ahead is doing, and then moves. The second half of the book reads that order line by line.
+Inside the step, the four fields change in a fixed order, so the moves fit together: the rider reads what the cat or bird ahead is doing, and then moves. The second half of the book reads that order line by line.
 
 ### The person watching
 
@@ -241,7 +241,7 @@ Every one of these types comes with functions, and every chapter from here on re
 
 ## Functions
 
-Every chapter from here on reads Roc functions, so this short chapter takes one apart. It works out how dark the sky is at a step of the ride:
+Every chapter from here on reads Roc functions, so this short chapter takes one apart. The `darkness_at` function works out how dark the sky is at a step of the ride:
 
 {{code Sky.darkness_at}}
 
@@ -274,7 +274,7 @@ The book often shows a function's annotation alone, until its body's turn comes.
 
 ### Methods
 
-Many calls in the book put a value first, as in `SunPath.height_at(clock).minus(FarHeight.zero)`. That's a method call. A method is a function associated with a particular type. Here's a function built from them, which works out how warm the horizon's color is, from how near the sun stands to the horizon:
+Many calls in the book put a value first, as in `SunPath.height_at(clock).minus(FarHeight.zero)`. That's a method call. A method is a function associated with a particular type. Here's a function built from method calls, which works out how warm the horizon's color is, from how near the sun stands to the horizon:
 
 {{code Sky.horizon_warmth_at}}
 
@@ -286,7 +286,7 @@ Many calls in the book put a value first, as in `SunPath.height_at(clock).minus(
 | `from_horizon.ratio_to(warmth_reach)` | method call | Divides one `FarRise` by another: how far the sun stands from the horizon, as a share of `warmth_reach`, a constant rise further down in the module. |
 | `Fraction.clamp(…).complement()` | function call, then method call | `clamp` keeps a number between 0 and 1, as a `Fraction`, and `complement` returns 1 minus it. |
 
-The compiler knows every value's type, so it turns each method call into a call of that type's own function when the program compiles. A type's methods are the functions between its `.{` and `}`, as `Distance`'s were. Even `>=` in `darkness_at` calls a method, `is_gte`.
+The compiler works out every value's type, so it turns each method call into a call of that type's own function when the program compiles. A type's methods are the functions between its `.{` and `}`, as `Distance`'s were. Even `>=` in `darkness_at` calls a method, `is_gte`.
 
 The next chapter starts on the things beside the road. Every function from here on has a block body or a one-expression body, and calls functions and methods like these.
 
