@@ -31,10 +31,10 @@ TruckHeadlights := [On, Off].{
 
 	## How the headlights look: their two beams while they are on, and nothing
 	## while they are off.
-	sprite : TruckHeadlights, TruckPlacement.TruckSetting -> Sprite
-	sprite = |headlights, truck|
+	sprite : TruckHeadlights, Sprite.Setting -> Sprite
+	sprite = |headlights, setting|
 		match headlights {
-			On => Sprite.from_shapes(beam_shapes(truck))
+			On => Sprite.from_shapes(beam_shapes(setting))
 			Off => Sprite.from_shapes([])
 		}
 }
@@ -74,27 +74,23 @@ beam_edge : ArgbColor
 beam_edge = ArgbColor.of(0x45FFF8D6)
 
 ## The two headlight beams, each a little in from its side.
-beam_shapes : TruckPlacement.TruckSetting -> List(Shapes.Shape)
-beam_shapes = |truck| {
+beam_shapes : Sprite.Setting -> List(Shapes.Shape)
+beam_shapes = |setting| {
 	box = TruckShape.truck_box
 	[
-		headlight_beam(truck, box.left.plus(headlight_inset)),
-		headlight_beam(truck, box.right.minus(headlight_inset)),
+		headlight_beam(setting, box.left.plus(headlight_inset)),
+		headlight_beam(setting, box.right.minus(headlight_inset)),
 	].keep_oks(|beam| beam)
 }
 
 ## The beam of the headlight `rightward` of the truck's centre line,
 ## brightest at the lamp. A beam with a corner behind the camera is not
 ## drawn.
-headlight_beam : TruckPlacement.TruckSetting,
-Distance -> Try(
-	Shapes.Shape,
-	[BehindCamera, TooSmall],
-)
-headlight_beam = |truck, rightward| {
+headlight_beam : Sprite.Setting, Distance -> Try(Shapes.Shape, [BehindCamera, TooSmall])
+headlight_beam = |setting, rightward| {
 	nose = TruckShape.truck_box.nose
 	on_truck = |ahead, height| TruckPlacement.point_at_height(
-		truck.spot,
+		setting.spot,
 		{ ahead, rightward, height },
 	)
 	at_lamp = |height| on_truck(nose, height)
@@ -105,8 +101,8 @@ headlight_beam = |truck, rightward| {
 	far_bottom = at_far_end(beam_far_center.minus(beam_far_half_height))
 	corners = RiderView.points_at_height_ahead([lamp_bottom, lamp_top, far_top, far_bottom])?
 	lamp = RiderView.point_at_height_ahead(at_lamp(headlight_height))?
-	on_screen = Camera.projected_points(corners, truck.focal_length)
-	lamp_on_screen = Camera.project(lamp, truck.focal_length)
+	on_screen = Camera.projected_points(corners, setting.focal_length)
+	lamp_on_screen = Camera.project(lamp, setting.focal_length)
 	fill = Brush.circular_gradient({
 		center_color: beam_core,
 		edge_color: beam_edge,

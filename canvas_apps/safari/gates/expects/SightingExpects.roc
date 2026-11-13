@@ -651,7 +651,7 @@ truck_seen_from = |vantage, lead|
 			vantage,
 			truck: {
 				route_position: Distance.metres(vantage.along.to_metres() + lead),
-				truck: { headlights: Off, brake_lights: Off },
+				lights: { headlights: Off, brake_lights: Off },
 			},
 		},
 	)

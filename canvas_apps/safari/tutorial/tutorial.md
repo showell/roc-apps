@@ -1929,7 +1929,7 @@ The truck faces straight along the road, so its placement is one line. The headl
 
 The truck is drawn from its spot, the camera's lens and the sky's darkness:
 
-{{code TruckPlacement.TruckSetting}}
+{{code Sprite.Setting}}
 
 Every corner is lowered by the same drop, how far the ground has curved away beneath the truck's spot. Across a 12-metre truck the drop changes by a few centimetres at most, far less than a pixel. `TruckPlacement.placed_face` places every corner of a face this way, and that's what `body_sprite` sorts and draws.
 
@@ -2019,7 +2019,7 @@ Read its signature out loud: `next_bend : Route, Distance -> NextBend`. The next
 
 Then the two ways to take a step. Both sit below the module's block, so they're private, and both are arithmetic on `Speed`. Within 60 metres of a bend, the truck brakes so it reaches the bend at its cautious speed. `VehicleLimits.turn_speed` is the speed a turn allows, and the rider's throttle asks it too. The truck's own rule is that limit times its caution, 80%, to leave a margin:
 
-{{code TruckJourney.cautious_turn_speed}}
+{{code TruckJourney.turn_caution}}
 
 {{code TruckJourney.progress_braking_for}}
 

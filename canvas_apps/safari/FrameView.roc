@@ -140,7 +140,7 @@ FrameView := {
 		encounter_stage: RideInstant.encounter_stage(route, instant),
 		truck: {
 			route_position: instant.truck.route_position,
-			truck: {
+			lights: {
 				headlights: TruckHeadlights.at(Sky.darkness_at(instant.clock)),
 				brake_lights: TruckBrakeLights.at(instant.truck.pace),
 			},

@@ -33,10 +33,10 @@ TruckBrakeLights := [On, Off].{
 
 	## How the brake lights look: the two lamps and their glows while they are
 	## on, and nothing while they are off.
-	sprite : TruckBrakeLights, TruckPlacement.TruckSetting -> Sprite
-	sprite = |brake_lights, truck|
+	sprite : TruckBrakeLights, Sprite.Setting -> Sprite
+	sprite = |brake_lights, setting|
 		match brake_lights {
-			On => Sprite.from_shapes(lamp_pair_shapes(truck))
+			On => Sprite.from_shapes(lamp_pair_shapes(setting))
 			Off => Sprite.from_shapes([])
 		}
 }
@@ -73,21 +73,18 @@ glow_reach : F64
 glow_reach = 3.2
 
 ## The two brake lights, one in from each side of the trailer's back.
-lamp_pair_shapes : TruckPlacement.TruckSetting -> List(Shapes.Shape)
-lamp_pair_shapes = |truck| {
+lamp_pair_shapes : Sprite.Setting -> List(Shapes.Shape)
+lamp_pair_shapes = |setting| {
 	box = TruckShape.truck_box
-	brake_shapes(
-		truck,
-		{ left: box.left.plus(brake_lamp_outer_edge), right: box.left.plus(brake_lamp_inner_edge) },
-	).concat(
-		brake_shapes(
-			truck,
-			{
-				left: box.right.minus(brake_lamp_inner_edge),
-				right: box.right.minus(brake_lamp_outer_edge),
-			},
-		),
-	)
+	left_lamp_sides = {
+		left: box.left.plus(brake_lamp_outer_edge),
+		right: box.left.plus(brake_lamp_inner_edge),
+	}
+	right_lamp_sides = {
+		left: box.right.minus(brake_lamp_inner_edge),
+		right: box.right.minus(brake_lamp_outer_edge),
+	}
+	brake_shapes(setting, left_lamp_sides).concat(brake_shapes(setting, right_lamp_sides))
 }
 
 ## The center of a polygon on screen: the mean of its corners. Each sum
@@ -110,12 +107,8 @@ glow_radius = |lamp_points, center| Screen.farthest_distance(lamp_points, center
 ## A brake light on the back of the trailer, its sides `left` and `right`
 ## measured rightward of the truck's centre line: its glow, then the lamp
 ## over the glow.
-brake_shapes : TruckPlacement.TruckSetting,
-{
-	left : Distance,
-	right : Distance,
-} -> List(Shapes.Shape)
-brake_shapes = |truck, lamp_sides| {
+brake_shapes : Sprite.Setting, { left : Distance, right : Distance } -> List(Shapes.Shape)
+brake_shapes = |setting, lamp_sides| {
 	rear = TruckShape.truck_box.rear
 	lamp =
 		TruckShape.strip_corners(
@@ -124,24 +117,28 @@ brake_shapes = |truck, lamp_sides| {
 				near: { ahead: rear, height: brake_lamp_bottom },
 				far: { ahead: rear, height: brake_lamp_top },
 			},
-		).map(|corner| TruckPlacement.point_at_height(truck.spot, corner))
-	glow = [brake_glow(truck, lamp)].keep_oks(|shape| shape)
-	match Camera.clipped_polygon({ color: brake_color, corners: lamp }, truck.focal_length) {
-		Ok(lamp_polygon) => glow.append(lamp_polygon)
-		Err(BehindCamera) => glow
+		).map(|corner| TruckPlacement.point_at_height(setting.spot, corner))
+	glow_shapes =
+		match brake_glow(setting, lamp) {
+			Ok(glow) => [glow]
+			Err(BehindCamera) | Err(TooSmall) => []
+		}
+	match Camera.clipped_polygon({ color: brake_color, corners: lamp }, setting.focal_length) {
+		Ok(lamp_polygon) => glow_shapes.append(lamp_polygon)
+		Err(BehindCamera) => glow_shapes
 	}
 }
 
 ## The glow round a brake lamp. A lamp with a corner behind the camera has
 ## no glow; the lamp itself is cut at the near plane like the body's faces.
-brake_glow : TruckPlacement.TruckSetting,
+brake_glow : Sprite.Setting,
 List(RiderView.PointAtHeight) -> Try(
 	Shapes.Shape,
 	[BehindCamera, TooSmall],
 )
-brake_glow = |truck, lamp_points| {
+brake_glow = |setting, lamp_points| {
 	lamp_ahead = RiderView.points_at_height_ahead(lamp_points)?
-	on_screen = Camera.projected_points(lamp_ahead, truck.focal_length)
+	on_screen = Camera.projected_points(lamp_ahead, setting.focal_length)
 	center = center_of(on_screen)
 	radius = glow_radius(on_screen, center)
 	fill = Brush.circular_gradient({

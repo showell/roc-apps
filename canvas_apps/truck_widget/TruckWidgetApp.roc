@@ -12,8 +12,8 @@ import game.Lens
 import game.Pipeline
 import game.SegmentFromRider
 import game.Sky
+import game.Sprite
 import game.TruckBody
-import game.TruckPlacement
 import game.TruckShape
 import game.World
 import lib.CanvasApp
@@ -115,7 +115,7 @@ view_vantage = |view| {
 }
 
 ## How the truck is drawn for `view`: its spot as that view's camera sees it.
-view_setting : TruckView -> TruckPlacement.TruckSetting
+view_setting : TruckView -> Sprite.Setting
 view_setting = |view| {
 	vantage = view_vantage(view)
 	from_rider = Ahead(SegmentFromRider.Position.first)

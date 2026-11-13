@@ -55,11 +55,6 @@ TruckJourney :: [].{
 			NoBendAhead => progress_toward_tease(progress, tease)
 		}
 	}
-
-	## How fast the truck takes a bend of `turn`: the speed the bend allows,
-	## less a margin.
-	cautious_turn_speed : Angle.Turn -> Speed
-	cautious_turn_speed = |turn| VehicleLimits.turn_speed(turn).scaled_by(turn_caution)
 }
 
 ## A bend ahead of the truck: how far off it is, and how sharply it turns.
@@ -127,7 +122,7 @@ tease_position = |{ rider_distance, route_length }| {
 ## bend at a cautious speed.
 progress_braking_for : TruckJourney.TruckProgress, ComingBend -> TruckJourney.TruckProgress
 progress_braking_for = |progress, bend| {
-	target_speed = TruckJourney.cautious_turn_speed(bend.turn)
+	target_speed = VehicleLimits.turn_speed(bend.turn).scaled_by(turn_caution)
 	acceleration = VehicleLimits.braking_to(
 		progress.speed,
 		{ target: target_speed, within: bend.distance },

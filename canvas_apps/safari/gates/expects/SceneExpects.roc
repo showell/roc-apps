@@ -38,7 +38,7 @@ cat_scene = Scene.scene_in_view(
 			encounter_stage: Waiting,
 			truck: {
 				route_position: Distance.metres(500.0),
-				truck: { headlights: Off, brake_lights: Off },
+				lights: { headlights: Off, brake_lights: Off },
 			},
 			clock: Clock.start,
 		},

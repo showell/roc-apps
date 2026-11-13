@@ -41,7 +41,7 @@ Scene := {
 	## facts, so the headlights always agree with `clock`.
 	RideFacts : {
 		encounter_stage : Animation.Stage,
-		truck : { route_position : Distance, truck : Truck },
+		truck : { route_position : Distance, lights : Truck },
 		clock : Clock,
 	}
 
