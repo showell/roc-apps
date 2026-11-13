@@ -1343,56 +1343,43 @@ The clock is the whole of the ride's time. Everything that changes with time, fr
 
 ## The ride instant
 
-We've held one frame still for a long time. Now it's time to turn the page. Each time the clock ticks, Safari Ride moves the rider and the truck and draws everything again. `RideInstant` is the one record it keeps from one tick to the next, and it holds the rider, the truck's journey, the clock, and the plan for the encounter on the rider's segment. One tick is a step.
+A moment carries four things: the rider, the truck, the clock, and the plan for when the cat or the bird ahead starts to move. A step makes the next moment from this one. This chapter reads that step, and sorts the ride's moving parts by how they change.
 
-```widget step
-Press play to run the ride, and the outer buttons to go to either end.
-```
+### One step
 
-The first three lines under the picture read three of that record's four fields, the clock, the rider and the truck, from a real ride. Press the last button, and the widget plays the ride up to step 2,000, eight steps a frame. Press the first, and it's back at the start almost at once, because the steps it has been through are kept in a list.
+Here's the step, whole:
 
-New in this chapter:
+{{code RideInstant.next}}
 
-- Roc: nothing new
-- Modules: `RideInstant`, `Tour`, `FrameView`
+Its doc comment gives the order, and the order matters. The rider moves first, reading where the encounter ahead has got to. Then the clock ticks. Then the world answers the rider who has just moved: the truck aims at how far along the route the rider now is, and the encounter plan is kept, dropped at a new segment, or made from this step's rider. The last line puts the four together into the next moment, and the old moment stays as it was.
 
-`RideInstant := { ... }.{ ... }` is a nominal type, from the chapter A simple tree: a record with a block of definitions, whose fields stay readable.
+### Carried and derived
 
-{{code RideInstant.RideInstant from "One instant of the ride" to "}.{"}}
+Those four fields are all the ride carries from one step to the next. Everything else in a frame is derived from them and the road, worked out again each time. So the ride's moving parts come in three kinds:
 
-### Worked out, not stored
-
-Those four fields are the whole of what Safari Ride keeps from one step to the next. The sun and the beacons keep nothing. The cat and the bird keep one thing between them, the step their animation started on, which is the plan. Each frame works everything else out again from those four. Call this *worked out, not stored*: keep the few things that have to last, and work out the rest. We'll see it everywhere from here on.
-
-That gives three kinds of moving thing, and the rest of the tour is organized around them:
-
-| Kind | Things | How it works |
+| Kind | Things | How it changes |
 |---|---|---|
-| Clock-driven | The sun, the sky, the beacons, the headlights | Worked out from the clock, with nothing stored |
-| Stepped | The rider, the truck | Stored in `RideInstant`, and moved once a step from where it was |
-| Rider-driven | The cat, the bird | Worked out from the clock and one stored start step, planned from how the rider is approaching |
+| Clock-driven | The sun, the sky, the beacons, the headlights | Derived from the clock alone |
+| Stepped | The rider, the truck | Carried in the moment, and moved once a step from where it was |
+| Rider-driven | The cat, the bird | Derived from the clock and the carried plan, which the rider's approach sets |
 
-Trees and cows are a fourth kind, the easiest of all: they never change.
+The trees and the cows are a fourth kind, the easiest of all: they stay put. The chapters ahead take the kinds in that order, simplest first.
 
-The game itself has no effectful functions at all. In Roc, a function with effects has a name that ends in `!`, and a type with the `=>` arrow. No function in the game has either. Effects live in the platform. A `?` appears in nine places, such as `Pipeline.scenery_sighting_of`, and it isn't an effect. Written after a `Try`, `?` hands an `Err`, such as `BehindCamera`, straight back to the caller, and otherwise gives the value inside the `Ok`.
+### Pure functions
+
+A Roc function with effects, such as reading a key or the time, has a name that ends in `!` and a type with the `=>` arrow. Every function in the ride's own code is pure instead: it works out an answer from what it's given, with the thin arrow, and the effects live in the platform. So the same moment always gives the same next moment, and the same picture.
 
 ### Pausing and stepping
 
-Mostly, Safari Ride is a screensaver: you sit back and watch it. You can also take the controls. Click the ride to give it the keyboard, and Space pauses it. While it's paused, Right moves one step forward and Left moves one step back. While it's running, each moves four steps at a time. J jumps to the next segment of the road, and R starts over.
+Mostly, Safari Ride is a screensaver: you sit back and watch it. You can also take the controls. Click the ride to give it the keyboard, and Space pauses it. While it's paused, Right moves one step forward and Left one step back. While it's running, each moves four steps at a time. J jumps to the next segment of the road, and R starts over.
 
-`SafariApp.model_at_next_step` handles all of that. It takes the model, which is the `Tour` and a pause flag, and a snapshot of the input. It returns the next model:
+One function handles all of that. It takes the model, which is the tour and whether it's paused, and a snapshot of the input, and returns the next model:
 
 {{code SafariApp.model_at_next_step from "motion = if input.key_pressed(KeySpace)" to "m.tour.step_forward()"}}
 
-There's no event handler here. Each frame, the platform hands `model_at_next_step` a snapshot, and `model_at_next_step` reads it. `key_pressed` says a key went down since the last frame, so one tap of Space pauses the ride once. `key_down` says a key is being held, so holding Right keeps the ride moving.
+Each frame, the platform hands the app a snapshot of the keys, and the app reads it. `key_pressed` says a key went down since the last frame, so one tap of Space pauses the ride once. `key_down` says a key is held, so holding Right keeps the ride moving. Reading the keys is the platform's effect, and the app sees only the snapshot, a plain value.
 
-Stepping forward is the ordinary step. Stepping back is more interesting, because it's where keeping so little pays off. `Tour` holds the current instant and a list of the instants before it, so going back just means taking the last one off the list:
-
-{{code Tour.step_back}}
-
-Nothing has to be undone. An old `RideInstant` is still a perfectly good value. The cat ends up in the right place because its position was only ever worked out from the rider's, and the sun ends up in the right place because it was only ever worked out from the clock. Neither one needs any code for going backward.
-
-We've seen the things that never change. The beacons are next, because they follow the clock alone.
+The clock-driven things come first, and the beacons are the simplest of them: they follow the clock alone.
 
 ## The beacons
 
