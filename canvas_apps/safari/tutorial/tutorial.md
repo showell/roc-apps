@@ -599,7 +599,7 @@ So a far tree is a handful of small functions over one list of tiers. The `expec
 
 ## The pipeline
 
-Every frame, every thing beside the road takes the same trip to the screen. In the {{chapter A far tree}} chapter, `TreeShapes.tree_sprite` takes a setting and returns a tree's sprite. This chapter follows the trip around that function: where the setting comes from, and where the sprite goes. A tree, a cow, a radio tower, the cat, the bird and the truck each start from a place on the road, and end as a rendering, a sprite with a depth, in the frame's one list. The `Pipeline` module holds the trip's types and the functions that sight and render, so we call the trip the pipeline.
+Every frame, every thing beside the road takes the same trip to the screen. In the {{chapter A far tree}} chapter, `TreeShapes.tree_sprite` takes a setting and returns a tree's sprite. This chapter follows the trip around that function: where the setting comes from, and where the sprite goes. A tree, a cow, a radio tower, the cat, the bird and the truck each start from a place on the road, and end as a rendering, a sprite with a depth, in the frame's one list. The `Pipeline` module holds the functions that sight and render, so we call the trip the pipeline.
 
 ```widget pipeline
 Step 1,529 of the ride, with only what came through the pipeline: its trees, critters and towers, the cat and the truck.
@@ -629,7 +629,7 @@ digraph pipeline {
 }
 ```
 
-Each kind has a sighting module, such as `TreeSighting`. It gathers the placed things of its kind on the road ahead, and hands each one to a `Pipeline` function that sights it.
+Each sort of thing has a sighting module, such as `TreeSighting`, and some serve several kinds: `BillboardSighting` sights every billboard. A sighting module gathers its placed things on the road ahead, and hands each one to a `Pipeline` function that sights it.
 
 ### Placed
 
@@ -673,7 +673,6 @@ Each sighting that's kept is rendered by `Pipeline.rendering_of`, which the {{ch
 
 A `Rendered` holds a depth and a sprite. The `::` makes it opaque, as it does `Distance`. The sprite is what a kind's `scenery_sprite` returns from a setting, and the depth is how far ahead of the camera the thing stands. The kind has done its job by now, and it's gone: a tree's rendering and a cow's have the same type.
 
-In a body, as here, `Rendered.({ depth, sprite })` builds a `Rendered` by wrapping the record. Among a function's arguments, as `Billboard.(billboard)` was, the same form takes one apart.
 
 ### One list
 
@@ -770,7 +769,7 @@ Here are some things from step 1,529 and what their sightings decide. `right` an
 | The radio tower past the end of the rider's segment | 20.40 | 355.61 | kept |
 | The truck | 92.19 | 489.15 | kept |
 
-A small tree far off sinks below the horizon, while a taller one just past it still shows its top. The ride's ground curves on a radius of 100 km, far tighter than the earth's, so its horizon is near. Distance counts the whole way, sideways too: the hidden tree stands about 1,500 metres from the camera. Of the 214 trees on the segments in view, 136 are kept, 30 are behind the camera, and 48 are below the horizon. Those three counts add up to all 214 trees, so at this step every tree the horizon leaves in view also passes the size test, which comes later in this chapter. The table says which test refused each tree. The program itself keeps only the answer that the tree is out of sight, as the code below shows.
+A small tree far off sinks below the horizon, while a taller one just past it still shows its top. The ride's ground curves on a radius of 100 km, far tighter than the earth's, so its horizon is near. The horizon is measured the whole way from the camera, sideways included: the hidden tree stands about 1,500 metres off. Of the 214 trees on the segments in view, 136 are kept, 30 are behind the camera, and 48 are below the horizon. Those three counts add up to all 214 trees, so at this step every tree the horizon leaves in view also passes the size test, which comes later in this chapter. The table says which test refused each tree. The program itself keeps only the answer that the tree is out of sight, as the code below shows.
 
 Each test lives in its own function, and each function asks the one below it first. A radio tower takes two of the tests, the near plane and the horizon, so here's its stack:
 
@@ -820,7 +819,7 @@ The first line asks `sighting_of`, and its plain `?` passes an `Err(OutOfSight)`
 
 ### Where the refusals stop
 
-A segment holds many trees, so its sighting module asks for all of their sightings at once:
+A segment holds many trees, so its sighting module asks for each tree's sighting and keeps the ones that come back:
 
 {{code TreeSighting.segment_trees}}
 
@@ -830,7 +829,7 @@ There's one truck, so `Scene` matches on its answer instead:
 
 {{code Scene.truck_renderings}}
 
-A `match` on a `Try` covers both tags, as any `match` covers every tag. An empty list leaves the truck out of the frame.
+A `TruckFate` is the truck's sighting, a `Try`, and a `match` on a `Try` covers both tags, as any `match` covers every tag. An empty list leaves the truck out of the frame.
 
 ### All through the ride
 
@@ -849,7 +848,7 @@ So a refusal is an ordinary value. A sighting gives back a `Try`, a `?` passes a
 
 ## The sky and the grass
 
-Behind everything beside the road stands the backdrop: the sky above the horizon and the grass below it. The horizon on the screen is the line halfway down it, where a level look from the rider lands. The rest of the frame covers the backdrop, so the backdrop shows wherever the rest leaves it uncovered. In a frame the sky is two colors, one at the top and one at the horizon, with a fade between them, and the grass is one rectangle. At step 1,529 the sky's two colors happen to match, for a reason the end of this chapter gives.
+Behind everything beside the road stands the backdrop: the sky above the horizon and the grass below it. The horizon on the screen is the line halfway down it, where a level look from the rider lands. In a frame the sky is two colors, one at the top and one at the horizon, with a fade between them, and the grass is one rectangle. At step 1,529 the sky's two colors happen to match, for a reason the end of this chapter gives.
 
 ```widget frame sky
 Step 1,529 of the ride: the trees, the grass, and the sky over them, one day blue.
@@ -867,7 +866,7 @@ The top of the sky blends from day into night, by how dark the sky is:
 
 {{code Sky.sky_top_color}}
 
-`day_sky` and `night_sky` are two constants in the module, a pale blue and a deep one. A constant in a module carries an annotation, as a function does, and here the type is an `RgbColor`. `Sky.darkness_at`, which the {{chapter Functions}} chapter took apart, says how dark the sky is, as a `Fraction`. It sits inside the `Sky` type's braces, so even its own module calls it by its full name, and the bare names belong to the module's helpers outside the braces. `ColorShade.color_between` does the blending:
+`day_sky` and `night_sky` are two constants in the module, a pale blue and a deep one. Each constant carries an annotation, as a function does, and here the type is an `RgbColor`. `Sky.darkness_at`, which the {{chapter Functions}} chapter took apart, says how dark the sky is, as a `Fraction`. `ColorShade.color_between` does the blending:
 
 {{code ColorShade.color_between}}
 
@@ -1273,7 +1272,7 @@ The trees and the cows stay put, which is easiest of all.
 - A wrong sky spoils only the frames it touches. A wrong step moves the rider for the rest of the ride.
 - The lines of `RideInstant.next` run in order. Once the moments exist, their frames can be painted in any order.
 
-So the stepped parts get the most care. The chapters ahead start with the clock-driven kind, the simplest.
+So the stepped parts get the most care.
 
 ### Pure functions
 
@@ -1454,7 +1453,9 @@ digraph stepped {
   RiderMind -> Gaze [label="  asks where to look"];
   Throttle -> VehicleLimits [label="  keeps to the limits"];
   TruckJourney -> VehicleLimits [label="  keeps to the limits"];
-  LeanSearch -> Motorcycle [label="  tries leans on it"];
+  LeanSearch -> Coast [label="  coasts each try"];
+  Throttle -> Coast [label="  coasts for the shoulder"];
+  Coast -> Motorcycle [label="  steps the pretend bike"];
 }
 ```
 
@@ -1495,7 +1496,7 @@ A decision is the bike's controls, a lean and an acceleration:
 
 {{code Motorcycle.Controls}}
 
-Look at the last line of `controls`. `Throttle` picks the acceleration, and it's asked about a motorcycle that exists only as a value: this motorcycle as it would be at the new lean. Two small helpers build such motorcycles:
+Look at the last line of `controls`. `Throttle` picks the acceleration, and it's asked about a motorcycle that exists only as a value: this motorcycle as it would be at the new lean. Two small helpers serve such pretend motorcycles:
 
 {{code Motorcycle.with_lean}}
 
@@ -1607,11 +1608,7 @@ This is step 374 of the ride, just after a bend. Each white arc is one try: a pr
 
 ### Where the rehearsals start
 
-Each step, the rider's controls come from one function:
-
-{{code RiderMind.controls}}
-
-Its first line asks the lean search for a lean. Its second asks the throttle how hard to accelerate, for the motorcycle at that lean. `with_lean` is the helper from the {{chapter The rider}} chapter: the same motorcycle, at another lean. Both lines rehearse.
+Each step, the rider's controls come from `RiderMind.controls`, which the {{chapter The rider}} chapter showed. Its first line asks the lean search for a lean. Its second asks the throttle how hard to accelerate, for the motorcycle at that lean, built with `with_lean`. Both lines rehearse.
 
 ### A coast
 
@@ -1822,11 +1819,11 @@ Each lamp is `[On, Off]`, and each has a module that owns two things: when its l
 
 {{code TruckShape.TruckFace}}
 
-A corner is three distances, measured from the middle of the trailer:
+A corner is three distances: ahead of and to the right of the middle of the trailer, and up from the road:
 
 {{code TruckShape.TruckPoint}}
 
-The truck is blue: a dark blue body, darker blue sides, a lighter blue roof, and black tires. The whole truck is its faces, in one list:
+The truck is blue: a dark blue body, darker blue sides, a lighter blue roof, and black tires. The whole truck is its faces, in one list, and `join` puts the lists inside it end to end:
 
 {{code TruckShape.truck_faces}}
 
@@ -1876,7 +1873,7 @@ The brake lights read the truck's pace instead of the sky, so they're on while t
 
 Their sprite works as the headlights' does: two lamps on the back of the trailer, each with a glow around it, and an empty sprite when they're off.
 
-Each frame, `FrameView` sets both lamps together, from the sky's darkness and the truck's pace:
+Each frame, `FrameView` sets both lamps together, in one record of lights, from the sky's darkness and the truck's pace:
 
 {{code FrameView.ride_facts from "headlights: TruckHeadlights.at(" to "brake_lights: TruckBrakeLights.at("}}
 
