@@ -507,13 +507,12 @@ repo_url = "https://github.com/showell/roc-apps"
 site_url : Str
 site_url = "https://roc.lynrummy.com/"
 
-## The bar across the top of every page leads back to the site, says the book
-## is a draft, and leads to the code the book reads.
+## The bar across the top of every page leads back to the site, and to the
+## code the book reads.
 top_bar : Str
 top_bar =
 	\\<header class="top-bar">
 	\\<a class="home-link" href="${site_url}">Steve's Roc Apps</a>
-	\\<p class="draft-notice">This is an early draft.</p>
 	\\<a class="repo-link" href="${repo_url}">roc-apps on GitHub</a>
 	\\</header>
 

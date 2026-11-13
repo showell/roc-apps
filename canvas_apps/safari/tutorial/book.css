@@ -66,8 +66,8 @@ article > figure.listing { width: fit-content; min-width: min(100%, var(--measur
 
 .book-bar { display: none; }
 
-/* The bar across the top of every page: the draft notice, and the way to the
-   code. It spans both columns of a chapter. */
+/* The bar across the top of every page: the way back to the site, and the way
+   to the code. It spans both columns of a chapter. */
 
 .top-bar {
   display: flex;
@@ -79,7 +79,6 @@ article > figure.listing { width: fit-content; min-width: min(100%, var(--measur
   font: 0.72rem/1.4 var(--plain);
 }
 body.chapter > .top-bar { grid-column: 1 / -1; }
-.draft-notice { margin: 0; padding: 0.1em 0.5em; border-radius: 3px; background: var(--draft); color: var(--draft-ink); }
 /* The same pill every app page has, from site/web/shared/home.js. */
 .home-link { padding: 3px 8px; border-radius: 4px; background: rgba(24, 24, 24, 0.72); color: #fff; text-decoration: none; }
 .repo-link { color: var(--quiet); text-decoration: none; }
