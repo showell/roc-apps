@@ -1599,7 +1599,7 @@ So a decision is a lean and an acceleration. The motorcycle turns them into move
 
 A lean of one degree turns the bike by a tenth of a degree each step, so at a metre a step it goes round a circle with a radius of 573 metres. That's nearly all the physics.
 
-The motorcycle is four fields: where it is on the route, which way it points, how fast it goes, and how far it leans. Its controls are a lean and an acceleration:
+Here's the motorcycle, the rider's first part, and its controls, a lean and an acceleration:
 
 {{code Motorcycle.Motorcycle from "Motorcycle := {" to "}.{"}}
 
@@ -1673,11 +1673,11 @@ Each limit is a `ThrottleLimit`: `NoLimit`, or `AtMost` some acceleration. `held
 
 The throttle answers an acceleration, and the motorcycle turns it into a speed.
 
-`Speed` and `Acceleration` are a pair like the clock and its steps: a speed is a value, and an acceleration is the change from one speed to another. To brake for a bend, the rider needs the steady acceleration that takes its speed to a target within so much road. That's `Speed.acceleration_to`. Its `within` is a `Distance`: the road the change has to happen in. The formula is the first line of a physics textbook, v² = u² + 2as, solved for a, with the speed going from `s` to `t`. In the parameter list, `Speed.(s)` and `target: Speed.(t)` unwrap the two speeds into plain numbers, as `Clock.(n)` does in the {{chapter The clock}} chapter:
+`Speed` and `Acceleration` are a pair like the clock and its steps: a speed is a value, and an acceleration is the change from one speed to another. To brake for a bend, the rider needs the steady acceleration that takes its speed to a target within so much road. That's `Speed.acceleration_to`. Its `within` is a `Distance`: the road the change has to happen in. The formula is the first line of a physics textbook, v² = u² + 2ad, solved for a, with the speed going from `s` to `t` over the distance `within`. In the parameter list, `Speed.(s)` and `target: Speed.(t)` unwrap the two speeds into plain numbers, as `Clock.(n)` does in the {{chapter The clock}} chapter:
 
 {{code Speed.acceleration_to}}
 
-It has one caller, `VehicleLimits.braking_to`. That function also holds the speed steady when less than a micrometre of road is left, and crashes on a brake that would take the speed below zero. The rider's bend brake, the gawk brake and the truck all brake through it. The first limit is the bend's:
+It has one caller, `VehicleLimits.braking_to`. That function also holds the speed steady when at most a micrometre of road is left, and crashes on a brake that would take the speed below zero. The rider's bend brake, the gawk brake and the truck all brake through it. The first limit is the bend's:
 
 {{code Throttle.bend_limit}}
 
@@ -1721,7 +1721,7 @@ So the job is a short list:
 {{types row Gaze.desired_gaze Choose where to look}}
 {{types row RiderEyes.next_gaze_yaw Turn the head}}
 {{types row RiderEyes.next_look_depth Keep the depth of the look}}
-{{types row Gawking.is_gawking Know whether the rider is gawking}}
+{{types row Gaze.noticed_pig Know whether the rider has noticed a pig}}
 {{types row Gawking.gawk_brake Work out the brake}}
 
 One step of the gaze
@@ -1749,7 +1749,7 @@ Before the eyes move, the rider chooses where to look. `Rider.rider_at_next_step
 
 {{code Gaze.desired_gaze}}
 
-The pig has to be near, and it has to be in sight. Near means within 150 metres, measured along the road. In sight is an angle:
+The pig has to be near, and it has to be in sight. Near means from 150 metres before the pig, measured along the road. In sight is an angle:
 
 {{code Gaze.turn_to}}
 
@@ -1783,9 +1783,9 @@ The depth has one job. It widens the view:
 
 ### Gawking
 
-Whether the rider is gawking is a plainer question than whether it's looking:
+Whether the rider is gawking is a plainer question than whether it's looking: has the rider noticed a pig on this segment?
 
-{{code Gawking.is_gawking}}
+{{code Gaze.noticed_pig}}
 
 Like the look, it starts when the pig is within 150 metres. It asks only where the rider is, so it lasts until the segment ends, long after the look.
 
@@ -1810,7 +1810,7 @@ Here's all of that on the third segment of the route:
 
 The look takes 165 steps, and getting the eyes back takes 174. The rider crawls on for 173 steps more, eyes on the road, and reaches the next segment at step 1,397. The gaze is home at every one of the ride's 18 seams between segments, and an expect holds that. A seam would be fine even with the gaze turned: the bike keeps its heading at a seam, and `gaze_yaw` is measured from the bike.
 
-That's the pig's part of the rider's step. The truck is the other stepped thing.
+That's the pig's part of the rider's step. The truck is the other stepped thing, and its chapters start with how it's drawn.
 
 ## The truck
 
