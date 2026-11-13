@@ -981,27 +981,23 @@ A range is a record:
 
 {{code Skyline.MountainRange}}
 
-Its `center` is the bearing of its middle, and `half_width` is the turn from the middle to either end. `height_ceiling` is how high above the horizon it reaches at most. The two wave counts shape its ridges. Here's the north range:
-
-{{code Skyline.north_range}}
-
-A range's height at a bearing comes from one function:
+Its `center` is the bearing of its middle, and `half_width` is the turn from the middle to either end. `height_ceiling` is how high above the horizon it reaches at most. The two wave counts shape its ridges. A range's height at a bearing comes from one function:
 
 {{signatures Skyline.range_height}}
 
-The range is highest in its middle and falls to zero at its ends, and two waves on top of that make its ridges. The trigonometry behind it waits for the math layer chapter near the end of the book. The rolling land is one wave of its own, all the way round.
+The range is highest in its middle and falls to zero at its ends, and two waves on top of that make its ridges, with their sizes tuned by eye. The rolling land is a little under one wave of its own, all the way round.
 
 ### Across the screen
 
-To paint a range, the ride goes across the screen two pixels at a time, and asks which bearing each column looks along. A column is a record:
+To paint a range, the ride goes across the screen two pixels at a time, and asks which bearing each column looks along. The middle of the screen looks along the camera's heading, and a column to its right looks a little further right, by a turn the lens decides. A column is a record:
 
 {{code Skyline.SkylineColumn}}
 
-One function paints a silhouette from the columns, whichever range or land it is:
+A silhouette is one flat region whose top edge follows the heights along the columns. One function paints a silhouette, whichever range or land it is:
 
 {{code Skyline.silhouette}}
 
-The record it takes has a field that holds a function: `height_at`, which says how high the silhouette stands at a column. A function is a value like any other, so it can sit in a record field. `silhouette` calls `height_at(column)` for each column, finds where that height lands on the screen with `Lens.y_for_height`, and joins the tops into one region closed along `base_y`. The `if` keeps the top from dipping below `base_y`, where the grass begins.
+The record it takes has a field that holds a function: `height_at`, which says how high the silhouette stands at a column. A function is a value like any other, so it can sit in a record field. `silhouette` calls `height_at(column)` for each column and finds where that height lands on the screen with `Lens.y_for_height`. A mountain is so far off that its distance drops out: how high it looks depends only on its height above the horizon and the lens. Then `silhouette` joins the tops into one region closed along `base_y`, which is the grass's top for the ranges and the horizon for the land. The `if` keeps the top from dipping below `base_y`.
 
 ### Back to front
 
@@ -1009,7 +1005,9 @@ The record it takes has a field that holds a function: `height_at`, which says h
 
 {{code Skyline.skyline_shapes}}
 
-Each `height_at` is an anonymous function written in place. The west range's asks `west_range_height` for the column's bearing. The north range's reads the height the column already holds, since the snow needs it too. The land's asks `land_height`. The snow is a `Try`: when every peak in view stands under the snowline, the snow is `Err(NoSnow)`, and the `match` gives an empty list.
+`aim` is the camera, as far as the skyline needs it. The `..` in its type, `{ heading : …, focal_length : …, .. }`, means the record may hold more fields, and this function reads just these two.
+
+Each `height_at` is an anonymous function written in place. The west range's asks `west_range_height` for the column's bearing. The north range's reads the height the column already holds, since the snow needs it too. The land's asks `land_height`. The snow is a `Try`: when too little of it shows on the screen, it's `Err(NoSnow)`, and the `match` gives an empty list.
 
 At dusk the rock darkens through `Sky.color_at_darkness`, as the grass does, and the land takes the grass's own color. The snow goes blue, through the same blend the sky uses:
 
