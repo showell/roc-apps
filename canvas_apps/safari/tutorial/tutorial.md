@@ -1179,7 +1179,7 @@ The herds are the last of the animals that stand still. Everything in the frame 
 
 ## Immutable values: a flip book
 
-The first half of the book held one page still, step 1,529, and built it part by part. Now the pages turn. The picture below holds a real ride. The bar is the whole route, with the rider and the truck as two dots on it, and the lines of text read out the clock, the rider and the truck. The figure under the bar is the rider seen from behind, which the rider's chapters come back to. Press play and let it run for a moment. Press play again to stop it, then press the step-back button a few times.
+The first half of the book held one page still, step 1,529, and built it part by part. Now the pages turn. The picture below holds a real ride. The bar is the whole route, with the rider and the truck as two dots on it, and the lines of text read out the clock, the rider and the truck. The figure under the bar is the rider seen from behind, with the lean drawn three times as steep. Press play and let it run for a moment. Press play again to stop it, then press the step-back button a few times.
 
 ```widget step
 Press play, press it again to stop, then step back.
@@ -1227,7 +1227,7 @@ Here's the function, piece by piece:
 | `route_place: { ..place, … }` | record update | The new `route_place` is an update of the old place in turn, and its `road_point` is an update of the old point. So the new motorcycle's `along` is `at`, three records deep. |
 | `speed: Speed.at_rest` | field | A second field with a new value. |
 
-`motorcycle` itself stays as it was, and so do `place` and its road point. Every step of the ride builds its next moment this way, out of the old moment's fields.
+`motorcycle` itself stays as it was, and so do `place` and its road point. Every step of the ride builds its next moment as a new record, out of the old moment's fields.
 
 ## Pure functions and effects
 
@@ -1251,7 +1251,7 @@ So every moment of a ride follows from the road it runs on and the keys the view
 
 ## Opaque types: the clock
 
-Every moment of the ride carries a clock, which counts the steps since the ride started. Step 1,529, the page the first half held still, is a clock. The sun, the sky and the beacons all follow the clock alone.
+Every moment of the ride carries a clock, which counts the steps since the ride started. Step 1,529, the page the first half held still, is a clock. The sun and the sky follow the clock alone, and each beacon follows the clock and its tower.
 
 ### A moment and a length
 
@@ -1288,7 +1288,7 @@ We enforce invariants with `crash`, and the clock has two. Every clock is at ste
 
 Each `expect` below the module's braces is a test, and `roc test` runs them all. A clock is a plain value, so a test builds one directly. `Clock.at_step(9).plus(Steps.of(3)) == Clock.at_step(12)` passes when step 9 plus three steps is step 12. The last three tests try `<` on a clock before another, a clock against itself, and a clock after another. `!` flips a `Bool`.
 
-The clock is the first of the four things a moment carries. The sun, the sky and the beacons are derived from it alone, at any step. The next chapter reads the step itself, which moves all four on together.
+The clock is the first of the four things a moment carries. The sun and the sky are derived from it alone, at any step, and the beacons from it and their towers. The next chapter reads the step itself, which moves all four on together.
 
 ## The ride instant
 
@@ -1328,7 +1328,7 @@ The trees and the cows stay put.
 
 So the stepped parts need the most care.
 
-The clock-driven things come next, and the beacons are the simplest of them: they follow the clock alone.
+The clock-driven things come next, and the beacons are the simplest of them: they follow the clock and their towers.
 
 ## The beacons
 
@@ -1398,13 +1398,13 @@ The picture's two beacons belong to the first segment, whose head start is 0. St
 
 ### A disc, or a refusal
 
-A tower's sighting passes `Beacon.disc` two things: the point on the screen where the beacon's middle lands, and how many pixels a metre spans there. `disc` returns a disc, or a refusal:
+`Tower.tower_shapes` passes `Beacon.disc` two things: the point on the screen where the beacon's middle lands, and how many pixels a metre spans there. `disc` returns a disc, or a refusal:
 
 {{signatures Beacon.disc}}
 
-The disc is 3 metres in radius, and see-through as far as the beacon is dim. `disc` returns `TooDim` for a beacon below a brightness of one part in fifty, and `TooSmall` for a disc whose radius comes to under half a pixel. The picture holds a disc for every other beacon.
+The disc is 3 metres in radius, and see-through as far as the beacon is dim. `disc` returns `TooDim` for a beacon below a brightness of one part in fifty, and `TooSmall` for a disc whose radius comes to under half a pixel. Every beacon bright enough and big enough gets its disc.
 
-Everything `Beacon` works with comes in as arguments: a tower's key, a clock, a spot and a scale. So its tests build those values directly, apart from any tower or ride. They check the head starts, the phase, the blink and the opposite blink halfway along, and the disc's size, color and refusals.
+Everything `Beacon` works with comes in as arguments: a tower's key, a clock, a point on the screen and a scale. So its tests build those values directly, apart from any tower or ride. They check the head starts, the phase, the blink and the opposite blink halfway along, and the disc's size, color and refusals.
 
 A beacon repeats every 120 steps. The sun moves one way through the whole ride, and the sky and the light on everything follow it.
 
@@ -1422,7 +1422,7 @@ This picture does only the first job, so its sky stays blue. For each frame, the
 
 {{code SunPath.height_at}}
 
-`SunPath.sun_direction_at` works out the sun's direction at a clock, a bearing and a height, with the ride's one piece of spherical trigonometry. The sky's part of the sunset needs only the height. Where the sun lands on the screen needs its bearing too, which comes next.
+`SunPath.sun_direction_at` works out the sun's direction at a clock, a bearing and a height, with the ride's one piece of spherical trigonometry. The sky turns about its pole as the earth does, at a latitude of 45° on the winter solstice, so the sun sinks along an arc into the southwest. The sky's part of the sunset needs only the height. Where the sun lands on the screen needs its bearing too, which comes next.
 
 ### In view, or out of view
 
@@ -1576,7 +1576,7 @@ When the bike leans, the camera rolls with it, and the whole picture leans:
 
 {{code RiderCamera.rider_roll}}
 
-A lean inside `roll_deadband`, a thousandth of a radian, leaves the picture level, and any other lean passes straight through. The camera turns as well: the rider's head follows the gaze and turns a little into a bend, and the camera adds the head's turn to the motorcycle's yaw.
+A lean inside `roll_deadband`, a thousandth of a radian, leaves the picture level, and any other lean passes straight through. The camera turns as well: the rider's head follows the gaze and turns a little into a bend, and the camera adds the head's turn to the motorcycle's yaw, as the {{chapter The rider's gaze}} chapter shows.
 
 So for each step, `RiderMind.controls` returns a lean and an acceleration, and `motorcycle_at_next_step` turns them into a new place on the road. The next chapter shows how the throttle chooses the acceleration. The {{chapter Variables and loops: rehearsal}} chapter shows how the rider chooses the lean.
 
@@ -1630,7 +1630,9 @@ It has one caller, `VehicleLimits.braking_to`. That function also holds the spee
 
 {{code Throttle.bend_limit}}
 
-The last limit, `shoulder_limit`, comes back in the {{chapter Variables and loops: rehearsal}} chapter, because it runs a pretend copy of the bike forward, which is what that chapter is about. The two in the middle come from what the rider sees: `encounter_throttle` is the cat's, and `gawk_brake` the pig's. The cat's has its own chapter, and the pig's comes after Rehearsal, in the {{chapter The rider's gaze}} chapter.
+`exit_speed` is the speed the bend ahead allows, or rest on the route's last segment, so the same limit brings the rider to a stop at the end of the road.
+
+The last limit, `shoulder_limit`, comes back in the {{chapter Variables and loops: rehearsal}} chapter, because it runs a pretend copy of the bike forward, which is what that chapter is about. The two in the middle come from what the rider sees: `encounter_throttle` is the cat's, and `gawk_brake` the pig's. The cat's comes in the {{chapter What a cat does to the rider}} chapter, and the pig's comes after Rehearsal, in the {{chapter The rider's gaze}} chapter.
 
 ## Variables and loops: rehearsal
 
