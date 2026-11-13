@@ -292,7 +292,7 @@ The next chapter starts on the things beside the road. Every function from here 
 
 ## Things
 
-The things beside the road are its trees, its radio towers and its animals. Here's a cow and a bull on the grass, produced by Safari Ride's own code:
+The things beside the road are its trees, its radio towers and its animals. Here's a cow and a bull on the grass, from Safari Ride's own code:
 
 ```widget cow
 A cow and a bull on the grass beside the road.
@@ -302,7 +302,7 @@ The ride has a lot of animals: herds of cows, some led by a bull, herds of pigs,
 
 Every other animal is a billboard: a flat picture of its emoji, standing on the grass and turned square to the camera, like a cardboard cutout. That takes far less code than modeling an animal, and it's charming.
 
-A billboard faces left or right, and one that faces right is its emoji mirrored. That's the `Billboard` type from the {{chapter Types}} chapter: an emoji, a height and a facing. Each emoji was traced into polygons ahead of time, and the `EmojiStill` module holds them as plain data.
+A billboard faces left or right, and one that faces right is its emoji mirrored. That's the `Billboard` type from the {{chapter Types}} chapter: an emoji, a height and a facing. We traced each emoji into polygons ahead of time, and the `EmojiStill` module holds them as plain data.
 
 A billboard animal starts from a record of the `Billboard.Species` type: its emoji, and how tall a grown one stands. A plain `:` names that type, so any module reads its fields. Here are the cow's and the bull's, from the `CowHerd` module:
 
@@ -314,7 +314,7 @@ The bull's height comes from the cow's: `cow.adult_height` reads a field of the 
 
 ### Calves
 
-A herd looks better with a few calves in it. The ride's rule is simple: number a herd's cows from 0, and make cows 1, 5, 9 and so on calves: every fourth cow, starting with cow 1. A calf is a billboard half as tall as a grown cow. Here are twenty cows in a row, numbered:
+A herd looks better with a few calves in it. The ride numbers a herd's cows from 0, and every fourth cow, starting with cow 1, is a calf: cows 1, 5, 9 and so on. A calf is a billboard half as tall as a grown cow. Here are twenty cows in a row, numbered:
 
 ```widget herd
 Twenty cows, numbered from 0. Cows 1, 5, 9, 13 and 17 are calves.
@@ -330,11 +330,11 @@ A second function puts `is_calf` to work. It gives each cow in a herd its billbo
 
 {{code CowHerd.cow_billboard}}
 
-Its `if` picks one of two billboards: a young one when `is_calf` says `True`, and a grown one when it says `False`. A `Billboard` is opaque, so only the `Billboard` module can build one, and `young_billboard` and `adult_billboard` are two of the ways it offers. The herd calls `cow_billboard` for every cow it places.
+Its `if` picks one of two billboards: a young one when `is_calf` says `True`, and a grown one when it says `False`. A `Billboard` is opaque, so only the `Billboard` module can build one, and `young_billboard` and `adult_billboard` are two of its functions that do. The herd calls `cow_billboard` for every cow it places.
 
 ### What a thing's sprite takes
 
-Calf, cow or bull, the ride produces a billboard's sprite the way it produces the sprite of every kind of thing beside the road: with a function called `scenery_sprite`, in that kind's module. The `Billboard` module's `scenery_sprite` has a longer definition, built around a `match`, a way of choosing between tags that the next chapter teaches. So here's its annotation alone:
+Calf, cow or bull, the ride produces a billboard's sprite the way it produces the sprite of every kind of thing beside the road: with a function called `scenery_sprite`, in that kind's module. The `Billboard` module's `scenery_sprite` has a longer definition, built around a `match`, which the next chapter teaches. So here's its annotation alone:
 
 {{signatures Billboard.scenery_sprite}}
 
@@ -346,11 +346,11 @@ A setting is a record:
 
 The `focal_length` says how strong the camera's lens is: the longer it is, the bigger everything looks, as when a camera zooms in. The `darkness` says how dark the sky is, from 0 by day to 1 at night, so everything beside the road can dim as night falls.
 
-The `spot` comes from a camera: it's what a sighting holds. So for the cow and the bull, the picture at the top of this chapter puts each one on the road by hand, the cow 10 metres ahead and 5 metres left of the middle, and lets a camera at the start of the road sight them. The rider's own camera comes in a later chapter.
+The `spot` comes from a camera: it's what a sighting holds. So for the cow and the bull, the code behind the picture at the top of this chapter places each one on the road by hand, the cow 10 metres ahead and 5 metres left of the middle, and sights them with a camera at the start of the road. The rider's own camera comes in a later chapter.
 
 What comes back is a sprite, and every sprite is a list of shapes. The cow's sprite is its emoji, as polygons.
 
-At the bends in the road stand four more kinds of billboard animal: elephants, giraffes, zebras and rhinos. They come next, with the `match` that mirrors the ones that face right.
+At the bends in the road stand four more kinds of billboard animal: elephants, giraffes, zebras and rhinos. They come next, with the `match` that picks which ones to mirror.
 
 ## Billboard Critters
 
@@ -364,7 +364,7 @@ The Roc ideas here are tag unions and `match`: a type that is exactly one of a f
 
 ### Two ways to face
 
-Each emoji shows its animal from the side, so a billboard faces left or right, and your eye follows its gaze. The `Billboard` module gives those two ways a type of their own:
+Each emoji shows its animal from the side, so a billboard faces left or right. The `Billboard` module gives those two ways a type of their own:
 
 {{code Billboard.Facing}}
 
@@ -374,7 +374,7 @@ The {{chapter Things}} chapter showed the annotation of `Billboard.scenery_sprit
 
 {{code Billboard.scenery_sprite}}
 
-A `Billboard` is opaque, and `Billboard.(billboard)` in the arguments opens it: it unwraps the billboard into a record named `billboard`, so the function can read `billboard.facing` and the other fields. Only the `Billboard` module can write that.
+A `Billboard` is opaque, and `Billboard.(billboard)` in the arguments opens it: it unwraps the billboard into a record named `billboard`, so the function can read `billboard.facing` and the other fields. Only the `Billboard` module can write `Billboard.(billboard)`.
 
 Braces hold a block or a record: a block holds lines of code, where a record holds fields with colons. The block names `flip`, and its last expression makes the sprite. `billboard.emoji.still()` gives the emoji's traced still. `StillShapes.standing_still_shapes` makes shapes from it at the billboard's height, and `Sprite.from_shapes` makes those shapes a sprite. In that last record, `flip` alone is short for `flip: flip`.
 
@@ -382,9 +382,9 @@ A still is plain data: a list of filled polygons, in the order they're painted. 
 
 {{code Still.Polygon}}
 
-Every point is measured in units of the still's height. Its feet are at `y` 0, its `x` runs across from its middle, and a standing animal is about 1 tall. So a still is free of pixels and metres, and the same numbers draw a cow in the distance and a cow by the road. Every animal in the ride, from the cow to the cat and the bird, is drawn from stills like this one.
+A still measures every point in units of its own height. Its feet are at `y` 0, its `x` runs across from its middle, and a standing animal is about 1 tall. So one still serves a cow in the distance and a cow by the road, each scaled to its own height. Every animal in the ride, from the cow to the cat and the bird, comes from stills like this one.
 
-Every emoji faces left, so a billboard that faces right needs its emoji mirrored. The `match` makes that choice. It looks at `billboard.facing`, and each line under it takes one tag and gives back what to do: `FacesLeft` gives `AsDrawn`, and `FacesRight` gives `Mirrored`. Those two are the tags of another tag union, `StillShapes.Flip`, and `flip` names the one the `match` picks. The compiler works out the type of `flip` from where it's used.
+Every emoji faces left, so a billboard that faces right needs its emoji mirrored. The `match` makes that choice. It looks at `billboard.facing`, and each line under it takes one tag and returns a tag: `FacesLeft` gives `AsDrawn`, and `FacesRight` gives `Mirrored`. Those two are the tags of another tag union, `StillShapes.Flip`, and `flip` names the one the `match` picks. The compiler works out the type of `flip` from where it's used.
 
 A `match` handles every tag of its type, and the compiler checks that it does. Leave out the `FacesRight` line, and the compiler stops with an error that names it:
 
@@ -405,17 +405,17 @@ Each tag is an animal. `BendAnimal` uses `:=`, so it's a nominal type: a new typ
 
 {{code BendAnimal.species_of}}
 
-This `match` is about as plain as one gets: a tag in, a record out, one line per animal. Its four lines are the four tags, so every bend animal has a species, and a grown giraffe is always 4.5 metres tall.
+The `match` has one line for each of the four tags, so every bend animal has a species, and a grown giraffe is always 4.5 metres tall.
 
 ### One thing at a bend
 
-A bend is quiet, or it holds one thing: an animal and its baby, or a pond of ducks. The `Segment` module's `BendLife` type says what's at a bend, and it says exactly that:
+A bend is quiet, or it holds one thing: an animal and its baby, or a pond of ducks. The `Segment` module's `BendLife` type says what's at a bend:
 
 {{code Segment.BendLife}}
 
 `Quiet` and `DuckPond` are plain tags, like the ones above. `Animal(BendAnimal)` is a tag that carries a value: an `Animal` always comes with one `BendAnimal`. So `Animal(Giraffe)` is a whole value, a bend with a giraffe at it.
 
-The route's plan stores a `BendLife` for each bend. A plain list of billboards there would let a giraffe and a duck pond share one bend. A `BendLife` is exactly one of its three tags, so a bend gets one thing, and the list of its billboards is worked out from that one thing.
+The route's plan stores a `BendLife` for each bend. A plain list of billboards there would let a giraffe and a duck pond share one bend. A `BendLife` is exactly one of its three tags, so a bend gets one thing, and `bend_billboards` derives the bend's billboards from it.
 
 What a bend's life can be
 ```dot
@@ -440,11 +440,10 @@ The function that gives a bend its billboards takes the bend's life and the bend
 
 {{code Segment.bend_billboards}}
 
-The `Animal(animal)` line matches a bend with any animal at it, and names the animal it carries `animal`, ready to use. Then `animal.bend_billboards(bend)` calls a different function with the same name. `animal` is a `BendAnimal`, so the call goes to the `bend_billboards` that comes with `BendAnimal`, which places the animal and its baby. A duck pond gets its ducks from the `Pond` module, and a quiet bend gets the empty list, `[]`. The code has the same shape as the type: one line for each tag, and the value a tag carries named right where the line needs it.
-
+The `Animal(animal)` line matches a bend with any animal at it, and names the animal it carries `animal`, ready to use. Then `animal.bend_billboards(bend)` calls a different function with the same name. `animal` is a `BendAnimal`, so the call goes to the `bend_billboards` that comes with `BendAnimal`, which places the animal and its baby. A duck pond gets its ducks from the `Pond` module, and a quiet bend gets the empty list, `[]`.
 ### Elephants, mostly
 
-The route's plans say what lives at each bend, and most of them say `Animal(Elephant)`. Only a handful say `Animal(Giraffe)`, `Animal(Zebra)`, `Animal(Rhino)` or `DuckPond`. That's on purpose. The ride is more interesting when most of it is ordinary: the elephants are the fixture, so the rare animal is a surprise.
+The route's plans say what lives at each bend, and most of them say `Animal(Elephant)`. Only a handful say `Animal(Giraffe)`, `Animal(Zebra)`, `Animal(Rhino)` or `DuckPond`. We chose that mix: the elephants are the fixture, so a rare animal is a surprise.
 
 A tag union lists everything a value can be, and a `match` handles each case. The emojis came ready-made, traced ahead of time. Next, we build shapes of our own: a triangle and a rectangle.
 
@@ -452,7 +451,7 @@ A tag union lists everything a value can be, and a `match` handles each case. Th
 
 A far tree in the ride is a trunk under eight triangles. So before we build a tree, we build its two shapes: a triangle and a rectangle.
 
-In Safari Ride, a shape is a value that describes something to paint. The first four tags of the `Shapes` module's `Shape` type are the kinds of region the ride paints, each a region of the screen with a fill:
+In Safari Ride, a shape is a value that describes something to paint. The first four tags of the `Shapes` module's `Shape` type are the kinds of region the platform paints, each a region of the screen with a fill:
 
 {{code Shapes.Shapes from "Shape : [" to "Polygon({ corners :"}}
 
@@ -472,11 +471,11 @@ And here's the code that makes it:
 
 The value is a `Triangle` tag with its record. The record names three corners, `first`, `second` and `third`, so every triangle has exactly three, by construction. A corner is a `Point`, a record with an `x` and a `y`. `Point.at` makes one from two plain numbers, measured from the top left of the picture, with `y` growing downward. The picture is 640 pixels wide and 324 tall.
 
-`Point.at` turns each of those numbers into a `Pixels`, an opaque type around an `F64`, like `Distance`. The ride works in metres on the road and in pixels on the screen, and two types keep the two apart, so each number says which one it is. In a program that moves between the road and the screen all the time, the types earn their keep.
+`Point.at` turns each of those numbers into a `Pixels`, an opaque type around an `F64`, like `Distance`. The ride works in metres on the road and in pixels on the screen, and two types keep the two apart, so each number's type names its unit.
 
-The `fill` is green. `RgbColor.of` makes a color from `0x2e8b57`, a number in hex, as `0x` says: the six digits a web page writes after its `#`, and `Brush.flat` makes a fill of that one color.
+The `fill` is green. `RgbColor.of` makes a color from `0x2e8b57`. The `0x` marks a number in hex: the six digits a web page writes after its `#`. `Brush.flat` makes a fill of that one color.
 
-A shape only describes. So what paints the triangle? The platform does. The picture is a small Roc app of its own, and it hands the platform a list of two shapes: the background, a rectangle that fills the picture, and then the triangle. The platform paints the list from first to last, so the triangle lands on the background.
+The platform paints the triangle. The picture is a small Roc app of its own, and it hands the platform a list of two shapes: the background, a rectangle that fills the picture, and then the triangle. The platform paints the list from first to last, so the triangle lands on the background.
 
 ### A rectangle
 
@@ -488,12 +487,12 @@ A brown rectangle on a plain background.
 
 {{code ShapesWidgetApp.brown_rectangle}}
 
-Look how closely the rectangle's structure echoes the triangle's, as it should:
+The rectangle's code has the triangle's structure:
 
 | | The triangle | The rectangle |
 |---|---|---|
 | Its type | `Shapes.Shape` | `Shapes.Shape` |
-| What builds it | the `Triangle` tag | the `Shapes.rectangle` function, which gives back a `Quad` |
+| What builds it | the `Triangle` tag | the `Shapes.rectangle` function, which returns a `Quad` |
 | Where it is | three corners, each from `Point.at` | a top left corner from `Point.at`, and a width and a height from `Pixels.of` |
 | Its fill | `Brush.flat(RgbColor.of(0x2e8b57))`, green | `Brush.flat(RgbColor.of(0x8b5a2b))`, brown |
 
@@ -503,11 +502,11 @@ Here's the function:
 
 `|{ top_left, width, height, fill }|` takes the record apart, naming each of its fields. The body works out where the right and bottom edges are, with `plus`, which adds two `Pixels`. Then it gives the quad its four corners, clockwise from the top left. Each side's two corners share an `x` or a `y`, so the sides are always square to the screen.
 
-That's both of a far tree's shapes. Next, we put them together, with functions of our own.
+A far tree needs just those two shapes. Next, we put them together, with functions of our own.
 
 ## A far tree
 
-With a triangle and a rectangle in hand, we can build the far tree. This chapter builds it from small functions: the tiers of its crown, a test that pins them, a triangle for each tier, and the order the trunk and the tiers are painted in.
+With a triangle and a rectangle in hand, we can build the far tree. The tree comes from small functions: the tiers of its crown, a test that pins them, a triangle for each tier, and the order of the trunk and the tiers in its sprite.
 
 ```widget far_tree
 One far tree, magnified so that it stands tall in the picture.
@@ -527,7 +526,7 @@ The widths start as a list of eight plain numbers:
 
 In a type, square brackets list tags. In a value, as here, they make a list, and every item in a list has the same type. These eight are `F64`s, chosen by eye, from the narrow top tier to the full-width bottom one.
 
-`map` calls a function on each item of a list and gives back a list of the answers. Here we hand it `Fraction.of` by name, and `Fraction.of` turns an `F64` into a `Fraction`, so `tier_widths` is a `List(Fraction)`. `Fraction.of` crashes on a number outside 0 to 1, because a share out of range means the sum behind it is wrong.
+`map` calls a function on each item of a list and returns a list of the answers. Here we hand it `Fraction.of` by name, and `Fraction.of` turns an `F64` into a `Fraction`, so `tier_widths` is a `List(Fraction)`. `Fraction.of` crashes on a number outside 0 to 1, because a share out of range means the sum behind it is wrong.
 
 ### Tops and bottoms
 
@@ -551,7 +550,7 @@ A tier is a set of shares. A triangle is corners on the screen. Between the two 
 
 {{code Camera.Upright}}
 
-The camera works the outline out from where the tree stands. How it does that is perspective, and the {{chapter The math layer}} chapter, near the end of the book, opens it up. Three small functions read the crown's place from the outline:
+The camera works the outline out from where the tree stands, by perspective. The {{chapter The math layer}} chapter, near the end of the book, explains perspective. Three small functions read the crown's place from the outline:
 
 {{signatures TreeShapes.crown_top_y TreeShapes.crown_height TreeShapes.crown_half_width}}
 
@@ -571,7 +570,7 @@ The trunk is a rectangle:
 
 Its body works out the trunk's width, its height and its top left corner from the outline, and hands them to `Shapes.rectangle`. Its `finish` says whether the trunk is shaded, which we come to at the end of the chapter.
 
-The order of the shapes matters as much as the shapes. `tree_sprite` produces the whole tree's sprite:
+`tree_sprite` produces the whole tree's sprite, and the order of its shapes matters:
 
 {{code TreeShapes.tree_sprite}}
 
@@ -589,7 +588,7 @@ The last line puts the list together. `[trunk]` is a list of one shape, and `con
 
 ### What you're missing
 
-Every tree 200 metres or more ahead of the camera is built this way: 200 metres is `cone_reach`. Nearer than that, the ride builds more. Each tier becomes a cone, which looks round and fattens as the rider passes under it, and the nearest cones are shaded. `crown_of` makes that choice, and `tier_shape` builds the cones. A cone on the screen is the outline round its ring and its tip, which the `ConvexHull` module finds.
+`tree_sprite` builds every tree 200 metres or more ahead of the camera this way: 200 metres is `cone_reach`. Nearer than that, the ride builds more. Each tier becomes a cone, which looks round and fattens as the rider passes under it, and the nearest cones are shaded. `crown_of` makes that choice, and `tier_shape` builds the cones. A cone on the screen is the outline round its ring and its tip, which the `ConvexHull` module finds.
 
 `round_trunk_reach` is 60 metres. Within it, `trunk_finish_of` gives `Shaded` in place of `Flat`, and the trunk looks round.
 
@@ -599,7 +598,7 @@ So a far tree is a handful of small functions over one list of tiers. The `expec
 
 ## The pipeline
 
-Every frame, every thing beside the road takes the same trip to the screen. In the {{chapter A far tree}} chapter, `TreeShapes.tree_sprite` takes a setting and returns a tree's sprite. This chapter follows the trip around that function: where the setting comes from, and where the sprite goes. A tree, a cow, a radio tower, the cat, the bird and the truck each start from a place on the road, and end as a rendering, a sprite with a depth, in the frame's one list. The `Pipeline` module holds the functions that sight and render, so we call the trip the pipeline.
+For each frame, every thing beside the road takes the same trip to the screen. In the {{chapter A far tree}} chapter, `TreeShapes.tree_sprite` takes a setting and returns a tree's sprite. This chapter follows the trip around that function: where the setting comes from, and where the sprite goes. A tree, a cow, a radio tower, the cat, the bird and the truck each start from a place on the road, and end as a rendering, a sprite with a depth, in the frame's one list. The `Pipeline` module holds the functions that sight and render, so we call the trip the pipeline.
 
 ```widget pipeline
 Step 1,529 of the ride, with only what came through the pipeline: its trees, critters and towers, the cat and the truck.
@@ -645,7 +644,7 @@ The trip starts from where a thing stands on the road:
 
 {{code Along.Along from "Along ::" to "metres = |metres|"}}
 
-The compiler keeps the two apart, so a place along the road always goes where a place along the road belongs.
+So the compiler rejects a call that passes an `across` where an `along` belongs.
 
 ### Sighted
 
@@ -663,15 +662,15 @@ A sighting keeps the thing's kind and swaps its place on the road for a `Spot`, 
 
 `right` and `forward` count metres from the camera, and a negative `forward` is behind it. A `RiderView.RiderPointAhead` is the same record behind a `::`, and only `RiderView.rider_point_ahead` builds one, from a point in front of the camera. So a spot's foot is always in front of the camera, by construction. This `spot` is the one `tree_sprite` took from its setting in the {{chapter A far tree}} chapter.
 
-Some placed things stay off the screen, because a sighting can refuse a thing. The rest of this chapter follows the sightings that are kept.
+A sighting function can also return a refusal, such as `OutOfSight`, in place of a sighting. The rest of this chapter follows the sightings that are kept.
 
 ### Rendered
 
-Each sighting that's kept is rendered by `Pipeline.rendering_of`, which the {{chapter Asking a kind}} chapter explains. It returns a `Rendered`:
+`Pipeline.rendering_of`, which the {{chapter Asking a kind}} chapter explains, renders each sighting that's kept, and returns a `Rendered`:
 
 {{code Rendered.Rendered from "Rendered ::" to "of = "}}
 
-A `Rendered` holds a depth and a sprite. The `::` makes it opaque, as it does `Distance`. The sprite is what a kind's `scenery_sprite` returns from a setting, and the depth is how far ahead of the camera the thing stands. The kind has done its job by now, and it's gone: a tree's rendering and a cow's have the same type.
+A `Rendered` holds a depth and a sprite. The `::` makes it opaque, as it does `Distance`. The sprite is what a kind's `scenery_sprite` returns from a setting, and the depth is how far ahead of the camera the thing stands. A tree's rendering and a cow's have the same type.
 
 
 ### One list
@@ -680,9 +679,9 @@ Every rendering has that one type, so a frame gathers them all in one list:
 
 {{code Scene.scene_renderings}}
 
-A `Scene` holds a list of renderings for each sort of thing, and `join` makes one list of them all. The guard rail along the road makes its own `Rendered`s, as a later chapter shows, and `scene.rails` joins them to the list. `Rendered.depth_sorted_renderings` sorts the list from far to near, and the platform paints it in that order, so a near thing covers a far one.
+A `Scene` holds a list of renderings for each sort of thing, and `join` makes one list of them all. The guard rail's renderings come in through `scene.rails`, as a later chapter shows. `Rendered.depth_sorted_renderings` sorts the list from far to near, and the platform paints it in that order, so a near thing covers a far one.
 
-So every thing beside the road makes the same trip: placed on the road, sighted by the camera, rendered as a sprite with a depth, and sorted into the frame's one list. Its kind rides through the first two types and is gone by the third. The trip can also end early, at the sighting, and the {{chapter Refused}} chapter goes back to that box. First, the next chapter shows how `rendering_of`, written once, gets a sprite out of every kind.
+So every thing beside the road makes the same trip: placed on the road, sighted by the camera, rendered as a sprite with a depth, and sorted into the frame's one list. Its kind rides through the first two types, and the third holds just a sprite and a depth. The trip can also end early, at the sighting, and the {{chapter Refused}} chapter goes back to that box. First, the next chapter shows how `rendering_of`, written once, gets a sprite out of every kind.
 
 ## Asking a kind
 
@@ -696,7 +695,7 @@ One function can render every kind because of this chapter's new Roc idea, the `
 
 ### A kind from the inside
 
-A tree needs a height and a color. Where it stands is the job of the types around it. So the `Conifer` type says which tree it is, and its methods give the height and the sprite:
+A tree needs a height and a color. The types around it hold where it stands. So the `Conifer` type says which tree it is, and its methods give the height and the sprite:
 
 {{module Conifer}}
 
@@ -720,7 +719,7 @@ This table explains the code's concepts:
 |---|---|---|
 | A type variable | Generality | `kind` in `Pipeline.Sighted(kind)` stands for whatever type the caller's sighting holds. |
 | A `where` clause | Constraint | `where [kind.scenery_sprite : kind, Sprite.Setting -> Sprite]` constrains `kind` to types that have a method named `scenery_sprite`, which takes a `kind` and a `Sprite.Setting` and returns a `Sprite`. The square brackets hold a list of constraints, here just one. |
-| A method | Placement | A method is a function inside a type's braces, and only a method meets a `where` clause. That's why `Conifer` keeps `scenery_sprite` inside, with `scenery_height`, while its private helpers sit outside. |
+| A method | Placement | A method is a function inside a type's braces, and only a method meets a `where` clause. So the `Conifer` module puts `scenery_sprite` inside the braces, with `scenery_height`, and its private helpers outside. |
 | A method call | Dispatch | `sighting.kind` is the sighting's `kind` field, which holds a value of the type `kind`. `.scenery_sprite(...)` calls that type's method, with the value before the dot as its first argument. |
 
 The rest of the body builds the setting. A `Sprite.LensAndLight` holds the shared part of a `Sprite.Setting`, the focal length and the darkness, and the body adds the sighting's own spot. `sighting.spot.foot().forward()` is how far ahead of the camera the thing's foot stands.
@@ -731,9 +730,9 @@ Each call to `rendering_of` fills `kind` with one particular type. The ride rend
 
 {{code Scene.scene_in_view from "trees:" to "trees:"}}
 
-The compiler looks inside `Conifer`'s braces, finds a `scenery_sprite` of the right type, and the call compiles. The compiler checks every other call the same way, one type at a time. So the choice of which `scenery_sprite` runs is made when the program compiles, once for each type. Every call returns a `Rendered`, whatever the kind, so a frame's renderings of trees, cows and towers all go in one list.
+The compiler looks inside `Conifer`'s braces, finds a `scenery_sprite` of the right type, and the call compiles. The compiler checks every other call the same way, one type at a time. So the compiler chooses which `scenery_sprite` runs, once for each type, when the program compiles. Every call returns a `Rendered`, whatever the kind, so a frame's renderings of trees, cows and towers all go in one list.
 
-Every type that fills `kind` has to pass the compiler's check. Here a `Rock`, a kind that is just one tag, is handed to `rendering_of`. The program is a small app of its own, which uses Safari Ride's modules as its `game` package. Only `Rock` and `rock_rendering` matter here. The rest makes the program an app. A name that ends in `!`, such as `main!`, marks a function with effects, which the {{chapter The ride instant}} chapter explains, and the `_` names an argument that `main!` leaves unused:
+Every type that fills `kind` has to pass the compiler's check. Here a program hands `rendering_of` a `Rock`, a kind that is just one tag. The program is a small app of its own, which uses Safari Ride's modules as its `game` package. Only `Rock` and `rock_rendering` matter here. The rest makes the program an app. A name that ends in `!`, such as `main!`, marks a function with effects, which the {{chapter The ride instant}} chapter explains, and the `_` names an argument that `main!` leaves unused:
 
 {{fails kind_without_sprite}}
 
@@ -747,11 +746,11 @@ Sighting a thing needs its height. A far thing shows only when its top clears th
 
 ### Names that say what they're for
 
-Roc matches a `where` clause by the method's name and type alone. Suppose the clause named a method called just `height`. The bird could well have one that says how high it flies, and the sighting would test the bird against the wrong number, while the compiler stays quiet. So every method the pipeline's clauses name starts with "scenery", which makes an accidental match unlikely.
+Roc matches a `where` clause by the method's name and type alone. Suppose the clause named a method called just `height`. The bird could well have one that says how high it flies, and the sighting would test the bird against the wrong number, yet the program would compile. So every method the pipeline's clauses name starts with "scenery", which makes an accidental match unlikely.
 
 So a kind meets the pipeline with two methods inside its braces, `scenery_height` and `scenery_sprite`. The tree, the cow, the radio tower, the cat and the bird each have both, and the compiler checks both methods of every kind when the program compiles.
 
-That finishes how a kept sighting reaches the frame. The next chapter takes the sightings that are refused.
+The next chapter takes the sightings that are refused.
 
 ## Refused
 
