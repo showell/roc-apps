@@ -1147,29 +1147,29 @@ A tower raises two problems of its own. Far off, it should sink below the horizo
 
 ### Where a tower stands
 
-A tower is two facts: which way it's turned, and its beacon, the light at its top:
+A tower is two facts: its yaw, which way its square footprint is turned, and its beacon, the light at its top:
 
 {{code Tower.Tower from "A tower in a frame" to "Tower :: {"}}
 
-Trees get their places once, when the world is built. A tower's sighting works out its place each frame, from its segment. Here's the tower past a segment's end:
+Trees get their places once, when the world is built. A tower's beacon blinks with the clock, so its sighting builds the tower afresh each frame, from its segment and the clock. Here's the tower past a segment's end:
 
 {{code TowerSighting.end_tower}}
 
-The tower halfway along is the same, with a square yaw, a `Midway` beacon, and one more way to fail: `mid_tower_point` gives `Err(NoMidTower)` for a segment of a kilometre or less. Where towers stand has one home, `TowerSighting`, and the world itself holds only the segments.
+It turns the tower to face the road where it ends. The tower halfway along is the same, with its footprint square to the road, a `Midway` beacon, and one more way to fail: `mid_tower_point` gives `Err(NoMidTower)` for a segment of a kilometre or less. Where towers stand has one home, `TowerSighting`, and the world itself holds only the segments.
 
 ### Over the horizon
 
-The ride's ground curves away on its 100 km radius, and a tower stands on it. From the rider's eye, 1.2 metres up, the ground curves out of sight 490 metres out. Past that horizon, the lowest thing the rider can see lies on the line from the eye that grazes the ground there:
+The ride's ground curves away on its 100 km radius, and a tower stands on it. From the rider's eye, 1.2 metres up, the ground curves out of sight 490 metres out. Past that horizon, the lowest thing the rider can see lies on the line from the eye that grazes the ground there. One function finds that lowest height at any point on the ground:
 
-{{code EarthCurve.lowest_visible_height}}
+{{signatures EarthCurve.lowest_visible_height}}
 
 A tower hides whatever part of it is under that line, so as it gets further away, it sinks from the bottom up. An 80-metre tower still shows its tip about 4.5 km off. Once all of it is under the line, `Pipeline.sighting_above_horizon_of` refuses it as `OutOfSight`, as the {{chapter Refused}} chapter showed. So a sighted tower always has something to paint.
 
 ### Rods
 
-A tower is drawn as a few dozen rods and a disc for its beacon:
+A tower is drawn as a few dozen rods and a disc for its beacon, by `Tower.tower_shapes`. It starts with one check:
 
-{{code Tower.tower_shapes}}
+{{code Tower.tower_shapes from "if hidden_on_tower(geometry) >= tower_height" to "a tower hidden wholly below the horizon"}}
 
 Its sighting has already refused a tower the horizon hides wholly, so here that case is a `crash`: a stop with a message, for a case that would be a bug. Otherwise come the legs, the rings and the braces, and the beacon's disc last, at the top.
 
@@ -1179,7 +1179,7 @@ A tower's footprint is a square, and four tags name its corners. Going round the
 
 Four legs run from the corners up to the top, each starting at the height the horizon hides. Every 20 metres up, a ring of four rods joins each corner to the next one round, and crossed braces fill the lowest two storeys.
 
-Each rod is a line between two points seen from the rider, and a near tower can stand partly behind the camera. So each rod goes through this function:
+Each rod is a line between two points seen from the rider. A near tower is wide, so its foot can stand ahead of the camera while a corner of its footprint stands beside or behind it. So each rod goes through this function:
 
 {{code RiderView.line_ahead}}
 
