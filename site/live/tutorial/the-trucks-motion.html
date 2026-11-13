@@ -1,0 +1,341 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>The truck&#39;s motion · Safari Ride</title>
+<link rel="icon" href="data:,">
+<link rel="stylesheet" href="book.css">
+<script src="book.js" defer></script>
+</head>
+<body class="chapter">
+<header class="top-bar">
+<a class="home-link" href="https://roc.lynrummy.com/">Steve's Roc Apps</a>
+<p class="draft-notice">This is an early draft.</p>
+<a class="repo-link" href="https://github.com/showell/roc-apps">roc-apps on GitHub</a>
+</header>
+<nav class="book-nav" id="chapters" aria-label="Chapters">
+<a class="book-name" href="index.html">Safari Ride</a>
+<ol>
+<li class="part">The big picture</li><li><a href="introduction.html"><span class="number">1</span>Introduction</a></li>
+<li><a href="one-page.html"><span class="number">2</span>One page</a></li>
+<li><a href="the-problem.html"><span class="number">3</span>The problem</a></li>
+<li><a href="platforms-packages-and-modules.html"><span class="number">4</span>Platforms, packages and modules</a></li>
+<li><a href="types.html"><span class="number">5</span>Types</a></li>
+<li><a href="functions.html"><span class="number">6</span>Functions</a></li>
+<li class="part">One frame</li><li><a href="things.html"><span class="number">7</span>Things</a></li>
+<li><a href="billboard-critters.html"><span class="number">8</span>Tag unions: billboard critters</a></li>
+<li><a href="shapes.html"><span class="number">9</span>Shapes</a></li>
+<li><a href="a-far-tree.html"><span class="number">10</span>Lists and map: a far tree</a></li>
+<li><a href="the-pipeline.html"><span class="number">11</span>The pipeline</a></li>
+<li><a href="asking-a-kind.html"><span class="number">12</span>Where clauses: asking a kind</a></li>
+<li><a href="refused.html"><span class="number">13</span>Errors as tag unions</a></li>
+<li class="category">Nature</li><li><a href="the-sky.html"><span class="number">14</span>The sky and the grass</a></li>
+<li><a href="mountains.html"><span class="number">15</span>Mountains</a></li>
+<li class="category">Man-made</li><li><a href="the-road.html"><span class="number">16</span>The road</a></li>
+<li><a href="rails.html"><span class="number">17</span>Rails</a></li>
+<li><a href="radio-towers.html"><span class="number">18</span>Radio towers</a></li>
+<li class="category">Critters that stand still</li><li><a href="herds.html"><span class="number">19</span>Herds</a></li>
+<li class="part">Motion</li><li><a href="a-flip-book.html"><span class="number">20</span>Immutable values: a flip book</a></li>
+<li><a href="records.html"><span class="number">21</span>Records</a></li>
+<li><a href="pure-functions-and-effects.html"><span class="number">22</span>Pure functions and effects</a></li>
+<li><a href="the-clock.html"><span class="number">23</span>Opaque types: the clock</a></li>
+<li><a href="the-ride-instant.html"><span class="number">24</span>The ride instant</a></li>
+<li class="category">The passage of time</li><li><a href="the-beacons.html"><span class="number">25</span>The beacons</a></li>
+<li><a href="the-setting-sun.html"><span class="number">26</span>The setting sun</a></li>
+<li class="category">Vehicles</li><li><a href="the-rider.html"><span class="number">27</span>The rider</a></li>
+<li><a href="the-throttle.html"><span class="number">28</span>The throttle</a></li>
+<li><a href="rehearsal.html"><span class="number">29</span>Variables and loops: rehearsal</a></li>
+<li><a href="the-riders-gaze.html"><span class="number">30</span>The rider&#39;s gaze</a></li>
+<li><a href="the-truck.html"><span class="number">31</span>The truck</a></li>
+<li class="here"><a href="the-trucks-motion.html"><span class="number">32</span>The truck&#39;s motion</a><ol class="sections"><li><a href="the-trucks-motion.html#a-tease-carried-out-by-physics">A tease, carried out by physics</a></li><li><a href="the-trucks-motion.html#carried-from-step-to-step">Carried from step to step</a></li><li><a href="the-trucks-motion.html#get-the-types-right">Get the types right</a></li><li><a href="the-trucks-motion.html#the-functions">The functions</a></li></ol></li>
+<li class="category">Critter motion</li><li><a href="the-cat.html"><span class="number">33</span>The cat</a></li>
+<li><a href="the-bird.html"><span class="number">34</span>The bird</a></li>
+<li><a href="what-a-cat-does-to-the-rider.html"><span class="number">35</span>What a cat does to the rider</a></li>
+<li class="part">Under the hood</li><li><a href="the-math-layer.html"><span class="number">36</span>The math layer</a></li>
+<li><a href="proving-it.html"><span class="number">37</span>Proving it</a></li>
+<li><a href="the-platform.html"><span class="number">38</span>The platform</a></li>
+<li><a href="zooming-back-out.html"><span class="number">39</span>Zooming back out</a></li>
+</ol>
+</nav>
+<main>
+<p class="book-bar"><a href="index.html">Safari Ride</a> <a href="#chapters">Chapters</a></p>
+<article>
+<p class="chapter-number">Chapter 32</p>
+<h1 id="the-trucks-motion">The truck&#39;s motion</h1>
+<p>The truck is what the rider chases. It starts 500 metres up the road, and for most of the ride the rider closes in on it, unevenly:</p>
+<table>
+<thead>
+<tr>
+<th>Step</th>
+<th>Rider, along the route</th>
+<th>Truck, along the route</th>
+<th>Lead</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>0</td>
+<td>0 metres</td>
+<td>500 metres</td>
+<td>500 metres</td>
+</tr>
+<tr>
+<td>2,000</td>
+<td>1,831 metres</td>
+<td>2,274 metres</td>
+<td>443 metres</td>
+</tr>
+<tr>
+<td>4,000</td>
+<td>4,796 metres</td>
+<td>5,051 metres</td>
+<td>255 metres</td>
+</tr>
+<tr>
+<td>6,000</td>
+<td>6,790 metres</td>
+<td>6,931 metres</td>
+<td>141 metres</td>
+</tr>
+</tbody>
+</table>
+<p>The closest the rider gets is 50 metres, at step 6,374. After that the rider slows to stop at the route&#39;s end, at step 6,746. The truck drives on past the end of the route and out of the picture. It stays ahead to the last, by design.</p>
+<h2 id="a-tease-carried-out-by-physics">A tease, carried out by physics <a class="section-link" href="#a-tease-carried-out-by-physics" aria-label="Link to this section">§</a></h2>
+<p>The truck&#39;s driver is teasing the rider: staying ahead, but letting the rider gain. That&#39;s a hand of god: a rule that bends the world on purpose, for the story. Here it&#39;s one function, <code>tease_position</code>. Given how far the rider has come, it says where the truck would like to be. The lead it aims for shrinks from 500 metres at the start of the route to 100 at the end.</p>
+<p>The rest is physics. The truck speeds up while it&#39;s short of that mark and holds its speed once it&#39;s past it. It slows for the bends, and that&#39;s mostly where the rider gains. The tease only ever speeds the truck up, so near the end the rider can get closer than the 100 metres it aims for. The truck can always pull away again, because it outdoes the rider by 10%, in both its acceleration and its top speed.</p>
+<h2 id="carried-from-step-to-step">Carried from step to step <a class="section-link" href="#carried-from-step-to-step" aria-label="Link to this section">§</a></h2>
+<p>Where the truck is depends on where the rider has been, so the truck is one of the four things each moment carries. Its step, <code>truck_progress_at_next_step</code>, takes a <code>TruckProgress</code> and returns the next one. The rider moves first, and then the truck reads where the rider has got to. The reading runs one way, from the truck to the rider.</p>
+<h2 id="get-the-types-right">Get the types right <a class="section-link" href="#get-the-types-right" aria-label="Link to this section">§</a></h2>
+<p>The truck&#39;s state is three fields:</p>
+<figure class="listing"><figcaption>TruckJourney.roc, in TruckProgress</figcaption><pre><code class="language-roc"><span class="syn-comment">## How far along the route the truck is, how fast it is going, and whether</span>
+<span class="syn-comment">## its last step slowed it. Nominal, not opaque: other modules read its</span>
+<span class="syn-comment">## fields.</span>
+<span class="syn-type">TruckProgress</span> := {
+	route_position : <span class="syn-type">Distance</span>,
+	speed : <span class="syn-type">Speed</span>,
+	pace : <span class="syn-type">TruckJourney.Pace</span>,
+	<span class="syn-comment"># ...</span>
+</code></pre></figure><p><code>route_position</code> is a <code>Distance</code> along the whole route, the same measure as the rider&#39;s progress, so the two can be compared directly. <code>Pace</code>, which the brake lights read in the <a class="chapter-link" href="the-truck.html">“The truck”</a> chapter, says whether the truck&#39;s last step slowed it down.</p>
+<p>A bend ahead of the truck is its own type, and so is the answer to &quot;is there one&quot;:</p>
+<figure class="listing"><figcaption>TruckJourney.roc</figcaption><pre><code class="language-roc"><span class="syn-comment">## A bend ahead of the truck: how far off it is, and how sharply it turns.</span>
+<span class="syn-type">ComingBend</span> : { distance : <span class="syn-type">Distance</span>, turn : <span class="syn-type">Angle.Turn</span> }
+</code></pre></figure><figure class="listing"><figcaption>TruckJourney.roc</figcaption><pre><code class="language-roc"><span class="syn-comment">## The next bend of the route past a point, or none: the route ends first.</span>
+<span class="syn-type">NextBend</span> : [<span class="syn-type">BendAhead</span>(<span class="syn-type">ComingBend</span>), <span class="syn-type">NoBendAhead</span>]
+</code></pre></figure><p><code>BendAhead</code> carries a <code>ComingBend</code>: how far off the bend is, and its turn, an angle. <code>NoBendAhead</code> is a bare tag: the route ends before another bend, or the truck is already past the end. The only way to read a bend&#39;s distance is inside the branch where there is a bend.</p>
+<h2 id="the-functions">The functions <a class="section-link" href="#the-functions" aria-label="Link to this section">§</a></h2>
+<figure class="diagram"><svg class="diagram diagram-wide" role="img" aria-label="The modules around `TruckJourney`" width="650pt" height="212pt"
+ viewBox="0.00 0.00 650.00 212.00" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+<g id="graph0" class="graph" transform="scale(1 1) rotate(0) translate(4 208)">
+<polygon fill="white" stroke="transparent" points="-4,4 -4,-208 646,-208 646,4 -4,4"/>
+<g id="node1" class="node">
+<polygon fill="none" stroke="black" stroke-width="2" points="298.5,-120 203.5,-120 203.5,-84 298.5,-84 298.5,-120"/>
+<text text-anchor="middle" x="251" y="-98.9" font-family="Helvetica,sans-Serif" font-size="12.00">TruckJourney</text>
+</g>
+<g id="node3" class="node">
+<polygon fill="none" stroke="black" points="54,-36 0,-36 0,0 54,0 54,-36"/>
+<text text-anchor="middle" x="27" y="-14.9" font-family="Helvetica,sans-Serif" font-size="12.00">Route</text>
+</g>
+<g id="edge2" class="edge">
+<path fill="none" stroke="black" d="M203.43,-98.57C149.67,-94.88 66.57,-86.04 43,-66 37.04,-60.93 33.3,-53.55 30.94,-46.13"/>
+<polygon fill="black" stroke="black" points="34.29,-45.1 28.52,-36.21 27.49,-46.76 34.29,-45.1"/>
+<text text-anchor="middle" x="109.5" y="-57.2" font-family="Times,serif" font-size="11.00"> &#160;finds the next bend on</text>
+</g>
+<g id="node4" class="node">
+<polygon fill="none" stroke="black" points="231.5,-36 134.5,-36 134.5,0 231.5,0 231.5,-36"/>
+<text text-anchor="middle" x="183" y="-14.9" font-family="Helvetica,sans-Serif" font-size="12.00">VehicleLimits</text>
+</g>
+<g id="edge3" class="edge">
+<path fill="none" stroke="black" d="M203.28,-84.37C195.64,-79.61 188.7,-73.58 184,-66 180.44,-60.27 179.08,-53.33 178.86,-46.57"/>
+<polygon fill="black" stroke="black" points="182.37,-46.44 179.32,-36.29 175.38,-46.13 182.37,-46.44"/>
+<text text-anchor="middle" x="241" y="-57.2" font-family="Times,serif" font-size="11.00"> &#160;keeps to the limits</text>
+</g>
+<g id="node5" class="node">
+<polygon fill="none" stroke="black" points="348,-36 292,-36 292,0 348,0 348,-36"/>
+<text text-anchor="middle" x="320" y="-14.9" font-family="Helvetica,sans-Serif" font-size="12.00">Speed</text>
+</g>
+<g id="edge4" class="edge">
+<path fill="none" stroke="black" d="M278.82,-83.8C285.68,-78.67 292.6,-72.62 298,-66 302.93,-59.95 307.05,-52.62 310.33,-45.56"/>
+<polygon fill="black" stroke="black" points="313.6,-46.82 314.29,-36.25 307.16,-44.08 313.6,-46.82"/>
+<text text-anchor="middle" x="391.5" y="-57.2" font-family="Times,serif" font-size="11.00"> &#160;measures how fast it goes in</text>
+</g>
+<g id="node6" class="node">
+<polygon fill="none" stroke="black" points="561,-36 467,-36 467,0 561,0 561,-36"/>
+<text text-anchor="middle" x="514" y="-14.9" font-family="Helvetica,sans-Serif" font-size="12.00">Acceleration</text>
+</g>
+<g id="edge5" class="edge">
+<path fill="none" stroke="black" d="M298.74,-98.13C356.98,-93.89 451.35,-84.38 481,-66 489.25,-60.89 496,-52.86 501.19,-44.89"/>
+<polygon fill="black" stroke="black" points="504.34,-46.45 506.4,-36.05 498.31,-42.89 504.34,-46.45"/>
+<text text-anchor="middle" x="568" y="-57.2" font-family="Times,serif" font-size="11.00"> &#160;measures speeding up in</text>
+</g>
+<g id="node2" class="node">
+<polygon fill="none" stroke="black" points="294,-204 208,-204 208,-168 294,-168 294,-204"/>
+<text text-anchor="middle" x="251" y="-182.9" font-family="Helvetica,sans-Serif" font-size="12.00">RideInstant</text>
+</g>
+<g id="edge1" class="edge">
+<path fill="none" stroke="black" d="M251,-167.61C251,-156.77 251,-142.6 251,-130.29"/>
+<polygon fill="black" stroke="black" points="254.5,-130.08 251,-120.08 247.5,-130.08 254.5,-130.08"/>
+<text text-anchor="middle" x="276" y="-141.2" font-family="Times,serif" font-size="11.00"> &#160;steps it</text>
+</g>
+</g>
+</svg><svg class="diagram diagram-phone" role="img" aria-label="The modules around `TruckJourney`" width="634pt" height="184pt"
+ viewBox="0.00 0.00 634.00 184.00" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+<g id="graph0" class="graph" transform="scale(1 1) rotate(0) translate(4 180)">
+<polygon fill="white" stroke="transparent" points="-4,4 -4,-180 630,-180 630,4 -4,4"/>
+<g id="node1" class="node">
+<polygon fill="none" stroke="black" stroke-width="2" points="280.5,-106 195.5,-106 195.5,-70 280.5,-70 280.5,-106"/>
+<text text-anchor="middle" x="238" y="-84.9" font-family="Helvetica,sans-Serif" font-size="12.00">TruckJourney</text>
+</g>
+<g id="node3" class="node">
+<polygon fill="none" stroke="black" points="54,-36 0,-36 0,0 54,0 54,-36"/>
+<text text-anchor="middle" x="27" y="-14.9" font-family="Helvetica,sans-Serif" font-size="12.00">Route</text>
+</g>
+<g id="edge2" class="edge">
+<path fill="none" stroke="black" d="M195.3,-86.38C143.63,-84.73 60.72,-78.96 38,-59 34.14,-55.61 31.58,-51.01 29.89,-46.14"/>
+<polygon fill="black" stroke="black" points="33.22,-44.97 27.52,-36.04 26.4,-46.58 33.22,-44.97"/>
+<text text-anchor="middle" x="104.5" y="-50.2" font-family="Times,serif" font-size="11.00"> &#160;finds the next bend on</text>
+</g>
+<g id="node4" class="node">
+<polygon fill="none" stroke="black" points="217.5,-36 130.5,-36 130.5,0 217.5,0 217.5,-36"/>
+<text text-anchor="middle" x="174" y="-14.9" font-family="Helvetica,sans-Serif" font-size="12.00">VehicleLimits</text>
+</g>
+<g id="edge3" class="edge">
+<path fill="none" stroke="black" d="M195.25,-74.57C188.14,-70.68 181.59,-65.6 177,-59 174.45,-55.33 172.99,-50.99 172.23,-46.55"/>
+<polygon fill="black" stroke="black" points="175.7,-46 171.56,-36.25 168.72,-46.46 175.7,-46"/>
+<text text-anchor="middle" x="234" y="-50.2" font-family="Times,serif" font-size="11.00"> &#160;keeps to the limits</text>
+</g>
+<g id="node5" class="node">
+<polygon fill="none" stroke="black" points="329,-36 275,-36 275,0 329,0 329,-36"/>
+<text text-anchor="middle" x="302" y="-14.9" font-family="Helvetica,sans-Serif" font-size="12.00">Speed</text>
+</g>
+<g id="edge4" class="edge">
+<path fill="none" stroke="black" d="M276.91,-69.88C281.4,-66.74 285.59,-63.12 289,-59 292.15,-55.19 294.55,-50.6 296.36,-45.91"/>
+<polygon fill="black" stroke="black" points="299.71,-46.94 299.34,-36.35 293.02,-44.86 299.71,-46.94"/>
+<text text-anchor="middle" x="381.5" y="-50.2" font-family="Times,serif" font-size="11.00"> &#160;measures how fast it goes in</text>
+</g>
+<g id="node6" class="node">
+<polygon fill="none" stroke="black" points="529,-36 445,-36 445,0 529,0 529,-36"/>
+<text text-anchor="middle" x="487" y="-14.9" font-family="Helvetica,sans-Serif" font-size="12.00">Acceleration</text>
+</g>
+<g id="edge5" class="edge">
+<path fill="none" stroke="black" d="M280.71,-86.73C339.11,-85.55 439.96,-80.37 469,-59 473.6,-55.62 477.05,-50.78 479.63,-45.64"/>
+<polygon fill="black" stroke="black" points="482.9,-46.87 483.39,-36.29 476.41,-44.26 482.9,-46.87"/>
+<text text-anchor="middle" x="552" y="-50.2" font-family="Times,serif" font-size="11.00"> &#160;measures speeding up in</text>
+</g>
+<g id="node2" class="node">
+<polygon fill="none" stroke="black" points="276,-176 200,-176 200,-140 276,-140 276,-176"/>
+<text text-anchor="middle" x="238" y="-154.9" font-family="Helvetica,sans-Serif" font-size="12.00">RideInstant</text>
+</g>
+<g id="edge1" class="edge">
+<path fill="none" stroke="black" d="M238,-139.84C238,-132.81 238,-124.49 238,-116.64"/>
+<polygon fill="black" stroke="black" points="241.5,-116.39 238,-106.39 234.5,-116.39 241.5,-116.39"/>
+<text text-anchor="middle" x="263" y="-120.2" font-family="Times,serif" font-size="11.00"> &#160;steps it</text>
+</g>
+</g>
+</svg><figcaption>The modules around <code>TruckJourney</code></figcaption></figure><p><code>RideInstant</code> moves the truck once a step. All it hands over is how far along the route the rider has just got to, and the route itself:</p>
+<figure class="listing"><figcaption>RideInstant.roc, in next</figcaption><pre><code class="language-roc"><span class="syn-comment"># ...</span>
+truck = <span class="syn-type">TruckJourney</span>.truck_progress_at_next_step(
+	instant.truck,
+	{ rider_distance: rider_place.distance_along(route), route },
+	<span class="syn-comment"># ...</span>
+</code></pre></figure><p>That record holds all the truck reads of the rider. The truck and the rider share <code>VehicleLimits</code>, the limits both keep to. The truck&#39;s 10% is its own, <code>chase_margin</code> in <code>TruckJourney</code>.</p>
+<p>The step works out the tease, then looks for the next bend:</p>
+<figure class="listing"><figcaption>TruckJourney.roc</figcaption><pre><code class="language-roc"><span class="syn-comment">## The truck&#39;s progress one step on: where the rider is along the route,</span>
+<span class="syn-comment">## and the route itself, decide its pace.</span>
+<span class="syn-name">truck_progress_at_next_step</span> : <span class="syn-type">TruckJourney.TruckProgress</span>,
+{
+	rider_distance : <span class="syn-type">Distance</span>,
+	route : <span class="syn-type">Route</span>,
+} -&gt; <span class="syn-type">TruckJourney.TruckProgress</span>
+<span class="syn-name">truck_progress_at_next_step</span> = |progress, { rider_distance, route }| {
+	tease = tease_position({ rider_distance, route_length: route.route_length() })
+	<span class="syn-keyword">match</span> next_bend(route, progress.route_position) {
+		<span class="syn-type">BendAhead</span>(bend) =&gt;
+			<span class="syn-keyword">if</span> bend.distance &lt;= brake_distance {
+				progress_braking_for(progress, bend)
+			} <span class="syn-keyword">else</span> {
+				progress_toward_tease(progress, tease)
+			}
+		<span class="syn-type">NoBendAhead</span> =&gt; progress_toward_tease(progress, tease)
+	}
+}
+</code></pre></figure><p>Here&#39;s the tease itself. The lead shrinks in step with the rider&#39;s progress along the route:</p>
+<figure class="listing"><figcaption>TruckJourney.roc</figcaption><pre><code class="language-roc"><span class="syn-comment">## The tease: where the truck aims to be along the route when the rider is</span>
+<span class="syn-comment">## `rider_distance` along it, so that the rider closes in on it over the whole</span>
+<span class="syn-comment">## route. The lead it aims for shrinks from `tease_start_lead` to</span>
+<span class="syn-comment">## `tease_finish_lead` in step with the rider&#39;s progress. The truck only chases</span>
+<span class="syn-comment">## this mark, and never slows to keep to it, so the real gap closes unevenly: the</span>
+<span class="syn-comment">## truck can run past the mark on a straight, and it slows for the bends.</span>
+<span class="syn-name">tease_position</span> : { rider_distance : <span class="syn-type">Distance</span>, route_length : <span class="syn-type">Distance</span> } -&gt; <span class="syn-type">Distance</span>
+<span class="syn-name">tease_position</span> = |{ rider_distance, route_length }| {
+	fraction_left = <span class="syn-number">1.0</span> - rider_distance.ratio_to(route_length)
+	extra_lead = tease_start_lead.minus(tease_finish_lead).times(fraction_left)
+	rider_distance.plus(tease_finish_lead).plus(extra_lead)
+}
+</code></pre></figure><p>Finding the next bend walks the route&#39;s segments with their ends, and takes the first one that ends past the truck:</p>
+<figure class="listing"><figcaption>TruckJourney.roc</figcaption><pre><code class="language-roc"><span class="syn-comment">## The next bend of `route` past `route_position`.</span>
+<span class="syn-name">next_bend</span> : <span class="syn-type">Route</span>, <span class="syn-type">Distance</span> -&gt; <span class="syn-type">NextBend</span>
+<span class="syn-name">next_bend</span> = |route, route_position|
+	<span class="syn-keyword">match</span> route.segments_with_ends().find_first(|stretch| route_position &lt; stretch.end) {
+		<span class="syn-type">Ok</span>({ segment, end }) =&gt;
+			<span class="syn-keyword">match</span> segment.ending {
+				<span class="syn-type">Bends</span>({ turn, .. }) =&gt; <span class="syn-type">BendAhead</span>({ distance: end.minus(route_position), turn })
+				<span class="syn-type">RouteEnds</span> =&gt; <span class="syn-type">NoBendAhead</span>
+			}
+		<span class="syn-type">Err</span>(<span class="syn-type">NotFound</span>) =&gt; <span class="syn-type">NoBendAhead</span>
+	}
+</code></pre></figure><p>Then come the two ways to take a step. Both sit below the module&#39;s block, so they&#39;re private, and both are arithmetic on <code>Speed</code>. Within 60 metres of a bend, the truck brakes so it reaches the bend at its cautious speed. <code>VehicleLimits.turn_speed</code> is the speed a turn allows, and the rider&#39;s throttle asks it too. The truck&#39;s own rule is that limit times its caution, 80%, to leave a margin:</p>
+<figure class="listing"><figcaption>TruckJourney.roc</figcaption><pre><code class="language-roc"><span class="syn-comment">## The truck takes a bend at this fraction of the speed the bend allows, to</span>
+<span class="syn-comment">## leave a margin.</span>
+<span class="syn-name">turn_caution</span> : <span class="syn-type">Fraction</span>
+<span class="syn-name">turn_caution</span> = <span class="syn-type">Fraction</span>.of(<span class="syn-number">0.8</span>)
+</code></pre></figure><figure class="listing"><figcaption>TruckJourney.roc</figcaption><pre><code class="language-roc"><span class="syn-comment">## The truck&#39;s progress one step on, slowing for `bend`, so that it reaches the</span>
+<span class="syn-comment">## bend at a cautious speed.</span>
+<span class="syn-name">progress_braking_for</span> : <span class="syn-type">TruckJourney.TruckProgress</span>, <span class="syn-type">ComingBend</span> -&gt; <span class="syn-type">TruckJourney.TruckProgress</span>
+<span class="syn-name">progress_braking_for</span> = |progress, bend| {
+	target_speed = <span class="syn-type">VehicleLimits</span>.turn_speed(bend.turn).scaled_by(turn_caution)
+	acceleration = <span class="syn-type">VehicleLimits</span>.braking_to(
+		progress.speed,
+		{ target: target_speed, within: bend.distance },
+	)
+	<span class="syn-comment"># The steady brake may land a little under its target; `VehicleLimits.braking_to`</span>
+	<span class="syn-comment"># says why. The truck alone keeps to the target here.</span>
+	speed = target_speed.max(progress.speed.accelerated_by(acceleration))
+	{
+		route_position: progress.route_position.plus(speed.step_length()),
+		speed,
+		pace: <span class="syn-keyword">if</span> speed &lt; progress.speed {
+			<span class="syn-type">Slowing</span>
+		} <span class="syn-keyword">else</span> {
+			<span class="syn-type">NotSlowing</span>
+		},
+	}
+}
+</code></pre></figure><p><code>VehicleLimits.braking_to</code> works out one steady brake that reaches the target speed at the bend. The brake is steady over the whole distance left, so one of the last steps before the bend can land a little under the target, and <code>target_speed.max(...)</code> holds the truck there. <code>braking_to</code> crashes on a brake that would take the speed below zero, the invariant it holds for the rider too. Farther from a bend, the truck chases the tease:</p>
+<figure class="listing"><figcaption>TruckJourney.roc</figcaption><pre><code class="language-roc"><span class="syn-comment">## The truck&#39;s progress one step on with no bend close: it speeds up while it</span>
+<span class="syn-comment">## is short of `tease`, and otherwise holds its speed.</span>
+<span class="syn-name">progress_toward_tease</span> : <span class="syn-type">TruckJourney.TruckProgress</span>, <span class="syn-type">Distance</span> -&gt; <span class="syn-type">TruckJourney.TruckProgress</span>
+<span class="syn-name">progress_toward_tease</span> = |progress, tease| {
+	speed =
+		<span class="syn-keyword">if</span> progress.route_position &lt; tease {
+			chase_top_speed.min(progress.speed.accelerated_by(chase_acceleration))
+		} <span class="syn-keyword">else</span> {
+			progress.speed
+		}
+	{
+		route_position: progress.route_position.plus(speed.step_length()),
+		speed,
+		pace: <span class="syn-type">NotSlowing</span>,
+	}
+}
+</code></pre></figure><p>The truck reads only how far along the route the rider has come. The cat and the bird ahead react to where the rider is, starting with the cat.</p>
+
+</article>
+<nav class="turn-page" aria-label="Previous and next chapter">
+<a rel="prev" href="the-truck.html"><small>Previous</small>The truck</a>
+<a rel="next" href="the-cat.html"><small>Next</small>The cat</a>
+</nav>
+</main>
+
+</body>
+</html>

@@ -1,0 +1,172 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>The road · Safari Ride</title>
+<link rel="icon" href="data:,">
+<link rel="stylesheet" href="book.css">
+<script src="book.js" defer></script>
+</head>
+<body class="chapter">
+<header class="top-bar">
+<a class="home-link" href="https://roc.lynrummy.com/">Steve's Roc Apps</a>
+<p class="draft-notice">This is an early draft.</p>
+<a class="repo-link" href="https://github.com/showell/roc-apps">roc-apps on GitHub</a>
+</header>
+<nav class="book-nav" id="chapters" aria-label="Chapters">
+<a class="book-name" href="index.html">Safari Ride</a>
+<ol>
+<li class="part">The big picture</li><li><a href="introduction.html"><span class="number">1</span>Introduction</a></li>
+<li><a href="one-page.html"><span class="number">2</span>One page</a></li>
+<li><a href="the-problem.html"><span class="number">3</span>The problem</a></li>
+<li><a href="platforms-packages-and-modules.html"><span class="number">4</span>Platforms, packages and modules</a></li>
+<li><a href="types.html"><span class="number">5</span>Types</a></li>
+<li><a href="functions.html"><span class="number">6</span>Functions</a></li>
+<li class="part">One frame</li><li><a href="things.html"><span class="number">7</span>Things</a></li>
+<li><a href="billboard-critters.html"><span class="number">8</span>Tag unions: billboard critters</a></li>
+<li><a href="shapes.html"><span class="number">9</span>Shapes</a></li>
+<li><a href="a-far-tree.html"><span class="number">10</span>Lists and map: a far tree</a></li>
+<li><a href="the-pipeline.html"><span class="number">11</span>The pipeline</a></li>
+<li><a href="asking-a-kind.html"><span class="number">12</span>Where clauses: asking a kind</a></li>
+<li><a href="refused.html"><span class="number">13</span>Errors as tag unions</a></li>
+<li class="category">Nature</li><li><a href="the-sky.html"><span class="number">14</span>The sky and the grass</a></li>
+<li><a href="mountains.html"><span class="number">15</span>Mountains</a></li>
+<li class="category">Man-made</li><li class="here"><a href="the-road.html"><span class="number">16</span>The road</a><ol class="sections"><li><a href="the-road.html#a-segments-ground">A segment&#39;s ground</a></li><li><a href="the-road.html#along-a-segment">Along a segment</a></li><li><a href="the-road.html#at-a-bend">At a bend</a></li></ol></li>
+<li><a href="rails.html"><span class="number">17</span>Rails</a></li>
+<li><a href="radio-towers.html"><span class="number">18</span>Radio towers</a></li>
+<li class="category">Critters that stand still</li><li><a href="herds.html"><span class="number">19</span>Herds</a></li>
+<li class="part">Motion</li><li><a href="a-flip-book.html"><span class="number">20</span>Immutable values: a flip book</a></li>
+<li><a href="records.html"><span class="number">21</span>Records</a></li>
+<li><a href="pure-functions-and-effects.html"><span class="number">22</span>Pure functions and effects</a></li>
+<li><a href="the-clock.html"><span class="number">23</span>Opaque types: the clock</a></li>
+<li><a href="the-ride-instant.html"><span class="number">24</span>The ride instant</a></li>
+<li class="category">The passage of time</li><li><a href="the-beacons.html"><span class="number">25</span>The beacons</a></li>
+<li><a href="the-setting-sun.html"><span class="number">26</span>The setting sun</a></li>
+<li class="category">Vehicles</li><li><a href="the-rider.html"><span class="number">27</span>The rider</a></li>
+<li><a href="the-throttle.html"><span class="number">28</span>The throttle</a></li>
+<li><a href="rehearsal.html"><span class="number">29</span>Variables and loops: rehearsal</a></li>
+<li><a href="the-riders-gaze.html"><span class="number">30</span>The rider&#39;s gaze</a></li>
+<li><a href="the-truck.html"><span class="number">31</span>The truck</a></li>
+<li><a href="the-trucks-motion.html"><span class="number">32</span>The truck&#39;s motion</a></li>
+<li class="category">Critter motion</li><li><a href="the-cat.html"><span class="number">33</span>The cat</a></li>
+<li><a href="the-bird.html"><span class="number">34</span>The bird</a></li>
+<li><a href="what-a-cat-does-to-the-rider.html"><span class="number">35</span>What a cat does to the rider</a></li>
+<li class="part">Under the hood</li><li><a href="the-math-layer.html"><span class="number">36</span>The math layer</a></li>
+<li><a href="proving-it.html"><span class="number">37</span>Proving it</a></li>
+<li><a href="the-platform.html"><span class="number">38</span>The platform</a></li>
+<li><a href="zooming-back-out.html"><span class="number">39</span>Zooming back out</a></li>
+</ol>
+</nav>
+<main>
+<p class="book-bar"><a href="index.html">Safari Ride</a> <a href="#chapters">Chapters</a></p>
+<article>
+<p class="chapter-number">Chapter 16</p>
+<h1 id="the-road">The road</h1>
+<p>In front of the mountains, the road comes nearer as the rider rides. It&#39;s ground, laid on the grass in front of the mountains and under everything beside the road.</p>
+<figure class="widget"><iframe class="canvas-app" src="../frame_widget/?start=road" title="Step 1,529 of the ride: the road, over the grass and under the trees." loading="lazy" style="aspect-ratio: 960 / 600"></iframe><figcaption>Step 1,529 of the ride: the road, over the grass and under the trees.</figcaption></figure><p>The ground comes in patches, and a patch is a list of corners on the ground and a color. The road&#39;s patches all come from one function:</p>
+<figure class="listing"><figcaption>GroundSighting.roc</figcaption><pre><code class="language-roc"><span class="syn-comment">## A patch of road with these corners.</span>
+<span class="syn-name">road_patch</span> : <span class="syn-type">List</span>(<span class="syn-type">RiderView.RiderPoint</span>) -&gt; <span class="syn-type">GroundPatch</span>
+<span class="syn-name">road_patch</span> = |corners| <span class="syn-type">GroundPatch</span>.of(corners, road_color)
+</code></pre></figure><p>Each corner is a <code>RiderPoint</code>, a point on the ground seen from the rider, so the <code>GroundPatch</code> module can find where each corner lands on the screen and place the patch there. The <a class="chapter-link" href="the-math-layer.html">“The math layer”</a> chapter follows a corner onto the screen.</p>
+<h2 id="a-segments-ground">A segment&#39;s ground <a class="section-link" href="#a-segments-ground" aria-label="Link to this section">§</a></h2>
+<p>The route is a chain of straight segments with a bend between each one and the next. Each segment in view gets its own ground from one function:</p>
+<figure class="listing"><figcaption>GroundSighting.roc, in ground_patches</figcaption><pre><code class="language-roc"><span class="syn-comment"># ...</span>
+<span class="syn-name">ground_patches</span> : <span class="syn-type">RoadAhead.RoadView</span>,
+{
+	vantage : <span class="syn-type">Geom.Vantage</span>,
+	in_view : <span class="syn-type">RoadAhead.SegmentInView</span>,
+} -&gt; <span class="syn-type">List</span>(<span class="syn-type">GroundPatch</span>)
+<span class="syn-name">ground_patches</span> = |road, { vantage, in_view }| {
+	along_segment =
+		<span class="syn-keyword">match</span> in_view.from_rider {
+			<span class="syn-type">Ahead</span>(_) =&gt; [road_along(road, { vantage, in_view })]
+			<span class="syn-type">JustBehind</span> =&gt; []
+		}
+	bend =
+		<span class="syn-keyword">match</span> <span class="syn-type">BendInView</span>.bend_after(road, in_view) {
+			<span class="syn-type">Ok</span>(bend_in_view) =&gt; [bend_paving(road, { vantage, bend_in_view })]
+			<span class="syn-type">Err</span>(<span class="syn-type">RoadEndsInView</span>) =&gt; []
+		}
+	[
+		along_segment,
+		bend,
+		pond_patches(road, { vantage, in_view }),
+	].join()
+	<span class="syn-comment"># ...</span>
+</code></pre></figure><p>A segment&#39;s ground is up to three things: the road along it, the paving at its bend into the next segment, and a pond if it ends at one. Each comes as a list, and <code>join</code> makes them one. The segment just behind the rider can still show its last stretch, and its bend&#39;s paving lays that stretch, so its own road list is empty. The last segment of the road ahead gets an empty list for its bend, <code>RoadEndsInView</code>, since the road in view ends there.</p>
+<h2 id="along-a-segment">Along a segment <a class="section-link" href="#along-a-segment" aria-label="Link to this section">§</a></h2>
+<p>The road along a segment is one patch:</p>
+<figure class="listing"><figcaption>GroundSighting.roc</figcaption><pre><code class="language-roc"><span class="syn-comment">## The road along a segment in view, as one patch: across its start, up its</span>
+<span class="syn-comment">## right edge to the end of each chunk, then back down its left edge. It is</span>
+<span class="syn-comment">## one patch, not a patch a chunk, because a canvas smooths each patch&#39;s</span>
+<span class="syn-comment">## edges on its own, and where two patches meet the grass under them shows</span>
+<span class="syn-comment">## through as a pale seam.</span>
+<span class="syn-name">road_along</span> : <span class="syn-type">RoadAhead.RoadView</span>,
+{
+	vantage : <span class="syn-type">Geom.Vantage</span>,
+	in_view : <span class="syn-type">RoadAhead.SegmentInView</span>,
+} -&gt; <span class="syn-type">GroundPatch</span>
+<span class="syn-name">road_along</span> = |road, { vantage, in_view }| {
+	from_rider = in_view.from_rider
+	segment_length = in_view.segment.length
+	segment_chunk_count = chunk_count(segment_length)
+	corner = |chunk_number, across| {
+		along = chunk_end(segment_length, chunk_number)
+		<span class="syn-type">RoadAhead</span>.rider_point_at(road, { vantage, from_rider, road_point: { along, across } })
+	}
+	up_right_edge =
+		<span class="syn-type">List</span>.from_iter(<span class="syn-type">U32</span>.until(<span class="syn-number">0</span>, segment_chunk_count + <span class="syn-number">1</span>))
+			.map(|number| corner(number, <span class="syn-type">Geom</span>.right_edge))
+	down_left_edge =
+		<span class="syn-type">List</span>.from_iter(<span class="syn-type">U32</span>.until(<span class="syn-number">0</span>, segment_chunk_count))
+			.map(|k| corner(segment_chunk_count - k, <span class="syn-type">Geom</span>.left_edge))
+	road_patch([corner(<span class="syn-number">0</span>, <span class="syn-type">Geom</span>.left_edge)].concat(up_right_edge).concat(down_left_edge))
+}
+</code></pre></figure><p><code>corner</code> is a function named inside the body. It uses <code>road</code>, <code>vantage</code> and <code>from_rider</code> from around it, so each call names only a chunk and an edge. A function that uses names from around it like this is a closure.</p>
+<p>The patch starts at the left corner of the segment&#39;s start, runs up the right edge to the end of every chunk, and comes back down the left, so its corners go round in order. So the right edge counts one corner more than the left: the left&#39;s first corner is already the patch&#39;s first. <code>U32.until(0, n)</code> counts from 0 up to just short of <code>n</code>, and <code>List.from_iter</code> collects the count into a list of chunk numbers.</p>
+<p>The edges are cut into chunks of at most <code>road_chunk_length</code>, 25 metres. The ride&#39;s ground curves away from the rider, on its 100 km radius, and a straight edge any longer would part from the curve by more than a pixel near the horizon.</p>
+<p>All of a segment&#39;s chunks share one patch. The platform smooths each patch&#39;s edges on its own, and where two patches met, the grass would show through as a pale seam.</p>
+<h2 id="at-a-bend">At a bend <a class="section-link" href="#at-a-bend" aria-label="Link to this section">§</a></h2>
+<p>Where one segment bends into the next, the two roads leave a gap on the outside of the turn. Here are three bends, seen from above:</p>
+<figure class="widget"><iframe class="canvas-app" src="../bends_widget/" title="Three bends from above. The off-white dot is where the view is from, the orange lines are the guard rails, and the yellow dot is each bend&#39;s apex, where the two roads&#39; outer edges meet." loading="lazy" style="aspect-ratio: 640 / 360"></iframe><figcaption>Three bends from above. The off-white dot is where the view is from, the orange lines are the guard rails, and the yellow dot is each bend&#39;s apex, where the two roads&#39; outer edges meet.</figcaption></figure><p>The paving fills the bend&#39;s outer corner. The <code>BendInView</code> module works it out, one step at a time:</p>
+<table>
+<thead>
+<tr>
+<th>Job</th>
+<th>Function</th>
+<th>Its type</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Find the outer edge</td>
+<td><code>outer_<wbr>edge</code></td>
+<td><code>BendInView -&gt; Across</code></td>
+</tr>
+<tr>
+<td>Find the corner, on the road</td>
+<td><code>outer_<wbr>corner</code></td>
+<td><code>BendInView -&gt; BendInView.<wbr>OuterCorner(Geom.<wbr>RoadPoint)</code></td>
+</tr>
+<tr>
+<td>See the corner from the rider</td>
+<td><code>outer_<wbr>corner_<wbr>in_<wbr>view</code></td>
+<td><code>BendInView, { road : RoadAhead.<wbr>RoadView, vantage : Geom.<wbr>Vantage, } -&gt; BendInView.<wbr>OuterCorner(RiderView.<wbr>RiderPoint)</code></td>
+</tr>
+</tbody>
+</table>
+<p>A bend to the right has its outer edge on the left, so the paving changes sides as the road turns. An outer corner is three points: where the first road&#39;s outer edge ends, where the next road&#39;s outer edge starts, and between them the apex, where the two outer edges, carried on straight, cross. <code>OuterCorner</code> takes the kind of point as a type variable, so the same record holds road points first and rider points after.</p>
+<p><code>GroundSighting.bend_paving</code> lays the corner as one more patch. It starts 40 metres before the bend, <code>lead_in_length</code>, runs up the left edge, across the end of the next road&#39;s first chunk, and back down the right. Whichever side is outside the turn takes in the corner&#39;s three points. Both roads end inside the paving, so road lies over road where they meet, and the patches join cleanly. Since the paving lays the last 40 metres of the road before the bend, it stands in for the road along the segment just behind. Forty metres is enough, because only a bend sharper than a right angle would show road further back, and every bend on the route is gentler than that.</p>
+<p>The ponds are ground too. A segment that ends at a pond lays two more patches, its bank and then its water.</p>
+<p>The corner has its paving. Next, each bend gets a rail around its outside.</p>
+
+</article>
+<nav class="turn-page" aria-label="Previous and next chapter">
+<a rel="prev" href="mountains.html"><small>Previous</small>Mountains</a>
+<a rel="next" href="rails.html"><small>Next</small>Rails</a>
+</nav>
+</main>
+<script src="embed.js"></script>
+</body>
+</html>

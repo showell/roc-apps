@@ -1,0 +1,476 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>The rider · Safari Ride</title>
+<link rel="icon" href="data:,">
+<link rel="stylesheet" href="book.css">
+<script src="book.js" defer></script>
+</head>
+<body class="chapter">
+<header class="top-bar">
+<a class="home-link" href="https://roc.lynrummy.com/">Steve's Roc Apps</a>
+<p class="draft-notice">This is an early draft.</p>
+<a class="repo-link" href="https://github.com/showell/roc-apps">roc-apps on GitHub</a>
+</header>
+<nav class="book-nav" id="chapters" aria-label="Chapters">
+<a class="book-name" href="index.html">Safari Ride</a>
+<ol>
+<li class="part">The big picture</li><li><a href="introduction.html"><span class="number">1</span>Introduction</a></li>
+<li><a href="one-page.html"><span class="number">2</span>One page</a></li>
+<li><a href="the-problem.html"><span class="number">3</span>The problem</a></li>
+<li><a href="platforms-packages-and-modules.html"><span class="number">4</span>Platforms, packages and modules</a></li>
+<li><a href="types.html"><span class="number">5</span>Types</a></li>
+<li><a href="functions.html"><span class="number">6</span>Functions</a></li>
+<li class="part">One frame</li><li><a href="things.html"><span class="number">7</span>Things</a></li>
+<li><a href="billboard-critters.html"><span class="number">8</span>Tag unions: billboard critters</a></li>
+<li><a href="shapes.html"><span class="number">9</span>Shapes</a></li>
+<li><a href="a-far-tree.html"><span class="number">10</span>Lists and map: a far tree</a></li>
+<li><a href="the-pipeline.html"><span class="number">11</span>The pipeline</a></li>
+<li><a href="asking-a-kind.html"><span class="number">12</span>Where clauses: asking a kind</a></li>
+<li><a href="refused.html"><span class="number">13</span>Errors as tag unions</a></li>
+<li class="category">Nature</li><li><a href="the-sky.html"><span class="number">14</span>The sky and the grass</a></li>
+<li><a href="mountains.html"><span class="number">15</span>Mountains</a></li>
+<li class="category">Man-made</li><li><a href="the-road.html"><span class="number">16</span>The road</a></li>
+<li><a href="rails.html"><span class="number">17</span>Rails</a></li>
+<li><a href="radio-towers.html"><span class="number">18</span>Radio towers</a></li>
+<li class="category">Critters that stand still</li><li><a href="herds.html"><span class="number">19</span>Herds</a></li>
+<li class="part">Motion</li><li><a href="a-flip-book.html"><span class="number">20</span>Immutable values: a flip book</a></li>
+<li><a href="records.html"><span class="number">21</span>Records</a></li>
+<li><a href="pure-functions-and-effects.html"><span class="number">22</span>Pure functions and effects</a></li>
+<li><a href="the-clock.html"><span class="number">23</span>Opaque types: the clock</a></li>
+<li><a href="the-ride-instant.html"><span class="number">24</span>The ride instant</a></li>
+<li class="category">The passage of time</li><li><a href="the-beacons.html"><span class="number">25</span>The beacons</a></li>
+<li><a href="the-setting-sun.html"><span class="number">26</span>The setting sun</a></li>
+<li class="category">Vehicles</li><li class="here"><a href="the-rider.html"><span class="number">27</span>The rider</a><ol class="sections"><li><a href="the-rider.html#the-riders-step">The rider&#39;s step</a></li><li><a href="the-rider.html#deciding">Deciding</a></li><li><a href="the-rider.html#one-step-of-physics">One step of physics</a></li><li><a href="the-rider.html#the-end-of-a-segment">The end of a segment</a></li><li><a href="the-rider.html#the-picture-leans-too">The picture leans too</a></li></ol></li>
+<li><a href="the-throttle.html"><span class="number">28</span>The throttle</a></li>
+<li><a href="rehearsal.html"><span class="number">29</span>Variables and loops: rehearsal</a></li>
+<li><a href="the-riders-gaze.html"><span class="number">30</span>The rider&#39;s gaze</a></li>
+<li><a href="the-truck.html"><span class="number">31</span>The truck</a></li>
+<li><a href="the-trucks-motion.html"><span class="number">32</span>The truck&#39;s motion</a></li>
+<li class="category">Critter motion</li><li><a href="the-cat.html"><span class="number">33</span>The cat</a></li>
+<li><a href="the-bird.html"><span class="number">34</span>The bird</a></li>
+<li><a href="what-a-cat-does-to-the-rider.html"><span class="number">35</span>What a cat does to the rider</a></li>
+<li class="part">Under the hood</li><li><a href="the-math-layer.html"><span class="number">36</span>The math layer</a></li>
+<li><a href="proving-it.html"><span class="number">37</span>Proving it</a></li>
+<li><a href="the-platform.html"><span class="number">38</span>The platform</a></li>
+<li><a href="zooming-back-out.html"><span class="number">39</span>Zooming back out</a></li>
+</ol>
+</nav>
+<main>
+<p class="book-bar"><a href="index.html">Safari Ride</a> <a href="#chapters">Chapters</a></p>
+<article>
+<p class="chapter-number">Chapter 27</p>
+<h1 id="the-rider">The rider</h1>
+<p>Where the rider is depends on where it was a step ago, so the ride carries the rider in the moment and moves it one step at a time. The rider is the larger of the two stepped things, and these modules do its stepping, and the truck&#39;s:</p>
+<figure class="diagram"><svg class="diagram diagram-wide" role="img" aria-label="The modules that do the stepping" width="733pt" height="528pt"
+ viewBox="0.00 0.00 733.00 528.00" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+<g id="graph0" class="graph" transform="scale(1 1) rotate(0) translate(4 524)">
+<polygon fill="white" stroke="transparent" points="-4,4 -4,-524 729,-524 729,4 -4,4"/>
+<g id="node1" class="node">
+<polygon fill="none" stroke="black" stroke-width="2" points="478,-520 392,-520 392,-484 478,-484 478,-520"/>
+<text text-anchor="middle" x="435" y="-498.9" font-family="Helvetica,sans-Serif" font-size="12.00">RideInstant</text>
+</g>
+<g id="node2" class="node">
+<polygon fill="none" stroke="black" points="238,-428 184,-428 184,-392 238,-392 238,-428"/>
+<text text-anchor="middle" x="211" y="-406.9" font-family="Helvetica,sans-Serif" font-size="12.00">Rider</text>
+</g>
+<g id="edge1" class="edge">
+<path fill="none" stroke="black" d="M392.6,-483.97C350.66,-467.11 287.12,-441.59 247.4,-425.62"/>
+<polygon fill="black" stroke="black" points="248.67,-422.36 238.08,-421.88 246.06,-428.86 248.67,-422.36"/>
+<text text-anchor="middle" x="380.5" y="-453.2" font-family="Helvetica,sans-Serif" font-size="11.00"> &#160;steps the rider</text>
+</g>
+<g id="node3" class="node">
+<polygon fill="none" stroke="black" points="647.5,-370 552.5,-370 552.5,-334 647.5,-334 647.5,-370"/>
+<text text-anchor="middle" x="600" y="-348.9" font-family="Helvetica,sans-Serif" font-size="12.00">TruckJourney</text>
+</g>
+<g id="edge2" class="edge">
+<path fill="none" stroke="black" d="M454.25,-483.73C483.68,-457.33 539.96,-406.85 573.32,-376.93"/>
+<polygon fill="black" stroke="black" points="575.76,-379.44 580.87,-370.16 571.09,-374.23 575.76,-379.44"/>
+<text text-anchor="middle" x="534.5" y="-453.2" font-family="Helvetica,sans-Serif" font-size="11.00"> &#160;steps the truck</text>
+</g>
+<g id="node4" class="node">
+<polygon fill="none" stroke="black" points="348.5,-312 269.5,-312 269.5,-276 348.5,-276 348.5,-312"/>
+<text text-anchor="middle" x="309" y="-290.9" font-family="Helvetica,sans-Serif" font-size="12.00">RiderMind</text>
+</g>
+<g id="edge3" class="edge">
+<path fill="none" stroke="black" d="M238.23,-394.54C248.74,-388.03 260.3,-379.64 269,-370 281.74,-355.89 291.78,-337 298.62,-321.7"/>
+<polygon fill="black" stroke="black" points="301.94,-322.83 302.65,-312.26 295.5,-320.08 301.94,-322.83"/>
+<text text-anchor="middle" x="350.5" y="-349.2" font-family="Helvetica,sans-Serif" font-size="11.00"> &#160;asks for its controls</text>
+</g>
+<g id="node5" class="node">
+<polygon fill="none" stroke="black" points="84,-36 0,-36 0,0 84,0 84,-36"/>
+<text text-anchor="middle" x="42" y="-14.9" font-family="Helvetica,sans-Serif" font-size="12.00">Motorcycle</text>
+</g>
+<g id="edge4" class="edge">
+<path fill="none" stroke="black" d="M183.75,-406.07C129.25,-398.53 12,-373.24 12,-295 12,-295 12,-295 12,-109 12,-86.63 20.45,-62.66 28.38,-45.08"/>
+<polygon fill="black" stroke="black" points="31.55,-46.56 32.67,-36.03 25.22,-43.56 31.55,-46.56"/>
+<text text-anchor="middle" x="58.5" y="-199.2" font-family="Helvetica,sans-Serif" font-size="11.00"> &#160;moves the bike</text>
+</g>
+<g id="node6" class="node">
+<polygon fill="none" stroke="black" points="210,-312 132,-312 132,-276 210,-276 210,-312"/>
+<text text-anchor="middle" x="171" y="-290.9" font-family="Helvetica,sans-Serif" font-size="12.00">RiderEyes</text>
+</g>
+<g id="edge5" class="edge">
+<path fill="none" stroke="black" d="M184.25,-391.64C177.33,-385.69 170.77,-378.38 167,-370 160.33,-355.17 161.11,-336.99 163.66,-322.24"/>
+<polygon fill="black" stroke="black" points="167.14,-322.71 165.75,-312.2 160.28,-321.28 167.14,-322.71"/>
+<text text-anchor="middle" x="215.5" y="-349.2" font-family="Helvetica,sans-Serif" font-size="11.00"> &#160;moves the eyes</text>
+</g>
+<g id="node10" class="node">
+<polygon fill="none" stroke="black" points="600.5,-128 503.5,-128 503.5,-92 600.5,-92 600.5,-128"/>
+<text text-anchor="middle" x="552" y="-106.9" font-family="Helvetica,sans-Serif" font-size="12.00">VehicleLimits</text>
+</g>
+<g id="edge10" class="edge">
+<path fill="none" stroke="black" d="M604.22,-333.82C612.15,-297.76 626.02,-212.33 597,-150 594.48,-144.6 590.82,-139.65 586.65,-135.23"/>
+<polygon fill="black" stroke="black" points="588.95,-132.59 579.27,-128.29 584.16,-137.69 588.95,-132.59"/>
+<text text-anchor="middle" x="669.5" y="-245.2" font-family="Helvetica,sans-Serif" font-size="11.00"> &#160;keeps to the limits</text>
+</g>
+<g id="node7" class="node">
+<polygon fill="none" stroke="black" points="471.5,-220 406.5,-220 406.5,-184 471.5,-184 471.5,-220"/>
+<text text-anchor="middle" x="439" y="-198.9" font-family="Helvetica,sans-Serif" font-size="12.00">Throttle</text>
+</g>
+<g id="edge6" class="edge">
+<path fill="none" stroke="black" d="M348.51,-280.75C365.13,-274.41 384.04,-265.55 399,-254 408.05,-247.02 416.21,-237.55 422.77,-228.67"/>
+<polygon fill="black" stroke="black" points="425.67,-230.63 428.54,-220.43 419.93,-226.61 425.67,-230.63"/>
+<text text-anchor="middle" x="480" y="-245.2" font-family="Helvetica,sans-Serif" font-size="11.00"> &#160;asks for an acceleration</text>
+</g>
+<g id="node8" class="node">
+<polygon fill="none" stroke="black" points="342.5,-220 253.5,-220 253.5,-184 342.5,-184 342.5,-220"/>
+<text text-anchor="middle" x="298" y="-198.9" font-family="Helvetica,sans-Serif" font-size="12.00">LeanSearch</text>
+</g>
+<g id="edge7" class="edge">
+<path fill="none" stroke="black" d="M306.88,-275.65C305.31,-262.82 303.15,-245.11 301.35,-230.38"/>
+<polygon fill="black" stroke="black" points="304.8,-229.8 300.11,-220.3 297.85,-230.65 304.8,-229.8"/>
+<text text-anchor="middle" x="348.5" y="-245.2" font-family="Helvetica,sans-Serif" font-size="11.00"> &#160;asks for a lean</text>
+</g>
+<g id="node9" class="node">
+<polygon fill="none" stroke="black" points="195,-220 141,-220 141,-184 195,-184 195,-220"/>
+<text text-anchor="middle" x="168" y="-198.9" font-family="Helvetica,sans-Serif" font-size="12.00">Gaze</text>
+</g>
+<g id="edge8" class="edge">
+<path fill="none" stroke="black" d="M269.47,-285.38C236.6,-278.27 193.27,-266.85 181,-254 174.9,-247.61 171.55,-238.77 169.75,-230.25"/>
+<polygon fill="black" stroke="black" points="173.18,-229.56 168.23,-220.19 166.26,-230.6 173.18,-229.56"/>
+<text text-anchor="middle" x="237" y="-245.2" font-family="Helvetica,sans-Serif" font-size="11.00"> &#160;asks where to look</text>
+</g>
+<g id="edge9" class="edge">
+<path fill="none" stroke="black" d="M450.46,-183.97C458.21,-173.32 469.17,-159.81 481,-150 488.47,-143.81 497.08,-138.12 505.66,-133.11"/>
+<polygon fill="black" stroke="black" points="507.52,-136.08 514.55,-128.15 504.11,-129.97 507.52,-136.08"/>
+<text text-anchor="middle" x="536.5" y="-153.2" font-family="Helvetica,sans-Serif" font-size="11.00"> &#160;keeps to the limits</text>
+</g>
+<g id="node11" class="node">
+<polygon fill="none" stroke="black" points="200,-128 146,-128 146,-92 200,-92 200,-128"/>
+<text text-anchor="middle" x="173" y="-106.9" font-family="Helvetica,sans-Serif" font-size="12.00">Coast</text>
+</g>
+<g id="edge12" class="edge">
+<path fill="none" stroke="black" d="M406.38,-189.96C356.6,-173.12 261.94,-141.09 209.78,-123.44"/>
+<polygon fill="black" stroke="black" points="210.84,-120.11 200.25,-120.22 208.6,-126.74 210.84,-120.11"/>
+<text text-anchor="middle" x="389" y="-153.2" font-family="Helvetica,sans-Serif" font-size="11.00"> &#160;coasts for the shoulder</text>
+</g>
+<g id="edge11" class="edge">
+<path fill="none" stroke="black" d="M253.33,-193.32C220.26,-186.62 179.25,-175.81 169,-162 163.96,-155.21 163.22,-146.41 164.28,-138.03"/>
+<polygon fill="black" stroke="black" points="167.72,-138.7 166.31,-128.2 160.87,-137.29 167.72,-138.7"/>
+<text text-anchor="middle" x="216" y="-153.2" font-family="Helvetica,sans-Serif" font-size="11.00"> &#160;coasts each try</text>
+</g>
+<g id="edge13" class="edge">
+<path fill="none" stroke="black" d="M148.05,-91.86C127.38,-77.66 97.83,-57.36 75.17,-41.79"/>
+<polygon fill="black" stroke="black" points="77.08,-38.85 66.86,-36.08 73.12,-44.62 77.08,-38.85"/>
+<text text-anchor="middle" x="182.5" y="-61.2" font-family="Helvetica,sans-Serif" font-size="11.00"> &#160;steps the pretend bike</text>
+</g>
+</g>
+</svg><svg class="diagram diagram-phone" role="img" aria-label="The modules that do the stepping" width="650pt" height="418pt"
+ viewBox="0.00 0.00 650.00 418.00" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+<g id="graph0" class="graph" transform="scale(1 1) rotate(0) translate(4 414)">
+<polygon fill="white" stroke="transparent" points="-4,4 -4,-414 646,-414 646,4 -4,4"/>
+<g id="node1" class="node">
+<polygon fill="none" stroke="black" stroke-width="2" points="413,-410 337,-410 337,-374 413,-374 413,-410"/>
+<text text-anchor="middle" x="375" y="-388.9" font-family="Helvetica,sans-Serif" font-size="12.00">RideInstant</text>
+</g>
+<g id="node2" class="node">
+<polygon fill="none" stroke="black" points="219,-340 165,-340 165,-304 219,-304 219,-340"/>
+<text text-anchor="middle" x="192" y="-318.9" font-family="Helvetica,sans-Serif" font-size="12.00">Rider</text>
+</g>
+<g id="edge1" class="edge">
+<path fill="none" stroke="black" d="M336.64,-376.74C304.86,-364.94 260,-348.27 228.69,-336.63"/>
+<polygon fill="black" stroke="black" points="229.63,-333.25 219.04,-333.05 227.19,-339.81 229.63,-333.25"/>
+<text text-anchor="middle" x="338.5" y="-354.2" font-family="Helvetica,sans-Serif" font-size="11.00"> &#160;steps the rider</text>
+</g>
+<g id="node3" class="node">
+<polygon fill="none" stroke="black" points="552.5,-293 467.5,-293 467.5,-257 552.5,-257 552.5,-293"/>
+<text text-anchor="middle" x="510" y="-271.9" font-family="Helvetica,sans-Serif" font-size="12.00">TruckJourney</text>
+</g>
+<g id="edge2" class="edge">
+<path fill="none" stroke="black" d="M395.21,-373.78C418.28,-354.14 456.14,-321.88 482.03,-299.83"/>
+<polygon fill="black" stroke="black" points="484.31,-302.48 489.65,-293.33 479.77,-297.15 484.31,-302.48"/>
+<text text-anchor="middle" x="464.5" y="-354.2" font-family="Helvetica,sans-Serif" font-size="11.00"> &#160;steps the truck</text>
+</g>
+<g id="node4" class="node">
+<polygon fill="none" stroke="black" points="304.5,-246 235.5,-246 235.5,-210 304.5,-210 304.5,-246"/>
+<text text-anchor="middle" x="270" y="-224.9" font-family="Helvetica,sans-Serif" font-size="12.00">RiderMind</text>
+</g>
+<g id="edge3" class="edge">
+<path fill="none" stroke="black" d="M219.01,-315.58C232.34,-311.54 247.55,-304.64 257,-293 265.29,-282.79 268.74,-268.69 270.03,-256.32"/>
+<polygon fill="black" stroke="black" points="273.54,-256.24 270.67,-246.04 266.56,-255.8 273.54,-256.24"/>
+<text text-anchor="middle" x="327.5" y="-272.2" font-family="Helvetica,sans-Serif" font-size="11.00"> &#160;asks for its controls</text>
+</g>
+<g id="node5" class="node">
+<polygon fill="none" stroke="black" points="74,-36 0,-36 0,0 74,0 74,-36"/>
+<text text-anchor="middle" x="37" y="-14.9" font-family="Helvetica,sans-Serif" font-size="12.00">Motorcycle</text>
+</g>
+<g id="edge4" class="edge">
+<path fill="none" stroke="black" d="M164.92,-318.18C118.34,-311.66 28,-291.03 28,-229 28,-229 28,-229 28,-87 28,-73.55 29.75,-58.74 31.71,-46.38"/>
+<polygon fill="black" stroke="black" points="35.21,-46.69 33.44,-36.25 28.31,-45.51 35.21,-46.69"/>
+<text text-anchor="middle" x="74.5" y="-155.2" font-family="Helvetica,sans-Serif" font-size="11.00"> &#160;moves the bike</text>
+</g>
+<g id="node6" class="node">
+<polygon fill="none" stroke="black" points="193,-246 125,-246 125,-210 193,-210 193,-246"/>
+<text text-anchor="middle" x="159" y="-224.9" font-family="Helvetica,sans-Serif" font-size="12.00">RiderEyes</text>
+</g>
+<g id="edge5" class="edge">
+<path fill="none" stroke="black" d="M169.33,-303.72C166.4,-300.48 163.79,-296.88 162,-293 156.78,-281.72 155.55,-268.08 155.81,-256.31"/>
+<polygon fill="black" stroke="black" points="159.32,-256.32 156.41,-246.13 152.33,-255.91 159.32,-256.32"/>
+<text text-anchor="middle" x="210.5" y="-272.2" font-family="Helvetica,sans-Serif" font-size="11.00"> &#160;moves the eyes</text>
+</g>
+<g id="node10" class="node">
+<polygon fill="none" stroke="black" points="509.5,-106 422.5,-106 422.5,-70 509.5,-70 509.5,-106"/>
+<text text-anchor="middle" x="466" y="-84.9" font-family="Helvetica,sans-Serif" font-size="12.00">VehicleLimits</text>
+</g>
+<g id="edge10" class="edge">
+<path fill="none" stroke="black" d="M516.62,-256.95C527.3,-226.44 544.59,-161.52 518,-117 517.21,-115.68 516.34,-114.42 515.39,-113.21"/>
+<polygon fill="black" stroke="black" points="517.76,-110.63 508.2,-106.05 512.81,-115.59 517.76,-110.63"/>
+<text text-anchor="middle" x="586.5" y="-190.2" font-family="Helvetica,sans-Serif" font-size="11.00"> &#160;keeps to the limits</text>
+</g>
+<g id="node7" class="node">
+<polygon fill="none" stroke="black" points="400.5,-176 345.5,-176 345.5,-140 400.5,-140 400.5,-176"/>
+<text text-anchor="middle" x="373" y="-154.9" font-family="Helvetica,sans-Serif" font-size="12.00">Throttle</text>
+</g>
+<g id="edge6" class="edge">
+<path fill="none" stroke="black" d="M304.75,-222.25C321.6,-218.41 341.15,-211.48 355,-199 359.07,-195.34 362.27,-190.57 364.78,-185.62"/>
+<polygon fill="black" stroke="black" points="368.13,-186.67 368.77,-176.1 361.67,-183.97 368.13,-186.67"/>
+<text text-anchor="middle" x="433" y="-190.2" font-family="Helvetica,sans-Serif" font-size="11.00"> &#160;asks for an acceleration</text>
+</g>
+<g id="node8" class="node">
+<polygon fill="none" stroke="black" points="297.5,-176 218.5,-176 218.5,-140 297.5,-140 297.5,-176"/>
+<text text-anchor="middle" x="258" y="-154.9" font-family="Helvetica,sans-Serif" font-size="12.00">LeanSearch</text>
+</g>
+<g id="edge7" class="edge">
+<path fill="none" stroke="black" d="M266.97,-209.84C265.72,-202.73 264.23,-194.3 262.83,-186.37"/>
+<polygon fill="black" stroke="black" points="266.25,-185.63 261.07,-176.39 259.36,-186.85 266.25,-185.63"/>
+<text text-anchor="middle" x="308.5" y="-190.2" font-family="Helvetica,sans-Serif" font-size="11.00"> &#160;asks for a lean</text>
+</g>
+<g id="node9" class="node">
+<polygon fill="none" stroke="black" points="184,-176 130,-176 130,-140 184,-140 184,-176"/>
+<text text-anchor="middle" x="157" y="-154.9" font-family="Helvetica,sans-Serif" font-size="12.00">Gaze</text>
+</g>
+<g id="edge8" class="edge">
+<path fill="none" stroke="black" d="M235.23,-218.71C223.42,-215.91 210.14,-212.8 198,-210 176.25,-204.99 162.95,-216.43 149,-199 146.03,-195.29 145.17,-190.78 145.51,-186.14"/>
+<polygon fill="black" stroke="black" points="149,-186.58 147.83,-176.05 142.18,-185.01 149,-186.58"/>
+<text text-anchor="middle" x="205" y="-190.2" font-family="Helvetica,sans-Serif" font-size="11.00"> &#160;asks where to look</text>
+</g>
+<g id="edge9" class="edge">
+<path fill="none" stroke="black" d="M386.1,-139.66C392.44,-132.06 400.5,-123.42 409,-117 411.64,-115.01 414.44,-113.09 417.33,-111.27"/>
+<polygon fill="black" stroke="black" points="419.34,-114.16 426.21,-106.09 415.81,-108.11 419.34,-114.16"/>
+<text text-anchor="middle" x="464.5" y="-120.2" font-family="Helvetica,sans-Serif" font-size="11.00"> &#160;keeps to the limits</text>
+</g>
+<g id="node11" class="node">
+<polygon fill="none" stroke="black" points="175,-106 121,-106 121,-70 175,-70 175,-106"/>
+<text text-anchor="middle" x="148" y="-84.9" font-family="Helvetica,sans-Serif" font-size="12.00">Coast</text>
+</g>
+<g id="edge12" class="edge">
+<path fill="none" stroke="black" d="M345.37,-150.37C311.22,-142.17 257.5,-129.26 257,-129 249.7,-125.27 250.2,-120.91 243,-117 225.11,-107.28 203.44,-100.56 185.32,-96.15"/>
+<polygon fill="black" stroke="black" points="185.92,-92.69 175.39,-93.87 184.35,-99.52 185.92,-92.69"/>
+<text text-anchor="middle" x="325" y="-120.2" font-family="Helvetica,sans-Serif" font-size="11.00"> &#160;coasts for the shoulder</text>
+</g>
+<g id="edge11" class="edge">
+<path fill="none" stroke="black" d="M218.45,-147.21C188.45,-139.7 152.15,-130.38 151,-129 148.01,-125.41 146.38,-120.96 145.6,-116.34"/>
+<polygon fill="black" stroke="black" points="149.09,-116.04 145.07,-106.24 142.1,-116.41 149.09,-116.04"/>
+<text text-anchor="middle" x="198" y="-120.2" font-family="Helvetica,sans-Serif" font-size="11.00"> &#160;coasts each try</text>
+</g>
+<g id="edge13" class="edge">
+<path fill="none" stroke="black" d="M120.85,-70.37C106.68,-61.69 89.15,-50.95 73.79,-41.54"/>
+<polygon fill="black" stroke="black" points="75.39,-38.41 65.03,-36.17 71.73,-44.38 75.39,-38.41"/>
+<text text-anchor="middle" x="166.5" y="-50.2" font-family="Helvetica,sans-Serif" font-size="11.00"> &#160;steps the pretend bike</text>
+</g>
+</g>
+</svg><figcaption>The modules that do the stepping</figcaption></figure><p>A box is a module, and an arrow points to a module it calls. This chapter explains the rider and its motorcycle. The throttle, the lean search and the gaze each get a chapter of their own after it, and the truck&#39;s chapters follow.</p>
+<p>A rider is two parts: a motorcycle, and a pair of eyes.</p>
+<figure class="listing"><figcaption>Rider.roc, in Rider</figcaption><pre><code class="language-roc"><span class="syn-comment"># ...</span>
+<span class="syn-type">Rider</span> := { motorcycle : <span class="syn-type">Motorcycle</span>, eyes : <span class="syn-type">RiderEyes</span> }.{
+<span class="syn-comment"># ...</span>
+</code></pre></figure><p>Both fields are nominal records of their own, and between them they hold six values:</p>
+<table>
+<thead>
+<tr>
+<th>Part</th>
+<th>Field</th>
+<th>Type</th>
+<th>What it is</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>motorcycle</td>
+<td><code>route_<wbr>place</code></td>
+<td><code>RoutePlace</code></td>
+<td>which segment, and where on it, along and across</td>
+</tr>
+<tr>
+<td></td>
+<td><code>yaw</code></td>
+<td><code>Angle.<wbr>Turn</code></td>
+<td>which way the bike points</td>
+</tr>
+<tr>
+<td></td>
+<td><code>speed</code></td>
+<td><code>Speed</code></td>
+<td>how far it goes in a step</td>
+</tr>
+<tr>
+<td></td>
+<td><code>lean</code></td>
+<td><code>Angle.<wbr>Lean</code></td>
+<td>how far it leans</td>
+</tr>
+<tr>
+<td>eyes</td>
+<td><code>gaze_<wbr>yaw</code></td>
+<td><code>Angle.<wbr>Turn</code></td>
+<td>where the rider is looking</td>
+</tr>
+<tr>
+<td></td>
+<td><code>look_<wbr>depth</code></td>
+<td><code>Fraction</code></td>
+<td>how deep the last look went</td>
+</tr>
+</tbody>
+</table>
+<p>Three of the six are angles, of two types: a <code>Lean</code> is the bike&#39;s tilt, apart from a <code>Turn</code>, so passing one where the other belongs fails to compile, as a bearing and a turn did in the <a class="chapter-link" href="mountains.html">“Mountains”</a> chapter.</p>
+<h2 id="the-riders-step">The rider&#39;s step <a class="section-link" href="#the-riders-step" aria-label="Link to this section">§</a></h2>
+<p>The step works in order, and the code reads that way: decide, move, cross a bend or stop, then choose where to look:</p>
+<figure class="listing"><figcaption>Rider.roc</figcaption><pre><code class="language-roc"><span class="syn-comment">## The rider a step on along `route`, with the encounter on their segment at</span>
+<span class="syn-comment">## `encounter_stage`: the move, the crossing onto the next segment, the stop</span>
+<span class="syn-comment">## at the route&#39;s end, and then where the rider looks.</span>
+<span class="syn-name">rider_at_next_step</span> : <span class="syn-type">Rider</span>, { route : <span class="syn-type">Route</span>, encounter_stage : <span class="syn-type">Animation.Stage</span> } -&gt; <span class="syn-type">Rider</span>
+<span class="syn-name">rider_at_next_step</span> = |rider, { route, encounter_stage }| {
+	segment = rider.motorcycle.route_place.segment_on(route)
+	moved = rider.motorcycle.motorcycle_at_next_step(
+		<span class="syn-type">RiderMind</span>.controls(rider.motorcycle, { segment, encounter_stage }),
+	)
+	motorcycle =
+		<span class="syn-keyword">match</span> segment.segment_ending() {
+			<span class="syn-type">Bends</span>({ bend, .. }) =&gt; moved.cross_bend_if_on_road(bend)
+			<span class="syn-type">RouteEnds</span> =&gt; stop_at_route_end(moved, segment)
+		}
+	gaze_target = <span class="syn-type">RiderMind</span>.gaze_target(motorcycle, motorcycle.route_place.segment_on(route))
+	{ motorcycle, eyes: rider.eyes.eyes_at_next_step(gaze_target) }
+}
+</code></pre></figure><p>The <code>match</code> on the segment&#39;s ending has two tags. <code>Bends({ bend, .. })</code> takes the payload&#39;s <code>bend</code> field. In a pattern, <code>..</code> stands for the rest of a record&#39;s fields.</p>
+<h2 id="deciding">Deciding <a class="section-link" href="#deciding" aria-label="Link to this section">§</a></h2>
+<p>Every decision the rider makes belongs to <code>RiderMind</code>:</p>
+<figure class="listing"><figcaption>RiderMind.roc</figcaption><pre><code class="language-roc"><span class="syn-comment">## The lean toward the best line, and the acceleration the throttle gives</span>
+<span class="syn-comment">## the motorcycle once it leans so, on `segment`, the one it is on, with the</span>
+<span class="syn-comment">## segment&#39;s encounter at `encounter_stage`.</span>
+<span class="syn-name">controls</span> : <span class="syn-type">Motorcycle</span>,
+{
+	segment : <span class="syn-type">Segment</span>,
+	encounter_stage : <span class="syn-type">Animation.Stage</span>,
+} -&gt; <span class="syn-type">Motorcycle.Controls</span>
+<span class="syn-name">controls</span> = |motorcycle, situation| {
+	lean = <span class="syn-type">LeanSearch</span>.best_lean(motorcycle)
+	{ lean, acceleration: <span class="syn-type">Throttle</span>.next_acceleration(motorcycle.with_lean(lean), situation) }
+}
+</code></pre></figure><p>A decision is the bike&#39;s controls, a lean and an acceleration:</p>
+<figure class="listing"><figcaption>Motorcycle.roc</figcaption><pre><code class="language-roc"><span class="syn-comment">## What the rider sets for a step: the lean the motorcycle takes, and how</span>
+<span class="syn-comment">## hard it accelerates.</span>
+<span class="syn-type">Controls</span> : { lean : <span class="syn-type">Angle.Lean</span>, acceleration : <span class="syn-type">Acceleration</span> }
+</code></pre></figure><p>Look at the last line of <code>controls</code>. <code>controls</code> passes <code>Throttle.next_acceleration</code> a pretend motorcycle: this motorcycle as it would be at the new lean. Two small helpers serve such pretend motorcycles:</p>
+<figure class="listing"><figcaption>Motorcycle.roc</figcaption><pre><code class="language-roc"><span class="syn-name">with_lean</span> : <span class="syn-type">Motorcycle</span>, <span class="syn-type">Angle.Lean</span> -&gt; <span class="syn-type">Motorcycle</span>
+<span class="syn-name">with_lean</span> = |motorcycle, lean| { ..motorcycle, lean }
+</code></pre></figure><figure class="listing"><figcaption>Motorcycle.roc</figcaption><pre><code class="language-roc"><span class="syn-comment">## The controls that keep this motorcycle&#39;s lean and speed as they are.</span>
+<span class="syn-name">steady_controls</span> : <span class="syn-type">Motorcycle</span> -&gt; <span class="syn-type">Motorcycle.Controls</span>
+<span class="syn-name">steady_controls</span> = |motorcycle| { lean: motorcycle.lean, acceleration: <span class="syn-type">Acceleration</span>.steady }
+</code></pre></figure><p><code>{ ..motorcycle, lean }</code> is a record update with a shorthand field: the field and the argument share the name <code>lean</code>. <code>with_lean</code> makes a motorcycle as it would be at another lean, and the real motorcycle stays as it was. <code>steady_controls</code> makes the controls that keep the lean and the speed as they are. The rider&#39;s steering, in the <a class="chapter-link" href="rehearsal.html">“Variables and loops: rehearsal”</a> chapter, uses both.</p>
+<h2 id="one-step-of-physics">One step of physics <a class="section-link" href="#one-step-of-physics" aria-label="Link to this section">§</a></h2>
+<p>A lean of one degree turns the bike by a tenth of a degree each step, so at a metre a step it goes round a circle with a radius of 573 metres. That&#39;s nearly all the physics. Here&#39;s the motorcycle:</p>
+<figure class="listing"><figcaption>Motorcycle.roc, in Motorcycle</figcaption><pre><code class="language-roc"><span class="syn-comment"># ...</span>
+<span class="syn-type">Motorcycle</span> := {
+	route_place : <span class="syn-type">RoutePlace</span>,
+	yaw : <span class="syn-type">Angle.Turn</span>,
+	speed : <span class="syn-type">Speed</span>,
+	lean : <span class="syn-type">Angle.Lean</span>,
+}.{
+<span class="syn-comment"># ...</span>
+</code></pre></figure><p>The step is the whole of the physics, in order:</p>
+<figure class="listing"><figcaption>Motorcycle.roc</figcaption><pre><code class="language-roc"><span class="syn-comment">## The motorcycle one step on, at the lean its controls set and the speed</span>
+<span class="syn-comment">## their acceleration gives, held to the top speed.</span>
+<span class="syn-name">motorcycle_at_next_step</span> : <span class="syn-type">Motorcycle</span>, <span class="syn-type">Motorcycle.Controls</span> -&gt; <span class="syn-type">Motorcycle</span>
+<span class="syn-name">motorcycle_at_next_step</span> = |motorcycle, { lean, acceleration }| {
+	speed = allowed_speed(motorcycle.speed.accelerated_by(acceleration))
+	step_length = speed.step_length()
+	turn = lean.steer(turn_per_lean)
+	mid = motorcycle.yaw.plus(turn.times(<span class="syn-number">0.5</span>)).to_radians()
+	place = motorcycle.route_place
+	{
+		route_place: {
+			..place,
+			road_point: {
+				along: place.road_point.along.plus(step_length.times(mid.cos())),
+				across: place.road_point.across.plus(step_length.times(mid.sin())),
+			},
+		},
+		yaw: motorcycle.yaw.plus(turn),
+		speed,
+		lean,
+	}
+}
+</code></pre></figure><p>It works in three parts:</p>
+<ol>
+<li><strong>The speed.</strong> <code>accelerated_by</code> adds the acceleration to the speed, and <code>allowed_speed</code> holds the result to the top speed.</li>
+<li><strong>The turn.</strong> <code>lean.steer(turn_per_lean)</code> turns the lean into a change of direction, a <code>Turn</code>, and that&#39;s the only way a lean changes where the bike points.</li>
+<li><strong>The move.</strong> The bike goes one step&#39;s length in the direction halfway through the step&#39;s turn, <code>mid</code>. <code>along.plus(…)</code> adds a <code>Distance</code> to a place along the road, as <code>Clock.plus</code> adds a length to a moment. The new place is a record update of <code>route_place</code>, inside a new motorcycle.</li>
+</ol>
+<p>The bike turns the same amount per step at any speed. That&#39;s a cheat, chosen by eye, and it holds up because the rider chooses each step&#39;s lean by trying it out on this same physics.</p>
+<h2 id="the-end-of-a-segment">The end of a segment <a class="section-link" href="#the-end-of-a-segment" aria-label="Link to this section">§</a></h2>
+<p>The end of a segment uses a small version of the same trying out. <code>cross_bend_if_on_road</code> makes a motorcycle carried past the bend onto the next segment. If that motorcycle is on the road, it&#39;s the answer, and if it&#39;s off the road, the old one is:</p>
+<figure class="listing"><figcaption>Motorcycle.roc</figcaption><pre><code class="language-roc"><span class="syn-comment">## This motorcycle carried over `bend`, the bend out of its segment, when</span>
+<span class="syn-comment">## that puts it on the next segment&#39;s road: placed on that segment and turned</span>
+<span class="syn-comment">## to its axis. Short of that, it stays where it is.</span>
+<span class="syn-name">cross_bend_if_on_road</span> : <span class="syn-type">Motorcycle</span>, <span class="syn-type">Geom.Bend</span> -&gt; <span class="syn-type">Motorcycle</span>
+<span class="syn-name">cross_bend_if_on_road</span> = |motorcycle, bend| {
+	on_next = motorcycle.route_place.route_place_past_bend(bend)
+	<span class="syn-keyword">if</span> on_next.is_on_road() {
+		{
+			..motorcycle,
+			route_place: on_next,
+			yaw: motorcycle.yaw.minus(bend.turn),
+		}
+	} <span class="syn-keyword">else</span> {
+		motorcycle
+	}
+}
+</code></pre></figure><p>At the end of the road, the throttle brakes the bike to rest. A last step can still carry it past the end, so <code>stop_at_route_end</code> holds it there with <code>Motorcycle.stopped_at</code>, from the <a class="chapter-link" href="records.html">“Records”</a> chapter.</p>
+<h2 id="the-picture-leans-too">The picture leans too <a class="section-link" href="#the-picture-leans-too" aria-label="Link to this section">§</a></h2>
+<p>When the bike leans, the camera rolls with it, and the whole picture leans:</p>
+<figure class="listing"><figcaption>RiderCamera.roc</figcaption><pre><code class="language-roc"><span class="syn-comment">## How far the canvas rolls with the rider&#39;s `lean`: not at all inside the</span>
+<span class="syn-comment">## deadband, and with the lean past it.</span>
+<span class="syn-name">rider_roll</span> : <span class="syn-type">Angle.Lean</span> -&gt; <span class="syn-type">Angle.Lean</span>
+<span class="syn-name">rider_roll</span> = |lean|
+	<span class="syn-keyword">if</span> lean.abs() &lt; roll_deadband {
+		<span class="syn-type">Angle</span>.upright
+	} <span class="syn-keyword">else</span> {
+		lean
+	}
+</code></pre></figure><p>A lean inside <code>roll_deadband</code>, a thousandth of a radian, leaves the picture level, and any other lean passes straight through. The camera turns as well: the rider&#39;s head follows the gaze and turns a little into a bend, and the camera adds the head&#39;s turn to the motorcycle&#39;s yaw, as the <a class="chapter-link" href="the-riders-gaze.html">“The rider&#39;s gaze”</a> chapter shows.</p>
+<p>So for each step, <code>RiderMind.controls</code> returns a lean and an acceleration, and <code>motorcycle_at_next_step</code> turns them into a new place on the road. The next chapter shows how the throttle chooses the acceleration. The <a class="chapter-link" href="rehearsal.html">“Variables and loops: rehearsal”</a> chapter shows how the rider chooses the lean.</p>
+
+</article>
+<nav class="turn-page" aria-label="Previous and next chapter">
+<a rel="prev" href="the-setting-sun.html"><small>Previous</small>The setting sun</a>
+<a rel="next" href="the-throttle.html"><small>Next</small>The throttle</a>
+</nav>
+</main>
+
+</body>
+</html>

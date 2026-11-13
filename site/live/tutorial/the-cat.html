@@ -1,0 +1,354 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>The cat · Safari Ride</title>
+<link rel="icon" href="data:,">
+<link rel="stylesheet" href="book.css">
+<script src="book.js" defer></script>
+</head>
+<body class="chapter">
+<header class="top-bar">
+<a class="home-link" href="https://roc.lynrummy.com/">Steve's Roc Apps</a>
+<p class="draft-notice">This is an early draft.</p>
+<a class="repo-link" href="https://github.com/showell/roc-apps">roc-apps on GitHub</a>
+</header>
+<nav class="book-nav" id="chapters" aria-label="Chapters">
+<a class="book-name" href="index.html">Safari Ride</a>
+<ol>
+<li class="part">The big picture</li><li><a href="introduction.html"><span class="number">1</span>Introduction</a></li>
+<li><a href="one-page.html"><span class="number">2</span>One page</a></li>
+<li><a href="the-problem.html"><span class="number">3</span>The problem</a></li>
+<li><a href="platforms-packages-and-modules.html"><span class="number">4</span>Platforms, packages and modules</a></li>
+<li><a href="types.html"><span class="number">5</span>Types</a></li>
+<li><a href="functions.html"><span class="number">6</span>Functions</a></li>
+<li class="part">One frame</li><li><a href="things.html"><span class="number">7</span>Things</a></li>
+<li><a href="billboard-critters.html"><span class="number">8</span>Tag unions: billboard critters</a></li>
+<li><a href="shapes.html"><span class="number">9</span>Shapes</a></li>
+<li><a href="a-far-tree.html"><span class="number">10</span>Lists and map: a far tree</a></li>
+<li><a href="the-pipeline.html"><span class="number">11</span>The pipeline</a></li>
+<li><a href="asking-a-kind.html"><span class="number">12</span>Where clauses: asking a kind</a></li>
+<li><a href="refused.html"><span class="number">13</span>Errors as tag unions</a></li>
+<li class="category">Nature</li><li><a href="the-sky.html"><span class="number">14</span>The sky and the grass</a></li>
+<li><a href="mountains.html"><span class="number">15</span>Mountains</a></li>
+<li class="category">Man-made</li><li><a href="the-road.html"><span class="number">16</span>The road</a></li>
+<li><a href="rails.html"><span class="number">17</span>Rails</a></li>
+<li><a href="radio-towers.html"><span class="number">18</span>Radio towers</a></li>
+<li class="category">Critters that stand still</li><li><a href="herds.html"><span class="number">19</span>Herds</a></li>
+<li class="part">Motion</li><li><a href="a-flip-book.html"><span class="number">20</span>Immutable values: a flip book</a></li>
+<li><a href="records.html"><span class="number">21</span>Records</a></li>
+<li><a href="pure-functions-and-effects.html"><span class="number">22</span>Pure functions and effects</a></li>
+<li><a href="the-clock.html"><span class="number">23</span>Opaque types: the clock</a></li>
+<li><a href="the-ride-instant.html"><span class="number">24</span>The ride instant</a></li>
+<li class="category">The passage of time</li><li><a href="the-beacons.html"><span class="number">25</span>The beacons</a></li>
+<li><a href="the-setting-sun.html"><span class="number">26</span>The setting sun</a></li>
+<li class="category">Vehicles</li><li><a href="the-rider.html"><span class="number">27</span>The rider</a></li>
+<li><a href="the-throttle.html"><span class="number">28</span>The throttle</a></li>
+<li><a href="rehearsal.html"><span class="number">29</span>Variables and loops: rehearsal</a></li>
+<li><a href="the-riders-gaze.html"><span class="number">30</span>The rider&#39;s gaze</a></li>
+<li><a href="the-truck.html"><span class="number">31</span>The truck</a></li>
+<li><a href="the-trucks-motion.html"><span class="number">32</span>The truck&#39;s motion</a></li>
+<li class="category">Critter motion</li><li class="here"><a href="the-cat.html"><span class="number">33</span>The cat</a><ol class="sections"><li><a href="the-cat.html#one-step-carried">One step carried</a></li><li><a href="the-cat.html#when-it-starts">When it starts</a></li><li><a href="the-cat.html#where-it-has-got-to">Where it has got to</a></li><li><a href="the-cat.html#what-it-looks-like">What it looks like</a></li><li><a href="the-cat.html#a-timeline">A timeline</a></li><li><a href="the-cat.html#into-the-frame">Into the frame</a></li></ol></li>
+<li><a href="the-bird.html"><span class="number">34</span>The bird</a></li>
+<li><a href="what-a-cat-does-to-the-rider.html"><span class="number">35</span>What a cat does to the rider</a></li>
+<li class="part">Under the hood</li><li><a href="the-math-layer.html"><span class="number">36</span>The math layer</a></li>
+<li><a href="proving-it.html"><span class="number">37</span>Proving it</a></li>
+<li><a href="the-platform.html"><span class="number">38</span>The platform</a></li>
+<li><a href="zooming-back-out.html"><span class="number">39</span>Zooming back out</a></li>
+</ol>
+</nav>
+<main>
+<p class="book-bar"><a href="index.html">Safari Ride</a> <a href="#chapters">Chapters</a></p>
+<article>
+<p class="chapter-number">Chapter 33</p>
+<h1 id="the-cat">The cat</h1>
+<p>A cat waits behind a tree by the road. As the rider comes near, it walks out into the lane, freezes, and leaps clear just before the rider arrives. The cat is the most elaborate animation in Safari Ride, and it&#39;s where the rider and the world start to change each other.</p>
+<figure class="widget"><iframe class="canvas-app" src="../cat_widget/" title="Press play and watch the crossing." loading="lazy" style="aspect-ratio: 640 / 360"></iframe><figcaption>Press play and watch the crossing.</figcaption></figure><p>The picture brings a rider in at a metre a step, from 50 metres off. The cat waits until the gap is 41 metres, walks out, and freezes in the lane at 31. It coils at 7, springs just under 6, and lies collapsed on the far verge by 3.</p>
+<h2 id="one-step-carried">One step carried <a class="section-link" href="#one-step-carried" aria-label="Link to this section">§</a></h2>
+<p>A crossing is a list of frames, and it plays one frame a step on the ride&#39;s clock. So the ride has to carry only one fact about it, the step it starts on. That&#39;s an <code>EncounterPlan</code>:</p>
+<figure class="listing"><figcaption>EncounterPlan.roc, in EncounterPlan</figcaption><pre><code class="language-roc"><span class="syn-comment">## When the encounter on the rider&#39;s segment starts: not planned yet, or at a</span>
+<span class="syn-comment">## step of the ride&#39;s clock. The ride keeps one, and forgets it at each new</span>
+<span class="syn-comment">## segment, since only the encounter on the rider&#39;s own segment is ever live.</span>
+<span class="syn-type">EncounterPlan</span> := [<span class="syn-type">Unplanned</span>, <span class="syn-type">StartsAt</span>(<span class="syn-type">Clock</span>)].{
+<span class="syn-comment"># ...</span>
+</code></pre></figure><p>The ride derives everything else about the cat in a frame from the plan and the clock:</p>
+<figure class="diagram"><svg class="diagram" role="img" aria-label="How a cat reaches the frame" width="262pt" height="380pt"
+ viewBox="0.00 0.00 261.50 380.00" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+<g id="graph0" class="graph" transform="scale(1 1) rotate(0) translate(4 376)">
+<polygon fill="white" stroke="transparent" points="-4,4 -4,-376 257.5,-376 257.5,4 -4,4"/>
+<g id="node1" class="node">
+<polygon fill="none" stroke="black" points="150.5,-372 44.5,-372 44.5,-336 150.5,-336 150.5,-372"/>
+<text text-anchor="middle" x="97.5" y="-357.4" font-family="Helvetica,sans-Serif" font-size="12.00">EncounterPlan</text>
+<text text-anchor="middle" x="97.5" y="-344.4" font-family="Helvetica,sans-Serif" font-size="12.00">and the clock</text>
+</g>
+<g id="node2" class="node">
+<polygon fill="none" stroke="black" points="195,-288 0,-288 0,-252 195,-252 195,-288"/>
+<text text-anchor="middle" x="97.5" y="-273.4" font-family="Helvetica,sans-Serif" font-size="12.00">Animation.Stage</text>
+<text text-anchor="middle" x="97.5" y="-260.4" font-family="Helvetica,sans-Serif" font-size="12.00">where the crossing has got to</text>
+</g>
+<g id="edge1" class="edge">
+<path fill="none" stroke="black" d="M97.5,-335.61C97.5,-324.77 97.5,-310.6 97.5,-298.29"/>
+<polygon fill="black" stroke="black" points="101,-298.08 97.5,-288.08 94,-298.08 101,-298.08"/>
+<text text-anchor="start" x="97.5" y="-309.2" font-family="Helvetica,sans-Serif" font-size="11.00"> &#160;stage_at</text>
+</g>
+<g id="node3" class="node">
+<polygon fill="none" stroke="black" points="187,-204 8,-204 8,-168 187,-168 187,-204"/>
+<text text-anchor="middle" x="97.5" y="-189.4" font-family="Helvetica,sans-Serif" font-size="12.00">Animation.Instant</text>
+<text text-anchor="middle" x="97.5" y="-176.4" font-family="Helvetica,sans-Serif" font-size="12.00">the cat&#39;s pose and location</text>
+</g>
+<g id="edge2" class="edge">
+<path fill="none" stroke="black" d="M97.5,-251.61C97.5,-240.77 97.5,-226.6 97.5,-214.29"/>
+<polygon fill="black" stroke="black" points="101,-214.08 97.5,-204.08 94,-214.08 101,-214.08"/>
+<text text-anchor="start" x="97.5" y="-225.2" font-family="Helvetica,sans-Serif" font-size="11.00"> &#160;the timeline&#39;s instant</text>
+</g>
+<g id="node4" class="node">
+<polygon fill="none" stroke="black" points="158,-120 37,-120 37,-84 158,-84 158,-120"/>
+<text text-anchor="middle" x="97.5" y="-105.4" font-family="Helvetica,sans-Serif" font-size="12.00">Geom.Placed</text>
+<text text-anchor="middle" x="97.5" y="-92.4" font-family="Helvetica,sans-Serif" font-size="12.00">a cat on the road</text>
+</g>
+<g id="edge3" class="edge">
+<path fill="none" stroke="black" d="M97.5,-167.61C97.5,-156.77 97.5,-142.6 97.5,-130.29"/>
+<polygon fill="black" stroke="black" points="101,-130.08 97.5,-120.08 94,-130.08 101,-130.08"/>
+<text text-anchor="start" x="97.5" y="-141.2" font-family="Helvetica,sans-Serif" font-size="11.00"> &#160;EncounterPoses places it</text>
+</g>
+<g id="node5" class="node">
+<polygon fill="none" stroke="black" points="145.5,-36 49.5,-36 49.5,0 145.5,0 145.5,-36"/>
+<text text-anchor="middle" x="97.5" y="-21.4" font-family="Helvetica,sans-Serif" font-size="12.00">a sighted cat</text>
+<text text-anchor="middle" x="97.5" y="-8.4" font-family="Helvetica,sans-Serif" font-size="12.00">in the frame</text>
+</g>
+<g id="edge4" class="edge">
+<path fill="none" stroke="black" d="M97.5,-83.61C97.5,-72.77 97.5,-58.6 97.5,-46.29"/>
+<polygon fill="black" stroke="black" points="101,-46.08 97.5,-36.08 94,-46.08 101,-46.08"/>
+<text text-anchor="start" x="97.5" y="-57.2" font-family="Helvetica,sans-Serif" font-size="11.00"> &#160;EncounterSighting sights it</text>
+</g>
+</g>
+</svg><figcaption>How a cat reaches the frame</figcaption></figure><h2 id="when-it-starts">When it starts <a class="section-link" href="#when-it-starts" aria-label="Link to this section">§</a></h2>
+<p>The ride plans the crossing once, from how fast the rider is coming. The cat should be across just as the rider comes within 3 metres of it. What the ride plans by is a span: how many steps the animation takes, and the gap it ends at.</p>
+<figure class="listing"><figcaption>EncounterPlan.roc</figcaption><pre><code class="language-roc"><span class="syn-comment">## How many steps an animation plays for, a frame a step, and the gap from</span>
+<span class="syn-comment">## the rider to the animal it ends at.</span>
+<span class="syn-type">StepSpan</span> : { length : <span class="syn-type">Steps</span>, ends_at : <span class="syn-type">Distance</span> }
+</code></pre></figure><p>The cat&#39;s span is its frames, ending 3 metres short:</p>
+<figure class="listing"><figcaption>CatCrossing.roc</figcaption><pre><code class="language-roc"><span class="syn-comment">## What the ride plans a crossing by: its length, and the gap it ends at.</span>
+<span class="syn-name">crossing_span</span> : <span class="syn-type">EncounterPlan.StepSpan</span>
+<span class="syn-name">crossing_span</span> = { length: <span class="syn-type">Steps</span>.of_count(crossing_frames.len()), ends_at: clear_gap }
+</code></pre></figure><p>The crossing has 38 frames. So the ride makes the plan on the first step where a rider keeping their speed would cover the rest of the gap, down to 3 metres, within 38 steps. A faster rider covers more road in that time, so the cat sets off farther away:</p>
+<table>
+<thead>
+<tr>
+<th>Rider&#39;s speed</th>
+<th>The crossing starts at a gap of</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>1 metre a step</td>
+<td>41 metres</td>
+</tr>
+<tr>
+<td>1.5 metres a step</td>
+<td>60 metres</td>
+</tr>
+<tr>
+<td>2 metres a step</td>
+<td>79 metres</td>
+</tr>
+</tbody>
+</table>
+<figure class="listing"><figcaption>EncounterPlan.roc</figcaption><pre><code class="language-roc"><span class="syn-comment">## The start of an animation that is to end as the rider comes within</span>
+<span class="syn-comment">## `ends_at`, planned at `now` from how the rider comes then: `gap` from the</span>
+<span class="syn-comment">## animal, at `speed`. It starts now on the first step that a rider keeping</span>
+<span class="syn-comment">## their speed would arrive within its length, so a faster rider has it</span>
+<span class="syn-comment">## start farther off. Till then, and while the rider is at rest, it isn&#39;t</span>
+<span class="syn-comment">## planned. The plan looks at the rider&#39;s speed that once: after it, the</span>
+<span class="syn-comment">## animal doesn&#39;t care what the rider does.</span>
+<span class="syn-comment">##</span>
+<span class="syn-comment">## Planning on the step itself keeps the guess short, an animation&#39;s length</span>
+<span class="syn-comment">## ahead. A plan from farther off would take the speed to be steady for</span>
+<span class="syn-comment">## longer, and a rider speeding up meanwhile would arrive before the end.</span>
+<span class="syn-name">plan_for</span> : <span class="syn-type">EncounterPlan.StepSpan</span>,
+{
+	gap : <span class="syn-type">Distance</span>,
+	speed : <span class="syn-type">Speed</span>,
+	now : <span class="syn-type">Clock</span>,
+} -&gt; <span class="syn-type">EncounterPlan</span>
+<span class="syn-name">plan_for</span> = |span, { gap, speed, now }|
+	<span class="syn-keyword">if</span> speed == <span class="syn-type">Speed</span>.at_rest {
+		<span class="syn-type">Unplanned</span>
+	} <span class="syn-keyword">else</span> <span class="syn-keyword">if</span> gap &lt;= <span class="syn-type">EncounterPlan</span>.planning_gap(span, speed) {
+		<span class="syn-type">StartsAt</span>(now)
+	} <span class="syn-keyword">else</span> {
+		<span class="syn-type">Unplanned</span>
+	}
+</code></pre></figure><p>The plan reads the rider&#39;s speed on that one step. After that, the cat plays on the clock alone. A rider who brakes arrives a little late, and the cat has crossed on time.</p>
+<h2 id="where-it-has-got-to">Where it has got to <a class="section-link" href="#where-it-has-got-to" aria-label="Link to this section">§</a></h2>
+<p>The plan and the clock say where the crossing has got to, as a <code>Stage</code>:</p>
+<figure class="listing"><figcaption>Animation.roc</figcaption><pre><code class="language-roc"><span class="syn-comment">## Where an animation has got to: not begun, playing and this many steps in,</span>
+<span class="syn-comment">## which is the frame it shows, or over this many steps ago.</span>
+<span class="syn-type">Stage</span> : [<span class="syn-type">Waiting</span>, <span class="syn-type">Playing</span>(<span class="syn-type">Steps</span>), <span class="syn-type">Past</span>(<span class="syn-type">Steps</span>)]
+</code></pre></figure><p><code>Waiting</code> comes before the crossing starts. <code>Playing</code> counts the steps in, and <code>Past</code> counts the steps since it ended. One function works the stage out:</p>
+<figure class="listing"><figcaption>EncounterPlan.roc</figcaption><pre><code class="language-roc"><span class="syn-comment">## Where an animation `length` steps long, started by `plan`, has got to with</span>
+<span class="syn-comment">## the ride&#39;s clock at `now`. An unplanned animation is still waiting.</span>
+<span class="syn-name">stage_at</span> : <span class="syn-type">EncounterPlan</span>, { now : <span class="syn-type">Clock</span>, length : <span class="syn-type">Steps</span> } -&gt; <span class="syn-type">Animation.Stage</span>
+<span class="syn-name">stage_at</span> = |plan, { now, length }|
+	<span class="syn-keyword">match</span> plan {
+		<span class="syn-type">Unplanned</span> =&gt; <span class="syn-type">Waiting</span>
+		<span class="syn-type">StartsAt</span>(first_step) =&gt; {
+			end = first_step.plus(length)
+			<span class="syn-keyword">if</span> now &lt; first_step {
+				<span class="syn-type">Waiting</span>
+			} <span class="syn-keyword">else</span> <span class="syn-keyword">if</span> now &lt; end {
+				<span class="syn-type">Playing</span>(now.steps_since(first_step))
+			} <span class="syn-keyword">else</span> {
+				<span class="syn-type">Past</span>(now.steps_since(end))
+			}
+		}
+	}
+</code></pre></figure><h2 id="what-it-looks-like">What it looks like <a class="section-link" href="#what-it-looks-like" aria-label="Link to this section">§</a></h2>
+<p>The crossing&#39;s frames come in three runs, one frame a step:</p>
+<table>
+<thead>
+<tr>
+<th>Frames</th>
+<th>What the cat does</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>1 to 10</td>
+<td>walks out, striding and resting, from behind its tree toward the middle of the road</td>
+</tr>
+<tr>
+<td>11 to 34</td>
+<td>stands frozen in the lane</td>
+</tr>
+<tr>
+<td>35 to 38</td>
+<td>coils, flies for two frames, and lands on the far verge</td>
+</tr>
+</tbody>
+</table>
+<p>The table counts frames from 1, as the picture does. A <code>Playing</code> stage counts its steps from 0. A cat holds itself in one of seven poses:</p>
+<figure class="listing"><figcaption>CatCrossing.roc</figcaption><pre><code class="language-roc"><span class="syn-comment">## How the cat holds itself: walking, it is at rest or mid-stride; then</span>
+<span class="syn-comment">## frozen; then its leap, from the coil through flight and landing to the</span>
+<span class="syn-comment">## collapse after.</span>
+<span class="syn-type">CatPose</span> : [<span class="syn-type">Rest</span>, <span class="syn-type">Stride</span>, <span class="syn-type">Frozen</span>, <span class="syn-type">Coil</span>, <span class="syn-type">Flight</span>, <span class="syn-type">Land</span>, <span class="syn-type">Collapse</span>]
+</code></pre></figure><p>Each frame is a pose, and where the cat is on its way across:</p>
+<figure class="listing"><figcaption>CatCrossing.roc</figcaption><pre><code class="language-roc"><span class="syn-comment">## One frame of any crossing before it is put on a road: how the cat looks, and</span>
+<span class="syn-comment">## where it is on its way across.</span>
+<span class="syn-type">CrossingFrame</span> : { pose : <span class="syn-type">CatCrossing.CatPose</span>, way : <span class="syn-type">CrossingWay</span> }
+</code></pre></figure><figure class="listing"><figcaption>CatCrossing.roc</figcaption><pre><code class="language-roc"><span class="syn-comment">## Where a cat is on its way across in one frame: walking out, this much of</span>
+<span class="syn-comment">## the way to the middle of the road; standing frozen there; or leaping, this</span>
+<span class="syn-comment">## much of the way on to the far verge and this high.</span>
+<span class="syn-type">CrossingWay</span> : [
+	<span class="syn-type">WalkingOut</span>(<span class="syn-type">Fraction</span>),
+	<span class="syn-type">StandingFrozen</span>,
+	<span class="syn-type">Leaping</span>({ way_to_verge : <span class="syn-type">Fraction</span>, lift : <span class="syn-type">Distance</span> }),
+]
+</code></pre></figure><p>A frame holds how far along its way the cat is, as a share of the way. The road comes in later, by the cat&#39;s own tree, so one list of frames serves every crossing. The leap is four of them, set by eye:</p>
+<figure class="listing"><figcaption>CatCrossing.roc</figcaption><pre><code class="language-roc"><span class="syn-comment">## The leap, frame by frame: how the cat looks, how much of the way from the</span>
+<span class="syn-comment">## middle of the road to the far verge it has come, and how high its feet are.</span>
+<span class="syn-comment">## These are keyframes set by eye, not measured off the stills, and each shows</span>
+<span class="syn-comment">## for one step.</span>
+<span class="syn-name">leap_frames</span> : <span class="syn-type">List</span>(<span class="syn-type">CrossingFrame</span>)
+<span class="syn-name">leap_frames</span> = [
+	{ pose: <span class="syn-type">Coil</span>, way: <span class="syn-type">Leaping</span>({ way_to_verge: <span class="syn-type">Fraction</span>.zero, lift: <span class="syn-type">Distance</span>.zero }) },
+	{ pose: <span class="syn-type">Flight</span>, way: <span class="syn-type">Leaping</span>({ way_to_verge: <span class="syn-type">Fraction</span>.of(<span class="syn-number">0.4</span>), lift: <span class="syn-type">Distance</span>.metres(<span class="syn-number">0.27</span>) }) },
+	{
+		pose: <span class="syn-type">Flight</span>,
+		way: <span class="syn-type">Leaping</span>({ way_to_verge: <span class="syn-type">Fraction</span>.of(<span class="syn-number">0.85</span>), lift: <span class="syn-type">Distance</span>.metres(<span class="syn-number">0.17</span>) }),
+	},
+	{ pose: <span class="syn-type">Land</span>, way: <span class="syn-type">Leaping</span>({ way_to_verge: <span class="syn-type">Fraction</span>.whole, lift: <span class="syn-type">Distance</span>.zero }) },
+]
+</code></pre></figure><p>One list joins the three runs:</p>
+<figure class="listing"><figcaption>CatCrossing.roc</figcaption><pre><code class="language-roc"><span class="syn-comment">## The frames of any crossing, one a step. Both the crossing&#39;s length and its</span>
+<span class="syn-comment">## timeline come from this one list, so the two can&#39;t disagree.</span>
+<span class="syn-name">crossing_frames</span> : <span class="syn-type">List</span>(<span class="syn-type">CrossingFrame</span>)
+<span class="syn-name">crossing_frames</span> = {
+	walking = walking_poses.map_with_index(
+		|pose, frame| {
+			pose,
+			way: <span class="syn-type">WalkingOut</span>(<span class="syn-type">Fraction</span>.of(frame.to_f64() / walking_poses.len().to_f64())),
+		},
+	)
+	frozen = <span class="syn-type">List</span>.repeat({ pose: <span class="syn-type">Frozen</span>, way: <span class="syn-type">StandingFrozen</span> }, frozen_frames)
+	[walking, frozen, leap_frames].join()
+}
+</code></pre></figure><p><code>map_with_index</code> hands each walking pose its place in the list, which gives its share of the way out. <code>List.repeat</code> makes the 24 frozen frames.</p>
+<h2 id="a-timeline">A timeline <a class="section-link" href="#a-timeline" aria-label="Link to this section">§</a></h2>
+<p>A list of frames and a way to show each one make a timeline. <code>Animation</code> defines it once, for any animal:</p>
+<figure class="listing"><figcaption>Animation.roc, in Timeline</figcaption><pre><code class="language-roc"><span class="syn-comment"># ...</span>
+<span class="syn-type">Timeline</span>(frame, pose) :: {
+	before : <span class="syn-type">Animation.Instant</span>(pose),
+	frames : <span class="syn-type">List</span>(frame),
+	frame_instant : frame -&gt; <span class="syn-type">Animation.Instant</span>(pose),
+	after : <span class="syn-type">Animation.Instant</span>(pose),
+}.{
+<span class="syn-comment"># ...</span>
+</code></pre></figure><p>For the cat, a frame is a <code>CrossingFrame</code> and a pose is a <code>CatPose</code>. <code>before</code> and <code>after</code> are the animal at rest, outside the frames. An <code>Instant(pose)</code> is a record of the pose and the animal&#39;s location.</p>
+<p><code>crossing_timeline</code> puts a crossing&#39;s frames on the road, by its own tree:</p>
+<figure class="listing"><figcaption>CatCrossing.roc</figcaption><pre><code class="language-roc"><span class="syn-comment">## The whole of a crossing, a frame a step: the cat walks out to the middle</span>
+<span class="syn-comment">## of the road, freezes there, and leaps clear to the far verge.</span>
+<span class="syn-name">crossing_timeline</span> : <span class="syn-type">CatCrossing</span> -&gt; <span class="syn-type">Animation.Timeline</span>(<span class="syn-type">CrossingFrame</span>, <span class="syn-type">CatCrossing.CatPose</span>)
+<span class="syn-name">crossing_timeline</span> = |crossing| {
+	on_road = |across| { road_point: { along: crossing.along(), across }, lift: <span class="syn-type">Distance</span>.zero }
+	start = on_road(crossing.start_across())
+	middle = on_road(<span class="syn-type">CatCrossing</span>.mid_across)
+	end = on_road(<span class="syn-type">CatCrossing</span>.end_across)
+	location_of = |way|
+		<span class="syn-keyword">match</span> way {
+			<span class="syn-type">WalkingOut</span>(fraction) =&gt;
+				<span class="syn-type">Animation</span>.location_between({ from: start, to: middle, fraction })
+			<span class="syn-type">StandingFrozen</span> =&gt; middle
+			<span class="syn-type">Leaping</span>({ way_to_verge, lift }) =&gt; {
+				on_the_way = <span class="syn-type">Animation</span>.location_between({
+					from: middle,
+					to: end,
+					fraction: way_to_verge,
+				})
+				{ ..on_the_way, lift }
+			}
+		}
+	<span class="syn-type">Animation.Timeline</span>.of({
+		before: { pose: <span class="syn-type">Rest</span>, location: start },
+		frames: crossing_frames,
+		frame_instant: |{ pose, way }| { pose, location: location_of(way) },
+		after: { pose: <span class="syn-type">Collapse</span>, location: end },
+	})
+}
+</code></pre></figure><p><code>location_of</code> is a function defined inside another, so it can use the crossing&#39;s <code>start</code>, <code>middle</code> and <code>end</code>. <code>Animation.location_between</code> returns the location a fraction of the way from one location to another. Asking a timeline for the animal at a stage is one <code>match</code>:</p>
+<figure class="listing"><figcaption>Animation.roc, in Timeline</figcaption><pre><code class="language-roc"><span class="syn-comment"># ...</span>
+<span class="syn-name">instant</span> : <span class="syn-type">Animation.Timeline</span>(frame, pose), <span class="syn-type">Animation.Stage</span> -&gt; <span class="syn-type">Animation.Instant</span>(pose)
+<span class="syn-name">instant</span> = |Animation.Timeline.(timeline), stage|
+	<span class="syn-keyword">match</span> stage {
+		<span class="syn-type">Waiting</span> =&gt; timeline.before
+		<span class="syn-type">Playing</span>(steps_in) =&gt;
+			<span class="syn-keyword">match</span> timeline.frames.get(steps_in.to_u64()) {
+				<span class="syn-type">Ok</span>(frame) =&gt; (timeline.frame_instant)(frame)
+				<span class="syn-type">Err</span>(<span class="syn-type">OutOfBounds</span>) =&gt;
+					<span class="syn-keyword">crash</span> <span class="syn-string">&quot;Animation.Timeline.instant: a stage plays past the last frame, so the span it was staged by disagrees with its timeline&quot;</span>
+			}
+		<span class="syn-type">Past</span>(_) =&gt; timeline.after
+		<span class="syn-comment"># ...</span>
+</code></pre></figure><p><code>frame_instant</code> is a function stored in a record&#39;s field, so calling it takes parentheses: <code>(timeline.frame_instant)(frame)</code>. Written <code>timeline.frame_instant(frame)</code>, it would read as a method call. The invariant is that the span and the frames agree, so <code>instant</code> crashes on a <code>Playing</code> stage past the last frame. Both come from the one list, <code>crossing_frames</code>, so every <code>Playing</code> stage finds its frame.</p>
+<h2 id="into-the-frame">Into the frame <a class="section-link" href="#into-the-frame" aria-label="Link to this section">§</a></h2>
+<p>The ride plays only the crossing on the rider&#39;s own segment. A cat on a segment ahead waits behind its tree:</p>
+<figure class="listing"><figcaption>EncounterPoses.roc</figcaption><pre><code class="language-roc"><span class="syn-comment">## The cats on `road`, with the encounter on the rider&#39;s segment at</span>
+<span class="syn-comment">## `encounter_stage`, in the order of `RoadAhead.segments_in_view`.</span>
+<span class="syn-name">cat_poses</span> : <span class="syn-type">RoadAhead.RoadView</span>, <span class="syn-type">Animation.Stage</span> -&gt; <span class="syn-type">List</span>(<span class="syn-type">EncounterPoses.PlacedAnimal</span>(<span class="syn-type">Cat</span>))
+<span class="syn-name">cat_poses</span> = |road, encounter_stage|
+	<span class="syn-type">RoadAhead</span>.segments_in_view(road).keep_oks(
+		|in_view| segment_cat({ in_view, encounter_stage }),
+	)
+</code></pre></figure><p>A <code>Cat</code> is the cat&#39;s kind in the frame: a record of its pose, with the methods every kind has. A <code>PlacedAnimal(Cat)</code> is a <code>Geom.Placed</code> cat, with the segment it stands on. <code>EncounterSighting</code> then sights each cat through <code>Pipeline.scenery_sighting_of</code>, as the pipeline sights a tree. From there, a cat joins the frame&#39;s depth sort like any other thing.</p>
+<p>The ride carries one step for the cat, and derives the rest, frame by frame, from that step and the clock. While it crosses, the cat also asks two things of the rider: hold the throttle, and look. After the bird&#39;s chapter, the <a class="chapter-link" href="what-a-cat-does-to-the-rider.html">“What a cat does to the rider”</a> chapter takes the rider&#39;s side.</p>
+
+</article>
+<nav class="turn-page" aria-label="Previous and next chapter">
+<a rel="prev" href="the-trucks-motion.html"><small>Previous</small>The truck&#39;s motion</a>
+<a rel="next" href="the-bird.html"><small>Next</small>The bird</a>
+</nav>
+</main>
+<script src="embed.js"></script>
+</body>
+</html>

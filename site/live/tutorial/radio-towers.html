@@ -1,0 +1,148 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Radio towers · Safari Ride</title>
+<link rel="icon" href="data:,">
+<link rel="stylesheet" href="book.css">
+<script src="book.js" defer></script>
+</head>
+<body class="chapter">
+<header class="top-bar">
+<a class="home-link" href="https://roc.lynrummy.com/">Steve's Roc Apps</a>
+<p class="draft-notice">This is an early draft.</p>
+<a class="repo-link" href="https://github.com/showell/roc-apps">roc-apps on GitHub</a>
+</header>
+<nav class="book-nav" id="chapters" aria-label="Chapters">
+<a class="book-name" href="index.html">Safari Ride</a>
+<ol>
+<li class="part">The big picture</li><li><a href="introduction.html"><span class="number">1</span>Introduction</a></li>
+<li><a href="one-page.html"><span class="number">2</span>One page</a></li>
+<li><a href="the-problem.html"><span class="number">3</span>The problem</a></li>
+<li><a href="platforms-packages-and-modules.html"><span class="number">4</span>Platforms, packages and modules</a></li>
+<li><a href="types.html"><span class="number">5</span>Types</a></li>
+<li><a href="functions.html"><span class="number">6</span>Functions</a></li>
+<li class="part">One frame</li><li><a href="things.html"><span class="number">7</span>Things</a></li>
+<li><a href="billboard-critters.html"><span class="number">8</span>Tag unions: billboard critters</a></li>
+<li><a href="shapes.html"><span class="number">9</span>Shapes</a></li>
+<li><a href="a-far-tree.html"><span class="number">10</span>Lists and map: a far tree</a></li>
+<li><a href="the-pipeline.html"><span class="number">11</span>The pipeline</a></li>
+<li><a href="asking-a-kind.html"><span class="number">12</span>Where clauses: asking a kind</a></li>
+<li><a href="refused.html"><span class="number">13</span>Errors as tag unions</a></li>
+<li class="category">Nature</li><li><a href="the-sky.html"><span class="number">14</span>The sky and the grass</a></li>
+<li><a href="mountains.html"><span class="number">15</span>Mountains</a></li>
+<li class="category">Man-made</li><li><a href="the-road.html"><span class="number">16</span>The road</a></li>
+<li><a href="rails.html"><span class="number">17</span>Rails</a></li>
+<li class="here"><a href="radio-towers.html"><span class="number">18</span>Radio towers</a><ol class="sections"><li><a href="radio-towers.html#where-a-tower-stands">Where a tower stands</a></li><li><a href="radio-towers.html#over-the-horizon">Over the horizon</a></li><li><a href="radio-towers.html#rods">Rods</a></li></ol></li>
+<li class="category">Critters that stand still</li><li><a href="herds.html"><span class="number">19</span>Herds</a></li>
+<li class="part">Motion</li><li><a href="a-flip-book.html"><span class="number">20</span>Immutable values: a flip book</a></li>
+<li><a href="records.html"><span class="number">21</span>Records</a></li>
+<li><a href="pure-functions-and-effects.html"><span class="number">22</span>Pure functions and effects</a></li>
+<li><a href="the-clock.html"><span class="number">23</span>Opaque types: the clock</a></li>
+<li><a href="the-ride-instant.html"><span class="number">24</span>The ride instant</a></li>
+<li class="category">The passage of time</li><li><a href="the-beacons.html"><span class="number">25</span>The beacons</a></li>
+<li><a href="the-setting-sun.html"><span class="number">26</span>The setting sun</a></li>
+<li class="category">Vehicles</li><li><a href="the-rider.html"><span class="number">27</span>The rider</a></li>
+<li><a href="the-throttle.html"><span class="number">28</span>The throttle</a></li>
+<li><a href="rehearsal.html"><span class="number">29</span>Variables and loops: rehearsal</a></li>
+<li><a href="the-riders-gaze.html"><span class="number">30</span>The rider&#39;s gaze</a></li>
+<li><a href="the-truck.html"><span class="number">31</span>The truck</a></li>
+<li><a href="the-trucks-motion.html"><span class="number">32</span>The truck&#39;s motion</a></li>
+<li class="category">Critter motion</li><li><a href="the-cat.html"><span class="number">33</span>The cat</a></li>
+<li><a href="the-bird.html"><span class="number">34</span>The bird</a></li>
+<li><a href="what-a-cat-does-to-the-rider.html"><span class="number">35</span>What a cat does to the rider</a></li>
+<li class="part">Under the hood</li><li><a href="the-math-layer.html"><span class="number">36</span>The math layer</a></li>
+<li><a href="proving-it.html"><span class="number">37</span>Proving it</a></li>
+<li><a href="the-platform.html"><span class="number">38</span>The platform</a></li>
+<li><a href="zooming-back-out.html"><span class="number">39</span>Zooming back out</a></li>
+</ol>
+</nav>
+<main>
+<p class="book-bar"><a href="index.html">Safari Ride</a> <a href="#chapters">Chapters</a></p>
+<article>
+<p class="chapter-number">Chapter 18</p>
+<h1 id="radio-towers">Radio towers</h1>
+<p>The radio towers are the tallest things beside the road: lattices of thin rods, 80 metres high, standing well back from it. One stands past the end of every segment, off to the right, and a long segment has one more halfway along, off to the left.</p>
+<figure class="widget"><iframe class="canvas-app" src="../frame_widget/?start=towers" title="Step 1,529 of the ride: the road and its rails, with the radio towers standing back from it." loading="lazy" style="aspect-ratio: 960 / 600"></iframe><figcaption>Step 1,529 of the ride: the road and its rails, with the radio towers standing back from it.</figcaption></figure><p>A tower raises two problems of its own. Far off, it should sink below the horizon from the bottom up, as the ground curves away under it. Up close, it can stand partly behind the camera. The chapter takes them in that order, after the tower&#39;s place by the road.</p>
+<h2 id="where-a-tower-stands">Where a tower stands <a class="section-link" href="#where-a-tower-stands" aria-label="Link to this section">§</a></h2>
+<p>A tower is two facts: its yaw, which way its square footprint is turned, and its beacon, the light at its top:</p>
+<figure class="listing"><figcaption>Tower.roc, in Tower</figcaption><pre><code class="language-roc"><span class="syn-comment">## A tower in a frame: how it is turned, and its beacon as it shines.</span>
+<span class="syn-type">Tower</span> :: { yaw : <span class="syn-type">Angle.Turn</span>, beacon : <span class="syn-type">Beacon</span> }.{
+<span class="syn-comment"># ...</span>
+</code></pre></figure><p>Trees get their places once, when the world is built. A tower&#39;s beacon blinks with the clock, so its sighting builds the tower afresh each frame, from its segment and the clock. Here&#39;s the tower past a segment&#39;s end:</p>
+<figure class="listing"><figcaption>TowerSighting.roc</figcaption><pre><code class="language-roc"><span class="syn-comment">## The tower past the end of a segment in view, if it is in front of the</span>
+<span class="syn-comment">## camera and above the horizon.</span>
+<span class="syn-name">end_tower</span> : <span class="syn-type">RoadAhead.RoadView</span>,
+{
+	vantage : <span class="syn-type">Geom.Vantage</span>,
+	in_view : <span class="syn-type">RoadAhead.SegmentInView</span>,
+	clock : <span class="syn-type">Clock</span>,
+} -&gt; <span class="syn-type">Try</span>(<span class="syn-type">Pipeline.Sighted</span>(<span class="syn-type">Tower</span>), [<span class="syn-type">OutOfSight</span>])
+<span class="syn-name">end_tower</span> = |road, { vantage, in_view, clock }| {
+	beacon = <span class="syn-type">Beacon</span>.at({ segment: in_view.index, place: <span class="syn-type">AtEnd</span> }, clock)
+	tower_if_ahead(
+		road,
+		{
+			vantage,
+			from_rider: in_view.from_rider,
+			road_point: {
+				along: <span class="syn-type">Along</span>.at(in_view.segment.length.plus(end_tower_beyond_end)),
+				across: <span class="syn-type">Across</span>.right_of_middle(end_tower_right_of_middle),
+			},
+			tower: <span class="syn-type">Tower</span>.standing({ yaw: end_tower_yaw, beacon }),
+		},
+	)
+}
+</code></pre></figure><p><code>end_tower</code> turns the tower 30 degrees from square to the road. <code>tower_if_ahead</code> stands the tower at its point by the road, and returns its sighting if it&#39;s in front of the camera and some of it shows above the horizon. The tower halfway along is the same, with its footprint square to the road, a <code>Midway</code> beacon, and one more way to fail: <code>mid_tower_point</code> gives <code>Err(NoMidTower)</code> for a segment of a kilometre or less. <code>TowerSighting</code> is the one home for where towers stand.</p>
+<h2 id="over-the-horizon">Over the horizon <a class="section-link" href="#over-the-horizon" aria-label="Link to this section">§</a></h2>
+<p>The ride&#39;s ground curves away on its 100 km radius, and a tower stands on it. From the rider&#39;s eye, 1.2 metres up, the ground curves out of sight 490 metres out. Past that horizon, the lowest thing the rider can see lies on the line from the eye that grazes the ground there. One function finds that lowest height at any point on the ground:</p>
+<figure class="listing"><figcaption>EarthCurve.roc</figcaption><pre><code class="language-roc"><span class="syn-name">lowest_visible_height</span> : <span class="syn-type">RiderView.RiderPoint</span> -&gt; <span class="syn-type">Distance</span>
+</code></pre></figure><p>The ground hides whatever part of a tower is under that line, so as a tower gets further away, it sinks from the bottom up. An 80-metre tower still shows its tip about 4.5 km off. Once all of it is under the line, <code>Pipeline.sighting_above_horizon_of</code> refuses it as <code>OutOfSight</code>, as in the <a class="chapter-link" href="refused.html">“Errors as tag unions”</a> chapter. So a sighted tower always has something to paint.</p>
+<h2 id="rods">Rods <a class="section-link" href="#rods" aria-label="Link to this section">§</a></h2>
+<p><code>Tower.tower_shapes</code> returns a tower as a few dozen rods, and a disc for its beacon when the beacon is bright enough and big enough to show. It starts by checking that some of the tower shows above the horizon:</p>
+<figure class="listing"><figcaption>Tower.roc, in tower_shapes</figcaption><pre><code class="language-roc"><span class="syn-comment"># ...</span>
+<span class="syn-keyword">if</span> hidden_on_tower(geometry) &gt;= tower_height {
+	<span class="syn-keyword">crash</span> <span class="syn-string">&quot;Tower.tower_shapes: a tower hidden wholly below the horizon is refused at its sighting&quot;</span>
+	<span class="syn-comment"># ...</span>
+</code></pre></figure><p>Its sighting has already refused a tower the horizon hides wholly. We enforce invariants with <code>crash</code>, and the invariant here is that every tower this function gets shows some part above the horizon. Otherwise come the legs, the rings and the braces, and the beacon&#39;s disc, when it shows, last, at the top.</p>
+<p>A tower&#39;s footprint is a square, and four tags name its corners. Going round the square is a <code>match</code>:</p>
+<figure class="listing"><figcaption>Tower.roc</figcaption><pre><code class="language-roc"><span class="syn-comment">## The corner after this one, going round the square.</span>
+<span class="syn-name">next_corner</span> : <span class="syn-type">Corner</span> -&gt; <span class="syn-type">Corner</span>
+<span class="syn-name">next_corner</span> = |corner|
+	<span class="syn-keyword">match</span> corner {
+		<span class="syn-type">BackLeft</span> =&gt; <span class="syn-type">BackRight</span>
+		<span class="syn-type">BackRight</span> =&gt; <span class="syn-type">FrontRight</span>
+		<span class="syn-type">FrontRight</span> =&gt; <span class="syn-type">FrontLeft</span>
+		<span class="syn-type">FrontLeft</span> =&gt; <span class="syn-type">BackLeft</span>
+	}
+</code></pre></figure><p>Four legs run from the corners up to the top, each starting at the height the horizon hides. Every 20 metres up, a ring of four rods joins each corner to the next one round, and crossed braces fill the lowest two storeys.</p>
+<p>Each rod is a line between two points seen from the rider. A near tower is wide, so its foot can stand ahead of the camera while a corner of its footprint stands beside or behind it. So each rod goes through this function:</p>
+<figure class="listing"><figcaption>RiderView.roc</figcaption><pre><code class="language-roc"><span class="syn-comment">## The part of the line from `from` to `to` at or past the near plane: the</span>
+<span class="syn-comment">## whole line, or the line cut where it crosses the near plane. A line</span>
+<span class="syn-comment">## with both ends behind the near plane has no such part.</span>
+<span class="syn-name">line_ahead</span> : { from : <span class="syn-type">RiderView.PointAtHeight</span>, to : <span class="syn-type">RiderView.PointAtHeight</span> } -&gt; <span class="syn-type">Try</span>(
+	{ from : <span class="syn-type">RiderView.PointAtHeightAhead</span>, to : <span class="syn-type">RiderView.PointAtHeightAhead</span> },
+	[<span class="syn-type">BehindCamera</span>],
+)
+<span class="syn-name">line_ahead</span> = |{ from, to }|
+	<span class="syn-keyword">match</span> (<span class="syn-type">RiderView</span>.point_at_height_ahead(from), <span class="syn-type">RiderView</span>.point_at_height_ahead(to)) {
+		(<span class="syn-type">Ok</span>(start), <span class="syn-type">Ok</span>(end)) =&gt; <span class="syn-type">Ok</span>({ from: start, to: end })
+		(<span class="syn-type">Ok</span>(start), <span class="syn-type">Err</span>(<span class="syn-type">BehindCamera</span>)) =&gt;
+			<span class="syn-type">Ok</span>({ from: start, to: near_plane_crossing({ from, to }) })
+		(<span class="syn-type">Err</span>(<span class="syn-type">BehindCamera</span>), <span class="syn-type">Ok</span>(end)) =&gt;
+			<span class="syn-type">Ok</span>({ from: near_plane_crossing({ from, to }), to: end })
+		(<span class="syn-type">Err</span>(<span class="syn-type">BehindCamera</span>), <span class="syn-type">Err</span>(<span class="syn-type">BehindCamera</span>)) =&gt; <span class="syn-type">Err</span>(<span class="syn-type">BehindCamera</span>)
+	}
+</code></pre></figure><p>The <code>match</code> is on a tuple, <code>(start, end)</code>: two values side by side, in parentheses. So it covers all four combinations of its two <code>Try</code>s. A rod with one end short of the near plane, 0.4 metres ahead of the camera, is cut where it crosses that plane. A rod with both ends behind it is refused.</p>
+<p>Each frame derives a tower afresh, its rods and its disc, from its segment, the clock and the camera. The disc on top blinks with the clock, which starts running in the second half of the book, in the <a class="chapter-link" href="the-beacons.html">“The beacons”</a> chapter. The last things to stand in the frame are the herds.</p>
+
+</article>
+<nav class="turn-page" aria-label="Previous and next chapter">
+<a rel="prev" href="rails.html"><small>Previous</small>Rails</a>
+<a rel="next" href="herds.html"><small>Next</small>Herds</a>
+</nav>
+</main>
+<script src="embed.js"></script>
+</body>
+</html>

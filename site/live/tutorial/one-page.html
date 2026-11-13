@@ -21,15 +21,41 @@
 <li class="here"><a href="one-page.html"><span class="number">2</span>One page</a></li>
 <li><a href="the-problem.html"><span class="number">3</span>The problem</a></li>
 <li><a href="platforms-packages-and-modules.html"><span class="number">4</span>Platforms, packages and modules</a></li>
-<li><a href="the-pieces-as-types.html"><span class="number">5</span>The pieces as types</a></li>
-<li><a href="things.html"><span class="number">6</span>Things</a></li>
-<li><a href="billboard-critters.html"><span class="number">7</span>Billboard Critters</a></li>
-<li><a href="shapes.html"><span class="number">8</span>Shapes</a></li>
-<li><a href="a-far-tree.html"><span class="number">9</span>A far tree</a></li>
-<li><a href="types-for-places.html"><span class="number">10</span>Types for places</a></li>
+<li><a href="types.html"><span class="number">5</span>Types</a></li>
+<li><a href="functions.html"><span class="number">6</span>Functions</a></li>
+<li class="part">One frame</li><li><a href="things.html"><span class="number">7</span>Things</a></li>
+<li><a href="billboard-critters.html"><span class="number">8</span>Tag unions: billboard critters</a></li>
+<li><a href="shapes.html"><span class="number">9</span>Shapes</a></li>
+<li><a href="a-far-tree.html"><span class="number">10</span>Lists and map: a far tree</a></li>
 <li><a href="the-pipeline.html"><span class="number">11</span>The pipeline</a></li>
-<li><a href="nature-types.html"><span class="number">12</span>Nature types</a></li>
-<li><a href="asking-a-kind.html"><span class="number">13</span>Asking a kind</a></li>
+<li><a href="asking-a-kind.html"><span class="number">12</span>Where clauses: asking a kind</a></li>
+<li><a href="refused.html"><span class="number">13</span>Errors as tag unions</a></li>
+<li class="category">Nature</li><li><a href="the-sky.html"><span class="number">14</span>The sky and the grass</a></li>
+<li><a href="mountains.html"><span class="number">15</span>Mountains</a></li>
+<li class="category">Man-made</li><li><a href="the-road.html"><span class="number">16</span>The road</a></li>
+<li><a href="rails.html"><span class="number">17</span>Rails</a></li>
+<li><a href="radio-towers.html"><span class="number">18</span>Radio towers</a></li>
+<li class="category">Critters that stand still</li><li><a href="herds.html"><span class="number">19</span>Herds</a></li>
+<li class="part">Motion</li><li><a href="a-flip-book.html"><span class="number">20</span>Immutable values: a flip book</a></li>
+<li><a href="records.html"><span class="number">21</span>Records</a></li>
+<li><a href="pure-functions-and-effects.html"><span class="number">22</span>Pure functions and effects</a></li>
+<li><a href="the-clock.html"><span class="number">23</span>Opaque types: the clock</a></li>
+<li><a href="the-ride-instant.html"><span class="number">24</span>The ride instant</a></li>
+<li class="category">The passage of time</li><li><a href="the-beacons.html"><span class="number">25</span>The beacons</a></li>
+<li><a href="the-setting-sun.html"><span class="number">26</span>The setting sun</a></li>
+<li class="category">Vehicles</li><li><a href="the-rider.html"><span class="number">27</span>The rider</a></li>
+<li><a href="the-throttle.html"><span class="number">28</span>The throttle</a></li>
+<li><a href="rehearsal.html"><span class="number">29</span>Variables and loops: rehearsal</a></li>
+<li><a href="the-riders-gaze.html"><span class="number">30</span>The rider&#39;s gaze</a></li>
+<li><a href="the-truck.html"><span class="number">31</span>The truck</a></li>
+<li><a href="the-trucks-motion.html"><span class="number">32</span>The truck&#39;s motion</a></li>
+<li class="category">Critter motion</li><li><a href="the-cat.html"><span class="number">33</span>The cat</a></li>
+<li><a href="the-bird.html"><span class="number">34</span>The bird</a></li>
+<li><a href="what-a-cat-does-to-the-rider.html"><span class="number">35</span>What a cat does to the rider</a></li>
+<li class="part">Under the hood</li><li><a href="the-math-layer.html"><span class="number">36</span>The math layer</a></li>
+<li><a href="proving-it.html"><span class="number">37</span>Proving it</a></li>
+<li><a href="the-platform.html"><span class="number">38</span>The platform</a></li>
+<li><a href="zooming-back-out.html"><span class="number">39</span>Zooming back out</a></li>
 </ol>
 </nav>
 <main>
@@ -38,7 +64,7 @@
 <p class="chapter-number">Chapter 2</p>
 <h1 id="one-page">One page</h1>
 <p>Safari Ride works like a flip book. Each frame is one page, and the ride shows a new page thirty times a second. Here&#39;s one page, held still. It&#39;s the page at step 1,529, with the cat out on the road:</p>
-<figure class="widget"><iframe class="canvas-app" src="../frame_widget/?start=moving" title="Step 1,529 of the ride, held still." loading="lazy" style="aspect-ratio: 960 / 600"></iframe><figcaption>Step 1,529 of the ride, held still.</figcaption></figure><p>This chapter makes a first pass over that page. It names the page&#39;s parts in the code, and it skips how each part is made.</p>
+<figure class="widget"><iframe class="canvas-app" src="../frame_widget/?start=moving" title="Step 1,529 of the ride, held still." loading="lazy" style="aspect-ratio: 960 / 600"></iframe><figcaption>Step 1,529 of the ride, held still.</figcaption></figure><p>This chapter makes a first pass over that page. It names the page&#39;s parts in the code. Later chapters show how each part is made.</p>
 <p>In the code, a page starts as one value of the <code>FrameView</code> type:</p>
 <figure class="listing"><figcaption>FrameView.roc, in FrameView</figcaption><pre><code class="language-roc"><span class="syn-comment"># ...</span>
 <span class="syn-type">FrameView</span> := {
@@ -60,13 +86,13 @@
 	roll : <span class="syn-type">Angle.Lean</span>,
 }.{
 <span class="syn-comment"># ...</span>
-</code></pre></figure><p>You can read it as English for now. A <code># ...</code> line marks code the book leaves out. Four of the fields are parts of the picture you can see: the backdrop of sky and grass, with the sun when it&#39;s in view; the mountains; the road and its ponds; and the scene, which holds the things in view on and beside the road. The fifth field, the camera&#39;s roll, leans the whole page when the bike leans. The roll comes from the rider, so it waits for the second half of the book.</p>
+</code></pre></figure><p>You can read it as English for now. A <code># ...</code> line marks a gap in the quoted code. Four of the fields are parts of the picture you can see: the backdrop of sky and grass, with the sun when it&#39;s in view; the mountains; the road and its ponds; and the scene, which holds the things in view on and beside the road. The fifth field is the camera&#39;s roll: how far the whole page leans when the bike leans. The roll comes from the rider, so the second half of the book explains it.</p>
 <p>One function gives back the <code>FrameView</code> for any moment of the ride:</p>
 <figure class="listing"><figcaption>FrameView.roc</figcaption><pre><code class="language-roc"><span class="syn-name">frame_view_at</span> : <span class="syn-type">Route</span>, <span class="syn-type">RideInstant</span> -&gt; <span class="syn-type">FrameView</span>
 </code></pre></figure><p>That line is a type annotation: the function&#39;s name, a colon, and its type. <code>frame_view_at</code> takes a <code>Route</code>, the whole road, and a <code>RideInstant</code>, one moment of the ride, such as the one at step 1,529. After the arrow comes what it gives back, the moment&#39;s <code>FrameView</code>. One more function turns the <code>FrameView</code>, backdrop and all, into a single list of shapes, leaned by the roll:</p>
 <figure class="listing"><figcaption>FrameView.roc</figcaption><pre><code class="language-roc"><span class="syn-name">leaned_shapes</span> : <span class="syn-type">FrameView</span> -&gt; <span class="syn-type">List</span>(<span class="syn-type">Shapes.Shape</span>)
 </code></pre></figure><p>Roc code runs on a platform, and Safari Ride&#39;s platform paints that list on the screen. So each page starts from one moment of the ride and ends as one list of shapes.</p>
-<p>The first half of the book holds this page still and builds it part by part, starting with the things beside the road. The second half turns the pages. The chapters ahead read Roc slowly, one idea at a time, so the syntax here can wait for them. The next chapter breaks the ride into the pieces we build.</p>
+<p>In the first half of the book, we hold this page still and build it part by part, starting with the things beside the road. In the second half, the pages turn. The chapters ahead teach Roc slowly, one idea at a time, so the syntax here can wait for them. In the next chapter, we break the ride into the pieces we build.</p>
 
 </article>
 <nav class="turn-page" aria-label="Previous and next chapter">

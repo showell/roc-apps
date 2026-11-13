@@ -21,24 +21,50 @@
 <li><a href="one-page.html"><span class="number">2</span>One page</a></li>
 <li><a href="the-problem.html"><span class="number">3</span>The problem</a></li>
 <li><a href="platforms-packages-and-modules.html"><span class="number">4</span>Platforms, packages and modules</a></li>
-<li><a href="the-pieces-as-types.html"><span class="number">5</span>The pieces as types</a></li>
-<li><a href="things.html"><span class="number">6</span>Things</a></li>
-<li><a href="billboard-critters.html"><span class="number">7</span>Billboard Critters</a></li>
-<li class="here"><a href="shapes.html"><span class="number">8</span>Shapes</a><ol class="sections"><li><a href="shapes.html#a-triangle">A triangle</a></li><li><a href="shapes.html#a-rectangle">A rectangle</a></li></ol></li>
-<li><a href="a-far-tree.html"><span class="number">9</span>A far tree</a></li>
-<li><a href="types-for-places.html"><span class="number">10</span>Types for places</a></li>
+<li><a href="types.html"><span class="number">5</span>Types</a></li>
+<li><a href="functions.html"><span class="number">6</span>Functions</a></li>
+<li class="part">One frame</li><li><a href="things.html"><span class="number">7</span>Things</a></li>
+<li><a href="billboard-critters.html"><span class="number">8</span>Tag unions: billboard critters</a></li>
+<li class="here"><a href="shapes.html"><span class="number">9</span>Shapes</a><ol class="sections"><li><a href="shapes.html#a-triangle">A triangle</a></li><li><a href="shapes.html#a-rectangle">A rectangle</a></li></ol></li>
+<li><a href="a-far-tree.html"><span class="number">10</span>Lists and map: a far tree</a></li>
 <li><a href="the-pipeline.html"><span class="number">11</span>The pipeline</a></li>
-<li><a href="nature-types.html"><span class="number">12</span>Nature types</a></li>
-<li><a href="asking-a-kind.html"><span class="number">13</span>Asking a kind</a></li>
+<li><a href="asking-a-kind.html"><span class="number">12</span>Where clauses: asking a kind</a></li>
+<li><a href="refused.html"><span class="number">13</span>Errors as tag unions</a></li>
+<li class="category">Nature</li><li><a href="the-sky.html"><span class="number">14</span>The sky and the grass</a></li>
+<li><a href="mountains.html"><span class="number">15</span>Mountains</a></li>
+<li class="category">Man-made</li><li><a href="the-road.html"><span class="number">16</span>The road</a></li>
+<li><a href="rails.html"><span class="number">17</span>Rails</a></li>
+<li><a href="radio-towers.html"><span class="number">18</span>Radio towers</a></li>
+<li class="category">Critters that stand still</li><li><a href="herds.html"><span class="number">19</span>Herds</a></li>
+<li class="part">Motion</li><li><a href="a-flip-book.html"><span class="number">20</span>Immutable values: a flip book</a></li>
+<li><a href="records.html"><span class="number">21</span>Records</a></li>
+<li><a href="pure-functions-and-effects.html"><span class="number">22</span>Pure functions and effects</a></li>
+<li><a href="the-clock.html"><span class="number">23</span>Opaque types: the clock</a></li>
+<li><a href="the-ride-instant.html"><span class="number">24</span>The ride instant</a></li>
+<li class="category">The passage of time</li><li><a href="the-beacons.html"><span class="number">25</span>The beacons</a></li>
+<li><a href="the-setting-sun.html"><span class="number">26</span>The setting sun</a></li>
+<li class="category">Vehicles</li><li><a href="the-rider.html"><span class="number">27</span>The rider</a></li>
+<li><a href="the-throttle.html"><span class="number">28</span>The throttle</a></li>
+<li><a href="rehearsal.html"><span class="number">29</span>Variables and loops: rehearsal</a></li>
+<li><a href="the-riders-gaze.html"><span class="number">30</span>The rider&#39;s gaze</a></li>
+<li><a href="the-truck.html"><span class="number">31</span>The truck</a></li>
+<li><a href="the-trucks-motion.html"><span class="number">32</span>The truck&#39;s motion</a></li>
+<li class="category">Critter motion</li><li><a href="the-cat.html"><span class="number">33</span>The cat</a></li>
+<li><a href="the-bird.html"><span class="number">34</span>The bird</a></li>
+<li><a href="what-a-cat-does-to-the-rider.html"><span class="number">35</span>What a cat does to the rider</a></li>
+<li class="part">Under the hood</li><li><a href="the-math-layer.html"><span class="number">36</span>The math layer</a></li>
+<li><a href="proving-it.html"><span class="number">37</span>Proving it</a></li>
+<li><a href="the-platform.html"><span class="number">38</span>The platform</a></li>
+<li><a href="zooming-back-out.html"><span class="number">39</span>Zooming back out</a></li>
 </ol>
 </nav>
 <main>
 <p class="book-bar"><a href="index.html">Safari Ride</a> <a href="#chapters">Chapters</a></p>
 <article>
-<p class="chapter-number">Chapter 8</p>
+<p class="chapter-number">Chapter 9</p>
 <h1 id="shapes">Shapes</h1>
 <p>A far tree in the ride is a trunk under eight triangles. So before we build a tree, we build its two shapes: a triangle and a rectangle.</p>
-<p>In Safari Ride, a shape is a value that describes something to paint. The first four tags of the <code>Shapes</code> module&#39;s <code>Shape</code> type are the kinds of region the ride paints, each a region of the screen with a fill:</p>
+<p>In Safari Ride, a shape is a value that describes something to paint. The first four tags of the <code>Shapes</code> module&#39;s <code>Shape</code> type are the kinds of region the platform paints, each a region of the screen with a fill:</p>
 <figure class="listing"><figcaption>lib/Shapes.roc, in Shapes</figcaption><pre><code class="language-roc"><span class="syn-comment"># ...</span>
 <span class="syn-type">Shape</span> : [
 	<span class="syn-comment">## Three corners, which is every triangle and nothing else.</span>
@@ -76,7 +102,7 @@
 	<span class="syn-comment">## traced still, a mountain, the road.</span>
 	<span class="syn-type">Polygon</span>({ corners : <span class="syn-type">List</span>(<span class="syn-type">Point</span>), fill : <span class="syn-type">Brush.Fill</span> }),
 	<span class="syn-comment"># ...</span>
-</code></pre></figure><p>Each tag carries a record, and every record ends with a <code>fill</code>, the paint for the inside. The ride produces a great many triangles, plenty of four-cornered things, a few round lights, and outlines traced from emoji and mountains, so those are its four regions. More tags follow them in the type, for other jobs, such as a line of text.</p>
+</code></pre></figure><p>Each tag carries a record, and every record ends with a <code>fill</code>, the paint for the inside. The ride produces a great many triangles, plenty of four-cornered things, a few round lights, and outlines traced from emoji and mountains, so those are its four regions. More tags follow them in the type, for other jobs, such as a line of text, and the <a class="chapter-link" href="the-platform.html">“The platform”</a> chapter takes two of them.</p>
 <h2 id="a-triangle">A triangle <a class="section-link" href="#a-triangle" aria-label="Link to this section">§</a></h2>
 <p>Here&#39;s a triangle:</p>
 <figure class="widget"><iframe class="canvas-app" src="../shapes_widget/?start=triangle" title="A green triangle on a plain background." loading="lazy" style="aspect-ratio: 640 / 324"></iframe><figcaption>A green triangle on a plain background.</figcaption></figure><p>And here&#39;s the code that makes it:</p>
@@ -89,9 +115,9 @@
 	fill: <span class="syn-type">Brush</span>.flat(<span class="syn-type">RgbColor</span>.of(<span class="syn-number">0x2e8b57</span>)),
 })
 </code></pre></figure><p>The value is a <code>Triangle</code> tag with its record. The record names three corners, <code>first</code>, <code>second</code> and <code>third</code>, so every triangle has exactly three, by construction. A corner is a <code>Point</code>, a record with an <code>x</code> and a <code>y</code>. <code>Point.at</code> makes one from two plain numbers, measured from the top left of the picture, with <code>y</code> growing downward. The picture is 640 pixels wide and 324 tall.</p>
-<p><code>Point.at</code> turns each of those numbers into a <code>Pixels</code>, an opaque type around an <code>F64</code>, like <code>Distance</code>. The ride works in metres on the road and in pixels on the screen, and two types keep the two apart, so each number says which one it is. Roc is just as happy with plain <code>F64</code>s, if you prefer that style. In a program that moves between the road and the screen all the time, the types earn their keep.</p>
-<p>The <code>fill</code> is green. <code>RgbColor.of</code> makes a color from <code>0x2e8b57</code>, a number in hex, as <code>0x</code> says: the six digits a web page writes after its <code>#</code>, and <code>Brush.flat</code> makes a fill of that one color.</p>
-<p>A shape only describes. So what paints the triangle? The platform does. The picture is a small Roc app of its own, and it hands the platform a list of two shapes: the background, a rectangle that fills the picture, and then the triangle. The platform paints the list from first to last, so the triangle lands on the background.</p>
+<p><code>Point.at</code> turns each of those numbers into a <code>Pixels</code>, an opaque type around an <code>F64</code>, like <code>Distance</code>. The ride works in metres on the road and in pixels on the screen, and two types keep the two apart, so each number&#39;s type names its unit.</p>
+<p>The <code>fill</code> is green. <code>RgbColor.of</code> makes a color from <code>0x2e8b57</code>. The <code>0x</code> marks a number in hex: the six digits a web page writes after its <code>#</code>. <code>Brush.flat</code> makes a fill of that one color.</p>
+<p>The platform paints the triangle. The picture is a small Roc app of its own, and it hands the platform a list of two shapes: the background, a rectangle that fills the picture, and then the triangle. The platform paints the list from first to last, so the triangle lands on the background.</p>
 <h2 id="a-rectangle">A rectangle <a class="section-link" href="#a-rectangle" aria-label="Link to this section">§</a></h2>
 <p>Next, a rectangle:</p>
 <figure class="widget"><iframe class="canvas-app" src="../shapes_widget/?start=rectangle" title="A brown rectangle on a plain background." loading="lazy" style="aspect-ratio: 640 / 324"></iframe><figcaption>A brown rectangle on a plain background.</figcaption></figure><figure class="listing"><figcaption>shapes_widget/ShapesWidgetApp.roc</figcaption><pre><code class="language-roc"><span class="syn-comment">## A brown rectangle.</span>
@@ -102,7 +128,7 @@
 	height: <span class="syn-type">Pixels</span>.of(<span class="syn-number">160.0</span>),
 	fill: <span class="syn-type">Brush</span>.flat(<span class="syn-type">RgbColor</span>.of(<span class="syn-number">0x8b5a2b</span>)),
 })
-</code></pre></figure><p>Look how closely the rectangle&#39;s structure echoes the triangle&#39;s, as it should:</p>
+</code></pre></figure><p>The rectangle&#39;s code has the triangle&#39;s structure:</p>
 <table>
 <thead>
 <tr>
@@ -120,7 +146,7 @@
 <tr>
 <td>What builds it</td>
 <td>the <code>Triangle</code> tag</td>
-<td>the <code>Shapes.<wbr>rectangle</code> function, which gives back a <code>Quad</code></td>
+<td>the <code>Shapes.<wbr>rectangle</code> function, which returns a <code>Quad</code></td>
 </tr>
 <tr>
 <td>Where it is</td>
@@ -154,13 +180,13 @@
 		fill,
 	})
 }
-</code></pre></figure><p><code>|{ top_left, width, height, fill }|</code> takes the record apart, naming each of its fields. The body works out where the right and bottom edges are, with <code>plus</code>, which adds two <code>Pixels</code>. Then it gives the quad its four corners, clockwise from the top left. Each corner is a record of an <code>x</code> and a <code>y</code>, each a <code>Pixels</code>, which is all a <code>Point</code> is. <code>Point.at</code> builds the same record from two plain numbers. Each side&#39;s two corners share an <code>x</code> or a <code>y</code>, so the sides are always square to the screen. The same picture app, showing its rectangle, hands the platform the background and then this quad.</p>
-<p>That&#39;s both of a far tree&#39;s shapes. Next, we put them together, with functions of our own.</p>
+</code></pre></figure><p><code>|{ top_left, width, height, fill }|</code> takes the record apart, naming each of its fields. The body works out where the right and bottom edges are, with <code>plus</code>, which adds two <code>Pixels</code>. Then it gives the quad its four corners, clockwise from the top left. Each side&#39;s two corners share an <code>x</code> or a <code>y</code>, so the sides are always square to the screen.</p>
+<p>A far tree needs just those two shapes. Next, we put them together, with functions of our own.</p>
 
 </article>
 <nav class="turn-page" aria-label="Previous and next chapter">
-<a rel="prev" href="billboard-critters.html"><small>Previous</small>Billboard Critters</a>
-<a rel="next" href="a-far-tree.html"><small>Next</small>A far tree</a>
+<a rel="prev" href="billboard-critters.html"><small>Previous</small>Tag unions: billboard critters</a>
+<a rel="next" href="a-far-tree.html"><small>Next</small>Lists and map: a far tree</a>
 </nav>
 </main>
 <script src="embed.js"></script>

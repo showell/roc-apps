@@ -1,0 +1,422 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>The rider&#39;s gaze · Safari Ride</title>
+<link rel="icon" href="data:,">
+<link rel="stylesheet" href="book.css">
+<script src="book.js" defer></script>
+</head>
+<body class="chapter">
+<header class="top-bar">
+<a class="home-link" href="https://roc.lynrummy.com/">Steve's Roc Apps</a>
+<p class="draft-notice">This is an early draft.</p>
+<a class="repo-link" href="https://github.com/showell/roc-apps">roc-apps on GitHub</a>
+</header>
+<nav class="book-nav" id="chapters" aria-label="Chapters">
+<a class="book-name" href="index.html">Safari Ride</a>
+<ol>
+<li class="part">The big picture</li><li><a href="introduction.html"><span class="number">1</span>Introduction</a></li>
+<li><a href="one-page.html"><span class="number">2</span>One page</a></li>
+<li><a href="the-problem.html"><span class="number">3</span>The problem</a></li>
+<li><a href="platforms-packages-and-modules.html"><span class="number">4</span>Platforms, packages and modules</a></li>
+<li><a href="types.html"><span class="number">5</span>Types</a></li>
+<li><a href="functions.html"><span class="number">6</span>Functions</a></li>
+<li class="part">One frame</li><li><a href="things.html"><span class="number">7</span>Things</a></li>
+<li><a href="billboard-critters.html"><span class="number">8</span>Tag unions: billboard critters</a></li>
+<li><a href="shapes.html"><span class="number">9</span>Shapes</a></li>
+<li><a href="a-far-tree.html"><span class="number">10</span>Lists and map: a far tree</a></li>
+<li><a href="the-pipeline.html"><span class="number">11</span>The pipeline</a></li>
+<li><a href="asking-a-kind.html"><span class="number">12</span>Where clauses: asking a kind</a></li>
+<li><a href="refused.html"><span class="number">13</span>Errors as tag unions</a></li>
+<li class="category">Nature</li><li><a href="the-sky.html"><span class="number">14</span>The sky and the grass</a></li>
+<li><a href="mountains.html"><span class="number">15</span>Mountains</a></li>
+<li class="category">Man-made</li><li><a href="the-road.html"><span class="number">16</span>The road</a></li>
+<li><a href="rails.html"><span class="number">17</span>Rails</a></li>
+<li><a href="radio-towers.html"><span class="number">18</span>Radio towers</a></li>
+<li class="category">Critters that stand still</li><li><a href="herds.html"><span class="number">19</span>Herds</a></li>
+<li class="part">Motion</li><li><a href="a-flip-book.html"><span class="number">20</span>Immutable values: a flip book</a></li>
+<li><a href="records.html"><span class="number">21</span>Records</a></li>
+<li><a href="pure-functions-and-effects.html"><span class="number">22</span>Pure functions and effects</a></li>
+<li><a href="the-clock.html"><span class="number">23</span>Opaque types: the clock</a></li>
+<li><a href="the-ride-instant.html"><span class="number">24</span>The ride instant</a></li>
+<li class="category">The passage of time</li><li><a href="the-beacons.html"><span class="number">25</span>The beacons</a></li>
+<li><a href="the-setting-sun.html"><span class="number">26</span>The setting sun</a></li>
+<li class="category">Vehicles</li><li><a href="the-rider.html"><span class="number">27</span>The rider</a></li>
+<li><a href="the-throttle.html"><span class="number">28</span>The throttle</a></li>
+<li><a href="rehearsal.html"><span class="number">29</span>Variables and loops: rehearsal</a></li>
+<li class="here"><a href="the-riders-gaze.html"><span class="number">30</span>The rider&#39;s gaze</a><ol class="sections"><li><a href="the-riders-gaze.html#get-the-types-right">Get the types right</a></li><li><a href="the-riders-gaze.html#the-look">The look</a></li><li><a href="the-riders-gaze.html#turning-the-head">Turning the head</a></li><li><a href="the-riders-gaze.html#the-depth-of-a-look">The depth of a look</a></li><li><a href="the-riders-gaze.html#gawking">Gawking</a></li><li><a href="the-riders-gaze.html#the-first-pig">The first pig</a></li></ol></li>
+<li><a href="the-truck.html"><span class="number">31</span>The truck</a></li>
+<li><a href="the-trucks-motion.html"><span class="number">32</span>The truck&#39;s motion</a></li>
+<li class="category">Critter motion</li><li><a href="the-cat.html"><span class="number">33</span>The cat</a></li>
+<li><a href="the-bird.html"><span class="number">34</span>The bird</a></li>
+<li><a href="what-a-cat-does-to-the-rider.html"><span class="number">35</span>What a cat does to the rider</a></li>
+<li class="part">Under the hood</li><li><a href="the-math-layer.html"><span class="number">36</span>The math layer</a></li>
+<li><a href="proving-it.html"><span class="number">37</span>Proving it</a></li>
+<li><a href="the-platform.html"><span class="number">38</span>The platform</a></li>
+<li><a href="zooming-back-out.html"><span class="number">39</span>Zooming back out</a></li>
+</ol>
+</nav>
+<main>
+<p class="book-bar"><a href="index.html">Safari Ride</a> <a href="#chapters">Chapters</a></p>
+<article>
+<p class="chapter-number">Chapter 30</p>
+<h1 id="the-riders-gaze">The rider&#39;s gaze</h1>
+<p>The herds chapter left one pig waiting. On the first two segments with pigs, one pig in the big herd catches the rider&#39;s eye. The rider turns to look and slows down, and the camera turns too.</p>
+<p>Looking and slowing down last different lengths of time. The eyes give up once the pig is too far to the side, and the speed stays down until the segment ends. So the code has two words for them: a <em>look</em> is what the eyes do, and <em>gawking</em> is what the speed does. This chapter takes them in that order.</p>
+<figure class="widget"><iframe class="canvas-app" src="../gaze_widget/" title="Press play to ride the stretch around the first distracting pig, seen from above. The lines under the picture read the rider&#39;s `speed`, `gaze_yaw` and `look_depth`." loading="lazy" style="aspect-ratio: 640 / 360"></iframe><figcaption>Press play to ride the stretch around the first distracting pig, seen from above. The lines under the picture read the rider&#39;s <code>speed</code>, <code>gaze_yaw</code> and <code>look_depth</code>.</figcaption></figure><h2 id="get-the-types-right">Get the types right <a class="section-link" href="#get-the-types-right" aria-label="Link to this section">§</a></h2>
+<p>Two fields of the rider&#39;s record carry the gaze:</p>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Type</th>
+<th>What it is</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>gaze_<wbr>yaw</code></td>
+<td><code>Angle.<wbr>Turn</code></td>
+<td>How far the rider looks from the way the bike points</td>
+</tr>
+<tr>
+<td><code>look_<wbr>depth</code></td>
+<td><code>Fraction</code></td>
+<td>How far a look went, from 0 to 1, fading once the gaze is back on the road</td>
+</tr>
+</tbody>
+</table>
+<p>Each angle is a <code>Turn</code> from the one before: <code>yaw</code> is how far the bike points from the road, and <code>gaze_yaw</code> is how far the eyes point from the bike.</p>
+<p>Three small types say what a pig can do to the rider. A segment&#39;s <code>pigs</code> field is <code>NoPigs</code>, or a <code>Herd</code> with its <code>interest</code>, which says whether the herd catches the rider&#39;s eye:</p>
+<figure class="listing"><figcaption>Segment.roc</figcaption><pre><code class="language-roc"><span class="syn-comment">## A segment&#39;s herd of pigs, if it has one, and how the rider takes it.</span>
+<span class="syn-type">Pigs</span> : [<span class="syn-type">NoPigs</span>, <span class="syn-type">Herd</span>({ herd : <span class="syn-type">PigHerd</span>, interest : <span class="syn-type">Segment.PigInterest</span> })]
+</code></pre></figure><p>The rider looks at a pig or at the road, and only a pig has an angle:</p>
+<figure class="listing"><figcaption>Gaze.roc</figcaption><pre><code class="language-roc"><span class="syn-comment">## Where the rider wants to look: at the pig in sight, this far from the</span>
+<span class="syn-comment">## way the motorcycle points, or at the road.</span>
+<span class="syn-type">GazeTarget</span> : [<span class="syn-type">OnPig</span>(<span class="syn-type">Angle.Turn</span>), <span class="syn-type">OnRoad</span>]
+</code></pre></figure><p>So the job is a short list:</p>
+<table>
+<thead>
+<tr>
+<th>Job</th>
+<th>Function</th>
+<th>Its type</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Choose where to look</td>
+<td><code>desired_<wbr>gaze</code></td>
+<td><code>Motorcycle, Segment -&gt; Gaze.<wbr>GazeTarget</code></td>
+</tr>
+<tr>
+<td>Turn the head</td>
+<td><code>next_<wbr>gaze_<wbr>yaw</code></td>
+<td><code>RiderEyes, Gaze.<wbr>GazeTarget -&gt; Angle.<wbr>Turn</code></td>
+</tr>
+<tr>
+<td>Keep the depth of the look</td>
+<td><code>next_<wbr>look_<wbr>depth</code></td>
+<td><code>RiderEyes, Angle.<wbr>Turn -&gt; Fraction</code></td>
+</tr>
+<tr>
+<td>Tell whether the rider has noticed a pig</td>
+<td><code>noticed_<wbr>pig</code></td>
+<td><code>Motorcycle, Segment -&gt; [Noticed(Geom.<wbr>Placed(Billboard)), NothingNoticed]</code></td>
+</tr>
+<tr>
+<td>Work out the brake</td>
+<td><code>gawk_<wbr>brake</code></td>
+<td><code>Motorcycle, Segment -&gt; ThrottleLimit</code></td>
+</tr>
+</tbody>
+</table>
+<figure class="diagram"><svg class="diagram diagram-wide" role="img" aria-label="One step of the gaze" width="753pt" height="115pt"
+ viewBox="0.00 0.00 753.00 115.00" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+<g id="graph0" class="graph" transform="scale(1 1) rotate(0) translate(4 111)">
+<polygon fill="white" stroke="transparent" points="-4,4 -4,-111 749,-111 749,4 -4,4"/>
+<g id="node1" class="node">
+<polygon fill="none" stroke="black" points="97,-53 0,-53 0,-17 97,-17 97,-53"/>
+<text text-anchor="middle" x="48.5" y="-31.9" font-family="Helvetica,sans-Serif" font-size="12.00">desired_gaze</text>
+</g>
+<g id="node2" class="node">
+<polygon fill="none" stroke="black" points="288,-53 179,-53 179,-17 288,-17 288,-53"/>
+<text text-anchor="middle" x="233.5" y="-31.9" font-family="Helvetica,sans-Serif" font-size="12.00">next_gaze_yaw</text>
+</g>
+<g id="edge1" class="edge">
+<path fill="none" stroke="black" d="M97.1,-35C118.87,-35 144.99,-35 168.45,-35"/>
+<polygon fill="black" stroke="black" points="168.67,-38.5 178.67,-35 168.67,-31.5 168.67,-38.5"/>
+<text text-anchor="middle" x="138" y="-38.2" font-family="Times,serif" font-size="11.00"> &#160;aims</text>
+</g>
+<g id="node3" class="node">
+<polygon fill="none" stroke="black" points="540,-90 424,-90 424,-54 540,-54 540,-90"/>
+<text text-anchor="middle" x="482" y="-68.9" font-family="Helvetica,sans-Serif" font-size="12.00">next_look_depth</text>
+</g>
+<g id="edge2" class="edge">
+<path fill="none" stroke="black" d="M288.29,-43.07C325.17,-48.61 374.37,-55.99 413.82,-61.92"/>
+<polygon fill="black" stroke="black" points="413.48,-65.4 423.89,-63.43 414.52,-58.48 413.48,-65.4"/>
+<text text-anchor="middle" x="356" y="-64.2" font-family="Times,serif" font-size="11.00"> &#160;hands its yaw to</text>
+</g>
+<g id="node4" class="node">
+<polygon fill="none" stroke="black" points="514.5,-36 449.5,-36 449.5,0 514.5,0 514.5,-36"/>
+<text text-anchor="middle" x="482" y="-14.9" font-family="Helvetica,sans-Serif" font-size="12.00">camera</text>
+</g>
+<g id="edge3" class="edge">
+<path fill="none" stroke="black" d="M288.36,-29.49C294.31,-28.95 300.28,-28.44 306,-28 351.56,-24.47 403.89,-21.64 439.37,-19.9"/>
+<polygon fill="black" stroke="black" points="439.54,-23.4 449.36,-19.42 439.2,-16.41 439.54,-23.4"/>
+<text text-anchor="middle" x="356" y="-31.2" font-family="Times,serif" font-size="11.00"> &#160;turns</text>
+</g>
+<g id="node5" class="node">
+<polygon fill="none" stroke="black" points="745,-90 624,-90 624,-54 745,-54 745,-90"/>
+<text text-anchor="middle" x="684.5" y="-68.9" font-family="Helvetica,sans-Serif" font-size="12.00">width of the view</text>
+</g>
+<g id="edge4" class="edge">
+<path fill="none" stroke="black" d="M540.19,-72C563.08,-72 589.66,-72 613.68,-72"/>
+<polygon fill="black" stroke="black" points="613.79,-75.5 623.79,-72 613.79,-68.5 613.79,-75.5"/>
+<text text-anchor="middle" x="582" y="-75.2" font-family="Times,serif" font-size="11.00"> &#160;widens</text>
+</g>
+<g id="node6" class="node">
+<polygon fill="none" stroke="black" points="94,-107 3,-107 3,-71 94,-71 94,-107"/>
+<text text-anchor="middle" x="48.5" y="-85.9" font-family="Helvetica,sans-Serif" font-size="12.00">gawk_brake</text>
+</g>
+<g id="node7" class="node">
+<polygon fill="none" stroke="black" points="261,-107 206,-107 206,-71 261,-71 261,-107"/>
+<text text-anchor="middle" x="233.5" y="-85.9" font-family="Helvetica,sans-Serif" font-size="12.00">speed</text>
+</g>
+<g id="edge5" class="edge">
+<path fill="none" stroke="black" d="M94.27,-89C125.37,-89 166.31,-89 195.55,-89"/>
+<polygon fill="black" stroke="black" points="195.75,-92.5 205.75,-89 195.75,-85.5 195.75,-92.5"/>
+<text text-anchor="middle" x="138" y="-92.2" font-family="Times,serif" font-size="11.00"> &#160;lowers</text>
+</g>
+</g>
+</svg><svg class="diagram diagram-phone" role="img" aria-label="One step of the gaze" width="260pt" height="254pt"
+ viewBox="0.00 0.00 259.50 254.00" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+<g id="graph0" class="graph" transform="scale(1 1) rotate(0) translate(4 250)">
+<polygon fill="white" stroke="transparent" points="-4,4 -4,-250 255.5,-250 255.5,4 -4,4"/>
+<g id="node1" class="node">
+<polygon fill="none" stroke="black" points="156,-246 69,-246 69,-210 156,-210 156,-246"/>
+<text text-anchor="middle" x="112.5" y="-224.9" font-family="Helvetica,sans-Serif" font-size="12.00">desired_gaze</text>
+</g>
+<g id="node2" class="node">
+<polygon fill="none" stroke="black" points="162,-176 63,-176 63,-140 162,-140 162,-176"/>
+<text text-anchor="middle" x="112.5" y="-154.9" font-family="Helvetica,sans-Serif" font-size="12.00">next_gaze_yaw</text>
+</g>
+<g id="edge1" class="edge">
+<path fill="none" stroke="black" d="M112.5,-209.84C112.5,-202.81 112.5,-194.49 112.5,-186.64"/>
+<polygon fill="black" stroke="black" points="116,-186.39 112.5,-176.39 109,-186.39 116,-186.39"/>
+<text text-anchor="middle" x="130" y="-190.2" font-family="Times,serif" font-size="11.00"> &#160;aims</text>
+</g>
+<g id="node3" class="node">
+<polygon fill="none" stroke="black" points="108.5,-106 2.5,-106 2.5,-70 108.5,-70 108.5,-106"/>
+<text text-anchor="middle" x="55.5" y="-84.9" font-family="Helvetica,sans-Serif" font-size="12.00">next_look_depth</text>
+</g>
+<g id="edge2" class="edge">
+<path fill="none" stroke="black" d="M69.02,-139.96C64.94,-136.86 61.29,-133.23 58.5,-129 56.04,-125.27 54.62,-120.9 53.88,-116.45"/>
+<polygon fill="black" stroke="black" points="57.35,-115.9 53.21,-106.15 50.37,-116.36 57.35,-115.9"/>
+<text text-anchor="middle" x="108.5" y="-120.2" font-family="Times,serif" font-size="11.00"> &#160;hands its yaw to</text>
+</g>
+<g id="node4" class="node">
+<polygon fill="none" stroke="black" points="197,-106 142,-106 142,-70 197,-70 197,-106"/>
+<text text-anchor="middle" x="169.5" y="-84.9" font-family="Helvetica,sans-Serif" font-size="12.00">camera</text>
+</g>
+<g id="edge3" class="edge">
+<path fill="none" stroke="black" d="M145.42,-139.77C149.54,-136.6 153.39,-133.01 156.5,-129 159.53,-125.09 161.86,-120.46 163.66,-115.75"/>
+<polygon fill="black" stroke="black" points="167,-116.78 166.64,-106.19 160.32,-114.7 167,-116.78"/>
+<text text-anchor="middle" x="182" y="-120.2" font-family="Times,serif" font-size="11.00"> &#160;turns</text>
+</g>
+<g id="node5" class="node">
+<polygon fill="none" stroke="black" points="111,-36 0,-36 0,0 111,0 111,-36"/>
+<text text-anchor="middle" x="55.5" y="-14.9" font-family="Helvetica,sans-Serif" font-size="12.00">width of the view</text>
+</g>
+<g id="edge4" class="edge">
+<path fill="none" stroke="black" d="M55.5,-69.84C55.5,-62.81 55.5,-54.49 55.5,-46.64"/>
+<polygon fill="black" stroke="black" points="59,-46.39 55.5,-36.39 52,-46.39 59,-46.39"/>
+<text text-anchor="middle" x="79.5" y="-50.2" font-family="Times,serif" font-size="11.00"> &#160;widens</text>
+</g>
+<g id="node6" class="node">
+<polygon fill="none" stroke="black" points="246,-246 165,-246 165,-210 246,-210 246,-246"/>
+<text text-anchor="middle" x="205.5" y="-224.9" font-family="Helvetica,sans-Serif" font-size="12.00">gawk_brake</text>
+</g>
+<g id="node7" class="node">
+<polygon fill="none" stroke="black" points="232.5,-176 178.5,-176 178.5,-140 232.5,-140 232.5,-176"/>
+<text text-anchor="middle" x="205.5" y="-154.9" font-family="Helvetica,sans-Serif" font-size="12.00">speed</text>
+</g>
+<g id="edge5" class="edge">
+<path fill="none" stroke="black" d="M205.5,-209.84C205.5,-202.81 205.5,-194.49 205.5,-186.64"/>
+<polygon fill="black" stroke="black" points="209,-186.39 205.5,-176.39 202,-186.39 209,-186.39"/>
+<text text-anchor="middle" x="228.5" y="-190.2" font-family="Times,serif" font-size="11.00"> &#160;lowers</text>
+</g>
+</g>
+</svg><figcaption>One step of the gaze</figcaption></figure><p>The chain from <code>desired_gaze</code> is the look, and <code>gawk_brake</code> is the gawking.</p>
+<h2 id="the-look">The look <a class="section-link" href="#the-look" aria-label="Link to this section">§</a></h2>
+<p><code>Rider.rider_at_next_step</code> moves the eyes last, after the bike has moved:</p>
+<figure class="listing"><figcaption>RiderEyes.roc</figcaption><pre><code class="language-roc"><span class="syn-comment">## These eyes moved on a step toward `target`: the gaze, and the look depth</span>
+<span class="syn-comment">## it leaves.</span>
+<span class="syn-name">eyes_at_next_step</span> : <span class="syn-type">RiderEyes</span>, <span class="syn-type">Gaze.GazeTarget</span> -&gt; <span class="syn-type">RiderEyes</span>
+<span class="syn-name">eyes_at_next_step</span> = |eyes, target| {
+	gaze_yaw = next_gaze_yaw(eyes, target)
+	{ gaze_yaw, look_depth: next_look_depth(eyes, gaze_yaw) }
+}
+</code></pre></figure><p>Before the eyes move, the rider chooses where to look. <code>RiderMind.gaze_target</code> hands that question to <code>Gaze.desired_gaze</code>:</p>
+<figure class="listing"><figcaption>Gaze.roc</figcaption><pre><code class="language-roc"><span class="syn-comment">## Where the rider wants to look: at a distracting pig that is near enough</span>
+<span class="syn-comment">## to notice and less than the release angle from the way the motorcycle</span>
+<span class="syn-comment">## points, or else at the road.</span>
+<span class="syn-name">desired_gaze</span> : <span class="syn-type">Motorcycle</span>, <span class="syn-type">Segment</span> -&gt; <span class="syn-type">Gaze.GazeTarget</span>
+<span class="syn-name">desired_gaze</span> = |motorcycle, segment|
+	<span class="syn-keyword">match</span> <span class="syn-type">Gaze</span>.noticed_pig(motorcycle, segment) {
+		<span class="syn-type">Noticed</span>(pig) =&gt; {
+			rider_point = motorcycle.route_place.road_point
+			turn = turn_to({ rider_point, yaw: motorcycle.yaw }, pig)
+			<span class="syn-keyword">if</span> turn.abs() &lt; look_release_angle {
+				<span class="syn-type">OnPig</span>(turn)
+			} <span class="syn-keyword">else</span> {
+				<span class="syn-type">OnRoad</span>
+			}
+		}
+		<span class="syn-type">NothingNoticed</span> =&gt; <span class="syn-type">OnRoad</span>
+	}
+</code></pre></figure><p>The pig has to be near, and it has to be in sight. Near means from 150 metres before the pig, measured along the road. In sight is an angle:</p>
+<figure class="listing"><figcaption>Gaze.roc</figcaption><pre><code class="language-roc"><span class="syn-comment">## How far `pig` stands from the way a motorcycle at `rider_point` points, its</span>
+<span class="syn-comment">## `yaw`.</span>
+<span class="syn-name">turn_to</span> : { rider_point : <span class="syn-type">Geom.RoadPoint</span>, yaw : <span class="syn-type">Angle.Turn</span> }, <span class="syn-type">Geom.Placed</span>(<span class="syn-type">Billboard</span>) -&gt; <span class="syn-type">Angle.Turn</span>
+<span class="syn-name">turn_to</span> = |{ rider_point, yaw }, pig|
+	<span class="syn-type">Angle.Turn</span>.radians(
+		<span class="syn-type">F64</span>.atan2({
+			x: pig.road_point.along.distance_from(rider_point.along).to_metres(),
+			y: pig.road_point.across.distance_from(rider_point.across).to_metres(),
+		}),
+	).minus(yaw)
+</code></pre></figure><p><code>turn_to</code> is the direction to the pig, less the way the bike points. The pig stands beside the road, so the angle grows as the rider comes closer, and at 35 degrees the rider lets it go.</p>
+<h2 id="turning-the-head">Turning the head <a class="section-link" href="#turning-the-head" aria-label="Link to this section">§</a></h2>
+<figure class="listing"><figcaption>RiderEyes.roc</figcaption><pre><code class="language-roc"><span class="syn-comment">## The gaze one step on. It swivels toward a pig by at most the swivel rate.</span>
+<span class="syn-comment">## With only the road to look at, it turns back by the return rate, and the</span>
+<span class="syn-comment">## last step lands it straight ahead.</span>
+<span class="syn-name">next_gaze_yaw</span> : <span class="syn-type">RiderEyes</span>, <span class="syn-type">Gaze.GazeTarget</span> -&gt; <span class="syn-type">Angle.Turn</span>
+<span class="syn-name">next_gaze_yaw</span> = |eyes, target| {
+	gaze = eyes.gaze_yaw
+	<span class="syn-keyword">match</span> target {
+		<span class="syn-type">OnPig</span>(turn) =&gt; gaze.plus(turn.minus(gaze).clamped_within(look_swivel_rate))
+		<span class="syn-type">OnRoad</span> =&gt; gaze.minus(gaze.clamped_within(look_return_rate))
+	}
+}
+</code></pre></figure><p>Toward a pig, the gaze turns by at most 4 degrees a step, and on the way back by at most 0.2, held there by <code>clamped_within</code>. A gaze within 0.2 degrees of straight ahead goes all the way home, so the return ends exactly there.</p>
+<p>The bike keeps its own heading. The gaze goes to the camera alone:</p>
+<figure class="listing"><figcaption>Rider.roc</figcaption><pre><code class="language-roc"><span class="syn-comment">## How far the rider&#39;s head turns from the way the motorcycle points: the</span>
+<span class="syn-comment">## gaze, and a little more with the lean, as a rider&#39;s head turns into a bend.</span>
+<span class="syn-name">head_yaw</span> : <span class="syn-type">Rider</span> -&gt; <span class="syn-type">Angle.Turn</span>
+<span class="syn-name">head_yaw</span> = |rider| rider.eyes.gaze_yaw.plus(rider.motorcycle.lean.steer(head_turn_per_lean))
+</code></pre></figure><p>The second term is the rider&#39;s head going with the lean. When the rider looks right, the road slides left on the page, and the bike keeps going where it was going.</p>
+<h2 id="the-depth-of-a-look">The depth of a look <a class="section-link" href="#the-depth-of-a-look" aria-label="Link to this section">§</a></h2>
+<figure class="listing"><figcaption>RiderEyes.roc</figcaption><pre><code class="language-roc"><span class="syn-comment">## The rider&#39;s look depth after the gaze moves to `gaze_yaw`. It rises with</span>
+<span class="syn-comment">## how far the gaze has turned, and it holds while the gaze is off straight</span>
+<span class="syn-comment">## ahead by any amount, so it holds all through the return. It fades only</span>
+<span class="syn-comment">## once the return has put the gaze exactly straight ahead.</span>
+<span class="syn-name">next_look_depth</span> : <span class="syn-type">RiderEyes</span>, <span class="syn-type">Angle.Turn</span> -&gt; <span class="syn-type">Fraction</span>
+<span class="syn-name">next_look_depth</span> = |eyes, gaze_yaw|
+	<span class="syn-keyword">if</span> gaze_yaw == <span class="syn-type">Angle</span>.straight_ahead {
+		<span class="syn-type">Fraction</span>.clamp(eyes.look_depth.to_f64() - look_depth_decay.to_f64())
+	} <span class="syn-keyword">else</span> {
+		eyes.look_depth.max(<span class="syn-type">Fraction</span>.clamp(gaze_yaw.abs().ratio_to(<span class="syn-type">Gaze</span>.look_release_angle)))
+	}
+</code></pre></figure><p>While the gaze is off straight ahead, the depth rises with how far it has turned, and holds there. Once the gaze is home, the depth fades by 0.0012 a step, so a full look takes more than 800 steps to fade.</p>
+<p>The depth has one job. It widens the view:</p>
+<figure class="listing"><figcaption>RiderEyes.roc</figcaption><pre><code class="language-roc"><span class="syn-comment">## How strongly the depth of these eyes&#39; look holds the rider&#39;s eye. The</span>
+<span class="syn-comment">## easing keeps a shallow look from widening the view much.</span>
+<span class="syn-name">attention</span> : <span class="syn-type">RiderEyes</span> -&gt; <span class="syn-type">Attention</span>
+<span class="syn-name">attention</span> = |eyes| <span class="syn-type">Attention</span>.from_fraction(<span class="syn-type">Easing</span>.smoothstep(eyes.look_depth))
+</code></pre></figure><p>The <code>Attention</code> type, an opaque <code>F64</code>, is how hard something holds the rider&#39;s eye, with a full look at 1. <code>Easing.smoothstep</code> eases the look&#39;s pull in and out. <code>RiderCamera.ride_focal_length</code> sets how wide the view is from <code>Rider.attention</code>, the stronger of this look&#39;s pull and a crossing cat&#39;s. So a pig widens the view, and the view stays wide for a while after.</p>
+<h2 id="gawking">Gawking <a class="section-link" href="#gawking" aria-label="Link to this section">§</a></h2>
+<p>Gawking asks a plainer question: has the rider noticed a pig on this segment?</p>
+<figure class="listing"><figcaption>Gaze.roc</figcaption><pre><code class="language-roc"><span class="syn-comment">## The pig the rider has noticed on this segment, if any. The noticing</span>
+<span class="syn-comment">## starts where an eye-catching pig is `notice_distance` ahead and asks only</span>
+<span class="syn-comment">## where the motorcycle is, so it lasts past the pig to the end of the</span>
+<span class="syn-comment">## segment.</span>
+<span class="syn-name">noticed_pig</span> : <span class="syn-type">Motorcycle</span>, <span class="syn-type">Segment</span> -&gt; [<span class="syn-type">Noticed</span>(<span class="syn-type">Geom.Placed</span>(<span class="syn-type">Billboard</span>)), <span class="syn-type">NothingNoticed</span>]
+<span class="syn-name">noticed_pig</span> = |motorcycle, segment| {
+	rider_along = motorcycle.route_place.road_point.along
+	<span class="syn-keyword">match</span> eye_catching_pig(segment) {
+		<span class="syn-type">CatchesEye</span>(pig) <span class="syn-keyword">if</span> is_past_notice(rider_along, pig) =&gt; <span class="syn-type">Noticed</span>(pig)
+		<span class="syn-type">CatchesEye</span>(_) | <span class="syn-type">NoPigCatchesEye</span> =&gt; <span class="syn-type">NothingNoticed</span>
+	}
+}
+</code></pre></figure><p>The <code>if</code> after <code>CatchesEye(pig)</code> is a guard: the branch matches only when the tag matches and the guard is true. Like the look, the noticing starts when the pig is within 150 metres. It asks only where the rider is, so it lasts until the segment ends, long after the look.</p>
+<p><code>gawk_brake</code> is the third link in the throttle&#39;s chain, a brake while the rider has noticed a pig:</p>
+<figure class="listing"><figcaption>Throttle.roc, in next_acceleration</figcaption><pre><code class="language-roc"><span class="syn-comment"># ...</span>
+<span class="syn-type">Gawking</span>.gawk_brake(motorcycle, segment),
+<span class="syn-comment"># ...</span>
+</code></pre></figure><figure class="listing"><figcaption>Gawking.roc</figcaption><pre><code class="language-roc"><span class="syn-comment">## The brake for a gawking rider, who aims to be down to `gawk_speed` by</span>
+<span class="syn-comment">## the settle distance before the pig. The noticing lasts to the end of</span>
+<span class="syn-comment">## the segment, so the brake holds the rider down until the next one.</span>
+<span class="syn-name">gawk_brake</span> : <span class="syn-type">Motorcycle</span>, <span class="syn-type">Segment</span> -&gt; <span class="syn-type">ThrottleLimit</span>
+<span class="syn-name">gawk_brake</span> = |motorcycle, segment|
+	<span class="syn-keyword">match</span> <span class="syn-type">Gaze</span>.noticed_pig(motorcycle, segment) {
+		<span class="syn-type">Noticed</span>(pig) =&gt; {
+			gap = pig.road_point.along.distance_from(motorcycle.route_place.road_point.along)
+			room = gap.minus(gawk_settle_distance)
+			<span class="syn-type">AtMost</span>(
+				<span class="syn-type">VehicleLimits</span>.braking_to(
+					motorcycle.speed,
+					{ target: gawk_speed, within: room.max(gawk_least_distance) },
+				),
+			)
+		}
+		<span class="syn-type">NothingNoticed</span> =&gt; <span class="syn-type">NoLimit</span>
+	}
+</code></pre></figure><p>The formula is the throttle&#39;s bend brake, with a pig for a bend: the rider aims to be down to 0.2 metres a step by 25 metres before the pig. Past that point, <code>gawk_least_distance</code> holds <code>room</code> at a metre, so the brake stays on.</p>
+<h2 id="the-first-pig">The first pig <a class="section-link" href="#the-first-pig" aria-label="Link to this section">§</a></h2>
+<p>Here&#39;s the look and the gawking on the third segment of the route:</p>
+<table>
+<thead>
+<tr>
+<th>Step</th>
+<th>What happens</th>
+<th>Speed</th>
+<th><code>gaze_<wbr>yaw</code></th>
+<th><code>look_<wbr>depth</code></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>885</td>
+<td>The rider looks, with the pig just inside 150 metres</td>
+<td>1.94 metres a step</td>
+<td>4.0 degrees</td>
+<td>0.114</td>
+</tr>
+<tr>
+<td>1,049</td>
+<td>The gaze is at its widest</td>
+<td>0.2 metres a step</td>
+<td>34.95 degrees</td>
+<td>0.999</td>
+</tr>
+<tr>
+<td>1,050</td>
+<td>The rider lets the pig go</td>
+<td>0.2 metres a step</td>
+<td>34.75 degrees</td>
+<td>0.999</td>
+</tr>
+<tr>
+<td>1,224</td>
+<td>The gaze is back on the road</td>
+<td>0.2 metres a step</td>
+<td>0 degrees</td>
+<td>0.997</td>
+</tr>
+</tbody>
+</table>
+<p>The look takes 165 steps, and getting the eyes back takes 174. The rider crawls on, eyes on the road, to the next segment at step 1,397. An expect holds that the gaze is home at every one of the ride&#39;s 18 seams between segments.</p>
+<p>That&#39;s the pig&#39;s part of the rider&#39;s step. The truck is the other stepped thing, and its chapters start with its sprite.</p>
+
+</article>
+<nav class="turn-page" aria-label="Previous and next chapter">
+<a rel="prev" href="rehearsal.html"><small>Previous</small>Variables and loops: rehearsal</a>
+<a rel="next" href="the-truck.html"><small>Next</small>The truck</a>
+</nav>
+</main>
+<script src="embed.js"></script>
+</body>
+</html>

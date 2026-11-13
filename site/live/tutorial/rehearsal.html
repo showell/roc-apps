@@ -1,0 +1,164 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Variables and loops: rehearsal · Safari Ride</title>
+<link rel="icon" href="data:,">
+<link rel="stylesheet" href="book.css">
+<script src="book.js" defer></script>
+</head>
+<body class="chapter">
+<header class="top-bar">
+<a class="home-link" href="https://roc.lynrummy.com/">Steve's Roc Apps</a>
+<p class="draft-notice">This is an early draft.</p>
+<a class="repo-link" href="https://github.com/showell/roc-apps">roc-apps on GitHub</a>
+</header>
+<nav class="book-nav" id="chapters" aria-label="Chapters">
+<a class="book-name" href="index.html">Safari Ride</a>
+<ol>
+<li class="part">The big picture</li><li><a href="introduction.html"><span class="number">1</span>Introduction</a></li>
+<li><a href="one-page.html"><span class="number">2</span>One page</a></li>
+<li><a href="the-problem.html"><span class="number">3</span>The problem</a></li>
+<li><a href="platforms-packages-and-modules.html"><span class="number">4</span>Platforms, packages and modules</a></li>
+<li><a href="types.html"><span class="number">5</span>Types</a></li>
+<li><a href="functions.html"><span class="number">6</span>Functions</a></li>
+<li class="part">One frame</li><li><a href="things.html"><span class="number">7</span>Things</a></li>
+<li><a href="billboard-critters.html"><span class="number">8</span>Tag unions: billboard critters</a></li>
+<li><a href="shapes.html"><span class="number">9</span>Shapes</a></li>
+<li><a href="a-far-tree.html"><span class="number">10</span>Lists and map: a far tree</a></li>
+<li><a href="the-pipeline.html"><span class="number">11</span>The pipeline</a></li>
+<li><a href="asking-a-kind.html"><span class="number">12</span>Where clauses: asking a kind</a></li>
+<li><a href="refused.html"><span class="number">13</span>Errors as tag unions</a></li>
+<li class="category">Nature</li><li><a href="the-sky.html"><span class="number">14</span>The sky and the grass</a></li>
+<li><a href="mountains.html"><span class="number">15</span>Mountains</a></li>
+<li class="category">Man-made</li><li><a href="the-road.html"><span class="number">16</span>The road</a></li>
+<li><a href="rails.html"><span class="number">17</span>Rails</a></li>
+<li><a href="radio-towers.html"><span class="number">18</span>Radio towers</a></li>
+<li class="category">Critters that stand still</li><li><a href="herds.html"><span class="number">19</span>Herds</a></li>
+<li class="part">Motion</li><li><a href="a-flip-book.html"><span class="number">20</span>Immutable values: a flip book</a></li>
+<li><a href="records.html"><span class="number">21</span>Records</a></li>
+<li><a href="pure-functions-and-effects.html"><span class="number">22</span>Pure functions and effects</a></li>
+<li><a href="the-clock.html"><span class="number">23</span>Opaque types: the clock</a></li>
+<li><a href="the-ride-instant.html"><span class="number">24</span>The ride instant</a></li>
+<li class="category">The passage of time</li><li><a href="the-beacons.html"><span class="number">25</span>The beacons</a></li>
+<li><a href="the-setting-sun.html"><span class="number">26</span>The setting sun</a></li>
+<li class="category">Vehicles</li><li><a href="the-rider.html"><span class="number">27</span>The rider</a></li>
+<li><a href="the-throttle.html"><span class="number">28</span>The throttle</a></li>
+<li class="here"><a href="rehearsal.html"><span class="number">29</span>Variables and loops: rehearsal</a><ol class="sections"><li><a href="rehearsal.html#where-the-rehearsals-start">Where the rehearsals start</a></li><li><a href="rehearsal.html#a-coast">A coast</a></li><li><a href="rehearsal.html#twelve-tries">Twelve tries</a></li><li><a href="rehearsal.html#why-rehearsing-is-safe">Why rehearsing is safe</a></li></ol></li>
+<li><a href="the-riders-gaze.html"><span class="number">30</span>The rider&#39;s gaze</a></li>
+<li><a href="the-truck.html"><span class="number">31</span>The truck</a></li>
+<li><a href="the-trucks-motion.html"><span class="number">32</span>The truck&#39;s motion</a></li>
+<li class="category">Critter motion</li><li><a href="the-cat.html"><span class="number">33</span>The cat</a></li>
+<li><a href="the-bird.html"><span class="number">34</span>The bird</a></li>
+<li><a href="what-a-cat-does-to-the-rider.html"><span class="number">35</span>What a cat does to the rider</a></li>
+<li class="part">Under the hood</li><li><a href="the-math-layer.html"><span class="number">36</span>The math layer</a></li>
+<li><a href="proving-it.html"><span class="number">37</span>Proving it</a></li>
+<li><a href="the-platform.html"><span class="number">38</span>The platform</a></li>
+<li><a href="zooming-back-out.html"><span class="number">39</span>Zooming back out</a></li>
+</ol>
+</nav>
+<main>
+<p class="book-bar"><a href="index.html">Safari Ride</a> <a href="#chapters">Chapters</a></p>
+<article>
+<p class="chapter-number">Chapter 29</p>
+<h1 id="variables-and-loops-rehearsal">Variables and loops: rehearsal</h1>
+<p>The rider steers by leaning, and for each step the rider chooses a lean by rehearsal. The lean search runs the bike&#39;s real step on a pretend motorcycle, reads where that motorcycle ends up, and throws the pretend one away. For each step, it tries twelve leans this way. Each try narrows the range the next one picks from, and the rider steers at the lean the tries close in on: the one that keeps the bike nearest the middle of the road.</p>
+<figure class="widget"><iframe class="canvas-app" src="../rehearsal_widget/" title="Click a mark to see that try at a lean." loading="lazy" style="aspect-ratio: 640 / 360"></iframe><figcaption>Click a mark to see that try at a lean.</figcaption></figure><p>The picture holds step 374 of the ride, just after a bend. Each white arc is one try: a pretend motorcycle coasting down the road at one lean. The yellow line is the road&#39;s middle, and the search looks for the lean whose coast ends nearest it. The last mark is the lean the rider steers at.</p>
+<h2 id="where-the-rehearsals-start">Where the rehearsals start <a class="section-link" href="#where-the-rehearsals-start" aria-label="Link to this section">§</a></h2>
+<p>For each step, the rider&#39;s controls come from <code>RiderMind.controls</code>, from the <a class="chapter-link" href="the-rider.html">“The rider”</a> chapter. Its first line asks the lean search for a lean. Its second asks the throttle how hard to accelerate, for the motorcycle at that lean, built with <code>with_lean</code>. Both calls run rehearsals.</p>
+<h2 id="a-coast">A coast <a class="section-link" href="#a-coast" aria-label="Link to this section">§</a></h2>
+<p><code>Coast</code> answers one question: if the rider held the lean and the speed from now on, where would the bike go? The answer is an <code>Outcome</code>:</p>
+<figure class="listing"><figcaption>Coast.roc</figcaption><pre><code class="language-roc"><span class="syn-comment">## Where a coast ends up: still on the road at this place across it, or off</span>
+<span class="syn-comment">## a shoulder after this many steps, counting the step that leaves.</span>
+<span class="syn-type">Outcome</span> : [<span class="syn-type">EndsAt</span>(<span class="syn-type">Across</span>), <span class="syn-type">Leaves</span>({ side : [<span class="syn-type">Left</span>, <span class="syn-type">Right</span>], after : <span class="syn-type">Steps</span> })]
+</code></pre></figure><p>The coast ends on the road at a place across it, or leaves the road at a shoulder after so many steps. One function runs it:</p>
+<figure class="listing"><figcaption>Coast.roc</figcaption><pre><code class="language-roc"><span class="syn-comment">## The coast from `motorcycle`, run a step at a time until it crosses a bound,</span>
+<span class="syn-comment">## gets `clear_distance` along the road, or runs `longest_coast` steps.</span>
+<span class="syn-name">coast_end</span> : <span class="syn-type">Motorcycle</span> -&gt; <span class="syn-type">CoastEnd</span>
+<span class="syn-name">coast_end</span> = |motorcycle| {
+	start = motorcycle.route_place.road_point
+	bounds = coast_bounds(start.across)
+	<span class="syn-keyword">var</span> $point = start
+	<span class="syn-keyword">var</span> $steps_run = <span class="syn-type">Steps</span>.zero
+	<span class="syn-keyword">var</span> $motorcycle = motorcycle
+	<span class="syn-keyword">while</span> $steps_run &lt; longest_coast <span class="syn-keyword">and</span> is_coasting({ bounds, start, point: $point }) {
+		$motorcycle = coasting_step($motorcycle)
+		$steps_run = $steps_run.plus(<span class="syn-type">Steps</span>.one_step)
+		$point = $motorcycle.route_place.road_point
+	}
+	outcome =
+		<span class="syn-keyword">if</span> $point.across &lt; bounds.left {
+			<span class="syn-type">Leaves</span>({ side: <span class="syn-type">Left</span>, after: $steps_run })
+		} <span class="syn-keyword">else</span> <span class="syn-keyword">if</span> $point.across &gt; bounds.right {
+			<span class="syn-type">Leaves</span>({ side: <span class="syn-type">Right</span>, after: $steps_run })
+		} <span class="syn-keyword">else</span> {
+			<span class="syn-type">EndsAt</span>($point.across)
+		}
+	{ outcome, steps_run: $steps_run }
+}
+</code></pre></figure><p><code>var $point</code> declares a variable: a name the function can set again, marked by the <code>$</code> at its front. Each pass of the <code>while</code> loop sets <code>$motorcycle</code> to the bike a step on, and <code>$point</code> to where it now is. The bounds are the road&#39;s edges, 5 centimetres in, or wherever the bike starts if that&#39;s further out. The loop runs until the bike crosses a bound, gets 25 metres along the road, which is as far ahead as the rehearsal needs to look, or has run for 2,000 steps, which ends a slow rider circling in place. Then the last lines read where the coast ended.</p>
+<p>The variables live and die inside <code>coast_end</code>. The function takes a motorcycle and returns an answer, and the same motorcycle always gives the same answer, so <code>coast_end</code> is as pure as every other function in the ride.</p>
+<p>Each pass makes its step with this:</p>
+<figure class="listing"><figcaption>Coast.roc</figcaption><pre><code class="language-roc"><span class="syn-comment">## The motorcycle one step on, holding its lean and speed.</span>
+<span class="syn-name">coasting_step</span> : <span class="syn-type">Motorcycle</span> -&gt; <span class="syn-type">Motorcycle</span>
+<span class="syn-name">coasting_step</span> = |motorcycle| motorcycle.motorcycle_at_next_step(motorcycle.steady_controls())
+</code></pre></figure><p><code>Motorcycle.motorcycle_at_next_step</code> is the real step, the same one that moves the real rider. <code>steady_controls</code> hands it the lean as it is and an acceleration of zero. The step is a pure function, so a pretend motorcycle steps exactly as the real one does.</p>
+<h2 id="twelve-tries">Twelve tries <a class="section-link" href="#twelve-tries" aria-label="Link to this section">§</a></h2>
+<p>A lean further right always ends a coast further right. So each try rules out half the leans still in play, and twelve tries narrow the choice down fast. That&#39;s a bisection: a binary search over leans.</p>
+<figure class="listing"><figcaption>LeanSearch.roc</figcaption><pre><code class="language-roc"><span class="syn-comment">## The lean for the next step, whose coast ends nearest the road&#39;s middle:</span>
+<span class="syn-comment">## halfway between the bounds the last try narrowed to.</span>
+<span class="syn-name">best_lean</span> : <span class="syn-type">Motorcycle</span> -&gt; <span class="syn-type">Angle.Lean</span>
+<span class="syn-name">best_lean</span> = |motorcycle| {
+	<span class="syn-keyword">var</span> $bounds = first_bounds(motorcycle)
+	<span class="syn-keyword">for</span> _ <span class="syn-keyword">in</span> <span class="syn-number">0</span>..&lt;lean_search_round_count {
+		$bounds = bounds_after(lean_try(motorcycle, $bounds))
+	}
+	<span class="syn-type">LeanSearch</span>.middle_lean($bounds)
+}
+</code></pre></figure><p><code>for _ in 0..&lt;lean_search_round_count</code> runs its body twelve times. <code>0..&lt;12</code> counts from 0 up to 11, and <code>_</code> stands in for the count, since the body needs only the bounds. The bounds start a degree either side of the bike&#39;s lean, so the lean it picks is always within a degree of the last one. Each try coasts the motorcycle at the lean halfway between the bounds:</p>
+<figure class="listing"><figcaption>LeanSearch.roc</figcaption><pre><code class="language-roc"><span class="syn-comment">## The motorcycle a try coasts: `motorcycle`, the one the search started</span>
+<span class="syn-comment">## from, with the lean halfway between `bounds`.</span>
+<span class="syn-name">tried_motorcycle</span> : <span class="syn-type">Motorcycle</span>, <span class="syn-type">LeanSearch.LeanBounds</span> -&gt; <span class="syn-type">Motorcycle</span>
+<span class="syn-name">tried_motorcycle</span> = |motorcycle, bounds|
+	motorcycle.with_lean(<span class="syn-type">LeanSearch</span>.middle_lean(bounds))
+</code></pre></figure><p><code>lean_correction</code> reads where that coast went, and returns which way to lean more:</p>
+<figure class="listing"><figcaption>LeanSearch.roc</figcaption><pre><code class="language-roc"><span class="syn-comment">## Which way the next try should lean, from where this try&#39;s coast went:</span>
+<span class="syn-comment">## off the left shoulder means more right, off the right means more left,</span>
+<span class="syn-comment">## and a coast that stays on the road compares its end with</span>
+<span class="syn-comment">## `aimed_across`. A coast that ends exactly there means lean left.</span>
+<span class="syn-name">lean_correction</span> : <span class="syn-type">Coast.Outcome</span> -&gt; [<span class="syn-type">MoreRight</span>, <span class="syn-type">MoreLeft</span>]
+<span class="syn-name">lean_correction</span> = |outcome|
+	<span class="syn-keyword">match</span> outcome {
+		<span class="syn-type">Leaves</span>({ side: <span class="syn-type">Left</span>, .. }) =&gt; <span class="syn-type">MoreRight</span>
+		<span class="syn-type">Leaves</span>({ side: <span class="syn-type">Right</span>, .. }) =&gt; <span class="syn-type">MoreLeft</span>
+		<span class="syn-type">EndsAt</span>(end_across) =&gt;
+			<span class="syn-keyword">if</span> end_across &lt; <span class="syn-type">LeanSearch</span>.aimed_across {
+				<span class="syn-type">MoreRight</span>
+			} <span class="syn-keyword">else</span> {
+				<span class="syn-type">MoreLeft</span>
+			}
+	}
+</code></pre></figure><p><code>Leaves({ side: Left, .. })</code> matches any coast off the left, whatever its count of steps. Off the left shoulder means lean more right, and off the right means more left. A coast that stays on the road compares where it ends with <code>aimed_across</code>, the road&#39;s middle. After the twelfth try, the search returns the lean halfway between the bounds it has narrowed to.</p>
+<h2 id="why-rehearsing-is-safe">Why rehearsing is safe <a class="section-link" href="#why-rehearsing-is-safe" aria-label="Link to this section">§</a></h2>
+<p>A rehearsal runs the real rules on a copy of the rider, and in Roc the copy is cheap. <code>tried_motorcycle</code> returns a new motorcycle, and the real one stays as it was. <code>motorcycle_at_next_step</code> has the thin arrow, so it reaches only its arguments. A rehearsal touches only its own copy.</p>
+<p>Each real step of the ride runs thirteen coasts: twelve for the lean, and one more in the throttle. That last one asks whether the bike, held as it is, would leave the road at a shoulder, and brakes if so:</p>
+<figure class="listing"><figcaption>Throttle.roc</figcaption><pre><code class="language-roc"><span class="syn-comment">## Nothing, unless a coast from here leaves the road; then the brake for the</span>
+<span class="syn-comment">## shoulder it reaches.</span>
+<span class="syn-name">shoulder_limit</span> : <span class="syn-type">Motorcycle</span> -&gt; <span class="syn-type">ThrottleLimit</span>
+<span class="syn-name">shoulder_limit</span> = |motorcycle|
+	<span class="syn-keyword">match</span> <span class="syn-type">Coast</span>.coast_outcome(motorcycle) {
+		<span class="syn-type">EndsAt</span>(_) =&gt; <span class="syn-type">NoLimit</span>
+		<span class="syn-type">Leaves</span>({ after, .. }) =&gt; <span class="syn-type">AtMost</span>(shoulder_brake(motorcycle.speed, after))
+	}
+</code></pre></figure><p>So every part of the rider&#39;s step, rehearsals included, is a function from the moment before to the moment after. One part is left: where the rider looks, the next chapter&#39;s subject.</p>
+
+</article>
+<nav class="turn-page" aria-label="Previous and next chapter">
+<a rel="prev" href="the-throttle.html"><small>Previous</small>The throttle</a>
+<a rel="next" href="the-riders-gaze.html"><small>Next</small>The rider&#39;s gaze</a>
+</nav>
+</main>
+<script src="embed.js"></script>
+</body>
+</html>

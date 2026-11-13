@@ -21,40 +21,68 @@
 <li><a href="one-page.html"><span class="number">2</span>One page</a></li>
 <li><a href="the-problem.html"><span class="number">3</span>The problem</a></li>
 <li><a href="platforms-packages-and-modules.html"><span class="number">4</span>Platforms, packages and modules</a></li>
-<li><a href="the-pieces-as-types.html"><span class="number">5</span>The pieces as types</a></li>
-<li class="here"><a href="things.html"><span class="number">6</span>Things</a><ol class="sections"><li><a href="things.html#calves">Calves</a></li><li><a href="things.html#what-a-things-sprite-takes">What a thing&#39;s sprite takes</a></li></ol></li>
-<li><a href="billboard-critters.html"><span class="number">7</span>Billboard Critters</a></li>
-<li><a href="shapes.html"><span class="number">8</span>Shapes</a></li>
-<li><a href="a-far-tree.html"><span class="number">9</span>A far tree</a></li>
-<li><a href="types-for-places.html"><span class="number">10</span>Types for places</a></li>
+<li><a href="types.html"><span class="number">5</span>Types</a></li>
+<li><a href="functions.html"><span class="number">6</span>Functions</a></li>
+<li class="part">One frame</li><li class="here"><a href="things.html"><span class="number">7</span>Things</a><ol class="sections"><li><a href="things.html#a-billboard-stands-in-for-an-animal">A billboard stands in for an animal</a></li><li><a href="things.html#a-species-record-names-the-animal">A species record names the animal</a></li><li><a href="things.html#a-function-picks-the-calves">A function picks the calves</a></li><li><a href="things.html#every-kind-returns-a-sprite">Every kind returns a sprite</a></li></ol></li>
+<li><a href="billboard-critters.html"><span class="number">8</span>Tag unions: billboard critters</a></li>
+<li><a href="shapes.html"><span class="number">9</span>Shapes</a></li>
+<li><a href="a-far-tree.html"><span class="number">10</span>Lists and map: a far tree</a></li>
 <li><a href="the-pipeline.html"><span class="number">11</span>The pipeline</a></li>
-<li><a href="nature-types.html"><span class="number">12</span>Nature types</a></li>
-<li><a href="asking-a-kind.html"><span class="number">13</span>Asking a kind</a></li>
+<li><a href="asking-a-kind.html"><span class="number">12</span>Where clauses: asking a kind</a></li>
+<li><a href="refused.html"><span class="number">13</span>Errors as tag unions</a></li>
+<li class="category">Nature</li><li><a href="the-sky.html"><span class="number">14</span>The sky and the grass</a></li>
+<li><a href="mountains.html"><span class="number">15</span>Mountains</a></li>
+<li class="category">Man-made</li><li><a href="the-road.html"><span class="number">16</span>The road</a></li>
+<li><a href="rails.html"><span class="number">17</span>Rails</a></li>
+<li><a href="radio-towers.html"><span class="number">18</span>Radio towers</a></li>
+<li class="category">Critters that stand still</li><li><a href="herds.html"><span class="number">19</span>Herds</a></li>
+<li class="part">Motion</li><li><a href="a-flip-book.html"><span class="number">20</span>Immutable values: a flip book</a></li>
+<li><a href="records.html"><span class="number">21</span>Records</a></li>
+<li><a href="pure-functions-and-effects.html"><span class="number">22</span>Pure functions and effects</a></li>
+<li><a href="the-clock.html"><span class="number">23</span>Opaque types: the clock</a></li>
+<li><a href="the-ride-instant.html"><span class="number">24</span>The ride instant</a></li>
+<li class="category">The passage of time</li><li><a href="the-beacons.html"><span class="number">25</span>The beacons</a></li>
+<li><a href="the-setting-sun.html"><span class="number">26</span>The setting sun</a></li>
+<li class="category">Vehicles</li><li><a href="the-rider.html"><span class="number">27</span>The rider</a></li>
+<li><a href="the-throttle.html"><span class="number">28</span>The throttle</a></li>
+<li><a href="rehearsal.html"><span class="number">29</span>Variables and loops: rehearsal</a></li>
+<li><a href="the-riders-gaze.html"><span class="number">30</span>The rider&#39;s gaze</a></li>
+<li><a href="the-truck.html"><span class="number">31</span>The truck</a></li>
+<li><a href="the-trucks-motion.html"><span class="number">32</span>The truck&#39;s motion</a></li>
+<li class="category">Critter motion</li><li><a href="the-cat.html"><span class="number">33</span>The cat</a></li>
+<li><a href="the-bird.html"><span class="number">34</span>The bird</a></li>
+<li><a href="what-a-cat-does-to-the-rider.html"><span class="number">35</span>What a cat does to the rider</a></li>
+<li class="part">Under the hood</li><li><a href="the-math-layer.html"><span class="number">36</span>The math layer</a></li>
+<li><a href="proving-it.html"><span class="number">37</span>Proving it</a></li>
+<li><a href="the-platform.html"><span class="number">38</span>The platform</a></li>
+<li><a href="zooming-back-out.html"><span class="number">39</span>Zooming back out</a></li>
 </ol>
 </nav>
 <main>
 <p class="book-bar"><a href="index.html">Safari Ride</a> <a href="#chapters">Chapters</a></p>
 <article>
-<p class="chapter-number">Chapter 6</p>
+<p class="chapter-number">Chapter 7</p>
 <h1 id="things">Things</h1>
-<p>The things beside the road are its trees, its radio towers and its animals. Here&#39;s a cow and a bull on the grass, produced by Safari Ride&#39;s own code:</p>
-<figure class="widget"><iframe class="canvas-app" src="../cow_widget/" title="A cow and a bull on the grass beside the road." loading="lazy" style="aspect-ratio: 960 / 600"></iframe><figcaption>A cow and a bull on the grass beside the road.</figcaption></figure><p>The ride has a lot of animals: herds of cows, some led by a bull, herds of pigs, ducks on the ponds, and an elephant at a bend in the road. The cat and the bird move, and they get chapters of their own.</p>
+<p>The things beside the road are its trees, its radio towers and its animals. We start with the animals. Here we learn how a thing becomes data, and how one function turns that data into a sprite. Here&#39;s a cow and a bull on the grass, from Safari Ride&#39;s own code:</p>
+<figure class="widget"><iframe class="canvas-app" src="../cow_widget/" title="A cow and a bull on the grass beside the road." loading="lazy" style="aspect-ratio: 960 / 600"></iframe><figcaption>A cow and a bull on the grass beside the road.</figcaption></figure><h2 id="a-billboard-stands-in-for-an-animal">A billboard stands in for an animal <a class="section-link" href="#a-billboard-stands-in-for-an-animal" aria-label="Link to this section">§</a></h2>
+<p>The ride has a lot of animals: herds of cows, some led by a bull, herds of pigs, ducks on the ponds, and an elephant at a bend in the road. The cat and the bird move, and they get chapters of their own.</p>
 <p>Every other animal is a billboard: a flat picture of its emoji, standing on the grass and turned square to the camera, like a cardboard cutout. That takes far less code than modeling an animal, and it&#39;s charming.</p>
-<p>A billboard faces left or right, and one that faces right is its emoji mirrored. That&#39;s the <code>Billboard</code> type from the <a class="chapter-link" href="the-pieces-as-types.html">“The pieces as types”</a> chapter: an emoji, a height and a facing. Each emoji was traced into polygons ahead of time, and the <code>EmojiStill</code> module holds them as plain data. The tracing itself is beyond this book.</p>
+<p>A billboard faces left or right, and one that faces right is its emoji mirrored. That&#39;s the <code>Billboard</code> type from the <a class="chapter-link" href="types.html">“Types”</a> chapter: an emoji, a height and a facing. We traced each emoji into polygons ahead of time, and the <code>EmojiStill</code> module holds them as plain data. So a billboard is data from end to end.</p>
+<h2 id="a-species-record-names-the-animal">A species record names the animal <a class="section-link" href="#a-species-record-names-the-animal" aria-label="Link to this section">§</a></h2>
 <p>A billboard animal starts from a record of the <code>Billboard.Species</code> type: its emoji, and how tall a grown one stands. A plain <code>:</code> names that type, so any module reads its fields. Here are the cow&#39;s and the bull&#39;s, from the <code>CowHerd</code> module:</p>
 <figure class="listing"><figcaption>CowHerd.roc</figcaption><pre><code class="language-roc"><span class="syn-name">cow</span> : <span class="syn-type">Billboard.Species</span>
 <span class="syn-name">cow</span> = { emoji: <span class="syn-type">EmojiStill</span>.cow, adult_height: <span class="syn-type">Distance</span>.metres(<span class="syn-number">1.4</span>) }
 </code></pre></figure><figure class="listing"><figcaption>CowHerd.roc</figcaption><pre><code class="language-roc"><span class="syn-name">bull</span> : <span class="syn-type">Billboard.Species</span>
 <span class="syn-name">bull</span> = { emoji: <span class="syn-type">EmojiStill</span>.bull, adult_height: cow.adult_height.times(<span class="syn-number">1.15</span>) }
-</code></pre></figure><p>The bull&#39;s height comes from the cow&#39;s. <code>cow.adult_height</code> reads a field of the <code>cow</code> record, and <code>.times(1.15)</code> calls the <code>times</code> function that comes with the field&#39;s type, <code>Distance</code>. It&#39;s another way to write <code>Distance.times(cow.adult_height, 1.15)</code>. So a bull stands 15% taller than a cow.</p>
-<h2 id="calves">Calves <a class="section-link" href="#calves" aria-label="Link to this section">§</a></h2>
-<p>A herd looks better with a few calves in it. The ride&#39;s rule is simple: number a herd&#39;s cows from 0, and make cows 1, 5, 9 and so on calves: every fourth cow, starting with cow 1. A calf is a billboard half as tall as a grown cow. Here are twenty cows in a row, numbered:</p>
-<figure class="widget"><iframe class="canvas-app" src="../herd_widget/" title="Twenty cows, numbered from 0. Cows 1, 5, 9, 13 and 17 are calves." loading="lazy" style="aspect-ratio: 640 / 116"></iframe><figcaption>Twenty cows, numbered from 0. Cows 1, 5, 9, 13 and 17 are calves.</figcaption></figure><p>How does the code pick the calves? With a function. A Roc function usually comes in two parts. On top is its type annotation: its name, a colon, and its type. Under it is its definition: its name again, an <code>=</code>, and the function itself. Here&#39;s the function that picks the calves, with a doc comment above both:</p>
+</code></pre></figure><p>The bull&#39;s height comes from the cow&#39;s: <code>cow.adult_height</code> reads a field of the <code>cow</code> record, and <code>.times(1.15)</code> is a method call on that <code>Distance</code>. So the bull derives from the cow, and a change to the cow&#39;s height carries over to the bull.</p>
+<h2 id="a-function-picks-the-calves">A function picks the calves <a class="section-link" href="#a-function-picks-the-calves" aria-label="Link to this section">§</a></h2>
+<p>A herd looks better with a few calves in it. A herd&#39;s cows count from 0, and every fourth cow, starting with cow 1, is a calf: cows 1, 5, 9 and so on. A calf is a billboard half as tall as a grown cow. Here are twenty cows in a row, numbered:</p>
+<figure class="widget"><iframe class="canvas-app" src="../herd_widget/" title="Twenty cows, numbered from 0. Cows 1, 5, 9, 13 and 17 are calves." loading="lazy" style="aspect-ratio: 640 / 116"></iframe><figcaption>Twenty cows, numbered from 0. Cows 1, 5, 9, 13 and 17 are calves.</figcaption></figure><p>One small function makes the choice:</p>
 <figure class="listing"><figcaption>CowHerd.roc</figcaption><pre><code class="language-roc"><span class="syn-comment">## Every fourth cow, starting with cow 1, is a calf.</span>
 <span class="syn-name">is_calf</span> : <span class="syn-type">U64</span> -&gt; <span class="syn-type">Bool</span>
 <span class="syn-name">is_calf</span> = |cow_number| cow_number.rem_by(<span class="syn-number">4</span>) == <span class="syn-number">1</span>
-</code></pre></figure><p>The annotation says <code>is_calf</code> takes a <code>U64</code>, a whole number from zero up, and gives back a <code>Bool</code>, <code>True</code> or <code>False</code>. In the definition, <code>|cow_number|</code> names what the function takes, and what follows is its answer. <code>cow_number.rem_by(4)</code> likewise calls the <code>rem_by</code> function that comes with a <code>U64</code>, and gives the remainder after dividing by 4. Then <code>==</code> compares that remainder with 1, which gives the <code>Bool</code>. So a cow whose number leaves a remainder of 1 is a calf.</p>
-<p>A second function puts <code>is_calf</code> to work. It gives each cow in a herd its billboard:</p>
+</code></pre></figure><p><code>is_calf</code> takes a <code>U64</code>, a whole number from zero up, and returns a <code>Bool</code>, <code>True</code> or <code>False</code>. <code>cow_number.rem_by(4)</code> is the remainder after dividing by 4, and <code>==</code> compares it with 1, which gives the <code>Bool</code>.</p>
+<p>A second function puts <code>is_calf</code> to work, and returns each cow&#39;s billboard:</p>
 <figure class="listing"><figcaption>CowHerd.roc</figcaption><pre><code class="language-roc"><span class="syn-comment">## The billboard for the herd&#39;s cow at `cow_number`: young for a calf, grown</span>
 <span class="syn-comment">## for the rest.</span>
 <span class="syn-name">cow_billboard</span> : <span class="syn-type">U64</span> -&gt; <span class="syn-type">Billboard</span>
@@ -64,12 +92,11 @@
 	} <span class="syn-keyword">else</span> {
 		<span class="syn-type">Billboard</span>.adult_billboard(cow, <span class="syn-type">FacesRight</span>)
 	}
-</code></pre></figure><p>Its answer is an <code>if</code>, which picks one of two values: a young billboard when <code>is_calf</code> says <code>True</code>, and a grown one when it says <code>False</code>. Both are cows, facing right, built from the <code>cow</code> record above. A <code>Billboard</code> is opaque, so only the <code>Billboard</code> module can build one, and <code>young_billboard</code> and <code>adult_billboard</code> are two of the ways it offers. The herd calls <code>cow_billboard</code> for every cow it places.</p>
-<h2 id="what-a-things-sprite-takes">What a thing&#39;s sprite takes <a class="section-link" href="#what-a-things-sprite-takes" aria-label="Link to this section">§</a></h2>
-<p>Calf, cow or bull, the ride produces a billboard&#39;s sprite the way it produces the sprite of every kind of thing beside the road: with a function called <code>scenery_sprite</code>, in that kind&#39;s module. The <code>Billboard</code> module&#39;s <code>scenery_sprite</code> has a longer definition, built around a <code>match</code>, a way of choosing between tags that the next chapter teaches. So here&#39;s its annotation alone, the line that sits above the definition, from the <code>Billboard</code> module:</p>
+</code></pre></figure><p>Its <code>if</code> picks one of two billboards: a young one when <code>is_calf</code> returns <code>True</code>, and a grown one when it returns <code>False</code>. A <code>Billboard</code> is opaque, so only the <code>Billboard</code> module builds one, and <code>young_billboard</code> and <code>adult_billboard</code> are two of its functions that do. <code>CowHerd</code> calls <code>cow_billboard</code> for every cow it places. So the herd&#39;s look comes down to two small functions over a number.</p>
+<h2 id="every-kind-returns-a-sprite">Every kind returns a sprite <a class="section-link" href="#every-kind-returns-a-sprite" aria-label="Link to this section">§</a></h2>
+<p>Calf, cow or bull, a billboard&#39;s sprite comes from a function called <code>scenery_sprite</code>, in the <code>Billboard</code> module. Every kind of thing beside the road has one, in its own module. The billboard&#39;s has a longer definition, built around a <code>match</code>, which the next chapter teaches, so here&#39;s its annotation alone:</p>
 <figure class="listing"><figcaption>Billboard.roc</figcaption><pre><code class="language-roc"><span class="syn-name">scenery_sprite</span> : <span class="syn-type">Billboard</span>, <span class="syn-type">Sprite.Setting</span> -&gt; <span class="syn-type">Sprite</span>
-</code></pre></figure><p>It takes a <code>Billboard</code> and a setting, and gives back a sprite. The <code>Conifer</code> module&#39;s <code>scenery_sprite</code> takes a tree instead, and the <code>Tower</code> module&#39;s takes a tower, but every one takes a setting and gives back a sprite. So whatever its kind, a thing in a frame comes out as a sprite.</p>
-<p>A setting is a record:</p>
+</code></pre></figure><p>It takes a <code>Billboard</code> and a setting, and returns a sprite. The <code>Conifer</code> module&#39;s <code>scenery_sprite</code> takes a tree instead, and the <code>Tower</code> module&#39;s takes a tower, but every one takes a setting and returns a sprite. A setting is a record:</p>
 <figure class="listing"><figcaption>Sprite.roc</figcaption><pre><code class="language-roc"><span class="syn-comment">## What a kind of object draws its sprite from: where it stands in the</span>
 <span class="syn-comment">## frame, the camera&#39;s focal length, and how dark the sky is.</span>
 <span class="syn-type">Setting</span> : {
@@ -78,14 +105,14 @@
 	darkness : <span class="syn-type">Fraction</span>,
 }
 </code></pre></figure><p>The <code>focal_length</code> says how strong the camera&#39;s lens is: the longer it is, the bigger everything looks, as when a camera zooms in. The <code>darkness</code> says how dark the sky is, from 0 by day to 1 at night, so everything beside the road can dim as night falls.</p>
-<p>The <code>spot</code> comes from a camera: it&#39;s what a sighting holds. So for the cow and the bull, the picture at the top of this chapter puts each one on the road by hand, the cow 10 metres ahead and 5 metres left of the middle, and lets a camera at the start of the road sight them. The rider&#39;s own camera comes in a later chapter.</p>
-<p>What comes back is a sprite, and every sprite is a list of shapes. The cow&#39;s sprite is its emoji, as polygons. Most of the ride&#39;s shapes have straight edges. At step 1,529, the ride produces 2,121 shapes on top of the sky and the grass: 868 triangles, 727 quads, 518 polygons and 8 discs. The trees&#39; trunks are 136 of the quads.</p>
-<p>At the bends in the road stand four more kinds of billboard animal: elephants, giraffes, zebras and rhinos. They come next, with the <code>match</code> that mirrors the ones that face right.</p>
+<p>The <code>spot</code> comes from a camera: it&#39;s what a sighting holds. So the picture at the top of this chapter places the cow and the bull on the road by hand, the cow 10 metres ahead and 5 metres left of the middle, and sights them with a camera at the start of the road. The rider&#39;s own camera comes in the <a class="chapter-link" href="the-rider.html">“The rider”</a> chapter.</p>
+<p>What comes back is a sprite, a list of shapes: for the cow, its emoji as polygons. So whatever its kind, a thing reaches the frame through one shape of function, a setting in and a sprite out.</p>
+<p>At the bends in the road stand four more kinds of billboard animal: elephants, giraffes, zebras and rhinos. They come next, with the <code>match</code> that picks which ones to mirror.</p>
 
 </article>
 <nav class="turn-page" aria-label="Previous and next chapter">
-<a rel="prev" href="the-pieces-as-types.html"><small>Previous</small>The pieces as types</a>
-<a rel="next" href="billboard-critters.html"><small>Next</small>Billboard Critters</a>
+<a rel="prev" href="functions.html"><small>Previous</small>Functions</a>
+<a rel="next" href="billboard-critters.html"><small>Next</small>Tag unions: billboard critters</a>
 </nav>
 </main>
 <script src="embed.js"></script>

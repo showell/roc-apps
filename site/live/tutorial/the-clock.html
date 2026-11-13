@@ -1,0 +1,207 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Opaque types: the clock · Safari Ride</title>
+<link rel="icon" href="data:,">
+<link rel="stylesheet" href="book.css">
+<script src="book.js" defer></script>
+</head>
+<body class="chapter">
+<header class="top-bar">
+<a class="home-link" href="https://roc.lynrummy.com/">Steve's Roc Apps</a>
+<p class="draft-notice">This is an early draft.</p>
+<a class="repo-link" href="https://github.com/showell/roc-apps">roc-apps on GitHub</a>
+</header>
+<nav class="book-nav" id="chapters" aria-label="Chapters">
+<a class="book-name" href="index.html">Safari Ride</a>
+<ol>
+<li class="part">The big picture</li><li><a href="introduction.html"><span class="number">1</span>Introduction</a></li>
+<li><a href="one-page.html"><span class="number">2</span>One page</a></li>
+<li><a href="the-problem.html"><span class="number">3</span>The problem</a></li>
+<li><a href="platforms-packages-and-modules.html"><span class="number">4</span>Platforms, packages and modules</a></li>
+<li><a href="types.html"><span class="number">5</span>Types</a></li>
+<li><a href="functions.html"><span class="number">6</span>Functions</a></li>
+<li class="part">One frame</li><li><a href="things.html"><span class="number">7</span>Things</a></li>
+<li><a href="billboard-critters.html"><span class="number">8</span>Tag unions: billboard critters</a></li>
+<li><a href="shapes.html"><span class="number">9</span>Shapes</a></li>
+<li><a href="a-far-tree.html"><span class="number">10</span>Lists and map: a far tree</a></li>
+<li><a href="the-pipeline.html"><span class="number">11</span>The pipeline</a></li>
+<li><a href="asking-a-kind.html"><span class="number">12</span>Where clauses: asking a kind</a></li>
+<li><a href="refused.html"><span class="number">13</span>Errors as tag unions</a></li>
+<li class="category">Nature</li><li><a href="the-sky.html"><span class="number">14</span>The sky and the grass</a></li>
+<li><a href="mountains.html"><span class="number">15</span>Mountains</a></li>
+<li class="category">Man-made</li><li><a href="the-road.html"><span class="number">16</span>The road</a></li>
+<li><a href="rails.html"><span class="number">17</span>Rails</a></li>
+<li><a href="radio-towers.html"><span class="number">18</span>Radio towers</a></li>
+<li class="category">Critters that stand still</li><li><a href="herds.html"><span class="number">19</span>Herds</a></li>
+<li class="part">Motion</li><li><a href="a-flip-book.html"><span class="number">20</span>Immutable values: a flip book</a></li>
+<li><a href="records.html"><span class="number">21</span>Records</a></li>
+<li><a href="pure-functions-and-effects.html"><span class="number">22</span>Pure functions and effects</a></li>
+<li class="here"><a href="the-clock.html"><span class="number">23</span>Opaque types: the clock</a><ol class="sections"><li><a href="the-clock.html#a-moment-and-a-length">A moment and a length</a></li><li><a href="the-clock.html#the-module">The module</a></li><li><a href="the-clock.html#two-invariants">Two invariants</a></li><li><a href="the-clock.html#tests">Tests</a></li></ol></li>
+<li><a href="the-ride-instant.html"><span class="number">24</span>The ride instant</a></li>
+<li class="category">The passage of time</li><li><a href="the-beacons.html"><span class="number">25</span>The beacons</a></li>
+<li><a href="the-setting-sun.html"><span class="number">26</span>The setting sun</a></li>
+<li class="category">Vehicles</li><li><a href="the-rider.html"><span class="number">27</span>The rider</a></li>
+<li><a href="the-throttle.html"><span class="number">28</span>The throttle</a></li>
+<li><a href="rehearsal.html"><span class="number">29</span>Variables and loops: rehearsal</a></li>
+<li><a href="the-riders-gaze.html"><span class="number">30</span>The rider&#39;s gaze</a></li>
+<li><a href="the-truck.html"><span class="number">31</span>The truck</a></li>
+<li><a href="the-trucks-motion.html"><span class="number">32</span>The truck&#39;s motion</a></li>
+<li class="category">Critter motion</li><li><a href="the-cat.html"><span class="number">33</span>The cat</a></li>
+<li><a href="the-bird.html"><span class="number">34</span>The bird</a></li>
+<li><a href="what-a-cat-does-to-the-rider.html"><span class="number">35</span>What a cat does to the rider</a></li>
+<li class="part">Under the hood</li><li><a href="the-math-layer.html"><span class="number">36</span>The math layer</a></li>
+<li><a href="proving-it.html"><span class="number">37</span>Proving it</a></li>
+<li><a href="the-platform.html"><span class="number">38</span>The platform</a></li>
+<li><a href="zooming-back-out.html"><span class="number">39</span>Zooming back out</a></li>
+</ol>
+</nav>
+<main>
+<p class="book-bar"><a href="index.html">Safari Ride</a> <a href="#chapters">Chapters</a></p>
+<article>
+<p class="chapter-number">Chapter 23</p>
+<h1 id="opaque-types-the-clock">Opaque types: the clock</h1>
+<p>Every moment of the ride carries a clock, which counts the steps since the ride started. Step 1,529, the page the first half held still, is a clock. The sun and the sky follow the clock alone, and each beacon follows the clock and its tower.</p>
+<h2 id="a-moment-and-a-length">A moment and a length <a class="section-link" href="#a-moment-and-a-length" aria-label="Link to this section">§</a></h2>
+<p>The ride uses time in two ways. A moment is a point in the ride, such as step 1,529. A length is a stretch of the ride, such as three steps. A moment plus a length is a later moment. So Safari Ride gives each its own type: a <code>Clock</code> is a moment, and a <code>Steps</code> is a length.</p>
+<p>Both hold a whole number, so a bare number could pass for either. Here&#39;s a line that tries to add 7 to the first clock:</p>
+<figure class="listing"><figcaption>clock_plus_seven.roc (doesn&#39;t compile)</figcaption><pre><code class="language-roc"><span class="syn-keyword">app</span> [main!] { game: <span class="syn-string">&quot;../../game.roc&quot;</span>, lib: <span class="syn-string">&quot;../../../lib/main.roc&quot;</span> }
+
+<span class="syn-keyword">import</span> game.<span class="syn-type">Clock</span>
+
+<span class="syn-name">main!</span> = |_args| {
+	later = <span class="syn-type">Clock</span>.start + <span class="syn-number">7</span>
+	echo!(later.to_str())
+	<span class="syn-type">Ok</span>({})
+}
+</code></pre></figure><figure class="listing"><figcaption>roc check on clock_plus_seven.roc</figcaption><pre><code class="language-text">── ✗ type mismatch ─────────────────────────────────── clock_plus_seven.roc:6:24
+
+This number is being used where a non-number type is needed.
+
+later = Clock.start + 7
+                      ^
+
+Other code expects this to have the type:
+
+    Steps
+
+── 1 error and 0 warnings ───────────────────────────────── clock_plus_seven.roc
+</code></pre></figure><p>The compiler rejects the line. <code>+</code> calls the <code>plus</code> method, and <code>Clock.plus</code> takes a <code>Steps</code>. The line passes it a bare 7. With the types right, a mixed-up sum is a compile error, found before the ride ever runs. The <a class="chapter-link" href="mountains.html">“Mountains”</a> chapter splits direction the same way: a <code>Bearing</code> is a direction, and a <code>Turn</code> is a change of direction.</p>
+<h2 id="the-module">The module <a class="section-link" href="#the-module" aria-label="Link to this section">§</a></h2>
+<p>Here&#39;s the whole <code>Clock</code> module:</p>
+<figure class="listing"><figcaption>Clock.roc, the whole file</figcaption><pre><code class="language-roc"><span class="syn-comment">## The ride&#39;s clock: which step of the ride this is. It starts at zero and</span>
+<span class="syn-comment">## moves on by one with every step, so it is always whole. It is one of the</span>
+<span class="syn-comment">## four things each step carries to the next.</span>
+<span class="syn-keyword">import</span> <span class="syn-type">Steps</span>
+
+<span class="syn-type">Clock</span> :: <span class="syn-type">U32</span>.{
+
+	<span class="syn-comment">## The clock as a ride starts.</span>
+	<span class="syn-name">start</span> : <span class="syn-type">Clock</span>
+	<span class="syn-name">start</span> = <span class="syn-type">Clock</span>.(<span class="syn-number">0</span>)
+
+	<span class="syn-comment">## The clock at step `number` of a ride.</span>
+	<span class="syn-name">at_step</span> : <span class="syn-type">U32</span> -&gt; <span class="syn-type">Clock</span>
+	<span class="syn-name">at_step</span> = |number| <span class="syn-type">Clock</span>.(number)
+
+	<span class="syn-comment">## The clock one step on.</span>
+	<span class="syn-name">next</span> : <span class="syn-type">Clock</span> -&gt; <span class="syn-type">Clock</span>
+	<span class="syn-name">next</span> = |<span class="syn-type">Clock</span>.(n)| <span class="syn-type">Clock</span>.(n + <span class="syn-number">1</span>)
+
+	<span class="syn-comment">## How many steps this clock is past `earlier`. It crashes when this clock</span>
+	<span class="syn-comment">## comes before `earlier`.</span>
+	<span class="syn-name">steps_since</span> : <span class="syn-type">Clock</span>, <span class="syn-type">Clock</span> -&gt; <span class="syn-type">Steps</span>
+	<span class="syn-name">steps_since</span> = |<span class="syn-type">Clock</span>.(n), <span class="syn-type">Clock</span>.(earlier)|
+		<span class="syn-keyword">if</span> n &lt; earlier {
+			<span class="syn-keyword">crash</span> <span class="syn-string">&quot;Clock.steps_since: this clock comes before the one it counts from&quot;</span>
+		} <span class="syn-keyword">else</span> {
+			<span class="syn-type">Steps</span>.of(n - earlier)
+		}
+
+	<span class="syn-comment">## The clock `length` steps on.</span>
+	<span class="syn-name">plus</span> : <span class="syn-type">Clock</span>, <span class="syn-type">Steps</span> -&gt; <span class="syn-type">Clock</span>
+	<span class="syn-name">plus</span> = |<span class="syn-type">Clock</span>.(n), length| <span class="syn-type">Clock</span>.(n + length.to_u32())
+
+	<span class="syn-comment">## The clock `length` steps back. It crashes when that would go back past</span>
+	<span class="syn-comment">## step 0, where the ride starts.</span>
+	<span class="syn-name">minus</span> : <span class="syn-type">Clock</span>, <span class="syn-type">Steps</span> -&gt; <span class="syn-type">Clock</span>
+	<span class="syn-name">minus</span> = |<span class="syn-type">Clock</span>.(n), length| {
+		back = length.to_u32()
+		<span class="syn-keyword">if</span> back &gt; n {
+			<span class="syn-keyword">crash</span> <span class="syn-string">&quot;Clock.minus: the ride starts at step 0, and nothing comes before it&quot;</span>
+		} <span class="syn-keyword">else</span> {
+			<span class="syn-type">Clock</span>.(n - back)
+		}
+	}
+
+	<span class="syn-name">is_lt</span> : <span class="syn-type">Clock</span>, <span class="syn-type">Clock</span> -&gt; <span class="syn-type">Bool</span>
+	<span class="syn-name">is_lt</span> = |<span class="syn-type">Clock</span>.(n), <span class="syn-type">Clock</span>.(other)| n &lt; other
+
+	<span class="syn-name">to_str</span> : <span class="syn-type">Clock</span> -&gt; <span class="syn-type">Str</span>
+	<span class="syn-name">to_str</span> = |<span class="syn-type">Clock</span>.(n)| n.to_str()
+
+	<span class="syn-name">is_eq</span> : _
+}
+
+<span class="syn-keyword">expect</span> <span class="syn-type">Clock</span>.at_step(<span class="syn-number">9</span>).steps_since(<span class="syn-type">Clock</span>.at_step(<span class="syn-number">9</span>)) == <span class="syn-type">Steps</span>.zero
+<span class="syn-keyword">expect</span> <span class="syn-type">Clock</span>.at_step(<span class="syn-number">9</span>).steps_since(<span class="syn-type">Clock</span>.at_step(<span class="syn-number">8</span>)) == <span class="syn-type">Steps</span>.one_step
+<span class="syn-keyword">expect</span> <span class="syn-type">Clock</span>.at_step(<span class="syn-number">9</span>).steps_since(<span class="syn-type">Clock</span>.start) == <span class="syn-type">Steps</span>.of(<span class="syn-number">9</span>)
+<span class="syn-keyword">expect</span> <span class="syn-type">Clock</span>.start.next().steps_since(<span class="syn-type">Clock</span>.start) == <span class="syn-type">Steps</span>.one_step
+<span class="syn-keyword">expect</span> <span class="syn-type">Clock</span>.start.plus(<span class="syn-type">Steps</span>.zero) == <span class="syn-type">Clock</span>.start
+<span class="syn-keyword">expect</span> <span class="syn-type">Clock</span>.at_step(<span class="syn-number">9</span>).plus(<span class="syn-type">Steps</span>.of(<span class="syn-number">3</span>)) == <span class="syn-type">Clock</span>.at_step(<span class="syn-number">12</span>)
+<span class="syn-keyword">expect</span> <span class="syn-type">Clock</span>.at_step(<span class="syn-number">9</span>).minus(<span class="syn-type">Steps</span>.zero) == <span class="syn-type">Clock</span>.at_step(<span class="syn-number">9</span>)
+<span class="syn-keyword">expect</span> <span class="syn-type">Clock</span>.at_step(<span class="syn-number">9</span>).minus(<span class="syn-type">Steps</span>.of(<span class="syn-number">3</span>)) == <span class="syn-type">Clock</span>.at_step(<span class="syn-number">6</span>)
+<span class="syn-keyword">expect</span> <span class="syn-type">Clock</span>.at_step(<span class="syn-number">9</span>).minus(<span class="syn-type">Steps</span>.of(<span class="syn-number">9</span>)) == <span class="syn-type">Clock</span>.start
+<span class="syn-keyword">expect</span> <span class="syn-type">Clock</span>.at_step(<span class="syn-number">8</span>) &lt; <span class="syn-type">Clock</span>.at_step(<span class="syn-number">9</span>)
+<span class="syn-keyword">expect</span> !(<span class="syn-type">Clock</span>.at_step(<span class="syn-number">9</span>) &lt; <span class="syn-type">Clock</span>.at_step(<span class="syn-number">9</span>))
+<span class="syn-keyword">expect</span> !(<span class="syn-type">Clock</span>.at_step(<span class="syn-number">10</span>) &lt; <span class="syn-type">Clock</span>.at_step(<span class="syn-number">9</span>))
+</code></pre></figure><p><code>Clock :: U32.{ … }</code> makes <code>Clock</code> an opaque type. It holds a <code>U32</code>, and code outside the module reaches that number through the functions between the braces. Those functions keep moments and lengths apart:</p>
+<table>
+<thead>
+<tr>
+<th>Function</th>
+<th>Takes</th>
+<th>Returns</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>next</code></td>
+<td>a clock</td>
+<td>the clock one step on</td>
+</tr>
+<tr>
+<td><code>plus</code></td>
+<td>a clock and a length</td>
+<td>a later clock</td>
+</tr>
+<tr>
+<td><code>minus</code></td>
+<td>a clock and a length</td>
+<td>an earlier clock</td>
+</tr>
+<tr>
+<td><code>steps_<wbr>since</code></td>
+<td>two clocks</td>
+<td>the length between them</td>
+</tr>
+</tbody>
+</table>
+<p><code>RideInstant.next</code> calls <code>Clock.next</code> once a step. <code>plus</code> reads the number inside a length with <code>length.to_u32()</code>, from the <code>Steps</code> module. <code>&lt;</code> calls <code>is_lt</code>, just as <code>+</code> calls <code>plus</code>, so two clocks compare as their steps do.</p>
+<h2 id="two-invariants">Two invariants <a class="section-link" href="#two-invariants" aria-label="Link to this section">§</a></h2>
+<p>We enforce invariants with <code>crash</code>, and the clock has two. Every clock is at step 0 or later, so <code>minus</code> crashes when it would go back past step 0. Every length counts forward, so <code>steps_since</code> crashes when the clock it counts from comes later. Either crash means a bug in the caller, and its message says which invariant broke.</p>
+<h2 id="tests">Tests <a class="section-link" href="#tests" aria-label="Link to this section">§</a></h2>
+<p>Each <code>expect</code> below the module&#39;s braces is a test, and <code>roc test</code> runs them all. A clock is a plain value, so a test builds one directly. <code>Clock.at_step(9).plus(Steps.of(3)) == Clock.at_step(12)</code> passes when step 9 plus three steps is step 12. The last three tests try <code>&lt;</code> on a clock before another, a clock against itself, and a clock after another. <code>!</code> flips a <code>Bool</code>.</p>
+<p>The clock is the first of the four things a moment carries. The sun and the sky are derived from it alone, at any step, and the beacons from it and their towers. The next chapter explains the step itself, which moves all four on together.</p>
+
+</article>
+<nav class="turn-page" aria-label="Previous and next chapter">
+<a rel="prev" href="pure-functions-and-effects.html"><small>Previous</small>Pure functions and effects</a>
+<a rel="next" href="the-ride-instant.html"><small>Next</small>The ride instant</a>
+</nav>
+</main>
+
+</body>
+</html>

@@ -1,0 +1,139 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Herds · Safari Ride</title>
+<link rel="icon" href="data:,">
+<link rel="stylesheet" href="book.css">
+<script src="book.js" defer></script>
+</head>
+<body class="chapter">
+<header class="top-bar">
+<a class="home-link" href="https://roc.lynrummy.com/">Steve's Roc Apps</a>
+<p class="draft-notice">This is an early draft.</p>
+<a class="repo-link" href="https://github.com/showell/roc-apps">roc-apps on GitHub</a>
+</header>
+<nav class="book-nav" id="chapters" aria-label="Chapters">
+<a class="book-name" href="index.html">Safari Ride</a>
+<ol>
+<li class="part">The big picture</li><li><a href="introduction.html"><span class="number">1</span>Introduction</a></li>
+<li><a href="one-page.html"><span class="number">2</span>One page</a></li>
+<li><a href="the-problem.html"><span class="number">3</span>The problem</a></li>
+<li><a href="platforms-packages-and-modules.html"><span class="number">4</span>Platforms, packages and modules</a></li>
+<li><a href="types.html"><span class="number">5</span>Types</a></li>
+<li><a href="functions.html"><span class="number">6</span>Functions</a></li>
+<li class="part">One frame</li><li><a href="things.html"><span class="number">7</span>Things</a></li>
+<li><a href="billboard-critters.html"><span class="number">8</span>Tag unions: billboard critters</a></li>
+<li><a href="shapes.html"><span class="number">9</span>Shapes</a></li>
+<li><a href="a-far-tree.html"><span class="number">10</span>Lists and map: a far tree</a></li>
+<li><a href="the-pipeline.html"><span class="number">11</span>The pipeline</a></li>
+<li><a href="asking-a-kind.html"><span class="number">12</span>Where clauses: asking a kind</a></li>
+<li><a href="refused.html"><span class="number">13</span>Errors as tag unions</a></li>
+<li class="category">Nature</li><li><a href="the-sky.html"><span class="number">14</span>The sky and the grass</a></li>
+<li><a href="mountains.html"><span class="number">15</span>Mountains</a></li>
+<li class="category">Man-made</li><li><a href="the-road.html"><span class="number">16</span>The road</a></li>
+<li><a href="rails.html"><span class="number">17</span>Rails</a></li>
+<li><a href="radio-towers.html"><span class="number">18</span>Radio towers</a></li>
+<li class="category">Critters that stand still</li><li class="here"><a href="herds.html"><span class="number">19</span>Herds</a><ol class="sections"><li><a href="herds.html#cows">Cows</a></li><li><a href="herds.html#pigs">Pigs</a></li></ol></li>
+<li class="part">Motion</li><li><a href="a-flip-book.html"><span class="number">20</span>Immutable values: a flip book</a></li>
+<li><a href="records.html"><span class="number">21</span>Records</a></li>
+<li><a href="pure-functions-and-effects.html"><span class="number">22</span>Pure functions and effects</a></li>
+<li><a href="the-clock.html"><span class="number">23</span>Opaque types: the clock</a></li>
+<li><a href="the-ride-instant.html"><span class="number">24</span>The ride instant</a></li>
+<li class="category">The passage of time</li><li><a href="the-beacons.html"><span class="number">25</span>The beacons</a></li>
+<li><a href="the-setting-sun.html"><span class="number">26</span>The setting sun</a></li>
+<li class="category">Vehicles</li><li><a href="the-rider.html"><span class="number">27</span>The rider</a></li>
+<li><a href="the-throttle.html"><span class="number">28</span>The throttle</a></li>
+<li><a href="rehearsal.html"><span class="number">29</span>Variables and loops: rehearsal</a></li>
+<li><a href="the-riders-gaze.html"><span class="number">30</span>The rider&#39;s gaze</a></li>
+<li><a href="the-truck.html"><span class="number">31</span>The truck</a></li>
+<li><a href="the-trucks-motion.html"><span class="number">32</span>The truck&#39;s motion</a></li>
+<li class="category">Critter motion</li><li><a href="the-cat.html"><span class="number">33</span>The cat</a></li>
+<li><a href="the-bird.html"><span class="number">34</span>The bird</a></li>
+<li><a href="what-a-cat-does-to-the-rider.html"><span class="number">35</span>What a cat does to the rider</a></li>
+<li class="part">Under the hood</li><li><a href="the-math-layer.html"><span class="number">36</span>The math layer</a></li>
+<li><a href="proving-it.html"><span class="number">37</span>Proving it</a></li>
+<li><a href="the-platform.html"><span class="number">38</span>The platform</a></li>
+<li><a href="zooming-back-out.html"><span class="number">39</span>Zooming back out</a></li>
+</ol>
+</nav>
+<main>
+<p class="book-bar"><a href="index.html">Safari Ride</a> <a href="#chapters">Chapters</a></p>
+<article>
+<p class="chapter-number">Chapter 19</p>
+<h1 id="herds">Herds</h1>
+<p>The farms along the road are crowds of billboards: herds of cows on the left, herds of pigs on the right. A herd is a list of placed billboards. The <code>CowHerd</code> and <code>PigHerd</code> modules lay the animals out again for each frame that needs them.</p>
+<figure class="widget"><iframe class="canvas-app" src="../frame_widget/?start=critters" title="Step 1,529 of the ride: the whole still frame so far, now with its herds and the animals at the bends." loading="lazy" style="aspect-ratio: 960 / 600"></iframe><figcaption>Step 1,529 of the ride: the whole still frame so far, now with its herds and the animals at the bends.</figcaption></figure><h2 id="cows">Cows <a class="section-link" href="#cows" aria-label="Link to this section">§</a></h2>
+<p>The world stores a cow herd as two counts: how many cows, and how many rows stand behind the front one. The route&#39;s herd is fourteen cows, in columns of three:</p>
+<figure class="listing"><figcaption>CowHerd.roc</figcaption><pre><code class="language-roc"><span class="syn-comment">## The herd&#39;s cows behind `herd_along`, column by column from the front,</span>
+<span class="syn-comment">## led by the bull at `herd_along` if the herd has one.</span>
+<span class="syn-name">herd_cows</span> : <span class="syn-type">CowHerd</span>, { herd_along : <span class="syn-type">Along</span>, bull : <span class="syn-type">CowHerd.Bull</span> } -&gt; <span class="syn-type">List</span>(<span class="syn-type">Geom.Placed</span>(<span class="syn-type">Billboard</span>))
+<span class="syn-name">herd_cows</span> = |<span class="syn-type">CowHerd</span>.({ cow_count, rows_behind_front }), { herd_along, bull }| {
+	cows =
+		<span class="syn-type">List</span>.from_iter(<span class="syn-type">U64</span>.until(<span class="syn-number">0</span>, cow_count))
+			.map(|cow_number| herd_cow({ herd_along, cow_number, rows_behind_front }))
+	<span class="syn-keyword">match</span> bull {
+		<span class="syn-type">WithBull</span> =&gt; [herd_bull(herd_along)].concat(cows)
+		<span class="syn-type">NoBull</span> =&gt; cows
+	}
+}
+</code></pre></figure><p><code>U64.until(0, cow_count)</code> counts the cows, and <code>herd_cow</code> places the cow with each number. A bull, if the herd has one, goes at the front of the list.</p>
+<p>A herd in a perfect grid would look like a parking lot, so each cow strays a little from its place:</p>
+<figure class="listing"><figcaption>CowHerd.roc</figcaption><pre><code class="language-roc"><span class="syn-comment">## The herd&#39;s cow at `cow_number`, counting from 0. The scatter&#39;s phases, 2.7</span>
+<span class="syn-comment">## along the road and 1.9 across it, are chosen by eye.</span>
+<span class="syn-name">herd_cow</span> : {
+	herd_along : <span class="syn-type">Along</span>,
+	cow_number : <span class="syn-type">U64</span>,
+	rows_behind_front : <span class="syn-type">U64</span>,
+} -&gt; <span class="syn-type">Geom.Placed</span>(<span class="syn-type">Billboard</span>)
+<span class="syn-name">herd_cow</span> = |{ herd_along, cow_number, rows_behind_front }| {
+	cows_per_column = rows_behind_front + <span class="syn-number">1</span>
+	column = cow_number.div_trunc_by(cows_per_column).to_f64()
+	row = cow_number.rem_by(cows_per_column).to_f64()
+	herd_front = herd_along.plus(gap_behind_bull)
+	column_place = herd_front.plus(column_spacing.times(column))
+	in_line = column_place.plus(row_stagger.times(row))
+	row_place = front_row_distance.plus(row_depth.times(row))
+	stray = <span class="syn-type">Scatter</span>.stray_of(
+		cow_number,
+		{
+			along_phase: <span class="syn-number">2.7</span>,
+			across_phase: <span class="syn-number">1.9</span>,
+			jitter_along,
+			jitter_across,
+		},
+	)
+	out_from_road = row_place.plus(stray.across)
+	{
+		road_point: {
+			along: in_line.plus(stray.along),
+			across: <span class="syn-type">Across</span>.left_of_middle(out_from_road),
+		},
+		lift: <span class="syn-type">Distance</span>.zero,
+		kind: cow_billboard(cow_number),
+	}
+}
+</code></pre></figure><p>The cow&#39;s number picks its column and its row: <code>div_trunc_by</code> divides and drops the remainder, and <code>rem_by</code> keeps only the remainder. Each row stands a little further along the road than the one in front of it, and further from the road. Then <code>Scatter.stray_of</code> moves the cow a little, along and across, with two phases, 2.7 and 1.9, chosen by eye. <code>stray_of</code> derives the stray from the cow&#39;s number, so it looks random and comes out the same on every run. The last expression is the placed cow: a place on the road, a lift of zero, and the billboard <code>cow_billboard</code> picks, a calf for every fourth cow.</p>
+<h2 id="pigs">Pigs <a class="section-link" href="#pigs" aria-label="Link to this section">§</a></h2>
+<p>A pig herd has two shapes, as a tag union:</p>
+<figure class="listing"><figcaption>PigHerd.roc</figcaption><pre><code class="language-roc"><span class="syn-comment">## The herd&#39;s pigs about `herd_along`.</span>
+<span class="syn-name">herd_pigs</span> : <span class="syn-type">PigHerd</span>, <span class="syn-type">Along</span> -&gt; <span class="syn-type">List</span>(<span class="syn-type">Geom.Placed</span>(<span class="syn-type">Billboard</span>))
+<span class="syn-name">herd_pigs</span> = |herd, herd_along|
+	<span class="syn-keyword">match</span> herd {
+		<span class="syn-type">BigHerd</span>(big_herd) =&gt; big_herd_pigs(big_herd, herd_along)
+		<span class="syn-type">TwoRows</span> =&gt; two_row_pigs(herd_along)
+	}
+</code></pre></figure><p>The first two herds of pigs are big, seven rows of seven, and the rest are two short rows. A <code>BigHerd</code> carries its sizes, and <code>TwoRows</code> is a plain tag, so each branch of the <code>match</code> calls the function for its shape. In the first two herds, one pig stands out from the rest and catches the rider&#39;s eye, and the rider&#39;s chapters in the second half come back to it.</p>
+<p><code>BillboardSighting</code> sights every herd&#39;s billboards, as the pipeline sights any thing beside the road.</p>
+<p>The herds are the last of the animals that stand still. Everything in the frame at step 1,529 now has its chapter, except the things that move: the cat, the bird and the truck. The first half of the book ends here: one frame, built part by part, from the things beside the road to the world they stand in.</p>
+
+</article>
+<nav class="turn-page" aria-label="Previous and next chapter">
+<a rel="prev" href="radio-towers.html"><small>Previous</small>Radio towers</a>
+<a rel="next" href="a-flip-book.html"><small>Next</small>Immutable values: a flip book</a>
+</nav>
+</main>
+<script src="embed.js"></script>
+</body>
+</html>

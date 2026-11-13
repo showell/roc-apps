@@ -21,15 +21,41 @@
 <li><a href="one-page.html"><span class="number">2</span>One page</a></li>
 <li class="here"><a href="the-problem.html"><span class="number">3</span>The problem</a></li>
 <li><a href="platforms-packages-and-modules.html"><span class="number">4</span>Platforms, packages and modules</a></li>
-<li><a href="the-pieces-as-types.html"><span class="number">5</span>The pieces as types</a></li>
-<li><a href="things.html"><span class="number">6</span>Things</a></li>
-<li><a href="billboard-critters.html"><span class="number">7</span>Billboard Critters</a></li>
-<li><a href="shapes.html"><span class="number">8</span>Shapes</a></li>
-<li><a href="a-far-tree.html"><span class="number">9</span>A far tree</a></li>
-<li><a href="types-for-places.html"><span class="number">10</span>Types for places</a></li>
+<li><a href="types.html"><span class="number">5</span>Types</a></li>
+<li><a href="functions.html"><span class="number">6</span>Functions</a></li>
+<li class="part">One frame</li><li><a href="things.html"><span class="number">7</span>Things</a></li>
+<li><a href="billboard-critters.html"><span class="number">8</span>Tag unions: billboard critters</a></li>
+<li><a href="shapes.html"><span class="number">9</span>Shapes</a></li>
+<li><a href="a-far-tree.html"><span class="number">10</span>Lists and map: a far tree</a></li>
 <li><a href="the-pipeline.html"><span class="number">11</span>The pipeline</a></li>
-<li><a href="nature-types.html"><span class="number">12</span>Nature types</a></li>
-<li><a href="asking-a-kind.html"><span class="number">13</span>Asking a kind</a></li>
+<li><a href="asking-a-kind.html"><span class="number">12</span>Where clauses: asking a kind</a></li>
+<li><a href="refused.html"><span class="number">13</span>Errors as tag unions</a></li>
+<li class="category">Nature</li><li><a href="the-sky.html"><span class="number">14</span>The sky and the grass</a></li>
+<li><a href="mountains.html"><span class="number">15</span>Mountains</a></li>
+<li class="category">Man-made</li><li><a href="the-road.html"><span class="number">16</span>The road</a></li>
+<li><a href="rails.html"><span class="number">17</span>Rails</a></li>
+<li><a href="radio-towers.html"><span class="number">18</span>Radio towers</a></li>
+<li class="category">Critters that stand still</li><li><a href="herds.html"><span class="number">19</span>Herds</a></li>
+<li class="part">Motion</li><li><a href="a-flip-book.html"><span class="number">20</span>Immutable values: a flip book</a></li>
+<li><a href="records.html"><span class="number">21</span>Records</a></li>
+<li><a href="pure-functions-and-effects.html"><span class="number">22</span>Pure functions and effects</a></li>
+<li><a href="the-clock.html"><span class="number">23</span>Opaque types: the clock</a></li>
+<li><a href="the-ride-instant.html"><span class="number">24</span>The ride instant</a></li>
+<li class="category">The passage of time</li><li><a href="the-beacons.html"><span class="number">25</span>The beacons</a></li>
+<li><a href="the-setting-sun.html"><span class="number">26</span>The setting sun</a></li>
+<li class="category">Vehicles</li><li><a href="the-rider.html"><span class="number">27</span>The rider</a></li>
+<li><a href="the-throttle.html"><span class="number">28</span>The throttle</a></li>
+<li><a href="rehearsal.html"><span class="number">29</span>Variables and loops: rehearsal</a></li>
+<li><a href="the-riders-gaze.html"><span class="number">30</span>The rider&#39;s gaze</a></li>
+<li><a href="the-truck.html"><span class="number">31</span>The truck</a></li>
+<li><a href="the-trucks-motion.html"><span class="number">32</span>The truck&#39;s motion</a></li>
+<li class="category">Critter motion</li><li><a href="the-cat.html"><span class="number">33</span>The cat</a></li>
+<li><a href="the-bird.html"><span class="number">34</span>The bird</a></li>
+<li><a href="what-a-cat-does-to-the-rider.html"><span class="number">35</span>What a cat does to the rider</a></li>
+<li class="part">Under the hood</li><li><a href="the-math-layer.html"><span class="number">36</span>The math layer</a></li>
+<li><a href="proving-it.html"><span class="number">37</span>Proving it</a></li>
+<li><a href="the-platform.html"><span class="number">38</span>The platform</a></li>
+<li><a href="zooming-back-out.html"><span class="number">39</span>Zooming back out</a></li>
 </ol>
 </nav>
 <main>
@@ -38,7 +64,7 @@
 <p class="chapter-number">Chapter 3</p>
 <h1 id="the-problem">The problem</h1>
 <p>Safari Ride shows a world in motion, seen from the rider&#39;s seat. Thirty times a second, it puts a new picture of that world on the screen. Each picture is a frame, and between frames a step moves the world on, so the pictures move. Whoever is watching can take the controls at any moment.</p>
-<p>That&#39;s what you see. For us, it&#39;s an engineering problem, and our first job is to break it into pieces we can build one at a time. A screen shows things from a world, and those come first. We hold one frame still and get it right before anything moves, and the controls come last. That plan costs something: the first half of the book holds one frame still. In return, every piece we build stands on a piece that already works. The plan gives the problem five pieces:</p>
+<p>That&#39;s what you see. For us, it&#39;s an engineering problem, and our first job is to break it into pieces we can build one at a time. We get one frame right before anything moves. That plan costs something: the first half of the book holds that frame still. In return, every piece we build stands on a piece that already works. The plan gives the problem five pieces:</p>
 <figure class="diagram"><svg class="diagram diagram-wide" role="img" aria-label="The five pieces" width="467pt" height="165pt"
  viewBox="0.00 0.00 467.00 165.00" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
 <g id="graph0" class="graph" transform="scale(1 1) rotate(0) translate(4 161)">
@@ -176,16 +202,17 @@
 <tr>
 <td>Motion</td>
 <td>Persistence</td>
-<td>The rider rides on, the truck drives ahead, the cat crosses the road and the sun goes down. At every step, something must carry each of them on from where it was, and the moves must fit together. The cat times its crossing to the rider coming toward it, and a cat in the road stops the rider speeding up.</td>
+<td>The rider rides on, the truck drives ahead, the cat crosses the road and the sun goes down. At every step, something must move each of them on, and the moves must fit together. The cat times its crossing to the rider coming toward it, and a cat in the road stops the rider speeding up.</td>
 </tr>
 <tr>
 <td>The person watching</td>
 <td>Interaction</td>
-<td>A viewer mostly sits back and watches, but they also need to pause the ride, step it forward and rewind it. So the program must give them controls they can find, and answer each one straight away.</td>
+<td>A viewer mostly sits back and watches, but they also need to pause the ride, and step it forward and back. So the program must give them controls, and answer each one straight away.</td>
 </tr>
 </tbody>
 </table>
-<p>Each of those pieces lives somewhere in the code. So before we read the first one, a short chapter shows how a Roc program is laid out: the platform it runs on, the modules it&#39;s made of, and the packages it uses.</p>
+<p>We take the pieces in turn. Things come first: what a cow or a tree is, and the shapes it&#39;s made of. Then the rider&#39;s view: the trip every thing takes from its place on the road into the frame, with the math behind it saved for a chapter near the end. The world comes after the view, because every part of it takes that same trip: the sky, the mountains, the road and everything along it. Those three make one frame, held still. Motion fills the second half of the book: moments that follow one another like a flip book&#39;s pages, and the clock, the rider, the truck, the cat and the bird, each moved on from step to step. The person watching comes last, at the platform, where the frames go out and the keys come in.</p>
+<p>Before the first piece, three short chapters cover Roc itself: how a program is laid out, its types, and its functions.</p>
 
 </article>
 <nav class="turn-page" aria-label="Previous and next chapter">

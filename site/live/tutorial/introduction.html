@@ -17,19 +17,45 @@
 <nav class="book-nav" id="chapters" aria-label="Chapters">
 <a class="book-name" href="index.html">Safari Ride</a>
 <ol>
-<li class="part">The big picture</li><li class="here"><a href="introduction.html"><span class="number">1</span>Introduction</a></li>
+<li class="part">The big picture</li><li class="here"><a href="introduction.html"><span class="number">1</span>Introduction</a><ol class="sections"><li><a href="introduction.html#run-it-yourself">Run it yourself</a></li></ol></li>
 <li><a href="one-page.html"><span class="number">2</span>One page</a></li>
 <li><a href="the-problem.html"><span class="number">3</span>The problem</a></li>
 <li><a href="platforms-packages-and-modules.html"><span class="number">4</span>Platforms, packages and modules</a></li>
-<li><a href="the-pieces-as-types.html"><span class="number">5</span>The pieces as types</a></li>
-<li><a href="things.html"><span class="number">6</span>Things</a></li>
-<li><a href="billboard-critters.html"><span class="number">7</span>Billboard Critters</a></li>
-<li><a href="shapes.html"><span class="number">8</span>Shapes</a></li>
-<li><a href="a-far-tree.html"><span class="number">9</span>A far tree</a></li>
-<li><a href="types-for-places.html"><span class="number">10</span>Types for places</a></li>
+<li><a href="types.html"><span class="number">5</span>Types</a></li>
+<li><a href="functions.html"><span class="number">6</span>Functions</a></li>
+<li class="part">One frame</li><li><a href="things.html"><span class="number">7</span>Things</a></li>
+<li><a href="billboard-critters.html"><span class="number">8</span>Tag unions: billboard critters</a></li>
+<li><a href="shapes.html"><span class="number">9</span>Shapes</a></li>
+<li><a href="a-far-tree.html"><span class="number">10</span>Lists and map: a far tree</a></li>
 <li><a href="the-pipeline.html"><span class="number">11</span>The pipeline</a></li>
-<li><a href="nature-types.html"><span class="number">12</span>Nature types</a></li>
-<li><a href="asking-a-kind.html"><span class="number">13</span>Asking a kind</a></li>
+<li><a href="asking-a-kind.html"><span class="number">12</span>Where clauses: asking a kind</a></li>
+<li><a href="refused.html"><span class="number">13</span>Errors as tag unions</a></li>
+<li class="category">Nature</li><li><a href="the-sky.html"><span class="number">14</span>The sky and the grass</a></li>
+<li><a href="mountains.html"><span class="number">15</span>Mountains</a></li>
+<li class="category">Man-made</li><li><a href="the-road.html"><span class="number">16</span>The road</a></li>
+<li><a href="rails.html"><span class="number">17</span>Rails</a></li>
+<li><a href="radio-towers.html"><span class="number">18</span>Radio towers</a></li>
+<li class="category">Critters that stand still</li><li><a href="herds.html"><span class="number">19</span>Herds</a></li>
+<li class="part">Motion</li><li><a href="a-flip-book.html"><span class="number">20</span>Immutable values: a flip book</a></li>
+<li><a href="records.html"><span class="number">21</span>Records</a></li>
+<li><a href="pure-functions-and-effects.html"><span class="number">22</span>Pure functions and effects</a></li>
+<li><a href="the-clock.html"><span class="number">23</span>Opaque types: the clock</a></li>
+<li><a href="the-ride-instant.html"><span class="number">24</span>The ride instant</a></li>
+<li class="category">The passage of time</li><li><a href="the-beacons.html"><span class="number">25</span>The beacons</a></li>
+<li><a href="the-setting-sun.html"><span class="number">26</span>The setting sun</a></li>
+<li class="category">Vehicles</li><li><a href="the-rider.html"><span class="number">27</span>The rider</a></li>
+<li><a href="the-throttle.html"><span class="number">28</span>The throttle</a></li>
+<li><a href="rehearsal.html"><span class="number">29</span>Variables and loops: rehearsal</a></li>
+<li><a href="the-riders-gaze.html"><span class="number">30</span>The rider&#39;s gaze</a></li>
+<li><a href="the-truck.html"><span class="number">31</span>The truck</a></li>
+<li><a href="the-trucks-motion.html"><span class="number">32</span>The truck&#39;s motion</a></li>
+<li class="category">Critter motion</li><li><a href="the-cat.html"><span class="number">33</span>The cat</a></li>
+<li><a href="the-bird.html"><span class="number">34</span>The bird</a></li>
+<li><a href="what-a-cat-does-to-the-rider.html"><span class="number">35</span>What a cat does to the rider</a></li>
+<li class="part">Under the hood</li><li><a href="the-math-layer.html"><span class="number">36</span>The math layer</a></li>
+<li><a href="proving-it.html"><span class="number">37</span>Proving it</a></li>
+<li><a href="the-platform.html"><span class="number">38</span>The platform</a></li>
+<li><a href="zooming-back-out.html"><span class="number">39</span>Zooming back out</a></li>
 </ol>
 </nav>
 <main>
@@ -39,8 +65,15 @@
 <h1 id="introduction">Introduction</h1>
 <p>Safari Ride is running in the page below. It&#39;s a big page, so give the ride a little while to load. Then it starts by itself.</p>
 <figure class="widget"><iframe class="canvas-app" src="../safari/" title="The ride, running as you read. Click it to give it the keyboard: Space pauses it, and the arrow keys step it." loading="eager" style="aspect-ratio: 960 / 600"></iframe><figcaption>The ride, running as you read. Click it to give it the keyboard: Space pauses it, and the arrow keys step it.</figcaption></figure><p>Watch it all the way through. A motorcycle carries its rider down a long country road. Cows and pigs graze in the fields, and trees crowd the roadside. A truck runs on ahead. A cat waits by the road for its moment to cross, and a bird takes off as the rider comes near. As the sun sets behind the mountains, the truck turns on its headlights. At the end of the road the rider stops, and the ride starts over.</p>
-<p>Safari Ride is written in Roc, and this is a book about Roc. If you&#39;re brand new to Roc, the <a href="https://www.roc-lang.org/tutorial">official Roc tutorial</a> makes a quick first stop. The tutorial teaches the language through small examples. This book picks up from there, with one real program: how its code is organized across many modules, and how Roc&#39;s larger ideas, such as opaque types, type variables and <code>where</code> clauses, solve the problems the ride poses. Roc is fun to read, and the book quotes the real code behind everything on the screen. The book explains each new Roc idea where the code first needs it.</p>
-<p>You&#39;ll learn two things as you read: Roc, and how a ride like this one is animated. The animation is a handful of plain ideas. Each frame is one picture, and a step moves the world on before the next. Far things look small, and near things cover far ones. The book explains each of these in plain words where the ride first needs it, and the trigonometry behind them waits for a chapter of its own near the end. If you know animation already, skim those parts. If both are new to you, you&#39;ll get both at a walking pace.</p>
+<p>Safari Ride is written in Roc, and this is a book about Roc. If you&#39;re brand new to Roc, the <a href="https://www.roc-lang.org/tutorial">official Roc tutorial</a> makes a quick first stop. The tutorial teaches the language through small examples. This book picks up from there, with one real program: how its code is organized across many modules, and how Roc&#39;s larger ideas, such as opaque types, type variables and <code>where</code> clauses, solve the problems the ride poses. The book quotes the real code behind what&#39;s on the screen. The book explains each new Roc idea where the code first needs it.</p>
+<p>You&#39;ll learn two things as you read: Roc, and how a ride like this one is animated. The animation is a handful of plain ideas. Each frame is one picture, and a step moves the world on before the next. Far things look small, and near things cover far ones. The book explains each of these in plain words where the ride first needs it. A chapter near the end gives the trigonometry behind them. If both are new to you, you&#39;ll get both at a walking pace.</p>
+<h2 id="run-it-yourself">Run it yourself <a class="section-link" href="#run-it-yourself" aria-label="Link to this section">§</a></h2>
+<p>Safari Ride is open source, in the <code>canvas_apps/safari</code> folder of <a href="https://github.com/showell/roc-apps">roc-apps</a>. It builds with the Roc nightly that the repository&#39;s <code>roc-version</code> file names, <code>nightly-2026-11-03-34bd006</code>. With that installed, two commands check the whole ride and run its tests:</p>
+<pre><code class="language-text">cd canvas_apps/safari
+roc check web.roc
+roc test web.roc
+</code></pre>
+<p><code>roc check</code> checks the type of every value in every module the ride uses, and <code>roc test</code> runs the 645 <code>expect</code> tests those modules hold. Then break something on purpose. In <code>Billboard.roc</code>, delete the <code>FacesRight =&gt; Mirrored</code> line from the <code>match</code> in <code>scenery_sprite</code>, and run <code>roc check web.roc</code> again. The compiler names the missing case, as the <a class="chapter-link" href="billboard-critters.html">“Tag unions: billboard critters”</a> chapter shows. Put the line back, and the check passes again.</p>
 
 </article>
 <nav class="turn-page" aria-label="Previous and next chapter">

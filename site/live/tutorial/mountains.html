@@ -1,0 +1,232 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Mountains · Safari Ride</title>
+<link rel="icon" href="data:,">
+<link rel="stylesheet" href="book.css">
+<script src="book.js" defer></script>
+</head>
+<body class="chapter">
+<header class="top-bar">
+<a class="home-link" href="https://roc.lynrummy.com/">Steve's Roc Apps</a>
+<p class="draft-notice">This is an early draft.</p>
+<a class="repo-link" href="https://github.com/showell/roc-apps">roc-apps on GitHub</a>
+</header>
+<nav class="book-nav" id="chapters" aria-label="Chapters">
+<a class="book-name" href="index.html">Safari Ride</a>
+<ol>
+<li class="part">The big picture</li><li><a href="introduction.html"><span class="number">1</span>Introduction</a></li>
+<li><a href="one-page.html"><span class="number">2</span>One page</a></li>
+<li><a href="the-problem.html"><span class="number">3</span>The problem</a></li>
+<li><a href="platforms-packages-and-modules.html"><span class="number">4</span>Platforms, packages and modules</a></li>
+<li><a href="types.html"><span class="number">5</span>Types</a></li>
+<li><a href="functions.html"><span class="number">6</span>Functions</a></li>
+<li class="part">One frame</li><li><a href="things.html"><span class="number">7</span>Things</a></li>
+<li><a href="billboard-critters.html"><span class="number">8</span>Tag unions: billboard critters</a></li>
+<li><a href="shapes.html"><span class="number">9</span>Shapes</a></li>
+<li><a href="a-far-tree.html"><span class="number">10</span>Lists and map: a far tree</a></li>
+<li><a href="the-pipeline.html"><span class="number">11</span>The pipeline</a></li>
+<li><a href="asking-a-kind.html"><span class="number">12</span>Where clauses: asking a kind</a></li>
+<li><a href="refused.html"><span class="number">13</span>Errors as tag unions</a></li>
+<li class="category">Nature</li><li><a href="the-sky.html"><span class="number">14</span>The sky and the grass</a></li>
+<li class="here"><a href="mountains.html"><span class="number">15</span>Mountains</a><ol class="sections"><li><a href="mountains.html#directions">Directions</a></li><li><a href="mountains.html#a-range">A range</a></li><li><a href="mountains.html#across-the-screen">Across the screen</a></li><li><a href="mountains.html#back-to-front">Back to front</a></li></ol></li>
+<li class="category">Man-made</li><li><a href="the-road.html"><span class="number">16</span>The road</a></li>
+<li><a href="rails.html"><span class="number">17</span>Rails</a></li>
+<li><a href="radio-towers.html"><span class="number">18</span>Radio towers</a></li>
+<li class="category">Critters that stand still</li><li><a href="herds.html"><span class="number">19</span>Herds</a></li>
+<li class="part">Motion</li><li><a href="a-flip-book.html"><span class="number">20</span>Immutable values: a flip book</a></li>
+<li><a href="records.html"><span class="number">21</span>Records</a></li>
+<li><a href="pure-functions-and-effects.html"><span class="number">22</span>Pure functions and effects</a></li>
+<li><a href="the-clock.html"><span class="number">23</span>Opaque types: the clock</a></li>
+<li><a href="the-ride-instant.html"><span class="number">24</span>The ride instant</a></li>
+<li class="category">The passage of time</li><li><a href="the-beacons.html"><span class="number">25</span>The beacons</a></li>
+<li><a href="the-setting-sun.html"><span class="number">26</span>The setting sun</a></li>
+<li class="category">Vehicles</li><li><a href="the-rider.html"><span class="number">27</span>The rider</a></li>
+<li><a href="the-throttle.html"><span class="number">28</span>The throttle</a></li>
+<li><a href="rehearsal.html"><span class="number">29</span>Variables and loops: rehearsal</a></li>
+<li><a href="the-riders-gaze.html"><span class="number">30</span>The rider&#39;s gaze</a></li>
+<li><a href="the-truck.html"><span class="number">31</span>The truck</a></li>
+<li><a href="the-trucks-motion.html"><span class="number">32</span>The truck&#39;s motion</a></li>
+<li class="category">Critter motion</li><li><a href="the-cat.html"><span class="number">33</span>The cat</a></li>
+<li><a href="the-bird.html"><span class="number">34</span>The bird</a></li>
+<li><a href="what-a-cat-does-to-the-rider.html"><span class="number">35</span>What a cat does to the rider</a></li>
+<li class="part">Under the hood</li><li><a href="the-math-layer.html"><span class="number">36</span>The math layer</a></li>
+<li><a href="proving-it.html"><span class="number">37</span>Proving it</a></li>
+<li><a href="the-platform.html"><span class="number">38</span>The platform</a></li>
+<li><a href="zooming-back-out.html"><span class="number">39</span>Zooming back out</a></li>
+</ol>
+</nav>
+<main>
+<p class="book-bar"><a href="index.html">Safari Ride</a> <a href="#chapters">Chapters</a></p>
+<article>
+<p class="chapter-number">Chapter 15</p>
+<h1 id="mountains">Mountains</h1>
+<p>However far the rider goes, the mountains stay as far away as ever. They only turn as the rider turns. So the ride treats them as far scenery: a mountain is just a height at a direction.</p>
+<figure class="widget"><iframe class="canvas-app" src="../frame_widget/?start=mountains" title="Step 1,529 of the ride: the trees, the grass, the sky, and the mountains along the horizon." loading="lazy" style="aspect-ratio: 960 / 600"></iframe><figcaption>Step 1,529 of the ride: the trees, the grass, the sky, and the mountains along the horizon.</figcaption></figure><p>There are two ranges: a high one to the north, with snow on its peaks, and a lower one to the west. In front of both runs a band of low, rolling land, in the grass&#39;s own green.</p>
+<h2 id="directions">Directions <a class="section-link" href="#directions" aria-label="Link to this section">§</a></h2>
+<p>A direction needs a type, and so does a change of direction. <code>Angle.Bearing</code> is a direction in the world, such as north, and <code>Angle.Turn</code> is how far to turn from one direction to another. Both are opaque types around one float, and only the <code>Angle</code> module builds or opens them. Here a <code>Turn</code> is passed where a <code>Bearing</code> belongs:</p>
+<figure class="listing"><figcaption>turn_as_bearing.roc (doesn&#39;t compile)</figcaption><pre><code class="language-roc"><span class="syn-keyword">app</span> [main!] { game: <span class="syn-string">&quot;../../game.roc&quot;</span>, lib: <span class="syn-string">&quot;../../../lib/main.roc&quot;</span> }
+
+<span class="syn-keyword">import</span> game.<span class="syn-type">Angle</span>
+
+<span class="syn-name">main!</span> = |_args| {
+	north = <span class="syn-type">Angle.Bearing</span>.radians(<span class="syn-number">0.0</span>)
+	quarter = <span class="syn-type">Angle.Turn</span>.radians(<span class="syn-number">1.5</span>)
+	echo!(north.turn_from(quarter).to_radians().to_str())
+	<span class="syn-type">Ok</span>({})
+}
+</code></pre></figure><figure class="listing"><figcaption>roc check on turn_as_bearing.roc</figcaption><pre><code class="language-text">── ✗ type mismatch ──────────────────────────────────── turn_as_bearing.roc:8:24
+
+The first argument being passed to this function has the wrong type.
+
+echo!(north.turn_from(quarter).to_radians().to_str())
+                      ^^^^^^^
+
+This argument has the type:
+
+    Angle.Turn
+
+But turn_from needs the first argument to be:
+
+    Angle.Bearing
+
+── 1 error and 0 warnings ────────────────────────────────── turn_as_bearing.roc
+</code></pre></figure><p>The compiler refuses it. A bearing plus a turn is a bearing. The turn from one bearing to another is a turn. The <code>Angle</code> module&#39;s functions keep the two types apart everywhere.</p>
+<h2 id="a-range">A range <a class="section-link" href="#a-range" aria-label="Link to this section">§</a></h2>
+<p>A range is a record:</p>
+<figure class="listing"><figcaption>Skyline.roc</figcaption><pre><code class="language-roc"><span class="syn-comment">## A mountain range: the bearing of its middle, how far it reaches either</span>
+<span class="syn-comment">## side, how far above the horizon it reaches at most, and the two frequencies of the ridges</span>
+<span class="syn-comment">## along it, broad and fine. Each ridge frequency is how many waves would fit</span>
+<span class="syn-comment">## a whole turn.</span>
+<span class="syn-type">MountainRange</span> : {
+	center : <span class="syn-type">Angle.Bearing</span>,
+	half_width : <span class="syn-type">Angle.Turn</span>,
+	height_ceiling : <span class="syn-type">FarRise</span>,
+	broad_ridge_waves : <span class="syn-type">F64</span>,
+	fine_ridge_waves : <span class="syn-type">F64</span>,
+}
+</code></pre></figure><p>Its <code>center</code> is the bearing of its middle, and <code>half_width</code> is the turn from the middle to either end. <code>height_ceiling</code> is how high above the horizon it reaches at most. The two wave counts shape its ridges. A range&#39;s height at a bearing comes from one function:</p>
+<figure class="listing"><figcaption>Skyline.roc</figcaption><pre><code class="language-roc"><span class="syn-name">range_height</span> : <span class="syn-type">MountainRange</span>, <span class="syn-type">Angle.Bearing</span> -&gt; <span class="syn-type">FarHeight</span>
+</code></pre></figure><p>The range is highest in its middle and falls to zero at its ends, and two waves on top of that height make its ridges, with sizes we chose by eye. The rolling land is a little under one wave of its own, all the way round.</p>
+<h2 id="across-the-screen">Across the screen <a class="section-link" href="#across-the-screen" aria-label="Link to this section">§</a></h2>
+<p>To find a range&#39;s outline, the ride goes across the screen two pixels at a time, and asks which bearing each column looks along. The middle of the screen looks along the camera&#39;s heading, and a column to its right looks a little further right, by a turn that comes from the lens. <code>Lens.turn_at_x</code> gives that turn from the column&#39;s place across the screen and the focal length. A column is a record:</p>
+<figure class="listing"><figcaption>Skyline.roc</figcaption><pre><code class="language-roc"><span class="syn-comment">## A column of the skyline: where it is across the screen, the bearing seen</span>
+<span class="syn-comment">## there, and the north range&#39;s height at that bearing, which the north range&#39;s</span>
+<span class="syn-comment">## silhouette and its snow both need. That height is worked out once per column,</span>
+<span class="syn-comment">## from its bearing, by `sky_columns_for`, the one builder of a column.</span>
+<span class="syn-type">SkylineColumn</span> : {
+	x : <span class="syn-type">Pixels</span>,
+	bearing : <span class="syn-type">Angle.Bearing</span>,
+	north_height : <span class="syn-type">FarHeight</span>,
+}
+</code></pre></figure><p>A silhouette is one flat region whose top edge follows the heights along the columns. One function returns a silhouette, whichever range or land it is:</p>
+<figure class="listing"><figcaption>Skyline.roc</figcaption><pre><code class="language-roc"><span class="syn-comment">## A silhouette across the screen, its top at `height_at` each of `sky_columns`</span>
+<span class="syn-comment">## through a lens of `focal_length`, but never below `base_y`, closed along</span>
+<span class="syn-comment">## `base_y`.</span>
+<span class="syn-name">silhouette</span> :
+	<span class="syn-type">List</span>(<span class="syn-type">SkylineColumn</span>),
+	{
+		focal_length : <span class="syn-type">Pixels</span>,
+		height_at : <span class="syn-type">SkylineColumn</span> -&gt; <span class="syn-type">FarHeight</span>,
+		color : <span class="syn-type">RgbColor</span>,
+		base_y : <span class="syn-type">Pixels</span>,
+	} -&gt; <span class="syn-type">Shapes.Shape</span>
+<span class="syn-name">silhouette</span> = |sky_columns, { focal_length, height_at, color, base_y }| {
+	left = <span class="syn-type">Screen</span>.drawn_left
+	right = <span class="syn-type">Screen</span>.drawn_right
+	crest = sky_columns.map(
+		|column| {
+			top_y = <span class="syn-type">Lens</span>.y_for_height({ height: height_at(column), focal_length })
+			{
+				x: column.x,
+				y: <span class="syn-keyword">if</span> top_y &gt; base_y {
+					base_y
+				} <span class="syn-keyword">else</span> {
+					top_y
+				},
+			}
+		},
+	)
+	<span class="syn-type">Shapes</span>.region_from_corners(
+		crest.concat([{ x: right, y: base_y }, { x: left, y: base_y }]),
+		<span class="syn-type">Brush</span>.flat(color),
+	)
+}
+</code></pre></figure><p>The record it takes has a field that holds a function: <code>height_at</code>, which says how high the silhouette stands at a column. A function is a value like any other, so it can sit in a record field. <code>silhouette</code> calls <code>height_at(column)</code> for each column and finds where that height lands on the screen with <code>Lens.y_for_height</code>. A mountain is so far off that its distance drops out: how high it looks depends only on its height above the horizon and the lens. Then <code>silhouette</code> joins the tops into one region closed along <code>base_y</code>, which is the grass&#39;s top for the ranges and the horizon for the land. The <code>if</code> holds the top at <code>base_y</code> or above it.</p>
+<h2 id="back-to-front">Back to front <a class="section-link" href="#back-to-front" aria-label="Link to this section">§</a></h2>
+<p><code>Skyline.skyline_shapes</code> calls <code>silhouette</code> three times, with a different <code>height_at</code> each time, and returns the results back to front, in the order they&#39;re painted: the west range, the north range, the north&#39;s snow, then the land:</p>
+<figure class="listing"><figcaption>Skyline.roc</figcaption><pre><code class="language-roc"><span class="syn-comment">## The skyline, back to front, for a camera facing `heading` through a lens</span>
+<span class="syn-comment">## of `focal_length`: the west range, the north range, the north&#39;s snow, then the</span>
+<span class="syn-comment">## land. `darkness` is how far the sky has darkened, and the rock and snow</span>
+<span class="syn-comment">## darken as far.</span>
+<span class="syn-name">skyline_shapes</span> : { heading : <span class="syn-type">Angle.Bearing</span>, focal_length : <span class="syn-type">Pixels</span>, .. },
+{
+	darkness : <span class="syn-type">Fraction</span>,
+} -&gt; <span class="syn-type">List</span>(<span class="syn-type">Shapes.Shape</span>)
+<span class="syn-name">skyline_shapes</span> = |aim, { darkness }| {
+	sky_columns = sky_columns_for(aim)
+	snow_shapes =
+		<span class="syn-keyword">match</span> snow_shape(
+			sky_columns,
+			{ focal_length: aim.focal_length, color: snow_color(darkness) },
+		) {
+			<span class="syn-type">Ok</span>(snow) =&gt; [snow]
+			<span class="syn-type">Err</span>(<span class="syn-type">NoSnow</span>) =&gt; []
+		}
+	[
+		[
+			silhouette(
+				sky_columns,
+				{
+					focal_length: aim.focal_length,
+					height_at: |column| <span class="syn-type">Skyline</span>.west_range_height(column.bearing),
+					color: <span class="syn-type">Sky</span>.color_at_darkness(west_rock, darkness),
+					base_y: range_base_y,
+				},
+			),
+			silhouette(
+				sky_columns,
+				{
+					focal_length: aim.focal_length,
+					height_at: |column| column.north_height,
+					color: <span class="syn-type">Sky</span>.color_at_darkness(north_rock, darkness),
+					base_y: range_base_y,
+				},
+			),
+		],
+		snow_shapes,
+		[
+			silhouette(
+				sky_columns,
+				{
+					focal_length: aim.focal_length,
+					height_at: |column| <span class="syn-type">Skyline</span>.land_height(column.bearing),
+					color: <span class="syn-type">Grass</span>.grass_color_at(darkness),
+					base_y: land_base_y,
+				},
+			),
+		],
+	].join()
+}
+</code></pre></figure><p><code>aim</code> is the camera, as far as the skyline needs it. The <code>..</code> in its type, <code>{ heading : …, focal_length : …, .. }</code>, means the record may hold more fields, and this function reads just these two.</p>
+<p>Each <code>height_at</code> is an anonymous function written in place. The west range&#39;s asks <code>west_range_height</code> for the column&#39;s bearing. The north range&#39;s reads the height the column already holds, since the snow needs it too. The land&#39;s asks <code>land_height</code>. The snow is a <code>Try</code>: when too little of it shows on the screen, it&#39;s <code>Err(NoSnow)</code>, and the <code>match</code> gives an empty list.</p>
+<p>At dusk the rock darkens through <code>Sky.color_at_darkness</code>, as the grass does, and the land takes the grass&#39;s own color. The snow goes blue, through the same blend the sky uses:</p>
+<figure class="listing"><figcaption>Skyline.roc</figcaption><pre><code class="language-roc"><span class="syn-name">snow_color</span> : <span class="syn-type">Fraction</span> -&gt; <span class="syn-type">RgbColor</span>
+<span class="syn-name">snow_color</span> = |darkness| <span class="syn-type">ColorShade</span>.color_between({
+	from: snow_day,
+	to: snow_night,
+	fraction: darkness,
+})
+</code></pre></figure><p>The mountains are far scenery: they turn with the rider and stay as far away as ever. Next comes the road.</p>
+
+</article>
+<nav class="turn-page" aria-label="Previous and next chapter">
+<a rel="prev" href="the-sky.html"><small>Previous</small>The sky and the grass</a>
+<a rel="next" href="the-road.html"><small>Next</small>The road</a>
+</nav>
+</main>
+<script src="embed.js"></script>
+</body>
+</html>

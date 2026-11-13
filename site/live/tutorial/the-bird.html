@@ -1,0 +1,239 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>The bird · Safari Ride</title>
+<link rel="icon" href="data:,">
+<link rel="stylesheet" href="book.css">
+<script src="book.js" defer></script>
+</head>
+<body class="chapter">
+<header class="top-bar">
+<a class="home-link" href="https://roc.lynrummy.com/">Steve's Roc Apps</a>
+<p class="draft-notice">This is an early draft.</p>
+<a class="repo-link" href="https://github.com/showell/roc-apps">roc-apps on GitHub</a>
+</header>
+<nav class="book-nav" id="chapters" aria-label="Chapters">
+<a class="book-name" href="index.html">Safari Ride</a>
+<ol>
+<li class="part">The big picture</li><li><a href="introduction.html"><span class="number">1</span>Introduction</a></li>
+<li><a href="one-page.html"><span class="number">2</span>One page</a></li>
+<li><a href="the-problem.html"><span class="number">3</span>The problem</a></li>
+<li><a href="platforms-packages-and-modules.html"><span class="number">4</span>Platforms, packages and modules</a></li>
+<li><a href="types.html"><span class="number">5</span>Types</a></li>
+<li><a href="functions.html"><span class="number">6</span>Functions</a></li>
+<li class="part">One frame</li><li><a href="things.html"><span class="number">7</span>Things</a></li>
+<li><a href="billboard-critters.html"><span class="number">8</span>Tag unions: billboard critters</a></li>
+<li><a href="shapes.html"><span class="number">9</span>Shapes</a></li>
+<li><a href="a-far-tree.html"><span class="number">10</span>Lists and map: a far tree</a></li>
+<li><a href="the-pipeline.html"><span class="number">11</span>The pipeline</a></li>
+<li><a href="asking-a-kind.html"><span class="number">12</span>Where clauses: asking a kind</a></li>
+<li><a href="refused.html"><span class="number">13</span>Errors as tag unions</a></li>
+<li class="category">Nature</li><li><a href="the-sky.html"><span class="number">14</span>The sky and the grass</a></li>
+<li><a href="mountains.html"><span class="number">15</span>Mountains</a></li>
+<li class="category">Man-made</li><li><a href="the-road.html"><span class="number">16</span>The road</a></li>
+<li><a href="rails.html"><span class="number">17</span>Rails</a></li>
+<li><a href="radio-towers.html"><span class="number">18</span>Radio towers</a></li>
+<li class="category">Critters that stand still</li><li><a href="herds.html"><span class="number">19</span>Herds</a></li>
+<li class="part">Motion</li><li><a href="a-flip-book.html"><span class="number">20</span>Immutable values: a flip book</a></li>
+<li><a href="records.html"><span class="number">21</span>Records</a></li>
+<li><a href="pure-functions-and-effects.html"><span class="number">22</span>Pure functions and effects</a></li>
+<li><a href="the-clock.html"><span class="number">23</span>Opaque types: the clock</a></li>
+<li><a href="the-ride-instant.html"><span class="number">24</span>The ride instant</a></li>
+<li class="category">The passage of time</li><li><a href="the-beacons.html"><span class="number">25</span>The beacons</a></li>
+<li><a href="the-setting-sun.html"><span class="number">26</span>The setting sun</a></li>
+<li class="category">Vehicles</li><li><a href="the-rider.html"><span class="number">27</span>The rider</a></li>
+<li><a href="the-throttle.html"><span class="number">28</span>The throttle</a></li>
+<li><a href="rehearsal.html"><span class="number">29</span>Variables and loops: rehearsal</a></li>
+<li><a href="the-riders-gaze.html"><span class="number">30</span>The rider&#39;s gaze</a></li>
+<li><a href="the-truck.html"><span class="number">31</span>The truck</a></li>
+<li><a href="the-trucks-motion.html"><span class="number">32</span>The truck&#39;s motion</a></li>
+<li class="category">Critter motion</li><li><a href="the-cat.html"><span class="number">33</span>The cat</a></li>
+<li class="here"><a href="the-bird.html"><span class="number">34</span>The bird</a><ol class="sections"><li><a href="the-bird.html#the-same-plan">The same plan</a></li><li><a href="the-bird.html#its-poses">Its poses</a></li><li><a href="the-bird.html#its-path">Its path</a></li><li><a href="the-bird.html#finding-its-trees">Finding its trees</a></li><li><a href="the-bird.html#into-the-frame">Into the frame</a></li></ol></li>
+<li><a href="what-a-cat-does-to-the-rider.html"><span class="number">35</span>What a cat does to the rider</a></li>
+<li class="part">Under the hood</li><li><a href="the-math-layer.html"><span class="number">36</span>The math layer</a></li>
+<li><a href="proving-it.html"><span class="number">37</span>Proving it</a></li>
+<li><a href="the-platform.html"><span class="number">38</span>The platform</a></li>
+<li><a href="zooming-back-out.html"><span class="number">39</span>Zooming back out</a></li>
+</ol>
+</nav>
+<main>
+<p class="book-bar"><a href="index.html">Safari Ride</a> <a href="#chapters">Chapters</a></p>
+<article>
+<p class="chapter-number">Chapter 34</p>
+<h1 id="the-bird">The bird</h1>
+<p>A bird sits on a treetop by the road. As the rider comes near, it takes off, flies across the road and ahead, and lands on a tree on the far side. The bird is Roc&#39;s logo, and it moves the way the cat does: one plan, a stage from the clock, and a timeline of frames.</p>
+<figure class="widget"><iframe class="canvas-app" src="../bird_widget/" title="Press play and watch the bird fly." loading="lazy" style="aspect-ratio: 640 / 360"></iframe><figcaption>Press play and watch the bird fly.</figcaption></figure><p>The picture&#39;s camera stays put, 18 metres short of the first tree, and the gap counts down as if a rider were coming at 1.25 metres a step. The bird leaves its perch, a treetop 6.4 metres up, at a gap of 60 metres. It rises to 10.7 metres up in the middle of its flight, and lands on a treetop 4.9 metres up at 15.</p>
+<h2 id="the-same-plan">The same plan <a class="section-link" href="#the-same-plan" aria-label="Link to this section">§</a></h2>
+<p>The ride plans a flight as it plans a crossing: once, when the rider first comes within reach. A flight is 36 frames, and <code>flight_span</code> sets it to end when a rider keeping their speed would be 15 metres short of the tree the bird left. So the rider sees the bird land before passing that tree:</p>
+<figure class="listing"><figcaption>BirdFlight.roc</figcaption><pre><code class="language-roc"><span class="syn-comment">## What the ride plans a flight by: its length, and the gap from the rider</span>
+<span class="syn-comment">## to the tree it left at which it has landed.</span>
+<span class="syn-name">flight_span</span> : <span class="syn-type">EncounterPlan.StepSpan</span>
+<span class="syn-name">flight_span</span> = { length: <span class="syn-type">Steps</span>.of_count(flight_frames.len()), ends_at: landing_gap }
+</code></pre></figure><p>A faster rider sets the bird off farther away:</p>
+<table>
+<thead>
+<tr>
+<th>Rider&#39;s speed</th>
+<th>The flight starts at a gap of</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>1 metre a step</td>
+<td>51 metres</td>
+</tr>
+<tr>
+<td>1.25 metres a step</td>
+<td>60 metres</td>
+</tr>
+<tr>
+<td>2 metres a step</td>
+<td>87 metres</td>
+</tr>
+</tbody>
+</table>
+<p>Each segment holds one encounter at most: a cat crossing, a bird&#39;s flight, or a quiet road. One function finds the stage of whichever it is, with that animal&#39;s own length:</p>
+<figure class="listing"><figcaption>Encounter.roc</figcaption><pre><code class="language-roc"><span class="syn-comment">## Where `encounter`&#39;s animation, started by `plan`, has got to with the</span>
+<span class="syn-comment">## ride&#39;s clock at `now`, as long as its span lasts. A quiet road has nothing</span>
+<span class="syn-comment">## to wait for, so it stays `Waiting`.</span>
+<span class="syn-name">encounter_stage</span> : <span class="syn-type">Encounter</span>, { plan : <span class="syn-type">EncounterPlan</span>, now : <span class="syn-type">Clock</span> } -&gt; <span class="syn-type">Animation.Stage</span>
+<span class="syn-name">encounter_stage</span> = |encounter, { plan, now }|
+	<span class="syn-keyword">match</span> encounter.encounter_span() {
+		<span class="syn-type">Ok</span>({ span, .. }) =&gt; plan.stage_at({ now, length: span.length })
+		<span class="syn-type">Err</span>(<span class="syn-type">QuietRoad</span>) =&gt; <span class="syn-type">Waiting</span>
+	}
+</code></pre></figure><p><code>encounter_span</code> returns the cat&#39;s span or the bird&#39;s, and <code>{ span, .. }</code> takes its <code>span</code> field. A quiet road stays <code>Waiting</code> for good.</p>
+<h2 id="its-poses">Its poses <a class="section-link" href="#its-poses" aria-label="Link to this section">§</a></h2>
+<p>A bird&#39;s pose can carry a tag of its own. Side on or seen from behind, its wings are up or down, so those two tags carry a <code>WingBeat</code>:</p>
+<figure class="listing"><figcaption>BirdFlight.roc</figcaption><pre><code class="language-roc"><span class="syn-comment">## Where the wings are in a beat.</span>
+<span class="syn-type">WingBeat</span> : [<span class="syn-type">WingsUp</span>, <span class="syn-type">WingsDown</span>]
+</code></pre></figure><figure class="listing"><figcaption>BirdFlight.roc</figcaption><pre><code class="language-roc"><span class="syn-comment">## How the bird looks: sitting; side on as it takes off; seen from behind</span>
+<span class="syn-comment">## as it flies off; and dropping onto its tree.</span>
+<span class="syn-type">BirdPose</span> : [
+	<span class="syn-type">Perched</span>,
+	<span class="syn-type">Side</span>(<span class="syn-type">BirdFlight.WingBeat</span>),
+	<span class="syn-type">Away</span>(<span class="syn-type">BirdFlight.WingBeat</span>),
+	<span class="syn-type">Diving</span>,
+]
+</code></pre></figure><p>A flight&#39;s 36 frames come in three runs:</p>
+<table>
+<thead>
+<tr>
+<th>Frames</th>
+<th>What the bird does</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>1 to 4</td>
+<td>one flap, side on</td>
+</tr>
+<tr>
+<td>5 to 32</td>
+<td>seven flaps, seen from behind</td>
+</tr>
+<tr>
+<td>33 to 36</td>
+<td>dives</td>
+</tr>
+</tbody>
+</table>
+<p>Before the first frame the bird sits on the tree it leaves, and after the last it sits on the tree it lands on. The poses are one list, built from the three runs:</p>
+<figure class="listing"><figcaption>BirdFlight.roc</figcaption><pre><code class="language-roc"><span class="syn-comment">## How the bird looks through a flight, a frame a step: a flap side on as it</span>
+<span class="syn-comment">## takes off, seven flaps seen from behind, and a flap&#39;s length of diving. The</span>
+<span class="syn-comment">## seven is chosen by eye.</span>
+<span class="syn-name">flight_poses</span> : <span class="syn-type">List</span>(<span class="syn-type">BirdFlight.BirdPose</span>)
+<span class="syn-name">flight_poses</span> = [
+	flap_poses({ up: <span class="syn-type">Side</span>(<span class="syn-type">WingsUp</span>), down: <span class="syn-type">Side</span>(<span class="syn-type">WingsDown</span>) }),
+	<span class="syn-type">List</span>.repeat(flap_poses({ up: <span class="syn-type">Away</span>(<span class="syn-type">WingsUp</span>), down: <span class="syn-type">Away</span>(<span class="syn-type">WingsDown</span>) }), <span class="syn-number">7</span>).join(),
+	<span class="syn-type">List</span>.repeat(<span class="syn-type">Diving</span>, <span class="syn-number">2</span> * frames_a_half_flap),
+].join()
+</code></pre></figure><p>Each frame is a pose, and how far through the flight it is:</p>
+<figure class="listing"><figcaption>BirdFlight.roc</figcaption><pre><code class="language-roc"><span class="syn-comment">## One frame of any flight before it is put between two trees: how the bird</span>
+<span class="syn-comment">## looks, and how far through the flight it is.</span>
+<span class="syn-type">FlightFrame</span> : { pose : <span class="syn-type">BirdFlight.BirdPose</span>, through : <span class="syn-type">Fraction</span> }
+</code></pre></figure><figure class="listing"><figcaption>BirdFlight.roc</figcaption><pre><code class="language-roc"><span class="syn-comment">## The frames of any flight, one a step: `flight_poses`, each as far through</span>
+<span class="syn-comment">## the flight as its place in the list, from the start at the first to the end</span>
+<span class="syn-comment">## at the last. Both the flight&#39;s length and its timeline come from this one</span>
+<span class="syn-comment">## list, so the two can&#39;t disagree.</span>
+<span class="syn-name">flight_frames</span> : <span class="syn-type">List</span>(<span class="syn-type">FlightFrame</span>)
+<span class="syn-name">flight_frames</span> = {
+	last_frame = (flight_poses.len() - <span class="syn-number">1</span>).to_f64()
+	flight_poses.map_with_index(
+		|pose, frame| { pose, through: <span class="syn-type">Fraction</span>.of(frame.to_f64() / last_frame) },
+	)
+}
+</code></pre></figure><p>The first frame is 0 of the way through, and the last is all of it. <code>map_with_index</code> passes each pose along with its place in the list, and that place over the last frame&#39;s place is the frame&#39;s share of the way.</p>
+<h2 id="its-path">Its path <a class="section-link" href="#its-path" aria-label="Link to this section">§</a></h2>
+<p>A <code>BirdFlight</code> is a record of two trees, <code>from</code> and <code>to</code>. Its timeline is the same <code>Animation.Timeline</code> as the cat&#39;s, with a <code>FlightFrame</code> for each frame and a <code>BirdPose</code> for each pose:</p>
+<figure class="listing"><figcaption>BirdFlight.roc</figcaption><pre><code class="language-roc"><span class="syn-comment">## The whole of a flight: `flight_frames`, on one smooth path that rises in</span>
+<span class="syn-comment">## the middle, from the tip of the tree it leaves to the tip of the one it</span>
+<span class="syn-comment">## lands on.</span>
+<span class="syn-name">flight_timeline</span> : <span class="syn-type">BirdFlight</span> -&gt; <span class="syn-type">Animation.Timeline</span>(<span class="syn-type">FlightFrame</span>, <span class="syn-type">BirdFlight.BirdPose</span>)
+<span class="syn-name">flight_timeline</span> = |{ from, to }| {
+	ends = { from: tree_top(from), to: tree_top(to) }
+	<span class="syn-type">Animation.Timeline</span>.of({
+		before: sitting_on(from),
+		frames: flight_frames,
+		frame_instant: |{ pose, through }| {
+			pose,
+			location: flight_location({ from: ends.from, to: ends.to, through }),
+		},
+		after: sitting_on(to),
+	})
+}
+</code></pre></figure><p>The path runs between the two treetops, eased at each end, and rises in an arc 5 metres high at the middle:</p>
+<figure class="listing"><figcaption>BirdFlight.roc</figcaption><pre><code class="language-roc"><span class="syn-comment">## The location `through` a flight between `from` and `to`, easing out and in along</span>
+<span class="syn-comment">## a straight line, and raised by an arc over it.</span>
+<span class="syn-name">flight_location</span> : {
+	from : <span class="syn-type">Animation.Location</span>,
+	to : <span class="syn-type">Animation.Location</span>,
+	through : <span class="syn-type">Fraction</span>,
+} -&gt; <span class="syn-type">Animation.Location</span>
+<span class="syn-name">flight_location</span> = |{ from, to, through }| {
+	on_line = <span class="syn-type">Animation</span>.location_between({ from, to, fraction: <span class="syn-type">Easing</span>.smoothstep(through) })
+	share = through.to_f64()
+	<span class="syn-comment"># 4t(1 - t) is 0 at both ends and 1 halfway, so the arc tops out at `flight_arc`.</span>
+	above_line = flight_arc.times(<span class="syn-number">4.0</span> * share * (<span class="syn-number">1.0</span> - share))
+	{ ..on_line, lift: on_line.lift.plus(above_line) }
+}
+</code></pre></figure><p><code>Easing.smoothstep</code> turns a share of the way into one that moves slowly at each end and faster in the middle, so the bird eases away from one tree and into the next. For <code>t</code>, the share of the way through, <code>4t(1 − t)</code> is 0 at both ends and 1 halfway, so the arc starts and ends at the treetops. The last line is a record update: the point on the line, with its lift raised.</p>
+<h2 id="finding-its-trees">Finding its trees <a class="section-link" href="#finding-its-trees" aria-label="Link to this section">§</a></h2>
+<p>A segment gets its bird once, when the world is built. The bird perches on the fifth tree on the left, and flies to the first tree on the far side at least 25 metres farther along:</p>
+<figure class="listing"><figcaption>BirdFlight.roc</figcaption><pre><code class="language-roc"><span class="syn-comment">## The flight of a bird perched on the tree at `perch`, among a segment&#39;s</span>
+<span class="syn-comment">## `trees`: to the first tree on the other side of the road far enough along.</span>
+<span class="syn-name">flight_from</span> : <span class="syn-type">List</span>(<span class="syn-type">Trees.RoadsideTree</span>), <span class="syn-type">Trees.RoadsideTree</span> -&gt; <span class="syn-type">Try</span>(<span class="syn-type">BirdFlight</span>, [<span class="syn-type">NoTreeToFlyTo</span>])
+<span class="syn-name">flight_from</span> = |trees, perch| {
+	is_far_enough = |tree| tree.road_point.along &gt;= perch.road_point.along.plus(shortest_hop)
+	is_landing_tree = |tree| is_far_side(tree) <span class="syn-keyword">and</span> is_far_enough(tree)
+	to = trees.find_first(is_landing_tree) ? |<span class="syn-type">NotFound</span>| <span class="syn-type">NoTreeToFlyTo</span>
+	<span class="syn-type">Ok</span>(<span class="syn-type">BirdFlight</span>.({ from: perch, to }))
+}
+</code></pre></figure><p><code>find_first</code> returns a <code>Try</code>. The <code>?</code> takes the tree it found, or returns the failure from <code>flight_from</code>, renamed to the bird&#39;s own, <code>NoTreeToFlyTo</code>, as in the <a class="chapter-link" href="refused.html">“Errors as tag unions”</a> chapter. The bird always starts on the left because its perched and side-on stills face right, so on a left tree it faces the road.</p>
+<p>The segment puts the perch and the flight together:</p>
+<figure class="listing"><figcaption>Segment.roc, in from_choices</figcaption><pre><code class="language-roc"><span class="syn-comment"># ...</span>
+<span class="syn-type">BirdHere</span> =&gt; {
+	perch =
+		fifth_left_tree(trees)
+			?? <span class="syn-keyword">crash</span> <span class="syn-string">&quot;Segment.from_choices: a segment planned with a bird has a tree for it to start on&quot;</span>
+	flight =
+		<span class="syn-type">BirdFlight</span>.flight_from(trees, perch)
+			?? <span class="syn-keyword">crash</span> <span class="syn-string">&quot;Segment.from_choices: a segment planned with a bird has a tree for it to fly to&quot;</span>
+	<span class="syn-type">BirdHere</span>(flight)
+	<span class="syn-comment"># ...</span>
+</code></pre></figure><p>The route&#39;s plan for the segment says <code>BirdHere</code>, a bare tag, and the segment&#39;s own encounter holds <code>BirdHere(flight)</code>, the flight itself. The route plans a bird only on a segment with both trees, so every bird&#39;s segment holds both: an invariant. <code>??</code> opens a <code>Try</code> another way: it takes the value from an <code>Ok</code>, and for an <code>Err</code> it runs the expression on its right instead. Here that&#39;s a <code>crash</code>, which enforces the invariant with its own message for each tree.</p>
+<h2 id="into-the-frame">Into the frame <a class="section-link" href="#into-the-frame" aria-label="Link to this section">§</a></h2>
+<p>The bird reaches the frame as the cat does, with a <code>Bird</code> as its kind. The rider&#39;s own segment plays its flight, and a bird on a segment ahead sits on its perch. A perched bird stands exactly at its tree&#39;s top, at the same depth as the tree. The scene paints trees before birds when depths tie, so the bird shows on top of its tree.</p>
+<p>The bird is there to be seen. Its whole cost to the ride is a list of poses, a path, and a still for each pose. A cat costs more, because the rider reacts to it.</p>
+
+</article>
+<nav class="turn-page" aria-label="Previous and next chapter">
+<a rel="prev" href="the-cat.html"><small>Previous</small>The cat</a>
+<a rel="next" href="what-a-cat-does-to-the-rider.html"><small>Next</small>What a cat does to the rider</a>
+</nav>
+</main>
+<script src="embed.js"></script>
+</body>
+</html>

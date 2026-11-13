@@ -1,0 +1,151 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>The ride instant · Safari Ride</title>
+<link rel="icon" href="data:,">
+<link rel="stylesheet" href="book.css">
+<script src="book.js" defer></script>
+</head>
+<body class="chapter">
+<header class="top-bar">
+<a class="home-link" href="https://roc.lynrummy.com/">Steve's Roc Apps</a>
+<p class="draft-notice">This is an early draft.</p>
+<a class="repo-link" href="https://github.com/showell/roc-apps">roc-apps on GitHub</a>
+</header>
+<nav class="book-nav" id="chapters" aria-label="Chapters">
+<a class="book-name" href="index.html">Safari Ride</a>
+<ol>
+<li class="part">The big picture</li><li><a href="introduction.html"><span class="number">1</span>Introduction</a></li>
+<li><a href="one-page.html"><span class="number">2</span>One page</a></li>
+<li><a href="the-problem.html"><span class="number">3</span>The problem</a></li>
+<li><a href="platforms-packages-and-modules.html"><span class="number">4</span>Platforms, packages and modules</a></li>
+<li><a href="types.html"><span class="number">5</span>Types</a></li>
+<li><a href="functions.html"><span class="number">6</span>Functions</a></li>
+<li class="part">One frame</li><li><a href="things.html"><span class="number">7</span>Things</a></li>
+<li><a href="billboard-critters.html"><span class="number">8</span>Tag unions: billboard critters</a></li>
+<li><a href="shapes.html"><span class="number">9</span>Shapes</a></li>
+<li><a href="a-far-tree.html"><span class="number">10</span>Lists and map: a far tree</a></li>
+<li><a href="the-pipeline.html"><span class="number">11</span>The pipeline</a></li>
+<li><a href="asking-a-kind.html"><span class="number">12</span>Where clauses: asking a kind</a></li>
+<li><a href="refused.html"><span class="number">13</span>Errors as tag unions</a></li>
+<li class="category">Nature</li><li><a href="the-sky.html"><span class="number">14</span>The sky and the grass</a></li>
+<li><a href="mountains.html"><span class="number">15</span>Mountains</a></li>
+<li class="category">Man-made</li><li><a href="the-road.html"><span class="number">16</span>The road</a></li>
+<li><a href="rails.html"><span class="number">17</span>Rails</a></li>
+<li><a href="radio-towers.html"><span class="number">18</span>Radio towers</a></li>
+<li class="category">Critters that stand still</li><li><a href="herds.html"><span class="number">19</span>Herds</a></li>
+<li class="part">Motion</li><li><a href="a-flip-book.html"><span class="number">20</span>Immutable values: a flip book</a></li>
+<li><a href="records.html"><span class="number">21</span>Records</a></li>
+<li><a href="pure-functions-and-effects.html"><span class="number">22</span>Pure functions and effects</a></li>
+<li><a href="the-clock.html"><span class="number">23</span>Opaque types: the clock</a></li>
+<li class="here"><a href="the-ride-instant.html"><span class="number">24</span>The ride instant</a><ol class="sections"><li><a href="the-ride-instant.html#one-step">One step</a></li><li><a href="the-ride-instant.html#carried-and-derived">Carried and derived</a></li></ol></li>
+<li class="category">The passage of time</li><li><a href="the-beacons.html"><span class="number">25</span>The beacons</a></li>
+<li><a href="the-setting-sun.html"><span class="number">26</span>The setting sun</a></li>
+<li class="category">Vehicles</li><li><a href="the-rider.html"><span class="number">27</span>The rider</a></li>
+<li><a href="the-throttle.html"><span class="number">28</span>The throttle</a></li>
+<li><a href="rehearsal.html"><span class="number">29</span>Variables and loops: rehearsal</a></li>
+<li><a href="the-riders-gaze.html"><span class="number">30</span>The rider&#39;s gaze</a></li>
+<li><a href="the-truck.html"><span class="number">31</span>The truck</a></li>
+<li><a href="the-trucks-motion.html"><span class="number">32</span>The truck&#39;s motion</a></li>
+<li class="category">Critter motion</li><li><a href="the-cat.html"><span class="number">33</span>The cat</a></li>
+<li><a href="the-bird.html"><span class="number">34</span>The bird</a></li>
+<li><a href="what-a-cat-does-to-the-rider.html"><span class="number">35</span>What a cat does to the rider</a></li>
+<li class="part">Under the hood</li><li><a href="the-math-layer.html"><span class="number">36</span>The math layer</a></li>
+<li><a href="proving-it.html"><span class="number">37</span>Proving it</a></li>
+<li><a href="the-platform.html"><span class="number">38</span>The platform</a></li>
+<li><a href="zooming-back-out.html"><span class="number">39</span>Zooming back out</a></li>
+</ol>
+</nav>
+<main>
+<p class="book-bar"><a href="index.html">Safari Ride</a> <a href="#chapters">Chapters</a></p>
+<article>
+<p class="chapter-number">Chapter 24</p>
+<h1 id="the-ride-instant">The ride instant</h1>
+<p>A moment carries four things: the rider, the truck, the clock, and the plan for when the cat or the bird ahead starts to move. A step makes the next moment from this one. This chapter explains that step, then groups the ride&#39;s moving parts by how they change.</p>
+<h2 id="one-step">One step <a class="section-link" href="#one-step" aria-label="Link to this section">§</a></h2>
+<p>Here&#39;s the step, whole:</p>
+<figure class="listing"><figcaption>RideInstant.roc</figcaption><pre><code class="language-roc"><span class="syn-comment">## The instant a step after `instant`. The world and the rider change each</span>
+<span class="syn-comment">## other within one step, in this order. First the rider reads the world as it</span>
+<span class="syn-comment">## stands at the old clock: the stage of the encounter on the rider&#39;s segment.</span>
+<span class="syn-comment">## Then the rider steps, and the clock ticks. Then the world answers the rider</span>
+<span class="syn-comment">## that has just moved. The truck aims at how far along the route this step&#39;s</span>
+<span class="syn-comment">## rider is, and the encounter plan is kept, forgotten at a new segment, or made</span>
+<span class="syn-comment">## from this step&#39;s rider at the new clock. The rider never reads the truck.</span>
+<span class="syn-name">next</span> : <span class="syn-type">Route</span>, <span class="syn-type">RideInstant</span> -&gt; <span class="syn-type">RideInstant</span>
+<span class="syn-name">next</span> = |route, instant| {
+	stage_before = <span class="syn-type">RideInstant</span>.encounter_stage(route, instant)
+	rider = instant.rider.rider_at_next_step({ route, encounter_stage: stage_before })
+	clock = instant.clock.next()
+	rider_place = rider.motorcycle.route_place
+	truck = <span class="syn-type">TruckJourney</span>.truck_progress_at_next_step(
+		instant.truck,
+		{ rider_distance: rider_place.distance_along(route), route },
+	)
+	segment_change =
+		<span class="syn-keyword">if</span> rider_place.segment_index == <span class="syn-type">RideInstant</span>.rider_segment_index(instant) {
+			<span class="syn-type">SameSegment</span>
+		} <span class="syn-keyword">else</span> {
+			<span class="syn-type">NewSegment</span>
+		}
+	encounter_plan = instant.encounter_plan.plan_at_next_step({
+		segment_change,
+		approach: encounter_approach(rider_place.segment_on(route).encounter, rider.motorcycle),
+		now: clock,
+	})
+	{ rider, truck, clock, encounter_plan }
+}
+</code></pre></figure><p><code>next_or_restart</code>, from the <a class="chapter-link" href="a-flip-book.html">“Immutable values: a flip book”</a> chapter, calls this step until the rider reaches the end of the road. The doc comment on <code>next</code> gives the order, and the order matters. The rider moves first, reading where the encounter ahead has got to. Then the clock ticks. Then the world answers the rider who has just moved: the truck aims at how far along the route the rider now is, and <code>plan_at_next_step</code> keeps the encounter plan, drops it at a new segment, or makes one from this step&#39;s rider. The last line puts the four together into the next moment, and the old moment stays as it was.</p>
+<p>The rider reads the encounter as a stage, where its animation has got to:</p>
+<figure class="listing"><figcaption>Animation.roc</figcaption><pre><code class="language-roc"><span class="syn-comment">## Where an animation has got to: not begun, playing and this many steps in,</span>
+<span class="syn-comment">## which is the frame it shows, or over this many steps ago.</span>
+<span class="syn-type">Stage</span> : [<span class="syn-type">Waiting</span>, <span class="syn-type">Playing</span>(<span class="syn-type">Steps</span>), <span class="syn-type">Past</span>(<span class="syn-type">Steps</span>)]
+</code></pre></figure><p><code>Waiting</code> comes before the animation starts, <code>Playing</code> counts the steps in, and <code>Past</code> counts the steps since it ended. The <a class="chapter-link" href="the-cat.html">“The cat”</a> chapter shows how the plan and the clock make one.</p>
+<h2 id="carried-and-derived">Carried and derived <a class="section-link" href="#carried-and-derived" aria-label="Link to this section">§</a></h2>
+<p>Those four fields are all the ride carries from one step to the next. The ride derives everything else in a frame from them and the road, afresh for each frame. So the ride&#39;s moving parts come in three kinds:</p>
+<table>
+<thead>
+<tr>
+<th>Kind</th>
+<th>Things</th>
+<th>How it changes</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Clock-driven</td>
+<td>The sun&#39;s height, the sky, the beacons</td>
+<td>Derived from the clock, and for a beacon its tower</td>
+</tr>
+<tr>
+<td>Stepped</td>
+<td>The rider, the truck</td>
+<td>Carried in the moment, and moved on once a step by its step function</td>
+</tr>
+<tr>
+<td>Rider-driven</td>
+<td>The cat, the bird</td>
+<td>Derived from the clock and the carried plan, which the rider&#39;s approach sets</td>
+</tr>
+</tbody>
+</table>
+<p>The trees and the cows stay put.</p>
+<p><code>Clock.next</code>, <code>Rider.rider_at_next_step</code> and <code>TruckJourney.truck_progress_at_next_step</code> all have the same shape: a value goes in, and the next value comes out. Call that a step function. Set beside the clock-driven kind, stepping has a cost:</p>
+<ul>
+<li>A function of the clock returns the sun at any step, straight away. To find the truck at step 4,000, the ride has to play that far.</li>
+<li>A wrong sky spoils only the frames it touches. A wrong step moves the rider for the rest of the ride.</li>
+<li>The lines of <code>RideInstant.next</code> run in order. Once the moments exist, the platform can paint their frames in any order.</li>
+</ul>
+<p>So the stepped parts need the most care.</p>
+<p>The clock-driven things come next, and the beacons are the simplest of them: they follow the clock and their towers.</p>
+
+</article>
+<nav class="turn-page" aria-label="Previous and next chapter">
+<a rel="prev" href="the-clock.html"><small>Previous</small>Opaque types: the clock</a>
+<a rel="next" href="the-beacons.html"><small>Next</small>The beacons</a>
+</nav>
+</main>
+
+</body>
+</html>

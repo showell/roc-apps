@@ -1,0 +1,266 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Errors as tag unions · Safari Ride</title>
+<link rel="icon" href="data:,">
+<link rel="stylesheet" href="book.css">
+<script src="book.js" defer></script>
+</head>
+<body class="chapter">
+<header class="top-bar">
+<a class="home-link" href="https://roc.lynrummy.com/">Steve's Roc Apps</a>
+<p class="draft-notice">This is an early draft.</p>
+<a class="repo-link" href="https://github.com/showell/roc-apps">roc-apps on GitHub</a>
+</header>
+<nav class="book-nav" id="chapters" aria-label="Chapters">
+<a class="book-name" href="index.html">Safari Ride</a>
+<ol>
+<li class="part">The big picture</li><li><a href="introduction.html"><span class="number">1</span>Introduction</a></li>
+<li><a href="one-page.html"><span class="number">2</span>One page</a></li>
+<li><a href="the-problem.html"><span class="number">3</span>The problem</a></li>
+<li><a href="platforms-packages-and-modules.html"><span class="number">4</span>Platforms, packages and modules</a></li>
+<li><a href="types.html"><span class="number">5</span>Types</a></li>
+<li><a href="functions.html"><span class="number">6</span>Functions</a></li>
+<li class="part">One frame</li><li><a href="things.html"><span class="number">7</span>Things</a></li>
+<li><a href="billboard-critters.html"><span class="number">8</span>Tag unions: billboard critters</a></li>
+<li><a href="shapes.html"><span class="number">9</span>Shapes</a></li>
+<li><a href="a-far-tree.html"><span class="number">10</span>Lists and map: a far tree</a></li>
+<li><a href="the-pipeline.html"><span class="number">11</span>The pipeline</a></li>
+<li><a href="asking-a-kind.html"><span class="number">12</span>Where clauses: asking a kind</a></li>
+<li class="here"><a href="refused.html"><span class="number">13</span>Errors as tag unions</a><ol class="sections"><li><a href="refused.html#an-answer-that-can-fail">An answer that can fail</a></li><li><a href="refused.html#a-test-on-top">A test on top</a></li><li><a href="refused.html#where-the-refusals-stop">Where the refusals stop</a></li><li><a href="refused.html#try-or-crash">Try or crash</a></li></ol></li>
+<li class="category">Nature</li><li><a href="the-sky.html"><span class="number">14</span>The sky and the grass</a></li>
+<li><a href="mountains.html"><span class="number">15</span>Mountains</a></li>
+<li class="category">Man-made</li><li><a href="the-road.html"><span class="number">16</span>The road</a></li>
+<li><a href="rails.html"><span class="number">17</span>Rails</a></li>
+<li><a href="radio-towers.html"><span class="number">18</span>Radio towers</a></li>
+<li class="category">Critters that stand still</li><li><a href="herds.html"><span class="number">19</span>Herds</a></li>
+<li class="part">Motion</li><li><a href="a-flip-book.html"><span class="number">20</span>Immutable values: a flip book</a></li>
+<li><a href="records.html"><span class="number">21</span>Records</a></li>
+<li><a href="pure-functions-and-effects.html"><span class="number">22</span>Pure functions and effects</a></li>
+<li><a href="the-clock.html"><span class="number">23</span>Opaque types: the clock</a></li>
+<li><a href="the-ride-instant.html"><span class="number">24</span>The ride instant</a></li>
+<li class="category">The passage of time</li><li><a href="the-beacons.html"><span class="number">25</span>The beacons</a></li>
+<li><a href="the-setting-sun.html"><span class="number">26</span>The setting sun</a></li>
+<li class="category">Vehicles</li><li><a href="the-rider.html"><span class="number">27</span>The rider</a></li>
+<li><a href="the-throttle.html"><span class="number">28</span>The throttle</a></li>
+<li><a href="rehearsal.html"><span class="number">29</span>Variables and loops: rehearsal</a></li>
+<li><a href="the-riders-gaze.html"><span class="number">30</span>The rider&#39;s gaze</a></li>
+<li><a href="the-truck.html"><span class="number">31</span>The truck</a></li>
+<li><a href="the-trucks-motion.html"><span class="number">32</span>The truck&#39;s motion</a></li>
+<li class="category">Critter motion</li><li><a href="the-cat.html"><span class="number">33</span>The cat</a></li>
+<li><a href="the-bird.html"><span class="number">34</span>The bird</a></li>
+<li><a href="what-a-cat-does-to-the-rider.html"><span class="number">35</span>What a cat does to the rider</a></li>
+<li class="part">Under the hood</li><li><a href="the-math-layer.html"><span class="number">36</span>The math layer</a></li>
+<li><a href="proving-it.html"><span class="number">37</span>Proving it</a></li>
+<li><a href="the-platform.html"><span class="number">38</span>The platform</a></li>
+<li><a href="zooming-back-out.html"><span class="number">39</span>Zooming back out</a></li>
+</ol>
+</nav>
+<main>
+<p class="book-bar"><a href="index.html">Safari Ride</a> <a href="#chapters">Chapters</a></p>
+<article>
+<p class="chapter-number">Chapter 13</p>
+<h1 id="errors-as-tag-unions">Errors as tag unions</h1>
+<p>Every frame, the pipeline tries to sight each thing on the road ahead, and its sighting functions refuse some of them. For a thing behind the camera, a thing the horizon hides or a thing too small to see, the sighting returns an <code>Err</code>. This chapter follows an answer that can fail, up through the functions that ask for it.</p>
+<p>Here are some things from step 1,529 and what their sightings return. <code>right</code> and <code>forward</code> place each thing&#39;s foot from the camera, in metres, and a <code>forward</code> below zero is behind it. A thing less than 0.4 metres in front of the camera, short of what we call its near plane, counts as behind it too:</p>
+<table>
+<thead>
+<tr>
+<th>What it is</th>
+<th><code>right</code></th>
+<th><code>forward</code></th>
+<th>Its sighting</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>The cat, frozen in the road</td>
+<td>0.38</td>
+<td>23.63</td>
+<td>kept</td>
+</tr>
+<tr>
+<td>The nearest tree behind the camera</td>
+<td>-8.09</td>
+<td>-8.36</td>
+<td>out of sight: behind the camera</td>
+</tr>
+<tr>
+<td>The nearest tree the horizon hides, a small one</td>
+<td>-1,433.43</td>
+<td>446.00</td>
+<td>out of sight: below the horizon</td>
+</tr>
+<tr>
+<td>A big tree just past it</td>
+<td>-1,446.07</td>
+<td>473.21</td>
+<td>kept</td>
+</tr>
+<tr>
+<td>The next radio tower</td>
+<td>20.40</td>
+<td>355.61</td>
+<td>kept</td>
+</tr>
+</tbody>
+</table>
+<p>A small tree far off sinks below the horizon, while a taller one just past it still shows its top. The ride&#39;s ground curves on a radius of 100 km, so its horizon is near. Of the 214 trees on the segments in view, 136 are kept, 30 are behind the camera, and 48 are below the horizon. The program returns one answer for every refusal, <code>OutOfSight</code>.</p>
+<p>Each test lives in its own function, and each function asks the one below it first. A radio tower takes two of the tests, the near plane and the horizon, so here&#39;s its stack:</p>
+<figure class="diagram"><svg class="diagram diagram-wide" role="img" aria-label="How a refusal travels" width="314pt" height="264pt"
+ viewBox="0.00 0.00 314.00 264.00" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+<g id="graph0" class="graph" transform="scale(1 1) rotate(0) translate(4 260)">
+<polygon fill="white" stroke="transparent" points="-4,4 -4,-260 310,-260 310,4 -4,4"/>
+<g id="node1" class="node">
+<polygon fill="none" stroke="black" points="226,-256 0,-256 0,-220 226,-220 226,-256"/>
+<text text-anchor="middle" x="113" y="-241.4" font-family="Helvetica,sans-Serif" font-size="12.00">Pipeline.sighting_above_horizon_of</text>
+<text text-anchor="middle" x="113" y="-228.4" font-family="Helvetica,sans-Serif" font-size="12.00">tests the horizon</text>
+</g>
+<g id="node2" class="node">
+<polygon fill="none" stroke="black" points="179.5,-146 46.5,-146 46.5,-110 179.5,-110 179.5,-146"/>
+<text text-anchor="middle" x="113" y="-124.9" font-family="Helvetica,sans-Serif" font-size="12.00">Pipeline.sighting_of</text>
+</g>
+<g id="edge1" class="edge">
+<path fill="none" stroke="black" d="M113,-209.63C113,-189.72 113,-163.38 113,-146.31"/>
+<polygon fill="black" stroke="black" points="109.5,-209.65 113,-219.65 116.5,-209.65 109.5,-209.65"/>
+<text text-anchor="middle" x="168.5" y="-186.2" font-family="Helvetica,sans-Serif" font-size="11.00"> &#160;passes up</text>
+<text text-anchor="middle" x="168.5" y="-174.2" font-family="Helvetica,sans-Serif" font-size="11.00"> &#160;an Err(OutOfSight)</text>
+</g>
+<g id="node3" class="node">
+<polygon fill="none" stroke="black" points="208,-36 18,-36 18,0 208,0 208,-36"/>
+<text text-anchor="middle" x="113" y="-21.4" font-family="Helvetica,sans-Serif" font-size="12.00">RiderView.rider_point_ahead</text>
+<text text-anchor="middle" x="113" y="-8.4" font-family="Helvetica,sans-Serif" font-size="12.00">tests the near plane</text>
+</g>
+<g id="edge2" class="edge">
+<path fill="none" stroke="black" d="M113,-99.63C113,-79.72 113,-53.38 113,-36.31"/>
+<polygon fill="black" stroke="black" points="109.5,-99.65 113,-109.65 116.5,-99.65 109.5,-99.65"/>
+<text text-anchor="middle" x="209.5" y="-76.2" font-family="Helvetica,sans-Serif" font-size="11.00"> &#160;passes up an Err(BehindCamera),</text>
+<text text-anchor="middle" x="209.5" y="-64.2" font-family="Helvetica,sans-Serif" font-size="11.00"> &#160;renamed OutOfSight</text>
+</g>
+</g>
+</svg><svg class="diagram diagram-phone" role="img" aria-label="How a refusal travels" width="309pt" height="208pt"
+ viewBox="0.00 0.00 309.00 208.00" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+<g id="graph0" class="graph" transform="scale(1 1) rotate(0) translate(4 204)">
+<polygon fill="white" stroke="transparent" points="-4,4 -4,-204 305,-204 305,4 -4,4"/>
+<g id="node1" class="node">
+<polygon fill="none" stroke="black" points="216,-200 0,-200 0,-164 216,-164 216,-200"/>
+<text text-anchor="middle" x="108" y="-185.4" font-family="Helvetica,sans-Serif" font-size="12.00">Pipeline.sighting_above_horizon_of</text>
+<text text-anchor="middle" x="108" y="-172.4" font-family="Helvetica,sans-Serif" font-size="12.00">tests the horizon</text>
+</g>
+<g id="node2" class="node">
+<polygon fill="none" stroke="black" points="169.5,-118 46.5,-118 46.5,-82 169.5,-82 169.5,-118"/>
+<text text-anchor="middle" x="108" y="-96.9" font-family="Helvetica,sans-Serif" font-size="12.00">Pipeline.sighting_of</text>
+</g>
+<g id="edge1" class="edge">
+<path fill="none" stroke="black" d="M108,-153.43C108,-141.68 108,-128.33 108,-118.05"/>
+<polygon fill="black" stroke="black" points="104.5,-153.64 108,-163.64 111.5,-153.64 104.5,-153.64"/>
+<text text-anchor="middle" x="163.5" y="-144.2" font-family="Helvetica,sans-Serif" font-size="11.00"> &#160;passes up</text>
+<text text-anchor="middle" x="163.5" y="-132.2" font-family="Helvetica,sans-Serif" font-size="11.00"> &#160;an Err(OutOfSight)</text>
+</g>
+<g id="node3" class="node">
+<polygon fill="none" stroke="black" points="198,-36 18,-36 18,0 198,0 198,-36"/>
+<text text-anchor="middle" x="108" y="-21.4" font-family="Helvetica,sans-Serif" font-size="12.00">RiderView.rider_point_ahead</text>
+<text text-anchor="middle" x="108" y="-8.4" font-family="Helvetica,sans-Serif" font-size="12.00">tests the near plane</text>
+</g>
+<g id="edge2" class="edge">
+<path fill="none" stroke="black" d="M108,-71.43C108,-59.68 108,-46.33 108,-36.05"/>
+<polygon fill="black" stroke="black" points="104.5,-71.64 108,-81.64 111.5,-71.64 104.5,-71.64"/>
+<text text-anchor="middle" x="204.5" y="-62.2" font-family="Helvetica,sans-Serif" font-size="11.00"> &#160;passes up an Err(BehindCamera),</text>
+<text text-anchor="middle" x="204.5" y="-50.2" font-family="Helvetica,sans-Serif" font-size="11.00"> &#160;renamed OutOfSight</text>
+</g>
+</g>
+</svg><figcaption>How a refusal travels</figcaption></figure><h2 id="an-answer-that-can-fail">An answer that can fail <a class="section-link" href="#an-answer-that-can-fail" aria-label="Link to this section">§</a></h2>
+<p>A sighting function&#39;s answer is a <code>Try</code>, Roc&#39;s type for an answer that can fail. A <code>Try</code> is one of two tags: <code>Ok</code>, holding the answer, or <code>Err</code>, holding a tag that says what went wrong. Here&#39;s the first sighting function, whole:</p>
+<figure class="listing"><figcaption>Pipeline.roc</figcaption><pre><code class="language-roc"><span class="syn-comment">## `placed` as a camera at `vantage` sees it, on the segment that lies at</span>
+<span class="syn-comment">## `from_rider`, if it is at or past the camera&#39;s near plane.</span>
+<span class="syn-name">sighting_of</span> : <span class="syn-type">Geom.Placed</span>(kind),
+{
+	road : <span class="syn-type">RoadAhead.RoadView</span>,
+	vantage : <span class="syn-type">Geom.Vantage</span>,
+	from_rider : <span class="syn-type">SegmentFromRider</span>,
+} -&gt; <span class="syn-type">Try</span>(<span class="syn-type">Pipeline.Sighted</span>(kind), [<span class="syn-type">OutOfSight</span>])
+<span class="syn-name">sighting_of</span> = |placed, { road, vantage, from_rider }| {
+	road_point = placed.road_point
+	rider_point = <span class="syn-type">RoadAhead</span>.rider_point_at(road, { vantage, from_rider, road_point })
+	foot = <span class="syn-type">RiderView</span>.rider_point_ahead(rider_point) ? |<span class="syn-type">BehindCamera</span>| <span class="syn-type">OutOfSight</span>
+	road_heading = <span class="syn-type">RoadAhead</span>.road_heading_at(road, { vantage, from_rider, road_point })
+	spot = <span class="syn-type">Spot</span>.at({ lift: placed.lift, foot, road_heading })
+	<span class="syn-type">Ok</span>({ spot, kind: placed.kind })
+}
+</code></pre></figure><p>Its type ends in <code>Try(Pipeline.Sighted(kind), [OutOfSight])</code>: a sighting, or <code>OutOfSight</code>. The last line wraps the spot and the kind in an <code>Ok</code>.</p>
+<p><code>RiderView.rider_point_ahead</code> gives back a <code>Try</code> of its own, and the <code>?</code> after it handles both answers. When the answer is an <code>Ok</code>, the <code>?</code> unwraps it, and <code>foot</code> is the point ahead. When it&#39;s an <code>Err</code>, the <code>?</code> ends <code>sighting_of</code> and gives back an <code>Err</code>. So every line after the <code>?</code> runs only for a thing in front of the camera.</p>
+<p><code>rider_point_ahead</code> takes a point seen from the rider, and its refusal says what&#39;s wrong with that point:</p>
+<figure class="listing"><figcaption>RiderView.roc</figcaption><pre><code class="language-roc"><span class="syn-name">rider_point_ahead</span> : <span class="syn-type">RiderView.RiderPoint</span> -&gt; <span class="syn-type">Try</span>(<span class="syn-type">RiderView.RiderPointAhead</span>, [<span class="syn-type">BehindCamera</span>])
+</code></pre></figure><p>A sighting&#39;s callers treat every refusal alike, as out of sight. So the <code>?</code> has a function after it, <code>|BehindCamera| OutOfSight</code>, and the <code>Err</code>&#39;s tag goes through that function on its way up. The function&#39;s argument is written as the tag itself, a pattern like the ones a <code>match</code> lists.</p>
+<h2 id="a-test-on-top">A test on top <a class="section-link" href="#a-test-on-top" aria-label="Link to this section">§</a></h2>
+<p>The next function asks <code>sighting_of</code> first, then makes a test of its own:</p>
+<figure class="listing"><figcaption>Pipeline.roc</figcaption><pre><code class="language-roc"><span class="syn-comment">## The sighting of `placed` on the segment at `from_rider`, if some of it shows</span>
+<span class="syn-comment">## over the horizon: its top, its kind&#39;s height above its lift and lowered</span>
+<span class="syn-comment">## by the ground&#39;s drop, is not hidden behind the curve of the ground. Every</span>
+<span class="syn-comment">## kind with a height takes this test here.</span>
+<span class="syn-name">sighting_above_horizon_of</span> : <span class="syn-type">Geom.Placed</span>(kind),
+{
+	road : <span class="syn-type">RoadAhead.RoadView</span>,
+	vantage : <span class="syn-type">Geom.Vantage</span>,
+	from_rider : <span class="syn-type">SegmentFromRider</span>,
+} -&gt; <span class="syn-type">Try</span>(<span class="syn-type">Pipeline.Sighted</span>(kind), [<span class="syn-type">OutOfSight</span>])
+	<span class="syn-keyword">where</span> [kind.scenery_height : kind -&gt; <span class="syn-type">Distance</span>]
+<span class="syn-name">sighting_above_horizon_of</span> = |placed, { road, vantage, from_rider }| {
+	sighting = sighting_of(placed, { road, vantage, from_rider })?
+	spot = sighting.spot
+	top = spot.lift().plus(placed.kind.scenery_height()).minus(spot.drop())
+	<span class="syn-keyword">if</span> <span class="syn-type">EarthCurve</span>.is_below_horizon({ point: spot.foot().to_rider(), top }) {
+		<span class="syn-type">Err</span>(<span class="syn-type">OutOfSight</span>)
+	} <span class="syn-keyword">else</span> {
+		<span class="syn-type">Ok</span>(sighting)
+	}
+}
+</code></pre></figure><p>The first line asks <code>sighting_of</code>, and its plain <code>?</code> passes an <code>Err(OutOfSight)</code> straight up. Then the function tests the horizon, with the kind&#39;s height from its <code>where</code> line, as in the <a class="chapter-link" href="asking-a-kind.html">“Where clauses: asking a kind”</a> chapter. <code>drop()</code> is how far the curving ground has dropped below level at the thing&#39;s foot. The function gives back the same tag for its own refusal, so both functions have the same type after the arrow.</p>
+<p><code>Pipeline.scenery_sighting_of</code> stacks one more test on top in the same way: a thing that would stand under 2 pixels tall on the screen is out of sight too. The trees, the billboards, the cat and the bird take all three tests. A radio tower is kept however small it looks, so it&#39;s sighted by <code>sighting_above_horizon_of</code>.</p>
+<h2 id="where-the-refusals-stop">Where the refusals stop <a class="section-link" href="#where-the-refusals-stop" aria-label="Link to this section">§</a></h2>
+<p>A segment holds many trees, so its sighting module asks for each tree&#39;s sighting and keeps the ones that come back:</p>
+<figure class="listing"><figcaption>TreeSighting.roc</figcaption><pre><code class="language-roc"><span class="syn-comment">## The trees in view on a segment in view.</span>
+<span class="syn-name">segment_trees</span> : <span class="syn-type">RoadAhead.RoadView</span>,
+{
+	camera : <span class="syn-type">Pipeline.SightingCamera</span>,
+	in_view : <span class="syn-type">RoadAhead.SegmentInView</span>,
+} -&gt; <span class="syn-type">List</span>(<span class="syn-type">Pipeline.Sighted</span>(<span class="syn-type">Conifer</span>))
+<span class="syn-name">segment_trees</span> = |road, { camera, in_view }|
+	in_view.segment.trees.keep_oks(
+		|tree| <span class="syn-type">Pipeline</span>.scenery_sighting_of(tree, { road, camera, from_rider: in_view.from_rider }),
+	)
+</code></pre></figure><p><code>keep_oks</code> calls the function it&#39;s given on each item of a list, keeps the <code>Ok</code> values, and drops the <code>Err</code>s. So <code>segment_trees</code> gives back a plain list of sightings, and the refusals stop there.</p>
+<p>There&#39;s one truck, so <code>Scene</code> matches on its answer instead:</p>
+<figure class="listing"><figcaption>Scene.roc</figcaption><pre><code class="language-roc"><span class="syn-comment">## The truck&#39;s renderings: one when its sighting kept it, and an empty list</span>
+<span class="syn-comment">## when it is out of sight.</span>
+<span class="syn-name">truck_renderings</span> : <span class="syn-type">TruckSighting.TruckFate</span>, <span class="syn-type">Sprite.LensAndLight</span> -&gt; <span class="syn-type">List</span>(<span class="syn-type">Rendered</span>)
+<span class="syn-name">truck_renderings</span> = |fate, lens_and_light|
+	<span class="syn-keyword">match</span> fate {
+		<span class="syn-type">Ok</span>(truck) =&gt; [<span class="syn-type">Pipeline</span>.rendering_of(truck, lens_and_light)]
+		<span class="syn-type">Err</span>(<span class="syn-type">OutOfSight</span>) =&gt; []
+	}
+</code></pre></figure><p>A <code>TruckFate</code> is the truck&#39;s sighting, a <code>Try</code>, and the <code>match</code> covers both its tags. For an <code>Err</code>, the truck&#39;s renderings are an empty list.</p>
+<h2 id="try-or-crash">Try or crash <a class="section-link" href="#try-or-crash" aria-label="Link to this section">§</a></h2>
+<p>A <code>Try</code> is for a value that can rightly be missing, such as a tree behind the camera. Other facts hold whenever the program is right, such as a share lying between 0 and 1. A fact like that is an invariant. A value that breaks one means a bug, and a made-up answer would hide the bug until it surfaced somewhere far from its cause.</p>
+<p>So the program stops at once instead. <code>Fraction.of</code> makes a share from a ratio:</p>
+<figure class="listing"><figcaption>lib/Fraction.roc</figcaption><pre><code class="language-roc"><span class="syn-comment">## A ratio that can only be in range, as a fraction.</span>
+<span class="syn-name">of</span> : <span class="syn-type">F64</span> -&gt; <span class="syn-type">Fraction</span>
+<span class="syn-name">of</span> = |ratio|
+	<span class="syn-keyword">match</span> from_ratio(ratio) {
+		<span class="syn-type">Ok</span>(fraction) =&gt; fraction
+		<span class="syn-type">Err</span>(<span class="syn-type">OutOfRange</span>) =&gt; <span class="syn-keyword">crash</span> <span class="syn-string">&quot;Fraction.of: this ratio is outside 0 to 1, so the sum behind it is wrong&quot;</span>
+	}
+</code></pre></figure><p><code>from_ratio</code> returns a <code>Try</code>, and the <code>match</code> covers both tags. For an <code>Err</code>, <code>crash</code> stops the program with a message that says which invariant broke. Use <code>crash</code> to enforce invariants.</p>
+<p>So a refusal is an ordinary value: a <code>?</code> passes it up, a function after the <code>?</code> can rename it, and a <code>keep_oks</code> or a <code>match</code> is where it stops. A value missing only through a bug gets a <code>crash</code> instead. The next chapter starts on the world the things stand in, with its sky and its grass.</p>
+
+</article>
+<nav class="turn-page" aria-label="Previous and next chapter">
+<a rel="prev" href="asking-a-kind.html"><small>Previous</small>Where clauses: asking a kind</a>
+<a rel="next" href="the-sky.html"><small>Next</small>The sky and the grass</a>
+</nav>
+</main>
+
+</body>
+</html>

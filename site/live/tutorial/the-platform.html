@@ -1,0 +1,262 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>The platform · Safari Ride</title>
+<link rel="icon" href="data:,">
+<link rel="stylesheet" href="book.css">
+<script src="book.js" defer></script>
+</head>
+<body class="chapter">
+<header class="top-bar">
+<a class="home-link" href="https://roc.lynrummy.com/">Steve's Roc Apps</a>
+<p class="draft-notice">This is an early draft.</p>
+<a class="repo-link" href="https://github.com/showell/roc-apps">roc-apps on GitHub</a>
+</header>
+<nav class="book-nav" id="chapters" aria-label="Chapters">
+<a class="book-name" href="index.html">Safari Ride</a>
+<ol>
+<li class="part">The big picture</li><li><a href="introduction.html"><span class="number">1</span>Introduction</a></li>
+<li><a href="one-page.html"><span class="number">2</span>One page</a></li>
+<li><a href="the-problem.html"><span class="number">3</span>The problem</a></li>
+<li><a href="platforms-packages-and-modules.html"><span class="number">4</span>Platforms, packages and modules</a></li>
+<li><a href="types.html"><span class="number">5</span>Types</a></li>
+<li><a href="functions.html"><span class="number">6</span>Functions</a></li>
+<li class="part">One frame</li><li><a href="things.html"><span class="number">7</span>Things</a></li>
+<li><a href="billboard-critters.html"><span class="number">8</span>Tag unions: billboard critters</a></li>
+<li><a href="shapes.html"><span class="number">9</span>Shapes</a></li>
+<li><a href="a-far-tree.html"><span class="number">10</span>Lists and map: a far tree</a></li>
+<li><a href="the-pipeline.html"><span class="number">11</span>The pipeline</a></li>
+<li><a href="asking-a-kind.html"><span class="number">12</span>Where clauses: asking a kind</a></li>
+<li><a href="refused.html"><span class="number">13</span>Errors as tag unions</a></li>
+<li class="category">Nature</li><li><a href="the-sky.html"><span class="number">14</span>The sky and the grass</a></li>
+<li><a href="mountains.html"><span class="number">15</span>Mountains</a></li>
+<li class="category">Man-made</li><li><a href="the-road.html"><span class="number">16</span>The road</a></li>
+<li><a href="rails.html"><span class="number">17</span>Rails</a></li>
+<li><a href="radio-towers.html"><span class="number">18</span>Radio towers</a></li>
+<li class="category">Critters that stand still</li><li><a href="herds.html"><span class="number">19</span>Herds</a></li>
+<li class="part">Motion</li><li><a href="a-flip-book.html"><span class="number">20</span>Immutable values: a flip book</a></li>
+<li><a href="records.html"><span class="number">21</span>Records</a></li>
+<li><a href="pure-functions-and-effects.html"><span class="number">22</span>Pure functions and effects</a></li>
+<li><a href="the-clock.html"><span class="number">23</span>Opaque types: the clock</a></li>
+<li><a href="the-ride-instant.html"><span class="number">24</span>The ride instant</a></li>
+<li class="category">The passage of time</li><li><a href="the-beacons.html"><span class="number">25</span>The beacons</a></li>
+<li><a href="the-setting-sun.html"><span class="number">26</span>The setting sun</a></li>
+<li class="category">Vehicles</li><li><a href="the-rider.html"><span class="number">27</span>The rider</a></li>
+<li><a href="the-throttle.html"><span class="number">28</span>The throttle</a></li>
+<li><a href="rehearsal.html"><span class="number">29</span>Variables and loops: rehearsal</a></li>
+<li><a href="the-riders-gaze.html"><span class="number">30</span>The rider&#39;s gaze</a></li>
+<li><a href="the-truck.html"><span class="number">31</span>The truck</a></li>
+<li><a href="the-trucks-motion.html"><span class="number">32</span>The truck&#39;s motion</a></li>
+<li class="category">Critter motion</li><li><a href="the-cat.html"><span class="number">33</span>The cat</a></li>
+<li><a href="the-bird.html"><span class="number">34</span>The bird</a></li>
+<li><a href="what-a-cat-does-to-the-rider.html"><span class="number">35</span>What a cat does to the rider</a></li>
+<li class="part">Under the hood</li><li><a href="the-math-layer.html"><span class="number">36</span>The math layer</a></li>
+<li><a href="proving-it.html"><span class="number">37</span>Proving it</a></li>
+<li class="here"><a href="the-platform.html"><span class="number">38</span>The platform</a><ol class="sections"><li><a href="the-platform.html#an-app-is-a-value">An app is a value</a></li><li><a href="the-platform.html#what-the-platform-calls">What the platform calls</a></li><li><a href="the-platform.html#the-person-watching">The person watching</a></li><li><a href="the-platform.html#the-host">The host</a></li><li><a href="the-platform.html#a-frame-is-a-list">A frame is a list</a></li></ol></li>
+<li><a href="zooming-back-out.html"><span class="number">39</span>Zooming back out</a></li>
+</ol>
+</nav>
+<main>
+<p class="book-bar"><a href="index.html">Safari Ride</a> <a href="#chapters">Chapters</a></p>
+<article>
+<p class="chapter-number">Chapter 38</p>
+<h1 id="the-platform">The platform</h1>
+<p>Every chapter so far has ended in a list of shapes. In this chapter, we follow the list onto the screen, and the viewer&#39;s keys back into the ride, the last of the five pieces. On the way, we see where the ride&#39;s effects live: in a small platform under the Roc code, which every app in this book shares.</p>
+<figure class="diagram"><svg class="diagram diagram-wide" role="img" aria-label="One tick, in order" width="571pt" height="236pt"
+ viewBox="0.00 0.00 571.08 236.00" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+<g id="graph0" class="graph" transform="scale(1 1) rotate(0) translate(4 232)">
+<polygon fill="white" stroke="transparent" points="-4,4 -4,-232 567.08,-232 567.08,4 -4,4"/>
+<g id="node1" class="node">
+<polygon fill="none" stroke="black" points="299.58,-228 152.58,-228 152.58,-192 299.58,-192 299.58,-228"/>
+<text text-anchor="middle" x="226.08" y="-213.4" font-family="Helvetica,sans-Serif" font-size="12.00">canvas_app_runner.js</text>
+<text text-anchor="middle" x="226.08" y="-200.4" font-family="Helvetica,sans-Serif" font-size="12.00">in the browser</text>
+</g>
+<g id="node2" class="node">
+<polygon fill="none" stroke="black" points="199.58,-132 36.58,-132 36.58,-96 199.58,-96 199.58,-132"/>
+<text text-anchor="middle" x="118.08" y="-117.4" font-family="Helvetica,sans-Serif" font-size="12.00">host.zig</text>
+<text text-anchor="middle" x="118.08" y="-104.4" font-family="Helvetica,sans-Serif" font-size="12.00">inside the WebAssembly</text>
+</g>
+<g id="edge1" class="edge">
+<path fill="none" stroke="black" d="M152.43,-207.24C96,-204.15 24.75,-195.88 6.08,-174 -8.03,-157.47 5.47,-144.91 27.36,-135.71"/>
+<polygon fill="black" stroke="black" points="28.73,-138.94 36.83,-132.1 26.24,-132.4 28.73,-138.94"/>
+<text text-anchor="start" x="6.08" y="-165.2" font-family="Helvetica,sans-Serif" font-size="11.00"> &#160;calls advance with the input,</text>
+<text text-anchor="start" x="6.08" y="-153.2" font-family="Helvetica,sans-Serif" font-size="11.00"> &#160;then computeFrame</text>
+</g>
+<g id="node4" class="node">
+<polygon fill="none" stroke="black" points="486.58,-132 365.58,-132 365.58,-96 486.58,-96 486.58,-132"/>
+<text text-anchor="middle" x="426.08" y="-117.4" font-family="Helvetica,sans-Serif" font-size="12.00">shapes_canvas.js</text>
+<text text-anchor="middle" x="426.08" y="-104.4" font-family="Helvetica,sans-Serif" font-size="12.00">in the browser</text>
+</g>
+<g id="edge4" class="edge">
+<path fill="none" stroke="black" d="M299.63,-197.67C321.26,-192.44 344.39,-184.87 364.08,-174 379.77,-165.34 394.43,-151.75 405.56,-139.79"/>
+<polygon fill="black" stroke="black" points="408.26,-142.02 412.33,-132.24 403.05,-137.34 408.26,-142.02"/>
+<text text-anchor="start" x="395.08" y="-165.2" font-family="Helvetica,sans-Serif" font-size="11.00"> &#160;reads the shapes with</text>
+<text text-anchor="start" x="395.08" y="-153.2" font-family="Helvetica,sans-Serif" font-size="11.00"> &#160;roc_glue.js, hands them over</text>
+</g>
+<g id="edge3" class="edge">
+<path fill="none" stroke="black" d="M153.15,-132.12C162.06,-137.25 171.3,-143.32 179.08,-150 190.4,-159.72 200.96,-172.48 209.19,-183.64"/>
+<polygon fill="black" stroke="black" points="206.34,-185.68 215,-191.79 212.04,-181.62 206.34,-185.68"/>
+<text text-anchor="start" x="202.08" y="-165.2" font-family="Helvetica,sans-Serif" font-size="11.00"> &#160;returns where the frame&#39;s</text>
+<text text-anchor="start" x="202.08" y="-153.2" font-family="Helvetica,sans-Serif" font-size="11.00"> &#160;list of shapes is</text>
+</g>
+<g id="node3" class="node">
+<polygon fill="none" stroke="black" points="196.58,-36 39.58,-36 39.58,0 196.58,0 196.58,-36"/>
+<text text-anchor="middle" x="118.08" y="-14.9" font-family="Helvetica,sans-Serif" font-size="12.00">the app&#39;s Roc functions</text>
+</g>
+<g id="edge2" class="edge">
+<path fill="none" stroke="black" d="M118.08,-95.76C118.08,-81.98 118.08,-62.4 118.08,-46.47"/>
+<polygon fill="black" stroke="black" points="121.58,-46.13 118.08,-36.13 114.58,-46.13 121.58,-46.13"/>
+<text text-anchor="start" x="118.08" y="-69.2" font-family="Helvetica,sans-Serif" font-size="11.00"> &#160;calls model_at_next_step,</text>
+<text text-anchor="start" x="118.08" y="-57.2" font-family="Helvetica,sans-Serif" font-size="11.00"> &#160;then frame_shapes</text>
+</g>
+</g>
+</svg><svg class="diagram diagram-phone" role="img" aria-label="One tick, in order" width="489pt" height="220pt"
+ viewBox="0.00 0.00 489.49 220.00" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+<g id="graph0" class="graph" transform="scale(1 1) rotate(0) translate(4 216)">
+<polygon fill="white" stroke="transparent" points="-4,4 -4,-216 485.49,-216 485.49,4 -4,4"/>
+<g id="node1" class="node">
+<polygon fill="none" stroke="black" points="253.99,-212 116.99,-212 116.99,-176 253.99,-176 253.99,-212"/>
+<text text-anchor="middle" x="185.49" y="-197.4" font-family="Helvetica,sans-Serif" font-size="12.00">canvas_app_runner.js</text>
+<text text-anchor="middle" x="185.49" y="-184.4" font-family="Helvetica,sans-Serif" font-size="12.00">in the browser</text>
+</g>
+<g id="node2" class="node">
+<polygon fill="none" stroke="black" points="170.99,-118 17.99,-118 17.99,-82 170.99,-82 170.99,-118"/>
+<text text-anchor="middle" x="94.49" y="-103.4" font-family="Helvetica,sans-Serif" font-size="12.00">host.zig</text>
+<text text-anchor="middle" x="94.49" y="-90.4" font-family="Helvetica,sans-Serif" font-size="12.00">inside the WebAssembly</text>
+</g>
+<g id="edge1" class="edge">
+<path fill="none" stroke="black" d="M116.79,-191.16C72.89,-188.36 21.62,-181.52 7.49,-165 -2.9,-152.84 -1.93,-141.93 7.49,-129 8.55,-127.55 9.69,-126.16 10.9,-124.85"/>
+<polygon fill="black" stroke="black" points="13.34,-127.36 18.48,-118.09 8.69,-122.14 13.34,-127.36"/>
+<text text-anchor="start" x="7.49" y="-150.2" font-family="Helvetica,sans-Serif" font-size="11.00"> &#160;calls advance with the input,</text>
+<text text-anchor="start" x="7.49" y="-138.2" font-family="Helvetica,sans-Serif" font-size="11.00"> &#160;then computeFrame</text>
+</g>
+<g id="node4" class="node">
+<polygon fill="none" stroke="black" points="406.99,-118 295.99,-118 295.99,-82 406.99,-82 406.99,-118"/>
+<text text-anchor="middle" x="351.49" y="-103.4" font-family="Helvetica,sans-Serif" font-size="12.00">shapes_canvas.js</text>
+<text text-anchor="middle" x="351.49" y="-90.4" font-family="Helvetica,sans-Serif" font-size="12.00">in the browser</text>
+</g>
+<g id="edge4" class="edge">
+<path fill="none" stroke="black" d="M254.39,-187.89C289.09,-183.88 326.35,-176.91 338.49,-165 348.11,-155.57 351.6,-141.12 352.58,-128.33"/>
+<polygon fill="black" stroke="black" points="356.08,-128.23 352.89,-118.13 349.09,-128.02 356.08,-128.23"/>
+<text text-anchor="start" x="351.49" y="-156.2" font-family="Helvetica,sans-Serif" font-size="11.00"> &#160;reads the shapes with</text>
+<text text-anchor="middle" x="416.49" y="-144.2" font-family="Helvetica,sans-Serif" font-size="11.00"> &#160;roc_glue.js,</text>
+<text text-anchor="start" x="351.49" y="-132.2" font-family="Helvetica,sans-Serif" font-size="11.00">hands them over</text>
+</g>
+<g id="edge3" class="edge">
+<path fill="none" stroke="black" d="M159.7,-118.1C164.46,-121.16 168.82,-124.76 172.49,-129 181.1,-138.95 184.58,-153.02 185.8,-165.44"/>
+<polygon fill="black" stroke="black" points="182.33,-165.99 186.38,-175.78 189.32,-165.61 182.33,-165.99"/>
+<text text-anchor="start" x="186.49" y="-150.2" font-family="Helvetica,sans-Serif" font-size="11.00"> &#160;returns where the frame&#39;s</text>
+<text text-anchor="start" x="186.49" y="-138.2" font-family="Helvetica,sans-Serif" font-size="11.00"> &#160;list of shapes is</text>
+</g>
+<g id="node3" class="node">
+<polygon fill="none" stroke="black" points="167.99,-36 20.99,-36 20.99,0 167.99,0 167.99,-36"/>
+<text text-anchor="middle" x="94.49" y="-14.9" font-family="Helvetica,sans-Serif" font-size="12.00">the app&#39;s Roc functions</text>
+</g>
+<g id="edge2" class="edge">
+<path fill="none" stroke="black" d="M94.49,-81.64C94.49,-71.3 94.49,-57.94 94.49,-46.22"/>
+<polygon fill="black" stroke="black" points="97.99,-46.05 94.49,-36.05 90.99,-46.05 97.99,-46.05"/>
+<text text-anchor="start" x="94.49" y="-62.2" font-family="Helvetica,sans-Serif" font-size="11.00"> &#160;calls model_at_next_step,</text>
+<text text-anchor="start" x="94.49" y="-50.2" font-family="Helvetica,sans-Serif" font-size="11.00"> &#160;then frame_shapes</text>
+</g>
+</g>
+</svg><figcaption>One tick, in order</figcaption></figure><h2 id="an-app-is-a-value">An app is a value <a class="section-link" href="#an-app-is-a-value" aria-label="Link to this section">§</a></h2>
+<p>The <a class="chapter-link" href="platforms-packages-and-modules.html">“Platforms, packages and modules”</a> chapter showed the app&#39;s last line: <code>WasmApp.program</code> takes <code>SafariApp.canvas_app</code>, the whole ride as one value. Here&#39;s that value:</p>
+<figure class="listing"><figcaption>SafariApp.roc</figcaption><pre><code class="language-roc"><span class="syn-name">canvas_app</span> : <span class="syn-type">CanvasApp.CanvasApp</span>(<span class="syn-type">SafariApp.Model</span>)
+<span class="syn-name">canvas_app</span> = {
+	size: { width: <span class="syn-type">Screen</span>.width.to_f64(), height: <span class="syn-type">Screen</span>.height.to_f64() },
+	<span class="syn-comment"># The ride&#39;s motion is written per step, and thirty steps a second is the</span>
+	<span class="syn-comment"># speed it is meant to look like, chosen by eye.</span>
+	frames_a_second: <span class="syn-number">30</span>,
+	init: initial_model,
+	model_at_next_step: <span class="syn-type">CanvasApp</span>.untimed_model_at_next_step(model_at_next_step),
+	frame_shapes: |m| <span class="syn-type">FrameView</span>.frame_view_at(m.tour.route(), m.tour.instant()).leaned_shapes(),
+	sounds: |_m| <span class="syn-number">0</span>,
+	tones: [],
+	title: <span class="syn-string">&quot;Safari&quot;</span>,
+}
+</code></pre></figure><p>An app is a record. Most of its fields are plain values: the screen&#39;s size, thirty frames a second, the first model, and a title. The ride is silent, so <code>sounds</code> returns 0 and <code>tones</code> is empty. <code>model_at_next_step</code> moves the model on a step, and <code>frame_shapes</code> returns the shapes of the model&#39;s frame.</p>
+<p>Every app&#39;s step also takes the seconds the step covers, which <code>WasmApp</code> works out from the frame rate. The ride counts steps, so one function fits its step to that shape:</p>
+<figure class="listing"><figcaption>lib/CanvasApp.roc</figcaption><pre><code class="language-roc"><span class="syn-name">untimed_model_at_next_step</span> : (model, <span class="syn-type">Input.Snapshot</span> -&gt; model) -&gt; (model, <span class="syn-type">Input.Snapshot</span>, <span class="syn-type">F32</span> -&gt; model)
+<span class="syn-name">untimed_model_at_next_step</span> = |step| |model, input, _seconds| step(model, input)
+</code></pre></figure><p>In the annotation, each part in parentheses is the type of a function. <code>untimed_model_at_next_step</code> takes a function of a model and an input snapshot, and returns a function that takes the seconds too and passes the first two to <code>step</code>. The seconds stop there, so the ride runs on steps alone.</p>
+<h2 id="what-the-platform-calls">What the platform calls <a class="section-link" href="#what-the-platform-calls" aria-label="Link to this section">§</a></h2>
+<p><code>WasmApp.program</code> turns the app into the functions the page&#39;s platform calls, the same for every app:</p>
+<figure class="listing"><figcaption>lib/WasmApp.roc</figcaption><pre><code class="language-roc"><span class="syn-name">program</span> : <span class="syn-type">CanvasApp.CanvasApp</span>(model) -&gt; {
+	init : {} -&gt; <span class="syn-type">Box</span>(model),
+	model_at_next_step : <span class="syn-type">Box</span>(model), <span class="syn-type">U32</span>, <span class="syn-type">U32</span>, <span class="syn-type">U32</span>, <span class="syn-type">U32</span>, <span class="syn-type">F32</span>, <span class="syn-type">F32</span>, <span class="syn-type">F32</span> -&gt; <span class="syn-type">Box</span>(model),
+	frame_shapes : <span class="syn-type">Box</span>(model) -&gt; <span class="syn-type">List</span>(<span class="syn-type">Shapes.Shape</span>),
+	release : <span class="syn-type">List</span>(<span class="syn-type">Shapes.Shape</span>) -&gt; {},
+	sounds : <span class="syn-type">Box</span>(model) -&gt; <span class="syn-type">U32</span>,
+	tone_count : {} -&gt; <span class="syn-type">U32</span>,
+	tone_freq : <span class="syn-type">U32</span> -&gt; <span class="syn-type">U32</span>,
+	tone_ms : <span class="syn-type">U32</span> -&gt; <span class="syn-type">U32</span>,
+	width : {} -&gt; <span class="syn-type">U32</span>,
+	height : {} -&gt; <span class="syn-type">U32</span>,
+	fps : {} -&gt; <span class="syn-type">U32</span>,
+}
+</code></pre></figure><p>Every one of the eleven functions has the thin arrow, so all of them are pure. A function such as <code>width : {} -&gt; U32</code> takes the empty record, <code>{}</code>, and returns a value from the app alone.</p>
+<p>The model travels as a <code>Box(model)</code>: the model behind a pointer, which the platform holds and only Roc reads. The input travels as seven numbers: the keys held and struck, the mouse buttons held and struck, the pointer&#39;s place across and down, and the wheel. <code>WasmApp.program</code> builds them back into a snapshot, with <code>Input.of</code> for the whole and <code>Mouse.of</code> for the mouse.</p>
+<h2 id="the-person-watching">The person watching <a class="section-link" href="#the-person-watching" aria-label="Link to this section">§</a></h2>
+<p>Mostly, Safari Ride is a screensaver: you sit back and watch it. You can also take the controls. Click the ride to give it the keyboard. Space pauses it. Held down, Right and Left move it forward and back, one step at a time while it&#39;s paused, and four at a time while it plays. J jumps to the next segment of the road, and R starts the ride over, running.</p>
+<p>The snapshot goes to the app&#39;s step, <code>SafariApp.model_at_next_step</code>. The step takes the model, which is the tour and whether it&#39;s paused, and the snapshot, and returns the next model. Here&#39;s the part that pauses and steps:</p>
+<figure class="listing"><figcaption>SafariApp.roc, in model_at_next_step</figcaption><pre><code class="language-roc"><span class="syn-comment"># ...</span>
+motion = <span class="syn-keyword">if</span> input.key_pressed(<span class="syn-type">KeySpace</span>) {
+	<span class="syn-keyword">match</span> m.motion {
+		<span class="syn-type">Playing</span> =&gt; <span class="syn-type">Paused</span>
+		<span class="syn-type">Paused</span> =&gt; <span class="syn-type">Playing</span>
+	}
+} <span class="syn-keyword">else</span> {
+	m.motion
+}
+steps_a_frame = <span class="syn-keyword">match</span> motion {
+	<span class="syn-type">Paused</span> =&gt; <span class="syn-type">Steps</span>.one_step
+	<span class="syn-type">Playing</span> =&gt; <span class="syn-type">Steps</span>.of(<span class="syn-number">4</span>)
+}
+moved =
+	<span class="syn-keyword">if</span> input.key_down(<span class="syn-type">KeyRight</span>) {
+		m.tour.steps_forward(steps_a_frame)
+	} <span class="syn-keyword">else</span> <span class="syn-keyword">if</span> input.key_down(<span class="syn-type">KeyLeft</span>) {
+		m.tour.steps_back(steps_a_frame)
+	} <span class="syn-keyword">else</span> {
+		<span class="syn-keyword">match</span> motion {
+			<span class="syn-type">Paused</span> =&gt; m.tour
+			<span class="syn-type">Playing</span> =&gt; m.tour.step_forward()
+			<span class="syn-comment"># ...</span>
+</code></pre></figure><p><code>key_pressed</code> returns whether a key went down since the last step, so one tap of Space pauses the ride once. <code>key_down</code> returns whether a key is held, so holding Right keeps the ride moving. The step reads the snapshot every time it runs, so each control answers on the next step.</p>
+<h2 id="the-host">The host <a class="section-link" href="#the-host" aria-label="Link to this section">§</a></h2>
+<p>The platform&#39;s own code is a host and a little JavaScript. <code>host.zig</code>, in Zig, runs inside the WebAssembly beside the app, holds the model, and calls the app&#39;s Roc functions. <code>canvas_app_runner.js</code>, in the browser, keeps time and gathers the input. For each tick it calls the host&#39;s <code>advance</code>, which steps the model, and when the browser is ready to draw, <code>computeFrame</code>, which returns where the frame&#39;s list of shapes sits in memory. When the browser falls behind, the runner steps up to four times before it draws once.</p>
+<p>The runner reads the shapes out of memory with <code>roc_glue.js</code>, a reader generated from the platform&#39;s types, and <code>shapes_canvas.js</code> paints them on the page&#39;s canvas. On the next call to <code>computeFrame</code>, the host hands the last frame&#39;s list to Roc&#39;s <code>release</code> before it asks for a new one. <code>release</code> is pure too: it takes the list and returns <code>{}</code>. Roc frees a value when its last reference goes, so passing the list to <code>release</code> frees it, in the app&#39;s own compiled code, which holds the layout of a <code>Shapes.Shape</code>.</p>
+<p>The runner and the painter come to under 700 lines of JavaScript, shared by every app on the platform, and the ride reaches them as a list of shapes.</p>
+<h2 id="a-frame-is-a-list">A frame is a list <a class="section-link" href="#a-frame-is-a-list" aria-label="Link to this section">§</a></h2>
+<p>A frame is one flat list of shapes, painted in order, so a later shape covers an earlier one. Two tags in that list are marks. <code>Blend</code> changes how the shapes after it mix with what&#39;s painted already. The ride uses it to add a light&#39;s glow to the colors under it. <code>View</code> sets the space the shapes after it are drawn in: a turn, a shift and a zoom, applied to their points. Here&#39;s how the whole frame leans with the rider:</p>
+<figure class="listing"><figcaption>FrameView.roc</figcaption><pre><code class="language-roc"><span class="syn-comment">## The whole frame turned by the camera&#39;s roll.</span>
+<span class="syn-comment">##</span>
+<span class="syn-comment">## The whole frame leans, backdrop and all, so the world banks into a turn:</span>
+<span class="syn-comment">## everything is drawn in one space, which turns about the middle of the</span>
+<span class="syn-comment">## screen by the roll, the other way round.</span>
+<span class="syn-name">leaned_shapes</span> : <span class="syn-type">FrameView</span> -&gt; <span class="syn-type">List</span>(<span class="syn-type">Shapes.Shape</span>)
+<span class="syn-name">leaned_shapes</span> = |view| framed_shapes(view, <span class="syn-type">Screen</span>.leaned_by(view.roll))
+</code></pre></figure><figure class="listing"><figcaption>Screen.roc</figcaption><pre><code class="language-roc"><span class="syn-comment">## The space the whole frame is drawn in when the camera rolls by `roll`:</span>
+<span class="syn-comment">## the screen turns by minus the roll about its middle.</span>
+<span class="syn-name">leaned_by</span> : <span class="syn-type">Angle.Lean</span> -&gt; <span class="syn-type">Shapes.Space</span>
+<span class="syn-name">leaned_by</span> = |roll|
+	<span class="syn-type">Shapes</span>.world_space({
+		target: middle,
+		offset: middle,
+		rotation: <span class="syn-number">0.0</span> - roll.to_degrees(),
+		zoom: <span class="syn-number">1.0</span>,
+	})
+</code></pre></figure><p><code>leaned_by</code> returns a space that turns the screen about its middle, by the roll in the opposite direction. <code>leaned_shapes</code> puts the whole frame inside that space, backdrop first, so the sky and the grass lean with the road.</p>
+<p>So the ride is a value, a step and a frame. The platform calls them, and everything with an effect, from the timing to the canvas, happens on the platform&#39;s side of the line.</p>
+
+</article>
+<nav class="turn-page" aria-label="Previous and next chapter">
+<a rel="prev" href="proving-it.html"><small>Previous</small>Proving it</a>
+<a rel="next" href="zooming-back-out.html"><small>Next</small>Zooming back out</a>
+</nav>
+</main>
+
+</body>
+</html>

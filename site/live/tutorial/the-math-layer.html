@@ -1,0 +1,259 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>The math layer · Safari Ride</title>
+<link rel="icon" href="data:,">
+<link rel="stylesheet" href="book.css">
+<script src="book.js" defer></script>
+</head>
+<body class="chapter">
+<header class="top-bar">
+<a class="home-link" href="https://roc.lynrummy.com/">Steve's Roc Apps</a>
+<p class="draft-notice">This is an early draft.</p>
+<a class="repo-link" href="https://github.com/showell/roc-apps">roc-apps on GitHub</a>
+</header>
+<nav class="book-nav" id="chapters" aria-label="Chapters">
+<a class="book-name" href="index.html">Safari Ride</a>
+<ol>
+<li class="part">The big picture</li><li><a href="introduction.html"><span class="number">1</span>Introduction</a></li>
+<li><a href="one-page.html"><span class="number">2</span>One page</a></li>
+<li><a href="the-problem.html"><span class="number">3</span>The problem</a></li>
+<li><a href="platforms-packages-and-modules.html"><span class="number">4</span>Platforms, packages and modules</a></li>
+<li><a href="types.html"><span class="number">5</span>Types</a></li>
+<li><a href="functions.html"><span class="number">6</span>Functions</a></li>
+<li class="part">One frame</li><li><a href="things.html"><span class="number">7</span>Things</a></li>
+<li><a href="billboard-critters.html"><span class="number">8</span>Tag unions: billboard critters</a></li>
+<li><a href="shapes.html"><span class="number">9</span>Shapes</a></li>
+<li><a href="a-far-tree.html"><span class="number">10</span>Lists and map: a far tree</a></li>
+<li><a href="the-pipeline.html"><span class="number">11</span>The pipeline</a></li>
+<li><a href="asking-a-kind.html"><span class="number">12</span>Where clauses: asking a kind</a></li>
+<li><a href="refused.html"><span class="number">13</span>Errors as tag unions</a></li>
+<li class="category">Nature</li><li><a href="the-sky.html"><span class="number">14</span>The sky and the grass</a></li>
+<li><a href="mountains.html"><span class="number">15</span>Mountains</a></li>
+<li class="category">Man-made</li><li><a href="the-road.html"><span class="number">16</span>The road</a></li>
+<li><a href="rails.html"><span class="number">17</span>Rails</a></li>
+<li><a href="radio-towers.html"><span class="number">18</span>Radio towers</a></li>
+<li class="category">Critters that stand still</li><li><a href="herds.html"><span class="number">19</span>Herds</a></li>
+<li class="part">Motion</li><li><a href="a-flip-book.html"><span class="number">20</span>Immutable values: a flip book</a></li>
+<li><a href="records.html"><span class="number">21</span>Records</a></li>
+<li><a href="pure-functions-and-effects.html"><span class="number">22</span>Pure functions and effects</a></li>
+<li><a href="the-clock.html"><span class="number">23</span>Opaque types: the clock</a></li>
+<li><a href="the-ride-instant.html"><span class="number">24</span>The ride instant</a></li>
+<li class="category">The passage of time</li><li><a href="the-beacons.html"><span class="number">25</span>The beacons</a></li>
+<li><a href="the-setting-sun.html"><span class="number">26</span>The setting sun</a></li>
+<li class="category">Vehicles</li><li><a href="the-rider.html"><span class="number">27</span>The rider</a></li>
+<li><a href="the-throttle.html"><span class="number">28</span>The throttle</a></li>
+<li><a href="rehearsal.html"><span class="number">29</span>Variables and loops: rehearsal</a></li>
+<li><a href="the-riders-gaze.html"><span class="number">30</span>The rider&#39;s gaze</a></li>
+<li><a href="the-truck.html"><span class="number">31</span>The truck</a></li>
+<li><a href="the-trucks-motion.html"><span class="number">32</span>The truck&#39;s motion</a></li>
+<li class="category">Critter motion</li><li><a href="the-cat.html"><span class="number">33</span>The cat</a></li>
+<li><a href="the-bird.html"><span class="number">34</span>The bird</a></li>
+<li><a href="what-a-cat-does-to-the-rider.html"><span class="number">35</span>What a cat does to the rider</a></li>
+<li class="part">Under the hood</li><li class="here"><a href="the-math-layer.html"><span class="number">36</span>The math layer</a><ol class="sections"><li><a href="the-math-layer.html#round-the-bends">Round the bends</a></li><li><a href="the-math-layer.html#to-the-rider">To the rider</a></li><li><a href="the-math-layer.html#through-the-pinhole">Through the pinhole</a></li><li><a href="the-math-layer.html#cutting-at-the-near-plane">Cutting at the near plane</a></li></ol></li>
+<li><a href="proving-it.html"><span class="number">37</span>Proving it</a></li>
+<li><a href="the-platform.html"><span class="number">38</span>The platform</a></li>
+<li><a href="zooming-back-out.html"><span class="number">39</span>Zooming back out</a></li>
+</ol>
+</nav>
+<main>
+<p class="book-bar"><a href="index.html">Safari Ride</a> <a href="#chapters">Chapters</a></p>
+<article>
+<p class="chapter-number">Chapter 36</p>
+<h1 id="the-math-layer">The math layer</h1>
+<p>Every sighting so far has turned a place on the road into a place on the screen, on trust. This chapter explains that step, with the trigonometry of perspective: one point travels from a segment of the road ahead, round the bends to the rider, and through the camera&#39;s lens onto the screen.</p>
+<figure class="diagram"><svg class="diagram" role="img" aria-label="The trip of one point to the screen" width="255pt" height="512pt"
+ viewBox="0.00 0.00 255.00 512.00" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+<g id="graph0" class="graph" transform="scale(1 1) rotate(0) translate(4 508)">
+<polygon fill="white" stroke="transparent" points="-4,4 -4,-508 251,-508 251,4 -4,4"/>
+<g id="node1" class="node">
+<polygon fill="none" stroke="black" points="155,-504 13,-504 13,-468 155,-468 155,-504"/>
+<text text-anchor="middle" x="84" y="-489.4" font-family="Helvetica,sans-Serif" font-size="12.00">RoadPoint</text>
+<text text-anchor="middle" x="84" y="-476.4" font-family="Helvetica,sans-Serif" font-size="12.00">on a segment ahead</text>
+</g>
+<g id="node2" class="node">
+<polygon fill="none" stroke="black" points="161,-408 7,-408 7,-372 161,-372 161,-408"/>
+<text text-anchor="middle" x="84" y="-393.4" font-family="Helvetica,sans-Serif" font-size="12.00">RoadPoint</text>
+<text text-anchor="middle" x="84" y="-380.4" font-family="Helvetica,sans-Serif" font-size="12.00">on the rider&#39;s segment</text>
+</g>
+<g id="edge1" class="edge">
+<path fill="none" stroke="black" d="M84,-467.76C84,-453.98 84,-434.4 84,-418.47"/>
+<polygon fill="black" stroke="black" points="87.5,-418.13 84,-408.13 80.5,-418.13 87.5,-418.13"/>
+<text text-anchor="start" x="84" y="-441.2" font-family="Helvetica,sans-Serif" font-size="11.00"> &#160;point_before_worked_bend,</text>
+<text text-anchor="start" x="84" y="-429.2" font-family="Helvetica,sans-Serif" font-size="11.00"> &#160;once for each bend</text>
+</g>
+<g id="node3" class="node">
+<polygon fill="none" stroke="black" points="145.5,-312 22.5,-312 22.5,-276 145.5,-276 145.5,-312"/>
+<text text-anchor="middle" x="84" y="-297.4" font-family="Helvetica,sans-Serif" font-size="12.00">RiderPoint</text>
+<text text-anchor="middle" x="84" y="-284.4" font-family="Helvetica,sans-Serif" font-size="12.00">right and forward</text>
+</g>
+<g id="edge2" class="edge">
+<path fill="none" stroke="black" d="M84,-371.76C84,-357.98 84,-338.4 84,-322.47"/>
+<polygon fill="black" stroke="black" points="87.5,-322.13 84,-312.13 80.5,-322.13 87.5,-322.13"/>
+<text text-anchor="start" x="84" y="-345.2" font-family="Helvetica,sans-Serif" font-size="11.00"> &#160;to_rider_point turns it</text>
+<text text-anchor="start" x="84" y="-333.2" font-family="Helvetica,sans-Serif" font-size="11.00"> &#160;by the camera&#39;s yaw</text>
+</g>
+<g id="node4" class="node">
+<polygon fill="none" stroke="black" points="168,-216 0,-216 0,-180 168,-180 168,-216"/>
+<text text-anchor="middle" x="84" y="-201.4" font-family="Helvetica,sans-Serif" font-size="12.00">RiderPointAhead</text>
+<text text-anchor="middle" x="84" y="-188.4" font-family="Helvetica,sans-Serif" font-size="12.00">at or past the near plane</text>
+</g>
+<g id="edge3" class="edge">
+<path fill="none" stroke="black" d="M84,-275.76C84,-261.98 84,-242.4 84,-226.47"/>
+<polygon fill="black" stroke="black" points="87.5,-226.13 84,-216.13 80.5,-226.13 87.5,-226.13"/>
+<text text-anchor="start" x="84" y="-249.2" font-family="Helvetica,sans-Serif" font-size="11.00"> &#160;RiderView.rider_point_ahead</text>
+<text text-anchor="start" x="84" y="-237.2" font-family="Helvetica,sans-Serif" font-size="11.00"> &#160;checks the near plane</text>
+</g>
+<g id="node5" class="node">
+<polygon fill="none" stroke="black" points="168,-132 0,-132 0,-96 168,-96 168,-132"/>
+<text text-anchor="middle" x="84" y="-117.4" font-family="Helvetica,sans-Serif" font-size="12.00">PointAtHeightAhead</text>
+<text text-anchor="middle" x="84" y="-104.4" font-family="Helvetica,sans-Serif" font-size="12.00">right, forward and height</text>
+</g>
+<g id="edge4" class="edge">
+<path fill="none" stroke="black" d="M84,-179.61C84,-168.77 84,-154.6 84,-142.29"/>
+<polygon fill="black" stroke="black" points="87.5,-142.08 84,-132.08 80.5,-142.08 87.5,-142.08"/>
+<text text-anchor="start" x="84" y="-153.2" font-family="Helvetica,sans-Serif" font-size="11.00"> &#160;at_height raises it</text>
+</g>
+<g id="node6" class="node">
+<polygon fill="none" stroke="black" points="143,-36 25,-36 25,0 143,0 143,-36"/>
+<text text-anchor="middle" x="84" y="-21.4" font-family="Helvetica,sans-Serif" font-size="12.00">Point</text>
+<text text-anchor="middle" x="84" y="-8.4" font-family="Helvetica,sans-Serif" font-size="12.00">x and y, in pixels</text>
+</g>
+<g id="edge5" class="edge">
+<path fill="none" stroke="black" d="M84,-95.76C84,-81.98 84,-62.4 84,-46.47"/>
+<polygon fill="black" stroke="black" points="87.5,-46.13 84,-36.13 80.5,-46.13 87.5,-46.13"/>
+<text text-anchor="start" x="84" y="-69.2" font-family="Helvetica,sans-Serif" font-size="11.00"> &#160;Camera.project divides</text>
+<text text-anchor="start" x="84" y="-57.2" font-family="Helvetica,sans-Serif" font-size="11.00"> &#160;by forward</text>
+</g>
+</g>
+</svg><figcaption>The trip of one point to the screen</figcaption></figure><p>Each box is a coordinate system, and its type says which. <code>along</code> and <code>across</code> are on the road, <code>right</code> and <code>forward</code> are from the camera, and <code>x</code> and <code>y</code> are on the screen. So a function&#39;s annotation says which space it works in, and the compiler rejects a call that passes a point from another space.</p>
+<h2 id="round-the-bends">Round the bends <a class="section-link" href="#round-the-bends" aria-label="Link to this section">§</a></h2>
+<p>A point on the road is measured within its own segment, and each segment holds only its length and the turn at its end. So a point three segments ahead comes back round three bends, one at a time, before the camera can see it:</p>
+<figure class="listing"><figcaption>RoadAhead.roc</figcaption><pre><code class="language-roc"><span class="syn-comment">## A point on the segment at `position` on the road ahead, carried back round</span>
+<span class="syn-comment">## each bend between it and the rider&#39;s segment, as the camera at `vantage`</span>
+<span class="syn-comment">## there sees it.</span>
+<span class="syn-name">rider_point_round_bends</span> : <span class="syn-type">RoadAhead.RoadView</span>,
+{
+	vantage : <span class="syn-type">Geom.Vantage</span>,
+	position : <span class="syn-type">SegmentFromRider.Position</span>,
+	road_point : <span class="syn-type">Geom.RoadPoint</span>,
+} -&gt; <span class="syn-type">RiderView.RiderPoint</span>
+<span class="syn-name">rider_point_round_bends</span> = |road, { vantage, position, road_point }| {
+	bends = bends_ahead(road)
+	<span class="syn-keyword">var</span> $point = road_point
+	<span class="syn-keyword">var</span> $bends_left = position.to_u32().to_u64()
+	<span class="syn-keyword">while</span> $bends_left &gt; <span class="syn-number">0</span> {
+		$bends_left = $bends_left - <span class="syn-number">1</span>
+		bend = bends.get($bends_left) ?? <span class="syn-keyword">crash</span> <span class="syn-string">&quot;RoadAhead.rider_point_round_bends: past the road&#39;s end&quot;</span>
+		$point = <span class="syn-type">Geom</span>.point_before_worked_bend($point, bend)
+	}
+	to_rider_point($point, vantage)
+}
+</code></pre></figure><p><code>position</code> is a <code>SegmentFromRider.Position</code>, the count of bends between the rider&#39;s segment and the point&#39;s. Each pass of the loop sets <code>$point</code> to the same point, measured on the segment before. For an <code>Err</code>, <code>??</code> runs a <code>crash</code>, as it does for the bird&#39;s trees.</p>
+<p>Each pass is one rotation and one shift:</p>
+<figure class="listing"><figcaption>Geom.roc</figcaption><pre><code class="language-roc"><span class="syn-comment">## `point`, on the segment after a bend already worked out, measured on the</span>
+<span class="syn-comment">## segment before it instead: turned by the bend, and moved to where the</span>
+<span class="syn-comment">## segment after starts.</span>
+<span class="syn-name">point_before_worked_bend</span> : <span class="syn-type">Geom.RoadPoint</span>, <span class="syn-type">Geom.WorkedBend</span> -&gt; <span class="syn-type">Geom.RoadPoint</span>
+<span class="syn-name">point_before_worked_bend</span> = |point, { start_after: start, cos_turn, sin_turn }| {
+	along = point.along.to_metres()
+	across = point.across.to_metres()
+	{
+		along: start.along.plus(<span class="syn-type">Distance</span>.metres(cos_turn * along - sin_turn * across)),
+		across: start.across.plus(<span class="syn-type">Distance</span>.metres(sin_turn * along + cos_turn * across)),
+	}
+}
+</code></pre></figure><p><code>start_after: start</code> names the record&#39;s <code>start_after</code> field <code>start</code>. Turning a point by an angle mixes its two parts: the cosine says how much of each part stays where it was, and the sine how much moves over into the other. Then the shift moves the point to where the next segment starts. A <code>WorkedBend</code> holds that start and the turn&#39;s cosine and sine, worked out once for each bend when the road ahead is built.</p>
+<h2 id="to-the-rider">To the rider <a class="section-link" href="#to-the-rider" aria-label="Link to this section">§</a></h2>
+<p>On the rider&#39;s own segment, one more turn brings the point into the camera&#39;s view:</p>
+<figure class="listing"><figcaption>RoadAhead.roc</figcaption><pre><code class="language-roc"><span class="syn-comment">## A point on the rider&#39;s segment, as the camera at `vantage` sees it.</span>
+<span class="syn-name">to_rider_point</span> : <span class="syn-type">Geom.RoadPoint</span>, <span class="syn-type">Geom.Vantage</span> -&gt; <span class="syn-type">RiderView.RiderPoint</span>
+<span class="syn-name">to_rider_point</span> = |{ along, across }, vantage| {
+	ahead = along.distance_from(vantage.along).to_metres()
+	aside = across.distance_from(vantage.across).to_metres()
+	cos_yaw = vantage.yaw.to_radians().cos()
+	sin_yaw = vantage.yaw.to_radians().sin()
+	{
+		forward: <span class="syn-type">Distance</span>.metres(ahead * cos_yaw + aside * sin_yaw),
+		right: <span class="syn-type">Distance</span>.metres((<span class="syn-number">0.0</span> - ahead) * sin_yaw + aside * cos_yaw),
+	}
+}
+</code></pre></figure><p>The camera stands at <code>vantage</code>, and its yaw is the way it points, as a turn from straight down the segment. Turning the camera one way turns the world the other way in its view, so the point turns by minus the yaw into <code>forward</code> and <code>right</code>.</p>
+<h2 id="through-the-pinhole">Through the pinhole <a class="section-link" href="#through-the-pinhole" aria-label="Link to this section">§</a></h2>
+<p>Next, <code>RiderView.rider_point_ahead</code>, from the <a class="chapter-link" href="refused.html">“Errors as tag unions”</a> chapter, checks the point against the near plane, 0.4 metres ahead of the camera. It refuses a point short of that as <code>BehindCamera</code>, and returns one at or past it as a <code>RiderPointAhead</code>. <code>at_height</code> raises it to a <code>PointAtHeightAhead</code>. Both types are opaque, and every way to build one starts from a point at or past the near plane.</p>
+<p><code>Camera.project</code> projects the point onto the screen. The camera is a pinhole, and a pinhole is similar triangles:</p>
+<figure class="listing"><figcaption>Camera.roc</figcaption><pre><code class="language-roc"><span class="syn-comment">## Where a point in front of the camera lands on the screen, through a</span>
+<span class="syn-comment">## lens of `focal_length`.</span>
+<span class="syn-name">project</span> : <span class="syn-type">RiderView.PointAtHeightAhead</span>, <span class="syn-type">Pixels</span> -&gt; <span class="syn-type">Point</span>
+<span class="syn-name">project</span> = |p, focal_length| {
+	slope_right = p.right().ratio_to(p.forward())
+	slope_up = p.height().minus(eye_height).ratio_to(p.forward())
+	{
+		x: <span class="syn-type">Lens</span>.x_for_slope({ slope: slope_right, focal_length }),
+		y: <span class="syn-type">Lens</span>.y_for_slope({ slope: slope_up, focal_length }),
+	}
+}
+</code></pre></figure><p>A point 2 metres to the right and 10 metres ahead has a slope of a fifth: its line of sight runs a fifth of a metre right for every metre forward. <code>Lens.x_for_slope</code> multiplies the slope by the focal length, in pixels, and measures from the middle of the screen. The height works the same way, from the eye, 1.2 metres up, and from the horizon on the screen.</p>
+<p>Dividing by <code>forward</code> is all of perspective: a thing twice as far off lands twice as close to the middle. The near plane keeps <code>forward</code> at 0.4 metres or more, so the division always has an answer.</p>
+<p>Two more things act on the way. The ground&#39;s curve lowers a thing standing far off, as the <a class="chapter-link" href="radio-towers.html">“Radio towers”</a> chapter showed. And far scenery, the sun and the mountains, works from heights above the horizon, with <code>Lens.far_point</code> for the sun.</p>
+<h2 id="cutting-at-the-near-plane">Cutting at the near plane <a class="section-link" href="#cutting-at-the-near-plane" aria-label="Link to this section">§</a></h2>
+<p>A single point is in view or refused, but a solid&#39;s face can be both at once. A patch of road can run from ahead of the camera to beside it, so a solid&#39;s corners stay plain <code>PointAtHeight</code>s until <code>RiderView.clipped_points</code> cuts the face at the near plane. Here&#39;s a rectangle 2 metres wide, from 2 metres ahead of the camera to a metre behind:</p>
+<table>
+<thead>
+<tr>
+<th></th>
+<th>Corners, as metres right and metres forward</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Before</td>
+<td>(-1, 2), (1, 2), (1, -1), (-1, -1)</td>
+</tr>
+<tr>
+<td>After</td>
+<td>(-1, 2), (1, 2), (1, 0.4), (-1, 0.4)</td>
+</tr>
+</tbody>
+</table>
+<p>The two corners behind the camera have gone, and two new ones stand where the rectangle&#39;s sides cross the near plane.</p>
+<p>The near plane is one region a face can be cut to. The ground&#39;s horizon is another: past it, 490 metres out, the ground curves out of sight. So one cut serves any region:</p>
+<figure class="listing"><figcaption>RiderView.roc</figcaption><pre><code class="language-roc"><span class="syn-comment">## A region of the rider&#39;s view that a polygon can be cut to: which of its</span>
+<span class="syn-comment">## corners lie in the region, and where its edges cross the boundary.</span>
+<span class="syn-type">Region</span>(point) : {
+	<span class="syn-comment">## `corner` as a point of the cut polygon, if it lies in the region.</span>
+	corner_in_region : <span class="syn-type">RiderView.PointAtHeight</span> -&gt; <span class="syn-type">Try</span>(point, [<span class="syn-type">Outside</span>]),
+
+	<span class="syn-comment">## Where the edge from `from` to `to` crosses the region&#39;s boundary,</span>
+	<span class="syn-comment">## strictly between its ends, nearest `from` first.</span>
+	edge_crossings : {
+		from : <span class="syn-type">RiderView.PointAtHeight</span>,
+		to : <span class="syn-type">RiderView.PointAtHeight</span>,
+	} -&gt; <span class="syn-type">List</span>(point),
+}
+</code></pre></figure><p>A region is two functions in a record: whether a corner lies inside, and where an edge crosses the boundary. The near plane&#39;s region returns <code>PointAtHeightAhead</code>s, ready for the camera, and the horizon&#39;s returns plain <code>PointAtHeight</code>s. Here&#39;s the cut:</p>
+<figure class="listing"><figcaption>RiderView.roc</figcaption><pre><code class="language-roc"><span class="syn-comment">## The polygon cut to what lies in `region`. Where an edge leaves the</span>
+<span class="syn-comment">## region and another comes back into it, a straight line joins them.</span>
+<span class="syn-name">points_in_region</span> : <span class="syn-type">List</span>(<span class="syn-type">RiderView.PointAtHeight</span>), <span class="syn-type">RiderView.Region</span>(point) -&gt; <span class="syn-type">List</span>(point)
+<span class="syn-name">points_in_region</span> = |polygon_points, region| {
+	next_corners = polygon_points.drop_first(<span class="syn-number">1</span>).concat(polygon_points.take_first(<span class="syn-number">1</span>))
+	edges = polygon_points.map2(next_corners, |from, to| { from, to, region })
+	edges.fold(<span class="syn-type">List</span>.with_capacity(<span class="syn-number">2</span> * polygon_points.len()), edge_points_onto)
+}
+</code></pre></figure><p><code>next_corners</code> turns the corners round by one, with <code>drop_first</code> and <code>take_first</code>, so <code>map2</code> can pair each corner with the next. Each pair is an edge. <code>fold</code> builds the cut face from the edges, starting from <code>List.with_capacity</code>, an empty list with room set aside. <code>edge_points_onto</code> keeps an edge&#39;s first corner when it lies in the region, then adds each point where the edge crosses the boundary. The near plane&#39;s cut is one line:</p>
+<figure class="listing"><figcaption>RiderView.roc</figcaption><pre><code class="language-roc"><span class="syn-comment">## The polygon cut to what lies at or past the near plane.</span>
+<span class="syn-name">clipped_points</span> : <span class="syn-type">List</span>(<span class="syn-type">RiderView.PointAtHeight</span>) -&gt; <span class="syn-type">List</span>(<span class="syn-type">RiderView.PointAtHeightAhead</span>)
+<span class="syn-name">clipped_points</span> = |polygon_points| <span class="syn-type">RiderView</span>.points_in_region(polygon_points, near_plane_region)
+</code></pre></figure><p>So a point on the road reaches the screen by four moves: a rotation for each bend, one turn to the camera, a check at the near plane, and a projection, which divides by <code>forward</code>.</p>
+
+</article>
+<nav class="turn-page" aria-label="Previous and next chapter">
+<a rel="prev" href="what-a-cat-does-to-the-rider.html"><small>Previous</small>What a cat does to the rider</a>
+<a rel="next" href="proving-it.html"><small>Next</small>Proving it</a>
+</nav>
+</main>
+
+</body>
+</html>

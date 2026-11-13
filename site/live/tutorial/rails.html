@@ -1,0 +1,193 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Rails · Safari Ride</title>
+<link rel="icon" href="data:,">
+<link rel="stylesheet" href="book.css">
+<script src="book.js" defer></script>
+</head>
+<body class="chapter">
+<header class="top-bar">
+<a class="home-link" href="https://roc.lynrummy.com/">Steve's Roc Apps</a>
+<p class="draft-notice">This is an early draft.</p>
+<a class="repo-link" href="https://github.com/showell/roc-apps">roc-apps on GitHub</a>
+</header>
+<nav class="book-nav" id="chapters" aria-label="Chapters">
+<a class="book-name" href="index.html">Safari Ride</a>
+<ol>
+<li class="part">The big picture</li><li><a href="introduction.html"><span class="number">1</span>Introduction</a></li>
+<li><a href="one-page.html"><span class="number">2</span>One page</a></li>
+<li><a href="the-problem.html"><span class="number">3</span>The problem</a></li>
+<li><a href="platforms-packages-and-modules.html"><span class="number">4</span>Platforms, packages and modules</a></li>
+<li><a href="types.html"><span class="number">5</span>Types</a></li>
+<li><a href="functions.html"><span class="number">6</span>Functions</a></li>
+<li class="part">One frame</li><li><a href="things.html"><span class="number">7</span>Things</a></li>
+<li><a href="billboard-critters.html"><span class="number">8</span>Tag unions: billboard critters</a></li>
+<li><a href="shapes.html"><span class="number">9</span>Shapes</a></li>
+<li><a href="a-far-tree.html"><span class="number">10</span>Lists and map: a far tree</a></li>
+<li><a href="the-pipeline.html"><span class="number">11</span>The pipeline</a></li>
+<li><a href="asking-a-kind.html"><span class="number">12</span>Where clauses: asking a kind</a></li>
+<li><a href="refused.html"><span class="number">13</span>Errors as tag unions</a></li>
+<li class="category">Nature</li><li><a href="the-sky.html"><span class="number">14</span>The sky and the grass</a></li>
+<li><a href="mountains.html"><span class="number">15</span>Mountains</a></li>
+<li class="category">Man-made</li><li><a href="the-road.html"><span class="number">16</span>The road</a></li>
+<li class="here"><a href="rails.html"><span class="number">17</span>Rails</a><ol class="sections"><li><a href="rails.html#from-path-to-quads">From path to quads</a></li><li><a href="rails.html#bars-and-posts">Bars and posts</a></li></ol></li>
+<li><a href="radio-towers.html"><span class="number">18</span>Radio towers</a></li>
+<li class="category">Critters that stand still</li><li><a href="herds.html"><span class="number">19</span>Herds</a></li>
+<li class="part">Motion</li><li><a href="a-flip-book.html"><span class="number">20</span>Immutable values: a flip book</a></li>
+<li><a href="records.html"><span class="number">21</span>Records</a></li>
+<li><a href="pure-functions-and-effects.html"><span class="number">22</span>Pure functions and effects</a></li>
+<li><a href="the-clock.html"><span class="number">23</span>Opaque types: the clock</a></li>
+<li><a href="the-ride-instant.html"><span class="number">24</span>The ride instant</a></li>
+<li class="category">The passage of time</li><li><a href="the-beacons.html"><span class="number">25</span>The beacons</a></li>
+<li><a href="the-setting-sun.html"><span class="number">26</span>The setting sun</a></li>
+<li class="category">Vehicles</li><li><a href="the-rider.html"><span class="number">27</span>The rider</a></li>
+<li><a href="the-throttle.html"><span class="number">28</span>The throttle</a></li>
+<li><a href="rehearsal.html"><span class="number">29</span>Variables and loops: rehearsal</a></li>
+<li><a href="the-riders-gaze.html"><span class="number">30</span>The rider&#39;s gaze</a></li>
+<li><a href="the-truck.html"><span class="number">31</span>The truck</a></li>
+<li><a href="the-trucks-motion.html"><span class="number">32</span>The truck&#39;s motion</a></li>
+<li class="category">Critter motion</li><li><a href="the-cat.html"><span class="number">33</span>The cat</a></li>
+<li><a href="the-bird.html"><span class="number">34</span>The bird</a></li>
+<li><a href="what-a-cat-does-to-the-rider.html"><span class="number">35</span>What a cat does to the rider</a></li>
+<li class="part">Under the hood</li><li><a href="the-math-layer.html"><span class="number">36</span>The math layer</a></li>
+<li><a href="proving-it.html"><span class="number">37</span>Proving it</a></li>
+<li><a href="the-platform.html"><span class="number">38</span>The platform</a></li>
+<li><a href="zooming-back-out.html"><span class="number">39</span>Zooming back out</a></li>
+</ol>
+</nav>
+<main>
+<p class="book-bar"><a href="index.html">Safari Ride</a> <a href="#chapters">Chapters</a></p>
+<article>
+<p class="chapter-number">Chapter 17</p>
+<h1 id="rails">Rails</h1>
+<p>At each bend, a guard rail runs along the outside of the turn: a metal bar half a metre up, on thin posts. It&#39;s the first part of the road itself that stands up off the ground.</p>
+<figure class="widget"><iframe class="canvas-app" src="../frame_widget/?start=rails" title="Step 1,529 of the ride: the road, with its guard rails at the bends ahead." loading="lazy" style="aspect-ratio: 960 / 600"></iframe><figcaption>Step 1,529 of the ride: the road, with its guard rails at the bends ahead.</figcaption></figure><p>The rail follows a path on the ground. It runs along the road&#39;s outer edge for the last 10 metres before the bend, out to the apex, back to the next segment&#39;s outer edge, and on along it for 10 metres more:</p>
+<figure class="diagram"><svg class="diagram" role="img" aria-label="The path of a guard rail" width="139pt" height="353pt"
+ viewBox="0.00 0.00 139.00 353.00" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+<g id="graph0" class="graph" transform="scale(1 1) rotate(0) translate(4 349)">
+<polygon fill="white" stroke="transparent" points="-4,4 -4,-349 135,-349 135,4 -4,4"/>
+<g id="node1" class="node">
+<polygon fill="none" stroke="black" points="128.5,-345 1.5,-345 1.5,-298 128.5,-298 128.5,-345"/>
+<text text-anchor="middle" x="65" y="-331.4" font-family="Helvetica,sans-Serif" font-size="12.00">runup_points:</text>
+<text text-anchor="middle" x="65" y="-318.4" font-family="Helvetica,sans-Serif" font-size="12.00">the last 10 metres</text>
+<text text-anchor="middle" x="65" y="-305.4" font-family="Helvetica,sans-Serif" font-size="12.00">before the bend</text>
+</g>
+<g id="node2" class="node">
+<polygon fill="none" stroke="black" points="120,-242 10,-242 10,-206 120,-206 120,-242"/>
+<text text-anchor="middle" x="65" y="-227.4" font-family="Helvetica,sans-Serif" font-size="12.00">leg_points:</text>
+<text text-anchor="middle" x="65" y="-214.4" font-family="Helvetica,sans-Serif" font-size="12.00">out to the apex</text>
+</g>
+<g id="edge1" class="edge">
+<path fill="none" stroke="black" d="M65,-297.87C65,-284.24 65,-266.8 65,-252.4"/>
+<polygon fill="black" stroke="black" points="68.5,-252.09 65,-242.09 61.5,-252.09 68.5,-252.09"/>
+<text text-anchor="middle" x="94" y="-267.2" font-family="Helvetica,sans-Serif" font-size="11.00"> &#160;turns out</text>
+</g>
+<g id="node3" class="node">
+<polygon fill="none" stroke="black" points="123,-150 7,-150 7,-103 123,-103 123,-150"/>
+<text text-anchor="middle" x="65" y="-136.4" font-family="Helvetica,sans-Serif" font-size="12.00">leg_points:</text>
+<text text-anchor="middle" x="65" y="-123.4" font-family="Helvetica,sans-Serif" font-size="12.00">back to the next</text>
+<text text-anchor="middle" x="65" y="-110.4" font-family="Helvetica,sans-Serif" font-size="12.00">segment&#39;s edge</text>
+</g>
+<g id="edge2" class="edge">
+<path fill="none" stroke="black" d="M65,-205.93C65,-193.29 65,-175.67 65,-160.33"/>
+<polygon fill="black" stroke="black" points="68.5,-160.17 65,-150.17 61.5,-160.17 68.5,-160.17"/>
+<text text-anchor="middle" x="98" y="-175.2" font-family="Helvetica,sans-Serif" font-size="11.00"> &#160;turns back</text>
+</g>
+<g id="node4" class="node">
+<polygon fill="none" stroke="black" points="130,-47 0,-47 0,0 130,0 130,-47"/>
+<text text-anchor="middle" x="65" y="-33.4" font-family="Helvetica,sans-Serif" font-size="12.00">runout_points:</text>
+<text text-anchor="middle" x="65" y="-20.4" font-family="Helvetica,sans-Serif" font-size="12.00">the first 10 metres</text>
+<text text-anchor="middle" x="65" y="-7.4" font-family="Helvetica,sans-Serif" font-size="12.00">after the bend</text>
+</g>
+<g id="edge3" class="edge">
+<path fill="none" stroke="black" d="M65,-102.83C65,-89.45 65,-72.27 65,-57.41"/>
+<polygon fill="black" stroke="black" points="68.5,-57.09 65,-47.09 61.5,-57.09 68.5,-57.09"/>
+<text text-anchor="middle" x="89.5" y="-72.2" font-family="Helvetica,sans-Serif" font-size="11.00"> &#160;runs on</text>
+</g>
+</g>
+</svg><figcaption>The path of a guard rail</figcaption></figure><h2 id="from-path-to-quads">From path to quads <a class="section-link" href="#from-path-to-quads" aria-label="Link to this section">§</a></h2>
+<p><code>RailSighting</code> finds the rail at every bend in view:</p>
+<figure class="listing"><figcaption>RailSighting.roc</figcaption><pre><code class="language-roc"><span class="syn-comment">## The quads of the rails at every bend in view: the bends along the road</span>
+<span class="syn-comment">## ahead, then the bend from the segment behind.</span>
+<span class="syn-name">rail_quads_in_view</span> : <span class="syn-type">RoadAhead.RoadView</span>, <span class="syn-type">Geom.Vantage</span> -&gt; <span class="syn-type">List</span>(<span class="syn-type">GuardRail.RailQuad</span>)
+<span class="syn-name">rail_quads_in_view</span> = |road, vantage|
+	<span class="syn-type">RoadAhead</span>.segments_in_view(road).join_map(
+		|in_view|
+			<span class="syn-keyword">match</span> <span class="syn-type">BendInView</span>.bend_after(road, in_view) {
+				<span class="syn-type">Ok</span>(bend_in_view) =&gt; {
+					path_points = rail_points(road, { vantage, bend_in_view })
+					<span class="syn-type">GuardRail</span>.quads_along(path_points)
+				}
+				<span class="syn-type">Err</span>(<span class="syn-type">RoadEndsInView</span>) =&gt; []
+			},
+	)
+</code></pre></figure><p><code>join_map</code> maps each segment in view to a list, here the quads of its bend&#39;s rail, and joins the lists into one. For each segment with a bend after it, <code>rail_points</code> finds the path, and <code>GuardRail.quads_along</code> cuts it into quads. The path joins four lists, one for each box of the diagram:</p>
+<figure class="listing"><figcaption>RailSighting.roc</figcaption><pre><code class="language-roc"><span class="syn-comment">## The path of the rail at a bend, along the road&#39;s outer edge: up to the</span>
+<span class="syn-comment">## bend, out to where the two outer edges meet, back to the next segment,</span>
+<span class="syn-comment">## and along it.</span>
+<span class="syn-name">rail_points</span> : <span class="syn-type">RoadAhead.RoadView</span>,
+{
+	vantage : <span class="syn-type">Geom.Vantage</span>,
+	bend_in_view : <span class="syn-type">BendInView</span>,
+} -&gt; <span class="syn-type">List</span>(<span class="syn-type">RiderView.RiderPoint</span>)
+<span class="syn-name">rail_points</span> = |road, { vantage, bend_in_view }| {
+	{ end_before, apex, start_after } = bend_in_view.outer_corner_in_view({ road, vantage })
+	[
+		runup_points(road, { vantage, bend_in_view }),
+		leg_points({ from: end_before, to: apex }),
+		leg_points({ from: apex, to: start_after }),
+		runout_points(road, { vantage, bend_in_view }),
+	].join()
+}
+</code></pre></figure><p><code>outer_corner_in_view</code>, from the <a class="chapter-link" href="the-road.html">“The road”</a> chapter, returns the bend&#39;s outer corner, and the first line takes that record apart into its three points. A leg between two of them gets a point about every metre:</p>
+<figure class="listing"><figcaption>RailSighting.roc</figcaption><pre><code class="language-roc"><span class="syn-comment">## A leg of rail from `from` to `to`: a point about every metre, the</span>
+<span class="syn-comment">## last at `to`, and none at `from`, which ends the leg before it.</span>
+<span class="syn-name">leg_points</span> : {
+	from : <span class="syn-type">RiderView.RiderPoint</span>,
+	to : <span class="syn-type">RiderView.RiderPoint</span>,
+} -&gt; <span class="syn-type">List</span>(<span class="syn-type">RiderView.RiderPoint</span>)
+<span class="syn-name">leg_points</span> = |{ from, to }| {
+	pieces = leg_pieces(<span class="syn-type">RiderView</span>.ground_distance({ from, to }))
+	evenly_spaced({ from, to, pieces }).drop_first(<span class="syn-number">1</span>)
+}
+</code></pre></figure><p>The points are about a metre apart, and a post will stand at each one. <code>drop_first(1)</code> drops a leg&#39;s first point, <code>from</code>, because that&#39;s the last point of the leg before it.</p>
+<h2 id="bars-and-posts">Bars and posts <a class="section-link" href="#bars-and-posts" aria-label="Link to this section">§</a></h2>
+<p><code>GuardRail.quads_along</code> turns the path into flat pieces with four corners each: a bar between each two neighbouring points, then a post at each point. A piece is a record:</p>
+<figure class="listing"><figcaption>GuardRail.roc</figcaption><pre><code class="language-roc"><span class="syn-comment">## A quad of the rail: its corners and its colour. Its low edge runs along</span>
+<span class="syn-comment">## the path from start to end, and its high edge runs above it.</span>
+<span class="syn-type">RailQuad</span> : {
+	corners : {
+		low_start : <span class="syn-type">RiderView.PointAtHeight</span>,
+		low_end : <span class="syn-type">RiderView.PointAtHeight</span>,
+		high_end : <span class="syn-type">RiderView.PointAtHeight</span>,
+		high_start : <span class="syn-type">RiderView.PointAtHeight</span>,
+	},
+	color : <span class="syn-type">RgbColor</span>,
+}
+</code></pre></figure><p>Its corners are <code>PointAtHeight</code>s, points seen from the rider at a height measured from the rider&#39;s own level, so a bar&#39;s top corners stand higher than its bottom ones. Where the ground has curved away, that height can be below zero.</p>
+<p>Each quad goes into the frame&#39;s depth sort on its own, at a depth that&#39;s the mean distance of its corners, so a tree can stand in front of one post and behind the next. A quad holds only its corners and a color, so <code>quad_rendering</code> makes its rendering directly. The things beside the road go through <code>Pipeline.rendering_of</code> instead:</p>
+<figure class="listing"><figcaption>GuardRail.roc</figcaption><pre><code class="language-roc"><span class="syn-comment">## A quad as the frame draws it, at its own depth, unless it&#39;s wholly</span>
+<span class="syn-comment">## behind the camera. A rail quad has no kind for `Pipeline` to ask, so it</span>
+<span class="syn-comment">## renders itself.</span>
+<span class="syn-name">quad_rendering</span> : <span class="syn-type">GuardRail.RailQuad</span>, <span class="syn-type">Sprite.LensAndLight</span> -&gt; <span class="syn-type">Try</span>(<span class="syn-type">Rendered</span>, [<span class="syn-type">BehindCamera</span>])
+<span class="syn-name">quad_rendering</span> = |quad, { focal_length, darkness }| {
+	dimmed_quad = { ..quad, color: <span class="syn-type">Sky</span>.color_at_darkness(quad.color, darkness) }
+	quad_shape(dimmed_quad, focal_length).map_ok(
+		|shape| <span class="syn-type">Rendered</span>.of(quad_depth(quad), <span class="syn-type">Sprite</span>.from_shapes([shape])),
+	)
+}
+</code></pre></figure><p><code>{ ..quad, color: … }</code> is a record update: a new quad, the same as <code>quad</code> but for its color, which is dimmed with the sky. <code>quad</code> itself stays as it was. <code>map_ok</code> works on a <code>Try</code>: it applies its function to an <code>Ok</code> and leaves an <code>Err</code> as it is, so a quad wholly behind the camera stays refused, and <code>Scene</code> drops those with <code>keep_oks</code>.</p>
+<p><code>rail_quads_in_view</code> finds each rail afresh every frame, its bars and posts from the route and the rider, and the depth sort places each one. Next come the radio towers, which go back through the pipeline as things beside the road.</p>
+
+</article>
+<nav class="turn-page" aria-label="Previous and next chapter">
+<a rel="prev" href="the-road.html"><small>Previous</small>The road</a>
+<a rel="next" href="radio-towers.html"><small>Next</small>Radio towers</a>
+</nav>
+</main>
+<script src="embed.js"></script>
+</body>
+</html>

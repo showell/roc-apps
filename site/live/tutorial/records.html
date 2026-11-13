@@ -1,0 +1,115 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Records · Safari Ride</title>
+<link rel="icon" href="data:,">
+<link rel="stylesheet" href="book.css">
+<script src="book.js" defer></script>
+</head>
+<body class="chapter">
+<header class="top-bar">
+<a class="home-link" href="https://roc.lynrummy.com/">Steve's Roc Apps</a>
+<p class="draft-notice">This is an early draft.</p>
+<a class="repo-link" href="https://github.com/showell/roc-apps">roc-apps on GitHub</a>
+</header>
+<nav class="book-nav" id="chapters" aria-label="Chapters">
+<a class="book-name" href="index.html">Safari Ride</a>
+<ol>
+<li class="part">The big picture</li><li><a href="introduction.html"><span class="number">1</span>Introduction</a></li>
+<li><a href="one-page.html"><span class="number">2</span>One page</a></li>
+<li><a href="the-problem.html"><span class="number">3</span>The problem</a></li>
+<li><a href="platforms-packages-and-modules.html"><span class="number">4</span>Platforms, packages and modules</a></li>
+<li><a href="types.html"><span class="number">5</span>Types</a></li>
+<li><a href="functions.html"><span class="number">6</span>Functions</a></li>
+<li class="part">One frame</li><li><a href="things.html"><span class="number">7</span>Things</a></li>
+<li><a href="billboard-critters.html"><span class="number">8</span>Tag unions: billboard critters</a></li>
+<li><a href="shapes.html"><span class="number">9</span>Shapes</a></li>
+<li><a href="a-far-tree.html"><span class="number">10</span>Lists and map: a far tree</a></li>
+<li><a href="the-pipeline.html"><span class="number">11</span>The pipeline</a></li>
+<li><a href="asking-a-kind.html"><span class="number">12</span>Where clauses: asking a kind</a></li>
+<li><a href="refused.html"><span class="number">13</span>Errors as tag unions</a></li>
+<li class="category">Nature</li><li><a href="the-sky.html"><span class="number">14</span>The sky and the grass</a></li>
+<li><a href="mountains.html"><span class="number">15</span>Mountains</a></li>
+<li class="category">Man-made</li><li><a href="the-road.html"><span class="number">16</span>The road</a></li>
+<li><a href="rails.html"><span class="number">17</span>Rails</a></li>
+<li><a href="radio-towers.html"><span class="number">18</span>Radio towers</a></li>
+<li class="category">Critters that stand still</li><li><a href="herds.html"><span class="number">19</span>Herds</a></li>
+<li class="part">Motion</li><li><a href="a-flip-book.html"><span class="number">20</span>Immutable values: a flip book</a></li>
+<li class="here"><a href="records.html"><span class="number">21</span>Records</a></li>
+<li><a href="pure-functions-and-effects.html"><span class="number">22</span>Pure functions and effects</a></li>
+<li><a href="the-clock.html"><span class="number">23</span>Opaque types: the clock</a></li>
+<li><a href="the-ride-instant.html"><span class="number">24</span>The ride instant</a></li>
+<li class="category">The passage of time</li><li><a href="the-beacons.html"><span class="number">25</span>The beacons</a></li>
+<li><a href="the-setting-sun.html"><span class="number">26</span>The setting sun</a></li>
+<li class="category">Vehicles</li><li><a href="the-rider.html"><span class="number">27</span>The rider</a></li>
+<li><a href="the-throttle.html"><span class="number">28</span>The throttle</a></li>
+<li><a href="rehearsal.html"><span class="number">29</span>Variables and loops: rehearsal</a></li>
+<li><a href="the-riders-gaze.html"><span class="number">30</span>The rider&#39;s gaze</a></li>
+<li><a href="the-truck.html"><span class="number">31</span>The truck</a></li>
+<li><a href="the-trucks-motion.html"><span class="number">32</span>The truck&#39;s motion</a></li>
+<li class="category">Critter motion</li><li><a href="the-cat.html"><span class="number">33</span>The cat</a></li>
+<li><a href="the-bird.html"><span class="number">34</span>The bird</a></li>
+<li><a href="what-a-cat-does-to-the-rider.html"><span class="number">35</span>What a cat does to the rider</a></li>
+<li class="part">Under the hood</li><li><a href="the-math-layer.html"><span class="number">36</span>The math layer</a></li>
+<li><a href="proving-it.html"><span class="number">37</span>Proving it</a></li>
+<li><a href="the-platform.html"><span class="number">38</span>The platform</a></li>
+<li><a href="zooming-back-out.html"><span class="number">39</span>Zooming back out</a></li>
+</ol>
+</nav>
+<main>
+<p class="book-bar"><a href="index.html">Safari Ride</a> <a href="#chapters">Chapters</a></p>
+<article>
+<p class="chapter-number">Chapter 21</p>
+<h1 id="records">Records</h1>
+<p><code>Tour.step_back</code> makes a new tour with a record update, and record updates run all through the ride. A Roc record stays as it was made, so a field with a new value means a new record.</p>
+<p>The motorcycle is a record of four fields: its place on the route, which way it&#39;s turned, its speed and its lean. The rider&#39;s step uses this function to hold the bike at the end of the road:</p>
+<figure class="listing"><figcaption>Motorcycle.roc</figcaption><pre><code class="language-roc"><span class="syn-comment">## This motorcycle stopped dead at `at` on its segment.</span>
+<span class="syn-name">stopped_at</span> : <span class="syn-type">Motorcycle</span>, <span class="syn-type">Along</span> -&gt; <span class="syn-type">Motorcycle</span>
+<span class="syn-name">stopped_at</span> = |motorcycle, at| {
+	place = motorcycle.route_place
+	{
+		..motorcycle,
+		route_place: { ..place, road_point: { ..place.road_point, along: at } },
+		speed: <span class="syn-type">Speed</span>.at_rest,
+	}
+}
+</code></pre></figure><p>Here&#39;s the function, piece by piece:</p>
+<table>
+<thead>
+<tr>
+<th>Code</th>
+<th>Term</th>
+<th>What it says</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>{ .<wbr>.<wbr>motorcycle, … }</code></td>
+<td>record update</td>
+<td>A new record with every field of <code>motorcycle</code>, except the ones named after it.</td>
+</tr>
+<tr>
+<td><code>route_<wbr>place: { .<wbr>.<wbr>place, … }</code></td>
+<td>record update</td>
+<td>The new <code>route_<wbr>place</code> is an update of the old place in turn, and its <code>road_<wbr>point</code> is an update of the old point. So the new motorcycle&#39;s <code>along</code> is <code>at</code>, three records deep.</td>
+</tr>
+<tr>
+<td><code>speed: Speed.<wbr>at_<wbr>rest</code></td>
+<td>field</td>
+<td>A second field with a new value.</td>
+</tr>
+</tbody>
+</table>
+<p><code>motorcycle</code> itself stays as it was, and so do <code>place</code> and its road point. Every step of the ride builds its next moment as a new record, out of the old moment&#39;s fields.</p>
+
+</article>
+<nav class="turn-page" aria-label="Previous and next chapter">
+<a rel="prev" href="a-flip-book.html"><small>Previous</small>Immutable values: a flip book</a>
+<a rel="next" href="pure-functions-and-effects.html"><small>Next</small>Pure functions and effects</a>
+</nav>
+</main>
+
+</body>
+</html>

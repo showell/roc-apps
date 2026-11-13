@@ -1,0 +1,106 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Immutable values: a flip book · Safari Ride</title>
+<link rel="icon" href="data:,">
+<link rel="stylesheet" href="book.css">
+<script src="book.js" defer></script>
+</head>
+<body class="chapter">
+<header class="top-bar">
+<a class="home-link" href="https://roc.lynrummy.com/">Steve's Roc Apps</a>
+<p class="draft-notice">This is an early draft.</p>
+<a class="repo-link" href="https://github.com/showell/roc-apps">roc-apps on GitHub</a>
+</header>
+<nav class="book-nav" id="chapters" aria-label="Chapters">
+<a class="book-name" href="index.html">Safari Ride</a>
+<ol>
+<li class="part">The big picture</li><li><a href="introduction.html"><span class="number">1</span>Introduction</a></li>
+<li><a href="one-page.html"><span class="number">2</span>One page</a></li>
+<li><a href="the-problem.html"><span class="number">3</span>The problem</a></li>
+<li><a href="platforms-packages-and-modules.html"><span class="number">4</span>Platforms, packages and modules</a></li>
+<li><a href="types.html"><span class="number">5</span>Types</a></li>
+<li><a href="functions.html"><span class="number">6</span>Functions</a></li>
+<li class="part">One frame</li><li><a href="things.html"><span class="number">7</span>Things</a></li>
+<li><a href="billboard-critters.html"><span class="number">8</span>Tag unions: billboard critters</a></li>
+<li><a href="shapes.html"><span class="number">9</span>Shapes</a></li>
+<li><a href="a-far-tree.html"><span class="number">10</span>Lists and map: a far tree</a></li>
+<li><a href="the-pipeline.html"><span class="number">11</span>The pipeline</a></li>
+<li><a href="asking-a-kind.html"><span class="number">12</span>Where clauses: asking a kind</a></li>
+<li><a href="refused.html"><span class="number">13</span>Errors as tag unions</a></li>
+<li class="category">Nature</li><li><a href="the-sky.html"><span class="number">14</span>The sky and the grass</a></li>
+<li><a href="mountains.html"><span class="number">15</span>Mountains</a></li>
+<li class="category">Man-made</li><li><a href="the-road.html"><span class="number">16</span>The road</a></li>
+<li><a href="rails.html"><span class="number">17</span>Rails</a></li>
+<li><a href="radio-towers.html"><span class="number">18</span>Radio towers</a></li>
+<li class="category">Critters that stand still</li><li><a href="herds.html"><span class="number">19</span>Herds</a></li>
+<li class="part">Motion</li><li class="here"><a href="a-flip-book.html"><span class="number">20</span>Immutable values: a flip book</a><ol class="sections"><li><a href="a-flip-book.html#turning-back">Turning back</a></li><li><a href="a-flip-book.html#what-a-moment-holds">What a moment holds</a></li></ol></li>
+<li><a href="records.html"><span class="number">21</span>Records</a></li>
+<li><a href="pure-functions-and-effects.html"><span class="number">22</span>Pure functions and effects</a></li>
+<li><a href="the-clock.html"><span class="number">23</span>Opaque types: the clock</a></li>
+<li><a href="the-ride-instant.html"><span class="number">24</span>The ride instant</a></li>
+<li class="category">The passage of time</li><li><a href="the-beacons.html"><span class="number">25</span>The beacons</a></li>
+<li><a href="the-setting-sun.html"><span class="number">26</span>The setting sun</a></li>
+<li class="category">Vehicles</li><li><a href="the-rider.html"><span class="number">27</span>The rider</a></li>
+<li><a href="the-throttle.html"><span class="number">28</span>The throttle</a></li>
+<li><a href="rehearsal.html"><span class="number">29</span>Variables and loops: rehearsal</a></li>
+<li><a href="the-riders-gaze.html"><span class="number">30</span>The rider&#39;s gaze</a></li>
+<li><a href="the-truck.html"><span class="number">31</span>The truck</a></li>
+<li><a href="the-trucks-motion.html"><span class="number">32</span>The truck&#39;s motion</a></li>
+<li class="category">Critter motion</li><li><a href="the-cat.html"><span class="number">33</span>The cat</a></li>
+<li><a href="the-bird.html"><span class="number">34</span>The bird</a></li>
+<li><a href="what-a-cat-does-to-the-rider.html"><span class="number">35</span>What a cat does to the rider</a></li>
+<li class="part">Under the hood</li><li><a href="the-math-layer.html"><span class="number">36</span>The math layer</a></li>
+<li><a href="proving-it.html"><span class="number">37</span>Proving it</a></li>
+<li><a href="the-platform.html"><span class="number">38</span>The platform</a></li>
+<li><a href="zooming-back-out.html"><span class="number">39</span>Zooming back out</a></li>
+</ol>
+</nav>
+<main>
+<p class="book-bar"><a href="index.html">Safari Ride</a> <a href="#chapters">Chapters</a></p>
+<article>
+<p class="chapter-number">Chapter 20</p>
+<h1 id="immutable-values-a-flip-book">Immutable values: a flip book</h1>
+<p>The first half of the book held one page still, step 1,529, and built it part by part. Now the pages turn. The picture below holds a real ride. The bar is the whole route, with the rider and the truck as two dots on it, and the lines of text read out the clock, the rider and the truck. The figure under the bar is the rider seen from behind, with the lean drawn three times as steep. Press play and let it run for a moment. Press play again to stop it, then press the step-back button a few times.</p>
+<figure class="widget"><iframe class="canvas-app" src="../step_widget/" title="Press play, press it again to stop, then step back." loading="lazy" style="aspect-ratio: 640 / 360"></iframe><figcaption>Press play, press it again to stop, then step back.</figcaption></figure><p>The ride steps back one moment at a time, as easily as it went forward. A Roc value stays exactly as it was made, and the ride changes from start to finish. A flip book shows how both hold.</p>
+<p>The <a class="chapter-link" href="one-page.html">“One page”</a> chapter called the ride a flip book. Each page is a still drawing, and the motion comes from the flipping. In Safari Ride, each page is a moment, a value of the <code>RideInstant</code> type, and one function makes the next one:</p>
+<figure class="listing"><figcaption>RideInstant.roc</figcaption><pre><code class="language-roc"><span class="syn-name">next_or_restart</span> : <span class="syn-type">Route</span>, <span class="syn-type">RideInstant</span> -&gt; [<span class="syn-type">Continued</span>(<span class="syn-type">RideInstant</span>), <span class="syn-type">Restarted</span>(<span class="syn-type">RideInstant</span>)]
+</code></pre></figure><p>It takes the road and a moment, and returns a tag union written in place: the next moment, tagged <code>Continued</code>, or the ride&#39;s first moment again, tagged <code>Restarted</code>, once the rider reaches the end of the road. Either way, it returns a new moment and leaves the old one as it was.</p>
+<p>The platform does the flipping. Thirty times a second it asks the app for its next state, and while the ride plays, the app moves on to the next moment through <code>next_or_restart</code>. Then the platform paints that moment&#39;s picture, which <code>FrameView.frame_view_at</code> works out from the moment and the road. The picture above flips much faster than that, to cover more road. The same moment always gives the same picture, so you can hold any page still and study it, as the first half of the book held step 1,529.</p>
+<h2 id="turning-back">Turning back <a class="section-link" href="#turning-back" aria-label="Link to this section">§</a></h2>
+<p>Every old moment stays as it was made, so the ride keeps the ones since it last started, and stepping back turns to an earlier page. Here&#39;s the function behind the step-back button you just pressed:</p>
+<figure class="listing"><figcaption>Tour.roc</figcaption><pre><code class="language-roc"><span class="syn-comment">## The tour a step back. At the ride&#39;s start there is nothing behind it,</span>
+<span class="syn-comment">## so it stays there.</span>
+<span class="syn-name">step_back</span> : <span class="syn-type">Tour</span> -&gt; <span class="syn-type">Tour</span>
+<span class="syn-name">step_back</span> = |<span class="syn-type">Tour</span>.(tour)|
+	<span class="syn-keyword">match</span> tour.past_instants.last() {
+		<span class="syn-type">Ok</span>(previous_instant) =&gt; {
+			past_instants = tour.past_instants.drop_last(<span class="syn-number">1</span>)
+			<span class="syn-type">Tour</span>.({ ..tour, instant: previous_instant, past_instants })
+		}
+		<span class="syn-type">Err</span>(<span class="syn-type">ListWasEmpty</span>) =&gt; <span class="syn-type">Tour</span>.(tour)
+	}
+</code></pre></figure><p>A <code>Tour</code> holds the moment on show, and a list of the moments before it. <code>Tour.(tour)</code> opens the tour to read its fields. <code>step_back</code> takes the last moment off that list and puts it on show, with a record update of those two fields. The old tour stays as it was. At the ride&#39;s start the list is empty, so <code>last</code> returns <code>Err(ListWasEmpty)</code>, and the tour stays where it is.</p>
+<h2 id="what-a-moment-holds">What a moment holds <a class="section-link" href="#what-a-moment-holds" aria-label="Link to this section">§</a></h2>
+<p>Here, once more, is everything a moment holds:</p>
+<figure class="listing"><figcaption>RideInstant.roc, in RideInstant</figcaption><pre><code class="language-roc"><span class="syn-comment"># ...</span>
+<span class="syn-type">RideInstant</span> := {
+	rider : <span class="syn-type">Rider</span>,
+	truck : <span class="syn-type">TruckJourney.TruckProgress</span>,
+	clock : <span class="syn-type">Clock</span>,
+	encounter_plan : <span class="syn-type">EncounterPlan</span>,
+}.{
+<span class="syn-comment"># ...</span>
+</code></pre></figure><p>That&#39;s four things: the rider, the truck, the clock, and the plan for when the cat or the bird ahead starts to move. The ride carries those four from step to step, and derives everything else in a frame from them and the road.</p>
+
+</article>
+<nav class="turn-page" aria-label="Previous and next chapter">
+<a rel="prev" href="herds.html"><small>Previous</small>Herds</a>
+<a rel="next" href="records.html"><small>Next</small>Records</a>
+</nav>
+</main>
+<script src="embed.js"></script>
+</body>
+</html>

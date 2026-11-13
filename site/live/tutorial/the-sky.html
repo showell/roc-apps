@@ -1,0 +1,157 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>The sky and the grass · Safari Ride</title>
+<link rel="icon" href="data:,">
+<link rel="stylesheet" href="book.css">
+<script src="book.js" defer></script>
+</head>
+<body class="chapter">
+<header class="top-bar">
+<a class="home-link" href="https://roc.lynrummy.com/">Steve's Roc Apps</a>
+<p class="draft-notice">This is an early draft.</p>
+<a class="repo-link" href="https://github.com/showell/roc-apps">roc-apps on GitHub</a>
+</header>
+<nav class="book-nav" id="chapters" aria-label="Chapters">
+<a class="book-name" href="index.html">Safari Ride</a>
+<ol>
+<li class="part">The big picture</li><li><a href="introduction.html"><span class="number">1</span>Introduction</a></li>
+<li><a href="one-page.html"><span class="number">2</span>One page</a></li>
+<li><a href="the-problem.html"><span class="number">3</span>The problem</a></li>
+<li><a href="platforms-packages-and-modules.html"><span class="number">4</span>Platforms, packages and modules</a></li>
+<li><a href="types.html"><span class="number">5</span>Types</a></li>
+<li><a href="functions.html"><span class="number">6</span>Functions</a></li>
+<li class="part">One frame</li><li><a href="things.html"><span class="number">7</span>Things</a></li>
+<li><a href="billboard-critters.html"><span class="number">8</span>Tag unions: billboard critters</a></li>
+<li><a href="shapes.html"><span class="number">9</span>Shapes</a></li>
+<li><a href="a-far-tree.html"><span class="number">10</span>Lists and map: a far tree</a></li>
+<li><a href="the-pipeline.html"><span class="number">11</span>The pipeline</a></li>
+<li><a href="asking-a-kind.html"><span class="number">12</span>Where clauses: asking a kind</a></li>
+<li><a href="refused.html"><span class="number">13</span>Errors as tag unions</a></li>
+<li class="category">Nature</li><li class="here"><a href="the-sky.html"><span class="number">14</span>The sky and the grass</a><ol class="sections"><li><a href="the-sky.html#the-top-of-the-sky">The top of the sky</a></li><li><a href="the-sky.html#the-horizon">The horizon</a></li><li><a href="the-sky.html#the-fade">The fade</a></li><li><a href="the-sky.html#the-grass">The grass</a></li></ol></li>
+<li><a href="mountains.html"><span class="number">15</span>Mountains</a></li>
+<li class="category">Man-made</li><li><a href="the-road.html"><span class="number">16</span>The road</a></li>
+<li><a href="rails.html"><span class="number">17</span>Rails</a></li>
+<li><a href="radio-towers.html"><span class="number">18</span>Radio towers</a></li>
+<li class="category">Critters that stand still</li><li><a href="herds.html"><span class="number">19</span>Herds</a></li>
+<li class="part">Motion</li><li><a href="a-flip-book.html"><span class="number">20</span>Immutable values: a flip book</a></li>
+<li><a href="records.html"><span class="number">21</span>Records</a></li>
+<li><a href="pure-functions-and-effects.html"><span class="number">22</span>Pure functions and effects</a></li>
+<li><a href="the-clock.html"><span class="number">23</span>Opaque types: the clock</a></li>
+<li><a href="the-ride-instant.html"><span class="number">24</span>The ride instant</a></li>
+<li class="category">The passage of time</li><li><a href="the-beacons.html"><span class="number">25</span>The beacons</a></li>
+<li><a href="the-setting-sun.html"><span class="number">26</span>The setting sun</a></li>
+<li class="category">Vehicles</li><li><a href="the-rider.html"><span class="number">27</span>The rider</a></li>
+<li><a href="the-throttle.html"><span class="number">28</span>The throttle</a></li>
+<li><a href="rehearsal.html"><span class="number">29</span>Variables and loops: rehearsal</a></li>
+<li><a href="the-riders-gaze.html"><span class="number">30</span>The rider&#39;s gaze</a></li>
+<li><a href="the-truck.html"><span class="number">31</span>The truck</a></li>
+<li><a href="the-trucks-motion.html"><span class="number">32</span>The truck&#39;s motion</a></li>
+<li class="category">Critter motion</li><li><a href="the-cat.html"><span class="number">33</span>The cat</a></li>
+<li><a href="the-bird.html"><span class="number">34</span>The bird</a></li>
+<li><a href="what-a-cat-does-to-the-rider.html"><span class="number">35</span>What a cat does to the rider</a></li>
+<li class="part">Under the hood</li><li><a href="the-math-layer.html"><span class="number">36</span>The math layer</a></li>
+<li><a href="proving-it.html"><span class="number">37</span>Proving it</a></li>
+<li><a href="the-platform.html"><span class="number">38</span>The platform</a></li>
+<li><a href="zooming-back-out.html"><span class="number">39</span>Zooming back out</a></li>
+</ol>
+</nav>
+<main>
+<p class="book-bar"><a href="index.html">Safari Ride</a> <a href="#chapters">Chapters</a></p>
+<article>
+<p class="chapter-number">Chapter 14</p>
+<h1 id="the-sky-and-the-grass">The sky and the grass</h1>
+<p>Behind everything beside the road stands the backdrop: the sky above the horizon and the grass below it. The horizon on the screen is the line halfway down it, where a level look from the rider lands. In a frame the sky is two colors, one at the top and one at the horizon, with a fade between them, and the grass is one rectangle. At step 1,529 the sky&#39;s two colors happen to match, for a reason the end of this chapter gives.</p>
+<figure class="widget"><iframe class="canvas-app" src="../frame_widget/?start=sky" title="Step 1,529 of the ride: the trees, the grass, and the sky over them, one day blue." loading="lazy" style="aspect-ratio: 960 / 600"></iframe><figcaption>Step 1,529 of the ride: the trees, the grass, and the sky over them, one day blue.</figcaption></figure><p>One function in the <code>Sky</code> module returns both colors at the ride&#39;s clock, as one record:</p>
+<figure class="listing"><figcaption>Sky.roc</figcaption><pre><code class="language-roc"><span class="syn-comment">## The sky&#39;s two colors at `clock`.</span>
+<span class="syn-name">colors_at</span> : <span class="syn-type">Clock</span> -&gt; <span class="syn-type">Sky.Colors</span>
+<span class="syn-name">colors_at</span> = |clock| { top: sky_top_color(clock), horizon: sky_horizon_color(clock) }
+</code></pre></figure><p><code>Sky.Colors</code> is a record of two <code>RgbColor</code>s, <code>top</code> and <code>horizon</code>. Each color has a function of its own.</p>
+<h2 id="the-top-of-the-sky">The top of the sky <a class="section-link" href="#the-top-of-the-sky" aria-label="Link to this section">§</a></h2>
+<p>The top of the sky blends from day into night, by how dark the sky is:</p>
+<figure class="listing"><figcaption>Sky.roc</figcaption><pre><code class="language-roc"><span class="syn-comment">## The sky&#39;s color at the top of the frame.</span>
+<span class="syn-name">sky_top_color</span> : <span class="syn-type">Clock</span> -&gt; <span class="syn-type">RgbColor</span>
+<span class="syn-name">sky_top_color</span> = |clock| <span class="syn-type">ColorShade</span>.color_between({
+	from: day_sky,
+	to: night_sky,
+	fraction: <span class="syn-type">Sky</span>.darkness_at(clock),
+})
+</code></pre></figure><p><code>day_sky</code> and <code>night_sky</code> are two constants in the module, a pale blue and a deep one. Each constant carries an annotation, as a function does, and here the type is an <code>RgbColor</code>. <code>Sky.darkness_at</code>, from the <a class="chapter-link" href="functions.html">“Functions”</a> chapter, says how dark the sky is, as a <code>Fraction</code>. <code>ColorShade.color_between</code> blends the two colors:</p>
+<figure class="listing"><figcaption>lib/ColorShade.roc</figcaption><pre><code class="language-roc"><span class="syn-comment">## The color `fraction` of the way from `from` to `to`, each channel</span>
+<span class="syn-comment">## rounded to a whole value as `channel_between` rounds it.</span>
+<span class="syn-name">color_between</span> : {
+	from : <span class="syn-type">RgbColor</span>,
+	to : <span class="syn-type">RgbColor</span>,
+	fraction : <span class="syn-type">Fraction</span>,
+} -&gt; <span class="syn-type">RgbColor</span>
+<span class="syn-name">color_between</span> = |{ from, to, fraction }| {
+	blend = |channel_of|
+		channel_between({
+			from: channel_of(from),
+			to: channel_of(to),
+			fraction,
+		})
+	<span class="syn-type">RgbColor</span>.from_channels({
+		red: blend(<span class="syn-type">RgbColor</span>.red),
+		green: blend(<span class="syn-type">RgbColor</span>.green),
+		blue: blend(<span class="syn-type">RgbColor</span>.blue),
+	})
+}
+</code></pre></figure><p>It takes one record, so every call names its three fields. A color is three channels, its red, green and blue, and each channel moves the same share of the way from <code>from</code> to <code>to</code>. <code>blend</code> is a function named inside the body, and it takes a function as its argument, such as <code>RgbColor.red</code>, which reads one channel of a color. The last line calls <code>blend</code> once for each channel. The share is a <code>Fraction</code>, which its type keeps between 0 and 1, so each channel lands between its values in <code>from</code> and <code>to</code>.</p>
+<h2 id="the-horizon">The horizon <a class="section-link" href="#the-horizon" aria-label="Link to this section">§</a></h2>
+<p>The horizon has the top&#39;s color, warmed toward red while the sun is near it:</p>
+<figure class="listing"><figcaption>Sky.roc</figcaption><pre><code class="language-roc"><span class="syn-comment">## The sky&#39;s color at the horizon: the sky warmed toward sunset red.</span>
+<span class="syn-name">sky_horizon_color</span> : <span class="syn-type">Clock</span> -&gt; <span class="syn-type">RgbColor</span>
+<span class="syn-name">sky_horizon_color</span> = |clock| <span class="syn-type">ColorShade</span>.color_between({
+	from: sky_top_color(clock),
+	to: sunset_red,
+	fraction: <span class="syn-type">Sky</span>.horizon_warmth_at(clock).times(horizon_warmth_at_most),
+})
+</code></pre></figure><p><code>Sky.horizon_warmth_at</code> says how near the sun stands to the horizon, as a <code>Fraction</code>, and <code>horizon_warmth_at_most</code> holds the warmest horizon to 85% of the way to <code>sunset_red</code>, so a little of the sky&#39;s own color still shows.</p>
+<h2 id="the-fade">The fade <a class="section-link" href="#the-fade" aria-label="Link to this section">§</a></h2>
+<p><code>Sky.sky_shape</code> returns the two colors as one shape:</p>
+<figure class="listing"><figcaption>Sky.roc</figcaption><pre><code class="language-roc"><span class="syn-comment">## The sky in `colors`: a gradient from the top colour down to the</span>
+<span class="syn-comment">## horizon&#39;s, over the rectangle above the horizon.</span>
+<span class="syn-name">sky_shape</span> : <span class="syn-type">Sky.Colors</span> -&gt; <span class="syn-type">Shapes.Shape</span>
+<span class="syn-name">sky_shape</span> = |colors|
+	<span class="syn-type">Screen</span>.above_horizon_rect(
+		<span class="syn-type">Linear</span>({
+			stops: {
+				start_color: <span class="syn-type">Brush</span>.opaque_rgba(colors.top),
+				end_color: <span class="syn-type">Brush</span>.opaque_rgba(colors.horizon),
+				start_offset: sky_top_stop.to_f64(),
+				end_offset: <span class="syn-number">1.0</span>,
+			},
+			start_point: { x: <span class="syn-type">Pixels</span>.zero, y: <span class="syn-type">Pixels</span>.zero },
+			end_point: { x: <span class="syn-type">Pixels</span>.zero, y: <span class="syn-type">Screen</span>.horizon_y },
+		}),
+	)
+</code></pre></figure><p><code>Screen.above_horizon_rect</code> is the rectangle from above the top of the screen down to the horizon, 200 pixels past each side. A fill is a tag union, <code>Brush.Fill</code>, and <code>Brush.flat</code> makes its plainest tag, one color. This fill is its <code>Linear</code> tag, whose color fades along a line, from <code>start_point</code> to <code>end_point</code>. Both points sit at <code>x</code> zero, so the line runs straight down, from the top of the screen to the horizon. Its <code>stops</code> say where along that line the fade begins and ends: the fade holds the top color for the first fifth of the way, <code>sky_top_stop</code>, then reaches the horizon&#39;s color at the end. The platform works out every color in between. <code>Brush.opaque_rgba</code> makes each color fully solid.</p>
+<h2 id="the-grass">The grass <a class="section-link" href="#the-grass" aria-label="Link to this section">§</a></h2>
+<p>The grass is one rectangle below the horizon, in one color, which darkens with the sky:</p>
+<figure class="listing"><figcaption>Grass.roc</figcaption><pre><code class="language-roc"><span class="syn-comment">## The grass&#39;s colour under a sky `darkness` dark.</span>
+<span class="syn-name">grass_color_at</span> : <span class="syn-type">Fraction</span> -&gt; <span class="syn-type">RgbColor</span>
+<span class="syn-name">grass_color_at</span> = |darkness| <span class="syn-type">Sky</span>.color_at_darkness(<span class="syn-type">Grass</span>.grass_color, darkness)
+</code></pre></figure><p><code>Sky.color_at_darkness</code> takes a color by day and how dark the sky is, and returns the color dimmed to match. Everything the sky lights dims through it, from the grass to the truck. Here&#39;s the rectangle:</p>
+<figure class="listing"><figcaption>Grass.roc</figcaption><pre><code class="language-roc"><span class="syn-comment">## The grass under a sky `darkness` dark: a rectangle from `grass_top_y`</span>
+<span class="syn-comment">## down to `roll_margin` below the screen, and `roll_margin` past each side.</span>
+<span class="syn-name">grass_shape</span> : <span class="syn-type">Fraction</span> -&gt; <span class="syn-type">Shapes.Shape</span>
+<span class="syn-name">grass_shape</span> = |darkness|
+	<span class="syn-type">Screen</span>.margin_rect(
+		{ top: grass_top_y, bottom: <span class="syn-type">Screen</span>.height.plus(<span class="syn-type">Screen</span>.roll_margin) },
+		<span class="syn-type">Brush</span>.flat(<span class="syn-type">Grass</span>.grass_color_at(darkness)),
+	)
+</code></pre></figure><p>The grass&#39;s top edge sits one pixel above the horizon, so its top row covers the sky&#39;s last one, and the two always meet. When the bike leans, the camera rolls with it, and the whole frame turns about the middle of the screen. A rectangle the size of the screen would turn with it and leave its corners bare. So <code>Screen.margin_rect</code> makes a rectangle that reaches <code>Screen.roll_margin</code>, 200 pixels, past each side of the screen, as the sky&#39;s does, and the grass reaches 200 pixels below the screen too. That covers a lean of up to 30°, more than the ride ever leans.</p>
+<p>Every function here works from the clock alone, or from colors worked out from it. So the backdrop at step 1,529 is the same on every run of the ride. At that step the sun is still high: the sky is near its day color and the horizon has yet to warm, so the two colors match and the picture shows one pale blue. In the second half of the book the clock runs, and the two colors part. One more part of the frame darkens with it: the mountains.</p>
+
+</article>
+<nav class="turn-page" aria-label="Previous and next chapter">
+<a rel="prev" href="refused.html"><small>Previous</small>Errors as tag unions</a>
+<a rel="next" href="mountains.html"><small>Next</small>Mountains</a>
+</nav>
+</main>
+<script src="embed.js"></script>
+</body>
+</html>

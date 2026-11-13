@@ -1,0 +1,220 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>The truck · Safari Ride</title>
+<link rel="icon" href="data:,">
+<link rel="stylesheet" href="book.css">
+<script src="book.js" defer></script>
+</head>
+<body class="chapter">
+<header class="top-bar">
+<a class="home-link" href="https://roc.lynrummy.com/">Steve's Roc Apps</a>
+<p class="draft-notice">This is an early draft.</p>
+<a class="repo-link" href="https://github.com/showell/roc-apps">roc-apps on GitHub</a>
+</header>
+<nav class="book-nav" id="chapters" aria-label="Chapters">
+<a class="book-name" href="index.html">Safari Ride</a>
+<ol>
+<li class="part">The big picture</li><li><a href="introduction.html"><span class="number">1</span>Introduction</a></li>
+<li><a href="one-page.html"><span class="number">2</span>One page</a></li>
+<li><a href="the-problem.html"><span class="number">3</span>The problem</a></li>
+<li><a href="platforms-packages-and-modules.html"><span class="number">4</span>Platforms, packages and modules</a></li>
+<li><a href="types.html"><span class="number">5</span>Types</a></li>
+<li><a href="functions.html"><span class="number">6</span>Functions</a></li>
+<li class="part">One frame</li><li><a href="things.html"><span class="number">7</span>Things</a></li>
+<li><a href="billboard-critters.html"><span class="number">8</span>Tag unions: billboard critters</a></li>
+<li><a href="shapes.html"><span class="number">9</span>Shapes</a></li>
+<li><a href="a-far-tree.html"><span class="number">10</span>Lists and map: a far tree</a></li>
+<li><a href="the-pipeline.html"><span class="number">11</span>The pipeline</a></li>
+<li><a href="asking-a-kind.html"><span class="number">12</span>Where clauses: asking a kind</a></li>
+<li><a href="refused.html"><span class="number">13</span>Errors as tag unions</a></li>
+<li class="category">Nature</li><li><a href="the-sky.html"><span class="number">14</span>The sky and the grass</a></li>
+<li><a href="mountains.html"><span class="number">15</span>Mountains</a></li>
+<li class="category">Man-made</li><li><a href="the-road.html"><span class="number">16</span>The road</a></li>
+<li><a href="rails.html"><span class="number">17</span>Rails</a></li>
+<li><a href="radio-towers.html"><span class="number">18</span>Radio towers</a></li>
+<li class="category">Critters that stand still</li><li><a href="herds.html"><span class="number">19</span>Herds</a></li>
+<li class="part">Motion</li><li><a href="a-flip-book.html"><span class="number">20</span>Immutable values: a flip book</a></li>
+<li><a href="records.html"><span class="number">21</span>Records</a></li>
+<li><a href="pure-functions-and-effects.html"><span class="number">22</span>Pure functions and effects</a></li>
+<li><a href="the-clock.html"><span class="number">23</span>Opaque types: the clock</a></li>
+<li><a href="the-ride-instant.html"><span class="number">24</span>The ride instant</a></li>
+<li class="category">The passage of time</li><li><a href="the-beacons.html"><span class="number">25</span>The beacons</a></li>
+<li><a href="the-setting-sun.html"><span class="number">26</span>The setting sun</a></li>
+<li class="category">Vehicles</li><li><a href="the-rider.html"><span class="number">27</span>The rider</a></li>
+<li><a href="the-throttle.html"><span class="number">28</span>The throttle</a></li>
+<li><a href="rehearsal.html"><span class="number">29</span>Variables and loops: rehearsal</a></li>
+<li><a href="the-riders-gaze.html"><span class="number">30</span>The rider&#39;s gaze</a></li>
+<li class="here"><a href="the-truck.html"><span class="number">31</span>The truck</a><ol class="sections"><li><a href="the-truck.html#the-whole-job">The whole job</a></li><li><a href="the-truck.html#the-bodys-shape">The body&#39;s shape</a></li><li><a href="the-truck.html#shape-placement-projection">Shape, placement, projection</a></li><li><a href="the-truck.html#the-headlights">The headlights</a></li><li><a href="the-truck.html#the-brake-lights">The brake lights</a></li></ol></li>
+<li><a href="the-trucks-motion.html"><span class="number">32</span>The truck&#39;s motion</a></li>
+<li class="category">Critter motion</li><li><a href="the-cat.html"><span class="number">33</span>The cat</a></li>
+<li><a href="the-bird.html"><span class="number">34</span>The bird</a></li>
+<li><a href="what-a-cat-does-to-the-rider.html"><span class="number">35</span>What a cat does to the rider</a></li>
+<li class="part">Under the hood</li><li><a href="the-math-layer.html"><span class="number">36</span>The math layer</a></li>
+<li><a href="proving-it.html"><span class="number">37</span>Proving it</a></li>
+<li><a href="the-platform.html"><span class="number">38</span>The platform</a></li>
+<li><a href="zooming-back-out.html"><span class="number">39</span>Zooming back out</a></li>
+</ol>
+</nav>
+<main>
+<p class="book-bar"><a href="index.html">Safari Ride</a> <a href="#chapters">Chapters</a></p>
+<article>
+<p class="chapter-number">Chapter 31</p>
+<h1 id="the-truck">The truck</h1>
+<p>All through the ride, the rider follows a truck up the road. The truck is the ride&#39;s one true solid: a body of flat faces in three dimensions, seen from wherever the camera stands, with headlights for the dark and brake lights for the bends. Here the truck stands at one place on the road. How it moves comes in the next chapter.</p>
+<figure class="widget"><iframe class="canvas-app" src="../truck_widget/" title="A truck from behind, from behind and to one side, and from the side." loading="lazy" style="aspect-ratio: 640 / 360"></iframe><figcaption>A truck from behind, from behind and to one side, and from the side.</figcaption></figure><h2 id="the-whole-job">The whole job <a class="section-link" href="#the-whole-job" aria-label="Link to this section">§</a></h2>
+<p>One function makes the truck&#39;s sprite. The sprite holds the headlight beams, the body and the brake lights, painted in that order:</p>
+<figure class="listing"><figcaption>Truck.roc</figcaption><pre><code class="language-roc"><span class="syn-comment">## How the truck looks in `setting`: its beams, its body, then its brake</span>
+<span class="syn-comment">## lights.</span>
+<span class="syn-name">scenery_sprite</span> : <span class="syn-type">Truck</span>, <span class="syn-type">Sprite.Setting</span> -&gt; <span class="syn-type">Sprite</span>
+<span class="syn-name">scenery_sprite</span> = |truck, setting|
+	<span class="syn-type">Sprite</span>.composite([
+		truck.headlights.sprite(setting),
+		<span class="syn-type">TruckBody</span>.body_sprite(setting),
+		truck.brake_lights.sprite(setting),
+	])
+</code></pre></figure><p><code>Sprite.composite</code> makes one sprite of several, each painted over the ones before:</p>
+<figure class="listing"><figcaption>Sprite.roc</figcaption><pre><code class="language-roc"><span class="syn-comment">## One sprite of several, each painted over the ones before it.</span>
+<span class="syn-name">composite</span> : <span class="syn-type">List</span>(<span class="syn-type">Sprite</span>) -&gt; <span class="syn-type">Sprite</span>
+<span class="syn-name">composite</span> = |sprites| <span class="syn-type">Sprite</span>.(sprites.join_map(<span class="syn-type">Sprite</span>.to_shapes))
+</code></pre></figure><p>The setting is the one every kind gets, the truck&#39;s spot, the lens and the sky&#39;s darkness:</p>
+<figure class="listing"><figcaption>Sprite.roc</figcaption><pre><code class="language-roc"><span class="syn-comment">## What a kind of object draws its sprite from: where it stands in the</span>
+<span class="syn-comment">## frame, the camera&#39;s focal length, and how dark the sky is.</span>
+<span class="syn-type">Setting</span> : {
+	spot : <span class="syn-type">Spot</span>,
+	focal_length : <span class="syn-type">Pixels</span>,
+	darkness : <span class="syn-type">Fraction</span>,
+}
+</code></pre></figure><p>The <code>Truck</code> value holds which of the truck&#39;s lamps are on:</p>
+<figure class="listing"><figcaption>Truck.roc, in Truck</figcaption><pre><code class="language-roc"><span class="syn-comment">## Which of the truck&#39;s lights are on.</span>
+<span class="syn-type">Truck</span> := { headlights : <span class="syn-type">TruckHeadlights</span>, brake_lights : <span class="syn-type">TruckBrakeLights</span> }.{
+<span class="syn-comment"># ...</span>
+</code></pre></figure><p>Each lamp is <code>[On, Off]</code>, and each has a module that owns two things: when its lamp is on, and how the lamp looks. The rest of this chapter explains the body, then the two lamps.</p>
+<h2 id="the-bodys-shape">The body&#39;s shape <a class="section-link" href="#the-bodys-shape" aria-label="Link to this section">§</a></h2>
+<p><code>TruckShape</code> says what the truck looks like, in the truck&#39;s own frame. Each part of the truck is a face, a color and its corners:</p>
+<figure class="listing"><figcaption>TruckShape.roc</figcaption><pre><code class="language-roc"><span class="syn-comment">## A face of the truck: a color and its corners, in the truck&#39;s own frame.</span>
+<span class="syn-type">TruckFace</span> : { color : <span class="syn-type">RgbColor</span>, corners : <span class="syn-type">List</span>(<span class="syn-type">TruckShape.TruckPoint</span>) }
+</code></pre></figure><p>A corner is three distances: ahead of and to the right of the middle of the trailer, and up from the road:</p>
+<figure class="listing"><figcaption>TruckShape.roc</figcaption><pre><code class="language-roc"><span class="syn-comment">## A point on the truck, in the truck&#39;s own frame: how far ahead of the</span>
+<span class="syn-comment">## trailer&#39;s center and how far to the right of it, each negative the other</span>
+<span class="syn-comment">## way, and how high above the road under the truck.</span>
+<span class="syn-type">TruckPoint</span> : {
+	ahead : <span class="syn-type">Distance</span>,
+	rightward : <span class="syn-type">Distance</span>,
+	height : <span class="syn-type">Distance</span>,
+}
+</code></pre></figure><p>The truck is blue: a dark blue body, darker blue sides, a lighter blue roof, and black tires. The whole truck is its faces, in one list, and <code>join</code> puts the lists inside it end to end:</p>
+<figure class="listing"><figcaption>TruckShape.roc</figcaption><pre><code class="language-roc"><span class="syn-comment">## The whole truck as it is built: its two sides, the trailer&#39;s back, its</span>
+<span class="syn-comment">## roof, the cab&#39;s windshield and nose, then its tires.</span>
+<span class="syn-name">truck_faces</span> : <span class="syn-type">List</span>(<span class="syn-type">TruckShape.TruckFace</span>)
+<span class="syn-name">truck_faces</span> = [
+	sides,
+	[trailer_back, roof, windshield, nose],
+	tires,
+].join()
+</code></pre></figure><h2 id="shape-placement-projection">Shape, placement, projection <a class="section-link" href="#shape-placement-projection" aria-label="Link to this section">§</a></h2>
+<p>The shape reaches the screen in three stages:</p>
+<table>
+<thead>
+<tr>
+<th>Stage</th>
+<th>What it does</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Shape</td>
+<td>Says where each corner of each face is in the truck&#39;s own frame</td>
+</tr>
+<tr>
+<td>Placement</td>
+<td>Turns one corner by the road&#39;s heading, carries it out from the truck&#39;s foot, and lowers it by the ground&#39;s drop</td>
+</tr>
+<tr>
+<td>Projection</td>
+<td>Turns one whole face into a polygon on the screen</td>
+</tr>
+</tbody>
+</table>
+<p>Placement works a corner at a time. <code>TruckSighting</code> finds the truck on the road ahead and works out its spot once. The truck is rigid and faces straight along the road, so every corner moves the same way, through that spot:</p>
+<figure class="listing"><figcaption>TruckPlacement.roc</figcaption><pre><code class="language-roc"><span class="syn-comment">## Where a point on the truck stands in the rider&#39;s view, for a truck at</span>
+<span class="syn-comment">## `spot` facing along the road.</span>
+<span class="syn-name">point_at_height</span> : <span class="syn-type">Spot</span>, <span class="syn-type">TruckShape.TruckPoint</span> -&gt; <span class="syn-type">RiderView.PointAtHeight</span>
+<span class="syn-name">point_at_height</span> = |spot, point|
+	spot.standing_point({ facing: <span class="syn-type">Angle</span>.straight_ahead, offset: point })
+</code></pre></figure><p>Every corner is lowered by the same drop, how far the ground has curved away beneath the truck&#39;s spot. Across a 12-metre truck the drop changes by a few centimetres at most, far less than a pixel.</p>
+<p>Projection works a face at a time, for two reasons. A face that reaches behind the camera is cut at the near plane, and the cut can take corners off a face and add new ones, so it needs the whole outline. And the faces are sorted by depth, a whole face at a time, so a nearer face covers a farther one. <code>TruckBody.body_sprite</code> takes those steps in order, with a name for each:</p>
+<figure class="listing"><figcaption>TruckBody.roc</figcaption><pre><code class="language-roc"><span class="syn-comment">## The truck&#39;s body in `setting`, its farthest faces first.</span>
+<span class="syn-name">body_sprite</span> : <span class="syn-type">Sprite.Setting</span> -&gt; <span class="syn-type">Sprite</span>
+<span class="syn-name">body_sprite</span> = |setting| {
+	placed_faces = <span class="syn-type">TruckShape</span>.truck_faces.map(
+		|face| <span class="syn-type">TruckPlacement</span>.placed_face(setting.spot, face),
+	)
+	faces_far_to_near = <span class="syn-type">DepthSort</span>.sort_by(placed_faces, face_depth)
+	dimmed_faces = faces_far_to_near.map(
+		|face| { ..face, color: <span class="syn-type">Sky</span>.color_at_darkness(face.color, setting.darkness) },
+	)
+	<span class="syn-type">Sprite</span>.from_shapes(
+		dimmed_faces.keep_oks(|face| <span class="syn-type">Camera</span>.clipped_polygon(face, setting.focal_length)),
+	)
+}
+</code></pre></figure><p><code>placed_faces</code> stands every face on the road, <code>faces_far_to_near</code> sorts them, and <code>dimmed_faces</code> darkens each face&#39;s color with the sky. Then <code>Camera.clipped_polygon</code> cuts each face at the near plane and projects it, and returns an <code>Err</code> for a face wholly behind the camera. The <a class="chapter-link" href="the-math-layer.html">“The math layer”</a> chapter shows how the cut works. <code>keep_oks</code> keeps the rest. The truck keeps all its faces however far off it stands, because the rider is always looking for it.</p>
+<h2 id="the-headlights">The headlights <a class="section-link" href="#the-headlights" aria-label="Link to this section">§</a></h2>
+<p>The ride runs from day into night, so the headlights come on near the end. They work like a light sensor on the lamps themselves: once the sky is dark enough, they&#39;re on.</p>
+<figure class="listing"><figcaption>TruckHeadlights.roc</figcaption><pre><code class="language-roc"><span class="syn-comment">## The headlights under a sky of `darkness`: on once the sky is dark</span>
+<span class="syn-comment">## enough, like a light sensor on the lamps.</span>
+<span class="syn-name">at</span> : <span class="syn-type">Fraction</span> -&gt; <span class="syn-type">TruckHeadlights</span>
+<span class="syn-name">at</span> = |darkness|
+	<span class="syn-keyword">if</span> darkness &gt;= headlights_on_darkness {
+		<span class="syn-type">On</span>
+	} <span class="syn-keyword">else</span> {
+		<span class="syn-type">Off</span>
+	}
+</code></pre></figure><p>They come on at this darkness:</p>
+<figure class="listing"><figcaption>TruckHeadlights.roc</figcaption><pre><code class="language-roc"><span class="syn-comment">## The headlights come on once the sky is 41.2% dark, about when the sun sinks</span>
+<span class="syn-comment">## behind the west range. The value was measured once, on this ride;</span>
+<span class="syn-comment">## gates/expects/RideExpects.roc pins the step.</span>
+<span class="syn-name">headlights_on_darkness</span> : <span class="syn-type">Fraction</span>
+<span class="syn-name">headlights_on_darkness</span> = <span class="syn-type">Fraction</span>.of(<span class="syn-number">0.412</span>)
+</code></pre></figure><p>On this ride, that&#39;s step 3,555 of 6,746. Once on, they stay on, because from there the sky only darkens. <code>TruckHeadlights.sprite</code> matches on both tags. An <code>Off</code> lamp is an empty sprite. An <code>On</code> lamp&#39;s sprite is two beams, each a wedge that fades from the lamp toward its far end:</p>
+<figure class="listing"><figcaption>TruckHeadlights.roc</figcaption><pre><code class="language-roc"><span class="syn-comment">## How the headlights look: their two beams while they are on, and nothing</span>
+<span class="syn-comment">## while they are off.</span>
+<span class="syn-name">sprite</span> : <span class="syn-type">TruckHeadlights</span>, <span class="syn-type">Sprite.Setting</span> -&gt; <span class="syn-type">Sprite</span>
+<span class="syn-name">sprite</span> = |headlights, setting|
+	<span class="syn-keyword">match</span> headlights {
+		<span class="syn-type">On</span> =&gt; <span class="syn-type">Sprite</span>.from_shapes(beam_shapes(setting))
+		<span class="syn-type">Off</span> =&gt; <span class="syn-type">Sprite</span>.from_shapes([])
+	}
+</code></pre></figure><h2 id="the-brake-lights">The brake lights <a class="section-link" href="#the-brake-lights" aria-label="Link to this section">§</a></h2>
+<p>The brake lights read the truck&#39;s pace, so they&#39;re on while the truck&#39;s last step slowed it, by day or by night. The pace is part of the truck&#39;s carried progress:</p>
+<figure class="listing"><figcaption>TruckJourney.roc</figcaption><pre><code class="language-roc"><span class="syn-comment">## Whether the truck&#39;s last step slowed it.</span>
+<span class="syn-type">Pace</span> := [<span class="syn-type">Slowing</span>, <span class="syn-type">NotSlowing</span>].{
+	<span class="syn-name">is_eq</span> : _
+}
+</code></pre></figure><figure class="listing"><figcaption>TruckBrakeLights.roc</figcaption><pre><code class="language-roc"><span class="syn-comment">## The brake lights of a truck going at `pace`: on while its last step</span>
+<span class="syn-comment">## slowed it.</span>
+<span class="syn-name">at</span> : <span class="syn-type">TruckJourney.Pace</span> -&gt; <span class="syn-type">TruckBrakeLights</span>
+<span class="syn-name">at</span> = |pace|
+	<span class="syn-keyword">match</span> pace {
+		<span class="syn-type">Slowing</span> =&gt; <span class="syn-type">On</span>
+		<span class="syn-type">NotSlowing</span> =&gt; <span class="syn-type">Off</span>
+	}
+</code></pre></figure><p>Their sprite works as the headlights&#39; does: two lamps on the back of the trailer, each with a glow around it, and an empty sprite when they&#39;re off.</p>
+<p>For each frame, <code>FrameView</code> sets both lamps together, in one record of lights, from the sky&#39;s darkness and the truck&#39;s pace:</p>
+<figure class="listing"><figcaption>FrameView.roc, in ride_facts</figcaption><pre><code class="language-roc"><span class="syn-comment"># ...</span>
+headlights: <span class="syn-type">TruckHeadlights</span>.at(<span class="syn-type">Sky</span>.darkness_at(instant.clock)),
+brake_lights: <span class="syn-type">TruckBrakeLights</span>.at(instant.truck.pace),
+<span class="syn-comment"># ...</span>
+</code></pre></figure><p>Step the ride back past step 3,555, and the headlights go off again: they read only the sky, so the sky turns them off. The brake lights read the truck&#39;s last step, which the ride carries, so they come back with it. Next, the truck moves.</p>
+
+</article>
+<nav class="turn-page" aria-label="Previous and next chapter">
+<a rel="prev" href="the-riders-gaze.html"><small>Previous</small>The rider&#39;s gaze</a>
+<a rel="next" href="the-trucks-motion.html"><small>Next</small>The truck&#39;s motion</a>
+</nav>
+</main>
+<script src="embed.js"></script>
+</body>
+</html>

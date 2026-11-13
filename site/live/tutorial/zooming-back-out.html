@@ -1,0 +1,226 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Zooming back out · Safari Ride</title>
+<link rel="icon" href="data:,">
+<link rel="stylesheet" href="book.css">
+<script src="book.js" defer></script>
+</head>
+<body class="chapter">
+<header class="top-bar">
+<a class="home-link" href="https://roc.lynrummy.com/">Steve's Roc Apps</a>
+<p class="draft-notice">This is an early draft.</p>
+<a class="repo-link" href="https://github.com/showell/roc-apps">roc-apps on GitHub</a>
+</header>
+<nav class="book-nav" id="chapters" aria-label="Chapters">
+<a class="book-name" href="index.html">Safari Ride</a>
+<ol>
+<li class="part">The big picture</li><li><a href="introduction.html"><span class="number">1</span>Introduction</a></li>
+<li><a href="one-page.html"><span class="number">2</span>One page</a></li>
+<li><a href="the-problem.html"><span class="number">3</span>The problem</a></li>
+<li><a href="platforms-packages-and-modules.html"><span class="number">4</span>Platforms, packages and modules</a></li>
+<li><a href="types.html"><span class="number">5</span>Types</a></li>
+<li><a href="functions.html"><span class="number">6</span>Functions</a></li>
+<li class="part">One frame</li><li><a href="things.html"><span class="number">7</span>Things</a></li>
+<li><a href="billboard-critters.html"><span class="number">8</span>Tag unions: billboard critters</a></li>
+<li><a href="shapes.html"><span class="number">9</span>Shapes</a></li>
+<li><a href="a-far-tree.html"><span class="number">10</span>Lists and map: a far tree</a></li>
+<li><a href="the-pipeline.html"><span class="number">11</span>The pipeline</a></li>
+<li><a href="asking-a-kind.html"><span class="number">12</span>Where clauses: asking a kind</a></li>
+<li><a href="refused.html"><span class="number">13</span>Errors as tag unions</a></li>
+<li class="category">Nature</li><li><a href="the-sky.html"><span class="number">14</span>The sky and the grass</a></li>
+<li><a href="mountains.html"><span class="number">15</span>Mountains</a></li>
+<li class="category">Man-made</li><li><a href="the-road.html"><span class="number">16</span>The road</a></li>
+<li><a href="rails.html"><span class="number">17</span>Rails</a></li>
+<li><a href="radio-towers.html"><span class="number">18</span>Radio towers</a></li>
+<li class="category">Critters that stand still</li><li><a href="herds.html"><span class="number">19</span>Herds</a></li>
+<li class="part">Motion</li><li><a href="a-flip-book.html"><span class="number">20</span>Immutable values: a flip book</a></li>
+<li><a href="records.html"><span class="number">21</span>Records</a></li>
+<li><a href="pure-functions-and-effects.html"><span class="number">22</span>Pure functions and effects</a></li>
+<li><a href="the-clock.html"><span class="number">23</span>Opaque types: the clock</a></li>
+<li><a href="the-ride-instant.html"><span class="number">24</span>The ride instant</a></li>
+<li class="category">The passage of time</li><li><a href="the-beacons.html"><span class="number">25</span>The beacons</a></li>
+<li><a href="the-setting-sun.html"><span class="number">26</span>The setting sun</a></li>
+<li class="category">Vehicles</li><li><a href="the-rider.html"><span class="number">27</span>The rider</a></li>
+<li><a href="the-throttle.html"><span class="number">28</span>The throttle</a></li>
+<li><a href="rehearsal.html"><span class="number">29</span>Variables and loops: rehearsal</a></li>
+<li><a href="the-riders-gaze.html"><span class="number">30</span>The rider&#39;s gaze</a></li>
+<li><a href="the-truck.html"><span class="number">31</span>The truck</a></li>
+<li><a href="the-trucks-motion.html"><span class="number">32</span>The truck&#39;s motion</a></li>
+<li class="category">Critter motion</li><li><a href="the-cat.html"><span class="number">33</span>The cat</a></li>
+<li><a href="the-bird.html"><span class="number">34</span>The bird</a></li>
+<li><a href="what-a-cat-does-to-the-rider.html"><span class="number">35</span>What a cat does to the rider</a></li>
+<li class="part">Under the hood</li><li><a href="the-math-layer.html"><span class="number">36</span>The math layer</a></li>
+<li><a href="proving-it.html"><span class="number">37</span>Proving it</a></li>
+<li><a href="the-platform.html"><span class="number">38</span>The platform</a></li>
+<li class="here"><a href="zooming-back-out.html"><span class="number">39</span>Zooming back out</a><ol class="sections"><li><a href="zooming-back-out.html#four-things-carried">Four things carried</a></li><li><a href="zooming-back-out.html#one-step-in-order">One step, in order</a></li><li><a href="zooming-back-out.html#where-each-thing-comes-from">Where each thing comes from</a></li></ol></li>
+</ol>
+</nav>
+<main>
+<p class="book-bar"><a href="index.html">Safari Ride</a> <a href="#chapters">Chapters</a></p>
+<article>
+<p class="chapter-number">Chapter 39</p>
+<h1 id="zooming-back-out">Zooming back out</h1>
+<p>Safari Ride is a loop. It carries four things from step to step, derives a frame from them, and steps again. Every part of that loop now has a chapter, so this one puts the parts back together.</p>
+<figure class="diagram"><svg class="diagram diagram-wide" role="img" aria-label="The loop" width="404pt" height="266pt"
+ viewBox="0.00 0.00 403.50 266.00" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+<g id="graph0" class="graph" transform="scale(1 1) rotate(0) translate(4 262)">
+<polygon fill="white" stroke="transparent" points="-4,4 -4,-262 399.5,-262 399.5,4 -4,4"/>
+<g id="node1" class="node">
+<polygon fill="none" stroke="black" points="194.5,-258 0.5,-258 0.5,-211 194.5,-211 194.5,-258"/>
+<text text-anchor="middle" x="97.5" y="-244.4" font-family="Helvetica,sans-Serif" font-size="12.00">RideInstant</text>
+<text text-anchor="middle" x="97.5" y="-231.4" font-family="Helvetica,sans-Serif" font-size="12.00">the rider, the truck,</text>
+<text text-anchor="middle" x="97.5" y="-218.4" font-family="Helvetica,sans-Serif" font-size="12.00">the clock, the encounter plan</text>
+</g>
+<g id="edge3" class="edge">
+<path fill="none" stroke="black" d="M194.66,-244.5C219.15,-243.82 237.5,-240.49 237.5,-234.5 237.5,-229.38 224.07,-226.2 204.86,-224.97"/>
+<polygon fill="black" stroke="black" points="204.81,-221.46 194.66,-224.5 204.49,-228.45 204.81,-221.46"/>
+<text text-anchor="start" x="237.5" y="-237.7" font-family="Helvetica,sans-Serif" font-size="11.00"> &#160;RideInstant.next_or_restart</text>
+<text text-anchor="start" x="237.5" y="-225.7" font-family="Helvetica,sans-Serif" font-size="11.00"> &#160;makes the next moment</text>
+</g>
+<g id="node2" class="node">
+<polygon fill="none" stroke="black" points="195,-147 0,-147 0,-100 195,-100 195,-147"/>
+<text text-anchor="middle" x="97.5" y="-133.4" font-family="Helvetica,sans-Serif" font-size="12.00">FrameView</text>
+<text text-anchor="middle" x="97.5" y="-120.4" font-family="Helvetica,sans-Serif" font-size="12.00">the backdrop, the mountains,</text>
+<text text-anchor="middle" x="97.5" y="-107.4" font-family="Helvetica,sans-Serif" font-size="12.00">the road and the scene</text>
+</g>
+<g id="edge1" class="edge">
+<path fill="none" stroke="black" d="M97.5,-210.92C97.5,-195.42 97.5,-174.62 97.5,-157.31"/>
+<polygon fill="black" stroke="black" points="101,-157.06 97.5,-147.06 94,-157.06 101,-157.06"/>
+<text text-anchor="start" x="97.5" y="-182.2" font-family="Helvetica,sans-Serif" font-size="11.00"> &#160;FrameView.frame_view_at</text>
+<text text-anchor="start" x="97.5" y="-170.2" font-family="Helvetica,sans-Serif" font-size="11.00"> &#160;derives the frame</text>
+</g>
+<g id="node3" class="node">
+<polygon fill="none" stroke="black" points="164,-36 31,-36 31,0 164,0 164,-36"/>
+<text text-anchor="middle" x="97.5" y="-14.9" font-family="Helvetica,sans-Serif" font-size="12.00">List(Shapes.Shape)</text>
+</g>
+<g id="edge2" class="edge">
+<path fill="none" stroke="black" d="M97.5,-99.79C97.5,-84.07 97.5,-63.07 97.5,-46.42"/>
+<polygon fill="black" stroke="black" points="101,-46.2 97.5,-36.2 94,-46.2 101,-46.2"/>
+<text text-anchor="start" x="97.5" y="-71.2" font-family="Helvetica,sans-Serif" font-size="11.00"> &#160;leaned_shapes</text>
+<text text-anchor="start" x="97.5" y="-59.2" font-family="Helvetica,sans-Serif" font-size="11.00"> &#160;flattens it</text>
+</g>
+</g>
+</svg><svg class="diagram diagram-phone" role="img" aria-label="The loop" width="319pt" height="265pt"
+ viewBox="0.00 0.00 319.00 265.00" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+<g id="graph0" class="graph" transform="scale(1 1) rotate(0) translate(4 261)">
+<polygon fill="white" stroke="transparent" points="-4,4 -4,-261 315,-261 315,4 -4,4"/>
+<g id="node1" class="node">
+<polygon fill="none" stroke="black" points="135,-257 12,-257 12,-186 135,-186 135,-257"/>
+<text text-anchor="middle" x="73.5" y="-244.4" font-family="Helvetica,sans-Serif" font-size="12.00">RideInstant</text>
+<text text-anchor="middle" x="73.5" y="-231.4" font-family="Helvetica,sans-Serif" font-size="12.00">the rider,</text>
+<text text-anchor="middle" x="73.5" y="-218.4" font-family="Helvetica,sans-Serif" font-size="12.00">the truck,</text>
+<text text-anchor="middle" x="73.5" y="-205.4" font-family="Helvetica,sans-Serif" font-size="12.00">the clock,</text>
+<text text-anchor="middle" x="73.5" y="-192.4" font-family="Helvetica,sans-Serif" font-size="12.00">the encounter plan</text>
+</g>
+<g id="edge3" class="edge">
+<path fill="none" stroke="black" d="M135.37,-229.99C140.68,-228.18 144,-225.35 144,-221.5 144,-220.66 143.84,-219.86 143.54,-219.12"/>
+<polygon fill="black" stroke="black" points="145.48,-216.2 135.37,-213.01 141.29,-221.81 145.48,-216.2"/>
+<text text-anchor="start" x="144" y="-224.7" font-family="Helvetica,sans-Serif" font-size="11.00"> &#160;RideInstant.next_or_restart</text>
+<text text-anchor="start" x="144" y="-212.7" font-family="Helvetica,sans-Serif" font-size="11.00"> &#160;makes the next moment</text>
+</g>
+<g id="node2" class="node">
+<polygon fill="none" stroke="black" points="147,-140 0,-140 0,-82 147,-82 147,-140"/>
+<text text-anchor="middle" x="73.5" y="-127.4" font-family="Helvetica,sans-Serif" font-size="12.00">FrameView</text>
+<text text-anchor="middle" x="73.5" y="-114.4" font-family="Helvetica,sans-Serif" font-size="12.00">the backdrop,</text>
+<text text-anchor="middle" x="73.5" y="-101.4" font-family="Helvetica,sans-Serif" font-size="12.00">the mountains,</text>
+<text text-anchor="middle" x="73.5" y="-88.4" font-family="Helvetica,sans-Serif" font-size="12.00">the road and the scene</text>
+</g>
+<g id="edge1" class="edge">
+<path fill="none" stroke="black" d="M73.5,-185.87C73.5,-174.57 73.5,-161.96 73.5,-150.4"/>
+<polygon fill="black" stroke="black" points="77,-150.14 73.5,-140.14 70,-150.14 77,-150.14"/>
+<text text-anchor="start" x="73.5" y="-166.2" font-family="Helvetica,sans-Serif" font-size="11.00"> &#160;FrameView.frame_view_at</text>
+<text text-anchor="start" x="73.5" y="-154.2" font-family="Helvetica,sans-Serif" font-size="11.00"> &#160;derives the frame</text>
+</g>
+<g id="node3" class="node">
+<polygon fill="none" stroke="black" points="135,-36 12,-36 12,0 135,0 135,-36"/>
+<text text-anchor="middle" x="73.5" y="-14.9" font-family="Helvetica,sans-Serif" font-size="12.00">List(Shapes.Shape)</text>
+</g>
+<g id="edge2" class="edge">
+<path fill="none" stroke="black" d="M73.5,-81.71C73.5,-70.4 73.5,-57.43 73.5,-46.23"/>
+<polygon fill="black" stroke="black" points="77,-46.14 73.5,-36.14 70,-46.14 77,-46.14"/>
+<text text-anchor="start" x="73.5" y="-62.2" font-family="Helvetica,sans-Serif" font-size="11.00"> &#160;leaned_shapes</text>
+<text text-anchor="start" x="73.5" y="-50.2" font-family="Helvetica,sans-Serif" font-size="11.00"> &#160;flattens it</text>
+</g>
+</g>
+</svg><figcaption>The loop</figcaption></figure><h2 id="four-things-carried">Four things carried <a class="section-link" href="#four-things-carried" aria-label="Link to this section">§</a></h2>
+<p>Here&#39;s the whole of what the ride carries:</p>
+<figure class="listing"><figcaption>RideInstant.roc, in RideInstant</figcaption><pre><code class="language-roc"><span class="syn-comment"># ...</span>
+<span class="syn-type">RideInstant</span> := {
+	rider : <span class="syn-type">Rider</span>,
+	truck : <span class="syn-type">TruckJourney.TruckProgress</span>,
+	clock : <span class="syn-type">Clock</span>,
+	encounter_plan : <span class="syn-type">EncounterPlan</span>,
+}.{
+<span class="syn-comment"># ...</span>
+</code></pre></figure><p>We derive everything else on the screen from those four fields and the road, afresh in every frame: the sky&#39;s colors, the sun, the beacons, the headlights, the cat&#39;s pose and the bird&#39;s, every sighting and every shape. <code>Tour</code> keeps the moments before this one, for stepping back, and each of those is the same record of four fields.</p>
+<h2 id="one-step-in-order">One step, in order <a class="section-link" href="#one-step-in-order" aria-label="Link to this section">§</a></h2>
+<p>The four read each other, so the order inside a step matters. As the <a class="chapter-link" href="the-ride-instant.html">“The ride instant”</a> chapter showed, <code>RideInstant.next</code> takes them in this order:</p>
+<ol>
+<li>The rider moves, reading where the encounter on its segment has got to at the old clock. A cat in the road holds the throttle.</li>
+<li>The clock ticks.</li>
+<li>The truck aims at how far along the route the rider now is.</li>
+<li>The step keeps the encounter plan, drops it at a new segment, or makes one from the rider who has just moved.</li>
+</ol>
+<p>The rider reacts to the cat on every step. The cat reacts to the rider once, when its plan is made, and after that it plays on the clock alone. Swap the truck&#39;s line with the rider&#39;s, and the truck aims at where the rider was a step ago. Stepping back reuses a moment instead: <code>Tour.step_back</code> takes an earlier moment off its list.</p>
+<h2 id="where-each-thing-comes-from">Where each thing comes from <a class="section-link" href="#where-each-thing-comes-from" aria-label="Link to this section">§</a></h2>
+<p>Ask of each thing on the screen where it comes from:</p>
+<table>
+<thead>
+<tr>
+<th>What you see</th>
+<th>Where it comes from</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>The rider&#39;s view</td>
+<td>Derived from the rider, the route, the encounter plan and the clock</td>
+</tr>
+<tr>
+<td>The sky</td>
+<td>Derived from the clock</td>
+</tr>
+<tr>
+<td>The sun and the mountains</td>
+<td>Derived from the clock and the camera</td>
+</tr>
+<tr>
+<td>The beacons</td>
+<td>Derived from the clock and the tower each one tops</td>
+</tr>
+<tr>
+<td>The trees and the herds</td>
+<td>Derived from the world, built once, the camera, and the clock, whose darkness dims them</td>
+</tr>
+<tr>
+<td>The cat and the bird</td>
+<td>Derived from the encounter plan, the clock and the camera</td>
+</tr>
+<tr>
+<td>The truck</td>
+<td>Derived from its progress, one of the four, and the camera</td>
+</tr>
+<tr>
+<td>Its headlights</td>
+<td>Derived from the clock, through the sky&#39;s darkness</td>
+</tr>
+<tr>
+<td>Its brake lights</td>
+<td>Derived from the truck, which says whether its last step slowed it</td>
+</tr>
+</tbody>
+</table>
+<p>Every row comes from the four and the road. Even the truck, whose progress the ride carries, reaches the frame through the camera like everything else. The book has shown one design: a small state carried from step to step, everything else derived from it, and types that allow only right states. Get the types right, and everything else follows.</p>
+
+</article>
+<nav class="turn-page" aria-label="Previous and next chapter">
+<a rel="prev" href="the-platform.html"><small>Previous</small>The platform</a>
+<span></span>
+</nav>
+</main>
+
+</body>
+</html>

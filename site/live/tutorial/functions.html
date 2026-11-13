@@ -1,0 +1,207 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Functions · Safari Ride</title>
+<link rel="icon" href="data:,">
+<link rel="stylesheet" href="book.css">
+<script src="book.js" defer></script>
+</head>
+<body class="chapter">
+<header class="top-bar">
+<a class="home-link" href="https://roc.lynrummy.com/">Steve's Roc Apps</a>
+<p class="draft-notice">This is an early draft.</p>
+<a class="repo-link" href="https://github.com/showell/roc-apps">roc-apps on GitHub</a>
+</header>
+<nav class="book-nav" id="chapters" aria-label="Chapters">
+<a class="book-name" href="index.html">Safari Ride</a>
+<ol>
+<li class="part">The big picture</li><li><a href="introduction.html"><span class="number">1</span>Introduction</a></li>
+<li><a href="one-page.html"><span class="number">2</span>One page</a></li>
+<li><a href="the-problem.html"><span class="number">3</span>The problem</a></li>
+<li><a href="platforms-packages-and-modules.html"><span class="number">4</span>Platforms, packages and modules</a></li>
+<li><a href="types.html"><span class="number">5</span>Types</a></li>
+<li class="here"><a href="functions.html"><span class="number">6</span>Functions</a><ol class="sections"><li><a href="functions.html#a-function-is-a-value">A function is a value</a></li><li><a href="functions.html#a-body-is-one-expression">A body is one expression</a></li><li><a href="functions.html#an-annotation-states-the-contract">An annotation states the contract</a></li><li><a href="functions.html#a-method-belongs-to-its-type">A method belongs to its type</a></li><li><a href="functions.html#every-function-has-this-shape">Every function has this shape</a></li></ol></li>
+<li class="part">One frame</li><li><a href="things.html"><span class="number">7</span>Things</a></li>
+<li><a href="billboard-critters.html"><span class="number">8</span>Tag unions: billboard critters</a></li>
+<li><a href="shapes.html"><span class="number">9</span>Shapes</a></li>
+<li><a href="a-far-tree.html"><span class="number">10</span>Lists and map: a far tree</a></li>
+<li><a href="the-pipeline.html"><span class="number">11</span>The pipeline</a></li>
+<li><a href="asking-a-kind.html"><span class="number">12</span>Where clauses: asking a kind</a></li>
+<li><a href="refused.html"><span class="number">13</span>Errors as tag unions</a></li>
+<li class="category">Nature</li><li><a href="the-sky.html"><span class="number">14</span>The sky and the grass</a></li>
+<li><a href="mountains.html"><span class="number">15</span>Mountains</a></li>
+<li class="category">Man-made</li><li><a href="the-road.html"><span class="number">16</span>The road</a></li>
+<li><a href="rails.html"><span class="number">17</span>Rails</a></li>
+<li><a href="radio-towers.html"><span class="number">18</span>Radio towers</a></li>
+<li class="category">Critters that stand still</li><li><a href="herds.html"><span class="number">19</span>Herds</a></li>
+<li class="part">Motion</li><li><a href="a-flip-book.html"><span class="number">20</span>Immutable values: a flip book</a></li>
+<li><a href="records.html"><span class="number">21</span>Records</a></li>
+<li><a href="pure-functions-and-effects.html"><span class="number">22</span>Pure functions and effects</a></li>
+<li><a href="the-clock.html"><span class="number">23</span>Opaque types: the clock</a></li>
+<li><a href="the-ride-instant.html"><span class="number">24</span>The ride instant</a></li>
+<li class="category">The passage of time</li><li><a href="the-beacons.html"><span class="number">25</span>The beacons</a></li>
+<li><a href="the-setting-sun.html"><span class="number">26</span>The setting sun</a></li>
+<li class="category">Vehicles</li><li><a href="the-rider.html"><span class="number">27</span>The rider</a></li>
+<li><a href="the-throttle.html"><span class="number">28</span>The throttle</a></li>
+<li><a href="rehearsal.html"><span class="number">29</span>Variables and loops: rehearsal</a></li>
+<li><a href="the-riders-gaze.html"><span class="number">30</span>The rider&#39;s gaze</a></li>
+<li><a href="the-truck.html"><span class="number">31</span>The truck</a></li>
+<li><a href="the-trucks-motion.html"><span class="number">32</span>The truck&#39;s motion</a></li>
+<li class="category">Critter motion</li><li><a href="the-cat.html"><span class="number">33</span>The cat</a></li>
+<li><a href="the-bird.html"><span class="number">34</span>The bird</a></li>
+<li><a href="what-a-cat-does-to-the-rider.html"><span class="number">35</span>What a cat does to the rider</a></li>
+<li class="part">Under the hood</li><li><a href="the-math-layer.html"><span class="number">36</span>The math layer</a></li>
+<li><a href="proving-it.html"><span class="number">37</span>Proving it</a></li>
+<li><a href="the-platform.html"><span class="number">38</span>The platform</a></li>
+<li><a href="zooming-back-out.html"><span class="number">39</span>Zooming back out</a></li>
+</ol>
+</nav>
+<main>
+<p class="book-bar"><a href="index.html">Safari Ride</a> <a href="#chapters">Chapters</a></p>
+<article>
+<p class="chapter-number">Chapter 6</p>
+<h1 id="functions">Functions</h1>
+<p>Every chapter from here on is full of Roc functions, so here we learn to read one, piece by piece. A Roc function takes its arguments and returns one value. The <code>darkness_at</code> function returns how dark the sky is at a step of the ride:</p>
+<figure class="listing"><figcaption>Sky.roc</figcaption><pre><code class="language-roc"><span class="syn-comment">## How dark the sky is at `clock`, from 0 (day) to 1 (night).</span>
+<span class="syn-name">darkness_at</span> : <span class="syn-type">Clock</span> -&gt; <span class="syn-type">Fraction</span>
+<span class="syn-name">darkness_at</span> = |clock| {
+	height = <span class="syn-type">SunPath</span>.height_at(clock)
+	<span class="syn-keyword">if</span> height &gt;= <span class="syn-type">SunPath</span>.height_when_set {
+		darkness_while_up(height)
+	} <span class="syn-keyword">else</span> {
+		darkness_after_set(height)
+	}
+}
+</code></pre></figure><h2 id="a-function-is-a-value">A function is a value <a class="section-link" href="#a-function-is-a-value" aria-label="Link to this section">§</a></h2>
+<p>In Roc, a function is an ordinary value, like a number. Its code is an anonymous function, and <code>=</code> gives it a name. Roc calls a named value a constant: once named, it keeps its value. Inside a function&#39;s body, the constants are named again on each run, so each run has its own. Here&#39;s the function, piece by piece:</p>
+<table>
+<thead>
+<tr>
+<th>Code</th>
+<th>Term</th>
+<th>What it says</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>##</code></td>
+<td>doc comment</td>
+<td>Describes the code under it.</td>
+</tr>
+<tr>
+<td><code>darkness_<wbr>at : Clock -&gt; Fraction</code></td>
+<td>type annotation</td>
+<td>The function&#39;s name, a colon, and its type. <code>darkness_<wbr>at</code> takes a <code>Clock</code>, which counts the ride&#39;s steps, and returns a <code>Fraction</code>, a number from 0 to 1.</td>
+</tr>
+<tr>
+<td><code>-&gt;</code></td>
+<td>thin arrow</td>
+<td>Separates what the function takes from what it returns.</td>
+</tr>
+<tr>
+<td><code>darkness_<wbr>at =</code></td>
+<td>constant</td>
+<td><code>=</code> names the function.</td>
+</tr>
+<tr>
+<td><code>|clock|</code></td>
+<td>anonymous function</td>
+<td>The function itself starts here.</td>
+</tr>
+<tr>
+<td><code>clock</code></td>
+<td>argument</td>
+<td>What the function is given.</td>
+</tr>
+<tr>
+<td><code>{</code> and <code>}</code></td>
+<td>block</td>
+<td>Names for values, then one last expression. A block is an expression too, and its value is that last expression&#39;s value.</td>
+</tr>
+<tr>
+<td><code>height = </code></td>
+<td>constant</td>
+<td>A name for a value, which the lines below it use.</td>
+</tr>
+<tr>
+<td><code>SunPath.<wbr>height_<wbr>at(clock)</code></td>
+<td>function call</td>
+<td>Calls <code>height_<wbr>at</code> from the <code>SunPath</code> module, with <code>clock</code> as its argument.</td>
+</tr>
+<tr>
+<td><code>if</code> and its two branches</td>
+<td><code>if</code> expression</td>
+<td>The block&#39;s last expression, so its value is what the function returns: one of the two calls, picked by whether the sun is still up. <code>SunPath.<wbr>height_<wbr>when_<wbr>set</code>, the sun&#39;s height once it has set, is a constant from the same module. <code>darkness_<wbr>while_<wbr>up</code> and <code>darkness_<wbr>after_<wbr>set</code> are functions further down in the <code>Sky</code> module, outside its type&#39;s braces, and a module calls those by their bare names.</td>
+</tr>
+</tbody>
+</table>
+<p>Because a function is a value, the chapters ahead pass functions to other functions and keep them in records&#39; fields.</p>
+<h2 id="a-body-is-one-expression">A body is one expression <a class="section-link" href="#a-body-is-one-expression" aria-label="Link to this section">§</a></h2>
+<p>A function&#39;s body is always one expression. A block is one kind, and a short body can be a plain expression, written straight after the <code>|</code>. The <code>Distance</code> module&#39;s <code>metres</code> turns a number of metres, an <code>F64</code>, into a length:</p>
+<figure class="listing"><figcaption>Distance.roc</figcaption><pre><code class="language-roc"><span class="syn-name">metres</span> : <span class="syn-type">F64</span> -&gt; <span class="syn-type">Distance</span>
+<span class="syn-name">metres</span> = |metres| <span class="syn-type">Distance</span>.(metres)
+</code></pre></figure><p>Inside the body, <code>metres</code> is the argument. The function sits inside <code>Distance</code>&#39;s braces, so it goes by <code>Distance.metres</code>, and the bare name is free for the argument. <code>Distance.(metres)</code> wraps the number as a <code>Distance</code>. So a one-line function and a ten-line one have the same shape: arguments in, one expression&#39;s value out.</p>
+<h2 id="an-annotation-states-the-contract">An annotation states the contract <a class="section-link" href="#an-annotation-states-the-contract" aria-label="Link to this section">§</a></h2>
+<p>An annotation states what a function takes and what it returns, with commas between the things it takes:</p>
+<figure class="listing"><figcaption>Sky.roc</figcaption><pre><code class="language-roc"><span class="syn-name">color_at_darkness</span> : <span class="syn-type">RgbColor</span>, <span class="syn-type">Fraction</span> -&gt; <span class="syn-type">RgbColor</span>
+</code></pre></figure><p><code>color_at_darkness</code> takes an <code>RgbColor</code> and a <code>Fraction</code>, and returns an <code>RgbColor</code>. The compiler holds every call to that contract. The book often shows a function&#39;s annotation alone, until its body&#39;s turn comes, because the annotation already says what goes in and what comes out.</p>
+<h2 id="a-method-belongs-to-its-type">A method belongs to its type <a class="section-link" href="#a-method-belongs-to-its-type" aria-label="Link to this section">§</a></h2>
+<p>Many calls in the book put a value first, as in <code>SunPath.height_at(clock).minus(FarHeight.zero)</code>. That&#39;s a method call. A method is a function that belongs to a particular type. Here&#39;s a function built from method calls, which returns how warm the horizon&#39;s color is, from how near the sun stands to the horizon:</p>
+<figure class="listing"><figcaption>Sky.roc</figcaption><pre><code class="language-roc"><span class="syn-comment">## How warm the horizon is at `clock`: most while the sun touches it, none</span>
+<span class="syn-comment">## once the sun is `warmth_reach` above or below.</span>
+<span class="syn-name">horizon_warmth_at</span> : <span class="syn-type">Clock</span> -&gt; <span class="syn-type">Fraction</span>
+<span class="syn-name">horizon_warmth_at</span> = |clock| {
+	from_horizon = <span class="syn-type">SunPath</span>.height_at(clock).minus(<span class="syn-type">FarHeight</span>.zero).abs()
+	<span class="syn-type">Fraction</span>.clamp(from_horizon.ratio_to(warmth_reach)).complement()
+}
+</code></pre></figure><table>
+<thead>
+<tr>
+<th>Code</th>
+<th>Term</th>
+<th>What it says</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>SunPath.<wbr>height_<wbr>at(clock)</code></td>
+<td>function call</td>
+<td>Returns the sun&#39;s height, a <code>FarHeight</code>.</td>
+</tr>
+<tr>
+<td><code>.<wbr>minus(FarHeight.<wbr>zero)</code></td>
+<td>method call</td>
+<td><code>FarHeight</code> has a <code>minus</code> method. The value before the dot is its first argument, so this is <code>FarHeight.<wbr>minus(SunPath.<wbr>height_<wbr>at(clock), FarHeight.<wbr>zero)</code>.</td>
+</tr>
+<tr>
+<td><code>.<wbr>abs()</code></td>
+<td>method call</td>
+<td>A method whose one argument is the value before the dot. <code>minus</code> returns a <code>FarRise</code>, the rise from one height to another, so this calls <code>FarRise.<wbr>abs</code>.</td>
+</tr>
+<tr>
+<td><code>from_<wbr>horizon.<wbr>ratio_<wbr>to(warmth_<wbr>reach)</code></td>
+<td>method call</td>
+<td>Divides one <code>FarRise</code> by another: how far the sun stands from the horizon, as a share of <code>warmth_<wbr>reach</code>, a constant rise further down in the module.</td>
+</tr>
+<tr>
+<td><code>Fraction.<wbr>clamp(…).<wbr>complement()</code></td>
+<td>function call, then method call</td>
+<td><code>clamp</code> keeps a number between 0 and 1, as a <code>Fraction</code>, and <code>complement</code> returns 1 minus it.</td>
+</tr>
+</tbody>
+</table>
+<p>A type&#39;s methods are the functions between its <code>.{</code> and <code>}</code>, as <code>Distance</code>&#39;s were. The compiler infers every value&#39;s type, so it resolves each method call to that type&#39;s own function when the program compiles. Even <code>&gt;=</code> in <code>darkness_at</code> calls a method, <code>is_gte</code>.</p>
+<h2 id="every-function-has-this-shape">Every function has this shape <a class="section-link" href="#every-function-has-this-shape" aria-label="Link to this section">§</a></h2>
+<p>A function is a value, its body is one expression, its annotation states its contract, and its methods belong to its types. Every function from here on is built the same way. The next chapter starts on the things beside the road.</p>
+
+</article>
+<nav class="turn-page" aria-label="Previous and next chapter">
+<a rel="prev" href="types.html"><small>Previous</small>Types</a>
+<a rel="next" href="things.html"><small>Next</small>Things</a>
+</nav>
+</main>
+
+</body>
+</html>

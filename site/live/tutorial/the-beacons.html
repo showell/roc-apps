@@ -1,0 +1,153 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>The beacons · Safari Ride</title>
+<link rel="icon" href="data:,">
+<link rel="stylesheet" href="book.css">
+<script src="book.js" defer></script>
+</head>
+<body class="chapter">
+<header class="top-bar">
+<a class="home-link" href="https://roc.lynrummy.com/">Steve's Roc Apps</a>
+<p class="draft-notice">This is an early draft.</p>
+<a class="repo-link" href="https://github.com/showell/roc-apps">roc-apps on GitHub</a>
+</header>
+<nav class="book-nav" id="chapters" aria-label="Chapters">
+<a class="book-name" href="index.html">Safari Ride</a>
+<ol>
+<li class="part">The big picture</li><li><a href="introduction.html"><span class="number">1</span>Introduction</a></li>
+<li><a href="one-page.html"><span class="number">2</span>One page</a></li>
+<li><a href="the-problem.html"><span class="number">3</span>The problem</a></li>
+<li><a href="platforms-packages-and-modules.html"><span class="number">4</span>Platforms, packages and modules</a></li>
+<li><a href="types.html"><span class="number">5</span>Types</a></li>
+<li><a href="functions.html"><span class="number">6</span>Functions</a></li>
+<li class="part">One frame</li><li><a href="things.html"><span class="number">7</span>Things</a></li>
+<li><a href="billboard-critters.html"><span class="number">8</span>Tag unions: billboard critters</a></li>
+<li><a href="shapes.html"><span class="number">9</span>Shapes</a></li>
+<li><a href="a-far-tree.html"><span class="number">10</span>Lists and map: a far tree</a></li>
+<li><a href="the-pipeline.html"><span class="number">11</span>The pipeline</a></li>
+<li><a href="asking-a-kind.html"><span class="number">12</span>Where clauses: asking a kind</a></li>
+<li><a href="refused.html"><span class="number">13</span>Errors as tag unions</a></li>
+<li class="category">Nature</li><li><a href="the-sky.html"><span class="number">14</span>The sky and the grass</a></li>
+<li><a href="mountains.html"><span class="number">15</span>Mountains</a></li>
+<li class="category">Man-made</li><li><a href="the-road.html"><span class="number">16</span>The road</a></li>
+<li><a href="rails.html"><span class="number">17</span>Rails</a></li>
+<li><a href="radio-towers.html"><span class="number">18</span>Radio towers</a></li>
+<li class="category">Critters that stand still</li><li><a href="herds.html"><span class="number">19</span>Herds</a></li>
+<li class="part">Motion</li><li><a href="a-flip-book.html"><span class="number">20</span>Immutable values: a flip book</a></li>
+<li><a href="records.html"><span class="number">21</span>Records</a></li>
+<li><a href="pure-functions-and-effects.html"><span class="number">22</span>Pure functions and effects</a></li>
+<li><a href="the-clock.html"><span class="number">23</span>Opaque types: the clock</a></li>
+<li><a href="the-ride-instant.html"><span class="number">24</span>The ride instant</a></li>
+<li class="category">The passage of time</li><li class="here"><a href="the-beacons.html"><span class="number">25</span>The beacons</a><ol class="sections"><li><a href="the-beacons.html#three-rules">Three rules</a></li><li><a href="the-beacons.html#which-beacon-and-when">Which beacon, and when</a></li><li><a href="the-beacons.html#the-phase">The phase</a></li><li><a href="the-beacons.html#the-brightness">The brightness</a></li><li><a href="the-beacons.html#a-disc-or-a-refusal">A disc, or a refusal</a></li></ol></li>
+<li><a href="the-setting-sun.html"><span class="number">26</span>The setting sun</a></li>
+<li class="category">Vehicles</li><li><a href="the-rider.html"><span class="number">27</span>The rider</a></li>
+<li><a href="the-throttle.html"><span class="number">28</span>The throttle</a></li>
+<li><a href="rehearsal.html"><span class="number">29</span>Variables and loops: rehearsal</a></li>
+<li><a href="the-riders-gaze.html"><span class="number">30</span>The rider&#39;s gaze</a></li>
+<li><a href="the-truck.html"><span class="number">31</span>The truck</a></li>
+<li><a href="the-trucks-motion.html"><span class="number">32</span>The truck&#39;s motion</a></li>
+<li class="category">Critter motion</li><li><a href="the-cat.html"><span class="number">33</span>The cat</a></li>
+<li><a href="the-bird.html"><span class="number">34</span>The bird</a></li>
+<li><a href="what-a-cat-does-to-the-rider.html"><span class="number">35</span>What a cat does to the rider</a></li>
+<li class="part">Under the hood</li><li><a href="the-math-layer.html"><span class="number">36</span>The math layer</a></li>
+<li><a href="proving-it.html"><span class="number">37</span>Proving it</a></li>
+<li><a href="the-platform.html"><span class="number">38</span>The platform</a></li>
+<li><a href="zooming-back-out.html"><span class="number">39</span>Zooming back out</a></li>
+</ol>
+</nav>
+<main>
+<p class="book-bar"><a href="index.html">Safari Ride</a> <a href="#chapters">Chapters</a></p>
+<article>
+<p class="chapter-number">Chapter 25</p>
+<h1 id="the-beacons">The beacons</h1>
+<p>Every radio tower has a magenta beacon on top, and the beacons blink. A beacon is the simplest moving thing in the ride: its brightness depends on two things only, which beacon it is and the clock.</p>
+<figure class="widget"><iframe class="canvas-app" src="../beacon_widget/" title="Press play and watch the two towers blink out of step." loading="lazy" style="aspect-ratio: 640 / 360"></iframe><figcaption>Press play and watch the two towers blink out of step.</figcaption></figure><p>The picture stands two towers side by side and plays two whole blinks, from step 5,400 to step 5,640. Their beacons blink opposite each other.</p>
+<h2 id="three-rules">Three rules <a class="section-link" href="#three-rules" aria-label="Link to this section">§</a></h2>
+<p>A beacon follows three rules:</p>
+<ol>
+<li>A blink takes 120 steps, from dark up to full brightness and back down.</li>
+<li>Each segment&#39;s beacons start their blinks at a different point from the last segment&#39;s, so the towers along the road blink at different times.</li>
+<li>The tower halfway along a segment blinks exactly opposite the tower at the segment&#39;s end.</li>
+</ol>
+<p>Every rule reads the tower and the clock alone. So the ride derives each beacon afresh, every frame. Ask for a beacon at step 5,430 cold, and the answer comes straight from the clock.</p>
+<h2 id="which-beacon-and-when">Which beacon, and when <a class="section-link" href="#which-beacon-and-when" aria-label="Link to this section">§</a></h2>
+<p>A tower&#39;s sighting asks for its beacon with one line. Here it is for the tower past a segment&#39;s end:</p>
+<figure class="listing"><figcaption>TowerSighting.roc, in end_tower</figcaption><pre><code class="language-roc"><span class="syn-comment"># ...</span>
+beacon = <span class="syn-type">Beacon</span>.at({ segment: in_view.index, place: <span class="syn-type">AtEnd</span> }, clock)
+<span class="syn-comment"># ...</span>
+</code></pre></figure><p>The record names the beacon. <code>in_view.index</code> is the segment&#39;s index in the route, counting from 0, and <code>AtEnd</code> is the tower&#39;s place on it. The tower halfway along passes <code>Midway</code> instead. The record&#39;s type is a <code>TowerKey</code>:</p>
+<figure class="listing"><figcaption>Beacon.roc</figcaption><pre><code class="language-roc"><span class="syn-comment">## Where on its segment a tower stands: past the segment&#39;s end, or halfway</span>
+<span class="syn-comment">## along it.</span>
+<span class="syn-type">TowerPlace</span> : [<span class="syn-type">AtEnd</span>, <span class="syn-type">Midway</span>]
+</code></pre></figure><figure class="listing"><figcaption>Beacon.roc</figcaption><pre><code class="language-roc"><span class="syn-comment">## Which tower a beacon tops: the segment it stands on, and its place</span>
+<span class="syn-comment">## there. Towers aren&#39;t kept, so this pair is all that tells one from</span>
+<span class="syn-comment">## another.</span>
+<span class="syn-type">TowerKey</span> : { segment : <span class="syn-type">Route.SegmentIndex</span>, place : <span class="syn-type">Beacon.TowerPlace</span> }
+</code></pre></figure><p>The clock says when. Here&#39;s the function the line calls:</p>
+<figure class="listing"><figcaption>Beacon.roc</figcaption><pre><code class="language-roc"><span class="syn-comment">## The beacon of the tower at `key`, as it shines at `clock`.</span>
+<span class="syn-name">at</span> : <span class="syn-type">Beacon.TowerKey</span>, <span class="syn-type">Clock</span> -&gt; <span class="syn-type">Beacon</span>
+<span class="syn-name">at</span> = |key, clock| <span class="syn-type">Beacon</span>.(beacon_brightness(<span class="syn-type">Beacon</span>.blink_phase(key, clock)))
+</code></pre></figure><p>A <code>Beacon</code> is an opaque type around a <code>Fraction</code>, its brightness, and <code>Beacon.(…)</code> builds one. Only the <code>Beacon</code> module can build one, so every beacon in the ride comes from this function.</p>
+<h2 id="the-phase">The phase <a class="section-link" href="#the-phase" aria-label="Link to this section">§</a></h2>
+<p>The brightness comes from the beacon&#39;s phase, which counts how many steps into its blink the beacon is:</p>
+<figure class="listing"><figcaption>Beacon.roc</figcaption><pre><code class="language-roc"><span class="syn-comment">## The phase at `clock` of the beacon of the tower at `key`: how many steps</span>
+<span class="syn-comment">## into its blink it is, from 0, where it starts dark, up to a step short of</span>
+<span class="syn-comment">## one `beacon_period`. It is the steps since the ride&#39;s start, plus the</span>
+<span class="syn-comment">## beacon&#39;s head start, wrapped to one blink.</span>
+<span class="syn-name">blink_phase</span> : <span class="syn-type">Beacon.TowerKey</span>, <span class="syn-type">Clock</span> -&gt; <span class="syn-type">Steps</span>
+<span class="syn-name">blink_phase</span> = |key, clock|
+	into_blink(clock.steps_since(<span class="syn-type">Clock</span>.start).plus(head_start(key)))
+</code></pre></figure><p><code>clock.steps_since(Clock.start)</code> turns a moment into a length: the steps since the ride began. The beacon&#39;s head start goes on top, and that&#39;s where the second and third rules live:</p>
+<figure class="listing"><figcaption>Beacon.roc</figcaption><pre><code class="language-roc"><span class="syn-comment">## How far into its blink the beacon of the tower at `place` on the segment at</span>
+<span class="syn-comment">## `segment` is when the ride starts. Each segment&#39;s beacon starts a stagger</span>
+<span class="syn-comment">## further into its blink than the last one&#39;s, so neighbouring segments&#39;</span>
+<span class="syn-comment">## beacons blink apart, and the tower halfway along starts half a blink on</span>
+<span class="syn-comment">## from the one at the end, so the two blink opposite each other.</span>
+<span class="syn-name">head_start</span> : <span class="syn-type">Beacon.TowerKey</span> -&gt; <span class="syn-type">Steps</span>
+<span class="syn-name">head_start</span> = |{ segment, place }| {
+	at_end = into_blink(beacon_stagger.times(segment.to_u32()))
+	<span class="syn-keyword">match</span> place {
+		<span class="syn-type">AtEnd</span> =&gt; at_end
+		<span class="syn-type">Midway</span> =&gt; into_blink(at_end.plus(half_period))
+	}
+}
+</code></pre></figure><p><code>beacon_stagger</code> is 37 steps, so each segment&#39;s beacon starts 37 steps further into its blink than the last one&#39;s. 37 and 120 have only 1 as a common factor, so the first 120 segments&#39; beacons all start at different points of the blink. The tower halfway along starts half a blink later than the tower at the end, so the two blink opposite each other. <code>half_period</code> is the period divided by two, so it follows the period if the period changes.</p>
+<p><code>into_blink</code> brings a sum of steps inside one blink:</p>
+<figure class="listing"><figcaption>Beacon.roc</figcaption><pre><code class="language-roc"><span class="syn-comment">## `steps` brought inside one blink: so many steps into a blink, from 0 up to a</span>
+<span class="syn-comment">## step short of one `beacon_period`.</span>
+<span class="syn-name">into_blink</span> : <span class="syn-type">Steps</span> -&gt; <span class="syn-type">Steps</span>
+<span class="syn-name">into_blink</span> = |steps| steps.wrapped_to(<span class="syn-type">Beacon</span>.beacon_period)
+</code></pre></figure><p><code>wrapped_to</code> keeps the remainder after dividing by the period. So the route&#39;s second segment, at index 1, has a beacon at its end with a head start of 37 steps. At step 83 the sum is 120, a whole blink, and its phase is back to 0.</p>
+<h2 id="the-brightness">The brightness <a class="section-link" href="#the-brightness" aria-label="Link to this section">§</a></h2>
+<p>A cosine turns the phase into a brightness:</p>
+<figure class="listing"><figcaption>Beacon.roc</figcaption><pre><code class="language-roc"><span class="syn-comment">## How bright a beacon is `phase` steps into its blink.</span>
+<span class="syn-name">beacon_brightness</span> : <span class="syn-type">Steps</span> -&gt; <span class="syn-type">Fraction</span>
+<span class="syn-name">beacon_brightness</span> = |phase| {
+	angle = <span class="syn-number">2.0</span> * <span class="syn-type">F64</span>.pi * phase.to_f64() / <span class="syn-type">Beacon</span>.beacon_period.to_f64()
+	<span class="syn-type">Fraction</span>.of((<span class="syn-number">1.0</span> - angle.cos()) / <span class="syn-number">2.0</span>)
+}
+</code></pre></figure><p><code>(1 - cos) / 2</code> is 0 at the start of a blink, 1 halfway through, and 0 again at the end. A cosine rises and falls smoothly, so the beacon eases into full brightness and out of it again. The formula also stays between 0 and 1 all the way. That matters, because <code>Fraction.of</code> enforces the invariant that every share lies between 0 and 1, with a <code>crash</code>.</p>
+<p>The picture&#39;s two beacons belong to the first segment, whose head start is 0. Step 5,400 is 45 whole blinks into the ride, so the beacon at the end is dark there, and the one halfway along is at full brightness. A quarter of a blink later, at step 5,430, the two are equally bright. By step 5,460 they&#39;ve changed places.</p>
+<h2 id="a-disc-or-a-refusal">A disc, or a refusal <a class="section-link" href="#a-disc-or-a-refusal" aria-label="Link to this section">§</a></h2>
+<p><code>Tower.tower_shapes</code> passes <code>Beacon.disc</code> two things: the point on the screen where the beacon&#39;s middle lands, and how many pixels a metre spans there. <code>disc</code> returns a disc, or a refusal:</p>
+<figure class="listing"><figcaption>Beacon.roc</figcaption><pre><code class="language-roc"><span class="syn-name">disc</span> : <span class="syn-type">Beacon</span>,
+{
+	center : <span class="syn-type">Point</span>,
+	metre_on_screen : <span class="syn-type">Pixels</span>,
+} -&gt; <span class="syn-type">Try</span>(<span class="syn-type">Shapes.Shape</span>, [<span class="syn-type">TooDim</span>, <span class="syn-type">TooSmall</span>])
+</code></pre></figure><p>The disc is 3 metres in radius, and see-through as far as the beacon is dim. <code>disc</code> returns <code>TooDim</code> for a beacon below a brightness of one part in fifty, and <code>TooSmall</code> for a disc whose radius comes to under half a pixel. Every beacon bright enough and big enough gets its disc.</p>
+<p>Everything <code>Beacon</code> works with comes in as arguments: a tower&#39;s key, a clock, a point on the screen and a scale. So its tests build those values directly, apart from any tower or ride. They check the head starts, the phase, the blink and the opposite blink halfway along, and the disc&#39;s size, color and refusals.</p>
+<p>A beacon repeats every 120 steps. The sun moves one way through the whole ride, and the sky and the light on everything follow it.</p>
+
+</article>
+<nav class="turn-page" aria-label="Previous and next chapter">
+<a rel="prev" href="the-ride-instant.html"><small>Previous</small>The ride instant</a>
+<a rel="next" href="the-setting-sun.html"><small>Next</small>The setting sun</a>
+</nav>
+</main>
+<script src="embed.js"></script>
+</body>
+</html>

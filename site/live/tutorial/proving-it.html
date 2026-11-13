@@ -1,0 +1,196 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Proving it · Safari Ride</title>
+<link rel="icon" href="data:,">
+<link rel="stylesheet" href="book.css">
+<script src="book.js" defer></script>
+</head>
+<body class="chapter">
+<header class="top-bar">
+<a class="home-link" href="https://roc.lynrummy.com/">Steve's Roc Apps</a>
+<p class="draft-notice">This is an early draft.</p>
+<a class="repo-link" href="https://github.com/showell/roc-apps">roc-apps on GitHub</a>
+</header>
+<nav class="book-nav" id="chapters" aria-label="Chapters">
+<a class="book-name" href="index.html">Safari Ride</a>
+<ol>
+<li class="part">The big picture</li><li><a href="introduction.html"><span class="number">1</span>Introduction</a></li>
+<li><a href="one-page.html"><span class="number">2</span>One page</a></li>
+<li><a href="the-problem.html"><span class="number">3</span>The problem</a></li>
+<li><a href="platforms-packages-and-modules.html"><span class="number">4</span>Platforms, packages and modules</a></li>
+<li><a href="types.html"><span class="number">5</span>Types</a></li>
+<li><a href="functions.html"><span class="number">6</span>Functions</a></li>
+<li class="part">One frame</li><li><a href="things.html"><span class="number">7</span>Things</a></li>
+<li><a href="billboard-critters.html"><span class="number">8</span>Tag unions: billboard critters</a></li>
+<li><a href="shapes.html"><span class="number">9</span>Shapes</a></li>
+<li><a href="a-far-tree.html"><span class="number">10</span>Lists and map: a far tree</a></li>
+<li><a href="the-pipeline.html"><span class="number">11</span>The pipeline</a></li>
+<li><a href="asking-a-kind.html"><span class="number">12</span>Where clauses: asking a kind</a></li>
+<li><a href="refused.html"><span class="number">13</span>Errors as tag unions</a></li>
+<li class="category">Nature</li><li><a href="the-sky.html"><span class="number">14</span>The sky and the grass</a></li>
+<li><a href="mountains.html"><span class="number">15</span>Mountains</a></li>
+<li class="category">Man-made</li><li><a href="the-road.html"><span class="number">16</span>The road</a></li>
+<li><a href="rails.html"><span class="number">17</span>Rails</a></li>
+<li><a href="radio-towers.html"><span class="number">18</span>Radio towers</a></li>
+<li class="category">Critters that stand still</li><li><a href="herds.html"><span class="number">19</span>Herds</a></li>
+<li class="part">Motion</li><li><a href="a-flip-book.html"><span class="number">20</span>Immutable values: a flip book</a></li>
+<li><a href="records.html"><span class="number">21</span>Records</a></li>
+<li><a href="pure-functions-and-effects.html"><span class="number">22</span>Pure functions and effects</a></li>
+<li><a href="the-clock.html"><span class="number">23</span>Opaque types: the clock</a></li>
+<li><a href="the-ride-instant.html"><span class="number">24</span>The ride instant</a></li>
+<li class="category">The passage of time</li><li><a href="the-beacons.html"><span class="number">25</span>The beacons</a></li>
+<li><a href="the-setting-sun.html"><span class="number">26</span>The setting sun</a></li>
+<li class="category">Vehicles</li><li><a href="the-rider.html"><span class="number">27</span>The rider</a></li>
+<li><a href="the-throttle.html"><span class="number">28</span>The throttle</a></li>
+<li><a href="rehearsal.html"><span class="number">29</span>Variables and loops: rehearsal</a></li>
+<li><a href="the-riders-gaze.html"><span class="number">30</span>The rider&#39;s gaze</a></li>
+<li><a href="the-truck.html"><span class="number">31</span>The truck</a></li>
+<li><a href="the-trucks-motion.html"><span class="number">32</span>The truck&#39;s motion</a></li>
+<li class="category">Critter motion</li><li><a href="the-cat.html"><span class="number">33</span>The cat</a></li>
+<li><a href="the-bird.html"><span class="number">34</span>The bird</a></li>
+<li><a href="what-a-cat-does-to-the-rider.html"><span class="number">35</span>What a cat does to the rider</a></li>
+<li class="part">Under the hood</li><li><a href="the-math-layer.html"><span class="number">36</span>The math layer</a></li>
+<li class="here"><a href="proving-it.html"><span class="number">37</span>Proving it</a><ol class="sections"><li><a href="proving-it.html#a-fixture-is-a-value">A fixture is a value</a></li><li><a href="proving-it.html#the-frame-hash">The frame hash</a></li><li><a href="proving-it.html#sums-in-order">Sums in order</a></li><li><a href="proving-it.html#three-more-proofs">Three more proofs</a></li><li><a href="proving-it.html#tests-beside-the-code">Tests beside the code</a></li><li><a href="proving-it.html#crashes-that-check">Crashes that check</a></li><li><a href="proving-it.html#the-page-itself">The page itself</a></li></ol></li>
+<li><a href="the-platform.html"><span class="number">38</span>The platform</a></li>
+<li><a href="zooming-back-out.html"><span class="number">39</span>Zooming back out</a></li>
+</ol>
+</nav>
+<main>
+<p class="book-bar"><a href="index.html">Safari Ride</a> <a href="#chapters">Chapters</a></p>
+<article>
+<p class="chapter-number">Chapter 37</p>
+<h1 id="proving-it">Proving it</h1>
+<p>The same step always gives the same frame, because the ride derives each frame from the four things it carries. In this chapter, we turn that sameness into a test strict enough to guard every change, down to the last pixel.</p>
+<table>
+<thead>
+<tr>
+<th>Step</th>
+<th>What the frame shows</th>
+<th>Hash of its pixels</th>
+<th>Shapes</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>0</td>
+<td>The start of the ride</td>
+<td><code>99207ed1</code></td>
+<td>1,959</td>
+</tr>
+<tr>
+<td>100</td>
+<td>A bird in flight</td>
+<td><code>ca240797</code></td>
+<td>2,114</td>
+</tr>
+<tr>
+<td>1,529</td>
+<td>A cat frozen in the road</td>
+<td><code>57dcc099</code></td>
+<td>2,121</td>
+</tr>
+<tr>
+<td>1,542</td>
+<td>The same cat in mid-leap</td>
+<td><code>ba8b423e</code></td>
+<td>1,848</td>
+</tr>
+<tr>
+<td>3,000</td>
+<td>The ride under way</td>
+<td><code>d4c4946f</code></td>
+<td>1,931</td>
+</tr>
+<tr>
+<td>3,698</td>
+<td>A distant truck, its glow barely a pixel</td>
+<td><code>431f7d75</code></td>
+<td>1,326</td>
+</tr>
+<tr>
+<td>5,700</td>
+<td>The truck at dusk, lights on</td>
+<td><code>c88cd52a</code></td>
+<td>1,276</td>
+</tr>
+<tr>
+<td>6,250</td>
+<td>The truck braking in plain view</td>
+<td><code>ba0188d8</code></td>
+<td>765</td>
+</tr>
+<tr>
+<td>9,000</td>
+<td>Past the end, on the second lap</td>
+<td><code>062374b3</code></td>
+<td>1,781</td>
+</tr>
+</tbody>
+</table>
+<p>Each row is one frame of the ride. Ride to that step today, and you get that hash and that many shapes. The gate is the set of checks every change must pass before it lands, and one of them holds every row as it is.</p>
+<h2 id="a-fixture-is-a-value">A fixture is a value <a class="section-link" href="#a-fixture-is-a-value" aria-label="Link to this section">§</a></h2>
+<p>A test rides to any step with one call:</p>
+<figure class="listing"><figcaption>Tour.roc</figcaption><pre><code class="language-roc"><span class="syn-comment">## The tour ridden from its start to `goal`, with the instants it passed</span>
+<span class="syn-comment">## behind it. The ride must not finish before `goal`.</span>
+<span class="syn-name">at_step</span> : <span class="syn-type">Clock</span> -&gt; <span class="syn-type">Tour</span>
+<span class="syn-name">at_step</span> = |goal| {
+	<span class="syn-keyword">var</span> $tour = <span class="syn-type">Tour</span>.initial
+	<span class="syn-keyword">while</span> <span class="syn-type">Tour</span>.instant($tour).clock != goal {
+		$tour =
+			<span class="syn-keyword">match</span> tour_after_step($tour) {
+				<span class="syn-type">Continued</span>(next_tour) =&gt; next_tour
+				<span class="syn-type">Restarted</span>(_) =&gt; <span class="syn-keyword">crash</span> <span class="syn-string">&quot;Tour.at_step: the ride finishes before step </span>${goal.to_str()}<span class="syn-string">&quot;</span>
+			}
+	}
+	$tour
+}
+</code></pre></figure><p><code>Tour.at_step</code> plays every step from the start up to the one asked for. <code>Tour.step_forward</code> rides on past the finish into a second lap, which is how the proof tools reach step 9,000. <code>Tour.initial</code> is a value, and each step returns a new tour, so the tour at step 1,529 is the same value in every test, on every run.</p>
+<h2 id="the-frame-hash">The frame hash <a class="section-link" href="#the-frame-hash" aria-label="Link to this section">§</a></h2>
+<p>The gate&#39;s proof tools are small Roc programs in <code>gates/proof/</code>. <code>RasterFrame</code> is one. It rides to a step and paints the frame into 576,000 pixels, 960 across and 600 down, in pure Roc, with <code>SafariFrame</code> and <code>ShapesPixels</code>, the Roc twin of the page&#39;s canvas. Then it prints a hash of them. The gate holds each hash to its line of <code>gates/proof.expected</code>, exactly. One different pixel in one frame fails it.</p>
+<p>A frame proves only what&#39;s in it, so each step in the table is there for a scene. We add a row whenever a change could go wrong with every listed frame staying the same. The row at 3,698 is one: the truck brakes about 600 metres off, and its glow is about a pixel across.</p>
+<h2 id="sums-in-order">Sums in order <a class="section-link" href="#sums-in-order" aria-label="Link to this section">§</a></h2>
+<p>Exact hashes make the order of arithmetic matter: adding floating-point numbers in another order can change the last bit of the answer. <code>Route.segments_with_ends</code> adds up the route&#39;s lengths, and its doc comment says why its direction matters:</p>
+<figure class="listing"><figcaption>Route.roc</figcaption><pre><code class="language-roc"><span class="syn-comment">## Each of the route&#39;s segments, in order, with how far along the route it</span>
+<span class="syn-comment">## ends. It is the one sum of the route&#39;s lengths, which every other</span>
+<span class="syn-comment">## distance along the route reads. The lengths are added from the first</span>
+<span class="syn-comment">## segment on: a float sum&#39;s rounding depends on its order, and another order</span>
+<span class="syn-comment">## can move a pixel.</span>
+<span class="syn-name">segments_with_ends</span> : <span class="syn-type">Route</span> -&gt; <span class="syn-type">List</span>({ segment : <span class="syn-type">Segment</span>, end : <span class="syn-type">Distance</span> })
+<span class="syn-name">segments_with_ends</span> = |<span class="syn-type">Route</span>.(segments)|
+	segments
+		.fold(
+			{ reached: <span class="syn-type">Distance</span>.zero, stretches: [] },
+			|{ reached, stretches }, segment| {
+				end = reached.plus(segment.length)
+				{ reached: end, stretches: stretches.append({ segment, end }) }
+			},
+		)
+		.stretches
+</code></pre></figure><p>A product&#39;s grouping counts as well. A beacon&#39;s angle is <code>2.0 * F64.pi * phase.to_f64() / Beacon.beacon_period.to_f64()</code>. Divide the phase by the period first, and the product means the same on paper, but some beacons change in their last bits, and the gate&#39;s hash of the built page fails.</p>
+<p>A value in an opaque type runs as the number inside it, so a change that retypes a module, to use <code>Speed</code> where it used plain <code>F64</code>s, leaves every hash where it was. That&#39;s why we rename, retype and reorganize the code freely: the compiler checks the types, and the hashes check every pixel.</p>
+<h2 id="three-more-proofs">Three more proofs <a class="section-link" href="#three-more-proofs" aria-label="Link to this section">§</a></h2>
+<p><code>ShapesFrame</code> paints each frame twice, once with its polygons whole and once cut into triangles. The gate holds the count of pixels that differ at 0 of 576,000, at every step in the table.</p>
+<p><code>StepBack</code> steps back at points along the route, from step 10 to the finish. One step back from step 3,000 has to land on step 2,999, and as many steps back as the ride took have to land on step 0.</p>
+<p><code>OnRoad</code> rides the whole route and checks that the rider stays on the road from start to finish.</p>
+<h2 id="tests-beside-the-code">Tests beside the code <a class="section-link" href="#tests-beside-the-code" aria-label="Link to this section">§</a></h2>
+<p>The rest of the testing is plain <code>expect</code>s. An <code>expect</code> sits at the top level of a module, under the code it checks, and <code>roc test</code> runs it. Safari Ride has over a thousand.</p>
+<p>An <code>expect</code> can use only what its module imports, so a check that needs several modules goes in <code>gates/expects/</code>, a folder of modules made only for checks.</p>
+<p>The gate makes every <code>expect</code> count. Each line in the source that starts with <code>expect</code> has to print <code>PASS</code> exactly once when <code>roc test</code> runs, so an <code>expect</code> has to sit in a module that a test run reaches.</p>
+<h2 id="crashes-that-check">Crashes that check <a class="section-link" href="#crashes-that-check" aria-label="Link to this section">§</a></h2>
+<p>Some beliefs about the program are cheaper to check as it runs. Every <code>Fraction.of</code> in the ride, from the <a class="chapter-link" href="refused.html">“Errors as tag unions”</a> chapter, enforces an invariant: a ratio outside 0 to 1 means a sum behind it is wrong, so the program stops, with a sentence that says so. The proof tools ride thousands of steps on every run of the gate, so each check on that path runs thousands of times.</p>
+<h2 id="the-page-itself">The page itself <a class="section-link" href="#the-page-itself" aria-label="Link to this section">§</a></h2>
+<p>This book is built from the code. Every snippet came through Roc&#39;s own parser, by name, and each program shown failing went through the compiler, with its message quoted as printed. The gate builds the book, so renaming a function quoted here fails the gate until the prose catches up.</p>
+<p>The gate also runs lints, small programs that read the Roc source for patterns we&#39;ve ruled out, each held at zero, so a vague name fails the gate before a single hash is worked out.</p>
+
+</article>
+<nav class="turn-page" aria-label="Previous and next chapter">
+<a rel="prev" href="the-math-layer.html"><small>Previous</small>The math layer</a>
+<a rel="next" href="the-platform.html"><small>Next</small>The platform</a>
+</nav>
+</main>
+
+</body>
+</html>

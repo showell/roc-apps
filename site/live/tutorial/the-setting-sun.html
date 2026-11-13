@@ -1,0 +1,148 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>The setting sun · Safari Ride</title>
+<link rel="icon" href="data:,">
+<link rel="stylesheet" href="book.css">
+<script src="book.js" defer></script>
+</head>
+<body class="chapter">
+<header class="top-bar">
+<a class="home-link" href="https://roc.lynrummy.com/">Steve's Roc Apps</a>
+<p class="draft-notice">This is an early draft.</p>
+<a class="repo-link" href="https://github.com/showell/roc-apps">roc-apps on GitHub</a>
+</header>
+<nav class="book-nav" id="chapters" aria-label="Chapters">
+<a class="book-name" href="index.html">Safari Ride</a>
+<ol>
+<li class="part">The big picture</li><li><a href="introduction.html"><span class="number">1</span>Introduction</a></li>
+<li><a href="one-page.html"><span class="number">2</span>One page</a></li>
+<li><a href="the-problem.html"><span class="number">3</span>The problem</a></li>
+<li><a href="platforms-packages-and-modules.html"><span class="number">4</span>Platforms, packages and modules</a></li>
+<li><a href="types.html"><span class="number">5</span>Types</a></li>
+<li><a href="functions.html"><span class="number">6</span>Functions</a></li>
+<li class="part">One frame</li><li><a href="things.html"><span class="number">7</span>Things</a></li>
+<li><a href="billboard-critters.html"><span class="number">8</span>Tag unions: billboard critters</a></li>
+<li><a href="shapes.html"><span class="number">9</span>Shapes</a></li>
+<li><a href="a-far-tree.html"><span class="number">10</span>Lists and map: a far tree</a></li>
+<li><a href="the-pipeline.html"><span class="number">11</span>The pipeline</a></li>
+<li><a href="asking-a-kind.html"><span class="number">12</span>Where clauses: asking a kind</a></li>
+<li><a href="refused.html"><span class="number">13</span>Errors as tag unions</a></li>
+<li class="category">Nature</li><li><a href="the-sky.html"><span class="number">14</span>The sky and the grass</a></li>
+<li><a href="mountains.html"><span class="number">15</span>Mountains</a></li>
+<li class="category">Man-made</li><li><a href="the-road.html"><span class="number">16</span>The road</a></li>
+<li><a href="rails.html"><span class="number">17</span>Rails</a></li>
+<li><a href="radio-towers.html"><span class="number">18</span>Radio towers</a></li>
+<li class="category">Critters that stand still</li><li><a href="herds.html"><span class="number">19</span>Herds</a></li>
+<li class="part">Motion</li><li><a href="a-flip-book.html"><span class="number">20</span>Immutable values: a flip book</a></li>
+<li><a href="records.html"><span class="number">21</span>Records</a></li>
+<li><a href="pure-functions-and-effects.html"><span class="number">22</span>Pure functions and effects</a></li>
+<li><a href="the-clock.html"><span class="number">23</span>Opaque types: the clock</a></li>
+<li><a href="the-ride-instant.html"><span class="number">24</span>The ride instant</a></li>
+<li class="category">The passage of time</li><li><a href="the-beacons.html"><span class="number">25</span>The beacons</a></li>
+<li class="here"><a href="the-setting-sun.html"><span class="number">26</span>The setting sun</a><ol class="sections"><li><a href="the-setting-sun.html#the-sun-goes-down">The sun goes down</a></li><li><a href="the-setting-sun.html#in-view-or-out-of-view">In view, or out of view</a></li><li><a href="the-setting-sun.html#the-sky-darkens">The sky darkens</a></li><li><a href="the-setting-sun.html#the-horizon-warms">The horizon warms</a></li><li><a href="the-setting-sun.html#going-backward">Going backward</a></li></ol></li>
+<li class="category">Vehicles</li><li><a href="the-rider.html"><span class="number">27</span>The rider</a></li>
+<li><a href="the-throttle.html"><span class="number">28</span>The throttle</a></li>
+<li><a href="rehearsal.html"><span class="number">29</span>Variables and loops: rehearsal</a></li>
+<li><a href="the-riders-gaze.html"><span class="number">30</span>The rider&#39;s gaze</a></li>
+<li><a href="the-truck.html"><span class="number">31</span>The truck</a></li>
+<li><a href="the-trucks-motion.html"><span class="number">32</span>The truck&#39;s motion</a></li>
+<li class="category">Critter motion</li><li><a href="the-cat.html"><span class="number">33</span>The cat</a></li>
+<li><a href="the-bird.html"><span class="number">34</span>The bird</a></li>
+<li><a href="what-a-cat-does-to-the-rider.html"><span class="number">35</span>What a cat does to the rider</a></li>
+<li class="part">Under the hood</li><li><a href="the-math-layer.html"><span class="number">36</span>The math layer</a></li>
+<li><a href="proving-it.html"><span class="number">37</span>Proving it</a></li>
+<li><a href="the-platform.html"><span class="number">38</span>The platform</a></li>
+<li><a href="zooming-back-out.html"><span class="number">39</span>Zooming back out</a></li>
+</ol>
+</nav>
+<main>
+<p class="book-bar"><a href="index.html">Safari Ride</a> <a href="#chapters">Chapters</a></p>
+<article>
+<p class="chapter-number">Chapter 26</p>
+<h1 id="the-setting-sun">The setting sun</h1>
+<p>The sun is the one thing in the sky that moves. As it sinks, the sky darkens, the horizon warms, and everything the sky lights dims with it. All of that is derived from the clock alone. This chapter explains the sunset in three jobs: the sun goes down, the sky darkens, and the horizon warms.</p>
+<h2 id="the-sun-goes-down">The sun goes down <a class="section-link" href="#the-sun-goes-down" aria-label="Link to this section">§</a></h2>
+<figure class="widget"><iframe class="canvas-app" src="../sky_widget/?start=sun" title="Press play. The two middle buttons step one frame at a time." loading="lazy" style="aspect-ratio: 640 / 360"></iframe><figcaption>Press play. The two middle buttons step one frame at a time.</figcaption></figure><p>This picture does only the first job, so its sky stays blue. For each frame, the picture calls <code>SunPath.height_at</code>, reads out the sun&#39;s height, and marks it on the chart&#39;s gold line:</p>
+<figure class="listing"><figcaption>SunPath.roc</figcaption><pre><code class="language-roc"><span class="syn-comment">## How high the sun stands above the horizon at `clock`; below it once</span>
+<span class="syn-comment">## negative.</span>
+<span class="syn-name">height_at</span> : <span class="syn-type">Clock</span> -&gt; <span class="syn-type">FarHeight</span>
+<span class="syn-name">height_at</span> = |clock| sun_direction_at(clock).height
+</code></pre></figure><p><code>SunPath.sun_direction_at</code> works out the sun&#39;s direction at a clock, a bearing and a height, with the ride&#39;s one piece of spherical trigonometry. The sky turns about its pole as the earth does, at a latitude of 45° on the winter solstice, so the sun sinks along an arc into the southwest. The sky&#39;s part of the sunset needs only the height. Where the sun lands on the screen needs its bearing too, which comes next.</p>
+<h2 id="in-view-or-out-of-view">In view, or out of view <a class="section-link" href="#in-view-or-out-of-view" aria-label="Link to this section">§</a></h2>
+<p>The sun stands in one direction, and the rider may be facing another. Two tags say whether it&#39;s in view:</p>
+<figure class="listing"><figcaption>Sun.roc</figcaption><pre><code class="language-roc"><span class="syn-comment">## The sun in a frame: in view at its place, or out of view, too far to</span>
+<span class="syn-comment">## the side of where the rider faces.</span>
+<span class="syn-type">Sighting</span> : [<span class="syn-type">InView</span>(<span class="syn-type">Sun.OnScreen</span>), <span class="syn-type">OutOfView</span>]
+</code></pre></figure><p>For an <code>OutOfView</code> sun, <code>Sun.sun_shapes</code> returns an empty list, and a <code>match</code> on a <code>Sighting</code> handles that tag too, since a <code>match</code> covers every tag. Here&#39;s the function that returns the <code>Sighting</code>:</p>
+<figure class="listing"><figcaption>Sun.roc</figcaption><pre><code class="language-roc"><span class="syn-comment">## The sun in a frame, for a camera facing `heading` through a lens of</span>
+<span class="syn-comment">## `focal_length`. It is in view while it is in front of the camera and its glow</span>
+<span class="syn-comment">## reaches the screen.</span>
+<span class="syn-name">sun_in_view</span> : { heading : <span class="syn-type">Angle.Bearing</span>, focal_length : <span class="syn-type">Pixels</span>, .. }, <span class="syn-type">Clock</span> -&gt; <span class="syn-type">Sun.Sighting</span>
+<span class="syn-name">sun_in_view</span> = |camera, clock| {
+	direction = <span class="syn-type">SunPath</span>.sun_direction_at(clock)
+	far_point = <span class="syn-type">Lens</span>.far_point({
+		turn: direction.bearing.turn_from(camera.heading),
+		height: direction.height,
+		focal_length: camera.focal_length,
+	})
+	<span class="syn-keyword">match</span> far_point {
+		<span class="syn-type">Ok</span>(point) =&gt; {
+			sun = {
+				center: point,
+				focal_length: camera.focal_length,
+				warmth: <span class="syn-type">Sky</span>.horizon_warmth_at(clock),
+			}
+			<span class="syn-keyword">if</span> is_glow_on_screen(sun) {
+				<span class="syn-type">InView</span>(sun)
+			} <span class="syn-keyword">else</span> {
+				<span class="syn-type">OutOfView</span>
+			}
+		}
+		<span class="syn-type">Err</span>(<span class="syn-type">BehindCamera</span>) =&gt; <span class="syn-type">OutOfView</span>
+	}
+}
+</code></pre></figure><p><code>Lens.far_point</code> says where something infinitely far off lands on the screen, and refuses with <code>BehindCamera</code> when it lies behind the camera. A sun that lands somewhere is still out of view when its glow stays wholly off the screen. At step 1,529, the frame the first half held still, the sun stands behind the rider, so <code>sun_in_view</code> returns <code>OutOfView</code> there. The pictures in this chapter always face the sun, so it&#39;s always in view in them.</p>
+<p>The sun in view is a glow and a disc:</p>
+<figure class="listing"><figcaption>Sun.roc</figcaption><pre><code class="language-roc"><span class="syn-comment">## The sun&#39;s shapes in a frame: while it is in view, its glow over the</span>
+<span class="syn-comment">## rectangle above the horizon, adding its light to the sky, and its disc</span>
+<span class="syn-comment">## over that, and nothing while it isn&#39;t.</span>
+<span class="syn-name">sun_shapes</span> : <span class="syn-type">Sun.Sighting</span> -&gt; <span class="syn-type">List</span>(<span class="syn-type">Shapes.Shape</span>)
+<span class="syn-name">sun_shapes</span> = |sun_sighting|
+	<span class="syn-keyword">match</span> sun_sighting {
+		<span class="syn-type">InView</span>(sun) =&gt; {
+			look = <span class="syn-type">Sun</span>.look(sun)
+			<span class="syn-type">Shapes</span>.added_light_shapes([<span class="syn-type">Screen</span>.above_horizon_rect(look.glow)]).append(
+				<span class="syn-type">Disc</span>({
+					center: sun.center,
+					radius: <span class="syn-type">Sun</span>.disc_radius_on_screen(sun),
+					fill: look.disc,
+				}),
+			)
+		}
+		<span class="syn-type">OutOfView</span> =&gt; []
+	}
+</code></pre></figure><p>The glow adds its light to the sky, over the rectangle above the horizon, and the disc comes after the glow in paint order. The grass comes after the backdrop&#39;s sun and covers whatever of the disc has sunk below the horizon, so the sun sets behind the land by paint order alone.</p>
+<h2 id="the-sky-darkens">The sky darkens <a class="section-link" href="#the-sky-darkens" aria-label="Link to this section">§</a></h2>
+<figure class="widget"><iframe class="canvas-app" src="../sky_widget/?start=sky" title="Press play. Now the sky darkens too." loading="lazy" style="aspect-ratio: 640 / 360"></iframe><figcaption>Press play. Now the sky darkens too.</figcaption></figure><p>This picture adds one call, <code>Sky.darkness_at</code>, whose answer is the blue line, and its grass dims too. The <a class="chapter-link" href="functions.html">“Functions”</a> chapter took that function apart: it asks for the sun&#39;s height and picks one of two shapes, on either side of the moment the sun has fully set:</p>
+<figure class="listing"><figcaption>Sky.roc</figcaption><pre><code class="language-roc"><span class="syn-name">darkness_while_up</span> : <span class="syn-type">FarHeight</span> -&gt; <span class="syn-type">Fraction</span>
+<span class="syn-name">darkness_after_set</span> : <span class="syn-type">FarHeight</span> -&gt; <span class="syn-type">Fraction</span>
+</code></pre></figure><p>While the sun is up, the darkness grows with the square of how far the sun has fallen since the ride began, and reaches <code>darkness_at_set</code>, 0.6, as it fully sets. After that, the darkness climbs in a straight line to full night as the sun sinks a further <code>night_depth</code>. The two shapes meet as the sun fully sets, and you can see the join in the blue line. Both helpers take only a height, so the darkness depends on the sun&#39;s height alone.</p>
+<p>The sky&#39;s top color blends from day to night by that darkness, as the <a class="chapter-link" href="the-sky.html">“The sky and the grass”</a> chapter showed, and everything the sky lights, the grass and the rock and the trees, dims through <code>Sky.color_at_darkness</code> by the same <code>Fraction</code>.</p>
+<h2 id="the-horizon-warms">The horizon warms <a class="section-link" href="#the-horizon-warms" aria-label="Link to this section">§</a></h2>
+<figure class="widget"><iframe class="canvas-app" src="../sky_widget/?start=warmth" title="Press play. This is the whole sunset." loading="lazy" style="aspect-ratio: 640 / 360"></iframe><figcaption>Press play. This is the whole sunset.</figcaption></figure><p>This picture adds <code>Sky.horizon_warmth_at</code>, the red line, and the same warmth reddens the sun&#39;s own glow and disc. The horizon is warmest when the sun&#39;s height is zero, on the horizon itself. <code>from_horizon</code> is how far the sun is from it, above or below, and <code>abs</code> makes the two sides match, which gives the red line its tent. <code>ratio_to</code> divides that by <code>warmth_reach</code>, 110, <code>Fraction.clamp</code> holds the ratio at 1 at most, and <code>complement</code> turns it around, so a height of zero gives full warmth, and 110 or more gives a warmth of zero.</p>
+<h2 id="going-backward">Going backward <a class="section-link" href="#going-backward" aria-label="Link to this section">§</a></h2>
+<p>Play any of those pictures backward, and the sun rises, with the same code. Every function here takes a clock and returns an answer, so the clock can run either way. The sun, the sky and the beacons each return their answer for any step, straight from the clock.</p>
+<p>The rider and the truck are another kind of thing: the ride carries them, and moves them one step at a time. The next chapters explain them, starting with the rider.</p>
+
+</article>
+<nav class="turn-page" aria-label="Previous and next chapter">
+<a rel="prev" href="the-beacons.html"><small>Previous</small>The beacons</a>
+<a rel="next" href="the-rider.html"><small>Next</small>The rider</a>
+</nav>
+</main>
+<script src="embed.js"></script>
+</body>
+</html>
