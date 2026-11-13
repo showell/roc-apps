@@ -526,7 +526,7 @@ The widths start as a list of eight plain numbers:
 
 In a type, square brackets list tags. In a value, as here, they make a list, and every item in a list has the same type. These eight are `F64`s, chosen by eye, from the narrow top tier to the full-width bottom one.
 
-`map` calls a function on each item of a list and returns a list of the answers. Here we hand it `Fraction.of` by name, and `Fraction.of` turns an `F64` into a `Fraction`, so `tier_widths` is a `List(Fraction)`. `Fraction.of` crashes on a number outside 0 to 1, because a share out of range means the sum behind it is wrong.
+`map` calls a function on each item of a list and returns a list of the answers. Here we hand it `Fraction.of` by name, and `Fraction.of` turns an `F64` into a `Fraction`, so `tier_widths` is a `List(Fraction)`.
 
 ### Tops and bottoms
 
@@ -598,26 +598,22 @@ So a far tree is a handful of small functions over one list of tiers. The `expec
 
 ## Records
 
-Most of the ride's data lives in records, and the chapters ahead build and read them in a few more ways. This short chapter gathers those ways in one place, around one function.
+Most of the ride's data lives in records. The book has already built records and taken them apart: a record type lists fields and their types, as `SegmentPlan` does, and `|{ top_left, width, height, fill }|` in `Shapes.rectangle` names each field of the record it's given. This short chapter adds the ways to read a field and to change one.
 
-Two are familiar already. A record type lists fields and their types, as `SegmentPlan` does. And `|{ top_left, width, height, fill }|` in `Shapes.rectangle` takes a record apart, naming each of its fields.
+A Roc record stays as it was made, so to change a field, the code builds a new record. The billboards' stills show how. A still's polygon is a record of its fill and its corners, and a fill is a flat color or a gradient between two colors. When the sky darkens, every color in a still darkens with it. Here's the function that returns a polygon under a darker sky:
 
-A Roc record stays as it was made, so to change a field, the code builds a new record. The motorcycle is a record of four fields: its place on the route, which way it's turned, its speed and its lean. Here's the function that stops it dead at the end of the road:
+{{code StillShapes.polygon_at_darkness}}
 
-{{code Motorcycle.stopped_at}}
-
-Here's the function, piece by piece:
+Here's what it does with records, piece by piece:
 
 | Code | Term | What it says |
 |---|---|---|
-| `motorcycle.route_place` | field access | Reads the motorcycle's `route_place` field. |
-| `{ ..motorcycle, … }` | record update | A new record with all of `motorcycle`'s fields, except the ones it names. |
-| `route_place: { ..place, … }` | nested update | A field's new value is an update of its own. This one updates the place, and inside it the road point, so it changes `along` three records deep. |
-| `speed: Speed.at_rest` | field | The second field the update changes. |
+| `stops.start_color` | field access | Reads the `start_color` field of the record `stops`. |
+| `{ ..stops, start_color: …, end_color: … }` | record update | A new record with all the fields of `stops`, except the two it names. |
+| `Linear({ ..gradient, stops: … })` | record update | A tag's record is updated the same way: a new gradient with dimmed stops, under the same tag. |
+| `{ ..polygon, fill }` | field shorthand | `fill` alone stands for `fill: fill`, the constant named just above it. |
 
-`motorcycle` itself stays as it was, and so do `place` and its road point.
-
-Patterns read records too. In a `match` branch or a function's arguments, `..` stands for the rest of a record's fields, so `{ span, .. }` takes the `span` field of a record that holds more. And `{ start_after: start, cos_turn, sin_turn }` takes the `start_after` field under a new name, `start`.
+`polygon` itself stays as it was, and so does every gradient inside it.
 
 The next chapter follows the trip every thing beside the road takes, from a place on the road to the frame.
 
@@ -868,7 +864,7 @@ The same kind of answer runs all through Safari Ride, wherever a function can co
 
 Each tag names one way its function can fail, and the ground patch has two.
 
-A `Try` is for a value that can rightly be missing, such as a tree behind the camera. Where a missing value would mean a bug in the program, later chapters use a `crash` instead: a stop, with a message that says what went wrong.
+A `Try` is for a value that can rightly be missing, such as a tree behind the camera. Other facts hold whenever the program is right: a share lies between 0 and 1, and the ride starts at step 0. A fact like that is an invariant. A value that breaks one means a bug, and a made-up answer would hide the bug until it surfaced somewhere far from its cause. So the program stops at once, with a `crash` and a message that says which invariant broke. Use `crash` to enforce invariants.
 
 So a refusal is an ordinary value. A sighting gives back a `Try`, a `?` passes an `Err` up or unwraps an `Ok`, a function after the `?` can rename the tag on the way, and a `keep_oks` or a `match` is where the refusals stop. The kept sightings go on to be rendered. The rest of the frame is the world the things stand in, and the next chapter starts with its sky and its grass.
 
@@ -1142,7 +1138,7 @@ The ground hides whatever part of a tower is under that line, so as a tower gets
 
 {{code Tower.tower_shapes from "if hidden_on_tower(geometry) >= tower_height" to "a tower hidden wholly below the horizon"}}
 
-Its sighting has already refused a tower the horizon hides wholly, so here that case is a `crash`: a stop with a message, for a case that would be a bug. Otherwise come the legs, the rings and the braces, and the beacon's disc last, at the top.
+Its sighting has already refused a tower the horizon hides wholly. We enforce invariants with `crash`, and the invariant here is that every tower this function gets shows some part above the horizon. Otherwise come the legs, the rings and the braces, and the beacon's disc last, at the top.
 
 A tower's footprint is a square, and four tags name its corners. Going round the square is a `match`:
 
@@ -1228,29 +1224,27 @@ That's four things: the rider, the truck, the clock, and the plan for when the c
 
 ## Pure functions and effects
 
-The flip book holds because the same moment always gives the same next moment, and the same picture. That rests on one Roc idea: a function's type says whether it has effects.
+The flip book turns both ways because the same moment always gives the same next moment, and the same picture. Behind that sits one Roc idea: a function's type says whether it has effects.
 
-An effect is anything beyond working out an answer: reading a key, reading the time, painting a canvas. Roc marks a function with effects twice, in its name and in its type:
+An effect is anything beyond working out an answer: reading a key, reading the time, painting a canvas. A function with effects carries two marks, one in its name and one in its type, and the compiler checks both:
 
 | Code | Term | What it says |
 |---|---|---|
 | `->` | thin arrow | A pure function. It returns an answer worked out from its arguments alone, so the same arguments always give the same answer. |
 | `=>` | thick arrow | A function with effects. It sits in the type in place of `->`. |
-| `!` | effectful function name | Ends the name of every function with effects, such as `main!`, where a Roc program with effects starts. |
+| `!` | `!` suffix | Ends the name of every function with effects, such as `main!`, where a Roc program with effects starts. |
 
-A `match` branch's `=>` is another use of the same symbol. Every function in Safari Ride's own code has the thin arrow. The effects live in the platform, under the ride's code: it keeps the time, reads the keys and paints the picture.
+A `match` branch's `=>` is another use of the same symbol. Every function the ride runs has the thin arrow. The effects live in the platform, under the ride's code: it times the frames, reads the keys and paints the picture.
 
 ### Pausing and stepping
 
-The keys still reach the ride. Mostly, Safari Ride is a screensaver: you sit back and watch it. You can also take the controls. Click the ride to give it the keyboard, and Space pauses it. While it's paused, Right moves a step forward and Left a step back, one each frame while the key is held. While it's running, each moves four steps at a time. J jumps to the next segment of the road, and R starts the ride over, running.
-
-One pure function handles all of that. It takes the model, which is the tour and whether it's paused, and a snapshot of the input, and returns the next model:
+The keys still reach the ride. Space pauses it, and while it's paused, Right and Left step it forward and back. One pure function handles the keys. It takes the model, which is the tour and whether it's paused, and a snapshot of the input, and returns the next model:
 
 {{code SafariApp.model_at_next_step from "motion = if input.key_pressed(KeySpace)" to "m.tour.step_forward()"}}
 
 Each frame, the platform reads the keys and hands the app a snapshot, a plain value. `key_pressed` says a key went down since the last frame, so one tap of Space pauses the ride once. `key_down` says a key is held, so holding Right keeps the ride moving. The same model and the same snapshot always give the same next model.
 
-So every moment of a ride follows from the road and the keys, and the ride can make any of them again. The chapters ahead take the four things a moment carries in turn, starting with the simplest: the clock.
+So the road and the keys fix every moment of a ride, and the ride can make any moment again. The next chapter starts on the first of the four things a moment carries: the clock.
 
 ## Opaque types: the clock
 
@@ -1283,9 +1277,9 @@ Here's the whole `Clock` module:
 
 `RideInstant.next` calls `Clock.next` once a step. `plus` reads the number inside a length with `length.to_u32()`, from the `Steps` module. `<` calls `is_lt`, just as `+` calls `plus`, so two clocks compare as their steps do.
 
-### Two crashes
+### Two invariants
 
-`minus` and `steps_since` each have a branch that ends in a `crash`. `minus` crashes when it would go back past step 0, and `steps_since` when the clock it counts from comes later. Either case is a bug in the caller, so the program stops with the `crash`'s message.
+We enforce invariants with `crash`, and the clock has two. Every clock is at step 0 or later, so `minus` crashes when it would go back past step 0. Every length counts forward, so `steps_since` crashes when the clock it counts from comes later. Either crash means a bug in the caller, and its message says which invariant broke.
 
 ### Tests
 
@@ -1331,7 +1325,7 @@ The trees and the cows stay put.
 
 So the stepped parts need the most care.
 
-The clock-driven things come first, and the beacons are the simplest of them: they follow the clock alone.
+The clock-driven things come next, and the beacons are the simplest of them: they follow the clock alone.
 
 ## The beacons
 
@@ -1395,7 +1389,7 @@ A cosine turns the phase into a brightness:
 
 {{code Beacon.beacon_brightness}}
 
-`(1 - cos) / 2` is 0 at the start of a blink, 1 halfway through, and 0 again at the end. A cosine rises and falls smoothly, so the beacon eases into full brightness and out of it again. The formula also stays between 0 and 1 all the way, which `Fraction.of` needs: it crashes on a ratio outside 0 to 1.
+`(1 - cos) / 2` is 0 at the start of a blink, 1 halfway through, and 0 again at the end. A cosine rises and falls smoothly, so the beacon eases into full brightness and out of it again. The formula also stays between 0 and 1 all the way. That matters, because `Fraction.of` enforces the invariant that every share lies between 0 and 1, with a `crash`.
 
 The picture's two beacons belong to the first segment, whose head start is 0. Step 5,400 is 45 whole blinks into the ride, so the beacon at the end is dark there, and the one halfway along is at full brightness. A quarter of a blink later, at step 5,430, the two are equally bright. By step 5,460 they've changed places.
 
@@ -1527,7 +1521,7 @@ The step works in order, and the code reads that way: decide, move, cross a bend
 
 {{code Rider.rider_at_next_step}}
 
-The `match` on the segment's ending has two tags. `Bends({ bend, .. })` takes the payload's `bend` field.
+The `match` on the segment's ending has two tags. `Bends({ bend, .. })` takes the payload's `bend` field. In a pattern, `..` stands for the rest of a record's fields.
 
 ### Deciding
 
@@ -1571,7 +1565,11 @@ The end of a segment uses a small version of the same trying out. `cross_bend_if
 
 {{code Motorcycle.cross_bend_if_on_road}}
 
-At the end of the road, `Motorcycle.stopped_at`, from the {{chapter Records}} chapter, stops the rider dead.
+At the end of the road, the throttle brakes the bike to rest. A last step can still carry it past the end, so `stop_at_route_end` holds it there, through a record update three levels deep:
+
+{{code Motorcycle.stopped_at}}
+
+`..motorcycle` keeps every field but the ones named, `route_place` is itself an update of the old place, and its `road_point` is an update of the old point.
 
 ### The picture leans too
 
@@ -1629,7 +1627,7 @@ The throttle returns an acceleration, and the motorcycle's step turns it into a 
 
 {{code Speed.acceleration_to}}
 
-It has one caller, `VehicleLimits.braking_to`. That function also holds the speed steady when at most a micrometre of road is left, and crashes on a brake that would take the speed below zero. The rider's bend brake, the gawk brake and the truck all brake through `braking_to`. The first limit is the bend's:
+It has one caller, `VehicleLimits.braking_to`. That function also holds the speed steady when at most a micrometre of road is left, and enforces the invariant that every speed is zero or more, with a `crash`. The rider's bend brake, the gawk brake and the truck all brake through `braking_to`. The first limit is the bend's:
 
 {{code Throttle.bend_limit}}
 
@@ -1996,7 +1994,7 @@ Then come the two ways to take a step. Both sit below the module's block, so the
 
 {{code TruckJourney.progress_braking_for}}
 
-`VehicleLimits.braking_to` works out one steady brake that reaches the target speed at the bend. A steady brake can land a little under the target, so `target_speed.max(...)` holds the truck there. A brake that would take the speed below zero is a bug, and `braking_to` crashes on one. Farther from a bend, the truck chases the tease:
+`VehicleLimits.braking_to` works out one steady brake that reaches the target speed at the bend. A steady brake can land a little under the target, so `target_speed.max(...)` holds the truck there. `braking_to` crashes on a brake that would take the speed below zero, the invariant it holds for the rider too. Farther from a bend, the truck chases the tease:
 
 {{code TruckJourney.progress_toward_tease}}
 
@@ -2118,7 +2116,7 @@ A list of frames and a way to show each one make a timeline. `Animation` defines
 
 {{code Animation.Timeline from "instant : Animation.Timeline" to "Past(_) => timeline.after"}}
 
-`frame_instant` is a function stored in a record's field, so calling it takes parentheses: `(timeline.frame_instant)(frame)`. Written `timeline.frame_instant(frame)`, it would read as a method call. A `Playing` stage past the last frame would mean the span and the frames disagree, so `instant` crashes there. Both come from the one list, `crossing_frames`, so every `Playing` stage finds its frame.
+`frame_instant` is a function stored in a record's field, so calling it takes parentheses: `(timeline.frame_instant)(frame)`. Written `timeline.frame_instant(frame)`, it would read as a method call. The invariant is that the span and the frames agree, so `instant` crashes on a `Playing` stage past the last frame. Both come from the one list, `crossing_frames`, so every `Playing` stage finds its frame.
 
 ### Into the frame
 
@@ -2212,7 +2210,7 @@ The segment puts the perch and the flight together:
 
 {{code Segment.from_choices from "BirdHere => {" to "BirdHere(flight)"}}
 
-The route's plan for the segment says `BirdHere`, a bare tag, and the segment's own encounter holds `BirdHere(flight)`, the flight itself. The route plans a bird only on a segment with both trees, so a missing one is a bug. `??` opens a `Try` another way: it takes the value from an `Ok`, and for an `Err` it runs the expression on its right instead. Here that's a `crash`, with its own reason for each tree.
+The route's plan for the segment says `BirdHere`, a bare tag, and the segment's own encounter holds `BirdHere(flight)`, the flight itself. The route plans a bird only on a segment with both trees, so every bird's segment holds both: an invariant. `??` opens a `Try` another way: it takes the value from an `Ok`, and for an `Err` it runs the expression on its right instead. Here that's a `crash`, which enforces the invariant with its own message for each tree.
 
 ### Into the frame
 
@@ -2428,7 +2426,7 @@ Some beliefs about the program are cheaper to check as it runs. `Fraction.of` is
 
 {{code Fraction.of}}
 
-Every `Fraction.of` in the ride is an assertion. A ratio outside 0 to 1 means a sum behind it is wrong, so the program stops, with a sentence that says so. `Easing.smoothstep` leans on it: its algebra keeps its answer between 0 and 1, and its `Fraction.of` checks that on every call. `Try` is the right answer when a value can honestly be missing. A wrong ratio is a bug, and a crash finds it sooner. The proof tools ride thousands of steps on every run of the gate, so each check on that path runs thousands of times.
+Every `Fraction.of` in the ride enforces an invariant: a ratio outside 0 to 1 means a sum behind it is wrong, so the program stops, with a sentence that says so. `Easing.smoothstep` leans on it: its algebra keeps its answer between 0 and 1, and its `Fraction.of` checks that on every call. `Try` is the right answer when a value can honestly be missing. A wrong ratio is a bug, and a crash finds it sooner. The proof tools ride thousands of steps on every run of the gate, so each check on that path runs thousands of times.
 
 ### The page itself
 
@@ -2565,7 +2563,7 @@ Every row comes from the four and the road. Even the truck, whose progress the r
 
 ## Appendix: the patterns
 
-Eight patterns kept turning up along the way. They're patterns in a loose sense: shapes of code that Roc makes easy to write and hard to break.
+Nine patterns kept turning up along the way. They're patterns in a loose sense: shapes of code that Roc makes easy to write and hard to break.
 
 | Name | What it is | Where to see it |
 |---|---|---|
@@ -2577,6 +2575,7 @@ Eight patterns kept turning up along the way. They're patterns in a loose sense:
 | The chain of limits | One value passes through independent rules, each of which can only lower it | `Throttle.next_acceleration` |
 | One record per space | Field names say which coordinate system a point is in | `RoadPoint`, `RiderPoint`, `PointAtHeight`, `Point` |
 | Rehearsal | Run the real rules on a pretend copy, read the result, and throw it away | `Coast`, `LeanSearch`, `Motorcycle.cross_bend_if_on_road` |
+| Invariants by `crash` | A fact that holds whenever the program is right is enforced with a `crash`, which stops the program at the first value that breaks it | `Fraction.of`, `Clock.minus`, `VehicleLimits.braking_to` |
 
 ## Appendix: list functions
 
@@ -2608,7 +2607,7 @@ These are the Roc surprises the chapters meet, sorted by where they first show u
 | A helper with no keyword to say it's private | Anything outside a type's braces is private to its module | Where clauses: asking a kind |
 | A `where` clause matching the wrong method | A clause matches a method by its name and type alone, so the pipeline's methods all start with "scenery" | Where clauses: asking a kind |
 | `var` and `while` inside a pure function | A variable lives and dies inside its function, so the function is still pure | Variables and loops: rehearsal |
-| `?? crash` on a lookup | It states a belief about the program: the lookup always finds its value, and a miss is a bug | The bird |
+| `?? crash` on a lookup | It enforces an invariant: the lookup always finds its value, and a miss is a bug | The bird |
 | A crash with a sentence about a sum | `Fraction.of` crashes on a ratio outside 0 to 1, because such a ratio means the sum behind it is wrong. A ratio that can rightly fall outside the range goes through `Fraction.clamp` instead | Proving it |
 | A frame hash that moves after a sum was regrouped | Floating-point sums and products depend on their order, so the order is part of what they mean | Proving it |
 | An `expect` that can't see a type | An `expect` can name only what its module imports, so a check that needs several modules lives in `gates/expects/` | Proving it |
@@ -2632,6 +2631,7 @@ This book uses these words in one sense only.
 | Encounter plan | One of the four carried things: whether the encounter on the rider's segment is planned yet, and the step it starts at. |
 | Far scenery | The sun and the mountains: a direction and a height above the horizon, and never any nearer. |
 | Frame | One picture of the ride, for one step. |
+| Invariant | A fact that holds whenever the program is right, such as a share lying between 0 and 1. The ride enforces each one with a `crash`. |
 | Kind | Which sort of thing something is, like `Conifer`, and the type a `Geom.Placed` carries. |
 | Near plane | The closest the camera can see, 0.4 metres ahead. Anything that crosses it is cut there. |
 | Picture | Everything on the screen in one frame. |

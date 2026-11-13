@@ -17,7 +17,7 @@ refusal: The next chapter takes the sightings that are refused.
 refusal: The compiler refuses it.
 refusal: `map_ok` works on a `Try`: it applies its function to an `Ok` and leaves an `Err` as it is, so a quad wholly behind the camera stays refused, and `Scene` drops those with `keep_oks`.
 refusal: Once all of it is under the line, `Pipeline.sighting_above_horizon_of` refuses it as `OutOfSight`, as in the {{chapter Errors as tag unions}} chapter.
-refusal: Its sighting has already refused a tower the horizon hides wholly, so here that case is a `crash`: a stop with a message, for a case that would be a bug.
+refusal: Its sighting has already refused a tower the horizon hides wholly.
 refusal: A rod with both ends behind it is refused.
 refusal: `Lens.far_point` says where something infinitely far off lands on the screen, and refuses with `BehindCamera` when it lies behind the camera.
 refusal: It refuses a point short of that as `BehindCamera`, and returns one at or past it as a `RiderPointAhead`.
