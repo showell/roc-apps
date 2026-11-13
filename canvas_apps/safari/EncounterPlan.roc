@@ -3,10 +3,10 @@
 ## clock, a frame a step from the step it starts at, and never looks at the
 ## rider. The ride picks that step once, when the rider first comes within
 ## reach, from how the rider is coming then, so that the animation ends as the
-## rider arrives. A `Timing` says where the animation has got to as an
-## `Animation.Stage`, which the animal's timeline turns into what it shows. The
-## plan is kept from one step to the next, one of the four things the ride
-## remembers.
+## rider arrives. The plan and the ride's clock say where the animation has
+## got to as an `Animation.Stage`, which the animal's timeline turns into what
+## it shows. The plan is kept from one step to the next, one of the four things
+## the ride remembers.
 import Animation
 import Clock
 import Distance
@@ -19,18 +19,6 @@ import Steps
 EncounterPlan := [Unplanned, StartsAt(Clock)].{
 
 	is_eq : _
-
-	## Where an encounter's clock stands: not planned yet, or planned to start
-	## at `first_step`, with the ride's clock at `now`.
-	Timing : [Unplanned, Planned({ first_step : Clock, now : Clock })]
-
-	## The timing of the encounter `plan` starts, with the ride's clock at `now`.
-	timing_at : EncounterPlan, Clock -> EncounterPlan.Timing
-	timing_at = |plan, now|
-		match plan {
-			Unplanned => Unplanned
-			StartsAt(first_step) => Planned({ first_step, now })
-		}
 
 	## How many steps an animation plays for, a frame a step, and the gap from
 	## the rider to the animal it ends at.
@@ -84,18 +72,18 @@ EncounterPlan := [Unplanned, StartsAt(Clock)].{
 		}
 	}
 
-	## The timing of an animation `span` long, for a rider `gap` short of its
+	## Where an animation `span` long has got to, for a rider `gap` short of its
 	## animal, coming at a steady `speed` from `gap_at_start` at step 0 of the
 	## ride's clock. It is planned by `plan_for`, on the first step that such a
 	## rider comes within reach. The ride's rider is not steady, so on the ride
 	## the same animation may start on another step.
-	steady_approach_timing : EncounterPlan.StepSpan,
+	steady_approach_stage : EncounterPlan.StepSpan,
 	{
 		gap_at_start : Distance,
 		speed : Speed,
 		gap : Distance,
-	} -> EncounterPlan.Timing
-	steady_approach_timing = |span, { gap_at_start, speed, gap }| {
+	} -> Animation.Stage
+	steady_approach_stage = |span, { gap_at_start, speed, gap }| {
 		now = Clock.start.plus(speed.steps_to_cover(gap_at_start.minus(gap)))
 		var $step = Clock.start
 		var $plan = Unplanned
@@ -110,15 +98,16 @@ EncounterPlan := [Unplanned, StartsAt(Clock)].{
 			)
 			$step = $step.next()
 		}
-		EncounterPlan.timing_at($plan, now)
+		$plan.stage_at({ now, length: span.length })
 	}
 
-	## Where an animation `length` steps long has got to at `timing`.
-	stage_at : EncounterPlan.Timing, Steps -> Animation.Stage
-	stage_at = |timing, length|
-		match timing {
+	## Where an animation `length` steps long, started by `plan`, has got to with
+	## the ride's clock at `now`. An unplanned animation is still waiting.
+	stage_at : EncounterPlan, { now : Clock, length : Steps } -> Animation.Stage
+	stage_at = |plan, { now, length }|
+		match plan {
 			Unplanned => Waiting
-			Planned({ first_step, now }) => {
+			StartsAt(first_step) => {
 				end = first_step.plus(length)
 				if now < first_step {
 					Waiting
@@ -237,20 +226,20 @@ expect plan_on_new_segment(made_plan, QuietRoad) == Unplanned
 expect plan_on_same_segment(Unplanned, near_approach) == StartsAt(Clock.at_step(100))
 expect plan_on_same_segment(Unplanned, QuietRoad) == Unplanned
 
+## The stage at step `now` of a 10-step animation that `plan` starts.
+ten_step_stage : EncounterPlan, U32 -> Animation.Stage
+ten_step_stage = |plan, now| plan.stage_at({ now: Clock.at_step(now), length: Steps.of(10) })
+
 ## The stage at step `now` of a 10-step animation starting at step 50.
 stage_now : U32 -> Animation.Stage
-stage_now = |now|
-	EncounterPlan.stage_at(
-		EncounterPlan.timing_at(StartsAt(Clock.at_step(50)), Clock.at_step(now)),
-		Steps.of(10),
-	)
+stage_now = |now| ten_step_stage(StartsAt(Clock.at_step(50)), now)
 
 expect stage_now(49) == Waiting
 expect stage_now(50) == Playing(Steps.zero)
 expect stage_now(59) == Playing(Steps.of(9))
 expect stage_now(60) == Past(Steps.zero)
 expect stage_now(65) == Past(Steps.of(5))
-expect EncounterPlan.stage_at(
-	EncounterPlan.timing_at(Unplanned, Clock.at_step(60)),
-	Steps.of(10),
-) == Waiting
+
+# An unplanned animation waits at every step, before, through and after where a
+# plan would have played it.
+expect [0, 50, 59, 60, 65].all(|now| ten_step_stage(Unplanned, now) == Waiting)

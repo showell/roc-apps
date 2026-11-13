@@ -56,17 +56,13 @@ closing_gap = VcrButtons.gap_range({ farthest: Distance.metres(75.0), metres_a_f
 rider_speed : Speed
 rider_speed = Speed.metres_a_step(1.25)
 
-## The flight's timing with the rider `gap` from the bird's first tree.
-flight_timing : Distance -> EncounterPlan.Timing
-flight_timing = |gap|
-	EncounterPlan.steady_approach_timing(
+## Where the flight has got to with the rider `gap` from the bird's first tree.
+stage_at : Distance -> Animation.Stage
+stage_at = |gap|
+	EncounterPlan.steady_approach_stage(
 		BirdFlight.flight_span,
 		{ gap_at_start: closing_gap.first, speed: rider_speed, gap },
 	)
-
-## Where the flight has got to with the rider `gap` from the bird's first tree.
-stage_at : Distance -> Animation.Stage
-stage_at = |gap| BirdFlight.flight_stage(flight_timing(gap))
 
 ## How far the picture's eye stands short of the first tree: far enough for
 ## the bird perched on top of it to fit.

@@ -6,6 +6,7 @@ import Along
 import Animation
 import BirdFlight
 import CatCrossing
+import Clock
 import EncounterPlan
 
 Encounter := [CatCrosses(CatCrossing), BirdHere(BirdFlight), QuietRoad].{
@@ -25,14 +26,13 @@ Encounter := [CatCrosses(CatCrossing), BirdHere(BirdFlight), QuietRoad].{
 			QuietRoad => Err(QuietRoad)
 		}
 
-	## Where `encounter` has got to at `timing`, as long as its animal's
-	## animation lasts. A quiet road has nothing to wait for, so it stays
-	## `Waiting`.
-	encounter_stage : Encounter, EncounterPlan.Timing -> Animation.Stage
-	encounter_stage = |encounter, timing|
-		match encounter {
-			CatCrosses(_) => CatCrossing.crossing_stage(timing)
-			BirdHere(_) => BirdFlight.flight_stage(timing)
-			QuietRoad => Waiting
+	## Where `encounter`'s animation, started by `plan`, has got to with the
+	## ride's clock at `now`, as long as its span lasts. A quiet road has nothing
+	## to wait for, so it stays `Waiting`.
+	encounter_stage : Encounter, { plan : EncounterPlan, now : Clock } -> Animation.Stage
+	encounter_stage = |encounter, { plan, now }|
+		match encounter.encounter_span() {
+			Ok({ span, .. }) => plan.stage_at({ now, length: span.length })
+			Err(QuietRoad) => Waiting
 		}
 }

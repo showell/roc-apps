@@ -2154,10 +2154,6 @@ Once a plan exists, the ride's clock says where the animation has got to. That's
 
 A plan and the clock together make a `Timing`:
 
-{{code EncounterPlan.Timing}}
-
-{{code EncounterPlan.timing_at}}
-
 A `Timing` and the animation's length make the `Stage`:
 
 {{code EncounterPlan.stage_at}}
@@ -2276,7 +2272,7 @@ So a faster rider sets the bird off farther away:
 
 The widget's rider comes at 1.25 metres a step, so the bird takes off at 60. Once it's planned, the flight plays on the ride's clock, a frame a step, whatever the rider does. Its stage is worked out exactly as the cat's is, from the plan's timing and the flight's own length:
 
-{{code BirdFlight.flight_stage}}
+{{code Encounter.encounter_stage}}
 
 ### What it looks like
 

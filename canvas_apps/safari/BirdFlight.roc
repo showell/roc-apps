@@ -48,27 +48,22 @@ BirdFlight := { from : Trees.RoadsideTree, to : Trees.RoadsideTree }.{
 	## What the ride plans a flight by: its length, and the gap from the rider
 	## to the tree it left at which it has landed.
 	flight_span : EncounterPlan.StepSpan
-	flight_span = { length: Steps.of(flight_poses.len().to_u32_wrap()), ends_at: landing_gap }
+	flight_span = { length: Steps.of_count(flight_frames.len()), ends_at: landing_gap }
 
 	## The flight of a bird perched on the tree at `perch`, among a segment's
 	## `trees`: to the first tree on the other side of the road far enough along.
 	flight_from : List(Trees.RoadsideTree), Trees.RoadsideTree -> Try(BirdFlight, [NoTreeToFlyTo])
 	flight_from = |trees, perch| {
 		is_far_enough = |tree| tree.road_point.along >= perch.road_point.along.plus(shortest_hop)
-		match trees.find_first(|tree| is_far_side(tree) and is_far_enough(tree)) {
-			Ok(to) => Ok(BirdFlight.({ from: perch, to }))
-			Err(NotFound) => Err(NoTreeToFlyTo)
-		}
+		is_landing_tree = |tree| is_far_side(tree) and is_far_enough(tree)
+		to = trees.find_first(is_landing_tree).map_err(|NotFound| NoTreeToFlyTo)?
+		Ok(BirdFlight.({ from: perch, to }))
 	}
 
 	## Where along its segment the ride plans `flight` by: the tree the bird
 	## leaves.
 	planned_along : BirdFlight -> Along
 	planned_along = |flight| flight.from.road_point.along
-
-	## Where the flight has got to at `timing`.
-	flight_stage : EncounterPlan.Timing -> Animation.Stage
-	flight_stage = |timing| EncounterPlan.stage_at(timing, flight_span.length)
 
 	## The bird at `stage` of its flight.
 	bird_instant_at : BirdFlight, Animation.Stage -> BirdFlight.BirdInstant
@@ -116,19 +111,34 @@ flight_poses = [
 	List.repeat(Diving, 2 * frames_a_half_flap),
 ].join()
 
-## The whole of a flight: `flight_poses`, on one smooth path that rises in
+## One frame of any flight before it is put between two trees: how the bird
+## looks, and how far through the flight it is.
+FlightFrame : { pose : BirdFlight.BirdPose, through : Fraction }
+
+## The frames of any flight, one a step: `flight_poses`, each as far through
+## the flight as its place in the list, from the start at the first to the end
+## at the last. Both the flight's length and its timeline come from this one
+## list, so the two can't disagree.
+flight_frames : List(FlightFrame)
+flight_frames = {
+	last_frame = (flight_poses.len() - 1).to_f64()
+	flight_poses.map_with_index(
+		|pose, frame| { pose, through: Fraction.of(frame.to_f64() / last_frame) },
+	)
+}
+
+## The whole of a flight: `flight_frames`, on one smooth path that rises in
 ## the middle, from the tip of the tree it leaves to the tip of the one it
 ## lands on.
-flight_timeline : BirdFlight -> Animation.Timeline(BirdFlight.BirdPose, BirdFlight.BirdPose)
+flight_timeline : BirdFlight -> Animation.Timeline(FlightFrame, BirdFlight.BirdPose)
 flight_timeline = |{ from, to }| {
 	ends = { from: tree_top(from), to: tree_top(to) }
-	last_frame = (flight_poses.len() - 1).to_f64()
 	Animation.Timeline.of({
 		before: sitting_on(from),
-		frames: flight_poses,
-		frame_instant: |pose, frame_number| {
-			through = Fraction.of(frame_number.to_f64() / last_frame)
-			{ pose, location: flight_location({ from: ends.from, to: ends.to, through }) }
+		frames: flight_frames,
+		frame_instant: |{ pose, through }| {
+			pose,
+			location: flight_location({ from: ends.from, to: ends.to, through }),
 		},
 		after: sitting_on(to),
 	})

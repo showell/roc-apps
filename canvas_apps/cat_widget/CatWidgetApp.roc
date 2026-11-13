@@ -5,6 +5,7 @@
 ## picture looks down the road at the cat, with the road's width to scale. Below
 ## it, the buttons and four lines of text that say what Cat and EncounterReaction
 ## make of the gap.
+import game.Animation
 import game.EncounterPlan
 import game.CatCrossing
 import game.EncounterReaction
@@ -53,13 +54,13 @@ rider_speed = Speed.metres_a_step(1.0)
 shapes_at : CatWidgetApp.Model -> List(Shapes.Shape)
 shapes_at = |transport| {
 	gap = transport.at
-	timing = crossing_timing(gap)
+	stage = crossing_stage(gap)
 	VcrButtons.frame_shapes(
 		transport,
 		{
 			range: closing_gap,
-			picture_shapes: road_shapes.concat(cat_shapes(timing)),
-			status_lines: status_lines({ gap, timing }),
+			picture_shapes: road_shapes.concat(cat_shapes(stage)),
+			status_lines: status_lines({ gap, stage }),
 		},
 	)
 }
@@ -116,18 +117,18 @@ road_shapes = {
 	]
 }
 
-## The crossing's timing with the rider `gap` short of the cat.
-crossing_timing : Distance -> EncounterPlan.Timing
-crossing_timing = |gap|
-	EncounterPlan.steady_approach_timing(
+## Where the crossing has got to with the rider `gap` short of the cat.
+crossing_stage : Distance -> Animation.Stage
+crossing_stage = |gap|
+	EncounterPlan.steady_approach_stage(
 		CatCrossing.crossing_span,
 		{ gap_at_start: closing_gap.first, speed: rider_speed, gap },
 	)
 
-## The cat at the crossing's `timing`, drawn by Safari's own stills.
-cat_shapes : EncounterPlan.Timing -> List(Shapes.Shape)
-cat_shapes = |timing| {
-	instant = World.first_cat_crossing.cat_instant_at(CatCrossing.crossing_stage(timing))
+## The cat at `stage` of the crossing, drawn by Safari's own stills.
+cat_shapes : Animation.Stage -> List(Shapes.Shape)
+cat_shapes = |stage| {
+	instant = World.first_cat_crossing.cat_instant_at(stage)
 	across = instant.location.road_point.across
 	cat : Cat
 	cat = { pose: instant.pose }
@@ -145,10 +146,9 @@ cat_shapes = |timing| {
 }
 
 ## What the crossing and the rider's reaction to it are at `gap`, with the
-## crossing at `timing`, a line each.
-status_lines : { gap : Distance, timing : EncounterPlan.Timing } -> List(Str)
-status_lines = |{ gap, timing }| {
-	stage = CatCrossing.crossing_stage(timing)
+## crossing at `stage`, a line each.
+status_lines : { gap : Distance, stage : Animation.Stage } -> List(Str)
+status_lines = |{ gap, stage }| {
 	instant = World.first_cat_crossing.cat_instant_at(stage)
 	throttle = EncounterReaction.encounter_throttle(World.first_cat_segment.encounter, stage)
 	[
@@ -174,7 +174,7 @@ expect CatCrossing.crossing_span.ends_at > closing_gap.last
 
 ## The lines at `gap`, with the crossing timed as the widget times it.
 lines_at : Distance -> List(Str)
-lines_at = |gap| status_lines({ gap, timing: crossing_timing(gap) })
+lines_at = |gap| status_lines({ gap, stage: crossing_stage(gap) })
 
 expect
 	lines_at(Distance.metres(50.0))

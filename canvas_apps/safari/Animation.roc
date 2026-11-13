@@ -58,21 +58,21 @@ Animation :: [].{
 
 	## A whole animation: the animal at rest before, the frames it plays through,
 	## one a step, and the animal at rest after. The frames are the animation's
-	## choreography, a constant list, and `frame_instant` turns a frame and its
-	## number into the animal then, so playing a frame builds only that frame.
+	## choreography, a constant list, and `frame_instant` turns a frame into the
+	## animal then, so playing a frame builds only that frame.
 	Timeline(frame, pose) :: {
 		before : Animation.Instant(pose),
 		frames : List(frame),
-		frame_instant : frame, Steps -> Animation.Instant(pose),
+		frame_instant : frame -> Animation.Instant(pose),
 		after : Animation.Instant(pose),
 	}.{
 
 		## The timeline that rests at `before`, plays `frames` one a step, each
-		## shown by `frame_instant` with its frame number, then rests at `after`.
+		## shown by `frame_instant`, then rests at `after`.
 		of : {
 			before : Animation.Instant(pose),
 			frames : List(frame),
-			frame_instant : frame, Steps -> Animation.Instant(pose),
+			frame_instant : frame -> Animation.Instant(pose),
 			after : Animation.Instant(pose),
 		} -> Animation.Timeline(frame, pose)
 		of = |parts| Animation.Timeline.(parts)
@@ -82,14 +82,12 @@ Animation :: [].{
 		instant = |Animation.Timeline.(timeline), stage|
 			match stage {
 				Waiting => timeline.before
-				Playing(steps_in) => {
-					frame_number = steps_in.to_u32().to_u64()
-					match timeline.frames.get(frame_number) {
-						Ok(frame) => (timeline.frame_instant)(frame, steps_in)
+				Playing(steps_in) =>
+					match timeline.frames.get(steps_in.to_u64()) {
+						Ok(frame) => (timeline.frame_instant)(frame)
 						Err(OutOfBounds) =>
 							crash "Animation.Timeline.instant: a stage plays past the last frame, so the span it was staged by disagrees with its timeline"
 					}
-				}
 				Past(_) => timeline.after
 			}
 	}
@@ -103,15 +101,18 @@ sideways_location = |across| {
 	lift: Distance.zero,
 }
 
-## A timeline of four frames, each as far across as ten times its frame number.
-four_frames : Animation.Timeline(Note, Note)
+## A timeline of four frames, each a note and where it is, as far across as ten
+## times its place in the list.
+four_frames : Animation.Timeline({ note : Note, location : Animation.Location }, Note)
 four_frames = Animation.Timeline.of({
 	before: { pose: BeforeIt, location: sideways_location(-1.0) },
-	frames: [First, Second, Third, Fourth],
-	frame_instant: |note, frame_number| {
-		pose: note,
-		location: sideways_location(10.0 * frame_number.to_f64()),
-	},
+	frames: [
+		{ note: First, location: sideways_location(0.0) },
+		{ note: Second, location: sideways_location(10.0) },
+		{ note: Third, location: sideways_location(20.0) },
+		{ note: Fourth, location: sideways_location(30.0) },
+	],
+	frame_instant: |{ note, location }| { pose: note, location },
 	after: { pose: AfterIt, location: sideways_location(99.0) },
 })
 
@@ -122,12 +123,13 @@ four_frames_at = |stage| {
 	(instant.pose, instant.location.road_point.across.to_metres())
 }
 
-# The first and last frames play with their own numbers; before them and past
-# them the timeline rests.
+# Each step in plays the frame of its number, the first and the last included;
+# before them and past them the timeline rests.
 expect
 	[
 		(Waiting, (BeforeIt, -1.0)),
 		(Playing(Steps.zero), (First, 0.0)),
+		(Playing(Steps.of(1)), (Second, 10.0)),
 		(Playing(Steps.of(2)), (Third, 20.0)),
 		(Playing(Steps.of(3)), (Fourth, 30.0)),
 		(Past(Steps.zero), (AfterIt, 99.0)),

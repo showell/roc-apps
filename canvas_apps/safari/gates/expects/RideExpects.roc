@@ -385,13 +385,13 @@ ride_encounters = {
 # rider.
 expect
 	ride_encounters.flying_step_count
-		== Fixtures.route_flights.len() * BirdFlight.flight_span.length.to_u32().to_u64()
+		== Fixtures.route_flights.len() * BirdFlight.flight_span.length.to_u64()
 expect ride_encounters.is_bird_ahead_throughout
 
 # Each of the three cats crosses on the ride. The reaction ends with its
 # segment, so the cat's hold has to have faded by then or it would snap to
 # nothing there.
-expect ride_encounters.crossing_step_count == 3 * CatCrossing.crossing_span.length.to_u32().to_u64()
+expect ride_encounters.crossing_step_count == 3 * CatCrossing.crossing_span.length.to_u64()
 expect ride_encounters.cat_exits == 3
 expect ride_encounters.is_faded_at_each_exit
 

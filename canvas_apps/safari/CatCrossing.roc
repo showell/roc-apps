@@ -61,16 +61,12 @@ CatCrossing :: { tree : Geom.RoadPoint }.{
 
 	## What the ride plans a crossing by: its length, and the gap it ends at.
 	crossing_span : EncounterPlan.StepSpan
-	crossing_span = { length: Steps.of(crossing_frames.len().to_u32_wrap()), ends_at: clear_gap }
+	crossing_span = { length: Steps.of_count(crossing_frames.len()), ends_at: clear_gap }
 
 	## Where along its segment the ride plans `crossing` by: where the cat
 	## crosses.
 	planned_along : CatCrossing -> Along
 	planned_along = |crossing| crossing.along()
-
-	## Where the crossing has got to at `timing`.
-	crossing_stage : EncounterPlan.Timing -> Animation.Stage
-	crossing_stage = |timing| EncounterPlan.stage_at(timing, crossing_span.length)
 
 	## How eye-catching a crossing cat is: how hard it holds the rider's eye at
 	## its strongest.
@@ -194,7 +190,7 @@ crossing_timeline = |crossing| {
 	Animation.Timeline.of({
 		before: { pose: Rest, location: start },
 		frames: crossing_frames,
-		frame_instant: |{ pose, way }, _frame_number| { pose, location: location_of(way) },
+		frame_instant: |{ pose, way }| { pose, location: location_of(way) },
 		after: { pose: Collapse, location: end },
 	})
 }

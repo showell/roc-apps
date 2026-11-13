@@ -89,17 +89,15 @@ Segment := {
 				CatCrosses => CatCrosses(
 					CatCrossing.by_tree({ tree: nearest_tree_ahead(trees, cat_along).road_point }),
 				)
-				BirdHere =>
-					match fifth_left_tree(trees) {
-						Ok(perch) =>
-							match BirdFlight.flight_from(trees, perch) {
-								Ok(flight) => BirdHere(flight)
-								Err(NoTreeToFlyTo) =>
-									crash "Segment.from_choices: a segment planned with a bird has a tree for it to fly to"
-							}
-						Err(NoPerch) =>
-							crash "Segment.from_choices: a segment planned with a bird has a tree for it to start on"
-					}
+				BirdHere => {
+					perch =
+						fifth_left_tree(trees)
+							?? crash "Segment.from_choices: a segment planned with a bird has a tree for it to start on"
+					flight =
+						BirdFlight.flight_from(trees, perch)
+							?? crash "Segment.from_choices: a segment planned with a bird has a tree for it to fly to"
+					BirdHere(flight)
+				}
 				QuietRoad => QuietRoad
 			},
 			ending: choices.ending,
@@ -217,11 +215,10 @@ nearest_tree_ahead = |trees, along|
 ## The tree a segment's bird perches on until its flight starts: the fifth on
 ## the left, with a negative `across`, among `trees`.
 fifth_left_tree : List(Trees.RoadsideTree) -> Try(Trees.RoadsideTree, [NoPerch])
-fifth_left_tree = |trees|
-	match trees.keep_if(|tree| tree.road_point.across < Across.middle).drop_first(4).first() {
-		Ok(tree) => Ok(tree)
-		Err(ListWasEmpty) => Err(NoPerch)
-	}
+fifth_left_tree = |trees| {
+	left_trees = trees.keep_if(|tree| tree.road_point.across < Across.middle)
+	left_trees.drop_first(4).first().map_err(|ListWasEmpty| NoPerch)
+}
 
 ## Where a herd of pigs stands on a segment `length` long.
 pig_herd_along : Distance -> Along
@@ -254,11 +251,7 @@ pairs_at = |alongs| alongs.join_map(|along| [tree_at(along, -6.0), tree_at(along
 
 ## How far along the fifth left tree of `trees` is, if there is one.
 fifth_along : List(Trees.RoadsideTree) -> Try(F64, [NoPerch])
-fifth_along = |trees|
-	match fifth_left_tree(trees) {
-		Ok(tree) => Ok(tree.road_point.along.to_metres())
-		Err(NoPerch) => Err(NoPerch)
-	}
+fifth_along = |trees| fifth_left_tree(trees).map_ok(|tree| tree.road_point.along.to_metres())
 
 # Only trees on the left count toward the fifth, and a segment too short for five
 # of them has none.

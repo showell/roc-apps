@@ -36,3 +36,8 @@ SafariApp.roc: the file that holds the SafariApp module
 shapes_canvas.js: a file of the JavaScript platform
 Rock: the kind of thing in tutorial/fails/kind_without_sprite.roc, which the build runs
 rock_rendering: the function in tutorial/fails/kind_without_sprite.roc, which the build runs
+
+# Names the chapters on the cat and the bird still use from code that has gone.
+# Those chapters are due for a rewrite; each line goes when its prose does.
+Timing: the code has no Timing; a plan and the clock make a stage in EncounterPlan.stage_at
+BirdFlight.flight_stage: the code has no flight_stage; Encounter.encounter_stage makes every animal's stage

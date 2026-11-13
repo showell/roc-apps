@@ -134,8 +134,12 @@ focal_length_of = |rider|
 	RiderCamera.of(rider, { route: Fixtures.cat_route, encounter_stage: Waiting }).focal_length
 
 ## An encounter ten steps in.
-ten_steps_in : EncounterPlan.Timing
-ten_steps_in = EncounterPlan.timing_at(StartsAt(Clock.at_step(100)), Clock.at_step(110))
+ten_steps_in : { plan : EncounterPlan, now : Clock }
+ten_steps_in = { plan: StartsAt(Clock.at_step(100)), now: Clock.at_step(110) }
+
+## An encounter not planned yet, at step 110.
+unplanned : { plan : EncounterPlan, now : Clock }
+unplanned = { plan: Unplanned, now: Clock.at_step(110) }
 
 ## The focal length of the camera for `rider` on the cat route, with the
 ## encounter on their segment ten steps in.
@@ -172,12 +176,12 @@ leaning = |rider, lean| { ..rider, motorcycle: { ..rider.motorcycle, lean } }
 looking_hard : Rider -> Rider
 looking_hard = |rider| { ..rider, eyes: { ..rider.eyes, look_depth: Fraction.whole } }
 
-## How strongly the encounter on this rider's segment, at `encounter_timing`, holds
-## their attention.
-encounter_attention_of : Rider, EncounterPlan.Timing -> F64
-encounter_attention_of = |rider, encounter_timing| {
+## How strongly the encounter on this rider's segment, played by
+## `encounter_clock`, holds their attention.
+encounter_attention_of : Rider, { plan : EncounterPlan, now : Clock } -> F64
+encounter_attention_of = |rider, encounter_clock| {
 	segment = Fixtures.cat_route.segment_at(rider.motorcycle.route_place.segment_index)
-	stage = segment.encounter.encounter_stage(encounter_timing)
+	stage = segment.encounter.encounter_stage(encounter_clock)
 	EncounterReaction.encounter_attention(segment.encounter, stage).to_f64()
 }
 
@@ -198,16 +202,17 @@ full_left = no_lean.minus(full_change)
 expect focal_length_at_lean(full_left) < focal_length_at_lean(no_lean)
 
 expect encounter_attention_of(rider_on(1), ten_steps_in) > 0.0
-expect !(encounter_attention_of(rider_on(1), Unplanned) > 0.0)
+expect !(encounter_attention_of(rider_on(1), unplanned) > 0.0)
 expect !(encounter_attention_of(rider_on(0), ten_steps_in) > 0.0)
 expect focal_length_ten_steps_in(rider_on(1)) < focal_length_ten_steps_in(rider_on(0))
 
 # While a cat crosses, the rider eases off: the throttle holds the acceleration
 # at none. Before the crossing it opens.
 ## The change of speed Throttle makes for a rider at the start of the world's
-## cat segment, going 0.3 m a step, with its crossing at `encounter_timing`.
-cat_throttle_change : EncounterPlan.Timing -> F64
-cat_throttle_change = |encounter_timing| {
+## cat segment, going 0.3 m a step, with its crossing played by
+## `encounter_clock`.
+cat_throttle_change : { plan : EncounterPlan, now : Clock } -> F64
+cat_throttle_change = |encounter_clock| {
 	motorcycle = {
 		..Motorcycle.initial,
 		route_place: {
@@ -216,27 +221,27 @@ cat_throttle_change = |encounter_timing| {
 		},
 		speed: Speed.metres_a_step(0.3),
 	}
-	throttle_change_at(motorcycle, encounter_timing)
+	throttle_change_at(motorcycle, encounter_clock)
 }
 
 ## The change of speed Throttle makes for this motorcycle in a step on the real
-## route, with its encounter at `encounter_timing`, held to the top speed, in
-## metres a step each step.
-throttle_change_at : Motorcycle, EncounterPlan.Timing -> F64
-throttle_change_at = |motorcycle, encounter_timing| {
+## route, with its encounter played by `encounter_clock`, held to the top speed,
+## in metres a step each step.
+throttle_change_at : Motorcycle, { plan : EncounterPlan, now : Clock } -> F64
+throttle_change_at = |motorcycle, encounter_clock| {
 	segment = motorcycle.route_place.segment_on(World.route)
 	acceleration = Throttle.next_acceleration(
 		motorcycle,
-		{ segment, encounter_stage: segment.encounter.encounter_stage(encounter_timing) },
+		{ segment, encounter_stage: segment.encounter.encounter_stage(encounter_clock) },
 	)
 	next = motorcycle.motorcycle_at_next_step({ lean: motorcycle.lean, acceleration })
 	next.speed.to_metres_a_step() - motorcycle.speed.to_metres_a_step()
 }
 
 expect cat_throttle_change(ten_steps_in) == 0.0
-expect cat_throttle_change(Unplanned) > 0.0
+expect cat_throttle_change(unplanned) > 0.0
 expect {
-	before_it = EncounterPlan.timing_at(StartsAt(Clock.at_step(100)), Clock.at_step(99))
+	before_it = { plan: StartsAt(Clock.at_step(100)), now: Clock.at_step(99) }
 	cat_throttle_change(before_it) > 0.0
 }
 expect focal_length_of(looking_hard(upright)) < focal_length_of(upright)
@@ -293,7 +298,7 @@ expect {
 	coast = Coast.coast_path(state)
 	match coast.outcome {
 		Leaves({ side: Left, after }) =>
-			coast.path_motorcycles.len() == after.to_u32().to_u64()
+			coast.path_motorcycles.len() == after.to_u64()
 				and coast.outcome == Coast.coast_outcome(state)
 		Leaves({ side: Right, .. }) | EndsAt(_) => False
 	}
@@ -385,7 +390,7 @@ with_segment = |motorcycle, index| {
 ## before its encounter is planned, in metres a step each step.
 throttle_change : Motorcycle -> F64
 throttle_change = |motorcycle| {
-	throttle_change_at(motorcycle, Unplanned)
+	throttle_change_at(motorcycle, unplanned)
 }
 
 # The rider brakes for the bend from 60 m short of the segment's end, and not a

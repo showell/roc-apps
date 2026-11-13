@@ -55,7 +55,7 @@ RideInstant := {
 	encounter_stage : Route, RideInstant -> Animation.Stage
 	encounter_stage = |route, instant|
 		instant.rider.motorcycle.route_place.segment_on(route).encounter.encounter_stage(
-			instant.encounter_plan.timing_at(instant.clock),
+			{ plan: instant.encounter_plan, now: instant.clock },
 		)
 }
 

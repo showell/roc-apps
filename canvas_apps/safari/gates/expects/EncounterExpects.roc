@@ -45,15 +45,15 @@ import lib.Shapes
 EncounterExpects :: [].{}
 
 ## The birds the camera sees on `road_view`, with the encounter on the
-## rider's segment at `encounter_timing`.
+## rider's segment played by `encounter_clock`, its plan and the ride's clock.
 birds_seen_on : RoadAhead.RoadView,
 {
 	camera : Pipeline.SightingCamera,
-	encounter_timing : EncounterPlan.Timing,
+	encounter_clock : { plan : EncounterPlan, now : Clock },
 } -> List(Pipeline.Sighted(Bird))
-birds_seen_on = |road_view, { camera, encounter_timing }| {
+birds_seen_on = |road_view, { camera, encounter_clock }| {
 	rider_segment = RoadAhead.segment_at(road_view, SegmentFromRider.Position.first)
-	encounter_stage = rider_segment.encounter.encounter_stage(encounter_timing)
+	encounter_stage = rider_segment.encounter.encounter_stage(encounter_clock)
 	EncounterSighting.birds_in_view(road_view, { camera, encounter_stage })
 }
 
@@ -125,19 +125,23 @@ bird_segment : Segment
 bird_segment = { ..Fixtures.segment_of(bird_trees), encounter: BirdHere(bird_flight) }
 
 ## A flight that started at step 100, at step `now`.
-flight_at_step : U32 -> EncounterPlan.Timing
-flight_at_step = |now| EncounterPlan.timing_at(StartsAt(Clock.at_step(100)), Clock.at_step(now))
+flight_at_step : U32 -> { plan : EncounterPlan, now : Clock }
+flight_at_step = |now| { plan: StartsAt(Clock.at_step(100)), now: Clock.at_step(now) }
+
+## An encounter not planned yet, at step 100.
+unplanned : { plan : EncounterPlan, now : Clock }
+unplanned = { plan: Unplanned, now: Clock.at_step(100) }
 
 ## The birds on `segment`, alone on its route, for a rider `rider_along` metres
 ## into it, seen through a focal length of `focal_length`, with the bird's flight
-## at `encounter_timing`.
+## played by `encounter_clock`.
 birds_on : Segment,
 {
 	rider_along : F64,
 	focal_length : Pixels,
-	encounter_timing : EncounterPlan.Timing,
+	encounter_clock : { plan : EncounterPlan, now : Clock },
 } -> List(Pipeline.Sighted(Bird))
-birds_on = |segment, { rider_along, focal_length, encounter_timing }|
+birds_on = |segment, { rider_along, focal_length, encounter_clock }|
 	birds_seen_on(
 		Fixtures.crafted_road([segment]),
 		{
@@ -145,18 +149,15 @@ birds_on = |segment, { rider_along, focal_length, encounter_timing }|
 				vantage: { ..Fixtures.origin, along: Along.metres(rider_along) },
 				focal_length,
 			},
-			encounter_timing,
+			encounter_clock,
 		},
 	)
 
-## The one bird that a rider `rider_along` metres in sees, with its flight at
-## `encounter_timing`.
-bird_at : F64, EncounterPlan.Timing -> Pipeline.Sighted(Bird)
-bird_at = |rider_along, encounter_timing|
-	birds_on(
-		bird_segment,
-		{ rider_along, focal_length: Pixels.of(500.0), encounter_timing },
-	).first()
+## The one bird that a rider `rider_along` metres in sees, with its flight
+## played by `encounter_clock`.
+bird_at : F64, { plan : EncounterPlan, now : Clock } -> Pipeline.Sighted(Bird)
+bird_at = |rider_along, encounter_clock|
+	birds_on(bird_segment, { rider_along, focal_length: Pixels.of(500.0), encounter_clock }).first()
 		?? crash "EncounterExpects: this rider sees a bird"
 
 ## How far off a bird is: right of the camera, forward of it, and its lift.
@@ -169,7 +170,7 @@ place_numbers = |bird| [
 
 # Before its flight the bird sits on the fifth left tree, wherever the rider is,
 # and after it on the far tree.
-expect place_numbers(bird_at(0.0, Unplanned)) == [-6.0, 100.0, left_top]
+expect place_numbers(bird_at(0.0, unplanned)) == [-6.0, 100.0, left_top]
 expect place_numbers(bird_at(40.0, flight_at_step(99))) == [-6.0, 60.0, left_top]
 expect place_numbers(bird_at(85.0, flight_at_step(136))) == [6.0, 45.0, far_top]
 
@@ -191,7 +192,7 @@ expect {
 ## length, before the flight.
 bird_count : { rider_along : F64, focal_length : Pixels } -> I64
 bird_count = |{ rider_along, focal_length }| {
-	birds = birds_on(bird_segment, { rider_along, focal_length, encounter_timing: Unplanned })
+	birds = birds_on(bird_segment, { rider_along, focal_length, encounter_clock: unplanned })
 	birds.len().to_i64_wrap()
 }
 
@@ -211,7 +212,7 @@ expect bird_count({ rider_along: 0.0, focal_length: Pixels.of(90.0) }) == 0
 expect
 	birds_seen_on(
 		Fixtures.crafted_road([segment_with_cat]),
-		{ camera: Fixtures.origin_camera, encounter_timing: Unplanned },
+		{ camera: Fixtures.origin_camera, encounter_clock: unplanned },
 	).len()
 		== 0
 
@@ -220,7 +221,7 @@ expect
 birds_on_two_segments : List(Pipeline.Sighted(Bird))
 birds_on_two_segments = birds_seen_on(
 	Fixtures.crafted_road([Fixtures.bending_right(bird_segment), bird_segment]),
-	{ camera: Fixtures.origin_camera, encounter_timing: flight_at_step(118) },
+	{ camera: Fixtures.origin_camera, encounter_clock: flight_at_step(118) },
 )
 
 # Only the rider's own segment plays its encounter: the bird ahead still sits.
@@ -292,7 +293,7 @@ expect Fixtures.route_flights.all(
 	|{ from, .. }| bird_planning_gap < from.road_point.along.from_start(),
 )
 
-# EncounterPlan.steady_approach_timing: a rider coming at 1.25 m a step from
+# EncounterPlan.steady_approach_stage: a rider coming at 1.25 m a step from
 # 75 m off sees the bird take off at 60 m, perched a step before, and land at
 # 15 m.
 
@@ -300,15 +301,13 @@ expect Fixtures.route_flights.all(
 ## its perch.
 steady_flight_stage : F64 -> Animation.Stage
 steady_flight_stage = |gap|
-	BirdFlight.flight_stage(
-		EncounterPlan.steady_approach_timing(
-			BirdFlight.flight_span,
-			{
-				gap_at_start: Distance.metres(75.0),
-				speed: Speed.metres_a_step(1.25),
-				gap: Distance.metres(gap),
-			},
-		),
+	EncounterPlan.steady_approach_stage(
+		BirdFlight.flight_span,
+		{
+			gap_at_start: Distance.metres(75.0),
+			speed: Speed.metres_a_step(1.25),
+			gap: Distance.metres(gap),
+		},
 	)
 
 expect steady_flight_stage(60.0) == Playing(Steps.zero)
