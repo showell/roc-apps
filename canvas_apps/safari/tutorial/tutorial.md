@@ -48,7 +48,7 @@ The first half of the book holds this page still and reads it part by part, star
 
 Safari Ride shows a world in motion, seen from the rider's seat. Thirty times a second, it puts a new picture of that world on the screen. Each picture is a frame, and between frames a step moves the world on, so the pictures move. Whoever is watching can take the controls at any moment.
 
-That's what you see. For us, it's an engineering problem, and our first job is to break it into pieces we can build one at a time. A screen shows the things in a world, so the things come first. We hold one frame still and get it right before anything moves, and the controls come last. That plan costs something: the first half of the book holds one frame still. In return, every piece we build stands on a piece that already works. The plan gives the problem five pieces:
+That's what you see. For us, it's an engineering problem, and our first job is to break it into pieces we can build one at a time. We get one frame right before anything moves. That plan costs something: the first half of the book holds that frame still. In return, every piece we build stands on a piece that already works. The plan gives the problem five pieces:
 
 The five pieces
 ```dot
@@ -84,7 +84,7 @@ digraph pieces {
 
 The book takes the pieces in turn. Things come first: what a cow, a tree or a tower is, and the shapes it's made of. Then the rider's view: the trip every thing takes from its place on the road into the frame, with the math behind it saved for a chapter near the end. The world comes after the view, because every part of it takes that same trip: the sky, the mountains, the road and everything along it. Those three make one frame, held still. Motion fills the second half of the book: moments that follow one another like a flip book's pages, and the clock, the rider, the truck, the cat and the bird, each carried on from step to step. The person watching comes last, at the platform, where the frames go out and the keys come in.
 
-Each of those pieces lives somewhere in the code. So before we read the first one, a short chapter shows how a Roc program is laid out: the platform it runs on, the modules it's made of, and the packages it uses. The two after it read Roc's types and functions.
+Before the first piece, three short chapters cover Roc itself: how a program is laid out, its types, and its functions.
 
 ## Platforms, packages and modules
 
