@@ -101,7 +101,7 @@ Each axis fails in its own way, and catching each failure takes a different kind
 
 ### Axis G. The code behind the prose
 
-- **G1.** The book is a code review. A sentence that's hard to write, or that exposes an odd design, is a code finding first, and the chapter follows the fix.
+- **G1.** The book is a code review. A sentence that's hard to write, or that exposes an odd design, is a code finding first, and the chapter follows the fix. When a chapter's smell needs a major refactor, rewrite the chapter from scratch, from a new spine, after the fix. A chapter whose code needs no major change may be edited in place. Err on the side of rewrites. (Steve, 2026-11-13.)
 - **G2.** Quote code that reads more or less like English. Code should answer to its name.
 - **G3.** Coordinate transforms belong in one home. A chapter that has to explain the same transform twice is a smell.
 - **G4.** The smells in `docs/smells.md` apply: a fat API, a derived value stored beside its source, a name that needs a comment to translate it.
