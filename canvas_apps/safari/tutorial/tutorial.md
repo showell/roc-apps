@@ -1307,42 +1307,39 @@ That's four things: the rider, the truck, the clock, and the plan for when the c
 
 ## The clock
 
-The ride's clock is a single number, and it still gets a module of its own. From here on the clock runs, so we read that module, `Clock`, from top to bottom before we let it go.
+The simplest of the four things a moment carries is the clock: which step of the ride this is. It's a single number, and it still gets a module of its own, because the ride keeps two kinds of time apart.
 
-New in this chapter:
+### A moment and a length
 
-- Roc: operators as method calls, `expect`
-- Modules: `Clock`, `Steps`
-
-Everyone knows what a clock does. The news is what this one refuses to do. Here is a line that adds 7 to a clock:
+Everyone knows what a clock does. The news is what this one refuses to do. Here's a line that adds 7 to a clock:
 
 {{fails clock_plus_seven}}
 
-Roc won't compile it. In Roc, `a + b` calls `a.plus(b)`. `Clock.plus` takes a `Steps`, a count of steps, and a bare 7 isn't one. The error says exactly that.
+The compiler refuses it. `+` calls the `plus` method, and `Clock.plus` takes a `Steps`, a count of steps, where this line hands it a bare 7. A `Clock` is a moment, and a `Steps` is a length of time, as a `Bearing` is a direction and a `Turn` is a change of one.
 
-Here is the whole module:
+Here's the whole module:
 
 {{module Clock}}
 
-### Get the types right
+`Clock :: U32.{ … }` makes a clock an opaque `U32`, so only the module's own functions read the number inside. They keep the two kinds of time apart:
 
-`Clock :: U32.{ ... }` says what a clock is: a `U32` underneath, and opaque, so only `Clock`'s own code sees the number inside. `Clock.(n)` builds a clock from a number. In a parameter list it works the other way, and takes the number out.
+| Function | Takes | Returns |
+|---|---|---|
+| `plus` | a clock and a length | a later clock |
+| `minus` | a clock and a length | an earlier clock |
+| `steps_since` | two clocks | the length between them |
 
-A clock comes with a partner, `Steps`. A clock is a moment, and a `Steps` is a length of time. A clock plus some steps is a later clock. A clock minus some steps is an earlier one. `steps_since` gives the steps between two clocks. Nothing adds two clocks together, because two moments don't add up to anything.
+Two moments make a meaningless sum, so the module leaves adding two clocks out. `next` moves a clock on by one step, and the ride calls it once a step.
 
-### The functions
+### Two crashes
 
-`next` moves a clock on by one step, and Safari Ride calls it once a step:
+`minus` crashes when it would go back past step 0, and `steps_since` crashes when it would count backward. Either one means the caller has a bug, so the clock stops the program and says why, with a `crash` and its message.
 
-{{code RideInstant.next from "clock = instant.clock.next()" to "clock = instant.clock.next()"}}
+### Tests
 
-Operators are method calls. `+` calls `plus`, and `<` calls `is_lt`. `is_eq : _` asks Roc to derive equality, so `==` works on clocks too.
+Below the module's braces, each `expect` is a test, and `roc test` runs them all. A clock is a plain value, so a test builds one directly: `Clock.at_step(9).plus(Steps.of(3))` starts at step 9 and checks the answer is step 12, before any ride has run. The last three tests check `<` on both sides of the line: one clock before another, a clock against itself, and one after.
 
-Two functions crash. `minus` crashes when it would go back past step 0, and `steps_since` crashes when it would count backward. Either one means the caller has a bug, so the clock stops the program and says why.
-
-Below the block, each `expect` is a test, and `roc test` runs them all. A clock is a plain value, so a test builds one directly. `Clock.at_step(9).plus(Steps.of(3))` starts at step 9 without riding nine steps first.
-
-Next, the clock starts to tick.
+The clock is the whole of the ride's time. Everything that changes with time, from the sky to the truck's lights, works it out from the clock. The next chapter turns to the moment itself, the `RideInstant`, and how one step moves all four of its parts on.
 
 ## The ride instant
 
