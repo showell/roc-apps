@@ -466,7 +466,7 @@ And here's the code that makes it:
 
 The value is a `Triangle` tag with its record. The record names three corners, `first`, `second` and `third`, so every triangle has exactly three, by construction. A corner is a `Point`, a record with an `x` and a `y`. `Point.at` makes one from two plain numbers, measured from the top left of the picture, with `y` growing downward. The picture is 640 pixels wide and 324 tall.
 
-`Point.at` turns each of those numbers into a `Pixels`, an opaque type around an `F64`, like `Distance`. The ride works in metres on the road and in pixels on the screen, and two types keep the two apart, so each number says which one it is. Roc is just as happy with plain `F64`s, if you prefer that style. In a program that moves between the road and the screen all the time, the types earn their keep.
+`Point.at` turns each of those numbers into a `Pixels`, an opaque type around an `F64`, like `Distance`. The ride works in metres on the road and in pixels on the screen, and two types keep the two apart, so each number says which one it is. In a program that moves between the road and the screen all the time, the types earn their keep.
 
 The `fill` is green. `RgbColor.of` makes a color from `0x2e8b57`, a number in hex, as `0x` says: the six digits a web page writes after its `#`, and `Brush.flat` makes a fill of that one color.
 
@@ -495,13 +495,13 @@ Here's the function:
 
 {{code Shapes.rectangle}}
 
-`|{ top_left, width, height, fill }|` takes the record apart, naming each of its fields. The body works out where the right and bottom edges are, with `plus`, which adds two `Pixels`. Then it gives the quad its four corners, clockwise from the top left. Each corner is a record of an `x` and a `y`, each a `Pixels`, which is all a `Point` is. `Point.at` builds the same record from two plain numbers. Each side's two corners share an `x` or a `y`, so the sides are always square to the screen. The same picture app, showing its rectangle, hands the platform the background and then this quad.
+`|{ top_left, width, height, fill }|` takes the record apart, naming each of its fields. The body works out where the right and bottom edges are, with `plus`, which adds two `Pixels`. Then it gives the quad its four corners, clockwise from the top left. Each side's two corners share an `x` or a `y`, so the sides are always square to the screen.
 
 That's both of a far tree's shapes. Next, we put them together, with functions of our own.
 
 ## A far tree
 
-A far tree in Safari Ride is a trunk under eight triangles. In this chapter we build one from small functions: the tiers of its crown, a test that pins them, a triangle for each tier, and the order the trunk and the tiers are painted in.
+With a triangle and a rectangle in hand, we can build the far tree. This chapter builds it from small functions: the tiers of its crown, a test that pins them, a triangle for each tier, and the order the trunk and the tiers are painted in.
 
 ```widget far_tree
 One far tree, magnified so that it stands tall in the picture.
@@ -529,7 +529,7 @@ Each tier also needs a top and a bottom. They follow a rule, so another `map` wo
 
 {{code TreeShapes.tiers}}
 
-`map_with_index` is `map` with one more thing for the function: the item's place in the list, counting from 0. The function here is written in place, right where `map_with_index` takes it. `|width, index|` says it takes a width and its index, and it gives back a record. Each tier's top is a tenth of the crown lower than the top of the tier above, and its bottom is three tenths below its top, so each tier overlaps the next. `index` is a `U64`, a whole number, and `to_f64` turns it into an `F64` for the division.
+`map_with_index` is `map` with one more thing for the function: the item's place in the list, counting from 0. The function here is written in place, right where `map_with_index` takes it, and it returns a record. Each tier's top is a tenth of the crown lower than the top of the tier above, and its bottom is three tenths below its top, so each tier overlaps the next. `index` is a `U64`, a whole number, and `to_f64` turns it into an `F64` for the division.
 
 ### Freezing the tiers
 
@@ -553,7 +553,7 @@ Three small functions read the crown's place from the outline:
 
 {{code TreeShapes.tier_triangle}}
 
-It takes the outline and a record, and `|outline, { tier, foliage_color }|` takes the record apart into its fields, as `Shapes.rectangle` did. The body names four values on the way, each on a line of its own: `crown_top`, `bottom_y`, `top_y` and `half_base`. A name holds its value for the rest of the body, and the last expression, the `Triangle`, is what the function gives back. Like `Distance`, `Pixels` has its own `plus`, `minus` and `scaled_by`. `scaled_by` multiplies a length by a `Fraction`, and `minus` subtracts one length from another.
+It takes the outline and a record, and `|outline, { tier, foliage_color }|` takes the record apart into its fields, as `Shapes.rectangle` did. The body names four constants on the way, `crown_top`, `bottom_y`, `top_y` and `half_base`, and its last expression is the `Triangle`. Like `Distance`, `Pixels` has its own `plus`, `minus` and `scaled_by`. `scaled_by` multiplies a length by a `Fraction`, and `minus` subtracts one length from another.
 
 On the screen, `y` grows downward, as it did in the {{chapter Shapes}} chapter, so `plus` moves down from the tip. The triangle's first corner sits on the tree's middle line at the tier's top. The other two sit at the tier's bottom, `half_base` to either side.
 
@@ -569,7 +569,7 @@ The order of the shapes matters as much as the shapes. `tree_sprite` produces th
 
 {{code TreeShapes.tree_sprite}}
 
-It takes the tree's setting and a record, and `|{ spot, focal_length, darkness }, { height, foliage_color }|` takes each one apart into its fields. `crown_of` sits inside the `TreeShapes` type's braces, with the type's own functions, and every use of it carries the type's name, as `Billboard.Facing` does.
+It takes the tree's setting and a record, and `|{ spot, focal_length, darkness }, { height, foliage_color }|` takes each one apart into its fields.
 
 The body first darkens the foliage and the trunk's brown as dusk falls. Then `tier_inputs_of` works out what every tier needs, the tree's outline among them, once for the whole tree. `inputs.base.forward()` is how far ahead of the camera the tree's foot stands. From that distance, `crown_of` and `trunk_finish_of` choose how much detail the tree gets. For a far tree, `crown` is `Triangles`, and the trunk's finish is `Flat`. The end of the chapter says what nearer trees get.
 
@@ -844,7 +844,7 @@ This table explains the code's concepts:
 | A method | Placement | A method is a function inside a type's braces, and only a method meets a `where` clause. That's why `Conifer` keeps `scenery_sprite` inside, with `scenery_height`, while its private helpers sit outside. |
 | A method call | Dispatch | `sighting.kind` is the sighting's `kind` field, which holds a value of the type `kind`. `.scenery_sprite(...)` calls that type's method, with the value before the dot as its first argument. |
 
-The rest of the body builds the setting. A `Sprite.LensAndLight` holds the shared part of a `Sprite.Setting`, the focal length and the darkness, and the body adds the sighting's own spot. In a record, `focal_length` alone is short for `focal_length: focal_length`, a field filled from the value of the same name. `sighting.spot.foot().forward()` is how far ahead of the camera the thing's foot stands.
+The rest of the body builds the setting. A `Sprite.LensAndLight` holds the shared part of a `Sprite.Setting`, the focal length and the darkness, and the body adds the sighting's own spot. `sighting.spot.foot().forward()` is how far ahead of the camera the thing's foot stands.
 
 ### The compiler checks each call
 
@@ -865,8 +865,6 @@ The message names the method the clause requires, and the type the compiler chec
 Sighting a thing needs its height. A far thing shows only when its top clears the horizon, and only when it stands tall enough on the screen to be worth showing. So `Pipeline.scenery_sighting_of`, which sights the trees, the billboard critters, the cat and the bird, constrains its kind with a `where` clause of its own, to types that have a `scenery_height`:
 
 {{code Pipeline.scenery_sighting_of from "where" to "where"}}
-
-A radio tower is kept however small it looks, so a tower is sighted by `Pipeline.sighting_above_horizon_of`, which skips the size test and carries the same constraint.
 
 ### Names that say what they're for
 
@@ -1133,7 +1131,7 @@ Each quad goes into the frame's depth sort on its own, at a depth that's the mea
 
 `{ ..quad, color: … }` is a record update: a new record, like `quad` with its `color` changed, and `quad` itself stays as it was. Here the new color is the quad's own, dimmed with the sky. `map_ok` works on a `Try`: it applies its function to an `Ok` and leaves an `Err` as it is, so a quad wholly behind the camera stays refused, and `Scene` drops those with `keep_oks`.
 
-The ride works out each rail afresh every frame, its bars and posts from the route and the rider, and the depth sort places each one. Next, the tallest things beside the road: the radio towers.
+The ride works out each rail afresh every frame, its bars and posts from the route and the rider, and the depth sort places each one. Next come the radio towers, which go back through the pipeline as things beside the road.
 
 ## Radio towers
 
@@ -1163,7 +1161,7 @@ The ride's ground curves away on its 100 km radius, and a tower stands on it. Fr
 
 {{signatures EarthCurve.lowest_visible_height}}
 
-A tower hides whatever part of it is under that line, so as it gets further away, it sinks from the bottom up. An 80-metre tower still shows its tip about 4.5 km off. Once all of it is under the line, `Pipeline.sighting_above_horizon_of` refuses it as `OutOfSight`, as the {{chapter Refused}} chapter showed. So a sighted tower always has something to paint.
+The ground hides whatever part of a tower is under that line, so as a tower gets further away, it sinks from the bottom up. An 80-metre tower still shows its tip about 4.5 km off. Once all of it is under the line, `Pipeline.sighting_above_horizon_of` refuses it as `OutOfSight`, as the {{chapter Refused}} chapter showed. So a sighted tower always has something to paint.
 
 ### Rods
 
@@ -1185,7 +1183,7 @@ Each rod is a line between two points seen from the rider. A near tower is wide,
 
 The `match` is on a pair, `(start, end)`, so it covers all four combinations of its two `Try`s. A rod with one end short of the near plane, 0.4 metres ahead of the camera, is cut where it crosses that plane. A rod with both ends behind it is refused.
 
-That's a tower: rods and a disc, worked out again each frame from its segment. The disc on top blinks, and the blinking waits for the second half, when the clock starts.
+That's a tower: rods and a disc, worked out again each frame from its segment, the clock and the camera. The disc on top blinks, and the blinking waits for the second half, when the clock starts.
 
 ## The modules
 
