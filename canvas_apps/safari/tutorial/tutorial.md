@@ -80,11 +80,11 @@ digraph pieces {
 | The world | Structure | A long road runs through open country, past trees, herds, ponds and radio towers. Something must lay it all out, and say where every one of them stands. |
 | The rider's view | Perception | The screen shows only what the rider sees. A tree far down the road looks small, and a tree close by looks big. For everything in the world, the program must work out what the rider perceives: where it lands on the screen, and how big, if the rider sees it at all. Where two things overlap, the nearer one covers the farther one. |
 | Motion | Persistence | The rider rides on, the truck drives ahead, the cat crosses the road and the sun goes down. At every step, something must carry each of them on from where it was, and the moves must fit together. The cat times its crossing to the rider coming toward it, and a cat in the road stops the rider speeding up. |
-| The person watching | Interaction | A viewer mostly sits back and watches, but they also need to pause the ride, step it forward and rewind it. So the program must give them controls they can find, and answer each one straight away. |
+| The person watching | Interaction | A viewer mostly sits back and watches, but they also need to pause the ride, and step it forward and back. So the program must give them controls, and answer each one straight away. |
 
-The book takes the pieces in turn. Things come first: what a cow, a tree or a tower is, and the shapes it's made of. Then the rider's view: the trip every thing takes from its place on the road into the frame, with the math behind it saved for a chapter near the end. Then the world: the sky, the mountains, the road and everything along it. Those three make one frame, held still. Motion fills the second half of the book: the clock, the rider, the truck, the cat and the bird, each carried on from step to step. The person watching comes last, at the platform, where the frames go out and the keys come in.
+The book takes the pieces in turn. Things come first: what a cow, a tree or a tower is, and the shapes it's made of. Then the rider's view: the trip every thing takes from its place on the road into the frame, with the math behind it saved for a chapter near the end. The world comes after the view, because every part of it takes that same trip: the sky, the mountains, the road and everything along it. Those three make one frame, held still. Motion fills the second half of the book: moments that follow one another like a flip book's pages, and the clock, the rider, the truck, the cat and the bird, each carried on from step to step. The person watching comes last, at the platform, where the frames go out and the keys come in.
 
-Each of those pieces lives somewhere in the code. So before we read the first one, a short chapter shows how a Roc program is laid out: the platform it runs on, the modules it's made of, and the packages it uses.
+Each of those pieces lives somewhere in the code. So before we read the first one, a short chapter shows how a Roc program is laid out: the platform it runs on, the modules it's made of, and the packages it uses. The two after it read Roc's types and functions.
 
 ## Platforms, packages and modules
 
@@ -1231,7 +1231,7 @@ Here's the function, piece by piece:
 
 ## Pure functions and effects
 
-The same moment always gives the same next moment, and the same picture. In Roc, a function's type guarantees it: the type says whether the function has effects.
+The same moment always gives the same next moment, and the same picture. In Roc, a function's type guarantees that sameness: the type says whether the function has effects.
 
 An effect is anything beyond working out an answer: reading a key, reading the time, painting a canvas. A function with effects carries two marks, one in its name and one in its type, and the compiler rejects a pure function that calls one:
 
@@ -1245,9 +1245,9 @@ A `match` branch's `=>` is another use of the same symbol. Every function the ri
 
 ### The keys
 
-The viewer's keys reach the ride as a plain value. Each frame, the platform reads the keys and hands the app's step a snapshot of them. The step is pure, so the same model and the same snapshot always give the same next model. The {{chapter The platform}} chapter follows a key from the viewer to the step.
+The viewer's keys reach the ride as a plain value. For each step, the platform reads the keys and hands the app's step a snapshot of them. The step is pure, so the same model and the same snapshot always give the same next model. The {{chapter The platform}} chapter shows how the keys reach the step.
 
-So the road and the keys fix every moment of a ride, and the ride can make any moment again. The next chapter starts on the first of the four things a moment carries: the clock.
+So every moment of a ride follows from the road it runs on and the keys the viewer presses, and the ride can make any moment again. The next chapter starts on the first of the four things a moment carries: the clock.
 
 ## Opaque types: the clock
 
@@ -2482,13 +2482,13 @@ The model travels as a `Box(model)`: the model behind a pointer, which the platf
 
 ### The person watching
 
-Mostly, Safari Ride is a screensaver: you sit back and watch it. You can also take the controls. Click the ride to give it the keyboard. Space pauses it, and Right and Left step it forward and back: one step a frame while it's paused, and four while it plays. J jumps to the next segment of the road, and R starts the ride over, running.
+Mostly, Safari Ride is a screensaver: you sit back and watch it. You can also take the controls. Click the ride to give it the keyboard. Space pauses it. Held down, Right and Left move it forward and back, one step at a time while it's paused, and four at a time while it plays. J jumps to the next segment of the road, and R starts the ride over, running.
 
 The snapshot goes to the app's step, `SafariApp.model_at_next_step`. The step takes the model, which is the tour and whether it's paused, and the snapshot, and returns the next model. Here's the part that pauses and steps:
 
 {{code SafariApp.model_at_next_step from "motion = if input.key_pressed(KeySpace)" to "m.tour.step_forward()"}}
 
-`key_pressed` returns whether a key went down since the last frame, so one tap of Space pauses the ride once. `key_down` returns whether a key is held, so holding Right keeps the ride moving. The step reads the snapshot on every tick, so each control answers on the next frame.
+`key_pressed` returns whether a key went down since the last step, so one tap of Space pauses the ride once. `key_down` returns whether a key is held, so holding Right keeps the ride moving. The step reads the snapshot every time it runs, so each control answers on the next step.
 
 ### The host
 
