@@ -82,6 +82,8 @@ digraph pieces {
 | Motion | Persistence | The rider rides on, the truck drives ahead, the cat crosses the road and the sun goes down. At every step, something must carry each of them on from where it was, and the moves must fit together. The cat times its crossing to the rider coming toward it, and a cat in the road stops the rider speeding up. |
 | The person watching | Interaction | A viewer mostly sits back and watches, but they also need to pause the ride, step it forward and rewind it. So the program must give them controls they can find, and answer each one straight away. |
 
+The book takes the pieces in turn. Things come first: what a cow, a tree or a tower is, and the shapes it's made of. Then the rider's view: the trip every thing takes from its place on the road into the frame, with the math behind it saved for a chapter near the end. Then the world: the sky, the mountains, the road and everything along it. Those three make one frame, held still. Motion fills the second half of the book: the clock, the rider, the truck, the cat and the bird, each carried on from step to step. The person watching comes last, at the platform, where the frames go out and the keys come in.
+
 Each of those pieces lives somewhere in the code. So before we read the first one, a short chapter shows how a Roc program is laid out: the platform it runs on, the modules it's made of, and the packages it uses.
 
 ## Platforms, packages and modules
@@ -1241,13 +1243,9 @@ An effect is anything beyond working out an answer: reading a key, reading the t
 
 A `match` branch's `=>` is another use of the same symbol. Every function the ride runs has the thin arrow. The effects live in the platform, under the ride's code. The platform times the frames, reads the keys and paints the picture.
 
-### Pausing and stepping
+### The keys
 
-Space pauses the ride, and Right and Left step it forward and back: one step a frame while it's paused, and four while it plays. One pure function handles the keys. It takes the model, which is the tour and whether it's paused, and a snapshot of the input, and returns the next model:
-
-{{code SafariApp.model_at_next_step from "motion = if input.key_pressed(KeySpace)" to "m.tour.step_forward()"}}
-
-Each frame, the platform reads the keys and hands the app a snapshot, a plain value. `key_pressed` returns whether a key went down since the last frame, so one tap of Space pauses the ride once. `key_down` returns whether a key is held, so holding Right keeps the ride moving. The same model and the same snapshot always give the same next model.
+The viewer's keys reach the ride as a plain value. Each frame, the platform reads the keys and hands the app's step a snapshot of them. The step is pure, so the same model and the same snapshot always give the same next model. The {{chapter The platform}} chapter follows a key from the viewer to the step.
 
 So the road and the keys fix every moment of a ride, and the ride can make any moment again. The next chapter starts on the first of the four things a moment carries: the clock.
 
@@ -2437,7 +2435,7 @@ Every one of these checks runs in a terminal, on the same lists of shapes the pa
 
 ## The platform
 
-Every chapter so far has ended in a list of shapes. This chapter follows the list onto the screen. On the way it shows where the ride's effects live: in a small platform under the Roc code, which every app in this book shares.
+Every chapter so far has ended in a list of shapes. This chapter follows the list onto the screen, and the viewer's keys back into the ride, the last of the five pieces. On the way, we see where the ride's effects live: in a small platform under the Roc code, which every app in this book shares.
 
 One tick, in order
 ```dot
@@ -2482,13 +2480,23 @@ Every one of the eleven functions has the thin arrow, so all of them are pure. A
 
 The model travels as a `Box(model)`: the model behind a pointer, which the platform holds and only Roc reads. The input travels as seven numbers: the keys held and struck, the mouse buttons held and struck, the pointer's place across and down, and the wheel. `WasmApp.program` builds them back into a snapshot, with `Input.of` for the whole and `Mouse.of` for the mouse.
 
+### The person watching
+
+Mostly, Safari Ride is a screensaver: you sit back and watch it. You can also take the controls. Click the ride to give it the keyboard. Space pauses it, and Right and Left step it forward and back: one step a frame while it's paused, and four while it plays. J jumps to the next segment of the road, and R starts the ride over, running.
+
+The snapshot goes to the app's step, `SafariApp.model_at_next_step`. The step takes the model, which is the tour and whether it's paused, and the snapshot, and returns the next model. Here's the part that pauses and steps:
+
+{{code SafariApp.model_at_next_step from "motion = if input.key_pressed(KeySpace)" to "m.tour.step_forward()"}}
+
+`key_pressed` returns whether a key went down since the last frame, so one tap of Space pauses the ride once. `key_down` returns whether a key is held, so holding Right keeps the ride moving. The step reads the snapshot on every tick, so each control answers on the next frame.
+
 ### The host
 
 The platform's own code is a host and a little JavaScript. `host.zig`, in Zig, runs inside the WebAssembly beside the app, holds the model, and calls the app's Roc functions. `canvas_app_runner.js`, in the browser, keeps time and gathers the input. For each tick it calls the host's `advance`, which steps the model, and when the browser is ready to draw, `computeFrame`, which returns where the frame's list of shapes sits in memory. When the browser falls behind, the runner steps up to four times before it draws once.
 
 The runner reads the shapes out of memory with `roc_glue.js`, a reader generated from the platform's types, and `shapes_canvas.js` paints them on the page's canvas. On the next call to `computeFrame`, the host hands the last frame's list to Roc's `release` before it asks for a new one. `release` is pure too: it takes the list and returns `{}`. Roc frees a value when its last reference goes, so passing the list to `release` frees it. The freeing runs in the app's compiled Roc code, which has the layout of a `Shapes.Shape`.
 
-The runner and the painter come to under 700 lines of JavaScript, and they serve every app on the platform. They handle the keys, the mouse, the canvas and the sound, and they read shapes. The ride reaches them as a list of shapes.
+The runner and the painter come to under 700 lines of JavaScript, and they serve every app on the platform. They gather the keys and the mouse, paint the canvas, play the sound, and read shapes. The ride reaches them as a list of shapes.
 
 ### A frame is a list
 
