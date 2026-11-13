@@ -1187,7 +1187,7 @@ That's a tower: rods and a disc, worked out again each frame from its segment, t
 
 ## Stills
 
-Every animal in Safari Ride is drawn from a still: a small picture made of filled polygons, stored as data. The cow and the elephant each have one still. The cat has seven, one for each pose, and the bird has six. Those two wait for the second half, when things move, but their stills are pictures like any other, and here they are:
+The cows of the {{chapter Things}} chapter and the bend animals after it are drawn from stills, and this chapter opens one up. Every animal in Safari Ride is drawn from a still: a small picture made of filled polygons, stored as data. The cow and the elephant each have one still. The cat has seven, one for each pose, and the bird has six. Those two wait for the second half, when things move, but their stills are pictures like any other, and here they are:
 
 ```widget stills
 Every pose of the cat and the bird. Click one to see it large, and click it again for its polygons.
@@ -1219,7 +1219,7 @@ A billboard's sprite is its still, drawn this way, at the height its spot and th
 
 ### How the stills got made
 
-The stills are the least readable code in Safari Ride, because programs wrote them. They're generated data, encoded as Roc, and here's where they came from.
+The stills are the least readable code in Safari Ride, because programs generated most of them. They're generated data, encoded as Roc, and here's where they came from.
 
 At a larger company, a picture like these would pass through three people. An artist would draw it. A software developer would build the tools that get it into the game. A project manager would look at the result and decide whether it's good enough. On Safari Ride, Claude, the AI that wrote its code, played the first two roles, and Steve, who made the ride, played the third.
 
@@ -1265,7 +1265,7 @@ A pig herd has two shapes, as a tag union:
 
 {{code PigHerd.herd_pigs}}
 
-The first segments with pigs get a big herd, seven rows of seven, and the rest get two short rows. A `BigHerd` carries its sizes, and `TwoRows` is a plain tag, so the `match` hands each shape to its own function. In each herd, one pig stands out from the rest, and the rider's chapters in the second half come back to it.
+The first two herds of pigs are big, seven rows of seven, and the rest are two short rows. A `BigHerd` carries its sizes, and `TwoRows` is a plain tag, so the `match` hands each shape to its own function. In the first two herds, one pig stands out from the rest and catches the rider's eye, and the rider's chapters in the second half come back to it.
 
 `BillboardSighting` sights every herd's billboards, as the pipeline sights any thing beside the road.
 
