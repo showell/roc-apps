@@ -106,7 +106,7 @@ The brackets after `app` name the two things the app hands the platform, and the
 
 ## Types
 
-Types are at the heart of every Roc program. A type says what a value holds, and the compiler checks every value against its type. So a good way to meet a Roc program is to read its types.
+Types are at the heart of every Roc program. A type says what a value holds, and the compiler checks every value against its type. That gives this book its rule: get the types right, and everything else follows. A type that holds just the values that make sense leaves each function a plain job, and the compiler checks the rest. So a good way to meet a Roc program is to read its types.
 
 This chapter takes one tour across Safari Ride, with a stop for each of the five pieces from the {{chapter The problem}} chapter: things, the world, the rider's view, motion and the person watching. On the way, you learn to read the types Roc programs are built from: numbers, records, tags, type variables and the types of functions. The next chapter reads one function closely, and the rest come piece by piece.
 
@@ -394,6 +394,8 @@ This match expression doesn't cover all possible cases.
 Missing patterns:
         FacesRight
 ```
+
+Here, getting the types right pays the most. A tag union lists every case, so when a new tag joins it, the compiler names every `match` that has yet to handle it.
 
 ### Four animals
 
@@ -1261,7 +1263,7 @@ Both hold a whole number, so a bare number could pass for either. Here's a line 
 
 {{fails clock_plus_seven}}
 
-The compiler rejects the line. `+` calls the `plus` method, and `Clock.plus` takes a `Steps`. The line passes it a bare 7. The {{chapter Mountains}} chapter splits direction the same way: a `Bearing` is a direction, and a `Turn` is a change of direction.
+The compiler rejects the line. `+` calls the `plus` method, and `Clock.plus` takes a `Steps`. The line passes it a bare 7. With the types right, a mixed-up sum is a compile error, found before the ride ever runs. The {{chapter Mountains}} chapter splits direction the same way: a `Bearing` is a direction, and a `Turn` is a change of direction.
 
 ### The module
 
@@ -2556,7 +2558,7 @@ Ask of each thing on the screen where it comes from:
 | Its headlights | Derived from the clock, through the sky's darkness |
 | Its brake lights | Derived from the truck, which says whether its last step slowed it |
 
-Every row comes from the four and the road. Even the truck, whose progress the ride carries, reaches the frame through the camera like everything else. The book set out to show one design: a small state carried from step to step, everything else derived from it, and types that allow only right states. The appendices gather the patterns that came up along the way.
+Every row comes from the four and the road. Even the truck, whose progress the ride carries, reaches the frame through the camera like everything else. The book set out to show one design: a small state carried from step to step, everything else derived from it, and types that allow only right states. Get the types right, and everything else follows. The appendices gather the patterns that came up along the way.
 
 ## Appendix: the patterns
 
