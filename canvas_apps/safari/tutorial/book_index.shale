@@ -1,0 +1,182 @@
+-- budget: steps=2000000000 reads=10 read_bytes=20000000 output_bytes=400000
+-- This script builds the book's index from its prose, and reports what the
+-- index says about the book's structure. It reads the built book, so run the
+-- tutorial gate first:
+--
+--   cd <roc-apps checkout> && shale canvas_apps/safari/gates/run.shale part=tutorial
+--   shale canvas_apps/safari/tutorial/book_index.shale
+--
+-- The terms and their categories live in tutorial/index_terms.txt. A term is
+-- found in a chapter when one of its patterns matches a line of that
+-- chapter's prose: every line outside a fence, headings and table cells
+-- included, read in lower case. The appendices are left out, so the index
+-- points only at chapters.
+--
+-- The output has two parts, both markdown:
+--   the index   one table per category. For each term: the chapter that
+--               mentions it most, the first chapter to mention it, and every
+--               chapter that does, by number;
+--   the smells  what the index shows about the order. A term whose first
+--               chapter mentions it once or twice, well before the chapter
+--               that mentions it most, may be used before it's taught. A term
+--               in a great many chapters may lack a home. A chapter that first
+--               mentions many terms may carry too many new ideas.
+
+const BOOK = arg("book", "canvas_apps/safari/tutorial/build/tutorial.md")
+const TERMS = "canvas_apps/safari/tutorial/index_terms.txt"
+-- A first mention this many chapters or more before the busiest chapter, with
+-- this many mentions or fewer, is reported as a possible forward use.
+const EARLY_GAP = 3
+const EARLY_MENTIONS = 2
+-- A term in at least this many chapters is reported as spread.
+const SPREAD = 15
+-- A chapter that first mentions at least this many terms is reported.
+const NEW_TERMS = 6
+
+-- The terms as `{category, name, patterns}`, in the file's order.
+function terms_of(text)
+  local found = {}
+  local category = ""
+  local number = 0
+  for raw in split(text, "\n") do
+    number = number + 1
+    local l = trim(raw)
+    if starts_with(l, "## ") then
+      category = trim(sub(l, 4))
+    elseif l ~= "" and not starts_with(l, "#") then
+      if category == "" then fail("book_index: " .. TERMS .. ":" .. number .. ": a term before any `## Category`") end
+      local parts = split(l, " | ")
+      local name = trim(parts[1])
+      local patterns = {}
+      if #parts == 1 then
+        push(patterns, "\\b" .. lower(name) .. "\\b")
+      else
+        for i = 2, #parts do push(patterns, trim(parts[i])) end
+      end
+      push(found, {category = category, name = name, patterns = patterns})
+    end
+  end
+  return found
+end
+
+-- The chapters as `{number, title, lines}`, each holding its prose in lower
+-- case. The appendices and Credits end the list.
+function chapters_of(text)
+  local found = {}
+  local now = nil
+  local fenced = false
+  for l in split(text, "\n") do
+    if starts_with(l, "```") then
+      fenced = not fenced
+    elseif not fenced then
+      if starts_with(l, "## ") then
+        local title = trim(sub(l, 4))
+        if starts_with(title, "Appendix") or title == "Credits" then break end
+        now = {number = #found + 1, title = title, lines = {}}
+        push(found, now)
+      elseif now ~= nil then
+        push(now.lines, lower(l))
+      end
+    end
+  end
+  return found
+end
+
+-- How many lines of `chapter` match any of `patterns`.
+function mentions(chapter, patterns)
+  local n = 0
+  for l in chapter.lines do
+    local hit = false
+    for p in patterns do
+      if not hit and re_find(l, p) ~= nil then hit = true end
+    end
+    if hit then n = n + 1 end
+  end
+  return n
+end
+
+-- One term's entry: `{term, counts, chapters, first, most}`, `counts` holding
+-- the lines that mention it in each chapter it's in.
+function entry_of(term, chapters)
+  local counts = {}
+  local present = {}
+  local first = nil
+  local most = nil
+  for c in chapters do
+    local n = mentions(c, term.patterns)
+    if n > 0 then
+      counts["" .. c.number] = n
+      push(present, c.number)
+      if first == nil then first = c end
+      if most == nil or n > counts["" .. most.number] then most = c end
+    end
+  end
+  if first == nil then return {term = term, counts = counts, chapters = present} end
+  return {term = term, counts = counts, chapters = present, first = first, most = most}
+end
+
+const CHAPTERS = chapters_of(read(BOOK))
+if #CHAPTERS == 0 then fail("book_index: no chapters in " .. BOOK .. ": run the tutorial gate first") end
+const ENTRIES = {}
+for t in terms_of(read(TERMS)) do push(ENTRIES, entry_of(t, CHAPTERS)) end
+
+-- The index.
+print("# The index")
+local category = ""
+for e in ENTRIES do
+  if e.term.category ~= category then
+    category = e.term.category
+    print("")
+    print("## " .. category)
+    print("")
+    print("| Term | Most in | First in | Every chapter |")
+    print("|---|---|---|---|")
+  end
+  if not has_key(e, "first") then
+    print("| " .. e.term.name .. " | (nowhere) | | |")
+  else
+    local numbers = {}
+    for n in e.chapters do push(numbers, "" .. n) end
+    print("| " .. e.term.name .. " | " .. e.most.number .. ". " .. e.most.title .. " | " .. e.first.number .. ". " .. e.first.title .. " | " .. join(numbers, ", ") .. " |")
+  end
+end
+
+-- The smells.
+print("")
+print("# The smells")
+print("")
+print("## Mentioned early, dwelt on later")
+print("")
+print("| Term | First in | Mentions there | Most in | Mentions there |")
+print("|---|---|---|---|---|")
+for e in ENTRIES do
+  if has_key(e, "first") and e.most.number - e.first.number >= EARLY_GAP and e.counts["" .. e.first.number] <= EARLY_MENTIONS then
+    print("| " .. e.term.name .. " | " .. e.first.number .. ". " .. e.first.title .. " | " .. e.counts["" .. e.first.number] .. " | " .. e.most.number .. ". " .. e.most.title .. " | " .. e.counts["" .. e.most.number] .. " |")
+  end
+end
+print("")
+print("## Spread across " .. SPREAD .. " chapters or more")
+print("")
+print("| Term | Chapters | Most in |")
+print("|---|---|---|")
+for e in ENTRIES do
+  if #e.chapters >= SPREAD then print("| " .. e.term.name .. " | " .. #e.chapters .. " | " .. e.most.number .. ". " .. e.most.title .. " |") end
+end
+print("")
+print("## Found nowhere")
+print("")
+for e in ENTRIES do
+  if not has_key(e, "first") then print("- " .. e.term.name) end
+end
+print("")
+print("## Chapters that first mention " .. NEW_TERMS .. " terms or more")
+print("")
+print("| Chapter | New terms |")
+print("|---|---|")
+for c in CHAPTERS do
+  local fresh = {}
+  for e in ENTRIES do
+    if has_key(e, "first") and e.first.number == c.number then push(fresh, e.term.name) end
+  end
+  if #fresh >= NEW_TERMS then print("| " .. c.number .. ". " .. c.title .. " | " .. join(fresh, ", ") .. " |") end
+end

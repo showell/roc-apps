@@ -1,0 +1,87 @@
+# The book's index terms. tutorial/book_index.shale finds each term in the
+# prose of the built book, chapter by chapter.
+#
+# A line `## Category` starts a category. Every other line that isn't blank or
+# a `#` comment is `term | pattern | pattern …`. A pattern is a regular
+# expression matched against a line of prose in lower case, code spans and
+# all, so a backticked keyword is written with its backticks. A term with no
+# pattern is found by its own name, as a whole word.
+
+## Roc concepts
+Module | \bmodules?\b
+Package | \bpackages?\b
+Platform | \bplatforms?\b
+Type annotation | \bannotations?\b
+Record | \brecords?\b
+Record update | record updates?
+Tag union | tag unions?
+Tag | \btags?\b
+`match` | `match`
+Type variable | type variables?
+Opaque type | \bopaque\b
+Nominal type | \bnominal\b
+Method | \bmethods?\b
+Static dispatch | static dispatch|method calls?
+`where` clause | `where`
+Function as a value | functions? (is|as) an? (ordinary )?value|function stored in a record|function in a record
+Anonymous function | anonymous function|lambda
+Block | \bblocks?\b
+Constant | \bconstants?\b
+Closure | \bclosures?\b
+Doc comment | doc comments?
+`if` expression | `if`|`else if`
+`Try` | `try`|`try\(
+`?` | `\?`
+`??` | `\?\?`
+`crash` | `crash`
+Invariant | \binvariants?\b
+`expect` | `expect`
+`var` and `while` | `var`|`while`|`for`
+Pure function | pure functions?|\bpure\b
+Effect and `!` | \beffects?\b|`main!`|`!` suffix
+Thin and thick arrows | thin arrow|thick arrow|`->`|`=>`
+`..` in a pattern | `\.\.`
+List functions | `map`|`fold`|`join_map`|`keep_oks`|`map_with_index`|`find_first`|`map2`|`concat`
+`Box` | `box`|`box\(
+
+## Animation concepts
+Shape | \bshapes?\b
+Triangle and rectangle | \btriangles?\b|\brectangles?\b
+Cone | \bcones?\b
+Lights and glow | headlights?|brake lights?|\bglow\b
+Frame | \bframes?\b
+Step | \bsteps?\b
+Picture | \bpictures?\b
+Sprite | \bsprites?\b
+Rendering | \brenderings?\b
+Depth and paint order | \bdepth\b|far to near|paint(ed)? order|painted in order
+Camera | \bcameras?\b
+Lens and focal length | \blens\b|focal length
+Perspective | \bperspective\b
+Near plane | near plane
+Horizon | \bhorizon\b
+Projection | \bproject(s|ed|ion)?\b
+Clipping | \bclip(s|ped|ping)?\b|\bcuts?\b at the near plane
+Billboard | \bbillboards?\b
+Still | \bstills\b|\b(a|the|its|one|each|every) still\b|`still`|still's
+Polygon and quad | \bpolygons?\b|\bquads?\b
+Blend | `blend`
+Lean and roll | \blean(s|ing)?\b|\broll\b
+Yaw and bearing | \byaw\b|\bbearings?\b
+Easing | `easing\.smoothstep`|\beas(e|es|ing)\b
+Timeline and stage | \btimelines?\b|`animation\.stage`|`playing`|`waiting`
+Flip book | flip book
+
+## The ride's design
+Carried and derived | \bcarried\b|\bcarries\b|\bderived?\b
+Segment and route | \bsegments?\b|\broutes?\b
+Bend | \bbends?\b
+Sighting | \bsightings?\b
+Spot | \bspots?\b
+Kind | \bkinds\b|`kind`|\b(the|its|each|every|one) kind\b
+Solid, card, far scenery | \bsolids?\b|\bcards?\b|far scenery
+Encounter and encounter plan | \bencounters?\b|encounter plan
+Chain of limits | chain of limits|`[a-z_]*_limit`
+Rehearsal | \brehears(al|als|ing|e)\b|\bcoasts?\b
+Frame hash | frame hash|\bhash(es)?\b
+The five pieces | five pieces|the person watching|the rider's view
