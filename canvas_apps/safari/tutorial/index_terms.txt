@@ -6,9 +6,13 @@
 # expression matched against a line of prose in lower case, code spans and
 # all, so a backticked keyword is written with its backticks. A term with no
 # pattern is found by its own name, as a whole word.
+#
+# A term's main chapter is the one that mentions it most. A part `main: Title`
+# names it instead, where the count picks a chapter that only passes through,
+# and the script stops if that chapter never mentions the term.
 
 ## Roc concepts
-Module | \bmodules?\b
+Module | \bmodules?\b | main: Platforms, packages and modules
 Package | \bpackages?\b
 Platform | \bplatforms?\b
 Type annotation | \bannotations?\b
@@ -18,7 +22,7 @@ Tag union | tag unions?
 Tag | \btags?\b
 `match` | `match`
 Type variable | type variables?
-Opaque type | \bopaque\b
+Opaque type | \bopaque\b | main: Opaque types: the clock
 Nominal type | \bnominal\b
 Method | \bmethods?\b
 Static dispatch | static dispatch|method calls?
@@ -40,18 +44,18 @@ Invariant | \binvariants?\b
 Pure function | pure functions?|\bpure\b
 Effect and `!` | \beffects?\b|`main!`|`!` suffix
 Thin and thick arrows | thin arrow|thick arrow|`->`|`=>`
-`..` in a pattern | `\.\.`
+`..` in a record | `\.\.`
 List functions | `map`|`fold`|`join_map`|`keep_oks`|`map_with_index`|`find_first`|`map2`|`concat`
 `Box` | `box`|`box\(
 
 ## Animation concepts
-Shape | \bshapes?\b
+Shape | \bshapes?\b | main: Shapes
 Triangle and rectangle | \btriangles?\b|\brectangles?\b
 Cone | \bcones?\b
 Lights and glow | headlights?|brake lights?|\bglow\b
-Frame | \bframes?\b
-Step | \bsteps?\b
-Picture | \bpictures?\b
+Frame | \bframes?\b | main: One page
+Step | \bsteps?\b | main: The ride instant
+Picture | \bpictures?\b | main: One page
 Sprite | \bsprites?\b
 Rendering | \brenderings?\b
 Depth and paint order | \bdepth\b|far to near|paint(ed)? order|painted in order
@@ -60,7 +64,7 @@ Lens and focal length | \blens\b|focal length
 Perspective | \bperspective\b
 Near plane | near plane
 Horizon | \bhorizon\b
-Projection | \bproject(s|ed|ion)?\b
+Projection | \bproject(s|ed|ion)?\b | main: The math layer
 Clipping | \bclip(s|ped|ping)?\b|\bcuts?\b at the near plane
 Billboard | \bbillboards?\b
 Still | \bstills\b|\b(a|the|its|one|each|every) still\b|`still`|still's
@@ -72,15 +76,15 @@ Easing | `easing\.smoothstep`|\beas(e|es|ing)\b
 Timeline and stage | \btimelines?\b|`animation\.stage`|`playing`|`waiting`
 Flip book | flip book
 
-## The ride's design
-Carried and derived | \bcarried\b|\bcarries\b|\bderived?\b
+## Safari Ride's design
+Carried and derived | \bcarried\b|\bcarries\b|\bderived?\b | main: The ride instant
 Segment and route | \bsegments?\b|\broutes?\b
-Bend | \bbends?\b
-Sighting | \bsightings?\b
-Spot | \bspots?\b
+Bend | \bbends?\b | main: The road
+Sighting | \bsightings?\b | main: The pipeline
+Spot | \bspots?\b | main: The pipeline
 Kind | \bkinds\b|`kind`|\b(the|its|each|every|one) kind\b
 Solid, card, far scenery | \bsolids?\b|\bcards?\b|far scenery
-Encounter and encounter plan | \bencounters?\b|encounter plan
+Encounter and encounter plan | \bencounters?\b|encounter plan | main: What a cat does to the rider
 Chain of limits | chain of limits|`[a-z_]*_limit`
 Rehearsal | \brehears(al|als|ing|e)\b|\bcoasts?\b
 Frame hash | frame hash|\bhash(es)?\b

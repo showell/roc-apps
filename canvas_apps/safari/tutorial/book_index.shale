@@ -48,12 +48,13 @@ function terms_of(text)
       local parts = split(l, " | ")
       local name = trim(parts[1])
       local patterns = {}
-      if #parts == 1 then
-        push(patterns, "\\b" .. lower(name) .. "\\b")
-      else
-        for i = 2, #parts do push(patterns, trim(parts[i])) end
+      local main = ""
+      for i = 2, #parts do
+        local part = trim(parts[i])
+        if starts_with(part, "main: ") then main = trim(sub(part, 7)) else push(patterns, part) end
       end
-      push(found, {category = category, name = name, patterns = patterns})
+      if #patterns == 0 then push(patterns, "\\b" .. lower(name) .. "\\b") end
+      push(found, {category = category, name = name, patterns = patterns, main = main})
     end
   end
   return found
@@ -112,6 +113,14 @@ function entry_of(term, chapters)
     end
   end
   if first == nil then return {term = term, counts = counts, chapters = present} end
+  if term.main ~= "" then
+    most = nil
+    for c in chapters do
+      if c.title == term.main then most = c end
+    end
+    if most == nil then fail("book_index: " .. term.name .. "'s main chapter, " .. term.main .. ", is no chapter of the book") end
+    if not has_key(counts, "" .. most.number) then fail("book_index: " .. term.name .. "'s main chapter, " .. term.main .. ", never mentions it") end
+  end
   return {term = term, counts = counts, chapters = present, first = first, most = most}
 end
 
@@ -119,6 +128,64 @@ const CHAPTERS = chapters_of(read(BOOK))
 if #CHAPTERS == 0 then fail("book_index: no chapters in " .. BOOK .. ": run the tutorial gate first") end
 const ENTRIES = {}
 for t in terms_of(read(TERMS)) do push(ENTRIES, entry_of(t, CHAPTERS)) end
+
+-- A term's place in the alphabet: lower case, with its backticks and other
+-- marks left out, so `match` sorts under m.
+function sort_key(name)
+  return re_replace(lower(name), "[^a-z0-9 ]", "")
+end
+
+-- The entries of `category` in alphabetical order.
+function alphabetical(category)
+  local keyed = {}
+  local by_key = {}
+  for i = 1, #ENTRIES do
+    local e = ENTRIES[i]
+    if e.term.category == category and has_key(e, "first") then
+      local key = sort_key(e.term.name) .. "\t" .. i
+      push(keyed, key)
+      by_key[key] = e
+    end
+  end
+  local ordered = {}
+  for key in sort(keyed) do push(ordered, by_key[key]) end
+  return ordered
+end
+
+-- The categories, in the terms file's order.
+function categories()
+  local found = {}
+  for e in ENTRIES do
+    if #found == 0 or found[#found] ~= e.term.category then push(found, e.term.category) end
+  end
+  return found
+end
+
+-- `part=appendix` prints the book's index appendix and nothing else: a table
+-- for each category, its terms in alphabetical order, each with its main
+-- chapter as a link and every other chapter that mentions it, by number. A
+-- term in SPREAD chapters or more is "throughout". tutorial/build.shale runs
+-- this for the `{{index}}` include.
+if arg("part", "report") == "appendix" then
+  for category in categories() do
+    print("### " .. category)
+    print("")
+    print("| Term | Main chapter | Also in |")
+    print("|---|---|---|")
+    for e in alphabetical(category) do
+      local others = "throughout"
+      if #e.chapters < SPREAD then
+        local numbers = {}
+        for n in e.chapters do
+          if n ~= e.most.number then push(numbers, "" .. n) end
+        end
+        others = join(numbers, ", ")
+      end
+      print("| " .. e.term.name .. " | {{chapter " .. e.most.title .. "}} | " .. others .. " |")
+    end
+    print("")
+  end
+else
 
 -- The index.
 print("# The index")
@@ -179,4 +246,5 @@ for c in CHAPTERS do
     if has_key(e, "first") and e.first.number == c.number then push(fresh, e.term.name) end
   end
   if #fresh >= NEW_TERMS then print("| " .. c.number .. ". " .. c.title .. " | " .. join(fresh, ", ") .. " |") end
+end
 end

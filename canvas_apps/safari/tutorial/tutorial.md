@@ -615,7 +615,7 @@ So the compiler rejects a call that passes an `across` where an `along` belongs.
 
 ### Sighted
 
-The screen shows what the camera sees. So for each frame, the pipeline sights every placed thing in play, and works out where it stands from the camera:
+The screen shows what the camera sees, and the camera is the rider's eye: it sits 1.2 metres above the road and looks where the rider looks. So for each frame, the pipeline sights every placed thing in play, and works out where it stands from the camera:
 
 {{code Pipeline.Sighted}}
 
@@ -2268,7 +2268,7 @@ The camera stands at `vantage`, and its yaw is the way it points, as a turn from
 
 Next, `RiderView.rider_point_ahead`, from the {{chapter Errors as tag unions}} chapter, checks the point against the near plane, 0.4 metres ahead of the camera. It refuses a point short of that as `BehindCamera`, and returns one at or past it as a `RiderPointAhead`. `at_height` raises it to a `PointAtHeightAhead`. Both types are opaque, and every way to build one starts from a point at or past the near plane.
 
-The camera is a pinhole, and a pinhole is similar triangles:
+`Camera.project` projects the point onto the screen. The camera is a pinhole, and a pinhole is similar triangles:
 
 {{code Camera.project}}
 
@@ -2301,7 +2301,7 @@ A region is two functions in a record: whether a corner lies inside, and where a
 
 {{code RiderView.clipped_points}}
 
-So a point on the road reaches the screen by four moves: a rotation for each bend, one turn to the camera, a check at the near plane, and a division by `forward`.
+So a point on the road reaches the screen by four moves: a rotation for each bend, one turn to the camera, a check at the near plane, and a projection, which divides by `forward`.
 
 ## Proving it
 
@@ -2593,6 +2593,12 @@ This book uses these words in one sense only.
 | Step | One tick of the ride. Each step has one frame. |
 | Still | An animal's drawing, as polygons in units of its own height. |
 | Tier | One layer of a conifer's crown. |
+
+## Appendix: index
+
+Each term points to the chapter that mentions it most, then by number to every other chapter it appears in. A term in fifteen chapters or more says "throughout".
+
+{{index}}
 
 ## Credits
 

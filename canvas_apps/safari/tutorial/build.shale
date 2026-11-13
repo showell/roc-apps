@@ -74,6 +74,12 @@
 -- gates/proof.expected. A step the file doesn't have stops the build, and so
 -- does a step it has that no row shows, once there are any rows.
 --
+-- `{{index}}` becomes the book's index: a table for each category of
+-- tutorial/index_terms.txt, its terms in alphabetical order, each with its
+-- main chapter and the others that mention it. tutorial/book_index.shale is
+-- the index's one home, so the build writes the book first, runs that script
+-- on it with `part=appendix`, and puts its tables where the include stands.
+--
 -- Every module beside safari's others has to be named somewhere in the source,
 -- as a whole word, in prose, a diagram or an include. A module the book never
 -- names stops the build. NOT_NAMED and NOT_NAMED_ENDINGS are the exceptions:
@@ -104,7 +110,9 @@ const PROOF_ROW = "^\\{\\{proof row ([0-9]+) ([^}]+)\\}\\}$"
 const PROOF_HASH = "^RasterFrame ([0-9]+): hash ([0-9a-f]+)$"
 const PROOF_SHAPES = "^ShapesFrame ([0-9]+): differ 0 of [0-9]+, triangles [0-9]+, shapes ([0-9]+)$"
 const CHAPTER_LINK = "\\{\\{chapter ([^{}]+)\\}\\}"
-const NOT_AN_INCLUDE = "not a line of the form {{code Module.name}}, {{code Module.name from \"text\" to \"text\"}}, {{module Name}}, {{signatures Module.name Module.name}}, {{types row Module.name words}}, {{expect Module.name}}, {{proof row N words}} or {{fails name}}, nor prose holding {{chapter Title}}"
+const INDEX = "{{index}}"
+const BOOK_INDEX = "canvas_apps/safari/tutorial/book_index.shale"
+const NOT_AN_INCLUDE = "not a line of the form {{code Module.name}}, {{code Module.name from \"text\" to \"text\"}}, {{module Name}}, {{signatures Module.name Module.name}}, {{types row Module.name words}}, {{expect Module.name}}, {{proof row N words}}, {{fails name}} or {{index}}, nor prose holding {{chapter Title}}"
 const NO_TITLE = "a diagram needs a title line directly above it"
 const CUT = "# ..."
 const PROOF_FILE = "/gates/proof.expected"
@@ -164,7 +172,9 @@ function read_entries(source, text, folder)
       entry.chapters = {}
       for m in linked do push(entry.chapters, m.groups[1]) end
     end
-    if contains(re_replace(l, CHAPTER_LINK, ""), "{{") then
+    if l == INDEX then
+      entry.index = true
+    elseif contains(re_replace(l, CHAPTER_LINK, ""), "{{") then
       local failing = re_find(l, FAILS)
       local whole = re_find(l, WHOLE_MODULE)
       local proof_row = re_find(l, PROOF_ROW)
@@ -614,6 +624,17 @@ function notes_text(notes)
 end
 
 -- The number of includes expanded.
+-- The index's tables, from book_index.shale run on the book as written so far.
+function book_index(entry, output)
+  local r = run({"shale", "--root", ".", BOOK_INDEX, "part=appendix", "book=" .. output}, {timeout_ms = 120000, head = 2000})
+  if r.ended ~= "exit" or get(r, "code", -1) ~= 0 then stop(entry, "book_index.shale failed: " .. trim(r.out)) end
+  local tables = {}
+  for l in lines(r.out) do
+    if not starts_with(l, "── ") then push(tables, l) end
+  end
+  return trim(join(tables, "\n"))
+end
+
 function build(source, output, folder)
   if exists(output) then remove(output) end
   if exists(notes_path(output)) then remove(notes_path(output)) end
@@ -660,6 +681,13 @@ function build(source, output, folder)
   mkdir(dirname(output))
   replace(output, join(kept, "\n"))
   replace(notes_path(output), notes_text(notes))
+  for i = 1, #entries do
+    if has_key(entries[i], "index") then
+      kept[i] = book_index(entries[i], output)
+      expanded = expanded + 1
+      replace(output, join(kept, "\n"))
+    end
+  end
   return expanded
 end
 
