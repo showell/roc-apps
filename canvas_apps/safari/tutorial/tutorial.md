@@ -915,10 +915,10 @@ That rectangle is all the grass there is. The sky goes above it, in the next cha
 
 ## The sky
 
-Above the grass is the sky, and in a frame the sky is two colors: one at the top of the frame and one at the horizon, with a fade between them.
+Above the grass is the sky, and in a frame the sky is two colors: one at the top of the frame and one at the horizon, with a fade between them. At step 1,529 the two happen to match, for a reason the end of this chapter gives.
 
 ```widget frame sky
-Step 1,529 of the ride: the trees, the grass, and the day sky over them.
+Step 1,529 of the ride: the trees, the grass, and the sky over them, one day blue.
 ```
 
 A frame asks the `Sky` module for both colors at the ride's clock, and gets them back as one record:
@@ -929,11 +929,11 @@ A frame asks the `Sky` module for both colors at the ride's clock, and gets them
 
 ### The top of the sky
 
-The top of the sky blends from day into night, as far as the sky is dark:
+The top of the sky blends from day into night, by how dark the sky is:
 
 {{code Sky.sky_top_color}}
 
-`day_sky` and `night_sky` are two constants in the module, a pale blue and a deep one. `Sky.darkness_at` says how dark the sky is, as a `Fraction`. `ColorShade.color_between` does the blending:
+`day_sky` and `night_sky` are two constants in the module, a pale blue and a deep one. `Sky.darkness_at`, which the {{chapter Functions}} chapter took apart, says how dark the sky is, as a `Fraction`. It sits inside the `Sky` type's braces, so even its own module calls it by its full name, and the bare names belong to the module's helpers outside the braces. `ColorShade.color_between` does the blending:
 
 {{code ColorShade.color_between}}
 
@@ -953,7 +953,7 @@ The horizon has the top's color, warmed toward red while the sun is near it:
 
 {{code Sky.sky_shape}}
 
-`Screen.above_horizon_rect` is the rectangle from above the top of the screen down to the horizon, 200 pixels past each side, as the grass's rectangle is. Its fill is `Linear`, a fill like `Brush.flat` whose color fades along a line, from `start_point` to `end_point`. Both points sit at `x` zero, so the line runs straight down, from the top of the screen to the horizon. Its `stops` say where along that line the fade begins and ends: it holds the top color for the first fifth of the way, `sky_top_stop`, then reaches the horizon's color at the end. The platform works out every color in between. `Brush.opaque_rgba` makes each color fully solid.
+`Screen.above_horizon_rect` is the rectangle from above the top of the screen down to the horizon, 200 pixels past each side, as the grass's rectangle is. A fill is a tag union, `Brush.Fill`, and `Brush.flat` makes its plainest tag, one color. This fill is its `Linear` tag, whose color fades along a line, from `start_point` to `end_point`. Both points sit at `x` zero, so the line runs straight down, from the top of the screen to the horizon. Its `stops` say where along that line the fade begins and ends: it holds the top color for the first fifth of the way, `sky_top_stop`, then reaches the horizon's color at the end. The platform works out every color in between. `Brush.opaque_rgba` makes each color fully solid.
 
 Every function here works from the clock alone, or from colors worked out from it. So the sky at step 1,529 is the same on every run of the ride. At that step the sun is still high: the sky is near its day color and the horizon has yet to warm, so the two colors match and the picture shows one pale blue. The second half of the book turns the clock to watch them part. One more part of the frame darkens with it: the mountains.
 
@@ -1017,13 +1017,13 @@ That's the far scenery: it turns with the rider and stays where it is. The road 
 
 ## The road
 
-The road is the first part of the world that comes nearer as the rider rides. It's ground: flat patches laid on the grass, in front of the mountains and under everything beside the road.
+The road is the first part of the world that comes nearer as the rider rides. It's ground, laid on the grass in front of the mountains and under everything beside the road.
 
 ```widget frame road
 Step 1,529 of the ride: the road and its ponds, over the grass and under the trees.
 ```
 
-A patch of ground is a list of corners and a color. The road's patches all take one function:
+The ground comes in patches, and a patch is a list of corners on the ground and a color. The road's patches all come from one function:
 
 {{code GroundSighting.road_patch}}
 
@@ -1033,9 +1033,9 @@ Each corner is a `RiderPoint`, a point on the ground seen from the rider, so the
 
 The route is a chain of straight segments with a bend between each one and the next. Each segment in view lays its own ground, with one function:
 
-{{code GroundSighting.ground_patches}}
+{{code GroundSighting.ground_patches from "ground_patches : RoadAhead.RoadView," to "].join()"}}
 
-A segment lays up to three things: the road along it, the paving at its bend into the next segment, and a pond if it ends at one. Each comes as a list, and `join` makes them one. The two `match`es leave a part out by giving an empty list. For the segment just behind the rider, the bend's paving covers its last stretch, so that segment's road list is empty. And the last segment of the road in view, where the road in view ends, lays its road and leaves its bend for a later frame.
+A segment lays up to three things: the road along it, the paving at its bend into the next segment, and a pond if it ends at one. Each comes as a list, and `join` makes them one. The two `match`es leave a part out by giving an empty list: the segment just behind the rider lays only its bend's paving, and the last segment in view lays only its road.
 
 ### Along a segment
 
@@ -1045,7 +1045,9 @@ The road along a segment is one patch:
 
 `corner` is a function named inside the body. It uses `road`, `vantage` and `from_rider` from around it, so each call names only a chunk and an edge. A function that uses names from around it like this is a closure.
 
-The patch runs up the right edge and back down the left, so its corners go round in order. Its edges are cut into chunks of at most `road_chunk_length`, 25 metres, because the ground curves away, and a straight edge any longer would part from the curve by more than a pixel near the horizon. `U32.until(0, n)` counts from 0 up to just short of `n`, and `List.from_iter` collects the count into a list of chunk numbers.
+The patch starts at the left corner of the segment's start, runs up the right edge to the end of every chunk, and comes back down the left, so its corners go round in order. That's why the right edge counts one corner more than the left: the left's first corner is already the patch's first. `U32.until(0, n)` counts from 0 up to just short of `n`, and `List.from_iter` collects the count into a list of chunk numbers.
+
+The edges are cut into chunks of at most `road_chunk_length`, 25 metres. The ride's ground curves away from the rider, on its 100 km radius, and a straight edge any longer would part from the curve by more than a pixel near the horizon.
 
 All of a segment's chunks share one patch. The platform smooths each patch's edges on its own, and where two patches met, the grass would show through as a pale seam.
 
@@ -1057,7 +1059,7 @@ Where one segment bends into the next, the two roads leave a gap on the outside 
 Three bends from above. The paving fills the outside of each turn, and the yellow dot is its apex, where the two roads' outer edges meet.
 ```
 
-The `BendInView` module works out the corner, one step at a time:
+The paving fills the bend's outer corner. The `BendInView` module works it out, one step at a time:
 
 | Job | Function | Its type |
 |---|---|---|
@@ -1065,13 +1067,73 @@ The `BendInView` module works out the corner, one step at a time:
 {{types row BendInView.outer_corner Find the corner, on the road}}
 {{types row BendInView.outer_corner_in_view See the corner from the rider}}
 
-A bend to the right has its outer edge on the left, so the paving changes sides as the road turns. An outer corner is three points: where the first road's outer edge ends, the apex, and where the next road's outer edge starts. `OuterCorner` takes the kind of point as a type variable, so the same record holds road points first and rider points after.
+A bend to the right has its outer edge on the left, so the paving changes sides as the road turns. An outer corner is three points: where the first road's outer edge ends, where the next road's outer edge starts, and between them the apex, where the two outer edges, carried on straight, cross. `OuterCorner` takes the kind of point as a type variable, so the same record holds road points first and rider points after.
 
-`GroundSighting.bend_paving` lays the corner as one more patch. It starts 40 metres before the bend, `lead_in_length`, runs up the left edge, across the start of the next road, and back down the right, and its outer side takes in the corner's three points. Since the paving lays the last 40 metres of the road before the bend, it stands in for the road along the segment just behind.
+`GroundSighting.bend_paving` lays the corner as one more patch. It starts 40 metres before the bend, `lead_in_length`, runs up the left edge, across the start of the next road, and back down the right, and whichever side is outside the turn takes in the corner's three points. Since the paving lays the last 40 metres of the road before the bend, it stands in for the road along the segment just behind.
 
 The ponds are ground too. A segment that ends at a pond lays two more patches, its bank and then its water.
 
 The corner has its paving. Next, the road needs a rail along its outer edge.
+
+## Rails
+
+At each bend, a guard rail runs along the outside of the turn: a metal bar half a metre up, on thin posts. It's the first thing the ride builds that stands up from the ground.
+
+```widget frame rails
+Step 1,529 of the ride: the road, with its guard rails at the bends ahead.
+```
+
+The rail follows a path on the ground. It runs along the road's outer edge for the last 10 metres before the bend, out to the apex, back to the next segment's outer edge, and on along it for 10 metres more:
+
+The path of a guard rail
+```dot
+digraph rail {
+  rankdir=TB;
+  nodesep=0.6;
+  ranksep=0.6;
+  node [shape=box, fontname="Helvetica", fontsize=18, margin="0.25,0.12"];
+  edge [fontname="Helvetica", fontsize=16];
+  up [label="runup_points:\nthe last 10 metres\nbefore the bend"];
+  out [label="leg_points:\nout to the apex"];
+  back [label="leg_points:\nback to the next\nsegment's edge"];
+  on [label="runout_points:\nthe first 10 metres\nafter the bend"];
+  up -> out [label="  turns out"];
+  out -> back [label="  turns back"];
+  back -> on [label="  runs on"];
+}
+```
+
+### From path to quads
+
+`RailSighting` finds the rail at every bend in view:
+
+{{code RailSighting.rail_quads_in_view}}
+
+For each segment in view with a bend after it, `rail_points` finds the path, and `GuardRail.quads_along` cuts it into quads. The path joins four lists, one for each box of the diagram:
+
+{{code RailSighting.rail_points}}
+
+The first line takes apart the record that `outer_corner_in_view` returns, naming its three fields, the corner from the road chapter. A leg between two of them gets a point about every metre:
+
+{{code RailSighting.leg_points}}
+
+A post stands at every point, so the points are a metre apart. Each leg leaves out its first point, `from`, because that's the last point of the leg before it.
+
+### Bars and posts
+
+`GuardRail.quads_along` turns the path into flat pieces with four corners each: a bar between each two neighbouring points, then a post at each point. A piece is a record:
+
+{{code GuardRail.RailQuad}}
+
+Its corners are `PointAtHeight`s, points seen from the rider at some height above the ground, so a bar's top corners stand higher than its bottom ones.
+
+Each quad goes into the frame's depth sort on its own, so a tree can stand in front of one post and behind the next. A quad holds only its corners and a color, so it makes its own rendering, where the things beside the road go through `Pipeline.rendering_of`:
+
+{{code GuardRail.quad_rendering}}
+
+`{ ..quad, color: … }` is a record update: a new record, like `quad` with its `color` changed, and `quad` itself stays as it was. Here the new color is the quad's own, dimmed with the sky. `map_ok` works on a `Try`: it applies its function to an `Ok` and leaves an `Err` as it is, so a quad wholly behind the camera stays refused.
+
+The ride works out each rail afresh every frame, its bars and posts from the route and the rider, and the depth sort places each one. Next, the tallest things beside the road: the radio towers.
 
 ## The modules
 
@@ -1621,58 +1683,6 @@ Two tags say whether the sun is in view, so there's no `null` and no off-screen 
 {{code FrameView.frame_view_at}}
 
 Most of what `frame_view_at` calls takes the clock, and that's the hard part. The sun sinks a little with every step, and the sky's colors, the mountains and the truck's headlights all follow it. That's a lot of heavy lifting for a circle. It gets a chapter of its own, The setting sun, once things start to move.
-
-## Rails
-
-A guard rail is a metal bar on thin posts, along a path on the ground. At each bend, the path runs along the road's outer edge, out to the apex, where the outer edges of the two segments meet, back, and on along the next segment.
-
-New in this chapter:
-
-- Roc: nothing new
-- Modules: `RailSighting`, `GuardRail`
-
-The path of a guard rail
-```dot
-digraph rail {
-  rankdir=LR;
-  node [shape=box, fontname="Helvetica"];
-  up [label="runup_points:\n10 metres along\nthe first segment"];
-  out [label="leg_points:\nout to the apex"];
-  back [label="leg_points:\nback to the\nsecond segment"];
-  on [label="runout_points:\n10 metres along\nthe second segment"];
-  up -> out [label="  turns out"];
-  out -> back [label="  turns back"];
-  back -> on [label="  runs on"];
-}
-```
-
-### Get the types right
-
-A quad is a flat piece with four corners: one for each stretch of bar, and one for each post.
-
-{{code GuardRail.RailQuad}}
-
-Each quad goes into the frame's depth sort on its own, so a tree can stand in front of one post and behind the next. A quad has no kind for `Pipeline` to ask about, so it makes its own `Rendered`, at its own depth:
-
-{{code GuardRail.quad_rendering}}
-
-### The functions
-
-For every bend in view, `RailSighting` finds the rail's path and cuts it into quads:
-
-{{code RailSighting.rail_quads_in_view}}
-
-{{code RailSighting.rail_points}}
-
-`rail_points` joins four lists, one for each box in the diagram of the rail's path.
-
-{{code RailSighting.leg_points}}
-
-A leg gets a point about every metre, because a post stands at every point. It leaves out its first point, which is the last point of the leg before it.
-
-`GuardRail.quads_along` turns the path into quads: the bars between neighbouring points, then a post at each point. At a turn of 45 degrees, the path has 25 points, so the rail is 24 bars and 25 posts: 49 quads, each in the depth sort on its own.
-
-A rail is never stored. Every frame works out its bars and posts again, from the route and the rider, and throws them away.
 
 ## Radio towers
 
