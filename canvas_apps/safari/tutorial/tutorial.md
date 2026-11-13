@@ -2083,48 +2083,51 @@ Step the ride back past step 3,555, and the headlights go off again. They only e
 
 ## The cat
 
-A cat walks out into the lane, freezes as the rider bears down on it, and leaps clear at the last possible moment. It's one of the most elaborate effects in Safari Ride, and it's where the rider and the world start to push on each other.
+A cat waits behind a tree by the road. As the rider comes near, it walks out into the lane, freezes, and leaps clear just before the rider arrives. The cat is the most elaborate animation in Safari Ride, and it's where the rider and the world start to change each other.
 
 ```widget cat
 Press play and watch the crossing.
 ```
 
-Play it, and the gap falls from 50 metres to 0, with the rider held at a metre a step. The cat waits on the right verge until 41 metres, where the last line changes to say the rider must hold the throttle. It walks out, and at 31 metres it freezes in the lane. It stays frozen until 7 metres, where it coils, leaps at 6 and lands at 4. At 3 metres it has collapsed on the far verge, and the rider may accelerate again. Below that, the picture stays as it is.
+The picture brings a rider in at a metre a step, from 50 metres off. The cat waits until the gap is 41 metres, walks out, and freezes in the lane at 31. It leaps at 6, and lies collapsed on the far verge by 3.
 
-### Two halves, and one fact remembered
+### One step carried
 
-A crossing comes in two halves. `CatCrossing` is what the cat does: where it crosses, and what it does at each step of its crossing. `Cat` is how it looks this frame, which is just its pose. The pose type, `CatPose`, is defined in `CatCrossing`, because the crossing is what changes the pose:
-
-{{code Cat.Cat from "Cat := {" to "}.{"}}
-
-The animation itself is a list of frames, played one a step on the ride's clock. All the ride has to remember is the step it started on. That's an `EncounterPlan`:
+A crossing is a list of frames, and it plays one frame a step on the ride's clock. So the ride has to carry only one fact about it, the step it starts on. That's an `EncounterPlan`:
 
 {{code EncounterPlan.EncounterPlan from "When the encounter" to "].{"}}
 
-Everything else about the cat is worked out from that one step and the clock.
+Everything else about the cat in a frame is derived from the plan and the clock:
 
-The modules around `CatCrossing`
+How a cat reaches the frame
 ```dot
 digraph cat {
-  node [shape=box, fontname="Helvetica"];
-  CatCrossing [style=bold];
-  World -> Segment [label="  marks some segments CatCrosses"];
-  Segment -> CatCrossing [label="  builds and holds it"];
-  RideInstant -> EncounterPlan [label="  keeps the plan"];
-  EncounterReaction -> CatCrossing [label="  reacts to it"];
-  EncounterSighting -> EncounterPoses [label="  asks where it stands"];
-  EncounterPoses -> CatCrossing [label="  asks for its instant"];
-  Cat -> CatCrossing [label="  takes its poses from"];
-  CatCrossing -> Animation [label="  plays its frames"];
-  CatCrossing -> EncounterPlan [label="  is planned by its span"];
-  EncounterPlan -> Animation [label="  answers a Stage"];
-  Cat -> CatStills [label="  draws a still"];
+  rankdir=TB;
+  nodesep=0.6;
+  ranksep=0.5;
+  node [shape=box, fontname="Helvetica", fontsize=18, margin="0.25,0.12"];
+  edge [fontname="Helvetica", fontsize=16];
+  plan [label="EncounterPlan\nand the clock"];
+  stage [label="Animation.Stage\nwhere the crossing has got to"];
+  instant [label="Animation.Instant\nthe cat's pose and location"];
+  sighted [label="a sighted cat\nin the frame"];
+  plan -> stage [label="  stage_at\l"];
+  stage -> instant [label="  the timeline's instant\l"];
+  instant -> sighted [label="  EncounterSighting\l"];
 }
 ```
 
-### When it plays
+### When it starts
 
-The ride plans the crossing once, from how fast the rider is coming. The aim is for the cat to be across just as the rider arrives 3 metres short of it. The crossing takes 38 steps, so the plan is made when a rider who kept their speed would cover the rest of the gap, down to 3 metres, in 38 steps. That's what coming within reach means. A faster rider covers more road in that time, so the plan is made farther off:
+The ride plans the crossing once, from how fast the rider is coming. The aim is for the cat to be across just as the rider comes within 3 metres of it. What the ride plans by is a span: how many steps the animation takes, and the gap it ends at.
+
+{{code EncounterPlan.StepSpan}}
+
+The cat's span is its frames, ending 3 metres short:
+
+{{code CatCrossing.crossing_span}}
+
+The crossing has 38 frames. So the plan is made on the first step where a rider keeping their speed would cover the rest of the gap, down to 3 metres, within 38 steps. A faster rider covers more road in that time, so the cat sets off farther away:
 
 | Rider's speed | The crossing starts at a gap of |
 |---|---|
@@ -2132,137 +2135,85 @@ The ride plans the crossing once, from how fast the rider is coming. The aim is 
 | 1.5 metres a step | 60 metres |
 | 2 metres a step | 79 metres |
 
-What the ride plans by is a span: how many steps the animation takes, and the gap it ends at.
-
-{{code EncounterPlan.StepSpan}}
-
-The cat's span is its 38 frames, ending 3 metres short:
-
-{{code CatCrossing.crossing_span}}
-
-The plan is made on the first step where the rider is within reach. Until then, and while the rider is at rest, the plan is `Unplanned`:
-
 {{code EncounterPlan.plan_for}}
 
-After that one look, the cat goes its own way, whatever the rider does. If the rider brakes, the cat still crosses on time, and the rider simply arrives a little later.
+The plan reads the rider's speed on that one step. After that, the cat plays on the clock alone. A rider who brakes arrives a little late, and the cat has crossed on time.
 
-Once a plan exists, the ride's clock says where the animation has got to. That's a `Stage`:
+### Where it has got to
+
+The plan and the clock say where the crossing has got to, as a `Stage`:
 
 {{code Animation.Stage}}
 
-`Waiting` before it starts, `Playing` while it runs, counting steps in, and `Past` after it ends, counting steps since. The tags carry only what each case needs, so `Waiting` is the bare tag, and a step count comes only with the cases it counts.
-
-A plan and the clock together make a `Timing`:
-
-A `Timing` and the animation's length make the `Stage`:
+`Waiting` comes before the crossing starts. `Playing` counts the steps in, and `Past` counts the steps since it ended. Each tag carries only what its case needs, so `Waiting` is a bare tag. One function works the stage out:
 
 {{code EncounterPlan.stage_at}}
 
-### Who moves first
-
-Each step, the world and the rider change each other, and the order matters. The rider reacts to the cat as it stood at the start of the step: if the crossing is playing, the throttle holds. Then the rider moves, and the ride checks the plan again. If the moved rider has just come within reach, the plan is made at the new clock. At each new segment the plan is forgotten, because only the encounter on the rider's own segment is ever live.
-
-So within one step, the rider answers the world, and then the world answers the rider. The cat looks at the rider once, when it's planned, and the rider looks at the cat every step.
-
 ### What it looks like
 
-The whole crossing is a list of frames, one a step:
+The crossing's frames come in three runs, one frame a step:
 
-| Frames | Frame numbers | What the cat does |
-|---|---|---|
-| walking out | 1 to 10 | strides and rests, from behind its tree most of the way to the middle of the road |
-| frozen | 11 to 34 | stands in the lane |
-| the leap | 35 to 38 | coils, flies twice, lands on the far verge |
+| Frames | What the cat does |
+|---|---|
+| 1 to 10 | walks out, striding and resting, from behind its tree toward the middle of the road |
+| 11 to 34 | stands frozen in the lane |
+| 35 to 38 | coils, flies for two frames, and lands on the far verge |
 
-That counts frames from 1, as the widget does; in the code, a `Playing` stage counts the steps in from 0.
-
-After the last frame it lies collapsed on the far verge. Each frame is a pose and where the cat is on its way across:
+That counts frames from 1, as the picture does. A `Playing` stage counts its steps from 0. Each frame is a pose, and where the cat is on its way across:
 
 {{code CatCrossing.CrossingFrame}}
 
 {{code CatCrossing.CrossingWay}}
 
-The leap is four keyframes, set by eye:
+A frame says how far along its way the cat is, and leaves out the road. So one list of frames serves every crossing, by whichever tree. The leap is four of them, set by eye:
 
 {{code CatCrossing.leap_frames}}
 
-`crossing_timeline` puts the frames on the road. A closure, `location_of`, turns each frame's way across into a place by this crossing's tree:
+### A timeline
+
+A list of frames and a way to show each one make a timeline. `Animation` defines it once, for any animal:
+
+{{code Animation.Timeline from "Timeline(frame, pose) ::" to "}.{"}}
+
+`frame` and `pose` are type variables. For the cat, a frame is a `CrossingFrame` and a pose is a `CatPose`. `before` and `after` are the animal at rest, outside the frames. An `Instant(pose)` is a record of the pose and the animal's location.
+
+`crossing_timeline` puts a crossing's frames on the road, by its own tree:
 
 {{code CatCrossing.crossing_timeline}}
 
-The span and the timeline both come from the one list, `crossing_frames`, so the animation's length always matches its frames.
-
-### How a timeline plays
-
-Asking for the cat at a stage is one function:
-
-{{code CatCrossing.cat_instant_at}}
-
-The timeline answers with a `match` on the stage and a lookup in the list:
+`location_of` is a function defined inside another, so it can use the crossing's `start`, `middle` and `end`. Asking a timeline for the animal at a stage is one `match`:
 
 {{code Animation.Timeline from "instant : Animation.Timeline" to "Past(_) => timeline.after"}}
 
-A `Playing` stage past the end of the frames would be a bug, and the timeline crashes on it. Here the length the ride plans by is the length of the list, so every `Playing` stage finds its frame.
+`frame_instant` is a function stored in a record's field, so calling it takes parentheses: `(timeline.frame_instant)(frame)`. Written `timeline.frame_instant(frame)`, it would read as a method call. A `Playing` stage past the last frame would mean the span and the frames disagree, so the timeline crashes there. Both come from the one list, `crossing_frames`, so every `Playing` stage finds its frame.
 
-### Getting it on screen
+### Into the frame
 
-The cat reaches the screen in two parts, and the camera is only in the second. First, `EncounterPoses` works out where each cat in view stands this frame. Only the rider's own segment plays its crossing; a cat on a segment ahead is still waiting behind its tree:
+The ride plays only the crossing on the rider's own segment. A cat on a segment ahead waits behind its tree:
 
 {{code EncounterPoses.cat_poses}}
 
-Then `EncounterSighting` asks where the camera sees each one. Through `Pipeline.scenery_sighting_of`, it drops any behind the camera or too small to draw:
+`EncounterSighting` then sights each cat through `Pipeline.scenery_sighting_of`, as the pipeline sights a tree. From there, a cat joins the frame's depth sort like any other thing.
 
-{{code EncounterSighting.cats_in_view}}
-
-From there, a cat is a kind like a tree or a cow, and it joins the frame's depth sort.
-
-The ride remembers one step for the cat, and works out everything else, frame by frame, from it and the clock. While it crosses, the cat also asks two things of the rider: hold the throttle, and look. That's the rider's side of the story, and it comes two chapters on.
+The ride carries one step for the cat, and derives the rest, frame by frame, from that step and the clock. While it crosses, the cat also asks two things of the rider: hold the throttle, and look. The {{chapter What a cat does to the rider}} chapter takes the rider's side.
 
 ## The bird
 
-The bird is Roc's logo, sitting on a treetop. As the rider comes near it takes off, flies across the road and ahead, and drops onto a tree on the far side. It moves the way the cat does, through the same plan and the same kind of timeline, and it took much less code.
+A bird sits on a treetop by the road. As the rider comes near, it takes off, flies across the road and ahead, and lands on a tree on the far side. The bird is Roc's logo, and it moves the way the cat does: one plan, a stage from the clock, and a timeline of frames.
 
 ```widget bird
 Press play and watch the bird fly.
 ```
 
-The widget's camera stays put, 18 metres short of the first tree. The gap counts down as if a rider were coming, and it only drives the clock. Play it, and the gap falls from 75 metres to 0, with the rider held at 1.25 metres a step. The bird sits on the tip of the left tree, 6.4 metres up, until a gap of 60 metres. It takes off side on, turns away at about 55 metres, and is highest, 10.7 metres up, near the middle of its flight, shrinking as it goes. It starts to dive at a gap of 20 metres, and at 15 it's perched on the tip of the far tree, 4.9 metres up. Below that, the picture stays as it is.
+The picture's camera stays put, 18 metres short of the first tree, and the gap counts down as if a rider were coming at 1.25 metres a step. The bird takes off at a gap of 60 metres, rises to 10.7 metres up in the middle of its flight, and lands at 15.
 
-### Two halves
+### The same plan
 
-A bird comes in the same two halves as a cat. `BirdFlight` is what it does: the tree it leaves and the tree it flies to. `Bird` is how it looks this frame, which is its pose:
-
-{{code Bird.Bird from "Bird := {" to "}.{"}}
-
-A pose can carry a tag of its own. A bird side on or seen from behind has its wings up or down, so those tags carry a `WingBeat`. As with the cat, the pose type is defined in the module that changes it, `BirdFlight`:
-
-{{code BirdFlight.BirdPose}}
-
-The modules around `BirdFlight`
-```dot
-digraph bird {
-  node [shape=box, fontname="Helvetica"];
-  BirdFlight [style=bold];
-  World -> Segment [label="  marks some segments BirdHere"];
-  Segment -> BirdFlight [label="  builds and holds it"];
-  Scene -> EncounterSighting [label="  asks for the birds in view"];
-  RideInstant -> EncounterPlan [label="  keeps the plan"];
-  EncounterSighting -> EncounterPoses [label="  asks where it stands"];
-  EncounterPoses -> BirdFlight [label="  asks for its instant"];
-  Bird -> BirdFlight [label="  takes its poses from"];
-  BirdFlight -> Animation [label="  plays its frames"];
-  BirdFlight -> EncounterPlan [label="  is planned by its span"];
-  Bird -> BirdStills [label="  draws a still"];
-}
-```
-
-### When it plays
-
-The ride plans the flight the way it plans a cat's crossing: once, when the rider first comes within reach, from how fast the rider is coming. A flight is 36 frames. It's planned to end when a rider who kept their speed would be 15 metres short of the tree the bird left, so the rider sees it land before passing that tree:
+The ride plans a flight as it plans a crossing: once, when the rider first comes within reach. A flight is 36 frames, and it's planned to end when a rider keeping their speed would be 15 metres short of the tree the bird left. So the rider sees the bird land before passing that tree:
 
 {{code BirdFlight.flight_span}}
 
-So a faster rider sets the bird off farther away:
+A faster rider sets the bird off farther away:
 
 | Rider's speed | The flight starts at a gap of |
 |---|---|
@@ -2270,13 +2221,19 @@ So a faster rider sets the bird off farther away:
 | 1.25 metres a step | 60 metres |
 | 2 metres a step | 87 metres |
 
-The widget's rider comes at 1.25 metres a step, so the bird takes off at 60. Once it's planned, the flight plays on the ride's clock, a frame a step, whatever the rider does. Its stage is worked out exactly as the cat's is, from the plan's timing and the flight's own length:
+Each segment holds one encounter at most: a cat crossing, a bird's flight, or a quiet road. One function finds the stage of whichever it is, with that animal's own length:
 
 {{code Encounter.encounter_stage}}
 
-### What it looks like
+`encounter_span` returns the cat's span or the bird's, and `{ span, .. }` takes the `span` field and leaves the rest of the record. A quiet road stays `Waiting` for good.
 
-A flight is a list of poses, one a step: a flap side on as it takes off, seven flaps seen from behind, then a flap's length of diving.
+### Its poses
+
+A bird's pose can carry a tag of its own. Side on or seen from behind, its wings are up or down, so those two tags carry a `WingBeat`:
+
+{{code BirdFlight.BirdPose}}
+
+A flight's 36 frames come in three runs:
 
 | Frames | What the bird does |
 |---|---|
@@ -2284,51 +2241,49 @@ A flight is a list of poses, one a step: a flap side on as it takes off, seven f
 | 5 to 32 | seven flaps, seen from behind |
 | 33 to 36 | dives |
 
-That counts frames from 1, as the widget does. Before the first frame the bird sits on the tree it leaves, and after the last it sits on the tree it flew to.
+Before the first frame the bird sits on the tree it leaves, and after the last it sits on the tree it lands on. Each frame is a pose, and how far through the flight it is:
 
-`flight_timeline` puts the poses on a path:
+{{code BirdFlight.FlightFrame}}
+
+{{code BirdFlight.flight_frames}}
+
+The first frame is 0 of the way through, and the last is all of it. `map_with_index` hands each pose its place in the list, which gives its share of the way.
+
+### Its path
+
+The timeline is the same `Animation.Timeline` as the cat's, with a `FlightFrame` for each frame and a `BirdPose` for each pose:
 
 {{code BirdFlight.flight_timeline}}
 
-The path eases along the straight line between the two treetops, and rises above it in an arc 5 metres high at the middle:
+The path runs between the two treetops, eased at each end, and rises in an arc 5 metres high at the middle:
 
 {{code BirdFlight.flight_location}}
 
-With `t` for `share`, how far through the flight the bird is, `4t(1 − t)` is 0 at both ends and 1 halfway, so the arc starts and ends on the line. The last line is a record update: everything about the point on the line, with its lift raised.
+`Easing.smoothstep` slows the bird near each tree. For `t`, the share of the way through, `4t(1 − t)` is 0 at both ends and 1 halfway, so the arc starts and ends at the treetops. The last line is a record update: the point on the line, with its lift raised.
 
-### Finding a tree
+### Finding its trees
 
-A segment's bird is chosen when the world is built. The segment picks the perch, the fifth tree on the left:
-
-{{code Segment.fifth_left_tree}}
-
-Then the bird picks where to fly: the first tree on the far side of the road at least 25 metres farther along.
+A segment's bird is chosen when the world is built. It perches on the fifth tree on the left, and flies to the first tree on the far side at least 25 metres farther along:
 
 {{code BirdFlight.flight_from}}
 
-`find_first` answers a `Try`, and the `match` opens it by hand, turning a failed search into the bird's own error, `NoTreeToFlyTo`. The bird always starts on the left because its perched and side-on stills always face right, so on a left tree it faces the road.
+`find_first` returns a `Try`, and `map_err` renames its failure to the bird's own, `NoTreeToFlyTo`. Then `?` returns that failure from `flight_from`, or takes the tree it found. The bird always starts on the left because its perched and side-on stills face right, so on a left tree it faces the road.
 
-The segment puts the two together. A route that plans a bird on a segment lacking a perch or a tree to fly to is a bug, so each failure crashes with its own reason:
+The segment puts the perch and the flight together:
 
-{{code Segment.from_choices from "BirdHere =>" to "QuietRoad => QuietRoad"}}
+{{code Segment.from_choices from "BirdHere => {" to "BirdHere(flight)"}}
 
-`match` is an expression here. Its answer is the value of the `encounter` field, an `Encounter`: a cat crossing, a bird's flight, or a quiet road, in a module of its own.
+The route plans a bird only on a segment with both trees, so a missing one is a bug. Each `?? crash` stops the program with its own reason.
 
-### Getting it on screen
+### Into the frame
 
-The bird reaches the screen the way the cat does: `EncounterPoses` places it, and `EncounterSighting` asks where the camera sees it. Only the rider's own segment plays its flight. A bird on a segment ahead is still perched on its first tree.
+The bird reaches the frame as the cat does. The rider's own segment plays its flight, and a bird on a segment ahead sits on its first tree. A perched bird stands exactly at its tree's top, at the same depth as the tree. The scene paints trees before birds when depths tie, so the bird shows on top of its tree.
 
-`Bird` draws it from its still, at its height:
-
-{{code Bird.scenery_sprite}}
-
-A perched bird stands exactly where its tree's top is, at the same depth, and the scene paints trees before birds when depths tie, so the bird is drawn over its tree.
-
-The bird is there only to be seen, so the rider's reactions pass it by. All it adds to the game is a list of poses, a path, and the stills to draw them.
+The bird is there only to be seen, so the rider rides on unchanged. Its whole cost to the ride is a list of poses, a path, and the stills to draw them. The cat asks more of the rider, and the next chapter takes that up.
 
 ## What a cat does to the rider
 
-A crossing cat asks two things of the rider: hold the throttle, and look. Both are the rider's own reactions. They live on the rider's side, in one module, `EncounterReaction`, which knows which encounters ask anything of the rider.
+A crossing cat plays on the clock alone, and the rider answers it on every step. It asks two things of the rider: hold the throttle, and look. Both are the rider's own reactions. They live on the rider's side, in one module, `EncounterReaction`, which knows which encounters ask anything of the rider.
 
 The modules around `EncounterReaction`
 ```dot
@@ -2353,7 +2308,7 @@ The rider's speed sets the cat off once, and from then on the effect runs one wa
 
 ### Hold the throttle
 
-A limit on the throttle is a `ThrottleLimit`, from the throttle chapter: either `NoLimit`, or `AtMost` some acceleration.
+A limit on the throttle is a `ThrottleLimit`, from the {{chapter The throttle}} chapter: either `NoLimit`, or `AtMost` some acceleration.
 
 While a cat crosses, the rider's speed can only hold or fall. That's `AtMost(Acceleration.steady)`, which caps the acceleration at zero:
 
@@ -2381,119 +2336,113 @@ The cat's pull rises as it crosses, up to its peak of 1.8, then fades over 83 st
 
 `Rider.attention` takes the stronger of two pulls: the cat's, and the depth of the rider's last look, which lingers after the eyes come home. The camera widens its view for that attention, or for the lean, whichever asks for the wider view. That's how a crossing cat seems to fill more of the picture.
 
-Each segment has one encounter at most: a cat, a bird, or a quiet road. Only a cat asks for either, and it asks for both. The rider's reactions to everything else, the bends and the pigs, live in the rider's own chapters.
+Each segment has one encounter at most: a cat, a bird, or a quiet road. Only a cat asks for either, and it asks for both. The rider's reactions to everything else, the bends and the pigs, came earlier, in the rider's own chapters.
 
 ## Rehearsal
 
-The rider steers itself, by leaning. Each step, it has to choose a lean, and it does that by working out what would happen. Call this *rehearsal*: run the real rules on a pretend copy, read the result, and throw it away.
-
-Safari Ride's rider steers by rehearsing. Each step it tries twelve leans. It keeps a low and a high bound on the lean, and each try moves one of them in. After the twelfth try, it takes the lean halfway between the two bounds.
+The rider steers by leaning, and each step it has to choose a lean. It chooses by rehearsal: it runs the bike's real step on a pretend motorcycle, reads where that motorcycle ends up, and throws it away. Each step tries twelve leans this way, and keeps the one whose rehearsal ends nearest the middle of the road.
 
 ```widget rehearsal
 Click a mark to see that try at a lean.
 ```
 
-Each try lets a pretend motorcycle coast down the road with one lean, and the white arc is where it goes. The yellow line is the road's middle, where the search wants each coast to end. A try that ends left of it sends the next try further right, and one that ends right of it sends the next further left, and by the twelfth they've closed in. This is step 374 of the ride, just after a bend.
+This is step 374 of the ride, just after a bend. Each white arc is one try: a pretend motorcycle coasting down the road at one lean. The yellow line is the road's middle, where the search wants each coast to end.
 
-The calls of one rehearsal
-```dot
-digraph rehearsal {
-  rankdir=LR;
-  node [shape=box, fontname="Helvetica"];
-  controls [label="RiderMind.controls"];
-  best [label="LeanSearch.best_lean"];
-  search [label="LeanSearch.search_tries"];
-  project [label="Coast.coast_outcome"];
-  keeping [label="Coast.coast_end"];
-  advance [label="Motorcycle.motorcycle_at_next_step"];
-  throttle [label="Throttle.next_acceleration"];
-  controls -> best [label="  asks for a lean"];
-  best -> search [label="  runs 12 tries"];
-  search -> project [label="  coasts each try"];
-  controls -> throttle [label="  asks about that lean"];
-  throttle -> project [label="  the 13th coast"];
-  project -> keeping [label="  drops the path"];
-  keeping -> advance [label="  a step at a time"];
-}
-```
+### Where the rehearsals start
 
-`Coast` answers one question. If the rider stopped changing anything now, and coasted, what would happen? It takes only the motorcycle, leaving the eyes out, and runs the physics. The step is the same `Motorcycle.motorcycle_at_next_step` that moves the real rider, handed `steady_controls()`: the current lean, and an acceleration of zero. The step is a function, so a pretend motorcycle can be stepped as easily as the real one.
+Each step, the rider's controls come from one function:
 
-{{code Coast.coast_outcome}}
+{{code RiderMind.controls}}
 
-`coast_end` runs the coast, and it can keep the path the motorcycle took, which is what the widget draws as the white arc. `coast_outcome` asks it to drop the path, since the ride only needs where the coast ended. The loop is in `coast_end`:
+Its first line asks the lean search for a lean. Its second asks the throttle how hard to accelerate, for the motorcycle at that lean. `with_lean` is the helper from the {{chapter The bike}} chapter: the same motorcycle, at another lean. Both lines rehearse.
 
-{{code Coast.coast_end}}
+### A coast
 
-The coast's bounds are the road's edges, 5 centimetres in, or wherever it starts if that's further out. The `while` moves the motorcycle a step at a time until it crosses one of those bounds, gets 25 metres further along its segment, or runs for 2,000 steps, and `return` leaves the function from inside the loop. The answer says where the coast went:
+`Coast` answers one question: if the rider held the lean and the speed from now on, where would the bike go? The answer is an `Outcome`:
 
 {{code Coast.Outcome}}
 
-`LeanSearch` asks `Coast` that question at twelve different leans. The rider wants the coast to end near the middle of the road. More lean to the right always moves the end of a coast to the right, so each try can rule out half the leans left between the bounds. That's a bisection, a binary search over leans. It's a `for` loop, with `$bounds.low` and `$bounds.high` closing in on each other. `LeanSearch.tried_motorcycle` is the motorcycle with the lean halfway between the bounds. It's pretend, and `Coast` gives it a pretend future:
+The coast ends on the road at a place across it, or leaves the road at a shoulder after so many steps. One function runs it:
 
-{{code LeanSearch.search_tries from "tried = " to "$bounds = bounds_after(tried)"}}
+{{code Coast.coast_end}}
 
-The search starts with bounds a degree either side of the current lean, `max_lean_change`, so the lean it picks is always within a degree of the last. That's what stops the bike flicking from one lean to another. Which way each try sends the next is a `match` on what the rehearsal found. Running off the left means more right, and running off the right means more left. A coast that stays on the road compares where it ends with `aimed_across`, the road's middle:
+`var $point` declares a variable: a name the function can set again, marked by the `$` at its front. Each pass of the `while` loop sets `$motorcycle` to the bike a step on, and `$point` to where it now is. The loop runs until the bike crosses a bound, gets 25 metres along the road, or has run for 2,000 steps. Then the last lines read where the coast ended.
 
-{{code LeanSearch.lean_correction}}
+The variables live and die inside `coast_end`. The function takes a motorcycle and returns an answer, and the same motorcycle always gives the same answer, so `coast_end` is as pure as every other function in the ride.
 
-After the last try, the lean it keeps is the midpoint of the bounds that try narrowed to:
+Each pass makes its step with this:
+
+{{code Coast.coasting_step}}
+
+That's the real step, `Motorcycle.motorcycle_at_next_step`, the one that moves the real rider. `steady_controls` hands it the lean as it is and an acceleration of zero. The step is a pure function, so a pretend motorcycle steps exactly as the real one does.
+
+### Twelve tries
+
+A lean further right always ends a coast further right. So each try rules out half the leans still in play, and twelve tries narrow the choice down fast. That's a bisection: a binary search over leans.
 
 {{code LeanSearch.best_lean}}
 
-`RiderMind.controls` calls that on its first line, and on its second asks the throttle about the motorcycle at that lean. That's where the rehearsals start: `RiderMind.controls` is the top of the calls in the picture above.
+`for _ in 0..<lean_search_round_count` runs its body twelve times. `0..<12` counts from 0 up to 11, and `_` leaves the count unnamed, since the body needs only the bounds. The bounds start a degree either side of the bike's lean, so the lean it picks is always within a degree of the last one. Each try coasts the motorcycle at the lean halfway between the bounds:
 
-Each real step of the ride runs thirteen pretend coasts: twelve for the lean, and one more in `Throttle`, which uses `Coast` to ask whether the road is about to run out.
+{{code LeanSearch.tried_motorcycle}}
 
-In a language with mutable objects, a rehearsal has a problem to solve before it starts. It needs to copy the rider, or save it and restore it, and it needs to be sure the copy is separate from the original, all the way down. It needs to know that the physics leaves everything global alone, like a scoreboard or a random number generator. In Roc, those problems go away. `Motorcycle.motorcycle_at_next_step` has a `->`, so it reaches only its arguments. The old motorcycle stays intact because every value does. A rehearsal that goes wrong is simply thrown away, and `LeanSearch` is about 100 lines above its tests.
+Where that coast goes decides which half of the bounds to keep:
 
-The last limit of the throttle is the same idea with one rehearsal in it. It runs the coast, and brakes only if the coast leaves the road:
+{{code LeanSearch.lean_correction}}
+
+Off the left shoulder means lean more right, and off the right means more left. A coast that stays on the road compares where it ends with `aimed_across`, the road's middle. After the twelfth try, the search returns the lean halfway between the bounds it has narrowed to.
+
+### Why rehearsing is cheap
+
+A rehearsal runs the real rules on a copy of the rider, and in Roc the copy is free. `tried_motorcycle` returns a new motorcycle, and the real one stays as it was. `motorcycle_at_next_step` has the thin arrow, so it reaches only its arguments. A rehearsal touches only its own copy, and a try the rider rejects is simply dropped.
+
+Each real step of the ride runs thirteen coasts: twelve for the lean, and one more in the throttle. That last one asks whether the bike, held as it is, would leave the road at a shoulder, and brakes if so:
 
 {{code Throttle.shoulder_limit}}
 
-That's the last of the rider.
+That's the whole rider. It looks, it rehearses, and it moves, and every part of it is a function from the moment before to the moment after. The next part of the book opens the math those functions stand on.
 
 ## The math layer
 
-Every sighting in the book so far has turned a place on the road into a place on the screen, and the book has taken that step on trust. This chapter opens it up, with the trigonometry the book has held back until now. It follows one point from a segment of the road ahead, round the bends, to the rider, and through the camera's lens onto the screen.
+Every sighting in the book so far has turned a place on the road into a place on the screen, and the book has taken that step on trust. This chapter opens it up, with the trigonometry of perspective. It follows one point from a segment of the road ahead, round the bends to the rider, and through the camera's lens onto the screen.
 
 The trip of one point to the screen
 ```dot
 digraph trip {
   rankdir=TB;
   nodesep=0.6;
-  ranksep=0.55;
+  ranksep=0.5;
   node [shape=box, fontname="Helvetica", fontsize=18, margin="0.25,0.12"];
   edge [fontname="Helvetica", fontsize=16];
   ahead [label="RoadPoint\non a segment ahead"];
   own [label="RoadPoint\non the rider's segment"];
   rider [label="RiderPoint\nright and forward"];
-  height [label="PointAtHeight\nright, forward and height"];
-  inview [label="PointAtHeightAhead\nat or past the near plane"];
+  checked [label="RiderPointAhead\nat or past the near plane"];
+  raised [label="PointAtHeightAhead\nright, forward and height"];
   screen [label="Point\nx and y, in pixels"];
   ahead -> own [label="  point_before_worked_bend,\l  once for each bend\l"];
   own -> rider [label="  to_rider_point turns it\l  by the camera's yaw\l"];
-  rider -> height [label="  the thing's height\l  goes on\l"];
-  height -> inview [label="  point_at_height_ahead\l  checks the near plane\l"];
-  inview -> screen [label="  Camera.project divides\l  by forward\l"];
+  rider -> checked [label="  RiderView.rider_point_ahead\l  checks the near plane\l"];
+  checked -> raised [label="  at_height raises it\l"];
+  raised -> screen [label="  Camera.project divides\l  by forward\l"];
 }
 ```
 
-Each box is a record type, and each type is a coordinate system. Its fields say which: `along` and `across` are on the road, `right` and `forward` are from the camera, and `x` and `y` are on the screen. So a function's annotation says which space it works in, and the compiler keeps a point from one space out of a function that wants another.
+Each box is a coordinate system, and its type says which. `along` and `across` are on the road, `right` and `forward` are from the camera, and `x` and `y` are on the screen. The two types with "Ahead" in their names are opaque, with methods that read the same parts. So a function's annotation says which space it works in, and the compiler keeps a point from one space out of a function that wants another.
 
 ### Round the bends
 
-A point on the road is measured within its own segment, and each segment knows only its length and the turn at its end. So a point three segments ahead has to come back round three bends, one at a time, before the camera can see it:
+A point on the road is measured within its own segment. For its shape, each segment holds only its length and the turn at its end. So a point three segments ahead has to come back round three bends, one at a time, before the camera can see it:
 
-{{code RoadAhead.rider_point_ahead from "var $point = road_point" to "to_rider_point($point, vantage)"}}
+{{code RoadAhead.rider_point_round_bends}}
 
-`position` is a `SegmentFromRider.Position`, the count of segments between the rider's and the point's. `var $point` declares a variable that the function can set again, and the `$` at the front of its name marks it. Each pass of the `while` loop sets it to the same point, measured on the segment before. The change stays inside the function: the caller hands over a point and gets back a new one.
+`position` is a `SegmentFromRider.Position`, the count of segments between the rider's and the point's. `bends` holds the bends of the road ahead, from the rider's own outward, so the loop counts down from the bend nearest the point. `var` and `while` work as they did in a coast: each pass sets `$point` to the same point, measured on the segment before. `??` takes the value out of an `Ok`. For an `Err`, it runs the expression on its right instead, here a `crash`.
 
 Each pass is one rotation and one shift:
 
 {{code Geom.point_before_worked_bend}}
 
-A `WorkedBend` holds where the next segment starts, measured on the segment before, and the cosine and sine of the bend's turn. The road ahead works those out once for each bend, when it's built, and every point of a frame that crosses that bend reuses them.
+Turning a point by an angle mixes its two parts. The cosine says how much of each part stays where it was, and the sine says how much moves over into the other. Then the shift moves the point to where the next segment starts. A `WorkedBend` holds that start, and the cosine and sine of the bend's turn. The road ahead works those out once for each bend, when it's built, and every point of a frame that crosses that bend reuses them.
 
 ### To the rider
 
@@ -2501,21 +2450,25 @@ On the rider's own segment, one more turn brings the point into the camera's vie
 
 {{code RoadAhead.to_rider_point}}
 
-The camera stands at `vantage`, turned by its yaw. The point's distances from the camera, along and across the road, turn by that yaw into `forward` and `right`. The function takes its opaque distances out to plain metres for the arithmetic, and wraps the answer back up as `Distance`s.
+The camera stands at `vantage`, and its yaw is which way it points, as a turn from straight down the segment. The point's distances from the camera, along and across the road, turn into `forward` and `right`. Turning the camera one way turns the world the other way in its view, so the point turns by minus the yaw, which is where the minus sign comes from.
 
 ### Through the pinhole
 
-A `RiderPoint` lies on the ground. A thing's height goes on top of it, and the result is a `PointAtHeight`. Before the camera can use the point, `RiderView.point_at_height_ahead` checks that it's at or past the near plane, 0.4 metres ahead of the camera, and refuses it as `BehindCamera` otherwise. A point that passes is a `PointAtHeightAhead`, an opaque type, and that check is the only way to make one.
+Next, `RiderView.rider_point_ahead`, from the {{chapter Refused}} chapter, checks the point against the near plane, 0.4 metres ahead of the camera. It refuses a point short of that as `BehindCamera`, and returns one past it as a `RiderPointAhead`. `at_height` raises that point to a height, and the result is a `PointAtHeightAhead`. Both types are opaque, and every way to build one starts from a point at or past the near plane.
 
 The camera is a pinhole, and a pinhole is similar triangles:
 
 {{code Camera.project}}
 
-A point 2 metres to the right and 10 metres ahead lies on a line of sight that runs a fifth of a metre right for every metre forward. That ratio is its slope. `Lens.x_for_slope` multiplies the slope by the lens's focal length, in pixels, and measures the answer from the middle of the screen. The height works the same way, measured from the eye, 1.2 metres up, and from the horizon on the screen. Dividing by `forward` is all of perspective: a thing twice as far off lands twice as close to the middle. The near plane keeps `forward` at 0.4 metres or more, so the division always has an answer.
+A point 2 metres to the right and 10 metres ahead lies on a line of sight that runs a fifth of a metre right for every metre forward. That ratio is its slope. `Lens.x_for_slope` multiplies the slope by the lens's focal length, in pixels, and measures the answer from the middle of the screen. The height works the same way, measured from the eye, 1.2 metres up, and from the horizon on the screen.
+
+Dividing by `forward` is all of perspective: a thing twice as far off lands twice as close to the middle. The near plane keeps `forward` at 0.4 metres or more, so the division always has an answer.
+
+Two more things act on the way. The ground's curve lowers a thing standing far off, as the {{chapter Radio towers}} chapter showed. And far scenery, the sun and the mountains, skips the trip altogether: `Lens.far_point` places it by its direction and its height above the horizon alone.
 
 ### Cutting at the near plane
 
-A single point is in view or refused, but a polygon can be both at once. A patch of road that runs from ahead of the camera to beside it has corners on both sides of the near plane. `RiderView.clipped_points` cuts it there. Here's a square, two metres on a side, with its far edge 2 metres ahead of the camera and its near edge a metre behind:
+A single point is in view or refused, but a solid's face can be both at once. A patch of road that runs from ahead of the camera to beside it has corners on both sides of the near plane. So a solid's corners stay plain `PointAtHeight`s until `RiderView.clipped_points` cuts the face there. Here's a square, two metres on a side, with its far edge 2 metres ahead of the camera and its near edge a metre behind:
 
 | | Corners, as metres right and metres forward |
 |---|---|
@@ -2524,26 +2477,19 @@ A single point is in view or refused, but a polygon can be both at once. A patch
 
 The two corners behind the camera have gone, and two new ones stand where the square's sides cross the near plane.
 
-The near plane is one region a polygon can be cut to. The ground's horizon is another, a circle round the rider, so the cut is written once, for any region:
+The near plane is one region a face can be cut to. The ground's horizon is another: past it, 490 metres out, the ground curves out of sight. So the cut is written once, for any region:
 
 {{code RiderView.Region}}
 
+A region is two functions in a record. One says whether a corner lies inside, and one says where an edge crosses the boundary. `Region(point)` leaves open what type of point a cut returns: the near plane's region returns `PointAtHeightAhead`s, ready for the camera, and the horizon's returns plain `PointAtHeight`s. Here's the cut:
+
 {{code RiderView.points_in_region}}
 
-The code brings in four ideas at once, so here they are:
-
-| Concept | Purpose | Explanation |
-|---|---|---|
-| A type variable on a record type | Choose | `Region(point)` leaves open what type of point a cut returns. The near plane's region returns `PointAtHeightAhead`s, ready for the camera, and the horizon's returns plain `PointAtHeight`s. |
-| Functions in a record | Ask | A region is two functions: one says whether a corner lies inside, and one says where an edge crosses the boundary. |
-| `map2` | Pair | `next_corners` is the corners turned round by one, so `map2` pairs each corner with the one after it, and the last with the first. Each pair is an edge. |
-| `fold` | Build | `fold` starts from an empty list and hands each edge, with the list so far, to `edge_points_onto`, which returns the list with that edge's points added. |
-
-`edge_points_onto` keeps an edge's first corner if it lies in the region, then adds each point where the edge crosses the boundary. The near plane's cut is then one line:
+`next_corners` is the corners turned round by one. `map2` walks two lists side by side, so it pairs each corner with the one after it, and the last with the first. Each pair is an edge. `fold` then builds the cut face from the edges: `edge_points_onto` keeps an edge's first corner if it lies in the region, then adds each point where the edge crosses the boundary. For the near plane, that crossing is the point the fraction of the way along the edge where `forward` reaches 0.4 metres. The near plane's cut is one line:
 
 {{code RiderView.clipped_points}}
 
-So every point in the ride reaches the screen by the same four moves: a rotation for each bend, one turn to the camera, a check at the near plane, and a division by `forward`. The next chapter asks how we know they're right.
+So a point on the road reaches the screen by four moves: a rotation for each bend, one turn to the camera, a check at the near plane, and a division by `forward`. The next chapter shows how the whole ride is checked, frame by frame, to the pixel.
 
 ## Proving it
 
@@ -2561,7 +2507,7 @@ The ride carries four things from step to step, and derives everything else in a
 {{proof row 6250 The truck braking in plain view}}
 {{proof row 9000 Past the end, on the second lap}}
 
-Each row is one frame of the ride. Ride to that step today, and you get that hash and that many shapes. A change to the program has to leave every row as it is. The rows come from the same file the check reads, `gates/proof.expected`.
+Each row is one frame of the ride. Ride to that step today, and you get that hash and that many shapes. The gate is the set of checks every change to the program has to pass before it lands, and one of its checks holds every row as it is. The rows come from the file that check reads, `gates/proof.expected`.
 
 ### A fixture is a value
 
@@ -2569,13 +2515,13 @@ A test of a game usually starts the game and drives it to the moment the test ca
 
 {{code Tour.at_step}}
 
-`Tour.initial` is a value, and each step returns a new tour. So the tour at step 1,529 is the same value in every test, on every run. So a test is a plain function call, and it answers at once.
+`Tour.at_step` plays every step from the start up to the one asked for. `Tour.initial` is a value, and each step returns a new tour, so the tour at step 1,529 is the same value in every test, on every run. A test is a plain function call, running the ride's own code.
 
 ### The frame hash
 
-`RasterFrame` rides to a step and paints the frame into 576,000 pixels, in pure Roc. Then it prints a hash of them. The painter is `SafariFrame`, and it fills the frame's shapes with `ShapesPixels`, which does in Roc what the page's JavaScript does on a canvas. The gate holds each hash to its line of `gates/proof.expected`, exactly. One different pixel in one frame fails it.
+The gate's proof tools are small Roc programs in `gates/proof/`. `RasterFrame` is one. It rides to a step and paints the frame into 576,000 pixels, 960 across and 600 down, in pure Roc. Then it prints a hash of them. Its painter is `SafariFrame`, which fills the frame's shapes with `ShapesPixels`, the Roc twin of what the page's JavaScript does on a canvas. The gate holds each hash to its line of `gates/proof.expected`, exactly. One different pixel in one frame fails it.
 
-A frame is evidence only for what's in it, so each step in the table is there for a scene: the bird in the air at step 100, the cat at 1,529 and 1,542, the truck's lights at 5,700 and 6,250. Step 9,000 is past the end of the ride, so its frame shows the ride started again. We add a row whenever a change could go wrong with every listed frame staying the same. A brake light stuck off, for example, shows only in the row at step 6,250, where the truck brakes in plain view.
+A frame is evidence only for what's in it, so each step in the table is there for a scene: the bird in the air at step 100, the cat at 1,529 and 1,542, the truck's lights at 3,698, 5,700 and 6,250. Step 9,000 is past the end of the ride, so its frame shows the ride started again. We add a row whenever a change could go wrong with every listed frame staying the same. A brake light stuck off, for example, changes the rows at 3,698 and 6,250, where the truck brakes.
 
 ### Sums in order
 
@@ -2583,17 +2529,17 @@ Exact hashes reach into the code. Adding floating-point numbers in a different o
 
 {{code Route.segments_with_ends}}
 
-A product's grouping counts as well. A beacon's angle is `2.0 * F64.pi * phase.to_f64() / Beacon.beacon_period.to_f64()`. Divide the phase by the period first, and the sum means the same on paper, but some of the beacons' shapes come out different in their last bits, and the gate's check of the built page fails.
+A product's grouping counts as well. A beacon's angle is `2.0 * F64.pi * phase.to_f64() / Beacon.beacon_period.to_f64()`. Divide the phase by the period first, and the sum means the same on paper. But some of the beacons' shapes come out different in their last bits, and the gate's check of the built page fails: the gate builds the page and holds a count of what it draws.
 
-The opaque types keep the sums honest in the same way. `Distance.plus`, `Speed.times` and the rest do exactly the arithmetic their names say, and a value wrapped in an opaque type runs as the number inside it. So a change that retypes a module, to use `Speed` where it used plain `F64`s, changes the types and leaves every hash where it was. A hash that moves says the change did more than retype.
+The opaque types keep the sums honest in the same way. `Distance.plus`, `Speed.times` and the rest do exactly the arithmetic their names say, and a value wrapped in an opaque type runs as the number inside it. So a change that retypes a module, to use `Speed` where it used plain `F64`s, changes the types and leaves every hash where it was. A hash that moves says the change did more than retype. So the code can be renamed, retyped and reorganized freely: the types catch what types catch, and the hashes catch the rest.
 
-The code in this book got its shape this way. Its modules were renamed, retyped and reorganized many times, and each change had to leave the frames alone. The types caught what types catch, and the hashes caught the rest.
+### Three more proofs
 
-### Two more proofs
-
-`ShapesFrame` paints each frame twice: once with its polygons whole, as the page gets them, and once cut into triangles, as the native program gets them. It counts the pixels that differ, and the gate holds that count at 0 of 576,000 at every step in the table.
+`ShapesFrame` paints each frame twice: once with its polygons whole, as the page gets them, and once cut into triangles, as a platform that fills only triangles gets them. It counts the pixels that differ, and the gate holds that count at 0 of 576,000 at every step in the table.
 
 `StepBack` rides the route and steps back at points along it: at steps 10, 1,000, 3,000 and 5,000, and at the finish. One step back from step 3,000 has to land on step 2,999, and as many steps back as the ride took have to land on step 0. `Tour.step_back` is small, and the test asks it the one thing it does.
+
+`OnRoad` rides the whole route and checks that the rider stays on the road from start to finish.
 
 ### Tests beside the code
 
@@ -2603,7 +2549,7 @@ A test's data can sit beside it as a plain definition. Here's a motorcycle to st
 
 {{code Motorcycle.riding}}
 
-`Motorcycle` imports only what stepping a motorcycle needs, so its tests build one directly. A check that needs several modules goes in `gates/expects/`, a folder of modules made only for checks. So every import of a module serves its own code.
+An `expect` can use only what its module imports. `Motorcycle` imports only what stepping a motorcycle needs, so its tests build one directly. A check that needs several modules goes in `gates/expects/`, a folder of modules made only for checks. So every import of a ride module serves the ride's own code.
 
 The gate makes every `expect` count. It finds each line in the source that starts with `expect`, and each one has to print `PASS` exactly once when `roc test` runs. So an `expect` in a module the test runs leave out fails the gate.
 
@@ -2613,19 +2559,19 @@ Some beliefs about the program are cheaper to check as it runs. `Fraction.of` is
 
 {{code Fraction.of}}
 
-Every `Fraction.of` in the ride is an assertion. `Easing.smoothstep` is one: its algebra keeps its answer between 0 and 1, and its `Fraction.of` checks that on every call. A ratio outside 0 to 1 means a sum behind it is wrong, so the program stops, with a sentence that says so. `Try` is the right answer when a value can honestly be missing. A wrong ratio is a bug, and a crash finds it sooner. The proof runs ride through thousands of frames, so every such `crash` is tested on every run of the gate.
+Every `Fraction.of` in the ride is an assertion. A ratio outside 0 to 1 means a sum behind it is wrong, so the program stops, with a sentence that says so. `Easing.smoothstep` leans on it: its algebra keeps its answer between 0 and 1, and its `Fraction.of` checks that on every call. `Try` is the right answer when a value can honestly be missing. A wrong ratio is a bug, and a crash finds it sooner. The proof tools ride thousands of steps on every run of the gate, so each check on that path runs thousands of times.
 
 ### The page itself
 
 This book is built from the code. Every snippet came through Roc's own parser, by name. Each program shown failing went through the compiler, and its message is quoted as the compiler printed it. The gate builds the book, so renaming a function quoted here fails the gate until the prose catches up.
 
-The gate also runs a set of lints over the Roc source before anything else. Each lint holds its count of violations, and every count is zero. So a vague name, or a boolean argument that should be a tag, fails the gate before a single hash is worked out.
+The gate also runs a set of lints, small programs that read the Roc source for patterns we've ruled out. Each lint holds its count of violations, and every count is zero. So a vague name, or a boolean argument that should be a tag, fails the gate before a single hash is worked out.
 
-All of this runs in a terminal. The next chapter shows how a list of shapes reaches one.
+All of this runs in a terminal. The next chapter shows how a list of shapes reaches a screen.
 
 ## The platform
 
-Every chapter so far has ended in a list of shapes. This chapter follows the list onto the screen, and it answers a question the book has left open since the ride instant: every function in the ride is pure, so where do the effects go?
+Every chapter so far has ended in a list of shapes. This chapter follows the list onto the screen. On the way it shows where the ride's effects live: in a small platform under the Roc code, which every app in this book shares.
 
 One tick, in order
 ```dot
@@ -2636,14 +2582,13 @@ digraph one_tick {
   node [shape=box, fontname="Helvetica", fontsize=18, margin="0.25,0.12"];
   edge [fontname="Helvetica", fontsize=16];
   runner [label="canvas_app_runner.js\nin the browser"];
-  step [label="model_at_next_step\nin Roc"];
-  frame [label="frame_shapes\nin Roc"];
+  host [label="host.zig\ninside the WebAssembly"];
+  roc [label="the app's Roc functions"];
   paint [label="shapes_canvas.js\nin the browser"];
-  release [label="release\nin Roc"];
-  runner -> step [label="  hands over the keys,\l  thirty times a second\l"];
-  step -> frame [label="  returns the next model,\l  boxed\l"];
-  frame -> paint [label="  returns the list\l  of shapes\l"];
-  paint -> release [label="  hands the list back\l  after painting it\l"];
+  runner -> host [label="  calls advance with the input,\l  then computeFrame\l"];
+  host -> roc [label="  calls model_at_next_step,\l  then frame_shapes\l"];
+  host -> runner [label="  returns where the frame's\l  list of shapes is\l"];
+  runner -> paint [label="  reads the shapes\l  and hands them over\l"];
 }
 ```
 
@@ -2653,13 +2598,13 @@ The {{chapter Platforms, packages and modules}} chapter showed the app's last li
 
 {{code SafariApp.canvas_app}}
 
-An app is a record. Most of its fields are plain values: the screen's size, thirty frames a second, a title. The ride is silent, so `sounds` returns 0 and `tones` is empty. Three fields are functions: `init` builds the first model, `model_at_next_step` moves the model on, and `frame_shapes` returns the shapes of the model's frame.
+An app is a record. Most of its fields are plain values: the screen's size, thirty frames a second, the first model, and a title. The ride is silent, so `sounds` returns 0 and `tones` is empty. `model_at_next_step` moves the model on a step, and `frame_shapes` returns the shapes of the model's frame.
 
-A runner hands every app the seconds since its last step. The ride counts steps, so one function fits its step to the runner:
+Every app's step also takes the seconds the step covers, which is one over its frame rate. The ride counts steps, so one function fits its step to that shape:
 
 {{code CanvasApp.untimed_model_at_next_step}}
 
-`untimed_model_at_next_step` takes a function and returns another. The new function takes one more argument, the seconds, and passes the other two to `step`. The seconds stop there, so the ride runs on steps alone.
+In the annotation, each part in parentheses is the type of a function. `untimed_model_at_next_step` takes a function of a model and an input snapshot, and returns a function of a model, a snapshot and the seconds. The body says the same: `|step|` takes the function, and returns `|model, input, _seconds|`, a function that passes the first two to `step`. The seconds stop there, so the ride runs on steps alone.
 
 ### What the platform asks for
 
@@ -2667,25 +2612,27 @@ A runner hands every app the seconds since its last step. The ride counts steps,
 
 {{signatures WasmApp.program}}
 
-Every one of the eleven functions has the thin arrow, so all of them are pure. The model travels as a `Box(model)`, the model behind a pointer, so the host holds a pointer, and only Roc reads what it points to. The keys travel as seven numbers, because the edge between WebAssembly and the browser carries numbers and lists, and `Input.of` builds them back into a snapshot of the keys.
+Every one of the eleven functions has the thin arrow, so all of them are pure. The model travels as a `Box(model)`: the model behind a pointer, which the platform holds and only Roc reads. The input travels as seven numbers: the keys held and struck, the mouse buttons held and struck, the pointer's place across and down, and the wheel. `WasmApp.program` builds them back into a snapshot, with `Input.of` for the whole and `Mouse.of` for the mouse.
 
-`release` takes a frame's list and returns `{}`, the empty record. The host hands each frame's list back when it's done painting, and Roc frees it, because Roc knows the layout of a `Shapes.Shape` and the host leaves that to Roc.
+### The host
+
+The platform's own code has two halves. `host.zig`, in Zig, runs inside the WebAssembly beside the app, holds the model, and calls the app's Roc functions. `canvas_app_runner.js`, in the browser, keeps time and gathers the input. For each tick it calls the host's `advance`, which steps the model, and when the browser is ready to draw, `computeFrame`, which returns where the frame's list of shapes sits in memory. When the browser falls behind, the runner steps up to four times before it draws once.
+
+The runner reads the shapes out of memory, and `shapes_canvas.js` paints them on the page's canvas. On the next call to `computeFrame`, the host hands the last frame's list to Roc's `release` before it asks for a new one. Roc frees the list, because Roc knows the layout of a `Shapes.Shape`.
+
+The two JavaScript files come to under 700 lines, and they serve every app on the platform. They handle the keys, the mouse, the canvas and the sound, and they read shapes. Everything they know of the ride is a list of shapes.
 
 ### A frame is a list
 
-A frame is one flat list of shapes, painted in order, so a later shape covers an earlier one. Two tags in that list are marks. `Blend` changes how the shapes after it combine with what's painted already, and `View` sets the space they're drawn in. Here's how the whole frame leans with the rider:
+A frame is one flat list of shapes, painted in order, so a later shape covers an earlier one. Two tags in that list are marks. `Blend` changes how the shapes after it mix with what's painted already. The ride uses it to add a light's glow to the colors under it. `View` sets the space the shapes after it are drawn in: a turn, a shift and a zoom, applied to their points. Here's how the whole frame leans with the rider:
 
 {{code FrameView.leaned_shapes}}
 
 {{code Screen.leaned_by}}
 
-`leaned_by` returns a space that turns the screen about its middle by the roll, the other way round. `leaned_shapes` puts the whole frame inside that space, backdrop first, so the sky and the grass lean with the road.
+`leaned_by` returns a space that turns the screen about its middle, by the roll in the opposite direction. `leaned_shapes` puts the whole frame inside that space, backdrop first, so the sky and the grass lean with the road.
 
-### Where the effects go
-
-The effects live outside Roc. `canvas_app_runner.js` keeps time, reads the keys and asks Roc for each step and each frame. `shapes_canvas.js` paints the shapes on the page's canvas. Together they come to under 700 lines of JavaScript, and they serve every app on the platform, so they deal only in shapes and keys.
-
-So the ride is a value, a step and a frame: the platform calls them, and everything with an effect happens on the platform's side of the line.
+So the ride is a value, a step and a frame. The platform calls them, and everything with an effect, from the clock to the canvas, happens on the platform's side of the line.
 
 ## Zooming back out
 
@@ -2704,7 +2651,7 @@ digraph loop {
   shapes [label="List(Shapes.Shape)"];
   instant -> view [label="  FrameView.frame_view_at\l  derives the frame\l"];
   view -> shapes [label="  leaned_shapes\l  flattens it\l"];
-  instant -> instant [label="  RideInstant.next\l  makes the next moment\l"];
+  instant -> instant [label="  RideInstant.next_or_restart\l  makes the next moment\l"];
 }
 ```
 
@@ -2718,7 +2665,7 @@ Everything else on the screen is derived from those four fields and the road, af
 
 ### One step, in order
 
-The four read each other, so the order inside a step matters. `RideInstant.next` takes them in this order:
+The four read each other, so the order inside a step matters. As the {{chapter The ride instant}} chapter showed, `RideInstant.next` takes them in this order:
 
 1. The rider moves, reading where the encounter on its segment has got to at the old clock. A cat in the road holds the throttle.
 2. The clock ticks.
@@ -2737,13 +2684,13 @@ Ask of each thing on the screen where it comes from:
 | The sky | Derived from the clock |
 | The sun and the mountains | Derived from the clock and the camera |
 | The beacons | Derived from the clock and the tower each one tops |
-| The trees and the herds | Derived from the world, built once, and the camera |
+| The trees and the herds | Derived from the world, built once, the camera, and the clock, whose darkness dims them |
 | The cat and the bird | Derived from the encounter plan, the clock and the camera |
-| The truck | Carried: one of the four |
+| The truck | Derived from its progress, one of the four, and the camera |
 | Its headlights | Derived from the clock, through the sky's darkness |
 | Its brake lights | Derived from the truck, which says whether its last step slowed it |
 
-The truck is the one thing on the screen that the ride carries as it is. Everything else is derived, from the four and the road. That's the design the book set out to show: a small state carried from step to step, everything else derived from it, and types that allow only right states. The appendices gather the patterns that kept turning up along the way.
+Everything on the screen is derived, from the four and the road. Even the truck, whose progress the ride carries, reaches the frame through the camera like everything else. That's the design the book set out to show: a small state carried from step to step, everything else derived from it, and types that allow only right states. The appendices gather the patterns that kept turning up along the way.
 
 ## The modules
 
@@ -3303,7 +3250,7 @@ Eight patterns kept turning up in the tour. They're patterns in a loose sense: s
 | Worked out, not stored | Keep the few things that must persist, and derive the rest each frame | `RideInstant`, `Cat`, `Sky` |
 | A sighting decides, drawing paints | A pure function answers with plain data, and something else draws it | `EncounterSighting`, `TowerSighting` |
 | Places and distances | One opaque type for where, a second for how far apart, and only the sums that make sense | `Clock` and `Steps`, `Bearing` and `Turn`, `Along` and `Distance`, `Speed` and `Acceleration` |
-| Rule and timeline | One function says how far along an animation is, and a timeline, plain data, says what the animal looks like at each stage | `BirdFlight.flight_stage` and `BirdFlight.flight_timeline` |
+| Rule and timeline | One function says how far along an animation is, and a timeline, plain data, says what the animal looks like at each stage | `Encounter.encounter_stage` and `BirdFlight.flight_timeline` |
 | The step function | A value goes in, and the next value comes out | `Rider.rider_at_next_step`, `TruckJourney.truck_progress_at_next_step`, `Tour.step_forward` |
 | The chain of limits | One value passes through independent rules, each of which can only lower it | `Throttle.next_acceleration` |
 | One record per space | Field names say which coordinate system a point is in | `RoadPoint`, `RiderPoint`, `PointAtHeight`, `Point` |

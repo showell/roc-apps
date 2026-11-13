@@ -95,7 +95,9 @@ Geom :: [].{
 		}
 	}
 
-	## What `point_in_segment_before` gives, for a bend already worked out.
+	## `point`, on the segment after a bend already worked out, measured on the
+	## segment before it instead: turned by the bend, and moved to where the
+	## segment after starts.
 	point_before_worked_bend : Geom.RoadPoint, Geom.WorkedBend -> Geom.RoadPoint
 	point_before_worked_bend = |point, { start_after: start, cos_turn, sin_turn }| {
 		along = point.along.to_metres()

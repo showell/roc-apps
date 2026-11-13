@@ -8,9 +8,9 @@ crash: a Roc keyword
 expect: a Roc keyword
 for: a Roc keyword
 if: a Roc keyword
+in: a Roc keyword, in a for loop
 import: a Roc keyword
 match: a Roc keyword
-return: a Roc keyword
 var: a Roc keyword
 where: a Roc keyword, in an annotation
 while: a Roc keyword
@@ -32,12 +32,11 @@ JavaScript: the language of the platform's runner, which a diagram's cluster nam
 
 # Files and folders the book names, which aren't Roc names.
 canvas_app_runner.js: a file of the JavaScript platform
+computeFrame: the host's export that the runner calls for a frame
+host.zig: the platform's host, in Zig
+WebAssembly: what the page's Roc and Zig are compiled to
 SafariApp.roc: the file that holds the SafariApp module
 shapes_canvas.js: a file of the JavaScript platform
 Rock: the kind of thing in tutorial/fails/kind_without_sprite.roc, which the build runs
 rock_rendering: the function in tutorial/fails/kind_without_sprite.roc, which the build runs
 
-# Names the chapters on the cat and the bird still use from code that has gone.
-# Those chapters are due for a rewrite; each line goes when its prose does.
-Timing: the code has no Timing; a plan and the clock make a stage in EncounterPlan.stage_at
-BirdFlight.flight_stage: the code has no flight_stage; Encounter.encounter_stage makes every animal's stage

@@ -117,7 +117,7 @@ RoadAhead :: [].{
 	rider_point_at = |road, { vantage, from_rider, road_point }|
 		match from_rider {
 			Ahead(position) =>
-				rider_point_ahead(road, { vantage, position, road_point })
+				rider_point_round_bends(road, { vantage, position, road_point })
 			JustBehind =>
 				match bend_behind(road) {
 					Behind(bend) => {
@@ -182,21 +182,22 @@ rider_segment_index = |road| road.segments_ahead().first_index
 previous_segment_index : RoadAhead.RoadView -> [Previous(Route.SegmentIndex), AtRouteStart]
 previous_segment_index = |road| rider_segment_index(road).previous()
 
-## A point on the segment at `position` on the road ahead, as the camera at
-## `vantage` on the rider's segment sees it.
-rider_point_ahead : RoadAhead.RoadView,
+## A point on the segment at `position` on the road ahead, carried back round
+## each bend between it and the rider's segment, as the camera at `vantage`
+## there sees it.
+rider_point_round_bends : RoadAhead.RoadView,
 {
 	vantage : Geom.Vantage,
 	position : SegmentFromRider.Position,
 	road_point : Geom.RoadPoint,
 } -> RiderView.RiderPoint
-rider_point_ahead = |road, { vantage, position, road_point }| {
+rider_point_round_bends = |road, { vantage, position, road_point }| {
 	bends = bends_ahead(road)
 	var $point = road_point
 	var $bends_left = position.to_u32().to_u64()
 	while $bends_left > 0 {
 		$bends_left = $bends_left - 1
-		bend = bends.get($bends_left) ?? crash "RoadAhead.rider_point_ahead: past the road's end"
+		bend = bends.get($bends_left) ?? crash "RoadAhead.rider_point_round_bends: past the road's end"
 		$point = Geom.point_before_worked_bend($point, bend)
 	}
 	to_rider_point($point, vantage)

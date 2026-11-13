@@ -93,14 +93,13 @@ Screen :: [].{
 	## The space the whole frame is drawn in when the camera rolls by `roll`:
 	## the screen turns by minus the roll about its middle.
 	leaned_by : Angle.Lean -> Shapes.Space
-	leaned_by = |roll| {
+	leaned_by = |roll|
 		Shapes.world_space({
 			target: middle,
 			offset: middle,
 			rotation: 0.0 - roll.to_degrees(),
 			zoom: 1.0,
 		})
-	}
 }
 
 expect Screen.distance({ from: Point.at(3.0, 4.0), to: Point.at(0.0, 0.0) }).to_f64() == 5.0
