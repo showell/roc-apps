@@ -1693,7 +1693,7 @@ Whether the rider is gawking is a plainer question than whether it's looking: ha
 
 {{code Gaze.noticed_pig}}
 
-Like the look, it starts when the pig is within 150 metres. It asks only where the rider is, so it lasts until the segment ends, long after the look.
+The `if` after `CatchesEye(pig)` is a guard: the branch matches only when the tag matches and the guard is true. Otherwise the `match` goes on to the next branch. Like the look, the noticing starts when the pig is within 150 metres. It asks only where the rider is, so it lasts until the segment ends, long after the look.
 
 `gawk_brake` is the third link in the throttle's chain. It gives a brake while the rider has noticed a pig, and `held_to` keeps the brake when it's lower than the acceleration so far:
 
@@ -2522,45 +2522,33 @@ Everything on the screen is derived, from the four and the road. Even the truck,
 
 ## Appendix: the patterns
 
-Eight patterns kept turning up in the tour. They're patterns in a loose sense: shapes of code that Roc makes easy to write and hard to break.
+Eight patterns kept turning up along the way. They're patterns in a loose sense: shapes of code that Roc makes easy to write and hard to break.
 
 | Name | What it is | Where to see it |
 |---|---|---|
-| Worked out, not stored | Keep the few things that must persist, and derive the rest each frame | `RideInstant`, `Cat`, `Sky` |
-| A sighting decides, drawing paints | A pure function answers with plain data, and something else draws it | `EncounterSighting`, `TowerSighting` |
-| Places and distances | One opaque type for where, a second for how far apart, and only the sums that make sense | `Clock` and `Steps`, `Bearing` and `Turn`, `Along` and `Distance`, `Speed` and `Acceleration` |
-| Rule and timeline | One function says how far along an animation is, and a timeline, plain data, says what the animal looks like at each stage | `Encounter.encounter_stage` and `BirdFlight.flight_timeline` |
+| Carried and derived | Carry the few things that must persist from step to step, and derive the rest each frame | `RideInstant`, `Sky`, `Beacon` |
+| A sighting decides, a sprite paints | A pure function answers with plain data, or a refusal, and something else turns the data into shapes | `Pipeline.sighting_of`, `TowerSighting` |
+| Places and distances | One opaque type for where, a second for how far apart, and only the sums that make sense | `Clock` and `Steps`, `Bearing` and `Turn`, `Along` and `Distance` |
+| Rule and timeline | One function says how far along an animation is, and a timeline, plain data, says what the animal shows at each stage | `EncounterPlan.stage_at` and `CatCrossing.crossing_timeline` |
 | The step function | A value goes in, and the next value comes out | `Rider.rider_at_next_step`, `TruckJourney.truck_progress_at_next_step`, `Tour.step_forward` |
 | The chain of limits | One value passes through independent rules, each of which can only lower it | `Throttle.next_acceleration` |
 | One record per space | Field names say which coordinate system a point is in | `RoadPoint`, `RiderPoint`, `PointAtHeight`, `Point` |
 | Rehearsal | Run the real rules on a pretend copy, read the result, and throw it away | `Coast`, `LeanSearch`, `Motorcycle.cross_bend_if_on_road` |
 
-Code that reads like configuration deserves a line of its own, because the tour kept stopping to admire it: `Pond`, `World.bending_plans`, the timelines, and `SafariApp.canvas_app`. None of them is a config format. They're ordinary Roc values, so the compiler checks them, and a tag that's misspelled is a compile-time error.
-
 ## Appendix: what catches you out
 
-This page lists what catches a reader of Roc out in Safari Ride, sorted by what shows up first. Everything on it comes from a chapter, and the last column says which.
-
-### Reading the code
+These are the Roc surprises the chapters meet, sorted by where they first show up. The last column names the chapter.
 
 | What you see | What's going on | Chapter |
 |---|---|---|
-| A method call with no import | Static dispatch finds `next` from the type of the value | One whole module |
-| A helper with no keyword to say it's private | Anything outside the module's block is private | The setting sun |
-| `var` and `for` under a `->` | A local that nothing outside can see, with `$` marking what changes. The function is still pure | Roadside trees, Rehearsal |
-| `?? crash` on a lookup | It isn't error handling. It states a belief about the program, and every gate run tests it | The world, Proving it |
-| An `expect` that can't see a type | It can only name what its module imports, so `Coast`'s projections are checked in the gate's `RiderExpects` | Proving it |
-
-### Running it
-
-| What you see | What's going on | Chapter |
-|---|---|---|
-| A crash with a sentence about a sum | `Fraction.of` crashes on a ratio outside 0 to 1, because such a ratio means the sum behind it is wrong. A ratio that can rightly fall outside the range goes through `Fraction.clamp` instead | The sky, Proving it |
-| The first frame of an animation shown too soon | `Waiting` and `Past` aren't progress of 0 and 1. Before its animation starts and after it ends, a critter can rest in a place or pose that no frame of the animation shows | The cat |
-| Beacons that stop, or run backward | The clock counts steps, not seconds, so pausing freezes them and stepping back reverses them | The beacons |
-| A frame hash that moves after a sum was reordered | Float addition isn't associative, so a sum's order is part of its meaning | Proving it |
-| A green gate over a wrong brake light | The gate is blind to whatever no listed frame shows | Proving it |
-| A page that differs from the hashed frame | The hash proves `ShapesPixels`'s pixels. The page's come from the browser's canvas, with anti-aliasing | Proving it |
+| A method call with no import | A method sits inside its type's braces, and the call finds it from the type of the value before the dot | Functions |
+| A helper with no keyword to say it's private | Anything outside a type's braces is private to its module | Asking a kind |
+| A `where` clause matching the wrong method | A clause matches a method by its name and type alone, so the pipeline's methods all start with "scenery" | Asking a kind |
+| `var` and `while` inside a pure function | A variable lives and dies inside its function, so the function is still pure | Rehearsal |
+| `?? crash` on a lookup | It states a belief about the program: the lookup always finds its value, and a miss is a bug | The bird |
+| A crash with a sentence about a sum | `Fraction.of` crashes on a ratio outside 0 to 1, because such a ratio means the sum behind it is wrong. A ratio that can rightly fall outside the range goes through `Fraction.clamp` instead | Proving it |
+| A frame hash that moves after a sum was regrouped | Floating-point sums and products depend on their order, so the order is part of what they mean | Proving it |
+| An `expect` that can't see a type | An `expect` can name only what its module imports, so a check that needs several modules lives in `gates/expects/` | Proving it |
 
 ## Appendix: glossary
 
@@ -2570,43 +2558,38 @@ This book uses these words in one sense only.
 |---|---|
 | Across | A place across the road, measured from its middle. Left is negative. |
 | Along | A place along a segment, measured from its start. |
-| Backdrop | The sky, the grass and the sun. It's the first thing in every frame. |
-| Billboard | A critter that stands still and always faces the camera, like the elephant. The bull is the fanciest one, with gradients in its still. |
-| Canvas | Where the painter puts shapes. Safari Ride's frames are for a canvas 960 pixels wide and 600 pixels tall. |
-| Card | A flat thing that always faces you, with a foot on the road and a width and a height on the screen, like the cat. |
-| Corner | One of the points of a polygon. |
-| Critter | Any animal in the ride, from the cat to the elephant. It's just our word for them: other people would say animals. A tree or a tower is never a critter. Critters come in two sorts: billboards, and motion critters. |
-| Depth | How far ahead of the camera something is. Far things come first in a frame. |
-| Encounter | The one event a segment can hold: a cat crossing, a bird flying, or neither, a quiet road. |
-| Encounter plan | One of the four things remembered: whether the encounter on the rider's segment is planned yet, and the step it starts at. |
-| Far scenery | The sun, the mountains and the rolling land: a direction and a height above the horizon, and never any nearer. |
-| Frame | Everything shown for one step: the backdrop, the mountains and the ground, then a series of pictures, far to near. |
-| Gawking | What the speed does for a pig: the rider slows for it, and stays slow to the end of the segment. |
-| Kind | Which sort of object something is, like `Conifer`. |
-| Look | What the eyes do for a pig: they turn toward it, and follow it until it's too far round. A crossing cat holds the eye without a look: it raises the rider's attention, which widens the view. |
-| Motion critter | A hand-drawn critter that moves, like the cat and the bird. |
+| Backdrop | The sky and the grass, the first thing in every frame. |
+| Billboard | An animal drawn from an emoji's still, standing still and seen from the side, like the cows. |
+| Carried | Kept from one step to the next. The ride carries four things: the rider, the truck, the clock and the encounter plan. |
+| Corner | One of the points of a shape. |
+| Critter | Any animal in the ride, from the cat to the elephant. A tree or a tower is never a critter. |
+| Depth | How far ahead of the camera something is. Far things are painted first. |
+| Derived | Worked out afresh in every frame, from what the ride carries and the road. |
+| Encounter | What a segment holds for the rider to meet: a cat crossing, a bird's flight, or a quiet road. |
+| Encounter plan | One of the four carried things: whether the encounter on the rider's segment is planned yet, and the step it starts at. |
+| Far scenery | The sun and the mountains: a direction and a height above the horizon, and never any nearer. |
+| Frame | One picture of the ride, for one step. |
+| Kind | Which sort of thing something is, like `Conifer`, and the type a `Geom.Placed` carries. |
 | Near plane | The closest the camera can see, 0.4 metres ahead. Anything that crosses it is cut there. |
-| Object | A thing in the picture with a place of its own: a tree, a tower, a critter or the truck. |
-| Painter | What puts shapes on the canvas. The page's painter is the browser's canvas, and the proof's is written in Roc. |
-| Sprite | How one object looks in one frame. A frame holds many pictures, one for each object in view, so "a picture" never means the whole frame. |
+| Picture | Everything on the screen in one frame. |
 | Placed | Put on the road, measured `along` and `across` a segment, and `lift` off the ground. |
-| Polygon | A shape with five or more corners. A frame's shapes with three or four are triangles and quads. |
-| Rendered | Made into a picture, with its depth attached. |
-| Road ahead | The rider's segment and the segments after it, as far as the rider can see. |
+| Polygon | A shape of any number of corners but three or four, which are triangles and quads. |
+| Rendering | A sprite with its depth, a `Rendered`. |
 | Route | The list of segments that makes up the whole ride. |
 | Segment | One stretch of road, from one bend to the next. |
-| Shape | One item in a frame's list, such as a polygon, a disc or a rectangle. |
-| Sighting | An object's spot and its kind, for one frame. It's a `Pipeline.Sighted`. |
+| Shape | One item in a frame's list, such as a triangle, a disc or a polygon. |
+| Sighting | A thing's spot and its kind, for one frame: a `Pipeline.Sighted`. |
 | Solid | A thing whose every corner has its own place along, across and above the road, like the truck. |
-| Spot | Where an object stands in one frame: its place on the road, its height off the ground, and where that puts its foot in the rider's view. Its sighting works it out once, and every picture is drawn from it. It's a `Spot`, from the module `Spot`. |
+| Spot | Where a thing stands in one frame, seen from the camera: a `Spot`. |
+| Sprite | How one thing looks in one frame: its shapes, a `Sprite`. |
 | Step | One tick of the ride. Each step has one frame. |
-| Still | A critter's drawing, as polygons traced ahead of time. |
+| Still | An animal's drawing, as polygons in units of its own height. |
 | Tier | One layer of a conifer's crown. |
 
 ## Credits
 
-Safari Ride was designed by Steve Howell. Claude wrote most of the code and this tutorial under his direction.
+Safari Ride was designed by Steve Howell. Claude wrote most of the code and this book under his direction.
 
 The animals by the road are drawn from Microsoft's [Fluent Emoji](https://github.com/microsoft/fluentui-emoji), in its Flat style, under the MIT license.
 
-The way these chapters open and close, the predictions under the widgets and the appendix "what catches you out" are ideas from Braeden Foster's [Rocco tutorial](https://github.com/Pixelsprout/rocco-engine).
+The way these chapters open and close, and the appendix "what catches you out", are ideas from Braeden Foster's [Rocco tutorial](https://github.com/Pixelsprout/rocco-engine).
