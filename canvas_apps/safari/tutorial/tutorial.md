@@ -1013,14 +1013,14 @@ At dusk the rock darkens through `Sky.color_at_darkness`, as the grass does, and
 
 {{code Skyline.snow_color}}
 
-That's the far scenery: it turns with the rider and stays where it is. The road comes next, and it's the first part of the world that comes nearer.
+That's the far scenery: it turns with the rider and stays where it is. Next comes the road.
 
 ## The road
 
 The road is the first part of the world that comes nearer as the rider rides. It's ground, laid on the grass in front of the mountains and under everything beside the road.
 
 ```widget frame road
-Step 1,529 of the ride: the road and its ponds, over the grass and under the trees.
+Step 1,529 of the ride: the road, over the grass and under the trees.
 ```
 
 The ground comes in patches, and a patch is a list of corners on the ground and a color. The road's patches all come from one function:
@@ -1035,7 +1035,7 @@ The route is a chain of straight segments with a bend between each one and the n
 
 {{code GroundSighting.ground_patches from "ground_patches : RoadAhead.RoadView," to "].join()"}}
 
-A segment lays up to three things: the road along it, the paving at its bend into the next segment, and a pond if it ends at one. Each comes as a list, and `join` makes them one. The two `match`es leave a part out by giving an empty list: the segment just behind the rider lays only its bend's paving, and the last segment in view lays only its road.
+A segment lays up to three things: the road along it, the paving at its bend into the next segment, and a pond if it ends at one. Each comes as a list, and `join` makes them one. The two `match`es leave a part out by giving an empty list. The segment just behind the rider can still show its last stretch, and its bend's paving lays that stretch, so its own road list is empty. The last segment of the road ahead gets an empty list for its bend, `RoadEndsInView`, since the road in view ends there.
 
 ### Along a segment
 
@@ -1056,7 +1056,7 @@ All of a segment's chunks share one patch. The platform smooths each patch's edg
 Where one segment bends into the next, the two roads leave a gap on the outside of the turn. Here are three bends, seen from above:
 
 ```widget bends
-Three bends from above. The paving fills the outside of each turn, and the yellow dot is its apex, where the two roads' outer edges meet.
+Three bends from above. The off-white dot is where the view is from, the orange lines are the guard rails, and the yellow dot is each bend's apex, where the two roads' outer edges meet.
 ```
 
 The paving fills the bend's outer corner. The `BendInView` module works it out, one step at a time:
@@ -1069,11 +1069,11 @@ The paving fills the bend's outer corner. The `BendInView` module works it out, 
 
 A bend to the right has its outer edge on the left, so the paving changes sides as the road turns. An outer corner is three points: where the first road's outer edge ends, where the next road's outer edge starts, and between them the apex, where the two outer edges, carried on straight, cross. `OuterCorner` takes the kind of point as a type variable, so the same record holds road points first and rider points after.
 
-`GroundSighting.bend_paving` lays the corner as one more patch. It starts 40 metres before the bend, `lead_in_length`, runs up the left edge, across the start of the next road, and back down the right, and whichever side is outside the turn takes in the corner's three points. Since the paving lays the last 40 metres of the road before the bend, it stands in for the road along the segment just behind.
+`GroundSighting.bend_paving` lays the corner as one more patch. It starts 40 metres before the bend, `lead_in_length`, runs up the left edge, across the end of the next road's first chunk, and back down the right, and whichever side is outside the turn takes in the corner's three points. Both roads end inside the paving, so road lies over road where they meet, and the patches join cleanly. Since the paving lays the last 40 metres of the road before the bend, it stands in for the road along the segment just behind. Forty metres is enough, because only a bend sharper than a right angle would show road further back, and every bend on the route is gentler than that.
 
 The ponds are ground too. A segment that ends at a pond lays two more patches, its bank and then its water.
 
-The corner has its paving. Next, the road needs a rail along its outer edge.
+The corner has its paving. Next, each bend gets a rail around its outside.
 
 ## Rails
 
