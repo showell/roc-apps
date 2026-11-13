@@ -156,8 +156,9 @@ Book := [].{
 					Err(NotFound) => {}
 				}
 				naming = { extent: manuscript.extent, slugs: outline.slugs }
-				linked = |chapter| linked_to_chapters(chapter, outline.slugs)
 				named = named_chapters(numbered, naming)
+				links = { slugs: outline.slugs, chapters: named }
+				linked = |chapter| linked_to_chapters(chapter, links)
 				chapters = named.map(|chapter| with_opening(linked(chapter), outline.dividers))
 				front_page = { file: front_file, html: front_html(linked(front), chapters) }
 				chapter_pages = chapters.map_with_index(
@@ -334,9 +335,76 @@ with_chapter_links = |html, slugs| match html.split_on(chapter_link_open) {
 	[] => crash "book: Str.split_on answered no pieces"
 }
 
-## The chapter with its body's chapter references written out.
-linked_to_chapters : Chapter, List(Book.Slug) -> Chapter
-linked_to_chapters = |chapter, slugs| { ..chapter, body: with_chapter_links(chapter.body, slugs) }
+## What a page's references are written out with: the slugs for a chapter's
+## title, and the chapters, numbered and named, for a chapter's number.
+ChapterLinks : { slugs : List(Book.Slug), chapters : List(Chapter) }
+
+## The chapter with its body's chapter references and chapter numbers written
+## out.
+linked_to_chapters : Chapter, ChapterLinks -> Chapter
+linked_to_chapters = |chapter, { slugs, chapters }| {
+	..chapter,
+	body: with_chapter_numbers(with_chapter_links(chapter.body, slugs), chapters),
+}
+
+chapter_number_open : Str
+chapter_number_open = "{{number "
+
+## Each `{{number N Title}}` in a page's HTML as the number N, linked to the
+## chapter's page when this book holds the chapter. book_index.shale counts the
+## chapters for the index, and with_number counts them for the pages, so a held
+## chapter whose number isn't N, or that has none, stops the build. A chapter
+## past the first chapters isn't held, and its number stays plain text.
+with_chapter_numbers : Str, List(Chapter) -> Str
+with_chapter_numbers = |html, chapters| match html.split_on(chapter_number_open) {
+	[before_any, .. as pieces] => {
+		references = pieces.map(|piece| chapter_number_reference(piece, chapters))
+		Str.join_with([before_any].concat(references), "")
+	}
+	[] => crash "book: Str.split_on answered no pieces"
+}
+
+## One piece after a `{{number `: the number, its chapter's title, the `}}`,
+## and the page after it.
+chapter_number_reference : Str, List(Chapter) -> Str
+chapter_number_reference = |piece, chapters| match piece.split_first("}}") {
+	Ok({ before: reference, after }) => "${chapter_number_written(reference, chapters)}${after}"
+	Err(NotFound) => crash "book: a chapter number with no end: ${piece}"
+}
+
+## A `{{number N Title}}` as chapter_number_link writes it, from its `N Title`.
+chapter_number_written : Str, List(Chapter) -> Str
+chapter_number_written = |reference, chapters| match reference.split_first(" ") {
+	Ok({ before: number, after: title }) => {
+		cited = { number, title }
+		match chapter_number_link(cited, chapters) {
+			Ok(link) => link
+			Err(Renumbered(held)) => crash "book: {{number ${reference}}} names chapter ${held.to_str()}"
+			Err(Unnumbered) => crash "book: {{number ${reference}}} names a chapter with no number"
+		}
+	}
+	Err(NotFound) => crash "book: a chapter number with no title: ${reference}"
+}
+
+## A chapter's number and its title, as the renderer escaped it.
+CitedNumber : { number : Str, title : Str }
+
+## The number as a link to its chapter's page, or as plain text when this book
+## doesn't hold the chapter. A held chapter with another number, or none, is an
+## error.
+chapter_number_link : CitedNumber, List(Chapter) -> Try(Str, [Renumbered(U64), Unnumbered])
+chapter_number_link = |{ number, title }, chapters|
+	match chapters.find_first(|chapter| BookText.escaped_text(chapter.title) == title) {
+		Ok(chapter) => match chapter.number {
+			Numbered(held) if held.to_str() == number => {
+				href = chapter.file
+				Ok("<a class=\"chapter-link\" href=\"${href}\">${number}</a>")
+			}
+			Numbered(held) => Err(Renumbered(held))
+			Unnumbered => Err(Unnumbered)
+		}
+		Err(NotFound) => Ok(number)
+	}
 
 ## One piece after a `{{chapter `: the title, the `}}`, and the page after it.
 ## The title is as the renderer escaped it.
@@ -570,6 +638,16 @@ one_section = {
 other_section : Chapter
 other_section = { ..one_section, file: "b.html", title: "B" }
 
+chapter_three : Chapter
+chapter_three = { ..one_section, number: Numbered(3) }
+
+bo_chapter : Chapter
+bo_chapter = {
+	..one_section,
+	title: "Bo's \"one\"",
+	number: Numbered(1),
+}
+
 a_part : Book.Divider
 a_part = {
 	before: "A",
@@ -643,6 +721,16 @@ expect with_chapter_links("<p>no references {{ here</p>", [slug_a]) == "<p>no re
 expect
 	with_chapter_links("{{chapter A}}, {{chapter B}} and {{chapter A}}", [slug_a])
 		== "<a class=\"chapter-link\" href=\"a-slug.html\">“A”</a>, “B” and <a class=\"chapter-link\" href=\"a-slug.html\">“A”</a>"
+expect with_chapter_numbers("<td>no numbers {{ here</td>", [chapter_three]) == "<td>no numbers {{ here</td>"
+expect
+	with_chapter_numbers("<td>{{number 3 A}}, {{number 9 Gone}}</td>", [chapter_three])
+		== "<td><a class=\"chapter-link\" href=\"a.html\">3</a>, 9</td>"
+expect
+	with_chapter_numbers("{{number 1 Bo&#39;s &quot;one&quot;}}", [bo_chapter])
+		== "<a class=\"chapter-link\" href=\"a.html\">1</a>"
+expect chapter_number_link({ number: "4", title: "A" }, [chapter_three]) == Err(Renumbered(3))
+expect chapter_number_link({ number: "3", title: "A" }, [one_section]) == Err(Unnumbered)
+expect chapter_number_link({ number: "3", title: "B" }, [chapter_three]) == Ok("3")
 expect nav_entry(
 	one_section,
 	one_section,

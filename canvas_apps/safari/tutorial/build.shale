@@ -63,6 +63,8 @@
 -- Book.roc to turn into a link to that chapter's page, or into the plain title
 -- when this build doesn't hold the page. The title must be a chapter's, as its
 -- `## ` heading spells it outside a fence, so a retitled chapter stops the build.
+-- `{{number 5 A far tree}}` is held alike, and Book.roc makes it the number,
+-- linked, and stops the build if the chapter it holds isn't number 5.
 --
 -- An include that can't be expanded stops the build, naming the source's
 -- line, and no output is left behind. Any line holding `{{` must be an
@@ -79,6 +81,7 @@
 -- main chapter and the others that mention it. tutorial/book_index.shale is
 -- the index's one home, so the build writes the book first, runs that script
 -- on it with `part=appendix`, and puts its tables where the include stands.
+-- The tables' chapter references are held as the source's prose is.
 --
 -- Every module beside safari's others has to be named somewhere in the source,
 -- as a whole word, in prose, a diagram or an include. A module the book never
@@ -110,9 +113,10 @@ const PROOF_ROW = "^\\{\\{proof row ([0-9]+) ([^}]+)\\}\\}$"
 const PROOF_HASH = "^RasterFrame ([0-9]+): hash ([0-9a-f]+)$"
 const PROOF_SHAPES = "^ShapesFrame ([0-9]+): differ 0 of [0-9]+, triangles [0-9]+, shapes ([0-9]+)$"
 const CHAPTER_LINK = "\\{\\{chapter ([^{}]+)\\}\\}"
+const CHAPTER_NUMBER = "\\{\\{number [0-9]+ ([^{}]+)\\}\\}"
 const INDEX = "{{index}}"
 const BOOK_INDEX = "canvas_apps/safari/tutorial/book_index.shale"
-const NOT_AN_INCLUDE = "not a line of the form {{code Module.name}}, {{code Module.name from \"text\" to \"text\"}}, {{module Name}}, {{signatures Module.name Module.name}}, {{types row Module.name words}}, {{expect Module.name}}, {{proof row N words}}, {{fails name}} or {{index}}, nor prose holding {{chapter Title}}"
+const NOT_AN_INCLUDE = "not a line of the form {{code Module.name}}, {{code Module.name from \"text\" to \"text\"}}, {{module Name}}, {{signatures Module.name Module.name}}, {{types row Module.name words}}, {{expect Module.name}}, {{proof row N words}}, {{fails name}} or {{index}}, nor prose holding {{chapter Title}} or {{number N Title}}"
 const NO_TITLE = "a diagram needs a title line directly above it"
 const CUT = "# ..."
 const PROOF_FILE = "/gates/proof.expected"
@@ -156,6 +160,20 @@ function signature_names(entry, list)
   return names
 end
 
+-- The titles of a line's chapter references, `{{chapter Title}}` and
+-- `{{number N Title}}`.
+function referenced_titles(l)
+  local titles = {}
+  for pattern in {CHAPTER_LINK, CHAPTER_NUMBER} do
+    for m in re_find_all(l, pattern) do push(titles, m.groups[1]) end
+  end
+  return titles
+end
+
+function without_references(l)
+  return re_replace(re_replace(l, CHAPTER_LINK, ""), CHAPTER_NUMBER, "")
+end
+
 -- The source's lines, in order. A code include's entry has its module, its name
 -- and its module's path, and its anchors if it has them. A signatures or types
 -- include's has its module and path, with its names or its name. A fails
@@ -167,14 +185,11 @@ function read_entries(source, text, folder)
   for l in split(text, "\n") do
     number = number + 1
     local entry = {source = source, line = number, text = l}
-    local linked = re_find_all(l, CHAPTER_LINK)
-    if #linked > 0 then
-      entry.chapters = {}
-      for m in linked do push(entry.chapters, m.groups[1]) end
-    end
+    local linked = referenced_titles(l)
+    if #linked > 0 then entry.chapters = linked end
     if l == INDEX then
       entry.index = true
-    elseif contains(re_replace(l, CHAPTER_LINK, ""), "{{") then
+    elseif contains(without_references(l), "{{") then
       local failing = re_find(l, FAILS)
       local whole = re_find(l, WHOLE_MODULE)
       local proof_row = re_find(l, PROOF_ROW)
@@ -243,9 +258,8 @@ function check_titles(entries)
   end
 end
 
--- Stops the build on a chapter include whose title no `## ` heading outside a
--- fence has.
-function check_chapter_links(entries)
+-- The titles of the `## ` headings outside a fence, as a set.
+function chapter_titles(entries)
   local titles = {}
   local fenced = false
   for e in entries do
@@ -255,6 +269,11 @@ function check_chapter_links(entries)
       titles[sub(e.text, 4, #e.text)] = true
     end
   end
+  return titles
+end
+
+-- Stops the build on a chapter include whose title isn't in `titles`.
+function check_chapter_links(entries, titles)
   for e in entries do
     for title in get(e, "chapters", {}) do
       if not has_key(titles, title) then stop(e, "no chapter is titled " .. title) end
@@ -623,24 +642,41 @@ function notes_text(notes)
   return join(rows, "")
 end
 
--- The number of includes expanded.
+-- Stops the build on a line of the index's tables with a `{{` that isn't a
+-- chapter reference, or a reference whose title isn't in `titles`, as a line of
+-- the source would. A row that doesn't end in `|` was cut short on its way out
+-- of book_index.shale, so it stops the build too.
+function check_index_tables(entry, tables, titles)
+  for l in tables do
+    if starts_with(l, "|") and not ends_with(l, "|") then stop(entry, "the index's line " .. l .. ": a row cut short") end
+    if contains(without_references(l), "{{") then stop(entry, "the index's line " .. l .. ": " .. NOT_AN_INCLUDE) end
+    for title in referenced_titles(l) do
+      if not has_key(titles, title) then stop(entry, "the index's line " .. l .. ": no chapter is titled " .. title) end
+    end
+  end
+  return nil
+end
+
 -- The index's tables, from book_index.shale run on the book as written so far.
-function book_index(entry, output)
-  local r = run({"shale", "--root", ".", BOOK_INDEX, "part=appendix", "book=" .. output}, {timeout_ms = 120000, head = 2000})
+function book_index(entry, output, titles)
+  local r = run({"shale", "--root", ".", BOOK_INDEX, "part=appendix", "book=" .. output}, {timeout_ms = 120000, head = 2000, width = 4000})
   if r.ended ~= "exit" or get(r, "code", -1) ~= 0 then stop(entry, "book_index.shale failed: " .. trim(r.out)) end
   local tables = {}
   for l in lines(r.out) do
     if not starts_with(l, "── ") then push(tables, l) end
   end
+  check_index_tables(entry, tables, titles)
   return trim(join(tables, "\n"))
 end
 
+-- Builds the book, and gives the number of includes expanded.
 function build(source, output, folder)
   if exists(output) then remove(output) end
   if exists(notes_path(output)) then remove(notes_path(output)) end
   local entries = read_entries(source, read(source), folder)
   check_titles(entries)
-  check_chapter_links(entries)
+  local titles = chapter_titles(entries)
+  check_chapter_links(entries, titles)
   local trees = parse_modules(entries)
   local roc = ""
   if needs_roc(entries) then roc = pinned_roc("tutorial") end
@@ -683,7 +719,7 @@ function build(source, output, folder)
   replace(notes_path(output), notes_text(notes))
   for i = 1, #entries do
     if has_key(entries[i], "index") then
-      kept[i] = book_index(entries[i], output)
+      kept[i] = book_index(entries[i], output, titles)
       expanded = expanded + 1
       replace(output, join(kept, "\n"))
     end
@@ -1022,6 +1058,31 @@ function check_chapter_rule(checks, folder)
   for bad in {"See {{chapter }}.", "See {{chapter A far tree}.", "{{chapter A far tree}} {{code Zoo.bare}}", "See {{chapter A far tree}} and {{"} do
     expect_stop_at(checks, folder, far .. bad, 5, bad, NOT_AN_INCLUDE)
   end
+
+  expect_prose(checks, folder, far .. "| Bend | {{chapter A far tree}} | {{number 1 A far tree}}, {{number 12 A far tree}} |")
+  expect_stop_at(checks, folder, far .. "{{number 1 A far tree}}, {{number 2 Gone}}", 5, "{{number 1 A far tree}}, {{number 2 Gone}}", "no chapter is titled Gone")
+  for bad in {"{{number A far tree}}", "{{number 1}}", "{{number x A far tree}}", "{{number 1 A far tree}"} do
+    expect_stop_at(checks, folder, far .. bad, 5, bad, NOT_AN_INCLUDE)
+  end
+
+  local index = {source = "s.md", line = 3, text = INDEX}
+  local titles = {}
+  titles["A far tree"] = true
+  local fine = attempt(check_index_tables, index, {"| Bend | {{chapter A far tree}} | {{number 2 A far tree}}, 3 |", "| Sky | {{chapter A far tree}} | throughout |"}, titles)
+  if not fine.ok then fail("self_test: the index's good tables stopped: " .. fine.error) end
+  push(checks, "the index's tables with good references")
+  local gone = attempt(check_index_tables, index, {"| Bend | {{chapter A far tree}} | {{number 2 Gone}} |"}, titles)
+  if gone.ok or gone.error ~= "s.md:3: {{index}}: the index's line | Bend | {{chapter A far tree}} | {{number 2 Gone}} |: no chapter is titled Gone" then fail("self_test: the index's missing chapter gave " .. json_write(gone)) end
+  push(checks, "the index's reference to a missing chapter")
+  local gone_main = attempt(check_index_tables, index, {"| Bend | {{chapter Gone}} | 2 |"}, titles)
+  if gone_main.ok or gone_main.error ~= "s.md:3: {{index}}: the index's line | Bend | {{chapter Gone}} | 2 |: no chapter is titled Gone" then fail("self_test: the index's missing main chapter gave " .. json_write(gone_main)) end
+  push(checks, "the index's main chapter missing")
+  local stray = attempt(check_index_tables, index, {"| Bend | {{chapter A far tree}} | {{numbr 2 A far tree}} |"}, titles)
+  if stray.ok or stray.error ~= "s.md:3: {{index}}: the index's line | Bend | {{chapter A far tree}} | {{numbr 2 A far tree}} |: " .. NOT_AN_INCLUDE then fail("self_test: the index's stray braces gave " .. json_write(stray)) end
+  push(checks, "the index's stray braces")
+  local cut = attempt(check_index_tables, index, {"| Bend | {{chapter A far tree}} | 2, 3…"}, titles)
+  if cut.ok or cut.error ~= "s.md:3: {{index}}: the index's line | Bend | {{chapter A far tree}} | 2, 3…: a row cut short" then fail("self_test: the index's row cut short gave " .. json_write(cut)) end
+  push(checks, "the index's row cut short")
   return nil
 end
 

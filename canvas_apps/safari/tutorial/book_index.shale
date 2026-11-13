@@ -164,8 +164,9 @@ end
 -- `part=appendix` prints the book's index appendix and nothing else: a table
 -- for each category, its terms in alphabetical order, each with its main
 -- chapter as a link and every other chapter that mentions it, by number. A
--- term in SPREAD chapters or more is "throughout". tutorial/build.shale runs
--- this for the `{{index}}` include.
+-- number is `{{number N Title}}`, which Book.roc makes a link and holds to its
+-- own count of the chapters. A term in SPREAD chapters or more is
+-- "throughout". tutorial/build.shale runs this for the `{{index}}` include.
 if arg("part", "report") == "appendix" then
   for category in categories() do
     print("### " .. category)
@@ -177,7 +178,7 @@ if arg("part", "report") == "appendix" then
       if #e.chapters < SPREAD then
         local numbers = {}
         for n in e.chapters do
-          if n ~= e.most.number then push(numbers, "" .. n) end
+          if n ~= e.most.number then push(numbers, "{{number " .. n .. " " .. CHAPTERS[n].title .. "}}") end
         end
         others = join(numbers, ", ")
       end
