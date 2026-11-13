@@ -228,10 +228,10 @@ a:has(> .number) { padding-left: 1.7em; text-indent: -1.7em; }
 
 /* The table of contents */
 
-ol.contents { max-width: none; columns: 2; column-gap: 2.5rem; margin: 0; padding: 0; list-style: none; font: 0.82rem/1.35 var(--plain); }
-ol.contents > li { break-inside: avoid; margin: 0 0 0.9rem; }
-ol.contents > li.part { margin: 1.2rem 0 0.5rem; color: var(--accent); font-weight: 700; break-after: avoid; }
-ol.contents > li.category { margin: 0.5rem 0; color: var(--quiet); font-style: italic; break-after: avoid; }
+ol.contents { max-width: 40rem; margin: 0; padding: 0; list-style: none; font: 0.9rem/1.45 var(--plain); }
+ol.contents > li { margin: 0 0 1rem; }
+ol.contents > li.part { margin: 2rem 0 0.8rem; padding-bottom: 0.3rem; border-bottom: 1px solid var(--rule); color: var(--accent); font-size: 1.15rem; font-weight: 700; }
+ol.contents > li.category { margin: 1.2rem 0 0.6rem; color: var(--quiet); font-size: 0.95rem; font-style: italic; }
 ol.contents > li > a { display: block; color: var(--ink); font-weight: 600; text-decoration: none; }
 ol.contents a:hover { color: var(--accent); }
 ol.contents .sections { margin: 0.15rem 0 0; padding-left: 1.7em; list-style: none; }
@@ -286,7 +286,6 @@ ol.contents .sections a { color: var(--quiet); text-decoration: none; }
   figure.widget { margin-inline: -1rem; }
   figure.widget figcaption { padding-inline: 1rem; }
   iframe.canvas-app { border-radius: 0; }
-  ol.contents { columns: 1; }
   figure.listing { margin-inline: -0.5rem; }
   figure.listing figcaption { padding-inline: 0.6rem; }
   figure.listing pre { padding-inline: 0.6rem; font-size: 0.72rem; tab-size: 2; }
