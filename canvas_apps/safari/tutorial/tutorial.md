@@ -2205,7 +2205,7 @@ The ride plays only the crossing on the rider's own segment. A cat on a segment 
 
 {{code EncounterPoses.cat_poses}}
 
-A `Cat` is the cat's kind in the frame, a record of its pose, and `PlacedAnimal(Cat)` is one on the road. `EncounterSighting` then sights each cat through `Pipeline.scenery_sighting_of`, as the pipeline sights a tree. From there, a cat joins the frame's depth sort like any other thing.
+A `Cat` is the cat's kind in the frame: a record of its pose, with the methods every kind has. A `PlacedAnimal(Cat)` is a `Geom.Placed` cat, with the segment it stands on. `EncounterSighting` then sights each cat through `Pipeline.scenery_sighting_of`, as the pipeline sights a tree. From there, a cat joins the frame's depth sort like any other thing.
 
 The ride carries one step for the cat, and derives the rest, frame by frame, from that step and the clock. While it crosses, the cat also asks two things of the rider: hold the throttle, and look. After the bird's chapter, the {{chapter What a cat does to the rider}} chapter takes the rider's side.
 
@@ -2318,10 +2318,6 @@ digraph reaction {
 }
 ```
 
-### When the rider feels it
-
-The order inside a step matters here. The rider reacts to the cat as it stood at the start of the step, then moves. Only after the move does the ride make its plan, if the rider has just come within reach. So the hold starts on the step after the crossing is planned. The camera, drawing the frame, reads the cat as it stands now.
-
 ### Hold the throttle
 
 A limit on the throttle is a `ThrottleLimit`, from the {{chapter The throttle}} chapter: either `NoLimit`, or `AtMost` some acceleration.
@@ -2350,7 +2346,7 @@ The cat's pull rises as it crosses, up to its peak of 1.8, then fades over 83 st
 
 `Playing` and `Past` both carry a step count, and this is where both are used: one says how far into the crossing, the other how long since it ended.
 
-`Rider.attention` takes the stronger of two pulls: the cat's, and the depth of the rider's last look, which lingers after the eyes come home. The camera widens its view for that attention, or for the lean, whichever asks for the wider view. That's how a crossing cat seems to fill more of the picture.
+`Rider.attention` takes the stronger of two pulls: the cat's, and the depth of the rider's last look, which lingers after the eyes come home. The camera widens its view for that attention, as a startled rider takes in more of the road. A lean widens the view too, and the camera takes whichever asks for the wider one.
 
 Of the three encounters, only a cat asks anything of the rider, and it asks for both. The rider's reactions to everything else, the bends and the pigs, came earlier, in the rider's own chapters.
 
@@ -2382,7 +2378,7 @@ The coast ends on the road at a place across it, or leaves the road at a shoulde
 
 {{code Coast.coast_end}}
 
-`var $point` declares a variable: a name the function can set again, marked by the `$` at its front. Each pass of the `while` loop sets `$motorcycle` to the bike a step on, and `$point` to where it now is. The loop runs until the bike crosses a bound, gets 25 metres along the road, or has run for 2,000 steps. Then the last lines read where the coast ended.
+`var $point` declares a variable: a name the function can set again, marked by the `$` at its front. Each pass of the `while` loop sets `$motorcycle` to the bike a step on, and `$point` to where it now is. The bounds are the road's edges, 5 centimetres in, or wherever the bike starts if that's further out. The loop runs until the bike crosses a bound, gets 25 metres along the road, which is as far ahead as the rehearsal needs to look, or has run for 2,000 steps, which ends a slow rider circling in place. Then the last lines read where the coast ended.
 
 The variables live and die inside `coast_end`. The function takes a motorcycle and returns an answer, and the same motorcycle always gives the same answer, so `coast_end` is as pure as every other function in the ride.
 
@@ -2408,7 +2404,7 @@ Where that coast goes decides which half of the bounds to keep:
 
 A `..` in a pattern stands for the rest of the record's fields, so `Leaves({ side: Left, .. })` matches any coast off the left, whatever its count of steps. Off the left shoulder means lean more right, and off the right means more left. A coast that stays on the road compares where it ends with `aimed_across`, the road's middle. After the twelfth try, the search returns the lean halfway between the bounds it has narrowed to.
 
-### Why rehearsing is cheap
+### Why rehearsing is safe
 
 A rehearsal runs the real rules on a copy of the rider, and in Roc the copy is cheap. `tried_motorcycle` returns a new motorcycle, and the real one stays as it was. `motorcycle_at_next_step` has the thin arrow, so it reaches only its arguments. A rehearsal touches only its own copy, and a try the rider rejects is simply dropped.
 
@@ -2444,7 +2440,7 @@ digraph trip {
 }
 ```
 
-Each box is a coordinate system, and its type says which. `along` and `across` are on the road, `right` and `forward` are from the camera, and `x` and `y` are on the screen. The two types with "Ahead" in their names are opaque, with methods that read the same parts. So a function's annotation says which space it works in, and the compiler keeps a point from one space out of a function that wants another.
+Each box is a coordinate system, and its type says which. `along` and `across` are on the road, `right` and `forward` are from the camera, and `x` and `y` are on the screen. The two types with "Ahead" in their names are opaque, with methods that read the same parts. So a function's annotation says which space it works in, and the compiler keeps a point from one space out of a function that wants another. The first two boxes share a type: a `RoadPoint` is measured on whichever segment holds it, and only the loop below moves one from a segment to the one before.
 
 ### Round the bends
 
@@ -2458,7 +2454,7 @@ Each pass is one rotation and one shift:
 
 {{code Geom.point_before_worked_bend}}
 
-Turning a point by an angle mixes its two parts. The cosine says how much of each part stays where it was, and the sine says how much moves over into the other. Then the shift moves the point to where the next segment starts. A `WorkedBend` holds that start, and the cosine and sine of the bend's turn. The road ahead works those out once for each bend, when it's built, and every point of a frame that crosses that bend reuses them.
+`start_after: start` takes the record's `start_after` field and names it `start` inside the function. Turning a point by an angle mixes its two parts. The cosine says how much of each part stays where it was, and the sine says how much moves over into the other. Then the shift moves the point to where the next segment starts. A `WorkedBend` holds that start, and the cosine and sine of the bend's turn. The road ahead works those out once for each bend, when it's built, and every point of a frame that crosses that bend reuses them.
 
 ### To the rider
 
@@ -2466,7 +2462,7 @@ On the rider's own segment, one more turn brings the point into the camera's vie
 
 {{code RoadAhead.to_rider_point}}
 
-The camera stands at `vantage`, and its yaw is which way it points, as a turn from straight down the segment. The point's distances from the camera, along and across the road, turn into `forward` and `right`. Turning the camera one way turns the world the other way in its view, so the point turns by minus the yaw, which is where the minus sign comes from.
+The camera stands at `vantage`, and its yaw is which way it points, as a turn from straight down the segment. The point's distances from the camera, along and across the road, turn into `forward` and `right`. Turning the camera one way turns the world the other way in its view, so the point turns by minus the yaw.
 
 ### Through the pinhole
 
@@ -2531,13 +2527,13 @@ A test of a game usually starts the game and drives it to the moment the test ca
 
 {{code Tour.at_step}}
 
-`Tour.at_step` plays every step from the start up to the one asked for. `Tour.initial` is a value, and each step returns a new tour, so the tour at step 1,529 is the same value in every test, on every run. A test is a plain function call, running the ride's own code.
+`Tour.at_step` plays every step from the start up to the one asked for, inside one ride. The proof tools ride on past the finish with `Tour.step_forward`, which starts the ride again, so they reach step 9,000 on the second lap. `Tour.initial` is a value, and each step returns a new tour, so the tour at step 1,529 is the same value in every test, on every run. A test is a plain function call, running the ride's own code.
 
 ### The frame hash
 
 The gate's proof tools are small Roc programs in `gates/proof/`. `RasterFrame` is one. It rides to a step and paints the frame into 576,000 pixels, 960 across and 600 down, in pure Roc. Then it prints a hash of them. Its painter is `SafariFrame`, which fills the frame's shapes with `ShapesPixels`, the Roc twin of what the page's JavaScript does on a canvas. The gate holds each hash to its line of `gates/proof.expected`, exactly. One different pixel in one frame fails it.
 
-A frame is evidence only for what's in it, so each step in the table is there for a scene: the bird in the air at step 100, the cat at 1,529 and 1,542, the truck's lights at 3,698, 5,700 and 6,250. Step 9,000 is past the end of the ride, so its frame shows the ride started again. We add a row whenever a change could go wrong with every listed frame staying the same. A brake light stuck off, for example, changes the rows at 3,698 and 6,250, where the truck brakes.
+A frame is evidence only for what's in it, so each step in the table is there for a scene: the bird in the air at step 100, the cat at 1,529 and 1,542, the truck's lights at 3,698, 5,700 and 6,250. Step 9,000 is past the end of the ride, so its frame shows the ride started again. We add a row whenever a change could go wrong with every listed frame staying the same. The row at 3,698 is one: the truck brakes about 600 metres off, and its glow is about a pixel across, so a change that lost a far glow would show there.
 
 ### Sums in order
 
@@ -2545,7 +2541,7 @@ Exact hashes reach into the code. Adding floating-point numbers in a different o
 
 {{code Route.segments_with_ends}}
 
-A product's grouping counts as well. A beacon's angle is `2.0 * F64.pi * phase.to_f64() / Beacon.beacon_period.to_f64()`. Divide the phase by the period first, and the sum means the same on paper. But some of the beacons' shapes come out different in their last bits, and the gate's check of the built page fails: the gate builds the page and holds a count of what it draws.
+A product's grouping counts as well. A beacon's angle is `2.0 * F64.pi * phase.to_f64() / Beacon.beacon_period.to_f64()`. Divide the phase by the period first, and the product means the same on paper. But some of the beacons' shapes come out different in their last bits, and the gate's check of the built page fails: the gate builds the page, runs it, and holds a hash of what it draws.
 
 The opaque types keep the sums honest in the same way. `Distance.plus`, `Speed.times` and the rest do exactly the arithmetic their names say, and a value wrapped in an opaque type runs as the number inside it. So a change that retypes a module, to use `Speed` where it used plain `F64`s, changes the types and leaves every hash where it was. A hash that moves says the change did more than retype. So the code can be renamed, retyped and reorganized freely: the types catch what types catch, and the hashes catch the rest.
 
@@ -2567,7 +2563,7 @@ A test's data can sit beside it as a plain definition. Here's a motorcycle to st
 
 An `expect` can use only what its module imports. `Motorcycle` imports only what stepping a motorcycle needs, so its tests build one directly. A check that needs several modules goes in `gates/expects/`, a folder of modules made only for checks. So every import of a ride module serves the ride's own code.
 
-The gate makes every `expect` count. It finds each line in the source that starts with `expect`, and each one has to print `PASS` exactly once when `roc test` runs. So an `expect` in a module the test runs leave out fails the gate.
+The gate makes every `expect` count. It finds each line in the source that starts with `expect`, and each one has to print `PASS` exactly once when `roc test` runs. So an `expect` in a module left out of every test run fails the gate.
 
 ### Crashes that check
 
@@ -2616,7 +2612,7 @@ The {{chapter Platforms, packages and modules}} chapter showed the app's last li
 
 An app is a record. Most of its fields are plain values: the screen's size, thirty frames a second, the first model, and a title. The ride is silent, so `sounds` returns 0 and `tones` is empty. `model_at_next_step` moves the model on a step, and `frame_shapes` returns the shapes of the model's frame.
 
-Every app's step also takes the seconds the step covers, which is one over its frame rate. The ride counts steps, so one function fits its step to that shape:
+Every app's step also takes the seconds the step covers, which is one over its frame rate. `WasmApp` works those out from the frame rate itself, so they stay inside the WebAssembly. The ride counts steps, so one function fits its step to that shape:
 
 {{code CanvasApp.untimed_model_at_next_step}}
 
@@ -2636,7 +2632,7 @@ The model travels as a `Box(model)`: the model behind a pointer, which the platf
 
 The platform's own code is a host and a little JavaScript. `host.zig`, in Zig, runs inside the WebAssembly beside the app, holds the model, and calls the app's Roc functions. `canvas_app_runner.js`, in the browser, keeps time and gathers the input. For each tick it calls the host's `advance`, which steps the model, and when the browser is ready to draw, `computeFrame`, which returns where the frame's list of shapes sits in memory. When the browser falls behind, the runner steps up to four times before it draws once.
 
-The runner reads the shapes out of memory with `roc_glue.js`, a reader generated from the platform's types, and `shapes_canvas.js` paints them on the page's canvas. On the next call to `computeFrame`, the host hands the last frame's list to Roc's `release` before it asks for a new one. Roc frees the list, because Roc knows the layout of a `Shapes.Shape`.
+The runner reads the shapes out of memory with `roc_glue.js`, a reader generated from the platform's types, and `shapes_canvas.js` paints them on the page's canvas. On the next call to `computeFrame`, the host hands the last frame's list to Roc's `release` before it asks for a new one. `release` is pure too: it takes the list and returns `{}`. Roc frees a value once its last holder lets it go, so handing the list back to Roc is what frees it, and Roc knows the layout of a `Shapes.Shape` to do so.
 
 The runner and the painter come to under 700 lines of JavaScript, and they serve every app on the platform. They handle the keys, the mouse, the canvas and the sound, and they read shapes. Everything they know of the ride is a list of shapes.
 
@@ -2650,7 +2646,7 @@ A frame is one flat list of shapes, painted in order, so a later shape covers an
 
 `leaned_by` returns a space that turns the screen about its middle, by the roll in the opposite direction. `leaned_shapes` puts the whole frame inside that space, backdrop first, so the sky and the grass lean with the road.
 
-So the ride is a value, a step and a frame. The platform calls them, and everything with an effect, from the clock to the canvas, happens on the platform's side of the line.
+So the ride is a value, a step and a frame. The platform calls them, and everything with an effect, from the timing to the canvas, happens on the platform's side of the line.
 
 ## Zooming back out
 
