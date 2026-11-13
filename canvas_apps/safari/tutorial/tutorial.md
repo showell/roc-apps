@@ -1351,7 +1351,7 @@ Here's the step, whole:
 
 {{code RideInstant.next}}
 
-Its doc comment gives the order, and the order matters. The rider moves first, reading where the encounter ahead has got to. Then the clock ticks. Then the world answers the rider who has just moved: the truck aims at how far along the route the rider now is, and the encounter plan is kept, dropped at a new segment, or made from this step's rider. The last line puts the four together into the next moment, and the old moment stays as it was.
+`next_or_restart`, from the {{chapter A flip book}} chapter, calls this step until the rider reaches the end of the road. Its doc comment gives the order, and the order matters. The rider moves first, reading where the encounter ahead has got to. Then the clock ticks. Then the world answers the rider who has just moved: the truck aims at how far along the route the rider now is, and the encounter plan is kept, dropped at a new segment, or made from this step's rider. The last line puts the four together into the next moment, and the old moment stays as it was.
 
 ### Carried and derived
 
@@ -1359,19 +1359,19 @@ Those four fields are all the ride carries from one step to the next. Everything
 
 | Kind | Things | How it changes |
 |---|---|---|
-| Clock-driven | The sun, the sky, the beacons, the headlights | Derived from the clock alone |
+| Clock-driven | The sun's height, the sky, the beacons | Derived from the clock, and for a beacon its tower |
 | Stepped | The rider, the truck | Carried in the moment, and moved once a step from where it was |
 | Rider-driven | The cat, the bird | Derived from the clock and the carried plan, which the rider's approach sets |
 
-The trees and the cows are a fourth kind, the easiest of all: they stay put. The chapters ahead take the kinds in that order, simplest first.
+The trees and the cows stay put, which is easiest of all. The chapters ahead start with the clock-driven kind, the simplest.
 
 ### Pure functions
 
-A Roc function with effects, such as reading a key or the time, has a name that ends in `!` and a type with the `=>` arrow. Every function in the ride's own code is pure instead: it works out an answer from what it's given, with the thin arrow, and the effects live in the platform. So the same moment always gives the same next moment, and the same picture.
+A Roc function with effects, such as reading a key or the time, has a name that ends in `!` and the thick arrow `=>` in its type, between what it takes and what it returns. (A `match` branch's `=>` is another use of the same symbol.) Every function in the ride's own code is pure instead: it works out an answer from what it's given, with the thin arrow, and the effects live in the platform. So the same moment always gives the same next moment, and the same picture.
 
 ### Pausing and stepping
 
-Mostly, Safari Ride is a screensaver: you sit back and watch it. You can also take the controls. Click the ride to give it the keyboard, and Space pauses it. While it's paused, Right moves one step forward and Left one step back. While it's running, each moves four steps at a time. J jumps to the next segment of the road, and R starts over.
+Mostly, Safari Ride is a screensaver: you sit back and watch it. You can also take the controls. Click the ride to give it the keyboard, and Space pauses it. While it's paused, Right moves a step forward and Left a step back, one each frame while the key is held. While it's running, each moves four steps at a time. J jumps to the next segment of the road, and R starts the ride over, running.
 
 One function handles all of that. It takes the model, which is the tour and whether it's paused, and a snapshot of the input, and returns the next model:
 
