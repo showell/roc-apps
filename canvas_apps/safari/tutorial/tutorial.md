@@ -110,101 +110,93 @@ The brackets after `app` name the two things the app hands the platform, and the
 
 Types are at the heart of every Roc program. A type says what a value holds, and the compiler checks every value against its type. That gives this book its rule: get the types right, and everything else follows. A type that holds just the values that make sense leaves each function a plain job, and the compiler checks the rest. So a good way to meet a Roc program is to read its types.
 
-This chapter takes one tour across Safari Ride, with a stop for each of the five pieces from the {{chapter The problem}} chapter: things, the world, the rider's view, motion and the person watching.
+This book reads Safari Ride's types first, with a stop for each of the five pieces from the {{chapter The problem}} chapter. Each stop shows one thing Roc's types do for a program.
 
-### Numbers at the bottom
+### A type can hide its number
 
-At the bottom of every type are Roc's own primitive types, and Safari Ride's are nearly all numbers. Here's a type built around one, `Distance`:
+Safari Ride's types are built from numbers. A length in metres is an `F64`, and so is a speed, so the ride gives a length a type of its own:
 
 {{code Distance.Distance}}
 
-The `::` makes `Distance` opaque: inside is an `F64`, a length in metres, and only the `Distance` module reads it. The type's own functions sit between `.{` and `}`. `metres : F64 -> Distance` is a function's type: `metres` takes an `F64` and returns a `Distance`, and `Distance.(metres)` wraps the number.
+The `::` makes `Distance` opaque. Inside is an `F64`, and only the functions between `.{` and `}` read it. So a type can encapsulate. Everywhere outside this module, a length is a `Distance`, and the compiler keeps it apart from every other number.
 
-So everywhere outside this module, the compiler keeps a length apart from every other number.
-
-### Things
+### Things: a type says what a thing can be
 
 ```widget frame moving
 Step 1,529 of the ride, held still: the frame these types describe.
 ```
 
-Every thing beside the road has a kind, and each kind is a type. A tree is a `Conifer`, and a cat is a `Cat`. A cow is a `Billboard`, an emoji that stands on the grass, looking left or right:
+Every thing beside the road has a kind, and each kind is a type, such as `Conifer` for a tree. A cow is a `Billboard`, an emoji that stands on the grass, looking left or right:
 
 {{code Billboard.Billboard from "Billboard ::" to "}.{"}}
 
-Each line inside the braces names a field and its type. A module's other types carry its name in front, as `Billboard.Facing` does.
+Each line inside the braces names a field and its type, so a billboard is an emoji, a height and a facing. A `Billboard.Facing` is one of two tags, `FacesLeft` or `FacesRight`. A tag is a name, and a type made of tags lists every value it holds. So a type says exactly what a thing can be: a billboard faces one of two ways, and the compiler checks every use against both.
 
-A `Billboard.Facing` is one of two tags, `FacesLeft` or `FacesRight`. A tag is a name, and a type made of tags lists every tag a value of that type can be.
-
-For each frame, a function returns the shapes that show a thing, in the order they're painted. We call those shapes its sprite:
+For each frame, a function returns a thing's shapes, in the order they're painted. We call them its sprite:
 
 {{code Sprite.Sprite from "Sprite ::" to ").{"}}
 
-A `Sprite` holds a `List(Shapes.Shape)`: a list whose items are each a `Shape`, from the `Shapes` module.
+### The world: a type can be plain data
 
-### The world
-
-Where a thing stands is the world's job. The `World` module holds the road's plan as a short list of stretches, called segments, and each segment's plan is a record of the `SegmentPlan` type:
+The `World` module holds the road's plan as a short list of stretches, called segments, and each segment's plan is a record of the `SegmentPlan` type:
 
 {{code World.SegmentPlan}}
 
-A plain `:` gives the record type a short name, so any module can build a plan and read its fields. Here's the plan for the last stretch of road:
+Some types are plain data. A `:` gives this record type a short name, so any module can build a plan and read its fields. Here's the plan for the last stretch of road:
 
 {{code World.last_plan}}
 
-After a value's name, a `:` gives the value its type, and the rest defines it. On this stretch, a cat crosses the road, and the trees alternate green with red. The `World.route` value is the whole road, built from the plans once, before the ride starts, and every tree, herd and pond takes its place along it.
+After a value's name, a `:` gives the value its type, and the rest defines it. On this stretch, a cat crosses the road, and the trees alternate green with red. The `World.route` value is the whole road, built from the plans once, before the ride starts. So the world is a value, and its type is a description anyone can read.
 
 ```widget route
 The whole route from above, one stretch for each plan. A mark shows where a cat crosses or a bird flies.
 ```
 
-### The rider's view
+### The rider's view: one type for every kind
 
-The screen shows only what the rider sees, so each frame is the view of a camera on the rider. Each thing takes three forms on its way to the screen, and each form is a type. First, the thing is placed on the road:
+The screen shows what a camera on the rider sees. Each thing takes three forms on its way there, and each form is a type. First, the thing is placed on the road:
 
 {{code Geom.Placed}}
 
-The `kind` in parentheses is a type variable: it stands for whatever type fills it. So a cow on the road is a `Geom.Placed(Billboard)`, and a tree is a `Geom.Placed(Conifer)`. One type serves every kind.
-
-Then the camera sights the thing:
+The `kind` in parentheses is a type variable: it stands for whatever type fills it. So a cow on the road is a `Geom.Placed(Billboard)`, and one type serves every kind. Then the camera sights the thing:
 
 {{code Pipeline.Sighted}}
 
-A sighting keeps the kind, and adds a `Spot`: where the thing stands in the rider's view. From the spot, we work out where the thing lands on the screen, and how big it looks there. One rule gives both: twice as far away looks half as big.
-
-Last, the thing is rendered:
+A sighting keeps the kind, and adds a `Spot`: where the thing stands in the rider's view. Last, the thing is rendered:
 
 {{code Rendered.Rendered from "Rendered ::" to "}.{"}}
 
-A rendering holds the thing's sprite, and its depth: how far ahead of the camera it stands. Renderings of every kind share one type, so trees and cows meet in one list. The `DepthSort` module sorts that list far to near, and the platform paints it in that order, as a painter paints the far hills before the near trees.
+A rendering holds the thing's sprite, and its depth: how far ahead of the camera it stands. Renderings of every kind share one type, so trees and cows meet in one list, which the `DepthSort` module sorts far to near for the platform to paint. Each stage of the trip is its own type, so the compiler keeps the stages in order.
 
-### Motion
+### Motion: the whole state in one type
 
-To set the ride moving, one record holds the whole ride at one moment:
+One record holds the whole ride at one moment:
 
 {{code RideInstant.RideInstant from "RideInstant := {" to "}.{"}}
 
-The `:=` makes `RideInstant` nominal, a third way to name a type. Its four fields are everything the ride carries from one step to the next: the rider, the truck, the clock, and the plan for when the cat or the bird ahead starts to move. We derive everything else that changes from them, such as the sun's height from the clock. One function makes a step:
+The `:=` makes `RideInstant` nominal, a third way to name a type. Its four fields are everything the ride carries from one step to the next: the rider, the truck, the clock, and the plan for when the cat or the bird ahead starts to move. We derive everything else that changes from them, such as the sun's height from the clock. So the type shows how small the ride's state is. One function makes a step:
 
 {{signatures RideInstant.next_or_restart}}
 
 It returns one of two tags, written in place in square brackets, and each tag carries the next moment.
 
-### The person watching
+### The person watching: a feature starts in a type
 
 The app's model is one line:
 
 {{code SafariApp.Model}}
 
-The tour holds the route, the moment on show, and every moment before it since the ride last started:
+`motion` is two tags written in place: the ride is playing or paused. The tour holds the route, the moment on show, and the moments before it:
 
 {{code Tour.Tour from "Tour :: {" to "}.{"}}
 
+Stepping back works because `past_instants` keeps those moments. The feature starts in the type, and the functions follow.
+
 ### Where we start
 
-On the way, you've read three ways to name a type. A `:` gives a type a short name, and any value of that shape fits it. A `::` makes a new, opaque type, and only its module reads inside it. A `:=` makes a new, nominal type, and any module reads its fields.
+You've read three ways to name a type: a `:` gives a short name that any value of that shape fits, a `::` makes an opaque type that only its module reads inside, and a `:=` makes a nominal type whose fields any module reads.
 
-The next chapter takes one function apart, and then we start with things: what a cow or a tree is in the code, and how it becomes a sprite.
+The types did six jobs on the way: they hid a number's meaning, said what a thing can be, held plain data, served every kind, held the whole state, and made room for a feature. The next chapter takes one function apart, and then we start with things.
 
 ## Functions
 
