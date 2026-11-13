@@ -331,31 +331,27 @@ Four kinds of big animal stand at the bends in the ride's road: elephants, giraf
 The four bend animals and their babies, lined up on the grass: two pairs face right, and two face left.
 ```
 
-The Roc ideas here are tag unions and `match`: a type that is exactly one of a few tags, and code that handles each tag in turn. A nominal type and a tag that carries a value come along with them.
+Here we learn tag unions and `match`: a type that is exactly one of a few tags, and code that handles each tag in turn. A nominal type and a tag that carries a value come along with them.
 
-### Two ways to face
+### A tag union lists every case
 
 Each emoji shows its animal from the side, so a billboard faces left or right. The `Billboard` module gives those two ways a type of their own:
 
 {{code Billboard.Facing}}
 
-The type is a list of tags in square brackets. A tag is a value in its own right: `FacesLeft` is a value, and so is `FacesRight`. A type made of tags is a tag union, and a value of a tag union is always exactly one of its tags.
+The type is a list of tags in square brackets. A tag is a value in its own right: `FacesLeft` is a value, and so is `FacesRight`. A type made of tags is a tag union, and a value of a tag union is always exactly one of its tags. So the type lists every case there is.
+
+### A match handles every case
 
 The {{chapter Things}} chapter showed the annotation of `Billboard.scenery_sprite` alone. Here's the whole function:
 
 {{code Billboard.scenery_sprite}}
 
-A `Billboard` is opaque, and `Billboard.(billboard)` in the arguments opens it: it unwraps the billboard into a record named `billboard`, so the function can read `billboard.facing` and the other fields. Only the `Billboard` module can write `Billboard.(billboard)`.
+A `Billboard` is opaque, and `Billboard.(billboard)` in the arguments opens it into a record named `billboard`, so the function can read `billboard.facing` and the other fields. Only the `Billboard` module can write `Billboard.(billboard)`.
 
-Braces hold a block or a record: a block holds lines of code, where a record holds fields with colons. The block names `flip`, and its last expression makes the sprite. `billboard.emoji.still()` gives the emoji's traced still. `StillShapes.standing_still_shapes` makes shapes from it at the billboard's height, and `Sprite.from_shapes` makes those shapes a sprite. In that last record, `flip` alone is short for `flip: flip`.
+Braces hold a block or a record: a block holds lines of code, and a record holds fields with colons. The block names `flip`, and its last expression makes the sprite. `billboard.emoji.still()` returns the emoji's traced still: a list of filled polygons, measured in units of the animal's own height, so one still serves a cow far off and a cow by the road. `StillShapes.standing_still_shapes` scales it to the billboard's height, and `Sprite.from_shapes` makes the shapes a sprite. In that last record, `flip` alone is short for `flip: flip`.
 
-A still is plain data: a list of filled polygons, in the order they're painted. A polygon is one record:
-
-{{code Still.Polygon}}
-
-A still measures every point in units of its own height. Its feet are at `y` 0, its `x` runs across from its middle, and a standing animal is about 1 tall. So one still serves a cow in the distance and a cow by the road, each scaled to its own height. Every animal in the ride, from the cow to the cat and the bird, comes from stills like this one.
-
-Every emoji faces left, so a billboard that faces right needs its emoji mirrored. The `match` makes that choice. It looks at `billboard.facing`, and each line under it takes one tag and returns a tag: `FacesLeft` gives `AsDrawn`, and `FacesRight` gives `Mirrored`. Those two are the tags of another tag union, `StillShapes.Flip`, and `flip` names the one the `match` picks. The compiler works out the type of `flip` from where it's used.
+Every emoji faces left, so a billboard that faces right needs its emoji mirrored. The `match` makes that choice: each line under it takes one tag of `billboard.facing` and returns a tag. `FacesLeft` gives `AsDrawn`, and `FacesRight` gives `Mirrored`. Those two are the tags of another tag union, `StillShapes.Flip`, and `flip` names the one the `match` returns. The compiler infers the type of `flip` from where it's used.
 
 A `match` handles every tag of its type, and the compiler checks that it does. Leave out the `FacesRight` line, and the compiler stops with an error that names it:
 
@@ -368,7 +364,7 @@ Missing patterns:
 
 Here, getting the types right pays the most. A tag union lists every case, so when a new tag joins it, the compiler names every `match` that has yet to handle it.
 
-### Four animals
+### A nominal type sets its tags apart
 
 The bend animals are a tag union too, with four tags:
 
@@ -380,15 +376,13 @@ Each tag is an animal. `BendAnimal` uses `:=`, so it's a nominal type: a new typ
 
 The `match` has one line for each of the four tags, so every bend animal has a species, and a grown giraffe is always 4.5 metres tall.
 
-### One thing at a bend
+### A tag carries a value
 
 A bend is quiet, or it holds one thing: an animal and its baby, or a pond of ducks. The `Segment` module's `BendLife` type says what's at a bend:
 
 {{code Segment.BendLife}}
 
-`Quiet` and `DuckPond` are plain tags, like the ones above. `Animal(BendAnimal)` is a tag that carries a value: an `Animal` always comes with one `BendAnimal`. So `Animal(Giraffe)` is a whole value, a bend with a giraffe at it.
-
-The route's plan stores a `BendLife` for each bend. A plain list of billboards there would let a giraffe and a duck pond share one bend. A `BendLife` is exactly one of its three tags, so a bend gets one thing, and `bend_billboards` derives the bend's billboards from it.
+`Quiet` and `DuckPond` are plain tags, like the ones above. `Animal(BendAnimal)` is a tag that carries a value: an `Animal` always comes with one `BendAnimal`. So `Animal(Giraffe)` is a whole value, a bend with a giraffe at it. The route's plan stores a `BendLife` for each bend, and a `BendLife` is exactly one of its three tags, so each bend gets one thing.
 
 What a bend's life can be
 ```dot
@@ -409,16 +403,17 @@ digraph bend_life {
 }
 ```
 
-The function that gives a bend its billboards takes the bend's life and the bend itself, a `Geom.Bend`, and takes the life apart with a `match`:
+The function that returns a bend's billboards takes the bend's life and the bend itself, a `Geom.Bend`, and takes the life apart with a `match`:
 
 {{code Segment.bend_billboards}}
 
-The `Animal(animal)` line matches a bend with any animal at it, and names the animal it carries `animal`, ready to use. Then `animal.bend_billboards(bend)` calls a different function with the same name. `animal` is a `BendAnimal`, so the call goes to the `bend_billboards` that comes with `BendAnimal`, which places the animal and its baby. A duck pond gets its ducks from the `Pond` module, and a quiet bend gets the empty list, `[]`.
+The `Animal(animal)` line matches a bend with any animal at it, and names the animal it carries `animal`, ready to use. Then `animal.bend_billboards(bend)` calls a different function with the same name. `animal` is a `BendAnimal`, so the call goes to the `bend_billboards` that comes with `BendAnimal`, which places the animal and its baby. A duck pond gets its ducks from the `Pond` module, and a quiet bend gets the empty list, `[]`. So a tag's value rides along with it, and the `match` hands it to the code that needs it.
+
 ### Elephants, mostly
 
 The route's plans say what lives at each bend, and most of them say `Animal(Elephant)`. Only a handful say `Animal(Giraffe)`, `Animal(Zebra)`, `Animal(Rhino)` or `DuckPond`. We chose that mix: the elephants are the fixture, so a rare animal is a surprise.
 
-A tag union lists everything a value can be, and a `match` handles each case. The emojis came ready-made, traced ahead of time. Next, we build shapes of our own: a triangle and a rectangle.
+A tag union lists every case, a `match` handles each one, a nominal type sets its tags apart, and a tag can carry a value. The emojis came ready-made, traced ahead of time. Next, we build shapes of our own: a triangle and a rectangle.
 
 ## Shapes
 
