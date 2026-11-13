@@ -1017,7 +1017,7 @@ That's the far scenery: it turns with the rider and stays where it is. Next come
 
 ## The road
 
-The road is the first part of the world that comes nearer as the rider rides. It's ground, laid on the grass in front of the mountains and under everything beside the road.
+In front of the mountains, the road comes nearer as the rider rides. It's ground, laid on the grass in front of the mountains and under everything beside the road.
 
 ```widget frame road
 Step 1,529 of the ride: the road, over the grass and under the trees.
@@ -1077,7 +1077,7 @@ The corner has its paving. Next, each bend gets a rail around its outside.
 
 ## Rails
 
-At each bend, a guard rail runs along the outside of the turn: a metal bar half a metre up, on thin posts. It's the first thing the ride builds that stands up from the ground.
+At each bend, a guard rail runs along the outside of the turn: a metal bar half a metre up, on thin posts. It's the first part of the road itself that stands up off the ground.
 
 ```widget frame rails
 Step 1,529 of the ride: the road, with its guard rails at the bends ahead.
@@ -1109,7 +1109,7 @@ digraph rail {
 
 {{code RailSighting.rail_quads_in_view}}
 
-For each segment in view with a bend after it, `rail_points` finds the path, and `GuardRail.quads_along` cuts it into quads. The path joins four lists, one for each box of the diagram:
+`join_map` maps each segment in view to a list, here the quads of its bend's rail, and joins the lists into one. For each segment with a bend after it, `rail_points` finds the path, and `GuardRail.quads_along` cuts it into quads. The path joins four lists, one for each box of the diagram:
 
 {{code RailSighting.rail_points}}
 
@@ -1117,7 +1117,7 @@ The first line takes apart the record that `outer_corner_in_view` returns, namin
 
 {{code RailSighting.leg_points}}
 
-A post stands at every point, so the points are a metre apart. Each leg leaves out its first point, `from`, because that's the last point of the leg before it.
+The points are about a metre apart, and a post will stand at each one. `drop_first(1)` leaves out a leg's first point, `from`, because that's the last point of the leg before it.
 
 ### Bars and posts
 
@@ -1127,13 +1127,65 @@ A post stands at every point, so the points are a metre apart. Each leg leaves o
 
 Its corners are `PointAtHeight`s, points seen from the rider at some height above the ground, so a bar's top corners stand higher than its bottom ones.
 
-Each quad goes into the frame's depth sort on its own, so a tree can stand in front of one post and behind the next. A quad holds only its corners and a color, so it makes its own rendering, where the things beside the road go through `Pipeline.rendering_of`:
+Each quad goes into the frame's depth sort on its own, at a depth that's the mean distance of its corners, so a tree can stand in front of one post and behind the next. A quad holds only its corners and a color, so it makes its own rendering, where the things beside the road go through `Pipeline.rendering_of`:
 
 {{code GuardRail.quad_rendering}}
 
 `{ ..quad, color: … }` is a record update: a new record, like `quad` with its `color` changed, and `quad` itself stays as it was. Here the new color is the quad's own, dimmed with the sky. `map_ok` works on a `Try`: it applies its function to an `Ok` and leaves an `Err` as it is, so a quad wholly behind the camera stays refused.
 
 The ride works out each rail afresh every frame, its bars and posts from the route and the rider, and the depth sort places each one. Next, the tallest things beside the road: the radio towers.
+
+## Radio towers
+
+The radio towers are the tallest things beside the road: lattices of thin rods, 80 metres high, standing well back from it. One stands past the end of every segment, off to the right, and a long segment has one more halfway along, off to the left.
+
+```widget frame towers
+Step 1,529 of the ride: the road and its rails, with the radio towers standing back from it.
+```
+
+A tower raises two problems of its own. Far off, it should sink below the horizon from the bottom up, as the ground curves away under it. Up close, it can stand partly behind the camera. The chapter takes them in that order, after the tower's place by the road.
+
+### Where a tower stands
+
+A tower is two facts: which way it's turned, and its beacon, the light at its top:
+
+{{code Tower.Tower from "A tower in a frame" to "Tower :: {"}}
+
+Trees get their places once, when the world is built. A tower's sighting works out its place each frame, from its segment. Here's the tower past a segment's end:
+
+{{code TowerSighting.end_tower}}
+
+The tower halfway along is the same, with a square yaw, a `Midway` beacon, and one more way to fail: `mid_tower_point` gives `Err(NoMidTower)` for a segment of a kilometre or less. Where towers stand has one home, `TowerSighting`, and the world itself holds only the segments.
+
+### Over the horizon
+
+The ride's ground curves away on its 100 km radius, and a tower stands on it. From the rider's eye, 1.2 metres up, the ground curves out of sight 490 metres out. Past that horizon, the lowest thing the rider can see lies on the line from the eye that grazes the ground there:
+
+{{code EarthCurve.lowest_visible_height}}
+
+A tower hides whatever part of it is under that line, so as it gets further away, it sinks from the bottom up. An 80-metre tower still shows its tip about 4.5 km off. Once all of it is under the line, `Pipeline.sighting_above_horizon_of` refuses it as `OutOfSight`, as the {{chapter Refused}} chapter showed. So a sighted tower always has something to paint.
+
+### Rods
+
+A tower is drawn as a few dozen rods and a disc for its beacon:
+
+{{code Tower.tower_shapes}}
+
+Its sighting has already refused a tower the horizon hides wholly, so here that case is a `crash`: a stop with a message, for a case that would be a bug. Otherwise come the legs, the rings and the braces, and the beacon's disc last, at the top.
+
+A tower's footprint is a square, and four tags name its corners. Going round the square is a `match`:
+
+{{code Tower.next_corner}}
+
+Four legs run from the corners up to the top, each starting at the height the horizon hides. Every 20 metres up, a ring of four rods joins each corner to the next one round, and crossed braces fill the lowest two storeys.
+
+Each rod is a line between two points seen from the rider, and a near tower can stand partly behind the camera. So each rod goes through this function:
+
+{{code RiderView.line_ahead}}
+
+The `match` is on a pair, `(start, end)`, so it covers all four combinations of its two `Try`s. A rod with one end short of the near plane, 0.4 metres ahead of the camera, is cut where it crosses that plane. A rod with both ends behind it is refused.
+
+That's a tower: rods and a disc, worked out again each frame from its segment. The disc on top blinks, and the blinking waits for the second half, when the clock starts.
 
 ## The modules
 
@@ -1683,88 +1735,6 @@ Two tags say whether the sun is in view, so there's no `null` and no off-screen 
 {{code FrameView.frame_view_at}}
 
 Most of what `frame_view_at` calls takes the clock, and that's the hard part. The sun sinks a little with every step, and the sky's colors, the mountains and the truck's headlights all follow it. That's a lot of heavy lifting for a circle. It gets a chapter of its own, The setting sun, once things start to move.
-
-## Radio towers
-
-The radio towers stand well back from the road. One stands past the end of every segment, off to the right, and a long segment has one more halfway along, off to the left. Each is a lattice of thin rods, 80 metres tall.
-
-A tower raises two problems a tree doesn't. Far off, it should sink over the horizon, and up close, it can stand partly behind the camera. It comes in three parts: a place by the road, worked out each frame from its segment; the horizon, which hides it from the bottom up as it recedes; and a shape, a lattice of rods on a square footprint.
-
-New in this chapter:
-
-- Roc: a `match` on a pair
-- Modules: `TowerSighting`, `Tower`
-
-### Get the types right
-
-The tower itself is two facts: which way it's turned, and its beacon. The tower at a segment's end is turned to the road, and the one halfway along stands square with it.
-
-{{code Tower.Tower from "A tower in a frame" to "Tower :: {"}}
-
-While its shapes are worked out, a tower's measurements for this frame travel together. Its spot says how far the ground has dropped beneath it, and how much of it the horizon hides is worked out from that spot:
-
-{{code Tower.TowerGeometry}}
-
-Each step of the job is a signature:
-
-| Job | Function | Its type |
-|---|---|---|
-{{types row TowerSighting.end_tower Place a tower past a segment's end}}
-{{types row Tower.scenery_sprite Draw it}}
-{{types row EarthCurve.lowest_visible_height Hide its foot}}
-{{types row RiderView.line_ahead Make one rod}}
-
-### Where a tower stands
-
-Trees get their spots once, when the world is built. A tower doesn't: each frame, its sighting works out its spot from its segment. Here's the tower past a segment's end:
-
-{{code TowerSighting.end_tower}}
-
-The `beacon` line lights the beacon for this step. The tower halfway along is the same, with `Midway` for its beacon, a square yaw, and one more way to fail, `NoMidTower`. `mid_tower_point` says whether a segment is longer than a kilometre, and where its halfway tower stands. It sits in `TowerSighting` beside the end tower's numbers, so where towers stand has one home, and the world itself knows nothing about towers.
-
-To draw a tower, `scenery_sprite` takes its spot and the lens from the setting, as a cat's does:
-
-{{code Tower.scenery_sprite}}
-
-The four corners of its base come from the spot. Each corner is an offset in the tower's own frame, and it stands on the road through the spot, turned by the tower's yaw. The truck, later on, stands its corners the same way:
-
-{{code Tower.tower_footprint}}
-
-### Over the horizon
-
-The ride's ground curves away, with a radius of 100 km, and everything stands on it: a tower is lowered by how far the ground has dropped beneath its foot, like a tree or the truck. From the rider's eye, 1.2 metres up, the ground curves out of sight 490 metres out, and that's the horizon. Past it, the lowest thing the rider can see is on the line from the eye that grazes the ground there:
-
-{{code EarthCurve.lowest_visible_height}}
-
-A tower hides whatever part of it is under that line, so as it gets further away, it sinks below the horizon from the bottom up. An 80-metre tower shows its tip until about 4.5 km. Once all of it is under the line, its sighting refuses it as `OutOfSight`, as it does a tree too small to see. The rule is the same for every kind with a height:
-
-{{code Pipeline.sighting_above_horizon_of}}
-
-So a sighted tower always has something to draw.
-
-### Rods
-
-Here's the whole tower, from the top. A tower the horizon hides wholly never gets here, so that case is a crash. Otherwise come the legs, the rings and the braces, and the beacon's disc last, at the top:
-
-{{code Tower.tower_shapes}}
-
-A tower's footprint is a square, and four tags name its corners. Going round the square is a `match`:
-
-{{code Tower.next_corner}}
-
-Four legs run from the corners up to the top. Each starts at the geometry's `hidden`, the height the horizon hides, so nothing below the horizon is drawn:
-
-{{code Tower.leg_shapes}}
-
-Every 20 metres up, short of the top, a ring of four rods joins each corner to the next, which is what `next_corner` is for. Crossed braces fill the lowest two storeys.
-
-Each rod is a line between two points in the rider's view, and it needs some care, because a near tower can stand partly behind the camera:
-
-{{code RiderView.line_ahead}}
-
-The `match` is on a pair, so it has to cover all four combinations. A rod with one end behind the near plane, 0.4 metres ahead of the camera, is cut where it crosses that plane, and a rod with both ends behind it isn't drawn.
-
-That's a tower: a few dozen rods and a disc, worked out again each frame from its segment. The rods never change. The disc on top blinks, and that waits until the clock starts.
 
 ## Stills: how we draw a critter
 
