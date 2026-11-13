@@ -1,0 +1,156 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Appendix: list functions · Safari Ride</title>
+<link rel="icon" href="data:,">
+<link rel="stylesheet" href="book.css">
+<script src="book.js" defer></script>
+</head>
+<body class="chapter">
+<header class="top-bar">
+<a class="home-link" href="https://roc.lynrummy.com/">Steve's Roc Apps</a>
+<a class="repo-link" href="https://github.com/showell/roc-apps">roc-apps on GitHub</a>
+</header>
+<nav class="book-nav" id="chapters" aria-label="Chapters">
+<a class="book-name" href="index.html">Safari Ride</a>
+<ol>
+<li class="part">The big picture</li><li><a href="introduction.html"><span class="number">1</span>Introduction</a></li>
+<li><a href="one-page.html"><span class="number">2</span>One page</a></li>
+<li><a href="the-problem.html"><span class="number">3</span>The problem</a></li>
+<li><a href="platforms-packages-and-modules.html"><span class="number">4</span>Platforms, packages and modules</a></li>
+<li><a href="types.html"><span class="number">5</span>Types</a></li>
+<li><a href="functions.html"><span class="number">6</span>Functions</a></li>
+<li class="part">One frame</li><li><a href="things.html"><span class="number">7</span>Things</a></li>
+<li><a href="billboard-critters.html"><span class="number">8</span>Tag unions: billboard critters</a></li>
+<li><a href="shapes.html"><span class="number">9</span>Shapes</a></li>
+<li><a href="a-far-tree.html"><span class="number">10</span>Lists and map: a far tree</a></li>
+<li><a href="the-pipeline.html"><span class="number">11</span>The pipeline</a></li>
+<li><a href="asking-a-kind.html"><span class="number">12</span>Where clauses: asking a kind</a></li>
+<li><a href="refused.html"><span class="number">13</span>Errors as tag unions</a></li>
+<li class="category">Nature</li><li><a href="the-sky.html"><span class="number">14</span>The sky and the grass</a></li>
+<li><a href="mountains.html"><span class="number">15</span>Mountains</a></li>
+<li class="category">Man-made</li><li><a href="the-road.html"><span class="number">16</span>The road</a></li>
+<li><a href="rails.html"><span class="number">17</span>Rails</a></li>
+<li><a href="radio-towers.html"><span class="number">18</span>Radio towers</a></li>
+<li class="category">Critters that stand still</li><li><a href="herds.html"><span class="number">19</span>Herds</a></li>
+<li class="part">Motion</li><li><a href="a-flip-book.html"><span class="number">20</span>Immutable values: a flip book</a></li>
+<li><a href="records.html"><span class="number">21</span>Records</a></li>
+<li><a href="pure-functions-and-effects.html"><span class="number">22</span>Pure functions and effects</a></li>
+<li><a href="the-clock.html"><span class="number">23</span>Opaque types: the clock</a></li>
+<li><a href="the-ride-instant.html"><span class="number">24</span>The ride instant</a></li>
+<li class="category">The passage of time</li><li><a href="the-beacons.html"><span class="number">25</span>The beacons</a></li>
+<li><a href="the-setting-sun.html"><span class="number">26</span>The setting sun</a></li>
+<li class="category">Vehicles</li><li><a href="the-rider.html"><span class="number">27</span>The rider</a></li>
+<li><a href="the-throttle.html"><span class="number">28</span>The throttle</a></li>
+<li><a href="rehearsal.html"><span class="number">29</span>Variables and loops: rehearsal</a></li>
+<li><a href="the-riders-gaze.html"><span class="number">30</span>The rider&#39;s gaze</a></li>
+<li><a href="the-truck.html"><span class="number">31</span>The truck</a></li>
+<li><a href="the-trucks-motion.html"><span class="number">32</span>The truck&#39;s motion</a></li>
+<li class="category">Critter motion</li><li><a href="the-cat.html"><span class="number">33</span>The cat</a></li>
+<li><a href="the-bird.html"><span class="number">34</span>The bird</a></li>
+<li><a href="what-a-cat-does-to-the-rider.html"><span class="number">35</span>What a cat does to the rider</a></li>
+<li class="part">Under the hood</li><li><a href="the-math-layer.html"><span class="number">36</span>The math layer</a></li>
+<li><a href="proving-it.html"><span class="number">37</span>Proving it</a></li>
+<li><a href="the-platform.html"><span class="number">38</span>The platform</a></li>
+<li><a href="zooming-back-out.html"><span class="number">39</span>Zooming back out</a></li>
+<li class="part">Appendices</li><li><a href="appendix-the-patterns.html">Appendix: the patterns</a></li>
+<li class="here"><a href="appendix-list-functions.html">Appendix: list functions</a></li>
+<li><a href="appendix-what-catches-you-out.html">Appendix: what catches you out</a></li>
+<li><a href="appendix-glossary.html">Appendix: glossary</a></li>
+<li><a href="appendix-index.html">Appendix: index</a></li>
+<li><a href="credits.html">Credits</a></li>
+</ol>
+</nav>
+<main>
+<p class="book-bar"><a href="index.html">Safari Ride</a> <a href="#chapters">Chapters</a></p>
+<article>
+<h1 id="appendix-list-functions">Appendix: list functions</h1>
+<p>The ride builds most of its answers out of lists. These are the main <code>List</code> functions the chapters use, in the order they first come up.</p>
+<table>
+<thead>
+<tr>
+<th>Function</th>
+<th>What it does</th>
+<th>Chapter</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>map</code></td>
+<td>Calls a function on each item, and returns a list of the answers</td>
+<td>Lists and map: a far tree</td>
+</tr>
+<tr>
+<td><code>map_<wbr>with_<wbr>index</code></td>
+<td><code>map</code>, with each item&#39;s place in the list, counting from 0</td>
+<td>Lists and map: a far tree</td>
+</tr>
+<tr>
+<td><code>concat</code></td>
+<td>Puts a second list after the first</td>
+<td>Lists and map: a far tree</td>
+</tr>
+<tr>
+<td><code>join</code></td>
+<td>Makes one list of a list of lists</td>
+<td>The pipeline</td>
+</tr>
+<tr>
+<td><code>keep_<wbr>oks</code></td>
+<td>Calls a function that returns a <code>Try</code> on each item, keeps the <code>Ok</code> values, and drops the <code>Err</code>s</td>
+<td>Errors as tag unions</td>
+</tr>
+<tr>
+<td><code>List.<wbr>from_<wbr>iter</code></td>
+<td>Collects a count, such as <code>U32.<wbr>until(0, n)</code>, into a list</td>
+<td>The road</td>
+</tr>
+<tr>
+<td><code>join_<wbr>map</code></td>
+<td>Maps each item to a list, and joins the lists into one</td>
+<td>Rails</td>
+</tr>
+<tr>
+<td><code>drop_<wbr>first</code></td>
+<td>Drops the first items, as many as it&#39;s given</td>
+<td>Rails</td>
+</tr>
+<tr>
+<td><code>fold</code></td>
+<td>Hands each item in turn to a function, along with the answer so far, starting from a first answer</td>
+<td>The throttle</td>
+</tr>
+<tr>
+<td><code>find_<wbr>first</code></td>
+<td>Returns the first item that passes a test, as a <code>Try</code></td>
+<td>The truck&#39;s motion</td>
+</tr>
+<tr>
+<td><code>List.<wbr>repeat</code></td>
+<td>Makes a list of one value, as many times as it&#39;s given</td>
+<td>The cat</td>
+</tr>
+<tr>
+<td><code>take_<wbr>first</code></td>
+<td>Keeps the first items, as many as it&#39;s given</td>
+<td>The math layer</td>
+</tr>
+<tr>
+<td><code>map2</code></td>
+<td>Walks two lists side by side, and calls a function on each pair</td>
+<td>The math layer</td>
+</tr>
+</tbody>
+</table>
+
+</article>
+<nav class="turn-page" aria-label="Previous and next chapter">
+<a rel="prev" href="appendix-the-patterns.html"><small>Previous</small>Appendix: the patterns</a>
+<a rel="next" href="appendix-what-catches-you-out.html"><small>Next</small>Appendix: what catches you out</a>
+</nav>
+</main>
+
+</body>
+</html>

@@ -1,0 +1,131 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Appendix: what catches you out · Safari Ride</title>
+<link rel="icon" href="data:,">
+<link rel="stylesheet" href="book.css">
+<script src="book.js" defer></script>
+</head>
+<body class="chapter">
+<header class="top-bar">
+<a class="home-link" href="https://roc.lynrummy.com/">Steve's Roc Apps</a>
+<a class="repo-link" href="https://github.com/showell/roc-apps">roc-apps on GitHub</a>
+</header>
+<nav class="book-nav" id="chapters" aria-label="Chapters">
+<a class="book-name" href="index.html">Safari Ride</a>
+<ol>
+<li class="part">The big picture</li><li><a href="introduction.html"><span class="number">1</span>Introduction</a></li>
+<li><a href="one-page.html"><span class="number">2</span>One page</a></li>
+<li><a href="the-problem.html"><span class="number">3</span>The problem</a></li>
+<li><a href="platforms-packages-and-modules.html"><span class="number">4</span>Platforms, packages and modules</a></li>
+<li><a href="types.html"><span class="number">5</span>Types</a></li>
+<li><a href="functions.html"><span class="number">6</span>Functions</a></li>
+<li class="part">One frame</li><li><a href="things.html"><span class="number">7</span>Things</a></li>
+<li><a href="billboard-critters.html"><span class="number">8</span>Tag unions: billboard critters</a></li>
+<li><a href="shapes.html"><span class="number">9</span>Shapes</a></li>
+<li><a href="a-far-tree.html"><span class="number">10</span>Lists and map: a far tree</a></li>
+<li><a href="the-pipeline.html"><span class="number">11</span>The pipeline</a></li>
+<li><a href="asking-a-kind.html"><span class="number">12</span>Where clauses: asking a kind</a></li>
+<li><a href="refused.html"><span class="number">13</span>Errors as tag unions</a></li>
+<li class="category">Nature</li><li><a href="the-sky.html"><span class="number">14</span>The sky and the grass</a></li>
+<li><a href="mountains.html"><span class="number">15</span>Mountains</a></li>
+<li class="category">Man-made</li><li><a href="the-road.html"><span class="number">16</span>The road</a></li>
+<li><a href="rails.html"><span class="number">17</span>Rails</a></li>
+<li><a href="radio-towers.html"><span class="number">18</span>Radio towers</a></li>
+<li class="category">Critters that stand still</li><li><a href="herds.html"><span class="number">19</span>Herds</a></li>
+<li class="part">Motion</li><li><a href="a-flip-book.html"><span class="number">20</span>Immutable values: a flip book</a></li>
+<li><a href="records.html"><span class="number">21</span>Records</a></li>
+<li><a href="pure-functions-and-effects.html"><span class="number">22</span>Pure functions and effects</a></li>
+<li><a href="the-clock.html"><span class="number">23</span>Opaque types: the clock</a></li>
+<li><a href="the-ride-instant.html"><span class="number">24</span>The ride instant</a></li>
+<li class="category">The passage of time</li><li><a href="the-beacons.html"><span class="number">25</span>The beacons</a></li>
+<li><a href="the-setting-sun.html"><span class="number">26</span>The setting sun</a></li>
+<li class="category">Vehicles</li><li><a href="the-rider.html"><span class="number">27</span>The rider</a></li>
+<li><a href="the-throttle.html"><span class="number">28</span>The throttle</a></li>
+<li><a href="rehearsal.html"><span class="number">29</span>Variables and loops: rehearsal</a></li>
+<li><a href="the-riders-gaze.html"><span class="number">30</span>The rider&#39;s gaze</a></li>
+<li><a href="the-truck.html"><span class="number">31</span>The truck</a></li>
+<li><a href="the-trucks-motion.html"><span class="number">32</span>The truck&#39;s motion</a></li>
+<li class="category">Critter motion</li><li><a href="the-cat.html"><span class="number">33</span>The cat</a></li>
+<li><a href="the-bird.html"><span class="number">34</span>The bird</a></li>
+<li><a href="what-a-cat-does-to-the-rider.html"><span class="number">35</span>What a cat does to the rider</a></li>
+<li class="part">Under the hood</li><li><a href="the-math-layer.html"><span class="number">36</span>The math layer</a></li>
+<li><a href="proving-it.html"><span class="number">37</span>Proving it</a></li>
+<li><a href="the-platform.html"><span class="number">38</span>The platform</a></li>
+<li><a href="zooming-back-out.html"><span class="number">39</span>Zooming back out</a></li>
+<li class="part">Appendices</li><li><a href="appendix-the-patterns.html">Appendix: the patterns</a></li>
+<li><a href="appendix-list-functions.html">Appendix: list functions</a></li>
+<li class="here"><a href="appendix-what-catches-you-out.html">Appendix: what catches you out</a></li>
+<li><a href="appendix-glossary.html">Appendix: glossary</a></li>
+<li><a href="appendix-index.html">Appendix: index</a></li>
+<li><a href="credits.html">Credits</a></li>
+</ol>
+</nav>
+<main>
+<p class="book-bar"><a href="index.html">Safari Ride</a> <a href="#chapters">Chapters</a></p>
+<article>
+<h1 id="appendix-what-catches-you-out">Appendix: what catches you out</h1>
+<p>These are the Roc surprises the chapters meet, sorted by where they first show up. The last column names the chapter.</p>
+<table>
+<thead>
+<tr>
+<th>What you see</th>
+<th>What&#39;s going on</th>
+<th>Chapter</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>A method call with no import</td>
+<td>A method sits inside its type&#39;s braces, and the call finds it from the type of the value before the dot</td>
+<td>Functions</td>
+</tr>
+<tr>
+<td>A helper with no keyword to say it&#39;s private</td>
+<td>Anything outside a type&#39;s braces is private to its module</td>
+<td>Where clauses: asking a kind</td>
+</tr>
+<tr>
+<td>A <code>where</code> clause matching the wrong method</td>
+<td>A clause matches a method by its name and type alone, so the pipeline&#39;s methods all start with &quot;scenery&quot;</td>
+<td>Where clauses: asking a kind</td>
+</tr>
+<tr>
+<td>A crash with a sentence about a sum</td>
+<td><code>Fraction.<wbr>of</code> crashes on a ratio outside 0 to 1, because such a ratio means the sum behind it is wrong</td>
+<td>Errors as tag unions</td>
+</tr>
+<tr>
+<td><code>var</code> and <code>while</code> inside a pure function</td>
+<td>A variable lives and dies inside its function, so the function is still pure</td>
+<td>Variables and loops: rehearsal</td>
+</tr>
+<tr>
+<td><code>?? crash</code> on a lookup</td>
+<td>It enforces an invariant: the lookup always finds its value, and a miss is a bug</td>
+<td>The bird</td>
+</tr>
+<tr>
+<td>A frame hash that moves after a sum was regrouped</td>
+<td>Floating-point sums and products depend on their order, so the order is part of what they mean</td>
+<td>Proving it</td>
+</tr>
+<tr>
+<td>An <code>expect</code> that can&#39;t see a type</td>
+<td>An <code>expect</code> can name only what its module imports, so a check that needs several modules lives in <code>gates/expects/</code></td>
+<td>Proving it</td>
+</tr>
+</tbody>
+</table>
+
+</article>
+<nav class="turn-page" aria-label="Previous and next chapter">
+<a rel="prev" href="appendix-list-functions.html"><small>Previous</small>Appendix: list functions</a>
+<a rel="next" href="appendix-glossary.html"><small>Next</small>Appendix: glossary</a>
+</nav>
+</main>
+
+</body>
+</html>

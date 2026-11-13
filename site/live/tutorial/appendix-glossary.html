@@ -1,0 +1,210 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Appendix: glossary · Safari Ride</title>
+<link rel="icon" href="data:,">
+<link rel="stylesheet" href="book.css">
+<script src="book.js" defer></script>
+</head>
+<body class="chapter">
+<header class="top-bar">
+<a class="home-link" href="https://roc.lynrummy.com/">Steve's Roc Apps</a>
+<a class="repo-link" href="https://github.com/showell/roc-apps">roc-apps on GitHub</a>
+</header>
+<nav class="book-nav" id="chapters" aria-label="Chapters">
+<a class="book-name" href="index.html">Safari Ride</a>
+<ol>
+<li class="part">The big picture</li><li><a href="introduction.html"><span class="number">1</span>Introduction</a></li>
+<li><a href="one-page.html"><span class="number">2</span>One page</a></li>
+<li><a href="the-problem.html"><span class="number">3</span>The problem</a></li>
+<li><a href="platforms-packages-and-modules.html"><span class="number">4</span>Platforms, packages and modules</a></li>
+<li><a href="types.html"><span class="number">5</span>Types</a></li>
+<li><a href="functions.html"><span class="number">6</span>Functions</a></li>
+<li class="part">One frame</li><li><a href="things.html"><span class="number">7</span>Things</a></li>
+<li><a href="billboard-critters.html"><span class="number">8</span>Tag unions: billboard critters</a></li>
+<li><a href="shapes.html"><span class="number">9</span>Shapes</a></li>
+<li><a href="a-far-tree.html"><span class="number">10</span>Lists and map: a far tree</a></li>
+<li><a href="the-pipeline.html"><span class="number">11</span>The pipeline</a></li>
+<li><a href="asking-a-kind.html"><span class="number">12</span>Where clauses: asking a kind</a></li>
+<li><a href="refused.html"><span class="number">13</span>Errors as tag unions</a></li>
+<li class="category">Nature</li><li><a href="the-sky.html"><span class="number">14</span>The sky and the grass</a></li>
+<li><a href="mountains.html"><span class="number">15</span>Mountains</a></li>
+<li class="category">Man-made</li><li><a href="the-road.html"><span class="number">16</span>The road</a></li>
+<li><a href="rails.html"><span class="number">17</span>Rails</a></li>
+<li><a href="radio-towers.html"><span class="number">18</span>Radio towers</a></li>
+<li class="category">Critters that stand still</li><li><a href="herds.html"><span class="number">19</span>Herds</a></li>
+<li class="part">Motion</li><li><a href="a-flip-book.html"><span class="number">20</span>Immutable values: a flip book</a></li>
+<li><a href="records.html"><span class="number">21</span>Records</a></li>
+<li><a href="pure-functions-and-effects.html"><span class="number">22</span>Pure functions and effects</a></li>
+<li><a href="the-clock.html"><span class="number">23</span>Opaque types: the clock</a></li>
+<li><a href="the-ride-instant.html"><span class="number">24</span>The ride instant</a></li>
+<li class="category">The passage of time</li><li><a href="the-beacons.html"><span class="number">25</span>The beacons</a></li>
+<li><a href="the-setting-sun.html"><span class="number">26</span>The setting sun</a></li>
+<li class="category">Vehicles</li><li><a href="the-rider.html"><span class="number">27</span>The rider</a></li>
+<li><a href="the-throttle.html"><span class="number">28</span>The throttle</a></li>
+<li><a href="rehearsal.html"><span class="number">29</span>Variables and loops: rehearsal</a></li>
+<li><a href="the-riders-gaze.html"><span class="number">30</span>The rider&#39;s gaze</a></li>
+<li><a href="the-truck.html"><span class="number">31</span>The truck</a></li>
+<li><a href="the-trucks-motion.html"><span class="number">32</span>The truck&#39;s motion</a></li>
+<li class="category">Critter motion</li><li><a href="the-cat.html"><span class="number">33</span>The cat</a></li>
+<li><a href="the-bird.html"><span class="number">34</span>The bird</a></li>
+<li><a href="what-a-cat-does-to-the-rider.html"><span class="number">35</span>What a cat does to the rider</a></li>
+<li class="part">Under the hood</li><li><a href="the-math-layer.html"><span class="number">36</span>The math layer</a></li>
+<li><a href="proving-it.html"><span class="number">37</span>Proving it</a></li>
+<li><a href="the-platform.html"><span class="number">38</span>The platform</a></li>
+<li><a href="zooming-back-out.html"><span class="number">39</span>Zooming back out</a></li>
+<li class="part">Appendices</li><li><a href="appendix-the-patterns.html">Appendix: the patterns</a></li>
+<li><a href="appendix-list-functions.html">Appendix: list functions</a></li>
+<li><a href="appendix-what-catches-you-out.html">Appendix: what catches you out</a></li>
+<li class="here"><a href="appendix-glossary.html">Appendix: glossary</a></li>
+<li><a href="appendix-index.html">Appendix: index</a></li>
+<li><a href="credits.html">Credits</a></li>
+</ol>
+</nav>
+<main>
+<p class="book-bar"><a href="index.html">Safari Ride</a> <a href="#chapters">Chapters</a></p>
+<article>
+<h1 id="appendix-glossary">Appendix: glossary</h1>
+<p>This book uses these words in one sense only.</p>
+<table>
+<thead>
+<tr>
+<th>Word</th>
+<th>What it means</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Across</td>
+<td>A place across the road, measured from its middle. Left is negative.</td>
+</tr>
+<tr>
+<td>Along</td>
+<td>A place along a segment, measured from its start.</td>
+</tr>
+<tr>
+<td>Backdrop</td>
+<td>The sky and the grass, the first thing in every frame.</td>
+</tr>
+<tr>
+<td>Billboard</td>
+<td>An animal drawn from an emoji&#39;s still, standing still and seen from the side, like the cows.</td>
+</tr>
+<tr>
+<td>Carried</td>
+<td>Kept from one step to the next. The ride carries four things: the rider, the truck, the clock and the encounter plan.</td>
+</tr>
+<tr>
+<td>Corner</td>
+<td>One of the points of a shape.</td>
+</tr>
+<tr>
+<td>Critter</td>
+<td>Any animal in the ride, from the cat to the elephant. A tree or a tower is never a critter.</td>
+</tr>
+<tr>
+<td>Depth</td>
+<td>How far ahead of the camera something is. Far things are painted first.</td>
+</tr>
+<tr>
+<td>Derived</td>
+<td>Worked out afresh in every frame, from what the ride carries and the road.</td>
+</tr>
+<tr>
+<td>Encounter</td>
+<td>What a segment holds for the rider to meet: a cat crossing, a bird&#39;s flight, or a quiet road.</td>
+</tr>
+<tr>
+<td>Encounter plan</td>
+<td>One of the four carried things: whether the encounter on the rider&#39;s segment is planned yet, and the step it starts at.</td>
+</tr>
+<tr>
+<td>Far scenery</td>
+<td>The sun and the mountains: a direction and a height above the horizon, and never any nearer.</td>
+</tr>
+<tr>
+<td>Frame</td>
+<td>One picture of the ride, for one step.</td>
+</tr>
+<tr>
+<td>Invariant</td>
+<td>A fact that holds whenever the program is right, such as a share lying between 0 and 1. The ride enforces each one with a <code>crash</code>.</td>
+</tr>
+<tr>
+<td>Kind</td>
+<td>Which sort of thing something is, like <code>Conifer</code>, and the type a <code>Geom.<wbr>Placed</code> carries.</td>
+</tr>
+<tr>
+<td>Near plane</td>
+<td>The closest the camera can see, 0.4 metres ahead. A sighting refuses a thing whose foot is short of it, and a line or face that crosses it is cut there.</td>
+</tr>
+<tr>
+<td>Picture</td>
+<td>Everything on the screen in one frame.</td>
+</tr>
+<tr>
+<td>Placed</td>
+<td>Put on the road, measured <code>along</code> and <code>across</code> a segment, and <code>lift</code> off the ground.</td>
+</tr>
+<tr>
+<td>Polygon</td>
+<td>A shape of any number of corners but three or four, which are triangles and quads.</td>
+</tr>
+<tr>
+<td>Rendering</td>
+<td>A sprite with its depth, a <code>Rendered</code>.</td>
+</tr>
+<tr>
+<td>Route</td>
+<td>The list of segments that makes up the whole ride.</td>
+</tr>
+<tr>
+<td>Segment</td>
+<td>One stretch of road, from one bend to the next.</td>
+</tr>
+<tr>
+<td>Shape</td>
+<td>One item in a frame&#39;s list, such as a triangle, a disc or a polygon.</td>
+</tr>
+<tr>
+<td>Sighting</td>
+<td>A thing&#39;s spot and its kind, for one frame: a <code>Pipeline.<wbr>Sighted</code>.</td>
+</tr>
+<tr>
+<td>Solid</td>
+<td>A thing whose every corner has its own place along, across and above the road, like the truck.</td>
+</tr>
+<tr>
+<td>Spot</td>
+<td>Where a thing stands in one frame, seen from the camera: a <code>Spot</code>.</td>
+</tr>
+<tr>
+<td>Sprite</td>
+<td>How one thing looks in one frame: its shapes, a <code>Sprite</code>.</td>
+</tr>
+<tr>
+<td>Step</td>
+<td>One tick of the ride. Each step has one frame.</td>
+</tr>
+<tr>
+<td>Still</td>
+<td>An animal&#39;s drawing, as polygons in units of its own height.</td>
+</tr>
+<tr>
+<td>Tier</td>
+<td>One layer of a conifer&#39;s crown.</td>
+</tr>
+</tbody>
+</table>
+
+</article>
+<nav class="turn-page" aria-label="Previous and next chapter">
+<a rel="prev" href="appendix-what-catches-you-out.html"><small>Previous</small>Appendix: what catches you out</a>
+<a rel="next" href="appendix-index.html"><small>Next</small>Appendix: index</a>
+</nav>
+</main>
+
+</body>
+</html>

@@ -1,0 +1,136 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Appendix: the patterns · Safari Ride</title>
+<link rel="icon" href="data:,">
+<link rel="stylesheet" href="book.css">
+<script src="book.js" defer></script>
+</head>
+<body class="chapter">
+<header class="top-bar">
+<a class="home-link" href="https://roc.lynrummy.com/">Steve's Roc Apps</a>
+<a class="repo-link" href="https://github.com/showell/roc-apps">roc-apps on GitHub</a>
+</header>
+<nav class="book-nav" id="chapters" aria-label="Chapters">
+<a class="book-name" href="index.html">Safari Ride</a>
+<ol>
+<li class="part">The big picture</li><li><a href="introduction.html"><span class="number">1</span>Introduction</a></li>
+<li><a href="one-page.html"><span class="number">2</span>One page</a></li>
+<li><a href="the-problem.html"><span class="number">3</span>The problem</a></li>
+<li><a href="platforms-packages-and-modules.html"><span class="number">4</span>Platforms, packages and modules</a></li>
+<li><a href="types.html"><span class="number">5</span>Types</a></li>
+<li><a href="functions.html"><span class="number">6</span>Functions</a></li>
+<li class="part">One frame</li><li><a href="things.html"><span class="number">7</span>Things</a></li>
+<li><a href="billboard-critters.html"><span class="number">8</span>Tag unions: billboard critters</a></li>
+<li><a href="shapes.html"><span class="number">9</span>Shapes</a></li>
+<li><a href="a-far-tree.html"><span class="number">10</span>Lists and map: a far tree</a></li>
+<li><a href="the-pipeline.html"><span class="number">11</span>The pipeline</a></li>
+<li><a href="asking-a-kind.html"><span class="number">12</span>Where clauses: asking a kind</a></li>
+<li><a href="refused.html"><span class="number">13</span>Errors as tag unions</a></li>
+<li class="category">Nature</li><li><a href="the-sky.html"><span class="number">14</span>The sky and the grass</a></li>
+<li><a href="mountains.html"><span class="number">15</span>Mountains</a></li>
+<li class="category">Man-made</li><li><a href="the-road.html"><span class="number">16</span>The road</a></li>
+<li><a href="rails.html"><span class="number">17</span>Rails</a></li>
+<li><a href="radio-towers.html"><span class="number">18</span>Radio towers</a></li>
+<li class="category">Critters that stand still</li><li><a href="herds.html"><span class="number">19</span>Herds</a></li>
+<li class="part">Motion</li><li><a href="a-flip-book.html"><span class="number">20</span>Immutable values: a flip book</a></li>
+<li><a href="records.html"><span class="number">21</span>Records</a></li>
+<li><a href="pure-functions-and-effects.html"><span class="number">22</span>Pure functions and effects</a></li>
+<li><a href="the-clock.html"><span class="number">23</span>Opaque types: the clock</a></li>
+<li><a href="the-ride-instant.html"><span class="number">24</span>The ride instant</a></li>
+<li class="category">The passage of time</li><li><a href="the-beacons.html"><span class="number">25</span>The beacons</a></li>
+<li><a href="the-setting-sun.html"><span class="number">26</span>The setting sun</a></li>
+<li class="category">Vehicles</li><li><a href="the-rider.html"><span class="number">27</span>The rider</a></li>
+<li><a href="the-throttle.html"><span class="number">28</span>The throttle</a></li>
+<li><a href="rehearsal.html"><span class="number">29</span>Variables and loops: rehearsal</a></li>
+<li><a href="the-riders-gaze.html"><span class="number">30</span>The rider&#39;s gaze</a></li>
+<li><a href="the-truck.html"><span class="number">31</span>The truck</a></li>
+<li><a href="the-trucks-motion.html"><span class="number">32</span>The truck&#39;s motion</a></li>
+<li class="category">Critter motion</li><li><a href="the-cat.html"><span class="number">33</span>The cat</a></li>
+<li><a href="the-bird.html"><span class="number">34</span>The bird</a></li>
+<li><a href="what-a-cat-does-to-the-rider.html"><span class="number">35</span>What a cat does to the rider</a></li>
+<li class="part">Under the hood</li><li><a href="the-math-layer.html"><span class="number">36</span>The math layer</a></li>
+<li><a href="proving-it.html"><span class="number">37</span>Proving it</a></li>
+<li><a href="the-platform.html"><span class="number">38</span>The platform</a></li>
+<li><a href="zooming-back-out.html"><span class="number">39</span>Zooming back out</a></li>
+<li class="part">Appendices</li><li class="here"><a href="appendix-the-patterns.html">Appendix: the patterns</a></li>
+<li><a href="appendix-list-functions.html">Appendix: list functions</a></li>
+<li><a href="appendix-what-catches-you-out.html">Appendix: what catches you out</a></li>
+<li><a href="appendix-glossary.html">Appendix: glossary</a></li>
+<li><a href="appendix-index.html">Appendix: index</a></li>
+<li><a href="credits.html">Credits</a></li>
+</ol>
+</nav>
+<main>
+<p class="book-bar"><a href="index.html">Safari Ride</a> <a href="#chapters">Chapters</a></p>
+<article>
+<h1 id="appendix-the-patterns">Appendix: the patterns</h1>
+<p>Nine patterns kept turning up along the way. They&#39;re patterns in a loose sense: shapes of code that Roc makes easy to write and hard to break.</p>
+<table>
+<thead>
+<tr>
+<th>Name</th>
+<th>What it is</th>
+<th>Where to see it</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Carried and derived</td>
+<td>Carry the few things that must persist from step to step, and derive the rest each frame</td>
+<td><code>RideInstant</code>, <code>Sky</code>, <code>Beacon</code></td>
+</tr>
+<tr>
+<td>A sighting decides, a sprite paints</td>
+<td>A pure function answers with plain data, or a refusal, and something else turns the data into shapes</td>
+<td><code>Pipeline.<wbr>sighting_<wbr>of</code>, <code>TowerSighting</code></td>
+</tr>
+<tr>
+<td>Places and distances</td>
+<td>One opaque type for where, a second for how far apart, and only the sums that make sense</td>
+<td><code>Clock</code> and <code>Steps</code>, <code>Bearing</code> and <code>Turn</code>, <code>Along</code> and <code>Distance</code></td>
+</tr>
+<tr>
+<td>Rule and timeline</td>
+<td>One function says how far along an animation is, and a timeline, plain data, says what the animal shows at each stage</td>
+<td><code>EncounterPlan.<wbr>stage_<wbr>at</code> and <code>CatCrossing.<wbr>crossing_<wbr>timeline</code></td>
+</tr>
+<tr>
+<td>The step function</td>
+<td>A value goes in, and the next value comes out</td>
+<td><code>Rider.<wbr>rider_<wbr>at_<wbr>next_<wbr>step</code>, <code>TruckJourney.<wbr>truck_<wbr>progress_<wbr>at_<wbr>next_<wbr>step</code>, <code>Tour.<wbr>step_<wbr>forward</code></td>
+</tr>
+<tr>
+<td>The chain of limits</td>
+<td>One value passes through independent rules, each of which can only lower it</td>
+<td><code>Throttle.<wbr>next_<wbr>acceleration</code></td>
+</tr>
+<tr>
+<td>One record per space</td>
+<td>Field names say which coordinate system a point is in</td>
+<td><code>RoadPoint</code>, <code>RiderPoint</code>, <code>PointAtHeight</code>, <code>Point</code></td>
+</tr>
+<tr>
+<td>Rehearsal</td>
+<td>Run the real rules on a pretend copy, read the result, and throw it away</td>
+<td><code>Coast</code>, <code>LeanSearch</code>, <code>Motorcycle.<wbr>cross_<wbr>bend_<wbr>if_<wbr>on_<wbr>road</code></td>
+</tr>
+<tr>
+<td>Invariants by <code>crash</code></td>
+<td>A fact that holds whenever the program is right is enforced with a <code>crash</code>, which stops the program at the first value that breaks it</td>
+<td><code>Fraction.<wbr>of</code>, <code>Clock.<wbr>minus</code>, <code>VehicleLimits.<wbr>braking_<wbr>to</code></td>
+</tr>
+</tbody>
+</table>
+
+</article>
+<nav class="turn-page" aria-label="Previous and next chapter">
+<a rel="prev" href="zooming-back-out.html"><small>Previous</small>Zooming back out</a>
+<a rel="next" href="appendix-list-functions.html"><small>Next</small>Appendix: list functions</a>
+</nav>
+</main>
+
+</body>
+</html>
