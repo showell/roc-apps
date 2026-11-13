@@ -86,8 +86,7 @@ Scene := {
 
 	## The scene's renderings far to near. The order of the fields they come
 	## from breaks ties, so the trees go before the birds: a perched bird stands
-	## at its tree's own depth and is drawn over it. It is public for
-	## FramePartsBench, which times the sort alone.
+	## at its tree's own depth and is drawn over it.
 	scene_renderings : Scene -> List(Rendered)
 	scene_renderings = |scene|
 		Rendered.depth_sorted_renderings(

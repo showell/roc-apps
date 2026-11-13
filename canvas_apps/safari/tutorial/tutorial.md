@@ -632,7 +632,7 @@ digraph pipeline {
 }
 ```
 
-Each sort of thing has a sighting module, such as `TreeSighting`, and some serve several kinds: `BillboardSighting` sights every billboard. A sighting module gathers its placed things on the road ahead, and hands each one to a `Pipeline` function that sights it.
+Each sort of thing has a sighting module, such as `TreeSighting`, and some serve several kinds: `BillboardSighting` sights every billboard. A sighting module gathers its placed things on the road ahead, and hands each one to a `Pipeline` function that sights it, as the {{chapter Errors as tag unions}} chapter shows for `TreeSighting`.
 
 ### Placed
 
@@ -683,7 +683,7 @@ Every rendering has that one type, so a frame gathers them all in one list:
 
 {{code Scene.scene_renderings}}
 
-A `Scene` holds a list of renderings for each sort of thing, and `join` makes one list of them all. The guard rail's renderings come in through `scene.rails`, as a later chapter shows. `Rendered.depth_sorted_renderings` sorts the list from far to near, and the platform paints it in that order, so a near thing covers a far one.
+A `Scene` holds a list of renderings for each sort of thing, and `join` makes one list of them all. The guard rail's renderings come in through `scene.rails`, as the {{chapter Rails}} chapter shows. `Rendered.depth_sorted_renderings` sorts the list from far to near, and the platform paints it in that order, so a near thing covers a far one.
 
 So every thing beside the road makes the same trip: placed on the road, sighted by the camera, rendered as a sprite with a depth, and sorted into the frame's one list. Its kind rides through the first two types, and the third holds just a sprite and a depth. The trip can also end early, at the sighting, and the {{chapter Errors as tag unions}} chapter goes back to that box. First, the next chapter shows how `rendering_of`, written once, gets a sprite out of every kind.
 
@@ -744,7 +744,7 @@ The message names the method the clause requires, and the type the compiler chec
 
 ### Asking for a height
 
-Sighting a thing needs its height. A far thing shows only when its top clears the horizon, and only when it stands tall enough on the screen to be worth showing. So `Pipeline.scenery_sighting_of`, which sights the trees, the billboard critters, the cat and the bird, constrains its kind with a `where` clause of its own, to types that have a `scenery_height`:
+Sighting a thing needs its height. A far thing shows only when its top clears the horizon, and only when it stands tall enough on the screen to be worth showing, two tests the next chapter shows. So `Pipeline.scenery_sighting_of`, which sights the trees, the billboard critters, the cat and the bird, constrains its kind with a `where` clause of its own, to types that have a `scenery_height`:
 
 {{code Pipeline.scenery_sighting_of from "where" to "where"}}
 
@@ -945,7 +945,7 @@ The range is highest in its middle and falls to zero at its ends, and two waves 
 
 ### Across the screen
 
-To find a range's outline, the ride goes across the screen two pixels at a time, and asks which bearing each column looks along. The middle of the screen looks along the camera's heading, and a column to its right looks a little further right, by a turn that comes from the lens. A column is a record:
+To find a range's outline, the ride goes across the screen two pixels at a time, and asks which bearing each column looks along. The middle of the screen looks along the camera's heading, and a column to its right looks a little further right, by a turn that comes from the lens. `Lens.turn_at_x` gives that turn from the column's place across the screen and the focal length. A column is a record:
 
 {{code Skyline.SkylineColumn}}
 
@@ -983,7 +983,7 @@ The ground comes in patches, and a patch is a list of corners on the ground and 
 
 {{code GroundSighting.road_patch}}
 
-Each corner is a `RiderPoint`, a point on the ground seen from the rider, so the `GroundPatch` module can find where each corner lands on the screen and place the patch there.
+Each corner is a `RiderPoint`, a point on the ground seen from the rider, so the `GroundPatch` module can find where each corner lands on the screen and place the patch there. The {{chapter The math layer}} chapter follows a corner onto the screen.
 
 ### A segment's ground
 
@@ -1123,11 +1123,11 @@ The ground hides whatever part of a tower is under that line, so as a tower gets
 
 ### Rods
 
-`Tower.tower_shapes` returns a tower as a few dozen rods and a disc for its beacon. It starts by checking that some of the tower shows above the horizon:
+`Tower.tower_shapes` returns a tower as a few dozen rods, and a disc for its beacon when the beacon is bright enough and big enough to show. It starts by checking that some of the tower shows above the horizon:
 
 {{code Tower.tower_shapes from "if hidden_on_tower(geometry) >= tower_height" to "a tower hidden wholly below the horizon"}}
 
-Its sighting has already refused a tower the horizon hides wholly. We enforce invariants with `crash`, and the invariant here is that every tower this function gets shows some part above the horizon. Otherwise come the legs, the rings and the braces, and the beacon's disc last, at the top.
+Its sighting has already refused a tower the horizon hides wholly. We enforce invariants with `crash`, and the invariant here is that every tower this function gets shows some part above the horizon. Otherwise come the legs, the rings and the braces, and the beacon's disc, when it shows, last, at the top.
 
 A tower's footprint is a square, and four tags name its corners. Going round the square is a `match`:
 
@@ -1141,7 +1141,7 @@ Each rod is a line between two points seen from the rider. A near tower is wide,
 
 The `match` is on a tuple, `(start, end)`: two values side by side, in parentheses. So it covers all four combinations of its two `Try`s. A rod with one end short of the near plane, 0.4 metres ahead of the camera, is cut where it crosses that plane. A rod with both ends behind it is refused.
 
-Each frame derives a tower afresh, its rods and its disc, from its segment, the clock and the camera. The disc on top blinks with the clock, which starts running in the second half of the book. The last things to stand in the frame are the herds.
+Each frame derives a tower afresh, its rods and its disc, from its segment, the clock and the camera. The disc on top blinks with the clock, which starts running in the second half of the book, in the {{chapter The beacons}} chapter. The last things to stand in the frame are the herds.
 
 ## Herds
 
