@@ -1337,9 +1337,9 @@ Two moments make a meaningless sum, so the module leaves adding two clocks out. 
 
 ### Tests
 
-Below the module's braces, each `expect` is a test, and `roc test` runs them all. A clock is a plain value, so a test builds one directly: `Clock.at_step(9).plus(Steps.of(3))` starts at step 9 and checks the answer is step 12, before any ride has run. The last three tests check `<` on both sides of the line: one clock before another, a clock against itself, and one after.
+Below the module's braces, each `expect` is a test, and `roc test` runs them all. A clock is a plain value, so a test builds one directly: `Clock.at_step(9).plus(Steps.of(3))` starts at step 9 and checks the answer is step 12, before any ride has run. The last three tests check `<` below, at and above the line: one clock before another, a clock against itself, and one after. `!` flips a `Bool`, and `length.to_u32()` reads the number inside a `Steps`.
 
-The clock is the whole of the ride's time. Everything that changes with time, from the sky to the truck's lights, works it out from the clock. The next chapter turns to the moment itself, the `RideInstant`, and how one step moves all four of its parts on.
+The clock is the whole of the ride's time of day. Everything that follows the time of day, from the sky to the truck's headlights, works it out from the clock. The next chapter turns to the moment itself, the `RideInstant`, and how one step moves all four of its parts on.
 
 ## The ride instant
 

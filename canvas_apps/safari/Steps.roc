@@ -1,5 +1,5 @@
 ## A whole number of the ride's steps: how long something lasts on the ride's
-## clock. Two `Clock`s subtract to one.
+## clock. `Clock.steps_since` gives the one between two `Clock`s.
 Steps :: U32.{
 
 	of : U32 -> Steps
