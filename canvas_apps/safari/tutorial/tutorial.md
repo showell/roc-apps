@@ -261,7 +261,7 @@ A function is a value, its body is one expression, its annotation states its con
 
 ## Things
 
-The things beside the road are its trees, its radio towers and its animals. We start with the animals, and the towers come later, with the world. Here we learn how a thing becomes data, and how one function turns that data into a sprite. Here's a cow and a bull on the grass, from Safari Ride's own code:
+The things beside the road are its trees, its radio towers and its animals. We start with the animals. Here we learn how a thing becomes data, and how one function turns that data into a sprite. Here's a cow and a bull on the grass, from Safari Ride's own code:
 
 ```widget cow
 A cow and a bull on the grass beside the road.
