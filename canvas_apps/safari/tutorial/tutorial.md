@@ -1134,7 +1134,7 @@ That's a tower: rods and a disc, worked out again each frame from its segment, t
 
 ## Herds
 
-The farms along the road are crowds of billboards: herds of cows on the left, herds of pigs on the right. A herd is just a list of placed billboards, and its module lays the animals out whenever it's asked.
+The farms along the road are crowds of billboards: herds of cows on the left, herds of pigs on the right. A herd is a list of placed billboards. The `CowHerd` and `PigHerd` modules lay the animals out again for each frame that needs them.
 
 ```widget frame critters
 Step 1,529 of the ride: the whole still frame so far, now with its herds and the animals at the bends.
@@ -1146,13 +1146,13 @@ The world stores a cow herd as two counts: how many cows, and how many rows stan
 
 {{code CowHerd.herd_cows}}
 
-`U64.until(0, cow_count)` counts the cows, and each number becomes a cow. A bull, if the herd has one, goes at the front of the list.
+`U64.until(0, cow_count)` counts the cows, and `herd_cow` places the cow with each number. A bull, if the herd has one, goes at the front of the list.
 
 A herd in a perfect grid would look like a parking lot, so each cow strays a little from its place:
 
 {{code CowHerd.herd_cow}}
 
-The cow's number picks its column and its row: `div_trunc_by` divides and drops the remainder, and `rem_by` keeps only the remainder. Each row stands a little further along the road than the one in front of it, and further from the road. Then `Scatter.stray_of` moves the cow a little, along and across, with two phases, 2.7 and 1.9, chosen by eye. The stray is worked out from the cow's number, so it looks random but comes out the same on every run, and every frame of the ride stays exact. The last expression is the placed cow: a place on the road, a lift of zero, and the billboard `cow_billboard` picks, a calf for every fourth cow.
+The cow's number picks its column and its row: `div_trunc_by` divides and drops the remainder, and `rem_by` keeps only the remainder. Each row stands a little further along the road than the one in front of it, and further from the road. Then `Scatter.stray_of` moves the cow a little, along and across, with two phases, 2.7 and 1.9, chosen by eye. `stray_of` derives the stray from the cow's number, so it looks random and comes out the same on every run. The last expression is the placed cow: a place on the road, a lift of zero, and the billboard `cow_billboard` picks, a calf for every fourth cow.
 
 ### Pigs
 
@@ -1160,11 +1160,11 @@ A pig herd has two shapes, as a tag union:
 
 {{code PigHerd.herd_pigs}}
 
-The first two herds of pigs are big, seven rows of seven, and the rest are two short rows. A `BigHerd` carries its sizes, and `TwoRows` is a plain tag, so the `match` hands each shape to its own function. In the first two herds, one pig stands out from the rest and catches the rider's eye, and the rider's chapters in the second half come back to it.
+The first two herds of pigs are big, seven rows of seven, and the rest are two short rows. A `BigHerd` carries its sizes, and `TwoRows` is a plain tag, so each branch of the `match` calls the function for its shape. In the first two herds, one pig stands out from the rest and catches the rider's eye, and the rider's chapters in the second half come back to it.
 
 `BillboardSighting` sights every herd's billboards, as the pipeline sights any thing beside the road.
 
-That's every animal that stands still. Everything in the frame at step 1,529 now has its chapter, except the things that move: the cat, the bird and the truck. The first half of the book ends here: one frame, built part by part, from the things beside the road to the world they stand in. The second half turns the pages.
+The herds are the last of the animals that stand still. Everything in the frame at step 1,529 now has its chapter, except the things that move: the cat, the bird and the truck. The first half of the book ends here: one frame, built part by part, from the things beside the road to the world they stand in.
 
 ## A flip book
 
@@ -1174,15 +1174,15 @@ The first half of the book held one page still, step 1,529, and built it part by
 Press play, press it again to stop, then step back.
 ```
 
-The ride steps back one moment at a time, as easily as it went forward. That ease starts with a puzzle about Roc values. A Roc value stays exactly as it was made, yet the ride is change from start to finish.
+The ride steps back one moment at a time, as easily as it went forward. A Roc value stays exactly as it was made, and the ride changes from start to finish. A flip book shows how both hold.
 
-The answer is in the flip book from the {{chapter One page}} chapter. Each page is a still drawing, and the motion comes from the flipping. In Safari Ride, each page is a moment, a value of the `RideInstant` type, and one function makes the next one:
+The {{chapter One page}} chapter called the ride a flip book. Each page is a still drawing, and the motion comes from the flipping. In Safari Ride, each page is a moment, a value of the `RideInstant` type, and one function makes the next one:
 
 {{signatures RideInstant.next_or_restart}}
 
 It takes the road and a moment, and returns a tag union written in place: the next moment, tagged `Continued`, or the ride's first moment again, tagged `Restarted`, once the rider reaches the end of the road. Either way, it returns a new moment and leaves the old one as it was.
 
-The platform does the flipping. Thirty times a second it asks the app for its next state, and while the ride plays, the app moves on to the next moment through `next_or_restart`. Then the platform paints that moment's picture, which `FrameView.frame_view_at` works out from the moment and the road. The picture above flips much faster than that, to cover more road. The same moment always gives the same picture, so any page can be held still and studied, as the first half did with step 1,529.
+The platform does the flipping. Thirty times a second it asks the app for its next state, and while the ride plays, the app moves on to the next moment through `next_or_restart`. Then the platform paints that moment's picture, which `FrameView.frame_view_at` works out from the moment and the road. The picture above flips much faster than that, to cover more road. The same moment always gives the same picture, so you can hold any page still and study it, as the first half of the book held step 1,529.
 
 ### Turning back
 
@@ -1251,7 +1251,7 @@ Here's the step, whole:
 
 {{code RideInstant.next}}
 
-`next_or_restart`, from the {{chapter A flip book}} chapter, calls this step until the rider reaches the end of the road. Its doc comment gives the order, and the order matters. The rider moves first, reading where the encounter ahead has got to. Then the clock ticks. Then the world answers the rider who has just moved: the truck aims at how far along the route the rider now is, and the encounter plan is kept, dropped at a new segment, or made from this step's rider. The last line puts the four together into the next moment, and the old moment stays as it was.
+`next_or_restart`, from the {{chapter A flip book}} chapter, calls this step until the rider reaches the end of the road. The doc comment on `next` gives the order, and the order matters. The rider moves first, reading where the encounter ahead has got to. Then the clock ticks. Then the world answers the rider who has just moved: the truck aims at how far along the route the rider now is, and `plan_at_next_step` keeps the encounter plan, forgets it at a new segment, or makes one from this step's rider. The last line puts the four together into the next moment, and the old moment stays as it was.
 
 The rider reads the encounter as a stage, where its animation has got to:
 
@@ -1261,23 +1261,23 @@ The rider reads the encounter as a stage, where its animation has got to:
 
 ### Carried and derived
 
-Those four fields are all the ride carries from one step to the next. Everything else in a frame is derived from them and the road, worked out again each time. So the ride's moving parts come in three kinds:
+Those four fields are all the ride carries from one step to the next. The ride derives everything else in a frame from them and the road, afresh for each frame. So the ride's moving parts come in three kinds:
 
 | Kind | Things | How it changes |
 |---|---|---|
 | Clock-driven | The sun's height, the sky, the beacons | Derived from the clock, and for a beacon its tower |
-| Stepped | The rider, the truck | Carried in the moment, and moved once a step from where it was |
+| Stepped | The rider, the truck | Carried in the moment, and moved on once a step by its step function |
 | Rider-driven | The cat, the bird | Derived from the clock and the carried plan, which the rider's approach sets |
 
-The trees and the cows stay put, which is easiest of all.
+The trees and the cows stay put.
 
-`Clock.next`, `Rider.rider_at_next_step` and `TruckJourney.truck_progress_at_next_step` all have the same shape: a value goes in, and the next value comes out. Call that a step function. Stepping has a cost, which shows beside the clock-driven kind:
+`Clock.next`, `Rider.rider_at_next_step` and `TruckJourney.truck_progress_at_next_step` all have the same shape: a value goes in, and the next value comes out. Call that a step function. Set beside the clock-driven kind, stepping has a cost:
 
-- The sun can be asked about any step, cold. To find the truck at step 4,000, the ride has to play that far.
+- A function of the clock returns the sun at any step, straight away. To find the truck at step 4,000, the ride has to play that far.
 - A wrong sky spoils only the frames it touches. A wrong step moves the rider for the rest of the ride.
-- The lines of `RideInstant.next` run in order. Once the moments exist, their frames can be painted in any order.
+- The lines of `RideInstant.next` run in order. Once the moments exist, the platform can paint their frames in any order.
 
-So the stepped parts get the most care.
+So the stepped parts need the most care.
 
 ### Pure functions
 
@@ -1291,7 +1291,7 @@ One function handles all of that. It takes the model, which is the tour and whet
 
 {{code SafariApp.model_at_next_step from "motion = if input.key_pressed(KeySpace)" to "m.tour.step_forward()"}}
 
-Each frame, the platform hands the app a snapshot of the keys, and the app reads it. `key_pressed` says a key went down since the last frame, so one tap of Space pauses the ride once. `key_down` says a key is held, so holding Right keeps the ride moving. Reading the keys is the platform's effect, and the app sees only the snapshot, a plain value.
+Each frame, the platform hands the app a snapshot of the keys, and the app reads it. `key_pressed` says a key went down since the last frame, so one tap of Space pauses the ride once. `key_down` says a key is held, so holding Right keeps the ride moving. Reading the keys is the platform's effect. The app reads the snapshot, which is a plain value.
 
 The clock-driven things come first, and the beacons are the simplest of them: they follow the clock alone.
 
@@ -1313,7 +1313,7 @@ A beacon follows three rules:
 2. Each segment's beacons start their blinks at a different point from the last segment's, so the towers along the road blink at different times.
 3. The tower halfway along a segment blinks exactly opposite the tower at the segment's end.
 
-Every rule reads the tower and the clock alone. So the ride derives each beacon afresh, every frame. Ask for a beacon at step 5,430 cold, and the answer comes straight from the clock. A beacon is derived, in its purest form.
+Every rule reads the tower and the clock alone. So the ride derives each beacon afresh, every frame. Ask for a beacon at step 5,430 cold, and the answer comes straight from the clock.
 
 ### Which beacon, and when
 
@@ -1357,21 +1357,21 @@ A cosine turns the phase into a brightness:
 
 {{code Beacon.beacon_brightness}}
 
-`(1 - cos) / 2` is 0 at the start of a blink, 1 halfway through, and 0 again at the end. A cosine rises and falls smoothly, so the beacon eases into full brightness and out of it again. It also stays between 0 and 1 all the way, and that matters, because `Fraction.of` crashes on a ratio outside 0 to 1.
+`(1 - cos) / 2` is 0 at the start of a blink, 1 halfway through, and 0 again at the end. A cosine rises and falls smoothly, so the beacon eases into full brightness and out of it again. The formula also stays between 0 and 1 all the way, which `Fraction.of` needs: it crashes on a ratio outside 0 to 1.
 
 The picture's two beacons belong to the first segment, whose head start is 0. Step 5,400 is 45 whole blinks into the ride, so the beacon at the end is dark there, and the one halfway along is at full brightness. A quarter of a blink later, at step 5,430, the two are equally bright. By step 5,460 they've changed places.
 
 ### A disc, or a refusal
 
-A tower hands its beacon two things: the point on the screen where the beacon's middle lands, and how many pixels a metre spans there. The beacon returns a disc, or a refusal:
+A tower's sighting passes `Beacon.disc` two things: the point on the screen where the beacon's middle lands, and how many pixels a metre spans there. `disc` returns a disc, or a refusal:
 
 {{signatures Beacon.disc}}
 
-The disc is 3 metres in radius, and see-through as far as the beacon is dim. `TooDim` refuses a beacon below a brightness of one part in fifty, and `TooSmall` a disc whose radius comes to under half a pixel. A refusal leaves the beacon out of the picture.
+The disc is 3 metres in radius, and see-through as far as the beacon is dim. `disc` returns `TooDim` for a beacon below a brightness of one part in fifty, and `TooSmall` for a disc whose radius comes to under half a pixel. A refused beacon is left out of the picture.
 
 Everything `Beacon` works with comes in as arguments: a tower's key, a clock, a spot and a scale. So its tests build those values directly, apart from any tower or ride. They check the head starts, the phase, the blink and the opposite blink halfway along, and the disc's size, color and refusals.
 
-A beacon goes round and round. The sun goes one way, and a lot more hangs on it.
+A beacon repeats every 120 steps. The sun moves one way through the whole ride, and the sky and the light on everything follow it.
 
 ## The setting sun
 
@@ -1383,7 +1383,7 @@ The sun is the one thing in the sky that moves. As it sinks, the sky darkens, th
 Press play. The two middle buttons step one frame at a time.
 ```
 
-This picture does only the first job, so its sky stays blue. Each frame, it asks `SunPath` how high the sun stands, reads out the answer, and marks it on the chart's gold line:
+This picture does only the first job, so its sky stays blue. For each frame, the picture calls `SunPath.height_at`, reads out the sun's height, and marks it on the chart's gold line:
 
 {{code SunPath.height_at}}
 
@@ -1395,17 +1395,17 @@ The sun stands in one direction, and the rider may be facing another. Two tags s
 
 {{code Sun.Sighting}}
 
-An `OutOfView` sun paints an empty list, and a `match` on a `Sighting` handles that tag too, since a `match` covers every tag. Here's the function that decides:
+For an `OutOfView` sun, `Sun.sun_shapes` returns an empty list, and a `match` on a `Sighting` handles that tag too, since a `match` covers every tag. Here's the function that returns the `Sighting`:
 
 {{code Sun.sun_in_view}}
 
-`Lens.far_point` says where something infinitely far off lands on the screen, and refuses with `BehindCamera` when it lies behind the camera. A sun that lands somewhere is still out of view when its glow stays wholly off the screen. At step 1,529, the frame the first half held still, the sun stands behind the rider, which is why that frame left the sun out. The pictures in this chapter always face the sun, so it's always in view in them.
+`Lens.far_point` says where something infinitely far off lands on the screen, and refuses with `BehindCamera` when it lies behind the camera. A sun that lands somewhere is still out of view when its glow stays wholly off the screen. At step 1,529, the frame the first half held still, the sun stands behind the rider, so `sun_in_view` returns `OutOfView` there. The pictures in this chapter always face the sun, so it's always in view in them.
 
 The sun in view is a glow and a disc:
 
 {{code Sun.sun_shapes}}
 
-The glow adds its light to the sky, over the rectangle above the horizon, and the disc paints over that. The grass comes after the backdrop's sun and covers whatever of the disc has sunk below the horizon, so the sun sets behind the land by paint order alone.
+The glow adds its light to the sky, over the rectangle above the horizon, and the disc comes after the glow in paint order. The grass comes after the backdrop's sun and covers whatever of the disc has sunk below the horizon, so the sun sets behind the land by paint order alone.
 
 ### The sky darkens
 
@@ -1427,11 +1427,11 @@ The sky's top color blends from day to night by that darkness, as the {{chapter 
 Press play. This is the whole sunset.
 ```
 
-This picture adds `Sky.horizon_warmth_at`, the red line, and the same warmth reddens the sun's own glow and disc. The horizon is warmest when the sun's height is zero, on the horizon itself. `from_horizon` is how far the sun is from it, above or below, and `abs` makes the two sides match, which gives the red line its tent. The share of `warmth_reach`, 110, is held at 1 by `Fraction.clamp`, and `complement` turns it around, so a height of zero gives full warmth, and 110 or more gives a warmth of zero.
+This picture adds `Sky.horizon_warmth_at`, the red line, and the same warmth reddens the sun's own glow and disc. The horizon is warmest when the sun's height is zero, on the horizon itself. `from_horizon` is how far the sun is from it, above or below, and `abs` makes the two sides match, which gives the red line its tent. `ratio_to` divides that by `warmth_reach`, 110, `Fraction.clamp` holds the ratio at 1 at most, and `complement` turns it around, so a height of zero gives full warmth, and 110 or more gives a warmth of zero.
 
 ### Going backward
 
-Play any of those pictures backward, and the sun rises, with the same code. Every function here takes a clock and answers, so the clock can run either way. The sun, the sky and the beacons can each be asked about any step, cold.
+Play any of those pictures backward, and the sun rises, with the same code. Every function here takes a clock and returns an answer, so the clock can run either way. The sun, the sky and the beacons each return their answer for any step, straight from the clock.
 
 The rider and the truck are another kind of thing: the ride carries them, and moves them one step at a time. The next chapters take them, starting with the rider.
 
@@ -1489,7 +1489,7 @@ The step works in order, and the code reads that way: decide, move, cross a bend
 
 {{code Rider.rider_at_next_step}}
 
-The `match` on the segment's ending has two tags. In `Bends({ bend, .. })`, the `..` takes the field it names and ignores the rest of the payload.
+The `match` on the segment's ending has two tags. `Bends({ bend, .. })` takes the payload's `bend` field, and the `..` matches the rest.
 
 ### Deciding
 
@@ -1501,13 +1501,13 @@ A decision is the bike's controls, a lean and an acceleration:
 
 {{code Motorcycle.Controls}}
 
-Look at the last line of `controls`. `Throttle` picks the acceleration, and it's asked about a motorcycle that exists only as a value: this motorcycle as it would be at the new lean. Two small helpers serve such pretend motorcycles:
+Look at the last line of `controls`. `controls` passes `Throttle.next_acceleration` a pretend motorcycle: this motorcycle as it would be at the new lean. Two small helpers serve such pretend motorcycles:
 
 {{code Motorcycle.with_lean}}
 
 {{code Motorcycle.steady_controls}}
 
-`{ ..motorcycle, lean }` is a record update with a shorthand field: the field and the argument share the name `lean`. `with_lean` makes a motorcycle as it would be at another lean, and the real motorcycle stays as it was. `steady_controls` makes the controls that keep the lean and the speed as they are. The {{chapter Rehearsal}} chapter builds the rider's steering on both.
+`{ ..motorcycle, lean }` is a record update with a shorthand field: the field and the argument share the name `lean`. `with_lean` makes a motorcycle as it would be at another lean, and the real motorcycle stays as it was. `steady_controls` makes the controls that keep the lean and the speed as they are. The rider's steering, in the {{chapter Rehearsal}} chapter, uses both.
 
 ### One step of physics
 
@@ -1521,19 +1521,19 @@ The step is the whole of the physics, in order:
 
 It works in three parts:
 
-1. **The speed.** The acceleration is applied, and `allowed_speed` holds the result to the top speed.
+1. **The speed.** `accelerated_by` adds the acceleration to the speed, and `allowed_speed` holds the result to the top speed.
 2. **The turn.** `lean.steer(turn_per_lean)` turns the lean into a change of direction, a `Turn`, and that's the only way a lean changes where the bike points.
-3. **The move.** The bike goes one step's length in the direction halfway through the step's turn, `mid`. `along.plus(…)` adds a `Distance` to a place along the road, a moment-and-length pair like the clock's. The new place is a record update of `route_place`, inside a new motorcycle.
+3. **The move.** The bike goes one step's length in the direction halfway through the step's turn, `mid`. `along.plus(…)` adds a `Distance` to a place along the road, as `Clock.plus` adds a length to a moment. The new place is a record update of `route_place`, inside a new motorcycle.
 
 The bike turns the same amount per step at any speed. That's a cheat, chosen by eye, and it holds up because the rider chooses each step's lean by trying it out on this same physics.
 
 ### The end of a segment
 
-A small version of that trying decides what happens at the end of a segment. `cross_bend_if_on_road` makes a motorcycle carried past the bend onto the next segment. If that motorcycle is on the road, it's the answer, and if it's off the road, the old one is. The rejected motorcycle simply drops out of use:
+The end of a segment uses a small version of the same trying out. `cross_bend_if_on_road` makes a motorcycle carried past the bend onto the next segment. If that motorcycle is on the road, it's the answer, and if it's off the road, the old one is:
 
 {{code Motorcycle.cross_bend_if_on_road}}
 
-At the end of the road, the rider stops dead, and record update does it three levels deep:
+At the end of the road, the rider stops dead, through a record update three levels deep:
 
 {{code Motorcycle.stopped_at}}
 
@@ -1545,9 +1545,9 @@ When the bike leans, the camera rolls with it, and the whole picture leans:
 
 {{code RiderCamera.rider_roll}}
 
-A lean inside `roll_deadband`, a thousandth of a radian, leaves the picture level, and any other lean passes straight through. The camera turns as well: the rider's head follows the gaze and turns a little into a bend, and the camera adds that to the motorcycle's yaw.
+A lean inside `roll_deadband`, a thousandth of a radian, leaves the picture level, and any other lean passes straight through. The camera turns as well: the rider's head follows the gaze and turns a little into a bend, and the camera adds the head's turn to the motorcycle's yaw.
 
-So a step decides a lean and an acceleration, and the motorcycle turns them into a new place on the road. The throttle chooses the acceleration, the next chapter's subject. Choosing the lean waits for the {{chapter Rehearsal}} chapter.
+So for each step, `RiderMind.controls` returns a lean and an acceleration, and `motorcycle_at_next_step` turns them into a new place on the road. The next chapter shows how the throttle chooses the acceleration. The {{chapter Rehearsal}} chapter shows how the rider chooses the lean.
 
 ## The throttle
 
