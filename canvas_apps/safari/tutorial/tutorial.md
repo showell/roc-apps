@@ -1185,6 +1185,90 @@ The `match` is on a pair, `(start, end)`, so it covers all four combinations of 
 
 That's a tower: rods and a disc, worked out again each frame from its segment, the clock and the camera. The disc on top blinks, and the blinking waits for the second half, when the clock starts.
 
+## Stills
+
+Every animal in Safari Ride is drawn from a still: a small picture made of filled polygons, stored as data. The cow and the elephant each have one still. The cat has seven, one for each pose, and the bird has six. Those two wait for the second half, when things move, but their stills are pictures like any other, and here they are:
+
+```widget stills
+Every pose of the cat and the bird. Click one to see it large, and click it again for its polygons.
+```
+
+Animating a critter comes down to choosing which still to show, and where.
+
+### A still is data
+
+A still is a list of polygons, in the order they're painted. A polygon is one record:
+
+{{code Still.Polygon}}
+
+Its fill is one flat color or a gradient, and its points are its corners. The animals by the road started as emoji, and the `EmojiStill` module holds one still for each. The cat and the bird were drawn for this ride, and their stills have poses. The bird's perched pose is Roc's own logo, made of a few straight-edged shapes, so the bird has very few points. The cat's curves are many short straight lines, so it has far more.
+
+Every point is measured in units of the still's height. Its feet are at `y` 0, and a standing critter is about 1 tall. So a still is free of pixels and metres, and the same numbers draw a cat in the distance and a cat in the lane.
+
+### Putting a still on the screen
+
+The `StillShapes` module does the rest. An `Anchor` says where a still stands on the screen, which way it faces, and how tall it is there:
+
+{{code StillShapes.Anchor}}
+
+Drawing a still is then one small sum for each point: the height on the screen scales the point, and the foot places it:
+
+{{code StillShapes.screen_point}}
+
+A billboard's sprite is its still, drawn this way, at the height its spot and the lens give it. A critter with poses picks its still with a `match` on its pose, and the second half of the book does that.
+
+### How the stills got made
+
+The stills are the least readable code in Safari Ride, because programs wrote them. They're generated data, encoded as Roc, and here's where they came from.
+
+At a larger company, a picture like these would pass through three people. An artist would draw it. A software developer would build the tools that get it into the game. A project manager would look at the result and decide whether it's good enough. On Safari Ride, Claude played the first two roles, and Steve played the third.
+
+The artist's cat was a program. An early version of Safari Ride drew the cat in TypeScript, with splines for its body, tapered capsules for its limbs, chains of joints for its legs, and strokes for its whiskers. That's a lot of code to carry from language to language, and the ride only ever shows seven poses.
+
+So the developer wrote a baker, a small program that ran the real drawing code once for each pose. A recorder stood in for the canvas. It kept every filled shape as a polygon and turned every stroke into a thin filled quad, and the result was a flat table of polygons. The drawing code stayed behind, and the table moved on.
+
+The emoji-based animals took a different route. They come from Microsoft's Fluent Emoji, in its Flat style. That set draws every animal whole and from the side, where another set draws a rhino as a face, which looks wrong beside a road. A second baker read each SVG file, walked its shapes in painting order, and cut each curve into short straight lines.
+
+The bull is a hybrid. It comes from the same emoji set, but in its Color style, which is shaded. It's the one still with gradients, which is why a polygon's fill can be `Shaded`.
+
+The Roc bird came last. Its perched pose is the logo, and Claude drew the five flight poses to match, directly as polygons, in the logo's two purples.
+
+The project manager's tool was a contact sheet: every still, side by side, in one image. Each bake wrote one, and Steve looked at it. A cat looking like a cat is a judgment for eyes, and the comment in the emoji baker puts the standard well: "an elephant is an elephant".
+
+The bakers belong to the older versions of Safari Ride, in TypeScript and Zig. The polygons they made have been carried along ever since, which is why these files look like generated data. They are. The next chapter puts many stills on the grass at once: the herds.
+
+## Herds
+
+The farms along the road are crowds of billboards: herds of cows on the left, herds of pigs on the right. A herd is just a list of placed billboards, and its module lays the animals out whenever it's asked.
+
+```widget frame critters
+Step 1,529 of the ride: the whole still frame so far, now with its herds and the animals at the bends.
+```
+
+### Cows
+
+The world stores a cow herd as two counts: how many cows, and how many rows stand behind the front one. The route's herd is fourteen cows, in columns of three:
+
+{{code CowHerd.herd_cows}}
+
+`U64.until(0, cow_count)` counts the cows, and each number becomes a cow. A bull, if the herd has one, goes at the front of the list.
+
+A herd in a perfect grid would look like a parking lot, so each cow strays a little from its place:
+
+{{code CowHerd.herd_cow}}
+
+The cow's number picks its column and its row: `div_trunc_by` divides and drops the remainder, and `rem_by` keeps only the remainder. Each row stands a little further along the road than the one in front of it, and further from the road. Then `Scatter.stray_of` moves the cow a little, along and across. The stray is worked out from the cow's number, so it looks random but comes out the same on every run, and every frame of the ride stays exact. The last expression is the placed cow: a place on the road, a lift of zero, and the billboard `cow_billboard` picks, a calf for every fourth cow.
+
+### Pigs
+
+A pig herd has two shapes, as a tag union:
+
+{{code PigHerd.herd_pigs}}
+
+The first segments with pigs get a big herd, seven rows of seven, and the rest get two short rows. A `BigHerd` carries its sizes, and `TwoRows` is a plain tag, so the `match` hands each shape to its own function. In each herd, one pig stands out from the rest, and the rider's chapters in the second half come back to it.
+
+That's every animal that stands still, and the last part of the frame. The first half of the book ends here: one frame, step 1,529, built part by part, from the things beside the road to the world they stand in. The second half turns the pages.
+
 ## The modules
 
 Safari Ride splits cleanly in two: the ride, and the view of the ride. In this chapter we map the modules on both sides, look at the thin layer of JavaScript that runs them, and open up one sighting.
@@ -1733,169 +1817,6 @@ Two tags say whether the sun is in view, so there's no `null` and no off-screen 
 {{code FrameView.frame_view_at}}
 
 Most of what `frame_view_at` calls takes the clock, and that's the hard part. The sun sinks a little with every step, and the sky's colors, the mountains and the truck's headlights all follow it. That's a lot of heavy lifting for a circle. It gets a chapter of its own, The setting sun, once things start to move.
-
-## Stills: how we draw a critter
-
-Before we can stand an elephant by the road, we have to be able to draw one. Every critter in Safari Ride is a *still*: a small picture made of filled polygons, stored as data. An elephant has one still. A cat has seven, one for each pose, and a bird has six. Those two have to wait until things start moving, but we can look at them now. Animating a critter comes down to choosing which still to show, and where.
-
-```widget stills
-Every pose of the cat and the bird. Click one to see it large, and click it again for its polygons.
-```
-
-New in this chapter:
-
-- Roc: a large table of plain data
-- Modules: `Still`, `StillShapes`, `CatStills`, `BirdStills`, `EmojiStill`
-
-The stills are the least readable code in Safari Ride, and nobody is meant to read them. They're generated data, encoded as Roc, and this chapter ends with how they got made. Here's how much data each set holds:
-
-| Stills | Kind | Pictures | Polygons | Points |
-|---|---|---|---|---|
-| `BirdStills` | Hand-drawn | 6 poses | 32 | 119 |
-| `CatStills` | Hand-drawn | 7 poses | 275 | 13,219 |
-| `EmojiStill` | Emoji-based | one for each animal by the road | 129 | 4,998 |
-
-The distinction matters. The cat and the bird were drawn for this game, and they have poses. The animals by the road started as emoji, and each has one picture.
-
-A polygon is one record: its fill, which is either one flat color or a gradient, and its points:
-
-{{code Still.Polygon}}
-
-The bird is the smallest set, because the perched bird is Roc's logo, and the logo is made of a few straight-edged shapes. The cat has far more points, because its curves are made of many short straight lines. Its seven stills fit in a 31-line file, and those lines are very long.
-
-Every point is measured in units of the still's height. Its feet are at `y` 0, and a standing critter is about 1 tall. That's why no pixels or metres appear here. The same numbers draw a cat in the distance and a cat in the lane.
-
-`StillShapes` does the rest. An `Anchor` says where a still stands on screen, which way it faces and how tall it is:
-
-{{code StillShapes.Anchor}}
-
-Drawing a still is then one sum for each point. The height in pixels scales the point, and the feet place it:
-
-{{code StillShapes.screen_point}}
-
-That's all there is to drawing a critter. Each stills module names its stills, a critter with poses, like the cat, picks one with a `match` on its pose, and `StillShapes.still_shapes` puts it on screen.
-
-### How the stills got made
-
-That's all the Roc in this chapter. If you came for the Roc, you can skip ahead to [The elephant](the-elephant.html). The rest of this chapter is the story of where the pictures came from.
-
-At a larger company, a picture like these would pass through three people. An artist would draw it. A software developer would build the tools that get it into the game. A project manager would look at the result and decide whether it's good enough. On Safari Ride, Claude played the first two roles, and Steve played the third.
-
-The artist's cat was a program. An early version of Safari Ride drew the cat in TypeScript, with splines for its body, tapered capsules for its limbs, chains of joints for its legs, and strokes for its whiskers. That's a lot of code to carry from language to language, and a game only ever shows seven poses.
-
-So the developer wrote a baker, a small program that ran the real drawing code once for each pose. A recorder stood in for the canvas. It kept every filled shape as a polygon and turned every stroke into a thin filled quad, and the result was a flat table of polygons. The drawing code stayed behind, and the table moved on.
-
-The emoji-based animals took a different route. They come from Microsoft's Fluent Emoji, in its Flat style. That set draws every animal whole and from the side, where another set draws a rhino as a face, which looks wrong beside a road. A second baker read each SVG file, walked its shapes in painting order, and cut each curve into short straight lines.
-
-The bull is a hybrid. It comes from the same emoji set, but in its Color style, which is shaded. It's the only still with gradients, on 40 of its 43 polygons, which is why a polygon's fill can be `Shaded`. Its 2,212 points are nearly half of `EmojiStill`.
-
-The Roc bird came last. Its perched pose is the logo, and Claude drew the five flight poses to match, directly as polygons, in the logo's two purples.
-
-The project manager's tool was a contact sheet: every still, side by side, in one image. Each bake wrote one, and Steve looked at it. No test can say whether a cat looks like a cat. The comment in the emoji baker puts the standard well: "an elephant is an elephant".
-
-The bakers belong to the older versions of Safari Ride, in TypeScript and Zig. The polygons they made have been carried along ever since, which is why these files look like generated data. They are.
-
-Now that we can draw a critter, we can stand one by the road.
-
-## The elephant
-
-The critters in this stretch of the book are billboards: one emoji still, standing in one place, always facing the camera. The code calls them billboards too. We'll start with the elephant. It stands at 14 of the route's 18 bends, so it's the bend animal you'll see most. A grown elephant waits beyond the guard rail on the outside of the bend, and its baby stands 14 metres straight on past the bend, where the road would run if it didn't turn.
-
-New in this chapter:
-
-- Roc: a wrapper only one module can build; a `match` that answers with a list
-- Modules: `Billboard`, `BendAnimal`
-
-### Get the types right
-
-A billboard is three facts: its still, its height, and which way it faces.
-
-{{code Billboard.Billboard from "Billboard :: {" to "}.{"}}
-
-Where it stands isn't one of them. That's the `Geom.Placed` around it. A species is its emoji and how tall a grown one stands, so a baby is the same species at half the height:
-
-{{code Billboard.Species}}
-
-The emoji is a named still, such as `EmojiStill.elephant`, and only `EmojiStill` can make one:
-
-{{code EmojiStill.EmojiStill from "EmojiStill ::" to "is_eq : _"}}
-
-So a billboard always holds a still that exists.
-
-### Drawing one
-
-An emoji faces left, so a billboard facing right is its still mirrored. A `match` on which way it faces picks the `flip`, and `StillShapes.standing_still_shapes` draws the still standing at the billboard's spot:
-
-{{code Billboard.scenery_sprite}}
-
-### Placing one at a bend
-
-A segment's ending carries its `bend_life`, what's at its bend. The segment turns that into billboards:
-
-{{code Segment.segment_bend_billboards}}
-
-What's at the bend gives its own billboards. A quiet bend gives nothing, a pond gives its ducks, and an animal gives two, itself and its baby:
-
-{{code Segment.bend_billboards}}
-
-The animal places itself:
-
-{{code BendAnimal.bend_billboards}}
-
-A `match` on the bend's outer side picks which side of the road the grown animal stands on, and which way it faces. It stands just beyond the rail, a metre and a half past the road's edge plus half its own width.
-
-An elephant has no state. Nothing in that function says "elephant". That's what makes the next chapter short.
-
-## Rhinos, giraffes and the other corner critters
-
-A giraffe, a rhino and a zebra have one bend each. They all use the same code as the elephant, and they differ by one row:
-
-{{code BendAnimal.species_of}}
-
-Each animal is a tag, and each answers with its emoji and how tall it stands. The `match` has to cover all four.
-
-To add a lion, we'd add a tag, a row here and a still in `EmojiStill`. The compiler would point at every `match` that needs the new tag.
-
-These animals stand at the bends. Most of the others come in crowds.
-
-## Herds: cows and pigs
-
-Safari Ride's farms are crowds of animals, and a crowd is just a list of critters. The world stores only each herd's counts or shape. Its segment says where along the road the herd stands, and the herd's own module lays out the animals whenever it's asked.
-
-New in this chapter:
-
-- Roc: nothing new
-- Modules: `CowHerd`, `Scatter`
-
-### Cows
-
-A herd of 14 cows grazes on the left of the road, in columns of three. Every fourth cow, from the second, is a calf, at half the height.
-
-{{code CowHerd.herd_cows}}
-
-A herd in a perfect grid would look like a parking lot, so each cow strays a little from its place:
-
-{{code CowHerd.herd_cow}}
-
-The stray comes from the sine and cosine of the cow's number. It looks random, but it's the same on every run, so the frames stay exact.
-
-A bull may stand in front of the herd, by the trees. It's the same record again, a bit taller than a cow:
-
-{{code CowHerd.herd_bull}}
-
-### Pigs
-
-A pig is a species, like the elephant's:
-
-{{code PigHerd.pig_species}}
-
-Pigs graze on the right of the road, near the end of a segment. The first two segments with pigs get a big herd, 7 rows of 7. After that, it's two short rows.
-
-{{code PigHerd.herd_pigs}}
-
-The `match` is on the herd's two shapes. How the rider takes a herd is a separate choice, which the route makes: `Unnoticed` or `Distracting`. Only pigs can be `Distracting`, never cows. On the first two herds, the standout pig catches the rider's eye, and the rider slows down to look. That's about the rider more than the pig, so it waits for the rider's chapters.
-
-That's every critter that stands still, and the end of what we can say about one frame.
 
 ## A flip book
 

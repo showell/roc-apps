@@ -30,12 +30,12 @@ Book := [].{
 			title: "The big picture",
 		},
 		{
-			before: "The world",
+			before: "Things",
 			level: Part,
 			title: "One frame",
 		},
 		{
-			before: "A simple tree",
+			before: "Grass",
 			level: Category,
 			title: "Nature",
 		},
@@ -45,12 +45,12 @@ Book := [].{
 			title: "Man-made",
 		},
 		{
-			before: "Stills: how we draw a critter",
+			before: "Stills",
 			level: Category,
 			title: "Critters that stand still",
 		},
 		{
-			before: "The ride instant",
+			before: "A flip book",
 			level: Part,
 			title: "Motion",
 		},
@@ -115,6 +115,8 @@ Book := [].{
 		{ chapter: "The road", slug: "the-road" },
 		{ chapter: "Rails", slug: "rails" },
 		{ chapter: "Radio towers", slug: "radio-towers" },
+		{ chapter: "Stills", slug: "stills" },
+		{ chapter: "Herds", slug: "herds" },
 	]
 
 	## The dividers and the slugs a book is cut with.

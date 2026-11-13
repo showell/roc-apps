@@ -18,6 +18,7 @@ while: a Roc keyword
 # Roc's builtins, which the book calls by their full names.
 F64.e.pow: a Roc builtin, the constant e and its method
 U32.until: a Roc builtin
+U64.until: a Roc builtin
 List.from_iter: a Roc builtin
 List.with_capacity: a Roc builtin
 
