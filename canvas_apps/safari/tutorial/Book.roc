@@ -70,11 +70,6 @@ Book := [].{
 			title: "Critter motion",
 		},
 		{
-			before: "Rehearsal",
-			level: Category,
-			title: "How the rider steers",
-		},
-		{
 			before: "The math layer",
 			level: Part,
 			title: "Under the hood",

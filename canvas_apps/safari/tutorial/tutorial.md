@@ -551,7 +551,7 @@ A tier is a set of shares. A triangle is corners on the screen. Between the two 
 
 {{code Camera.Upright}}
 
-Three small functions read the crown's place from the outline:
+The camera works the outline out from where the tree stands. How it does that is perspective, and the {{chapter The math layer}} chapter, near the end of the book, opens it up. Three small functions read the crown's place from the outline:
 
 {{signatures TreeShapes.crown_top_y TreeShapes.crown_height TreeShapes.crown_half_width}}
 
@@ -683,100 +683,7 @@ Every rendering has that one type, so a frame gathers them all in one list:
 
 A `Scene` holds a list of renderings for each sort of thing, and `join` makes one list of them all. The guard rail along the road makes its own `Rendered`s, as a later chapter shows, and `scene.rails` joins them to the list. `Rendered.depth_sorted_renderings` sorts the list from far to near, and the platform paints it in that order, so a near thing covers a far one.
 
-So every thing beside the road makes the same trip: placed on the road, sighted by the camera, rendered as a sprite with a depth, and sorted into the frame's one list. Its kind rides through the first two types and is gone by the third. The trip can also end early, at the sighting, and the next chapter goes back to that box.
-
-## Refused
-
-Every frame, the pipeline tries to sight each thing on the road ahead, and its sighting functions refuse some of them. A thing behind the camera, a thing the horizon hides and a thing too small to see all stay out of the frame. This chapter is about how a Roc function gives back an answer that can fail, and how that answer travels up through the functions that ask for it.
-
-Here are some things from step 1,529 and what their sightings decide. `right` and `forward` place each thing's foot from the camera, in metres, and a `forward` below zero is behind it. A thing less than 0.4 metres in front of the camera, short of what we call its near plane, counts as behind it too. The road bends, so a tree on a segment far ahead can stand far to one side:
-
-| What it is | `right` | `forward` | What its sighting decides |
-|---|---|---|---|
-| The cat, frozen in the road | 0.38 | 23.63 | kept |
-| The nearest tree, a big green one | 3.45 | 21.63 | kept |
-| The nearest tree behind the camera, a gold one | -8.09 | -8.36 | out of sight: behind the camera |
-| The nearest tree the horizon hides, a small green one | -1,433.43 | 446.00 | out of sight: below the horizon |
-| A big green tree just past it | -1,446.07 | 473.21 | kept |
-| The radio tower past the end of the rider's segment | 20.40 | 355.61 | kept |
-| The truck | 92.19 | 489.15 | kept |
-
-A small tree far off sinks below the horizon, while a taller one just past it still shows its top. The ride's ground curves on a radius of 100 km, far tighter than the earth's, so its horizon is near. Distance counts the whole way, sideways too: the hidden tree stands about 1,500 metres from the camera. Of the 214 trees on the segments in view, 136 are kept, 30 are behind the camera, and 48 are below the horizon. Those three counts add up to all 214 trees, so at this step every tree the horizon leaves in view also passes the size test, which comes later in this chapter. The table says which test refused each tree. The program itself keeps only the answer that the tree is out of sight, as the code below shows.
-
-Each test lives in its own function, and each function asks the one below it first. A radio tower takes two of the tests, the near plane and the horizon, so here's its stack:
-
-How a refusal travels
-```dot
-digraph refusal {
-  rankdir=TB;
-  nodesep=0.6;
-  ranksep=0.7;
-  node [shape=box, fontname="Helvetica", fontsize=18, margin="0.25,0.12"];
-  edge [fontname="Helvetica", fontsize=16];
-  horizon [label="Pipeline.sighting_above_horizon_of\ntests the horizon"];
-  sighting [label="Pipeline.sighting_of"];
-  ahead [label="RiderView.rider_point_ahead\ntests the near plane"];
-  horizon -> sighting [dir=back, label="  passes up\n  an Err(OutOfSight)"];
-  sighting -> ahead [dir=back, label="  passes up an Err(BehindCamera),\n  renamed OutOfSight"];
-}
-```
-
-### An answer that can fail
-
-A sighting function's answer is a `Try`, Roc's type for an answer that can fail. A `Try` is one of two tags: `Ok`, holding the answer, or `Err`, holding a tag that says what went wrong. Here's the first sighting function, whole:
-
-{{code Pipeline.sighting_of}}
-
-Its type ends in `Try(Pipeline.Sighted(kind), [OutOfSight])`: a sighting, or `OutOfSight`. The last line wraps the spot and the kind in an `Ok`.
-
-The test itself happens one level down. `RiderView.rider_point_ahead` gives back a `Try` of its own, and the `?` after it decides what happens next. When the answer is an `Ok`, the `?` unwraps it, and `foot` is the point ahead. When it's an `Err`, the `?` ends `sighting_of` right there and gives back an `Err`. So every line after the `?` runs only for a thing in front of the camera, and the body reads as one straight path.
-
-`rider_point_ahead` works on a `RiderPoint`, a bare point seen from the rider, and its refusal says what's wrong with that point:
-
-{{signatures RiderView.rider_point_ahead}}
-
-A sighting's callers need only to know the thing is out of sight. So the `?` has a function after it, `|BehindCamera| OutOfSight`, and the `Err`'s tag goes through that function on its way up. The function's argument is written as the tag itself, a pattern like the ones a `match` lists, and `BehindCamera` is the only tag `rider_point_ahead` gives, so that one pattern covers it.
-
-### A test on top
-
-The next function asks `sighting_of` first, then makes a test of its own:
-
-{{code Pipeline.sighting_above_horizon_of}}
-
-Its `where` line says what the function needs from a kind: its height. The {{chapter Asking a kind}} chapter reads that line. A `Spot` gives its parts through methods, such as `lift()` and `foot()`. The ride's ground curves away from the rider, and `drop()` gives how far it has dropped below level at the thing's foot.
-
-The first line asks `sighting_of`, and its plain `?` passes an `Err(OutOfSight)` straight up. Then the function tests the horizon, and gives back the same tag for its own refusal. So both functions have the same type after the arrow, and a caller treats the two refusals alike.
-
-`Pipeline.scenery_sighting_of` stacks one more test on top in the same way: a thing that would stand under 2 pixels tall on the screen is out of sight too. The trees, the billboards, the cat and the bird take all three tests. A radio tower is kept however small it looks, so it's sighted by `sighting_above_horizon_of`. The truck takes only the near-plane test, so it's sighted by `sighting_of`.
-
-### Where the refusals stop
-
-A segment holds many trees, so its sighting module asks for all of their sightings at once:
-
-{{code TreeSighting.segment_trees}}
-
-`scenery_sighting_of` takes a `camera`, which holds the vantage and the lens's focal length, because its size test needs the lens. `keep_oks` is a `List` function. It calls the function it's given on each item, keeps the `Ok` values, and drops the `Err`s. So `segment_trees` gives back a plain list of sightings, and the refusals stop there.
-
-There's one truck, so `Scene` matches on its answer instead:
-
-{{code Scene.truck_renderings}}
-
-A `match` on a `Try` covers both tags, as any `match` covers every tag. An empty list leaves the truck out of the frame.
-
-### All through the ride
-
-The same kind of answer runs all through Safari Ride, wherever a function can come up empty:
-
-| Job | Function | Its type |
-|---|---|---|
-{{types row RoutePlace.at_distance Find a place on the route}}
-{{types row BirdFlight.flight_from Pick a tree for the bird to fly to}}
-{{types row GroundPatch.patch_shape Shape a patch of the road}}
-{{types row Camera.clipped_polygon Cut a shape at the near plane}}
-
-Each tag names one way its function can fail, and the ground patch has two.
-
-So a refusal is an ordinary value. A sighting gives back a `Try`, a `?` passes an `Err` up or unwraps an `Ok`, a function after the `?` can rename the tag on the way, and `keep_oks` or a `match` decides where the refusals stop. The kept sightings go on to be rendered. That leaves two questions from the trip, and the next two chapters answer them: what is a kind, and how does `rendering_of`, written once, get a sprite out of every kind?
+So every thing beside the road makes the same trip: placed on the road, sighted by the camera, rendered as a sprite with a depth, and sorted into the frame's one list. Its kind rides through the first two types and is gone by the third. The trip can also end early, at the sighting, and the {{chapter Refused}} chapter goes back to that box. First, the next chapter shows how `rendering_of`, written once, gets a sprite out of every kind.
 
 ## Asking a kind
 
@@ -845,7 +752,100 @@ Roc matches a `where` clause by the method's name and type alone. Suppose the cl
 
 So a kind meets the pipeline with two methods inside its braces, `scenery_height` and `scenery_sprite`. The tree, the cow, the radio tower, the cat and the bird each have both, and the compiler checks both methods of every kind when the program compiles.
 
-That finishes how a thing beside the road reaches the frame. The rest of the frame is the world the things stand in, and the next chapters build it from the ground up.
+That finishes how a kept sighting reaches the frame. The next chapter takes the sightings that are refused.
+
+## Refused
+
+Every frame, the pipeline tries to sight each thing on the road ahead, and its sighting functions refuse some of them. A thing behind the camera, a thing the horizon hides and a thing too small to see all stay out of the frame. This chapter is about how a Roc function gives back an answer that can fail, and how that answer travels up through the functions that ask for it.
+
+Here are some things from step 1,529 and what their sightings decide. `right` and `forward` place each thing's foot from the camera, in metres, and a `forward` below zero is behind it. A thing less than 0.4 metres in front of the camera, short of what we call its near plane, counts as behind it too. The road bends, so a tree on a segment far ahead can stand far to one side:
+
+| What it is | `right` | `forward` | What its sighting decides |
+|---|---|---|---|
+| The cat, frozen in the road | 0.38 | 23.63 | kept |
+| The nearest tree, a big green one | 3.45 | 21.63 | kept |
+| The nearest tree behind the camera, a gold one | -8.09 | -8.36 | out of sight: behind the camera |
+| The nearest tree the horizon hides, a small green one | -1,433.43 | 446.00 | out of sight: below the horizon |
+| A big green tree just past it | -1,446.07 | 473.21 | kept |
+| The radio tower past the end of the rider's segment | 20.40 | 355.61 | kept |
+| The truck | 92.19 | 489.15 | kept |
+
+A small tree far off sinks below the horizon, while a taller one just past it still shows its top. The ride's ground curves on a radius of 100 km, far tighter than the earth's, so its horizon is near. Distance counts the whole way, sideways too: the hidden tree stands about 1,500 metres from the camera. Of the 214 trees on the segments in view, 136 are kept, 30 are behind the camera, and 48 are below the horizon. Those three counts add up to all 214 trees, so at this step every tree the horizon leaves in view also passes the size test, which comes later in this chapter. The table says which test refused each tree. The program itself keeps only the answer that the tree is out of sight, as the code below shows.
+
+Each test lives in its own function, and each function asks the one below it first. A radio tower takes two of the tests, the near plane and the horizon, so here's its stack:
+
+How a refusal travels
+```dot
+digraph refusal {
+  rankdir=TB;
+  nodesep=0.6;
+  ranksep=0.7;
+  node [shape=box, fontname="Helvetica", fontsize=18, margin="0.25,0.12"];
+  edge [fontname="Helvetica", fontsize=16];
+  horizon [label="Pipeline.sighting_above_horizon_of\ntests the horizon"];
+  sighting [label="Pipeline.sighting_of"];
+  ahead [label="RiderView.rider_point_ahead\ntests the near plane"];
+  horizon -> sighting [dir=back, label="  passes up\n  an Err(OutOfSight)"];
+  sighting -> ahead [dir=back, label="  passes up an Err(BehindCamera),\n  renamed OutOfSight"];
+}
+```
+
+### An answer that can fail
+
+A sighting function's answer is a `Try`, Roc's type for an answer that can fail. A `Try` is one of two tags: `Ok`, holding the answer, or `Err`, holding a tag that says what went wrong. Here's the first sighting function, whole:
+
+{{code Pipeline.sighting_of}}
+
+Its type ends in `Try(Pipeline.Sighted(kind), [OutOfSight])`: a sighting, or `OutOfSight`. The last line wraps the spot and the kind in an `Ok`.
+
+The test itself happens one level down. `RiderView.rider_point_ahead` gives back a `Try` of its own, and the `?` after it decides what happens next. When the answer is an `Ok`, the `?` unwraps it, and `foot` is the point ahead. When it's an `Err`, the `?` ends `sighting_of` right there and gives back an `Err`. So every line after the `?` runs only for a thing in front of the camera, and the body reads as one straight path.
+
+`rider_point_ahead` works on a `RiderPoint`, a bare point seen from the rider, and its refusal says what's wrong with that point:
+
+{{signatures RiderView.rider_point_ahead}}
+
+A sighting's callers need only to know the thing is out of sight. So the `?` has a function after it, `|BehindCamera| OutOfSight`, and the `Err`'s tag goes through that function on its way up. The function's argument is written as the tag itself, a pattern like the ones a `match` lists, and `BehindCamera` is the only tag `rider_point_ahead` gives, so that one pattern covers it.
+
+### A test on top
+
+The next function asks `sighting_of` first, then makes a test of its own:
+
+{{code Pipeline.sighting_above_horizon_of}}
+
+Its `where` line asks the kind for its height, as the {{chapter Asking a kind}} chapter showed. A `Spot` gives its parts through methods, such as `lift()` and `foot()`. The ride's ground curves away from the rider, and `drop()` gives how far it has dropped below level at the thing's foot.
+
+The first line asks `sighting_of`, and its plain `?` passes an `Err(OutOfSight)` straight up. Then the function tests the horizon, and gives back the same tag for its own refusal. So both functions have the same type after the arrow, and a caller treats the two refusals alike.
+
+`Pipeline.scenery_sighting_of` stacks one more test on top in the same way: a thing that would stand under 2 pixels tall on the screen is out of sight too. The trees, the billboards, the cat and the bird take all three tests. A radio tower is kept however small it looks, so it's sighted by `sighting_above_horizon_of`. The truck takes only the near-plane test, so it's sighted by `sighting_of`.
+
+### Where the refusals stop
+
+A segment holds many trees, so its sighting module asks for all of their sightings at once:
+
+{{code TreeSighting.segment_trees}}
+
+`scenery_sighting_of` takes a `camera`, which holds the vantage and the lens's focal length, because its size test needs the lens. `keep_oks` is a `List` function. It calls the function it's given on each item, keeps the `Ok` values, and drops the `Err`s. So `segment_trees` gives back a plain list of sightings, and the refusals stop there.
+
+There's one truck, so `Scene` matches on its answer instead:
+
+{{code Scene.truck_renderings}}
+
+A `match` on a `Try` covers both tags, as any `match` covers every tag. An empty list leaves the truck out of the frame.
+
+### All through the ride
+
+The same kind of answer runs all through Safari Ride, wherever a function can come up empty:
+
+| Job | Function | Its type |
+|---|---|---|
+{{types row RoutePlace.at_distance Find a place on the route}}
+{{types row BirdFlight.flight_from Pick a tree for the bird to fly to}}
+{{types row GroundPatch.patch_shape Shape a patch of the road}}
+{{types row Camera.clipped_polygon Cut a shape at the near plane}}
+
+Each tag names one way its function can fail, and the ground patch has two.
+
+So a refusal is an ordinary value. A sighting gives back a `Try`, a `?` passes an `Err` up or unwraps an `Ok`, a function after the `?` can rename the tag on the way, and `keep_oks` or a `match` decides where the refusals stop. The kept sightings go on to be rendered. The rest of the frame is the world the things stand in, and the next chapters build it from the ground up.
 
 ## The sky and the grass
 
@@ -1249,6 +1249,12 @@ Here's the step, whole:
 
 `next_or_restart`, from the {{chapter A flip book}} chapter, calls this step until the rider reaches the end of the road. Its doc comment gives the order, and the order matters. The rider moves first, reading where the encounter ahead has got to. Then the clock ticks. Then the world answers the rider who has just moved: the truck aims at how far along the route the rider now is, and the encounter plan is kept, dropped at a new segment, or made from this step's rider. The last line puts the four together into the next moment, and the old moment stays as it was.
 
+The rider reads the encounter as a stage, where its animation has got to:
+
+{{code Animation.Stage}}
+
+`Waiting` comes before the animation starts, `Playing` counts the steps in, and `Past` counts the steps since it ended. The {{chapter The cat}} chapter shows how the plan and the clock make one.
+
 ### Carried and derived
 
 Those four fields are all the ride carries from one step to the next. Everything else in a frame is derived from them and the road, worked out again each time. So the ride's moving parts come in three kinds:
@@ -1423,7 +1429,7 @@ This picture adds `Sky.horizon_warmth_at`, the red line, and the same warmth red
 
 Play any of those pictures backward, and the sun rises, with the same code. Every function here takes a clock and answers, so the clock can run either way. The sun, the sky and the beacons can each be asked about any step, cold.
 
-The rider and the truck are another kind of thing: the ride carries them, and moves them one step at a time. The next chapter shows what that costs.
+The rider and the truck are another kind of thing: the ride carries them, and moves them one step at a time. The next chapters take them, starting with the rider.
 
 ## The rider
 
@@ -1589,6 +1595,70 @@ It has one caller, `VehicleLimits.braking_to`. That function also holds the spee
 
 The last limit, `shoulder_limit`, comes back in the {{chapter Rehearsal}} chapter, because it runs a pretend copy of the bike forward, which is what that chapter is about. The two in the middle come from what the rider sees: `encounter_throttle` is the cat's, and `gawk_brake` the pig's. The cat's has its own chapter, so we'll take the pig first.
 
+## Rehearsal
+
+The rider steers by leaning, and each step it has to choose a lean. It chooses by rehearsal: it runs the bike's real step on a pretend motorcycle, reads where that motorcycle ends up, and throws it away. Each step tries twelve leans this way. Each try narrows the range the next one picks from, and the rider steers at the lean the tries close in on, the one that keeps the bike nearest the middle of the road.
+
+```widget rehearsal
+Click a mark to see that try at a lean.
+```
+
+This is step 374 of the ride, just after a bend. Each white arc is one try: a pretend motorcycle coasting down the road at one lean. The yellow line is the road's middle, where the search wants each coast to end. The last mark, the choice, is the lean the rider steers at.
+
+### Where the rehearsals start
+
+Each step, the rider's controls come from one function:
+
+{{code RiderMind.controls}}
+
+Its first line asks the lean search for a lean. Its second asks the throttle how hard to accelerate, for the motorcycle at that lean. `with_lean` is the helper from the {{chapter The rider}} chapter: the same motorcycle, at another lean. Both lines rehearse.
+
+### A coast
+
+`Coast` answers one question: if the rider held the lean and the speed from now on, where would the bike go? The answer is an `Outcome`:
+
+{{code Coast.Outcome}}
+
+The coast ends on the road at a place across it, or leaves the road at a shoulder after so many steps. One function runs it:
+
+{{code Coast.coast_end}}
+
+`var $point` declares a variable: a name the function can set again, marked by the `$` at its front. Each pass of the `while` loop sets `$motorcycle` to the bike a step on, and `$point` to where it now is. The bounds are the road's edges, 5 centimetres in, or wherever the bike starts if that's further out. The loop runs until the bike crosses a bound, gets 25 metres along the road, which is as far ahead as the rehearsal needs to look, or has run for 2,000 steps, which ends a slow rider circling in place. Then the last lines read where the coast ended.
+
+The variables live and die inside `coast_end`. The function takes a motorcycle and returns an answer, and the same motorcycle always gives the same answer, so `coast_end` is as pure as every other function in the ride.
+
+Each pass makes its step with this:
+
+{{code Coast.coasting_step}}
+
+That's the real step, `Motorcycle.motorcycle_at_next_step`, the one that moves the real rider. `steady_controls` hands it the lean as it is and an acceleration of zero. The step is a pure function, so a pretend motorcycle steps exactly as the real one does.
+
+### Twelve tries
+
+A lean further right always ends a coast further right. So each try rules out half the leans still in play, and twelve tries narrow the choice down fast. That's a bisection: a binary search over leans.
+
+{{code LeanSearch.best_lean}}
+
+`for _ in 0..<lean_search_round_count` runs its body twelve times. `0..<12` counts from 0 up to 11, and `_` leaves the count unnamed, since the body needs only the bounds. The bounds start a degree either side of the bike's lean, so the lean it picks is always within a degree of the last one. Each try coasts the motorcycle at the lean halfway between the bounds:
+
+{{code LeanSearch.tried_motorcycle}}
+
+Where that coast goes decides which half of the bounds to keep:
+
+{{code LeanSearch.lean_correction}}
+
+A `..` in a pattern stands for the rest of the record's fields, so `Leaves({ side: Left, .. })` matches any coast off the left, whatever its count of steps. Off the left shoulder means lean more right, and off the right means more left. A coast that stays on the road compares where it ends with `aimed_across`, the road's middle. After the twelfth try, the search returns the lean halfway between the bounds it has narrowed to.
+
+### Why rehearsing is safe
+
+A rehearsal runs the real rules on a copy of the rider, and in Roc the copy is cheap. `tried_motorcycle` returns a new motorcycle, and the real one stays as it was. `motorcycle_at_next_step` has the thin arrow, so it reaches only its arguments. A rehearsal touches only its own copy, and a try the rider rejects is simply dropped.
+
+Each real step of the ride runs thirteen coasts: twelve for the lean, and one more in the throttle. That last one asks whether the bike, held as it is, would leave the road at a shoulder, and brakes if so:
+
+{{code Throttle.shoulder_limit}}
+
+So the rider rehearses and moves, and every part of it is a function from the moment before to the moment after. One part is left: where the rider looks, which the next chapter takes.
+
 ## The rider's gaze
 
 The herds chapter left one pig waiting. On the first two segments with pigs, one pig in the big herd catches the rider's eye. The rider turns to look and slows down, and the camera turns too.
@@ -1685,7 +1755,7 @@ The depth has one job. It widens the view:
 
 {{code RiderEyes.attention}}
 
-`RiderCamera.ride_focal_length` sets how wide the view is. It asks `Rider.attention`, which takes the stronger of two pulls: this look's, and a crossing cat's, which the cat chapters cover. So a pig widens the view, and the view stays wide for a while after.
+An `Attention` is how hard something holds the rider's eye, an opaque type around an `F64`: a full look is 1. `Easing.smoothstep` turns the look's depth into one that moves slowly at each end and faster in the middle, so the pull eases in and out. `RiderCamera.ride_focal_length` sets how wide the view is. It asks `Rider.attention`, which takes the stronger of two pulls: this look's, and a crossing cat's, which the cat chapters cover. So a pig widens the view, and the view stays wide for a while after.
 
 ### Gawking
 
@@ -1798,7 +1868,9 @@ On this ride, that's step 3,555 of 6,746. Once on, they stay on, because from th
 
 ### The brake lights
 
-The brake lights read the truck's pace instead of the sky, so they're on while the truck's last step slowed it, by day or by night:
+The brake lights read the truck's pace instead of the sky, so they're on while the truck's last step slowed it, by day or by night. The pace is part of the truck's carried progress:
+
+{{code TruckJourney.Pace}}
 
 {{code TruckBrakeLights.at}}
 
@@ -1839,9 +1911,7 @@ The truck's state is three fields:
 
 {{code TruckJourney.TruckProgress from "How far along" to "pace : TruckJourney.Pace,"}}
 
-`route_position` is a `Distance` along the whole route, the same measure as the rider's progress, so the two can be compared directly. `Pace` says whether the truck's last step slowed it down:
-
-{{code TruckJourney.Pace}}
+`route_position` is a `Distance` along the whole route, the same measure as the rider's progress, so the two can be compared directly. `Pace`, which the brake lights read in the {{chapter The truck}} chapter, says whether the truck's last step slowed it down.
 
 A bend ahead of the truck is its own type, and so is the answer to "is there one":
 
@@ -2162,71 +2232,7 @@ The cat's pull rises as it crosses, up to its peak of 1.8, then fades over 83 st
 
 `Rider.attention` takes the stronger of two pulls: the cat's, and the depth of the rider's last look, which lingers after the eyes come home. The camera widens its view for that attention, as a startled rider takes in more of the road. A lean widens the view too, and the camera takes whichever asks for the wider one.
 
-Of the three encounters, only a cat asks anything of the rider, and it asks for both. The rider's reactions to everything else, the bends and the pigs, came earlier, in the rider's own chapters.
-
-## Rehearsal
-
-The rider steers by leaning, and each step it has to choose a lean. It chooses by rehearsal: it runs the bike's real step on a pretend motorcycle, reads where that motorcycle ends up, and throws it away. Each step tries twelve leans this way. Each try narrows the range the next one picks from, and the rider steers at the lean the tries close in on, the one that keeps the bike nearest the middle of the road.
-
-```widget rehearsal
-Click a mark to see that try at a lean.
-```
-
-This is step 374 of the ride, just after a bend. Each white arc is one try: a pretend motorcycle coasting down the road at one lean. The yellow line is the road's middle, where the search wants each coast to end. The last mark, the choice, is the lean the rider steers at.
-
-### Where the rehearsals start
-
-Each step, the rider's controls come from one function:
-
-{{code RiderMind.controls}}
-
-Its first line asks the lean search for a lean. Its second asks the throttle how hard to accelerate, for the motorcycle at that lean. `with_lean` is the helper from the {{chapter The rider}} chapter: the same motorcycle, at another lean. Both lines rehearse.
-
-### A coast
-
-`Coast` answers one question: if the rider held the lean and the speed from now on, where would the bike go? The answer is an `Outcome`:
-
-{{code Coast.Outcome}}
-
-The coast ends on the road at a place across it, or leaves the road at a shoulder after so many steps. One function runs it:
-
-{{code Coast.coast_end}}
-
-`var $point` declares a variable: a name the function can set again, marked by the `$` at its front. Each pass of the `while` loop sets `$motorcycle` to the bike a step on, and `$point` to where it now is. The bounds are the road's edges, 5 centimetres in, or wherever the bike starts if that's further out. The loop runs until the bike crosses a bound, gets 25 metres along the road, which is as far ahead as the rehearsal needs to look, or has run for 2,000 steps, which ends a slow rider circling in place. Then the last lines read where the coast ended.
-
-The variables live and die inside `coast_end`. The function takes a motorcycle and returns an answer, and the same motorcycle always gives the same answer, so `coast_end` is as pure as every other function in the ride.
-
-Each pass makes its step with this:
-
-{{code Coast.coasting_step}}
-
-That's the real step, `Motorcycle.motorcycle_at_next_step`, the one that moves the real rider. `steady_controls` hands it the lean as it is and an acceleration of zero. The step is a pure function, so a pretend motorcycle steps exactly as the real one does.
-
-### Twelve tries
-
-A lean further right always ends a coast further right. So each try rules out half the leans still in play, and twelve tries narrow the choice down fast. That's a bisection: a binary search over leans.
-
-{{code LeanSearch.best_lean}}
-
-`for _ in 0..<lean_search_round_count` runs its body twelve times. `0..<12` counts from 0 up to 11, and `_` leaves the count unnamed, since the body needs only the bounds. The bounds start a degree either side of the bike's lean, so the lean it picks is always within a degree of the last one. Each try coasts the motorcycle at the lean halfway between the bounds:
-
-{{code LeanSearch.tried_motorcycle}}
-
-Where that coast goes decides which half of the bounds to keep:
-
-{{code LeanSearch.lean_correction}}
-
-A `..` in a pattern stands for the rest of the record's fields, so `Leaves({ side: Left, .. })` matches any coast off the left, whatever its count of steps. Off the left shoulder means lean more right, and off the right means more left. A coast that stays on the road compares where it ends with `aimed_across`, the road's middle. After the twelfth try, the search returns the lean halfway between the bounds it has narrowed to.
-
-### Why rehearsing is safe
-
-A rehearsal runs the real rules on a copy of the rider, and in Roc the copy is cheap. `tried_motorcycle` returns a new motorcycle, and the real one stays as it was. `motorcycle_at_next_step` has the thin arrow, so it reaches only its arguments. A rehearsal touches only its own copy, and a try the rider rejects is simply dropped.
-
-Each real step of the ride runs thirteen coasts: twelve for the lean, and one more in the throttle. That last one asks whether the bike, held as it is, would leave the road at a shoulder, and brakes if so:
-
-{{code Throttle.shoulder_limit}}
-
-That's the whole rider. It looks, it rehearses, and it moves, and every part of it is a function from the moment before to the moment after. The next part of the book opens the math those functions stand on.
+Of the three encounters, only a cat asks anything of the rider, and it asks for both. The rider's reactions to everything else, the bends and the pigs, came earlier, in the rider's own chapters. That's the last thing in the ride that moves. The rest of the book opens the machinery under it all.
 
 ## The math layer
 
@@ -2460,7 +2466,7 @@ A frame is one flat list of shapes, painted in order, so a later shape covers an
 
 `leaned_by` returns a space that turns the screen about its middle, by the roll in the opposite direction. `leaned_shapes` puts the whole frame inside that space, backdrop first, so the sky and the grass lean with the road.
 
-So the ride is a value, a step and a frame. The platform calls them, and everything with an effect, from the timing to the canvas, happens on the platform's side of the line.
+So the ride is a value, a step and a frame. The platform calls them, and everything with an effect, from the timing to the canvas, happens on the platform's side of the line. That's the last of the parts, and the last chapter puts them back together.
 
 ## Zooming back out
 
