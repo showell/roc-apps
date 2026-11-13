@@ -123,6 +123,10 @@ Book := [].{
 		{ chapter: "The beacons", slug: "the-beacons" },
 		{ chapter: "The setting sun", slug: "the-setting-sun" },
 		{ chapter: "Stepping", slug: "stepping" },
+		{ chapter: "The rider", slug: "the-rider" },
+		{ chapter: "The bike", slug: "the-bike" },
+		{ chapter: "The throttle", slug: "the-throttle" },
+		{ chapter: "The rider's gaze", slug: "the-riders-gaze" },
 	]
 
 	## The dividers and the slugs a book is cut with.

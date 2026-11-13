@@ -1542,82 +1542,62 @@ So the stepped parts get the most care. The rider's step takes the next four cha
 
 ## The rider
 
-The rider is two things: a motorcycle, and a pair of eyes.
+The rider is the larger of the two stepped things. A rider is two parts: a motorcycle, and a pair of eyes.
+
+{{code Rider.Rider from "Rider := {" to "}.{"}}
+
+Both fields are nominal records of their own, and between them they hold six values:
 
 | Part | Field | Type | What it is |
 |---|---|---|---|
-| motorcycle | `route_place` | `RoutePlace` | which segment, and its `road_point` on it, along and across |
+| motorcycle | `route_place` | `RoutePlace` | which segment, and where on it, along and across |
 | | `yaw` | `Angle.Turn` | which way the bike points |
 | | `speed` | `Speed` | how far it goes in a step |
 | | `lean` | `Angle.Lean` | how far it leans |
 | eyes | `gaze_yaw` | `Angle.Turn` | where the rider is looking |
 | | `look_depth` | `Fraction` | how deep the last look went |
 
-New in this chapter:
+Three of the six are angles, of two types: a `Lean` is the bike's tilt, apart from a `Turn`, so passing one where the other belongs fails to compile, as a bearing and a turn did in the {{chapter Mountains}} chapter. The eyes get a chapter of their own.
 
-- Roc: a nominal record of nominal records, record update three levels deep, a value for a motorcycle that doesn't exist
-- Modules: `Rider`, `Motorcycle`, `RiderEyes`, `RiderMind`, `RiderCamera`
+### The rider's step
 
-{{code Rider.Rider from "Rider := {" to "}.{"}}
-
-`Rider := { ... }` is a nominal record, like `RideInstant`, and both of its fields are nominal records too: `Motorcycle` and `RiderEyes`. Nothing in the rider is a bare float. Three of the fields in the table are angles, of two types: `yaw` and `gaze_yaw` are `Turn`s, and `lean` is a `Lean`. Passing a `Lean` where a `Turn` is wanted is a compile-time error. The eyes get a chapter of their own.
-
-The step does its work in order, and the code reads that way: decide, move, cross a bend or stop, then choose where to look:
+The step works in order, and the code reads that way: decide, move, cross a bend or stop, then choose where to look:
 
 {{code Rider.rider_at_next_step}}
 
-Static dispatch finds `segment_on` on the `RoutePlace`. The `match` on `segment.segment_ending()` has two tags, and `..` in `Bends({ bend, .. })` ignores the rest of its payload.
+The `match` on the segment's ending has two tags. In `Bends({ bend, .. })`, the `..` takes the field it names and ignores the rest of the payload.
+
+### Deciding
+
+Every decision the rider makes belongs to `RiderMind`:
 
 {{code RiderMind.controls}}
 
-Every decision the rider makes is `RiderMind`'s. `RiderMind.controls` answers the bike's controls: a lean and an acceleration. Notice its last line. `Throttle` picks the acceleration, and it's asked about a motorcycle that doesn't exist: this motorcycle as it would be at the new lean. `motorcycle.with_lean(lean)` builds that one as a new record. The real motorcycle isn't touched, because no Roc value can be changed.
+A decision is the bike's controls: a lean and an acceleration. Look at the last line. `Throttle` picks the acceleration, and it's asked about a motorcycle that exists only as a value: this motorcycle as it would be at the new lean. `motorcycle.with_lean(lean)` builds that one as a new record, and the real motorcycle stays as it was. The {{chapter Rehearsal}} chapter takes the idea much further.
 
-The Rehearsal chapter takes that idea much further. A small version of it decides what happens at the end of a segment. `cross_bend_if_on_road` makes a motorcycle carried past the bend onto the next segment. If that motorcycle is on the road, it's the answer. If not, the old one is. The rejected motorcycle simply stops being referred to, and nothing has to be undone:
+A small version of it decides what happens at the end of a segment. `cross_bend_if_on_road` makes a motorcycle carried past the bend onto the next segment. If that motorcycle is on the road, it's the answer, and if it's off the road, the old one is. The rejected motorcycle simply drops out of use:
 
 {{code Motorcycle.cross_bend_if_on_road}}
 
-Record update does most of the writing here. Stopping dead updates three levels deep: `..motorcycle` keeps everything but the fields named, `route_place` is itself an update of the old place, and its `road_point` is an update of the old point:
+At the end of the road, the rider stops dead, and record update does it three levels deep:
 
 {{code Motorcycle.stopped_at}}
 
+`..motorcycle` keeps every field but the ones named, `route_place` is itself an update of the old place, and its `road_point` is an update of the old point.
+
 ### The picture leans too
 
-When the rider leans, the whole picture leans with it. This is all of that:
-
-{{code RiderCamera.roll_deadband}}
+When the bike leans, the camera rolls with it, and the whole picture leans:
 
 {{code RiderCamera.rider_roll}}
 
-A lean inside the deadband leaves the canvas level, and any other lean passes straight through. It's called once a frame:
+A lean inside `roll_deadband`, a thousandth of a radian, leaves the picture level, and any other lean passes straight through. The camera turns as well: the rider's head follows the gaze and turns a little into a bend, and the camera adds that to the motorcycle's yaw.
 
-{{code RiderCamera.of from "roll: rider_roll" to "roll: rider_roll"}}
-
-The camera turns as well. `Rider.head_yaw` follows the gaze and turns a little with the lean, as a rider's head turns into a bend, and the camera adds it to the motorcycle's yaw.
-
-So a decision is a lean and an acceleration. The motorcycle is what turns them into movement.
+So a decision is a lean and an acceleration. The motorcycle turns them into movement, in the next chapter.
 
 ## The bike
 
-A lean of 1 degree turns the bike by a tenth of a degree each step, so at a metre a step it goes round a circle 573 metres in radius. That's nearly all the physics.
-
-New in this chapter:
-
-- Roc: nothing new
-
-The modules around `Motorcycle`
-```dot
-digraph bike {
-  node [shape=box, fontname="Helvetica"];
-  Motorcycle [style=bold];
-  Rider -> Motorcycle [label="  steps it"];
-  RiderMind -> Motorcycle [label="  makes its controls"];
-  Coast -> Motorcycle [label="  steps a pretend one"];
-  LeanSearch -> Motorcycle [label="  tries leans on it"];
-  Motorcycle -> RoutePlace [label="  holds its place"];
-  Motorcycle -> VehicleLimits [label="  keeps to the top speed"];
-  Motorcycle -> Angle [label="  turns by its lean"];
-}
-```
+A lean of one degree turns the bike by a tenth of a degree each step, so at a metre a step it goes round a circle with a radius of 573 metres. That's nearly all the physics.
 
 The motorcycle is four fields: where it is on the route, which way it points, how fast it goes, and how far it leans. Its controls are a lean and an acceleration:
 
@@ -1625,31 +1605,35 @@ The motorcycle is four fields: where it is on the route, which way it points, ho
 
 {{code Motorcycle.Controls}}
 
+### One step of physics
+
 The step is the whole of the physics, in order:
 
 {{code Motorcycle.motorcycle_at_next_step}}
 
-The step works in three parts. First the speed: the acceleration is applied, and `allowed_speed` holds the result to the top speed. Then the turn: `lean.steer(turn_per_lean)` turns the lean into a change of direction, a `Turn`. That's the only way a lean affects where the bike points. Then the move: the bike goes one step's length in the direction halfway through the step's turn, `mid`. `along.plus(...)` adds a `Distance` to a place, which is places and distances again. The new place is a record update of `route_place` with a new `road_point`, inside a new motorcycle.
+It works in three parts:
 
-The bike turns the same amount per step at any speed. That's a cheat, chosen by eye, and it's fine here because the rider chooses each step's lean by trying it out on this same physics.
+1. **The speed.** The acceleration is applied, and `allowed_speed` holds the result to the top speed.
+2. **The turn.** `lean.steer(turn_per_lean)` turns the lean into a change of direction, a `Turn`, and that's the only way a lean changes where the bike points.
+3. **The move.** The bike goes one step's length in the direction halfway through the step's turn, `mid`. `along.plus(…)` adds a `Distance` to a place along the road, a moment-and-length pair like the clock's. The new place is a record update of `route_place`, inside a new motorcycle.
 
-Two small helpers let the rest of the program pretend:
+The bike turns the same amount per step at any speed. That's a cheat, chosen by eye, and it holds up because the rider chooses each step's lean by trying it out on this same physics.
+
+### Pretend motorcycles
+
+Two small helpers let the rest of the program try things out:
 
 {{code Motorcycle.with_lean}}
 
 {{code Motorcycle.steady_controls}}
 
-`{ ..motorcycle, lean }` is record update with a shorthand: the field and the local have the same name. `with_lean` makes a motorcycle that doesn't exist, and `steady_controls` makes the controls to coast one on. The Rehearsal chapter uses both hundreds of times a step.
+`{ ..motorcycle, lean }` is a record update with a shorthand field: the field and the argument share the name `lean`. `with_lean` makes a motorcycle as it would be at another lean, and `steady_controls` makes the controls that coast one on. The {{chapter Rehearsal}} chapter uses both hundreds of times a step.
 
-So the work is split. The throttle chooses an acceleration, and the bike turns it into a speed. Choosing the lean has to wait for the Rehearsal chapter.
+So the work is split. The throttle chooses an acceleration, the next chapter's subject, and the bike turns it into a speed. Choosing the lean waits for the {{chapter Rehearsal}} chapter.
 
 ## The throttle
 
 The rider is always deciding whether to accelerate, brake or hold steady. `Throttle` makes that decision, once a step.
-
-New in this chapter:
-
-- Modules: `Throttle`, `ThrottleLimit`, `Speed`, `Acceleration`, `VehicleLimits`
 
 The modules around `Throttle`
 ```dot
@@ -1675,13 +1659,13 @@ digraph limits {
 }
 ```
 
-The rider has several reasons to slow down, and they don't know about each other. A bend is coming. A cat is in the lane. There's a pig to look at. Coasting on would carry the bike off the road. `Throttle` writes them as a list of limits, the chain in the second diagram. It starts from `offered`, the cruise acceleration. `fold` hands each limit in turn to `held_to`, with the acceleration so far, and each limit lets it through or lowers it:
+The rider has several reasons to slow down, and each is a rule of its own. A bend is coming. A cat is in the lane. There's a pig to look at. Coasting on would carry the bike off the road. `Throttle` writes them as a list of limits, the chain in the second diagram. It starts from `offered`, the cruise acceleration. `fold` hands each limit in turn to `held_to`, with the acceleration so far, and each limit lets it through or lowers it:
 
 {{code Throttle.next_acceleration from "limits = [" to "limits.fold(offered, held_to)"}}
 
 Call this *the chain of limits*. Each limit answers the same type and can be read alone, and adding a reason is one more line. It reads like a list of rules because that's what it is.
 
-Each limit is a `ThrottleLimit`: nothing, or at most some acceleration. `held_to` takes the lower:
+Each limit is a `ThrottleLimit`: `NoLimit`, or `AtMost` some acceleration. `held_to` takes the lower:
 
 {{code ThrottleLimit.ThrottleLimit}}
 
@@ -1689,7 +1673,7 @@ Each limit is a `ThrottleLimit`: nothing, or at most some acceleration. `held_to
 
 The throttle answers an acceleration, and the motorcycle turns it into a speed.
 
-`Speed` and `Acceleration` are places and distances again: a speed is the place, and an acceleration is the change from one speed to another. To brake for a bend, the rider needs the steady acceleration that takes its speed to a target within so much road. That's `Speed.acceleration_to`. Its `within` is a `Distance`: the road the change has to happen in. The formula is the first line of a physics textbook, v² = u² + 2as, solved for a, with the speed going from `s` to `t`. In the parameter list, `Speed.(s)` and `target: Speed.(t)` unwrap the two speeds into plain numbers, as `Clock.(n)` did in the One whole module chapter:
+`Speed` and `Acceleration` are a pair like the clock and its steps: a speed is a value, and an acceleration is the change from one speed to another. To brake for a bend, the rider needs the steady acceleration that takes its speed to a target within so much road. That's `Speed.acceleration_to`. Its `within` is a `Distance`: the road the change has to happen in. The formula is the first line of a physics textbook, v² = u² + 2as, solved for a, with the speed going from `s` to `t`. In the parameter list, `Speed.(s)` and `target: Speed.(t)` unwrap the two speeds into plain numbers, as `Clock.(n)` does in the {{chapter The clock}} chapter:
 
 {{code Speed.acceleration_to}}
 
@@ -1711,7 +1695,7 @@ Press play to ride the stretch around the first distracting pig, seen from above
 
 ### Get the types right
 
-The rider's record has two fields we haven't used yet:
+The rider's record has two fields this chapter puts to work:
 
 | Field | Type | What it is |
 |---|---|---|
@@ -1728,7 +1712,7 @@ The rider looks at a pig or at the road, and only a pig has an angle:
 
 {{code Gaze.GazeTarget}}
 
-A pig asks something of the throttle, or it doesn't, and that's the `ThrottleLimit` from the throttle chapter.
+What a pig asks of the throttle is a `ThrottleLimit`, from the throttle chapter.
 
 So the job is a short list:
 
@@ -1753,7 +1737,7 @@ digraph gaze {
 }
 ```
 
-The chain from `desired_gaze` is the look, and `gawk_brake` is the gawking. Nothing joins them. Both ask about the same pig, and neither asks about the other.
+The chain from `desired_gaze` is the look, and `gawk_brake` is the gawking. The two stand apart: both ask about the same pig, and each asks only about the pig.
 
 ### The look
 
@@ -1769,7 +1753,7 @@ The pig has to be near, and it has to be in sight. Near means within 150 metres,
 
 {{code Gaze.turn_to}}
 
-That's the direction to the pig, less the way the bike points. The pig stands beside the road, so the angle grows as the rider comes closer. At 35 degrees the rider lets it go. There's no timer and no flag saying the look is over. The first pig stands about 11 metres from the middle of the road, so it reaches 35 degrees about 16 metres ahead.
+That's the direction to the pig, less the way the bike points. The pig stands beside the road, so the angle grows as the rider comes closer. At 35 degrees the rider lets it go. The angle alone ends the look. The first pig stands about 11 metres from the middle of the road, so it reaches 35 degrees about 16 metres ahead.
 
 ### Turning the head
 
@@ -1779,7 +1763,7 @@ Toward a pig, the gaze turns by at most 4 degrees a step, and `clamped_within` h
 
 A gaze within 0.2 degrees of straight ahead goes all the way there, so the last step of the return lands exactly home, and the return ends.
 
-Nothing here turns the bike. The gaze goes to the camera, and to nothing else that moves:
+The bike keeps its own heading. The gaze goes to the camera alone:
 
 {{code Rider.head_yaw}}
 
@@ -1789,7 +1773,7 @@ The second term is the rider's head going with the lean. So when the rider looks
 
 {{code RiderEyes.next_look_depth}}
 
-While the gaze is off straight ahead, the depth rises with how far it has turned, and it doesn't drop. Once the gaze is home, the depth fades by 0.0012 a step, so a full look takes more than 800 steps to fade.
+While the gaze is off straight ahead, the depth rises with how far it has turned, and holds there. Once the gaze is home, the depth fades by 0.0012 a step, so a full look takes more than 800 steps to fade.
 
 The depth has one job. It widens the view:
 
@@ -1803,7 +1787,7 @@ Whether the rider is gawking is a plainer question than whether it's looking:
 
 {{code Gawking.is_gawking}}
 
-Like the look, it starts when the pig is within 150 metres. It only asks where the rider is, with no angle, so it lasts until the segment ends, long after the look.
+Like the look, it starts when the pig is within 150 metres. It asks only where the rider is, so it lasts until the segment ends, long after the look.
 
 `gawk_brake` is the third link in the throttle's chain. It gives a brake while the rider has noticed a pig, and `held_to` keeps the brake when it's lower than the acceleration so far:
 
@@ -1824,7 +1808,7 @@ Here's all of that on the third segment of the route:
 | 1,050 | The rider lets the pig go | 0.2 metres a step | 34.75 degrees | 0.999 |
 | 1,224 | The gaze is back on the road | 0.2 metres a step | 0 degrees | 0.997 |
 
-The look takes 165 steps, and getting the eyes back takes 174. The rider crawls for 173 steps more with nothing to look at, and reaches the next segment at step 1,397. The gaze is home at every one of the ride's 18 seams between segments, and an expect holds that. A seam needs no reset anyway: the bike doesn't turn at a seam, and `gaze_yaw` is measured from the bike.
+The look takes 165 steps, and getting the eyes back takes 174. The rider crawls on for 173 steps more, eyes on the road, and reaches the next segment at step 1,397. The gaze is home at every one of the ride's 18 seams between segments, and an expect holds that. A seam would be fine even with the gaze turned: the bike keeps its heading at a seam, and `gaze_yaw` is measured from the bike.
 
 That's the pig's part of the rider's step. The truck is the other stepped thing.
 
