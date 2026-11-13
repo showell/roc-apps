@@ -102,7 +102,7 @@ A module is one file of Roc, named for what it holds. `SafariApp.roc` holds the 
 
 The brackets after `app` name the two things the app hands the platform, and the last two lines define them. `Model` is the type of what the app keeps as it runs, and here it's the one in `SafariApp`.
 
-`SafariApp.canvas_app` is the whole ride as one value, and the `WasmApp.program` function fits it to the web platform. What it gives back is the app's `program`.
+`SafariApp.canvas_app` is the whole ride as one value, and the `WasmApp.program` function fits it to the web platform. What it gives back is the app's `program`. The next chapter reads the types inside those modules.
 
 ## Types
 
@@ -130,7 +130,7 @@ Here's what its parts say:
 | `is_gt` to `is_lte` | These four let `>`, `>=`, `<` and `<=` compare two lengths. |
 | `is_eq : _` | This lets `==` compare two lengths, and the `_` asks the compiler to write its definition from the number inside. |
 
-Everywhere outside this module, a length is a `Distance`, and the compiler keeps it apart from every other number. The functions between the braces are the only ways to make a length, change one or read one.
+Everywhere outside this module, a length is a `Distance`, and the compiler keeps it apart from every other number. The functions between the braces are the only ways to make a length, change one or read one. A call such as `d.min(other)` puts the value before the dot, and the {{chapter Functions}} chapter explains how that finds the function.
 
 ### Things
 
@@ -348,7 +348,7 @@ The `focal_length` says how strong the camera's lens is: the longer it is, the b
 
 The `spot` comes from a camera: it's what a sighting holds. So for the cow and the bull, the picture at the top of this chapter puts each one on the road by hand, the cow 10 metres ahead and 5 metres left of the middle, and lets a camera at the start of the road sight them. The rider's own camera comes in a later chapter.
 
-What comes back is a sprite, and every sprite is a list of shapes. The cow's sprite is its emoji, as polygons. At step 1,529, the ride produces 2,121 shapes on top of the sky and the grass: 868 triangles, 727 quads, 518 polygons and 8 discs. The trees' trunks are 136 of the quads.
+What comes back is a sprite, and every sprite is a list of shapes. The cow's sprite is its emoji, as polygons.
 
 At the bends in the road stand four more kinds of billboard animal: elephants, giraffes, zebras and rhinos. They come next, with the `match` that mirrors the ones that face right.
 
@@ -595,7 +595,7 @@ Every tree 200 metres or more ahead of the camera is built this way: 200 metres 
 
 Cones take far more work to build, and far off they look just like triangles, so the ride spends that work only where it shows.
 
-So a far tree is a handful of small functions over one list of tiers. The `expect` pins the tiers, each tier becomes a triangle, and one list puts the trunk first and the tiers over it. Every tree beside the road runs through this same code, wherever it stands.
+So a far tree is a handful of small functions over one list of tiers. The `expect` pins the tiers, each tier becomes a triangle, and one list puts the trunk first and the tiers over it. Every tree beside the road runs through this same code, wherever it stands. The next chapter follows the trip around that code, from a place on the road to the frame.
 
 ## The pipeline
 
@@ -734,7 +734,7 @@ Each call to `rendering_of` fills `kind` with one particular type. The ride rend
 
 The compiler looks inside `Conifer`'s braces, finds a `scenery_sprite` of the right type, and the call compiles. The compiler checks every other call the same way, one type at a time. So the choice of which `scenery_sprite` runs is made when the program compiles, once for each type. Every call returns a `Rendered`, whatever the kind, so a frame's renderings of trees, cows and towers all go in one list.
 
-Every type that fills `kind` has to pass the compiler's check. Here a `Rock`, a kind that is just one tag, is handed to `rendering_of`. The program is a small app of its own, which uses Safari Ride's modules as its `game` package. Only `Rock` and `rock_rendering` matter here. The rest makes the program an app, and the `_` names an argument that `main!` leaves unused:
+Every type that fills `kind` has to pass the compiler's check. Here a `Rock`, a kind that is just one tag, is handed to `rendering_of`. The program is a small app of its own, which uses Safari Ride's modules as its `game` package. Only `Rock` and `rock_rendering` matter here. The rest makes the program an app. A name that ends in `!`, such as `main!`, marks a function with effects, which the {{chapter The ride instant}} chapter explains, and the `_` names an argument that `main!` leaves unused:
 
 {{fails kind_without_sprite}}
 
@@ -1131,7 +1131,7 @@ Each rod is a line between two points seen from the rider. A near tower is wide,
 
 The `match` is on a tuple, `(start, end)`: two values side by side, in parentheses. So it covers all four combinations of its two `Try`s. A rod with one end short of the near plane, 0.4 metres ahead of the camera, is cut where it crosses that plane. A rod with both ends behind it is refused.
 
-That's a tower: rods and a disc, worked out again each frame from its segment, the clock and the camera. The disc on top blinks, and the blinking waits for the second half, when the clock starts.
+That's a tower: rods and a disc, worked out again each frame from its segment, the clock and the camera. The disc on top blinks, and the blinking waits for the second half, when the clock starts. The last things to stand in the frame are the herds.
 
 ## Herds
 
@@ -1458,7 +1458,7 @@ digraph stepped {
 }
 ```
 
-A box is a module, and an arrow points to a module it calls. This chapter takes the rider and its motorcycle. The throttle, the gaze and the lean search each get a chapter of their own after it, and the truck's chapters follow.
+A box is a module, and an arrow points to a module it calls. This chapter takes the rider and its motorcycle. The throttle, the lean search and the gaze each get a chapter of their own after it, and the truck's chapters follow.
 
 A rider is two parts: a motorcycle, and a pair of eyes.
 
@@ -1593,7 +1593,7 @@ It has one caller, `VehicleLimits.braking_to`. That function also holds the spee
 
 {{code Throttle.bend_limit}}
 
-The last limit, `shoulder_limit`, comes back in the {{chapter Rehearsal}} chapter, because it runs a pretend copy of the bike forward, which is what that chapter is about. The two in the middle come from what the rider sees: `encounter_throttle` is the cat's, and `gawk_brake` the pig's. The cat's has its own chapter, so we'll take the pig first.
+The last limit, `shoulder_limit`, comes back in the {{chapter Rehearsal}} chapter, because it runs a pretend copy of the bike forward, which is what that chapter is about. The two in the middle come from what the rider sees: `encounter_throttle` is the cat's, and `gawk_brake` the pig's. The cat's has its own chapter, and the pig's comes after Rehearsal, in the {{chapter The rider's gaze}} chapter.
 
 ## Rehearsal
 
@@ -1850,7 +1850,7 @@ Projection works a face at a time, for two reasons. A face that reaches behind t
 
 {{code TruckBody.body_sprite}}
 
-`placed_faces` stands every face on the road, `faces_far_to_near` sorts them, and `dimmed_faces` darkens each face's color with the sky. Then `Camera.clipped_polygon` cuts and projects each face, refusing one wholly behind the camera, and `keep_oks` keeps the rest. The truck is drawn however small it stands, because the rider is always looking for it.
+`placed_faces` stands every face on the road, `faces_far_to_near` sorts them, and `dimmed_faces` darkens each face's color with the sky. Then `Camera.clipped_polygon` cuts and projects each face, refusing one wholly behind the camera, as the {{chapter The math layer}} chapter shows, and `keep_oks` keeps the rest. The truck is drawn however small it stands, because the rider is always looking for it.
 
 ### The headlights
 
