@@ -1663,10 +1663,10 @@ So every part of the rider's step, rehearsals included, is a function from the m
 
 The herds chapter left one pig waiting. On the first two segments with pigs, one pig in the big herd catches the rider's eye. The rider turns to look and slows down, and the camera turns too.
 
-Looking and slowing down are two different things, and they last different lengths of time. The eyes follow the pig, and they give up once it's too far to the side. The speed drops for the pig, and it stays down until the segment ends. So the code has two words for them. A *look* is what the eyes do, and *gawking* is what the speed does. This chapter takes them in that order.
+Looking and slowing down last different lengths of time. The eyes give up once the pig is too far to the side, and the speed stays down until the segment ends. So the code has two words for them: a *look* is what the eyes do, and *gawking* is what the speed does. This chapter takes them in that order.
 
 ```widget gaze
-Press play to ride the stretch around the first distracting pig, seen from above. Each step is one call to `Rider.rider_at_next_step`, and the lines under the picture read the rider's `speed`, `gaze_yaw` and `look_depth`.
+Press play to ride the stretch around the first distracting pig, seen from above. The lines under the picture read the rider's `speed`, `gaze_yaw` and `look_depth`.
 ```
 
 ### Get the types right
@@ -1678,17 +1678,15 @@ Two fields of the rider's record carry the gaze:
 | `gaze_yaw` | `Angle.Turn` | How far the rider looks from the way the bike points |
 | `look_depth` | `Fraction` | How far a look went, from 0 to 1, fading once the gaze is back on the road |
 
-Mind what `gaze_yaw` is measured from. The road has a direction, `yaw` is how far the bike points from the road, and `gaze_yaw` is how far the eyes point from the bike. Each is measured from the one before it, which is what a `Turn` is.
+Each angle is a `Turn` from the one before: `yaw` is how far the bike points from the road, and `gaze_yaw` is how far the eyes point from the bike.
 
-Three small types say what a pig can do to the rider. Each one carries its payload only where it means something. A segment's `pigs` field is `NoPigs` or `Herd`, and only `Herd` carries a payload: the herd itself, and its `interest`. The interest is `Distracting` or `Unnoticed`, which says whether the herd catches the rider's eye:
+Three small types say what a pig can do to the rider. A segment's `pigs` field is `NoPigs`, or a `Herd` with its `interest`, which says whether the herd catches the rider's eye:
 
 {{code Segment.Pigs}}
 
 The rider looks at a pig or at the road, and only a pig has an angle:
 
 {{code Gaze.GazeTarget}}
-
-What a pig asks of the throttle is a `ThrottleLimit`, from the throttle chapter.
 
 So the job is a short list:
 
@@ -1721,7 +1719,7 @@ The chain from `desired_gaze` is the look, and `gawk_brake` is the gawking.
 
 {{code RiderEyes.eyes_at_next_step}}
 
-Before the eyes move, the rider chooses where to look. `Rider.rider_at_next_step` asks `RiderMind.gaze_target`, since `RiderMind` holds every choice the rider makes, and `gaze_target` hands the question to `Gaze.desired_gaze`:
+Before the eyes move, the rider chooses where to look. `RiderMind.gaze_target` hands that question to `Gaze.desired_gaze`:
 
 {{code Gaze.desired_gaze}}
 
@@ -1729,15 +1727,13 @@ The pig has to be near, and it has to be in sight. Near means from 150 metres be
 
 {{code Gaze.turn_to}}
 
-That's the direction to the pig, less the way the bike points. The pig stands beside the road, so the angle grows as the rider comes closer. At 35 degrees the rider lets it go. The angle alone ends the look. The first pig stands about 11 metres from the middle of the road, so it reaches 35 degrees about 16 metres ahead.
+`turn_to` is the direction to the pig, less the way the bike points. The pig stands beside the road, so the angle grows as the rider comes closer, and at 35 degrees the rider lets it go.
 
 ### Turning the head
 
 {{code RiderEyes.next_gaze_yaw}}
 
-Toward a pig, the gaze turns by at most 4 degrees a step, and `clamped_within` holds the change to that limit on either side. On the way back the same clamp holds it to 0.2 degrees a step.
-
-A gaze within 0.2 degrees of straight ahead goes all the way there, so the last step of the return lands exactly home, and the return ends.
+Toward a pig, the gaze turns by at most 4 degrees a step, and on the way back by at most 0.2, held there by `clamped_within`. A gaze within 0.2 degrees of straight ahead goes all the way home, so the return ends exactly there.
 
 The bike keeps its own heading. The gaze goes to the camera alone:
 
@@ -1755,23 +1751,23 @@ The depth has one job. It widens the view:
 
 {{code RiderEyes.attention}}
 
-The `Attention` type is how hard something holds the rider's eye. It's an opaque type around an `F64`, and a full look is 1. `Easing.smoothstep` turns the look's depth into one that moves slowly at each end and faster in the middle, so the pull eases in and out. `RiderCamera.ride_focal_length` sets how wide the view is. It asks `Rider.attention`, which takes the stronger of two pulls: this look's, and a crossing cat's, which the cat chapters cover. So a pig widens the view, and the view stays wide for a while after.
+The `Attention` type, an opaque `F64`, is how hard something holds the rider's eye, with a full look at 1. `Easing.smoothstep` eases the look's pull in and out. `RiderCamera.ride_focal_length` sets how wide the view is from `Rider.attention`, the stronger of this look's pull and a crossing cat's. So a pig widens the view, and the view stays wide for a while after.
 
 ### Gawking
 
-Whether the rider is gawking is a plainer question than whether it's looking: has the rider noticed a pig on this segment?
+Gawking asks a plainer question: has the rider noticed a pig on this segment?
 
 {{code Gaze.noticed_pig}}
 
-The `if` after `CatchesEye(pig)` is a guard: the branch matches only when the tag matches and the guard is true. Otherwise the `match` goes on to the next branch. Like the look, the noticing starts when the pig is within 150 metres. It asks only where the rider is, so it lasts until the segment ends, long after the look.
+The `if` after `CatchesEye(pig)` is a guard: the branch matches only when the tag matches and the guard is true. Like the look, the noticing starts when the pig is within 150 metres. It asks only where the rider is, so it lasts until the segment ends, long after the look.
 
-`gawk_brake` is the third link in the throttle's chain. It gives a brake while the rider has noticed a pig, and `held_to` keeps the brake when it's lower than the acceleration so far:
+`gawk_brake` is the third link in the throttle's chain, a brake while the rider has noticed a pig:
 
 {{code Throttle.next_acceleration from "Gawking.gawk_brake(motorcycle, segment)," to "Gawking.gawk_brake(motorcycle, segment),"}}
 
 {{code Gawking.gawk_brake}}
 
-The formula is the one the throttle uses for a bend, with a pig for a bend. The rider aims to be down to 0.2 metres a step by 25 metres before the pig. Past that point `room` would go below zero, so `gawk_least_distance` holds it at a metre and the brake stays on.
+The formula is the throttle's bend brake, with a pig for a bend: the rider aims to be down to 0.2 metres a step by 25 metres before the pig. Past that point, `gawk_least_distance` holds `room` at a metre, so the brake stays on.
 
 ### The first pig
 
@@ -1784,7 +1780,7 @@ Here's the look and the gawking on the third segment of the route:
 | 1,050 | The rider lets the pig go | 0.2 metres a step | 34.75 degrees | 0.999 |
 | 1,224 | The gaze is back on the road | 0.2 metres a step | 0 degrees | 0.997 |
 
-The look takes 165 steps, and getting the eyes back takes 174. The rider crawls on for 173 steps more, eyes on the road, and reaches the next segment at step 1,397. The gaze is home at every one of the ride's 18 seams between segments, and an expect holds that. A seam would be fine even with the gaze turned: the bike keeps its heading at a seam, and `gaze_yaw` is measured from the bike.
+The look takes 165 steps, and getting the eyes back takes 174. The rider crawls on, eyes on the road, to the next segment at step 1,397. An expect holds that the gaze is home at every one of the ride's 18 seams between segments.
 
 That's the pig's part of the rider's step. The truck is the other stepped thing, and its chapters start with its sprite.
 
@@ -2032,7 +2028,7 @@ The plan and the clock say where the crossing has got to, as a `Stage`:
 
 {{code Animation.Stage}}
 
-`Waiting` comes before the crossing starts. `Playing` counts the steps in, and `Past` counts the steps since it ended. Each tag carries only what its case needs, so `Waiting` is a bare tag. One function works the stage out:
+`Waiting` comes before the crossing starts. `Playing` counts the steps in, and `Past` counts the steps since it ended. One function works the stage out:
 
 {{code EncounterPlan.stage_at}}
 
@@ -2064,7 +2060,7 @@ One list joins the three runs:
 
 {{code CatCrossing.crossing_frames}}
 
-`map_with_index` hands each walking pose its place in the list, which gives its share of the way out. `List.repeat` makes the 24 frozen frames, and `join` puts the three lists end to end.
+`map_with_index` hands each walking pose its place in the list, which gives its share of the way out. `List.repeat` makes the 24 frozen frames.
 
 ### A timeline
 
@@ -2072,7 +2068,7 @@ A list of frames and a way to show each one make a timeline. `Animation` defines
 
 {{code Animation.Timeline from "Timeline(frame, pose) ::" to "}.{"}}
 
-`frame` and `pose` are type variables. For the cat, a frame is a `CrossingFrame` and a pose is a `CatPose`. `before` and `after` are the animal at rest, outside the frames. An `Instant(pose)` is a record of the pose and the animal's location.
+For the cat, a frame is a `CrossingFrame` and a pose is a `CatPose`. `before` and `after` are the animal at rest, outside the frames. An `Instant(pose)` is a record of the pose and the animal's location.
 
 `crossing_timeline` puts a crossing's frames on the road, by its own tree:
 
@@ -2237,7 +2233,7 @@ Of the three encounters, the cat alone changes the rider, through both reactions
 
 ## The math layer
 
-Every sighting in the book so far has turned a place on the road into a place on the screen, and the book has taken that step on trust. This chapter opens it up, with the trigonometry of perspective. It follows one point from a segment of the road ahead, round the bends to the rider, and through the camera's lens onto the screen.
+Every sighting so far has turned a place on the road into a place on the screen, on trust. This chapter opens that step up, with the trigonometry of perspective: one point travels from a segment of the road ahead, round the bends to the rider, and through the camera's lens onto the screen.
 
 The trip of one point to the screen
 ```dot
@@ -2261,21 +2257,21 @@ digraph trip {
 }
 ```
 
-Each box is a coordinate system, and its type says which. `along` and `across` are on the road, `right` and `forward` are from the camera, and `x` and `y` are on the screen. The two types with "Ahead" in their names are opaque, with methods that read the same parts. So a function's annotation says which space it works in, and the compiler rejects a call that passes a point from another space. The first two boxes share a type: a `RoadPoint` is measured on whichever segment holds it, and the loop below moves one from a segment to the one before.
+Each box is a coordinate system, and its type says which. `along` and `across` are on the road, `right` and `forward` are from the camera, and `x` and `y` are on the screen. So a function's annotation says which space it works in, and the compiler rejects a call that passes a point from another space.
 
 ### Round the bends
 
-A point on the road is measured within its own segment. For its shape, each segment holds only its length and the turn at its end. So a point three segments ahead has to come back round three bends, one at a time, before the camera can see it:
+A point on the road is measured within its own segment, and each segment holds only its length and the turn at its end. So a point three segments ahead comes back round three bends, one at a time, before the camera can see it:
 
 {{code RoadAhead.rider_point_round_bends}}
 
-`RoadAhead.RoadView` is the road in view, ahead of the rider. `position` is a `SegmentFromRider.Position`, the count of bends between the rider's segment and the point's. `bends` holds the bends of the road ahead, from the rider's own outward, so the loop counts down from the bend nearest the point. `var` and `while` work as they did in a coast: each pass sets `$point` to the same point, measured on the segment before. For an `Err`, `??` runs a `crash`, as it does for the bird's trees.
+`position` is a `SegmentFromRider.Position`, the count of bends between the rider's segment and the point's. Each pass of the loop sets `$point` to the same point, measured on the segment before. For an `Err`, `??` runs a `crash`, as it does for the bird's trees.
 
 Each pass is one rotation and one shift:
 
 {{code Geom.point_before_worked_bend}}
 
-`start_after: start` takes the record's `start_after` field and names it `start` inside the function. Turning a point by an angle mixes its two parts. The cosine says how much of each part stays where it was, and the sine says how much moves over into the other. Then the shift moves the point to where the next segment starts. A `WorkedBend` holds that start, and the cosine and sine of the bend's turn. The road ahead works those out once for each bend, when it's built, and every point of a frame that crosses that bend reuses them.
+`start_after: start` names the record's `start_after` field `start`. Turning a point by an angle mixes its two parts: the cosine says how much of each part stays where it was, and the sine how much moves over into the other. Then the shift moves the point to where the next segment starts. A `WorkedBend` holds that start and the turn's cosine and sine, worked out once for each bend when the road ahead is built.
 
 ### To the rider
 
@@ -2283,25 +2279,25 @@ On the rider's own segment, one more turn brings the point into the camera's vie
 
 {{code RoadAhead.to_rider_point}}
 
-The camera stands at `vantage`, and its yaw is which way it points, as a turn from straight down the segment. The point's distances from the camera, along and across the road, turn into `forward` and `right`. Turning the camera one way turns the world the other way in its view, so the point turns by minus the yaw.
+The camera stands at `vantage`, and its yaw is the way it points, as a turn from straight down the segment. Turning the camera one way turns the world the other way in its view, so the point turns by minus the yaw into `forward` and `right`.
 
 ### Through the pinhole
 
-Next, `RiderView.rider_point_ahead`, from the {{chapter Errors as tag unions}} chapter, checks the point against the near plane, 0.4 metres ahead of the camera. It refuses a point short of that as `BehindCamera`, and returns one at or past it as a `RiderPointAhead`. `at_height` raises that point to a height, and the result is a `PointAtHeightAhead`. Both types are opaque, and every way to build one starts from a point at or past the near plane.
+Next, `RiderView.rider_point_ahead`, from the {{chapter Errors as tag unions}} chapter, checks the point against the near plane, 0.4 metres ahead of the camera. It refuses a point short of that as `BehindCamera`, and returns one at or past it as a `RiderPointAhead`. `at_height` raises it to a `PointAtHeightAhead`. Both types are opaque, and every way to build one starts from a point at or past the near plane.
 
 The camera is a pinhole, and a pinhole is similar triangles:
 
 {{code Camera.project}}
 
-A point 2 metres to the right and 10 metres ahead lies on a line of sight that runs a fifth of a metre right for every metre forward. That ratio is its slope. `Lens.x_for_slope` multiplies the slope by the lens's focal length, in pixels, and measures the answer from the middle of the screen. The height works the same way, measured from the eye, 1.2 metres up, and from the horizon on the screen.
+A point 2 metres to the right and 10 metres ahead has a slope of a fifth: its line of sight runs a fifth of a metre right for every metre forward. `Lens.x_for_slope` multiplies the slope by the focal length, in pixels, and measures from the middle of the screen. The height works the same way, from the eye, 1.2 metres up, and from the horizon on the screen.
 
 Dividing by `forward` is all of perspective: a thing twice as far off lands twice as close to the middle. The near plane keeps `forward` at 0.4 metres or more, so the division always has an answer.
 
-Two more things act on the way. The ground's curve lowers a thing standing far off, as the {{chapter Radio towers}} chapter showed. And far scenery takes a shorter trip. `Lens.far_point` places the sun by its direction and its height above the horizon, and the mountains' skyline works from heights above the horizon too.
+Two more things act on the way. The ground's curve lowers a thing standing far off, as the {{chapter Radio towers}} chapter showed. And far scenery, the sun and the mountains, works from heights above the horizon, with `Lens.far_point` for the sun.
 
 ### Cutting at the near plane
 
-A single point is in view or refused, but a solid's face can be both at once. A patch of road that runs from ahead of the camera to beside it has corners on both sides of the near plane. So a solid's corners stay plain `PointAtHeight`s until `RiderView.clipped_points` cuts the face there. Here's a rectangle, 2 metres wide, with its far edge 2 metres ahead of the camera and its near edge a metre behind:
+A single point is in view or refused, but a solid's face can be both at once. A patch of road can run from ahead of the camera to beside it, so a solid's corners stay plain `PointAtHeight`s until `RiderView.clipped_points` cuts the face at the near plane. Here's a rectangle 2 metres wide, from 2 metres ahead of the camera to a metre behind:
 
 | | Corners, as metres right and metres forward |
 |---|---|
@@ -2314,11 +2310,11 @@ The near plane is one region a face can be cut to. The ground's horizon is anoth
 
 {{code RiderView.Region}}
 
-A region is two functions in a record. One says whether a corner lies inside, and one says where an edge crosses the boundary. `Region(point)` leaves open what type of point a cut returns: the near plane's region returns `PointAtHeightAhead`s, ready for the camera, and the horizon's returns plain `PointAtHeight`s. Here's the cut:
+A region is two functions in a record: whether a corner lies inside, and where an edge crosses the boundary. The near plane's region returns `PointAtHeightAhead`s, ready for the camera, and the horizon's returns plain `PointAtHeight`s. Here's the cut:
 
 {{code RiderView.points_in_region}}
 
-`next_corners` is the corners turned round by one: `drop_first(1)` drops the first corner, and `concat(take_first(1))` puts it back at the end. `map2` walks two lists side by side, so it pairs each corner with the one after it, and the last with the first. Each pair is an edge. `fold` then builds the cut face from the edges, starting from `List.with_capacity`, an empty list with room set aside for the points to come. `edge_points_onto` keeps an edge's first corner if it lies in the region, then adds each point where the edge crosses the boundary. For the near plane, that crossing is the point on the edge where `forward` is exactly 0.4 metres. The near plane's cut is one line:
+`next_corners` turns the corners round by one, with `drop_first` and `take_first`, so `map2` can pair each corner with the next. Each pair is an edge. `fold` builds the cut face from the edges, starting from `List.with_capacity`, an empty list with room set aside. `edge_points_onto` keeps an edge's first corner when it lies in the region, then adds each point where the edge crosses the boundary. The near plane's cut is one line:
 
 {{code RiderView.clipped_points}}
 
