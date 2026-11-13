@@ -16,14 +16,12 @@ where: a Roc keyword, in an annotation
 while: a Roc keyword
 
 # Roc's builtins, which the book calls by their full names.
-F64.e.pow: a Roc builtin, the constant e and its method
+F64.pi: a Roc builtin, the constant pi
 U32.until: a Roc builtin
 U64.until: a Roc builtin
 List.from_iter: a Roc builtin
-List.with_capacity: a Roc builtin
 
 # Roc's command line.
-glue: the `roc glue` command
 roc: the Roc command
 test: the `roc test` command
 PASS: what `roc test --verbose` prints for an expect
@@ -34,12 +32,7 @@ JavaScript: the language of the platform's runner, which a diagram's cluster nam
 
 # Files and folders the book names, which aren't Roc names.
 canvas_app_runner.js: a file of the JavaScript platform
-game.roc: the package file that lists the game's modules
-main.roc: the native app's root file
-roc_glue.js: the file `roc glue` generates
 SafariApp.roc: the file that holds the SafariApp module
 shapes_canvas.js: a file of the JavaScript platform
-turn_as_bearing: a failing program in tutorial/fails, which the build runs
-web.roc: the web app's root file
 Rock: the kind of thing in tutorial/fails/kind_without_sprite.roc, which the build runs
 rock_rendering: the function in tutorial/fails/kind_without_sprite.roc, which the build runs
