@@ -245,7 +245,7 @@ Every chapter from here on reads Roc functions, so this short chapter takes one 
 
 {{code Sky.darkness_at}}
 
-In Roc, a function is an ordinary value, like a number. Its code is an anonymous function, and `=` gives it a name. Roc calls a named value a constant: once named, it keeps its value. Inside a function's body, the constants are named again on each run, so each run has its own. Here's the function, piece by piece:
+In Roc, a function is an ordinary value, like a number, so the chapters ahead pass functions to other functions and keep them in records' fields. A function's code is an anonymous function, and `=` gives it a name. Roc calls a named value a constant: once named, it keeps its value. Inside a function's body, the constants are named again on each run, so each run has its own. Here's the function, piece by piece:
 
 | Code | Term | What it says |
 |---|---|---|
@@ -867,6 +867,8 @@ The same kind of answer runs all through Safari Ride, wherever a function can co
 {{types row Camera.clipped_polygon Cut a shape at the near plane}}
 
 Each tag names one way its function can fail, and the ground patch has two.
+
+A `Try` is for a value that can rightly be missing, such as a tree behind the camera. Where a missing value would mean a bug in the program, later chapters use a `crash` instead: a stop, with a message that says what went wrong.
 
 So a refusal is an ordinary value. A sighting gives back a `Try`, a `?` passes an `Err` up or unwraps an `Ok`, a function after the `?` can rename the tag on the way, and a `keep_oks` or a `match` is where the refusals stop. The kept sightings go on to be rendered. The rest of the frame is the world the things stand in, and the next chapter starts with its sky and its grass.
 
@@ -2303,7 +2305,7 @@ A point on the road is measured within its own segment. For its shape, each segm
 
 {{code RoadAhead.rider_point_round_bends}}
 
-`RoadAhead.RoadView` is the road in view, ahead of the rider. `position` is a `SegmentFromRider.Position`, the count of bends between the rider's segment and the point's. `bends` holds the bends of the road ahead, from the rider's own outward, so the loop counts down from the bend nearest the point. `var` and `while` work as they did in a coast: each pass sets `$point` to the same point, measured on the segment before. `??` takes the value out of an `Ok`. For an `Err`, it runs the expression on its right instead, here a `crash`.
+`RoadAhead.RoadView` is the road in view, ahead of the rider. `position` is a `SegmentFromRider.Position`, the count of bends between the rider's segment and the point's. `bends` holds the bends of the road ahead, from the rider's own outward, so the loop counts down from the bend nearest the point. `var` and `while` work as they did in a coast: each pass sets `$point` to the same point, measured on the segment before. For an `Err`, `??` runs a `crash`, as it does for the bird's trees.
 
 Each pass is one rotation and one shift:
 
@@ -2575,6 +2577,26 @@ Eight patterns kept turning up along the way. They're patterns in a loose sense:
 | The chain of limits | One value passes through independent rules, each of which can only lower it | `Throttle.next_acceleration` |
 | One record per space | Field names say which coordinate system a point is in | `RoadPoint`, `RiderPoint`, `PointAtHeight`, `Point` |
 | Rehearsal | Run the real rules on a pretend copy, read the result, and throw it away | `Coast`, `LeanSearch`, `Motorcycle.cross_bend_if_on_road` |
+
+## Appendix: list functions
+
+The ride builds most of its answers out of lists. These are the `List` functions the chapters use, in the order they first come up.
+
+| Function | What it does | Chapter |
+|---|---|---|
+| `map` | Calls a function on each item, and returns a list of the answers | Lists and map: a far tree |
+| `map_with_index` | `map`, with each item's place in the list, counting from 0 | Lists and map: a far tree |
+| `concat` | Puts a second list after the first | Lists and map: a far tree |
+| `join` | Makes one list of a list of lists | The pipeline |
+| `keep_oks` | Calls a function that returns a `Try` on each item, keeps the `Ok` values, and drops the `Err`s | Errors as tag unions |
+| `List.from_iter` | Collects a count, such as `U32.until(0, n)`, into a list | The road |
+| `join_map` | Maps each item to a list, and joins the lists into one | Rails |
+| `drop_first` | Drops the first items, as many as it's given | Rails |
+| `fold` | Hands each item in turn to a function, along with the answer so far, starting from a first answer | The throttle |
+| `List.repeat` | Makes a list of one value, as many times as it's given | The cat |
+| `find_first` | Returns the first item that passes a test, as a `Try` | The bird |
+| `take_first` | Keeps the first items, as many as it's given | The math layer |
+| `map2` | Walks two lists side by side, and calls a function on each pair | The math layer |
 
 ## Appendix: what catches you out
 
