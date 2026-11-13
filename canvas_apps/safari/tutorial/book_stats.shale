@@ -1,0 +1,106 @@
+-- budget: steps=200000000 reads=10 read_bytes=20000000 output_bytes=200000
+-- This script counts what the Safari book is made of, chapter by chapter: the
+-- lines of Roc code it quotes, the words of its prose, and its diagrams,
+-- widgets and images. It reads the built book, so run the tutorial gate
+-- first, which writes it with every include expanded:
+--
+--   cd <roc-apps checkout> && shale canvas_apps/safari/gates/run.shale part=tutorial
+--   shale canvas_apps/safari/tutorial/book_stats.shale
+--
+-- The output is a markdown table, one row per chapter, then a row for the
+-- chapters together, one for the appendices together, and one for the whole
+-- book.
+--
+-- What counts as what:
+--   code      every line inside a ```roc fence, blank lines left out;
+--   prose     the words outside every fence: headings, paragraphs, lists,
+--             captions and table cells. A word is a run of characters with a
+--             letter or a digit in it, so a lone `|` or `-` is no word;
+--   diagram   a ```dot fence;
+--   widget    a ```widget fence;
+--   image     a markdown image, `![…](…)`, or an `<img` tag, outside a fence.
+--
+-- Other fences, such as ```text for a compiler's message, count toward none of
+-- these. A chapter is a `## ` heading outside a fence. A heading that starts
+-- `Appendix` or is `Credits` is an appendix.
+
+const BOOK = arg("book", "canvas_apps/safari/tutorial/build/tutorial.md")
+
+-- The number of words in one line of prose.
+function word_count(l)
+  local n = 0
+  for w in split(l, " ") do
+    if re_find(w, "[A-Za-z0-9]") ~= nil then n = n + 1 end
+  end
+  return n
+end
+
+-- The book's chapters in order, each `{title, code, prose, diagrams,
+-- widgets, images}`.
+function chapters_of(text)
+  local found = {}
+  local now = {title = "(before the first chapter)", code = 0, prose = 0, diagrams = 0, widgets = 0, images = 0}
+  local fence = ""
+  for l in split(text, "\n") do
+    if starts_with(l, "```") then
+      if fence == "" then
+        local tag = trim(sub(l, 4))
+        fence = tag == "" and "bare" or split(tag, " ")[1]
+        if fence == "dot" then now.diagrams = now.diagrams + 1 end
+        if fence == "widget" then now.widgets = now.widgets + 1 end
+      else
+        fence = ""
+      end
+    elseif fence == "roc" then
+      if trim(l) ~= "" then now.code = now.code + 1 end
+    elseif fence == "" then
+      if starts_with(l, "## ") then
+        push(found, now)
+        now = {title = trim(sub(l, 4)), code = 0, prose = 0, diagrams = 0, widgets = 0, images = 0}
+      end
+      if re_find(l, "!\\[[^\\]]*\\]\\(|<img") ~= nil then now.images = now.images + 1 end
+      if re_find(trim(l), "^\\|?[ :|-]+$") == nil then now.prose = now.prose + word_count(l) end
+    end
+  end
+  push(found, now)
+  return found
+end
+
+function is_appendix(title)
+  return starts_with(title, "Appendix") or title == "Credits"
+end
+
+function row(name, c)
+  return "| " .. name .. " | " .. c.code .. " | " .. c.prose .. " | " .. c.diagrams .. " | " .. c.widgets .. " | " .. c.images .. " |"
+end
+
+function add(total, c)
+  total.code = total.code + c.code
+  total.prose = total.prose + c.prose
+  total.diagrams = total.diagrams + c.diagrams
+  total.widgets = total.widgets + c.widgets
+  total.images = total.images + c.images
+end
+
+if not exists(BOOK) then fail("book_stats: no " .. BOOK .. ": run the tutorial gate first, which builds it") end
+const ALL = chapters_of(read(BOOK))
+const CHAPTERS = {code = 0, prose = 0, diagrams = 0, widgets = 0, images = 0}
+const APPENDICES = {code = 0, prose = 0, diagrams = 0, widgets = 0, images = 0}
+const BOOK_TOTAL = {code = 0, prose = 0, diagrams = 0, widgets = 0, images = 0}
+local number = 0
+print("| Chapter | Roc lines | Prose words | Diagrams | Widgets | Images |")
+print("|---|---|---|---|---|---|")
+for c in ALL do
+  if is_appendix(c.title) then
+    add(APPENDICES, c)
+    print(row(c.title, c))
+  elseif c.title ~= "(before the first chapter)" then
+    number = number + 1
+    add(CHAPTERS, c)
+    print(row(number .. ". " .. c.title, c))
+  end
+  add(BOOK_TOTAL, c)
+end
+print(row("**The " .. number .. " chapters**", CHAPTERS))
+print(row("**The appendices**", APPENDICES))
+print(row("**The whole book**", BOOK_TOTAL))
