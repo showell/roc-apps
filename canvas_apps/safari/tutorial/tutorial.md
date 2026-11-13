@@ -12,9 +12,9 @@ The ride, running as you read. Click it to give it the keyboard: Space pauses it
 
 Watch it all the way through. A motorcycle carries its rider down a long country road. Cows and pigs graze in the fields, and trees crowd the roadside. A truck runs on ahead. A cat waits by the road for its moment to cross, and a bird takes off as the rider comes near. As the sun sets behind the mountains, the truck turns on its headlights. At the end of the road the rider stops, and the ride starts over.
 
-Safari Ride is written in Roc, and this is a book about Roc. If you're brand new to Roc, the [official Roc tutorial](https://www.roc-lang.org/tutorial) makes a quick first stop. The tutorial teaches the language through small examples. This book picks up from there, with one real program: how its code is organized across many modules, and how Roc's larger ideas, such as opaque types, type variables and `where` clauses, solve the problems the ride poses. The book quotes the real code behind everything on the screen. The book explains each new Roc idea where the code first needs it.
+Safari Ride is written in Roc, and this is a book about Roc. If you're brand new to Roc, the [official Roc tutorial](https://www.roc-lang.org/tutorial) makes a quick first stop. The tutorial teaches the language through small examples. This book picks up from there, with one real program: how its code is organized across many modules, and how Roc's larger ideas, such as opaque types, type variables and `where` clauses, solve the problems the ride poses. The book quotes the real code behind what's on the screen. The book explains each new Roc idea where the code first needs it.
 
-You'll learn two things as you read: Roc, and how a ride like this one is animated. The animation is a handful of plain ideas. Each frame is one picture, and a step moves the world on before the next. Far things look small, and near things cover far ones. The book explains each of these in plain words where the ride first needs it. A chapter near the end gives the trigonometry behind them. If you know animation already, skim those parts. If both are new to you, you'll get both at a walking pace.
+You'll learn two things as you read: Roc, and how a ride like this one is animated. The animation is a handful of plain ideas. Each frame is one picture, and a step moves the world on before the next. Far things look small, and near things cover far ones. The book explains each of these in plain words where the ride first needs it. A chapter near the end gives the trigonometry behind them. If both are new to you, you'll get both at a walking pace.
 
 ## One page
 
@@ -79,10 +79,10 @@ digraph pieces {
 | Things | Components | A tree, a cow and a radio tower must each be built from shapes the screen can show. Every frame starts from a blank screen, so every frame must hold all of its shapes, every time. |
 | The world | Structure | A long road runs through open country, past trees, herds, ponds and radio towers. Something must lay it all out, and say where every one of them stands. |
 | The rider's view | Perception | The screen shows only what the rider sees. A tree far down the road looks small, and a tree close by looks big. For everything in the world, the program must work out what the rider perceives: where it lands on the screen, and how big, if the rider sees it at all. Where two things overlap, the nearer one covers the farther one. |
-| Motion | Persistence | The rider rides on, the truck drives ahead, the cat crosses the road and the sun goes down. At every step, something must carry each of them on from where it was, and the moves must fit together. The cat times its crossing to the rider coming toward it, and a cat in the road stops the rider speeding up. |
+| Motion | Persistence | The rider rides on, the truck drives ahead, the cat crosses the road and the sun goes down. At every step, something must move each of them on, and the moves must fit together. The cat times its crossing to the rider coming toward it, and a cat in the road stops the rider speeding up. |
 | The person watching | Interaction | A viewer mostly sits back and watches, but they also need to pause the ride, and step it forward and back. So the program must give them controls, and answer each one straight away. |
 
-The book takes the pieces in turn. Things come first: what a cow, a tree or a tower is, and the shapes it's made of. Then the rider's view: the trip every thing takes from its place on the road into the frame, with the math behind it saved for a chapter near the end. The world comes after the view, because every part of it takes that same trip: the sky, the mountains, the road and everything along it. Those three make one frame, held still. Motion fills the second half of the book: moments that follow one another like a flip book's pages, and the clock, the rider, the truck, the cat and the bird, each carried on from step to step. The person watching comes last, at the platform, where the frames go out and the keys come in.
+The book takes the pieces in turn. Things come first: what a cow or a tree is, and the shapes it's made of. Then the rider's view: the trip every thing takes from its place on the road into the frame, with the math behind it saved for a chapter near the end. The world comes after the view, because every part of it takes that same trip: the sky, the mountains, the road and everything along it. Those three make one frame, held still. Motion fills the second half of the book: moments that follow one another like a flip book's pages, and the clock, the rider, the truck, the cat and the bird, each moved on from step to step. The person watching comes last, at the platform, where the frames go out and the keys come in.
 
 Before the first piece, three short chapters cover Roc itself: how a program is laid out, its types, and its functions.
 
@@ -104,7 +104,7 @@ A module is one file of Roc, named for what it holds. `SafariApp.roc` holds the 
 
 The brackets after `app` name the two things the app hands the platform, and the last two lines define them. `Model` is the type of what the app keeps as it runs, and here it's the one in `SafariApp`.
 
-`SafariApp.canvas_app` is the whole ride as one value, and the `WasmApp.program` function fits it to the web platform. Its result is the app's `program`. The next chapter reads the types inside those modules.
+`SafariApp.canvas_app` is the whole ride as one value, and the `WasmApp.program` function fits it to the web platform. Its result is the app's `program`. The {{chapter The platform}} chapter, near the end, opens that value. The next chapter reads the types inside those modules.
 
 ## Types
 
@@ -173,7 +173,7 @@ A plain `:` gives the record type a short name: any record with these fields is 
 
 {{code World.last_plan}}
 
-After a value's name, a `:` gives the value its type, so the first line says `last_plan` is a `SegmentPlan`, and the rest defines it. `Distance.metres(300.0)` calls the `metres` function in the `Distance` module. On this stretch, a cat crosses the road. The `World.route` value is the whole road, built from the plans once, before the ride starts, and every tree, herd, pond and tower takes its place along it.
+After a value's name, a `:` gives the value its type, so the first line says `last_plan` is a `SegmentPlan`, and the rest defines it. `Distance.metres(300.0)` calls the `metres` function in the `Distance` module. On this stretch, a cat crosses the road, and the trees alternate green with red. The `World.route` value is the whole road, built from the plans once, before the ride starts, and every tree, herd and pond takes its place along it.
 
 ```widget route
 The whole route from above, one stretch of road for each plan. A mark in the middle of a stretch shows that its plan has a cat cross or a bird fly.
@@ -195,7 +195,7 @@ A sighting keeps the kind, and adds a `Spot`: where the thing stands in the ride
 
 From the spot, we work out where the thing lands on the screen, and how big it looks there. One rule gives both: twice as far away looks half as big.
 
-A thing out of the rider's sight gets the tag `OutOfSight` in place of a sighting: it's behind the camera, too close to show, or too far off to show over the horizon.
+A thing out of the rider's sight gets the tag `OutOfSight` in place of a sighting: it's behind the camera, hidden by the horizon, or too small to see.
 
 Last, the thing is rendered:
 
@@ -219,7 +219,7 @@ One function makes a step:
 
 {{signatures RideInstant.next_or_restart}}
 
-When a function's body is long, the book shows its type annotation alone, until the body's turn comes. `next_or_restart` returns a value of a type written in place, in square brackets: one of two tags. A tag can carry a value, and each of these carries the next moment. `Continued` carries the moment one step on, and `Restarted` carries the ride's first moment, once the rider has finished the route.
+`next_or_restart` returns a value of a type written in place, in square brackets: one of two tags. A tag can carry a value, and each of these carries the next moment. `Continued` carries the moment one step on, and `Restarted` carries the ride's first moment, once the rider has finished the route.
 
 Inside the step, the four fields change in a fixed order, so the moves fit together: the rider reads what the cat or bird ahead is doing, and then moves. The second half of the book reads that order line by line.
 
@@ -239,7 +239,7 @@ Because the tour keeps every past moment, stepping back is as quick as stepping 
 
 On the way, you've read three ways to name a type. A `:` gives a type a short name, and any value of that shape fits it. A `::` makes a new, opaque type, and only its module reads inside it. A `:=` makes a new, nominal type, and any module reads its fields.
 
-Every one of these types comes with functions, and every chapter from here on reads them. So the next chapter takes one function apart. After it, we start with things: what a cow, a tree or a tower is in the code, and how a thing becomes a sprite.
+Every one of these types comes with functions, and every chapter from here on reads them. So the next chapter takes one function apart. After it, we start with things: what a cow or a tree is in the code, and how a thing becomes a sprite.
 
 ## Functions
 
@@ -294,7 +294,7 @@ The next chapter starts on the things beside the road. Every function from here 
 
 ## Things
 
-The things beside the road are its trees, its radio towers and its animals. Here's a cow and a bull on the grass, from Safari Ride's own code:
+The things beside the road are its trees, its radio towers and its animals. This chapter starts with the animals, and the towers come later, with the world. Here's a cow and a bull on the grass, from Safari Ride's own code:
 
 ```widget cow
 A cow and a bull on the grass beside the road.
@@ -348,7 +348,7 @@ A setting is a record:
 
 The `focal_length` says how strong the camera's lens is: the longer it is, the bigger everything looks, as when a camera zooms in. The `darkness` says how dark the sky is, from 0 by day to 1 at night, so everything beside the road can dim as night falls.
 
-The `spot` comes from a camera: it's what a sighting holds. So for the cow and the bull, the code behind the picture at the top of this chapter places each one on the road by hand, the cow 10 metres ahead and 5 metres left of the middle, and sights them with a camera at the start of the road. The rider's own camera comes in a later chapter.
+The `spot` comes from a camera: it's what a sighting holds. So for the cow and the bull, the code behind the picture at the top of this chapter places each one on the road by hand, the cow 10 metres ahead and 5 metres left of the middle, and sights them with a camera at the start of the road. The rider's own camera comes in the {{chapter The rider}} chapter.
 
 What comes back is a sprite, and every sprite is a list of shapes. The cow's sprite is its emoji, as polygons.
 
@@ -459,7 +459,7 @@ In Safari Ride, a shape is a value that describes something to paint. The first 
 
 {{code Shapes.Shapes from "Shape : [" to "Polygon({ corners :"}}
 
-Each tag carries a record, and every record ends with a `fill`, the paint for the inside. The ride produces a great many triangles, plenty of four-cornered things, a few round lights, and outlines traced from emoji and mountains, so those are its four regions. More tags follow them in the type, for other jobs, such as a line of text.
+Each tag carries a record, and every record ends with a `fill`, the paint for the inside. The ride produces a great many triangles, plenty of four-cornered things, a few round lights, and outlines traced from emoji and mountains, so those are its four regions. More tags follow them in the type, for other jobs, such as a line of text, and the {{chapter The platform}} chapter takes two of them.
 
 ### A triangle
 
