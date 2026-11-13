@@ -1125,13 +1125,13 @@ The points are about a metre apart, and a post will stand at each one. `drop_fir
 
 {{code GuardRail.RailQuad}}
 
-Its corners are `PointAtHeight`s, points seen from the rider at some height above the ground, so a bar's top corners stand higher than its bottom ones.
+Its corners are `PointAtHeight`s, points seen from the rider at a height measured from the rider's own level, so a bar's top corners stand higher than its bottom ones. Where the ground has curved away, that height can be below zero.
 
 Each quad goes into the frame's depth sort on its own, at a depth that's the mean distance of its corners, so a tree can stand in front of one post and behind the next. A quad holds only its corners and a color, so it makes its own rendering, where the things beside the road go through `Pipeline.rendering_of`:
 
 {{code GuardRail.quad_rendering}}
 
-`{ ..quad, color: … }` is a record update: a new record, like `quad` with its `color` changed, and `quad` itself stays as it was. Here the new color is the quad's own, dimmed with the sky. `map_ok` works on a `Try`: it applies its function to an `Ok` and leaves an `Err` as it is, so a quad wholly behind the camera stays refused.
+`{ ..quad, color: … }` is a record update: a new record, like `quad` with its `color` changed, and `quad` itself stays as it was. Here the new color is the quad's own, dimmed with the sky. `map_ok` works on a `Try`: it applies its function to an `Ok` and leaves an `Err` as it is, so a quad wholly behind the camera stays refused, and `Scene` drops those with `keep_oks`.
 
 The ride works out each rail afresh every frame, its bars and posts from the route and the rider, and the depth sort places each one. Next, the tallest things beside the road: the radio towers.
 
