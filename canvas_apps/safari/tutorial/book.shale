@@ -224,24 +224,37 @@ function manuscript(text)
   return {pages = pages, diagrams = draw_all(diagrams)}
 end
 
--- The expanded tutorial cut after its first CHAPTERS chapters, or all of it
--- when CHAPTERS is unset. It finds `## ` headings by line outside fences, as
--- manuscript does, since a Roc doc comment starts the same way.
+-- Whether a `## ` heading is an appendix or the credits, which have no number
+-- and go with the book however many chapters it keeps.
+function is_back_matter(heading)
+  local title = sub(heading, 4)
+  return starts_with(title, "Appendix") or title == "Credits"
+end
+
+-- The expanded tutorial with only its first CHAPTERS numbered chapters, or all
+-- of it when CHAPTERS is unset. The appendices and the credits are always
+-- kept. It finds `## ` headings by line outside fences, as manuscript does,
+-- since a Roc doc comment starts the same way.
 function first_chapters(text)
   if CHAPTERS == nil then return text end
   local kept = {}
   local seen = 0
+  local keeping = true
   local in_fence = false
   for l in split(text, "\n") do
     if starts_with(l, "```") then
       in_fence = not in_fence
     elseif not in_fence and starts_with(l, "## ") then
-      seen = seen + 1
+      if is_back_matter(l) then
+        keeping = true
+      else
+        seen = seen + 1
+        keeping = seen <= CHAPTERS
+      end
     end
-    if seen > CHAPTERS then return join(kept, "\n") .. "\n" end
-    push(kept, l)
+    if keeping then push(kept, l) end
   end
-  return text
+  return join(kept, "\n") .. "\n"
 end
 
 function widget_folders()

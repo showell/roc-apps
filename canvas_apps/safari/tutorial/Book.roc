@@ -128,6 +128,12 @@ Book := [].{
 		{ chapter: "Proving it", slug: "proving-it" },
 		{ chapter: "The platform", slug: "the-platform" },
 		{ chapter: "Zooming back out", slug: "zooming-back-out" },
+		{ chapter: "Appendix: the patterns", slug: "appendix-the-patterns" },
+		{ chapter: "Appendix: list functions", slug: "appendix-list-functions" },
+		{ chapter: "Appendix: what catches you out", slug: "appendix-what-catches-you-out" },
+		{ chapter: "Appendix: glossary", slug: "appendix-glossary" },
+		{ chapter: "Appendix: index", slug: "appendix-index" },
+		{ chapter: "Credits", slug: "credits" },
 	]
 
 	## The dividers and the slugs a book is cut with.
