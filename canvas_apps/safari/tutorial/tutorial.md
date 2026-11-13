@@ -110,29 +110,17 @@ The brackets after `app` name the two things the app hands the platform, and the
 
 Types are at the heart of every Roc program. A type says what a value holds, and the compiler checks every value against its type. That gives this book its rule: get the types right, and everything else follows. A type that holds just the values that make sense leaves each function a plain job, and the compiler checks the rest. So a good way to meet a Roc program is to read its types.
 
-This chapter takes one tour across Safari Ride, with a stop for each of the five pieces from the {{chapter The problem}} chapter: things, the world, the rider's view, motion and the person watching. On the way, you learn to read the types Roc programs are built from: numbers, records, tags, type variables and the types of functions. The next chapter reads one function closely, and the rest come piece by piece.
+This chapter takes one tour across Safari Ride, with a stop for each of the five pieces from the {{chapter The problem}} chapter: things, the world, the rider's view, motion and the person watching.
 
 ### Numbers at the bottom
 
-Every type is built from smaller ones, and at the bottom are Roc's own primitive types. Safari Ride's are nearly all numbers. Here's a type built around one, `Distance`, in full:
+At the bottom of every type are Roc's own primitive types, and Safari Ride's are nearly all numbers. Here's a type built around one, `Distance`:
 
 {{code Distance.Distance}}
 
-Here's what its parts say:
+The `::` makes `Distance` opaque: inside is an `F64`, a length in metres, and only the `Distance` module reads it. The type's own functions sit between `.{` and `}`. `metres : F64 -> Distance` is a function's type: `metres` takes an `F64` and returns a `Distance`, and `Distance.(metres)` wraps the number.
 
-| Code | What it says |
-|---|---|
-| `Distance ::` | `Distance` names the type. The `::` makes it opaque: only the `Distance` module reads what's inside. |
-| `F64` | What's inside: one of Roc's number types, a 64-bit floating-point number. A `Distance` is a length in metres. |
-| `.{` and `}` | The type's own functions sit between these braces. |
-| `##` | A doc comment, which describes the code under it. |
-| `metres : F64 -> Distance` | The type of a function: `metres` takes an `F64` and returns a `Distance`. |
-| `metres = \|metres\| Distance.(metres)` | The function itself. `Distance.(metres)` wraps the number it's given as a `Distance`. |
-| `to_metres = \|Distance.(d)\| d` | The other way round: `Distance.(d)` opens a `Distance`, and the function gives back the number inside. |
-| `is_gt` to `is_lte` | These four let `>`, `>=`, `<` and `<=` compare two lengths. |
-| `is_eq : _` | This lets `==` compare two lengths, and the `_` has the compiler derive its definition from the number inside. |
-
-Everywhere outside this module, a length is a `Distance`, and the compiler keeps it apart from every other number. The functions between the braces are the only ways to make a length, change one or read one. A call such as `d.min(other)` puts the value before the dot, and the {{chapter Functions}} chapter explains how Roc finds the function for such a call.
+So everywhere outside this module, the compiler keeps a length apart from every other number.
 
 ### Things
 
@@ -140,106 +128,83 @@ Everywhere outside this module, a length is a `Distance`, and the compiler keeps
 Step 1,529 of the ride, held still: the frame these types describe.
 ```
 
-Every thing beside the road has a kind, and each kind is a type. A tree is a `Conifer`, a cat is a `Cat`, and a radio tower is a `Tower`. A cow is a `Billboard`, an emoji that stands on the grass, square to the rider, looking left or right:
+Every thing beside the road has a kind, and each kind is a type. A tree is a `Conifer`, and a cat is a `Cat`. A cow is a `Billboard`, an emoji that stands on the grass, looking left or right:
 
 {{code Billboard.Billboard from "Billboard ::" to "}.{"}}
 
-Here's what each piece of it says:
-
-| Code | What it says |
-|---|---|
-| `Billboard ::` | `Billboard` names the type. The `::` makes it opaque, as it does `Distance`: only the `Billboard` module reads its fields. |
-| `emoji : EmojiStill,` | `emoji` names a field, and `EmojiStill` names its type: the `EmojiStill` type in the `EmojiStill` module. |
-| `height : Distance,` | `height` names a field, and `Distance` names its type: the main type of the `Distance` module. |
-| `facing : Billboard.Facing,` | `facing` names a field, and `Billboard.Facing` names its type: the `Facing` type in the `Billboard` module. |
-
-A module's main type has the module's own name, as `Billboard` and `Distance` do. Every other type a module offers carries the module's name in front wherever it's used, as `EmojiStill` and `Billboard.Facing` do.
+Each line inside the braces names a field and its type. A module's other types carry its name in front, as `Billboard.Facing` does.
 
 A `Billboard.Facing` is one of two tags, `FacesLeft` or `FacesRight`. A tag is a name, and a type made of tags lists every tag a value of that type can be.
 
-For each frame, a function returns the shapes that show a thing, in the order they're painted. We call those shapes its sprite. Here's the `Sprite` type:
+For each frame, a function returns the shapes that show a thing, in the order they're painted. We call those shapes its sprite:
 
 {{code Sprite.Sprite from "Sprite ::" to ").{"}}
 
-A `Sprite` is opaque, like `Billboard`, and it holds a `List(Shapes.Shape)`: a list whose items are each a `Shape`, from the `Shapes` module. Nearly every shape has straight edges. A far tree's sprite is one rectangle of trunk under eight triangles.
+A `Sprite` holds a `List(Shapes.Shape)`: a list whose items are each a `Shape`, from the `Shapes` module.
 
 ### The world
 
-A sprite says how a thing looks. Where it stands is the world's job. The `World` module holds the road's plan as a short list of stretches, called segments, and each segment's plan is a record of the `SegmentPlan` type:
+Where a thing stands is the world's job. The `World` module holds the road's plan as a short list of stretches, called segments, and each segment's plan is a record of the `SegmentPlan` type:
 
 {{code World.SegmentPlan}}
 
-A plain `:` gives the record type a short name: any record with these fields is a `SegmentPlan`, so any module can build a plan and read its fields. Here's the plan for the last stretch of road:
+A plain `:` gives the record type a short name, so any module can build a plan and read its fields. Here's the plan for the last stretch of road:
 
 {{code World.last_plan}}
 
-After a value's name, a `:` gives the value its type, so the first line says `last_plan` is a `SegmentPlan`, and the rest defines it. `Distance.metres(300.0)` calls the `metres` function in the `Distance` module. On this stretch, a cat crosses the road, and the trees alternate green with red. The `World.route` value is the whole road, built from the plans once, before the ride starts, and every tree, herd and pond takes its place along it.
+After a value's name, a `:` gives the value its type, and the rest defines it. On this stretch, a cat crosses the road, and the trees alternate green with red. The `World.route` value is the whole road, built from the plans once, before the ride starts, and every tree, herd and pond takes its place along it.
 
 ```widget route
-The whole route from above, one stretch of road for each plan. A mark in the middle of a stretch shows that its plan has a cat cross or a bird fly.
+The whole route from above, one stretch for each plan. A mark shows where a cat crosses or a bird flies.
 ```
 
 ### The rider's view
 
-The screen shows only what the rider sees. So each frame is the view of a camera on the rider, which sits where the rider sits and faces where the rider looks. Each thing takes three forms on its way to the screen, and each form is a type. First, the thing is placed on the road:
+The screen shows only what the rider sees, so each frame is the view of a camera on the rider. Each thing takes three forms on its way to the screen, and each form is a type. First, the thing is placed on the road:
 
 {{code Geom.Placed}}
 
-The `kind` in parentheses is a type variable: it stands for whatever type fills it. So a cow on the road is a `Geom.Placed(Billboard)`, whose `kind` field holds a `Billboard`, and a tree is a `Geom.Placed(Conifer)`. One type serves every kind.
+The `kind` in parentheses is a type variable: it stands for whatever type fills it. So a cow on the road is a `Geom.Placed(Billboard)`, and a tree is a `Geom.Placed(Conifer)`. One type serves every kind.
 
 Then the camera sights the thing:
 
 {{code Pipeline.Sighted}}
 
-A sighting keeps the kind, and adds a `Spot`: where the thing stands in the rider's view, so far ahead and so far to the side.
-
-From the spot, we work out where the thing lands on the screen, and how big it looks there. One rule gives both: twice as far away looks half as big.
-
-A thing out of the rider's sight gets the tag `OutOfSight` in place of a sighting: it's behind the camera, hidden by the horizon, or too small to see.
+A sighting keeps the kind, and adds a `Spot`: where the thing stands in the rider's view. From the spot, we work out where the thing lands on the screen, and how big it looks there. One rule gives both: twice as far away looks half as big.
 
 Last, the thing is rendered:
 
 {{code Rendered.Rendered from "Rendered ::" to "}.{"}}
 
-A rendering holds the thing's sprite, and its depth: how far ahead of the camera it stands. Renderings of every kind share one type, so trees, cows and towers all meet in one list of renderings.
-
-To finish the frame, the `DepthSort` module sorts that list far to near, and the platform paints it in that order, as a painter paints the far hills before the near trees.
+A rendering holds the thing's sprite, and its depth: how far ahead of the camera it stands. Renderings of every kind share one type, so trees and cows meet in one list. The `DepthSort` module sorts that list far to near, and the platform paints it in that order, as a painter paints the far hills before the near trees.
 
 ### Motion
 
-So far the ride stands still. To set it moving, one record holds the whole ride at one moment:
+To set the ride moving, one record holds the whole ride at one moment:
 
 {{code RideInstant.RideInstant from "RideInstant := {" to "}.{"}}
 
-The `:=` makes `RideInstant` nominal: a new type, apart from every other record with the same fields, as an opaque type is. Any module can read a nominal type's fields.
-
-Those four fields are everything the ride carries from one step to the next: the rider, the truck, the clock, and the plan for when the cat or the bird ahead starts to move. We derive everything else that changes from them. The sun's height, for one, is derived from the clock.
-
-One function makes a step:
+The `:=` makes `RideInstant` nominal, a third way to name a type. Its four fields are everything the ride carries from one step to the next: the rider, the truck, the clock, and the plan for when the cat or the bird ahead starts to move. We derive everything else that changes from them, such as the sun's height from the clock. One function makes a step:
 
 {{signatures RideInstant.next_or_restart}}
 
-`next_or_restart` returns a value of a type written in place, in square brackets: one of two tags. A tag can carry a value, and each of these carries the next moment. `Continued` carries the moment one step on, and `Restarted` carries the ride's first moment, once the rider has finished the route.
-
-Inside the step, the four fields change in a fixed order, so the moves fit together: the rider reads what the cat or bird ahead is doing, and then moves. The second half of the book reads that order line by line.
+It returns one of two tags, written in place in square brackets, and each tag carries the next moment.
 
 ### The person watching
 
-The controls are a handful of keys, named beside the ride. The app's model is one line:
+The app's model is one line:
 
 {{code SafariApp.Model}}
 
-The `motion` field's type is written in place, as two tags. The tour holds the route, the moment on show, and every moment before it since the ride last started:
+The tour holds the route, the moment on show, and every moment before it since the ride last started:
 
 {{code Tour.Tour from "Tour :: {" to "}.{"}}
-
-Because the tour keeps every past moment, stepping back is as quick as stepping forward: the tour takes the moment before, and the frame is produced from it like any other.
 
 ### Where we start
 
 On the way, you've read three ways to name a type. A `:` gives a type a short name, and any value of that shape fits it. A `::` makes a new, opaque type, and only its module reads inside it. A `:=` makes a new, nominal type, and any module reads its fields.
 
-Every one of these types comes with functions, and every chapter from here on reads them. So the next chapter takes one function apart. After it, we start with things: what a cow or a tree is in the code, and how a thing becomes a sprite.
+The next chapter takes one function apart, and then we start with things: what a cow or a tree is in the code, and how it becomes a sprite.
 
 ## Functions
 
