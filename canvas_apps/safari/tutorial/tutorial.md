@@ -1383,110 +1383,57 @@ The clock-driven things come first, and the beacons are the simplest of them: th
 
 ## The beacons
 
-In Safari Ride, every radio tower has a beacon on top, and the beacons blink. A beacon is the simplest thing in the game that moves. How bright it is depends only on which beacon it is and which step of the ride it is.
+Every radio tower has a beacon on top, and the beacons blink. A beacon is the simplest moving thing in the ride: how bright it is depends only on which beacon it is and the clock.
 
 ```widget beacon
 Press play and watch the two towers blink out of step.
 ```
 
-The widget stands two towers side by side, with beacons that blink opposite each other, and plays two whole blinks, from step 5,400 to step 5,640.
-
-New in this chapter:
-
-- Modules: `Beacon`
+The picture stands two towers side by side, with beacons that blink opposite each other, and plays two whole blinks, from step 5,400 to step 5,640.
 
 ### Three rules
 
 A beacon follows three rules:
 
 1. A blink takes 120 steps, from dark up to full brightness and back down.
-2. Neighboring towers start their blinks at different points, so the towers along a road don't blink together.
-3. A segment longer than a kilometre has a second tower halfway along, and its beacon blinks exactly opposite the one at the segment's end. Only one segment on the route is that long.
+2. Neighboring towers start their blinks at different points, so the towers along a road blink at different times.
+3. The second tower halfway along a long segment blinks exactly opposite the one at the segment's end.
 
-None of those rules needs a memory. Ask a beacon about step 5,430 cold, and it can answer. So Safari Ride stores nothing about beacons at all. That's *worked out, not stored*, in its purest form.
+Each rule works from the clock alone. Ask a beacon about step 5,430 cold, and it answers. So the ride derives every beacon afresh each frame, from the clock: derived, in its purest form.
 
-### Get the types right
+### Asking for a beacon
 
-A beacon needs three types, all opaque:
-
-| Type | What it is | Under it |
-|---|---|---|
-| `Clock` | Which step of the ride it is | A `U32` |
-| `Steps` | How many steps something lasts | A `U32` |
-| `Beacon` | A beacon at one moment of its blink | A `Fraction`, how bright it is |
-
-`Clock` and `Steps` are the same type of number underneath, so only the types tell them apart. A step of the ride and a length of time are different things, and neither can stand in for the other.
-
-A `Clock` is the ride's own time. It counts the ride's steps, from 0 at the start to about 7,000 at the end, and it moves on one step each frame. The game draws 30 frames a second, so the clock keeps roughly in step with real time, but it's simulated time: pause the ride and it stops, and step back and it runs backward. This is all the arithmetic a clock does with `Steps`:
-
-{{signatures Clock.steps_since Clock.plus Clock.minus}}
-
-A clock is a place in time, and `Steps` is a distance between two of them. Two clocks give the steps between them, and a clock and some steps give a later clock, or an earlier one. Adding two clocks means nothing, so there's no function for it. Adding two `Steps` does mean something, so `Steps` has a `plus`. This book calls the pattern *places and distances*: one opaque type says where something is, a second says how far apart two of them are, and only the sums that make sense get a function.
-
-A `Beacon` is the light on a tower as the scene draws it: a magenta disc, at a brightness. You ask for one by its tower and the step of the ride:
-
-{{signatures Beacon.at}}
-
-A `Beacon.TowerKey` says which tower: the index of its segment, and whether it stands at the segment's end or midway along it.
-
-{{code Beacon.TowerKey}}
-
-A beacon knows how bright it is, and it draws itself. Give it where its middle goes on the screen and how many pixels a metre spans there, and it gives back a magenta disc, whose transparency follows its brightness, or says it's too dim or too small to draw.
-
-### The functions
-
-The modules behind a beacon
-```dot
-digraph beacon {
-  node [shape=box, fontname="Helvetica"];
-  Beacon [style=bold];
-  Scene -> TowerSighting [label="  hands it the clock"];
-  Scene -> Clock [label="  carries the clock"];
-  TowerSighting -> Beacon [label="  asks for each beacon"];
-  TowerSighting -> Tower [label="  stands each tower"];
-  TowerSighting -> Clock [label="  reads the step"];
-  Beacon -> Clock [label="  counts steps since the start"];
-  Beacon -> Steps [label="  works out its head start"];
-  Beacon -> Fraction [label="  measures its brightness"];
-  Beacon -> Route [label="  takes a segment's index"];
-  Clock -> Steps [label="  measures time between clocks"];
-  Tower -> Beacon [label="  holds it"];
-}
-```
-
-A box is a module, and an arrow is an import. Each frame, `Scene` hands the clock to `TowerSighting`, which finds the towers in view and asks for each tower's beacon at that frame. The clock goes no further. A tower holds its beacon as it shines that frame and decides where it sits, at the tower's top, and the beacon does the rest. Here's the line where the tower past the end of a segment gets its beacon:
+A tower asks for its beacon when its sighting builds it, with this line from the tower past a segment's end:
 
 {{code TowerSighting.end_tower from "beacon = Beacon.at" to "beacon = Beacon.at"}}
 
-The segment's index and the tower's place say which beacon, and the clock says how bright it is. The tower halfway along a segment has the same line with `Midway` in place of `AtEnd`.
-
-Now down into `Beacon`:
+The segment's index and the tower's place say which beacon, and the clock says how bright it is. The tower halfway along a segment has the same line with `Midway` in place of `AtEnd`. Here's the function it calls:
 
 {{code Beacon.at}}
 
-Inside the module, `Beacon.(...)` builds a beacon from its brightness. No other module can. The brightness comes from the beacon's phase, how far it is into its blink:
+A `Beacon` is opaque, around a `Fraction`, its brightness. Inside the module, `Beacon.(…)` builds one, and only this module can. The brightness comes from the beacon's phase, how far it is into its blink:
 
 {{code Beacon.blink_phase}}
 
-`clock.steps_since(Clock.start)` is how a place becomes a distance, and it says which distance: the one from the start of the ride. Adding the beacon's head start gives its phase, and a cosine turns that into a brightness:
+`clock.steps_since(Clock.start)` turns a moment into a length: the steps since the ride began. Adding the beacon's head start gives its phase, and `wrapped_to` brings that back inside one blink, so a phase of 130 is a phase of 10. A cosine turns the phase into a brightness:
 
 {{code Beacon.beacon_brightness}}
 
-`wrapped_to` is the only `%` that `Steps` offers, so a phase of 130 is a phase of 10. (The period is written `Beacon.beacon_period`, with its type's name, even here, because it's defined in the type's block.) `(1 - cos) / 2` runs from 0 up to 1 and back to 0 over one period, and it can't leave that range. So `Fraction.of`, which crashes on a ratio outside 0 to 1, is safe here.
+`(1 - cos) / 2` runs from 0 up to 1 and back to 0 over one blink, and it stays inside that range. So `Fraction.of`, which crashes on a ratio outside 0 to 1, is safe here.
 
-A beacon gets its head start from its segment's index and its tower's place:
+### Out of step
+
+A beacon's head start comes from its segment's index and its tower's place:
 
 {{code Beacon.head_start}}
 
-Each segment's beacon starts 37 steps further into its blink than the last one's, so towers along the road don't blink in unison, which would be boring. 37 shares no factor with 120, so the first 120 segments' beacons all start at different points of the blink. Plenty of other numbers would do.
+Each segment's beacon starts 37 steps further into its blink than the last one's. 37 and 120 share only the factor 1, so the first 120 segments' beacons all start at different points of the blink. The tower halfway along a segment starts half a blink on, so it blinks opposite the one at its end. `half_period` is worked out from the period, so it stays right if the period changes.
 
-The tower halfway along a segment blinks opposite the one at its end, and opposite means half a blink on. `half_period` is worked out from the period, so it stays right if the period changes.
+The picture's two beacons are the first segment's: the one at its end, with a head start of zero, and the one halfway along, half a blink on. Step 5,400 is 45 whole blinks in, so the first is dark there and the second is at full brightness. A quarter of a blink later, at step 5,430, they're equally bright, and by step 5,460 they've changed places.
 
-The widget's two beacons are the first segment's: the one at its end, with no head start, and the midway one, half a blink on. Step 5,400 is 45 whole blinks in, so the first is dark there and the second is at full brightness. A quarter of a blink later, at step 5,430, they're equally bright, and by step 5,460 they've changed places.
+A beacon also draws itself. Given where its middle lands on the screen and how many pixels a metre spans there, it returns a magenta disc whose transparency follows its brightness, or a refusal when it's too dim or too small to show. So its tests stand alone, apart from any tower: `Beacon`'s own tests check that a beacon blinks, that the halfway one blinks the other way, and that its disc comes out the right size and color.
 
-Because the beacon draws itself, its tests need no tower. `Beacon`'s own tests check that a beacon blinks, that the midway one blinks the other way, and that its disc comes out the right size and color, or not at all when it's too dim.
-
-There's no blink abstraction, because nothing else in the game blinks. A beacon goes round and round. The sun goes one way, and a lot more hangs on it.
+A beacon goes round and round. The sun goes one way, and a lot more hangs on it.
 
 ## The setting sun
 
