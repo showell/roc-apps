@@ -1885,7 +1885,7 @@ Projection works a face at a time, for two reasons. A face that reaches behind t
 
 {{code TruckBody.body_sprite}}
 
-`placed_faces` stands every face on the road, `faces_far_to_near` sorts them, and `dimmed_faces` darkens each face's color with the sky. Then `Camera.clipped_polygon` cuts and projects each face, and returns an `Err` for one wholly behind the camera, as the {{chapter The math layer}} chapter shows. `keep_oks` keeps the rest. The truck keeps all its faces however far off it stands, because the rider is always looking for it.
+`placed_faces` stands every face on the road, `faces_far_to_near` sorts them, and `dimmed_faces` darkens each face's color with the sky. Then `Camera.clipped_polygon` cuts each face at the near plane and projects it, and returns an `Err` for a face wholly behind the camera. The {{chapter The math layer}} chapter shows how the cut works. `keep_oks` keeps the rest. The truck keeps all its faces however far off it stands, because the rider is always looking for it.
 
 ### The headlights
 
@@ -1995,7 +1995,7 @@ Then come the two ways to take a step. Both sit below the module's block, so the
 
 {{code TruckJourney.progress_braking_for}}
 
-`VehicleLimits.braking_to` works out one steady brake that reaches the target speed at the bend. A steady brake can land a little under the target, so `target_speed.max(...)` holds the truck there. `braking_to` crashes on a brake that would take the speed below zero, the invariant it holds for the rider too. Farther from a bend, the truck chases the tease:
+`VehicleLimits.braking_to` works out one steady brake that reaches the target speed at the bend. The brake is steady over the whole distance left, so one of the last steps before the bend can land a little under the target, and `target_speed.max(...)` holds the truck there. `braking_to` crashes on a brake that would take the speed below zero, the invariant it holds for the rider too. Farther from a bend, the truck chases the tease:
 
 {{code TruckJourney.progress_toward_tease}}
 
@@ -2266,7 +2266,7 @@ The cat's pull rises as it crosses, up to its peak of 1.8, then fades over 83 st
 
 `Playing` and `Past` both carry a step count, and `cat_attention` uses both: one says how far into the crossing, the other how long since it ended.
 
-`Rider.attention` takes the stronger of two pulls: the cat's, and the depth of the rider's last look, which lingers after the eyes come home. The camera widens its view for that attention, as a startled rider takes in more of the road. A lean widens the view too, and the camera takes whichever asks for the wider one.
+`Rider.attention` takes the stronger of two pulls: the cat's, and the depth of the rider's last look, which lingers after the eyes come home. The camera widens its view for that attention, as a startled rider takes in more of the road.
 
 Of the three encounters, the cat alone changes the rider, through both reactions. The rider's reactions to the bends and the pigs came in the rider's own chapters. The cat's are the last of the ride's moving parts. What's left is the machinery under them: the math, the proofs and the platform.
 
@@ -2568,7 +2568,7 @@ Ask of each thing on the screen where it comes from:
 | Its headlights | Derived from the clock, through the sky's darkness |
 | Its brake lights | Derived from the truck, which says whether its last step slowed it |
 
-Every row comes from the four and the road. Even the truck, whose progress the ride carries, reaches the frame through the camera like everything else. The book set out to show one design: a small state carried from step to step, everything else derived from it, and types that allow only right states. Get the types right, and everything else follows.
+Every row comes from the four and the road. Even the truck, whose progress the ride carries, reaches the frame through the camera like everything else. The book has shown one design: a small state carried from step to step, everything else derived from it, and types that allow only right states. Get the types right, and everything else follows.
 
 ## Appendix: the patterns
 
@@ -2588,7 +2588,7 @@ Nine patterns kept turning up along the way. They're patterns in a loose sense: 
 
 ## Appendix: list functions
 
-The ride builds most of its answers out of lists. These are the `List` functions the chapters use, in the order they first come up.
+The ride builds most of its answers out of lists. These are the main `List` functions the chapters use, in the order they first come up.
 
 | Function | What it does | Chapter |
 |---|---|---|
@@ -2601,8 +2601,8 @@ The ride builds most of its answers out of lists. These are the `List` functions
 | `join_map` | Maps each item to a list, and joins the lists into one | Rails |
 | `drop_first` | Drops the first items, as many as it's given | Rails |
 | `fold` | Hands each item in turn to a function, along with the answer so far, starting from a first answer | The throttle |
+| `find_first` | Returns the first item that passes a test, as a `Try` | The truck's motion |
 | `List.repeat` | Makes a list of one value, as many times as it's given | The cat |
-| `find_first` | Returns the first item that passes a test, as a `Try` | The bird |
 | `take_first` | Keeps the first items, as many as it's given | The math layer |
 | `map2` | Walks two lists side by side, and calls a function on each pair | The math layer |
 
@@ -2615,9 +2615,9 @@ These are the Roc surprises the chapters meet, sorted by where they first show u
 | A method call with no import | A method sits inside its type's braces, and the call finds it from the type of the value before the dot | Functions |
 | A helper with no keyword to say it's private | Anything outside a type's braces is private to its module | Where clauses: asking a kind |
 | A `where` clause matching the wrong method | A clause matches a method by its name and type alone, so the pipeline's methods all start with "scenery" | Where clauses: asking a kind |
+| A crash with a sentence about a sum | `Fraction.of` crashes on a ratio outside 0 to 1, because such a ratio means the sum behind it is wrong | Errors as tag unions |
 | `var` and `while` inside a pure function | A variable lives and dies inside its function, so the function is still pure | Variables and loops: rehearsal |
 | `?? crash` on a lookup | It enforces an invariant: the lookup always finds its value, and a miss is a bug | The bird |
-| A crash with a sentence about a sum | `Fraction.of` crashes on a ratio outside 0 to 1, because such a ratio means the sum behind it is wrong. A ratio that can rightly fall outside the range goes through `Fraction.clamp` instead | Proving it |
 | A frame hash that moves after a sum was regrouped | Floating-point sums and products depend on their order, so the order is part of what they mean | Proving it |
 | An `expect` that can't see a type | An `expect` can name only what its module imports, so a check that needs several modules lives in `gates/expects/` | Proving it |
 
@@ -2642,7 +2642,7 @@ This book uses these words in one sense only.
 | Frame | One picture of the ride, for one step. |
 | Invariant | A fact that holds whenever the program is right, such as a share lying between 0 and 1. The ride enforces each one with a `crash`. |
 | Kind | Which sort of thing something is, like `Conifer`, and the type a `Geom.Placed` carries. |
-| Near plane | The closest the camera can see, 0.4 metres ahead. Anything that crosses it is cut there. |
+| Near plane | The closest the camera can see, 0.4 metres ahead. A sighting refuses a thing whose foot is short of it, and a line or face that crosses it is cut there. |
 | Picture | Everything on the screen in one frame. |
 | Placed | Put on the road, measured `along` and `across` a segment, and `lift` off the ground. |
 | Polygon | A shape of any number of corners but three or four, which are triangles and quads. |
