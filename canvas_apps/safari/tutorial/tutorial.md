@@ -1202,39 +1202,44 @@ That's four things: the rider, the truck, the clock, and the plan for when the c
 
 ## The clock
 
-A moment's clock says which step of the ride this is. It's a single number, and it still gets a module of its own, because the ride keeps two kinds of time apart.
+Every moment of the ride carries a clock, which counts the steps since the ride started. Step 1,529, the page the first half held still, is a clock. The sun, the sky and the beacons all follow the clock alone.
 
 ### A moment and a length
 
-Everyone knows what a clock does. The news is what this one refuses to do. Here's a line that adds 7 to a clock:
+The ride uses time in two ways. A moment is a point in the ride, such as step 1,529. A length is a stretch of the ride, such as three steps. A moment plus a length is a later moment. So Safari Ride gives each its own type: a `Clock` is a moment, and a `Steps` is a length.
+
+Both hold a whole number, so a bare number could pass for either. Here's a line that tries to add 7 to the first clock:
 
 {{fails clock_plus_seven}}
 
-The compiler refuses it. `+` calls the `plus` method, and `Clock.plus` takes a `Steps`, a count of steps, where this line hands it a bare 7. A `Clock` is a moment, and a `Steps` is a length of time, as a `Bearing` is a direction and a `Turn` is a change of one.
+The compiler rejects the line. `+` calls the `plus` method, and `Clock.plus` takes a `Steps`. The line passes it a bare 7. The {{chapter Mountains}} chapter splits direction the same way: a `Bearing` is a direction, and a `Turn` is a change of direction.
 
-Here's the whole module:
+### The module
+
+Here's the whole `Clock` module:
 
 {{module Clock}}
 
-`Clock :: U32.{ … }` makes a clock an opaque `U32`, so only the module's own functions read the number inside. They keep the two kinds of time apart:
+`Clock :: U32.{ … }` makes `Clock` an opaque type. It holds a `U32`, and code outside the module reaches that number through the functions between the braces. Those functions keep moments and lengths apart:
 
 | Function | Takes | Returns |
 |---|---|---|
+| `next` | a clock | the clock one step on |
 | `plus` | a clock and a length | a later clock |
 | `minus` | a clock and a length | an earlier clock |
 | `steps_since` | two clocks | the length between them |
 
-Two moments make a meaningless sum, so the module leaves adding two clocks out. `next` moves a clock on by one step, and the ride calls it once a step.
+`RideInstant.next` calls `Clock.next` once a step. `plus` reads the number inside a length with `length.to_u32()`, from the `Steps` module. `<` calls `is_lt`, just as `+` calls `plus`, so two clocks compare as their steps do.
 
 ### Two crashes
 
-`minus` crashes when it would go back past step 0, and `steps_since` crashes when it would count backward. Either one means the caller has a bug, so the clock stops the program and says why, with a `crash` and its message.
+`minus` and `steps_since` each have a branch that ends in a `crash`. `minus` crashes when it would go back past step 0, and `steps_since` when the clock it counts from comes later. Either case is a bug in the caller, so the program stops with the `crash`'s message.
 
 ### Tests
 
-Below the module's braces, each `expect` is a test, and `roc test` runs them all. A clock is a plain value, so a test builds one directly: `Clock.at_step(9).plus(Steps.of(3))` starts at step 9 and checks the answer is step 12, before any ride has run. The last three tests check `<` below, at and above the line: one clock before another, a clock against itself, and one after. `!` flips a `Bool`, and `length.to_u32()` reads the number inside a `Steps`.
+Each `expect` below the module's braces is a test, and `roc test` runs them all. A clock is a plain value, so a test builds one directly. `Clock.at_step(9).plus(Steps.of(3)) == Clock.at_step(12)` passes when step 9 plus three steps is step 12. The last three tests try `<` on a clock before another, a clock against itself, and a clock after another. `!` flips a `Bool`.
 
-The clock is the whole of the ride's time of day. Everything that follows the time of day, from the sky to the truck's headlights, works it out from the clock. The next chapter turns to the moment itself, the `RideInstant`, and how one step moves all four of its parts on.
+The clock is the first of the four things a moment carries. The sun, the sky and the beacons are derived from it alone, at any step. The next chapter reads the step itself, which moves all four on together.
 
 ## The ride instant
 

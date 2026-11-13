@@ -17,8 +17,8 @@ Clock :: U32.{
 	next : Clock -> Clock
 	next = |Clock.(n)| Clock.(n + 1)
 
-	## How many steps this clock is past `earlier`. A clock before `earlier` is
-	## no count of steps.
+	## How many steps this clock is past `earlier`. It crashes when this clock
+	## comes before `earlier`.
 	steps_since : Clock, Clock -> Steps
 	steps_since = |Clock.(n), Clock.(earlier)|
 		if n < earlier {
@@ -31,7 +31,8 @@ Clock :: U32.{
 	plus : Clock, Steps -> Clock
 	plus = |Clock.(n), length| Clock.(n + length.to_u32())
 
-	## The clock `length` steps back. The ride's first step has none before it.
+	## The clock `length` steps back. It crashes when that would go back past
+	## step 0, where the ride starts.
 	minus : Clock, Steps -> Clock
 	minus = |Clock.(n), length| {
 		back = length.to_u32()
