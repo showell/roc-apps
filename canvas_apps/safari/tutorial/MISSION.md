@@ -177,11 +177,13 @@ The work is a linear pass, one chapter at a time, in book order, starting again 
 
 **The think-aloud reader.** A third cold reader reads the whole chapter and narrates its understanding paragraph by paragraph: "Now I know X. I expect Y next. This paragraph gave me Z instead." Where its expectation and the page part, there's a flow break. It proposes no prose.
 
+**The voice reader.** Every chapter also gets a cold reader armed with axes D and E, who reads sentence by sentence and quotes each sentence that breaks a rule, naming the rule. The nitpick rounds hunt friction, and a cute line glides past them: "Everyone knows what a clock does. The news is what this one refuses to do" survived every other reader (Steve, 2026-11-13). It breaks D2, since "refuses" is a negative in disguise, and D11, since the compiler refuses, not the clock. It's also a set-up-and-twist (D7). The voice reader watches above all for negatives in disguise ("refuses", "leaves out", "stays out", "spares"), for verbs that give code a will or the wrong agent (a module that "refuses", "decides" or "knows"), and for set-ups, twists and closing morals. Its brief names the rules, not example sentences. Comma joins are D3's judgment call, not a voice finding. A lint beside `book_negatives` flags the disguised-negative and will-giving words, with an exceptions table for real refusals, such as a sighting that returns `Err`.
+
 **Nitpick rounds.** After the fixes from those three, a fresh cold agent reads the built chapter and lists the five things a careful reader would stumble on. Its brief gives no clues: no axes, no worries of ours, no list of past findings. Fix what's real, rebuild, and send a new agent. Stop when a round turns up nothing worth fixing, or after three rounds. Nitpickers find friction well and real-world sense poorly (a bull isn't a cow), so the author's read still checks the world.
 
 **One voice.** However many readers a chapter gets, none of them writes the book. Their findings are reports; one voice phrases every fix, and it fixes by subtraction first (C13). Take suggestions with restraint, or the book reads as if a committee wrote it.
 
-**The order before Steve sees a chapter:** the author's read and the quick gates, then the promise check and the truth-and-order reader together, then the think-aloud reader, then the nitpick rounds, with a fix and a rebuild after each. Steve gets a chapter that has survived all of them.
+**The order before Steve sees a chapter:** the author's read and the quick gates, then the promise check and the truth-and-order reader together, then the think-aloud reader and the voice reader, then the nitpick rounds, with a fix and a rebuild after each. Steve gets a chapter that has survived all of them.
 
 **The vocabulary.** The carried-and-derived wording reaches each chapter as it comes up, not in one sweep, so every change lands in a chapter Steve is about to read.
 
