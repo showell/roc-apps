@@ -110,7 +110,7 @@ The brackets after `app` name the two things the app hands the platform, and the
 
 Types are at the heart of every Roc program. A type says what a value holds, and the compiler checks every value against its type. That gives this book its rule: get the types right, and everything else follows. A type that holds just the values that make sense leaves each function a plain job, and the compiler checks the rest. So a good way to meet a Roc program is to read its types.
 
-This book reads Safari Ride's types first: the numbers underneath, then a stop for each of the five pieces from the {{chapter The problem}} chapter. Types describe the structure of a program's data and the rules it keeps, and each stop shows one way they do it.
+This book reads Safari Ride's types first, and they reach every part of the program, from a single number to the whole ride. Types describe the structure of a program's data and the rules it keeps, and each stop shows one way they do it.
 
 ### Distance pins down a number
 
@@ -196,7 +196,7 @@ Stepping back works because `past_instants` keeps those moments. So the feature 
 
 You've read three ways to name a type: `:` for a short name, `::` for an opaque type, and `:=` for a nominal one.
 
-On the way, the types pinned down a number, spelled out a thing's fields and choices, laid out the road, carried every kind, captured the whole ride and kept its past. Each one described the data's structure, or a rule the data keeps. The next chapter takes one function apart, and then we start with things.
+On the way, the types pinned down a number, spelled out a thing's fields and choices, laid out the road, carried every kind, captured the whole ride and kept its past. Each described the data's structure or a rule it keeps, and the same few kinds of type served the whole program. The next chapter takes one function apart, and then we start with things.
 
 ## Functions
 
