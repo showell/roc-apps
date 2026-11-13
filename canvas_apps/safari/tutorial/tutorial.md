@@ -2404,7 +2404,7 @@ digraph rehearsal {
   best [label="LeanSearch.best_lean"];
   search [label="LeanSearch.search_tries"];
   project [label="Coast.coast_outcome"];
-  keeping [label="Coast.coast_keeping"];
+  keeping [label="Coast.coast_end"];
   advance [label="Motorcycle.motorcycle_at_next_step"];
   throttle [label="Throttle.next_acceleration"];
   controls -> best [label="  asks for a lean"];
@@ -2421,9 +2421,9 @@ digraph rehearsal {
 
 {{code Coast.coast_outcome}}
 
-`coast_keeping` runs the coast, and it can keep the path the motorcycle took, which is what the widget draws as the white arc. `coast_outcome` asks it to drop the path, since the ride only needs where the coast ended. The loop is in `coast_keeping`:
+`coast_end` runs the coast, and it can keep the path the motorcycle took, which is what the widget draws as the white arc. `coast_outcome` asks it to drop the path, since the ride only needs where the coast ended. The loop is in `coast_end`:
 
-{{code Coast.coast_keeping}}
+{{code Coast.coast_end}}
 
 The coast's bounds are the road's edges, 5 centimetres in, or wherever it starts if that's further out. The `while` moves the motorcycle a step at a time until it crosses one of those bounds, gets 25 metres further along its segment, or runs for 2,000 steps, and `return` leaves the function from inside the loop. The answer says where the coast went:
 
@@ -2431,7 +2431,7 @@ The coast's bounds are the road's edges, 5 centimetres in, or wherever it starts
 
 `LeanSearch` asks `Coast` that question at twelve different leans. The rider wants the coast to end near the middle of the road. More lean to the right always moves the end of a coast to the right, so each try can rule out half the leans left between the bounds. That's a bisection, a binary search over leans. It's a `for` loop, with `$bounds.low` and `$bounds.high` closing in on each other. `LeanSearch.tried_motorcycle` is the motorcycle with the lean halfway between the bounds. It's pretend, and `Coast` gives it a pretend future:
 
-{{code LeanSearch.search_tries from "lean_try = {" to "$bounds = bounds_after(lean_try)"}}
+{{code LeanSearch.search_tries from "tried = " to "$bounds = bounds_after(tried)"}}
 
 The search starts with bounds a degree either side of the current lean, `max_lean_change`, so the lean it picks is always within a degree of the last. That's what stops the bike flicking from one lean to another. Which way each try sends the next is a `match` on what the rehearsal found. Running off the left means more right, and running off the right means more left. A coast that stays on the road compares where it ends with `aimed_across`, the road's middle:
 

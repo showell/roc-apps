@@ -34,43 +34,34 @@ LeanSearch :: [].{
 	lean_search_round_count : U8
 	lean_search_round_count = 12
 
-	## One try of the search: the bounds it tried between, and where the coast
-	## with the lean halfway between them went.
-	LeanTry : {
-		low : Angle.Lean,
-		high : Angle.Lean,
-		outcome : Coast.Outcome,
-	}
+	## The leans a try searches between.
+	LeanBounds : { low : Angle.Lean, high : Angle.Lean }
 
-	## The lean a try tried, halfway between its bounds.
-	tried_lean : LeanTry -> Angle.Lean
-	tried_lean = |{ low, high, .. }| middle_lean({ low, high })
+	## The lean halfway between `bounds`, which a try tries.
+	middle_lean : LeanSearch.LeanBounds -> Angle.Lean
+	middle_lean = |{ low, high }| low.halfway_to(high)
 
 	## The motorcycle a try coasts: `motorcycle`, the one the search started
-	## from, with the lean halfway between the try's bounds. It takes the bounds
-	## alone, so the search can ask for it before the try has an outcome.
-	tried_motorcycle : Motorcycle, { low : Angle.Lean, high : Angle.Lean, .. } -> Motorcycle
-	tried_motorcycle = |motorcycle, { low, high, .. }|
-		motorcycle.with_lean(middle_lean({ low, high }))
+	## from, with the lean halfway between `bounds`.
+	tried_motorcycle : Motorcycle, LeanSearch.LeanBounds -> Motorcycle
+	tried_motorcycle = |motorcycle, bounds|
+		motorcycle.with_lean(LeanSearch.middle_lean(bounds))
+
+	## One try of the search: the bounds it tried between, and where the coast
+	## with the lean halfway between them went.
+	LeanTry : { bounds : LeanSearch.LeanBounds, outcome : Coast.Outcome }
 
 	## The tries of the bisection over the leans one step can reach from the
 	## motorcycle's own, in the order tried. Each try's bounds are the half of the one
 	## before it that its coast pointed to.
 	search_tries : Motorcycle -> List(LeanSearch.LeanTry)
 	search_tries = |motorcycle| {
-		var $bounds = {
-			low: motorcycle.lean.minus(max_lean_change),
-			high: motorcycle.lean.plus(max_lean_change),
-		}
+		var $bounds = first_bounds(motorcycle)
 		var $tries = []
 		for _ in 0..<lean_search_round_count {
-			lean_try = {
-				low: $bounds.low,
-				high: $bounds.high,
-				outcome: Coast.coast_outcome(LeanSearch.tried_motorcycle(motorcycle, $bounds)),
-			}
-			$tries = $tries.append(lean_try)
-			$bounds = bounds_after(lean_try)
+			tried = lean_try(motorcycle, $bounds)
+			$tries = $tries.append(tried)
+			$bounds = bounds_after(tried)
 		}
 		$tries
 	}
@@ -79,29 +70,40 @@ LeanSearch :: [].{
 	## halfway between the bounds the last try narrowed to.
 	best_lean : Motorcycle -> Angle.Lean
 	best_lean = |motorcycle| {
-		last_try = LeanSearch.search_tries(motorcycle).last() ?? crash "LeanSearch.best_lean: the search makes at least one try"
-		middle_lean(bounds_after(last_try))
+		var $bounds = first_bounds(motorcycle)
+		for _ in 0..<lean_search_round_count {
+			$bounds = bounds_after(lean_try(motorcycle, $bounds))
+		}
+		LeanSearch.middle_lean($bounds)
 	}
 }
 
-## The leans a try searches between.
-LeanBounds : { low : Angle.Lean, high : Angle.Lean }
-
-## The lean halfway between `bounds`, which a try tries.
-middle_lean : LeanBounds -> Angle.Lean
-middle_lean = |{ low, high }| low.halfway_to(high)
+## The bounds of the search's first try: the leans one step can reach from the
+## motorcycle's own.
+first_bounds : Motorcycle -> LeanSearch.LeanBounds
+first_bounds = |motorcycle| {
+	low: motorcycle.lean.minus(max_lean_change),
+	high: motorcycle.lean.plus(max_lean_change),
+}
 
 ## The most the lean changes in one step.
 max_lean_change : Angle.LeanChange
 max_lean_change = Angle.LeanChange.degrees(1.0)
 
+## The try between `bounds`: where the coast of the tried motorcycle goes.
+lean_try : Motorcycle, LeanSearch.LeanBounds -> LeanSearch.LeanTry
+lean_try = |motorcycle, bounds| {
+	bounds,
+	outcome: Coast.coast_outcome(LeanSearch.tried_motorcycle(motorcycle, bounds)),
+}
+
 ## The half of a try's bounds its coast points to.
-bounds_after : LeanSearch.LeanTry -> LeanBounds
-bounds_after = |lean_try| {
-	mid = LeanSearch.tried_lean(lean_try)
-	match LeanSearch.lean_correction(lean_try.outcome) {
-		MoreRight => { low: mid, high: lean_try.high }
-		MoreLeft => { low: lean_try.low, high: mid }
+bounds_after : LeanSearch.LeanTry -> LeanSearch.LeanBounds
+bounds_after = |{ bounds, outcome }| {
+	mid = LeanSearch.middle_lean(bounds)
+	match LeanSearch.lean_correction(outcome) {
+		MoreRight => { low: mid, high: bounds.high }
+		MoreLeft => { low: bounds.low, high: mid }
 	}
 }
 
@@ -112,6 +114,19 @@ ending_at = |metres| EndsAt(Across.metres(metres))
 expect LeanSearch.lean_correction(ending_at(-0.1)) == MoreRight
 expect LeanSearch.lean_correction(ending_at(0.1)) == MoreLeft
 expect LeanSearch.lean_correction(ending_at(0.0)) == MoreLeft
+
+## Bounds a degree either side of upright.
+upright_bounds : LeanSearch.LeanBounds
+upright_bounds = { low: Angle.Lean.degrees(-1.0), high: Angle.Lean.degrees(1.0) }
+
+# A try halves its bounds, keeping the half its coast points to.
+expect LeanSearch.middle_lean(upright_bounds) == Angle.Lean.degrees(0.0)
+expect
+	bounds_after({ bounds: upright_bounds, outcome: ending_at(-0.1) })
+		== { low: Angle.Lean.degrees(0.0), high: Angle.Lean.degrees(1.0) }
+expect
+	bounds_after({ bounds: upright_bounds, outcome: ending_at(0.1) })
+		== { low: Angle.Lean.degrees(-1.0), high: Angle.Lean.degrees(0.0) }
 
 ## The lean the search picks for a motorcycle at the start of the segment, in
 ## radians.
@@ -128,6 +143,26 @@ searched_lean = |across, lean_radians|
 		},
 		lean: Angle.Lean.radians(lean_radians),
 	}).to_radians()
+
+## The search's tries for the motorcycle the ride starts with.
+initial_tries : List(LeanSearch.LeanTry)
+initial_tries = LeanSearch.search_tries(Motorcycle.initial)
+
+# The search makes its rounds of tries, the first between the leans one step can
+# reach, and each after it between the half of the one before that its coast
+# pointed to.
+expect initial_tries.len() == LeanSearch.lean_search_round_count.to_u64()
+expect initial_tries.first().map_ok(|first| first.bounds) == Ok(first_bounds(Motorcycle.initial))
+expect
+	initial_tries
+		.map2(initial_tries.drop_first(1), |before, after| after.bounds == bounds_after(before))
+		.all(|is_followed| is_followed)
+
+# The lean the search picks is the middle of the half its last try pointed to.
+expect {
+	picked = initial_tries.last().map_ok(|last| LeanSearch.middle_lean(bounds_after(last)))
+	picked == Ok(LeanSearch.best_lean(Motorcycle.initial))
+}
 
 # An upright rider right of the middle leans left, and one left of it leans
 # right.

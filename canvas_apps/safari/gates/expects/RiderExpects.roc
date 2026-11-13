@@ -287,20 +287,31 @@ expect {
 }
 
 # A coast's path has a motorcycle for each step it ran and ends where its
-# outcome says, clear of the start when it stays on the road, and `coast_outcome`
-# gives the same outcome without the path.
+# outcome says: off either edge after as many steps as the path has, clear of
+# the start when it stays on the road, and after the longest coast when it
+# circles.
 expect {
 	state = {
 		..Motorcycle.initial,
 		yaw: Angle.Turn.radians(-1.5),
 		speed: Speed.metres_a_step(0.7),
 	}
-	coast = Coast.coast_path(state)
-	match coast.outcome {
-		Leaves({ side: Left, after }) =>
-			coast.path_motorcycles.len() == after.to_u64()
-				and coast.outcome == Coast.coast_outcome(state)
+	path = Coast.path_motorcycles(state)
+	match Coast.coast_outcome(state) {
+		Leaves({ side: Left, after }) => path.len() == after.to_u64()
 		Leaves({ side: Right, .. }) | EndsAt(_) => False
+	}
+}
+expect {
+	state = {
+		..Motorcycle.initial,
+		yaw: Angle.Turn.radians(1.5),
+		speed: Speed.metres_a_step(0.7),
+	}
+	path = Coast.path_motorcycles(state)
+	match Coast.coast_outcome(state) {
+		Leaves({ side: Right, after }) => path.len() == after.to_u64()
+		Leaves({ side: Left, .. }) | EndsAt(_) => False
 	}
 }
 expect {
@@ -311,15 +322,26 @@ expect {
 			road_point: { ..Motorcycle.initial.route_place.road_point, across: Across.metres(1.0) },
 		},
 	}
-	coast = Coast.coast_path(state)
-	match (coast.outcome, coast.path_motorcycles.last()) {
+	match (Coast.coast_outcome(state), Coast.path_motorcycles(state).last()) {
 		(EndsAt(end_across), Ok(last)) => {
 			start_along = state.route_place.road_point.along
 			travelled = last.route_place.road_point.along.distance_from(start_along)
 			last.route_place.road_point.across == end_across
 				and travelled >= Coast.clear_distance
-				and coast.outcome == Coast.coast_outcome(state)
 		}
+		(Leaves(_), _) | (EndsAt(_), Err(_)) => False
+	}
+}
+expect {
+	circling = {
+		..Motorcycle.initial,
+		speed: Speed.metres_a_step(0.01),
+		lean: Angle.Lean.radians(0.5),
+	}
+	path = Coast.path_motorcycles(circling)
+	match (Coast.coast_outcome(circling), path.last()) {
+		(EndsAt(end_across), Ok(last)) =>
+			path.len() == 2000 and last.route_place.road_point.across == end_across
 		(Leaves(_), _) | (EndsAt(_), Err(_)) => False
 	}
 }

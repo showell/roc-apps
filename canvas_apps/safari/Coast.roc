@@ -17,53 +17,81 @@ Coast :: [].{
 	clear_distance : Distance
 	clear_distance = Distance.metres(25.0)
 
-	## Where a coast ends up, and the motorcycle at each of its steps, the last
-	## one the step that ends it.
-	Path : { outcome : Coast.Outcome, path_motorcycles : List(Motorcycle) }
-
-	## The coast from `motorcycle`, step by step.
-	coast_path : Motorcycle -> Coast.Path
-	coast_path = |motorcycle| coast_keeping(motorcycle, KeepPath)
-
 	## Where a coast from `motorcycle` ends up.
 	coast_outcome : Motorcycle -> Coast.Outcome
-	coast_outcome = |motorcycle| coast_keeping(motorcycle, DropPath).outcome
+	coast_outcome = |motorcycle| coast_end(motorcycle).outcome
+
+	## The motorcycle at each step of a coast from `motorcycle`, the last one the
+	## step that ends it.
+	path_motorcycles : Motorcycle -> List(Motorcycle)
+	path_motorcycles = |motorcycle| {
+		var $motorcycle = motorcycle
+		var $path = []
+		for _ in 0..<coast_end(motorcycle).steps_run.to_u32() {
+			$motorcycle = coasting_step($motorcycle)
+			$path = $path.append($motorcycle)
+		}
+		$path
+	}
 }
 
-## A coast from `motorcycle`, with its path or with an empty one. `coast_outcome` runs
-## inside every step of the ride, and building the path there makes a
-## release-built ride two and a half times as slow, so only `coast_path` keeps
-## it.
-coast_keeping : Motorcycle, [KeepPath, DropPath] -> Coast.Path
-coast_keeping = |motorcycle, keeping| {
+## Where a coast ends up, and how many steps it runs to get there.
+CoastEnd : { outcome : Coast.Outcome, steps_run : Steps }
+
+## The coast from `motorcycle`, run a step at a time until it crosses a bound,
+## gets `clear_distance` along the road, or runs `longest_coast` steps.
+coast_end : Motorcycle -> CoastEnd
+coast_end = |motorcycle| {
 	start = motorcycle.route_place.road_point
-	inset_half_width = Geom.road_half_width.minus(shoulder_margin)
-	right_bound = Across.right_of_middle(inset_half_width).max(start.across)
-	left_bound = Across.left_of_middle(inset_half_width).min(start.across)
-	var $motorcycle = motorcycle
+	bounds = coast_bounds(start.across)
+	var $point = start
 	var $steps_run = Steps.zero
-	var $path = []
-	while $steps_run < longest_coast {
-		$motorcycle = $motorcycle.motorcycle_at_next_step($motorcycle.steady_controls())
+	var $motorcycle = motorcycle
+	while $steps_run < longest_coast and is_coasting({ bounds, start, point: $point }) {
+		$motorcycle = coasting_step($motorcycle)
 		$steps_run = $steps_run.plus(Steps.one_step)
-		$path =
-			match keeping {
-				KeepPath => $path.append($motorcycle)
-				DropPath => $path
-			}
-		point = $motorcycle.route_place.road_point
-		if point.across < left_bound {
-			return { outcome: Leaves({ side: Left, after: $steps_run }), path_motorcycles: $path }
-		}
-		if point.across > right_bound {
-			return { outcome: Leaves({ side: Right, after: $steps_run }), path_motorcycles: $path }
-		}
-		if point.along.distance_from(start.along) >= Coast.clear_distance {
-			return { outcome: EndsAt(point.across), path_motorcycles: $path }
-		}
+		$point = $motorcycle.route_place.road_point
 	}
-	{ outcome: EndsAt($motorcycle.route_place.road_point.across), path_motorcycles: $path }
+	outcome =
+		if $point.across < bounds.left {
+			Leaves({ side: Left, after: $steps_run })
+		} else if $point.across > bounds.right {
+			Leaves({ side: Right, after: $steps_run })
+		} else {
+			EndsAt($point.across)
+		}
+	{ outcome, steps_run: $steps_run }
 }
+
+## How far across the road a coast may go before it counts as leaving.
+CoastBounds : { left : Across, right : Across }
+
+## The bounds of a coast that starts at `start_across`: the road's edges, inset
+## by `shoulder_margin`, or `start_across` where that is further out.
+coast_bounds : Across -> CoastBounds
+coast_bounds = |start_across| {
+	inset_half_width = Geom.road_half_width.minus(shoulder_margin)
+	{
+		left: Across.left_of_middle(inset_half_width).min(start_across),
+		right: Across.right_of_middle(inset_half_width).max(start_across),
+	}
+}
+
+## Whether a coast from `start` that has reached `point` goes on: it is within
+## `bounds`, and short of `clear_distance` along the road.
+is_coasting : {
+	bounds : CoastBounds,
+	start : Geom.RoadPoint,
+	point : Geom.RoadPoint,
+} -> Bool
+is_coasting = |{ bounds, start, point }|
+	point.across >= bounds.left
+		and point.across <= bounds.right
+		and point.along.distance_from(start.along) < Coast.clear_distance
+
+## The motorcycle one step on, holding its lean and speed.
+coasting_step : Motorcycle -> Motorcycle
+coasting_step = |motorcycle| motorcycle.motorcycle_at_next_step(motorcycle.steady_controls())
 
 ## How far inside each shoulder the rehearsal puts the road's edge: 5 cm.
 ## A coast that crosses this inset edge counts as leaving the road, so the

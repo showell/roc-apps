@@ -70,7 +70,7 @@ Rehearsal : { lean_try : LeanSearch.LeanTry, path_points : List(ArcPoint) }
 ## Where a coast of `coasting` goes, each step as a point on the arc.
 path_points_of : Motorcycle -> List(ArcPoint)
 path_points_of = |coasting|
-	Coast.coast_path(coasting).path_motorcycles.map(
+	Coast.path_motorcycles(coasting).map(
 		|path_motorcycle| {
 			point = path_motorcycle.route_place.road_point
 			start_along = motorcycle.route_place.road_point.along
@@ -82,7 +82,7 @@ rehearsals : List(Rehearsal)
 rehearsals =
 	LeanSearch.search_tries(motorcycle).map(
 		|lean_try| {
-			tried = LeanSearch.tried_motorcycle(motorcycle, lean_try)
+			tried = LeanSearch.tried_motorcycle(motorcycle, lean_try.bounds)
 			{ lean_try, path_points: path_points_of(tried) }
 		},
 	)
@@ -388,10 +388,11 @@ status_lines = |stop|
 		Shown(try) =>
 			match rehearsals.get(try - 1) {
 				Ok(rehearsal) => {
-					tried = lean_text(LeanSearch.tried_lean(rehearsal.lean_try))
+					bounds = rehearsal.lean_try.bounds
+					tried = lean_text(LeanSearch.middle_lean(bounds))
 					[
 						"Try ${try.to_str()} of ${rehearsals.len().to_str()}: lean ${tried}",
-						"Between ${lean_text(rehearsal.lean_try.low)} and ${lean_text(rehearsal.lean_try.high)}",
+						"Between ${lean_text(bounds.low)} and ${lean_text(bounds.high)}",
 						outcome_text(rehearsal),
 						verdict_text(lean_correction_of(rehearsal)),
 					]
@@ -570,7 +571,7 @@ expect
 		|{ lean_try, path_points }|
 			match (lean_try.outcome, path_points.last()) {
 				(EndsAt(end_across), Ok(end)) => end.across == end_across
-				(Leaves({ after, .. }), Ok(_)) => path_points.len() == after.to_u32().to_u64()
+				(Leaves({ after, .. }), Ok(_)) => path_points.len() == after.to_u64()
 				(_, Err(ListWasEmpty)) => False
 			},
 	)
