@@ -17,14 +17,42 @@
 --             captions and table cells. A word is a run of characters with a
 --             letter or a digit in it, so a lone `|` or `-` is no word;
 --   diagram   a ```dot fence;
---   widget    a ```widget fence;
---   image     a markdown image, `![…](…)`, or an `<img` tag, outside a fence.
+--   image     a picture the Roc code draws and the reader only looks at: a
+--             ```widget fence whose widget tutorial/book_check.mjs marks
+--             FIXED_PICTURE, or a markdown image, `![…](…)`, or an `<img`;
+--   widget    a ```widget fence the reader works, with the VCR controls or
+--             by clicking: every widget book_check.mjs gives a place to click,
+--             and `ride`, the ride itself, which runs and takes the keys.
+--
+-- book_check.mjs is the one home for which widget is which, so a widget the
+-- book uses and its table leaves out stops the run.
 --
 -- Other fences, such as ```text for a compiler's message, count toward none of
 -- these. A chapter is a `## ` heading outside a fence. A heading that starts
 -- `Appendix` or is `Credits` is an appendix.
+--
+-- A chapter holds at most MAX_PROSE_WORDS words of prose (Steve, 2026-11-13:
+-- the book stays short, and a long chapter gets edited down to its key
+-- concepts). The last line names the longest chapter, and the run fails when
+-- any chapter is over the limit, naming each one. The tutorial gate runs this
+-- after it builds the book.
 
 const BOOK = arg("book", "canvas_apps/safari/tutorial/build/tutorial.md")
+const BOOK_CHECK = "canvas_apps/safari/tutorial/book_check.mjs"
+const MAX_PROSE_WORDS = 900
+
+-- From book_check.mjs's CLICKED_AT table, each widget's name mapped to true
+-- for a fixed picture and false for one the reader works.
+function widget_kinds()
+  local kinds = {}
+  for l in split(read(BOOK_CHECK), "\n") do
+    local m = re_find(l, "^  \"\\.\\./([a-z_]+)_widget/\": (.*)$")
+    if m ~= nil then kinds[m.groups[1]] = starts_with(m.groups[2], "FIXED_PICTURE") end
+  end
+  if #keys(kinds) == 0 then fail("book_stats: no widgets in " .. BOOK_CHECK .. "'s CLICKED_AT table") end
+  return kinds
+end
+const WIDGET_KINDS = widget_kinds()
 
 -- The number of words in one line of prose.
 function word_count(l)
@@ -47,7 +75,17 @@ function chapters_of(text)
         local tag = trim(sub(l, 4))
         fence = tag == "" and "bare" or split(tag, " ")[1]
         if fence == "dot" then now.diagrams = now.diagrams + 1 end
-        if fence == "widget" then now.widgets = now.widgets + 1 end
+        if fence == "widget" then
+          local name = split(tag, " ")[2]
+          if name == "ride" then
+            now.widgets = now.widgets + 1
+          elseif not has_key(WIDGET_KINDS, name) then fail("book_stats: the widget `" .. name .. "` in " .. now.title .. " is missing from " .. BOOK_CHECK .. "'s CLICKED_AT table")
+          elseif WIDGET_KINDS[name] then
+            now.images = now.images + 1
+          else
+            now.widgets = now.widgets + 1
+          end
+        end
       else
         fence = ""
       end
@@ -88,6 +126,8 @@ const CHAPTERS = {code = 0, prose = 0, diagrams = 0, widgets = 0, images = 0}
 const APPENDICES = {code = 0, prose = 0, diagrams = 0, widgets = 0, images = 0}
 const BOOK_TOTAL = {code = 0, prose = 0, diagrams = 0, widgets = 0, images = 0}
 local number = 0
+local longest = {title = "", prose = 0}
+local too_long = {}
 print("| Chapter | Roc lines | Prose words | Diagrams | Widgets | Images |")
 print("|---|---|---|---|---|---|")
 for c in ALL do
@@ -98,9 +138,15 @@ for c in ALL do
     number = number + 1
     add(CHAPTERS, c)
     print(row(number .. ". " .. c.title, c))
+    if c.prose > longest.prose then longest = c end
+    if c.prose > MAX_PROSE_WORDS then push(too_long, c.title .. " (" .. c.prose .. ")") end
   end
   add(BOOK_TOTAL, c)
 end
 print(row("**The " .. number .. " chapters**", CHAPTERS))
 print(row("**The appendices**", APPENDICES))
 print(row("**The whole book**", BOOK_TOTAL))
+if #too_long > 0 then
+  fail("book_stats: " .. #too_long .. " chapters over " .. MAX_PROSE_WORDS .. " prose words: " .. join(too_long, ", "))
+end
+print("book_stats: every chapter within " .. MAX_PROSE_WORDS .. " prose words; the longest is " .. longest.title .. ", at " .. longest.prose)

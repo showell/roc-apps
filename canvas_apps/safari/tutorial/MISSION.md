@@ -33,6 +33,7 @@ Each axis fails in its own way, and catching each failure takes a different kind
   - each tick is a pipeline.
 - **A4.** Really teach something without forcing the issue. Most of the code is vanilla, and that's a feature. Don't invent a new Roc concept for every chapter.
 - **A5.** Say what Roc *is*. Don't bash OO or any other style.
+- **A7.** **A chapter holds at most 900 words of prose.** The book stays short. A chapter over the limit gets edited down to its key concepts; it's split only when it really holds two separate subjects, and never when it's cohesive. Edit with care around a paragraph that pays a promise or carries the flow. `tutorial/book_stats.shale` counts the words, and the tutorial gate fails a chapter that runs over. (Steve, 2026-11-13.)
 - **A6.** The scope is Safari Ride. The repository's other canvas apps are completely out of scope: never mention them.
 
 ### Axis B. Truth: every sentence matches the code today

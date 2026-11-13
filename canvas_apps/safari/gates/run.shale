@@ -156,6 +156,7 @@ end
 const SELF_PATH = GATES .. "/run.shale"
 const TUTORIAL = "canvas_apps/safari/tutorial/build.shale"
 const COLOR_ROC = "canvas_apps/safari/tutorial/color_roc.shale"
+const BOOK_STATS = "canvas_apps/safari/tutorial/book_stats.shale"
 const BOOK_NAMES = GATES .. "/book_names.shale"
 const BOOK_NEGATIVES = GATES .. "/book_negatives.shale"
 const INPUT_BITS = GATES .. "/input_bits.shale"
@@ -610,7 +611,8 @@ end
 -- tutorial/build.shale's self-test, then the tutorial's build, so a name it
 -- includes that is gone from the code fails the gates. Then color_roc.shale's
 -- self-test, which book.shale also runs, so a change to it is tested before
--- the next book build.
+-- the next book build. Last, tutorial/book_stats.shale reads the built book,
+-- and fails when a chapter runs over its limit of prose words.
 function tutorial()
   local cache = child_cache("tutorial")
   local env = cache_env(cache)
@@ -618,6 +620,14 @@ function tutorial()
     print(trim(must(run(argv, {timeout_ms = 60000, tail = 20, env = env})).out))
   end
   drop_child_cache(cache)
+  local stats = run({"shale", "--root", ".", BOOK_STATS}, {timeout_ms = 60000, tail = 3})
+  if stats.ended ~= "exit" or get(stats, "code", -1) ~= 0 then
+    print(trim(stats.out))
+    fail("safari gates: book_stats ended " .. stats.ended .. " " .. get(stats, "code", -1) .. ": a chapter runs over its limit of prose words")
+  end
+  for line in lines(stats.out) do
+    if starts_with(line, "book_stats: ") then print(line) end
+  end
   return nil
 end
 
