@@ -638,7 +638,7 @@ A sighting keeps the thing's kind and swaps its place on the road for a `Spot`, 
 
 {{code RiderView.RiderPoint}}
 
-`right` and `forward` count metres from the camera, and a negative `forward` is behind it. A `RiderView.RiderPointAhead` is the same record behind a `::`, and only `RiderView.rider_point_ahead` builds one, from a point in front of the camera. So a spot's foot is always in front of the camera, by construction. This `spot` is the one `tree_sprite` took from its setting in the {{chapter Lists and map: a far tree}} chapter.
+`right` and `forward` count metres from the camera, and a negative `forward` is behind it. A `RiderView.RiderPointAhead` is the same record behind a `::`, and only `RiderView.rider_point_ahead` builds one, from a point in front of the camera. So a spot's foot is always in front of the camera, by construction. From the foot, the ride finds where the thing lands on the screen and how big it looks there, by one rule of perspective: a thing twice as far off looks half as big, and lands twice as close to the middle of the screen. The {{chapter The math layer}} chapter shows the math. This `spot` is the one `tree_sprite` took from its setting in the {{chapter Lists and map: a far tree}} chapter.
 
 A sighting function can also return a refusal, such as `OutOfSight`, in place of a sighting. The rest of this chapter shows what happens to the sightings that are kept.
 

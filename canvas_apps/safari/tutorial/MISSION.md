@@ -91,6 +91,7 @@ Each axis fails in its own way, and catching each failure takes a different kind
 - **E3.** Repetition teaches, so keep a returning idea. A returning idea is the place for a wink ("Guess which technique comes up again?"). A guess is about an idea, never about arithmetic.
 - **E4.** No bragging that simple code is simple. No presumed reactions from the reader.
 - **E5.** Vary the chapter endings. Ending on what's still missing is a good move, but it isn't a template.
+- **E6.** **Write super tight transitions.** Two sharp sentences will often suffice. A section's theme lives in its heading; restate it at the section's end only where the ending earns it, never as a "So …" on every section. A cold reader of the whole book found the summaries read as padding over 39 chapters (Steve, 2026-11-13).
 
 ### Axis F. Vocabulary: one word for one thing
 
@@ -202,3 +203,15 @@ The work is a linear pass, one chapter at a time, in book order, starting again 
 9. The math layer, Proving it, The platform, Zooming back out, the appendices, the credits
 
 When the day runs short, the chapters Steve has already read get the lightest pass, and the rest wait at the same standard. Never lower the standard to make a date.
+
+## 4. Lessons for the next book
+
+A cold reader of the whole book, and Steve's replies to it (2026-11-13, essay notes/book-cold-review.md), set these for the books after this one.
+
+- **Define the whole book's spine before drafting chapters.** Late foundations and a crowded opening came from too little time on the book's spine, and from drafting much of it in one shot.
+- **Keep the language's thread strong in the app's chapters.** A chapter about the program still teaches or reinforces a language idea. An idea that gets one sentence in passing either earns its own place or goes.
+- **Pick a smaller codebase, or accept withheld code.** With a large program, the hard functions show up only as annotations. Quote each definition once: a repeat is a smell to catch across the whole book, not just one chapter at a time.
+- **The floor reader is ready to learn the language.** Teach what the language makes unique, at full strength. If an idea seems out of reach, the fix is to teach it more clearly, not to leave it out.
+- **The reader mostly reads.** A builder's book with exercises is out of scope, and readers read more than ever now that agents write much of the code. A short "run it yourself" section is still worth having.
+- **The voice is precise, bordering on rigor, on purpose.** The cost is a slow cadence, which the transitions rule (E6) answers.
+- **Comparisons to other languages are an open question.** Explaining the language on its own merits is simpler, and it avoids choosing which languages to compare against. One-line anchors might still help a working programmer.
