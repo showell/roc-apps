@@ -594,28 +594,7 @@ The last line puts the list together. `[trunk]` is a list of one shape, and `con
 
 Cones take far more work to build, and far off they look just like triangles, so the ride spends that work only where it shows.
 
-So a far tree is a handful of small functions over one list of tiers. The `expect` pins the tiers, each tier becomes a triangle, and one list puts the trunk first and the tiers over it. Every tree beside the road runs through this same code, wherever it stands.
-
-## Records
-
-Most of the ride's data lives in records. The book has already built records and taken them apart: a record type lists fields and their types, as `SegmentPlan` does, and `|{ top_left, width, height, fill }|` in `Shapes.rectangle` names each field of the record it's given. This short chapter adds the ways to read a field and to change one.
-
-A Roc record stays as it was made, so to change a field, the code builds a new record. The billboards' stills show how. A still's polygon is a record of its fill and its corners, and a fill is a flat color or a gradient between two colors. When the sky darkens, every color in a still darkens with it. Here's the function that returns a polygon under a darker sky:
-
-{{code StillShapes.polygon_at_darkness}}
-
-Here's what it does with records, piece by piece:
-
-| Code | Term | What it says |
-|---|---|---|
-| `stops.start_color` | field access | Reads the `start_color` field of the record `stops`. |
-| `{ ..stops, start_color: …, end_color: … }` | record update | A new record with all the fields of `stops`, except the two it names. |
-| `Linear({ ..gradient, stops: … })` | record update | A tag's record is updated the same way: a new gradient with dimmed stops, under the same tag. |
-| `{ ..polygon, fill }` | field shorthand | `fill` alone stands for `fill: fill`, the constant named just above it. |
-
-`polygon` itself stays as it was, and so does every gradient inside it.
-
-The next chapter follows the trip every thing beside the road takes, from a place on the road to the frame.
+So a far tree is a handful of small functions over one list of tiers. The `expect` pins the tiers, each tier becomes a triangle, and one list puts the trunk first and the tiers over it. Every tree beside the road runs through this same code, wherever it stands. The next chapter follows the trip around that code, from a place on the road to the frame.
 
 ## The pipeline
 
@@ -864,9 +843,15 @@ The same kind of answer runs all through Safari Ride, wherever a function can co
 
 Each tag names one way its function can fail, and the ground patch has two.
 
-A `Try` is for a value that can rightly be missing, such as a tree behind the camera. Other facts hold whenever the program is right: a share lies between 0 and 1, and the ride starts at step 0. A fact like that is an invariant. A value that breaks one means a bug, and a made-up answer would hide the bug until it surfaced somewhere far from its cause. So the program stops at once, with a `crash` and a message that says which invariant broke. Use `crash` to enforce invariants.
+A `Try` is for a value that can rightly be missing, such as a tree behind the camera. Other facts hold whenever the program is right, such as a share lying between 0 and 1. A fact like that is an invariant. A value that breaks one means a bug, and a made-up answer would hide the bug until it surfaced somewhere far from its cause.
 
-So a refusal is an ordinary value. A sighting gives back a `Try`, a `?` passes an `Err` up or unwraps an `Ok`, a function after the `?` can rename the tag on the way, and a `keep_oks` or a `match` is where the refusals stop. The kept sightings go on to be rendered. The rest of the frame is the world the things stand in, and the next chapter starts with its sky and its grass.
+So the program stops at once instead. `Fraction.of` makes a share from a ratio:
+
+{{code Fraction.of}}
+
+`from_ratio` returns a `Try`, and the `match` covers both tags. For an `Err`, `crash` stops the program with a message that says which invariant broke. Use `crash` to enforce invariants.
+
+So a refusal is an ordinary value. A sighting gives back a `Try`, a `?` passes an `Err` up or unwraps an `Ok`, a function after the `?` can rename the tag on the way, and a `keep_oks` or a `match` is where the refusals stop. A value missing only through a bug gets a `crash` instead. The kept sightings go on to be rendered. The rest of the frame is the world the things stand in, and the next chapter starts with its sky and its grass.
 
 ## The sky and the grass
 
@@ -1098,7 +1083,7 @@ Each quad goes into the frame's depth sort on its own, at a depth that's the mea
 
 {{code GuardRail.quad_rendering}}
 
-`{ ..quad, color: … }` is a record update, whose new color is the quad's own, dimmed with the sky. `map_ok` works on a `Try`: it applies its function to an `Ok` and leaves an `Err` as it is, so a quad wholly behind the camera stays refused, and `Scene` drops those with `keep_oks`.
+`{ ..quad, color: … }` is a record update: a new quad, the same as `quad` but for its color, which is dimmed with the sky. `quad` itself stays as it was. `map_ok` works on a `Try`: it applies its function to an `Ok` and leaves an `Err` as it is, so a quad wholly behind the camera stays refused, and `Scene` drops those with `keep_oks`.
 
 `rail_quads_in_view` finds each rail afresh every frame, its bars and posts from the route and the rider, and the depth sort places each one. Next come the radio towers, which go back through the pipeline as things beside the road.
 
@@ -1222,11 +1207,29 @@ Here, once more, is everything a moment holds:
 
 That's four things: the rider, the truck, the clock, and the plan for when the cat or the bird ahead starts to move. The ride carries those four from step to step, and derives everything else in a frame from them and the road.
 
+## Records
+
+`Tour.step_back` makes a new tour with a record update, and record updates run all through the ride. A Roc record stays as it was made, so a field with a new value means a new record.
+
+The motorcycle is a record of four fields: its place on the route, which way it's turned, its speed and its lean. The rider's step uses this function to hold the bike at the end of the road:
+
+{{code Motorcycle.stopped_at}}
+
+Here's the function, piece by piece:
+
+| Code | Term | What it says |
+|---|---|---|
+| `{ ..motorcycle, … }` | record update | A new record with every field of `motorcycle`, except the ones named after it. |
+| `route_place: { ..place, … }` | record update | The new `route_place` is an update of the old place in turn, and its `road_point` is an update of the old point. So the new motorcycle's `along` is `at`, three records deep. |
+| `speed: Speed.at_rest` | field | A second field with a new value. |
+
+`motorcycle` itself stays as it was, and so do `place` and its road point. Every step of the ride builds its next moment this way, out of the old moment's fields.
+
 ## Pure functions and effects
 
-The flip book turns both ways because the same moment always gives the same next moment, and the same picture. Behind that sits one Roc idea: a function's type says whether it has effects.
+The same moment always gives the same next moment, and the same picture. In Roc, a function's type guarantees it: the type says whether the function has effects.
 
-An effect is anything beyond working out an answer: reading a key, reading the time, painting a canvas. A function with effects carries two marks, one in its name and one in its type, and the compiler checks both:
+An effect is anything beyond working out an answer: reading a key, reading the time, painting a canvas. A function with effects carries two marks, one in its name and one in its type, and the compiler rejects a pure function that calls one:
 
 | Code | Term | What it says |
 |---|---|---|
@@ -1234,15 +1237,15 @@ An effect is anything beyond working out an answer: reading a key, reading the t
 | `=>` | thick arrow | A function with effects. It sits in the type in place of `->`. |
 | `!` | `!` suffix | Ends the name of every function with effects, such as `main!`, where a Roc program with effects starts. |
 
-A `match` branch's `=>` is another use of the same symbol. Every function the ride runs has the thin arrow. The effects live in the platform, under the ride's code: it times the frames, reads the keys and paints the picture.
+A `match` branch's `=>` is another use of the same symbol. Every function the ride runs has the thin arrow. The effects live in the platform, under the ride's code. The platform times the frames, reads the keys and paints the picture.
 
 ### Pausing and stepping
 
-The keys still reach the ride. Space pauses it, and while it's paused, Right and Left step it forward and back. One pure function handles the keys. It takes the model, which is the tour and whether it's paused, and a snapshot of the input, and returns the next model:
+Space pauses the ride, and Right and Left step it forward and back: one step a frame while it's paused, and four while it plays. One pure function handles the keys. It takes the model, which is the tour and whether it's paused, and a snapshot of the input, and returns the next model:
 
 {{code SafariApp.model_at_next_step from "motion = if input.key_pressed(KeySpace)" to "m.tour.step_forward()"}}
 
-Each frame, the platform reads the keys and hands the app a snapshot, a plain value. `key_pressed` says a key went down since the last frame, so one tap of Space pauses the ride once. `key_down` says a key is held, so holding Right keeps the ride moving. The same model and the same snapshot always give the same next model.
+Each frame, the platform reads the keys and hands the app a snapshot, a plain value. `key_pressed` returns whether a key went down since the last frame, so one tap of Space pauses the ride once. `key_down` returns whether a key is held, so holding Right keeps the ride moving. The same model and the same snapshot always give the same next model.
 
 So the road and the keys fix every moment of a ride, and the ride can make any moment again. The next chapter starts on the first of the four things a moment carries: the clock.
 
@@ -1565,11 +1568,7 @@ The end of a segment uses a small version of the same trying out. `cross_bend_if
 
 {{code Motorcycle.cross_bend_if_on_road}}
 
-At the end of the road, the throttle brakes the bike to rest. A last step can still carry it past the end, so `stop_at_route_end` holds it there, through a record update three levels deep:
-
-{{code Motorcycle.stopped_at}}
-
-`..motorcycle` keeps every field but the ones named, `route_place` is itself an update of the old place, and its `road_point` is an update of the old point.
+At the end of the road, the throttle brakes the bike to rest. A last step can still carry it past the end, so `stop_at_route_end` holds it there with `Motorcycle.stopped_at`, from the {{chapter Records}} chapter.
 
 ### The picture leans too
 
@@ -2422,9 +2421,7 @@ The gate makes every `expect` count. It finds each line in the source that start
 
 ### Crashes that check
 
-Some beliefs about the program are cheaper to check as it runs. `Fraction.of` is one:
-
-{{code Fraction.of}}
+Some beliefs about the program are cheaper to check as it runs. `Fraction.of`, from the {{chapter Errors as tag unions}} chapter, is one.
 
 Every `Fraction.of` in the ride enforces an invariant: a ratio outside 0 to 1 means a sum behind it is wrong, so the program stops, with a sentence that says so. `Easing.smoothstep` leans on it: its algebra keeps its answer between 0 and 1, and its `Fraction.of` checks that on every call. `Try` is the right answer when a value can honestly be missing. A wrong ratio is a bug, and a crash finds it sooner. The proof tools ride thousands of steps on every run of the gate, so each check on that path runs thousands of times.
 

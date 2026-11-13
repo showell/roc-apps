@@ -25,7 +25,6 @@ app [main!] {
 	sky: "../../sky_widget/package.roc",
 	step: "../../step_widget/package.roc",
 	stills: "../../stills_widget/package.roc",
-	tree: "../../tree_widget/package.roc",
 	truck: "../../truck_widget/package.roc",
 	widget: "../../widget_kit/main.roc",
 }
@@ -49,7 +48,6 @@ import shapes.ShapesWidgetApp
 import sky.SkyWidgetApp
 import step.StepWidgetApp
 import stills.StillsWidgetApp
-import tree.TreeWidgetApp
 import truck.TruckWidgetApp
 import game.Steps
 import lib.CanvasApp
@@ -101,7 +99,7 @@ words_shown = |canvas_app, inputs| {
 
 # The native runner plots every line of type with Font, which crashes on a
 # byte it has no glyph for, so each word a widget shows must have one. Every
-# widget's first frame is read. The two lines named are there to show the words
+# widget's first frame is read. The line named is there to show the words
 # were found at all.
 expect {
 	words = [
@@ -124,12 +122,10 @@ expect {
 		words_shown(SkyWidgetApp.canvas_app, []),
 		words_shown(StepWidgetApp.canvas_app, []),
 		words_shown(StillsWidgetApp.canvas_app, []),
-		words_shown(TreeWidgetApp.canvas_app, []),
 		words_shown(TruckWidgetApp.canvas_app, []),
 	].join()
 	words.all(Font.can_plot)
 		and words.contains("a cat crosses")
-		and words.contains("Cones({ shade: 0.5 })")
 }
 
 ## Every line of the names under the stills widget's small stills, the only

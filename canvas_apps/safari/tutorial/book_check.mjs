@@ -199,7 +199,6 @@ const CLICKED_AT = {
   "../sky_widget/": PLAY,
   "../step_widget/": PLAY,
   "../stills_widget/": { x: 0.114, y: 0.883 },
-  "../tree_widget/": FIXED_PICTURE,
   "../truck_widget/": FIXED_PICTURE,
 };
 

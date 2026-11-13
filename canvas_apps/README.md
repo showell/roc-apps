@@ -18,8 +18,7 @@ is a fixed map of the whole route, marking where a cat crosses or a bird flies,
 clicks through one step's twelve tries at a lean, `stills_widget` lays out
 every pose of the cat and the bird and shows the one clicked large, with its
 polygons counted, `gaze_widget` drags the rider past the pig that catches
-the eye, `tree_widget` is a fixed picture of three conifers at the three
-distances where their crowns differ, `far_tree_widget` is a fixed picture of one
+the eye, `far_tree_widget` is a fixed picture of one
 far conifer through a lens six times the ride's, `conifers_widget` is a fixed
 picture of the four kinds of conifer side by side through the same lens,
 `kinds_widget` is a fixed picture of a conifer, a cow, a tower, the cat and
