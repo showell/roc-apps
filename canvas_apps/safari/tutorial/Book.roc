@@ -60,7 +60,7 @@ Book := [].{
 			title: "The passage of time",
 		},
 		{
-			before: "Stepping through the ride: RideInstant",
+			before: "Stepping",
 			level: Category,
 			title: "Vehicles",
 		},
@@ -121,6 +121,8 @@ Book := [].{
 		{ chapter: "The clock", slug: "the-clock" },
 		{ chapter: "The ride instant", slug: "the-ride-instant" },
 		{ chapter: "The beacons", slug: "the-beacons" },
+		{ chapter: "The setting sun", slug: "the-setting-sun" },
+		{ chapter: "Stepping", slug: "stepping" },
 	]
 
 	## The dividers and the slugs a book is cut with.

@@ -1437,148 +1437,78 @@ A beacon goes round and round. The sun goes one way, and a lot more hangs on it.
 
 ## The setting sun
 
-Safari Ride needs a sunset. We'll build it the way we build everything here: concepts, then types, then functions.
+The sun is the one thing in the sky that moves, and a lot hangs on it. As it sinks, the sky darkens, the horizon warms, and everything the sky lights dims with it. All of that is derived from the clock alone. This chapter takes the sunset in three jobs: the sun goes down, the sky darkens, and the horizon warms.
 
-The concept is three jobs:
-
-1. Move the sun down the sky.
-2. Darken the sky.
-3. Warm the horizon.
-
-All three come from the clock, and the game stores none of them.
-
-### Get the types right
-
-The types do the work, and a sunset needs four:
-
-| Type | What it is | Under it |
-|---|---|---|
-| `Clock` | A step of the ride | A `U32` |
-| `FarHeight` | A height above the horizon of something far off, like the sun, in pixels, as the lens draws it before the view widens | An `F64`, because a shape can sit between two pixels |
-| `Fraction` | A ratio from 0 to 1, like how far toward dusk we are | An `F64` |
-| `RgbColor` | A color | An `I64`, `0xRRGGBB` |
-
-All four are opaque. Each is still a number, and the type gives it a name, so a height can't be passed where a fraction is wanted. With those in hand, each job is one or two signatures. The two jobs that change a color have a second row: the first function works out a `Fraction`, and the second turns it into a color.
-
-| Job | Function | Its type |
-|---|---|---|
-{{types row SunPath.height_at Move the sun}}
-{{types row Sky.darkness_at Darken the sky}}
-{{types row Sky.sky_top_color}}
-{{types row Sky.horizon_warmth_at Warm the horizon}}
-{{types row Sky.sky_horizon_color}}
-
-Every one is a `->`, and every one starts from a `Clock`. That's most of the design, before we've read a line of code.
-
-### The functions
-
-The sunset, from the top
-```dot
-digraph sunset {
-  node [shape=box, fontname="Helvetica"];
-  frame [label="each frame"];
-  frame -> "Sun.sun_in_view" [label="  places the sun"];
-  frame -> "Sky.colors_at" [label="  colors the sky"];
-  "Sky.colors_at" -> "Sky.sky_top_color" [label="  colors the top"];
-  "Sky.colors_at" -> "Sky.sky_horizon_color" [label="  colors the horizon"];
-  "Sky.sky_top_color" -> "Sky.darkness_at" [label="  asks how dark"];
-  "Sky.sky_horizon_color" -> "Sky.sky_top_color" [label="  starts from the top"];
-  "Sky.sky_horizon_color" -> "Sky.horizon_warmth_at" [label="  asks how warm"];
-  "Sun.sun_in_view" -> "SunPath.sun_direction_at" [label="  asks where the sun stands"];
-  "Sky.darkness_at" -> "SunPath.height_at" [label="  asks how high"];
-  "Sky.horizon_warmth_at" -> "SunPath.height_at" [label="  asks how high"];
-  "SunPath.height_at" -> "SunPath.sun_direction_at" [label="  reads the height"];
-  "SunPath.sun_direction_at" [style=bold];
-  clock [label="the clock"];
-  "SunPath.sun_direction_at" -> clock [label="  turns the sky by"];
-}
-```
-
-A box is a function, and an arrow is a call. Under the frame, `Sun.sun_in_view` does the first job. `Sky.colors_at` does the other two, as the color of the top of the sky and the color of the horizon. Every path ends at `SunPath.sun_direction_at`, the only box that does anything with the clock but pass it on, because everything in a sunset comes down to where the sun stands.
-
-Here's the top of that diagram in code. Each frame, the game asks for two things, and they make the backdrop:
-
-{{code FrameView.frame_view_at from "backdrop: {" to "sun_sighting: Sun.sun_in_view"}}
-
-`FrameView` hands the clock straight to `Sun` and `Sky`, so everything from here on is in those two and `SunPath`. Let's take the three jobs in order.
-
-### Job one: the sun goes down
+### The sun goes down
 
 ```widget sky sun
-Press play. The two middle buttons step one frame at a time, for the patient.
+Press play. The two middle buttons step one frame at a time.
 ```
 
-This widget does only the first job, so the sky stays blue. For each frame it calls `SunPath.height_at`, reads out the answer, and marks it on the chart's gold line.
-
-The sun chapter showed how `Sun.sun_in_view` places the sun on the screen. From the clock, it takes the sun's direction, a bearing and a height, from `SunPath.sun_direction_at`. The rest of the sunset needs only the height:
+This picture does only the first job, so its sky stays blue. Each frame, it asks `SunPath` how high the sun stands, reads out the answer, and marks it on the chart's gold line:
 
 {{code SunPath.height_at}}
 
-### Job two: the sky darkens
+`SunPath.sun_direction_at` works out the sun's direction at a clock, a bearing and a height, with the ride's one piece of spherical trigonometry. The rest of the sunset needs only the height.
+
+### In view, or out of view
+
+The sun stands in one direction, and the rider may be facing another. Two tags say whether it's in view:
+
+{{code Sun.Sighting}}
+
+An `OutOfView` sun paints an empty list, and a `match` on a `Sighting` handles that tag too, since a `match` covers every tag. Here's the function that decides:
+
+{{code Sun.sun_in_view}}
+
+`Lens.far_point` says where something infinitely far off lands on the screen, and refuses with `BehindCamera` when it lies behind the camera. A sun that lands somewhere is still out of view when its glow stays wholly off the screen. At step 1,529, the frame the first half held still, the sun stands behind the rider, which is why that frame showed only sky.
+
+The sun in view is a glow and a disc:
+
+{{code Sun.sun_shapes}}
+
+The glow adds its light to the sky, over the rectangle above the horizon, and the disc paints over that. The grass comes after the backdrop's sun and covers whatever of the disc has sunk below the horizon, so the sun sets behind the land by paint order alone.
+
+### The sky darkens
 
 ```widget sky sky
 Press play. Now the sky darkens too.
 ```
 
-This widget adds one call, `Sky.darkness_at`, and the sky finally does something. Its answer is the blue line. The top of the sky blends day into night, by that `Fraction`:
-
-{{code Sky.sky_top_color}}
-
-`darkness_at` works out that `Fraction`:
-
-{{code Sky.darkness_at}}
-
-It asks for the sun's height, then picks one of two shapes. They meet when the sun has fully set, one radius below the horizon, and you can see the join in the blue line. Before that, the darkness grows with the square of how far the sun has fallen since the ride began, and reaches 0.6 as the sun fully sets. After that, it rises in a straight line to full dark as the sun sinks one more radius.
+This picture adds one call, `Sky.darkness_at`, whose answer is the blue line. The {{chapter Functions}} chapter took that function apart: it asks for the sun's height and picks one of two shapes, on either side of the moment the sun has fully set:
 
 {{signatures Sky.darkness_while_up Sky.darkness_after_set}}
 
-Both sit below the module's block, so they're private. Roc needs no keyword for that.
+While the sun is up, the darkness grows with the square of how far the sun has fallen since the ride began, and reaches `darkness_at_set`, 0.6, as it fully sets. After that, the darkness climbs in a straight line to full night as the sun sinks a further `night_depth`. The two shapes meet as the sun fully sets, and you can see the join in the blue line. Both helpers take only a height, so the darkness depends on the sun's height alone.
 
-Neither has heard of the clock. The outer functions take a clock, because that's what the frame has to give. The helpers take a height, because the darkness depends on the height, and since they take nothing else, the height is all it can depend on.
+The sky's top color blends from day to night by that darkness, as the {{chapter The sky}} chapter showed, and everything the sky lights, the grass and the rock and the trees, dims through `Sky.color_at_darkness` by the same `Fraction`.
 
-### Job three: the horizon warms
+### The horizon warms
 
 ```widget sky warmth
 Press play. This is the whole sunset.
 ```
 
-This widget adds `Sky.horizon_warmth_at`, the red line. This job is polish. A sunset without it is still a sunset, just a sad one.
-
-The horizon starts from the top color and blends toward sunset red by the warmth. The warmth is scaled by `horizon_warmth_at_most`, 0.85, so a little of the sky's own color always shows:
-
-{{code Sky.sky_horizon_color}}
-
-`horizon_warmth_at` asks for the sun's height, just as dusk did:
-
-{{code Sky.horizon_warmth_at}}
-
-The horizon is warmest when the sun's height is zero. `from_horizon` is how far the sun is from the horizon, above or below it. `abs` makes the two sides match, which gives the red line its tent. `ratio_to(warmth_reach)` turns that distance into a share of 110 pixels, and `Fraction.clamp` holds the share at 1 for anything farther. The share grows with distance, but warmth should shrink with it, so `complement` turns the share into warmth: one minus the share. A height of zero gives full warmth, and 110 pixels or more gives none.
+This picture adds `Sky.horizon_warmth_at`, the red line. The horizon is warmest when the sun's height is zero, on the horizon itself. `from_horizon` is how far the sun is from it, above or below, and `abs` makes the two sides match, which gives the red line its tent. The share of `warmth_reach`, 110, is held at 1 by `Fraction.clamp`, and `complement` turns it around, so a height of zero gives full warmth, and 110 or more gives a warmth of zero.
 
 ### Going backward
 
-Play any of those widgets backward, and the sun rises. No code does that. Every function here takes a clock and answers, so it doesn't matter which way the clock runs.
+Play any of those pictures backward, and the sun rises, with the same code. Every function here takes a clock and answers, so the clock can run either way. The sun, the sky and the beacons can each be asked about any step, cold.
 
-The sun and the beacons can be asked about any step, cold. Hand `Sky.darkness_at` a clock and it answers. The rider and the truck can't do that.
+The rider and the truck are another kind of thing: the ride carries them, and moves them one step at a time. The next chapter shows what that costs.
 
-## Stepping through the ride: RideInstant
+## Stepping
 
-Where the rider and the truck are depends on where they were, so their state has to be kept. `RideInstant` keeps four things from one step to the next: the rider, the truck, the clock, and the plan for the encounter on the rider's segment. Two of those, the rider and the truck, move by their own physics. This chapter and the next few are about them.
-
-```widget step
-Press the last button, then the first.
-```
-
-Going forward, the ride has to be played, because each step starts from the one before. Going back, it only reads a list. The rider and the truck are the reason for that difference.
-
-New in this chapter:
-
-- Roc: nothing new
-- Modules: none yet. This chapter shows what calls the modules below, and the next few open them.
+Where the rider and the truck are depends on where they were a step ago, so the ride carries them in the moment and moves them one step at a time. That's the stepped kind of moving part, and this chapter shows what does the stepping and what it costs.
 
 The modules that do the stepping
 ```dot
 digraph stepped {
-  node [shape=box, fontname="Helvetica"];
+  rankdir=TB;
+  nodesep=0.5;
+  ranksep=0.6;
+  node [shape=box, fontname="Helvetica", fontsize=18, margin="0.25,0.12"];
+  edge [fontname="Helvetica", fontsize=16];
   RideInstant [style=bold];
   RideInstant -> Rider [label="  steps the rider"];
   RideInstant -> TruckJourney [label="  steps the truck"];
@@ -1594,21 +1524,21 @@ digraph stepped {
 }
 ```
 
-A box is a module, and an arrow points to a module it calls.
+A box is a module, and an arrow points to a module it calls. `RideInstant.next`, from the {{chapter The ride instant}} chapter, steps the rider and the truck, and the modules below them do the work.
 
-Here's the step again, this time whole. Its body is a block: names, then a record, which is the value of the block. The names come in a fixed order, and the order matters. First the rider reads how far the encounter on its segment has got, at the old clock. The code calls that its stage, and the cat chapter explains it. Then the rider steps, and then the clock ticks. Then the truck and the encounter plan answer the rider who has just moved. The rider never reads the truck.
+### The step function
 
-{{code RideInstant.next}}
+`Clock.next`, `Rider.rider_at_next_step` and `TruckJourney.truck_progress_at_next_step` all have the same shape: a value goes in, and the next value comes out. Call that a step function. The ride holds a rider, and another rider one step on, and the old one stays as it was.
 
-`Clock.next`, `Rider.rider_at_next_step` and `TruckJourney.truck_progress_at_next_step` all have the same shape: a value goes in, and the next value comes out. Call that *the step function*. There's no mutable rider being nudged. There's a rider, and another rider one step on.
+### What stepping costs
 
-Stepping has a cost, which shows up when we compare it with the sun:
+Stepping has a cost, which shows beside the sun:
 
-- We can ask about the sun at any step. To find a truck at step 4,000, we have to play the ride that far, or write the answer down by hand.
-- A wrong sky only affects the frames it touches. A wrong step moves the rider for the rest of the ride.
-- The lines of `RideInstant.next` have to run in order. Frames can be worked out in any order.
+- The sun can be asked about any step, cold. To find the truck at step 4,000, the ride has to play that far.
+- A wrong sky spoils only the frames it touches. A wrong step moves the rider for the rest of the ride.
+- The lines of `RideInstant.next` run in order. Frames can be worked out in any order.
 
-The rider's step is the bigger of the two, and it takes up the next four chapters. The truck gets the three chapters after those.
+So the stepped parts get the most care. The rider's step takes the next four chapters, and the truck's the three after those.
 
 ## The rider
 
