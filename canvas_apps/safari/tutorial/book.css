@@ -228,13 +228,13 @@ a:has(> .number) { padding-left: 1.7em; text-indent: -1.7em; }
 
 /* The table of contents */
 
-ol.contents { max-width: 40rem; margin: 0; padding: 0; list-style: none; font: 0.9rem/1.45 var(--plain); }
-ol.contents > li { margin: 0 0 1rem; }
-ol.contents > li.part { margin: 2rem 0 0.8rem; padding-bottom: 0.3rem; border-bottom: 1px solid var(--rule); color: var(--accent); font-size: 1.15rem; font-weight: 700; }
-ol.contents > li.category { margin: 1.2rem 0 0.6rem; color: var(--quiet); font-size: 0.95rem; font-style: italic; }
+ol.contents { max-width: 34rem; margin: 0 auto; padding: 0; list-style: none; font: 0.9rem/1.45 var(--plain); }
+ol.contents > li { margin: 0 0 1rem; padding-left: 1.6rem; }
+ol.contents > li.part { margin: 2rem 0 0.8rem; padding: 0 0 0.3rem; border-bottom: 1px solid var(--rule); color: var(--accent); font-size: 1.15rem; font-weight: 700; }
+ol.contents > li.category { margin: 1.2rem 0 0.6rem; padding-left: 0.8rem; color: var(--quiet); font-size: 0.95rem; font-style: italic; }
 ol.contents > li > a { display: block; color: var(--ink); font-weight: 600; text-decoration: none; }
 ol.contents a:hover { color: var(--accent); }
-ol.contents .sections { margin: 0.15rem 0 0; padding-left: 1.7em; list-style: none; }
+ol.contents .sections { margin: 0.15rem 0 0; padding-left: 2.2em; list-style: none; }
 ol.contents .sections li { margin: 0.1rem 0; }
 ol.contents .sections a { color: var(--quiet); text-decoration: none; }
 
