@@ -228,20 +228,15 @@ a:has(> .number) { padding-left: 1.7em; text-indent: -1.7em; }
 
 /* The table of contents */
 
-/* One column that breathes. A part's big icon sits in a gutter to the left of
-   its title, and the categories and chapters are indented by that gutter, so
-   every chapter title lines up under its part's title. */
-ol.contents { max-width: 46rem; margin: 0; padding: 0; list-style: none; font: 1rem/1.5 var(--plain); }
-ol.contents > li { margin: 0 0 1.4rem; padding-left: 5rem; }
-ol.contents > li.part { display: flex; align-items: center; gap: 1.2rem; margin: 3.5rem 0 1.6rem; padding: 0 0 0.6rem; border-bottom: 1px solid var(--rule); color: var(--accent); font-size: 1.7rem; font-weight: 700; }
-ol.contents > li.part .icon { width: 3.8rem; font-size: 3.4rem; line-height: 1; text-align: center; }
-ol.contents > li.category { display: flex; align-items: center; gap: 0.8rem; margin: 2.4rem 0 1.1rem; color: var(--quiet); font-size: 1.25rem; font-style: italic; }
-ol.contents > li.category .icon { width: 2.4rem; font-size: 2.1rem; line-height: 1; text-align: center; }
+ol.contents { max-width: 38rem; margin: 0; padding: 0; list-style: none; font: 0.9rem/1.4 var(--plain); }
+ol.contents > li { margin: 0 0 0.9rem; }
+ol.contents > li.part { margin: 1.8rem 0 0.6rem; padding-bottom: 0.3rem; border-bottom: 1px solid var(--rule, currentColor); color: var(--accent); font-size: 1.15rem; font-weight: 700; }
+ol.contents > li.category { margin: 0.9rem 0 0.5rem; color: var(--quiet); font-style: italic; }
 .icon { display: inline-block; width: 1.6em; font-style: normal; }
-ol.contents > li > a { display: block; color: var(--ink); font-size: 1.1rem; font-weight: 600; text-decoration: none; }
+ol.contents > li > a { display: block; color: var(--ink); font-weight: 600; text-decoration: none; }
 ol.contents a:hover { color: var(--accent); }
-ol.contents .sections { margin: 0.3rem 0 0; padding-left: 1.7em; list-style: none; }
-ol.contents .sections li { margin: 0.15rem 0; }
+ol.contents .sections { margin: 0.15rem 0 0; padding-left: 1.7em; list-style: none; }
+ol.contents .sections li { margin: 0.1rem 0; }
 ol.contents .sections a { color: var(--quiet); text-decoration: none; }
 
 /* Previous and next */
@@ -292,10 +287,6 @@ ol.contents .sections a { color: var(--quiet); text-decoration: none; }
   figure.widget { margin-inline: -1rem; }
   figure.widget figcaption { padding-inline: 1rem; }
   iframe.canvas-app { border-radius: 0; }
-  ol.contents > li { padding-left: 2.8rem; }
-  ol.contents > li.part { font-size: 1.35rem; }
-  ol.contents > li.part .icon { width: 2rem; font-size: 2rem; }
-  ol.contents > li.category .icon { width: 1.6rem; font-size: 1.4rem; }
   figure.listing { margin-inline: -0.5rem; }
   figure.listing figcaption { padding-inline: 0.6rem; }
   figure.listing pre { padding-inline: 0.6rem; font-size: 0.72rem; tab-size: 2; }
