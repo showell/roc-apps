@@ -81,7 +81,7 @@ Tour :: {
 	## The tour a step back. At the ride's start there is nothing behind it,
 	## so it stays there.
 	step_back : Tour -> Tour
-	step_back = |Tour.(tour)| {
+	step_back = |Tour.(tour)|
 		match tour.past_instants.last() {
 			Ok(previous_instant) => {
 				past_instants = tour.past_instants.drop_last(1)
@@ -89,7 +89,6 @@ Tour :: {
 			}
 			Err(ListWasEmpty) => Tour.(tour)
 		}
-	}
 
 	## The tour stepped on until the rider is on another of the route's
 	## segments, which are its scenes. Every ride finishes and starts again on

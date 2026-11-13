@@ -32,12 +32,13 @@ Beacon :: Fraction.{
 	at : Beacon.TowerKey, Clock -> Beacon
 	at = |tower, clock| Beacon.(beacon_brightness(Beacon.blink_phase(tower, clock)))
 
-	## The phase of the beacon of `tower` at `clock`: the steps since the
-	## ride's start, plus the beacon's head start. Each whole `beacon_period`
-	## on is the same point of the blink, counted from where it starts dark.
+	## The phase of the beacon of `tower` at `clock`: how many steps into its
+	## blink it is, from 0, where it starts dark, up to one `beacon_period`. It is
+	## the steps since the ride's start, plus the beacon's head start, wrapped
+	## to one blink.
 	blink_phase : Beacon.TowerKey, Clock -> Steps
 	blink_phase = |tower, clock|
-		clock.steps_since(Clock.start).plus(head_start(tower))
+		into_blink(clock.steps_since(Clock.start).plus(head_start(tower)))
 
 	## A beacon blinks once in this many steps of the ride.
 	beacon_period : Steps
@@ -74,12 +75,17 @@ Beacon :: Fraction.{
 ## from the one at the end, so the two blink opposite each other.
 head_start : Beacon.TowerKey -> Steps
 head_start = |{ segment, place }| {
-	at_end = beacon_stagger.times(segment.to_u32()).wrapped_to(Beacon.beacon_period)
+	at_end = into_blink(beacon_stagger.times(segment.to_u32()))
 	match place {
 		AtEnd => at_end
-		Midway => at_end.plus(half_period).wrapped_to(Beacon.beacon_period)
+		Midway => into_blink(at_end.plus(half_period))
 	}
 }
+
+## `steps` brought inside one blink: so many steps into a blink, from 0 up to
+## one `beacon_period`.
+into_blink : Steps -> Steps
+into_blink = |steps| steps.wrapped_to(Beacon.beacon_period)
 
 ## Each segment's beacon starts this many steps further into its blink than the
 ## last one's. The number shares no factor with the period, so the first
@@ -94,8 +100,7 @@ half_period = Steps.of(Beacon.beacon_period.to_u32() // 2)
 ## How bright a beacon is `phase` steps into its blink.
 beacon_brightness : Steps -> Fraction
 beacon_brightness = |phase| {
-	wrapped = phase.wrapped_to(Beacon.beacon_period).to_f64()
-	angle = 2.0 * F64.pi * wrapped / Beacon.beacon_period.to_f64()
+	angle = 2.0 * F64.pi * phase.to_f64() / Beacon.beacon_period.to_f64()
 	Fraction.of((1.0 - angle.cos()) / 2.0)
 }
 
@@ -182,10 +187,6 @@ expect
 		(beacon_brightness(Steps.of(60)).to_f64(), 1.0),
 		(beacon_brightness(Steps.of(30)).to_f64(), 0.5),
 		(beacon_brightness(Steps.of(90)).to_f64(), 0.5),
-		(beacon_brightness(Steps.of(120)).to_f64(), 0.0),
-		(beacon_brightness(Steps.of(180)).to_f64(), 1.0),
-		(beacon_brightness(Steps.of(300)).to_f64(), 1.0),
-		(beacon_brightness(Steps.of(240)).to_f64(), 0.0),
 	].all(|(got, want)| (got - want).abs() <= 0.0000001)
 
 ## How bright the first segment's beacon at `place` is at `step` of the ride.
@@ -224,8 +225,7 @@ expect
 		(Route.SegmentIndex.first, AtEnd, 5519, 119.0),
 	].all(
 		|(segment, place, step, want)| {
-			phase = Beacon.blink_phase({ segment, place }, Clock.at_step(step))
-			phase.wrapped_to(Beacon.beacon_period).to_f64() == want
+			Beacon.blink_phase({ segment, place }, Clock.at_step(step)).to_f64() == want
 		},
 	)
 

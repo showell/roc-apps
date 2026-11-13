@@ -130,6 +130,10 @@ Book := [].{
 		{ chapter: "The truck", slug: "the-truck" },
 		{ chapter: "The truck's motion", slug: "the-trucks-motion" },
 		{ chapter: "The truck's lights", slug: "the-trucks-lights" },
+		{ chapter: "The cat", slug: "the-cat" },
+		{ chapter: "The bird", slug: "the-bird" },
+		{ chapter: "What a cat does to the rider", slug: "what-a-cat-does-to-the-rider" },
+		{ chapter: "Rehearsal", slug: "rehearsal" },
 	]
 
 	## The dividers and the slugs a book is cut with.

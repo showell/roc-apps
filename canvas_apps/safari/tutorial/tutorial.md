@@ -1399,7 +1399,7 @@ A beacon follows three rules:
 2. Neighboring towers start their blinks at different points, so the towers along a road blink at different times.
 3. The second tower halfway along a long segment blinks exactly opposite the one at the segment's end.
 
-Each rule works from the clock alone. Ask a beacon about step 5,430 cold, and it answers. So the ride derives every beacon afresh each frame, from the clock: derived, in its purest form.
+Each rule works from the tower and the clock alone. Ask a beacon about step 5,430 cold, and it answers. So the ride derives every beacon afresh each frame, from the clock: derived, in its purest form.
 
 ### Asking for a beacon
 
@@ -1415,7 +1415,7 @@ A `Beacon` is opaque, around a `Fraction`, its brightness. Inside the module, `B
 
 {{code Beacon.blink_phase}}
 
-`clock.steps_since(Clock.start)` turns a moment into a length: the steps since the ride began. Adding the beacon's head start gives its phase, and `wrapped_to` brings that back inside one blink, so a phase of 130 is a phase of 10. A cosine turns the phase into a brightness:
+`clock.steps_since(Clock.start)` turns a moment into a length: the steps since the ride began. Adding the beacon's head start, and bringing the sum inside one blink with `into_blink`, gives its phase: a sum of 130 steps is a phase of 10. A cosine turns the phase into a brightness:
 
 {{code Beacon.beacon_brightness}}
 
@@ -1887,7 +1887,7 @@ Placement works a point at a time. Projection works a face at a time, for two re
 
 ### Placement: one rigid body
 
-A truck is rigid, so every corner moves together. `TruckSighting` finds the truck on the road ahead and works out two things once: the truck's spot, and which of its lights are on.
+A truck is rigid, so every corner moves together. `TruckSighting` finds the truck on the road ahead and works out the truck's spot once. Which of its lights are on is worked out before, from the sky and the truck's pace, and the sighting carries it along.
 
 {{code Pipeline.Sighted}}
 
@@ -1924,7 +1924,7 @@ The truck is what the rider chases. It starts 500 metres up the road, and for mo
 | 4,000 | 4,796 metres | 5,051 metres | 255 metres |
 | 6,000 | 6,790 metres | 6,931 metres | 141 metres |
 
-The closest the rider gets is 50 metres, at step 6,374. After that the rider slows to stop at the route's end, at step 6,746. The truck drives on, past the end of the route, and vanishes, since the ride draws only what's on the route. It stays ahead to the last. Some riders have complained about the darn truck, and that's the design. At least for now haha.
+The closest the rider gets is 50 metres, at step 6,374. After that the rider slows to stop at the route's end, at step 6,746. The truck drives on, past the end of the route, and vanishes, since the ride draws only what's on the route. It stays ahead to the last, by design.
 
 ### A tease, carried out by physics
 
@@ -1977,7 +1977,7 @@ digraph truck_motion {
 
 {{code RideInstant.next from "truck = TruckJourney.truck_progress_at_next_step(" to "{ rider_distance: rider_place.distance_along(route), route },"}}
 
-That record is the whole of the chase. `TruckJourney` and the rider's modules stand apart, each importing only its own. What the two share is `VehicleLimits`, the limits both keep to, which is where the truck's 10% comes from.
+That record is the whole of the chase. `TruckJourney` and the rider's modules stand apart, each importing only its own. What the two share is `VehicleLimits`, the limits both keep to. The truck's 10% is its own, `chase_margin` in `TruckJourney`.
 
 The step works out the tease, then looks for the next bend:
 
@@ -2007,7 +2007,7 @@ That's a truck you can chase. The next chapter lights it.
 
 ## The truck's lights
 
-The ride runs from day into night, so the truck's headlights come on near the end. The truck brakes for bends, so its brake lights show whenever you're close to it, even by day. The truck drives exactly the same with its lights on or off.
+The ride runs from day into night, so the truck's headlights come on near the end. The truck brakes for bends, so its brake lights show while it slows for one, even by day. The truck drives exactly the same with its lights on or off.
 
 Each frame, `FrameView` builds both lamps together. It hands the sky's darkness to `TruckHeadlights` and the truck's pace to `TruckBrakeLights`:
 
@@ -2065,16 +2065,11 @@ A cat walks out into the lane, freezes as the rider bears down on it, and leaps 
 Press play and watch the crossing.
 ```
 
-Play it, and the gap falls from 50 metres to 0, with the rider held at a metre a step. The cat waits on the right verge until 41 metres, where the last line changes to "The rider may not accelerate". It walks out, and at 31 metres it freezes in the lane. It stays frozen until 7 metres, where it coils, leaps at 6 and lands at 4. At 3 metres it has collapsed on the far verge, and the rider may accelerate again. Below that, nothing changes.
-
-New in this chapter:
-
-- Roc: a list of frames as data; a `crash` that the data rules out
-- Modules: `CatCrossing`, `Cat`, `Animation`, `EncounterPlan`, `EncounterPoses`, `EncounterSighting`
+Play it, and the gap falls from 50 metres to 0, with the rider held at a metre a step. The cat waits on the right verge until 41 metres, where the last line changes to say the rider must hold the throttle. It walks out, and at 31 metres it freezes in the lane. It stays frozen until 7 metres, where it coils, leaps at 6 and lands at 4. At 3 metres it has collapsed on the far verge, and the rider may accelerate again. Below that, the picture stays as it is.
 
 ### Two halves, and one fact remembered
 
-A crossing comes in two halves. `CatCrossing` is what the cat does: where it crosses, and what it does at each step of its crossing. `Cat` is how it looks this frame, which is just its pose. The pose type, `CatPose`, is defined in `CatCrossing`, not in `Cat`, because the crossing is what changes the pose:
+A crossing comes in two halves. `CatCrossing` is what the cat does: where it crosses, and what it does at each step of its crossing. `Cat` is how it looks this frame, which is just its pose. The pose type, `CatPose`, is defined in `CatCrossing`, because the crossing is what changes the pose:
 
 {{code Cat.Cat from "Cat := {" to "}.{"}}
 
@@ -2121,17 +2116,17 @@ The cat's span is its 38 frames, ending 3 metres short:
 
 {{code CatCrossing.crossing_span}}
 
-The plan is made on the first step where the rider is within reach. Until then, and while the rider is at rest, nothing is planned:
+The plan is made on the first step where the rider is within reach. Until then, and while the rider is at rest, the plan is `Unplanned`:
 
 {{code EncounterPlan.plan_for}}
 
-After that one look, the cat doesn't care what the rider does. If the rider brakes, the cat still crosses on time, and the rider simply arrives a little later.
+After that one look, the cat goes its own way, whatever the rider does. If the rider brakes, the cat still crosses on time, and the rider simply arrives a little later.
 
 Once a plan exists, the ride's clock says where the animation has got to. That's a `Stage`:
 
 {{code Animation.Stage}}
 
-`Waiting` before it starts, `Playing` while it runs, counting steps in, and `Past` after it ends, counting steps since. The tags carry only what each case needs, so there's no step count to misread while the cat is waiting.
+`Waiting` before it starts, `Playing` while it runs, counting steps in, and `Past` after it ends, counting steps since. The tags carry only what each case needs, so `Waiting` is the bare tag, and a step count comes only with the cases it counts.
 
 A plan and the clock together make a `Timing`:
 
@@ -2147,7 +2142,7 @@ A `Timing` and the animation's length make the `Stage`:
 
 Each step, the world and the rider change each other, and the order matters. The rider reacts to the cat as it stood at the start of the step: if the crossing is playing, the throttle holds. Then the rider moves, and the ride checks the plan again. If the moved rider has just come within reach, the plan is made at the new clock. At each new segment the plan is forgotten, because only the encounter on the rider's own segment is ever live.
 
-So within one step, the rider answers the world, and then the world answers the rider. The cat never sees the rider again once it's planned, but the rider sees the cat every step.
+So within one step, the rider answers the world, and then the world answers the rider. The cat looks at the rider once, when it's planned, and the rider looks at the cat every step.
 
 ### What it looks like
 
@@ -2175,7 +2170,7 @@ The leap is four keyframes, set by eye:
 
 {{code CatCrossing.crossing_timeline}}
 
-The span and the timeline both come from the one list, `crossing_frames`, so the animation's length and its frames can't disagree.
+The span and the timeline both come from the one list, `crossing_frames`, so the animation's length always matches its frames.
 
 ### How a timeline plays
 
@@ -2187,11 +2182,11 @@ The timeline answers with a `match` on the stage and a lookup in the list:
 
 {{code Animation.Timeline from "instant : Animation.Timeline" to "Past(_) => timeline.after"}}
 
-A `Playing` stage past the end of the frames would be a bug, and the timeline crashes rather than guess. It can't happen here, because the length the ride plans by is the length of the list.
+A `Playing` stage past the end of the frames would be a bug, and the timeline crashes on it. Here the length the ride plans by is the length of the list, so every `Playing` stage finds its frame.
 
 ### Getting it on screen
 
-The cat reaches the screen in two parts, and the camera is only in the second. First, `EncounterPoses` works out where each cat in view stands this frame, with no camera at all. Only the rider's own segment plays its crossing; a cat on a segment ahead is still waiting behind its tree:
+The cat reaches the screen in two parts, and the camera is only in the second. First, `EncounterPoses` works out where each cat in view stands this frame. Only the rider's own segment plays its crossing; a cat on a segment ahead is still waiting behind its tree:
 
 {{code EncounterPoses.cat_poses}}
 
@@ -2212,11 +2207,6 @@ Press play and watch the bird fly.
 ```
 
 The widget's camera stays put, 18 metres short of the first tree. The gap counts down as if a rider were coming, and it only drives the clock. Play it, and the gap falls from 75 metres to 0, with the rider held at 1.25 metres a step. The bird sits on the tip of the left tree, 6.4 metres up, until a gap of 60 metres. It takes off side on, turns away at about 55 metres, and is highest, 10.7 metres up, near the middle of its flight, shrinking as it goes. It starts to dive at a gap of 20 metres, and at 15 it's perched on the tip of the far tree, 4.9 metres up. Below that, the picture stays as it is.
-
-New in this chapter:
-
-- Roc: tags inside tags, opening a `Try` by hand, `match` as an expression
-- Modules: `BirdFlight`, `Bird`
 
 ### Two halves
 
@@ -2296,9 +2286,9 @@ Then the bird picks where to fly: the first tree on the far side of the road at 
 
 {{code BirdFlight.flight_from}}
 
-`find_first` answers a `Try`, and the `match` opens it by hand, turning "not found" into the bird's own error, `NoTreeToFlyTo`. The bird always starts on the left because its perched and side-on stills face right and are never mirrored, so on a left tree it faces the road.
+`find_first` answers a `Try`, and the `match` opens it by hand, turning a failed search into the bird's own error, `NoTreeToFlyTo`. The bird always starts on the left because its perched and side-on stills always face right, so on a left tree it faces the road.
 
-The segment puts the two together. A route that plans a bird on a segment with no tree for it is a bug, so each failure crashes with its own reason:
+The segment puts the two together. A route that plans a bird on a segment lacking a perch or a tree to fly to is a bug, so each failure crashes with its own reason:
 
 {{code Segment.from_choices from "BirdHere =>" to "QuietRoad => QuietRoad"}}
 
@@ -2306,7 +2296,7 @@ The segment puts the two together. A route that plans a bird on a segment with n
 
 ### Getting it on screen
 
-The bird reaches the screen the way the cat does: `EncounterPoses` places it with no camera, and `EncounterSighting` asks where the camera sees it. Only the rider's own segment plays its flight. A bird on a segment ahead is still perched on its first tree.
+The bird reaches the screen the way the cat does: `EncounterPoses` places it, and `EncounterSighting` asks where the camera sees it. Only the rider's own segment plays its flight. A bird on a segment ahead is still perched on its first tree.
 
 `Bird` draws it from its still, at its height:
 
@@ -2314,16 +2304,11 @@ The bird reaches the screen the way the cat does: `EncounterPoses` places it wit
 
 A perched bird stands exactly where its tree's top is, at the same depth, and the scene paints trees before birds when depths tie, so the bird is drawn over its tree.
 
-The bird asks nothing of the rider, so the rider's reactions pass it by. All it adds to the game is a list of poses, a path, and the stills to draw them.
+The bird is there only to be seen, so the rider's reactions pass it by. All it adds to the game is a list of poses, a path, and the stills to draw them.
 
 ## What a cat does to the rider
 
 A crossing cat asks two things of the rider: hold the throttle, and look. Both are the rider's own reactions. They live on the rider's side, in one module, `EncounterReaction`, which knows which encounters ask anything of the rider.
-
-New in this chapter:
-
-- Roc: a `match` inside a `match`
-- Modules: `EncounterReaction`, `Attention`
 
 The modules around `EncounterReaction`
 ```dot
@@ -2342,15 +2327,15 @@ digraph reaction {
 
 ### When the rider feels it
 
-The order inside a step matters here. The rider reacts to the cat as it stood at the start of the step, then moves. Only after the move does the ride make its plan, if the rider has just come within reach. So on the step the crossing is planned, the rider hasn't felt it yet; the hold starts on the next step. The camera, drawing the frame, reads the cat as it stands now.
+The order inside a step matters here. The rider reacts to the cat as it stood at the start of the step, then moves. Only after the move does the ride make its plan, if the rider has just come within reach. So the hold starts on the step after the crossing is planned. The camera, drawing the frame, reads the cat as it stands now.
 
-Once planned, the cat never reads the rider again. The rider's speed sets the cat off once, and from then on the effect runs one way: the cat keeps the rider from speeding up, and nothing the rider does moves the cat.
+The rider's speed sets the cat off once, and from then on the effect runs one way: the cat keeps the rider from speeding up, and moves on the ride's clock alone.
 
 ### Hold the throttle
 
-A limit on the throttle is a `ThrottleLimit`, from the throttle chapter: either nothing, or at most some acceleration.
+A limit on the throttle is a `ThrottleLimit`, from the throttle chapter: either `NoLimit`, or `AtMost` some acceleration.
 
-While a cat crosses, the rider may not speed up. That's `AtMost(Acceleration.steady)`, which caps the acceleration at zero without braking:
+While a cat crosses, the rider's speed can only hold or fall. That's `AtMost(Acceleration.steady)`, which caps the acceleration at zero:
 
 {{code EncounterReaction.encounter_throttle}}
 
@@ -2360,7 +2345,7 @@ The cat's limit is one of the four in the throttle's chain of limits, beside the
 
 ### Look
 
-How hard something holds the rider's eye is an `Attention`. A full look to the side is 1, and a crossing cat holds the eye harder than that, so underneath it's an `F64`, not a `Fraction`:
+How hard something holds the rider's eye is an `Attention`. A full look to the side is 1, and a crossing cat holds the eye harder than that, so underneath it's an `F64`, which can go past 1:
 
 {{code Attention.Attention from "Attention :: F64.{" to "Attention :: F64.{"}}
 
@@ -2376,11 +2361,11 @@ The cat's pull rises as it crosses, up to its peak of 1.8, then fades over 83 st
 
 `Rider.attention` takes the stronger of two pulls: the cat's, and the depth of the rider's last look, which lingers after the eyes come home. The camera widens its view for that attention, or for the lean, whichever asks for the wider view. That's how a crossing cat seems to fill more of the picture.
 
-Each segment has one encounter at most: a cat, a bird, or a quiet road. A cat asks for both, a bird for neither, and the rider's reactions to everything else, the bends and the pigs, live in the rider's own chapters.
+Each segment has one encounter at most: a cat, a bird, or a quiet road. Only a cat asks for either, and it asks for both. The rider's reactions to everything else, the bends and the pigs, live in the rider's own chapters.
 
 ## Rehearsal
 
-The rider has no steering wheel. Nothing tells it where to go. Each step, it has to choose a lean, and it does that by working out what would happen. Call this *rehearsal*: run the real rules on a pretend copy, read the result, and throw it away.
+The rider steers itself, by leaning. Each step, it has to choose a lean, and it does that by working out what would happen. Call this *rehearsal*: run the real rules on a pretend copy, read the result, and throw it away.
 
 Safari Ride's rider steers by rehearsing. Each step it tries twelve leans. It keeps a low and a high bound on the lean, and each try moves one of them in. After the twelfth try, it takes the lean halfway between the two bounds.
 
@@ -2388,12 +2373,7 @@ Safari Ride's rider steers by rehearsing. Each step it tries twelve leans. It ke
 Click a mark to see that try at a lean.
 ```
 
-Each try lets a motorcycle that doesn't exist coast down the road with one lean, and the white arc is where it goes. The yellow line is the road's middle, where the search wants each coast to end. A try that ends left of it sends the next try further right, and one that ends right of it sends the next further left, and by the twelfth they've closed in. This is step 374 of the ride, just after a bend.
-
-New in this chapter:
-
-- Roc: a `while` that stops early, with `return`; `for` over a range
-- Modules: `Coast`, `LeanSearch`
+Each try lets a pretend motorcycle coast down the road with one lean, and the white arc is where it goes. The yellow line is the road's middle, where the search wants each coast to end. A try that ends left of it sends the next try further right, and one that ends right of it sends the next further left, and by the twelfth they've closed in. This is step 374 of the ride, just after a bend.
 
 The calls of one rehearsal
 ```dot
@@ -2417,7 +2397,7 @@ digraph rehearsal {
 }
 ```
 
-`Coast` answers one question. If the rider stopped changing anything now, and coasted, what would happen? It takes the motorcycle alone, never the eyes, and runs the physics. The step is the same `Motorcycle.motorcycle_at_next_step` that moves the real rider, handed `steady_controls()`: the current lean, and no acceleration. The step is a function, so a pretend motorcycle can be stepped as easily as the real one.
+`Coast` answers one question. If the rider stopped changing anything now, and coasted, what would happen? It takes only the motorcycle, leaving the eyes out, and runs the physics. The step is the same `Motorcycle.motorcycle_at_next_step` that moves the real rider, handed `steady_controls()`: the current lean, and an acceleration of zero. The step is a function, so a pretend motorcycle can be stepped as easily as the real one.
 
 {{code Coast.coast_outcome}}
 
@@ -2429,11 +2409,11 @@ The coast's bounds are the road's edges, 5 centimetres in, or wherever it starts
 
 {{code Coast.Outcome}}
 
-`LeanSearch` asks `Coast` that question at twelve different leans. The rider wants the coast to end near the middle of the road. More lean to the right always moves the end of a coast to the right, so each try can rule out half the leans left between the bounds. That's a bisection, a binary search over leans. It's a `for` loop, with `$bounds.low` and `$bounds.high` closing in on each other. `LeanSearch.tried_motorcycle` is the motorcycle with the lean halfway between the bounds. It doesn't exist, and `Coast` gives it a future that didn't happen:
+`LeanSearch` asks `Coast` that question at twelve different leans. The rider wants the coast to end near the middle of the road. More lean to the right always moves the end of a coast to the right, so each try can rule out half the leans left between the bounds. That's a bisection, a binary search over leans. It's a `for` loop, with `$bounds.low` and `$bounds.high` closing in on each other. `LeanSearch.tried_motorcycle` is the motorcycle with the lean halfway between the bounds. It's pretend, and `Coast` gives it a pretend future:
 
 {{code LeanSearch.search_tries from "lean_try = {" to "$bounds = bounds_after(lean_try)"}}
 
-The search starts with bounds a degree either side of the current lean, `max_lean_change`, so the lean it picks is never more than a degree from the last. That's what stops the bike flicking from one lean to another. Which way each try sends the next is a `match` on what the rehearsal found. Running off the left means more right, and running off the right means more left. A coast that stays on the road compares where it ends with `aimed_across`, the road's middle:
+The search starts with bounds a degree either side of the current lean, `max_lean_change`, so the lean it picks is always within a degree of the last. That's what stops the bike flicking from one lean to another. Which way each try sends the next is a `match` on what the rehearsal found. Running off the left means more right, and running off the right means more left. A coast that stays on the road compares where it ends with `aimed_across`, the road's middle:
 
 {{code LeanSearch.lean_correction}}
 
@@ -2443,9 +2423,9 @@ After the last try, the lean it keeps is the midpoint of the bounds that try nar
 
 `RiderMind.controls` calls that on its first line, and on its second asks the throttle about the motorcycle at that lean. That's where the rehearsals start: `RiderMind.controls` is the top of the calls in the picture above.
 
-Each real step of the ride runs thirteen coasts that never happen: twelve for the lean, and one more in `Throttle`, which uses `Coast` to ask whether the road is about to run out.
+Each real step of the ride runs thirteen pretend coasts: twelve for the lean, and one more in `Throttle`, which uses `Coast` to ask whether the road is about to run out.
 
-In a language with mutable objects, a rehearsal has a problem to solve before it starts. It needs to copy the rider, or save it and restore it, and it needs to be sure the copy shares nothing with the original, all the way down. It needs to know that the physics doesn't quietly update something global, like a scoreboard or a random number generator. In Roc, none of that comes up. `Motorcycle.motorcycle_at_next_step` has a `->`, so it can't reach anything but its arguments. The old motorcycle stays intact because every value does. A rehearsal that goes wrong costs nothing, and `LeanSearch` is about 100 lines above its tests.
+In a language with mutable objects, a rehearsal has a problem to solve before it starts. It needs to copy the rider, or save it and restore it, and it needs to be sure the copy is separate from the original, all the way down. It needs to know that the physics leaves everything global alone, like a scoreboard or a random number generator. In Roc, those problems go away. `Motorcycle.motorcycle_at_next_step` has a `->`, so it reaches only its arguments. The old motorcycle stays intact because every value does. A rehearsal that goes wrong is simply thrown away, and `LeanSearch` is about 100 lines above its tests.
 
 The last limit of the throttle is the same idea with one rehearsal in it. It runs the coast, and brakes only if the coast leaves the road:
 
