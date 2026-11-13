@@ -113,10 +113,9 @@ FrameView := {
 
 	## The whole frame turned by the camera's roll.
 	##
-	## The whole frame leans, backdrop and all, so the world banks into a turn.
-	## That is a camera whose target and offset are both the middle of the
-	## screen and whose rotation is the roll, the other way round: a space
-	## around everything else.
+	## The whole frame leans, backdrop and all, so the world banks into a turn:
+	## everything is drawn in one space, which turns about the middle of the
+	## screen by the roll, the other way round.
 	leaned_shapes : FrameView -> List(Shapes.Shape)
 	leaned_shapes = |view| framed_shapes(view, Screen.leaned_by(view.roll))
 

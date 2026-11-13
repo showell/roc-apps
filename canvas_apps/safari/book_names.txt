@@ -20,6 +20,8 @@ F64.pi: a Roc builtin, the constant pi
 U32.until: a Roc builtin
 U64.until: a Roc builtin
 List.from_iter: a Roc builtin
+List.repeat: a Roc builtin
+List.with_capacity: a Roc builtin
 
 # Roc's command line.
 roc: the Roc command
@@ -34,6 +36,7 @@ JavaScript: the language of the platform's runner, which a diagram's cluster nam
 canvas_app_runner.js: a file of the JavaScript platform
 computeFrame: the host's export that the runner calls for a frame
 host.zig: the platform's host, in Zig
+roc_glue.js: the generated reader of a frame's shapes
 WebAssembly: what the page's Roc and Zig are compiled to
 SafariApp.roc: the file that holds the SafariApp module
 shapes_canvas.js: a file of the JavaScript platform

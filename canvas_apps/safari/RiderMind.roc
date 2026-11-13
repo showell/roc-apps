@@ -18,9 +18,9 @@ RiderMind :: [].{
 		segment : Segment,
 		encounter_stage : Animation.Stage,
 	} -> Motorcycle.Controls
-	controls = |motorcycle, ride| {
+	controls = |motorcycle, situation| {
 		lean = LeanSearch.best_lean(motorcycle)
-		{ lean, acceleration: Throttle.next_acceleration(motorcycle.with_lean(lean), ride) }
+		{ lean, acceleration: Throttle.next_acceleration(motorcycle.with_lean(lean), situation) }
 	}
 
 	## Where the rider wants to look from `motorcycle`, on `segment`, the one

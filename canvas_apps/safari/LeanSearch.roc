@@ -16,8 +16,8 @@ LeanSearch :: [].{
 	## and a coast that stays on the road compares its end with
 	## `aimed_across`. A coast that ends exactly there means lean left.
 	lean_correction : Coast.Outcome -> [MoreRight, MoreLeft]
-	lean_correction = |coast|
-		match coast {
+	lean_correction = |outcome|
+		match outcome {
 			Leaves({ side: Left, .. }) => MoreRight
 			Leaves({ side: Right, .. }) => MoreLeft
 			EndsAt(end_across) =>

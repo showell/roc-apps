@@ -56,7 +56,7 @@ BirdFlight := { from : Trees.RoadsideTree, to : Trees.RoadsideTree }.{
 	flight_from = |trees, perch| {
 		is_far_enough = |tree| tree.road_point.along >= perch.road_point.along.plus(shortest_hop)
 		is_landing_tree = |tree| is_far_side(tree) and is_far_enough(tree)
-		to = trees.find_first(is_landing_tree).map_err(|NotFound| NoTreeToFlyTo)?
+		to = trees.find_first(is_landing_tree) ? |NotFound| NoTreeToFlyTo
 		Ok(BirdFlight.({ from: perch, to }))
 	}
 
