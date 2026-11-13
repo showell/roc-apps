@@ -261,17 +261,21 @@ A function is a value, its body is one expression, its annotation states its con
 
 ## Things
 
-The things beside the road are its trees, its radio towers and its animals. This chapter starts with the animals, and the towers come later, with the world. Here's a cow and a bull on the grass, from Safari Ride's own code:
+The things beside the road are its trees, its radio towers and its animals. We start with the animals, and the towers come later, with the world. Here we learn how a thing becomes data, and how one function turns that data into a sprite. Here's a cow and a bull on the grass, from Safari Ride's own code:
 
 ```widget cow
 A cow and a bull on the grass beside the road.
 ```
 
+### A billboard stands in for an animal
+
 The ride has a lot of animals: herds of cows, some led by a bull, herds of pigs, ducks on the ponds, and an elephant at a bend in the road. The cat and the bird move, and they get chapters of their own.
 
 Every other animal is a billboard: a flat picture of its emoji, standing on the grass and turned square to the camera, like a cardboard cutout. That takes far less code than modeling an animal, and it's charming.
 
-A billboard faces left or right, and one that faces right is its emoji mirrored. That's the `Billboard` type from the {{chapter Types}} chapter: an emoji, a height and a facing. We traced each emoji into polygons ahead of time, and the `EmojiStill` module holds them as plain data.
+A billboard faces left or right, and one that faces right is its emoji mirrored. That's the `Billboard` type from the {{chapter Types}} chapter: an emoji, a height and a facing. We traced each emoji into polygons ahead of time, and the `EmojiStill` module holds them as plain data. So a billboard is data from end to end.
+
+### A species record names the animal
 
 A billboard animal starts from a record of the `Billboard.Species` type: its emoji, and how tall a grown one stands. A plain `:` names that type, so any module reads its fields. Here are the cow's and the bull's, from the `CowHerd` module:
 
@@ -279,45 +283,43 @@ A billboard animal starts from a record of the `Billboard.Species` type: its emo
 
 {{code CowHerd.bull}}
 
-The bull's height comes from the cow's: `cow.adult_height` reads a field of the `cow` record, and `.times(1.15)` is a method call on that `Distance`.
+The bull's height comes from the cow's: `cow.adult_height` reads a field of the `cow` record, and `.times(1.15)` is a method call on that `Distance`. So the bull derives from the cow, and a change to the cow's height carries over to the bull.
 
-### Calves
+### A function picks the calves
 
-A herd looks better with a few calves in it. The ride numbers a herd's cows from 0, and every fourth cow, starting with cow 1, is a calf: cows 1, 5, 9 and so on. A calf is a billboard half as tall as a grown cow. Here are twenty cows in a row, numbered:
+A herd looks better with a few calves in it. A herd's cows count from 0, and every fourth cow, starting with cow 1, is a calf: cows 1, 5, 9 and so on. A calf is a billboard half as tall as a grown cow. Here are twenty cows in a row, numbered:
 
 ```widget herd
 Twenty cows, numbered from 0. Cows 1, 5, 9, 13 and 17 are calves.
 ```
 
-The code picks the calves with a function:
+One small function makes the choice:
 
 {{code CowHerd.is_calf}}
 
 `is_calf` takes a `U64`, a whole number from zero up, and returns a `Bool`, `True` or `False`. `cow_number.rem_by(4)` is the remainder after dividing by 4, and `==` compares it with 1, which gives the `Bool`.
 
-A second function puts `is_calf` to work. It gives each cow in a herd its billboard:
+A second function puts `is_calf` to work, and returns each cow's billboard:
 
 {{code CowHerd.cow_billboard}}
 
-Its `if` picks one of two billboards: a young one when `is_calf` says `True`, and a grown one when it says `False`. A `Billboard` is opaque, so only the `Billboard` module can build one, and `young_billboard` and `adult_billboard` are two of its functions that do. The herd calls `cow_billboard` for every cow it places.
+Its `if` picks one of two billboards: a young one when `is_calf` returns `True`, and a grown one when it returns `False`. A `Billboard` is opaque, so only the `Billboard` module builds one, and `young_billboard` and `adult_billboard` are two of its functions that do. `CowHerd` calls `cow_billboard` for every cow it places. So the herd's look comes down to two small functions over a number.
 
-### What a thing's sprite takes
+### Every kind returns a sprite
 
-Calf, cow or bull, the ride produces a billboard's sprite the way it produces the sprite of every kind of thing beside the road: with a function called `scenery_sprite`, in that kind's module. The `Billboard` module's `scenery_sprite` has a longer definition, built around a `match`, which the next chapter teaches. So here's its annotation alone:
+Calf, cow or bull, a billboard's sprite comes from a function called `scenery_sprite`, in the `Billboard` module. Every kind of thing beside the road has one, in its own module. The billboard's has a longer definition, built around a `match`, which the next chapter teaches, so here's its annotation alone:
 
 {{signatures Billboard.scenery_sprite}}
 
-It takes a `Billboard` and a setting, and gives back a sprite. The `Conifer` module's `scenery_sprite` takes a tree instead, and the `Tower` module's takes a tower, but every one takes a setting and gives back a sprite. So whatever its kind, a thing in a frame comes out as a sprite.
-
-A setting is a record:
+It takes a `Billboard` and a setting, and returns a sprite. The `Conifer` module's `scenery_sprite` takes a tree instead, and the `Tower` module's takes a tower, but every one takes a setting and returns a sprite. A setting is a record:
 
 {{code Sprite.Setting}}
 
 The `focal_length` says how strong the camera's lens is: the longer it is, the bigger everything looks, as when a camera zooms in. The `darkness` says how dark the sky is, from 0 by day to 1 at night, so everything beside the road can dim as night falls.
 
-The `spot` comes from a camera: it's what a sighting holds. So for the cow and the bull, the code behind the picture at the top of this chapter places each one on the road by hand, the cow 10 metres ahead and 5 metres left of the middle, and sights them with a camera at the start of the road. The rider's own camera comes in the {{chapter The rider}} chapter.
+The `spot` comes from a camera: it's what a sighting holds. So the picture at the top of this chapter places the cow and the bull on the road by hand, the cow 10 metres ahead and 5 metres left of the middle, and sights them with a camera at the start of the road. The rider's own camera comes in the {{chapter The rider}} chapter.
 
-What comes back is a sprite, and every sprite is a list of shapes. The cow's sprite is its emoji, as polygons.
+What comes back is a sprite, a list of shapes: for the cow, its emoji as polygons. So whatever its kind, a thing reaches the frame through one shape of function, a setting in and a sprite out.
 
 At the bends in the road stand four more kinds of billboard animal: elephants, giraffes, zebras and rhinos. They come next, with the `match` that picks which ones to mirror.
 
