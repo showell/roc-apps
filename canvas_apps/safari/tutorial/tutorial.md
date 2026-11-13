@@ -352,7 +352,7 @@ What comes back is a sprite, and every sprite is a list of shapes. The cow's spr
 
 At the bends in the road stand four more kinds of billboard animal: elephants, giraffes, zebras and rhinos. They come next, with the `match` that picks which ones to mirror.
 
-## Billboard Critters
+## Tag unions: billboard critters
 
 Four kinds of big animal stand at the bends in the ride's road: elephants, giraffes, zebras and rhinos. Each animal stands with its baby:
 
@@ -504,7 +504,7 @@ Here's the function:
 
 A far tree needs just those two shapes. Next, we put them together, with functions of our own.
 
-## A far tree
+## Lists and map: a far tree
 
 With a triangle and a rectangle in hand, we can build the far tree. The tree comes from small functions: the tiers of its crown, a test that pins them, a triangle for each tier, and the order of the trunk and the tiers in its sprite.
 
@@ -598,7 +598,7 @@ So a far tree is a handful of small functions over one list of tiers. The `expec
 
 ## The pipeline
 
-For each frame, every thing beside the road takes the same trip to the screen. In the {{chapter A far tree}} chapter, `TreeShapes.tree_sprite` takes a setting and returns a tree's sprite. This chapter follows the trip around that function: where the setting comes from, and where the sprite goes. A tree, a cow, a radio tower, the cat, the bird and the truck each start from a place on the road, and end as a rendering, a sprite with a depth, in the frame's one list. The `Pipeline` module holds the functions that sight and render, so we call the trip the pipeline.
+For each frame, every thing beside the road takes the same trip to the screen. In the {{chapter Lists and map: a far tree}} chapter, `TreeShapes.tree_sprite` takes a setting and returns a tree's sprite. This chapter follows the trip around that function: where the setting comes from, and where the sprite goes. A tree, a cow, a radio tower, the cat, the bird and the truck each start from a place on the road, and end as a rendering, a sprite with a depth, in the frame's one list. The `Pipeline` module holds the functions that sight and render, so we call the trip the pipeline.
 
 ```widget pipeline
 Step 1,529 of the ride, with only what came through the pipeline: its trees, critters and towers, the cat and the truck.
@@ -660,13 +660,13 @@ A sighting keeps the thing's kind and swaps its place on the road for a `Spot`, 
 
 {{code RiderView.RiderPoint}}
 
-`right` and `forward` count metres from the camera, and a negative `forward` is behind it. A `RiderView.RiderPointAhead` is the same record behind a `::`, and only `RiderView.rider_point_ahead` builds one, from a point in front of the camera. So a spot's foot is always in front of the camera, by construction. This `spot` is the one `tree_sprite` took from its setting in the {{chapter A far tree}} chapter.
+`right` and `forward` count metres from the camera, and a negative `forward` is behind it. A `RiderView.RiderPointAhead` is the same record behind a `::`, and only `RiderView.rider_point_ahead` builds one, from a point in front of the camera. So a spot's foot is always in front of the camera, by construction. This `spot` is the one `tree_sprite` took from its setting in the {{chapter Lists and map: a far tree}} chapter.
 
 A sighting function can also return a refusal, such as `OutOfSight`, in place of a sighting. The rest of this chapter follows the sightings that are kept.
 
 ### Rendered
 
-`Pipeline.rendering_of`, which the {{chapter Asking a kind}} chapter explains, renders each sighting that's kept, and returns a `Rendered`:
+`Pipeline.rendering_of`, which the {{chapter Where clauses: asking a kind}} chapter explains, renders each sighting that's kept, and returns a `Rendered`:
 
 {{code Rendered.Rendered from "Rendered ::" to "of = "}}
 
@@ -681,9 +681,9 @@ Every rendering has that one type, so a frame gathers them all in one list:
 
 A `Scene` holds a list of renderings for each sort of thing, and `join` makes one list of them all. The guard rail's renderings come in through `scene.rails`, as a later chapter shows. `Rendered.depth_sorted_renderings` sorts the list from far to near, and the platform paints it in that order, so a near thing covers a far one.
 
-So every thing beside the road makes the same trip: placed on the road, sighted by the camera, rendered as a sprite with a depth, and sorted into the frame's one list. Its kind rides through the first two types, and the third holds just a sprite and a depth. The trip can also end early, at the sighting, and the {{chapter Refused}} chapter goes back to that box. First, the next chapter shows how `rendering_of`, written once, gets a sprite out of every kind.
+So every thing beside the road makes the same trip: placed on the road, sighted by the camera, rendered as a sprite with a depth, and sorted into the frame's one list. Its kind rides through the first two types, and the third holds just a sprite and a depth. The trip can also end early, at the sighting, and the {{chapter Errors as tag unions}} chapter goes back to that box. First, the next chapter shows how `rendering_of`, written once, gets a sprite out of every kind.
 
-## Asking a kind
+## Where clauses: asking a kind
 
 One function, `Pipeline.rendering_of`, renders every kind of thing beside the road. Here it renders five of them:
 
@@ -699,7 +699,7 @@ A tree needs a height and a color. The types around it hold where it stands. So 
 
 {{module Conifer}}
 
-`Conifer :=` makes a nominal type, as `BendAnimal` is in the {{chapter Billboard Critters}} chapter: four tags, and a name that keeps them apart from any other union of the same tags. Two things about its layout matter here. The functions inside the type's braces, `scenery_height` and `scenery_sprite`, are its methods, and a value calls one with a dot: `conifer.scenery_height()`. Everything outside the braces is private to the module, such as the heights, the colors and `foliage_color`, and a call names it plainly: `foliage_color(conifer)`. In the `match`, `Green | SmallGreen =>` gives both greens one color.
+`Conifer :=` makes a nominal type, as `BendAnimal` is in the {{chapter Tag unions: billboard critters}} chapter: four tags, and a name that keeps them apart from any other union of the same tags. Two things about its layout matter here. The functions inside the type's braces, `scenery_height` and `scenery_sprite`, are its methods, and a value calls one with a dot: `conifer.scenery_height()`. Everything outside the braces is private to the module, such as the heights, the colors and `foliage_color`, and a call names it plainly: `foliage_color(conifer)`. In the `match`, `Green | SmallGreen =>` gives both greens one color.
 
 `scenery_sprite` hands the height and the color to `TreeShapes.tree_sprite`, the function that builds the far tree's sprite. Why the two methods sit inside the braces is the rest of this chapter.
 
@@ -752,7 +752,7 @@ So a kind meets the pipeline with two methods inside its braces, `scenery_height
 
 The next chapter takes the sightings that are refused.
 
-## Refused
+## Errors as tag unions
 
 Every frame, the pipeline tries to sight each thing on the road ahead, and its sighting functions refuse some of them. For a thing behind the camera, a thing the horizon hides or a thing too small to see, the sighting returns an `Err`. This chapter is about how a Roc function gives back an answer that can fail, and how that answer travels up through the functions that ask for it.
 
@@ -810,7 +810,7 @@ The next function asks `sighting_of` first, then makes a test of its own:
 
 {{code Pipeline.sighting_above_horizon_of}}
 
-Its `where` line asks the kind for its height, as in the {{chapter Asking a kind}} chapter. A `Spot` gives its parts through methods, such as `lift()` and `foot()`. The ride's ground curves away from the rider, and `drop()` gives how far it has dropped below level at the thing's foot.
+Its `where` line asks the kind for its height, as in the {{chapter Where clauses: asking a kind}} chapter. A `Spot` gives its parts through methods, such as `lift()` and `foot()`. The ride's ground curves away from the rider, and `drop()` gives how far it has dropped below level at the thing's foot.
 
 The first line asks `sighting_of`, and its plain `?` passes an `Err(OutOfSight)` straight up. Then the function tests the horizon, and gives back the same tag for its own refusal. So both functions have the same type after the arrow, and a caller treats the two refusals alike.
 
@@ -1107,7 +1107,7 @@ The ride's ground curves away on its 100 km radius, and a tower stands on it. Fr
 
 {{signatures EarthCurve.lowest_visible_height}}
 
-The ground hides whatever part of a tower is under that line, so as a tower gets further away, it sinks from the bottom up. An 80-metre tower still shows its tip about 4.5 km off. Once all of it is under the line, `Pipeline.sighting_above_horizon_of` refuses it as `OutOfSight`, as in the {{chapter Refused}} chapter. So a sighted tower always has something to paint.
+The ground hides whatever part of a tower is under that line, so as a tower gets further away, it sinks from the bottom up. An 80-metre tower still shows its tip about 4.5 km off. Once all of it is under the line, `Pipeline.sighting_above_horizon_of` refuses it as `OutOfSight`, as in the {{chapter Errors as tag unions}} chapter. So a sighted tower always has something to paint.
 
 ### Rods
 
@@ -1165,7 +1165,7 @@ The first two herds of pigs are big, seven rows of seven, and the rest are two s
 
 The herds are the last of the animals that stand still. Everything in the frame at step 1,529 now has its chapter, except the things that move: the cat, the bird and the truck. The first half of the book ends here: one frame, built part by part, from the things beside the road to the world they stand in.
 
-## A flip book
+## Immutable values: a flip book
 
 The first half of the book held one page still, step 1,529, and built it part by part. Now the pages turn. The picture below holds a real ride. The bar is the whole route, with the rider and the truck as two dots on it, and the lines of text read out the clock, the rider and the truck. The figure under the bar is the rider seen from behind, which the rider's chapters come back to. Press play and let it run for a moment. Press play again to stop it, then press the step-back button a few times.
 
@@ -1199,7 +1199,7 @@ Here, once more, is everything a moment holds:
 
 That's four things: the rider, the truck, the clock, and the plan for when the cat or the bird ahead starts to move. The ride carries those four from step to step, and derives everything else in a frame from them and the road. The chapters ahead take the four in turn, starting with the simplest: the clock.
 
-## The clock
+## Opaque types: the clock
 
 Every moment of the ride carries a clock, which counts the steps since the ride started. Step 1,529, the page the first half held still, is a clock. The sun, the sky and the beacons all follow the clock alone.
 
@@ -1250,7 +1250,7 @@ Here's the step, whole:
 
 {{code RideInstant.next}}
 
-`next_or_restart`, from the {{chapter A flip book}} chapter, calls this step until the rider reaches the end of the road. The doc comment on `next` gives the order, and the order matters. The rider moves first, reading where the encounter ahead has got to. Then the clock ticks. Then the world answers the rider who has just moved: the truck aims at how far along the route the rider now is, and `plan_at_next_step` keeps the encounter plan, drops it at a new segment, or makes one from this step's rider. The last line puts the four together into the next moment, and the old moment stays as it was.
+`next_or_restart`, from the {{chapter Immutable values: a flip book}} chapter, calls this step until the rider reaches the end of the road. The doc comment on `next` gives the order, and the order matters. The rider moves first, reading where the encounter ahead has got to. Then the clock ticks. Then the world answers the rider who has just moved: the truck aims at how far along the route the rider now is, and `plan_at_next_step` keeps the encounter plan, drops it at a new segment, or makes one from this step's rider. The last line puts the four together into the next moment, and the old moment stays as it was.
 
 The rider reads the encounter as a stage, where its animation has got to:
 
@@ -1506,7 +1506,7 @@ Look at the last line of `controls`. `controls` passes `Throttle.next_accelerati
 
 {{code Motorcycle.steady_controls}}
 
-`{ ..motorcycle, lean }` is a record update with a shorthand field: the field and the argument share the name `lean`. `with_lean` makes a motorcycle as it would be at another lean, and the real motorcycle stays as it was. `steady_controls` makes the controls that keep the lean and the speed as they are. The rider's steering, in the {{chapter Rehearsal}} chapter, uses both.
+`{ ..motorcycle, lean }` is a record update with a shorthand field: the field and the argument share the name `lean`. `with_lean` makes a motorcycle as it would be at another lean, and the real motorcycle stays as it was. `steady_controls` makes the controls that keep the lean and the speed as they are. The rider's steering, in the {{chapter Variables and loops: rehearsal}} chapter, uses both.
 
 ### One step of physics
 
@@ -1546,7 +1546,7 @@ When the bike leans, the camera rolls with it, and the whole picture leans:
 
 A lean inside `roll_deadband`, a thousandth of a radian, leaves the picture level, and any other lean passes straight through. The camera turns as well: the rider's head follows the gaze and turns a little into a bend, and the camera adds the head's turn to the motorcycle's yaw.
 
-So for each step, `RiderMind.controls` returns a lean and an acceleration, and `motorcycle_at_next_step` turns them into a new place on the road. The next chapter shows how the throttle chooses the acceleration. The {{chapter Rehearsal}} chapter shows how the rider chooses the lean.
+So for each step, `RiderMind.controls` returns a lean and an acceleration, and `motorcycle_at_next_step` turns them into a new place on the road. The next chapter shows how the throttle chooses the acceleration. The {{chapter Variables and loops: rehearsal}} chapter shows how the rider chooses the lean.
 
 ## The throttle
 
@@ -1590,7 +1590,7 @@ Each limit is a `ThrottleLimit`: `NoLimit`, or `AtMost` some acceleration. `held
 
 The throttle returns an acceleration, and the motorcycle's step turns it into a speed.
 
-`Speed` and `Acceleration` are a pair like the clock and its steps: a speed is a value, and an acceleration is the change from one speed to another. To brake for a bend, the rider needs the steady acceleration that takes its speed to a target within so much road. That's `Speed.acceleration_to`. Its `within` is a `Distance`: the road the change has to happen in. The formula is the first line of a physics textbook, v² = u² + 2ad, solved for a, with the speed going from `s` to `t` over the distance `within`. In the parameter list, `Speed.(s)` and `target: Speed.(t)` unwrap the two speeds into plain numbers, as `Clock.(n)` does in the {{chapter The clock}} chapter:
+`Speed` and `Acceleration` are a pair like the clock and its steps: a speed is a value, and an acceleration is the change from one speed to another. To brake for a bend, the rider needs the steady acceleration that takes its speed to a target within so much road. That's `Speed.acceleration_to`. Its `within` is a `Distance`: the road the change has to happen in. The formula is the first line of a physics textbook, v² = u² + 2ad, solved for a, with the speed going from `s` to `t` over the distance `within`. In the parameter list, `Speed.(s)` and `target: Speed.(t)` unwrap the two speeds into plain numbers, as `Clock.(n)` does in the {{chapter Opaque types: the clock}} chapter:
 
 {{code Speed.acceleration_to}}
 
@@ -1598,9 +1598,9 @@ It has one caller, `VehicleLimits.braking_to`. That function also holds the spee
 
 {{code Throttle.bend_limit}}
 
-The last limit, `shoulder_limit`, comes back in the {{chapter Rehearsal}} chapter, because it runs a pretend copy of the bike forward, which is what that chapter is about. The two in the middle come from what the rider sees: `encounter_throttle` is the cat's, and `gawk_brake` the pig's. The cat's has its own chapter, and the pig's comes after Rehearsal, in the {{chapter The rider's gaze}} chapter.
+The last limit, `shoulder_limit`, comes back in the {{chapter Variables and loops: rehearsal}} chapter, because it runs a pretend copy of the bike forward, which is what that chapter is about. The two in the middle come from what the rider sees: `encounter_throttle` is the cat's, and `gawk_brake` the pig's. The cat's has its own chapter, and the pig's comes after Rehearsal, in the {{chapter The rider's gaze}} chapter.
 
-## Rehearsal
+## Variables and loops: rehearsal
 
 The rider steers by leaning, and for each step the rider chooses a lean by rehearsal. The lean search runs the bike's real step on a pretend motorcycle, reads where that motorcycle ends up, and throws the pretend one away. For each step, it tries twelve leans this way. Each try narrows the range the next one picks from, and the rider steers at the lean the tries close in on: the one that keeps the bike nearest the middle of the road.
 
@@ -2171,7 +2171,7 @@ A segment gets its bird once, when the world is built. The bird perches on the f
 
 {{code BirdFlight.flight_from}}
 
-`find_first` returns a `Try`. The `?` takes the tree it found, or returns the failure from `flight_from`, renamed to the bird's own, `NoTreeToFlyTo`, as in the {{chapter Refused}} chapter. The bird always starts on the left because its perched and side-on stills face right, so on a left tree it faces the road.
+`find_first` returns a `Try`. The `?` takes the tree it found, or returns the failure from `flight_from`, renamed to the bird's own, `NoTreeToFlyTo`, as in the {{chapter Errors as tag unions}} chapter. The bird always starts on the left because its perched and side-on stills face right, so on a left tree it faces the road.
 
 The segment puts the perch and the flight together:
 
@@ -2288,7 +2288,7 @@ The camera stands at `vantage`, and its yaw is which way it points, as a turn fr
 
 ### Through the pinhole
 
-Next, `RiderView.rider_point_ahead`, from the {{chapter Refused}} chapter, checks the point against the near plane, 0.4 metres ahead of the camera. It refuses a point short of that as `BehindCamera`, and returns one at or past it as a `RiderPointAhead`. `at_height` raises that point to a height, and the result is a `PointAtHeightAhead`. Both types are opaque, and every way to build one starts from a point at or past the near plane.
+Next, `RiderView.rider_point_ahead`, from the {{chapter Errors as tag unions}} chapter, checks the point against the near plane, 0.4 metres ahead of the camera. It refuses a point short of that as `BehindCamera`, and returns one at or past it as a `RiderPointAhead`. `at_height` raises that point to a height, and the result is a `PointAtHeightAhead`. Both types are opaque, and every way to build one starts from a point at or past the near plane.
 
 The camera is a pinhole, and a pinhole is similar triangles:
 
@@ -2550,9 +2550,9 @@ These are the Roc surprises the chapters meet, sorted by where they first show u
 | What you see | What's going on | Chapter |
 |---|---|---|
 | A method call with no import | A method sits inside its type's braces, and the call finds it from the type of the value before the dot | Functions |
-| A helper with no keyword to say it's private | Anything outside a type's braces is private to its module | Asking a kind |
-| A `where` clause matching the wrong method | A clause matches a method by its name and type alone, so the pipeline's methods all start with "scenery" | Asking a kind |
-| `var` and `while` inside a pure function | A variable lives and dies inside its function, so the function is still pure | Rehearsal |
+| A helper with no keyword to say it's private | Anything outside a type's braces is private to its module | Where clauses: asking a kind |
+| A `where` clause matching the wrong method | A clause matches a method by its name and type alone, so the pipeline's methods all start with "scenery" | Where clauses: asking a kind |
+| `var` and `while` inside a pure function | A variable lives and dies inside its function, so the function is still pure | Variables and loops: rehearsal |
 | `?? crash` on a lookup | It states a belief about the program: the lookup always finds its value, and a miss is a bug | The bird |
 | A crash with a sentence about a sum | `Fraction.of` crashes on a ratio outside 0 to 1, because such a ratio means the sum behind it is wrong. A ratio that can rightly fall outside the range goes through `Fraction.clamp` instead | Proving it |
 | A frame hash that moves after a sum was regrouped | Floating-point sums and products depend on their order, so the order is part of what they mean | Proving it |
