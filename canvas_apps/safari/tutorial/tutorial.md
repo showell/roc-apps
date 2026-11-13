@@ -1273,13 +1273,13 @@ That's every animal that stands still. Everything in the frame at step 1,529 now
 
 ## A flip book
 
-The first half of the book held one page still, step 1,529, and built it part by part. Now the pages turn. The picture below holds a real ride: the two dots are the rider and the truck on the road, and the lines of text read out where the ride is. Press play and let it run for a moment. Then pause it, and press the step-back button a few times.
+The first half of the book held one page still, step 1,529, and built it part by part. Now the pages turn. The picture below holds a real ride. The bar is the whole route, with the rider and the truck as two dots on it, and the lines of text read out the clock, the rider and the truck. The figure under the bar is the rider seen from behind, which the rider's chapters come back to. Press play and let it run for a moment. Press play again to stop it, then press the step-back button a few times.
 
 ```widget step
-Press play, then pause, then step back.
+Press play, press it again to stop, then step back.
 ```
 
-The ride steps back one moment at a time, as easily as it went forward. That ease comes from Roc, and it starts with a puzzle. A Roc value stays exactly as it was made, yet the ride is change from start to finish.
+The ride steps back one moment at a time, as easily as it went forward. That ease comes from how Roc values work, and it starts with a puzzle. A Roc value stays exactly as it was made, yet the ride is change from start to finish.
 
 The answer is in the flip book from the {{chapter One page}} chapter. Each page is a still drawing, and the motion comes from the flipping. In Safari Ride, each page is a moment, a value of the `RideInstant` type, and one function makes the next one:
 
@@ -1287,11 +1287,11 @@ The answer is in the flip book from the {{chapter One page}} chapter. Each page 
 
 It takes the road and a moment, and returns a tag union written in place: the next moment, tagged `Continued`, or the ride's first moment again, tagged `Restarted`, once the rider reaches the end of the road. Either way, it returns a new moment and leaves the old one as it was.
 
-The platform does the flipping. Thirty times a second it asks for the next moment, and paints that moment's picture, which `FrameView.frame_view_at` works out from the moment and the road. The same moment always gives the same picture, so any page can be held still and studied, as the first half did with step 1,529.
+The platform does the flipping. Thirty times a second it asks the app for its next state, and while the ride plays, the app moves on to the next moment through `next_or_restart`. Then the platform paints that moment's picture, which `FrameView.frame_view_at` works out from the moment and the road. The picture above flips much faster than that, to cover more road. The same moment always gives the same picture, so any page can be held still and studied, as the first half did with step 1,529.
 
 ### Turning back
 
-Every old moment stays as it was made, so the ride keeps them, and stepping back turns to an earlier page. Here's the function behind the step-back button you just pressed:
+Every old moment stays as it was made, so the ride keeps the ones since it last started, and stepping back turns to an earlier page. Here's the function behind the step-back button you just pressed:
 
 {{code Tour.step_back}}
 
@@ -1299,7 +1299,7 @@ A `Tour` holds the moment on show, and a list of the moments before it. `Tour.(t
 
 ### What a moment holds
 
-Now look at how little a moment holds:
+Here, once more, is everything a moment holds:
 
 {{code RideInstant.RideInstant from "RideInstant := {" to "}.{"}}
 
@@ -1307,7 +1307,7 @@ That's four things: the rider, the truck, the clock, and the plan for when the c
 
 ## The clock
 
-The simplest of the four things a moment carries is the clock: which step of the ride this is. It's a single number, and it still gets a module of its own, because the ride keeps two kinds of time apart.
+A moment's clock says which step of the ride this is. It's a single number, and it still gets a module of its own, because the ride keeps two kinds of time apart.
 
 ### A moment and a length
 
