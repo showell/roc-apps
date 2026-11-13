@@ -1,6 +1,6 @@
 # Safari Ride: a tour of a real Roc program
 
-Safari Ride is a small Roc program with a lot to look at. This book reads it with you.
+Safari Ride is a small Roc program with a lot to look at. In this book, we read it with you.
 
 ## Introduction
 
@@ -42,7 +42,7 @@ That line is a type annotation: the function's name, a colon, and its type. `fra
 
 Roc code runs on a platform, and Safari Ride's platform paints that list on the screen. So each page starts from one moment of the ride and ends as one list of shapes.
 
-The first half of the book holds this page still and reads it part by part, starting with the things beside the road. The second half turns the pages. The chapters ahead read Roc slowly, one idea at a time, so the syntax here can wait for them. The next chapter breaks the ride into the pieces we build.
+In the first half of the book, we hold this page still and build it part by part, starting with the things beside the road. In the second half, the pages turn. The chapters ahead teach Roc slowly, one idea at a time, so the syntax here can wait for them. In the next chapter, we break the ride into the pieces we build.
 
 ## The problem
 
@@ -82,7 +82,7 @@ digraph pieces {
 | Motion | Persistence | The rider rides on, the truck drives ahead, the cat crosses the road and the sun goes down. At every step, something must move each of them on, and the moves must fit together. The cat times its crossing to the rider coming toward it, and a cat in the road stops the rider speeding up. |
 | The person watching | Interaction | A viewer mostly sits back and watches, but they also need to pause the ride, and step it forward and back. So the program must give them controls, and answer each one straight away. |
 
-The book takes the pieces in turn. Things come first: what a cow or a tree is, and the shapes it's made of. Then the rider's view: the trip every thing takes from its place on the road into the frame, with the math behind it saved for a chapter near the end. The world comes after the view, because every part of it takes that same trip: the sky, the mountains, the road and everything along it. Those three make one frame, held still. Motion fills the second half of the book: moments that follow one another like a flip book's pages, and the clock, the rider, the truck, the cat and the bird, each moved on from step to step. The person watching comes last, at the platform, where the frames go out and the keys come in.
+We take the pieces in turn. Things come first: what a cow or a tree is, and the shapes it's made of. Then the rider's view: the trip every thing takes from its place on the road into the frame, with the math behind it saved for a chapter near the end. The world comes after the view, because every part of it takes that same trip: the sky, the mountains, the road and everything along it. Those three make one frame, held still. Motion fills the second half of the book: moments that follow one another like a flip book's pages, and the clock, the rider, the truck, the cat and the bird, each moved on from step to step. The person watching comes last, at the platform, where the frames go out and the keys come in.
 
 Before the first piece, three short chapters cover Roc itself: how a program is laid out, its types, and its functions.
 
@@ -110,7 +110,7 @@ The brackets after `app` name the two things the app hands the platform, and the
 
 Types are at the heart of every Roc program. A type says what a value holds, and the compiler checks every value against its type. That gives this book its rule: get the types right, and everything else follows. A type that holds just the values that make sense leaves each function a plain job, and the compiler checks the rest. So a good way to meet a Roc program is to read its types.
 
-This book reads Safari Ride's types first, and they reach every part of the program, from a single number to the whole ride. Types describe the structure of a program's data and the rules it keeps, and each stop shows one way they do it.
+This book shows Safari Ride's types first, and they reach every part of the program, from a single number to the whole ride. Types describe the structure of a program's data and the rules it keeps, and each stop shows one way they do it.
 
 ### Distance pins down a number
 
@@ -200,11 +200,13 @@ On the way, the types pinned down a number, spelled out a thing's fields and cho
 
 ## Functions
 
-Every chapter from here on reads Roc functions, so this short chapter takes one apart. The `darkness_at` function works out how dark the sky is at a step of the ride:
+Every chapter from here on is full of Roc functions, so here we learn to read one, piece by piece. A Roc function takes its arguments and returns one value. The `darkness_at` function returns how dark the sky is at a step of the ride:
 
 {{code Sky.darkness_at}}
 
-In Roc, a function is an ordinary value, like a number, so the chapters ahead pass functions to other functions and keep them in records' fields. A function's code is an anonymous function, and `=` gives it a name. Roc calls a named value a constant: once named, it keeps its value. Inside a function's body, the constants are named again on each run, so each run has its own. Here's the function, piece by piece:
+### A function is a value
+
+In Roc, a function is an ordinary value, like a number. Its code is an anonymous function, and `=` gives it a name. Roc calls a named value a constant: once named, it keeps its value. Inside a function's body, the constants are named again on each run, so each run has its own. Here's the function, piece by piece:
 
 | Code | Term | What it says |
 |---|---|---|
@@ -219,21 +221,27 @@ In Roc, a function is an ordinary value, like a number, so the chapters ahead pa
 | `SunPath.height_at(clock)` | function call | Calls `height_at` from the `SunPath` module, with `clock` as its argument. |
 | `if` and its two branches | `if` expression | The block's last expression, so its value is what the function returns: one of the two calls, picked by whether the sun is still up. `SunPath.height_when_set`, the sun's height once it has set, is a constant from the same module. `darkness_while_up` and `darkness_after_set` are functions further down in the `Sky` module, outside its type's braces, and a module calls those by their bare names. |
 
-A function's body is always one expression. A block is one kind, and a short body can be a plain expression, written straight after the `|`. Here's one from the `Distance` module, which turns a number of metres, an `F64`, into a length:
+Because a function is a value, the chapters ahead pass functions to other functions and keep them in records' fields.
+
+### A body is one expression
+
+A function's body is always one expression. A block is one kind, and a short body can be a plain expression, written straight after the `|`. The `Distance` module's `metres` turns a number of metres, an `F64`, into a length:
 
 {{code Distance.metres}}
 
-Inside the body, `metres` is the argument. The function sits inside `Distance`'s braces, so it goes by `Distance.metres`, and the bare name is free for the argument. `Distance.(metres)` wraps the number as a `Distance`.
+Inside the body, `metres` is the argument. The function sits inside `Distance`'s braces, so it goes by `Distance.metres`, and the bare name is free for the argument. `Distance.(metres)` wraps the number as a `Distance`. So a one-line function and a ten-line one have the same shape: arguments in, one expression's value out.
 
-The book often shows a function's annotation alone, until its body's turn comes. An annotation lists the things a function takes with commas between them:
+### An annotation states the contract
+
+An annotation states what a function takes and what it returns, with commas between the things it takes:
 
 {{signatures Sky.color_at_darkness}}
 
-`color_at_darkness` takes an `RgbColor` and a `Fraction`, and returns an `RgbColor`.
+`color_at_darkness` takes an `RgbColor` and a `Fraction`, and returns an `RgbColor`. The compiler holds every call to that contract. The book often shows a function's annotation alone, until its body's turn comes, because the annotation already says what goes in and what comes out.
 
-### Methods
+### A method belongs to its type
 
-Many calls in the book put a value first, as in `SunPath.height_at(clock).minus(FarHeight.zero)`. That's a method call. A method is a function associated with a particular type. Here's a function built from method calls, which works out how warm the horizon's color is, from how near the sun stands to the horizon:
+Many calls in the book put a value first, as in `SunPath.height_at(clock).minus(FarHeight.zero)`. That's a method call. A method is a function that belongs to a particular type. Here's a function built from method calls, which returns how warm the horizon's color is, from how near the sun stands to the horizon:
 
 {{code Sky.horizon_warmth_at}}
 
@@ -245,9 +253,11 @@ Many calls in the book put a value first, as in `SunPath.height_at(clock).minus(
 | `from_horizon.ratio_to(warmth_reach)` | method call | Divides one `FarRise` by another: how far the sun stands from the horizon, as a share of `warmth_reach`, a constant rise further down in the module. |
 | `Fraction.clamp(…).complement()` | function call, then method call | `clamp` keeps a number between 0 and 1, as a `Fraction`, and `complement` returns 1 minus it. |
 
-The compiler works out every value's type, so it turns each method call into a call of that type's own function when the program compiles. A type's methods are the functions between its `.{` and `}`, as `Distance`'s were. Even `>=` in `darkness_at` calls a method, `is_gte`.
+A type's methods are the functions between its `.{` and `}`, as `Distance`'s were. The compiler infers every value's type, so it resolves each method call to that type's own function when the program compiles. Even `>=` in `darkness_at` calls a method, `is_gte`.
 
-The next chapter starts on the things beside the road. Every function from here on has a block body or a one-expression body, and calls functions and methods like these.
+### Every function has this shape
+
+A function is a value, its body is one expression, its annotation states its contract, and its methods belong to its types. Every function from here on is built the same way. The next chapter starts on the things beside the road.
 
 ## Things
 
@@ -621,7 +631,7 @@ A sighting keeps the thing's kind and swaps its place on the road for a `Spot`, 
 
 `right` and `forward` count metres from the camera, and a negative `forward` is behind it. A `RiderView.RiderPointAhead` is the same record behind a `::`, and only `RiderView.rider_point_ahead` builds one, from a point in front of the camera. So a spot's foot is always in front of the camera, by construction. This `spot` is the one `tree_sprite` took from its setting in the {{chapter Lists and map: a far tree}} chapter.
 
-A sighting function can also return a refusal, such as `OutOfSight`, in place of a sighting. The rest of this chapter follows the sightings that are kept.
+A sighting function can also return a refusal, such as `OutOfSight`, in place of a sighting. The rest of this chapter shows what happens to the sightings that are kept.
 
 ### Rendered
 
@@ -1228,11 +1238,11 @@ We enforce invariants with `crash`, and the clock has two. Every clock is at ste
 
 Each `expect` below the module's braces is a test, and `roc test` runs them all. A clock is a plain value, so a test builds one directly. `Clock.at_step(9).plus(Steps.of(3)) == Clock.at_step(12)` passes when step 9 plus three steps is step 12. The last three tests try `<` on a clock before another, a clock against itself, and a clock after another. `!` flips a `Bool`.
 
-The clock is the first of the four things a moment carries. The sun and the sky are derived from it alone, at any step, and the beacons from it and their towers. The next chapter reads the step itself, which moves all four on together.
+The clock is the first of the four things a moment carries. The sun and the sky are derived from it alone, at any step, and the beacons from it and their towers. The next chapter explains the step itself, which moves all four on together.
 
 ## The ride instant
 
-A moment carries four things: the rider, the truck, the clock, and the plan for when the cat or the bird ahead starts to move. A step makes the next moment from this one. This chapter reads that step, and sorts the ride's moving parts by how they change.
+A moment carries four things: the rider, the truck, the clock, and the plan for when the cat or the bird ahead starts to move. A step makes the next moment from this one. This chapter explains that step, then groups the ride's moving parts by how they change.
 
 ### One step
 
@@ -1350,7 +1360,7 @@ A beacon repeats every 120 steps. The sun moves one way through the whole ride, 
 
 ## The setting sun
 
-The sun is the one thing in the sky that moves. As it sinks, the sky darkens, the horizon warms, and everything the sky lights dims with it. All of that is derived from the clock alone. This chapter takes the sunset in three jobs: the sun goes down, the sky darkens, and the horizon warms.
+The sun is the one thing in the sky that moves. As it sinks, the sky darkens, the horizon warms, and everything the sky lights dims with it. All of that is derived from the clock alone. This chapter explains the sunset in three jobs: the sun goes down, the sky darkens, and the horizon warms.
 
 ### The sun goes down
 
@@ -1408,7 +1418,7 @@ This picture adds `Sky.horizon_warmth_at`, the red line, and the same warmth red
 
 Play any of those pictures backward, and the sun rises, with the same code. Every function here takes a clock and returns an answer, so the clock can run either way. The sun, the sky and the beacons each return their answer for any step, straight from the clock.
 
-The rider and the truck are another kind of thing: the ride carries them, and moves them one step at a time. The next chapters take them, starting with the rider.
+The rider and the truck are another kind of thing: the ride carries them, and moves them one step at a time. The next chapters explain them, starting with the rider.
 
 ## The rider
 
@@ -1439,7 +1449,7 @@ digraph stepped {
 }
 ```
 
-A box is a module, and an arrow points to a module it calls. This chapter takes the rider and its motorcycle. The throttle, the lean search and the gaze each get a chapter of their own after it, and the truck's chapters follow.
+A box is a module, and an arrow points to a module it calls. This chapter explains the rider and its motorcycle. The throttle, the lean search and the gaze each get a chapter of their own after it, and the truck's chapters follow.
 
 A rider is two parts: a motorcycle, and a pair of eyes.
 
@@ -1785,7 +1795,7 @@ The `Truck` value holds which of the truck's lamps are on:
 
 {{code Truck.Truck from "Which of" to "Truck := {"}}
 
-Each lamp is `[On, Off]`, and each has a module that owns two things: when its lamp is on, and how the lamp looks. The rest of this chapter takes the body, then the two lamps.
+Each lamp is `[On, Off]`, and each has a module that owns two things: when its lamp is on, and how the lamp looks. The rest of this chapter explains the body, then the two lamps.
 
 ### The body's shape
 
@@ -2208,7 +2218,7 @@ Of the three encounters, the cat alone changes the rider, through both reactions
 
 ## The math layer
 
-Every sighting so far has turned a place on the road into a place on the screen, on trust. This chapter opens that step up, with the trigonometry of perspective: one point travels from a segment of the road ahead, round the bends to the rider, and through the camera's lens onto the screen.
+Every sighting so far has turned a place on the road into a place on the screen, on trust. This chapter explains that step, with the trigonometry of perspective: one point travels from a segment of the road ahead, round the bends to the rider, and through the camera's lens onto the screen.
 
 The trip of one point to the screen
 ```dot
@@ -2297,7 +2307,7 @@ So a point on the road reaches the screen by four moves: a rotation for each ben
 
 ## Proving it
 
-The same step always gives the same frame, because the ride derives each frame from the four things it carries. This chapter turns that sameness into a test strict enough to guard every change, down to the last pixel.
+The same step always gives the same frame, because the ride derives each frame from the four things it carries. In this chapter, we turn that sameness into a test strict enough to guard every change, down to the last pixel.
 
 | Step | What the frame shows | Hash of its pixels | Shapes |
 |---|---|---|---|
@@ -2365,7 +2375,7 @@ The gate also runs lints, small programs that read the Roc source for patterns w
 
 ## The platform
 
-Every chapter so far has ended in a list of shapes. This chapter follows the list onto the screen, and the viewer's keys back into the ride, the last of the five pieces. On the way, we see where the ride's effects live: in a small platform under the Roc code, which every app in this book shares.
+Every chapter so far has ended in a list of shapes. In this chapter, we follow the list onto the screen, and the viewer's keys back into the ride, the last of the five pieces. On the way, we see where the ride's effects live: in a small platform under the Roc code, which every app in this book shares.
 
 One tick, in order
 ```dot
