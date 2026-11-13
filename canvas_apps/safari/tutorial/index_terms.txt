@@ -25,7 +25,7 @@ Type variable | type variables?
 Opaque type | \bopaque\b | main: Opaque types: the clock
 Nominal type | \bnominal\b
 Method | \bmethods?\b
-Static dispatch | static dispatch|method calls?
+Method call | method calls?
 `where` clause | `where`
 Function as a value | functions? (is|as) an? (ordinary )?value|function stored in a record|function in a record
 Anonymous function | anonymous function|lambda

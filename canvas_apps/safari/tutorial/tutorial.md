@@ -16,6 +16,18 @@ Safari Ride is written in Roc, and this is a book about Roc. If you're brand new
 
 You'll learn two things as you read: Roc, and how a ride like this one is animated. The animation is a handful of plain ideas. Each frame is one picture, and a step moves the world on before the next. Far things look small, and near things cover far ones. The book explains each of these in plain words where the ride first needs it. A chapter near the end gives the trigonometry behind them. If both are new to you, you'll get both at a walking pace.
 
+### Run it yourself
+
+Safari Ride is open source, in the `canvas_apps/safari` folder of [roc-apps](https://github.com/showell/roc-apps). It builds with the Roc nightly that the repository's `roc-version` file names, `nightly-2026-11-03-34bd006`. With that installed, two commands check the whole ride and run its tests:
+
+```text
+cd canvas_apps/safari
+roc check web.roc
+roc test web.roc
+```
+
+`roc check` checks the type of every value in every module the ride uses, and `roc test` runs the 645 `expect` tests those modules hold. Then break something on purpose. In `Billboard.roc`, delete the `FacesRight => Mirrored` line from the `match` in `scenery_sprite`, and run `roc check web.roc` again. The compiler names the missing case, as the {{chapter Tag unions: billboard critters}} chapter shows. Put the line back, and the check passes again.
+
 ## One page
 
 Safari Ride works like a flip book. Each frame is one page, and the ride shows a new page thirty times a second. Here's one page, held still. It's the page at step 1,529, with the cat out on the road:

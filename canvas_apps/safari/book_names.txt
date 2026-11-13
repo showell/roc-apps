@@ -41,3 +41,10 @@ shapes_canvas.js: a file of the JavaScript platform
 Rock: the kind of thing in tutorial/fails/kind_without_sprite.roc, which the build runs
 rock_rendering: the function in tutorial/fails/kind_without_sprite.roc, which the build runs
 
+# The files and commands a reader runs, from the Introduction's "Run it yourself".
+web.roc: the ride's root, which a reader checks and tests
+Billboard.roc: the file the reader breaks on purpose
+check: `roc check`, the compiler's type check
+version: `roc-version`, the file that names the pinned nightly
+nightly: the pinned Roc nightly's name, `nightly-2026-11-03-34bd006`
+
