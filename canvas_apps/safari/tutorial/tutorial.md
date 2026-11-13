@@ -1437,7 +1437,7 @@ A beacon goes round and round. The sun goes one way, and a lot more hangs on it.
 
 ## The setting sun
 
-The sun is the one thing in the sky that moves, and a lot hangs on it. As it sinks, the sky darkens, the horizon warms, and everything the sky lights dims with it. All of that is derived from the clock alone. This chapter takes the sunset in three jobs: the sun goes down, the sky darkens, and the horizon warms.
+The sun is the one thing in the sky that moves. As it sinks, the sky darkens, the horizon warms, and everything the sky lights dims with it. All of that is derived from the clock alone. This chapter takes the sunset in three jobs: the sun goes down, the sky darkens, and the horizon warms.
 
 ### The sun goes down
 
@@ -1449,7 +1449,7 @@ This picture does only the first job, so its sky stays blue. Each frame, it asks
 
 {{code SunPath.height_at}}
 
-`SunPath.sun_direction_at` works out the sun's direction at a clock, a bearing and a height, with the ride's one piece of spherical trigonometry. The rest of the sunset needs only the height.
+`SunPath.sun_direction_at` works out the sun's direction at a clock, a bearing and a height, with the ride's one piece of spherical trigonometry. The sky's part of the sunset needs only the height. Where the sun lands on the screen needs its bearing too, which comes next.
 
 ### In view, or out of view
 
@@ -1461,7 +1461,7 @@ An `OutOfView` sun paints an empty list, and a `match` on a `Sighting` handles t
 
 {{code Sun.sun_in_view}}
 
-`Lens.far_point` says where something infinitely far off lands on the screen, and refuses with `BehindCamera` when it lies behind the camera. A sun that lands somewhere is still out of view when its glow stays wholly off the screen. At step 1,529, the frame the first half held still, the sun stands behind the rider, which is why that frame showed only sky.
+`Lens.far_point` says where something infinitely far off lands on the screen, and refuses with `BehindCamera` when it lies behind the camera. A sun that lands somewhere is still out of view when its glow stays wholly off the screen. At step 1,529, the frame the first half held still, the sun stands behind the rider, which is why that frame left the sun out. The pictures in this chapter always face the sun, so it's always in view in them.
 
 The sun in view is a glow and a disc:
 
@@ -1475,7 +1475,7 @@ The glow adds its light to the sky, over the rectangle above the horizon, and th
 Press play. Now the sky darkens too.
 ```
 
-This picture adds one call, `Sky.darkness_at`, whose answer is the blue line. The {{chapter Functions}} chapter took that function apart: it asks for the sun's height and picks one of two shapes, on either side of the moment the sun has fully set:
+This picture adds one call, `Sky.darkness_at`, whose answer is the blue line, and its grass dims too. The {{chapter Functions}} chapter took that function apart: it asks for the sun's height and picks one of two shapes, on either side of the moment the sun has fully set:
 
 {{signatures Sky.darkness_while_up Sky.darkness_after_set}}
 
@@ -1489,7 +1489,7 @@ The sky's top color blends from day to night by that darkness, as the {{chapter 
 Press play. This is the whole sunset.
 ```
 
-This picture adds `Sky.horizon_warmth_at`, the red line. The horizon is warmest when the sun's height is zero, on the horizon itself. `from_horizon` is how far the sun is from it, above or below, and `abs` makes the two sides match, which gives the red line its tent. The share of `warmth_reach`, 110, is held at 1 by `Fraction.clamp`, and `complement` turns it around, so a height of zero gives full warmth, and 110 or more gives a warmth of zero.
+This picture adds `Sky.horizon_warmth_at`, the red line, and the same warmth reddens the sun's own glow and disc. The horizon is warmest when the sun's height is zero, on the horizon itself. `from_horizon` is how far the sun is from it, above or below, and `abs` makes the two sides match, which gives the red line its tent. The share of `warmth_reach`, 110, is held at 1 by `Fraction.clamp`, and `complement` turns it around, so a height of zero gives full warmth, and 110 or more gives a warmth of zero.
 
 ### Going backward
 
@@ -1524,11 +1524,11 @@ digraph stepped {
 }
 ```
 
-A box is a module, and an arrow points to a module it calls. `RideInstant.next`, from the {{chapter The ride instant}} chapter, steps the rider and the truck, and the modules below them do the work.
+A box is a module, and an arrow points to a module it calls. The diagram shows the main calls, and leaves the smaller ones to the chapters ahead. `RideInstant.next`, from the {{chapter The ride instant}} chapter, steps the rider and the truck, and the modules below them do the work.
 
 ### The step function
 
-`Clock.next`, `Rider.rider_at_next_step` and `TruckJourney.truck_progress_at_next_step` all have the same shape: a value goes in, and the next value comes out. Call that a step function. The ride holds a rider, and another rider one step on, and the old one stays as it was.
+`Clock.next`, `Rider.rider_at_next_step` and `TruckJourney.truck_progress_at_next_step` all have the same shape: a value goes in, and the next value comes out. Call that a step function. A step makes a new rider one step on, and the old one stays as it was.
 
 ### What stepping costs
 
@@ -1536,9 +1536,9 @@ Stepping has a cost, which shows beside the sun:
 
 - The sun can be asked about any step, cold. To find the truck at step 4,000, the ride has to play that far.
 - A wrong sky spoils only the frames it touches. A wrong step moves the rider for the rest of the ride.
-- The lines of `RideInstant.next` run in order. Frames can be worked out in any order.
+- The lines of `RideInstant.next` run in order. Once the moments exist, their frames can be painted in any order.
 
-So the stepped parts get the most care. The rider's step takes the next four chapters, and the truck's the three after those.
+So the stepped parts get the most care. The rider's step takes the next four chapters, and the truck's chapters follow.
 
 ## The rider
 
