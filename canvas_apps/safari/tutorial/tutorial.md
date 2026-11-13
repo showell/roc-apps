@@ -378,6 +378,12 @@ A `Billboard` is opaque, and `Billboard.(billboard)` in the arguments opens it: 
 
 Braces hold a block or a record: a block holds lines of code, where a record holds fields with colons. The block names `flip`, and its last expression makes the sprite. `billboard.emoji.still()` gives the emoji's traced still. `StillShapes.standing_still_shapes` makes shapes from it at the billboard's height, and `Sprite.from_shapes` makes those shapes a sprite. In that last record, `flip` alone is short for `flip: flip`.
 
+A still is plain data: a list of filled polygons, in the order they're painted. A polygon is one record:
+
+{{code Still.Polygon}}
+
+Every point is measured in units of the still's height. Its feet are at `y` 0, its `x` runs across from its middle, and a standing animal is about 1 tall. So a still is free of pixels and metres, and the same numbers draw a cow in the distance and a cow by the road. Every animal in the ride, from the cow to the cat and the bird, is drawn from stills like this one.
+
 Every emoji faces left, so a billboard that faces right needs its emoji mirrored. The `match` makes that choice. It looks at `billboard.facing`, and each line under it takes one tag and gives back what to do: `FacesLeft` gives `AsDrawn`, and `FacesRight` gives `Mirrored`. Those two are the tags of another tag union, `StillShapes.Flip`, and `flip` names the one the `match` picks. The compiler works out the type of `flip` from where it's used.
 
 A `match` handles every tag of its type, and the compiler checks that it does. Leave out the `FacesRight` line, and the compiler stops with an error that names it:
@@ -591,41 +597,9 @@ Cones take far more work to build, and far off they look just like triangles, so
 
 So a far tree is a handful of small functions over one list of tiers. The `expect` pins the tiers, each tier becomes a triangle, and one list puts the trunk first and the tiers over it. Every tree beside the road runs through this same code, wherever it stands.
 
-## Types for places
-
-Safari Ride measures a place in two ways: on the road, and from the camera. Each way has types of its own, and this chapter reads them. The next chapter moves every thing beside the road from the first to the second.
-
-### On the road
-
-A place on the road is a `Geom.RoadPoint`:
-
-{{code Geom.RoadPoint}}
-
-`along` is how far the place lies along its segment of road, and `across` is how far it lies from the middle of the road. Each is a type of its own around a number of metres, as `Distance` is:
-
-{{code Distance.Distance from "Distance ::" to "metres = |metres|"}}
-
-{{code Along.Along from "Along ::" to "metres = |metres|"}}
-
-An `Along` counts metres from the start of a segment, and an `Across` counts metres from the middle of the road, growing to the right. The compiler keeps the two apart, so a place along the road always goes where a place along the road belongs.
-
-### From the camera
-
-A place seen from the camera is a `Spot`:
-
-{{code Spot.Spot from "Spot ::" to "}.{"}}
-
-`lift` is how far off the ground the thing stands, and `road_heading` is which way the road runs there. `foot` is where the thing stands in the rider's view, and its type starts from a plain record of two distances:
-
-{{code RiderView.RiderPoint}}
-
-`right` and `forward` count metres from the camera, and a negative `forward` is behind it. A `RiderView.RiderPointAhead` is the same record behind a `::`, and only `RiderView.rider_point_ahead` builds one, from a point in front of the camera. So a spot's foot is always in front of the camera, by construction.
-
-So a place on the road is a `RoadPoint`, and a place seen from the camera is a `Spot`. A thing placed on the road holds the first, and a thing the camera sights holds the second. The {{chapter The pipeline}} chapter follows every thing from one to the other.
-
 ## The pipeline
 
-Every frame, every thing beside the road takes the same trip to the screen. In the {{chapter A far tree}} chapter, `TreeShapes.tree_sprite` takes a setting and gives back a tree's sprite. This chapter follows the trip around that function: where the setting comes from, and where the sprite goes. A tree, a cow, a radio tower, the cat, the bird and the truck each start from a place on the road and end as a rendering, a sprite with a depth, in the frame's one list. The `Pipeline` module holds the trip's types and the functions that sight and render, so we call the trip the pipeline.
+Every frame, every thing beside the road takes the same trip to the screen. In the {{chapter A far tree}} chapter, `TreeShapes.tree_sprite` takes a setting and returns a tree's sprite. This chapter follows the trip around that function: where the setting comes from, and where the sprite goes. A tree, a cow, a radio tower, the cat, the bird and the truck each start from a place on the road, and end as a rendering, a sprite with a depth, in the frame's one list. The `Pipeline` module holds the trip's types and the functions that sight and render, so we call the trip the pipeline.
 
 ```widget pipeline
 Step 1,529 of the ride, with only what came through the pipeline: its trees, critters and towers, the cat and the truck.
@@ -663,7 +637,15 @@ The trip starts from where a thing stands on the road:
 
 {{code Geom.Placed}}
 
-`road_point` is the thing's place on the road, a `RoadPoint` from the {{chapter Types for places}} chapter, and `lift` says how far off the ground it stands. `kind` says what the thing is. Its type is the type variable `kind`, so a placed tree is a `Geom.Placed(Conifer)`, and a placed cow is a `Geom.Placed(Billboard)`.
+`kind` says what the thing is. Its type is the type variable `kind`, so a placed tree is a `Geom.Placed(Conifer)`, and a placed cow is a `Geom.Placed(Billboard)`. `lift` says how far off the ground it stands, and `road_point` is its place on the road:
+
+{{code Geom.RoadPoint}}
+
+`along` is how far the place lies along its segment of road, and `across` is how far it lies from the middle of the road, growing to the right. Each is an opaque type around a number of metres, as `Distance` is:
+
+{{code Along.Along from "Along ::" to "metres = |metres|"}}
+
+The compiler keeps the two apart, so a place along the road always goes where a place along the road belongs.
 
 ### Sighted
 
@@ -671,17 +653,25 @@ The screen shows what the camera sees. So for each frame, the pipeline sights ev
 
 {{code Pipeline.Sighted}}
 
-The `Spot` is the thing's place seen from the camera, as the {{chapter Types for places}} chapter showed. This `spot` is the one `tree_sprite` took from its setting in the {{chapter A far tree}} chapter.
+A sighting keeps the thing's kind and swaps its place on the road for a `Spot`, a place seen from the camera:
+
+{{code Spot.Spot from "Spot ::" to "}.{"}}
+
+`lift` is still how far off the ground the thing stands, and `road_heading` is which way the road runs there. `foot` is where the thing stands in the camera's view, and its type starts from a plain record of two distances:
+
+{{code RiderView.RiderPoint}}
+
+`right` and `forward` count metres from the camera, and a negative `forward` is behind it. A `RiderView.RiderPointAhead` is the same record behind a `::`, and only `RiderView.rider_point_ahead` builds one, from a point in front of the camera. So a spot's foot is always in front of the camera, by construction. This `spot` is the one `tree_sprite` took from its setting in the {{chapter A far tree}} chapter.
 
 Some placed things stay off the screen, because a sighting can refuse a thing. The rest of this chapter follows the sightings that are kept.
 
 ### Rendered
 
-Each sighting that's kept is rendered by `Pipeline.rendering_of`, which the {{chapter Asking a kind}} chapter explains. It gives back a `Rendered`:
+Each sighting that's kept is rendered by `Pipeline.rendering_of`, which the {{chapter Asking a kind}} chapter explains. It returns a `Rendered`:
 
 {{code Rendered.Rendered from "Rendered ::" to "of = "}}
 
-A `Rendered` holds a depth and a sprite. The `::` makes it opaque, as it does `Distance`. The sprite is what a kind's `scenery_sprite` gives back from a setting, and the depth is how far ahead of the camera the thing stands. The kind has done its job by now, and it's gone: a tree's rendering and a cow's have the same type.
+A `Rendered` holds a depth and a sprite. The `::` makes it opaque, as it does `Distance`. The sprite is what a kind's `scenery_sprite` returns from a setting, and the depth is how far ahead of the camera the thing stands. The kind has done its job by now, and it's gone: a tree's rendering and a cow's have the same type.
 
 In a body, as here, `Rendered.({ depth, sprite })` builds a `Rendered` by wrapping the record. Among a function's arguments, as `Billboard.(billboard)` was, the same form takes one apart.
 
@@ -788,35 +778,6 @@ Each tag names one way its function can fail, and the ground patch has two.
 
 So a refusal is an ordinary value. A sighting gives back a `Try`, a `?` passes an `Err` up or unwraps an `Ok`, a function after the `?` can rename the tag on the way, and `keep_oks` or a `match` decides where the refusals stop. The kept sightings go on to be rendered. That leaves two questions from the trip, and the next two chapters answer them: what is a kind, and how does `rendering_of`, written once, get a sprite out of every kind?
 
-## Nature types
-
-Every thing beside the road carries its kind through the first two types of the pipeline, a `Geom.Placed` and a `Pipeline.Sighted`. In this chapter we look inside one kind, the tree's.
-
-```widget conifers
-The four conifers, left to right: Green, SmallGreen, Red and Gold.
-```
-
-A tree needs a height and a color. Where it stands is the job of the forms around it. So the `Conifer` type says which tree it is, and its methods give the height and the color:
-
-{{module Conifer}}
-
-`Conifer` is a nominal type. A nominal type has a name, and Roc treats it as different from every other type, even one with exactly the same shape. Another union of `Green`, `SmallGreen`, `Red` and `Gold` would be a different type, and only a `Conifer` fits where a `Conifer` is expected. Its set of tags is fixed, too: the four the definition lists, and only those.
-
-The module's code shows these Roc concepts:
-
-| Concept | Purpose | Explanation |
-|---|---|---|
-| A nominal type | Identity | `Conifer :=` gives `Conifer` a name of its own. Roc keeps it apart from every other type, even another union of the same four tags. |
-| A tag union | Variants | The backing type, `[Green, SmallGreen, Red, Gold]`, lists every sort of tree a `Conifer` can be, and the list is fixed. |
-| Methods | Behavior | Functions inside the type's braces: `scenery_height` and `scenery_sprite`. A value calls one with a dot, as in `conifer.scenery_height()`. The next chapter shows why they sit inside the braces. |
-| Privacy | Hiding | Everything outside the braces stays private to the module: the heights, the colors and `foliage_color`. A call names a private function plainly: `foliage_color(conifer)`. |
-| One branch, two tags | Grouping | In a `match`, `Green \| SmallGreen =>` gives both greens one color. |
-| Equality | Comparison | `is_eq : _` asks the compiler to write `==`, as it did for `Distance`, and here `==` compares tags. |
-
-`scenery_sprite` hands the height and the color to `TreeShapes.tree_sprite`, the function that produces the far tree's sprite. A module's definitions can come in any order, so the methods use values defined below them.
-
-So a kind describes a thing, and the pipeline does the rest. But the pipeline is one piece of code for every kind alike. So how does it get a height and a sprite out of a `Conifer`?
-
 ## Asking a kind
 
 One function, `Pipeline.rendering_of`, renders every kind of thing beside the road. Here it renders five of them:
@@ -825,9 +786,21 @@ One function, `Pipeline.rendering_of`, renders every kind of thing beside the ro
 A tree, a cow, a radio tower, the cat and the bird, each rendered by `Pipeline.rendering_of`, and each at its own distance so that it shows clearly.
 ```
 
-One function can render every kind because of this chapter's new Roc idea, the `where` clause, which constrains a type variable to types that have certain methods.
+One function can render every kind because of this chapter's new Roc idea, the `where` clause, which constrains a type variable to types that have certain methods. First, here's one kind from the inside.
 
-`rendering_of` takes a sighting, with the focal length and the darkness that the whole frame shares, and it gives back a `Rendered`, the thing's sprite and its depth. The sprite comes from the kind, so `rendering_of` calls the kind's own `scenery_sprite` method.
+### A kind from the inside
+
+A tree needs a height and a color. Where it stands is the job of the types around it. So the `Conifer` type says which tree it is, and its methods give the height and the sprite:
+
+{{module Conifer}}
+
+`Conifer :=` makes a nominal type, as `BendAnimal` is in the {{chapter Billboard Critters}} chapter: four tags, and a name that keeps them apart from any other union of the same tags. Two things about its layout matter here. The functions inside the type's braces, `scenery_height` and `scenery_sprite`, are its methods, and a value calls one with a dot: `conifer.scenery_height()`. Everything outside the braces is private to the module, such as the heights, the colors and `foliage_color`, and a call names it plainly: `foliage_color(conifer)`. In the `match`, `Green | SmallGreen =>` gives both greens one color.
+
+`scenery_sprite` hands the height and the color to `TreeShapes.tree_sprite`, the function that builds the far tree's sprite. Why the two methods sit inside the braces is the rest of this chapter.
+
+### One function for every kind
+
+`rendering_of` takes a sighting, with the focal length and the darkness that the whole frame shares, and returns a `Rendered`, the thing's sprite and its depth. The sprite comes from the kind, so `rendering_of` calls the kind's own `scenery_sprite` method.
 
 The `Rendered` coming out is the same type for every kind. The sighting going in carries its kind: it's a `Pipeline.Sighted(kind)`, and `kind` is a type variable, so it stands for any type at all: a number, a record or a `Conifer`. Only some types have a `scenery_sprite`. So `rendering_of` needs a constraint on `kind`: any type, as long as that type has a `scenery_sprite`.
 
@@ -840,7 +813,7 @@ This table explains the code's concepts:
 | Concept | Purpose | Explanation |
 |---|---|---|
 | A type variable | Generality | `kind` in `Pipeline.Sighted(kind)` stands for whatever type the caller's sighting holds. |
-| A `where` clause | Constraint | `where [kind.scenery_sprite : kind, Sprite.Setting -> Sprite]` constrains `kind` to types that have a method named `scenery_sprite`, which takes a `kind` and a `Sprite.Setting` and gives back a `Sprite`. The square brackets hold a list of constraints, here just one. |
+| A `where` clause | Constraint | `where [kind.scenery_sprite : kind, Sprite.Setting -> Sprite]` constrains `kind` to types that have a method named `scenery_sprite`, which takes a `kind` and a `Sprite.Setting` and returns a `Sprite`. The square brackets hold a list of constraints, here just one. |
 | A method | Placement | A method is a function inside a type's braces, and only a method meets a `where` clause. That's why `Conifer` keeps `scenery_sprite` inside, with `scenery_height`, while its private helpers sit outside. |
 | A method call | Dispatch | `sighting.kind` is the sighting's `kind` field, which holds a value of the type `kind`. `.scenery_sprite(...)` calls that type's method, with the value before the dot as its first argument. |
 
@@ -852,7 +825,7 @@ Each call to `rendering_of` fills `kind` with one particular type. The ride rend
 
 {{code Scene.scene_in_view from "trees:" to "trees:"}}
 
-The compiler looks inside `Conifer`'s braces, finds a `scenery_sprite` of the right type, and the call compiles. The compiler checks every other call the same way, one type at a time. So the choice of which `scenery_sprite` runs is made when the program compiles, once for each type. Every call gives back a `Rendered`, whatever the kind, so a frame's renderings of trees, cows and towers all go in one list.
+The compiler looks inside `Conifer`'s braces, finds a `scenery_sprite` of the right type, and the call compiles. The compiler checks every other call the same way, one type at a time. So the choice of which `scenery_sprite` runs is made when the program compiles, once for each type. Every call returns a `Rendered`, whatever the kind, so a frame's renderings of trees, cows and towers all go in one list.
 
 Every type that fills `kind` has to pass the compiler's check. Here a `Rock`, a kind that is just one tag, is handed to `rendering_of`. The program is a small app of its own, which uses Safari Ride's modules as its `game` package. Only `Rock` and `rock_rendering` matter here. The rest makes the program an app, and the `_` names an argument that `main!` leaves unused:
 
@@ -874,46 +847,9 @@ So a kind meets the pipeline with two methods inside its braces, `scenery_height
 
 That finishes how a thing beside the road reaches the frame. The rest of the frame is the world the things stand in, and the next chapters build it from the ground up.
 
-## Grass
+## The sky and the grass
 
-The ground under the things beside the road is grass, and it's the simplest part of the ride: one rectangle. Here's step 1,529 with only its trees and the grass under them:
-
-```widget frame grass
-Step 1,529 of the ride: its trees, and the grass they stand on.
-```
-
-The horizon on the screen is the line halfway down it, where a level look from the rider lands. The grass fills the screen below it, and the rest of the frame, the mountains, the road and the things beside it, covers the grass. So the grass shows wherever the rest of the frame leaves it uncovered, and that one rectangle is all the grass code the ride needs.
-
-The `Grass` module holds the grass's color by day, as a constant:
-
-{{code Grass.grass_color}}
-
-A constant in a module carries an annotation, as a function does, and here the type is an `RgbColor`. Like `Distance`'s functions, the `Grass` module's sit inside the braces of a type named for the module, so other code calls this one `Grass.grass_color`. `0x4A8F43` is the color in hex, the way a web page writes it after a `#`.
-
-As the sun sets, the grass darkens with the sky:
-
-{{code Grass.grass_color_at}}
-
-`Sky.color_at_darkness` takes a color by day and how dark the sky is, and returns the color dimmed to match. Everything the sky lights dims through it, from the grass to the truck.
-
-The grass's top edge sits one pixel above the horizon:
-
-{{code Grass.grass_top_y}}
-
-`Screen.horizon_y` is the horizon, and `y` grows downward, so `minus` one pixel moves the edge up. The sky, in the next chapter, is painted before the grass and stops at the horizon, so the grass's top row covers the sky's last one and the two always meet.
-
-Here's the rectangle itself:
-
-{{code Grass.grass_shape}}
-
-When the bike leans, the camera rolls with it, and the whole frame turns about the middle of the screen. A rectangle the size of the screen would turn with it and leave its corners bare. So `Screen.margin_rect` makes a rectangle from a top and a bottom that reaches `Screen.roll_margin`, 200 pixels, past each side of the screen, and the grass reaches 200 pixels below the screen too. That covers a lean of up to 30°, more than the ride ever leans.
-
-That rectangle is all the grass there is. The sky goes above it, in the next chapter.
-
-
-## The sky
-
-Above the grass is the sky, and in a frame the sky is two colors: one at the top of the frame and one at the horizon, with a fade between them. At step 1,529 the two happen to match, for a reason the end of this chapter gives.
+Behind everything beside the road stands the backdrop: the sky above the horizon and the grass below it. The horizon on the screen is the line halfway down it, where a level look from the rider lands. The rest of the frame covers the backdrop, so the backdrop shows wherever the rest leaves it uncovered. In a frame the sky is two colors, one at the top and one at the horizon, with a fade between them, and the grass is one rectangle. At step 1,529 the sky's two colors happen to match, for a reason the end of this chapter gives.
 
 ```widget frame sky
 Step 1,529 of the ride: the trees, the grass, and the sky over them, one day blue.
@@ -931,7 +867,7 @@ The top of the sky blends from day into night, by how dark the sky is:
 
 {{code Sky.sky_top_color}}
 
-`day_sky` and `night_sky` are two constants in the module, a pale blue and a deep one. `Sky.darkness_at`, which the {{chapter Functions}} chapter took apart, says how dark the sky is, as a `Fraction`. It sits inside the `Sky` type's braces, so even its own module calls it by its full name, and the bare names belong to the module's helpers outside the braces. `ColorShade.color_between` does the blending:
+`day_sky` and `night_sky` are two constants in the module, a pale blue and a deep one. A constant in a module carries an annotation, as a function does, and here the type is an `RgbColor`. `Sky.darkness_at`, which the {{chapter Functions}} chapter took apart, says how dark the sky is, as a `Fraction`. It sits inside the `Sky` type's braces, so even its own module calls it by its full name, and the bare names belong to the module's helpers outside the braces. `ColorShade.color_between` does the blending:
 
 {{code ColorShade.color_between}}
 
@@ -951,9 +887,21 @@ The horizon has the top's color, warmed toward red while the sun is near it:
 
 {{code Sky.sky_shape}}
 
-`Screen.above_horizon_rect` is the rectangle from above the top of the screen down to the horizon, 200 pixels past each side, as the grass's rectangle is. A fill is a tag union, `Brush.Fill`, and `Brush.flat` makes its plainest tag, one color. This fill is its `Linear` tag, whose color fades along a line, from `start_point` to `end_point`. Both points sit at `x` zero, so the line runs straight down, from the top of the screen to the horizon. Its `stops` say where along that line the fade begins and ends: it holds the top color for the first fifth of the way, `sky_top_stop`, then reaches the horizon's color at the end. The platform works out every color in between. `Brush.opaque_rgba` makes each color fully solid.
+`Screen.above_horizon_rect` is the rectangle from above the top of the screen down to the horizon, 200 pixels past each side. A fill is a tag union, `Brush.Fill`, and `Brush.flat` makes its plainest tag, one color. This fill is its `Linear` tag, whose color fades along a line, from `start_point` to `end_point`. Both points sit at `x` zero, so the line runs straight down, from the top of the screen to the horizon. Its `stops` say where along that line the fade begins and ends: it holds the top color for the first fifth of the way, `sky_top_stop`, then reaches the horizon's color at the end. The platform works out every color in between. `Brush.opaque_rgba` makes each color fully solid.
 
-Every function here works from the clock alone, or from colors worked out from it. So the sky at step 1,529 is the same on every run of the ride. At that step the sun is still high: the sky is near its day color and the horizon has yet to warm, so the two colors match and the picture shows one pale blue. The second half of the book turns the clock to watch them part. One more part of the frame darkens with it: the mountains.
+### The grass
+
+The grass is one rectangle below the horizon, in one color, which darkens with the sky:
+
+{{code Grass.grass_color_at}}
+
+`Sky.color_at_darkness` takes a color by day and how dark the sky is, and returns the color dimmed to match. Everything the sky lights dims through it, from the grass to the truck. Here's the rectangle:
+
+{{code Grass.grass_shape}}
+
+The grass's top edge sits one pixel above the horizon, so its top row covers the sky's last one, and the two always meet. When the bike leans, the camera rolls with it, and the whole frame turns about the middle of the screen. A rectangle the size of the screen would turn with it and leave its corners bare. So `Screen.margin_rect` makes a rectangle that reaches `Screen.roll_margin`, 200 pixels, past each side of the screen, as the sky's does, and the grass reaches 200 pixels below the screen too. That covers a lean of up to 30°, more than the ride ever leans.
+
+Every function here works from the clock alone, or from colors worked out from it. So the backdrop at step 1,529 is the same on every run of the ride. At that step the sun is still high: the sky is near its day color and the horizon has yet to warm, so the two colors match and the picture shows one pale blue. The second half of the book turns the clock to watch them part. One more part of the frame darkens with it: the mountains.
 
 ## Mountains
 
@@ -1185,58 +1133,6 @@ The `match` is on a tuple, `(start, end)`: two values side by side, in parenthes
 
 That's a tower: rods and a disc, worked out again each frame from its segment, the clock and the camera. The disc on top blinks, and the blinking waits for the second half, when the clock starts.
 
-## Stills
-
-The cows of the {{chapter Things}} chapter and the bend animals after it are drawn from stills, and this chapter opens one up. Every animal in Safari Ride is drawn from a still: a small picture made of filled polygons, stored as data. The cow and the elephant each have one still. The cat has seven, one for each pose, and the bird has six. Those two wait for the second half, when things move, but their stills are pictures like any other, and here they are:
-
-```widget stills
-Every pose of the cat and the bird. Click one to see it large, and click it again for its polygons.
-```
-
-Animating a critter comes down to choosing which still to show, and where.
-
-### A still is data
-
-A still is a list of polygons, in the order they're painted. A polygon is one record:
-
-{{code Still.Polygon}}
-
-Its fill is one flat color or a gradient, and its points are its corners. The animals by the road started as emoji, and the `EmojiStill` module holds one still for each. The cat and the bird were drawn for this ride, and their stills have poses. The bird's perched pose is Roc's own logo, made of a few straight-edged shapes, so the bird has very few points. The cat's curves are many short straight lines, so it has far more.
-
-Every point is measured in units of the still's height. Its feet are at `y` 0, its `x` runs across from its middle, and a standing critter is about 1 tall. So a still is free of pixels and metres, and the same numbers draw a cat in the distance and a cat in the lane.
-
-### Putting a still on the screen
-
-The `StillShapes` module does the rest. An `Anchor` says where a still stands on the screen, which way it faces, and how tall it is there:
-
-{{code StillShapes.Anchor}}
-
-Drawing a still is then one small sum for each point. `screen_vector` scales the point by the height on the screen, mirrors it if the still is flipped, and turns its `y` over, since a still's `y` grows upward and the screen's grows down. Then the foot places it:
-
-{{code StillShapes.screen_point}}
-
-A billboard's sprite is its still, drawn this way, at the height its spot and the lens give it. A critter with poses picks its still with a `match` on its pose, and the second half of the book does that.
-
-### How the stills got made
-
-The stills are the least readable code in Safari Ride, because programs generated most of them. They're generated data, encoded as Roc, and here's where they came from.
-
-At a larger company, a picture like these would pass through three people. An artist would draw it. A software developer would build the tools that get it into the game. A project manager would look at the result and decide whether it's good enough. On Safari Ride, Claude, the AI that wrote its code, played the first two roles, and Steve, who made the ride, played the third.
-
-The artist's cat was a program. An early version of Safari Ride drew the cat in TypeScript, with splines for its body, tapered capsules for its limbs, chains of joints for its legs, and strokes for its whiskers. That's a lot of code to carry from language to language, and the ride only ever shows seven poses.
-
-So the developer wrote a baker, a small program that ran the real drawing code once for each pose. A recorder stood in for the canvas. It kept every filled shape as a polygon and turned every stroke into a thin filled quad, and the result was a flat table of polygons. The drawing code stayed behind, and the table moved on.
-
-The emoji-based animals took a different route. They come from Microsoft's Fluent Emoji, in its Flat style. That set draws every animal whole and from the side, where another set draws a rhino as a face, which looks wrong beside a road. A second baker read each SVG file, walked its shapes in painting order, and cut each curve into short straight lines.
-
-The bull is a hybrid. It comes from the same emoji set, but in its Color style, which is shaded. It's the one still with gradients, which is why a polygon's fill can be `Shaded`.
-
-The Roc bird came last. Its perched pose is the logo, and Claude drew the five flight poses to match, directly as polygons, in the logo's two purples.
-
-The project manager's tool was a contact sheet: every still, side by side, in one image. Each bake wrote one, and Steve looked at it. A cat looking like a cat is a judgment for eyes, and the comment in the emoji baker puts the standard well: "an elephant is an elephant".
-
-The bakers belong to the older versions of Safari Ride, in TypeScript and Zig. The polygons they made have been carried along ever since, which is why these files look like generated data. They are. The next chapter puts many stills on the grass at once: the herds.
-
 ## Herds
 
 The farms along the road are crowds of billboards: herds of cows on the left, herds of pigs on the right. A herd is just a list of placed billboards, and its module lays the animals out whenever it's asked.
@@ -1363,7 +1259,15 @@ Those four fields are all the ride carries from one step to the next. Everything
 | Stepped | The rider, the truck | Carried in the moment, and moved once a step from where it was |
 | Rider-driven | The cat, the bird | Derived from the clock and the carried plan, which the rider's approach sets |
 
-The trees and the cows stay put, which is easiest of all. The chapters ahead start with the clock-driven kind, the simplest.
+The trees and the cows stay put, which is easiest of all.
+
+`Clock.next`, `Rider.rider_at_next_step` and `TruckJourney.truck_progress_at_next_step` all have the same shape: a value goes in, and the next value comes out. Call that a step function. Stepping has a cost, which shows beside the clock-driven kind:
+
+- The sun can be asked about any step, cold. To find the truck at step 4,000, the ride has to play that far.
+- A wrong sky spoils only the frames it touches. A wrong step moves the rider for the rest of the ride.
+- The lines of `RideInstant.next` run in order. Once the moments exist, their frames can be painted in any order.
+
+So the stepped parts get the most care. The chapters ahead start with the clock-driven kind, the simplest.
 
 ### Pure functions
 
@@ -1505,7 +1409,7 @@ This picture adds one call, `Sky.darkness_at`, whose answer is the blue line, an
 
 While the sun is up, the darkness grows with the square of how far the sun has fallen since the ride began, and reaches `darkness_at_set`, 0.6, as it fully sets. After that, the darkness climbs in a straight line to full night as the sun sinks a further `night_depth`. The two shapes meet as the sun fully sets, and you can see the join in the blue line. Both helpers take only a height, so the darkness depends on the sun's height alone.
 
-The sky's top color blends from day to night by that darkness, as the {{chapter The sky}} chapter showed, and everything the sky lights, the grass and the rock and the trees, dims through `Sky.color_at_darkness` by the same `Fraction`.
+The sky's top color blends from day to night by that darkness, as the {{chapter The sky and the grass}} chapter showed, and everything the sky lights, the grass and the rock and the trees, dims through `Sky.color_at_darkness` by the same `Fraction`.
 
 ### The horizon warms
 
@@ -1521,9 +1425,9 @@ Play any of those pictures backward, and the sun rises, with the same code. Ever
 
 The rider and the truck are another kind of thing: the ride carries them, and moves them one step at a time. The next chapter shows what that costs.
 
-## Stepping
+## The rider
 
-Where the rider and the truck are depends on where they were a step ago, so the ride carries them in the moment and moves them one step at a time. That's the stepped kind of moving part, and this chapter shows what does the stepping and what it costs.
+Where the rider is depends on where it was a step ago, so the ride carries the rider in the moment and moves it one step at a time. The rider is the larger of the two stepped things, and these modules do its stepping, and the truck's:
 
 The modules that do the stepping
 ```dot
@@ -1548,25 +1452,9 @@ digraph stepped {
 }
 ```
 
-A box is a module, and an arrow points to a module it calls. The diagram shows the main calls, and leaves the smaller ones to the chapters ahead. `RideInstant.next`, from the {{chapter The ride instant}} chapter, steps the rider and the truck, and the modules below them do the work.
+A box is a module, and an arrow points to a module it calls. This chapter takes the rider and its motorcycle. The throttle, the gaze and the lean search each get a chapter of their own after it, and the truck's chapters follow.
 
-### The step function
-
-`Clock.next`, `Rider.rider_at_next_step` and `TruckJourney.truck_progress_at_next_step` all have the same shape: a value goes in, and the next value comes out. Call that a step function. A step makes a new rider one step on, and the old one stays as it was.
-
-### What stepping costs
-
-Stepping has a cost, which shows beside the sun:
-
-- The sun can be asked about any step, cold. To find the truck at step 4,000, the ride has to play that far.
-- A wrong sky spoils only the frames it touches. A wrong step moves the rider for the rest of the ride.
-- The lines of `RideInstant.next` run in order. Once the moments exist, their frames can be painted in any order.
-
-So the stepped parts get the most care. The rider's step takes the next four chapters, and the truck's chapters follow.
-
-## The rider
-
-The rider is the larger of the two stepped things. A rider is two parts: a motorcycle, and a pair of eyes.
+A rider is two parts: a motorcycle, and a pair of eyes.
 
 {{code Rider.Rider from "Rider := {" to "}.{"}}
 
@@ -1581,7 +1469,7 @@ Both fields are nominal records of their own, and between them they hold six val
 | eyes | `gaze_yaw` | `Angle.Turn` | where the rider is looking |
 | | `look_depth` | `Fraction` | how deep the last look went |
 
-Three of the six are angles, of two types: a `Lean` is the bike's tilt, apart from a `Turn`, so passing one where the other belongs fails to compile, as a bearing and a turn did in the {{chapter Mountains}} chapter. The eyes get a chapter of their own.
+Three of the six are angles, of two types: a `Lean` is the bike's tilt, apart from a `Turn`, so passing one where the other belongs fails to compile, as a bearing and a turn did in the {{chapter Mountains}} chapter.
 
 ### The rider's step
 
@@ -1597,9 +1485,39 @@ Every decision the rider makes belongs to `RiderMind`:
 
 {{code RiderMind.controls}}
 
-A decision is the bike's controls: a lean and an acceleration. Look at the last line. `Throttle` picks the acceleration, and it's asked about a motorcycle that exists only as a value: this motorcycle as it would be at the new lean. `motorcycle.with_lean(lean)` builds that one as a new record, and the real motorcycle stays as it was. The {{chapter Rehearsal}} chapter takes the idea much further.
+A decision is the bike's controls, a lean and an acceleration:
 
-A small version of it decides what happens at the end of a segment. `cross_bend_if_on_road` makes a motorcycle carried past the bend onto the next segment. If that motorcycle is on the road, it's the answer, and if it's off the road, the old one is. The rejected motorcycle simply drops out of use:
+{{code Motorcycle.Controls}}
+
+Look at the last line of `controls`. `Throttle` picks the acceleration, and it's asked about a motorcycle that exists only as a value: this motorcycle as it would be at the new lean. Two small helpers build such motorcycles:
+
+{{code Motorcycle.with_lean}}
+
+{{code Motorcycle.steady_controls}}
+
+`{ ..motorcycle, lean }` is a record update with a shorthand field: the field and the argument share the name `lean`. `with_lean` makes a motorcycle as it would be at another lean, and the real motorcycle stays as it was. `steady_controls` makes the controls that keep the lean and the speed as they are. The {{chapter Rehearsal}} chapter builds the rider's steering on both.
+
+### One step of physics
+
+A lean of one degree turns the bike by a tenth of a degree each step, so at a metre a step it goes round a circle with a radius of 573 metres. That's nearly all the physics. Here's the motorcycle:
+
+{{code Motorcycle.Motorcycle from "Motorcycle := {" to "}.{"}}
+
+The step is the whole of the physics, in order:
+
+{{code Motorcycle.motorcycle_at_next_step}}
+
+It works in three parts:
+
+1. **The speed.** The acceleration is applied, and `allowed_speed` holds the result to the top speed.
+2. **The turn.** `lean.steer(turn_per_lean)` turns the lean into a change of direction, a `Turn`, and that's the only way a lean changes where the bike points.
+3. **The move.** The bike goes one step's length in the direction halfway through the step's turn, `mid`. `along.plus(…)` adds a `Distance` to a place along the road, a moment-and-length pair like the clock's. The new place is a record update of `route_place`, inside a new motorcycle.
+
+The bike turns the same amount per step at any speed. That's a cheat, chosen by eye, and it holds up because the rider chooses each step's lean by trying it out on this same physics.
+
+### The end of a segment
+
+A small version of that trying decides what happens at the end of a segment. `cross_bend_if_on_road` makes a motorcycle carried past the bend onto the next segment. If that motorcycle is on the road, it's the answer, and if it's off the road, the old one is. The rejected motorcycle simply drops out of use:
 
 {{code Motorcycle.cross_bend_if_on_road}}
 
@@ -1617,43 +1535,7 @@ When the bike leans, the camera rolls with it, and the whole picture leans:
 
 A lean inside `roll_deadband`, a thousandth of a radian, leaves the picture level, and any other lean passes straight through. The camera turns as well: the rider's head follows the gaze and turns a little into a bend, and the camera adds that to the motorcycle's yaw.
 
-So a decision is a lean and an acceleration. The motorcycle turns them into movement, in the next chapter.
-
-## The bike
-
-A lean of one degree turns the bike by a tenth of a degree each step, so at a metre a step it goes round a circle with a radius of 573 metres. That's nearly all the physics.
-
-Here's the motorcycle, the rider's first part, and its controls, a lean and an acceleration:
-
-{{code Motorcycle.Motorcycle from "Motorcycle := {" to "}.{"}}
-
-{{code Motorcycle.Controls}}
-
-### One step of physics
-
-The step is the whole of the physics, in order:
-
-{{code Motorcycle.motorcycle_at_next_step}}
-
-It works in three parts:
-
-1. **The speed.** The acceleration is applied, and `allowed_speed` holds the result to the top speed.
-2. **The turn.** `lean.steer(turn_per_lean)` turns the lean into a change of direction, a `Turn`, and that's the only way a lean changes where the bike points.
-3. **The move.** The bike goes one step's length in the direction halfway through the step's turn, `mid`. `along.plus(…)` adds a `Distance` to a place along the road, a moment-and-length pair like the clock's. The new place is a record update of `route_place`, inside a new motorcycle.
-
-The bike turns the same amount per step at any speed. That's a cheat, chosen by eye, and it holds up because the rider chooses each step's lean by trying it out on this same physics.
-
-### Pretend motorcycles
-
-Two small helpers let the rest of the program try things out:
-
-{{code Motorcycle.with_lean}}
-
-{{code Motorcycle.steady_controls}}
-
-`{ ..motorcycle, lean }` is a record update with a shorthand field: the field and the argument share the name `lean`. `with_lean` makes a motorcycle as it would be at another lean, and `steady_controls` makes the controls that coast one on. The {{chapter Rehearsal}} chapter uses both on every step of the ride.
-
-So the work is split. The throttle chooses an acceleration, the next chapter's subject, and the bike turns it into a speed. Choosing the lean waits for the {{chapter Rehearsal}} chapter.
+So a step decides a lean and an acceleration, and the motorcycle turns them into a new place on the road. The throttle chooses the acceleration, the next chapter's subject. Choosing the lean waits for the {{chapter Rehearsal}} chapter.
 
 ## The throttle
 
@@ -1838,104 +1720,95 @@ That's the pig's part of the rider's step. The truck is the other stepped thing,
 
 ## The truck
 
-All through the ride, the rider follows a truck up the road. How the truck moves comes in the next chapter, and its lights in the one after. This chapter draws it: a plain truck, standing at a place on the road that's already known, and facing along the road.
+All through the ride, the rider follows a truck up the road. The truck is the ride's one true solid: a body of flat faces in three dimensions, seen from wherever the camera stands, with headlights for the dark and brake lights for the bends. This chapter builds the truck at one place on the road. How it moves comes in the next chapter.
 
 ```widget truck
 A truck from behind, from behind and to one side, and from the side.
 ```
 
-### How to draw a truck
+### The whole job
 
-Here's the whole job in one function. Given a sighted truck and the camera's lens, it works out the truck's setting, then draws its headlight beams, its body and its brake lights, each painted over the one before:
+One function makes the truck's sprite. It paints the headlight beams, the body and the brake lights, in that order:
 
 {{code Truck.scenery_sprite}}
 
-The body is drawn the same way, one level down. It takes the truck's spot, places each face, sorts the faces far to near so that a nearer face covers a farther one, and clips and projects each one:
+`Sprite.composite` makes one sprite of several, each painted over the ones before:
 
-{{code TruckBody.body_sprite}}
+{{code Sprite.composite}}
 
-The modules that draw the truck
-```dot
-digraph truck_drawing {
-  node [shape=box, fontname="Helvetica"];
-  Truck [style=bold];
-  Scene -> TruckSighting [label="  finds it with truck_in_view"];
-  Scene -> Truck [label="  draws it with scenery_sprite"];
-  Truck -> TruckBody [label="  draws its body with body_sprite"];
-  TruckBody -> TruckShape [label="  reads the faces of"];
-  TruckBody -> TruckPlacement [label="  places each face with placed_face"];
-}
-```
+The setting is the one every kind gets, the truck's spot, the lens and the sky's darkness:
 
-The rest of this chapter opens those pieces: what the truck looks like, and how it's placed on the road.
+{{code Sprite.Setting}}
 
-### What the truck looks like
+The truck itself, the `Truck` value, holds only which of its lamps are on:
 
-The truck is blue: a dark blue body, darker blue sides, a lighter blue roof, and black tires. The windshield is the body's color, as if painted on.
+{{code Truck.Truck from "Which of" to "Truck := {"}}
 
-`TruckShape` says only what the truck looks like. Where the truck is, and the road it's on, belong to other modules. Each part of the truck is a face, a color and its corners:
+Each lamp is `[On, Off]`, and each has a module that owns two things: when its lamp is on, and how the lamp looks. The rest of this chapter takes the body, then the two lamps.
+
+### The body's shape
+
+`TruckShape` says what the truck looks like, in the truck's own frame. Each part of the truck is a face, a color and its corners:
 
 {{code TruckShape.TruckFace}}
 
-A corner is a point in the truck's own frame, three distances measured from the middle of the trailer:
+A corner is three distances, measured from the middle of the trailer:
 
 {{code TruckShape.TruckPoint}}
 
-The sides come first. Each one is a single outline, the trailer and the cab together, walked from the back of the trailer to the nose and back:
-
-{{code TruckShape.sides}}
-
-The trailer's back, the roof, the windshield and the nose are each a strip across the truck. Here's the windshield, sloping down from the cab's roof to its nose:
-
-{{code TruckShape.windshield}}
-
-The tires are circles standing on the road, one on each side of each axle:
-
-{{code TruckShape.tires}}
-
-And the whole truck is its faces, in one list:
+The truck is blue: a dark blue body, darker blue sides, a lighter blue roof, and black tires. The whole truck is its faces, in one list:
 
 {{code TruckShape.truck_faces}}
 
 ### Shape, placement, projection
 
-That shape gets to the screen in three stages:
+The shape reaches the screen in three stages:
 
 | Stage | What it does |
 |---|---|
 | Shape | Says where each corner of each face is in the truck's own frame |
-| Placement | Turns one point by the road's heading, carries it out from the truck's foot, and lowers it by the ground's drop |
+| Placement | Turns one corner by the road's heading, carries it out from the truck's foot, and lowers it by the ground's drop |
 | Projection | Turns one whole face into a polygon on the screen |
 
-Placement works a point at a time. Projection works a face at a time, for two reasons. A face that reaches behind the camera is clipped, and clipping can cut corners off a face and add new ones, so it needs the whole outline. And the faces are sorted by depth before they're drawn, and the sort orders whole faces.
-
-### Placement: one rigid body
-
-A truck is rigid, so every corner moves together. `TruckSighting` finds the truck on the road ahead and works out the truck's spot once. Which of its lights are on is worked out before, from the sky and the truck's pace, and the sighting carries it along.
-
-{{code Pipeline.Sighted}}
-
-Every sighting's spot holds the object's foot in the rider's view, and which way the road runs there. `road_heading_at` finds that direction from two points on the road: the object's own, and a point one metre further along. It brings both into the rider's view, and the angle between them is the heading.
-
-{{code RoadAhead.road_heading_at}}
-
-A solid thing stands each of its points through its spot. A point is an offset in the thing's own frame. It is turned by the road's heading and by how the thing faces against the road, carried out from the foot, and lowered by the ground's drop. The tower stands its footprint this way, turned by its yaw:
-
-{{code Spot.standing_point}}
-
-The truck faces straight along the road, so its placement is one line. The headlights and the brake lights use it too:
+Placement works a corner at a time. `TruckSighting` finds the truck on the road ahead and works out its spot once. The truck is rigid and faces straight along the road, so every corner moves the same way, through that spot:
 
 {{code TruckPlacement.point_at_height}}
 
-The truck is drawn from its spot, the camera's lens and the sky's darkness:
+Every corner is lowered by the same drop, how far the ground has curved away beneath the truck's spot. Across a 12-metre truck the drop changes by a few centimetres at most, far less than a pixel.
 
-{{code Sprite.Setting}}
+Projection works a face at a time, for two reasons. A face that reaches behind the camera is cut at the near plane, and the cut can take corners off a face and add new ones, so it needs the whole outline. And the faces are sorted by depth, a whole face at a time, so a nearer face covers a farther one. The body does those steps in order, one name each:
 
-Every corner is lowered by the same drop, how far the ground has curved away beneath the truck's spot. Across a 12-metre truck the drop changes by a few centimetres at most, far less than a pixel. `TruckPlacement.placed_face` places every corner of a face this way, and that's what `body_sprite` sorts and draws.
+{{code TruckBody.body_sprite}}
 
-With the lights off, the beams and the brake lights are empty pictures, and `scenery_sprite` draws just the body. The truck is drawn however small it stands, because the rider is always looking for it.
+`placed_faces` stands every face on the road, `faces_far_to_near` sorts them, and `dimmed_faces` darkens each face's color with the sky. Then `Camera.clipped_polygon` cuts and projects each face, refusing one wholly behind the camera, and `keep_oks` keeps the rest. The truck is drawn however small it stands, because the rider is always looking for it.
 
-That's a truck. Next, it moves.
+### The headlights
+
+The ride runs from day into night, so the headlights come on near the end. They work like a light sensor on the lamps themselves: once the sky is dark enough, they're on.
+
+{{code TruckHeadlights.at}}
+
+They come on at this darkness:
+
+{{code TruckHeadlights.headlights_on_darkness}}
+
+On this ride, that's step 3,555 of 6,746. Once on, they stay on, because from there the sky only darkens. Their sprite matches both tags. An `Off` lamp is an empty sprite, and an `On` lamp paints two beams, wedges that fade from the lamp toward their far end:
+
+{{code TruckHeadlights.sprite}}
+
+### The brake lights
+
+The brake lights read the truck's pace instead of the sky, so they're on while the truck's last step slowed it, by day or by night:
+
+{{code TruckBrakeLights.at}}
+
+Their sprite works as the headlights' does: two lamps on the back of the trailer, each with a glow around it, and an empty sprite when they're off.
+
+Each frame, `FrameView` sets both lamps together, from the sky's darkness and the truck's pace:
+
+{{code FrameView.ride_facts from "headlights: TruckHeadlights.at(" to "brake_lights: TruckBrakeLights.at("}}
+
+Step the ride back past step 3,555, and the headlights go off again: they read only the sky, so the sky turns them off. The brake lights read the truck's last step, which the ride carries, so they come back with it. That's a truck. Next, it moves.
 
 ## The truck's motion
 
@@ -1958,11 +1831,7 @@ Everything else is plain physics. The truck speeds up while it's short of that m
 
 ### Carried from step to step
 
-The sun is worked out from the clock. `sun_direction_at` takes a clock, so you can ask about any step and get an answer at once, cold.
-
-The truck takes more, because where it is depends on where the rider has been. So the truck is carried forward. Its step, `truck_progress_at_next_step`, takes a `TruckProgress` and returns the next one. The ride remembers four things from one step to the next, the rider, the truck, the clock and the encounter plan, and the truck is one of them.
-
-That's what makes the order of a step matter. The rider moves first, and then the truck reads where the rider has got to. The reading runs one way, from the truck to the rider.
+Where the truck is depends on where the rider has been, so the ride carries the truck, one of its four things. Its step, `truck_progress_at_next_step`, takes a `TruckProgress` and returns the next one. The rider moves first, and then the truck reads where the rider has got to. The reading runs one way, from the truck to the rider.
 
 ### Get the types right
 
@@ -2014,9 +1883,6 @@ Here's the tease itself. The lead shrinks in step with the rider's progress alon
 Finding the next bend walks the route's segments with their ends, and takes the first one that ends past the truck:
 
 {{code TruckJourney.next_bend}}
-
-Read its signature out loud: `next_bend : Route, Distance -> NextBend`. The next bend, on a route, past a distance. That's what a signature should do: say what the function is for, before you read its body.
-
 Then the two ways to take a step. Both sit below the module's block, so they're private, and both are arithmetic on `Speed`. Within 60 metres of a bend, the truck brakes so it reaches the bend at its cautious speed. `VehicleLimits.turn_speed` is the speed a turn allows, and the rider's throttle asks it too. The truck's own rule is that limit times its caution, 80%, to leave a margin:
 
 {{code TruckJourney.turn_caution}}
@@ -2027,59 +1893,7 @@ Then the two ways to take a step. Both sit below the module's block, so they're 
 
 {{code TruckJourney.progress_toward_tease}}
 
-That's a truck you can chase. The next chapter lights it.
-
-## The truck's lights
-
-The ride runs from day into night, so the truck's headlights come on near the end. The truck brakes for bends, so its brake lights show while it slows for one, even by day. The truck drives exactly the same with its lights on or off.
-
-Each frame, `FrameView` builds both lamps together. It hands the sky's darkness to `TruckHeadlights` and the truck's pace to `TruckBrakeLights`:
-
-{{code FrameView.ride_facts from "headlights: TruckHeadlights.at(" to "brake_lights: TruckBrakeLights.at("}}
-
-Each kind of lamp gets a module, and each module owns two things: whether its lamp is on, and how the lamp looks. Both are `[On, Off]`, and a `Truck` holds one field per lamp:
-
-{{code Truck.Truck from "Which of" to "Truck := {"}}
-
-### The headlights
-
-The headlights work like a light sensor on the lamps themselves: once the sky is dark enough, they're on. `Sky.darkness_at` answers a `Fraction`, 0 by day and 1 at full dark, and the sensor reads that:
-
-{{code TruckHeadlights.at}}
-
-They come on at this darkness:
-
-{{code TruckHeadlights.headlights_on_darkness}}
-
-On this ride, that's step 3,555 of 6,746. Once on, they stay on, because from there the sky only darkens.
-
-Their `sprite` matches both tags, and an `Off` lamp is an empty sprite. When they're on, it paints two beams as wedges that fade from the lamp toward their far end. Their points are placed the way the body's are, with `TruckPlacement.point_at_height`:
-
-{{code TruckHeadlights.sprite}}
-
-### The brake lights
-
-The brake lights have a twist: they ignore the light and follow the truck's pace, so they're on while its last step slowed it, by day or by night:
-
-{{code TruckBrakeLights.at}}
-
-Their picture works the same way as the headlights': two lamps on the back of the trailer, each with a glow around it, and an empty list when they're off:
-
-{{code TruckBrakeLights.sprite}}
-
-### All together
-
-`Sprite.composite` makes one picture of several, each painted over the ones before:
-
-{{code Sprite.composite}}
-
-`Truck.scenery_sprite`, from the chapter that drew the truck, puts the beams first, then the body, then the brake lights:
-
-{{code Truck.scenery_sprite from "Sprite.composite([" to "truck.brake_lights.sprite(setting),"}}
-
-`TruckBody` draws only the body, and the lights are drawn around it.
-
-Step the ride back past step 3,555, and the headlights go off again. They only ever read the sky, so the sky turns them off. The brake lights read the truck's last step, which the ride keeps, so they come back with it.
+That's a truck you can chase, and it runs on its own rules. The animals ahead answer the rider instead.
 
 ## The cat
 
@@ -2366,7 +2180,7 @@ Each step, the rider's controls come from one function:
 
 {{code RiderMind.controls}}
 
-Its first line asks the lean search for a lean. Its second asks the throttle how hard to accelerate, for the motorcycle at that lean. `with_lean` is the helper from the {{chapter The bike}} chapter: the same motorcycle, at another lean. Both lines rehearse.
+Its first line asks the lean search for a lean. Its second asks the throttle how hard to accelerate, for the motorcycle at that lean. `with_lean` is the helper from the {{chapter The rider}} chapter: the same motorcycle, at another lean. Both lines rehearse.
 
 ### A coast
 
