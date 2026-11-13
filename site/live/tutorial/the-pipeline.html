@@ -11,7 +11,6 @@
 <body class="chapter">
 <header class="top-bar">
 <a class="home-link" href="https://roc.lynrummy.com/">Steve's Roc Apps</a>
-<p class="draft-notice">This is an early draft.</p>
 <a class="repo-link" href="https://github.com/showell/roc-apps">roc-apps on GitHub</a>
 </header>
 <nav class="book-nav" id="chapters" aria-label="Chapters">
@@ -227,7 +226,7 @@
 <span class="syn-comment">## negative `right` is to the rider&#39;s left, and a negative `forward` is</span>
 <span class="syn-comment">## behind the rider.</span>
 <span class="syn-type">RiderPoint</span> : { right : <span class="syn-type">Distance</span>, forward : <span class="syn-type">Distance</span> }
-</code></pre></figure><p><code>right</code> and <code>forward</code> count metres from the camera, and a negative <code>forward</code> is behind it. A <code>RiderView.RiderPointAhead</code> is the same record behind a <code>::</code>, and only <code>RiderView.rider_point_ahead</code> builds one, from a point in front of the camera. So a spot&#39;s foot is always in front of the camera, by construction. This <code>spot</code> is the one <code>tree_sprite</code> took from its setting in the <a class="chapter-link" href="a-far-tree.html">“Lists and map: a far tree”</a> chapter.</p>
+</code></pre></figure><p><code>right</code> and <code>forward</code> count metres from the camera, and a negative <code>forward</code> is behind it. A <code>RiderView.RiderPointAhead</code> is the same record behind a <code>::</code>, and only <code>RiderView.rider_point_ahead</code> builds one, from a point in front of the camera. So a spot&#39;s foot is always in front of the camera, by construction. From the foot, the ride finds where the thing lands on the screen and how big it looks there, by one rule of perspective: a thing twice as far off looks half as big, and lands twice as close to the middle of the screen. The <a class="chapter-link" href="the-math-layer.html">“The math layer”</a> chapter shows the math. This <code>spot</code> is the one <code>tree_sprite</code> took from its setting in the <a class="chapter-link" href="a-far-tree.html">“Lists and map: a far tree”</a> chapter.</p>
 <p>A sighting function can also return a refusal, such as <code>OutOfSight</code>, in place of a sighting. The rest of this chapter shows what happens to the sightings that are kept.</p>
 <h2 id="rendered">Rendered <a class="section-link" href="#rendered" aria-label="Link to this section">§</a></h2>
 <p><code>Pipeline.rendering_of</code>, which the <a class="chapter-link" href="asking-a-kind.html">“Where clauses: asking a kind”</a> chapter explains, renders each sighting that&#39;s kept, and returns a <code>Rendered</code>:</p>

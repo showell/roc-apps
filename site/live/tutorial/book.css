@@ -66,8 +66,8 @@ article > figure.listing { width: fit-content; min-width: min(100%, var(--measur
 
 .book-bar { display: none; }
 
-/* The bar across the top of every page: the draft notice, and the way to the
-   code. It spans both columns of a chapter. */
+/* The bar across the top of every page: the way back to the site, and the way
+   to the code. It spans both columns of a chapter. */
 
 .top-bar {
   display: flex;
@@ -79,7 +79,6 @@ article > figure.listing { width: fit-content; min-width: min(100%, var(--measur
   font: 0.72rem/1.4 var(--plain);
 }
 body.chapter > .top-bar { grid-column: 1 / -1; }
-.draft-notice { margin: 0; padding: 0.1em 0.5em; border-radius: 3px; background: var(--draft); color: var(--draft-ink); }
 /* The same pill every app page has, from site/web/shared/home.js. */
 .home-link { padding: 3px 8px; border-radius: 4px; background: rgba(24, 24, 24, 0.72); color: #fff; text-decoration: none; }
 .repo-link { color: var(--quiet); text-decoration: none; }
@@ -228,13 +227,13 @@ a:has(> .number) { padding-left: 1.7em; text-indent: -1.7em; }
 
 /* The table of contents */
 
-ol.contents { max-width: none; columns: 2; column-gap: 2.5rem; margin: 0; padding: 0; list-style: none; font: 0.82rem/1.35 var(--plain); }
-ol.contents > li { break-inside: avoid; margin: 0 0 0.9rem; }
-ol.contents > li.part { margin: 1.2rem 0 0.5rem; color: var(--accent); font-weight: 700; break-after: avoid; }
-ol.contents > li.category { margin: 0.5rem 0; color: var(--quiet); font-style: italic; break-after: avoid; }
+ol.contents { max-width: 34rem; margin: 0 auto; padding: 0; list-style: none; font: 0.9rem/1.45 var(--plain); }
+ol.contents > li { margin: 0 0 1rem; padding-left: 1.6rem; }
+ol.contents > li.part { margin: 2rem 0 0.8rem; padding: 0 0 0.3rem; border-bottom: 1px solid var(--rule); color: var(--accent); font-size: 1.15rem; font-weight: 700; }
+ol.contents > li.category { margin: 1.2rem 0 0.6rem; padding-left: 0.8rem; color: var(--quiet); font-size: 0.95rem; font-style: italic; }
 ol.contents > li > a { display: block; color: var(--ink); font-weight: 600; text-decoration: none; }
 ol.contents a:hover { color: var(--accent); }
-ol.contents .sections { margin: 0.15rem 0 0; padding-left: 1.7em; list-style: none; }
+ol.contents .sections { margin: 0.15rem 0 0; padding-left: 2.2em; list-style: none; }
 ol.contents .sections li { margin: 0.1rem 0; }
 ol.contents .sections a { color: var(--quiet); text-decoration: none; }
 
@@ -286,7 +285,6 @@ ol.contents .sections a { color: var(--quiet); text-decoration: none; }
   figure.widget { margin-inline: -1rem; }
   figure.widget figcaption { padding-inline: 1rem; }
   iframe.canvas-app { border-radius: 0; }
-  ol.contents { columns: 1; }
   figure.listing { margin-inline: -0.5rem; }
   figure.listing figcaption { padding-inline: 0.6rem; }
   figure.listing pre { padding-inline: 0.6rem; font-size: 0.72rem; tab-size: 2; }
