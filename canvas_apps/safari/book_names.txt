@@ -29,8 +29,6 @@ test: the `roc test` command
 PASS: what `roc test --verbose` prints for an expect
 
 # Other languages, for comparison.
-null: other languages' missing value, which Roc doesn't have
-JavaScript: the language of the platform's runner, which a diagram's cluster names
 
 # Files and folders the book names, which aren't Roc names.
 canvas_app_runner.js: a file of the JavaScript platform
