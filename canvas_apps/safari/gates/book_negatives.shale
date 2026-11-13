@@ -9,7 +9,7 @@
 -- The arguments:
 --   manuscript  the document, safari's tutorial by default;
 --   stop_at     the heading of the first chapter it doesn't read, `The
---               modules` by default: the chapters above it are the new book,
+--               clock` by default: the chapters above it are the new book,
 --               and the rest is the old draft. It moves down a chapter at a
 --               time, as the pass does;
 --   table       the negative sentences the book keeps, by default
@@ -46,7 +46,7 @@
 use("cookbook:roc/findings.shale")
 
 const MANUSCRIPT = arg("manuscript", "canvas_apps/safari/tutorial/tutorial.md")
-const STOP_AT = arg("stop_at", "The modules")
+const STOP_AT = arg("stop_at", "The clock")
 const TABLE_FILE = arg("table", "canvas_apps/safari/book_negatives.txt")
 const HELD = arg("held", "")
 
