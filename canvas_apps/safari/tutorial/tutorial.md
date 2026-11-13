@@ -2322,7 +2322,7 @@ So a point on the road reaches the screen by four moves: a rotation for each ben
 
 ## Proving it
 
-The ride carries four things from step to step, and derives everything else in a frame from them. So a frame is a value, and the same step always gives the same frame. This chapter turns that sameness into a test strict enough to guard every change to the program, down to the last pixel.
+The same step always gives the same frame, because the ride derives each frame from the four things it carries. This chapter turns that sameness into a test strict enough to guard every change, down to the last pixel.
 
 | Step | What the frame shows | Hash of its pixels | Shapes |
 |---|---|---|---|
@@ -2336,65 +2336,57 @@ The ride carries four things from step to step, and derives everything else in a
 {{proof row 6250 The truck braking in plain view}}
 {{proof row 9000 Past the end, on the second lap}}
 
-Each row is one frame of the ride. Ride to that step today, and you get that hash and that many shapes. The gate is the set of checks every change to the program has to pass before it lands, and one of its checks holds every row as it is. The rows come from the file that check reads, `gates/proof.expected`.
+Each row is one frame of the ride. Ride to that step today, and you get that hash and that many shapes. The gate is the set of checks every change must pass before it lands, and one of them holds every row as it is.
 
 ### A fixture is a value
 
-A test rides to any step of the ride with one call:
+A test rides to any step with one call:
 
 {{code Tour.at_step}}
 
-`Tour.at_step` plays every step from the start up to the one asked for, inside one ride. The proof tools ride on past the finish with `Tour.step_forward`, which starts the ride again, so they reach step 9,000 on the second lap. `Tour.initial` is a value, and each step returns a new tour, so the tour at step 1,529 is the same value in every test, on every run. A test is a plain function call, running the ride's own code.
+`Tour.at_step` plays every step from the start up to the one asked for. `Tour.step_forward` rides on past the finish into a second lap, which is how the proof tools reach step 9,000. `Tour.initial` is a value, and each step returns a new tour, so the tour at step 1,529 is the same value in every test, on every run.
 
 ### The frame hash
 
-The gate's proof tools are small Roc programs in `gates/proof/`. `RasterFrame` is one. It rides to a step and paints the frame into 576,000 pixels, 960 across and 600 down, in pure Roc. Then it prints a hash of them. Its painter is `SafariFrame`, which fills the frame's shapes with `ShapesPixels`, the Roc twin of what the page's JavaScript does on a canvas. The gate holds each hash to its line of `gates/proof.expected`, exactly. One different pixel in one frame fails it.
+The gate's proof tools are small Roc programs in `gates/proof/`. `RasterFrame` is one. It rides to a step and paints the frame into 576,000 pixels, 960 across and 600 down, in pure Roc, with `SafariFrame` and `ShapesPixels`, the Roc twin of the page's canvas. Then it prints a hash of them. The gate holds each hash to its line of `gates/proof.expected`, exactly. One different pixel in one frame fails it.
 
-A frame is evidence only for what's in it, so each step in the table is there for a scene: the bird in the air at step 100, the cat at 1,529 and 1,542, the truck's lights at 3,698, 5,700 and 6,250. Step 9,000 is past the end of the ride, so its frame shows the ride started again. We add a row whenever a change could go wrong with every listed frame staying the same. The row at 3,698 is one: the truck brakes about 600 metres off, and its glow is about a pixel across, so a change that lost a far glow would show there.
+A frame proves only what's in it, so each step in the table is there for a scene. We add a row whenever a change could go wrong with every listed frame staying the same. The row at 3,698 is one: the truck brakes about 600 metres off, and its glow is about a pixel across.
 
 ### Sums in order
 
-Exact hashes make the order of arithmetic matter. Adding floating-point numbers in a different order can change the last bit of the answer, so the order of a sum is part of what it means. `Route.segments_with_ends` folds over the route's segments, adding up their lengths, and its doc comment says why its direction matters:
+Exact hashes make the order of arithmetic matter: adding floating-point numbers in another order can change the last bit of the answer. `Route.segments_with_ends` adds up the route's lengths, and its doc comment says why its direction matters:
 
 {{code Route.segments_with_ends}}
 
-A product's grouping counts as well. A beacon's angle is `2.0 * F64.pi * phase.to_f64() / Beacon.beacon_period.to_f64()`. Divide the phase by the period first, and the product means the same on paper. But some of the beacons' shapes come out different in their last bits, and the gate's check of the built page fails: the gate builds the page, runs it, and holds a hash of what it draws.
+A product's grouping counts as well. A beacon's angle is `2.0 * F64.pi * phase.to_f64() / Beacon.beacon_period.to_f64()`. Divide the phase by the period first, and the product means the same on paper, but some beacons change in their last bits, and the gate's hash of the built page fails.
 
-`Distance.plus`, `Speed.times` and the rest do exactly the arithmetic their names say, and a value wrapped in an opaque type runs as the number inside it. So a change that retypes a module, to use `Speed` where it used plain `F64`s, changes the types and leaves every hash where it was. A hash that moves says the change did more than retype. So we rename, retype and reorganize the code freely. The compiler checks the types, and the hashes check every pixel.
+A value in an opaque type runs as the number inside it, so a change that retypes a module, to use `Speed` where it used plain `F64`s, leaves every hash where it was. That's why we rename, retype and reorganize the code freely: the compiler checks the types, and the hashes check every pixel.
 
 ### Three more proofs
 
-`ShapesFrame` paints each frame twice: once with its polygons whole, as the page gets them, and once cut into triangles, as a platform that fills only triangles gets them. It counts the pixels that differ, and the gate holds that count at 0 of 576,000 at every step in the table.
+`ShapesFrame` paints each frame twice, once with its polygons whole and once cut into triangles. The gate holds the count of pixels that differ at 0 of 576,000, at every step in the table.
 
-`StepBack` rides the route and steps back at points along it: at steps 10, 1,000, 3,000 and 5,000, and at the finish. One step back from step 3,000 has to land on step 2,999, and as many steps back as the ride took have to land on step 0.
+`StepBack` steps back at points along the route, from step 10 to the finish. One step back from step 3,000 has to land on step 2,999, and as many steps back as the ride took have to land on step 0.
 
 `OnRoad` rides the whole route and checks that the rider stays on the road from start to finish.
 
 ### Tests beside the code
 
-The rest of the testing is plain `expect`s. An `expect` sits at the top level of a module, under the code it checks, and `roc test` runs it. Safari Ride has over a thousand. A test of a pure function writes down its arguments, calls it, and compares the answer. The tests check both sides of each question: a beacon dark and lit, a point on the near plane and just short of it.
+The rest of the testing is plain `expect`s. An `expect` sits at the top level of a module, under the code it checks, and `roc test` runs it. Safari Ride has over a thousand.
 
-A test's data can sit beside it as a plain definition. Here's a motorcycle to step, on its own:
+An `expect` can use only what its module imports, so a check that needs several modules goes in `gates/expects/`, a folder of modules made only for checks.
 
-{{code Motorcycle.riding}}
-
-An `expect` can use only what its module imports. `Motorcycle` imports only what stepping a motorcycle needs, so its tests build one directly. A check that needs several modules goes in `gates/expects/`, a folder of modules made only for checks. So every import of a ride module serves the ride's own code.
-
-The gate makes every `expect` count. It finds each line in the source that starts with `expect`, and each one has to print `PASS` exactly once when `roc test` runs. So an `expect` has to sit in a module that a test run reaches, or the gate fails.
+The gate makes every `expect` count. Each line in the source that starts with `expect` has to print `PASS` exactly once when `roc test` runs, so an `expect` has to sit in a module that a test run reaches.
 
 ### Crashes that check
 
-Some beliefs about the program are cheaper to check as it runs. `Fraction.of`, from the {{chapter Errors as tag unions}} chapter, is one.
-
-Every `Fraction.of` in the ride enforces an invariant: a ratio outside 0 to 1 means a sum behind it is wrong, so the program stops, with a sentence that says so. `Easing.smoothstep` leans on it: its algebra keeps its answer between 0 and 1, and its `Fraction.of` checks that on every call. `Try` is the right answer when a value can honestly be missing. A wrong ratio is a bug, and a crash finds it sooner. The proof tools ride thousands of steps on every run of the gate, so each check on that path runs thousands of times.
+Some beliefs about the program are cheaper to check as it runs. Every `Fraction.of` in the ride, from the {{chapter Errors as tag unions}} chapter, enforces an invariant: a ratio outside 0 to 1 means a sum behind it is wrong, so the program stops, with a sentence that says so. The proof tools ride thousands of steps on every run of the gate, so each check on that path runs thousands of times.
 
 ### The page itself
 
-This book is built from the code. Every snippet came through Roc's own parser, by name. Each program shown failing went through the compiler, and its message is quoted as the compiler printed it. The gate builds the book, so renaming a function quoted here fails the gate until the prose catches up.
+This book is built from the code. Every snippet came through Roc's own parser, by name, and each program shown failing went through the compiler, with its message quoted as printed. The gate builds the book, so renaming a function quoted here fails the gate until the prose catches up.
 
-The gate also runs a set of lints, small programs that read the Roc source for patterns we've ruled out. Each lint holds its count of violations, and every count is zero. So a vague name, or a boolean argument that should be a tag, fails the gate before a single hash is worked out.
-
-Every one of these checks runs in a terminal, on the same lists of shapes the page paints.
+The gate also runs lints, small programs that read the Roc source for patterns we've ruled out, each held at zero, so a vague name fails the gate before a single hash is worked out.
 
 ## The platform
 
@@ -2427,11 +2419,11 @@ The {{chapter Platforms, packages and modules}} chapter showed the app's last li
 
 An app is a record. Most of its fields are plain values: the screen's size, thirty frames a second, the first model, and a title. The ride is silent, so `sounds` returns 0 and `tones` is empty. `model_at_next_step` moves the model on a step, and `frame_shapes` returns the shapes of the model's frame.
 
-Every app's step also takes the seconds the step covers, which is one over its frame rate. `WasmApp` works those out from the frame rate itself, so they stay inside the WebAssembly. The ride counts steps, so one function fits its step to that shape:
+Every app's step also takes the seconds the step covers, which `WasmApp` works out from the frame rate. The ride counts steps, so one function fits its step to that shape:
 
 {{code CanvasApp.untimed_model_at_next_step}}
 
-In the annotation, each part in parentheses is the type of a function. `untimed_model_at_next_step` takes a function of a model and an input snapshot, and returns a function of a model, a snapshot and the seconds. The body says the same: `|step|` takes the function, and returns `|model, input, _seconds|`, a function that passes the first two to `step`. The seconds stop there, so the ride runs on steps alone.
+In the annotation, each part in parentheses is the type of a function. `untimed_model_at_next_step` takes a function of a model and an input snapshot, and returns a function that takes the seconds too and passes the first two to `step`. The seconds stop there, so the ride runs on steps alone.
 
 ### What the platform calls
 
@@ -2457,13 +2449,13 @@ The snapshot goes to the app's step, `SafariApp.model_at_next_step`. The step ta
 
 The platform's own code is a host and a little JavaScript. `host.zig`, in Zig, runs inside the WebAssembly beside the app, holds the model, and calls the app's Roc functions. `canvas_app_runner.js`, in the browser, keeps time and gathers the input. For each tick it calls the host's `advance`, which steps the model, and when the browser is ready to draw, `computeFrame`, which returns where the frame's list of shapes sits in memory. When the browser falls behind, the runner steps up to four times before it draws once.
 
-The runner reads the shapes out of memory with `roc_glue.js`, a reader generated from the platform's types, and `shapes_canvas.js` paints them on the page's canvas. On the next call to `computeFrame`, the host hands the last frame's list to Roc's `release` before it asks for a new one. `release` is pure too: it takes the list and returns `{}`. Roc frees a value when its last reference goes, so passing the list to `release` frees it. The freeing runs in the app's compiled Roc code, which has the layout of a `Shapes.Shape`.
+The runner reads the shapes out of memory with `roc_glue.js`, a reader generated from the platform's types, and `shapes_canvas.js` paints them on the page's canvas. On the next call to `computeFrame`, the host hands the last frame's list to Roc's `release` before it asks for a new one. `release` is pure too: it takes the list and returns `{}`. Roc frees a value when its last reference goes, so passing the list to `release` frees it, in the app's own compiled code, which holds the layout of a `Shapes.Shape`.
 
-The runner and the painter come to under 700 lines of JavaScript, and they serve every app on the platform. They gather the keys and the mouse, paint the canvas, play the sound, and read shapes. The ride reaches them as a list of shapes.
+The runner and the painter come to under 700 lines of JavaScript, shared by every app on the platform, and the ride reaches them as a list of shapes.
 
 ### A frame is a list
 
-A frame is one flat list of shapes, painted in order, so a later shape covers an earlier one. Two tags in that list are marks. `Blend` changes how the shapes after it mix with what's painted already. The ride uses it to add a light's glow to the colors under it. `View` sets the space the shapes after it are drawn in: a turn, a shift and a zoom, applied to their points. `Shapes.world_space` builds one from a `target`, the point it turns and zooms about, an `offset`, where on the screen that point lands, and a rotation and a zoom. Here's how the whole frame leans with the rider:
+A frame is one flat list of shapes, painted in order, so a later shape covers an earlier one. Two tags in that list are marks. `Blend` changes how the shapes after it mix with what's painted already. The ride uses it to add a light's glow to the colors under it. `View` sets the space the shapes after it are drawn in: a turn, a shift and a zoom, applied to their points. Here's how the whole frame leans with the rider:
 
 {{code FrameView.leaned_shapes}}
 
