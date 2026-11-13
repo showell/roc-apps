@@ -1550,7 +1550,7 @@ So for each step, `RiderMind.controls` returns a lean and an acceleration, and `
 
 ## The throttle
 
-The rider is always deciding whether to accelerate, brake or hold steady. `Throttle` makes that decision, once a step.
+The rider is always choosing whether to accelerate, brake or hold steady. The `Throttle` module returns that choice once a step, as an acceleration.
 
 The modules around `Throttle`
 ```dot
@@ -1580,7 +1580,7 @@ The rider has several reasons to slow down, and each is a rule of its own. A ben
 
 {{code Throttle.next_acceleration from "limits = [" to "limits.fold(offered, held_to)"}}
 
-Call this *the chain of limits*. Each limit answers the same type and can be read alone, and adding a reason is one more line. It reads like a list of rules because that's what it is.
+Call this *the chain of limits*. Each limit reads alone, and a new reason to slow down is one more line in the list.
 
 Each limit is a `ThrottleLimit`: `NoLimit`, or `AtMost` some acceleration. `held_to` takes the lower:
 
@@ -1588,13 +1588,13 @@ Each limit is a `ThrottleLimit`: `NoLimit`, or `AtMost` some acceleration. `held
 
 {{code Throttle.held_to}}
 
-The throttle answers an acceleration, and the motorcycle turns it into a speed.
+The throttle returns an acceleration, and the motorcycle's step turns it into a speed.
 
 `Speed` and `Acceleration` are a pair like the clock and its steps: a speed is a value, and an acceleration is the change from one speed to another. To brake for a bend, the rider needs the steady acceleration that takes its speed to a target within so much road. That's `Speed.acceleration_to`. Its `within` is a `Distance`: the road the change has to happen in. The formula is the first line of a physics textbook, v² = u² + 2ad, solved for a, with the speed going from `s` to `t` over the distance `within`. In the parameter list, `Speed.(s)` and `target: Speed.(t)` unwrap the two speeds into plain numbers, as `Clock.(n)` does in the {{chapter The clock}} chapter:
 
 {{code Speed.acceleration_to}}
 
-It has one caller, `VehicleLimits.braking_to`. That function also holds the speed steady when at most a micrometre of road is left, and crashes on a brake that would take the speed below zero. The rider's bend brake, the gawk brake and the truck all brake through it. The first limit is the bend's:
+It has one caller, `VehicleLimits.braking_to`. That function also holds the speed steady when at most a micrometre of road is left, and crashes on a brake that would take the speed below zero. The rider's bend brake, the gawk brake and the truck all brake through `braking_to`. The first limit is the bend's:
 
 {{code Throttle.bend_limit}}
 
@@ -1602,17 +1602,17 @@ The last limit, `shoulder_limit`, comes back in the {{chapter Rehearsal}} chapte
 
 ## Rehearsal
 
-The rider steers by leaning, and each step it has to choose a lean. It chooses by rehearsal: it runs the bike's real step on a pretend motorcycle, reads where that motorcycle ends up, and throws it away. Each step tries twelve leans this way. Each try narrows the range the next one picks from, and the rider steers at the lean the tries close in on, the one that keeps the bike nearest the middle of the road.
+The rider steers by leaning, and for each step the rider chooses a lean by rehearsal. The lean search runs the bike's real step on a pretend motorcycle, reads where that motorcycle ends up, and throws the pretend one away. For each step, it tries twelve leans this way. Each try narrows the range the next one picks from, and the rider steers at the lean the tries close in on: the one that keeps the bike nearest the middle of the road.
 
 ```widget rehearsal
 Click a mark to see that try at a lean.
 ```
 
-This is step 374 of the ride, just after a bend. Each white arc is one try: a pretend motorcycle coasting down the road at one lean. The yellow line is the road's middle, where the search wants each coast to end. The last mark, the choice, is the lean the rider steers at.
+The picture holds step 374 of the ride, just after a bend. Each white arc is one try: a pretend motorcycle coasting down the road at one lean. The yellow line is the road's middle, and the search looks for the lean whose coast ends nearest it. The last mark is the lean the rider steers at.
 
 ### Where the rehearsals start
 
-Each step, the rider's controls come from `RiderMind.controls`, which the {{chapter The rider}} chapter showed. Its first line asks the lean search for a lean. Its second asks the throttle how hard to accelerate, for the motorcycle at that lean, built with `with_lean`. Both lines rehearse.
+For each step, the rider's controls come from `RiderMind.controls`, from the {{chapter The rider}} chapter. Its first line asks the lean search for a lean. Its second asks the throttle how hard to accelerate, for the motorcycle at that lean, built with `with_lean`. Both calls run rehearsals.
 
 ### A coast
 
@@ -1632,7 +1632,7 @@ Each pass makes its step with this:
 
 {{code Coast.coasting_step}}
 
-That's the real step, `Motorcycle.motorcycle_at_next_step`, the one that moves the real rider. `steady_controls` hands it the lean as it is and an acceleration of zero. The step is a pure function, so a pretend motorcycle steps exactly as the real one does.
+`Motorcycle.motorcycle_at_next_step` is the real step, the same one that moves the real rider. `steady_controls` hands it the lean as it is and an acceleration of zero. The step is a pure function, so a pretend motorcycle steps exactly as the real one does.
 
 ### Twelve tries
 
@@ -1640,11 +1640,11 @@ A lean further right always ends a coast further right. So each try rules out ha
 
 {{code LeanSearch.best_lean}}
 
-`for _ in 0..<lean_search_round_count` runs its body twelve times. `0..<12` counts from 0 up to 11, and `_` leaves the count unnamed, since the body needs only the bounds. The bounds start a degree either side of the bike's lean, so the lean it picks is always within a degree of the last one. Each try coasts the motorcycle at the lean halfway between the bounds:
+`for _ in 0..<lean_search_round_count` runs its body twelve times. `0..<12` counts from 0 up to 11, and `_` stands in for the count, since the body needs only the bounds. The bounds start a degree either side of the bike's lean, so the lean it picks is always within a degree of the last one. Each try coasts the motorcycle at the lean halfway between the bounds:
 
 {{code LeanSearch.tried_motorcycle}}
 
-Where that coast goes decides which half of the bounds to keep:
+`lean_correction` reads where that coast went, and returns which way to lean more:
 
 {{code LeanSearch.lean_correction}}
 
@@ -1652,13 +1652,13 @@ A `..` in a pattern stands for the rest of the record's fields, so `Leaves({ sid
 
 ### Why rehearsing is safe
 
-A rehearsal runs the real rules on a copy of the rider, and in Roc the copy is cheap. `tried_motorcycle` returns a new motorcycle, and the real one stays as it was. `motorcycle_at_next_step` has the thin arrow, so it reaches only its arguments. A rehearsal touches only its own copy, and a try the rider rejects is simply dropped.
+A rehearsal runs the real rules on a copy of the rider, and in Roc the copy is cheap. `tried_motorcycle` returns a new motorcycle, and the real one stays as it was. `motorcycle_at_next_step` has the thin arrow, so it reaches only its arguments. A rehearsal touches only its own copy.
 
 Each real step of the ride runs thirteen coasts: twelve for the lean, and one more in the throttle. That last one asks whether the bike, held as it is, would leave the road at a shoulder, and brakes if so:
 
 {{code Throttle.shoulder_limit}}
 
-So the rider rehearses and moves, and every part of it is a function from the moment before to the moment after. One part is left: where the rider looks, which the next chapter takes.
+So every part of the rider's step, rehearsals included, is a function from the moment before to the moment after. One part is left: where the rider looks, the next chapter's subject.
 
 ## The rider's gaze
 
@@ -1672,7 +1672,7 @@ Press play to ride the stretch around the first distracting pig, seen from above
 
 ### Get the types right
 
-The rider's record has two fields this chapter puts to work:
+Two fields of the rider's record carry the gaze:
 
 | Field | Type | What it is |
 |---|---|---|
@@ -1698,7 +1698,7 @@ So the job is a short list:
 {{types row Gaze.desired_gaze Choose where to look}}
 {{types row RiderEyes.next_gaze_yaw Turn the head}}
 {{types row RiderEyes.next_look_depth Keep the depth of the look}}
-{{types row Gaze.noticed_pig Know whether the rider has noticed a pig}}
+{{types row Gaze.noticed_pig Tell whether the rider has noticed a pig}}
 {{types row Gawking.gawk_brake Work out the brake}}
 
 One step of the gaze
@@ -1714,7 +1714,7 @@ digraph gaze {
 }
 ```
 
-The chain from `desired_gaze` is the look, and `gawk_brake` is the gawking. The two stand apart: both ask about the same pig, and each asks only about the pig.
+The chain from `desired_gaze` is the look, and `gawk_brake` is the gawking.
 
 ### The look
 
@@ -1722,7 +1722,7 @@ The chain from `desired_gaze` is the look, and `gawk_brake` is the gawking. The 
 
 {{code RiderEyes.eyes_at_next_step}}
 
-Before the eyes move, the rider chooses where to look. `Rider.rider_at_next_step` asks `RiderMind.gaze_target`, since every decision is `RiderMind`'s, and `gaze_target` hands the question to `Gaze.desired_gaze`:
+Before the eyes move, the rider chooses where to look. `Rider.rider_at_next_step` asks `RiderMind.gaze_target`, since `RiderMind` holds every choice the rider makes, and `gaze_target` hands the question to `Gaze.desired_gaze`:
 
 {{code Gaze.desired_gaze}}
 
@@ -1744,7 +1744,7 @@ The bike keeps its own heading. The gaze goes to the camera alone:
 
 {{code Rider.head_yaw}}
 
-The second term is the rider's head going with the lean. So when the rider looks right, the road slides left on the page, and the bike keeps going where it was going.
+The second term is the rider's head going with the lean. When the rider looks right, the road slides left on the page, and the bike keeps going where it was going.
 
 ### The depth of a look
 
@@ -1756,7 +1756,7 @@ The depth has one job. It widens the view:
 
 {{code RiderEyes.attention}}
 
-An `Attention` is how hard something holds the rider's eye, an opaque type around an `F64`: a full look is 1. `Easing.smoothstep` turns the look's depth into one that moves slowly at each end and faster in the middle, so the pull eases in and out. `RiderCamera.ride_focal_length` sets how wide the view is. It asks `Rider.attention`, which takes the stronger of two pulls: this look's, and a crossing cat's, which the cat chapters cover. So a pig widens the view, and the view stays wide for a while after.
+The `Attention` type is how hard something holds the rider's eye. It's an opaque type around an `F64`, and a full look is 1. `Easing.smoothstep` turns the look's depth into one that moves slowly at each end and faster in the middle, so the pull eases in and out. `RiderCamera.ride_focal_length` sets how wide the view is. It asks `Rider.attention`, which takes the stronger of two pulls: this look's, and a crossing cat's, which the cat chapters cover. So a pig widens the view, and the view stays wide for a while after.
 
 ### Gawking
 
@@ -1776,7 +1776,7 @@ The formula is the one the throttle uses for a bend, with a pig for a bend. The 
 
 ### The first pig
 
-Here's all of that on the third segment of the route:
+Here's the look and the gawking on the third segment of the route:
 
 | Step | What happens | Speed | `gaze_yaw` | `look_depth` |
 |---|---|---|---|---|
@@ -1787,11 +1787,11 @@ Here's all of that on the third segment of the route:
 
 The look takes 165 steps, and getting the eyes back takes 174. The rider crawls on for 173 steps more, eyes on the road, and reaches the next segment at step 1,397. The gaze is home at every one of the ride's 18 seams between segments, and an expect holds that. A seam would be fine even with the gaze turned: the bike keeps its heading at a seam, and `gaze_yaw` is measured from the bike.
 
-That's the pig's part of the rider's step. The truck is the other stepped thing, and its chapters start with how it's drawn.
+That's the pig's part of the rider's step. The truck is the other stepped thing, and its chapters start with its sprite.
 
 ## The truck
 
-All through the ride, the rider follows a truck up the road. The truck is the ride's one true solid: a body of flat faces in three dimensions, seen from wherever the camera stands, with headlights for the dark and brake lights for the bends. This chapter builds the truck at one place on the road. How it moves comes in the next chapter.
+All through the ride, the rider follows a truck up the road. The truck is the ride's one true solid: a body of flat faces in three dimensions, seen from wherever the camera stands, with headlights for the dark and brake lights for the bends. Here the truck stands at one place on the road. How it moves comes in the next chapter.
 
 ```widget truck
 A truck from behind, from behind and to one side, and from the side.
@@ -1799,7 +1799,7 @@ A truck from behind, from behind and to one side, and from the side.
 
 ### The whole job
 
-One function makes the truck's sprite. It paints the headlight beams, the body and the brake lights, in that order:
+One function makes the truck's sprite. The sprite holds the headlight beams, the body and the brake lights, painted in that order:
 
 {{code Truck.scenery_sprite}}
 
@@ -1811,7 +1811,7 @@ The setting is the one every kind gets, the truck's spot, the lens and the sky's
 
 {{code Sprite.Setting}}
 
-The truck itself, the `Truck` value, holds only which of its lamps are on:
+The `Truck` value holds which of the truck's lamps are on:
 
 {{code Truck.Truck from "Which of" to "Truck := {"}}
 
@@ -1847,11 +1847,11 @@ Placement works a corner at a time. `TruckSighting` finds the truck on the road 
 
 Every corner is lowered by the same drop, how far the ground has curved away beneath the truck's spot. Across a 12-metre truck the drop changes by a few centimetres at most, far less than a pixel.
 
-Projection works a face at a time, for two reasons. A face that reaches behind the camera is cut at the near plane, and the cut can take corners off a face and add new ones, so it needs the whole outline. And the faces are sorted by depth, a whole face at a time, so a nearer face covers a farther one. The body does those steps in order, one name each:
+Projection works a face at a time, for two reasons. A face that reaches behind the camera is cut at the near plane, and the cut can take corners off a face and add new ones, so it needs the whole outline. And the faces are sorted by depth, a whole face at a time, so a nearer face covers a farther one. `TruckBody.body_sprite` takes those steps in order, with a name for each:
 
 {{code TruckBody.body_sprite}}
 
-`placed_faces` stands every face on the road, `faces_far_to_near` sorts them, and `dimmed_faces` darkens each face's color with the sky. Then `Camera.clipped_polygon` cuts and projects each face, refusing one wholly behind the camera, as the {{chapter The math layer}} chapter shows, and `keep_oks` keeps the rest. The truck is drawn however small it stands, because the rider is always looking for it.
+`placed_faces` stands every face on the road, `faces_far_to_near` sorts them, and `dimmed_faces` darkens each face's color with the sky. Then `Camera.clipped_polygon` cuts and projects each face, and returns an `Err` for one wholly behind the camera, as the {{chapter The math layer}} chapter shows. `keep_oks` keeps the rest. The truck keeps all its faces however far off it stands, because the rider is always looking for it.
 
 ### The headlights
 
@@ -1863,13 +1863,13 @@ They come on at this darkness:
 
 {{code TruckHeadlights.headlights_on_darkness}}
 
-On this ride, that's step 3,555 of 6,746. Once on, they stay on, because from there the sky only darkens. Their sprite matches both tags. An `Off` lamp is an empty sprite, and an `On` lamp paints two beams, wedges that fade from the lamp toward their far end:
+On this ride, that's step 3,555 of 6,746. Once on, they stay on, because from there the sky only darkens. `TruckHeadlights.sprite` matches on both tags. An `Off` lamp is an empty sprite. An `On` lamp's sprite is two beams, each a wedge that fades from the lamp toward its far end:
 
 {{code TruckHeadlights.sprite}}
 
 ### The brake lights
 
-The brake lights read the truck's pace instead of the sky, so they're on while the truck's last step slowed it, by day or by night. The pace is part of the truck's carried progress:
+The brake lights read the truck's pace, so they're on while the truck's last step slowed it, by day or by night. The pace is part of the truck's carried progress:
 
 {{code TruckJourney.Pace}}
 
@@ -1877,11 +1877,11 @@ The brake lights read the truck's pace instead of the sky, so they're on while t
 
 Their sprite works as the headlights' does: two lamps on the back of the trailer, each with a glow around it, and an empty sprite when they're off.
 
-Each frame, `FrameView` sets both lamps together, in one record of lights, from the sky's darkness and the truck's pace:
+For each frame, `FrameView` sets both lamps together, in one record of lights, from the sky's darkness and the truck's pace:
 
 {{code FrameView.ride_facts from "headlights: TruckHeadlights.at(" to "brake_lights: TruckBrakeLights.at("}}
 
-Step the ride back past step 3,555, and the headlights go off again: they read only the sky, so the sky turns them off. The brake lights read the truck's last step, which the ride carries, so they come back with it. That's a truck. Next, it moves.
+Step the ride back past step 3,555, and the headlights go off again: they read only the sky, so the sky turns them off. The brake lights read the truck's last step, which the ride carries, so they come back with it. Next, the truck moves.
 
 ## The truck's motion
 
@@ -1894,17 +1894,17 @@ The truck is what the rider chases. It starts 500 metres up the road, and for mo
 | 4,000 | 4,796 metres | 5,051 metres | 255 metres |
 | 6,000 | 6,790 metres | 6,931 metres | 141 metres |
 
-The closest the rider gets is 50 metres, at step 6,374. After that the rider slows to stop at the route's end, at step 6,746. The truck drives on, past the end of the route, and vanishes, since the ride draws only what's on the route. It stays ahead to the last, by design.
+The closest the rider gets is 50 metres, at step 6,374. After that the rider slows to stop at the route's end, at step 6,746. The truck drives on past the end of the route and out of the picture. It stays ahead to the last, by design.
 
 ### A tease, carried out by physics
 
-The truck's driver is teasing the rider: staying ahead, but letting the rider gain. That's the hand of god, a rule that bends the world on purpose, for the story. Here it's one function, `tease_position`. Given how far the rider has come, it says where the truck would like to be. The lead it aims for shrinks from 500 metres at the start of the route to 100 at the end.
+The truck's driver is teasing the rider: staying ahead, but letting the rider gain. That's a hand of god: a rule that bends the world on purpose, for the story. Here it's one function, `tease_position`. Given how far the rider has come, it says where the truck would like to be. The lead it aims for shrinks from 500 metres at the start of the route to 100 at the end.
 
-Everything else is plain physics. The truck speeds up while it's short of that mark and holds its speed once it's past it. It slows for the bends, and that's mostly where the rider gains. The tease only ever speeds the truck up, so near the end the rider can get closer than the 100 metres it aims for. The truck can always pull away again, because it outdoes the rider by 10%, in both its acceleration and its top speed.
+The rest is physics. The truck speeds up while it's short of that mark and holds its speed once it's past it. It slows for the bends, and that's mostly where the rider gains. The tease only ever speeds the truck up, so near the end the rider can get closer than the 100 metres it aims for. The truck can always pull away again, because it outdoes the rider by 10%, in both its acceleration and its top speed.
 
 ### Carried from step to step
 
-Where the truck is depends on where the rider has been, so the ride carries the truck, one of its four things. Its step, `truck_progress_at_next_step`, takes a `TruckProgress` and returns the next one. The rider moves first, and then the truck reads where the rider has got to. The reading runs one way, from the truck to the rider.
+Where the truck is depends on where the rider has been, so the truck is one of the four things each moment carries. Its step, `truck_progress_at_next_step`, takes a `TruckProgress` and returns the next one. The rider moves first, and then the truck reads where the rider has got to. The reading runs one way, from the truck to the rider.
 
 ### Get the types right
 
@@ -1941,7 +1941,7 @@ digraph truck_motion {
 
 {{code RideInstant.next from "truck = TruckJourney.truck_progress_at_next_step(" to "{ rider_distance: rider_place.distance_along(route), route },"}}
 
-That record is the whole of the chase. `TruckJourney` and the rider's modules stand apart, each importing only its own. What the two share is `VehicleLimits`, the limits both keep to. The truck's 10% is its own, `chase_margin` in `TruckJourney`.
+That record holds all the truck reads of the rider. The truck and the rider share `VehicleLimits`, the limits both keep to. The truck's 10% is its own, `chase_margin` in `TruckJourney`.
 
 The step works out the tease, then looks for the next bend:
 
@@ -1954,17 +1954,18 @@ Here's the tease itself. The lead shrinks in step with the rider's progress alon
 Finding the next bend walks the route's segments with their ends, and takes the first one that ends past the truck:
 
 {{code TruckJourney.next_bend}}
-Then the two ways to take a step. Both sit below the module's block, so they're private, and both are arithmetic on `Speed`. Within 60 metres of a bend, the truck brakes so it reaches the bend at its cautious speed. `VehicleLimits.turn_speed` is the speed a turn allows, and the rider's throttle asks it too. The truck's own rule is that limit times its caution, 80%, to leave a margin:
+
+Then come the two ways to take a step. Both sit below the module's block, so they're private, and both are arithmetic on `Speed`. Within 60 metres of a bend, the truck brakes so it reaches the bend at its cautious speed. `VehicleLimits.turn_speed` is the speed a turn allows, and the rider's throttle asks it too. The truck's own rule is that limit times its caution, 80%, to leave a margin:
 
 {{code TruckJourney.turn_caution}}
 
 {{code TruckJourney.progress_braking_for}}
 
-`VehicleLimits.braking_to` works out one steady brake that reaches the target speed at the bend. A steady brake can land a little under the target, so `target_speed.max(...)` holds the truck there. A brake that would take the speed below zero is a bug, and `braking_to` crashes on one. Otherwise, the truck chases:
+`VehicleLimits.braking_to` works out one steady brake that reaches the target speed at the bend. A steady brake can land a little under the target, so `target_speed.max(...)` holds the truck there. A brake that would take the speed below zero is a bug, and `braking_to` crashes on one. Farther from a bend, the truck chases the tease:
 
 {{code TruckJourney.progress_toward_tease}}
 
-That's a truck you can chase, and it runs on its own rules. The animals ahead answer the rider instead.
+The truck reads only how far along the route the rider has come. The cat and the bird ahead react to where the rider is, starting with the cat.
 
 ## The cat
 
@@ -1982,7 +1983,7 @@ A crossing is a list of frames, and it plays one frame a step on the ride's cloc
 
 {{code EncounterPlan.EncounterPlan from "When the encounter" to "].{"}}
 
-Everything else about the cat in a frame is derived from the plan and the clock:
+The ride derives everything else about the cat in a frame from the plan and the clock:
 
 How a cat reaches the frame
 ```dot
@@ -2006,7 +2007,7 @@ digraph cat {
 
 ### When it starts
 
-The ride plans the crossing once, from how fast the rider is coming. The aim is for the cat to be across just as the rider comes within 3 metres of it. What the ride plans by is a span: how many steps the animation takes, and the gap it ends at.
+The ride plans the crossing once, from how fast the rider is coming. The cat should be across just as the rider comes within 3 metres of it. What the ride plans by is a span: how many steps the animation takes, and the gap it ends at.
 
 {{code EncounterPlan.StepSpan}}
 
@@ -2014,7 +2015,7 @@ The cat's span is its frames, ending 3 metres short:
 
 {{code CatCrossing.crossing_span}}
 
-The crossing has 38 frames. So the plan is made on the first step where a rider keeping their speed would cover the rest of the gap, down to 3 metres, within 38 steps. A faster rider covers more road in that time, so the cat sets off farther away:
+The crossing has 38 frames. So the ride makes the plan on the first step where a rider keeping their speed would cover the rest of the gap, down to 3 metres, within 38 steps. A faster rider covers more road in that time, so the cat sets off farther away:
 
 | Rider's speed | The crossing starts at a gap of |
 |---|---|
@@ -2046,7 +2047,7 @@ The crossing's frames come in three runs, one frame a step:
 | 11 to 34 | stands frozen in the lane |
 | 35 to 38 | coils, flies for two frames, and lands on the far verge |
 
-That counts frames from 1, as the picture does. A `Playing` stage counts its steps from 0. A cat holds itself in one of seven poses:
+The table counts frames from 1, as the picture does. A `Playing` stage counts its steps from 0. A cat holds itself in one of seven poses:
 
 {{code CatCrossing.CatPose}}
 
@@ -2056,7 +2057,7 @@ Each frame is a pose, and where the cat is on its way across:
 
 {{code CatCrossing.CrossingWay}}
 
-A frame says how far along its way the cat is, and leaves out the road. So one list of frames serves every crossing, by whichever tree. The leap is four of them, set by eye:
+A frame holds how far along its way the cat is, as a share of the way. The road comes in later, by the cat's own tree, so one list of frames serves every crossing. The leap is four of them, set by eye:
 
 {{code CatCrossing.leap_frames}}
 
@@ -2082,7 +2083,7 @@ A list of frames and a way to show each one make a timeline. `Animation` defines
 
 {{code Animation.Timeline from "instant : Animation.Timeline" to "Past(_) => timeline.after"}}
 
-`frame_instant` is a function stored in a record's field, so calling it takes parentheses: `(timeline.frame_instant)(frame)`. Written `timeline.frame_instant(frame)`, it would read as a method call. A `Playing` stage past the last frame would mean the span and the frames disagree, so the timeline crashes there. Both come from the one list, `crossing_frames`, so every `Playing` stage finds its frame.
+`frame_instant` is a function stored in a record's field, so calling it takes parentheses: `(timeline.frame_instant)(frame)`. Written `timeline.frame_instant(frame)`, it would read as a method call. A `Playing` stage past the last frame would mean the span and the frames disagree, so `instant` crashes there. Both come from the one list, `crossing_frames`, so every `Playing` stage finds its frame.
 
 ### Into the frame
 
