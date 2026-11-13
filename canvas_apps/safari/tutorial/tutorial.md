@@ -1153,7 +1153,7 @@ Trees get their places once, when the world is built. A tower's beacon blinks wi
 
 {{code TowerSighting.end_tower}}
 
-It turns the tower to face the road where it ends. The tower halfway along is the same, with its footprint square to the road, a `Midway` beacon, and one more way to fail: `mid_tower_point` gives `Err(NoMidTower)` for a segment of a kilometre or less. Where towers stand has one home, `TowerSighting`, and the world itself holds only the segments.
+It turns the tower 30 degrees from square to the road. `tower_if_ahead` stands the tower at its point by the road, and returns its sighting if it's in front of the camera and some of it shows above the horizon. The tower halfway along is the same, with its footprint square to the road, a `Midway` beacon, and one more way to fail: `mid_tower_point` gives `Err(NoMidTower)` for a segment of a kilometre or less. Where towers stand has one home, `TowerSighting`.
 
 ### Over the horizon
 
@@ -1181,7 +1181,7 @@ Each rod is a line between two points seen from the rider. A near tower is wide,
 
 {{code RiderView.line_ahead}}
 
-The `match` is on a pair, `(start, end)`, so it covers all four combinations of its two `Try`s. A rod with one end short of the near plane, 0.4 metres ahead of the camera, is cut where it crosses that plane. A rod with both ends behind it is refused.
+The `match` is on a tuple, `(start, end)`: two values side by side, in parentheses. So it covers all four combinations of its two `Try`s. A rod with one end short of the near plane, 0.4 metres ahead of the camera, is cut where it crosses that plane. A rod with both ends behind it is refused.
 
 That's a tower: rods and a disc, worked out again each frame from its segment, the clock and the camera. The disc on top blinks, and the blinking waits for the second half, when the clock starts.
 
@@ -1203,7 +1203,7 @@ A still is a list of polygons, in the order they're painted. A polygon is one re
 
 Its fill is one flat color or a gradient, and its points are its corners. The animals by the road started as emoji, and the `EmojiStill` module holds one still for each. The cat and the bird were drawn for this ride, and their stills have poses. The bird's perched pose is Roc's own logo, made of a few straight-edged shapes, so the bird has very few points. The cat's curves are many short straight lines, so it has far more.
 
-Every point is measured in units of the still's height. Its feet are at `y` 0, and a standing critter is about 1 tall. So a still is free of pixels and metres, and the same numbers draw a cat in the distance and a cat in the lane.
+Every point is measured in units of the still's height. Its feet are at `y` 0, its `x` runs across from its middle, and a standing critter is about 1 tall. So a still is free of pixels and metres, and the same numbers draw a cat in the distance and a cat in the lane.
 
 ### Putting a still on the screen
 
@@ -1257,7 +1257,7 @@ A herd in a perfect grid would look like a parking lot, so each cow strays a lit
 
 {{code CowHerd.herd_cow}}
 
-The cow's number picks its column and its row: `div_trunc_by` divides and drops the remainder, and `rem_by` keeps only the remainder. Each row stands a little further along the road than the one in front of it, and further from the road. Then `Scatter.stray_of` moves the cow a little, along and across. The stray is worked out from the cow's number, so it looks random but comes out the same on every run, and every frame of the ride stays exact. The last expression is the placed cow: a place on the road, a lift of zero, and the billboard `cow_billboard` picks, a calf for every fourth cow.
+The cow's number picks its column and its row: `div_trunc_by` divides and drops the remainder, and `rem_by` keeps only the remainder. Each row stands a little further along the road than the one in front of it, and further from the road. Then `Scatter.stray_of` moves the cow a little, along and across, with two phases, 2.7 and 1.9, chosen by eye. The stray is worked out from the cow's number, so it looks random but comes out the same on every run, and every frame of the ride stays exact. The last expression is the placed cow: a place on the road, a lift of zero, and the billboard `cow_billboard` picks, a calf for every fourth cow.
 
 ### Pigs
 
@@ -1279,7 +1279,7 @@ The first half of the book held one page still, step 1,529, and built it part by
 Press play, press it again to stop, then step back.
 ```
 
-The ride steps back one moment at a time, as easily as it went forward. That ease comes from how Roc values work, and it starts with a puzzle. A Roc value stays exactly as it was made, yet the ride is change from start to finish.
+The ride steps back one moment at a time, as easily as it went forward. That ease starts with a puzzle about Roc values. A Roc value stays exactly as it was made, yet the ride is change from start to finish.
 
 The answer is in the flip book from the {{chapter One page}} chapter. Each page is a still drawing, and the motion comes from the flipping. In Safari Ride, each page is a moment, a value of the `RideInstant` type, and one function makes the next one:
 
@@ -1295,7 +1295,7 @@ Every old moment stays as it was made, so the ride keeps the ones since it last 
 
 {{code Tour.step_back}}
 
-A `Tour` holds the moment on show, and a list of the moments before it. `Tour.(tour)` opens the tour to read its fields. `step_back` takes the last moment off that list and puts it on show, with a record update: `{ ..tour, instant: previous_instant, past_instants }` is a new tour, the same as `tour` but for those two fields. The old tour stays as it was.
+A `Tour` holds the moment on show, and a list of the moments before it. `Tour.(tour)` opens the tour to read its fields. `step_back` takes the last moment off that list and puts it on show, with a record update: `{ ..tour, instant: previous_instant, past_instants }` is a new tour, the same as `tour` but for those two fields. The old tour stays as it was. At the ride's start the list is empty, so `last` returns `Err(ListWasEmpty)`, and the tour stays where it is.
 
 ### What a moment holds
 
@@ -1641,7 +1641,7 @@ Two small helpers let the rest of the program try things out:
 
 {{code Motorcycle.steady_controls}}
 
-`{ ..motorcycle, lean }` is a record update with a shorthand field: the field and the argument share the name `lean`. `with_lean` makes a motorcycle as it would be at another lean, and `steady_controls` makes the controls that coast one on. The {{chapter Rehearsal}} chapter uses both hundreds of times a step.
+`{ ..motorcycle, lean }` is a record update with a shorthand field: the field and the argument share the name `lean`. `with_lean` makes a motorcycle as it would be at another lean, and `steady_controls` makes the controls that coast one on. The {{chapter Rehearsal}} chapter uses both on every step of the ride.
 
 So the work is split. The throttle chooses an acceleration, the next chapter's subject, and the bike turns it into a speed. Choosing the lean waits for the {{chapter Rehearsal}} chapter.
 
