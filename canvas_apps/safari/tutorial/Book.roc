@@ -14,13 +14,11 @@ Book := [].{
 
 	Page : { file : Str, html : Str }
 
-	## A line in the book's lists of chapters, above the chapter titled `before`,
-	## with an emoji beside its title to break up the list.
+	## A line in the book's lists of chapters, above the chapter titled `before`.
 	Divider : {
 		before : Str,
 		level : [Part, Category],
 		title : Str,
-		icon : Str,
 	}
 
 	## The book's parts, and the categories inside them.
@@ -30,67 +28,56 @@ Book := [].{
 			before: "Introduction",
 			level: Part,
 			title: "The big picture",
-			icon: "🗺️",
 		},
 		{
 			before: "Things",
 			level: Part,
 			title: "One frame",
-			icon: "🖼️",
 		},
 		{
 			before: "The sky and the grass",
 			level: Category,
 			title: "Nature",
-			icon: "🌲",
 		},
 		{
 			before: "The road",
 			level: Category,
 			title: "Man-made",
-			icon: "📡",
 		},
 		{
 			before: "Herds",
 			level: Category,
 			title: "Critters that stand still",
-			icon: "🐄",
 		},
 		{
 			before: "Immutable values: a flip book",
 			level: Part,
 			title: "Motion",
-			icon: "🏍️",
 		},
 		{
 			before: "The beacons",
 			level: Category,
 			title: "The passage of time",
-			icon: "🌅",
 		},
 		{
 			before: "The rider",
 			level: Category,
 			title: "Vehicles",
-			icon: "🚚",
 		},
 		{
 			before: "The cat",
 			level: Category,
 			title: "Critter motion",
-			icon: "🐈",
 		},
 		{
 			before: "The math layer",
 			level: Part,
 			title: "Under the hood",
-			icon: "⚙️",
 		},
 		{
 			before: "Appendix: the patterns",
 			level: Part,
 			title: "Appendices",
-			icon: "📚",
 		},
 	]
 
@@ -397,7 +384,7 @@ divider_html = |divider| {
 		Part => "part"
 		Category => "category"
 	}
-	"<li class=\"${class}\"><span class=\"icon\" aria-hidden=\"true\">${divider.icon}</span>${BookText.escaped_text(divider.title)}</li>"
+	"<li class=\"${class}\">${BookText.escaped_text(divider.title)}</li>"
 }
 
 front_html : Chapter, List(Chapter) -> Str
@@ -583,7 +570,6 @@ a_part = {
 	before: "A",
 	level: Part,
 	title: "P & Q",
-	icon: "🅿️",
 }
 
 a_category : Book.Divider
@@ -591,7 +577,6 @@ a_category = {
 	before: "A",
 	level: Category,
 	title: "C",
-	icon: "©️",
 }
 
 elsewhere : Book.Divider
@@ -599,7 +584,6 @@ elsewhere = {
 	before: "B",
 	level: Part,
 	title: "R",
-	icon: "®️",
 }
 
 plain_book : Manuscript.Contents
@@ -692,7 +676,7 @@ expect Book.pages(widget_book, empty_outline).map(|page| page.html.contains("emb
 expect Book.pages(
 	plain_book,
 	{ ..empty_outline, dividers: [{ ..a_part, before: "One" }] },
-).all(|page| page.html.contains("<li class=\"part\"><span class=\"icon\" aria-hidden=\"true\">🅿️</span>P &amp; Q</li>"))
+).all(|page| page.html.contains("<li class=\"part\">P &amp; Q</li>"))
 expect
 	named_for_slug(one_section, { extent: FirstChapters, slugs: [slug_a] })
 		== Ok({ ..one_section, file: "a-slug.html" })
@@ -710,7 +694,7 @@ expect with_opening(one_section, [elsewhere]).opening == ""
 expect with_opening(
 	one_section,
 	[a_part, a_category, elsewhere],
-).opening == "<li class=\"part\"><span class=\"icon\" aria-hidden=\"true\">🅿️</span>P &amp; Q</li>\n<li class=\"category\"><span class=\"icon\" aria-hidden=\"true\">©️</span>C</li>"
+).opening == "<li class=\"part\">P &amp; Q</li>\n<li class=\"category\">C</li>"
 expect contents_entry({ ..one_section, opening: "<li>o</li>" }).starts_with("<li>o</li><li><a ")
 expect nav_entry(
 	{ ..one_section, opening: "<li>o</li>" },
