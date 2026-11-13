@@ -754,11 +754,11 @@ The next chapter takes the sightings that are refused.
 
 ## Refused
 
-Every frame, the pipeline tries to sight each thing on the road ahead, and its sighting functions refuse some of them. A thing behind the camera, a thing the horizon hides and a thing too small to see all stay out of the frame. This chapter is about how a Roc function gives back an answer that can fail, and how that answer travels up through the functions that ask for it.
+Every frame, the pipeline tries to sight each thing on the road ahead, and its sighting functions refuse some of them. For a thing behind the camera, a thing the horizon hides or a thing too small to see, the sighting returns an `Err`. This chapter is about how a Roc function gives back an answer that can fail, and how that answer travels up through the functions that ask for it.
 
-Here are some things from step 1,529 and what their sightings decide. `right` and `forward` place each thing's foot from the camera, in metres, and a `forward` below zero is behind it. A thing less than 0.4 metres in front of the camera, short of what we call its near plane, counts as behind it too. The road bends, so a tree on a segment far ahead can stand far to one side:
+Here are some things from step 1,529 and what their sightings return. `right` and `forward` place each thing's foot from the camera, in metres, and a `forward` below zero is behind it. A thing less than 0.4 metres in front of the camera, short of what we call its near plane, counts as behind it too. The road bends, so a tree on a segment far ahead can stand far to one side:
 
-| What it is | `right` | `forward` | What its sighting decides |
+| What it is | `right` | `forward` | Its sighting |
 |---|---|---|---|
 | The cat, frozen in the road | 0.38 | 23.63 | kept |
 | The nearest tree, a big green one | 3.45 | 21.63 | kept |
@@ -768,7 +768,7 @@ Here are some things from step 1,529 and what their sightings decide. `right` an
 | The radio tower past the end of the rider's segment | 20.40 | 355.61 | kept |
 | The truck | 92.19 | 489.15 | kept |
 
-A small tree far off sinks below the horizon, while a taller one just past it still shows its top. The ride's ground curves on a radius of 100 km, far tighter than the earth's, so its horizon is near. The horizon is measured the whole way from the camera, sideways included: the hidden tree stands about 1,500 metres off. Of the 214 trees on the segments in view, 136 are kept, 30 are behind the camera, and 48 are below the horizon. Those three counts add up to all 214 trees, so at this step every tree the horizon leaves in view also passes the size test, which comes later in this chapter. The table says which test refused each tree. The program itself keeps only the answer that the tree is out of sight, as the code below shows.
+A small tree far off sinks below the horizon, while a taller one just past it still shows its top. The ride's ground curves on a radius of 100 km, far tighter than the earth's, so its horizon is near. The horizon is measured the whole way from the camera, sideways included: the hidden tree stands about 1,500 metres off. Of the 214 trees on the segments in view, 136 are kept, 30 are behind the camera, and 48 are below the horizon. Those three counts add up to all 214 trees, so at this step every tree the horizon leaves in view also passes the size test, which comes later in this chapter. The table names the test each tree failed. The program itself returns one answer for all three, `OutOfSight`, as the code below shows.
 
 Each test lives in its own function, and each function asks the one below it first. A radio tower takes two of the tests, the near plane and the horizon, so here's its stack:
 
@@ -796,13 +796,13 @@ A sighting function's answer is a `Try`, Roc's type for an answer that can fail.
 
 Its type ends in `Try(Pipeline.Sighted(kind), [OutOfSight])`: a sighting, or `OutOfSight`. The last line wraps the spot and the kind in an `Ok`.
 
-The test itself happens one level down. `RiderView.rider_point_ahead` gives back a `Try` of its own, and the `?` after it decides what happens next. When the answer is an `Ok`, the `?` unwraps it, and `foot` is the point ahead. When it's an `Err`, the `?` ends `sighting_of` right there and gives back an `Err`. So every line after the `?` runs only for a thing in front of the camera, and the body reads as one straight path.
+The test itself happens one level down. `RiderView.rider_point_ahead` gives back a `Try` of its own, and the `?` after it handles both answers. When the answer is an `Ok`, the `?` unwraps it, and `foot` is the point ahead. When it's an `Err`, the `?` ends `sighting_of` and gives back an `Err`. So every line after the `?` runs only for a thing in front of the camera, and the body reads as one straight path.
 
 `rider_point_ahead` works on a `RiderPoint`, a bare point seen from the rider, and its refusal says what's wrong with that point:
 
 {{signatures RiderView.rider_point_ahead}}
 
-A sighting's callers need only to know the thing is out of sight. So the `?` has a function after it, `|BehindCamera| OutOfSight`, and the `Err`'s tag goes through that function on its way up. The function's argument is written as the tag itself, a pattern like the ones a `match` lists, and `BehindCamera` is the only tag `rider_point_ahead` gives, so that one pattern covers it.
+A sighting's callers treat every refusal alike, as out of sight. So the `?` has a function after it, `|BehindCamera| OutOfSight`, and the `Err`'s tag goes through that function on its way up. The function's argument is written as the tag itself, a pattern like the ones a `match` lists, and `BehindCamera` is the only tag `rider_point_ahead` gives, so that one pattern covers it.
 
 ### A test on top
 
@@ -810,7 +810,7 @@ The next function asks `sighting_of` first, then makes a test of its own:
 
 {{code Pipeline.sighting_above_horizon_of}}
 
-Its `where` line asks the kind for its height, as the {{chapter Asking a kind}} chapter showed. A `Spot` gives its parts through methods, such as `lift()` and `foot()`. The ride's ground curves away from the rider, and `drop()` gives how far it has dropped below level at the thing's foot.
+Its `where` line asks the kind for its height, as in the {{chapter Asking a kind}} chapter. A `Spot` gives its parts through methods, such as `lift()` and `foot()`. The ride's ground curves away from the rider, and `drop()` gives how far it has dropped below level at the thing's foot.
 
 The first line asks `sighting_of`, and its plain `?` passes an `Err(OutOfSight)` straight up. Then the function tests the horizon, and gives back the same tag for its own refusal. So both functions have the same type after the arrow, and a caller treats the two refusals alike.
 
@@ -828,7 +828,7 @@ There's one truck, so `Scene` matches on its answer instead:
 
 {{code Scene.truck_renderings}}
 
-A `TruckFate` is the truck's sighting, a `Try`, and a `match` on a `Try` covers both tags, as any `match` covers every tag. An empty list leaves the truck out of the frame.
+A `TruckFate` is the truck's sighting, a `Try`, and a `match` on a `Try` covers both tags, as any `match` covers every tag. For an `Err`, the truck's renderings are an empty list.
 
 ### All through the ride
 
@@ -843,7 +843,7 @@ The same kind of answer runs all through Safari Ride, wherever a function can co
 
 Each tag names one way its function can fail, and the ground patch has two.
 
-So a refusal is an ordinary value. A sighting gives back a `Try`, a `?` passes an `Err` up or unwraps an `Ok`, a function after the `?` can rename the tag on the way, and `keep_oks` or a `match` decides where the refusals stop. The kept sightings go on to be rendered. The rest of the frame is the world the things stand in, and the next chapters build it from the ground up.
+So a refusal is an ordinary value. A sighting gives back a `Try`, a `?` passes an `Err` up or unwraps an `Ok`, a function after the `?` can rename the tag on the way, and a `keep_oks` or a `match` is where the refusals stop. The kept sightings go on to be rendered. The rest of the frame is the world the things stand in, and the next chapter starts with its sky and its grass.
 
 ## The sky and the grass
 
@@ -853,7 +853,7 @@ Behind everything beside the road stands the backdrop: the sky above the horizon
 Step 1,529 of the ride: the trees, the grass, and the sky over them, one day blue.
 ```
 
-A frame asks the `Sky` module for both colors at the ride's clock, and gets them back as one record:
+One function in the `Sky` module returns both colors at the ride's clock, as one record:
 
 {{code Sky.colors_at}}
 
@@ -865,11 +865,11 @@ The top of the sky blends from day into night, by how dark the sky is:
 
 {{code Sky.sky_top_color}}
 
-`day_sky` and `night_sky` are two constants in the module, a pale blue and a deep one. Each constant carries an annotation, as a function does, and here the type is an `RgbColor`. `Sky.darkness_at`, which the {{chapter Functions}} chapter took apart, says how dark the sky is, as a `Fraction`. `ColorShade.color_between` does the blending:
+`day_sky` and `night_sky` are two constants in the module, a pale blue and a deep one. Each constant carries an annotation, as a function does, and here the type is an `RgbColor`. `Sky.darkness_at`, from the {{chapter Functions}} chapter, says how dark the sky is, as a `Fraction`. `ColorShade.color_between` blends the two colors:
 
 {{code ColorShade.color_between}}
 
-It takes one record, so every call names its three fields. A color is three channels, its red, green and blue, and each channel moves the same share of the way from `from` to `to`. `blend` is a function named inside the body, and it takes a function as its argument: `RgbColor.red`, say, which reads one channel of a color. The last line calls `blend` once for each channel. The share is a `Fraction`, which its type keeps between 0 and 1, so `color_between` can trust it.
+It takes one record, so every call names its three fields. A color is three channels, its red, green and blue, and each channel moves the same share of the way from `from` to `to`. `blend` is a function named inside the body, and it takes a function as its argument, such as `RgbColor.red`, which reads one channel of a color. The last line calls `blend` once for each channel. The share is a `Fraction`, which its type keeps between 0 and 1, so each channel lands between its values in `from` and `to`.
 
 ### The horizon
 
@@ -881,11 +881,11 @@ The horizon has the top's color, warmed toward red while the sun is near it:
 
 ### The fade
 
-`Sky.sky_shape` paints the two colors as one shape:
+`Sky.sky_shape` returns the two colors as one shape:
 
 {{code Sky.sky_shape}}
 
-`Screen.above_horizon_rect` is the rectangle from above the top of the screen down to the horizon, 200 pixels past each side. A fill is a tag union, `Brush.Fill`, and `Brush.flat` makes its plainest tag, one color. This fill is its `Linear` tag, whose color fades along a line, from `start_point` to `end_point`. Both points sit at `x` zero, so the line runs straight down, from the top of the screen to the horizon. Its `stops` say where along that line the fade begins and ends: it holds the top color for the first fifth of the way, `sky_top_stop`, then reaches the horizon's color at the end. The platform works out every color in between. `Brush.opaque_rgba` makes each color fully solid.
+`Screen.above_horizon_rect` is the rectangle from above the top of the screen down to the horizon, 200 pixels past each side. A fill is a tag union, `Brush.Fill`, and `Brush.flat` makes its plainest tag, one color. This fill is its `Linear` tag, whose color fades along a line, from `start_point` to `end_point`. Both points sit at `x` zero, so the line runs straight down, from the top of the screen to the horizon. Its `stops` say where along that line the fade begins and ends: the fade holds the top color for the first fifth of the way, `sky_top_stop`, then reaches the horizon's color at the end. The platform works out every color in between. `Brush.opaque_rgba` makes each color fully solid.
 
 ### The grass
 
@@ -899,7 +899,7 @@ The grass is one rectangle below the horizon, in one color, which darkens with t
 
 The grass's top edge sits one pixel above the horizon, so its top row covers the sky's last one, and the two always meet. When the bike leans, the camera rolls with it, and the whole frame turns about the middle of the screen. A rectangle the size of the screen would turn with it and leave its corners bare. So `Screen.margin_rect` makes a rectangle that reaches `Screen.roll_margin`, 200 pixels, past each side of the screen, as the sky's does, and the grass reaches 200 pixels below the screen too. That covers a lean of up to 30°, more than the ride ever leans.
 
-Every function here works from the clock alone, or from colors worked out from it. So the backdrop at step 1,529 is the same on every run of the ride. At that step the sun is still high: the sky is near its day color and the horizon has yet to warm, so the two colors match and the picture shows one pale blue. The second half of the book turns the clock to watch them part. One more part of the frame darkens with it: the mountains.
+Every function here works from the clock alone, or from colors worked out from it. So the backdrop at step 1,529 is the same on every run of the ride. At that step the sun is still high: the sky is near its day color and the horizon has yet to warm, so the two colors match and the picture shows one pale blue. In the second half of the book the clock runs, and the two colors part. One more part of the frame darkens with it: the mountains.
 
 ## Mountains
 
@@ -917,7 +917,7 @@ A direction needs a type, and so does a change of direction. `Angle.Bearing` is 
 
 {{fails turn_as_bearing}}
 
-The compiler refuses it. A bearing plus a turn is a bearing, and the turn from one bearing to another is a turn, and the `Angle` module's functions keep the two apart everywhere.
+The compiler refuses it. A bearing plus a turn is a bearing. The turn from one bearing to another is a turn. The `Angle` module's functions keep the two types apart everywhere.
 
 ### A range
 
@@ -929,23 +929,23 @@ Its `center` is the bearing of its middle, and `half_width` is the turn from the
 
 {{signatures Skyline.range_height}}
 
-The range is highest in its middle and falls to zero at its ends, and two waves on top of that make its ridges, with their sizes tuned by eye. The rolling land is a little under one wave of its own, all the way round.
+The range is highest in its middle and falls to zero at its ends, and two waves on top of that height make its ridges, with sizes we chose by eye. The rolling land is a little under one wave of its own, all the way round.
 
 ### Across the screen
 
-To paint a range, the ride goes across the screen two pixels at a time, and asks which bearing each column looks along. The middle of the screen looks along the camera's heading, and a column to its right looks a little further right, by a turn the lens decides. A column is a record:
+To find a range's outline, the ride goes across the screen two pixels at a time, and asks which bearing each column looks along. The middle of the screen looks along the camera's heading, and a column to its right looks a little further right, by a turn that comes from the lens. A column is a record:
 
 {{code Skyline.SkylineColumn}}
 
-A silhouette is one flat region whose top edge follows the heights along the columns. One function paints a silhouette, whichever range or land it is:
+A silhouette is one flat region whose top edge follows the heights along the columns. One function returns a silhouette, whichever range or land it is:
 
 {{code Skyline.silhouette}}
 
-The record it takes has a field that holds a function: `height_at`, which says how high the silhouette stands at a column. A function is a value like any other, so it can sit in a record field. `silhouette` calls `height_at(column)` for each column and finds where that height lands on the screen with `Lens.y_for_height`. A mountain is so far off that its distance drops out: how high it looks depends only on its height above the horizon and the lens. Then `silhouette` joins the tops into one region closed along `base_y`, which is the grass's top for the ranges and the horizon for the land. The `if` keeps the top from dipping below `base_y`.
+The record it takes has a field that holds a function: `height_at`, which says how high the silhouette stands at a column. A function is a value like any other, so it can sit in a record field. `silhouette` calls `height_at(column)` for each column and finds where that height lands on the screen with `Lens.y_for_height`. A mountain is so far off that its distance drops out: how high it looks depends only on its height above the horizon and the lens. Then `silhouette` joins the tops into one region closed along `base_y`, which is the grass's top for the ranges and the horizon for the land. The `if` holds the top at `base_y` or above it.
 
 ### Back to front
 
-`Skyline.skyline_shapes` calls `silhouette` three times, with a different `height_at` each time, and paints the results back to front: the west range, the north range, the north's snow, then the land:
+`Skyline.skyline_shapes` calls `silhouette` three times, with a different `height_at` each time, and returns the results back to front, in the order they're painted: the west range, the north range, the north's snow, then the land:
 
 {{code Skyline.skyline_shapes}}
 
@@ -957,7 +957,7 @@ At dusk the rock darkens through `Sky.color_at_darkness`, as the grass does, and
 
 {{code Skyline.snow_color}}
 
-That's the far scenery: it turns with the rider and stays where it is. Next comes the road.
+The mountains are far scenery: they turn with the rider and stay as far away as ever. Next comes the road.
 
 ## The road
 
@@ -971,15 +971,15 @@ The ground comes in patches, and a patch is a list of corners on the ground and 
 
 {{code GroundSighting.road_patch}}
 
-Each corner is a `RiderPoint`, a point on the ground seen from the rider, so the `GroundPatch` module can find where each corner lands on the screen and paint the patch there.
+Each corner is a `RiderPoint`, a point on the ground seen from the rider, so the `GroundPatch` module can find where each corner lands on the screen and place the patch there.
 
 ### A segment's ground
 
-The route is a chain of straight segments with a bend between each one and the next. Each segment in view lays its own ground, with one function:
+The route is a chain of straight segments with a bend between each one and the next. Each segment in view gets its own ground from one function:
 
 {{code GroundSighting.ground_patches from "ground_patches : RoadAhead.RoadView," to "].join()"}}
 
-A segment lays up to three things: the road along it, the paving at its bend into the next segment, and a pond if it ends at one. Each comes as a list, and `join` makes them one. The two `match`es leave a part out by giving an empty list. The segment just behind the rider can still show its last stretch, and its bend's paving lays that stretch, so its own road list is empty. The last segment of the road ahead gets an empty list for its bend, `RoadEndsInView`, since the road in view ends there.
+A segment's ground is up to three things: the road along it, the paving at its bend into the next segment, and a pond if it ends at one. Each comes as a list, and `join` makes them one. The segment just behind the rider can still show its last stretch, and its bend's paving lays that stretch, so its own road list is empty. The last segment of the road ahead gets an empty list for its bend, `RoadEndsInView`, since the road in view ends there.
 
 ### Along a segment
 
@@ -989,7 +989,7 @@ The road along a segment is one patch:
 
 `corner` is a function named inside the body. It uses `road`, `vantage` and `from_rider` from around it, so each call names only a chunk and an edge. A function that uses names from around it like this is a closure.
 
-The patch starts at the left corner of the segment's start, runs up the right edge to the end of every chunk, and comes back down the left, so its corners go round in order. That's why the right edge counts one corner more than the left: the left's first corner is already the patch's first. `U32.until(0, n)` counts from 0 up to just short of `n`, and `List.from_iter` collects the count into a list of chunk numbers.
+The patch starts at the left corner of the segment's start, runs up the right edge to the end of every chunk, and comes back down the left, so its corners go round in order. So the right edge counts one corner more than the left: the left's first corner is already the patch's first. `U32.until(0, n)` counts from 0 up to just short of `n`, and `List.from_iter` collects the count into a list of chunk numbers.
 
 The edges are cut into chunks of at most `road_chunk_length`, 25 metres. The ride's ground curves away from the rider, on its 100 km radius, and a straight edge any longer would part from the curve by more than a pixel near the horizon.
 
@@ -1013,7 +1013,7 @@ The paving fills the bend's outer corner. The `BendInView` module works it out, 
 
 A bend to the right has its outer edge on the left, so the paving changes sides as the road turns. An outer corner is three points: where the first road's outer edge ends, where the next road's outer edge starts, and between them the apex, where the two outer edges, carried on straight, cross. `OuterCorner` takes the kind of point as a type variable, so the same record holds road points first and rider points after.
 
-`GroundSighting.bend_paving` lays the corner as one more patch. It starts 40 metres before the bend, `lead_in_length`, runs up the left edge, across the end of the next road's first chunk, and back down the right, and whichever side is outside the turn takes in the corner's three points. Both roads end inside the paving, so road lies over road where they meet, and the patches join cleanly. Since the paving lays the last 40 metres of the road before the bend, it stands in for the road along the segment just behind. Forty metres is enough, because only a bend sharper than a right angle would show road further back, and every bend on the route is gentler than that.
+`GroundSighting.bend_paving` lays the corner as one more patch. It starts 40 metres before the bend, `lead_in_length`, runs up the left edge, across the end of the next road's first chunk, and back down the right. Whichever side is outside the turn takes in the corner's three points. Both roads end inside the paving, so road lies over road where they meet, and the patches join cleanly. Since the paving lays the last 40 metres of the road before the bend, it stands in for the road along the segment just behind. Forty metres is enough, because only a bend sharper than a right angle would show road further back, and every bend on the route is gentler than that.
 
 The ponds are ground too. A segment that ends at a pond lays two more patches, its bank and then its water.
 
@@ -1057,11 +1057,11 @@ digraph rail {
 
 {{code RailSighting.rail_points}}
 
-The first line takes apart the record that `outer_corner_in_view` returns, naming its three fields, the corner from the road chapter. A leg between two of them gets a point about every metre:
+`outer_corner_in_view`, from the {{chapter The road}} chapter, returns the bend's outer corner, and the first line takes that record apart into its three points. A leg between two of them gets a point about every metre:
 
 {{code RailSighting.leg_points}}
 
-The points are about a metre apart, and a post will stand at each one. `drop_first(1)` leaves out a leg's first point, `from`, because that's the last point of the leg before it.
+The points are about a metre apart, and a post will stand at each one. `drop_first(1)` drops a leg's first point, `from`, because that's the last point of the leg before it.
 
 ### Bars and posts
 
@@ -1071,13 +1071,13 @@ The points are about a metre apart, and a post will stand at each one. `drop_fir
 
 Its corners are `PointAtHeight`s, points seen from the rider at a height measured from the rider's own level, so a bar's top corners stand higher than its bottom ones. Where the ground has curved away, that height can be below zero.
 
-Each quad goes into the frame's depth sort on its own, at a depth that's the mean distance of its corners, so a tree can stand in front of one post and behind the next. A quad holds only its corners and a color, so it makes its own rendering, where the things beside the road go through `Pipeline.rendering_of`:
+Each quad goes into the frame's depth sort on its own, at a depth that's the mean distance of its corners, so a tree can stand in front of one post and behind the next. A quad holds only its corners and a color, so `quad_rendering` makes its rendering directly. The things beside the road go through `Pipeline.rendering_of` instead:
 
 {{code GuardRail.quad_rendering}}
 
 `{ ..quad, color: … }` is a record update: a new record, like `quad` with its `color` changed, and `quad` itself stays as it was. Here the new color is the quad's own, dimmed with the sky. `map_ok` works on a `Try`: it applies its function to an `Ok` and leaves an `Err` as it is, so a quad wholly behind the camera stays refused, and `Scene` drops those with `keep_oks`.
 
-The ride works out each rail afresh every frame, its bars and posts from the route and the rider, and the depth sort places each one. Next come the radio towers, which go back through the pipeline as things beside the road.
+`rail_quads_in_view` finds each rail afresh every frame, its bars and posts from the route and the rider, and the depth sort places each one. Next come the radio towers, which go back through the pipeline as things beside the road.
 
 ## Radio towers
 
@@ -1099,7 +1099,7 @@ Trees get their places once, when the world is built. A tower's beacon blinks wi
 
 {{code TowerSighting.end_tower}}
 
-It turns the tower 30 degrees from square to the road. `tower_if_ahead` stands the tower at its point by the road, and returns its sighting if it's in front of the camera and some of it shows above the horizon. The tower halfway along is the same, with its footprint square to the road, a `Midway` beacon, and one more way to fail: `mid_tower_point` gives `Err(NoMidTower)` for a segment of a kilometre or less. Where towers stand has one home, `TowerSighting`.
+`end_tower` turns the tower 30 degrees from square to the road. `tower_if_ahead` stands the tower at its point by the road, and returns its sighting if it's in front of the camera and some of it shows above the horizon. The tower halfway along is the same, with its footprint square to the road, a `Midway` beacon, and one more way to fail: `mid_tower_point` gives `Err(NoMidTower)` for a segment of a kilometre or less. `TowerSighting` is the one home for where towers stand.
 
 ### Over the horizon
 
@@ -1107,11 +1107,11 @@ The ride's ground curves away on its 100 km radius, and a tower stands on it. Fr
 
 {{signatures EarthCurve.lowest_visible_height}}
 
-The ground hides whatever part of a tower is under that line, so as a tower gets further away, it sinks from the bottom up. An 80-metre tower still shows its tip about 4.5 km off. Once all of it is under the line, `Pipeline.sighting_above_horizon_of` refuses it as `OutOfSight`, as the {{chapter Refused}} chapter showed. So a sighted tower always has something to paint.
+The ground hides whatever part of a tower is under that line, so as a tower gets further away, it sinks from the bottom up. An 80-metre tower still shows its tip about 4.5 km off. Once all of it is under the line, `Pipeline.sighting_above_horizon_of` refuses it as `OutOfSight`, as in the {{chapter Refused}} chapter. So a sighted tower always has something to paint.
 
 ### Rods
 
-A tower is drawn as a few dozen rods and a disc for its beacon, by `Tower.tower_shapes`. It starts with one check:
+`Tower.tower_shapes` returns a tower as a few dozen rods and a disc for its beacon. It starts by checking that some of the tower shows above the horizon:
 
 {{code Tower.tower_shapes from "if hidden_on_tower(geometry) >= tower_height" to "a tower hidden wholly below the horizon"}}
 
@@ -1129,7 +1129,7 @@ Each rod is a line between two points seen from the rider. A near tower is wide,
 
 The `match` is on a tuple, `(start, end)`: two values side by side, in parentheses. So it covers all four combinations of its two `Try`s. A rod with one end short of the near plane, 0.4 metres ahead of the camera, is cut where it crosses that plane. A rod with both ends behind it is refused.
 
-That's a tower: rods and a disc, worked out again each frame from its segment, the clock and the camera. The disc on top blinks, and the blinking waits for the second half, when the clock starts. The last things to stand in the frame are the herds.
+Each frame derives a tower afresh, its rods and its disc, from its segment, the clock and the camera. The disc on top blinks with the clock, which starts running in the second half of the book. The last things to stand in the frame are the herds.
 
 ## Herds
 
