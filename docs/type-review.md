@@ -63,7 +63,7 @@ From `canvas_apps` in the main checkout (`/home/steve/showell_repos/roc-apps`), 
 
 ```
 cd /home/steve/showell_repos/roc-apps/canvas_apps && shale <<'TAG'
-local r = run({"shale", "cookbook:roc/type_walk.shale", "root=safari", "module=Tower",
+local r = run({"shale", "cookbook:roc/print_module_types.shale", "root=safari", "module=Tower",
   "clients=*_widget", "packages=lib=repos:roc-apps/canvas_apps/lib"}, {whole = 4000000, timeout_ms = 300000})
 print(r.out)
 TAG
@@ -250,7 +250,7 @@ End every report with a short list of whatever cost you time that wasn't the tas
 - a Shale script refused, and what you meant (a missing builtin, a confusing error, a rule this brief didn't mention);
 - the hook refusing a command you needed;
 - a check that was slow, flaky, or failed for a reason unrelated to your change;
-- a recipe that gave a wrong or confusing answer (type_walk, roc_commas, the lints);
+- a recipe that gave a wrong or confusing answer (print_module_types, wrap_long_lines, the lints);
 - anything in this brief that was wrong, missing or unclear;
 - another agent's files getting in your way.
 

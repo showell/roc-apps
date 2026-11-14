@@ -1,12 +1,12 @@
 # The review workflow
 
-This workflow is specific to Steve's setup. It needs Shale (the `type_walk` recipe and the Shale-only shell) and the essay surface (`essay-repl-server`, with its comments). Another agent can run it once those are in place. The agents' own brief is `docs/type-review.md`, and this file is the orchestrator's side.
+This workflow is specific to Steve's setup. It needs Shale (the `print_module_types` recipe and the Shale-only shell) and the essay surface (`essay-repl-server`, with its comments). Another agent can run it once those are in place. The agents' own brief is `docs/type-review.md`, and this file is the orchestrator's side.
 
 The process makes code right one module at a time, types first. Cold agents review and clean up in parallel. One orchestrator decides, merges and gates. Steve stays single-threaded, making only the calls that are his. It ran first on Safari, and it should carry over to roc-chat.
 
 ## The roles
 
-**Review agent.** It reads the guides (`CLAUDE.md`, `docs/roc-style.md`, `docs/smells.md`), walks a module with `cookbook:roc/type_walk.shale` and reports findings. It changes nothing. Each finding gives what the smell is, the fix, its reach, whether pixels move, and whether the call is clear or needs Steve. The report ends with how the walk felt, noisy or incomplete, which is how the tool gets tuned.
+**Review agent.** It reads the guides (`CLAUDE.md`, `docs/roc-style.md`, `docs/smells.md`), walks a module with `cookbook:roc/print_module_types.shale` and reports findings. It changes nothing. Each finding gives what the smell is, the fix, its reach, whether pixels move, and whether the call is clear or needs Steve. The report ends with how the walk felt, noisy or incomplete, which is how the tool gets tuned.
 
 **Cleanup agent.** It makes only the fixes the orchestrator decided, in a worktree of its own, and runs only the quick checks. It reports the new types, what it did and didn't do, the checks, whether pixels moved, and any book sentence it made plainly false.
 
@@ -78,7 +78,7 @@ The tutorial is rewritten later, so lanes never rewrite prose.
 
 ## The type walk
 
-`cookbook:roc/type_walk.shale` grows as reviewers ask; "a bit of feature-itis" is fine. Run it with `module=<Name>` from the app's folder. It prints:
+`cookbook:roc/print_module_types.shale` grows as reviewers ask; "a bit of feature-itis" is fine. Run it with `module=<Name>` from the app's folder. It prints:
 - the type closure, with less detail at depth;
 - a stop list for hub types;
 - per-member use counts, with receivers typed where the code says, and operators counted;

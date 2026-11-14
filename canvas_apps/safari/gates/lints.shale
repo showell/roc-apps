@@ -82,7 +82,7 @@ const UNTYPED_PATHS = {"game.roc", "main.roc", "web.roc", "gates/", "tutorial/"}
 -- `skip` names files of drawing data, tables of points that read better side
 -- by side than one number to a line. `from_repo_root` runs a recipe from the
 -- checkout's root, where `types=1` finds `roc-version`. `tree_globs`, from the
--- root, stands for the whole tree in place of safari's folder: unused_imports
+-- root, stands for the whole tree in place of safari's folder: find_unused_imports
 -- reads the widgets, widget_kit and lib too, because Roc doesn't warn of an
 -- unused import, and the widgets import the game. `folders` names the shared
 -- folders a lint also judges, each in a run of its own, since these recipes
@@ -98,7 +98,7 @@ const UNTYPED_PATHS = {"game.roc", "main.roc", "web.roc", "gates/", "tutorial/"}
 -- records. lib's run reads it from lib's folder.
 const STACK_DICTATED = "stack_dictated.txt"
 const LINTS = {
-  {recipe = "name_hunt", args = {}, budget = {}, counts = {
+  {recipe = "hunt_names", args = {}, budget = {}, counts = {
     {"state_effect", 0}, {"question", 0}, {"vague", 0}, {"name_type", 0}, {"negative", 0},
     {"noun_effect", 0}, {"command_tense", 0}, {"mixed_tense", 0}, {"container", 0},
     {"preposition_split", 0}, {"short_name", 0}, {"worker_name", 0}, {"stacked_preposition", 0},
@@ -106,27 +106,27 @@ const LINTS = {
     {"phrase_name", 0},
     {"singular_list", 0}, {"world_verb", 0}, {"where_name", 0},
   }, whole_tree = {"command_tense", "mixed_tense"}, folders = SHARED_AND_WIDGETS},
-  {recipe = "errors", args = {}, budget = {}, counts = {
+  {recipe = "check_errors", args = {}, budget = {}, counts = {
     {"error_alias", 0}, {"optional_tag", 0}, {"set_fallback", 0}, {"placeholder", 0},
   }, whole_tree = {"error_alias"}, folders = SHARED_AND_WIDGETS},
-  {recipe = "nest_depth", args = {"min=4"}, budget = {}, counts = {{"nested", 0}}, folders = {WIDGETS}},
-  {recipe = "parens", args = {}, budget = {}, counts = {{"paren_if", 0}, {"wrapped_body", 0}, {"else_block", 0}, {"lambda_if", 0}},
+  {recipe = "find_deep_calls", args = {"min=4"}, budget = {}, counts = {{"nested", 0}}, folders = {WIDGETS}},
+  {recipe = "find_extra_parens", args = {}, budget = {}, counts = {{"paren_if", 0}, {"wrapped_body", 0}, {"else_block", 0}, {"lambda_if", 0}},
     folders = {WIDGETS}},
-  {recipe = "boundaries", args = {"types=1", "root=" .. SAFARI .. "/types_root.roc", "clients=" .. join(CLIENT_GLOBS, ","), "tests=" .. GATE_GLOB, "test_reach=dead"}, budget = {}, from_repo_root = true, counts = {
+  {recipe = "check_boundaries", args = {"types=1", "root=" .. SAFARI .. "/types_root.roc", "clients=" .. join(CLIENT_GLOBS, ","), "tests=" .. GATE_GLOB, "test_reach=dead"}, budget = {}, from_repo_root = true, counts = {
     {"single", 0}, {"fixed", 0}, {"entry", 0}, {"constant", 0}, {"bool_param", 0}, {"dead", 0},
   }, whole_tree = {"single", "fixed", "entry", "constant", "bool_param", "dead"}},
-  {recipe = "stack", args = {}, budget = {"--budget", "steps=4000000000"}, counts = {{"to stack", 0}, {"to unstack", 0}, {"long", 0}},
+  {recipe = "check_stacking", args = {}, budget = {"--budget", "steps=4000000000"}, counts = {{"to stack", 0}, {"to unstack", 0}, {"long", 0}},
     skip = {"BirdStills.roc", "CatStills.roc", "EmojiStill.roc"}, folders = {"canvas_apps/widget_kit", WIDGETS},
     folder_args = {{"canvas_apps/lib", {"skip=Font.roc", "dictated=" .. STACK_DICTATED}}}},
-  {recipe = "vocabulary", args = {"words=vocabulary.txt"}, budget = {}, counts = {{"retired_name", 0}, {"retired_comment", 0}},
+  {recipe = "check_vocabulary", args = {"words=vocabulary.txt"}, budget = {}, counts = {{"retired_name", 0}, {"retired_comment", 0}},
     folders = {WIDGETS}},
-  {recipe = "name_types", args = {"table=name_types.txt"}, budget = {}, counts = {{"name_type", 0}, {"bare_beside_unit", 0}, {"no_value", 0}},
+  {recipe = "check_name_types", args = {"table=name_types.txt"}, budget = {}, counts = {{"name_type", 0}, {"bare_beside_unit", 0}, {"no_value", 0}},
     whole_tree = {"bare_beside_unit"}},
-  {recipe = "bare_floats", args = {"table=bare_floats.txt"}, budget = {}, counts = {{"bare_float", 0}, {"unused_exception", 0}}},
-  {recipe = "families", args = {}, budget = {}, counts = {{"family", 0}, {"twin_name", 0}}, whole_tree = {"family", "twin_name"}},
-  {recipe = "plain_names", args = {}, budget = {}, counts = {{"pure_mutator", 0}, {"abbreviation", 0}, {"module_doc", 0}},
+  {recipe = "find_bare_floats", args = {"table=bare_floats.txt"}, budget = {}, counts = {{"bare_float", 0}, {"unused_exception", 0}}},
+  {recipe = "check_families", args = {}, budget = {}, counts = {{"family", 0}, {"twin_name", 0}}, whole_tree = {"family", "twin_name"}},
+  {recipe = "find_unclear_names", args = {}, budget = {}, counts = {{"pure_mutator", 0}, {"abbreviation", 0}, {"module_doc", 0}},
     folders = SHARED_AND_WIDGETS},
-  {recipe = "unused_imports", args = {}, budget = {}, from_repo_root = true, counts = {{"unused_import", 0}},
+  {recipe = "find_unused_imports", args = {}, budget = {}, from_repo_root = true, counts = {{"unused_import", 0}},
     tree_globs = TREE_GLOBS},
 }
 
@@ -174,7 +174,7 @@ function lint_argv(lint, glob)
   return argv
 end
 
--- `whole`, not `tail`: name_hunt's summary is one long line.
+-- `whole`, not `tail`: hunt_names's summary is one long line.
 function lint_run(lint, glob)
   local opts = {timeout_ms = 600000, whole = 4000000}
   if not runs_from_repo_root(lint) then opts.cwd = SAFARI end

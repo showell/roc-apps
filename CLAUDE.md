@@ -281,7 +281,7 @@ to bring its own format-only changes.
 - **Judge a pure reformat by machine code, not archive bytes.** Roc's
   procedure names hash the source layout, so a reformat changes the
   archive's bytes while the code stays the same. Shale's
-  `cookbook/roc/same_code.shale` compares two builds instruction by
+  `cookbook/roc/compare_machine_code.shale` compares two builds instruction by
   instruction with those names masked.
 
 ## 6. Testing: frozen answers, planted faults, exact counts
@@ -365,12 +365,12 @@ planted cases, and let the compiler judge any rewrite.
 - **Read Roc with Roc's own parser, never a regex.** The recipes read the
   tree from `roc-ast`, so a comment or a string never counts and a broken
   annotation reads as Roc reads it (`cookbook/roc/README.md`,
-  `name_hunt.shale`). roc-apps's toolchain release carries `roc-ast`.
+  `hunt_names.shale`). roc-apps's toolchain release carries `roc-ast`.
 - **Each check proves itself on plants.** A plant is a case the check must
   find, or must leave alone. `self_test=1` runs a recipe on its own
   (`cookbook/roc/plants/<recipe>/`), so the hunt itself is tested.
 - **The compiler judges a rewrite.** A syntax tree can't know a type, so
-  `methods.shale`, which turns `List.map(xs, f)` into `xs.map(f)`, keeps a
+  `rewrite_method_calls.shale`, which turns `List.map(xs, f)` into `xs.map(f)`, keeps a
   file's rewrite only if `roc check` passes and `roc test`'s summary is
   unchanged. Any other error puts the file back. It runs the repo's own
   pin, read from `roc-version`, because method lookup has changed between
@@ -378,8 +378,8 @@ planted cases, and let the compiler judge any rewrite.
 - **Run the rewriters lazily, on the files you touch.** Before you commit
   a change to a Roc file, run the recipes that rewrite code over it, from
   the repo's root and at the repo's pin, with `--undo-on-stop`: first
-  `methods.shale apply=1` (an old-style `Module.fn(x, ...)` call becomes
-  `x.fn(...)`), then `roc_commas.shale tokens=6` (groups stacked or joined
+  `rewrite_method_calls.shale apply=1` (an old-style `Module.fn(x, ...)` call becomes
+  `x.fn(...)`), then `wrap_long_lines.shale tokens=6` (groups stacked or joined
   by the rule, long lines stacked), then `roc fmt`. Then run the hunts over
   the same files
   and fix what they find, so a file you touched leaves clean. A repo-wide
@@ -387,24 +387,24 @@ planted cases, and let the compiler judge any rewrite.
 - **A rewrite is its own commit,** apart from any change in behaviour, as a
   reformat is (§5). The message names each recipe and what it changed.
   After it, `roc check` is clean (zero ✗, zero ●) and the gate passes; for
-  a rewrite that shouldn't change the program, `same_code.shale` shows the
-  same machine code. `methods.shale` needs roc-types built at the repo's
+  a rewrite that shouldn't change the program, `compare_machine_code.shale` shows the
+  same machine code. `rewrite_method_calls.shale` needs roc-types built at the repo's
   pin: with `types=0` it can change behaviour while `roc check` stays clean
   (a `U64.to_str(n)` became a call that printed `0.0`), so never run it that
   way. What a recipe can't rewrite (a function type's
-  arguments, which `roc_commas` can't stack) is fixed by hand, here with a
+  arguments, which `wrap_long_lines` can't stack) is fixed by hand, here with a
   record.
-- **The recipes.** `name_hunt` (awkward names, tense, container words),
-  `errors` (an error alias, an optional tag), `boundaries` (a one-caller
-  wrapper, a fixed parameter), `nest_depth`, `parens` (an emitter's braceless
-  `if`s and wrapped bodies), `stack` (a group that should stack or unstack,
-  or a line past 100 columns), `roc_commas` (trailing commas so `roc fmt`
-  stacks or joins groups), `methods`, `same_code` (two builds the same machine
-  code, the judge of a pure reformat) and `tree_patch`. Each is a recipe,
+- **The recipes.** `hunt_names` (awkward names, tense, container words),
+  `check_errors` (an error alias, an optional tag), `check_boundaries` (a
+  one-caller wrapper, a fixed parameter), `find_deep_calls`, `find_extra_parens`
+  (an emitter's braceless `if`s and wrapped bodies), `check_stacking` (a group that should stack or unstack,
+  or a line past 100 columns), `wrap_long_lines` (trailing commas so `roc fmt`
+  stacks or joins groups), `rewrite_method_calls`, `compare_machine_code` (two builds the same machine
+  code, the judge of a pure reformat) and `write_tree_patch`. Each is a recipe,
   not a builtin: copy one and change it for the job.
 - **A finding is a question for a reader.** Each prints
   `path:line: check: why`. Fix it, or answer it in the code the hunt
-  reads: `boundaries`' `single`, for instance, accepts a one-caller
+  reads: `check_boundaries`' `single`, for instance, accepts a one-caller
   wrapper that a `##` doc or an `expect` keeps. A gate holds each hunt it
   runs at zero, never at a count.
 - **A rule a script can check gets a check, and a gate runs it.**

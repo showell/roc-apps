@@ -91,6 +91,6 @@ step. No upstream issue matches (closest: roc-lang/roc #12919, #12194).
 
 Commit `7b2b1527` moved the building of the `FrameView` from each widget into
 `picture_shapes`, which then called `framed_shapes` as a method. The module
-call is the workaround, with a comment beside it, since `methods.shale` would
+call is the workaround, with a comment beside it, since `rewrite_method_calls.shale` would
 otherwise turn it back into the method form (it judges by `roc check`, which
 passes).

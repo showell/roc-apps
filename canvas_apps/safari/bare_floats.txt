@@ -1,5 +1,5 @@
 # What may hold a bare F64 in safari. The rule is in docs/roc-style.md, and
-# cookbook/roc/bare_floats.shale reads this table.
+# cookbook/roc/find_bare_floats.shale reads this table.
 
 # The unit types: each module's job is holding the float.
 Acceleration: a unit type

@@ -43,11 +43,11 @@
 --                     hold, or holds with no negative in it.
 --
 -- The output is the counts, one line per finding, and the counts again
--- (cookbook/roc/findings.shale). The run fails if there is a finding. Given
+-- (cookbook/findings.shale). The run fails if there is a finding. Given
 -- `held`, it passes with that many negatives, printing only the counts, and
 -- fails with any other number, more or fewer, or with an unused exception.
 
-use("cookbook:roc/findings.shale")
+use("cookbook:findings.shale")
 
 const MANUSCRIPT = arg("manuscript", "canvas_apps/safari/tutorial/tutorial.md")
 const STOP_AT = arg("stop_at", "Appendix: the patterns")
