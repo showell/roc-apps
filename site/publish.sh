@@ -6,6 +6,7 @@
 #                               workshop, particles, trick_or_treat
 #   site/publish.sh tutorial    the Safari Ride book, with every widget and app it
 #                               frames (each published first, if staging differs)
+#   site/publish.sh shale-book  the Shale book, as book/build.shale built it
 #   site/publish.sh home        the landing page and shared/
 #
 # An app: copies ~/build/roc-apps/next/<app>/ (what <app>'s build.sh last wrote,
@@ -34,6 +35,9 @@ LIVE="${LIVE:-$HERE/live}"
 . "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/../pinned-roc.sh"
 ROCEMIT_REPO="${ROCEMIT_REPO:-$HOME/showell_repos/rust-codex-compiler}"
 COBBLESTONE="${COBBLESTONE:-$HOME/showell_repos/cobblestone-u66rel}"
+# The Shale book is built by book/build.shale on the shale repository's book
+# branch, not from a directory here, so its PROVENANCE names that checkout.
+SHALE_BOOK="${SHALE_BOOK:-$HOME/showell_repos/lanes/shale-book}"
 
 # Whether an app's build read rocemit and Cobblestone. A canvas app never does,
 # so it passes unnamed; any other app this doesn't name is refused, so a new
@@ -41,7 +45,7 @@ COBBLESTONE="${COBBLESTONE:-$HOME/showell_repos/cobblestone-u66rel}"
 reads_emitted_codex() {
     case "$1" in
         gpu|games|machine|framebuffer) return 0 ;;
-        basic|tutorial) return 1 ;;
+        basic|tutorial|shale-book) return 1 ;;
         *) [ "$2" = "canvas_apps/$1" ] && return 1
            echo "publish.sh doesn't know whether $1 reads rocemit and Cobblestone; name it in reads_emitted_codex"; exit 2 ;;
     esac
@@ -96,8 +100,13 @@ else
     src="$app"
     # The book is built from safari's tutorial folder.
     if [ "$app" = tutorial ]; then src=canvas_apps/safari/tutorial; publish_book_frames; fi
-    [ -d "$REPO/$src" ] || src="canvas_apps/$app"
-    [ -d "$REPO/$src" ] || { echo "$app is neither an app nor a canvas app in $REPO"; exit 2; }
+    if [ "$app" = shale-book ]; then
+        src=
+        require_checkout "the Shale book" "$SHALE_BOOK" SHALE_BOOK
+    else
+        [ -d "$REPO/$src" ] || src="canvas_apps/$app"
+        [ -d "$REPO/$src" ] || { echo "$app is neither an app nor a canvas app in $REPO"; exit 2; }
+    fi
     [ -d "$NEXT/$app" ] || { echo "no dev build at $NEXT/$app; run $app's build.sh first"; exit 2; }
     if [ "$src" = "canvas_apps/$app" ] && ! grep -qxF "opt speed" "$NEXT/$app/BUILT"; then
         echo "$NEXT/$app is not a release build; run canvas_apps/build.sh $app release first"; exit 2
@@ -114,10 +123,14 @@ else
         echo "published $(date -u +%Y-%m-%dT%H:%M:%SZ)"
         # A build that recorded its own compiler is believed; the older apps
         # record none and are built by whatever `roc` points at.
-        if [ -f "$LIVE/$app/BUILT" ]; then cat "$LIVE/$app/BUILT"; else
-            echo "roc $("$ROC" version | sed 's/Roc compiler version //')"
+        if [ "$app" = shale-book ]; then
+            echo "shale $(git -C "$SHALE_BOOK" rev-parse --short HEAD) $(git -C "$SHALE_BOOK" branch --show-current)$(git -C "$SHALE_BOOK" diff --quiet HEAD -- book || echo ' +uncommitted')"
+        else
+            if [ -f "$LIVE/$app/BUILT" ]; then cat "$LIVE/$app/BUILT"; else
+                echo "roc $("$ROC" version | sed 's/Roc compiler version //')"
+            fi
+            echo "roc-apps $(git -C "$REPO" rev-parse --short HEAD)$(git -C "$REPO" diff --quiet HEAD -- "$src" || echo ' +uncommitted')"
         fi
-        echo "roc-apps $(git -C "$REPO" rev-parse --short HEAD)$(git -C "$REPO" diff --quiet HEAD -- "$src" || echo ' +uncommitted')"
         if [ "$emitted" = yes ]; then
             echo "rocemit $(git -C "$ROCEMIT_REPO" rev-parse --short HEAD)$(git -C "$ROCEMIT_REPO" diff --quiet HEAD || echo ' +uncommitted')"
             echo "cobblestone $(git -C "$COBBLESTONE" rev-parse --short HEAD) $(git -C "$COBBLESTONE" branch --show-current)"
