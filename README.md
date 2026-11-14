@@ -24,6 +24,10 @@ there; the others are mapped below.
 | `findings/` | Roc behaviours we found, each with a program that shows it | |
 | `docs/` | `roc-style.md`, how Steve writes Roc (tags, records, opaque types for what's validated, one workhorse at the edge); `roc-notes.md`, how the Roc nightly behaves (the compiler, the language, what copies); the Codex forms safari uses; the machine's memory plan and structures | |
 
+## The Safari book, the prototype
+
+The Safari tutorial (`canvas_apps/safari/tutorial/`) was the prototype book. The books after it fork its machinery rather than share it: the Shale book (in the `shale` repo) began from a copy of its MISSION.md, and its general gates, starting with `canvas_apps/safari/gates/book_negatives.shale`, are being copied into Shale's cookbook as recipes. The originals here are kept as they are, so they go stale. For a new book, start from Shale's cookbook and the Shale book, not from these copies.
+
 ## The site: Steve's Roc Apps
 
 Every app is a static page. One Caddy (`ops/Caddyfile`) serves them all, an
