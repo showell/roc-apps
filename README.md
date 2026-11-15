@@ -42,7 +42,7 @@ The ports announced before the site redirect: :9201 to prod's `safari/`;
 | where | what | written by |
 |---|---|---|
 | `ops/` | `Caddyfile` and `roc-site.service`: one Caddy serving the site and redirecting the ports announced before it; `install.sh` | hand |
-| `site/web/index.html` | the landing page: Canvas apps, Interpreters, In progress, and the date each app on the channel was published | hand |
+| `site/web/index.html` | the landing page: the featured apps, Luke's examples, Platforms (roc-screensaver), and the date each app on the channel was published | hand |
 | `site/web/shared/home.js` | the link home, and the banner on dev (whose root alone has a `channel` file); every page loads it with one relative line | hand |
 | `site/build.sh` | the landing page, `shared/` and the `channel` file into dev | hand |
 | `site/publish.sh` | THE SIGN-OFF: one app's dev directory over `site/live/<app>/` whole, with a `PROVENANCE`, committed and pushed; `site/publish.sh home` for the landing page and `shared/`; `site/publish.sh tutorial` for the Safari Ride book, after the widgets it frames, and never dropping a page staging has | hand |

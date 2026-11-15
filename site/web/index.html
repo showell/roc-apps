@@ -3,7 +3,7 @@
 <head>
 <!-- Every link opens in a new tab (Steve's preference). -->
 <base target="_blank">
-<meta name="description" content="Programs written in Roc: the Fast Track board game against computer players, the Safari Ride screensaver and the little Roc book about it, the roc-markdown library, a BASIC interpreter, and six roc-ray examples.">
+<meta name="description" content="Programs written in Roc: the Fast Track board game against computer players, the Safari Ride screensaver and the little Roc book about it, the roc-markdown library, a BASIC interpreter, six roc-ray examples, and roc-screensaver, a Roc platform in Zig for screensavers that also run as web pages.">
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Steve's Roc Work</title>
@@ -227,6 +227,24 @@ raylib, a C library. In the browser, the same rules run on a Zig wasm host, and 
     <p>Drag on a sixteen-by-sixteen canvas. <a href="https://github.com/lukewilliamboswell/roc-ray/tree/e100c9548b903ee5c7363f5997251980c4355c7b/examples/generated_assets">Luke's original</a> · <a href="https://github.com/showell/roc-apps/tree/master/canvas_apps/workshop">The port</a></p>
   </section>
 </div>
+
+<h2>Platforms</h2>
+<section class="feature" data-app="tides">
+  <div>
+    <a href="tides/" aria-hidden="true" tabindex="-1"><img class="shot" src="tides/shot.png" alt="" loading="lazy"></a>
+    <h3><a href="https://github.com/showell/roc-screensaver">roc-screensaver</a></h3>
+    <p>A Roc platform written in Zig, whose own software rasterizer paints each frame with no GPU and no graphics library, so one Roc app is both a Windows screensaver and a web page. The web page is the developer's quick preview: a wasm platform paints the same shapes on a canvas, so a change shows in a browser in seconds, long before a Windows machine is involved, and the repo's checks hold the page's frames to the native ones. Three screensavers run on it: Lanterns, a sunrise made for Roc's 0.1.0 launch; Tides, bands of water under a sky that goes from dawn to night; and Bubbles, which rise, wobble, and fade or pop. The Windows build passes headless on GitHub's Windows runners, and has yet to run on a real Windows machine.</p>
+    <p>Even if you don't intend to build a screensaver, the repo is instructive for Roc newcomers. It shows how a Roc app runs on more than one platform, and its <code>lib/</code> has helpers (shapes, brushes, colors, lettering, keyboard input) for building things like game engines.</p>
+    <p class="opening"><span class="tag">Roc at work</span>An app is one Roc value: a model, a step from one model to the next, and the shapes each model looks like. Only the platform changes between Windows and the browser, and the keyboard controls belong to the app, in Roc, so they work the same in both.</p>
+    <p class="opening"><span class="tag nice">Roc plays nice with others</span>On Windows a Zig host steps the app, reads each frame out of Roc's memory, rasterizes it and hands it to the window through GDI. In the browser a small Zig wasm host and a little JavaScript paint the same shapes on a canvas.</p>
+    <div class="links"><a href="tides/">Tides</a><a href="welcome-to-roc/">Lanterns</a><a href="bubbles/">Bubbles</a><a href="https://github.com/showell/roc-screensaver">The source</a></div>
+  </div>
+  <div class="stats">
+    <div class="stat"><b>2,054</b><span>lines of Zig in the native host, 811 of them the rasterizer</span></div>
+    <div class="stat"><b>8,155</b><span>lines of Roc in 49 modules</span></div>
+    <div class="stat"><b>263</b><span>expects</span></div>
+  </div>
+</section>
 
 <footer>All the source is in <a href="https://github.com/showell/roc-apps">roc-apps</a> on GitHub.</footer>
 </main>
