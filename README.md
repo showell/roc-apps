@@ -33,7 +33,7 @@ The Safari tutorial (`canvas_apps/safari/tutorial/`) was the prototype book. The
 Every app is a static page. One Caddy (`ops/Caddyfile`) serves them all, an
 app at a path of its own and a channel on a port of its own, so a page moves
 from one channel to the next unchanged. The design is
-`:9100/notes/roc-web-umbrella.md`.
+[notes/roc-web-umbrella.md](https://github.com/showell/essay-repl-server/blob/master/notes/roc-web-umbrella.md).
 
 | channel | where | serves | written by |
 |---|---|---|---|
@@ -75,7 +75,7 @@ Every page's URLs are relative, so the site works under any prefix.
 shaders), run in Roc on the CPU, one gid after another, with the pixels put
 on a 2d canvas. Started 2026-09-12 with hand ports of plasma and the
 fountain; the same day every kernel was emitted and all 39 demo pages
-became one gallery module. The essay is `:9100/notes/plasma-in-roc.md`.
+became one gallery module. The essay is [notes/plasma-in-roc.md](https://github.com/showell/essay-repl-server/blob/master/notes/plasma-in-roc.md).
 
 | where | what | written by |
 |---|---|---|
@@ -127,7 +127,7 @@ on the landing page.
 ## machine: simulated devices in one Roc value
 
 `machine/` is the start of the devices plan
-(`:9100/notes/codex-devices-in-roc.md`, `:9100/notes/roc-machine-emulator.md`):
+([notes/codex-devices-in-roc.md](https://github.com/showell/essay-repl-server/blob/master/notes/codex-devices-in-roc.md), [notes/roc-machine-emulator.md](https://github.com/showell/essay-repl-server/blob/master/notes/roc-machine-emulator.md)):
 a Roc machine holding the devices upstream's codex-vm models (memory, PCI
 configuration space, a drive, a keyboard queue, a console), each behind a door
 that takes the machine and hands it back. Step 1 is a hand-written program on
@@ -172,7 +172,7 @@ the console capture's rather than the program's.
 
 At 2026-09-12: 160 pass, 0 fail, 410 refused by reason, 24 diagnostic tests
 skipped, 2 named divergences, 1 stack overflow. The essay is
-`:9100/notes/the-corpus-that-argues-back.md`.
+[notes/the-corpus-that-argues-back.md](https://github.com/showell/essay-repl-server/blob/master/notes/the-corpus-that-argues-back.md).
 
 **The divergence, which is not a bug:** a Codex list is written in place and
 a Roc list is a value, so a program that writes a list through one name and
@@ -229,7 +229,7 @@ suite is its installation check (`zig build run-test-eval`, 47 minutes).
 
 ## What is known to be slow, and why
 
-`http://143.244.172.148:9100/notes/what-is-slow.md`. In one line: a Codex
+[notes/what-is-slow.md](https://github.com/showell/essay-repl-server/blob/master/notes/what-is-slow.md). In one line: a Codex
 list built by `x & f rest` is quadratic in Roc, and the emitter writes an
 accumulator loop for that shape; everything else is the nightly. (The
 stills were once strings with a decoder, because the debug compiler's

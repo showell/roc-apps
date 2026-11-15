@@ -3,7 +3,7 @@
 A zig platform under the Roc: the low-level machine in the host, with the Roc
 above it free to be an operating system. The essay is
 `notes/a-zig-floor-under-a-roc-kernel.md`
-(<http://143.244.172.148:9100/notes/a-zig-floor-under-a-roc-kernel.md>).
+(<https://github.com/showell/essay-repl-server/blob/master/notes/a-zig-floor-under-a-roc-kernel.md>).
 
 The machine emulator in `machine/roc` holds every device in one Roc value,
 which is how we found out what the doors are. This is the other arrangement:

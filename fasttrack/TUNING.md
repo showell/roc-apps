@@ -68,7 +68,7 @@ Then, on deals no stage had seen:
 Steve: the pen was worth less than the worst square out of it (24 against
 26), and the commonest good move in the game is to come out of the pen and
 play a 4 backwards, which makes L0, L1 and L2 good squares to park on
-(`:9100/notes/fasttrack-distance-table.md` has every square's formula). Both
+([notes/fasttrack-distance-table.md](https://github.com/showell/essay-repl-server/blob/master/notes/fasttrack-distance-table.md) has every square's formula). Both
 became weights, raced against `home = 10`.
 
 | A | B | deals | A won |

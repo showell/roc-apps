@@ -206,7 +206,7 @@ writes for it, without the screen: `trace` finds each pixel's closest hit and
 nothing else, `render` is the whole `rt-render`, and each prints a checksum
 that stays the same. The case study that goes on from here, what `rt-closest`
 carries and what the dev backend's code is, is the essay
-`:9100/notes/raytrace-case-study.md`.
+[notes/raytrace-case-study.md](https://github.com/showell/essay-repl-server/blob/master/notes/raytrace-case-study.md).
 
 ## 2026-09-15: the bench with LLVM
 
