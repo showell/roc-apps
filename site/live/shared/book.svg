@@ -1,0 +1,43 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 300" role="img" aria-label="An open book: a chapter of prose on the left page, and a drawing of a road through hills on the right">
+  <rect width="400" height="300" fill="#ece6d8"/>
+  <!-- the book's shadow and cover -->
+  <ellipse cx="200" cy="262" rx="170" ry="14" fill="#000" opacity="0.12"/>
+  <path d="M28 70 L200 82 L372 70 L372 250 L200 262 L28 250 Z" fill="#5b3ea8"/>
+  <!-- the pages -->
+  <path d="M38 62 Q120 52 198 72 L198 246 Q120 228 38 240 Z" fill="#fffdf7" stroke="#d8d0bf"/>
+  <path d="M202 72 Q280 52 362 62 L362 240 Q280 228 202 246 Z" fill="#fffdf7" stroke="#d8d0bf"/>
+  <path d="M198 72 L202 72 L202 246 L198 246 Z" fill="#cfc6b3"/>
+  <!-- left page: a chapter title and its lines -->
+  <text x="58" y="96" font-family="Georgia, serif" font-size="15" font-weight="bold" fill="#2a2620">The road</text>
+  <g fill="#bdb5a4">
+    <rect x="58" y="108" width="120" height="5" rx="2"/>
+    <rect x="58" y="120" width="112" height="5" rx="2"/>
+    <rect x="58" y="132" width="122" height="5" rx="2"/>
+    <rect x="58" y="144" width="80" height="5" rx="2"/>
+  </g>
+  <!-- a quoted Roc function, in color -->
+  <rect x="56" y="158" width="126" height="54" rx="4" fill="#2b2733"/>
+  <g>
+    <rect x="64" y="167" width="40" height="5" rx="2" fill="#c792ea"/>
+    <rect x="108" y="167" width="54" height="5" rx="2" fill="#82aaff"/>
+    <rect x="72" y="179" width="62" height="5" rx="2" fill="#c3e88d"/>
+    <rect x="72" y="191" width="44" height="5" rx="2" fill="#f78c6c"/>
+    <rect x="120" y="191" width="36" height="5" rx="2" fill="#89ddff"/>
+    <rect x="64" y="203" width="28" height="5" rx="2" fill="#c792ea"/>
+  </g>
+  <g fill="#bdb5a4">
+    <rect x="58" y="222" width="110" height="5" rx="2"/>
+  </g>
+  <!-- right page: the ride the chapter is about -->
+  <rect x="222" y="86" width="122" height="96" rx="4" fill="#bfe0f5"/>
+  <circle cx="320" cy="108" r="11" fill="#f7c948"/>
+  <path d="M222 150 Q250 122 280 142 Q306 124 344 140 L344 182 L222 182 Z" fill="#7fb069"/>
+  <path d="M222 166 Q262 150 300 164 Q322 172 344 160 L344 182 L222 182 Z" fill="#5c9450"/>
+  <path d="M262 182 Q282 162 300 152" stroke="#8a8174" stroke-width="7" fill="none" stroke-linecap="round"/>
+  <path d="M262 182 Q282 162 300 152" stroke="#fff" stroke-width="1.5" stroke-dasharray="4 4" fill="none"/>
+  <g fill="#bdb5a4">
+    <rect x="222" y="196" width="118" height="5" rx="2"/>
+    <rect x="222" y="208" width="104" height="5" rx="2"/>
+    <rect x="222" y="220" width="114" height="5" rx="2"/>
+  </g>
+</svg>
