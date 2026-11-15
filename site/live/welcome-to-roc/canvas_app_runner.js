@@ -385,8 +385,11 @@ function frameTimer() {
 // A steady time per frame does not mean the fast code has arrived, since the
 // quick tier is steady too, only slower. So the warm-up runs for its budget,
 // and stops sooner only on what a switch looks like: the last few frames well
-// under the first few and close to one another.
+// under the first few and close to one another. A light app's frames can look
+// sped up and settled within the first slice, before the optimizing tier has
+// had time to compile, so it never stops on that before `WARM_LEAST_MS`.
 const WARM_BUDGET_MS = 400;
+const WARM_LEAST_MS = 150;
 const WARM_WINDOW = 8; // frames compared at each end, enough to outvote one slow frame
 const WARM_SPED_UP = 0.6; // the last frames' mean against the first frames'
 const WARM_SETTLED = 1.2; // the slowest of the last frames against the fastest
@@ -426,7 +429,7 @@ async function warmUp(game, width, height) {
       ctx.fillRect(0, 0, offstage.width, offstage.height);
       ShapesCanvas.paint(ctx, game.frame(), scale);
       times.push(performance.now() - frameStart);
-      if (spedUpAndSettled(times)) return { times, ms: performance.now() - start, stoppedBy: 'sped up and settled' };
+      if (performance.now() - start >= WARM_LEAST_MS && spedUpAndSettled(times)) return { times, ms: performance.now() - start, stoppedBy: 'sped up and settled' };
       if (performance.now() - start >= WARM_BUDGET_MS) return { times, ms: performance.now() - start, stoppedBy: 'its budget' };
     }
     await later();
