@@ -54,7 +54,7 @@ else
         # The block's access log, Caddy's before validate: validate runs as
         # root and would make it root's, and the reload would then fail.
         [ -f /var/log/caddy/roc-access.log ] || sudo install -o caddy -g caddy -m 640 /dev/null /var/log/caddy/roc-access.log
-        [ -f /etc/caddy/sites/$BLOCK ] && sudo cp /etc/caddy/sites/$BLOCK /tmp/$BLOCK.old || rm -f /tmp/$BLOCK.old
+        [ -f /etc/caddy/sites/$BLOCK ] && sudo cp /etc/caddy/sites/$BLOCK /tmp/$BLOCK.old || sudo rm -f /tmp/$BLOCK.old
         sudo install -m 644 /tmp/$BLOCK /etc/caddy/sites/$BLOCK
         if ! sudo caddy validate --adapter caddyfile --config /etc/caddy/Caddyfile >/tmp/$BLOCK.validate 2>&1; then
             tail -5 /tmp/$BLOCK.validate
@@ -62,7 +62,9 @@ else
             echo 'the new block did not validate; the old one is back'; exit 1
         fi
         sudo systemctl reload caddy
-        rm -f /tmp/$BLOCK /tmp/$BLOCK.old /tmp/$BLOCK.validate"
+        # sudo cp made the .old root's, and /tmp is sticky, so only root removes it.
+        rm -f /tmp/$BLOCK /tmp/$BLOCK.validate
+        sudo rm -f /tmp/$BLOCK.old"
 fi
 
 # A new name's certificate takes Caddy a few seconds to obtain.
