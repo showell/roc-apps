@@ -40,9 +40,9 @@ const LOOKS = arg("looks", "") == "1"
 -- chapters that have passed the loop in MISSION.md.
 const CHAPTERS_ARG = arg("chapters", "")
 const CHAPTERS = CHAPTERS_ARG ~= "" and tonumber(CHAPTERS_ARG) or nil
--- A Shale run holds 64 programs, so the widgets' release builds run as a run of
--- their own, and the diagrams are drawn in runs of their own, DIAGRAMS_PER_RUN
--- at a time, as each takes Graphviz once or twice.
+-- The widgets' release builds run as a run of their own, and the diagrams are
+-- drawn in runs of their own, DIAGRAMS_PER_RUN at a time, as each takes
+-- Graphviz once or twice, so each run's programs stay well inside its budget.
 const WIDGETS_ONLY = arg("widgets", "") == "1"
 const DIAGRAMS_ONLY = arg("diagrams", "") == "1"
 const DIAGRAMS_PER_RUN = 30

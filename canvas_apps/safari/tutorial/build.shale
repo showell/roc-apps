@@ -282,8 +282,8 @@ function check_chapter_links(entries, titles)
   return nil
 end
 
--- One roc-ast run for every module, because a run holds 64 programs and a
--- long tutorial quotes more includes than that.
+-- One roc-ast run for every module: one program, in place of one an include,
+-- which a long tutorial quotes hundreds of.
 function parse_modules(entries)
   local paths = {}
   for e in entries do
@@ -925,7 +925,7 @@ end
 
 -- The note says where each kind of block came from, in order, and has no line
 -- for anything that isn't a Roc block. One document holds them all, because each
--- document costs programs and a run holds 64.
+-- document costs programs.
 function check_note_rule(checks, folder)
   local zoo = folder .. "/Zoo.roc"
   local includes = {

@@ -45,8 +45,8 @@ for g in CLIENT_GLOBS do push(tree_globs, g) end
 push(tree_globs, "canvas_apps/lib/**/*.roc")
 const TREE_GLOBS = tree_globs
 
--- More files than this go through each recipe at once, because a run may start
--- only 64 programs.
+-- More files than this go through each recipe at once, one program for them
+-- all, so the gate starts few programs.
 const MOST_ONE_AT_A_TIME = 6
 
 -- The shared code under safari, from the checkout's root. A lint that names
