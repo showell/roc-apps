@@ -23,7 +23,13 @@
   /* A featured program: its story on the left, its Roc in numbers on the right. */
   .feature { display: grid; grid-template-columns: minmax(0, 1fr) 210px; gap: 18px; background: var(--pane);
              border: 1px solid var(--edge); border-radius: 8px; padding: 16px 18px; margin: 0 0 14px; }
-  @media (max-width: 640px) { .feature { grid-template-columns: 1fr; } }
+  /* On a phone the card is one column, which must be allowed to shrink below its widest line (minmax(0, ...)),
+     or a code sample or the REPL's screen widens the whole page instead of scrolling inside itself. */
+  @media (max-width: 640px) {
+    main { padding: 24px 12px 36px; overflow-wrap: anywhere; }
+    .feature { grid-template-columns: minmax(0, 1fr); padding: 14px 12px; }
+  }
+  img { max-width: 100%; }
   .feature h3 { margin: 0 0 6px; font-size: 19px; }
   .feature .opening { margin: 0 0 8px; font-size: 15.5px; }
   /* A program's Roc strength, tagged so it stands out. */

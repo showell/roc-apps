@@ -1,0 +1,25 @@
+-- This script checks that the landing page fits a phone. It runs
+-- site/check_mobile.mjs, which loads the page in headless Chromium at 320,
+-- 360, 390 and 414 px wide with mobile emulation and names everything wider
+-- than the screen, then prints one verdict line. It fails when any width
+-- scrolls sideways or has an element or a run of text past the edge.
+--
+--   cd <roc-apps checkout> && shale site/check_mobile.shale               # staging, :9200
+--   cd <roc-apps checkout> && shale site/check_mobile.shale channel=dev   # dev, :9210, after site/build.sh
+--
+-- Run it on dev after changing site/web/index.html, and on staging after
+-- `site/publish.sh home`. The shots it takes (each width's whole page and
+-- first screen, and the page at 1280 px) go to a fresh folder under
+-- ~/build/roc-apps/, which it names; delete it once you've looked.
+
+const URLS = {dev = "http://143.244.172.148:9210/", staging = "http://143.244.172.148:9200/"}
+const WANT = "script: check_mobile.mjs drives the page in headless Chromium"
+
+local channel = arg("channel", "staging")
+if not has_key(URLS, channel) then fail("check_mobile: channel is dev or staging, not " .. channel) end
+local shots = fresh_dir("build:roc-apps", "mobile-shots")
+local r = run({"node", "site/check_mobile.mjs", URLS[channel], real(shots), "desktop"},
+  {timeout_ms = 120000, tail = 60, want = WANT})
+print(trim(r.out))
+if r.code ~= 0 then fail("check_mobile: the " .. channel .. " landing page doesn't fit a phone (exit " .. r.code .. ")") end
+print("check_mobile: the " .. channel .. " landing page fits a phone at every width")

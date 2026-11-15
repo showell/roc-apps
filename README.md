@@ -47,12 +47,14 @@ The ports announced before the site redirect: :9201 to prod's `safari/`;
 | `site/build.sh` | the landing page, `shared/` and the `channel` file into dev | hand |
 | `site/publish.sh` | THE SIGN-OFF: one app's dev directory over `site/live/<app>/` whole, with a `PROVENANCE`, committed and pushed; `site/publish.sh home` for the landing page and `shared/`; `site/publish.sh tutorial` for the Safari Ride book, after the widgets it frames, and never dropping a page staging has | hand |
 | `site/publish_lanterns.shale` | roc-screensaver's lanterns page to staging at `welcome-to-roc/`, unlinked from the landing page: built by that repo's `tools/web_build.shale` from a clean commit on GitHub, copied with a `PROVENANCE` naming it, checked (its files, relative URLs, absent from the landing page, roc-screensaver's `tools/web_shots.mjs` on staging), committed and pushed | hand |
+| `site/check_mobile.shale` | the landing page held to a phone's width: `site/check_mobile.mjs` loads it in headless Chromium at 320, 360, 390 and 414 px with mobile emulation, and fails on a sideways scroll or anything past the screen's edge; `channel=dev` checks dev, else staging | hand |
 | `site/live/` | what staging serves, and what prod serves | `site/publish.sh`; `site/publish_lanterns.shale` for `welcome-to-roc/` |
 | `site/deploy.sh` | THE PROD DEPLOY: `site/live/` to the droplet with `rsync --delete`, each file's sha256 checked against staging's; the site block installed and validated when it changed; the landing page checked over HTTPS | hand |
 | `ops/roc.lynrummy.com.caddy` | prod's site block, imported by the droplet's Caddyfile (angry-gopher's `deploy/Caddyfile`) from `/etc/caddy/sites/` | hand |
 
     site/build.sh                  # the root into dev, http://<box>:9210/
     canvas_apps/build.sh safari release   # or safari's gates/publish.shale: release wasm into dev
+    shale site/check_mobile.shale channel=dev   # after a landing page change: it fits a phone
     site/publish.sh safari         # when dev looks right: staging, http://<box>:9200/safari/
     site/publish.sh tutorial       # the book, once each widget it frames is published
     shale site/publish_lanterns.shale   # roc-screensaver's lanterns: staging, http://<box>:9200/welcome-to-roc/
