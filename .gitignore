@@ -1,10 +1,6 @@
 
 # The wasm host object, rebuilt by every build.sh run.
 basic/wasm/platform/targets/
-machine/wasm/platform/targets/
-machine/native/platform/targets/
-machine/batch/platform/targets/
-framebuffer/platform/targets/
 fasttrack/cli/platform/targets/
 
 # Editor swap files — one got committed by a `git add -A` on 2026-09-20.

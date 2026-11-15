@@ -44,8 +44,7 @@ reduced program, `findings/` holds it.
   cannot link on Linux (`.github/workflows/windows.yml` builds on Windows).
   `arm64mac` and `x64mac` link on Linux against roc-ray's sysroot. The wasm dev
   backend writes a constant record's relocations out of offset order when field
-  order and layout order differ (roc-lang/roc#11419,
-  `findings/wasm-reloc-order/`).
+  order and layout order differ (roc-lang/roc#11419).
 - `ROC_LIR_DUMP=` (empty for every procedure) prints the LIR under source names.
   `roc build --debug` names wasm procedures only `roc__proc_<hex>`, and `perf`
   on a native build sees the same ids.

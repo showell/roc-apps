@@ -15,11 +15,9 @@ there; the others are mapped below.
 | `ray/` | `fetch_exes.sh`, which pulls the canvas apps' Windows executables to a Windows machine | `ray/README.md` |
 | `cbor-pets/` | CBOR as a Roc format, from the Zulip thread "CBOR serialization": `Cbor.parse`/`Cbor.to_bytes` work for a profile through derived `parser_for`/`encoder_for`, with its picture (an `ImageBlob`) a byte string and its pet ages an array | `cbor-pets/README.md` |
 | `basic/` | a BASIC interpreter written by hand in Roc, a web page that runs it, and the corpora that grade it | `basic/README.md` |
-| `machine/` | simulated devices in one Roc value | `machine/README.md` |
-| `framebuffer/` | Codex drawing on a screen, with no machine under it | `framebuffer/README.md` |
 | `site/`, `ops/` | the site that serves the apps: dev, staging and prod | below |
 | `findings/` | Roc behaviours we found, each with a program that shows it | |
-| `docs/` | `roc-style.md`, how Steve writes Roc (tags, records, opaque types for what's validated, one workhorse at the edge); `roc-notes.md`, how the Roc nightly behaves (the compiler, the language, what copies); the Codex forms safari uses; the machine's memory plan and structures | |
+| `docs/` | `roc-style.md`, how Steve writes Roc (tags, records, opaque types for what's validated, one workhorse at the edge); `roc-notes.md`, how the Roc nightly behaves (the compiler, the language, what copies); the Codex forms safari uses | |
 
 ## The Safari book, the prototype
 
@@ -64,28 +62,6 @@ deliberate copy with a provenance file and a commit, moves it to staging.
 Both channels send no-store, so each is live the moment its file is.
 
 Every page's URLs are relative, so the site works under any prefix.
-
-## machine: simulated devices in one Roc value
-
-`machine/` is the start of the devices plan
-([notes/codex-devices-in-roc.md](https://github.com/showell/essay-repl-server/blob/master/notes/codex-devices-in-roc.md), [notes/roc-machine-emulator.md](https://github.com/showell/essay-repl-server/blob/master/notes/roc-machine-emulator.md)):
-a Roc machine holding the devices upstream's codex-vm models (memory, PCI
-configuration space, a drive, a keyboard queue, a console), each behind a door
-that takes the machine and hands it back. Step 1 is a hand-written program on
-it, watched by a page. `machine/README.md` is the map.
-
-    machine/build.sh               # host + app + page + disk image into dev, :9210/machine/machine.html
-    node machine/wasm/smoke.mjs ~/build/roc-apps/next/machine
-
-## framebuffer: Codex drawing on a screen, with no machine under it
-
-`framebuffer/` runs a Codex program that only touches memory, with the bytes
-kept by the platform's host and the screen a part of them where UEFI's GOP
-protocol puts it. The page runs the program once a frame. `framebuffer/README.md`
-is the map.
-
-    framebuffer/build.sh framebuffer/demos/scene-spin.codex   # dev, :9210/framebuffer/
-    node framebuffer/frames.mjs scene-spin 5
 
 ## What's tracked
 

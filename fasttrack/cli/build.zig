@@ -1,7 +1,6 @@
 // The experiment platform's native host: platform/host.zig compiled to a static
 // library for x86_64-linux-musl against roc's own `builtins` and `host_alloc`
-// modules from the roc checkout (-Droc=<path>, default ~/showell_repos/roc). A
-// copy of machine/native/build.zig; fasttrack keeps its own.
+// modules from the roc checkout (-Droc=<path>, default ~/showell_repos/roc).
 const std = @import("std");
 
 pub fn build(b: *std.Build) void {

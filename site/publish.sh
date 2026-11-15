@@ -1,7 +1,7 @@
 #!/bin/bash
 # THE SIGN-OFF: move what the dev channel shows into staging, one app at a time.
 #
-#   site/publish.sh safari      an app: basic, machine, framebuffer; or a
+#   site/publish.sh safari      an app: basic, fasttrack; or a
 #                               canvas app: safari, snake, pong, breakout, camera,
 #                               workshop, particles, trick_or_treat
 #   site/publish.sh tutorial    the Safari Ride book, with every widget and app it
@@ -18,12 +18,9 @@
 # request with no-store, so it is live at once. Nothing else writes site/live/.
 #
 # PROVENANCE records what the build read: the Roc compiler, the roc-apps
-# commit (marked when the app's own tree has uncommitted changes), a hash of
-# each module, and for an app built from emitted Codex (machine, framebuffer)
-# the rocemit commit and the Cobblestone checkout the emitter
-# resolved against. A canvas app and basic read neither, so record neither.
-# A checkout an app needs and that is missing stops the publish before
-# site/live/ is touched.
+# commit (marked when the app's own tree has uncommitted changes), and a hash
+# of each wasm. A checkout an app needs and that is missing stops the publish
+# before site/live/ is touched.
 #
 # PUBLISH_DRY_RUN=1 writes the PROVENANCE and stops before git; with NEXT and
 # LIVE pointed at scratch copies it touches nothing tracked.
@@ -33,23 +30,9 @@ REPO="$(cd "$HERE/.." && pwd)"
 NEXT="${NEXT:-$HOME/build/roc-apps/next}"
 LIVE="${LIVE:-$HERE/live}"
 . "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/../pinned-roc.sh"
-ROCEMIT_REPO="${ROCEMIT_REPO:-$HOME/showell_repos/rust-codex-compiler}"
-COBBLESTONE="${COBBLESTONE:-$HOME/showell_repos/cobblestone-u66rel}"
 # The Shale book is built by book/build.shale on the shale repository's book
 # branch, not from a directory here, so its PROVENANCE names that checkout.
 SHALE_BOOK="${SHALE_BOOK:-$HOME/showell_repos/lanes/shale-book}"
-
-# Whether an app's build read rocemit and Cobblestone. A canvas app never does,
-# so it passes unnamed; any other app this doesn't name is refused, so a new
-# one gets a decision rather than a blank line.
-reads_emitted_codex() {
-    case "$1" in
-        machine|framebuffer) return 0 ;;
-        basic|tutorial|shale-book) return 1 ;;
-        *) [ "$2" = "canvas_apps/$1" ] && return 1
-           echo "publish.sh doesn't know whether $1 reads rocemit and Cobblestone; name it in reads_emitted_codex"; exit 2 ;;
-    esac
-}
 
 # A checkout the PROVENANCE must name; missing, the publish stops.
 require_checkout() {
@@ -111,12 +94,6 @@ else
     if [ "$src" = "canvas_apps/$app" ] && ! grep -qxF "opt speed" "$NEXT/$app/BUILT"; then
         echo "$NEXT/$app is not a release build; run canvas_apps/build.sh $app release first"; exit 2
     fi
-    emitted=no
-    if reads_emitted_codex "$app" "$src"; then
-        emitted=yes
-        require_checkout rocemit "$ROCEMIT_REPO" ROCEMIT_REPO
-        require_checkout Cobblestone "$COBBLESTONE" COBBLESTONE
-    fi
     rm -rf "$LIVE/$app"
     cp -r "$NEXT/$app" "$LIVE/$app"
     {
@@ -130,10 +107,6 @@ else
                 echo "roc $("$ROC" version | sed 's/Roc compiler version //')"
             fi
             echo "roc-apps $(git -C "$REPO" rev-parse --short HEAD)$(git -C "$REPO" diff --quiet HEAD -- "$src" || echo ' +uncommitted')"
-        fi
-        if [ "$emitted" = yes ]; then
-            echo "rocemit $(git -C "$ROCEMIT_REPO" rev-parse --short HEAD)$(git -C "$ROCEMIT_REPO" diff --quiet HEAD || echo ' +uncommitted')"
-            echo "cobblestone $(git -C "$COBBLESTONE" rev-parse --short HEAD) $(git -C "$COBBLESTONE" branch --show-current)"
         fi
         (cd "$LIVE/$app" && find . -name '*.wasm' | sort | while read -r w; do
             echo "sha256 $(sha256sum "$w" | cut -c1-16)  $(stat -c %s "$w") bytes  ${w#./}"

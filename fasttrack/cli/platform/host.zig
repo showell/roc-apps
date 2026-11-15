@@ -1,6 +1,5 @@
 //! Fast Track's experiment host: the command line in as a List(Str), lines out
 //! to stdout, each with its newline, and memory from the C library's allocator.
-//! A copy of machine/native's host without the drives.
 
 const std = @import("std");
 const builtins = @import("builtins");

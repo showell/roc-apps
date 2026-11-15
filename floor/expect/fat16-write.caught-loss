@@ -1,7 +1,0 @@
-wrote True
-exists True
-readback Hello, disk!
-size -1
-wrote-bin False
-bin <none>
-absent False
