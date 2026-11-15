@@ -64,9 +64,9 @@
 <body>
 <main>
 <h1>Steve's Roc Work</h1>
-<p class="lede">Steve Howell's work in <a href="https://www.roc-lang.org/">Roc</a>: apps, a book and a package,
-written or refined through agentic development, with Claude, an AI agent, writing the code. The apps run here in
-your browser, compiled to WebAssembly.</p>
+<p class="lede">Steve Howell wrote or refined these <a href="https://www.roc-lang.org/">Roc</a> apps, this book and
+this package through agentic development, with Claude, an AI agent, writing the code. The apps run here in your
+browser, compiled to WebAssembly.</p>
 <p class="license">Everything on this page is open source under the
 <a href="https://opensource.org/license/upl-1.0">Universal Permissive License (UPL) 1.0</a>, the license Roc itself uses.</p>
 
@@ -145,7 +145,7 @@ N             SQR(N)        NEWTON
  10            3.162278      3.162278</a>
     <h3><a href="basic/basic.html">BASIC</a></h3>
     <p>Written directly in Roc, not translated from another language, it runs two dialects, ECMA-55 Minimal BASIC and the BASIC of the 1978 Creative Computing games, and it's graded against the National Bureau of Standards' test programs and the classic games. The REPL runs here; the same interpreter runs as a command-line program.</p>
-    <p class="opening"><span class="tag">Roc at work</span>Roc's values never change, yet this BASIC interpreter updates its machine in place: Roc reuses a value's memory when nothing else refers to it, and the machine is shaped so nothing does. A check holds each of its small control programs to what one loop allocates, and most allocate nothing at all.</p>
+    <p class="opening"><span class="tag">Roc at work</span>In Roc a value never changes, yet this interpreter updates its machine in place. Roc reuses a value's memory whenever nothing else refers to it, and the machine is designed so that nothing else does. A check measures what each loop of the interpreter's small test programs allocates, and most of them allocate nothing at all.</p>
     <div class="links"><a href="basic/basic.html">The REPL</a><a href="basic/">How it works</a><a href="https://github.com/showell/roc-apps/tree/master/basic">The source</a></div>
   </div>
   <div class="stats">
@@ -159,8 +159,8 @@ N             SQR(N)        NEWTON
   <div>
     <a href="fasttrack/" aria-hidden="true" tabindex="-1"><img class="shot board" src="fasttrack/shot.png" alt="" loading="lazy"></a>
     <h3><a href="fasttrack/">Fast Track</a></h3>
-    <p>The marble race board game: you play red against them, and their marbles walk the board as they move. They never see a card they haven't drawn. The rules and the whole page are Roc, ported from Steve's Elm version; the computer players are new, written by Claude.</p>
-    <p class="opening"><span class="tag">Roc at work</span>The game's rules are a pure Roc function, so the three computer players try every line of play through the rest of their turn with the real rules, and keep the one their strategy scores highest; no move ever has to be undone.</p>
+    <p>The marble race board game: you play red against three computer players, and their marbles walk the board as they move. Each computer player plans its whole turn before it moves. It tries every line of play for the rest of the turn, up to five plays deep, and it counts a position reached two different ways only once. It scores where each line would leave the board, by Steve's own ranking of the board's squares, a bonus for each step a marble takes down its home stretch, and the aces, jokers and jacks it's holding back for later, and then it plays the best line. It never sees a card it hasn't drawn. Its weights were settled by racing each candidate against the reigning champion over thousands of dealt games. The rules and the whole page are Roc, ported from Steve's Elm version; the computer players are new, written by Claude.</p>
+    <p class="opening"><span class="tag">Roc at work</span>The game's rules are one pure Roc function, and the search simply calls it to see where each line of play leads. Every game state is a value, so trying a line never disturbs the real game, and no move ever has to be undone.</p>
     <div class="links"><a href="fasttrack/">Play</a><a href="https://github.com/showell/roc-apps/tree/master/fasttrack">The source, and how it is built</a><a href="https://github.com/showell/elm-fasttrack">Steve's Elm original</a></div>
   </div>
   <div class="stats">
