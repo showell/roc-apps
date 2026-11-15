@@ -54,17 +54,6 @@ is running it. The last row is the shape that issue #10297 reported as an
 OOM; on this nightly it is not evaluated at all, so the value size is
 bounded now and the step count is not.
 
-## Where it came from
-
-An emitted Codex program in our corpus took 2.7 seconds to `roc check` and
-3 ms to run. The 2.7 seconds is the compiler playing a whole-tree
-tic-tac-toe search, which is what that program does; the run is 3 ms
-because the answer was already a constant by then. Inlining its modules
-into one file, which should change nothing, turned the seconds into a
-hang, and that turned out to be because the inlining made a helper answer
-a constant, which made the search never terminate -- a program bug in the
-reduction, which is exactly the case this reports.
-
 ## Reducing
 
 `reduce.py` shrinks a file while checking at every step that it still

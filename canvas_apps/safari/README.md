@@ -15,17 +15,7 @@ Space pauses. Left and Right step back and forward through the ride's history â€
 a frame at a time while paused, faster while it runs. J jumps to the next
 bend. R starts the ride again.
 
-## Where it came from
-
-Safari began as a Codex program, the language of
-[Cobblestone](https://github.com/damiant3/Cobblestone), and its chapter modules
-were emitted as Roc by rust-codex-compiler's `rocemit`, one module per Codex
-chapter. **The Roc is the program now**, edited here like any other Roc. The
-Codex program is still the Codex program in `safari-codex`, which emits the
-zig, the wasm and the C#; it does not emit this.
-
-A module whose header says it was emitted still reads much as it was emitted.
-The rest have been rewritten by hand.
+Thanks to Damian Tedrow, whose [Cobblestone](https://github.com/damiant3/Cobblestone) inspired Safari.
 
 ## The map
 
@@ -37,7 +27,7 @@ The rest have been rewritten by hand.
 | `Sky.roc`, `Sun.roc` and `Grass.roc` | what is behind the ride: the sky's gradient, the sun and its glow, and the grass, each drawn by its own module over `Screen.roc`'s rectangles, which reach past a rolled screen's corners |
 | `gates/proof/SafariFrame.roc` | a frame painted into pixels in Roc, for the proof tools below |
 | `RideInstant.roc` and the chapter modules | one instant of the ride, the world, the route, the rider, the animals, the scenery, and how each is drawn |
-| `Bird.roc` | the bird, the first thing here that was never Codex, with `BirdFlight.roc`, `EncounterSighting.roc` and `BirdStills.roc` |
+| `Bird.roc` | the bird, with `BirdFlight.roc`, `EncounterSighting.roc` and `BirdStills.roc` |
 | `Pipeline.roc` | the steps every kind of object takes through a frame: placed (`Geom.Placed`), sighted (`Pipeline.Sighted`), then rendered (`Rendered.roc`, a `Sprite.roc` and its depth). `Conifer.roc`, `Billboard.roc`, `Tower.roc` and `Truck.roc` are among the kinds that go through it, and the depth sort orders the renderings |
 | `Animation.roc` | what the cat and the bird share: a timeline that turns a stage into an instant |
 | `EncounterPlan.roc` | the ride's plan for the encounter on the rider's segment: when its animation starts, and so the stage it has got to |
@@ -106,6 +96,3 @@ in any checkout.
 An `expect` sits below the block of the module it checks. Where it needs a
 module that one doesn't import, it sits in its topic's module in `gates/expects/`,
 and a helper two of those modules need sits in `gates/expects/Fixtures.roc`.
-
-`emitted.sh` and `retest.sh`, which emitted the Roc from Codex, refuse to run:
-the modules they would rewrite are source now.

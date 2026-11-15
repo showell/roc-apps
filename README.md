@@ -1,9 +1,9 @@
 # roc-apps
 
-Programs in Roc from the Cobblestone world. Most are Codex emitted as Roc by
-rust-codex-compiler's `rocemit` and run on platforms of our own, in the browser
-or natively; BASIC is written in Roc by hand. An app with a README keeps its map
-there; the others are mapped below.
+Programs in Roc, run on platforms of our own, in the browser or natively. An
+app with a README keeps its map there; the others are mapped below.
+
+Thanks to Damian Tedrow, whose [Cobblestone](https://github.com/damiant3/Cobblestone) inspired Safari.
 
 ## The apps
 
@@ -17,7 +17,7 @@ there; the others are mapped below.
 | `basic/` | a BASIC interpreter written by hand in Roc, a web page that runs it, and the corpora that grade it | `basic/README.md` |
 | `site/`, `ops/` | the site that serves the apps: dev, staging and prod | below |
 | `findings/` | Roc behaviours we found, each with a program that shows it | |
-| `docs/` | `roc-style.md`, how Steve writes Roc (tags, records, opaque types for what's validated, one workhorse at the edge); `roc-notes.md`, how the Roc nightly behaves (the compiler, the language, what copies); the Codex forms safari uses | |
+| `docs/` | `roc-style.md`, how Steve writes Roc (tags, records, opaque types for what's validated, one workhorse at the edge); `roc-notes.md`, how the Roc nightly behaves (the compiler, the language, what copies) | |
 
 ## The Safari book, the prototype
 
@@ -102,12 +102,3 @@ is for working ON the compiler, and the wasm host builds against its
 `-Doptimize=ReleaseFast` does not link on this 8 GB box. The debug build's
 checker is quadratic in a file's literals (the nightly's is not); Roc's eval
 suite is its installation check (`zig build run-test-eval`, 47 minutes).
-
-## What is known to be slow, and why
-
-[notes/what-is-slow.md](https://github.com/showell/essay-repl-server/blob/master/notes/what-is-slow.md). In one line: a Codex
-list built by `x & f rest` is quadratic in Roc, and the emitter writes an
-accumulator loop for that shape; everything else is the nightly. (The
-stills were once strings with a decoder, because the debug compiler's
-checker was quadratic in a file's literals; the nightly's is linear and
-they are literals again, 2026-09-12.)

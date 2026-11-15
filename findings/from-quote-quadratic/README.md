@@ -23,7 +23,3 @@ take what `roc check` takes (21 s at 800). `roc build` defaults to LLVM
 The same 400 literals as 400 separate constants (`w0 : T`, `w0 = "w0"`,
 ...) take 0.78 s under `roc run`; built inside a function, so nothing is
 evaluated at compile time, `roc check` takes 0.30 s.
-
-Found through rocemit, which writes a Codex text literal as a Roc string of
-its own `Text` type; the ported tests' literals are mostly a few per
-expression, so they pay about a third more compile time rather than this.

@@ -1,5 +1,5 @@
 [Unit]
-Description=Cobblestone Roc Projects: dev on 9210, staging on 9200 (Caddy, ops/Caddyfile)
+Description=Steve's Roc Apps: dev on 9210, staging on 9200 (Caddy, ops/Caddyfile)
 
 [Service]
 ExecStart=%h/build/caddy/caddy run --config %h/showell_repos/roc-apps/ops/Caddyfile --adapter caddyfile

@@ -15,6 +15,5 @@ instead, which is why 09-19 runs at all. The window for the panic is
 therefore after 220fd47 (09-12) and at or before d025939 (09-19); the
 correction is a comment on the issue.
 
-It is `tests/ladder.sh`'s `trie-prefix-test` (codex/test/trie-prefix-test),
-reduced by hand from rocemit's output: the Codex chapters folded into one
-file, then one simplification at a time, keeping each that still panicked.
+It was reduced by hand from a larger trie test, one simplification at a time,
+keeping each that still panicked.

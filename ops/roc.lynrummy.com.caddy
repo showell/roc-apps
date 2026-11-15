@@ -1,4 +1,4 @@
-# Cobblestone Roc Projects in prod, https://roc.lynrummy.com. The prod droplet's
+# Steve's Roc Apps in prod, https://roc.lynrummy.com. The prod droplet's
 # Caddyfile (angry-gopher's deploy/Caddyfile) imports /etc/caddy/sites/*.caddy,
 # where site/deploy.sh installs this file beside lynrummy.com's site block.
 # It serves /srv/roc-site/, which site/deploy.sh copies verbatim from staging.

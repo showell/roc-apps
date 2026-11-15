@@ -1,4 +1,4 @@
-# Cobblestone Roc Projects on this box: one Caddy, a path per app, a port per
+# Steve's Roc Apps on this box: one Caddy, a path per app, a port per
 # channel. Run by the roc-site user service (ops/roc-site.service). Prod is
 # https://roc.lynrummy.com, on the prod droplet (ops/roc.lynrummy.com.caddy).
 #

@@ -399,7 +399,7 @@ long movie wants: `FRAMES=1500`.
 |---|---|
 | `snake`, `pong`, `breakout`, `camera`, `particles` | roc-ray's examples of the same names |
 | `workshop` | roc-ray's `generated_assets`, the Pixel Workshop |
-| `safari` | this repository's own screensaver, which began as a Codex program; `safari/README.md` |
+| `safari` | this repository's own screensaver; `safari/README.md` |
 | `trick_or_treat`, and every `*_widget` | this repository's own |
 
 The roc-ray examples were taken at commit `e100c95`. They are © 2024 Luke Boswell, under the UPL
