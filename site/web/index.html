@@ -59,27 +59,12 @@
 <p class="lede">Programs written in <a href="https://www.roc-lang.org/">Roc</a> and compiled to WebAssembly,
 with a thin layer of JavaScript that draws the screen and passes along your clicks and keys.</p>
 
-<section class="feature" data-app="fasttrack">
-  <div>
-    <a href="fasttrack/" aria-hidden="true" tabindex="-1"><img class="shot board" src="fasttrack/shot.png" alt="" loading="lazy"></a>
-    <h3><a href="fasttrack/">Fast Track</a></h3>
-    <p class="opening">Three computer players, written in Roc, try every line of play through the rest of their turn and take the one their strategy scores highest, and they never see a card they haven't drawn.</p>
-    <p>The marble race board game: you play red against them, and their marbles walk the board as they move. The rules and the whole page are Roc, ported from Steve's Elm version; the computer players are new.</p>
-    <div class="links"><a href="https://github.com/showell/roc-apps/tree/master/fasttrack">How it is built</a><a href="https://github.com/showell/elm-fasttrack">Steve's Elm original</a></div>
-  </div>
-  <div class="stats">
-    <div class="stat"><b>4,166</b><span>lines of Roc: the game, its page and its players</span></div>
-    <div class="stat"><b>30</b><span>modules</span></div>
-    <div class="stat"><b>96</b><span>expects, and 371 lines of tests beside them</span></div>
-  </div>
-</section>
-
 <section class="feature" data-app="safari">
   <div>
     <a href="safari/" aria-hidden="true" tabindex="-1"><img class="shot" src="safari/shot.png" alt="" loading="lazy"></a>
     <h3><a href="safari/">Safari Ride</a></h3>
-    <p class="opening">A whole countryside built in Roc, frame by frame: hills, a winding road, herds, a cat and a bird, and a rider who leans into the turns.</p>
-    <p>A drive through the country, as a screensaver. Space pauses, the arrows step through the ride, J jumps to the next intersection, R starts over. The same files run here and as a native program.</p>
+    <p class="opening">Safari Ride models a whole world with Roc's types: on each stretch of road a cat crosses, a bird flies over, or the road is quiet, three cases of one tag union, and the compiler checks that every one is handled. And every instant of the ride is a plain value, so stepping backward is just returning to an earlier one.</p>
+    <p>A drive through the country, as a screensaver: hills, a winding road, herds, and a rider who leans into the turns. Space pauses, the arrows step through the ride, J jumps to the next intersection, R starts over.</p>
     <div class="links"><a href="tutorial/">The book about it</a><a href="https://github.com/showell/roc-apps/tree/master/canvas_apps/safari">The source</a></div>
   </div>
   <div class="stats">
@@ -93,7 +78,7 @@ with a thin layer of JavaScript that draws the screen and passes along your clic
   <div>
     <a href="tutorial/" aria-hidden="true" tabindex="-1"><img class="shot drawing" src="shared/book.svg" alt="" loading="lazy"></a>
     <h3><a href="tutorial/">Safari Ride: a tour of a real Roc program</a></h3>
-    <p class="opening">A little book that teaches Roc through Safari Ride's real source: every snippet is quoted from the program when the book is built, so the book and the code never drift apart.</p>
+    <p class="opening">A little book that teaches Roc through Safari Ride's real source, and is itself built by a Roc program: one pure function turns the chapters into every page, and every code sample is quoted from the ride's source as the book is built, so the book and the code stay in step.</p>
     <p>It starts from one page of the ride and works out to the whole program: types, tag unions, records, opaque types, pure functions and effects, each met where the ride needs it. Interactive widgets let you poke at the pieces. An early draft.</p>
     <div class="links"><a href="tutorial/">Read it</a></div>
   </div>
@@ -109,8 +94,8 @@ with a thin layer of JavaScript that draws the screen and passes along your clic
   <div>
     <a href="markdown/" aria-hidden="true" tabindex="-1"><img class="shot drawing" src="shared/markdown.svg" alt="" loading="lazy"></a>
     <h3><a href="markdown/">roc-markdown</a></h3>
-    <p class="opening">A markdown renderer in pure Roc that's safe to show whatever a user typed, with a hard limit on the work any one message can cost.</p>
-    <p>Messages to HTML: a Roc package with no dependencies and no platform, pure functions from bytes to bytes, so any Roc app can import it. It renders Gopher Chat on lynrummy.com. The playground runs it, compiled to WebAssembly, as you type.</p>
+    <p class="opening">A Roc package with no platform runs anywhere Roc does: the same pure functions render chat on a server and, compiled to WebAssembly, in your browser as you type.</p>
+    <p>A markdown renderer for chat, safe to show whatever a user typed. Each render carries a budget for its work, an ordinary value, so a message built to overload it is refused before it's shown. It renders Gopher Chat on lynrummy.com, and the playground runs it live.</p>
     <div class="links"><a href="markdown/">The playground</a><a href="https://github.com/showell/roc-markdown">The package</a></div>
   </div>
   <div class="stats">
@@ -137,20 +122,40 @@ N             SQR(N)        NEWTON
  9             3             3
  10            3.162278      3.162278</a>
     <h3><a href="basic/basic.html">BASIC</a></h3>
-    <p class="opening">A BASIC interpreter written by hand in Roc, graded against the National Bureau of Standards' Minimal BASIC test programs and the classic games of 1978.</p>
-    <p>It runs two dialects: ECMA-55 Minimal BASIC, and the BASIC of the 1978 Creative Computing games. The REPL runs here; the same interpreter runs as a native program.</p>
+    <p class="opening">Roc's values never change, yet this BASIC interpreter updates its machine in place: Roc reuses a value's memory when nothing else refers to it, and the machine is shaped so nothing does, so most of its small control programs loop without allocating at all.</p>
+    <p>Written by hand in Roc, it runs two dialects, ECMA-55 Minimal BASIC and the BASIC of the 1978 Creative Computing games, and it's graded against the National Bureau of Standards' test programs and the classic games. The REPL runs here; the same interpreter runs as a command-line program.</p>
     <div class="links"><a href="basic/basic.html">The REPL</a><a href="basic/">How it works</a></div>
   </div>
   <div class="stats">
     <div class="stat"><b>6,733</b><span>lines of Roc in 12 modules</span></div>
     <div class="stat"><b>208</b><span>NBS test programs that grade it</span></div>
-    <div class="stat"><b>99</b><span>games from <i>BASIC Computer Games</i> (1978), graded byte for byte</span></div>
+    <div class="stat"><b>99</b><span>games from <i>BASIC Computer Games</i> (1978) that grade it, each against a recorded run</span></div>
+  </div>
+</section>
+
+<section class="feature" data-app="fasttrack">
+  <div>
+    <a href="fasttrack/" aria-hidden="true" tabindex="-1"><img class="shot board" src="fasttrack/shot.png" alt="" loading="lazy"></a>
+    <h3><a href="fasttrack/">Fast Track</a></h3>
+    <p class="opening">The game's rules are a pure Roc function, so the three computer players can try every line of play through the rest of their turn with the real rules, and keep the one their strategy scores highest; no move ever has to be undone. They never see a card they haven't drawn.</p>
+    <p>The marble race board game: you play red against them, and their marbles walk the board as they move. The rules and the whole page are Roc, ported from Steve's Elm version; the computer players are new.</p>
+    <div class="links"><a href="https://github.com/showell/roc-apps/tree/master/fasttrack">How it is built</a><a href="https://github.com/showell/elm-fasttrack">Steve's Elm original</a></div>
+  </div>
+  <div class="stats">
+    <div class="stat"><b>4,166</b><span>lines of Roc: the game, its page and its players</span></div>
+    <div class="stat"><b>30</b><span>modules</span></div>
+    <div class="stat"><b>96</b><span>expects, and 371 lines of tests beside them</span></div>
   </div>
 </section>
 
 <h2>Luke's examples</h2>
-<p class="lede">Six of <a href="https://github.com/lukewilliamboswell/roc-ray">roc-ray</a>'s own examples, by
-Luke Boswell, taken with only small changes. The same files run here and as native programs through roc-ray.</p>
+<p class="lede"><a href="https://github.com/lukewilliamboswell/roc-ray">roc-ray</a> is Luke Boswell's Roc platform
+for 2D games, visual tools and interactive apps, powered by raylib, and it runs natively on macOS, Linux and
+Windows. These six toy retro games are roc-ray's own examples, all written by Luke. What this site adds is a
+proof of concept: the same Roc files also run as web pages, which is what you see here. They show the power of
+Roc in miniature. Luke's game rules are pure functions, a world in and the next world out, and Roc's types say so,
+so the rules moved to the browser with only their import lines changed. Only the drawing was rewritten, from
+roc-ray's drawing calls to a frame described as a value, and the same files still type-check against roc-ray.</p>
 <div class="minis">
   <section class="mini" data-app="snake">
     <a href="snake/" aria-hidden="true" tabindex="-1"><img class="shot" src="snake/shot.png" alt="" loading="lazy"></a>
