@@ -1,2 +1,0 @@
-bound: 3
-swap: 3

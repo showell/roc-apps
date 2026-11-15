@@ -1,3 +1,0 @@
-literal: 42 lit
-revised: 7 rev
-mixed: 99 mixed

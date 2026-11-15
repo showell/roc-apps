@@ -1,7 +1,7 @@
 #!/bin/bash
 # THE SIGN-OFF: move what the dev channel shows into staging, one app at a time.
 #
-#   site/publish.sh safari      an app: basic, machine, framebuffer, gpu, games; or a
+#   site/publish.sh safari      an app: basic, machine, framebuffer; or a
 #                               canvas app: safari, snake, pong, breakout, camera,
 #                               workshop, particles, trick_or_treat
 #   site/publish.sh tutorial    the Safari Ride book, with every widget and app it
@@ -19,8 +19,8 @@
 #
 # PROVENANCE records what the build read: the Roc compiler, the roc-apps
 # commit (marked when the app's own tree has uncommitted changes), a hash of
-# each module, and for an app built from emitted Codex (gpu, games, machine,
-# framebuffer) the rocemit commit and the Cobblestone checkout the emitter
+# each module, and for an app built from emitted Codex (machine, framebuffer)
+# the rocemit commit and the Cobblestone checkout the emitter
 # resolved against. A canvas app and basic read neither, so record neither.
 # A checkout an app needs and that is missing stops the publish before
 # site/live/ is touched.
@@ -44,7 +44,7 @@ SHALE_BOOK="${SHALE_BOOK:-$HOME/showell_repos/lanes/shale-book}"
 # one gets a decision rather than a blank line.
 reads_emitted_codex() {
     case "$1" in
-        gpu|games|machine|framebuffer) return 0 ;;
+        machine|framebuffer) return 0 ;;
         basic|tutorial|shale-book) return 1 ;;
         *) [ "$2" = "canvas_apps/$1" ] && return 1
            echo "publish.sh doesn't know whether $1 reads rocemit and Cobblestone; name it in reads_emitted_codex"; exit 2 ;;

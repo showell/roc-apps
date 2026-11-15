@@ -1,5 +1,0 @@
-name=Codex
-version=42
-emit-len=37
-list-len=3
-null=null-ok

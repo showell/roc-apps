@@ -1,3 +1,0 @@
-count-ones 5: 2
-count-ones 255: 8
-count-nz 5: 2

@@ -1,3 +1,0 @@
-buf-read 128 200
-compare-a-high -1
-compare-high-a 1

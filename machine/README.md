@@ -12,8 +12,7 @@ Two programs drive it:
   the effects it declares, which grant the boot process its capabilities. The
   ladder copies these modules in beside the emitted ones, passes the test's
   `.vmargs` as the command line, and links its `.disk` and `.disk2` in as the
-  primary master and slave, imported by a `MachineMedia.roc` it writes. A
-  batch run is `tests/ladder.sh fat16-list`.
+  primary master and slave, imported by a `MachineMedia.roc` it writes.
 - **The page's app**, which builds a machine with a disk image and steps it.
 - **The batch page.** An emitted unit built for wasm on `batch/`'s platform
   runs to its end in the browser: the page loads its disk images into the

@@ -1,3 +1,0 @@
-reads-in-body: 60
-reads-in-sibling: 50
-reads-in-tail: 23

@@ -1,3 +1,0 @@
-record 42
-list 9
-closure 42

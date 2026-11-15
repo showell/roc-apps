@@ -1,3 +1,0 @@
-arm-then: 15
-after-arm: 17
-base: 999

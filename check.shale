@@ -24,9 +24,6 @@ const WANT = "roc-pin: the repository's pinned nightly"
 
 const EXCEPTIONS = {
   {prefix = "canvas_apps/safari/tutorial/fails/", why = "programs that fail on purpose: the tutorial's builder checks that they do"},
-  {prefix = "tests/", why = "Codex's generated tests, written by rocemit and judged by tests/ladder.sh; Codex is parked"},
-  {prefix = "gpu/roc/", why = "Codex's kernels as rocemit emits them, written by gpu/emitted.sh; Codex is parked"},
-  {prefix = "games/roc/", why = "Codex's games as rocemit emits them, written by games/emitted.sh; Codex is parked"},
   {prefix = "findings/roc-check-hang/", why = "programs that hang `roc check` on purpose: the finding is the hang"},
   {prefix = "site/", why = "the published site's copies, built from the trees checked here"},
 }

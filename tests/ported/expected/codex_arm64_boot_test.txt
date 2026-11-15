@@ -1,2 +1,0 @@
-Codex ARM64 boot OK
-hello world
