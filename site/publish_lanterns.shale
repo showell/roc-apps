@@ -109,7 +109,11 @@ function check_published()
   print(trim(r.out))
   local seen = "do not differ"
   if moved then seen = "differ" end
-  check_line("web_shots.mjs on staging", r.code == 0 and moved, "exit " .. r.code .. ", the shots 1.5 s apart " .. seen)
+  -- roc-screensaver's verify holds the skin's lines exactly; here a page
+  -- that lost its skin (a "none") is enough to stop.
+  local dressed = contains(r.out, "\nskin help: ") and contains(r.out, "\nskin links: ") and not contains(r.out, "skin help: none") and not contains(r.out, "skin links: none")
+  if not dressed then seen = seen .. ", and the skin's help or links are missing" end
+  check_line("web_shots.mjs on staging", r.code == 0 and moved and dressed, "exit " .. r.code .. ", the shots 1.5 s apart " .. seen)
   return nil
 end
 
