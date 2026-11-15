@@ -1,0 +1,201 @@
+-- budget: steps=40000000 read_bytes=200000000
+-- This script publishes roc-screensaver's screensavers to staging, each in its
+-- own folder of the site, as site/publish.sh does for an app of this
+-- repository. The landing page's Platforms section links them.
+--
+--   cd <roc-apps checkout> && shale site/publish_screensavers.shale               # every one in SCREENSAVERS
+--   cd <roc-apps checkout> && shale site/publish_screensavers.shale saver=tides   # that one alone
+--
+-- SCREENSAVERS names each screensaver's site folder: lanterns lives at
+-- welcome-to-roc/, an address handed out before the landing page linked it,
+-- and the others at their own names. A screensaver with a `shot_step` also
+-- gets a shot.png, the landing page's picture of it.
+--
+-- The pages' sources stay in roc-screensaver (repos:roc-screensaver), and the
+-- script refuses that checkout when it has changes of any kind or its HEAD is
+-- on no branch of GitHub's, so what is published is always a commit anyone
+-- can fetch. For each screensaver it builds the page there with
+-- roc-screensaver's own tools/web_build.shale, the release wasm, into the dev
+-- channel's folder of the same name (http://143.244.172.148:9210/<folder>/),
+-- copies that over site/live/<folder>/ whole, and writes a PROVENANCE beside
+-- it: the compiler and the opt from the build's BUILT, the roc-screensaver
+-- commit, and a hash of the wasm. The shot, where there is one, is the native
+-- PNG harness's frame at `shot_step` (`zig build png`, which the
+-- roc-screensaver gate holds to the page's frame at the same step), squeezed
+-- by site/squeeze_png.mjs, and the PROVENANCE names its step.
+--
+-- Then it checks the published page before committing it. The folder must
+-- hold exactly the page's files, the page's URLs must be relative, staging
+-- must serve the checkout's index.html, and roc-screensaver's
+-- tools/web_shots.mjs must pass on the staging page: its first frame under the
+-- warming-up pill, the ride, and the skin's help and links. A failed check
+-- stops before git, leaving the new files in site/live/ uncommitted. Each
+-- screensaver's folder is committed alone, with its PROVENANCE in the
+-- message, and the commits are pushed at the end. site/deploy.sh takes them
+-- to prod with the rest.
+
+const SAVER = "repos:roc-screensaver"
+const SCREENSAVERS = {
+  {name = "lanterns", folder = "welcome-to-roc", shot_step = 0},
+  {name = "bubbles", folder = "bubbles", shot_step = 0},
+  {name = "tides", folder = "tides", shot_step = 1500},
+}
+const STAGING = "http://143.244.172.148:9200/"
+const PAGE_FILES = {"PROVENANCE", "canvas_app_runner.js", "index.html", "roc_glue.js", "shapes_canvas.js"}
+const NODE_WANT = "web-shots: roc-screensaver's headless Chromium check of a live page"
+const SQUEEZE_WANT = "script: site/squeeze_png.mjs recompresses the native harness's frame"
+
+-- The roc-screensaver commit to publish, its full hash. A checkout with any
+-- change, or whose HEAD no GitHub branch holds, stops the publish.
+function saver_commit()
+  if not exists(SAVER .. "/tools/web_build.shale") then fail("publish_screensavers: no roc-screensaver checkout at " .. SAVER) end
+  if not git_is_clean(SAVER) then
+    for s in git_status(SAVER) do print(s.code .. " " .. s.path) end
+    fail("publish_screensavers: roc-screensaver has uncommitted changes; commit and push them first")
+  end
+  git_fetch(SAVER)
+  local head = trim(must(run({"git", "rev-parse", "HEAD"}, {cwd = SAVER, timeout_ms = 10000, tail = 2})).out)
+  local on = must(run({"git", "branch", "-r", "--contains", head}, {cwd = SAVER, timeout_ms = 10000, tail = 20}))
+  if trim(on.out) == "" then fail("publish_screensavers: roc-screensaver's HEAD " .. sub(head, 1, 7) .. " is on no branch of origin; push it first") end
+  return head
+end
+
+-- Every file below `dir`, by its name under it, sorted.
+function files_under(dir)
+  local names = {}
+  for e in walk_all(dir, {kind = "file"}) do push(names, sub(e.path, #dir + 2, #e.path)) end
+  sort(names)
+  return names
+end
+
+-- The files a screensaver's published folder holds, sorted.
+function expected_files(s)
+  local names = {}
+  for f in PAGE_FILES do push(names, f) end
+  push(names, s.name .. ".wasm")
+  if s.shot_step > 0 then push(names, "shot.png") end
+  sort(names)
+  return names
+end
+
+-- The first 16 hex digits of a file's sha256.
+function sha256_16(p)
+  local r = must(run({"sha256sum", real(p)}, {timeout_ms = 10000, tail = 2}))
+  return sub(trim(r.out), 1, 16)
+end
+
+-- The PROVENANCE for the page in `live`, built from roc-screensaver at `head`.
+function provenance(s, live, head)
+  local stamp = trim(must(run({"date", "-u", "+%Y-%m-%dT%H:%M:%SZ"}, {timeout_ms = 5000, tail = 2})).out)
+  local text = "published " .. stamp .. "\n"
+  text = text .. trim(read(live .. "/BUILT")) .. "\n"
+  text = text .. "roc-screensaver " .. sub(head, 1, 7) .. " https://github.com/showell/roc-screensaver/commit/" .. head .. "\n"
+  local wasm = live .. "/" .. s.name .. ".wasm"
+  text = text .. "sha256 " .. sha256_16(wasm) .. "  " .. stat(wasm).size .. " bytes  " .. s.name .. ".wasm\n"
+  if s.shot_step > 0 then text = text .. "shot.png: the native harness's frame after " .. s.shot_step .. " steps\n" end
+  return text
+end
+
+-- shot.png in `live`: the native harness's frame at the screensaver's
+-- shot_step, built from the same checkout, squeezed.
+function make_shot(s, live)
+  local frames = fresh_dir("build:roc-apps", s.name .. "-shot")
+  local b = run({"zig", "build", "-Dapp=screensavers/" .. s.name .. "/main.roc", "png", "--", real(frames), "" .. s.shot_step},
+    {cwd = SAVER, timeout_ms = 300000, tail = 20})
+  print(trim(b.out))
+  if b.code ~= 0 then fail("publish_screensavers: the native harness failed on " .. s.name) end
+  local step = "" .. s.shot_step
+  while #step < 3 do step = "0" .. step end
+  local frame = frames .. "/step-" .. step .. ".png"
+  print(trim(must(run({"node", "site/squeeze_png.mjs", real(frame), real(live) .. "/shot.png"},
+    {timeout_ms = 60000, tail = 5, want = SQUEEZE_WANT})).out))
+  remove_tree(frames)
+  return nil
+end
+
+-- One check's line; a failed one stops the publish.
+function check_line(name, ok, detail)
+  local verdict = "PASS"
+  if not ok then verdict = "FAIL" end
+  print(verdict .. "  " .. name .. ": " .. detail)
+  if not ok then fail("publish_screensavers: the check of " .. name .. " failed; site/live/ is changed and not committed") end
+  return nil
+end
+
+-- The published page, checked in the checkout and as staging serves it.
+function check_published(s, live)
+  local found = files_under(live)
+  local want = expected_files(s)
+  check_line("files", join(found, " ") == join(want, " "), live .. " holds " .. join(found, " ") .. "; expected " .. join(want, " "))
+
+  local page = read(live .. "/index.html")
+  local absolute = re_find_all(page, [=[(?:src|href)\s*=\s*["'](?:/|[a-z]+://)]=])
+  check_line("relative URLs", #absolute == 0, #absolute .. " src or href in index.html start with / or a scheme")
+
+  local url = STAGING .. s.folder .. "/"
+  local served = http_get(url, {timeout_ms = 10000})
+  check_line("staging serves it", served.status == 200 and served.body == page, url .. " answered " .. served.status .. ", " .. #served.body .. " bytes, the checkout's index.html is " .. #page)
+
+  local shots = fresh_dir("scratch:", s.folder .. "-shots")
+  local r = run({"node", real(SAVER .. "/tools/web_shots.mjs"), url, real(shots), "1300", "2800"},
+    {timeout_ms = 60000, tail = 20, want = NODE_WANT})
+  local moved = exists(shots .. "/at_01300ms.png") and exists(shots .. "/at_02800ms.png") and read(shots .. "/at_01300ms.png") ~= read(shots .. "/at_02800ms.png")
+  remove_tree(shots)
+  print(trim(r.out))
+  local seen = "do not differ"
+  if moved then seen = "differ" end
+  -- roc-screensaver's verify holds the skin's lines exactly; here a page
+  -- that lost its skin (a "none") is enough to stop.
+  local dressed = contains(r.out, "\nskin help: ") and contains(r.out, "\nskin links: ") and not contains(r.out, "skin help: none") and not contains(r.out, "skin links: none")
+  if not dressed then seen = seen .. ", and the skin's help or links are missing" end
+  check_line("web_shots.mjs on staging", r.code == 0 and moved and dressed, "exit " .. r.code .. ", the shots 1.5 s apart " .. seen)
+  return nil
+end
+
+-- Builds, copies, checks and commits one screensaver; answers whether a
+-- commit was made.
+function publish_one(s, head)
+  local next = "build:roc-apps/next/" .. s.folder
+  local live = "site/live/" .. s.folder
+  print("── " .. s.name .. " at " .. s.folder .. "/")
+  local b = run({"shale", "--root", ".", "tools/web_build.shale", "saver=" .. s.name, "dest=" .. s.folder}, {cwd = SAVER, timeout_ms = 300000, tail = 30})
+  print(trim(b.out))
+  if b.code ~= 0 then fail("publish_screensavers: roc-screensaver's web build of " .. s.name .. " failed") end
+  if not contains(read(next .. "/BUILT"), "\nopt speed\n") then fail("publish_screensavers: " .. next .. " is not a release build") end
+
+  if exists(live) then remove_tree(live) end
+  copy(next, live)
+  if s.shot_step > 0 then make_shot(s, live) end
+  create(live .. "/PROVENANCE", provenance(s, live, head))
+  -- Folded into PROVENANCE, as site/publish.sh does: one record, not two.
+  remove(live .. "/BUILT")
+  print(read(live .. "/PROVENANCE"))
+
+  check_published(s, live)
+
+  must(run({"git", "add", "-A", "--", live}, {timeout_ms = 30000, tail = 5}))
+  local msg = "site: publish " .. s.folder .. " (roc-screensaver's " .. s.name .. ") to staging\n\n" .. read(live .. "/PROVENANCE")
+  git_commit("", msg)
+  print("published " .. s.folder .. " to staging: " .. STAGING .. s.folder .. "/")
+  return nil
+end
+
+function main()
+  local only = arg("saver", "")
+  local chosen = {}
+  for s in SCREENSAVERS do
+    if only == "" or only == s.name then push(chosen, s) end
+  end
+  if #chosen == 0 then fail("publish_screensavers: saver=" .. only .. " is not one of SCREENSAVERS") end
+
+  local head = saver_commit()
+  print("roc-screensaver " .. sub(head, 1, 7) .. ", clean and on origin")
+  local staged = run({"git", "diff", "--cached", "--quiet"}, {timeout_ms = 10000, tail = 5})
+  if staged.code ~= 0 then fail("publish_screensavers: roc-apps' index already holds staged changes; commit or unstage them first") end
+
+  for s in chosen do publish_one(s, head) end
+  git_push("")
+  return nil
+end
+
+main()
