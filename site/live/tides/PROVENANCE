@@ -1,0 +1,6 @@
+published 2026-11-15T22:06:29Z
+Roc compiler version nightly-2026-11-03-34bd006
+opt speed
+roc-screensaver 63d90a6 https://github.com/showell/roc-screensaver/commit/63d90a6f161f002a9eab8736e4aed876ba20980b
+sha256 2f2e42dcea474ef5  48132 bytes  tides.wasm
+shot.png: the native harness's frame after 1500 steps
