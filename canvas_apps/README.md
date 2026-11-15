@@ -402,7 +402,8 @@ long movie wants: `FRAMES=1500`.
 | `safari` | this repository's own screensaver, which began as a Codex program; `safari/README.md` |
 | `trick_or_treat`, and every `*_widget` | this repository's own |
 
-The roc-ray examples were taken at commit `e100c95`. Each ported file says in its own docstring what changed in it and why,
+The roc-ray examples were taken at commit `e100c95`. They are © 2024 Luke Boswell, under the UPL
+1.0; `LICENSE-roc-ray` is roc-ray's license, kept with the ported files as the UPL asks. Each ported file says in its own docstring what changed in it and why,
 which is the copy to trust. The shape of the change is the same throughout: the
 rules keep their arithmetic and change their import lines, and the drawing is
 rewritten, because upstream draws into a `Draw.Frame` and here a frame is a
