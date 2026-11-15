@@ -75,7 +75,7 @@ browser, compiled to WebAssembly.</p>
   <div>
     <a href="safari/" aria-hidden="true" tabindex="-1"><img class="shot" src="safari/shot.png" alt="" loading="lazy"></a>
     <h3><a href="safari/">Safari Ride</a></h3>
-    <p>A drive through the country, as a screensaver: hills, a winding road, herds, and a rider who leans into the turns. It began as a program in another language, Codex, translated to Roc by a tool; every one of its modules has since been rewritten. Space pauses, the arrows step through the ride, J jumps to the next intersection, R starts over.</p>
+    <p>A drive through the country, as a screensaver: hills, a winding road, herds, and a rider who leans into the turns. It has lineage in TypeScript, where it began, and this Roc version is its latest rewrite. Space pauses, the arrows step through the ride, J jumps to the next intersection, R starts over.</p>
     <p class="opening"><span class="tag">Roc at work</span>Safari Ride models a whole world with Roc's types. On each stretch of road a cat crosses, a bird flies over, or the road is quiet: three cases of one tag union, and the compiler checks that every match handles them all. A step of the ride answers <code>[Continued(Tour), Restarted(Tour)]</code>, a union declared nowhere but in its function's signature. And every instant of the ride is a plain value, so stepping backward is just returning to an earlier one.</p>
     <pre class="roc"><span class="t">encounter_throttle</span> : Encounter, Animation.Stage -> ThrottleLimit
 <span class="t">encounter_throttle</span> = |encounter, stage|
@@ -88,7 +88,7 @@ browser, compiled to WebAssembly.</p>
         BirdHere(_) | QuietRoad => NoLimit
     }</pre>
     <p class="caption">From <code>canvas_apps/safari/EncounterReaction.roc</code>: while a cat crosses, the rider eases off.</p>
-    <p class="opening"><span class="tag nice">Roc plays nice with others</span>Safari's platform host is written in Zig, and a little JavaScript paints the frames that Roc describes. The ride itself began in another language, Codex, and a tool translated it into Roc, which gave the rewrite a working start.</p>
+    <p class="opening"><span class="tag nice">Roc plays nice with others</span>The ride came to Roc from TypeScript. In your browser it's a wasm module holding the Roc ride and a small Zig host, and the page's JavaScript calls that host to step the ride and fetch each frame to paint.</p>
     <div class="links"><a href="tutorial/">The book about it</a><a href="https://github.com/showell/roc-apps/tree/master/canvas_apps/safari">The source</a></div>
   </div>
   <div class="stats">
