@@ -1,7 +1,7 @@
 #!/bin/bash
 # Install the pages as systemd --user services that survive reboots and
 # logouts (linger is on for this user). Rerun after editing a unit;
-# idempotent. The same pattern as essay-repl-server/ops/install.sh.
+# idempotent.
 #
 #   roc-site  :9210  dev: ~/build/roc-apps/next, whatever the build scripts last wrote
 #             :9200  staging: site/live/, which only site/publish.sh writes

@@ -1,6 +1,6 @@
 # The review workflow
 
-This workflow is specific to Steve's setup. It needs Shale (the `print_module_types` recipe and the Shale-only shell) and the essay surface (`essay-repl-server`, with its comments). Another agent can run it once those are in place. The agents' own brief is `docs/type-review.md`, and this file is the orchestrator's side.
+This workflow is specific to Steve's setup. It needs Shale (the `print_module_types` recipe and the Shale-only shell) and the essay surface ([essay-surface](https://github.com/showell/essay-surface), with its comments). Another agent can run it once those are in place. The agents' own brief is `docs/type-review.md`, and this file is the orchestrator's side.
 
 The process makes code right one module at a time, types first. Cold agents review and clean up in parallel. One orchestrator decides, merges and gates. Steve stays single-threaded, making only the calls that are his. It ran first on Safari, and it should carry over to roc-chat.
 
@@ -62,9 +62,9 @@ Things the quick tier has missed, which the brief now covers:
 
 ## Decisions for Steve
 
-- **On the essay surface, never the console.** With four agents reporting, the console is too noisy. Each decision or group of decisions is a `notes/<slug>.md`, with the facts, the options and a recommendation on each item.
+- **On the essay surface, never the console.** With four agents reporting, the console is too noisy. Each decision or group of decisions is a note on the surface, with the facts, the options and a recommendation on each item.
 - **Repeat the link.** Repeat its URL at the end of every reply until Steve says he's reading it.
-- **Replies are comments.** They live in `essay-repl-server/data/comments/notes/<slug>.md.comments.json`, one per paragraph, not in the note or in git.
+- **Replies are comments.** They live in the surface's comments folder (`~/essay-dogfood/comments/<name>.note.jsonl` on the box), one per paragraph, not in the note or in git. Notes and replies are transient: the surface keeps only the newest 20, so a decision that must last goes into this repo.
 - **Record his answers.** Add them to the note under "Steve's answer" and carry them into the lanes.
 - **One at a time.** Hold agent reports until he's ready, and hand him one note at a time.
 - **Pixel changes wait for one eye-test note,** with before and after renders. Steve tests carefully, so batch them rather than asking piecemeal.
@@ -74,7 +74,7 @@ Things the quick tier has missed, which the brief now covers:
 The tutorial is rewritten later, so lanes never rewrite prose.
 - **Includes:** a lane points a broken include at the new name.
 - **Stale names:** while the book is parked, no count is held. The gate prints the stale names and the unnamed modules as SKIPPED, because a held count only tracked how broken the parked prose was (Steve: "a skip is actually more honest than churning counts").
-- **The log:** the orchestrator logs the sentences each lane made false in `essay-repl-server/notes/book-parked-sentences.md`.
+- **The log:** the orchestrator logs the sentences each lane made false in `canvas_apps/safari/tutorial/book-parked-sentences.md`.
 
 ## The type walk
 

@@ -24,7 +24,7 @@ Each axis fails in its own way, and catching each failure takes a different kind
 
 - **A0.** **Keep simple things simple.** The reader already knows what a triangle, a tree and a cow are. The code's job is to express those concepts plainly. The book's job is to add only what the reader can't guess: the choices Safari Ride made, and why. Every reader knows a triangle has three corners; what they can't guess is that Roc describes the triangle instead of painting it. Everyone knows a tree is a trunk and a crown; the news is that the ride draws two versions of a tree, and why. A cow is a cow; the news is that the ride draws it as a billboard emoji, because that's less code and it's charming. When a simple thing takes long to explain, the code is too complicated: fix the code first (G1). This rule governs every other one.
 
-- **A1.** A chapter teaches one idea about writing clear Roc, or one axis of difficulty from the axes note (essay-repl-server notes/axes-of-difficulty.md), or a harder case of one. The axes are shapes, placement and projection; motion; the camera; rider physics; what covers what; honest cheats; the platform edge; proving it.
+- **A1.** A chapter teaches one idea about writing clear Roc, or one axis of difficulty from the axes note (`axes-of-difficulty.md`, beside this file), or a harder case of one. The axes are shapes, placement and projection; motion; the camera; rider physics; what covers what; honest cheats; the platform edge; proving it.
 - **A2.** "Who owns this behavior?" is the question every chapter answers again. It is not a chapter of its own.
 - **A3.** The spine shows through every chapter:
   - each step carries four things, and the program derives the rest;
@@ -127,7 +127,7 @@ Each axis fails in its own way, and catching each failure takes a different kind
 ### Axis I. Completeness: what "done" means for a chapter
 
 - **I1.** It has a problem, its types, its functions and an ending, plus "New in this chapter" when it introduces something new.
-- **I2.** Every sentence in book-parked-sentences.md (essay-repl-server notes) that points at it is fixed or struck out.
+- **I2.** Every sentence in `book-parked-sentences.md` (beside this file) that points at it is fixed or struck out.
 - **I3.** The gate is green, and the book is rebuilt on the dev channel.
 - **I4.** Steve has read it, and his replies are answered.
 - **I5.** For the whole book: the glossary is current, the appendices match the chapters, and Zooming back out sums up exactly what the chapters showed.
