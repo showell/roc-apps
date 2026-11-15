@@ -74,6 +74,7 @@ your browser, compiled to WebAssembly.</p>
   <div>
     <a href="safari/" aria-hidden="true" tabindex="-1"><img class="shot" src="safari/shot.png" alt="" loading="lazy"></a>
     <h3><a href="safari/">Safari Ride</a></h3>
+    <p>A drive through the country, as a screensaver: hills, a winding road, herds, and a rider who leans into the turns. It began as a program in another language, Codex, translated to Roc by a tool; every one of its modules has since been rewritten. Space pauses, the arrows step through the ride, J jumps to the next intersection, R starts over.</p>
     <p class="opening"><span class="tag">Roc at work</span>Safari Ride models a whole world with Roc's types. On each stretch of road a cat crosses, a bird flies over, or the road is quiet: three cases of one tag union, and the compiler checks that every match handles them all. A step of the ride answers <code>[Continued(Tour), Restarted(Tour)]</code>, a union declared nowhere but in its function's signature. And every instant of the ride is a plain value, so stepping backward is just returning to an earlier one.</p>
     <pre class="roc"><span class="t">encounter_throttle</span> : Encounter, Animation.Stage -> ThrottleLimit
 <span class="t">encounter_throttle</span> = |encounter, stage|
@@ -86,7 +87,6 @@ your browser, compiled to WebAssembly.</p>
         BirdHere(_) | QuietRoad => NoLimit
     }</pre>
     <p class="caption">From <code>canvas_apps/safari/EncounterReaction.roc</code>: while a cat crosses, the rider eases off.</p>
-    <p>A drive through the country, as a screensaver: hills, a winding road, herds, and a rider who leans into the turns. It began as a program in another language, Codex, translated to Roc by a tool; every one of its modules has since been rewritten. Space pauses, the arrows step through the ride, J jumps to the next intersection, R starts over.</p>
     <div class="links"><a href="tutorial/">The book about it</a><a href="https://github.com/showell/roc-apps/tree/master/canvas_apps/safari">The source</a></div>
   </div>
   <div class="stats">
@@ -99,9 +99,9 @@ your browser, compiled to WebAssembly.</p>
   <div>
     <a href="tutorial/" aria-hidden="true" tabindex="-1"><img class="shot drawing" src="shared/book.svg" alt="" loading="lazy"></a>
     <h3><a href="tutorial/">Safari Ride: a tour of a real Roc program</a></h3>
-    <p class="opening"><span class="tag">Roc at work</span>The book is built by a Roc program whose types keep its effects apart: one effectful <code>main!</code> prints the pages, and one pure <code>-></code> function turns the chapters into every one of them, so its tests check whole pages as plain values.</p>
     <p>It teaches Roc through Safari Ride's real source: every code sample is quoted from the ride as the book is built, so the book and the code stay in step.</p>
     <p>It starts from one page of the ride and works out to the whole program: types, tag unions, records, opaque types, pure functions and effects, each met where the ride needs it. Interactive widgets let you poke at the pieces. An early draft.</p>
+    <p class="opening"><span class="tag">Roc at work</span>The book is built by a Roc program whose types keep its effects apart: one effectful <code>main!</code> prints the pages, and one pure <code>-></code> function turns the chapters into every one of them, so its tests check whole pages as plain values.</p>
     <div class="links"><a href="tutorial/">Read it</a><a href="https://github.com/showell/roc-apps/tree/master/canvas_apps/safari/tutorial">The source, and the program that builds it</a></div>
   </div>
   <div class="stats">
@@ -116,8 +116,8 @@ your browser, compiled to WebAssembly.</p>
   <div>
     <a href="markdown/" aria-hidden="true" tabindex="-1"><img class="shot drawing" src="shared/markdown.svg" alt="" loading="lazy"></a>
     <h3><a href="markdown/">roc-markdown</a></h3>
-    <p class="opening"><span class="tag">Roc at work</span>In Roc only a platform can perform effects, and a package has none, so a renderer fed hostile input can't touch the disk or the network. The same pure functions render chat on a server and, compiled to WebAssembly, in your browser as you type.</p>
     <p>A finished, complete package, built to a professional standard and in production: a markdown renderer for chat, safe to show whatever a user typed. Each render carries a budget for its work, an ordinary value, so a message built to overload it is refused before it's shown. It renders Gopher Chat on lynrummy.com, and the playground runs it live.</p>
+    <p class="opening"><span class="tag">Roc at work</span>In Roc only a platform can perform effects, and a package has none, so a renderer fed hostile input can't touch the disk or the network. The same pure functions render chat on a server and, compiled to WebAssembly, in your browser as you type.</p>
     <div class="links"><a href="markdown/">The playground</a><a href="https://github.com/showell/roc-markdown">The package</a></div>
   </div>
   <div class="stats">
@@ -144,8 +144,8 @@ N             SQR(N)        NEWTON
  9             3             3
  10            3.162278      3.162278</a>
     <h3><a href="basic/basic.html">BASIC</a></h3>
-    <p class="opening"><span class="tag">Roc at work</span>Roc's values never change, yet this BASIC interpreter updates its machine in place: Roc reuses a value's memory when nothing else refers to it, and the machine is shaped so nothing does. A check holds each of its small control programs to what one loop allocates, and most allocate nothing at all.</p>
     <p>Written directly in Roc, not translated from another language, it runs two dialects, ECMA-55 Minimal BASIC and the BASIC of the 1978 Creative Computing games, and it's graded against the National Bureau of Standards' test programs and the classic games. The REPL runs here; the same interpreter runs as a command-line program.</p>
+    <p class="opening"><span class="tag">Roc at work</span>Roc's values never change, yet this BASIC interpreter updates its machine in place: Roc reuses a value's memory when nothing else refers to it, and the machine is shaped so nothing does. A check holds each of its small control programs to what one loop allocates, and most allocate nothing at all.</p>
     <div class="links"><a href="basic/basic.html">The REPL</a><a href="basic/">How it works</a><a href="https://github.com/showell/roc-apps/tree/master/basic">The source</a></div>
   </div>
   <div class="stats">
@@ -159,8 +159,8 @@ N             SQR(N)        NEWTON
   <div>
     <a href="fasttrack/" aria-hidden="true" tabindex="-1"><img class="shot board" src="fasttrack/shot.png" alt="" loading="lazy"></a>
     <h3><a href="fasttrack/">Fast Track</a></h3>
-    <p class="opening"><span class="tag">Roc at work</span>The game's rules are a pure Roc function, so the three computer players try every line of play through the rest of their turn with the real rules, and keep the one their strategy scores highest; no move ever has to be undone.</p>
     <p>The marble race board game: you play red against them, and their marbles walk the board as they move. They never see a card they haven't drawn. The rules and the whole page are Roc, ported from Steve's Elm version; the computer players are new, written by Claude.</p>
+    <p class="opening"><span class="tag">Roc at work</span>The game's rules are a pure Roc function, so the three computer players try every line of play through the rest of their turn with the real rules, and keep the one their strategy scores highest; no move ever has to be undone.</p>
     <div class="links"><a href="fasttrack/">Play</a><a href="https://github.com/showell/roc-apps/tree/master/fasttrack">The source, and how it is built</a><a href="https://github.com/showell/elm-fasttrack">Steve's Elm original</a></div>
   </div>
   <div class="stats">
