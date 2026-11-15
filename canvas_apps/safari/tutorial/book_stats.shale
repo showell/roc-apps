@@ -38,6 +38,14 @@
 -- after it builds the book.
 
 const BOOK = arg("book", "canvas_apps/safari/tutorial/build/tutorial.md")
+-- The book's own source, which a build older than it no longer matches.
+const SOURCE = "canvas_apps/safari/tutorial/tutorial.md"
+-- A build older than its source counts a book that is gone (2026-11-15: it
+-- stopped on a chapter the source no longer had), so the run stops first and
+-- names the gate that rebuilds it. A `book=` of the caller's own is its own.
+if BOOK == "canvas_apps/safari/tutorial/build/tutorial.md" and exists(BOOK) and stat(BOOK).modified < stat(SOURCE).modified then
+  fail("book_stats: the built book is older than " .. SOURCE .. ", so it counts a book that is gone: run the tutorial gate first (`shale canvas_apps/safari/gates/run.shale part=tutorial`)")
+end
 const BOOK_CHECK = "canvas_apps/safari/tutorial/book_check.mjs"
 const MAX_PROSE_WORDS = 900
 
