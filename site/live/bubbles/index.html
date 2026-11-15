@@ -1,0 +1,22 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>bubbles</title>
+<link rel="icon" href="data:,">
+</head>
+<body>
+<!-- Translucent purple bubbles rise, wobble, and fade or pop near the top, forever.
+     It plays by itself; Space and R are its controls. ?step=N shows the frame
+     after N steps, still. -->
+<script>
+window.SHOW = {
+  wasm: 'bubbles.wasm',
+  readsPointer: false,
+};
+</script>
+<script src="roc_glue.js"></script>
+<script src="shapes_canvas.js"></script>
+<script src="canvas_app_runner.js"></script>
+</body>
+</html>
