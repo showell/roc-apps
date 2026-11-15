@@ -15,7 +15,8 @@
 # release build (`canvas_apps/build.sh <app> release`). `home` does the same
 # for the landing page and shared/; dev's `channel` file stays behind, so
 # staging holds exactly what prod will. Staging on :9200 serves site/live/ per
-# request with no-store, so it is live at once. Nothing else writes site/live/.
+# request with no-store, so it is live at once. Nothing else writes site/live/
+# but site/publish_lanterns.shale, which writes welcome-to-roc/ alone.
 #
 # PROVENANCE records what the build read: the Roc compiler, the roc-apps
 # commit (marked when the app's own tree has uncommitted changes), and a hash
