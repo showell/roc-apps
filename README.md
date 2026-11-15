@@ -37,8 +37,7 @@ from one channel to the next unchanged. The design is
 | prod | `https://roc.lynrummy.com/` | `/srv/roc-site/` on the prod droplet, staging's files verbatim | `site/deploy.sh`, on Steve's sign-off of staging |
 
 The ports announced before the site redirect: :9201 to prod's `safari/`;
-:9203's `basic/` to prod and the rest of :9203 to dev at the same path;
-:9204 and :9205, never announced, to staging's `gpu/` and `games/`.
+:9203's `basic/` to prod and the rest of :9203 to dev at the same path.
 
 | where | what | written by |
 |---|---|---|

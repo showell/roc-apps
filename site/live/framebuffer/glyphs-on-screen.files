@@ -1,8 +1,0 @@
-GlyphsOnScreen.roc
-CceChar.roc
-CceText.roc
-GlyphRasterizer.roc
-GopDraw.roc
-Prelude.roc
-TrueType.roc
-Mem.roc

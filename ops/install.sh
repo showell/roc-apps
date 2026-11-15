@@ -5,7 +5,7 @@
 #
 #   roc-site  :9210  dev: ~/build/roc-apps/next, whatever the build scripts last wrote
 #             :9200  staging: site/live/, which only site/publish.sh writes
-#             :9201, :9203, :9204, :9205  redirects from the ports announced before the site
+#             :9201, :9203  redirects from the ports announced before the site
 #
 # roc-site is Caddy (ops/Caddyfile), from the release binary at
 # ~/build/caddy/caddy. It reads a file per request with no-store, so a publish

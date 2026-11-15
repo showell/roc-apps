@@ -8,13 +8,11 @@
 # The ports announced before the site answer with redirects, 302 so that a
 # later change of target reaches a browser that followed one before: :9201
 # (Safari) to prod's safari/; :9203 (the old preview) to prod for basic/ and to
-# dev at the same path for the rest; :9204 and :9205 (the gallery and the
-# games, never announced) to staging's gpu/ and games/.
+# dev at the same path for the rest.
 #
 # Every response is no-store, because a cached module looks exactly like a
-# build that changed nothing, and asks for cross-origin isolation, because the
-# framebuffer page shares memory with its Web Worker through a
-# SharedArrayBuffer, which a browser gives only an isolated page.
+# build that changed nothing, and asks for cross-origin isolation, as prod's
+# site block does, so a page behaves the same on every channel.
 {
 	persist_config off
 }
@@ -44,14 +42,4 @@
 	@basic path /basic /basic/*
 	redir @basic https://roc.lynrummy.com{uri} 302
 	redir http://{host}:9210{uri} 302
-}
-
-:9204 {
-	redir / http://{host}:9200/gpu/gallery.html 302
-	redir http://{host}:9200/gpu{uri} 302
-}
-
-:9205 {
-	redir / http://{host}:9200/ 302
-	redir http://{host}:9200/games{uri} 302
 }

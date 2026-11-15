@@ -1,9 +1,0 @@
-GopPaddedStride.roc
-CceChar.roc
-CceText.roc
-Color.roc
-Matrix4.roc
-Maybe.roc
-Renderer3D.roc
-Texture.roc
-Mem.roc
