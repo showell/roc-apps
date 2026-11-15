@@ -42,7 +42,7 @@
 // needs both — snake turns on the edge, a paddle moves while a key is held —
 // so an event alone will not do.
 //
-// The bits are Keys.roc's, and safari/gates/input_bits.shale holds the two equal.
+// The bits are lib/Keys.roc's, written out again here.
 const KEY_BIT = {
   ArrowUp: 1, ArrowDown: 2, ArrowLeft: 4, ArrowRight: 8,
   KeyW: 16, KeyA: 32, KeyS: 64, KeyD: 128,
@@ -87,8 +87,7 @@ function watchKeyboard(target) {
 // game never learns how big the window is or how the page scaled the canvas.
 // During a drag it may be off the canvas.
 
-// `event.buttons` uses Mouse.roc's bits, and safari/gates/input_bits.shale holds the
-// two equal, as it does KEY_BIT.
+// `event.buttons` uses lib/Mouse.roc's bits, written out again here.
 const MOUSE_BIT = { Left: 1, Right: 2, Middle: 4 };
 const MOUSE_BITS = MOUSE_BIT.Left | MOUSE_BIT.Right | MOUSE_BIT.Middle;
 
@@ -240,8 +239,8 @@ function bindApp(exports) {
   return {
     ...exports,
     // The tick's input arrives as named fields, and this is the one call that
-    // puts them in the export's order. safari/gates/input_bits.shale holds
-    // that order to host.zig's and lib/WasmApp.roc's.
+    // puts them in the export's order, which is web/platform/host.zig's and
+    // lib/WasmApp.roc's.
     advance: ({ key_held, key_struck, button_held, button_struck, x, y, wheel }) =>
       exports.advance(key_held, key_struck, button_held, button_struck, x, y, wheel),
     // `computeFrame` is the effect, and it answers the address of the Roc

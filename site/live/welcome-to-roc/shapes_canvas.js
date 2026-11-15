@@ -4,12 +4,8 @@
 // that type, reads them out of the wasm, and this file does what a canvas
 // does with them. It answers one name, `ShapesCanvas`, with `paint`.
 //
-// Its Roc twin is safari/gates/proof/ShapesPixels.roc, which paints the same shapes into
-// exact pixels, with no anti-aliasing, for Safari's gate. The gate checks the
-// twin, not this file, since Roc can't run a canvas. This file is checked by
-// page_check.mjs, which runs every built page against a stand-in canvas, and
-// by camera_check.mjs, which checks where a view mark puts points, and by
-// text_check.mjs, which checks how a line of type is set.
+// Here the gate checks it through tools/web_shots.mjs, which runs the live
+// page in headless Chromium and holds its frames to the still page's.
 //
 // This file is copied from roc-apps (`canvas_apps/web/shapes_canvas.js`) on 2026-11-15, and it
 // is allowed to drift from it.
