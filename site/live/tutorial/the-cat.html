@@ -324,7 +324,7 @@
 </code></pre></figure><p><code>location_of</code> is a function defined inside another, so it can use the crossing&#39;s <code>start</code>, <code>middle</code> and <code>end</code>. <code>Animation.location_between</code> returns the location a fraction of the way from one location to another. Asking a timeline for the animal at a stage is one <code>match</code>:</p>
 <figure class="listing"><figcaption>Animation.roc, in Timeline</figcaption><pre><code class="language-roc"><span class="syn-comment"># ...</span>
 <span class="syn-name">instant</span> : <span class="syn-type">Animation.Timeline</span>(frame, pose), <span class="syn-type">Animation.Stage</span> -&gt; <span class="syn-type">Animation.Instant</span>(pose)
-<span class="syn-name">instant</span> = |Animation.Timeline.(timeline), stage|
+<span class="syn-name">instant</span> = |<span class="syn-type">Animation.Timeline</span>.(timeline), stage|
 	<span class="syn-keyword">match</span> stage {
 		<span class="syn-type">Waiting</span> =&gt; timeline.before
 		<span class="syn-type">Playing</span>(steps_in) =&gt;

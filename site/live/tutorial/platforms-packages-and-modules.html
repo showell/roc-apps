@@ -71,16 +71,16 @@
 <p>A Roc program runs on a platform, it&#39;s made of modules, and it can use packages. Those three words say where Safari Ride&#39;s code lives.</p>
 <p>A platform is the layer underneath a Roc program that deals with the outside world. For Safari Ride, that&#39;s the screen and the keyboard. The Roc code describes each frame, and the platform paints it. In this page, the platform is WebAssembly and a little JavaScript. On a desktop, the same Roc code runs on a native platform called roc-ray.</p>
 <p>Each Roc program is an app, and the app&#39;s first line of code names its platform. Here&#39;s Safari Ride&#39;s app for the web, the whole file:</p>
-<figure class="listing"><figcaption>web.roc, the whole file</figcaption><pre><code class="language-roc"># Safari, as a page: the wasm module a browser runs. main.roc beside it
-# is the same app on roc-ray.
-app [Model, program] { lib: &quot;../lib/main.roc&quot;, pf: platform &quot;../web/platform/main.roc&quot; }
+<figure class="listing"><figcaption>web.roc, the whole file</figcaption><pre><code class="language-roc"><span class="syn-comment"># Safari, as a page: the wasm module a browser runs. main.roc beside it</span>
+<span class="syn-comment"># is the same app on roc-ray.</span>
+<span class="syn-keyword">app</span> [<span class="syn-type">Model</span>, program] { lib: <span class="syn-string">&quot;../lib/main.roc&quot;</span>, pf: <span class="syn-keyword">platform</span> <span class="syn-string">&quot;../web/platform/main.roc&quot;</span> }
 
-import lib.WasmApp
-import SafariApp
+<span class="syn-keyword">import</span> lib.<span class="syn-type">WasmApp</span>
+<span class="syn-keyword">import</span> <span class="syn-type">SafariApp</span>
 
-Model : SafariApp.Model
+<span class="syn-type">Model</span> : <span class="syn-type">SafariApp.Model</span>
 
-program = WasmApp.program(SafariApp.canvas_app)
+<span class="syn-name">program</span> = <span class="syn-type">WasmApp</span>.program(<span class="syn-type">SafariApp</span>.canvas_app)
 </code></pre></figure><p>Lines that start with <code>#</code> are comments. The first line of code names the platform, and gives it the short name <code>pf</code>.</p>
 <p>The first line also names a package, <code>lib</code>. A package is a bundle of modules: the app gives it a short name, and the path says where it is. The <code>lib</code> package holds what Safari Ride shares with the live pictures in this book, such as what a shape is and what a key press is.</p>
 <p>A module is one file of Roc, named for what it holds. <code>SafariApp.roc</code> holds the <code>SafariApp</code> module, and <code>import SafariApp</code> brings it in. <code>import lib.WasmApp</code> brings in the <code>WasmApp</code> module from the <code>lib</code> package.</p>
