@@ -220,5 +220,5 @@ GitHub names for that path at that tag, and run `fc-cache`.
 
 ## Status (2026-11-16)
 
-Dog Park plays on the dev channel, at `/dog-park/`. It is not on staging
-or prod yet, and the landing page has no card for it.
+Dog Park is on the dev channel and staging, at `/dog-park/`, with its card
+on the landing page beneath Fast Track's. It is not on prod yet.
