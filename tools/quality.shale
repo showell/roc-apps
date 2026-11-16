@@ -12,8 +12,8 @@
 --   cd <roc-apps checkout> && shale tools/quality.shale tier=full baseline=write
 --
 -- The fast tier reads the .roc files changed since `since=` (master by
--- default: the commits since the branch left it, the uncommitted changes
--- and the new files), each file in a run of its own, and prints their
+-- default: the commits since the branch left it and the uncommitted
+-- changes, of tracked files alone), each file in a run of its own, and prints their
 -- findings: about half a second a file (20 files in 9.7 s, 2026-11-16). A
 -- check that reads across files (a twin type, a function's callers) can't
 -- be judged from one file, so the fast tier leaves it to the full tier and
@@ -25,6 +25,8 @@
 -- project, roc-types on every app (TYPED_EXCEPTIONS names the two trees it
 -- leaves out), and `rewrite_method_calls`' dry run on every file the types
 -- reach, which counts the old-style calls it could turn (`rewritable`). The
+-- parse recipes read a copy of the tracked files (`tracked_tree`), so a
+-- build's ignored output never enters a count. The
 -- dry run writes each trial in place and puts it back, so the full tier
 -- refuses a checkout with uncommitted .roc changes. It needs the cookbook's
 -- rewrite recipe to take several globs and print its file count; an older
@@ -56,6 +58,7 @@ const SINCE = arg("since", "master")
 const BASELINE_ARG = arg("baseline", "")
 const PART = arg("part", "")
 const RECIPE_ARG = arg("recipe", "")
+const TREE_ARG = arg("tree", "")
 
 -- The recipes that only parse. `checks` pairs each count's name in the
 -- recipe's summary with the name its finding lines give; `args` are the
@@ -242,16 +245,35 @@ end
 
 -- ── The full tier's parse recipes ───────────────────────────────────────
 
--- A child run: one recipe over every project. It prints a line a finding,
--- `F<tab>check<tab>line`, and a line a failure, `CANT<tab>why`.
-function parse_part(name)
+-- A copy of the tracked .roc files, as the working tree has them, at their
+-- own paths in a fresh folder of this run's. Most recipes take one glob, and
+-- a glob over the checkout also finds what git ignores or doesn't track (a
+-- tutorial build's prepared sources, 76 files under
+-- canvas_apps/safari/tutorial/build/); in the copy a glob finds only what git
+-- tracks. Each recipe's count of the files it read is still held to git's.
+function tracked_tree(files)
+  local tree = fresh_dir("build:roc-apps", "quality-tree")
+  for f in files do
+    local dest = tree .. "/" .. f
+    local dir = dirname(dest)
+    if not exists(dir) then mkdir(dir) end
+    replace(dest, read(f))
+  end
+  return tree
+end
+
+-- A child run: one recipe over every project, in `tracked_tree`'s copy
+-- `tree`. It prints a line a finding, `F<tab>check<tab>line`, and a line a
+-- failure, `CANT<tab>why`.
+function parse_part(name, tree)
+  if tree == "" then fail("quality: part=parse needs tree=, the copy of the tracked files") end
   local rc = nil
   for c in PARSE_RECIPES do
     if c.recipe == name then rc = c end
   end
   if rc == nil then fail("quality: no parse recipe " .. name) end
   for p in projects_of(tracked_roc_files()) do
-    local r = run(recipe_argv(rc, p.name .. "/**/*.roc"), {timeout_ms = RECIPE_TIMEOUT_MS, whole = RECIPE_KEEP})
+    local r = run(recipe_argv(rc, p.name .. "/**/*.roc"), {timeout_ms = RECIPE_TIMEOUT_MS, whole = RECIPE_KEEP, cwd = tree})
     local v = verdict_of(rc, r, p.files)
     if not v.ok then
       print("CANT\t" .. p.name .. ": " .. v.why)
@@ -392,10 +414,13 @@ end
 -- trial in place and puts it back; the job's files are held to git's copy
 -- after it.
 function rewrite_part()
+  -- An app may reach a file git doesn't track (a build's output); the dry
+  -- run reads only tracked ones.
+  local tracked = set_of(tracked_roc_files())
   local reach = {}
   for l in lines(trim(read(REACH_FILE))) do
     local f = split(l, "\t")
-    push_at(reach, f[1], f[2])
+    if has_key(tracked, f[2]) then push_at(reach, f[1], f[2]) end
   end
   for j in rewrite_jobs(reach) do
     local from = 1
@@ -487,10 +512,11 @@ function count_finding(st, app, recipe, check, short, n)
   return nil
 end
 
--- The parse recipes, each over every project in a child run.
-function full_parse(st)
+-- The parse recipes, each over every project in a child run, in the copy
+-- `tree` of the tracked files.
+function full_parse(st, tree)
   for rc in PARSE_RECIPES do
-    local r = timed_run(BOOK, "parse " .. rc.recipe, {"shale", "--root", ".", SELF_PATH, "part=parse", "recipe=" .. rc.recipe},
+    local r = timed_run(BOOK, "parse " .. rc.recipe, {"shale", "--root", ".", SELF_PATH, "part=parse", "recipe=" .. rc.recipe, "tree=" .. tree},
       {timeout_ms = 1800000, whole = RECIPE_KEEP, cpu_budget_ms = rc.cpu_budget_ms})
     if r.ended ~= "exit" or r.code ~= 0 then push(st.cant, rc.recipe .. ": its run over the projects " .. r.ended .. " " .. get(r, "code", -1) .. ": " .. tail_of(r.out, 4)) end
     local n = 0
@@ -582,7 +608,9 @@ function full()
   local projects = projects_of(files)
   print("quality, full: " .. #files .. " files in " .. #projects .. " projects")
   local st = {cant = {}, counts = {}, by_app = {}, log = {}}
-  full_parse(st)
+  local tree = tracked_tree(files)
+  full_parse(st, tree)
+  remove_tree(tree)
   local reach = full_types(st, files)
   full_rewrite(st, reach)
   replace(FINDINGS_LOG, join(st.log, "\n") .. "\n")
@@ -618,17 +646,18 @@ end
 
 -- ── The fast tier ───────────────────────────────────────────────────────
 
--- The .roc files changed since the branch left `since`: committed,
--- uncommitted and new, that are still there.
+-- The tracked .roc files changed since the branch left `since`: committed
+-- or not. A new file counts once it is added (`git add`), so a build's
+-- output, ignored or merely untracked, never enters.
 function changed_roc_files(since)
   not_option("quality", "since", since)
   local base = trim(must(run({"git", "merge-base", since, "HEAD"}, {timeout_ms = 30000, whole = 1000})).out)
   local seen = {}
   local out = {}
   local diff = must(run({"git", "diff", "--name-only", base, "--", "*.roc"}, {timeout_ms = 30000, whole = 1000000})).out
-  local new = must(run({"git", "ls-files", "--others", "--exclude-standard", "--", "*.roc"}, {timeout_ms = 30000, whole = 1000000})).out
-  for f in lines(trim(diff .. "\n" .. new)) do
-    if f ~= "" and not has_key(seen, f) and exists(f) then
+  local tracked = set_of(tracked_roc_files())
+  for f in lines(trim(diff)) do
+    if f ~= "" and not has_key(seen, f) and has_key(tracked, f) and exists(f) then
       seen[f] = true
       push(out, f)
     end
@@ -678,7 +707,7 @@ function fast()
 end
 
 if PART == "parse" then
-  parse_part(RECIPE_ARG)
+  parse_part(RECIPE_ARG, TREE_ARG)
 elseif PART == "types" then
   types_part()
 elseif PART == "rewrite" then

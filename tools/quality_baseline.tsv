@@ -29,10 +29,15 @@ book_builder	check_boundaries	dead	1
 book_builder	check_boundaries	single	2
 book_builder	check_families	twin_name	1
 book_builder	check_name_types	no_value	1
-book_builder	check_stacking	wide string	93
+book_builder	check_stacking	long	1
+book_builder	check_stacking	stack	1
+book_builder	check_stacking	wide string	118
 book_builder	find_unused_imports	unused_import	2
+book_builder	hunt_names	singular_list	1
 book_builder	rewrite_method_calls	rewritable	8
 book_builder	roc-types	unreached	2
+building-books	check_stacking	long	3
+building-books	check_stacking	wide string	1
 canvas_apps/beacon_widget	check_families	twin_name	1
 canvas_apps/beacon_widget	check_stacking	wide string	1
 canvas_apps/beacon_widget	roc-types	unreached	1
@@ -140,10 +145,10 @@ canvas_apps/rehearsal_widget	roc-types	unreached	1
 canvas_apps/route_widget	check_name_types	bare_beside_unit	2
 canvas_apps/route_widget	rewrite_method_calls	rewritable	1
 canvas_apps/route_widget	roc-types	unreached	1
-canvas_apps/safari	check_families	twin_name	4
+canvas_apps/safari	check_families	twin_name	3
 canvas_apps/safari	check_name_types	bare_beside_unit	16
 canvas_apps/safari	check_stacking	long	48
-canvas_apps/safari	check_stacking	wide string	111
+canvas_apps/safari	check_stacking	wide string	70
 canvas_apps/safari	find_unclear_names	abbreviation	1
 canvas_apps/safari	rewrite_method_calls	rewritable	27
 canvas_apps/safari	roc-types	unreached	11
@@ -186,7 +191,6 @@ canvas_apps/truck_widget	check_stacking	wide string	1
 canvas_apps/truck_widget	roc-types	unreached	1
 canvas_apps/web	check_stacking	long	1
 canvas_apps/web	check_stacking	stack	1
-canvas_apps/widget_kit	check_families	family	4
 canvas_apps/widget_kit	check_name_types	bare_beside_unit	11
 canvas_apps/widget_kit	roc-types	unreached	1
 canvas_apps/workshop	check_boundaries	fixed	2
