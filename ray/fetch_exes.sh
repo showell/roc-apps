@@ -4,13 +4,13 @@
 # from the run -- into ~/roc-ray, and makes them executable: the eight canvas
 # apps.
 #
-#   scp steve@143.244.172.148:showell_repos/roc-apps/ray/fetch_exes.sh ~/
+#   scp <you>@<the box>:showell_repos/roc-apps/ray/fetch_exes.sh ~/
 #   chmod u+x ~/fetch_exes.sh && ~/fetch_exes.sh
 #
 # The environment names everything that could differ: BOX (the build box),
 # SRC (where its download landed), DEST (where they go here).
 set -eu
-BOX="${BOX:-steve@143.244.172.148}"
+BOX="${BOX:?set BOX to you@the-box}"
 SRC="${SRC:-/home/steve/build/roc-apps/ray/windows}"
 DEST="${DEST:-$HOME/roc-ray}"
 

@@ -17,7 +17,7 @@ the page's reader, and the page loads `../shared/home.js` (`site/build.sh`).
 A build publishes to `~/build/roc-apps/next/fasttrack/` only if every check
 passed; the dev channel serves that directory (the top-level README).
 
-The page is http://143.244.172.148:9210/fasttrack/. In the URL: `?seed=<n>`
+The page is `/fasttrack/` on the dev channel (port 9210). In the URL: `?seed=<n>`
 replays a deal, `?pause=<ms>` is the computer's pause per click (1050),
 `?step=<ms>` a marble's time per square (150), and `?setup=<n>` starts from
 one of Setup.roc's scenarios.

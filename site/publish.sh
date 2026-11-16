@@ -72,7 +72,7 @@ if [ "$app" = home ]; then
     # Dev must show the landing page as site/web has it, or this would publish
     # an older one and say nothing.
     if ! diff -q "$HERE/web/index.html" "$NEXT/index.html" > /dev/null || ! diff -rq "$HERE/web/shared" "$NEXT/shared" > /dev/null; then
-        echo "dev's landing page is older than site/web/; run site/build.sh, look at http://143.244.172.148:9210/, then publish"; exit 2
+        echo "dev's landing page is older than site/web/; run site/build.sh, look at http://localhost:9210/, then publish"; exit 2
     fi
     cp "$NEXT/index.html" "$LIVE/"
     rm -rf "$LIVE/shared"
@@ -130,4 +130,4 @@ git -C "$REPO" commit -q -m "site: publish $what to staging
 
 $([ "$app" = home ] || cat "$LIVE/$app/PROVENANCE")" -- "${paths[@]}"
 git -C "$REPO" push -q
-echo "published $what to staging: http://143.244.172.148:9200/"
+echo "published $what to staging: http://localhost:9200/"

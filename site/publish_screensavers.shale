@@ -16,7 +16,7 @@
 -- on no branch of GitHub's, so what is published is always a commit anyone
 -- can fetch. For each screensaver it builds the page there with
 -- roc-screensaver's own tools/web_build.shale, the release wasm, into the dev
--- channel's folder of the same name (http://143.244.172.148:9210/<folder>/),
+-- channel's folder of the same name (http://localhost:9210/<folder>/),
 -- copies that over site/live/<folder>/ whole, and writes a PROVENANCE beside
 -- it: the compiler and the opt from the build's BUILT, the roc-screensaver
 -- commit, and a hash of the wasm. The shot, where there is one, is the native
@@ -40,7 +40,7 @@ const SCREENSAVERS = {
   {name = "bubbles", folder = "bubbles", shot_step = 0},
   {name = "tides", folder = "tides", shot_step = 1500},
 }
-const STAGING = "http://143.244.172.148:9200/"
+const STAGING = "http://localhost:9200/"
 const PAGE_FILES = {"PROVENANCE", "canvas_app_runner.js", "index.html", "roc_glue.js", "shapes_canvas.js"}
 const NODE_WANT = "web-shots: roc-screensaver's headless Chromium check of a live page"
 const SQUEEZE_WANT = "script: site/squeeze_png.mjs recompresses the native harness's frame"

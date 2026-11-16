@@ -84,4 +84,4 @@ esac
   DIR="$OUT" SHOT="$OUT/shot.png" node "$HERE/web/page_check.mjs" "$name" ) || { echo "page check failed"; exit 1; }
 rm -rf "$DEST.old"; [ -d "$DEST" ] && mv "$DEST" "$DEST.old"; mv "$OUT" "$DEST"; rm -rf "$DEST.old"
 ls -la "$DEST"
-if [ -z "$OUT_GIVEN" ]; then echo "dev: http://143.244.172.148:9210/$name/"; fi
+if [ -z "$OUT_GIVEN" ]; then echo "dev: http://localhost:9210/$name/"; fi

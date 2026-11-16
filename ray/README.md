@@ -3,7 +3,7 @@
 `fetch_exes.sh` pulls the canvas apps' Windows executables from the build box to
 a Windows machine. Run it there, under WSL:
 
-    scp steve@143.244.172.148:showell_repos/roc-apps/ray/fetch_exes.sh ~/
+    scp <you>@<the box>:showell_repos/roc-apps/ray/fetch_exes.sh ~/
     chmod u+x ~/fetch_exes.sh && ~/fetch_exes.sh
 
 The executables come from `.github/workflows/windows.yml`, run by hand:

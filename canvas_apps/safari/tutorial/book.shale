@@ -399,7 +399,7 @@ function main()
   if STAGE == "" then move_into_place() end
 
   for line in sizes do print(line) end
-  print("book: " .. #book.pages .. " pages and " .. #book.diagrams .. " diagrams at http://143.244.172.148:9210/" .. (STAGE == "" and "tutorial" or STAGE) .. "/")
+  print("book: " .. #book.pages .. " pages and " .. #book.diagrams .. " diagrams at http://localhost:9210/" .. (STAGE == "" and "tutorial" or STAGE) .. "/")
   return nil
 end
 

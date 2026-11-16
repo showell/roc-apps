@@ -48,7 +48,7 @@ if [ -n "${FAST:-}" ]; then
     cp "$HERE/web/fasttrack.js" "$OUT/"
     cp "$HERE/web/page.html" "$OUT/index.html"
     publish
-    echo "dev (FAST, dev backend, unchecked): http://143.244.172.148:9210/fasttrack/"
+    echo "dev (FAST, dev backend, unchecked): http://localhost:9210/fasttrack/"
     exit 0
 fi
 # **THE SQUARE VALUES ARE GENERATED**: SquareValues.roc must be what
@@ -100,4 +100,4 @@ SEED=3 SEATS=cccc CLICKS=200 SHOT="$OUT/shot.png" node "$HERE/web/page_check.mjs
 (cd "$HERE/.." && shale fasttrack/tools/gold.shale page="$OUT") || { echo "the gold games moved"; exit 1; }
 publish
 ls -la "$DEST"
-echo "dev: http://143.244.172.148:9210/fasttrack/"
+echo "dev: http://localhost:9210/fasttrack/"

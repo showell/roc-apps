@@ -33,4 +33,4 @@ cp "$HERE/web/index.html" "$HERE/web/basic.html" "$OUT/"
 node "$HERE/page_check.mjs" "$OUT" || { echo "page check failed"; exit 1; }
 rm -rf "$NEXT.old"; [ -d "$NEXT" ] && mv "$NEXT" "$NEXT.old"; mv "$OUT" "$NEXT"; rm -rf "$NEXT.old"
 ls -la "$NEXT"
-echo "dev: http://143.244.172.148:9210/basic/"
+echo "dev: http://localhost:9210/basic/"
