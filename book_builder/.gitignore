@@ -1,0 +1,2 @@
+# The build's own output; the caches are .zig-cache/, ignored at the root.
+zig-out/

@@ -1,0 +1,105 @@
+-- The book builder's gate: every check the folder has, one line each with
+-- its numbers, run from the roc-apps root:
+--   shale book_builder/tools/verify.shale
+-- It stops at the first check that fails, and its last line says how many
+-- passed. Roc is roc-apps' pin, found and checked by the repository's
+-- prelude (`pinned_roc`).
+--
+--   roc fmt --check over platform/ and examples/
+--   roc check of the one-page example, held to zero errors and zero warnings
+--     by the report's marks, since a warning alone still exits 2
+--   roc test of the one-page example, held to exactly `roc_tests_expected`
+--     expects, platform/Book.roc's among them
+--   zig fmt --check over build.zig and host/
+--   the glue snapshot (host/glue/platform_abi.zig) is what roc glue makes
+--     of platform/ now (tools/glue.shale check=1)
+--   zig build test, held to exactly `zig_tests_expected` tests
+--   zig build, the program with the one-page example linked
+--   the example run end to end: exit 0, and its output exactly
+--     examples/one_page/expected.html
+--   the app's failure path: run on a folder with no book.md, exit 1 and its
+--     message exactly
+--   the host's refusal of a command line that names no folder: exit 2 and
+--     the usage line exactly
+
+const roc_tests_expected = 10
+const zig_tests_expected = 10
+const here = "book_builder"
+const book_want = "book-e2e: the book program this gate just built, untracked by design"
+
+if not exists(here .. "/platform/main.roc") then
+  fail("verify: run it from the roc-apps root (no book_builder/platform/main.roc here)")
+end
+
+const roc = pinned_roc("verify")
+const passed = {count = 0}
+
+function line(name, ok, detail, ms)
+  local verdict = "PASS"
+  if not ok then verdict = "FAIL" end
+  print(verdict .. "  " .. name .. ": " .. detail .. " (" .. ms .. " ms)")
+  if not ok then fail("verify: " .. name .. " failed") end
+  passed.count = passed.count + 1
+end
+
+-- The built program run on `folder`, its exit and output held to `code` and
+-- `expected` exactly.
+function run_book_line(name, args, code, expected)
+  local argv = {"zig-out/bin/book"}
+  for a in args do push(argv, a) end
+  local r = run(argv, {cwd = here, timeout_ms = 10000, whole = 100000, want = book_want})
+  local same = r.out == expected
+  if r.code ~= code or not same then print(r.out) end
+  local said = "the output as expected, " .. #expected .. " bytes"
+  if not same then said = "the output differs from the " .. #expected .. " bytes expected" end
+  line(name, r.code == code and same, "exit " .. r.code .. ", " .. code .. " expected; " .. said, r.ms)
+end
+
+local r = run({roc, "fmt", "--check", "platform", "examples"}, {cwd = here, timeout_ms = 30000, tail = 20})
+local formatted = #glob(here .. "/platform/**/*.roc") + #glob(here .. "/examples/**/*.roc")
+if r.code ~= 0 then print(r.out) end
+line("roc fmt --check", r.code == 0, formatted .. " files, " .. lines(trim(r.out))[1], r.ms)
+
+r = run({roc, "check", "main.roc"}, {cwd = here .. "/examples/one_page", timeout_ms = 60000, whole = 200000})
+local errors = #find_all(r.out, "── ✗")
+local warnings = #find_all(r.out, "── ●")
+local clean = errors + warnings == 0 and contains(r.out, "No errors found")
+if not clean then print(r.out) end
+line("roc check examples/one_page/main.roc", clean, errors .. " errors, " .. warnings .. " warnings", r.ms)
+
+r = run({roc, "test", "main.roc"}, {cwd = here .. "/examples/one_page", timeout_ms = 100000, tail = 40})
+local all_passed = re_find(r.out, "All \\((\\d+)\\) tests passed")
+local ran = 0
+if all_passed ~= nil then ran = parse_int(all_passed.group) end
+if r.code ~= 0 or ran ~= roc_tests_expected then print(r.out) end
+line("roc test examples/one_page/main.roc", r.code == 0 and ran == roc_tests_expected, ran .. " passed, " .. roc_tests_expected .. " expected", r.ms)
+
+r = run({"zig", "fmt", "--check", "build.zig", "host"}, {cwd = here, timeout_ms = 30000, tail = 20})
+if r.code ~= 0 then print(r.out) end
+line("zig fmt --check", r.code == 0, #glob(here .. "/host/**/*.zig") + 1 .. " files", r.ms)
+
+r = run({"shale", "book_builder/tools/glue.shale", "check=1"}, {timeout_ms = 100000, tail = 20})
+if r.code ~= 0 then print(r.out) end
+line("glue snapshot", r.code == 0, "host/glue/platform_abi.zig is roc glue's output for platform/", r.ms)
+
+r = run({"zig", "build", "test", "--summary", "all"}, {cwd = here, timeout_ms = 300000, tail = 40})
+local counts = re_find(r.out, "(\\d+)/(\\d+) tests passed")
+local zig_passed = 0
+local zig_ran = 0
+if counts ~= nil then
+  zig_passed = parse_int(counts.groups[1])
+  zig_ran = parse_int(counts.groups[2])
+end
+if r.code ~= 0 or zig_ran ~= zig_tests_expected then print(r.out) end
+line("zig build test", r.code == 0 and zig_passed == zig_tests_expected and zig_ran == zig_tests_expected, zig_passed .. " of " .. zig_ran .. " passed, " .. zig_tests_expected .. " expected", r.ms)
+
+if exists(here .. "/zig-out/bin/book") then remove(here .. "/zig-out/bin/book") end
+r = run({"zig", "build"}, {cwd = here, timeout_ms = 300000, tail = 40})
+if r.code ~= 0 then print(r.out) end
+line("zig build", r.code == 0 and exists(here .. "/zig-out/bin/book"), "zig-out/bin/book, exit " .. r.code, r.ms)
+
+run_book_line("end to end examples/one_page", {"examples/one_page"}, 0, read(here .. "/examples/one_page/expected.html"))
+run_book_line("end to end, no book.md in platform/", {"platform"}, 1, "platform/book.md: is not there\n")
+run_book_line("end to end, no folder named", {}, 2, "usage: book <book folder>\n")
+
+print("verify: " .. passed.count .. " checks passed")
