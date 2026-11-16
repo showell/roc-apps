@@ -15,6 +15,7 @@ Thanks to Damian Tedrow, whose [Cobblestone](https://github.com/damiant3/Cobbles
 | `ray/` | `fetch_exes.sh`, which pulls the canvas apps' Windows executables to a Windows machine | `ray/README.md` |
 | `cbor-pets/` | CBOR as a Roc format, from the Zulip thread "CBOR serialization": `Cbor.parse`/`Cbor.to_bytes` work for a profile through derived `parser_for`/`encoder_for`, with its picture (an `ImageBlob`) a byte string and its pet ages an array | `cbor-pets/README.md` |
 | `basic/` | a BASIC interpreter written by hand in Roc, a web page that runs it, and the corpora that grade it | `basic/README.md` |
+| `book_builder/` | a book platform: a Zig host whose one effect reads a file under the book's folder, and a one-page example book; a skeleton, step 1 of five | `book_builder/README.md` |
 | `site/`, `ops/` | the site that serves the apps: dev, staging and prod | below |
 | `findings/` | Roc behaviours we found, each with a program that shows it | |
 | `docs/` | `roc-style.md`, how Steve writes Roc (tags, records, opaque types for what's validated, one workhorse at the edge); `roc-notes.md`, how the Roc nightly behaves (the compiler, the language, what copies) | |
