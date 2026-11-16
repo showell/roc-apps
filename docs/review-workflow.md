@@ -64,7 +64,7 @@ Things the quick tier has missed, which the brief now covers:
 
 - **On the essay surface, never the console.** With four agents reporting, the console is too noisy. Each decision or group of decisions is a note on the surface, with the facts, the options and a recommendation on each item.
 - **Repeat the link.** Repeat its URL at the end of every reply until Steve says he's reading it.
-- **Replies are comments.** They live in the surface's comments folder (`~/essay-dogfood/comments/<name>.note.jsonl` on the box), one per paragraph, not in the note or in git. Notes and replies are transient: the surface keeps only the newest 20, so a decision that must last goes into this repo.
+- **Replies are comments.** They live in the surface's comments folder (`~/essays/comments/<name>.note.jsonl` on the box), one per paragraph, not in the note or in git. Notes and replies are transient: the surface keeps only the newest 20, so a decision that must last goes into this repo.
 - **Record his answers.** Add them to the note under "Steve's answer" and carry them into the lanes.
 - **One at a time.** Hold agent reports until he's ready, and hand him one note at a time.
 - **Pixel changes wait for one eye-test note,** with before and after renders. Steve tests carefully, so batch them rather than asking piecemeal.
