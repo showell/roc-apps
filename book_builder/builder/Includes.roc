@@ -193,10 +193,14 @@ prepared_of = |line, prepared| match prepared {
 				Ok({ before, .. }) => before
 				Err(NotFound) => inside
 			}
-		if inside == line.text or Str.count_utf8_bytes(inside) + 4 != Str.count_utf8_bytes(line.text) or !kinds.contains(kind) {
-			Err(NotAnInclude)
-		} else {
+		is_include =
+			inside != line.text
+				and Str.count_utf8_bytes(inside) + 4 == Str.count_utf8_bytes(line.text)
+				and kinds.contains(kind)
+		if is_include {
 			Ok(Ahead({ path: "${folder}/line-${line.number.to_str()}.md", include: line.text }))
+		} else {
+			Err(NotAnInclude)
 		}
 	}
 }

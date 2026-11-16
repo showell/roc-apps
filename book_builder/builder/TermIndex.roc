@@ -94,7 +94,8 @@ term_of = |line, category| match line.split_on(" | ") {
 		}
 		patterns =
 			if $patterns.is_empty() {
-				[TermPattern.from_str("\\b${term_name.with_ascii_lowercased()}\\b") ? |why| "the term `${term_name}`, as its own pattern: ${why}"]
+				own = "\\b${term_name.with_ascii_lowercased()}\\b"
+				[TermPattern.from_str(own) ? |why| "the term `${term_name}`, as its own pattern: ${why}"]
 			} else {
 				$patterns
 			}
@@ -118,13 +119,9 @@ Entry : {
 
 entry_of : Term, List(TermIndex.Chapter) -> Try(Entry, Str)
 entry_of = |term, chapters| {
+	is_mention = |line| term.patterns.any(|pattern| pattern.is_found_in(line))
 	mentions = chapters
-		.map(
-			|chapter| {
-				chapter,
-				lines: chapter.prose.count_if(|line| term.patterns.any(|pattern| pattern.is_found_in(line))),
-			},
-		)
+		.map(|chapter| { chapter, lines: chapter.prose.count_if(is_mention) })
 		.keep_if(|mention| mention.lines > 0)
 	busiest = mentions.fold(
 		Nowhere,
@@ -137,16 +134,15 @@ entry_of = |term, chapters| {
 	match busiest {
 		Nowhere => Ok({ term, mentions, main: Nowhere })
 		Busiest(held) if term.main.is_empty() => Ok({ term, mentions, main: Main(held.chapter) })
-		Busiest(_) =>
+		Busiest(_) => {
+			is_mentioned = |chapter|
+				mentions.any(|mention| mention.chapter.number == chapter.number)
 			match chapters.find_first(|chapter| chapter.title == term.main) {
 				Err(NotFound) => Err("index: ${term.name}'s main chapter, ${term.main}, is no chapter of the book")
-				Ok(chapter) if mentions.any(|mention| mention.chapter.number == chapter.number) => Ok({
-					term,
-					mentions,
-					main: Main(chapter),
-				})
+				Ok(chapter) if is_mentioned(chapter) => Ok({ term, mentions, main: Main(chapter) })
 				Ok(_) => Err("index: ${term.name}'s main chapter, ${term.main}, never mentions it")
 			}
+		}
 	}
 }
 
@@ -165,7 +161,10 @@ categories_of = |entries| entries.fold(
 ## A term's place in the alphabet: lowercased, with its backticks and other
 ## marks left out, so `match` sorts under m.
 sort_key : Str -> List(U8)
-sort_key = |term_name| term_name.with_ascii_lowercased().to_utf8().keep_if(|byte| (byte >= 'a' and byte <= 'z') or (byte >= '0' and byte <= '9') or byte == ' ')
+sort_key = |term_name| term_name
+	.with_ascii_lowercased()
+	.to_utf8()
+	.keep_if(|byte| (byte >= 'a' and byte <= 'z') or (byte >= '0' and byte <= '9') or byte == ' ')
 
 ## Two byte strings in byte order, a shorter one first when it starts the other.
 compare_bytes : List(U8), List(U8) -> [Before, Same, After]
@@ -284,4 +283,7 @@ expect
 	})
 		.map_ok(|table| table.contains("throughout") or !table.contains("{{number 14 C}}"))
 		== Ok(Bool.False)
-expect compare_bytes([], []) == Same and compare_bytes([1], [1, 2]) == Before and compare_bytes([2], [1, 2]) == After
+expect
+	compare_bytes([], []) == Same
+		and compare_bytes([1], [1, 2]) == Before
+		and compare_bytes([2], [1, 2]) == After

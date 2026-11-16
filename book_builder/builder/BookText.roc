@@ -62,7 +62,10 @@ BookText := [].{
 
 	## Whether a byte is an ASCII letter or digit.
 	is_letter_or_digit : U8 -> Bool
-	is_letter_or_digit = |byte| (byte >= 'a' and byte <= 'z') or (byte >= 'A' and byte <= 'Z') or (byte >= '0' and byte <= '9')
+	is_letter_or_digit = |byte|
+		(byte >= 'a' and byte <= 'z')
+			or (byte >= 'A' and byte <= 'Z')
+			or (byte >= '0' and byte <= '9')
 }
 
 expect BookText.text_from_bytes([97]) == "a"

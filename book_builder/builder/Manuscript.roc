@@ -178,7 +178,9 @@ expect
 expect
 	Manuscript.pages(book_lines).chapters.map(|page| page.markdown)
 		== ["# One\ntext\n## Part\n```\n## not a chapter\n### nor a section\n```\n", "# Two\n"]
-expect Manuscript.pages(book_lines).chapters.map(|page| page.source_lines.map(|line| line.number)) == [[4, 5, 6, 7, 8, 9, 10], [11]]
+expect
+	Manuscript.pages(book_lines).chapters.map(|page| page.source_lines.map(|line| line.number))
+		== [[4, 5, 6, 7, 8, 9, 10], [11]]
 expect Manuscript.pages([]).front.markdown == ""
 expect Manuscript.pages([]).chapters == []
 expect Manuscript.chapter_title({

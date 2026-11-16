@@ -142,8 +142,8 @@ widget_html = |folders, { words, caption }|
 						safe_caption = BookText.escaped_text(caption)
 						frame_class = SafariFences.widget_frame_class
 						loading = loading_html(frame.loading)
-						iframe =
-							\\<iframe class="${frame_class}" src="../${frame.folder}/${address_end}" title="${safe_caption}" loading="${loading}" style="aspect-ratio: ${frame.aspect}"></iframe>
+						opening = "<iframe class=\"${frame_class}\" src=\"../${frame.folder}/${address_end}\" title=\"${safe_caption}\""
+						iframe = "${opening} loading=\"${loading}\" style=\"aspect-ratio: ${frame.aspect}\"></iframe>"
 						Html("<figure class=\"widget\">${iframe}<figcaption>${caption_html}</figcaption></figure>")
 					}
 				}

@@ -279,17 +279,25 @@ look_problems : {
 	look : Pages.Look,
 } -> List(Str)
 look_problems = |{ chapters, left_out, look }| {
-	titled = |title| chapters.any(|chapter| chapter.title == title) or left_out.any(|chapter| chapter.title == title)
+	titled = |title|
+		chapters.any(|chapter| chapter.title == title)
+			or left_out.any(|chapter| chapter.title == title)
 	not_plain = look.slugs.drop_if(|slug| is_plain_slug(slug.slug)).map(|slug| "book: the slug `${slug.slug}` isn't plain: lowercase letters, digits and hyphens")
-	no_chapter = look.slugs.drop_if(|slug| titled(slug.chapter)).map(|slug| "book: the slug `${slug.slug}` names `${slug.chapter}`, a chapter that isn't in the book")
-	no_place = look.dividers.drop_if(|divider| titled(divider.before)).map(|divider| "book: the divider `${divider.title}` stands above `${divider.before}`, a chapter that isn't in the book")
+	no_chapter = look.slugs
+		.drop_if(|slug| titled(slug.chapter))
+		.map(|slug| "book: the slug `${slug.slug}` names `${slug.chapter}`, a chapter that isn't in the book")
+	no_place = look.dividers
+		.drop_if(|divider| titled(divider.before))
+		.map(|divider| "book: the divider `${divider.title}` stands above `${divider.before}`, a chapter that isn't in the book")
 	[not_plain, no_chapter, no_place].join()
 }
 
 is_plain_slug : Str -> Bool
 is_plain_slug = |slug| {
 	bytes = slug.to_utf8()
-	!bytes.is_empty() and bytes.all(|byte| (byte >= 'a' and byte <= 'z') or (byte >= '0' and byte <= '9') or byte == '-')
+	is_slug_byte = |byte|
+		(byte >= 'a' and byte <= 'z') or (byte >= '0' and byte <= '9') or byte == '-'
+	!bytes.is_empty() and bytes.all(is_slug_byte)
 }
 
 ## Each file named more than once, once.

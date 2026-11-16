@@ -56,7 +56,11 @@ Bytes :: [].{
 
 	## An ASCII letter, a digit or `_`: a byte of a word in Roc and in Shale.
 	is_ascii_word_byte : U8 -> Bool
-	is_ascii_word_byte = |b| (b >= 'a' and b <= 'z') or (b >= 'A' and b <= 'Z') or Bytes.is_digit(b) or b == '_'
+	is_ascii_word_byte = |b|
+		(b >= 'a' and b <= 'z')
+			or (b >= 'A' and b <= 'Z')
+			or Bytes.is_digit(b)
+			or b == '_'
 }
 
 expect Bytes.byte_at([1, 2], 1) == 2

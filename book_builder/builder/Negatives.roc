@@ -41,10 +41,16 @@ Negatives := [].{
 			Err("negatives: no prose in ${manuscript}")
 		} else {
 			unlisted = prose.found.drop_if(|hit| exceptions.sentences.contains(hit.sentence))
-			unused = exceptions.rows.drop_if(|row| prose.found.any(|hit| hit.sentence == row.sentence))
+			is_used = |row| prose.found.any(|hit| hit.sentence == row.sentence)
+			unused = exceptions.rows.drop_if(is_used)
 			findings =
 				unlisted
-					.map(|hit| "${manuscript}:${hit.line.to_str()}: negative [${hit.chapter}] ${hit.words}: ${hit.sentence}")
+					.map(
+						|hit| {
+							at = "${manuscript}:${hit.line.to_str()}"
+							"${at}: negative [${hit.chapter}] ${hit.words}: ${hit.sentence}"
+						},
+					)
 					.concat(unused.map(|row| "${table.name}:${row.line.to_str()}: unused_exception: no negative sentence of the prose is `${row.sentence}`"))
 			counts = [
 				"negative ${unlisted.len().to_str()}",

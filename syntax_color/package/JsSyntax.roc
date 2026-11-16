@@ -33,7 +33,7 @@ JsSyntax :: [].{
 			$state =
 				match $state.mode {
 					Code => code_step(bytes, $state)
-					InTemplate => template_part(bytes, $state, $state.at)
+					InTemplate => template_part(bytes, { state: $state, from: $state.at })
 				}
 		}
 		$state.out
@@ -51,7 +51,8 @@ State : {
 
 ## What the token before was, as far as the next one cares: a value, after
 ## which `/` divides; `function` or `class`, after which a name is declared; a
-## `.`, after which a word is a property; or anything else, after which `/` starts a regular expression.
+## `.`, after which a word is a property; or anything else, after which `/`
+## starts a regular expression.
 Before : [Value, Declarer, Dot, Operator]
 
 keywords : List(Str)
@@ -146,7 +147,7 @@ code_step = |bytes, state| {
 			},
 		)
 	} else if byte == '`' {
-		template_part(bytes, state, at + 1)
+		template_part(bytes, { state, from: at + 1 })
 	} else if byte == '/' and state.before != Value {
 		emit(
 			state,
@@ -273,8 +274,8 @@ word_step = |bytes, state| {
 ## The state after a part of a template literal: from `at`, its opening
 ## backquote or the `}` before it passed, to what ends the part, its closing
 ## backquote, a `${` or the end of the text. The part is one string span.
-template_part : List(U8), State, U64 -> State
-template_part = |bytes, state, from| {
+template_part : List(U8), { state : State, from : U64 } -> State
+template_part = |bytes, { state, from }| {
 	stop = template_text_end(bytes, from)
 	if stop >= bytes.len() {
 		{ ..emit(
@@ -416,10 +417,8 @@ block_comment_end = |bytes, at| {
 number_end : List(U8), U64 -> U64
 number_end = |bytes, at| {
 	prefix = Bytes.byte_at(bytes, at + 1)
-	if Bytes.byte_at(
-		bytes,
-		at,
-	) == '0' and (prefix == 'x' or prefix == 'X' or prefix == 'b' or prefix == 'B' or prefix == 'o' or prefix == 'O') {
+	is_radix = ['x', 'X', 'b', 'B', 'o', 'O'].contains(prefix)
+	if Bytes.byte_at(bytes, at) == '0' and is_radix {
 		Bytes.run_end(bytes, { at: at + 2, keep: |b| is_hex_digit(b) or b == '_' })
 	} else {
 		whole = Bytes.run_end(bytes, { at, keep: is_digit_or_separator })

@@ -86,7 +86,10 @@ Fences := [].{
 		fences_of(lines).keep_oks(
 			|{ opening, fence, language }|
 				match Fences.answer(fence, { language, hooks, colorer }) {
-					Refused(why) => Ok("${manuscript}:${opening.number.to_str()}: ${opening.text}: ${why}")
+					Refused(why) => {
+						at = "${manuscript}:${opening.number.to_str()}"
+						Ok("${at}: ${opening.text}: ${why}")
+					}
 					Html(_) | Pass => Err(NoRefusal)
 				},
 		)
@@ -183,7 +186,8 @@ shout = {
 		if body.is_empty() {
 			Refused("a shout needs something to shout")
 		} else {
-			Html("<p class=\"shout\">${BookText.escaped_text(words)}: ${BookText.escaped_text(body.with_ascii_uppercased())}</p>")
+			shouted = BookText.escaped_text(body.with_ascii_uppercased())
+			Html("<p class=\"shout\">${BookText.escaped_text(words)}: ${shouted}</p>")
 		},
 }
 

@@ -308,7 +308,7 @@ counted_at = |bytes, atom| {
 		(
 			Ok(done),
 			Ok(next),
-		) if done.at > atom.at and (next == '?' or next == '*' or next == '+' or next == '{') => Err("a count after a count")
+		) if done.at > atom.at and is_count_mark(next) => Err("a count after a count")
 		_ => counted
 	}
 }
@@ -355,7 +355,7 @@ atom_at = |bytes, at| match bytes.get(at) {
 		runs: [],
 	})
 	Ok('\\') => escaped_at(bytes, at + 1)
-	Ok(byte) if byte == '?' or byte == '*' or byte == '+' or byte == '{' or byte == '}' => Err("a `${byte_text(byte)}` with nothing to count")
+	Ok(byte) if is_count_mark(byte) or byte == '}' => Err("a `${byte_text(byte)}` with nothing to count")
 	Ok(byte) => Ok({
 		steps: [Byte(byte)],
 		at: at + 1,
@@ -363,6 +363,11 @@ atom_at = |bytes, at| match bytes.get(at) {
 	})
 	Err(OutOfBounds) => crash "TermPattern.atom_at: sequence_at asks only inside the pattern"
 }
+
+## Whether a byte says how many times the atom before it comes: `?`, `*`, `+`
+## or the `{` of a count in braces.
+is_count_mark : U8 -> Bool
+is_count_mark = |byte| byte == '?' or byte == '*' or byte == '+' or byte == '{'
 
 byte_text : U8 -> Str
 byte_text = |byte| Str.from_utf8_lossy([byte])
@@ -411,7 +416,10 @@ escaped_at = |bytes, at| match bytes.get(at) {
 }
 
 is_alphanumeric : U8 -> Bool
-is_alphanumeric = |byte| (byte >= 'a' and byte <= 'z') or (byte >= 'A' and byte <= 'Z') or (byte >= '0' and byte <= '9')
+is_alphanumeric = |byte|
+	(byte >= 'a' and byte <= 'z')
+		or (byte >= 'A' and byte <= 'Z')
+		or (byte >= '0' and byte <= '9')
 
 ## A class's members from `at`, just past its `[`, to its `]`.
 class_at : List(U8), U64 -> Try(Parsed, Str)

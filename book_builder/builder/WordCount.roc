@@ -33,7 +33,9 @@ is_table_rule = |text| {
 }
 
 line_words : Str -> U64
-line_words = |text| text.split_on(" ").count_if(|word| word.to_utf8().any(BookText.is_letter_or_digit))
+line_words = |text| text
+	.split_on(" ")
+	.count_if(|word| word.to_utf8().any(BookText.is_letter_or_digit))
 
 lines_of : Str -> List(Manuscript.Line)
 lines_of = |text| match Manuscript.lines(text) {

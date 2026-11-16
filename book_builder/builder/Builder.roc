@@ -228,7 +228,9 @@ Builder := [].{
 				),
 				look: settings.look,
 			})?
-			forged = made.keep_if(|page| page.html.contains(page_mark) or page.html.contains(report_mark)).map(|page| "book: ${page.file} holds the text of a page mark, which would cut the book there")
+			forged = made
+				.keep_if(|page| page.html.contains(page_mark) or page.html.contains(report_mark))
+				.map(|page| "book: ${page.file} holds the text of a page mark, which would cut the book there")
 			if !forged.is_empty() {
 				Err(forged)
 			} else {

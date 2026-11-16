@@ -146,7 +146,8 @@ without_spans : Str -> Str
 without_spans = |html| {
 	closed = Str.join_with(html.split_on("</span>"), "")
 	pieces = closed.split_on("<span class=\"")
-	rest = pieces.drop_first(1).map(|piece| piece.split_first("\">").map_ok(|parts| parts.after) ?? crash "SyntaxColor.without_spans: an opened span has its `\">`")
+	after_opening = |piece| piece.split_first("\">").map_ok(|parts| parts.after) ?? crash "SyntaxColor.without_spans: an opened span has its `\">`"
+	rest = pieces.drop_first(1).map(after_opening)
 	Str.join_with(pieces.take_first(1).concat(rest), "")
 }
 

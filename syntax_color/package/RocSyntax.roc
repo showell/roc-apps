@@ -151,18 +151,21 @@ code_step = |bytes, state| {
 		{ ..emit(state, { class: Comment, end: Bytes.line_end(bytes, at) }), place: MidLine }
 	} else {
 		header = header_at(bytes, { at, header: state.header })
+		state_header =
+			if header == InHeader {
+				InHeader
+			} else {
+				CodeSeen
+			}
 		token_step(
 			bytes,
 			{
-				..state,
-				header: if header == InHeader {
-					InHeader
-				} else {
-					CodeSeen
-				},
-				place: MidLine,
+				state: { ..state, header: state_header, place: MidLine },
+				byte,
+				next,
+				place: state.place,
+				header,
 			},
-			{ byte, next, place: state.place, header },
 		)
 	}
 }
@@ -180,19 +183,16 @@ header_at = |bytes, { at, header }|
 ## The state after a token that isn't space or a comment. `place` and `header`
 ## are where the token stands: first on its line or not, and before, inside or
 ## past the file's header.
-token_step : List(U8),
-State,
-{
-	byte : U8,
-	next : U8,
-	place : [LineStart, MidLine],
-	header : Header,
-} -> State
-token_step = |
-	bytes,
-	state,
-	{ byte, next, place, header },
-| {
+token_step :
+	List(U8),
+	{
+		state : State,
+		byte : U8,
+		next : U8,
+		place : [LineStart, MidLine],
+		header : Header,
+	} -> State
+token_step = |bytes, { state, byte, next, place, header }| {
 	at = state.at
 	if byte == '"' {
 		{ ..emit(state, { class: String, end: at + 1 }), mode: InString(Quoted) }
@@ -227,7 +227,7 @@ token_step = |
 	} else if is_upper(byte) {
 		type_step(bytes, state)
 	} else if is_lower(byte) or byte == '_' {
-		word_step(bytes, state, { place, header })
+		word_step(bytes, { state, place, header })
 	} else if byte == '$' and Bytes.is_ascii_word_byte(next) {
 		{ ..emit(state, { class: Plain, end: word_end(bytes, at + 1) }), before: Value }
 	} else if byte >= 0x80 {
@@ -236,7 +236,7 @@ token_step = |
 			before: Value,
 		}
 	} else {
-		symbol_step(bytes, state, { byte, next })
+		symbol_step(bytes, { state, byte, next })
 	}
 }
 
@@ -249,13 +249,20 @@ type_step = |bytes, state| {
 
 ## A word that starts in lower case: a keyword, a name a definition gives, or
 ## another name, which is plain.
-word_step : List(U8), State, { place : [LineStart, MidLine], header : Header } -> State
-word_step = |bytes, state, { place, header }| {
+word_step :
+	List(U8),
+	{
+		state : State,
+		place : [LineStart, MidLine],
+		header : Header,
+	} -> State
+word_step = |bytes, { state, place, header }| {
 	at = state.at
 	end = word_end(bytes, at)
 	word = Str.from_utf8(
 		bytes.sublist({ start: at, len: end - at }),
 	) ?? crash "RocSyntax.word_step: a word is ASCII"
+	is_header_word = header_starts.contains(word) or header_sections.contains(word)
 	if state.before == Dot {
 		{ ..emit(state, { class: Plain, end }), before: Value }
 	} else if keywords.contains(word) {
@@ -266,7 +273,7 @@ word_step = |bytes, state, { place, header }| {
 			before: Keyword,
 			header: InHeader,
 		}
-	} else if header == InHeader and (header_starts.contains(word) or header_sections.contains(word)) {
+	} else if header == InHeader and is_header_word {
 		{ ..emit(state, { class: Keyword, end }), before: Keyword }
 	} else if word == "platform" and Bytes.byte_at(bytes, space_end(bytes, end)) == '"' {
 		{ ..emit(state, { class: Keyword, end }), before: Keyword }
@@ -296,8 +303,14 @@ is_defined = |bytes, { end, frames }| {
 
 ## Punctuation and operators, which are plain; brackets and bars open and
 ## close frames.
-symbol_step : List(U8), State, { byte : U8, next : U8 } -> State
-symbol_step = |bytes, state, { byte, next }| {
+symbol_step :
+	List(U8),
+	{
+		state : State,
+		byte : U8,
+		next : U8,
+	} -> State
+symbol_step = |bytes, { state, byte, next }| {
 	at = state.at
 	plain = |end, before| { ..emit(state, { class: Plain, end }), before }
 	if byte == '{' {
@@ -502,7 +515,16 @@ space_end = |bytes, at| Bytes.run_end(bytes, { at, keep: |b| b == ' ' or b == '\
 
 ## Whether a byte ends a value, so that a `-` after it subtracts.
 is_value_end : U8 -> Bool
-is_value_end = |b| Bytes.is_ascii_word_byte(b) or b == ')' or b == ']' or b == '}' or b == '"' or b == '\'' or b == '!' or b == '?' or b >= 0x80
+is_value_end = |b|
+	Bytes.is_ascii_word_byte(b)
+		or b == ')'
+		or b == ']'
+		or b == '}'
+		or b == '"'
+		or b == '\''
+		or b == '!'
+		or b == '?'
+		or b >= 0x80
 
 is_upper : U8 -> Bool
 is_upper = |b| b >= 'A' and b <= 'Z'
