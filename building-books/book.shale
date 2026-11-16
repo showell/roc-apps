@@ -15,13 +15,13 @@
 --   diagram-N.dot  the Nth ```dot fence's source, and diagram-N.svg, its
 --   diagram-N.svg  drawing by Graphviz (book_builder/tools/draw_diagrams.shale)
 --
--- Then `roc test` runs the app's expects, held to exactly APP_TESTS and to its
--- top-level `expect` lines, each passed once. Then `zig build` builds the app
--- into book_builder/zig-out/building-books, on Roc's dev backend, and the
--- program writes the pages, or stops on a gate. The pages go to build/book/
--- with the Safari tutorial's stylesheet, whose markup the builder writes, and
--- are staged in the channel's /building-books.staging/. book_check.mjs drives
--- them there in a real browser and leaves a shot of each page in build/shots/.
+-- Then the book builder's tools/build_book.shale runs the app's expects, held
+-- to exactly APP_TESTS, builds the app into book_builder/zig-out/building-books,
+-- on Roc's dev backend, and runs the program on the checkout's root, which
+-- writes the pages, or stops on a gate. The pages go to build/book/ with the
+-- builder's stylesheet, and are staged in the channel's
+-- /building-books.staging/. The builder's tools/book_check.mjs drives them
+-- there in a real browser and leaves a shot of each page in build/shots/.
 -- Then the book builder's tools/move_stage.shale puts the stage in the place
 -- of /building-books/. A failure at any step stops the run before the move, so
 -- the channel's book is left as it was.
@@ -29,22 +29,17 @@ const BOOK = "building-books"
 const SOURCE = "building-books/book.md"
 const PREPARED = "building-books/build/prepared"
 const OUT = "building-books/build/book"
+const REPORT = "building-books/build/report.txt"
 const SHOTS = "building-books/build/shots"
-const STYLESHEET = "canvas_apps/safari/tutorial/book.css"
-const BUILDER = "book_builder"
-const PROGRAM = "book_builder/zig-out/building-books/bin/book"
 const NEXT = "build:roc-apps/next"
 const DEST_NAME = "building-books"
 const STAGED_NAME = "building-books.staging"
 const DRAW = "book_builder/tools/draw_diagrams.shale"
 const MOVE = "book_builder/tools/move_stage.shale"
-const CHECKER = "canvas_apps/safari/tutorial/book_check.mjs"
-const CACHE = "build:roc-apps/book-cache"
-const PAGE_MARK = "<!-- book page: "
-const REPORT_MARK = "<!-- book report -->"
+const CHECKER = "book_builder/tools/book_check.mjs"
+const BUILD = "book_builder/tools/build_book.shale"
 const APP_TESTS = 4
 const DOT_WANT = "graphviz: a book's diagrams, drawn at build time"
-const BOOK_WANT = "book: the book program book.shale just built, untracked by design"
 const CHECK_WANT = "script: book_check.mjs drives the staged pages in headless Chromium"
 const STOPS_WANT = "book: a script the book quotes, run to show its stop"
 
@@ -81,66 +76,7 @@ function write_stops()
   return count
 end
 
--- The app's expects run, held to APP_TESTS and to the top-level `expect`
--- lines its files hold, each passed once.
-function test_app(env)
-  local r = run({pinned_roc("book"), "test", "--verbose", "app/main.roc"}, {cwd = BOOK, timeout_ms = 120000, whole = 2000000, env = env})
-  local written = {}
-  for path in glob(BOOK .. "/app/*.roc") do
-    local n = 0
-    for l in lines(read(path)) do
-      n = n + 1
-      if starts_with(l, "expect") then written["app/" .. basename(path) .. ":" .. n] = true end
-    end
-  end
-  local wrong = {}
-  local passed = {}
-  for l in lines(r.out) do
-    if starts_with(l, "PASS: app/") then
-      local at = trim(sub(l, 7))
-      if has_key(passed, at) then push(wrong, "passed twice: " .. at) end
-      if not has_key(written, at) then push(wrong, "passed, and no top-level expect line is there: " .. at) end
-      passed[at] = true
-    end
-  end
-  for at in keys(written) do
-    if not has_key(passed, at) then push(wrong, "an expect line that never passed: " .. at) end
-  end
-  if r.code ~= 0 or #wrong > 0 or #keys(passed) ~= APP_TESTS then
-    print(trim(sub(r.out, #r.out - 3000)))
-    for w in wrong do print("  " .. w) end
-    fail("book: roc test app/main.roc: " .. #keys(passed) .. " of app/'s passed, " .. APP_TESTS .. " expected, exit " .. r.code)
-  end
-  print("book: roc test app/main.roc, " .. APP_TESTS .. " of app/'s passed, as expected, in " .. r.ms .. " ms")
-  return nil
-end
-
--- The program's pages, written to OUT with the stylesheet, and the report
--- after them. The builder ends each page with a newline before the next
--- page's mark, which is its separator and no part of the page.
-function write_pages(output)
-  if exists(OUT) then remove_tree(OUT) end
-  mkdir(OUT)
-  local halves = split(output, REPORT_MARK .. "\n")
-  if #halves ~= 2 then fail("book: the program's output has no report, or two") end
-  local pieces = split(halves[1], PAGE_MARK)
-  if pieces[1] ~= "" then fail("book: the program said something before its first page: " .. pieces[1]) end
-  local files = {}
-  for piece in drop(pieces, 1) do
-    local close = find(piece, " -->\n")
-    local file = sub(piece, 1, close - 1)
-    local html = sub(piece, close + 5)
-    if not ends_with(html, "\n") then fail("book: " .. file .. " doesn't end with the builder's newline") end
-    replace(OUT .. "/" .. file, sub(html, 1, #html - 1))
-    push(files, file)
-  end
-  copy(STYLESHEET, OUT .. "/book.css")
-  return {files = files, report = halves[2]}
-end
-
 function main()
-  mkdir(CACHE)
-  local env = {XDG_CACHE_HOME = real(CACHE)}
   if exists(PREPARED) then remove_tree(PREPARED) end
   mkdir(PREPARED)
   print("book: " .. write_stops() .. " {{stops}} includes run")
@@ -149,30 +85,26 @@ function main()
     if starts_with(l, "draw_diagrams: ") then print("book: " .. sub(l, 16) .. " in " .. drawn.ms .. " ms") end
   end
 
-  test_app(env)
-  if exists(PROGRAM) then remove(PROGRAM) end
-  local built = run({"zig", "build", "-Dapp=../" .. BOOK .. "/app/main.roc", "-p", "zig-out/building-books"}, {cwd = BUILDER, timeout_ms = 600000, tail = 40, env = env})
-  if built.code ~= 0 or #find_all(built.out, "── ✗") + #find_all(built.out, "── ●") > 0 or not exists(PROGRAM) then
-    print(built.out)
-    fail("book: the book's program didn't build cleanly")
+  local argv = {"shale", "--root", ".", BUILD, "book=" .. BOOK, "tests=" .. APP_TESTS, "name=building-books", "folder=.", "out=" .. OUT, "report=" .. REPORT}
+  local built = run(argv, {timeout_ms = 900000, tail = 60})
+  local pages = 0
+  for l in lines(built.out) do
+    if starts_with(l, "build_book: ") then print("book: " .. sub(l, 13)) end
+    local m = re_find(l, "^build_book: ([0-9]+) pages in ")
+    if m ~= nil then pages = tonumber(m.groups[1]) end
   end
-  print("book: the program built in " .. built.ms .. " ms")
-
-  local r = run({real(PROGRAM), "."}, {timeout_ms = 60000, whole = 4000000, want = BOOK_WANT})
-  if r.code ~= 0 then
-    print(r.out)
-    fail("book: the book's program stopped, exit " .. r.code)
+  if built.code ~= 0 then
+    print(trim(built.out))
+    fail("book: build_book.shale stopped, so /" .. DEST_NAME .. "/ is left as it was")
   end
-  print("book: the program ran in " .. r.ms .. " ms")
-  local written = write_pages(r.out)
   local staging = NEXT .. "/" .. STAGED_NAME
   if exists(staging) then remove_tree(staging) end
   copy(OUT, staging)
 
   if exists(SHOTS) then remove_tree(SHOTS) end
   mkdir(SHOTS)
-  local argv = {"nice", "-n", "19", "node", CHECKER, "http://127.0.0.1:9210/" .. STAGED_NAME .. "/", real(SHOTS)}
-  local checked = run(argv, {timeout_ms = 600000, tail = 60, want = CHECK_WANT})
+  local check_argv = {"nice", "-n", "19", "node", CHECKER, "http://127.0.0.1:9210/" .. STAGED_NAME .. "/", real(SHOTS)}
+  local checked = run(check_argv, {timeout_ms = 600000, tail = 60, want = CHECK_WANT})
   if checked.ended ~= "exit" or checked.code ~= 0 then
     print(trim(checked.out))
     fail("book: book_check failed on " .. staging .. ", so /" .. DEST_NAME .. "/ is left as it was")
@@ -184,10 +116,10 @@ function main()
   local moved = must(run({"shale", "--root", ".", MOVE, "stage=" .. STAGED_NAME, "place=" .. DEST_NAME}, {timeout_ms = 60000, tail = 20}))
   print("book: the move into place took " .. moved.ms .. " ms")
 
-  for l in lines(written.report) do
+  for l in lines(read(REPORT)) do
     if trim(l) ~= "" then print("book: " .. l) end
   end
-  print("book: " .. #written.files .. " pages at http://localhost:9210/" .. DEST_NAME .. "/")
+  print("book: " .. pages .. " pages at http://localhost:9210/" .. DEST_NAME .. "/")
   return nil
 end
 

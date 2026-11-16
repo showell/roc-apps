@@ -137,10 +137,16 @@ From the roc-apps root:
   a fence hook of its own, `shout`, with `expected.html`. `examples/broken_includes/` and `examples/broken_gates/`
   are books that fail, each run by the full example's program, with the
   problems it prints in `expected.txt`.
-- `tools/`: the gate, the glue regenerator, and two steps a book's
-  pre-step and publish share: `draw_diagrams.shale`, which writes a
-  manuscript's diagram sources and draws them, and `move_stage.shale`, which
-  puts a staged book in the place of the dev channel's copy.
+- `tools/`: the gate, the glue regenerator, and the steps every book's
+  `book.shale` shares: `draw_diagrams.shale`, which writes a manuscript's
+  diagram sources and draws them; `build_book.shale`, which runs the app's
+  expects held to an exact count, builds the app, runs it and writes the
+  pages; `book_check.mjs`, which drives the staged pages in headless
+  Chromium (`BOOK_CHECK_CHROMIUM`, else Playwright's newest install); and
+  `move_stage.shale`, which puts a staged book in the place of the dev
+  channel's copy.
+- `book.css`: the stylesheet for the markup `builder/Pages.roc` writes,
+  which both books use.
 
 ## Pitfalls
 

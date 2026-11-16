@@ -1,4 +1,7 @@
-/* The Safari Ride book. The prose keeps a reading measure, and code, tables and
+/* The book builder's stylesheet, for the markup builder/Pages.roc writes; the
+   Safari Ride book and the books book both use it, and the widget, draft-note
+   and top-bar rules apply only where a book's look writes them. The prose keeps
+   a reading measure, and code, tables and
    diagrams may run wider into the right margin. A narrow window takes the chapter
    list out of the way, and a printed page drops whatever only a screen can use. */
 :root {

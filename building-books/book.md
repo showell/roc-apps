@@ -57,9 +57,8 @@ docs/SHALE-AGENTS.md in the shale repo. Clone these five repos side by side
 in ~/books, all from github.com/showell: roc-apps, roc-markdown, shale,
 zig-webbox and essay-surface. Install Zig 0.17.0; the Roc nightly that
 roc-apps/roc-version names, at ~/tools/roc-<that name>/roc; Node 22 or newer;
-the Chromium build that roc-apps' canvas_apps/safari/tutorial/book_check.mjs
-looks for; and Graphviz with the package manager (ask me before you use
-sudo). Build Shale and set it up as its README says. Write
+Playwright's Chromium (npx playwright install chromium); and Graphviz with
+the package manager (ask me before you use sudo). Build Shale and set it up as its README says. Write
 ~/.config/shale/mounts with these mounts:
   cookbook = ~/books/shale/cookbook
   build = ~/books/build

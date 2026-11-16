@@ -6,8 +6,16 @@
 // is made for the desktop (MISSION.md), so the views are desktop, tablet and print
 // widths; a phone is extremely low priority and isn't checked.
 //
-//   node book_check.mjs http://127.0.0.1:9210/tutorial.staging/ none
-//   node book_check.mjs http://127.0.0.1:9210/tutorial.staging/ <shots folder>
+//   node book_builder/tools/book_check.mjs http://127.0.0.1:9210/tutorial.staging/ none
+//   node book_builder/tools/book_check.mjs http://127.0.0.1:9210/tutorial.staging/ <shots folder>
+//
+// The Safari tutorial's book.shale and the books book's run it. A book with no
+// widgets is held to the same checks, and its widget count is zero.
+//
+// The browser is the binary BOOK_CHECK_CHROMIUM names, when it's set, and
+// otherwise the newest Chromium Playwright installed under
+// ~/.cache/ms-playwright (`npx playwright install chromium` puts one there).
+// When neither is there, the check stops before it starts, saying both.
 //
 // The checks are the same either way. The second argument says whether to
 // take shots, which no check reads. They're for a person or an agent to look
@@ -27,11 +35,30 @@
 // There is no Playwright package on the box, so this speaks the browser's
 // DevTools protocol over the WebSocket that Node has built in.
 import { spawn } from "node:child_process";
-import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
+import { existsSync, mkdirSync, mkdtempSync, readdirSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 
-const CHROME = `${process.env.HOME}/.cache/ms-playwright/chromium-1140/chrome-linux/chrome`;
+const PLAYWRIGHT_CACHE = `${process.env.HOME}/.cache/ms-playwright`;
+function chromiumPath() {
+  const named = process.env.BOOK_CHECK_CHROMIUM;
+  if (named) {
+    if (!existsSync(named)) { console.error(`book_check: BOOK_CHECK_CHROMIUM names ${named}, and nothing is there`); process.exit(2); }
+    return named;
+  }
+  const installed = existsSync(PLAYWRIGHT_CACHE)
+    ? readdirSync(PLAYWRIGHT_CACHE)
+      .map((name) => ({ name, build: Number((name.match(/^chromium-(\d+)$/) ?? [])[1]) }))
+      .filter((entry) => entry.build > 0 && existsSync(`${PLAYWRIGHT_CACHE}/${entry.name}/chrome-linux/chrome`))
+      .sort((a, b) => b.build - a.build)
+    : [];
+  if (installed.length === 0) {
+    console.error(`book_check: no Chromium: set BOOK_CHECK_CHROMIUM to its binary, or run \`npx playwright install chromium\`, which puts one in ${PLAYWRIGHT_CACHE}`);
+    process.exit(2);
+  }
+  return `${PLAYWRIGHT_CACHE}/${installed[0].name}/chrome-linux/chrome`;
+}
+const CHROME = chromiumPath();
 const WIDTH = 1400;
 const HEIGHT = 900;
 // The ways a reader sees a page besides the desktop window it's driven in.

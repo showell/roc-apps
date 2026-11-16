@@ -53,6 +53,9 @@ prepared_folder : Str
 prepared_folder = "building-books/build/prepared"
 
 ## Everything this book chooses, but its fence hook, which needs the drawings.
+## Every path is the roc-apps checkout's: the book's read root is the
+## checkout itself, since a book about the builder quotes the builder's code
+## and the Safari book's files.
 settings : Builder.Settings
 settings = {
 	..Builder.default_settings,

@@ -1,0 +1,117 @@
+-- budget: steps=50000000 arena_bytes=1000000000 read_bytes=200000000 output_bytes=200000 call_bytes=40000000
+-- This builds a book's app with the book builder and writes its pages, the
+-- steps every book's book.shale shares after its own pre-step:
+--
+--   cd <roc-apps checkout> && shale book_builder/tools/build_book.shale book=<folder> tests=N name=<name> folder=<read root> out=<pages> report=<file>
+--
+-- `roc test` runs the app's expects, `<book>/app/main.roc` from `<book>`,
+-- held to exactly `tests` and to the top-level `expect` lines of `<book>/app/`,
+-- each passed once; the packages' own are their gates' to hold. Then
+-- `zig build` builds the app into book_builder/zig-out/<name>, on Roc's dev
+-- backend, and its build is held to zero errors and zero warnings by the
+-- report's marks. The program runs on `folder`, the root its reads are
+-- confined to, and prints every page or the gates' problems. The pages go to
+-- `out`, made afresh, with the builder's stylesheet, book.css, and the
+-- program's report (each page's words of prose, the lint's counts) goes to
+-- `report`. Roc's cache is build:roc-apps/book-cache, which every book shares.
+--
+-- The Safari tutorial's book.shale and the books book's run it.
+const BOOK = arg("book", "")
+const TESTS = arg("tests", -1)
+const NAME = arg("name", "")
+const FOLDER = arg("folder", "")
+const OUT = arg("out", "")
+const REPORT = arg("report", "")
+const BUILDER = "book_builder"
+const STYLESHEET = "book_builder/book.css"
+const CACHE = "build:roc-apps/book-cache"
+const PAGE_MARK = "<!-- book page: "
+const REPORT_MARK = "<!-- book report -->"
+const BOOK_WANT = "book: the book program build_book.shale just built, untracked by design"
+
+-- The app's expects run, held to TESTS and to the top-level `expect` lines
+-- its files hold, each passed once.
+function test_app(env)
+  local r = run({pinned_roc("build_book"), "test", "--verbose", "app/main.roc"}, {cwd = BOOK, timeout_ms = 120000, whole = 2000000, env = env})
+  local written = {}
+  for path in glob(BOOK .. "/app/*.roc") do
+    local n = 0
+    for l in lines(read(path)) do
+      n = n + 1
+      if starts_with(l, "expect") then written["app/" .. basename(path) .. ":" .. n] = true end
+    end
+  end
+  local wrong = {}
+  local passed = {}
+  for l in lines(r.out) do
+    if starts_with(l, "PASS: app/") then
+      local at = trim(sub(l, 7))
+      if has_key(passed, at) then push(wrong, "passed twice: " .. at) end
+      if not has_key(written, at) then push(wrong, "passed, and no top-level expect line is there: " .. at) end
+      passed[at] = true
+    end
+  end
+  for at in keys(written) do
+    if not has_key(passed, at) then push(wrong, "an expect line that never passed: " .. at) end
+  end
+  if r.code ~= 0 or #wrong > 0 or #keys(passed) ~= TESTS then
+    print(trim(sub(r.out, #r.out - 3000)))
+    for w in wrong do print("  " .. w) end
+    fail("build_book: roc test app/main.roc: " .. #keys(passed) .. " of app/'s passed, " .. TESTS .. " expected, exit " .. r.code)
+  end
+  print("build_book: roc test app/main.roc, " .. TESTS .. " of app/'s passed, as expected, in " .. r.ms .. " ms")
+  return nil
+end
+
+-- The program's pages, written to OUT with the stylesheet, and its report
+-- to REPORT. The builder ends each page with a newline before the next
+-- page's mark, which is its separator and no part of the page.
+function write_pages(output)
+  if exists(OUT) then remove_tree(OUT) end
+  mkdir(OUT)
+  local halves = split(output, REPORT_MARK .. "\n")
+  if #halves ~= 2 then fail("build_book: the program's output has no report, or two") end
+  local pieces = split(halves[1], PAGE_MARK)
+  if pieces[1] ~= "" then fail("build_book: the program said something before its first page: " .. pieces[1]) end
+  local count = 0
+  for piece in drop(pieces, 1) do
+    local close = find(piece, " -->\n")
+    local file = sub(piece, 1, close - 1)
+    local html = sub(piece, close + 5)
+    if not ends_with(html, "\n") then fail("build_book: " .. file .. " doesn't end with the builder's newline") end
+    replace(OUT .. "/" .. file, sub(html, 1, #html - 1))
+    count = count + 1
+  end
+  copy(STYLESHEET, OUT .. "/book.css")
+  replace(REPORT, halves[2])
+  return count
+end
+
+function main()
+  for given in {BOOK, NAME, FOLDER, OUT, REPORT} do
+    if given == "" then fail("build_book: book=, tests=, name=, folder=, out= and report= are each needed") end
+  end
+  if TESTS < 0 then fail("build_book: tests= is the app's exact number of expects") end
+  if contains(NAME, "/") then fail("build_book: name= is one folder of book_builder/zig-out") end
+  mkdir(CACHE)
+  local env = {XDG_CACHE_HOME = real(CACHE)}
+  test_app(env)
+  local program = BUILDER .. "/zig-out/" .. NAME .. "/bin/book"
+  if exists(program) then remove(program) end
+  local built = run({"zig", "build", "-Dapp=../" .. BOOK .. "/app/main.roc", "-p", "zig-out/" .. NAME}, {cwd = BUILDER, timeout_ms = 600000, tail = 40, env = env})
+  if built.code ~= 0 or #find_all(built.out, "── ✗") + #find_all(built.out, "── ●") > 0 or not exists(program) then
+    print(built.out)
+    fail("build_book: the book's program didn't build cleanly")
+  end
+  print("build_book: the program built in " .. built.ms .. " ms")
+  local r = run({real(program), FOLDER}, {timeout_ms = 120000, whole = 40000000, want = BOOK_WANT})
+  if r.code ~= 0 then
+    print(r.out)
+    fail("build_book: the book's program stopped, exit " .. r.code)
+  end
+  print("build_book: the program ran in " .. r.ms .. " ms")
+  print("build_book: " .. write_pages(r.out) .. " pages in " .. OUT)
+  return nil
+end
+
+main()
