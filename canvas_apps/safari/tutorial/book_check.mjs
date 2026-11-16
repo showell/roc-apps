@@ -6,11 +6,23 @@
 // is made for the desktop (MISSION.md), so the views are desktop, tablet and print
 // widths; a phone is extremely low priority and isn't checked.
 //
+//   node book_check.mjs http://127.0.0.1:9210/tutorial.staging/ none
 //   node book_check.mjs http://127.0.0.1:9210/tutorial.staging/ <shots folder>
 //
-// A shot of each page goes in the shots folder, and one for each view in the
-// folder named for it. A third argument, `looks`, reads and shoots the pages
-// without driving their widgets, for a quick look at a change to the styling.
+// The checks are the same either way. The second argument says whether to
+// take shots, which no check reads. They're for a person or an agent to look
+// at, and taking them is most of the run's time: a full-page shot of a long
+// page in each of five views. So `none` is the inner loop, half a minute for
+// the whole book on a quiet box, and a shots folder is the pre-publish tier,
+// which book.shale runs before it replaces the channel's book: a shot of each
+// page goes in the folder, and one for each view in the folder named for it,
+// three or four minutes. A third argument, `looks`, reads the pages without
+// driving their widgets, for a quick look at a change to the styling.
+//
+// PAGES_AT_ONCE pages are open at a time, each in a window of its own so none
+// is a background tab the browser slows down. Each page's events reach only
+// its own checks, by its DevTools session. The last lines say how long each
+// phase took, summed over the pages, so a slow run says where its time went.
 //
 // There is no Playwright package on the box, so this speaks the browser's
 // DevTools protocol over the WebSocket that Node has built in.
@@ -29,13 +41,25 @@ const VIEWS = [
   { name: "dark", width: WIDTH, height: HEIGHT, scheme: "dark" },
   { name: "print", width: 794, height: 1123, media: "print" },
 ];
-const [base, shots, mode] = process.argv.slice(2);
-if (!base || !shots || (mode && mode !== "looks")) { console.error("usage: book_check.mjs <book url> <shots folder> [looks]"); process.exit(2); }
-for (const folder of [shots, ...VIEWS.map((view) => join(shots, view.name))]) mkdirSync(folder, { recursive: true });
+// Two cores, and a page spends much of its time waiting on its own loads.
+const PAGES_AT_ONCE = 2;
+const [base, shotsArgument, mode] = process.argv.slice(2);
+if (!base || !shotsArgument || (mode && mode !== "looks")) { console.error("usage: book_check.mjs <book url> <shots folder | none> [looks]"); process.exit(2); }
+const shots = shotsArgument === "none" ? null : shotsArgument;
+if (shots) for (const folder of [shots, ...VIEWS.map((view) => join(shots, view.name))]) mkdirSync(folder, { recursive: true });
 
 const sleep = (ms) => new Promise((done) => setTimeout(done, ms));
 const failures = [];
 const fail = (page, why) => failures.push(`${page}: ${why}`);
+
+// Each phase's time, summed over the pages.
+const phases = new Map();
+async function timed(phase, work) {
+  const started = Date.now();
+  const answer = await work();
+  phases.set(phase, (phases.get(phase) ?? 0) + Date.now() - started);
+  return answer;
+}
 
 function startBrowser(profile) {
   const browser = spawn(CHROME, [
@@ -55,7 +79,8 @@ function startBrowser(profile) {
   return { browser, address };
 }
 
-// One DevTools connection: `send` answers a command, and `on` hears an event.
+// One DevTools connection: `send` answers a command, and `on` hears an event
+// of one session, a page's, so pages open at once never hear each other's.
 async function connect(address) {
   const socket = new WebSocket(address);
   await new Promise((open, refused) => {
@@ -72,12 +97,15 @@ async function connect(address) {
       waiting.delete(message.id);
       message.error ? refuse(new Error(JSON.stringify(message.error))) : answer(message.result);
     } else {
-      hearers.get(message.method)?.(message.params);
+      hearers.get(`${message.sessionId} ${message.method}`)?.(message.params);
     }
   };
   return {
     socket,
-    on: (method, hear) => hearers.set(method, hear),
+    on: (sessionId, method, hear) => hearers.set(`${sessionId} ${method}`, hear),
+    forget: (sessionId) => {
+      for (const key of [...hearers.keys()]) if (key.startsWith(`${sessionId} `)) hearers.delete(key);
+    },
     send: (method, params = {}, sessionId) => new Promise((answer, refuse) => {
       const id = ++lastId;
       waiting.set(id, { answer, refuse });
@@ -225,32 +253,54 @@ async function checkFrame(page, file, i) {
 
 const shotName = (file) => file.replace(/\.html$/, ".png");
 
-async function shoot(page, path) {
-  const { data } = await page.send("Page.captureScreenshot", { format: "png", captureBeyondViewport: true }, page.session);
+// A shot of the page as it is, for a run that takes shots. The pause first
+// lets the page paint what the last step changed.
+async function shoot(page, path, pause) {
+  await timed("pausing to paint, for shots", () => sleep(pause));
+  const { data } = await timed("shots", () => page.send("Page.captureScreenshot", { format: "png", captureBeyondViewport: true }, page.session));
   writeFileSync(path, Buffer.from(data, "base64"));
 }
 
+// Whether the page has taken on the view: its width, its media and its colour
+// scheme. Emulation reaches the page apart from what is evaluated in it, so a
+// read made too soon could measure the view before.
+const TAKES_VIEW = (view) => `(async () => {
+  const taken = () => innerWidth === ${view.width}
+    && matchMedia('print').matches === ${view.media === "print"}
+    && matchMedia('(prefers-color-scheme: dark)').matches === ${view.scheme === "dark"};
+  const started = Date.now();
+  while (!taken()) {
+    if (Date.now() - started > 5000) return false;
+    await new Promise((later) => setTimeout(later, 10));
+  }
+  return true;
+})()`;
+
 // One view of a page that's already loaded: what overflows, and a shot of it.
 async function checkView(page, file, view) {
-  await page.send("Emulation.setDeviceMetricsOverride", { width: view.width, height: view.height, deviceScaleFactor: 1, mobile: view.mobile ?? false }, page.session);
-  await page.send("Emulation.setEmulatedMedia", { media: view.media ?? "", features: [{ name: "prefers-color-scheme", value: view.scheme ?? "light" }] }, page.session);
-  await sleep(100);
-  const held = await evaluate(page, READ_PAGE);
+  await timed("views: switching", async () => {
+    await page.send("Emulation.setDeviceMetricsOverride", { width: view.width, height: view.height, deviceScaleFactor: 1, mobile: view.mobile ?? false }, page.session);
+    await page.send("Emulation.setEmulatedMedia", { media: view.media ?? "", features: [{ name: "prefers-color-scheme", value: view.scheme ?? "light" }] }, page.session);
+  });
+  if (!(await timed("views: switching", () => evaluate(page, TAKES_VIEW(view))))) fail(file, `the page never took on the ${view.name} view`);
+  const held = await timed("views: reading", () => evaluate(page, READ_PAGE));
   if (held.scrollWidth > held.clientWidth) fail(file, `the page scrolls sideways in ${view.name}: ${held.scrollWidth} in ${held.clientWidth}`);
   if (held.overflowingBlocks > 0) fail(file, `${held.overflowingBlocks} blocks run past the window in ${view.name}`);
   if (held.pres > 0) fail(file, `${held.pres} code blocks scroll in ${view.name}`);
   for (const diagram of held.diagrams) {
     if (diagram.drawings !== 1) fail(file, `${diagram.drawings} drawings of a diagram show in ${view.name}`);
   }
-  await shoot(page, join(shots, view.name, shotName(file)));
+  if (shots) await shoot(page, join(shots, view.name, shotName(file)), 100);
   return held;
 }
 
-async function checkPage(link, file, seen) {
-  const { targetId } = await link.send("Target.createTarget", { url: "about:blank" });
+// One page, held to every check, and what it holds, with its line for the
+// report.
+async function checkPage(link, file) {
+  const { targetId } = await link.send("Target.createTarget", { url: "about:blank", newWindow: true });
   const { sessionId } = await link.send("Target.attachToTarget", { targetId, flatten: true });
   const page = { send: link.send, session: sessionId };
-  const hear = (method, handle) => link.on(method, handle);
+  const hear = (method, handle) => link.on(sessionId, method, handle);
   hear("Runtime.exceptionThrown", ({ exceptionDetails }) => fail(file, `exception: ${exceptionDetails.exception?.description ?? exceptionDetails.text}`));
   hear("Runtime.consoleAPICalled", ({ type, args }) => {
     if (type === "error" || type === "warning") fail(file, `console ${type}: ${args.map((a) => a.value ?? a.description).join(" ")}`);
@@ -265,14 +315,15 @@ async function checkPage(link, file, seen) {
   hear("Network.loadingFailed", ({ canceled, errorText }) => {
     if (!canceled) fail(file, `a request failed: ${errorText}`);
   });
-  for (const domain of ["Page", "Runtime", "Log", "Network"]) await page.send(`${domain}.enable`, {}, page.session);
-  await page.send("Emulation.setDeviceMetricsOverride", { width: WIDTH, height: HEIGHT, deviceScaleFactor: 1, mobile: false }, page.session);
-  const loaded = new Promise((done) => hear("Page.loadEventFired", done));
-  await page.send("Page.navigate", { url: new URL(file, base).href }, page.session);
-  await loaded;
+  await timed("loading", async () => {
+    for (const domain of ["Page", "Runtime", "Log", "Network"]) await page.send(`${domain}.enable`, {}, page.session);
+    await page.send("Emulation.setDeviceMetricsOverride", { width: WIDTH, height: HEIGHT, deviceScaleFactor: 1, mobile: false }, page.session);
+    const loaded = new Promise((done) => hear("Page.loadEventFired", done));
+    await page.send("Page.navigate", { url: new URL(file, base).href }, page.session);
+    await loaded;
+  });
 
-  const held = await evaluate(page, READ_PAGE);
-  seen.set(file, held);
+  const held = await timed("reading", () => evaluate(page, READ_PAGE));
   if (held.scrollWidth > held.clientWidth) fail(file, `the page scrolls sideways: ${held.scrollWidth} in ${held.clientWidth}`);
   if (held.overflowingBlocks > 0) fail(file, `${held.overflowingBlocks} blocks run past the window`);
   if (held.pres > 0) fail(file, `${held.pres} code blocks scroll`);
@@ -280,14 +331,51 @@ async function checkPage(link, file, seen) {
     if (diagram.drawings !== 1 || diagram.width < 50 || diagram.height < 20 || diagram.shapes === 0) fail(file, `a diagram didn't draw: ${JSON.stringify(diagram)}`);
   }
   const widgets = [];
-  if (mode !== "looks") for (let i = 0; i < held.frames; i++) widgets.push(await checkFrame(page, file, i));
-  await evaluate(page, "scrollTo(0, 0)");
-  await sleep(200);
-  await shoot(page, join(shots, shotName(file)));
+  if (mode !== "looks") for (let i = 0; i < held.frames; i++) widgets.push(await timed("widgets", () => checkFrame(page, file, i)));
+  if (shots) {
+    await evaluate(page, "scrollTo(0, 0)");
+    await shoot(page, join(shots, shotName(file)), 200);
+  }
   for (const view of VIEWS) await checkView(page, file, view);
   await link.send("Target.closeTarget", { targetId });
-  console.log(`${file}: ${held.diagrams.length} diagrams, ${held.frames} widgets ${widgets.join(" ")}, ${held.draftNotes} draft notes`);
-  return held;
+  link.forget(sessionId);
+  return { held, line: `${file}: ${held.diagrams.length} diagrams, ${held.frames} widgets ${widgets.join(" ")}, ${held.draftNotes} draft notes` };
+}
+
+// Every page the book links to, from its front page, PAGES_AT_ONCE at a time:
+// each page's check gives the pages it links to, and the run ends when every
+// page found has been checked. Gives each page, in the order found, with its
+// line.
+async function checkBook(link) {
+  const found = ["index.html"];
+  const checked = new Map();
+  let taken = 0;
+  let working = 0;
+  const waiting = [];
+  const wakeAll = () => { while (waiting.length) waiting.shift()(); };
+  async function worker() {
+    for (;;) {
+      if (taken < found.length) {
+        const file = found[taken++];
+        working++;
+        const page = await checkPage(link, file);
+        checked.set(file, page);
+        for (const href of page.held.links) {
+          const target = href.split("#")[0];
+          if (target && !/^[a-z]+:/.test(target) && !found.includes(target)) found.push(target);
+        }
+        working--;
+        wakeAll();
+      } else if (working === 0) {
+        wakeAll();
+        return;
+      } else {
+        await new Promise((wake) => waiting.push(wake));
+      }
+    }
+  }
+  await Promise.all(Array.from({ length: PAGES_AT_ONCE }, worker));
+  return found.map((file) => [file, checked.get(file)]);
 }
 
 // Every link inside the book must reach a page, and an anchor an element on it.
@@ -311,18 +399,17 @@ const { browser, address } = startBrowser(profile);
 let exitCode = 1;
 try {
   const link = await connect(await address);
+  const started = Date.now();
+  const pages = await checkBook(link);
   const seen = new Map();
-  const queue = ["index.html"];
-  while (queue.length) {
-    const file = queue.shift();
-    const held = await checkPage(link, file, seen);
-    for (const href of held.links) {
-      const target = href.split("#")[0];
-      if (target && !/^[a-z]+:/.test(target) && !seen.has(target) && !queue.includes(target)) queue.push(target);
-    }
+  for (const [file, page] of pages) {
+    console.log(page.line);
+    seen.set(file, page.held);
   }
   const reached = checkLinks(seen);
-  console.log(`book_check: ${seen.size} pages, ${reached} links reached`);
+  const spent = [...phases].sort((a, b) => b[1] - a[1]).map(([phase, ms]) => `${phase} ${(ms / 1000).toFixed(1)} s`);
+  console.log(`book_check: time by phase, over the pages: ${spent.join(", ")}`);
+  console.log(`book_check: ${seen.size} pages, ${reached} links reached, ${shots ? "with shots" : "no shots"}, ${PAGES_AT_ONCE} pages at a time, in ${((Date.now() - started) / 1000).toFixed(1)} s`);
   for (const failure of failures) console.log(`FAIL ${failure}`);
   exitCode = failures.length ? 1 : 0;
   link.socket.close();
