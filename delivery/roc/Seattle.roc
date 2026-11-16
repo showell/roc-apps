@@ -16,8 +16,11 @@
 Seattle :: [].{
 
 	## One neighborhood: its name, its center on the map, its side of the
-	## lake (the west is city, slower), its ring's radius and how many houses
-	## stand on the ring.
+	## lake (the west is city, slower), its ring's radius, how many houses
+	## stand on the ring, and whether it is an overflow neighborhood: one
+	## left out of the merging and placed in the trucks' room at the end
+	## (`Overflow`), one routed with the rest (`Routed`), or one the race
+	## tries both ways (`EitherWay`).
 	Neighborhood : {
 		name : Str,
 		x : F64,
@@ -25,6 +28,7 @@ Seattle :: [].{
 		side : [West, East, Island],
 		ring_radius : F64,
 		house_count : U8,
+		overflow : [Routed, Overflow, EitherWay],
 	}
 
 	neighborhoods : List(Neighborhood)
@@ -36,6 +40,7 @@ Seattle :: [].{
 			side: West,
 			ring_radius: 32,
 			house_count: 12,
+			overflow: Routed,
 		},
 		{
 			name: "Green Lake",
@@ -44,6 +49,7 @@ Seattle :: [].{
 			side: West,
 			ring_radius: 34,
 			house_count: 12,
+			overflow: Routed,
 		},
 		{
 			name: "Fremont",
@@ -52,6 +58,7 @@ Seattle :: [].{
 			side: West,
 			ring_radius: 30,
 			house_count: 12,
+			overflow: Routed,
 		},
 		{
 			name: "U-District",
@@ -60,6 +67,7 @@ Seattle :: [].{
 			side: West,
 			ring_radius: 30,
 			house_count: 12,
+			overflow: Routed,
 		},
 		{
 			name: "Magnolia",
@@ -68,6 +76,7 @@ Seattle :: [].{
 			side: West,
 			ring_radius: 26,
 			house_count: 12,
+			overflow: Routed,
 		},
 		{
 			name: "Queen Anne",
@@ -76,6 +85,7 @@ Seattle :: [].{
 			side: West,
 			ring_radius: 32,
 			house_count: 12,
+			overflow: Routed,
 		},
 		{
 			name: "Capitol Hill",
@@ -84,6 +94,7 @@ Seattle :: [].{
 			side: West,
 			ring_radius: 29,
 			house_count: 12,
+			overflow: Routed,
 		},
 		{
 			name: "Eastlake",
@@ -92,6 +103,7 @@ Seattle :: [].{
 			side: West,
 			ring_radius: 24,
 			house_count: 12,
+			overflow: Routed,
 		},
 		{
 			name: "Downtown",
@@ -100,6 +112,7 @@ Seattle :: [].{
 			side: West,
 			ring_radius: 30,
 			house_count: 12,
+			overflow: Routed,
 		},
 		{
 			name: "Beacon Hill",
@@ -108,6 +121,7 @@ Seattle :: [].{
 			side: West,
 			ring_radius: 30,
 			house_count: 12,
+			overflow: Routed,
 		},
 		{
 			name: "West Seattle",
@@ -116,6 +130,7 @@ Seattle :: [].{
 			side: West,
 			ring_radius: 30,
 			house_count: 12,
+			overflow: Routed,
 		},
 		{
 			name: "Mercer Island",
@@ -124,6 +139,7 @@ Seattle :: [].{
 			side: Island,
 			ring_radius: 10,
 			house_count: 0,
+			overflow: Routed,
 		},
 		{
 			name: "Mercer N",
@@ -132,6 +148,7 @@ Seattle :: [].{
 			side: Island,
 			ring_radius: 19,
 			house_count: 12,
+			overflow: Routed,
 		},
 		{
 			name: "Mercer S",
@@ -140,6 +157,7 @@ Seattle :: [].{
 			side: Island,
 			ring_radius: 19,
 			house_count: 12,
+			overflow: Routed,
 		},
 		{
 			name: "Medina",
@@ -148,6 +166,7 @@ Seattle :: [].{
 			side: East,
 			ring_radius: 28,
 			house_count: 12,
+			overflow: EitherWay,
 		},
 		{
 			name: "Kirkland",
@@ -156,6 +175,7 @@ Seattle :: [].{
 			side: East,
 			ring_radius: 30,
 			house_count: 12,
+			overflow: Routed,
 		},
 		{
 			name: "Redmond",
@@ -164,6 +184,7 @@ Seattle :: [].{
 			side: East,
 			ring_radius: 32,
 			house_count: 12,
+			overflow: Routed,
 		},
 		{
 			name: "Bellevue",
@@ -172,6 +193,7 @@ Seattle :: [].{
 			side: East,
 			ring_radius: 34,
 			house_count: 12,
+			overflow: Overflow,
 		},
 		{
 			name: "Factoria",
@@ -180,6 +202,7 @@ Seattle :: [].{
 			side: East,
 			ring_radius: 30,
 			house_count: 12,
+			overflow: Routed,
 		},
 		{
 			name: "Issaquah",
@@ -188,6 +211,7 @@ Seattle :: [].{
 			side: East,
 			ring_radius: 30,
 			house_count: 12,
+			overflow: Routed,
 		},
 		{
 			name: "Exit 1",
@@ -196,6 +220,7 @@ Seattle :: [].{
 			side: West,
 			ring_radius: 6,
 			house_count: 0,
+			overflow: Routed,
 		},
 		{
 			name: "Exit 2",
@@ -204,6 +229,7 @@ Seattle :: [].{
 			side: West,
 			ring_radius: 6,
 			house_count: 0,
+			overflow: Routed,
 		},
 		{
 			name: "Exit 3",
@@ -212,6 +238,7 @@ Seattle :: [].{
 			side: West,
 			ring_radius: 6,
 			house_count: 0,
+			overflow: Routed,
 		},
 		{
 			name: "Exit 4",
@@ -220,6 +247,7 @@ Seattle :: [].{
 			side: West,
 			ring_radius: 6,
 			house_count: 0,
+			overflow: Routed,
 		},
 		{
 			name: "Exit 5",
@@ -228,6 +256,7 @@ Seattle :: [].{
 			side: West,
 			ring_radius: 6,
 			house_count: 0,
+			overflow: Routed,
 		},
 		{
 			name: "Exit 6",
@@ -236,6 +265,7 @@ Seattle :: [].{
 			side: West,
 			ring_radius: 6,
 			house_count: 0,
+			overflow: Routed,
 		},
 		{
 			name: "5/520",
@@ -244,6 +274,7 @@ Seattle :: [].{
 			side: West,
 			ring_radius: 6,
 			house_count: 0,
+			overflow: Routed,
 		},
 		{
 			name: "Montlake",
@@ -252,6 +283,7 @@ Seattle :: [].{
 			side: West,
 			ring_radius: 6,
 			house_count: 0,
+			overflow: Routed,
 		},
 	]
 
@@ -334,11 +366,7 @@ Seattle :: [].{
 			Err(NotFound) => NoAnchor
 		}
 
-	## Bellevue and Medina, on the FC's doorstep across the lake, are left
-	## to the end of their routes (Medina only in half the race).
-	bellevue : U8
-	bellevue = node_of("Bellevue")
-
+	## Medina, the SR-520 bridgehead.
 	medina : U8
 	medina = node_of("Medina")
 
@@ -353,15 +381,15 @@ Seattle :: [].{
 	fleet : Fleet
 	fleet = { truck_count, caps: truck_caps, anchors: truck_anchors }
 
-	## The geography as the solve's top level reads it: the neighborhoods on
-	## the FC's doorstep, which wait for the end of their routes. Bellevue
-	## always waits; Medina, the SR-520 bridgehead, waits in half the race.
-	## The road graph and the rings are the map's constants (RoadGraph.roc,
-	## this module), which every stage reads.
-	Geography : { always_held : List(U8), sometimes_held : List(U8) }
+	## The geography as the solve's top level reads it: the neighborhoods,
+	## each saying whether it is an overflow neighborhood. Bellevue, on the
+	## FC just across the lake, always is; Medina, the SR-520
+	## bridgehead, is in half the race. The road graph and the rings are the
+	## map's constants (RoadGraph.roc, this module), which every stage reads.
+	Geography : { neighborhoods : List(Neighborhood) }
 
 	geography : Geography
-	geography = { always_held: [bellevue], sometimes_held: [medina] }
+	geography = { neighborhoods: neighborhoods }
 
 	## The neighborhoods whose ring is never cut into arcs.
 	is_arc_exempt : U8 -> Bool

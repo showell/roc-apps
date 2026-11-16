@@ -67,15 +67,16 @@ exchange, arc-rebalance). Every move is scored against a single **integer
 load-bearing trick: no decision turns on a float near a tie, so the
 greedy tie-breaks never flip between engines. A 4-way construction **race**
 keeps the minimum. Almost everything you watch is emergent from that cost.
-The one bit of local knowledge leaned on: Bellevue and Medina, on the
-fulfillment center's doorstep across the lake, are left to the end of their
-routes.
+The one bit of local knowledge leaned on: Bellevue and Medina, just across
+the lake from the fulfillment center, are overflow neighborhoods, left out
+of the merging and placed in the trucks' room at the end (Medina in half
+the race; each neighborhood's `overflow` in `roc/Seattle.roc` says).
 
 ### Where things live
 
 | where | what |
 |---|---|
-| `roc/` | the solver: `Seattle.roc` (the map, the fleet, the ring geometry), `RoadGraph.roc`, `Orders.roc`, `Houses.roc` and `Stop.roc` (a stop's houses, packed into one U64), `Route.roc`, `Pain.roc`, `Build.roc` (construction), `Improve.roc` (local search before the trucks are assigned), `SlotSearch.roc` (after), `Solve.roc` (a solve and the race), `Replay.roc`, `PlanJson.roc`, `Gold.roc`, and `delivery.roc`, the app, on `roc/platform/` |
+| `roc/` | the solver: `Seattle.roc` (the map, the fleet, the ring geometry), `RoadGraph.roc`, `Orders.roc`, `Houses.roc` and `Stop.roc` (a stop's houses, packed into one U64), `Route.roc`, `Pain.roc`, `Build.roc` (construction), `Improve.roc` (local search before the trucks are assigned), `SlotSearch.roc` (after), `Solve.roc` (the front door, `routes_for`: the race over the strategy's variants of `attempt`, the algorithm), `Itinerary.roc` (a truck's stops with their expected arrival, totes aboard and pain so far), `Replay.roc`, `PlanJson.roc`, `Gold.roc`, and `delivery.roc`, the app, on `roc/platform/` |
 | `src/` | the Zig host and its judges (above) |
 | `*.ts`, `web/index.html` | the display, and `solver.ts`, the readable reference the gold is minted from (`goldgen.ts`; it is not in the page's bundle) |
 | `zig/` | the Zig solver the Roc replaced, kept as the bench's yardstick, with its own gold check |

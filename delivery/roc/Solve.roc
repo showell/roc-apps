@@ -1,14 +1,15 @@
-## The solver's top level: `routes_for`, the algorithm in one screen
-## (Clarke-Wright savings over the day's neighborhoods, then local search),
-## each stage a function below it, and the race that runs it four ways (two
-## ways of splitting an oversized piece by two of holding Medina back) and
-## keeps the plan of least pain, the first of equals. The stages are
-## Build's, Improve's and SlotSearch's; each threads the replay's moves
-## along, and the display minutes are worked out from the routes after.
+## The solver's front door. `routes_for` gives a day's dispatch plan: it
+## races `attempt`, the algorithm in one screen (Clarke-Wright savings over
+## the day's neighborhoods, then local search), over the strategy's
+## variants, and keeps the attempt of least pain, the first of equals.
+## `routes_traced` gives the same plan with the trace of how it was found,
+## which the page replays. The stages are Build's, Improve's and
+## SlotSearch's, each threading the trace's moves along.
 
 import Build
 import Houses
 import Improve
+import Itinerary
 import Orders
 import Pain
 import Replay
@@ -19,63 +20,6 @@ import Stop
 
 Solve :: [].{
 
-	## A solved day: each truck's route by slot (an idle truck's empty),
-	## the stops no truck had room for (a legal plan has none), the display
-	## minutes, and the replay: the clusters it started from, every move,
-	## and the routes it ended with.
-	Plan : {
-		slot_routes : List(List(Stop)),
-		unrouted : List(Stop),
-		minutes : List(Pain.Minutes),
-		travel : I64,
-		local : F64,
-		service : I64,
-		time : F64,
-		spread : F64,
-		start_routes : List(List(Stop)),
-		moves : List(Replay.Move),
-	}
-
-	Variant : {
-		label : Str,
-		chunking : Build.Chunking,
-		medina : [Deferred, InLine],
-	}
-
-	variants : List(Variant)
-	variants = [
-		{
-			label: "room/whole/M+",
-			chunking: Roomiest,
-			medina: Deferred,
-		},
-		{
-			label: "room/whole/M-",
-			chunking: Roomiest,
-			medina: InLine,
-		},
-		{
-			label: "cost/whole/M+",
-			chunking: Cheapest,
-			medina: Deferred,
-		},
-		{
-			label: "cost/whole/M-",
-			chunking: Cheapest,
-			medina: InLine,
-		},
-	]
-
-	## A day's trucks' routes, by slot, with the stops no truck had room
-	## for (a legal plan has none), and the replay: the routes the merging
-	## started from and every move since.
-	Routes : {
-		slot_routes : List(List(Stop)),
-		unrouted : List(Stop),
-		start_routes : List(List(Stop)),
-		moves : List(Replay.Move),
-	}
-
 	## The day's orders, the fleet that carries them, and the map.
 	Day : {
 		orders : List(Orders.NeighborhoodOrders),
@@ -83,26 +27,91 @@ Solve :: [].{
 		geography : Seattle.Geography,
 	}
 
-	## This is the algorithm: Clarke and Wright's savings, then local search.
-	## `variant` is how the race varies it: how a piece too big for one
-	## truck is split, and whether Medina waits with Bellevue.
-	routes_for : Day, Variant -> Routes
-	routes_for = |{ orders, fleet, geography }, variant| {
+	## The day's plan: each truck's itinerary, by its slot (an idle truck's
+	## has no stops), and the stops no truck had room for (a legal plan has
+	## none).
+	DispatchPlan : { itineraries : List(Itinerary), unrouted : List(Stop) }
+
+	## How the plan was found, for the page's replay: the routes the merging
+	## started from, and every move since.
+	Trace : { start_routes : List(List(Stop)), moves : List(Replay.Move) }
+
+	## One way the strategy can run: how a piece too big for one truck is
+	## split, and which neighborhoods are overflow ones, left out of the
+	## merging and placed in the trucks' room at the end. `name` is in plain
+	## words; `reference_label` is solver.ts's name for it, which the gold
+	## pins.
+	StrategyVariant : {
+		name : Str,
+		reference_label : Str,
+		chunking : Build.Chunking,
+		overflow_neighborhoods : List(U8),
+	}
+
+	## The day's dispatch plan.
+	routes_for : Day -> DispatchPlan
+	routes_for = |day| routes_traced(day).dispatch_plan
+
+	## The day's dispatch plan, and the trace of how it was found.
+	routes_traced : Day -> { dispatch_plan : DispatchPlan, trace : Trace }
+	routes_traced = |day| {
+		best = race(day).best
+		{ dispatch_plan: dispatch_plan_of(best), trace: best.trace }
+	}
+
+	## An attempt's routes as itineraries.
+	dispatch_plan_of : Attempt -> DispatchPlan
+	dispatch_plan_of = |best| {
+		itineraries: best.slot_routes.map(Itinerary.itinerary_of),
+		unrouted: best.unrouted,
+	}
+
+	## The strategy's variants for a day: each way of splitting an oversized
+	## piece, by each choice of which either-way neighborhoods are overflow,
+	## all of them first.
+	strategy_variants : Day -> List(StrategyVariant)
+	strategy_variants = |{ geography, .. }| {
+		always = geography_overflow(geography, Overflow)
+		either_way = geography_overflow(geography, EitherWay)
+		choices = overflow_choices(either_way)
+		[Roomiest, Cheapest].join_map(
+			|chunking|
+				choices.map(
+					|chosen| {
+						name: variant_name(chunking, { either_way, chosen }),
+						reference_label: reference_label(chunking, { either_way, chosen }),
+						chunking,
+						overflow_neighborhoods: always.concat(chosen),
+					},
+				),
+		)
+	}
+
+	## One attempt at the day, the strategy run one way: Clarke and Wright's
+	## savings, then local search.
+	attempt : Day, StrategyVariant -> Attempt
+	attempt = |{ orders, fleet, .. }, variant| {
 		# One cluster per neighborhood, an anchor's first houses pinned to its
-		# truck; the FC's doorstep neighborhoods wait for the end.
-		{ held_routes, waiting_routes } = hold_back(clusters(orders), doorstep(geography, variant.medina))
+		# truck; the overflow neighborhoods' clusters wait for the end.
+		{ overflow_routes, routes } = set_aside_overflow(
+			clusters(orders),
+			variant.overflow_neighborhoods,
+		)
 
 		# Clarke-Wright: join the two routes whose join saves the most pain,
 		# while a join saves any.
-		saved = merge_by_savings(waiting_routes)
+		saved = merge_by_savings(routes)
 
 		# Down to the fleet: join on regardless, then pack what is left onto
-		# trucks with room; and the held-back neighborhoods into the slack.
+		# trucks with room; and the overflow neighborhoods into the room left.
 		fitted = fit_to_fleet(saved, { fleet, chunking: variant.chunking })
-		joined = join_held_routes(fitted, { held_routes, chunking: variant.chunking })
+		placed = place_overflow_neighborhoods(
+			fitted,
+			{ overflow_routes, chunking: variant.chunking },
+		)
 
 		# Local search: 2-opt, relocate, exchange, rebalance and split.
-		improved = improve_routes(joined)
+		improved = improve_routes(placed)
 
 		# Each route its truck: an anchored one its anchor's.
 		assigned = assign_trucks(improved, fleet)
@@ -113,43 +122,163 @@ Solve :: [].{
 		{
 			slot_routes: finished.slot_routes,
 			unrouted: finished.unrouted,
-			moves: finished.moves,
-			start_routes: waiting_routes,
+			trace: { start_routes: routes, moves: finished.moves },
 		}
 	}
 
-	Race : {
-		best : Plan,
-		winner : Str,
-		pains : List({ label : Str, pain : I64 }),
+	## An attempt's routes, by slot, its unrouted stops and its trace.
+	Attempt : {
+		slot_routes : List(List(Stop)),
+		unrouted : List(Stop),
+		trace : Trace,
 	}
 
-	race : List(Orders.NeighborhoodOrders) -> Race
-	race = |orders| {
-		plans = variants.map(|v| { label: v.label, plan: solve_variant(orders, v) })
-		pains = plans.map(|p| { label: p.label, pain: plan_pain(p.plan) })
-		first = plans.first() ?? crash "Solve.race: four variants"
+	## Every variant's attempt and its pain, and the best: the least pain,
+	## the first of equals.
+	Race : {
+		best : Attempt,
+		winner : StrategyVariant,
+		pains : List({ variant : StrategyVariant, pain : I64 }),
+	}
+
+	race : Day -> Race
+	race = |day| {
+		attempts = strategy_variants(day).map(|v| { variant: v, attempt: attempt(day, v) })
+		pains = attempts.map(|a| { variant: a.variant, pain: attempt_pain(a.attempt) })
+		first = attempts.first() ?? crash "Solve.race: a strategy has variants"
 		var $best = first
-		var $best_pain = plan_pain(first.plan)
-		for p in plans.drop_first(1) {
-			pain = plan_pain(p.plan)
+		var $best_pain = attempt_pain(first.attempt)
+		for a in attempts.drop_first(1) {
+			pain = attempt_pain(a.attempt)
 			if pain < $best_pain {
 				$best_pain = pain
-				$best = p
+				$best = a
 			}
 		}
-		{ best: $best.plan, winner: $best.label, pains }
+		{ best: $best.attempt, winner: $best.variant, pains }
 	}
+
+	## The day, with Seattle's fleet and geography.
+	seattle_day : List(Orders.NeighborhoodOrders) -> Day
+	seattle_day = |orders| { orders, fleet: Seattle.fleet, geography: Seattle.geography }
+
+	## The page's plan: the routes with their display minutes and the trace.
+	PagePlan : {
+		slot_routes : List(List(Stop)),
+		unrouted : List(Stop),
+		minutes : List(Pain.Minutes),
+		route_times : List(F64),
+		travel : I64,
+		local : F64,
+		service : I64,
+		time : F64,
+		spread : F64,
+		trace : Trace,
+	}
+
+	page_plan : { dispatch_plan : DispatchPlan, trace : Trace } -> PagePlan
+	page_plan = |{ dispatch_plan, trace }| page_plan_of(dispatch_plan, trace)
 }
 
-plan_pain : Solve.Plan -> I64
-plan_pain = |plan| plan.slot_routes.fold(0, |n, r| n + Pain.pain_of(r))
+attempt_pain : Solve.Attempt -> I64
+attempt_pain = |a| a.slot_routes.fold(0, |n, r| n + Pain.pain_of(r))
 
-## One variant's plan: its routes, and their display minutes.
-solve_variant : List(Orders.NeighborhoodOrders), Solve.Variant -> Solve.Plan
-solve_variant = |orders, variant|
-	Solve.routes_for({ orders, fleet: Seattle.fleet, geography: Seattle.geography }, variant)
-		|> plan_of
+## The neighborhoods of the geography with this overflow tag, in map order.
+geography_overflow : Seattle.Geography, [Overflow, EitherWay] -> List(U8)
+geography_overflow = |geography, tag|
+	geography.neighborhoods.map_with_index(|n, i| { n, i }).keep_if(
+		|e|
+			match (e.n.overflow, tag) {
+				(Overflow, Overflow) => True
+				(EitherWay, EitherWay) => True
+				_ => False
+			},
+	).map(|e| e.i.to_u8_wrap())
+
+## Every choice of the either-way neighborhoods to make overflow: all of
+## them first, then by dropping the last ones first.
+overflow_choices : List(U8) -> List(List(U8))
+overflow_choices = |either_way|
+	match either_way {
+		[] => [[]]
+		[first, .. as rest] => {
+			later = overflow_choices(rest)
+			later.map(|c| c.prepend(first)).concat(later)
+		}
+	}
+
+variant_name : Build.Chunking, { either_way : List(U8), chosen : List(U8) } -> Str
+variant_name = |chunking, { either_way, chosen }| {
+	truck =
+		match chunking {
+			Roomiest => "roomiest truck"
+			Cheapest => "cheapest truck"
+		}
+	parts = either_way.map(
+		|n|
+			if chosen.contains(n) {
+				"${Seattle.name_of(n)} as overflow"
+			} else {
+				"${Seattle.name_of(n)} routed"
+			},
+	)
+	Str.join_with([truck].concat(parts), ", ")
+}
+
+## solver.ts's label: `room` or `cost`, then each either-way neighborhood's
+## initial with `+` when it is overflow (`room/whole/M+`).
+reference_label : Build.Chunking, { either_way : List(U8), chosen : List(U8) } -> Str
+reference_label = |chunking, { either_way, chosen }| {
+	kind =
+		match chunking {
+			Roomiest => "room"
+			Cheapest => "cost"
+		}
+	marks = either_way.map(
+		|n| {
+			initial = Str.from_utf8(Seattle.name_of(n).to_utf8().take_first(1)) ?? crash "Solve.reference_label: an ASCII name"
+			if chosen.contains(n) {
+				"${initial}+"
+			} else {
+				"${initial}-"
+			}
+		},
+	)
+	"${kind}/whole/${Str.join_with(marks, "")}"
+}
+
+## The page's plan from the dispatch plan: each route's display minutes
+## (its time the itinerary's expected return), the totals in route order,
+## and the spread over the trucks deployed.
+page_plan_of : Solve.DispatchPlan, Solve.Trace -> Solve.PagePlan
+page_plan_of = |dispatch_plan, trace| {
+	slot_routes = dispatch_plan.itineraries.map(Itinerary.route_stops)
+	minutes = slot_routes.map(Pain.minutes_of)
+	route_times = dispatch_plan.itineraries.map(|i| i.expected_return)
+	travel = minutes.fold(0, |n, m| n + m.travel)
+	local = minutes.fold(0, |n, m| n + m.local)
+	service = minutes.fold(0, |n, m| n + m.service)
+	deployed = route_times.map_with_index(
+		|time, i| { time, i },
+	).keep_if(|e| !(slot_routes.get(e.i) ?? crash "Solve.page_plan_of: in range").is_empty()).map(|e| e.time)
+	spread =
+		match (deployed.max(), deployed.min()) {
+			(Ok(most), Ok(least)) => most - least
+			_ => 0
+		}
+	{
+		slot_routes,
+		unrouted: dispatch_plan.unrouted,
+		minutes,
+		route_times,
+		travel,
+		local,
+		service,
+		time: travel.to_f64() + local + service.to_f64(),
+		spread,
+		trace,
+	}
+}
 
 ## Work in progress before the trucks are assigned: the routes, and the
 ## moves recorded so far.
@@ -160,24 +289,16 @@ Unassigned : { routes : List(List(Stop)), moves : List(Replay.Move) }
 clusters : List(Orders.NeighborhoodOrders) -> List(List(Stop))
 clusters = |orders| Build.clusters_of(orders)
 
-## The doorstep neighborhoods this variant holds back.
-doorstep : Seattle.Geography, [Deferred, InLine] -> List(U8)
-doorstep = |geography, medina|
-	match medina {
-		Deferred => geography.always_held.concat(geography.sometimes_held)
-		InLine => geography.always_held
-	}
-
-## The clusters split into those of the held-back neighborhoods and the
-## rest, each in order.
-hold_back : List(List(Stop)),
+## The clusters split into the overflow neighborhoods' and the rest, each
+## in order.
+set_aside_overflow : List(List(Stop)),
 List(U8) -> {
-	held_routes : List(List(Stop)),
-	waiting_routes : List(List(Stop)),
+	overflow_routes : List(List(Stop)),
+	routes : List(List(Stop)),
 }
-hold_back = |all_routes, nbhds| {
-	is_held = |route| nbhds.contains(Route.stop_at(route, 0).nbhd)
-	{ held_routes: all_routes.keep_if(is_held), waiting_routes: all_routes.drop_if(is_held) }
+set_aside_overflow = |all_routes, overflow_neighborhoods| {
+	is_overflow = |route| overflow_neighborhoods.contains(Route.stop_at(route, 0).nbhd)
+	{ overflow_routes: all_routes.keep_if(is_overflow), routes: all_routes.drop_if(is_overflow) }
 }
 
 merge_by_savings : List(List(Stop)) -> Unassigned
@@ -200,11 +321,17 @@ fit_to_fleet = |work, { fleet, chunking }| {
 	}
 }
 
-join_held_routes : Unassigned, { held_routes : List(List(Stop)), chunking : Build.Chunking } -> Unassigned
-join_held_routes = |work, { held_routes, chunking }| Build.deferred_placed(
+## The overflow neighborhoods into the trucks' room, each where it costs
+## least.
+place_overflow_neighborhoods : Unassigned,
+{
+	overflow_routes : List(List(Stop)),
+	chunking : Build.Chunking,
+} -> Unassigned
+place_overflow_neighborhoods = |
 	work,
-	{ deferred: held_routes, chunking },
-)
+	{ overflow_routes, chunking },
+| Build.overflow_placed(work, { overflow_routes, chunking })
 
 ## 2-opt each route, relocate and exchange stops, 2-opt again, rebalance,
 ## split arcs off, exchange and rebalance again, and merge each route's
@@ -275,37 +402,6 @@ improve_assigned = |assigned| {
 		slot_routes: SlotSearch.houses_tidied(rebalanced.slot_routes.map(Route.two_opt_stops)),
 		unrouted: assigned.unrouted,
 		moves: [assigned.moves, repaired.moves, searched.moves, rebalanced.moves].join(),
-	}
-}
-
-## A plan's display minutes, worked out from its routes: each route's, the
-## totals in route order, and the spread over the trucks deployed.
-plan_of : Solve.Routes -> Solve.Plan
-plan_of = |routes| {
-	slot_routes = routes.slot_routes
-	minutes = slot_routes.map(Pain.minutes_of)
-	travel = minutes.fold(0, |n, m| n + m.travel)
-	local = minutes.fold(0, |n, m| n + m.local)
-	service = minutes.fold(0, |n, m| n + m.service)
-	deployed = slot_routes.map_with_index(
-		|r, i| { r, i },
-	).keep_if(|e| !e.r.is_empty()).map(|e| (minutes.get(e.i) ?? crash "Solve.plan_of: in range").time)
-	spread =
-		match (deployed.max(), deployed.min()) {
-			(Ok(most), Ok(least)) => most - least
-			_ => 0
-		}
-	{
-		slot_routes,
-		unrouted: routes.unrouted,
-		minutes,
-		travel,
-		local,
-		service,
-		time: travel.to_f64() + local + service.to_f64(),
-		spread,
-		start_routes: routes.start_routes,
-		moves: routes.moves,
 	}
 }
 

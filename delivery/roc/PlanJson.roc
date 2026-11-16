@@ -12,25 +12,26 @@ import Stop
 
 PlanJson :: [].{
 
-	plan_json_of : Solve.Plan -> JsonOut
+	plan_json_of : Solve.PagePlan -> JsonOut
 	plan_json_of = |plan| {
 		routes = plan.slot_routes.map_with_index(
 			|r, i| {
 				m = plan.minutes.get(i) ?? crash "PlanJson.plan_json_of: a route's minutes"
+				time = plan.route_times.get(i) ?? crash "PlanJson.plan_json_of: a route's time"
 				JsonOut.ordered_object([
 					("stops", stops_json(r)),
 					("orders", JsonOut.int(Route.load(r).to_i64_wrap())),
 					("travel", JsonOut.int(m.travel)),
-					("time", JsonOut.float(m.time)),
+					("time", JsonOut.float(time)),
 				])
 			},
 		)
 		start = frame_json({
-			routes: plan.start_routes,
+			routes: plan.trace.start_routes,
 			touched: [],
-			label: "start · ${plan.start_routes.len().to_str()} clusters seeded",
+			label: "start · ${plan.trace.start_routes.len().to_str()} clusters seeded",
 		})
-		moves = plan.moves.map(
+		moves = plan.trace.moves.map(
 			|m| frame_json({
 				routes: m.frame_routes,
 				touched: m.touched,

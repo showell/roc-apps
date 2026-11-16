@@ -168,6 +168,7 @@ const roc_inputs = [_][]const u8{
     "roc/Gold.roc",
     "roc/Houses.roc",
     "roc/Improve.roc",
+    "roc/Itinerary.roc",
     "roc/JsonOut.roc",
     "roc/Orders.roc",
     "roc/Pain.roc",

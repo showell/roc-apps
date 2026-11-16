@@ -4,9 +4,9 @@
 ## labels and the road graph, then the shift's demand, every race variant's
 ## pain, the winner, and the winning plan's routes with each one's pain.
 
+import Itinerary
 import JsonOut
 import Orders
-import Pain
 import RoadGraph
 import Route
 import Seattle
@@ -18,10 +18,15 @@ Gold :: [].{
 	gold_of : U32 -> JsonOut
 	gold_of = |seed| {
 		orders = Orders.day_orders(seed)
-		race = Solve.race(orders)
+		day = Solve.seattle_day(orders)
+		race = Solve.race(day)
+		dispatch_plan = Solve.dispatch_plan_of(race.best)
 		JsonOut.ordered_object([
 			("fleet", fleet),
-			("raceVariants", JsonOut.array(Solve.variants.map(|v| JsonOut.string(v.label)))),
+			(
+				"raceVariants",
+				JsonOut.array(race.pains.map(|p| JsonOut.string(p.variant.reference_label))),
+			),
 			("substrate", substrate),
 			(
 				"shift",
@@ -31,13 +36,13 @@ Gold :: [].{
 					(
 						"race",
 						JsonOut.ordered_object([
-							("winner", JsonOut.string(race.winner)),
+							("winner", JsonOut.string(race.winner.reference_label)),
 							(
 								"pains",
 								JsonOut.array(
 									race.pains.map(
 										|p| JsonOut.ordered_object([
-											("label", JsonOut.string(p.label)),
+											("label", JsonOut.string(p.variant.reference_label)),
 											("pain", JsonOut.int(p.pain)),
 										]),
 									),
@@ -45,10 +50,10 @@ Gold :: [].{
 							),
 						]),
 					),
-					("routes", JsonOut.array(race.best.slot_routes.map(gold_route))),
+					("routes", JsonOut.array(dispatch_plan.itineraries.map(gold_route))),
 					(
 						"totalPain",
-						JsonOut.int(race.best.slot_routes.fold(0, |n, r| n + Pain.pain_of(r))),
+						JsonOut.int(dispatch_plan.itineraries.fold(0, |n, i| n + i.expected_pain)),
 					),
 				]),
 			),
@@ -138,13 +143,17 @@ bytes_order = |a, b|
 			}
 	}
 
-gold_route : List(Stop) -> JsonOut
-gold_route = |stops|
+## A truck's itinerary as the gold has its route, the pain its itinerary
+## expects (so the gold holds the itinerary's sum to the route's).
+gold_route : Itinerary -> JsonOut
+gold_route = |itinerary| {
+	stops = itinerary.route_stops()
 	JsonOut.ordered_object([
 		("stops", JsonOut.array(stops.map(gold_stop))),
 		("orders", JsonOut.int(Route.load(stops).to_i64_wrap())),
-		("pain", JsonOut.int(Pain.pain_of(stops))),
+		("pain", JsonOut.int(itinerary.expected_pain)),
 	])
+}
 
 gold_stop : Stop -> JsonOut
 gold_stop = |stop| {

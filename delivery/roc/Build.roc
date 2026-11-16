@@ -3,8 +3,8 @@
 ## merges join them into routes while a merge saves pain. When merges alone
 ## can't bring the routes down to the fleet, the routes merge regardless,
 ## then the leftovers are packed onto the trucks with room. Last, the
-## neighborhoods held back (Bellevue, and Medina in half the race) fill the
-## slack where they cost least.
+## overflow neighborhoods (Bellevue, and Medina in half the race) fill the
+## trucks' room where they cost least.
 
 import Houses
 import Orders
@@ -212,11 +212,13 @@ Build :: [].{
 		{ routes: $kept_routes.map(|e| e.route_stops), moves: $moves }
 	}
 
-	## The held-back neighborhoods into the trucks' slack, the biggest first:
+	## The overflow neighborhoods into the trucks' room, the biggest first:
 	## each whole into the route where it costs least, else a chunk at a time.
-	deferred_placed : Built, { deferred : List(List(Stop)), chunking : Chunking } -> Built
-	deferred_placed = |built, { deferred, chunking }| {
-		ordered = items_by_load_desc(deferred.map(|r| Route.stop_at(r, 0)), Stop.load)
+	## The captions keep solver.ts's words ("deferred fill"), which the gold
+	## pins.
+	overflow_placed : Built, { overflow_routes : List(List(Stop)), chunking : Chunking } -> Built
+	overflow_placed = |built, { overflow_routes, chunking }| {
+		ordered = items_by_load_desc(overflow_routes.map(|r| Route.stop_at(r, 0)), Stop.load)
 		var $routes = built.routes
 		var $moves = built.moves
 		for stop in ordered {
@@ -244,7 +246,7 @@ Build :: [].{
 						$routes = $routes.set(
 							b.ri,
 							b.route_stops,
-						) ?? crash "Build.deferred_placed: in range"
+						) ?? crash "Build.overflow_placed: in range"
 						$moves = $moves.append({
 							kind: Relocate,
 							saved: 0,
@@ -274,7 +276,7 @@ Build :: [].{
 						$routes = $routes.set(
 							into.k,
 							placed,
-						) ?? crash "Build.deferred_placed: in range"
+						) ?? crash "Build.overflow_placed: in range"
 						$moves = $moves.append({
 							kind: Relocate,
 							saved: 0,
@@ -431,7 +433,7 @@ aliased_frame_routes = |routes, kept_routes| kept_routes.fold(
 ## Where a piece of `houses` too big for one truck goes, and how much of
 ## it: the truck with the most room (the first of equals), or the truck
 ## where the most of it that fits costs least. `place` says how a piece
-## goes on: appended (force placement) or at its best place (the deferred).
+## goes on: appended (force placement) or at its best place (the overflow neighborhoods).
 chunk_target : List(List(Stop)),
 {
 	nbhd : U8,
