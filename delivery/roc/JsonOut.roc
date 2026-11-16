@@ -9,7 +9,7 @@ JsonOut :: List(U8).{
 	string = |text| JsonOut.(escaped_onto([], text))
 
 	int : I64 -> JsonOut
-	int = |n| JsonOut.(Str.to_utf8(n.to_str()))
+	int = |n| JsonOut.(n.to_str().to_utf8())
 
 	## A float, in Roc's shortest form that reads back to the same bits.
 	float : F64 -> JsonOut
@@ -17,7 +17,7 @@ JsonOut :: List(U8).{
 		if !x.is_finite() {
 			crash "JsonOut.float: JSON has no ${x.to_str()}"
 		}
-		JsonOut.(Str.to_utf8(x.to_str()))
+		JsonOut.(x.to_str().to_utf8())
 	}
 
 	array : List(JsonOut) -> JsonOut
@@ -34,8 +34,8 @@ JsonOut :: List(U8).{
 		JsonOut.($out.append(']'))
 	}
 
-	object : List((Str, JsonOut)) -> JsonOut
-	object = |members| {
+	ordered_object : List((Str, JsonOut)) -> JsonOut
+	ordered_object = |members| {
 		var $out = ['{']
 		var $first = True
 		for (key, JsonOut.(bytes)) in members {
@@ -61,7 +61,7 @@ escaped_onto = |out, text| {
 		$out = if b == '"' or b == '\\' {
 			$out.append('\\').append(b)
 		} else if b < 0x20 {
-			$out.concat(Str.to_utf8("\\u00")).append(hex_digit(b // 16)).append(hex_digit(b % 16))
+			$out.concat("\\u00".to_utf8()).append(hex_digit(b // 16)).append(hex_digit(b % 16))
 		} else {
 			$out.append(b)
 		}
@@ -77,6 +77,9 @@ hex_digit = |d|
 		'a' + d - 10
 	}
 
-expect JsonOut.string("a\"b\\c\n").to_bytes() == Str.to_utf8("\"a\\\"b\\\\c\\u000a\"")
-expect JsonOut.object([("b", JsonOut.int(-2)), ("a", JsonOut.array([JsonOut.float(1.5), JsonOut.float(3.0)]))]).to_bytes() == Str.to_utf8("{\"b\":-2,\"a\":[1.5,3]}")
-expect JsonOut.array([]).to_bytes() == Str.to_utf8("[]")
+expect JsonOut.string("a\"b\\c\n").to_bytes() == "\"a\\\"b\\\\c\\u000a\"".to_utf8()
+expect {
+	floats = JsonOut.array([JsonOut.float(1.5), JsonOut.float(3.0)])
+	JsonOut.ordered_object([("b", JsonOut.int(-2)), ("a", floats)]).to_bytes() == "{\"b\":-2,\"a\":[1.5,3]}".to_utf8()
+}
+expect JsonOut.array([]).to_bytes() == "[]".to_utf8()

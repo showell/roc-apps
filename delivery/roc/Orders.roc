@@ -41,7 +41,8 @@ mulberry32 : U32 -> { state : U32, draw : F64 }
 mulberry32 = |s| {
 	state = s.plus_wrap(0x6d2b79f5)
 	t0 = state.bitwise_xor(state.shr_zf_wrap(15)).times_wrap(state.bitwise_or(1))
-	t1 = t0.bitwise_xor(t0.plus_wrap(t0.bitwise_xor(t0.shr_zf_wrap(7)).times_wrap(t0.bitwise_or(61))))
+	mixed = t0.bitwise_xor(t0.shr_zf_wrap(7)).times_wrap(t0.bitwise_or(61))
+	t1 = t0.bitwise_xor(t0.plus_wrap(mixed))
 	{ state, draw: t1.bitwise_xor(t1.shr_zf_wrap(14)).to_f64() / 4294967296.0 }
 }
 
@@ -65,8 +66,17 @@ with_house : List(Orders.NeighborhoodOrders), House -> List(Orders.NeighborhoodO
 with_house = |orders, house|
 	match orders.find_first_index(|o| o.nbhd == house.nbhd) {
 		Ok(i) => {
-			{ list, prev } = orders.replace(i, { nbhd: house.nbhd, houses: Houses.empty }) ?? crash "Orders.with_house: in range"
-			list.set(i, { nbhd: prev.nbhd, houses: prev.houses.append(house.number) }) ?? crash "Orders.with_house: in range"
+			{ list, prev } = orders.replace(
+				i,
+				{ nbhd: house.nbhd, houses: Houses.empty },
+			) ?? crash "Orders.with_house: in range"
+			list.set(
+				i,
+				{ nbhd: prev.nbhd, houses: prev.houses.append(house.number) },
+			) ?? crash "Orders.with_house: in range"
 		}
-		Err(NotFound) => orders.append({ nbhd: house.nbhd, houses: Houses.empty.append(house.number) })
+		Err(NotFound) => orders.append({
+			nbhd: house.nbhd,
+			houses: Houses.empty.append(house.number),
+		})
 	}

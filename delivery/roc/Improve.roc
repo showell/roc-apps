@@ -19,8 +19,8 @@ Improve :: [].{
 
 	## Or-opt: move a free stop to the best place in another route while one
 	## saves pain. The scan goes on after each move, from the next stop.
-	relocated : Searched -> Searched
-	relocated = |start| {
+	relocate_stops : Searched -> Searched
+	relocate_stops = |start| {
 		var $routes = start.routes
 		var $moves = start.moves
 		var $improved = True
@@ -29,19 +29,24 @@ Improve :: [].{
 			var $r = 0
 			while $r < $routes.len() {
 				var $s = 0
-				while $s < route_at($routes, $r).len() {
-					from = route_at($routes, $r)
+				while $s < route_stops_at($routes, $r).len() {
+					from = route_stops_at($routes, $r)
 					stop = Route.stop_at(from, $s)
 					if !stop.is_pinned() {
 						without = from.drop_at($s)
 						drop = Pain.pain_of(from) - Pain.pain_of(without)
 						var $best = NoMove
 						for t in 0..<$routes.len() {
-							to = route_at($routes, t)
+							to = route_stops_at($routes, t)
 							if t != $r and Route.load(to) + stop.load() <= Route.cap(to) {
 								base = Pain.pain_of(to)
 								for at in 0..=to.len() {
-									gain = drop - (Pain.pain_of_view(to, Inserted({ at, stop })) - base)
+									gain = drop - (
+										Pain.pain_of_view(
+											to,
+											Inserted({ at, stop }),
+										) - base
+									)
 									is_better =
 										match $best {
 											NoMove => True
@@ -56,9 +61,24 @@ Improve :: [].{
 						match $best {
 							NoMove => {}
 							Move(b) => {
-								with_out = $routes.set($r, without) ?? crash "Improve.relocated: in range"
-								$routes = with_out.set(b.t, Route.insert_at(route_at(with_out, b.t), { at: b.at, stop })) ?? crash "Improve.relocated: in range"
-								$moves = $moves.append({ kind: Relocate, saved: b.gain, detail: "moved ${Seattle.name_of(stop.nbhd)} to another truck", frame: $routes, touched: Replay.keys_of([stop]) })
+								with_out = $routes.set(
+									$r,
+									without,
+								) ?? crash "Improve.relocate_stops: in range"
+								$routes = with_out.set(
+									b.t,
+									Route.insert_at(
+										route_stops_at(with_out, b.t),
+										{ at: b.at, stop },
+									),
+								) ?? crash "Improve.relocate_stops: in range"
+								$moves = $moves.append({
+									kind: Relocate,
+									saved: b.gain,
+									detail: "moved ${Seattle.name_of(stop.nbhd)} to another truck",
+									frame_routes: $routes,
+									touched: Replay.stop_keys([stop]),
+								})
 								$improved = True
 							}
 						}
@@ -77,8 +97,8 @@ Improve :: [].{
 	## Exchange: trade one free stop between two routes, each into its best
 	## place and merged with a stop of its neighborhood, while a trade saves
 	## pain (at most 200 trades).
-	exchanged : Searched -> Searched
-	exchanged = |start| {
+	exchange_stops : Searched -> Searched
+	exchange_stops = |start| {
 		var $routes = start.routes
 		var $moves = start.moves
 		var $rounds = 0
@@ -87,9 +107,9 @@ Improve :: [].{
 			pains = $routes.map(Pain.pain_of)
 			var $best = NoMove
 			for a in 0..<$routes.len() {
-				ra = route_at($routes, a)
+				ra = route_stops_at($routes, a)
 				for b in (a + 1)..<$routes.len() {
-					rb = route_at($routes, b)
+					rb = route_stops_at($routes, b)
 					base = pain_at(pains, a) + pain_at(pains, b)
 					for i in 0..<ra.len() {
 						sa = Route.stop_at(ra, i)
@@ -102,8 +122,12 @@ Improve :: [].{
 									and Route.load(ra) - sa.load() + sb.load() <= Route.cap(ra)
 									and Route.load(rb) - sb.load() + sa.load() <= Route.cap(rb)
 									{
-										new_a = Route.coalesce(Route.reinsert(ra, { at: i, stop: sb }))
-										new_b = Route.coalesce(Route.reinsert(rb, { at: j, stop: sa }))
+										new_a = Route.coalesced_stops(
+											Route.reinserted_stops(ra, { at: i, stop: sb }),
+										)
+										new_b = Route.coalesced_stops(
+											Route.reinserted_stops(rb, { at: j, stop: sa }),
+										)
 										gain = base - (Pain.pain_of(new_a) + Pain.pain_of(new_b))
 										is_better =
 											match $best {
@@ -111,7 +135,14 @@ Improve :: [].{
 												Move(m) => gain > m.gain
 											}
 										if gain >= 1 and is_better {
-											$best = Move({ gain, a, b, new_a, new_b, touched: [sa, sb] })
+											$best = Move({
+												gain,
+												a,
+												b,
+												new_a,
+												new_b,
+												touched: [sa, sb],
+											})
 										}
 									}
 						}
@@ -124,8 +155,19 @@ Improve :: [].{
 				}
 
 				Move(m) => {
-					$routes = ($routes.set(m.a, m.new_a) ?? crash "Improve.exchanged: in range").set(m.b, m.new_b) ?? crash "Improve.exchanged: in range"
-					$moves = $moves.append({ kind: Swap, saved: m.gain, detail: "traded a stop between two trucks", frame: $routes, touched: Replay.keys_of(m.touched) })
+					$routes = (
+						$routes.set(
+							m.a,
+							m.new_a,
+						) ?? crash "Improve.exchange_stops: in range"
+					).set(m.b, m.new_b) ?? crash "Improve.exchange_stops: in range"
+					$moves = $moves.append({
+						kind: Swap,
+						saved: m.gain,
+						detail: "traded a stop between two trucks",
+						frame_routes: $routes,
+						touched: Replay.stop_keys(m.touched),
+					})
 				}
 			}
 		}
@@ -135,8 +177,8 @@ Improve :: [].{
 	## Rebalance, the free tie-break: move a free stop where the routes' total
 	## pain stays the same and their spread (the population standard
 	## deviation of the routes' pains) shrinks the most, at most 400 times.
-	rebalanced : Searched -> Searched
-	rebalanced = |start| {
+	rebalance_stops : Searched -> Searched
+	rebalance_stops = |start| {
 		var $routes = start.routes
 		var $moves = start.moves
 		var $rounds = 0
@@ -147,23 +189,32 @@ Improve :: [].{
 			spread0 = spread_of(pains.map_with_index(|p, i| { pain: p, is_alive: is_at(alive, i) }))
 			var $best = NoMove
 			for r in 0..<$routes.len() {
-				from = route_at($routes, r)
+				from = route_stops_at($routes, r)
 				for s in 0..<from.len() {
 					stop = Route.stop_at(from, s)
 					if !stop.is_pinned() {
 						without = from.drop_at(s)
 						from_pain = Pain.pain_of(without)
 						for t in 0..<$routes.len() {
-							to = route_at($routes, t)
+							to = route_stops_at($routes, t)
 							if t != r and Route.load(to) + stop.load() <= Route.cap(to) {
 								for at in 0..=to.len() {
 									to_pain = Pain.pain_of_view(to, Inserted({ at, stop }))
-									total_change = from_pain - pain_at(pains, r) + (to_pain - pain_at(pains, t))
+									total_change = from_pain - pain_at(
+										pains,
+										r,
+									) + (to_pain - pain_at(pains, t))
 									if total_change == 0 {
 										after = pains.map_with_index(
 											|p, i|
 												if i == r {
-													{ pain: from_pain, is_alive: !without.is_empty() and is_at(alive, i) }
+													{
+														pain: from_pain,
+														is_alive: !without.is_empty() and is_at(
+															alive,
+															i,
+														),
+													}
 												} else if i == t {
 													{ pain: to_pain, is_alive: is_at(alive, i) }
 												} else {
@@ -192,11 +243,23 @@ Improve :: [].{
 				}
 
 				Move(m) => {
-					from = route_at($routes, m.r)
+					from = route_stops_at($routes, m.r)
 					stop = Route.stop_at(from, m.s)
-					with_out = $routes.set(m.r, from.drop_at(m.s)) ?? crash "Improve.rebalanced: in range"
-					$routes = with_out.set(m.t, Route.insert_at(route_at(with_out, m.t), { at: m.at, stop })) ?? crash "Improve.rebalanced: in range"
-					$moves = $moves.append({ kind: Settle, saved: 0, detail: "tie-break: ${Seattle.name_of(stop.nbhd)} → another truck", frame: $routes, touched: Replay.keys_of([stop]) })
+					with_out = $routes.set(
+						m.r,
+						from.drop_at(m.s),
+					) ?? crash "Improve.rebalance_stops: in range"
+					$routes = with_out.set(
+						m.t,
+						Route.insert_at(route_stops_at(with_out, m.t), { at: m.at, stop }),
+					) ?? crash "Improve.rebalance_stops: in range"
+					$moves = $moves.append({
+						kind: Settle,
+						saved: 0,
+						detail: "tie-break: ${Seattle.name_of(stop.nbhd)} → another truck",
+						frame_routes: $routes,
+						touched: Replay.stop_keys([stop]),
+					})
 					$routes = $routes.drop_if(|route| route.is_empty())
 				}
 			}
@@ -217,21 +280,26 @@ Improve :: [].{
 			pains = $routes.map(Pain.pain_of)
 			var $best = NoMove
 			for a in 0..<$routes.len() {
-				ra = route_at($routes, a)
+				ra = route_stops_at($routes, a)
 				for sa in 0..<ra.len() {
 					stop = Route.stop_at(ra, sa)
 					if !stop.is_pinned() and stop.load() >= 2 {
 						arcs = arc_subsets(stop.nbhd, stop.houses)
 						for b in 0..<$routes.len() {
-							rb = route_at($routes, b)
+							rb = route_stops_at($routes, b)
 							if b != a and !rb.any(|s| s.nbhd == stop.nbhd) {
 								for arc in arcs {
 									if Route.load(rb) + arc.count() <= Route.cap(rb) {
 										rest = Route.free_stop(stop.nbhd, stop.houses.without(arc))
-										pain_a = Pain.pain_of(ra.set(sa, rest) ?? crash "Improve.split: in range")
+										pain_a = Pain.pain_of(
+											ra.set(sa, rest) ?? crash "Improve.split: in range",
+										)
 										take = Route.free_stop(stop.nbhd, arc)
 										var $at_b = 0
-										var $pain_b = Pain.pain_of_view(rb, Inserted({ at: 0, stop: take }))
+										var $pain_b = Pain.pain_of_view(
+											rb,
+											Inserted({ at: 0, stop: take }),
+										)
 										for at in 1..=rb.len() {
 											c = Pain.pain_of_view(rb, Inserted({ at, stop: take }))
 											if c < $pain_b {
@@ -239,14 +307,25 @@ Improve :: [].{
 												$at_b = at
 											}
 										}
-										change = pain_a - pain_at(pains, a) + ($pain_b - pain_at(pains, b))
+										change = pain_a - pain_at(
+											pains,
+											a,
+										) + ($pain_b - pain_at(pains, b))
 										is_better =
 											match $best {
 												NoMove => True
 												Move(m) => change < m.change
 											}
 										if change <= -1 and is_better {
-											$best = Move({ change, a, sa, b, at: $at_b, take, rest })
+											$best = Move({
+												change,
+												a,
+												sa,
+												b,
+												at: $at_b,
+												take,
+												rest,
+											})
 										}
 									}
 								}
@@ -261,16 +340,25 @@ Improve :: [].{
 				}
 
 				Move(m) => {
-					with_rest = $routes.set(m.a, route_at($routes, m.a).set(m.sa, m.rest) ?? crash "Improve.split: in range") ?? crash "Improve.split: in range"
-					$routes = with_rest.set(m.b, Route.insert_at(route_at(with_rest, m.b), { at: m.at, stop: m.take })) ?? crash "Improve.split: in range"
+					with_rest = $routes.set(
+						m.a,
+						route_stops_at(
+							$routes,
+							m.a,
+						).set(m.sa, m.rest) ?? crash "Improve.split: in range",
+					) ?? crash "Improve.split: in range"
+					$routes = with_rest.set(
+						m.b,
+						Route.insert_at(route_stops_at(with_rest, m.b), { at: m.at, stop: m.take }),
+					) ?? crash "Improve.split: in range"
 					name = Seattle.name_of(m.take.nbhd)
 					both = m.take.load() + m.rest.load()
 					$moves = $moves.append({
 						kind: Settle,
 						saved: -m.change,
 						detail: "split ${name}: ${m.take.load().to_str()} of ${both.to_str()} totes to another truck",
-						frame: $routes,
-						touched: Replay.keys_for(m.take.nbhd, m.take.houses),
+						frame_routes: $routes,
+						touched: Replay.house_keys(m.take.nbhd, m.take.houses),
 					})
 				}
 			}
@@ -279,8 +367,8 @@ Improve :: [].{
 	}
 }
 
-route_at : List(List(Stop)), U64 -> List(Stop)
-route_at = |routes, i| routes.get(i) ?? crash "Improve.route_at: a route of the plan"
+route_stops_at : List(List(Stop)), U64 -> List(Stop)
+route_stops_at = |routes, i| routes.get(i) ?? crash "Improve.route_stops_at: a route of the plan"
 
 pain_at : List(I64), U64 -> I64
 pain_at = |pains, i| pains.get(i) ?? crash "Improve.pain_at: a route's pain"
@@ -312,7 +400,14 @@ arc_subsets = |nbhd, houses| {
 	} else {
 		list = houses.to_list()
 		angles = Seattle.house_angles(nbhd, list)
-		ordered = stable_by_angle(list.map_with_index(|h, i| { house: h, angle: angles.get(i) ?? crash "Improve.arc_subsets: an angle a house" }))
+		ordered = stable_by_angle(
+			list.map_with_index(
+				|h, i| {
+					house: h,
+					angle: angles.get(i) ?? crash "Improve.arc_subsets: an angle a house",
+				},
+			),
+		)
 		most = if n - 1 < 3 {
 			n - 1
 		} else {
@@ -326,23 +421,25 @@ arc_subsets = |nbhd, houses| {
 					$arc = $arc.append(ordered.get((first + j) % n) ?? crash "Improve.arc_subsets: in range")
 				}
 				sorted = $arc.to_list().sort_with(
-					|p, q| if p < q {
-						Before
-					} else if p > q {
-						After
-					} else {
-						Same
-					},
-				)
-				is_new = !$out.any(
-					|seen| seen.count() == k and seen.to_list().sort_with(
-						|p, q| if p < q {
+					|p, q|
+						if p < q {
 							Before
 						} else if p > q {
 							After
 						} else {
 							Same
 						},
+				)
+				is_new = !$out.any(
+					|seen| seen.count() == k and seen.to_list().sort_with(
+						|p, q|
+							if p < q {
+								Before
+							} else if p > q {
+								After
+							} else {
+								Same
+							},
 					) == sorted,
 				)
 				if is_new {

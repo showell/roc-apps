@@ -14,10 +14,10 @@ PlanJson :: [].{
 
 	plan_json_of : Solve.Plan -> JsonOut
 	plan_json_of = |plan| {
-		routes = plan.by_slot.map_with_index(
+		routes = plan.slot_routes.map_with_index(
 			|r, i| {
 				m = plan.minutes.get(i) ?? crash "PlanJson.plan_json_of: a route's minutes"
-				JsonOut.object([
+				JsonOut.ordered_object([
 					("stops", stops_json(r)),
 					("orders", JsonOut.int(Route.load(r).to_i64_wrap())),
 					("travel", JsonOut.int(m.travel)),
@@ -25,10 +25,24 @@ PlanJson :: [].{
 				])
 			},
 		)
-		start = frame_json({ routes: plan.start_frame, touched: [], label: "start · ${plan.start_frame.len().to_str()} clusters seeded" })
-		moves = plan.moves.map(|m| frame_json({ routes: m.frame, touched: m.touched, label: Replay.caption(m) }))
-		done = frame_json({ routes: plan.by_slot, touched: [], label: "done · trucks assigned to their lanes" })
-		JsonOut.object([
+		start = frame_json({
+			routes: plan.start_routes,
+			touched: [],
+			label: "start · ${plan.start_routes.len().to_str()} clusters seeded",
+		})
+		moves = plan.moves.map(
+			|m| frame_json({
+				routes: m.frame_routes,
+				touched: m.touched,
+				label: Replay.caption(m),
+			}),
+		)
+		done = frame_json({
+			routes: plan.slot_routes,
+			touched: [],
+			label: "done · trucks assigned to their lanes",
+		})
+		JsonOut.ordered_object([
 			("routes", JsonOut.array(routes)),
 			("totalTime", JsonOut.float(plan.time)),
 			("travel", JsonOut.int(plan.travel)),
@@ -53,15 +67,24 @@ stop_json = |stop| {
 		("houses", JsonOut.array(stop.houses.to_list().map(|h| JsonOut.int(h.to_i64())))),
 	]
 	match stop.pin {
-		Free => JsonOut.object(members)
-		Pinned(slot) => JsonOut.object(members.append(("pin", JsonOut.int(slot.to_i64_wrap()))))
+		Free => JsonOut.ordered_object(members)
+		Pinned(slot) => JsonOut.ordered_object(
+			members.append(("pin", JsonOut.int(slot.to_i64_wrap()))),
+		)
 	}
 }
 
-frame_json : { routes : List(List(Stop)), touched : List(Replay.HouseKey), label : Str } -> JsonOut
+frame_json : {
+	routes : List(List(Stop)),
+	touched : List(Replay.HouseKey),
+	label : Str,
+} -> JsonOut
 frame_json = |{ routes, touched, label }|
-	JsonOut.object([
-		("routes", JsonOut.array(routes.map(|r| JsonOut.object([("stops", stops_json(r))])))),
+	JsonOut.ordered_object([
+		(
+			"routes",
+			JsonOut.array(routes.map(|r| JsonOut.ordered_object([("stops", stops_json(r))]))),
+		),
 		("touched", JsonOut.array(touched.map(|k| JsonOut.string(Replay.key_name(k))))),
 		("label", JsonOut.string(label)),
 	])

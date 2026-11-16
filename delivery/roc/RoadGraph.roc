@@ -13,7 +13,11 @@ import Seattle
 
 RoadGraph :: [].{
 
-	Edge : { a : U8, b : U8, minutes : I64 }
+	Edge : {
+		a : U8,
+		b : U8,
+		minutes : I64,
+	}
 
 	## Every artery edge, roads then bridges' spans, with its minutes.
 	edges : List(Edge)
@@ -21,8 +25,11 @@ RoadGraph :: [].{
 		roads = Seattle.roads.map(
 			|(a, b)| {
 				on_i5 = Seattle.is_i5_exit(a) or Seattle.is_i5_exit(b)
-				points = [Seattle.gate_point(a, Seattle.point_of(b)), Seattle.gate_point(b, Seattle.point_of(a))]
-				minutes = length_px(points) * factor(a, b, Surface) * min_per_px
+				points = [
+					Seattle.gate_point(a, Seattle.point_of(b)),
+					Seattle.gate_point(b, Seattle.point_of(a)),
+				]
+				minutes = length_px(points) * factor({ a, b }, Surface) * min_per_px
 				{
 					a,
 					b,
@@ -39,15 +46,17 @@ RoadGraph :: [].{
 		)
 		var $out = roads
 		for bridge in Seattle.bridges {
-			for i in 0..<(bridge.nodes.len() - 1) {
-				a = bridge.nodes.get(i) ?? crash "RoadGraph.edges: a span's first node"
-				c = bridge.nodes.get(i + 1) ?? crash "RoadGraph.edges: a span's last node"
+			for i in 0..<(bridge.landings.len() - 1) {
+				a = bridge.landings.get(i) ?? crash "RoadGraph.edges: a span's first node"
+				c = bridge.landings.get(i + 1) ?? crash "RoadGraph.edges: a span's last node"
 				waters = bridge.waters.get(i) ?? crash "RoadGraph.edges: a span's waters"
 				first_turn = waters.first() ?? Seattle.point_of(c)
 				last_turn = waters.last() ?? Seattle.point_of(a)
-				points = [Seattle.gate_point(a, first_turn)].concat(waters).append(Seattle.gate_point(c, last_turn))
+				points = [
+					Seattle.gate_point(a, first_turn),
+				].concat(waters).append(Seattle.gate_point(c, last_turn))
 				on_i5 = Seattle.is_i5_exit(a) or Seattle.is_i5_exit(c)
-				minutes = length_px(points) * factor(a, c, Bridge) * min_per_px
+				minutes = length_px(points) * factor({ a, b: c }, Bridge) * min_per_px
 				$out = $out.append({
 					a,
 					b: c,
@@ -67,7 +76,7 @@ RoadGraph :: [].{
 
 	## The minutes of the shortest drive from node `a` to node `b`.
 	minutes : U8, U8 -> I64
-	minutes = |a, b| matrix.get(pair_index(a, b)) ?? crash "RoadGraph.minutes: no such node"
+	minutes = |a, b| pair_minutes.get(pair_index(a, b)) ?? crash "RoadGraph.minutes: no such node"
 
 	## The nodes of the shortest drive from `a` to `b`, both ends included.
 	path : U8, U8 -> List(U8)
@@ -77,19 +86,30 @@ RoadGraph :: [].{
 	## included, and the `k`th of them: `path` without a list to carry, for
 	## the pain's hot loop.
 	path_length : U8, U8 -> U64
-	path_length = |a, b| (path_lengths.get(pair_index(a, b)) ?? crash "RoadGraph.path_length: no such node").to_u64()
+	path_length = |
+		a,
+		b,
+	| (path_lengths.get(pair_index(a, b)) ?? crash "RoadGraph.path_length: no such node").to_u64()
 
-	path_node : U8, U8, U64 -> U8
-	path_node = |a, b, k| path_store.get(pair_index(a, b).shl_wrap(5) + k) ?? crash "RoadGraph.path_node: no such node"
+	path_node : U8, { to : U8, k : U64 } -> U8
+	path_node = |
+		a,
+		{ to: b, k },
+	| path_store.get(pair_index(a, b).shl_wrap(5) + k) ?? crash "RoadGraph.path_node: no such node"
 
 	## Every pair's minutes, `a * node_count + b`, for the gold to compare.
 	all_minutes : List(I64)
-	all_minutes = matrix
+	all_minutes = pair_minutes
 
 	## Minutes on a neighborhood's slow ring road: the ring walk (Seattle's
 	## `ring_walk_px`) at its side's arterial speed, slowed. The display's
 	## clock and the one float-scored pass read it.
-	local_minutes : U8, { entry : F64, exit : F64, angles : List(F64) } -> F64
+	local_minutes : U8,
+	{
+		entry_angle : F64,
+		exit_angle : F64,
+		angles : List(F64),
+	} -> F64
 	local_minutes = |node, walk| {
 		arterial = if Seattle.is_west(node) {
 			speed_city
@@ -151,8 +171,8 @@ length_px = |points| {
 ## An edge's speed factor (lower is faster), in roadgraph.ts's order of
 ## checks: 520's lake span, Montlake and I-5, the 405 bypass, bridges, the
 ## city, the suburbs.
-factor : U8, U8, [Surface, Bridge] -> F64
-factor = |a, b, kind| {
+factor : { a : U8, b : U8 }, [Surface, Bridge] -> F64
+factor = |{ a, b }, kind| {
 	montlake = Seattle.node_of("Montlake")
 	issaquah = Seattle.node_of("Issaquah")
 	redmond = Seattle.node_of("Redmond")
@@ -209,25 +229,25 @@ unreached = 9_223_372_036_854_775_807
 ## Each node's edges, both ways, in edge order.
 Spoke : { to : U8, minutes : I64 }
 
-adjacency : List(List(Spoke))
-adjacency = {
-	var $out = List.repeat([], Seattle.node_count)
+spokes_by_node : List(List(Spoke))
+spokes_by_node = {
+	var $out = [].repeat(Seattle.node_count)
 	for e in RoadGraph.edges {
-		$out = with_spoke($out, e.a, { to: e.b, minutes: e.minutes })
-		$out = with_spoke($out, e.b, { to: e.a, minutes: e.minutes })
+		$out = with_spoke($out, { from: e.a, spoke: { to: e.b, minutes: e.minutes } })
+		$out = with_spoke($out, { from: e.b, spoke: { to: e.a, minutes: e.minutes } })
 	}
 	$out
 }
 
-with_spoke : List(List(Spoke)), U8, Spoke -> List(List(Spoke))
-with_spoke = |adj, node, spoke| {
-	{ list, prev } = adj.replace(node.to_u64(), []) ?? crash "RoadGraph.with_spoke: no such node"
-	list.set(node.to_u64(), prev.append(spoke)) ?? crash "RoadGraph.with_spoke: no such node"
+with_spoke : List(List(Spoke)), { from : U8, spoke : Spoke } -> List(List(Spoke))
+with_spoke = |spokes, { from, spoke }| {
+	{ list, prev } = spokes.replace(from.to_u64(), []) ?? crash "RoadGraph.with_spoke: no such node"
+	list.set(from.to_u64(), prev.append(spoke)) ?? crash "RoadGraph.with_spoke: no such node"
 }
 
 ## One source's Dijkstra: each node's distance and the node before it on
 ## the path (`n`, the source itself or none).
-Reach : { dist : List(I64), prev : List(U64) }
+Reach : { distances : List(I64), prev_nodes : List(U64) }
 
 reach_from : U64 -> Reach
 reach_from = |s| {
@@ -253,24 +273,27 @@ reach_from = |s| {
 				u = $u
 				$done = $done.set(u, True) ?? crash "RoadGraph.reach_from: in range"
 				du = $dist.get(u) ?? crash "RoadGraph.reach_from: in range"
-				for spoke in adjacency.get(u) ?? crash "RoadGraph.reach_from: in range" {
+				for spoke in spokes_by_node.get(u) ?? crash "RoadGraph.reach_from: in range" {
 					to = spoke.to.to_u64()
 					if du + spoke.minutes < ($dist.get(to) ?? crash "RoadGraph.reach_from: in range") {
-						$dist = $dist.set(to, du + spoke.minutes) ?? crash "RoadGraph.reach_from: in range"
+						$dist = $dist.set(
+							to,
+							du + spoke.minutes,
+						) ?? crash "RoadGraph.reach_from: in range"
 						$prev = $prev.set(to, u) ?? crash "RoadGraph.reach_from: in range"
 					}
 				}
 			}
 		}
 	}
-	{ dist: $dist, prev: $prev }
+	{ distances: $dist, prev_nodes: $prev }
 }
 
 reaches : List(Reach)
 reaches = List.from_iter(U64.until(0, Seattle.node_count)).map(reach_from)
 
-matrix : List(I64)
-matrix = reaches.join_map(|r| r.dist)
+pair_minutes : List(I64)
+pair_minutes = reaches.join_map(|r| r.distances)
 
 paths : List(List(U8))
 paths = {
@@ -279,7 +302,7 @@ paths = {
 	var $a = 0
 	for r in reaches {
 		for b in 0..<n {
-			$out = $out.append(path_back(r.prev, { from: $a, to: b }))
+			$out = $out.append(path_back(r.prev_nodes, { from: $a, to: b }))
 		}
 		$a = $a + 1
 	}
@@ -306,11 +329,11 @@ path_lengths = paths.map(|p| p.len().to_u8_wrap())
 
 ## The path from `from` to `to`, walked back along `prev`.
 path_back : List(U64), { from : U64, to : U64 } -> List(U8)
-path_back = |prev, { from, to }| {
+path_back = |prev_nodes, { from, to }| {
 	var $rev = [to.to_u8_wrap()]
 	var $v = to
 	while $v != from {
-		$v = prev.get($v) ?? crash "RoadGraph.path_back: the road graph is connected"
+		$v = prev_nodes.get($v) ?? crash "RoadGraph.path_back: the road graph is connected"
 		$rev = $rev.append($v.to_u8_wrap())
 	}
 	$rev.rev()

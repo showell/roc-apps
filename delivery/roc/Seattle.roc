@@ -18,38 +18,241 @@ Seattle :: [].{
 	## One neighborhood: its name, its center on the map, its side of the
 	## lake (the west is city, slower), its ring's radius and how many houses
 	## stand on the ring.
-	Neighborhood : { name : Str, x : F64, y : F64, side : [West, East, Island], ring_radius : F64, house_count : U8 }
+	Neighborhood : {
+		name : Str,
+		x : F64,
+		y : F64,
+		side : [West, East, Island],
+		ring_radius : F64,
+		house_count : U8,
+	}
 
 	neighborhoods : List(Neighborhood)
 	neighborhoods = [
-		{ name: "Ballard", x: 224, y: 146, side: West, ring_radius: 32, house_count: 12 },
-		{ name: "Green Lake", x: 360, y: 62, side: West, ring_radius: 34, house_count: 12 },
-		{ name: "Fremont", x: 340, y: 212, side: West, ring_radius: 30, house_count: 12 },
-		{ name: "U-District", x: 460, y: 169, side: West, ring_radius: 30, house_count: 12 },
-		{ name: "Magnolia", x: 170, y: 291, side: West, ring_radius: 26, house_count: 12 },
-		{ name: "Queen Anne", x: 286, y: 316, side: West, ring_radius: 32, house_count: 12 },
-		{ name: "Capitol Hill", x: 434, y: 443, side: West, ring_radius: 29, house_count: 12 },
-		{ name: "Eastlake", x: 441, y: 311, side: West, ring_radius: 24, house_count: 12 },
-		{ name: "Downtown", x: 300, y: 430, side: West, ring_radius: 30, house_count: 12 },
-		{ name: "Beacon Hill", x: 432, y: 555, side: West, ring_radius: 30, house_count: 12 },
-		{ name: "West Seattle", x: 211, y: 589, side: West, ring_radius: 30, house_count: 12 },
-		{ name: "Mercer Island", x: 548, y: 500, side: Island, ring_radius: 10, house_count: 0 },
-		{ name: "Mercer N", x: 548, y: 552, side: Island, ring_radius: 19, house_count: 12 },
-		{ name: "Mercer S", x: 548, y: 635, side: Island, ring_radius: 19, house_count: 12 },
-		{ name: "Medina", x: 638, y: 228, side: East, ring_radius: 28, house_count: 12 },
-		{ name: "Kirkland", x: 650, y: 60, side: East, ring_radius: 30, house_count: 12 },
-		{ name: "Redmond", x: 868, y: 200, side: East, ring_radius: 32, house_count: 12 },
-		{ name: "Bellevue", x: 740, y: 330, side: East, ring_radius: 34, house_count: 12 },
-		{ name: "Factoria", x: 672, y: 508, side: East, ring_radius: 30, house_count: 12 },
-		{ name: "Issaquah", x: 858, y: 612, side: East, ring_radius: 30, house_count: 12 },
-		{ name: "Exit 1", x: 328, y: 570, side: West, ring_radius: 6, house_count: 0 },
-		{ name: "Exit 2", x: 377, y: 436, side: West, ring_radius: 6, house_count: 0 },
-		{ name: "Exit 3", x: 397, y: 311, side: West, ring_radius: 6, house_count: 0 },
-		{ name: "Exit 4", x: 401, y: 212, side: West, ring_radius: 6, house_count: 0 },
-		{ name: "Exit 5", x: 405, y: 169, side: West, ring_radius: 6, house_count: 0 },
-		{ name: "Exit 6", x: 414, y: 84, side: West, ring_radius: 6, house_count: 0 },
-		{ name: "5/520", x: 399, y: 262, side: West, ring_radius: 6, house_count: 0 },
-		{ name: "Montlake", x: 490, y: 256, side: West, ring_radius: 6, house_count: 0 },
+		{
+			name: "Ballard",
+			x: 224,
+			y: 146,
+			side: West,
+			ring_radius: 32,
+			house_count: 12,
+		},
+		{
+			name: "Green Lake",
+			x: 360,
+			y: 62,
+			side: West,
+			ring_radius: 34,
+			house_count: 12,
+		},
+		{
+			name: "Fremont",
+			x: 340,
+			y: 212,
+			side: West,
+			ring_radius: 30,
+			house_count: 12,
+		},
+		{
+			name: "U-District",
+			x: 460,
+			y: 169,
+			side: West,
+			ring_radius: 30,
+			house_count: 12,
+		},
+		{
+			name: "Magnolia",
+			x: 170,
+			y: 291,
+			side: West,
+			ring_radius: 26,
+			house_count: 12,
+		},
+		{
+			name: "Queen Anne",
+			x: 286,
+			y: 316,
+			side: West,
+			ring_radius: 32,
+			house_count: 12,
+		},
+		{
+			name: "Capitol Hill",
+			x: 434,
+			y: 443,
+			side: West,
+			ring_radius: 29,
+			house_count: 12,
+		},
+		{
+			name: "Eastlake",
+			x: 441,
+			y: 311,
+			side: West,
+			ring_radius: 24,
+			house_count: 12,
+		},
+		{
+			name: "Downtown",
+			x: 300,
+			y: 430,
+			side: West,
+			ring_radius: 30,
+			house_count: 12,
+		},
+		{
+			name: "Beacon Hill",
+			x: 432,
+			y: 555,
+			side: West,
+			ring_radius: 30,
+			house_count: 12,
+		},
+		{
+			name: "West Seattle",
+			x: 211,
+			y: 589,
+			side: West,
+			ring_radius: 30,
+			house_count: 12,
+		},
+		{
+			name: "Mercer Island",
+			x: 548,
+			y: 500,
+			side: Island,
+			ring_radius: 10,
+			house_count: 0,
+		},
+		{
+			name: "Mercer N",
+			x: 548,
+			y: 552,
+			side: Island,
+			ring_radius: 19,
+			house_count: 12,
+		},
+		{
+			name: "Mercer S",
+			x: 548,
+			y: 635,
+			side: Island,
+			ring_radius: 19,
+			house_count: 12,
+		},
+		{
+			name: "Medina",
+			x: 638,
+			y: 228,
+			side: East,
+			ring_radius: 28,
+			house_count: 12,
+		},
+		{
+			name: "Kirkland",
+			x: 650,
+			y: 60,
+			side: East,
+			ring_radius: 30,
+			house_count: 12,
+		},
+		{
+			name: "Redmond",
+			x: 868,
+			y: 200,
+			side: East,
+			ring_radius: 32,
+			house_count: 12,
+		},
+		{
+			name: "Bellevue",
+			x: 740,
+			y: 330,
+			side: East,
+			ring_radius: 34,
+			house_count: 12,
+		},
+		{
+			name: "Factoria",
+			x: 672,
+			y: 508,
+			side: East,
+			ring_radius: 30,
+			house_count: 12,
+		},
+		{
+			name: "Issaquah",
+			x: 858,
+			y: 612,
+			side: East,
+			ring_radius: 30,
+			house_count: 12,
+		},
+		{
+			name: "Exit 1",
+			x: 328,
+			y: 570,
+			side: West,
+			ring_radius: 6,
+			house_count: 0,
+		},
+		{
+			name: "Exit 2",
+			x: 377,
+			y: 436,
+			side: West,
+			ring_radius: 6,
+			house_count: 0,
+		},
+		{
+			name: "Exit 3",
+			x: 397,
+			y: 311,
+			side: West,
+			ring_radius: 6,
+			house_count: 0,
+		},
+		{
+			name: "Exit 4",
+			x: 401,
+			y: 212,
+			side: West,
+			ring_radius: 6,
+			house_count: 0,
+		},
+		{
+			name: "Exit 5",
+			x: 405,
+			y: 169,
+			side: West,
+			ring_radius: 6,
+			house_count: 0,
+		},
+		{
+			name: "Exit 6",
+			x: 414,
+			y: 84,
+			side: West,
+			ring_radius: 6,
+			house_count: 0,
+		},
+		{
+			name: "5/520",
+			x: 399,
+			y: 262,
+			side: West,
+			ring_radius: 6,
+			house_count: 0,
+		},
+		{
+			name: "Montlake",
+			x: 490,
+			y: 256,
+			side: West,
+			ring_radius: 6,
+			house_count: 0,
+		},
 	]
 
 	## The FC's node, after every neighborhood's, and how many nodes there are.
@@ -184,22 +387,27 @@ Seattle :: [].{
 
 	## A bridge: its nodes in order, and the waypoints over the water between
 	## each node and the next.
-	Bridge : { nodes : List(U8), waters : List(List(Point)) }
+	Bridge : { landings : List(U8), waters : List(List(Point)) }
 
 	Point : { x : F64, y : F64 }
 
 	bridges : List(Bridge)
 	bridges = [
+		{ landings: ["5/520", "Montlake", "Medina"].map(node_of), waters: [[], []] },
 		{
-			nodes: ["5/520", "Montlake", "Medina"].map(node_of),
-			waters: [[], []],
-		},
-		{
-			nodes: ["Beacon Hill", "Mercer Island", "Factoria"].map(node_of),
+			landings: ["Beacon Hill", "Mercer Island", "Factoria"].map(node_of),
 			waters: [[{ x: 482, y: 522 }], [{ x: 610, y: 489 }]],
 		},
 		{
-			nodes: ["Exit 1", "Exit 2", "Exit 3", "5/520", "Exit 4", "Exit 5", "Exit 6"].map(node_of),
+			landings: [
+				"Exit 1",
+				"Exit 2",
+				"Exit 3",
+				"5/520",
+				"Exit 4",
+				"Exit 5",
+				"Exit 6",
+			].map(node_of),
 			waters: [[], [{ x: 399, y: 373 }], [], [], [], []],
 		},
 	]
@@ -228,7 +436,10 @@ Seattle :: [].{
 	## The angle, from `node`'s center, of its gate facing node `toward`; the
 	## FC has no ring, so 0.
 	gate_angle : U8, U8 -> F64
-	gate_angle = |node, toward| gate_angles.get(node.to_u64().times_wrap(node_count) + toward.to_u64()) ?? crash "Seattle.gate_angle: no such node"
+	gate_angle = |
+		node,
+		toward,
+	| gate_angles.get(node.to_u64().times_wrap(node_count) + toward.to_u64()) ?? crash "Seattle.gate_angle: no such node"
 
 	## The ring angles of a neighborhood's houses, in the order given.
 	house_angles : U8, List(U8) -> List(F64)
@@ -316,8 +527,13 @@ Seattle :: [].{
 	## The length in pixels of the shortest walk round `node`'s ring that
 	## enters at one gate, passes every house, and leaves by the other: out
 	## and back over the covered arc, or once round when both gates are one.
-	ring_walk_px : U8, { entry : F64, exit : F64, angles : List(F64) } -> F64
-	ring_walk_px = |node, { entry, exit, angles }|
+	ring_walk_px : U8,
+	{
+		entry_angle : F64,
+		exit_angle : F64,
+		angles : List(F64),
+	} -> F64
+	ring_walk_px = |node, { entry_angle: entry, exit_angle: exit, angles }|
 		if node == fc {
 			0
 		} else {
@@ -342,8 +558,8 @@ Seattle :: [].{
 			}
 			start = points.get(($gap_at + 1) % n) ?? crash "Seattle.ring_walk_px: in range"
 			covered = tau - $max_gap
-			pe = arc_offset(entry, start, covered)
-			px = arc_offset(exit, start, covered)
+			pe = arc_offset(entry, { start, covered })
+			px = arc_offset(exit, { start, covered })
 			is_same_gate = norm(entry - exit) < 0.000000001
 			arc = if is_same_gate and 2 * covered > tau {
 				tau
@@ -356,8 +572,8 @@ Seattle :: [].{
 
 ## A gate's offset along the covered arc from `start`, snapped to the nearer
 ## end of the arc when float drift has put it in the gap.
-arc_offset : F64, F64, F64 -> F64
-arc_offset = |a, start, covered| {
+arc_offset : F64, { start : F64, covered : F64 } -> F64
+arc_offset = |a, { start, covered }| {
 	o = Seattle.norm(a - start)
 	if o <= covered {
 		o
@@ -380,10 +596,25 @@ float_order = |p, q|
 	}
 
 i5_exits : List(U8)
-i5_exits = ["Exit 1", "Exit 2", "Exit 3", "Exit 4", "Exit 5", "Exit 6", "5/520"].map(Seattle.node_of)
+i5_exits = [
+	"Exit 1",
+	"Exit 2",
+	"Exit 3",
+	"Exit 4",
+	"Exit 5",
+	"Exit 6",
+	"5/520",
+].map(Seattle.node_of)
 
 arc_exempt : List(U8)
-arc_exempt = ["West Seattle", "Magnolia", "Kirkland", "Issaquah", "Mercer S", "U-District"].map(Seattle.node_of)
+arc_exempt = [
+	"West Seattle",
+	"Magnolia",
+	"Kirkland",
+	"Issaquah",
+	"Mercer S",
+	"U-District",
+].map(Seattle.node_of)
 
 ## Every gate's angle, `node * node_count + toward`.
 gate_angles : List(F64)

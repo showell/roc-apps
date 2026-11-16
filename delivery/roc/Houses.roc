@@ -114,8 +114,8 @@ Houses :: U64.{
 	}
 
 	## The houses with the one at place `i` replaced by `h`.
-	with_house_at : Houses, U64, U8 -> Houses
-	with_house_at = |Houses.(bits), i, h| {
+	with_house_at : Houses, { at : U64, house : U8 } -> Houses
+	with_house_at = |Houses.(bits), { at: i, house: h }| {
 		shift = i.to_u8_wrap().shl_wrap(2)
 		cleared = bits.bitwise_and(U64.shl_wrap(15, shift).bitwise_not())
 		Houses.(cleared.bitwise_or(h.to_u64().shl_wrap(shift)))
@@ -124,19 +124,23 @@ Houses :: U64.{
 	is_eq : _
 }
 
+## A stop's most houses, for the expects.
+fifteen : List(U8)
+fifteen = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 0, 1, 2, 3]
+
 ## The house bits, every nibble below the count.
 low_mask : U64
 low_mask = U64.shl_wrap(1, 60) - 1
 
 expect Houses.from_list([3, 7, 0, 11]).to_list() == [3, 7, 0, 11]
 expect Houses.from_list([]).count() == 0
-expect Houses.from_list([1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 0, 1, 2, 3]).to_list() == [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 0, 1, 2, 3]
+expect Houses.from_list(fifteen).to_list() == fifteen
 expect Houses.from_list([4, 5]).concat(Houses.from_list([9])).to_list() == [4, 5, 9]
 expect Houses.from_list([4, 5, 9, 2]).take_first(2).to_list() == [4, 5]
 expect Houses.from_list([4, 5, 9, 2]).drop_first(2).to_list() == [9, 2]
 expect Houses.from_list([4, 5]).take_first(9).to_list() == [4, 5]
 expect Houses.from_list([4, 5]).drop_first(9).to_list() == []
-expect Houses.from_list([1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 0, 1, 2, 3]).take_first(15).count() == 15
+expect Houses.from_list(fifteen).take_first(15).count() == 15
 expect Houses.from_list([4, 5, 9, 2]).without(Houses.from_list([9, 4])).to_list() == [5, 2]
 expect Houses.from_list([4, 5, 9]).contains(9) and !Houses.from_list([4, 5, 9]).contains(2)
-expect Houses.from_list([4, 5, 9]).with_house_at(1, 11).to_list() == [4, 11, 9]
+expect Houses.from_list([4, 5, 9]).with_house_at({ at: 1, house: 11 }).to_list() == [4, 11, 9]

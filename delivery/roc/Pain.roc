@@ -27,7 +27,11 @@ Pain :: [].{
 	## built: whole, with a run of stops reversed (2-opt's candidate), or
 	## with a stop inserted. A scan prices thousands of candidates and keeps
 	## one, so only the one it keeps is ever built.
-	View : [Whole, Reversed({ first : U64, last : U64 }), Inserted({ at : U64, stop : Stop })]
+	View : [
+		Whole,
+		Reversed({ first : U64, last : U64 }),
+		Inserted({ at : U64, stop : Stop }),
+	]
 
 	## The pain of the route `view` makes of `stops`.
 	##
@@ -35,25 +39,32 @@ Pain :: [].{
 	## helper takes the list (each would count it up and down, atomically),
 	## and the paths are read a node at a time.
 	pain_of_view : List(Stop), View -> I64
-	pain_of_view = |stops, view| priced(stops, view).pain
+	pain_of_view = |stops, view| price_view(stops, view).pain
 
 	## `pain_of_view`, with the route handed back: a scan threads its route
 	## through each candidate's pricing, so the route has one owner and is
 	## never counted up and down (atomically) a candidate.
-	priced : List(Stop), View -> { stops : List(Stop), pain : I64 }
-	priced = |stops, view| {
+	price_view : List(Stop), View -> { stops : List(Stop), pain : I64 }
+	price_view = |stops, view| {
 		count = stops.len()
 		{ n, extra } =
 			match view {
 				Inserted({ stop, .. }) => { n: count + 1, extra: stop }
-				Whole | Reversed(_) => { n: count, extra: { nbhd: Seattle.fc, houses: Houses.empty, pin: Free } }
+				Whole | Reversed(_) => {
+					n: count,
+					extra: {
+						nbhd: Seattle.fc,
+						houses: Houses.empty,
+						pin: Free,
+					},
+				}
 			}
 		# The stops are read by index, never by `for s in stops`: a `for` over
 		# a list counts the list up and down, atomically, each time it runs.
 		var $aboard = extra.houses.count().to_i64_wrap()
 		var $served = 0
 		for j in 0..<count {
-			s = stops.get(j) ?? crash "Pain.priced: in range"
+			s = stops.get(j) ?? crash "Pain.price_view: in range"
 			$aboard = $aboard + s.houses.count().to_i64_wrap()
 			$served = $served.bitwise_or(U64.shl_wrap(1, s.nbhd))
 		}
@@ -89,7 +100,7 @@ Pain :: [].{
 					}
 				}
 			for k in 0..<RoadGraph.path_length($from, to) {
-				node = RoadGraph.path_node($from, to, k)
+				node = RoadGraph.path_node($from, { to, k })
 				if node != $last {
 					# A multiply that wraps: pain's factors are a few hundred at
 					# most, and on wasm32 a checked 64-bit multiply is a call to a
@@ -100,10 +111,11 @@ Pain :: [].{
 					$last = node
 					bit = U64.shl_wrap(1, node)
 					if $served.bitwise_and(bit) != 0 and $delivered.bitwise_and(bit) == 0 {
-						$pain = $pain + ring_unit.times_wrap(empty_pain + tote_pain.times_wrap($aboard))
+						ring_rate = empty_pain + tote_pain.times_wrap($aboard)
+						$pain = $pain + ring_unit.times_wrap(ring_rate)
 						$delivered = $delivered.bitwise_or(bit)
 						for j in 0..<count {
-							s = stops.get(j) ?? crash "Pain.priced: in range"
+							s = stops.get(j) ?? crash "Pain.price_view: in range"
 							if s.nbhd == node {
 								$aboard = $aboard - s.houses.count().to_i64_wrap()
 							}
@@ -143,12 +155,22 @@ Pain :: [].{
 
 	## A route's display minutes: artery minutes (whole), the ring walks'
 	## (float), the service minutes, and their sum.
-	Minutes : { travel : I64, local : F64, service : I64, time : F64 }
+	Minutes : {
+		travel : I64,
+		local : F64,
+		service : I64,
+		time : F64,
+	}
 
 	minutes_of : List(Stop) -> Minutes
 	minutes_of = |stops|
 		if stops.is_empty() {
-			{ travel: 0, local: 0, service: 0, time: 0 }
+			{
+				travel: 0,
+				local: 0,
+				service: 0,
+				time: 0,
+			}
 		} else {
 			nodes = path_nodes(stops)
 			var $travel = 0
@@ -169,8 +191,8 @@ Pain :: [].{
 					$local = $local + RoadGraph.local_minutes(
 						node,
 						{
-							entry: Seattle.gate_angle(node, before),
-							exit: Seattle.gate_angle(node, after),
+							entry_angle: Seattle.gate_angle(node, before),
+							exit_angle: Seattle.gate_angle(node, after),
 							angles: Seattle.house_angles(node, visit.to_list()),
 						},
 					)
@@ -180,7 +202,12 @@ Pain :: [].{
 				}
 			}
 			service = total_load(stops).to_i64_wrap() * RoadGraph.service_minutes
-			{ travel: $travel, local: $local, service, time: $travel.to_f64() + $local + service.to_f64() }
+			{
+				travel: $travel,
+				local: $local,
+				service,
+				time: $travel.to_f64() + $local + service.to_f64(),
+			}
 		}
 }
 
@@ -191,11 +218,12 @@ total_load = |stops| stops.fold(0, |n, s| n + s.load().to_i64_wrap())
 houses_at : List(Stop), U8 -> Houses
 houses_at = |stops, node| stops.fold(
 	Houses.empty,
-	|hs, s| if s.nbhd == node {
-		hs.concat(s.houses)
-	} else {
-		hs
-	},
+	|hs, s|
+		if s.nbhd == node {
+			hs.concat(s.houses)
+		} else {
+			hs
+		},
 )
 
 empty_pain : I64

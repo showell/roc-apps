@@ -115,9 +115,23 @@ difference from the gold is a bug in the Roc.
 
 On the `delivery-roc` branch, not merged; on the dev channel at
 `/delivery/`, not on staging or prod. The Roc passes the gold, all 20
-shifts and 545 replay frames, natively and as the page's `solver.wasm`. It is slower than the Zig it replaced: some 1.6 times
-natively and 2.1 to 2.3 times in the browser's engine, measured on a busy
-box. The cost is in Roc's atomic reference counts on the route lists the
-pain function is handed (one count up and down per candidate priced) and
-its checked arithmetic, more than in allocation, which an arena a solve has
-made small.
+shifts and 545 replay frames, natively and as the page's `solver.wasm`.
+
+It runs within the 1.5x of the Zig it replaced that it was held to: about
+1.3x in the browser's engine (node driving both `solver.wasm` modules) and
+about 1.2x natively, each seed's best of eight (`zig build wasm-bench`,
+`zig build bench`). What it took is in the solver's hot loop, and the
+rules are worth keeping in any change to it:
+
+- **A list one owner at a time.** A `for`, `fold` or `any` over a list,
+  and a list a caller keeps while passing it, count the list up and down
+  atomically. The pain loop and Route's checks read stops by index, and the
+  scans thread their route through `Pain.price_view`.
+- **Price a candidate in place.** `Pain.View` reads a route with a run
+  reversed or a stop inserted without building it; a scan builds only the
+  candidate it keeps.
+- **No checked 64-bit multiply in the hot loop.** On wasm32 it is a call to
+  a 128-bit multiply; the pain's rate and the tables' indexes use
+  `times_wrap`, their factors being a few hundred at most.
+- **One arena a solve** (`src/roc_seam.zig`), a bump pointer reset when the
+  next solve starts.

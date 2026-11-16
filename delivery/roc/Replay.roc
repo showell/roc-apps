@@ -18,14 +18,20 @@ Replay :: [].{
 	## One recorded move: what it saved (0 for a placement or a tie-break),
 	## the words after its kind in the caption, the routes it left, and the
 	## houses it touched.
-	Move : { kind : MoveKind, saved : I64, detail : Str, frame : List(List(Stop)), touched : List(HouseKey) }
+	Move : {
+		kind : MoveKind,
+		saved : I64,
+		detail : Str,
+		frame_routes : List(List(Stop)),
+		touched : List(HouseKey),
+	}
 
 	## Every house of these stops, stop by stop.
-	keys_of : List(Stop) -> List(HouseKey)
-	keys_of = |stops| stops.join_map(|s| keys_for(s.nbhd, s.houses))
+	stop_keys : List(Stop) -> List(HouseKey)
+	stop_keys = |stops| stops.join_map(|s| house_keys(s.nbhd, s.houses))
 
-	keys_for : U8, Houses -> List(HouseKey)
-	keys_for = |nbhd, houses| houses.to_list().map(|house| { nbhd, house })
+	house_keys : U8, Houses -> List(HouseKey)
+	house_keys = |nbhd, houses| houses.to_list().map(|house| { nbhd, house })
 
 	## The page's caption: the move's kind and detail, then the pain saved
 	## when it saved any.

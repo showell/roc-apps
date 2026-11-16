@@ -43,17 +43,20 @@ Route :: [].{
 
 	## The route with `stop` at place `at`.
 	insert_at : List(Stop), { at : U64, stop : Stop } -> List(Stop)
-	insert_at = |stops, { at, stop }| stops.insert(at, stop) ?? crash "Route.insert_at: a place in the route"
+	insert_at = |
+		stops,
+		{ at, stop },
+	| stops.insert(at, stop) ?? crash "Route.insert_at: a place in the route"
 
 	stop_at : List(Stop), U64 -> Stop
 	stop_at = |stops, i| stops.get(i) ?? crash "Route.stop_at: a stop of the route"
 
 	## One stop per neighborhood: each later stop's houses join the first's,
 	## which keeps its place, and a pin joins with them.
-	coalesce : List(Stop) -> List(Stop)
-	coalesce = |stops|
+	coalesced_stops : List(Stop) -> List(Stop)
+	coalesced_stops = |stops|
 		if has_repeat(stops) {
-			coalesced(stops)
+			merge_repeats(stops)
 		} else {
 			stops
 		}
@@ -62,12 +65,12 @@ Route :: [].{
 	insert_best : List(Stop), Stop -> List(Stop)
 	insert_best = |stops, stop| {
 		n = stops.len()
-		first = Pain.priced(stops, Inserted({ at: 0, stop }))
+		first = Pain.price_view(stops, Inserted({ at: 0, stop }))
 		var $route = first.stops
 		var $best_at = 0
 		var $best_pain = first.pain
 		for at in 1..=n {
-			p = Pain.priced($route, Inserted({ at, stop }))
+			p = Pain.price_view($route, Inserted({ at, stop }))
 			$route = p.stops
 			if p.pain < $best_pain {
 				$best_pain = p.pain
@@ -79,7 +82,7 @@ Route :: [].{
 
 	## `stop` at its cheapest place, merged into a stop of its neighborhood
 	## the route already has: of equals, appending it at the end.
-	cheapest_insert : List(Stop), Stop -> List(Stop)
+	stops_with_cheapest_insert : List(Stop), Stop -> List(Stop)
 
 	##
 	## On a route with one stop a neighborhood, the only candidates that
@@ -87,9 +90,9 @@ Route :: [].{
 	## added at the end) and, where the neighborhood has a stop at `e`, the
 	## merged stop moved to each place up to `e`: so those are priced in
 	## place, in the scan's order, and only the winner is built.
-	cheapest_insert = |stops, stop| {
+	stops_with_cheapest_insert = |stops, stop| {
 		match stops.find_first_index(|s| s.nbhd == stop.nbhd) {
-			_ if has_repeat(stops) => cheapest_insert_by_building(stops, stop)
+			_ if has_repeat(stops) => stops_with_insert_built(stops, stop)
 			Err(NotFound) => {
 				var $best_at = stops.len()
 				var $best_pain = Pain.pain_of_view(stops, Inserted({ at: stops.len(), stop }))
@@ -123,7 +126,7 @@ Route :: [].{
 						stop.pin
 					},
 				}
-				appended = stops.set(e, back) ?? crash "Route.cheapest_insert: in range"
+				appended = stops.set(e, back) ?? crash "Route.stops_with_cheapest_insert: in range"
 				rest = stops.drop_at(e)
 				var $best_at = stops.len()
 				var $best_pain = Pain.pain_of(appended)
@@ -143,14 +146,14 @@ Route :: [].{
 		}
 	}
 
-	## The same as `cheapest_insert`, each candidate built and merged: for a
+	## The same as `stops_with_cheapest_insert`, each candidate built and merged: for a
 	## route that has two stops in one neighborhood.
-	cheapest_insert_by_building : List(Stop), Stop -> List(Stop)
-	cheapest_insert_by_building = |stops, stop| {
-		var $best = coalesce(stops.append(stop))
+	stops_with_insert_built : List(Stop), Stop -> List(Stop)
+	stops_with_insert_built = |stops, stop| {
+		var $best = coalesced_stops(stops.append(stop))
 		var $best_pain = Pain.pain_of($best)
 		for at in 0..<stops.len() {
-			candidate = coalesce(insert_at(stops, { at, stop }))
+			candidate = coalesced_stops(insert_at(stops, { at, stop }))
 			pain = Pain.pain_of(candidate)
 			if pain < $best_pain {
 				$best_pain = pain
@@ -161,15 +164,15 @@ Route :: [].{
 	}
 
 	## The route without the stop at `at`, and `stop` at its cheapest place.
-	reinsert : List(Stop), { at : U64, stop : Stop } -> List(Stop)
-	reinsert = |stops, { at, stop }| insert_best(stops.drop_at(at), stop)
+	reinserted_stops : List(Stop), { at : U64, stop : Stop } -> List(Stop)
+	reinserted_stops = |stops, { at, stop }| insert_best(stops.drop_at(at), stop)
 
 	## 2-opt: reverse any run of stops whose reversal cuts the pain, taking
 	## each as found, until a whole scan finds none.
-	two_opt : List(Stop) -> List(Stop)
-	two_opt = |stops| {
+	two_opt_stops : List(Stop) -> List(Stop)
+	two_opt_stops = |stops| {
 		n = stops.len()
-		start = Pain.priced(stops, Whole)
+		start = Pain.price_view(stops, Whole)
 		var $route = start.stops
 		var $pain = start.pain
 		var $improved = True
@@ -177,10 +180,10 @@ Route :: [].{
 			$improved = False
 			for i in 0..<n {
 				for k in (i + 1)..<n {
-					p = Pain.priced($route, Reversed({ first: i, last: k }))
+					p = Pain.price_view($route, Reversed({ first: i, last: k }))
 					$route = p.stops
 					if $pain - p.pain >= 1 {
-						$route = reversed_run($route, { first: i, last: k })
+						$route = run_reversed_stops($route, { first: i, last: k })
 						$pain = p.pain
 						$improved = True
 					}
@@ -192,27 +195,34 @@ Route :: [].{
 
 	## The pain of a route as the solver will leave it, after 2-opt.
 	tidied_pain : List(Stop) -> I64
-	tidied_pain = |stops| Pain.pain_of(two_opt(stops))
+	tidied_pain = |stops| Pain.pain_of(two_opt_stops(stops))
 
 	## A stop of `houses` in `nbhd`, free to move.
 	free_stop : U8, Houses -> Stop
 	free_stop = |nbhd, houses| { nbhd, houses, pin: Free }
 }
 
-## `Route.coalesce` of a route with a repeat, built anew.
-coalesced : List(Stop) -> List(Stop)
-coalesced = |stops| {
+## `Route.coalesced_stops` of a route with a repeat, built anew.
+merge_repeats : List(Stop) -> List(Stop)
+merge_repeats = |stops| {
 	var $out = []
 	for s in stops {
 		$out = match $out.find_first_index(|o| o.nbhd == s.nbhd) {
 			Ok(i) => {
-				{ list, prev } = $out.replace(i, s) ?? crash "Route.coalesce: in range"
+				{ list, prev } = $out.replace(i, s) ?? crash "Route.coalesced_stops: in range"
 				pin = if s.is_pinned() {
 					s.pin
 				} else {
 					prev.pin
 				}
-				list.set(i, { nbhd: prev.nbhd, houses: prev.houses.concat(s.houses), pin }) ?? crash "Route.coalesce: in range"
+				list.set(
+					i,
+					{
+						nbhd: prev.nbhd,
+						houses: prev.houses.concat(s.houses),
+						pin,
+					},
+				) ?? crash "Route.coalesced_stops: in range"
 			}
 
 			Err(NotFound) => $out.append(s)
@@ -255,8 +265,8 @@ has_repeat = |stops| {
 }
 
 ## The route with the stops from `first` to `last` reversed.
-reversed_run : List(Stop), { first : U64, last : U64 } -> List(Stop)
-reversed_run = |stops, { first, last }|
+run_reversed_stops : List(Stop), { first : U64, last : U64 } -> List(Stop)
+run_reversed_stops = |stops, { first, last }|
 	stops
 		.take_first(first)
 		.concat(stops.sublist({ start: first, len: last - first + 1 }).rev())

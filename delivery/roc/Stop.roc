@@ -5,7 +5,11 @@
 
 import Houses
 
-Stop := { nbhd : U8, houses : Houses, pin : [Free, Pinned(U64)] }.{
+Stop := {
+	nbhd : U8,
+	houses : Houses,
+	pin : [Free, Pinned(U64)],
+}.{
 
 	## How many totes the stop drops: one an order, an order a house.
 	load : Stop -> U64
