@@ -473,6 +473,24 @@ expect colored("app [main!] { pf: platform \"p.roc\" }") == [(Keyword, "app"), (
 expect colored("# a comment first\npackage [A] {}") == [(Comment, "# a comment first"), (Keyword, "package"), (Type, "A")]
 expect colored("x = 1\nf(app, package, platform)") == [(Name, "x"), (Number, "1")]
 
+# web.roc's header, which roc-ast's tree can't color: the header is colored as
+# any other, and the definitions after it are too.
+expect
+	colored("app [Model, program] { lib: \"l.roc\", pf: platform \"p.roc\" }\n\nimport lib.W\nModel : W.Model\nprogram = W.program")
+		== [
+			(Keyword, "app"),
+			(Type, "Model"),
+			(String, "\"l.roc\""),
+			(Keyword, "platform"),
+			(String, "\"p.roc\""),
+			(Keyword, "import"),
+			(Type, "W"),
+			(Type, "Model"),
+			(Type, "W.Model"),
+			(Name, "program"),
+			(Type, "W"),
+		]
+
 # Types and tags, a qualified name as one span, and a module before a function.
 expect colored("f(Ok(Str), Bool.True, Str.concat, lib.Shapes)") == [(Type, "Ok"), (Type, "Str"), (Type, "Bool.True"), (Type, "Str"), (Type, "Shapes")]
 expect colored("f(A.B.c, A.(1))") == [(Type, "A.B"), (Type, "A"), (Number, "1")]
