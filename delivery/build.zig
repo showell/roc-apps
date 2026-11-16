@@ -42,7 +42,7 @@ pub fn build(b: *std.Build) void {
     linkRoc(roc_lib, gold_exe.root_module);
     const gold_run = b.addRunArtifact(gold_exe);
     gold_run.setCwd(b.path("."));
-    gold_run.expectExitCode(0);
+    gold_run.stdio = .inherit;
     gold_run.has_side_effects = true;
     const gold_step = b.step("gold", "The Roc solver natively against solver_gold.json and solver_frames_gold.json, every shift");
     gold_step.dependOn(&gold_run.step);
@@ -52,7 +52,7 @@ pub fn build(b: *std.Build) void {
     wasm_run.addFileArg(wasm_check);
     wasm_run.addArtifactArg(solver_wasm);
     wasm_run.setCwd(b.path("."));
-    wasm_run.expectExitCode(0);
+    wasm_run.stdio = .inherit;
     wasm_run.has_side_effects = true;
     const wasm_step = b.step("wasm-gold", "The page's solver.wasm, driven under node, against both gold files");
     wasm_step.dependOn(&wasm_run.step);
@@ -73,6 +73,7 @@ pub fn build(b: *std.Build) void {
     wasm_bench_run.addArtifactArg(reference_wasm);
     wasm_bench_run.addArtifactArg(solver_wasm);
     wasm_bench_run.setCwd(b.path("."));
+    wasm_bench_run.stdio = .inherit;
     wasm_bench_run.has_side_effects = true;
     wasm_bench_run.addPassthruArgs();
     b.step("wasm-bench", "Time the page's solve under node, the Zig reference's solver.wasm against the Roc one").dependOn(&wasm_bench_run.step);
@@ -91,7 +92,7 @@ pub fn build(b: *std.Build) void {
     }) });
     const reference_run = b.addRunArtifact(reference_gold);
     reference_run.setCwd(b.path("zig"));
-    reference_run.expectExitCode(0);
+    reference_run.stdio = .inherit;
     reference_run.has_side_effects = true;
     b.step("reference-gold", "The Zig reference solver (zig/) against the gold").dependOn(&reference_run.step);
 
@@ -117,6 +118,7 @@ pub fn build(b: *std.Build) void {
     linkRoc(roc_lib, bench.root_module);
     const bench_run = b.addRunArtifact(bench);
     bench_run.setCwd(b.path("."));
+    bench_run.stdio = .inherit;
     bench_run.has_side_effects = true;
     bench_run.addPassthruArgs();
     b.step("bench", "Time the 20 gold shifts' solves natively, the Zig reference against the Roc").dependOn(&bench_run.step);

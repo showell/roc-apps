@@ -132,8 +132,7 @@ pub fn main() !void {
         if (field(fshift, "seed").integer != seed) std.debug.panic("gold_check: the two gold files' shifts are out of step", .{});
 
         const g_bytes = seam.gold(seed);
-        const got = (try std.json.parseFromSlice(Value, a, seam.slice(g_bytes), .{})).value;
-        seam.release(g_bytes);
+        const got = (try std.json.parseFromSlice(Value, a, seam.slice(g_bytes), .{ .allocate = .alloc_always })).value;
         if (!map_checked) {
             _ = same("fleet", field(got, "fleet"), field(gold, "fleet"), .exact);
             _ = same("raceVariants", field(got, "raceVariants"), field(gold, "raceVariants"), .exact);
@@ -151,8 +150,7 @@ pub fn main() !void {
         if (gs.object.count() != 5) fail("{s}: the Roc's gold has {d} keys, not 5", .{ tag, gs.object.count() });
 
         const p_bytes = seam.plan(seed);
-        const plan = (try std.json.parseFromSlice(Value, a, seam.slice(p_bytes), .{})).value;
-        seam.release(p_bytes);
+        const plan = (try std.json.parseFromSlice(Value, a, seam.slice(p_bytes), .{ .allocate = .alloc_always })).value;
         const proutes = field(plan, "routes").array.items;
         const groutes = field(gshift, "routes").array.items;
         const froutes = field(fshift, "routes").array.items;

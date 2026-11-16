@@ -40,7 +40,6 @@ pub fn main(init: std.process.Init) !void {
             const plan = seam.plan(seed);
             const r1 = nowNs(io);
             check +%= @intCast(plan.length);
-            seam.release(plan);
             zig_ns += z1 - z0;
             roc_ns += r1 - r0;
         }
@@ -49,4 +48,5 @@ pub fn main(init: std.process.Init) !void {
     const zig_ms = @as(f64, @floatFromInt(zig_ns)) / 1e6 / n;
     const roc_ms = @as(f64, @floatFromInt(roc_ns)) / 1e6 / n;
     std.debug.print("native, {d} solves each: Zig {d:.1} ms a shift, Roc {d:.1} ms a shift, Roc/Zig {d:.2}x (check {d})\n", .{ rounds * seeds.len, zig_ms, roc_ms, roc_ms / zig_ms, check });
+    std.debug.print("the Roc's allocations: {d:.0} a shift, {d:.1} MB a shift\n", .{ @as(f64, @floatFromInt(seam.allocations)) / n, @as(f64, @floatFromInt(seam.allocated_bytes)) / 1e6 / n });
 }

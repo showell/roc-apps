@@ -10,6 +10,7 @@ Thanks to Damian Tedrow, whose [Cobblestone](https://github.com/damiant3/Cobbles
 | where | what | map |
 |---|---|---|
 | `canvas_apps/` | eight small interactive programs that run as a page and, as a spike not kept current, natively on roc-ray, from one set of files: Safari, snake, pong, breakout, particles, a camera world, a pixel paint program, and a movie you can scrub | `canvas_apps/README.md`, `canvas_apps/safari/README.md` |
+| `delivery/` | Seattle Delivery, a screensaver with an algorithm at its heart: eight trucks deliver a hundred orders across a winking map of Seattle; the solver (Clarke-Wright savings, local search, an integer pain cost, a four-way race) is Roc under a Zig host, compiled to WebAssembly, and the TypeScript display draws its plan | `delivery/README.md` |
 | `dog-park/` | Dog Park, a herding game: drag a dog through a park of critters and herd the cows into one bunch; the physics is Roc (the rules, the wish, the walk) under a Zig board, compiled to WebAssembly, and the browser keeps each player's park | `dog-park/README.md` |
 | `fasttrack/` | Fast Track, the board game, ported from Steve's elm-fasttrack: the rules and the whole page in Roc, drawn by a thin page script that patches the board | `fasttrack/README.md` |
 | `glue/` | `JsGlue.roc`, the `roc glue` spec that generates a page's frame reader from the compiler's type table | `glue/README.md` |

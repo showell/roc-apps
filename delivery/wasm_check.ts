@@ -3,11 +3,11 @@
 // every gold seed, and compares the JSON Plan it emits against BOTH gold
 // files: route structure vs solver_gold.json, frames + display numbers vs
 // solver_frames_gold.json. Strings/integers strict; trig-derived floats at
-// ULP tolerance (wasm ships zig's libm, the golds were minted under V8).
-// Run from the repo root (wired into ops/check_delivery):
+// ULP tolerance (the wasm's ring geometry is Roc's, the golds were minted
+// under V8). Run in delivery/ by `zig build wasm-gold`, which bundles it and
+// names the module to drive:
 //
-//   delivery/node_modules/.bin/esbuild delivery/wasm_check.ts \
-//     --bundle --platform=node --format=esm --outfile=/tmp/wc.mjs && node /tmp/wc.mjs
+//   node wasm_check.mjs <solver.wasm>
 
 import { readFileSync } from "node:fs";
 

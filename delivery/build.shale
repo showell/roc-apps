@@ -121,6 +121,7 @@ end
 local head = git_head("")
 if not git_is_clean("") then head = head .. "+dirty" end
 replace(STAGING .. "/BUILT", "roc " .. trim(read("roc-version")) .. "\ncommit " .. head .. "\n")
+mkdir("build:roc-apps/gen/delivery/shots")
 -- The dev channel serves the staging folder too, at /delivery.staging/.
 local played = run({"node", HERE .. "/tools/page_check.mjs", "http://localhost:9210/delivery.staging/", real(HERE .. "/zig-out/web/solver.wasm"), real("build:roc-apps/gen/delivery/shots")}, {timeout_ms = 180000, tail = 30, want = WANT_NODE})
 if played.code ~= 0 then

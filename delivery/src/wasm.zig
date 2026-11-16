@@ -8,7 +8,6 @@ const seam = @import("roc_seam.zig");
 var last: seam.RocBytes = .{ .bytes = null, .length = 0, .capacity_or_alloc_ptr = 0 };
 
 pub export fn solveShift(seed: u32) u32 {
-    seam.release(last);
     last = seam.plan(seed);
     return @intCast(last.length);
 }

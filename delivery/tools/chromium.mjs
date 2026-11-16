@@ -75,8 +75,12 @@ export async function withBrowser(use) {
   }
 }
 
-/** A fresh tab `width` by `height`: its console said into `said`, its uncaught exceptions into `thrown`. */
-export async function tab(link, { width, height }) {
+/**
+ * A fresh tab `width` by `height`, `before` a script run in each document it
+ * loads before the page's own: its console said into `said`, its uncaught
+ * exceptions into `thrown`.
+ */
+export async function tab(link, { width, height, before }) {
   const { targetId } = await link.send("Target.createTarget", { url: "about:blank" });
   const { sessionId } = await link.send("Target.attachToTarget", { targetId, flatten: true });
   const page = { session: sessionId, send: (m, p = {}) => link.send(m, p, sessionId), said: [], thrown: [] };
@@ -88,6 +92,7 @@ export async function tab(link, { width, height }) {
   });
   for (const domain of ["Page", "Runtime"]) await page.send(`${domain}.enable`);
   await page.send("Emulation.setDeviceMetricsOverride", { width, height, deviceScaleFactor: 1, mobile: false });
+  if (before) await page.send("Page.addScriptToEvaluateOnNewDocument", { source: before });
   return page;
 }
 
