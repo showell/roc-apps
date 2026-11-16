@@ -185,7 +185,9 @@ a problem you find is yours to fix, or to raise with Steve.
    `tools/verify.shale`). roc-apps has one for the whole repository,
    `check.shale` at its root, and each tree runs its own as well (safari's
    `canvas_apps/safari/gates/run.shale`, whose tier for each edit is
-   `fast.shale`). Run all of it, not a hand-picked
+   `fast.shale`). `check.shale` holds the apps to `apps.txt`, one path a
+   line, sorted: a new app adds its line, a removed one takes its line out.
+   Run all of it, not a hand-picked
    part, and read how many things ran (§6). When you change a gate,
    plant the fault it should catch, see it go red, and take the plant out.
 4. **No skips, no allowlists, no ratchets.** A check that can't run fails;

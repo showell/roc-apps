@@ -90,7 +90,9 @@ others at `~/tools/roc-<pin>/roc`, and nothing uses `roc` from the PATH:
 
 `shale check.shale` holds the whole repository to the pin: every
 hand-written file formatted, and every app checked with no errors or
-warnings, apart from the trees it names and says why. Every bash script
+warnings, apart from the trees it names and says why. The apps it checks
+are exactly those `apps.txt` lists, one path a line, sorted: adding or
+removing an app adds or removes its line there. Every bash script
 that runs Roc sources `pinned-roc.sh`, which refuses a compiler whose
 `roc version` isn't the pin; every Shale script asks `pinned_roc` in the
 repository's prelude, `.shale/prelude.shale`, which makes the same

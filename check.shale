@@ -8,16 +8,21 @@
 --   cd <roc-apps checkout> && shale check.shale
 --
 -- Each app is checked from its own folder, so it reports every module it
--- imports. The number of apps is held exactly (APPS), so an app that stops
--- being found fails the run as surely as one that stops compiling; add or
--- remove an app, and change the number with it.
+-- imports. The apps are held exactly by apps.txt, one app's path a line,
+-- sorted, so an app that stops being found fails the run as surely as one
+-- that stops compiling; add or remove an app, and add or remove its line.
+-- The list is checked first, before anything slow, and a difference fails
+-- the run naming each app missing from the tree or missing from the file.
+-- A list, not a count: two branches that each add an app each add a line,
+-- and git merges them to the right list (or conflicts where they collide),
+-- where two edits of one count from N to N+1 merged silently to one short.
 --
 -- A few places are left out, each for the reason beside it in EXCEPTIONS.
 -- Each is a debt, named here and nowhere else.
 --
 -- budget: steps=200000000
 
-const APPS = 63
+const APPS_LIST = "apps.txt"
 const CHUNK = 50
 const SELF_PATH = "check.shale"
 const WANT = "roc-pin: the repository's pinned nightly"
@@ -46,6 +51,47 @@ function roc_files(apps_only)
   end
   return kept
 end
+
+function copy_list(l)
+  local out = {}
+  for x in l do push(out, x) end
+  return out
+end
+
+-- What is wrong with apps.txt against the apps found, one line each: a
+-- blank line, a repeat or a line out of order in the file, then each app it
+-- names that isn't in the tree, then each app in the tree it doesn't name.
+function app_list_wrongs(apps)
+  local wrongs = {}
+  local listed = lines(trim(read(APPS_LIST)))
+  local seen = {}
+  local n = 0
+  for l in listed do
+    n = n + 1
+    if trim(l) == "" then push(wrongs, APPS_LIST .. ":" .. n .. " is blank")
+    elseif has_key(seen, l) then push(wrongs, APPS_LIST .. ":" .. n .. ": " .. l .. " is listed twice")
+    else seen[l] = true end
+  end
+  local in_order = copy_list(listed)
+  sort(in_order)
+  local i = 1
+  while i <= #listed do
+    if listed[i] ~= in_order[i] then
+      push(wrongs, APPS_LIST .. ":" .. i .. ": " .. listed[i] .. " is out of order (sorted, line " .. i .. " is " .. in_order[i] .. ")")
+      i = #listed
+    end
+    i = i + 1
+  end
+  local found = set_of(apps)
+  for l in listed do
+    if trim(l) ~= "" and not has_key(found, l) then push(wrongs, l .. " is in " .. APPS_LIST .. " but is no app in the tree") end
+  end
+  for a in apps do
+    if not has_key(seen, a) then push(wrongs, a .. " is an app missing from " .. APPS_LIST) end
+  end
+  return wrongs
+end
+
 
 -- One app's check: nil when clean, else why not.
 function check_app(roc, path)
@@ -83,6 +129,11 @@ function part(k)
 end
 
 function all()
+  local apps = roc_files(true)
+  local wrongs = app_list_wrongs(apps)
+  for w in wrongs do print("FAIL apps: " .. w) end
+  if #wrongs > 0 then fail("check: the apps found differ from " .. APPS_LIST .. " (" .. #wrongs .. " above); add or remove its lines") end
+  print("apps: " .. #apps .. " found, each listed in " .. APPS_LIST)
   local roc = pinned_roc("check")
   local files = roc_files(false)
   local fmt = {roc, "fmt", "--check"}
@@ -94,11 +145,6 @@ function all()
     push(failed, "fmt")
   else
     print("roc fmt: " .. #files .. " files clean")
-  end
-  local apps = roc_files(true)
-  if #apps ~= APPS then
-    print("FAIL apps: found " .. #apps .. ", held at " .. APPS)
-    push(failed, "app count")
   end
   local parts = (#apps + CHUNK - 1) // CHUNK
   local k = 1
