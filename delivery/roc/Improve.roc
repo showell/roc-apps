@@ -41,7 +41,7 @@ Improve :: [].{
 							if t != $r and Route.load(to) + stop.load() <= Route.cap(to) {
 								base = Pain.pain_of(to)
 								for at in 0..=to.len() {
-									gain = drop - (Pain.pain_of(Route.insert_at(to, { at, stop })) - base)
+									gain = drop - (Pain.pain_of_view(to, Inserted({ at, stop })) - base)
 									is_better =
 										match $best {
 											NoMove => True
@@ -97,23 +97,23 @@ Improve :: [].{
 							sb = Route.stop_at(rb, j)
 							if
 								!sa.is_pinned()
-								and !sb.is_pinned()
-								and sa.nbhd != sb.nbhd
-								and Route.load(ra) - sa.load() + sb.load() <= Route.cap(ra)
-								and Route.load(rb) - sb.load() + sa.load() <= Route.cap(rb)
-							{
-								new_a = Route.coalesce(Route.reinsert(ra, { at: i, stop: sb }))
-								new_b = Route.coalesce(Route.reinsert(rb, { at: j, stop: sa }))
-								gain = base - (Pain.pain_of(new_a) + Pain.pain_of(new_b))
-								is_better =
-									match $best {
-										NoMove => True
-										Move(m) => gain > m.gain
+									and !sb.is_pinned()
+									and sa.nbhd != sb.nbhd
+									and Route.load(ra) - sa.load() + sb.load() <= Route.cap(ra)
+									and Route.load(rb) - sb.load() + sa.load() <= Route.cap(rb)
+									{
+										new_a = Route.coalesce(Route.reinsert(ra, { at: i, stop: sb }))
+										new_b = Route.coalesce(Route.reinsert(rb, { at: j, stop: sa }))
+										gain = base - (Pain.pain_of(new_a) + Pain.pain_of(new_b))
+										is_better =
+											match $best {
+												NoMove => True
+												Move(m) => gain > m.gain
+											}
+										if gain >= 1 and is_better {
+											$best = Move({ gain, a, b, new_a, new_b, touched: [sa, sb] })
+										}
 									}
-								if gain >= 1 and is_better {
-									$best = Move({ gain, a, b, new_a, new_b, touched: [sa, sb] })
-								}
-							}
 						}
 					}
 				}
@@ -157,7 +157,7 @@ Improve :: [].{
 							to = route_at($routes, t)
 							if t != r and Route.load(to) + stop.load() <= Route.cap(to) {
 								for at in 0..=to.len() {
-									to_pain = Pain.pain_of(Route.insert_at(to, { at, stop }))
+									to_pain = Pain.pain_of_view(to, Inserted({ at, stop }))
 									total_change = from_pain - pain_at(pains, r) + (to_pain - pain_at(pains, t))
 									if total_change == 0 {
 										after = pains.map_with_index(
@@ -231,9 +231,9 @@ Improve :: [].{
 										pain_a = Pain.pain_of(ra.set(sa, rest) ?? crash "Improve.split: in range")
 										take = Route.free_stop(stop.nbhd, arc)
 										var $at_b = 0
-										var $pain_b = Pain.pain_of(rb.prepend(take))
+										var $pain_b = Pain.pain_of_view(rb, Inserted({ at: 0, stop: take }))
 										for at in 1..=rb.len() {
-											c = Pain.pain_of(Route.insert_at(rb, { at, stop: take }))
+											c = Pain.pain_of_view(rb, Inserted({ at, stop: take }))
 											if c < $pain_b {
 												$pain_b = c
 												$at_b = at
@@ -265,15 +265,13 @@ Improve :: [].{
 					$routes = with_rest.set(m.b, Route.insert_at(route_at(with_rest, m.b), { at: m.at, stop: m.take })) ?? crash "Improve.split: in range"
 					name = Seattle.name_of(m.take.nbhd)
 					both = m.take.load() + m.rest.load()
-					$moves = $moves.append(
-						{
-							kind: Settle,
-							saved: -m.change,
-							detail: "split ${name}: ${m.take.load().to_str()} of ${both.to_str()} totes to another truck",
-							frame: $routes,
-							touched: Replay.keys_for(m.take.nbhd, m.take.houses),
-						},
-					)
+					$moves = $moves.append({
+						kind: Settle,
+						saved: -m.change,
+						detail: "split ${name}: ${m.take.load().to_str()} of ${both.to_str()} totes to another truck",
+						frame: $routes,
+						touched: Replay.keys_for(m.take.nbhd, m.take.houses),
+					})
 				}
 			}
 		}
@@ -315,7 +313,11 @@ arc_subsets = |nbhd, houses| {
 		list = houses.to_list()
 		angles = Seattle.house_angles(nbhd, list)
 		ordered = stable_by_angle(list.map_with_index(|h, i| { house: h, angle: angles.get(i) ?? crash "Improve.arc_subsets: an angle a house" }))
-		most = if n - 1 < 3 { n - 1 } else { 3 }
+		most = if n - 1 < 3 {
+			n - 1
+		} else {
+			3
+		}
 		var $out = []
 		for k in 1..=most {
 			for first in 0..<n {
@@ -323,8 +325,26 @@ arc_subsets = |nbhd, houses| {
 				for j in 0..<k {
 					$arc = $arc.append(ordered.get((first + j) % n) ?? crash "Improve.arc_subsets: in range")
 				}
-				sorted = $arc.to_list().sort_with(|p, q| if p < q { Before } else if p > q { After } else { Same })
-				is_new = !$out.any(|seen| seen.count() == k and seen.to_list().sort_with(|p, q| if p < q { Before } else if p > q { After } else { Same }) == sorted)
+				sorted = $arc.to_list().sort_with(
+					|p, q| if p < q {
+						Before
+					} else if p > q {
+						After
+					} else {
+						Same
+					},
+				)
+				is_new = !$out.any(
+					|seen| seen.count() == k and seen.to_list().sort_with(
+						|p, q| if p < q {
+							Before
+						} else if p > q {
+							After
+						} else {
+							Same
+						},
+					) == sorted,
+				)
 				if is_new {
 					$out = $out.append($arc)
 				}

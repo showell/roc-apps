@@ -57,6 +57,26 @@ pub fn build(b: *std.Build) void {
     const wasm_step = b.step("wasm-gold", "The page's solver.wasm, driven under node, against both gold files");
     wasm_step.dependOn(&wasm_run.step);
 
+    // The Zig reference's solver.wasm (zig/wasm.zig), built as angry-gopher
+    // served it, and the bench that times it against the Roc one under node.
+    const reference_wasm = b.addExecutable(.{ .name = "reference_solver", .root_module = b.createModule(.{
+        .root_source_file = b.path("zig/wasm.zig"),
+        .target = wasm32,
+        .optimize = .ReleaseSmall,
+        .strip = true,
+    }) });
+    reference_wasm.entry = .disabled;
+    reference_wasm.rdynamic = true;
+    const wasm_bench = esbuild(b, "wasm_bench.ts", "wasm_bench.mjs", .esm);
+    const wasm_bench_run = b.addSystemCommand(&.{"node"});
+    wasm_bench_run.addFileArg(wasm_bench);
+    wasm_bench_run.addArtifactArg(reference_wasm);
+    wasm_bench_run.addArtifactArg(solver_wasm);
+    wasm_bench_run.setCwd(b.path("."));
+    wasm_bench_run.has_side_effects = true;
+    wasm_bench_run.addPassthruArgs();
+    b.step("wasm-bench", "Time the page's solve under node, the Zig reference's solver.wasm against the Roc one").dependOn(&wasm_bench_run.step);
+
     const typecheck = b.addSystemCommand(&.{ "node_modules/.bin/tsc", "--noEmit", "-p", "." });
     typecheck.setCwd(b.path("."));
     typecheck.has_side_effects = true;
@@ -100,6 +120,8 @@ pub fn build(b: *std.Build) void {
     bench_run.has_side_effects = true;
     bench_run.addPassthruArgs();
     b.step("bench", "Time the 20 gold shifts' solves natively, the Zig reference against the Roc").dependOn(&bench_run.step);
+    // The bench installed (zig-out/bin/bench), for a profiler.
+    b.step("bench-exe", "Install the bench as zig-out/bin/bench, for a profiler").dependOn(&b.addInstallArtifact(bench, .{}).step);
 
     // **THE ROC'S OWN CHECKS**: its expects, and its layout as `roc fmt` has it.
     const roc_test = b.addSystemCommand(&.{ roc, "test", "roc/delivery.roc" });
@@ -130,7 +152,7 @@ fn esbuild(b: *std.Build, entry: []const u8, out_name: []const u8, format: enum 
 }
 
 /// Every TypeScript file a bundle may reach.
-const ts_sources = [_][]const u8{ "main.ts", "geography.ts", "orders.ts", "roadgraph.ts", "solver.ts", "map_view.ts", "timeline.ts", "wasm_check.ts" };
+const ts_sources = [_][]const u8{ "main.ts", "geography.ts", "orders.ts", "roadgraph.ts", "solver.ts", "map_view.ts", "timeline.ts", "wasm_check.ts", "wasm_bench.ts" };
 
 /// The Roc the solver is built from: an archive for each target, from
 /// `roc_inputs` (src/roc_seam.zig is its seam).

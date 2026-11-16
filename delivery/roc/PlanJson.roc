@@ -17,32 +17,28 @@ PlanJson :: [].{
 		routes = plan.by_slot.map_with_index(
 			|r, i| {
 				m = plan.minutes.get(i) ?? crash "PlanJson.plan_json_of: a route's minutes"
-				JsonOut.object(
-					[
-						("stops", stops_json(r)),
-						("orders", JsonOut.int(Route.load(r).to_i64_wrap())),
-						("travel", JsonOut.int(m.travel)),
-						("time", JsonOut.float(m.time)),
-					],
-				)
+				JsonOut.object([
+					("stops", stops_json(r)),
+					("orders", JsonOut.int(Route.load(r).to_i64_wrap())),
+					("travel", JsonOut.int(m.travel)),
+					("time", JsonOut.float(m.time)),
+				])
 			},
 		)
 		start = frame_json({ routes: plan.start_frame, touched: [], label: "start · ${plan.start_frame.len().to_str()} clusters seeded" })
 		moves = plan.moves.map(|m| frame_json({ routes: m.frame, touched: m.touched, label: Replay.caption(m) }))
 		done = frame_json({ routes: plan.by_slot, touched: [], label: "done · trucks assigned to their lanes" })
-		JsonOut.object(
-			[
-				("routes", JsonOut.array(routes)),
-				("totalTime", JsonOut.float(plan.time)),
-				("travel", JsonOut.int(plan.travel)),
-				("local", JsonOut.float(plan.local)),
-				("service", JsonOut.int(plan.service)),
-				("spread", JsonOut.float(plan.spread)),
-				("log", JsonOut.array([])),
-				("frames", JsonOut.array([start].concat(moves).append(done))),
-				("unrouted", stops_json(plan.unrouted)),
-			],
-		)
+		JsonOut.object([
+			("routes", JsonOut.array(routes)),
+			("totalTime", JsonOut.float(plan.time)),
+			("travel", JsonOut.int(plan.travel)),
+			("local", JsonOut.float(plan.local)),
+			("service", JsonOut.int(plan.service)),
+			("spread", JsonOut.float(plan.spread)),
+			("log", JsonOut.array([])),
+			("frames", JsonOut.array([start].concat(moves).append(done))),
+			("unrouted", stops_json(plan.unrouted)),
+		])
 	}
 }
 
@@ -64,10 +60,8 @@ stop_json = |stop| {
 
 frame_json : { routes : List(List(Stop)), touched : List(Replay.HouseKey), label : Str } -> JsonOut
 frame_json = |{ routes, touched, label }|
-	JsonOut.object(
-		[
-			("routes", JsonOut.array(routes.map(|r| JsonOut.object([("stops", stops_json(r))])))),
-			("touched", JsonOut.array(touched.map(|k| JsonOut.string(Replay.key_name(k))))),
-			("label", JsonOut.string(label)),
-		],
-	)
+	JsonOut.object([
+		("routes", JsonOut.array(routes.map(|r| JsonOut.object([("stops", stops_json(r))])))),
+		("touched", JsonOut.array(touched.map(|k| JsonOut.string(Replay.key_name(k))))),
+		("label", JsonOut.string(label)),
+	])

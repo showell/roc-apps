@@ -11,9 +11,11 @@
 
 import { readFileSync } from "node:fs";
 
-const gold = JSON.parse(readFileSync("delivery/solver_gold.json", "utf8"));
-const framesGold = JSON.parse(readFileSync("delivery/solver_frames_gold.json", "utf8"));
-const wasmBytes = readFileSync("delivery/solver.wasm");
+const gold = JSON.parse(readFileSync("solver_gold.json", "utf8"));
+const framesGold = JSON.parse(readFileSync("solver_frames_gold.json", "utf8"));
+const wasmPath = process.argv[2];
+if (!wasmPath) throw new Error("wasm_check: name the solver.wasm to drive");
+const wasmBytes = readFileSync(wasmPath);
 
 const { instance } = await WebAssembly.instantiate(wasmBytes, {});
 const ex = instance.exports as {

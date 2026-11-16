@@ -21,20 +21,92 @@ Pain :: [].{
 
 	## The pain of driving these stops in order, out of the FC and back.
 	pain_of : List(Stop) -> I64
-	pain_of = |stops|
-		if stops.is_empty() {
+	pain_of = |stops| pain_of_view(stops, Whole)
+
+	## A route as a candidate move would leave it, read in place rather than
+	## built: whole, with a run of stops reversed (2-opt's candidate), or
+	## with a stop inserted. A scan prices thousands of candidates and keeps
+	## one, so only the one it keeps is ever built.
+	View : [Whole, Reversed({ first : U64, last : U64 }), Inserted({ at : U64, stop : Stop })]
+
+	## The pain of the route `view` makes of `stops`.
+	##
+	## It is the solver's hot loop, so it is one function over numbers: no
+	## helper takes the list (each would count it up and down, atomically),
+	## and the paths are read a node at a time.
+	pain_of_view : List(Stop), View -> I64
+	pain_of_view = |stops, view| {
+		count = stops.len()
+		{ n, extra } =
+			match view {
+				Inserted({ stop, .. }) => { n: count + 1, extra: stop }
+				Whole | Reversed(_) => { n: count, extra: { nbhd: Seattle.fc, houses: Houses.empty, pin: Free } }
+			}
+		var $aboard = extra.houses.count().to_i64_wrap()
+		var $served = 0
+		for s in stops {
+			$aboard = $aboard + s.houses.count().to_i64_wrap()
+			$served = $served.bitwise_or(U64.shl_wrap(1, s.nbhd))
+		}
+		if extra.nbhd != Seattle.fc {
+			$served = $served.bitwise_or(U64.shl_wrap(1, extra.nbhd))
+		}
+		var $pain = 0
+		var $last = Seattle.fc
+		var $delivered = 0
+		var $from = Seattle.fc
+		for i in 0..=n {
+			to =
+				if i == n {
+					Seattle.fc
+				} else {
+					match view {
+						Whole => (stops.get(i) ?? crash "Pain.pain_of_view: in range").nbhd
+						Reversed({ first, last }) =>
+							if i >= first and i <= last {
+								(stops.get(first + last - i) ?? crash "Pain.pain_of_view: in range").nbhd
+							} else {
+								(stops.get(i) ?? crash "Pain.pain_of_view: in range").nbhd
+							}
+
+						Inserted({ at, stop }) =>
+							if i < at {
+								(stops.get(i) ?? crash "Pain.pain_of_view: in range").nbhd
+							} else if i == at {
+								stop.nbhd
+							} else {
+								(stops.get(i - 1) ?? crash "Pain.pain_of_view: in range").nbhd
+							}
+					}
+				}
+			for k in 0..<RoadGraph.path_length($from, to) {
+				node = RoadGraph.path_node($from, to, k)
+				if node != $last {
+					$pain = $pain + RoadGraph.minutes($last, node) * (empty_pain + tote_pain * $aboard)
+					$last = node
+					bit = U64.shl_wrap(1, node)
+					if $served.bitwise_and(bit) != 0 and $delivered.bitwise_and(bit) == 0 {
+						$pain = $pain + ring_unit * (empty_pain + tote_pain * $aboard)
+						$delivered = $delivered.bitwise_or(bit)
+						for s in stops {
+							if s.nbhd == node {
+								$aboard = $aboard - s.houses.count().to_i64_wrap()
+							}
+						}
+						if extra.nbhd == node {
+							$aboard = $aboard - extra.houses.count().to_i64_wrap()
+						}
+					}
+				}
+			}
+			$from = to
+		}
+		if n == 0 {
 			0
 		} else {
-			start = { pain: 0, aboard: total_load(stops), last: Seattle.fc, delivered: 0 }
-			var $walk = start
-			var $from = Seattle.fc
-			for stop in stops {
-				$walk = leg_onto($walk, { stops, from: $from, to: stop.nbhd })
-				$from = stop.nbhd
-			}
-			done = leg_onto($walk, { stops, from: $from, to: Seattle.fc })
-			done.pain
+			$pain
 		}
+	}
 
 	## The nodes these stops' route drives, FC to FC, the shortest paths
 	## between them laid end to end with each repeat of a node in a row
@@ -102,39 +174,14 @@ total_load = |stops| stops.fold(0, |n, s| n + s.load().to_i64_wrap())
 
 ## Every house the stops deliver in one neighborhood, in stop order.
 houses_at : List(Stop), U8 -> Houses
-houses_at = |stops, node| stops.fold(Houses.empty, |hs, s| if s.nbhd == node { hs.concat(s.houses) } else { hs })
-
-## The route's pain so far, as it drives: the totes aboard, the last node
-## it reached, and the neighborhoods delivered, a bit a node.
-Walk : { pain : I64, aboard : I64, last : U8, delivered : U64 }
-
-## The walk on along the shortest path from `from` to `to`.
-leg_onto : Walk, { stops : List(Stop), from : U8, to : U8 } -> Walk
-leg_onto = |walk, { stops, from, to }| {
-	var $w = walk
-	for node in RoadGraph.path(from, to) {
-		if node != $w.last {
-			driven = $w.pain + RoadGraph.minutes($w.last, node) * (empty_pain + tote_pain * $w.aboard)
-			bit = U64.shl_wrap(1, node)
-			if node != Seattle.fc and $w.delivered.bitwise_and(bit) == 0 {
-				served = houses_at(stops, node).count().to_i64_wrap()
-				if served > 0 {
-					$w = {
-						pain: driven + ring_unit * (empty_pain + tote_pain * $w.aboard),
-						aboard: $w.aboard - served,
-						last: node,
-						delivered: $w.delivered.bitwise_or(bit),
-					}
-				} else {
-					$w = { ..$w, pain: driven, last: node }
-				}
-			} else {
-				$w = { ..$w, pain: driven, last: node }
-			}
-		}
-	}
-	$w
-}
+houses_at = |stops, node| stops.fold(
+	Houses.empty,
+	|hs, s| if s.nbhd == node {
+		hs.concat(s.houses)
+	} else {
+		hs
+	},
+)
 
 empty_pain : I64
 empty_pain = 10

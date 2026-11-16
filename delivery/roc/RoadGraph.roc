@@ -23,7 +23,18 @@ RoadGraph :: [].{
 				on_i5 = Seattle.is_i5_exit(a) or Seattle.is_i5_exit(b)
 				points = [Seattle.gate_point(a, Seattle.point_of(b)), Seattle.gate_point(b, Seattle.point_of(a))]
 				minutes = length_px(points) * factor(a, b, Surface) * min_per_px
-				{ a, b, minutes: rounded_minutes(minutes, if on_i5 { Ramp } else { Artery }) }
+				{
+					a,
+					b,
+					minutes: rounded_minutes(
+						minutes,
+						if on_i5 {
+							Ramp
+						} else {
+							Artery
+						},
+					),
+				}
 			},
 		)
 		var $out = roads
@@ -37,7 +48,18 @@ RoadGraph :: [].{
 				points = [Seattle.gate_point(a, first_turn)].concat(waters).append(Seattle.gate_point(c, last_turn))
 				on_i5 = Seattle.is_i5_exit(a) or Seattle.is_i5_exit(c)
 				minutes = length_px(points) * factor(a, c, Bridge) * min_per_px
-				$out = $out.append({ a, b: c, minutes: rounded_minutes(minutes, if on_i5 { Ramp } else { Artery }) })
+				$out = $out.append({
+					a,
+					b: c,
+					minutes: rounded_minutes(
+						minutes,
+						if on_i5 {
+							Ramp
+						} else {
+							Artery
+						},
+					),
+				})
 			}
 		}
 		$out
@@ -51,6 +73,15 @@ RoadGraph :: [].{
 	path : U8, U8 -> List(U8)
 	path = |a, b| paths.get(a.to_u64() * Seattle.node_count + b.to_u64()) ?? crash "RoadGraph.path: no such node"
 
+	## How many nodes the shortest drive from `a` to `b` passes, both ends
+	## included, and the `k`th of them: `path` without a list to carry, for
+	## the pain's hot loop.
+	path_length : U8, U8 -> U64
+	path_length = |a, b| (path_lengths.get(a.to_u64() * Seattle.node_count + b.to_u64()) ?? crash "RoadGraph.path_length: no such node").to_u64()
+
+	path_node : U8, U8, U64 -> U8
+	path_node = |a, b, k| path_store.get((a.to_u64() * Seattle.node_count + b.to_u64()) * path_most + k) ?? crash "RoadGraph.path_node: no such node"
+
 	## Every pair's minutes, `a * node_count + b`, for the gold to compare.
 	all_minutes : List(I64)
 	all_minutes = matrix
@@ -60,7 +91,11 @@ RoadGraph :: [].{
 	## clock and the one float-scored pass read it.
 	local_minutes : U8, { entry : F64, exit : F64, angles : List(F64) } -> F64
 	local_minutes = |node, walk| {
-		arterial = if Seattle.is_west(node) { speed_city } else { speed_suburb }
+		arterial = if Seattle.is_west(node) {
+			speed_city
+		} else {
+			speed_suburb
+		}
 		Seattle.ring_walk_px(node, walk) * arterial * neighborhood_slowdown * min_per_px
 	}
 
@@ -127,7 +162,11 @@ factor = |a, b, kind| {
 	} else {
 		match kind {
 			Bridge => speed_bridge
-			Surface => if Seattle.is_west(a) or Seattle.is_west(b) { speed_city } else { speed_suburb }
+			Surface => if Seattle.is_west(a) or Seattle.is_west(b) {
+				speed_city
+			} else {
+				speed_suburb
+			}
 		}
 	}
 }
@@ -240,6 +279,23 @@ paths = {
 	}
 	$out
 }
+
+## Every path's nodes, `path_most` a pair, and each path's length.
+path_most : U64
+path_most = 32
+
+path_store : List(U8)
+path_store = paths.join_map(
+	|p| {
+		if p.len() > path_most {
+			crash "RoadGraph.path_store: a path longer than path_most"
+		}
+		p.concat(List.repeat(0, path_most - p.len()))
+	},
+)
+
+path_lengths : List(U8)
+path_lengths = paths.map(|p| p.len().to_u8_wrap())
 
 ## The path from `from` to `to`, walked back along `prev`.
 path_back : List(U64), { from : U64, to : U64 } -> List(U8)

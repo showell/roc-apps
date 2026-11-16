@@ -1,7 +1,7 @@
 ## Seattle Delivery's solver, the app its Zig host links (roc/platform/).
 ## Each answer is a shift's, by its seed: the page's plan, or the facts the
 ## gold corpus pins.
-app [plan_json, gold_json] { pf: platform "./platform/main.roc" }
+app [gold_json, plan_json] { pf: platform "./platform/main.roc" }
 
 import Gold
 import JsonOut

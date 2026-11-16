@@ -7,12 +7,12 @@
 ## Zig links (`delivery/build.zig`).
 platform ""
 	requires {
-		plan_json : U32 -> List(U8),
 		gold_json : U32 -> List(U8),
+		plan_json : U32 -> List(U8)
 	}
 	exposes []
 	packages {}
-	provides { "roc_plan": plan_for_host, "roc_gold": gold_for_host }
+	provides { "roc_gold": gold_for_host, "roc_plan": plan_for_host }
 	targets: {
 		x64musl: {
 			inputs: [app],

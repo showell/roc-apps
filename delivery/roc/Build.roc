@@ -56,7 +56,11 @@ Build :: [].{
 				ri = route_at($routes, i)
 				for j in (i + 1)..<$routes.len() {
 					rj = route_at($routes, j)
-					cap = if Route.has_anchor(ri) { Route.cap(ri) } else { Route.cap(rj) }
+					cap = if Route.has_anchor(ri) {
+						Route.cap(ri)
+					} else {
+						Route.cap(rj)
+					}
 					if Route.load(ri) + Route.load(rj) <= cap and !(Route.has_anchor(ri) and Route.has_anchor(rj)) {
 						joined = best_join(ri, rj)
 						saved = pain_at(pains, i) + pain_at(pains, j) - Pain.pain_of(joined)
@@ -109,7 +113,11 @@ Build :: [].{
 		indexed = routes.map_with_index(|r, i| { route: r, at: i })
 		anchored = indexed.keep_if(|e| Route.has_anchor(e.route))
 		clusters = stable_by_load_desc(indexed.keep_if(|e| !Route.has_anchor(e.route) and !e.route.is_empty()), |e| Route.load(e.route))
-		keep = if anchored.len() < Seattle.truck_count { Seattle.truck_count - anchored.len() } else { 0 }
+		keep = if anchored.len() < Seattle.truck_count {
+			Seattle.truck_count - anchored.len()
+		} else {
+			0
+		}
 		var $kept = anchored.concat(clusters.take_first(keep))
 		surplus = clusters.drop_first(keep)
 		var $moves = built.moves
@@ -136,15 +144,13 @@ Build :: [].{
 					match $whole {
 						Truck(b) => {
 							$kept = kept_with_stop($kept, b.k, Route.free_stop(stop.nbhd, $remaining))
-							$moves = $moves.append(
-								{
-									kind: Relocate,
-									saved: 0,
-									detail: "capacity placement: ${Seattle.name_of(stop.nbhd)} (${n.to_str()}) onto a truck with room",
-									frame: aliased_frame(routes, $kept),
-									touched: Replay.keys_for(stop.nbhd, $remaining),
-								},
-							)
+							$moves = $moves.append({
+								kind: Relocate,
+								saved: 0,
+								detail: "capacity placement: ${Seattle.name_of(stop.nbhd)} (${n.to_str()}) onto a truck with room",
+								frame: aliased_frame(routes, $kept),
+								touched: Replay.keys_for(stop.nbhd, $remaining),
+							})
 							$remaining = Houses.empty
 						}
 
@@ -156,15 +162,13 @@ Build :: [].{
 							take = $remaining.take_first(into.take)
 							$remaining = $remaining.drop_first(into.take)
 							$kept = kept_with_stop($kept, into.k, Route.free_stop(stop.nbhd, take))
-							$moves = $moves.append(
-								{
-									kind: Relocate,
-									saved: 0,
-									detail: "capacity split: ${Seattle.name_of(stop.nbhd)} ${into.take.to_str()} tote(s) onto a truck with room",
-									frame: aliased_frame(routes, $kept),
-									touched: Replay.keys_for(stop.nbhd, take),
-								},
-							)
+							$moves = $moves.append({
+								kind: Relocate,
+								saved: 0,
+								detail: "capacity split: ${Seattle.name_of(stop.nbhd)} ${into.take.to_str()} tote(s) onto a truck with room",
+								frame: aliased_frame(routes, $kept),
+								touched: Replay.keys_for(stop.nbhd, take),
+							})
 						}
 					}
 				}
@@ -203,15 +207,13 @@ Build :: [].{
 				match $whole {
 					Truck(b) => {
 						$routes = $routes.set(b.ri, b.route) ?? crash "Build.deferred_placed: in range"
-						$moves = $moves.append(
-							{
-								kind: Relocate,
-								saved: 0,
-								detail: "deferred fill: ${Seattle.name_of(stop.nbhd)} (${n.to_str()}) into slack",
-								frame: $routes,
-								touched: Replay.keys_for(stop.nbhd, $remaining),
-							},
-						)
+						$moves = $moves.append({
+							kind: Relocate,
+							saved: 0,
+							detail: "deferred fill: ${Seattle.name_of(stop.nbhd)} (${n.to_str()}) into slack",
+							frame: $routes,
+							touched: Replay.keys_for(stop.nbhd, $remaining),
+						})
 						$remaining = Houses.empty
 					}
 
@@ -221,15 +223,13 @@ Build :: [].{
 						$remaining = $remaining.drop_first(into.take)
 						placed = Route.insert_best(route_at($routes, into.k), Route.free_stop(stop.nbhd, take))
 						$routes = $routes.set(into.k, placed) ?? crash "Build.deferred_placed: in range"
-						$moves = $moves.append(
-							{
-								kind: Relocate,
-								saved: 0,
-								detail: "deferred split: ${Seattle.name_of(stop.nbhd)} ${into.take.to_str()} tote(s) into slack",
-								frame: $routes,
-								touched: Replay.keys_for(stop.nbhd, take),
-							},
-						)
+						$moves = $moves.append({
+							kind: Relocate,
+							saved: 0,
+							detail: "deferred split: ${Seattle.name_of(stop.nbhd)} ${into.take.to_str()} tote(s) into slack",
+							frame: $routes,
+							touched: Replay.keys_for(stop.nbhd, take),
+						})
 					}
 				}
 			}
@@ -288,18 +288,56 @@ pain_at = |pains, i| pains.get(i) ?? crash "Build.pain_at: a route's pain"
 ## a then b, a then b reversed, a reversed then b, both reversed.
 best_join : List(Stop), List(Stop) -> List(Stop)
 best_join = |a, b| {
-	ra = a.rev()
-	rb = b.rev()
-	var $best = a.concat(b)
-	var $best_pain = Pain.pain_of($best)
-	for candidate in [a.concat(rb), ra.concat(b), ra.concat(rb)] {
-		pain = Pain.pain_of(candidate)
+	# Each way read in place: a then b reversed is the run after a reversed,
+	# a reversed then b the run before it, and both reversed is b then a,
+	# reversed whole.
+	ab = a.concat(b)
+	ba = b.concat(a)
+	n = ab.len()
+	cut = a.len()
+	ways = [
+		{ stops: ab, view: Whole },
+		{
+			stops: ab,
+			view: if cut < n {
+				Reversed({ first: cut, last: n - 1 })
+			} else {
+				Whole
+			},
+		},
+		{
+			stops: ab,
+			view: if cut > 0 {
+				Reversed({ first: 0, last: cut - 1 })
+			} else {
+				Whole
+			},
+		},
+		{
+			stops: ba,
+			view: if n > 0 {
+				Reversed({ first: 0, last: n - 1 })
+			} else {
+				Whole
+			},
+		},
+	]
+	var $best = 0
+	var $best_pain = Pain.pain_of(ab)
+	for w in 1..<4 {
+		way = ways.get(w) ?? crash "Build.best_join: four ways"
+		pain = Pain.pain_of_view(way.stops, way.view)
 		if pain < $best_pain {
 			$best_pain = pain
-			$best = candidate
+			$best = w
 		}
 	}
-	$best
+	match $best {
+		0 => ab
+		1 => a.concat(b.rev())
+		2 => a.rev().concat(b)
+		_ => ba.rev()
+	}
 }
 
 ## How much appending a stop of these houses adds to a route's pain.
@@ -335,7 +373,11 @@ chunk_target = |routes, { nbhd, houses, chunking, place }| {
 		ks = route_at(routes, k)
 		room = room_of(ks)
 		if room > 0 {
-			take = if room.to_u64_wrap() < n { room.to_u64_wrap() } else { n }
+			take = if room.to_u64_wrap() < n {
+				room.to_u64_wrap()
+			} else {
+				n
+			}
 			match chunking {
 				Roomiest => {
 					is_better =

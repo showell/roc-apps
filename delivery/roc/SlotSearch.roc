@@ -105,7 +105,13 @@ SlotSearch :: [].{
 													take = Route.free_stop(b, b_stop.houses.take_first(ku))
 													rest = Route.free_stop(b, b_stop.houses.drop_first(ku))
 													nt = Route.cheapest_insert(rt.drop_at(xi), take)
-													swapped = rtp.map(|s| if s.nbhd == b { rest } else { s })
+													swapped = rtp.map(
+														|s| if s.nbhd == b {
+															rest
+														} else {
+															s
+														},
+													)
 													ntp = Route.cheapest_insert(swapped, x)
 													gain = base - (Route.tidied_pain(nt) + Route.tidied_pain(ntp))
 													if gain >= 1 and beats($best, gain) {
@@ -129,15 +135,13 @@ SlotSearch :: [].{
 
 				Move(m) => {
 					$slots = ($slots.set(m.t, m.nt) ?? crash "SlotSearch.corridor_repaired: in range").set(m.tp, m.ntp) ?? crash "SlotSearch.corridor_repaired: in range"
-					$moves = $moves.append(
-						{
-							kind: Consolidate,
-							saved: m.gain,
-							detail: "consolidated ${m.name} onto the truck passing through (${m.via})",
-							frame: $slots,
-							touched: m.touched,
-						},
-					)
+					$moves = $moves.append({
+						kind: Consolidate,
+						saved: m.gain,
+						detail: "consolidated ${m.name} onto the truck passing through (${m.via})",
+						frame: $slots,
+						touched: m.touched,
+					})
 				}
 			}
 		}
@@ -184,18 +188,18 @@ SlotSearch :: [].{
 							sb = Route.stop_at(rb, j)
 							if
 								!sa.is_pinned()
-								and !sb.is_pinned()
-								and sa.nbhd != sb.nbhd
-								and Route.load(ra) - sa.load() + sb.load() <= Seattle.cap_of_slot(a)
-								and Route.load(rb) - sb.load() + sa.load() <= Seattle.cap_of_slot(b)
-							{
-								new_a = Route.coalesce(Route.reinsert(ra, { at: i, stop: sb }))
-								new_b = Route.coalesce(Route.reinsert(rb, { at: j, stop: sa }))
-								gain = tidied_at(cur, a) + tidied_at(cur, b) - (Route.tidied_pain(new_a) + Route.tidied_pain(new_b))
-								if gain >= 1 and beats($best, gain) {
-									$best = Move({ gain, a, b, new_a, new_b, change: Traded, touched: Replay.keys_of([sa, sb]) })
-								}
-							}
+									and !sb.is_pinned()
+									and sa.nbhd != sb.nbhd
+									and Route.load(ra) - sa.load() + sb.load() <= Seattle.cap_of_slot(a)
+									and Route.load(rb) - sb.load() + sa.load() <= Seattle.cap_of_slot(b)
+									{
+										new_a = Route.coalesce(Route.reinsert(ra, { at: i, stop: sb }))
+										new_b = Route.coalesce(Route.reinsert(rb, { at: j, stop: sa }))
+										gain = tidied_at(cur, a) + tidied_at(cur, b) - (Route.tidied_pain(new_a) + Route.tidied_pain(new_b))
+										if gain >= 1 and beats($best, gain) {
+											$best = Move({ gain, a, b, new_a, new_b, change: Traded, touched: Replay.keys_of([sa, sb]) })
+										}
+									}
 						}
 					}
 				}
@@ -279,15 +283,13 @@ SlotSearch :: [].{
 
 				Move(m) => {
 					$slots = ($slots.set(m.a, m.ra) ?? crash "SlotSearch.arc_rebalanced: in range").set(m.b, m.rb) ?? crash "SlotSearch.arc_rebalanced: in range"
-					$moves = $moves.append(
-						{
-							kind: Relocate,
-							saved: m.gain,
-							detail: "arc-rebalance between trucks ${(m.a + 1).to_str()} and ${(m.b + 1).to_str()}",
-							frame: $slots,
-							touched: m.touched,
-						},
-					)
+					$moves = $moves.append({
+						kind: Relocate,
+						saved: m.gain,
+						detail: "arc-rebalance between trucks ${(m.a + 1).to_str()} and ${(m.b + 1).to_str()}",
+						frame: $slots,
+						touched: m.touched,
+					})
 				}
 			}
 		}
@@ -321,10 +323,18 @@ beats = |best, gain|
 	}
 
 larger : I64, I64 -> I64
-larger = |a, b| if a > b { a } else { b }
+larger = |a, b| if a > b {
+	a
+} else {
+	b
+}
 
 smaller : I64, I64 -> I64
-smaller = |a, b| if a < b { a } else { b }
+smaller = |a, b| if a < b {
+	a
+} else {
+	b
+}
 
 slot_at : List(List(Stop)), U64 -> List(Stop)
 slot_at = |slots, i| slots.get(i) ?? crash "SlotSearch.slot_at: one of the eight slots"
@@ -361,10 +371,28 @@ rescued = |best, c| {
 		if !is_over_a and !is_over_b {
 			best
 		} else {
-			over = if is_over_a { c.ra } else { c.rb }
-			under = if is_over_a { c.rb } else { c.ra }
-			cap_under = if is_over_a { cap_b } else { cap_a }
-			need = Route.load(over) - (if is_over_a { cap_a } else { cap_b })
+			over = if is_over_a {
+				c.ra
+			} else {
+				c.rb
+			}
+			under = if is_over_a {
+				c.rb
+			} else {
+				c.ra
+			}
+			cap_under = if is_over_a {
+				cap_b
+			} else {
+				cap_a
+			}
+			need = Route.load(over) - (
+				if is_over_a {
+					cap_a
+				} else {
+					cap_b
+				}
+			)
 			var $best = best
 			for fi in 0..<over.len() {
 				f = Route.stop_at(over, fi)
@@ -373,7 +401,22 @@ rescued = |best, c| {
 						arc = Houses.from_list(arc_list)
 						if arc.count() >= need and arc.count() < f.load() and Route.load(under) + arc.count() <= cap_under {
 							keep = f.houses.without(arc)
-							raw = over.map_with_index(|s, i| { stop: if i == fi { { nbhd: s.nbhd, houses: keep, pin: s.pin } } else { s }, i }).keep_if(|e| if e.i == fi { !keep.is_empty() } else { !e.stop.houses.is_empty() }).map(|e| e.stop)
+							raw = over.map_with_index(
+								|s, i| {
+									stop: if i == fi {
+										{ nbhd: s.nbhd, houses: keep, pin: s.pin }
+									} else {
+										s
+									},
+									i,
+								},
+							).keep_if(
+								|e| if e.i == fi {
+									!keep.is_empty()
+								} else {
+									!e.stop.houses.is_empty()
+								},
+							).map(|e| e.stop)
 							new_over = Route.coalesce(raw)
 							new_under = Route.cheapest_insert(under, Route.free_stop(f.nbhd, arc))
 							touched = c.touched.concat(Replay.keys_for(f.nbhd, arc))

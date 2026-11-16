@@ -64,7 +64,11 @@ Houses :: U64.{
 	take_first : Houses, U64 -> Houses
 	take_first = |Houses.(bits), n| {
 		have = bits.shr_zf_wrap(60)
-		k = if n < have { n } else { have }
+		k = if n < have {
+			n
+		} else {
+			have
+		}
 		kept = if k == 15 {
 			bits.bitwise_and(low_mask)
 		} else {
@@ -76,7 +80,11 @@ Houses :: U64.{
 	drop_first : Houses, U64 -> Houses
 	drop_first = |Houses.(bits), n| {
 		have = bits.shr_zf_wrap(60)
-		k = if n < have { n } else { have }
+		k = if n < have {
+			n
+		} else {
+			have
+		}
 		rest = bits.bitwise_and(low_mask).shr_zf_wrap((k * 4).to_u8_wrap())
 		Houses.(rest.bitwise_or((have - k).shl_wrap(60)))
 	}

@@ -1,0 +1,135 @@
+-- Seattle Delivery's gate, then its page into the dev channel. Each check
+-- prints a line with what it ran; any failure stops the run, naming the
+-- check, and the page in the dev channel stays as it was.
+--
+--   cd <roc-apps checkout> && shale delivery/build.shale
+--
+-- It needs delivery/node_modules (`npm ci` in delivery/, once): tsc and
+-- esbuild. The checks, in order:
+-- - `zig build fmt`, `roc fmt --check roc` and `roc check` with no error and
+--   no warning (the ✗ and ● marks counted, not the exit code);
+-- - `roc test roc/delivery.roc`: the expects of every module it reaches,
+--   held exactly (ROC_EXPECTS);
+-- - `zig build typecheck`: tsc over the display and the reference solver.ts;
+-- - `zig build reference-test` and `reference-gold`: the Zig solver in zig/,
+--   the bench's yardstick, its unit tests held exactly (REFERENCE_TESTS);
+-- - `zig build gold`: the Roc solver natively against both gold files,
+--   every shift and frame (SHIFTS, FRAMES);
+-- - `zig build wasm-gold`: the page's own solver.wasm, the Roc one, driven
+--   under node against both gold files.
+-- Then the page: zig-out/web/ (index.html, app.js, solver.wasm) into
+-- build:roc-apps/next/delivery.staging/, played there in headless Chromium
+-- by tools/page_check.mjs (the solver.wasm it fetched is the one the gold
+-- judged; a shuffle, the replay and the day play with no console error),
+-- and only then swapped in whole as build:roc-apps/next/delivery/, the dev
+-- channel's /delivery/, with a BUILT file naming the Roc and the commit.
+-- The shots are in build:roc-apps/gen/delivery/shots/.
+--
+-- A count that moves goes with the change that moved it, and its commit
+-- says why. The benches (`zig build bench`, `zig build wasm-bench`) are in
+-- no gate: they time, and a busy box moves them.
+--
+-- budget: steps=20000000
+
+const HERE = "delivery"
+const ROC_EXPECTS = 15
+const REFERENCE_TESTS = 6
+const SHIFTS = 20
+const FRAMES = 545
+const DEST = "build:roc-apps/next/delivery"
+const STAGING = "build:roc-apps/next/delivery.staging"
+const WANT_NODE = "node-tests: the page's checks under node"
+const WANT_ROC = "roc-pin: roc-apps' pinned nightly"
+
+function zig_build(step, keep)
+  local r = run({"zig", "build", step, "--summary", "all"}, {cwd = HERE, timeout_ms = 1500000, whole = keep})
+  if r.code ~= 0 then
+    local out = r.out
+    if #out > 6000 then out = sub(out, #out - 6000, #out) end
+    print(out)
+    fail("delivery: `zig build " .. step .. "` failed")
+  end
+  return r
+end
+
+-- The line of `out` that starts with `prefix`, or a stop naming `who`.
+function line_starting(out, prefix, who)
+  for l in lines(out) do
+    if starts_with(trim(l), prefix) then return trim(l) end
+  end
+  print(out)
+  fail("delivery: " .. who .. " printed no `" .. prefix .. "` line")
+end
+
+local roc = pinned_roc("delivery/build.shale")
+
+zig_build("fmt", 20000)
+local fmt = run({roc, "fmt", "--check", "roc"}, {cwd = HERE, timeout_ms = 120000, whole = 20000, want = WANT_ROC})
+if fmt.code ~= 0 then
+  print(fmt.out)
+  fail("delivery: roc fmt --check roc")
+end
+local checked = run({roc, "check", "delivery.roc"}, {cwd = HERE .. "/roc", timeout_ms = 300000, whole = 400000, want = WANT_ROC})
+if checked.code ~= 0 or #find_all(checked.out, "✗") > 0 or #find_all(checked.out, "●") > 0 or not contains(checked.out, "No errors found") then
+  print(checked.out)
+  fail("delivery: roc check roc/delivery.roc is not clean")
+end
+print("PASS zig fmt, roc fmt, roc check: no error, no warning")
+
+local tested = run({roc, "test", "roc/delivery.roc"}, {cwd = HERE, timeout_ms = 300000, whole = 200000, want = WANT_ROC})
+local expects = re_find(tested.out, "All \\((\\d+)\\) tests passed")
+if tested.code ~= 0 or expects == nil or tonumber(expects.groups[1]) ~= ROC_EXPECTS then
+  print(tested.out)
+  fail("delivery: roc test roc/delivery.roc, held at " .. ROC_EXPECTS .. " expects")
+end
+print("PASS roc test: " .. expects.groups[1] .. "/" .. ROC_EXPECTS .. " expects")
+
+zig_build("typecheck", 40000)
+print("PASS zig build typecheck: tsc over the display and solver.ts")
+
+local ref = zig_build("reference-test", 40000)
+local rt = re_find(ref.out, "(\\d+)/(\\d+) tests passed")
+if rt == nil or rt.groups[1] ~= rt.groups[2] or tonumber(rt.groups[1]) ~= REFERENCE_TESTS then
+  print(ref.out)
+  fail("delivery: the reference's tests, held at " .. REFERENCE_TESTS)
+end
+local refgold = zig_build("reference-gold", 40000)
+print("PASS the Zig reference: " .. rt.groups[1] .. "/" .. REFERENCE_TESTS .. " tests; " .. line_starting(refgold.out, "ALL GOLD CHECKS PASSED", "reference-gold"))
+
+local gold = zig_build("gold", 40000)
+local said = line_starting(gold.out, "GOLD:", "zig build gold")
+local g = re_find(said, "^GOLD: (\\d+)/(\\d+) shifts match, (\\d+) frames")
+if g == nil or tonumber(g.groups[1]) ~= SHIFTS or tonumber(g.groups[2]) ~= SHIFTS or tonumber(g.groups[3]) ~= FRAMES then
+  print(gold.out)
+  fail("delivery: the native gold, held at " .. SHIFTS .. " shifts and " .. FRAMES .. " frames")
+end
+print("PASS zig build gold (the Roc, natively): " .. said)
+
+local wasm = zig_build("wasm-gold", 40000)
+local conforms = line_starting(wasm.out, "WASM ARTIFACT CONFORMS (" .. SHIFTS .. " shifts", "zig build wasm-gold")
+print("PASS zig build wasm-gold (the page's solver.wasm): " .. conforms)
+
+-- The page, built by the steps above (the default step installs it).
+zig_build("install", 40000)
+if exists(STAGING) then remove_tree(STAGING) end
+mkdir(STAGING)
+local files = 0
+for f in {"index.html", "app.js", "solver.wasm"} do
+  copy(HERE .. "/zig-out/web/" .. f, STAGING .. "/" .. f)
+  files = files + 1
+end
+local head = git_head("")
+if not git_is_clean("") then head = head .. "+dirty" end
+replace(STAGING .. "/BUILT", "roc " .. trim(read("roc-version")) .. "\ncommit " .. head .. "\n")
+-- The dev channel serves the staging folder too, at /delivery.staging/.
+local played = run({"node", HERE .. "/tools/page_check.mjs", "http://localhost:9210/delivery.staging/", real(HERE .. "/zig-out/web/solver.wasm"), real("build:roc-apps/gen/delivery/shots")}, {timeout_ms = 180000, tail = 30, want = WANT_NODE})
+if played.code ~= 0 then
+  print(played.out)
+  fail("delivery: tools/page_check.mjs failed on the staged page; the dev channel's /delivery/ is as it was")
+end
+local checks = 0
+for l in lines(played.out) do if starts_with(l, "PASS ") then checks = checks + 1 end end
+print("PASS tools/page_check.mjs: " .. checks .. " checks in headless Chromium")
+if exists(DEST) then remove_tree(DEST) end
+must(run({"mv", real(STAGING), real(DEST)}, {timeout_ms = 10000, tail = 5}))
+print("dev: " .. (files + 1) .. " files in build:roc-apps/next/delivery/ (commit " .. head .. "), http://localhost:9210/delivery/")

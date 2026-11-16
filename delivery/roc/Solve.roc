@@ -80,8 +80,16 @@ solved = |orders, variant| {
 	routes = all.drop_if(is_deferred)
 
 	saving = Build.merged({ routes, moves: [] }, Saving)
-	to_fleet = if saving.routes.len() > Seattle.truck_count { Build.merged(saving, ToFleet) } else { saving }
-	forced = if to_fleet.routes.len() > Seattle.truck_count { Build.force_placed(to_fleet, variant.chunking) } else { to_fleet }
+	to_fleet = if saving.routes.len() > Seattle.truck_count {
+		Build.merged(saving, ToFleet)
+	} else {
+		saving
+	}
+	forced = if to_fleet.routes.len() > Seattle.truck_count {
+		Build.force_placed(to_fleet, variant.chunking)
+	} else {
+		to_fleet
+	}
 	built = Build.deferred_placed(forced, { deferred, chunking: variant.chunking })
 
 	tidied = { ..built, routes: built.routes.map(Route.two_opt) }
@@ -102,7 +110,11 @@ solved = |orders, variant| {
 	free = SlotSearch.corridor_repaired(start, AnyShift)
 	shackled_pain = shackled.by_slot.fold(0, |n, r| n + Route.tidied_pain(r))
 	free_pain = free.by_slot.fold(0, |n, r| n + Route.tidied_pain(r))
-	repaired = if free_pain < shackled_pain { free } else { shackled }
+	repaired = if free_pain < shackled_pain {
+		free
+	} else {
+		shackled
+	}
 
 	searched = SlotSearch.relocated_or_swapped({ by_slot: repaired.by_slot.map(Route.two_opt), moves: [] })
 	rebalanced = SlotSearch.arc_rebalanced({ by_slot: searched.by_slot.map(Route.two_opt), moves: [] })

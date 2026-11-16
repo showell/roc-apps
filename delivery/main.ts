@@ -9,14 +9,14 @@ import type { Plan, SolveFrame } from "./solver.ts";
 import { drawMap, truckPanelHitTest, buildTracks, HUD_TOOLTIPS, HUD_LINKS } from "./map_view.ts";
 import type { Track } from "./map_view.ts";
 
-// The solver lives in zig now (delivery/zig, served at /delivery/solver.wasm
-// and instantiated in boot()). solveShift writes the whole Plan — routes,
-// display minutes, the solve-replay frames — as JSON into wasm memory, in
-// exactly the shape the TS solver used to return; ops/check_delivery holds
-// the module bit-exact against that reference, so everything downstream
-// (timeline, tracks, the A-stepper) draws the same plan it always did. The
-// TS solver stays in the repo as the reference implementation but is no
-// longer in this bundle.
+// The solver is Roc under a Zig host (delivery/roc, delivery/src), served as
+// solver.wasm beside this page and instantiated in boot(). solveShift writes
+// the whole Plan — routes, display minutes, the solve-replay frames — as JSON
+// into wasm memory, in exactly the shape the TS solver returns; the gold
+// checks (delivery/build.shale) hold the module bit-exact against that
+// reference, so everything downstream (timeline, tracks, the A-stepper) draws
+// the same plan. The TS solver stays as the reference implementation and is
+// not in this bundle.
 type SolverWasm = {
   memory: WebAssembly.Memory;
   solveShift: (seed: number) => number;
@@ -297,7 +297,7 @@ window.addEventListener("keydown", (e) => {
 
 /** Fetch + instantiate the solver, solve the first shift, first paint. */
 async function boot(): Promise<void> {
-  const resp = await fetch("/delivery/solver.wasm");
+  const resp = await fetch("solver.wasm");
   const { instance } = await WebAssembly.instantiate(await resp.arrayBuffer(), {});
   solverWasm = instance.exports as unknown as SolverWasm;
   plan = solveShift(seed);
