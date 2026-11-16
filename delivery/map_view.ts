@@ -1,0 +1,1029 @@
+// map_view.ts — draws the static Seattle network onto a 2D canvas, in logical
+// (1000x720) coordinates. The backdrop everything else (routes, the manager's
+// overrides) will later draw on top of. Arteries connect to neighborhoods at
+// gates (cul-de-sac entrances); names are hover-reveal to stay uncluttered.
+
+import type { Pt, Neighborhood } from "./geography.ts";
+import {
+  MAP_W,
+  MAP_H,
+  FLEET,
+  TRUCK_CAPS,
+  WEST_SHORE,
+  EAST_SHORE,
+  MERCER_ISLAND,
+  PUGET_SOUND,
+  LAKE_UNION,
+  CANAL_WEST,
+  CANAL_EAST,
+  UNION_BAY,
+  WAREHOUSE,
+  BRIDGES,
+  NEIGHBORHOODS,
+  ROADS,
+  housesOf,
+  roadGates,
+  bridgeDeck,
+  allGates,
+  edgePolyline,
+  ringWalkPath,
+  gateAngle,
+  houseAngles,
+  nodeAt,
+} from "./geography.ts";
+import { buildSubstrate } from "./roadgraph.ts";
+import type { Plan, Route, SolveFrame, Stop } from "./solver.ts";
+import { buildItinerary } from "./timeline.ts";
+import type { Itinerary, Leg } from "./timeline.ts";
+
+// The routing substrate is static, so build the travel-time matrix once.
+const SUB = buildSubstrate();
+
+// One colour per truck — eight hues spread ~45° around the wheel, all dark
+// enough to read over the pale land and far enough apart to tell apart.
+const TRUCK_COLORS = [
+  "#1c6fd6", // blue
+  "#e8590c", // orange
+  "#2f9e44", // green
+  "#d6336c", // magenta
+  "#a0521d", // saddle brown — warm/light enough to part from T8 charcoal, still redder than T7 gold
+  "#7048e8", // violet
+  "#b8860b", // dark gold
+  "#343a40", // charcoal
+];
+
+// House marker sizes (squares). Non-customer homes are pure decoration (they show
+// the random daily sampling), so they sit well below the order squares.
+const ORDER_SIZE = 9.9;
+const HOME_SIZE = 5.0;
+
+// Truck-panel layout (top-right), shared by the renderer and the hit-test.
+const PANEL_X = MAP_W - 250;
+const PANEL_W = 240;
+const PANEL_TOP = 148; // top of the right-side panel — pushed below the always-on controls hints
+const PANEL_ROW0 = PANEL_TOP + 37; // text baseline of the first truck row
+const PANEL_ROW_H = 18;
+
+const COLOR = {
+  westLand: "#e7e3ea",
+  eastLand: "#e7eede",
+  water: "#9fcfe6",
+  waterEdge: "#6fb2d2",
+  island: "#eef3df",
+  road: "#cfc7bb",
+  roadCasing: "#b3aa9c",
+  gate: "#7d7464",
+  ring: "#a89f90",
+  ringHot: "#2a2e34",
+  home: "#cdc6b8",
+  homeEdge: "#a9a094",
+  order: "#e8732e",
+  depot: "#c0392b",
+  text: "#2a2e34",
+  note: "#7b8088",
+  faint: "#b9b3bf",
+  link: "#2a6db0",
+};
+
+function trace(ctx: CanvasRenderingContext2D, pts: Pt[], close: boolean): void {
+  ctx.beginPath();
+  ctx.moveTo(pts[0].x, pts[0].y);
+  for (let i = 1; i < pts.length; i++) ctx.lineTo(pts[i].x, pts[i].y);
+  if (close) ctx.closePath();
+}
+
+function fillPoly(ctx: CanvasRenderingContext2D, pts: Pt[], fill: string, edge?: string): void {
+  trace(ctx, pts, true);
+  ctx.fillStyle = fill;
+  ctx.fill();
+  if (edge) {
+    ctx.lineWidth = 2;
+    ctx.strokeStyle = edge;
+    ctx.stroke();
+  }
+}
+
+function drawLand(ctx: CanvasRenderingContext2D): void {
+  ctx.fillStyle = COLOR.westLand;
+  ctx.fillRect(0, 0, MAP_W, MAP_H);
+  ctx.fillStyle = COLOR.eastLand;
+  ctx.fillRect(540, 0, MAP_W - 540, MAP_H);
+}
+
+function lakeWashington(ctx: CanvasRenderingContext2D): void {
+  ctx.beginPath();
+  ctx.moveTo(WEST_SHORE[0].x, WEST_SHORE[0].y);
+  for (const p of WEST_SHORE) ctx.lineTo(p.x, p.y);
+  for (let i = EAST_SHORE.length - 1; i >= 0; i--) ctx.lineTo(EAST_SHORE[i].x, EAST_SHORE[i].y);
+  ctx.closePath();
+  ctx.fillStyle = COLOR.water;
+  ctx.fill();
+  ctx.lineWidth = 2;
+  ctx.strokeStyle = COLOR.waterEdge;
+  ctx.stroke();
+}
+
+function channel(ctx: CanvasRenderingContext2D, pts: Pt[]): void {
+  ctx.lineCap = "round";
+  ctx.lineJoin = "round";
+  trace(ctx, pts, false);
+  ctx.lineWidth = 14;
+  ctx.strokeStyle = COLOR.waterEdge;
+  ctx.stroke();
+  trace(ctx, pts, false);
+  ctx.lineWidth = 10;
+  ctx.strokeStyle = COLOR.water;
+  ctx.stroke();
+}
+
+function drawWater(ctx: CanvasRenderingContext2D): void {
+  lakeWashington(ctx);
+  fillPoly(ctx, PUGET_SOUND, COLOR.water, COLOR.waterEdge);
+  channel(ctx, CANAL_WEST);
+  channel(ctx, CANAL_EAST);
+  fillPoly(ctx, UNION_BAY, COLOR.water, COLOR.waterEdge);
+  fillPoly(ctx, LAKE_UNION, COLOR.water, COLOR.waterEdge);
+  fillPoly(ctx, MERCER_ISLAND, COLOR.island, COLOR.waterEdge);
+}
+
+function stroke(ctx: CanvasRenderingContext2D, pts: Pt[], width: number, color: string): void {
+  trace(ctx, pts, false);
+  ctx.lineCap = "round";
+  ctx.lineJoin = "round";
+  ctx.lineWidth = width;
+  ctx.strokeStyle = color;
+  ctx.stroke();
+}
+
+function drawRoads(ctx: CanvasRenderingContext2D): void {
+  for (const r of ROADS) {
+    const gates = roadGates(r);
+    stroke(ctx, gates, 6, COLOR.roadCasing);
+    stroke(ctx, gates, 3.5, COLOR.road);
+  }
+}
+
+/** Extend a freeway end past its terminal exit to the map edge at `edgeY`, holding
+ *  the road's local heading (`from` exit, coming from `prev`). Cosmetic only — this
+ *  stub is not a graph edge; it just keeps I-5 from dead-ending at the last exit. */
+function freewayStub(from: Pt, prev: Pt, edgeY: number): Pt {
+  const vx = from.x - prev.x;
+  const vy = from.y - prev.y;
+  const t = (edgeY - from.y) / vy;
+  return { x: from.x + vx * t, y: edgeY };
+}
+
+function drawBridges(ctx: CanvasRenderingContext2D): void {
+  // Bridges draw like the surface arteries (casing + tan) — no black deck or yellow
+  // centre stripe; over water they just read as the road continuing. I-5 alone extends
+  // past its end exits to the map edges, so the freeway reads as passing THROUGH the
+  // region rather than dead-ending at the last delivery exit.
+  for (const b of BRIDGES) {
+    let deck = bridgeDeck(b);
+    if (b.name === "I-5") {
+      const south = freewayStub(nodeAt("Exit 1"), nodeAt("Exit 2"), MAP_H);
+      const north = freewayStub(nodeAt("Exit 6"), nodeAt("Exit 5"), 0);
+      deck = [south, ...deck, north];
+    }
+    stroke(ctx, deck, 6, COLOR.roadCasing);
+    stroke(ctx, deck, 3.5, COLOR.road);
+  }
+}
+
+function drawGates(ctx: CanvasRenderingContext2D): void {
+  ctx.fillStyle = COLOR.gate;
+  for (const g of allGates()) {
+    ctx.beginPath();
+    ctx.arc(g.x, g.y, 2.4, 0, Math.PI * 2);
+    ctx.fill();
+  }
+}
+
+function drawNeighborhood(
+  ctx: CanvasRenderingContext2D,
+  n: Neighborhood,
+  orders: Set<string>,
+  houseColor: Map<string, string>, // per-house truck colour (so a split shows two colours)
+  highlight: Set<string> | null, // houses of the focused truck, to make pop
+  delivered: Set<string> | null, // houses already serviced (playback) → checkmark
+  popped: Set<string> | null = null, // houses a solver move just touched → halo + enlarge
+): void {
+  if (n.houses === 0) {
+    // A bridge interchange (no homes) — a small junction disc, not a ring.
+    ctx.beginPath();
+    ctx.arc(n.center.x, n.center.y, n.ringRadius, 0, Math.PI * 2);
+    ctx.fillStyle = COLOR.gate;
+    ctx.fill();
+    return;
+  }
+
+  if (n.lake) {
+    ctx.beginPath();
+    ctx.arc(n.center.x, n.center.y, n.lake, 0, Math.PI * 2);
+    ctx.fillStyle = COLOR.water;
+    ctx.fill();
+    ctx.lineWidth = 1.5;
+    ctx.strokeStyle = COLOR.waterEdge;
+    ctx.stroke();
+  }
+
+  // Ring road — kept neutral even on hover, so it never fights the routes.
+  ctx.beginPath();
+  ctx.arc(n.center.x, n.center.y, n.ringRadius, 0, Math.PI * 2);
+  ctx.lineWidth = 3;
+  ctx.strokeStyle = COLOR.ring;
+  ctx.stroke();
+
+  // Houses — orders take their truck's colour and pop, plain homes recede.
+  // When a truck is focused, its stops stay vivid and bigger while every other
+  // truck's orders fade right back, so the route's doors read at a glance.
+  const focusMode = highlight !== null;
+  housesOf(n).forEach((h, i) => {
+    const key = `${n.name}#${i}`;
+    const isOrder = orders.has(key);
+    if (isOrder) {
+      const isPopped = popped !== null && popped.has(key);
+      const focused = isPopped || (focusMode && highlight!.has(key));
+      const muted = focusMode && !focused; // a popped house never mutes the rest
+      const color = houseColor.get(key) ?? COLOR.order;
+      // Delivered (during playback): the square becomes a checkmark in the
+      // truck's colour — the moment the goods hit the doorstep.
+      if (delivered && delivered.has(key)) {
+        drawCheck(ctx, h.x, h.y, ORDER_SIZE * 1.5, color);
+        return;
+      }
+      // A just-moved house (solver animation): a soft halo in its truck's colour
+      // so the eye lands on where the action happened this frame.
+      if (isPopped) {
+        ctx.globalAlpha = 0.3;
+        ctx.fillStyle = color;
+        ctx.beginPath();
+        ctx.arc(h.x, h.y, 15, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.globalAlpha = 1;
+      }
+      const s = isPopped ? 16 : focused ? 13 : ORDER_SIZE;
+      ctx.globalAlpha = muted ? 0.5 : 1;
+      ctx.fillStyle = color;
+      ctx.strokeStyle = isPopped ? "#16202b" : "#ffffff";
+      ctx.lineWidth = isPopped ? 2.5 : focused ? 2 : 1.5;
+      ctx.beginPath();
+      ctx.rect(h.x - s / 2, h.y - s / 2, s, s);
+      ctx.fill();
+      ctx.stroke();
+      ctx.globalAlpha = 1;
+    } else {
+      const s = HOME_SIZE;
+      ctx.fillStyle = COLOR.home;
+      ctx.strokeStyle = COLOR.homeEdge;
+      ctx.lineWidth = 1;
+      ctx.beginPath();
+      ctx.rect(h.x - s / 2, h.y - s / 2, s, s);
+      ctx.fill();
+      ctx.stroke();
+    }
+  });
+}
+
+/**
+ * The detail panel under the truck list (top-right). When a neighborhood is
+ * hovered it leads with that neighborhood's facts; either way it then shows the
+ * active truck's neighborhood-by-neighborhood breakdown (the hovered one in
+ * bold). Off the map on purpose, so nothing floats over the routes.
+ */
+function drawDetail(ctx: CanvasRenderingContext2D, plan: Plan, orders: Set<string>, hoverNbhd: string | null, activeTruck: number | null): void {
+  if (hoverNbhd === null && activeTruck === null) return;
+
+  const x = PANEL_X;
+  let y = PANEL_ROW0 + plan.routes.length * PANEL_ROW_H + (plan.unrouted.length ? 18 : 0) + 20;
+  ctx.strokeStyle = "rgba(0, 0, 0, 0.12)";
+  ctx.lineWidth = 1;
+  ctx.beginPath();
+  ctx.moveTo(x, y - 14);
+  ctx.lineTo(x + PANEL_W, y - 14);
+  ctx.stroke();
+  ctx.textAlign = "left";
+
+  // Lead with the hovered neighborhood's facts.
+  const n = hoverNbhd ? NEIGHBORHOODS.find((m) => m.name === hoverNbhd) : undefined;
+  if (n) {
+    let count = 0;
+    for (let i = 0; i < n.houses; i++) if (orders.has(`${n.name}#${i}`)) count++;
+    ctx.fillStyle = COLOR.text;
+    ctx.font = "bold 14px system-ui, sans-serif";
+    ctx.fillText(n.name, x, y);
+    y += 18;
+    if (n.note) {
+      ctx.fillStyle = COLOR.note;
+      ctx.font = "italic 12px system-ui, sans-serif";
+      ctx.fillText(n.note, x, y);
+      y += 17;
+    }
+    ctx.fillStyle = COLOR.note;
+    ctx.font = "12px system-ui, sans-serif";
+    ctx.fillText(`${count} order${count === 1 ? "" : "s"}  ·  ≈${Math.round(SUB.time("FC", n.name))} min from FC`, x, y);
+    y += 24;
+  }
+
+  // Then the active truck's whole route.
+  if (activeTruck === null || !plan.routes[activeTruck]) return;
+  const r = plan.routes[activeTruck];
+  const color = TRUCK_COLORS[activeTruck % TRUCK_COLORS.length];
+  ctx.fillStyle = COLOR.text;
+  ctx.font = "bold 13px system-ui, sans-serif";
+  ctx.fillText(`Truck ${activeTruck + 1} — ${r.orders} totes · ${Math.round(r.time)} min`, x, y);
+  y += 19;
+  r.stops.forEach((s, k) => {
+    const here = s.nbhd === hoverNbhd;
+    ctx.fillStyle = color;
+    ctx.beginPath();
+    ctx.arc(x + 4, y - 4, here ? 4.5 : 3.5, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.fillStyle = COLOR.text;
+    ctx.font = `${here ? "bold " : ""}12px system-ui, sans-serif`;
+    ctx.fillText(`${k + 1}. ${s.nbhd}`, x + 14, y);
+    ctx.fillStyle = COLOR.note;
+    ctx.textAlign = "right";
+    ctx.fillText(`${s.orders} tote${s.orders === 1 ? "" : "s"}`, x + PANEL_W, y);
+    ctx.textAlign = "left";
+    y += 17;
+  });
+}
+
+function drawWarehouse(ctx: CanvasRenderingContext2D): void {
+  const { x, y } = WAREHOUSE;
+  ctx.fillStyle = COLOR.depot;
+  ctx.strokeStyle = "#7d241a";
+  ctx.lineWidth = 2;
+  ctx.beginPath();
+  ctx.rect(x - 13, y - 8, 26, 18);
+  ctx.fill();
+  ctx.stroke();
+  ctx.beginPath();
+  ctx.moveTo(x - 16, y - 8);
+  ctx.lineTo(x, y - 20);
+  ctx.lineTo(x + 16, y - 8);
+  ctx.closePath();
+  ctx.fill();
+  ctx.stroke();
+
+  ctx.fillStyle = COLOR.text;
+  ctx.font = "bold 13px system-ui, sans-serif";
+  ctx.textAlign = "center";
+  ctx.fillText("Warehouse", x, y + 26);
+  ctx.fillStyle = COLOR.note;
+  ctx.font = "italic 11px system-ui, sans-serif";
+  ctx.fillText("AmazonFresh FC", x, y + 39);
+}
+
+function drawRegionLabels(ctx: CanvasRenderingContext2D): void {
+  ctx.textAlign = "center";
+
+  ctx.save();
+  ctx.translate(545, 320);
+  ctx.rotate(Math.PI / 2);
+  ctx.fillStyle = COLOR.waterEdge;
+  ctx.font = "italic 16px system-ui, sans-serif";
+  ctx.fillText("Lake Washington", 0, 0);
+  ctx.restore();
+
+  ctx.fillStyle = COLOR.waterEdge;
+  ctx.font = "italic 11px system-ui, sans-serif";
+  ctx.textAlign = "center";
+  ctx.fillText("Lake Union", 358, 400);
+
+  ctx.save();
+  ctx.translate(48, 360);
+  ctx.rotate(-Math.PI / 2);
+  ctx.fillStyle = COLOR.waterEdge;
+  ctx.font = "italic 13px system-ui, sans-serif";
+  ctx.fillText("Puget Sound", 0, 0);
+  ctx.restore();
+}
+
+// Hover regions over the top-left HUD text → native browser tooltips (main.ts sets
+// canvas.title from these). Logical coords, matching the baselines drawn in drawHud.
+export const HUD_TOOLTIPS: { x: number; y: number; w: number; h: number; text: string }[] = [
+  { x: 24, y: 64, w: 110, h: 18, text: "Use S to shuffle up a new shift" }, // over "Shift Sn"
+  { x: 24, y: 86, w: 100, h: 18, text: "randomly selected from 228 homes" }, // over "100 orders"
+];
+
+// Nav links under the order count — single source of truth for both the drawing
+// (drawHud) and the click/hover hit-testing (main.ts). Logical coords; `y` is the
+// hit-rect top, text baseline sits at y + 13.
+export const HUD_LINKS = [
+  { label: "Home", href: "/", x: 24, y: 108, w: 46, h: 18 },
+];
+
+function drawHud(ctx: CanvasRenderingContext2D, shift: number): void {
+  ctx.textAlign = "left";
+
+  // Title + tagline + shift + order count (top-left — there's more room here than at the bottom).
+  ctx.fillStyle = COLOR.text;
+  ctx.font = "bold 18px system-ui, sans-serif";
+  ctx.fillText("Seattle Delivery Network", 24, 34);
+
+  ctx.fillStyle = COLOR.note;
+  ctx.font = "italic 12px system-ui, sans-serif";
+  ctx.fillText("totally not to scale", 24, 53);
+
+  // Which shift we're on — called out so a particular shuffle can be reported.
+  ctx.fillStyle = COLOR.text;
+  ctx.font = "bold 15px system-ui, sans-serif";
+  ctx.fillText(`Shift S${shift}`, 24, 77);
+
+  // The day's order count, in a plainly legible size right under the shift.
+  ctx.font = "14px system-ui, sans-serif";
+  ctx.fillText(`${FLEET.orders} orders`, 24, 99);
+
+  // Nav links (Home, Blog), under the order count — each its own underlined line.
+  ctx.fillStyle = COLOR.link;
+  ctx.font = "13px system-ui, sans-serif";
+  for (const l of HUD_LINKS) {
+    const baseline = l.y + 13;
+    ctx.fillText(l.label, l.x, baseline);
+    ctx.fillRect(l.x, baseline + 2, ctx.measureText(l.label).width, 1); // underline
+  }
+
+  // How-to-use hints (top-right, above the plan panel) — always on, one instruction per
+  // line, with the key bolded.
+  ctx.font = "13px system-ui, sans-serif";
+  const hints: { key: string; rest: string }[] = [
+    { key: "", rest: "hover a neighborhood or a truck" },
+    { key: "Space", rest: " — run the day" },
+    { key: "A", rest: " — step the solve" },
+    { key: "←/→", rest: " — step (paused)" },
+    { key: "S", rest: " — new shift" },
+    { key: "B", rest: " — back" },
+  ];
+  hints.forEach((h, i) => {
+    const y = 24 + i * 19;
+    ctx.fillStyle = COLOR.text;
+    if (h.key) {
+      ctx.font = "bold 13px system-ui, sans-serif";
+      ctx.fillText(h.key, PANEL_X, y);
+      const kw = ctx.measureText(h.key).width;
+      ctx.font = "13px system-ui, sans-serif";
+      ctx.fillText(h.rest, PANEL_X + kw, y);
+    } else {
+      ctx.fillText(h.rest, PANEL_X, y);
+    }
+  });
+}
+
+/** Break `text` into lines that each fit `maxW` at the current font. */
+function wrapText(ctx: CanvasRenderingContext2D, text: string, maxW: number): string[] {
+  const lines: string[] = [];
+  let line = "";
+  for (const word of text.split(" ")) {
+    const trial = line ? `${line} ${word}` : word;
+    if (line && ctx.measureText(trial).width > maxW) {
+      lines.push(line);
+      line = word;
+    } else {
+      line = trial;
+    }
+  }
+  if (line) lines.push(line);
+  return lines;
+}
+
+/**
+ * The solver-stepper panel, in the top-right column the truck panel normally
+ * owns (empty during the stepper). The move caption wraps across lines so it
+ * never crowds the map; controls and the grey legend sit below.
+ */
+function drawSolvePanel(ctx: CanvasRenderingContext2D, label: string, i: number, n: number): void {
+  const x = PANEL_X;
+  ctx.textAlign = "left";
+
+  ctx.fillStyle = COLOR.text;
+  ctx.font = "bold 14px system-ui, sans-serif";
+  ctx.fillText("Building the plan", x, PANEL_TOP);
+  ctx.fillStyle = COLOR.note;
+  ctx.font = "12px system-ui, sans-serif";
+  ctx.fillText(`step ${i + 1} of ${n}`, x, PANEL_TOP + 17);
+
+  let y = PANEL_TOP + 48;
+  ctx.fillStyle = COLOR.text;
+  ctx.font = "bold 14px system-ui, sans-serif";
+  for (const ln of wrapText(ctx, label, PANEL_W)) {
+    ctx.fillText(ln, x, y);
+    y += 19;
+  }
+
+  y += 14;
+  ctx.fillStyle = COLOR.note;
+  ctx.font = "12px system-ui, sans-serif";
+  for (const ln of ["A / →   next step", "←   step back", "Esc   exit", "", "grey = truck not yet decided"]) {
+    if (ln) ctx.fillText(ln, x, y);
+    y += 17;
+  }
+}
+
+/** Grey veil + label while the solver runs — the shuffle takes a beat, so say so. */
+function drawSolveVeil(ctx: CanvasRenderingContext2D): void {
+  ctx.fillStyle = "rgba(13, 27, 42, 0.5)"; // the page bg, translucent
+  ctx.fillRect(0, 0, MAP_W, MAP_H);
+  ctx.fillStyle = "#ffffff";
+  ctx.font = "bold 22px system-ui, sans-serif";
+  ctx.textAlign = "center";
+  ctx.fillText("shuffling…", MAP_W / 2, MAP_H / 2);
+}
+
+/**
+ * The drawn polyline of a truck's whole tour, FC -> stops -> FC. It follows real
+ * arteries and bridges (each leg is the substrate's shortest path, stitched edge
+ * by edge), and at every neighborhood it threads onto the ring road: a full loop
+ * of the cul-de-sac where the truck delivers, a short arc where it only passes
+ * through. So the line stays on the roads the whole way and visibly drives
+ * around to the houses.
+ */
+function routeGeometry(route: Route): Pt[] {
+  const waypoints = ["FC", ...route.stops.map((s) => s.nbhd), "FC"];
+  const nodes: string[] = [];
+  for (let i = 1; i < waypoints.length; i++) {
+    const leg = SUB.path(waypoints[i - 1], waypoints[i]); // [a, ..., b]
+    for (const node of leg) if (nodes[nodes.length - 1] !== node) nodes.push(node);
+  }
+  const housesAt = new Map<string, number[]>();
+  for (const s of route.stops) housesAt.set(s.nbhd, (housesAt.get(s.nbhd) ?? []).concat(s.houses));
+
+  const pts: Pt[] = [];
+  for (let i = 1; i < nodes.length; i++) {
+    const prev = nodes[i - 1];
+    const node = nodes[i];
+    pts.push(...edgePolyline(prev, node)); // the artery in, ending at node's entry gate
+    if (node !== "FC" && i < nodes.length - 1) {
+      const next = nodes[i + 1];
+      const entry = gateAngle(node, nodeAt(prev));
+      const exit = gateAngle(node, nodeAt(next));
+      pts.push(...ringWalkPath(node, entry, exit, houseAngles(node, housesAt.get(node) ?? []))); // ring to exit gate
+    }
+  }
+  return pts;
+}
+
+/**
+ * The route layer (z=2), drawn on top of the map. With a truck active (hovered
+ * directly, or via the neighborhood it serves) we show ONLY that truck's tour;
+ * otherwise every truck's, lighter.
+ */
+function drawRoutes(ctx: CanvasRenderingContext2D, plan: Plan, activeTruck: number | null): void {
+  ctx.lineCap = "round";
+  ctx.lineJoin = "round";
+  plan.routes.forEach((route, i) => {
+    if (activeTruck !== null && i !== activeTruck) return; // single-route mode
+    const pts = routeGeometry(route);
+    if (pts.length < 2) return;
+    const emphasised = activeTruck === i;
+    trace(ctx, pts, false);
+    ctx.globalAlpha = 0.8;
+    ctx.lineWidth = emphasised ? 2.8 : 1.6;
+    ctx.strokeStyle = TRUCK_COLORS[i % TRUCK_COLORS.length];
+    ctx.stroke();
+    ctx.globalAlpha = 1;
+  });
+}
+
+// --- Animation: trucks as dots riding their routes (the "watch the day run"
+// flipbook). It's a pure read-out of each truck's Itinerary (timeline.ts): the
+// dot's position AND the doorstep checkmarks both come from the same ordered
+// legs, so they can't drift. A single global clock drives every truck.
+//
+// Departures stagger because the warehouse can only load one truck at a time:
+// the crew loads the hardest route first (LOAD_PER_TOTE per tote), and each
+// truck waits at the dock until the trucks ahead of it in line are loaded. So a
+// truck behind a big load waits longer — the fleet fans out on its own.
+
+const DOCK_TIME = 8; // minutes to load one truck at the single dock
+
+export type Track = {
+  itin: Itinerary; // the canonical sequence of timed legs
+  full: Pt[]; // the whole polyline, for the faint "road ahead" underlay
+  deliveries: { key: string; t: number }[]; // local time each house's service ends
+  total: number; // minutes start-to-finish (== route.time)
+  depart: number; // minutes after the global clock that this truck leaves the FC
+  color: string;
+};
+
+function legEnd(leg: Leg): Pt {
+  return leg.kind === "drive" || leg.kind === "arc" ? leg.pts[leg.pts.length - 1] : leg.at;
+}
+
+/** Build every truck's itinerary once when play starts, then stagger departures. */
+export function buildTracks(plan: Plan): Track[] {
+  const tracks: Track[] = plan.routes.map((r, i) => {
+    const itin = buildItinerary(SUB, r);
+    const full: Pt[] = [];
+    const deliveries: { key: string; t: number }[] = [];
+    let t = 0;
+    for (const leg of itin.legs) {
+      if (leg.kind === "drive" || leg.kind === "arc") for (const p of leg.pts) full.push(p);
+      else if (leg.kind === "service") deliveries.push({ key: leg.house, t: t + leg.dur });
+      t += leg.dur;
+    }
+    return { itin, full, deliveries, total: itin.total, depart: 0, color: TRUCK_COLORS[i % TRUCK_COLORS.length] };
+  });
+  // One loading dock: the crew loads the hardest route first, and each truck
+  // departs DOCK_TIME after the one ahead of it — so the longest routes fan out
+  // of the FC with the biggest head start.
+  const order = tracks.map((_, i) => i).sort((a, b) => tracks[b].total - tracks[a].total);
+  order.forEach((ti, rank) => (tracks[ti].depart = rank * DOCK_TIME));
+  return tracks;
+}
+
+/** Houses delivered by global clock `t` (a house flips once its service ends). */
+function deliveredAt(tracks: Track[], t: number): Set<string> {
+  const done = new Set<string>();
+  for (const track of tracks) {
+    const e = t - track.depart;
+    for (const d of track.deliveries) if (e >= d.t) done.add(d.key);
+  }
+  return done;
+}
+
+/** A checkmark in the truck's colour, with a white halo so it reads on the map. */
+function drawCheck(ctx: CanvasRenderingContext2D, cx: number, cy: number, s: number, color: string): void {
+  ctx.beginPath();
+  ctx.moveTo(cx - s * 0.45, cy + s * 0.05);
+  ctx.lineTo(cx - s * 0.1, cy + s * 0.4);
+  ctx.lineTo(cx + s * 0.5, cy - s * 0.45);
+  ctx.lineCap = "round";
+  ctx.lineJoin = "round";
+  ctx.strokeStyle = "#ffffff";
+  ctx.lineWidth = s * 0.55;
+  ctx.stroke();
+  ctx.strokeStyle = color;
+  ctx.lineWidth = s * 0.34;
+  ctx.stroke();
+}
+
+/**
+ * Read the truck off its itinerary at the global clock: where its dot is, the
+ * trail behind it, and whether it's out on the road (vs waiting at the FC or
+ * already home). Walk the legs accumulating minutes; the leg holding `e` gives
+ * the head (interpolated along a drive/arc, parked at a service stop).
+ */
+function posAt(track: Track, clock: number): { head: Pt; prefix: Pt[]; active: boolean } {
+  const e = clock - track.depart;
+  const legs = track.itin.legs;
+  if (e <= 0 || legs.length === 0) return { head: WAREHOUSE, prefix: [], active: false };
+  if (e >= track.total) return { head: legEnd(legs[legs.length - 1]), prefix: track.full, active: false };
+
+  const prefix: Pt[] = [];
+  let head: Pt = WAREHOUSE;
+  let acc = 0;
+  for (const leg of legs) {
+    const end = acc + leg.dur;
+    if (leg.kind === "drive" || leg.kind === "arc") {
+      if (e >= end) {
+        for (const p of leg.pts) prefix.push(p);
+        head = leg.pts[leg.pts.length - 1];
+      } else {
+        const f = leg.dur > 0 ? (e - acc) / leg.dur : 0;
+        head = alongPoly(leg.pts, f, prefix);
+        break;
+      }
+    } else {
+      // enter / service: the truck is parked at a single point for the duration.
+      head = leg.at;
+      if (e < end) {
+        prefix.push(leg.at);
+        break;
+      }
+      prefix.push(leg.at);
+    }
+    acc = end;
+  }
+  return { head, prefix, active: true };
+}
+
+/** Point at fraction `f` along a polyline; pushes the travelled prefix into `out`. */
+function alongPoly(pts: Pt[], f: number, out: Pt[]): Pt {
+  let total = 0;
+  for (let i = 1; i < pts.length; i++) total += Math.hypot(pts[i].x - pts[i - 1].x, pts[i].y - pts[i - 1].y);
+  const target = f * total;
+  out.push(pts[0]);
+  let acc = 0;
+  for (let i = 1; i < pts.length; i++) {
+    const d = Math.hypot(pts[i].x - pts[i - 1].x, pts[i].y - pts[i - 1].y);
+    if (acc + d >= target) {
+      const t = d > 0 ? (target - acc) / d : 0;
+      const head = { x: pts[i - 1].x + (pts[i].x - pts[i - 1].x) * t, y: pts[i - 1].y + (pts[i].y - pts[i - 1].y) * t };
+      out.push(head);
+      return head;
+    }
+    out.push(pts[i]);
+    acc += d;
+  }
+  return pts[pts.length - 1];
+}
+
+function drawAnimation(ctx: CanvasRenderingContext2D, tracks: Track[], t: number): void {
+  ctx.lineCap = "round";
+  ctx.lineJoin = "round";
+
+  // Faint full routes underneath — "the roads ahead".
+  for (const track of tracks) {
+    if (track.full.length < 2) continue;
+    trace(ctx, track.full, false);
+    ctx.globalAlpha = 0.16;
+    ctx.lineWidth = 1.4;
+    ctx.strokeStyle = track.color;
+    ctx.stroke();
+  }
+
+  // Travelled trail + the dot at each truck's head.
+  for (const track of tracks) {
+    const { head, prefix, active } = posAt(track, t);
+
+    if (prefix.length >= 2) {
+      trace(ctx, prefix, false);
+      ctx.globalAlpha = 0.85;
+      ctx.lineWidth = 2.4;
+      ctx.strokeStyle = track.color;
+      ctx.stroke();
+    }
+
+    // Trucks waiting at the FC or already home read smaller and dimmer, so the
+    // ones actually out driving are what your eye follows.
+    ctx.globalAlpha = active ? 1 : 0.55;
+    ctx.beginPath();
+    ctx.arc(head.x, head.y, active ? 6 : 4.5, 0, Math.PI * 2);
+    ctx.fillStyle = track.color;
+    ctx.fill();
+    ctx.lineWidth = 2;
+    ctx.strokeStyle = "#ffffff";
+    ctx.stroke();
+  }
+  ctx.globalAlpha = 1;
+}
+
+// Progress meter (bottom, left-aligned with the HUD): one square per delivered house in
+// a single row straight across, appended in the order doorsteps are hit across the WHOLE
+// fleet and tinted by the delivering truck.
+const PROG_CELL = 3; // each house is a 3×3 square, packed with no gaps (100 → 300px wide)
+
+/**
+ * The day's deliveries as a filling row of 3×3 squares — total progress at a glance, and
+ * which trucks cleared their routes first: a truck's colour stops appearing once it's
+ * done, so the slow west routes trail to the very end despite their head start out of the
+ * single dock (departures stagger by load; finishing order is what this shows).
+ */
+function drawProgress(ctx: CanvasRenderingContext2D, tracks: Track[], t: number): void {
+  const events: { t: number; color: string }[] = [];
+  for (const tr of tracks) for (const d of tr.deliveries) events.push({ t: tr.depart + d.t, color: tr.color });
+  events.sort((a, b) => a.t - b.t);
+  const total = events.length;
+  let done = 0;
+  for (const e of events) if (t >= e.t) done++;
+
+  const x0 = 24; // left edge aligned with the HUD
+  const y0 = 699; // near the very bottom (the controls hint that used to live here moved up-right)
+  for (let i = 0; i < total; i++) {
+    ctx.fillStyle = i < done ? events[i].color : "rgba(20, 26, 34, 0.10)";
+    ctx.fillRect(x0 + i * PROG_CELL, y0, PROG_CELL, PROG_CELL);
+  }
+
+  ctx.textAlign = "left";
+  ctx.fillStyle = COLOR.text;
+  ctx.font = "bold 12px system-ui, sans-serif";
+  ctx.fillText(`delivered ${done} / ${total}`, x0 + total * PROG_CELL + 8, y0 + PROG_CELL);
+}
+
+function drawClock(ctx: CanvasRenderingContext2D, t: number, maxT: number, playing: boolean): void {
+  const done = t >= maxT;
+  ctx.textAlign = "left";
+  ctx.fillStyle = COLOR.text;
+  ctx.font = "bold 15px system-ui, sans-serif";
+  const badge = done ? "✓ day complete" : playing ? "▶ running the day" : "⏸ paused";
+  ctx.fillText(`${badge}  ·  ${Math.round(Math.min(t, maxT))} / ${Math.round(maxT)} min`, 24, 690);
+}
+
+function drawTruckPanel(ctx: CanvasRenderingContext2D, plan: Plan, activeTruck: number | null): void {
+  const deployed = plan.routes.filter((r) => r.stops.length > 0).length;
+  ctx.textAlign = "left";
+  ctx.fillStyle = COLOR.text;
+  ctx.font = "bold 14px system-ui, sans-serif";
+  ctx.fillText(`Plan — ${deployed} of ${FLEET.trucks} trucks out`, PANEL_X, PANEL_TOP);
+  ctx.fillStyle = COLOR.note;
+  ctx.font = "12px system-ui, sans-serif";
+  ctx.fillText(`${Math.round(plan.totalTime)} driver-min  ·  spread ${Math.round(plan.spread)} min`, PANEL_X, PANEL_TOP + 17);
+
+  plan.routes.forEach((route, i) => {
+    const y = PANEL_ROW0 + i * PANEL_ROW_H;
+    const lit = activeTruck === i;
+    const idle = route.stops.length === 0;
+
+    if (lit) {
+      ctx.fillStyle = "rgba(20, 26, 34, 0.06)";
+      ctx.fillRect(PANEL_X - 4, y - 13, PANEL_W + 8, PANEL_ROW_H);
+    }
+
+    // The truck's colour tab — hollow for an idle truck (it never left the dock).
+    ctx.globalAlpha = idle ? 0.4 : 1;
+    ctx.strokeStyle = TRUCK_COLORS[i % TRUCK_COLORS.length];
+    ctx.lineWidth = lit ? 5 : 3;
+    ctx.beginPath();
+    ctx.moveTo(PANEL_X, y - 4);
+    ctx.lineTo(PANEL_X + 18, y - 4);
+    ctx.stroke();
+    ctx.globalAlpha = 1;
+
+    ctx.fillStyle = idle ? COLOR.faint : lit ? COLOR.text : COLOR.note;
+    ctx.font = `${lit && !idle ? "bold " : ""}12px system-ui, sans-serif`;
+    ctx.fillText(
+      idle
+        ? `Truck ${i + 1}: idle — stayed home`
+        : `Truck ${i + 1}: ${route.orders}/${TRUCK_CAPS[i]} totes · ${Math.round(route.time)}m · ${route.stops.length} stops`,
+      PANEL_X + 26,
+      y,
+    );
+  });
+
+  if (plan.unrouted.length) {
+    ctx.fillStyle = "#c0392b";
+    ctx.font = "bold 12px system-ui, sans-serif";
+    ctx.fillText(`⚠ ${plan.unrouted.length} stops unrouted`, PANEL_X, PANEL_ROW0 + plan.routes.length * PANEL_ROW_H + 2);
+  }
+}
+
+/** Which truck-panel row (if any) a logical point falls on — for hover focus. */
+export function truckPanelHitTest(plan: Plan, p: Pt): number | null {
+  for (let i = 0; i < plan.routes.length; i++) {
+    const y = PANEL_ROW0 + i * PANEL_ROW_H;
+    if (p.x >= PANEL_X - 4 && p.x <= PANEL_X + PANEL_W + 4 && p.y >= y - 13 && p.y <= y + PANEL_ROW_H - 13) return i;
+  }
+  return null;
+}
+
+export type MapView = {
+  orders: Set<string>;
+  plan: Plan;
+  hoverNbhd: string | null; // neighborhood under the cursor (map)
+  hoverHouse: string | null; // nearest ordered house under the cursor (`nbhd#i`)
+  focusTruck: number | null; // truck row under the cursor (panel)
+  shift: number; // which shuffle we're on (S1, S2, …)
+  solving: boolean; // mid-solve → grey the map behind a "shuffling…" veil
+  anim?: { t: number; maxT: number; playing: boolean; tracks: Track[]; blink?: boolean } | null; // play mode
+  solveAnim?: { frames: SolveFrame[]; i: number } | null; // `A` — watch the solver build the plan
+};
+
+// A solver-animation house whose truck isn't committed yet (a "free" stop that
+// hasn't merged onto an anchored route). Neutral grey → "still up for grabs".
+const COLOR_PENDING = "#9aa0a8";
+
+/**
+ * Frame colours for the solver animation. A house wears its truck's colour the
+ * moment that truck is *committed* — which for an anchored cluster is from the
+ * very first frame (its route carries the anchor's pin). Unpinned "free" stops
+ * stay grey until they merge onto a pinned route (or get slotted at the end),
+ * so the colour never asserts a truck the solver hasn't actually chosen yet.
+ */
+function frameColorMaps(frame: { routes: { stops: Stop[] }[] }): Map<string, string> {
+  const houseColor = new Map<string, string>();
+  for (const r of frame.routes) {
+    const pin = r.stops.find((s) => s.pin !== undefined)?.pin;
+    const c = pin !== undefined ? TRUCK_COLORS[pin % TRUCK_COLORS.length] : COLOR_PENDING;
+    for (const s of r.stops) for (const h of s.houses) houseColor.set(`${s.nbhd}#${h}`, c);
+  }
+  return houseColor;
+}
+
+/** Per-house truck colour and truck index (a split neighborhood maps to two trucks). */
+function truckColorMaps(plan: { routes: { stops: Stop[] }[] }): { houseColor: Map<string, string>; houseTruck: Map<string, number> } {
+  const houseColor = new Map<string, string>();
+  const houseTruck = new Map<string, number>();
+  plan.routes.forEach((r, i) => {
+    const c = TRUCK_COLORS[i % TRUCK_COLORS.length];
+    for (const s of r.stops) for (const h of s.houses) {
+      houseColor.set(`${s.nbhd}#${h}`, c);
+      houseTruck.set(`${s.nbhd}#${h}`, i);
+    }
+  });
+  return { houseColor, houseTruck };
+}
+
+/**
+ * The "active" truck for a hover and the set of its houses to pop. Prefer the
+ * truck hovered directly in the panel; else the truck delivering the house
+ * nearest the cursor (so a split neighborhood surfaces the *right* truck); else,
+ * failing a specific house, whichever truck serves the hovered neighborhood.
+ */
+function focusOf(
+  plan: Plan,
+  houseTruck: Map<string, number>,
+  hoverNbhd: string | null,
+  hoverHouse: string | null,
+  focusTruck: number | null,
+): { activeTruck: number | null; highlight: Set<string> | null } {
+  let activeTruck = focusTruck;
+  if (activeTruck === null && hoverHouse !== null && houseTruck.has(hoverHouse)) {
+    activeTruck = houseTruck.get(hoverHouse)!;
+  }
+  if (activeTruck === null && hoverNbhd !== null) {
+    const serving = plan.routes.findIndex((r) => r.stops.some((s) => s.nbhd === hoverNbhd));
+    if (serving >= 0) activeTruck = serving;
+  }
+  let highlight: Set<string> | null = null;
+  if (activeTruck !== null && plan.routes[activeTruck]) {
+    highlight = new Set();
+    for (const s of plan.routes[activeTruck].stops) for (const i of s.houses) highlight.add(`${s.nbhd}#${i}`);
+  }
+  return { activeTruck, highlight };
+}
+
+/**
+ * Paint the frame. The map (z=1) is always the same picture — only the order
+ * squares are tinted by their truck. The routes (z=2) ride on top, all of them
+ * or just the focused truck's.
+ */
+export function drawMap(ctx: CanvasRenderingContext2D, view: MapView): void {
+  const { orders, plan, hoverNbhd, hoverHouse, focusTruck, shift, solving, anim, solveAnim } = view;
+
+  // Solver animation: replay the build step by step. Each frame recolours the
+  // dots from that moment's assignment — clusters coalesce, stops hop trucks,
+  // and the final frame snaps everything into its truck's lane. No routes or
+  // truck panel here; it's purely "watch who gets handed to whom".
+  if (solveAnim) {
+    const frame = solveAnim.frames[solveAnim.i];
+    // The final frame is fully slotted (every cluster has a truck), so colour by
+    // slot; earlier frames colour by commitment, leaving undecided houses grey.
+    const isFinal = solveAnim.i === solveAnim.frames.length - 1;
+    const houseColor = isFinal ? truckColorMaps(frame).houseColor : frameColorMaps(frame);
+    const popped = frame.touched.length ? new Set(frame.touched) : null;
+    drawLand(ctx);
+    drawWater(ctx);
+    drawRegionLabels(ctx);
+    drawRoads(ctx);
+    drawBridges(ctx);
+    drawGates(ctx);
+    for (const n of NEIGHBORHOODS) drawNeighborhood(ctx, n, orders, houseColor, null, null, popped);
+    drawWarehouse(ctx);
+    drawHud(ctx, shift);
+    drawSolvePanel(ctx, frame.label, solveAnim.i, solveAnim.frames.length);
+    return;
+  }
+
+  // Play mode: the static map underneath, then the moving dots on top. While the
+  // day is actually running, hover focus is suppressed so nothing competes with
+  // the trucks. The moment you PAUSE, hover comes back to life — you can inspect
+  // any truck's whole tour mid-day, laid over how far its dot has got.
+  if (anim) {
+    const { houseColor, houseTruck } = truckColorMaps(plan);
+    const paused = !anim.playing;
+    const { activeTruck, highlight } = paused
+      ? focusOf(plan, houseTruck, hoverNbhd, hoverHouse, focusTruck)
+      : { activeTruck: null as number | null, highlight: null as Set<string> | null };
+
+    drawLand(ctx);
+    drawWater(ctx);
+    drawRegionLabels(ctx);
+    drawRoads(ctx);
+    drawBridges(ctx);
+    drawGates(ctx);
+    // The completion blink: a single blanked frame the instant the last tote lands —
+    // routes and checkmarks wink off, then the next frame brings them back.
+    const delivered = anim.blink ? null : deliveredAt(anim.tracks, anim.t);
+    for (const n of NEIGHBORHOODS) drawNeighborhood(ctx, n, orders, houseColor, highlight, delivered);
+    drawWarehouse(ctx);
+    if (!anim.blink) drawAnimation(ctx, anim.tracks, anim.t);
+    // A hovered truck (paused only): lay its full tour on top of the trail, so
+    // the road still ahead of the dot reads.
+    if (activeTruck !== null) drawRoutes(ctx, plan, activeTruck);
+    drawHud(ctx, shift);
+    drawTruckPanel(ctx, plan, activeTruck);
+    drawClock(ctx, anim.t, anim.maxT, anim.playing);
+    drawProgress(ctx, anim.tracks, anim.t);
+    if (paused) drawDetail(ctx, plan, orders, hoverNbhd, activeTruck);
+    return;
+  }
+
+  // Each ordered house takes the colour — and records the truck — that delivers
+  // it, so a neighborhood split between trucks shows both colours and we can ask
+  // "who delivers this house?". The active truck's houses then pop; the rest fade.
+  const { houseColor, houseTruck } = truckColorMaps(plan);
+  const { activeTruck, highlight } = focusOf(plan, houseTruck, hoverNbhd, hoverHouse, focusTruck);
+
+  // z=1 — the map itself.
+  drawLand(ctx);
+  drawWater(ctx);
+  drawRegionLabels(ctx);
+  drawRoads(ctx);
+  drawBridges(ctx);
+  drawGates(ctx);
+  for (const n of NEIGHBORHOODS) drawNeighborhood(ctx, n, orders, houseColor, highlight, null);
+  drawWarehouse(ctx);
+
+  // z=2 — the routes, on top so the loop around each cul-de-sac is visible.
+  drawRoutes(ctx, plan, activeTruck);
+
+  // Screen furniture — all off the map, so nothing floats over the routes.
+  drawHud(ctx, shift);
+  drawTruckPanel(ctx, plan, activeTruck);
+  drawDetail(ctx, plan, orders, hoverNbhd, activeTruck);
+
+  // While the next plan is being solved, grey the (now-stale) map behind a veil.
+  if (solving) drawSolveVeil(ctx);
+}
