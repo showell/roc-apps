@@ -8,7 +8,13 @@
 ##
 ## A pattern compiles to a small program of steps, and a line is searched by
 ## carrying every step the match could be at, one byte at a time, so a search
-## is linear in the line's length whatever the pattern.
+## is linear in the line's length whatever the pattern. While no step is live,
+## the search skips to the next byte a match could start with, which spares
+## most of a line for a pattern that starts with a word. Before any of that,
+## a line that holds none of the pattern's required texts is passed over: each
+## alternative at the top has the longest run of plain bytes in it that every
+## match of that alternative holds, and a pattern with an alternative that has
+## no such run has no required texts.
 
 ## One step of a compiled pattern. `Split` and `Jump` name other steps by
 ## their place in the program.
@@ -24,7 +30,14 @@ Step : [
 	Matched,
 ]
 
-TermPattern :: List(Step).{
+## The steps a match starts at, each reading a byte, or `Anywhere` when one of
+## them reads any byte, or none does.
+Starts : [Anywhere, Only(List(Step))]
+
+## The texts a line must hold one of to match, or `AnyLine`.
+Required : [AnyLine, OneOf(List(Str))]
+
+TermPattern :: { steps : List(Step), starts : Starts, required : Required }.{
 
 	## The pattern's program, or what in it this subset refuses.
 	from_str : Str -> Try(TermPattern, Str)
@@ -32,7 +45,8 @@ TermPattern :: List(Step).{
 		bytes = text.to_utf8()
 		parsed = alternatives_at(bytes, 0)?
 		if parsed.at == bytes.len() {
-			Ok(TermPattern.(parsed.steps.append(Matched)))
+			steps = parsed.steps.append(Matched)
+			Ok(TermPattern.({ steps, starts: starts_of(steps), required: required_of(parsed.runs) }))
 		} else {
 			Err("the pattern `${text}` has a `)` that closes no group")
 		}
@@ -40,28 +54,125 @@ TermPattern :: List(Step).{
 
 	## Whether the pattern matches anywhere in `line`.
 	is_found_in : TermPattern, Str -> Bool
-	is_found_in = |TermPattern.(steps), line| {
-		bytes = line.to_utf8()
-		len = bytes.len()
-		var $live = []
-		var $at = 0
-		var $found = Bool.False
-		while !$found and $at <= len {
-			$live = closure(steps, { live: $live.append(0), bytes, at: $at })
-			if $live.any(|place| steps.get(place) == Ok(Matched)) {
-				$found = Bool.True
-			} else {
-				byte_here = bytes.get($at)
-				$live = $live.keep_if(|place| accepts(steps, { place, byte: byte_here })).map(|place| place + 1)
-				$at = $at + 1
+	is_found_in = |TermPattern.({ steps, starts, required }), line|
+		match required {
+			OneOf(texts) if !texts.any(|text| line.contains(text)) => Bool.False
+			_ => searched(steps, { starts, line })
+		}
+}
+
+## Whether the program matches anywhere in `line`.
+searched : List(Step), { starts : Starts, line : Str } -> Bool
+searched = |steps, { starts, line }| {
+	bytes = line.to_utf8()
+	len = bytes.len()
+	var $live = []
+	var $at = 0
+	var $found = Bool.False
+	while !$found and $at <= len {
+		if $live.is_empty() {
+			$at = next_start(starts, { bytes, at: $at })
+		}
+		$live = closure(steps, { live: $live.append(0), bytes, at: $at })
+		if $live.any(|place| steps.get(place) == Ok(Matched)) {
+			$found = Bool.True
+		} else {
+			byte_here = bytes.get($at)
+			$live = $live.keep_if(|place| accepts(steps, { place, byte: byte_here })).map(|place| place + 1)
+			$at = $at + 1
+		}
+	}
+	$found
+}
+
+## The texts each top-level alternative's longest plain run makes, when every
+## alternative has one that is text.
+required_of : List(List(U8)) -> Required
+required_of = |runs|
+	if runs.any(|run| run.is_empty()) {
+		AnyLine
+	} else {
+		texts = runs.keep_oks(Str.from_utf8)
+		if texts.len() == runs.len() {
+			OneOf(texts)
+		} else {
+			AnyLine
+		}
+	}
+
+## The steps reachable from the program's start without reading a byte, each
+## condition (`\b`, `^`, `$`) taken as met, are the steps a match starts at.
+starts_of : List(Step) -> Starts
+starts_of = |steps| {
+	var $todo = [0]
+	var $seen = []
+	var $starts = []
+	var $anywhere = Bool.False
+	while !$todo.is_empty() {
+		place = $todo.last() ?? crash "TermPattern.starts_of: the list isn't empty"
+		$todo = $todo.drop_last(1)
+		if !$seen.contains(place) {
+			$seen = $seen.append(place)
+			match steps.get(place) {
+				Ok(Split(first, second)) => {
+					$todo = $todo.append(second).append(first)
+				}
+				Ok(Jump(target)) => {
+					$todo = $todo.append(target)
+				}
+				Ok(Boundary) | Ok(LineStart) | Ok(LineEnd) => {
+					$todo = $todo.append(place + 1)
+				}
+				Ok(Byte(byte)) => {
+					$starts = $starts.append(Byte(byte))
+				}
+				Ok(Class({ side: Inside, ranges })) => {
+					$starts = $starts.append(Class({ side: Inside, ranges }))
+				}
+				Ok(AnyByte) | Ok(Class({ side: Outside, .. })) | Ok(Matched) => {
+					$anywhere = Bool.True
+				}
+				Err(OutOfBounds) => crash "TermPattern.starts_of: a step names a place past the program"
 			}
 		}
-		$found
+	}
+	if $anywhere {
+		Anywhere
+	} else {
+		Only($starts)
 	}
 }
 
-## A part of a program and where the parse stopped.
-Parsed : { steps : List(Step), at : U64 }
+## The first place from `at` whose byte a match could start with, or the
+## line's end when there is none. A match that reads no byte makes the starts
+## `Anywhere`, so no match is skipped.
+next_start : Starts, { bytes : List(U8), at : U64 } -> U64
+next_start = |starts, { bytes, at }| match starts {
+	Anywhere => at
+	Only(first_steps) => {
+		var $place = at
+		var $going = Bool.True
+		while $going {
+			match bytes.get($place) {
+				Ok(byte) =>
+					if first_steps.any(|step| accepts([step], { place: 0, byte: Ok(byte) })) {
+						$going = Bool.False
+					} else {
+						$place = $place + 1
+					}
+				Err(OutOfBounds) => {
+					$going = Bool.False
+				}
+			}
+		}
+		$place
+	}
+}
+
+## A part of a program and where the parse stopped, with the longest run of
+## plain bytes each of its alternatives holds in every match, empty where it
+## has none.
+Parsed : { steps : List(Step), at : U64, runs : List(List(U8)) }
 
 ## The steps moved to start at `base` in a larger program.
 shifted : List(Step), U64 -> List(Step)
@@ -93,7 +204,7 @@ alternatives_at = |bytes, at| {
 	first = sequence_at(bytes, at)?
 	if bytes.get(first.at) == Ok('|') {
 		rest = alternatives_at(bytes, first.at + 1)?
-		Ok({ steps: either(first.steps, rest.steps), at: rest.at })
+		Ok({ steps: either(first.steps, rest.steps), at: rest.at, runs: first.runs.concat(rest.runs) })
 	} else {
 		Ok(first)
 	}
@@ -105,6 +216,8 @@ sequence_at = |bytes, start| {
 	var $steps = []
 	var $at = start
 	var $going = Bool.True
+	var $run = []
+	var $longest = []
 	while $going {
 		match bytes.get($at) {
 			Err(OutOfBounds) => {
@@ -116,12 +229,23 @@ sequence_at = |bytes, start| {
 			Ok(_) => {
 				atom = atom_at(bytes, $at)?
 				counted = counted_at(bytes, atom)?
+				match (atom.steps, counted.at == atom.at) {
+					([Byte(byte)], Bool.True) => {
+						$run = $run.append(byte)
+					}
+					_ => {
+						$run = []
+					}
+				}
+				if $run.len() > $longest.len() {
+					$longest = $run
+				}
 				$steps = joined($steps, counted.steps)
 				$at = counted.at
 			}
 		}
 	}
-	Ok({ steps: $steps, at: $at })
+	Ok({ steps: $steps, at: $at, runs: [$longest] })
 }
 
 ## The atom with the count after it, if any.
@@ -129,9 +253,9 @@ counted_at : List(U8), Parsed -> Try(Parsed, Str)
 counted_at = |bytes, atom| {
 	n = atom.steps.len()
 	counted = match bytes.get(atom.at) {
-		Ok('?') => Ok({ steps: [Split(1, n + 1)].concat(shifted(atom.steps, 1)), at: atom.at + 1 })
-		Ok('*') => Ok({ steps: [Split(1, n + 2)].concat(shifted(atom.steps, 1)).append(Jump(0)), at: atom.at + 1 })
-		Ok('+') => Ok({ steps: atom.steps.append(Split(0, n + 1)), at: atom.at + 1 })
+		Ok('?') => Ok({ steps: [Split(1, n + 1)].concat(shifted(atom.steps, 1)), at: atom.at + 1, runs: [] })
+		Ok('*') => Ok({ steps: [Split(1, n + 2)].concat(shifted(atom.steps, 1)).append(Jump(0)), at: atom.at + 1, runs: [] })
+		Ok('+') => Ok({ steps: atom.steps.append(Split(0, n + 1)), at: atom.at + 1, runs: [] })
 		Ok('{') => Err("a count in braces")
 		_ => Ok(atom)
 	}
@@ -156,19 +280,19 @@ atom_at = |bytes, at| match bytes.get(at) {
 		} else {
 			inner = alternatives_at(bytes, inner_start)?
 			if bytes.get(inner.at) == Ok(')') {
-				Ok({ steps: inner.steps, at: inner.at + 1 })
+				Ok({ steps: inner.steps, at: inner.at + 1, runs: [] })
 			} else {
 				Err("a group that never closes")
 			}
 		}
 	}
 	Ok('[') => class_at(bytes, at + 1)
-	Ok('.') => Ok({ steps: [AnyByte], at: at + 1 })
-	Ok('^') => Ok({ steps: [LineStart], at: at + 1 })
-	Ok('$') => Ok({ steps: [LineEnd], at: at + 1 })
+	Ok('.') => Ok({ steps: [AnyByte], at: at + 1, runs: [] })
+	Ok('^') => Ok({ steps: [LineStart], at: at + 1, runs: [] })
+	Ok('$') => Ok({ steps: [LineEnd], at: at + 1, runs: [] })
 	Ok('\\') => escaped_at(bytes, at + 1)
 	Ok(byte) if byte == '?' or byte == '*' or byte == '+' or byte == '{' or byte == '}' => Err("a `${byte_text(byte)}` with nothing to count")
-	Ok(byte) => Ok({ steps: [Byte(byte)], at: at + 1 })
+	Ok(byte) => Ok({ steps: [Byte(byte)], at: at + 1, runs: [] })
 	Err(OutOfBounds) => crash "TermPattern.atom_at: sequence_at asks only inside the pattern"
 }
 
@@ -187,15 +311,15 @@ named_class = |letter| match letter {
 ## What follows a `\`.
 escaped_at : List(U8), U64 -> Try(Parsed, Str)
 escaped_at = |bytes, at| match bytes.get(at) {
-	Ok('b') => Ok({ steps: [Boundary], at: at + 1 })
+	Ok('b') => Ok({ steps: [Boundary], at: at + 1, runs: [] })
 	Ok(letter) =>
 		match named_class(letter) {
-			Ok(ranges) => Ok({ steps: [Class({ side: Inside, ranges })], at: at + 1 })
+			Ok(ranges) => Ok({ steps: [Class({ side: Inside, ranges })], at: at + 1, runs: [] })
 			Err(NotAClass) =>
 				if is_alphanumeric(letter) {
 					Err("the escape `\\${byte_text(letter)}`")
 				} else {
-					Ok({ steps: [Byte(letter)], at: at + 1 })
+					Ok({ steps: [Byte(letter)], at: at + 1, runs: [] })
 				}
 		}
 	Err(OutOfBounds) => Err("a `\\` at the end")
@@ -254,7 +378,7 @@ class_at = |bytes, start| {
 				}
 		}
 	}
-	Ok({ steps: [Class({ side, ranges: $ranges })], at: $at })
+	Ok({ steps: [Class({ side, ranges: $ranges })], at: $at, runs: [] })
 }
 
 ## Whether a word starts or ends at `at`: a word byte on one side only.
@@ -368,3 +492,28 @@ expect refusal("\\1") == "the escape `\\1`"
 expect refusal("a\\") == "a `\\` at the end"
 expect refusal("a}") == "a `}` with nothing to count"
 expect refusal("\\bok\\b") == "accepted"
+
+starts : Str -> Starts
+starts = |pattern| match TermPattern.from_str(pattern) {
+	Ok(TermPattern.({ starts: found_starts, .. })) => found_starts
+	Err(why) => crash "the test pattern `${pattern}` is refused: ${why}"
+}
+
+required : Str -> Required
+required = |pattern| match TermPattern.from_str(pattern) {
+	Ok(TermPattern.({ required: found_required, .. })) => found_required
+	Err(why) => crash "the test pattern `${pattern}` is refused: ${why}"
+}
+
+expect required("\\bgates?\\b") == OneOf(["gate"])
+expect required("anonymous function|lambda") == OneOf(["anonymous function", "lambda"])
+expect required("functions? (is|as) an? (ordinary )?value") == OneOf(["function"])
+expect required("`\\?\\?`") == OneOf(["`??`"])
+expect required("ab+c") == OneOf(["a"])
+expect ["a|b?", "(abc)", "a*", "[ab]x?"].all(|pattern| required(pattern) == AnyLine)
+expect found("a\\.b|lambda", "x a.b y") and !found("a\\.b|lambda", "x a b y")
+expect starts("\\bgates?\\b") == Only([Byte('g')])
+expect starts("^(a|[0-9])") == Only([Byte('a'), Class({ side: Inside, ranges: [{ low: '0', high: '9' }] })])
+expect [".x", "[^ ]x", "x?", "$", "(a|)"].all(|pattern| starts(pattern) == Anywhere)
+expect found("\\bgate\\b", "a long line before the gate") and !found("\\bgate\\b", "a long line before the gates")
+expect found("x?y", "zzzy") and found("(ab|b)c", "aabc") and !found("ab", "a b ba")

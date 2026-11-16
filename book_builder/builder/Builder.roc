@@ -53,6 +53,15 @@ Builder := [].{
 		## matter, which has no number, no word limit and no place in the
 		## index.
 		is_back_matter : Str -> Bool,
+
+		## How the pages look beyond what the manuscript says: the book's name,
+		## the chapters' slugs and dividers, and the book's own HTML on every
+		## page.
+		look : Pages.Look,
+
+		## The includes a pre-step of the book's own expands, as
+		## Includes.expanded describes.
+		prepared : Includes.Prepared,
 	}
 
 	## The settings of a book that names only its own.
@@ -66,6 +75,8 @@ Builder := [].{
 		colorer: Fences.no_color,
 		include_languages: Includes.default_languages,
 		is_back_matter: |title| title.starts_with("Appendix") or title == "Credits",
+		look: Pages.default_look,
+		prepared: NoPrepared,
 	}
 
 	## A text the build read, and its path.
@@ -90,7 +101,7 @@ Builder := [].{
 		manuscript = read_named!(settings.manuscript)?
 		wanted =
 			match Manuscript.lines(manuscript.text) {
-				Ok(lines) => Includes.paths_wanted(lines)
+				Ok(lines) => Includes.paths_wanted(lines, settings.prepared)
 				Err(UnclosedFence(_)) => []
 			}
 		var $includes = []
@@ -134,7 +145,7 @@ Builder := [].{
 				Err(problem) => [problem]
 			}
 		expanded =
-			Includes.expanded(lines, { manuscript: name, files: sources.includes, languages: settings.include_languages })
+			Includes.expanded(lines, { manuscript: name, files: sources.includes, languages: settings.include_languages, prepared: settings.prepared })
 				? |problems| problems.concat(gates).concat(lint_problems)
 		indexed = with_index(expanded, { settings, terms: sources.index_terms })
 		book = Manuscript.pages(indexed.lines)
@@ -154,6 +165,7 @@ Builder := [].{
 			made = Pages.pages({
 				front: render(book.front),
 				chapters: List.map2(book.chapters, numbers, |chapter, number| { page: render(chapter), number }),
+				look: settings.look,
 			})?
 			forged = made.keep_if(|page| page.html.contains(page_mark) or page.html.contains(report_mark)).map(|page| "book: ${page.file} holds the text of a page mark, which would cut the book there")
 			if !forged.is_empty() {

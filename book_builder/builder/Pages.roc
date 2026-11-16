@@ -5,9 +5,15 @@
 ## sections come from the render's own headings, and each section's heading
 ## gets a link to itself.
 ##
-## A chapter's page is named for its heading's id, the front page is
-## `index.html`, and two pages with one name stop the build. So does a page
-## that isn't one top heading with only sections under it.
+## A chapter's page is named for its slug when the book's look gives it one,
+## and for its heading's id otherwise. The front page is `index.html`, and two
+## pages with one name stop the build. So does a page that isn't one top
+## heading with only sections under it, a slug that isn't plain or names no
+## chapter, and a divider above no chapter.
+##
+## A book's look also names the book, adds its own HTML to every page's head
+## and to the start and end of its body, and rewrites each rendered page before
+## its sections are linked.
 import md.MdDocument
 import BookText
 import References
@@ -20,17 +26,69 @@ Pages := [].{
 	## A page as the renderer gave it back, with its chapter's number.
 	Rendered : { page : MdDocument.Page, number : [Numbered(U64), Unnumbered] }
 
+	## A chapter's page name for good, kept when the chapter is retitled: the
+	## page is `<slug>.html`, and the slug holds only lowercase letters, digits
+	## and hyphens.
+	Slug : { chapter : Str, slug : Str }
+
+	## A line in the book's lists of chapters, above the chapter titled
+	## `before`: a part of the book, or a category inside one.
+	Divider : { before : Str, level : [Part, Category], title : Str }
+
+	## How a book's pages look beyond what the manuscript says.
+	Look : {
+		## The book's name, in each page's title and its bar: the front page's
+		## title unless named.
+		book_name : [FrontTitle, Named(Str)],
+
+		## The chapters' page names.
+		slugs : List(Pages.Slug),
+
+		## The parts and categories in the contents and the list of chapters.
+		dividers : List(Pages.Divider),
+
+		## HTML at the end of every page's head, as it is.
+		head_end : Str,
+
+		## HTML at the start of every page's body, as it is.
+		body_start : Str,
+
+		## HTML at the end of every page's body, given the page's `<main>`.
+		body_end : Str -> Str,
+
+		## Each rendered page's HTML, rewritten before its sections are linked
+		## and its chapter references written out.
+		body_rewrite : Str -> Str,
+	}
+
+	## The look of a book that names nothing of its own.
+	default_look : Pages.Look
+	default_look = {
+		book_name: FrontTitle,
+		slugs: [],
+		dividers: [],
+		head_end: "",
+		body_start: "",
+		body_end: |_| "",
+		body_rewrite: |html| html,
+	}
+
 	## The front page, then each chapter's, or every problem found.
-	pages : { front : MdDocument.Page, chapters : List(Pages.Rendered) } -> Try(List(Pages.Page), List(Str))
-	pages = |{ front, chapters }| {
-		front_chapter = chapter_of({ page: front, number: Unnumbered }) ? |problem| [problem]
-		book_name = front_chapter.title
-		made = chapters.map(chapter_of)
-		shaped = made.keep_oks(|chapter| chapter)
+	pages : { front : MdDocument.Page, chapters : List(Pages.Rendered), look : Pages.Look } -> Try(List(Pages.Page), List(Str))
+	pages = |{ front, chapters, look }| {
+		front_chapter = chapter_of({ page: front, number: Unnumbered }, look) ? |problem| [problem]
+		book_name =
+			match look.book_name {
+				FrontTitle => front_chapter.title
+				Named(name) => name
+			}
+		made = chapters.map(|chapter| chapter_of(chapter, look))
+		shaped = made.keep_oks(|chapter| chapter).map(|chapter| with_slug(chapter, look.slugs)).map(|chapter| with_opening(chapter, look.dividers))
 		files = [front_file].concat(shaped.map(|chapter| chapter.file))
 		problems =
 			made
 				.keep_oks(problem_of)
+				.concat(look_problems(shaped, look))
 				.concat(repeated_files(files).map(|file| "book: two pages are named ${file}"))
 		if !problems.is_empty() {
 			Err(problems)
@@ -43,7 +101,7 @@ Pages := [].{
 			} else {
 				match linked.keep_oks(|chapter| chapter) {
 					[linked_front, .. as linked_chapters] => {
-						front_page = { file: front_file, html: front_html(linked_front, { book_name, chapters: linked_chapters }) }
+						front_page = { file: front_file, html: front_html(linked_front, { book_name, chapters: linked_chapters, look }) }
 						chapter_pages = linked_chapters.map_with_index(
 							|chapter, i| {
 								{ previous, next } = neighbours(linked_chapters, i)
@@ -56,6 +114,7 @@ Pages := [].{
 											chapters: linked_chapters,
 											previous,
 											next,
+											look,
 										},
 									),
 								}
@@ -81,6 +140,7 @@ Chapter : {
 	number : [Numbered(U64), Unnumbered],
 	body : Str,
 	sections : List(Section),
+	opening : Str,
 }
 
 problem_of : Try(Chapter, Str) -> Try(Str, [NoProblem])
@@ -96,8 +156,8 @@ problem_list = |made| match made {
 }
 
 ## A page has one top heading, and the rest of its headings are its sections.
-chapter_of : Pages.Rendered -> Try(Chapter, Str)
-chapter_of = |{ page, number }| {
+chapter_of : Pages.Rendered, Pages.Look -> Try(Chapter, Str)
+chapter_of = |{ page, number }, look| {
 	html = BookText.text_from_bytes(page.html)
 	match page.headings {
 		[top, .. as rest] if top.level == 1 and rest.all(|heading| heading.level == 2) =>
@@ -105,8 +165,9 @@ chapter_of = |{ page, number }| {
 				file: "${BookText.text_from_bytes(top.id)}.html",
 				title: BookText.text_from_bytes(top.text),
 				number,
-				body: with_section_links(html),
+				body: with_section_links((look.body_rewrite)(html)),
 				sections: rest.map(section_of),
+				opening: "",
 			})
 		headings => {
 			titles = Str.join_with(headings.map(|heading| BookText.text_from_bytes(heading.text)), ", ")
@@ -144,6 +205,47 @@ section_of = |heading| {
 	{ id: BookText.text_from_bytes(heading.id), title }
 }
 
+## The chapter with its page named for its slug, if it has one.
+with_slug : Chapter, List(Pages.Slug) -> Chapter
+with_slug = |chapter, slugs| match slugs.find_first(|slug| slug.chapter == chapter.title) {
+	Ok(slug) => { ..chapter, file: "${slug.slug}.html" }
+	Err(NotFound) => chapter
+}
+
+## The chapter with the list items of the dividers above it.
+with_opening : Chapter, List(Pages.Divider) -> Chapter
+with_opening = |chapter, dividers| {
+	above = dividers.keep_if(|divider| divider.before == chapter.title)
+	{ ..chapter, opening: Str.join_with(above.map(divider_html), "\n") }
+}
+
+divider_html : Pages.Divider -> Str
+divider_html = |divider| {
+	class =
+		match divider.level {
+			Part => "part"
+			Category => "category"
+		}
+	"<li class=\"${class}\">${BookText.escaped_text(divider.title)}</li>"
+}
+
+## What is wrong with a look's slugs and dividers: a slug that isn't plain or
+## names no chapter, and a divider above no chapter.
+look_problems : List(Chapter), Pages.Look -> List(Str)
+look_problems = |chapters, look| {
+	titled = |title| chapters.any(|chapter| chapter.title == title)
+	not_plain = look.slugs.drop_if(|slug| is_plain_slug(slug.slug)).map(|slug| "book: the slug `${slug.slug}` isn't plain: lowercase letters, digits and hyphens")
+	no_chapter = look.slugs.drop_if(|slug| titled(slug.chapter)).map(|slug| "book: the slug `${slug.slug}` names `${slug.chapter}`, a chapter that isn't in the book")
+	no_place = look.dividers.drop_if(|divider| titled(divider.before)).map(|divider| "book: the divider `${divider.title}` stands above `${divider.before}`, a chapter that isn't in the book")
+	[not_plain, no_chapter, no_place].join()
+}
+
+is_plain_slug : Str -> Bool
+is_plain_slug = |slug| {
+	bytes = slug.to_utf8()
+	!bytes.is_empty() and bytes.all(|byte| (byte >= 'a' and byte <= 'z') or (byte >= '0' and byte <= '9') or byte == '-')
+}
+
 ## Each file named more than once, once.
 repeated_files : List(Str) -> List(Str)
 repeated_files = |files| files.fold(
@@ -177,8 +279,8 @@ neighbour_at = |chapters, i| match chapters.get(i) {
 	Err(OutOfBounds) => NoChapter
 }
 
-front_html : Chapter, { book_name : Str, chapters : List(Chapter) } -> Str
-front_html = |front, { book_name, chapters }| {
+front_html : Chapter, { book_name : Str, chapters : List(Chapter), look : Pages.Look } -> Str
+front_html = |front, { book_name, chapters, look }| {
 	contents = Str.join_with(chapters.map(contents_entry), "\n")
 	main =
 		\\<main>
@@ -190,16 +292,19 @@ front_html = |front, { book_name, chapters }| {
 		\\</ol>
 		\\</article>
 		\\</main>
-	page_html({
-		title: BookText.escaped_text(book_name),
-		body_class: "front",
-		nav: "",
-		main,
-	})
+	page_html(
+		{
+			title: BookText.escaped_text(book_name),
+			body_class: "front",
+			nav: "",
+			main,
+		},
+		look,
+	)
 }
 
 contents_entry : Chapter -> Str
-contents_entry = |chapter| "<li>${chapter_link(chapter)}${sections_html(chapter)}</li>"
+contents_entry = |chapter| "${chapter.opening}<li>${chapter_link(chapter)}${sections_html(chapter)}</li>"
 
 chapter_html :
 	Chapter,
@@ -208,8 +313,9 @@ chapter_html :
 		chapters : List(Chapter),
 		previous : Neighbour,
 		next : Neighbour,
+		look : Pages.Look,
 	} -> Str
-chapter_html = |chapter, { book_name, chapters, previous, next }| {
+chapter_html = |chapter, { book_name, chapters, previous, next, look }| {
 	label = match chapter.number {
 		Numbered(n) => "<p class=\"chapter-number\">Chapter ${n.to_str()}</p>\n"
 		Unnumbered => ""
@@ -228,12 +334,15 @@ chapter_html = |chapter, { book_name, chapters, previous, next }| {
 		\\${forward}
 		\\</nav>
 		\\</main>
-	page_html({
-		title: "${BookText.escaped_text(chapter.title)} · ${safe_name}",
-		body_class: "chapter",
-		nav: book_nav(chapters, { here: chapter, safe_name }),
-		main,
-	})
+	page_html(
+		{
+			title: "${BookText.escaped_text(chapter.title)} · ${safe_name}",
+			body_class: "chapter",
+			nav: book_nav(chapters, { here: chapter, safe_name }),
+			main,
+		},
+		look,
+	)
 }
 
 book_nav : List(Chapter), { here : Chapter, safe_name : Str } -> Str
@@ -253,9 +362,9 @@ book_nav = |chapters, { here, safe_name }| {
 nav_entry : Chapter, Chapter -> Str
 nav_entry = |chapter, here|
 	if chapter.file == here.file {
-		"<li class=\"here\">${chapter_link(chapter)}${sections_html(chapter)}</li>"
+		"${chapter.opening}<li class=\"here\">${chapter_link(chapter)}${sections_html(chapter)}</li>"
 	} else {
-		"<li>${chapter_link(chapter)}</li>"
+		"${chapter.opening}<li>${chapter_link(chapter)}</li>"
 	}
 
 chapter_link : Chapter -> Str
@@ -297,8 +406,12 @@ page_html :
 		body_class : Str,
 		nav : Str,
 		main : Str,
-	} -> Str
-page_html = |{ title, body_class, nav, main }| {
+	},
+	Pages.Look -> Str
+page_html = |{ title, body_class, nav, main }, look| {
+	head_end = look.head_end
+	body_start = look.body_start
+	body_end = (look.body_end)(main)
 	page =
 		\\<!doctype html>
 		\\<html lang="en">
@@ -308,11 +421,11 @@ page_html = |{ title, body_class, nav, main }| {
 		\\<title>${title}</title>
 		\\<link rel="icon" href="data:,">
 		\\<link rel="stylesheet" href="book.css">
-		\\</head>
+		\\${head_end}</head>
 		\\<body class="${body_class}">
-		\\${nav}
+		\\${body_start}${nav}
 		\\${main}
-		\\</body>
+		\\${body_end}</body>
 		\\</html>
 	page
 }
@@ -324,6 +437,7 @@ one_section = {
 	number: Unnumbered,
 	body: "",
 	sections: [{ id: "s", title: "S" }],
+	opening: "",
 }
 
 other_section : Chapter
@@ -345,10 +459,10 @@ two_page : MdDocument.Page
 two_page = rendered("<h1 id=\"two\">Two</h1>\n<p>Back to {{number 1 One}}.</p>\n", [heading({ level: 1, id: "two", text: "Two" })])
 
 expect
-	Pages.pages({ front: front_page, chapters: [{ page: one_page, number: Numbered(1) }, { page: two_page, number: Unnumbered }] }).map_ok(|made| made.map(|page| page.file))
+	Pages.pages({ look: Pages.default_look, front: front_page, chapters: [{ page: one_page, number: Numbered(1) }, { page: two_page, number: Unnumbered }] }).map_ok(|made| made.map(|page| page.file))
 		== Ok(["index.html", "one.html", "two.html"])
 expect
-	match Pages.pages({ front: front_page, chapters: [{ page: one_page, number: Numbered(1) }, { page: two_page, number: Unnumbered }] }) {
+	match Pages.pages({ look: Pages.default_look, front: front_page, chapters: [{ page: one_page, number: Numbered(1) }, { page: two_page, number: Unnumbered }] }) {
 		Ok([front, one, two]) =>
 			front.html.contains("<title>B &amp; c</title>")
 				and front.html.contains("<ol class=\"contents\">\n<li><a href=\"one.html\"><span class=\"number\">1</span>One</a><ol class=\"sections\"><li><a href=\"one.html#s\">S</a></li></ol></li>\n<li><a href=\"two.html\">Two</a></li>\n</ol>")
@@ -363,16 +477,16 @@ expect
 		_ => Bool.False
 	}
 expect
-	Pages.pages({ front: front_page, chapters: [{ page: one_page, number: Numbered(1) }, { page: one_page, number: Numbered(2) }] })
+	Pages.pages({ look: Pages.default_look, front: front_page, chapters: [{ page: one_page, number: Numbered(1) }, { page: one_page, number: Numbered(2) }] })
 		== Err(["book: two pages are named one.html"])
 expect
-	Pages.pages({ front: rendered("<p>no heading</p>", []), chapters: [] })
+	Pages.pages({ look: Pages.default_look, front: rendered("<p>no heading</p>", []), chapters: [] })
 		== Err(["book: a page needs one top heading and only sections under it: "])
 expect
-	Pages.pages({ front: front_page, chapters: [{ page: rendered("", [heading({ level: 1, id: "x", text: "X" }), heading({ level: 3, id: "y", text: "Y" })]), number: Unnumbered }, { page: two_page, number: Unnumbered }] })
+	Pages.pages({ look: Pages.default_look, front: front_page, chapters: [{ page: rendered("", [heading({ level: 1, id: "x", text: "X" }), heading({ level: 3, id: "y", text: "Y" })]), number: Unnumbered }, { page: two_page, number: Unnumbered }] })
 		== Err(["book: a page needs one top heading and only sections under it: X, Y"])
 expect
-	Pages.pages({ front: front_page, chapters: [{ page: two_page, number: Unnumbered }] })
+	Pages.pages({ look: Pages.default_look, front: front_page, chapters: [{ page: two_page, number: Unnumbered }] })
 		== Err(["book: {{number 1 One}} names no chapter of the book"])
 expect nav_entry(one_section, one_section) == "<li class=\"here\"><a href=\"a.html\">A</a><ol class=\"sections\"><li><a href=\"a.html#s\">S</a></li></ol></li>"
 expect nav_entry(one_section, other_section) == "<li><a href=\"a.html\">A</a></li>"
@@ -383,3 +497,46 @@ expect neighbours([one_section, other_section, one_section], 1) == { previous: C
 expect neighbours([one_section, other_section], 1) == { previous: Chapter(one_section), next: NoChapter }
 expect repeated_files(["a", "b", "a", "a", "c", "c"]) == ["a", "c"]
 expect repeated_files(["a", "b"]) == []
+
+safari_look : Pages.Look
+safari_look = {
+	book_name: Named("Bo & co"),
+	slugs: [{ chapter: "One", slug: "first-one" }],
+	dividers: [{ before: "One", level: Part, title: "P & Q" }, { before: "One", level: Category, title: "C" }],
+	head_end: "<script src=\"a.js\"></script>\n",
+	body_start: "<header>top</header>\n",
+	body_end: |main| if (main.contains("Back to")) "<script src=\"b.js\"></script>\n" else "\n",
+	body_rewrite: |html| html.replace_each("Hi.", "Hello."),
+}
+
+expect
+	match Pages.pages({ look: safari_look, front: front_page, chapters: [{ page: one_page, number: Numbered(1) }, { page: two_page, number: Unnumbered }] }) {
+		Ok([front, one, two]) =>
+			front.html.contains("<title>Bo &amp; co</title>")
+				and front.html.contains("<p>Hello.</p>")
+				and front.html.contains("<link rel=\"stylesheet\" href=\"book.css\">\n<script src=\"a.js\"></script>\n</head>\n<body class=\"front\">\n<header>top</header>\n\n<main>")
+				and front.html.contains("<ol class=\"contents\">\n<li class=\"part\">P &amp; Q</li>\n<li class=\"category\">C</li><li><a href=\"first-one.html\">")
+				and front.html.ends_with("</main>\n\n</body>\n</html>")
+				and one.file == "first-one.html"
+				and one.html.contains("<title>One · Bo &amp; co</title>")
+				and one.html.contains("<li class=\"category\">C</li><li class=\"here\"><a href=\"first-one.html\">")
+				and two.html.contains("<a class=\"chapter-link\" href=\"first-one.html\">1</a>")
+				and two.html.ends_with("</main>\n<script src=\"b.js\"></script>\n</body>\n</html>")
+		_ => Bool.False
+	}
+expect
+	match Pages.pages({ look: Pages.default_look, front: front_page, chapters: [{ page: one_page, number: Numbered(1) }, { page: two_page, number: Unnumbered }] }) {
+		Ok([front, ..]) => front.html.contains("<link rel=\"stylesheet\" href=\"book.css\">\n</head>\n<body class=\"front\">\n\n<main>") and front.html.ends_with("</main>\n</body>\n</html>")
+		_ => Bool.False
+	}
+expect
+	Pages.pages({ look: { ..Pages.default_look, slugs: [{ chapter: "One", slug: "One" }, { chapter: "Gone", slug: "gone" }], dividers: [{ before: "Gone", level: Part, title: "P" }] }, front: front_page, chapters: [{ page: one_page, number: Numbered(1) }, { page: two_page, number: Unnumbered }] })
+		== Err([
+			"book: the slug `One` isn't plain: lowercase letters, digits and hyphens",
+			"book: the slug `gone` names `Gone`, a chapter that isn't in the book",
+			"book: the divider `P` stands above `Gone`, a chapter that isn't in the book",
+		])
+expect
+	Pages.pages({ look: { ..Pages.default_look, slugs: [{ chapter: "One", slug: "two" }] }, front: front_page, chapters: [{ page: one_page, number: Numbered(1) }, { page: two_page, number: Unnumbered }] })
+		== Err(["book: two pages are named two.html"])
+expect ["a-1", "x"].all(is_plain_slug) and ["", "A", "a_b", "a.html", "é"].all(|slug| !is_plain_slug(slug))

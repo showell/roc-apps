@@ -23,15 +23,18 @@ past the host's 16 MiB cap.
 
 ## Status (2026-11-16)
 
-Steps 1 and 2 of five are here: the platform, and the builder package
-(`builder/`), everything about a book that is a function of its manuscript.
-Two examples build: `examples/one_page/`, the platform alone, and
-`examples/full/`, a book that uses most of the builder. Still to come, each
-a later step: code coloring, as a package of its own behind the builder's
-coloring hook; and the Safari tutorial (`canvas_apps/safari/tutorial/`)
-rebuilt on this platform, with its own fence hooks (widgets, diagrams), in
-place of `make_book.roc` on the echo platform and the Shale scripts that
-read its files.
+Steps 1, 2 and 4 of five are here: the platform, the builder package
+(`builder/`), everything about a book that is a function of its manuscript,
+and the Safari tutorial built with it. Two examples build:
+`examples/one_page/`, the platform alone, and `examples/full/`, a book that
+uses most of the builder. The Safari tutorial's app is
+`canvas_apps/safari/tutorial/app/main.roc`, built by that folder's
+`build_next.shale`, whose pre-step does what needs a program: it quotes the
+game's code through Roc's parser, runs `roc check`, and draws the diagrams.
+Its pages are the same as the published book's, `make_book.roc`'s, once the
+coloring is taken away (`compare_books.shale` there), and both builds stand
+until the move is decided. Still to come: code coloring behind the builder's
+coloring hook, from `syntax_color/`.
 
 ## A book
 
@@ -60,21 +63,32 @@ What the builder does, and where each rule lives:
   and the pages.
 - `builder/Includes.roc`: `{{file PATH}}` and
   `{{lines PATH from "A" to "B"}}`, each a fence quoting a file of the
-  book's folder, read through the platform.
+  book's folder, read through the platform; and the includes a book's own
+  pre-step expands (`prepared` in the settings), each read from the file
+  the pre-step wrote for its line, which a missing or stale file stops.
 - `builder/References.roc`: `{{chapter Title}}` and `{{number N Title}}`
   in prose, linked to the chapter's page.
 - `builder/TermIndex.roc` and `builder/TermPattern.roc`: the `{{index}}`
   line's tables, from a terms file whose patterns are a subset of regular
-  expressions.
+  expressions. A pattern's search passes over a line that lacks the plain
+  text every match holds, and skips to a byte a match can start with,
+  which took the Safari book's index from 50 s to under half a second.
 - `builder/WordCount.roc`: words of prose per page, and the limit (900 by
   default) a numbered chapter is held to.
 - `builder/Negatives.roc`: the negatives lint, a words file and a table of
   the negative sentences the book keeps.
 - `builder/Fences.roc`: a book's fence hooks, and the coloring hook for
   code.
-- `builder/Pages.roc`: each page's HTML and the book's navigation.
+- `builder/Pages.roc`: each page's HTML and the book's navigation, and a
+  book's look: its name, its chapters' slugs, its parts and categories in
+  the lists of chapters, its own HTML at the head and the ends of every
+  page, and a rewrite of each rendered page.
 - `builder/Builder.roc`: the settings, and the build, which reads what the
   settings name and hands it to `Builder.built`, which is pure.
+
+The package exposes `Builder`, `Fences`, `Pages` (for the look's types) and
+`Manuscript` (for a book that reads its own manuscript's lines as the builder
+does).
 
 The package imports roc-markdown by relative path, from a checkout beside
 roc-apps, as Safari's `make_book.roc` does; so does the gate's `roc check`.
