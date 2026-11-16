@@ -534,8 +534,8 @@ is_lower = |b| b >= 'a' and b <= 'z'
 
 ## The runs of `text` that get a color, each with its class and its text: what
 ## the expects below read.
-colored : Str -> List((Span.Class, Str))
-colored = |text| {
+colored_spans : Str -> List((Span.Class, Str))
+colored_spans = |text| {
 	bytes = text.to_utf8()
 	RocSyntax.spans(text)
 		.keep_if(|span| span.class != Plain)
@@ -544,43 +544,43 @@ colored = |text| {
 				span.class,
 				Str.from_utf8(
 					bytes.sublist({ start: span.start, len: span.end - span.start }),
-				) ?? crash "RocSyntax.colored: a span ends inside a character",
+				) ?? crash "RocSyntax.colored_spans: a span ends inside a character",
 			),
 		)
 }
 
 expect RocSyntax.spans("") == []
-expect colored("x # a comment\n## a doc") == [(Comment, "# a comment"), (Comment, "## a doc")]
-expect colored("\"a # b\" # c") == [(String, "\"a # b\""), (Comment, "# c")]
+expect colored_spans("x # a comment\n## a doc") == [(Comment, "# a comment"), (Comment, "## a doc")]
+expect colored_spans("\"a # b\" # c") == [(String, "\"a # b\""), (Comment, "# c")]
 
 # Strings: whole, with an escaped quote, cut by interpolations, nested ones too.
-expect colored("f(\"ab\")") == [(String, "\"ab\"")]
-expect colored("f(\"a\\\"b\")") == [(String, "\"a\\\"b\"")]
-expect colored("f(\"a\${b}c\")") == [(String, "\"a"), (String, "c\"")]
-expect colored("f(\"\${b}\")") == [(String, "\""), (String, "\"")]
-expect colored("f(\"a\${g(\"b\${c}d\")}e\")") == [
+expect colored_spans("f(\"ab\")") == [(String, "\"ab\"")]
+expect colored_spans("f(\"a\\\"b\")") == [(String, "\"a\\\"b\"")]
+expect colored_spans("f(\"a\${b}c\")") == [(String, "\"a"), (String, "c\"")]
+expect colored_spans("f(\"\${b}\")") == [(String, "\""), (String, "\"")]
+expect colored_spans("f(\"a\${g(\"b\${c}d\")}e\")") == [
 	(String, "\"a"),
 	(String, "\"b"),
 	(String, "d\""),
 	(String, "e\""),
 ]
-expect colored("f(\"a\\\${b}\")") == [(String, "\"a\\\${b}\"")]
-expect colored("f(\"\${ { x: 1 }.x }\")") == [
+expect colored_spans("f(\"a\\\${b}\")") == [(String, "\"a\\\${b}\"")]
+expect colored_spans("f(\"\${ { x: 1 }.x }\")") == [
 	(String, "\""),
 	(Number, "1"),
 	(String, "\""),
 ]
 
 # A string still open stops at its newline, or at the end of the text.
-expect colored("x = \"ab\ny = 1") == [
+expect colored_spans("x = \"ab\ny = 1") == [
 	(Name, "x"),
 	(String, "\"ab"),
 	(Name, "y"),
 	(Number, "1"),
 ]
-expect colored("f(\"ab") == [(String, "\"ab")]
-expect colored("f(\"a\${b") == [(String, "\"a")]
-expect colored("x = \"a\${f(b\ny = 1") == [
+expect colored_spans("f(\"ab") == [(String, "\"ab")]
+expect colored_spans("f(\"a\${b") == [(String, "\"a")]
+expect colored_spans("x = \"a\${f(b\ny = 1") == [
 	(Name, "x"),
 	(String, "\"a"),
 	(Name, "y"),
@@ -590,31 +590,31 @@ expect colored("x = \"a\${f(b\ny = 1") == [
 # Characters, and multi-line strings, whose `\\` is a string's wherever it
 # opens one: first on its line, after `=`, in a call, before an interpolation,
 # and with nothing after it.
-expect colored("f('a', '\\'', '\\n')") == [
+expect colored_spans("f('a', '\\'', '\\n')") == [
 	(String, "'a'"),
 	(String, "'\\''"),
 	(String, "'\\n'"),
 ]
-expect colored("f('a") == [(String, "'a")]
-expect colored("css =\n\t\\\\a { \${x} }\n\t\\\\b \"q\"") == [
+expect colored_spans("f('a") == [(String, "'a")]
+expect colored_spans("css =\n\t\\\\a { \${x} }\n\t\\\\b \"q\"") == [
 	(Name, "css"),
 	(String, "\\\\a { "),
 	(String, " }"),
 	(String, "\\\\b \"q\""),
 ]
-expect colored("css = \\\\a") == [(Name, "css"), (String, "\\\\a")]
-expect colored("f(\\\\a\n)") == [(String, "\\\\a")]
-expect colored("x = \\\\a \${y} b\nz = 1") == [
+expect colored_spans("css = \\\\a") == [(Name, "css"), (String, "\\\\a")]
+expect colored_spans("f(\\\\a\n)") == [(String, "\\\\a")]
+expect colored_spans("x = \\\\a \${y} b\nz = 1") == [
 	(Name, "x"),
 	(String, "\\\\a "),
 	(String, " b"),
 	(Name, "z"),
 	(Number, "1"),
 ]
-expect colored("x = \\\\") == [(Name, "x"), (String, "\\\\")]
+expect colored_spans("x = \\\\") == [(Name, "x"), (String, "\\\\")]
 
 # Numbers, with the `-` of a negative one, and not of a subtraction.
-expect colored("f(1, 1.5, 0x1F, 0b101, 1_000, 12u8, -1.0, [-2])") == [
+expect colored_spans("f(1, 1.5, 0x1F, 0b101, 1_000, 12u8, -1.0, [-2])") == [
 	(Number, "1"),
 	(Number, "1.5"),
 	(Number, "0x1F"),
@@ -624,12 +624,12 @@ expect colored("f(1, 1.5, 0x1F, 0b101, 1_000, 12u8, -1.0, [-2])") == [
 	(Number, "-1.0"),
 	(Number, "-2"),
 ]
-expect colored("f(a - 1, a-1, b) - 2") == [
+expect colored_spans("f(a - 1, a-1, b) - 2") == [
 	(Number, "1"),
 	(Number, "1"),
 	(Number, "2"),
 ]
-expect colored("f(pair.0, 1..2, 2.0.to_str())") == [
+expect colored_spans("f(pair.0, 1..2, 2.0.to_str())") == [
 	(Number, "1"),
 	(Number, "2"),
 	(Number, "2.0"),
@@ -637,7 +637,7 @@ expect colored("f(pair.0, 1..2, 2.0.to_str())") == [
 
 # Every keyword, and words that only hold one or follow a dot or a `$`.
 expect
-	colored("f = and as break crash dbg else expect exposing for if import in match or return var where while")
+	colored_spans("f = and as break crash dbg else expect exposing for if import in match or return var where while")
 		== [
 			(Name, "f"),
 			(Keyword, "and"),
@@ -659,26 +659,26 @@ expect
 			(Keyword, "where"),
 			(Keyword, "while"),
 		]
-expect colored("f(iffy, x.if, $in, in_view, for_each!)") == []
+expect colored_spans("f(iffy, x.if, $in, in_view, for_each!)") == []
 
 # A header's first word is a keyword, and so is `platform` before its string;
 # the same words elsewhere are not.
-expect colored("app [main!] { pf: platform \"p.roc\" }") == [
+expect colored_spans("app [main!] { pf: platform \"p.roc\" }") == [
 	(Keyword, "app"),
 	(Keyword, "platform"),
 	(String, "\"p.roc\""),
 ]
-expect colored("# a comment first\npackage [A] {}") == [
+expect colored_spans("# a comment first\npackage [A] {}") == [
 	(Comment, "# a comment first"),
 	(Keyword, "package"),
 	(Type, "A"),
 ]
-expect colored("x = 1\nf(app, package, platform)") == [(Name, "x"), (Number, "1")]
+expect colored_spans("x = 1\nf(app, package, platform)") == [(Name, "x"), (Number, "1")]
 
 # A platform header's sections are keywords to the line that starts at its
 # first column, and the same words past it, or after a dot, are not.
 expect
-	colored("platform \"\"\n\trequires {\n\t\tmain! : I8\n\t}\n\texposes [Echo]\n\tpackages {}\n\tprovides { \"m\": Echo.provides }\n\thosted {}\n\ttargets: {\n\t\tdir: \"t/\",\n\t}\n\nimport Echo\nrequires = 1\nf(exposes, packages, provides, hosted, targets)")
+	colored_spans("platform \"\"\n\trequires {\n\t\tmain! : I8\n\t}\n\texposes [Echo]\n\tpackages {}\n\tprovides { \"m\": Echo.provides }\n\thosted {}\n\ttargets: {\n\t\tdir: \"t/\",\n\t}\n\nimport Echo\nrequires = 1\nf(exposes, packages, provides, hosted, targets)")
 		== [
 			(Keyword, "platform"),
 			(String, "\"\""),
@@ -702,18 +702,18 @@ expect
 
 # `module` and `hosted` start a header too, and a header's words are plain
 # when the file starts with anything else.
-expect colored("module [f]\n\nf = 1") == [
+expect colored_spans("module [f]\n\nf = 1") == [
 	(Keyword, "module"),
 	(Name, "f"),
 	(Number, "1"),
 ]
-expect colored("hosted [Echo]\nexposes = 1") == [
+expect colored_spans("hosted [Echo]\nexposes = 1") == [
 	(Keyword, "hosted"),
 	(Type, "Echo"),
 	(Name, "exposes"),
 	(Number, "1"),
 ]
-expect colored("import A\n\texposes [B]\nmodule = 1") == [
+expect colored_spans("import A\n\texposes [B]\nmodule = 1") == [
 	(Keyword, "import"),
 	(Type, "A"),
 	(Type, "B"),
@@ -723,7 +723,7 @@ expect colored("import A\n\texposes [B]\nmodule = 1") == [
 
 # An app header's indented lines are in it, to the line that starts at its
 # first column: a stacked header's closing brace, or the code after it.
-expect colored("app [main!] { pf: platform \"p\" }\n\tx: provides\nrequires = 1") == [
+expect colored_spans("app [main!] { pf: platform \"p\" }\n\tx: provides\nrequires = 1") == [
 	(Keyword, "app"),
 	(Keyword, "platform"),
 	(String, "\"p\""),
@@ -731,7 +731,7 @@ expect colored("app [main!] { pf: platform \"p\" }\n\tx: provides\nrequires = 1"
 	(Name, "requires"),
 	(Number, "1"),
 ]
-expect colored("app [main!] {\n\tpf: platform \"p\",\n\tx: provides,\n}\nmain! = 1") == [
+expect colored_spans("app [main!] {\n\tpf: platform \"p\",\n\tx: provides,\n}\nmain! = 1") == [
 	(Keyword, "app"),
 	(Keyword, "platform"),
 	(String, "\"p\""),
@@ -743,7 +743,7 @@ expect colored("app [main!] {\n\tpf: platform \"p\",\n\tx: provides,\n}\nmain! =
 # web.roc's header, which roc-ast's tree can't color: the header is colored as
 # any other, and the definitions after it are too.
 expect
-	colored("app [Model, program] { lib: \"l.roc\", pf: platform \"p.roc\" }\n\nimport lib.W\nModel : W.Model\nprogram = W.program")
+	colored_spans("app [Model, program] { lib: \"l.roc\", pf: platform \"p.roc\" }\n\nimport lib.W\nModel : W.Model\nprogram = W.program")
 		== [
 			(Keyword, "app"),
 			(Type, "Model"),
@@ -759,14 +759,14 @@ expect
 		]
 
 # Types and tags, a qualified name as one span, and a module before a function.
-expect colored("f(Ok(Str), Bool.True, Str.concat, lib.Shapes)") == [
+expect colored_spans("f(Ok(Str), Bool.True, Str.concat, lib.Shapes)") == [
 	(Type, "Ok"),
 	(Type, "Str"),
 	(Type, "Bool.True"),
 	(Type, "Str"),
 	(Type, "Shapes"),
 ]
-expect colored("f(A.B.c, A.(1))") == [
+expect colored_spans("f(A.B.c, A.(1))") == [
 	(Type, "A.B"),
 	(Type, "A"),
 	(Number, "1"),
@@ -774,37 +774,37 @@ expect colored("f(A.B.c, A.(1))") == [
 
 # A wrapped value's type is a type, qualified or not, in a lambda's arguments
 # and out of them.
-expect colored("f(|A.(x)|, |A.B.(x)|, |(A.B.(x), y)|, |{ a: A.B.C.(x) }|)") == [
+expect colored_spans("f(|A.(x)|, |A.B.(x)|, |(A.B.(x), y)|, |{ a: A.B.C.(x) }|)") == [
 	(Type, "A"),
 	(Type, "A.B"),
 	(Type, "A.B"),
 	(Type, "A.B.C"),
 ]
-expect colored("f(A.(x), A.B.(x))") == [(Type, "A"), (Type, "A.B")]
-expect colored("f(|x| A.B.(x))") == [(Type, "A.B")]
+expect colored_spans("f(A.(x), A.B.(x))") == [(Type, "A"), (Type, "A.B")]
+expect colored_spans("f(|x| A.B.(x))") == [(Type, "A.B")]
 
 # Names: the top level and a type's block define with `=` and `:`; a body
 # only with `:`; records and expressions define nothing.
-expect colored("x = 1\ny : U8\nmain! = |_| {}") == [
+expect colored_spans("x = 1\ny : U8\nmain! = |_| {}") == [
 	(Name, "x"),
 	(Number, "1"),
 	(Name, "y"),
 	(Type, "U8"),
 	(Name, "main!"),
 ]
-expect colored("T := [].{\n\tx = 1\n\ty : U8\n}") == [
+expect colored_spans("T := [].{\n\tx = 1\n\ty : U8\n}") == [
 	(Type, "T"),
 	(Name, "x"),
 	(Number, "1"),
 	(Name, "y"),
 	(Type, "U8"),
 ]
-expect colored("f = |a| {\n\tb = a\n\tc : U8\n\tc = b\n\tc\n}") == [
+expect colored_spans("f = |a| {\n\tb = a\n\tc : U8\n\tc = b\n\tc\n}") == [
 	(Name, "f"),
 	(Name, "c"),
 	(Type, "U8"),
 ]
-expect colored("f = |a|\n\tif a {\n\t\tb = 1\n\t\tb\n\t} else {\n\t\tc : U8\n\t\tc = 2\n\t\tc\n\t}") == [
+expect colored_spans("f = |a|\n\tif a {\n\t\tb = 1\n\t\tb\n\t} else {\n\t\tc : U8\n\t\tc = 2\n\t\tc\n\t}") == [
 	(Name, "f"),
 	(Keyword, "if"),
 	(Number, "1"),
@@ -813,43 +813,43 @@ expect colored("f = |a|\n\tif a {\n\t\tb = 1\n\t\tb\n\t} else {\n\t\tc : U8\n\t\
 	(Type, "U8"),
 	(Number, "2"),
 ]
-expect colored("x = {\n\ty : U8\n\ty = 1\n\ty\n}") == [
+expect colored_spans("x = {\n\ty : U8\n\ty = 1\n\ty\n}") == [
 	(Name, "x"),
 	(Name, "y"),
 	(Type, "U8"),
 	(Number, "1"),
 ]
-expect colored("r = {\n\ta: 1,\n\tb: 2,\n}") == [
+expect colored_spans("r = {\n\ta: 1,\n\tb: 2,\n}") == [
 	(Name, "r"),
 	(Number, "1"),
 	(Number, "2"),
 ]
-expect colored("R : {\n\ta : U8,\n}\nf : {\n\tb : U8,\n} -> U8") == [
+expect colored_spans("R : {\n\ta : U8,\n}\nf : {\n\tb : U8,\n} -> U8") == [
 	(Type, "R"),
 	(Type, "U8"),
 	(Name, "f"),
 	(Type, "U8"),
 	(Type, "U8"),
 ]
-expect colored("x == 1\nx => 1\ny := 1\nz :: 1") == [
+expect colored_spans("x == 1\nx => 1\ny := 1\nz :: 1") == [
 	(Number, "1"),
 	(Number, "1"),
 	(Number, "1"),
 	(Number, "1"),
 ]
-expect colored("  x = 1") == [(Name, "x"), (Number, "1")]
-expect colored("f(\n\tx = 1\n)") == [(Number, "1")]
-expect colored("expect {\n\tx = 1\n\tx == 1\n}") == [
+expect colored_spans("  x = 1") == [(Name, "x"), (Number, "1")]
+expect colored_spans("f(\n\tx = 1\n)") == [(Number, "1")]
+expect colored_spans("expect {\n\tx = 1\n\tx == 1\n}") == [
 	(Keyword, "expect"),
 	(Number, "1"),
 	(Number, "1"),
 ]
-expect colored("f = |{ a, b }| {\n\tc : U8\n\tc\n}") == [
+expect colored_spans("f = |{ a, b }| {\n\tc : U8\n\tc\n}") == [
 	(Name, "f"),
 	(Name, "c"),
 	(Type, "U8"),
 ]
-expect colored("f = |x| match x {\n\tA | B => {\n\t\ty : U8\n\t\ty = 1\n\t\ty\n\t}\n}") == [
+expect colored_spans("f = |x| match x {\n\tA | B => {\n\t\ty : U8\n\t\ty = 1\n\t\ty\n\t}\n}") == [
 	(Name, "f"),
 	(Keyword, "match"),
 	(Type, "A"),

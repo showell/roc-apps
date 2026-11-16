@@ -44,8 +44,11 @@ QuotedColor := [].{
 	notes_of = |text| text.split_on("\n").drop_if(|row| row.is_empty()).map_try(note_of)
 
 	## Each block of one file, colored by the file's coloring.
-	colored : { text : Str, notes : List(QuotedColor.Note) } -> Try(List(QuotedColor.Colored), Str)
-	colored = |{ text, notes }| {
+	colored_blocks : {
+		text : Str,
+		notes : List(QuotedColor.Note),
+	} -> Try(List(QuotedColor.Colored), Str)
+	colored_blocks = |{ text, notes }| {
 		spans = SyntaxColor.spans(SyntaxColor.roc, text)
 		bytes = text.to_utf8()
 		starts = line_starts(bytes)
@@ -199,7 +202,7 @@ zoo : Str
 zoo = "Zoo :: [].{\n\tfeed = |cage| {\n\t\tamount = \"a\"\n\t\tamount\n\t}\n}\n"
 
 expect
-	QuotedColor.colored({
+	QuotedColor.colored_blocks({
 		text: zoo,
 		notes: [
 			{
@@ -225,7 +228,7 @@ expect
 			},
 		])
 expect
-	QuotedColor.colored({
+	QuotedColor.colored_blocks({
 		text: zoo,
 		notes: [
 			{

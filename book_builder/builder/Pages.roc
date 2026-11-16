@@ -85,10 +85,10 @@ Pages := [].{
 		{
 			front : MdDocument.Page,
 			chapters : List(Pages.Rendered),
-			left_out : List(Pages.Rendered),
+			left_out_chapters : List(Pages.Rendered),
 			look : Pages.Look,
 		} -> Try(List(Pages.Page), List(Str))
-	pages = |{ front, chapters, left_out, look }| {
+	pages = |{ front, chapters, left_out_chapters, look }| {
 		front_chapter = chapter_of({ page: front, number: Unnumbered }, look) ? |problem| [problem]
 		book_name =
 			match look.book_name {
@@ -96,7 +96,7 @@ Pages := [].{
 				Named(name) => name
 			}
 		made = chapters.map(|chapter| chapter_of(chapter, look))
-		left = left_out.map(|chapter| chapter_of(chapter, look))
+		left = left_out_chapters.map(|chapter| chapter_of(chapter, look))
 		shaped = made.keep_oks(|chapter| chapter).map(|chapter| with_slug(chapter, look.slugs)).map(
 			|chapter| with_opening(chapter, look.dividers),
 		)
@@ -108,7 +108,7 @@ Pages := [].{
 			made
 				.concat(left)
 				.keep_oks(problem_of)
-				.concat(look_problems({ chapters: shaped, left_out: left_titled, look }))
+				.concat(look_problems({ chapters: shaped, left_out_chapters: left_titled, look }))
 				.concat(repeated_files(files).map(|file| "book: two pages are named ${file}"))
 		if !problems.is_empty() {
 			Err(problems)
@@ -120,9 +120,9 @@ Pages := [].{
 					number: chapter.number,
 				},
 			)
-			references = { chapters: reference_chapters, left_out: left_titled }
+			references = { chapters: reference_chapters, left_out_chapters: left_titled }
 			linked = [front_chapter].concat(shaped).map(
-				|chapter| References.linked(
+				|chapter| References.linked_html(
 					chapter.body,
 					references,
 				).map_ok(|body| { ..chapter, body }),
@@ -275,13 +275,13 @@ divider_html = |divider| {
 ## out is still a chapter of it.
 look_problems : {
 	chapters : List(Chapter),
-	left_out : List(References.LeftOut),
+	left_out_chapters : List(References.LeftOut),
 	look : Pages.Look,
 } -> List(Str)
-look_problems = |{ chapters, left_out, look }| {
+look_problems = |{ chapters, left_out_chapters, look }| {
 	titled = |title|
 		chapters.any(|chapter| chapter.title == title)
-			or left_out.any(|chapter| chapter.title == title)
+			or left_out_chapters.any(|chapter| chapter.title == title)
 	not_plain = look.slugs.drop_if(|slug| is_plain_slug(slug.slug)).map(|slug| "book: the slug `${slug.slug}` isn't plain: lowercase letters, digits and hyphens")
 	no_chapter = look.slugs
 		.drop_if(|slug| titled(slug.chapter))
@@ -509,11 +509,11 @@ heading : {
 } -> MdDocument.Heading
 heading = |{ level, id, text }| { level, id: id.to_utf8(), text: text.to_utf8() }
 
-rendered : Str, List(MdDocument.Heading) -> MdDocument.Page
-rendered = |html, headings| { html: html.to_utf8(), headings }
+rendered_page : Str, List(MdDocument.Heading) -> MdDocument.Page
+rendered_page = |html, headings| { html: html.to_utf8(), headings }
 
 front_page : MdDocument.Page
-front_page = rendered(
+front_page = rendered_page(
 	"<h1 id=\"b\">B &amp; c</h1>\n<p>Hi.</p>\n",
 	[
 		heading({
@@ -525,7 +525,7 @@ front_page = rendered(
 )
 
 one_page : MdDocument.Page
-one_page = rendered(
+one_page = rendered_page(
 	"<h1 id=\"one\">One</h1>\n<h2 id=\"s\">S</h2>\n<p>See {{chapter Two}}.</p>\n",
 	[
 		heading({
@@ -542,7 +542,7 @@ one_page = rendered(
 )
 
 two_page : MdDocument.Page
-two_page = rendered(
+two_page = rendered_page(
 	"<h1 id=\"two\">Two</h1>\n<p>Back to {{number 1 One}}.</p>\n",
 	[
 		heading({
@@ -555,7 +555,7 @@ two_page = rendered(
 
 expect
 	Pages.pages({
-		left_out: [],
+		left_out_chapters: [],
 		look: Pages.default_look,
 		front: front_page,
 		chapters: [{ page: one_page, number: Numbered(1) }, { page: two_page, number: Unnumbered }],
@@ -563,7 +563,7 @@ expect
 		== Ok(["index.html", "one.html", "two.html"])
 expect
 	match Pages.pages({
-		left_out: [],
+		left_out_chapters: [],
 		look: Pages.default_look,
 		front: front_page,
 		chapters: [{ page: one_page, number: Numbered(1) }, { page: two_page, number: Unnumbered }],
@@ -583,7 +583,7 @@ expect
 	}
 expect
 	Pages.pages({
-		left_out: [],
+		left_out_chapters: [],
 		look: Pages.default_look,
 		front: front_page,
 		chapters: [
@@ -594,20 +594,20 @@ expect
 		== Err(["book: two pages are named one.html"])
 expect
 	Pages.pages({
-		left_out: [],
+		left_out_chapters: [],
 		look: Pages.default_look,
-		front: rendered("<p>no heading</p>", []),
+		front: rendered_page("<p>no heading</p>", []),
 		chapters: [],
 	})
 		== Err(["book: a page needs one top heading and only sections under it: "])
 expect
 	Pages.pages({
-		left_out: [],
+		left_out_chapters: [],
 		look: Pages.default_look,
 		front: front_page,
 		chapters: [
 			{
-				page: rendered(
+				page: rendered_page(
 					"",
 					[
 						heading({
@@ -630,7 +630,7 @@ expect
 		== Err(["book: a page needs one top heading and only sections under it: X, Y"])
 expect
 	Pages.pages({
-		left_out: [],
+		left_out_chapters: [],
 		look: Pages.default_look,
 		front: front_page,
 		chapters: [{ page: two_page, number: Unnumbered }],
@@ -684,7 +684,7 @@ safari_look = {
 
 expect
 	match Pages.pages({
-		left_out: [],
+		left_out_chapters: [],
 		look: safari_look,
 		front: front_page,
 		chapters: [{ page: one_page, number: Numbered(1) }, { page: two_page, number: Unnumbered }],
@@ -704,7 +704,7 @@ expect
 	}
 expect
 	match Pages.pages({
-		left_out: [],
+		left_out_chapters: [],
 		look: Pages.default_look,
 		front: front_page,
 		chapters: [{ page: one_page, number: Numbered(1) }, { page: two_page, number: Unnumbered }],
@@ -716,7 +716,7 @@ expect
 	}
 expect
 	Pages.pages({
-		left_out: [],
+		left_out_chapters: [],
 		look: {
 			..Pages.default_look,
 			slugs: [{ chapter: "One", slug: "One" }, { chapter: "Gone", slug: "gone" }],
@@ -738,7 +738,7 @@ expect
 		])
 expect
 	Pages.pages({
-		left_out: [],
+		left_out_chapters: [],
 		look: { ..Pages.default_look, slugs: [{ chapter: "One", slug: "two" }] },
 		front: front_page,
 		chapters: [{ page: one_page, number: Numbered(1) }, { page: two_page, number: Unnumbered }],
@@ -769,7 +769,7 @@ cut_short_look = {
 
 expect
 	match Pages.pages({
-		left_out: [{ page: two_page, number: Unnumbered }],
+		left_out_chapters: [{ page: two_page, number: Unnumbered }],
 		look: cut_short_look,
 		front: front_page,
 		chapters: [{ page: one_page, number: Numbered(1) }],

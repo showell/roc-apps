@@ -26,22 +26,22 @@ Negatives := [].{
 	## file and the table each come with the name the messages give it. A
 	## table or a words file that can't be read as the header says is an
 	## error.
-	judged :
+	verdict :
 		{
 			manuscript : Str,
 			lines : List(Manuscript.Line),
 			words : { name : Str, text : Str },
 			table : { name : Str, text : Str },
 		} -> Try({ findings : List(Str), summary : Str }, Str)
-	judged = |{ manuscript, lines, words, table }| {
-		word_list = words_of(words)?
+	verdict = |{ manuscript, lines, words, table }| {
+		word_list = listed_words(words)?
 		exceptions = exception_table(table)?
 		prose = prose_hits(lines, word_list)
 		if prose.read_count == 0 {
 			Err("negatives: no prose in ${manuscript}")
 		} else {
-			unlisted = prose.found.drop_if(|hit| exceptions.sentences.contains(hit.sentence))
-			is_used = |row| prose.found.any(|hit| hit.sentence == row.sentence)
+			unlisted = prose.found_hits.drop_if(|hit| exceptions.sentences.contains(hit.sentence))
+			is_used = |row| prose.found_hits.any(|hit| hit.sentence == row.sentence)
 			unused = exceptions.rows.drop_if(is_used)
 			findings =
 				unlisted
@@ -55,7 +55,7 @@ Negatives := [].{
 			counts = [
 				"negative ${unlisted.len().to_str()}",
 				"unused_exception ${unused.len().to_str()}",
-				"${prose.found.len().to_str()} negative sentences of ${prose.read_count.to_str()} read",
+				"${prose.found_hits.len().to_str()} negative sentences of ${prose.read_count.to_str()} read",
 				"${exceptions.rows.len().to_str()} kept in the table",
 			]
 			Ok({ findings, summary: "negatives: ${Str.join_with(counts, ", ")}" })
@@ -130,7 +130,7 @@ Hit : {
 
 ## Every sentence of the prose that holds a word of `word_list`, and how many
 ## sentences were read.
-prose_hits : List(Manuscript.Line), List(Str) -> { found : List(Hit), read_count : U64 }
+prose_hits : List(Manuscript.Line), List(Str) -> { found_hits : List(Hit), read_count : U64 }
 prose_hits = |lines, word_list| {
 	var $found = []
 	var $read_count = 0
@@ -159,7 +159,7 @@ prose_hits = |lines, word_list| {
 			}
 		}
 	}
-	{ found: $found, read_count: $read_count }
+	{ found_hits: $found, read_count: $read_count }
 }
 
 ## The texts of one line of prose: a table row's cells, or the line itself.
@@ -260,8 +260,8 @@ is_word_at = |bytes, { word, at }|
 		and is_boundary(bytes, at + word.len())
 
 ## The words file's words, in lower case.
-words_of : { name : Str, text : Str } -> Try(List(Str), Str)
-words_of = |{ name, text }| {
+listed_words : { name : Str, text : Str } -> Try(List(Str), Str)
+listed_words = |{ name, text }| {
 	word_list = BookText.text_lines(text)
 		.map(Str.trim)
 		.drop_if(|line| line.is_empty() or line.starts_with("#"))
@@ -380,7 +380,7 @@ kinds_only = {
 
 judge_sample : Str, { name : Str, text : Str } -> Try({ findings : List(Str), summary : Str }, Str)
 judge_sample = |text, table| match Manuscript.lines(text) {
-	Ok(lines) => Negatives.judged({
+	Ok(lines) => Negatives.verdict({
 		manuscript: "book.md",
 		lines,
 		words: negative_words,
@@ -477,7 +477,7 @@ expect judge_sample(
 ) == Err("negatives: t.txt defines no kinds")
 expect
 	match Manuscript.lines("A.\n") {
-		Ok(lines) => Negatives.judged({
+		Ok(lines) => Negatives.verdict({
 			manuscript: "book.md",
 			lines,
 			words: { name: "w.txt", text: "# none\n" },

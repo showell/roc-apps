@@ -10,7 +10,7 @@
 ## Each becomes a fence with the path in its title, its language from the
 ## path's extension. The path is the book folder's, read through the
 ## platform's one effect, so this module is pure: `paths_wanted` says which
-## files to read, and `expanded` takes what each read answered.
+## files to read, and `expanded_lines` takes what each read answered.
 ##
 ## A line of prose that holds any other `{{` (outside code spans, and other
 ## than a chapter reference or the `{{index}}` line) is an error, so a
@@ -66,7 +66,7 @@ Includes := [].{
 	## found, each naming the manuscript's line and the include as written. A
 	## quote's lines are fenced, and each keeps the number of its include's
 	## line, so a later problem names the line the writer wrote.
-	expanded :
+	expanded_lines :
 		List(Manuscript.Line),
 		{
 			manuscript : Str,
@@ -74,7 +74,7 @@ Includes := [].{
 			languages : List(Includes.Language),
 			prepared : Includes.Prepared,
 		} -> Try(List(Manuscript.Line), List(Str))
-	expanded = |lines, { manuscript, files, languages, prepared }| {
+	expanded_lines = |lines, { manuscript, files, languages, prepared }| {
 		var $out = []
 		var $problems = []
 		for line in lines {
@@ -87,7 +87,7 @@ Includes := [].{
 					$problems = $problems.append("${include_at}: ${not_an_include}")
 				}
 				Include(directive) =>
-					match quoted_block(directive, { files, languages }) {
+					match quoted_block_lines(directive, { files, languages }) {
 						Ok(block) => {
 							$out = $out.concat(
 								block.map(
@@ -244,12 +244,12 @@ is_anchor : Str -> Bool
 is_anchor = |text| !text.is_empty() and !text.contains("\"")
 
 ## The lines an include becomes, each placed.
-quoted_block : Directive,
+quoted_block_lines : Directive,
 {
 	files : List(Includes.FileRead),
 	languages : List(Includes.Language),
 } -> Try(List({ text : Str, place : [Prose, Fenced] }), Str)
-quoted_block = |directive, { files, languages }| {
+quoted_block_lines = |directive, { files, languages }| {
 	path = directive_path(directive)
 	text =
 		match (directive, file_text(files, path)) {
@@ -257,7 +257,7 @@ quoted_block = |directive, { files, languages }| {
 			(_, read) => read
 		}?
 	match directive {
-		Ahead({ include, .. }) => expansion_of(text, { path, include })
+		Ahead({ include, .. }) => expansion_lines_of(text, { path, include })
 		WholeFile(_) | Excerpt(_) => {
 			{ quoted, label } = selection(directive, BookText.text_lines(text))?
 			if quoted.any(|line| line.trim().starts_with("```")) {
@@ -273,12 +273,12 @@ quoted_block = |directive, { files, languages }| {
 
 ## What a pre-step's file says an include becomes, after its first line, which
 ## must be the include as written.
-expansion_of : Str,
+expansion_lines_of : Str,
 { path : Str, include : Str } -> Try(
 	List({ text : Str, place : [Prose, Fenced] }),
 	Str,
 )
-expansion_of = |text, { path, include }| match text.split_first("\n") {
+expansion_lines_of = |text, { path, include }| match text.split_first("\n") {
 	Ok({ before: first, after: rest }) if first == include =>
 		match Manuscript.lines(rest) {
 			Ok([]) => Err("${path} expands it to nothing")
@@ -315,7 +315,7 @@ file_text : List(Includes.FileRead), Str -> Try(Str, Str)
 file_text = |files, path| match files.find_first(|file| file.path == path) {
 	Ok({ text: Ok(text), .. }) => Ok(text)
 	Ok({ text: Err(problem), .. }) => Err("${path} ${Includes.read_problem_text(problem)}")
-	Err(NotFound) => crash "Includes.expanded: no read for ${path}, which paths_wanted names"
+	Err(NotFound) => crash "Includes.expanded_lines: no read for ${path}, which paths_wanted names"
 }
 
 ## The index of the one line holding `anchor`. It must be there exactly once,
@@ -371,7 +371,7 @@ text_of : List(Manuscript.Line) -> Str
 text_of = |lines| Str.join_with(lines.map(|line| "${line.text}\n"), "")
 
 expand_sample : Str -> Try(Str, List(Str))
-expand_sample = |text| Includes.expanded(
+expand_sample = |text| Includes.expanded_lines(
 	lines_of(text),
 	{
 		manuscript: "book.md",
@@ -382,7 +382,7 @@ expand_sample = |text| Includes.expanded(
 ).map_ok(text_of)
 
 expect
-	Includes.expanded(
+	Includes.expanded_lines(
 		lines_of("A\n{{file notes}}\n"),
 		{
 			manuscript: "book.md",
@@ -493,7 +493,7 @@ prepared_files = [
 ]
 
 expand_prepared : Str -> Try(List(Manuscript.Line), List(Str))
-expand_prepared = |text| Includes.expanded(
+expand_prepared = |text| Includes.expanded_lines(
 	lines_of(text),
 	{
 		manuscript: "book.md",
@@ -542,12 +542,12 @@ expect
 		])
 expect
 	["{{other A.b}}", "x {{code A.b}}", "{{code A.b}} "].all(
-		|line| Includes.expanded(
+		|line| Includes.expanded_lines(
 			lines_of("${line}\n"),
 			{ manuscript: "book.md", files: [], languages: [], prepared },
 		) == Err(["book.md:1: ${line}: ${not_an_include}"]),
 	)
-expect Includes.expanded(
+expect Includes.expanded_lines(
 	lines_of("{{code A.b}}\n"),
 	{
 		manuscript: "book.md",

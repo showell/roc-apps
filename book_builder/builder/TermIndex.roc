@@ -23,7 +23,7 @@ TermIndex := [].{
 	Chapter : {
 		number : U64,
 		title : Str,
-		prose : List(Str),
+		prose_lines : List(Str),
 	}
 
 	## A term in this many chapters or more is "throughout".
@@ -109,8 +109,8 @@ term_of = |line, category| match line.split_on(" | ") {
 	[] => crash "book: Str.split_on answered no pieces"
 }
 
-## A term and where the book mentions it: how many lines of each chapter it's
-## in, those chapters in order, and its main chapter, unless it is nowhere.
+## The index's entry for a term: how many lines of each chapter mention it,
+## those chapters in order, and its main chapter, unless it is nowhere.
 Entry : {
 	term : Term,
 	mentions : List({ chapter : TermIndex.Chapter, lines : U64 }),
@@ -121,7 +121,7 @@ entry_of : Term, List(TermIndex.Chapter) -> Try(Entry, Str)
 entry_of = |term, chapters| {
 	is_mention = |line| term.patterns.any(|pattern| pattern.is_found_in(line))
 	mentions = chapters
-		.map(|chapter| { chapter, lines: chapter.prose.count_if(is_mention) })
+		.map(|chapter| { chapter, lines: chapter.prose_lines.count_if(is_mention) })
 		.keep_if(|mention| mention.lines > 0)
 	busiest = mentions.fold(
 		Nowhere,
@@ -223,17 +223,17 @@ sample_chapters = [
 	{
 		number: 1,
 		title: "Gates",
-		prose: ["a gate is a check.", "the gate runs.", "one budget."],
+		prose_lines: ["a gate is a check.", "the gate runs.", "one budget."],
 	},
 	{
 		number: 2,
 		title: "Budgets",
-		prose: ["a budget, and a gate.", "budgets bound a run.", "the budget again."],
+		prose_lines: ["a budget, and a gate.", "budgets bound a run.", "the budget again."],
 	},
 	{
 		number: 3,
 		title: "Replies",
-		prose: ["her reply came.", "a `gate` in code."],
+		prose_lines: ["her reply came.", "a `gate` in code."],
 	},
 ]
 
@@ -263,7 +263,7 @@ expect
 			{
 				number: 1,
 				title: "C",
-				prose: ["a word"],
+				prose_lines: ["a word"],
 			},
 			15,
 		).map_with_index(|chapter, i| { ..chapter, number: i + 1 }),
@@ -276,7 +276,7 @@ expect
 			{
 				number: 1,
 				title: "C",
-				prose: ["a word"],
+				prose_lines: ["a word"],
 			},
 			14,
 		).map_with_index(|chapter, i| { ..chapter, number: i + 1 }),

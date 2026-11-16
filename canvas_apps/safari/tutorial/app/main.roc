@@ -46,7 +46,7 @@ main! = |_folder| {
 	var $colored = []
 	for source in $sources {
 		text = read_prepared!("build/prepared/${source}")?
-		blocks = QuotedColor.colored({
+		blocks = QuotedColor.colored_blocks({
 			text,
 			notes: notes.keep_if(|note| note.source == source),
 		}) ? |why| "${why}\n"

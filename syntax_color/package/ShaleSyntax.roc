@@ -184,8 +184,8 @@ is_word_start = |b| (b >= 'a' and b <= 'z') or (b >= 'A' and b <= 'Z') or b == '
 
 ## The runs of `text` that get a color, each with its class and its text: what
 ## the expects below read.
-colored : Str -> List((Span.Class, Str))
-colored = |text| {
+colored_spans : Str -> List((Span.Class, Str))
+colored_spans = |text| {
 	bytes = text.to_utf8()
 	ShaleSyntax.spans(text)
 		.keep_if(|span| span.class != Plain)
@@ -194,7 +194,7 @@ colored = |text| {
 				span.class,
 				Str.from_utf8(
 					bytes.sublist({ start: span.start, len: span.end - span.start }),
-				) ?? crash "ShaleSyntax.colored: a span ends inside a character",
+				) ?? crash "ShaleSyntax.colored_spans: a span ends inside a character",
 			),
 		)
 }
@@ -203,36 +203,36 @@ expect ShaleSyntax.spans("") == []
 
 # Comments: a line's, which keeps a CR; a block's at each level; `--[=x` and
 # `--[[`, which are a line's.
-expect colored("x = 1 -- a\r\ny") == [(Number, "1"), (Comment, "-- a\r")]
-expect colored("--[=[ a\nb ]=] 1") == [(Comment, "--[=[ a\nb ]=]"), (Number, "1")]
-expect colored("--[==[ ]=] ]==]") == [(Comment, "--[==[ ]=] ]==]")]
-expect colored("--[=x\n1") == [(Comment, "--[=x"), (Number, "1")]
-expect colored("--[[a]]\n1") == [(Comment, "--[[a]]"), (Number, "1")]
-expect colored("--") == [(Comment, "--")]
-expect colored("a - -1") == [(Number, "1")]
+expect colored_spans("x = 1 -- a\r\ny") == [(Number, "1"), (Comment, "-- a\r")]
+expect colored_spans("--[=[ a\nb ]=] 1") == [(Comment, "--[=[ a\nb ]=]"), (Number, "1")]
+expect colored_spans("--[==[ ]=] ]==]") == [(Comment, "--[==[ ]=] ]==]")]
+expect colored_spans("--[=x\n1") == [(Comment, "--[=x"), (Number, "1")]
+expect colored_spans("--[[a]]\n1") == [(Comment, "--[[a]]"), (Number, "1")]
+expect colored_spans("--") == [(Comment, "--")]
+expect colored_spans("a - -1") == [(Number, "1")]
 
 # Strings in each quote, with escapes, and long ones, which hold a lower closer.
-expect colored("x = \"a -- b\" .. 'c\\'d' .. \"e\\\\\"") == [
+expect colored_spans("x = \"a -- b\" .. 'c\\'d' .. \"e\\\\\"") == [
 	(String, "\"a -- b\""),
 	(String, "'c\\'d'"),
 	(String, "\"e\\\\\""),
 ]
-expect colored("[=[a ]] b]=] [==[c ]=] d]==]") == [
+expect colored_spans("[=[a ]] b]=] [==[c ]=] d]==]") == [
 	(String, "[=[a ]] b]=]"),
 	(String, "[==[c ]=] d]==]"),
 ]
-expect colored("\"a\"\"b\"") == [(String, "\"a\""), (String, "\"b\"")]
+expect colored_spans("\"a\"\"b\"") == [(String, "\"a\""), (String, "\"b\"")]
 
 # Strings and long brackets that never close stop at their line or the end.
-expect colored("\"ab\n1") == [(String, "\"ab"), (Number, "1")]
-expect colored("'ab") == [(String, "'ab")]
-expect colored("\"a\\") == [(String, "\"a\\")]
-expect colored("[=[ a\nb") == [(String, "[=[ a\nb")]
-expect colored("--[=[ a") == [(Comment, "--[=[ a")]
-expect colored("[[a]] [=a t[1]") == [(Number, "1")]
+expect colored_spans("\"ab\n1") == [(String, "\"ab"), (Number, "1")]
+expect colored_spans("'ab") == [(String, "'ab")]
+expect colored_spans("\"a\\") == [(String, "\"a\\")]
+expect colored_spans("[=[ a\nb") == [(String, "[=[ a\nb")]
+expect colored_spans("--[=[ a") == [(Comment, "--[=[ a")]
+expect colored_spans("[[a]] [=a t[1]") == [(Number, "1")]
 
 # Numbers are digits; a float or a hexadecimal splits at what isn't one.
-expect colored("1 23 1.5 0x1F 9a") == [
+expect colored_spans("1 23 1.5 0x1F 9a") == [
 	(Number, "1"),
 	(Number, "23"),
 	(Number, "1"),
@@ -243,7 +243,7 @@ expect colored("1 23 1.5 0x1F 9a") == [
 
 # Every keyword, and words that hold one.
 expect
-	colored("and break const continue do else elseif end false for function f if in local nil not or return then true while")
+	colored_spans("and break const continue do else elseif end false for function f if in local nil not or return then true while")
 		== [
 			(Keyword, "and"),
 			(Keyword, "break"),
@@ -268,19 +268,19 @@ expect
 			(Keyword, "true"),
 			(Keyword, "while"),
 		]
-expect colored("end_col iffy _end end1 Function use attempt") == []
+expect colored_spans("end_col iffy _end end1 Function use attempt") == []
 
 # The name `function` declares, past a comment; a call or a local is no name.
-expect colored("function --[=[ a ]=] f(x)\n  return f(x)\nend") == [
+expect colored_spans("function --[=[ a ]=] f(x)\n  return f(x)\nend") == [
 	(Keyword, "function"),
 	(Comment, "--[=[ a ]=]"),
 	(Name, "f"),
 	(Keyword, "return"),
 	(Keyword, "end"),
 ]
-expect colored("local function_name = 1\nfunction (x)") == [
+expect colored_spans("local function_name = 1\nfunction (x)") == [
 	(Keyword, "local"),
 	(Number, "1"),
 	(Keyword, "function"),
 ]
-expect colored("+ - * // % .. == ~= < <= > >= = ( ) { } [ ] , . # ? ; @ / ~ é") == []
+expect colored_spans("+ - * // % .. == ~= < <= > >= = ( ) { } [ ] , . # ? ; @ / ~ é") == []

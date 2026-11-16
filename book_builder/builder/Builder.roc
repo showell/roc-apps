@@ -4,7 +4,7 @@
 ##
 ## `build!` reads what the settings name (the manuscript, each file an include
 ## quotes, the index's terms, the negatives lint's words and table) and gives
-## them to `built`, which is pure. The build's gates come before any page: an
+## them to `book_text`, which is pure. The build's gates come before any page: an
 ## include that can't be expanded, a reference to no chapter, a negative
 ## sentence the lint's table doesn't keep, a numbered chapter over the word
 ## limit, a fence its hook refuses, and two hooks for one language. Every
@@ -60,7 +60,7 @@ Builder := [].{
 		look : Pages.Look,
 
 		## The includes a pre-step of the book's own expands, as
-		## Includes.expanded describes.
+		## Includes.expanded_lines describes.
 		prepared : Includes.Prepared,
 
 		## Which chapters the book's pages hold: all of them, or the first N
@@ -141,19 +141,19 @@ Builder := [].{
 			index_terms,
 			negatives,
 		}
-		Builder.built(settings, sources).map_err(
+		Builder.book_text(settings, sources).map_err(
 			|problems| Str.join_with(problems.map(|problem| "${problem}\n"), ""),
 		)
 	}
 
 	## The book built from what was read: its pages and report, or every
 	## problem found.
-	built : Builder.Settings, Builder.Sources -> Try(Str, List(Str))
-	built = |settings, sources| {
+	book_text : Builder.Settings, Builder.Sources -> Try(Str, List(Str))
+	book_text = |settings, sources| {
 		name = settings.manuscript
 		lines = Manuscript.lines(sources.manuscript) ? |UnclosedFence(at)| ["${name}:${at.to_str()}: a fence opens here and never closes"]
 		gates = [
-			Fences.languages_claimed_twice(settings.fence_hooks).map(|language| "book: two fence hooks claim the language `${language}`"),
+			Fences.twice_claimed_languages(settings.fence_hooks).map(|language| "book: two fence hooks claim the language `${language}`"),
 			citation_problems(lines, name),
 		].join()
 		lint = lint_verdict(lines, { name, negatives: sources.negatives })
@@ -169,7 +169,7 @@ Builder := [].{
 				Err(problem) => [problem]
 			}
 		expanded =
-			Includes.expanded(
+			Includes.expanded_lines(
 				lines,
 				{
 					manuscript: name,
@@ -179,7 +179,7 @@ Builder := [].{
 				},
 			)
 				? |problems| problems.concat(gates).concat(lint_problems)
-		indexed = with_index(expanded, { settings, terms: sources.index_terms })
+		indexed = lines_with_index(expanded, { settings, terms: sources.index_terms })
 		book = Manuscript.pages(indexed.lines)
 		front_words = WordCount.prose_words(book.front.source_lines)
 		counted = List.map2(
@@ -192,7 +192,7 @@ Builder := [].{
 			},
 		)
 		over = counted.keep_oks(
-			|{ chapter, number, count }| over_limit(chapter, { settings, number, count }),
+			|{ chapter, number, count }| limit_problem(chapter, { settings, number, count }),
 		)
 		fence_problems = [book.front]
 			.concat(book.chapters)
@@ -223,9 +223,9 @@ Builder := [].{
 			made = Pages.pages({
 				front: render(book.front),
 				chapters: held.map(|{ chapter, number, .. }| { page: render(chapter), number }),
-				left_out: counted.drop_if(|{ number, .. }| is_held(number, settings.chapters)).map(
-					|{ chapter, number, .. }| { page: render(heading_page(chapter)), number },
-				),
+				left_out_chapters: counted.drop_if(
+					|{ number, .. }| is_held(number, settings.chapters),
+				).map(|{ chapter, number, .. }| { page: render(heading_page(chapter)), number }),
 				look: settings.look,
 			})?
 			forged = made
@@ -281,7 +281,7 @@ lint_verdict :
 	} -> Try([NotRun, Ran({ findings : List(Str), summary : Str })], Str)
 lint_verdict = |lines, { name, negatives }| match negatives {
 	NoLint => Ok(NotRun)
-	Lint({ words, table }) => Negatives.judged({
+	Lint({ words, table }) => Negatives.verdict({
 		manuscript: name,
 		lines,
 		words,
@@ -328,14 +328,14 @@ chapter_numbers = |chapters, settings| {
 }
 
 ## A numbered chapter over the word limit, as a problem.
-over_limit :
+limit_problem :
 	Manuscript.PageSource,
 	{
 		settings : Builder.Settings,
 		number : [Numbered(U64), Unnumbered],
 		count : U64,
 	} -> Try(Str, [Within])
-over_limit = |chapter, { settings, number, count }|
+limit_problem = |chapter, { settings, number, count }|
 	match (number, WordCount.room({ words: count, limit: settings.word_limit })) {
 		(
 			Numbered(_),
@@ -346,13 +346,13 @@ over_limit = |chapter, { settings, number, count }|
 
 ## The lines with the `{{index}}` line's tables in its place, and what kept
 ## them from being built.
-with_index :
+lines_with_index :
 	List(Manuscript.Line),
 	{
 		settings : Builder.Settings,
 		terms : [NoIndex, IndexTerms(Builder.Named)],
 	} -> { lines : List(Manuscript.Line), problems : List(Str) }
-with_index = |lines, { settings, terms }| {
+lines_with_index = |lines, { settings, terms }| {
 	index_lines = lines.keep_if(is_index_line)
 	match (terms, index_lines) {
 		(NoIndex, []) => { lines, problems: [] }
@@ -373,7 +373,7 @@ with_index = |lines, { settings, terms }| {
 					Numbered(n) => Ok({
 						number: n,
 						title: heading_title(chapter),
-						prose: index_prose(chapter),
+						prose_lines: index_prose_lines(chapter),
 					})
 					Unnumbered => Err(Unnumbered)
 				},
@@ -408,8 +408,8 @@ is_index_line = |line| line.place == Prose and line.text == "{{index}}"
 
 ## A chapter's prose as the index reads it: each line outside a fence but its
 ## heading, lowercased.
-index_prose : Manuscript.PageSource -> List(Str)
-index_prose = |chapter| chapter.source_lines
+index_prose_lines : Manuscript.PageSource -> List(Str)
+index_prose_lines = |chapter| chapter.source_lines
 	.drop_first(1)
 	.keep_if(|line| line.place == Prose)
 	.map(|line| line.text.with_ascii_lowercased())
@@ -423,7 +423,7 @@ sources_of = |manuscript| {
 }
 
 built_of : Str -> Try(Str, List(Str))
-built_of = |manuscript| Builder.built(Builder.default_settings, sources_of(manuscript))
+built_of = |manuscript| Builder.book_text(Builder.default_settings, sources_of(manuscript))
 
 ## A book whose one chapter has `count` words of prose, its one-word title
 ## among them.
@@ -467,7 +467,7 @@ expect built_of(
 	}),
 ).is_ok()
 expect
-	Builder.built(
+	Builder.book_text(
 		{ ..Builder.default_settings, word_limit: 3 },
 		sources_of(
 			book_of_words({
@@ -479,7 +479,7 @@ expect
 	)
 		== Err(["book: the chapter `One` has 4 words of prose, over the limit of 3"])
 expect
-	Builder.built(
+	Builder.book_text(
 		{ ..Builder.default_settings, is_back_matter: |_| Bool.False },
 		sources_of(
 			book_of_words({
@@ -510,7 +510,7 @@ expect
 expect built_of("# B\n\n```\ncode\n") == Err(["book.md:3: a fence opens here and never closes"])
 expect built_of("# B\n\n## One\n\n{{index}}\n") == Err(["book.md:5: {{index}}: the book's settings name no index terms"])
 expect
-	Builder.built(
+	Builder.book_text(
 		Builder.default_settings,
 		{
 			..sources_of("# B\n\n## One\n"),
@@ -519,7 +519,7 @@ expect
 	)
 		== Err(["book: the settings name the index terms terms.txt, and no line of the book is {{index}}"])
 expect
-	Builder.built(
+	Builder.book_text(
 		Builder.default_settings,
 		{
 			..sources_of("# B\n\n## One\n\nOne word.\n\n## Appendix: index\n\n{{index}}\n"),
@@ -528,7 +528,7 @@ expect
 	)
 		== Err(["index: terms.txt:1: a term before any `## Category`"])
 expect
-	match Builder.built(
+	match Builder.book_text(
 		Builder.default_settings,
 		{
 			..sources_of("# B\n\n## One\n\nOne word.\n\n## Appendix: index\n\n{{index}}\n"),
@@ -553,7 +553,7 @@ refusing = {
 }
 
 expect
-	Builder.built(
+	Builder.book_text(
 		{ ..Builder.default_settings, fence_hooks: [refusing, refusing] },
 		sources_of("# B\n\n```never a\n```\n\n## One\n\n```never b\n```\n"),
 	)
@@ -563,13 +563,13 @@ expect
 			"book.md:8: ```never b: no b",
 		])
 expect
-	Builder.built(
+	Builder.book_text(
 		{ ..Builder.default_settings, fence_hooks: [refusing] },
 		sources_of("# B\n\n```never mark\n```\n"),
 	)
 		== Err(["book: index.html holds the text of a page mark, which would cut the book there"])
 expect
-	Builder.built(
+	Builder.book_text(
 		Builder.default_settings,
 		{
 			..sources_of("# B\n\nIt is not here.\n\n{{file gone.txt}}\n{{chapter Gone}}\n"),
@@ -587,7 +587,7 @@ expect
 			"negatives: negative 1, unused_exception 0, 1 negative sentences of 2 read, 0 kept in the table",
 		])
 expect
-	Builder.built(
+	Builder.book_text(
 		Builder.default_settings,
 		{
 			..sources_of("# B\n\nA.\n"),
@@ -599,7 +599,7 @@ expect
 	)
 		== Err(["negatives: t.txt defines no kinds"])
 expect
-	match Builder.built(
+	match Builder.book_text(
 		Builder.default_settings,
 		{
 			..sources_of("# B\n\nA.\n"),
@@ -627,7 +627,7 @@ two_chapters : Str
 two_chapters = "# B\n\nFront.\n\n## One\n\nSee {{chapter Two}} and {{number 2 Two}}.\n\n## Appendix: a\n\n## Two\n\nBack to {{number 1 One}}.\n"
 
 first_chapters : U64 -> Try(Str, List(Str))
-first_chapters = |count| Builder.built(
+first_chapters = |count| Builder.book_text(
 	{ ..Builder.default_settings, chapters: FirstChapters(count) },
 	sources_of(two_chapters),
 )
@@ -654,7 +654,7 @@ expect
 		_ => Bool.False
 	}
 expect
-	Builder.built(
+	Builder.book_text(
 		{
 			..Builder.default_settings,
 			chapters: FirstChapters(1),
@@ -667,7 +667,7 @@ expect
 			"book: the chapter `Two` has 6 words of prose, over the limit of 5",
 		])
 expect
-	Builder.built(
+	Builder.book_text(
 		{ ..Builder.default_settings, chapters: FirstChapters(1) },
 		sources_of("# B\n\n## One\n\n## Two\n\nSee {{chapter Gone}}.\n"),
 	)

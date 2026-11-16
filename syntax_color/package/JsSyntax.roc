@@ -460,8 +460,8 @@ is_word_byte = |b| is_letter(b) or Bytes.is_digit(b) or b >= 0x80
 
 ## The runs of `text` that get a color, each with its class and its text: what
 ## the expects below read.
-colored : Str -> List((Span.Class, Str))
-colored = |text| {
+colored_spans : Str -> List((Span.Class, Str))
+colored_spans = |text| {
 	bytes = text.to_utf8()
 	JsSyntax.spans(text)
 		.keep_if(|span| span.class != Plain)
@@ -470,7 +470,7 @@ colored = |text| {
 				span.class,
 				Str.from_utf8(
 					bytes.sublist({ start: span.start, len: span.end - span.start }),
-				) ?? crash "JsSyntax.colored: a span ends inside a character",
+				) ?? crash "JsSyntax.colored_spans: a span ends inside a character",
 			),
 		)
 }
@@ -478,61 +478,61 @@ colored = |text| {
 expect JsSyntax.spans("") == []
 
 # Comments of both kinds, one never closed, and a script's first `#!` line.
-expect colored("// a comment ends.\nconst x = a.\n  b") == [
+expect colored_spans("// a comment ends.\nconst x = a.\n  b") == [
 	(Comment, "// a comment ends."),
 	(Keyword, "const"),
 ]
-expect colored("a // b /* c\n/* d\ne */ f") == [(Comment, "// b /* c"), (Comment, "/* d\ne */")]
-expect colored("a /* b") == [(Comment, "/* b")]
-expect colored("#!/usr/bin/env node\nx") == [(Comment, "#!/usr/bin/env node")]
-expect colored("x # y") == []
+expect colored_spans("a // b /* c\n/* d\ne */ f") == [(Comment, "// b /* c"), (Comment, "/* d\ne */")]
+expect colored_spans("a /* b") == [(Comment, "/* b")]
+expect colored_spans("#!/usr/bin/env node\nx") == [(Comment, "#!/usr/bin/env node")]
+expect colored_spans("x # y") == []
 
 # Quoted strings, with escapes and a line continuation; one still open stops
 # at its line's end or the text's.
-expect colored("f(\"a\\\"b\", 'c\\'d', \"e\\\nf\")") == [
+expect colored_spans("f(\"a\\\"b\", 'c\\'d', \"e\\\nf\")") == [
 	(String, "\"a\\\"b\""),
 	(String, "'c\\'d'"),
 	(String, "\"e\\\nf\""),
 ]
-expect colored("f(\"ab\nx = 'c") == [(String, "\"ab"), (String, "'c")]
+expect colored_spans("f(\"ab\nx = 'c") == [(String, "\"ab"), (String, "'c")]
 
 # Template literals: their text is a string, and `${...}` is code, nested
 # templates and braces too; one still open runs to the end.
-expect colored("`a \${b} c`") == [(String, "`a "), (String, " c`")]
-expect colored("`\${`x\${1}y`}z`") == [
+expect colored_spans("`a \${b} c`") == [(String, "`a "), (String, " c`")]
+expect colored_spans("`\${`x\${1}y`}z`") == [
 	(String, "`"),
 	(String, "`x"),
 	(Number, "1"),
 	(String, "y`"),
 	(String, "z`"),
 ]
-expect colored("`a \${ { b: 1 }.b } c`") == [
+expect colored_spans("`a \${ { b: 1 }.b } c`") == [
 	(String, "`a "),
 	(Number, "1"),
 	(String, " c`"),
 ]
-expect colored("`a\nb\\`c`") == [(String, "`a\nb\\`c`")]
-expect colored("`a \${b") == [(String, "`a ")]
-expect colored("`a") == [(String, "`a")]
+expect colored_spans("`a\nb\\`c`") == [(String, "`a\nb\\`c`")]
+expect colored_spans("`a \${b") == [(String, "`a ")]
+expect colored_spans("`a") == [(String, "`a")]
 
 # A `/` starts a regular expression where a value is due, and divides after one.
-expect colored("x = /a\\/b[/]c/gi.test(s)") == [(String, "/a\\/b[/]c/gi")]
-expect colored("f(/a/); return /b/") == [
+expect colored_spans("x = /a\\/b[/]c/gi.test(s)") == [(String, "/a\\/b[/]c/gi")]
+expect colored_spans("f(/a/); return /b/") == [
 	(String, "/a/"),
 	(Keyword, "return"),
 	(String, "/b/"),
 ]
-expect colored("a / b / c; (d) / 2; e[0] / f; 4 / 2") == [
+expect colored_spans("a / b / c; (d) / 2; e[0] / f; 4 / 2") == [
 	(Number, "2"),
 	(Number, "0"),
 	(Number, "4"),
 	(Number, "2"),
 ]
-expect colored("this / 2") == [(Keyword, "this"), (Number, "2")]
-expect colored("x = /ab\ny") == [(String, "/ab")]
+expect colored_spans("this / 2") == [(Keyword, "this"), (Number, "2")]
+expect colored_spans("x = /ab\ny") == [(String, "/ab")]
 
 # Numbers in every base, with exponents, separators and BigInt's `n`.
-expect colored("f(1, 1.5, .5, 1., 0x1F, 0B101, 0o17, 1e10, 2.5E-3, 1_000_000, 10n, 0xFFn)") == [
+expect colored_spans("f(1, 1.5, .5, 1., 0x1F, 0B101, 0o17, 1e10, 2.5E-3, 1_000_000, 10n, 0xFFn)") == [
 	(Number, "1"),
 	(Number, "1.5"),
 	(Number, ".5"),
@@ -546,11 +546,11 @@ expect colored("f(1, 1.5, .5, 1., 0x1F, 0B101, 0o17, 1e10, 2.5E-3, 1_000_000, 10
 	(Number, "10n"),
 	(Number, "0xFFn"),
 ]
-expect colored("a1 x.b2 1..toString()") == [(Number, "1.")]
+expect colored_spans("a1 x.b2 1..toString()") == [(Number, "1.")]
 
 # Every keyword, and words that hold one or follow a dot.
 expect
-	colored("async await break case catch const continue debugger default delete do else export extends false finally for if import in instanceof let new null of return super switch this throw true try typeof undefined var void while with yield")
+	colored_spans("async await break case catch const continue debugger default delete do else export extends false finally for if import in instanceof let new null of return super switch this throw true try typeof undefined var void while with yield")
 		== [
 			(Keyword, "async"),
 			(Keyword, "await"),
@@ -592,18 +592,18 @@ expect
 			(Keyword, "with"),
 			(Keyword, "yield"),
 		]
-expect colored("iffy $if _new from x.default y.\n  then café") == []
+expect colored_spans("iffy $if _new from x.default y.\n  then café") == []
 
 # The name `function` or `class` declares, past a comment; a call is none.
-expect colored("function /* a */ f(x) { return f(x) }") == [
+expect colored_spans("function /* a */ f(x) { return f(x) }") == [
 	(Keyword, "function"),
 	(Comment, "/* a */"),
 	(Name, "f"),
 	(Keyword, "return"),
 ]
-expect colored("class Box extends Base {}") == [
+expect colored_spans("class Box extends Base {}") == [
 	(Keyword, "class"),
 	(Name, "Box"),
 	(Keyword, "extends"),
 ]
-expect colored("const g = function (x) {}") == [(Keyword, "const"), (Keyword, "function")]
+expect colored_spans("const g = function (x) {}") == [(Keyword, "const"), (Keyword, "function")]

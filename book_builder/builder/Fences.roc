@@ -95,8 +95,8 @@ Fences := [].{
 		)
 
 	## Every language that more than one hook claims.
-	languages_claimed_twice : List(Fences.Hook) -> List(Str)
-	languages_claimed_twice = |hooks| {
+	twice_claimed_languages : List(Fences.Hook) -> List(Str)
+	twice_claimed_languages = |hooks| {
 		languages = hooks.map(|hook| hook.language)
 		languages.fold(
 			[],
@@ -290,5 +290,5 @@ expect
 		]
 		Err(_) => Bool.False
 	}
-expect Fences.languages_claimed_twice([shout, { ..shout, language: "dot" }, shout]) == ["shout"]
-expect Fences.languages_claimed_twice([shout, { ..shout, language: "dot" }]) == []
+expect Fences.twice_claimed_languages([shout, { ..shout, language: "dot" }, shout]) == ["shout"]
+expect Fences.twice_claimed_languages([shout, { ..shout, language: "dot" }]) == []

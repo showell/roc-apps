@@ -27,12 +27,12 @@ shout = {
 		if body.trim().is_empty() {
 			Refused("a shout needs something to shout")
 		} else {
-			Html("<p class=\"shout\">${escaped(words)}: ${escaped(body.trim().with_ascii_uppercased())}</p>")
+			Html("<p class=\"shout\">${escaped_text(words)}: ${escaped_text(body.trim().with_ascii_uppercased())}</p>")
 		},
 }
 
-escaped : Str -> Str
-escaped = |text|
+escaped_text : Str -> Str
+escaped_text = |text|
 	text
 		.replace_each("&", "&amp;")
 		.replace_each("<", "&lt;")
