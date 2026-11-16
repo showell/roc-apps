@@ -3,9 +3,8 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<!-- The physics the page runs: the server fills in its hash when it serves this file. -->
-<meta name="dogpark-physics" content="PHYSICS_HASH">
 <title>Dog Park</title>
+<script src="../shared/home.js"></script>
 <style>
   html, body { margin: 0; height: 100%; background: #e9f3e1; }
   canvas { display: block; width: 100vw; height: 100vh; touch-action: none; }
@@ -18,12 +17,12 @@
   #next button#next-go { background: #2a7a2a; color: #fff; border-color: #1d5c1d; }
   #levels { position: fixed; bottom: 10px; left: 10px; }
   #levels button[aria-current="true"] { background: #234; color: #fff; cursor: default; }
-  #debug { position: fixed; top: 10px; right: 220px; font: 600 14px system-ui, sans-serif; color: #234; background: rgba(255,255,255,0.85); border: 1px solid #9ab; border-radius: 8px; padding: 6px 12px; cursor: pointer; }
+  #debug { position: fixed; top: 40px; right: 220px; font: 600 14px system-ui, sans-serif; color: #234; background: rgba(255,255,255,0.85); border: 1px solid #9ab; border-radius: 8px; padding: 6px 12px; cursor: pointer; }
   #debug[aria-pressed="true"] { color: white; background: #556; border-color: #556; }
-  #map { position: fixed; top: 10px; right: 120px; font: 600 14px system-ui, sans-serif; color: white; background: #1f6fd1; border: 0; border-radius: 8px; padding: 7px 14px; cursor: pointer; }
+  #map { position: fixed; top: 40px; right: 120px; font: 600 14px system-ui, sans-serif; color: white; background: #1f6fd1; border: 0; border-radius: 8px; padding: 7px 14px; cursor: pointer; }
   #toast { position: fixed; left: 50%; bottom: 28px; transform: translate(-50%, 12px); max-width: min(90vw, 560px); font: 600 17px system-ui, sans-serif; color: white; background: rgba(40, 30, 20, 0.92); border-radius: 12px; padding: 12px 18px; text-align: center; opacity: 0; transition: opacity 0.25s, transform 0.25s; pointer-events: none; }
   #toast.shown { opacity: 1; transform: translate(-50%, 0); }
-  #reset { position: fixed; top: 10px; right: 10px; font: 600 14px system-ui, sans-serif; color: #234; background: rgba(255,255,255,0.85); border: 1px solid #9ab; border-radius: 8px; padding: 6px 12px; cursor: pointer; }
+  #reset { position: fixed; top: 40px; right: 10px; font: 600 14px system-ui, sans-serif; color: #234; background: rgba(255,255,255,0.85); border: 1px solid #9ab; border-radius: 8px; padding: 6px 12px; cursor: pointer; }
 </style>
 </head>
 <body>

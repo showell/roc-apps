@@ -36,14 +36,23 @@ test("every module imports without a DOM", () => {
 });
 
 test("the engine keeps no state of its own: its exports are a maker, pure helpers and constants", () => {
-  assert.deepEqual(Object.keys(engine).sort(), ["answer_ms", "backoff_ms", "budget_bytes", "createEngine", "most_catch_up_ticks", "most_humans", "spacing_ms", "ticksDue", "window_ticks"]);
+  assert.deepEqual(Object.keys(engine).sort(), ["createEngine", "keep_ms", "level_key", "levelsOf", "most_catch_up_ticks", "most_humans", "parkKey", "ticksDue"]);
   // docs/PHYSICS.md's numbers.
-  assert.deepEqual(engine.backoff_ms, [5000, 10000, 20000, 40000, 60000]);
-  assert.equal(engine.window_ticks, 32);
-  assert.equal(engine.budget_bytes, 48 * 1024);
-  assert.equal(engine.spacing_ms, 1000);
-  assert.equal(engine.answer_ms, 5000);
   assert.equal(engine.most_humans, 16);
+  assert.equal(engine.most_catch_up_ticks, 8);
+  assert.equal(engine.keep_ms, 1000);
+  // What the browser keeps, by key.
+  assert.equal(engine.level_key, "dogpark.level");
+  assert.deepEqual([1, 2].map(engine.parkKey), ["dogpark.park.1", "dogpark.park.2"]);
+});
+
+test("the levels kept: `level L of U`, L at most U, U at most the levels there are; anything else is Level One of one", () => {
+  assert.deepEqual(engine.levelsOf("level 2 of 2"), { now: 2, unlocked: 2 });
+  assert.deepEqual(engine.levelsOf("level 1 of 2"), { now: 1, unlocked: 2 });
+  assert.deepEqual(engine.levelsOf("level 1 of 1"), { now: 1, unlocked: 1 });
+  for (const junk of [null, "", "level 2 of 1", "level 0 of 1", `level 1 of ${scene.levels.length + 1}`, "level 1 of 2\n", " level 1 of 1", "level 01 of 2x"]) {
+    assert.deepEqual(engine.levelsOf(junk), { now: 1, unlocked: 1 }, `${JSON.stringify(junk)}`);
+  }
 });
 
 test("the ticks due: one per 62.5 ms begun, at most 8 after a stall, the rest dropped", () => {

@@ -1,12 +1,13 @@
-// Dog Park, played: one human, the park on the new physics (docs/PHYSICS.md).
+// Dog Park, played: one human, the park on its physics (docs/PHYSICS.md).
 //
 // THE PARK IS A CHECKERBOARD of 350 px tiles, each named by its column and
-// row, 64 by 64 of them: the world, its dogs and cows in the 10 by 10
-// tiles in its middle. **THE PAGE RUNS THE PHYSICS** (physics.wasm, the
-// server's own Zig, served as /physics-<hash>.wasm, the hash named in
-// index.html), 16 ticks a second, and reports each tick's lines to the
-// server, which re-runs them and keeps them (POST /report); a page load is
-// POST /load. The engine (engine.js) keeps the record and the protocol.
+// row, round a torus: the world, its critters in the park in its middle.
+// **THE PAGE RUNS THE PHYSICS** (physics.wasm, beside this file), 16 ticks a
+// second; the engine (engine.js) keeps the tick and the park, and the
+// browser keeps each level's park, the level played and the levels
+// unlocked (localStorage), so a reload picks the game up. Where the
+// browser keeps nothing (storage blocked), the game plays the same and
+// starts afresh at each load.
 //
 // Pressing a dog leashes it; dragging it moves it by how far the pointer
 // moved, tick by tick, the cows ahead of it scooting aside and the other
@@ -15,8 +16,7 @@
 // hit (quips.js). The leash comes off when
 // you press another dog, or 320 ticks (20 s) after the drag ended, and the
 // park sleeps. Holding a dog near an edge of the screen carries it on, the
-// viewport following. Dragging anywhere else pans the park; the tiles the
-// screen shows are subscribed as it moves.
+// viewport following. Dragging anywhere else pans the park.
 //
 // "m", or the Map button, toggles the MAP (the overview): the whole world
 // once, opening centred on your view: the critters as dots (the dog you
@@ -24,17 +24,17 @@
 // pressing inside it. Its scrollbars and the wheel move it round the
 // torus. "m" again, or Back, returns.
 //
-// The dev console says what the engine does: loads, differs, retries.
+// The dev console says what the engine does: loads, refusals, stalls.
 //
 // The page's modules: scene.js (the frames, tiles, the overview's frame,
 // and what a frame draws), pointer.js (what a pointer event means, and the
 // edge bands), blit.js (the drawing, and what a press is on), physics.js
-// (the wasm's exports), engine.js (the record, the protocol and the tick;
-// no DOM). This file gives the engine the real wire, clocks and console,
-// wires the DOM to it, and runs the frame loop and the drawing. It starts
-// only where there is a DOM, so node can import every module.
+// (the wasm's exports), engine.js (the tick and the park kept; no DOM).
+// This file gives the engine the clock, the console and the browser's
+// storage, wires the DOM to it, and runs the frame loop and the drawing.
+// It starts only where there is a DOM, so node can import every module.
 
-import { nearScene, overviewScene, messageScene, dogOfTarget, world_px, tile_px, largestHerd, cow_count, level, levels, levelName, wonText } from "./scene.js";
+import { nearScene, overviewScene, dogOfTarget, world_px, tile_px, largestHerd, cow_count, level, levels, levelName, wonText } from "./scene.js";
 import { meaning, panPointer, pressedOn, resting } from "./pointer.js";
 import { draw } from "./blit.js";
 import { createEngine } from "./engine.js";
@@ -42,45 +42,54 @@ import { pressedCritter, quipper, bumper } from "./quips.js";
 import { score as score_template } from "./words.js";
 import { instantiatePhysics } from "./physics.js";
 
-// ── the wire ────────────────────────────────────────────────────────────────
+// ── what the browser keeps ──────────────────────────────────────────────────
 
-// A text in, the server's answer out: { status, text }; rejects when
-// nothing came back (the engine abandons a try after 5 s itself).
-async function post(path, text) {
-  const response = await fetch(path, { method: "POST", headers: { "content-type": "text/plain" }, body: text });
-  return { status: response.status, text: await response.text() };
+// **THE BROWSER'S STORAGE**, each read and write in try/catch: storage may
+// be missing, blocked or full, and then the game plays on and remembers
+// nothing (a read is null, a write is dropped, and the first is said).
+let storageSaid = false;
+function storageFailed(what, e) {
+  if (storageSaid) return;
+  storageSaid = true;
+  console.warn(`Dog Park can't ${what} the browser's storage (${e?.message ?? e}): the game plays on, and won't be remembered`);
 }
+const store = {
+  read(key) {
+    try { return localStorage.getItem(key); } catch (e) { storageFailed("read", e); return null; }
+  },
+  write(key, text) {
+    try { localStorage.setItem(key, text); } catch (e) { storageFailed("write", e); }
+  },
+  remove(key) {
+    try { localStorage.removeItem(key); } catch (e) { storageFailed("write", e); }
+  },
+};
 
-// The physics the server judges with, under its hash (index.html names it).
-async function loadPhysics() {
-  const hash = document.querySelector('meta[name="dogpark-physics"]').content;
-  const response = await fetch(`/physics-${hash}.wasm`);
-  if (!response.ok) throw new Error(`/physics-${hash}.wasm: ${response.status}`);
-  const physics = await instantiatePhysics(response);
-  if (physics.hash !== hash) throw new Error(`/physics-${hash}.wasm is physics ${physics.hash}`);
-  return physics;
-}
-
-// **THE REMEMBERED VIEWPORT** (Steve, 2026-10-15): a load picks the
-// player's game up, so it opens where the player last looked. A new game,
-// or Start over, opens on the park's middle (the key is cleared). Storage
-// may be missing or refuse: then every load opens on the middle.
-// The key names the geometry (the tile, the world, the level): a view kept
-// under another would open on the wrong ground. Read after the load sets
-// the level.
+// **THE REMEMBERED VIEWPORT**: a load picks the player's game up, so it
+// opens where the player last looked. A new game, or Start over, opens on
+// the park's middle (the key is cleared). The key names the geometry (the
+// tile, the world, the level): a view kept under another would open on the
+// wrong ground. Read once the level is set.
 const viewportKey = () => `dogpark.viewport.${tile_px}.${world_px}.${level}`;
 function savedViewport() {
   try {
-    const v = JSON.parse(localStorage.getItem(viewportKey()) ?? "null");
+    const v = JSON.parse(store.read(viewportKey()) ?? "null");
     if (v && Number.isFinite(v.parkX) && Number.isFinite(v.parkY)) return { parkX: v.parkX, parkY: v.parkY };
-  } catch { /* none kept */ }
+  } catch { /* none kept that reads */ }
   return "none";
 }
 function saveViewport(v) {
-  try { localStorage.setItem(viewportKey(), JSON.stringify({ parkX: v.parkX, parkY: v.parkY })); } catch { /* not kept */ }
+  store.write(viewportKey(), JSON.stringify({ parkX: v.parkX, parkY: v.parkY }));
 }
 function forgetViewport() {
-  try { localStorage.removeItem(viewportKey()); } catch { /* nothing kept */ }
+  store.remove(viewportKey());
+}
+
+// The physics, beside the page.
+async function loadPhysics() {
+  const response = await fetch("physics.wasm");
+  if (!response.ok) throw new Error(`physics.wasm: ${response.status}`);
+  return instantiatePhysics(response);
 }
 
 // ── the page ────────────────────────────────────────────────────────────────
@@ -90,13 +99,9 @@ async function start() {
   const ctx = canvas.getContext("2d");
   const engine = createEngine({
     physics: await loadPhysics(),
-    post,
+    store,
     now: () => performance.now(),
-    wall: () => Date.now(),
-    setTimer: (ms, fn) => setTimeout(fn, ms),
-    clearTimer: (h) => clearTimeout(h),
     log: console,
-    reload: () => location.reload(),
   });
   // Near (the park at its size) or the overview (a window onto the world).
   let mode = "near";
@@ -122,12 +127,17 @@ async function start() {
     canvas.height = Math.floor(height * ratio);
     return { width, height };
   }
-  await engine.load(fit, savedViewport);
+  engine.load(fit, savedViewport);
   overviewAt = { parkX: world_px / 2, parkY: world_px / 2 };
   const score = document.getElementById("score");
   // Kept at most twice a second, when it moved.
   let savedAt = { parkX: NaN, parkY: NaN };
   let savedMs = -Infinity;
+
+  // The park is kept as the page goes away (a closed tab, another app on a
+  // phone), so nothing played since the last keep is lost.
+  window.addEventListener("pagehide", () => engine.keep());
+  document.addEventListener("visibilitychange", () => { if (document.visibilityState === "hidden") engine.keep(); });
 
   // The page does what an event means, in order: the mode and the
   // overview's window are the page's, the rest the engine's.
@@ -206,11 +216,7 @@ async function start() {
     drawn = mode === "overview"
       ? { mode, objects: overviewScene(v.viewport, [...v.dogs.values()], v.cows, v.subscribed, v.lastLeashed, overviewAt, v.chickens ?? [], v.others ?? []) }
       : { mode, objects: nearScene(v.viewport, [...v.dogs.values()], v.cows, v.leashed, { alpha: v.alpha, was: v.was }, v.visits, { chickens: v.chickens ?? [], poops: v.poops ?? [], others: v.others ?? [], labels }) };
-    const note = v.status.kind === "stopped" ? v.status.message
-      : v.status.kind === "reloading" ? `reloading: ${v.status.why}`
-      : v.waitingS !== null ? `Someone else is playing right now. Your turn comes in about ${v.waitingS} s.`
-      : "none";
-    draw(ctx, note === "none" ? drawn.objects : [...drawn.objects, ...messageScene(v.viewport, note)]);
+    draw(ctx, drawn.objects);
     // The goal, shown when it changes.
     // Out of the park's cows, never the ones this page happens to know.
     if (v.cows.length > 0) {
@@ -240,11 +246,11 @@ async function start() {
   };
   requestAnimationFrame(frame);
 
-  // **THE LEVELS** (Steve, 2026-10-20): a level won offers the next, which
-  // the player may take or not ("Keep playing here": some practise, some
-  // explore); once more than one is unlocked, a button each, so a player
-  // moves between them freely. Each level's game is kept apart, on the
-  // server. Shown only when what it says changes.
+  // **THE LEVELS**: a level won offers the next, which the player may take
+  // or not ("Keep playing here": some practise, some explore); once more
+  // than one is unlocked, a button each, so a player moves between them
+  // freely. Each level's park is kept apart. Shown only when what it says
+  // changes.
   const levelsBox = document.getElementById("levels");
   const nextBox = document.getElementById("next");
   let shownLevels = "";
@@ -272,10 +278,17 @@ async function start() {
       }
     }
   }
-  async function goLevel(n) {
-    const said = await engine.goLevel(n);
-    if (said !== "ok") return console.error(`/level ${n}: ${said}`);
-    location.reload();
+  // Another level, at once: its park as kept, the view where the player
+  // last looked there; the page's own state as a load leaves it.
+  function goLevel(n) {
+    const said = engine.goLevel(n, savedViewport);
+    if (said !== "ok") return console.error(`level ${n}: ${said}`);
+    mode = "near";
+    hand = resting;
+    overviewAt = { parkX: world_px / 2, parkY: world_px / 2 };
+    declined = false;
+    shownLevels = "";
+    savedAt = { parkX: NaN, parkY: NaN };
   }
   document.getElementById("next-go")?.addEventListener("click", () => goLevel(level + 1));
   document.getElementById("next-stay")?.addEventListener("click", () => {
@@ -283,14 +296,14 @@ async function start() {
     shownLevels = "";
   });
 
-  // **START OVER**: this device's game back to its first layout, at the
-  // next load (`POST /reset`), and the page loads again.
-  document.getElementById("reset")?.addEventListener("click", async () => {
+  // **START OVER**: this level's park back to its first layout, the view
+  // on its middle.
+  document.getElementById("reset")?.addEventListener("click", () => {
     if (!confirm(`Start over ${levelName(level)}? Every critter goes back to where the level began.`)) return;
-    const r = await post("/reset", "");
-    if (r.status !== 200) return console.error(`/reset: ${r.status} ${r.text}`);
+    engine.startOver();
     forgetViewport();
-    location.reload();
+    savedAt = { parkX: NaN, parkY: NaN };
+    hand = resting;
   });
 }
 
