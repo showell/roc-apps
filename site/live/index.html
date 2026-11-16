@@ -3,7 +3,7 @@
 <head>
 <!-- Every link opens in a new tab (Steve's preference). -->
 <base target="_blank">
-<meta name="description" content="Programs written in Roc: the Fast Track board game against computer players, the Dog Park herding game, the Safari Ride screensaver and the little Roc book about it, the roc-markdown library, a BASIC interpreter, six roc-ray examples, and roc-screensaver, a Roc platform in Zig for screensavers that also run as web pages.">
+<meta name="description" content="Programs written in Roc: the Fast Track board game against computer players, the Dog Park herding game, the Seattle Delivery route planner, the Safari Ride screensaver and the little Roc book about it, the roc-markdown library, a BASIC interpreter, six roc-ray examples, and roc-screensaver, a Roc platform in Zig for screensavers that also run as web pages.">
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Steve's Roc Work</title>
@@ -193,6 +193,22 @@ N             SQR(N)        NEWTON
   <div class="stats">
     <div class="stat"><b>3,688</b><span>lines of Roc in 12 modules: the world, the rules, the wish and the walk</span></div>
     <div class="stat"><b>79</b><span>expects</span></div>
+  </div>
+</section>
+
+<section class="feature" data-app="delivery">
+  <div>
+    <a href="delivery/" aria-hidden="true" tabindex="-1"><img class="shot" src="delivery/shot.png" alt="" loading="lazy"></a>
+    <h3><a href="delivery/">Seattle Delivery</a></h3>
+    <p>A delivery planner you can watch at work: eight trucks deliver a hundred grocery orders across a not-to-scale map of Seattle. Each shift starts as one cluster of orders per neighborhood. Clarke and Wright's savings method merges them: of every pair of routes, it joins the two whose joining saves the most, and repeats while a join saves anything, then brings the routes down to the eight trucks. Local search follows: reversing a run of stops, moving a stop to another truck, trading stops between trucks, and handing a few of a neighborhood's houses to a second truck that passes by. Every move is judged by one whole-number cost, which charges each minute of driving more for every tote still aboard, so a truck wants to drop its heaviest loads early. The whole solve runs four ways, two ways of splitting a load too big for one truck by two ways of treating Medina, and the cheapest plan wins.</p>
+    <p>Press space to play the day, S to shuffle up a new shift, and A to step through the solver itself, one move at a time, as it builds the plan. There's no score and nothing to win; the fun is watching the routes make sense.</p>
+    <p class="opening"><span class="tag">Roc at work</span>The whole planner is one pure function, a day's orders in and a dispatch plan out, which the browser and the test harness each run under their own small Zig host; it can't tell which. Being pure, it's reproducible to the bit: native and WebAssembly agree on every route of twenty recorded shifts. The code reads as plain values in and out, and Roc updates a route in place whenever nothing else holds it, which is most of how it runs within about 1.3 times the Zig it replaced.</p>
+    <p class="opening"><span class="tag nice">Roc plays nice with others</span>The solver is Roc compiled to WebAssembly, and the original TypeScript still draws the map and the trucks from the plan it answers. It replaced a Zig solver, and matches the TypeScript reference it was ported from, every route and every replay frame.</p>
+    <div class="links"><a href="delivery/">Play</a><a href="https://github.com/showell/roc-apps/tree/master/delivery">The source, and how it is built</a></div>
+  </div>
+  <div class="stats">
+    <div class="stat"><b>4,704</b><span>lines of Roc in 17 files: the map, the cost, the merges and the local search</span></div>
+    <div class="stat"><b>22</b><span>expects, and the gold: twenty shifts held bit for bit</span></div>
   </div>
 </section>
 
