@@ -1,0 +1,261 @@
+-- budget: steps=600000000 arena_bytes=2000000000 read_bytes=400000000 call_bytes=40000000 output_bytes=200000
+-- This is syntax_color's gate: every check of the package, in one run. From a
+-- roc-apps checkout's root, whose prelude gives the pinned Roc:
+--
+--   cd <roc-apps checkout> && shale syntax_color/tools/verify.shale
+--
+-- It prints a line a check, PASS or FAIL with its numbers, and fails unless
+-- every one passed:
+--   - `roc fmt --check` over the folder's Roc;
+--   - `roc check` of the harness, which reaches every module, with no error and
+--     no warning;
+--   - `roc test`, its count held to the `expect` lines in the package, and
+--     both to EXPECTS;
+--   - the oracle (each sample that differs is written, its first differing
+--     line, to .zig-cache/syntax_color/differences.txt): each sample of oracle/*.jsonl, colored by the harness, held
+--     byte for byte to what today's scripts made of it, with the samples known
+--     to differ named in oracle/known_mismatches.txt, each with its reason. A
+--     sample that differs and isn't named fails, and so does one named that
+--     matches. Each corpus's count is held to CORPORA.
+--
+-- A Roc block is colored as it reads in its file: the harness colors the file
+-- and takes the lines the block's note names, as the book does. The blocks are
+-- also colored alone, with no file around them, and ALONE_MATCHES holds how
+-- many of those come out the same, since a block cut from a function's body
+-- reads differently alone.
+const WANT = "roc-pin: roc-apps' pinned nightly, for syntax_color's gate"
+const HARNESS_DIR = "syntax_color/harness"
+const PACKAGE_DIR = "syntax_color/package"
+const ORACLE = "syntax_color/oracle"
+const WORK = ".zig-cache/syntax_color"
+const MARK = "<!-- syntax_color answer -->\n"
+const OUR_SPANS = "<span class=\"syn-[a-z]+\">|</span>"
+const ARG_BYTES = 700000
+const EXPECTS = 95
+const CORPORA = {roc_files = 76, roc_blocks = 223, shale_files = 109}
+const ALONE_MATCHES = 218
+
+const board = {lines = {}, failed = 0}
+
+function say(ok, what)
+  local mark = "FAIL"
+  if ok then mark = "PASS" else board.failed = board.failed + 1 end
+  push(board.lines, mark .. "  " .. what)
+  print(mark .. "  " .. what)
+  return nil
+end
+
+function unescaped(html)
+  local s = join(split(html, "&lt;"), "<")
+  s = join(split(s, "&gt;"), ">")
+  s = join(split(s, "&quot;"), "\"")
+  s = join(split(s, "&#39;"), "'")
+  return join(split(s, "&amp;"), "&")
+end
+
+-- A sample's text: its HTML with the spans taken away and the escapes undone,
+-- which both of today's scripts check holds.
+function text_of(html)
+  return unescaped(re_replace(html, OUR_SPANS, ""))
+end
+
+function read_corpus(name)
+  local records = {}
+  for l in lines(read(ORACLE .. "/" .. name .. ".jsonl")) do
+    if trim(l) ~= "" then push(records, json_read(l)) end
+  end
+  return records
+end
+
+-- The known mismatches, `corpus<TAB>name<TAB>why` a line, as a set of
+-- `corpus<TAB>name`.
+function known_mismatches()
+  local known = {}
+  for l in lines(read(ORACLE .. "/known_mismatches.txt")) do
+    if trim(l) ~= "" and not starts_with(l, "#") then
+      local parts = split(l, "\t")
+      if #parts ~= 3 then fail("verify: known_mismatches.txt wants corpus, name and why, tab apart: " .. l) end
+      known[parts[1] .. "\t" .. parts[2]] = parts[3]
+    end
+  end
+  return known
+end
+
+-- The byte where each line of `text` starts, from 0.
+function line_starts(text)
+  local starts = {}
+  local at = 0
+  for l in split(text, "\n") do
+    push(starts, at)
+    at = at + #l + 1
+  end
+  return starts
+end
+
+-- The harness's SPEC for a block's note, against its file's text.
+function block_spec(note, file_text)
+  local starts = line_starts(file_text)
+  local ls = split(file_text, "\n")
+  local spec = {}
+  for part in note.parts do
+    if has_key(part, "cut") then
+      push(spec, "T " .. part.cut)
+    else
+      local n = part.from
+      while n <= part.to do
+        local last = #ls[n]
+        if n == part.to then last = part.end_col - 1 end
+        push(spec, "R " .. (starts[n] + part.indent) .. " " .. (starts[n] + last))
+        n = n + 1
+      end
+    end
+  end
+  return join(spec, "\n")
+end
+
+-- Every request, with what it must answer: {corpus, name, argv, want}.
+function requests()
+  local out = {}
+  local files = {}
+  for r in read_corpus("roc_files") do
+    local text = text_of(r.html)
+    files[r.name] = text
+    push(out, {corpus = "roc_files", name = r.name, argv = {"roc", text}, want = r.html})
+  end
+  for r in read_corpus("roc_blocks") do
+    push(out, {corpus = "roc_blocks", name = r.name, argv = {"roc-block", files[r.note.path], block_spec(r.note, files[r.note.path])}, want = r.html})
+    push(out, {corpus = "roc_blocks_alone", name = r.name, argv = {"roc", text_of(r.html)}, want = r.html})
+  end
+  for r in read_corpus("shale_files") do
+    push(out, {corpus = "shale_files", name = r.name, argv = {"shale", text_of(r.html)}, want = r.html})
+  end
+  return out
+end
+
+-- The harness's answers to the requests, in runs of at most ARG_BYTES of
+-- arguments each.
+function answers(tool, reqs)
+  local got = {}
+  local at = 1
+  while at <= #reqs do
+    local argv = {tool}
+    local bytes = 0
+    local i = at
+    while i <= #reqs and (i == at or bytes < ARG_BYTES) do
+      for a in reqs[i].argv do
+        push(argv, a)
+        bytes = bytes + #a
+      end
+      i = i + 1
+    end
+    local r = run(argv, {timeout_ms = 300000, whole = 60000000, want = WANT})
+    if r.code ~= 0 then fail("verify: the harness exited " .. r.code .. ": " .. sub(r.out, 1, 400)) end
+    local pieces = split(r.out, MARK)
+    if pieces[1] ~= "" then fail("verify: the harness said something before its first answer") end
+    if #pieces - 1 ~= i - at then fail("verify: " .. (i - at) .. " requests got " .. (#pieces - 1) .. " answers") end
+    for p in drop(pieces, 1) do push(got, p) end
+    at = i
+  end
+  return got
+end
+
+-- The first line where `got` and `want` differ, both ways, for a reader.
+function first_difference(got, want)
+  local g = split(got, "\n")
+  local w = split(want, "\n")
+  local i = 1
+  while i <= #g and i <= #w and g[i] == w[i] do i = i + 1 end
+  return "  line " .. i .. "\n  got:  " .. get(g, i, "(none)") .. "\n  want: " .. get(w, i, "(none)")
+end
+
+function check_oracle(tool)
+  local reqs = requests()
+  local got = answers(tool, reqs)
+  local known = known_mismatches()
+  local tally = {}
+  local alone = 0
+  local diffs = {}
+  local i = 1
+  while i <= #reqs do
+    local q = reqs[i]
+    local same = got[i] == q.want
+    if not same then push(diffs, q.corpus .. ": " .. q.name .. "\n" .. first_difference(got[i], q.want)) end
+    if q.corpus == "roc_blocks_alone" then
+      if same then alone = alone + 1 end
+    else
+      if not has_key(tally, q.corpus) then tally[q.corpus] = {samples = 0, matched = 0, known = 0, wrong = {}} end
+      local t = tally[q.corpus]
+      t.samples = t.samples + 1
+      local key = q.corpus .. "\t" .. q.name
+      if same and not has_key(known, key) then
+        t.matched = t.matched + 1
+      elseif not same and has_key(known, key) then
+        t.known = t.known + 1
+      elseif same then
+        push(t.wrong, q.name .. ": matches, but known_mismatches.txt says it differs")
+      else
+        push(t.wrong, q.name .. ": differs")
+      end
+      known[key .. "\tseen"] = true
+    end
+    i = i + 1
+  end
+  replace(WORK .. "/differences.txt", join(diffs, "\n\n") .. "\n")
+  for corpus in sort(keys(CORPORA)) do
+    local t = get(tally, corpus, {samples = 0, matched = 0, known = 0, wrong = {}})
+    for w in t.wrong do print("      " .. corpus .. ": " .. w) end
+    local ok = t.samples == CORPORA[corpus] and #t.wrong == 0
+    say(ok, corpus .. ": " .. t.samples .. " samples (held at " .. CORPORA[corpus] .. "), " .. t.matched .. " match byte for byte, " .. t.known .. " differ as known_mismatches.txt says, " .. #t.wrong .. " wrong")
+  end
+  local stale = {}
+  for key in keys(known) do
+    if not ends_with(key, "\tseen") and not has_key(known, key .. "\tseen") then push(stale, key) end
+  end
+  say(#stale == 0, "known_mismatches.txt: every entry names a sample" .. (#stale == 0 and "" or (": not " .. join(stale, ", "))))
+  say(alone == ALONE_MATCHES, "roc_blocks colored alone: " .. alone .. " match (held at " .. ALONE_MATCHES .. ")")
+  return nil
+end
+
+-- The ✗ and ● lines of a compiler's output.
+function marks(out)
+  local n = 0
+  for l in lines(out) do
+    if contains(l, "✗") or contains(l, "●") then n = n + 1 end
+  end
+  return n
+end
+
+function count_expects()
+  local n = 0
+  for p in glob(PACKAGE_DIR .. "/*.roc") do
+    for l in lines(read(p)) do
+      if starts_with(l, "expect") then n = n + 1 end
+    end
+  end
+  return n
+end
+
+local roc = pinned_roc("syntax_color verify")
+local f = run({roc, "fmt", "--check", "package", "harness"}, {cwd = "syntax_color", timeout_ms = 60000, tail = 20, want = WANT})
+say(f.code == 0, "roc fmt --check package harness" .. (f.code == 0 and "" or (": " .. trim(f.out))))
+
+local c = run({roc, "check", "main.roc"}, {cwd = HARNESS_DIR, timeout_ms = 120000, whole = 400000, want = WANT})
+local c_marks = marks(c.out)
+say(c.code == 0 and c_marks == 0 and contains(c.out, "No errors found"), "roc check harness/main.roc: " .. c_marks .. " errors and warnings")
+
+local t = run({roc, "test", "main.roc"}, {cwd = HARNESS_DIR, timeout_ms = 300000, tail = 40, want = WANT})
+local passed = re_find(t.out, "All \\(([0-9]+)\\) tests passed")
+local ran = passed ~= nil and tonumber(passed.groups[1]) or -1
+local written = count_expects()
+say(t.code == 0 and ran == written and ran == EXPECTS, "roc test: " .. ran .. " passed, " .. written .. " expect lines in package/ (held at " .. EXPECTS .. ")")
+if t.code ~= 0 then print(trim(t.out)) end
+
+mkdir(WORK)
+local tool = real(WORK) .. "/harness"
+local b = run({roc, "build", "--opt=dev", "main.roc", "--output=" .. tool}, {cwd = HARNESS_DIR, timeout_ms = 300000, whole = 400000, want = WANT})
+local b_marks = marks(b.out)
+say(b.code == 0 and b_marks == 0, "roc build --opt=dev harness/main.roc: " .. b_marks .. " errors and warnings")
+if b.code == 0 then check_oracle(tool) else say(false, "the oracle: no harness to run") end
+
+if board.failed > 0 then fail("verify: " .. board.failed .. " of " .. #board.lines .. " checks failed") end
+print("verify: " .. #board.lines .. " of " .. #board.lines .. " passed")

@@ -1,0 +1,6 @@
+# The samples whose colors differ from today's scripts', and why: a line each,
+# corpus, name and why, apart by tabs. tools/verify.shale holds this list exact.
+roc_files	canvas_apps/safari/web.roc	color_roc leaves the whole file plain, because roc-ast's spans for its app header overlap ("the tree contradicts itself at line 3"); a lexer has no tree to contradict, and colors it
+roc_blocks	block 004: canvas_apps/safari/web.roc 1-10	the same header: color_roc leaves the block plain, and the lexer colors it
+shale_files	roc-apps/canvas_apps/safari/tutorial/build.shale, function fenced_failure	color_shale refuses it, since one function alone fails `shale --check` (it calls functions it doesn't hold); its lexing is sound, and ShaleSyntax colors it
+shale_files	books-book/build.shale, the prose check	color_shale refuses it, since a run of lines cut from a function fails `shale --check`; ShaleSyntax colors it
