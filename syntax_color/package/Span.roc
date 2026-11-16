@@ -2,7 +2,11 @@
 ## it is colored as. A language's lexer answers a list of them that covers
 ## every byte of its text once, in order, and SyntaxColor turns that list into
 ## HTML.
-Span := { class : Span.Class, start : U64, end : U64 }.{
+Span := {
+	class : Span.Class,
+	start : U64,
+	end : U64,
+}.{
 
 	## What a run of bytes is, as far as its color goes.
 	Class : [Plain, Comment, String, Number, Keyword, Name, Type]
@@ -77,17 +81,182 @@ expect
 		(Type, "syn-type"),
 	].all(|(class, css)| Span.css_class(class) == Ok(css))
 
-expect Span.push_run([], { class: Plain, start: 0, end: 0 }) == []
-expect Span.push_run([{ class: Plain, start: 0, end: 2 }], { class: Plain, start: 2, end: 5 }) == [{ class: Plain, start: 0, end: 5 }]
-expect Span.push_run([{ class: Plain, start: 0, end: 2 }], { class: String, start: 2, end: 5 }) == [{ class: Plain, start: 0, end: 2 }, { class: String, start: 2, end: 5 }]
-expect Span.push_token([{ class: String, start: 0, end: 2 }], { class: String, start: 2, end: 5 }) == [{ class: String, start: 0, end: 2 }, { class: String, start: 2, end: 5 }]
-expect Span.push_token([], { class: String, start: 3, end: 3 }) == []
-expect Span.push_token([{ class: Plain, start: 0, end: 2 }], { class: Plain, start: 2, end: 3 }) == [{ class: Plain, start: 0, end: 3 }]
+expect Span.push_run(
+	[],
+	{
+		class: Plain,
+		start: 0,
+		end: 0,
+	},
+) == []
+expect Span.push_run(
+	[
+		{
+			class: Plain,
+			start: 0,
+			end: 2,
+		},
+	],
+	{
+		class: Plain,
+		start: 2,
+		end: 5,
+	},
+) == [
+	{
+		class: Plain,
+		start: 0,
+		end: 5,
+	},
+]
+expect Span.push_run(
+	[
+		{
+			class: Plain,
+			start: 0,
+			end: 2,
+		},
+	],
+	{
+		class: String,
+		start: 2,
+		end: 5,
+	},
+) == [
+	{
+		class: Plain,
+		start: 0,
+		end: 2,
+	},
+	{
+		class: String,
+		start: 2,
+		end: 5,
+	},
+]
+expect Span.push_token(
+	[
+		{
+			class: String,
+			start: 0,
+			end: 2,
+		},
+	],
+	{
+		class: String,
+		start: 2,
+		end: 5,
+	},
+) == [
+	{
+		class: String,
+		start: 0,
+		end: 2,
+	},
+	{
+		class: String,
+		start: 2,
+		end: 5,
+	},
+]
+expect Span.push_token(
+	[],
+	{
+		class: String,
+		start: 3,
+		end: 3,
+	},
+) == []
+expect Span.push_token(
+	[
+		{
+			class: Plain,
+			start: 0,
+			end: 2,
+		},
+	],
+	{
+		class: Plain,
+		start: 2,
+		end: 3,
+	},
+) == [
+	{
+		class: Plain,
+		start: 0,
+		end: 3,
+	},
+]
 
 expect Span.is_cover([], 0)
 expect !Span.is_cover([], 1)
-expect Span.is_cover([{ class: Plain, start: 0, end: 2 }, { class: Comment, start: 2, end: 3 }], 3)
-expect !Span.is_cover([{ class: Plain, start: 0, end: 2 }, { class: Comment, start: 3, end: 4 }], 4)
-expect !Span.is_cover([{ class: Plain, start: 0, end: 2 }, { class: Comment, start: 1, end: 3 }], 3)
-expect !Span.is_cover([{ class: Plain, start: 0, end: 2 }], 3)
-expect !Span.is_cover([{ class: Plain, start: 0, end: 0 }, { class: Plain, start: 0, end: 1 }], 1)
+expect Span.is_cover(
+	[
+		{
+			class: Plain,
+			start: 0,
+			end: 2,
+		},
+		{
+			class: Comment,
+			start: 2,
+			end: 3,
+		},
+	],
+	3,
+)
+expect !Span.is_cover(
+	[
+		{
+			class: Plain,
+			start: 0,
+			end: 2,
+		},
+		{
+			class: Comment,
+			start: 3,
+			end: 4,
+		},
+	],
+	4,
+)
+expect !Span.is_cover(
+	[
+		{
+			class: Plain,
+			start: 0,
+			end: 2,
+		},
+		{
+			class: Comment,
+			start: 1,
+			end: 3,
+		},
+	],
+	3,
+)
+expect !Span.is_cover(
+	[
+		{
+			class: Plain,
+			start: 0,
+			end: 2,
+		},
+	],
+	3,
+)
+expect !Span.is_cover(
+	[
+		{
+			class: Plain,
+			start: 0,
+			end: 0,
+		},
+		{
+			class: Plain,
+			start: 0,
+			end: 1,
+		},
+	],
+	1,
+)

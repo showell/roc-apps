@@ -37,14 +37,26 @@ SyntaxColor :: [].{
 	html : SyntaxColor.Language, Str -> Str
 	html = |language, text| {
 		end = text.count_utf8_bytes()
-		SyntaxColor.range_html(text, { spans: SyntaxColor.spans(language, text), start: 0, end })
+		SyntaxColor.range_html(
+			text,
+			{
+				spans: SyntaxColor.spans(language, text),
+				start: 0,
+				end,
+			},
+		)
 	}
 
 	## The bytes of `text` from `start` up to `end` as HTML, from the spans the
 	## whole text has: a span the range cuts is cut with it. A caller that shows
 	## part of a file colors the file once and takes the ranges it shows, so
 	## each part is colored as it reads in its file.
-	range_html : Str, { spans : List(Span), start : U64, end : U64 } -> Str
+	range_html : Str,
+	{
+		spans : List(Span),
+		start : U64,
+		end : U64,
+	} -> Str
 	range_html = |text, range| {
 		bytes = text.to_utf8()
 		start = range.start
@@ -93,7 +105,13 @@ first_span_at = |spans, start| {
 }
 
 ## The HTML of bytes `from` up to `to`, in the span its class makes, onto `out`.
-html_onto : List(U8), { bytes : List(U8), class : Span.Class, from : U64, to : U64 } -> List(U8)
+html_onto : List(U8),
+{
+	bytes : List(U8),
+	class : Span.Class,
+	from : U64,
+	to : U64,
+} -> List(U8)
 html_onto = |out, { bytes, class, from, to }|
 	if to <= from {
 		out
@@ -103,7 +121,10 @@ html_onto = |out, { bytes, class, from, to }|
 			Err(Plain) => inside.fold(out, |so_far, byte| escaped_onto(so_far, byte))
 			Ok(css) => {
 				opened = out.concat("<span class=\"${css}\">".to_utf8())
-				inside.fold(opened, |so_far, byte| escaped_onto(so_far, byte)).concat("</span>".to_utf8())
+				inside.fold(
+					opened,
+					|so_far, byte| escaped_onto(so_far, byte),
+				).concat("</span>".to_utf8())
 			}
 		}
 	}
@@ -134,22 +155,37 @@ expect SyntaxColor.html(SyntaxColor.shale, "") == ""
 expect SyntaxColor.escaped_text("a&b<c>d\"e'f") == "a&amp;b&lt;c&gt;d&quot;e&#39;f"
 
 # Each special escaped in plain text and inside a span alike.
-expect SyntaxColor.html(SyntaxColor.roc, "a < b # <&>\"'") == "a &lt; b <span class=\"syn-comment\"># &lt;&amp;&gt;&quot;&#39;</span>"
-expect SyntaxColor.html(SyntaxColor.shale, "x = '<a href=\"&\">'") == "x = <span class=\"syn-string\">&#39;&lt;a href=&quot;&amp;&quot;&gt;&#39;</span>"
+expect SyntaxColor.html(
+	SyntaxColor.roc,
+	"a < b # <&>\"'",
+) == "a &lt; b <span class=\"syn-comment\"># &lt;&amp;&gt;&quot;&#39;</span>"
+expect SyntaxColor.html(
+	SyntaxColor.shale,
+	"x = '<a href=\"&\">'",
+) == "x = <span class=\"syn-string\">&#39;&lt;a href=&quot;&amp;&quot;&gt;&#39;</span>"
 
 # Text that looks like our own span is text.
-expect SyntaxColor.html(SyntaxColor.shale, "-- </span>") == "<span class=\"syn-comment\">-- &lt;/span&gt;</span>"
+expect SyntaxColor.html(
+	SyntaxColor.shale,
+	"-- </span>",
+) == "<span class=\"syn-comment\">-- &lt;/span&gt;</span>"
 
 # A range cuts the spans it crosses, and stops at the text's end.
 expect {
 	text = "x = 1 # one"
 	spans = SyntaxColor.spans(SyntaxColor.roc, text)
-	SyntaxColor.range_html(text, { spans, start: 2, end: 9 }) == "= <span class=\"syn-number\">1</span> <span class=\"syn-comment\"># o</span>"
+	SyntaxColor.range_html(
+		text,
+		{ spans, start: 2, end: 9 },
+	) == "= <span class=\"syn-number\">1</span> <span class=\"syn-comment\"># o</span>"
 }
 expect {
 	text = "x = 1"
 	spans = SyntaxColor.spans(SyntaxColor.roc, text)
-	SyntaxColor.range_html(text, { spans, start: 0, end: 99 }) == SyntaxColor.html(SyntaxColor.roc, text)
+	SyntaxColor.range_html(
+		text,
+		{ spans, start: 0, end: 99 },
+	) == SyntaxColor.html(SyntaxColor.roc, text)
 }
 expect {
 	text = "x = 1"
@@ -158,12 +194,53 @@ expect {
 }
 
 # A span crossing lines stays one span, as Shale's long strings do.
-expect SyntaxColor.html(SyntaxColor.shale, "[=[a\nb]=]") == "<span class=\"syn-string\">[=[a\nb]=]</span>"
+expect SyntaxColor.html(
+	SyntaxColor.shale,
+	"[=[a\nb]=]",
+) == "<span class=\"syn-string\">[=[a\nb]=]</span>"
 
 ## Pieces of text that start, end or break a token in one language or the
 ## other, and bytes that aren't ASCII.
 hostile_pieces : List(Str)
-hostile_pieces = ["\"", "'", "`", "/", "/*", "*/", "//", "1e", ".5", "\${", "}", "\\\\", "\\", "#", "--", "[=[", "]=]", "[", "]", "|", "(", ")", "{", "-1", "0x", "é", "\n", "\r", "\u(0)", "a", "A.", ".(", "&<>", " ", "=", ":", "function"]
+hostile_pieces = [
+	"\"",
+	"'",
+	"`",
+	"/",
+	"/*",
+	"*/",
+	"//",
+	"1e",
+	".5",
+	"\${",
+	"}",
+	"\\\\",
+	"\\",
+	"#",
+	"--",
+	"[=[",
+	"]=]",
+	"[",
+	"]",
+	"|",
+	"(",
+	")",
+	"{",
+	"-1",
+	"0x",
+	"é",
+	"\n",
+	"\r",
+	"\u(0)",
+	"a",
+	"A.",
+	".(",
+	"&<>",
+	" ",
+	"=",
+	":",
+	"function",
+]
 
 ## Every text of two hostile pieces, and some longer ones.
 hostile_texts : List(Str)

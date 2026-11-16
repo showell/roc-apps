@@ -39,7 +39,10 @@ Bytes :: [].{
 			} else if byte == '\n' {
 				$end = $at
 				$at = bytes.len()
-			} else if byte == '\\' and $at + 1 < bytes.len() and Bytes.byte_at(bytes, $at + 1) != '\n' {
+			} else if byte == '\\' and $at + 1 < bytes.len() and Bytes.byte_at(
+				bytes,
+				$at + 1,
+			) != '\n' {
 				$at = $at + 2
 			} else {
 				$at = $at + 1
@@ -67,4 +70,11 @@ expect Bytes.quoted_end("ab\nc'".to_utf8(), { at: 0, quote: '\'' }) == 2
 expect Bytes.quoted_end("a\\".to_utf8(), { at: 0, quote: '\'' }) == 2
 expect Bytes.quoted_end("a\\\nb'".to_utf8(), { at: 0, quote: '\'' }) == 2
 expect ['0', '9'].all(Bytes.is_digit) and !['/', ':', 'a'].any(Bytes.is_digit)
-expect ['a', 'z', 'A', 'Z', '0', '_'].all(Bytes.is_ascii_word_byte) and ![' ', '$', '!', 0xC3].any(Bytes.is_ascii_word_byte)
+expect [
+	'a',
+	'z',
+	'A',
+	'Z',
+	'0',
+	'_',
+].all(Bytes.is_ascii_word_byte) and ![' ', '$', '!', 0xC3].any(Bytes.is_ascii_word_byte)

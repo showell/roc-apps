@@ -22,7 +22,13 @@ JsSyntax :: [].{
 	spans : Str -> List(Span)
 	spans = |text| {
 		bytes = text.to_utf8()
-		var $state = { at: 0, out: [], braces: [], before: Operator, mode: Code }
+		var $state = {
+			at: 0,
+			out: [],
+			braces: [],
+			before: Operator,
+			mode: Code,
+		}
 		while $state.at < bytes.len() {
 			$state =
 				match $state.mode {
@@ -99,7 +105,12 @@ value_keywords = ["false", "null", "super", "this", "true", "undefined"]
 
 ## The state with the bytes from `at` up to `end` added as one token of
 ## `class`, and `before` as what it was.
-emit : State, { class : Span.Class, end : U64, before : Before } -> State
+emit : State,
+{
+	class : Span.Class,
+	end : U64,
+	before : Before,
+} -> State
 emit = |state, { class, end, before }| {
 	..state,
 	out: Span.push_token(state.out, { class, start: state.at, end }),
@@ -126,31 +137,112 @@ code_step = |bytes, state| {
 	} else if byte == '#' and next == '!' and at == 0 {
 		pass(state, { class: Comment, end: Bytes.line_end(bytes, at) })
 	} else if byte == '"' or byte == '\'' {
-		emit(state, { class: String, end: quoted_end(bytes, { at: at + 1, quote: byte }), before: Value })
+		emit(
+			state,
+			{
+				class: String,
+				end: quoted_end(bytes, { at: at + 1, quote: byte }),
+				before: Value,
+			},
+		)
 	} else if byte == '`' {
 		template_part(bytes, state, at + 1)
 	} else if byte == '/' and state.before != Value {
-		emit(state, { class: String, end: regex_end(bytes, at + 1), before: Value })
+		emit(
+			state,
+			{
+				class: String,
+				end: regex_end(bytes, at + 1),
+				before: Value,
+			},
+		)
 	} else if Bytes.is_digit(byte) or (byte == '.' and Bytes.is_digit(next)) {
-		emit(state, { class: Number, end: Bytes.run_end(bytes, { at: number_end(bytes, at), keep: is_word_byte }), before: Value })
+		emit(
+			state,
+			{
+				class: Number,
+				end: Bytes.run_end(bytes, { at: number_end(bytes, at), keep: is_word_byte }),
+				before: Value,
+			},
+		)
 	} else if is_word_byte(byte) {
 		word_step(bytes, state)
 	} else if byte == '{' {
-		{ ..emit(state, { class: Plain, end: at + 1, before: Operator }), braces: state.braces.append(Brace) }
+		{ ..emit(
+			state,
+			{
+				class: Plain,
+				end: at + 1,
+				before: Operator,
+			},
+		), braces: state.braces.append(Brace) }
 	} else if byte == '}' {
 		match state.braces.last() {
-			Ok(Interpolation) => { ..emit(state, { class: Plain, end: at + 1, before: Value }), braces: state.braces.drop_last(1), mode: InTemplate }
-			Ok(Brace) => { ..emit(state, { class: Plain, end: at + 1, before: Value }), braces: state.braces.drop_last(1) }
-			Err(ListWasEmpty) => emit(state, { class: Plain, end: at + 1, before: Value })
+			Ok(Interpolation) => {
+				..emit(
+					state,
+					{
+						class: Plain,
+						end: at + 1,
+						before: Value,
+					},
+				),
+				braces: state.braces.drop_last(1),
+				mode: InTemplate,
+			}
+			Ok(Brace) => { ..emit(
+				state,
+				{
+					class: Plain,
+					end: at + 1,
+					before: Value,
+				},
+			), braces: state.braces.drop_last(1) }
+			Err(ListWasEmpty) => emit(
+				state,
+				{
+					class: Plain,
+					end: at + 1,
+					before: Value,
+				},
+			)
 		}
 	} else if byte == '.' and next == '.' {
-		emit(state, { class: Plain, end: Bytes.run_end(bytes, { at, keep: |b| b == '.' }), before: Operator })
+		emit(
+			state,
+			{
+				class: Plain,
+				end: Bytes.run_end(bytes, { at, keep: |b| b == '.' }),
+				before: Operator,
+			},
+		)
 	} else if byte == '.' {
-		emit(state, { class: Plain, end: at + 1, before: Dot })
+		emit(
+			state,
+			{
+				class: Plain,
+				end: at + 1,
+				before: Dot,
+			},
+		)
 	} else if byte == ')' or byte == ']' {
-		emit(state, { class: Plain, end: at + 1, before: Value })
+		emit(
+			state,
+			{
+				class: Plain,
+				end: at + 1,
+				before: Value,
+			},
+		)
 	} else {
-		emit(state, { class: Plain, end: at + 1, before: Operator })
+		emit(
+			state,
+			{
+				class: Plain,
+				end: at + 1,
+				before: Operator,
+			},
+		)
 	}
 }
 
@@ -160,7 +252,9 @@ word_step : List(U8), State -> State
 word_step = |bytes, state| {
 	at = state.at
 	end = Bytes.run_end(bytes, { at, keep: is_word_byte })
-	word = Str.from_utf8(bytes.sublist({ start: at, len: end - at })) ?? crash "JsSyntax.word_step: a word holds whole characters"
+	word = Str.from_utf8(
+		bytes.sublist({ start: at, len: end - at }),
+	) ?? crash "JsSyntax.word_step: a word holds whole characters"
 	if state.before == Dot {
 		emit(state, { class: Plain, end, before: Value })
 	} else if word == "function" or word == "class" {
@@ -183,12 +277,44 @@ template_part : List(U8), State, U64 -> State
 template_part = |bytes, state, from| {
 	stop = template_text_end(bytes, from)
 	if stop >= bytes.len() {
-		{ ..emit(state, { class: String, end: bytes.len(), before: Value }), mode: InTemplate }
+		{ ..emit(
+			state,
+			{
+				class: String,
+				end: bytes.len(),
+				before: Value,
+			},
+		), mode: InTemplate }
 	} else if Bytes.byte_at(bytes, stop) == '`' {
-		{ ..emit(state, { class: String, end: stop + 1, before: Value }), mode: Code }
+		{ ..emit(
+			state,
+			{
+				class: String,
+				end: stop + 1,
+				before: Value,
+			},
+		), mode: Code }
 	} else {
-		text = emit(state, { class: String, end: stop, before: Value })
-		{ ..emit(text, { class: Plain, end: stop + 2, before: Operator }), mode: Code, braces: state.braces.append(Interpolation) }
+		text = emit(
+			state,
+			{
+				class: String,
+				end: stop,
+				before: Value,
+			},
+		)
+		{
+			..emit(
+				text,
+				{
+					class: Plain,
+					end: stop + 2,
+					before: Operator,
+				},
+			),
+			mode: Code,
+			braces: state.braces.append(Interpolation),
+		}
 	}
 }
 
@@ -290,7 +416,10 @@ block_comment_end = |bytes, at| {
 number_end : List(U8), U64 -> U64
 number_end = |bytes, at| {
 	prefix = Bytes.byte_at(bytes, at + 1)
-	if Bytes.byte_at(bytes, at) == '0' and (prefix == 'x' or prefix == 'X' or prefix == 'b' or prefix == 'B' or prefix == 'o' or prefix == 'O') {
+	if Bytes.byte_at(
+		bytes,
+		at,
+	) == '0' and (prefix == 'x' or prefix == 'X' or prefix == 'b' or prefix == 'B' or prefix == 'o' or prefix == 'O') {
 		Bytes.run_end(bytes, { at: at + 2, keep: |b| is_hex_digit(b) or b == '_' })
 	} else {
 		whole = Bytes.run_end(bytes, { at, keep: is_digit_or_separator })
@@ -302,7 +431,13 @@ number_end = |bytes, at| {
 			}
 		e = Bytes.byte_at(bytes, fraction)
 		sign = Bytes.byte_at(bytes, fraction + 1)
-		if (e == 'e' or e == 'E') and (Bytes.is_digit(sign) or ((sign == '+' or sign == '-') and Bytes.is_digit(Bytes.byte_at(bytes, fraction + 2)))) {
+		if (e == 'e' or e == 'E') and (
+			Bytes.is_digit(sign) or (
+				(sign == '+' or sign == '-') and Bytes.is_digit(
+					Bytes.byte_at(bytes, fraction + 2),
+				)
+			)
+		) {
 			Bytes.run_end(bytes, { at: fraction + 2, keep: is_digit_or_separator })
 		} else {
 			fraction
@@ -331,13 +466,23 @@ colored = |text| {
 	bytes = text.to_utf8()
 	JsSyntax.spans(text)
 		.keep_if(|span| span.class != Plain)
-		.map(|span| (span.class, Str.from_utf8(bytes.sublist({ start: span.start, len: span.end - span.start })) ?? crash "JsSyntax.colored: a span ends inside a character"))
+		.map(
+			|span| (
+				span.class,
+				Str.from_utf8(
+					bytes.sublist({ start: span.start, len: span.end - span.start }),
+				) ?? crash "JsSyntax.colored: a span ends inside a character",
+			),
+		)
 }
 
 expect JsSyntax.spans("") == []
 
 # Comments of both kinds, one never closed, and a script's first `#!` line.
-expect colored("// a comment ends.\nconst x = a.\n  b") == [(Comment, "// a comment ends."), (Keyword, "const")]
+expect colored("// a comment ends.\nconst x = a.\n  b") == [
+	(Comment, "// a comment ends."),
+	(Keyword, "const"),
+]
 expect colored("a // b /* c\n/* d\ne */ f") == [(Comment, "// b /* c"), (Comment, "/* d\ne */")]
 expect colored("a /* b") == [(Comment, "/* b")]
 expect colored("#!/usr/bin/env node\nx") == [(Comment, "#!/usr/bin/env node")]
@@ -345,27 +490,63 @@ expect colored("x # y") == []
 
 # Quoted strings, with escapes and a line continuation; one still open stops
 # at its line's end or the text's.
-expect colored("f(\"a\\\"b\", 'c\\'d', \"e\\\nf\")") == [(String, "\"a\\\"b\""), (String, "'c\\'d'"), (String, "\"e\\\nf\"")]
+expect colored("f(\"a\\\"b\", 'c\\'d', \"e\\\nf\")") == [
+	(String, "\"a\\\"b\""),
+	(String, "'c\\'d'"),
+	(String, "\"e\\\nf\""),
+]
 expect colored("f(\"ab\nx = 'c") == [(String, "\"ab"), (String, "'c")]
 
 # Template literals: their text is a string, and `${...}` is code, nested
 # templates and braces too; one still open runs to the end.
 expect colored("`a \${b} c`") == [(String, "`a "), (String, " c`")]
-expect colored("`\${`x\${1}y`}z`") == [(String, "`"), (String, "`x"), (Number, "1"), (String, "y`"), (String, "z`")]
-expect colored("`a \${ { b: 1 }.b } c`") == [(String, "`a "), (Number, "1"), (String, " c`")]
+expect colored("`\${`x\${1}y`}z`") == [
+	(String, "`"),
+	(String, "`x"),
+	(Number, "1"),
+	(String, "y`"),
+	(String, "z`"),
+]
+expect colored("`a \${ { b: 1 }.b } c`") == [
+	(String, "`a "),
+	(Number, "1"),
+	(String, " c`"),
+]
 expect colored("`a\nb\\`c`") == [(String, "`a\nb\\`c`")]
 expect colored("`a \${b") == [(String, "`a ")]
 expect colored("`a") == [(String, "`a")]
 
 # A `/` starts a regular expression where a value is due, and divides after one.
 expect colored("x = /a\\/b[/]c/gi.test(s)") == [(String, "/a\\/b[/]c/gi")]
-expect colored("f(/a/); return /b/") == [(String, "/a/"), (Keyword, "return"), (String, "/b/")]
-expect colored("a / b / c; (d) / 2; e[0] / f; 4 / 2") == [(Number, "2"), (Number, "0"), (Number, "4"), (Number, "2")]
+expect colored("f(/a/); return /b/") == [
+	(String, "/a/"),
+	(Keyword, "return"),
+	(String, "/b/"),
+]
+expect colored("a / b / c; (d) / 2; e[0] / f; 4 / 2") == [
+	(Number, "2"),
+	(Number, "0"),
+	(Number, "4"),
+	(Number, "2"),
+]
 expect colored("this / 2") == [(Keyword, "this"), (Number, "2")]
 expect colored("x = /ab\ny") == [(String, "/ab")]
 
 # Numbers in every base, with exponents, separators and BigInt's `n`.
-expect colored("f(1, 1.5, .5, 1., 0x1F, 0B101, 0o17, 1e10, 2.5E-3, 1_000_000, 10n, 0xFFn)") == [(Number, "1"), (Number, "1.5"), (Number, ".5"), (Number, "1."), (Number, "0x1F"), (Number, "0B101"), (Number, "0o17"), (Number, "1e10"), (Number, "2.5E-3"), (Number, "1_000_000"), (Number, "10n"), (Number, "0xFFn")]
+expect colored("f(1, 1.5, .5, 1., 0x1F, 0B101, 0o17, 1e10, 2.5E-3, 1_000_000, 10n, 0xFFn)") == [
+	(Number, "1"),
+	(Number, "1.5"),
+	(Number, ".5"),
+	(Number, "1."),
+	(Number, "0x1F"),
+	(Number, "0B101"),
+	(Number, "0o17"),
+	(Number, "1e10"),
+	(Number, "2.5E-3"),
+	(Number, "1_000_000"),
+	(Number, "10n"),
+	(Number, "0xFFn"),
+]
 expect colored("a1 x.b2 1..toString()") == [(Number, "1.")]
 
 # Every keyword, and words that hold one or follow a dot.
@@ -415,6 +596,15 @@ expect
 expect colored("iffy $if _new from x.default y.\n  then café") == []
 
 # The name `function` or `class` declares, past a comment; a call is none.
-expect colored("function /* a */ f(x) { return f(x) }") == [(Keyword, "function"), (Comment, "/* a */"), (Name, "f"), (Keyword, "return")]
-expect colored("class Box extends Base {}") == [(Keyword, "class"), (Name, "Box"), (Keyword, "extends")]
+expect colored("function /* a */ f(x) { return f(x) }") == [
+	(Keyword, "function"),
+	(Comment, "/* a */"),
+	(Name, "f"),
+	(Keyword, "return"),
+]
+expect colored("class Box extends Base {}") == [
+	(Keyword, "class"),
+	(Name, "Box"),
+	(Keyword, "extends"),
+]
 expect colored("const g = function (x) {}") == [(Keyword, "const"), (Keyword, "function")]

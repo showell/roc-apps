@@ -67,8 +67,14 @@ BookText := [].{
 
 expect BookText.text_from_bytes([97]) == "a"
 expect BookText.escaped_text("a <b> \"c\" & 'd'") == "a &lt;b&gt; &quot;c&quot; &amp; &#39;d&#39;"
-expect BookText.rewritten_after("no marks", { opening: "<b>", rewrite: |piece| "x${piece}" }) == "no marks"
-expect BookText.rewritten_after("a<b>c<b>d", { opening: "<b>", rewrite: |piece| "x${piece}" }) == "a<b>xc<b>xd"
+expect BookText.rewritten_after(
+	"no marks",
+	{ opening: "<b>", rewrite: |piece| "x${piece}" },
+) == "no marks"
+expect BookText.rewritten_after(
+	"a<b>c<b>d",
+	{ opening: "<b>", rewrite: |piece| "x${piece}" },
+) == "a<b>xc<b>xd"
 expect BookText.text_lines("a\nb\n") == ["a", "b"]
 expect BookText.text_lines("a\nb") == ["a", "b"]
 expect BookText.text_lines("") == []

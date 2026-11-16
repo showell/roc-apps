@@ -21,7 +21,14 @@ ShaleSyntax :: [].{
 		var $after_function = Bool.False
 		while $at < bytes.len() {
 			token = token_at(bytes, $at)
-			$out = Span.push_token($out, { class: class_of(token, $after_function), start: $at, end: token.end })
+			$out = Span.push_token(
+				$out,
+				{
+					class: class_of(token, $after_function),
+					start: $at,
+					end: token.end,
+				},
+			)
 			$after_function = match token.kind {
 				Space | Comment => $after_function
 				Word(word) => word == "function"
@@ -60,7 +67,17 @@ keywords = [
 ]
 
 ## One token: what kind it is, and the index just past it.
-Token : { kind : [Space, Comment, String, Number, Word(Str), Symbol], end : U64 }
+Token : {
+	kind : [
+		Space,
+		Comment,
+		String,
+		Number,
+		Word(Str),
+		Symbol,
+	],
+	end : U64,
+}
 
 ## A word is a keyword, or a name, which right after `function` is the name
 ## that `function` declares.
@@ -99,7 +116,9 @@ token_at = |bytes, at| {
 		{ kind: Number, end: Bytes.run_end(bytes, { at, keep: Bytes.is_digit }) }
 	} else if is_word_start(byte) {
 		end = Bytes.run_end(bytes, { at, keep: Bytes.is_ascii_word_byte })
-		word = Str.from_utf8(bytes.sublist({ start: at, len: end - at })) ?? crash "ShaleSyntax.token_at: a word is ASCII"
+		word = Str.from_utf8(
+			bytes.sublist({ start: at, len: end - at }),
+		) ?? crash "ShaleSyntax.token_at: a word is ASCII"
 		{ kind: Word(word), end }
 	} else if byte >= 0x80 {
 		{ kind: Symbol, end: Bytes.run_end(bytes, { at, keep: |b| b >= 0x80 }) }
@@ -170,7 +189,14 @@ colored = |text| {
 	bytes = text.to_utf8()
 	ShaleSyntax.spans(text)
 		.keep_if(|span| span.class != Plain)
-		.map(|span| (span.class, Str.from_utf8(bytes.sublist({ start: span.start, len: span.end - span.start })) ?? crash "ShaleSyntax.colored: a span ends inside a character"))
+		.map(
+			|span| (
+				span.class,
+				Str.from_utf8(
+					bytes.sublist({ start: span.start, len: span.end - span.start }),
+				) ?? crash "ShaleSyntax.colored: a span ends inside a character",
+			),
+		)
 }
 
 expect ShaleSyntax.spans("") == []
@@ -186,8 +212,15 @@ expect colored("--") == [(Comment, "--")]
 expect colored("a - -1") == [(Number, "1")]
 
 # Strings in each quote, with escapes, and long ones, which hold a lower closer.
-expect colored("x = \"a -- b\" .. 'c\\'d' .. \"e\\\\\"") == [(String, "\"a -- b\""), (String, "'c\\'d'"), (String, "\"e\\\\\"")]
-expect colored("[=[a ]] b]=] [==[c ]=] d]==]") == [(String, "[=[a ]] b]=]"), (String, "[==[c ]=] d]==]")]
+expect colored("x = \"a -- b\" .. 'c\\'d' .. \"e\\\\\"") == [
+	(String, "\"a -- b\""),
+	(String, "'c\\'d'"),
+	(String, "\"e\\\\\""),
+]
+expect colored("[=[a ]] b]=] [==[c ]=] d]==]") == [
+	(String, "[=[a ]] b]=]"),
+	(String, "[==[c ]=] d]==]"),
+]
 expect colored("\"a\"\"b\"") == [(String, "\"a\""), (String, "\"b\"")]
 
 # Strings and long brackets that never close stop at their line or the end.
@@ -199,7 +232,14 @@ expect colored("--[=[ a") == [(Comment, "--[=[ a")]
 expect colored("[[a]] [=a t[1]") == [(Number, "1")]
 
 # Numbers are digits; a float or a hexadecimal splits at what isn't one.
-expect colored("1 23 1.5 0x1F 9a") == [(Number, "1"), (Number, "23"), (Number, "1"), (Number, "5"), (Number, "0"), (Number, "9")]
+expect colored("1 23 1.5 0x1F 9a") == [
+	(Number, "1"),
+	(Number, "23"),
+	(Number, "1"),
+	(Number, "5"),
+	(Number, "0"),
+	(Number, "9"),
+]
 
 # Every keyword, and words that hold one.
 expect
@@ -231,6 +271,16 @@ expect
 expect colored("end_col iffy _end end1 Function use attempt") == []
 
 # The name `function` declares, past a comment; a call or a local is no name.
-expect colored("function --[=[ a ]=] f(x)\n  return f(x)\nend") == [(Keyword, "function"), (Comment, "--[=[ a ]=]"), (Name, "f"), (Keyword, "return"), (Keyword, "end")]
-expect colored("local function_name = 1\nfunction (x)") == [(Keyword, "local"), (Number, "1"), (Keyword, "function")]
+expect colored("function --[=[ a ]=] f(x)\n  return f(x)\nend") == [
+	(Keyword, "function"),
+	(Comment, "--[=[ a ]=]"),
+	(Name, "f"),
+	(Keyword, "return"),
+	(Keyword, "end"),
+]
+expect colored("local function_name = 1\nfunction (x)") == [
+	(Keyword, "local"),
+	(Number, "1"),
+	(Keyword, "function"),
+]
 expect colored("+ - * // % .. == ~= < <= > >= = ( ) { } [ ] , . # ? ; @ / ~ é") == []

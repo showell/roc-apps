@@ -15,14 +15,25 @@ Diagrams := [].{
 
 	## One diagram as the manuscript has it: its id, its title, and the
 	## fence's body, each line with its newline.
-	Diagram : { id : Str, title : Str, source : Str }
+	Diagram : {
+		id : Str,
+		title : Str,
+		source : Str,
+	}
 
 	## A diagram with its drawing, ready for the page.
-	Drawn : { id : Str, title : Str, svg : Str }
+	Drawn : {
+		id : Str,
+		title : Str,
+		svg : Str,
+	}
 
 	## The manuscript as the builder reads it, and its diagrams in order, or
 	## a problem for each diagram with no title above it.
-	found : { name : Str, text : Str } -> Try({ manuscript : Str, diagrams : List(Diagrams.Diagram) }, List(Str))
+	found : { name : Str, text : Str } -> Try(
+		{ manuscript : Str, diagrams : List(Diagrams.Diagram) },
+		List(Str),
+	)
 	found = |{ name, text }| {
 		var $out = []
 		var $diagrams = []
@@ -53,7 +64,10 @@ Diagrams := [].{
 						$open = NoFence
 					} else {
 						last = $diagrams.last() ?? crash "Diagrams.found: an open diagram is in the list"
-						$diagrams = $diagrams.drop_last(1).append({ ..last, source: "${last.source}${line}\n" })
+						$diagrams = $diagrams.drop_last(1).append({
+							..last,
+							source: "${last.source}${line}\n",
+						})
 					}
 					$out = $out.append(line)
 				}
@@ -82,17 +96,34 @@ Diagrams := [].{
 }
 
 expect
-	Diagrams.found({ name: "t.md", text: "a\n\nAround `Sky`\n```dot\ndigraph {\n}\n```\n```text\n```dot\n```\n\nTwo\n```dot\nx\n```\n" })
+	Diagrams.found({
+		name: "t.md",
+		text: "a\n\nAround `Sky`\n```dot\ndigraph {\n}\n```\n```text\n```dot\n```\n\nTwo\n```dot\nx\n```\n",
+	})
 		== Ok({
 			manuscript: "a\n\n\n```dot diagram-1\ndigraph {\n}\n```\n```text\n```dot\n```\n\n\n```dot diagram-2\nx\n```\n",
 			diagrams: [
-				{ id: "diagram-1", title: "Around `Sky`", source: "digraph {\n}\n" },
-				{ id: "diagram-2", title: "Two", source: "x\n" },
+				{
+					id: "diagram-1",
+					title: "Around `Sky`",
+					source: "digraph {\n}\n",
+				},
+				{
+					id: "diagram-2",
+					title: "Two",
+					source: "x\n",
+				},
 			],
 		})
-expect Diagrams.found({ name: "t.md", text: "plain\n" }) == Ok({ manuscript: "plain\n", diagrams: [] })
+expect Diagrams.found({ name: "t.md", text: "plain\n" }) == Ok({
+	manuscript: "plain\n",
+	diagrams: [],
+})
 expect
 	Diagrams.found({ name: "t.md", text: "```dot\n```\n\n\n```dot\n```\n" })
-		== Err(["t.md:1: ```dot: a diagram needs a title line directly above it", "t.md:5: ```dot: a diagram needs a title line directly above it"])
+		== Err([
+			"t.md:1: ```dot: a diagram needs a title line directly above it",
+			"t.md:5: ```dot: a diagram needs a title line directly above it",
+		])
 expect Diagrams.svg_path("diagram-2") == "build/prepared/diagram-2.svg"
 expect Diagrams.dot_path("diagram-2") == "build/prepared/diagram-2.dot"

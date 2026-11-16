@@ -23,7 +23,10 @@ main! : Str => Try(Str, Str)
 main! = |_folder| {
 	folders = folder_lines(read_prepared!(widgets_path)?)
 	extent = extent_of(read_prepared!(chapters_path)?)?
-	manuscript = Diagrams.found({ name: manuscript_path, text: read_prepared!(manuscript_path)? }) ? |problems| Str.join_with(problems.map(|problem| "${problem}\n"), "")
+	manuscript = Diagrams.found({
+		name: manuscript_path,
+		text: read_prepared!(manuscript_path)?,
+	}) ? |problems| Str.join_with(problems.map(|problem| "${problem}\n"), "")
 	var $drawn = []
 	for diagram in manuscript.diagrams {
 		source = read_prepared!(Diagrams.dot_path(diagram.id))?
@@ -43,7 +46,10 @@ main! = |_folder| {
 	var $colored = []
 	for source in $sources {
 		text = read_prepared!("build/prepared/${source}")?
-		blocks = QuotedColor.colored({ text, notes: notes.keep_if(|note| note.source == source) }) ? |why| "${why}\n"
+		blocks = QuotedColor.colored({
+			text,
+			notes: notes.keep_if(|note| note.source == source),
+		}) ? |why| "${why}\n"
 		$colored = $colored.concat(blocks)
 	}
 	settings = {
@@ -87,7 +93,9 @@ extent_of = |line| {
 		match line.split_first("book: the first ") {
 			Ok({ before: "", after }) =>
 				match after.split_first(" chapters\n") {
-					Ok({ before: count, after: "" }) => U64.from_str(count).map_ok(|first| FirstChapters(first)).map_err(|_| why)
+					Ok(
+						{ before: count, after: "" },
+					) => U64.from_str(count).map_ok(|first| FirstChapters(first)).map_err(|_| why)
 					_ => Err(why)
 				}
 			_ => Err(why)
@@ -108,7 +116,18 @@ base_settings = {
 	manuscript: manuscript_path,
 	index_terms: IndexTerms("index_terms.txt"),
 	look: SafariLook.look,
-	prepared: Prepared({ folder: "build/prepared", kinds: ["code", "expect", "fails", "module", "proof", "signatures", "types"] }),
+	prepared: Prepared({
+		folder: "build/prepared",
+		kinds: [
+			"code",
+			"expect",
+			"fails",
+			"module",
+			"proof",
+			"signatures",
+			"types",
+		],
+	}),
 }
 
 ## A file of the book's folder, or the build's stop naming it.
@@ -128,5 +147,10 @@ folder_lines = |text| text.split_on("\n").drop_if(|line| line.is_empty())
 expect extent_of("book: every chapter\n") == Ok(AllChapters)
 expect extent_of("book: the first 3 chapters\n") == Ok(FirstChapters(3))
 expect
-	["book: the first x chapters\n", "the first 3 chapters\n", "book: the first 3 chapters", "book: every chapter"]
+	[
+		"book: the first x chapters\n",
+		"the first 3 chapters\n",
+		"book: the first 3 chapters",
+		"book: every chapter",
+	]
 		.all(|line| extent_of(line) == Err("build/prepared/chapters.txt says neither `book: every chapter` nor `book: the first N chapters`: ${line}"))

@@ -50,23 +50,23 @@ References := [].{
 	}
 
 	## A chapter the book leaves out, which has no page: its title and number.
-	LeftOut : {
-		title : Str,
-		number : [Numbered(U64), Unnumbered],
-	}
+	LeftOut : { title : Str, number : [Numbered(U64), Unnumbered] }
 
 	## The chapters a reference can name: those with a page, and those left out.
-	Chapters : {
-		chapters : List(References.Target),
-		left_out : List(References.LeftOut),
-	}
+	Chapters : { chapters : List(References.Target), left_out : List(References.LeftOut) }
 
 	## The rendered page with each reference written out as a link, or what is
 	## wrong with the references that can't be.
 	linked : Str, References.Chapters -> Try(Str, List(Str))
 	linked = |html, chapters| {
-		titled = rewritten(html, { opening: "{{chapter ", write: |reference| title_link(reference, chapters) })
-		numbered = rewritten(titled.html, { opening: "{{number ", write: |reference| number_link(reference, chapters) })
+		titled = rewritten(
+			html,
+			{ opening: "{{chapter ", write: |reference| title_link(reference, chapters) },
+		)
+		numbered = rewritten(
+			titled.html,
+			{ opening: "{{number ", write: |reference| number_link(reference, chapters) },
+		)
 		problems = titled.problems.concat(numbered.problems)
 		if problems.is_empty() {
 			Ok(numbered.html)
@@ -94,7 +94,9 @@ citation_of = |piece| {
 ## `N Title`, a number of digits and a title.
 number_citation : Str -> Try(References.Citation, [NotACitation])
 number_citation = |text| match text.split_first(" ") {
-	Ok({ before: number, after: title }) if is_digits(number) and !title.is_empty() => Ok(ByNumber({ number, title }))
+	Ok(
+		{ before: number, after: title },
+	) if is_digits(number) and !title.is_empty() => Ok(ByNumber({ number, title }))
 	_ => Err(NotACitation)
 }
 
@@ -115,7 +117,11 @@ citation_end = |piece| {
 }
 
 ## The page rewritten at each `opening`, and what went wrong.
-rewritten : Str, { opening : Str, write : Str -> Try(Str, Str) } -> { html : Str, problems : List(Str) }
+rewritten : Str,
+{
+	opening : Str,
+	write : Str -> Try(Str, Str),
+} -> { html : Str, problems : List(Str) }
 rewritten = |html, { opening, write }| match html.split_on(opening) {
 	[before_any, .. as pieces] => {
 		var $out = before_any
@@ -162,7 +168,9 @@ chapter_titled = |{ chapters, left_out }, title| {
 
 title_link : Str, References.Chapters -> Try(Str, Str)
 title_link = |title, chapters| match chapter_titled(chapters, title) {
-	Ok({ page: OnPage(file), .. }) => Ok("<a class=\"chapter-link\" href=\"${file}\">“${title}”</a>")
+	Ok(
+		{ page: OnPage(file), .. },
+	) => Ok("<a class=\"chapter-link\" href=\"${file}\">“${title}”</a>")
 	Ok({ page: LeftOut, .. }) => Ok("“${title}”")
 	Err(NoChapter) => Err("book: {{chapter ${title}}} names no chapter of the book")
 }
@@ -171,9 +179,15 @@ number_link : Str, References.Chapters -> Try(Str, Str)
 number_link = |reference, chapters| match reference.split_first(" ") {
 	Ok({ before: number, after: title }) =>
 		match chapter_titled(chapters, title) {
-			Ok({ number: Numbered(held), page }) if held.to_str() == number => Ok(number_written(number, page))
-			Ok({ number: Numbered(held), .. }) => Err("book: {{number ${reference}}} names chapter ${held.to_str()}")
-			Ok({ number: Unnumbered, .. }) => Err("book: {{number ${reference}}} names a chapter with no number")
+			Ok(
+				{ number: Numbered(held), page },
+			) if held.to_str() == number => Ok(number_written(number, page))
+			Ok(
+				{ number: Numbered(held), .. },
+			) => Err("book: {{number ${reference}}} names chapter ${held.to_str()}")
+			Ok(
+				{ number: Unnumbered, .. },
+			) => Err("book: {{number ${reference}}} names a chapter with no number")
 			Err(NoChapter) => Err("book: {{number ${reference}}} names no chapter of the book")
 		}
 	Err(NotFound) => Err("book: a chapter number with no title: {{number ${reference}}}")
@@ -186,7 +200,10 @@ number_written = |number, page| match page {
 	LeftOut => number
 }
 
-expect References.citations("See {{chapter A far tree}} and {{number 5 The road}}.") == [ByTitle("A far tree"), ByNumber({ number: "5", title: "The road" })]
+expect References.citations("See {{chapter A far tree}} and {{number 5 The road}}.") == [
+	ByTitle("A far tree"),
+	ByNumber({ number: "5", title: "The road" }),
+]
 expect References.citations("no references {{ here") == []
 expect References.citations("{{chapter }} {{number x Y}} {{number 5}} {{index}} {{chapter a{b}}") == []
 expect References.without_citations("See {{chapter A}}, {{number 2 B}} and {{lines x}}.") == "See ,  and {{lines x}}."
@@ -197,31 +214,78 @@ expect References.cited_title(ByNumber({ number: "3", title: "B" })) == "B"
 chapters : References.Chapters
 chapters = {
 	chapters: [
-		{ title: "Bo's \"one\" & two", file: "bo.html", number: Numbered(1) },
-		{ title: "Back", file: "back.html", number: Unnumbered },
+		{
+			title: "Bo's \"one\" & two",
+			file: "bo.html",
+			number: Numbered(1),
+		},
+		{
+			title: "Back",
+			file: "back.html",
+			number: Unnumbered,
+		},
 	],
 	left_out: [],
 }
 
 cut_short : References.Chapters
 cut_short = {
-	chapters: [{ title: "One", file: "one.html", number: Numbered(1) }],
-	left_out: [{ title: "Two & three", number: Numbered(2) }, { title: "Credits", number: Unnumbered }],
+	chapters: [
+		{
+			title: "One",
+			file: "one.html",
+			number: Numbered(1),
+		},
+	],
+	left_out: [
+		{ title: "Two & three", number: Numbered(2) },
+		{ title: "Credits", number: Unnumbered },
+	],
 }
 
 expect
-	References.linked("<p>{{chapter Bo&#39;s &quot;one&quot; &amp; two}} and {{number 1 Bo&#39;s &quot;one&quot; &amp; two}}</p>", chapters)
+	References.linked(
+		"<p>{{chapter Bo&#39;s &quot;one&quot; &amp; two}} and {{number 1 Bo&#39;s &quot;one&quot; &amp; two}}</p>",
+		chapters,
+	)
 		== Ok("<p><a class=\"chapter-link\" href=\"bo.html\">“Bo&#39;s &quot;one&quot; &amp; two”</a> and <a class=\"chapter-link\" href=\"bo.html\">1</a></p>")
 expect References.linked("<p>none {{ here</p>", chapters) == Ok("<p>none {{ here</p>")
-expect References.linked("{{chapter Gone}}", chapters) == Err(["book: {{chapter Gone}} names no chapter of the book"])
-expect References.linked("{{number 2 Bo&#39;s &quot;one&quot; &amp; two}}", chapters) == Err(["book: {{number 2 Bo&#39;s &quot;one&quot; &amp; two}} names chapter 1"])
-expect References.linked("{{number 4 Back}}", chapters) == Err(["book: {{number 4 Back}} names a chapter with no number"])
-expect References.linked("{{number 4 Gone}} {{chapter Back", chapters) == Err(["book: a reference with no end: {{chapter Back", "book: {{number 4 Gone}} names no chapter of the book"])
-expect References.linked("{{number 4}}", chapters) == Err(["book: a chapter number with no title: {{number 4}}"])
+expect References.linked(
+	"{{chapter Gone}}",
+	chapters,
+) == Err(["book: {{chapter Gone}} names no chapter of the book"])
+expect References.linked(
+	"{{number 2 Bo&#39;s &quot;one&quot; &amp; two}}",
+	chapters,
+) == Err(["book: {{number 2 Bo&#39;s &quot;one&quot; &amp; two}} names chapter 1"])
+expect References.linked(
+	"{{number 4 Back}}",
+	chapters,
+) == Err(["book: {{number 4 Back}} names a chapter with no number"])
+expect References.linked("{{number 4 Gone}} {{chapter Back", chapters) == Err([
+	"book: a reference with no end: {{chapter Back",
+	"book: {{number 4 Gone}} names no chapter of the book",
+])
+expect References.linked(
+	"{{number 4}}",
+	chapters,
+) == Err(["book: a chapter number with no title: {{number 4}}"])
 expect
-	References.linked("<p>{{chapter Two &amp; three}}, {{number 2 Two &amp; three}} and {{number 1 One}}</p>", cut_short)
+	References.linked(
+		"<p>{{chapter Two &amp; three}}, {{number 2 Two &amp; three}} and {{number 1 One}}</p>",
+		cut_short,
+	)
 		== Ok("<p>“Two &amp; three”, 2 and <a class=\"chapter-link\" href=\"one.html\">1</a></p>")
 expect References.linked("{{chapter Credits}}", cut_short) == Ok("“Credits”")
-expect References.linked("{{number 3 Two &amp; three}}", cut_short) == Err(["book: {{number 3 Two &amp; three}} names chapter 2"])
-expect References.linked("{{number 4 Credits}}", cut_short) == Err(["book: {{number 4 Credits}} names a chapter with no number"])
-expect References.linked("{{chapter Gone}} {{number 5 Gone}}", cut_short) == Err(["book: {{chapter Gone}} names no chapter of the book", "book: {{number 5 Gone}} names no chapter of the book"])
+expect References.linked(
+	"{{number 3 Two &amp; three}}",
+	cut_short,
+) == Err(["book: {{number 3 Two &amp; three}} names chapter 2"])
+expect References.linked(
+	"{{number 4 Credits}}",
+	cut_short,
+) == Err(["book: {{number 4 Credits}} names a chapter with no number"])
+expect References.linked("{{chapter Gone}} {{number 5 Gone}}", cut_short) == Err([
+	"book: {{chapter Gone}} names no chapter of the book",
+	"book: {{number 5 Gone}} names no chapter of the book",
+])

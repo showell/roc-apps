@@ -72,7 +72,9 @@ Negatives := [].{
 				while $end < len and is_stop(byte_at(bytes, $end)) {
 					$end = $end + 1
 				}
-				sentence = BookText.text_from_bytes(bytes.sublist({ start: $at, len: $end - $at })).trim()
+				sentence = BookText.text_from_bytes(
+					bytes.sublist({ start: $at, len: $end - $at }),
+				).trim()
 				if !sentence.is_empty() {
 					$found = $found.append(sentence)
 				}
@@ -94,7 +96,9 @@ Negatives := [].{
 		var $found = []
 		var $at = 0
 		while $at < len {
-			match word_list.find_first(|word| is_word_at(bytes, { word: word.to_utf8(), at: $at })) {
+			match word_list.find_first(
+				|word| is_word_at(bytes, { word: word.to_utf8(), at: $at }),
+			) {
 				Ok(word) => {
 					if !$found.contains(word) {
 						$found = $found.append(word)
@@ -138,7 +142,12 @@ prose_hits = |lines, word_list| {
 					$read_count = $read_count + 1
 					words = Negatives.words_in(sentence, word_list)
 					if !words.is_empty() {
-						$found = $found.append({ line: line.number, chapter: $chapter, words: Str.join_with(words, ","), sentence })
+						$found = $found.append({
+							line: line.number,
+							chapter: $chapter,
+							words: Str.join_with(words, ","),
+							sentence,
+						})
 					}
 				}
 			}
@@ -259,10 +268,17 @@ words_of = |{ name, text }| {
 }
 
 ## One sentence the table keeps, and its line in the table.
-KeptRow : { kind : Str, sentence : Str, line : U64 }
+KeptRow : {
+	kind : Str,
+	sentence : Str,
+	line : U64,
+}
 
 ## The table's rows, and their sentences for looking up.
-exception_table : { name : Str, text : Str } -> Try({ rows : List(KeptRow), sentences : List(Str) }, Str)
+exception_table : { name : Str, text : Str } -> Try(
+	{ rows : List(KeptRow), sentences : List(Str) },
+	Str,
+)
 exception_table = |{ name, text }| {
 	var $kinds = []
 	var $rows = []
@@ -283,13 +299,19 @@ exception_table = |{ name, text }| {
 					row = kept_row(line) ? |_| "${at}expected `kind: the sentence`"
 					match $kinds.find_first(|known| known.name == row.kind) {
 						Err(NotFound) => return Err("${at}`${row.kind}` is no kind the table defines")
-						Ok({ action: Fix, .. }) => return Err("${at}`${row.kind}` is a kind to fix, not to keep")
+						Ok(
+							{ action: Fix, .. },
+						) => return Err("${at}`${row.kind}` is a kind to fix, not to keep")
 						Ok({ action: Keep, .. }) => {}
 					}
 					if $rows.any(|kept| kept.sentence == row.sentence) {
 						return Err("${at}the sentence is listed twice")
 					}
-					$rows = $rows.append({ kind: row.kind, sentence: row.sentence, line: $number })
+					$rows = $rows.append({
+						kind: row.kind,
+						sentence: row.sentence,
+						line: $number,
+					})
 				}
 		}
 	}
@@ -339,34 +361,57 @@ is_kind_name = |text| {
 }
 
 negative_words : { name : Str, text : Str }
-negative_words = { name: "words.txt", text: "# The words.\nnot\nno\nnone\nnever\nisn't\ndoesn't\nnothing\nrather than\n\n" }
+negative_words = {
+	name: "words.txt",
+	text: "# The words.\nnot\nno\nnone\nnever\nisn't\ndoesn't\nnothing\nrather than\n\n",
+}
 
 kinds_only : { name : Str, text : Str }
-kinds_only = { name: "negatives.txt", text: "# keep guarantee: the no is the point.\n# fix hedge: softens a claim.\n" }
+kinds_only = {
+	name: "negatives.txt",
+	text: "# keep guarantee: the no is the point.\n# fix hedge: softens a claim.\n",
+}
 
 judge_sample : Str, { name : Str, text : Str } -> Try({ findings : List(Str), summary : Str }, Str)
 judge_sample = |text, table| match Manuscript.lines(text) {
-	Ok(lines) => Negatives.judged({ manuscript: "book.md", lines, words: negative_words, table })
+	Ok(lines) => Negatives.judged({
+		manuscript: "book.md",
+		lines,
+		words: negative_words,
+		table,
+	})
 	Err(_) => crash "the test text's fences close"
 }
 
 expect Negatives.sentences("One. Two! Three? Four") == ["One.", "Two!", "Three?", "Four"]
-expect Negatives.sentences("The value 4.5 and `a. b` stay. Next.") == ["The value 4.5 and `a. b` stay.", "Next."]
+expect Negatives.sentences("The value 4.5 and `a. b` stay. Next.") == [
+	"The value 4.5 and `a. b` stay.",
+	"Next.",
+]
 expect Negatives.sentences("Wait... what?! Done.") == ["Wait...", "what?!", "Done."]
 expect Negatives.sentences("an `open span. Then more.") == ["an", "open span.", "Then more."]
 expect Negatives.sentences("x.`y`") == ["x.", "`y`"]
 expect Negatives.sentences(". .") == ["."]
 expect Negatives.sentences("...") == []
 expect Negatives.sentences("") == []
-expect Negatives.words_in("It isn’t `not` here, and {{chapter Not none}} is NOT none.", ["not", "isn't", "none"]) == ["isn't", "not", "none"]
-expect Negatives.words_in("Notable nothing knot no_one nob", ["not", "no", "nothing"]) == ["nothing"]
+expect Negatives.words_in(
+	"It isn’t `not` here, and {{chapter Not none}} is NOT none.",
+	["not", "isn't", "none"],
+) == ["isn't", "not", "none"]
+expect Negatives.words_in(
+	"Notable nothing knot no_one nob",
+	["not", "no", "nothing"],
+) == ["nothing"]
 expect Negatives.words_in("Rather than this, no.", ["no", "rather than"]) == ["rather than", "no"]
 expect Negatives.words_in("Plain words.", ["no"]) == []
 expect line_texts("| Not a | b |") == [" Not a ", " b "]
 expect line_texts("| a | :---: | -- |") == [" a "]
 expect line_texts("plain | text") == ["plain | text"]
 expect
-	judge_sample("# Book\n\nIt is not here.\n\n## One\n\nA fine line. Nothing is wrong.\n```\nnot code\n```\n{{file x not}}\n| Term | Not this |\n", kinds_only)
+	judge_sample(
+		"# Book\n\nIt is not here.\n\n## One\n\nA fine line. Nothing is wrong.\n```\nnot code\n```\n{{file x not}}\n| Term | Not this |\n",
+		kinds_only,
+	)
 		== Ok({
 			findings: [
 				"book.md:3: negative [(before the first chapter)] not: It is not here.",
@@ -378,7 +423,10 @@ expect
 expect
 	judge_sample(
 		"## One\n\nIt is not here. It never was.\n",
-		{ name: "negatives.txt", text: "${kinds_only.text}\nguarantee: It never was.\nguarantee: Gone from the prose.\n" },
+		{
+			name: "negatives.txt",
+			text: "${kinds_only.text}\nguarantee: It never was.\nguarantee: Gone from the prose.\n",
+		},
 	)
 		== Ok({
 			findings: [
@@ -388,20 +436,55 @@ expect
 			summary: "negatives: negative 1, unused_exception 1, 2 negative sentences of 3 read, 2 kept in the table",
 		})
 expect
-	judge_sample("## One\n\nIt never was.\n", { name: "negatives.txt", text: "${kinds_only.text}guarantee: It never was.\n" })
-		== Ok({ findings: [], summary: "negatives: negative 0, unused_exception 0, 1 negative sentences of 2 read, 1 kept in the table" })
+	judge_sample(
+		"## One\n\nIt never was.\n",
+		{ name: "negatives.txt", text: "${kinds_only.text}guarantee: It never was.\n" },
+	)
+		== Ok({
+			findings: [],
+			summary: "negatives: negative 0, unused_exception 0, 1 negative sentences of 2 read, 1 kept in the table",
+		})
 expect judge_sample("```\nonly code\n```\n", kinds_only) == Err("negatives: no prose in book.md")
-expect judge_sample("A.\n", { name: "t.txt", text: "# keep a: x\n# keep a: y\n" }) == Err("negatives: t.txt:2: the kind `a` is defined twice")
-expect judge_sample("A.\n", { name: "t.txt", text: "# keep a: x\nb: A sentence.\n" }) == Err("negatives: t.txt:2: `b` is no kind the table defines")
-expect judge_sample("A.\n", { name: "t.txt", text: "# fix a: x\na: A sentence.\n" }) == Err("negatives: t.txt:2: `a` is a kind to fix, not to keep")
-expect judge_sample("A.\n", { name: "t.txt", text: "# keep a: x\na: One.\na: One.\n" }) == Err("negatives: t.txt:3: the sentence is listed twice")
-expect judge_sample("A.\n", { name: "t.txt", text: "# keep a: x\nnot a row\n" }) == Err("negatives: t.txt:2: expected `kind: the sentence`")
-expect judge_sample("A.\n", { name: "t.txt", text: "# Only comments.\n" }) == Err("negatives: t.txt defines no kinds")
+expect judge_sample(
+	"A.\n",
+	{ name: "t.txt", text: "# keep a: x\n# keep a: y\n" },
+) == Err("negatives: t.txt:2: the kind `a` is defined twice")
+expect judge_sample(
+	"A.\n",
+	{ name: "t.txt", text: "# keep a: x\nb: A sentence.\n" },
+) == Err("negatives: t.txt:2: `b` is no kind the table defines")
+expect judge_sample(
+	"A.\n",
+	{ name: "t.txt", text: "# fix a: x\na: A sentence.\n" },
+) == Err("negatives: t.txt:2: `a` is a kind to fix, not to keep")
+expect judge_sample(
+	"A.\n",
+	{ name: "t.txt", text: "# keep a: x\na: One.\na: One.\n" },
+) == Err("negatives: t.txt:3: the sentence is listed twice")
+expect judge_sample(
+	"A.\n",
+	{ name: "t.txt", text: "# keep a: x\nnot a row\n" },
+) == Err("negatives: t.txt:2: expected `kind: the sentence`")
+expect judge_sample(
+	"A.\n",
+	{ name: "t.txt", text: "# Only comments.\n" },
+) == Err("negatives: t.txt defines no kinds")
 expect
 	match Manuscript.lines("A.\n") {
-		Ok(lines) => Negatives.judged({ manuscript: "book.md", lines, words: { name: "w.txt", text: "# none\n" }, table: kinds_only }) == Err("negatives: w.txt names no words")
+		Ok(lines) => Negatives.judged({
+			manuscript: "book.md",
+			lines,
+			words: { name: "w.txt", text: "# none\n" },
+			table: kinds_only,
+		}) == Err("negatives: w.txt names no words")
 		Err(_) => Bool.False
 	}
 expect kind_line("# keep guarantee: the point") == Ok({ name: "guarantee", action: Keep })
 expect kind_line("# fix hedge: softens") == Ok({ name: "hedge", action: Fix })
-expect ["# keep Bad: x", "# keep a:x", "# keep a:   ", "# drop a: x", "keep a: x"].all(|line| kind_line(line) == Err(NotAKind))
+expect [
+	"# keep Bad: x",
+	"# keep a:x",
+	"# keep a:   ",
+	"# drop a: x",
+	"keep a: x",
+].all(|line| kind_line(line) == Err(NotAKind))

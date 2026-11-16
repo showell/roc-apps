@@ -27,10 +27,7 @@ SafariFences := [].{
 
 	## The hook for ```dot fences, given the drawings.
 	dot : List(Diagrams.Drawn) -> Fences.Hook
-	dot = |drawings| {
-		language: "dot",
-		html_of: |{ words, .. }| diagram_html(drawings, words),
-	}
+	dot = |drawings| { language: "dot", html_of: |{ words, .. }| diagram_html(drawings, words) }
 }
 
 ## The page behind a widget's word, and the shape of its canvas: `Screen.roc`
@@ -159,7 +156,9 @@ widget_html = |folders, { words, caption }|
 ## is refused: it could close the page early with a forged page mark.
 diagram_html : List(Diagrams.Drawn), Str -> [Html(Str), Refused(Str)]
 diagram_html = |drawings, id| match drawings.find_first(|drawn| drawn.id == id) {
-	Ok({ svg, .. }) if svg.contains("<!--") => Refused("the drawing for the diagram `${id}` holds an HTML comment")
+	Ok(
+		{ svg, .. },
+	) if svg.contains("<!--") => Refused("the drawing for the diagram `${id}` holds an HTML comment")
 	Ok({ title, svg, .. }) =>
 		match BookText.inline_html(title) {
 			Err(why) => Refused(why)
@@ -184,9 +183,20 @@ expect frame_of("ride").folder == "safari"
 expect frame_of("sky").folder == "sky_widget"
 expect frame_of("cow").aspect == "960 / 600"
 expect
-	[frame_of("herd"), frame_of("bend_animals"), frame_of("far_tree"), frame_of("pipeline"), frame_of("route"), frame_of("shapes")].map(|frame| frame.aspect)
+	[
+		frame_of("herd"),
+		frame_of("bend_animals"),
+		frame_of("far_tree"),
+		frame_of("pipeline"),
+		frame_of("route"),
+		frame_of("shapes"),
+	].map(|frame| frame.aspect)
 		== ["640 / 116", "640 / 160", "640 / 240", "640 / 340", "640 / 220", "640 / 324"]
-expect [frame_of("ride"), frame_of("frame"), frame_of("sky")].map(|frame| loading_html(frame.loading)) == ["eager", "lazy", "lazy"]
+expect [
+	frame_of("ride"),
+	frame_of("frame"),
+	frame_of("sky"),
+].map(|frame| loading_html(frame.loading)) == ["eager", "lazy", "lazy"]
 expect
 	html_of(SafariFences.widget(folders), { words: "sky", body: "Press `play` <now>.\n" })
 		== Html("<figure class=\"widget\"><iframe class=\"canvas-app\" src=\"../sky_widget/\" title=\"Press `play` &lt;now&gt;.\" loading=\"lazy\" style=\"aspect-ratio: 640 / 360\"></iframe><figcaption>Press <code>play</code> &lt;now&gt;.</figcaption></figure>")
@@ -195,19 +205,45 @@ expect
 		Html(html) => html.contains("src=\"../frame_widget/?start=trees\"")
 		Refused(_) => Bool.False
 	}
-expect html_of(SafariFences.widget(folders), { words: "frame trees now", body: "a\n" }) == Refused("a widget fence is a widget and at most one word to start at: `frame trees now`")
-expect html_of(SafariFences.widget(folders), { words: "cow", body: "a\n" }) == Refused("the widget `cow` needs a folder canvas_apps/cow_widget, and there's none")
-expect html_of(SafariFences.widget(folders), { words: "sky", body: " \n" }) == Refused("the widget `sky` needs a caption in its fence")
-expect html_of(SafariFences.widget(folders), { words: "sky", body: "a\n\nb\n" }) == Refused("a caption isn't one paragraph of Markdown: a\n\nb")
+expect html_of(
+	SafariFences.widget(folders),
+	{ words: "frame trees now", body: "a\n" },
+) == Refused("a widget fence is a widget and at most one word to start at: `frame trees now`")
+expect html_of(
+	SafariFences.widget(folders),
+	{ words: "cow", body: "a\n" },
+) == Refused("the widget `cow` needs a folder canvas_apps/cow_widget, and there's none")
+expect html_of(
+	SafariFences.widget(folders),
+	{ words: "sky", body: " \n" },
+) == Refused("the widget `sky` needs a caption in its fence")
+expect html_of(
+	SafariFences.widget(folders),
+	{ words: "sky", body: "a\n\nb\n" },
+) == Refused("a caption isn't one paragraph of Markdown: a\n\nb")
 
 drawings : List(Diagrams.Drawn)
 drawings = [
-	{ id: "diagram-1", title: "Around `Sky`", svg: "<svg role=\"img\">" },
-	{ id: "diagram-2", title: "A note", svg: "<svg><!-- x -->" },
+	{
+		id: "diagram-1",
+		title: "Around `Sky`",
+		svg: "<svg role=\"img\">",
+	},
+	{
+		id: "diagram-2",
+		title: "A note",
+		svg: "<svg><!-- x -->",
+	},
 ]
 
 expect
 	html_of(SafariFences.dot(drawings), { words: "diagram-1", body: "digraph {}\n" })
 		== Html("<figure class=\"diagram\"><svg role=\"img\" aria-label=\"Around `Sky`\"><figcaption>Around <code>Sky</code></figcaption></figure>")
-expect html_of(SafariFences.dot(drawings), { words: "diagram-2", body: "" }) == Refused("the drawing for the diagram `diagram-2` holds an HTML comment")
-expect html_of(SafariFences.dot(drawings), { words: "diagram-3", body: "" }) == Refused("no drawing for the diagram `diagram-3`")
+expect html_of(
+	SafariFences.dot(drawings),
+	{ words: "diagram-2", body: "" },
+) == Refused("the drawing for the diagram `diagram-2` holds an HTML comment")
+expect html_of(
+	SafariFences.dot(drawings),
+	{ words: "diagram-3", body: "" },
+) == Refused("no drawing for the diagram `diagram-3`")

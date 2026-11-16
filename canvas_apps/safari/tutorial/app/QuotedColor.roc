@@ -18,9 +18,23 @@ import sc.SyntaxColor
 QuotedColor := [].{
 
 	## One block of the note: its include's line, its file's copy, its parts.
-	Note : { line : U64, source : Str, parts : List(QuotedColor.Part) }
+	Note : {
+		line : U64,
+		source : Str,
+		parts : List(QuotedColor.Part),
+	}
 
-	Part : [Lines({ from : U64, to : U64, indent : U64, end_col : U64 }), Cut(U64)]
+	Part : [
+		Lines(
+			{
+				from : U64,
+				to : U64,
+				indent : U64,
+				end_col : U64,
+			},
+		),
+		Cut(U64),
+	]
 
 	## A block's text, and its text colored.
 	Colored : { code : Str, html : Str }
@@ -91,19 +105,32 @@ line_starts = |bytes| {
 	$starts.append(bytes.len() + 1)
 }
 
-File : { text : Str, bytes : List(U8), spans : List(Span), starts : List(U64) }
+File : {
+	text : Str,
+	bytes : List(U8),
+	spans : List(Span),
+	starts : List(U64),
+}
 
 note_colored : QuotedColor.Note, File -> Try(QuotedColor.Colored, Str)
 note_colored = |note, file| {
-	pieces = note.parts.map_try(|part| part_colored(part, file)) ? |why| "blocks.txt: the block at line ${note.line.to_str()}, from ${note.source}: ${why}"
-	Ok({ code: Str.join_with(pieces.map(|piece| piece.code), "\n"), html: Str.join_with(pieces.map(|piece| piece.html), "\n") })
+	pieces = note.parts.map_try(
+		|part| part_colored(part, file),
+	) ? |why| "blocks.txt: the block at line ${note.line.to_str()}, from ${note.source}: ${why}"
+	Ok({
+		code: Str.join_with(pieces.map(|piece| piece.code), "\n"),
+		html: Str.join_with(pieces.map(|piece| piece.html), "\n"),
+	})
 }
 
 part_colored : QuotedColor.Part, File -> Try(QuotedColor.Colored, Str)
 part_colored = |part, file| match part {
 	Cut(tabs) => {
 		indent = Str.repeat("\t", tabs)
-		Ok({ code: "${indent}${cut_text}", html: "${indent}<span class=\"syn-comment\">${cut_text}</span>" })
+		Ok({
+			code: "${indent}${cut_text}",
+			html: "${indent}<span class=\"syn-comment\">${cut_text}</span>",
+		})
 	}
 	Lines({ from, to, indent, end_col }) => {
 		if from < 1 or to < from or to + 1 >= file.starts.len() {
@@ -118,9 +145,13 @@ part_colored = |part, file| match part {
 				line_end = (file.starts.get(number) ?? crash "QuotedColor: a line inside the file has its end") - 1
 				start = (line_start + indent).min(line_end)
 				end = if (number == to) (line_start + end_col - 1).min(line_end) else line_end
-				code = Str.from_utf8(file.bytes.sublist({ start, len: end - start.min(end) })) ? |_| "a line cut inside a character"
+				code = Str.from_utf8(
+					file.bytes.sublist({ start, len: end - start.min(end) }),
+				) ? |_| "a line cut inside a character"
 				$codes = $codes.append(code)
-				$htmls = $htmls.append(SyntaxColor.range_html(file.text, { spans: file.spans, start, end }))
+				$htmls = $htmls.append(
+					SyntaxColor.range_html(file.text, { spans: file.spans, start, end }),
+				)
 				$number = $number + 1
 			}
 			Ok({ code: Str.join_with($codes, "\n"), html: Str.join_with($htmls, "\n") })
@@ -129,8 +160,31 @@ part_colored = |part, file| match part {
 }
 
 expect QuotedColor.notes_of("3\tsources/1.roc\t19,19,1,12\n4\tsources/2.roc\tcut2\t1,2,0,5\n") == Ok([
-	{ line: 3, source: "sources/1.roc", parts: [Lines({ from: 19, to: 19, indent: 1, end_col: 12 })] },
-	{ line: 4, source: "sources/2.roc", parts: [Cut(2), Lines({ from: 1, to: 2, indent: 0, end_col: 5 })] },
+	{
+		line: 3,
+		source: "sources/1.roc",
+		parts: [
+			Lines({
+				from: 19,
+				to: 19,
+				indent: 1,
+				end_col: 12,
+			}),
+		],
+	},
+	{
+		line: 4,
+		source: "sources/2.roc",
+		parts: [
+			Cut(2),
+			Lines({
+				from: 1,
+				to: 2,
+				indent: 0,
+				end_col: 5,
+			}),
+		],
+	},
 ])
 expect QuotedColor.notes_of("x\ty\n") == Err("blocks.txt: a row whose line isn't a number: x\ty")
 expect QuotedColor.notes_of("1\ty\t1,2\n") == Err("blocks.txt: a part that isn't FROM,TO,INDENT,END_COL or cutN: 1,2")
@@ -141,7 +195,25 @@ zoo : Str
 zoo = "Zoo :: [].{\n\tfeed = |cage| {\n\t\tamount = \"a\"\n\t\tamount\n\t}\n}\n"
 
 expect
-	QuotedColor.colored({ text: zoo, notes: [{ line: 1, source: "z", parts: [Cut(0), Lines({ from: 3, to: 4, indent: 2, end_col: 9 }), Cut(1)] }] })
+	QuotedColor.colored({
+		text: zoo,
+		notes: [
+			{
+				line: 1,
+				source: "z",
+				parts: [
+					Cut(0),
+					Lines({
+						from: 3,
+						to: 4,
+						indent: 2,
+						end_col: 9,
+					}),
+					Cut(1),
+				],
+			},
+		],
+	})
 		== Ok([
 			{
 				code: "# ...\namount = \"a\"\namount\n\t# ...",
@@ -149,9 +221,31 @@ expect
 			},
 		])
 expect
-	QuotedColor.colored({ text: zoo, notes: [{ line: 7, source: "z", parts: [Lines({ from: 6, to: 7, indent: 0, end_col: 1 })] }] })
+	QuotedColor.colored({
+		text: zoo,
+		notes: [
+			{
+				line: 7,
+				source: "z",
+				parts: [
+					Lines({
+						from: 6,
+						to: 7,
+						indent: 0,
+						end_col: 1,
+					}),
+				],
+			},
+		],
+	})
 		== Err("blocks.txt: the block at line 7, from z: lines 6 to 7, which the file doesn't have")
 
-expect (QuotedColor.colorer([{ code: "x", html: "<b>x</b>" }]))({ language: "roc", code: "x\n" }) == Colored("<b>x</b>\n")
-expect (QuotedColor.colorer([]))({ language: "roc", code: "\"a\"\n" }) == Colored("<span class=\"syn-string\">&quot;a&quot;</span>\n")
+expect (QuotedColor.colorer([{ code: "x", html: "<b>x</b>" }]))({
+	language: "roc",
+	code: "x\n",
+}) == Colored("<b>x</b>\n")
+expect (QuotedColor.colorer([]))({
+	language: "roc",
+	code: "\"a\"\n",
+}) == Colored("<span class=\"syn-string\">&quot;a&quot;</span>\n")
 expect (QuotedColor.colorer([]))({ language: "text", code: "x\n" }) == Plain

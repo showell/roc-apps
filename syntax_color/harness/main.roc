@@ -26,9 +26,18 @@ answers = |args| answers_onto([], args)
 answers_onto : List(Str), List(Str) -> List(Str)
 answers_onto = |out, args| match args {
 	[] => out
-	["roc", text, .. as rest] => answers_onto(out.append(SyntaxColor.html(SyntaxColor.roc, text)), rest)
-	["js", text, .. as rest] => answers_onto(out.append(SyntaxColor.html(SyntaxColor.js, text)), rest)
-	["shale", text, .. as rest] => answers_onto(out.append(SyntaxColor.html(SyntaxColor.shale, text)), rest)
+	["roc", text, .. as rest] => answers_onto(
+		out.append(SyntaxColor.html(SyntaxColor.roc, text)),
+		rest,
+	)
+	["js", text, .. as rest] => answers_onto(
+		out.append(SyntaxColor.html(SyntaxColor.js, text)),
+		rest,
+	)
+	["shale", text, .. as rest] => answers_onto(
+		out.append(SyntaxColor.html(SyntaxColor.shale, text)),
+		rest,
+	)
 	["roc-block", file, spec, .. as rest] => answers_onto(out.append(block_html(file, spec)), rest)
 	[stray, ..] => crash "harness: a request that isn't roc, shale, js or roc-block: ${stray}"
 }
@@ -46,7 +55,14 @@ block_line_html = |file, { spans, line }|
 	match line.split_first(" ") {
 		Ok({ before: "R", after }) =>
 			match after.split_on(" ") {
-				[start, end] => SyntaxColor.range_html(file, { spans, start: number(start), end: number(end) })
+				[start, end] => SyntaxColor.range_html(
+					file,
+					{
+						spans,
+						start: number(start),
+						end: number(end),
+					},
+				)
 				_ => crash "harness: an R line holds two numbers: ${line}"
 			}
 		Ok({ before: "T", after }) => SyntaxColor.html(SyntaxColor.roc, after)

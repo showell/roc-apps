@@ -20,12 +20,6 @@ Host := [].{
 	## host's size cap (`ReadFailed`). The bytes are empty unless `Found`.
 	read_file! : List(U8) => {
 		bytes : List(U8),
-		status : [
-			Found,
-			NotAFile,
-			NotFound,
-			OutsideTheBook,
-			ReadFailed,
-		],
+		status : [Found, NotAFile, NotFound, OutsideTheBook, ReadFailed],
 	}
 }

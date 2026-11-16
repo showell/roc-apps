@@ -15,12 +15,8 @@ platform ""
 	}
 	exposes [Book]
 	packages {}
-	provides {
-		"roc_main": main_for_host!,
-	}
-	hosted {
-		"read_file": Host.read_file!,
-	}
+	provides { "roc_main": main_for_host! }
+	hosted { "read_file": Host.read_file! }
 	targets: {
 		x64musl: {
 			inputs: [app],

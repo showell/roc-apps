@@ -1,10 +1,7 @@
 ## This app is the book builder's example of most of what it does: a front
 ## page and chapters, includes, chapter references, an index, the negatives
 ## lint and one fence hook of its own, `shout`.
-app [main!] {
-	bb: "../../builder/main.roc",
-	pf: platform "../../platform/main.roc",
-}
+app [main!] { bb: "../../builder/main.roc", pf: platform "../../platform/main.roc" }
 
 import pf.Book
 import bb.Builder
@@ -42,5 +39,8 @@ escaped = |text|
 		.replace_each(">", "&gt;")
 		.replace_each("\"", "&quot;")
 
-expect (shout.html_of)({ words: "Hey", body: "a <b>\n" }) == Html("<p class=\"shout\">Hey: A &lt;B&gt;</p>")
+expect (shout.html_of)({
+	words: "Hey",
+	body: "a <b>\n",
+}) == Html("<p class=\"shout\">Hey: A &lt;B&gt;</p>")
 expect (shout.html_of)({ words: "Hey", body: " \n" }) == Refused("a shout needs something to shout")

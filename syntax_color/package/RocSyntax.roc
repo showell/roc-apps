@@ -67,12 +67,33 @@ State : {
 Header : [NoCodeYet, InHeader, CodeSeen]
 
 ## An open bracket: what it opened.
-Frame : [Paren, Square, Record, Body, TypeBlock, LambdaArgs, Interpolation(StringKind)]
+Frame : [
+	Paren,
+	Square,
+	Record,
+	Body,
+	TypeBlock,
+	LambdaArgs,
+	Interpolation(StringKind),
+]
 
 StringKind : [Quoted, Multiline]
 
 ## What the token before was, as far as the next one cares.
-Before : [Start, Value, Dot, Colon, Arrow, Equals, FatArrow, BarOpen, BarClose, Opener, Operator, Keyword]
+Before : [
+	Start,
+	Value,
+	Dot,
+	Colon,
+	Arrow,
+	Equals,
+	FatArrow,
+	BarOpen,
+	BarClose,
+	Opener,
+	Operator,
+	Keyword,
+]
 
 keywords : List(Str)
 keywords = [
@@ -119,14 +140,26 @@ code_step = |bytes, state| {
 	byte = Bytes.byte_at(bytes, at)
 	next = Bytes.byte_at(bytes, at + 1)
 	if byte == '\n' {
-		{ ..emit(state, { class: Plain, end: at + 1 }), place: LineStart, frames: without_interpolations(state.frames) }
+		{
+			..emit(state, { class: Plain, end: at + 1 }),
+			place: LineStart,
+			frames: without_interpolations(state.frames),
+		}
 	} else if byte == ' ' or byte == '\t' or byte == '\r' {
 		emit(state, { class: Plain, end: at + 1 })
 	} else if byte == '#' {
 		{ ..emit(state, { class: Comment, end: Bytes.line_end(bytes, at) }), place: MidLine }
 	} else {
 		header = header_at(bytes, { at, header: state.header })
-		token_step(bytes, { ..state, header: if (header == InHeader) InHeader else CodeSeen, place: MidLine }, { byte, next, place: state.place, header })
+		token_step(
+			bytes,
+			{
+				..state,
+				header: if (header == InHeader) InHeader else CodeSeen,
+				place: MidLine,
+			},
+			{ byte, next, place: state.place, header },
+		)
 	}
 }
 
@@ -143,22 +176,49 @@ header_at = |bytes, { at, header }|
 ## The state after a token that isn't space or a comment. `place` and `header`
 ## are where the token stands: first on its line or not, and before, inside or
 ## past the file's header.
-token_step : List(U8), State, { byte : U8, next : U8, place : [LineStart, MidLine], header : Header } -> State
-token_step = |bytes, state, { byte, next, place, header }| {
+token_step : List(U8),
+State,
+{
+	byte : U8,
+	next : U8,
+	place : [LineStart, MidLine],
+	header : Header,
+} -> State
+token_step = |
+	bytes,
+	state,
+	{ byte, next, place, header },
+| {
 	at = state.at
 	if byte == '"' {
 		{ ..emit(state, { class: String, end: at + 1 }), mode: InString(Quoted) }
 	} else if byte == '\'' {
-		{ ..emit(state, { class: String, end: Bytes.quoted_end(bytes, { at: at + 1, quote: '\'' }) }), before: Value }
+		{
+			..emit(
+				state,
+				{ class: String, end: Bytes.quoted_end(bytes, { at: at + 1, quote: '\'' }) },
+			),
+			before: Value,
+		}
 	} else if byte == '\\' and next == '\\' {
 		{ ..emit(state, { class: String, end: at + 2 }), mode: InString(Multiline) }
 	} else if Bytes.is_digit(byte) {
 		if state.before == Dot {
-			{ ..emit(state, { class: Plain, end: Bytes.run_end(bytes, { at, keep: Bytes.is_digit }) }), before: Value }
+			{
+				..emit(
+					state,
+					{ class: Plain, end: Bytes.run_end(bytes, { at, keep: Bytes.is_digit }) },
+				),
+				before: Value,
+			}
 		} else {
 			{ ..emit(state, { class: Number, end: number_end(bytes, at) }), before: Value }
 		}
-	} else if byte == '-' and Bytes.is_digit(next) and !(at > 0 and is_value_end(Bytes.byte_at(bytes, at - 1))) {
+	} else if byte == '-' and Bytes.is_digit(next) and !(
+		at > 0 and is_value_end(
+			Bytes.byte_at(bytes, at - 1),
+		)
+	) {
 		{ ..emit(state, { class: Number, end: number_end(bytes, at + 1) }), before: Value }
 	} else if is_upper(byte) {
 		type_step(bytes, state)
@@ -167,7 +227,10 @@ token_step = |bytes, state, { byte, next, place, header }| {
 	} else if byte == '$' and Bytes.is_ascii_word_byte(next) {
 		{ ..emit(state, { class: Plain, end: word_end(bytes, at + 1) }), before: Value }
 	} else if byte >= 0x80 {
-		{ ..emit(state, { class: Plain, end: Bytes.run_end(bytes, { at, keep: |b| b >= 0x80 }) }), before: Value }
+		{
+			..emit(state, { class: Plain, end: Bytes.run_end(bytes, { at, keep: |b| b >= 0x80 }) }),
+			before: Value,
+		}
 	} else {
 		symbol_step(bytes, state, { byte, next })
 	}
@@ -186,13 +249,19 @@ word_step : List(U8), State, { place : [LineStart, MidLine], header : Header } -
 word_step = |bytes, state, { place, header }| {
 	at = state.at
 	end = word_end(bytes, at)
-	word = Str.from_utf8(bytes.sublist({ start: at, len: end - at })) ?? crash "RocSyntax.word_step: a word is ASCII"
+	word = Str.from_utf8(
+		bytes.sublist({ start: at, len: end - at }),
+	) ?? crash "RocSyntax.word_step: a word is ASCII"
 	if state.before == Dot {
 		{ ..emit(state, { class: Plain, end }), before: Value }
 	} else if keywords.contains(word) {
 		{ ..emit(state, { class: Keyword, end }), before: Keyword }
 	} else if header == NoCodeYet and header_starts.contains(word) {
-		{ ..emit(state, { class: Keyword, end }), before: Keyword, header: InHeader }
+		{
+			..emit(state, { class: Keyword, end }),
+			before: Keyword,
+			header: InHeader,
+		}
 	} else if header == InHeader and (header_starts.contains(word) or header_sections.contains(word)) {
 		{ ..emit(state, { class: Keyword, end }), before: Keyword }
 	} else if word == "platform" and Bytes.byte_at(bytes, space_end(bytes, end)) == '"' {
@@ -231,7 +300,11 @@ symbol_step = |bytes, state, { byte, next }| {
 		{ ..plain(at + 1, Opener), frames: state.frames.append(brace_frame(state.before)) }
 	} else if byte == '}' {
 		match state.frames.last() {
-			Ok(Interpolation(kind)) => { ..plain(at + 1, Opener), frames: state.frames.drop_last(1), mode: InString(kind) }
+			Ok(Interpolation(kind)) => {
+				..plain(at + 1, Opener),
+				frames: state.frames.drop_last(1),
+				mode: InString(kind),
+			}
 			Ok(_) => { ..plain(at + 1, Value), frames: state.frames.drop_last(1) }
 			Err(ListWasEmpty) => plain(at + 1, Value)
 		}
@@ -276,12 +349,20 @@ symbol_step = |bytes, state, { byte, next }| {
 bar_step : State, State -> State
 bar_step = |state, passed|
 	match state.frames.last() {
-		Ok(LambdaArgs) => { ..passed, frames: state.frames.drop_last(1), before: BarClose }
+		Ok(LambdaArgs) => {
+			..passed,
+			frames: state.frames.drop_last(1),
+			before: BarClose,
+		}
 		_ =>
 			if state.before == Value {
 				passed
 			} else {
-				{ ..passed, frames: state.frames.append(LambdaArgs), before: BarOpen }
+				{
+					..passed,
+					frames: state.frames.append(LambdaArgs),
+					before: BarOpen,
+				}
 			}
 	}
 
@@ -305,7 +386,11 @@ string_step = |bytes, { state, kind }| {
 	} else if byte == '\n' {
 		{ ..text, mode: Code }
 	} else if byte == '"' {
-		{ ..emit(text, { class: String, end: stop + 1 }), mode: Code, before: Value }
+		{
+			..emit(text, { class: String, end: stop + 1 }),
+			mode: Code,
+			before: Value,
+		}
 	} else {
 		{
 			..emit(text, { class: Plain, end: stop + 2 }),
@@ -349,7 +434,9 @@ number_end = |bytes, at| {
 	} else {
 		whole = Bytes.run_end(bytes, { at, keep: |b| Bytes.is_digit(b) or b == '_' })
 		fraction =
-			if Bytes.byte_at(bytes, whole) == '.' and Bytes.is_digit(Bytes.byte_at(bytes, whole + 1)) {
+			if Bytes.byte_at(bytes, whole) == '.' and Bytes.is_digit(
+				Bytes.byte_at(bytes, whole + 1),
+			) {
 				Bytes.run_end(bytes, { at: whole + 1, keep: |b| Bytes.is_digit(b) or b == '_' })
 			} else {
 				whole
@@ -422,7 +509,14 @@ colored = |text| {
 	bytes = text.to_utf8()
 	RocSyntax.spans(text)
 		.keep_if(|span| span.class != Plain)
-		.map(|span| (span.class, Str.from_utf8(bytes.sublist({ start: span.start, len: span.end - span.start })) ?? crash "RocSyntax.colored: a span ends inside a character"))
+		.map(
+			|span| (
+				span.class,
+				Str.from_utf8(
+					bytes.sublist({ start: span.start, len: span.end - span.start }),
+				) ?? crash "RocSyntax.colored: a span ends inside a character",
+			),
+		)
 }
 
 expect RocSyntax.spans("") == []
@@ -434,31 +528,82 @@ expect colored("f(\"ab\")") == [(String, "\"ab\"")]
 expect colored("f(\"a\\\"b\")") == [(String, "\"a\\\"b\"")]
 expect colored("f(\"a\${b}c\")") == [(String, "\"a"), (String, "c\"")]
 expect colored("f(\"\${b}\")") == [(String, "\""), (String, "\"")]
-expect colored("f(\"a\${g(\"b\${c}d\")}e\")") == [(String, "\"a"), (String, "\"b"), (String, "d\""), (String, "e\"")]
+expect colored("f(\"a\${g(\"b\${c}d\")}e\")") == [
+	(String, "\"a"),
+	(String, "\"b"),
+	(String, "d\""),
+	(String, "e\""),
+]
 expect colored("f(\"a\\\${b}\")") == [(String, "\"a\\\${b}\"")]
-expect colored("f(\"\${ { x: 1 }.x }\")") == [(String, "\""), (Number, "1"), (String, "\"")]
+expect colored("f(\"\${ { x: 1 }.x }\")") == [
+	(String, "\""),
+	(Number, "1"),
+	(String, "\""),
+]
 
 # A string still open stops at its newline, or at the end of the text.
-expect colored("x = \"ab\ny = 1") == [(Name, "x"), (String, "\"ab"), (Name, "y"), (Number, "1")]
+expect colored("x = \"ab\ny = 1") == [
+	(Name, "x"),
+	(String, "\"ab"),
+	(Name, "y"),
+	(Number, "1"),
+]
 expect colored("f(\"ab") == [(String, "\"ab")]
 expect colored("f(\"a\${b") == [(String, "\"a")]
-expect colored("x = \"a\${f(b\ny = 1") == [(Name, "x"), (String, "\"a"), (Name, "y"), (Number, "1")]
+expect colored("x = \"a\${f(b\ny = 1") == [
+	(Name, "x"),
+	(String, "\"a"),
+	(Name, "y"),
+	(Number, "1"),
+]
 
 # Characters, and multi-line strings, whose `\\` is a string's wherever it
 # opens one: first on its line, after `=`, in a call, before an interpolation,
 # and with nothing after it.
-expect colored("f('a', '\\'', '\\n')") == [(String, "'a'"), (String, "'\\''"), (String, "'\\n'")]
+expect colored("f('a', '\\'', '\\n')") == [
+	(String, "'a'"),
+	(String, "'\\''"),
+	(String, "'\\n'"),
+]
 expect colored("f('a") == [(String, "'a")]
-expect colored("css =\n\t\\\\a { \${x} }\n\t\\\\b \"q\"") == [(Name, "css"), (String, "\\\\a { "), (String, " }"), (String, "\\\\b \"q\"")]
+expect colored("css =\n\t\\\\a { \${x} }\n\t\\\\b \"q\"") == [
+	(Name, "css"),
+	(String, "\\\\a { "),
+	(String, " }"),
+	(String, "\\\\b \"q\""),
+]
 expect colored("css = \\\\a") == [(Name, "css"), (String, "\\\\a")]
 expect colored("f(\\\\a\n)") == [(String, "\\\\a")]
-expect colored("x = \\\\a \${y} b\nz = 1") == [(Name, "x"), (String, "\\\\a "), (String, " b"), (Name, "z"), (Number, "1")]
+expect colored("x = \\\\a \${y} b\nz = 1") == [
+	(Name, "x"),
+	(String, "\\\\a "),
+	(String, " b"),
+	(Name, "z"),
+	(Number, "1"),
+]
 expect colored("x = \\\\") == [(Name, "x"), (String, "\\\\")]
 
 # Numbers, with the `-` of a negative one, and not of a subtraction.
-expect colored("f(1, 1.5, 0x1F, 0b101, 1_000, 12u8, -1.0, [-2])") == [(Number, "1"), (Number, "1.5"), (Number, "0x1F"), (Number, "0b101"), (Number, "1_000"), (Number, "12u8"), (Number, "-1.0"), (Number, "-2")]
-expect colored("f(a - 1, a-1, b) - 2") == [(Number, "1"), (Number, "1"), (Number, "2")]
-expect colored("f(pair.0, 1..2, 2.0.to_str())") == [(Number, "1"), (Number, "2"), (Number, "2.0")]
+expect colored("f(1, 1.5, 0x1F, 0b101, 1_000, 12u8, -1.0, [-2])") == [
+	(Number, "1"),
+	(Number, "1.5"),
+	(Number, "0x1F"),
+	(Number, "0b101"),
+	(Number, "1_000"),
+	(Number, "12u8"),
+	(Number, "-1.0"),
+	(Number, "-2"),
+]
+expect colored("f(a - 1, a-1, b) - 2") == [
+	(Number, "1"),
+	(Number, "1"),
+	(Number, "2"),
+]
+expect colored("f(pair.0, 1..2, 2.0.to_str())") == [
+	(Number, "1"),
+	(Number, "2"),
+	(Number, "2.0"),
+]
 
 # Every keyword, and words that only hold one or follow a dot or a `$`.
 expect
@@ -488,8 +633,16 @@ expect colored("f(iffy, x.if, $in, in_view, for_each!)") == []
 
 # A header's first word is a keyword, and so is `platform` before its string;
 # the same words elsewhere are not.
-expect colored("app [main!] { pf: platform \"p.roc\" }") == [(Keyword, "app"), (Keyword, "platform"), (String, "\"p.roc\"")]
-expect colored("# a comment first\npackage [A] {}") == [(Comment, "# a comment first"), (Keyword, "package"), (Type, "A")]
+expect colored("app [main!] { pf: platform \"p.roc\" }") == [
+	(Keyword, "app"),
+	(Keyword, "platform"),
+	(String, "\"p.roc\""),
+]
+expect colored("# a comment first\npackage [A] {}") == [
+	(Comment, "# a comment first"),
+	(Keyword, "package"),
+	(Type, "A"),
+]
 expect colored("x = 1\nf(app, package, platform)") == [(Name, "x"), (Number, "1")]
 
 # A platform header's sections are keywords to the line that starts at its
@@ -519,14 +672,43 @@ expect
 
 # `module` and `hosted` start a header too, and a header's words are plain
 # when the file starts with anything else.
-expect colored("module [f]\n\nf = 1") == [(Keyword, "module"), (Name, "f"), (Number, "1")]
-expect colored("hosted [Echo]\nexposes = 1") == [(Keyword, "hosted"), (Type, "Echo"), (Name, "exposes"), (Number, "1")]
-expect colored("import A\n\texposes [B]\nmodule = 1") == [(Keyword, "import"), (Type, "A"), (Type, "B"), (Name, "module"), (Number, "1")]
+expect colored("module [f]\n\nf = 1") == [
+	(Keyword, "module"),
+	(Name, "f"),
+	(Number, "1"),
+]
+expect colored("hosted [Echo]\nexposes = 1") == [
+	(Keyword, "hosted"),
+	(Type, "Echo"),
+	(Name, "exposes"),
+	(Number, "1"),
+]
+expect colored("import A\n\texposes [B]\nmodule = 1") == [
+	(Keyword, "import"),
+	(Type, "A"),
+	(Type, "B"),
+	(Name, "module"),
+	(Number, "1"),
+]
 
 # An app header's indented lines are in it, to the line that starts at its
 # first column: a stacked header's closing brace, or the code after it.
-expect colored("app [main!] { pf: platform \"p\" }\n\tx: provides\nrequires = 1") == [(Keyword, "app"), (Keyword, "platform"), (String, "\"p\""), (Keyword, "provides"), (Name, "requires"), (Number, "1")]
-expect colored("app [main!] {\n\tpf: platform \"p\",\n\tx: provides,\n}\nmain! = 1") == [(Keyword, "app"), (Keyword, "platform"), (String, "\"p\""), (Keyword, "provides"), (Name, "main!"), (Number, "1")]
+expect colored("app [main!] { pf: platform \"p\" }\n\tx: provides\nrequires = 1") == [
+	(Keyword, "app"),
+	(Keyword, "platform"),
+	(String, "\"p\""),
+	(Keyword, "provides"),
+	(Name, "requires"),
+	(Number, "1"),
+]
+expect colored("app [main!] {\n\tpf: platform \"p\",\n\tx: provides,\n}\nmain! = 1") == [
+	(Keyword, "app"),
+	(Keyword, "platform"),
+	(String, "\"p\""),
+	(Keyword, "provides"),
+	(Name, "main!"),
+	(Number, "1"),
+]
 
 # web.roc's header, which roc-ast's tree can't color: the header is colored as
 # any other, and the definitions after it are too.
@@ -547,27 +729,102 @@ expect
 		]
 
 # Types and tags, a qualified name as one span, and a module before a function.
-expect colored("f(Ok(Str), Bool.True, Str.concat, lib.Shapes)") == [(Type, "Ok"), (Type, "Str"), (Type, "Bool.True"), (Type, "Str"), (Type, "Shapes")]
-expect colored("f(A.B.c, A.(1))") == [(Type, "A.B"), (Type, "A"), (Number, "1")]
+expect colored("f(Ok(Str), Bool.True, Str.concat, lib.Shapes)") == [
+	(Type, "Ok"),
+	(Type, "Str"),
+	(Type, "Bool.True"),
+	(Type, "Str"),
+	(Type, "Shapes"),
+]
+expect colored("f(A.B.c, A.(1))") == [
+	(Type, "A.B"),
+	(Type, "A"),
+	(Number, "1"),
+]
 
 # A wrapped value's type is a type, qualified or not, in a lambda's arguments
 # and out of them.
-expect colored("f(|A.(x)|, |A.B.(x)|, |(A.B.(x), y)|, |{ a: A.B.C.(x) }|)") == [(Type, "A"), (Type, "A.B"), (Type, "A.B"), (Type, "A.B.C")]
+expect colored("f(|A.(x)|, |A.B.(x)|, |(A.B.(x), y)|, |{ a: A.B.C.(x) }|)") == [
+	(Type, "A"),
+	(Type, "A.B"),
+	(Type, "A.B"),
+	(Type, "A.B.C"),
+]
 expect colored("f(A.(x), A.B.(x))") == [(Type, "A"), (Type, "A.B")]
 expect colored("f(|x| A.B.(x))") == [(Type, "A.B")]
 
 # Names: the top level and a type's block define with `=` and `:`; a body
 # only with `:`; records and expressions define nothing.
-expect colored("x = 1\ny : U8\nmain! = |_| {}") == [(Name, "x"), (Number, "1"), (Name, "y"), (Type, "U8"), (Name, "main!")]
-expect colored("T := [].{\n\tx = 1\n\ty : U8\n}") == [(Type, "T"), (Name, "x"), (Number, "1"), (Name, "y"), (Type, "U8")]
-expect colored("f = |a| {\n\tb = a\n\tc : U8\n\tc = b\n\tc\n}") == [(Name, "f"), (Name, "c"), (Type, "U8")]
-expect colored("f = |a|\n\tif a {\n\t\tb = 1\n\t\tb\n\t} else {\n\t\tc : U8\n\t\tc = 2\n\t\tc\n\t}") == [(Name, "f"), (Keyword, "if"), (Number, "1"), (Keyword, "else"), (Name, "c"), (Type, "U8"), (Number, "2")]
-expect colored("x = {\n\ty : U8\n\ty = 1\n\ty\n}") == [(Name, "x"), (Name, "y"), (Type, "U8"), (Number, "1")]
-expect colored("r = {\n\ta: 1,\n\tb: 2,\n}") == [(Name, "r"), (Number, "1"), (Number, "2")]
-expect colored("R : {\n\ta : U8,\n}\nf : {\n\tb : U8,\n} -> U8") == [(Type, "R"), (Type, "U8"), (Name, "f"), (Type, "U8"), (Type, "U8")]
-expect colored("x == 1\nx => 1\ny := 1\nz :: 1") == [(Number, "1"), (Number, "1"), (Number, "1"), (Number, "1")]
+expect colored("x = 1\ny : U8\nmain! = |_| {}") == [
+	(Name, "x"),
+	(Number, "1"),
+	(Name, "y"),
+	(Type, "U8"),
+	(Name, "main!"),
+]
+expect colored("T := [].{\n\tx = 1\n\ty : U8\n}") == [
+	(Type, "T"),
+	(Name, "x"),
+	(Number, "1"),
+	(Name, "y"),
+	(Type, "U8"),
+]
+expect colored("f = |a| {\n\tb = a\n\tc : U8\n\tc = b\n\tc\n}") == [
+	(Name, "f"),
+	(Name, "c"),
+	(Type, "U8"),
+]
+expect colored("f = |a|\n\tif a {\n\t\tb = 1\n\t\tb\n\t} else {\n\t\tc : U8\n\t\tc = 2\n\t\tc\n\t}") == [
+	(Name, "f"),
+	(Keyword, "if"),
+	(Number, "1"),
+	(Keyword, "else"),
+	(Name, "c"),
+	(Type, "U8"),
+	(Number, "2"),
+]
+expect colored("x = {\n\ty : U8\n\ty = 1\n\ty\n}") == [
+	(Name, "x"),
+	(Name, "y"),
+	(Type, "U8"),
+	(Number, "1"),
+]
+expect colored("r = {\n\ta: 1,\n\tb: 2,\n}") == [
+	(Name, "r"),
+	(Number, "1"),
+	(Number, "2"),
+]
+expect colored("R : {\n\ta : U8,\n}\nf : {\n\tb : U8,\n} -> U8") == [
+	(Type, "R"),
+	(Type, "U8"),
+	(Name, "f"),
+	(Type, "U8"),
+	(Type, "U8"),
+]
+expect colored("x == 1\nx => 1\ny := 1\nz :: 1") == [
+	(Number, "1"),
+	(Number, "1"),
+	(Number, "1"),
+	(Number, "1"),
+]
 expect colored("  x = 1") == [(Name, "x"), (Number, "1")]
 expect colored("f(\n\tx = 1\n)") == [(Number, "1")]
-expect colored("expect {\n\tx = 1\n\tx == 1\n}") == [(Keyword, "expect"), (Number, "1"), (Number, "1")]
-expect colored("f = |{ a, b }| {\n\tc : U8\n\tc\n}") == [(Name, "f"), (Name, "c"), (Type, "U8")]
-expect colored("f = |x| match x {\n\tA | B => {\n\t\ty : U8\n\t\ty = 1\n\t\ty\n\t}\n}") == [(Name, "f"), (Keyword, "match"), (Type, "A"), (Type, "B"), (Name, "y"), (Type, "U8"), (Number, "1")]
+expect colored("expect {\n\tx = 1\n\tx == 1\n}") == [
+	(Keyword, "expect"),
+	(Number, "1"),
+	(Number, "1"),
+]
+expect colored("f = |{ a, b }| {\n\tc : U8\n\tc\n}") == [
+	(Name, "f"),
+	(Name, "c"),
+	(Type, "U8"),
+]
+expect colored("f = |x| match x {\n\tA | B => {\n\t\ty : U8\n\t\ty = 1\n\t\ty\n\t}\n}") == [
+	(Name, "f"),
+	(Keyword, "match"),
+	(Type, "A"),
+	(Type, "B"),
+	(Name, "y"),
+	(Type, "U8"),
+	(Number, "1"),
+]

@@ -20,14 +20,21 @@ TermIndex := [].{
 
 	## A chapter as the index reads it: its number, its title as its heading
 	## spells it, and its prose, one line each, lowercased.
-	Chapter : { number : U64, title : Str, prose : List(Str) }
+	Chapter : {
+		number : U64,
+		title : Str,
+		prose : List(Str),
+	}
 
 	## A term in this many chapters or more is "throughout".
 	spread : U64
 	spread = 15
 
 	## The index's tables, as markdown, or what is wrong with the terms.
-	tables : { terms : { name : Str, text : Str }, chapters : List(TermIndex.Chapter) } -> Try(Str, Str)
+	tables : {
+		terms : { name : Str, text : Str },
+		chapters : List(TermIndex.Chapter),
+	} -> Try(Str, Str)
 	tables = |{ terms, chapters }| {
 		parsed = terms_of(terms)?
 		entries = parsed.map_try(|term| entry_of(term, chapters))?
@@ -89,7 +96,12 @@ term_of = |line, category| match line.split_on(" | ") {
 			} else {
 				$patterns
 			}
-		Ok({ category, name: term_name, patterns, main: $main })
+		Ok({
+			category,
+			name: term_name,
+			patterns,
+			main: $main,
+		})
 	}
 	[] => crash "book: Str.split_on answered no pieces"
 }
@@ -105,7 +117,12 @@ Entry : {
 entry_of : Term, List(TermIndex.Chapter) -> Try(Entry, Str)
 entry_of = |term, chapters| {
 	mentions = chapters
-		.map(|chapter| { chapter, lines: chapter.prose.count_if(|line| term.patterns.any(|pattern| pattern.is_found_in(line))) })
+		.map(
+			|chapter| {
+				chapter,
+				lines: chapter.prose.count_if(|line| term.patterns.any(|pattern| pattern.is_found_in(line))),
+			},
+		)
 		.keep_if(|mention| mention.lines > 0)
 	busiest = mentions.fold(
 		Nowhere,
@@ -121,7 +138,11 @@ entry_of = |term, chapters| {
 		Busiest(_) =>
 			match chapters.find_first(|chapter| chapter.title == term.main) {
 				Err(NotFound) => Err("index: ${term.name}'s main chapter, ${term.main}, is no chapter of the book")
-				Ok(chapter) if mentions.any(|mention| mention.chapter.number == chapter.number) => Ok({ term, mentions, main: Main(chapter) })
+				Ok(chapter) if mentions.any(|mention| mention.chapter.number == chapter.number) => Ok({
+					term,
+					mentions,
+					main: Main(chapter),
+				})
 				Ok(_) => Err("index: ${term.name}'s main chapter, ${term.main}, never mentions it")
 			}
 	}
@@ -198,13 +219,28 @@ term_row = |entry| match entry.main {
 
 sample_chapters : List(TermIndex.Chapter)
 sample_chapters = [
-	{ number: 1, title: "Gates", prose: ["a gate is a check.", "the gate runs.", "one budget."] },
-	{ number: 2, title: "Budgets", prose: ["a budget, and a gate.", "budgets bound a run.", "the budget again."] },
-	{ number: 3, title: "Replies", prose: ["her reply came.", "a `gate` in code."] },
+	{
+		number: 1,
+		title: "Gates",
+		prose: ["a gate is a check.", "the gate runs.", "one budget."],
+	},
+	{
+		number: 2,
+		title: "Budgets",
+		prose: ["a budget, and a gate.", "budgets bound a run.", "the budget again."],
+	},
+	{
+		number: 3,
+		title: "Replies",
+		prose: ["her reply came.", "a `gate` in code."],
+	},
 ]
 
 index_of : Str -> Try(Str, Str)
-index_of = |text| TermIndex.tables({ terms: { name: "terms.txt", text }, chapters: sample_chapters })
+index_of = |text| TermIndex.tables({
+	terms: { name: "terms.txt", text },
+	chapters: sample_chapters,
+})
 
 expect
 	index_of("# The terms.\n## Machinery\nGate | \\bgates?\\b\nBudget | \\bbudgets?\\b\n\n## Talk\nreply | \\brepl(y|ies)\\b | main: Replies\nFence\n")
@@ -222,13 +258,27 @@ expect
 expect
 	TermIndex.tables({
 		terms: { name: "t", text: "## A\nword\n" },
-		chapters: List.repeat({ number: 1, title: "C", prose: ["a word"] }, 15).map_with_index(|chapter, i| { ..chapter, number: i + 1 }),
+		chapters: List.repeat(
+			{
+				number: 1,
+				title: "C",
+				prose: ["a word"],
+			},
+			15,
+		).map_with_index(|chapter, i| { ..chapter, number: i + 1 }),
 	})
 		== Ok("### A\n\n| Term | Main chapter | Also in |\n|---|---|---|\n| word | {{chapter C}} | throughout |\n\n")
 expect
 	TermIndex.tables({
 		terms: { name: "t", text: "## A\nword\n" },
-		chapters: List.repeat({ number: 1, title: "C", prose: ["a word"] }, 14).map_with_index(|chapter, i| { ..chapter, number: i + 1 }),
+		chapters: List.repeat(
+			{
+				number: 1,
+				title: "C",
+				prose: ["a word"],
+			},
+			14,
+		).map_with_index(|chapter, i| { ..chapter, number: i + 1 }),
 	})
 		.map_ok(|table| table.contains("throughout") or !table.contains("{{number 14 C}}"))
 		== Ok(Bool.False)

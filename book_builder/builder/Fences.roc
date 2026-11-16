@@ -31,7 +31,12 @@ Fences := [].{
 	no_color = |_| Plain
 
 	## What a fence becomes in a book with these hooks and this coloring.
-	answer : Fences.Fence, { language : Str, hooks : List(Fences.Hook), colorer : Fences.Colorer } -> [Html(Str), Refused(Str), Pass]
+	answer : Fences.Fence,
+	{
+		language : Str,
+		hooks : List(Fences.Hook),
+		colorer : Fences.Colorer,
+	} -> [Html(Str), Refused(Str), Pass]
 	answer = |fence, { language, hooks, colorer }|
 		match hooks.find_first(|hook| hook.language == language) {
 			Ok(hook) =>
@@ -47,7 +52,13 @@ Fences := [].{
 						Colored(code) => Html("${code_block_open(language)}${code}</code></pre>\n")
 					}
 				} else {
-					Html(listing_html({ language, title: fence.words, code: code_html(colored, fence.body) }))
+					Html(
+						listing_html({
+							language,
+							title: fence.words,
+							code: code_html(colored, fence.body),
+						}),
+					)
 				}
 			}
 		}
@@ -65,7 +76,12 @@ Fences := [].{
 	}
 
 	## Every refusal among a page's fences, each naming the fence's line.
-	refusals : List(Manuscript.Line), { manuscript : Str, hooks : List(Fences.Hook), colorer : Fences.Colorer } -> List(Str)
+	refusals : List(Manuscript.Line),
+	{
+		manuscript : Str,
+		hooks : List(Fences.Hook),
+		colorer : Fences.Colorer,
+	} -> List(Str)
 	refusals = |lines, { manuscript, hooks, colorer }|
 		fences_of(lines).keep_oks(
 			|{ opening, fence, language }|
@@ -107,7 +123,11 @@ code_html = |colored, code| match colored {
 }
 
 ## A titled listing: the renderer's own markup for code, the title over it.
-listing_html : { language : Str, title : Str, code : Str } -> Str
+listing_html : {
+	language : Str,
+	title : Str,
+	code : Str,
+} -> Str
 listing_html = |{ language, title, code }| {
 	safe_title = BookText.escaped_text(title)
 	listing =
@@ -117,7 +137,13 @@ listing_html = |{ language, title, code }| {
 
 ## Each fence of some lines: its opening line, its language, and the fence as
 ## the renderer hands it to the hook.
-fences_of : List(Manuscript.Line) -> List({ opening : Manuscript.Line, language : Str, fence : Fences.Fence })
+fences_of : List(Manuscript.Line) -> List(
+	{
+		opening : Manuscript.Line,
+		language : Str,
+		fence : Fences.Fence,
+	},
+)
 fences_of = |lines| {
 	var $found = []
 	var $open = NoFence
@@ -136,7 +162,11 @@ fences_of = |lines| {
 							Err(NotFound) => { language: info, words: "" }
 						}
 					text = Str.join_with(body.map(|body_line| "${body_line}\n"), "")
-					$found = $found.append({ opening, language, fence: { words, body: text } })
+					$found = $found.append({
+						opening,
+						language,
+						fence: { words, body: text },
+					})
 					$open = NoFence
 				} else {
 					$open = Open({ opening, body: body.append(line.text) })
@@ -165,28 +195,95 @@ bold_roc = |{ language, code }|
 		Plain
 	}
 
-answer_of : { language : Str, words : Str, body : Str }, Fences.Colorer -> [Html(Str), Refused(Str), Pass]
-answer_of = |{ language, words, body }, colorer| Fences.answer({ words, body }, { language, hooks: [shout], colorer })
+answer_of : {
+	language : Str,
+	words : Str,
+	body : Str,
+},
+Fences.Colorer -> [Html(Str), Refused(Str), Pass]
+answer_of = |{ language, words, body }, colorer| Fences.answer(
+	{ words, body },
+	{ language, hooks: [shout], colorer },
+)
 
-expect answer_of({ language: "shout", words: "hey", body: "a <b>\n" }, Fences.no_color) == Html("<p class=\"shout\">hey: A &lt;B&gt;\n</p>")
-expect answer_of({ language: "shout", words: "", body: "" }, Fences.no_color) == Refused("a shout needs something to shout")
-expect answer_of({ language: "roc", words: "", body: "x\n" }, Fences.no_color) == Pass
-expect answer_of({ language: "roc", words: "", body: "a < b\n" }, bold_roc) == Html("<pre><code class=\"language-roc\"><b>a &lt; b\n</b></code></pre>\n")
-expect answer_of({ language: "", words: "", body: "x\n" }, |_| Colored("y")) == Html("<pre><code>y</code></pre>\n")
+expect answer_of(
+	{
+		language: "shout",
+		words: "hey",
+		body: "a <b>\n",
+	},
+	Fences.no_color,
+) == Html("<p class=\"shout\">hey: A &lt;B&gt;\n</p>")
+expect answer_of(
+	{
+		language: "shout",
+		words: "",
+		body: "",
+	},
+	Fences.no_color,
+) == Refused("a shout needs something to shout")
+expect answer_of(
+	{
+		language: "roc",
+		words: "",
+		body: "x\n",
+	},
+	Fences.no_color,
+) == Pass
+expect answer_of(
+	{
+		language: "roc",
+		words: "",
+		body: "a < b\n",
+	},
+	bold_roc,
+) == Html("<pre><code class=\"language-roc\"><b>a &lt; b\n</b></code></pre>\n")
+expect answer_of(
+	{
+		language: "",
+		words: "",
+		body: "x\n",
+	},
+	|_| Colored("y"),
+) == Html("<pre><code>y</code></pre>\n")
 expect
-	answer_of({ language: "roc", words: "A.roc, in b", body: "a < b\n" }, Fences.no_color)
+	answer_of(
+		{
+			language: "roc",
+			words: "A.roc, in b",
+			body: "a < b\n",
+		},
+		Fences.no_color,
+	)
 		== Html("<figure class=\"listing\"><figcaption>A.roc, in b</figcaption><pre><code class=\"language-roc\">a &lt; b\n</code></pre></figure>")
 expect
-	answer_of({ language: "roc", words: "A & B", body: "x\n" }, bold_roc)
+	answer_of(
+		{
+			language: "roc",
+			words: "A & B",
+			body: "x\n",
+		},
+		bold_roc,
+	)
 		== Html("<figure class=\"listing\"><figcaption>A &amp; B</figcaption><pre><code class=\"language-roc\"><b>x\n</b></code></pre></figure>")
 expect
 	match Manuscript.lines("a\n```shout\n```\n```roc t\nx\n```\n```\n```\n```shout loud\nwords\n```\n") {
-		Ok(lines) => Fences.refusals(lines, { manuscript: "book.md", hooks: [shout], colorer: Fences.no_color }) == ["book.md:2: ```shout: a shout needs something to shout"]
+		Ok(lines) => Fences.refusals(
+			lines,
+			{
+				manuscript: "book.md",
+				hooks: [shout],
+				colorer: Fences.no_color,
+			},
+		) == ["book.md:2: ```shout: a shout needs something to shout"]
 		Err(_) => Bool.False
 	}
 expect
 	match Manuscript.lines("```roc A title  \nx\n\ny\n```\n```\n```\n") {
-		Ok(lines) => fences_of(lines).map(|found| (found.language, found.fence)) == [("roc", { words: "A title", body: "x\n\ny\n" }), ("", { words: "", body: "" })]
+		Ok(lines) => fences_of(lines).map(|found| (found.language, found.fence)) == [
+			("roc", { words: "A title", body: "x\n\ny\n" }),
+			("", { words: "", body: "" }),
+		]
 		Err(_) => Bool.False
 	}
 expect Fences.languages_claimed_twice([shout, { ..shout, language: "dot" }, shout]) == ["shout"]

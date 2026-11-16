@@ -31,15 +31,27 @@ Manuscript := [].{
 			if $open_at == 0 {
 				if line.starts_with(fence_mark) {
 					$open_at = $number
-					$out = $out.append({ number: $number, text: line, place: Fenced })
+					$out = $out.append({
+						number: $number,
+						text: line,
+						place: Fenced,
+					})
 				} else {
-					$out = $out.append({ number: $number, text: line, place: Prose })
+					$out = $out.append({
+						number: $number,
+						text: line,
+						place: Prose,
+					})
 				}
 			} else {
 				if line == fence_mark {
 					$open_at = 0
 				}
-				$out = $out.append({ number: $number, text: line, place: Fenced })
+				$out = $out.append({
+					number: $number,
+					text: line,
+					place: Fenced,
+				})
 			}
 		}
 		if $open_at == 0 {
@@ -54,7 +66,10 @@ Manuscript := [].{
 	PageSource : { source_lines : List(Manuscript.Line), markdown : Str }
 
 	## The front page, then each chapter in order.
-	pages : List(Manuscript.Line) -> { front : Manuscript.PageSource, chapters : List(Manuscript.PageSource) }
+	pages : List(Manuscript.Line) -> {
+		front : Manuscript.PageSource,
+		chapters : List(Manuscript.PageSource),
+	}
 	pages = |lines_given| {
 		var $done = []
 		var $now = []
@@ -111,14 +126,45 @@ page_source = |lines_given| {
 expect
 	Manuscript.lines("a\n```roc x\n## in code\n```\n## b\n")
 		== Ok([
-			{ number: 1, text: "a", place: Prose },
-			{ number: 2, text: "```roc x", place: Fenced },
-			{ number: 3, text: "## in code", place: Fenced },
-			{ number: 4, text: "```", place: Fenced },
-			{ number: 5, text: "## b", place: Prose },
+			{
+				number: 1,
+				text: "a",
+				place: Prose,
+			},
+			{
+				number: 2,
+				text: "```roc x",
+				place: Fenced,
+			},
+			{
+				number: 3,
+				text: "## in code",
+				place: Fenced,
+			},
+			{
+				number: 4,
+				text: "```",
+				place: Fenced,
+			},
+			{
+				number: 5,
+				text: "## b",
+				place: Prose,
+			},
 		])
 expect Manuscript.lines("a\n```\nb\n``` \n") == Err(UnclosedFence(2))
-expect Manuscript.lines("```\n```") == Ok([{ number: 1, text: "```", place: Fenced }, { number: 2, text: "```", place: Fenced }])
+expect Manuscript.lines("```\n```") == Ok([
+	{
+		number: 1,
+		text: "```",
+		place: Fenced,
+	},
+	{
+		number: 2,
+		text: "```",
+		place: Fenced,
+	},
+])
 expect Manuscript.lines("") == Ok([])
 
 book_lines : List(Manuscript.Line)
@@ -131,14 +177,27 @@ expect
 	Manuscript.pages(book_lines).front.markdown == "# Book\nfront\n## Aside\n"
 expect
 	Manuscript.pages(book_lines).chapters.map(|page| page.markdown)
-		== [
-			"# One\ntext\n## Part\n```\n## not a chapter\n### nor a section\n```\n",
-			"# Two\n",
-		]
+		== ["# One\ntext\n## Part\n```\n## not a chapter\n### nor a section\n```\n", "# Two\n"]
 expect Manuscript.pages(book_lines).chapters.map(|page| page.source_lines.map(|line| line.number)) == [[4, 5, 6, 7, 8, 9, 10], [11]]
 expect Manuscript.pages([]).front.markdown == ""
 expect Manuscript.pages([]).chapters == []
-expect Manuscript.chapter_title({ number: 1, text: "## A title", place: Prose }) == Ok("A title")
-expect Manuscript.chapter_title({ number: 1, text: "## A title", place: Fenced }) == Err(NotAChapter)
-expect Manuscript.chapter_title({ number: 1, text: "### A section", place: Prose }) == Err(NotAChapter)
-expect Manuscript.chapter_title({ number: 1, text: "# The book", place: Prose }) == Err(NotAChapter)
+expect Manuscript.chapter_title({
+	number: 1,
+	text: "## A title",
+	place: Prose,
+}) == Ok("A title")
+expect Manuscript.chapter_title({
+	number: 1,
+	text: "## A title",
+	place: Fenced,
+}) == Err(NotAChapter)
+expect Manuscript.chapter_title({
+	number: 1,
+	text: "### A section",
+	place: Prose,
+}) == Err(NotAChapter)
+expect Manuscript.chapter_title({
+	number: 1,
+	text: "# The book",
+	place: Prose,
+}) == Err(NotAChapter)

@@ -89,7 +89,15 @@ Includes := [].{
 				Include(directive) =>
 					match quoted_block(directive, { files, languages }) {
 						Ok(block) => {
-							$out = $out.concat(block.map(|placed| { number: line.number, text: placed.text, place: placed.place }))
+							$out = $out.concat(
+								block.map(
+									|placed| {
+										number: line.number,
+										text: placed.text,
+										place: placed.place,
+									},
+								),
+							)
 						}
 						Err(problem) => {
 							$problems = $problems.append("${include_at}: ${problem}")
@@ -135,7 +143,17 @@ not_an_include : Str
 not_an_include = "a `{{` the build doesn't know: an include is a line {{file PATH}} or {{lines PATH from \"A\" to \"B\"}}, the index is the line {{index}}, and prose may hold {{chapter Title}} and {{number N Title}}"
 
 ## What one include asks for.
-Directive : [WholeFile(Str), Excerpt({ path : Str, from : Str, to : Str }), Ahead({ path : Str, include : Str })]
+Directive : [
+	WholeFile(Str),
+	Excerpt(
+		{
+			path : Str,
+			from : Str,
+			to : Str,
+		},
+	),
+	Ahead({ path : Str, include : Str }),
+]
 
 directive_path : Directive -> Str
 directive_path = |directive| match directive {
@@ -222,7 +240,11 @@ is_anchor : Str -> Bool
 is_anchor = |text| !text.is_empty() and !text.contains("\"")
 
 ## The lines an include becomes, each placed.
-quoted_block : Directive, { files : List(Includes.FileRead), languages : List(Includes.Language) } -> Try(List({ text : Str, place : [Prose, Fenced] }), Str)
+quoted_block : Directive,
+{
+	files : List(Includes.FileRead),
+	languages : List(Includes.Language),
+} -> Try(List({ text : Str, place : [Prose, Fenced] }), Str)
 quoted_block = |directive, { files, languages }| {
 	path = directive_path(directive)
 	text =
@@ -247,7 +269,11 @@ quoted_block = |directive, { files, languages }| {
 
 ## What a pre-step's file says an include becomes, after its first line, which
 ## must be the include as written.
-expansion_of : Str, { path : Str, include : Str } -> Try(List({ text : Str, place : [Prose, Fenced] }), Str)
+expansion_of : Str,
+{ path : Str, include : Str } -> Try(
+	List({ text : Str, place : [Prose, Fenced] }),
+	Str,
+)
 expansion_of = |text, { path, include }| match text.split_first("\n") {
 	Ok({ before: first, after: rest }) if first == include =>
 		match Manuscript.lines(rest) {
@@ -255,7 +281,9 @@ expansion_of = |text, { path, include }| match text.split_first("\n") {
 			Ok(placed) => Ok(placed.map(|line| { text: line.text, place: line.place }))
 			Err(UnclosedFence(at)) => Err("${path}: a fence opens at its line ${(at + 1).to_str()} and never closes")
 		}
-	Ok({ before: first, .. }) => Err("${path} is the expansion of `${first}`, not this line: run the book's pre-step again")
+	Ok(
+		{ before: first, .. },
+	) => Err("${path} is the expansion of `${first}`, not this line: run the book's pre-step again")
 	Err(NotFound) => Err("${path} is the expansion of `${text}`, not this line: run the book's pre-step again")
 }
 
@@ -269,7 +297,10 @@ selection = |directive, file_lines| match directive {
 		if last < first {
 			Err("in ${path}, `${to}` comes before `${from}`")
 		} else {
-			Ok({ quoted: file_lines.sublist({ start: first, len: last - first + 1 }), label: "${path}, an excerpt" })
+			Ok({
+				quoted: file_lines.sublist({ start: first, len: last - first + 1 }),
+				label: "${path}, an excerpt",
+			})
 		}
 	}
 	Ahead(_) => crash "Includes.selection: a prepared include quotes no lines of a file"
@@ -338,16 +369,45 @@ text_of = |lines| Str.join_with(lines.map(|line| "${line.text}\n"), "")
 expand_sample : Str -> Try(Str, List(Str))
 expand_sample = |text| Includes.expanded(
 	lines_of(text),
-	{ manuscript: "book.md", files: sample_files, languages: Includes.default_languages, prepared: NoPrepared },
+	{
+		manuscript: "book.md",
+		files: sample_files,
+		languages: Includes.default_languages,
+		prepared: NoPrepared,
+	},
 ).map_ok(text_of)
 
 expect
-	Includes.expanded(lines_of("A\n{{file notes}}\n"), { manuscript: "book.md", files: sample_files, languages: [], prepared: NoPrepared })
+	Includes.expanded(
+		lines_of("A\n{{file notes}}\n"),
+		{
+			manuscript: "book.md",
+			files: sample_files,
+			languages: [],
+			prepared: NoPrepared,
+		},
+	)
 		== Ok([
-			{ number: 1, text: "A", place: Prose },
-			{ number: 2, text: "```text notes, the whole file", place: Fenced },
-			{ number: 2, text: "plain", place: Fenced },
-			{ number: 2, text: "```", place: Fenced },
+			{
+				number: 1,
+				text: "A",
+				place: Prose,
+			},
+			{
+				number: 2,
+				text: "```text notes, the whole file",
+				place: Fenced,
+			},
+			{
+				number: 2,
+				text: "plain",
+				place: Fenced,
+			},
+			{
+				number: 2,
+				text: "```",
+				place: Fenced,
+			},
 		])
 
 expect
@@ -378,13 +438,33 @@ expect
 		])
 expect expand_sample("See `{{file x}}`, {{chapter One}} and {{number 2 Two}}.\n{{index}}\n```\n{{file x}}\n```\n") == Ok("See `{{file x}}`, {{chapter One}} and {{number 2 Two}}.\n{{index}}\n```\n{{file x}}\n```\n")
 expect
-	["{{fil x}}", " {{file x}}", "{{file x}} ", "{{file a b}}", "{{file }}", "{{lines x from \"a\"}}", "{{lines x from \"\" to \"b\"}}", "{{lines x from \"a\" to \"b\" }}", "{{index}} too", "a {{ b"]
+	[
+		"{{fil x}}",
+		" {{file x}}",
+		"{{file x}} ",
+		"{{file a b}}",
+		"{{file }}",
+		"{{lines x from \"a\"}}",
+		"{{lines x from \"\" to \"b\"}}",
+		"{{lines x from \"a\" to \"b\" }}",
+		"{{index}} too",
+		"a {{ b",
+	]
 		.all(|line| expand_sample("${line}\n") == Err(["book.md:1: ${line}: ${not_an_include}"]))
 expect
-	Includes.paths_wanted(lines_of("{{file b}}\n{{lines a from \"x\" to \"y\"}}\n{{file b}}\n```\n{{file c}}\n```\n{{file d e}}\n"), NoPrepared)
+	Includes.paths_wanted(
+		lines_of("{{file b}}\n{{lines a from \"x\" to \"y\"}}\n{{file b}}\n```\n{{file c}}\n```\n{{file d e}}\n"),
+		NoPrepared,
+	)
 		== ["b", "a"]
 expect
-	[("a.roc", "roc"), ("dir.v2/README", "text"), ("x.mjs", "javascript"), ("x.unknown", "text"), ("x", "text")]
+	[
+		("a.roc", "roc"),
+		("dir.v2/README", "text"),
+		("x.mjs", "javascript"),
+		("x.unknown", "text"),
+		("x", "text"),
+	]
 		.all(|(path, language)| language_of(path, Includes.default_languages) == language)
 expect
 	[
@@ -409,16 +489,44 @@ prepared_files = [
 ]
 
 expand_prepared : Str -> Try(List(Manuscript.Line), List(Str))
-expand_prepared = |text| Includes.expanded(lines_of(text), { manuscript: "book.md", files: prepared_files, languages: [], prepared })
+expand_prepared = |text| Includes.expanded(
+	lines_of(text),
+	{
+		manuscript: "book.md",
+		files: prepared_files,
+		languages: [],
+		prepared,
+	},
+)
 
 expect
 	expand_prepared("A\n{{code A.b}}\n{{row x}}\n")
 		== Ok([
-			{ number: 1, text: "A", place: Prose },
-			{ number: 2, text: "```roc A.roc", place: Fenced },
-			{ number: 2, text: "b = 1", place: Fenced },
-			{ number: 2, text: "```", place: Fenced },
-			{ number: 3, text: "| a | b |", place: Prose },
+			{
+				number: 1,
+				text: "A",
+				place: Prose,
+			},
+			{
+				number: 2,
+				text: "```roc A.roc",
+				place: Fenced,
+			},
+			{
+				number: 2,
+				text: "b = 1",
+				place: Fenced,
+			},
+			{
+				number: 2,
+				text: "```",
+				place: Fenced,
+			},
+			{
+				number: 3,
+				text: "| a | b |",
+				place: Prose,
+			},
 		])
 expect
 	expand_prepared("A\nB\nC\n{{code A.x}}\n{{code A.e}}\n{{code A.f}}\n{{code A.g}}\n")
@@ -429,6 +537,22 @@ expect
 			"book.md:7: {{code A.g}}: pre/line-7.md is not there, and the book's pre-step writes it",
 		])
 expect
-	["{{other A.b}}", "x {{code A.b}}", "{{code A.b}} "].all(|line| Includes.expanded(lines_of("${line}\n"), { manuscript: "book.md", files: [], languages: [], prepared }) == Err(["book.md:1: ${line}: ${not_an_include}"]))
-expect Includes.expanded(lines_of("{{code A.b}}\n"), { manuscript: "book.md", files: [], languages: [], prepared: NoPrepared }) == Err(["book.md:1: {{code A.b}}: ${not_an_include}"])
-expect Includes.paths_wanted(lines_of("{{code A.b}}\n{{file x}}\n```\n{{row y}}\n```\n{{row z}}\n"), prepared) == ["pre/line-1.md", "x", "pre/line-6.md"]
+	["{{other A.b}}", "x {{code A.b}}", "{{code A.b}} "].all(
+		|line| Includes.expanded(
+			lines_of("${line}\n"),
+			{ manuscript: "book.md", files: [], languages: [], prepared },
+		) == Err(["book.md:1: ${line}: ${not_an_include}"]),
+	)
+expect Includes.expanded(
+	lines_of("{{code A.b}}\n"),
+	{
+		manuscript: "book.md",
+		files: [],
+		languages: [],
+		prepared: NoPrepared,
+	},
+) == Err(["book.md:1: {{code A.b}}: ${not_an_include}"])
+expect Includes.paths_wanted(
+	lines_of("{{code A.b}}\n{{file x}}\n```\n{{row y}}\n```\n{{row z}}\n"),
+	prepared,
+) == ["pre/line-1.md", "x", "pre/line-6.md"]
