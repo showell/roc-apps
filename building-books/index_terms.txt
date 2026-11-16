@@ -1,18 +1,18 @@
-# The book's index terms, read by the cookbook's prose/build_term_index.shale.
+# The book's index terms, read by the book builder's index.
 # A term is `Name`, or `Name | pattern | pattern`, each pattern a regular
 # expression over a lower-cased line of prose.
 
 ## The machinery
 anchor | \banchors?\b
 the source file | source file | markdown file
-build.shale | build\.shale
+book.shale | book\.shale
 contents page | contents page
 dev channel | dev channel
 diagram | \bdiagrams?\b | graphviz
 gate | \bgates?\b
 include | \bincludes?\b
 index | \bindex\b
-negatives lint | negatives lint | negative sentence | find_negatives
+negatives lint | negatives lint | negative sentence
 900 words | 900 words
 claims checked by the compiler | \{\{fails | roc check
 

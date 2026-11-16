@@ -100,7 +100,9 @@ starts at its first column.
   builder's host, roc-chat's host, zig-webbox and zig-metal-unikernel, read by
   eye the same way.
 - The gate takes about 3 seconds on a warm Roc cache.
-- The book builder does not use the package yet.
+- Two books color their code with it, behind the book builder's coloring
+  hook: the Safari tutorial (`canvas_apps/safari/tutorial/app/QuotedColor.roc`)
+  and the books book (`building-books/app/main.roc`).
 
 ## Pitfalls
 

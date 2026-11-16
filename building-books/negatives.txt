@@ -1,8 +1,8 @@
 # The negative sentences the book's prose keeps. The rule: say what happens,
 # and keep a negative only where the "no" is the point.
-# build.shale runs the cookbook's prose/find_negatives.shale over book.md, which
-# finds every sentence holding a negative word. Each one is rewritten, or
-# listed here with its kind, and the build stops on any other.
+# The book builder's negatives lint reads book.md and finds every sentence
+# holding a word of negative_words.txt. Each one is rewritten, or listed here
+# with its kind, and the build stops on any other.
 #
 # The kinds. A `fix` kind is rewritten: cut the sentence or the clause first,
 # if the paragraph stands without it, and only then say what happens. A `keep`

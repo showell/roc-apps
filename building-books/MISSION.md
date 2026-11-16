@@ -10,10 +10,10 @@ This is the one home for the book's rules. Every writer and reader of the book, 
 
 ## The gates
 
-**C. At most 900 words of prose a page.** `build.shale` counts every word outside the code, and stops on more.
+**C. At most 900 words of prose a chapter.** The book builder counts every word outside the code in each numbered chapter, and stops on more.
 
-**D. Say what happens.** The cookbook's `prose/find_negatives.shale` runs over `book.md` on every build. A negative sentence is rewritten, and `negatives.txt` lists any kept one with its reason. Rewrite rather than keep.
+**D. Say what happens.** The book builder's negatives lint runs over `book.md` on every build. A negative sentence is rewritten, and `negatives.txt` lists any kept one with its reason. Rewrite rather than keep.
 
-**E. Every quote comes from its file at build time.** Code and quoted rules arrive by include (`{{file}}`, `{{function}}`, `{{lines}}`, `{{runs}}`, `{{stops}}`), never pasted, so a quote can't drift from what it quotes.
+**E. Every quote comes from its file at build time.** Code and quoted rules arrive by include (`{{file}}`, `{{function}}`, `{{lines}}`, `{{stops}}`), never pasted, so a quote can't drift from what it quotes.
 
 **F. Only public resources.** The book names a repo, a path or a page only after checking that it exists and is public, and it never names private infrastructure.

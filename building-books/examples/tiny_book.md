@@ -10,10 +10,10 @@ A chapter is everything under its heading, up to the next one.
 
 The script below is quoted from its file each time the book builds:
 
-{{file books-book/examples/count_words.shale}}
+{{file building-books/examples/count_words.shale}}
 
 ## The second chapter
 
 One function of the builder, with the comment above it:
 
-{{function books-book/build.shale anchored_line}}
+{{function book_builder/builder/Includes.roc anchored_line}}
