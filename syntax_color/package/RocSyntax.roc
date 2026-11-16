@@ -13,6 +13,13 @@
 ## are one span, a wrapped value's type in a pattern among them,
 ## `|Route.Index.(n)|`.
 ##
+## A file's header is its first token, when that is a header's word (`app`,
+## `hosted`, `module`, `package` or `platform`), up to the next line that
+## starts at its first column. In it, those words and a platform header's
+## sections (`requires`, `exposes`, `packages`, `provides`, `hosted`,
+## `targets`) are keywords, as Roc's tokenizer has them. `platform` before a
+## string is one anywhere.
+##
 ## No text makes it fail. A string still open at a newline or at the end stops
 ## there, and a byte no token starts with is plain.
 import Bytes
@@ -51,9 +58,13 @@ State : {
 	frames : List(Frame),
 	before : Before,
 	place : [LineStart, MidLine],
-	header : [NoCodeYet, CodeSeen],
+	header : Header,
 	mode : [Code, InString(StringKind)],
 }
+
+## Where the lexer stands in a file's header: before any token, inside a
+## header, or past it (or in a file with none).
+Header : [NoCodeYet, InHeader, CodeSeen]
 
 ## An open bracket: what it opened.
 Frame : [Paren, Square, Record, Body, TypeBlock, LambdaArgs, Interpolation(StringKind)]
@@ -86,8 +97,12 @@ keywords = [
 ]
 
 ## The words a file's header starts with.
-header_keywords : List(Str)
-header_keywords = ["app", "package", "platform"]
+header_starts : List(Str)
+header_starts = ["app", "hosted", "module", "package", "platform"]
+
+## The words that start a platform header's sections.
+header_sections : List(Str)
+header_sections = ["exposes", "hosted", "packages", "provides", "requires", "targets"]
 
 ## The state with the bytes from `at` up to `end` added as one run of `class`.
 emit : State, { class : Span.Class, end : U64 } -> State
@@ -110,14 +125,25 @@ code_step = |bytes, state| {
 	} else if byte == '#' {
 		{ ..emit(state, { class: Comment, end: Bytes.line_end(bytes, at) }), place: MidLine }
 	} else {
-		token_step(bytes, { ..state, header: CodeSeen, place: MidLine }, { byte, next, place: state.place, header: state.header })
+		header = header_at(bytes, { at, header: state.header })
+		token_step(bytes, { ..state, header: if (header == InHeader) InHeader else CodeSeen, place: MidLine }, { byte, next, place: state.place, header })
 	}
 }
 
+## Where the token at `at` stands in the file's header: a line that starts at
+## its first column ends a header.
+header_at : List(U8), { at : U64, header : Header } -> Header
+header_at = |bytes, { at, header }|
+	if header == InHeader and (at == 0 or Bytes.byte_at(bytes, at - 1) == '\n') {
+		CodeSeen
+	} else {
+		header
+	}
+
 ## The state after a token that isn't space or a comment. `place` and `header`
-## are where the token stands: first on its line or not, first in the file or
-## not.
-token_step : List(U8), State, { byte : U8, next : U8, place : [LineStart, MidLine], header : [NoCodeYet, CodeSeen] } -> State
+## are where the token stands: first on its line or not, and before, inside or
+## past the file's header.
+token_step : List(U8), State, { byte : U8, next : U8, place : [LineStart, MidLine], header : Header } -> State
 token_step = |bytes, state, { byte, next, place, header }| {
 	at = state.at
 	if byte == '"' {
@@ -156,7 +182,7 @@ type_step = |bytes, state| {
 
 ## A word that starts in lower case: a keyword, a name a definition gives, or
 ## another name, which is plain.
-word_step : List(U8), State, { place : [LineStart, MidLine], header : [NoCodeYet, CodeSeen] } -> State
+word_step : List(U8), State, { place : [LineStart, MidLine], header : Header } -> State
 word_step = |bytes, state, { place, header }| {
 	at = state.at
 	end = word_end(bytes, at)
@@ -165,7 +191,9 @@ word_step = |bytes, state, { place, header }| {
 		{ ..emit(state, { class: Plain, end }), before: Value }
 	} else if keywords.contains(word) {
 		{ ..emit(state, { class: Keyword, end }), before: Keyword }
-	} else if header == NoCodeYet and header_keywords.contains(word) {
+	} else if header == NoCodeYet and header_starts.contains(word) {
+		{ ..emit(state, { class: Keyword, end }), before: Keyword, header: InHeader }
+	} else if header == InHeader and (header_starts.contains(word) or header_sections.contains(word)) {
 		{ ..emit(state, { class: Keyword, end }), before: Keyword }
 	} else if word == "platform" and Bytes.byte_at(bytes, space_end(bytes, end)) == '"' {
 		{ ..emit(state, { class: Keyword, end }), before: Keyword }
@@ -463,6 +491,42 @@ expect colored("f(iffy, x.if, $in, in_view, for_each!)") == []
 expect colored("app [main!] { pf: platform \"p.roc\" }") == [(Keyword, "app"), (Keyword, "platform"), (String, "\"p.roc\"")]
 expect colored("# a comment first\npackage [A] {}") == [(Comment, "# a comment first"), (Keyword, "package"), (Type, "A")]
 expect colored("x = 1\nf(app, package, platform)") == [(Name, "x"), (Number, "1")]
+
+# A platform header's sections are keywords to the line that starts at its
+# first column, and the same words past it, or after a dot, are not.
+expect
+	colored("platform \"\"\n\trequires {\n\t\tmain! : I8\n\t}\n\texposes [Echo]\n\tpackages {}\n\tprovides { \"m\": Echo.provides }\n\thosted {}\n\ttargets: {\n\t\tdir: \"t/\",\n\t}\n\nimport Echo\nrequires = 1\nf(exposes, packages, provides, hosted, targets)")
+		== [
+			(Keyword, "platform"),
+			(String, "\"\""),
+			(Keyword, "requires"),
+			(Name, "main!"),
+			(Type, "I8"),
+			(Keyword, "exposes"),
+			(Type, "Echo"),
+			(Keyword, "packages"),
+			(Keyword, "provides"),
+			(String, "\"m\""),
+			(Type, "Echo"),
+			(Keyword, "hosted"),
+			(Keyword, "targets"),
+			(String, "\"t/\""),
+			(Keyword, "import"),
+			(Type, "Echo"),
+			(Name, "requires"),
+			(Number, "1"),
+		]
+
+# `module` and `hosted` start a header too, and a header's words are plain
+# when the file starts with anything else.
+expect colored("module [f]\n\nf = 1") == [(Keyword, "module"), (Name, "f"), (Number, "1")]
+expect colored("hosted [Echo]\nexposes = 1") == [(Keyword, "hosted"), (Type, "Echo"), (Name, "exposes"), (Number, "1")]
+expect colored("import A\n\texposes [B]\nmodule = 1") == [(Keyword, "import"), (Type, "A"), (Type, "B"), (Name, "module"), (Number, "1")]
+
+# An app header's indented lines are in it, to the line that starts at its
+# first column: a stacked header's closing brace, or the code after it.
+expect colored("app [main!] { pf: platform \"p\" }\n\tx: provides\nrequires = 1") == [(Keyword, "app"), (Keyword, "platform"), (String, "\"p\""), (Keyword, "provides"), (Name, "requires"), (Number, "1")]
+expect colored("app [main!] {\n\tpf: platform \"p\",\n\tx: provides,\n}\nmain! = 1") == [(Keyword, "app"), (Keyword, "platform"), (String, "\"p\""), (Keyword, "provides"), (Name, "main!"), (Number, "1")]
 
 # web.roc's header, which roc-ast's tree can't color: the header is colored as
 # any other, and the definitions after it are too.

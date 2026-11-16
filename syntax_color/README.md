@@ -65,6 +65,12 @@ with the books book's checkout and the Shale cookbook beside it. Its header
 says what each file holds. Re-record only when today's scripts change, and
 read the diff.
 
+A header's keywords follow Roc's tokenizer at the pin: `app`, `hosted`,
+`module`, `package` and `platform` start one, and in it those words and a
+platform header's sections, `requires`, `exposes`, `packages`, `provides`,
+`hosted` and `targets`, are keywords. The header runs to the next line that
+starts at its first column.
+
 ## Status (2026-11-16)
 
 - Every Safari Roc block (223) and every file they quote (76) matches
