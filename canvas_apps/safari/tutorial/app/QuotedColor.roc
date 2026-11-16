@@ -144,7 +144,11 @@ part_colored = |part, file| match part {
 				line_start = file.starts.get(number - 1) ?? crash "QuotedColor: a line inside the file has its start"
 				line_end = (file.starts.get(number) ?? crash "QuotedColor: a line inside the file has its end") - 1
 				start = (line_start + indent).min(line_end)
-				end = if (number == to) (line_start + end_col - 1).min(line_end) else line_end
+				end = if number == to {
+					(line_start + end_col - 1).min(line_end)
+				} else {
+					line_end
+				}
 				code = Str.from_utf8(
 					file.bytes.sublist({ start, len: end - start.min(end) }),
 				) ? |_| "a line cut inside a character"

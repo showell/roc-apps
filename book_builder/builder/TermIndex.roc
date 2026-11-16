@@ -63,12 +63,14 @@ terms_of = |{ name, text }| {
 		line = raw.trim()
 		if line.starts_with("## ") {
 			$category = line.drop_prefix("## ").trim()
-		} else if !line.is_empty() and !line.starts_with("#") {
-			if $category.is_empty() {
-				return Err("${at}a term before any `## Category`")
+		} else {
+			if !line.is_empty() and !line.starts_with("#") {
+				if $category.is_empty() {
+					return Err("${at}a term before any `## Category`")
+				}
+				term = term_of(line, $category) ? |why| "${at}${why}"
+				$found = $found.append(term)
 			}
-			term = term_of(line, $category) ? |why| "${at}${why}"
-			$found = $found.append(term)
 		}
 	}
 	Ok($found)

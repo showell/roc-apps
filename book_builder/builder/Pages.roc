@@ -665,7 +665,12 @@ safari_look = {
 	],
 	head_end: "<script src=\"a.js\"></script>\n",
 	body_start: "<header>top</header>\n",
-	body_end: |main| if (main.contains("Back to")) "<script src=\"b.js\"></script>\n" else "\n",
+	body_end: |main|
+		if main.contains("Back to") {
+			"<script src=\"b.js\"></script>\n"
+		} else {
+			"\n"
+		},
 	body_rewrite: |html| html.replace_each("Hi.", "Hello."),
 }
 

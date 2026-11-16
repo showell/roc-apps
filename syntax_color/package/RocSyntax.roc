@@ -155,7 +155,11 @@ code_step = |bytes, state| {
 			bytes,
 			{
 				..state,
-				header: if (header == InHeader) InHeader else CodeSeen,
+				header: if header == InHeader {
+					InHeader
+				} else {
+					CodeSeen
+				},
 				place: MidLine,
 			},
 			{ byte, next, place: state.place, header },
@@ -460,7 +464,11 @@ type_end = |bytes, at| {
 word_end : List(U8), U64 -> U64
 word_end = |bytes, at| {
 	end = Bytes.run_end(bytes, { at, keep: Bytes.is_ascii_word_byte })
-	if (Bytes.byte_at(bytes, end) == '!') end + 1 else end
+	if Bytes.byte_at(bytes, end) == '!' {
+		end + 1
+	} else {
+		end
+	}
 }
 
 ## The frames with the last closed, if it is `frame`; a stray closer closes
