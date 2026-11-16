@@ -342,6 +342,27 @@ Seattle :: [].{
 	medina : U8
 	medina = node_of("Medina")
 
+	## The fleet as the solve's top level reads it: how many trucks, and
+	## each one's cap and anchor, by slot.
+	Fleet : {
+		truck_count : U64,
+		caps : List(U64),
+		anchors : List(U8),
+	}
+
+	fleet : Fleet
+	fleet = { truck_count, caps: truck_caps, anchors: truck_anchors }
+
+	## The geography as the solve's top level reads it: the neighborhoods on
+	## the FC's doorstep, which wait for the end of their routes. Bellevue
+	## always waits; Medina, the SR-520 bridgehead, waits in half the race.
+	## The road graph and the rings are the map's constants (RoadGraph.roc,
+	## this module), which every stage reads.
+	Geography : { always_held : List(U8), sometimes_held : List(U8) }
+
+	geography : Geography
+	geography = { always_held: [bellevue], sometimes_held: [medina] }
+
 	## The neighborhoods whose ring is never cut into arcs.
 	is_arc_exempt : U8 -> Bool
 	is_arc_exempt = |node| arc_exempt.contains(node)
