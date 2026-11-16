@@ -35,16 +35,25 @@ Pain :: [].{
 	## helper takes the list (each would count it up and down, atomically),
 	## and the paths are read a node at a time.
 	pain_of_view : List(Stop), View -> I64
-	pain_of_view = |stops, view| {
+	pain_of_view = |stops, view| priced(stops, view).pain
+
+	## `pain_of_view`, with the route handed back: a scan threads its route
+	## through each candidate's pricing, so the route has one owner and is
+	## never counted up and down (atomically) a candidate.
+	priced : List(Stop), View -> { stops : List(Stop), pain : I64 }
+	priced = |stops, view| {
 		count = stops.len()
 		{ n, extra } =
 			match view {
 				Inserted({ stop, .. }) => { n: count + 1, extra: stop }
 				Whole | Reversed(_) => { n: count, extra: { nbhd: Seattle.fc, houses: Houses.empty, pin: Free } }
 			}
+		# The stops are read by index, never by `for s in stops`: a `for` over
+		# a list counts the list up and down, atomically, each time it runs.
 		var $aboard = extra.houses.count().to_i64_wrap()
 		var $served = 0
-		for s in stops {
+		for j in 0..<count {
+			s = stops.get(j) ?? crash "Pain.priced: in range"
 			$aboard = $aboard + s.houses.count().to_i64_wrap()
 			$served = $served.bitwise_or(U64.shl_wrap(1, s.nbhd))
 		}
@@ -88,7 +97,8 @@ Pain :: [].{
 					if $served.bitwise_and(bit) != 0 and $delivered.bitwise_and(bit) == 0 {
 						$pain = $pain + ring_unit * (empty_pain + tote_pain * $aboard)
 						$delivered = $delivered.bitwise_or(bit)
-						for s in stops {
+						for j in 0..<count {
+							s = stops.get(j) ?? crash "Pain.priced: in range"
 							if s.nbhd == node {
 								$aboard = $aboard - s.houses.count().to_i64_wrap()
 							}
@@ -102,9 +112,9 @@ Pain :: [].{
 			$from = to
 		}
 		if n == 0 {
-			0
+			{ stops, pain: 0 }
 		} else {
-			$pain
+			{ stops, pain: $pain }
 		}
 	}
 
