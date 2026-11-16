@@ -365,12 +365,20 @@ end
 
 -- The staged book takes the place of the channel's folder `name`. The book it
 -- replaces is set aside as `name`.replaced first, a name no build writes, and
--- removed once the new one is in.
+-- removed once the new one is in. If the new one can't be moved in, the old
+-- one goes back, so the channel never loses its book.
 function move_into_place(name)
+  local place = real(NEXT) .. "/" .. name
   local aside = NEXT .. "/" .. name .. ".replaced"
   remove_if_there(aside)
-  if exists(NEXT .. "/" .. name) then must(run({"mv", real(NEXT) .. "/" .. name, real(NEXT) .. "/" .. name .. ".replaced"}, {timeout_ms = 10000, whole = 1000, want = MOVE_WANT}), "moving the old book") end
-  must(run({"mv", real(STAGING), real(NEXT) .. "/" .. name}, {timeout_ms = 10000, whole = 1000, want = MOVE_WANT}), "moving the new book")
+  local had_book = exists(NEXT .. "/" .. name)
+  if had_book then must(run({"mv", place, place .. ".replaced"}, {timeout_ms = 10000, whole = 1000, want = MOVE_WANT}), "moving the old book") end
+  local moved = run({"mv", real(STAGING), place}, {timeout_ms = 10000, whole = 1000, want = MOVE_WANT})
+  if moved.ended ~= "exit" or moved.code ~= 0 then
+    if had_book then must(run({"mv", place .. ".replaced", place}, {timeout_ms = 10000, whole = 1000, want = MOVE_WANT}), "putting the old book back") end
+    print(trim(moved.out))
+    fail("book: moving the new book into " .. name .. " failed, and the old book is back in its place")
+  end
   remove_if_there(aside)
   return nil
 end
