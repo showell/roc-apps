@@ -2,9 +2,9 @@
 ## builder, from the tutorial's folder. Its pre-step, build_next.shale, does
 ## what needs a program: it expands the includes that quote the game's code
 ## through Roc's parser, runs `roc check` on the failing examples, draws the
-## diagrams with Graphviz, and lists the widgets' folders, each into
-## `build/prepared/`. This app reads those results through the platform, and a
-## missing one stops the build, named.
+## diagrams with Graphviz, lists the widgets' folders, and says which chapters
+## the book holds, each into `build/prepared/`. This app reads those results
+## through the platform, and a missing one stops the build, named.
 app [main!] {
 	bb: "../../../../book_builder/builder/main.roc",
 	md: "../../../../../roc-markdown/package/main.roc",
@@ -22,6 +22,7 @@ import SafariLook
 main! : Str => Try(Str, Str)
 main! = |_folder| {
 	folders = folder_lines(read_prepared!(widgets_path)?)
+	extent = extent_of(read_prepared!(chapters_path)?)?
 	manuscript = Diagrams.found({ name: manuscript_path, text: read_prepared!(manuscript_path)? }) ? |problems| Str.join_with(problems.map(|problem| "${problem}\n"), "")
 	var $drawn = []
 	for diagram in manuscript.diagrams {
@@ -49,6 +50,7 @@ main! = |_folder| {
 		..base_settings,
 		fence_hooks: [SafariFences.widget(folders), SafariFences.dot($drawn)],
 		colorer: QuotedColor.colorer($colored),
+		chapters: extent,
 	}
 	Builder.build!(
 		settings,
@@ -68,6 +70,30 @@ manuscript_path = "tutorial.md"
 ## game.
 widgets_path : Str
 widgets_path = "build/prepared/widgets.txt"
+
+## Which chapters the book holds, as the pre-step says in the line it also
+## writes to the book's BUILT: every chapter, or the first N and the back
+## matter.
+chapters_path : Str
+chapters_path = "build/prepared/chapters.txt"
+
+## The book's extent from the line at `chapters_path`, or why it isn't one.
+extent_of : Str -> Try(Builder.Extent, Str)
+extent_of = |line| {
+	why = "${chapters_path} says neither `book: every chapter` nor `book: the first N chapters`: ${line}"
+	if line == "book: every chapter\n" {
+		Ok(AllChapters)
+	} else {
+		match line.split_first("book: the first ") {
+			Ok({ before: "", after }) =>
+				match after.split_first(" chapters\n") {
+					Ok({ before: count, after: "" }) => U64.from_str(count).map_ok(|first| FirstChapters(first)).map_err(|_| why)
+					_ => Err(why)
+				}
+			_ => Err(why)
+		}
+	}
+}
 
 ## The pre-step's note of which lines of which file each quoted Roc block
 ## shows, for its coloring.
@@ -99,3 +125,8 @@ read_prepared! = |path| match Book.read_file!(path) {
 ## The lines of a text, without the empty one after its last newline.
 folder_lines : Str -> List(Str)
 folder_lines = |text| text.split_on("\n").drop_if(|line| line.is_empty())
+expect extent_of("book: every chapter\n") == Ok(AllChapters)
+expect extent_of("book: the first 3 chapters\n") == Ok(FirstChapters(3))
+expect
+	["book: the first x chapters\n", "the first 3 chapters\n", "book: the first 3 chapters", "book: every chapter"]
+		.all(|line| extent_of(line) == Err("build/prepared/chapters.txt says neither `book: every chapter` nor `book: the first N chapters`: ${line}"))

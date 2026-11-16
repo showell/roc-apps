@@ -6,7 +6,12 @@
 --
 -- It builds both first: book.shale with `stage=tutorial.old check=0`, into the
 -- dev channel's /tutorial.old/, and build_next.shale, into /tutorial.next/.
--- `build=0` compares the two folders as they stand.
+-- `build=0` compares the two folders as they stand. `chapters=N` builds both
+-- with `chapters=N`, the first N chapters and the back matter. book.shale then
+-- draws only the diagrams of the chapters it keeps, numbered over them, and
+-- build_next.shale draws every diagram, so each of book.shale's drawings is
+-- held to the builder's of the same name, and the builder's others are
+-- counted apart.
 --
 -- Every file of either folder is compared: each page, the front page (the
 -- contents) and the index appendix among them, and book.css, book.js and
@@ -33,6 +38,7 @@ const OLD = "build:roc-apps/next/tutorial.old"
 const NEW = "build:roc-apps/next/tutorial.next"
 const OLD_DRAWINGS = "canvas_apps/safari/tutorial/build/book"
 const NEW_DRAWINGS = "canvas_apps/safari/tutorial/build/prepared"
+const CHAPTERS = arg("chapters", "")
 const ROC_CODE = "<code class=\"language-roc\">"
 const OUR_SPANS = "<span class=\"syn-[a-z]+\">|</span>"
 
@@ -75,9 +81,15 @@ function names_in(folder)
 end
 
 function build_both()
-  local old = must(run({"shale", "--root", ".", "canvas_apps/safari/tutorial/book.shale", "stage=tutorial.old", "check=0"}, {timeout_ms = 600000, tail = 5}))
+  local old_argv = {"shale", "--root", ".", "canvas_apps/safari/tutorial/book.shale", "stage=tutorial.old", "check=0"}
+  local new_argv = {"shale", "--root", ".", "canvas_apps/safari/tutorial/build_next.shale"}
+  if CHAPTERS ~= "" then
+    push(old_argv, "chapters=" .. CHAPTERS)
+    push(new_argv, "chapters=" .. CHAPTERS)
+  end
+  local old = must(run(old_argv, {timeout_ms = 600000, tail = 5}))
   print("compare_books: today's build took " .. old.ms .. " ms")
-  local new = must(run({"shale", "--root", ".", "canvas_apps/safari/tutorial/build_next.shale"}, {timeout_ms = 900000, tail = 12}))
+  local new = must(run(new_argv, {timeout_ms = 900000, tail = 12}))
   print(trim(new.out))
   print("compare_books: the builder's build took " .. new.ms .. " ms")
   return nil
@@ -113,7 +125,12 @@ for path in glob(OLD_DRAWINGS .. "/diagram-*.svg") do
     drawings = drawings + 1
   end
 end
-if #glob(NEW_DRAWINGS .. "/diagram-*.svg") ~= #glob(OLD_DRAWINGS .. "/diagram-*.svg") then push(differ, "the builds drew different numbers of diagrams") end
+local drawn_apart = #glob(NEW_DRAWINGS .. "/diagram-*.svg") - #glob(OLD_DRAWINGS .. "/diagram-*.svg")
+if CHAPTERS == "" and drawn_apart ~= 0 then push(differ, "the builds drew different numbers of diagrams") end
+if CHAPTERS ~= "" then
+  if drawn_apart < 0 then push(differ, "today's build drew more diagrams than the builder's") end
+  print("compare_books: the builder drew " .. drawn_apart .. " more diagrams, of chapters the cut leaves out")
+end
 
 local colored_blocks = 0
 local colored_same = 0

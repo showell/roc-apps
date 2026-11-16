@@ -85,7 +85,11 @@ What the builder does, and where each rule lives:
   the lists of chapters, its own HTML at the head and the ends of every
   page, and a rewrite of each rendered page.
 - `builder/Builder.roc`: the settings, and the build, which reads what the
-  settings name and hands it to `Builder.built`, which is pure.
+  settings name and hands it to `Builder.built`, which is pure. The
+  `chapters` setting cuts a book's pages to its first N numbered chapters
+  and all its back matter, for a quick look at the start of a long book; the
+  gates and the index still read every chapter, and a reference to one left
+  out is plain text.
 
 The package exposes `Builder`, `Fences`, `Pages` (for the look's types) and
 `Manuscript` (for a book that reads its own manuscript's lines as the builder

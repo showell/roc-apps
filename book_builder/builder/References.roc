@@ -3,7 +3,8 @@
 ## `{{number 5 Title}}`. Before the render, every cited title must be a
 ## chapter's, as its `##` heading spells it. After the render, each reference
 ## becomes a link to the chapter's page: the title in quotation marks, or the
-## number, which must be the chapter's own.
+## number, which must be the chapter's own. A book cut short leaves some
+## chapters out, and a reference to one is its title or number as plain text.
 import BookText
 
 References := [].{
@@ -48,9 +49,21 @@ References := [].{
 		number : [Numbered(U64), Unnumbered],
 	}
 
+	## A chapter the book leaves out, which has no page: its title and number.
+	LeftOut : {
+		title : Str,
+		number : [Numbered(U64), Unnumbered],
+	}
+
+	## The chapters a reference can name: those with a page, and those left out.
+	Chapters : {
+		chapters : List(References.Target),
+		left_out : List(References.LeftOut),
+	}
+
 	## The rendered page with each reference written out as a link, or what is
 	## wrong with the references that can't be.
-	linked : Str, List(References.Target) -> Try(Str, List(Str))
+	linked : Str, References.Chapters -> Try(Str, List(Str))
 	linked = |html, chapters| {
 		titled = rewritten(html, { opening: "{{chapter ", write: |reference| title_link(reference, chapters) })
 		numbered = rewritten(titled.html, { opening: "{{number ", write: |reference| number_link(reference, chapters) })
@@ -130,26 +143,47 @@ rewritten = |html, { opening, write }| match html.split_on(opening) {
 	[] => crash "book: Str.split_on answered no pieces"
 }
 
-## The target whose title, escaped as the renderer escapes it, is `title`.
-chapter_titled : List(References.Target), Str -> Try(References.Target, [NotFound])
-chapter_titled = |chapters, title| chapters.find_first(|target| BookText.escaped_text(target.title) == title)
+## A cited chapter: its number, and its page or that the book leaves it out.
+Cited : { number : [Numbered(U64), Unnumbered], page : [OnPage(Str), LeftOut] }
 
-title_link : Str, List(References.Target) -> Try(Str, Str)
-title_link = |title, chapters| match chapter_titled(chapters, title) {
-	Ok(target) => Ok("<a class=\"chapter-link\" href=\"${target.file}\">“${title}”</a>")
-	Err(NotFound) => Err("book: {{chapter ${title}}} names no chapter of the book")
+## The chapter whose title, escaped as the renderer escapes it, is `title`.
+chapter_titled : References.Chapters, Str -> Try(Cited, [NoChapter])
+chapter_titled = |{ chapters, left_out }, title| {
+	is_cited = |chapter| BookText.escaped_text(chapter.title) == title
+	match chapters.find_first(is_cited) {
+		Ok(target) => Ok({ number: target.number, page: OnPage(target.file) })
+		Err(NotFound) =>
+			match left_out.find_first(is_cited) {
+				Ok(chapter) => Ok({ number: chapter.number, page: LeftOut })
+				Err(NotFound) => Err(NoChapter)
+			}
+	}
 }
 
-number_link : Str, List(References.Target) -> Try(Str, Str)
+title_link : Str, References.Chapters -> Try(Str, Str)
+title_link = |title, chapters| match chapter_titled(chapters, title) {
+	Ok({ page: OnPage(file), .. }) => Ok("<a class=\"chapter-link\" href=\"${file}\">“${title}”</a>")
+	Ok({ page: LeftOut, .. }) => Ok("“${title}”")
+	Err(NoChapter) => Err("book: {{chapter ${title}}} names no chapter of the book")
+}
+
+number_link : Str, References.Chapters -> Try(Str, Str)
 number_link = |reference, chapters| match reference.split_first(" ") {
 	Ok({ before: number, after: title }) =>
 		match chapter_titled(chapters, title) {
-			Ok({ number: Numbered(held), file, .. }) if held.to_str() == number => Ok("<a class=\"chapter-link\" href=\"${file}\">${number}</a>")
+			Ok({ number: Numbered(held), page }) if held.to_str() == number => Ok(number_written(number, page))
 			Ok({ number: Numbered(held), .. }) => Err("book: {{number ${reference}}} names chapter ${held.to_str()}")
 			Ok({ number: Unnumbered, .. }) => Err("book: {{number ${reference}}} names a chapter with no number")
-			Err(NotFound) => Err("book: {{number ${reference}}} names no chapter of the book")
+			Err(NoChapter) => Err("book: {{number ${reference}}} names no chapter of the book")
 		}
 	Err(NotFound) => Err("book: a chapter number with no title: {{number ${reference}}}")
+}
+
+## A chapter's number as a link to its page, or plain for one left out.
+number_written : Str, [OnPage(Str), LeftOut] -> Str
+number_written = |number, page| match page {
+	OnPage(file) => "<a class=\"chapter-link\" href=\"${file}\">${number}</a>"
+	LeftOut => number
 }
 
 expect References.citations("See {{chapter A far tree}} and {{number 5 The road}}.") == [ByTitle("A far tree"), ByNumber({ number: "5", title: "The road" })]
@@ -160,11 +194,20 @@ expect References.without_citations("plain") == "plain"
 expect References.cited_title(ByTitle("A")) == "A"
 expect References.cited_title(ByNumber({ number: "3", title: "B" })) == "B"
 
-chapters : List(References.Target)
-chapters = [
-	{ title: "Bo's \"one\" & two", file: "bo.html", number: Numbered(1) },
-	{ title: "Back", file: "back.html", number: Unnumbered },
-]
+chapters : References.Chapters
+chapters = {
+	chapters: [
+		{ title: "Bo's \"one\" & two", file: "bo.html", number: Numbered(1) },
+		{ title: "Back", file: "back.html", number: Unnumbered },
+	],
+	left_out: [],
+}
+
+cut_short : References.Chapters
+cut_short = {
+	chapters: [{ title: "One", file: "one.html", number: Numbered(1) }],
+	left_out: [{ title: "Two & three", number: Numbered(2) }, { title: "Credits", number: Unnumbered }],
+}
 
 expect
 	References.linked("<p>{{chapter Bo&#39;s &quot;one&quot; &amp; two}} and {{number 1 Bo&#39;s &quot;one&quot; &amp; two}}</p>", chapters)
@@ -175,3 +218,10 @@ expect References.linked("{{number 2 Bo&#39;s &quot;one&quot; &amp; two}}", chap
 expect References.linked("{{number 4 Back}}", chapters) == Err(["book: {{number 4 Back}} names a chapter with no number"])
 expect References.linked("{{number 4 Gone}} {{chapter Back", chapters) == Err(["book: a reference with no end: {{chapter Back", "book: {{number 4 Gone}} names no chapter of the book"])
 expect References.linked("{{number 4}}", chapters) == Err(["book: a chapter number with no title: {{number 4}}"])
+expect
+	References.linked("<p>{{chapter Two &amp; three}}, {{number 2 Two &amp; three}} and {{number 1 One}}</p>", cut_short)
+		== Ok("<p>“Two &amp; three”, 2 and <a class=\"chapter-link\" href=\"one.html\">1</a></p>")
+expect References.linked("{{chapter Credits}}", cut_short) == Ok("“Credits”")
+expect References.linked("{{number 3 Two &amp; three}}", cut_short) == Err(["book: {{number 3 Two &amp; three}} names chapter 2"])
+expect References.linked("{{number 4 Credits}}", cut_short) == Err(["book: {{number 4 Credits}} names a chapter with no number"])
+expect References.linked("{{chapter Gone}} {{number 5 Gone}}", cut_short) == Err(["book: {{chapter Gone}} names no chapter of the book", "book: {{number 5 Gone}} names no chapter of the book"])

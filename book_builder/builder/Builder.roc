@@ -62,7 +62,20 @@ Builder := [].{
 		## The includes a pre-step of the book's own expands, as
 		## Includes.expanded describes.
 		prepared : Includes.Prepared,
+
+		## Which chapters the book's pages hold: all of them, or the first N
+		## numbered chapters and all the back matter, for a quick look at the
+		## start of a long book.
+		chapters : Builder.Extent,
 	}
+
+	## Every chapter, or the first N numbered ones and the back matter. The
+	## gates read the whole manuscript either way, and the index is built from
+	## every chapter, so a book cut short stops on what the whole book would.
+	## Only its pages hold less. A reference to a chapter it leaves out, in
+	## prose or in the index, is the chapter's title or number as plain text,
+	## and a slug or a divider of a chapter left out has no page to be on.
+	Extent : [AllChapters, FirstChapters(U64)]
 
 	## The settings of a book that names only its own.
 	default_settings : Builder.Settings
@@ -77,6 +90,7 @@ Builder := [].{
 		is_back_matter: |title| title.starts_with("Appendix") or title == "Credits",
 		look: Pages.default_look,
 		prepared: NoPrepared,
+		chapters: AllChapters,
 	}
 
 	## A text the build read, and its path.
@@ -149,9 +163,13 @@ Builder := [].{
 				? |problems| problems.concat(gates).concat(lint_problems)
 		indexed = with_index(expanded, { settings, terms: sources.index_terms })
 		book = Manuscript.pages(indexed.lines)
-		numbers = chapter_numbers(book.chapters, settings)
-		words = [book.front].concat(book.chapters).map(|page| WordCount.prose_words(page.source_lines))
-		over = List.map3(book.chapters, numbers, words.drop_first(1), |chapter, number, count| over_limit(chapter, { settings, number, count })).keep_oks(|problem| problem)
+		front_words = WordCount.prose_words(book.front.source_lines)
+		counted = List.map2(
+			book.chapters,
+			chapter_numbers(book.chapters, settings),
+			|chapter, number| { chapter, number, count: WordCount.prose_words(chapter.source_lines) },
+		)
+		over = counted.keep_oks(|{ chapter, number, count }| over_limit(chapter, { settings, number, count }))
 		fence_problems = [book.front]
 			.concat(book.chapters)
 			.map(|page| Fences.refusals(page.source_lines, { manuscript: name, hooks: settings.fence_hooks, colorer: settings.colorer }))
@@ -162,9 +180,11 @@ Builder := [].{
 		} else {
 			options = { fence: Fences.renderer_hook({ hooks: settings.fence_hooks, colorer: settings.colorer }), images: AsLinks }
 			render = |page| Md.render_document(page.markdown.to_utf8(), options)
+			held = counted.keep_if(|{ number, .. }| is_held(number, settings.chapters))
 			made = Pages.pages({
 				front: render(book.front),
-				chapters: List.map2(book.chapters, numbers, |chapter, number| { page: render(chapter), number }),
+				chapters: held.map(|{ chapter, number, .. }| { page: render(chapter), number }),
+				left_out: counted.drop_if(|{ number, .. }| is_held(number, settings.chapters)).map(|{ chapter, number, .. }| { page: render(heading_page(chapter)), number }),
 				look: settings.look,
 			})?
 			forged = made.keep_if(|page| page.html.contains(page_mark) or page.html.contains(report_mark)).map(|page| "book: ${page.file} holds the text of a page mark, which would cut the book there")
@@ -172,7 +192,7 @@ Builder := [].{
 				Err(forged)
 			} else {
 				pages_text = Str.join_with(made.map(|page| "${page_mark}${page.file} -->\n${page.html}\n"), "")
-				counts = List.map2(made, words, |page, count| "${page.file}: ${count.to_str()} words of prose\n")
+				counts = List.map2(made, [front_words].concat(held.map(|chapter| chapter.count)), |page, count| "${page.file}: ${count.to_str()} words of prose\n")
 				lint_line =
 					match lint {
 						Ok(Ran({ summary, .. })) => "${summary}\n"
@@ -220,6 +240,20 @@ heading_title = |page| match page.source_lines.first() {
 	Ok(line) => Manuscript.chapter_title(line) ?? crash "Builder.heading_title: a chapter's first line is its heading"
 	Err(ListWasEmpty) => crash "Builder.heading_title: a chapter has its heading line"
 }
+
+## Whether a chapter with this number has its page in a book of this extent.
+## Back matter always does.
+is_held : [Numbered(U64), Unnumbered], Builder.Extent -> Bool
+is_held = |number, extent| match (number, extent) {
+	(_, AllChapters) => Bool.True
+	(Unnumbered, FirstChapters(_)) => Bool.True
+	(Numbered(n), FirstChapters(first)) => n <= first
+}
+
+## A chapter left out, as its heading alone, which is all its rendering needs
+## to give: its title as the renderer spells it.
+heading_page : Manuscript.PageSource -> Manuscript.PageSource
+heading_page = |chapter| { ..chapter, markdown: "# ${heading_title(chapter)}\n" }
 
 ## Each chapter's number: its place among the chapters that aren't back
 ## matter, counted from one, or none for back matter.
@@ -413,5 +447,43 @@ expect
 		Ok(lines) => chapter_numbers(Manuscript.pages(lines).chapters, Builder.default_settings) == [Numbered(1), Unnumbered, Numbered(2)]
 		Err(_) => Bool.False
 	}
+
+## A book of two numbered chapters, back matter between them, and references
+## both ways, for cutting short.
+two_chapters : Str
+two_chapters = "# B\n\nFront.\n\n## One\n\nSee {{chapter Two}} and {{number 2 Two}}.\n\n## Appendix: a\n\n## Two\n\nBack to {{number 1 One}}.\n"
+
+first_chapters : U64 -> Try(Str, List(Str))
+first_chapters = |count| Builder.built({ ..Builder.default_settings, chapters: FirstChapters(count) }, sources_of(two_chapters))
+
+expect
+	match first_chapters(1) {
+		Ok(text) =>
+			text.contains("<!-- book page: one.html -->\n")
+				and text.contains("<p>See “Two” and 2.</p>")
+				and text.contains("<!-- book page: appendix-a.html -->\n")
+				and !text.contains("two.html")
+				and text.contains("<a rel=\"next\" href=\"appendix-a.html\"><small>Next</small>Appendix: a</a>")
+				and text.ends_with("<!-- book report -->\nindex.html: 2 words of prose\none.html: 8 words of prose\nappendix-a.html: 2 words of prose\n")
+		Err(_) => Bool.False
+	}
+expect
+	match first_chapters(0) {
+		Ok(text) => !text.contains("one.html") and text.ends_with("<!-- book report -->\nindex.html: 2 words of prose\nappendix-a.html: 2 words of prose\n")
+		Err(_) => Bool.False
+	}
+expect
+	match (first_chapters(2), built_of(two_chapters)) {
+		(Ok(cut), Ok(whole)) => cut == whole
+		_ => Bool.False
+	}
+expect
+	Builder.built({ ..Builder.default_settings, chapters: FirstChapters(1), word_limit: 5 }, sources_of(two_chapters))
+		== Err(["book: the chapter `One` has 8 words of prose, over the limit of 5", "book: the chapter `Two` has 6 words of prose, over the limit of 5"])
+expect
+	Builder.built({ ..Builder.default_settings, chapters: FirstChapters(1) }, sources_of("# B\n\n## One\n\n## Two\n\nSee {{chapter Gone}}.\n"))
+		== Err(["book.md:7: See {{chapter Gone}}.: no chapter is titled Gone"])
+expect [Numbered(3), Unnumbered].all(|number| is_held(number, FirstChapters(3))) and !is_held(Numbered(4), FirstChapters(3))
+expect is_held(Numbered(4), AllChapters)
 expect ["Appendix: a", "Appendix", "Credits"].all(Builder.default_settings.is_back_matter)
 expect ["Credits and more", "An appendix", "credits"].all(|title| !(Builder.default_settings.is_back_matter)(title))

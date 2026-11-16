@@ -16,6 +16,7 @@
 --   diagram-N.svg  drawing by Graphviz, in child runs of this script with
 --                  `diagrams=1`, DIAGRAMS_PER_RUN at a time
 --   widgets.txt    the folders beside the game that hold a widget's page
+--   chapters.txt   which chapters the book holds, the line BUILT gets too
 --   blocks.txt     which lines of which file each quoted Roc block shows, and
 --   sources/       a copy of each such file, for the app's coloring
 --
@@ -28,6 +29,15 @@
 -- The Roc code is colored by syntax_color/, each quoted block as it reads in
 -- its file (app/QuotedColor.roc). `compare_books.shale` holds this book to
 -- book.shale's, page by page.
+--
+-- `chapters=N` builds the first N numbered chapters, for a quick look, as
+-- book.shale's `chapters=N` does: the front page, those chapters and all the
+-- back matter (the appendices, the index among them, and the credits), and
+-- the contents and the lists of chapters hold only those. The builder's
+-- `chapters` setting makes the cut (book_builder/builder/Builder.roc,
+-- `Extent`): the pre-step, the diagrams and the builder's gates still read the
+-- whole manuscript, and the index is built from every chapter, so a reference
+-- to a chapter left out is its title or number as plain text.
 const TUTORIAL = "canvas_apps/safari/tutorial"
 const SOURCE = "canvas_apps/safari/tutorial/tutorial.md"
 const PREPARED = "canvas_apps/safari/tutorial/build/prepared"
@@ -42,6 +52,15 @@ const DIAGRAMS_PER_RUN = 30
 const PHONE_POINTS = 300
 const DOT_WANT = "graphviz: the tutorial's diagrams, drawn at build time"
 const BOOK_WANT = "book-next: the book program build_next.shale just built, untracked by design"
+const CHAPTERS_ARG = arg("chapters", "")
+const CHAPTERS = CHAPTERS_ARG ~= "" and tonumber(CHAPTERS_ARG) or nil
+
+-- What this build holds, for site/publish.sh to require of a book, as
+-- book.shale's says it; the app reads the same line from chapters.txt.
+function built_record()
+  if CHAPTERS == nil then return "book: every chapter\n" end
+  return "book: the first " .. CHAPTERS .. " chapters\n"
+end
 
 -- The drawing of one diagram, ready to sit in a page, and how wide it is in
 -- points. Graphviz's comments and titles are dropped, because a title shows as a
@@ -184,7 +203,7 @@ function write_pages(output)
   copy(TUTORIAL .. "/book.css", OUT .. "/book.css")
   copy(TUTORIAL .. "/book.js", OUT .. "/book.js")
   copy("canvas_apps/widget_kit/embed.js", OUT .. "/embed.js")
-  replace(OUT .. "/BUILT", "book: every chapter\n")
+  replace(OUT .. "/BUILT", built_record())
   return {files = files, report = halves[2]}
 end
 
@@ -197,6 +216,7 @@ function main()
   print(trim(prepared.out))
   print("build_next: the pre-step's includes took " .. prepared.ms .. " ms")
   replace(PREPARED .. "/widgets.txt", join(widget_folders(), "\n") .. "\n")
+  replace(PREPARED .. "/chapters.txt", built_record())
   local count = write_diagram_sources(read(SOURCE))
   local drawn = must(run({"shale", "--root", ".", TUTORIAL .. "/build_next.shale", "diagrams_all=" .. count}, {timeout_ms = 600000, tail = 20, want = DOT_WANT}))
   print("build_next: " .. count .. " diagrams drawn in " .. drawn.ms .. " ms")
@@ -223,7 +243,7 @@ function main()
     local m = re_find(l, ": ([0-9]+) words of prose$")
     if m ~= nil then words = words + tonumber(m.groups[1]) end
   end
-  print("build_next: " .. #written.files .. " pages, " .. words .. " words of prose, at http://localhost:9210/tutorial.next/")
+  print("build_next: " .. #written.files .. " pages, " .. words .. " words of prose, " .. trim(sub(built_record(), 7)) .. ", at http://localhost:9210/tutorial.next/")
   return nil
 end
 

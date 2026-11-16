@@ -9,7 +9,9 @@
 ## and for its heading's id otherwise. The front page is `index.html`, and two
 ## pages with one name stop the build. So does a page that isn't one top
 ## heading with only sections under it, a slug that isn't plain or names no
-## chapter, and a divider above no chapter.
+## chapter, and a divider above no chapter. A book cut short names the chapters
+## it leaves out, which have no page: a slug or a divider of one is no problem
+## and shows nowhere, and a reference to one is plain text.
 ##
 ## A book's look also names the book, adds its own HTML to every page's head
 ## and to the start and end of its body, and rewrites each rendered page before
@@ -73,9 +75,16 @@ Pages := [].{
 		body_rewrite: |html| html,
 	}
 
-	## The front page, then each chapter's, or every problem found.
-	pages : { front : MdDocument.Page, chapters : List(Pages.Rendered), look : Pages.Look } -> Try(List(Pages.Page), List(Str))
-	pages = |{ front, chapters, look }| {
+	## The front page, then each chapter's, or every problem found. Of a
+	## chapter left out only its heading need be rendered.
+	pages :
+		{
+			front : MdDocument.Page,
+			chapters : List(Pages.Rendered),
+			left_out : List(Pages.Rendered),
+			look : Pages.Look,
+		} -> Try(List(Pages.Page), List(Str))
+	pages = |{ front, chapters, left_out, look }| {
 		front_chapter = chapter_of({ page: front, number: Unnumbered }, look) ? |problem| [problem]
 		book_name =
 			match look.book_name {
@@ -83,18 +92,22 @@ Pages := [].{
 				Named(name) => name
 			}
 		made = chapters.map(|chapter| chapter_of(chapter, look))
+		left = left_out.map(|chapter| chapter_of(chapter, look))
 		shaped = made.keep_oks(|chapter| chapter).map(|chapter| with_slug(chapter, look.slugs)).map(|chapter| with_opening(chapter, look.dividers))
+		left_titled = left.keep_oks(|chapter| chapter).map(|chapter| { title: chapter.title, number: chapter.number })
 		files = [front_file].concat(shaped.map(|chapter| chapter.file))
 		problems =
 			made
+				.concat(left)
 				.keep_oks(problem_of)
-				.concat(look_problems(shaped, look))
+				.concat(look_problems({ chapters: shaped, left_out: left_titled, look }))
 				.concat(repeated_files(files).map(|file| "book: two pages are named ${file}"))
 		if !problems.is_empty() {
 			Err(problems)
 		} else {
 			reference_chapters = shaped.map(|chapter| { title: chapter.title, file: chapter.file, number: chapter.number })
-			linked = [front_chapter].concat(shaped).map(|chapter| References.linked(chapter.body, reference_chapters).map_ok(|body| { ..chapter, body }))
+			references = { chapters: reference_chapters, left_out: left_titled }
+			linked = [front_chapter].concat(shaped).map(|chapter| References.linked(chapter.body, references).map_ok(|body| { ..chapter, body }))
 			link_problems = linked.keep_oks(problem_list).join()
 			if !link_problems.is_empty() {
 				Err(link_problems)
@@ -230,10 +243,11 @@ divider_html = |divider| {
 }
 
 ## What is wrong with a look's slugs and dividers: a slug that isn't plain or
-## names no chapter, and a divider above no chapter.
-look_problems : List(Chapter), Pages.Look -> List(Str)
-look_problems = |chapters, look| {
-	titled = |title| chapters.any(|chapter| chapter.title == title)
+## names no chapter, and a divider above no chapter. A chapter the book leaves
+## out is still a chapter of it.
+look_problems : { chapters : List(Chapter), left_out : List(References.LeftOut), look : Pages.Look } -> List(Str)
+look_problems = |{ chapters, left_out, look }| {
+	titled = |title| chapters.any(|chapter| chapter.title == title) or left_out.any(|chapter| chapter.title == title)
 	not_plain = look.slugs.drop_if(|slug| is_plain_slug(slug.slug)).map(|slug| "book: the slug `${slug.slug}` isn't plain: lowercase letters, digits and hyphens")
 	no_chapter = look.slugs.drop_if(|slug| titled(slug.chapter)).map(|slug| "book: the slug `${slug.slug}` names `${slug.chapter}`, a chapter that isn't in the book")
 	no_place = look.dividers.drop_if(|divider| titled(divider.before)).map(|divider| "book: the divider `${divider.title}` stands above `${divider.before}`, a chapter that isn't in the book")
@@ -459,10 +473,10 @@ two_page : MdDocument.Page
 two_page = rendered("<h1 id=\"two\">Two</h1>\n<p>Back to {{number 1 One}}.</p>\n", [heading({ level: 1, id: "two", text: "Two" })])
 
 expect
-	Pages.pages({ look: Pages.default_look, front: front_page, chapters: [{ page: one_page, number: Numbered(1) }, { page: two_page, number: Unnumbered }] }).map_ok(|made| made.map(|page| page.file))
+	Pages.pages({ left_out: [], look: Pages.default_look, front: front_page, chapters: [{ page: one_page, number: Numbered(1) }, { page: two_page, number: Unnumbered }] }).map_ok(|made| made.map(|page| page.file))
 		== Ok(["index.html", "one.html", "two.html"])
 expect
-	match Pages.pages({ look: Pages.default_look, front: front_page, chapters: [{ page: one_page, number: Numbered(1) }, { page: two_page, number: Unnumbered }] }) {
+	match Pages.pages({ left_out: [], look: Pages.default_look, front: front_page, chapters: [{ page: one_page, number: Numbered(1) }, { page: two_page, number: Unnumbered }] }) {
 		Ok([front, one, two]) =>
 			front.html.contains("<title>B &amp; c</title>")
 				and front.html.contains("<ol class=\"contents\">\n<li><a href=\"one.html\"><span class=\"number\">1</span>One</a><ol class=\"sections\"><li><a href=\"one.html#s\">S</a></li></ol></li>\n<li><a href=\"two.html\">Two</a></li>\n</ol>")
@@ -477,16 +491,16 @@ expect
 		_ => Bool.False
 	}
 expect
-	Pages.pages({ look: Pages.default_look, front: front_page, chapters: [{ page: one_page, number: Numbered(1) }, { page: one_page, number: Numbered(2) }] })
+	Pages.pages({ left_out: [], look: Pages.default_look, front: front_page, chapters: [{ page: one_page, number: Numbered(1) }, { page: one_page, number: Numbered(2) }] })
 		== Err(["book: two pages are named one.html"])
 expect
-	Pages.pages({ look: Pages.default_look, front: rendered("<p>no heading</p>", []), chapters: [] })
+	Pages.pages({ left_out: [], look: Pages.default_look, front: rendered("<p>no heading</p>", []), chapters: [] })
 		== Err(["book: a page needs one top heading and only sections under it: "])
 expect
-	Pages.pages({ look: Pages.default_look, front: front_page, chapters: [{ page: rendered("", [heading({ level: 1, id: "x", text: "X" }), heading({ level: 3, id: "y", text: "Y" })]), number: Unnumbered }, { page: two_page, number: Unnumbered }] })
+	Pages.pages({ left_out: [], look: Pages.default_look, front: front_page, chapters: [{ page: rendered("", [heading({ level: 1, id: "x", text: "X" }), heading({ level: 3, id: "y", text: "Y" })]), number: Unnumbered }, { page: two_page, number: Unnumbered }] })
 		== Err(["book: a page needs one top heading and only sections under it: X, Y"])
 expect
-	Pages.pages({ look: Pages.default_look, front: front_page, chapters: [{ page: two_page, number: Unnumbered }] })
+	Pages.pages({ left_out: [], look: Pages.default_look, front: front_page, chapters: [{ page: two_page, number: Unnumbered }] })
 		== Err(["book: {{number 1 One}} names no chapter of the book"])
 expect nav_entry(one_section, one_section) == "<li class=\"here\"><a href=\"a.html\">A</a><ol class=\"sections\"><li><a href=\"a.html#s\">S</a></li></ol></li>"
 expect nav_entry(one_section, other_section) == "<li><a href=\"a.html\">A</a></li>"
@@ -510,7 +524,7 @@ safari_look = {
 }
 
 expect
-	match Pages.pages({ look: safari_look, front: front_page, chapters: [{ page: one_page, number: Numbered(1) }, { page: two_page, number: Unnumbered }] }) {
+	match Pages.pages({ left_out: [], look: safari_look, front: front_page, chapters: [{ page: one_page, number: Numbered(1) }, { page: two_page, number: Unnumbered }] }) {
 		Ok([front, one, two]) =>
 			front.html.contains("<title>Bo &amp; co</title>")
 				and front.html.contains("<p>Hello.</p>")
@@ -525,18 +539,34 @@ expect
 		_ => Bool.False
 	}
 expect
-	match Pages.pages({ look: Pages.default_look, front: front_page, chapters: [{ page: one_page, number: Numbered(1) }, { page: two_page, number: Unnumbered }] }) {
+	match Pages.pages({ left_out: [], look: Pages.default_look, front: front_page, chapters: [{ page: one_page, number: Numbered(1) }, { page: two_page, number: Unnumbered }] }) {
 		Ok([front, ..]) => front.html.contains("<link rel=\"stylesheet\" href=\"book.css\">\n</head>\n<body class=\"front\">\n\n<main>") and front.html.ends_with("</main>\n</body>\n</html>")
 		_ => Bool.False
 	}
 expect
-	Pages.pages({ look: { ..Pages.default_look, slugs: [{ chapter: "One", slug: "One" }, { chapter: "Gone", slug: "gone" }], dividers: [{ before: "Gone", level: Part, title: "P" }] }, front: front_page, chapters: [{ page: one_page, number: Numbered(1) }, { page: two_page, number: Unnumbered }] })
+	Pages.pages({ left_out: [], look: { ..Pages.default_look, slugs: [{ chapter: "One", slug: "One" }, { chapter: "Gone", slug: "gone" }], dividers: [{ before: "Gone", level: Part, title: "P" }] }, front: front_page, chapters: [{ page: one_page, number: Numbered(1) }, { page: two_page, number: Unnumbered }] })
 		== Err([
 			"book: the slug `One` isn't plain: lowercase letters, digits and hyphens",
 			"book: the slug `gone` names `Gone`, a chapter that isn't in the book",
 			"book: the divider `P` stands above `Gone`, a chapter that isn't in the book",
 		])
 expect
-	Pages.pages({ look: { ..Pages.default_look, slugs: [{ chapter: "One", slug: "two" }] }, front: front_page, chapters: [{ page: one_page, number: Numbered(1) }, { page: two_page, number: Unnumbered }] })
+	Pages.pages({ left_out: [], look: { ..Pages.default_look, slugs: [{ chapter: "One", slug: "two" }] }, front: front_page, chapters: [{ page: one_page, number: Numbered(1) }, { page: two_page, number: Unnumbered }] })
 		== Err(["book: two pages are named two.html"])
 expect ["a-1", "x"].all(is_plain_slug) and ["", "A", "a_b", "a.html", "é"].all(|slug| !is_plain_slug(slug))
+
+## A book cut short: chapter Two is left out, and its slug and divider are no
+## problem and show nowhere.
+cut_short_look : Pages.Look
+cut_short_look = { ..Pages.default_look, slugs: [{ chapter: "Two", slug: "second" }], dividers: [{ before: "Two", level: Part, title: "Second part" }] }
+
+expect
+	match Pages.pages({ left_out: [{ page: two_page, number: Unnumbered }], look: cut_short_look, front: front_page, chapters: [{ page: one_page, number: Numbered(1) }] }) {
+		Ok([front, one]) =>
+			front.html.contains("<ol class=\"contents\">\n<li><a href=\"one.html\"><span class=\"number\">1</span>One</a><ol class=\"sections\"><li><a href=\"one.html#s\">S</a></li></ol></li>\n</ol>")
+				and !front.html.contains("Second part")
+				and !one.html.contains("second.html")
+				and one.html.contains("<p>See “Two”.</p>")
+				and one.html.contains("<a rel=\"prev\" href=\"index.html\"><small>Previous</small>Contents</a>\n<span></span>")
+		_ => Bool.False
+	}
