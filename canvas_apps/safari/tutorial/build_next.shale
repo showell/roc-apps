@@ -33,6 +33,22 @@
 -- its file (app/QuotedColor.roc). `compare_books.shale` holds this book to
 -- book.shale's, page by page.
 --
+-- The channel's book is replaced only by one that passed, as book.shale's is,
+-- and the steps after the build are book.shale's own. The pages are staged in
+-- the channel's /tutorial.next.staging/, beside the widgets they frame. Then
+-- book.shale's `widgets=1` makes each widget's page a release build, unless
+-- its stamp says it already is. Then book_check.mjs drives the staged pages
+-- in a real browser and leaves a shot of each page in build/next_shots/ (the
+-- pre-publish tier). Then book.shale's `move=` puts the stage in the place of
+-- /tutorial.next/. A failure at any step stops the run before the move, so
+-- the channel's /tutorial.next/ is left as it was, and the stage is left for
+-- a look. Each step's time is printed as it ends.
+--
+-- `stage=NAME` is the inner loop: the book is built into the channel's folder
+-- NAME and book_check.mjs drives it there with no shots, and the widgets'
+-- builds and the move are left out. `check=0` beside it skips the browser
+-- check too, for a look at the pages alone.
+--
 -- `chapters=N` builds the first N numbered chapters, for a quick look, as
 -- book.shale's `chapters=N` does: the front page, those chapters and all the
 -- back matter (the appendices, the index among them, and the credits), and
@@ -47,7 +63,15 @@ const PREPARED = "canvas_apps/safari/tutorial/build/prepared"
 const OUT = "canvas_apps/safari/tutorial/build/next"
 const BUILDER = "book_builder"
 const PROGRAM = "book_builder/zig-out/safari/bin/book"
-const DEST = "build:roc-apps/next/tutorial.next"
+const NEXT = "build:roc-apps/next"
+const DEST_NAME = "tutorial.next"
+const STAGE = arg("stage", "")
+const CHECK = arg("check", "1") ~= "0"
+const STAGED_NAME = STAGE == "" and DEST_NAME .. ".staging" or STAGE
+const STAGING = NEXT .. "/" .. STAGED_NAME
+const SHOTS = "canvas_apps/safari/tutorial/build/next_shots"
+const BOOK_SHALE = "canvas_apps/safari/tutorial/book.shale"
+const CHECK_WANT = "script: book_check.mjs drives the staged pages in headless Chromium"
 const CACHE = "build:roc-apps/book-cache"
 const PAGE_MARK = "<!-- book page: "
 const REPORT_MARK = "<!-- book report -->"
@@ -58,6 +82,8 @@ const BOOK_WANT = "book-next: the book program build_next.shale just built, untr
 const APP_TESTS = 55
 const CHAPTERS_ARG = arg("chapters", "")
 const CHAPTERS = CHAPTERS_ARG ~= "" and tonumber(CHAPTERS_ARG) or nil
+if STAGE == DEST_NAME or STAGE == "tutorial" then fail("build_next: stage=" .. STAGE .. " names a published book's folder, and a stage is a folder of its own") end
+if not CHECK and STAGE == "" then fail("build_next: check=0 builds only a stage=, never the channel's book") end
 
 -- What this build holds, for site/publish.sh to require of a book, as
 -- book.shale's says it; the app reads the same line from chapters.txt.
@@ -245,6 +271,28 @@ function test_app(env)
   return nil
 end
 
+-- book_check.mjs on the staged pages: with a shot of each page before a move,
+-- the pre-publish tier, and with none for a stage=, the inner loop.
+function check_stage()
+  local shots = "none"
+  if STAGE == "" then
+    if exists(SHOTS) then remove_tree(SHOTS) end
+    mkdir(SHOTS)
+    shots = real(SHOTS)
+  end
+  local argv = {"nice", "-n", "19", "node", TUTORIAL .. "/book_check.mjs", "http://127.0.0.1:9210/" .. STAGED_NAME .. "/", shots}
+  local r = run(argv, {timeout_ms = 900000, tail = 60, want = CHECK_WANT})
+  if r.ended ~= "exit" or r.code ~= 0 then
+    print(trim(r.out))
+    fail("build_next: book_check failed on " .. STAGING .. ", so " .. DEST_NAME .. " is left as it was")
+  end
+  for l in lines(r.out) do
+    if starts_with(l, "book_check: ") then print(l) end
+  end
+  print("build_next: book_check, " .. (shots == "none" and "no shots" or "shots in " .. SHOTS) .. ", took " .. r.ms .. " ms")
+  return nil
+end
+
 function main()
   mkdir(CACHE)
   local env = {XDG_CACHE_HOME = real(CACHE)}
@@ -275,14 +323,28 @@ function main()
   end
   print("build_next: the program ran in " .. r.ms .. " ms")
   local written = write_pages(r.out)
-  if exists(DEST) then remove_tree(DEST) end
-  copy(OUT, DEST)
+  if exists(STAGING) then remove_tree(STAGING) end
+  copy(OUT, STAGING)
+  print("build_next: staged at " .. STAGING)
+
+  if STAGE == "" then
+    local widgets = must(run({"shale", "--root", ".", BOOK_SHALE, "widgets=1"}, {timeout_ms = 3600000, tail = 30}))
+    if trim(widgets.out) ~= "" then print(trim(widgets.out)) end
+    print("build_next: the widgets' release builds took " .. widgets.ms .. " ms")
+  end
+  if CHECK then check_stage() end
+  if STAGE == "" then
+    local moved = must(run({"shale", "--root", ".", BOOK_SHALE, "stage=" .. STAGED_NAME, "move=" .. DEST_NAME}, {timeout_ms = 60000, tail = 20}))
+    print("build_next: the move into place took " .. moved.ms .. " ms")
+  end
+
   local words = 0
   for l in lines(written.report) do
     local m = re_find(l, ": ([0-9]+) words of prose$")
     if m ~= nil then words = words + tonumber(m.groups[1]) end
   end
-  print("build_next: " .. #written.files .. " pages, " .. words .. " words of prose, " .. trim(sub(built_record(), 7)) .. ", at http://localhost:9210/tutorial.next/")
+  local place = STAGE == "" and DEST_NAME or STAGED_NAME
+  print("build_next: " .. #written.files .. " pages, " .. words .. " words of prose, " .. trim(sub(built_record(), 7)) .. ", at http://localhost:9210/" .. place .. "/")
   return nil
 end
 

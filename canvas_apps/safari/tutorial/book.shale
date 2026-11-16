@@ -48,6 +48,10 @@ const CHAPTERS = CHAPTERS_ARG ~= "" and tonumber(CHAPTERS_ARG) or nil
 -- drawn in runs of their own, DIAGRAMS_PER_RUN at a time, as each takes
 -- Graphviz once or twice, so each run's programs stay well inside its budget.
 const WIDGETS_ONLY = arg("widgets", "") == "1"
+-- `stage=NAME move=PLACE` is the last step alone: the staged folder NAME takes
+-- the place of the channel's folder PLACE. build_next.shale's book publishes
+-- with it, and with `widgets=1`, so the two books share those steps.
+const MOVE = arg("move", "")
 const DIAGRAMS_ONLY = arg("diagrams", "") == "1"
 const DIAGRAMS_PER_RUN = 30
 const STAGED_NAME = STAGE == "" and "tutorial.staging" or STAGE
@@ -359,13 +363,15 @@ function build_widgets(folders)
   return nil
 end
 
-function move_into_place()
-  local old = real(NEXT) .. "/tutorial.old"
-  local dest = real(NEXT) .. "/tutorial"
-  remove_if_there(NEXT .. "/tutorial.old")
-  if exists(DEST) then must(run({"mv", dest, old}, {timeout_ms = 10000, whole = 1000, want = MOVE_WANT}), "moving the old book") end
-  must(run({"mv", real(STAGING), dest}, {timeout_ms = 10000, whole = 1000, want = MOVE_WANT}), "moving the new book")
-  remove_if_there(NEXT .. "/tutorial.old")
+-- The staged book takes the place of the channel's folder `name`. The book it
+-- replaces is set aside as `name`.replaced first, a name no build writes, and
+-- removed once the new one is in.
+function move_into_place(name)
+  local aside = NEXT .. "/" .. name .. ".replaced"
+  remove_if_there(aside)
+  if exists(NEXT .. "/" .. name) then must(run({"mv", real(NEXT) .. "/" .. name, real(NEXT) .. "/" .. name .. ".replaced"}, {timeout_ms = 10000, whole = 1000, want = MOVE_WANT}), "moving the old book") end
+  must(run({"mv", real(STAGING), real(NEXT) .. "/" .. name}, {timeout_ms = 10000, whole = 1000, want = MOVE_WANT}), "moving the new book")
+  remove_if_there(aside)
   return nil
 end
 
@@ -400,7 +406,7 @@ function main()
   local check = {"nice", "-n", "19", "node", TUTORIAL .. "/book_check.mjs", CHANNEL_URL, real(WORK) .. "/shots"}
   if LOOKS then push(check, "looks") end
   if CHECK then print(trim(must(run(check, {timeout_ms = 600000, tail = 60, want = CHECK_WANT}), "book_check").out)) end
-  if STAGE == "" then move_into_place() end
+  if STAGE == "" then move_into_place("tutorial") end
 
   for line in sizes do print(line) end
   print("book: " .. #book.pages .. " pages and " .. #book.diagrams .. " diagrams at http://localhost:9210/" .. (STAGE == "" and "tutorial" or STAGE) .. "/")
@@ -409,6 +415,11 @@ end
 
 if WIDGETS_ONLY then
   build_widgets(widget_folders())
+elseif MOVE ~= "" then
+  if STAGE == "" then fail("book: move= moves the folder stage= names, and none is named") end
+  if MOVE == STAGE or contains(MOVE, "/") then fail("book: move=" .. MOVE .. " must name a folder of the channel other than the stage") end
+  if not exists(STAGING) then fail("book: move=" .. MOVE .. ": no staged book at " .. STAGING) end
+  move_into_place(MOVE)
 elseif DIAGRAMS_ONLY then
   draw_diagrams(tonumber(arg("first", "")), tonumber(arg("last", "")))
 else

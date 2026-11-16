@@ -5,7 +5,8 @@
 --   cd <roc-apps checkout> && shale canvas_apps/safari/tutorial/compare_books.shale
 --
 -- It builds both first: book.shale with `stage=tutorial.old check=0`, into the
--- dev channel's /tutorial.old/, and build_next.shale, into /tutorial.next/.
+-- dev channel's /tutorial.old/, and build_next.shale, which publishes into
+-- /tutorial.next/ once its stage has passed the browser check.
 -- `build=0` compares the two folders as they stand. `chapters=N` builds both
 -- with `chapters=N`, the first N chapters and the back matter. book.shale then
 -- draws only the diagrams of the chapters it keeps, numbered over them, and
@@ -89,7 +90,7 @@ function build_both()
   end
   local old = must(run(old_argv, {timeout_ms = 600000, tail = 5}))
   print("compare_books: today's build took " .. old.ms .. " ms")
-  local new = must(run(new_argv, {timeout_ms = 900000, tail = 12}))
+  local new = must(run(new_argv, {timeout_ms = 3600000, tail = 16}))
   print(trim(new.out))
   print("compare_books: the builder's build took " .. new.ms .. " ms")
   return nil

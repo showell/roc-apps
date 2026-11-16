@@ -75,8 +75,12 @@ It takes under a minute unless a widget's page needs rebuilding.
 The same book also builds with roc-apps' book builder (`book_builder/`), as a
 small app on the book platform, `canvas_apps/safari/tutorial/app/main.roc`,
 into `/tutorial.next/` with `shale canvas_apps/safari/tutorial/build_next.shale`,
-in about three seconds once its program is built, its Roc code colored by
-`syntax_color/`. `shale canvas_apps/safari/tutorial/compare_books.shale` builds
+its Roc code colored by `syntax_color/`. It publishes as book.shale does: it
+stages the pages, makes the widgets release builds, drives the stage in a
+browser with shots, and only then moves it into place. Its inner loop,
+`stage=NAME`, builds into that folder and checks it with no shots, in about
+a minute, or about seven seconds with `check=0`, once its program is built.
+`shale canvas_apps/safari/tutorial/compare_books.shale` builds
 both and holds the builder's pages to book.shale's, page by page, with the
 coloring taken away, then reports each Roc block colored differently;
 book.shale stays the published book until that comparison has decided the
