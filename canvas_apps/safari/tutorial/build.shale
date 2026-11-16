@@ -147,7 +147,13 @@ function module_path(entry, folder, module)
   for near in {folder .. "/" .. file, folder .. "/gates/" .. file} do
     if exists(near) then return near end
   end
-  local found = glob(dirname(folder) .. "/*/" .. file)
+  -- One level of folders, by `ls`: a glob walks every folder below, the
+  -- builds' output among them.
+  local found = {}
+  for name in ls(dirname(folder)) do
+    local beside = dirname(folder) .. "/" .. name
+    if not starts_with(name, ".") and stat(beside).kind == "directory" and exists(beside .. "/" .. file) then push(found, beside .. "/" .. file) end
+  end
   if #found == 0 then stop(entry, "no module file " .. folder .. "/" .. file) end
   if #found > 1 then stop(entry, "two modules of that name: " .. join(found, ", ")) end
   return found[1]
@@ -910,9 +916,10 @@ end
 -- The modules in `folder` that `text` doesn't name as a whole word, sorted.
 function unnamed_modules(folder, text)
   local unnamed = {}
-  for path in glob(folder .. "/*.roc") do
-    local module = sub(basename(path), 1, #basename(path) - 4)
-    if not excused(module) and re_find(text, "\\b" .. module .. "\\b") == nil then push(unnamed, module) end
+  -- The folder's own files, by `ls`, since a glob walks every folder below.
+  for name in ls(folder) do
+    local module = sub(name, 1, #name - 4)
+    if ends_with(name, ".roc") and stat(folder .. "/" .. name).kind == "file" and not excused(module) and re_find(text, "\\b" .. module .. "\\b") == nil then push(unnamed, module) end
   end
   return sort(unnamed)
 end
