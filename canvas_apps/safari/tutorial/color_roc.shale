@@ -1,6 +1,7 @@
 -- budget: steps=500000000 arena_bytes=1500000000 reads=20000 read_bytes=400000000 output_bytes=200000 call_entries=4000000
--- This colors the Roc code in the book's rendered pages, and book.shale runs it
--- on the staged pages. The renderer knows nothing of Roc: a ```roc fence reaches
+-- This colors the Roc code in rendered pages of the Safari book, and
+-- syntax_color/tools/record_oracle.shale runs it to record the colorer's
+-- oracle, which syntax_color/ is held to. The renderer knows nothing of Roc: a ```roc fence reaches
 -- this as a <pre><code class="language-roc"> holding escaped text, and each one
 -- comes out with spans around what it colors, and book.css says what they look
 -- like. A page's text must stay the same byte for byte once the spans are taken
@@ -8,8 +9,7 @@
 --
 --   cd <roc-apps checkout> && shale canvas_apps/safari/tutorial/color_roc.shale pages=<folder> order=<pages>
 --
--- `pages=` names the folder of the staged pages, which book.shale gives as its
--- STAGING, the one home of that folder.
+-- `pages=` names the folder of the pages, and `order=` the pages in book order.
 --
 -- A block is often part of a definition, which Roc can't parse alone. Every
 -- block comes from a file, though, so the file is parsed whole. build.shale
@@ -340,7 +340,7 @@ end
 
 -- Colors the pages named in `order`, in `folder`, and gives the count of each
 -- outcome. The whole book uses every block in the note. The first chapters,
--- as book.shale's `chapters=N` cuts them, use the note's first blocks.
+-- `extent=first_chapters`, use the note's first blocks.
 function color_pages(folder, order, notes, extent)
   local files = parsed_files(notes)
   local tally = {colored = 0, plain = {}, noted = 0}

@@ -2,7 +2,7 @@
 
 A Roc package that colors source code for web pages: code text in, HTML out,
 with a `<span class="syn-...">` around each run a language's lexer gives a
-class. It colors Roc and Shale the same way the Safari book's
+class. It colors Roc and Shale the same way
 `canvas_apps/safari/tutorial/color_roc.shale` and the Shale cookbook's
 `color_shale.shale` do, byte for byte, and JavaScript and Zig with the same
 classes. The class names are book.css's: `syn-comment`, `syn-string`,

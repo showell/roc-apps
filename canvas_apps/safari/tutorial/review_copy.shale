@@ -1,24 +1,23 @@
 -- budget: steps=200000000 arena_bytes=900000000 read_bytes=200000000 output_bytes=200000 call_bytes=2000000
 -- This makes the copy of the book that a cold reviewer reads, in
--- build/review/. It starts from build/tutorial.md, so run book.shale or
--- build.shale first.
+-- build/review/. It starts from build/tutorial.md, so run build.shale first.
 --
 --   cd <roc-apps checkout> && shale canvas_apps/safari/tutorial/review_copy.shale
 --
 -- The manuscript isn't what a reader sees: its widgets are a caption in a
--- fence, its diagrams are Graphviz source, its parts live in Book.roc, and most
+-- fence, its diagrams are Graphviz source, its parts live in app/SafariLook.roc, and most
 -- of the lines that start `## ` are Roc doc comments. So each widget becomes a
 -- bracketed line saying the reader plays with it, each diagram becomes its
--- title, Book.roc's dividers become `# ` headings, and the `[check: ...]` notes
+-- title, SafariLook.roc's dividers become `# ` headings, and the `[check: ...]` notes
 -- go. chapters.txt lists each chapter with its line range, which also tells a
 -- reviewer how far a read has to go.
 const SOURCE = "canvas_apps/safari/tutorial/build/tutorial.md"
-const BOOK = "canvas_apps/safari/tutorial/Book.roc"
-const DRAFT_NOTES = "canvas_apps/safari/tutorial/DraftNotes.roc"
+const BOOK = "canvas_apps/safari/tutorial/app/SafariLook.roc"
+const DRAFT_NOTES = "canvas_apps/safari/tutorial/app/DraftNotes.roc"
 const OUT = "canvas_apps/safari/tutorial/build/review"
 const TUTORIAL_HTML = "scratch:roc-tutorial/tutorial.html"
 
--- Book.roc's dividers in order: the chapter each stands above, and its title.
+-- SafariLook.roc's dividers in order: the chapter each stands above, and its title.
 function dividers()
   local found = {}
   local before = nil

@@ -1,268 +1,120 @@
--- budget: steps=100000000 arena_bytes=1000000000 read_bytes=200000000 output_bytes=200000 call_bytes=20000000
--- This builds the Safari Ride book into the dev channel, one page a chapter.
+-- budget: steps=50000000 arena_bytes=1000000000 read_bytes=200000000 output_bytes=200000 call_bytes=40000000
+-- This builds the Safari Ride book with the book builder (book_builder/), into
+-- the dev channel's /tutorial/:
 --
 --   cd <roc-apps checkout> && nice -n 19 shale canvas_apps/safari/tutorial/book.shale
 --
--- It runs on demand and at publish, and never in the fast tier. It expands
--- tutorial.md with build.shale, splits the result at each chapter heading, and
--- draws each ```dot fence with Graphviz, in child runs of this script with
--- `diagrams=1`. A diagram's title is the line above its
--- fence, which goes with the drawing to be set as its caption. A diagram wider
--- than a phone is drawn a second way for a phone, turned and tightened, and
--- book.css shows one of the two. make_book.roc then renders every page in one
--- run, and its fence hook stops the build on a widget with no folder.
--- A chapter's `##` headings become `#`, so a page has one top heading and its
--- sections are level two.
+-- It runs on demand and at publish (gates/publish.shale), and never in the
+-- fast tier. The book is the app app/main.roc on the book platform, which reads
+-- the tutorial's folder and prints every page. What needs a program is this
+-- script's pre-step, whose results go in build/prepared/, where the app reads
+-- them:
 --
--- The book frames each widget's page, so those pages must be release builds. A
--- page is rebuilt unless it carries the stamp of the last commit that touched
--- its inputs, and any other build of it removes the stamp, as build.sh replaces
--- the whole folder.
+--   line-N.md      each include of the source's line N that quotes the game's
+--                  code through Roc's parser, or runs `roc check` on a failing
+--                  program, or reads the proof file: build.shale's `prepare=1`
+--   diagram-N.dot  the Nth ```dot fence's source, and diagram-N.svg, its
+--   diagram-N.svg  drawing by Graphviz, which draw_diagrams.shale makes
+--   widgets.txt    the folders beside the game that hold a widget's page
+--   chapters.txt   which chapters the book holds, the line BUILT gets too
+--   blocks.txt     which lines of which file each quoted Roc block shows, and
+--   sources/       a copy of each such file, for the app's coloring
 --
--- The pages are staged beside their widgets and book_check.mjs drives them in a
--- real browser, so the channel's book is replaced only by one that passed. The
--- check leaves a full-page shot of each page in build/book/shots/. Before that,
--- color_roc.shale colors the pages' Roc code, and says how many blocks it left
--- plain.
+-- Then `roc test` runs the app's expects, the app/ folder's held to exactly
+-- APP_TESTS and to its top-level `expect` lines, each passed once; the
+-- packages' own are their gates' to hold. Then `zig build` builds the app
+-- into book_builder/zig-out/safari, on Roc's dev backend, and the program
+-- writes the pages, which go to build/book/ with the book's stylesheet and
+-- scripts, and from there to the channel. The Roc code is colored by
+-- syntax_color/, each quoted block as it reads in its file (app/QuotedColor.roc).
 --
--- `stage=tutorial.mine` builds the book into that folder of the channel and
--- checks it there, for a look at a draft or a change to the book's own tools. It
--- leaves the channel's book and the widgets' builds alone, and it leaves the
--- folder for whoever asked to read and then remove. `looks=1` beside it skips
--- driving the widgets, so a pass over the pages' looks takes a couple of minutes.
--- `check=0` beside it skips book_check.mjs altogether, for compare_books.shale,
--- which reads the pages and not the browser.
+-- The channel's book is replaced only by one that passed. The pages are staged
+-- in the channel's /tutorial.staging/, beside the widgets they frame. Then
+-- build_widgets.shale makes safari's page and each widget's a release build,
+-- unless its stamp says it already is. Then book_check.mjs drives the staged
+-- pages in a real browser and leaves a shot of each page in build/shots/ (the
+-- pre-publish tier). Then move_stage.shale puts the stage in the place of
+-- /tutorial/. A failure at any step stops the run before the move, so the
+-- channel's /tutorial/ is left as it was, and the stage is left for a look.
+-- Each step's time is printed as it ends.
+--
+-- `stage=NAME` is the inner loop: the book is built into the channel's folder
+-- NAME and book_check.mjs drives it there with no shots, and the widgets'
+-- builds and the move are left out. `check=0` beside it skips the browser
+-- check too, for a look at the pages alone.
+--
+-- `chapters=N` builds the first N numbered chapters, as gates/publish.shale
+-- does for the chapters that have passed the loop in MISSION.md: the front
+-- page, those chapters and all the back matter (the appendices, the index
+-- among them, and the credits), and the contents and the lists of chapters
+-- hold only those. The builder's `chapters` setting makes the cut
+-- (book_builder/builder/Builder.roc, `Extent`): the pre-step, the diagrams and
+-- the builder's gates still read the whole manuscript, and the index is built
+-- from every chapter, so a reference to a chapter left out is its title or
+-- number as plain text.
 const TUTORIAL = "canvas_apps/safari/tutorial"
-const WORK = "canvas_apps/safari/tutorial/build/book"
-const EXPANDED = "canvas_apps/safari/tutorial/build/tutorial.md"
+const SOURCE = "canvas_apps/safari/tutorial/tutorial.md"
+const PREPARED = "canvas_apps/safari/tutorial/build/prepared"
+const OUT = "canvas_apps/safari/tutorial/build/book"
+const BUILDER = "book_builder"
+const PROGRAM = "book_builder/zig-out/safari/bin/book"
 const NEXT = "build:roc-apps/next"
+const DEST_NAME = "tutorial"
 const STAGE = arg("stage", "")
-const LOOKS = arg("looks", "") == "1"
 const CHECK = arg("check", "1") ~= "0"
-if not CHECK and STAGE == "" then fail("book: check=0 builds only a stage=, never the channel's book") end
--- `chapters=N` keeps only the first N chapters, for a book that holds just the
--- chapters that have passed the loop in MISSION.md.
+const STAGED_NAME = STAGE == "" and DEST_NAME .. ".staging" or STAGE
+const STAGING = NEXT .. "/" .. STAGED_NAME
+const SHOTS = "canvas_apps/safari/tutorial/build/shots"
+const DRAW = "canvas_apps/safari/tutorial/draw_diagrams.shale"
+const WIDGETS = "canvas_apps/safari/tutorial/build_widgets.shale"
+const MOVE = "canvas_apps/safari/tutorial/move_stage.shale"
+const CHECK_WANT = "script: book_check.mjs drives the staged pages in headless Chromium"
+const CACHE = "build:roc-apps/book-cache"
+const PAGE_MARK = "<!-- book page: "
+const REPORT_MARK = "<!-- book report -->"
+const DOT_WANT = "graphviz: the tutorial's diagrams, drawn at build time"
+const BOOK_WANT = "book: the book program book.shale just built, untracked by design"
+const APP_TESTS = 55
 const CHAPTERS_ARG = arg("chapters", "")
 const CHAPTERS = CHAPTERS_ARG ~= "" and tonumber(CHAPTERS_ARG) or nil
--- The widgets' release builds run as a run of their own, and the diagrams are
--- drawn in runs of their own, DIAGRAMS_PER_RUN at a time, as each takes
--- Graphviz once or twice, so each run's programs stay well inside its budget.
-const WIDGETS_ONLY = arg("widgets", "") == "1"
--- `stage=NAME move=PLACE` is the last step alone: the staged folder NAME takes
--- the place of the channel's folder PLACE. build_next.shale's book publishes
--- with it, and with `widgets=1`, so the two books share those steps.
-const MOVE = arg("move", "")
-const DIAGRAMS_ONLY = arg("diagrams", "") == "1"
-const DIAGRAMS_PER_RUN = 30
-const STAGED_NAME = STAGE == "" and "tutorial.staging" or STAGE
-const STAGING = "build:roc-apps/next/" .. STAGED_NAME
-const DEST = "build:roc-apps/next/tutorial"
-const CHANNEL_URL = "http://127.0.0.1:9210/" .. STAGED_NAME .. "/"
-const CACHE = "build:roc-apps/book-cache"
-const STAMP = "BOOK_INPUTS"
-const PAGE_MARK = "<!-- book page: "
-const COLOR = "canvas_apps/safari/tutorial/color_roc.shale"
-const ROC_WANT = "roc-pin: roc-apps' pinned nightly, for the book's page step"
-const DOT_WANT = "graphviz: the tutorial's diagrams, drawn at build time"
-const PAGE_WANT = "script: canvas_apps/build.sh builds and checks a page, and refuses another Roc"
-const CHECK_WANT = "script: book_check.mjs drives the staged pages in headless Chromium"
-const PHONE_POINTS = 300
-const MOVE_WANT = "move: the staged book takes the channel's place in one rename"
-const INPUTS = {"canvas_apps", ":(exclude)canvas_apps/safari/tutorial", ":(exclude)canvas_apps/safari/gates", ":(exclude,glob)**/*.md", "roc-version", "pinned-roc.sh", ".shale/prelude.shale"}
+-- A stage is a folder of its own: never the published book, the name the move
+-- sets the old book aside as, or a path.
+if STAGE == DEST_NAME or STAGE == DEST_NAME .. ".replaced" or contains(STAGE, "/") then fail("book: stage=" .. STAGE .. " names the published book's folder or a path, and a stage is a folder of its own") end
+if not CHECK and STAGE == "" then fail("book: check=0 builds only a stage=, never the channel's book") end
 
-function must(r, what)
-  if r.ended ~= "exit" or get(r, "code", -1) ~= 0 then
-    print(trim(r.out))
-    fail("book: " .. what .. " failed")
-  end
-  return r
+-- What this build holds, for site/publish.sh to require of a book and fold
+-- into its PROVENANCE; the app reads the same line from chapters.txt.
+function built_record()
+  if CHAPTERS == nil then return "book: every chapter\n" end
+  return "book: the first " .. CHAPTERS .. " chapters\n"
 end
 
-function remove_if_there(path)
-  if exists(path) then remove_tree(path) end
-  return nil
-end
-
--- The drawing of one diagram, ready to sit in a page, and how wide it is in
--- points. Graphviz's comments and titles are dropped, because a title shows as a
--- tooltip on hover.
-function drawing(path, options, class)
-  local argv = {"dot", "-Tsvg", "-Gfontsize=12", "-Nfontsize=12", "-Efontsize=11", "-Nmargin=0.13,0.06"}
-  for option in options do push(argv, option) end
-  push(argv, real(path))
-  local r = must(run(argv, {timeout_ms = 30000, whole = 2000000, want = DOT_WANT}), "dot on " .. path .. " (Graphviz)")
-  local at = find(r.out, "<svg ")
-  if at == nil or not starts_with(r.out, "<?xml") then fail("book: dot said more than a drawing for " .. path .. ": " .. r.out) end
-  local kept = {}
-  for l in lines(sub(r.out, at + 5)) do
-    if not starts_with(l, "<!--") and not starts_with(l, "<title>") then push(kept, l) end
-  end
-  local width = re_find(r.out, "<svg width=\"([0-9]+)pt\"")
-  if width == nil then fail("book: no width in the drawing of " .. path) end
-  return {svg = "<svg class=\"" .. class .. "\" role=\"img\" " .. join(kept, "\n"), width = tonumber(width.groups[1])}
-end
-
--- A line of a diagram with the list in its label down the page, a name a line.
-function label_list_down(l)
-  local open = find(l, "label=\"")
-  if open == nil then return l end
-  local close = find(l, "\"", open + 7)
-  if close == nil then return l end
-  local label = join(split(sub(l, open + 7, close - 1), ", "), ",\\n")
-  return sub(l, 1, open + 6) .. label .. sub(l, close)
-end
-
--- A diagram's source for a phone: a row of boxes runs down the page instead, and
--- a label's list does too. A record's fields are side by side, so a record
--- diagram turns the other way, for `phone_options` to say.
-function phone_source(source)
-  local kept = {}
-  for l in source do
-    if trim(l) ~= "rankdir=LR;" then push(kept, label_list_down(l)) end
-  end
-  return join(kept, "\n") .. "\n"
-end
-
-function phone_options(source)
-  local options = {"-Gnodesep=0.12", "-Granksep=0.3", "-Nmargin=0.06,0.04"}
-  if contains(join(source, "\n"), "shape=record") then push(options, "-Grankdir=LR") end
-  return options
-end
-
--- A diagram's drawing, and a phone's beside it if it needs one. The source is
--- the fence's lines, which `manuscript` writes to the diagram's .dot file.
-function diagram_svg(id, source)
-  local path = WORK .. "/" .. id .. ".dot"
-  local plain = drawing(path, {}, "diagram")
-  if plain.width <= PHONE_POINTS then return plain.svg end
-  local phone_path = WORK .. "/" .. id .. "-phone.dot"
-  replace(phone_path, phone_source(source))
-  local wide = join(split(plain.svg, "<svg class=\"diagram\""), "<svg class=\"diagram diagram-wide\"")
-  return wide .. drawing(phone_path, phone_options(source), "diagram diagram-phone").svg
-end
-
--- The lines of a diagram's .dot file, which ends with the one newline that
--- `manuscript` adds after the fence's last line.
-function dot_lines(id)
-  local all = split(read(WORK .. "/" .. id .. ".dot"), "\n")
-  return take(all, #all - 1)
-end
-
-function diagram_id(n)
-  return "diagram-" .. n
-end
-
--- The child run's work: draw diagrams `first` to `last` into their .svg files.
-function draw_diagrams(first, last)
-  for n = first, last do
-    local id = diagram_id(n)
-    replace(WORK .. "/" .. id .. ".svg", diagram_svg(id, dot_lines(id)))
-  end
-  return nil
-end
-
--- Each diagram takes Graphviz once or twice, so the drawing runs in child runs
--- of DIAGRAMS_PER_RUN diagrams each, and the book holds any number of them.
--- A child that fails stops the build, and so does a drawing it didn't leave.
-function draw_all(diagrams)
-  local count = #diagrams
-  local first = 1
-  while first <= count do
-    local last = first + DIAGRAMS_PER_RUN - 1
-    if last > count then last = count end
-    local argv = {"shale", "--root", ".", TUTORIAL .. "/book.shale", "diagrams=1", "first=" .. first, "last=" .. last}
-    must(run(argv, {timeout_ms = 600000, tail = 20, want = DOT_WANT}), "drawing diagrams " .. first .. " to " .. last)
-    first = last + 1
-  end
-  local drawn = {}
-  for diagram in diagrams do
-    local svg = WORK .. "/" .. diagram.id .. ".svg"
-    if not exists(svg) then fail("book: no drawing of " .. diagram.id .. " at " .. svg) end
-    push(drawn, {id = diagram.id, title = diagram.title, svg = read(svg)})
-  end
-  return drawn
-end
-
--- The pages of the expanded tutorial and its diagrams. Each ```dot fence gets
--- an id as its argument, for the Roc hook to find its drawing by, and takes the
--- title line above it along. This reads fences by line, as build.shale writes
--- them, and make_book.roc's checks stop the build if that ever disagrees with
--- the renderer.
-function manuscript(text)
-  local pages = {}
-  local diagrams = {}
-  local page = {}
-  local in_fence = false
-  local dot = nil
-  local title = ""
+-- Each ```dot fence's source, written to its diagram-N.dot, as app/Diagrams.roc
+-- finds the fences; gives how many there are.
+function write_diagram_sources(text)
+  local count = 0
+  local open = "none"
+  local body = {}
   for l in split(text, "\n") do
-    if in_fence then
-      if l == "```" then
-        in_fence = false
-        if dot ~= nil then
-          local id = diagram_id(#diagrams + 1)
-          replace(WORK .. "/" .. id .. ".dot", join(dot, "\n") .. "\n")
-          push(diagrams, {id = id, title = title})
-          dot = nil
-        end
-      elseif dot ~= nil then
-        push(dot, l)
+    if open == "none" then
+      if l == "```dot" then
+        open = "dot"
+        body = {}
+      elseif starts_with(l, "```") then
+        open = "other"
       end
-      push(page, l)
-    elseif l == "```dot" then
-      in_fence = true
-      dot = {}
-      title = page[#page]
-      page = take(page, #page - 1)
-      push(page, "```dot " .. diagram_id(#diagrams + 1))
-    elseif starts_with(l, "```") then
-      in_fence = true
-      push(page, l)
-    elseif starts_with(l, "## ") then
-      push(pages, join(page, "\n"))
-      page = {sub(l, 2)}
-    elseif starts_with(l, "### ") then
-      push(page, sub(l, 2))
-    else
-      push(page, l)
+    elseif l == "```" then
+      if open == "dot" then
+        count = count + 1
+        replace(PREPARED .. "/diagram-" .. count .. ".dot", join(body, "\n") .. "\n")
+      end
+      open = "none"
+    elseif open == "dot" then
+      push(body, l)
     end
   end
-  if in_fence then fail("book: a fence never closes in " .. EXPANDED) end
-  push(pages, join(page, "\n"))
-  return {pages = pages, diagrams = draw_all(diagrams)}
-end
-
--- Whether a `## ` heading is an appendix or the credits, which have no number
--- and go with the book however many chapters it keeps.
-function is_back_matter(heading)
-  local title = sub(heading, 4)
-  return starts_with(title, "Appendix") or title == "Credits"
-end
-
--- The expanded tutorial with only its first CHAPTERS numbered chapters, or all
--- of it when CHAPTERS is unset. The appendices and the credits are always
--- kept. It finds `## ` headings by line outside fences, as manuscript does,
--- since a Roc doc comment starts the same way.
-function first_chapters(text)
-  if CHAPTERS == nil then return text end
-  local kept = {}
-  local seen = 0
-  local keeping = true
-  local in_fence = false
-  for l in split(text, "\n") do
-    if starts_with(l, "```") then
-      in_fence = not in_fence
-    elseif not in_fence and starts_with(l, "## ") then
-      if is_back_matter(l) then
-        keeping = true
-      else
-        seen = seen + 1
-        keeping = seen <= CHAPTERS
-      end
-    end
-    if keeping then push(kept, l) end
-  end
-  return join(kept, "\n") .. "\n"
+  if open ~= "none" then fail("book: a fence never closes in " .. SOURCE) end
+  return count
 end
 
 function widget_folders()
@@ -271,165 +123,141 @@ function widget_folders()
   return folders
 end
 
-function make_book_argv(tool, book, folders)
-  local argv = {tool}
-  for page in book.pages do
-    push(argv, "page")
-    push(argv, page)
-  end
-  for diagram in book.diagrams do
-    push(argv, "diagram")
-    push(argv, diagram.id)
-    push(argv, diagram.title)
-    push(argv, diagram.svg)
-  end
-  for folder in folders do
-    push(argv, "widget")
-    push(argv, folder)
-  end
-  if CHAPTERS ~= nil then push(argv, "first_chapters") end
-  return argv
-end
-
--- What this build holds, for site/publish.sh to require of a book and fold into
--- its PROVENANCE.
-function built_record()
-  if CHAPTERS == nil then return "book: every chapter\n" end
-  return "book: the first " .. CHAPTERS .. " chapters\n"
-end
-
+-- The program's pages, written to OUT with the book's own files, and the
+-- report after them. The builder ends each page with a newline before the
+-- next page's mark, which is its separator and no part of the page.
 function write_pages(output)
-  remove_if_there(STAGING)
-  mkdir(STAGING)
+  if exists(OUT) then remove_tree(OUT) end
+  mkdir(OUT)
+  local halves = split(output, REPORT_MARK .. "\n")
+  if #halves ~= 2 then fail("book: the program's output has no report, or two") end
+  local pieces = split(halves[1], PAGE_MARK)
+  if pieces[1] ~= "" then fail("book: the program said something before its first page: " .. pieces[1]) end
   local files = {}
-  local pieces = split(output, PAGE_MARK)
-  if trim(pieces[1]) ~= "" then fail("book: make_book said something before its first page: " .. pieces[1]) end
   for piece in drop(pieces, 1) do
     local close = find(piece, " -->\n")
     local file = sub(piece, 1, close - 1)
     local html = sub(piece, close + 5)
-    replace(STAGING .. "/" .. file, html)
+    if not ends_with(html, "\n") then fail("book: " .. file .. " doesn't end with the builder's newline") end
+    replace(OUT .. "/" .. file, sub(html, 1, #html - 1))
     push(files, file)
   end
-  replace(STAGING .. "/book.css", read(TUTORIAL .. "/book.css"))
-  replace(STAGING .. "/book.js", read(TUTORIAL .. "/book.js"))
-  replace(STAGING .. "/embed.js", read("canvas_apps/widget_kit/embed.js"))
-  replace(STAGING .. "/BUILT", built_record())
-  return files
+  copy(TUTORIAL .. "/book.css", OUT .. "/book.css")
+  copy(TUTORIAL .. "/book.js", OUT .. "/book.js")
+  copy("canvas_apps/widget_kit/embed.js", OUT .. "/embed.js")
+  replace(OUT .. "/BUILT", built_record())
+  return {files = files, report = halves[2]}
 end
 
-function page_sizes(files)
-  local sizes = {}
-  for file in files do push(sizes, file .. " " .. (#read(STAGING .. "/" .. file) // 1024) .. " KB") end
-  return sizes
-end
-
--- The commit that last touched what a widget's page is built from, or nil when
--- the checkout has changes there, and only a fresh build can be trusted.
-function inputs_commit()
-  local status = {"git", "status", "--porcelain", "--"}
-  local log = {"git", "log", "-1", "--format=%H", "--"}
-  for path in INPUTS do
-    push(status, path)
-    push(log, path)
+-- The app's expects run, and the app/ folder's held to APP_TESTS and to the
+-- top-level `expect` lines its files hold, each passed once.
+function test_app(env)
+  local r = run({pinned_roc("book"), "test", "--verbose", "app/main.roc"}, {cwd = TUTORIAL, timeout_ms = 120000, whole = 2000000, env = env})
+  local written = {}
+  for path in glob(TUTORIAL .. "/app/*.roc") do
+    local n = 0
+    for l in lines(read(path)) do
+      n = n + 1
+      if starts_with(l, "expect") then written["app/" .. basename(path) .. ":" .. n] = true end
+    end
   end
-  if trim(run(status, {timeout_ms = 30000, whole = 100000}).out) ~= "" then return nil end
-  return trim(run(log, {timeout_ms = 30000, whole = 1000}).out)
-end
-
-function is_release_of(folder, inputs)
-  local stamp = NEXT .. "/" .. folder .. "/" .. STAMP
-  return inputs ~= nil and exists(stamp) and trim(read(stamp)) == inputs
-end
-
-function release_argv(folder)
-  if folder == "safari" then return {"nice", "-n", "19", "shale", "--root", ".", "canvas_apps/safari/gates/run.shale", "part=page", "release=1"} end
-  return {"nice", "-n", "19", "bash", "canvas_apps/build.sh", folder, "release"}
-end
-
-function build_release(folder, inputs)
-  must(run(release_argv(folder), {timeout_ms = 900000, tail = 20, want = PAGE_WANT}), folder .. "'s release build")
-  if not contains(read(NEXT .. "/" .. folder .. "/BUILT"), "opt speed") then fail("book: " .. folder .. " isn't a release build") end
-  if inputs ~= nil then replace(NEXT .. "/" .. folder .. "/" .. STAMP, inputs .. "\n") end
-  print("book: built " .. folder .. " for release")
+  local wrong = {}
+  local passed = {}
+  for l in lines(r.out) do
+    if starts_with(l, "PASS: app/") then
+      local at = trim(sub(l, 7))
+      if has_key(passed, at) then push(wrong, "passed twice: " .. at) end
+      if not has_key(written, at) then push(wrong, "passed, and no top-level expect line is there: " .. at) end
+      passed[at] = true
+    end
+  end
+  for at in keys(written) do
+    if not has_key(passed, at) then push(wrong, "an expect line that never passed: " .. at) end
+  end
+  if r.code ~= 0 or #wrong > 0 or #keys(passed) ~= APP_TESTS then
+    print(trim(sub(r.out, #r.out - 3000)))
+    for w in wrong do print("  " .. w) end
+    fail("book: roc test app/main.roc: " .. #keys(passed) .. " of app/'s passed, " .. APP_TESTS .. " expected, exit " .. r.code)
+  end
+  print("book: roc test app/main.roc, " .. APP_TESTS .. " of app/'s passed, as expected, in " .. r.ms .. " ms")
   return nil
 end
 
-function build_widgets(folders)
-  local inputs = inputs_commit()
-  for folder in folders do
-    if not is_release_of(folder, inputs) then build_release(folder, inputs) end
+-- book_check.mjs on the staged pages: with a shot of each page before a move,
+-- the pre-publish tier, and with none for a stage=, the inner loop.
+function check_stage()
+  local shots = "none"
+  if STAGE == "" then
+    if exists(SHOTS) then remove_tree(SHOTS) end
+    mkdir(SHOTS)
+    shots = real(SHOTS)
   end
-  return nil
-end
-
--- The staged book takes the place of the channel's folder `name`. The book it
--- replaces is set aside as `name`.replaced first, a name no build writes, and
--- removed once the new one is in. If the new one can't be moved in, the old
--- one goes back, so the channel never loses its book.
-function move_into_place(name)
-  local place = real(NEXT) .. "/" .. name
-  local aside = NEXT .. "/" .. name .. ".replaced"
-  remove_if_there(aside)
-  local had_book = exists(NEXT .. "/" .. name)
-  if had_book then must(run({"mv", place, place .. ".replaced"}, {timeout_ms = 10000, whole = 1000, want = MOVE_WANT}), "moving the old book") end
-  local moved = run({"mv", real(STAGING), place}, {timeout_ms = 10000, whole = 1000, want = MOVE_WANT})
-  if moved.ended ~= "exit" or moved.code ~= 0 then
-    if had_book then must(run({"mv", place .. ".replaced", place}, {timeout_ms = 10000, whole = 1000, want = MOVE_WANT}), "putting the old book back") end
-    print(trim(moved.out))
-    fail("book: moving the new book into " .. name .. " failed, and the old book is back in its place")
+  local argv = {"nice", "-n", "19", "node", TUTORIAL .. "/book_check.mjs", "http://127.0.0.1:9210/" .. STAGED_NAME .. "/", shots}
+  local r = run(argv, {timeout_ms = 900000, tail = 60, want = CHECK_WANT})
+  if r.ended ~= "exit" or r.code ~= 0 then
+    print(trim(r.out))
+    fail("book: book_check failed on " .. STAGING .. ", so " .. DEST_NAME .. " is left as it was")
   end
-  remove_if_there(aside)
+  for l in lines(r.out) do
+    if starts_with(l, "book_check: ") then print(l) end
+  end
+  print("book: book_check, " .. (shots == "none" and "no shots" or "shots in " .. SHOTS) .. ", took " .. r.ms .. " ms")
   return nil
 end
 
 function main()
-  local roc = pinned_roc("book")
   mkdir(CACHE)
   local env = {XDG_CACHE_HOME = real(CACHE)}
-  print(trim(must(run({"shale", "--root", ".", TUTORIAL .. "/build.shale"}, {timeout_ms = 120000, tail = 20, env = env}), "build.shale").out))
+  if exists(PREPARED) then remove_tree(PREPARED) end
+  mkdir(PREPARED)
+  local prepared = must(run({"shale", "--root", ".", TUTORIAL .. "/build.shale", "prepare=1"}, {timeout_ms = 300000, tail = 20, env = env}))
+  print(trim(prepared.out))
+  print("book: the pre-step's includes took " .. prepared.ms .. " ms")
+  replace(PREPARED .. "/widgets.txt", join(widget_folders(), "\n") .. "\n")
+  replace(PREPARED .. "/chapters.txt", built_record())
+  local count = write_diagram_sources(read(SOURCE))
+  local drawn = must(run({"shale", "--root", ".", DRAW, "count=" .. count}, {timeout_ms = 600000, tail = 20, want = DOT_WANT}))
+  print("book: " .. count .. " diagrams drawn in " .. drawn.ms .. " ms")
 
-  remove_if_there(WORK)
-  mkdir(WORK)
-  must(run({"nice", "-n", "19", roc, "test", "make_book.roc"}, {cwd = TUTORIAL, timeout_ms = 120000, tail = 40, env = env, want = ROC_WANT}), "roc test make_book.roc")
-  local tool = real(WORK) .. "/make_book"
-  local built = run({"nice", "-n", "19", roc, "build", "--opt=dev", "make_book.roc", "--output=" .. tool}, {cwd = TUTORIAL, timeout_ms = 120000, re = "✗|●", head = 40, env = env, want = ROC_WANT})
-  if built.matched_lines > 0 or not exists(WORK .. "/make_book") then
-    print(trim(built.out))
-    fail("book: make_book.roc didn't build")
+  test_app(env)
+  if exists(PROGRAM) then remove(PROGRAM) end
+  local built = run({"zig", "build", "-Dapp=../" .. TUTORIAL .. "/app/main.roc", "-p", "zig-out/safari"}, {cwd = BUILDER, timeout_ms = 600000, tail = 40, env = env})
+  if built.code ~= 0 or #find_all(built.out, "── ✗") + #find_all(built.out, "── ●") > 0 or not exists(PROGRAM) then
+    print(built.out)
+    fail("book: the book's program didn't build cleanly")
   end
+  print("book: the program built in " .. built.ms .. " ms")
 
-  local book = manuscript(first_chapters(read(EXPANDED)))
-  local folders = widget_folders()
-  local rendered = must(run(make_book_argv(tool, book, folders), {timeout_ms = 60000, whole = 20000000, want = ROC_WANT}), "make_book")
-  local files = write_pages(rendered.out)
-  must(run({"shale", "--root", ".", COLOR, "self_test=1"}, {timeout_ms = 30000, tail = 20}), "color_roc's self test")
-  local extent = CHAPTERS == nil and "whole_book" or "first_chapters"
-  print(trim(must(run({"shale", "--root", ".", COLOR, "pages=" .. STAGING, "order=" .. join(files, " "), "extent=" .. extent}, {timeout_ms = 30000, tail = 300}), "color_roc").out))
-  local sizes = page_sizes(files)
+  local r = run({real(PROGRAM), TUTORIAL}, {timeout_ms = 120000, whole = 40000000, want = BOOK_WANT})
+  if r.code ~= 0 then
+    print(r.out)
+    fail("book: the book's program stopped, exit " .. r.code)
+  end
+  print("book: the program ran in " .. r.ms .. " ms")
+  local written = write_pages(r.out)
+  if exists(STAGING) then remove_tree(STAGING) end
+  copy(OUT, STAGING)
+  print("book: staged at " .. STAGING)
 
   if STAGE == "" then
-    print(trim(must(run({"shale", "--root", ".", TUTORIAL .. "/book.shale", "widgets=1"}, {timeout_ms = 1800000, tail = 20, want = PAGE_WANT}), "the widgets' release builds").out))
+    local widgets = must(run({"shale", "--root", ".", WIDGETS}, {timeout_ms = 3600000, tail = 30}))
+    print(trim(widgets.out))
+    print("book: the widgets' release builds took " .. widgets.ms .. " ms")
   end
-  local check = {"nice", "-n", "19", "node", TUTORIAL .. "/book_check.mjs", CHANNEL_URL, real(WORK) .. "/shots"}
-  if LOOKS then push(check, "looks") end
-  if CHECK then print(trim(must(run(check, {timeout_ms = 600000, tail = 60, want = CHECK_WANT}), "book_check").out)) end
-  if STAGE == "" then move_into_place("tutorial") end
+  if CHECK then check_stage() end
+  if STAGE == "" then
+    local moved = must(run({"shale", "--root", ".", MOVE, "stage=" .. STAGED_NAME, "place=" .. DEST_NAME}, {timeout_ms = 60000, tail = 20}))
+    print("book: the move into place took " .. moved.ms .. " ms")
+  end
 
-  for line in sizes do print(line) end
-  print("book: " .. #book.pages .. " pages and " .. #book.diagrams .. " diagrams at http://localhost:9210/" .. (STAGE == "" and "tutorial" or STAGE) .. "/")
+  local words = 0
+  for l in lines(written.report) do
+    local m = re_find(l, ": ([0-9]+) words of prose$")
+    if m ~= nil then words = words + tonumber(m.groups[1]) end
+  end
+  local place = STAGE == "" and DEST_NAME or STAGED_NAME
+  print("book: " .. #written.files .. " pages, " .. words .. " words of prose, " .. trim(sub(built_record(), 7)) .. ", at http://localhost:9210/" .. place .. "/")
   return nil
 end
 
-if WIDGETS_ONLY then
-  build_widgets(widget_folders())
-elseif MOVE ~= "" then
-  if STAGE == "" then fail("book: move= moves the folder stage= names, and none is named") end
-  if MOVE == STAGE or contains(MOVE, "/") then fail("book: move=" .. MOVE .. " must name a folder of the channel other than the stage") end
-  if not exists(STAGING) then fail("book: move=" .. MOVE .. ": no staged book at " .. STAGING) end
-  move_into_place(MOVE)
-elseif DIAGRAMS_ONLY then
-  draw_diagrams(tonumber(arg("first", "")), tonumber(arg("last", "")))
-else
-  main()
-end
+main()

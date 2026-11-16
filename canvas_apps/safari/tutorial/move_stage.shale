@@ -1,0 +1,41 @@
+-- This puts a staged book in the place of a folder of the dev channel, the last
+-- step of book.shale's publish:
+--
+--   cd <roc-apps checkout> && shale canvas_apps/safari/tutorial/move_stage.shale stage=tutorial.staging place=tutorial
+--
+-- The book it replaces is set aside as PLACE.replaced first, a name no build
+-- writes, and removed once the new one is in. If the new one can't be moved in,
+-- the old one goes back, so the channel never loses its book.
+const NEXT = "build:roc-apps/next"
+const STAGE = arg("stage", "")
+const PLACE = arg("place", "")
+const MOVE_WANT = "move: the staged book takes the channel's place in one rename"
+
+function moved_ok(from, to)
+  local r = run({"mv", from, to}, {timeout_ms = 10000, whole = 1000, want = MOVE_WANT})
+  if r.ended == "exit" and r.code == 0 then return true end
+  print(trim(r.out))
+  return false
+end
+
+function move_into_place(stage, place)
+  local folder = real(NEXT) .. "/" .. place
+  local aside = NEXT .. "/" .. place .. ".replaced"
+  if exists(aside) then remove_tree(aside) end
+  local had_book = exists(NEXT .. "/" .. place)
+  if had_book and not moved_ok(folder, folder .. ".replaced") then fail("move_stage: the old book in " .. place .. " couldn't be set aside") end
+  if not moved_ok(real(NEXT .. "/" .. stage), folder) then
+    if had_book and not moved_ok(folder .. ".replaced", folder) then fail("move_stage: the new book didn't go into " .. place .. ", and the old one didn't go back") end
+    fail("move_stage: moving the new book into " .. place .. " failed, and the old book is back in its place")
+  end
+  if exists(aside) then remove_tree(aside) end
+  return nil
+end
+
+for name in {STAGE, PLACE} do
+  if name == "" or contains(name, "/") or ends_with(name, ".replaced") then fail("move_stage: stage= and place= each name a folder of the channel, and not one ending .replaced") end
+end
+if STAGE == PLACE then fail("move_stage: stage= and place= name the same folder") end
+if not exists(NEXT .. "/" .. STAGE) then fail("move_stage: no staged book at " .. NEXT .. "/" .. STAGE) end
+move_into_place(STAGE, PLACE)
+print("move_stage: " .. STAGE .. " is now " .. PLACE)

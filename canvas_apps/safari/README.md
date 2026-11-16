@@ -67,24 +67,18 @@ them, in three tiers, each run from the roc-apps root:
 | `run.shale` | every lint, every expect, every widget's check and expects, the tutorial, the names in its prose, the proof tools, the dev page; reports every failure | as its header says |
 | `publish.shale` | the merge gate and `check.shale` from cold caches, then the book, which builds safari's page and every widget's as release wasm | about six minutes |
 
-The book of the tutorial, one page a chapter, builds into the dev channel at
-`/tutorial/` with `nice -n 19 shale canvas_apps/safari/tutorial/book.shale`. It
-runs on demand and at publish, and it needs roc-markdown beside this checkout.
-It takes under a minute unless a widget's page needs rebuilding.
-
-The same book also builds with roc-apps' book builder (`book_builder/`), as a
-small app on the book platform, `canvas_apps/safari/tutorial/app/main.roc`,
-into `/tutorial.next/` with `shale canvas_apps/safari/tutorial/build_next.shale`,
-its Roc code colored by `syntax_color/`. It publishes as book.shale does: it
-stages the pages, makes the widgets release builds, drives the stage in a
-browser with shots, and only then moves it into place. Its inner loop,
-`stage=NAME`, builds into that folder and checks it with no shots, in about
-a minute, or about seven seconds with `check=0`, once its program is built.
-`shale canvas_apps/safari/tutorial/compare_books.shale` builds
-both and holds the builder's pages to book.shale's, page by page, with the
-coloring taken away, then reports each Roc block colored differently;
-book.shale stays the published book until that comparison has decided the
-move.
+The book of the tutorial, one page a chapter, is built by roc-apps' book
+builder (`book_builder/`), as a small app on the book platform,
+`canvas_apps/safari/tutorial/app/main.roc`, its Roc code colored by
+`syntax_color/`. It builds into the dev channel at `/tutorial/` with
+`nice -n 19 shale canvas_apps/safari/tutorial/book.shale`, on demand and at
+publish, and it needs roc-markdown beside this checkout. It stages the pages,
+makes safari's page and the widgets' release builds
+(`tutorial/build_widgets.shale`, which rebuilds only a page whose build reads
+a file that changed), drives the stage in a browser with shots, and only then
+moves it into place (`tutorial/move_stage.shale`). Its inner loop,
+`stage=NAME`, builds into that folder and checks it with no shots, in about a
+minute, or about seven seconds with `check=0`, once its program is built.
 
 An agent runs the fast tier, and one merge gate runs at a time, because the box
 has two cores. Each tier ends by naming what it didn't run.

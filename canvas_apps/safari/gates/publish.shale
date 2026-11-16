@@ -13,7 +13,8 @@
 const RUN = "canvas_apps/safari/gates/run.shale"
 const BOOK = "canvas_apps/safari/tutorial/book.shale"
 -- The chapters that have passed the loop in MISSION.md, which are the ones
--- published. Each needs a slug in Book.slugs, or the book stops.
+-- published. Each needs a slug in tutorial/app/SafariLook.roc's `slugs`, or
+-- the book stops.
 const PUBLISHED_CHAPTERS = 39
 
 function report_stage(r, what)

@@ -43,14 +43,15 @@ require_checkout() {
         echo "$app reads $what, and there is no git checkout at $dir; set $var= to the checkout the build used"; exit 2
     }
 }
-# The book publishes only a build of book.shale. A page staging has is never
+# The book publishes only a build of canvas_apps/safari/tutorial/book.shale,
+# whose BUILT says which chapters it holds. A page staging has is never
 # taken away, since its address is published. The widgets and apps the book
 # frames ship with it: each one whose staged copy isn't the build the book was
 # checked with is published first, from the dev channel, by this same script.
 # The list comes from the built pages' own frames, so it can't go stale.
 publish_book_frames() {
     local book="$NEXT/tutorial" page folder
-    [ -f "$book/BUILT" ] || { echo "$book is not a build of canvas_apps/safari/tutorial/book.shale"; exit 2; }
+    grep -q '^book: ' "$book/BUILT" 2>/dev/null || { echo "$book has no BUILT saying which chapters it holds, so it is not a book that canvas_apps/safari/tutorial/book.shale built"; exit 2; }
     for page in "$LIVE"/tutorial/*.html; do
         [ -e "$page" ] || continue
         [ -f "$book/${page##*/}" ] || { echo "staging has tutorial/${page##*/} and this book doesn't: a published page never goes away"; exit 2; }
@@ -115,7 +116,8 @@ else
         done)
     } > "$LIVE/$app/PROVENANCE"
     # Folded into PROVENANCE above; one record, not two. BOOK_INPUTS is
-    # book.shale's stamp on a widget's dev build, and means nothing in staging.
+    # canvas_apps/safari/tutorial/build_widgets.shale's stamp on a page's dev
+    # build, and means nothing in staging.
     rm -f "$LIVE/$app/BUILT" "$LIVE/$app/BOOK_INPUTS"
     cat "$LIVE/$app/PROVENANCE"
     paths=("$LIVE/$app")

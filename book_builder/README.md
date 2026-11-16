@@ -28,14 +28,10 @@ Steps 1, 2 and 4 of five are here: the platform, the builder package
 and the Safari tutorial built with it. Two examples build:
 `examples/one_page/`, the platform alone, and `examples/full/`, a book that
 uses most of the builder. The Safari tutorial's app is
-`canvas_apps/safari/tutorial/app/main.roc`, built by that folder's
-`build_next.shale`, whose pre-step does what needs a program: it quotes the
-game's code through Roc's parser, runs `roc check`, and draws the diagrams.
-Its pages are the same as the published book's, `make_book.roc`'s, once the
-coloring is taken away (`compare_books.shale` there), and its colorer,
-`syntax_color/` behind the coloring hook, colors all but two of its 223 Roc
-blocks as the published book does, those two by design. Both builds stand
-until the move is decided.
+`canvas_apps/safari/tutorial/app/main.roc`, built and published by that
+folder's `book.shale`, whose pre-step does what needs a program: it quotes
+the game's code through Roc's parser, runs `roc check`, and draws the
+diagrams. Its colorer is `syntax_color/`, behind the coloring hook.
 
 ## A book
 
@@ -96,7 +92,7 @@ The package exposes `Builder`, `Fences`, `Pages` (for the look's types) and
 does).
 
 The package imports roc-markdown by relative path, from a checkout beside
-roc-apps, as Safari's `make_book.roc` does; so does the gate's `roc check`.
+roc-apps, as Safari's book app does; so does the gate's `roc check`.
 
 ## Building and checking
 

@@ -1,0 +1,259 @@
+-- budget: steps=50000000 arena_bytes=1000000000 read_bytes=200000000
+-- This makes safari's page and each widget's page in the dev channel a release
+-- build, for the book that frames them. book.shale runs it before its browser
+-- check:
+--
+--   cd <roc-apps checkout> && shale canvas_apps/safari/tutorial/build_widgets.shale
+--
+-- A page is rebuilt unless its stamp, BOOK_INPUTS in its folder, lists exactly
+-- what its build reads now, each file by its git hash (`git hash-object`, so an
+-- uncommitted change counts as what it is). Each page's list is its own, so a
+-- change rebuilds only the pages whose builds read it. A page's build reads:
+--
+--   - the Roc modules its app reaches: web.roc, then each module an import
+--     names, through the packages each app and package header names, with
+--     those package roots, read by Roc's own parser (roc_tree);
+--   - its page.html and shot.env, which canvas_apps/build.sh copies and runs;
+--   - every page's common inputs, COMMON_TREES' tracked files (the platform,
+--     the host and the scripts that check a page, and the glue) and
+--     COMMON_FILES;
+--   - for safari, the gate that builds its page and holds what it draws,
+--     SAFARI_GATE_FILES.
+--
+-- Any other build of a page removes its stamp, as build.sh replaces the whole
+-- folder. site/publish.sh drops the stamp from what it publishes.
+--
+-- `look=1` says which pages are stale and why, and builds none. `show=FOLDER`
+-- lists what that page's build reads.
+const LOOK = arg("look", "") == "1"
+const SHOW = arg("show", "")
+const NEXT = "build:roc-apps/next"
+const STAMP = "BOOK_INPUTS"
+const PAGE_WANT = "script: canvas_apps/build.sh builds and checks a page, and refuses another Roc"
+const COMMON_TREES = {"canvas_apps/web", "glue"}
+const COMMON_FILES = {"canvas_apps/build.sh", "pinned-roc.sh", "roc-version"}
+const SAFARI_GATE_FILES = {"canvas_apps/safari/gates/run.shale", "canvas_apps/safari/gates/input_bits.shale", "canvas_apps/safari/gates/page.expected", ".shale/prelude.shale"}
+-- The folders whose top-level modules a page's app can reach. A module the walk
+-- reaches outside them stops the run, so none is left out of a stamp quietly.
+const PACKAGE_FOLDERS = {"canvas_apps/safari", "canvas_apps/lib", "canvas_apps/widget_kit"}
+-- The platform's modules are counted in COMMON_TREES, so the walk needn't enter
+-- them.
+const PLATFORM_ALIAS = "pf"
+
+function widget_folders()
+  local folders = {"safari"}
+  for page in glob("canvas_apps/*_widget/page.html") do push(folders, basename(dirname(page))) end
+  return folders
+end
+
+-- The top-level .roc files of a folder, by `ls`, since a glob walks the builds'
+-- output below.
+function roc_files_in(dir, into)
+  for name in ls(dir) do
+    if ends_with(name, ".roc") and stat(dir .. "/" .. name).kind == "file" then push(into, dir .. "/" .. name) end
+  end
+  return into
+end
+
+-- A header's packages, by name, each the path of its root: the record fields
+-- above the module's statements whose value is a string.
+function header_aliases(tree)
+  local aliases = {}
+  local dir = dirname(tree.path)
+  for n in tree.nodes do
+    if n.kind == "statements" and n.depth == 1 then return aliases end
+    if n.kind == "record-field" and #n.kids == 1 then
+      local value = tree.nodes[n.kids[1]]
+      if value.kind == "e-string" and #value.kids == 1 then
+        local part = tree.nodes[value.kids[1]]
+        -- A package outside the checkout has no normal path here, and a page's
+        -- walk that reaches it stops, as it is in none of PACKAGE_FOLDERS.
+        local root = nil
+        if part.kind == "e-string-part" and get(n, "name", "") ~= "" and get(part, "raw", "") ~= "" then root = path_normal(dir .. "/" .. part.raw) end
+        if root ~= nil then aliases[n.name] = root end
+      end
+    end
+  end
+  return aliases
+end
+
+-- The module names a file's imports give, as written: `Sky` or `game.Sky`.
+function imported_names(tree)
+  local names = {}
+  for n in tree.nodes do
+    if n.kind == "s-import" then push(names, words(n.raw)[1]) end
+  end
+  return names
+end
+
+-- Each parsed file's imports and header packages, by path, read from its tree
+-- once for every page that reaches it.
+function index_trees(trees)
+  local index = {}
+  for path in keys(trees) do
+    index[path] = {imports = imported_names(trees[path]), aliases = header_aliases(trees[path])}
+  end
+  return index
+end
+
+-- The Roc files a page's app reaches from `app`, with the package roots it goes
+-- through, sorted.
+function reached_modules(index, app)
+  local seen = {}
+  seen[app] = true
+  local queue = {{path = app, root = app}}
+  local at = 1
+  while at <= #queue do
+    local item = queue[at]
+    at = at + 1
+    if not has_key(index, item.path) then fail("build_widgets: " .. app .. " reaches " .. item.path .. ", which is in none of PACKAGE_FOLDERS") end
+    local aliases = index[item.root].aliases
+    for name in index[item.path].imports do
+      local parts = split(name, ".")
+      local next = nil
+      if #parts == 1 then
+        next = {path = dirname(item.path) .. "/" .. name .. ".roc", root = item.root}
+      elseif #parts == 2 and parts[1] ~= PLATFORM_ALIAS then
+        if not has_key(aliases, parts[1]) then fail("build_widgets: " .. item.path .. " imports " .. name .. ", and " .. item.root .. " names no package " .. parts[1]) end
+        local root = aliases[parts[1]]
+        if not has_key(seen, root) then
+          seen[root] = true
+          push(queue, {path = root, root = root})
+        end
+        next = {path = dirname(root) .. "/" .. parts[2] .. ".roc", root = root}
+      elseif #parts ~= 2 then
+        fail("build_widgets: " .. item.path .. " imports " .. name .. ", which isn't Module or package.Module")
+      end
+      if next ~= nil and not has_key(seen, next.path) then
+        seen[next.path] = true
+        push(queue, next)
+      end
+    end
+  end
+  return sort(keys(seen))
+end
+
+-- The tracked files of COMMON_TREES, less their prose, and COMMON_FILES.
+function common_inputs()
+  local argv = {"git", "ls-files", "--"}
+  for tree in COMMON_TREES do push(argv, tree) end
+  local found = {}
+  for path in lines(trim(must(run(argv, {timeout_ms = 30000, whole = 1000000})).out)) do
+    if not ends_with(path, ".md") then push(found, path) end
+  end
+  for path in COMMON_FILES do push(found, path) end
+  return found
+end
+
+-- What each page's build reads, by folder.
+function inputs_by_folder(folders)
+  local parsed = {}
+  for dir in PACKAGE_FOLDERS do roc_files_in(dir, parsed) end
+  for folder in folders do
+    if folder ~= "safari" then roc_files_in("canvas_apps/" .. folder, parsed) end
+  end
+  local trees = {}
+  for tree in roc_tree(parsed) do
+    if tree.err ~= "" then fail("build_widgets: roc-ast refused " .. tree.path .. ": " .. tree.err) end
+    trees[tree.path] = tree
+  end
+  local index = index_trees(trees)
+  local common = common_inputs()
+  local by_folder = {}
+  for folder in folders do
+    local dir = "canvas_apps/" .. folder
+    local inputs = reached_modules(index, dir .. "/web.roc")
+    for path in {dir .. "/page.html", dir .. "/shot.env"} do push(inputs, path) end
+    if folder == "safari" then
+      for path in SAFARI_GATE_FILES do push(inputs, path) end
+    end
+    for path in common do push(inputs, path) end
+    by_folder[folder] = sort(unique(inputs))
+  end
+  return by_folder
+end
+
+-- Each input's git hash, by path, in one run of `git hash-object`.
+function hashes_of(by_folder)
+  local all = {}
+  for folder in keys(by_folder) do
+    for path in by_folder[folder] do push(all, path) end
+  end
+  all = sort(unique(all))
+  local argv = {"git", "hash-object", "--"}
+  for path in all do push(argv, path) end
+  local said = lines(trim(must(run(argv, {timeout_ms = 60000, whole = 1000000})).out))
+  if #said ~= #all then fail("build_widgets: git hash-object gave " .. #said .. " hashes for " .. #all .. " files") end
+  local hashes = {}
+  for k = 1, #all do hashes[all[k]] = said[k] end
+  return hashes
+end
+
+function stamp_text(inputs, hashes)
+  local rows = {}
+  for path in inputs do push(rows, hashes[path] .. " " .. path .. "\n") end
+  return join(rows, "")
+end
+
+-- The inputs whose lines differ between the stamp a page has and the one it
+-- would get, for the line that says why it is rebuilt.
+function changed_inputs(had, wanted)
+  local old = set_of(lines(trim(had)))
+  local changed = {}
+  for l in lines(trim(wanted)) do
+    if not has_key(old, l) then push(changed, sub(l, find(l, " ") + 1)) end
+  end
+  return changed
+end
+
+function release_argv(folder)
+  if folder == "safari" then return {"nice", "-n", "19", "shale", "--root", ".", "canvas_apps/safari/gates/run.shale", "part=page", "release=1"} end
+  return {"nice", "-n", "19", "bash", "canvas_apps/build.sh", folder, "release"}
+end
+
+function build_release(folder, stamp)
+  local r = run(release_argv(folder), {timeout_ms = 900000, tail = 20, want = PAGE_WANT})
+  if r.ended ~= "exit" or get(r, "code", -1) ~= 0 then
+    print(trim(r.out))
+    fail("build_widgets: " .. folder .. "'s release build failed")
+  end
+  if not contains(read(NEXT .. "/" .. folder .. "/BUILT"), "opt speed") then fail("build_widgets: " .. folder .. " isn't a release build") end
+  replace(NEXT .. "/" .. folder .. "/" .. STAMP, stamp)
+  return r.ms
+end
+
+function main()
+  local folders = widget_folders()
+  local by_folder = inputs_by_folder(folders)
+  local hashes = hashes_of(by_folder)
+  local rebuilt = {}
+  for folder in folders do
+    local stamp = stamp_text(by_folder[folder], hashes)
+    local path = NEXT .. "/" .. folder .. "/" .. STAMP
+    local had = exists(path) and read(path) or ""
+    if had ~= stamp then
+      local why = "no stamp"
+      if had ~= "" then
+        local changed = changed_inputs(had, stamp)
+        why = #changed .. " of its " .. #by_folder[folder] .. " inputs changed: " .. join(take(changed, 3), ", ") .. (#changed > 3 and ", ..." or "")
+      end
+      if LOOK then
+        print("build_widgets: " .. folder .. " is stale (" .. why .. ")")
+      else
+        local ms = build_release(folder, stamp)
+        print("build_widgets: built " .. folder .. " for release in " .. ms .. " ms (" .. why .. ")")
+      end
+      push(rebuilt, folder)
+    end
+  end
+  print("build_widgets: " .. #rebuilt .. " of " .. #folders .. " pages " .. (LOOK and "stale, none built" or "rebuilt, the rest current"))
+  return nil
+end
+
+if SHOW ~= "" then
+  local by_folder = inputs_by_folder({SHOW})
+  for path in by_folder[SHOW] do print(path) end
+  print("build_widgets: " .. SHOW .. "'s build reads " .. #by_folder[SHOW] .. " files")
+else
+  main()
+end

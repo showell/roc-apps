@@ -6,7 +6,7 @@
 --   cd <roc-apps checkout> && shale syntax_color/tools/record_oracle.shale
 --
 -- The Roc samples are colored by roc-apps' canvas_apps/safari/tutorial/
--- color_roc.shale, as the Safari book's build runs it, and the Shale samples
+-- color_roc.shale, and the Shale samples
 -- by the cookbook's color_shale.shale. Each script runs on a scratch copy of
 -- what it needs, so nothing in the checkout changes but build/, which the
 -- tutorial's own build.shale rewrites first.

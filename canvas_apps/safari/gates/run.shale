@@ -162,11 +162,16 @@ const BOOK_NEGATIVES = GATES .. "/book_negatives.shale"
 const INPUT_BITS = GATES .. "/input_bits.shale"
 -- The root that reaches nearly every expect, the one fast.shale runs.
 const MAIN_EXPECT_ROOT = "gates/expects/main.roc"
-const EXPECT_ROOTS = {MAIN_EXPECT_ROOT, "web.roc", "../lib/main.roc", "tutorial/make_book.roc", "gates/proof/main.roc"}
+const EXPECT_ROOTS = {MAIN_EXPECT_ROOT, "web.roc", "../lib/main.roc", "tutorial/app/main.roc", "gates/proof/main.roc"}
 -- The packages of other repos that a root reaches. Their expects run, and are
 -- that repo's to count, so they are neither held here nor a failure. A `PASS`
 -- outside the checkout from any other folder fails.
 const OTHER_REPO_PACKAGES = {"../../../roc-markdown/package/"}
+-- The packages of roc-apps outside canvas_apps that the book's app reaches, the
+-- book builder and its platform and the colorer. Their own gates count their
+-- expects (book_builder/tools/verify.shale, syntax_color/tools/verify.shale),
+-- so they are neither held here nor a failure.
+const OTHER_TREE_PACKAGES = {"../../book_builder/builder/", "../../book_builder/platform/", "../../syntax_color/package/"}
 -- The widgets' expect root, from safari's folder, where `roc test` runs, and
 -- from the checkout's root, for git. Its own expects are the widgets', since
 -- only it reaches them.
@@ -258,9 +263,9 @@ function stage_opts(stage, tail, is_cold)
   return {timeout_ms = 1800000, tail = tail, cpu_budget_ms = CPU_BUDGET_MS[stage], cold = is_cold}
 end
 
--- Whether `at`, a `PASS` line's place, is in a package of OTHER_REPO_PACKAGES.
-function other_repo_package(at)
-  for p in OTHER_REPO_PACKAGES do
+-- Whether `at`, a `PASS` line's place, starts with one of `packages`.
+function in_packages(at, packages)
+  for p in packages do
     if starts_with(at, p) then return true end
   end
   return false
@@ -279,8 +284,10 @@ function test_root(roc, env, root, passed)
     if starts_with(l, "PASS: ") then
       local at = trim(sub(l, 7))
       printed = printed + 1
-      if starts_with(at, "../../../") then
-        if other_repo_package(at) then
+      if in_packages(at, OTHER_TREE_PACKAGES) then
+        other_repos = other_repos + 1
+      elseif starts_with(at, "../../../") then
+        if in_packages(at, OTHER_REPO_PACKAGES) then
           other_repos = other_repos + 1
         else
           wrong = wrong + 1
@@ -305,7 +312,7 @@ function test_root(roc, env, root, passed)
     print("FAIL roc test " .. root .. " ended " .. r.ended .. " " .. get(r, "code", -1) .. " with " .. printed .. " PASS lines: " .. trim(sub(r.out, #r.out - 300)))
   end
   local others = ""
-  if other_repos > 0 then others = " (" .. other_repos .. " of them other repos', not counted)" end
+  if other_repos > 0 then others = " (" .. other_repos .. " of them other packages', not counted)" end
   print("roc test " .. root .. ": " .. printed .. " passed" .. others .. ", " .. r.ms .. " ms")
   return wrong
 end
@@ -377,7 +384,7 @@ end
 -- `roc test --verbose` from each of EXPECT_ROOTS, whose reach together is
 -- every expect: gates/expects/main.roc reaches nearly all of them,
 -- web.roc the game's modules that only the running game imports, lib's
--- package root all of lib, make_book.roc the tutorial's, and
+-- package root all of lib, tutorial/app/main.roc the book's app, and
 -- gates/proof/main.roc the proof tools' modules that hold expects. The source is the
 -- count, so no number needs keeping: every line of a `.roc` file in
 -- SAFARI_SOURCES that starts `expect` must print `PASS` once in a run that
@@ -582,8 +589,9 @@ end
 -- gates/input_bits.shale first, which holds the page's key and button bits
 -- equal to lib's. Then canvas_apps/build.sh builds safari's dev page into a
 -- scratch folder, so the dev channel doesn't move, and the hash of what it drew
--- is held to PAGE_EXPECTED. With `release=1`, which tutorial/book.shale gives
--- it, it builds the release page into the dev channel, held to the same hash.
+-- is held to PAGE_EXPECTED. With `release=1`, which tutorial/build_widgets.shale
+-- gives it, it builds the release page into the dev channel, held to the same
+-- hash.
 function page()
   print(trim(must(run({"shale", "--root", ".", INPUT_BITS}, {timeout_ms = 60000, whole = 100000})).out))
   local scratch = fresh_dir("scratch:", "safari-page")
@@ -610,8 +618,8 @@ end
 
 -- tutorial/build.shale's self-test, then the tutorial's build, so a name it
 -- includes that is gone from the code fails the gates. Then color_roc.shale's
--- self-test, which book.shale also runs, so a change to it is tested before
--- the next book build. Last, tutorial/book_stats.shale reads the built book,
+-- self-test, since syntax_color's oracle records what it colors. Last,
+-- tutorial/book_stats.shale reads the expanded tutorial,
 -- and fails when a chapter runs over its limit of prose words.
 function tutorial()
   local cache = child_cache("tutorial")

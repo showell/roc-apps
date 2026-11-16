@@ -1,5 +1,5 @@
 ## This app builds the Safari Ride book on the book platform, with the book
-## builder, from the tutorial's folder. Its pre-step, build_next.shale, does
+## builder, from the tutorial's folder. Its pre-step, book.shale, does
 ## what needs a program: it expands the includes that quote the game's code
 ## through Roc's parser, runs `roc check` on the failing examples, draws the
 ## diagrams with Graphviz, lists the widgets' folders, and says which chapters
@@ -31,7 +31,7 @@ main! = |_folder| {
 	for diagram in manuscript.diagrams {
 		source = read_prepared!(Diagrams.dot_path(diagram.id))?
 		if source != diagram.source {
-			return Err("${Diagrams.dot_path(diagram.id)} is not the source of ${diagram.id} in ${manuscript_path}: run build_next.shale, whose pre-step draws it\n")
+			return Err("${Diagrams.dot_path(diagram.id)} is not the source of ${diagram.id} in ${manuscript_path}: run book.shale, whose pre-step draws it\n")
 		}
 		svg = read_prepared!(Diagrams.svg_path(diagram.id))?
 		$drawn = $drawn.append({ id: diagram.id, title: diagram.title, svg })
@@ -134,7 +134,7 @@ base_settings = {
 read_prepared! : Str => Try(Str, Str)
 read_prepared! = |path| match Book.read_file!(path) {
 	Ok(text) => Ok(text)
-	Err(NotFound) => Err("${path} is not there: run build_next.shale, whose pre-step writes it\n")
+	Err(NotFound) => Err("${path} is not there: run book.shale, whose pre-step writes it\n")
 	Err(NotAFile) => Err("${path} is not a file\n")
 	Err(NotUtf8) => Err("${path} is not UTF-8 text\n")
 	Err(OutsideTheBook) => Err("${path} is outside the book's folder\n")

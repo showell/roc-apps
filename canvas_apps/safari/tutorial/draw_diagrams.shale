@@ -1,0 +1,112 @@
+-- budget: steps=50000000 arena_bytes=1000000000 read_bytes=200000000 call_bytes=40000000
+-- This draws the Safari Ride book's diagrams with Graphviz, for book.shale,
+-- which writes each ```dot fence's source to build/prepared/diagram-N.dot first.
+-- Each drawing goes beside its source as diagram-N.svg, ready to sit in a page:
+--
+--   cd <roc-apps checkout> && shale canvas_apps/safari/tutorial/draw_diagrams.shale count=N
+--
+-- Graphviz's comments and titles are dropped from a drawing, because a title
+-- shows as a tooltip on hover. A diagram wider than a phone is drawn a second
+-- way for a phone, turned and tightened, and book.css shows one of the two.
+--
+-- Each diagram takes Graphviz once or twice, and a run has a budget of
+-- programs, so `count=N` draws them in child runs of this script, each given
+-- `first=` and `last=`, DIAGRAMS_PER_RUN at a time. A child that fails stops the
+-- run, and so does a drawing it didn't leave.
+const PREPARED = "canvas_apps/safari/tutorial/build/prepared"
+const SELF = "canvas_apps/safari/tutorial/draw_diagrams.shale"
+const DIAGRAMS_PER_RUN = 30
+const PHONE_POINTS = 300
+const DOT_WANT = "graphviz: the tutorial's diagrams, drawn at build time"
+
+-- The drawing of one diagram, and how wide it is in points.
+function drawing(path, options, class)
+  local argv = {"dot", "-Tsvg", "-Gfontsize=12", "-Nfontsize=12", "-Efontsize=11", "-Nmargin=0.13,0.06"}
+  for option in options do push(argv, option) end
+  push(argv, real(path))
+  local r = must(run(argv, {timeout_ms = 30000, whole = 2000000, want = DOT_WANT}))
+  local at = find(r.out, "<svg ")
+  if at == nil or not starts_with(r.out, "<?xml") then fail("draw_diagrams: dot said more than a drawing for " .. path .. ": " .. r.out) end
+  local kept = {}
+  for l in lines(sub(r.out, at + 5)) do
+    if not starts_with(l, "<!--") and not starts_with(l, "<title>") then push(kept, l) end
+  end
+  local width = re_find(r.out, "<svg width=\"([0-9]+)pt\"")
+  if width == nil then fail("draw_diagrams: no width in the drawing of " .. path) end
+  return {svg = "<svg class=\"" .. class .. "\" role=\"img\" " .. join(kept, "\n"), width = tonumber(width.groups[1])}
+end
+
+-- A line of a diagram with the list in its label down the page, a name a line.
+function label_list_down(l)
+  local open = find(l, "label=\"")
+  if open == nil then return l end
+  local close = find(l, "\"", open + 7)
+  if close == nil then return l end
+  local label = join(split(sub(l, open + 7, close - 1), ", "), ",\\n")
+  return sub(l, 1, open + 6) .. label .. sub(l, close)
+end
+
+-- A diagram's source for a phone: a row of boxes runs down the page instead, and
+-- a label's list does too. A record's fields are side by side, so a record
+-- diagram turns the other way, for `phone_options` to say.
+function phone_source(source)
+  local kept = {}
+  for l in source do
+    if trim(l) ~= "rankdir=LR;" then push(kept, label_list_down(l)) end
+  end
+  return join(kept, "\n") .. "\n"
+end
+
+function phone_options(source)
+  local options = {"-Gnodesep=0.12", "-Granksep=0.3", "-Nmargin=0.06,0.04"}
+  if contains(join(source, "\n"), "shape=record") then push(options, "-Grankdir=LR") end
+  return options
+end
+
+-- A diagram's drawing, and a phone's beside it if it needs one. The .dot file
+-- ends with the one newline book.shale adds after the fence's last line.
+function diagram_svg(id)
+  local path = PREPARED .. "/" .. id .. ".dot"
+  local all = split(read(path), "\n")
+  local source = take(all, #all - 1)
+  local plain = drawing(path, {}, "diagram")
+  if plain.width <= PHONE_POINTS then return plain.svg end
+  local phone_path = PREPARED .. "/" .. id .. "-phone.dot"
+  replace(phone_path, phone_source(source))
+  local wide = join(split(plain.svg, "<svg class=\"diagram\""), "<svg class=\"diagram diagram-wide\"")
+  return wide .. drawing(phone_path, phone_options(source), "diagram diagram-phone").svg
+end
+
+-- A child run's work: diagrams `first` to `last` drawn into their .svg files.
+function draw_some(first, last)
+  for n = first, last do
+    local id = "diagram-" .. n
+    replace(PREPARED .. "/" .. id .. ".svg", diagram_svg(id))
+  end
+  return nil
+end
+
+function draw_all(count)
+  local first = 1
+  while first <= count do
+    local last = first + DIAGRAMS_PER_RUN - 1
+    if last > count then last = count end
+    must(run({"shale", "--root", ".", SELF, "first=" .. first, "last=" .. last}, {timeout_ms = 300000, tail = 20, want = DOT_WANT}))
+    first = last + 1
+  end
+  for n = 1, count do
+    if not exists(PREPARED .. "/diagram-" .. n .. ".svg") then fail("draw_diagrams: no drawing of diagram-" .. n) end
+  end
+  return nil
+end
+
+const COUNT = arg("count", "")
+const FIRST = arg("first", "")
+const LAST = arg("last", "")
+if COUNT ~= "" then
+  draw_all(tonumber(COUNT))
+elseif FIRST ~= "" and LAST ~= "" then
+  draw_some(tonumber(FIRST), tonumber(LAST))
+else
+  fail("draw_diagrams: count=N draws them all; first= and last= are a child run's")
+end
