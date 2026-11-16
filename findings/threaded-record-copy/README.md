@@ -28,7 +28,7 @@ a recursion is free. `h` copying on every other write is not explained.
 
 This is why the BASIC interpreter's writes after an expression copy: its
 evaluator threads the machine and returns it. The redesign that follows from
-it: http://143.244.172.148:9100/notes/basic-machine-design.md
+it: [basic-machine-design.md](https://github.com/showell/essay-repl-server/blob/master/notes/basic-machine-design.md)
 
 ## Retested on nightly 2026-09-23-c7852fd
 
