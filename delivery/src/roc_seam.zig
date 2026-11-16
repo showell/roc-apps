@@ -4,11 +4,12 @@
 //! runtime functions exported here for its memory and its crashes.
 //!
 //! **ONE SOLVE, ONE ARENA.** Each call into the Roc first drops everything
-//! the last call allocated, its answer included, and allocates from the
-//! arena as it goes; `roc_dealloc` frees nothing. A solve allocates some
-//! 86,000 times and 7.4 MB in all (the bench counts them), so the arena
-//! holds a solve whole, and its pages are kept for the next. Each
-//! allocation carries its size before it, for `roc_realloc` to copy.
+//! the last call allocated, its answer included, and allocates as it goes;
+//! `roc_dealloc` frees nothing. A solve allocates some 86,000 times and
+//! 7.4 MB in all (the bench counts them), so the arena is a bump pointer
+//! over a fixed 32 MB, and past it (a call that never comes in the gold's
+//! shifts) a std arena. Each allocation carries its size before it, for
+//! `roc_realloc` to copy.
 
 const std = @import("std");
 const builtin = @import("builtin");
@@ -24,14 +25,14 @@ extern fn roc_gold(seed: u32) callconv(.c) RocBytes;
 /// solve-replay frames, as the JSON main.ts reads. Its bytes last until the
 /// next call into the Roc.
 pub fn plan(seed: u32) RocBytes {
-    _ = arena.reset(.retain_capacity);
+    drop();
     return roc_plan(seed);
 }
 
 /// The facts solver_gold.json pins for the shift `seed`, with the map's;
 /// its bytes, too, last until the next call.
 pub fn gold(seed: u32) RocBytes {
-    _ = arena.reset(.retain_capacity);
+    drop();
     return roc_gold(seed);
 }
 
@@ -41,6 +42,13 @@ pub fn slice(l: RocBytes) []const u8 {
 }
 
 var arena: std.heap.ArenaAllocator = .init(if (builtin.cpu.arch.isWasm()) std.heap.wasm_allocator else std.heap.page_allocator);
+var bump: [32 << 20]u8 align(16) = undefined;
+var bumped: usize = 0;
+
+fn drop() void {
+    bumped = 0;
+    _ = arena.reset(.retain_capacity);
+}
 
 /// Each allocation's size, before what Roc is given. Sixteen bytes: Roc asks
 /// for at most sixteen's alignment.
@@ -55,10 +63,15 @@ fn allocate(len: usize, alignment: usize) [*]u8 {
     allocations += 1;
     allocated_bytes += len;
     if (alignment > header) std.debug.panic("roc_alloc: alignment {d} is past the header's {d}", .{ alignment, header });
-    const got = arena.allocator().alignedAlloc(u8, .fromByteUnits(header), header + len) catch @panic("roc_alloc: out of memory");
-    const words: [*]usize = @ptrCast(got.ptr);
+    const size = std.mem.alignForward(usize, header + len, header);
+    const base: [*]u8 = if (bumped + size <= bump.len) blk: {
+        const at = bumped;
+        bumped += size;
+        break :blk bump[at..].ptr;
+    } else (arena.allocator().alignedAlloc(u8, .fromByteUnits(header), size) catch @panic("roc_alloc: out of memory")).ptr;
+    const words: [*]usize = @ptrCast(@alignCast(base));
     words[0] = len;
-    return got.ptr + header;
+    return base + header;
 }
 
 fn roc_alloc(len: usize, alignment: usize) callconv(.c) *anyopaque {

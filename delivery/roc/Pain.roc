@@ -91,11 +91,16 @@ Pain :: [].{
 			for k in 0..<RoadGraph.path_length($from, to) {
 				node = RoadGraph.path_node($from, to, k)
 				if node != $last {
-					$pain = $pain + RoadGraph.minutes($last, node) * (empty_pain + tote_pain * $aboard)
+					# A multiply that wraps: pain's factors are a few hundred at
+					# most, and on wasm32 a checked 64-bit multiply is a call to a
+					# 128-bit one (`__multi3`), which perf found at an eighth of the
+					# page's solve.
+					rate = empty_pain + tote_pain.times_wrap($aboard)
+					$pain = $pain + RoadGraph.minutes($last, node).times_wrap(rate)
 					$last = node
 					bit = U64.shl_wrap(1, node)
 					if $served.bitwise_and(bit) != 0 and $delivered.bitwise_and(bit) == 0 {
-						$pain = $pain + ring_unit * (empty_pain + tote_pain * $aboard)
+						$pain = $pain + ring_unit.times_wrap(empty_pain + tote_pain.times_wrap($aboard))
 						$delivered = $delivered.bitwise_or(bit)
 						for j in 0..<count {
 							s = stops.get(j) ?? crash "Pain.priced: in range"

@@ -67,20 +67,20 @@ RoadGraph :: [].{
 
 	## The minutes of the shortest drive from node `a` to node `b`.
 	minutes : U8, U8 -> I64
-	minutes = |a, b| matrix.get(a.to_u64() * Seattle.node_count + b.to_u64()) ?? crash "RoadGraph.minutes: no such node"
+	minutes = |a, b| matrix.get(pair_index(a, b)) ?? crash "RoadGraph.minutes: no such node"
 
 	## The nodes of the shortest drive from `a` to `b`, both ends included.
 	path : U8, U8 -> List(U8)
-	path = |a, b| paths.get(a.to_u64() * Seattle.node_count + b.to_u64()) ?? crash "RoadGraph.path: no such node"
+	path = |a, b| paths.get(pair_index(a, b)) ?? crash "RoadGraph.path: no such node"
 
 	## How many nodes the shortest drive from `a` to `b` passes, both ends
 	## included, and the `k`th of them: `path` without a list to carry, for
 	## the pain's hot loop.
 	path_length : U8, U8 -> U64
-	path_length = |a, b| (path_lengths.get(a.to_u64() * Seattle.node_count + b.to_u64()) ?? crash "RoadGraph.path_length: no such node").to_u64()
+	path_length = |a, b| (path_lengths.get(pair_index(a, b)) ?? crash "RoadGraph.path_length: no such node").to_u64()
 
 	path_node : U8, U8, U64 -> U8
-	path_node = |a, b, k| path_store.get((a.to_u64() * Seattle.node_count + b.to_u64()) * path_most + k) ?? crash "RoadGraph.path_node: no such node"
+	path_node = |a, b, k| path_store.get(pair_index(a, b).shl_wrap(5) + k) ?? crash "RoadGraph.path_node: no such node"
 
 	## Every pair's minutes, `a * node_count + b`, for the gold to compare.
 	all_minutes : List(I64)
@@ -104,6 +104,12 @@ RoadGraph :: [].{
 	service_minutes : I64
 	service_minutes = 2
 }
+
+## A pair of nodes' place in the tables, `a * node_count + b`, by a multiply
+## that wraps: the numbers are under 900, and on wasm32 a checked 64-bit
+## multiply calls a 128-bit one.
+pair_index : U8, U8 -> U64
+pair_index = |a, b| a.to_u64().times_wrap(Seattle.node_count) + b.to_u64()
 
 min_per_px : F64
 min_per_px = 0.0225
@@ -281,6 +287,7 @@ paths = {
 }
 
 ## Every path's nodes, `path_most` a pair, and each path's length.
+## 32, `path_node`'s shift of 5.
 path_most : U64
 path_most = 32
 

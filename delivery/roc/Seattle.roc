@@ -228,7 +228,7 @@ Seattle :: [].{
 	## The angle, from `node`'s center, of its gate facing node `toward`; the
 	## FC has no ring, so 0.
 	gate_angle : U8, U8 -> F64
-	gate_angle = |node, toward| gate_angles.get(node.to_u64() * node_count + toward.to_u64()) ?? crash "Seattle.gate_angle: no such node"
+	gate_angle = |node, toward| gate_angles.get(node.to_u64().times_wrap(node_count) + toward.to_u64()) ?? crash "Seattle.gate_angle: no such node"
 
 	## The ring angles of a neighborhood's houses, in the order given.
 	house_angles : U8, List(U8) -> List(F64)

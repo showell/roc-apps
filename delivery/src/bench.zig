@@ -1,6 +1,8 @@
 //! Times a shift's solve natively, the Zig reference solver (zig/) against
 //! the Roc, over the 20 gold seeds, each solved `rounds` times (the first
-//! argument, 3 unset), and prints both totals and their ratio. Each side
+//! argument, 3 unset), the two taking turns seed by seed, and prints each
+//! one's time a shift, summing each seed's fastest solve (the least
+//! disturbed by other work on the box), and their ratio. Each side
 //! does what the page's solveShift does: the day's draw and the race with
 //! its replay recorded. The Zig side leaves out the JSON the Roc's answer
 //! includes, which costs it well under a millisecond.
@@ -26,11 +28,11 @@ pub fn main(init: std.process.Init) !void {
     const rounds: usize = if (args.next()) |a| try std.fmt.parseInt(usize, a, 10) else 3;
 
     const sub = reference.roadgraph.buildSubstrate();
-    var zig_ns: i96 = 0;
-    var roc_ns: i96 = 0;
+    var zig_best: [seeds.len]i96 = @splat(std.math.maxInt(i96));
+    var roc_best: [seeds.len]i96 = @splat(std.math.maxInt(i96));
     var check: i64 = 0;
     for (0..rounds) |_| {
-        for (seeds) |seed| {
+        for (seeds, 0..) |seed, i| {
             const z0 = nowNs(io);
             const demand = reference.orders.chooseOrders(seed, reference.geography.ORDERS);
             const result = reference.solver.race(&sub, &demand, &rec);
@@ -40,13 +42,19 @@ pub fn main(init: std.process.Init) !void {
             const plan = seam.plan(seed);
             const r1 = nowNs(io);
             check +%= @intCast(plan.length);
-            zig_ns += z1 - z0;
-            roc_ns += r1 - r0;
+            zig_best[i] = @min(zig_best[i], z1 - z0);
+            roc_best[i] = @min(roc_best[i], r1 - r0);
         }
     }
+    var zig_ns: i96 = 0;
+    var roc_ns: i96 = 0;
+    for (zig_best, roc_best) |z, r| {
+        zig_ns += z;
+        roc_ns += r;
+    }
     const n: f64 = @floatFromInt(rounds * seeds.len);
-    const zig_ms = @as(f64, @floatFromInt(zig_ns)) / 1e6 / n;
-    const roc_ms = @as(f64, @floatFromInt(roc_ns)) / 1e6 / n;
-    std.debug.print("native, {d} solves each: Zig {d:.1} ms a shift, Roc {d:.1} ms a shift, Roc/Zig {d:.2}x (check {d})\n", .{ rounds * seeds.len, zig_ms, roc_ms, roc_ms / zig_ms, check });
+    const zig_ms = @as(f64, @floatFromInt(zig_ns)) / 1e6 / seeds.len;
+    const roc_ms = @as(f64, @floatFromInt(roc_ns)) / 1e6 / seeds.len;
+    std.debug.print("native, best of {d} per seed: Zig {d:.1} ms a shift, Roc {d:.1} ms a shift, Roc/Zig {d:.2}x (check {d})\n", .{ rounds, zig_ms, roc_ms, roc_ms / zig_ms, check });
     std.debug.print("the Roc's allocations: {d:.0} a shift, {d:.1} MB a shift\n", .{ @as(f64, @floatFromInt(seam.allocations)) / n, @as(f64, @floatFromInt(seam.allocated_bytes)) / 1e6 / n });
 }

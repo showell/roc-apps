@@ -13,6 +13,9 @@ pub fn build(b: *std.Build) void {
     const roc_lib = rocArchives(b, roc, roc_opt);
 
     const wasm32 = b.resolveTargetQuery(.{ .cpu_arch = .wasm32, .os_tag = .freestanding });
+    // `zig build -Dwasm-names=true -p zig-out-names`: a solver.wasm with its
+    // function names, for node's CPU profiler.
+    const wasm_names = b.option(bool, "wasm-names", "keep the function names in solver.wasm, for a profiler (the served one has none)") orelse false;
 
     // **THE PAGE**: zig-out/web/ holds what the dev channel serves, the
     // shell (web/index.html), the bundle (app.js) and the solver.
@@ -20,7 +23,7 @@ pub fn build(b: *std.Build) void {
         .root_source_file = b.path("src/wasm.zig"),
         .target = wasm32,
         .optimize = .ReleaseSafe,
-        .strip = true,
+        .strip = !wasm_names,
     }) });
     linkRoc(roc_lib, solver_wasm.root_module);
     solver_wasm.entry = .disabled;

@@ -20,4 +20,5 @@ dog-park/zig-out/
 
 # Seattle Delivery's build output and its npm tools (npm ci in delivery/).
 delivery/zig-out/
+delivery/zig-out-names/
 delivery/node_modules/

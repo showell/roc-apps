@@ -37,7 +37,7 @@ Houses :: U64.{
 		if i >= bits.shr_zf_wrap(60) {
 			crash "Houses.house_at: past the last house"
 		}
-		bits.shr_zf_wrap((i * 4).to_u8_wrap()).bitwise_and(15).to_u8_wrap()
+		bits.shr_zf_wrap(i.to_u8_wrap().shl_wrap(2)).bitwise_and(15).to_u8_wrap()
 	}
 
 	append : Houses, U8 -> Houses
@@ -46,7 +46,7 @@ Houses :: U64.{
 		if n >= 15 or h >= 16 {
 			crash "Houses.append: a stop holds at most 15 houses, each numbered under 16"
 		}
-		low = bits.bitwise_and(low_mask).bitwise_or(h.to_u64().shl_wrap((n * 4).to_u8_wrap()))
+		low = bits.bitwise_and(low_mask).bitwise_or(h.to_u64().shl_wrap(n.to_u8_wrap().shl_wrap(2)))
 		Houses.(low.bitwise_or((n + 1).shl_wrap(60)))
 	}
 
@@ -72,7 +72,7 @@ Houses :: U64.{
 		kept = if k == 15 {
 			bits.bitwise_and(low_mask)
 		} else {
-			bits.bitwise_and(U64.shl_wrap(1, (k * 4).to_u8_wrap()) - 1)
+			bits.bitwise_and(U64.shl_wrap(1, k.to_u8_wrap().shl_wrap(2)) - 1)
 		}
 		Houses.(kept.bitwise_or(k.shl_wrap(60)))
 	}
@@ -85,7 +85,7 @@ Houses :: U64.{
 		} else {
 			have
 		}
-		rest = bits.bitwise_and(low_mask).shr_zf_wrap((k * 4).to_u8_wrap())
+		rest = bits.bitwise_and(low_mask).shr_zf_wrap(k.to_u8_wrap().shl_wrap(2))
 		Houses.(rest.bitwise_or((have - k).shl_wrap(60)))
 	}
 
@@ -116,7 +116,7 @@ Houses :: U64.{
 	## The houses with the one at place `i` replaced by `h`.
 	with_house_at : Houses, U64, U8 -> Houses
 	with_house_at = |Houses.(bits), i, h| {
-		shift = (i * 4).to_u8_wrap()
+		shift = i.to_u8_wrap().shl_wrap(2)
 		cleared = bits.bitwise_and(U64.shl_wrap(15, shift).bitwise_not())
 		Houses.(cleared.bitwise_or(h.to_u64().shl_wrap(shift)))
 	}
