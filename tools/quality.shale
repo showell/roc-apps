@@ -14,12 +14,21 @@
 -- The fast tier reads the .roc files changed since `since=` (master by
 -- default: the commits since the branch left it, the uncommitted changes
 -- and the new files), each file in a run of its own, and prints their
--- findings. A check that reads across files (a twin type, a function's
--- callers) can't be judged from one file, so the fast tier leaves it to
--- the full tier and says which it left.
+-- findings: about half a second a file (20 files in 9.7 s, 2026-11-16). A
+-- check that reads across files (a twin type, a function's callers) can't
+-- be judged from one file, so the fast tier leaves it to the full tier and
+-- says which it left. It runs no typed stage.
 --
--- The full tier runs every parse recipe over every project, then roc-types
--- on every app (TYPED below). A project is a top-level folder, except that
+-- The full tier took 16 minutes on 2026-11-16 (979 s, on a box shared with
+-- other work), so it runs detached: the parse recipes 29 s, roc-types 313 s
+-- and the rewrite's dry run 637 s. It runs every parse recipe over every
+-- project, roc-types on every app (TYPED_EXCEPTIONS names the two trees it
+-- leaves out), and `rewrite_method_calls`' dry run on every file the types
+-- reach, which counts the old-style calls it could turn (`rewritable`). The
+-- dry run writes each trial in place and puts it back, so the full tier
+-- refuses a checkout with uncommitted .roc changes. It needs the cookbook's
+-- rewrite recipe to take several globs and print its file count; an older
+-- one can't run, and says so. A project is a top-level folder, except that
 -- each folder under findings/ is a project of its own, since each holds one
 -- unrelated program. Each recipe reads a whole project at once, so a check
 -- across files sees the project's own files and no other app's. The
@@ -256,10 +265,11 @@ end
 
 -- ── The full tier's typed stages ────────────────────────────────────────
 
--- The typed stages' CPU budgets. roc-types took 294 s of CPU over the 62
--- apps on 2026-11-16 (410 s of wall time).
+-- The typed stages' CPU budgets, about twice what they took on 2026-11-16:
+-- roc-types 306 s of CPU over the 62 apps, the rewrite's dry run 660 s over
+-- its 71 runs.
 const TYPES_CPU_BUDGET_MS = 600000
-const REWRITE_CPU_BUDGET_MS = 3600000
+const REWRITE_CPU_BUDGET_MS = 1400000
 
 -- The lines kept of roc-types' module list, its header the first: far more
 -- modules than any app has.
@@ -637,11 +647,13 @@ function fast()
   end
   for f in files do
     local parts = {}
+    local cant_here = 0
     for rc in PARSE_RECIPES do
       local r = run(recipe_argv(rc, f), {timeout_ms = RECIPE_TIMEOUT_MS, whole = RECIPE_KEEP, cpu_budget_ms = 10000, stage = rc.recipe .. " " .. f})
       local v = verdict_of(rc, r, 1)
       if not v.ok then
         push(cant, f .. ": " .. v.why)
+        cant_here = cant_here + 1
       else
         local n = 0
         for x in v.findings do
@@ -655,6 +667,7 @@ function fast()
       end
       yield()
     end
+    if cant_here > 0 then push(parts, cant_here .. " recipes couldn't run") end
     print(f .. ": " .. (#parts == 0 and "no findings" or join(parts, ", ")))
   end
   print("left to the full tier, as they read across files: " .. join(left, ", "))
