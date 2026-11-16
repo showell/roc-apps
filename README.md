@@ -97,6 +97,12 @@ the new nightly, change `roc-version` and the two workflows, run `roc fmt`
 over the repository and commit that apart, then run every tree's own
 checks.
 
+`shale tools/quality.shale` runs Shale's Roc code-quality recipes (the
+hunts of CLAUDE.md §7) over the files changed since master, and `tier=full`
+over every app, roc-types and the method rewrite's dry run included. It
+fails only when a recipe can't run on the code, and counts what the
+recipes find, per app, against `tools/quality_baseline.tsv` (`tools/README.md`).
+
 The checkout `~/showell_repos/roc` (main, zig 0.16.0 at `~/zig-0.16.0/zig`)
 is for working ON the compiler, and the wasm host builds against its
 `src/builtins`. Its debug build goes to `~/build/roc/out/bin/roc`:

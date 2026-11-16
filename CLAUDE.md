@@ -410,7 +410,10 @@ planted cases, and let the compiler judge any rewrite.
   `docs/roc-style.md`, "Testing and enforcement", lists the hunts. roc-chat's
   verify holds its hunts at zero, each with a plant. Where no gate runs one
   yet (roc-markdown's), run it by hand before a review, and add it to the
-  gate as a change of its own.
+  gate as a change of its own. In roc-apps, `tools/quality.shale` runs
+  them over every app in report mode: it fails when a recipe can't run,
+  and holds the rest as counts in `tools/quality_baseline.tsv`, a debt on
+  the way to zero, not a ratchet to keep.
 - **For agents using Shale instead of the shell,** read Shale's
   `docs/SHALE-AGENTS.md`. That part is Steve's setup only.
 - **Code is reviewed type by type, with cold agents in parallel.** A

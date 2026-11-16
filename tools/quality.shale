@@ -1,0 +1,681 @@
+-- This script runs Shale's Roc code-quality recipes (the `cookbook:` mount's
+-- roc/ folder) over the Roc files of roc-apps, and fails only when a recipe
+-- can't run on them: a file roc-ast refuses, an app roc-types can't type, a
+-- recipe that stops before its counts, or a count this script can't match
+-- to the recipe's own lines. Those are tool gaps. What the recipes find is
+-- counted and printed per app, and doesn't fail the run yet: the counts are
+-- held in `tools/quality_baseline.tsv`, so a later change can hold the tree
+-- to "no new findings".
+--
+--   cd <roc-apps checkout> && shale tools/quality.shale                  # the fast tier
+--   cd <roc-apps checkout> && shale tools/quality.shale tier=full        # every app; run it detached
+--   cd <roc-apps checkout> && shale tools/quality.shale tier=full baseline=write
+--
+-- The fast tier reads the .roc files changed since `since=` (master by
+-- default: the commits since the branch left it, the uncommitted changes
+-- and the new files), each file in a run of its own, and prints their
+-- findings. A check that reads across files (a twin type, a function's
+-- callers) can't be judged from one file, so the fast tier leaves it to
+-- the full tier and says which it left.
+--
+-- The full tier runs every parse recipe over every project, then roc-types
+-- on every app (TYPED below). A project is a top-level folder, except that
+-- each folder under findings/ is a project of its own, since each holds one
+-- unrelated program. Each recipe reads a whole project at once, so a check
+-- across files sees the project's own files and no other app's. The
+-- findings are counted per app: a folder under canvas_apps/ or findings/,
+-- else the top-level folder. Each finding line goes to FINDINGS_LOG, and
+-- the counts are compared with the baseline, each moved count printed.
+-- `baseline=write` writes the counts as the new baseline.
+--
+-- Each recipe's run is timed by `cookbook:times.shale` under the book
+-- `roc-apps-quality` and held to the CPU budget beside it, so a slowdown
+-- shows. The times measured on 2026-11-16 are in each table's comment.
+--
+-- budget: steps=4000000000 read_bytes=8000000000 arena_bytes=2000000000 output_bytes=4000000 call_depth=200 kept_bytes=64000000
+
+use("cookbook:times.shale")
+use("cookbook:roc/types.shale")
+
+const SELF_PATH = "tools/quality.shale"
+const BASELINE = "tools/quality_baseline.tsv"
+const BASELINE_HEADER = "app\trecipe\tcheck\tcount"
+const FINDINGS_LOG = "build:roc-apps/quality-findings.txt"
+const BOOK = "roc-apps-quality"
+const TIER = arg("tier", "fast")
+const SINCE = arg("since", "master")
+const BASELINE_ARG = arg("baseline", "")
+const PART = arg("part", "")
+const RECIPE_ARG = arg("recipe", "")
+
+-- The recipes that only parse. `checks` pairs each count's name in the
+-- recipe's summary with the name its finding lines give; `args` are the
+-- recipe's own arguments, as the style guide runs it (docs/roc-style.md,
+-- "Testing and enforcement": a call four deep); `cross` names the
+-- checks that read across files, which the fast tier can't judge;
+-- `fails_on_findings` marks a recipe that exits nonzero on any finding;
+-- `summary_once` one that prints its summary once, after its findings,
+-- where the others print it before them and again after. `quiet` names
+-- checks the fast tier counts and doesn't print line by line:
+-- check_stacking's `wide string` is a line Roc has no short way to split.
+-- `cpu_budget_ms` holds the full tier's run over every project, about three
+-- times what it took on 2026-11-16 (`cpu_measured_ms`), so a slowdown of
+-- that size stops the run.
+--
+-- check_vocabulary is left out: it needs a project's own file of decided
+-- words, and only safari has one, which safari's gates/lints.shale holds at
+-- zero.
+const PARSE_RECIPES = {
+  {recipe = "hunt_names", short = "names", fails_on_findings = false, cpu_measured_ms = 2144, cpu_budget_ms = 8000, checks = {
+    {"state_effect", "state_effect"}, {"question", "question"}, {"vague", "vague"}, {"name_type", "name_type"},
+    {"negative", "negative"}, {"noun_effect", "noun_effect"}, {"command_tense", "command_tense"},
+    {"mixed_tense", "mixed_tense"}, {"container", "container"}, {"preposition_split", "preposition_split"},
+    {"short_name", "short_name"}, {"worker_name", "worker_name"}, {"stacked_preposition", "stacked_preposition"},
+    {"taken_word", "taken_word"}, {"bare_participle", "bare_participle"}, {"phrase_name", "phrase_name"},
+    {"singular_list", "singular_list"}, {"world_verb", "world_verb"}, {"where_name", "where_name"},
+  }, cross = {"command_tense", "mixed_tense"}},
+  {recipe = "check_stacking", short = "stack", fails_on_findings = false, cpu_measured_ms = 4969, cpu_budget_ms = 16000, checks = {
+    {"to stack", "stack"}, {"to unstack", "unstack"}, {"long", "long"}, {"wide string", "wide string"},
+  }, cross = {}, quiet = {"wide string"}},
+  {recipe = "find_extra_parens", short = "parens", fails_on_findings = false, cpu_measured_ms = 1987, cpu_budget_ms = 8000, checks = {
+    {"paren_if", "paren_if"}, {"wrapped_body", "wrapped_body"}, {"else_block", "else_block"}, {"lambda_if", "lambda_if"},
+  }, cross = {}},
+  {recipe = "check_errors", short = "errors", fails_on_findings = false, cpu_measured_ms = 2719, cpu_budget_ms = 9000, checks = {
+    {"error_alias", "error_alias"}, {"optional_tag", "optional_tag"}, {"set_fallback", "set_fallback"},
+    {"placeholder", "placeholder"}, {"number_fallback", "number_fallback"},
+  }, cross = {"error_alias", "optional_tag"}},
+  {recipe = "find_deep_calls", short = "deep", args = {"min=4"}, fails_on_findings = false, cpu_measured_ms = 1669, cpu_budget_ms = 7000, checks = {
+    {"nested", "nested"},
+  }, cross = {}},
+  {recipe = "find_unused_imports", short = "imports", fails_on_findings = true, cpu_measured_ms = 1938, cpu_budget_ms = 7000, checks = {
+    {"unused_import", "unused_import"},
+  }, cross = {}},
+  {recipe = "check_name_types", short = "types", fails_on_findings = true, cpu_measured_ms = 1906, cpu_budget_ms = 7000, checks = {
+    {"name_type", "name_type"}, {"bare_beside_unit", "bare_beside_unit"}, {"no_value", "no_value"},
+  }, cross = {"bare_beside_unit"}},
+  {recipe = "check_families", short = "family", fails_on_findings = true, cpu_measured_ms = 1832, cpu_budget_ms = 7000, checks = {
+    {"family", "family"}, {"twin_name", "twin_name"},
+  }, cross = {"family", "twin_name"}},
+  {recipe = "find_unclear_names", short = "unclear", fails_on_findings = true, cpu_measured_ms = 1778, cpu_budget_ms = 7000, checks = {
+    {"pure_mutator", "pure_mutator"}, {"abbreviation", "abbreviation"}, {"module_doc", "module_doc"},
+  }, cross = {}},
+  {recipe = "check_boundaries", short = "bounds", fails_on_findings = false, summary_once = true, cpu_measured_ms = 3081, cpu_budget_ms = 10000, checks = {
+    {"single", "single"}, {"fixed", "fixed"}, {"entry", "entry"}, {"constant", "constant"}, {"bool_param", "bool_param"},
+    {"dead", "dead"}, {"unused_api", "unused_api"}, {"same_branches", "same_branches"},
+  }, cross = {"single", "fixed", "entry", "constant", "dead", "unused_api"}},
+}
+
+-- What a recipe's run looks like from here.
+const RECIPE_TIMEOUT_MS = 600000
+const RECIPE_KEEP = 30000000
+const RECIPE_STEPS = "steps=40000000000"
+const FINDING_RE = "^([^ :]+\\.roc):[0-9]+(?::[0-9]+)?: ([a-z_]+(?: [a-z_]+)?): "
+
+-- ── Where a file belongs ────────────────────────────────────────────────
+
+-- The project a tracked path is read with: its top-level folder, or a
+-- findings/ folder of its own.
+function project_of(path)
+  local parts = split(path, "/")
+  if #parts > 2 and parts[1] == "findings" then return parts[1] .. "/" .. parts[2] end
+  return parts[1]
+end
+
+-- The app a finding is counted under: a folder of canvas_apps/ or of
+-- findings/, else the top-level folder.
+function app_of(path)
+  local parts = split(path, "/")
+  if #parts > 2 and (parts[1] == "canvas_apps" or parts[1] == "findings") then return parts[1] .. "/" .. parts[2] end
+  return parts[1]
+end
+
+function tracked_roc_files()
+  local r = must(run({"git", "ls-files", "*.roc"}, {timeout_ms = 30000, whole = 4000000}))
+  return lines(trim(r.out))
+end
+
+-- Each project, with how many tracked .roc files it holds.
+function projects_of(files)
+  local by = {}
+  for f in files do incr(by, project_of(f)) end
+  local out = {}
+  for k in sort(keys(by)) do push(out, {name = k, files = by[k]}) end
+  return out
+end
+
+-- ── One recipe's run, and whether it ran ────────────────────────────────
+
+function recipe_argv(rc, glob)
+  local argv = {"shale", "--budget", RECIPE_STEPS, real("cookbook:roc/" .. rc.recipe .. ".shale"), "glob=" .. glob}
+  for a in get(rc, "args", {}) do push(argv, a) end
+  return argv
+end
+
+-- The recipe's own lines: not Shale's `──` reports or the `called from`
+-- lines under a stop.
+function own_lines(out)
+  local kept = {}
+  for l in lines(out) do
+    if not starts_with(l, "──") and not starts_with(l, "   ") and trim(l) ~= "" then push(kept, l) end
+  end
+  return kept
+end
+
+function stop_line(out)
+  for l in lines(out) do
+    if starts_with(l, "── stopped at ") then return l end
+  end
+  return nil
+end
+
+-- The number a summary gives for a check: "check N", or "N check" for
+-- check_stacking's "N to stack". Nil when the summary doesn't name it.
+function count_in_summary(summary, label)
+  local after = re_find(summary, "(?:^|[;:,] )" .. label .. " ([0-9]+)")
+  if after ~= nil then return tonumber(after.group) end
+  local before = re_find(summary, "(?:^|[;:,] )([0-9]+) " .. label .. "(?:,|$)")
+  if before ~= nil then return tonumber(before.group) end
+  return nil
+end
+
+-- The last lines of a run, for a failure's message.
+function tail_of(out, n)
+  local ls = lines(trim(out))
+  if #ls <= n then return join(ls, " | ") end
+  return join(last(ls, n), " | ")
+end
+
+-- `{ok, why, summary, findings}` for `r`, the run of `rc` over `files`
+-- files. `findings` is each finding's `{path, check, line}`. It is not ok
+-- when the recipe didn't run to its counts, read fewer or more files than
+-- it was given, refused a file, or printed counts its lines don't bear out.
+function verdict_of(rc, r, files)
+  local who = rc.recipe
+  if r.ended ~= "exit" then return {ok = false, why = who .. " " .. r.ended .. " after " .. r.ms .. " ms: " .. tail_of(r.out, 4)} end
+  local own = own_lines(r.out)
+  if #own == 0 then return {ok = false, why = who .. " printed nothing of its own: " .. tail_of(r.out, 4)} end
+  local summary = own[#own]
+  if re_find(summary, FINDING_RE) ~= nil then return {ok = false, why = who .. " ended on a finding, not its summary: " .. tail_of(r.out, 4)} end
+  for l in own do
+    if starts_with(l, "refused: ") or starts_with(l, "not reached by ") then return {ok = false, why = who .. ": " .. l} end
+  end
+  if not get(rc, "summary_once", false) and own[1] ~= summary then return {ok = false, why = who .. " stopped before its last summary: " .. tail_of(r.out, 4)} end
+  local read = re_find(summary, "([0-9]+) files")
+  if read == nil then return {ok = false, why = who .. ": no file count in its summary: " .. summary} end
+  if tonumber(read.group) ~= files then return {ok = false, why = who .. " read " .. read.group .. " files where git tracks " .. files .. ": " .. summary} end
+  if r.code ~= 0 then
+    local stop = stop_line(r.out)
+    local findings_stop = stop ~= nil and contains(stop, ": fail: " .. summary .. " (")
+    if not (rc.fails_on_findings and findings_stop) then return {ok = false, why = who .. " exited " .. r.code .. ": " .. (stop or tail_of(r.out, 4))} end
+  end
+  local labels = {}
+  for c in rc.checks do labels[c[2]] = c[1] end
+  local by_label = {}
+  local findings = {}
+  for l in own do
+    local m = re_find(l, FINDING_RE)
+    if m ~= nil then
+      local label = m.groups[2]
+      if not has_key(labels, label) then return {ok = false, why = who .. ": a finding of a check this gate doesn't know, `" .. label .. "`: " .. sub(l, 1, 200)} end
+      incr(by_label, label)
+      push(findings, {path = m.groups[1], check = label, line = l})
+    end
+  end
+  for c in rc.checks do
+    local said = count_in_summary(summary, c[1])
+    if said == nil then return {ok = false, why = who .. ": its summary has no count of " .. c[1] .. ": " .. summary} end
+    local seen = get(by_label, c[2], 0)
+    if said ~= seen then return {ok = false, why = who .. ": its summary counts " .. said .. " " .. c[1] .. ", and it printed " .. seen .. " such lines"} end
+  end
+  if r.code ~= 0 and #findings == 0 then return {ok = false, why = who .. " exited " .. r.code .. " with no findings"} end
+  return {ok = true, why = "", summary = summary, findings = findings}
+end
+
+-- ── The full tier's parse recipes ───────────────────────────────────────
+
+-- A child run: one recipe over every project. It prints a line a finding,
+-- `F<tab>check<tab>line`, and a line a failure, `CANT<tab>why`.
+function parse_part(name)
+  local rc = nil
+  for c in PARSE_RECIPES do
+    if c.recipe == name then rc = c end
+  end
+  if rc == nil then fail("quality: no parse recipe " .. name) end
+  for p in projects_of(tracked_roc_files()) do
+    local r = run(recipe_argv(rc, p.name .. "/**/*.roc"), {timeout_ms = RECIPE_TIMEOUT_MS, whole = RECIPE_KEEP})
+    local v = verdict_of(rc, r, p.files)
+    if not v.ok then
+      print("CANT\t" .. p.name .. ": " .. v.why)
+    else
+      for f in v.findings do print("F\t" .. f.check .. "\t" .. f.line) end
+    end
+    yield()
+  end
+  return nil
+end
+
+-- ── The full tier's typed stages ────────────────────────────────────────
+
+-- The typed stages' CPU budgets. roc-types took 294 s of CPU over the 62
+-- apps on 2026-11-16 (410 s of wall time).
+const TYPES_CPU_BUDGET_MS = 600000
+const REWRITE_CPU_BUDGET_MS = 3600000
+
+-- The lines kept of roc-types' module list, its header the first: far more
+-- modules than any app has.
+const TYPES_HEAD = 20000
+
+-- Where the full tier leaves the types stage's reach for the rewrite stage:
+-- `app<tab>path` a line.
+const REACH_FILE = "build:roc-apps/quality-reach.tsv"
+
+-- The apps that roc-types and the method rewrite leave out, each for its
+-- reason. check.shale leaves the same two out of `roc check`.
+const TYPED_EXCEPTIONS = {
+  {prefix = "canvas_apps/safari/tutorial/fails/", why = "programs that fail to type on purpose: the tutorial's builder checks that they do"},
+  {prefix = "findings/roc-check-hang/", why = "programs that hang Roc's checker on purpose: the finding is the hang"},
+}
+
+function typed_excepted(path)
+  for e in TYPED_EXCEPTIONS do
+    if starts_with(path, e.prefix) then return true end
+  end
+  return false
+end
+
+-- Every app the typed stages read, as check.shale finds them.
+function typed_apps()
+  local r = run({"git", "grep", "-l", "-E", "^app \\[", "--", "*.roc"}, {timeout_ms = 30000, whole = 4000000})
+  local out = {}
+  for f in lines(trim(r.out)) do
+    if f ~= "" and not typed_excepted(f) then push(out, f) end
+  end
+  return out
+end
+
+-- A child run: roc-types on every app, the checker of the tree's pin. It
+-- prints `APP<tab>app<tab>ms<tab>cpu_ms<tab>files` for an app typed,
+-- `REACH<tab>app<tab>path` for each file of this checkout it reached, and
+-- `CANT<tab>why` for an app it couldn't type. Only the module lines are
+-- kept of what roc-types prints, as the types themselves are megabytes an
+-- app.
+function types_part()
+  local roc = pinned_roc("quality")
+  local pin = trim(read("roc-version"))
+  local exe = roc_types_exe(roc)
+  if not exists(exe) then
+    print("CANT\troc-types: no " .. exe .. ": Shale's `shale tools/roc_types/install.shale` installs it")
+    return nil
+  end
+  local want_head = "roc-types " .. ROC_TYPES_FORMAT .. " " .. pin
+  local here = real(".") .. "/"
+  for app in typed_apps() do
+    local t = run({real(exe), real(app)}, {timeout_ms = 300000, head = TYPES_HEAD, re = "^(== |roc-types )"})
+    local head = ""
+    local mods = {}
+    for l in lines(t.out) do
+      if starts_with(l, "roc-types ") and head == "" then
+        head = l
+      elseif starts_with(l, "== ") then
+        push(mods, sub(l, 4))
+      end
+    end
+    if t.ended ~= "exit" or t.code ~= 0 then
+      local e = run({real(exe), real(app)}, {timeout_ms = 300000, tail = 8, not_re = "\\t"})
+      print("CANT\t" .. app .. ": roc-types " .. t.ended .. " " .. get(t, "code", -1) .. ": " .. tail_of(e.out, 8))
+    elseif head ~= want_head then
+      print("CANT\t" .. app .. ": roc-types' first line is `" .. head .. "`, not `" .. want_head .. "`")
+    elseif #mods == 0 then
+      print("CANT\t" .. app .. ": roc-types named no module")
+    elseif #mods + 1 >= TYPES_HEAD then
+      print("CANT\t" .. app .. ": roc-types named " .. TYPES_HEAD .. " modules or more, past what this keeps")
+    else
+      local inside = 0
+      for m in mods do
+        if starts_with(m, here) then
+          print("REACH\t" .. app .. "\t" .. sub(m, #here + 1))
+          inside = inside + 1
+        end
+      end
+      print("APP\t" .. app .. "\t" .. t.ms .. "\t" .. t.cpu_ms .. "\t" .. inside)
+    end
+    yield()
+  end
+  return nil
+end
+
+-- The rewrite stage's runs. Each file is judged once, on one app that
+-- reaches it: an app in the file's own folder (`app_of`) if one does, else
+-- the app that reaches the most files, as the cost of a run grows with its
+-- app's size (roc-types reads all of it). An app's files are run a folder at
+-- a time, so each run's count belongs to one folder.
+function rewrite_jobs(reach)
+  local roots_of = {}
+  for a in keys(reach) do
+    for f in reach[a] do push_at(roots_of, f, a) end
+  end
+  local by = {}
+  for f in sort(keys(roots_of)) do
+    local best = ""
+    local best_key = ""
+    for r in roots_of[f] do
+      -- Its own folder first, then the most files, then by name.
+      local k = (app_of(r) == app_of(f) and "0" or "1") .. "\t" .. (1000000 - #reach[r]) .. "\t" .. r
+      if best == "" or k < best_key then
+        best = r
+        best_key = k
+      end
+    end
+    push_at(by, best .. "\t" .. app_of(f), f)
+  end
+  local jobs = {}
+  for k in sort(keys(by)) do
+    local parts = split(k, "\t")
+    push(jobs, {root = parts[1], unit = parts[2], files = by[k]})
+  end
+  return jobs
+end
+
+-- A child run: the rewrite recipe's dry run on each job. It prints
+-- `RW<tab>folder<tab>root<tab>files<tab>rewritable<tab>left<tab>ms` a job,
+-- and `CANT<tab>why` for one that couldn't run. The dry run writes each
+-- trial in place and puts it back; the job's files are held to git's copy
+-- after it.
+function rewrite_part()
+  local reach = {}
+  for l in lines(trim(read(REACH_FILE))) do
+    local f = split(l, "\t")
+    push_at(reach, f[1], f[2])
+  end
+  for j in rewrite_jobs(reach) do
+    local from = 1
+    local files = 0
+    local rewritable = 0
+    local left = 0
+    local ms = 0
+    local why = ""
+    while why == "" do
+      local r = run({"shale", "--undo-on-stop", real("cookbook:roc/rewrite_method_calls.shale"), "glob=" .. join(j.files, ","), "root=" .. j.root, "from=" .. from},
+        {timeout_ms = 1800000, whole = 4000000})
+      ms = ms + r.ms
+      local own = own_lines(r.out)
+      local summary = #own > 0 and own[#own] or ""
+      local m = re_find(summary, "^dry run: files ([0-9]+), candidates [0-9]+, rewritten ([0-9]+), left ([0-9]+)")
+      if r.ended ~= "exit" or r.code ~= 0 then
+        why = "exited " .. get(r, "code", -1) .. ": " .. (stop_line(r.out) or tail_of(r.out, 4))
+      elseif m == nil then
+        why = "no `dry run: files N, ...` summary (a cookbook older than the one that splits globs?): " .. sub(summary, 1, 200)
+      else
+        files = files + tonumber(m.groups[1])
+        rewritable = rewritable + tonumber(m.groups[2])
+        left = left + tonumber(m.groups[3])
+        local next = re_find(summary, "go on with from=([0-9]+)")
+        if next == nil then break end
+        from = tonumber(next.group)
+      end
+    end
+    if why == "" and files ~= #j.files then why = "read " .. files .. " of its " .. #j.files .. " files" end
+    if why == "" and trim(git_diff("", {paths = j.files})) ~= "" then why = "the dry run left its files changed: see git diff" end
+    if why ~= "" then
+      print("CANT\t" .. j.unit .. " on " .. j.root .. ": rewrite_method_calls " .. why)
+    else
+      print("RW\t" .. j.unit .. "\t" .. j.root .. "\t" .. files .. "\t" .. rewritable .. "\t" .. left .. "\t" .. ms)
+    end
+    yield()
+  end
+  return nil
+end
+
+-- ── The full tier ───────────────────────────────────────────────────────
+
+function key_of(app, recipe, check)
+  return app .. "\t" .. recipe .. "\t" .. check
+end
+
+function read_baseline()
+  local counts = {}
+  if not exists(BASELINE) then return counts end
+  local all = lines(read(BASELINE))
+  if #all == 0 or all[1] ~= BASELINE_HEADER then fail("quality: " .. BASELINE .. " does not start with its header") end
+  for i = 2, #all do
+    local f = split(all[i], "\t")
+    if #f ~= 4 then fail("quality: " .. BASELINE .. ":" .. i .. " is not four fields") end
+    counts[key_of(f[1], f[2], f[3])] = tonumber(f[4])
+  end
+  return counts
+end
+
+function write_baseline(counts)
+  local text = BASELINE_HEADER .. "\n"
+  for k in sort(keys(counts)) do text = text .. k .. "\t" .. counts[k] .. "\n" end
+  replace(BASELINE, text)
+  return nil
+end
+
+-- Each count that differs from the baseline, as a line.
+function moved_counts(was, now)
+  local all = {}
+  for k in keys(was) do all[k] = true end
+  for k in keys(now) do all[k] = true end
+  local out = {}
+  for k in sort(keys(all)) do
+    local a = get(was, k, 0)
+    local b = get(now, k, 0)
+    if a ~= b then
+      local f = split(k, "\t")
+      push(out, (b > a and "up " or "down ") .. f[1] .. ": " .. f[2] .. " " .. f[3] .. " " .. a .. " to " .. b)
+    end
+  end
+  return out
+end
+
+function count_finding(st, app, recipe, check, short, n)
+  if n == 0 then return nil end
+  incr(st.counts, key_of(app, recipe, check), n)
+  if not has_key(st.by_app, app) then st.by_app[app] = {} end
+  incr(st.by_app[app], short, n)
+  return nil
+end
+
+-- The parse recipes, each over every project in a child run.
+function full_parse(st)
+  for rc in PARSE_RECIPES do
+    local r = timed_run(BOOK, "parse " .. rc.recipe, {"shale", "--root", ".", SELF_PATH, "part=parse", "recipe=" .. rc.recipe},
+      {timeout_ms = 1800000, whole = RECIPE_KEEP, cpu_budget_ms = rc.cpu_budget_ms})
+    if r.ended ~= "exit" or r.code ~= 0 then push(st.cant, rc.recipe .. ": its run over the projects " .. r.ended .. " " .. get(r, "code", -1) .. ": " .. tail_of(r.out, 4)) end
+    local n = 0
+    for l in lines(r.out) do
+      if starts_with(l, "CANT\t") then
+        push(st.cant, rc.recipe .. " in " .. sub(l, 6))
+      elseif starts_with(l, "F\t") then
+        local f = split(l, "\t")
+        local path = re_find(f[3], "^([^ :]+\\.roc):").group
+        count_finding(st, app_of(path), rc.recipe, f[2], rc.short, 1)
+        push(st.log, f[3])
+        n = n + 1
+      end
+    end
+    print(rc.recipe .. ": " .. n .. " findings, " .. times_seconds(r.ms) .. " (cpu " .. times_seconds(r.cpu_ms) .. ")")
+    yield()
+  end
+  return nil
+end
+
+-- roc-types on every app. Gives the reach, `app<tab>path` lines. A tracked
+-- file no app reaches is counted, `roc-types unreached`: no typed check
+-- reads it.
+function full_types(st, files)
+  local apps = typed_apps()
+  local r = timed_run(BOOK, "roc-types every app", {"shale", "--root", ".", SELF_PATH, "part=types"},
+    {timeout_ms = 3000000, whole = RECIPE_KEEP, cpu_budget_ms = TYPES_CPU_BUDGET_MS})
+  if r.ended ~= "exit" or r.code ~= 0 then push(st.cant, "roc-types: its run over the apps " .. r.ended .. " " .. get(r, "code", -1) .. ": " .. tail_of(r.out, 4)) end
+  local reach = {}
+  local reached = {}
+  local typed = 0
+  for l in lines(r.out) do
+    if starts_with(l, "CANT\t") then
+      push(st.cant, "roc-types on " .. sub(l, 6))
+    elseif starts_with(l, "REACH\t") then
+      local f = split(l, "\t")
+      push(reach, f[2] .. "\t" .. f[3])
+      reached[f[3]] = true
+    elseif starts_with(l, "APP\t") then
+      typed = typed + 1
+    end
+  end
+  local unreached = 0
+  for f in files do
+    if not typed_excepted(f) and not has_key(reached, f) then
+      count_finding(st, app_of(f), "roc-types", "unreached", "untyped", 1)
+      push(st.log, f .. ":1: unreached: no app's types reach it, so no typed check reads it")
+      unreached = unreached + 1
+    end
+  end
+  print("roc-types: " .. typed .. " of " .. #apps .. " apps typed, " .. #keys(reached) .. " files reached, " .. unreached .. " reached by none, "
+    .. times_seconds(r.ms) .. " (cpu " .. times_seconds(r.cpu_ms) .. ")")
+  for e in TYPED_EXCEPTIONS do print("left out of the typed stages: " .. e.prefix .. " (" .. e.why .. ")") end
+  return reach
+end
+
+-- The method rewrite's dry run over every file the types reach.
+function full_rewrite(st, reach)
+  local dirty = trim(must(run({"git", "status", "--porcelain", "--", "*.roc"}, {timeout_ms = 30000, whole = 1000000})).out)
+  if dirty ~= "" then
+    push(st.cant, "rewrite_method_calls: the checkout has uncommitted .roc changes, and the dry run writes its trials in place: commit them, or run the full tier in a clean worktree")
+    return nil
+  end
+  replace(REACH_FILE, join(reach, "\n") .. "\n")
+  local r = timed_run(BOOK, "rewrite_method_calls dry run", {"shale", "--root", ".", SELF_PATH, "part=rewrite"},
+    {timeout_ms = 7200000, whole = RECIPE_KEEP, cpu_budget_ms = REWRITE_CPU_BUDGET_MS})
+  if r.ended ~= "exit" or r.code ~= 0 then push(st.cant, "rewrite_method_calls: its run over the apps " .. r.ended .. " " .. get(r, "code", -1) .. ": " .. tail_of(r.out, 4)) end
+  local jobs = 0
+  local files = 0
+  local rewritable = 0
+  for l in lines(r.out) do
+    if starts_with(l, "CANT\t") then
+      push(st.cant, sub(l, 6))
+    elseif starts_with(l, "RW\t") then
+      local f = split(l, "\t")
+      count_finding(st, f[2], "rewrite_method_calls", "rewritable", "methods", tonumber(f[5]))
+      push(st.log, "rewrite " .. f[2] .. " on " .. f[3] .. ": " .. f[4] .. " files, " .. f[5] .. " calls to rewrite, " .. f[6] .. " left, " .. f[7] .. " ms")
+      jobs = jobs + 1
+      files = files + tonumber(f[4])
+      rewritable = rewritable + tonumber(f[5])
+    end
+  end
+  print("rewrite_method_calls: " .. rewritable .. " calls to rewrite in " .. files .. " files, " .. jobs .. " runs, " .. times_seconds(r.ms) .. " (cpu " .. times_seconds(r.cpu_ms) .. ")")
+  return nil
+end
+
+function full()
+  local files = tracked_roc_files()
+  local projects = projects_of(files)
+  print("quality, full: " .. #files .. " files in " .. #projects .. " projects")
+  local st = {cant = {}, counts = {}, by_app = {}, log = {}}
+  full_parse(st)
+  local reach = full_types(st, files)
+  full_rewrite(st, reach)
+  replace(FINDINGS_LOG, join(st.log, "\n") .. "\n")
+  local rows = {}
+  local cols = {"app"}
+  for rc in PARSE_RECIPES do push(cols, rc.short) end
+  push(cols, "untyped")
+  push(cols, "methods")
+  for app in sort(keys(st.by_app)) do
+    local row = {app = app}
+    for c in drop(cols, 1) do row[c] = get(st.by_app[app], c, 0) end
+    push(rows, row)
+  end
+  print(table(rows, cols))
+  print("every finding: " .. real(FINDINGS_LOG))
+  local moved = moved_counts(read_baseline(), st.counts)
+  if BASELINE_ARG == "write" then
+    if #st.cant > 0 then
+      for c in st.cant do print("CAN'T RUN " .. c) end
+      fail("quality: no baseline written, since a recipe couldn't run")
+    end
+    write_baseline(st.counts)
+    print("baseline written: " .. BASELINE .. ", " .. #keys(st.counts) .. " counts (" .. #moved .. " moved)")
+  else
+    for m in moved do print("moved " .. m) end
+    print("against " .. BASELINE .. ": " .. #moved .. " counts moved; report mode, so none fails the run")
+  end
+  for c in st.cant do print("CAN'T RUN " .. c) end
+  if #st.cant > 0 then fail("quality: " .. #st.cant .. " runs couldn't run (named above): a tool gap") end
+  print("quality, full: every recipe ran on every project, roc-types on every app")
+  return nil
+end
+
+-- ── The fast tier ───────────────────────────────────────────────────────
+
+-- The .roc files changed since the branch left `since`: committed,
+-- uncommitted and new, that are still there.
+function changed_roc_files(since)
+  not_option("quality", "since", since)
+  local base = trim(must(run({"git", "merge-base", since, "HEAD"}, {timeout_ms = 30000, whole = 1000})).out)
+  local seen = {}
+  local out = {}
+  local diff = must(run({"git", "diff", "--name-only", base, "--", "*.roc"}, {timeout_ms = 30000, whole = 1000000})).out
+  local new = must(run({"git", "ls-files", "--others", "--exclude-standard", "--", "*.roc"}, {timeout_ms = 30000, whole = 1000000})).out
+  for f in lines(trim(diff .. "\n" .. new)) do
+    if f ~= "" and not has_key(seen, f) and exists(f) then
+      seen[f] = true
+      push(out, f)
+    end
+  end
+  return sort(out)
+end
+
+function fast()
+  local files = changed_roc_files(SINCE)
+  print("quality, fast: " .. #files .. " .roc files changed since " .. SINCE)
+  local cant = {}
+  local shown = 0
+  local left = {}
+  for rc in PARSE_RECIPES do
+    for c in rc.cross do push(left, rc.recipe .. " " .. c) end
+  end
+  for f in files do
+    local parts = {}
+    for rc in PARSE_RECIPES do
+      local r = run(recipe_argv(rc, f), {timeout_ms = RECIPE_TIMEOUT_MS, whole = RECIPE_KEEP, cpu_budget_ms = 10000, stage = rc.recipe .. " " .. f})
+      local v = verdict_of(rc, r, 1)
+      if not v.ok then
+        push(cant, f .. ": " .. v.why)
+      else
+        local n = 0
+        for x in v.findings do
+          if not has_item(rc.cross, x.check) then
+            if not has_item(get(rc, "quiet", {}), x.check) then print(x.line) end
+            n = n + 1
+          end
+        end
+        if n > 0 then push(parts, rc.short .. " " .. n) end
+        shown = shown + n
+      end
+      yield()
+    end
+    print(f .. ": " .. (#parts == 0 and "no findings" or join(parts, ", ")))
+  end
+  print("left to the full tier, as they read across files: " .. join(left, ", "))
+  for c in cant do print("CAN'T RUN " .. c) end
+  if #cant > 0 then fail("quality, fast: " .. #cant .. " recipe runs couldn't run (named above): a tool gap") end
+  print("quality, fast: " .. #files .. " files, " .. shown .. " findings; report mode, so none fails the run")
+  return nil
+end
+
+if PART == "parse" then
+  parse_part(RECIPE_ARG)
+elseif PART == "types" then
+  types_part()
+elseif PART == "rewrite" then
+  rewrite_part()
+elseif PART ~= "" then
+  fail("quality: part=" .. PART .. " is not a part")
+elseif TIER == "fast" then
+  fast()
+elseif TIER == "full" then
+  full()
+else
+  fail("quality: tier=" .. TIER .. ": the tiers are fast and full")
+end
