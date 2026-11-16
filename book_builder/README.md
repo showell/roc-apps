@@ -23,9 +23,11 @@ past the host's 16 MiB cap.
 
 ## Status (2026-11-16)
 
-Steps 1, 2 and 4 of five are here: the platform, the builder package
-(`builder/`), everything about a book that is a function of its manuscript,
-and the Safari tutorial built with it. Two examples build:
+All five steps are here: the platform, the builder package (`builder/`),
+everything about a book that is a function of its manuscript, the Safari
+tutorial built with it, and the books book (`building-books/`, its app
+`building-books/app/main.roc` and its pre-step `building-books/book.shale`).
+Two examples build:
 `examples/one_page/`, the platform alone, and `examples/full/`, a book that
 uses most of the builder. The Safari tutorial's app is
 `canvas_apps/safari/tutorial/app/main.roc`, built and published by that
@@ -58,11 +60,17 @@ What the builder does, and where each rule lives:
 
 - `builder/Manuscript.roc`: which lines are prose and which are fenced,
   and the pages.
-- `builder/Includes.roc`: `{{file PATH}}` and
-  `{{lines PATH from "A" to "B"}}`, each a fence quoting a file of the
-  book's folder, read through the platform; and the includes a book's own
-  pre-step expands (`prepared` in the settings), each read from the file
-  the pre-step wrote for its line, which a missing or stale file stops.
+- `builder/Includes.roc`: `{{file PATH}}`,
+  `{{lines PATH from "A" to "B"}}` and `{{function PATH NAME}}` (one
+  top-level Shale or Roc definition, with its comments), each a fence
+  quoting a file of the book's folder, read through the platform; and the
+  includes a book's own pre-step expands (`prepared` in the settings), each
+  read from the file the pre-step wrote for its line, which a missing or
+  stale file stops.
+- `builder/Diagrams.roc`: a book's diagrams, each a ```dot fence with its
+  title on the line above. The pre-step draws them
+  (`tools/draw_diagrams.shale`), and the app reads the drawings and hands
+  them to the hook for ```dot fences.
 - `builder/References.roc`: `{{chapter Title}}` and `{{number N Title}}`
   in prose, linked to the chapter's page.
 - `builder/TermIndex.roc` and `builder/TermPattern.roc`: the `{{index}}`
@@ -87,9 +95,10 @@ What the builder does, and where each rule lives:
   gates and the index still read every chapter, and a reference to one left
   out is plain text.
 
-The package exposes `Builder`, `Fences`, `Pages` (for the look's types) and
+The package exposes `Builder`, `Fences`, `Pages` (for the look's types),
 `Manuscript` (for a book that reads its own manuscript's lines as the builder
-does).
+does), `Diagrams`, `Includes` (for its words for a failed read) and
+`BookText` (for escaping, and a caption's Markdown).
 
 The package imports roc-markdown by relative path, from a checkout beside
 roc-apps, as Safari's book app does; so does the gate's `roc check`.
@@ -124,11 +133,14 @@ From the roc-apps root:
 - `examples/one_page/`: the smallest book, with `expected.html`, the page
   the gate holds its output to byte for byte.
 - `examples/full/`: a book with chapters, includes, references, an index,
-  the negatives lint and a fence hook of its own, `shout`, with
-  `expected.html`. `examples/broken_includes/` and `examples/broken_gates/`
+  the negatives lint, a diagram (its drawing checked in, in `drawings/`) and
+  a fence hook of its own, `shout`, with `expected.html`. `examples/broken_includes/` and `examples/broken_gates/`
   are books that fail, each run by the full example's program, with the
   problems it prints in `expected.txt`.
-- `tools/`: the gate and the glue regenerator.
+- `tools/`: the gate, the glue regenerator, and two steps a book's
+  pre-step and publish share: `draw_diagrams.shale`, which writes a
+  manuscript's diagram sources and draws them, and `move_stage.shale`, which
+  puts a staged book in the place of the dev channel's copy.
 
 ## Pitfalls
 

@@ -1,23 +1,56 @@
 -- budget: steps=50000000 arena_bytes=1000000000 read_bytes=200000000 call_bytes=40000000
--- This draws the Safari Ride book's diagrams with Graphviz, for book.shale,
--- which writes each ```dot fence's source to build/prepared/diagram-N.dot first.
--- Each drawing goes beside its source as diagram-N.svg, ready to sit in a page:
+-- This draws a book's diagrams with Graphviz, for a book's pre-step. A diagram
+-- is a ```dot fence of the manuscript, as book_builder/builder/Diagrams.roc
+-- finds them; this writes the Nth one's source to diagram-N.dot in the book's
+-- folder of prepared files, and its drawing beside it as diagram-N.svg, ready
+-- to sit in a page:
 --
---   cd <roc-apps checkout> && shale canvas_apps/safari/tutorial/draw_diagrams.shale count=N
+--   cd <roc-apps checkout> && shale book_builder/tools/draw_diagrams.shale source=<manuscript> prepared=<folder>
+--
+-- It prints how many it drew. The Safari tutorial's book.shale and the books
+-- book's book.shale run it.
 --
 -- Graphviz's comments and titles are dropped from a drawing, because a title
 -- shows as a tooltip on hover. A diagram wider than a phone is drawn a second
 -- way for a phone, turned and tightened, and book.css shows one of the two.
 --
 -- Each diagram takes Graphviz once or twice, and a run has a budget of
--- programs, so `count=N` draws them in child runs of this script, each given
+-- programs, so the diagrams are drawn in child runs of this script, each given
 -- `first=` and `last=`, DIAGRAMS_PER_RUN at a time. A child that fails stops the
 -- run, and so does a drawing it didn't leave.
-const PREPARED = "canvas_apps/safari/tutorial/build/prepared"
-const SELF = "canvas_apps/safari/tutorial/draw_diagrams.shale"
+const PREPARED = arg("prepared", "")
+const SELF = "book_builder/tools/draw_diagrams.shale"
 const DIAGRAMS_PER_RUN = 30
 const PHONE_POINTS = 300
-const DOT_WANT = "graphviz: the tutorial's diagrams, drawn at build time"
+const DOT_WANT = "graphviz: a book's diagrams, drawn at build time"
+
+-- Each ```dot fence's source, written to its diagram-N.dot, as Diagrams.roc
+-- finds the fences; gives how many there are.
+function write_diagram_sources(source)
+  local count = 0
+  local open = "none"
+  local body = {}
+  for l in split(read(source), "\n") do
+    if open == "none" then
+      if l == "```dot" then
+        open = "dot"
+        body = {}
+      elseif starts_with(l, "```") then
+        open = "other"
+      end
+    elseif l == "```" then
+      if open == "dot" then
+        count = count + 1
+        replace(PREPARED .. "/diagram-" .. count .. ".dot", join(body, "\n") .. "\n")
+      end
+      open = "none"
+    elseif open == "dot" then
+      push(body, l)
+    end
+  end
+  if open ~= "none" then fail("draw_diagrams: a fence never closes in " .. source) end
+  return count
+end
 
 -- The drawing of one diagram, and how wide it is in points.
 function drawing(path, options, class)
@@ -64,7 +97,8 @@ function phone_options(source)
 end
 
 -- A diagram's drawing, and a phone's beside it if it needs one. The .dot file
--- ends with the one newline book.shale adds after the fence's last line.
+-- ends with the one newline write_diagram_sources adds after the fence's last
+-- line.
 function diagram_svg(id)
   local path = PREPARED .. "/" .. id .. ".dot"
   local all = split(read(path), "\n")
@@ -91,7 +125,7 @@ function draw_all(count)
   while first <= count do
     local last = first + DIAGRAMS_PER_RUN - 1
     if last > count then last = count end
-    must(run({"shale", "--root", ".", SELF, "first=" .. first, "last=" .. last}, {timeout_ms = 300000, tail = 20, want = DOT_WANT}))
+    must(run({"shale", "--root", ".", SELF, "prepared=" .. PREPARED, "first=" .. first, "last=" .. last}, {timeout_ms = 300000, tail = 20, want = DOT_WANT}))
     first = last + 1
   end
   for n = 1, count do
@@ -100,13 +134,16 @@ function draw_all(count)
   return nil
 end
 
-const COUNT = arg("count", "")
+const SOURCE = arg("source", "")
 const FIRST = arg("first", "")
 const LAST = arg("last", "")
-if COUNT ~= "" then
-  draw_all(tonumber(COUNT))
+if PREPARED == "" or not exists(PREPARED) then fail("draw_diagrams: prepared= names the book's folder of prepared files, which is there") end
+if SOURCE ~= "" then
+  local count = write_diagram_sources(SOURCE)
+  draw_all(count)
+  print("draw_diagrams: " .. count .. " diagrams drawn")
 elseif FIRST ~= "" and LAST ~= "" then
   draw_some(tonumber(FIRST), tonumber(LAST))
 else
-  fail("draw_diagrams: count=N draws them all; first= and last= are a child run's")
+  fail("draw_diagrams: source= draws a manuscript's diagrams; first= and last= are a child run's")
 end

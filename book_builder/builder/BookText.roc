@@ -1,7 +1,8 @@
 ## This module is where the builder's bytes become text. The renderer speaks
 ## in bytes, and a book's pages are built as text. It also holds the small
-## pieces of text work the other modules share: escaping, a split and rejoin
-## around a marker, and a text's lines.
+## pieces of text work the other modules share, and a book's own modules use:
+## escaping, a split and rejoin around a marker, a text's lines, and a line of
+## Markdown made a caption.
 import md.Md
 
 BookText := [].{
@@ -60,6 +61,23 @@ BookText := [].{
 		[] => crash "book: Str.split_on answered no pieces"
 	}
 
+	## A line of Markdown as HTML that can sit inside a caption, so without the
+	## paragraph the renderer puts around it, or why text that renders as
+	## anything but one paragraph can't.
+	inline_html : Str -> Try(Str, Str)
+	inline_html = |text| {
+		rendered = Md.render_document(text.to_utf8(), { fence: |_| Pass, images: AsLinks })
+		html = BookText.text_from_bytes(rendered.html).trim()
+		one_paragraph = match html.split_on("<p>") {
+			["", opened] => opened.split_on("</p>")
+			_ => []
+		}
+		match one_paragraph {
+			[inside, ""] => Ok(inside.trim())
+			_ => Err("a caption isn't one paragraph of Markdown: ${text}")
+		}
+	}
+
 	## Whether a byte is an ASCII letter or digit.
 	is_letter_or_digit : U8 -> Bool
 	is_letter_or_digit = |byte|
@@ -86,5 +104,8 @@ expect BookText.without_code_spans("a `b` c `d`") == "a   c  "
 expect BookText.without_code_spans("no code") == "no code"
 expect BookText.without_code_spans("a `open") == "a `open"
 expect BookText.without_code_spans("`x` y `z") == "  y `z"
+expect BookText.inline_html("plain") == Ok("plain")
+expect BookText.inline_html("around `Sky` & <b>") == Ok("around <code>Sky</code> &amp; &lt;b&gt;")
+expect BookText.inline_html("one\n\ntwo") == Err("a caption isn't one paragraph of Markdown: one\n\ntwo")
 expect ['a', 'z', 'A', 'Z', '0', '9'].all(BookText.is_letter_or_digit)
 expect ['-', '_', ' ', '`', 0xC3].all(|byte| !BookText.is_letter_or_digit(byte))

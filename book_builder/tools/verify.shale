@@ -29,7 +29,7 @@
 --     exactly its expected.txt; and a folder with no book.md
 
 const one_page_tests = 10
-const full_tests = 229
+const full_tests = 245
 const zig_tests_expected = 10
 const here = "book_builder"
 const book_want = "book-e2e: the book program this gate just built, untracked by design"

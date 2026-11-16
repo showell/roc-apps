@@ -3,7 +3,7 @@
 ## book's own voice. It works on rendered HTML because the renderer escapes raw
 ## markup, and these notes sit in the middle of a paragraph, so no fence can
 ## reach them.
-import BookText
+import bb.BookText
 
 DraftNotes := [].{
 

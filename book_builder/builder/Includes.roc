@@ -5,7 +5,16 @@
 ##     {{file PATH}}                     the whole file;
 ##     {{lines PATH from "A" to "B"}}    the lines from the one holding A
 ##                                       through the one holding B, each text
-##                                       in the file exactly once.
+##                                       in the file exactly once;
+##     {{function PATH NAME}}            one top-level definition of a Shale or
+##                                       a Roc file, with the comment lines
+##                                       right above it.
+##
+## A Shale function runs from its `function NAME(` line through the first line
+## that is exactly `end`. A Roc definition starts at the first line that begins
+## `NAME :` or `NAME =`, and runs on through every line indented under it, a
+## closing bracket at the line's start, and its `NAME =` after a signature;
+## a blank line between those stays in it.
 ##
 ## Each becomes a fence with the path in its title, its language from the
 ## path's extension. The path is the book folder's, read through the
@@ -140,7 +149,7 @@ Includes := [].{
 }
 
 not_an_include : Str
-not_an_include = "a `{{` the build doesn't know: an include is a line {{file PATH}} or {{lines PATH from \"A\" to \"B\"}}, the index is the line {{index}}, and prose may hold {{chapter Title}} and {{number N Title}}"
+not_an_include = "a `{{` the build doesn't know: an include is a line {{file PATH}}, {{lines PATH from \"A\" to \"B\"}} or {{function PATH NAME}}, the index is the line {{index}}, and prose may hold {{chapter Title}} and {{number N Title}}"
 
 ## What one include asks for.
 Directive : [
@@ -152,6 +161,7 @@ Directive : [
 			to : Str,
 		},
 	),
+	Definition({ path : Str, name : Str }),
 	Ahead({ path : Str, include : Str }),
 ]
 
@@ -159,6 +169,7 @@ directive_path : Directive -> Str
 directive_path = |directive| match directive {
 	WholeFile(path) => path
 	Excerpt({ path, .. }) => path
+	Definition({ path, .. }) => path
 	Ahead({ path, .. }) => path
 }
 
@@ -215,6 +226,7 @@ directive_of = |text| {
 		match inside.split_first(" ") {
 			Ok({ before: "file", after: path }) if is_plain_path(path) => Ok(WholeFile(path))
 			Ok({ before: "lines", after }) => excerpt_of(after)
+			Ok({ before: "function", after }) => definition_of(after)
 			_ => Err(NotAnInclude)
 		}
 	}
@@ -231,6 +243,13 @@ excerpt_of = |text| {
 	} else {
 		Err(NotAnInclude)
 	}
+}
+
+## `PATH NAME`, each one word.
+definition_of : Str -> Try(Directive, [NotAnInclude])
+definition_of = |text| match text.split_on(" ") {
+	[path, name] if is_plain_path(path) and is_plain_path(name) => Ok(Definition({ path, name }))
+	_ => Err(NotAnInclude)
 }
 
 ## A path is one word: not empty, and no space or tab in it.
@@ -258,7 +277,7 @@ quoted_block_lines = |directive, { files, languages }| {
 		}?
 	match directive {
 		Ahead({ include, .. }) => expansion_lines_of(text, { path, include })
-		WholeFile(_) | Excerpt(_) => {
+		WholeFile(_) | Excerpt(_) | Definition(_) => {
 			{ quoted, label } = selection(directive, BookText.text_lines(text))?
 			if quoted.any(|line| line.trim().starts_with("```")) {
 				Err("${path} holds a fence of its own, and a quote can't")
@@ -307,7 +326,78 @@ selection = |directive, file_lines| match directive {
 			})
 		}
 	}
+	Definition({ path, name }) => {
+		span =
+			match path.split_last(".") {
+				Ok({ after: "shale", .. }) => shale_function_span(file_lines, name)
+				Ok({ after: "roc", .. }) => roc_definition_span(file_lines, name)
+				_ => Err("a {{function}} include quotes a Shale or a Roc file, and ${path} is neither")
+			}?
+		Ok({
+			quoted: file_lines.sublist({ start: span.first, len: span.last - span.first + 1 }),
+			label: "${path}, the function ${name}",
+		})
+	}
 	Ahead(_) => crash "Includes.selection: a prepared include quotes no lines of a file"
+}
+
+## The first and last index of a Shale function's lines: the comment lines
+## right above `function NAME(`, through the first line that is `end`.
+shale_function_span : List(Str), Str -> Try({ first : U64, last : U64 }, Str)
+shale_function_span = |file_lines, name| {
+	start = file_lines.find_first_index(|line| line.starts_with("function ${name}(")) ? |_| "there is no top-level function ${name}"
+	ending = file_lines.drop_first(start).find_first_index(|line| line == "end") ? |_| "the function ${name} has no `end` at the start of a line"
+	Ok({ first: start - comments_above(file_lines, { start, opening: "--" }), last: start + ending })
+}
+
+## The first and last index of a Roc definition's lines: the comment lines
+## right above its first line, through the last line that belongs to it.
+roc_definition_span : List(Str), Str -> Try({ first : U64, last : U64 }, Str)
+roc_definition_span = |file_lines, name| {
+	is_head = |line| line.starts_with("${name} :") or line.starts_with("${name} =")
+	start = file_lines.find_first_index(is_head) ? |_| "there is no top-level definition ${name}"
+	var $last = start
+	var $at = start + 1
+	var $going = Bool.True
+	while $going and $at < file_lines.len() {
+		line = file_lines.get($at) ?? crash "Includes.roc_definition_span: the index is below the length"
+		if line.trim().is_empty() {
+			$at = $at + 1
+		} else if is_roc_continuation(line, name) {
+			$last = $at
+			$at = $at + 1
+		} else {
+			$going = Bool.False
+		}
+	}
+	Ok({ first: start - comments_above(file_lines, { start, opening: "#" }), last: $last })
+}
+
+## Whether a line goes on a Roc definition above it: indented under it, a
+## closing bracket at the line's start, or the definition after its signature.
+is_roc_continuation : Str, Str -> Bool
+is_roc_continuation = |line, name|
+	line.starts_with("\t")
+		or line.starts_with(" ")
+		or line.starts_with("}")
+		or line.starts_with("]")
+		or line.starts_with(")")
+		or line.starts_with("${name} =")
+
+## How many lines right above `start` open with the comment's mark.
+comments_above : List(Str), { start : U64, opening : Str } -> U64
+comments_above = |file_lines, { start, opening }| {
+	var $count = 0
+	var $going = Bool.True
+	while $going and $count < start {
+		line = file_lines.get(start - $count - 1) ?? crash "Includes.comments_above: the index is below the start"
+		if line.starts_with(opening) {
+			$count = $count + 1
+		} else {
+			$going = Bool.False
+		}
+	}
+	$count
 }
 
 ## The text read for `path`, or why there is none.
@@ -362,6 +452,8 @@ sample_files = [
 	{ path: "code/twice.txt", text: Ok("x\nx\n") },
 	{ path: "code/fenced.md", text: Ok("a\n  ```roc\nb\n") },
 	{ path: "notes", text: Ok("plain") },
+	{ path: "tools/a.shale", text: Ok("x = 1\n-- Says hello.\n-- Twice.\nfunction greet(x)\n  return x\nend\nfunction greeting()\nend\nfunction open()\n") },
+	{ path: "lib/A.roc", text: Ok("x = 1\n\n## Adds one.\n# Kept.\nadd_one : U64 -> U64\nadd_one = |n| {\n\tm = n\n\n\tm + 1\n}\n\nexpect add_one(1) == 2\ndouble = |n| n * 2\nnext = 3\n") },
 	{ path: "gone.txt", text: Err(NotFound) },
 	{ path: "up.txt", text: Err(OutsideTheBook) },
 ]
@@ -453,6 +545,8 @@ expect
 		"{{lines x from \"a\" to \"b\" }}",
 		"{{index}} too",
 		"a {{ b",
+		"{{function x}}",
+		"{{function a b c}}",
 	]
 		.all(|line| expand_sample("${line}\n") == Err(["book.md:1: ${line}: ${not_an_include}"]))
 expect
@@ -560,3 +654,21 @@ expect Includes.paths_wanted(
 	lines_of("{{code A.b}}\n{{file x}}\n```\n{{row y}}\n```\n{{row z}}\n"),
 	prepared,
 ) == ["pre/line-1.md", "x", "pre/line-6.md"]
+expect
+	expand_sample("{{function tools/a.shale greet}}\n")
+		== Ok("```shale tools/a.shale, the function greet\n-- Says hello.\n-- Twice.\nfunction greet(x)\n  return x\nend\n```\n")
+expect
+	expand_sample("{{function lib/A.roc add_one}}\n")
+		== Ok("```roc lib/A.roc, the function add_one\n## Adds one.\n# Kept.\nadd_one : U64 -> U64\nadd_one = |n| {\n\tm = n\n\n\tm + 1\n}\n```\n")
+expect
+	expand_sample("{{function lib/A.roc double}}\n{{function tools/a.shale greeting}}\n")
+		== Ok("```roc lib/A.roc, the function double\ndouble = |n| n * 2\n```\n```shale tools/a.shale, the function greeting\nfunction greeting()\nend\n```\n")
+expect
+	expand_sample("{{function tools/a.shale gone}}\n{{function tools/a.shale open}}\n{{function lib/A.roc gone}}\n{{function notes x}}\n{{function gone.txt x}}\n")
+		== Err([
+			"book.md:1: {{function tools/a.shale gone}}: there is no top-level function gone",
+			"book.md:2: {{function tools/a.shale open}}: the function open has no `end` at the start of a line",
+			"book.md:3: {{function lib/A.roc gone}}: there is no top-level definition gone",
+			"book.md:4: {{function notes x}}: a {{function}} include quotes a Shale or a Roc file, and notes is neither",
+			"book.md:5: {{function gone.txt x}}: gone.txt is not there",
+		])

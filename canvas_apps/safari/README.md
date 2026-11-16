@@ -76,7 +76,7 @@ publish, and it needs roc-markdown beside this checkout. It stages the pages,
 makes safari's page and the widgets' release builds
 (`tutorial/build_widgets.shale`, which rebuilds only a page whose build reads
 a file that changed), drives the stage in a browser with shots, and only then
-moves it into place (`tutorial/move_stage.shale`). Its inner loop,
+moves it into place (`book_builder/tools/move_stage.shale`). Its inner loop,
 `stage=NAME`, builds into that folder and checks it with no shots, in about a
 minute, or about seven seconds with `check=0`, once its program is built.
 

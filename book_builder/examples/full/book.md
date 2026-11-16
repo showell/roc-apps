@@ -13,6 +13,14 @@ chapters and links each page to the pages beside it.
 A section is a heading inside a chapter. The contents page lists it, and so
 does the list of chapters beside this page.
 
+A diagram is Graphviz source with its title on the line above it, drawn
+before the build:
+
+From the first page to the last
+```dot
+digraph { first -> last }
+```
+
 See {{chapter Quoting files}} for the includes, and chapter
 {{number 3 The index}} for the index.
 

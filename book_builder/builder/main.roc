@@ -1,1 +1,1 @@
-package [Builder, Fences, Manuscript, Pages] { md: "../../../roc-markdown/package/main.roc" }
+package [BookText, Builder, Diagrams, Fences, Includes, Manuscript, Pages] { md: "../../../roc-markdown/package/main.roc" }

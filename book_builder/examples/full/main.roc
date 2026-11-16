@@ -1,22 +1,51 @@
 ## This app is the book builder's example of most of what it does: a front
 ## page and chapters, includes, chapter references, an index, the negatives
-## lint and one fence hook of its own, `shout`.
+## lint, a diagram and one fence hook of its own, `shout`. A book's pre-step
+## draws its diagrams with Graphviz; this one's drawing is checked in, in
+## `drawings/`, beside the source it stands for.
 app [main!] { bb: "../../builder/main.roc", pf: platform "../../platform/main.roc" }
 
 import pf.Book
 import bb.Builder
+import bb.Diagrams
 import bb.Fences
+import bb.Includes
 
 main! : Str => Try(Str, Str)
-main! = |_folder| Builder.build!(settings, Book.read_file!)
+main! = |_folder| {
+	found = Diagrams.found({
+		name: settings.manuscript,
+		text: read_text!(settings.manuscript)?,
+	}) ? |problems| Str.join_with(problems.map(|problem| "${problem}\n"), "")
+	drawn = Diagrams.drawn!(
+		{
+			diagrams: found.diagrams,
+			folder: "drawings",
+			manuscript: settings.manuscript,
+		},
+		read_text!,
+	)?
+	Builder.build!(
+		{ ..settings, fence_hooks: [shout, Diagrams.hook(drawn)] },
+		|path|
+			if path == settings.manuscript {
+				Ok(found.manuscript)
+			} else {
+				Book.read_file!(path)
+			},
+	)
+}
 
 settings : Builder.Settings
 settings = {
 	..Builder.default_settings,
 	index_terms: IndexTerms("terms.txt"),
 	negatives: Lint({ words: "negative_words.txt", table: "negatives.txt" }),
-	fence_hooks: [shout],
 }
+
+## A file of the book's folder, or the build's stop naming it.
+read_text! : Str => Try(Str, Str)
+read_text! = |path| Book.read_file!(path).map_err(|problem| "${path} ${Includes.read_problem_text(problem)}\n")
 
 ## A ```shout fence is its words and its body in capitals, in a paragraph of
 ## its own. One with nothing to shout stops the build.

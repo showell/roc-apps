@@ -1,16 +1,13 @@
-## This module holds the Safari Ride book's own fences, as the book builder's
-## hooks. A ```widget fence becomes a live frame, and a ```dot fence becomes
-## its drawing. A ```widget fence names its widget and, for a widget that opens
-## partway, the word it opens at: ```widget frame trees. Its body is the
-## caption. A ```dot fence names its drawing, `diagram-N`, as Diagrams writes
-## it, and the drawing comes from the pre-step, already read.
+## This module holds the Safari Ride book's own fence, as a book builder's
+## hook: a ```widget fence becomes a live frame. It names its widget and, for a
+## widget that opens partway, the word it opens at: ```widget frame trees. Its
+## body is the caption. The book's ```dot fences are the builder's
+## (book_builder/builder/Diagrams.roc).
 ##
-## Roc's hooks are pure, so a widget's folder is looked for, and a diagram
-## drawn and read, before the build. A fence that names something missing is
-## refused, which stops the build.
+## Roc's hooks are pure, so a widget's folder is looked for before the build. A
+## fence that names a missing widget is refused, which stops the build.
 import bb.Fences
-import BookText
-import Diagrams
+import bb.BookText
 
 SafariFences := [].{
 
@@ -25,9 +22,6 @@ SafariFences := [].{
 		html_of: |{ words, body }| widget_html(folders, { words, caption: body.trim() }),
 	}
 
-	## The hook for ```dot fences, given the drawings.
-	dot : List(Diagrams.Drawn) -> Fences.Hook
-	dot = |drawings| { language: "dot", html_of: |{ words, .. }| diagram_html(drawings, words) }
 }
 
 ## The page behind a widget's word, and the shape of its canvas: `Screen.roc`
@@ -151,28 +145,6 @@ widget_html = |folders, { words, caption }|
 		}
 	}
 
-## The drawing, or a phone's and a desktop's for a wide diagram, over its title.
-## The drawing goes into the page as it is, so one holding a comment's opening
-## is refused: it could close the page early with a forged page mark.
-diagram_html : List(Diagrams.Drawn), Str -> [Html(Str), Refused(Str)]
-diagram_html = |drawings, id| match drawings.find_first(|drawn| drawn.id == id) {
-	Ok(
-		{ svg, .. },
-	) if svg.contains("<!--") => Refused("the drawing for the diagram `${id}` holds an HTML comment")
-	Ok({ title, svg, .. }) =>
-		match BookText.inline_html(title) {
-			Err(why) => Refused(why)
-			Ok(caption_html) => {
-				named = svg.replace_each(
-					"role=\"img\"",
-					"role=\"img\" aria-label=\"${BookText.escaped_text(title)}\"",
-				)
-				Html("<figure class=\"diagram\">${named}<figcaption>${caption_html}</figcaption></figure>")
-			}
-		}
-	Err(NotFound) => Refused("no drawing for the diagram `${id}`")
-}
-
 folders : List(Str)
 folders = ["sky_widget", "frame_widget"]
 
@@ -221,29 +193,3 @@ expect html_of(
 	SafariFences.widget(folders),
 	{ words: "sky", body: "a\n\nb\n" },
 ) == Refused("a caption isn't one paragraph of Markdown: a\n\nb")
-
-drawings : List(Diagrams.Drawn)
-drawings = [
-	{
-		id: "diagram-1",
-		title: "Around `Sky`",
-		svg: "<svg role=\"img\">",
-	},
-	{
-		id: "diagram-2",
-		title: "A note",
-		svg: "<svg><!-- x -->",
-	},
-]
-
-expect
-	html_of(SafariFences.dot(drawings), { words: "diagram-1", body: "digraph {}\n" })
-		== Html("<figure class=\"diagram\"><svg role=\"img\" aria-label=\"Around `Sky`\"><figcaption>Around <code>Sky</code></figcaption></figure>")
-expect html_of(
-	SafariFences.dot(drawings),
-	{ words: "diagram-2", body: "" },
-) == Refused("the drawing for the diagram `diagram-2` holds an HTML comment")
-expect html_of(
-	SafariFences.dot(drawings),
-	{ words: "diagram-3", body: "" },
-) == Refused("no drawing for the diagram `diagram-3`")

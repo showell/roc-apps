@@ -14,7 +14,7 @@ app [main!] {
 
 import pf.Book
 import bb.Builder
-import Diagrams
+import bb.Diagrams
 import QuotedColor
 import SafariFences
 import SafariLook
@@ -27,15 +27,14 @@ main! = |_folder| {
 		name: manuscript_path,
 		text: read_prepared!(manuscript_path)?,
 	}) ? |problems| Str.join_with(problems.map(|problem| "${problem}\n"), "")
-	var $drawn = []
-	for diagram in manuscript.diagrams {
-		source = read_prepared!(Diagrams.dot_path(diagram.id))?
-		if source != diagram.source {
-			return Err("${Diagrams.dot_path(diagram.id)} is not the source of ${diagram.id} in ${manuscript_path}: run book.shale, whose pre-step draws it\n")
-		}
-		svg = read_prepared!(Diagrams.svg_path(diagram.id))?
-		$drawn = $drawn.append({ id: diagram.id, title: diagram.title, svg })
-	}
+	drawn = Diagrams.drawn!(
+		{
+			diagrams: manuscript.diagrams,
+			folder: prepared_folder,
+			manuscript: manuscript_path,
+		},
+		read_prepared!,
+	)?
 	notes = QuotedColor.notes_of(read_prepared!(blocks_path)?) ? |why| "${why}\n"
 	var $sources = []
 	for note in notes {
@@ -54,7 +53,7 @@ main! = |_folder| {
 	}
 	settings = {
 		..base_settings,
-		fence_hooks: [SafariFences.widget(folders), SafariFences.dot($drawn)],
+		fence_hooks: [SafariFences.widget(folders), Diagrams.hook(drawn)],
 		colorer: QuotedColor.colorer($colored),
 		chapters: extent,
 	}
@@ -71,6 +70,10 @@ main! = |_folder| {
 
 manuscript_path : Str
 manuscript_path = "tutorial.md"
+
+## Where the pre-step leaves what it prepared.
+prepared_folder : Str
+prepared_folder = "build/prepared"
 
 ## The widgets' folders, one a line, as the pre-step finds them beside the
 ## game.
@@ -117,7 +120,7 @@ base_settings = {
 	index_terms: IndexTerms("index_terms.txt"),
 	look: SafariLook.look,
 	prepared: Prepared({
-		folder: "build/prepared",
+		folder: prepared_folder,
 		kinds: [
 			"code",
 			"expect",

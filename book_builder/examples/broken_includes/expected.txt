@@ -1,6 +1,6 @@
 book.md:7: {{file code/missing.roc}}: code/missing.roc is not there
 book.md:8: {{lines code/a.txt from "start" to "nowhere"}}: `nowhere` is in code/a.txt 0 times, and an anchor must be there once
-book.md:10: {{fil code/a.txt}}: a `{{` the build doesn't know: an include is a line {{file PATH}} or {{lines PATH from "A" to "B"}}, the index is the line {{index}}, and prose may hold {{chapter Title}} and {{number N Title}}
+book.md:10: {{fil code/a.txt}}: a `{{` the build doesn't know: an include is a line {{file PATH}}, {{lines PATH from "A" to "B"}} or {{function PATH NAME}}, the index is the line {{index}}, and prose may hold {{chapter Title}} and {{number N Title}}
 book.md:9: See {{chapter Nowhere}}.: no chapter is titled Nowhere
 book.md:3: negative [(before the first chapter)] not: It is not here.
 negatives: negative 1, unused_exception 0, 2 negative sentences of 5 read, 1 kept in the table

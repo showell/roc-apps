@@ -14,7 +14,8 @@
 --                  code through Roc's parser, or runs `roc check` on a failing
 --                  program, or reads the proof file: build.shale's `prepare=1`
 --   diagram-N.dot  the Nth ```dot fence's source, and diagram-N.svg, its
---   diagram-N.svg  drawing by Graphviz, which draw_diagrams.shale makes
+--   diagram-N.svg  drawing by Graphviz, which the book builder's
+--                  tools/draw_diagrams.shale writes
 --   widgets.txt    the folders beside the game that hold a widget's page
 --   chapters.txt   which chapters the book holds, the line BUILT gets too
 --   blocks.txt     which lines of which file each quoted Roc block shows, and
@@ -33,8 +34,8 @@
 -- build_widgets.shale makes safari's page and each widget's a release build,
 -- unless its stamp says it already is. Then book_check.mjs drives the staged
 -- pages in a real browser and leaves a shot of each page in build/shots/ (the
--- pre-publish tier). Then move_stage.shale puts the stage in the place of
--- /tutorial/. A failure at any step stops the run before the move, so the
+-- pre-publish tier). Then the book builder's tools/move_stage.shale puts the
+-- stage in the place of /tutorial/. A failure at any step stops the run before the move, so the
 -- channel's /tutorial/ is left as it was, and the stage is left for a look.
 -- Each step's time is printed as it ends.
 --
@@ -65,16 +66,16 @@ const CHECK = arg("check", "1") ~= "0"
 const STAGED_NAME = STAGE == "" and DEST_NAME .. ".staging" or STAGE
 const STAGING = NEXT .. "/" .. STAGED_NAME
 const SHOTS = "canvas_apps/safari/tutorial/build/shots"
-const DRAW = "canvas_apps/safari/tutorial/draw_diagrams.shale"
+const DRAW = "book_builder/tools/draw_diagrams.shale"
 const WIDGETS = "canvas_apps/safari/tutorial/build_widgets.shale"
-const MOVE = "canvas_apps/safari/tutorial/move_stage.shale"
+const MOVE = "book_builder/tools/move_stage.shale"
 const CHECK_WANT = "script: book_check.mjs drives the staged pages in headless Chromium"
 const CACHE = "build:roc-apps/book-cache"
 const PAGE_MARK = "<!-- book page: "
 const REPORT_MARK = "<!-- book report -->"
 const DOT_WANT = "graphviz: the tutorial's diagrams, drawn at build time"
 const BOOK_WANT = "book: the book program book.shale just built, untracked by design"
-const APP_TESTS = 55
+const APP_TESTS = 41
 const CHAPTERS_ARG = arg("chapters", "")
 const CHAPTERS = CHAPTERS_ARG ~= "" and tonumber(CHAPTERS_ARG) or nil
 -- A stage is a folder of its own: never the published book, the name the move
@@ -87,34 +88,6 @@ if not CHECK and STAGE == "" then fail("book: check=0 builds only a stage=, neve
 function built_record()
   if CHAPTERS == nil then return "book: every chapter\n" end
   return "book: the first " .. CHAPTERS .. " chapters\n"
-end
-
--- Each ```dot fence's source, written to its diagram-N.dot, as app/Diagrams.roc
--- finds the fences; gives how many there are.
-function write_diagram_sources(text)
-  local count = 0
-  local open = "none"
-  local body = {}
-  for l in split(text, "\n") do
-    if open == "none" then
-      if l == "```dot" then
-        open = "dot"
-        body = {}
-      elseif starts_with(l, "```") then
-        open = "other"
-      end
-    elseif l == "```" then
-      if open == "dot" then
-        count = count + 1
-        replace(PREPARED .. "/diagram-" .. count .. ".dot", join(body, "\n") .. "\n")
-      end
-      open = "none"
-    elseif open == "dot" then
-      push(body, l)
-    end
-  end
-  if open ~= "none" then fail("book: a fence never closes in " .. SOURCE) end
-  return count
 end
 
 function widget_folders()
@@ -215,9 +188,10 @@ function main()
   print("book: the pre-step's includes took " .. prepared.ms .. " ms")
   replace(PREPARED .. "/widgets.txt", join(widget_folders(), "\n") .. "\n")
   replace(PREPARED .. "/chapters.txt", built_record())
-  local count = write_diagram_sources(read(SOURCE))
-  local drawn = must(run({"shale", "--root", ".", DRAW, "count=" .. count}, {timeout_ms = 600000, tail = 20, want = DOT_WANT}))
-  print("book: " .. count .. " diagrams drawn in " .. drawn.ms .. " ms")
+  local drawn = must(run({"shale", "--root", ".", DRAW, "source=" .. SOURCE, "prepared=" .. PREPARED}, {timeout_ms = 600000, tail = 20, want = DOT_WANT}))
+  for l in lines(drawn.out) do
+    if starts_with(l, "draw_diagrams: ") then print("book: " .. sub(l, 16) .. " in " .. drawn.ms .. " ms") end
+  end
 
   test_app(env)
   if exists(PROGRAM) then remove(PROGRAM) end

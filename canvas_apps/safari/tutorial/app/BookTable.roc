@@ -2,7 +2,7 @@
 ## places where a name may break, after a `.` or a `_`, so a narrow table wraps a
 ## long name there and never mid-word. It works on rendered HTML because the
 ## renderer writes no markup a chapter can reach.
-import BookText
+import bb.BookText
 
 BookTable := [].{
 
