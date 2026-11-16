@@ -16,4 +16,4 @@ fasttrack/web/platform/targets/
 .zig-cache/
 
 # Dog Park's build output, when zig build runs in its folder by hand.
-dog_park/zig-out/
+dog-park/zig-out/

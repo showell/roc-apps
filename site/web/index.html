@@ -3,7 +3,7 @@
 <head>
 <!-- Every link opens in a new tab (Steve's preference). -->
 <base target="_blank">
-<meta name="description" content="Programs written in Roc: the Fast Track board game against computer players, the Safari Ride screensaver and the little Roc book about it, the roc-markdown library, a BASIC interpreter, six roc-ray examples, and roc-screensaver, a Roc platform in Zig for screensavers that also run as web pages.">
+<meta name="description" content="Programs written in Roc: the Fast Track board game against computer players, the Dog Park herding game, the Safari Ride screensaver and the little Roc book about it, the roc-markdown library, a BASIC interpreter, six roc-ray examples, and roc-screensaver, a Roc platform in Zig for screensavers that also run as web pages.">
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Steve's Roc Work</title>
@@ -178,6 +178,21 @@ N             SQR(N)        NEWTON
   <div class="stats">
     <div class="stat"><b>4,166</b><span>lines of Roc: the game, its page and its players</span></div>
     <div class="stat"><b>96</b><span>expects, and 371 lines of tests beside them</span></div>
+  </div>
+</section>
+
+<section class="feature" data-app="dog-park">
+  <div>
+    <a href="dog-park/" aria-hidden="true" tabindex="-1"><img class="shot" src="dog-park/shot.png" alt="" loading="lazy"></a>
+    <h3><a href="dog-park/">Dog Park</a></h3>
+    <p>A herding game: press a dog to leash it, drag it through a park full of critters, and herd all the cows into one bunch. Dogs of its breed follow it in herds and chains, cows run from a moving dog and drift toward each other, goats walk boldly up to the dogs, and chickens wander out to eat the trail of poop the herds leave. The world wraps around, top to bottom and side to side. Your park is kept in your browser, so it's where you left it when you come back.</p>
+    <p class="opening"><span class="tag">Roc at work</span>What every critter does is Roc. The rules say, for each pair of kinds, what one does about the other (keep its distance, herd, close in, or ignore it), and the compiler holds them to every pair, so a new kind of critter is a change to the Roc alone. The walk, everyone's moves after each pixel of the leashed dog's, is the hot path: it works in place on lists the Zig lends it, and allocates nothing.</p>
+    <p class="opening"><span class="tag nice">Roc plays nice with others</span>A Zig board keeps the books and calls the Roc, the two compiled together to WebAssembly and run sixteen times a second. A plain Zig version of the walk, sharing none of the Roc's code, checks every step the Roc takes in the tests.</p>
+    <div class="links"><a href="dog-park/">Play</a><a href="https://github.com/showell/roc-apps/tree/master/dog-park">The source, and how it is built</a></div>
+  </div>
+  <div class="stats">
+    <div class="stat"><b>3,688</b><span>lines of Roc in 12 modules: the world, the rules, the wish and the walk</span></div>
+    <div class="stat"><b>79</b><span>expects</span></div>
   </div>
 </section>
 

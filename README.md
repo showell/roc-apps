@@ -10,7 +10,7 @@ Thanks to Damian Tedrow, whose [Cobblestone](https://github.com/damiant3/Cobbles
 | where | what | map |
 |---|---|---|
 | `canvas_apps/` | eight small interactive programs that run as a page and, as a spike not kept current, natively on roc-ray, from one set of files: Safari, snake, pong, breakout, particles, a camera world, a pixel paint program, and a movie you can scrub | `canvas_apps/README.md`, `canvas_apps/safari/README.md` |
-| `dog_park/` | Dog Park, a herding game: drag a dog through a park of critters and herd the cows into one bunch; the physics is Roc (the rules, the wish, the walk) under a Zig board, compiled to WebAssembly, and the browser keeps each player's park | `dog_park/README.md` |
+| `dog-park/` | Dog Park, a herding game: drag a dog through a park of critters and herd the cows into one bunch; the physics is Roc (the rules, the wish, the walk) under a Zig board, compiled to WebAssembly, and the browser keeps each player's park | `dog-park/README.md` |
 | `fasttrack/` | Fast Track, the board game, ported from Steve's elm-fasttrack: the rules and the whole page in Roc, drawn by a thin page script that patches the board | `fasttrack/README.md` |
 | `glue/` | `JsGlue.roc`, the `roc glue` spec that generates a page's frame reader from the compiler's type table | `glue/README.md` |
 | `ray/` | `fetch_exes.sh`, which pulls the canvas apps' Windows executables to a Windows machine | `ray/README.md` |

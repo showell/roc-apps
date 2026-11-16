@@ -2,7 +2,7 @@
 -- line with what it ran; any failure stops the run, naming the check, and
 -- the page in the dev channel stays as it was.
 --
---   cd <roc-apps checkout> && shale dog_park/build.shale
+--   cd <roc-apps checkout> && shale dog-park/build.shale
 --
 -- The checks, in order:
 -- - `zig build check`: zig fmt over the Zig and the generated .zon; the
@@ -22,7 +22,11 @@
 -- blocked), and only then swapped in whole as
 -- build:roc-apps/next/dog-park/, the dev channel's /dog-park/, with a
 -- BUILT file naming the Roc and the commit. The shots page_check takes
--- are in build:roc-apps/gen/dog_park/shots/.
+-- are in build:roc-apps/gen/dog-park/shots/. Before the swap,
+-- tools/card_shot.mjs takes the landing page's picture of the staged page,
+-- and site/squeeze_png.mjs makes it the page's shot.png. The critters are
+-- emoji, so a box with no colour emoji font (fc-list) stops the run there:
+-- a picture without them would be published otherwise.
 --
 -- A count that moves goes with the change that moved it, and its commit
 -- says why. `zig build slow` (the full fuzz, the wasm tests in
@@ -30,7 +34,7 @@
 --
 -- budget: steps=20000000
 
-const HERE = "dog_park"
+const HERE = "dog-park"
 const ZIG_TESTS = 60
 -- print_world.roc's, Rules.roc's, Wish.roc's, Walk.roc's and print_page.roc's
 -- `roc test`s, each with the expects of what it imports.
@@ -46,7 +50,7 @@ function zig_build(roc, step, keep)
     local out = r.out
     if #out > 6000 then out = sub(out, #out - 6000, #out) end
     print(out)
-    fail("dog_park: `zig build " .. step .. "` failed")
+    fail("dog-park: `zig build " .. step .. "` failed")
   end
   return r
 end
@@ -60,7 +64,7 @@ function counts(out)
   for l in lines(out) do
     local z = re_find(l, "Build Summary: .*; (\\d+)/(\\d+) tests passed")
     if z ~= nil then
-      if z.groups[1] ~= z.groups[2] then fail("dog_park: " .. trim(l)) end
+      if z.groups[1] ~= z.groups[2] then fail("dog-park: " .. trim(l)) end
       zig = tonumber(z.groups[1])
     end
     local e = re_find(l, "^All \\((\\d+)\\) tests passed")
@@ -84,44 +88,44 @@ function node_test(file)
   for k in {"pass", "fail", "skipped", "todo", "cancelled"} do
     if not has_key(said, k) then
       print(r.out)
-      fail("dog_park: " .. file .. " printed no `# " .. k .. "` line")
+      fail("dog-park: " .. file .. " printed no `# " .. k .. "` line")
     end
   end
   if r.code ~= 0 or said.fail ~= 0 or said.skipped ~= 0 or said.todo ~= 0 or said.cancelled ~= 0 then
     print(r.out)
-    fail("dog_park: " .. file .. " exited " .. r.code .. ": " .. said.pass .. " passed, " .. said.fail .. " failed, " .. said.skipped .. " skipped, " .. said.todo .. " to do")
+    fail("dog-park: " .. file .. " exited " .. r.code .. ": " .. said.pass .. " passed, " .. said.fail .. " failed, " .. said.skipped .. " skipped, " .. said.todo .. " to do")
   end
   return said.pass
 end
 
-local roc = pinned_roc("dog_park/build.shale")
+local roc = pinned_roc("dog-park/build.shale")
 
 local check = zig_build(roc, "check", 4000000)
 local c = counts(check.out)
-if c.zig ~= ZIG_TESTS then fail("dog_park: " .. c.zig .. " Zig tests ran, held at " .. ZIG_TESTS) end
-if c.roc_runs ~= ROC_RUNS or c.roc ~= ROC_EXPECTS then fail("dog_park: " .. c.roc_runs .. " roc test runs, " .. c.roc .. " expects; held at " .. ROC_RUNS .. " and " .. ROC_EXPECTS) end
+if c.zig ~= ZIG_TESTS then fail("dog-park: " .. c.zig .. " Zig tests ran, held at " .. ZIG_TESTS) end
+if c.roc_runs ~= ROC_RUNS or c.roc ~= ROC_EXPECTS then fail("dog-park: " .. c.roc_runs .. " roc test runs, " .. c.roc .. " expects; held at " .. ROC_RUNS .. " and " .. ROC_EXPECTS) end
 print("PASS zig build check: " .. c.zig .. "/" .. ZIG_TESTS .. " Zig tests (natively and on wasm32-wasi), " .. c.roc .. " Roc expects in " .. c.roc_runs .. " runs, roc fmt, roc-fresh, zig fmt")
 
 local node = {{file = "tools/test_page_modules.mjs", held = 42}, {file = "tools/test_engine.mjs", held = 11}}
 for n in node do
   local passed = node_test(n.file)
-  if passed ~= n.held then fail("dog_park: " .. n.file .. ": " .. passed .. " passed, held at " .. n.held) end
+  if passed ~= n.held then fail("dog-park: " .. n.file .. ": " .. passed .. " passed, held at " .. n.held) end
   print("PASS " .. n.file .. ": " .. passed .. "/" .. n.held)
 end
 
 zig_build(roc, "walk-judge", 200000)
 print("PASS zig build walk-judge: every walk of the bench's drags matches walk_reference.zig")
 
-local kind = run({"shale", "dog_park/tools/new_kind.shale"}, {timeout_ms = 1500000, tail = 40})
+local kind = run({"shale", "dog-park/tools/new_kind.shale"}, {timeout_ms = 1500000, tail = 40})
 if kind.code ~= 0 then
   print(kind.out)
-  fail("dog_park: tools/new_kind.shale failed")
+  fail("dog-park: tools/new_kind.shale failed")
 end
 local verdict = ""
 for l in lines(kind.out) do if starts_with(l, "new_kind: ") then verdict = l end end
 if verdict == "" then
   print(kind.out)
-  fail("dog_park: tools/new_kind.shale printed no verdict")
+  fail("dog-park: tools/new_kind.shale printed no verdict")
 end
 print("PASS " .. verdict)
 
@@ -138,14 +142,21 @@ local head = git_head("")
 if not git_is_clean("") then head = head .. "+dirty" end
 replace(STAGING .. "/BUILT", "roc " .. trim(read("roc-version")) .. "\ncommit " .. head .. "\n")
 -- The dev channel serves the staging folder too, at /dog-park.staging/.
-local played = run({"node", HERE .. "/tools/page_check.mjs", "http://localhost:9210/dog-park.staging/", real("build:roc-apps/gen/dog_park/shots")}, {timeout_ms = 120000, tail = 30, want = WANT_NODE})
+local played = run({"node", HERE .. "/tools/page_check.mjs", "http://localhost:9210/dog-park.staging/", real("build:roc-apps/gen/dog-park/shots")}, {timeout_ms = 120000, tail = 30, want = WANT_NODE})
 if played.code ~= 0 then
   print(played.out)
-  fail("dog_park: tools/page_check.mjs failed on the staged page; the dev channel's /dog-park/ is as it was")
+  fail("dog-park: tools/page_check.mjs failed on the staged page; the dev channel's /dog-park/ is as it was")
 end
 local checks = 0
 for l in lines(played.out) do if starts_with(l, "PASS ") then checks = checks + 1 end end
 print("PASS tools/page_check.mjs: " .. checks .. " checks in headless Chromium")
+local fonts = must(run({"fc-list", ":color=true", "family"}, {timeout_ms = 30000, whole = 100000})).out
+if not contains(fonts, "Emoji") then fail("dog-park: no colour emoji font (fc-list :color=true): the landing page's picture would show no critters; README, \"The landing page's picture\", says how to install one") end
+local raw = real("build:roc-apps/gen/dog-park") .. "/card-raw.png"
+must(run({"node", HERE .. "/tools/card_shot.mjs", "http://localhost:9210/dog-park.staging/", raw}, {timeout_ms = 120000, tail = 10, want = WANT_NODE}))
+must(run({"node", "site/squeeze_png.mjs", raw, real(STAGING) .. "/shot.png"}, {timeout_ms = 60000, tail = 5, want = "script: site/squeeze_png.mjs recompresses the landing page's picture"}))
+files = files + 1
+print("PASS tools/card_shot.mjs: the landing page's picture, " .. stat(STAGING .. "/shot.png").size .. " bytes, its colour emoji from " .. trim(fonts))
 if exists(DEST) then remove_tree(DEST) end
 must(run({"mv", real(STAGING), real(DEST)}, {timeout_ms = 10000, tail = 5}))
 print("dev: " .. (files + 2) .. " files in build:roc-apps/next/dog-park/ (commit " .. head .. "), http://localhost:9210/dog-park/")

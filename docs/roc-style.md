@@ -6,7 +6,7 @@ records, opaque types, `Try`. Using them is a discipline, though, and the
 language won't apply it for you; this guide is that discipline, written down.
 
 These are Steve's preferences for Roc in this repository (Dog Park's physics
-in `dog_park/` among it) and its siblings ([roc-chat](https://github.com/showell/roc-chat)), and
+in `dog-park/` among it) and its siblings ([roc-chat](https://github.com/showell/roc-chat)), and
 most carry over from his Zig. Each one replaces a construct that can be wrong
 and still compile with one that can't. Examples are small and constructed (a
 cart, an order, a user id) unless real code is the clearest, which is Safari

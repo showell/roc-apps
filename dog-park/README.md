@@ -97,9 +97,9 @@ The Roc is in `roc/`, roughly in the order to read it:
 
 **To change something and see it**, from roc-apps' root:
 
-    shale dog_park/build.shale    # every check, then the page into the dev channel
+    shale dog-park/build.shale    # every check, then the page into the dev channel
 
-and, in `dog_park/`, for the inner loop:
+and, in `dog-park/`, for the inner loop:
 
     zig build roc        # print the world and rules for the Zig and the page
     zig build test       # zig fmt, the physics' tests and the page's tests: the fast tier
@@ -120,7 +120,7 @@ commit them with your change (`zig build check` fails on one left stale).
 To break a long record, list, call or lambda's arguments, put a comma
 after its last item, and `roc fmt` lays it out one item a line.
 
-**To know a change is right:** `shale dog_park/build.shale` (below). The
+**To know a change is right:** `shale dog-park/build.shale` (below). The
 Zig tests hold the Roc to recordings of today's game (the golden runs),
 which fail, saying so, when the world or the rules change: record them
 anew with `physics_golden_test.zig`'s `print`. A change that should leave
@@ -160,7 +160,7 @@ walk's judge), are Zig. The rules
 | `src/walk_reference.zig` | the plain Zig walk the Roc is judged against |
 | `src/physics_bench.zig` | `zig build physics-bench` and `walk-judge` |
 | `web/` | the page: `index.html`, `park.js` (the DOM, the frame loop, the browser's storage), `engine.js` (the tick and the park kept, no DOM), `physics.js` (the wasm's exports), `scene.js`, `pointer.js`, `blit.js`, `quips.js`, and the files the Roc prints |
-| `tools/` | the test runner, the node tests (`test_page_modules.mjs`, `test_engine.mjs`, with `lib/page_rig.mjs`), `run_wasi.mjs`, `new_kind.shale`, `page_check.mjs` |
+| `tools/` | the test runner, the node tests (`test_page_modules.mjs`, `test_engine.mjs`, with `lib/page_rig.mjs`), `run_wasi.mjs`, `new_kind.shale`, `page_check.mjs` and `card_shot.mjs` (headless Chromium, through `lib/chromium.mjs`) |
 | `build.shale` | the gate, then the page into the dev channel |
 
 It needs the box's Zig (0.17, `build.zig.zon`), the Roc roc-apps pins,
@@ -168,7 +168,7 @@ node, and Shale for `build.shale`. It has no Zig dependencies.
 
 ## The checks
 
-`shale dog_park/build.shale`, from roc-apps' root, runs every check, each
+`shale dog-park/build.shale`, from roc-apps' root, runs every check, each
 with its count held exactly, and publishes only when all pass:
 
 - `zig build check`: `zig fmt --check` over the Zig and the generated
@@ -187,15 +187,16 @@ with its count held exactly, and publishes only when all pass:
   park and that a reload picks it up; then it loads it again with
   localStorage refusing every use and checks that the game plays and says
   so once. Any console error fails it. Its shots are in
-  `~/build/roc-apps/gen/dog_park/shots/`; the box has no emoji font, so
-  they show the tiles and the leash's ring but not the critters.
+  `~/build/roc-apps/gen/dog-park/shots/`;
+- `tools/card_shot.mjs`, the landing page's picture (below), taken of the
+  staged page.
 
 Every Zig test is built with `tools/test_runner.zig`, std's runner but
 stricter: a skipped test fails, and so does a test binary with no named
 tests in it. A node test fails on a skip or a todo, not only on its exit
 code.
 
-The tiers, in `dog_park/`:
+The tiers, in `dog-park/`:
 
     zig build physics-test   # the physics' tests alone, natively: the fastest
     zig build test           # after every edit
@@ -204,6 +205,18 @@ The tiers, in `dog_park/`:
 
 `-Dfuzz=full` gives any step the full fuzz. The bench
 (`zig build physics-bench`) is in no tier.
+
+## The landing page's picture
+
+`build.shale` takes it of each build it publishes, as the page's
+`shot.png`: `tools/card_shot.mjs` plays Level Two in headless Chromium and
+drags a dog round a loop, and `site/squeeze_png.mjs` makes it small. The
+critters are emoji, so the box needs a colour emoji font, or the build
+stops. Noto Color Emoji, for one user and with no sudo: download
+`fonts/NotoColorEmoji.ttf` at a release tag of
+[googlefonts/noto-emoji](https://github.com/googlefonts/noto-emoji) into
+`~/.local/share/fonts/`, check that `git hash-object` of it is the blob
+GitHub names for that path at that tag, and run `fc-cache`.
 
 ## Status (2026-11-16)
 

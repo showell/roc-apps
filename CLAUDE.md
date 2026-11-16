@@ -683,9 +683,9 @@ part, so a machine checks it, not a reader.
   request's arena goes with it. Planted crashes, one per way the Roc can
   die, prove it (`app/test/crash.roc`, `host/crash_test.zig`).
 - **Let the host check the Roc's work.** In Dog Park
-  (`dog_park/README.md`, "Changing the game in Roc"), the physics and the
+  (`dog-park/README.md`, "Changing the game in Roc"), the physics and the
   rules are Roc under a Zig board, compiled to the page's wasm. `zig build
-  walk-judge` checks every step against `dog_park/src/walk_reference.zig`,
+  walk-judge` checks every step against `dog-park/src/walk_reference.zig`,
   a plain Zig reference that shares none of the Roc's code.
 
 ## 14. Security habits for Roc services
