@@ -33,7 +33,7 @@ const WORK = ".zig-cache/syntax_color"
 const MARK = "<!-- syntax_color answer -->\n"
 const OUR_SPANS = "<span class=\"syn-[a-z]+\">|</span>"
 const ARG_BYTES = 700000
-const EXPECTS = 146
+const EXPECTS = 182
 const CORPORA = {roc_files = 76, roc_blocks = 223, shale_files = 109, js_files = 13}
 const ALONE_MATCHES = 217
 
