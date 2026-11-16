@@ -3,7 +3,8 @@
 // its frames uncompressed (a 960 by 600 frame is 1.7 MB), and a landing page's
 // picture should be a few tens of kilobytes. Each row takes whichever of PNG's
 // five filters leaves the smallest sum, the usual heuristic, and the rows are
-// deflated at level 9. site/publish_screensavers.shale runs it.
+// deflated at level 9. roc-screensaver's tools/web_build.shale and
+// dog-park/build.shale run it.
 //
 //   node site/squeeze_png.mjs <in.png> <out.png>
 import { readFileSync, writeFileSync } from "node:fs";
