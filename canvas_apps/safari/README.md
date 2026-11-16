@@ -72,6 +72,15 @@ The book of the tutorial, one page a chapter, builds into the dev channel at
 runs on demand and at publish, and it needs roc-markdown beside this checkout.
 It takes under a minute unless a widget's page needs rebuilding.
 
+The same book also builds with roc-apps' book builder (`book_builder/`), as a
+small app on the book platform, `canvas_apps/safari/tutorial/app/main.roc`,
+into `/tutorial.next/` with `shale canvas_apps/safari/tutorial/build_next.shale`,
+in about three seconds once its program is built. Its Roc code is plain for
+now. `shale canvas_apps/safari/tutorial/compare_books.shale` builds both and
+holds the builder's pages to book.shale's, page by page, with the coloring
+taken away; book.shale stays the published book until that comparison has
+decided the move.
+
 An agent runs the fast tier, and one merge gate runs at a time, because the box
 has two cores. Each tier ends by naming what it didn't run.
 

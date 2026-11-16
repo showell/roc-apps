@@ -1,0 +1,234 @@
+-- budget: steps=50000000 arena_bytes=1000000000 read_bytes=200000000 output_bytes=200000 call_bytes=40000000
+-- This builds the Safari Ride book with the book builder (book_builder/), into
+-- the dev channel's /tutorial.next/, beside the book book.shale builds:
+--
+--   cd <roc-apps checkout> && shale canvas_apps/safari/tutorial/build_next.shale
+--
+-- The book is the app app/main.roc on the book platform, which reads the
+-- tutorial's folder and prints every page. What needs a program is this
+-- script's pre-step, whose results go in build/prepared/, where the app reads
+-- them:
+--
+--   line-N.md      each include of the source's line N that quotes the game's
+--                  code through Roc's parser, or runs `roc check` on a failing
+--                  program, or reads the proof file: build.shale's `prepare=1`
+--   diagram-N.dot  the Nth ```dot fence's source, and diagram-N.svg, its
+--   diagram-N.svg  drawing by Graphviz, in child runs of this script with
+--                  `diagrams=1`, DIAGRAMS_PER_RUN at a time
+--   widgets.txt    the folders beside the game that hold a widget's page
+--
+-- Then `zig build` builds the app into book_builder/zig-out/safari, on Roc's
+-- dev backend, and the program writes the pages, which go to build/next/ with
+-- the book's stylesheet and scripts, and from there to the channel. A diagram
+-- is drawn as book.shale draws it: its comments and titles dropped, and one
+-- wider than a phone drawn a second way for a phone.
+--
+-- The code is left plain: coloring is the builder's colorer's, and the book
+-- names none yet. `compare_books.shale` holds this book to book.shale's, page
+-- by page.
+const TUTORIAL = "canvas_apps/safari/tutorial"
+const SOURCE = "canvas_apps/safari/tutorial/tutorial.md"
+const PREPARED = "canvas_apps/safari/tutorial/build/prepared"
+const OUT = "canvas_apps/safari/tutorial/build/next"
+const BUILDER = "book_builder"
+const PROGRAM = "book_builder/zig-out/safari/bin/book"
+const DEST = "build:roc-apps/next/tutorial.next"
+const CACHE = "build:roc-apps/book-cache"
+const PAGE_MARK = "<!-- book page: "
+const REPORT_MARK = "<!-- book report -->"
+const DIAGRAMS_PER_RUN = 30
+const PHONE_POINTS = 300
+const DOT_WANT = "graphviz: the tutorial's diagrams, drawn at build time"
+const BOOK_WANT = "book-next: the book program build_next.shale just built, untracked by design"
+
+-- The drawing of one diagram, ready to sit in a page, and how wide it is in
+-- points. Graphviz's comments and titles are dropped, because a title shows as a
+-- tooltip on hover.
+function drawing(path, options, class)
+  local argv = {"dot", "-Tsvg", "-Gfontsize=12", "-Nfontsize=12", "-Efontsize=11", "-Nmargin=0.13,0.06"}
+  for option in options do push(argv, option) end
+  push(argv, real(path))
+  local r = must(run(argv, {timeout_ms = 30000, whole = 2000000, want = DOT_WANT}))
+  local at = find(r.out, "<svg ")
+  if at == nil or not starts_with(r.out, "<?xml") then fail("build_next: dot said more than a drawing for " .. path .. ": " .. r.out) end
+  local kept = {}
+  for l in lines(sub(r.out, at + 5)) do
+    if not starts_with(l, "<!--") and not starts_with(l, "<title>") then push(kept, l) end
+  end
+  local width = re_find(r.out, "<svg width=\"([0-9]+)pt\"")
+  if width == nil then fail("build_next: no width in the drawing of " .. path) end
+  return {svg = "<svg class=\"" .. class .. "\" role=\"img\" " .. join(kept, "\n"), width = tonumber(width.groups[1])}
+end
+
+-- A line of a diagram with the list in its label down the page, a name a line.
+function label_list_down(l)
+  local open = find(l, "label=\"")
+  if open == nil then return l end
+  local close = find(l, "\"", open + 7)
+  if close == nil then return l end
+  local label = join(split(sub(l, open + 7, close - 1), ", "), ",\\n")
+  return sub(l, 1, open + 6) .. label .. sub(l, close)
+end
+
+-- A diagram's source for a phone: a row of boxes runs down the page instead, and
+-- a label's list does too. A record's fields are side by side, so a record
+-- diagram turns the other way, for `phone_options` to say.
+function phone_source(source)
+  local kept = {}
+  for l in source do
+    if trim(l) ~= "rankdir=LR;" then push(kept, label_list_down(l)) end
+  end
+  return join(kept, "\n") .. "\n"
+end
+
+function phone_options(source)
+  local options = {"-Gnodesep=0.12", "-Granksep=0.3", "-Nmargin=0.06,0.04"}
+  if contains(join(source, "\n"), "shape=record") then push(options, "-Grankdir=LR") end
+  return options
+end
+
+-- A diagram's drawing, and a phone's beside it if it needs one.
+function diagram_svg(id)
+  local path = PREPARED .. "/" .. id .. ".dot"
+  local all = split(read(path), "\n")
+  local source = take(all, #all - 1)
+  local plain = drawing(path, {}, "diagram")
+  if plain.width <= PHONE_POINTS then return plain.svg end
+  local phone_path = PREPARED .. "/" .. id .. "-phone.dot"
+  replace(phone_path, phone_source(source))
+  local wide = join(split(plain.svg, "<svg class=\"diagram\""), "<svg class=\"diagram diagram-wide\"")
+  return wide .. drawing(phone_path, phone_options(source), "diagram diagram-phone").svg
+end
+
+-- The child run's work: draw diagrams `first` to `last` into their .svg files.
+function draw_diagrams(first, last)
+  for n = first, last do
+    local id = "diagram-" .. n
+    replace(PREPARED .. "/" .. id .. ".svg", diagram_svg(id))
+  end
+  return nil
+end
+
+-- Each ```dot fence's source, written to its diagram-N.dot, as app/Diagrams.roc
+-- finds the fences; gives how many there are.
+function write_diagram_sources(text)
+  local count = 0
+  local open = "none"
+  local body = {}
+  for l in split(text, "\n") do
+    if open == "none" then
+      if l == "```dot" then
+        open = "dot"
+        body = {}
+      elseif starts_with(l, "```") then
+        open = "other"
+      end
+    elseif l == "```" then
+      if open == "dot" then
+        count = count + 1
+        replace(PREPARED .. "/diagram-" .. count .. ".dot", join(body, "\n") .. "\n")
+      end
+      open = "none"
+    elseif open == "dot" then
+      push(body, l)
+    end
+  end
+  if open ~= "none" then fail("build_next: a fence never closes in " .. SOURCE) end
+  return count
+end
+
+-- Draws every diagram, in child runs, since each takes Graphviz once or twice
+-- and a run has a budget of programs.
+function draw_all(count)
+  local first = 1
+  while first <= count do
+    local last = first + DIAGRAMS_PER_RUN - 1
+    if last > count then last = count end
+    must(run({"shale", "--root", ".", TUTORIAL .. "/build_next.shale", "diagrams=1", "first=" .. first, "last=" .. last}, {timeout_ms = 300000, tail = 20, want = DOT_WANT}))
+    first = last + 1
+  end
+  for n = 1, count do
+    if not exists(PREPARED .. "/diagram-" .. n .. ".svg") then fail("build_next: no drawing of diagram-" .. n) end
+  end
+  return nil
+end
+
+function widget_folders()
+  local folders = {"safari"}
+  for page in glob("canvas_apps/*_widget/page.html") do push(folders, basename(dirname(page))) end
+  return folders
+end
+
+-- The program's pages, written to OUT with the book's own files, and the
+-- report after them. The builder ends each page with a newline before the
+-- next page's mark, which is its separator and no part of the page. BUILT
+-- says what the book holds, as book.shale's does, for site/publish.sh.
+function write_pages(output)
+  if exists(OUT) then remove_tree(OUT) end
+  mkdir(OUT)
+  local halves = split(output, REPORT_MARK .. "\n")
+  if #halves ~= 2 then fail("build_next: the program's output has no report, or two") end
+  local pieces = split(halves[1], PAGE_MARK)
+  if pieces[1] ~= "" then fail("build_next: the program said something before its first page: " .. pieces[1]) end
+  local files = {}
+  for piece in drop(pieces, 1) do
+    local close = find(piece, " -->\n")
+    local file = sub(piece, 1, close - 1)
+    local html = sub(piece, close + 5)
+    if not ends_with(html, "\n") then fail("build_next: " .. file .. " doesn't end with the builder's newline") end
+    replace(OUT .. "/" .. file, sub(html, 1, #html - 1))
+    push(files, file)
+  end
+  copy(TUTORIAL .. "/book.css", OUT .. "/book.css")
+  copy(TUTORIAL .. "/book.js", OUT .. "/book.js")
+  copy("canvas_apps/widget_kit/embed.js", OUT .. "/embed.js")
+  replace(OUT .. "/BUILT", "book: every chapter\n")
+  return {files = files, report = halves[2]}
+end
+
+function main()
+  mkdir(CACHE)
+  local env = {XDG_CACHE_HOME = real(CACHE)}
+  if exists(PREPARED) then remove_tree(PREPARED) end
+  mkdir(PREPARED)
+  local prepared = must(run({"shale", "--root", ".", TUTORIAL .. "/build.shale", "prepare=1"}, {timeout_ms = 300000, tail = 20, env = env}))
+  print(trim(prepared.out))
+  print("build_next: the pre-step's includes took " .. prepared.ms .. " ms")
+  replace(PREPARED .. "/widgets.txt", join(widget_folders(), "\n") .. "\n")
+  local count = write_diagram_sources(read(SOURCE))
+  local drawn = must(run({"shale", "--root", ".", TUTORIAL .. "/build_next.shale", "diagrams_all=" .. count}, {timeout_ms = 600000, tail = 20, want = DOT_WANT}))
+  print("build_next: " .. count .. " diagrams drawn in " .. drawn.ms .. " ms")
+
+  if exists(PROGRAM) then remove(PROGRAM) end
+  local built = run({"zig", "build", "-Dapp=../" .. TUTORIAL .. "/app/main.roc", "-p", "zig-out/safari"}, {cwd = BUILDER, timeout_ms = 600000, tail = 40, env = env})
+  if built.code ~= 0 or #find_all(built.out, "── ✗") + #find_all(built.out, "── ●") > 0 or not exists(PROGRAM) then
+    print(built.out)
+    fail("build_next: the book's program didn't build cleanly")
+  end
+  print("build_next: the program built in " .. built.ms .. " ms")
+
+  local r = run({real(PROGRAM), TUTORIAL}, {timeout_ms = 120000, whole = 40000000, want = BOOK_WANT})
+  if r.code ~= 0 then
+    print(r.out)
+    fail("build_next: the book's program stopped, exit " .. r.code)
+  end
+  print("build_next: the program ran in " .. r.ms .. " ms")
+  local written = write_pages(r.out)
+  if exists(DEST) then remove_tree(DEST) end
+  copy(OUT, DEST)
+  local words = 0
+  for l in lines(written.report) do
+    local m = re_find(l, ": ([0-9]+) words of prose$")
+    if m ~= nil then words = words + tonumber(m.groups[1]) end
+  end
+  print("build_next: " .. #written.files .. " pages, " .. words .. " words of prose, at http://localhost:9210/tutorial.next/")
+  return nil
+end
+
+if arg("diagrams", "") == "1" then
+  draw_diagrams(tonumber(arg("first", "")), tonumber(arg("last", "")))
+elseif arg("diagrams_all", "") ~= "" then
+  draw_all(tonumber(arg("diagrams_all", "")))
+else
+  main()
+end

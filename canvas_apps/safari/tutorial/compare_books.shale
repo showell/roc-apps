@@ -1,0 +1,108 @@
+-- budget: steps=200000000 arena_bytes=1500000000 read_bytes=400000000 output_bytes=200000 call_bytes=40000000
+-- This holds the book the book builder makes (build_next.shale) to the book
+-- book.shale makes today, page by page, and its last line is the verdict.
+--
+--   cd <roc-apps checkout> && shale canvas_apps/safari/tutorial/compare_books.shale
+--
+-- It builds both first: book.shale with `stage=tutorial.old check=0`, into the
+-- dev channel's /tutorial.old/, and build_next.shale, into /tutorial.next/.
+-- `build=0` compares the two folders as they stand.
+--
+-- Every file of either folder is compared: each page, the front page (the
+-- contents) and the index appendix among them, and book.css, book.js and
+-- embed.js. Each diagram's drawing is compared too, as each build wrote it
+-- (build/book/diagram-N.svg and build/prepared/diagram-N.svg), besides its
+-- place in its page.
+--
+-- Today's pages have their Roc code colored by color_roc.shale, and the
+-- builder's book has it plain until the book names a colorer, so the
+-- comparison takes the coloring away on both sides: inside each
+-- `<code class="language-roc">` up to its `</code>`, every `<span
+-- class="syn-NAME">` and every `</span>` is dropped, NAME being lowercase
+-- letters. color_roc puts nothing else there, and its own check holds a
+-- page's text the same once those spans are gone. Nothing else is
+-- normalized.
+const OLD = "build:roc-apps/next/tutorial.old"
+const NEW = "build:roc-apps/next/tutorial.next"
+const OLD_DRAWINGS = "canvas_apps/safari/tutorial/build/book"
+const NEW_DRAWINGS = "canvas_apps/safari/tutorial/build/prepared"
+const ROC_CODE = "<code class=\"language-roc\">"
+const OUR_SPANS = "<span class=\"syn-[a-z]+\">|</span>"
+
+-- The page with its Roc code's coloring taken away.
+function uncolored(html)
+  local pieces = split(html, ROC_CODE)
+  local kept = {pieces[1]}
+  for piece in drop(pieces, 1) do
+    local close = find(piece, "</code>")
+    if close == nil then fail("compare_books: a Roc code block with no end") end
+    push(kept, re_replace(sub(piece, 1, close - 1), OUR_SPANS, "") .. sub(piece, close))
+  end
+  return join(kept, ROC_CODE)
+end
+
+-- Where two texts first differ, as a line of each, numbered.
+function first_difference(a, b)
+  local left = split(a, "\n")
+  local right = split(b, "\n")
+  local i = 1
+  while i <= #left and i <= #right and left[i] == right[i] do i = i + 1 end
+  local was = "(none)"
+  local now = "(none)"
+  if i <= #left then was = sub(left[i], 1, 300) end
+  if i <= #right then now = sub(right[i], 1, 300) end
+  return "line " .. i .. "\n    today:   " .. was .. "\n    builder: " .. now
+end
+
+function names_in(folder)
+  local names = {}
+  for e in walk(folder, {kind = "file"}) do push(names, sub(e.path, #folder + 2)) end
+  return sort(names)
+end
+
+function build_both()
+  local old = must(run({"shale", "--root", ".", "canvas_apps/safari/tutorial/book.shale", "stage=tutorial.old", "check=0"}, {timeout_ms = 600000, tail = 5}))
+  print("compare_books: today's build took " .. old.ms .. " ms")
+  local new = must(run({"shale", "--root", ".", "canvas_apps/safari/tutorial/build_next.shale"}, {timeout_ms = 900000, tail = 12}))
+  print(trim(new.out))
+  print("compare_books: the builder's build took " .. new.ms .. " ms")
+  return nil
+end
+
+if arg("build", "1") ~= "0" then build_both() end
+
+local old_names = names_in(OLD)
+local new_names = names_in(NEW)
+local differ = {}
+local same = 0
+for name in old_names do
+  if not has_item(new_names, name) then
+    push(differ, name .. ": only in today's book")
+  elseif uncolored(read(OLD .. "/" .. name)) == uncolored(read(NEW .. "/" .. name)) then
+    same = same + 1
+  else
+    push(differ, name .. ": differs at " .. first_difference(uncolored(read(OLD .. "/" .. name)), uncolored(read(NEW .. "/" .. name))))
+  end
+end
+for name in new_names do
+  if not has_item(old_names, name) then push(differ, name .. ": only in the builder's book") end
+end
+
+local drawings = 0
+for path in glob(OLD_DRAWINGS .. "/diagram-*.svg") do
+  local name = basename(path)
+  if not exists(NEW_DRAWINGS .. "/" .. name) then
+    push(differ, "drawing " .. name .. ": only in today's build")
+  elseif read(path) ~= read(NEW_DRAWINGS .. "/" .. name) then
+    push(differ, "drawing " .. name .. ": differs")
+  else
+    drawings = drawings + 1
+  end
+end
+if #glob(NEW_DRAWINGS .. "/diagram-*.svg") ~= #glob(OLD_DRAWINGS .. "/diagram-*.svg") then push(differ, "the builds drew different numbers of diagrams") end
+
+for d in differ do print("DIFF " .. d) end
+local verdict = "PASS"
+if #differ > 0 then verdict = "FAIL" end
+print("compare_books: " .. verdict .. ", " .. same .. " of " .. #old_names .. " files the same once coloring is stripped, " .. drawings .. " drawings the same, " .. #differ .. " differences")
+if #differ > 0 then fail("compare_books: the books differ") end

@@ -96,11 +96,19 @@
 -- instead be a `cut`, which holds the `# ...` line as the block shows it. The
 -- file and the note together give the block's text exactly.
 --
+-- `prepare=1` is the book builder's pre-step (app/main.roc, built by
+-- build_next.shale): the same checks and expansions, each include written to
+-- build/prepared/line-N.md, N its line in the source, as the include's line
+-- then what it becomes. The `{{index}}` line is left to the book builder,
+-- which builds the index itself. Beside them goes blocks.jsonl, the note
+-- above with each block's `line`.
+--
 -- `self_test=1` proves both sides of each failure on a module written here,
 -- and safari's gate runs it.
 const SAFARI = "canvas_apps/safari"
 const SOURCE = "canvas_apps/safari/tutorial/tutorial.md"
 const OUTPUT = "canvas_apps/safari/tutorial/build/tutorial.md"
+const PREPARED = "canvas_apps/safari/tutorial/build/prepared"
 const WANT = "roc-pin: roc-apps' pinned nightly, for the tutorial's failing programs"
 const INCLUDE = "^\\{\\{code ([A-Z][A-Za-z0-9_]*|web)\\.([A-Za-z_][A-Za-z0-9_]*!?)(?: from \"([^\"]+)\" to \"([^\"]+)\")?\\}\\}$"
 const SIGNATURES = "^\\{\\{signatures ([A-Z][A-Za-z0-9_.! ]*[a-zA-Z0-9_!])\\}\\}$"
@@ -669,10 +677,10 @@ function book_index(entry, output, titles)
   return trim(join(tables, "\n"))
 end
 
--- Builds the book, and gives the number of includes expanded.
-function build(source, output, folder)
-  if exists(output) then remove(output) end
-  if exists(notes_path(output)) then remove(notes_path(output)) end
+-- The source's entries, checked, with what expanding them needs: the trees
+-- of the modules they quote, the pinned Roc when a failing program needs it,
+-- and the proof file's numbers.
+function checked_entries(source, folder)
   local entries = read_entries(source, read(source), folder)
   check_titles(entries)
   local titles = chapter_titles(entries)
@@ -685,33 +693,61 @@ function build(source, output, folder)
     numbers = proof_numbers(folder .. PROOF_FILE)
     check_proof_rows(entries, numbers)
   end
+  return {entries = entries, titles = titles, trees = trees, roc = roc, numbers = numbers}
+end
+
+-- What an entry becomes, or nil for a line that stays as it is. The `{{index}}`
+-- line stays here too: the index is built from the book once it is written.
+function expansion(e, checked, folder, notes)
+  if has_key(e, "proof_step") then return proof_table_row(e, checked.numbers) end
+  if has_key(e, "signatures") then return fenced_signatures(e, checked.trees[e.path], folder, notes) end
+  if has_key(e, "types_name") then return types_table_row(e, checked.trees[e.path]) end
+  if has_key(e, "expect_after") then return fenced_expect(e, checked.trees[e.path], folder, notes) end
+  if has_key(e, "path") then return fenced_definition(e, checked.trees[e.path], folder, notes) end
+  if has_key(e, "program") then return fenced_failure(e, checked.roc, notes) end
+  if has_key(e, "whole_module") then return fenced_module(e, folder, notes) end
+  return nil
+end
+
+-- Writes each include's expansion to `dir`, and gives how many there are.
+-- The files of an earlier run go first, so none is left stale.
+function prepare(source, dir, folder)
+  mkdir(dir)
+  for old in glob(dir .. "/line-*.md") do remove(old) end
+  if exists(dir .. "/blocks.jsonl") then remove(dir .. "/blocks.jsonl") end
+  local checked = checked_entries(source, folder)
+  local notes = {}
+  local written = 0
+  for e in checked.entries do
+    local before = #notes
+    local text = expansion(e, checked, folder, notes)
+    if text ~= nil then
+      replace(dir .. "/line-" .. e.line .. ".md", e.text .. "\n" .. text .. "\n")
+      if #notes > before then notes[#notes].line = e.line end
+      written = written + 1
+    end
+  end
+  replace(dir .. "/blocks.jsonl", notes_text(notes))
+  return written
+end
+
+-- Builds the book, and gives the number of includes expanded.
+function build(source, output, folder)
+  if exists(output) then remove(output) end
+  if exists(notes_path(output)) then remove(notes_path(output)) end
+  local checked = checked_entries(source, folder)
+  local entries = checked.entries
+  local titles = checked.titles
   local kept = {}
   local notes = {}
   local expanded = 0
   for e in entries do
-    if has_key(e, "proof_step") then
-      push(kept, proof_table_row(e, numbers))
-      expanded = expanded + 1
-    elseif has_key(e, "signatures") then
-      push(kept, fenced_signatures(e, trees[e.path], folder, notes))
-      expanded = expanded + 1
-    elseif has_key(e, "types_name") then
-      push(kept, types_table_row(e, trees[e.path]))
-      expanded = expanded + 1
-    elseif has_key(e, "expect_after") then
-      push(kept, fenced_expect(e, trees[e.path], folder, notes))
-      expanded = expanded + 1
-    elseif has_key(e, "path") then
-      push(kept, fenced_definition(e, trees[e.path], folder, notes))
-      expanded = expanded + 1
-    elseif has_key(e, "program") then
-      push(kept, fenced_failure(e, roc, notes))
-      expanded = expanded + 1
-    elseif has_key(e, "whole_module") then
-      push(kept, fenced_module(e, folder, notes))
-      expanded = expanded + 1
-    else
+    local text = expansion(e, checked, folder, notes)
+    if text == nil then
       push(kept, e.text)
+    else
+      push(kept, text)
+      expanded = expanded + 1
     end
   end
   mkdir(dirname(output))
@@ -956,6 +992,27 @@ function check_note_rule(checks, folder)
   return nil
 end
 
+-- The pre-step's files: each include's line, then what it becomes, a file a
+-- line, and none left from an earlier run; the note gains each block's line.
+function check_prepare_rule(checks, folder)
+  local dir = folder .. "/prepared"
+  mkdir(dir)
+  replace(dir .. "/line-9.md", "stale")
+  replace(folder .. "/doc.md", "prose\n\n{{code Zoo.bare}}\n\nmore\n{{types row Zoo.feed Feed them}}\n")
+  local r = attempt(prepare, folder .. "/doc.md", dir, folder)
+  if not r.ok or r.value ~= 2 then fail("self_test: the pre-step gave " .. json_write(r)) end
+  local code = read(dir .. "/line-3.md")
+  if code ~= "{{code Zoo.bare}}\n```roc Zoo.roc\nbare = 1.0\n```\n" then fail("self_test: the pre-step's line-3.md was [" .. code .. "]") end
+  local row = read(dir .. "/line-6.md")
+  if row ~= "{{types row Zoo.feed Feed them}}\n| Feed them | `feed` | `Cage -> F64` |\n" then fail("self_test: the pre-step's line-6.md was [" .. row .. "]") end
+  if exists(dir .. "/line-9.md") then fail("self_test: the pre-step left an earlier run's file") end
+  local note = read(dir .. "/blocks.jsonl")
+  if not contains(note, "\"line\":3") or #lines(trim(note)) ~= 1 then fail("self_test: the pre-step's note was [" .. note .. "]") end
+  remove_tree(dir)
+  push(checks, "the pre-step's files")
+  return nil
+end
+
 -- Both sides of the proof table's rows.
 function check_proof_rule(checks, folder)
   mkdir(folder .. "/gates")
@@ -1188,6 +1245,7 @@ function self_test()
   check_title_rule(checks, folder)
   check_chapter_rule(checks, folder)
   check_note_rule(checks, folder)
+  check_prepare_rule(checks, folder)
   check_named_rule(checks, folder)
   check_proof_rule(checks, folder)
   check_annotation_rules(checks, folder)
@@ -1211,6 +1269,11 @@ end
 
 if arg("self_test", "") == "1" then
   self_test()
+elseif arg("prepare", "") == "1" then
+  local written = prepare(SOURCE, PREPARED, SAFARI)
+  print("tutorial: " .. written .. " includes prepared in " .. PREPARED)
+  check_modules_named(SAFARI, read(SOURCE))
+  print("tutorial: the book names every module")
 else
   local expanded = build(SOURCE, OUTPUT, SAFARI)
   print("tutorial: " .. expanded .. " includes expanded into " .. OUTPUT)

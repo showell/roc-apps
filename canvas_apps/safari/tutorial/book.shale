@@ -30,12 +30,16 @@
 -- leaves the channel's book and the widgets' builds alone, and it leaves the
 -- folder for whoever asked to read and then remove. `looks=1` beside it skips
 -- driving the widgets, so a pass over the pages' looks takes a couple of minutes.
+-- `check=0` beside it skips book_check.mjs altogether, for compare_books.shale,
+-- which reads the pages and not the browser.
 const TUTORIAL = "canvas_apps/safari/tutorial"
 const WORK = "canvas_apps/safari/tutorial/build/book"
 const EXPANDED = "canvas_apps/safari/tutorial/build/tutorial.md"
 const NEXT = "build:roc-apps/next"
 const STAGE = arg("stage", "")
 const LOOKS = arg("looks", "") == "1"
+const CHECK = arg("check", "1") ~= "0"
+if not CHECK and STAGE == "" then fail("book: check=0 builds only a stage=, never the channel's book") end
 -- `chapters=N` keeps only the first N chapters, for a book that holds just the
 -- chapters that have passed the loop in MISSION.md.
 const CHAPTERS_ARG = arg("chapters", "")
@@ -395,7 +399,7 @@ function main()
   end
   local check = {"nice", "-n", "19", "node", TUTORIAL .. "/book_check.mjs", CHANNEL_URL, real(WORK) .. "/shots"}
   if LOOKS then push(check, "looks") end
-  print(trim(must(run(check, {timeout_ms = 600000, tail = 60, want = CHECK_WANT}), "book_check").out))
+  if CHECK then print(trim(must(run(check, {timeout_ms = 600000, tail = 60, want = CHECK_WANT}), "book_check").out)) end
   if STAGE == "" then move_into_place() end
 
   for line in sizes do print(line) end
