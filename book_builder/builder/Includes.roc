@@ -51,15 +51,17 @@ Includes := [].{
 		$paths
 	}
 
-	## The manuscript with each include expanded, or every problem found, each
-	## naming the manuscript's line and the include as written.
+	## The manuscript's lines with each include expanded, or every problem
+	## found, each naming the manuscript's line and the include as written. A
+	## quote's lines are fenced, and each keeps the number of its include's
+	## line, so a later problem names the line the writer wrote.
 	expanded :
 		List(Manuscript.Line),
 		{
 			manuscript : Str,
 			files : List(Includes.FileRead),
 			languages : List(Includes.Language),
-		} -> Try(Str, List(Str))
+		} -> Try(List(Manuscript.Line), List(Str))
 	expanded = |lines, { manuscript, files, languages }| {
 		var $out = []
 		var $problems = []
@@ -67,7 +69,7 @@ Includes := [].{
 			include_at = "${manuscript}:${line.number.to_str()}: ${line.text}"
 			match line_kind(line) {
 				Kept => {
-					$out = $out.append(line.text)
+					$out = $out.append(line)
 				}
 				Unknown => {
 					$problems = $problems.append("${include_at}: ${not_an_include}")
@@ -75,7 +77,7 @@ Includes := [].{
 				Include(directive) =>
 					match quoted_block(directive, { files, languages }) {
 						Ok(block) => {
-							$out = $out.append(block)
+							$out = $out.concat(block.split_on("\n").map(|text| { number: line.number, text, place: Fenced }))
 						}
 						Err(problem) => {
 							$problems = $problems.append("${include_at}: ${problem}")
@@ -84,7 +86,7 @@ Includes := [].{
 			}
 		}
 		if $problems.is_empty() {
-			Ok(Str.join_with($out.map(|text| "${text}\n"), ""))
+			Ok($out)
 		} else {
 			Err($problems)
 		}
@@ -267,11 +269,24 @@ sample_files = [
 	{ path: "up.txt", text: Err(OutsideTheBook) },
 ]
 
+## Lines as the text they came from.
+text_of : List(Manuscript.Line) -> Str
+text_of = |lines| Str.join_with(lines.map(|line| "${line.text}\n"), "")
+
 expand_sample : Str -> Try(Str, List(Str))
 expand_sample = |text| Includes.expanded(
 	lines_of(text),
 	{ manuscript: "book.md", files: sample_files, languages: Includes.default_languages },
-)
+).map_ok(text_of)
+
+expect
+	Includes.expanded(lines_of("A\n{{file notes}}\n"), { manuscript: "book.md", files: sample_files, languages: [] })
+		== Ok([
+			{ number: 1, text: "A", place: Prose },
+			{ number: 2, text: "```text notes, the whole file", place: Fenced },
+			{ number: 2, text: "plain", place: Fenced },
+			{ number: 2, text: "```", place: Fenced },
+		])
 
 expect
 	expand_sample("A\n{{file code/a.roc}}\nB\n")

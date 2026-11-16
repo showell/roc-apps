@@ -1,0 +1,10 @@
+# The words the negatives lint looks for, one a line.
+not
+no
+none
+never
+nothing
+without
+isn't
+doesn't
+can't

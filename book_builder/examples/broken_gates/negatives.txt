@@ -1,0 +1,6 @@
+# The negative sentences the example book keeps.
+#
+# keep guarantee: the "no" is the guarantee itself.
+# fix contrast: says what a thing is by what it isn't.
+
+guarantee: A quote holds no fence of its own.

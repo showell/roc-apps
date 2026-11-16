@@ -1,0 +1,225 @@
+<!-- book page: index.html -->
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>The Example Book</title>
+<link rel="icon" href="data:,">
+<link rel="stylesheet" href="book.css">
+</head>
+<body class="front">
+
+<main>
+<article>
+<h1 id="the-example-book">The Example Book</h1>
+<p>This book shows what the book builder does. The contents below list its chapters and their sections.</p>
+
+<h2 id="contents">Contents</h2>
+<ol class="contents">
+<li><a href="pages-and-chapters.html"><span class="number">1</span>Pages and chapters</a><ol class="sections"><li><a href="pages-and-chapters.html#sections">Sections</a></li></ol></li>
+<li><a href="quoting-files.html"><span class="number">2</span>Quoting files</a></li>
+<li><a href="the-index.html"><span class="number">3</span>The index</a></li>
+<li><a href="appendix-index.html">Appendix: index</a><ol class="sections"><li><a href="appendix-index.html#the-builder">The builder</a></li></ol></li>
+</ol>
+</article>
+</main>
+</body>
+</html>
+<!-- book page: pages-and-chapters.html -->
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Pages and chapters · The Example Book</title>
+<link rel="icon" href="data:,">
+<link rel="stylesheet" href="book.css">
+</head>
+<body class="chapter">
+<nav class="book-nav" id="chapters" aria-label="Chapters">
+<a class="book-name" href="index.html">The Example Book</a>
+<ol>
+<li class="here"><a href="pages-and-chapters.html"><span class="number">1</span>Pages and chapters</a><ol class="sections"><li><a href="pages-and-chapters.html#sections">Sections</a></li></ol></li>
+<li><a href="quoting-files.html"><span class="number">2</span>Quoting files</a></li>
+<li><a href="the-index.html"><span class="number">3</span>The index</a></li>
+<li><a href="appendix-index.html">Appendix: index</a></li>
+</ol>
+</nav>
+<main>
+<p class="book-bar"><a href="index.html">The Example Book</a> <a href="#chapters">Chapters</a></p>
+<article>
+<p class="chapter-number">Chapter 1</p>
+<h1 id="pages-and-chapters">Pages and chapters</h1>
+<p>Each chapter starts at a heading of its own. The builder numbers the chapters and links each page to the pages beside it.</p>
+<h2 id="sections">Sections <a class="section-link" href="#sections" aria-label="Link to this section">§</a></h2>
+<p>A section is a heading inside a chapter. The contents page lists it, and so does the list of chapters beside this page.</p>
+<p>See <a class="chapter-link" href="quoting-files.html">“Quoting files”</a> for the includes, and chapter <a class="chapter-link" href="the-index.html">3</a> for the index.</p>
+
+</article>
+<nav class="turn-page" aria-label="Previous and next chapter">
+<a rel="prev" href="index.html"><small>Previous</small>Contents</a>
+<a rel="next" href="quoting-files.html"><small>Next</small>Quoting files</a>
+</nav>
+</main>
+</body>
+</html>
+<!-- book page: quoting-files.html -->
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Quoting files · The Example Book</title>
+<link rel="icon" href="data:,">
+<link rel="stylesheet" href="book.css">
+</head>
+<body class="chapter">
+<nav class="book-nav" id="chapters" aria-label="Chapters">
+<a class="book-name" href="index.html">The Example Book</a>
+<ol>
+<li><a href="pages-and-chapters.html"><span class="number">1</span>Pages and chapters</a></li>
+<li class="here"><a href="quoting-files.html"><span class="number">2</span>Quoting files</a></li>
+<li><a href="the-index.html"><span class="number">3</span>The index</a></li>
+<li><a href="appendix-index.html">Appendix: index</a></li>
+</ol>
+</nav>
+<main>
+<p class="book-bar"><a href="index.html">The Example Book</a> <a href="#chapters">Chapters</a></p>
+<article>
+<p class="chapter-number">Chapter 2</p>
+<h1 id="quoting-files">Quoting files</h1>
+<p>An include quotes a file as it stands when the book is built. A quote holds no fence of its own.</p>
+<figure class="listing"><figcaption>code/greet.roc, the whole file</figcaption><pre><code class="language-roc">## A greeting for a name.
+greet : Str -&gt; Str
+greet = |name|
+	&quot;Hello, ${name}!&quot;
+</code></pre></figure><p>An excerpt quotes the lines from one anchor to another.</p>
+<figure class="listing"><figcaption>code/greet.roc, an excerpt</figcaption><pre><code class="language-roc">greet : Str -&gt; Str
+greet = |name|
+	&quot;Hello, ${name}!&quot;
+</code></pre></figure><p>A fence of the book&#39;s own kind goes through its hook:</p>
+<p class="shout">A greeting: HELLO, READER</p><p>A plain fence is code, escaped as the renderer escapes it:</p>
+<pre><code class="language-text">&lt;b&gt; &amp; &quot;quotes&quot;
+</code></pre>
+
+</article>
+<nav class="turn-page" aria-label="Previous and next chapter">
+<a rel="prev" href="pages-and-chapters.html"><small>Previous</small>Pages and chapters</a>
+<a rel="next" href="the-index.html"><small>Next</small>The index</a>
+</nav>
+</main>
+</body>
+</html>
+<!-- book page: the-index.html -->
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>The index · The Example Book</title>
+<link rel="icon" href="data:,">
+<link rel="stylesheet" href="book.css">
+</head>
+<body class="chapter">
+<nav class="book-nav" id="chapters" aria-label="Chapters">
+<a class="book-name" href="index.html">The Example Book</a>
+<ol>
+<li><a href="pages-and-chapters.html"><span class="number">1</span>Pages and chapters</a></li>
+<li><a href="quoting-files.html"><span class="number">2</span>Quoting files</a></li>
+<li class="here"><a href="the-index.html"><span class="number">3</span>The index</a></li>
+<li><a href="appendix-index.html">Appendix: index</a></li>
+</ol>
+</nav>
+<main>
+<p class="book-bar"><a href="index.html">The Example Book</a> <a href="#chapters">Chapters</a></p>
+<article>
+<p class="chapter-number">Chapter 3</p>
+<h1 id="the-index">The index</h1>
+<p>The index lists each term of the terms file with the chapter that mentions it most. A chapter, an include and a hook each have a place in it.</p>
+
+</article>
+<nav class="turn-page" aria-label="Previous and next chapter">
+<a rel="prev" href="quoting-files.html"><small>Previous</small>Quoting files</a>
+<a rel="next" href="appendix-index.html"><small>Next</small>Appendix: index</a>
+</nav>
+</main>
+</body>
+</html>
+<!-- book page: appendix-index.html -->
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Appendix: index · The Example Book</title>
+<link rel="icon" href="data:,">
+<link rel="stylesheet" href="book.css">
+</head>
+<body class="chapter">
+<nav class="book-nav" id="chapters" aria-label="Chapters">
+<a class="book-name" href="index.html">The Example Book</a>
+<ol>
+<li><a href="pages-and-chapters.html"><span class="number">1</span>Pages and chapters</a></li>
+<li><a href="quoting-files.html"><span class="number">2</span>Quoting files</a></li>
+<li><a href="the-index.html"><span class="number">3</span>The index</a></li>
+<li class="here"><a href="appendix-index.html">Appendix: index</a><ol class="sections"><li><a href="appendix-index.html#the-builder">The builder</a></li></ol></li>
+</ol>
+</nav>
+<main>
+<p class="book-bar"><a href="index.html">The Example Book</a> <a href="#chapters">Chapters</a></p>
+<article>
+<h1 id="appendix-index">Appendix: index</h1>
+<h2 id="the-builder">The builder <a class="section-link" href="#the-builder" aria-label="Link to this section">§</a></h2>
+<table>
+<thead>
+<tr>
+<th>Term</th>
+<th>Main chapter</th>
+<th>Also in</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Anchor</td>
+<td><a class="chapter-link" href="quoting-files.html">“Quoting files”</a></td>
+<td></td>
+</tr>
+<tr>
+<td>Chapter</td>
+<td><a class="chapter-link" href="pages-and-chapters.html">“Pages and chapters”</a></td>
+<td><a class="chapter-link" href="the-index.html">3</a></td>
+</tr>
+<tr>
+<td>Hook</td>
+<td><a class="chapter-link" href="quoting-files.html">“Quoting files”</a></td>
+<td><a class="chapter-link" href="the-index.html">3</a></td>
+</tr>
+<tr>
+<td>Include</td>
+<td><a class="chapter-link" href="quoting-files.html">“Quoting files”</a></td>
+<td><a class="chapter-link" href="pages-and-chapters.html">1</a>, <a class="chapter-link" href="the-index.html">3</a></td>
+</tr>
+<tr>
+<td>Section</td>
+<td><a class="chapter-link" href="pages-and-chapters.html">“Pages and chapters”</a></td>
+<td></td>
+</tr>
+</tbody>
+</table>
+
+</article>
+<nav class="turn-page" aria-label="Previous and next chapter">
+<a rel="prev" href="the-index.html"><small>Previous</small>The index</a>
+<span></span>
+</nav>
+</main>
+</body>
+</html>
+<!-- book report -->
+index.html: 20 words of prose
+pages-and-chapters.html: 66 words of prose
+quoting-files.html: 55 words of prose
+the-index.html: 31 words of prose
+appendix-index.html: 48 words of prose
+negatives: negative 0, unused_exception 0, 1 negative sentences of 24 read, 1 kept in the table

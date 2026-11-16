@@ -1,0 +1,10 @@
+# The example book's index terms. A term is `Name`, or
+# `Name | pattern | pattern`, each pattern a regular expression over a
+# lowercased line of prose, and `main: Title` names its main chapter.
+
+## The builder
+Chapter | \bchapters?\b
+Include | \bincludes?\b | main: Quoting files
+Hook | \bhooks?\b
+Section | \bsections?\b
+Anchor | \banchors?\b

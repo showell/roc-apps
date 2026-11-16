@@ -3,29 +3,39 @@
 --   shale book_builder/tools/verify.shale
 -- It stops at the first check that fails, and its last line says how many
 -- passed. Roc is roc-apps' pin, found and checked by the repository's
--- prelude (`pinned_roc`).
+-- prelude (`pinned_roc`). The builder package imports roc-markdown from the
+-- checkout beside roc-apps (../roc-markdown), and `roc check` of the full
+-- example fails without it.
 --
---   roc fmt --check over platform/ and examples/
---   roc check of the one-page example, held to zero errors and zero warnings
+--   roc fmt --check over platform/, builder/ and examples/
+--   roc check of each example app, held to zero errors and zero warnings
 --     by the report's marks, since a warning alone still exits 2
---   roc test of the one-page example, held to exactly `roc_tests_expected`
+--   roc test of the one-page example, held to exactly `one_page_tests`
 --     expects, platform/Book.roc's among them
+--   roc test --verbose of the full example, whose reach is the builder
+--     package: the expects that pass inside book_builder/ held to exactly
+--     `full_tests`, and to the top-level `expect` lines of the files it
+--     reaches, each passed once; roc-markdown's are counted, not held
 --   zig fmt --check over build.zig and host/
 --   the glue snapshot (host/glue/platform_abi.zig) is what roc glue makes
 --     of platform/ now (tools/glue.shale check=1)
 --   zig build test, held to exactly `zig_tests_expected` tests
---   zig build, the program with the one-page example linked
---   the example run end to end: exit 0, and its output exactly
---     examples/one_page/expected.html
---   the app's failure path: run on a folder with no book.md, exit 1 and its
---     message exactly
---   the host's refusal of a command line that names no folder: exit 2 and
---     the usage line exactly
+--   zig build, the program with the one-page example linked, and its runs:
+--     the example (its output exactly examples/one_page/expected.html), a
+--     folder with no book.md, and a command line that names no folder
+--   zig build of the full example (examples/full/main.roc) into
+--     zig-out/full, and its runs: the full book, exactly
+--     examples/full/expected.html; the two broken books, each exit 1 with
+--     exactly its expected.txt; and a folder with no book.md
 
-const roc_tests_expected = 10
+const one_page_tests = 10
+const full_tests = 194
 const zig_tests_expected = 10
 const here = "book_builder"
 const book_want = "book-e2e: the book program this gate just built, untracked by design"
+-- The files the full example's tests reach, whose `expect` lines are the
+-- count's other home.
+const full_reach = {"book_builder/builder/*.roc", "book_builder/platform/Book.roc", "book_builder/examples/full/main.roc"}
 
 if not exists(here .. "/platform/main.roc") then
   fail("verify: run it from the roc-apps root (no book_builder/platform/main.roc here)")
@@ -42,12 +52,12 @@ function line(name, ok, detail, ms)
   passed.count = passed.count + 1
 end
 
--- The built program run on `folder`, its exit and output held to `code` and
+-- A built program run on `args`, its exit and output held to `code` and
 -- `expected` exactly.
-function run_book_line(name, args, code, expected)
-  local argv = {"zig-out/bin/book"}
+function run_book_line(name, program, args, code, expected)
+  local argv = {program}
   for a in args do push(argv, a) end
-  local r = run(argv, {cwd = here, timeout_ms = 10000, whole = 100000, want = book_want})
+  local r = run(argv, {cwd = here, timeout_ms = 10000, whole = 400000, want = book_want})
   local same = r.out == expected
   if r.code ~= code or not same then print(r.out) end
   local said = "the output as expected, " .. #expected .. " bytes"
@@ -55,24 +65,80 @@ function run_book_line(name, args, code, expected)
   line(name, r.code == code and same, "exit " .. r.code .. ", " .. code .. " expected; " .. said, r.ms)
 end
 
-local r = run({roc, "fmt", "--check", "platform", "examples"}, {cwd = here, timeout_ms = 30000, tail = 20})
-local formatted = #glob(here .. "/platform/**/*.roc") + #glob(here .. "/examples/**/*.roc")
+function check_app(app)
+  local r = run({roc, "check", "main.roc"}, {cwd = here .. "/examples/" .. app, timeout_ms = 60000, whole = 400000})
+  local errors = #find_all(r.out, "── ✗")
+  local warnings = #find_all(r.out, "── ●")
+  local clean = errors + warnings == 0 and contains(r.out, "No errors found")
+  if not clean then print(r.out) end
+  line("roc check examples/" .. app .. "/main.roc", clean, errors .. " errors, " .. warnings .. " warnings", r.ms)
+end
+
+-- Each top-level `expect` line of the files `full_reach` names, as
+-- `path:line` from the full example's folder, which is how roc test names it.
+function written_expects()
+  local written = {}
+  for pattern in full_reach do
+    for path in glob(pattern) do
+      local n = 0
+      for l in lines(read(path)) do
+        n = n + 1
+        if starts_with(l, "expect") then
+          local shown = "../../" .. sub(path, #here + 2)
+          if starts_with(path, here .. "/examples/full/") then shown = basename(path) end
+          written[shown .. ":" .. n] = true
+        end
+      end
+    end
+  end
+  return written
+end
+
+local r = run({roc, "fmt", "--check", "platform", "builder", "examples"}, {cwd = here, timeout_ms = 30000, tail = 20})
+local formatted = #glob(here .. "/platform/**/*.roc") + #glob(here .. "/builder/**/*.roc") + #glob(here .. "/examples/**/*.roc")
 if r.code ~= 0 then print(r.out) end
 line("roc fmt --check", r.code == 0, formatted .. " files, " .. lines(trim(r.out))[1], r.ms)
 
-r = run({roc, "check", "main.roc"}, {cwd = here .. "/examples/one_page", timeout_ms = 60000, whole = 200000})
-local errors = #find_all(r.out, "── ✗")
-local warnings = #find_all(r.out, "── ●")
-local clean = errors + warnings == 0 and contains(r.out, "No errors found")
-if not clean then print(r.out) end
-line("roc check examples/one_page/main.roc", clean, errors .. " errors, " .. warnings .. " warnings", r.ms)
+check_app("one_page")
+check_app("full")
 
 r = run({roc, "test", "main.roc"}, {cwd = here .. "/examples/one_page", timeout_ms = 100000, tail = 40})
 local all_passed = re_find(r.out, "All \\((\\d+)\\) tests passed")
 local ran = 0
 if all_passed ~= nil then ran = parse_int(all_passed.group) end
-if r.code ~= 0 or ran ~= roc_tests_expected then print(r.out) end
-line("roc test examples/one_page/main.roc", r.code == 0 and ran == roc_tests_expected, ran .. " passed, " .. roc_tests_expected .. " expected", r.ms)
+if r.code ~= 0 or ran ~= one_page_tests then print(r.out) end
+line("roc test examples/one_page/main.roc", r.code == 0 and ran == one_page_tests, ran .. " passed, " .. one_page_tests .. " expected", r.ms)
+
+r = run({roc, "test", "--verbose", "main.roc"}, {cwd = here .. "/examples/full", timeout_ms = 200000, whole = 1000000})
+local written = written_expects()
+local seen = {}
+local inside = 0
+local markdown = 0
+local wrong = {}
+for l in lines(r.out) do
+  if starts_with(l, "PASS: ") then
+    local at = trim(sub(l, 7))
+    if starts_with(at, "../../../../roc-markdown/") then
+      markdown = markdown + 1
+    elseif has_key(seen, at) then
+      push(wrong, "passed twice: " .. at)
+    else
+      seen[at] = true
+      inside = inside + 1
+      if not has_key(written, at) then push(wrong, "passed, and no top-level expect line is there: " .. at) end
+    end
+  elseif contains(l, "── ✗") or contains(l, "TEST FAILURE") then
+    push(wrong, trim(l))
+  end
+end
+for at in keys(written) do
+  if not has_key(seen, at) then push(wrong, "an expect line that never passed: " .. at) end
+end
+local summary = re_find(r.out, "All \\((\\d+)\\) tests passed")
+if summary == nil or parse_int(summary.group) ~= inside + markdown then push(wrong, "the summary is not the PASS lines' count: " .. trim(sub(r.out, #r.out - 300))) end
+for w in wrong do print("  " .. w) end
+local full_ok = r.code == 0 and #wrong == 0 and inside == full_tests
+line("roc test examples/full/main.roc", full_ok, inside .. " passed in book_builder/, " .. full_tests .. " expected, " .. #keys(written) .. " expect lines written; " .. markdown .. " of roc-markdown's, not held", r.ms)
 
 r = run({"zig", "fmt", "--check", "build.zig", "host"}, {cwd = here, timeout_ms = 30000, tail = 20})
 if r.code ~= 0 then print(r.out) end
@@ -98,8 +164,20 @@ r = run({"zig", "build"}, {cwd = here, timeout_ms = 300000, tail = 40})
 if r.code ~= 0 then print(r.out) end
 line("zig build", r.code == 0 and exists(here .. "/zig-out/bin/book"), "zig-out/bin/book, exit " .. r.code, r.ms)
 
-run_book_line("end to end examples/one_page", {"examples/one_page"}, 0, read(here .. "/examples/one_page/expected.html"))
-run_book_line("end to end, no book.md in platform/", {"platform"}, 1, "platform/book.md: is not there\n")
-run_book_line("end to end, no folder named", {}, 2, "usage: book <book folder>\n")
+const one_page = "zig-out/bin/book"
+run_book_line("end to end examples/one_page", one_page, {"examples/one_page"}, 0, read(here .. "/examples/one_page/expected.html"))
+run_book_line("end to end, no book.md in platform/", one_page, {"platform"}, 1, "platform/book.md: is not there\n")
+run_book_line("end to end, no folder named", one_page, {}, 2, "usage: book <book folder>\n")
+
+if exists(here .. "/zig-out/full/bin/book") then remove(here .. "/zig-out/full/bin/book") end
+r = run({"zig", "build", "-Dapp=examples/full/main.roc", "-p", "zig-out/full"}, {cwd = here, timeout_ms = 300000, tail = 40})
+if r.code ~= 0 then print(r.out) end
+line("zig build of examples/full", r.code == 0 and exists(here .. "/zig-out/full/bin/book"), "zig-out/full/bin/book, exit " .. r.code, r.ms)
+
+const full = "zig-out/full/bin/book"
+run_book_line("end to end examples/full", full, {"examples/full"}, 0, read(here .. "/examples/full/expected.html"))
+run_book_line("end to end examples/broken_includes", full, {"examples/broken_includes"}, 1, read(here .. "/examples/broken_includes/expected.txt"))
+run_book_line("end to end examples/broken_gates", full, {"examples/broken_gates"}, 1, read(here .. "/examples/broken_gates/expected.txt"))
+run_book_line("end to end full, no book.md in platform/", full, {"platform"}, 1, "book.md is not there\n")
 
 print("verify: " .. passed.count .. " checks passed")

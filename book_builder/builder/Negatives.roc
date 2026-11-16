@@ -22,17 +22,16 @@ import Manuscript
 
 Negatives := [].{
 
-	## A text the lint reads, and the name its messages give it.
-	Named : { name : Str, text : Str }
-
-	## The findings, one line each, and a summary of the counts. A table or a
-	## words file that can't be read as the header says is an error.
+	## The findings, one line each, and a summary of the counts. The words
+	## file and the table each come with the name the messages give it. A
+	## table or a words file that can't be read as the header says is an
+	## error.
 	judged :
 		{
 			manuscript : Str,
 			lines : List(Manuscript.Line),
-			words : Negatives.Named,
-			table : Negatives.Named,
+			words : { name : Str, text : Str },
+			table : { name : Str, text : Str },
 		} -> Try({ findings : List(Str), summary : Str }, Str)
 	judged = |{ manuscript, lines, words, table }| {
 		word_list = words_of(words)?
@@ -246,7 +245,7 @@ is_word_at = |bytes, { word, at }|
 		and is_boundary(bytes, at + word.len())
 
 ## The words file's words, in lower case.
-words_of : Negatives.Named -> Try(List(Str), Str)
+words_of : { name : Str, text : Str } -> Try(List(Str), Str)
 words_of = |{ name, text }| {
 	word_list = BookText.text_lines(text)
 		.map(Str.trim)
@@ -263,7 +262,7 @@ words_of = |{ name, text }| {
 KeptRow : { kind : Str, sentence : Str, line : U64 }
 
 ## The table's rows, and their sentences for looking up.
-exception_table : Negatives.Named -> Try({ rows : List(KeptRow), sentences : List(Str) }, Str)
+exception_table : { name : Str, text : Str } -> Try({ rows : List(KeptRow), sentences : List(Str) }, Str)
 exception_table = |{ name, text }| {
 	var $kinds = []
 	var $rows = []
@@ -339,13 +338,13 @@ is_kind_name = |text| {
 	!bytes.is_empty() and bytes.all(|byte| (byte >= 'a' and byte <= 'z') or byte == '-')
 }
 
-negative_words : Negatives.Named
+negative_words : { name : Str, text : Str }
 negative_words = { name: "words.txt", text: "# The words.\nnot\nno\nnone\nnever\nisn't\ndoesn't\nnothing\nrather than\n\n" }
 
-kinds_only : Negatives.Named
+kinds_only : { name : Str, text : Str }
 kinds_only = { name: "negatives.txt", text: "# keep guarantee: the no is the point.\n# fix hedge: softens a claim.\n" }
 
-judge_sample : Str, Negatives.Named -> Try({ findings : List(Str), summary : Str }, Str)
+judge_sample : Str, { name : Str, text : Str } -> Try({ findings : List(Str), summary : Str }, Str)
 judge_sample = |text, table| match Manuscript.lines(text) {
 	Ok(lines) => Negatives.judged({ manuscript: "book.md", lines, words: negative_words, table })
 	Err(_) => crash "the test text's fences close"

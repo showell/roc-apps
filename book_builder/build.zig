@@ -42,11 +42,14 @@ pub fn build(b: *std.Build) void {
 }
 
 /// The app on platform/, built by the pinned Roc for x64musl into an
-/// archive, on Roc's dev backend.
+/// archive, on Roc's dev backend. The builder package (builder/) is an input
+/// too, since a book app imports it; roc-markdown, the sibling checkout it
+/// imports, is not, so a change there wants a clean build.
 fn rocArchive(b: *std.Build, roc: []const u8, app_root: []const u8) std.Build.LazyPath {
     const archive = b.addSystemCommand(&.{ roc, "build", app_root, "--target=x64musl", "--opt=dev" });
     archive.setCwd(b.path("."));
     rocInputs(b, archive, "platform");
+    rocInputs(b, archive, "builder");
     rocInputs(b, archive, std.fs.path.dirname(app_root) orelse ".");
     archive.addFileInput(.{ .cwd_relative = roc });
     return archive.addPrefixedOutputFileArg("--output=", "app-x64musl.a");

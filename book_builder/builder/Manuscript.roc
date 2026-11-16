@@ -49,10 +49,6 @@ Manuscript := [].{
 		}
 	}
 
-	## The manuscript's text again, from its lines.
-	text_of : List(Manuscript.Line) -> Str
-	text_of = |lines_given| Str.join_with(lines_given.map(|line| "${line.text}\n"), "")
-
 	## One page's source: its lines as the manuscript has them, and its text
 	## with each heading one level up, for the renderer.
 	PageSource : { source_lines : List(Manuscript.Line), markdown : Str }
@@ -124,11 +120,6 @@ expect
 expect Manuscript.lines("a\n```\nb\n``` \n") == Err(UnclosedFence(2))
 expect Manuscript.lines("```\n```") == Ok([{ number: 1, text: "```", place: Fenced }, { number: 2, text: "```", place: Fenced }])
 expect Manuscript.lines("") == Ok([])
-expect
-	match Manuscript.lines("a\n\n```\nb\n```\n") {
-		Ok(lines) => Manuscript.text_of(lines) == "a\n\n```\nb\n```\n"
-		Err(_) => Bool.False
-	}
 
 book_lines : List(Manuscript.Line)
 book_lines = match Manuscript.lines("# Book\nfront\n### Aside\n## One\ntext\n### Part\n```\n## not a chapter\n### nor a section\n```\n## Two\n") {
