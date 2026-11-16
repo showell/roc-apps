@@ -141,9 +141,6 @@ const READ_PAGE = `(() => ({
 const SEE_FRAME = (i) => `(async () => {
   const frame = document.querySelectorAll('iframe.canvas-app')[${i}];
   frame.scrollIntoView({ block: 'center' });
-  // Input reaches a frame by where the last painted picture put it, so a press
-  // right after a scroll can go astray.
-  for (let painted = 0; painted < 2; painted++) await new Promise(requestAnimationFrame);
   const started = Date.now();
   const canvasOf = () => { try { return frame.contentDocument?.querySelector('canvas'); } catch { return null; } };
   while (Date.now() - started < 20000) {
@@ -151,6 +148,7 @@ const SEE_FRAME = (i) => `(async () => {
     if (canvas && canvas.width > 0) {
       const box = frame.getBoundingClientRect();
       canvas.addEventListener('pointerdown', () => { canvas.dataset.pressed = 'yes'; });
+      canvas.addEventListener('pointermove', () => { canvas.dataset.hovered = 'yes'; });
       const { data } = canvas.getContext('2d').getImageData(0, 0, canvas.width, canvas.height);
       const colours = new Set();
       for (let at = 0; at < data.length; at += 4 * 97) colours.add((data[at] << 16) | (data[at + 1] << 8) | data[at + 2]);
@@ -189,13 +187,53 @@ async function evaluate(page, expression) {
   return result.value;
 }
 
-// Whether the frame's picture leaves `before` within a few seconds.
+// The page's next frame, which is a frame of its widgets too: a same-origin
+// frame runs in the page's own event loop and renders with it.
+const NEXT_FRAME = `new Promise(requestAnimationFrame)`;
+const FELT = (i, what) => `document.querySelectorAll('iframe.canvas-app')[${i}].contentDocument.querySelector('canvas').dataset.${what} === 'yes'`;
+
+// How long a widget has to answer, counted in the page's frames, not in time,
+// so a busy box that renders slowly gives it the same chance: on a quiet box
+// 300 frames is five seconds. A widget reads a press once a frame and draws the
+// frame after, so one that hasn't answered in that many frames is broken.
+const ANSWER_FRAMES = 300;
+// How many frames the browser may take to route input to the place a scroll
+// moved a widget's frame to.
+const ROUTE_FRAMES = 300;
+// The most frames any widget took for its input to reach it, for the report.
+let mostRouteFrames = 0;
+
+// Whether the frame's picture leaves `before` within ANSWER_FRAMES frames.
 async function pictureChanges(page, i, before) {
-  for (let tries = 0; tries < 50; tries++) {
+  for (let frames = 0; frames < ANSWER_FRAMES; frames++) {
     if ((await evaluate(page, PICTURE_OF_FRAME(i))) !== before) return true;
-    await sleep(100);
+    await evaluate(page, NEXT_FRAME);
   }
   return false;
+}
+
+// Whether `felt` holds within ROUTE_FRAMES frames, since an event the
+// browser has taken reaches the page's handlers on its own schedule.
+async function feltWithin(page, felt) {
+  for (let frames = 0; frames < ROUTE_FRAMES; frames++) {
+    if (await evaluate(page, felt)) return true;
+    await evaluate(page, NEXT_FRAME);
+  }
+  return false;
+}
+
+// The browser routes input by where the last picture it was handed put each
+// frame, so right after a scroll a press can land where the frame used to be,
+// and more so the busier the box. A move to the press's point is harmless and
+// says when routing has caught up: the canvas feels it. Gives how many frames
+// that took, or nil if it never did.
+async function routeTo(page, i, mouseAt) {
+  for (let frames = 0; frames < ROUTE_FRAMES; frames++) {
+    await mouseAt("mouseMoved", 0);
+    if (await evaluate(page, FELT(i, "hovered"))) return frames;
+    await evaluate(page, NEXT_FRAME);
+  }
+  return null;
 }
 
 // The play button of VcrButtons, as shares of the frame.
@@ -237,17 +275,27 @@ async function checkFrame(page, file, i) {
   const frame = await evaluate(page, SEE_FRAME(i));
   if (frame.missing) { fail(file, `the widget ${frame.src} drew nothing`); return frame.src; }
   if (Math.abs(frame.canvasWidth - frame.width) > 2) fail(file, `the widget ${frame.src} is ${frame.canvasWidth} wide in a frame ${frame.width} wide`);
-  const before = await evaluate(page, PICTURE_OF_FRAME(i));
   const isRide = frame.src === "../safari/";
   const clicked = CLICKED_AT[frame.src.split("?")[0]];
   if (!isRide && !clicked) { fail(file, `CLICKED_AT doesn't say where to click ${frame.src}`); return frame.src; }
   if (clicked === FIXED_PICTURE) return frame.src;
   const y = frame.top + frame.height * (clicked?.y ?? 0.5);
-  const mouse = (type, share, buttons) => page.send("Input.dispatchMouseEvent",
-    { type, x: frame.left + frame.width * share, y, button: "left", buttons, clickCount: 1 }, page.session);
-  if (!isRide) await mouse("mousePressed", clicked.x, 1);
-  if (!(await pictureChanges(page, i, before))) fail(file, `the widget ${frame.src} didn't move: ${await evaluate(page, WHERE_THE_CLICK_WENT(i, frame, y))}`);
-  if (!isRide) await mouse("mouseReleased", clicked.x, 0);
+  const mouseAt = (type, buttons) => page.send("Input.dispatchMouseEvent",
+    { type, x: frame.left + frame.width * (clicked?.x ?? 0.5), y, button: buttons ? "left" : "none", buttons, clickCount: buttons ? 1 : 0 }, page.session);
+  if (!isRide) {
+    const frames = await routeTo(page, i, mouseAt);
+    if (frames === null) { fail(file, `input never reached the widget ${frame.src} in ${ROUTE_FRAMES} frames: ${await evaluate(page, WHERE_THE_CLICK_WENT(i, frame, y))}`); return frame.src; }
+    mostRouteFrames = Math.max(mostRouteFrames, frames);
+  }
+  // The picture before the press, taken once the pointer is over the widget, so
+  // nothing the pointer's arrival drew counts as the press's answer.
+  const before = await evaluate(page, PICTURE_OF_FRAME(i));
+  if (!isRide) {
+    await mouseAt("mousePressed", 1);
+    if (!(await feltWithin(page, FELT(i, "pressed")))) fail(file, `the widget ${frame.src} never felt the press: ${await evaluate(page, WHERE_THE_CLICK_WENT(i, frame, y))}`);
+  }
+  if (!(await pictureChanges(page, i, before))) fail(file, `the widget ${frame.src} didn't move in ${ANSWER_FRAMES} frames: ${await evaluate(page, WHERE_THE_CLICK_WENT(i, frame, y))}`);
+  if (!isRide) await mouseAt("mouseReleased", 0);
   return frame.src;
 }
 
@@ -409,6 +457,7 @@ try {
   const reached = checkLinks(seen);
   const spent = [...phases].sort((a, b) => b[1] - a[1]).map(([phase, ms]) => `${phase} ${(ms / 1000).toFixed(1)} s`);
   console.log(`book_check: time by phase, over the pages: ${spent.join(", ")}`);
+  console.log(`book_check: input reached every pressed widget within ${mostRouteFrames} frames of its scroll`);
   console.log(`book_check: ${seen.size} pages, ${reached} links reached, ${shots ? "with shots" : "no shots"}, ${PAGES_AT_ONCE} pages at a time, in ${((Date.now() - started) / 1000).toFixed(1)} s`);
   for (const failure of failures) console.log(`FAIL ${failure}`);
   exitCode = failures.length ? 1 : 0;
