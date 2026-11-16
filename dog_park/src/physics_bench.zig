@@ -4,9 +4,8 @@
 //!   both axes (200 pixel-ticks, a walk after each);
 //! - **a packed herd:** a tick with the full drag;
 //! - **the busiest spot strewn with poop:** the same, with `strewn_poops`
-//!   poops on free spots of the region (metal-vmm QUEUE 207: every blocked
-//!   step scans every poop in view);
-//! - **a server's re-run** of a 8-tick report from the busiest spot.
+//!   poops on free spots of the region (every blocked
+//!   step scans every poop in view).
 //! Each is the mean of as many runs from the same board as fit in about a
 //! second (at least ten), so a retune that makes a tick dearer doesn't
 //! make the bench crawl.
@@ -14,7 +13,6 @@
 const std = @import("std");
 const physics = @import("physics.zig");
 const wire = @import("physics_wire.zig");
-const judge = @import("physics_judge.zig");
 const Board = physics.Board;
 const Point = physics.Point;
 
@@ -145,46 +143,27 @@ fn poopsSeen(b: *Board) usize {
     return sc.poop_listed.count();
 }
 
-/// The report's ticks: the page sends a report at its byte budget, and a
-/// tick here moves many critters, so 32 would pass the 64 KiB body.
+/// The report's ticks: as many as a report from the busiest spot held
+/// under the page's byte budget, when the page had a server to send it to.
 const report_ticks = 8;
 
-/// A `report_ticks`-tick report from the busiest spot, as the page would send it, and
-/// the server's kept state before it.
-fn busiestReport(spot: Busiest, w: *wire.Text) !judge.Kept {
-    const busiest = spot.dog;
+/// A `report_ticks`-tick report from the busiest spot, as the page wrote
+/// it for its server: the header, `from`, and each tick's grab, `t` line
+/// (the drag as merged and capped) and checked lines.
+fn busiestReport(spot: Busiest, w: *wire.Text) !void {
     var page = spot.board;
     var lines: physics.Lines = .{};
     try wire.write(w, .{ .header = .{ .language = wire.language, .physics = 1, .epoch = .{ .ms = 1, .count = 1 }, .req = 1 } });
     try wire.write(w, .{ .from = .{ .tick = 0, .wall = 0 } });
-    // The view: every tile the region meets at some tick's start.
-    var view: wire.TileSet = .{};
     var t: physics.Tick = 1;
     while (t <= report_ticks) : (t += 1) {
-        const g = page.geometry();
-        const span = physics.TileSpan.of(g, g.region(page.of(.dog)[busiest]));
-        var r = span.row_lo;
-        while (r <= span.row_hi) : (r += 1) {
-            var c = span.col_lo;
-            while (c <= span.col_hi) : (c += 1) try view.add(g.tileAt(c, r));
-        }
         const drag = physics.mergeAndCap(&.{.{ .dx = physics.px(20), .dy = physics.px(if (t % 8 < 4) 10 else -10) }});
         const humans: []const physics.Human = if (page.hold.leashed.drag != .on) &.{.grab} else &.{};
-        for (humans) |h| try wire.write(w, switch (h) {
-            .grab => .{ .grab = t },
-            else => unreachable,
-        });
+        for (humans) |_| try wire.write(w, .{ .grab = t });
         _ = physics.tick(&page, t, humans, drag.slice(), &lines);
         try wire.write(w, .{ .t = .{ .tick = t, .ms = 0, .drag = drag } });
         for (lines.slice()) |c| try wire.write(w, wire.checkedLine(t, c));
     }
-    var kept: judge.Kept = .{ .tick = 0, .board = spot.board };
-    kept.board.hold = .none;
-    kept.pending[0] = .{ .leash = busiest };
-    kept.pending_len = 1;
-    kept.view.tiles = view;
-    kept.held = view;
-    return kept;
 }
 
 /// The board moved by `by` tiles on both axes, round the torus: the park
@@ -246,7 +225,7 @@ fn printLines(io: std.Io, full: physics.Capped, uneven: i32) !void {
     try tickLines(out, &text_buf, &lines, 1);
     var report: [65536]u8 = undefined;
     var w: wire.Text = .{ .buf = &report };
-    _ = try busiestReport(spot, &w);
+    try busiestReport(spot, &w);
     try out.print("== report\n{s}", .{w.bytes()});
     try out.flush();
 }
@@ -311,8 +290,7 @@ pub fn main(init: std.process.Init) !void {
         std.mem.doNotOptimizeAway(sink);
         return;
     }
-    // `-- busiest`: the busiest spot's full drag, 20 runs; `-- rerun`: the
-    // server's re-run of its 8-tick report, 20 runs.
+    // `-- busiest`: the busiest spot's full drag, 20 runs.
     if (args.len > 1 and std.mem.eql(u8, args[1], "busiest")) {
         const spot = busiestSpot();
         var lines: physics.Lines = .{};
@@ -340,21 +318,8 @@ pub fn main(init: std.process.Init) !void {
     }
     // `-- lines`: every line of many ticks, in the wire's text, for a
     // before-and-after diff of a change that must not change what the
-    // physics does (metal-vmm QUEUE 210).
+    // physics does.
     if (args.len > 1 and std.mem.eql(u8, args[1], "lines")) return printLines(io, full, 0);
-    if (args.len > 1 and std.mem.eql(u8, args[1], "rerun")) {
-        var report: [65536]u8 = undefined;
-        var w: wire.Text = .{ .buf = &report };
-        const kept = try busiestReport(busiestSpot(), &w);
-        var answer: [65536]u8 = undefined;
-        var findings: judge.Findings = .{};
-        for (0..20) |_| {
-            var k = kept;
-            var out: wire.Text = .{ .buf = &answer };
-            if (try judge.judge(&k, 1, w.bytes(), &out, &findings) != .kept) return error.NotKept;
-        }
-        return;
-    }
 
     // The park's busiest spot.
     const spot = busiestSpot();
@@ -376,25 +341,4 @@ pub fn main(init: std.process.Init) !void {
 
     var herd = packedHerd();
     std.debug.print("a packed herd: {d} dogs and {d} cows placed, {d} seen: the full drag {d:.1} us a tick\n", .{ herd.dogs, herd.cows, awakeCount(&herd.board), timeTick(io, &herd.board, &.{}, full.slice()) });
-
-    // A 8-tick report from the busiest spot, re-run by the server.
-    var report: [65536]u8 = undefined;
-    var w: wire.Text = .{ .buf = &report };
-    const kept = try busiestReport(spot, &w);
-    var answer: [65536]u8 = undefined;
-    var findings: judge.Findings = .{};
-    var runs: usize = 0;
-    const t0 = nowNs(io);
-    var verdict: judge.Verdict = undefined;
-    while (runs < least_runs or nowNs(io) - t0 < budget_ns) : (runs += 1) {
-        var k = kept;
-        var out: wire.Text = .{ .buf = &answer };
-        verdict = try judge.judge(&k, 1, w.bytes(), &out, &findings);
-    }
-    const t1 = nowNs(io);
-    var check = kept;
-    var out: wire.Text = .{ .buf = &answer };
-    _ = try judge.judge(&check, 1, w.bytes(), &out, &findings);
-    std.debug.print("a server's re-run of a 8-tick report ({d} bytes) from the busiest spot: {s}, {d:.1} us\n", .{ w.len, std.mem.trimEnd(u8, out.bytes(), "\n"), @as(f64, @floatFromInt(t1 - t0)) / @as(f64, @floatFromInt(runs)) / 1000.0 });
-    if (verdict != .kept) return error.NotKept;
 }

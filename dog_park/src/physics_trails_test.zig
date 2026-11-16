@@ -301,8 +301,8 @@ test "the poops by tile: a slot laid anew mid-drag leaves its old tile's list, s
     try testing.expectEqual(@as(?physics.Bumped, null), bumpOf(&lines));
     try overlapsNone(&b);
     // The slot was seen at the start, so its line is its new point (the
-    // page moves its poop), never an eaten line (metal-vmm QUEUE 210: the
-    // lines walk only the slots seen at the start and those laid).
+    // page moves its poop), never an eaten line (the lines walk only the
+    // slots seen at the start and those laid).
     var poop_lines: usize = 0;
     for (lines.slice()) |c| switch (c) {
         .poop => |l| {

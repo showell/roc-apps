@@ -56,9 +56,6 @@ fn tickOf(t: f64) Tick {
 
 // ── memory ──────────────────────────────────────────────────────────────────
 
-export fn physicsHash() u32 {
-    return wire.physics_hash;
-}
 /// The physics' clock: the page ticks every 1000 / this ms.
 export fn ticksPerSecond() u32 {
     return physics.ticks_per_second;
@@ -169,23 +166,14 @@ fn humanOf(kind: u32, dog: u32) physics.Human {
     };
 }
 
-/// **ONE OF THE HUMAN'S INPUTS** at tick `t`, applied to the board (its
-/// next tick's inputs begun) and written as its line: the line's length,
-/// or -1 less the refusal (physics.Refusal) when its precondition fails,
-/// the board unchanged.
-export fn human(kind: u32, t: f64, dog: u32) i32 {
+/// **ONE OF THE HUMAN'S INPUTS** for the next tick, applied to the board
+/// (its inputs begun): 0, or -1 less the refusal (physics.Refusal) when
+/// its precondition fails, the board unchanged.
+export fn human(kind: u32, dog: u32) i32 {
     const h = humanOf(kind, dog);
     if (h != .grab and h != .letgo and dog >= physics.countOf(physics.leashed_kind)) return -1 - @as(i32, @backingInt(physics.Refusal.leash_no_such_dog));
     if (physics.input(&board, &begun, h)) |r| return -1 - @as(i32, @backingInt(r));
-    var w = out();
-    const at: Tick = tickOf(t);
-    wire.write(&w, switch (h) {
-        .release => |d| .{ .release = .{ .tick = at, .dog = d } },
-        .leash => |d| .{ .leash = .{ .tick = at, .dog = d } },
-        .grab => .{ .grab = at },
-        .letgo => .{ .letgo = at },
-    }) catch unreachable;
-    return @intCast(w.len);
+    return 0;
 }
 
 /// The displacements in `ints`, `n` triples (dx, dy in 256ths, `@ms`).
@@ -410,17 +398,17 @@ const the_dog: u16 = 25;
 /// with poops laid, dogs walked and chickens moved.
 fn playedPark(dog: u16, n: u32, dx: i32) Tick {
     reset(physics.last_level);
-    _ = human(@backingInt(HumanKind.leash), 1, dog);
+    _ = human(@backingInt(HumanKind.leash), dog);
     var t: Tick = 1;
     while (t <= n) : (t += 1) {
         // A bump ends the drag: the dog is grabbed again, as a player would.
-        if (board.hold == .leashed and board.hold.leashed.drag != .on) _ = human(@backingInt(HumanKind.grab), @floatFromInt(t), 0);
+        if (board.hold == .leashed and board.hold.leashed.drag != .on) _ = human(@backingInt(HumanKind.grab), 0);
         ints_buf[0] = physics.px(dx);
         ints_buf[1] = physics.px(1);
         ints_buf[2] = 5;
         _ = tick(@floatFromInt(t), 1);
     }
-    _ = human(@backingInt(HumanKind.letgo), @floatFromInt(t), 0);
+    _ = human(@backingInt(HumanKind.letgo), 0);
     while (board.hold != .none) : (t += 1) _ = tick(@floatFromInt(t), 0);
     return t - 1;
 }
@@ -456,7 +444,7 @@ test "a park written and read back is the board it was, with its tick, its poops
     try testing.expectEqualStrings(text, parkText(t));
 
     // Written while a dog is leashed and dragged: read back, nothing is.
-    _ = human(@backingInt(HumanKind.leash), @floatFromInt(t + 1), 3);
+    _ = human(@backingInt(HumanKind.leash), 3);
     ints_buf[0] = physics.px(4);
     ints_buf[1] = 0;
     ints_buf[2] = 0;
@@ -484,7 +472,7 @@ test "a park read back plays on as the board it was written from: the same lines
             reset(physics.last_level);
             try testing.expectEqual(@as(i32, 0), readPark(putPark(text)));
         }
-        _ = human(@backingInt(HumanKind.leash), @floatFromInt(t + 1), 7);
+        _ = human(@backingInt(HumanKind.leash), 7);
         for (1..80) |k| {
             ints_buf[0] = physics.px(5);
             ints_buf[1] = physics.px(-2);
@@ -573,16 +561,15 @@ test "a park is refused, the board unchanged, when it is not a park, of another 
 
 test "a refused input leaves the board and writes nothing" {
     reset(physics.last_level);
-    try testing.expectEqual(@as(i32, -1 - @as(i32, @backingInt(physics.Refusal.grab_unleashed))), human(@backingInt(HumanKind.grab), 1, 0));
-    try testing.expect(human(@backingInt(HumanKind.leash), 1, 4) > 0);
-    try testing.expectEqualStrings("leash 1 4\n", out_buf[0..10]);
-    try testing.expectEqual(@as(i32, -1 - @as(i32, @backingInt(physics.Refusal.leash_while_leashed))), human(@backingInt(HumanKind.leash), 1, 5));
+    try testing.expectEqual(@as(i32, -1 - @as(i32, @backingInt(physics.Refusal.grab_unleashed))), human(@backingInt(HumanKind.grab), 0));
+    try testing.expectEqual(@as(i32, 0), human(@backingInt(HumanKind.leash), 4));
+    try testing.expectEqual(@as(i32, -1 - @as(i32, @backingInt(physics.Refusal.leash_while_leashed))), human(@backingInt(HumanKind.leash), 5));
     try testing.expectEqual(@as(i32, 4), leashedDog());
     // A dog Level One does not lay out can't be leashed there.
     reset(0);
     const absent = for (board.knownOf(physics.leashed_kind), 0..) |k, i| {
         if (k == .absent) break i;
     } else unreachable;
-    try testing.expectEqual(@as(i32, -1 - @as(i32, @backingInt(physics.Refusal.leash_no_such_dog))), human(@backingInt(HumanKind.leash), 1, @intCast(absent)));
+    try testing.expectEqual(@as(i32, -1 - @as(i32, @backingInt(physics.Refusal.leash_no_such_dog))), human(@backingInt(HumanKind.leash), @intCast(absent)));
     try testing.expectEqual(@as(i32, -1), leashedDog());
 }

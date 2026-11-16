@@ -16,9 +16,6 @@ pub fn build(b: *std.Build) void {
     const roc = rocCompiler(b);
     const roc_lib = rocArchives(b, roc);
 
-    // **THE PHYSICS HASH, ONCE** (physics_wire.zig): a CRC-32 over the
-    // files src/physics_sources.zon lists, read here at configure time and
-    // handed to every module that compiles the physics.
     // **-Dwalk-judge**: every walk run beside src/walk_reference.zig and
     // compared (`zig build walk-judge`); off by default.
     const walk_judge = b.option(bool, "walk-judge", "judge every Roc walk against the plain Zig reference (walk_reference.zig), panicking at a difference") orelse false;
@@ -49,10 +46,13 @@ pub fn build(b: *std.Build) void {
         physics_mod: *std.Build.Module,
         roc_lib: RocLib,
 
-        /// The physics' tests (physics_all_tests.zig), natively.
+        /// The physics' tests (physics_all_tests.zig), natively. They run
+        /// every time, never cached, so every summary says how many ran.
         fn physics(u: @This(), size: Fuzz) *std.Build.Step {
             const m = u.module("src/physics_all_tests.zig", u.target, u.optimize, size);
-            return &u.b.addRunArtifact(u.b.addTest(.{ .root_module = m, .test_runner = testRunner(u.b) })).step;
+            const run = u.b.addRunArtifact(u.b.addTest(.{ .root_module = m, .test_runner = testRunner(u.b) }));
+            run.has_side_effects = true;
+            return &run.step;
         }
 
         /// The physics' tests compiled to wasm32-wasi and run under node,
@@ -155,11 +155,11 @@ pub fn build(b: *std.Build) void {
     }) });
     linkRoc(roc_lib, physics_bench.root_module);
     const physics_bench_run = b.addRunArtifact(physics_bench);
-    // `zig build physics-bench -- herd` (or `busiest`, `strewn`, `rerun`):
+    // `zig build physics-bench -- herd` (or `busiest`, `strewn`):
     // one of the bench's ticks alone, a fixed number of runs, for a
     // profiler; `-- lines`: every line of its drags, in the wire's text.
     physics_bench_run.addPassthruArgs();
-    b.step("physics-bench", "Time a physics tick natively (ReleaseSafe); -- herd, busiest, strewn or rerun: that one alone, for a profiler; -- lines: every line of its drags").dependOn(&physics_bench_run.step);
+    b.step("physics-bench", "Time a physics tick natively (ReleaseSafe); -- herd, busiest or strewn: that one alone, for a profiler; -- lines: every line of its drags").dependOn(&physics_bench_run.step);
 
     // **THE WALK'S JUDGE**: the bench's `-- judge` (its `lines` workload:
     // every dog leashed in turn on two parks, the strewn drag, the packed
@@ -177,6 +177,8 @@ pub fn build(b: *std.Build) void {
     judged_run.addArg("judge");
     _ = judged_run.captureStdOut(.{});
     judged_run.expectExitCode(0);
+    // It runs every time, never cached: a pass is a run that judged.
+    judged_run.has_side_effects = true;
     b.step("walk-judge", "Run the bench's `-- lines` with every Roc walk judged against the plain Zig reference (src/walk_reference.zig)").dependOn(&judged_run.step);
 
     // **THE WORLD AND ITS RULES, FROM ROC** (src/world.zig, src/rules.zig):
@@ -332,7 +334,8 @@ const pin_file = "../roc-version";
 
 /// The Roc the physics is built by: roc-apps' `roc-version`, one line, as
 /// `roc version` ends (a nightly's name). Moving it is a decision: a new
-/// Roc is new archives, so judge them (the physics hash covers that file).
+/// Roc is new archives, so judge them (physics-bench's `lines`, the walk's
+/// judge, the golden runs).
 fn rocPin(b: *std.Build) []const u8 {
     const path = pathFromRoot(b, pin_file);
     const said = std.Io.Dir.cwd().readFileAlloc(b.graph.io, path, b.allocator, .limited(256)) catch |e|
@@ -397,31 +400,12 @@ fn linkRoc(lib: RocLib, m: *std.Build.Module) void {
 /// a change to any prints again.
 const printed_from = [_][]const u8{ "roc/World.roc", "roc/Rules.roc", "roc/Layout.roc", "roc/Wish.roc", "roc/Words.roc", "roc/Look.roc" };
 
-/// The physics' build options, `physics_options`: its hash.
+/// The physics' build options, `physics_options`: whether every walk is
+/// judged against the plain Zig reference.
 fn physicsOptions(b: *std.Build, walk_judge: bool) *std.Build.Module {
     const options = b.addOptions();
-    options.addOption(u32, "physics_hash", physicsHash(b, pathFromRoot(b, "src")));
     options.addOption(bool, "walk_judge", walk_judge);
     return options.createModule();
-}
-
-/// The physics hash: a CRC-32 over the files `dir`/physics_sources.zon
-/// lists, in its order.
-fn physicsHash(b: *std.Build, dir: []const u8) u32 {
-    const io = b.graph.io;
-    const list_path = b.fmt("{s}/physics_sources.zon", .{dir});
-    const list = std.Io.Dir.cwd().readFileAlloc(io, list_path, b.allocator, .limited(1 << 16)) catch |e|
-        std.process.fatal("the physics hash's sources: {s} does not read ({t})", .{ list_path, e });
-    var diag: std.zon.parse.Diagnostics = undefined;
-    const names = std.zon.parse.fromSlice([]const []const u8, .{ .gpa = b.allocator, .arena = b.allocator, .source = b.allocator.dupeSentinel(u8, list, 0) catch @panic("out of memory"), .diagnostics = &diag }) catch
-        std.process.fatal("{s} is not a list of file names", .{list_path});
-    var crc = std.hash.Crc32.init();
-    for (names) |name| {
-        const path = b.fmt("{s}/{s}", .{ dir, name });
-        crc.update(std.Io.Dir.cwd().readFileAlloc(io, path, b.allocator, .limited(1 << 22)) catch |e|
-            std.process.fatal("the physics hash's source {s} does not read ({t})", .{ path, e }));
-    }
-    return crc.final();
 }
 
 /// `builder`'s build root as an absolute path: 0.17's `b.root` may hold a

@@ -1,7 +1,7 @@
 # Why the Roc walk costs what it does
 
 The walk (`roc/Walk.roc`, with the wish in it, `roc/Wish.roc`) is the
-physics' hot path, run natively on the server and as wasm on the page. It
+physics' hot path, run as wasm on the page and natively in the benches. It
 costs about 1.4 times a plain Zig walk's natively. What drives the cost,
 found by counting instructions (callgrind's per-instruction counts against
 the disassembly), not by guessing, and the rules that keep it down. `zig

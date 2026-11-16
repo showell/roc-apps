@@ -140,8 +140,7 @@ trusting it.
   into the build user's `~/tools/`, because that's where `build.zig` looks,
   and point Shale's `tools` mount there.
 - **Move pins lazily.** A project that's working keeps its pin until it
-  next gets features. Dog Park stays on its older pin
-  (`dog-park/roc/roc-version`).
+  next gets features.
 - **A pin move is its own commit.** Change `roc-version`, then run the full
   verify and regenerate any ABI snapshot with `roc glue` (roc-chat
   `tools/chat_glue.shale`) to check the seam hasn't moved. If `roc fmt` now
@@ -684,10 +683,10 @@ part, so a machine checks it, not a reader.
   request's arena goes with it. Planted crashes, one per way the Roc can
   die, prove it (`app/test/crash.roc`, `host/crash_test.zig`).
 - **Let the host check the Roc's work.** In Dog Park
-  (`dog-park/README.md`, "Changing the game in Roc"), the physics and the
-  rules are Roc under a Zig server. `zig build walk-judge` checks every
-  step against `src/play/walk_reference.zig`, a plain Zig reference that
-  shares none of the Roc's code.
+  (`dog_park/README.md`, "Changing the game in Roc"), the physics and the
+  rules are Roc under a Zig board, compiled to the page's wasm. `zig build
+  walk-judge` checks every step against `dog_park/src/walk_reference.zig`,
+  a plain Zig reference that shares none of the Roc's code.
 
 ## 14. Security habits for Roc services
 

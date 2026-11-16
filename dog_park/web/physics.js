@@ -10,8 +10,8 @@
 //                                  its first layout, nothing leashed
 //     leashed()                    the leashed dog's number, or "none"
 //     drag()                       "none" | "on" | { ended: tick }
-//     human(h, t, dog)             h: "release" | "leash" | "grab" | "letgo";
-//                                  applied and written: { text } or { refused }
+//     human(h, dog)                h: "release" | "leash" | "grab" | "letgo",
+//                                  for the next tick: {} or { refused }
 //     tick(t, drag)                drag: [[dx, dy, ms], ...] in 256ths, as the
 //                                  pointer made them; merged, capped and run:
 //                                  { checked (text), drag (as capped), flags,
@@ -89,11 +89,11 @@ export function createPhysics(x) {
       const d = x.dragOf();
       return d === -1 ? "none" : d === -2 ? "on" : { ended: d };
     },
-    human(h, t, dog = 0) {
+    human(h, dog = 0) {
       const kind = human_kinds.indexOf(h);
       if (kind < 0) throw new Error(`no human input ${h}`);
-      const r = x.human(kind, t, dog);
-      return r < 0 ? { refused: -1 - r } : { text: text(r) };
+      const r = x.human(kind, dog);
+      return r < 0 ? { refused: -1 - r } : {};
     },
     tick(t, drag) {
       const len = x.tick(t, putDrag(drag));

@@ -1,6 +1,6 @@
 //! **THE PHYSICS** (docs/PHYSICS.md): the critters' board and one tick of
-//! it, the shared Zig that the page (as wasm) and the server (natively)
-//! both run, so they agree to the bit.
+//! it, the Zig that the page runs as wasm and the tests and benches run
+//! natively, the two agreeing to the bit.
 //!
 //! A tick is a pure function: the board before, plus what the human did
 //! during it (`Human` inputs, then the drag's displacements), gives the
@@ -407,8 +407,8 @@ pub const Critter = struct {
     }
 };
 
-/// Whether the board has a critter: the page has only those it received;
-/// the server has every one.
+/// Whether the board has a critter: a level lays out only some of each
+/// kind's numbers, and the rest are absent.
 pub const Known = enum(u8) { absent, present };
 
 /// A leashed dog's drag: on (the pointer is down), or ended at a tick (the
@@ -792,7 +792,7 @@ pub const Scene = struct {
     /// tick's start, or laid since, and not eaten. A listed slot is always
     /// present.
     poop_listed: std.StaticBitSet(poop_count) = undefined,
-    /// **THE POOPS BY TILE** (metal-vmm QUEUE 207's measure): each listed
+    /// **THE POOPS BY TILE**: each listed
     /// slot is on the list of the span's tile its point stands in
     /// (`poop_head` by the tile's offset in the span, `poop_next` by slot,
     /// `no_poop` ends a list), so a square asks only the tiles it could
@@ -801,7 +801,7 @@ pub const Scene = struct {
     poop_next: [poop_count]u16 = undefined,
     /// The slots a dog pooped into this tick.
     poop_laid: std.StaticBitSet(poop_count) = undefined,
-    /// **THE SLOTS SEEN AT THE START** (metal-vmm QUEUE 210): listed when
+    /// **THE SLOTS SEEN AT THE START**: listed when
     /// the tick began, what the page holds too; and for each such slot a
     /// poop is laid into, its point before (`poop_was`, set only then). A
     /// tick's poop lines walk these and the laid slots, not all 2048.
@@ -812,7 +812,7 @@ pub const Scene = struct {
     /// seen critters, for each walk.
     roc_walk: roc.Walk(critter_count, walk_most + 1, poop_count, span_tiles * span_tiles, span_cells) = .{},
     poops_changed: bool = true,
-    /// **THE SEEN CRITTERS BY CELL** (metal-vmm QUEUE 210; grid.zig): seen
+    /// **THE SEEN CRITTERS BY CELL** (grid.zig): seen
     /// index `j` is in the cell of the world its point stands in (`cell` a
     /// side). Roc keeps them (roc/Walk.roc's `cells`): `init` clears the
     /// storage, Roc's first call of the tick files the critters (`filed`),
@@ -1303,8 +1303,8 @@ fn chickensTurn(sc: *Scene) void {
 
 /// Every overlapping pair among the critters the physics sees, by the
 /// first critter then the second, and every critter on a poop (counted,
-/// not listed): the invariant the server checks after every tick (a
-/// finding, not a refutation).
+/// not listed): the invariant the tests check after every tick, and a
+/// park read back is held to (physics_page.zig's `readPark`).
 pub fn overlaps(b: *Board, found: []([2]Critter)) usize {
     @setRuntimeSafety(false);
     var sc: Scene = undefined;

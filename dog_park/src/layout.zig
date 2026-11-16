@@ -1,5 +1,5 @@
 //! **THE FIRST LAYOUT**, in 256ths: where every critter stands when the park
-//! starts afresh (the server's first start, and every load). A chicken's
+//! starts afresh (a new game, and Start over). A chicken's
 //! starting spot is its home (`home`), where a forager walks back to
 //! (docs/PHYSICS.md, "Poop and chickens"). Today's pattern (a dog of each
 //! breed in each corner of every park tile, a cow in each white tile, two

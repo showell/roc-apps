@@ -1,8 +1,8 @@
-//! **A NEW KIND, MADE IN ROC ALONE** (metal-vmm QUEUE 240; sheep since the park has goats): this test
+//! **A NEW KIND, MADE IN ROC ALONE** (sheep, since the park has goats): this test
 //! runs only in the sheep world, a copy of this repository with
 //! test/new_kind/sheep.patch applied, which touches nothing but roc/*.roc
-//! (`zig build new-kind`, tools/new_kind.sh: the patch, then `zig
-//! build roc` there, then this). The Zig is these same files, byte for
+//! (tools/new_kind.shale: the patch, then `zig build roc` there, then
+//! `zig build new-kind-test`). The Zig is these same files, byte for
 //! byte; only world.zon, rules.zon and the Roc built are the sheep
 //! world's. In this repository's own world there are no sheep, and it
 //! does not compile, saying so.

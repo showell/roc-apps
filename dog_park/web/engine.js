@@ -162,7 +162,7 @@ export function createEngine({ physics, store, now, log }) {
       log.warn(`a ${h} at tick ${t} dropped: ${most_humans} inputs there already`);
       return false;
     }
-    const r = physics.human(h, t, dog);
+    const r = physics.human(h, dog);
     if (r.refused !== undefined) {
       log.warn(`a ${h} ${dog} at tick ${t} refused (${r.refused}), dropped`);
       return false;

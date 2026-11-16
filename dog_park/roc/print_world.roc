@@ -3,8 +3,8 @@
 ## it twice and checks in what it prints:
 ##
 ## - `roc roc/print_world.roc -- zon`: src/world.zon, which src/world.zig
-##   imports as a `World` (the physics: the server, the page's wasm, the
-##   kernel). The critter counts are its lists' lengths.
+##   imports as a `World` (the physics: the page's wasm, the tests and the
+##   benches). The critter counts are its lists' lengths.
 ## - `roc roc/print_world.roc -- js`: web/world.js, the numbers the page's script
 ##   draws with.
 ##

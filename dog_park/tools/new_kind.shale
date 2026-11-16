@@ -1,0 +1,78 @@
+-- A new kind of critter, made in Roc alone: this script copies dog_park/
+-- (and roc-apps' roc-version, which its build reads) into a scratch folder,
+-- applies test/new_kind/sheep.patch there, which may touch roc/*.roc and
+-- nothing else, prints the sheep world (`zig build roc`), and runs
+-- src/new_kind_test.zig and the walk's judge on the same Zig, byte for
+-- byte. It prints one verdict line, and stops naming the step that failed.
+--
+--   cd <roc-apps checkout> && shale dog_park/tools/new_kind.shale
+--
+-- The scratch folder is under build:roc-apps/gen/dog_park/ and is removed
+-- at the end (a run that stops leaves it, and the next run removes it);
+-- the Zig cache is build:roc-apps/zig-cache/dog_park-new-kind,
+-- kept, so a second run builds only what changed.
+--
+-- budget: steps=20000000
+
+const HERE = "dog_park"
+const PATCH = "dog_park/test/new_kind/sheep.patch"
+const COPIED = {"build.zig", "build.zig.zon", "roc", "src", "web", "tools", "test"}
+
+-- Every file the patch changes is roc/<name>.roc: a patch that needs the
+-- Zig changed proves nothing.
+function check_patch()
+  local n = 0
+  for g in grep(PATCH, "+++ ") do
+    if starts_with(g.text, "+++ ") then
+      if re_match(g.text, "^\\+\\+\\+ b/roc/[^/]+\\.roc$") == nil then fail("new_kind: sheep.patch touches more than roc/*.roc: " .. g.text) end
+      n = n + 1
+    end
+  end
+  if n == 0 then fail("new_kind: sheep.patch changes no file") end
+  return n
+end
+
+function zig_build(dir, roc, cache, step)
+  local r = run({"zig", "build", "--cache-dir", real(cache), "-Droc=" .. roc, step, "--summary", "all"}, {cwd = dir, timeout_ms = 900000, tail = 30})
+  if r.code ~= 0 then
+    print(r.out)
+    fail("new_kind: `zig build " .. step .. "` in the sheep world failed")
+  end
+  return r
+end
+
+local roc = pinned_roc("new_kind")
+local files = check_patch()
+if not exists("build:roc-apps/gen/dog_park") then mkdir("build:roc-apps/gen/dog_park") end
+-- A run that stopped leaves its folder, to look at; the next run removes it.
+local stale = {}
+for e in walk_all("build:roc-apps/gen/dog_park", {kind = "directory"}) do
+  if dirname(e.path) == "build:roc-apps/gen/dog_park" and starts_with(basename(e.path), "new-kind.") then push(stale, e.path) end
+end
+for p in stale do remove_tree(p) end
+local work = fresh_dir("build:roc-apps/gen/dog_park", "new-kind")
+local sheep = work .. "/dog_park"
+mkdir(sheep)
+for name in COPIED do copy(HERE .. "/" .. name, sheep .. "/" .. name) end
+copy("roc-version", work .. "/roc-version")
+must(run({"git", "apply", "-p1", real(PATCH)}, {cwd = sheep, timeout_ms = 30000, tail = 20}))
+-- The Zig is this checkout's, byte for byte.
+local zig_files = 0
+for p in glob(HERE .. "/src/*.zig") do
+  if read(p) ~= read(sheep .. "/src/" .. basename(p)) then fail("new_kind: " .. p .. " differs after the patch") end
+  zig_files = zig_files + 1
+end
+local cache = "build:roc-apps/zig-cache/dog_park-new-kind"
+zig_build(sheep, roc, cache, "roc")
+local t = zig_build(sheep, roc, cache, "new-kind-test")
+zig_build(sheep, roc, cache, "walk-judge")
+remove_tree(work)
+-- The runner's `--tests=1` holds the binary to its one named test; the
+-- summary counts the unnamed `test {}` blocks that import the rest too.
+local ran = nil
+for l in lines(t.out) do
+  local m = re_find(l, "Build Summary: .*; (\\d+)/(\\d+) tests passed")
+  if m ~= nil and m.groups[1] == m.groups[2] then ran = m.groups[1] end
+end
+if ran == nil then fail("new_kind: the sheep world's test binary said no `N/N tests passed`") end
+print("new_kind: sheep.patch (" .. files .. " Roc files) on " .. zig_files .. " unchanged Zig files: the sheep world's one named test (" .. ran .. "/" .. ran .. " passed with its imports) and the walk's judge pass")

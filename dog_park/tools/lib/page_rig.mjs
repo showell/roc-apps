@@ -98,9 +98,9 @@ export function laidOutCritters(n) {
 export function letGoTicks() {
   geometry.reset(0);
   const dog = geometry.critters().dogs[0].id;
-  geometry.human("leash", 1, dog);
+  geometry.human("leash", dog);
   geometry.tick(1, []);
-  geometry.human("letgo", 2, 0);
+  geometry.human("letgo");
   for (let t = 2; t < 100_000; t++) {
     if (geometry.tick(t, []).flags & flag.release) return t - 2;
   }

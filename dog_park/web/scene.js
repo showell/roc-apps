@@ -49,8 +49,8 @@ export function parkFromViewport(viewport, viewportX, viewportY) {
 // (Steve, 2026-10-15). **THEY ARE THE LEVEL'S** (world.js's `levels`, which
 // roc/World.roc says; Level One first): `setLevel(n)` sets them, and every
 // module that imports them sees the level's (live bindings). A page plays
-// one level at a time, set by its load. A page subscribes to at most
-// `most_tiles` (the server refuses more): the whole world fits.
+// one level at a time, set by its load or a change of level. The page
+// holds the whole world, at most `most_tiles` tiles.
 import { tile_px, levels } from "./world.js";
 export { tile_px, levels };
 export const most_tiles = 64;

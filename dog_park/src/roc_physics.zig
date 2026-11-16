@@ -159,8 +159,6 @@ pub fn Walk(comptime seen_most: usize, comptime moving_most: usize, comptime poo
             std.debug.assert(cells_side <= side);
             const freed = deallocs.load(.monotonic);
             const asked = allocs.load(.monotonic);
-            const was = if (shared) roc_hooks.enter(physics_roc);
-            defer if (shared) roc_hooks.leave(was);
             const r = roc_walk(mode, axis, inc, @intCast(cells_side), before, laid, self.from.toRead(), self.poops.toRead(), self.homes.toRead(), cells.toChange(), self.crits.toChange(), self.depth.toChange(), self.eaten.toChange(), self.moving.toChange());
             if (allocs.load(.monotonic) != asked) std.debug.panic("roc_alloc: Roc asked for memory in a call that returned, last from 0x{x}: a list grown past its room, or a lent list copied (docs/ROC-SPEED.md); `nm` on the archive names the function", .{alloc_from.load(.monotonic)});
             if (deallocs.load(.monotonic) != freed) @panic("roc_dealloc: Roc freed a list the physics lent it (a list kept, or a refcount word moved)");
@@ -175,24 +173,13 @@ pub fn Walk(comptime seen_most: usize, comptime moving_most: usize, comptime poo
     };
 }
 
-/// **ANOTHER ROC APP IN THE BINARY** (roc-webbox's roc_hooks.zig, which the
-/// binary's root then declares, as a webbox combo of Dog Park and the TODO
-/// list does): the root exports the four below and hands Roc's calls to the
-/// app inside its Roc call, so `call` brackets the walk. Alone, as every
-/// build here is, they are exported here.
-/// A root may declare it empty (`struct {}`: a host that forwards whatever
-/// its application declares), which is none.
-const shared = @hasDecl(@import("root"), "roc_hooks") and @hasDecl(@import("root").roc_hooks, "enter");
-const roc_hooks = if (shared) @import("root").roc_hooks else struct {};
-const physics_roc = @This();
-
+// Roc's four calls into its host, exported here: the physics is the only
+// Roc in every binary that links it.
 comptime {
-    if (!shared) {
-        @export(&roc_alloc, .{ .name = "roc_alloc" });
-        @export(&roc_realloc, .{ .name = "roc_realloc" });
-        @export(&roc_dealloc, .{ .name = "roc_dealloc" });
-        @export(&roc_crashed, .{ .name = "roc_crashed" });
-    }
+    @export(&roc_alloc, .{ .name = "roc_alloc" });
+    @export(&roc_realloc, .{ .name = "roc_realloc" });
+    @export(&roc_dealloc, .{ .name = "roc_dealloc" });
+    @export(&roc_crashed, .{ .name = "roc_crashed" });
 }
 
 /// A Roc crash: an overflow, a division by zero, or a `crash` (a slot
