@@ -29,7 +29,8 @@ Diagrams := [].{
 	}
 
 	## The manuscript as the builder reads it, and its diagrams in order, or
-	## a problem for each diagram with no title above it.
+	## a problem for each ```dot fence with no title line above it, which is
+	## no diagram.
 	found : { name : Str, text : Str } -> Try(
 		{ manuscript : Str, diagrams : List(Diagrams.Diagram) },
 		List(Str),
@@ -46,13 +47,17 @@ Diagrams := [].{
 				NoFence =>
 					if line == "```dot" {
 						id = "diagram-${($diagrams.len() + 1).to_str()}"
-						title = $out.last() ?? ""
-						if title.trim().is_empty() {
-							$problems = $problems.append("${name}:${$number.to_str()}: ```dot: a diagram needs a title line directly above it")
+						match $out.last() {
+							Ok(title) if !title.trim().is_empty() => {
+								$diagrams = $diagrams.append({ id, title, source: "" })
+								$open = InDot
+							}
+							_ => {
+								$problems = $problems.append("${name}:${$number.to_str()}: ```dot: a diagram needs a title line directly above it")
+								$open = InOther
+							}
 						}
 						$out = $out.drop_last(1).append("").append("```dot ${id}")
-						$diagrams = $diagrams.append({ id, title, source: "" })
-						$open = InDot
 					} else {
 						if line.starts_with("```") {
 							$open = InOther
@@ -127,3 +132,6 @@ expect
 		])
 expect Diagrams.svg_path("diagram-2") == "build/prepared/diagram-2.svg"
 expect Diagrams.dot_path("diagram-2") == "build/prepared/diagram-2.dot"
+expect
+	Diagrams.found({ name: "t.md", text: "```dot\ndigraph {\n```\n" })
+		== Err(["t.md:1: ```dot: a diagram needs a title line directly above it"])

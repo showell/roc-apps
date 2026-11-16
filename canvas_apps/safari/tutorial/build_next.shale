@@ -55,7 +55,7 @@ const DIAGRAMS_PER_RUN = 30
 const PHONE_POINTS = 300
 const DOT_WANT = "graphviz: the tutorial's diagrams, drawn at build time"
 const BOOK_WANT = "book-next: the book program build_next.shale just built, untracked by design"
-const APP_TESTS = 54
+const APP_TESTS = 55
 const CHAPTERS_ARG = arg("chapters", "")
 const CHAPTERS = CHAPTERS_ARG ~= "" and tonumber(CHAPTERS_ARG) or nil
 
