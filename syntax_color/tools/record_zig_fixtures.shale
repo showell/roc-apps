@@ -1,0 +1,57 @@
+-- budget: steps=200000000 arena_bytes=1000000000 call_bytes=40000000
+-- This records oracle/zig_files.jsonl, the Zig fixtures. No script colored
+-- Zig before the package did, so the fixtures are the package's own answers
+-- for real Zig on the box, each read by eye before it was committed;
+-- tools/verify.shale then holds the package to them. Run it from a roc-apps
+-- checkout, with Shale, roc-chat, zig-webbox and zig-metal-unikernel beside it
+-- under the `repos:` mount, after tools/verify.shale has built the harness:
+--
+--   cd <roc-apps checkout> && shale syntax_color/tools/record_zig_fixtures.shale
+--
+-- A fixture holds the file's text as it was recorded, so the files beside
+-- roc-apps can move on without moving the fixtures. Re-record only for a
+-- deliberate change to the Zig lexer, and read every sample that moved in
+-- the diff.
+const TOOL = ".zig-cache/syntax_color/harness"
+const OUT = "syntax_color/oracle/zig_files.jsonl"
+const MARK = "<!-- syntax_color answer -->\n"
+const WANT = "roc-pin: syntax_color's harness, built by its gate"
+
+-- A spread of what Zig on the box holds: Shale's parser glue, with many
+-- quoted identifiers, its tests' multiline strings and characters, the book
+-- builder's host and its ABI test, roc-chat's seam test, a webbox view full
+-- of multiline strings, and the kernel's hex-heavy drivers, its boot
+-- assembly and a simulator with floats.
+const FILES = {
+  "repos:shale/src/shale_zig_ast.zig",
+  "repos:shale/src/script/ast.zig",
+  "repos:shale/src/shale_tokens_test.zig",
+  "repos:shale/src/shale_job_record.zig",
+  "repos:shale/src/script_bench.zig",
+  "book_builder/host/abi.zig",
+  "book_builder/host/abi_test.zig",
+  "book_builder/host/book_folder.zig",
+  "repos:roc-chat/host/seam_test.zig",
+  "repos:zig-webbox/src/log_view.zig",
+  "repos:zig-metal-unikernel/src/pci.zig",
+  "repos:zig-metal-unikernel/src/boot.zig",
+  "repos:zig-metal-unikernel/src/tcp_sim_world.zig",
+}
+
+if not exists(TOOL) then fail("record_zig_fixtures: no harness at " .. TOOL .. ": run tools/verify.shale first") end
+local argv = {real(TOOL)}
+for f in FILES do
+  push(argv, "zig")
+  push(argv, read(f))
+end
+local r = must(run(argv, {timeout_ms = 120000, whole = 20000000, want = WANT}))
+local answers = drop(split(r.out, MARK), 1)
+if #answers ~= #FILES then fail("record_zig_fixtures: " .. #FILES .. " files got " .. #answers .. " answers") end
+local out = {}
+local i = 1
+while i <= #FILES do
+  push(out, json_write({name = FILES[i], outcome = "reviewed", html = answers[i]}))
+  i = i + 1
+end
+replace(OUT, join(out, "\n") .. "\n")
+print("record_zig_fixtures: " .. #FILES .. " files")
