@@ -20,7 +20,10 @@
 --   blocks.txt     which lines of which file each quoted Roc block shows, and
 --   sources/       a copy of each such file, for the app's coloring
 --
--- Then `zig build` builds the app into book_builder/zig-out/safari, on Roc's
+-- Then `roc test` runs the app's expects, the app/ folder's held to exactly
+-- APP_TESTS and to its top-level `expect` lines, each passed once; the
+-- packages' own are their gates' to hold. Then `zig build` builds the app
+-- into book_builder/zig-out/safari, on Roc's
 -- dev backend, and the program writes the pages, which go to build/next/ with
 -- the book's stylesheet and scripts, and from there to the channel. A diagram
 -- is drawn as book.shale draws it: its comments and titles dropped, and one
@@ -52,6 +55,7 @@ const DIAGRAMS_PER_RUN = 30
 const PHONE_POINTS = 300
 const DOT_WANT = "graphviz: the tutorial's diagrams, drawn at build time"
 const BOOK_WANT = "book-next: the book program build_next.shale just built, untracked by design"
+const APP_TESTS = 54
 const CHAPTERS_ARG = arg("chapters", "")
 const CHAPTERS = CHAPTERS_ARG ~= "" and tonumber(CHAPTERS_ARG) or nil
 
@@ -207,6 +211,40 @@ function write_pages(output)
   return {files = files, report = halves[2]}
 end
 
+-- The app's expects run, and the app/ folder's held to APP_TESTS and to the
+-- top-level `expect` lines its files hold, each passed once; gives the time.
+function test_app(env)
+  local r = run({pinned_roc("build_next"), "test", "--verbose", "app/main.roc"}, {cwd = TUTORIAL, timeout_ms = 120000, whole = 2000000, env = env})
+  local written = {}
+  for path in glob(TUTORIAL .. "/app/*.roc") do
+    local n = 0
+    for l in lines(read(path)) do
+      n = n + 1
+      if starts_with(l, "expect") then written["app/" .. basename(path) .. ":" .. n] = true end
+    end
+  end
+  local wrong = {}
+  local passed = {}
+  for l in lines(r.out) do
+    if starts_with(l, "PASS: app/") then
+      local at = trim(sub(l, 7))
+      if has_key(passed, at) then push(wrong, "passed twice: " .. at) end
+      if not has_key(written, at) then push(wrong, "passed, and no top-level expect line is there: " .. at) end
+      passed[at] = true
+    end
+  end
+  for at in keys(written) do
+    if not has_key(passed, at) then push(wrong, "an expect line that never passed: " .. at) end
+  end
+  if r.code ~= 0 or #wrong > 0 or #keys(passed) ~= APP_TESTS then
+    print(trim(sub(r.out, #r.out - 3000)))
+    for w in wrong do print("  " .. w) end
+    fail("build_next: roc test app/main.roc: " .. #keys(passed) .. " of app/'s passed, " .. APP_TESTS .. " expected, exit " .. r.code)
+  end
+  print("build_next: roc test app/main.roc, " .. APP_TESTS .. " of app/'s passed, as expected, in " .. r.ms .. " ms")
+  return nil
+end
+
 function main()
   mkdir(CACHE)
   local env = {XDG_CACHE_HOME = real(CACHE)}
@@ -221,6 +259,7 @@ function main()
   local drawn = must(run({"shale", "--root", ".", TUTORIAL .. "/build_next.shale", "diagrams_all=" .. count}, {timeout_ms = 600000, tail = 20, want = DOT_WANT}))
   print("build_next: " .. count .. " diagrams drawn in " .. drawn.ms .. " ms")
 
+  test_app(env)
   if exists(PROGRAM) then remove(PROGRAM) end
   local built = run({"zig", "build", "-Dapp=../" .. TUTORIAL .. "/app/main.roc", "-p", "zig-out/safari"}, {cwd = BUILDER, timeout_ms = 600000, tail = 40, env = env})
   if built.code ~= 0 or #find_all(built.out, "── ✗") + #find_all(built.out, "── ●") > 0 or not exists(PROGRAM) then
