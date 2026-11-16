@@ -154,7 +154,7 @@ Build :: [].{
 					for k in 0..<$kept_routes.len() {
 						ks = kept_route_stops($kept_routes, k)
 						if room_of(ks) >= n.to_i64_wrap() {
-							c = append_pain(ks, { nbhd: stop.nbhd, houses: $remaining })
+							c = appending_pain(ks, { nbhd: stop.nbhd, houses: $remaining })
 							is_better =
 								match $whole {
 									NoTruck => True
@@ -395,8 +395,8 @@ best_joined_stops = |a, b| {
 }
 
 ## How much appending a stop of these houses adds to a route's pain.
-append_pain : List(Stop), { nbhd : U8, houses : Houses } -> I64
-append_pain = |
+appending_pain : List(Stop), { nbhd : U8, houses : Houses } -> I64
+appending_pain = |
 	stops,
 	{ nbhd, houses },
 | Pain.pain_of(stops.append(Route.free_stop(nbhd, houses))) - Pain.pain_of(stops)
@@ -469,7 +469,7 @@ chunk_target = |routes, { nbhd, houses, chunking, place }| {
 					piece = Route.free_stop(nbhd, houses.take_first(take))
 					cost =
 						match place {
-							Appended => append_pain(ks, { nbhd, houses: piece.houses })
+							Appended => appending_pain(ks, { nbhd, houses: piece.houses })
 							Inserted => Pain.pain_of(
 								Route.insert_best(ks, piece),
 							) - Pain.pain_of(ks)

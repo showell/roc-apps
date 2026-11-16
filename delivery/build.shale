@@ -23,7 +23,10 @@
 -- judged; a shuffle, the replay and the day play with no console error),
 -- and only then swapped in whole as build:roc-apps/next/delivery/, the dev
 -- channel's /delivery/, with a BUILT file naming the Roc and the commit.
--- The shots are in build:roc-apps/gen/delivery/shots/.
+-- The shots are in build:roc-apps/gen/delivery/shots/. Before the swap,
+-- tools/card_shot.mjs takes the landing page's picture of the staged page
+-- (the day being played), and site/squeeze_png.mjs makes it the page's
+-- shot.png.
 --
 -- A count that moves goes with the change that moved it, and its commit
 -- says why. The benches (`zig build bench`, `zig build wasm-bench`) are in
@@ -131,6 +134,11 @@ end
 local checks = 0
 for l in lines(played.out) do if starts_with(l, "PASS ") then checks = checks + 1 end end
 print("PASS tools/page_check.mjs: " .. checks .. " checks in headless Chromium")
+local raw = real("build:roc-apps/gen/delivery") .. "/card-raw.png"
+must(run({"node", HERE .. "/tools/card_shot.mjs", "http://localhost:9210/delivery.staging/", raw}, {timeout_ms = 120000, tail = 10, want = WANT_NODE}))
+must(run({"node", "site/squeeze_png.mjs", raw, real(STAGING) .. "/shot.png"}, {timeout_ms = 60000, tail = 5, want = "script: site/squeeze_png.mjs recompresses the landing page's picture"}))
+files = files + 1
+print("PASS tools/card_shot.mjs: the landing page's picture, " .. stat(STAGING .. "/shot.png").size .. " bytes")
 if exists(DEST) then remove_tree(DEST) end
 must(run({"mv", real(STAGING), real(DEST)}, {timeout_ms = 10000, tail = 5}))
 print("dev: " .. (files + 1) .. " files in build:roc-apps/next/delivery/ (commit " .. head .. "), http://localhost:9210/delivery/")

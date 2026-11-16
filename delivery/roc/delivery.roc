@@ -4,7 +4,6 @@
 app [gold_json, plan_json] { pf: platform "./platform/main.roc" }
 
 import Gold
-import JsonOut
 import Orders
 import PlanJson
 import Solve
