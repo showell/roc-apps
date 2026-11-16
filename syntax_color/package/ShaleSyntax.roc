@@ -7,6 +7,7 @@
 ## a long string that never closes runs to the end of its line or of the text,
 ## a number that runs into a name stops where the name starts, and a byte no
 ## token starts with is plain.
+import Bytes
 import Span
 
 ShaleSyntax :: [].{
@@ -82,10 +83,10 @@ class_of = |token, after_function| match token.kind {
 ## The token that starts at `at`, which is below the length.
 token_at : List(U8), U64 -> Token
 token_at = |bytes, at| {
-	byte = byte_at(bytes, at)
+	byte = Bytes.byte_at(bytes, at)
 	if is_space(byte) {
 		{ kind: Space, end: at + 1 }
-	} else if byte == '-' and byte_at(bytes, at + 1) == '-' {
+	} else if byte == '-' and Bytes.byte_at(bytes, at + 1) == '-' {
 		{ kind: Comment, end: comment_end(bytes, at) }
 	} else if byte == '[' {
 		match long_level(bytes, at) {
@@ -93,15 +94,15 @@ token_at = |bytes, at| {
 			Err(NotLong) => { kind: Symbol, end: at + 1 }
 		}
 	} else if byte == '"' or byte == '\'' {
-		{ kind: String, end: quoted_end(bytes, { at: at + 1, quote: byte }) }
-	} else if is_digit(byte) {
-		{ kind: Number, end: run_end(bytes, { at, keep: is_digit }) }
+		{ kind: String, end: Bytes.quoted_end(bytes, { at: at + 1, quote: byte }) }
+	} else if Bytes.is_digit(byte) {
+		{ kind: Number, end: Bytes.run_end(bytes, { at, keep: Bytes.is_digit }) }
 	} else if is_word_start(byte) {
-		end = run_end(bytes, { at, keep: is_word_byte })
+		end = Bytes.run_end(bytes, { at, keep: Bytes.is_ascii_word_byte })
 		word = Str.from_utf8(bytes.sublist({ start: at, len: end - at })) ?? crash "ShaleSyntax.token_at: a word is ASCII"
 		{ kind: Word(word), end }
 	} else if byte >= 0x80 {
-		{ kind: Symbol, end: run_end(bytes, { at, keep: |b| b >= 0x80 }) }
+		{ kind: Symbol, end: Bytes.run_end(bytes, { at, keep: |b| b >= 0x80 }) }
 	} else {
 		{ kind: Symbol, end: at + 1 }
 	}
@@ -113,19 +114,19 @@ comment_end : List(U8), U64 -> U64
 comment_end = |bytes, at|
 	match long_level(bytes, at + 2) {
 		Ok(level) => long_end(bytes, { opener: at + 2, level })
-		Err(NotLong) => line_end(bytes, at)
+		Err(NotLong) => Bytes.line_end(bytes, at)
 	}
 
 ## The level of a long bracket opening at `at`, `[=[` being 1, or none: a
 ## long string needs a level, so `[[` opens none.
 long_level : List(U8), U64 -> Try(U64, [NotLong])
 long_level = |bytes, at|
-	if byte_at(bytes, at) != '[' {
+	if Bytes.byte_at(bytes, at) != '[' {
 		Err(NotLong)
 	} else {
-		after = run_end(bytes, { at: at + 1, keep: |b| b == '=' })
+		after = Bytes.run_end(bytes, { at: at + 1, keep: |b| b == '=' })
 		level = after - (at + 1)
-		if level > 0 and byte_at(bytes, after) == '[' {
+		if level > 0 and Bytes.byte_at(bytes, after) == '[' {
 			Ok(level)
 		} else {
 			Err(NotLong)
@@ -139,7 +140,7 @@ long_end = |bytes, { opener, level }| {
 	var $at = opener + level + 2
 	var $end = bytes.len()
 	while $at < bytes.len() {
-		if byte_at(bytes, $at) == ']' and is_closer(bytes, { at: $at, level }) {
+		if Bytes.byte_at(bytes, $at) == ']' and is_closer(bytes, { at: $at, level }) {
 			$end = $at + level + 2
 			$at = bytes.len()
 		} else {
@@ -152,64 +153,15 @@ long_end = |bytes, { opener, level }| {
 ## Whether a closer of `level` starts at `at`.
 is_closer : List(U8), { at : U64, level : U64 } -> Bool
 is_closer = |bytes, { at, level }| {
-	after = run_end(bytes, { at: at + 1, keep: |b| b == '=' })
-	after - (at + 1) == level and byte_at(bytes, after) == ']'
+	after = Bytes.run_end(bytes, { at: at + 1, keep: |b| b == '=' })
+	after - (at + 1) == level and Bytes.byte_at(bytes, after) == ']'
 }
-
-## The end of a quoted string whose text starts at `at`: just past the closing
-## quote. A backslash keeps the byte after it in the string, unless that is a
-## newline; a string still open at a newline or at the end stops there.
-quoted_end : List(U8), { at : U64, quote : U8 } -> U64
-quoted_end = |bytes, { at, quote }| {
-	var $at = at
-	var $end = bytes.len()
-	while $at < bytes.len() {
-		byte = byte_at(bytes, $at)
-		if byte == quote {
-			$end = $at + 1
-			$at = bytes.len()
-		} else if byte == '\n' {
-			$end = $at
-			$at = bytes.len()
-		} else if byte == '\\' and $at + 1 < bytes.len() and byte_at(bytes, $at + 1) != '\n' {
-			$at = $at + 2
-		} else {
-			$at = $at + 1
-		}
-	}
-	$end
-}
-
-## The index of the newline at or after `at`, or the length.
-line_end : List(U8), U64 -> U64
-line_end = |bytes, at| run_end(bytes, { at, keep: |b| b != '\n' })
-
-## The index of the first byte at or after `at` that `keep` refuses, or the
-## length.
-run_end : List(U8), { at : U64, keep : U8 -> Bool } -> U64
-run_end = |bytes, { at, keep }| {
-	var $at = at
-	while $at < bytes.len() and keep(byte_at(bytes, $at)) {
-		$at = $at + 1
-	}
-	$at
-}
-
-## The byte at `at`, or 0 past the end, which no rule here takes.
-byte_at : List(U8), U64 -> U8
-byte_at = |bytes, at| bytes.get(at) ?? 0
 
 is_space : U8 -> Bool
 is_space = |b| b == ' ' or b == '\t' or b == '\r' or b == '\n'
 
-is_digit : U8 -> Bool
-is_digit = |b| b >= '0' and b <= '9'
-
 is_word_start : U8 -> Bool
 is_word_start = |b| (b >= 'a' and b <= 'z') or (b >= 'A' and b <= 'Z') or b == '_'
-
-is_word_byte : U8 -> Bool
-is_word_byte = |b| is_word_start(b) or is_digit(b)
 
 ## The runs of `text` that get a color, each with its class and its text: what
 ## the expects below read.

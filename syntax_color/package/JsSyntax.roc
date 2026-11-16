@@ -13,6 +13,7 @@
 ## No text makes it fail: a string, comment, template or regular expression
 ## still open at the end stops there, a quoted string or a regular expression
 ## also at its line's end, and a byte no token starts with is plain.
+import Bytes
 import Span
 
 JsSyntax :: [].{
@@ -114,24 +115,24 @@ pass = |state, { class, end }| emit(state, { class, end, before: state.before })
 code_step : List(U8), State -> State
 code_step = |bytes, state| {
 	at = state.at
-	byte = byte_at(bytes, at)
-	next = byte_at(bytes, at + 1)
+	byte = Bytes.byte_at(bytes, at)
+	next = Bytes.byte_at(bytes, at + 1)
 	if byte == ' ' or byte == '\t' or byte == '\r' or byte == '\n' {
 		pass(state, { class: Plain, end: at + 1 })
 	} else if byte == '/' and next == '/' {
-		pass(state, { class: Comment, end: line_end(bytes, at) })
+		pass(state, { class: Comment, end: Bytes.line_end(bytes, at) })
 	} else if byte == '/' and next == '*' {
 		pass(state, { class: Comment, end: block_comment_end(bytes, at + 2) })
 	} else if byte == '#' and next == '!' and at == 0 {
-		pass(state, { class: Comment, end: line_end(bytes, at) })
+		pass(state, { class: Comment, end: Bytes.line_end(bytes, at) })
 	} else if byte == '"' or byte == '\'' {
 		emit(state, { class: String, end: quoted_end(bytes, { at: at + 1, quote: byte }), before: Value })
 	} else if byte == '`' {
 		template_part(bytes, state, at + 1)
 	} else if byte == '/' and state.before != Value {
 		emit(state, { class: String, end: regex_end(bytes, at + 1), before: Value })
-	} else if is_digit(byte) or (byte == '.' and is_digit(next)) {
-		emit(state, { class: Number, end: run_end(bytes, { at: number_end(bytes, at), keep: is_word_byte }), before: Value })
+	} else if Bytes.is_digit(byte) or (byte == '.' and Bytes.is_digit(next)) {
+		emit(state, { class: Number, end: Bytes.run_end(bytes, { at: number_end(bytes, at), keep: is_word_byte }), before: Value })
 	} else if is_word_byte(byte) {
 		word_step(bytes, state)
 	} else if byte == '{' {
@@ -143,7 +144,7 @@ code_step = |bytes, state| {
 			Err(ListWasEmpty) => emit(state, { class: Plain, end: at + 1, before: Value })
 		}
 	} else if byte == '.' and next == '.' {
-		emit(state, { class: Plain, end: run_end(bytes, { at, keep: |b| b == '.' }), before: Operator })
+		emit(state, { class: Plain, end: Bytes.run_end(bytes, { at, keep: |b| b == '.' }), before: Operator })
 	} else if byte == '.' {
 		emit(state, { class: Plain, end: at + 1, before: Dot })
 	} else if byte == ')' or byte == ']' {
@@ -158,7 +159,7 @@ code_step = |bytes, state| {
 word_step : List(U8), State -> State
 word_step = |bytes, state| {
 	at = state.at
-	end = run_end(bytes, { at, keep: is_word_byte })
+	end = Bytes.run_end(bytes, { at, keep: is_word_byte })
 	word = Str.from_utf8(bytes.sublist({ start: at, len: end - at })) ?? crash "JsSyntax.word_step: a word holds whole characters"
 	if state.before == Dot {
 		emit(state, { class: Plain, end, before: Value })
@@ -183,7 +184,7 @@ template_part = |bytes, state, from| {
 	stop = template_text_end(bytes, from)
 	if stop >= bytes.len() {
 		{ ..emit(state, { class: String, end: bytes.len(), before: Value }), mode: InTemplate }
-	} else if byte_at(bytes, stop) == '`' {
+	} else if Bytes.byte_at(bytes, stop) == '`' {
 		{ ..emit(state, { class: String, end: stop + 1, before: Value }), mode: Code }
 	} else {
 		text = emit(state, { class: String, end: stop, before: Value })
@@ -198,8 +199,8 @@ template_text_end = |bytes, at| {
 	var $at = at
 	var $stop = bytes.len()
 	while $at < bytes.len() {
-		byte = byte_at(bytes, $at)
-		if byte == '`' or (byte == '$' and byte_at(bytes, $at + 1) == '{') {
+		byte = Bytes.byte_at(bytes, $at)
+		if byte == '`' or (byte == '$' and Bytes.byte_at(bytes, $at + 1) == '{') {
 			$stop = $at
 			$at = bytes.len()
 		} else if byte == '\\' {
@@ -219,7 +220,7 @@ quoted_end = |bytes, { at, quote }| {
 	var $at = at
 	var $end = bytes.len()
 	while $at < bytes.len() {
-		byte = byte_at(bytes, $at)
+		byte = Bytes.byte_at(bytes, $at)
 		if byte == quote {
 			$end = $at + 1
 			$at = bytes.len()
@@ -244,11 +245,11 @@ regex_end = |bytes, at| {
 	var $in_class = Bool.False
 	var $end = bytes.len()
 	while $at < bytes.len() {
-		byte = byte_at(bytes, $at)
+		byte = Bytes.byte_at(bytes, $at)
 		if byte == '\n' {
 			$end = $at
 			$at = bytes.len()
-		} else if byte == '\\' and byte_at(bytes, $at + 1) != '\n' {
+		} else if byte == '\\' and Bytes.byte_at(bytes, $at + 1) != '\n' {
 			$at = $at + 2
 		} else if byte == '[' {
 			$in_class = Bool.True
@@ -257,7 +258,7 @@ regex_end = |bytes, at| {
 			$in_class = Bool.False
 			$at = $at + 1
 		} else if byte == '/' and !$in_class {
-			$end = run_end(bytes, { at: $at + 1, keep: is_word_byte })
+			$end = Bytes.run_end(bytes, { at: $at + 1, keep: is_word_byte })
 			$at = bytes.len()
 		} else {
 			$at = $at + 1
@@ -273,7 +274,7 @@ block_comment_end = |bytes, at| {
 	var $at = at
 	var $end = bytes.len()
 	while $at < bytes.len() {
-		if byte_at(bytes, $at) == '*' and byte_at(bytes, $at + 1) == '/' {
+		if Bytes.byte_at(bytes, $at) == '*' and Bytes.byte_at(bytes, $at + 1) == '/' {
 			$end = $at + 2
 			$at = bytes.len()
 		} else {
@@ -288,62 +289,40 @@ block_comment_end = |bytes, at| {
 ## other letters run into the number, the caller takes with it.
 number_end : List(U8), U64 -> U64
 number_end = |bytes, at| {
-	prefix = byte_at(bytes, at + 1)
-	if byte_at(bytes, at) == '0' and (prefix == 'x' or prefix == 'X' or prefix == 'b' or prefix == 'B' or prefix == 'o' or prefix == 'O') {
-		run_end(bytes, { at: at + 2, keep: |b| is_hex_digit(b) or b == '_' })
+	prefix = Bytes.byte_at(bytes, at + 1)
+	if Bytes.byte_at(bytes, at) == '0' and (prefix == 'x' or prefix == 'X' or prefix == 'b' or prefix == 'B' or prefix == 'o' or prefix == 'O') {
+		Bytes.run_end(bytes, { at: at + 2, keep: |b| is_hex_digit(b) or b == '_' })
 	} else {
-		whole = run_end(bytes, { at, keep: is_digit_or_separator })
+		whole = Bytes.run_end(bytes, { at, keep: is_digit_or_separator })
 		fraction =
-			if byte_at(bytes, whole) == '.' and !is_letter(byte_at(bytes, whole + 1)) {
-				run_end(bytes, { at: whole + 1, keep: is_digit_or_separator })
+			if Bytes.byte_at(bytes, whole) == '.' and !is_letter(Bytes.byte_at(bytes, whole + 1)) {
+				Bytes.run_end(bytes, { at: whole + 1, keep: is_digit_or_separator })
 			} else {
 				whole
 			}
-		e = byte_at(bytes, fraction)
-		sign = byte_at(bytes, fraction + 1)
-		if (e == 'e' or e == 'E') and (is_digit(sign) or ((sign == '+' or sign == '-') and is_digit(byte_at(bytes, fraction + 2)))) {
-			run_end(bytes, { at: fraction + 2, keep: is_digit_or_separator })
+		e = Bytes.byte_at(bytes, fraction)
+		sign = Bytes.byte_at(bytes, fraction + 1)
+		if (e == 'e' or e == 'E') and (Bytes.is_digit(sign) or ((sign == '+' or sign == '-') and Bytes.is_digit(Bytes.byte_at(bytes, fraction + 2)))) {
+			Bytes.run_end(bytes, { at: fraction + 2, keep: is_digit_or_separator })
 		} else {
 			fraction
 		}
 	}
 }
 
-## The index of the newline at or after `at`, or the length.
-line_end : List(U8), U64 -> U64
-line_end = |bytes, at| run_end(bytes, { at, keep: |b| b != '\n' })
-
-## The index of the first byte at or after `at` that `keep` refuses, or the
-## length.
-run_end : List(U8), { at : U64, keep : U8 -> Bool } -> U64
-run_end = |bytes, { at, keep }| {
-	var $at = at
-	while $at < bytes.len() and keep(byte_at(bytes, $at)) {
-		$at = $at + 1
-	}
-	$at
-}
-
-## The byte at `at`, or 0 past the end, which no rule here takes.
-byte_at : List(U8), U64 -> U8
-byte_at = |bytes, at| bytes.get(at) ?? 0
-
-is_digit : U8 -> Bool
-is_digit = |b| b >= '0' and b <= '9'
-
 is_digit_or_separator : U8 -> Bool
-is_digit_or_separator = |b| is_digit(b) or b == '_'
+is_digit_or_separator = |b| Bytes.is_digit(b) or b == '_'
 
 is_letter : U8 -> Bool
 is_letter = |b| (b >= 'a' and b <= 'z') or (b >= 'A' and b <= 'Z') or b == '_' or b == '$'
 
 is_hex_digit : U8 -> Bool
-is_hex_digit = |b| is_digit(b) or (b >= 'a' and b <= 'f') or (b >= 'A' and b <= 'F')
+is_hex_digit = |b| Bytes.is_digit(b) or (b >= 'a' and b <= 'f') or (b >= 'A' and b <= 'F')
 
 ## A byte of a name: an ASCII letter, a digit, `_`, `$`, or any byte of a
 ## character past ASCII, which JavaScript's names may hold.
 is_word_byte : U8 -> Bool
-is_word_byte = |b| is_letter(b) or is_digit(b) or b >= 0x80
+is_word_byte = |b| is_letter(b) or Bytes.is_digit(b) or b >= 0x80
 
 ## The runs of `text` that get a color, each with its class and its text: what
 ## the expects below read.

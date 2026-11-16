@@ -31,7 +31,8 @@ through the repository's prelude.
 A language is a `SyntaxColor.Language`, `{ name, spans }`, whose `spans` is its
 lexer. `SyntaxColor.roc`, `SyntaxColor.shale` and `SyntaxColor.js` are the three
 there are, each lexer a module of its own (`RocSyntax.roc`, `ShaleSyntax.roc`,
-`JsSyntax.roc`). Another language is one more module with a
+`JsSyntax.roc`), and `Bytes.roc` holds the byte reads they share. Another
+language is one more module with a
 `spans : Str -> List(Span)` and one more value beside those.
 
 No text makes a lexer fail: an unterminated string, a stray byte or half a

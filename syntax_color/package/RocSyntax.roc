@@ -16,6 +16,7 @@
 ##
 ## No text makes it fail. A string still open at a newline or at the end stops
 ## there, and a byte no token starts with is plain.
+import Bytes
 import Span
 
 RocSyntax :: [].{
@@ -101,14 +102,14 @@ emit = |state, { class, end }| {
 code_step : List(U8), State -> State
 code_step = |bytes, state| {
 	at = state.at
-	byte = byte_at(bytes, at)
-	next = byte_at(bytes, at + 1)
+	byte = Bytes.byte_at(bytes, at)
+	next = Bytes.byte_at(bytes, at + 1)
 	if byte == '\n' {
 		{ ..emit(state, { class: Plain, end: at + 1 }), place: LineStart, frames: without_interpolations(state.frames) }
 	} else if byte == ' ' or byte == '\t' or byte == '\r' {
 		emit(state, { class: Plain, end: at + 1 })
 	} else if byte == '#' {
-		{ ..emit(state, { class: Comment, end: line_end(bytes, at) }), place: MidLine }
+		{ ..emit(state, { class: Comment, end: Bytes.line_end(bytes, at) }), place: MidLine }
 	} else {
 		token_step(bytes, { ..state, header: CodeSeen, place: MidLine }, { byte, next, place: state.place, header: state.header })
 	}
@@ -123,26 +124,26 @@ token_step = |bytes, state, { byte, next, place, header }| {
 	if byte == '"' {
 		{ ..emit(state, { class: String, end: at + 1 }), mode: InString(Quoted) }
 	} else if byte == '\'' {
-		{ ..emit(state, { class: String, end: quoted_end(bytes, { at: at + 1, quote: '\'' }) }), before: Value }
+		{ ..emit(state, { class: String, end: Bytes.quoted_end(bytes, { at: at + 1, quote: '\'' }) }), before: Value }
 	} else if byte == '\\' and next == '\\' {
 		class = if (place == LineStart) String else Plain
 		{ ..emit(state, { class, end: at + 2 }), mode: InString(Multiline) }
-	} else if is_digit(byte) {
+	} else if Bytes.is_digit(byte) {
 		if state.before == Dot {
-			{ ..emit(state, { class: Plain, end: run_end(bytes, { at, keep: is_digit }) }), before: Value }
+			{ ..emit(state, { class: Plain, end: Bytes.run_end(bytes, { at, keep: Bytes.is_digit }) }), before: Value }
 		} else {
 			{ ..emit(state, { class: Number, end: number_end(bytes, at) }), before: Value }
 		}
-	} else if byte == '-' and is_digit(next) and !(at > 0 and is_value_end(byte_at(bytes, at - 1))) {
+	} else if byte == '-' and Bytes.is_digit(next) and !(at > 0 and is_value_end(Bytes.byte_at(bytes, at - 1))) {
 		{ ..emit(state, { class: Number, end: number_end(bytes, at + 1) }), before: Value }
 	} else if is_upper(byte) {
 		type_step(bytes, state)
 	} else if is_lower(byte) or byte == '_' {
 		word_step(bytes, state, { place, header })
-	} else if byte == '$' and is_word_byte(next) {
+	} else if byte == '$' and Bytes.is_ascii_word_byte(next) {
 		{ ..emit(state, { class: Plain, end: word_end(bytes, at + 1) }), before: Value }
 	} else if byte >= 0x80 {
-		{ ..emit(state, { class: Plain, end: run_end(bytes, { at, keep: |b| b >= 0x80 }) }), before: Value }
+		{ ..emit(state, { class: Plain, end: Bytes.run_end(bytes, { at, keep: |b| b >= 0x80 }) }), before: Value }
 	} else {
 		symbol_step(bytes, state, { byte, next })
 	}
@@ -154,7 +155,7 @@ type_step : List(U8), State -> State
 type_step = |bytes, state| {
 	end = type_end(bytes, state.at)
 	is_qualified = bytes.sublist({ start: state.at, len: end - state.at }).contains('.')
-	is_unwrapped = byte_at(bytes, end) == '.' and byte_at(bytes, end + 1) == '(' and is_in_lambda_args(state.frames)
+	is_unwrapped = Bytes.byte_at(bytes, end) == '.' and Bytes.byte_at(bytes, end + 1) == '(' and is_in_lambda_args(state.frames)
 	class = if (is_qualified and is_unwrapped) Plain else Type
 	{ ..emit(state, { class, end }), before: Value }
 }
@@ -172,7 +173,7 @@ word_step = |bytes, state, { place, header }| {
 		{ ..emit(state, { class: Keyword, end }), before: Keyword }
 	} else if header == NoCodeYet and header_keywords.contains(word) {
 		{ ..emit(state, { class: Keyword, end }), before: Keyword }
-	} else if word == "platform" and byte_at(bytes, space_end(bytes, end)) == '"' {
+	} else if word == "platform" and Bytes.byte_at(bytes, space_end(bytes, end)) == '"' {
 		{ ..emit(state, { class: Keyword, end }), before: Keyword }
 	} else if place == LineStart and is_defined(bytes, { end, frames: state.frames }) {
 		{ ..emit(state, { class: Name, end }), before: Value }
@@ -187,8 +188,8 @@ word_step = |bytes, state, { place, header }| {
 is_defined : List(U8), { end : U64, frames : List(Frame) } -> Bool
 is_defined = |bytes, { end, frames }| {
 	after = space_end(bytes, end)
-	sign = byte_at(bytes, after)
-	follow = byte_at(bytes, after + 1)
+	sign = Bytes.byte_at(bytes, after)
+	follow = Bytes.byte_at(bytes, after + 1)
 	is_annotation = after > end and sign == ':' and follow != ':' and follow != '='
 	is_assignment = sign == '=' and follow != '=' and follow != '>'
 	match frames.last() {
@@ -225,7 +226,7 @@ symbol_step = |bytes, state, { byte, next }| {
 	} else if byte == '|' {
 		bar_step(state, plain(at + 1, Operator))
 	} else if byte == '.' and next == '.' {
-		plain(run_end(bytes, { at, keep: |b| b == '.' }), Operator)
+		plain(Bytes.run_end(bytes, { at, keep: |b| b == '.' }), Operator)
 	} else if byte == '.' {
 		plain(at + 1, Dot)
 	} else if byte == ':' and (next == '=' or next == ':') {
@@ -276,7 +277,7 @@ string_step : List(U8), { state : State, kind : StringKind } -> State
 string_step = |bytes, { state, kind }| {
 	stop = string_text_end(bytes, { at: state.at, kind })
 	text = emit(state, { class: String, end: stop })
-	byte = byte_at(bytes, stop)
+	byte = Bytes.byte_at(bytes, stop)
 	if stop >= bytes.len() {
 		text
 	} else if byte == '\n' {
@@ -301,8 +302,8 @@ string_text_end = |bytes, { at, kind }| {
 	var $at = at
 	var $stop = bytes.len()
 	while $at < bytes.len() {
-		byte = byte_at(bytes, $at)
-		next = byte_at(bytes, $at + 1)
+		byte = Bytes.byte_at(bytes, $at)
+		next = Bytes.byte_at(bytes, $at + 1)
 		if byte == '\n' or (byte == '"' and kind == Quoted) or (byte == '$' and next == '{') {
 			$stop = $at
 			$at = bytes.len()
@@ -315,46 +316,23 @@ string_text_end = |bytes, { at, kind }| {
 	$stop
 }
 
-## The end of a character, `'a'` or `'\n'`, whose text starts at `at`: just past
-## its closing quote, or where its line or the text ends.
-quoted_end : List(U8), { at : U64, quote : U8 } -> U64
-quoted_end = |bytes, { at, quote }| {
-	var $at = at
-	var $end = bytes.len()
-	while $at < bytes.len() {
-		byte = byte_at(bytes, $at)
-		if byte == quote {
-			$end = $at + 1
-			$at = bytes.len()
-		} else if byte == '\n' {
-			$end = $at
-			$at = bytes.len()
-		} else if byte == '\\' and $at + 1 < bytes.len() and byte_at(bytes, $at + 1) != '\n' {
-			$at = $at + 2
-		} else {
-			$at = $at + 1
-		}
-	}
-	$end
-}
-
 ## The end of a number whose first digit is at `at`: `0x1F` and the other
 ## prefixed forms, or digits with an optional fraction, then any letters that
 ## follow, as a type's suffix.
 number_end : List(U8), U64 -> U64
 number_end = |bytes, at| {
-	prefix = byte_at(bytes, at + 1)
-	if byte_at(bytes, at) == '0' and (prefix == 'x' or prefix == 'o' or prefix == 'b') {
-		run_end(bytes, { at: at + 2, keep: is_word_byte })
+	prefix = Bytes.byte_at(bytes, at + 1)
+	if Bytes.byte_at(bytes, at) == '0' and (prefix == 'x' or prefix == 'o' or prefix == 'b') {
+		Bytes.run_end(bytes, { at: at + 2, keep: Bytes.is_ascii_word_byte })
 	} else {
-		whole = run_end(bytes, { at, keep: |b| is_digit(b) or b == '_' })
+		whole = Bytes.run_end(bytes, { at, keep: |b| Bytes.is_digit(b) or b == '_' })
 		fraction =
-			if byte_at(bytes, whole) == '.' and is_digit(byte_at(bytes, whole + 1)) {
-				run_end(bytes, { at: whole + 1, keep: |b| is_digit(b) or b == '_' })
+			if Bytes.byte_at(bytes, whole) == '.' and Bytes.is_digit(Bytes.byte_at(bytes, whole + 1)) {
+				Bytes.run_end(bytes, { at: whole + 1, keep: |b| Bytes.is_digit(b) or b == '_' })
 			} else {
 				whole
 			}
-		run_end(bytes, { at: fraction, keep: is_word_byte })
+		Bytes.run_end(bytes, { at: fraction, keep: Bytes.is_ascii_word_byte })
 	}
 }
 
@@ -362,9 +340,9 @@ number_end = |bytes, at| {
 ## dots.
 type_end : List(U8), U64 -> U64
 type_end = |bytes, at| {
-	var $end = run_end(bytes, { at, keep: is_word_byte })
-	while byte_at(bytes, $end) == '.' and is_upper(byte_at(bytes, $end + 1)) {
-		$end = run_end(bytes, { at: $end + 1, keep: is_word_byte })
+	var $end = Bytes.run_end(bytes, { at, keep: Bytes.is_ascii_word_byte })
+	while Bytes.byte_at(bytes, $end) == '.' and is_upper(Bytes.byte_at(bytes, $end + 1)) {
+		$end = Bytes.run_end(bytes, { at: $end + 1, keep: Bytes.is_ascii_word_byte })
 	}
 	$end
 }
@@ -372,8 +350,8 @@ type_end = |bytes, at| {
 ## The end of a word, with the `!` an effect's name ends in.
 word_end : List(U8), U64 -> U64
 word_end = |bytes, at| {
-	end = run_end(bytes, { at, keep: is_word_byte })
-	if (byte_at(bytes, end) == '!') end + 1 else end
+	end = Bytes.run_end(bytes, { at, keep: Bytes.is_ascii_word_byte })
+	if (Bytes.byte_at(bytes, end) == '!') end + 1 else end
 }
 
 ## Whether the brackets open now are a lambda's arguments, or brackets inside
@@ -409,44 +387,19 @@ is_interpolation = |frame| match frame {
 	_ => Bool.False
 }
 
-## The index of the newline at or after `at`, or the length.
-line_end : List(U8), U64 -> U64
-line_end = |bytes, at| run_end(bytes, { at, keep: |b| b != '\n' })
-
 ## The index of the first byte at or after `at` that isn't a space or a tab.
 space_end : List(U8), U64 -> U64
-space_end = |bytes, at| run_end(bytes, { at, keep: |b| b == ' ' or b == '\t' })
-
-## The index of the first byte at or after `at` that `keep` refuses, or the
-## length.
-run_end : List(U8), { at : U64, keep : U8 -> Bool } -> U64
-run_end = |bytes, { at, keep }| {
-	var $at = at
-	while $at < bytes.len() and keep(byte_at(bytes, $at)) {
-		$at = $at + 1
-	}
-	$at
-}
-
-## The byte at `at`, or 0 past the end, which no rule here takes.
-byte_at : List(U8), U64 -> U8
-byte_at = |bytes, at| bytes.get(at) ?? 0
+space_end = |bytes, at| Bytes.run_end(bytes, { at, keep: |b| b == ' ' or b == '\t' })
 
 ## Whether a byte ends a value, so that a `-` after it subtracts.
 is_value_end : U8 -> Bool
-is_value_end = |b| is_word_byte(b) or b == ')' or b == ']' or b == '}' or b == '"' or b == '\'' or b == '!' or b == '?' or b >= 0x80
-
-is_digit : U8 -> Bool
-is_digit = |b| b >= '0' and b <= '9'
+is_value_end = |b| Bytes.is_ascii_word_byte(b) or b == ')' or b == ']' or b == '}' or b == '"' or b == '\'' or b == '!' or b == '?' or b >= 0x80
 
 is_upper : U8 -> Bool
 is_upper = |b| b >= 'A' and b <= 'Z'
 
 is_lower : U8 -> Bool
 is_lower = |b| b >= 'a' and b <= 'z'
-
-is_word_byte : U8 -> Bool
-is_word_byte = |b| is_upper(b) or is_lower(b) or is_digit(b) or b == '_'
 
 ## The runs of `text` that get a color, each with its class and its text: what
 ## the expects below read.
