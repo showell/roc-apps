@@ -16,7 +16,9 @@
 --     byte for byte to what today's scripts made of it, with the samples known
 --     to differ named in oracle/known_mismatches.txt, each with its reason. A
 --     sample that differs and isn't named fails, and so does one named that
---     matches. Each corpus's count is held to CORPORA.
+--     matches. Each corpus's count is held to CORPORA. JavaScript had no
+--     colorer before this one, so its fixtures, oracle/js_files.jsonl, are the
+--     package's answers read by eye (tools/record_js_fixtures.shale).
 --
 -- A Roc block is colored as it reads in its file: the harness colors the file
 -- and takes the lines the block's note names, as the book does. The blocks are
@@ -31,8 +33,8 @@ const WORK = ".zig-cache/syntax_color"
 const MARK = "<!-- syntax_color answer -->\n"
 const OUR_SPANS = "<span class=\"syn-[a-z]+\">|</span>"
 const ARG_BYTES = 700000
-const EXPECTS = 95
-const CORPORA = {roc_files = 76, roc_blocks = 223, shale_files = 109}
+const EXPECTS = 122
+const CORPORA = {roc_files = 76, roc_blocks = 223, shale_files = 109, js_files = 13}
 const ALONE_MATCHES = 218
 
 const board = {lines = {}, failed = 0}
@@ -128,6 +130,9 @@ function requests()
   end
   for r in read_corpus("shale_files") do
     push(out, {corpus = "shale_files", name = r.name, argv = {"shale", text_of(r.html)}, want = r.html})
+  end
+  for r in read_corpus("js_files") do
+    push(out, {corpus = "js_files", name = r.name, argv = {"js", text_of(r.html)}, want = r.html})
   end
   return out
 end

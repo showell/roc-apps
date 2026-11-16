@@ -5,9 +5,10 @@
 ##
 ## A language is a value of `Language`: its name and its lexer, a function from
 ## the text to spans that cover every byte once. Each language's lexer is a
-## module of its own (RocSyntax, ShaleSyntax), and another language plugs in
+## module of its own (RocSyntax, ShaleSyntax, JsSyntax), and another language plugs in
 ## as one more module and one more value here.
 import Span
+import JsSyntax
 import RocSyntax
 import ShaleSyntax
 
@@ -23,6 +24,10 @@ SyntaxColor :: [].{
 	## Shale, as the Shale cookbook's color_shale.shale colors it.
 	shale : SyntaxColor.Language
 	shale = { name: "shale", spans: ShaleSyntax.spans }
+
+	## JavaScript, with the classes the other two use.
+	js : SyntaxColor.Language
+	js = { name: "js", spans: JsSyntax.spans }
 
 	## The spans of `text` in `language`, covering every byte once, in order.
 	spans : SyntaxColor.Language, Str -> List(Span)
@@ -158,7 +163,7 @@ expect SyntaxColor.html(SyntaxColor.shale, "[=[a\nb]=]") == "<span class=\"syn-s
 ## Pieces of text that start, end or break a token in one language or the
 ## other, and bytes that aren't ASCII.
 hostile_pieces : List(Str)
-hostile_pieces = ["\"", "'", "\${", "}", "\\\\", "\\", "#", "--", "[=[", "]=]", "[", "]", "|", "(", ")", "{", "-1", "0x", "é", "\n", "\r", "\u(0)", "a", "A.", ".(", "&<>", " ", "=", ":", "function"]
+hostile_pieces = ["\"", "'", "`", "/", "/*", "*/", "//", "1e", ".5", "\${", "}", "\\\\", "\\", "#", "--", "[=[", "]=]", "[", "]", "|", "(", ")", "{", "-1", "0x", "é", "\n", "\r", "\u(0)", "a", "A.", ".(", "&<>", " ", "=", ":", "function"]
 
 ## Every text of two hostile pieces, and some longer ones.
 hostile_texts : List(Str)
@@ -184,6 +189,7 @@ is_faithful = |language, text|
 	Span.is_cover(SyntaxColor.spans(language, text), text.count_utf8_bytes())
 		and without_spans(SyntaxColor.html(language, text)) == SyntaxColor.escaped_text(text)
 
-expect hostile_texts.len() == 909
+expect hostile_texts.len() == 1378
 expect hostile_texts.all(|text| is_faithful(SyntaxColor.roc, text))
 expect hostile_texts.all(|text| is_faithful(SyntaxColor.shale, text))
+expect hostile_texts.all(|text| is_faithful(SyntaxColor.js, text))

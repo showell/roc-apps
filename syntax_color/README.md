@@ -2,9 +2,9 @@
 
 A Roc package that colors source code for web pages: code text in, HTML out,
 with a `<span class="syn-...">` around each run a language's lexer gives a
-class. It colors Roc and Shale, the same way the Safari book's
+class. It colors Roc and Shale the same way the Safari book's
 `canvas_apps/safari/tutorial/color_roc.shale` and the Shale cookbook's
-`color_shale.shale` do, byte for byte. The class names are book.css's:
+`color_shale.shale` do, byte for byte, and JavaScript with the same classes. The class names are book.css's:
 `syn-comment`, `syn-string`, `syn-number`, `syn-keyword`, `syn-name` and
 `syn-type`.
 
@@ -29,18 +29,20 @@ through the repository's prelude.
   escaped, as both the spans and the text between them are.
 
 A language is a `SyntaxColor.Language`, `{ name, spans }`, whose `spans` is its
-lexer. `SyntaxColor.roc` and `SyntaxColor.shale` are the two there are, each
-lexer a module of its own (`RocSyntax.roc`, `ShaleSyntax.roc`). Another
-language is one more module with a `spans : Str -> List(Span)` and one more
-value beside those two.
+lexer. `SyntaxColor.roc`, `SyntaxColor.shale` and `SyntaxColor.js` are the three
+there are, each lexer a module of its own (`RocSyntax.roc`, `ShaleSyntax.roc`,
+`JsSyntax.roc`). Another language is one more module with a
+`spans : Str -> List(Span)` and one more value beside those.
 
 No text makes a lexer fail: an unterminated string, a stray byte or half a
 program still comes out with every byte covered, and the expects hold both
-lexers to that over 909 hostile texts.
+lexers to that over 1378 hostile texts.
 
 ## Lexical, with brackets
 
-Both lexers read bytes, not a tree. Shale's follows Shale's own lexer
+The lexers read bytes, not a tree. JavaScript's keeps a stack of braces, for
+a template's `${...}`, and the token before, to tell a regular expression's
+`/` from division's. Shale's follows Shale's own lexer
 (`src/script/lex.zig` in the shale repository). Roc's has no lexer of record to
 follow, since color_roc reads roc-ast's tree, so RocSyntax keeps the little it
 needs to agree with the tree: which brackets are open and what the token
@@ -71,6 +73,10 @@ read the diff.
   `name = ...` lines read as top-level definitions alone.
 - 107 of 109 Shale samples match color_shale; the two others are fragments
   color_shale refuses because they fail `shale --check` alone.
+- JavaScript had no colorer before, so its 13 fixtures (`oracle/js_files.jsonl`,
+  from `tools/record_js_fixtures.shale`) are the package's own answers, read
+  by eye.
+- The gate takes about 3 seconds on a warm Roc cache.
 - The book builder does not use the package yet.
 
 ## Pitfalls
