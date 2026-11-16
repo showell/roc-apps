@@ -16,6 +16,8 @@
 --   diagram-N.svg  drawing by Graphviz, in child runs of this script with
 --                  `diagrams=1`, DIAGRAMS_PER_RUN at a time
 --   widgets.txt    the folders beside the game that hold a widget's page
+--   blocks.txt     which lines of which file each quoted Roc block shows, and
+--   sources/       a copy of each such file, for the app's coloring
 --
 -- Then `zig build` builds the app into book_builder/zig-out/safari, on Roc's
 -- dev backend, and the program writes the pages, which go to build/next/ with
@@ -23,9 +25,9 @@
 -- is drawn as book.shale draws it: its comments and titles dropped, and one
 -- wider than a phone drawn a second way for a phone.
 --
--- The code is left plain: coloring is the builder's colorer's, and the book
--- names none yet. `compare_books.shale` holds this book to book.shale's, page
--- by page.
+-- The Roc code is colored by syntax_color/, each quoted block as it reads in
+-- its file (app/QuotedColor.roc). `compare_books.shale` holds this book to
+-- book.shale's, page by page.
 const TUTORIAL = "canvas_apps/safari/tutorial"
 const SOURCE = "canvas_apps/safari/tutorial/tutorial.md"
 const PREPARED = "canvas_apps/safari/tutorial/build/prepared"

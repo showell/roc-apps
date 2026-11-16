@@ -9,11 +9,13 @@ app [main!] {
 	bb: "../../../../book_builder/builder/main.roc",
 	md: "../../../../../roc-markdown/package/main.roc",
 	pf: platform "../../../../book_builder/platform/main.roc",
+	sc: "../../../../syntax_color/package/main.roc",
 }
 
 import pf.Book
 import bb.Builder
 import Diagrams
+import QuotedColor
 import SafariFences
 import SafariLook
 
@@ -30,9 +32,23 @@ main! = |_folder| {
 		svg = read_prepared!(Diagrams.svg_path(diagram.id))?
 		$drawn = $drawn.append({ id: diagram.id, title: diagram.title, svg })
 	}
+	notes = QuotedColor.notes_of(read_prepared!(blocks_path)?) ? |why| "${why}\n"
+	var $sources = []
+	for note in notes {
+		if !$sources.contains(note.source) {
+			$sources = $sources.append(note.source)
+		}
+	}
+	var $colored = []
+	for source in $sources {
+		text = read_prepared!("build/prepared/${source}")?
+		blocks = QuotedColor.colored({ text, notes: notes.keep_if(|note| note.source == source) }) ? |why| "${why}\n"
+		$colored = $colored.concat(blocks)
+	}
 	settings = {
 		..base_settings,
 		fence_hooks: [SafariFences.widget(folders), SafariFences.dot($drawn)],
+		colorer: QuotedColor.colorer($colored),
 	}
 	Builder.build!(
 		settings,
@@ -53,7 +69,13 @@ manuscript_path = "tutorial.md"
 widgets_path : Str
 widgets_path = "build/prepared/widgets.txt"
 
-## The settings, but for the fence hooks, which need what the pre-step left.
+## The pre-step's note of which lines of which file each quoted Roc block
+## shows, for its coloring.
+blocks_path : Str
+blocks_path = "build/prepared/blocks.txt"
+
+## The settings, but for the fence hooks and the colorer, which need what the
+## pre-step left.
 base_settings : Builder.Settings
 base_settings = {
 	..Builder.default_settings,

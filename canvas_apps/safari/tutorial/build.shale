@@ -101,7 +101,12 @@
 -- build/prepared/line-N.md, N its line in the source, as the include's line
 -- then what it becomes. The `{{index}}` line is left to the book builder,
 -- which builds the index itself. Beside them goes blocks.jsonl, the note
--- above with each block's `line`.
+-- above with each block's `line`, and blocks.txt, the same note for the app
+-- to read, a block a line: its include's line, the file, and its parts, each
+-- `FROM,TO,INDENT,END_COL` or `cutN`, a cut shown after N tabs, separated by
+-- tabs, its file named as its copy, sources/K.roc, K counting the files in the
+-- order the blocks first show them. The copies let the app, which reads only
+-- the book's folder, color each block as it reads in its file.
 --
 -- `self_test=1` proves both sides of each failure on a module written here,
 -- and safari's gate runs it.
@@ -709,12 +714,45 @@ function expansion(e, checked, folder, notes)
   return nil
 end
 
+function map_paths(notes)
+  local paths = {}
+  for note in notes do push(paths, note.path) end
+  return paths
+end
+
+function source_name(k)
+  return "sources/" .. k .. ".roc"
+end
+
+-- The note as blocks.txt has it, each file named for its place in `paths`.
+function notes_for_the_app(notes, paths)
+  local rows = {}
+  for note in notes do
+    local k = 1
+    while paths[k] ~= note.path do k = k + 1 end
+    local row = {"" .. note.line, source_name(k)}
+    for part in note.parts do
+      if has_key(part, "cut") then
+        local tabs = #part.cut - #CUT
+        if sub(part.cut, tabs + 1) ~= CUT or trim(sub(part.cut, 1, tabs)) ~= "" then fail("tutorial: a cut that isn't tabs then " .. CUT .. ": " .. part.cut) end
+        push(row, "cut" .. tabs)
+      else
+        push(row, part.from .. "," .. part.to .. "," .. part.indent .. "," .. part.end_col)
+      end
+    end
+    push(rows, join(row, "\t") .. "\n")
+  end
+  return join(rows, "")
+end
+
 -- Writes each include's expansion to `dir`, and gives how many there are.
 -- The files of an earlier run go first, so none is left stale.
 function prepare(source, dir, folder)
   mkdir(dir)
   for old in glob(dir .. "/line-*.md") do remove(old) end
   if exists(dir .. "/blocks.jsonl") then remove(dir .. "/blocks.jsonl") end
+  if exists(dir .. "/blocks.txt") then remove(dir .. "/blocks.txt") end
+  if exists(dir .. "/sources") then remove_tree(dir .. "/sources") end
   local checked = checked_entries(source, folder)
   local notes = {}
   local written = 0
@@ -728,8 +766,12 @@ function prepare(source, dir, folder)
     end
   end
   replace(dir .. "/blocks.jsonl", notes_text(notes))
+  local paths = unique(map_paths(notes))
+  replace(dir .. "/blocks.txt", notes_for_the_app(notes, paths))
+  for k = 1, #paths do copy(paths[k], dir .. "/" .. source_name(k)) end
   return written
 end
+
 
 -- Builds the book, and gives the number of includes expanded.
 function build(source, output, folder)
@@ -1008,6 +1050,11 @@ function check_prepare_rule(checks, folder)
   if exists(dir .. "/line-9.md") then fail("self_test: the pre-step left an earlier run's file") end
   local note = read(dir .. "/blocks.jsonl")
   if not contains(note, "\"line\":3") or #lines(trim(note)) ~= 1 then fail("self_test: the pre-step's note was [" .. note .. "]") end
+  local for_app = read(dir .. "/blocks.txt")
+  if for_app ~= "3\tsources/1.roc\t19,19,1,12\n" then fail("self_test: the pre-step's blocks.txt was [" .. for_app .. "]") end
+  if read(dir .. "/sources/1.roc") ~= read(folder .. "/Zoo.roc") then fail("self_test: the pre-step's copy of Zoo.roc differs") end
+  local two = notes_for_the_app({{line = 4, path = "a.roc", parts = {{cut = "\t\t# ..."}, {from = 1, to = 2, indent = 0, end_col = 5}}}, {line = 7, path = "b.roc", parts = {}}}, {"b.roc", "a.roc"})
+  if two ~= "4\tsources/2.roc\tcut2\t1,2,0,5\n7\tsources/1.roc\n" then fail("self_test: blocks.txt for a cut and two files was [" .. two .. "]") end
   remove_tree(dir)
   push(checks, "the pre-step's files")
   return nil

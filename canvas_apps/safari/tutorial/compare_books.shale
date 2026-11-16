@@ -21,7 +21,14 @@
 -- class="syn-NAME">` and every `</span>` is dropped, NAME being lowercase
 -- letters. color_roc puts nothing else there, and its own check holds a
 -- page's text the same once those spans are gone. Nothing else is
--- normalized.
+-- normalized, and that comparison is the verdict.
+--
+-- The builder's book colors its Roc code too, with syntax_color/ through
+-- app/QuotedColor.roc, so a second report holds each Roc block's coloring to
+-- today's, byte for byte, and names every block that differs, by page and by
+-- its place among the page's Roc blocks. It is a report beside the verdict:
+-- syntax_color's oracle/known_mismatches.txt lists the blocks whose coloring
+-- the package changed on purpose.
 const OLD = "build:roc-apps/next/tutorial.old"
 const NEW = "build:roc-apps/next/tutorial.next"
 const OLD_DRAWINGS = "canvas_apps/safari/tutorial/build/book"
@@ -39,6 +46,13 @@ function uncolored(html)
     push(kept, re_replace(sub(piece, 1, close - 1), OUR_SPANS, "") .. sub(piece, close))
   end
   return join(kept, ROC_CODE)
+end
+
+-- The Roc blocks of a page, colored, in order.
+function roc_blocks(html)
+  local blocks = {}
+  for piece in drop(split(html, ROC_CODE), 1) do push(blocks, sub(piece, 1, find(piece, "</code>") - 1)) end
+  return blocks
 end
 
 -- Where two texts first differ, as a line of each, numbered.
@@ -100,6 +114,28 @@ for path in glob(OLD_DRAWINGS .. "/diagram-*.svg") do
   end
 end
 if #glob(NEW_DRAWINGS .. "/diagram-*.svg") ~= #glob(OLD_DRAWINGS .. "/diagram-*.svg") then push(differ, "the builds drew different numbers of diagrams") end
+
+local colored_blocks = 0
+local colored_same = 0
+local colored_pages = 0
+for name in old_names do
+  if ends_with(name, ".html") and has_item(new_names, name) then
+    local old_html = read(OLD .. "/" .. name)
+    local new_html = read(NEW .. "/" .. name)
+    if old_html == new_html then colored_pages = colored_pages + 1 end
+    local old_blocks = roc_blocks(old_html)
+    local new_blocks = roc_blocks(new_html)
+    for k = 1, #old_blocks do
+      colored_blocks = colored_blocks + 1
+      if k <= #new_blocks and old_blocks[k] == new_blocks[k] then
+        colored_same = colored_same + 1
+      elseif k <= #new_blocks then
+        print("COLOR " .. name .. ", Roc block " .. k .. ": " .. first_difference(old_blocks[k], new_blocks[k]))
+      end
+    end
+  end
+end
+print("compare_books: colored, " .. colored_pages .. " pages the same byte for byte, " .. colored_same .. " of " .. colored_blocks .. " Roc blocks colored the same")
 
 for d in differ do print("DIFF " .. d) end
 local verdict = "PASS"

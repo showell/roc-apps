@@ -32,9 +32,10 @@ uses most of the builder. The Safari tutorial's app is
 `build_next.shale`, whose pre-step does what needs a program: it quotes the
 game's code through Roc's parser, runs `roc check`, and draws the diagrams.
 Its pages are the same as the published book's, `make_book.roc`'s, once the
-coloring is taken away (`compare_books.shale` there), and both builds stand
-until the move is decided. Still to come: code coloring behind the builder's
-coloring hook, from `syntax_color/`.
+coloring is taken away (`compare_books.shale` there), and its colorer,
+`syntax_color/` behind the coloring hook, colors all but two of its 223 Roc
+blocks as the published book does, those two by design. Both builds stand
+until the move is decided.
 
 ## A book
 
