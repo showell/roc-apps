@@ -10,9 +10,8 @@
 ## `=`, `=>`, a lambda's closing `|` or a keyword, and a record anywhere else.
 ##
 ## A type name and the names after it that start with a capital, `Route.Index`,
-## are one span. In a lambda's arguments, a wrapped value's type is left plain
-## when it is qualified, `|Route.Index.(n)|`, though not when it isn't,
-## `|Route.(segments)|`, as the book has it.
+## are one span, a wrapped value's type in a pattern among them,
+## `|Route.Index.(n)|`.
 ##
 ## No text makes it fail. A string still open at a newline or at the end stops
 ## there, and a byte no token starts with is plain.
@@ -153,11 +152,7 @@ token_step = |bytes, state, { byte, next, place, header }| {
 ## words after it, joined by dots.
 type_step : List(U8), State -> State
 type_step = |bytes, state| {
-	end = type_end(bytes, state.at)
-	is_qualified = bytes.sublist({ start: state.at, len: end - state.at }).contains('.')
-	is_unwrapped = Bytes.byte_at(bytes, end) == '.' and Bytes.byte_at(bytes, end + 1) == '(' and is_in_lambda_args(state.frames)
-	class = if (is_qualified and is_unwrapped) Plain else Type
-	{ ..emit(state, { class, end }), before: Value }
+	{ ..emit(state, { class: Type, end: type_end(bytes, state.at) }), before: Value }
 }
 
 ## A word that starts in lower case: a keyword, a name a definition gives, or
@@ -354,14 +349,6 @@ word_end = |bytes, at| {
 	if (Bytes.byte_at(bytes, end) == '!') end + 1 else end
 }
 
-## Whether the brackets open now are a lambda's arguments, or brackets inside
-## them.
-is_in_lambda_args : List(Frame) -> Bool
-is_in_lambda_args = |frames| {
-	inner = frames.find_last(|frame| frame != Paren and frame != Square and frame != Record)
-	inner == Ok(LambdaArgs)
-}
-
 ## The frames with the last closed, if it is `frame`; a stray closer closes
 ## nothing.
 without_last : List(Frame), Frame -> List(Frame)
@@ -495,9 +482,10 @@ expect
 expect colored("f(Ok(Str), Bool.True, Str.concat, lib.Shapes)") == [(Type, "Ok"), (Type, "Str"), (Type, "Bool.True"), (Type, "Str"), (Type, "Shapes")]
 expect colored("f(A.B.c, A.(1))") == [(Type, "A.B"), (Type, "A"), (Number, "1")]
 
-# A wrapped value's type in a lambda's arguments is plain only when qualified.
-expect colored("f(|A.(x)|, |A.B.(x)|, |(A.B.(x), y)|)") == [(Type, "A")]
-expect colored("f(A.B.(x))") == [(Type, "A.B")]
+# A wrapped value's type is a type, qualified or not, in a lambda's arguments
+# and out of them.
+expect colored("f(|A.(x)|, |A.B.(x)|, |(A.B.(x), y)|, |{ a: A.B.C.(x) }|)") == [(Type, "A"), (Type, "A.B"), (Type, "A.B"), (Type, "A.B.C")]
+expect colored("f(A.(x), A.B.(x))") == [(Type, "A"), (Type, "A.B")]
 expect colored("f(|x| A.B.(x))") == [(Type, "A.B")]
 
 # Names: the top level and a type's block define with `=` and `:`; a body

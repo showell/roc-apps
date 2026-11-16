@@ -68,10 +68,16 @@ read the diff.
 ## Status (2026-11-16)
 
 - Every Safari Roc block (223) and every file they quote (76) matches
-  color_roc, but for web.roc, which color_roc leaves plain because roc-ast's
-  spans for its app header overlap. Colored alone, without their files, 218 of
-  the 223 blocks match. The other five are cut from a function's body, whose
-  `name = ...` lines read as top-level definitions alone.
+  color_roc, but where the package colors what color_roc leaves plain, each
+  named in `oracle/known_mismatches.txt`:
+  - web.roc, whole, which color_roc leaves plain because roc-ast's spans for
+    its app header overlap;
+  - a qualified type in a lambda's unwrap pattern, `|Route.SegmentIndex.(n)|`,
+    a type as `|Route.(n)|` is (four files and one block).
+- Colored alone, without their files, 217 of the 223 blocks match. Four of the
+  others are cut from a function's body, whose `name = ...` lines read as
+  top-level definitions alone; the other two are web.roc's header and the
+  unwrap pattern above.
 - 107 of 109 Shale samples match color_shale; the two others are fragments
   color_shale refuses because they fail `shale --check` alone.
 - JavaScript had no colorer before, so its 13 fixtures (`oracle/js_files.jsonl`,
@@ -85,6 +91,3 @@ read the diff.
 - A record literal opened right after `=` reads as a body, so a `name : value`
   field in it, spaced as an annotation is, would count as a definition.
   `roc fmt` writes fields as `name: value`, which never does.
-- A qualified type in a lambda's unwrap pattern, `|Route.Index.(n)|`, is plain,
-  where an unqualified one, `|Route.(n)|`, is a type. That is color_roc's
-  answer, kept so the book doesn't change.

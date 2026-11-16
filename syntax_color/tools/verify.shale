@@ -35,7 +35,7 @@ const OUR_SPANS = "<span class=\"syn-[a-z]+\">|</span>"
 const ARG_BYTES = 700000
 const EXPECTS = 135
 const CORPORA = {roc_files = 76, roc_blocks = 223, shale_files = 109, js_files = 13}
-const ALONE_MATCHES = 218
+const ALONE_MATCHES = 217
 
 const board = {lines = {}, failed = 0}
 
