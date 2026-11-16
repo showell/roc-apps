@@ -164,7 +164,7 @@ end
 -- `part=appendix` prints the book's index appendix and nothing else: a table
 -- for each category, its terms in alphabetical order, each with its main
 -- chapter as a link and every other chapter that mentions it, by number. A
--- number is `{{number N Title}}`, which Book.roc makes a link and holds to its
+-- number is `{{number N Title}}`, which the book builder makes a link and holds to its
 -- own count of the chapters. A term in SPREAD chapters or more is
 -- "throughout". tutorial/build.shale runs this for the `{{index}}` include.
 if arg("part", "report") == "appendix" then

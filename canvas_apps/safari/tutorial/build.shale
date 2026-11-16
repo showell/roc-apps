@@ -60,10 +60,10 @@
 -- row or a sentence ending in `.` or `:`. A diagram without one stops the build.
 --
 -- `{{chapter A far tree}}` sits inside a line of prose, and stays there for
--- Book.roc to turn into a link to that chapter's page, or into the plain title
+-- the book builder to turn into a link to that chapter's page, or into the plain title
 -- when this build doesn't hold the page. The title must be a chapter's, as its
 -- `## ` heading spells it outside a fence, so a retitled chapter stops the build.
--- `{{number 5 A far tree}}` is held alike, and Book.roc makes it the number,
+-- `{{number 5 A far tree}}` is held alike, and the builder makes it the number,
 -- linked, and stops the build if the chapter it holds isn't number 5.
 --
 -- An include that can't be expanded stops the build, naming the source's
@@ -97,7 +97,7 @@
 -- file and the note together give the block's text exactly.
 --
 -- `prepare=1` is the book builder's pre-step (app/main.roc, built by
--- build_next.shale): the same checks and expansions, each include written to
+-- book.shale): the same checks and expansions, each include written to
 -- build/prepared/line-N.md, N its line in the source, as the include's line
 -- then what it becomes. The `{{index}}` line is left to the book builder,
 -- which builds the index itself. Beside them goes blocks.jsonl, the note
@@ -1156,7 +1156,7 @@ function check_reach_rule(checks, top, folder)
   return nil
 end
 
--- Both sides of a chapter include's title, which stays in the prose for Book.roc.
+-- Both sides of a chapter include's title, which stays in the prose for the builder.
 function check_chapter_rule(checks, folder)
   local far = "## A far tree\n\n"
   expect_prose(checks, folder, far .. "See the {{chapter A far tree}} chapter.")
