@@ -125,8 +125,7 @@ token_step = |bytes, state, { byte, next, place, header }| {
 	} else if byte == '\'' {
 		{ ..emit(state, { class: String, end: Bytes.quoted_end(bytes, { at: at + 1, quote: '\'' }) }), before: Value }
 	} else if byte == '\\' and next == '\\' {
-		class = if (place == LineStart) String else Plain
-		{ ..emit(state, { class, end: at + 2 }), mode: InString(Multiline) }
+		{ ..emit(state, { class: String, end: at + 2 }), mode: InString(Multiline) }
 	} else if Bytes.is_digit(byte) {
 		if state.before == Dot {
 			{ ..emit(state, { class: Plain, end: Bytes.run_end(bytes, { at, keep: Bytes.is_digit }) }), before: Value }
@@ -417,11 +416,16 @@ expect colored("f(\"ab") == [(String, "\"ab")]
 expect colored("f(\"a\${b") == [(String, "\"a")]
 expect colored("x = \"a\${f(b\ny = 1") == [(Name, "x"), (String, "\"a"), (Name, "y"), (Number, "1")]
 
-# Characters, and multi-line strings, whose `\\` is colored first on its line.
+# Characters, and multi-line strings, whose `\\` is a string's wherever it
+# opens one: first on its line, after `=`, in a call, before an interpolation,
+# and with nothing after it.
 expect colored("f('a', '\\'', '\\n')") == [(String, "'a'"), (String, "'\\''"), (String, "'\\n'")]
 expect colored("f('a") == [(String, "'a")]
 expect colored("css =\n\t\\\\a { \${x} }\n\t\\\\b \"q\"") == [(Name, "css"), (String, "\\\\a { "), (String, " }"), (String, "\\\\b \"q\"")]
-expect colored("css = \\\\a") == [(Name, "css"), (String, "a")]
+expect colored("css = \\\\a") == [(Name, "css"), (String, "\\\\a")]
+expect colored("f(\\\\a\n)") == [(String, "\\\\a")]
+expect colored("x = \\\\a \${y} b\nz = 1") == [(Name, "x"), (String, "\\\\a "), (String, " b"), (Name, "z"), (Number, "1")]
+expect colored("x = \\\\") == [(Name, "x"), (String, "\\\\")]
 
 # Numbers, with the `-` of a negative one, and not of a subtraction.
 expect colored("f(1, 1.5, 0x1F, 0b101, 1_000, 12u8, -1.0, [-2])") == [(Number, "1"), (Number, "1.5"), (Number, "0x1F"), (Number, "0b101"), (Number, "1_000"), (Number, "12u8"), (Number, "-1.0"), (Number, "-2")]
