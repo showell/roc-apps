@@ -56,25 +56,28 @@ problem stops the build, and every problem found is printed, one a line.
 
 What the builder does, and where each rule lives:
 
-- `Manuscript.roc`: which lines are prose and which are fenced, and the
-  pages.
-- `Includes.roc`: `{{file PATH}}` and `{{lines PATH from "A" to "B"}}`, each
-  a fence quoting a file of the book's folder, read through the platform.
-- `References.roc`: `{{chapter Title}}` and `{{number N Title}}` in prose,
-  linked to the chapter's page.
-- `TermIndex.roc` and `TermPattern.roc`: the `{{index}}` line's tables, from
-  a terms file whose patterns are a subset of regular expressions.
-- `WordCount.roc`: words of prose per page, and the limit (900 by default)
-  a numbered chapter is held to.
-- `Negatives.roc`: the negatives lint, a words file and a table of the
-  negative sentences the book keeps.
-- `Fences.roc`: a book's fence hooks, and the coloring hook for code.
-- `Pages.roc`: each page's HTML and the book's navigation.
-- `Builder.roc`: the settings, and the build, which reads what the
+- `builder/Manuscript.roc`: which lines are prose and which are fenced,
+  and the pages.
+- `builder/Includes.roc`: `{{file PATH}}` and
+  `{{lines PATH from "A" to "B"}}`, each a fence quoting a file of the
+  book's folder, read through the platform.
+- `builder/References.roc`: `{{chapter Title}}` and `{{number N Title}}`
+  in prose, linked to the chapter's page.
+- `builder/TermIndex.roc` and `builder/TermPattern.roc`: the `{{index}}`
+  line's tables, from a terms file whose patterns are a subset of regular
+  expressions.
+- `builder/WordCount.roc`: words of prose per page, and the limit (900 by
+  default) a numbered chapter is held to.
+- `builder/Negatives.roc`: the negatives lint, a words file and a table of
+  the negative sentences the book keeps.
+- `builder/Fences.roc`: a book's fence hooks, and the coloring hook for
+  code.
+- `builder/Pages.roc`: each page's HTML and the book's navigation.
+- `builder/Builder.roc`: the settings, and the build, which reads what the
   settings name and hands it to `Builder.built`, which is pure.
 
 The package imports roc-markdown by relative path, from a checkout beside
-roc-apps (`../roc-markdown`), as Safari's `make_book.roc` does.
+roc-apps, as Safari's `make_book.roc` does; so does the gate's `roc check`.
 
 ## Building and checking
 
