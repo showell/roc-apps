@@ -113,9 +113,9 @@ The first prints `shale ReleaseSafe`, the name of the optimized build with its s
 
 Setup takes Claude one session. Most of its time goes to downloads and to the first builds, and the token cost is a session's worth of reading READMEs and running commands.
 
-## The book is a program
+## How the book is built
 
-A book stays true only while its quotes match their sources. This system keeps them matched by treating the book as a program. The prose lives in a source file. A build turns that file into pages, and pulls each quote into the page from the real file at that moment. Gates stop the build when something is wrong. You ran this book's build in the last chapter. This chapter opens it up.
+The person making the book writes a single markdown-like file. A build turns that file into a website: a page for each chapter, the contents, the index, and every quote pulled in from its source file as that file stands at the moment of the build. Gates stop the build when something is wrong, and the last good copy stays up. You ran this book's build in the last chapter. This chapter shows what it does.
 
 ### One source file
 
