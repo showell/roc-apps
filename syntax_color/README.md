@@ -4,9 +4,9 @@ A Roc package that colors source code for web pages: code text in, HTML out,
 with a `<span class="syn-...">` around each run a language's lexer gives a
 class. It colors Roc and Shale the same way the Safari book's
 `canvas_apps/safari/tutorial/color_roc.shale` and the Shale cookbook's
-`color_shale.shale` do, byte for byte, and JavaScript with the same classes. The class names are book.css's:
-`syn-comment`, `syn-string`, `syn-number`, `syn-keyword`, `syn-name` and
-`syn-type`.
+`color_shale.shale` do, byte for byte, and JavaScript and Zig with the same
+classes. The class names are book.css's: `syn-comment`, `syn-string`,
+`syn-number`, `syn-keyword`, `syn-name` and `syn-type`.
 
 The folder stands alone, so it can move to a repository of its own: nothing in
 it imports from the rest of roc-apps. Only its gate takes roc-apps' pinned Roc,
@@ -29,22 +29,28 @@ through the repository's prelude.
   escaped, as both the spans and the text between them are.
 
 A language is a `SyntaxColor.Language`, `{ name, spans }`, whose `spans` is its
-lexer. `SyntaxColor.roc`, `SyntaxColor.shale` and `SyntaxColor.js` are the three
-there are, each lexer a module of its own (`RocSyntax.roc`, `ShaleSyntax.roc`,
-`JsSyntax.roc`), and `Bytes.roc` holds the byte reads they share. Another
-language is one more module with a
-`spans : Str -> List(Span)` and one more value beside those.
+lexer. `SyntaxColor.roc`, `SyntaxColor.shale`, `SyntaxColor.js` and
+`SyntaxColor.zig` are the four there are, each lexer a module of its own
+(`RocSyntax.roc`, `ShaleSyntax.roc`, `JsSyntax.roc`, `ZigSyntax.roc`), and
+`Bytes.roc` holds the byte reads two or more of them make the same way.
+Another language is one more module with a `spans : Str -> List(Span)` and one
+more value beside those.
 
 No text makes a lexer fail: an unterminated string, a stray byte or half a
-program still comes out with every byte covered, and the expects hold both
-lexers to that over 1378 hostile texts.
+program still comes out with every byte covered, and the expects hold every
+lexer to that over 1692 hostile texts.
 
 ## Lexical, with brackets
 
 The lexers read bytes, not a tree. JavaScript's keeps a stack of braces, for
 a template's `${...}`, and the token before, to tell a regular expression's
-`/` from division's. Shale's follows Shale's own lexer
-(`src/script/lex.zig` in the shale repository). Roc's has no lexer of record to
+`/` from division's. Zig's follows Zig's own tokenizer
+(lib/std/zig/tokenizer.zig in Zig's standard library), keeping only whether
+the token before was `fn` or a `.`: the name after `fn` is a name, and a word
+after a `.` is a field, never a keyword or a type. Its primitive types (`u8`,
+`usize`, `type`, `anytype`) are types, and its builtins (`@import`) are
+keywords. Shale's follows Shale's own lexer (`src/script/lex.zig` in the
+shale repository). Roc's has no lexer of record to
 follow, since color_roc reads roc-ast's tree, so RocSyntax keeps the little it
 needs to agree with the tree: which brackets are open and what the token
 before was. That tells a top-level definition's name from a local's, and a
@@ -89,6 +95,10 @@ starts at its first column.
 - JavaScript had no colorer before, so its 13 fixtures (`oracle/js_files.jsonl`,
   from `tools/record_js_fixtures.shale`) are the package's own answers, read
   by eye.
+- Zig had none either: its 13 fixtures (`oracle/zig_files.jsonl`, from
+  `tools/record_zig_fixtures.shale`) are real files from Shale, the book
+  builder's host, roc-chat's host, zig-webbox and zig-metal-unikernel, read by
+  eye the same way.
 - The gate takes about 3 seconds on a warm Roc cache.
 - The book builder does not use the package yet.
 
