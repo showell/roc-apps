@@ -1,5 +1,7 @@
 # Building a Book with Claude
 
+## Introduction
+
 This is a short how-to manual for building a book with Claude Code as the writer and a small build system that turns markdown into a checked, published website. You stay the editor: you set the rules, read the drafts and reply, and the agent writes.
 
 Steve Howell writes programs in Roc and builds tools for working with agents. With Claude Code writing and Steve editing, he built the [Safari Ride book](https://roc.lynrummy.com/tutorial/), which teaches Roc through one real program. This book is its companion. It explains how that book was made, and the same builder builds it.
@@ -14,7 +16,7 @@ Steve Howell writes programs in Roc and builds tools for working with agents. Wi
 
 A passing familiarity with Roc helps with the Safari examples, and your own book can be about anything.
 
-The first chapter says what the system does for any book, with its limits. The second gets you set up, with this book building on your machine. The third opens the machinery. The fourth, the heart of the book, is the cadence of drafts and replies that finds a book's voice. The fifth covers working with several agents, and publishing.
+The next chapter says what the system does for any book, with its limits. The third gets you set up, with this book building on your machine. The fourth opens the machinery. The fifth, the heart of the book, is the cadence of drafts and replies that finds a book's voice. The sixth covers working with several agents, and publishing.
 
 ## What it does for any book
 
@@ -40,7 +42,7 @@ The Safari book's own builder does more, all of it particular to that book:
 - live widgets: a piece of the running program framed in the page, which the browser check drives;
 - three channels of publishing, dev, staging and public, run by scripts in its repository.
 
-The third chapter shows the compiler check, and what it takes to build one for another language.
+The fourth chapter shows the compiler check, and what it takes to build one for another language.
 
 ## Getting set up
 
@@ -79,7 +81,7 @@ Claude clones all five into one folder, side by side, about 115 MB in all:
 | [roc-markdown](https://github.com/showell/roc-markdown) | the markdown renderer the builder imports, checked out beside roc-apps | 81 files, 4 MB |
 | [shale](https://github.com/showell/shale) | the scripting language the build's steps run in, and its cookbook of recipes | about 900 files, 35 MB |
 | [zig-webbox](https://github.com/showell/zig-webbox) | a library Shale builds against, checked out beside it | 42 files, 2 MB |
-| [essay-surface](https://github.com/showell/essay-surface) | a small web app where the agent's drafts meet your replies, one option for the fourth chapter's cadence | about 100 files, 3 MB |
+| [essay-surface](https://github.com/showell/essay-surface) | a small web app where the agent's drafts meet your replies, one option for the fifth chapter's cadence | about 100 files, 3 MB |
 
 ### What Claude installs
 
