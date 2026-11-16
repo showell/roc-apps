@@ -68,8 +68,10 @@ The program as it is here (`Box(model) -> {}`), built and run with each:
 | `nightly-2026-11-15-f25da45` (the newest, 2026-11-15) | clean | hit a runtime error |
 
 On `nightly-2026-11-15-f25da45`, `roc build --opt=speed` builds it with 0
-errors and 0 warnings as well. No issue in roc-lang/roc matches, searched
-2026-11-15; the nearest are #10770 (a runtime error in a generic host
+errors and 0 warnings as well. Filed as roc-lang/roc#13113 (2026-11-16,
+https://github.com/roc-lang/roc/issues/13113, reproduced that day on
+`nightly-2026-11-15-f25da45`). No issue in roc-lang/roc matched, searched
+2026-11-15 and again 2026-11-16; the nearest are #10770 (a runtime error in a generic host
 signal, closed) and #12851 (a `provides` annotation naming an undeclared
 type segfaults the compiler, closed).
 
