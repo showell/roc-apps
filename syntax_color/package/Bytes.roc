@@ -54,7 +54,15 @@ Bytes :: [].{
 	is_digit : U8 -> Bool
 	is_digit = |b| b >= '0' and b <= '9'
 
-	## An ASCII letter, a digit or `_`: a byte of a word in Roc and in Shale.
+	## A space, a tab, a CR or a newline: the whitespace of Shale and of Zig.
+	is_space : U8 -> Bool
+	is_space = |b| b == ' ' or b == '\t' or b == '\r' or b == '\n'
+
+	## An ASCII letter or `_`: the first byte of a word in Shale and in Zig.
+	is_ascii_word_start : U8 -> Bool
+	is_ascii_word_start = |b| (b >= 'a' and b <= 'z') or (b >= 'A' and b <= 'Z') or b == '_'
+
+	## An ASCII letter, a digit or `_`: a byte of a word in Roc, Shale and Zig.
 	is_ascii_word_byte : U8 -> Bool
 	is_ascii_word_byte = |b|
 		(b >= 'a' and b <= 'z')
@@ -74,6 +82,16 @@ expect Bytes.quoted_end("ab\nc'".to_utf8(), { at: 0, quote: '\'' }) == 2
 expect Bytes.quoted_end("a\\".to_utf8(), { at: 0, quote: '\'' }) == 2
 expect Bytes.quoted_end("a\\\nb'".to_utf8(), { at: 0, quote: '\'' }) == 2
 expect ['0', '9'].all(Bytes.is_digit) and !['/', ':', 'a'].any(Bytes.is_digit)
+expect [' ', '\t', '\r', '\n'].all(Bytes.is_space) and !['a', 0x0B, 0x0C, 0].any(Bytes.is_space)
+expect ['a', 'z', 'A', 'Z', '_'].all(Bytes.is_ascii_word_start) and ![
+	'0',
+	'9',
+	'$',
+	'@',
+	'`',
+	'{',
+	0xC3,
+].any(Bytes.is_ascii_word_start)
 expect [
 	'a',
 	'z',

@@ -101,7 +101,7 @@ class_of = |token, after_function| match token.kind {
 token_at : List(U8), U64 -> Token
 token_at = |bytes, at| {
 	byte = Bytes.byte_at(bytes, at)
-	if is_space(byte) {
+	if Bytes.is_space(byte) {
 		{ kind: Space, end: at + 1 }
 	} else if byte == '-' and Bytes.byte_at(bytes, at + 1) == '-' {
 		{ kind: Comment, end: comment_end(bytes, at) }
@@ -114,7 +114,7 @@ token_at = |bytes, at| {
 		{ kind: String, end: Bytes.quoted_end(bytes, { at: at + 1, quote: byte }) }
 	} else if Bytes.is_digit(byte) {
 		{ kind: Number, end: Bytes.run_end(bytes, { at, keep: Bytes.is_digit }) }
-	} else if is_word_start(byte) {
+	} else if Bytes.is_ascii_word_start(byte) {
 		end = Bytes.run_end(bytes, { at, keep: Bytes.is_ascii_word_byte })
 		word = Str.from_utf8(
 			bytes.sublist({ start: at, len: end - at }),
@@ -175,12 +175,6 @@ is_closer = |bytes, { at, level }| {
 	after = Bytes.run_end(bytes, { at: at + 1, keep: |b| b == '=' })
 	after - (at + 1) == level and Bytes.byte_at(bytes, after) == ']'
 }
-
-is_space : U8 -> Bool
-is_space = |b| b == ' ' or b == '\t' or b == '\r' or b == '\n'
-
-is_word_start : U8 -> Bool
-is_word_start = |b| (b >= 'a' and b <= 'z') or (b >= 'A' and b <= 'Z') or b == '_'
 
 ## The runs of `text` that get a color, each with its class and its text: what
 ## the expects below read.
