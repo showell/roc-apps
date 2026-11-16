@@ -6,7 +6,11 @@
 // scrolls or clips on its own (a code sample with overflow-x: auto) is held to
 // that box, not to the screen, since the page itself doesn't move. Each
 // offender is named by its tag, class and first words, with how far past the
-// edge it reaches. A page without a viewport meta tag fails too. Each width's
+// edge it reaches. A page without a viewport meta tag fails too, and so does
+// one with a picture that didn't load: an <img> whose naturalWidth is 0 once
+// loaded (a card's black rectangle, since the .shot style's background hides
+// a 404), or an image request that failed or answered 400 or more, each named
+// by its src. Each width's
 // whole page is saved as phone-<width>.png, its first screen as
 // phone-<width>-top.png, and with `desktop` a 1280 px shot
 // (desktop-1280.png) is saved as well, for comparing a change by eye.
@@ -134,6 +138,10 @@ const MEASURE = `(() => {
   };
 })()`;
 
+// Every <img> on the page that has no picture once it is done loading, by its
+// src as the page writes it.
+const UNLOADED = `[...document.images].filter((img) => img.naturalWidth === 0).map((img) => img.getAttribute('src'))`;
+
 async function evaluate(page, expression) {
   const { result, exceptionDetails } = await page.send("Runtime.evaluate", { expression, awaitPromise: true, returnByValue: true }, page.session);
   if (exceptionDetails) throw new Error(exceptionDetails.exception?.description ?? exceptionDetails.text);
@@ -141,8 +149,13 @@ async function evaluate(page, expression) {
 }
 
 // Loads the page at one size, waits for its images, and answers MEASURE's
-// findings, saving the whole page as a shot.
+// findings with the images that didn't load, saving the whole page as a shot.
 async function measure(link, page, width, mobile, shot) {
+  const urls = new Map();
+  const failed = new Map();
+  link.on("Network.requestWillBeSent", (p) => urls.set(p.requestId, p.request.url));
+  link.on("Network.responseReceived", (p) => { if (p.type === "Image" && p.response.status >= 400) failed.set(p.response.url, `answered ${p.response.status}`); });
+  link.on("Network.loadingFailed", (p) => { if (p.type === "Image") failed.set(urls.get(p.requestId) ?? p.requestId, p.errorText); });
   await page.send("Emulation.setDeviceMetricsOverride", { width, height: mobile ? 800 : 900, deviceScaleFactor: mobile ? 3 : 1, mobile }, page.session);
   await page.send("Emulation.setTouchEmulationEnabled", { enabled: mobile }, page.session);
   const loaded = new Promise((done) => link.on("Page.loadEventFired", done));
@@ -152,6 +165,8 @@ async function measure(link, page, width, mobile, shot) {
   await evaluate(page, "Promise.all([...document.images].map((img) => { img.loading = 'eager'; return img.complete ? null : new Promise((done) => { img.onload = img.onerror = done; }); }))");
   await sleep(300);
   const seen = await evaluate(page, MEASURE);
+  seen.images = (await evaluate(page, UNLOADED)).map((src) => `${src} (naturalWidth 0)`);
+  for (const [requested, why] of failed) seen.images.push(`${requested} (${why})`);
   const { data } = await page.send("Page.captureScreenshot", { format: "png", captureBeyondViewport: true, clip: { x: 0, y: 0, width, height: seen.height, scale: 1 } }, page.session);
   writeFileSync(join(shots, shot), Buffer.from(data, "base64"));
   const top = await page.send("Page.captureScreenshot", { format: "png" }, page.session);
@@ -167,21 +182,22 @@ try {
   const { targetId } = await link.send("Target.createTarget", { url: "about:blank" });
   const { sessionId } = await link.send("Target.attachToTarget", { targetId, flatten: true });
   const page = { send: link.send, session: sessionId };
-  for (const domain of ["Page", "Runtime"]) await page.send(`${domain}.enable`, {}, page.session);
+  for (const domain of ["Page", "Runtime", "Network"]) await page.send(`${domain}.enable`, {}, page.session);
   let failures = 0;
   for (const width of WIDTHS) {
     const seen = await measure(link, page, width, true, `phone-${width}.png`);
     const scrolls = seen.scrollWidth > seen.screen;
-    const bad = scrolls || seen.found.length > 0 || seen.viewport === null;
-    console.log(`${bad ? "FAIL" : "PASS"} ${width} px: scrollWidth ${seen.scrollWidth} of ${seen.screen}, ${seen.found.length} past the edge, viewport ${seen.viewport ?? "missing"}`);
+    const bad = scrolls || seen.found.length > 0 || seen.viewport === null || seen.images.length > 0;
+    console.log(`${bad ? "FAIL" : "PASS"} ${width} px: scrollWidth ${seen.scrollWidth} of ${seen.screen}, ${seen.found.length} past the edge, viewport ${seen.viewport ?? "missing"}, ${seen.images.length} images not loaded`);
     for (const f of seen.found) console.log(`  ${f.past} px past: ${f.what} (${f.left} to ${f.right})`);
+    for (const image of seen.images) console.log(`  image not loaded: ${image}`);
     if (bad) failures++;
   }
   if (extra === "desktop") {
     const seen = await measure(link, page, 1280, false, "desktop-1280.png");
     console.log(`desktop 1280 px: ${seen.height} px tall, scrollWidth ${seen.scrollWidth}`);
   }
-  console.log(`check_mobile: ${WIDTHS.length - failures} of ${WIDTHS.length} widths fit${failures ? "" : ", nothing past the edge"}; shots in ${shots}`);
+  console.log(`check_mobile: ${WIDTHS.length - failures} of ${WIDTHS.length} widths pass${failures ? "" : ", nothing past the edge, every image loaded"}; shots in ${shots}`);
   exitCode = failures ? 1 : 0;
   link.socket.close();
 } finally {
