@@ -4,8 +4,7 @@ const std = @import("std");
 /// into an archive for each target it runs on (`rocArchives`) and linked
 /// under the Zig host in src/: the page's solver.wasm, and the native judge
 /// and bench. The display is TypeScript (*.ts), bundled by esbuild into
-/// app.js. zig/ keeps the Zig solver the Roc replaced, as the bench's
-/// yardstick and with its own gold check.
+/// app.js.
 pub fn build(b: *std.Build) void {
     const target = b.standardTargetOptions(.{});
     const roc = rocCompiler(b);
@@ -60,63 +59,22 @@ pub fn build(b: *std.Build) void {
     const wasm_step = b.step("wasm-gold", "The page's solver.wasm, driven under node, against both gold files");
     wasm_step.dependOn(&wasm_run.step);
 
-    // The Zig reference's solver.wasm (zig/wasm.zig), built as angry-gopher
-    // served it, and the bench that times it against the Roc one under node.
-    const reference_wasm = b.addExecutable(.{ .name = "reference_solver", .root_module = b.createModule(.{
-        .root_source_file = b.path("zig/wasm.zig"),
-        .target = wasm32,
-        .optimize = .ReleaseSmall,
-        .strip = true,
-    }) });
-    reference_wasm.entry = .disabled;
-    reference_wasm.rdynamic = true;
+    // **THE BENCHES**: a shift's solve timed, the page's solver.wasm under
+    // node and the Roc natively. They time, so no gate runs them.
     const wasm_bench = esbuild(b, "wasm_bench.ts", "wasm_bench.mjs", .esm);
     const wasm_bench_run = b.addSystemCommand(&.{"node"});
     wasm_bench_run.addFileArg(wasm_bench);
-    wasm_bench_run.addArtifactArg(reference_wasm);
     wasm_bench_run.addArtifactArg(solver_wasm);
     wasm_bench_run.setCwd(b.path("."));
     wasm_bench_run.stdio = .inherit;
     wasm_bench_run.has_side_effects = true;
     wasm_bench_run.addPassthruArgs();
-    b.step("wasm-bench", "Time the page's solve under node, the Zig reference's solver.wasm against the Roc one").dependOn(&wasm_bench_run.step);
-
-    const typecheck = b.addSystemCommand(&.{ "node_modules/.bin/tsc", "--noEmit", "-p", "." });
-    typecheck.setCwd(b.path("."));
-    typecheck.has_side_effects = true;
-    b.step("typecheck", "tsc over the display and the reference solver.ts").dependOn(&typecheck.step);
-
-    // **THE YARDSTICK**: the Zig solver in zig/, its unit tests and its own
-    // gold check, and the bench that times it against the Roc.
-    const reference_gold = b.addExecutable(.{ .name = "reference_gold", .root_module = b.createModule(.{
-        .root_source_file = b.path("zig/gold_check.zig"),
-        .target = target,
-        .optimize = .ReleaseFast,
-    }) });
-    const reference_run = b.addRunArtifact(reference_gold);
-    reference_run.setCwd(b.path("zig"));
-    reference_run.stdio = .inherit;
-    reference_run.has_side_effects = true;
-    b.step("reference-gold", "The Zig reference solver (zig/) against the gold").dependOn(&reference_run.step);
-
-    const reference_test = b.addTest(.{ .root_module = b.createModule(.{
-        .root_source_file = b.path("zig/reference.zig"),
-        .target = target,
-        .optimize = .Debug,
-    }) });
-    const reference_test_run = b.addRunArtifact(reference_test);
-    reference_test_run.has_side_effects = true;
-    b.step("reference-test", "The Zig reference solver's unit tests").dependOn(&reference_test_run.step);
+    b.step("wasm-bench", "Time the page's solve under node: the page's solver.wasm, over the 20 gold seeds").dependOn(&wasm_bench_run.step);
 
     const bench = b.addExecutable(.{ .name = "bench", .root_module = b.createModule(.{
         .root_source_file = b.path("src/bench.zig"),
         .target = target,
         .optimize = .ReleaseFast,
-        .imports = &.{.{ .name = "reference", .module = b.createModule(.{
-            .root_source_file = b.path("zig/reference.zig"),
-            .target = target,
-            .optimize = .ReleaseFast,
-        }) }},
     }) });
     linkRoc(roc_lib, bench.root_module);
     const bench_run = b.addRunArtifact(bench);
@@ -124,9 +82,14 @@ pub fn build(b: *std.Build) void {
     bench_run.stdio = .inherit;
     bench_run.has_side_effects = true;
     bench_run.addPassthruArgs();
-    b.step("bench", "Time the 20 gold shifts' solves natively, the Zig reference against the Roc").dependOn(&bench_run.step);
+    b.step("bench", "Time the 20 gold shifts' solves natively, the Roc").dependOn(&bench_run.step);
     // The bench installed (zig-out/bin/bench), for a profiler.
     b.step("bench-exe", "Install the bench as zig-out/bin/bench, for a profiler").dependOn(&b.addInstallArtifact(bench, .{}).step);
+
+    const typecheck = b.addSystemCommand(&.{ "node_modules/.bin/tsc", "--noEmit", "-p", "." });
+    typecheck.setCwd(b.path("."));
+    typecheck.has_side_effects = true;
+    b.step("typecheck", "tsc over the display and the reference solver.ts").dependOn(&typecheck.step);
 
     // **THE ROC'S OWN CHECKS**: its expects, and its layout as `roc fmt` has it.
     const roc_test = b.addSystemCommand(&.{ roc, "test", "roc/delivery.roc" });

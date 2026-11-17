@@ -79,7 +79,6 @@ the race; each neighborhood's `overflow` in `roc/Seattle.roc` says).
 | `roc/` | the solver: `Seattle.roc` (the map, the fleet, the ring geometry), `RoadGraph.roc`, `Orders.roc`, `Houses.roc` and `Stop.roc` (a stop's houses, packed into one U64), `Route.roc`, `Pain.roc`, `Build.roc` (construction), `Improve.roc` (local search before the trucks are assigned), `SlotSearch.roc` (after), `Solve.roc` (the front door, `routes_for`: the race over the strategy's variants of `attempt`, the algorithm), `Itinerary.roc` (a truck's stops with their expected arrival, totes aboard and pain so far), `Replay.roc`, `PlanJson.roc`, `Gold.roc`, and `delivery.roc`, the app, on `roc/platform/` |
 | `src/` | the Zig host and its judges (above) |
 | `*.ts`, `web/index.html` | the display, and `solver.ts`, the readable reference the gold is minted from (`goldgen.ts`; it is not in the page's bundle) |
-| `zig/` | the Zig solver the Roc replaced, kept as the bench's yardstick, with its own gold check |
 | `solver_gold.json`, `solver_frames_gold.json` | the gold corpus: 20 shifts, every route, pain, race variant, the road graph, and every replay frame |
 | `tools/` | `page_check.mjs`, the staged page in headless Chromium |
 | `build.shale` | the gate, then the page into the dev channel |
@@ -105,8 +104,8 @@ and, in `delivery/`:
     zig build gold                 # the same, as served (LLVM, some two minutes to build)
     zig build wasm-gold            # the page's own solver.wasm against the gold, under node
     zig build roc-test             # Roc's expects and roc fmt --check roc
-    zig build bench                # a shift's solve timed natively, the Zig reference against the Roc
-    zig build wasm-bench           # the same in the browser's engine: both solver.wasm modules under node
+    zig build bench                # a shift's solve timed natively, in ms a shift
+    zig build wasm-bench           # the same in the browser's engine: the page's solver.wasm under node
 
 Regenerate the gold (`goldgen.ts`, its header has the command) only on an
 intentional change to `solver.ts`'s semantics, never to fit the Roc: a
@@ -118,10 +117,13 @@ On the `delivery-roc` branch, not merged; on the dev channel at
 `/delivery/`, not on staging or prod. The Roc passes the gold, all 20
 shifts and 545 replay frames, natively and as the page's `solver.wasm`.
 
-It runs within the 1.5x of the Zig it replaced that it was held to: about
-1.3x in the browser's engine (node driving both `solver.wasm` modules) and
-about 1.2x natively, each seed's best of eight (`zig build wasm-bench`,
-`zig build bench`). What it took is in the solver's hot loop, and the
+It runs within the 1.5x of the Zig it replaced that it was held to. Last
+measured on 2026-11-16 (commit `d7f08f96`), before the Zig solver left the
+tree: 1.33x in the browser's engine (node driving both `solver.wasm`
+modules) and 1.16x natively, each seed's best of eight. The benches now
+time the Roc alone, in milliseconds a shift (`zig build wasm-bench`, `zig
+build bench`), and the Zig solver is in git's history (`git log --
+delivery/zig`). What the speed took is in the solver's hot loop, and the
 rules are worth keeping in any change to it:
 
 - **A list one owner at a time.** A `for`, `fold` or `any` over a list,

@@ -11,8 +11,6 @@
 -- - `roc test roc/delivery.roc`: the expects of every module it reaches,
 --   held exactly (ROC_EXPECTS);
 -- - `zig build typecheck`: tsc over the display and the reference solver.ts;
--- - `zig build reference-test` and `reference-gold`: the Zig solver in zig/,
---   the bench's yardstick, its unit tests held exactly (REFERENCE_TESTS);
 -- - `zig build gold`: the Roc solver natively against both gold files,
 --   every shift and frame (SHIFTS, FRAMES);
 -- - `zig build wasm-gold`: the page's own solver.wasm, the Roc one, driven
@@ -36,7 +34,6 @@
 
 const HERE = "delivery"
 const ROC_EXPECTS = 22
-const REFERENCE_TESTS = 6
 const SHIFTS = 20
 const FRAMES = 545
 const DEST = "build:roc-apps/next/delivery"
@@ -89,15 +86,6 @@ print("PASS roc test: " .. expects.groups[1] .. "/" .. ROC_EXPECTS .. " expects"
 
 zig_build("typecheck", 40000)
 print("PASS zig build typecheck: tsc over the display and solver.ts")
-
-local ref = zig_build("reference-test", 40000)
-local rt = re_find(ref.out, "(\\d+)/(\\d+) tests passed")
-if rt == nil or rt.groups[1] ~= rt.groups[2] or tonumber(rt.groups[1]) ~= REFERENCE_TESTS then
-  print(ref.out)
-  fail("delivery: the reference's tests, held at " .. REFERENCE_TESTS)
-end
-local refgold = zig_build("reference-gold", 40000)
-print("PASS the Zig reference: " .. rt.groups[1] .. "/" .. REFERENCE_TESTS .. " tests; " .. line_starting(refgold.out, "ALL GOLD CHECKS PASSED", "reference-gold"))
 
 local gold = zig_build("gold", 40000)
 local said = line_starting(gold.out, "GOLD:", "zig build gold")
