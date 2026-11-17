@@ -101,7 +101,7 @@ canvas_apps/lib	check_stacking	long	28
 canvas_apps/lib	check_stacking	stack	5
 canvas_apps/lib	check_stacking	wide string	15
 canvas_apps/lib	find_extra_parens	lambda_if	3
-canvas_apps/lib	rewrite_method_calls	rewritable	4
+canvas_apps/lib	rewrite_method_calls	rewritable	3
 canvas_apps/lib	roc-types	unreached	1
 canvas_apps/native	check_boundaries	single	2
 canvas_apps/native	check_name_types	bare_beside_unit	16
@@ -112,7 +112,7 @@ canvas_apps/native	check_stacking	wide string	1
 canvas_apps/native	find_unclear_names	module_doc	1
 canvas_apps/native	hunt_names	bare_participle	1
 canvas_apps/native	hunt_names	singular_list	2
-canvas_apps/native	rewrite_method_calls	rewritable	43
+canvas_apps/native	rewrite_method_calls	rewritable	42
 canvas_apps/native	roc-types	unreached	1
 canvas_apps/particles	check_name_types	bare_beside_unit	10
 canvas_apps/particles	check_stacking	long	1
@@ -150,7 +150,7 @@ canvas_apps/safari	check_name_types	bare_beside_unit	16
 canvas_apps/safari	check_stacking	long	48
 canvas_apps/safari	check_stacking	wide string	70
 canvas_apps/safari	find_unclear_names	abbreviation	1
-canvas_apps/safari	rewrite_method_calls	rewritable	29
+canvas_apps/safari	rewrite_method_calls	rewritable	27
 canvas_apps/safari	roc-types	unreached	11
 canvas_apps/shapes_widget	roc-types	unreached	1
 canvas_apps/sky_widget	check_boundaries	single	1
@@ -186,7 +186,7 @@ canvas_apps/trick_or_treat	find_extra_parens	lambda_if	1
 canvas_apps/trick_or_treat	find_unclear_names	module_doc	13
 canvas_apps/trick_or_treat	hunt_names	bare_participle	5
 canvas_apps/trick_or_treat	hunt_names	singular_list	17
-canvas_apps/trick_or_treat	rewrite_method_calls	rewritable	85
+canvas_apps/trick_or_treat	rewrite_method_calls	rewritable	73
 canvas_apps/truck_widget	check_stacking	wide string	1
 canvas_apps/truck_widget	roc-types	unreached	1
 canvas_apps/web	check_stacking	long	1
@@ -256,7 +256,7 @@ fasttrack	hunt_names	noun_effect	1
 fasttrack	hunt_names	phrase_name	11
 fasttrack	hunt_names	singular_list	71
 fasttrack	hunt_names	world_verb	2
-fasttrack	rewrite_method_calls	rewritable	512
+fasttrack	rewrite_method_calls	rewritable	485
 fasttrack	roc-types	unreached	4
 findings/codec-field-error-row	check_boundaries	dead	2
 findings/codec-field-error-row	check_stacking	long	1
