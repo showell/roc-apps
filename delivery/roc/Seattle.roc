@@ -504,7 +504,7 @@ Seattle :: [].{
 	## An angle brought into [0, 2π): JS's `%`, whose remainder keeps the
 	## dividend's sign, is Roc's `rem_by`.
 	norm : F64 -> F64
-	norm = |a| F64.rem_by(F64.rem_by(a, tau) + tau, tau)
+	norm = |a| (a.rem_by(tau) + tau).rem_by(tau)
 
 	tau : F64
 	tau = F64.pi * 2.0
@@ -696,7 +696,7 @@ name_phase : Str -> F64
 name_phase = |name| {
 	var $h = 0
 	for c in name.to_utf8() {
-		$h = U32.plus_wrap(U32.times_wrap($h, 31), c.to_u32())
+		$h = U32.times_wrap($h, 31).plus_wrap(c.to_u32())
 	}
 	($h % 360).to_f64() * (F64.pi / 180.0)
 }
