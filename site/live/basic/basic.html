@@ -298,7 +298,13 @@ async function pump(id) {
   }
   if (id !== run) return;
   running = false;
+  showStopped();
+}
+
+function showStopped() {
   $("status").textContent = "stopped";
+  $("line").disabled = true;
+  $("line").placeholder = "the program is not asking for anything";
 }
 
 function feed(text) {
@@ -319,7 +325,11 @@ function go() {
   pump(run);
 }
 
-$("stop").onclick = () => { stopped = true; };
+// A program waiting for a line has no pump running to notice Stop.
+$("stop").onclick = () => {
+  stopped = true;
+  if (!running && x && x.runStatus() === 1) showStopped();
+};
 $("line").addEventListener("keydown", (e) => {
   if (e.key !== "Enter" || !x || running) return;
   feed($("line").value);
