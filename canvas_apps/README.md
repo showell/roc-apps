@@ -3,12 +3,12 @@
 Small interactive Roc programs that run two ways from one set of files: as a
 native program on roc-ray, and as a page in a browser.
 
-Twenty-eight of them, covering a few different kinds of program. `safari` is a
+Twenty-nine of them, covering a few different kinds of program. `safari` is a
 driving screensaver. `snake`, `pong` and `breakout` are arcade games.
 `particles` is a fountain of four thousand sprites that follows the pointer.
 `camera` is a world larger than the window, with a camera over it and a HUD
 that stays put. `workshop` is a pixel paint program you drag on.
-`trick_or_treat` is a movie you can scrub. `cat_widget` is a small page for
+`trick_or_treat` and `thanksgiving` are movies you can scrub. `cat_widget` is a small page for
 the Safari tutorial: drag across it and the cat's crossing plays under the
 pointer, from Safari's own modules. `sky_widget`, `bird_widget` and `beacon_widget`
 are three more: drag the clock and the sun sets, drag the gap and the bird
@@ -33,7 +33,7 @@ with the layers its address names, `pipeline_widget` is a fixed picture of the
 same step with only what the pipeline renders, and `shapes_widget` is a fixed picture
 of a triangle and a rectangle, for the book to quote the code under it.
 
-Six of the twenty-eight — all but `safari`, `trick_or_treat` and the widgets — are
+Six of the twenty-nine — all but `safari`, the two movies and the widgets — are
 roc-ray's own examples, by Luke Boswell, taken with only small changes to fit this scheme.
 
 **The native side runs on roc-ray 0.12.0** (`23eec6e`), with the
@@ -400,7 +400,7 @@ long movie wants: `FRAMES=1500`.
 | `snake`, `pong`, `breakout`, `camera`, `particles` | roc-ray's examples of the same names |
 | `workshop` | roc-ray's `generated_assets`, the Pixel Workshop |
 | `safari` | this repository's own screensaver; `safari/README.md` |
-| `trick_or_treat`, and every `*_widget` | this repository's own |
+| `trick_or_treat`, `thanksgiving`, and every `*_widget` | this repository's own |
 
 The roc-ray examples were taken at commit `e100c95`. They are © 2024 Luke Boswell, under the UPL
 1.0; `LICENSE-roc-ray` is roc-ray's license, kept with the ported files as the UPL asks. Each ported file says in its own docstring what changed in it and why,

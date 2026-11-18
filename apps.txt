@@ -42,6 +42,8 @@ canvas_apps/snake/main.roc
 canvas_apps/snake/web.roc
 canvas_apps/step_widget/web.roc
 canvas_apps/stills_widget/web.roc
+canvas_apps/thanksgiving/main.roc
+canvas_apps/thanksgiving/web.roc
 canvas_apps/trick_or_treat/main.roc
 canvas_apps/trick_or_treat/web.roc
 canvas_apps/truck_widget/web.roc
