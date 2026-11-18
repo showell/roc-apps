@@ -29,12 +29,12 @@ RoadGraph :: [].{
 					Seattle.gate_point(a, Seattle.point_of(b)),
 					Seattle.gate_point(b, Seattle.point_of(a)),
 				]
-				minutes = length_px(points) * factor({ a, b }, Surface) * min_per_px
+				drive_minutes = length_px(points) * factor({ a, b }, Surface) * min_per_px
 				{
 					a,
 					b,
 					minutes: rounded_minutes(
-						minutes,
+						drive_minutes,
 						if on_i5 {
 							Ramp
 						} else {
@@ -56,12 +56,12 @@ RoadGraph :: [].{
 					Seattle.gate_point(a, first_turn),
 				].concat(waters).append(Seattle.gate_point(c, last_turn))
 				on_i5 = Seattle.is_i5_exit(a) or Seattle.is_i5_exit(c)
-				minutes = length_px(points) * factor({ a, b: c }, Bridge) * min_per_px
+				drive_minutes = length_px(points) * factor({ a, b: c }, Bridge) * min_per_px
 				$out = $out.append({
 					a,
 					b: c,
 					minutes: rounded_minutes(
-						minutes,
+						drive_minutes,
 						if on_i5 {
 							Ramp
 						} else {

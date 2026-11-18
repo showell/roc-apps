@@ -19,17 +19,17 @@ Billboard :: {
 
 	## A grown animal of `species`.
 	adult_billboard : Billboard.Species, Billboard.Facing -> Billboard
-	adult_billboard = |species, facing|
-		Billboard.({ emoji: species.emoji, height: species.adult_height, facing })
+	adult_billboard = |species, way|
+		Billboard.({ emoji: species.emoji, height: species.adult_height, facing: way })
 
 	## A young animal of `species`, which stands half as tall as a grown one.
 	young_billboard : Billboard.Species, Billboard.Facing -> Billboard
-	young_billboard = |species, facing|
+	young_billboard = |species, way|
 		Billboard.(
 			{
 				emoji: species.emoji,
 				height: species.adult_height.divided_by(2.0),
-				facing,
+				facing: way,
 			},
 		)
 

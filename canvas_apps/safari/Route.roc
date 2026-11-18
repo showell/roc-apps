@@ -51,20 +51,20 @@ Route :: List(Segment).{
 		is_eq : _
 	}
 
-	## The route along `route_segments`, which must have the route's shape:
+	## The route along `segments`, which must have the route's shape:
 	## every segment but the last bends into the next, and the last ends the
 	## route.
 	from_segments : List(Segment) -> Route
-	from_segments = |route_segments| {
-		count = route_segments.len()
+	from_segments = |segments| {
+		count = segments.len()
 		is_in_place = |segment, at|
 			match segment.ending {
 				Bends(_) => at + 1 < count
 				RouteEnds => at + 1 == count
 			}
-		is_route_shaped = route_segments.map_with_index(is_in_place).all(|is_ok| is_ok)
-		if !route_segments.is_empty() and is_route_shaped {
-			Route.(route_segments)
+		is_route_shaped = segments.map_with_index(is_in_place).all(|is_ok| is_ok)
+		if !segments.is_empty() and is_route_shaped {
+			Route.(segments)
 		} else {
 			crash "Route.from_segments: every segment but the last bends, and the last ends the route"
 		}

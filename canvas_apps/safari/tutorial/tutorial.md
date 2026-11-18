@@ -128,7 +128,7 @@ This book shows Safari Ride's types first, and they reach every part of the prog
 
 Safari Ride's types are built from numbers. A length and a speed are both an `F64` underneath, so the ride gives each a type of its own. Here's the start of a length's:
 
-{{code Distance.Distance from "Distance ::" to "metres = |metres|"}}
+{{code Distance.Distance from "Distance ::" to "metres = |amount|"}}
 
 The `::` makes `Distance` opaque: inside is an `F64`, and only the `Distance` module opens it. `metres` wraps a number of metres as a `Distance`. So a `Distance` is more precise than an `F64`: its type says what the number means, and the compiler keeps a length apart from a speed or any other number. The {{chapter Opaque types: the clock}} chapter shows that precision catching a bug.
 
@@ -620,7 +620,7 @@ The trip starts from where a thing stands on the road:
 
 `along` is how far the place lies along its segment of road, and `across` is how far it lies from the middle of the road, growing to the right. Each is an opaque type around a number of metres, as `Distance` is:
 
-{{code Along.Along from "Along ::" to "metres = |metres|"}}
+{{code Along.Along from "Along ::" to "metres = |amount|"}}
 
 So the compiler rejects a call that passes an `across` where an `along` belongs.
 

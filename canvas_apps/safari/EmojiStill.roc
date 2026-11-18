@@ -11,7 +11,7 @@ EmojiStill :: Still.{
 
 	## The traced still itself.
 	still : EmojiStill -> Still
-	still = |EmojiStill.(still)| still
+	still = |EmojiStill.(traced)| traced
 
 	is_eq : _
 

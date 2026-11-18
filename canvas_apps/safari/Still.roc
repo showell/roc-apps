@@ -12,7 +12,7 @@ import lib.RgbColor
 
 Still :: List(Still.Polygon).{
 
-	## The still made of `polygons`, drawn in their order. Each polygon is
+	## The still made of `polygon_list`, drawn in their order. Each polygon is
 	## checked once, here, and a flawed one crashes with a reason that says
 	## where it is in the still's frame: a polygon of fewer than three
 	## corners, a corner that repeats its neighbour (the last corner's
@@ -21,14 +21,14 @@ Still :: List(Still.Polygon).{
 	## starts where it ends, or a radial one whose axes span less than
 	## `min_axes_area`.
 	of : List(Still.Polygon) -> Still
-	of = |polygons| {
-		for polygon in polygons {
+	of = |polygon_list| {
+		for polygon in polygon_list {
 			match polygon_flaw(polygon) {
 				Sound => {}
 				Flawed(reason) => crash "Still.of: ${reason}"
 			}
 		}
-		Still.(polygons)
+		Still.(polygon_list)
 	}
 
 	## A place in the still's frame: a corner of a polygon, or where a

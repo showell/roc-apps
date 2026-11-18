@@ -21,7 +21,7 @@ ArgbColor :: I64.{
 
 	## An opaque colour given an alpha byte, 0 for none and 255 for whole.
 	from_rgb : RgbColor, { alpha : U8 } -> ArgbColor
-	from_rgb = |color, { alpha }| ArgbColor.(alpha.to_i64().shl_wrap(24).bitwise_or(color.to_i64()))
+	from_rgb = |color, { alpha: alpha_byte }| ArgbColor.(alpha_byte.to_i64().shl_wrap(24).bitwise_or(color.to_i64()))
 
 	## The alpha byte, 0 for none and 255 for whole.
 	alpha : ArgbColor -> U8

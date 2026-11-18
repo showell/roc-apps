@@ -74,7 +74,7 @@ VcrButtons :: [].{
 		opens_at : number,
 		frame_shapes : VcrButtons.Transport(number) -> List(Shapes.Shape),
 	} -> CanvasApp.CanvasApp(VcrButtons.Transport(number))
-	canvas_app = |{ title, range, opens_at, frame_shapes }|
+	canvas_app = |{ title, range, opens_at, frame_shapes: transport_shapes }|
 		WidgetPage.canvas_app({
 			title,
 			frames_a_second: WidgetPage.moving_frames_a_second,
@@ -83,7 +83,7 @@ VcrButtons :: [].{
 				transport,
 				{ input, range },
 			),
-			frame_shapes,
+			frame_shapes: transport_shapes,
 		})
 
 	## The buttons after one frame: a press, then the number's own run.

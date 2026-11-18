@@ -14,7 +14,7 @@ GroundPatch :: { corners : List(RiderView.RiderPoint), color : RgbColor }.{
 
 	## The patch with these corners, in this colour.
 	of : List(RiderView.RiderPoint), RgbColor -> GroundPatch
-	of = |corners, color| GroundPatch.({ corners, color })
+	of = |patch_corners, color| GroundPatch.({ corners: patch_corners, color })
 
 	## The patch's corners, in the order its outline runs.
 	corners : GroundPatch -> List(RiderView.RiderPoint)

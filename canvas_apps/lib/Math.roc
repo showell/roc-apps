@@ -23,7 +23,7 @@ Math :: [].{
 	rect = |x, y, width, height| { x, y, width, height }
 
 	circle : Math.Vec2, F32 -> Math.Circle
-	circle = |center, radius| { center, radius }
+	circle = |middle, radius| { center: middle, radius }
 
 	add : Math.Vec2, Math.Vec2 -> Math.Vec2
 	add = |a, b| { x: a.x + b.x, y: a.y + b.y }

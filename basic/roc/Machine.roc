@@ -913,13 +913,13 @@ Machine :: [].{
 				piece = match it {
 					Semi => { said: "", t: "", fx: $fx }
 					Comma => {
-						next = $col + Machine.zone - $col.rem_by(Machine.zone)
+						tab_stop = $col + Machine.zone - $col.rem_by(Machine.zone)
 						{
 							said: "",
-							t: if w > 0 and next >= w {
+							t: if w > 0 and tab_stop >= w {
 								"\n"
 							} else {
-								Machine.spaces(next - $col)
+								Machine.spaces(tab_stop - $col)
 							},
 							fx: $fx,
 						}
@@ -1310,15 +1310,15 @@ Machine :: [].{
 		}
 		x = Machine.num_of(f.v)
 		limit = Machine.num_of(l.v)
-		step = Machine.num_of(s.v)
+		step_by = Machine.num_of(s.v)
 		if Machine.plain(m, s.fx) {
-			Machine.enter_for(pg, m, v, limit, step, x)
+			Machine.enter_for(pg, m, v, limit, step_by, x)
 		} else {
 			d = Machine.settle(m, s.fx)
 			if d.done {
 				d
 			} else {
-				Machine.enter_for(pg, d, v, limit, step, x)
+				Machine.enter_for(pg, d, v, limit, step_by, x)
 			}
 		}
 	}
@@ -1328,8 +1328,8 @@ Machine :: [].{
 	# statement after the FOR is read here, from the machine itself: passed
 	# in beside it, it made every store in here copy (findings/helper-arg-copy).
 	enter_for : Parse.Program, M, U64, F64, F64, F64 -> M
-	enter_for = |pg, m, v, limit, step, x| {
-		f = { v: v, limit: limit, step: step, after: m.pc + 1 }
+	enter_for = |pg, m, v, limit, step_by, x| {
+		f = { v: v, limit: limit, step: step_by, after: m.pc + 1 }
 		keep = Machine.outside(m.loops, m.ldepth, f.after)
 		if (f.step >= 0.0 and x > f.limit) or (f.step < 0.0 and x < f.limit) {
 			skip = pg.skips.get(m.pc) ?? Parse.none
