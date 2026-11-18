@@ -1,6 +1,5 @@
-published 2026-09-24T11:19:23Z
-roc nightly-2026-09-22-e494788
-roc-apps ab837ff
-rocemit e6a83da
-cobblestone 9f6bdc03 u62-candidate
-sha256 23efdf46998fa2c2  79359 bytes  snake.wasm
+published 2026-11-18T17:42:35Z
+roc nightly-2026-11-03-34bd006
+opt speed
+roc-apps 143b65a1
+sha256 fd7f3c640fb580d2  84434 bytes  snake.wasm
