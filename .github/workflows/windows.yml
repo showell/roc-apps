@@ -13,8 +13,7 @@
 #
 #   gh workflow run windows.yml -f roc_ray_ref=<commit> -f roc_nightly=nightly-<date>-<sha> -f apps=snake
 #
-# Every app under canvas_apps/ is built. ray/fetch_exes.sh is what pulls them
-# from the build box to a Windows machine.
+# Every app under canvas_apps/ is built.
 #
 # **THE TWO CHECKOUTS ARE SIBLINGS**, because canvas_apps/<name>/main.roc
 # names roc-ray as `../../../roc-ray` in its own source rather than through a

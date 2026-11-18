@@ -2,8 +2,7 @@
 
 What the new Roc compiler's nightly builds do that is easy to trip over, for
 anyone writing or emitting Roc in this repository. How the Roc is *written*
-(Steve's style) is [roc-style.md](roc-style.md). Where a behaviour has a
-reduced program, `findings/` holds it.
+(Steve's style) is [roc-style.md](roc-style.md).
 
 ## The compiler
 
@@ -26,7 +25,7 @@ reduced program, `findings/` holds it.
   time, with no step limit** (roc-lang/roc#11334). `roc check` never finishes on
   a program whose opening calls a function that loops forever, and on a
   terminating program the check takes as long as the program's own work. A
-  reduced program must still terminate (`findings/roc-check-hang/`). The
+  reduced program must still terminate. The
   compiler now says what it is evaluating while it runs. An experiment that
   plays games from a constant seed must tie the seed to a run-time value
   (`seed + 0 * List.len(args)`), or `roc check` plays the games -- and on 09-07
@@ -54,7 +53,7 @@ reduced program, `findings/` holds it.
   (roc-lang/roc#11335; from 09-23 it uses brk, above). On those nightlies
   `strace -c` counts allocations exactly and `strace -k` names the builtin
   that asked, and an allocation-heavy program runs several times slower than
-  on a C allocator (`findings/roc-alloc-mmap/`).
+  on a C allocator.
 
 ## The language
 
@@ -103,11 +102,11 @@ reduced program, `findings/` holds it.
      nested list is copied per write. Take it out with `List.replace`, write
      it, put it back.
   3. A value threaded down a recursion and handed back makes the caller's next
-     store copy (`findings/threaded-record-copy/`). A recursive function that
+     store copy. A recursive function that
      only reads the value does not.
   4. A helper given a record together with a value read from that record, when
      the caller passes a freshly updated record and the store is in its own
-     function (`findings/helper-arg-copy/`). Let the helper read the field.
+     function. Let the helper read the field.
   5. A run loop that hands its `var` record to the step itself, rather than a
      fresh update such as `{ ..$m, steps: $m.steps + 1 }`.
   6. A field taken out in one statement and written back in another. Take it

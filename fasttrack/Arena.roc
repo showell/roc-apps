@@ -9,8 +9,8 @@
 #
 # `compare` is the tool for "is B better than A": a block of four turned
 # deals per seed, every strategy in red's seat, and `compare_report` judges
-# each strategy against the first on the same deals (exp_duplicate.roc).
-# `tally_game` counts every player's game (exp_table.roc, exp_cards.roc).
+# each strategy against the first on the same deals. `tally_game` counts
+# every player's game, for Tables.
 import Board
 import Game
 import History

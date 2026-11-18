@@ -1326,7 +1326,7 @@ Machine :: [].{
 	# A loop whose body must not run lands past the NEXT that closes it.
 	# **A HELPER GIVEN THE MACHINE IS NOT GIVEN WHAT WAS READ FROM IT.** The
 	# statement after the FOR is read here, from the machine itself: passed
-	# in beside it, it made every store in here copy (findings/helper-arg-copy).
+	# in beside it, it made every store in here copy.
 	enter_for : Parse.Program, M, U64, F64, F64, F64 -> M
 	enter_for = |pg, m, v, limit, step, x| {
 		f = { v: v, limit: limit, step: step, after: m.pc + 1 }

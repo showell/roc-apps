@@ -117,7 +117,8 @@ Reach :: [].{
 		far = Board.far
 		home = Board.index_of(target.zone_colors, { zone: NormalColor(target.color), id: target.peak })
 		start = List.set(List.repeat({ cards: far, first: [] }, Board.all_locs(target.zone_colors).len()), home, { cards: 0, first: [] }) ?? crash ("Reach: no home")
-		# A pass says whether it changed anything (findings/llvm-closure-loop-alias).
+		# A pass says whether it changed anything: LLVM has ended a `while $next != $d`
+		# loop after one pass when the pass is a local closure (README.md).
 		relax = |d|
 			List.fold(
 				edges,

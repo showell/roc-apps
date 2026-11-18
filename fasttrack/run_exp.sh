@@ -3,7 +3,7 @@
 # runs it detached, each line of its log stamped with the time. Prints the
 # log's path.
 #
-#   fasttrack/run_exp.sh exp_duplicate
+#   fasttrack/run_exp.sh exp_<name>
 #
 # The build lands in ~/build/roc-apps/gen/fasttrack/<name>/, the log beside it
 # as log.md: a line a game while it plays, the report at the end, and last

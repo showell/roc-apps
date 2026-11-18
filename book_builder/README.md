@@ -151,8 +151,7 @@ From the roc-apps root:
 ## Pitfalls
 
 - **A provided function must have concrete types.** One whose type is still
-  polymorphic passes `roc check` and crashes at run time
-  (`findings/provides-type-variable/`).
+  polymorphic passes `roc check` and crashes at run time.
 - **A record crosses in Roc's order, not the source's**: by alignment, then
   by name, with a tag union's tag byte after its payload and its tags
   numbered alphabetically. After a change to `platform/`, run the glue

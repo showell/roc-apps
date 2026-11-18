@@ -9,18 +9,15 @@ Thanks to Damian Tedrow, whose [Cobblestone](https://github.com/damiant3/Cobbles
 
 | where | what | map |
 |---|---|---|
-| `canvas_apps/` | eight small interactive programs that run as a page and, as a spike not kept current, natively on roc-ray, from one set of files: Safari, snake, pong, breakout, particles, a camera world, a pixel paint program, and a movie you can scrub | `canvas_apps/README.md`, `canvas_apps/safari/README.md` |
+| `canvas_apps/` | eight small interactive programs that run as a page and, in native builds kept for posterity but not current, on roc-ray, from one set of files: Safari, snake, pong, breakout, particles, a camera world, a pixel paint program, and a movie you can scrub | `canvas_apps/README.md`, `canvas_apps/safari/README.md` |
 | `delivery/` | Seattle Delivery, a screensaver with an algorithm at its heart: eight trucks deliver a hundred orders across a winking map of Seattle; the solver (Clarke-Wright savings, local search, an integer pain cost, a four-way race) is Roc under a Zig host, compiled to WebAssembly, and the TypeScript display draws its plan | `delivery/README.md` |
 | `dog-park/` | Dog Park, a herding game: drag a dog through a park of critters and herd the cows into one bunch; the physics is Roc (the rules, the wish, the walk) under a Zig board, compiled to WebAssembly, and the browser keeps each player's park | `dog-park/README.md` |
 | `fasttrack/` | Fast Track, the board game, ported from Steve's elm-fasttrack: the rules and the whole page in Roc, drawn by a thin page script that patches the board | `fasttrack/README.md` |
 | `glue/` | `JsGlue.roc`, the `roc glue` spec that generates a page's frame reader from the compiler's type table | `glue/README.md` |
-| `ray/` | `fetch_exes.sh`, which pulls the canvas apps' Windows executables to a Windows machine | `ray/README.md` |
-| `cbor-pets/` | CBOR as a Roc format, from the Zulip thread "CBOR serialization": `Cbor.parse`/`Cbor.to_bytes` work for a profile through derived `parser_for`/`encoder_for`, with its picture (an `ImageBlob`) a byte string and its pet ages an array | `cbor-pets/README.md` |
 | `basic/` | a BASIC interpreter written by hand in Roc, a web page that runs it, and the corpora that grade it | `basic/README.md` |
 | `book_builder/` | the book builder: a Roc platform whose Zig host's one effect reads a file under the book's folder, and the builder package a book's app calls; it builds the Safari tutorial and the books book | `book_builder/README.md` |
 | `building-books/` | the books book, *Building a Book with Claude*: a short how-to for building a book like the Safari tutorial, with Claude writing; its app and its pre-step, `book.shale` | `building-books/MISSION.md` |
 | `site/`, `ops/` | the site that serves the apps: dev, staging and prod | below |
-| `findings/` | Roc behaviours we found, each with a program that shows it | |
 | `docs/` | `roc-style.md`, how Steve writes Roc (tags, records, opaque types for what's validated, one workhorse at the edge); `roc-notes.md`, how the Roc nightly behaves (the compiler, the language, what copies) | |
 
 ## The Safari book, the prototype

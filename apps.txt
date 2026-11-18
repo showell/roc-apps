@@ -51,15 +51,6 @@ canvas_apps/workshop/main.roc
 canvas_apps/workshop/web.roc
 delivery/roc/delivery.roc
 dog-park/roc/physics.roc
-fasttrack/exp_cards.roc
-fasttrack/exp_duplicate.roc
-fasttrack/exp_rollout.roc
-fasttrack/exp_search_size.roc
-fasttrack/exp_table.roc
 fasttrack/web.roc
-findings/provides-type-variable/app/main.roc
-findings/roc-alloc-mmap/churn.roc
-findings/roc-ctfe-realloc/main.roc
-findings/roc-ctfe-realloc/runtime.roc
 glue/JsGlue.roc
 syntax_color/harness/main.roc

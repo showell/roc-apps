@@ -7,8 +7,7 @@
 ## The host (host/) reads only under the book's folder and writes nothing but
 ## stdout and stderr. Each function here is annotated with concrete types,
 ## because a provided function whose type is still polymorphic passes
-## `roc check` and crashes at run time (roc-apps
-## findings/provides-type-variable/).
+## `roc check` and crashes at run time.
 platform ""
 	requires {
 		main! : Str => Try(Str, Str)

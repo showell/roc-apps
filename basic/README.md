@@ -129,8 +129,7 @@ line, is where the transcript starts.
 - **An empty transcript is a CRASH.** The runtime's stack overflow message
   carries no ✗, and an empty transcript prints no TEST FAILED.
 - **The copy in `store`** (READ or INPUT into an array element) is load-bearing:
-  handing `set_arr` the machine straight from `ensure_arr` overflows the stack
-  (`findings/store-overflow/`).
+  handing `set_arr` the machine straight from `ensure_arr` overflows the stack.
 - **The string path is decided before the numeric grammar**, or a string read
   down the numeric path becomes zero.
 - **The text screen (1,000 bytes at 1024) and the framebuffer (64,000 at

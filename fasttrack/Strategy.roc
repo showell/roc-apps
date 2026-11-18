@@ -12,7 +12,7 @@
 # that (TUNING.md, and the code in git history).
 #
 # `champion` is what the page's computers play. TUNING.md says how each number
-# was chosen; a new experiment is a new value (Arena, the exp_*.roc apps).
+# was chosen; a new experiment is a new value (Arena, an app on cli/).
 import Board
 import Game
 import Piece

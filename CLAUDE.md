@@ -226,8 +226,7 @@ list is `docs/roc-notes.md`, "The compiler".
 - **Compile-time evaluation has no step limit** (roc-lang/roc#11334). A
   call whose arguments are all known at compile time runs during
   `roc check`, so a check can hang, or take as long as the program. An
-  experiment from a constant seed ties the seed to a run-time value
-  (`findings/roc-check-hang/`).
+  experiment from a constant seed ties the seed to a run-time value.
 - **Keep scratch directories out of Roc's way.** Older nightlies deleted
   every `roc-*` directory in the system temp root when they ran. The pin
   doesn't (in `roc check`, `roc test` or a build), but don't name a
@@ -236,11 +235,10 @@ list is `docs/roc-notes.md`, "The compiler".
 - **"Overflowed its stack memory" means a SIGSEGV, not necessarily a deep
   recursion.** The default runtime prints it for any segfault, a read after
   free included. Look for the real cause before raising a stack size.
-- **A compiler bug gets a reduced reproduction.** It goes in roc-apps
-  `findings/<name>/`, with the smallest program that shows it and a
-  `README.md` saying what it shows (`findings/roc-check-hang/` also keeps
-  the upstream `ISSUE.md`). Before reducing, try the newer nightlies: it
-  may be fixed already (see §2).
+- **A compiler bug gets a reduced reproduction.** Before reducing, try the
+  newer nightlies: it may be fixed already (see §2). Then cut it to the
+  smallest program that shows it, and report it upstream with that program
+  (roc-lang/roc's issues).
 
 ## 5. Formatting: `roc fmt` decides
 
@@ -504,8 +502,7 @@ check the defaults first.
   repo) can leave several gigabytes there and fill a sandbox's disk. Watch
   `df` during a long run and clear the cache after it.
 - **A build that's still slow on dev is a finding.** Look for compile-time
-  evaluation first (§4), then reduce it into `findings/` (roc-apps
-  `findings/roc-compile-time-memory/` is one).
+  evaluation first, then reduce it to a program others can run (§4).
 
 ## 10. Performance: know what copies
 
@@ -525,8 +522,7 @@ Read it before writing a loop that stores into a list or a record.
   `crash("...")` into `crash ("...")`). The `?? l` is a placeholder as well as
   a copy, an answer nobody meant (`docs/roc-style.md`, "Errors and
   failure"). The others (`List.update` on a nested list, a value threaded down a recursion, a field taken out and written
-  back in separate statements) are in the notes, with reproductions under
-  `findings/` (`threaded-record-copy/`, `helper-arg-copy/`).
+  back in separate statements) are in the notes.
 - **Append into an accumulator.** Build a list with `List.append` in an
   accumulator loop, not by concatenating onto a recursion or with
   `List.concat(acc, [x])`, which the notes measure at about 50 times
@@ -585,10 +581,9 @@ one.
   "Pitfalls".
 - **Each kind of knowledge has one home.** What the compiler does goes in
   `docs/roc-notes.md`, how the code should read goes in
-  `docs/roc-style.md`, and a reduced reproduction goes in
-  `findings/<name>/` with the program that shows it (roc-apps
-  `findings/roc-check-hang/`). Point to these homes rather than copying
-  them.
+  `docs/roc-style.md`, and a compiler bug's reduced reproduction goes
+  upstream, in the issue that reports it. Point to these homes rather than
+  copying them.
 - **A path you cite must exist.** Check each backticked path before you
   commit a doc. If a doc is stale, fix it, or cut it down to a stub that
   says only what is still true.

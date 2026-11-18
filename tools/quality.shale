@@ -20,7 +20,7 @@
 -- says which it left. It runs no typed stage.
 --
 -- The full tier runs every parse recipe over every project, roc-types on
--- every app (TYPED_EXCEPTIONS names the two trees it leaves out), and
+-- every app (TYPED_EXCEPTIONS names the tree it leaves out), and
 -- `rewrite_method_calls trials=0` on every file the types reach, which
 -- counts the old-style calls the types prove could be method calls
 -- (`rewritable`), with no trial compile: a proven call the compiler would
@@ -37,12 +37,10 @@
 -- of CPU, and the run about 3 minutes. The parse recipes read a copy of the tracked files
 -- (`tracked_tree`), so a build's ignored output never enters a count. It
 -- needs the cookbook's rewrite recipe to take `trials=0` and `types_from=`;
--- an older one can't run, and says so. A project is a top-level folder,
--- except that each folder under findings/ is a project of its own, since
--- each holds one unrelated program. Each recipe reads a whole project at
--- once, so a check across files sees the project's own files and no other
--- app's. The findings are counted per app: a folder under canvas_apps/ or
--- findings/, else the top-level folder. Each finding line goes to
+-- an older one can't run, and says so. A project is a top-level folder.
+-- Each recipe reads a whole project at once, so a check across files sees
+-- the project's own files and no other app's. The findings are counted per
+-- app: a folder under canvas_apps/, else the top-level folder. Each finding line goes to
 -- FINDINGS_LOG, and the counts are compared with the baseline, each moved
 -- count printed. `baseline=write` writes the counts as the new baseline.
 --
@@ -134,19 +132,16 @@ const FINDING_RE = "^([^ :]+\\.roc):[0-9]+(?::[0-9]+)?: ([a-z_]+(?: [a-z_]+)?): 
 
 -- ── Where a file belongs ────────────────────────────────────────────────
 
--- The project a tracked path is read with: its top-level folder, or a
--- findings/ folder of its own.
+-- The project a tracked path is read with: its top-level folder.
 function project_of(path)
-  local parts = split(path, "/")
-  if #parts > 2 and parts[1] == "findings" then return parts[1] .. "/" .. parts[2] end
-  return parts[1]
+  return split(path, "/")[1]
 end
 
--- The app a finding is counted under: a folder of canvas_apps/ or of
--- findings/, else the top-level folder.
+-- The app a finding is counted under: a folder of canvas_apps/, else the
+-- top-level folder.
 function app_of(path)
   local parts = split(path, "/")
-  if #parts > 2 and (parts[1] == "canvas_apps" or parts[1] == "findings") then return parts[1] .. "/" .. parts[2] end
+  if #parts > 2 and parts[1] == "canvas_apps" then return parts[1] .. "/" .. parts[2] end
   return parts[1]
 end
 
@@ -712,10 +707,9 @@ const COUNT_JOB_CPU_MS = 20000
 const TYPES_KEEP = 400000000
 
 -- The apps that roc-types and the method rewrite leave out, each for its
--- reason. check.shale leaves the same two out of `roc check`.
+-- reason. check.shale leaves them out of `roc check` too.
 const TYPED_EXCEPTIONS = {
   {prefix = "canvas_apps/safari/tutorial/fails/", why = "programs that fail to type on purpose: the tutorial's builder checks that they do"},
-  {prefix = "findings/roc-check-hang/", why = "programs that hang Roc's checker on purpose: the finding is the hang"},
 }
 
 function typed_excepted(path)

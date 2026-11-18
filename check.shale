@@ -29,7 +29,6 @@ const WANT = "roc-pin: the repository's pinned nightly"
 
 const EXCEPTIONS = {
   {prefix = "canvas_apps/safari/tutorial/fails/", why = "programs that fail on purpose: the tutorial's builder checks that they do"},
-  {prefix = "findings/roc-check-hang/", why = "programs that hang `roc check` on purpose: the finding is the hang"},
   {prefix = "site/", why = "the published site's copies, built from the trees checked here"},
 }
 

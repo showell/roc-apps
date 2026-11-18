@@ -4,7 +4,8 @@
 of Steve's ranking (SquareValues.roc), a base bonus of 2500 a step, and the A,
 joker and J hoarded at 1500, 1000, 500 and 0 by pieces home, opponents
 ignored, with a whole-turn search (Search.roc). The experiments below are in
-the order they ran; the tools are the README's.
+the order they ran; the tools are the README's. The `exp_*.roc` apps named
+below are in git history (`git log -- 'fasttrack/exp_*.roc'`).
 
 **The 2500 base bonus was adopted on Steve's call** on pooled evidence (+1
 point a game, 1.9 standard errors over 4000 deals), though on fresh seeds
@@ -525,6 +526,6 @@ deep.
 ## Before these races
 
 Every race and arena number before `4a9f3b7` came from a build whose
-distance tables were all "far" (`findings/llvm-closure-loop-alias/`), and is
+distance tables were all "far" (the LLVM loop bug in the README), and is
 void. The danger race run on it (64.5% for danger 10) measured a different
 computer.

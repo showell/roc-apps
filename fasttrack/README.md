@@ -44,35 +44,24 @@ one of Setup.roc's scenarios.
 
 ## Tuning it
 
-An experiment is a small app (`exp_*.roc`) on `cli/`, a native platform whose
-host `cli/build.sh` builds against a roc source checkout at
+An experiment is a small app (`fasttrack/<name>.roc`) on `cli/`, a native
+platform whose host `cli/build.sh` builds against a roc source checkout at
 `~/showell_repos/roc` (`ROC_CHECKOUT`); `fasttrack/run_exp.sh <name>` builds
 the app with LLVM and runs it detached, its log at
 `~/build/roc-apps/gen/fasttrack/<name>/log.md`: a line per seed, the report,
-and `[exit 0]` last (earlier logs are kept).
+and `[exit 0]` last (earlier logs are kept). The apps that ran `TUNING.md`'s
+experiments are in git history (`git log -- 'fasttrack/exp_*.roc'`), to
+bring back when one is wanted again.
 
-- **Is B better than the champion?** Put B in `variants` in
-  `exp_duplicate.roc`, e.g. `{ ..Strategy.champion, base_bonus: 3000 }`, and
-  run it. Every seed is dealt four times with the decks turned a seat, and
-  each strategy plays red on the same deals (`Arena.compare`). Read "paired,
-  in standard errors": 500 seeds (2000 deals) take about five minutes a
-  variant and resolve about 1.5 points of win rate. Confirm a winner on fresh
-  seeds (`first_seed`) before it goes into `Strategy.champion`. (Build
-  lists of strategies with `List.map`, as the app does: a literal list of
-  Strategy records has crashed `roc check`.)
-- **Is one decision right?** `exp_rollout.roc` plays a seed to red's turn and
-  plays each of the champion's best lines out 1000 times from there, the
-  undrawn cards shuffled afresh -- the sharpest tool there is, since whole
-  games drown a decision in luck.
-- **What do winners do?** `exp_cards.roc` (the cards each player drew and
-  played) and `exp_table.roc` (turns, idle turns, captures, fast-track use)
-  over `Arena.tally_game` and `Tables.roc`.
-- **Why is a search slow?** `exp_search_size.roc`.
-- **Did a change keep every decision?** Run `exp_cards` before and after and
-  compare the two logs without their times,
-  `diff <(cut -c11- old.md) <(cut -c11- new.md)`: the games must match (only a
-  fast-track landing count may differ, when the same position is reached by
-  another path).
+- **Is B better than the champion?** `Arena.compare` deals every seed four
+  times with the decks turned a seat, and each strategy plays red on the same
+  deals; `Arena.compare_report` reads them "paired, in standard errors". 500
+  seeds (2000 deals) take about five minutes a variant and resolve about 1.5
+  points of win rate. Confirm a winner on fresh seeds before it goes into
+  `Strategy.champion`. (Build lists of strategies with `List.map`: a literal
+  list of Strategy records has crashed `roc check`.)
+- **What do winners do?** `Arena.tally_game` counts each player's game, and
+  `Tables` turns the counts into what the winner does that the losers don't.
 
 What the experiments have taught, in short: the deal decides a lot (winners
 draw more move-again cards), so strategies differ by a point or two of win
@@ -88,7 +77,7 @@ thousand deals, and anything not seen again on fresh seeds.
 | `Assoc` `ElmRandom` | assoc-list's ordered dict and set; elm/random, to the bit, so a seed deals Elm's cards |
 | `Page` `Motion` `Codes` `FastTrack` | the page as data, what each click moved (for the marbles), a click as a number, and the program the platform runs |
 | `Strategy` `Search` `SquareValues` `Rank` `Reach` | the computer player and its square values |
-| `Arena` `Tables` `exp_*.roc` `run_exp.sh` `cli/` | experiments |
+| `Arena` `Tables` `run_exp.sh` `cli/` | the experiment harness; the experiment apps are in git history |
 | `RulesTests` `TeamTests` `SearchTests`, expects in the modules | Elm's tests, the partnership rules, and the rest |
 
 **The page has no virtual DOM and needs none** (`web/platform/Wire.roc`):
@@ -124,7 +113,7 @@ Built on `nightly-2026-09-07-14d9829`, now on the nightly in
 
 | what | now | workaround |
 |---|---|---|
-| LLVM ends a `while $next != $d` loop after one pass when the pass is a local closure | **still wrong on 09-23** (`findings/llvm-closure-loop-alias/`) | the pass reports whether it changed anything (`Reach.fewest_over`) |
+| LLVM ends a `while $next != $d` loop after one pass when the pass is a local closure | **still wrong on 09-23** | the pass reports whether it changed anything (`Reach.fewest_over`) |
 | the dev backend dropped a variable from an interpolated string in a closure | not reproduced small | `Str.concat` (`Game.winner`) |
 | an or-pattern binding a variable in a lambda: `roc check` ran out of memory | not reproduced small | one arm each |
 | a literal list of Strategy records crashed `roc check` | not reproduced small | `List.map` |
