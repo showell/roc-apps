@@ -62,8 +62,7 @@ SunPath :: [].{
 	height_when_set = FarHeight.zero.lowered_by(radius)
 
 	## The first step at which the sun has fully set, its whole disc below the
-	## horizon. The sky's turning places it; `sunset_climax` in
-	## gates/expects/RideExpects.roc holds where the sunset falls in the ride.
+	## horizon.
 	fully_set_at : Clock
 	fully_set_at = {
 		var $clock = Clock.start

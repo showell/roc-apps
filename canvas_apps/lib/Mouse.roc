@@ -22,9 +22,7 @@ Mouse :: [].{
 		}
 
 	## `wheel` is a field rather than a method, so a game reads it exactly as it
-	## does on roc-ray: `input.mouse.wheel`, positive away from the hand. It is
-	## not called `wheel_delta`, because roc-ray's `wheel_delta` means both
-	## axes, as a Vec2.
+	## does on roc-ray: `input.mouse.wheel`, positive away from the hand.
 	Snapshot := {
 		held : U32,
 		struck : U32,

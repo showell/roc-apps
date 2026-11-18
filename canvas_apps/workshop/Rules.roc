@@ -145,7 +145,7 @@ Rules :: [].{
 		}
 
 	## One step of the editor: the canvas it produced, and which tones it set
-	## off. Upstream's `update_editor`, with the two upload edits gone.
+	## off.
 	step : Rules.World, Input.Snapshot -> { world : Rules.World, sounds : U32 }
 	step = |world, input| {
 		at = input.mouse.position()
