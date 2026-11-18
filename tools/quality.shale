@@ -23,8 +23,8 @@
 -- every app (TYPED_EXCEPTIONS names the tree it leaves out), and
 -- `rewrite_method_calls trials=0` over each app's own files that its roots
 -- reach, which counts the old-style calls the types prove could be method
--- calls (`rewritable`) and the method calls whose receiver and first
--- argument are peers (`peer_receiver`), with no trial compile: a proven call the compiler
+-- calls (`rewritable`) and the method calls of a symmetric function on
+-- peers (`peer_receiver`, `a.max(b)`), with no trial compile: a proven call the compiler
 -- would refuse is counted, and the recipe's header says which those are. A
 -- file no root of its app reaches is `unreached`. A shared folder (an app
 -- with no root of its own: canvas_apps/lib, web, native, widget_kit) takes
@@ -499,7 +499,7 @@ function tools_identity(roc)
   for rc in PARSE_RECIPES do recipe_closure("cookbook:roc/" .. rc.recipe .. ".shale", seen, libs) end
   recipe_closure("cookbook:roc/rewrite_method_calls.shale", seen, libs)
   recipe_closure("cookbook:roc/types.shale", seen, libs)
-  recipe_closure("cookbook:roc/builtin_signatures/" .. trim(read("roc-version")) .. ".txt", seen, libs)
+  recipe_closure("cookbook:roc/symmetric_functions.txt", seen, libs)
   for p in libs do push(named, {p, real(p)}) end
   local paths = {}
   for n in named do push(paths, n[2]) end
