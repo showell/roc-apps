@@ -1,7 +1,5 @@
-published 2026-11-07T21:57:25Z
+published 2026-11-18T17:46:29Z
 roc nightly-2026-11-03-34bd006
 opt speed
-roc-apps e864c152
-rocemit ad9a0e7
-cobblestone  
-sha256 92d58036ca06e92d  82205 bytes  camera.wasm
+roc-apps d1f3c11d
+sha256 db2357763e626f68  76641 bytes  camera.wasm
