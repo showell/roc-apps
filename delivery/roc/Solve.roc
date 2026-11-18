@@ -176,8 +176,38 @@ Solve :: [].{
 		trace : Trace,
 	}
 
+	## The page's plan from the dispatch plan: each route's display minutes
+	## (its time the itinerary's expected return), the totals in route order,
+	## and the spread over the trucks deployed.
 	page_plan : { dispatch_plan : DispatchPlan, trace : Trace } -> PagePlan
-	page_plan = |{ dispatch_plan, trace }| page_plan_of(dispatch_plan, trace)
+	page_plan = |{ dispatch_plan, trace }| {
+		slot_routes = dispatch_plan.itineraries.map(Itinerary.route_stops)
+		minutes = slot_routes.map(Pain.minutes_of)
+		route_times = dispatch_plan.itineraries.map(|i| i.expected_return)
+		travel = minutes.fold(0, |n, m| n + m.travel)
+		local = minutes.fold(0, |n, m| n + m.local)
+		service = minutes.fold(0, |n, m| n + m.service)
+		deployed = route_times.map_with_index(
+			|time, i| { time, i },
+		).keep_if(|e| !(slot_routes.get(e.i) ?? crash "Solve.page_plan: in range").is_empty()).map(|e| e.time)
+		spread =
+			match (deployed.max(), deployed.min()) {
+				(Ok(most), Ok(least)) => most - least
+				_ => 0
+			}
+		{
+			slot_routes,
+			unrouted: dispatch_plan.unrouted,
+			minutes,
+			route_times,
+			travel,
+			local,
+			service,
+			time: travel.to_f64() + local + service.to_f64(),
+			spread,
+			trace,
+		}
+	}
 }
 
 attempt_pain : Solve.Attempt -> I64
@@ -247,39 +277,6 @@ reference_label = |chunking, { either_way, chosen }| {
 	"${kind}/whole/${Str.join_with(marks, "")}"
 }
 
-## The page's plan from the dispatch plan: each route's display minutes
-## (its time the itinerary's expected return), the totals in route order,
-## and the spread over the trucks deployed.
-page_plan_of : Solve.DispatchPlan, Solve.Trace -> Solve.PagePlan
-page_plan_of = |dispatch_plan, trace| {
-	slot_routes = dispatch_plan.itineraries.map(Itinerary.route_stops)
-	minutes = slot_routes.map(Pain.minutes_of)
-	route_times = dispatch_plan.itineraries.map(|i| i.expected_return)
-	travel = minutes.fold(0, |n, m| n + m.travel)
-	local = minutes.fold(0, |n, m| n + m.local)
-	service = minutes.fold(0, |n, m| n + m.service)
-	deployed = route_times.map_with_index(
-		|time, i| { time, i },
-	).keep_if(|e| !(slot_routes.get(e.i) ?? crash "Solve.page_plan_of: in range").is_empty()).map(|e| e.time)
-	spread =
-		match (deployed.max(), deployed.min()) {
-			(Ok(most), Ok(least)) => most - least
-			_ => 0
-		}
-	{
-		slot_routes,
-		unrouted: dispatch_plan.unrouted,
-		minutes,
-		route_times,
-		travel,
-		local,
-		service,
-		time: travel.to_f64() + local + service.to_f64(),
-		spread,
-		trace,
-	}
-}
-
 ## Work in progress before the trucks are assigned: the routes, and the
 ## moves recorded so far.
 Unassigned : { routes : List(List(Stop)), moves : List(Replay.Move) }
@@ -301,6 +298,8 @@ set_aside_overflow = |all_routes, overflow_neighborhoods| {
 	{ overflow_routes: all_routes.keep_if(is_overflow), routes: all_routes.drop_if(is_overflow) }
 }
 
+## Clarke and Wright's savings over the clusters, the trace's moves
+## starting from none.
 merge_by_savings : List(List(Stop)) -> Unassigned
 merge_by_savings = |routes| Build.merge_routes({ routes, moves: [] }, Saving)
 

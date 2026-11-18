@@ -152,7 +152,8 @@ Build :: [].{
 					n = $remaining.count()
 					var $whole = NoTruck
 					for k in 0..<$kept_routes.len() {
-						ks = kept_route_stops($kept_routes, k)
+						kept = $kept_routes.get(k) ?? crash "Build.force_placed: a kept route"
+						ks = kept.route_stops
 						if room_of(ks) >= n.to_i64_wrap() {
 							c = appending_pain(ks, { nbhd: stop.nbhd, houses: $remaining })
 							is_better =
@@ -403,12 +404,6 @@ appending_pain = |
 
 ## A kept route of force placement, and its place in the routes it came from.
 Kept : { route_stops : List(Stop), at : U64 }
-
-kept_route_stops : List(Kept), U64 -> List(Stop)
-kept_route_stops = |
-	kept_routes,
-	k,
-| (kept_routes.get(k) ?? crash "Build.kept_route_stops: a kept route").route_stops
 
 kept_routes_with_stop : List(Kept), { k : U64, stop : Stop } -> List(Kept)
 kept_routes_with_stop = |kept_routes, { k, stop }| {

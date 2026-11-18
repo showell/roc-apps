@@ -83,14 +83,16 @@ RoadGraph :: [].{
 	path = |a, b| paths.get(pair_index(a, b)) ?? crash "RoadGraph.path: no such node"
 
 	## How many nodes the shortest drive from `a` to `b` passes, both ends
-	## included, and the `k`th of them: `path` without a list to carry, for
-	## the pain's hot loop.
+	## included: with `path_node`, `path` without a list to carry, for the
+	## pain's hot loop.
 	path_length : U8, U8 -> U64
 	path_length = |
 		a,
 		b,
 	| (path_lengths.get(pair_index(a, b)) ?? crash "RoadGraph.path_length: no such node").to_u64()
 
+	## The `k`th node of the shortest drive from `a` to `to`, read from the
+	## packed store, a pair's path at its index shifted by 5.
 	path_node : U8, { to : U8, k : U64 } -> U8
 	path_node = |
 		a,
