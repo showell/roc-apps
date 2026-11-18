@@ -76,7 +76,7 @@ the race; each neighborhood's `overflow` in `roc/Seattle.roc` says).
 
 | where | what |
 |---|---|
-| `roc/` | the solver: `Seattle.roc` (the map, the fleet, the ring geometry), `RoadGraph.roc`, `Orders.roc`, `Houses.roc` and `Stop.roc` (a stop's houses, packed into one U64), `Route.roc`, `Pain.roc`, `Build.roc` (construction), `Improve.roc` (local search before the trucks are assigned), `SlotSearch.roc` (after), `Solve.roc` (the front door, `routes_for`: the race over the strategy's variants of `attempt`, the algorithm), `Itinerary.roc` (a truck's stops with their expected arrival, totes aboard and pain so far), `Replay.roc`, `PlanJson.roc`, `Gold.roc`, and `delivery.roc`, the app, on `roc/platform/` |
+| `roc/` | the solver: `Seattle.roc` (the map, the fleet, the ring geometry), `RoadGraph.roc`, `Orders.roc`, `Houses.roc` and `Stop.roc` (a stop's houses, packed into one U64), `Route.roc`, `Pain.roc`, `Build.roc` (construction), `Improve.roc` (local search before the trucks are assigned), `SlotSearch.roc` (after), `Solve.roc` (the front door, `routes_traced`: the race over the strategy's variants of `attempt`, the algorithm), `Itinerary.roc` (a truck's stops with their expected arrival, totes aboard and pain so far), `Replay.roc`, `PlanJson.roc`, `Gold.roc`, and `delivery.roc`, the app, on `roc/platform/` |
 | `src/` | the Zig host and its judges (above) |
 | `*.ts`, `web/index.html` | the display, and `solver.ts`, the readable reference the gold is minted from (`goldgen.ts`; it is not in the page's bundle) |
 | `solver_gold.json`, `solver_frames_gold.json` | the gold corpus: 20 shifts, every route, pain, race variant, the road graph, and every replay frame |

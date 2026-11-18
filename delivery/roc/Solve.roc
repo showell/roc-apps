@@ -1,10 +1,10 @@
-## The solver's front door. `routes_for` gives a day's dispatch plan: it
-## races `attempt`, the algorithm in one screen (Clarke-Wright savings over
-## the day's neighborhoods, then local search), over the strategy's
-## variants, and keeps the attempt of least pain, the first of equals.
-## `routes_traced` gives the same plan with the trace of how it was found,
-## which the page replays. The stages are Build's, Improve's and
-## SlotSearch's, each threading the trace's moves along.
+## The solver's front door. `routes_traced` gives a day's dispatch plan and
+## the trace of how it was found, which the page replays: it races
+## `attempt`, the algorithm in one screen (Clarke-Wright savings over the
+## day's neighborhoods, then local search), over the strategy's variants,
+## and keeps the attempt of least pain, the first of equals. The stages are
+## Build's, Improve's and SlotSearch's, each threading the trace's moves
+## along.
 
 import Build
 import Houses
@@ -47,10 +47,6 @@ Solve :: [].{
 		chunking : Build.Chunking,
 		overflow_neighborhoods : List(U8),
 	}
-
-	## The day's dispatch plan.
-	routes_for : Day -> DispatchPlan
-	routes_for = |day| routes_traced(day).dispatch_plan
 
 	## The day's dispatch plan, and the trace of how it was found.
 	routes_traced : Day -> { dispatch_plan : DispatchPlan, trace : Trace }
