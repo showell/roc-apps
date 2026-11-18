@@ -107,7 +107,7 @@ sitting_on = |tree| { pose: Perched, location: tree_top(tree) }
 flight_poses : List(BirdFlight.BirdPose)
 flight_poses = [
 	flap_poses({ up: Side(WingsUp), down: Side(WingsDown) }),
-	List.repeat(flap_poses({ up: Away(WingsUp), down: Away(WingsDown) }), 7).join(),
+	flap_poses({ up: Away(WingsUp), down: Away(WingsDown) }).repeat(7).join(),
 	List.repeat(Diving, 2 * frames_a_half_flap),
 ].join()
 

@@ -90,7 +90,7 @@ FrameView := {
 	## skyline, the ground, then each thing beside the road, far to near.
 	ride_shape_lists : FrameView -> List(List(Shapes.Shape))
 	ride_shape_lists = |view|
-		[view.mountain_shapes, view.ground_patch_shapes].concat(Scene.scene_shape_lists(view.scene))
+		[view.mountain_shapes, view.ground_patch_shapes].concat(view.scene.scene_shape_lists())
 
 	## The camera the frame at `instant` is seen through. It is public for
 	## FramePartsBench, which times the camera alone.
@@ -167,7 +167,7 @@ FrameView := {
 	ground_shapes = |road, { camera, darkness }| {
 		lens_and_light = { focal_length: camera.focal_length, darkness }
 		GroundSighting.patches_in_view(road, camera.vantage).keep_oks(
-			|patch| GroundPatch.patch_shape(patch, lens_and_light),
+			|patch| patch.patch_shape(lens_and_light),
 		)
 	}
 }
