@@ -73,13 +73,21 @@ Player :: [].{
 					Anytime => Partner(partner)
 					OnceHome => PartnerOnceHome(partner)
 				}
-				config_player(init_setup, color, team, ElmRandom.initial_seed(millis + 1000003 * (i + rotation).rem_by(n)))
+				config_player(
+					init_setup,
+					color,
+					team,
+					ElmRandom.initial_seed(millis + 1000003 * (i + rotation).rem_by(n)),
+				)
 			},
 		)
 	}
 
 	get_player : List(Type.Player), U64 -> Type.Player
-	get_player = |players, idx| players.get(idx) ?? crash ("Player.get_player: no player at that index")
+	get_player = |
+		players,
+		idx,
+	| players.get(idx) ?? crash ("Player.get_player: no player at that index")
 
 	## The colors whose pieces this player may move: its own, and its
 	## partner's when its team's rules allow.
@@ -88,7 +96,10 @@ Player :: [].{
 		match player.team {
 			Solo => [player.color]
 			Partner(partner) => [player.color, partner]
-			PartnerOnceHome(partner) => if Piece.all_home(board, Board.color_index(zone_colors, player.color)) {
+			PartnerOnceHome(partner) => if Piece.all_home(
+				board,
+				Board.color_index(zone_colors, player.color),
+			) {
 				[player.color, partner]
 			} else {
 				[player.color]
@@ -100,7 +111,12 @@ Player :: [].{
 
 	get_moves_for_player : Type.Player, Type.Board, List(Str) -> List(Type.Move)
 	get_moves_for_player = |player, board, zone_colors|
-		LegalMove.get_moves_for_cards(Assoc.set_from_list(player.hand), board, zone_colors, movers(player, zone_colors, board))
+		LegalMove.get_moves_for_cards(
+			Assoc.set_from_list(player.hand),
+			board,
+			zone_colors,
+			movers(player, zone_colors, board),
+		)
 
 	turn_need_card : Type.Board, List(Str), Type.Player -> Type.Player
 	turn_need_card = |board, zone_colors, player| {
@@ -112,7 +128,11 @@ Player :: [].{
 			}
 			{ ..player, turn }
 		} else {
-			{ ..player, turn: TurnNeedCard({ moves: moves }), get_out_credits: 0 }
+			{
+				..player,
+				turn: TurnNeedCard({ moves: moves }),
+				get_out_credits: 0,
+			}
 		}
 	}
 
@@ -140,7 +160,12 @@ Player :: [].{
 	finish_seven_split : Type.Board, List(Str), List(Str), I64, U64 -> Type.Turn
 	finish_seven_split = |board, zone_colors, move_colors, distance, end_loc| {
 		move_count = 7 - distance
-		moves = LegalMove.get_moves_for_move_type(FinishSplit(move_count, end_loc), board, zone_colors, move_colors)
+		moves = LegalMove.get_moves_for_move_type(
+			FinishSplit(move_count, end_loc),
+			board,
+			zone_colors,
+			move_colors,
+		)
 		TurnNeedStartLoc({
 			play_type: FinishSeven(move_count),
 			moves,
@@ -160,8 +185,22 @@ Player :: [].{
 	finish_move : Type.Board, List(Str), Type.Move, Type.Player -> Type.Player
 	finish_move = |board, zone_colors, move, player|
 		match move.kind {
-			StartSplit(distance) => { ..player, turn: finish_seven_split(board, zone_colors, movers(player, zone_colors, board), distance, move.end) }
-			_ => maybe_finish_turn(LegalMove.get_card_for_move_type(move.kind), board, zone_colors, player)
+			StartSplit(distance) => {
+				..player,
+				turn: finish_seven_split(
+					board,
+					zone_colors,
+					movers(player, zone_colors, board),
+					distance,
+					move.end,
+				),
+			}
+			_ => maybe_finish_turn(
+				LegalMove.get_card_for_move_type(move.kind),
+				board,
+				zone_colors,
+				player,
+			)
 		}
 
 	set_start_location : U64, Type.Player -> Type.Player
@@ -188,10 +227,16 @@ Player :: [].{
 		}
 
 	update_active_player : (Type.Player -> Type.Player), Type.Game -> Type.Game
-	update_active_player = |f, game| { ..game, players: update_player(game.players, game.active_player_idx, f) }
+	update_active_player = |f, game| {
+		..game,
+		players: update_player(game.players, game.active_player_idx, f),
+	}
 
 	update_player : List(Type.Player), U64, (Type.Player -> Type.Player) -> List(Type.Player)
-	update_player = |players, idx, f| players.set(idx, f(get_player(players, idx))) ?? crash ("update_player: no player at that index")
+	update_player = |players, idx, f| players.set(
+		idx,
+		f(get_player(players, idx)),
+	) ?? crash ("update_player: no player at that index")
 
 	set_turn : U64, Type.Turn, List(Type.Player) -> List(Type.Player)
 	set_turn = |idx, turn, players| update_player(players, idx, |player| { ..player, turn })
@@ -207,7 +252,12 @@ Player :: [].{
 				} else {
 					TurnDone
 				}
-				{ ..player, hand: player.hand.drop_at(idx), turn, get_out_credits: player.get_out_credits + 1 }
+				{
+					..player,
+					hand: player.hand.drop_at(idx),
+					turn,
+					get_out_credits: player.get_out_credits + 1,
+				}
 			}
 			_ => player
 		}
@@ -285,7 +335,12 @@ Player :: [].{
 			{ deck: player.deck, seed: player.seed }
 		}
 		match fresh.deck {
-			[card, .. as rest] => { ..player, deck: rest, seed: fresh.seed, hand: player.hand.append(card) }
+			[card, .. as rest] => {
+				..player,
+				deck: rest,
+				seed: fresh.seed,
+				hand: player.hand.append(card),
+			}
 			[] => player
 		}
 	}

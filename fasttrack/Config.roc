@@ -34,32 +34,120 @@ Config :: [].{
 	config_locations : List(Type.Location)
 	config_locations = [
 		# holding pen
-		{ x: -4.2, y: 1.7, id: "HP1" },
-		{ x: -3.2, y: 1.7, id: "HP2" },
-		{ x: -4.2, y: 0.7, id: "HP3" },
-		{ x: -3.2, y: 0.7, id: "HP4" },
+		{
+			x: -4.2,
+			y: 1.7,
+			id: "HP1",
+		},
+		{
+			x: -3.2,
+			y: 1.7,
+			id: "HP2",
+		},
+		{
+			x: -4.2,
+			y: 0.7,
+			id: "HP3",
+		},
+		{
+			x: -3.2,
+			y: 0.7,
+			id: "HP4",
+		},
 		# base
-		{ x: 0.0, y: 1.0, id: "B1" },
-		{ x: 0.0, y: 2.0, id: "B2" },
-		{ x: 0.0, y: 3.0, id: "B3" },
-		{ x: 0.0, y: 4.0, id: "B4" },
+		{
+			x: 0.0,
+			y: 1.0,
+			id: "B1",
+		},
+		{
+			x: 0.0,
+			y: 2.0,
+			id: "B2",
+		},
+		{
+			x: 0.0,
+			y: 3.0,
+			id: "B3",
+		},
+		{
+			x: 0.0,
+			y: 4.0,
+			id: "B4",
+		},
 		# bottom
-		{ x: -1.0, y: 0.0, id: "HH" },
-		{ x: 0.0, y: 0.0, id: "DS" },
-		{ x: 1.0, y: 0.0, id: "BR" },
+		{
+			x: -1.0,
+			y: 0.0,
+			id: "HH",
+		},
+		{
+			x: 0.0,
+			y: 0.0,
+			id: "DS",
+		},
+		{
+			x: 1.0,
+			y: 0.0,
+			id: "BR",
+		},
 		# left
-		{ x: -2.0, y: 0.0, id: "L0" },
-		{ x: -2.0, y: 1.0, id: "L1" },
-		{ x: -2.0, y: 2.0, id: "L2" },
-		{ x: -2.0, y: 3.0, id: "L3" },
-		{ x: -2.0, y: 4.0, id: "L4" },
-		{ x: -2.0, y: 5.0, id: "FT" },
+		{
+			x: -2.0,
+			y: 0.0,
+			id: "L0",
+		},
+		{
+			x: -2.0,
+			y: 1.0,
+			id: "L1",
+		},
+		{
+			x: -2.0,
+			y: 2.0,
+			id: "L2",
+		},
+		{
+			x: -2.0,
+			y: 3.0,
+			id: "L3",
+		},
+		{
+			x: -2.0,
+			y: 4.0,
+			id: "L4",
+		},
+		{
+			x: -2.0,
+			y: 5.0,
+			id: "FT",
+		},
 		# right
-		{ x: 2.0, y: 0.0, id: "R0" },
-		{ x: 2.0, y: 1.0, id: "R1" },
-		{ x: 2.0, y: 2.0, id: "R2" },
-		{ x: 2.0, y: 3.0, id: "R3" },
-		{ x: 2.0, y: 4.0, id: "R4" },
+		{
+			x: 2.0,
+			y: 0.0,
+			id: "R0",
+		},
+		{
+			x: 2.0,
+			y: 1.0,
+			id: "R1",
+		},
+		{
+			x: 2.0,
+			y: 2.0,
+			id: "R2",
+		},
+		{
+			x: 2.0,
+			y: 3.0,
+			id: "R3",
+		},
+		{
+			x: 2.0,
+			y: 4.0,
+			id: "R4",
+		},
 	]
 
 	## For sorting the cheat sheet, and nothing else.
@@ -131,9 +219,41 @@ Config :: [].{
 	## Suits do not matter in Fast Track. Each player's copy is shuffled once
 	## before the game and drawn from the top (Player.shuffle).
 	full_deck : List(Str)
-	full_deck = ["2", "3", "4", "5", "6", "7", "8", "9", "10", "J", "Q", "K", "A"].repeat(4).join().concat(["joker", "joker"])
+	full_deck = [
+		"2",
+		"3",
+		"4",
+		"5",
+		"6",
+		"7",
+		"8",
+		"9",
+		"10",
+		"J",
+		"Q",
+		"K",
+		"A",
+	].repeat(4).join().concat(["joker", "joker"])
 }
 
 expect Config.full_deck.len() == 54
-expect Config.full_deck.take_first(14) == ["2", "3", "4", "5", "6", "7", "8", "9", "10", "J", "Q", "K", "A", "2"]
-expect Config.move_count_for_card("6", Bool.True) == 1 and Config.move_count_for_card("6", Bool.False) == 6
+expect Config.full_deck.take_first(14) == [
+	"2",
+	"3",
+	"4",
+	"5",
+	"6",
+	"7",
+	"8",
+	"9",
+	"10",
+	"J",
+	"Q",
+	"K",
+	"A",
+	"2",
+]
+expect Config.move_count_for_card("6", Bool.True) == 1 and Config.move_count_for_card(
+	"6",
+	Bool.False,
+) == 6

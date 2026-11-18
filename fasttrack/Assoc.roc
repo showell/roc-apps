@@ -18,7 +18,12 @@ Assoc :: [].{
 			Err(_) => Err(NotFound)
 		}
 
-	dict_insert : Assoc.AssocDict(k, v), k, v -> Assoc.AssocDict(k, v) where [k.is_eq : k, k -> Bool]
+	dict_insert : Assoc.AssocDict(
+		k,
+		v,
+	),
+	k,
+	v -> Assoc.AssocDict(k, v) where [k.is_eq : k, k -> Bool]
 	dict_insert = |dict, key, value| List.prepend(dict_remove(dict, key), { key, value })
 
 	dict_remove : Assoc.AssocDict(k, v), k -> Assoc.AssocDict(k, v) where [k.is_eq : k, k -> Bool]
@@ -38,6 +43,12 @@ Assoc :: [].{
 }
 
 expect Assoc.set_from_list([1, 2, 3, 2]) == [2, 3, 1]
-expect Assoc.dict_keys(Assoc.dict_insert(Assoc.dict_insert(Assoc.dict_insert([], "a", 1), "b", 2), "a", 3)) == ["a", "b"]
+expect Assoc.dict_keys(
+	Assoc.dict_insert(
+		Assoc.dict_insert(Assoc.dict_insert([], "a", 1), "b", 2),
+		"a",
+		3,
+	),
+) == ["a", "b"]
 expect Assoc.dict_get(Assoc.dict_insert([], "a", 1), "a") == Ok(1)
 expect Assoc.dict_get(Assoc.dict_insert([], "a", 1), "b") == Err(NotFound)

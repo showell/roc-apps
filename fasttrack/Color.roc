@@ -2,7 +2,14 @@
 # Color.elm.
 Color :: [].{
 	get_zone_colors : U64 -> List(Str)
-	get_zone_colors = |num_players| ["red", "blue", "green", "purple", "aqua", "brown"].take_first(num_players)
+	get_zone_colors = |num_players| [
+		"red",
+		"blue",
+		"green",
+		"purple",
+		"aqua",
+		"brown",
+	].take_first(num_players)
 
 	rotate_list : U64, List(a) -> List(a)
 	rotate_list = |idx, lst| lst.drop_first(idx).concat(lst.take_first(idx))
@@ -30,4 +37,7 @@ Color :: [].{
 expect Color.prev_zone_color("green", ["red", "blue", "green"]) == "blue"
 expect Color.next_zone_color("green", ["red", "blue", "green"]) == "red"
 expect Color.prev_zone_color("red", ["red", "blue", "green"]) == "green"
-expect Color.rotate_list(1, ["red", "blue", "green", "purple"]) == ["blue", "green", "purple", "red"]
+expect Color.rotate_list(
+	1,
+	["red", "blue", "green", "purple"],
+) == ["blue", "green", "purple", "red"]

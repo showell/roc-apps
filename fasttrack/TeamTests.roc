@@ -18,7 +18,11 @@ TeamTests :: [].{
 	game_with = |teams, pieces, hand| {
 		start = Game.begin_game(0, Normal, teams)
 		board = Piece.board_of(start.zone_colors, pieces)
-		players = Player.update_player(start.players, 0, |p| { ..p, hand, turn: TurnBegin })
+		players = Player.update_player(
+			start.players,
+			0,
+			|p| { ..p, hand, turn: TurnBegin },
+		)
 		Player.set_turn_to_need_card({ ..start, board, players })
 	}
 
@@ -57,32 +61,54 @@ expect {
 
 # Red's 2 moves either red's piece or green's.
 expect {
-	g = TeamTests.game_with(Anytime, [("red", "L0", "red"), ("green", "L0", "green")], ["2"])
+	g = TeamTests.game_with(
+		Anytime,
+		[("red", "L0", "red"), ("green", "L0", "green")],
+		["2"],
+	)
 	TeamTests.starts(g).len() == 2 and TeamTests.starts(g).contains("green@L0")
 }
 
 # Green's piece on the fast track is the team's: red must move it.
 expect {
-	g = TeamTests.game_with(Anytime, [("red", "L0", "red"), ("blue", "FT", "green")], ["2"])
+	g = TeamTests.game_with(
+		Anytime,
+		[("red", "L0", "red"), ("blue", "FT", "green")],
+		["2"],
+	)
 	TeamTests.starts(g) == ["green@FT"]
 }
 
 # A seven splits between red's piece and green's.
 expect {
-	g = TeamTests.game_with(Anytime, [("red", "L0", "red"), ("green", "L0", "green")], ["7"])
+	g = TeamTests.game_with(
+		Anytime,
+		[("red", "L0", "red"), ("green", "L0", "green")],
+		["7"],
+	)
 	moves = LegalMove.get_moves_for_cards(["7"], g.board, g.zone_colors, ["red", "green"])
 	moves.any(|m| m.kind == StartSplit(3))
 }
 
 # A team wins only with both partners home.
 expect Game.winner(TeamTests.game_with(Anytime, TeamTests.home("red"), ["2"])) == Err(NoWinner)
-expect Game.winner(TeamTests.game_with(Anytime, TeamTests.home("red").concat(TeamTests.home("green")), ["2"])) == Ok("red and green")
+expect Game.winner(
+	TeamTests.game_with(
+		Anytime,
+		TeamTests.home("red").concat(TeamTests.home("green")),
+		["2"],
+	),
+) == Ok("red and green")
 expect Game.winner(TeamTests.game_with(Solo, TeamTests.home("red"), ["2"])) == Ok("red")
 
 # With a 3 that would land red's piece on green's, the team's computer does
 # something else.
 expect {
-	g = TeamTests.game_with(Anytime, [("red", "L0", "red"), ("red", "L3", "green")], ["3", "2"])
+	g = TeamTests.game_with(
+		Anytime,
+		[("red", "L0", "red"), ("red", "L3", "green")],
+		["3", "2"],
+	)
 	finished = match Search.best_line(Strategy.champion, g) {
 		Ok(best) => best.line.game
 		Err(_) => g
@@ -92,10 +118,36 @@ expect {
 
 # In a game for one too: a piece on the fast track moves before any other,
 # and nothing leaves the pen until it has.
-expect TeamTests.starts(TeamTests.game_with(Solo, [("red", "L0", "red"), ("blue", "FT", "red")], ["2"])) == ["red@FT"]
-expect TeamTests.starts(TeamTests.game_with(Solo, [("red", "HP1", "red"), ("blue", "FT", "red")], ["A"])) == ["red@FT"]
+expect TeamTests.starts(
+	TeamTests.game_with(
+		Solo,
+		[("red", "L0", "red"), ("blue", "FT", "red")],
+		["2"],
+	),
+) == ["red@FT"]
+expect TeamTests.starts(
+	TeamTests.game_with(
+		Solo,
+		[("red", "HP1", "red"), ("blue", "FT", "red")],
+		["A"],
+	),
+) == ["red@FT"]
 
 # A piece in the pen and an A, a joker or a 6 in hand: the card must be
 # played -- the turn wants a card, not a discard.
-expect ["A", "joker", "6"].all(|card| Player.get_active_player(TeamTests.game_with(Solo, [("red", "HP1", "red")], [card, "3"])).turn != TurnNeedDiscard)
-expect Player.get_active_player(TeamTests.game_with(Solo, [("red", "HP1", "red")], ["3", "5"])).turn == TurnNeedDiscard
+expect ["A", "joker", "6"].all(
+	|card| Player.get_active_player(
+		TeamTests.game_with(
+			Solo,
+			[("red", "HP1", "red")],
+			[card, "3"],
+		),
+	).turn != TurnNeedDiscard,
+)
+expect Player.get_active_player(
+	TeamTests.game_with(
+		Solo,
+		[("red", "HP1", "red")],
+		["3", "5"],
+	),
+).turn == TurnNeedDiscard

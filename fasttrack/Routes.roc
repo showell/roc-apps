@@ -16,12 +16,21 @@ import Board
 
 Routes :: [].{
 
+	## Whether a walk from a fast-track square may take the fast track.
+	FastTrackRule : [TakeFastTrack, PassFastTrack]
+
+	## Whether a walk may leave the pen.
+	PenRule : [LeavePen, StayInPen]
+
+	## Whether a walk may leave the bullseye.
+	BullseyeRule : [LeaveBullseye, StayInBullseye]
+
 	## The longest walk a card asks for: a 10.
 	longest : U64
 	longest = 10
 
 	## The squares after `r`, for a piece whose own zone is zone 0.
-	next : U64, [TakeFastTrack, PassFastTrack], [LeavePen, StayInPen], [LeaveBullseye, StayInBullseye] -> List(U64)
+	next : U64, Routes.FastTrackRule, Routes.PenRule, Routes.BullseyeRule -> List(U64)
 	next = |r, fast, pen, bullseye|
 		if r == Board.bullseye {
 			if bullseye == LeaveBullseye {
@@ -42,7 +51,11 @@ Routes :: [].{
 			} else if l == Board.ft {
 				if z == 0 {
 					if fast == TakeFastTrack {
-						[Board.at(nz, Board.ft), Board.at(nz, Board.r4), Board.bullseye]
+						[
+							Board.at(nz, Board.ft),
+							Board.at(nz, Board.r4),
+							Board.bullseye,
+						]
 					} else {
 						[Board.at(nz, Board.r4), Board.bullseye]
 					}
@@ -145,7 +158,11 @@ Routes :: [].{
 expect Routes.forward_walks(Board.at(0, 12), 8) == [[13, 14, 15, 16, 43, 42, 41, 40]]
 # From a piece's own FT, one step: the fast track, the next zone's R4, or the
 # bullseye.
-expect Routes.forward_walks(Board.at(0, Board.ft), 1) == [[Board.at(1, Board.ft)], [Board.at(1, Board.r4)], [Board.bullseye]]
+expect Routes.forward_walks(Board.at(0, Board.ft), 1) == [
+	[Board.at(1, Board.ft)],
+	[Board.at(1, Board.r4)],
+	[Board.bullseye],
+]
 # Home: DS into the base.
 expect Routes.forward_walks(Board.at(0, Board.ds), 4) == [[4, 5, 6, 7]]
 # Back 4 from L0: HH, DS, BR, R0.

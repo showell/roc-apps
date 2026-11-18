@@ -14,7 +14,11 @@ import Player
 import Type
 
 Motion :: [].{
-	Motion : { color : Str, path : List(U64), sent_home : Bool }
+	Motion : {
+		color : Str,
+		path : List(U64),
+		sent_home : Bool,
+	}
 
 	## The motions of `msg`, which took `before` to `after`.
 	of : Type.Game, Type.GameMsg, Type.Game -> List(Motion.Motion)
@@ -37,18 +41,52 @@ Motion :: [].{
 				match m.kind {
 					JackTrade =>
 						match hit {
-							Ok(other) => [{ color: name(c), path: [m.start, m.end], sent_home: Bool.False }, { color: name(other), path: [m.end, m.start], sent_home: Bool.False }]
-							Err(_) => [{ color: name(c), path: [m.start, m.end], sent_home: Bool.False }]
+							Ok(other) => [
+								{
+									color: name(c),
+									path: [m.start, m.end],
+									sent_home: Bool.False,
+								},
+								{
+									color: name(other),
+									path: [m.end, m.start],
+									sent_home: Bool.False,
+								},
+							]
+							Err(_) => [
+								{
+									color: name(c),
+									path: [m.start, m.end],
+									sent_home: Bool.False,
+								},
+							]
 						}
 					_ => {
 						(n, direction) = match m.kind {
-							WithCard(card) => (Config.move_count_for_card(card, Board.is_pen(m.start)), if (card == "4") Backward else Forward)
-							Reverse(card) => (Config.move_count_for_card(card, Board.is_pen(m.start)), Backward)
+							WithCard(card) => (
+								Config.move_count_for_card(card, Board.is_pen(m.start)),
+								if (card == "4") Backward else Forward,
+							)
+							Reverse(card) => (
+								Config.move_count_for_card(card, Board.is_pen(m.start)),
+								Backward,
+							)
 							StartSplit(k) => (k, Forward)
 							FinishSplit(k, _) => (k, Forward)
 							JackTrade => (1, Forward)
 						}
-						walked = { color: name(c), path: LegalMove.walk_between(board, c, m.start, m.end, n, direction), sent_home: Bool.False }
+						walked = {
+							color: name(c),
+							path: LegalMove.walk_between(
+								board,
+								c,
+								m.start,
+								m.end,
+								n,
+								direction,
+							),
+							sent_home: Bool.False,
+						}
 						[walked].concat(sent_home(board, m.end, name))
 					}
 				}
@@ -59,7 +97,13 @@ Motion :: [].{
 	sent_home : Type.Board, U64, (U64 -> Str) -> List(Motion.Motion)
 	sent_home = |board, s, name|
 		match Piece.at(board, s) {
-			Ok(victim) => [{ color: name(victim), path: [s, Piece.open_holding_pen_location(board, victim)], sent_home: Bool.True }]
+			Ok(victim) => [
+				{
+					color: name(victim),
+					path: [s, Piece.open_holding_pen_location(board, victim)],
+					sent_home: Bool.True,
+				},
+			]
 			Err(_) => []
 		}
 
@@ -72,7 +116,13 @@ Motion :: [].{
 			c = before.active_player_idx
 			l0 = Board.at(c, Board.l0)
 			match Piece.piece_to_move_out_of_pen(before.board, c) {
-				Ok(pen) => [{ color: name(c), path: [pen, l0], sent_home: Bool.False }].concat(sent_home(before.board, l0, name))
+				Ok(pen) => [
+					{
+						color: name(c),
+						path: [pen, l0],
+						sent_home: Bool.False,
+					},
+				].concat(sent_home(before.board, l0, name))
 				Err(_) => []
 			}
 		}
@@ -83,14 +133,26 @@ Motion :: [].{
 test_game : List((Str, Str, Str)), List(Str) -> Type.Game
 test_game = |pieces, hand| {
 	start = Game.begin_game(0, Normal, Solo)
-	players = Player.update_player(start.players, 0, |p| { ..p, hand, turn: TurnBegin })
-	ready = Player.set_turn_to_need_card({ ..start, board: Piece.board_of(start.zone_colors, pieces), players })
+	players = Player.update_player(
+		start.players,
+		0,
+		|p| { ..p, hand, turn: TurnBegin },
+	)
+	ready = Player.set_turn_to_need_card({
+		..start,
+		board: Piece.board_of(start.zone_colors, pieces),
+		players,
+	})
 	Game.update_game(ActivateCard(0), History.init({}), ready).1
 }
 
 ## What a click at `s` moves.
 motions_at : Type.Game, U64 -> List(Motion.Motion)
-motions_at = |g, s| Motion.of(g, SetStartLocation(s), Game.update_game(SetStartLocation(s), History.init({}), g).1)
+motions_at = |g, s| Motion.of(
+	g,
+	SetStartLocation(s),
+	Game.update_game(SetStartLocation(s), History.init({}), g).1,
+)
 
 # A 3 walks red's piece from L0 up to L3, square by square.
 expect {
@@ -107,14 +169,30 @@ expect {
 # A jack trades: each piece goes to the other's square.
 expect {
 	g = test_game([("red", "L0", "red"), ("red", "L3", "blue")], ["J"])
-	end_click = Game.update_game(SetStartLocation(Board.at(0, Board.l0)), History.init({}), g).1
-	Motion.of(end_click, SetEndLocation(Board.at(0, 14)), Game.update_game(SetEndLocation(Board.at(0, 14)), History.init({}), end_click).1)
+	end_click = Game.update_game(
+		SetStartLocation(Board.at(0, Board.l0)),
+		History.init({}),
+		g,
+	).1
+	Motion.of(
+		end_click,
+		SetEndLocation(Board.at(0, 14)),
+		Game.update_game(
+			SetEndLocation(Board.at(0, 14)),
+			History.init({}),
+			end_click,
+		).1,
+	)
 		== [{ color: "red", path: [11, 14], sent_home: Bool.False }, { color: "blue", path: [14, 11], sent_home: Bool.False }]
 }
 
 # An undo moves nothing on the page, even when the board it restores differs.
 expect {
 	g = test_game([("red", "L0", "red"), ("red", "HP1", "red")], ["3"])
-	moved = Game.update_game(SetStartLocation(Board.at(0, Board.l0)), History.init({}), g).1
+	moved = Game.update_game(
+		SetStartLocation(Board.at(0, Board.l0)),
+		History.init({}),
+		g,
+	).1
 	Motion.of(moved, UndoAction, g) == []
 }

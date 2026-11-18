@@ -93,8 +93,14 @@ Codes :: [].{
 expect {
 	colors = ["red", "blue", "green", "purple"]
 	s = Board.at(2, Board.r4)
-	Codes.decode(colors, Codes.end_location(s)) == Ok(SetEndLocation(s)) and Codes.location(s) == 32 * 2 + 21
+	Codes.decode(
+		colors,
+		Codes.end_location(s),
+	) == Ok(SetEndLocation(s)) and Codes.location(s) == 32 * 2 + 21
 }
-expect Codes.decode(["red", "blue", "green", "purple"], Codes.start_location(Board.bullseye)) == Ok(SetStartLocation(Board.bullseye))
+expect Codes.decode(
+	["red", "blue", "green", "purple"],
+	Codes.start_location(Board.bullseye),
+) == Ok(SetStartLocation(Board.bullseye))
 expect Codes.decode(["red"], Codes.discard_card(3)) == Ok(DiscardCard(3))
 expect Codes.decode(["red"], 7) == Err(BadCode)

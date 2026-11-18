@@ -37,4 +37,7 @@ History :: [].{
 
 expect History.can_undo(History.reset(1), 1) == Bool.False
 expect History.can_undo(History.update(History.reset(1), 2), 2)
-expect History.undo(History.update(History.update(History.reset(1), 1), 2), 3) == ({ states: [1] }, 2)
+expect History.undo(
+	History.update(History.update(History.reset(1), 1), 2),
+	3,
+) == ({ states: [1] }, 2)

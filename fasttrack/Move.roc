@@ -13,7 +13,10 @@ Move :: [].{
 		} else {
 			board = Piece.move_piece(move, game.board)
 			moved = Player.ensure_hand_not_empty({ ..game, board })
-			Player.update_active_player(|p| Player.finish_move(board, game.zone_colors, move, p), moved)
+			Player.update_active_player(
+				|p| Player.finish_move(board, game.zone_colors, move, p),
+				moved,
+			)
 		}
 
 	## A piece with exactly one place to go goes there; with several, the
@@ -33,7 +36,16 @@ Move :: [].{
 		if player.get_out_credits < Config.num_credits_to_get_out {
 			game
 		} else {
-			Player.update_active_player(Player.clear_credits, { ..game, board: Piece.bring_player_out(Board.color_index(game.zone_colors, player.color), game.board) })
+			Player.update_active_player(
+				Player.clear_credits,
+				{
+					..game,
+					board: Piece.bring_player_out(
+						Board.color_index(game.zone_colors, player.color),
+						game.board,
+					),
+				},
+			)
 		}
 	}
 

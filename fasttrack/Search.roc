@@ -18,7 +18,11 @@ import Strategy
 import Type
 
 Search :: [].{
-	Line : { game : Type.Game, msgs : List(Type.GameMsg), drew : Bool }
+	Line : {
+		game : Type.Game,
+		msgs : List(Type.GameMsg),
+		drew : Bool,
+	}
 
 	## Every choice the turn offers now, one per distinct card.
 	options : Type.Game -> List(Type.GameMsg)
@@ -27,12 +31,24 @@ Search :: [].{
 		match player.turn {
 			TurnNeedCard(_) => {
 				playable = Player.get_playable_cards(player)
-				first_of_each(player.hand, |card| List.contains(playable, card), |i| ActivateCard(i))
+				first_of_each(
+					player.hand,
+					|card| List.contains(playable, card),
+					|i| ActivateCard(i),
+				)
 			}
 			TurnNeedStartLoc(info) => List.map(info.start_locs, |loc| SetStartLocation(loc))
 			TurnNeedEndLoc(info) => List.map(info.end_locs, |loc| SetEndLocation(loc))
-			TurnNeedDiscard => first_of_each(player.hand, |_| Bool.True, |i| DiscardCard(i))
-			TurnNeedCover => first_of_each(player.hand, |_| Bool.True, |i| CoverCard(i))
+			TurnNeedDiscard => first_of_each(
+				player.hand,
+				|_| Bool.True,
+				|i| DiscardCard(i),
+			)
+			TurnNeedCover => first_of_each(
+				player.hand,
+				|_| Bool.True,
+				|i| CoverCard(i),
+			)
 			_ => []
 		}
 	}
@@ -60,7 +76,11 @@ Search :: [].{
 	apply : Search.Line, Type.GameMsg -> Search.Line
 	apply = |line, msg| {
 		(_, game) = Game.update_game(msg, History.init({}), line.game)
-		{ game, msgs: line.msgs.append(msg), drew: line.drew or hand_size(game) > hand_size(line.game) }
+		{
+			game,
+			msgs: line.msgs.append(msg),
+			drew: line.drew or hand_size(game) > hand_size(line.game),
+		}
 	}
 
 	## A line the search goes on with: the player is choosing a card, or
@@ -164,7 +184,10 @@ Search :: [].{
 		kept = if line.drew {
 			0
 		} else {
-			Strategy.hand(Strategy.hoard_worths(strategy, game, mover.color), Player.get_active_player(line.game).hand)
+			Strategy.hand(
+				Strategy.hoard_worths(strategy, game, mover.color),
+				Player.get_active_player(line.game).hand,
+			)
 		}
 		Strategy.board(strategy, line.game, colors) + kept
 	}
@@ -188,10 +211,7 @@ Search :: [].{
 			$done = $done.concat($level.drop_if(is_open))
 			$depth = $depth + 1
 		}
-		{
-			lines: finals({ done: $done, level: $level }),
-			cut: $capped or $level.any(is_open),
-		}
+		{ lines: finals({ done: $done, level: $level }), cut: $capped or $level.any(is_open) }
 	}
 
 	## A search's answer: the lines that ended, and those still open at the
@@ -291,10 +311,19 @@ Search :: [].{
 	best_line = |strategy, game| {
 		found = all_lines(game)
 		best = found.lines.fold(
-			{ line: { game, msgs: [], drew: Bool.False }, score: 0, found: Bool.False },
+			{
+				line: { game, msgs: [], drew: Bool.False },
+				score: 0,
+				found: Bool.False,
+			},
 			|acc, line| {
 				s = score(strategy, game, line)
-				better = !acc.found or s > acc.score or (s == acc.score and key_before(position_key(line), position_key(acc.line)))
+				better = !acc.found or s > acc.score or (
+					s == acc.score and key_before(
+						position_key(line),
+						position_key(acc.line),
+					)
+				)
 				if better {
 					{ line, score: s, found: Bool.True }
 				} else {
@@ -310,4 +339,8 @@ Search :: [].{
 	}
 }
 
-expect Search.first_of_each(["K", "7", "Q", "K"], |_| Bool.True, |i| ActivateCard(i)) == [ActivateCard(0), ActivateCard(1)]
+expect Search.first_of_each(
+	["K", "7", "Q", "K"],
+	|_| Bool.True,
+	|i| ActivateCard(i),
+) == [ActivateCard(0), ActivateCard(1)]

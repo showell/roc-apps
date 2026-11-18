@@ -26,7 +26,7 @@ FastTrack :: [].{
 	## and `motion_id` counts the clicks that moved something.
 	Model : {
 		game : Type.Game,
-		history : History.History(Type.Game),
+		history : Game.Undo,
 		seats : List(FastTrack.Seat),
 		plan : List(Type.GameMsg),
 		motion_id : U32,
@@ -68,14 +68,25 @@ FastTrack :: [].{
 			Solo
 		}
 		game = Game.begin_game(millis, setups.get(setup.to_u64()) ?? Normal, team_style)
-		{ game, history: History.reset(game), seats: seats_of(seat_bits), plan: [], motion_id: 0, motions: [] }
+		{
+			game,
+			history: History.reset(game),
+			seats: seats_of(seat_bits),
+			plan: [],
+			motion_id: 0,
+			motions: [],
+		}
 	}
 
 	## The computer's next click, and the rest of its plan: a finished turn
 	## is passed on; otherwise the plan in hand, or a new one. With no play at
 	## all the turn is passed on too, as Arena.step does, so the page can
 	## never wait on a tick that does nothing.
-	next_click : FastTrack.Model, Strategy.Strategy -> Try({ msg : Type.GameMsg, rest : List(Type.GameMsg) }, [NoPlay])
+	next_click : FastTrack.Model,
+	Strategy.Strategy -> Try(
+		{ msg : Type.GameMsg, rest : List(Type.GameMsg) },
+		[NoPlay],
+	)
 	next_click = |model, strategy|
 		if Player.get_active_player(model.game).turn == TurnDone {
 			Ok({ msg: RotateBoard, rest: [] })
@@ -122,7 +133,14 @@ FastTrack :: [].{
 				} else {
 					model.motion_id + 1
 				}
-				{ ..model, game, history, plan: s.rest, motion_id, motions }
+				{
+					..model,
+					game,
+					history,
+					plan: s.rest,
+					motion_id,
+					motions,
+				}
 			}
 			Err(_) => model
 		}
@@ -147,7 +165,13 @@ FastTrack :: [].{
 				},
 				winner: Game.winner(model.game) ?? "",
 				motion_id: model.motion_id,
-				motions: model.motions.map(|m| { color: m.color, path: m.path.map(U64.to_u32_wrap), sent_home: m.sent_home }),
+				motions: model.motions.map(
+					|m| {
+						color: m.color,
+						path: m.path.map(U64.to_u32_wrap),
+						sent_home: m.sent_home,
+					},
+				),
 			},
 		)
 	}

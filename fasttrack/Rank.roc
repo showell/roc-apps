@@ -41,7 +41,12 @@ Rank :: [].{
 	## A square that can reach the peak: where it is (indexed as
 	## Board.all_locs), its base depth for rule 2, and its cards and routes
 	## at each stage.
-	Row : { at : U64, loc : Type.PieceLocation, base : I64, stage : List(Reach.Routes) }
+	Row : {
+		at : U64,
+		loc : Type.PieceLocation,
+		base : I64,
+		stage : List(Reach.Routes),
+	}
 
 	## Base depth, for rule 1: B4 4, B3 3, B2 2, B1 1, anything else 0.
 	base_depth : Str -> I64
@@ -90,7 +95,9 @@ Rank :: [].{
 				1
 			}
 		} else {
-			a.stage.map_with_index(|sa, i| by_stage(sa, b.stage.get(i) ?? { cards: Board.far, routes: 0 })).fold(
+			a.stage.map_with_index(
+				|sa, i| by_stage(sa, b.stage.get(i) ?? { cards: Board.far, routes: 0 }),
+			).fold(
 				0,
 				|decided, c| if decided != 0 {
 					decided
@@ -104,12 +111,23 @@ Rank :: [].{
 	## Every square a piece of `color` can reach the peak from, best first
 	## (ties in board order).
 	ranked : List(Str), Str, Str -> List(Rank.Row)
-	ranked = |zone_colors, color, peak| ranked_in(Reach.grid(zone_colors, color), zone_colors, color, peak)
+	ranked = |zone_colors, color, peak| ranked_in(
+		Reach.grid(zone_colors, color),
+		zone_colors,
+		color,
+		peak,
+	)
 
 	## `ranked`, over a color's grid built once (Reach.grid).
 	ranked_in : List(Reach.Move), List(Str), Str, Str -> List(Rank.Row)
 	ranked_in = |grid, zone_colors, color, peak| {
-		tables = stages.map(|st| Reach.routes(grid, { zone_colors, color, peak }, { hand: st.hand, face: FreeFace }))
+		tables = stages.map(
+			|st| Reach.routes(
+				grid,
+				{ zone_colors, color, peak },
+				{ hand: st.hand, face: FreeFace },
+			),
+		)
 		rows = Board.all_locs(zone_colors).map_with_index(
 			|loc, i| {
 				stage = tables.map(|t| t.get(i) ?? { cards: Board.far, routes: 0 })
@@ -120,7 +138,12 @@ Rank :: [].{
 				}
 				base = base_depth(id)
 				# The base squares past the peak count too: they rank first.
-				if base == 0 and (stage.first() ?? { cards: Board.far, routes: 0 }).cards >= Board.far {
+				if base == 0 and (
+					stage.first() ?? {
+						cards: Board.far,
+						routes: 0,
+					}
+				).cards >= Board.far {
 					[]
 				} else {
 					[{ at: i, loc, base, stage }]
@@ -149,21 +172,40 @@ Rank :: [].{
 	Places : { place : List(U64), worst : U64 }
 
 	places : List(Str), Str, Str -> Rank.Places
-	places = |zone_colors, color, peak| places_in(Reach.grid(zone_colors, color), zone_colors, color, peak)
+	places = |zone_colors, color, peak| places_in(
+		Reach.grid(zone_colors, color),
+		zone_colors,
+		color,
+		peak,
+	)
 
 	places_in : List(Reach.Move), List(Str), Str, Str -> Rank.Places
 	places_in = |grid, zone_colors, color, peak| {
 		order = ranked_in(grid, zone_colors, color, peak)
 		start = List.repeat(U64.highest, Board.all_locs(zone_colors).len())
 		settled = order.map_with_index(|row, i| { row, i }).fold(
-			{ place: start, prev: { row: order.first() ?? { at: 0, loc: { zone: BullsEyeZone, id: "" }, base: 0, stage: [] }, place: 0 } },
+			{
+				place: start,
+				prev: {
+					row: order.first() ?? {
+						at: 0,
+						loc: { zone: BullsEyeZone, id: "" },
+						base: 0,
+						stage: [],
+					},
+					place: 0,
+				},
+			},
 			|acc, x| {
 				p = if x.i > 0 and compare(acc.prev.row, x.row) == 0 {
 					acc.prev.place
 				} else {
 					x.i
 				}
-				{ place: acc.place.set(x.row.at, p) ?? crash ("Rank: square out of range"), prev: { row: x.row, place: p } }
+				{
+					place: acc.place.set(x.row.at, p) ?? crash ("Rank: square out of range"),
+					prev: { row: x.row, place: p },
+				}
 			},
 		)
 		worst = settled.place.fold(
@@ -183,7 +225,9 @@ colors = ["red", "blue", "green", "purple"]
 
 ## Red's place at each of its squares, by the square's id.
 places_by_id : Rank.Places -> (Str -> U64)
-places_by_id = |p| |id| p.place.get(Board.index_of(colors, { zone: NormalColor("red"), id })) ?? crash "Rank's expects: red has a square of every id they name"
+places_by_id = |p| |id| p.place.get(
+	Board.index_of(colors, { zone: NormalColor("red"), id }),
+) ?? crash "Rank's expects: red has a square of every id they name"
 
 # Red's places to B3: B4 first (a base square), then B3, B2 and B1; R4 above
 # R3; DS above R4; the pen squares share one place.

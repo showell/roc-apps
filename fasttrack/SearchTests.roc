@@ -14,7 +14,9 @@ import Type
 
 ## The champion's best line from `game`: its messages, cut, and end position.
 choice : Type.Game -> Try((List(Type.GameMsg), Bool, List(U64)), [NoPlay])
-choice = |game| Search.best_line(Strategy.champion, game).map_ok(|best| (best.line.msgs, best.cut, Search.position_key(best.line)))
+choice = |game| Search.best_line(Strategy.champion, game).map_ok(
+	|best| (best.line.msgs, best.cut, Search.position_key(best.line)),
+)
 
 # Setup.roc's scenarios, red to play: a split seven, a forced reverse, a
 # discard, a cover, the bullseye.

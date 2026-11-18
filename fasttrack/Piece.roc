@@ -29,7 +29,10 @@ Piece :: [].{
 	holds = |board, s, c| square(board, s) == (c + 1).to_u8_wrap()
 
 	place : Type.Board, U64, U64 -> Type.Board
-	place = |board, s, c| board.set(s, (c + 1).to_u8_wrap()) ?? crash "Piece.place: a square past the board"
+	place = |board, s, c| board.set(
+		s,
+		(c + 1).to_u8_wrap(),
+	) ?? crash "Piece.place: a square past the board"
 
 	clear : Type.Board, U64 -> Type.Board
 	clear = |board, s| board.set(s, 0) ?? crash "Piece.clear: a square past the board"
@@ -52,12 +55,17 @@ Piece :: [].{
 
 	## Only when a piece is being sent home, so there is always a square.
 	open_holding_pen_location : Type.Board, U64 -> U64
-	open_holding_pen_location = |board, c| Board.pen_of(c).find_first(|s| is_open(board, s)) ?? crash ("Piece: no open pen square")
+	open_holding_pen_location = |
+		board,
+		c,
+	| Board.pen_of(c).find_first(|s| is_open(board, s)) ?? crash ("Piece: no open pen square")
 
 	## Every piece of another color on the open track (the bullseye too): the
 	## squares a jack may trade with.
 	swappable_locs : Type.Board, U64 -> List(U64)
-	swappable_locs = |board, c| Board.squares.keep_if(|s| Board.is_track(s) and !is_open(board, s) and !holds(board, s, c))
+	swappable_locs = |board, c| Board.squares.keep_if(
+		|s| Board.is_track(s) and !is_open(board, s) and !holds(board, s, c),
+	)
 
 	my_pieces : Type.Board, U64 -> List(U64)
 	my_pieces = |board, c| Board.squares.keep_if(|s| holds(board, s, c))
@@ -79,12 +87,20 @@ Piece :: [].{
 	other_non_pen_pieces = |board, c, s| non_pen_pieces(board, c).drop_if(|x| x == s)
 
 	fast_track_squares : List(U64)
-	fast_track_squares = [Board.at(0, Board.ft), Board.at(1, Board.ft), Board.at(2, Board.ft), Board.at(3, Board.ft)]
+	fast_track_squares = [
+		Board.at(0, Board.ft),
+		Board.at(1, Board.ft),
+		Board.at(2, Board.ft),
+		Board.at(3, Board.ft),
+	]
 
 	## A piece on the fast track must be moved before any other: across every
 	## color the player moves, which in a partnership is the team.
 	any_on_fast_track : Type.Board, List(U64) -> Bool
-	any_on_fast_track = |board, movers| fast_track_squares.any(|s| movers.any(|c| holds(board, s, c)))
+	any_on_fast_track = |
+		board,
+		movers,
+	| fast_track_squares.any(|s| movers.any(|c| holds(board, s, c)))
 
 	has_piece_on_fast_track : Type.Board, U64 -> Bool
 	has_piece_on_fast_track = |board, c| any_on_fast_track(board, [c])
@@ -93,7 +109,11 @@ Piece :: [].{
 	team_movable_pieces = |board, movers| movers.join_map(|c| movable_pieces(board, c))
 
 	team_other_non_pen_pieces : Type.Board, List(U64), U64 -> List(U64)
-	team_other_non_pen_pieces = |board, movers, s| movers.join_map(|c| other_non_pen_pieces(board, c, s))
+	team_other_non_pen_pieces = |
+		board,
+		movers,
+		s,
+	| movers.join_map(|c| other_non_pen_pieces(board, c, s))
 
 	## Every base square of `c` holds a piece of its own.
 	all_home : Type.Board, U64 -> Bool
@@ -110,7 +130,14 @@ Piece :: [].{
 	config_pieces : Setup.InitSetup, List(Str) -> Type.Board
 	config_pieces = |init_setup, zone_colors| {
 		starts = Setup.starting_locations(init_setup)
-		place_color = |board, c| starts.fold(board, |b, id| place(b, Board.at(c, Board.square_of(id)), c))
+		place_color = |board, c| starts.fold(
+			board,
+			|b, id| place(
+				b,
+				Board.at(c, Board.square_of(id)),
+				c,
+			),
+		)
 		zone_colors.fold_with_index(empty, |board, _, c| place_color(board, c))
 	}
 
@@ -119,7 +146,12 @@ Piece :: [].{
 		match piece_to_move_out_of_pen(board, c) {
 			# probably a bug
 			Err(_) => board
-			Ok(start) => execute_move(RegularMove, start, Board.at(c, Board.l0), board)
+			Ok(start) => execute_move(
+				RegularMove,
+				start,
+				Board.at(c, Board.l0),
+				board,
+			)
 		}
 
 	move_piece : Type.Move, Type.Board -> Type.Board
@@ -139,7 +171,11 @@ Piece :: [].{
 		match at(board, end) {
 			Ok(end_c) =>
 				if flavor == TradePieces {
-					place(place(board, start, end_c), end, start_c)
+					place(
+						place(board, start, end_c),
+						end,
+						start_c,
+					)
 				} else {
 					pen = open_holding_pen_location(board, end_c)
 					sent_home = place(board, pen, end_c)

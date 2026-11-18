@@ -70,10 +70,20 @@ Board :: [].{
 
 	## A color's pen squares, HP1 to HP4, and its base squares, B1 to B4.
 	pen_of : U64 -> List(U64)
-	pen_of = |c| [at(c, 0), at(c, 1), at(c, 2), at(c, 3)]
+	pen_of = |c| [
+		at(c, 0),
+		at(c, 1),
+		at(c, 2),
+		at(c, 3),
+	]
 
 	base_of : U64 -> List(U64)
-	base_of = |c| [at(c, 4), at(c, 5), at(c, 6), at(c, 7)]
+	base_of = |c| [
+		at(c, 4),
+		at(c, 5),
+		at(c, 6),
+		at(c, 7),
+	]
 
 	## The translation table: `relative_table` holds, for each color, every
 	## square as that color sees it (its own zone first), and
@@ -108,15 +118,24 @@ Board :: [].{
 
 	## Square `s` as color `c` sees it.
 	relative : U64, U64 -> U64
-	relative = |c, s| (relative_table.get(c) ?? []).get(s) ?? crash ("Board.relative: no such square")
+	relative = |
+		c,
+		s,
+	| (relative_table.get(c) ?? []).get(s) ?? crash ("Board.relative: no such square")
 
 	## The square color `c` calls `r`.
 	absolute : U64, U64 -> U64
-	absolute = |c, r| (absolute_table.get(c) ?? []).get(r) ?? crash ("Board.absolute: no such square")
+	absolute = |
+		c,
+		r,
+	| (absolute_table.get(c) ?? []).get(r) ?? crash ("Board.absolute: no such square")
 
 	## A color's place in the game's color order.
 	color_index : List(Str), Str -> U64
-	color_index = |zone_colors, color| zone_colors.find_first_index(|c| c == color) ?? crash ("Board: no zone ${color}")
+	color_index = |
+		zone_colors,
+		color,
+	| zone_colors.find_first_index(|c| c == color) ?? crash ("Board: no zone ${color}")
 
 	## The squares by name, for the page, the click codes and the tests.
 	square_of : Str -> U64
@@ -144,8 +163,14 @@ Board :: [].{
 	all_locs = |zone_colors| squares.map(|s| loc_of(zone_colors, s))
 }
 
-expect Board.relative(1, Board.at(1, 0)) == 0 and Board.relative(1, Board.at(0, 0)) == 3 * Board.per_zone and Board.relative(0, 57) == 57
-expect Board.absolute(2, Board.relative(2, 40)) == 40 and Board.relative(3, Board.bullseye) == Board.bullseye
+expect Board.relative(
+	1,
+	Board.at(1, 0),
+) == 0 and Board.relative(1, Board.at(0, 0)) == 3 * Board.per_zone and Board.relative(0, 57) == 57
+expect Board.absolute(
+	2,
+	Board.relative(2, 40),
+) == 40 and Board.relative(3, Board.bullseye) == Board.bullseye
 expect {
 	colors = ["red", "blue", "green", "purple"]
 	Board.index_of(colors, { zone: NormalColor("green"), id: "L0" }) == Board.at(2, Board.l0)

@@ -31,7 +31,14 @@ Page :: [].{
 	el : Str, Str, U32, [Enabled, Disabled], List(Page.Tree) -> Page.Tree
 	el = |tag, style, click, state, children| {
 		# The wire's node keeps a Bool: fasttrack.js sets the DOM's `disabled`.
-		root = { parent: 0, tag, text: "", style, click, disabled: state == Disabled }
+		root = {
+			parent: 0,
+			tag,
+			text: "",
+			style,
+			click,
+			disabled: state == Disabled,
+		}
 		children.fold(
 			[root],
 			|acc, child| {
@@ -56,7 +63,16 @@ Page :: [].{
 	span = |children| el("span", "", 0, Enabled, children)
 
 	text : Str -> Page.Tree
-	text = |s| [{ parent: 0, tag: "", text: s, style: "", click: 0, disabled: Bool.False }]
+	text = |s| [
+		{
+			parent: 0,
+			tag: "",
+			text: s,
+			style: "",
+			click: 0,
+			disabled: Bool.False,
+		},
+	]
 
 	bold : Str, List(Page.Tree) -> Page.Tree
 	bold = |style, children| el("b", style, 0, Enabled, children)
@@ -81,7 +97,14 @@ Page :: [].{
 	## seat and once someone has won, and then nothing takes a click.
 	## `motions` are what the last click moved (Motion.roc), for the page to
 	## animate.
-	Flags : { clicks : Page.Clicks, show_undo : Bool, tick : U32, winner : Str, motion_id : U32, motions : List(Wire.Motion) }
+	Flags : {
+		clicks : Page.Clicks,
+		show_undo : Bool,
+		tick : U32,
+		winner : Str,
+		motion_id : U32,
+		motions : List(Wire.Motion),
+	}
 
 	## Whether the board answers a click.
 	Clicks : [TakesClicks, IgnoresClicks]
@@ -117,7 +140,13 @@ Page :: [].{
 				0,
 				Enabled,
 				[
-					div([div([div([el("board", "", 0, Enabled, [])]), el("hr", "", 0, Enabled, []), console])]),
+					div([
+						div([
+							div([el("board", "", 0, Enabled, [])]),
+							el("hr", "", 0, Enabled, []),
+							console,
+						]),
+					]),
 					div([cheat_sheet_view(active_player)]),
 				],
 			),
@@ -206,7 +235,17 @@ Page :: [].{
 	computer_view = |player, color|
 		div(
 			[
-				span(player.hand.map(|card| el("button", card_css(color, color), 0, Disabled, [text(card)]))),
+				span(
+					player.hand.map(
+						|card| el(
+							"button",
+							card_css(color, color),
+							0,
+							Disabled,
+							[text(card)],
+						),
+					),
+				),
 				div([text("the computer is playing ${color}")]),
 			]
 				.concat(team_line(player)),
@@ -228,18 +267,39 @@ Page :: [].{
 						b = panel_height - (loc.y * Config.square_size) + radius
 						cx = Config.square_size + center + a * theta.cos() - b * theta.sin()
 						cy = Config.square_size + center + a * theta.sin() + b * theta.cos()
-						slot(game, active_player, clicks, { zone: NormalColor(zone_color), id: loc.id }, cx, cy)
+						slot(
+							game,
+							active_player,
+							clicks,
+							{ zone: NormalColor(zone_color), id: loc.id },
+							cx,
+							cy,
+						)
 					},
 				)
 			},
 		).join()
-		bulls_eye = slot(game, active_player, clicks, { zone: BullsEyeZone, id: "bullseye" }, Config.square_size + center, Config.square_size + center)
+		bulls_eye = slot(
+			game,
+			active_player,
+			clicks,
+			{ zone: BullsEyeZone, id: "bullseye" },
+			Config.square_size + center,
+			Config.square_size + center,
+		)
 		zones.append(bulls_eye)
 	}
 
 	## `drawLocationAtCoords`.
 	slot : Type.Game, Type.Player, Page.Clicks, Type.PieceLocation, F64, F64 -> Wire.Slot
-	slot = |game, active_player, clicks, piece_location, cx, cy| {
+	slot = |
+		game,
+		active_player,
+		clicks,
+		piece_location,
+		cx,
+		cy,
+	| {
 		zone_color = match piece_location.zone {
 			BullsEyeZone => "black"
 			NormalColor(color) => color
@@ -308,14 +368,28 @@ Page :: [].{
 	player_view : Type.Player, Str, List(Page.Tree) -> Page.Tree
 	player_view = |player, color, undo_button| {
 		playable_cards = Player.get_playable_cards(player)
-		hand_cards = player.hand.map_with_index(|card, idx| hand_card_view(color, player, playable_cards, idx, card))
+		hand_cards = player.hand.map_with_index(
+			|card, idx| hand_card_view(color, player, playable_cards, idx, card),
+		)
 		hand = span([hand_cards, undo_button, rotate_button_view(player)].join())
 		console = match player.turn {
 			TurnNeedDiscard => div([text("click a card to discard")])
 			TurnNeedCover => div([text("click a card to cover")])
 			TurnNeedCard(_) => div([div([text("click a card above")])])
-			TurnNeedStartLoc(info) => div([active_card_view(LegalMove.get_card_for_play_type(info.play_type), color, need_start_instructions(info.play_type))])
-			TurnNeedEndLoc(info) => div([active_card_view(LegalMove.get_card_for_play_type(info.play_type), color, "now click piece's end location")])
+			TurnNeedStartLoc(info) => div([
+				active_card_view(
+					LegalMove.get_card_for_play_type(info.play_type),
+					color,
+					need_start_instructions(info.play_type),
+				),
+			])
+			TurnNeedEndLoc(info) => div([
+				active_card_view(
+					LegalMove.get_card_for_play_type(info.play_type),
+					color,
+					"now click piece's end location",
+				),
+			])
 			TurnDone => div([text("ok, now hit 'done' if you're happy")])
 			_ => div([])
 		}
@@ -343,16 +417,46 @@ Page :: [].{
 		}
 		label = [text(card)]
 		match action {
-			CanActivate => el("button", card_css(color, color), Codes.activate_card(idx), Enabled, label)
-			CanDiscard => el("button", card_css("gray", color), Codes.discard_card(idx), Enabled, label)
-			CanCover => el("button", card_css("gray", color), Codes.cover_card(idx), Enabled, label)
-			Ignore => el("button", card_css("gray", "gray"), 0, Disabled, label)
+			CanActivate => el(
+				"button",
+				card_css(color, color),
+				Codes.activate_card(idx),
+				Enabled,
+				label,
+			)
+			CanDiscard => el(
+				"button",
+				card_css("gray", color),
+				Codes.discard_card(idx),
+				Enabled,
+				label,
+			)
+			CanCover => el(
+				"button",
+				card_css("gray", color),
+				Codes.cover_card(idx),
+				Enabled,
+				label,
+			)
+			Ignore => el(
+				"button",
+				card_css("gray", "gray"),
+				0,
+				Disabled,
+				label,
+			)
 		}
 	}
 
 	active_card_view : Str, Str, Str -> Page.Tree
 	active_card_view = |active_card, color, instructions|
-		span([bold("color: ${color}; padding: 4px; margin: 5px; font-size: 110%", [text(active_card)]), text(instructions)])
+		span([
+			bold(
+				"color: ${color}; padding: 4px; margin: 5px; font-size: 110%",
+				[text(active_card)],
+			),
+			text(instructions),
+		])
 
 	card_css : Str, Str -> Str
 	card_css = |border_color, color|
@@ -361,7 +465,11 @@ Page :: [].{
 	credits_view : Type.Player -> Page.Tree
 	credits_view = |player|
 		if player.get_out_credits > 0 {
-			div([text("You have "), bold("", [text(player.get_out_credits.to_str())]), text(" credits (you need ${Config.num_credits_to_get_out.to_str()} to get out)")])
+			div([
+				text("You have "),
+				bold("", [text(player.get_out_credits.to_str())]),
+				text(" credits (you need ${Config.num_credits_to_get_out.to_str()} to get out)"),
+			])
 		} else {
 			span([])
 		}
@@ -379,8 +487,15 @@ Page :: [].{
 		if List.is_empty(cards) {
 			div([])
 		} else {
-			hints = List.sort_by(cards, Config.card_value).map(|card| div([text("${card} - ${Config.hint_for_card(card)}")]))
-			div([el("br", "", 0, Enabled, []), bold("", [text("Cheat sheet:")]), div(hints)])
+			hints = List.sort_by(
+				cards,
+				Config.card_value,
+			).map(|card| div([text("${card} - ${Config.hint_for_card(card)}")]))
+			div([
+				el("br", "", 0, Enabled, []),
+				bold("", [text("Cheat sheet:")]),
+				div(hints),
+			])
 		}
 	}
 }

@@ -32,10 +32,20 @@ Reach :: [].{
 			Config.move_count_for_card(card, Board.is_pen(s)),
 			if (card == "4") Backward else Forward,
 			if (["A", "6", "joker"].contains(card)) LeavePen else StayInPen,
-			if (["J", "Q", "K"].contains(card) and s == Board.bullseye) LeaveBullseye else StayInBullseye,
+			if (
+				[
+					"J",
+					"Q",
+					"K",
+				].contains(card) and s == Board.bullseye
+			) LeaveBullseye else StayInBullseye,
 		)
 
-	Move : { from : U64, to : U64, card : Str }
+	Move : {
+		from : U64,
+		to : U64,
+		card : Str,
+	}
 
 	## Where a free face card takes a piece: one square on (a J, Q or K moves
 	## one), or out of the bullseye. It does not leave the pen.
@@ -54,13 +64,25 @@ Reach :: [].{
 	grid = |zone_colors, color|
 		Board.squares.map_with_index(
 			|from, _|
-				if Board.zone(from) != Board.color_index(zone_colors, color) and !Board.is_track(from) {
+				if Board.zone(from) != Board.color_index(
+					zone_colors,
+					color,
+				) and !Board.is_track(from) {
 					[]
 				} else {
 					cards.join_map(
 						|card| {
-							plain = lands(zone_colors, color, from, card).map(|to| { from, to, card })
-							with_face = face_steps(zone_colors, color, from).join_map(|step| lands(zone_colors, color, step, card).map(|to| { from, to, card: "face+${card}" }))
+							plain = lands(
+								zone_colors,
+								color,
+								from,
+								card,
+							).map(|to| { from, to, card })
+							with_face = face_steps(zone_colors, color, from).join_map(
+								|step| lands(zone_colors, color, step, card).map(
+									|to| { from, to, card: "face+${card}" },
+								),
+							)
 							plain.concat(with_face)
 						},
 					)
@@ -74,7 +96,11 @@ Reach :: [].{
 	## Whose way home, and to where: the seating, the piece's color, and its
 	## `peak`, the deepest base square it can still enter: B4, or B3 once B4
 	## is occupied, and so on.
-	Target : { zone_colors : List(Str), color : Str, peak : Str }
+	Target : {
+		zone_colors : List(Str),
+		color : Str,
+		peak : Str,
+	}
 
 	## What a table may play: these kinds of card, and whether a free face
 	## card may go first.
@@ -84,7 +110,14 @@ Reach :: [].{
 	## the peak is dropped; one landing on the peak or short of it never
 	## passes the occupied squares.
 	fewest_cards : Reach.Target, [FreeFace, CardsOnly] -> List(Reach.Best)
-	fewest_cards = |target, face| fewest_over(usable(grid(target.zone_colors, target.color), target, { hand: cards, face }), target)
+	fewest_cards = |target, face| fewest_over(
+		usable(
+			grid(target.zone_colors, target.color),
+			target,
+			{ hand: cards, face },
+		),
+		target,
+	)
 
 	## Whether a move may be played from this hand of card kinds: its card,
 	## and its free face card (a J, Q or K) if it has one.
@@ -103,16 +136,29 @@ Reach :: [].{
 	usable : List(Reach.Move), Reach.Target, Reach.Deck -> List(Reach.Move)
 	usable = |all, target, deck| {
 		peak_at = Config.base_locations.find_first_index(|id| id == target.peak) ?? crash ("Reach: the peak is a base square")
-		occupied = Config.base_locations.drop_first(peak_at + 1).map(|id| Board.index_of(target.zone_colors, { zone: NormalColor(target.color), id }))
-		all.drop_if(|e| (deck.face == CardsOnly and e.card.starts_with("face+")) or occupied.contains(e.to) or !is_allowed(deck.hand, e.card))
+		occupied = Config.base_locations.drop_first(peak_at + 1).map(
+			|id| Board.index_of(target.zone_colors, { zone: NormalColor(target.color), id }),
+		)
+		all.drop_if(
+			|e| (deck.face == CardsOnly and e.card.starts_with("face+")) or occupied.contains(e.to) or !is_allowed(
+				deck.hand,
+				e.card,
+			),
+		)
 	}
 
 	## The fewest cards home over these moves.
 	fewest_over : List(Reach.Move), Reach.Target -> List(Reach.Best)
 	fewest_over = |edges, target| {
 		far = Board.far
-		home = Board.index_of(target.zone_colors, { zone: NormalColor(target.color), id: target.peak })
-		start = List.repeat({ cards: far, first: [] }, Board.all_locs(target.zone_colors).len()).set(home, { cards: 0, first: [] }) ?? crash ("Reach: no home")
+		home = Board.index_of(
+			target.zone_colors,
+			{ zone: NormalColor(target.color), id: target.peak },
+		)
+		start = List.repeat(
+			{ cards: far, first: [] },
+			Board.all_locs(target.zone_colors).len(),
+		).set(home, { cards: 0, first: [] }) ?? crash ("Reach: no home")
 		# A pass says whether it changed anything: LLVM has ended a `while $next != $d`
 		# loop after one pass when the pass is a local closure (README.md).
 		relax = |d|
@@ -122,9 +168,21 @@ Reach :: [].{
 					via = (acc.d.get(e.to) ?? { cards: far, first: [] }).cards + 1
 					here = acc.d.get(e.from) ?? { cards: far, first: [] }
 					if via < here.cards {
-						{ d: acc.d.set(e.from, { cards: via, first: [e.card] }) ?? crash ("Reach: edge out of range"), changed: Bool.True }
+						{
+							d: acc.d.set(
+								e.from,
+								{ cards: via, first: [e.card] },
+							) ?? crash ("Reach: edge out of range"),
+							changed: Bool.True,
+						}
 					} else if via == here.cards and !here.first.contains(e.card) {
-						{ d: acc.d.set(e.from, { cards: via, first: here.first.append(e.card) }) ?? crash ("Reach: edge out of range"), changed: Bool.True }
+						{
+							d: acc.d.set(
+								e.from,
+								{ cards: via, first: here.first.append(e.card) },
+							) ?? crash ("Reach: edge out of range"),
+							changed: Bool.True,
+						}
 					} else {
 						acc
 					}
@@ -148,7 +206,10 @@ Reach :: [].{
 		edges = usable(all, target, deck)
 		best = fewest_over(edges, target)
 		cards_at = |i| (best.get(i) ?? { cards: Board.far, first: [] }).cards
-		home = Board.index_of(target.zone_colors, { zone: NormalColor(target.color), id: target.peak })
+		home = Board.index_of(
+			target.zone_colors,
+			{ zone: NormalColor(target.color), id: target.peak },
+		)
 		start = best.map_with_index(
 			|b, i| {
 				cards: b.cards,
@@ -179,7 +240,10 @@ Reach :: [].{
 					if cards_at(e.from) == level and cards_at(e.to) == level - 1 {
 						here = acc.get(e.from) ?? { cards: 0, routes: 0 }
 						via = (acc.get(e.to) ?? { cards: 0, routes: 0 }).routes
-						acc.set(e.from, { ..here, routes: here.routes + via }) ?? crash ("Reach: edge out of range")
+						acc.set(
+							e.from,
+							{ ..here, routes: here.routes + via },
+						) ?? crash ("Reach: edge out of range")
 					} else {
 						acc
 					},
@@ -231,7 +295,21 @@ expect {
 expect {
 	no_joker = Reach.cards.drop_if(|c| c == "joker")
 	grid = Reach.grid(colors, "red")
-	at = |hand, id| Reach.routes(grid, { zone_colors: colors, color: "red", peak: "B3" }, { hand, face: FreeFace }).get(red_square(id)) ?? crash "Reach's expects: every square is in the table"
+	at = |hand, id| Reach.routes(
+		grid,
+		{
+			zone_colors: colors,
+			color: "red",
+			peak: "B3",
+		},
+		{ hand, face: FreeFace },
+	).get(red_square(id)) ?? crash "Reach's expects: every square is in the table"
 	no_six = no_joker.drop_if(|c| c == "6")
-	at(no_joker, "R1") == { cards: 1, routes: 2 } and at(no_joker, "R3") == { cards: 1, routes: 2 } and at(no_six, "R1") == { cards: 1, routes: 1 } and at(no_six, "R3") == { cards: 1, routes: 2 }
+	at(no_joker, "R1") == { cards: 1, routes: 2 } and at(no_joker, "R3") == {
+		cards: 1,
+		routes: 2,
+	} and at(no_six, "R1") == {
+		cards: 1,
+		routes: 1,
+	} and at(no_six, "R3") == { cards: 1, routes: 2 }
 }

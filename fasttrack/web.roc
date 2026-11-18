@@ -1,7 +1,5 @@
 # Fast Track, as a page: the wasm module a browser runs.
-app [Model, program] {
-	pf: platform "web/platform/main.roc",
-}
+app [Model, program] { pf: platform "web/platform/main.roc" }
 
 import FastTrack
 import RulesTests

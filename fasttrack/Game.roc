@@ -17,6 +17,10 @@ import Setup
 import Type
 
 Game :: [].{
+
+	## A game's undo: the states a card played can go back to.
+	Undo : History.History(Type.Game)
+
 	num_players : U64
 	num_players = 4
 
@@ -37,12 +41,14 @@ Game :: [].{
 		})
 	}
 
-	update_game : Type.GameMsg, History.History(Type.Game), Type.Game -> (History.History(Type.Game), Type.Game)
+	update_game : Type.GameMsg, Game.Undo, Type.Game -> (Game.Undo, Type.Game)
 	update_game = |msg, history, game| {
 		save_prior = |new_game| (History.update(history, game), new_game)
 		match msg {
 			UndoAction => History.undo(history, game)
-			ActivateCard(idx) => save_prior(Player.update_active_player(|p| Player.activate_card(idx, p), game))
+			ActivateCard(idx) => save_prior(
+				Player.update_active_player(|p| Player.activate_card(idx, p), game),
+			)
 			DiscardCard(idx) => {
 				discarded = Player.update_active_player(|p| Player.discard_card(idx, p), game)
 				got_out = Move.maybe_get_out_via_discard(discarded)
@@ -67,7 +73,11 @@ Game :: [].{
 	rotate_board = |game| {
 		old_idx = game.active_player_idx
 		new_idx = (old_idx + 1).rem_by(game.num_players)
-		players = Player.set_turn(new_idx, TurnBegin, Player.set_turn(old_idx, TurnIdle, game.players))
+		players = Player.set_turn(
+			new_idx,
+			TurnBegin,
+			Player.set_turn(old_idx, TurnIdle, game.players),
+		)
 		begin_active_turn({ ..game, players, active_player_idx: new_idx })
 	}
 
@@ -109,7 +119,10 @@ Game :: [].{
 	handle_start_loc_click : U64, Type.Game -> Type.Game
 	handle_start_loc_click = |location, game|
 		match Player.get_active_player(game).turn {
-			TurnNeedStartLoc(_) => Move.maybe_auto_move(location, Player.update_active_player(|p| Player.set_start_location(location, p), game))
+			TurnNeedStartLoc(_) => Move.maybe_auto_move(
+				location,
+				Player.update_active_player(|p| Player.set_start_location(location, p), game),
+			)
 			# the click handlers are wrong
 			_ => game
 		}
@@ -118,7 +131,12 @@ Game :: [].{
 	handle_end_loc_click = |end_loc, game| {
 		active_player = Player.get_active_player(game)
 		match active_player.turn {
-			TurnNeedEndLoc(info) => Move.move_to_end_loc(active_player, info.start_location, end_loc, game)
+			TurnNeedEndLoc(info) => Move.move_to_end_loc(
+				active_player,
+				info.start_location,
+				end_loc,
+				game,
+			)
 			_ => game
 		}
 	}

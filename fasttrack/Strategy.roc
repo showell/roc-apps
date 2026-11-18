@@ -94,7 +94,10 @@ Strategy :: [].{
 	## What a hand is worth: each hoarded card still in it.
 	hand : List({ cards : List(Str), worth : I64 }), List(Str) -> I64
 	hand = |worths, cards|
-		worths.fold(0, |total, h| total + cards.count_if(|c| h.cards.contains(c)).to_i64_wrap() * h.worth)
+		worths.fold(
+			0,
+			|total, h| total + cards.count_if(|c| h.cards.contains(c)).to_i64_wrap() * h.worth,
+		)
 }
 
 # The table's corners (SquareValues, from Steve's ranking), and the base bonus.
@@ -110,8 +113,15 @@ expect {
 # The champion's hoard: 1500 an A, joker or J with none home, 500 with two.
 expect {
 	start = Game.begin_game(0, Normal, Solo)
-	two_home = { ..start, board: Piece.board_of(start.zone_colors, [("red", "B1", "red"), ("red", "B2", "red")]) }
-	Strategy.hoard_worths(Strategy.champion, start, "red") == [{ cards: ["A", "joker", "J"], worth: 1500 }]
-		and Strategy.hoard_worths(Strategy.champion, two_home, "red") == [{ cards: ["A", "joker", "J"], worth: 500 }]
+	two_home = {
+		..start,
+		board: Piece.board_of(start.zone_colors, [("red", "B1", "red"), ("red", "B2", "red")]),
+	}
+	Strategy.hoard_worths(Strategy.champion, start, "red") == [
+		{ cards: ["A", "joker", "J"], worth: 1500 },
+	]
+		and Strategy.hoard_worths(Strategy.champion, two_home, "red") == [
+			{ cards: ["A", "joker", "J"], worth: 500 },
+		]
 		and Strategy.board(Strategy.champion, two_home, ["red"]) == 5800 + 2500 + 5900 + 5000
 }
