@@ -24,7 +24,7 @@ Motion :: [].{
 			# Only a discard can bring a piece out; an undo moves nothing on
 			# the page, it just shows the earlier board.
 			DiscardCard(_) => brought_out(before, after, name)
-			_ => List.join_map(Move.made(before, msg), |m| of_move(before.board, m, name))
+			_ => Move.made(before, msg).join_map(|m| of_move(before.board, m, name))
 		}
 	}
 
@@ -49,7 +49,7 @@ Motion :: [].{
 							JackTrade => (1, Forward)
 						}
 						walked = { color: name(c), path: LegalMove.walk_between(board, c, m.start, m.end, n, direction), sent_home: Bool.False }
-						List.concat([walked], sent_home(board, m.end, name))
+						[walked].concat(sent_home(board, m.end, name))
 					}
 				}
 			}
@@ -72,7 +72,7 @@ Motion :: [].{
 			c = before.active_player_idx
 			l0 = Board.at(c, Board.l0)
 			match Piece.piece_to_move_out_of_pen(before.board, c) {
-				Ok(pen) => List.concat([{ color: name(c), path: [pen, l0], sent_home: Bool.False }], sent_home(before.board, l0, name))
+				Ok(pen) => [{ color: name(c), path: [pen, l0], sent_home: Bool.False }].concat(sent_home(before.board, l0, name))
 				Err(_) => []
 			}
 		}

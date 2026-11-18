@@ -32,15 +32,12 @@ Page :: [].{
 	el = |tag, style, click, state, children| {
 		# The wire's node keeps a Bool: fasttrack.js sets the DOM's `disabled`.
 		root = { parent: 0, tag, text: "", style, click, disabled: state == Disabled }
-		List.fold(
-			children,
+		children.fold(
 			[root],
 			|acc, child| {
-				offset = U64.to_u32_wrap(List.len(acc))
-				List.concat(
-					acc,
-					List.map(
-						child,
+				offset = acc.len().to_u32_wrap()
+				acc.concat(
+					child.map(
 						|n| if n.parent == 0 {
 							{ ..n, parent: 1 }
 						} else {
@@ -75,7 +72,7 @@ Page :: [].{
 
 	## `incircleRadius`: from the centre to the middle of a side.
 	incircle_radius : U64 -> F64
-	incircle_radius = |side_count| (panel_width / 2.0) / F64.tan(F64.pi / U64.to_f64(side_count))
+	incircle_radius = |side_count| (panel_width / 2.0) / (F64.pi / side_count.to_f64()).tan()
 
 	center_offset : U64 -> F64
 	center_offset = |side_count| panel_height + incircle_radius(side_count)
@@ -101,7 +98,7 @@ Page :: [].{
 		} else {
 			[]
 		}
-		side_count = List.len(zone_colors)
+		side_count = zone_colors.len()
 		console =
 			if flags.winner != "" {
 				winner_view(flags.winner)
@@ -135,41 +132,38 @@ Page :: [].{
 	## it has any.
 	labels_view : Type.Game -> List(Wire.Label)
 	labels_view = |game| {
-		side_count = List.len(game.zone_colors)
-		List.join(
-			List.map_with_index(
-				game.players,
-				|p, i|
-					if p.get_out_credits > 0 {
-						# The pen's centre on the screen, and the label clear of it:
-						# above for red and blue, below for green and purple.
-						pen = spot(side_count, i, -3.7, 1.2)
-						dy = if i < 2 {
-							-1.4 * Config.square_size
-						} else {
-							1.4 * Config.square_size + 4.0
-						}
-						at = { x: pen.x, y: pen.y + dy }
-						n = I64.to_str(p.get_out_credits)
-						[
-							{
-								x: at.x,
-								y: at.y,
-								text: "${n} discard${
-									if p.get_out_credits == 1 {
-										""
-									} else {
-										"s"
-									}
-								}",
-								fill: p.color,
-							},
-						]
+		side_count = game.zone_colors.len()
+		game.players.map_with_index(
+			|p, i|
+				if p.get_out_credits > 0 {
+					# The pen's centre on the screen, and the label clear of it:
+					# above for red and blue, below for green and purple.
+					pen = spot(side_count, i, -3.7, 1.2)
+					dy = if i < 2 {
+						-1.4 * Config.square_size
 					} else {
-						[]
-					},
-			),
-		)
+						1.4 * Config.square_size + 4.0
+					}
+					at = { x: pen.x, y: pen.y + dy }
+					n = p.get_out_credits.to_str()
+					[
+						{
+							x: at.x,
+							y: at.y,
+							text: "${n} discard${
+								if p.get_out_credits == 1 {
+									""
+								} else {
+									"s"
+								}
+							}",
+							fill: p.color,
+						},
+					]
+				} else {
+					[]
+				},
+		).join()
 	}
 
 	## Where a point of a zone's panel lands on the board (Polygon.elm): the
@@ -177,13 +171,13 @@ Page :: [].{
 	## angle.
 	spot : U64, U64, F64, F64 -> { x : F64, y : F64 }
 	spot = |side_count, zone, px, py| {
-		theta = 2.0 * F64.pi / U64.to_f64(side_count) * U64.to_f64(zone)
+		theta = 2.0 * F64.pi / side_count.to_f64() * zone.to_f64()
 		center = center_offset(side_count)
 		a = px * Config.square_size
 		b = panel_height - (py * Config.square_size) + incircle_radius(side_count)
 		{
-			x: Config.square_size + center + a * F64.cos(theta) - b * F64.sin(theta),
-			y: Config.square_size + center + a * F64.sin(theta) + b * F64.cos(theta),
+			x: Config.square_size + center + a * theta.cos() - b * theta.sin(),
+			y: Config.square_size + center + a * theta.sin() + b * theta.cos(),
 		}
 	}
 
@@ -191,7 +185,7 @@ Page :: [].{
 	## color named.
 	winner_view : Str -> Page.Tree
 	winner_view = |winner| {
-		(color, verb) = match Str.split_first(winner, " and ") {
+		(color, verb) = match winner.split_first(" and ") {
 			Ok(parts) => (parts.before, "win")
 			Err(_) => (winner, "wins")
 		}
@@ -212,7 +206,7 @@ Page :: [].{
 	computer_view = |player, color|
 		div(
 			[
-				span(List.map(player.hand, |card| el("button", card_css(color, color), 0, Disabled, [text(card)]))),
+				span(player.hand.map(|card| el("button", card_css(color, color), 0, Disabled, [text(card)]))),
 				div([text("the computer is playing ${color}")]),
 			]
 				.concat(team_line(player)),
@@ -220,31 +214,27 @@ Page :: [].{
 
 	board_view : Type.Game, List(Str), Type.Player, Page.Clicks -> List(Wire.Slot)
 	board_view = |game, zone_colors, active_player, clicks| {
-		side_count = List.len(zone_colors)
-		angle = 2.0 * F64.pi / U64.to_f64(side_count)
+		side_count = zone_colors.len()
+		angle = 2.0 * F64.pi / side_count.to_f64()
 		center = center_offset(side_count)
 		radius = incircle_radius(side_count)
-		zones = List.join(
-			List.map_with_index(
-				zone_colors,
-				|zone_color, i| {
-					theta = angle * U64.to_f64(i)
-					List.map(
-						Config.config_locations,
-						|loc| {
-							# Upright in the panel, then pushed out and turned.
-							a = loc.x * Config.square_size
-							b = panel_height - (loc.y * Config.square_size) + radius
-							cx = Config.square_size + center + a * F64.cos(theta) - b * F64.sin(theta)
-							cy = Config.square_size + center + a * F64.sin(theta) + b * F64.cos(theta)
-							slot(game, active_player, clicks, { zone: NormalColor(zone_color), id: loc.id }, cx, cy)
-						},
-					)
-				},
-			),
-		)
+		zones = zone_colors.map_with_index(
+			|zone_color, i| {
+				theta = angle * i.to_f64()
+				Config.config_locations.map(
+					|loc| {
+						# Upright in the panel, then pushed out and turned.
+						a = loc.x * Config.square_size
+						b = panel_height - (loc.y * Config.square_size) + radius
+						cx = Config.square_size + center + a * theta.cos() - b * theta.sin()
+						cy = Config.square_size + center + a * theta.sin() + b * theta.cos()
+						slot(game, active_player, clicks, { zone: NormalColor(zone_color), id: loc.id }, cx, cy)
+					},
+				)
+			},
+		).join()
 		bulls_eye = slot(game, active_player, clicks, { zone: BullsEyeZone, id: "bullseye" }, Config.square_size + center, Config.square_size + center)
-		List.append(zones, bulls_eye)
+		zones.append(bulls_eye)
 	}
 
 	## `drawLocationAtCoords`.
@@ -318,8 +308,8 @@ Page :: [].{
 	player_view : Type.Player, Str, List(Page.Tree) -> Page.Tree
 	player_view = |player, color, undo_button| {
 		playable_cards = Player.get_playable_cards(player)
-		hand_cards = List.map_with_index(player.hand, |card, idx| hand_card_view(color, player, playable_cards, idx, card))
-		hand = span(List.join([hand_cards, undo_button, rotate_button_view(player)]))
+		hand_cards = player.hand.map_with_index(|card, idx| hand_card_view(color, player, playable_cards, idx, card))
+		hand = span([hand_cards, undo_button, rotate_button_view(player)].join())
 		console = match player.turn {
 			TurnNeedDiscard => div([text("click a card to discard")])
 			TurnNeedCover => div([text("click a card to cover")])
@@ -329,14 +319,14 @@ Page :: [].{
 			TurnDone => div([text("ok, now hit 'done' if you're happy")])
 			_ => div([])
 		}
-		div(List.concat([hand, credits_view(player), console], team_line(player)))
+		div([hand, credits_view(player), console].concat(team_line(player)))
 	}
 
 	need_start_instructions : Type.PlayType -> Str
 	need_start_instructions = |play_type|
 		match play_type {
 			PlayCard(_) => "click a piece to start move"
-			FinishSeven(count) => "click a piece to finish split (moving ${I64.to_str(count)})"
+			FinishSeven(count) => "click a piece to finish split (moving ${count.to_str()})"
 		}
 
 	hand_card_view : Str, Type.Player, Assoc.AssocSet(Str), U64, Str -> Page.Tree
@@ -371,7 +361,7 @@ Page :: [].{
 	credits_view : Type.Player -> Page.Tree
 	credits_view = |player|
 		if player.get_out_credits > 0 {
-			div([text("You have "), bold("", [text(I64.to_str(player.get_out_credits))]), text(" credits (you need ${I64.to_str(Config.num_credits_to_get_out)} to get out)")])
+			div([text("You have "), bold("", [text(player.get_out_credits.to_str())]), text(" credits (you need ${Config.num_credits_to_get_out.to_str()} to get out)")])
 		} else {
 			span([])
 		}
@@ -389,7 +379,7 @@ Page :: [].{
 		if List.is_empty(cards) {
 			div([])
 		} else {
-			hints = List.map(List.sort_by(cards, Config.card_value), |card| div([text("${card} - ${Config.hint_for_card(card)}")]))
+			hints = List.sort_by(cards, Config.card_value).map(|card| div([text("${card} - ${Config.hint_for_card(card)}")]))
 			div([el("br", "", 0, Enabled, []), bold("", [text("Cheat sheet:")]), div(hints)])
 		}
 	}

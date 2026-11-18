@@ -37,9 +37,8 @@ FastTrack :: [].{
 	## computer, playing Strategy.champion.
 	seats_of : U32 -> List(FastTrack.Seat)
 	seats_of = |bits|
-		List.map(
-			[0, 1, 2, 3],
-			|i| if U32.bitwise_and(U32.shr_zf_wrap(bits, 2 * i), 3) == 0 {
+		[0, 1, 2, 3].map(
+			|i| if bits.shr_zf_wrap(2 * i).bitwise_and(3) == 0 {
 				Human
 			} else {
 				Computer(Strategy.champion)
@@ -47,11 +46,11 @@ FastTrack :: [].{
 		)
 
 	seat : FastTrack.Model -> FastTrack.Seat
-	seat = |model| List.get(model.seats, model.game.active_player_idx) ?? Human
+	seat = |model| model.seats.get(model.game.active_player_idx) ?? Human
 
 	## The computer's seat, unless someone has won.
 	agent_to_move : FastTrack.Model -> Bool
-	agent_to_move = |model| seat(model) != Human and Try.is_err(Game.winner(model.game))
+	agent_to_move = |model| seat(model) != Human and Game.winner(model.game).is_err()
 
 	## The setups `init`'s number picks, in order.
 	setups : List(Setup.InitSetup)
@@ -68,7 +67,7 @@ FastTrack :: [].{
 		} else {
 			Solo
 		}
-		game = Game.begin_game(millis, List.get(setups, U32.to_u64(setup)) ?? Normal, team_style)
+		game = Game.begin_game(millis, setups.get(setup.to_u64()) ?? Normal, team_style)
 		{ game, history: History.reset(game), seats: seats_of(seat_bits), plan: [], motion_id: 0, motions: [] }
 	}
 
@@ -82,7 +81,7 @@ FastTrack :: [].{
 			Ok({ msg: RotateBoard, rest: [] })
 		} else {
 			plan =
-				if List.is_empty(model.plan) {
+				if model.plan.is_empty() {
 					match Search.best_line(strategy, model.game) {
 						Ok(best) => best.line.msgs
 						Err(_) => []
@@ -104,10 +103,10 @@ FastTrack :: [].{
 		step =
 			if code == Codes.agent_step and agent_to_move(model) {
 				match seat(model) {
-					Computer(strategy) => Try.map_err(next_click(model, strategy), |_| Ignored)
+					Computer(strategy) => next_click(model, strategy).map_err(|_| Ignored)
 					Human => Err(Ignored)
 				}
-			} else if code != Codes.agent_step and seat(model) == Human and Try.is_err(Game.winner(model.game)) {
+			} else if code != Codes.agent_step and seat(model) == Human and Game.winner(model.game).is_err() {
 				Codes.decode(model.game.zone_colors, code)
 					.map_err(|_| Ignored)
 					.map_ok(|m| { msg: m, rest: [] })
@@ -118,7 +117,7 @@ FastTrack :: [].{
 			Ok(s) => {
 				(history, game) = Game.update_game(s.msg, model.history, model.game)
 				motions = Motion.of(model.game, s.msg, game)
-				motion_id = if List.is_empty(motions) {
+				motion_id = if motions.is_empty() {
 					model.motion_id
 				} else {
 					model.motion_id + 1
@@ -135,7 +134,7 @@ FastTrack :: [].{
 		Page.view(
 			model.game,
 			{
-				clicks: if human and Try.is_err(Game.winner(model.game)) {
+				clicks: if human and Game.winner(model.game).is_err() {
 					TakesClicks
 				} else {
 					IgnoresClicks
@@ -148,7 +147,7 @@ FastTrack :: [].{
 				},
 				winner: Game.winner(model.game) ?? "",
 				motion_id: model.motion_id,
-				motions: List.map(model.motions, |m| { color: m.color, path: List.map(m.path, U64.to_u32_wrap), sent_home: m.sent_home }),
+				motions: model.motions.map(|m| { color: m.color, path: m.path.map(U64.to_u32_wrap), sent_home: m.sent_home }),
 			},
 		)
 	}
@@ -161,8 +160,8 @@ FastTrack :: [].{
 	}
 	program = {
 		init: |millis, setup, seat_bits, teams| Box.box(init(millis, setup, seat_bits, teams)),
-		update: |b, code| Box.box(update(Box.unbox(b), code)),
-		view: |b| Box.box(view(Box.unbox(b))),
+		update: |b, code| Box.box(update(b.unbox(), code)),
+		view: |b| Box.box(view(b.unbox())),
 		release: |_view| {},
 	}
 }
@@ -172,9 +171,9 @@ expect {
 	start = FastTrack.init(3, 0, 0x55, 0)
 	var $m = start
 	var $n = 0
-	while Try.is_err(Game.winner($m.game)) and $n < 5000 {
+	while Game.winner($m.game).is_err() and $n < 5000 {
 		$m = FastTrack.update($m, Codes.agent_step)
 		$n = $n + 1
 	}
-	Try.is_ok(Game.winner($m.game))
+	Game.winner($m.game).is_ok()
 }

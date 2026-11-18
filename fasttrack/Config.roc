@@ -18,16 +18,16 @@ Config :: [].{
 	base_locations = ["B1", "B2", "B3", "B4"]
 
 	is_base_id : Str -> Bool
-	is_base_id = |id| List.contains(base_locations, id)
+	is_base_id = |id| base_locations.contains(id)
 
 	holding_pen_locations : List(Str)
 	holding_pen_locations = ["HP1", "HP2", "HP3", "HP4"]
 
 	is_holding_pen_id : Str -> Bool
-	is_holding_pen_id = |id| List.contains(holding_pen_locations, id)
+	is_holding_pen_id = |id| holding_pen_locations.contains(id)
 
 	is_move_again_card : Str -> Bool
-	is_move_again_card = |card| List.contains(["A", "K", "Q", "J", "joker", "6"], card)
+	is_move_again_card = |card| ["A", "K", "Q", "J", "joker", "6"].contains(card)
 
 	## One zone's squares, in the panel's own coordinates: x across, y up
 	## from the edge of the board.
@@ -131,9 +131,9 @@ Config :: [].{
 	## Suits do not matter in Fast Track. Each player's copy is shuffled once
 	## before the game and drawn from the top (Player.shuffle).
 	full_deck : List(Str)
-	full_deck = List.join(List.repeat(["2", "3", "4", "5", "6", "7", "8", "9", "10", "J", "Q", "K", "A"], 4)).concat(["joker", "joker"])
+	full_deck = ["2", "3", "4", "5", "6", "7", "8", "9", "10", "J", "Q", "K", "A"].repeat(4).join().concat(["joker", "joker"])
 }
 
-expect List.len(Config.full_deck) == 54
-expect List.take_first(Config.full_deck, 14) == ["2", "3", "4", "5", "6", "7", "8", "9", "10", "J", "Q", "K", "A", "2"]
+expect Config.full_deck.len() == 54
+expect Config.full_deck.take_first(14) == ["2", "3", "4", "5", "6", "7", "8", "9", "10", "J", "Q", "K", "A", "2"]
 expect Config.move_count_for_card("6", Bool.True) == 1 and Config.move_count_for_card("6", Bool.False) == 6

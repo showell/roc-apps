@@ -11,19 +11,19 @@ History :: [].{
 
 	prior_states : History.History(a), a -> List(a) where [a.is_eq : a, a -> Bool]
 	prior_states = |history, state|
-		match List.find_first_index(history.states, |s| s != state) {
-			Ok(i) => List.drop_first(history.states, i)
+		match history.states.find_first_index(|s| s != state) {
+			Ok(i) => history.states.drop_first(i)
 			Err(_) => []
 		}
 
 	update : History.History(a), a -> History.History(a) where [a.is_eq : a, a -> Bool]
-	update = |history, state| { states: List.prepend(prior_states(history, state), state) }
+	update = |history, state| { states: prior_states(history, state).prepend(state) }
 
 	reset : a -> History.History(a)
 	reset = |state| { states: [state] }
 
 	can_undo : History.History(a), a -> Bool where [a.is_eq : a, a -> Bool]
-	can_undo = |history, state| !List.is_empty(prior_states(history, state))
+	can_undo = |history, state| !prior_states(history, state).is_empty()
 
 	## With nothing to undo this answers the state unchanged; the page hides
 	## the button then anyway.

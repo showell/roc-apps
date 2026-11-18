@@ -39,31 +39,28 @@ Search :: [].{
 
 	## Cards the rules treat alike: a Q and a K both move one and go again.
 	same_card : Str, Str -> Bool
-	same_card = |a, b| a == b or (List.contains(["Q", "K"], a) and List.contains(["Q", "K"], b))
+	same_card = |a, b| a == b or (["Q", "K"].contains(a) and ["Q", "K"].contains(b))
 
 	## The index of the first copy of each card `keep` accepts: two 5s are
 	## one choice, and so are a Q and a K.
 	first_of_each : List(Str), (Str -> Bool), (U64 -> Type.GameMsg) -> List(Type.GameMsg)
 	first_of_each = |hand, keep, make|
-		List.join(
-			List.map_with_index(
-				hand,
-				|card, i|
-					if keep(card) and List.find_first_index(hand, |c| same_card(c, card)) == Ok(i) {
-						[make(i)]
-					} else {
-						[]
-					},
-			),
-		)
+		hand.map_with_index(
+			|card, i|
+				if keep(card) and hand.find_first_index(|c| same_card(c, card)) == Ok(i) {
+					[make(i)]
+				} else {
+					[]
+				},
+		).join()
 
 	hand_size : Type.Game -> U64
-	hand_size = |game| List.len(Player.get_active_player(game).hand)
+	hand_size = |game| Player.get_active_player(game).hand.len()
 
 	apply : Search.Line, Type.GameMsg -> Search.Line
 	apply = |line, msg| {
 		(_, game) = Game.update_game(msg, History.init({}), line.game)
-		{ game, msgs: List.append(line.msgs, msg), drew: line.drew or hand_size(game) > hand_size(line.game) }
+		{ game, msgs: line.msgs.append(msg), drew: line.drew or hand_size(game) > hand_size(line.game) }
 	}
 
 	## A line the search goes on with: the player is choosing a card, or
@@ -90,8 +87,8 @@ Search :: [].{
 			_ => Bool.False
 		}
 		choices = options(line.game)
-		if mid_play and !line.drew and !List.is_empty(choices) {
-			List.join_map(choices, |msg| settle(apply(line, msg)))
+		if mid_play and !line.drew and !choices.is_empty() {
+			choices.join_map(|msg| settle(apply(line, msg)))
 		} else {
 			[line]
 		}
@@ -99,7 +96,7 @@ Search :: [].{
 
 	## One card play further, every way.
 	expand : Search.Line -> List(Search.Line)
-	expand = |line| List.join_map(options(line.game), |msg| settle(apply(line, msg)))
+	expand = |line| options(line.game).join_map(|msg| settle(apply(line, msg)))
 
 	## The same position reached two ways is one line, the first: lines are
 	## the same when their keys are (line_key), found by sorting the keys, not
@@ -107,9 +104,8 @@ Search :: [].{
 	## thousands of lines.
 	distinct_lines : List(Search.Line) -> List(Search.Line)
 	distinct_lines = |lines| {
-		keyed = List.map_with_index(lines, |line, i| { key: line_key(line), i, line })
-		sorted = List.sort_with(
-			keyed,
+		keyed = lines.map_with_index(|line, i| { key: line_key(line), i, line })
+		sorted = keyed.sort_with(
 			|a, b|
 				if key_before(a.key, b.key) {
 					Before
@@ -121,28 +117,23 @@ Search :: [].{
 					After
 				},
 		)
-		firsts = List.fold(
-			sorted,
+		firsts = sorted.fold(
 			[],
 			|kept, x|
-				match List.last(kept) {
+				match kept.last() {
 					Ok(k) if k.key == x.key => kept
-					_ => List.append(kept, x)
+					_ => kept.append(x)
 				},
 		)
-		List.map(
-			List.sort_with(
-				firsts,
-				|a, b| if a.i < b.i {
-					Before
-				} else if a.i > b.i {
-					After
-				} else {
-					Same
-				},
-			),
-			|x| x.line,
-		)
+		firsts.sort_with(
+			|a, b| if a.i < b.i {
+				Before
+			} else if a.i > b.i {
+				After
+			} else {
+				Same
+			},
+		).map(|x| x.line)
 	}
 
 	## A line's position (position_key) and where its turn stands: two lines
@@ -156,7 +147,7 @@ Search :: [].{
 			TurnDone => 3
 			_ => 4
 		}
-		List.append(position_key(line), stage)
+		position_key(line).append(stage)
 	}
 
 	## The most lines a level of the search keeps; past it the search keeps
@@ -184,29 +175,29 @@ Search :: [].{
 	all_lines = |game| {
 		start = settle({ game, msgs: [], drew: Bool.False })
 		var $level = start
-		var $done = List.drop_if(start, is_open)
+		var $done = start.drop_if(is_open)
 		var $depth = 0
 		var $capped = Bool.False
 		# A turn is at most five plays (a line ends when the hand is refilled),
 		# so the depth guard never binds; max_lines is the cap that can.
-		while List.any($level, is_open) and $depth < 8 {
+		while $level.any(is_open) and $depth < 8 {
 			grown = $level.keep_if(is_open).join_map(expand)
 			merged = distinct_lines(grown)
-			$capped = $capped or List.len(merged) > max_lines
-			$level = List.take_first(merged, max_lines)
-			$done = List.concat($done, List.drop_if($level, is_open))
+			$capped = $capped or merged.len() > max_lines
+			$level = merged.take_first(max_lines)
+			$done = $done.concat($level.drop_if(is_open))
 			$depth = $depth + 1
 		}
 		{
 			lines: finals({ done: $done, level: $level }),
-			cut: $capped or List.any($level, is_open),
+			cut: $capped or $level.any(is_open),
 		}
 	}
 
 	## A search's answer: the lines that ended, and those still open at the
 	## last level it reached, but never the empty line.
 	finals : { done : List(Search.Line), level : List(Search.Line) } -> List(Search.Line)
-	finals = |{ done, level }| List.keep_if(List.concat(done, List.keep_if(level, is_open)), |l| !List.is_empty(l.msgs))
+	finals = |{ done, level }| done.concat(level.keep_if(is_open)).keep_if(|l| !l.msgs.is_empty())
 
 	## The line that takes the first choice offered at every step, through
 	## the rest of the turn: a player who plays the first legal move it finds.
@@ -225,7 +216,7 @@ Search :: [].{
 			}
 			$steps = $steps + 1
 		}
-		if List.is_empty($line.msgs) {
+		if $line.msgs.is_empty() {
 			Err(NoPlay)
 		} else {
 			Ok($line)
@@ -240,8 +231,7 @@ Search :: [].{
 	position_key = |line| {
 		g = line.game
 		p = Player.get_active_player(g)
-		ascending = |xs| List.sort_with(
-			xs,
+		ascending = |xs| xs.sort_with(
 			|a, b| if a < b {
 				Before
 			} else if a > b {
@@ -250,42 +240,40 @@ Search :: [].{
 				Same
 			},
 		)
-		pieces = List.join(
-			List.map_with_index(
-				g.board,
-				|v, sq| if v == 0 {
-					[]
-				} else {
-					[10 * sq + U8.to_u64(v) - 1]
-				},
-			),
-		)
+		pieces = List.map_with_index(
+			g.board,
+			|v, sq| if v == 0 {
+				[]
+			} else {
+				[10 * sq + v.to_u64() - 1]
+			},
+		).join()
 		cards = ascending(p.hand.map(|c| Config.card_value(c).to_u64_wrap()))
-		List.join([
+		[
 			pieces,
 			[999],
 			cards,
 			[
 				999,
-				I64.to_u64_wrap(p.get_out_credits),
+				p.get_out_credits.to_u64_wrap(),
 				if line.drew {
 					1
 				} else {
 					0
 				},
 			],
-		])
+		].join()
 	}
 
 	## Lexicographic order on keys.
 	key_before : List(U64), List(U64) -> Bool
 	key_before = |a, b| {
 		var $i = 0
-		var $answer = List.len(a) < List.len(b)
+		var $answer = a.len() < b.len()
 		var $decided = Bool.False
-		while !$decided and $i < List.len(a) and $i < List.len(b) {
-			x = List.get(a, $i) ?? 0
-			y = List.get(b, $i) ?? 0
+		while !$decided and $i < a.len() and $i < b.len() {
+			x = a.get($i) ?? 0
+			y = b.get($i) ?? 0
 			if x != y {
 				$answer = x < y
 				$decided = Bool.True
@@ -302,8 +290,7 @@ Search :: [].{
 	best_line : Strategy.Strategy, Type.Game -> Try({ line : Search.Line, cut : Bool }, [NoPlay])
 	best_line = |strategy, game| {
 		found = all_lines(game)
-		best = List.fold(
-			found.lines,
+		best = found.lines.fold(
 			{ line: { game, msgs: [], drew: Bool.False }, score: 0, found: Bool.False },
 			|acc, line| {
 				s = score(strategy, game, line)

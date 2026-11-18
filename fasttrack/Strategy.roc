@@ -43,14 +43,14 @@ Strategy :: [].{
 	## What the squares of these colors' pieces are worth.
 	board : Strategy.Strategy, Type.Game, List(Str) -> I64
 	board = |strategy, game, colors| {
-		cs = List.map(colors, |c| Board.color_index(game.zone_colors, c))
+		cs = colors.map(|c| Board.color_index(game.zone_colors, c))
 		var $total = 0
 		var $s = 0
 		while $s < Board.count {
 			match Piece.at(game.board, $s) {
-				Ok(c) if List.contains(cs, c) => {
+				Ok(c) if cs.contains(c) => {
 					own_base = if Board.is_base($s) and Board.zone($s) == c {
-						U64.to_i64_wrap(Board.local($s)) - 3
+						Board.local($s).to_i64_wrap() - 3
 					} else {
 						0
 					}
@@ -72,15 +72,13 @@ Strategy :: [].{
 	hoard_worths : Strategy.Strategy, Type.Game, Str -> List({ cards : List(Str), worth : I64 })
 	hoard_worths = |strategy, game, color| {
 		n = in_base(game, color)
-		List.map(
-			strategy.hoards,
+		strategy.hoards.map(
 			|h| {
-				last = List.len(h.worth)
+				last = h.worth.len()
 				worth = if last == 0 {
 					0
 				} else {
-					List.get(
-						h.worth,
+					h.worth.get(
 						if n < last {
 							n
 						} else {

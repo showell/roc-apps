@@ -17,16 +17,16 @@ ElmRandom :: [].{
 	mask = 4294967295
 
 	next : ElmRandom.Seed -> ElmRandom.Seed
-	next = |seed| { state: U64.bitwise_and((seed.state * 1664525) + seed.incr, mask), incr: seed.incr }
+	next = |seed| { state: ((seed.state * 1664525) + seed.incr).bitwise_and(mask), incr: seed.incr }
 
 	## What `Bitwise.xor` answers: the low 32 bits, read as a signed Int32.
 	signed32 : U64 -> I64
 	signed32 = |bits| {
-		low = U64.bitwise_and(bits, mask)
+		low = bits.bitwise_and(mask)
 		if low >= 2147483648 {
-			U64.to_i64_wrap(low) - 4294967296
+			low.to_i64_wrap() - 4294967296
 		} else {
-			U64.to_i64_wrap(low)
+			low.to_i64_wrap()
 		}
 	}
 
@@ -47,7 +47,7 @@ ElmRandom :: [].{
 	initial_seed : U64 -> ElmRandom.Seed
 	initial_seed = |x| {
 		seed1 = next({ state: 0, incr: 1013904223 })
-		state2 = U64.bitwise_and(seed1.state + x, mask)
+		state2 = (seed1.state + x).bitwise_and(mask)
 		next({ state: state2, incr: seed1.incr })
 	}
 
@@ -64,11 +64,11 @@ ElmRandom :: [].{
 		} else {
 			a
 		}
-		range = I64.to_u64_wrap(hi - lo + 1)
-		if U64.bitwise_and(range - 1, range) == 0 {
+		range = (hi - lo + 1).to_u64_wrap()
+		if (range - 1).bitwise_and(range) == 0 {
 			{ value: (range - 1).bitwise_and(peel(seed0)).to_i64_wrap() + lo, seed: next(seed0) }
 		} else {
-			threshold = U64.rem_by(4294967296 - range, range)
+			threshold = (4294967296 - range).rem_by(range)
 			var $seed = seed0
 			var $x = peel($seed)
 			while $x < threshold {
@@ -88,7 +88,7 @@ draws = |seed0| {
 	var $deck = 54
 	while $deck > 42 {
 		d = ElmRandom.int(0, $deck - 1, $seed)
-		$values = List.append($values, d.value)
+		$values = $values.append(d.value)
 		$seed = d.seed
 		$deck = $deck - 1
 	}

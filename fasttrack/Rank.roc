@@ -22,12 +22,12 @@ Rank :: [].{
 	## The decks, stage by stage: each drops more kinds of card.
 	stages : List({ title : Str, hand : List(Str) })
 	stages = {
-		all = List.drop_if(Reach.cards, |c| c == "joker")
-		no6 = List.drop_if(all, |c| c == "6")
-		no7 = List.drop_if(no6, |c| c == "7")
-		no4 = List.drop_if(no7, |c| c == "4")
-		no_face = List.drop_if(no4, |c| List.contains(["J", "Q", "K"], c))
-		no_high = List.drop_if(no_face, |c| c == "9" or c == "10")
+		all = Reach.cards.drop_if(|c| c == "joker")
+		no6 = all.drop_if(|c| c == "6")
+		no7 = no6.drop_if(|c| c == "7")
+		no4 = no7.drop_if(|c| c == "4")
+		no_face = no4.drop_if(|c| ["J", "Q", "K"].contains(c))
+		no_high = no_face.drop_if(|c| c == "9" or c == "10")
 		[
 			{ title: "no joker", hand: all },
 			{ title: "no 6", hand: no6 },
@@ -76,7 +76,7 @@ Rank :: [].{
 	## -1 when `a` ranks above `b`, 1 below, 0 a tie at every stage.
 	compare : Rank.Row, Rank.Row -> I64
 	compare = |a, b| {
-		first = |r| List.first(r.stage) ?? { cards: Board.far, routes: 0 }
+		first = |r| r.stage.first() ?? { cards: Board.far, routes: 0 }
 		if a.base != b.base {
 			if a.base > b.base {
 				-1
@@ -90,8 +90,7 @@ Rank :: [].{
 				1
 			}
 		} else {
-			List.fold(
-				List.map_with_index(a.stage, |sa, i| by_stage(sa, List.get(b.stage, i) ?? { cards: Board.far, routes: 0 })),
+			a.stage.map_with_index(|sa, i| by_stage(sa, b.stage.get(i) ?? { cards: Board.far, routes: 0 })).fold(
 				0,
 				|decided, c| if decided != 0 {
 					decided
@@ -110,29 +109,25 @@ Rank :: [].{
 	## `ranked`, over a color's grid built once (Reach.grid).
 	ranked_in : List(Reach.Move), List(Str), Str, Str -> List(Rank.Row)
 	ranked_in = |grid, zone_colors, color, peak| {
-		tables = List.map(stages, |st| Reach.routes(grid, { zone_colors, color, peak }, { hand: st.hand, face: FreeFace }))
-		rows = List.join(
-			List.map_with_index(
-				Board.all_locs(zone_colors),
-				|loc, i| {
-					stage = List.map(tables, |t| List.get(t, i) ?? { cards: Board.far, routes: 0 })
-					id = if loc.zone == NormalColor(color) {
-						loc.id
-					} else {
-						""
-					}
-					base = base_depth(id)
-					# The base squares past the peak count too: they rank first.
-					if base == 0 and (List.first(stage) ?? { cards: Board.far, routes: 0 }).cards >= Board.far {
-						[]
-					} else {
-						[{ at: i, loc, base, stage }]
-					}
-				},
-			),
-		)
-		List.sort_with(
-			rows,
+		tables = stages.map(|st| Reach.routes(grid, { zone_colors, color, peak }, { hand: st.hand, face: FreeFace }))
+		rows = Board.all_locs(zone_colors).map_with_index(
+			|loc, i| {
+				stage = tables.map(|t| t.get(i) ?? { cards: Board.far, routes: 0 })
+				id = if loc.zone == NormalColor(color) {
+					loc.id
+				} else {
+					""
+				}
+				base = base_depth(id)
+				# The base squares past the peak count too: they rank first.
+				if base == 0 and (stage.first() ?? { cards: Board.far, routes: 0 }).cards >= Board.far {
+					[]
+				} else {
+					[{ at: i, loc, base, stage }]
+				}
+			},
+		).join()
+		rows.sort_with(
 			|a, b| {
 				c = compare(a, b)
 				if c < 0 {
@@ -160,20 +155,18 @@ Rank :: [].{
 	places_in = |grid, zone_colors, color, peak| {
 		order = ranked_in(grid, zone_colors, color, peak)
 		start = List.repeat(U64.highest, Board.all_locs(zone_colors).len())
-		settled = List.fold(
-			List.map_with_index(order, |row, i| { row, i }),
-			{ place: start, prev: { row: List.first(order) ?? { at: 0, loc: { zone: BullsEyeZone, id: "" }, base: 0, stage: [] }, place: 0 } },
+		settled = order.map_with_index(|row, i| { row, i }).fold(
+			{ place: start, prev: { row: order.first() ?? { at: 0, loc: { zone: BullsEyeZone, id: "" }, base: 0, stage: [] }, place: 0 } },
 			|acc, x| {
 				p = if x.i > 0 and compare(acc.prev.row, x.row) == 0 {
 					acc.prev.place
 				} else {
 					x.i
 				}
-				{ place: List.set(acc.place, x.row.at, p) ?? crash ("Rank: square out of range"), prev: { row: x.row, place: p } }
+				{ place: acc.place.set(x.row.at, p) ?? crash ("Rank: square out of range"), prev: { row: x.row, place: p } }
 			},
 		)
-		worst = List.fold(
-			settled.place,
+		worst = settled.place.fold(
 			0,
 			|m, p| if p != U64.highest and p > m {
 				p
@@ -190,7 +183,7 @@ colors = ["red", "blue", "green", "purple"]
 
 ## Red's place at each of its squares, by the square's id.
 places_by_id : Rank.Places -> (Str -> U64)
-places_by_id = |p| |id| List.get(p.place, Board.index_of(colors, { zone: NormalColor("red"), id })) ?? crash "Rank's expects: red has a square of every id they name"
+places_by_id = |p| |id| p.place.get(Board.index_of(colors, { zone: NormalColor("red"), id })) ?? crash "Rank's expects: red has a square of every id they name"
 
 # Red's places to B3: B4 first (a base square), then B3, B2 and B1; R4 above
 # R3; DS above R4; the pen squares share one place.

@@ -28,10 +28,10 @@ Assoc :: [].{
 	dict_keys = |dict| List.map(dict, |entry| entry.key)
 
 	set_insert : Assoc.AssocSet(a), a -> Assoc.AssocSet(a) where [a.is_eq : a, a -> Bool]
-	set_insert = |set, item| List.prepend(List.drop_if(set, |other| other == item), item)
+	set_insert = |set, item| List.drop_if(set, |other| other == item).prepend(item)
 
 	set_from_list : List(a) -> Assoc.AssocSet(a) where [a.is_eq : a, a -> Bool]
-	set_from_list = |items| List.fold(items, [], |set, item| set_insert(set, item))
+	set_from_list = |items| items.fold([], |set, item| set_insert(set, item))
 
 	set_member : Assoc.AssocSet(a), a -> Bool where [a.is_eq : a, a -> Bool]
 	set_member = |set, item| List.contains(set, item)

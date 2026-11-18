@@ -66,7 +66,7 @@ Game :: [].{
 	rotate_board : Type.Game -> Type.Game
 	rotate_board = |game| {
 		old_idx = game.active_player_idx
-		new_idx = U64.rem_by(old_idx + 1, game.num_players)
+		new_idx = (old_idx + 1).rem_by(game.num_players)
 		players = Player.set_turn(new_idx, TurnBegin, Player.set_turn(old_idx, TurnIdle, game.players))
 		begin_active_turn({ ..game, players, active_player_idx: new_idx })
 	}
@@ -87,12 +87,12 @@ Game :: [].{
 					Err(NoWinner)
 				}
 				Partner(partner) => if both_home(player.color, partner) {
-					Ok(Str.concat(player.color, Str.concat(" and ", partner)))
+					Ok(player.color.concat(" and ".concat(partner)))
 				} else {
 					Err(NoWinner)
 				}
 				PartnerOnceHome(partner) => if both_home(player.color, partner) {
-					Ok(Str.concat(player.color, Str.concat(" and ", partner)))
+					Ok(player.color.concat(" and ".concat(partner)))
 				} else {
 					Err(NoWinner)
 				}
@@ -129,5 +129,5 @@ Game :: [].{
 expect {
 	game = Game.begin_game(0, Normal, Solo)
 	red = Player.get_player(game.players, 0)
-	red.hand == ["9", "J", "5", "5", "J"] and List.len(red.deck) == 49
+	red.hand == ["9", "J", "5", "5", "J"] and red.deck.len() == 49
 }

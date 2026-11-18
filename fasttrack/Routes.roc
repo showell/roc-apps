@@ -77,7 +77,7 @@ Routes :: [].{
 					6 => [7]
 					_ => []
 				}
-				List.map(to, |t| Board.at(z, t))
+				to.map(|t| Board.at(z, t))
 			}
 		}
 
@@ -115,31 +115,30 @@ Routes :: [].{
 		if n == 0 {
 			[[]]
 		} else {
-			List.join_map(step(r), |s| List.map(walks(step, n - 1, s), |rest| List.prepend(rest, s)))
+			step(r).join_map(|s| walks(step, n - 1, s).map(|rest| rest.prepend(s)))
 		}
 
 	## Indexed by `r * (longest + 1) + n`.
 	forward : List(List(List(U64)))
 	forward =
-		List.join_map(
-			Board.squares,
+		Board.squares.join_map(
 			|r| {
 				fast = if (r != Board.bullseye and Board.local(r) == Board.ft) TakeFastTrack else PassFastTrack
 				pen = if (Board.is_pen(r)) LeavePen else StayInPen
 				bullseye = if (r == Board.bullseye) LeaveBullseye else StayInBullseye
 				step = |s| next(s, fast, pen, bullseye)
-				List.map(Board.indices(longest + 1), |n| walks(step, n, r))
+				Board.indices(longest + 1).map(|n| walks(step, n, r))
 			},
 		)
 
 	backward : List(List(List(U64)))
-	backward = List.join_map(Board.squares, |r| List.map(Board.indices(longest + 1), |n| walks(prev, n, r)))
+	backward = Board.squares.join_map(|r| Board.indices(longest + 1).map(|n| walks(prev, n, r)))
 
 	forward_walks : U64, U64 -> List(List(U64))
-	forward_walks = |r, n| List.get(forward, r * (longest + 1) + n) ?? []
+	forward_walks = |r, n| forward.get(r * (longest + 1) + n) ?? []
 
 	backward_walks : U64, U64 -> List(List(U64))
-	backward_walks = |r, n| List.get(backward, r * (longest + 1) + n) ?? []
+	backward_walks = |r, n| backward.get(r * (longest + 1) + n) ?? []
 }
 
 # From L1, 8 steps: L2 L3 L4 FT, then the next zone's R4 R3 R2 R1.

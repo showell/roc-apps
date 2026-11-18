@@ -2,17 +2,17 @@
 # Color.elm.
 Color :: [].{
 	get_zone_colors : U64 -> List(Str)
-	get_zone_colors = |num_players| List.take_first(["red", "blue", "green", "purple", "aqua", "brown"], num_players)
+	get_zone_colors = |num_players| ["red", "blue", "green", "purple", "aqua", "brown"].take_first(num_players)
 
 	rotate_list : U64, List(a) -> List(a)
-	rotate_list = |idx, lst| List.concat(List.drop_first(lst, idx), List.take_first(lst, idx))
+	rotate_list = |idx, lst| lst.drop_first(idx).concat(lst.take_first(idx))
 
 	## The color `step` places after this one. A color that is not there
 	## counts as index -1 going forward and 1 going back, as in Elm.
 	shifted : Str, List(Str), I64, I64 -> Str
 	shifted = |color, zone_colors, missing, step| {
-		idx = match List.find_first_index(zone_colors, |c| c == color) {
-			Ok(i) => U64.to_i64_wrap(i)
+		idx = match zone_colors.find_first_index(|c| c == color) {
+			Ok(i) => i.to_i64_wrap()
 			Err(_) => missing
 		}
 		len = zone_colors.len().to_i64_wrap()

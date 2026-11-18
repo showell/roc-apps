@@ -33,16 +33,15 @@ LegalMove :: [].{
 		} else {
 			r = Board.relative(c, start)
 			walks = match direction {
-				Backward => Routes.backward_walks(r, I64.to_u64_wrap(n))
-				Forward => Routes.forward_walks(r, I64.to_u64_wrap(n))
+				Backward => Routes.backward_walks(r, n.to_u64_wrap())
+				Forward => Routes.forward_walks(r, n.to_u64_wrap())
 			}
-			List.join_map(
-				walks,
+			walks.join_map(
 				|walk|
-					if List.any(walk, |x| Piece.holds(board, Board.absolute(c, x), c)) {
+					if walk.any(|x| Piece.holds(board, Board.absolute(c, x), c)) {
 						[]
 					} else {
-						[Board.absolute(c, List.last(walk) ?? crash ("LegalMove: an empty walk"))]
+						[Board.absolute(c, walk.last() ?? crash ("LegalMove: an empty walk"))]
 					},
 			)
 		}
@@ -53,20 +52,17 @@ LegalMove :: [].{
 	walk_between = |board, c, start, end, n, direction| {
 		r = Board.relative(c, start)
 		walks = match direction {
-			Backward => Routes.backward_walks(r, I64.to_u64_wrap(n))
-			Forward => Routes.forward_walks(r, I64.to_u64_wrap(n))
+			Backward => Routes.backward_walks(r, n.to_u64_wrap())
+			Forward => Routes.forward_walks(r, n.to_u64_wrap())
 		}
-		open = List.keep_if(
-			List.map(walks, |walk| List.map(walk, |x| Board.absolute(c, x))),
-			|walk| List.last(walk) == Ok(end) and !List.any(walk, |x| Piece.holds(board, x, c)),
-		)
-		List.prepend(List.first(open) ?? [end], start)
+		open = walks.map(|walk| walk.map(|x| Board.absolute(c, x))).keep_if(|walk| walk.last() == Ok(end) and !walk.any(|x| Piece.holds(board, x, c)))
+		(open.first() ?? [end]).prepend(start)
 	}
 
 	## Whether the piece on `s` can go `n` more squares, for the second part
 	## of a split seven: no leaving the pen or the bullseye.
 	get_can_go_n_spaces : Type.Board, U64, List(Str), I64, List(Str) -> Bool
-	get_can_go_n_spaces = |board, s, zone_colors, n, movers| can_go(board, s, n, List.map(movers, |m| Board.color_index(zone_colors, m)))
+	get_can_go_n_spaces = |board, s, zone_colors, n, movers| can_go(board, s, n, movers.map(|m| Board.color_index(zone_colors, m)))
 
 	can_go : Type.Board, U64, I64, List(U64) -> Bool
 	can_go = |board, s, n, movers|
@@ -74,7 +70,7 @@ LegalMove :: [].{
 			Err(_) => Bool.False
 			Ok(c) =>
 				if Board.is_ft(s) or !Piece.any_on_fast_track(board, movers) {
-					!List.is_empty(ends(board, c, s, n, Forward, StayInPen, StayInBullseye))
+					!ends(board, c, s, n, Forward, StayInPen, StayInBullseye).is_empty()
 				} else {
 					Bool.False
 				}
@@ -84,8 +80,8 @@ LegalMove :: [].{
 	## backwards instead.
 	get_moves_for_cards : List(Str), Type.Board, List(Str), List(Str) -> List(Type.Move)
 	get_moves_for_cards = |cards, board, zone_colors, movers| {
-		m = List.map(movers, |c| Board.color_index(zone_colors, c))
-		moves_for = |make_move_type| List.join_map(cards, |card| moves_for_type(make_move_type(card), board, m))
+		m = movers.map(|c| Board.color_index(zone_colors, c))
+		moves_for = |make_move_type| cards.join_map(|card| moves_for_type(make_move_type(card), board, m))
 		forward_moves = moves_for(
 			|card| if card == "4" {
 				Reverse(card)
@@ -93,7 +89,7 @@ LegalMove :: [].{
 				WithCard(card)
 			},
 		)
-		if List.is_empty(forward_moves) {
+		if forward_moves.is_empty() {
 			moves_for(|card| Reverse(card))
 		} else {
 			forward_moves
@@ -101,7 +97,7 @@ LegalMove :: [].{
 	}
 
 	get_moves_for_move_type : Type.MoveType, Type.Board, List(Str), List(Str) -> List(Type.Move)
-	get_moves_for_move_type = |move_type, board, zone_colors, movers| moves_for_type(move_type, board, List.map(movers, |c| Board.color_index(zone_colors, c)))
+	get_moves_for_move_type = |move_type, board, zone_colors, movers| moves_for_type(move_type, board, movers.map(|c| Board.color_index(zone_colors, c)))
 
 	moves_for_type : Type.MoveType, Type.Board, List(U64) -> List(Type.Move)
 	moves_for_type = |move_type, board, movers| {
@@ -109,11 +105,11 @@ LegalMove :: [].{
 			FinishSplit(_, exclude) => Piece.team_other_non_pen_pieces(board, movers, exclude)
 			_ => Piece.team_movable_pieces(board, movers)
 		}
-		List.join_map(starts, |start| moves_from(move_type, board, start, movers))
+		starts.join_map(|start| moves_from(move_type, board, start, movers))
 	}
 
 	get_moves_from_location : Type.MoveType, Type.Board, List(Str), U64, List(Str) -> List(Type.Move)
-	get_moves_from_location = |move_type, board, zone_colors, start, movers| moves_from(move_type, board, start, List.map(movers, |c| Board.color_index(zone_colors, c)))
+	get_moves_from_location = |move_type, board, zone_colors, start, movers| moves_from(move_type, board, start, movers.map(|c| Board.color_index(zone_colors, c)))
 
 	moves_from : Type.MoveType, Type.Board, U64, List(U64) -> List(Type.Move)
 	moves_from = |move_type, board, start, movers|
@@ -126,21 +122,21 @@ LegalMove :: [].{
 						Reverse(_) => Backward
 						_ => if (card == "4") Backward else Forward
 					}
-					pen = if (List.contains(["A", "joker", "6"], card)) LeavePen else StayInPen
-					bullseye = if (List.contains(["J", "Q", "K"], card) and start == Board.bullseye) LeaveBullseye else StayInBullseye
+					pen = if (["A", "joker", "6"].contains(card)) LeavePen else StayInPen
+					bullseye = if (["J", "Q", "K"].contains(card) and start == Board.bullseye) LeaveBullseye else StayInBullseye
 					n = move_count_for_move_type(move_type, Board.is_pen(start))
 					if move_type == WithCard("7") {
 						moves_for_seven(board, c, start, movers)
 					} else if move_type == WithCard("J") {
-						steps = List.map(ends(board, c, start, 1, direction, pen, bullseye), |end| { kind: WithCard("J"), start, end })
+						steps = ends(board, c, start, 1, direction, pen, bullseye).map(|end| { kind: WithCard("J"), start, end })
 						trades = if Board.is_track(start) {
-							List.map(Piece.swappable_locs(board, c), |end| { kind: JackTrade, start, end })
+							Piece.swappable_locs(board, c).map(|end| { kind: JackTrade, start, end })
 						} else {
 							[]
 						}
-						List.concat(steps, trades)
+						steps.concat(trades)
 					} else {
-						List.map(ends(board, c, start, n, direction, pen, bullseye), |end| { kind: move_type, start, end })
+						ends(board, c, start, n, direction, pen, bullseye).map(|end| { kind: move_type, start, end })
 					}
 				} else {
 					[]
@@ -152,26 +148,25 @@ LegalMove :: [].{
 	## never onto the bullseye.
 	moves_for_seven : Type.Board, U64, U64, List(U64) -> List(Type.Move)
 	moves_for_seven = |board, c, start, movers| {
-		full = List.map(ends(board, c, start, 7, Forward, StayInPen, StayInBullseye), |end| { kind: WithCard("7"), start, end })
+		full = ends(board, c, start, 7, Forward, StayInPen, StayInBullseye).map(|end| { kind: WithCard("7"), start, end })
 		others = Piece.team_other_non_pen_pieces(board, movers, start)
-		if List.is_empty(others) {
+		if others.is_empty() {
 			full
 		} else {
-			partial = List.join_map(
-				[1, 2, 3, 4, 5, 6],
+			partial = [1, 2, 3, 4, 5, 6].join_map(
 				|count| {
-					candidates = List.map(List.drop_if(ends(board, c, start, count, Forward, StayInPen, StayInBullseye), |end| end == Board.bullseye), |end| { kind: StartSplit(count), start, end })
-					List.keep_if(candidates, |move| can_finish_split(board, others, 7 - count, move, movers))
+					candidates = ends(board, c, start, count, Forward, StayInPen, StayInBullseye).drop_if(|end| end == Board.bullseye).map(|end| { kind: StartSplit(count), start, end })
+					candidates.keep_if(|move| can_finish_split(board, others, 7 - count, move, movers))
 				},
 			)
-			List.concat(partial, full)
+			partial.concat(full)
 		}
 	}
 
 	can_finish_split : Type.Board, List(U64), I64, Type.Move, List(U64) -> Bool
 	can_finish_split = |board, others, count, move, movers| {
 		moved = Piece.move_piece(move, board)
-		List.any(others, |other| can_go(moved, other, count, movers))
+		others.any(|other| can_go(moved, other, count, movers))
 	}
 
 	get_card_for_play_type : Type.PlayType -> Str

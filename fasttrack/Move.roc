@@ -51,14 +51,14 @@ Move :: [].{
 	made = |game, msg|
 		match (Player.get_active_player(game).turn, msg) {
 			(TurnNeedStartLoc(info), SetStartLocation(start)) => {
-				from = List.keep_if(info.moves, |m| m.start == start)
+				from = info.moves.keep_if(|m| m.start == start)
 				match from {
-					[first, ..] if List.all(from, |m| m.end == first.end) => [first]
+					[first, ..] if from.all(|m| m.end == first.end) => [first]
 					_ => []
 				}
 			}
 			(TurnNeedEndLoc(info), SetEndLocation(end)) => {
-				match List.find_first(info.moves, |m| m.start == info.start_location and m.end == end) {
+				match info.moves.find_first(|m| m.start == info.start_location and m.end == end) {
 					Ok(m) => [m]
 					Err(_) => []
 				}

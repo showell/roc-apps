@@ -26,7 +26,7 @@ points_for = |worst, place|
 	if place == U64.highest {
 		0
 	} else {
-		100 * (U64.to_i64_wrap(worst) - U64.to_i64_wrap(place))
+		100 * (worst.to_i64_wrap() - place.to_i64_wrap())
 	}
 
 ## A zone's lines of the table: its title, then each square's value with the
@@ -34,7 +34,7 @@ points_for = |worst, place|
 zone_lines : List(I64), { title : Str, zone : U64 } -> Str
 zone_lines = |values, { title, zone }| {
 	zone_values = values.sublist({ start: zone * Board.per_zone, len: Board.per_zone })
-	lines = List.map2(Config.config_locations, zone_values, |location, points| "\t\t${points.to_str()}, # ${location.id}\n")
+	lines = Config.config_locations.map2(zone_values, |location, points| "\t\t${points.to_str()}, # ${location.id}\n")
 	Str.join_with(lines, "").with_prefix("\t\t# ${title}\n")
 }
 

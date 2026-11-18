@@ -30,13 +30,13 @@ Codes :: [].{
 	agent_step = 3
 
 	activate_card : U64 -> U32
-	activate_card = |idx| 100 + U64.to_u32_wrap(idx)
+	activate_card = |idx| 100 + idx.to_u32_wrap()
 
 	discard_card : U64 -> U32
-	discard_card = |idx| 200 + U64.to_u32_wrap(idx)
+	discard_card = |idx| 200 + idx.to_u32_wrap()
 
 	cover_card : U64 -> U32
-	cover_card = |idx| 300 + U64.to_u32_wrap(idx)
+	cover_card = |idx| 300 + idx.to_u32_wrap()
 
 	bulls_eye : U32
 	bulls_eye = 999
@@ -45,7 +45,7 @@ Codes :: [].{
 	location = |s| if s == Board.bullseye {
 		bulls_eye
 	} else {
-		U64.to_u32_wrap(32 * Board.zone(s) + Board.local(s))
+		(32 * Board.zone(s) + Board.local(s)).to_u32_wrap()
 	}
 
 	start_location : U64 -> U32
@@ -59,9 +59,9 @@ Codes :: [].{
 		if code == bulls_eye {
 			Ok(Board.bullseye)
 		} else {
-			zone = U32.to_u64(code // 32)
-			local = U32.to_u64(code % 32)
-			if zone < List.len(zone_colors) and local < Board.per_zone {
+			zone = (code // 32).to_u64()
+			local = (code % 32).to_u64()
+			if zone < zone_colors.len() and local < Board.per_zone {
 				Ok(Board.at(zone, local))
 			} else {
 				Err(BadCode)
@@ -76,15 +76,15 @@ Codes :: [].{
 		} else if code == undo {
 			Ok(UndoAction)
 		} else if code >= 20000 {
-			Try.map_ok(to_location(zone_colors, code - 20000), |loc| SetEndLocation(loc))
+			to_location(zone_colors, code - 20000).map_ok(|loc| SetEndLocation(loc))
 		} else if code >= 10000 {
-			Try.map_ok(to_location(zone_colors, code - 10000), |loc| SetStartLocation(loc))
+			to_location(zone_colors, code - 10000).map_ok(|loc| SetStartLocation(loc))
 		} else if code >= 300 and code < 400 {
-			Ok(CoverCard(U32.to_u64(code - 300)))
+			Ok(CoverCard((code - 300).to_u64()))
 		} else if code >= 200 and code < 300 {
-			Ok(DiscardCard(U32.to_u64(code - 200)))
+			Ok(DiscardCard((code - 200).to_u64()))
 		} else if code >= 100 and code < 200 {
-			Ok(ActivateCard(U32.to_u64(code - 100)))
+			Ok(ActivateCard((code - 100).to_u64()))
 		} else {
 			Err(BadCode)
 		}

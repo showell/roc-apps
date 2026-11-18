@@ -79,10 +79,10 @@ Board :: [].{
 	## square as that color sees it (its own zone first), and
 	## `absolute_table` the way back. Red's rows are the identity.
 	relative_table : List(List(U64))
-	relative_table = List.map([0, 1, 2, 3], |c| List.map(squares, |s| turn(s, zones - c)))
+	relative_table = [0, 1, 2, 3].map(|c| squares.map(|s| turn(s, zones - c)))
 
 	absolute_table : List(List(U64))
-	absolute_table = List.map([0, 1, 2, 3], |c| List.map(squares, |r| turn(r, c)))
+	absolute_table = [0, 1, 2, 3].map(|c| squares.map(|r| turn(r, c)))
 
 	## 0 through 88.
 	squares : List(U64)
@@ -93,7 +93,7 @@ Board :: [].{
 	indices = |n| {
 		var $xs = List.with_capacity(n)
 		for i in 0..<n {
-			$xs = List.append($xs, i)
+			$xs = $xs.append(i)
 		}
 		$xs
 	}
@@ -108,19 +108,19 @@ Board :: [].{
 
 	## Square `s` as color `c` sees it.
 	relative : U64, U64 -> U64
-	relative = |c, s| List.get(List.get(relative_table, c) ?? [], s) ?? crash ("Board.relative: no such square")
+	relative = |c, s| (relative_table.get(c) ?? []).get(s) ?? crash ("Board.relative: no such square")
 
 	## The square color `c` calls `r`.
 	absolute : U64, U64 -> U64
-	absolute = |c, r| List.get(List.get(absolute_table, c) ?? [], r) ?? crash ("Board.absolute: no such square")
+	absolute = |c, r| (absolute_table.get(c) ?? []).get(r) ?? crash ("Board.absolute: no such square")
 
 	## A color's place in the game's color order.
 	color_index : List(Str), Str -> U64
-	color_index = |zone_colors, color| List.find_first_index(zone_colors, |c| c == color) ?? crash ("Board: no zone ${color}")
+	color_index = |zone_colors, color| zone_colors.find_first_index(|c| c == color) ?? crash ("Board: no zone ${color}")
 
 	## The squares by name, for the page, the click codes and the tests.
 	square_of : Str -> U64
-	square_of = |id| List.find_first_index(Config.config_locations, |l| l.id == id) ?? crash ("Board: no square ${id}")
+	square_of = |id| Config.config_locations.find_first_index(|l| l.id == id) ?? crash ("Board: no square ${id}")
 
 	index_of : List(Str), Type.PieceLocation -> U64
 	index_of = |zone_colors, loc|
@@ -141,7 +141,7 @@ Board :: [].{
 
 	## Every square in order, by name.
 	all_locs : List(Str) -> List(Type.PieceLocation)
-	all_locs = |zone_colors| List.map(squares, |s| loc_of(zone_colors, s))
+	all_locs = |zone_colors| squares.map(|s| loc_of(zone_colors, s))
 }
 
 expect Board.relative(1, Board.at(1, 0)) == 0 and Board.relative(1, Board.at(0, 0)) == 3 * Board.per_zone and Board.relative(0, 57) == 57
@@ -150,5 +150,5 @@ expect {
 	colors = ["red", "blue", "green", "purple"]
 	Board.index_of(colors, { zone: NormalColor("green"), id: "L0" }) == Board.at(2, Board.l0)
 		and Board.loc_of(colors, Board.at(3, Board.ft)) == { zone: NormalColor("purple"), id: "FT" }
-		and List.len(Board.all_locs(colors)) == Board.count
+		and Board.all_locs(colors).len() == Board.count
 }

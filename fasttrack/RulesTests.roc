@@ -35,7 +35,7 @@ RulesTests :: [].{
 			"BE.bullseye"
 		} else {
 			loc = Board.loc_of(zone_colors, s)
-			"${List.get(zone_colors, Board.zone(s)) ?? crash "show_loc: every square off the bullseye is in a seated zone"}.${loc.id}"
+			"${zone_colors.get(Board.zone(s)) ?? crash "show_loc: every square off the bullseye is in a seated zone"}.${loc.id}"
 		}
 
 	show_move_type : Type.MoveType -> Str
@@ -43,8 +43,8 @@ RulesTests :: [].{
 		match move_type {
 			WithCard(card) => card
 			Reverse(card) => "R${card}"
-			StartSplit(count) => "SS${I64.to_str(count)}"
-			FinishSplit(count, _) => "FS${I64.to_str(count)}"
+			StartSplit(count) => "SS${count.to_str()}"
+			FinishSplit(count, _) => "FS${count.to_str()}"
 			_ => "other"
 		}
 
@@ -60,10 +60,10 @@ RulesTests :: [].{
 	}
 
 	moves_are : List(Type.Move), List(Str) -> Bool
-	moves_are = |moves, expected| same_set(List.map(moves, show_move), expected)
+	moves_are = |moves, expected| same_set(moves.map(show_move), expected)
 
 	locs_are : List(U64), List(Str) -> Bool
-	locs_are = |locs, expected| same_set(List.map(locs, show_loc), expected)
+	locs_are = |locs, expected| same_set(locs.map(show_loc), expected)
 
 	## Where a blue piece on `start` lands after `n` steps forward.
 	ends : Type.Board, U64, I64 -> List(U64)
@@ -73,7 +73,7 @@ RulesTests :: [].{
 	for_cards = |cards, b| LegalMove.get_moves_for_cards(Assoc.set_from_list(cards), b, zone_colors, ["blue"])
 
 	end_locs_of : List(Type.Move) -> List(U64)
-	end_locs_of = |moves| List.map(moves, |m| m.end)
+	end_locs_of = |moves| moves.map(|m| m.end)
 }
 
 # testZoneColors lives in Color.roc.
@@ -195,13 +195,13 @@ expect {
 expect {
 	b = RulesTests.board([("green", "FT", "blue"), ("red", "L1", "blue")])
 	moves = LegalMove.get_moves_from_location(WithCard("8"), b, RulesTests.zone_colors, RulesTests.at("red", "L1"), ["blue"])
-	List.is_empty(moves)
+	moves.is_empty()
 }
 
 # can't jump own piece
 expect {
 	b = RulesTests.board([("blue", "R3", "blue")])
-	List.is_empty(RulesTests.ends(b, RulesTests.at("red", "L1"), 8))
+	RulesTests.ends(b, RulesTests.at("red", "L1"), 8).is_empty()
 }
 
 # testHasPieceOnFastTrack

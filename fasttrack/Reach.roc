@@ -31,8 +31,8 @@ Reach :: [].{
 			s,
 			Config.move_count_for_card(card, Board.is_pen(s)),
 			if (card == "4") Backward else Forward,
-			if (List.contains(["A", "6", "joker"], card)) LeavePen else StayInPen,
-			if (List.contains(["J", "Q", "K"], card) and s == Board.bullseye) LeaveBullseye else StayInBullseye,
+			if (["A", "6", "joker"].contains(card)) LeavePen else StayInPen,
+			if (["J", "Q", "K"].contains(card) and s == Board.bullseye) LeaveBullseye else StayInBullseye,
 		)
 
 	Move : { from : U64, to : U64, card : Str }
@@ -52,24 +52,20 @@ Reach :: [].{
 	## and bases -- have no moves.
 	grid : List(Str), Str -> List(Reach.Move)
 	grid = |zone_colors, color|
-		List.join(
-			List.map_with_index(
-				Board.squares,
-				|from, _|
-					if Board.zone(from) != Board.color_index(zone_colors, color) and !Board.is_track(from) {
-						[]
-					} else {
-						List.join_map(
-							cards,
-							|card| {
-								plain = List.map(lands(zone_colors, color, from, card), |to| { from, to, card })
-								with_face = List.join_map(face_steps(zone_colors, color, from), |step| List.map(lands(zone_colors, color, step, card), |to| { from, to, card: "face+${card}" }))
-								List.concat(plain, with_face)
-							},
-						)
-					},
-			),
-		)
+		Board.squares.map_with_index(
+			|from, _|
+				if Board.zone(from) != Board.color_index(zone_colors, color) and !Board.is_track(from) {
+					[]
+				} else {
+					cards.join_map(
+						|card| {
+							plain = lands(zone_colors, color, from, card).map(|to| { from, to, card })
+							with_face = face_steps(zone_colors, color, from).join_map(|step| lands(zone_colors, color, step, card).map(|to| { from, to, card: "face+${card}" }))
+							plain.concat(with_face)
+						},
+					)
+				},
+		).join()
 
 	## For each square, indexed as Board.all_locs: the fewest cards to the
 	## peak (`far` where no cards do), and every card that starts such a way.
@@ -94,10 +90,10 @@ Reach :: [].{
 	## and its free face card (a J, Q or K) if it has one.
 	is_allowed : List(Str), Str -> Bool
 	is_allowed = |hand, card|
-		if Str.starts_with(card, "face+") {
-			List.contains(hand, Str.drop_prefix(card, "face+")) and List.any(["J", "Q", "K"], |f| List.contains(hand, f))
+		if card.starts_with("face+") {
+			hand.contains(card.drop_prefix("face+")) and ["J", "Q", "K"].any(|f| hand.contains(f))
 		} else {
-			List.contains(hand, card)
+			hand.contains(card)
 		}
 
 	## The grid's moves a table may use: no face card first unless the deck
@@ -106,9 +102,9 @@ Reach :: [].{
 	## on the peak or short of it never passes the occupied squares.
 	usable : List(Reach.Move), Reach.Target, Reach.Deck -> List(Reach.Move)
 	usable = |all, target, deck| {
-		peak_at = List.find_first_index(Config.base_locations, |id| id == target.peak) ?? crash ("Reach: the peak is a base square")
-		occupied = List.map(List.drop_first(Config.base_locations, peak_at + 1), |id| Board.index_of(target.zone_colors, { zone: NormalColor(target.color), id }))
-		List.drop_if(all, |e| (deck.face == CardsOnly and Str.starts_with(e.card, "face+")) or List.contains(occupied, e.to) or !is_allowed(deck.hand, e.card))
+		peak_at = Config.base_locations.find_first_index(|id| id == target.peak) ?? crash ("Reach: the peak is a base square")
+		occupied = Config.base_locations.drop_first(peak_at + 1).map(|id| Board.index_of(target.zone_colors, { zone: NormalColor(target.color), id }))
+		all.drop_if(|e| (deck.face == CardsOnly and e.card.starts_with("face+")) or occupied.contains(e.to) or !is_allowed(deck.hand, e.card))
 	}
 
 	## The fewest cards home over these moves.
@@ -116,20 +112,19 @@ Reach :: [].{
 	fewest_over = |edges, target| {
 		far = Board.far
 		home = Board.index_of(target.zone_colors, { zone: NormalColor(target.color), id: target.peak })
-		start = List.set(List.repeat({ cards: far, first: [] }, Board.all_locs(target.zone_colors).len()), home, { cards: 0, first: [] }) ?? crash ("Reach: no home")
+		start = List.repeat({ cards: far, first: [] }, Board.all_locs(target.zone_colors).len()).set(home, { cards: 0, first: [] }) ?? crash ("Reach: no home")
 		# A pass says whether it changed anything: LLVM has ended a `while $next != $d`
 		# loop after one pass when the pass is a local closure (README.md).
 		relax = |d|
-			List.fold(
-				edges,
+			edges.fold(
 				{ d, changed: Bool.False },
 				|acc, e| {
-					via = (List.get(acc.d, e.to) ?? { cards: far, first: [] }).cards + 1
-					here = List.get(acc.d, e.from) ?? { cards: far, first: [] }
+					via = (acc.d.get(e.to) ?? { cards: far, first: [] }).cards + 1
+					here = acc.d.get(e.from) ?? { cards: far, first: [] }
 					if via < here.cards {
-						{ d: List.set(acc.d, e.from, { cards: via, first: [e.card] }) ?? crash ("Reach: edge out of range"), changed: Bool.True }
-					} else if via == here.cards and !List.contains(here.first, e.card) {
-						{ d: List.set(acc.d, e.from, { cards: via, first: List.append(here.first, e.card) }) ?? crash ("Reach: edge out of range"), changed: Bool.True }
+						{ d: acc.d.set(e.from, { cards: via, first: [e.card] }) ?? crash ("Reach: edge out of range"), changed: Bool.True }
+					} else if via == here.cards and !here.first.contains(e.card) {
+						{ d: acc.d.set(e.from, { cards: via, first: here.first.append(e.card) }) ?? crash ("Reach: edge out of range"), changed: Bool.True }
 					} else {
 						acc
 					}
@@ -152,10 +147,9 @@ Reach :: [].{
 	routes = |all, target, deck| {
 		edges = usable(all, target, deck)
 		best = fewest_over(edges, target)
-		cards_at = |i| (List.get(best, i) ?? { cards: Board.far, first: [] }).cards
+		cards_at = |i| (best.get(i) ?? { cards: Board.far, first: [] }).cards
 		home = Board.index_of(target.zone_colors, { zone: NormalColor(target.color), id: target.peak })
-		start = List.map_with_index(
-			best,
+		start = best.map_with_index(
 			|b, i| {
 				cards: b.cards,
 				routes: if i == home {
@@ -167,8 +161,7 @@ Reach :: [].{
 		)
 		# Squares n cards out take their routes from squares n - 1 out, so
 		# one sweep per distance settles every count.
-		deepest = List.fold(
-			best,
+		deepest = best.fold(
 			0,
 			|m, b| if b.cards < Board.far and b.cards > m {
 				b.cards
@@ -180,14 +173,13 @@ Reach :: [].{
 		var $n = 1
 		while $n <= deepest {
 			level = $n
-			sweep = List.fold(
-				edges,
+			sweep = edges.fold(
 				$counts,
 				|acc, e|
 					if cards_at(e.from) == level and cards_at(e.to) == level - 1 {
-						here = List.get(acc, e.from) ?? { cards: 0, routes: 0 }
-						via = (List.get(acc, e.to) ?? { cards: 0, routes: 0 }).routes
-						List.set(acc, e.from, { ..here, routes: here.routes + via }) ?? crash ("Reach: edge out of range")
+						here = acc.get(e.from) ?? { cards: 0, routes: 0 }
+						via = (acc.get(e.to) ?? { cards: 0, routes: 0 }).routes
+						acc.set(e.from, { ..here, routes: here.routes + via }) ?? crash ("Reach: edge out of range")
 					} else {
 						acc
 					},
@@ -210,7 +202,7 @@ red_square = |id| Board.index_of(colors, { zone: NormalColor("red"), id })
 cards_by_id : Str, [FreeFace, CardsOnly] -> (Str -> I64)
 cards_by_id = |peak, face| {
 	best = Reach.fewest_cards({ zone_colors: colors, color: "red", peak }, face)
-	|id| (List.get(best, red_square(id)) ?? crash "Reach's expects: every square is in the table").cards
+	|id| (best.get(red_square(id)) ?? crash "Reach's expects: every square is in the table").cards
 }
 
 # Steve's expectations, for red: B4 0; B3 .. R4 one card; L0 .. L2 two.
@@ -237,9 +229,9 @@ expect {
 # routes each (F+5 or 6; F+7 or 8). Without the 6, R1 keeps one route and R3
 # two.
 expect {
-	no_joker = List.drop_if(Reach.cards, |c| c == "joker")
+	no_joker = Reach.cards.drop_if(|c| c == "joker")
 	grid = Reach.grid(colors, "red")
-	at = |hand, id| List.get(Reach.routes(grid, { zone_colors: colors, color: "red", peak: "B3" }, { hand, face: FreeFace }), red_square(id)) ?? crash "Reach's expects: every square is in the table"
-	no_six = List.drop_if(no_joker, |c| c == "6")
+	at = |hand, id| Reach.routes(grid, { zone_colors: colors, color: "red", peak: "B3" }, { hand, face: FreeFace }).get(red_square(id)) ?? crash "Reach's expects: every square is in the table"
+	no_six = no_joker.drop_if(|c| c == "6")
 	at(no_joker, "R1") == { cards: 1, routes: 2 } and at(no_joker, "R3") == { cards: 1, routes: 2 } and at(no_six, "R1") == { cards: 1, routes: 1 } and at(no_six, "R3") == { cards: 1, routes: 2 }
 }

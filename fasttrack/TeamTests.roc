@@ -30,11 +30,11 @@ TeamTests :: [].{
 			game.zone_colors,
 			Player.movers(Player.get_player(game.players, 0), game.zone_colors, game.board),
 		)
-		Assoc.set_from_list(List.map(moves, |m| "${Piece.get_piece(game.board, game.zone_colors, m.start) ?? crash "TeamTests: a move starts where a piece stands"}@${Board.loc_of(game.zone_colors, m.start).id}"))
+		Assoc.set_from_list(moves.map(|m| "${Piece.get_piece(game.board, game.zone_colors, m.start) ?? crash "TeamTests: a move starts where a piece stands"}@${Board.loc_of(game.zone_colors, m.start).id}"))
 	}
 
 	home : Str -> List((Str, Str, Str))
-	home = |color| List.map(["B1", "B2", "B3", "B4"], |id| (color, id, color))
+	home = |color| ["B1", "B2", "B3", "B4"].map(|id| (color, id, color))
 }
 
 # Who red may move.
@@ -58,7 +58,7 @@ expect {
 # Red's 2 moves either red's piece or green's.
 expect {
 	g = TeamTests.game_with(Anytime, [("red", "L0", "red"), ("green", "L0", "green")], ["2"])
-	List.len(TeamTests.starts(g)) == 2 and List.contains(TeamTests.starts(g), "green@L0")
+	TeamTests.starts(g).len() == 2 and TeamTests.starts(g).contains("green@L0")
 }
 
 # Green's piece on the fast track is the team's: red must move it.
@@ -71,12 +71,12 @@ expect {
 expect {
 	g = TeamTests.game_with(Anytime, [("red", "L0", "red"), ("green", "L0", "green")], ["7"])
 	moves = LegalMove.get_moves_for_cards(["7"], g.board, g.zone_colors, ["red", "green"])
-	List.any(moves, |m| m.kind == StartSplit(3))
+	moves.any(|m| m.kind == StartSplit(3))
 }
 
 # A team wins only with both partners home.
 expect Game.winner(TeamTests.game_with(Anytime, TeamTests.home("red"), ["2"])) == Err(NoWinner)
-expect Game.winner(TeamTests.game_with(Anytime, List.concat(TeamTests.home("red"), TeamTests.home("green")), ["2"])) == Ok("red and green")
+expect Game.winner(TeamTests.game_with(Anytime, TeamTests.home("red").concat(TeamTests.home("green")), ["2"])) == Ok("red and green")
 expect Game.winner(TeamTests.game_with(Solo, TeamTests.home("red"), ["2"])) == Ok("red")
 
 # With a 3 that would land red's piece on green's, the team's computer does
@@ -97,5 +97,5 @@ expect TeamTests.starts(TeamTests.game_with(Solo, [("red", "HP1", "red"), ("blue
 
 # A piece in the pen and an A, a joker or a 6 in hand: the card must be
 # played -- the turn wants a card, not a discard.
-expect List.all(["A", "joker", "6"], |card| Player.get_active_player(TeamTests.game_with(Solo, [("red", "HP1", "red")], [card, "3"])).turn != TurnNeedDiscard)
+expect ["A", "joker", "6"].all(|card| Player.get_active_player(TeamTests.game_with(Solo, [("red", "HP1", "red")], [card, "3"])).turn != TurnNeedDiscard)
 expect Player.get_active_player(TeamTests.game_with(Solo, [("red", "HP1", "red")], ["3", "5"])).turn == TurnNeedDiscard
