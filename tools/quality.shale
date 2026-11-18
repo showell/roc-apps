@@ -44,6 +44,16 @@
 -- FINDINGS_LOG, and the counts are compared with the baseline, each moved
 -- count printed. `baseline=write` writes the counts as the new baseline.
 --
+-- An app's own tables and exemptions are its lints', asked of the lint
+-- scripts in SETTINGS_SOURCES (Safari's first: its name_types.txt, its
+-- drawing data that check_stacking skips, lib's stack_dictated.txt). A
+-- recipe with settings for a folder runs over that folder on its own, with
+-- them, and its run over the folder's project leaves that folder's
+-- findings out, so the folder's counts are those its own lints hold. The
+-- fast tier passes a file its folder's tables and skips a file its folder
+-- skips; a `dictated=` table names files a one-file run can't find, so it
+-- is the full tier's alone.
+--
 -- A stage's time goes in `cookbook:times.shale`'s book `roc-apps-quality`
 -- when it ran every item, and its CPU is held to the budget beside it, so a
 -- slowdown shows.
@@ -161,9 +171,10 @@ end
 
 -- ── One recipe's run, and whether it ran ────────────────────────────────
 
-function recipe_argv(rc, glob)
+function recipe_argv(rc, glob, extra?)
   local argv = {"shale", "--budget", RECIPE_STEPS, real("cookbook:roc/" .. rc.recipe .. ".shale"), "glob=" .. glob}
   for a in get(rc, "args", {}) do push(argv, a) end
+  for a in extra or {} do push(argv, a) end
   return argv
 end
 
@@ -247,6 +258,78 @@ function verdict_of(rc, r, files)
   return {ok = true, why = "", summary = summary, findings = findings}
 end
 
+
+-- ── A project's own tables and exemptions ───────────────────────────────
+
+-- The lint scripts that hold an app's own settings for the recipes, each
+-- asked with `reads=settings`: Safari's first, as its lints are held at
+-- zero. Each prints `SETTING<tab>recipe<tab>folder<tab>arg` lines, paths
+-- from the checkout's root, and stays the one home of what it prints.
+const SETTINGS_SOURCES = {"canvas_apps/safari/gates/lints.shale"}
+
+-- Each folder's settings for a recipe this script runs, as `{recipe,
+-- folder, args, skip, files}`: `args` the arguments to pass, `skip` the
+-- files a `skip=` leaves out, `files` the tables the arguments name.
+-- A recipe run over a project that holds such a folder leaves that
+-- folder's findings to a run of its own, with its settings, so the
+-- folder's counts are its own lints' counts. A setting of a recipe this
+-- script doesn't run is named and left.
+function project_settings()
+  local runs = {}
+  for rc in PARSE_RECIPES do runs[rc.recipe] = true end
+  local by = {}
+  local order = {}
+  local unused = {}
+  for src in SETTINGS_SOURCES do
+    local r = run({"shale", "--root", ".", src, "reads=settings"}, {timeout_ms = 60000, whole = 100000})
+    if r.ended ~= "exit" or r.code ~= 0 then fail("quality: " .. src .. " reads=settings: " .. tail_of(r.out, 4)) end
+    for l in lines(r.out) do
+      if starts_with(l, "SETTING\t") then
+        local f = split(l, "\t")
+        if #f ~= 4 then fail("quality: " .. src .. " printed a setting that is not four fields: " .. l) end
+        if not has_key(runs, f[2]) then
+          unused[f[2]] = true
+        else
+          local k = f[2] .. "@" .. f[3]
+          if not has_key(by, k) then
+            by[k] = {recipe = f[2], folder = f[3], args = {}, skip = {}, files = {}}
+            push(order, k)
+          end
+          local s = by[k]
+          push(s.args, f[4])
+          local m = re_find(f[4], "^([a-z]+)=(.+)$")
+          if m == nil then fail("quality: " .. src .. " printed a setting that is not name=value: " .. l) end
+          if m.groups[1] == "skip" then
+            for x in split(m.groups[2], ",") do push(s.skip, x) end
+          else
+            if not exists(m.groups[2]) then fail("quality: " .. src .. " names a table that isn't here: " .. m.groups[2]) end
+            push(s.files, m.groups[2])
+          end
+        end
+      end
+    end
+  end
+  local out = {}
+  for k in order do push(out, by[k]) end
+  if #keys(unused) > 0 then print("settings of recipes this doesn't run, left: " .. join(sort(keys(unused)), ", ")) end
+  return out
+end
+
+-- The folders of `settings` that judge `recipe` in runs of their own.
+function settings_folders(settings, recipe)
+  local out = {}
+  for s in settings do
+    if s.recipe == recipe then push(out, s.folder) end
+  end
+  return out
+end
+
+function is_under_any(path, folders)
+  for f in folders do
+    if starts_with(path, f .. "/") then return true end
+  end
+  return false
+end
 
 -- ── The counts and the baseline ────────────────────────────────────────
 
@@ -590,11 +673,15 @@ function parse_recipe(name)
   fail("quality: no parse recipe " .. name)
 end
 
-function parse_one(item, tree, counts)
+-- One run, `recipe<tab>unit<tab>args<tab>files`: the unit a project or a
+-- folder with settings of its own, `args` those settings separated by
+-- spaces (`-` for none), and `files` how many files the run must read.
+function parse_one(item, tree)
   local f = split(item, "\t")
   local rc = parse_recipe(f[1])
-  local r = run(recipe_argv(rc, f[2] .. "/**/*.roc"), {timeout_ms = RECIPE_TIMEOUT_MS, whole = RECIPE_KEEP, cwd = tree, cpu_budget_ms = rc.cpu_budget_ms, stage = rc.recipe .. " on " .. f[2]})
-  local v = verdict_of(rc, r, counts[f[2]])
+  local extra = f[3] == "-" and {} or split(f[3], " ")
+  local r = run(recipe_argv(rc, f[2] .. "/**/*.roc", extra), {timeout_ms = RECIPE_TIMEOUT_MS, whole = RECIPE_KEEP, cwd = tree, cpu_budget_ms = rc.cpu_budget_ms, stage = rc.recipe .. " on " .. f[2]})
+  local v = verdict_of(rc, r, tonumber(f[4]))
   if not v.ok then
     print("CANT\t" .. rc.recipe .. " in " .. f[2] .. ": " .. v.why)
   else
@@ -610,19 +697,20 @@ end
 -- for each run that ran, and a line a failure, `CANT<tab>why`.
 function parse_part(work, tree)
   if tree == "" then fail("quality: part=parse needs tree=, the copy of the tracked files") end
-  local counts = {}
-  for f in tracked_roc_files() do incr(counts, project_of(f)) end
   local cpu = 0
   for item in lines(trim(read(work))) do
-    cpu = cpu + parse_one(item, tree, counts)
+    cpu = cpu + parse_one(item, tree)
     yield()
   end
   print("CPU\t" .. cpu)
   return nil
 end
 
-function take_parse_finding(st, rc, check, line)
+-- A finding of `rc`'s run over `unit`. A project's run leaves out what it
+-- finds in a folder with settings of its own, whose own run counts it.
+function take_parse_finding(st, rc, unit, check, line)
   local path = re_find(line, "^([^ :]+\\.roc):").group
+  if not has_key(st.setting_units, rc.recipe .. "@" .. unit) and is_under_any(path, settings_folders(st.settings, rc.recipe)) then return nil end
   count_finding(st, app_of(path), rc.recipe, check, rc.short, 1)
   push(st.log, line)
   return nil
@@ -635,35 +723,57 @@ end
 function parse_plan(st, files, projects, hashes, id)
   local by_project = {}
   for f in files do push_at(by_project, project_of(f), f .. "\t" .. hashes[f]) end
+  -- Each run: a recipe over a project, or over a folder with settings of
+  -- its own (`project_settings`), whose key adds its arguments and tables.
+  local units = {}
+  for rc in PARSE_RECIPES do
+    for p in projects do push(units, {rc = rc, unit = p.name, project = p.name, args = "-", lines = by_project[p.name], files = p.files, tables = {}}) end
+  end
+  local table_hashes = {}
+  for s in st.settings do
+    local ls = {}
+    for f in files do
+      if starts_with(f, s.folder .. "/") then push(ls, f .. "\t" .. hashes[f]) end
+    end
+    if #ls == 0 then fail("quality: settings for " .. s.recipe .. " in " .. s.folder .. ", which holds no tracked .roc file") end
+    local th = hashes_of(s.files)
+    if th == nil then fail("quality: git couldn't hash the tables " .. join(s.files, ", ")) end
+    for t in s.files do push(ls, "table " .. t .. "\t" .. th[t]) end
+    push(ls, "args\t" .. join(s.args, " "))
+    st.setting_units[s.recipe .. "@" .. s.folder] = true
+    push(units, {rc = parse_recipe(s.recipe), unit = s.folder, project = project_of(s.folder .. "/x.roc"), args = join(s.args, " "), lines = ls, files = #ls - #s.files - 1 - #s.skip, tables = s.files})
+  end
   local plan = {keys_of = {}, misses = {}, copy = {}, found = 0, all = 0}
   local need = {}
-  for rc in PARSE_RECIPES do
-    for p in projects do
-      plan.all = plan.all + 1
-      local name = rc.recipe .. "@" .. p.name
-      cache_keep(st, "parse", name)
-      local key = id.parse[rc.recipe] .. "\n" .. join(by_project[p.name], "\n")
-      local hit = cache_read("parse", name, key)
-      if hit ~= nil then
-        for l in lines(hit) do
-          local tab = find(l, "\t")
-          if tab ~= nil then
-            take_parse_finding(st, rc, sub(l, 1, tab - 1), sub(l, tab + 1))
-            plan.found = plan.found + 1
-          end
+  local need_tables = {}
+  for u in units do
+    local rc = u.rc
+    plan.all = plan.all + 1
+    local name = rc.recipe .. "@" .. u.unit
+    cache_keep(st, "parse", name)
+    local key = id.parse[rc.recipe] .. "\n" .. join(u.lines, "\n")
+    local hit = cache_read("parse", name, key)
+    if hit ~= nil then
+      for l in lines(hit) do
+        local tab = find(l, "\t")
+        if tab ~= nil then
+          take_parse_finding(st, rc, u.unit, sub(l, 1, tab - 1), sub(l, tab + 1))
+          plan.found = plan.found + 1
         end
-      else
-        plan.keys_of[name] = key
-        need[p.name] = true
-        -- A run's cost grows with its project's files; each also starts a
-        -- recipe and roc-ast.
-        push(plan.misses, {part = "parse", name = rc.recipe .. "\t" .. p.name, cost = rc.cpu_measured_ms * p.files // #files + 150})
       end
+    else
+      plan.keys_of[name] = key
+      need[u.project] = true
+      for t in u.tables do need_tables[t] = true end
+      -- A run's cost grows with its unit's files; each also starts a
+      -- recipe and roc-ast.
+      push(plan.misses, {part = "parse", name = rc.recipe .. "\t" .. u.unit .. "\t" .. u.args .. "\t" .. u.files, cost = rc.cpu_measured_ms * u.files // #files + 150})
     end
   end
   for f in files do
     if has_key(need, project_of(f)) then push(plan.copy, f) end
   end
+  for t in sort(keys(need_tables)) do push(plan.copy, t) end
   return plan
 end
 
@@ -675,7 +785,7 @@ function parse_take(st, plan, res)
       local f = split(l, "\t")
       local line = join(drop(f, 4), "\t")
       push_at(found, f[2] .. "@" .. f[3], f[4] .. "\t" .. line)
-      take_parse_finding(st, parse_recipe(f[2]), f[4], line)
+      take_parse_finding(st, parse_recipe(f[2]), f[3], f[4], line)
       plan.found = plan.found + 1
     elseif starts_with(l, "DONE\t") then
       local f = split(l, "\t")
@@ -1051,7 +1161,8 @@ function full()
   local hashes = {}
   for f in files do hashes[f] = by_os[here .. f] end
   local id = tool_identity(pinned_roc("quality"))
-  local st = {cant = {}, over = {}, counts = {}, by_app = {}, log = {}, kept = {}}
+  local st = {cant = {}, over = {}, counts = {}, by_app = {}, log = {}, kept = {}, settings = project_settings(), setting_units = {}}
+  for s in st.settings do print("settings: " .. s.recipe .. " in " .. s.folder .. ", run on its own: " .. join(s.args, " ")) end
   -- The parse recipes and roc-types share one pool, so neither core idles
   -- at the turn from one to the other; the count needs the kept types.
   local pp = parse_plan(st, files, projects, hashes, id)
@@ -1126,6 +1237,23 @@ function changed_roc_files(since)
   return sort(out)
 end
 
+-- A file's settings for one recipe in the fast tier, `{skip, args}`: a file
+-- its folder's `skip=` names isn't run, and a table (`table=`, `words=`)
+-- is passed. A `dictated=` table names files a one-file glob doesn't find,
+-- so the fast tier leaves it to the full tier, as Safari's own lints do.
+function fast_settings(settings, recipe, path)
+  local out = {skip = false, args = {}}
+  for s in settings do
+    if s.recipe == recipe and starts_with(path, s.folder .. "/") then
+      if has_item(s.skip, path) then out.skip = true end
+      for a in s.args do
+        if starts_with(a, "table=") or starts_with(a, "words=") then push(out.args, a) end
+      end
+    end
+  end
+  return out
+end
+
 function fast()
   local files = changed_roc_files(SINCE)
   print("quality, fast: " .. #files .. " .roc files changed since " .. SINCE)
@@ -1135,13 +1263,17 @@ function fast()
   for rc in PARSE_RECIPES do
     for c in rc.cross do push(left, rc.recipe .. " " .. c) end
   end
+  local settings = #files > 0 and project_settings() or {}
   for f in files do
     local parts = {}
     local cant_here = 0
     for rc in PARSE_RECIPES do
-      local r = run(recipe_argv(rc, f), {timeout_ms = RECIPE_TIMEOUT_MS, whole = RECIPE_KEEP, cpu_budget_ms = 10000, stage = rc.recipe .. " " .. f})
-      local v = verdict_of(rc, r, 1)
-      if not v.ok then
+      local own = fast_settings(settings, rc.recipe, f)
+      local r = own.skip and nil or run(recipe_argv(rc, f, own.args), {timeout_ms = RECIPE_TIMEOUT_MS, whole = RECIPE_KEEP, cpu_budget_ms = 10000, stage = rc.recipe .. " " .. f})
+      local v = own.skip and {ok = true, findings = {}} or verdict_of(rc, r, 1)
+      if own.skip then
+        push(parts, rc.short .. " skipped, as its folder's settings say")
+      elseif not v.ok then
         push(cant, f .. ": " .. v.why)
         cant_here = cant_here + 1
       else

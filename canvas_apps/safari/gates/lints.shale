@@ -130,6 +130,46 @@ const LINTS = {
     tree_globs = TREE_GLOBS},
 }
 
+-- The tables and exemptions each lint takes, for tools/quality.shale, which
+-- runs the same recipes over every app and so must judge safari's files as
+-- this script does: one line `SETTING<tab>recipe<tab>folder<tab>arg` an
+-- argument, the folder and each path in the argument named from the
+-- checkout's root. They are the arguments that name a file (`words=`,
+-- `table=`, `dictated=`) and `skip`, safari's own and each folder's in
+-- `folder_args`. With `reads=settings` this script prints them and stops,
+-- so this table stays their one home.
+function setting_lines()
+  local out = {}
+  for lint in LINTS do
+    local by_folder = {{SAFARI, lint.args, get(lint, "skip", {})}}
+    for fa in get(lint, "folder_args", {}) do
+      local args = {}
+      local skip = {}
+      for a in fa[2] do
+        if starts_with(a, "skip=") then
+          for s in split(sub(a, 6), ",") do push(skip, s) end
+        else
+          push(args, a)
+        end
+      end
+      push(by_folder, {fa[1], args, skip})
+    end
+    for f in by_folder do
+      local folder = f[1]
+      for a in f[2] do
+        local m = re_find(a, "^(words|table|dictated)=(.+)$")
+        if m ~= nil then push(out, "SETTING\t" .. lint.recipe .. "\t" .. folder .. "\t" .. m.groups[1] .. "=" .. folder .. "/" .. m.groups[2]) end
+      end
+      if #f[3] > 0 then
+        local skip = {}
+        for s in f[3] do push(skip, folder .. "/" .. s) end
+        push(out, "SETTING\t" .. lint.recipe .. "\t" .. folder .. "\tskip=" .. join(skip, ","))
+      end
+    end
+  end
+  return out
+end
+
 -- What the lints' verdicts rest on, beside the files judged: this script, the
 -- tables its lints read (a `words=` or `table=` argument, from safari's
 -- folder), and the cookbook's Roc recipes. With `reads=rules` this script
@@ -406,8 +446,10 @@ if READS == "globs" then
   print(join(TREE_GLOBS, "\n"))
 elseif READS == "rules" then
   print(join(rule_files(), "\n"))
+elseif READS == "settings" then
+  print(join(setting_lines(), "\n"))
 elseif READS ~= "" then
-  fail("safari lints: reads= is globs or rules")
+  fail("safari lints: reads= is globs, rules or settings")
 elseif FILES == "" then
   judge_tree()
 else
