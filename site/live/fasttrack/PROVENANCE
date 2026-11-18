@@ -1,6 +1,4 @@
-published 2026-09-24T11:19:20Z
-roc nightly-2026-09-22-e494788
-roc-apps 68fc214
-rocemit e6a83da
-cobblestone 9f6bdc03 u62-candidate
-sha256 93470b5023c8f61c  830910 bytes  fasttrack.wasm
+published 2026-11-18T17:47:24Z
+roc nightly-2026-11-03-34bd006
+roc-apps d678c893
+sha256 97ee7bdbeeea8aec  865568 bytes  fasttrack.wasm

@@ -21,50 +21,47 @@ const RocGlue = (() => {
   // U32
   const read_t3 = (view, at) => view.getUint32(at, true);
 
-  // Box(t1)
-  const read_t4 = (view, at) => view.getUint32(at, true);
+  // {}
+  const read_t4 = (view, at) => null;
 
-  // Box(t1)
-  const read_t5 = (view, at) => view.getUint32(at, true);
-
-  // Box(t7)
-  const read_t6 = (view, at) => read_t7(view, view.getUint32(at, true));
+  // Box(t6)
+  const read_t5 = (view, at) => read_t6(view, view.getUint32(at, true));
 
   // a record
-  const read_t7 = (view, at) => ({ board_size: read_t8(view, at + 0), labels: read_t9(view, at + 8), motions: read_t12(view, at + 20), nodes: read_t16(view, at + 32), slots: read_t18(view, at + 44), winner: read_t11(view, at + 56), motion_id: read_t3(view, at + 68), tick: read_t3(view, at + 72), });
+  const read_t6 = (view, at) => ({ board_size: read_t7(view, at + 0), labels: read_t8(view, at + 8), motions: read_t11(view, at + 20), nodes: read_t15(view, at + 32), slots: read_t17(view, at + 44), winner: read_t10(view, at + 56), motion_id: read_t3(view, at + 68), tick: read_t3(view, at + 72), });
 
   // F64
-  const read_t8 = (view, at) => view.getFloat64(at, true);
+  const read_t7 = (view, at) => view.getFloat64(at, true);
 
-  // List(t10)
-  const read_t9 = (view, at) => {
+  // List(t9)
+  const read_t8 = (view, at) => {
     const start = view.getUint32(at, true);
     const length = view.getUint32(at + 4, true);
     const out = [];
-    for (let i = 0; i < length; i++) out.push(read_t10(view, start + i * 40));
+    for (let i = 0; i < length; i++) out.push(read_t9(view, start + i * 40));
     return out;
   };
 
   // a record
-  const read_t10 = (view, at) => ({ x: read_t8(view, at + 0), y: read_t8(view, at + 8), fill: read_t11(view, at + 16), text: read_t11(view, at + 28), });
+  const read_t9 = (view, at) => ({ x: read_t7(view, at + 0), y: read_t7(view, at + 8), fill: read_t10(view, at + 16), text: read_t10(view, at + 28), });
 
   // Str
-  const read_t11 = (view, at) => readStr(view, at);
+  const read_t10 = (view, at) => readStr(view, at);
 
-  // List(t13)
-  const read_t12 = (view, at) => {
+  // List(t12)
+  const read_t11 = (view, at) => {
     const start = view.getUint32(at, true);
     const length = view.getUint32(at + 4, true);
     const out = [];
-    for (let i = 0; i < length; i++) out.push(read_t13(view, start + i * 28));
+    for (let i = 0; i < length; i++) out.push(read_t12(view, start + i * 28));
     return out;
   };
 
   // a record
-  const read_t13 = (view, at) => ({ color: read_t11(view, at + 0), path: read_t14(view, at + 12), sent_home: read_t15(view, at + 24), });
+  const read_t12 = (view, at) => ({ color: read_t10(view, at + 0), path: read_t13(view, at + 12), sent_home: read_t14(view, at + 24), });
 
   // List(t3)
-  const read_t14 = (view, at) => {
+  const read_t13 = (view, at) => {
     const start = view.getUint32(at, true);
     const length = view.getUint32(at + 4, true);
     const out = [];
@@ -73,47 +70,50 @@ const RocGlue = (() => {
   };
 
   // Bool
-  const read_t15 = (view, at) => view.getUint8(at) !== 0;
+  const read_t14 = (view, at) => view.getUint8(at) !== 0;
 
-  // List(t17)
-  const read_t16 = (view, at) => {
+  // List(t16)
+  const read_t15 = (view, at) => {
     const start = view.getUint32(at, true);
     const length = view.getUint32(at + 4, true);
     const out = [];
-    for (let i = 0; i < length; i++) out.push(read_t17(view, start + i * 48));
+    for (let i = 0; i < length; i++) out.push(read_t16(view, start + i * 48));
     return out;
   };
 
   // a record
-  const read_t17 = (view, at) => ({ style: read_t11(view, at + 0), tag: read_t11(view, at + 12), text: read_t11(view, at + 24), click: read_t3(view, at + 36), parent: read_t3(view, at + 40), disabled: read_t15(view, at + 44), });
+  const read_t16 = (view, at) => ({ style: read_t10(view, at + 0), tag: read_t10(view, at + 12), text: read_t10(view, at + 24), click: read_t3(view, at + 36), parent: read_t3(view, at + 40), disabled: read_t14(view, at + 44), });
 
-  // List(t19)
-  const read_t18 = (view, at) => {
+  // List(t18)
+  const read_t17 = (view, at) => {
     const start = view.getUint32(at, true);
     const length = view.getUint32(at + 4, true);
     const out = [];
-    for (let i = 0; i < length; i++) out.push(read_t19(view, start + i * 80));
+    for (let i = 0; i < length; i++) out.push(read_t18(view, start + i * 80));
     return out;
   };
 
   // a record
-  const read_t19 = (view, at) => ({ cx: read_t8(view, at + 0), cy: read_t8(view, at + 8), piece_r: read_t8(view, at + 16), size: read_t8(view, at + 24), fill: read_t11(view, at + 32), piece: read_t11(view, at + 44), stroke: read_t11(view, at + 56), click: read_t3(view, at + 68), square: read_t15(view, at + 72), });
+  const read_t18 = (view, at) => ({ cx: read_t7(view, at + 0), cy: read_t7(view, at + 8), piece_r: read_t7(view, at + 16), size: read_t7(view, at + 24), fill: read_t10(view, at + 32), piece: read_t10(view, at + 44), stroke: read_t10(view, at + 56), click: read_t3(view, at + 68), square: read_t14(view, at + 72), });
+
+  // Box(t1)
+  const read_t19 = (view, at) => view.getUint32(at, true);
 
   // Box(t1)
   const read_t20 = (view, at) => view.getUint32(at, true);
 
-  // {}
-  const read_t21 = (view, at) => null;
+  // Box(t1)
+  const read_t21 = (view, at) => view.getUint32(at, true);
 
   // What this platform provides:
   //   roc_init : t2, t3, t3, t3 -> t0
-  //   roc_update : t5, t3 -> t4
-  //   roc_view : t20 -> t6
-  //   roc_release : t6 -> t21
+  //   roc_release : t5 -> t4
+  //   roc_update : t20, t3 -> t19
+  //   roc_view : t21 -> t5
   // init reads what roc_init answers
+  // release reads what roc_release answers
   // update reads what roc_update answers
   // view reads what roc_view answers
-  // release reads what roc_release answers
 
-  return { read_t0, read_t2, read_t3, read_t4, read_t5, read_t6, read_t7, read_t8, read_t9, read_t10, read_t11, read_t12, read_t13, read_t14, read_t15, read_t16, read_t17, read_t18, read_t19, read_t20, read_t21, init: read_t0, update: read_t4, view: read_t6, release: read_t21 };
+  return { read_t0, read_t2, read_t3, read_t4, read_t5, read_t6, read_t7, read_t8, read_t9, read_t10, read_t11, read_t12, read_t13, read_t14, read_t15, read_t16, read_t17, read_t18, read_t19, read_t20, read_t21, init: read_t0, release: read_t4, update: read_t19, view: read_t5 };
 })();
