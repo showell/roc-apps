@@ -1,6 +1,5 @@
-published 2026-09-24T11:19:27Z
-roc nightly-2026-09-22-e494788
-roc-apps 6b2c71d
-rocemit e6a83da
-cobblestone 9f6bdc03 u62-candidate
-sha256 15fb1c0cb4d1d9b2  156955 bytes  particles.wasm
+published 2026-11-18T17:45:06Z
+roc nightly-2026-11-03-34bd006
+opt speed
+roc-apps d0da4601
+sha256 b6ba2309e916f6d8  168386 bytes  particles.wasm
