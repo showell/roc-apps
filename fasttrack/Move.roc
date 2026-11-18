@@ -59,8 +59,8 @@ Move :: [].{
 
 	## The moves one message makes: an end click's, or a start click's when
 	## that piece has only one place to go (maybe_auto_move).
-	made : Type.Game, Type.GameMsg -> List(Type.Move)
-	made = |game, msg|
+	moves_made : Type.Game, Type.GameMsg -> List(Type.Move)
+	moves_made = |game, msg|
 		match (Player.get_active_player(game).turn, msg) {
 			(TurnNeedStartLoc(info), SetStartLocation(start)) => {
 				from = info.moves.keep_if(|m| m.start == start)

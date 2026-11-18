@@ -113,7 +113,7 @@ expect {
 		Ok(best) => best.line.game
 		Err(_) => g
 	}
-	Piece.is_open(finished.board, Board.at(2, 0))
+	Piece.is_open(finished.board, Board.square_at(2, 0))
 }
 
 # In a game for one too: a piece on the fast track moves before any other,

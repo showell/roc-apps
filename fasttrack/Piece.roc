@@ -10,8 +10,8 @@ Piece :: [].{
 	empty = List.repeat(0, Board.count)
 
 	## Who stands on `s`.
-	at : Type.Board, U64 -> Try(U64, [NotFound])
-	at = |board, s|
+	color_at : Type.Board, U64 -> Try(U64, [NotFound])
+	color_at = |board, s|
 		match List.get(board, s) {
 			Ok(v) if v > 0 => Ok(v.to_u64() - 1)
 			_ => Err(NotFound)
@@ -40,7 +40,7 @@ Piece :: [].{
 	## The color on `s`, by name, for the page.
 	get_piece : Type.Board, List(Str), U64 -> Try(Str, [NotFound])
 	get_piece = |board, zone_colors, s|
-		match at(board, s) {
+		match color_at(board, s) {
 			Ok(c) => Ok(zone_colors.get(c) ?? crash "Piece.get_piece: a piece of a color the game has")
 			Err(_) => Err(NotFound)
 		}
@@ -88,10 +88,10 @@ Piece :: [].{
 
 	fast_track_squares : List(U64)
 	fast_track_squares = [
-		Board.at(0, Board.ft),
-		Board.at(1, Board.ft),
-		Board.at(2, Board.ft),
-		Board.at(3, Board.ft),
+		Board.square_at(0, Board.ft),
+		Board.square_at(1, Board.ft),
+		Board.square_at(2, Board.ft),
+		Board.square_at(3, Board.ft),
 	]
 
 	## A piece on the fast track must be moved before any other: across every
@@ -120,12 +120,12 @@ Piece :: [].{
 	all_home = |board, c| Board.base_of(c).all(|s| holds(board, s, c))
 
 	## A color's pieces in its own base.
-	in_base : Type.Board, U64 -> U64
-	in_base = |board, c| Board.base_of(c).count_if(|s| holds(board, s, c))
+	count_in_base : Type.Board, U64 -> U64
+	count_in_base = |board, c| Board.base_of(c).count_if(|s| holds(board, s, c))
 
 	## A color's pieces in its pen.
-	in_pen : Type.Board, U64 -> U64
-	in_pen = |board, c| Board.pen_of(c).count_if(|s| holds(board, s, c))
+	count_in_pen : Type.Board, U64 -> U64
+	count_in_pen = |board, c| Board.pen_of(c).count_if(|s| holds(board, s, c))
 
 	config_pieces : Setup.InitSetup, List(Str) -> Type.Board
 	config_pieces = |init_setup, zone_colors| {
@@ -134,7 +134,7 @@ Piece :: [].{
 			board,
 			|b, id| place(
 				b,
-				Board.at(c, Board.square_of(id)),
+				Board.square_at(c, Board.local_of_id(id)),
 				c,
 			),
 		)
@@ -149,7 +149,7 @@ Piece :: [].{
 			Ok(start) => execute_move(
 				RegularMove,
 				start,
-				Board.at(c, Board.l0),
+				Board.square_at(c, Board.l0),
 				board,
 			)
 		}
@@ -167,8 +167,8 @@ Piece :: [].{
 	## trade) or sends it back to its own pen.
 	execute_move : Type.MoveFlavor, U64, U64, Type.Board -> Type.Board
 	execute_move = |flavor, start, end, board| {
-		start_c = at(board, start) ?? crash "Piece.execute_move: no piece to move"
-		match at(board, end) {
+		start_c = color_at(board, start) ?? crash "Piece.execute_move: no piece to move"
+		match color_at(board, end) {
 			Ok(end_c) =>
 				if flavor == TradePieces {
 					place(
@@ -195,7 +195,7 @@ Piece :: [].{
 				s = if zone == "BE" {
 					Board.bullseye
 				} else {
-					Board.at(Board.color_index(zone_colors, zone), Board.square_of(id))
+					Board.square_at(Board.color_index(zone_colors, zone), Board.local_of_id(id))
 				}
 				place(b, s, Board.color_index(zone_colors, color))
 			},

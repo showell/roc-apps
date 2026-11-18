@@ -304,7 +304,7 @@ Player :: [].{
 		var $seed = seed0
 		while !$left.is_empty() {
 			draw = ElmRandom.int(0, $left.len().to_i64_wrap() - 1, $seed)
-			i = draw.value.to_u64_wrap()
+			i = draw.number.to_u64_wrap()
 			$deck = $deck.append($left.get(i) ?? crash "Player.shuffle: out of range")
 			$left = $left.drop_at(i)
 			$seed = draw.seed
@@ -316,19 +316,19 @@ Player :: [].{
 	## is shuffled again from the player's own seed. No other player's draws
 	## touch this one's cards.
 	replenish_hand : Type.Game -> Type.Game
-	replenish_hand = |game| update_active_player(fill_hand, game)
+	replenish_hand = |game| update_active_player(with_full_hand, game)
 
-	fill_hand : Type.Player -> Type.Player
-	fill_hand = |player| {
+	with_full_hand : Type.Player -> Type.Player
+	with_full_hand = |player| {
 		var $p = player
 		while $p.hand.len() < 5 {
-			$p = draw_card($p)
+			$p = with_card_drawn($p)
 		}
 		$p
 	}
 
-	draw_card : Type.Player -> Type.Player
-	draw_card = |player| {
+	with_card_drawn : Type.Player -> Type.Player
+	with_card_drawn = |player| {
 		fresh = if player.deck.is_empty() {
 			shuffle(player.seed)
 		} else {

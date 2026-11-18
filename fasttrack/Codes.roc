@@ -63,7 +63,7 @@ Codes :: [].{
 			zone = (code // 32).to_u64()
 			local = (code % 32).to_u64()
 			if zone < zone_colors.len() and local < Board.per_zone {
-				Ok(Board.at(zone, local))
+				Ok(Board.square_at(zone, local))
 			} else {
 				Err(BadCode)
 			}
@@ -93,7 +93,7 @@ Codes :: [].{
 
 expect {
 	colors = ["red", "blue", "green", "purple"]
-	s = Board.at(2, Board.r4)
+	s = Board.square_at(2, Board.r4)
 	Codes.decode(
 		colors,
 		Codes.end_location(s),

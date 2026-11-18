@@ -7,7 +7,16 @@
 # and Elm's `==` on either compares the lists, order included, which is what
 # History's undo check sees. Roc's `Dict` and `Set` keep another order.
 Assoc :: [].{
-	AssocDict(k, v) : List({ key : k, value : v })
+
+	## An association list, as assoc-list has it.
+	AssocDict(k, v) : List(
+		{
+			key : k,
+
+			## The key's value: what the list associates with it.
+			value : v,
+		},
+	)
 
 	AssocSet(a) : List(a)
 

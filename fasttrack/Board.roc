@@ -52,8 +52,8 @@ Board :: [].{
 	local : U64 -> U64
 	local = |s| s % per_zone
 
-	at : U64, U64 -> U64
-	at = |z, l| z * per_zone + l
+	square_at : U64, U64 -> U64
+	square_at = |z, l| z * per_zone + l
 
 	is_pen : U64 -> Bool
 	is_pen = |s| s < bullseye and local(s) < 4
@@ -71,18 +71,18 @@ Board :: [].{
 	## A color's pen squares, HP1 to HP4, and its base squares, B1 to B4.
 	pen_of : U64 -> List(U64)
 	pen_of = |c| [
-		at(c, 0),
-		at(c, 1),
-		at(c, 2),
-		at(c, 3),
+		square_at(c, 0),
+		square_at(c, 1),
+		square_at(c, 2),
+		square_at(c, 3),
 	]
 
 	base_of : U64 -> List(U64)
 	base_of = |c| [
-		at(c, 4),
-		at(c, 5),
-		at(c, 6),
-		at(c, 7),
+		square_at(c, 4),
+		square_at(c, 5),
+		square_at(c, 6),
+		square_at(c, 7),
 	]
 
 	## The translation table: `relative_table` holds, for each color, every
@@ -114,7 +114,7 @@ Board :: [].{
 		if s == bullseye {
 			s
 		} else {
-			at((zone(s) + k) % zones, local(s))
+			square_at((zone(s) + k) % zones, local(s))
 		}
 
 	## Square `s` as color `c` sees it.
@@ -139,14 +139,14 @@ Board :: [].{
 	| zone_colors.find_first_index(|c| c == color) ?? crash "Board: no zone ${color}"
 
 	## The squares by name, for the page, the click codes and the tests.
-	square_of : Str -> U64
-	square_of = |id| Config.config_locations.find_first_index(|l| l.id == id) ?? crash "Board: no square ${id}"
+	local_of_id : Str -> U64
+	local_of_id = |id| Config.config_locations.find_first_index(|l| l.id == id) ?? crash "Board: no square ${id}"
 
 	index_of : List(Str), Type.PieceLocation -> U64
 	index_of = |zone_colors, loc|
 		match loc.zone {
 			BullsEyeZone => bullseye
-			NormalColor(color) => at(color_index(zone_colors, color), square_of(loc.id))
+			NormalColor(color) => square_at(color_index(zone_colors, color), local_of_id(loc.id))
 		}
 
 	loc_of : List(Str), U64 -> Type.PieceLocation
@@ -166,15 +166,15 @@ Board :: [].{
 
 expect Board.relative(
 	1,
-	Board.at(1, 0),
-) == 0 and Board.relative(1, Board.at(0, 0)) == 3 * Board.per_zone and Board.relative(0, 57) == 57
+	Board.square_at(1, 0),
+) == 0 and Board.relative(1, Board.square_at(0, 0)) == 3 * Board.per_zone and Board.relative(0, 57) == 57
 expect Board.absolute(
 	2,
 	Board.relative(2, 40),
 ) == 40 and Board.relative(3, Board.bullseye) == Board.bullseye
 expect {
 	colors = ["red", "blue", "green", "purple"]
-	Board.index_of(colors, { zone: NormalColor("green"), id: "L0" }) == Board.at(2, Board.l0)
-		and Board.loc_of(colors, Board.at(3, Board.ft)) == { zone: NormalColor("purple"), id: "FT" }
+	Board.index_of(colors, { zone: NormalColor("green"), id: "L0" }) == Board.square_at(2, Board.l0)
+		and Board.loc_of(colors, Board.square_at(3, Board.ft)) == { zone: NormalColor("purple"), id: "FT" }
 		and Board.all_locs(colors).len() == Board.count
 }

@@ -128,7 +128,7 @@ FastTrack :: [].{
 		match step {
 			Ok(s) => {
 				(history, game) = Game.update_game(s.msg, model.history, model.game)
-				motions = Motion.of(model.game, s.msg, game)
+				motions = Motion.motions_of(model.game, s.msg, game)
 				motion_id = if motions.is_empty() {
 					model.motion_id
 				} else {

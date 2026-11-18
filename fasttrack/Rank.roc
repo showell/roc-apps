@@ -60,8 +60,8 @@ Rank :: [].{
 		}
 
 	## One stage: fewer cards, then more routes. -1 when `a` is better.
-	by_stage : Reach.Routes, Reach.Routes -> I64
-	by_stage = |a, b|
+	stage_order : Reach.Routes, Reach.Routes -> I64
+	stage_order = |a, b|
 		if a.cards != b.cards {
 			if a.cards < b.cards {
 				-1
@@ -96,7 +96,7 @@ Rank :: [].{
 			}
 		} else {
 			a.stage.map_with_index(
-				|sa, i| by_stage(sa, b.stage.get(i) ?? { cards: Board.far, routes: 0 }),
+				|sa, i| stage_order(sa, b.stage.get(i) ?? { cards: Board.far, routes: 0 }),
 			).fold(
 				0,
 				|decided, c|
@@ -111,17 +111,17 @@ Rank :: [].{
 
 	## Every square a piece of `color` can reach the peak from, best first
 	## (ties in board order).
-	ranked : List(Str), Str, Str -> List(Rank.Row)
-	ranked = |zone_colors, color, peak| ranked_in(
+	ranked_rows : List(Str), Str, Str -> List(Rank.Row)
+	ranked_rows = |zone_colors, color, peak| ranked_rows_in(
 		Reach.grid(zone_colors, color),
 		zone_colors,
 		color,
 		peak,
 	)
 
-	## `ranked`, over a color's grid built once (Reach.grid).
-	ranked_in : List(Reach.Move), List(Str), Str, Str -> List(Rank.Row)
-	ranked_in = |grid, zone_colors, color, peak| {
+	## `ranked_rows`, over a color's grid built once (Reach.grid).
+	ranked_rows_in : List(Reach.Move), List(Str), Str, Str -> List(Rank.Row)
+	ranked_rows_in = |grid, zone_colors, color, peak| {
 		tables = stages.map(
 			|st| Reach.routes(
 				grid,
@@ -182,7 +182,7 @@ Rank :: [].{
 
 	places_in : List(Reach.Move), List(Str), Str, Str -> Rank.Places
 	places_in = |grid, zone_colors, color, peak| {
-		order = ranked_in(grid, zone_colors, color, peak)
+		order = ranked_rows_in(grid, zone_colors, color, peak)
 		start = List.repeat(U64.highest, Board.all_locs(zone_colors).len())
 		settled = order.map_with_index(|row, i| { row, i }).fold(
 			{

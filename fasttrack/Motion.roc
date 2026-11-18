@@ -21,23 +21,23 @@ Motion :: [].{
 	}
 
 	## The motions of `msg`, which took `before` to `after`.
-	of : Type.Game, Type.GameMsg, Type.Game -> List(Motion.Motion)
-	of = |before, msg, after| {
-		name = |c| before.zone_colors.get(c) ?? crash "Motion.of: a piece of a color the game has"
+	motions_of : Type.Game, Type.GameMsg, Type.Game -> List(Motion.Motion)
+	motions_of = |before, msg, after| {
+		name = |c| before.zone_colors.get(c) ?? crash "Motion.motions_of: a piece of a color the game has"
 		match msg {
 			# Only a discard can bring a piece out; an undo moves nothing on
 			# the page, it just shows the earlier board.
-			DiscardCard(_) => brought_out(before, after, name)
-			_ => Move.made(before, msg).join_map(|m| of_move(before.board, m, name))
+			DiscardCard(_) => brought_out_motions(before, after, name)
+			_ => Move.moves_made(before, msg).join_map(|m| motions_of_move(before.board, m, name))
 		}
 	}
 
-	of_move : Type.Board, Type.Move, (U64 -> Str) -> List(Motion.Motion)
-	of_move = |board, m, name|
-		match Piece.at(board, m.start) {
+	motions_of_move : Type.Board, Type.Move, (U64 -> Str) -> List(Motion.Motion)
+	motions_of_move = |board, m, name|
+		match Piece.color_at(board, m.start) {
 			Err(_) => []
 			Ok(c) => {
-				hit = Piece.at(board, m.end)
+				hit = Piece.color_at(board, m.end)
 				match m.kind {
 					JackTrade =>
 						match hit {
@@ -91,16 +91,16 @@ Motion :: [].{
 							),
 							sent_home: Bool.False,
 						}
-						[walked].concat(sent_home(board, m.end, name))
+						[walked].concat(sent_home_motions(board, m.end, name))
 					}
 				}
 			}
 		}
 
 	## A piece on `s` sent back to the first open square of its pen.
-	sent_home : Type.Board, U64, (U64 -> Str) -> List(Motion.Motion)
-	sent_home = |board, s, name|
-		match Piece.at(board, s) {
+	sent_home_motions : Type.Board, U64, (U64 -> Str) -> List(Motion.Motion)
+	sent_home_motions = |board, s, name|
+		match Piece.color_at(board, s) {
 			Ok(victim) => [
 				{
 					color: name(victim),
@@ -112,13 +112,13 @@ Motion :: [].{
 		}
 
 	## Discard credits bring the active player's last pen piece out to L0.
-	brought_out : Type.Game, Type.Game, (U64 -> Str) -> List(Motion.Motion)
-	brought_out = |before, after, name|
+	brought_out_motions : Type.Game, Type.Game, (U64 -> Str) -> List(Motion.Motion)
+	brought_out_motions = |before, after, name|
 		if before.board == after.board {
 			[]
 		} else {
 			c = before.active_player_idx
-			l0 = Board.at(c, Board.l0)
+			l0 = Board.square_at(c, Board.l0)
 			match Piece.piece_to_move_out_of_pen(before.board, c) {
 				Ok(pen) => [
 					{
@@ -126,7 +126,7 @@ Motion :: [].{
 						path: [pen, l0],
 						sent_home: Bool.False,
 					},
-				].concat(sent_home(before.board, l0, name))
+				].concat(sent_home_motions(before.board, l0, name))
 				Err(_) => []
 			}
 		}
@@ -151,8 +151,8 @@ test_game = |pieces, hand| {
 }
 
 ## What a click at `s` moves.
-motions_at : Type.Game, U64 -> List(Motion.Motion)
-motions_at = |g, s| Motion.of(
+click_motions : Type.Game, U64 -> List(Motion.Motion)
+click_motions = |g, s| Motion.motions_of(
 	g,
 	SetStartLocation(s),
 	Game.update_game(SetStartLocation(s), History.init({}), g).1,
@@ -161,28 +161,28 @@ motions_at = |g, s| Motion.of(
 # A 3 walks red's piece from L0 up to L3, square by square.
 expect {
 	g = test_game([("red", "L0", "red")], ["3"])
-	motions_at(g, Board.at(0, Board.l0)) == [{ color: "red", path: [11, 12, 13, 14], sent_home: Bool.False }]
+	click_motions(g, Board.square_at(0, Board.l0)) == [{ color: "red", path: [11, 12, 13, 14], sent_home: Bool.False }]
 }
 
 # Landing on blue sends blue back to its pen's first open square.
 expect {
 	g = test_game([("red", "L0", "red"), ("red", "L2", "blue")], ["2"])
-	motions_at(g, Board.at(0, Board.l0)) == [{ color: "red", path: [11, 12, 13], sent_home: Bool.False }, { color: "blue", path: [13, Board.at(1, 0)], sent_home: Bool.True }]
+	click_motions(g, Board.square_at(0, Board.l0)) == [{ color: "red", path: [11, 12, 13], sent_home: Bool.False }, { color: "blue", path: [13, Board.square_at(1, 0)], sent_home: Bool.True }]
 }
 
 # A jack trades: each piece goes to the other's square.
 expect {
 	g = test_game([("red", "L0", "red"), ("red", "L3", "blue")], ["J"])
 	end_click = Game.update_game(
-		SetStartLocation(Board.at(0, Board.l0)),
+		SetStartLocation(Board.square_at(0, Board.l0)),
 		History.init({}),
 		g,
 	).1
-	Motion.of(
+	Motion.motions_of(
 		end_click,
-		SetEndLocation(Board.at(0, 14)),
+		SetEndLocation(Board.square_at(0, 14)),
 		Game.update_game(
-			SetEndLocation(Board.at(0, 14)),
+			SetEndLocation(Board.square_at(0, 14)),
 			History.init({}),
 			end_click,
 		).1,
@@ -194,9 +194,9 @@ expect {
 expect {
 	g = test_game([("red", "L0", "red"), ("red", "HP1", "red")], ["3"])
 	moved = Game.update_game(
-		SetStartLocation(Board.at(0, Board.l0)),
+		SetStartLocation(Board.square_at(0, Board.l0)),
 		History.init({}),
 		g,
 	).1
-	Motion.of(moved, UndoAction, g) == []
+	Motion.motions_of(moved, UndoAction, g) == []
 }

@@ -47,7 +47,7 @@ Strategy :: [].{
 		var $total = 0
 		var $s = 0
 		while $s < Board.count {
-			match Piece.at(game.board, $s) {
+			match Piece.color_at(game.board, $s) {
 				Ok(c) if cs.contains(c) => {
 					own_base = if Board.is_base($s) and Board.zone($s) == c {
 						Board.local($s).to_i64_wrap() - 3
@@ -64,14 +64,14 @@ Strategy :: [].{
 	}
 
 	## A player's pieces in its own base.
-	in_base : Type.Game, Str -> U64
-	in_base = |game, color| Piece.in_base(game.board, Board.color_index(game.zone_colors, color))
+	count_in_base : Type.Game, Str -> U64
+	count_in_base = |game, color| Piece.count_in_base(game.board, Board.color_index(game.zone_colors, color))
 
 	## What each hoard's cards are worth this turn, given the board it starts
 	## from.
 	hoard_worths : Strategy.Strategy, Type.Game, Str -> List({ cards : List(Str), worth : I64 })
 	hoard_worths = |strategy, game, color| {
-		n = in_base(game, color)
+		n = count_in_base(game, color)
 		strategy.hoards.map(
 			|h| {
 				last = h.worth.len()
@@ -103,11 +103,11 @@ Strategy :: [].{
 # The table's corners (SquareValues, from Steve's ranking), and the base bonus.
 expect {
 	b4 = 7
-	SquareValues.points(0, Board.at(0, b4)) == 6100
-		and SquareValues.points(0, Board.at(1, Board.r4)) == 100
-		and SquareValues.points(0, Board.at(0, 0)) == 0
-		and SquareValues.points(1, Board.at(1, b4)) == 6100
-		and SquareValues.points(1, Board.at(2, Board.r4)) == 100
+	SquareValues.points(0, Board.square_at(0, b4)) == 6100
+		and SquareValues.points(0, Board.square_at(1, Board.r4)) == 100
+		and SquareValues.points(0, Board.square_at(0, 0)) == 0
+		and SquareValues.points(1, Board.square_at(1, b4)) == 6100
+		and SquareValues.points(1, Board.square_at(2, Board.r4)) == 100
 }
 
 # The champion's hoard: 1500 an A, joker or J with none home, 500 with two.

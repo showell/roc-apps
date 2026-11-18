@@ -16,21 +16,21 @@ Color :: [].{
 
 	## The color `step` places after this one. A color that is not there
 	## counts as index -1 going forward and 1 going back, as in Elm.
-	shifted : Str, List(Str), I64, I64 -> Str
-	shifted = |color, zone_colors, missing, step| {
+	shifted_color : Str, List(Str), I64, I64 -> Str
+	shifted_color = |color, zone_colors, missing, step| {
 		idx = match zone_colors.find_first_index(|c| c == color) {
 			Ok(i) => i.to_i64_wrap()
 			Err(_) => missing
 		}
 		len = zone_colors.len().to_i64_wrap()
-		zone_colors.get((idx + step).mod_by(len).to_u64_wrap()) ?? crash "Color.shifted: an index mod the colors' count is one of them"
+		zone_colors.get((idx + step).mod_by(len).to_u64_wrap()) ?? crash "Color.shifted_color: an index mod the colors' count is one of them"
 	}
 
 	next_zone_color : Str, List(Str) -> Str
-	next_zone_color = |color, zone_colors| shifted(color, zone_colors, -1, 1)
+	next_zone_color = |color, zone_colors| shifted_color(color, zone_colors, -1, 1)
 
 	prev_zone_color : Str, List(Str) -> Str
-	prev_zone_color = |color, zone_colors| shifted(color, zone_colors, 1, -1)
+	prev_zone_color = |color, zone_colors| shifted_color(color, zone_colors, 1, -1)
 }
 
 # tests/Example.elm, testZoneColors, plus the wrap the other way.

@@ -34,7 +34,7 @@ Routes :: [].{
 	next = |r, fast, pen, bullseye|
 		if r == Board.bullseye {
 			if bullseye == LeaveBullseye {
-				[Board.at(3, Board.ft)]
+				[Board.square_at(3, Board.ft)]
 			} else {
 				[]
 			}
@@ -44,7 +44,7 @@ Routes :: [].{
 			nz = (z + 1) % Board.zones
 			if l < 4 {
 				if pen == LeavePen {
-					[Board.at(z, Board.l0)]
+					[Board.square_at(z, Board.l0)]
 				} else {
 					[]
 				}
@@ -52,17 +52,17 @@ Routes :: [].{
 				if z == 0 {
 					if fast == TakeFastTrack {
 						[
-							Board.at(nz, Board.ft),
-							Board.at(nz, Board.r4),
+							Board.square_at(nz, Board.ft),
+							Board.square_at(nz, Board.r4),
 							Board.bullseye,
 						]
 					} else {
-						[Board.at(nz, Board.r4), Board.bullseye]
+						[Board.square_at(nz, Board.r4), Board.bullseye]
 					}
 				} else if fast == TakeFastTrack and nz != 0 {
-					[Board.at(nz, Board.ft), Board.at(nz, Board.r4)]
+					[Board.square_at(nz, Board.ft), Board.square_at(nz, Board.r4)]
 				} else {
-					[Board.at(nz, Board.r4)]
+					[Board.square_at(nz, Board.r4)]
 				}
 			} else {
 				# HH, L0-L4 up to FT; R4 down to R0, BR, DS; DS into the base
@@ -90,7 +90,7 @@ Routes :: [].{
 					6 => [7]
 					_ => []
 				}
-				to.map(|t| Board.at(z, t))
+				to.map(|t| Board.square_at(z, t))
 			}
 		}
 
@@ -104,7 +104,7 @@ Routes :: [].{
 			z = Board.zone(r)
 			l = Board.local(r)
 			if l == Board.r4 {
-				[Board.at((z + Board.zones - 1) % Board.zones, Board.ft)]
+				[Board.square_at((z + Board.zones - 1) % Board.zones, Board.ft)]
 			} else {
 				back = match l {
 					8 => Board.ds
@@ -118,7 +118,7 @@ Routes :: [].{
 					9 => 10
 					_ => l - 1
 				}
-				[Board.at(z, back)]
+				[Board.square_at(z, back)]
 			}
 		}
 
@@ -167,15 +167,15 @@ Routes :: [].{
 }
 
 # From L1, 8 steps: L2 L3 L4 FT, then the next zone's R4 R3 R2 R1.
-expect Routes.forward_walks(Board.at(0, 12), 8) == [[13, 14, 15, 16, 43, 42, 41, 40]]
+expect Routes.forward_walks(Board.square_at(0, 12), 8) == [[13, 14, 15, 16, 43, 42, 41, 40]]
 # From a piece's own FT, one step: the fast track, the next zone's R4, or the
 # bullseye.
-expect Routes.forward_walks(Board.at(0, Board.ft), 1) == [
-	[Board.at(1, Board.ft)],
-	[Board.at(1, Board.r4)],
+expect Routes.forward_walks(Board.square_at(0, Board.ft), 1) == [
+	[Board.square_at(1, Board.ft)],
+	[Board.square_at(1, Board.r4)],
 	[Board.bullseye],
 ]
 # Home: DS into the base.
-expect Routes.forward_walks(Board.at(0, Board.ds), 4) == [[4, 5, 6, 7]]
+expect Routes.forward_walks(Board.square_at(0, Board.ds), 4) == [[4, 5, 6, 7]]
 # Back 4 from L0: HH, DS, BR, R0.
-expect Routes.backward_walks(Board.at(0, Board.l0), 4) == [[8, 9, 10, 17]]
+expect Routes.backward_walks(Board.square_at(0, Board.l0), 4) == [[8, 9, 10, 17]]

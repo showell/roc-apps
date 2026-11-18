@@ -25,6 +25,7 @@ Wire :: [].{
 		click : U32,
 	}
 
+	## One of the page's nodes: text, or an element (see above).
 	Node : {
 		parent : U32,
 		tag : Str,
@@ -58,6 +59,8 @@ Wire :: [].{
 		board_size : F64,
 		slots : List(Wire.Slot),
 		labels : List(Wire.Label),
+
+		## The page's nodes, in document order.
 		nodes : List(Wire.Node),
 		tick : U32,
 		winner : Str,

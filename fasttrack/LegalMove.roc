@@ -91,7 +91,7 @@ LegalMove :: [].{
 
 	can_go : Type.Board, U64, I64, List(U64) -> Bool
 	can_go = |board, s, n, movers|
-		match Piece.at(board, s) {
+		match Piece.color_at(board, s) {
 			Err(_) => Bool.False
 			Ok(c) =>
 				if Board.is_ft(s) or !Piece.any_on_fast_track(board, movers) {
@@ -158,7 +158,7 @@ LegalMove :: [].{
 
 	moves_from : Type.MoveType, Type.Board, U64, List(U64) -> List(Type.Move)
 	moves_from = |move_type, board, start, movers|
-		match Piece.at(board, start) {
+		match Piece.color_at(board, start) {
 			Err(_) => []
 			Ok(c) =>
 				if Board.is_ft(start) or !Piece.any_on_fast_track(board, movers) {

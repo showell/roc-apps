@@ -11,7 +11,9 @@
 ElmRandom :: [].{
 	Seed : { state : U64, incr : U64 }
 
-	Draw : { value : I64, seed : ElmRandom.Seed }
+	## One draw, as elm/random's `step` answers it: the number drawn and the
+	## seed after it.
+	Draw : { number : I64, seed : ElmRandom.Seed }
 
 	mask : U64
 	mask = 4294967295
@@ -66,7 +68,7 @@ ElmRandom :: [].{
 		}
 		range = (hi - lo + 1).to_u64_wrap()
 		if (range - 1).bitwise_and(range) == 0 {
-			{ value: (range - 1).bitwise_and(peel(seed0)).to_i64_wrap() + lo, seed: next(seed0) }
+			{ number: (range - 1).bitwise_and(peel(seed0)).to_i64_wrap() + lo, seed: next(seed0) }
 		} else {
 			threshold = (4294967296 - range).rem_by(range)
 			var $seed = seed0
@@ -75,7 +77,7 @@ ElmRandom :: [].{
 				$seed = next($seed)
 				$x = peel($seed)
 			}
-			{ value: $x.rem_by(range).to_i64_wrap() + lo, seed: next($seed) }
+			{ number: $x.rem_by(range).to_i64_wrap() + lo, seed: next($seed) }
 		}
 	}
 }
@@ -88,7 +90,7 @@ draws = |seed0| {
 	var $deck = 54
 	while $deck > 42 {
 		d = ElmRandom.int(0, $deck - 1, $seed)
-		$values = $values.append(d.value)
+		$values = $values.append(d.number)
 		$seed = d.seed
 		$deck = $deck - 1
 	}
