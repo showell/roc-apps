@@ -135,7 +135,7 @@ backdrop_parts = backdrop_pieces(paused_frame_view.backdrop)
 ## The part of the ride's shapes in `paused_frame_view` on `on_layers`, in
 ## the game's paint order.
 ride_shapes_on : List(Layer) -> List(Shapes.Shape)
-ride_shapes_on = |on_layers| FrameView.ride_shape_lists(view_on(on_layers)).join()
+ride_shapes_on = |on_layers| view_on(on_layers).ride_shape_lists().join()
 
 ## The frame's shapes on `on_layers`, backdrop and all, in paint order.
 frame_shapes_on : List(Layer) -> List(Shapes.Shape)

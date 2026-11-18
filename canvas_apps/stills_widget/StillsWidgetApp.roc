@@ -263,10 +263,7 @@ large_area = {
 large_anchor : Still -> StillShapes.Anchor
 large_anchor = |still| {
 	extent = extent_of(still)
-	still_height = F64.min(
-		large_area.width / extent_width(extent),
-		large_area.height / (extent.top - extent.bottom),
-	)
+	still_height = (large_area.width / extent_width(extent)).min(large_area.height / (extent.top - extent.bottom))
 	middle = middle_of(large_area)
 	standing_at(
 		still,

@@ -133,10 +133,7 @@ map_plan = {
 	road_height = extent.north.minus(extent.south).to_metres()
 	{
 		origin: Point.at(canvas_width / 2.0, canvas_height / 2.0),
-		pixels_a_metre: F64.min(
-			(canvas_width - 2.0 * map_margin) / road_width,
-			(canvas_height - 2.0 * map_margin) / road_height,
-		),
+		pixels_a_metre: ((canvas_width - 2.0 * map_margin) / road_width).min((canvas_height - 2.0 * map_margin) / road_height),
 	}
 }
 

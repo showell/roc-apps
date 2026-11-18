@@ -58,7 +58,7 @@ pipeline_scene = {
 
 ## The pipeline's things as shapes, far to near.
 scene_shapes : List(Shapes.Shape)
-scene_shapes = Scene.scene_shape_lists(pipeline_scene).join()
+scene_shapes = pipeline_scene.scene_shape_lists().join()
 
 ## The part of the frame the picture keeps, from its top left corner: at this
 ## step every thing the pipeline renders stands in it, and the rest of the frame
@@ -104,7 +104,7 @@ drawn_shapes = picture_shapes({}).drop_first(1).keep_if(
 # Every shape drawn comes from the paused frame's own scene, and none from its
 # mountains, its road or its backdrop.
 expect {
-	frame_scene_shapes = Scene.scene_shape_lists(paused_frame_view.scene).join()
+	frame_scene_shapes = paused_frame_view.scene.scene_shape_lists().join()
 	left_out = [
 		paused_frame_view.mountain_shapes,
 		paused_frame_view.ground_patch_shapes,
