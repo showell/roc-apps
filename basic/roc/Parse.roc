@@ -255,8 +255,8 @@ Parse :: [].{
 			}
 			for d in got.defs {
 				if !($bodied.get(d.letter) ?? True) {
-					$fns = $fns.set(d.letter, d.def) ?? $fns
-					$bodied = $bodied.set(d.letter, True) ?? $bodied
+					$fns = $fns.set(d.letter, d.def) ?? crash "Parse: a DEF's letter is one of 26"
+					$bodied = $bodied.set(d.letter, True) ?? crash "Parse: a DEF's letter is one of 26"
 				} else {
 					{}
 				}
@@ -469,7 +469,7 @@ Parse :: [].{
 				$open = $open.append($i)
 			} else if mark == 2 and !$open.is_empty() {
 				f = $open.last() ?? 0
-				$skips = $skips.set(f, $i + 1) ?? $skips
+				$skips = $skips.set(f, $i + 1) ?? crash "Parse.skips_of: an open FOR is a mark's index"
 				$open = $open.drop_last(1)
 			} else {
 				{}
@@ -588,7 +588,7 @@ Parse :: [].{
 						pslot: h.pslot,
 						body: Parse.zero,
 					},
-				) ?? fns
+				) ?? crash "Parse: a DEF's letter is one of 26"
 			} else {
 				fns
 			}

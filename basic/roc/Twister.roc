@@ -30,13 +30,13 @@ Twister :: [].{
 		var $i = 1
 		var $k = 624
 		while $k > 0 {
-			prev = $mt.get($i - 1) ?? 0
-			cur = $mt.get($i) ?? 0
+			prev = $mt.get($i - 1) ?? crash "Twister: an index inside the 624-word state"
+			cur = $mt.get($i) ?? crash "Twister: an index inside the 624-word state"
 			x = cur.bitwise_xor(prev.bitwise_xor(prev.div_trunc_by(1073741824)).times_wrap(1664525)).plus_wrap(seed)
 			$mt = $mt.set($i, x) ?? crash "by_array: inside the state"
 			$i = $i + 1
 			if $i >= 624 {
-				$mt = $mt.set(0, $mt.get(623) ?? 0) ?? crash "by_array: inside the state"
+				$mt = $mt.set(0, $mt.get(623) ?? crash "Twister: an index inside the 624-word state") ?? crash "by_array: inside the state"
 				$i = 1
 			} else {
 				{}
@@ -45,13 +45,13 @@ Twister :: [].{
 		}
 		$k = 623
 		while $k > 0 {
-			prev = $mt.get($i - 1) ?? 0
-			cur = $mt.get($i) ?? 0
+			prev = $mt.get($i - 1) ?? crash "Twister: an index inside the 624-word state"
+			cur = $mt.get($i) ?? crash "Twister: an index inside the 624-word state"
 			x = cur.bitwise_xor(prev.bitwise_xor(prev.div_trunc_by(1073741824)).times_wrap(1566083941)).minus_wrap(U64.to_u32_wrap($i))
 			$mt = $mt.set($i, x) ?? crash "by_array: inside the state"
 			$i = $i + 1
 			if $i >= 624 {
-				$mt = $mt.set(0, $mt.get(623) ?? 0) ?? crash "by_array: inside the state"
+				$mt = $mt.set(0, $mt.get(623) ?? crash "Twister: an index inside the 624-word state") ?? crash "by_array: inside the state"
 				$i = 1
 			} else {
 				{}
@@ -66,13 +66,13 @@ Twister :: [].{
 		var $mt = state
 		var $kk = 0
 		while $kk < 624 {
-			y = ($mt.get($kk) ?? 0).bitwise_and(2147483648).bitwise_or(($mt.get(($kk + 1).rem_by(624)) ?? 0).bitwise_and(2147483647))
+			y = ($mt.get($kk) ?? crash "Twister: an index inside the 624-word state").bitwise_and(2147483648).bitwise_or(($mt.get(($kk + 1).rem_by(624)) ?? crash "Twister: an index inside the 624-word state").bitwise_and(2147483647))
 			mag = if y.bitwise_and(1) == 1 {
 				2567483615
 			} else {
 				0
 			}
-			x = ($mt.get(($kk + 397).rem_by(624)) ?? 0).bitwise_xor(y.div_trunc_by(2)).bitwise_xor(mag)
+			x = ($mt.get(($kk + 397).rem_by(624)) ?? crash "Twister: an index inside the 624-word state").bitwise_xor(y.div_trunc_by(2)).bitwise_xor(mag)
 			$mt = $mt.set($kk, x) ?? crash "twist: inside the state"
 			$kk = $kk + 1
 		}
@@ -98,13 +98,13 @@ Twister :: [].{
 		if at >= 624 {
 			fresh = Twister.twist(mt)
 			{
-				y: Twister.temper(fresh.get(0) ?? 0),
+				y: Twister.temper(fresh.get(0) ?? crash "Twister: an index inside the 624-word state"),
 				mt: fresh,
 				at: 1,
 			}
 		} else {
 			{
-				y: Twister.temper(mt.get(at) ?? 0),
+				y: Twister.temper(mt.get(at) ?? crash "Twister: an index inside the 624-word state"),
 				mt: mt,
 				at: at + 1,
 			}
