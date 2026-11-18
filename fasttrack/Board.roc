@@ -110,36 +110,37 @@ Board :: [].{
 
 	## A square moved round by `k` zones; the bullseye stays put.
 	turn : U64, U64 -> U64
-	turn = |s, k| if s == bullseye {
-		s
-	} else {
-		at((zone(s) + k) % zones, local(s))
-	}
+	turn = |s, k|
+		if s == bullseye {
+			s
+		} else {
+			at((zone(s) + k) % zones, local(s))
+		}
 
 	## Square `s` as color `c` sees it.
 	relative : U64, U64 -> U64
 	relative = |
 		c,
 		s,
-	| (relative_table.get(c) ?? []).get(s) ?? crash ("Board.relative: no such square")
+	| (relative_table.get(c) ?? []).get(s) ?? crash "Board.relative: no such square"
 
 	## The square color `c` calls `r`.
 	absolute : U64, U64 -> U64
 	absolute = |
 		c,
 		r,
-	| (absolute_table.get(c) ?? []).get(r) ?? crash ("Board.absolute: no such square")
+	| (absolute_table.get(c) ?? []).get(r) ?? crash "Board.absolute: no such square"
 
 	## A color's place in the game's color order.
 	color_index : List(Str), Str -> U64
 	color_index = |
 		zone_colors,
 		color,
-	| zone_colors.find_first_index(|c| c == color) ?? crash ("Board: no zone ${color}")
+	| zone_colors.find_first_index(|c| c == color) ?? crash "Board: no zone ${color}"
 
 	## The squares by name, for the page, the click codes and the tests.
 	square_of : Str -> U64
-	square_of = |id| Config.config_locations.find_first_index(|l| l.id == id) ?? crash ("Board: no square ${id}")
+	square_of = |id| Config.config_locations.find_first_index(|l| l.id == id) ?? crash "Board: no square ${id}"
 
 	index_of : List(Str), Type.PieceLocation -> U64
 	index_of = |zone_colors, loc|

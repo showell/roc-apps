@@ -45,11 +45,12 @@ Page :: [].{
 				offset = acc.len().to_u32_wrap()
 				acc.concat(
 					child.map(
-						|n| if n.parent == 0 {
-							{ ..n, parent: 1 }
-						} else {
-							{ ..n, parent: n.parent + offset }
-						},
+						|n|
+							if n.parent == 0 {
+								{ ..n, parent: 1 }
+							} else {
+								{ ..n, parent: n.parent + offset }
+							},
 					),
 				)
 			},

@@ -52,7 +52,7 @@ LegalMove :: [].{
 					if walk.any(|x| Piece.holds(board, Board.absolute(c, x), c)) {
 						[]
 					} else {
-						[Board.absolute(c, walk.last() ?? crash ("LegalMove: an empty walk"))]
+						[Board.absolute(c, walk.last() ?? crash "LegalMove: an empty walk")]
 					},
 			)
 		}
@@ -118,11 +118,12 @@ LegalMove :: [].{
 			|card| moves_for_type(make_move_type(card), board, m),
 		)
 		forward_moves = moves_for(
-			|card| if card == "4" {
-				Reverse(card)
-			} else {
-				WithCard(card)
-			},
+			|card|
+				if card == "4" {
+					Reverse(card)
+				} else {
+					WithCard(card)
+				},
 		)
 		if forward_moves.is_empty() {
 			moves_for(|card| Reverse(card))
@@ -164,16 +165,22 @@ LegalMove :: [].{
 					card = get_card_for_move_type(move_type)
 					direction = match move_type {
 						Reverse(_) => Backward
-						_ => if (card == "4") Backward else Forward
+						_ => if card == "4" {
+							Backward
+						} else {
+							Forward
+						}
 					}
-					pen = if (["A", "joker", "6"].contains(card)) LeavePen else StayInPen
-					bullseye = if (
-						[
-							"J",
-							"Q",
-							"K",
-						].contains(card) and start == Board.bullseye
-					) LeaveBullseye else StayInBullseye
+					pen = if ["A", "joker", "6"].contains(card) {
+						LeavePen
+					} else {
+						StayInPen
+					}
+					bullseye = if ["J", "Q", "K"].contains(card) and start == Board.bullseye {
+						LeaveBullseye
+					} else {
+						StayInBullseye
+					}
 					n = move_count_for_move_type(move_type, Board.is_pen(start))
 					if move_type == WithCard("7") {
 						moves_for_seven(board, c, start, movers)

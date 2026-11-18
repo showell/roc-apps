@@ -65,7 +65,11 @@ Motion :: [].{
 						(n, direction) = match m.kind {
 							WithCard(card) => (
 								Config.move_count_for_card(card, Board.is_pen(m.start)),
-								if (card == "4") Backward else Forward,
+								if card == "4" {
+									Backward
+								} else {
+									Forward
+								},
 							)
 							Reverse(card) => (
 								Config.move_count_for_card(card, Board.is_pen(m.start)),

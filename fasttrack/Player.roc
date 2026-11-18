@@ -87,7 +87,7 @@ Player :: [].{
 	get_player = |
 		players,
 		idx,
-	| players.get(idx) ?? crash ("Player.get_player: no player at that index")
+	| players.get(idx) ?? crash "Player.get_player: no player at that index"
 
 	## The colors whose pieces this player may move: its own, and its
 	## partner's when its team's rules allow.
@@ -236,7 +236,7 @@ Player :: [].{
 	update_player = |players, idx, f| players.set(
 		idx,
 		f(get_player(players, idx)),
-	) ?? crash ("update_player: no player at that index")
+	) ?? crash "update_player: no player at that index"
 
 	set_turn : U64, Type.Turn, List(Type.Player) -> List(Type.Player)
 	set_turn = |idx, turn, players| update_player(players, idx, |player| { ..player, turn })
@@ -305,7 +305,7 @@ Player :: [].{
 		while !$left.is_empty() {
 			draw = ElmRandom.int(0, $left.len().to_i64_wrap() - 1, $seed)
 			i = draw.value.to_u64_wrap()
-			$deck = $deck.append($left.get(i) ?? crash ("Player.shuffle: out of range"))
+			$deck = $deck.append($left.get(i) ?? crash "Player.shuffle: out of range")
 			$left = $left.drop_at(i)
 			$seed = draw.seed
 		}

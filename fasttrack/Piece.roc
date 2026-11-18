@@ -58,7 +58,7 @@ Piece :: [].{
 	open_holding_pen_location = |
 		board,
 		c,
-	| Board.pen_of(c).find_first(|s| is_open(board, s)) ?? crash ("Piece: no open pen square")
+	| Board.pen_of(c).find_first(|s| is_open(board, s)) ?? crash "Piece: no open pen square"
 
 	## Every piece of another color on the open track (the bullseye too): the
 	## squares a jack may trade with.
@@ -167,7 +167,7 @@ Piece :: [].{
 	## trade) or sends it back to its own pen.
 	execute_move : Type.MoveFlavor, U64, U64, Type.Board -> Type.Board
 	execute_move = |flavor, start, end, board| {
-		start_c = at(board, start) ?? crash ("Piece.execute_move: no piece to move")
+		start_c = at(board, start) ?? crash "Piece.execute_move: no piece to move"
 		match at(board, end) {
 			Ok(end_c) =>
 				if flavor == TradePieces {

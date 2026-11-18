@@ -42,11 +42,12 @@ Codes :: [].{
 	bulls_eye = 999
 
 	location : U64 -> U32
-	location = |s| if s == Board.bullseye {
-		bulls_eye
-	} else {
-		(32 * Board.zone(s) + Board.local(s)).to_u32_wrap()
-	}
+	location = |s|
+		if s == Board.bullseye {
+			bulls_eye
+		} else {
+			(32 * Board.zone(s) + Board.local(s)).to_u32_wrap()
+		}
 
 	start_location : U64 -> U32
 	start_location = |s| 10000 + location(s)

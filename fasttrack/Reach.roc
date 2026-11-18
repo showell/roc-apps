@@ -30,15 +30,21 @@ Reach :: [].{
 			Board.color_index(zone_colors, color),
 			s,
 			Config.move_count_for_card(card, Board.is_pen(s)),
-			if (card == "4") Backward else Forward,
-			if (["A", "6", "joker"].contains(card)) LeavePen else StayInPen,
-			if (
-				[
-					"J",
-					"Q",
-					"K",
-				].contains(card) and s == Board.bullseye
-			) LeaveBullseye else StayInBullseye,
+			if card == "4" {
+				Backward
+			} else {
+				Forward
+			},
+			if ["A", "6", "joker"].contains(card) {
+				LeavePen
+			} else {
+				StayInPen
+			},
+			if ["J", "Q", "K"].contains(card) and s == Board.bullseye {
+				LeaveBullseye
+			} else {
+				StayInBullseye
+			},
 		)
 
 	Move : {
@@ -135,7 +141,7 @@ Reach :: [].{
 	## on the peak or short of it never passes the occupied squares.
 	usable : List(Reach.Move), Reach.Target, Reach.Deck -> List(Reach.Move)
 	usable = |all, target, deck| {
-		peak_at = Config.base_locations.find_first_index(|id| id == target.peak) ?? crash ("Reach: the peak is a base square")
+		peak_at = Config.base_locations.find_first_index(|id| id == target.peak) ?? crash "Reach: the peak is a base square"
 		occupied = Config.base_locations.drop_first(peak_at + 1).map(
 			|id| Board.index_of(target.zone_colors, { zone: NormalColor(target.color), id }),
 		)
@@ -158,7 +164,7 @@ Reach :: [].{
 		start = List.repeat(
 			{ cards: far, first: [] },
 			Board.all_locs(target.zone_colors).len(),
-		).set(home, { cards: 0, first: [] }) ?? crash ("Reach: no home")
+		).set(home, { cards: 0, first: [] }) ?? crash "Reach: no home"
 		# A pass says whether it changed anything: LLVM has ended a `while $next != $d`
 		# loop after one pass when the pass is a local closure (README.md).
 		relax = |d|
@@ -172,7 +178,7 @@ Reach :: [].{
 							d: acc.d.set(
 								e.from,
 								{ cards: via, first: [e.card] },
-							) ?? crash ("Reach: edge out of range"),
+							) ?? crash "Reach: edge out of range",
 							changed: Bool.True,
 						}
 					} else if via == here.cards and !here.first.contains(e.card) {
@@ -180,7 +186,7 @@ Reach :: [].{
 							d: acc.d.set(
 								e.from,
 								{ cards: via, first: here.first.append(e.card) },
-							) ?? crash ("Reach: edge out of range"),
+							) ?? crash "Reach: edge out of range",
 							changed: Bool.True,
 						}
 					} else {
@@ -224,11 +230,12 @@ Reach :: [].{
 		# one sweep per distance settles every count.
 		deepest = best.fold(
 			0,
-			|m, b| if b.cards < Board.far and b.cards > m {
-				b.cards
-			} else {
-				m
-			},
+			|m, b|
+				if b.cards < Board.far and b.cards > m {
+					b.cards
+				} else {
+					m
+				},
 		)
 		var $counts = start
 		var $n = 1
@@ -243,7 +250,7 @@ Reach :: [].{
 						acc.set(
 							e.from,
 							{ ..here, routes: here.routes + via },
-						) ?? crash ("Reach: edge out of range")
+						) ?? crash "Reach: edge out of range"
 					} else {
 						acc
 					},

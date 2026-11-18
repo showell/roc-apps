@@ -38,11 +38,12 @@ FastTrack :: [].{
 	seats_of : U32 -> List(FastTrack.Seat)
 	seats_of = |bits|
 		[0, 1, 2, 3].map(
-			|i| if bits.shr_zf_wrap(2 * i).bitwise_and(3) == 0 {
-				Human
-			} else {
-				Computer(Strategy.champion)
-			},
+			|i|
+				if bits.shr_zf_wrap(2 * i).bitwise_and(3) == 0 {
+					Human
+				} else {
+					Computer(Strategy.champion)
+				},
 		)
 
 	seat : FastTrack.Model -> FastTrack.Seat

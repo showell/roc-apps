@@ -146,13 +146,14 @@ Search :: [].{
 				},
 		)
 		firsts.sort_with(
-			|a, b| if a.i < b.i {
-				Before
-			} else if a.i > b.i {
-				After
-			} else {
-				Same
-			},
+			|a, b|
+				if a.i < b.i {
+					Before
+				} else if a.i > b.i {
+					After
+				} else {
+					Same
+				},
 		).map(|x| x.line)
 	}
 
@@ -252,21 +253,23 @@ Search :: [].{
 		g = line.game
 		p = Player.get_active_player(g)
 		ascending = |xs| xs.sort_with(
-			|a, b| if a < b {
-				Before
-			} else if a > b {
-				After
-			} else {
-				Same
-			},
+			|a, b|
+				if a < b {
+					Before
+				} else if a > b {
+					After
+				} else {
+					Same
+				},
 		)
 		pieces = List.map_with_index(
 			g.board,
-			|v, sq| if v == 0 {
-				[]
-			} else {
-				[10 * sq + v.to_u64() - 1]
-			},
+			|v, sq|
+				if v == 0 {
+					[]
+				} else {
+					[10 * sq + v.to_u64() - 1]
+				},
 		).join()
 		cards = ascending(p.hand.map(|c| Config.card_value(c).to_u64_wrap()))
 		[

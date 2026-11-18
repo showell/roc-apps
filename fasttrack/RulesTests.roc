@@ -23,11 +23,12 @@ RulesTests :: [].{
 	board = |pieces| Piece.board_of(zone_colors, pieces)
 
 	at : Str, Str -> U64
-	at = |zone, id| if zone == "BE" {
-		Board.bullseye
-	} else {
-		Board.index_of(zone_colors, { zone: NormalColor(zone), id })
-	}
+	at = |zone, id|
+		if zone == "BE" {
+			Board.bullseye
+		} else {
+			Board.index_of(zone_colors, { zone: NormalColor(zone), id })
+		}
 
 	show_loc : U64 -> Str
 	show_loc = |s|

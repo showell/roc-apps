@@ -99,11 +99,12 @@ Rank :: [].{
 				|sa, i| by_stage(sa, b.stage.get(i) ?? { cards: Board.far, routes: 0 }),
 			).fold(
 				0,
-				|decided, c| if decided != 0 {
-					decided
-				} else {
-					c
-				},
+				|decided, c|
+					if decided != 0 {
+						decided
+					} else {
+						c
+					},
 			)
 		}
 	}
@@ -203,18 +204,19 @@ Rank :: [].{
 					x.i
 				}
 				{
-					place: acc.place.set(x.row.at, p) ?? crash ("Rank: square out of range"),
+					place: acc.place.set(x.row.at, p) ?? crash "Rank: square out of range",
 					prev: { row: x.row, place: p },
 				}
 			},
 		)
 		worst = settled.place.fold(
 			0,
-			|m, p| if p != U64.highest and p > m {
-				p
-			} else {
-				m
-			},
+			|m, p|
+				if p != U64.highest and p > m {
+					p
+				} else {
+					m
+				},
 		)
 		{ place: settled.place, worst }
 	}

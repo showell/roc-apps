@@ -136,9 +136,21 @@ Routes :: [].{
 	forward =
 		Board.squares.join_map(
 			|r| {
-				fast = if (r != Board.bullseye and Board.local(r) == Board.ft) TakeFastTrack else PassFastTrack
-				pen = if (Board.is_pen(r)) LeavePen else StayInPen
-				bullseye = if (r == Board.bullseye) LeaveBullseye else StayInBullseye
+				fast = if r != Board.bullseye and Board.local(r) == Board.ft {
+					TakeFastTrack
+				} else {
+					PassFastTrack
+				}
+				pen = if Board.is_pen(r) {
+					LeavePen
+				} else {
+					StayInPen
+				}
+				bullseye = if r == Board.bullseye {
+					LeaveBullseye
+				} else {
+					StayInBullseye
+				}
 				step = |s| next(s, fast, pen, bullseye)
 				Board.indices(longest + 1).map(|n| walks(step, n, r))
 			},
