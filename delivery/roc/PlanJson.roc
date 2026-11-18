@@ -18,7 +18,7 @@ PlanJson :: [].{
 			|r, i| {
 				m = plan.minutes.get(i) ?? crash "PlanJson.plan_json_of: a route's minutes"
 				time = plan.route_times.get(i) ?? crash "PlanJson.plan_json_of: a route's time"
-				JsonOut.ordered_object([
+				JsonOut.object([
 					("stops", stops_json(r)),
 					("orders", JsonOut.int(Route.load(r).to_i64_wrap())),
 					("travel", JsonOut.int(m.travel)),
@@ -43,7 +43,7 @@ PlanJson :: [].{
 			touched: [],
 			label: "done · trucks assigned to their lanes",
 		})
-		JsonOut.ordered_object([
+		JsonOut.object([
 			("routes", JsonOut.array(routes)),
 			("totalTime", JsonOut.float(plan.time)),
 			("travel", JsonOut.int(plan.travel)),
@@ -68,10 +68,8 @@ stop_json = |stop| {
 		("houses", JsonOut.array(stop.houses.to_list().map(|h| JsonOut.int(h.to_i64())))),
 	]
 	match stop.pin {
-		Free => JsonOut.ordered_object(members)
-		Pinned(slot) => JsonOut.ordered_object(
-			members.append(("pin", JsonOut.int(slot.to_i64_wrap()))),
-		)
+		Free => JsonOut.object(members)
+		Pinned(slot) => JsonOut.object(members.append(("pin", JsonOut.int(slot.to_i64_wrap()))))
 	}
 }
 
@@ -81,11 +79,8 @@ frame_json : {
 	label : Str,
 } -> JsonOut
 frame_json = |{ routes, touched, label }|
-	JsonOut.ordered_object([
-		(
-			"routes",
-			JsonOut.array(routes.map(|r| JsonOut.ordered_object([("stops", stops_json(r))]))),
-		),
+	JsonOut.object([
+		("routes", JsonOut.array(routes.map(|r| JsonOut.object([("stops", stops_json(r))])))),
 		("touched", JsonOut.array(touched.map(|k| JsonOut.string(Replay.key_name(k))))),
 		("label", JsonOut.string(label)),
 	])

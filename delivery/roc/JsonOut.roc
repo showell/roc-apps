@@ -34,8 +34,8 @@ JsonOut :: List(U8).{
 		JsonOut.($out.append(']'))
 	}
 
-	ordered_object : List((Str, JsonOut)) -> JsonOut
-	ordered_object = |members| {
+	object : List((Str, JsonOut)) -> JsonOut
+	object = |members| {
 		var $out = ['{']
 		var $first = True
 		for (key, JsonOut.(bytes)) in members {
@@ -80,6 +80,6 @@ hex_digit = |d|
 expect JsonOut.string("a\"b\\c\n").to_bytes() == "\"a\\\"b\\\\c\\u000a\"".to_utf8()
 expect {
 	floats = JsonOut.array([JsonOut.float(1.5), JsonOut.float(3.0)])
-	JsonOut.ordered_object([("b", JsonOut.int(-2)), ("a", floats)]).to_bytes() == "{\"b\":-2,\"a\":[1.5,3]}".to_utf8()
+	JsonOut.object([("b", JsonOut.int(-2)), ("a", floats)]).to_bytes() == "{\"b\":-2,\"a\":[1.5,3]}".to_utf8()
 }
 expect JsonOut.array([]).to_bytes() == "[]".to_utf8()

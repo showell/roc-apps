@@ -38,7 +38,7 @@ SlotSearch :: [].{
 			tidied = $slots.map(Route.tidied_pain)
 			var $best = NoMove
 			for t in 0..<$slots.len() {
-				rt = slot_stops_at($slots, t)
+				rt = slot_route($slots, t)
 				if !rt.is_empty() {
 					delivered = rt.map(|s| s.nbhd)
 					threaded = Pain.path_nodes(rt).fold(
@@ -75,9 +75,9 @@ SlotSearch :: [].{
 					$slots = (
 						$slots.set(
 							m.t,
-							m.t_stops,
+							m.t_route,
 						) ?? crash "SlotSearch.corridor_repaired: in range"
-					).set(m.tp, m.tp_stops) ?? crash "SlotSearch.corridor_repaired: in range"
+					).set(m.tp, m.tp_route) ?? crash "SlotSearch.corridor_repaired: in range"
 					$moves = $moves.append({
 						kind: Consolidate,
 						saved: m.gain,
@@ -103,16 +103,16 @@ SlotSearch :: [].{
 			tidied_pains = $slots.map(Route.tidied_pain)
 			var $best = NoMove
 			for a in 0..<$slots.len() {
-				a_stops = slot_stops_at($slots, a)
-				for si in 0..<a_stops.len() {
-					stop = Route.stop_at(a_stops, si)
+				a_route = slot_route($slots, a)
+				for si in 0..<a_route.len() {
+					stop = Route.stop_at(a_route, si)
 					if !stop.is_pinned() {
 						for b in 0..<$slots.len() {
-							b_stops = slot_stops_at($slots, b)
-							fits = Route.load(b_stops) + stop.load() <= Seattle.cap_of_slot(b)
+							b_route = slot_route($slots, b)
+							fits = Route.load(b_route) + stop.load() <= Seattle.cap_of_slot(b)
 							if b != a and fits {
-								new_a = a_stops.drop_at(si)
-								new_b = Route.stops_with_cheapest_insert(b_stops, stop)
+								new_a = a_route.drop_at(si)
+								new_b = Route.cheapest_insert(b_route, stop)
 								pair = tidied_at(tidied_pains, a) + tidied_at(tidied_pains, b)
 								gain = pair - (Route.tidied_pain(new_a) + Route.tidied_pain(new_b))
 								if gain >= 1 and beats($best, gain) {
@@ -132,25 +132,21 @@ SlotSearch :: [].{
 				}
 			}
 			for a in 0..<$slots.len() {
-				a_stops = slot_stops_at($slots, a)
+				a_route = slot_route($slots, a)
 				for b in (a + 1)..<$slots.len() {
-					b_stops = slot_stops_at($slots, b)
-					load_a = Route.load(a_stops)
-					load_b = Route.load(b_stops)
-					for i in 0..<a_stops.len() {
-						sa = Route.stop_at(a_stops, i)
-						for j in 0..<b_stops.len() {
-							sb = Route.stop_at(b_stops, j)
+					b_route = slot_route($slots, b)
+					load_a = Route.load(a_route)
+					load_b = Route.load(b_route)
+					for i in 0..<a_route.len() {
+						sa = Route.stop_at(a_route, i)
+						for j in 0..<b_route.len() {
+							sb = Route.stop_at(b_route, j)
 							fits_a = load_a - sa.load() + sb.load() <= Seattle.cap_of_slot(a)
 							fits_b = load_b - sb.load() + sa.load() <= Seattle.cap_of_slot(b)
 							is_free = !sa.is_pinned() and !sb.is_pinned()
 							if is_free and sa.nbhd != sb.nbhd and fits_a and fits_b {
-								new_a = Route.coalesced_stops(
-									Route.reinserted_stops(a_stops, { at: i, stop: sb }),
-								)
-								new_b = Route.coalesced_stops(
-									Route.reinserted_stops(b_stops, { at: j, stop: sa }),
-								)
+								new_a = Route.coalesce(Route.reinsert(a_route, { at: i, stop: sb }))
+								new_b = Route.coalesce(Route.reinsert(b_route, { at: j, stop: sa }))
 								pair = tidied_at(tidied_pains, a) + tidied_at(tidied_pains, b)
 								after = Route.tidied_pain(new_a) + Route.tidied_pain(new_b)
 								gain = pair - after
@@ -219,9 +215,9 @@ SlotSearch :: [].{
 			tidied_pains = $slots.map(Route.tidied_pain)
 			var $best = NoMove
 			for a in 0..<$slots.len() {
-				a_stops = slot_stops_at($slots, a)
-				for si in 0..<a_stops.len() {
-					stop = Route.stop_at(a_stops, si)
+				a_route = slot_route($slots, a)
+				for si in 0..<a_route.len() {
+					stop = Route.stop_at(a_route, si)
 					if !stop.is_pinned() {
 						for b in 0..<$slots.len() {
 							if b != a {
@@ -231,11 +227,8 @@ SlotSearch :: [].{
 										tidied_pains,
 										a,
 										b,
-										a_stops: a_stops.drop_at(si),
-										b_stops: Route.stops_with_cheapest_insert(
-											slot_stops_at($slots, b),
-											stop,
-										),
+										a_route: a_route.drop_at(si),
+										b_route: Route.cheapest_insert(slot_route($slots, b), stop),
 										touched: Replay.stop_keys([stop]),
 									},
 								)
@@ -245,13 +238,13 @@ SlotSearch :: [].{
 				}
 			}
 			for a in 0..<$slots.len() {
-				a_stops = slot_stops_at($slots, a)
+				a_route = slot_route($slots, a)
 				for b in (a + 1)..<$slots.len() {
-					b_stops = slot_stops_at($slots, b)
-					for i in 0..<a_stops.len() {
-						sa = Route.stop_at(a_stops, i)
-						for j in 0..<b_stops.len() {
-							sb = Route.stop_at(b_stops, j)
+					b_route = slot_route($slots, b)
+					for i in 0..<a_route.len() {
+						sa = Route.stop_at(a_route, i)
+						for j in 0..<b_route.len() {
+							sb = Route.stop_at(b_route, j)
 							if !sa.is_pinned() and !sb.is_pinned() and sa.nbhd != sb.nbhd {
 								$best = rescue_move(
 									$best,
@@ -259,11 +252,11 @@ SlotSearch :: [].{
 										tidied_pains,
 										a,
 										b,
-										a_stops: Route.coalesced_stops(
-											Route.reinserted_stops(a_stops, { at: i, stop: sb }),
+										a_route: Route.coalesce(
+											Route.reinsert(a_route, { at: i, stop: sb }),
 										),
-										b_stops: Route.coalesced_stops(
-											Route.reinserted_stops(b_stops, { at: j, stop: sa }),
+										b_route: Route.coalesce(
+											Route.reinsert(b_route, { at: j, stop: sa }),
 										),
 										touched: Replay.stop_keys([sa, sb]),
 									},
@@ -282,9 +275,9 @@ SlotSearch :: [].{
 					$slots = (
 						$slots.set(
 							m.a,
-							m.a_stops,
+							m.a_route,
 						) ?? crash "SlotSearch.arc_rebalanced: in range"
-					).set(m.b, m.b_stops) ?? crash "SlotSearch.arc_rebalanced: in range"
+					).set(m.b, m.b_route) ?? crash "SlotSearch.arc_rebalanced: in range"
 					$moves = $moves.append({
 						kind: Relocate,
 						saved: m.gain,
@@ -340,8 +333,8 @@ smaller = |a, b|
 		b
 	}
 
-slot_stops_at : List(List(Stop)), U64 -> List(Stop)
-slot_stops_at = |slots, i| slots.get(i) ?? crash "SlotSearch.slot_stops_at: one of the eight slots"
+slot_route : List(List(Stop)), U64 -> List(Stop)
+slot_route = |slots, i| slots.get(i) ?? crash "SlotSearch.slot_route: one of the eight slots"
 
 tidied_at : List(I64), U64 -> I64
 tidied_at = |pains, i| pains.get(i) ?? crash "SlotSearch.tidied_at: a slot's pain"
@@ -365,8 +358,8 @@ CorridorMove : [
 			gain : I64,
 			t : U64,
 			tp : U64,
-			t_stops : List(Stop),
-			tp_stops : List(Stop),
+			t_route : List(Stop),
+			tp_route : List(Stop),
 			name : Str,
 			via : Str,
 			touched : List(Replay.HouseKey),
@@ -382,22 +375,22 @@ ArcMove : [
 			gain : I64,
 			a : U64,
 			b : U64,
-			a_stops : List(Stop),
-			b_stops : List(Stop),
+			a_route : List(Stop),
+			b_route : List(Stop),
 			touched : List(Replay.HouseKey),
 		},
 	),
 ]
 
-## The candidate arc-rebalance move `a_stops`/`b_stops` for trucks `a` and
+## The candidate arc-rebalance move `a_route`/`b_route` for trucks `a` and
 ## `b`, scored as it is when both fit, or rescued by an arc when one truck
 ## is over its cap and the other isn't; the better of it and `best`.
 Candidate : {
 	tidied_pains : List(I64),
 	a : U64,
 	b : U64,
-	a_stops : List(Stop),
-	b_stops : List(Stop),
+	a_route : List(Stop),
+	b_route : List(Stop),
 	touched : List(Replay.HouseKey),
 }
 
@@ -405,8 +398,8 @@ rescue_move : ArcMove, Candidate -> ArcMove
 rescue_move = |best, c| {
 	cap_a = Seattle.cap_of_slot(c.a)
 	cap_b = Seattle.cap_of_slot(c.b)
-	la = Route.load(c.a_stops)
-	lb = Route.load(c.b_stops)
+	la = Route.load(c.a_route)
+	lb = Route.load(c.b_route)
 	if la <= cap_a and lb <= cap_b {
 		score_move(best, c)
 	} else {
@@ -416,14 +409,14 @@ rescue_move = |best, c| {
 			best
 		} else {
 			over = if is_over_a {
-				c.a_stops
+				c.a_route
 			} else {
-				c.b_stops
+				c.b_route
 			}
 			under = if is_over_a {
-				c.b_stops
+				c.b_route
 			} else {
-				c.a_stops
+				c.a_route
 			}
 			cap_under = if is_over_a {
 				cap_b
@@ -467,11 +460,8 @@ rescue_move = |best, c| {
 										!e.stop.houses.is_empty()
 									},
 							).map(|e| e.stop)
-							new_over = Route.coalesced_stops(raw)
-							new_under = Route.stops_with_cheapest_insert(
-								under,
-								Route.free_stop(f.nbhd, arc),
-							)
+							new_over = Route.coalesce(raw)
+							new_under = Route.cheapest_insert(under, Route.free_stop(f.nbhd, arc))
 							touched = c.touched.concat(Replay.house_keys(f.nbhd, arc))
 							$best =
 								if is_over_a {
@@ -479,8 +469,8 @@ rescue_move = |best, c| {
 										$best,
 										{
 											..c,
-											a_stops: new_over,
-											b_stops: new_under,
+											a_route: new_over,
+											b_route: new_under,
 											touched,
 										},
 									)
@@ -489,8 +479,8 @@ rescue_move = |best, c| {
 										$best,
 										{
 											..c,
-											a_stops: new_under,
-											b_stops: new_over,
+											a_route: new_under,
+											b_route: new_over,
 											touched,
 										},
 									)
@@ -506,19 +496,19 @@ rescue_move = |best, c| {
 
 score_move : ArcMove, Candidate -> ArcMove
 score_move = |best, c| {
-	is_over_a = Route.load(c.a_stops) > Seattle.cap_of_slot(c.a)
-	if is_over_a or Route.load(c.b_stops) > Seattle.cap_of_slot(c.b) {
+	is_over_a = Route.load(c.a_route) > Seattle.cap_of_slot(c.a)
+	if is_over_a or Route.load(c.b_route) > Seattle.cap_of_slot(c.b) {
 		best
 	} else {
 		pair = tidied_at(c.tidied_pains, c.a) + tidied_at(c.tidied_pains, c.b)
-		gain = pair - (Route.tidied_pain(c.a_stops) + Route.tidied_pain(c.b_stops))
+		gain = pair - (Route.tidied_pain(c.a_route) + Route.tidied_pain(c.b_route))
 		if gain >= 1 and beats(best, gain) {
 			Move({
 				gain,
 				a: c.a,
 				b: c.b,
-				a_stops: c.a_stops,
-				b_stops: c.b_stops,
+				a_route: c.a_route,
+				b_route: c.b_route,
 				touched: c.touched,
 			})
 		} else {
@@ -541,7 +531,7 @@ houses_tidied_in : List(List(Stop)), U8 -> List(List(Stop))
 houses_tidied_in = |slot_routes, nbhd| {
 	serving = List.from_iter(
 		U64.until(0, slot_routes.len()),
-	).keep_if(|i| slot_stops_at(slot_routes, i).any(|s| s.nbhd == nbhd and !s.houses.is_empty()))
+	).keep_if(|i| slot_route(slot_routes, i).any(|s| s.nbhd == nbhd and !s.houses.is_empty()))
 	if serving.len() < 2 {
 		slot_routes
 	} else {
@@ -616,7 +606,7 @@ houses_tidied_in = |slot_routes, nbhd| {
 			$parts.fold(
 				slot_routes,
 				|slots, part| {
-					route = slot_stops_at(slots, part.slot)
+					route = slot_route(slots, part.slot)
 					stop = Route.stop_at(route, part.at)
 					slots.set(
 						part.slot,
@@ -638,7 +628,7 @@ part_at = |parts, i| parts.get(i) ?? crash "SlotSearch.part_at: a part of the sp
 ## that delivers it, or none when its path never delivers it.
 slot_part : List(List(Stop)), { slot : U64, nbhd : U8 } -> Try(Part, [NoVisit])
 slot_part = |slot_routes, { slot, nbhd }| {
-	route = slot_stops_at(slot_routes, slot)
+	route = slot_route(slot_routes, slot)
 	at = route.find_first_index(|s| s.nbhd == nbhd) ?? crash "SlotSearch.slot_part: the slot serves it"
 	nodes = Pain.path_nodes(route)
 	match nodes.find_first_index(|n| n == nbhd) {
@@ -680,12 +670,12 @@ corridor_repair_onto : CorridorMove,
 } -> CorridorMove
 corridor_repair_onto = |best, { slots, tidied, t, b, splitting }| {
 	var $best = best
-	rt = slot_stops_at(slots, t)
+	rt = slot_route(slots, t)
 	match slots.find_first_index(|r| r.any(|s| s.nbhd == b)) {
 		Err(NotFound) => {}
 		Ok(tp) =>
 			if tp != t {
-				rtp = slot_stops_at(slots, tp)
+				rtp = slot_route(slots, tp)
 				b_stop = rtp.find_first(|s| s.nbhd == b) ?? crash "SlotSearch.corridor_repair_onto: the slot serves it"
 				if !b_stop.is_pinned() {
 					base = tidied_at(tidied, t) + tidied_at(tidied, tp)
@@ -698,16 +688,16 @@ corridor_repair_onto = |best, { slots, tidied, t, b, splitting }| {
 					name_b = Seattle.name_of(b)
 					# (a) Absorbed whole, if it fits.
 					if load_t + b_load <= cap_t {
-						t_stops = Route.stops_with_cheapest_insert(rt, b_stop)
-						after = Route.tidied_pain(t_stops) + Route.tidied_pain(without)
+						t_route = Route.cheapest_insert(rt, b_stop)
+						after = Route.tidied_pain(t_route) + Route.tidied_pain(without)
 						gain = base - after
 						if gain >= 1 and beats($best, gain) {
 							$best = Move({
 								gain,
 								t,
 								tp,
-								t_stops,
-								tp_stops: without,
+								t_route,
+								tp_route: without,
 								name: name_b,
 								via: "absorbed",
 								touched: Replay.stop_keys([b_stop]),
@@ -721,17 +711,17 @@ corridor_repair_onto = |best, { slots, tidied, t, b, splitting }| {
 						fits = fits_t and load_tp - b_load + trade_load <= cap_tp
 						if !trade.is_pinned() and fits {
 							t_without = without_nbhd(rt, trade.nbhd)
-							t_stops = Route.stops_with_cheapest_insert(t_without, b_stop)
-							tp_stops = Route.stops_with_cheapest_insert(without, trade)
-							after = Route.tidied_pain(t_stops) + Route.tidied_pain(tp_stops)
+							t_route = Route.cheapest_insert(t_without, b_stop)
+							tp_route = Route.cheapest_insert(without, trade)
+							after = Route.tidied_pain(t_route) + Route.tidied_pain(tp_route)
 							gain = base - after
 							if gain >= 1 and beats($best, gain) {
 								$best = Move({
 									gain,
 									t,
 									tp,
-									t_stops,
-									tp_stops,
+									t_route,
+									tp_route,
 									name: name_b,
 									via: "trading ${Seattle.name_of(trade.nbhd)}",
 									touched: Replay.stop_keys([b_stop, trade]),
@@ -759,7 +749,7 @@ corridor_repair_onto = |best, { slots, tidied, t, b, splitting }| {
 								ku = $k.to_u64_wrap()
 								take = Route.free_stop(b, b_stop.houses.take_first(ku))
 								rest = Route.free_stop(b, b_stop.houses.drop_first(ku))
-								t_stops = Route.stops_with_cheapest_insert(rt.drop_at(xi), take)
+								t_route = Route.cheapest_insert(rt.drop_at(xi), take)
 								swapped = rtp.map(
 									|s|
 										if s.nbhd == b {
@@ -768,8 +758,8 @@ corridor_repair_onto = |best, { slots, tidied, t, b, splitting }| {
 											s
 										},
 								)
-								tp_stops = Route.stops_with_cheapest_insert(swapped, x)
-								after = Route.tidied_pain(t_stops) + Route.tidied_pain(tp_stops)
+								tp_route = Route.cheapest_insert(swapped, x)
+								after = Route.tidied_pain(t_route) + Route.tidied_pain(tp_route)
 								gain = base - after
 								if gain >= 1 and beats($best, gain) {
 									left = b_stop.load() - ku
@@ -779,8 +769,8 @@ corridor_repair_onto = |best, { slots, tidied, t, b, splitting }| {
 										gain,
 										t,
 										tp,
-										t_stops,
-										tp_stops,
+										t_route,
+										tp_route,
 										name: name_b,
 										via,
 										touched: Replay.stop_keys([x, take]),

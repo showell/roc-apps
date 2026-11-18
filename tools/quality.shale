@@ -56,7 +56,8 @@
 --
 -- An app's own tables and exemptions are its lints', asked of the lint
 -- scripts in SETTINGS_SOURCES (Safari's first: its name_types.txt, its
--- drawing data that check_stacking skips, lib's stack_dictated.txt). A
+-- drawing data that check_stacking skips, lib's stack_dictated.txt; then
+-- Seattle Delivery's terms.txt, for hunt_names). A
 -- recipe with settings for a folder runs over that folder on its own, with
 -- them, and its run over the folder's project leaves that folder's
 -- findings out, so the folder's counts are those its own lints hold. The
@@ -275,9 +276,10 @@ end
 
 -- The lint scripts that hold an app's own settings for the recipes, each
 -- asked with `reads=settings`: Safari's first, as its lints are held at
--- zero. Each prints `SETTING<tab>recipe<tab>folder<tab>arg` lines, paths
--- from the checkout's root, and stays the one home of what it prints.
-const SETTINGS_SOURCES = {"canvas_apps/safari/gates/lints.shale"}
+-- zero, then Seattle Delivery's (its terms). Each prints
+-- `SETTING<tab>recipe<tab>folder<tab>arg` lines, paths from the checkout's
+-- root, and stays the one home of what it prints.
+const SETTINGS_SOURCES = {"canvas_apps/safari/gates/lints.shale", "delivery/lints.shale"}
 
 -- Each folder's settings for a recipe this script runs, as `{recipe,
 -- folder, args, skip, files}`: `args` the arguments to pass, `skip` the

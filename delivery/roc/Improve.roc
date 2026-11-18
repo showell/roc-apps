@@ -29,15 +29,15 @@ Improve :: [].{
 			var $r = 0
 			while $r < $routes.len() {
 				var $s = 0
-				while $s < route_stops_at($routes, $r).len() {
-					from = route_stops_at($routes, $r)
+				while $s < route_at($routes, $r).len() {
+					from = route_at($routes, $r)
 					stop = Route.stop_at(from, $s)
 					if !stop.is_pinned() {
 						without = from.drop_at($s)
 						drop = Pain.pain_of(from) - Pain.pain_of(without)
 						var $best = NoMove
 						for t in 0..<$routes.len() {
-							to = route_stops_at($routes, t)
+							to = route_at($routes, t)
 							if t != $r and Route.load(to) + stop.load() <= Route.cap(to) {
 								base = Pain.pain_of(to)
 								for at in 0..=to.len() {
@@ -67,10 +67,7 @@ Improve :: [].{
 								) ?? crash "Improve.relocate_stops: in range"
 								$routes = with_out.set(
 									b.t,
-									Route.insert_at(
-										route_stops_at(with_out, b.t),
-										{ at: b.at, stop },
-									),
+									Route.insert_at(route_at(with_out, b.t), { at: b.at, stop }),
 								) ?? crash "Improve.relocate_stops: in range"
 								$moves = $moves.append({
 									kind: Relocate,
@@ -107,9 +104,9 @@ Improve :: [].{
 			pains = $routes.map(Pain.pain_of)
 			var $best = NoMove
 			for a in 0..<$routes.len() {
-				ra = route_stops_at($routes, a)
+				ra = route_at($routes, a)
 				for b in (a + 1)..<$routes.len() {
-					rb = route_stops_at($routes, b)
+					rb = route_at($routes, b)
 					base = pain_at(pains, a) + pain_at(pains, b)
 					for i in 0..<ra.len() {
 						sa = Route.stop_at(ra, i)
@@ -122,11 +119,11 @@ Improve :: [].{
 									and Route.load(ra) - sa.load() + sb.load() <= Route.cap(ra)
 									and Route.load(rb) - sb.load() + sa.load() <= Route.cap(rb)
 									{
-										new_a = Route.coalesced_stops(
-											Route.reinserted_stops(ra, { at: i, stop: sb }),
+										new_a = Route.coalesce(
+											Route.reinsert(ra, { at: i, stop: sb }),
 										)
-										new_b = Route.coalesced_stops(
-											Route.reinserted_stops(rb, { at: j, stop: sa }),
+										new_b = Route.coalesce(
+											Route.reinsert(rb, { at: j, stop: sa }),
 										)
 										gain = base - (Pain.pain_of(new_a) + Pain.pain_of(new_b))
 										is_better =
@@ -189,14 +186,14 @@ Improve :: [].{
 			spread0 = spread_of(pains.map_with_index(|p, i| { pain: p, is_alive: is_at(alive, i) }))
 			var $best = NoMove
 			for r in 0..<$routes.len() {
-				from = route_stops_at($routes, r)
+				from = route_at($routes, r)
 				for s in 0..<from.len() {
 					stop = Route.stop_at(from, s)
 					if !stop.is_pinned() {
 						without = from.drop_at(s)
 						from_pain = Pain.pain_of(without)
 						for t in 0..<$routes.len() {
-							to = route_stops_at($routes, t)
+							to = route_at($routes, t)
 							if t != r and Route.load(to) + stop.load() <= Route.cap(to) {
 								for at in 0..=to.len() {
 									to_pain = Pain.pain_of_view(to, Inserted({ at, stop }))
@@ -243,7 +240,7 @@ Improve :: [].{
 				}
 
 				Move(m) => {
-					from = route_stops_at($routes, m.r)
+					from = route_at($routes, m.r)
 					stop = Route.stop_at(from, m.s)
 					with_out = $routes.set(
 						m.r,
@@ -251,7 +248,7 @@ Improve :: [].{
 					) ?? crash "Improve.rebalance_stops: in range"
 					$routes = with_out.set(
 						m.t,
-						Route.insert_at(route_stops_at(with_out, m.t), { at: m.at, stop }),
+						Route.insert_at(route_at(with_out, m.t), { at: m.at, stop }),
 					) ?? crash "Improve.rebalance_stops: in range"
 					$moves = $moves.append({
 						kind: Settle,
@@ -280,13 +277,13 @@ Improve :: [].{
 			pains = $routes.map(Pain.pain_of)
 			var $best = NoMove
 			for a in 0..<$routes.len() {
-				ra = route_stops_at($routes, a)
+				ra = route_at($routes, a)
 				for sa in 0..<ra.len() {
 					stop = Route.stop_at(ra, sa)
 					if !stop.is_pinned() and stop.load() >= 2 {
 						arcs = arc_subsets(stop.nbhd, stop.houses)
 						for b in 0..<$routes.len() {
-							rb = route_stops_at($routes, b)
+							rb = route_at($routes, b)
 							if b != a and !rb.any(|s| s.nbhd == stop.nbhd) {
 								for arc in arcs {
 									if Route.load(rb) + arc.count() <= Route.cap(rb) {
@@ -342,14 +339,11 @@ Improve :: [].{
 				Move(m) => {
 					with_rest = $routes.set(
 						m.a,
-						route_stops_at(
-							$routes,
-							m.a,
-						).set(m.sa, m.rest) ?? crash "Improve.split: in range",
+						route_at($routes, m.a).set(m.sa, m.rest) ?? crash "Improve.split: in range",
 					) ?? crash "Improve.split: in range"
 					$routes = with_rest.set(
 						m.b,
-						Route.insert_at(route_stops_at(with_rest, m.b), { at: m.at, stop: m.take }),
+						Route.insert_at(route_at(with_rest, m.b), { at: m.at, stop: m.take }),
 					) ?? crash "Improve.split: in range"
 					name = Seattle.name_of(m.take.nbhd)
 					both = m.take.load() + m.rest.load()
@@ -367,8 +361,8 @@ Improve :: [].{
 	}
 }
 
-route_stops_at : List(List(Stop)), U64 -> List(Stop)
-route_stops_at = |routes, i| routes.get(i) ?? crash "Improve.route_stops_at: a route of the plan"
+route_at : List(List(Stop)), U64 -> List(Stop)
+route_at = |routes, i| routes.get(i) ?? crash "Improve.route_at: a route of the plan"
 
 pain_at : List(I64), U64 -> I64
 pain_at = |pains, i| pains.get(i) ?? crash "Improve.pain_at: a route's pain"

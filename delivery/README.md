@@ -82,6 +82,7 @@ the race; each neighborhood's `overflow` in `roc/Seattle.roc` says).
 | `solver_gold.json`, `solver_frames_gold.json` | the gold corpus: 20 shifts, every route, pain, race variant, the road graph, and every replay frame |
 | `tools/` | `page_check.mjs`, the staged page in headless Chromium |
 | `build.shale` | the gate, then the page into the dev channel |
+| `lints.shale`, `terms.txt` | Shale's Roc name hunt over `roc/` with delivery's own terms (a `List(Stop)` is a `route`), each count held; `tools/quality.shale` asks it for the terms (`reads=settings`) |
 
 Faithfulness to `solver.ts` is in the order things are scanned and
 compared: ties go to the first candidate everywhere, JS's Map and Set
@@ -97,6 +98,7 @@ found at `~/tools/roc-<pin>/roc`; the build stops on any other), node, and
 `npm ci` in this folder once (tsc and esbuild). From roc-apps' root:
 
     shale delivery/build.shale    # every check, then the page into the dev channel
+    shale delivery/lints.shale    # the name hunt, with delivery's terms
 
 and, in `delivery/`:
 

@@ -61,8 +61,8 @@ Itinerary := {
 		}
 
 	## The route's stops, without their timings.
-	route_stops : Itinerary -> List(Stop)
-	route_stops = |itinerary| itinerary.stops.map(|e| e.stop)
+	route : Itinerary -> List(Stop)
+	route = |itinerary| itinerary.stops.map(|e| e.stop)
 }
 
 ## Each neighborhood's first arrival on the walk, and the walk's totals.
@@ -172,7 +172,7 @@ sample_routes = [
 
 expect sample_routes.all(|r| Itinerary.itinerary_of(r).expected_pain == Pain.pain_of(r))
 expect sample_routes.all(|r| Itinerary.itinerary_of(r).expected_return == Pain.minutes_of(r).time)
-expect sample_routes.all(|r| Itinerary.itinerary_of(r).route_stops() == r)
+expect sample_routes.all(|r| Itinerary.itinerary_of(r).route() == r)
 
 expect
 	sample_routes.all(

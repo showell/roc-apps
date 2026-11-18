@@ -181,7 +181,7 @@ Solve :: [].{
 	## and the spread over the trucks deployed.
 	page_plan : { dispatch_plan : DispatchPlan, trace : Trace } -> PagePlan
 	page_plan = |{ dispatch_plan, trace }| {
-		slot_routes = dispatch_plan.itineraries.map(Itinerary.route_stops)
+		slot_routes = dispatch_plan.itineraries.map(Itinerary.route)
 		minutes = slot_routes.map(Pain.minutes_of)
 		route_times = dispatch_plan.itineraries.map(|i| i.expected_return)
 		travel = minutes.fold(0, |n, m| n + m.travel)
@@ -337,12 +337,12 @@ place_overflow_neighborhoods = |
 ## stops of one neighborhood.
 improve_routes : Unassigned -> Unassigned
 improve_routes = |work| {
-	tidied = { ..work, routes: work.routes.map(Route.two_opt_stops) }
+	tidied = { ..work, routes: work.routes.map(Route.two_opt) }
 	moved = Improve.exchange_stops(Improve.relocate_stops(tidied))
-	retidied = { ..moved, routes: moved.routes.map(Route.two_opt_stops) }
+	retidied = { ..moved, routes: moved.routes.map(Route.two_opt) }
 	settled = Improve.rebalance_stops(retidied)
 	split = Improve.rebalance_stops(Improve.exchange_stops(Improve.split(settled)))
-	{ ..split, routes: split.routes.map(|r| Route.two_opt_stops(Route.coalesced_stops(r))) }
+	{ ..split, routes: split.routes.map(|r| Route.two_opt(Route.coalesce(r))) }
 }
 
 ## The routes given their trucks (`slots_of`); routes past the fleet, which
@@ -390,15 +390,15 @@ improve_assigned = |assigned| {
 			shackled
 		}
 	searched = SlotSearch.relocated_or_swapped({
-		slot_routes: repaired.slot_routes.map(Route.two_opt_stops),
+		slot_routes: repaired.slot_routes.map(Route.two_opt),
 		moves: [],
 	})
 	rebalanced = SlotSearch.arc_rebalanced({
-		slot_routes: searched.slot_routes.map(Route.two_opt_stops),
+		slot_routes: searched.slot_routes.map(Route.two_opt),
 		moves: [],
 	})
 	{
-		slot_routes: SlotSearch.houses_tidied(rebalanced.slot_routes.map(Route.two_opt_stops)),
+		slot_routes: SlotSearch.houses_tidied(rebalanced.slot_routes.map(Route.two_opt)),
 		unrouted: assigned.unrouted,
 		moves: [assigned.moves, repaired.moves, searched.moves, rebalanced.moves].join(),
 	}
@@ -431,7 +431,7 @@ slots_of = |routes, spilled| {
 		}
 	}
 	var $unrouted = spilled
-	for r in Build.items_by_load_desc($leftover, Route.load) {
+	for r in Build.stable_by_load_desc($leftover, Route.load) {
 		match $slots.map_with_index(
 			|s, i| { s, i },
 		).find_first(|e| e.s.is_empty() and Route.load(r) <= Seattle.cap_of_slot(e.i)) {
@@ -447,7 +447,7 @@ slots_of = |routes, spilled| {
 						var $into = 0
 						for i in 0..<$slots.len() {
 							free = Seattle.cap_of_slot(i).to_i64_wrap() - Route.load(
-								slot_stops($slots, i),
+								slot_route($slots, i),
 							).to_i64_wrap()
 							if free > $room {
 								$room = free
@@ -462,7 +462,7 @@ slots_of = |routes, spilled| {
 							piece = Route.free_stop(stop.nbhd, $houses.take_first(take))
 							$slots = $slots.set(
 								$into,
-								slot_stops($slots, $into).append(piece),
+								slot_route($slots, $into).append(piece),
 							) ?? crash "Solve.slots_of: in range"
 							$houses = $houses.drop_first(take)
 						}
@@ -470,8 +470,8 @@ slots_of = |routes, spilled| {
 				}
 		}
 	}
-	{ slot_routes: $slots.map(Route.coalesced_stops), unrouted: $unrouted }
+	{ slot_routes: $slots.map(Route.coalesce), unrouted: $unrouted }
 }
 
-slot_stops : List(List(Stop)), U64 -> List(Stop)
-slot_stops = |slots, i| slots.get(i) ?? crash "Solve.slot_stops: one of the eight slots"
+slot_route : List(List(Stop)), U64 -> List(Stop)
+slot_route = |slots, i| slots.get(i) ?? crash "Solve.slot_route: one of the eight slots"

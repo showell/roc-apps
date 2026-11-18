@@ -21,7 +21,7 @@ Gold :: [].{
 		day = Solve.seattle_day(orders)
 		race = Solve.race(day)
 		dispatch_plan = Solve.dispatch_plan_of(race.best)
-		JsonOut.ordered_object([
+		JsonOut.object([
 			("fleet", fleet),
 			(
 				"raceVariants",
@@ -30,18 +30,18 @@ Gold :: [].{
 			("substrate", substrate),
 			(
 				"shift",
-				JsonOut.ordered_object([
+				JsonOut.object([
 					("seed", JsonOut.int(seed.to_i64())),
 					("demand", demand_of(orders)),
 					(
 						"race",
-						JsonOut.ordered_object([
+						JsonOut.object([
 							("winner", JsonOut.string(race.winner.reference_label)),
 							(
 								"pains",
 								JsonOut.array(
 									race.pains.map(
-										|p| JsonOut.ordered_object([
+										|p| JsonOut.object([
 											("label", JsonOut.string(p.variant.reference_label)),
 											("pain", JsonOut.int(p.pain)),
 										]),
@@ -62,7 +62,7 @@ Gold :: [].{
 }
 
 fleet : JsonOut
-fleet = JsonOut.ordered_object([
+fleet = JsonOut.object([
 	("trucks", JsonOut.int(Seattle.truck_count.to_i64_wrap())),
 	("orders", JsonOut.int(Seattle.order_count.to_i64_wrap())),
 	("caps", JsonOut.array(Seattle.truck_caps.map(|c| JsonOut.int(c.to_i64_wrap())))),
@@ -76,13 +76,13 @@ all_nodes : List(U8)
 all_nodes = List.from_iter(U64.until(0, Seattle.node_count)).map(|n| n.to_u8_wrap())
 
 substrate : JsonOut
-substrate = JsonOut.ordered_object([
+substrate = JsonOut.object([
 	("nodes", JsonOut.array(all_nodes.map(node_name))),
 	(
 		"edges",
 		JsonOut.array(
 			RoadGraph.edges.map(
-				|e| JsonOut.ordered_object([
+				|e| JsonOut.object([
 					("a", node_name(e.a)),
 					("b", node_name(e.b)),
 					("minutes", JsonOut.int(e.minutes)),
@@ -147,8 +147,8 @@ bytes_order = |a, b|
 ## expects (so the gold holds the itinerary's sum to the route's).
 gold_route : Itinerary -> JsonOut
 gold_route = |itinerary| {
-	stops = itinerary.route_stops()
-	JsonOut.ordered_object([
+	stops = itinerary.route()
+	JsonOut.object([
 		("stops", JsonOut.array(stops.map(gold_stop))),
 		("orders", JsonOut.int(Route.load(stops).to_i64_wrap())),
 		("pain", JsonOut.int(itinerary.expected_pain)),
@@ -162,9 +162,7 @@ gold_stop = |stop| {
 		("houses", JsonOut.array(stop.houses.to_list().map(|h| JsonOut.int(h.to_i64())))),
 	]
 	match stop.pin {
-		Free => JsonOut.ordered_object(members)
-		Pinned(slot) => JsonOut.ordered_object(
-			members.append(("pin", JsonOut.int(slot.to_i64_wrap()))),
-		)
+		Free => JsonOut.object(members)
+		Pinned(slot) => JsonOut.object(members.append(("pin", JsonOut.int(slot.to_i64_wrap()))))
 	}
 }

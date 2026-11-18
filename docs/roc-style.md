@@ -109,9 +109,13 @@ Roc's own rules are in the langref's
   noun: the one before a preposition or a word like `ahead`, else the last, so
   `trees_in_view`, `corners_ahead` and `rectangle_corners` all pass. A collective
   noun doesn't count: a herd of cows is `herd_cows`, and a route of segments is
-  `route_segments`. The rule covers a function that gives a list or a `Try` of
+  `route_segments`, unless the project's own terms say what the noun holds:
+  Seattle Delivery's `terms.txt` has `route: Stop`, so there a `List(Stop)` is a
+  `route`. The rule covers a function that gives a list or a `Try` of
   one, a field and a parameter, and a verb's object doesn't excuse it unless the
-  function gives back the list it took (`push_trail`). Bytes are plumbing, so
+  function gives back the list it took (`push_trail`, `two_opt`), whatever its
+  first word. A name that starts with a preposition (`by_slot`) hides its noun
+  either way, so it is named again (`routes_by_slot`), not made plural. Bytes are plumbing, so
   `boundary : List(U8)` says what they mean, but `flat_coordinates` gives a
   `List(F64)` and is plural. A word with no plural passes, and an accumulator may
   keep its short idiom as its whole name, `out`. The name hunt's `singular_list`

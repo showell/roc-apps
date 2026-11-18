@@ -62,9 +62,9 @@ Build :: [].{
 			pains = $routes.map(Pain.pain_of)
 			var $best = NoMerge
 			for i in 0..<$routes.len() {
-				ri = route_stops_at($routes, i)
+				ri = route_at($routes, i)
 				for j in (i + 1)..<$routes.len() {
-					rj = route_stops_at($routes, j)
+					rj = route_at($routes, j)
 					cap = if Route.has_anchor(ri) {
 						Route.cap(ri)
 					} else {
@@ -72,7 +72,7 @@ Build :: [].{
 					}
 					fits = Route.load(ri) + Route.load(rj) <= cap
 					if fits and !(Route.has_anchor(ri) and Route.has_anchor(rj)) {
-						joined = best_joined_stops(ri, rj)
+						joined = best_join(ri, rj)
 						saved = pain_at(pains, i) + pain_at(pains, j) - Pain.pain_of(joined)
 						is_better =
 							match $best {
@@ -131,11 +131,11 @@ Build :: [].{
 	force_placed : Built, Chunking -> Built
 	force_placed = |built, chunking| {
 		routes = built.routes
-		indexed = routes.map_with_index(|r, i| { route_stops: r, at: i })
-		anchored = indexed.keep_if(|e| Route.has_anchor(e.route_stops))
-		clusters = items_by_load_desc(
-			indexed.keep_if(|e| !Route.has_anchor(e.route_stops) and !e.route_stops.is_empty()),
-			|e| Route.load(e.route_stops),
+		indexed = routes.map_with_index(|r, i| { route: r, at: i })
+		anchored = indexed.keep_if(|e| Route.has_anchor(e.route))
+		clusters = stable_by_load_desc(
+			indexed.keep_if(|e| !Route.has_anchor(e.route) and !e.route.is_empty()),
+			|e| Route.load(e.route),
 		)
 		keep = if anchored.len() < Seattle.truck_count {
 			Seattle.truck_count - anchored.len()
@@ -146,14 +146,14 @@ Build :: [].{
 		surplus = clusters.drop_first(keep)
 		var $moves = built.moves
 		for extra in surplus {
-			for stop in extra.route_stops {
+			for stop in extra.route {
 				var $remaining = stop.houses
 				while !$remaining.is_empty() {
 					n = $remaining.count()
 					var $whole = NoTruck
 					for k in 0..<$kept_routes.len() {
 						kept = $kept_routes.get(k) ?? crash "Build.force_placed: a kept route"
-						ks = kept.route_stops
+						ks = kept.route
 						if room_of(ks) >= n.to_i64_wrap() {
 							c = appending_pain(ks, { nbhd: stop.nbhd, houses: $remaining })
 							is_better =
@@ -184,7 +184,7 @@ Build :: [].{
 
 						NoTruck => {
 							into = chunk_target(
-								$kept_routes.map(|e| e.route_stops),
+								$kept_routes.map(|e| e.route),
 								{
 									nbhd: stop.nbhd,
 									houses: $remaining,
@@ -210,7 +210,7 @@ Build :: [].{
 				}
 			}
 		}
-		{ routes: $kept_routes.map(|e| e.route_stops), moves: $moves }
+		{ routes: $kept_routes.map(|e| e.route), moves: $moves }
 	}
 
 	## The overflow neighborhoods into the trucks' room, the biggest first:
@@ -219,7 +219,7 @@ Build :: [].{
 	## pins.
 	overflow_placed : Built, { overflow_routes : List(List(Stop)), chunking : Chunking } -> Built
 	overflow_placed = |built, { overflow_routes, chunking }| {
-		ordered = items_by_load_desc(overflow_routes.map(|r| Route.stop_at(r, 0)), Stop.load)
+		ordered = stable_by_load_desc(overflow_routes.map(|r| Route.stop_at(r, 0)), Stop.load)
 		var $routes = built.routes
 		var $moves = built.moves
 		for stop in ordered {
@@ -228,7 +228,7 @@ Build :: [].{
 				n = $remaining.count()
 				var $whole = NoTruck
 				for ri in 0..<$routes.len() {
-					rs = route_stops_at($routes, ri)
+					rs = route_at($routes, ri)
 					if room_of(rs) >= n.to_i64_wrap() {
 						candidate = Route.insert_best(rs, Route.free_stop(stop.nbhd, $remaining))
 						delta = Pain.pain_of(candidate) - Pain.pain_of(rs)
@@ -238,7 +238,7 @@ Build :: [].{
 								Truck(b) => delta < b.delta
 							}
 						if is_better {
-							$whole = Truck({ ri, delta, route_stops: candidate })
+							$whole = Truck({ ri, delta, route: candidate })
 						}
 					}
 				}
@@ -246,7 +246,7 @@ Build :: [].{
 					Truck(b) => {
 						$routes = $routes.set(
 							b.ri,
-							b.route_stops,
+							b.route,
 						) ?? crash "Build.overflow_placed: in range"
 						$moves = $moves.append({
 							kind: Relocate,
@@ -271,7 +271,7 @@ Build :: [].{
 						take = $remaining.take_first(into.take)
 						$remaining = $remaining.drop_first(into.take)
 						placed = Route.insert_best(
-							route_stops_at($routes, into.k),
+							route_at($routes, into.k),
 							Route.free_stop(stop.nbhd, take),
 						)
 						$routes = $routes.set(
@@ -294,8 +294,8 @@ Build :: [].{
 
 	## A list stably sorted by a load, the biggest first (JS's sort is
 	## stable).
-	items_by_load_desc : List(a), (a -> U64) -> List(a)
-	items_by_load_desc = |items, load_of| {
+	stable_by_load_desc : List(a), (a -> U64) -> List(a)
+	stable_by_load_desc = |items, load_of| {
 		indexed = items.map_with_index(|item, i| { item, i, load: load_of(item) })
 		sorted = indexed.sort_with(
 			|p, q|
@@ -333,16 +333,16 @@ free_clusters_onto = |out, { nbhd, houses }| {
 room_of : List(Stop) -> I64
 room_of = |stops| Route.cap(stops).to_i64_wrap() - Route.load(stops).to_i64_wrap()
 
-route_stops_at : List(List(Stop)), U64 -> List(Stop)
-route_stops_at = |routes, i| routes.get(i) ?? crash "Build.route_stops_at: a route of the plan"
+route_at : List(List(Stop)), U64 -> List(Stop)
+route_at = |routes, i| routes.get(i) ?? crash "Build.route_at: a route of the plan"
 
 pain_at : List(I64), U64 -> I64
 pain_at = |pains, i| pains.get(i) ?? crash "Build.pain_at: a route's pain"
 
 ## `a` and `b` laid end to end the cheapest of four ways, ties to the first:
 ## a then b, a then b reversed, a reversed then b, both reversed.
-best_joined_stops : List(Stop), List(Stop) -> List(Stop)
-best_joined_stops = |a, b| {
+best_join : List(Stop), List(Stop) -> List(Stop)
+best_join = |a, b| {
 	# Each way read in place: a then b reversed is the run after a reversed,
 	# a reversed then b the run before it, and both reversed is b then a,
 	# reversed whole.
@@ -380,7 +380,7 @@ best_joined_stops = |a, b| {
 	var $best = 0
 	var $best_pain = Pain.pain_of(ab)
 	for w in 1..<4 {
-		way = ways.get(w) ?? crash "Build.best_joined_stops: four ways"
+		way = ways.get(w) ?? crash "Build.best_join: four ways"
 		pain = Pain.pain_of_view(way.stops, way.view)
 		if pain < $best_pain {
 			$best_pain = pain
@@ -403,17 +403,17 @@ appending_pain = |
 | Pain.pain_of(stops.append(Route.free_stop(nbhd, houses))) - Pain.pain_of(stops)
 
 ## A kept route of force placement, and its place in the routes it came from.
-Kept : { route_stops : List(Stop), at : U64 }
+Kept : { route : List(Stop), at : U64 }
 
 kept_routes_with_stop : List(Kept), { k : U64, stop : Stop } -> List(Kept)
 kept_routes_with_stop = |kept_routes, { k, stop }| {
 	{ list, prev } = kept_routes.replace(
 		k,
-		{ route_stops: [], at: 0 },
+		{ route: [], at: 0 },
 	) ?? crash "Build.kept_routes_with_stop: a kept route"
 	list.set(
 		k,
-		{ route_stops: prev.route_stops.append(stop), at: prev.at },
+		{ route: prev.route.append(stop), at: prev.at },
 	) ?? crash "Build.kept_routes_with_stop: a kept route"
 }
 
@@ -422,7 +422,7 @@ kept_routes_with_stop = |kept_routes, { k, stop }| {
 aliased_frame_routes : List(List(Stop)), List(Kept) -> List(List(Stop))
 aliased_frame_routes = |routes, kept_routes| kept_routes.fold(
 	routes,
-	|frame, k| frame.set(k.at, k.route_stops) ?? crash "Build.aliased_frame_routes: in range",
+	|frame, k| frame.set(k.at, k.route) ?? crash "Build.aliased_frame_routes: in range",
 )
 
 ## Where a piece of `houses` too big for one truck goes, and how much of
@@ -440,7 +440,7 @@ chunk_target = |routes, { nbhd, houses, chunking, place }| {
 	n = houses.count()
 	var $best = NoTruck
 	for k in 0..<routes.len() {
-		ks = route_stops_at(routes, k)
+		ks = route_at(routes, k)
 		room = room_of(ks)
 		if room > 0 {
 			take = if room.to_u64_wrap() < n {
