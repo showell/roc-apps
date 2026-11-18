@@ -37,11 +37,12 @@ Vec :: [].{
 	}
 
 	unit_for : U64, U64 -> U64
-	unit_for = |n, u| if u * Vec.width >= n {
-		u
-	} else {
-		Vec.unit_for(n, u * Vec.width)
-	}
+	unit_for = |n, u|
+		if u * Vec.width >= n {
+			u
+		} else {
+			Vec.unit_for(n, u * Vec.width)
+		}
 
 	full : U64, a -> Tree(a)
 	full = |unit, fill|
@@ -70,11 +71,12 @@ Vec :: [].{
 
 	# `fill` past the end.
 	get : V(a), U64, a -> a
-	get = |v, i, fill| if i >= v.n {
-		fill
-	} else {
-		Vec.get_in(v.root, v.unit, i, fill)
-	}
+	get = |v, i, fill|
+		if i >= v.n {
+			fill
+		} else {
+			Vec.get_in(v.root, v.unit, i, fill)
+		}
 
 	get_in : Tree(a), U64, U64, a -> a
 	get_in = |t, unit, i, fill| match t {

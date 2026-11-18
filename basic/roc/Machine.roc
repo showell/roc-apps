@@ -198,11 +198,12 @@ Machine :: [].{
 
 	# LOG: the atanh series after a reduction by powers of two.
 	ln : F64 -> F64
-	ln = |x| if x <= 0.0 {
-		0.0
-	} else {
-		Machine.ln_reduce(x, 0)
-	}
+	ln = |x|
+		if x <= 0.0 {
+			0.0
+		} else {
+			Machine.ln_reduce(x, 0)
+		}
 
 	ln_reduce : F64, I64 -> F64
 	ln_reduce = |x, k|
@@ -417,11 +418,12 @@ Machine :: [].{
 	}
 
 	no_zeros : Str -> Str
-	no_zeros = |t| if t.ends_with("0") {
-		Machine.no_zeros(Machine.take(t, t.count_utf8_bytes() - 1))
-	} else {
-		t
-	}
+	no_zeros = |t|
+		if t.ends_with("0") {
+			Machine.no_zeros(Machine.take(t, t.count_utf8_bytes() - 1))
+		} else {
+			t
+		}
 
 	# ---- the evaluator ----------------------------------------------------------
 
@@ -666,11 +668,12 @@ Machine :: [].{
 	chars = Machine.char_table(0, [])
 
 	char_table : U64, List(Str) -> List(Str)
-	char_table = |c, acc| if c >= 256 {
-		acc
-	} else {
-		Machine.char_table(c + 1, acc.append(Str.from_utf8([c.to_u8_wrap()]) ?? "?"))
-	}
+	char_table = |c, acc|
+		if c >= 256 {
+			acc
+		} else {
+			Machine.char_table(c + 1, acc.append(Str.from_utf8([c.to_u8_wrap()]) ?? "?"))
+		}
 
 	# A parameter bound by a call hides the variable of its name.
 	num_var : M, Env, U64 -> F64
@@ -916,13 +919,14 @@ Machine :: [].{
 	}
 
 	clamp : I64, U64 -> U64
-	clamp = |n, hi| if n <= 0 {
-		0
-	} else if n.to_u64_wrap() > hi {
-		hi
-	} else {
-		n.to_u64_wrap()
-	}
+	clamp = |n, hi|
+		if n <= 0 {
+			0
+		} else if n.to_u64_wrap() > hi {
+			hi
+		} else {
+			n.to_u64_wrap()
+		}
 
 	slice : List(U8), U64, U64 -> Str
 	slice = |b, from, n|
@@ -1091,11 +1095,12 @@ Machine :: [].{
 		}
 
 	spaces : I64 -> Str
-	spaces = |n| if n <= 0 {
-		""
-	} else {
-		" ".repeat(n.to_u64_wrap())
-	}
+	spaces = |n|
+		if n <= 0 {
+			""
+		} else {
+			" ".repeat(n.to_u64_wrap())
+		}
 
 	zone : I64
 	zone = 14
@@ -1106,13 +1111,14 @@ Machine :: [].{
 	# **PRINT WRAPS AT A MARGIN** where there is one: ECMA-55's, or the
 	# page's forty columns. A microcomputer's batch run has none.
 	wrap_at : Parse.Program, M -> I64
-	wrap_at = |pg, _m| if pg.ecma {
-		Machine.margin
-	} else if pg.live {
-		Devices.screen_w
-	} else {
-		0
-	}
+	wrap_at = |pg, _m|
+		if pg.ecma {
+			Machine.margin
+		} else if pg.live {
+			Devices.screen_w
+		} else {
+			0
+		}
 
 	# A PRINT's text, reports and all, built without touching the machine:
 	# its items are evaluated in order against the column they move.
@@ -1120,7 +1126,7 @@ Machine :: [].{
 	print_text = |pg, m, items, newline| {
 		w = Machine.wrap_at(pg, m)
 		var $text = ""
-		var $col = (Machine.devices_of(m)).col
+		var $col = Machine.devices_of(m).col
 		var $fx = Machine.fresh(m)
 		for it in items {
 			if Machine.stopped($fx) {
@@ -1309,7 +1315,7 @@ Machine :: [].{
 		var $arrs = arrs
 		var $count = count
 		for x in made {
-			if (Vec.get($arrs, x.slot, Machine.no_arr)).n == 0 {
+			if Vec.get($arrs, x.slot, Machine.no_arr).n == 0 {
 				a = Machine.shaped(
 					base,
 					10,
@@ -1507,11 +1513,12 @@ Machine :: [].{
 	# A GOSUB and its RETURN, or a loop entered and left, reuse the same cells:
 	# a list pushed and popped back to empty allocated every time.
 	push : List(a), U64, a -> List(a)
-	push = |xs, depth, x| if depth < xs.len() {
-		xs.set(depth, x) ?? crash "push: inside the list"
-	} else {
-		xs.append(x)
-	}
+	push = |xs, depth, x|
+		if depth < xs.len() {
+			xs.set(depth, x) ?? crash "push: inside the list"
+		} else {
+			xs.append(x)
+		}
 
 	next_line : Parse.Program, M, U64 -> U64
 	next_line = |pg, _m, line| pg.firsts.get(line + 1) ?? pg.prog.len()
@@ -1935,11 +1942,12 @@ Machine :: [].{
 
 	# A value `finite` would pass without a report.
 	quick : F64 -> Quick
-	quick = |x| if x > Machine.huge or x < 0.0 - Machine.huge {
-		Slow
-	} else {
-		Got(x)
-	}
+	quick = |x|
+		if x > Machine.huge or x < 0.0 - Machine.huge {
+			Slow
+		} else {
+			Got(x)
+		}
 
 	fast_neg : M, Parse.Expr -> Quick
 	fast_neg = |m, a| match Machine.fast(m, a) {
@@ -2176,7 +2184,7 @@ Machine :: [].{
 	| match Machine.fast_subs(m, one, two, pair) {
 		Nowhere => Nothing
 		Cell(i, j) =>
-			if (Vec.at(m.arrs, slot)).n == 0 {
+			if Vec.at(m.arrs, slot).n == 0 {
 				Nothing
 			} else {
 				match Machine.fast(m, e) {
@@ -2276,7 +2284,7 @@ Machine :: [].{
 			pair,
 		)
 		# The array is made before the value is evaluated.
-		exists = (Vec.at(m.arrs, slot)).n > 0
+		exists = Vec.at(m.arrs, slot).n > 0
 		fx = if exists {
 			at.fx
 		} else {
@@ -2526,7 +2534,7 @@ Machine :: [].{
 			d
 		} else if !b.ok {
 			Machine.fail(d, "Bad DIM bound: ".concat(Parse.name_of(item.slot)))
-		} else if (Vec.at(d.arrs, item.slot)).n > 0 {
+		} else if Vec.at(d.arrs, item.slot).n > 0 {
 			d
 		} else {
 			{
@@ -2601,7 +2609,7 @@ Machine :: [].{
 					t.two,
 					t.pair,
 				)
-				exists = (Vec.at(m.arrs, t.slot)).n > 0
+				exists = Vec.at(m.arrs, t.slot).n > 0
 				fx = if exists {
 					at.fx
 				} else {
@@ -2680,7 +2688,7 @@ Machine :: [].{
 
 	reply_value : Parse.Program, M, U64 -> Str
 	reply_value = |pg, m, k| {
-		raw = (Machine.devices_of(m)).reply.get(k) ?? ""
+		raw = Machine.devices_of(m).reply.get(k) ?? ""
 		if pg.ecma {
 			Machine.unquote(raw)
 		} else {
@@ -2691,7 +2699,7 @@ Machine :: [].{
 	# INPUT's prompt has gone out, and is not printed again when the statement
 	# runs again with its line.
 	prompt_shown : M -> Bool
-	prompt_shown = |m| (Machine.devices_of(m)).asked
+	prompt_shown = |m| Machine.devices_of(m).asked
 
 	prompted : M -> M
 	prompted = |m| { ..m, devices: Devices.prompt_out(m.devices) }
@@ -2859,11 +2867,12 @@ Machine :: [].{
 	}
 
 	sign_len : List(U8) -> U64
-	sign_len = |b| if Parse.byte(b, 0) == 45 or Parse.byte(b, 0) == 43 {
-		1
-	} else {
-		0
-	}
+	sign_len = |b|
+		if Parse.byte(b, 0) == 45 or Parse.byte(b, 0) == 43 {
+			1
+		} else {
+			0
+		}
 
 	datum_overflows : List(U8) -> Bool
 	datum_overflows = |b| Parse.numeral(b, Machine.sign_len(b)).v > Machine.huge
@@ -3049,11 +3058,12 @@ Machine :: [].{
 
 	# The machine before its first statement: refused, or declared.
 	started : Loaded, List(Str), U64 -> M
-	started = |l, inp, seed| if l.bad.why != "" {
-		Machine.refuse(l.bad)
-	} else {
-		Machine.declared(l.pg, Machine.new(inp, seed))
-	}
+	started = |l, inp, seed|
+		if l.bad.why != "" {
+			Machine.refuse(l.bad)
+		} else {
+			Machine.declared(l.pg, Machine.new(inp, seed))
+		}
 
 	# A batch run's transcript, from the machine it ended as.
 	ended : Parse.Program, M -> Str
@@ -3115,7 +3125,7 @@ Machine :: [].{
 	# **A REPORTED EXCEPTION IS NOT A HALT**; what stops gets its own marker.
 	transcript : M -> Str
 	transcript = |m| {
-		body = Str.join_with((Machine.devices_of(m)).out, "")
+		body = Str.join_with(Machine.devices_of(m).out, "")
 		if m.rejected {
 			"*** REJECTED: ".concat(m.err)
 		} else if m.err != "" and m.gap {

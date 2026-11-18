@@ -300,7 +300,7 @@ cell = |m, slot, i, j| {
 	if c < 0 {
 		18446744073709551615
 	} else {
-		Vec.at((Vec.at(m.arrs, slot)).cells, c.to_u64_wrap()).to_bits()
+		Vec.at(Vec.at(m.arrs, slot).cells, c.to_u64_wrap()).to_bits()
 	}
 }
 
@@ -345,8 +345,9 @@ shown = |s|
 	)
 
 flag : Bool -> Str
-flag = |b| if b {
-	"yes"
-} else {
-	"no"
-}
+flag = |b|
+	if b {
+		"yes"
+	} else {
+		"no"
+	}

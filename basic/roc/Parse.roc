@@ -301,11 +301,12 @@ Parse :: [].{
 		}
 
 	eol : List(U8), U64 -> U64
-	eol = |b, i| if i >= b.len() or Parse.byte(b, i) == 10 {
-		i
-	} else {
-		Parse.eol(b, i + 1)
-	}
+	eol = |b, i|
+		if i >= b.len() or Parse.byte(b, i) == 10 {
+			i
+		} else {
+			Parse.eol(b, i + 1)
+		}
 
 	one_line : List(U8), U64, U64 -> Line
 	one_line = |b, i, e| {
@@ -351,11 +352,12 @@ Parse :: [].{
 
 	# Lines in number order; equal numbers keep their order.
 	sort_lines : List(Line) -> List(Line)
-	sort_lines = |ls| if Parse.in_order(ls, 1) {
-		ls
-	} else {
-		Parse.sort_from(ls, 0, [])
-	}
+	sort_lines = |ls|
+		if Parse.in_order(ls, 1) {
+			ls
+		} else {
+			Parse.sort_from(ls, 0, [])
+		}
 
 	in_order : List(Line), U64 -> Bool
 	in_order = |ls, i|
@@ -517,11 +519,12 @@ Parse :: [].{
 	}
 
 	item_end : List(U8), U64 -> U64
-	item_end = |b, i| if i >= b.len() or Parse.byte(b, i) == 44 {
-		i
-	} else {
-		Parse.item_end(b, i + 1)
-	}
+	item_end = |b, i|
+		if i >= b.len() or Parse.byte(b, i) == 44 {
+			i
+		} else {
+			Parse.item_end(b, i + 1)
+		}
 
 	trim_right : List(U8), U64, U64 -> Str
 	trim_right = |b, from, to|
@@ -2179,25 +2182,28 @@ Parse :: [].{
 	is_alpha = |c| c >= 65 and c <= 90
 
 	upper : U8 -> U8
-	upper = |c| if c >= 97 and c <= 122 {
-		c - 32
-	} else {
-		c
-	}
+	upper = |c|
+		if c >= 97 and c <= 122 {
+			c - 32
+		} else {
+			c
+		}
 
 	skip_ws : List(U8), U64 -> U64
-	skip_ws = |b, i| if Parse.byte(b, i) == 32 {
-		Parse.skip_ws(b, i + 1)
-	} else {
-		i
-	}
+	skip_ws = |b, i|
+		if Parse.byte(b, i) == 32 {
+			Parse.skip_ws(b, i + 1)
+		} else {
+			i
+		}
 
 	word_end : List(U8), U64 -> U64
-	word_end = |b, i| if Parse.is_alpha(Parse.byte(b, i)) {
-		Parse.word_end(b, i + 1)
-	} else {
-		i
-	}
+	word_end = |b, i|
+		if Parse.is_alpha(Parse.byte(b, i)) {
+			Parse.word_end(b, i + 1)
+		} else {
+			i
+		}
 
 	# Whether `word` stands at `i` (after spaces): the position past it, or
 	# the position given when it does not.
@@ -2244,11 +2250,12 @@ Parse :: [].{
 		}
 
 	digits_end : List(U8), U64 -> U64
-	digits_end = |b, i| if Parse.is_digit(Parse.byte(b, i)) {
-		Parse.digits_end(b, i + 1)
-	} else {
-		i
-	}
+	digits_end = |b, i|
+		if Parse.is_digit(Parse.byte(b, i)) {
+			Parse.digits_end(b, i + 1)
+		} else {
+			i
+		}
 
 	# Only the first nine digits count: an I64 that `*` overflows is a crash.
 	digits_val : List(U8), U64, U64, I64 -> I64

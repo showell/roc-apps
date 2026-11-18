@@ -584,11 +584,12 @@ Listing :: [].{
 	}
 
 	def_body : List(U8), U64, List(Def) -> Sc
-	def_body = |b, k, fns| if Listing.byte(b, k) != 61 {
-		Listing.no("Expected =")
-	} else {
-		Listing.then_end(b, Listing.num_expr(b, k + 1, fns))
-	}
+	def_body = |b, k, fns|
+		if Listing.byte(b, k) != 61 {
+			Listing.no("Expected =")
+		} else {
+			Listing.then_end(b, Listing.num_expr(b, k + 1, fns))
+		}
 
 	var_list : List(U8), U64, Str, List(Def) -> Sc
 	var_list = |b, i, what, fns| {
@@ -648,11 +649,12 @@ Listing :: [].{
 	}
 
 	item_end : List(U8), U64 -> U64
-	item_end = |b, i| if i >= b.len() or Listing.byte(b, i) == 44 {
-		i
-	} else {
-		Listing.item_end(b, i + 1)
-	}
+	item_end = |b, i|
+		if i >= b.len() or Listing.byte(b, i) == 44 {
+			i
+		} else {
+			Listing.item_end(b, i + 1)
+		}
 
 	# An unquoted datum is letters, digits, spaces, `+`, `-` and `.`.
 	plain : List(U8), U64, U64 -> Bool
@@ -879,11 +881,12 @@ Listing :: [].{
 	}
 
 	name_end : List(U8), U64 -> U64
-	name_end = |b, j| if Listing.is_digit(Listing.byte(b, j + 1)) {
-		j + 2
-	} else {
-		j + 1
-	}
+	name_end = |b, j|
+		if Listing.is_digit(Listing.byte(b, j + 1)) {
+			j + 2
+		} else {
+			j + 1
+		}
 
 	is_builtin : Str -> Bool
 	is_builtin = |k| k == "ABS" or k == "ATN" or k == "COS" or k == "EXP" or k == "INT" or k == "LOG" or k == "SGN" or k == "SIN" or k == "SQR" or k == "TAN" or k == "RND"
@@ -1015,18 +1018,20 @@ Listing :: [].{
 	}
 
 	end : List(U8), U64 -> Sc
-	end = |b, i| if Listing.skip_ws(b, i) < b.len() {
-		Listing.no("Text after the end of a statement")
-	} else {
-		Listing.ok(i, False)
-	}
+	end = |b, i|
+		if Listing.skip_ws(b, i) < b.len() {
+			Listing.no("Text after the end of a statement")
+		} else {
+			Listing.ok(i, False)
+		}
 
 	then_end : List(U8), Sc -> Sc
-	then_end = |b, r| if r.why != "" {
-		r
-	} else {
-		Listing.end(b, r.at)
-	}
+	then_end = |b, r|
+		if r.why != "" {
+			r
+		} else {
+			Listing.end(b, r.at)
+		}
 
 	target : List(U8), U64 -> Sc
 	target = |b, i| {
@@ -1070,18 +1075,20 @@ Listing :: [].{
 	}
 
 	quote_close : List(U8), U64 -> U64
-	quote_close = |b, i| if i >= b.len() or Listing.byte(b, i) == 34 {
-		i
-	} else {
-		Listing.quote_close(b, i + 1)
-	}
+	quote_close = |b, i|
+		if i >= b.len() or Listing.byte(b, i) == 34 {
+			i
+		} else {
+			Listing.quote_close(b, i + 1)
+		}
 
 	word_end : List(U8), U64 -> U64
-	word_end = |b, i| if Listing.is_alpha(Listing.byte(b, i)) {
-		Listing.word_end(b, i + 1)
-	} else {
-		i
-	}
+	word_end = |b, i|
+		if Listing.is_alpha(Listing.byte(b, i)) {
+			Listing.word_end(b, i + 1)
+		} else {
+			i
+		}
 
 	text : List(U8), U64, U64 -> Str
 	text = |b, i, e| Str.from_utf8(b.sublist({ start: i, len: e - i })) ?? ""
@@ -1107,18 +1114,20 @@ Listing :: [].{
 	byte = |b, i| b.get(i) ?? 0
 
 	eol : List(U8), U64 -> U64
-	eol = |b, i| if i >= b.len() or Listing.byte(b, i) == 10 {
-		i
-	} else {
-		Listing.eol(b, i + 1)
-	}
+	eol = |b, i|
+		if i >= b.len() or Listing.byte(b, i) == 10 {
+			i
+		} else {
+			Listing.eol(b, i + 1)
+		}
 
 	skip_ws : List(U8), U64 -> U64
-	skip_ws = |b, i| if Listing.byte(b, i) == 32 or Listing.byte(b, i) == 9 {
-		Listing.skip_ws(b, i + 1)
-	} else {
-		i
-	}
+	skip_ws = |b, i|
+		if Listing.byte(b, i) == 32 or Listing.byte(b, i) == 9 {
+			Listing.skip_ws(b, i + 1)
+		} else {
+			i
+		}
 
 	is_digit : U8 -> Bool
 	is_digit = |c| c >= 48 and c <= 57
@@ -1127,18 +1136,20 @@ Listing :: [].{
 	is_alpha = |c| (c >= 65 and c <= 90) or (c >= 97 and c <= 122)
 
 	upper : U8 -> U8
-	upper = |c| if c >= 97 and c <= 122 {
-		c - 32
-	} else {
-		c
-	}
+	upper = |c|
+		if c >= 97 and c <= 122 {
+			c - 32
+		} else {
+			c
+		}
 
 	digits_end : List(U8), U64 -> U64
-	digits_end = |b, i| if Listing.is_digit(Listing.byte(b, i)) {
-		Listing.digits_end(b, i + 1)
-	} else {
-		i
-	}
+	digits_end = |b, i|
+		if Listing.is_digit(Listing.byte(b, i)) {
+			Listing.digits_end(b, i + 1)
+		} else {
+			i
+		}
 
 	# Only the first nine digits count: a line number past four is refused
 	# by length, and an I64 that `*` overflows is a crash in Roc.

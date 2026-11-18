@@ -23,7 +23,7 @@ view = |boxed| {
 	r = boxed.unbox()
 	# A flag byte first, 1 when the program drew pixels, so the page knows
 	# which display to show rather than guessing from a length.
-	flag = if (Machine.devices_of(r.m)).drew {
+	flag = if Machine.devices_of(r.m).drew {
 		1
 	} else {
 		0
@@ -32,11 +32,11 @@ view = |boxed| {
 }
 
 status : Box(Model) -> I64
-status = |boxed| Machine.status((boxed.unbox()).m)
+status = |boxed| Machine.status(boxed.unbox().m)
 
 # Milliseconds a SLEEPing machine asked for; zero when it is not.
 pause : Box(Model) -> I64
-pause = |boxed| Machine.pause_ms((boxed.unbox()).m)
+pause = |boxed| Machine.pause_ms(boxed.unbox().m)
 
 drop : Box(Model) -> {}
 drop = |_boxed| {}

@@ -262,11 +262,12 @@ Devices :: [].{
 
 	# The column after text, without making its bytes when it has no newline.
 	col_after_text : Str, I64 -> I64
-	col_after_text = |t, col| if t.contains("\n") {
-		Devices.col_after(t.to_utf8(), col)
-	} else {
-		col + t.count_utf8_bytes().to_i64_wrap()
-	}
+	col_after_text = |t, col|
+		if t.contains("\n") {
+			Devices.col_after(t.to_utf8(), col)
+		} else {
+			col + t.count_utf8_bytes().to_i64_wrap()
+		}
 
 	# **A PROGRAM THAT PRINTS FOREVER MUST NOT GROW FOREVER**: the transcript
 	# is trimmed to its last 8,000 pieces once it has twice that.
