@@ -29,12 +29,15 @@ Codes :: [].{
 	agent_step : U32
 	agent_step = 3
 
+	## The code a click on hand card `idx` sends to play it.
 	activate_card : U64 -> U32
 	activate_card = |idx| 100 + idx.to_u32_wrap()
 
+	## The code a click on hand card `idx` sends to discard it.
 	discard_card : U64 -> U32
 	discard_card = |idx| 200 + idx.to_u32_wrap()
 
+	## The code a click on hand card `idx` sends to cover it.
 	cover_card : U64 -> U32
 	cover_card = |idx| 300 + idx.to_u32_wrap()
 

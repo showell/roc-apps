@@ -67,6 +67,7 @@ Piece :: [].{
 		|s| Board.is_track(s) and !is_open(board, s) and !holds(board, s, c),
 	)
 
+	## Every square a piece of color `c` stands on.
 	my_pieces : Type.Board, U64 -> List(U64)
 	my_pieces = |board, c| Board.squares.keep_if(|s| holds(board, s, c))
 
@@ -105,6 +106,7 @@ Piece :: [].{
 	has_piece_on_fast_track : Type.Board, U64 -> Bool
 	has_piece_on_fast_track = |board, c| any_on_fast_track(board, [c])
 
+	## Every piece the movers can move, color by color.
 	team_movable_pieces : Type.Board, List(U64) -> List(U64)
 	team_movable_pieces = |board, movers| movers.join_map(|c| movable_pieces(board, c))
 
@@ -123,10 +125,6 @@ Piece :: [].{
 	count_in_base : Type.Board, U64 -> U64
 	count_in_base = |board, c| Board.base_squares(c).count_if(|s| holds(board, s, c))
 
-	## A color's pieces in its pen.
-	count_in_pen : Type.Board, U64 -> U64
-	count_in_pen = |board, c| Board.pen_squares(c).count_if(|s| holds(board, s, c))
-
 	config_pieces : Setup.InitSetup, List(Str) -> Type.Board
 	config_pieces = |init_setup, zone_colors| {
 		starts = Setup.starting_locations(init_setup)
@@ -141,6 +139,7 @@ Piece :: [].{
 		zone_colors.fold_with_index(empty, |board, _, c| place_color(board, c))
 	}
 
+	## What discard credits buy: color `c`'s next pen piece moved out.
 	bring_player_out : U64, Type.Board -> Type.Board
 	bring_player_out = |c, board|
 		match piece_to_move_out_of_pen(board, c) {

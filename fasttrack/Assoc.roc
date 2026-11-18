@@ -28,12 +28,14 @@ Assoc :: [].{
 	v -> Assoc.AssocDict(k, v) where [k.is_eq : k, k -> Bool]
 	dict_insert = |dict, key, value| List.prepend(dict_remove(dict, key), { key, value })
 
+	## assoc-list's `remove`: the dict without `key`.
 	dict_remove : Assoc.AssocDict(k, v), k -> Assoc.AssocDict(k, v) where [k.is_eq : k, k -> Bool]
 	dict_remove = |dict, key| List.drop_if(dict, |entry| entry.key == key)
 
 	dict_keys : Assoc.AssocDict(k, v) -> List(k)
 	dict_keys = |dict| List.map(dict, |entry| entry.key)
 
+	## assoc-set's `insert`: `item` first, and no other copy of it.
 	set_insert : Assoc.AssocSet(a), a -> Assoc.AssocSet(a) where [a.is_eq : a, a -> Bool]
 	set_insert = |set, item| List.drop_if(set, |other| other == item).prepend(item)
 

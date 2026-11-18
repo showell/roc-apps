@@ -110,16 +110,7 @@ Rank :: [].{
 	}
 
 	## Every square a piece of `color` can reach the peak from, best first
-	## (ties in board order).
-	ranked_rows : List(Str), Str, Str -> List(Rank.Row)
-	ranked_rows = |zone_colors, color, peak| ranked_rows_in(
-		Reach.grid_moves(zone_colors, color),
-		zone_colors,
-		color,
-		peak,
-	)
-
-	## `ranked_rows`, over a color's grid built once (Reach.grid_moves).
+	## (ties in board order), over a color's grid built once (Reach.grid_moves).
 	ranked_rows_in : List(Reach.Move), List(Str), Str, Str -> List(Rank.Row)
 	ranked_rows_in = |grid_moves, zone_colors, color, peak| {
 		tables = stages.map(

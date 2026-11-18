@@ -397,6 +397,7 @@ Page :: [].{
 		div([hand, credits_view(player), console].concat(team_line_trees(player)))
 	}
 
+	## What the console asks of a player choosing the piece to move.
 	need_start_instructions : Type.PlayType -> Str
 	need_start_instructions = |play_type|
 		match play_type {
@@ -475,6 +476,7 @@ Page :: [].{
 			span([])
 		}
 
+	## The done button, once the player's turn is over.
 	rotate_button_trees : Type.Player -> List(Page.Tree)
 	rotate_button_trees = |player|
 		match player.turn {

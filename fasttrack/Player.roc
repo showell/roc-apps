@@ -109,6 +109,7 @@ Player :: [].{
 	get_active_player : Type.Game -> Type.Player
 	get_active_player = |game| get_player(game.players, game.active_player_idx)
 
+	## Every move the player's hand allows on this board.
 	get_moves_for_player : Type.Player, Type.Board, List(Str) -> List(Type.Move)
 	get_moves_for_player = |player, board, zone_colors|
 		LegalMove.get_moves_for_cards(
@@ -136,6 +137,7 @@ Player :: [].{
 		}
 	}
 
+	## After a move: a move-again card asks for the next card; any other ends the turn.
 	maybe_finish_turn : Str, Type.Board, List(Str), Type.Player -> Type.Player
 	maybe_finish_turn = |card, board, zone_colors, player|
 		if Config.is_move_again_card(card) {
@@ -219,6 +221,7 @@ Player :: [].{
 			_ => player
 		}
 
+	## The square of the piece the player picked, while it picks where it goes.
 	get_start_location : Type.Player -> Try(U64, [NotFound])
 	get_start_location = |player|
 		match player.turn {
@@ -345,6 +348,7 @@ Player :: [].{
 		}
 	}
 
+	## The squares the player may pick a piece on, while it picks one.
 	start_locs_for_player : Type.Player -> Assoc.AssocSet(U64)
 	start_locs_for_player = |player|
 		match player.turn {

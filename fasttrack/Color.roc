@@ -1,6 +1,8 @@
 # Color -- the zones' colors and their order around the board, from
 # Color.elm.
 Color :: [].{
+
+	## The colors of a game's zones, in their order round the board (Color.elm's getZoneColors).
 	get_zone_colors : U64 -> List(Str)
 	get_zone_colors = |num_players| [
 		"red",

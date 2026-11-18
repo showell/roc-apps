@@ -220,30 +220,6 @@ Search :: [].{
 	finals : { done : List(Search.Line), level : List(Search.Line) } -> List(Search.Line)
 	finals = |{ done, level }| done.concat(level.keep_if(is_open)).keep_if(|l| !l.msgs.is_empty())
 
-	## The line that takes the first choice offered at every step, through
-	## the rest of the turn: a player who plays the first legal move it finds.
-	first_line : Type.Game -> Try(Search.Line, [NoPlay])
-	first_line = |game| {
-		var $line = { game, msgs: [], drew: Bool.False }
-		var $steps = 0
-		while !$line.drew and Player.get_active_player($line.game).turn != TurnDone and $steps < 1000 {
-			match options($line.game) {
-				[first, ..] => {
-					$line = apply($line, first)
-				}
-				[] => {
-					$steps = 1000
-				}
-			}
-			$steps = $steps + 1
-		}
-		if $line.msgs.is_empty() {
-			Err(NoPlay)
-		} else {
-			Ok($line)
-		}
-	}
-
 	## A line's position as numbers: every piece as its square (Board.roc) and
 	## color, in square order, then
 	## the mover's hand as a multiset, its discard credits, and whether it
