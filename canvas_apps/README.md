@@ -36,12 +36,17 @@ of a triangle and a rectangle, for the book to quote the code under it.
 Six of the twenty-nine — all but `safari`, the two movies and the widgets — are
 roc-ray's own examples, by Luke Boswell, taken with only small changes to fit this scheme.
 
-**The native side runs on roc-ray 0.12.0** (`23eec6e`), with the
-repository's pinned nightly; roc-ray names no compiler of its own. It shows
-that one set of files can run on roc-ray and as a page. The page is the side
-we check most: the safari gate and every page build judge it, while the
-native side is checked by `roc check` here and by the Windows workflow,
-which builds every app and runs it headless.
+**The native side is kept for posterity, and it isn't kept current.** The
+native roc-ray builds (`native/` and each app's `main.roc`) run on roc-ray
+0.12.0 (`23eec6e`) at the repository's pinned nightly; roc-ray names no
+compiler of its own. They don't build at newer Roc nightlies: roc-ray itself
+fails at the 11-15 nightly (as of 2026-11-18). They are out of the code
+sweeps, so a repo-wide rewrite or hunt leaves them as they are
+(`native/README.md`). They show that one set of files can run on roc-ray and
+as a page. The page is the side we keep current: the safari gate and every
+page build judge it, while the native side is checked only by `roc check` at
+the pin here and by the Windows workflow, which builds every app and runs it
+headless.
 
     canvas_apps/build.sh snake       the page,   http://<box>:9210/snake/
     canvas_apps/build.sh snake release   the page as `--opt=speed` wasm, which site/publish.sh requires
@@ -64,7 +69,7 @@ which builds every app and runs it headless.
 | `snake/web.roc` | the app as a page, on `web/platform/`, through `lib.WasmApp` |
 | `lib/` | a package every app shares: `CanvasApp` `WasmApp` `Shapes` `Brush` `Input` `Keys` `Mouse` `Math` `Camera` `Font` `Random` `Trig` `BrushGlsl` `Eye` `ConvexCut` `RgbColor` `ArgbColor` |
 | `web/` | the page's end: the wasm platform and host, `build.zig` and `options.zig` (the host object, rebuilt by every page build), `canvas_app_runner.js`, `shapes_canvas.js`, `page_check.mjs`, `mini_canvas.mjs`, `mini_font.mjs`, `camera_check.mjs`, `text_check.mjs` |
-| `native/` | roc-ray's end, as a package: `CanvasAppRunner.roc` |
+| `native/` | roc-ray's end, as a package: `CanvasAppRunner.roc`; kept for posterity, not current (`native/README.md`) |
 | `widget_kit/` | what the tutorial's widgets share, as a package: `WidgetPage` lays out the picture and the text, `ReadoutText` puts a widget's numbers into words, `VcrButtons` runs a widget's one number with a video recorder's buttons, and `WidgetPalette` holds the colors the widgets share. It sits above `lib/` and Safari's `game` package, because it speaks in `Fraction`s and no other app wants it |
 
 An app's own directory holds a `<Name>App.roc` with the `CanvasApp` value in
@@ -260,7 +265,8 @@ names match at all: `input.mouse.position()` is how roc-ray is read.
 
 ## The roc-ray end
 
-The native side is a spike, not kept current (see the top of this file).
+The native side is kept for posterity, not kept current (see the top of this
+file, and `native/README.md`).
 `native/CanvasAppRunner.roc` opens a window at the app's `size`, paces to its
 `frames_a_second`, converts roc-ray's snapshot into an `Input.Snapshot`, and paints.
 
