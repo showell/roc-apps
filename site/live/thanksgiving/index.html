@@ -1,0 +1,21 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>thanksgiving</title>
+</head>
+<body>
+<!-- The Thanksgiving movie on the canvas apps' runner. Space pauses, Left and
+     Right scrub, J skips a second, R goes back to the start; the movie holds
+     on its last frame. -->
+<script>
+window.SHOW = {
+  wasm: 'thanksgiving.wasm',
+  loading: 'Setting the table…',
+};
+</script>
+<script src="roc_glue.js"></script>
+<script src="shapes_canvas.js"></script>
+<script src="canvas_app_runner.js"></script>
+</body>
+</html>
