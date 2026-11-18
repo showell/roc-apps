@@ -36,7 +36,7 @@ PixelGrid :: [].{
 		## `end` is not past `start`.
 		until : PixelGrid.Coordinate, PixelGrid.Coordinate -> Iter(PixelGrid.Coordinate)
 		until = |PixelGrid.Coordinate.(start), PixelGrid.Coordinate.(end)|
-			U16.until(start, end).map(|place| PixelGrid.Coordinate.(place))
+			start.until(end).map(|place| PixelGrid.Coordinate.(place))
 
 		to_f64 : PixelGrid.Coordinate -> F64
 		to_f64 = |PixelGrid.Coordinate.(place)| place.to_f64()

@@ -23,7 +23,7 @@ main! = |args| {
 	var $shapes = 0
 	for _ in 0..<steps {
 		view = FrameView.frame_view_at(route, $instant)
-		$shapes = $shapes + FrameView.ride_shape_lists(view).join().len()
+		$shapes = $shapes + view.ride_shape_lists().join().len()
 		$instant =
 			match RideInstant.next_or_restart(route, $instant) {
 				Continued(next) | Restarted(next) => next

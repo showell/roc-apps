@@ -11,7 +11,7 @@ ProofRide :: [].{
 	ride_on = |tour, steps| {
 		var $tour = tour
 		for _ in 0..<steps {
-			$tour = Tour.step_forward($tour)
+			$tour = $tour.step_forward()
 		}
 		$tour
 	}

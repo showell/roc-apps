@@ -62,7 +62,7 @@ Comparison : { pixels : List(U32), counts : Str }
 compare : Tour -> Comparison
 compare = |tour| {
 	view = FrameView.frame_view_at(tour.route(), tour.instant())
-	instant_shapes = FrameView.ride_shape_lists(view).join()
+	instant_shapes = view.ride_shape_lists().join()
 	cut_shapes = ConvexCut.cut_shapes(instant_shapes)
 	a = SafariFrame.picture_pixels(view)
 	backdrop = SafariFrame.backdrop_pixels(view)
@@ -77,7 +77,7 @@ compare = |tour| {
 			$differ = $differ + 1
 		}
 	}
-	differing = "differ ${U64.to_str($differ)} of ${U64.to_str(n)}"
+	differing = "differ ${$differ.to_str()} of ${n.to_str()}"
 	totals = "triangles ${triangles(cut_shapes).to_str()}, shapes ${instant_shapes.len().to_str()}"
 	{ pixels: b, counts: "${differing}, ${totals}" }
 }

@@ -71,7 +71,7 @@ main! = |_args| {
 	var $widest_place = place_of(0, Tour.initial)
 	while !$tour.instant().rider.is_finished($tour.route()) and $step < steps_cap {
 		last_segment = $tour.instant().rider_segment_index().to_u32()
-		$tour = Tour.step_forward($tour)
+		$tour = $tour.step_forward()
 		$step = $step + 1
 		for line in broken_rules($tour, { step: $step, last_segment }) {
 			if $bad < bad_lines_cap {

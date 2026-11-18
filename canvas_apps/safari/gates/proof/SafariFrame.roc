@@ -44,7 +44,7 @@ SafariFrame :: [].{
 			SafariFrame.backdrop_pixels(view),
 			{
 				roll: SafariFrame.screen_roll(view.roll),
-				shapes: FrameView.ride_shape_lists(view).join(),
+				shapes: view.ride_shape_lists().join(),
 			},
 		)
 

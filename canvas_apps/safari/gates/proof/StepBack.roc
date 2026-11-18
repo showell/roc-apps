@@ -20,23 +20,23 @@ main! = |_args| {
 	var $k = 0
 	for steps in [10, 1000, 3000, 5000] {
 		while $k < steps {
-			$tour = Tour.step_forward($tour)
+			$tour = $tour.step_forward()
 			$k = $k + 1
 		}
 		here = $tour.instant().clock
-		there = Tour.step_back($tour).instant().clock
+		there = $tour.step_back().instant().clock
 		ok = there.next() == here
 		if !ok {
 			$bad = $bad + 1
 		}
 		clocks = "clock ${here.to_str()}, one back -> ${there.to_str()}"
-		$out = $out.concat("${verdict_of(ok)}after ${I64.to_str(steps)} steps: ${clocks}\n")
+		$out = $out.concat("${verdict_of(ok)}after ${steps.to_str()} steps: ${clocks}\n")
 	}
 	while !$tour.instant().rider.is_finished($tour.route()) {
-		$tour = Tour.step_forward($tour)
+		$tour = $tour.step_forward()
 	}
 	finish = $tour.instant().clock
-	one_back = Tour.step_back($tour).instant().clock
+	one_back = $tour.step_back().instant().clock
 	finish_ok = one_back.next() == finish
 	if !finish_ok {
 		$bad = $bad + 1
@@ -44,11 +44,11 @@ main! = |_args| {
 	$out = $out.concat("${verdict_of(finish_ok)}at the finish: one back went back one step\n")
 	var $backs = 0
 	while $backs < finish.steps_since(Clock.start).to_u32() {
-		$tour = Tour.step_back($tour)
+		$tour = $tour.step_back()
 		$backs = $backs + 1
 	}
 	at_start = $tour.instant().clock
-	past_start = Tour.step_back($tour).instant().clock
+	past_start = $tour.step_back().instant().clock
 	start_ok = at_start == Clock.start and past_start == Clock.start
 	if !start_ok {
 		$bad = $bad + 1
@@ -59,7 +59,7 @@ main! = |_args| {
 			if $bad == 0 {
 				"every step back went back one step\n"
 			} else {
-				"${I64.to_str($bad)} did not go back one step\n"
+				"${$bad.to_str()} did not go back one step\n"
 			},
 		),
 	)

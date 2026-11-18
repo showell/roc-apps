@@ -78,7 +78,7 @@ part_size = |part, { route, instant }| {
 	} else if part == "full" {
 		FrameView.frame_view_at(route, instant).leaned_shapes().len()
 	} else if part == "view" {
-		FrameView.ride_shape_lists(FrameView.frame_view_at(route, instant)).join().len()
+		FrameView.frame_view_at(route, instant).ride_shape_lists().join().len()
 	} else if part == "camera" {
 		FrameView.camera_at(
 			route,
@@ -121,10 +121,10 @@ kind_size : Str,
 	facts : Scene.RideFacts,
 } -> U64
 kind_size = |part, { road, camera, facts }| {
-	cam = RiderCamera.sighting_camera(camera)
+	cam = camera.sighting_camera()
 	lens_and_light = { focal_length: cam.focal_length, darkness: Sky.darkness_at(facts.clock) }
 	if part == "scene" {
-		Scene.scene_shape_lists(Scene.scene_in_view(road, { camera: cam, facts })).join().len()
+		Scene.scene_in_view(road, { camera: cam, facts }).scene_shape_lists().join().len()
 	} else if part == "scene_in_view" {
 		scene_rendering_count(Scene.scene_in_view(road, { camera: cam, facts }))
 	} else if part == "trees_sight" {
@@ -189,10 +189,10 @@ prepared_size : Str,
 prepared_size = |part, { route, instant, reps }| {
 	view = FrameView.frame_view_at(route, instant)
 	scene = view.scene
-	sorted = Scene.scene_renderings(scene)
+	sorted = scene.scene_renderings()
 	painted = {
 		backdrop: view.backdrop,
-		ride_shape_lists: FrameView.ride_shape_lists(view),
+		ride_shape_lists: view.ride_shape_lists(),
 		space: Screen.leaned_by(view.roll),
 	}
 	var $sum = 0
@@ -200,7 +200,7 @@ prepared_size = |part, { route, instant, reps }| {
 		$sum = $sum
 			+ (
 				if part == "sort_only" {
-					Scene.scene_renderings(scene).len()
+					scene.scene_renderings().len()
 				} else if part == "flatten_only" {
 					sorted.join_map(|rendering| rendering.sprite().to_shapes()).len()
 				} else {
@@ -260,7 +260,7 @@ counts_line : Route, RideInstant -> Str
 counts_line = |route, instant| {
 	camera = FrameView.camera_at(route, instant)
 	road = RoadAhead.RoadView.ahead_of(route, camera.route_place.segment_index)
-	cam = RiderCamera.sighting_camera(camera)
+	cam = camera.sighting_camera()
 	scene = Scene.scene_in_view(road, { camera: cam, facts: FrameView.ride_facts(route, instant) })
 	kinds = [
 		("trees", scene.trees),

@@ -129,7 +129,7 @@ note_colored = |note, file| {
 part_colored : QuotedColor.Part, File -> Try(QuotedColor.Colored, Str)
 part_colored = |part, file| match part {
 	Cut(tabs) => {
-		indent = Str.repeat("\t", tabs)
+		indent = "\t".repeat(tabs)
 		Ok({
 			code: "${indent}${cut_text}",
 			html: "${indent}<span class=\"syn-comment\">${cut_text}</span>",
