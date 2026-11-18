@@ -190,9 +190,13 @@ Roc's own rules are in the langref's
   `##` doc), and a `Pose` that has two shapes in two modules (`twin_name`).
 - **A top-level value or a field is never one letter.** `board_width`, not
   `w`; `row`, not `y`. It is read far from where it is set, so its name is
-  all the reader has. Coordinates are the exception: `x` and `y` on a point
-  like lib's `Point` are the words for what they hold. A local or a lambda's
-  parameter can be short: its definition is in view.
+  all the reader has. Three sets of letters are the exception, each the words
+  for what it holds when its record has the set: a point's coordinates (`x` and
+  `y` on lib's `Point`, with `z`, and `w` beside `x` and `y`), a colour's
+  channels (`r`, `g`, `b`, and `a` beside them, as in lib's `Brush.Rgba`), and a
+  triangle's corners (`a`, `b` and `c`, all three, as in lib's
+  `ConvexCut.cross3`). A local or a lambda's parameter can be short: its
+  definition is in view.
 - **A type or a field is named for what it holds, not where it sits.**
   `Entry`, `Item`, `Node`, `Data` and `Info` say only that a value is in a list
   or a tree; the domain usually has the word. One row of a customer's order
