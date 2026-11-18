@@ -366,13 +366,14 @@ Brush :: [].{
 }
 
 clamp01 : F64 -> F64
-clamp01 = |t| if t < 0.0 {
-	0.0
-} else if t > 1.0 {
-	1.0
-} else {
-	t
-}
+clamp01 = |t|
+	if t < 0.0 {
+		0.0
+	} else if t > 1.0 {
+		1.0
+	} else {
+		t
+	}
 
 ## How far a point lies from the inner radius to the outer one, clamped to 0..1,
 ## or 1 when the radii meet.
@@ -466,17 +467,18 @@ x_span = |corners|
 
 ## The colour the stops give at `t`, for offsets start_offset <= end_offset.
 two_stop : Brush.TwoStops, F64 -> Brush.Rgba
-two_stop = |stops, t| if t <= stops.start_offset {
-	stops.start_color
-} else if t >= stops.end_offset {
-	stops.end_color
-} else {
-	Brush.mix({
-		from: stops.start_color,
-		to: stops.end_color,
-		fraction: (t - stops.start_offset) / (stops.end_offset - stops.start_offset),
-	})
-}
+two_stop = |stops, t|
+	if t <= stops.start_offset {
+		stops.start_color
+	} else if t >= stops.end_offset {
+		stops.end_color
+	} else {
+		Brush.mix({
+			from: stops.start_color,
+			to: stops.end_color,
+			fraction: (t - stops.start_offset) / (stops.end_offset - stops.start_offset),
+		})
+	}
 
 ## The ellipse with axes (3, 4) and (5, 6) has determinant -2, and its inverse
 ## takes each axis back to a unit vector.
