@@ -21,10 +21,10 @@ basic	hunt_names	preposition_split	2
 basic	hunt_names	short_name	35
 basic	hunt_names	singular_list	76
 basic	hunt_names	world_verb	3
-basic	parse-key	basic	1c5b6b08f6ae846153bd0181ab0674fd51e1e91e
+basic	parse-key	basic	a13467145a44dd109b8b9e50033012a81c73a69d
 basic	rewrite_method_calls	peer_receiver	95
 basic	roc-types	unreached	3
-basic	types-key	basic	1c5b6b08f6ae846153bd0181ab0674fd51e1e91e
+basic	types-key	basic	a13467145a44dd109b8b9e50033012a81c73a69d
 book_builder	check_boundaries	dead	1
 book_builder	check_boundaries	single	2
 book_builder	check_families	twin_name	1
@@ -33,33 +33,33 @@ book_builder	check_stacking	stack	1
 book_builder	check_stacking	wide string	118
 book_builder	find_unused_imports	unused_import	2
 book_builder	hunt_names	singular_list	1
-book_builder	parse-key	book_builder	0276603f00fccb460aed853f0f8901d73819c34a
+book_builder	parse-key	book_builder	82016806e0693e0cac93dfe9b85b226e83efff73
 book_builder	rewrite_method_calls	peer_receiver	24
 book_builder	rewrite_method_calls	rewritable	5
 book_builder	roc-types	unreached	2
-book_builder	types-key	book_builder,repos:roc-markdown/package	d42deb7eedebbdcda3ea6d6c1b5d5cbe7479f27a
+book_builder	types-key	book_builder,repos:roc-markdown/package	3daf211b241866b967d14c600abc9f0c27e1055d
 building-books	check_stacking	long	3
 building-books	check_stacking	wide string	1
-building-books	parse-key	building-books	924c2eee12ccadd32608ddb007cdd4dc511f83cd
-building-books	types-key	book_builder,building-books,repos:roc-markdown/package,syntax_color	d77e75dee5b70fb04718e703cfad33d22e493dbf
-canvas_apps	parse-key	canvas_apps	1d81e17a346477d92bbc2e0905364e2eba518f1d
+building-books	parse-key	building-books	5f328cd82feb9c325eaf9b224063a894bbdd6c72
+building-books	types-key	book_builder,building-books,repos:roc-markdown/package,syntax_color	d7dd4c45bbcfed97baf2a37607df8f080461eacf
+canvas_apps	parse-key	canvas_apps	499433a09e6464cab16f8516b0978c4ac7f7516a
 canvas_apps/beacon_widget	check_families	twin_name	1
 canvas_apps/beacon_widget	check_stacking	wide string	1
 canvas_apps/beacon_widget	roc-types	unreached	1
-canvas_apps/beacon_widget	types-key	canvas_apps/beacon_widget,canvas_apps/lib,canvas_apps/safari,canvas_apps/web,canvas_apps/widget_kit	b0e5d9767cad215a091eaffae0ab9ada5f564c4f
+canvas_apps/beacon_widget	types-key	canvas_apps/beacon_widget,canvas_apps/lib,canvas_apps/safari,canvas_apps/web,canvas_apps/widget_kit	3d02be3d8e33201315f2268e376dae2593b56547
 canvas_apps/bend_animals_widget	check_families	twin_name	1
 canvas_apps/bend_animals_widget	check_name_types	bare_beside_unit	4
 canvas_apps/bend_animals_widget	check_stacking	wide string	2
 canvas_apps/bend_animals_widget	rewrite_method_calls	peer_receiver	3
 canvas_apps/bend_animals_widget	roc-types	unreached	1
-canvas_apps/bend_animals_widget	types-key	canvas_apps/bend_animals_widget,canvas_apps/lib,canvas_apps/safari,canvas_apps/web,canvas_apps/widget_kit	8859362a3fe1d1bd67f039883171bff10f1cd8d1
+canvas_apps/bend_animals_widget	types-key	canvas_apps/bend_animals_widget,canvas_apps/lib,canvas_apps/safari,canvas_apps/web,canvas_apps/widget_kit	0e4e3af63352b78508b9cb88d1b21b50eff4713a
 canvas_apps/bends_widget	check_name_types	bare_beside_unit	1
 canvas_apps/bends_widget	check_stacking	wide string	1
 canvas_apps/bends_widget	rewrite_method_calls	peer_receiver	2
 canvas_apps/bends_widget	roc-types	unreached	1
-canvas_apps/bends_widget	types-key	canvas_apps/bends_widget,canvas_apps/lib,canvas_apps/safari,canvas_apps/web,canvas_apps/widget_kit	9f62981a35606a87e68df410c67c4c29e00b10c6
+canvas_apps/bends_widget	types-key	canvas_apps/bends_widget,canvas_apps/lib,canvas_apps/safari,canvas_apps/web,canvas_apps/widget_kit	03323750ca6bdd1556bd4147414771d38b17b514
 canvas_apps/bird_widget	roc-types	unreached	1
-canvas_apps/bird_widget	types-key	canvas_apps/bird_widget,canvas_apps/lib,canvas_apps/safari,canvas_apps/web,canvas_apps/widget_kit	0117972eaf84c99d3adb837b8825fd3f52271316
+canvas_apps/bird_widget	types-key	canvas_apps/bird_widget,canvas_apps/lib,canvas_apps/safari,canvas_apps/web,canvas_apps/widget_kit	73f0e524c33043c552406e2f8ac0e4c514e96ee6
 canvas_apps/breakout	check_families	twin_name	5
 canvas_apps/breakout	check_name_types	bare_beside_unit	1
 canvas_apps/breakout	check_stacking	long	10
@@ -74,7 +74,7 @@ canvas_apps/breakout	hunt_names	phrase_name	1
 canvas_apps/breakout	hunt_names	short_name	3
 canvas_apps/breakout	hunt_names	singular_list	9
 canvas_apps/breakout	rewrite_method_calls	rewritable	31
-canvas_apps/breakout	types-key	canvas_apps/breakout,canvas_apps/lib,canvas_apps/native,canvas_apps/web,repos:roc-ray/platform,roc-cache:packages/6ZUwqYhCS8PU9Mo6MF7oV82ET2o7KYb57CLKDq4cq4sS,roc-cache:packages/HoULZB8QzktiNPYSe9myzy9JQzm1nMbjDPVWoA63QpVf	e841f0bda2eefe78e466ae2031f5b9e8557cf3a7
+canvas_apps/breakout	types-key	canvas_apps/breakout,canvas_apps/lib,canvas_apps/native,canvas_apps/web,repos:roc-ray/platform,roc-cache:packages/6ZUwqYhCS8PU9Mo6MF7oV82ET2o7KYb57CLKDq4cq4sS,roc-cache:packages/HoULZB8QzktiNPYSe9myzy9JQzm1nMbjDPVWoA63QpVf	a1cc713ff571afc986bbf36d97c92142f6774636
 canvas_apps/camera	check_families	family	3
 canvas_apps/camera	check_name_types	bare_beside_unit	5
 canvas_apps/camera	check_stacking	long	4
@@ -87,41 +87,40 @@ canvas_apps/camera	find_unclear_names	module_doc	3
 canvas_apps/camera	hunt_names	short_name	1
 canvas_apps/camera	hunt_names	singular_list	7
 canvas_apps/camera	rewrite_method_calls	rewritable	12
-canvas_apps/camera	types-key	canvas_apps/camera,canvas_apps/lib,canvas_apps/native,canvas_apps/web,repos:roc-ray/platform,roc-cache:packages/6ZUwqYhCS8PU9Mo6MF7oV82ET2o7KYb57CLKDq4cq4sS,roc-cache:packages/HoULZB8QzktiNPYSe9myzy9JQzm1nMbjDPVWoA63QpVf	63052d32061eb0aeec0cf93d9339c34d0d5611c8
+canvas_apps/camera	types-key	canvas_apps/camera,canvas_apps/lib,canvas_apps/native,canvas_apps/web,repos:roc-ray/platform,roc-cache:packages/6ZUwqYhCS8PU9Mo6MF7oV82ET2o7KYb57CLKDq4cq4sS,roc-cache:packages/HoULZB8QzktiNPYSe9myzy9JQzm1nMbjDPVWoA63QpVf	229021af079b3f57873e2a8531356ef998cda3c6
 canvas_apps/cat_widget	rewrite_method_calls	peer_receiver	1
 canvas_apps/cat_widget	roc-types	unreached	1
-canvas_apps/cat_widget	types-key	canvas_apps/cat_widget,canvas_apps/lib,canvas_apps/safari,canvas_apps/web,canvas_apps/widget_kit	683216b5db60594e90844be8dd3783421363c735
+canvas_apps/cat_widget	types-key	canvas_apps/cat_widget,canvas_apps/lib,canvas_apps/safari,canvas_apps/web,canvas_apps/widget_kit	38439da8f5fad8981ff5d64ca8b75d948aa59c8a
 canvas_apps/conifers_widget	check_families	twin_name	1
 canvas_apps/conifers_widget	roc-types	unreached	1
-canvas_apps/conifers_widget	types-key	canvas_apps/conifers_widget,canvas_apps/lib,canvas_apps/safari,canvas_apps/web,canvas_apps/widget_kit	43aa24cf769ee7c11df35bec7aec0c04747fc358
+canvas_apps/conifers_widget	types-key	canvas_apps/conifers_widget,canvas_apps/lib,canvas_apps/safari,canvas_apps/web,canvas_apps/widget_kit	be8c25ebe252db9ea4a300897be4291344cfc670
 canvas_apps/cow_widget	check_name_types	bare_beside_unit	2
 canvas_apps/cow_widget	roc-types	unreached	1
-canvas_apps/cow_widget	types-key	canvas_apps/cow_widget,canvas_apps/lib,canvas_apps/safari,canvas_apps/web,canvas_apps/widget_kit	bc80186ba4f31055955d131b38984c8039eeff2a
+canvas_apps/cow_widget	types-key	canvas_apps/cow_widget,canvas_apps/lib,canvas_apps/safari,canvas_apps/web,canvas_apps/widget_kit	b05b77116ee10c38eae4bd734fc742d9c69023c5
 canvas_apps/far_tree_widget	roc-types	unreached	1
-canvas_apps/far_tree_widget	types-key	canvas_apps/far_tree_widget,canvas_apps/lib,canvas_apps/safari,canvas_apps/web,canvas_apps/widget_kit	7067da787be7d782599dc3793e00fb5f9e1ec16c
+canvas_apps/far_tree_widget	types-key	canvas_apps/far_tree_widget,canvas_apps/lib,canvas_apps/safari,canvas_apps/web,canvas_apps/widget_kit	d3a8f64733c1e7e19f491a55a5552bea17435c31
 canvas_apps/frame_widget	rewrite_method_calls	peer_receiver	3
 canvas_apps/frame_widget	roc-types	unreached	1
-canvas_apps/frame_widget	types-key	canvas_apps/frame_widget,canvas_apps/lib,canvas_apps/safari,canvas_apps/web,canvas_apps/widget_kit	936a6698557d21874f53366256459ddba40519ca
+canvas_apps/frame_widget	types-key	canvas_apps/frame_widget,canvas_apps/lib,canvas_apps/safari,canvas_apps/web,canvas_apps/widget_kit	a19b08d8ec7e31f137ca07e4f81e777c579d8a58
 canvas_apps/gaze_widget	check_name_types	bare_beside_unit	1
 canvas_apps/gaze_widget	check_stacking	wide string	1
 canvas_apps/gaze_widget	rewrite_method_calls	peer_receiver	2
 canvas_apps/gaze_widget	roc-types	unreached	1
-canvas_apps/gaze_widget	types-key	canvas_apps/gaze_widget,canvas_apps/lib,canvas_apps/safari,canvas_apps/web,canvas_apps/widget_kit	bbd74838274a629641f77ec0142f370706544476
+canvas_apps/gaze_widget	types-key	canvas_apps/gaze_widget,canvas_apps/lib,canvas_apps/safari,canvas_apps/web,canvas_apps/widget_kit	2fdf91070b58f526773efb597ac802ad874753dc
 canvas_apps/herd_widget	check_families	twin_name	1
 canvas_apps/herd_widget	check_name_types	bare_beside_unit	2
 canvas_apps/herd_widget	rewrite_method_calls	peer_receiver	3
 canvas_apps/herd_widget	roc-types	unreached	1
-canvas_apps/herd_widget	types-key	canvas_apps/herd_widget,canvas_apps/lib,canvas_apps/safari,canvas_apps/web,canvas_apps/widget_kit	88c20387d6b8991c350f03b014263ea18223f09f
+canvas_apps/herd_widget	types-key	canvas_apps/herd_widget,canvas_apps/lib,canvas_apps/safari,canvas_apps/web,canvas_apps/widget_kit	099336b61e3e8a67762a93dc1a86496b8095dc77
 canvas_apps/kinds_widget	check_name_types	bare_beside_unit	4
 canvas_apps/kinds_widget	rewrite_method_calls	peer_receiver	1
 canvas_apps/kinds_widget	roc-types	unreached	1
-canvas_apps/kinds_widget	types-key	canvas_apps/kinds_widget,canvas_apps/lib,canvas_apps/safari,canvas_apps/web,canvas_apps/widget_kit	76df8b1bdb0e78aec5945ce1bac7fdf29480135e
+canvas_apps/kinds_widget	types-key	canvas_apps/kinds_widget,canvas_apps/lib,canvas_apps/safari,canvas_apps/web,canvas_apps/widget_kit	1a11c4997f60cafb788bb256d48a094127f6fe9e
 canvas_apps/lib	check_families	twin_name	4
 canvas_apps/lib	check_name_types	bare_beside_unit	49
 canvas_apps/lib	check_name_types	no_value	2
 canvas_apps/lib	check_stacking	stack	2
 canvas_apps/lib	check_stacking	wide string	14
-canvas_apps/lib	hunt_names	stale_doc_name	1
 canvas_apps/lib	rewrite_method_calls	peer_receiver	39
 canvas_apps/lib	rewrite_method_calls	rewritable	3
 canvas_apps/lib	roc-types	unreached	1
@@ -169,10 +168,10 @@ canvas_apps/particles	find_unclear_names	module_doc	2
 canvas_apps/particles	hunt_names	bare_participle	1
 canvas_apps/particles	hunt_names	singular_list	3
 canvas_apps/particles	rewrite_method_calls	rewritable	12
-canvas_apps/particles	types-key	canvas_apps/lib,canvas_apps/native,canvas_apps/particles,canvas_apps/web,repos:roc-ray/platform,roc-cache:packages/6ZUwqYhCS8PU9Mo6MF7oV82ET2o7KYb57CLKDq4cq4sS,roc-cache:packages/HoULZB8QzktiNPYSe9myzy9JQzm1nMbjDPVWoA63QpVf	e09cfe99e217187e147799b8eb9fcbe32d3e687d
+canvas_apps/particles	types-key	canvas_apps/lib,canvas_apps/native,canvas_apps/particles,canvas_apps/web,repos:roc-ray/platform,roc-cache:packages/6ZUwqYhCS8PU9Mo6MF7oV82ET2o7KYb57CLKDq4cq4sS,roc-cache:packages/HoULZB8QzktiNPYSe9myzy9JQzm1nMbjDPVWoA63QpVf	1da46f951caf64bb7757793cd0b21f51a3b43250
 canvas_apps/pipeline_widget	rewrite_method_calls	peer_receiver	2
 canvas_apps/pipeline_widget	roc-types	unreached	1
-canvas_apps/pipeline_widget	types-key	canvas_apps/lib,canvas_apps/pipeline_widget,canvas_apps/safari,canvas_apps/web,canvas_apps/widget_kit	37a70d065201172370c1301f1d097951a8408fde
+canvas_apps/pipeline_widget	types-key	canvas_apps/lib,canvas_apps/pipeline_widget,canvas_apps/safari,canvas_apps/web,canvas_apps/widget_kit	14b8416d5507bc86cc4ceee046d13b8cf756b798
 canvas_apps/pong	check_boundaries	single	1
 canvas_apps/pong	check_families	family	1
 canvas_apps/pong	check_name_types	no_value	1
@@ -185,28 +184,27 @@ canvas_apps/pong	find_unclear_names	module_doc	4
 canvas_apps/pong	hunt_names	short_name	2
 canvas_apps/pong	hunt_names	singular_list	8
 canvas_apps/pong	rewrite_method_calls	rewritable	33
-canvas_apps/pong	types-key	canvas_apps/lib,canvas_apps/native,canvas_apps/pong,canvas_apps/web,repos:roc-ray/platform,roc-cache:packages/6ZUwqYhCS8PU9Mo6MF7oV82ET2o7KYb57CLKDq4cq4sS,roc-cache:packages/HoULZB8QzktiNPYSe9myzy9JQzm1nMbjDPVWoA63QpVf	ab6a5222c155567454a92c0ebdc7e305807db4c2
+canvas_apps/pong	types-key	canvas_apps/lib,canvas_apps/native,canvas_apps/pong,canvas_apps/web,repos:roc-ray/platform,roc-cache:packages/6ZUwqYhCS8PU9Mo6MF7oV82ET2o7KYb57CLKDq4cq4sS,roc-cache:packages/HoULZB8QzktiNPYSe9myzy9JQzm1nMbjDPVWoA63QpVf	49296c9b5bf564d614d256d1508246b95cf7a4ab
 canvas_apps/rehearsal_widget	check_name_types	bare_beside_unit	2
 canvas_apps/rehearsal_widget	check_stacking	wide string	1
 canvas_apps/rehearsal_widget	rewrite_method_calls	peer_receiver	4
 canvas_apps/rehearsal_widget	roc-types	unreached	1
-canvas_apps/rehearsal_widget	types-key	canvas_apps/lib,canvas_apps/rehearsal_widget,canvas_apps/safari,canvas_apps/web,canvas_apps/widget_kit	680b18a05a2233f30da9b12c5c350a46f744dc44
+canvas_apps/rehearsal_widget	types-key	canvas_apps/lib,canvas_apps/rehearsal_widget,canvas_apps/safari,canvas_apps/web,canvas_apps/widget_kit	aca08d72b61f45b97dc1d33a52921bb00a4ecb4a
 canvas_apps/route_widget	check_name_types	bare_beside_unit	2
 canvas_apps/route_widget	rewrite_method_calls	peer_receiver	5
 canvas_apps/route_widget	roc-types	unreached	1
-canvas_apps/route_widget	types-key	canvas_apps/lib,canvas_apps/route_widget,canvas_apps/safari,canvas_apps/web,canvas_apps/widget_kit	632cf8030c099246017e6ad0e93cbd50eaf4a0ae
+canvas_apps/route_widget	types-key	canvas_apps/lib,canvas_apps/route_widget,canvas_apps/safari,canvas_apps/web,canvas_apps/widget_kit	2107e9fa16cb7da5d5b58431aa47c8954b2e9871
 canvas_apps/safari	check_families	twin_name	2
 canvas_apps/safari	check_stacking	wide string	70
-canvas_apps/safari	hunt_names	stale_doc_name	1
 canvas_apps/safari	rewrite_method_calls	peer_receiver	122
 canvas_apps/safari	roc-types	unreached	11
-canvas_apps/safari	types-key	book_builder,canvas_apps/beacon_widget,canvas_apps/bend_animals_widget,canvas_apps/bends_widget,canvas_apps/bird_widget,canvas_apps/cat_widget,canvas_apps/conifers_widget,canvas_apps/cow_widget,canvas_apps/far_tree_widget,canvas_apps/frame_widget,canvas_apps/gaze_widget,canvas_apps/herd_widget,canvas_apps/kinds_widget,canvas_apps/lib,canvas_apps/native,canvas_apps/pipeline_widget,canvas_apps/rehearsal_widget,canvas_apps/route_widget,canvas_apps/safari,canvas_apps/shapes_widget,canvas_apps/sky_widget,canvas_apps/step_widget,canvas_apps/stills_widget,canvas_apps/truck_widget,canvas_apps/web,canvas_apps/widget_kit,repos:roc-markdown/package,repos:roc-ray/platform,roc-cache:packages/6ZUwqYhCS8PU9Mo6MF7oV82ET2o7KYb57CLKDq4cq4sS,roc-cache:packages/HoULZB8QzktiNPYSe9myzy9JQzm1nMbjDPVWoA63QpVf,syntax_color	3f3102ab785cca1f581029ffb4361437c28fb841
+canvas_apps/safari	types-key	book_builder,canvas_apps/beacon_widget,canvas_apps/bend_animals_widget,canvas_apps/bends_widget,canvas_apps/bird_widget,canvas_apps/cat_widget,canvas_apps/conifers_widget,canvas_apps/cow_widget,canvas_apps/far_tree_widget,canvas_apps/frame_widget,canvas_apps/gaze_widget,canvas_apps/herd_widget,canvas_apps/kinds_widget,canvas_apps/lib,canvas_apps/native,canvas_apps/pipeline_widget,canvas_apps/rehearsal_widget,canvas_apps/route_widget,canvas_apps/safari,canvas_apps/shapes_widget,canvas_apps/sky_widget,canvas_apps/step_widget,canvas_apps/stills_widget,canvas_apps/truck_widget,canvas_apps/web,canvas_apps/widget_kit,repos:roc-markdown/package,repos:roc-ray/platform,roc-cache:packages/6ZUwqYhCS8PU9Mo6MF7oV82ET2o7KYb57CLKDq4cq4sS,roc-cache:packages/HoULZB8QzktiNPYSe9myzy9JQzm1nMbjDPVWoA63QpVf,syntax_color	dfc1d8c29e33a707b109183240aff27441992209
 canvas_apps/shapes_widget	roc-types	unreached	1
-canvas_apps/shapes_widget	types-key	canvas_apps/lib,canvas_apps/safari,canvas_apps/shapes_widget,canvas_apps/web,canvas_apps/widget_kit	cb41d94cf143829e6765af46f66c0a827755dbc0
+canvas_apps/shapes_widget	types-key	canvas_apps/lib,canvas_apps/safari,canvas_apps/shapes_widget,canvas_apps/web,canvas_apps/widget_kit	e28f49ca42737621cf8d85f4714415ed7d4d1f8b
 canvas_apps/sky_widget	check_stacking	wide string	2
 canvas_apps/sky_widget	rewrite_method_calls	peer_receiver	1
 canvas_apps/sky_widget	roc-types	unreached	1
-canvas_apps/sky_widget	types-key	canvas_apps/lib,canvas_apps/safari,canvas_apps/sky_widget,canvas_apps/web,canvas_apps/widget_kit	979d88678429e39002e340e515e06452df6c4ff4
+canvas_apps/sky_widget	types-key	canvas_apps/lib,canvas_apps/safari,canvas_apps/sky_widget,canvas_apps/web,canvas_apps/widget_kit	a91f8be7fb29a3375ea32c9ae0a8db130f0e6a28
 canvas_apps/snake	check_boundaries	dead	1
 canvas_apps/snake	check_name_types	bare_beside_unit	12
 canvas_apps/snake	check_name_types	no_value	1
@@ -218,16 +216,16 @@ canvas_apps/snake	find_unclear_names	module_doc	6
 canvas_apps/snake	hunt_names	short_name	2
 canvas_apps/snake	hunt_names	singular_list	7
 canvas_apps/snake	rewrite_method_calls	rewritable	24
-canvas_apps/snake	types-key	canvas_apps/lib,canvas_apps/native,canvas_apps/snake,canvas_apps/web,repos:roc-ray/platform,roc-cache:packages/6ZUwqYhCS8PU9Mo6MF7oV82ET2o7KYb57CLKDq4cq4sS,roc-cache:packages/HoULZB8QzktiNPYSe9myzy9JQzm1nMbjDPVWoA63QpVf	d9f2ee92524f8a8d867ff822ae899d518aed46fc
+canvas_apps/snake	types-key	canvas_apps/lib,canvas_apps/native,canvas_apps/snake,canvas_apps/web,repos:roc-ray/platform,roc-cache:packages/6ZUwqYhCS8PU9Mo6MF7oV82ET2o7KYb57CLKDq4cq4sS,roc-cache:packages/HoULZB8QzktiNPYSe9myzy9JQzm1nMbjDPVWoA63QpVf	f51412cd29ab5b6f2b5a0dbd61d22c10d537540c
 canvas_apps/step_widget	rewrite_method_calls	peer_receiver	3
 canvas_apps/step_widget	roc-types	unreached	1
-canvas_apps/step_widget	types-key	canvas_apps/lib,canvas_apps/safari,canvas_apps/step_widget,canvas_apps/web,canvas_apps/widget_kit	44bef3c96a8d457449acba927db00059fd93d284
+canvas_apps/step_widget	types-key	canvas_apps/lib,canvas_apps/safari,canvas_apps/step_widget,canvas_apps/web,canvas_apps/widget_kit	214a6d8f4270a9351b96f4a98915ea80c6969336
 canvas_apps/stills_widget	check_families	twin_name	1
 canvas_apps/stills_widget	check_name_types	bare_beside_unit	6
 canvas_apps/stills_widget	check_stacking	wide string	4
 canvas_apps/stills_widget	rewrite_method_calls	peer_receiver	15
 canvas_apps/stills_widget	roc-types	unreached	1
-canvas_apps/stills_widget	types-key	canvas_apps/lib,canvas_apps/safari,canvas_apps/stills_widget,canvas_apps/web,canvas_apps/widget_kit	b32f6a3af4d6bde4ac50586c3e4ce54765ad0f36
+canvas_apps/stills_widget	types-key	canvas_apps/lib,canvas_apps/safari,canvas_apps/stills_widget,canvas_apps/web,canvas_apps/widget_kit	10d3f05866db41cdd4fffa75ad8f7091f31a1381
 canvas_apps/thanksgiving	check_boundaries	fixed	1
 canvas_apps/thanksgiving	check_boundaries	single	1
 canvas_apps/thanksgiving	check_families	twin_name	1
@@ -238,7 +236,7 @@ canvas_apps/thanksgiving	hunt_names	bare_participle	2
 canvas_apps/thanksgiving	hunt_names	singular_list	1
 canvas_apps/thanksgiving	rewrite_method_calls	peer_receiver	40
 canvas_apps/thanksgiving	rewrite_method_calls	rewritable	1
-canvas_apps/thanksgiving	types-key	canvas_apps/lib,canvas_apps/native,canvas_apps/thanksgiving,canvas_apps/web,repos:roc-ray/platform,roc-cache:packages/6ZUwqYhCS8PU9Mo6MF7oV82ET2o7KYb57CLKDq4cq4sS,roc-cache:packages/HoULZB8QzktiNPYSe9myzy9JQzm1nMbjDPVWoA63QpVf	7511e462fc7aa02fbf3b9fb0e84ff28ac38b0d64
+canvas_apps/thanksgiving	types-key	canvas_apps/lib,canvas_apps/native,canvas_apps/thanksgiving,canvas_apps/web,repos:roc-ray/platform,roc-cache:packages/6ZUwqYhCS8PU9Mo6MF7oV82ET2o7KYb57CLKDq4cq4sS,roc-cache:packages/HoULZB8QzktiNPYSe9myzy9JQzm1nMbjDPVWoA63QpVf	afcfcae0dd689a73effbaf3ff3068bc8d3f957d4
 canvas_apps/trick_or_treat	check_boundaries	fixed	1
 canvas_apps/trick_or_treat	check_boundaries	single	8
 canvas_apps/trick_or_treat	check_errors	number_fallback	2
@@ -251,11 +249,11 @@ canvas_apps/trick_or_treat	find_unclear_names	module_doc	13
 canvas_apps/trick_or_treat	hunt_names	bare_participle	3
 canvas_apps/trick_or_treat	hunt_names	singular_list	15
 canvas_apps/trick_or_treat	rewrite_method_calls	rewritable	29
-canvas_apps/trick_or_treat	types-key	canvas_apps/lib,canvas_apps/native,canvas_apps/trick_or_treat,canvas_apps/web,repos:roc-ray/platform,roc-cache:packages/6ZUwqYhCS8PU9Mo6MF7oV82ET2o7KYb57CLKDq4cq4sS,roc-cache:packages/HoULZB8QzktiNPYSe9myzy9JQzm1nMbjDPVWoA63QpVf	2fa42e128f590b1a4bd5d268d32f5c67e046eddf
+canvas_apps/trick_or_treat	types-key	canvas_apps/lib,canvas_apps/native,canvas_apps/trick_or_treat,canvas_apps/web,repos:roc-ray/platform,roc-cache:packages/6ZUwqYhCS8PU9Mo6MF7oV82ET2o7KYb57CLKDq4cq4sS,roc-cache:packages/HoULZB8QzktiNPYSe9myzy9JQzm1nMbjDPVWoA63QpVf	b9607b98ccd457ddf4eb6b6b2b22b5a9061b3d86
 canvas_apps/truck_widget	check_stacking	wide string	1
 canvas_apps/truck_widget	rewrite_method_calls	peer_receiver	1
 canvas_apps/truck_widget	roc-types	unreached	1
-canvas_apps/truck_widget	types-key	canvas_apps/lib,canvas_apps/safari,canvas_apps/truck_widget,canvas_apps/web,canvas_apps/widget_kit	7d0c51a4de977dae758d4f4e6e023238aa5ad9ce
+canvas_apps/truck_widget	types-key	canvas_apps/lib,canvas_apps/safari,canvas_apps/truck_widget,canvas_apps/web,canvas_apps/widget_kit	5dc55a1c497a56852a99b2f8458e0889b2191ed1
 canvas_apps/web	check_stacking	long	1
 canvas_apps/web	check_stacking	stack	1
 canvas_apps/web	typed-file	canvas_apps/web/platform/main.roc	0/0 canvas_apps/beacon_widget canvas_apps/bend_animals_widget canvas_apps/bends_widget canvas_apps/bird_widget canvas_apps/breakout canvas_apps/camera canvas_apps/cat_widget canvas_apps/conifers_widget canvas_apps/cow_widget canvas_apps/far_tree_widget canvas_apps/frame_widget canvas_apps/gaze_widget canvas_apps/herd_widget canvas_apps/kinds_widget canvas_apps/particles canvas_apps/pipeline_widget canvas_apps/pong canvas_apps/rehearsal_widget canvas_apps/route_widget canvas_apps/safari canvas_apps/shapes_widget canvas_apps/sky_widget canvas_apps/snake canvas_apps/step_widget canvas_apps/stills_widget canvas_apps/thanksgiving canvas_apps/trick_or_treat canvas_apps/truck_widget canvas_apps/workshop
@@ -282,14 +280,13 @@ canvas_apps/workshop	hunt_names	short_name	1
 canvas_apps/workshop	hunt_names	singular_list	6
 canvas_apps/workshop	hunt_names	stale_doc_name	1
 canvas_apps/workshop	rewrite_method_calls	rewritable	19
-canvas_apps/workshop	types-key	canvas_apps/lib,canvas_apps/native,canvas_apps/web,canvas_apps/workshop,repos:roc-ray/platform,roc-cache:packages/6ZUwqYhCS8PU9Mo6MF7oV82ET2o7KYb57CLKDq4cq4sS,roc-cache:packages/HoULZB8QzktiNPYSe9myzy9JQzm1nMbjDPVWoA63QpVf	dc026c0296444c91daf1d168b47b2e7db4215c02
-delivery	check_boundaries	dead	1
+canvas_apps/workshop	types-key	canvas_apps/lib,canvas_apps/native,canvas_apps/web,canvas_apps/workshop,repos:roc-ray/platform,roc-cache:packages/6ZUwqYhCS8PU9Mo6MF7oV82ET2o7KYb57CLKDq4cq4sS,roc-cache:packages/HoULZB8QzktiNPYSe9myzy9JQzm1nMbjDPVWoA63QpVf	71dd7682c556339a4f617f9c0d4e852c41b608c3
 delivery	check_stacking	wide string	20
 delivery	hunt_names	short_name	28
 delivery	hunt_names	singular_list	12
-delivery	parse-key	delivery	6fc99819c948307f51441015cc48e23059a028ce
+delivery	parse-key	delivery	c3067b9d125f0616a32ce8005892ca4c1f0d1c1e
 delivery	rewrite_method_calls	peer_receiver	48
-delivery	types-key	delivery	6fc99819c948307f51441015cc48e23059a028ce
+delivery	types-key	delivery	c3067b9d125f0616a32ce8005892ca4c1f0d1c1e
 dog-park	check_boundaries	dead	3
 dog-park	check_boundaries	single	2
 dog-park	check_families	twin_name	2
@@ -306,10 +303,10 @@ dog-park	hunt_names	phrase_name	4
 dog-park	hunt_names	preposition_split	1
 dog-park	hunt_names	short_name	5
 dog-park	hunt_names	singular_list	14
-dog-park	parse-key	dog-park	6fb834488aa8ee3321052e656eb781ecc6ae09ed
+dog-park	parse-key	dog-park	85fbd10b934c663ab0800a3181f6f60ee1443f44
 dog-park	rewrite_method_calls	peer_receiver	18
 dog-park	roc-types	unreached	6
-dog-park	types-key	dog-park	6fb834488aa8ee3321052e656eb781ecc6ae09ed
+dog-park	types-key	dog-park	85fbd10b934c663ab0800a3181f6f60ee1443f44
 fasttrack	check_boundaries	dead	1
 fasttrack	check_boundaries	fixed	1
 fasttrack	check_errors	placeholder	2
@@ -322,11 +319,11 @@ fasttrack	find_unclear_names	pure_mutator	18
 fasttrack	find_unused_imports	unused_import	2
 fasttrack	hunt_names	short_name	1
 fasttrack	hunt_names	singular_list	30
-fasttrack	parse-key	fasttrack	359fad479397a19679a8ec8537a18981807b8592
+fasttrack	parse-key	fasttrack	88fb769ecc47bfd2035ebc7641a58abae671e143
 fasttrack	rewrite_method_calls	peer_receiver	22
 fasttrack	rewrite_method_calls	rewritable	2
 fasttrack	roc-types	unreached	5
-fasttrack	types-key	fasttrack	359fad479397a19679a8ec8537a18981807b8592
+fasttrack	types-key	fasttrack	88fb769ecc47bfd2035ebc7641a58abae671e143
 glue	check_boundaries	single	1
 glue	check_errors	number_fallback	1
 glue	check_stacking	long	3
@@ -337,14 +334,14 @@ glue	find_extra_parens	lambda_if	1
 glue	hunt_names	bare_participle	2
 glue	hunt_names	singular_list	1
 glue	hunt_names	world_verb	1
-glue	parse-key	glue	31b9e7c9cf9f6c4f4e118c28425a91f136c068a5
+glue	parse-key	glue	1bddef3dab484b64ca3062ff1592880c8daecfa3
 glue	rewrite_method_calls	rewritable	50
-glue	types-key	glue,roc-cache:compat-8ef4841088748ac1aa781861c5d51bf4411c8d2407e4a9de0f79cabaf7dbd97a/src/compiler-platforms/glue/701f09d0d31715d6518d5cb66edd0f85787bd5d658761b1e6c343b44bb405b74	2bce6032a7cbbcd0f332613d17240785f44358fc
+glue	types-key	glue,roc-cache:compat-8ef4841088748ac1aa781861c5d51bf4411c8d2407e4a9de0f79cabaf7dbd97a/src/compiler-platforms/glue/701f09d0d31715d6518d5cb66edd0f85787bd5d658761b1e6c343b44bb405b74	8928e4f2d0bc77313c634303eb2b9284f8127ed4
 syntax_color	check_errors	number_fallback	1
 syntax_color	check_families	twin_name	3
 syntax_color	check_stacking	wide string	15
-syntax_color	parse-key	syntax_color	80f731df65a604f4fe71819eb08882adff77d0b4
+syntax_color	parse-key	syntax_color	217c5102c04d8069bf7d76eac676d2c1a5181051
 syntax_color	rewrite_method_calls	peer_receiver	16
 syntax_color	rewrite_method_calls	rewritable	2
 syntax_color	roc-types	unreached	1
-syntax_color	types-key	syntax_color	80f731df65a604f4fe71819eb08882adff77d0b4
+syntax_color	types-key	syntax_color	217c5102c04d8069bf7d76eac676d2c1a5181051
