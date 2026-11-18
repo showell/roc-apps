@@ -356,9 +356,6 @@ without_nbhd = |stops, nbhd| {
 	kept
 }
 
-## The candidate arc-rebalance move `ra`/`rb` for trucks `a` and `b`,
-## scored as it is when both fit, or rescued by an arc when one truck is
-## over its cap and the other isn't; the better of it and `best`.
 ## The best corridor repair so far, or none: the two trucks' new routes,
 ## and the caption's words.
 CorridorMove : [
@@ -392,6 +389,9 @@ ArcMove : [
 	),
 ]
 
+## The candidate arc-rebalance move `a_stops`/`b_stops` for trucks `a` and
+## `b`, scored as it is when both fit, or rescued by an arc when one truck
+## is over its cap and the other isn't; the better of it and `best`.
 Candidate : {
 	tidied_pains : List(I64),
 	a : U64,
