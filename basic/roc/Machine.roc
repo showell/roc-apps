@@ -439,8 +439,8 @@ Machine :: [].{
 		S(s) => s
 	}
 
-	stopped : Fx -> Bool
-	stopped = |fx| fx.stop != ""
+	is_stopped : Fx -> Bool
+	is_stopped = |fx| fx.stop != ""
 
 	# ECMA-55 7.4: an overflow is reported and continues with the largest
 	# number of its sign. An infinity is never a value.
@@ -477,7 +477,7 @@ Machine :: [].{
 				two,
 				pair,
 			)
-			if Machine.stopped(at.fx) {
+			if Machine.is_stopped(at.fx) {
 				{ v: N(0.0), fx: at.fx }
 			} else {
 				Machine.elem(
@@ -545,11 +545,11 @@ Machine :: [].{
 		)
 		Cat(a, b) => {
 			l = Machine.eval(pg, m, env, fx, a)
-			if Machine.stopped(l.fx) {
+			if Machine.is_stopped(l.fx) {
 				l
 			} else {
 				r = Machine.eval(pg, m, env, l.fx, b)
-				if Machine.stopped(r.fx) {
+				if Machine.is_stopped(r.fx) {
 					r
 				} else {
 					{ v: S(Machine.str_of(l.v).concat(Machine.str_of(r.v))), fx: r.fx }
@@ -558,7 +558,7 @@ Machine :: [].{
 		}
 		Call(code, a) => {
 			r = Machine.eval(pg, m, env, fx, a)
-			if Machine.stopped(r.fx) {
+			if Machine.is_stopped(r.fx) {
 				r
 			} else {
 				Machine.call(m, r.fx, code, r.v)
@@ -567,7 +567,7 @@ Machine :: [].{
 		Rnd => Machine.draw_rnd(pg, m, fx)
 		RndOf(a) => {
 			r = Machine.eval(pg, m, env, fx, a)
-			if Machine.stopped(r.fx) {
+			if Machine.is_stopped(r.fx) {
 				r
 			} else if pg.ecma or Machine.num_of(r.v) > 0.0 {
 				Machine.draw_rnd(pg, m, r.fx)
@@ -587,7 +587,7 @@ Machine :: [].{
 		Chr(a) => {
 			r = Machine.eval(pg, m, env, fx, a)
 			code = Machine.floor(Machine.num_of(r.v)).to_i64_wrap().bitwise_and(255)
-			if Machine.stopped(r.fx) {
+			if Machine.is_stopped(r.fx) {
 				r
 			} else {
 				{ v: S(Machine.chars.get(code.to_u64_wrap()) ?? "?"), fx: r.fx }
@@ -595,7 +595,7 @@ Machine :: [].{
 		}
 		StrOf(a) => {
 			r = Machine.eval(pg, m, env, fx, a)
-			if Machine.stopped(r.fx) {
+			if Machine.is_stopped(r.fx) {
 				r
 			} else {
 				{ v: S(Machine.fmt_num(Machine.num_of(r.v))), fx: r.fx }
@@ -652,7 +652,7 @@ Machine :: [].{
 		)
 		Seq(a, b) => {
 			r = Machine.eval(pg, m, env, fx, a)
-			if Machine.stopped(r.fx) {
+			if Machine.is_stopped(r.fx) {
 				r
 			} else {
 				Machine.eval(pg, m, env, r.fx, b)
@@ -701,13 +701,13 @@ Machine :: [].{
 		op,
 	| {
 		l = Machine.eval(pg, m, env, fx, a)
-		if Machine.stopped(l.fx) {
+		if Machine.is_stopped(l.fx) {
 			l
 		} else {
 			r = Machine.eval(pg, m, env, l.fx, b)
 			x = Machine.num_of(l.v)
 			d = Machine.num_of(r.v)
-			if Machine.stopped(r.fx) {
+			if Machine.is_stopped(r.fx) {
 				r
 			} else if op == 1 {
 				Machine.finite(r.fx, x + d)
@@ -879,17 +879,17 @@ Machine :: [].{
 		which,
 	| {
 		s = Machine.eval(pg, m, env, fx, a)
-		c = if Machine.stopped(s.fx) {
+		c = if Machine.is_stopped(s.fx) {
 			s
 		} else {
 			Machine.eval(pg, m, env, s.fx, n)
 		}
-		l = if which == 4 and !Machine.stopped(c.fx) {
+		l = if which == 4 and !Machine.is_stopped(c.fx) {
 			Machine.eval(pg, m, env, c.fx, k)
 		} else {
 			c
 		}
-		if Machine.stopped(l.fx) {
+		if Machine.is_stopped(l.fx) {
 			l
 		} else {
 			src = Machine.str_of(s.v).to_utf8()
@@ -963,7 +963,7 @@ Machine :: [].{
 			Machine.eval(pg, m, env, fx, f.body)
 		} else {
 			a = Machine.eval(pg, m, env, fx, arg)
-			if Machine.stopped(a.fx) {
+			if Machine.is_stopped(a.fx) {
 				a
 			} else {
 				Machine.eval(
@@ -999,7 +999,7 @@ Machine :: [].{
 		pair,
 	| {
 		r = Machine.eval(pg, m, env, fx, one)
-		r2 = if pair and !Machine.stopped(r.fx) {
+		r2 = if pair and !Machine.is_stopped(r.fx) {
 			Machine.eval(pg, m, env, r.fx, two)
 		} else {
 			r
@@ -1129,7 +1129,7 @@ Machine :: [].{
 		var $col = Machine.devices_of(m).col
 		var $fx = Machine.fresh(m)
 		for it in items {
-			if Machine.stopped($fx) {
+			if Machine.is_stopped($fx) {
 				{}
 			} else {
 				piece = match it {
@@ -1155,7 +1155,7 @@ Machine :: [].{
 						x = Machine.num_of(r.v)
 						{
 							said: r.fx.said,
-							t: if Machine.stopped(r.fx) {
+							t: if Machine.is_stopped(r.fx) {
 								""
 							} else if pg.ecma {
 								Machine.tab_ecma(x, Devices.col_after_text(r.fx.said, $col))
@@ -1174,7 +1174,7 @@ Machine :: [].{
 						wrapped = w > 0 and c > 0 and c + t.count_utf8_bytes().to_i64_wrap() > w
 						{
 							said: r.fx.said,
-							t: if Machine.stopped(r.fx) {
+							t: if Machine.is_stopped(r.fx) {
 								""
 							} else if wrapped {
 								"\n".concat(t)
@@ -1192,7 +1192,7 @@ Machine :: [].{
 			}
 		}
 		{
-			text: if newline and !Machine.stopped($fx) {
+			text: if newline and !Machine.is_stopped($fx) {
 				$text.concat("\n")
 			} else {
 				$text
@@ -1290,7 +1290,7 @@ Machine :: [].{
 		} else {
 			Machine.make_arrays(drawn.arrs, drawn.arr_count, drawn.base, fx.made)
 		}
-		if Machine.stopped(fx) {
+		if Machine.is_stopped(fx) {
 			{
 				..drawn,
 				seed: fx.seed,
@@ -1527,7 +1527,7 @@ Machine :: [].{
 	condition : Parse.Program, M, Parse.Expr, U8, Parse.Expr -> { yes : Bool, fx : Fx }
 	condition = |pg, m, a, op, b| {
 		l = Machine.eval(pg, m, [], Machine.fresh(m), a)
-		r = if Machine.stopped(l.fx) {
+		r = if Machine.is_stopped(l.fx) {
 			l
 		} else {
 			Machine.eval(pg, m, [], l.fx, b)
@@ -1616,12 +1616,12 @@ Machine :: [].{
 		st,
 	| {
 		f = Machine.eval(pg, m, [], Machine.fresh(m), from)
-		l = if Machine.stopped(f.fx) {
+		l = if Machine.is_stopped(f.fx) {
 			f
 		} else {
 			Machine.eval(pg, m, [], f.fx, lim)
 		}
-		s = if Machine.stopped(l.fx) {
+		s = if Machine.is_stopped(l.fx) {
 			l
 		} else {
 			Machine.eval(pg, m, [], l.fx, st)
@@ -2290,7 +2290,7 @@ Machine :: [].{
 		} else {
 			{ ..at.fx, made: at.fx.made.append({ slot: slot, pair: pair }) }
 		}
-		r = if Machine.stopped(fx) {
+		r = if Machine.is_stopped(fx) {
 			{ v: N(0.0), fx: fx }
 		} else {
 			Machine.eval(pg, m, [], fx, e)
@@ -2417,12 +2417,12 @@ Machine :: [].{
 	do_plot : Parse.Program, M, Parse.Expr, Parse.Expr, Parse.Expr -> M
 	do_plot = |pg, m, x, y, c| {
 		rx = Machine.eval(pg, m, [], Machine.fresh(m), x)
-		ry = if Machine.stopped(rx.fx) {
+		ry = if Machine.is_stopped(rx.fx) {
 			rx
 		} else {
 			Machine.eval(pg, m, [], rx.fx, y)
 		}
-		rc = if Machine.stopped(ry.fx) {
+		rc = if Machine.is_stopped(ry.fx) {
 			ry
 		} else {
 			Machine.eval(pg, m, [], ry.fx, c)
@@ -2450,7 +2450,7 @@ Machine :: [].{
 	do_poke : Parse.Program, M, Parse.Expr, Parse.Expr -> M
 	do_poke = |pg, m, a, v| {
 		ra = Machine.eval(pg, m, [], Machine.fresh(m), a)
-		rv = if Machine.stopped(ra.fx) {
+		rv = if Machine.is_stopped(ra.fx) {
 			ra
 		} else {
 			Machine.eval(pg, m, [], ra.fx, v)
@@ -2650,7 +2650,7 @@ Machine :: [].{
 			} else {
 				Machine.prompted(Machine.emit(Machine.emit(m, prompt), "? "))
 			}
-			if Machine.untyped(m0) {
+			if !Machine.has_typed_line(m0) {
 				{ ..m0, waiting: True }
 			} else {
 				line = Machine.typed(m0)
@@ -2704,11 +2704,11 @@ Machine :: [].{
 	prompted : M -> M
 	prompted = |m| { ..m, devices: Devices.prompt_out(m.devices) }
 
-	# No line is typed for INPUT to read.
-	untyped : M -> Bool
-	untyped = |m| {
+	# A line is typed for INPUT to read.
+	has_typed_line : M -> Bool
+	has_typed_line = |m| {
 		d = Machine.devices_of(m)
-		d.ip >= d.inp.len()
+		d.ip < d.inp.len()
 	}
 
 	# The next line typed.
