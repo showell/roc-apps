@@ -42,10 +42,7 @@ SafariFrame :: [].{
 	picture_pixels = |view|
 		ShapesPixels.pixels_with_shapes(
 			SafariFrame.backdrop_pixels(view),
-			{
-				roll: SafariFrame.screen_roll(view.roll),
-				shapes: view.ride_shape_lists().join(),
-			},
+			{ roll: SafariFrame.screen_roll(view.roll), shapes: view.ride_shape_lists().join() },
 		)
 
 	## The frame's backdrop alone: the sky and the grass, then the sun.
