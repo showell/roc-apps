@@ -9,6 +9,9 @@ The repository's own scripts, beside `check.shale` at its root.
   says how to run each tier and what each costs. The baseline is the full
   tier's cache: a run measures again only the apps whose key moved, so a
   run with nothing changed takes seconds, and `fresh=1` measures every app.
+- `quality_keys.shale` is a library of `quality.shale`'s alone, the hashes
+  its keys are made of, split out to keep that script under Shale's 64 KiB
+  cap on a script.
 - `quality_baseline.tsv` holds those counts, one `app`, `recipe`, `check`
   and `count` a line, and the keys they were measured at: a `parse-key`
   line a project and a `types-key` line an app, each naming its folders

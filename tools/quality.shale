@@ -73,8 +73,10 @@
 
 use("cookbook:times.shale")
 use("cookbook:roc/types.shale")
+use("./quality_keys.shale")
 
 const SELF_PATH = "tools/quality.shale"
+const KEYS_PATH = "tools/quality_keys.shale"
 const BASELINE = "tools/quality_baseline.tsv"
 const BASELINE_HEADER = "app\trecipe\tcheck\tcount"
 const FINDINGS_LOG = "build:roc-apps/quality-findings.txt"
@@ -115,7 +117,8 @@ const PARSE_RECIPES = {
     {"short_name", "short_name"}, {"worker_name", "worker_name"}, {"stacked_preposition", "stacked_preposition"},
     {"taken_word", "taken_word"}, {"bare_participle", "bare_participle"}, {"phrase_name", "phrase_name"},
     {"singular_list", "singular_list"}, {"world_verb", "world_verb"}, {"where_name", "where_name"},
-  }, cross = {"command_tense", "mixed_tense"}},
+    {"stale_doc_name", "stale_doc_name"},
+  }, cross = {"command_tense", "mixed_tense", "stale_doc_name"}},
   {recipe = "check_stacking", short = "stack", fails_on_findings = false, cpu_measured_ms = 4969, cpu_budget_ms = 16000, checks = {
     {"to stack", "stack"}, {"to unstack", "unstack"}, {"long", "long"}, {"wide string", "wide string"},
   }, cross = {}, quiet = {"wide string"}},
@@ -437,57 +440,12 @@ end
 -- key moved, and keeps every other count. A shared folder's typed counts
 -- come every run from its files' rows (`shared_files`).
 
--- Git's hash of a text, as a blob.
-function blob_hash(text)
-  return trim(must(run({"git", "hash-object", "--stdin"}, {timeout_ms = 30000, whole = 1000, stdin = text})).out)
-end
-
--- The git blob hash of each file at an OS path, by path, from one program;
--- nil when git can't hash one of them.
-function hashes_of(os_paths)
-  local out = {}
-  if #os_paths == 0 then return out end
-  local r = run({"git", "hash-object", "--no-filters", "--stdin-paths"}, {timeout_ms = 120000, whole = 64000000, stdin = join(os_paths, "\n") .. "\n"})
-  if r.ended ~= "exit" or r.code ~= 0 then return nil end
-  local hs = lines(trim(r.out))
-  if #hs ~= #os_paths then return nil end
-  for i = 1, #os_paths do out[os_paths[i]] = hs[i] end
-  return out
-end
-
--- The files a recipe is made of: the recipe and each library it loads, in
--- turn (`use("cookbook:...")`, or `use("./x.shale")` beside it), each once.
-function recipe_closure(path, seen, out)
-  if has_key(seen, path) then return nil end
-  seen[path] = true
-  push(out, path)
-  for g in grep(path, "use(\"") do
-    local m = re_find(g.text, "use\\(\"(cookbook:[^\"]+|\\./[^\"]+)\"\\)")
-    if m ~= nil then recipe_closure(starts_with(m.group, "./") and (dirname(path) .. sub(m.group, 2)) or m.group, seen, out) end
-  end
-  return nil
-end
-
--- The git hash of this script's code alone, its comment and blank lines
--- left out, so a change to its prose leaves every key as it was.
-function code_hash(path)
-  local kept = {}
-  for l in lines(read(path)) do
-    if trim(l) ~= "" and not starts_with(trim(l), "--") then push(kept, l) end
-  end
-  return blob_hash(join(kept, "\n") .. "\n")
-end
-
--- The `shale` this run's children run: the PATH's, through its link.
-function shale_binary()
-  local w = trim(must(run({"which", "shale"}, {timeout_ms = 5000, whole = 4000})).out)
-  return trim(must(run({"readlink", "-f", w}, {timeout_ms = 5000, whole = 4000})).out)
-end
+-- The hashes (git's, of texts, files and folders) are tools/quality_keys.shale's.
 
 -- One hash for every tool that makes a count: the Roc pin, `shale` (its
 -- builtins and preludes run every recipe), roc-ast, roc-types, the repo's
--- prelude (which finds the pinned Roc), this script's code (`code_hash`),
--- and every file of each recipe's closure and of the types library this
+-- prelude (which finds the pinned Roc), this script's code and its keys
+-- library's (`code_hash`), and every file of each recipe's closure and of the types library this
 -- script reads roc-types with.
 function tools_identity(roc)
   local named = {
@@ -507,78 +465,8 @@ function tools_identity(roc)
   for n in named do push(paths, n[2]) end
   local h = hashes_of(unique(paths))
   if h == nil then fail("quality: git couldn't hash the tools and recipes: " .. join(unique(paths), ", ")) end
-  local ls = {"pin\t" .. trim(read("roc-version")), "self\t" .. code_hash(SELF_PATH)}
+  local ls = {"pin\t" .. trim(read("roc-version")), "self\t" .. code_hash(SELF_PATH), "keys\t" .. code_hash(KEYS_PATH)}
   for n in named do push(ls, n[1] .. "\t" .. h[n[2]]) end
-  return blob_hash(join(ls, "\n") .. "\n")
-end
-
--- Each folder's git tree as the run reads it, the tracked files as the
--- working copy has them: a fresh index (`read-tree HEAD`, `add -u`, under
--- half a second) written as a tree, listed at the top and in canvas_apps/.
-function folder_trees(scratch)
-  local env = {GIT_INDEX_FILE = real(scratch) .. "/index"}
-  must(run({"git", "read-tree", "HEAD"}, {timeout_ms = 60000, whole = 4000, env = env}))
-  must(run({"git", "add", "-u", "--", "."}, {timeout_ms = 120000, whole = 4000, env = env}))
-  local tree = trim(must(run({"git", "write-tree"}, {timeout_ms = 60000, whole = 4000, env = env})).out)
-  local out = {}
-  for below in {"", "canvas_apps/"} do
-    local argv = {"git", "ls-tree", "-d", tree}
-    if below ~= "" then push(argv, below) end
-    for l in lines(trim(must(run(argv, {timeout_ms = 60000, whole = 400000})).out)) do
-      -- `040000 tree <hash><tab><path>`
-      local tab = find(l, "\t")
-      if tab ~= nil then out[sub(l, tab + 1)] = split(sub(l, 1, tab - 1), " ")[3] end
-    end
-  end
-  return out
-end
-
--- A key's name for a folder outside the checkout, the same from every
--- checkout on the box: `repos:` and a sibling repo's real path (a lane's
--- worktree reaches one through a link), or `roc-cache:` and its path there.
-function outside_name(st, dir)
-  if has_key(st.outside_names, dir) then return st.outside_names[dir] end
-  local canon = trim(must(run({"readlink", "-f", dir}, {timeout_ms = 5000, whole = 4000})).out)
-  local repos = real("repos:") .. "/"
-  local name = ""
-  if starts_with(canon, repos) then
-    name = "repos:" .. sub(canon, #repos + 1)
-  else
-    local at = find(canon, "/.cache/roc/")
-    if at == nil then fail("quality: an app reaches " .. canon .. ", which is outside the checkout, the repos: mount and Roc's cache, so no key can name it") end
-    name = "roc-cache:" .. sub(canon, at + #"/.cache/roc/")
-  end
-  st.outside_names[dir] = name
-  return name
-end
-
--- A sibling repo's folder is keyed by its .roc files' hashes; one of Roc's
--- cache by its name, which is the hash of what it holds.
-function outside_folder_id(folder)
-  if starts_with(folder, "roc-cache:") then return "named" end
-  if not exists(folder) then return "gone" end
-  local paths = {}
-  for n in sort(ls(folder)) do
-    if ends_with(n, ".roc") then push(paths, real(folder .. "/" .. n)) end
-  end
-  local h = hashes_of(paths)
-  if h == nil then fail("quality: git couldn't hash the .roc files of " .. folder) end
-  local ls_ = {}
-  for q in paths do push(ls_, basename(q) .. " " .. h[q]) end
-  return blob_hash(join(ls_, "\n") .. "\n")
-end
-
-function folder_id(st, folder)
-  if contains(folder, ":") then
-    if not has_key(st.outside, folder) then st.outside[folder] = outside_folder_id(folder) end
-    return st.outside[folder]
-  end
-  return get(st.trees, folder, "gone")
-end
-
-function key_hash(st, folders)
-  local ls = {"tools\t" .. st.tools}
-  for f in folders do push(ls, f .. "\t" .. folder_id(st, f)) end
   return blob_hash(join(ls, "\n") .. "\n")
 end
 
