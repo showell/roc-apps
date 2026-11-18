@@ -18,7 +18,7 @@ import sc.SyntaxColor
 QuotedColor := [].{
 
 	## One block of the note: its include's line, its file's copy, its parts.
-	Note : {
+	Block : {
 		line : U64,
 		source : Str,
 		parts : List(QuotedColor.Part),
@@ -40,13 +40,13 @@ QuotedColor := [].{
 	Colored : { code : Str, html : Str }
 
 	## The note's blocks, or what is wrong with a line of it.
-	notes_of : Str -> Try(List(QuotedColor.Note), Str)
+	notes_of : Str -> Try(List(QuotedColor.Block), Str)
 	notes_of = |text| text.split_on("\n").drop_if(|row| row.is_empty()).map_try(note_of)
 
 	## Each block of one file, colored by the file's coloring.
 	colored_blocks : {
 		text : Str,
-		notes : List(QuotedColor.Note),
+		notes : List(QuotedColor.Block),
 	} -> Try(List(QuotedColor.Colored), Str)
 	colored_blocks = |{ text, notes }| {
 		spans = SyntaxColor.spans(SyntaxColor.roc, text)
@@ -71,7 +71,7 @@ QuotedColor := [].{
 cut_text : Str
 cut_text = "# ..."
 
-note_of : Str -> Try(QuotedColor.Note, Str)
+note_of : Str -> Try(QuotedColor.Block, Str)
 note_of = |row| match row.split_on("\t") {
 	[line_text, source, .. as part_texts] => {
 		line = U64.from_str(line_text) ? |_| "blocks.txt: a row whose line isn't a number: ${row}"
@@ -115,7 +115,7 @@ File : {
 	starts : List(U64),
 }
 
-note_colored : QuotedColor.Note, File -> Try(QuotedColor.Colored, Str)
+note_colored : QuotedColor.Block, File -> Try(QuotedColor.Colored, Str)
 note_colored = |note, file| {
 	pieces = note.parts.map_try(
 		|part| part_colored(part, file),
