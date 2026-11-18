@@ -1,6 +1,5 @@
-published 2026-09-24T11:19:26Z
-roc nightly-2026-09-22-e494788
-roc-apps 1c22110
-rocemit e6a83da
-cobblestone 9f6bdc03 u62-candidate
-sha256 eb7d6731966b74e2  78431 bytes  breakout.wasm
+published 2026-11-18T17:44:29Z
+roc nightly-2026-11-03-34bd006
+opt speed
+roc-apps fb9044f7
+sha256 51cd902eee9e4b92  78720 bytes  breakout.wasm
