@@ -10,8 +10,10 @@
 ## way, slips, and is caught. Once all three sit, the lights blink on down the
 ## table, each robot's eyes lighting with the bulb above its place, and the
 ## eye eases back to take in the whole table. The banner drops, the leaves
-## blow across, and the last frame holds.
+## blow across, and a fourth robot walks in and does the robot dance, while
+## the others turn their eyes to watch. The last frame holds its final pose.
 import lib.Eye
+import Dancer
 import Dishes
 import Lights
 import Robot
@@ -21,7 +23,7 @@ Dinner :: [].{
 
 	## The last tick that moves. Every tick after it shows the same frame.
 	end_tick : I64
-	end_tick = 1290
+	end_tick = 1670
 
 	## When the first bulb blinks on.
 	lights_tick : I64
@@ -72,6 +74,42 @@ Dinner :: [].{
 			seat_height: Table.chair_of(build).seat_height,
 			reach: reach(build, now),
 			eye_glow: bulb_glow(Lights.nearest_bulb(Table.chair_of(build).forward), now),
+			look: smooth(ramp(now - watch_tick, 30)),
+		}
+	}
+
+	## Where the dancer's feet are: walking in from the right, then on its spot
+	## beside the near end of the table.
+	dancer_feet : I64 -> Eye.At
+	dancer_feet = |tick| { right: dancer_right(held_tick(tick)), forward: 1.4, height: 0.0 }
+
+	## How the dancer stands at `tick`: arms swinging in steps on the walk in,
+	## then the routine, each move snapping into place and holding.
+	dancer_pose : I64 -> Dancer.Pose
+	dancer_pose = |tick| {
+		now = held_tick(tick)
+		walked = dancer_from - dancer_right(now)
+		phase = walked * F64.tau / 0.55
+		pace = ((dancer_right(now - 5) - dancer_right(now)) / 0.09).min(1.0)
+		move =
+			if now < dance_tick {
+				clicks = (phase.sin() * 2.0 + 2.5).to_i64_wrap() - 2
+				swing = 0.18 * I64.to_f64(clicks) * pace
+				{ ..rest, left_upper: rest.left_upper - swing, right_upper: rest.right_upper - swing }
+			} else {
+				dance_move(now - dance_tick)
+			}
+		{
+			left_upper: move.left_upper,
+			left_fore: move.left_fore,
+			right_upper: move.right_upper,
+			right_fore: move.right_fore,
+			head: move.head,
+			pop: move.pop,
+			turn: move.turn,
+			bounce: move.bounce,
+			phase,
+			stride: pace,
 		}
 	}
 
@@ -386,6 +424,138 @@ ramp = |since, len|
 
 smooth : F64 -> F64
 smooth = |u| u * u * (3.0 - 2.0 * u)
+
+# The seated robots turn their eyes to the dancer as it walks in.
+watch_tick : I64
+watch_tick = 1110
+
+# The dancer walks in from the right, after the banner is up, to a spot
+# beside the near end of the table where the pulled-back eye sees it whole.
+walk_in_tick : I64
+walk_in_tick = 1090
+
+dance_tick : I64
+dance_tick = 1236
+
+dancer_from : F64
+dancer_from = 4.5
+
+dancer_right : I64 -> F64
+dancer_right = |tick| {
+	u = smooth(ramp(tick - walk_in_tick, dance_tick - 6 - walk_in_tick))
+	dancer_from + (1.25 - dancer_from) * u
+}
+
+# One pose of the dance: the joints and the rest of what Dancer is told,
+# without the walk.
+Move : { left_upper : F64, left_fore : F64, right_upper : F64, right_fore : F64, head : F64, pop : F64, turn : F64, bounce : F64 }
+
+rest : Move
+rest = { left_upper: -0.12, left_fore: -0.12, right_upper: 0.12, right_fore: 0.12, head: 0.0, pop: 0.0, turn: 1.0, bounce: 0.0 }
+
+quarter : F64
+quarter = F64.pi / 2.0
+
+# Both arms out and bent up at the elbow, a right angle each.
+goalpost : Move
+goalpost = { ..rest, left_upper: -quarter, left_fore: -F64.pi, right_upper: quarter, right_fore: F64.pi }
+
+# Both arms straight out to the sides.
+arms_out : Move
+arms_out = { ..rest, left_upper: -quarter, left_fore: -quarter, right_upper: quarter, right_fore: quarter }
+
+# The routine, a move and how many ticks it lasts. A move snaps into place
+# over its first `snap_frames` ticks and holds for the rest, so the dance
+# goes in clicks rather than easing.
+routine : List({ move : Move, frames : I64 })
+routine = [
+	{ move: { ..rest, right_upper: quarter, right_fore: quarter }, frames: 14 },
+	{ move: { ..rest, right_upper: quarter, right_fore: F64.pi }, frames: 18 },
+	{ move: { ..rest, right_upper: quarter, right_fore: 2.62 }, frames: 9 },
+	{ move: { ..rest, right_upper: quarter, right_fore: 2.09 }, frames: 9 },
+	{ move: { ..rest, right_upper: quarter, right_fore: 1.57 }, frames: 9 },
+	{ move: { ..rest, right_upper: quarter, right_fore: 1.05 }, frames: 9 },
+	{ move: { ..rest, right_upper: quarter, right_fore: 0.52 }, frames: 12 },
+	{ move: goalpost, frames: 16 },
+	{ move: { ..goalpost, head: 0.5 }, frames: 8 },
+	{ move: { ..goalpost, head: 1.0 }, frames: 14 },
+	{ move: { ..goalpost, head: 0.5 }, frames: 8 },
+	{ move: goalpost, frames: 8 },
+	{ move: { ..goalpost, head: -0.5 }, frames: 8 },
+	{ move: { ..goalpost, head: -1.0 }, frames: 14 },
+	{ move: goalpost, frames: 12 },
+	{ move: { ..goalpost, pop: 0.07 }, frames: 8 },
+	{ move: goalpost, frames: 6 },
+	{ move: { ..goalpost, pop: -0.07 }, frames: 8 },
+	{ move: goalpost, frames: 6 },
+	{ move: { ..goalpost, pop: 0.07 }, frames: 8 },
+	{ move: goalpost, frames: 10 },
+	{ move: { ..arms_out, bounce: 0.05 }, frames: 7 },
+	{ move: arms_out, frames: 7 },
+	{ move: { ..arms_out, bounce: 0.05 }, frames: 7 },
+	{ move: arms_out, frames: 7 },
+	{ move: { ..arms_out, bounce: 0.05 }, frames: 7 },
+	{ move: arms_out, frames: 9 },
+	{ move: { ..rest, turn: 0.88 }, frames: 10 },
+	{ move: { ..rest, turn: 0.75 }, frames: 10 },
+	{ move: { ..rest, turn: 0.62 }, frames: 10 },
+	{ move: { ..rest, turn: 0.5 }, frames: 16 },
+	{ move: { ..rest, turn: 0.62 }, frames: 10 },
+	{ move: { ..rest, turn: 0.75 }, frames: 10 },
+	{ move: { ..rest, turn: 0.88 }, frames: 10 },
+	{ move: rest, frames: 12 },
+	{ move: { ..goalpost, left_fore: -2.09, right_fore: 2.09 }, frames: 9 },
+	{ move: { ..goalpost, left_fore: -1.57, right_fore: 1.57 }, frames: 9 },
+	{ move: { ..goalpost, left_fore: -1.05, right_fore: 1.05 }, frames: 9 },
+	{ move: { ..goalpost, left_fore: -1.05, right_fore: 1.05, head: 1.0 }, frames: 10 },
+	{ move: { ..goalpost, left_fore: -1.05, right_fore: 1.05, head: -1.0 }, frames: 10 },
+	{ move: { ..goalpost, left_fore: -1.05, right_fore: 1.05 }, frames: 8 },
+	{ move: { ..goalpost, left_fore: -1.05, right_fore: 1.05, pop: 0.07 }, frames: 6 },
+	{ move: { ..goalpost, left_fore: -1.05, right_fore: 1.05 }, frames: 6 },
+	# The final pose: one forearm up, one down, head to the camera, knees
+	# dropped a little. The movie holds on it.
+	{ move: { ..rest, right_upper: quarter, right_fore: F64.pi, left_upper: -quarter, left_fore: 0.0, bounce: 0.03 }, frames: 40 },
+]
+
+snap_frames : I64
+snap_frames = 3
+
+# The move `since` ticks into the routine, and the last move after it ends.
+dance_move : I64 -> Move
+dance_move = |since| {
+	var $before = rest
+	var $start = 0
+	var $found = False
+	var $move = rest
+	for step in routine {
+		if !$found and since < $start + step.frames {
+			$move = snapped({ from: $before, to: step.move, fraction: ramp(since - $start + 1, snap_frames) })
+			$found = True
+		}
+		$before = step.move
+		$start = $start + step.frames
+	}
+	if !$found {
+		$before
+	} else {
+		$move
+	}
+}
+
+snapped : { from : Move, to : Move, fraction : F64 } -> Move
+snapped = |{ from, to, fraction }| {
+	mix = |a, b| a + (b - a) * fraction
+	{
+		left_upper: mix(from.left_upper, to.left_upper),
+		left_fore: mix(from.left_fore, to.left_fore),
+		right_upper: mix(from.right_upper, to.right_upper),
+		right_fore: mix(from.right_fore, to.right_fore),
+		head: mix(from.head, to.head),
+		pop: mix(from.pop, to.pop),
+		turn: mix(from.turn, to.turn),
+		bounce: mix(from.bounce, to.bounce),
+	}
+}
 
 # Every robot is sat down before the first bulb blinks, and is still sitting
 # down one tick before it is seated.

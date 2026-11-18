@@ -10,6 +10,7 @@
 import lib.Shapes
 import Backyard
 import Banner
+import Dancer
 import Dinner
 import Dishes
 import Leaves
@@ -62,6 +63,7 @@ Thanksgiving :: [].{
 		for build in guests {
 			$out = $out.concat(dish_shapes(view, { build, tick, layer: OnTable }))
 		}
+		$out = $out.concat(dancer_shapes(view, tick))
 		$out = $out.concat(Lights.strand_shapes(view, Dinner.bulb_glows(tick)))
 		$out = $out.concat(Banner.banner_shapes(Dinner.banner_drop(tick), { width: width }))
 		$out.concat(Leaves.leaf_shapes(Dinner.gust_seconds(tick), { width: width }))
@@ -81,6 +83,15 @@ robot_shapes = |view, { build, tick }|
 				feet: point,
 				pixels_per_metre,
 			})
+		Err(BehindEye) => []
+	}
+
+# The dancer stands beside the near end of the table, nearer than anything
+# on it, so it is painted after the table and its dishes.
+dancer_shapes : View, I64 -> List(Shapes.Shape)
+dancer_shapes = |view, tick|
+	match view.sighting(Dinner.dancer_feet(tick)) {
+		Ok({ point, pixels_per_metre }) => Dancer.figure_shapes({ pose: Dinner.dancer_pose(tick), feet: point, pixels_per_metre })
 		Err(BehindEye) => []
 	}
 

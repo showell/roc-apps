@@ -25,6 +25,7 @@ Robot :: [].{
 	## goes from 0, standing, to 1, sat on a seat `seat_height` up. `reach` goes
 	## from 0, the right arm at its side, to 1, the right hand held up under a
 	## dish. `eye_glow` goes from 0, eyes dark, to 1, lit like the string lights.
+	## `look` slides the eyes from 0, straight ahead, to 1, to the screen's right.
 	Pose : {
 		phase : F64,
 		stride : F64,
@@ -32,6 +33,7 @@ Robot :: [].{
 		seat_height : F64,
 		reach : F64,
 		eye_glow : F64,
+		look : F64,
 	}
 
 	## Where the right hand is, in metres across from the middle and up from
@@ -122,7 +124,7 @@ Robot :: [].{
 				},
 			),
 		)
-		$out = $out.concat(face_shapes(place, { body, head_bottom, glow: pose.eye_glow }))
+		$out = $out.concat(face_shapes(place, { body, head_bottom, glow: pose.eye_glow, look: pose.look }))
 		$out = $out.concat(arm_shapes(place, { body, pose }))
 		$out
 	}
@@ -513,8 +515,10 @@ face_shapes : Place,
 	body : Proportions,
 	head_bottom : F64,
 	glow : F64,
+	look : F64,
 } -> List(Shapes.Shape)
-face_shapes = |place, { body, head_bottom, glow }| {
+face_shapes = |place, { body, head_bottom, glow, look }| {
+	slide = look * body.head_width * 0.14
 	eye_up = head_bottom + body.head_height * 0.58
 	eye_apart = body.head_width * 0.24
 	eye_radius = body.head_height * 0.14
@@ -529,7 +533,7 @@ face_shapes = |place, { body, head_bottom, glow }| {
 			dot(
 				place,
 				{
-					at: { across: side * eye_apart, up: eye_up },
+					at: { across: slide + side * eye_apart, up: eye_up },
 					radius: eye_radius,
 					fill: eye_fill,
 				},
@@ -556,7 +560,7 @@ face_shapes = |place, { body, head_bottom, glow }| {
 							{
 								center: screen_point(
 									place,
-									{ across: side * eye_apart, up: eye_up },
+									{ across: slide + side * eye_apart, up: eye_up },
 								),
 								radius: Pixels.of(eye_radius * 2.6 * place.scale),
 							},
@@ -654,6 +658,7 @@ standing_still = {
 	seat_height: 0.4,
 	reach: 0.0,
 	eye_glow: 0.0,
+	look: 0.0,
 }
 
 # A raised hand is above the shoulder, and a lowered one below it, for every
