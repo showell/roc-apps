@@ -2,7 +2,10 @@
 
 `roc build web.roc --target=wasm32` (dev or speed) segfaults the compiler on
 `nightly-2026-11-03-34bd006`, and still on `nightly-2026-11-07-ad3a5d2`, for
-three of the tutorial widgets: beacon, bird and sky. `roc check` on the same
+three of the tutorial widgets: beacon, bird and sky. The reduced program
+below still crashes on `nightly-2026-11-15-f25da45`: the fix,
+roc-lang/roc#12925 ("Count a template's direct dispatch targets in its
+closure"), merged as `a4157f3` on 2026-11-16, after that nightly's commit. `roc check` on the same
 apps is clean, and the crash comes about 3 s into the build:
 
 ```
@@ -91,6 +94,9 @@ step. No upstream issue matches (closest: roc-lang/roc #12919, #12194).
 
 Commit `7b2b1527` moved the building of the `FrameView` from each widget into
 `picture_shapes`, which then called `framed_shapes` as a method. The module
-call is the workaround, with a comment beside it, since `rewrite_method_calls.shale` would
+call was the workaround, with a comment beside it, since `rewrite_method_calls.shale` would
 otherwise turn it back into the method form (it judges by `roc check`, which
-passes).
+passes). Commit `9d32926e` (2026-11-08) took the workaround out with the
+fake view: `picture_shapes` now calls `FrameView.painted_shapes` on a plain
+record, so no widget makes the crashing call. Retire this finding at the
+first pin that holds `a4157f3`, once the reduced program runs there.
