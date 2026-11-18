@@ -31,10 +31,9 @@ anyone writing or emitting Roc in this repository. How the Roc is *written*
   (`seed + 0 * List.len(args)`), or `roc check` plays the games -- and on 09-07
   crashed doing it.
 - **A headerless app runs on a built-in echo platform** whose `echo!` writes no
-  newline. Up to 09-22 its allocator mapped a page per allocation (#11335); an
-  allocating program spent most of its time in the kernel, so fasttrack's
-  experiments run on their own platform (`fasttrack/cli/`). From 09-23 the
-  built-in platform is the faster of the two.
+  newline. Up to 09-22 its allocator mapped a page per allocation (#11335), so
+  an allocating program spent most of its time in the kernel. From 09-23 it
+  doesn't.
 - Older nightlies deleted every `roc-*` directory in the system temp root when
   they ran; the 10-29 pin doesn't (`roc check`, `roc test` and a build all left
   one alone). A scratch directory still shouldn't use that prefix. Roc honours

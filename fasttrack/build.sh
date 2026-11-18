@@ -60,10 +60,10 @@ if grep -q -e "✗" -e "●" "$LOG/test.log" || ! grep -q "^All ([0-9]*) tests p
     cat "$LOG/test.log"; echo "tests failed"; exit 1
 fi
 tail -1 "$LOG/test.log"
-# The expects web.roc does not reach: the experiments' Arena, and the
-# ranking behind the square values (Rank, which brings Reach), and the
-# champion's frozen choices (SearchTests).
-for m in Arena Rank SearchTests; do
+# The expects web.roc does not reach: the ranking behind the square values
+# (Rank, which brings Reach), and the champion's frozen choices (SearchTests,
+# which brings Arena).
+for m in Rank SearchTests; do
     (cd "$HERE" && "$ROC" test "$m.roc") > "$LOG/test-$m.log" 2>&1 || true
     if grep -q -e "✗" -e "●" "$LOG/test-$m.log" || ! grep -q "^All ([0-9]*) tests passed" "$LOG/test-$m.log"; then
         cat "$LOG/test-$m.log"; echo "$m tests failed"; exit 1

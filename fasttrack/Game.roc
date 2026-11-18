@@ -24,7 +24,7 @@ Game :: [].{
 	begin_game = |millis, init_setup, teams| begin_dealt(millis, init_setup, teams, 0)
 
 	## A game whose decks are turned `rotation` seats: seat i plays the deck
-	## seat i + rotation would have had (Arena's duplicate deals).
+	## seat i + rotation would have had.
 	begin_dealt : U64, Setup.InitSetup, Type.Teams, U64 -> Type.Game
 	begin_dealt = |millis, init_setup, teams, rotation| {
 		zone_colors = Color.get_zone_colors(num_players)

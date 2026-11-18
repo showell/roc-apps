@@ -4,8 +4,9 @@
 of Steve's ranking (SquareValues.roc), a base bonus of 2500 a step, and the A,
 joker and J hoarded at 1500, 1000, 500 and 0 by pieces home, opponents
 ignored, with a whole-turn search (Search.roc). The experiments below are in
-the order they ran; the tools are the README's. The `exp_*.roc` apps named
-below are in git history (`git log -- 'fasttrack/exp_*.roc'`).
+the order they ran. The harness they ran on (`run_exp.sh`, `cli/`, `Tables`
+and most of `Arena`) and the `exp_*.roc` apps named below are in git history
+(`git log -- fasttrack/run_exp.sh 'fasttrack/exp_*.roc'`).
 
 **The 2500 base bonus was adopted on Steve's call** on pooled evidence (+1
 point a game, 1.9 standard errors over 4000 deals), though on fresh seeds
