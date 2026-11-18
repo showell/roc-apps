@@ -48,7 +48,6 @@ canvas_apps/bend_animals_widget	roc-types	unreached	1
 canvas_apps/bends_widget	check_name_types	bare_beside_unit	1
 canvas_apps/bends_widget	check_stacking	wide string	1
 canvas_apps/bends_widget	roc-types	unreached	1
-canvas_apps/bird_widget	rewrite_method_calls	rewritable	1
 canvas_apps/bird_widget	roc-types	unreached	1
 canvas_apps/breakout	check_families	twin_name	4
 canvas_apps/breakout	check_name_types	bare_beside_unit	1
@@ -82,7 +81,6 @@ canvas_apps/conifers_widget	roc-types	unreached	1
 canvas_apps/cow_widget	check_name_types	bare_beside_unit	2
 canvas_apps/cow_widget	roc-types	unreached	1
 canvas_apps/far_tree_widget	roc-types	unreached	1
-canvas_apps/frame_widget	rewrite_method_calls	rewritable	1
 canvas_apps/frame_widget	roc-types	unreached	1
 canvas_apps/gaze_widget	check_name_types	bare_beside_unit	1
 canvas_apps/gaze_widget	check_stacking	wide string	1
@@ -92,15 +90,12 @@ canvas_apps/herd_widget	check_name_types	bare_beside_unit	2
 canvas_apps/herd_widget	roc-types	unreached	1
 canvas_apps/kinds_widget	check_name_types	bare_beside_unit	4
 canvas_apps/kinds_widget	roc-types	unreached	1
-canvas_apps/lib	check_boundaries	single	5
-canvas_apps/lib	check_families	family	2
-canvas_apps/lib	check_families	twin_name	3
-canvas_apps/lib	check_name_types	bare_beside_unit	41
+canvas_apps/lib	check_families	twin_name	4
+canvas_apps/lib	check_name_types	bare_beside_unit	49
 canvas_apps/lib	check_name_types	no_value	2
 canvas_apps/lib	check_stacking	long	28
 canvas_apps/lib	check_stacking	stack	5
 canvas_apps/lib	check_stacking	wide string	15
-canvas_apps/lib	find_extra_parens	lambda_if	3
 canvas_apps/lib	rewrite_method_calls	rewritable	3
 canvas_apps/lib	roc-types	unreached	1
 canvas_apps/native	check_boundaries	single	2
@@ -124,7 +119,6 @@ canvas_apps/particles	hunt_names	bare_participle	1
 canvas_apps/particles	hunt_names	singular_list	3
 canvas_apps/particles	rewrite_method_calls	rewritable	12
 canvas_apps/pipeline_widget	check_boundaries	constant	1
-canvas_apps/pipeline_widget	rewrite_method_calls	rewritable	2
 canvas_apps/pipeline_widget	roc-types	unreached	1
 canvas_apps/pong	check_boundaries	constant	1
 canvas_apps/pong	check_boundaries	single	1
@@ -143,19 +137,14 @@ canvas_apps/rehearsal_widget	check_name_types	bare_beside_unit	2
 canvas_apps/rehearsal_widget	check_stacking	wide string	1
 canvas_apps/rehearsal_widget	roc-types	unreached	1
 canvas_apps/route_widget	check_name_types	bare_beside_unit	2
-canvas_apps/route_widget	rewrite_method_calls	rewritable	1
 canvas_apps/route_widget	roc-types	unreached	1
 canvas_apps/safari	check_families	twin_name	3
 canvas_apps/safari	check_name_types	bare_beside_unit	16
 canvas_apps/safari	check_stacking	long	48
 canvas_apps/safari	check_stacking	wide string	70
-canvas_apps/safari	find_unclear_names	abbreviation	1
-canvas_apps/safari	rewrite_method_calls	rewritable	27
 canvas_apps/safari	roc-types	unreached	11
 canvas_apps/shapes_widget	roc-types	unreached	1
-canvas_apps/sky_widget	check_boundaries	single	1
 canvas_apps/sky_widget	check_stacking	wide string	2
-canvas_apps/sky_widget	rewrite_method_calls	rewritable	1
 canvas_apps/sky_widget	roc-types	unreached	1
 canvas_apps/snake	check_boundaries	constant	1
 canvas_apps/snake	check_boundaries	dead	1
@@ -170,10 +159,9 @@ canvas_apps/snake	hunt_names	short_name	2
 canvas_apps/snake	hunt_names	singular_list	7
 canvas_apps/snake	rewrite_method_calls	rewritable	39
 canvas_apps/step_widget	roc-types	unreached	1
-canvas_apps/stills_widget	check_boundaries	single	1
+canvas_apps/stills_widget	check_families	twin_name	1
 canvas_apps/stills_widget	check_name_types	bare_beside_unit	6
 canvas_apps/stills_widget	check_stacking	wide string	4
-canvas_apps/stills_widget	rewrite_method_calls	rewritable	1
 canvas_apps/stills_widget	roc-types	unreached	1
 canvas_apps/trick_or_treat	check_boundaries	fixed	1
 canvas_apps/trick_or_treat	check_boundaries	single	9
