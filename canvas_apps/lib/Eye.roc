@@ -60,7 +60,7 @@ Eye :: [].{
 	## is in front of the eye, and projected. Empty when none of it is.
 	screen_corners : Eye.Eye, List(Eye.At) -> List(Point)
 	screen_corners = |eye, points|
-		points_in_front(turned_points(eye, points)).map(
+		points_in_front(points.map(|p| turn(eye, p))).map(
 			|point| {
 				spot = flat(eye, point)
 				Point.at(spot.x, spot.y)
@@ -87,9 +87,6 @@ flat = |eye, p| {
 	x: eye.width / 2.0 + p.right / p.forward * eye.focal,
 	y: eye.height / 2.0 - (p.height - eye.eye_height) / p.forward * eye.focal,
 }
-
-turned_points : Eye.Eye, List(Eye.At) -> List(Eye.At)
-turned_points = |eye, points| points.map(|p| turn(eye, p))
 
 # A polygon is cut rather than dropped. Dropping one the moment a corner goes
 # behind the eye would pop a whole house off the screen while most of it is

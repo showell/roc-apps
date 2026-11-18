@@ -30,7 +30,7 @@ QuotedColor := [].{
 				from : U64,
 				to : U64,
 				indent : U64,
-				end_col : U64,
+				end_column : U64,
 			},
 		),
 		Cut(U64),
@@ -88,7 +88,7 @@ part_of = |text|
 		Ok(Cut(tabs))
 	} else {
 		match text.split_on(",").map_try(U64.from_str) {
-			Ok([from, to, indent, end_col]) => Ok(Lines({ from, to, indent, end_col }))
+			Ok([from, to, indent, end_column]) => Ok(Lines({ from, to, indent, end_column }))
 			_ => Err(NotAPart)
 		}
 	}
@@ -135,7 +135,7 @@ part_colored = |part, file| match part {
 			html: "${indent}<span class=\"syn-comment\">${cut_text}</span>",
 		})
 	}
-	Lines({ from, to, indent, end_col }) => {
+	Lines({ from, to, indent, end_column }) => {
 		if from < 1 or to < from or to + 1 >= file.starts.len() {
 			Err("lines ${from.to_str()} to ${to.to_str()}, which the file doesn't have")
 		} else {
@@ -148,7 +148,7 @@ part_colored = |part, file| match part {
 				line_end = (file.starts.get(number) ?? crash "QuotedColor: a line inside the file has its end") - 1
 				start = (line_start + indent).min(line_end)
 				end = if number == to {
-					(line_start + end_col - 1).min(line_end)
+					(line_start + end_column - 1).min(line_end)
 				} else {
 					line_end
 				}
@@ -175,7 +175,7 @@ expect QuotedColor.notes_of("3\tsources/1.roc\t19,19,1,12\n4\tsources/2.roc\tcut
 				from: 19,
 				to: 19,
 				indent: 1,
-				end_col: 12,
+				end_column: 12,
 			}),
 		],
 	},
@@ -188,7 +188,7 @@ expect QuotedColor.notes_of("3\tsources/1.roc\t19,19,1,12\n4\tsources/2.roc\tcut
 				from: 1,
 				to: 2,
 				indent: 0,
-				end_col: 5,
+				end_column: 5,
 			}),
 		],
 	},
@@ -214,7 +214,7 @@ expect
 						from: 3,
 						to: 4,
 						indent: 2,
-						end_col: 9,
+						end_column: 9,
 					}),
 					Cut(1),
 				],
@@ -239,7 +239,7 @@ expect
 						from: 6,
 						to: 7,
 						indent: 0,
-						end_col: 1,
+						end_column: 1,
 					}),
 				],
 			},

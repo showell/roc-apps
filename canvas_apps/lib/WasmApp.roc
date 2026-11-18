@@ -2,7 +2,8 @@
 ## for, which is the same for every app. The platform asks for eleven
 ## functions over a boxed model: box it, step it with the tick's keys, answer
 ## its shapes, and say which tones went off. `program` takes a CanvasApp and
-## names none, so an app's wasm file only names its app.
+## names none, so an app's wasm file only names its app. It has no
+## `canvas_app` of its own, as an app module does: it takes one.
 import CanvasApp
 import Input
 import Mouse

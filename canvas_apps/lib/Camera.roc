@@ -29,6 +29,7 @@ Camera :: [].{
 		zoom : F32,
 	}.{
 
+		## The camera turned to `new_rotation` degrees, which must be finite.
 		with_rotation : Camera2D, F32 -> Camera2D
 		with_rotation = |camera, new_rotation| { ..camera, rotation: finite_scalar(new_rotation) }
 
@@ -143,7 +144,7 @@ finite_scalar = |value|
 finite_vec : Math.Vec2 -> Math.Vec2
 finite_vec = |v| { x: finite_scalar(v.x), y: finite_scalar(v.y) }
 
-# A zoom of zero has no inverse, so screen_to_world could not undo it.
+## A zoom of zero has no inverse, so screen_to_world could not undo it.
 invertible_zoom : F32 -> F32
 invertible_zoom = |zoom|
 	if zoom == 0 {

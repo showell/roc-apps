@@ -6,6 +6,8 @@
 ##
 ## It is a record, not a module found by name. Each app says which value it is
 ## out loud and hands it to a runner, and a runner is a function of one.
+## So this module has no `canvas_app` of its own, as each app module does:
+## it is the type that every app's `canvas_app` is.
 import Shapes
 import Input
 

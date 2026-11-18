@@ -323,6 +323,7 @@ cursor_shapes = |job, clock| {
 	).prepend(cursor)
 }
 
+## The dot that marks where a curve stands at the cursor.
 curve_dot : Point, RgbColor -> Shapes.Shape
 curve_dot = |center, color|
 	Disc({

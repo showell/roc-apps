@@ -60,7 +60,7 @@ mask = 4294967295
 bits : Random.State -> U64
 bits = |Random.State.(n)| n
 
-# The next state, and the 32 bits it carries.
+## The next state, and the 32 bits it carries.
 turn : Random.State -> Random.State
 turn = |state| Random.State.((bits(state) * 1664525 + 1013904223).bitwise_and(mask))
 

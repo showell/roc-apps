@@ -25,9 +25,11 @@ Math :: [].{
 	circle : Math.Vec2, F32 -> Math.Circle
 	circle = |center, radius| { center, radius }
 
+	## The sum of two vectors.
 	add : Math.Vec2, Math.Vec2 -> Math.Vec2
 	add = |a, b| { x: a.x + b.x, y: a.y + b.y }
 
+	## `v` stretched by `k` on both axes.
 	scale : Math.Vec2, F32 -> Math.Vec2
 	scale = |v, k| { x: v.x * k, y: v.y * k }
 
