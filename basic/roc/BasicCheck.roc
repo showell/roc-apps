@@ -18,14 +18,14 @@ import Parse
 import Vec
 
 main! = |args| {
-	dialect = List.get(args, 0) ?? ""
-	listing = CommandLine.clean(List.get(args, 1) ?? "")
-	replies = CommandLine.lines_of(CommandLine.clean(List.get(args, 2) ?? ""))
+	dialect = args.get(0) ?? ""
+	listing = CommandLine.clean(args.get(1) ?? "")
+	replies = CommandLine.lines_of(CommandLine.clean(args.get(2) ?? ""))
 	l = Machine.loaded(listing, dialect == "ecma")
 	r = batch(l.pg, to_effect(l.pg, { m: Machine.started(l, replies, 1), checked: 0 }), 10)
 	# **A CHECK THAT NEVER RAN CHECKED NOTHING**: `checked` is how many fast
 	# answers were compared.
-	dbg { steps: r.m.steps, statements: List.len(l.pg.prog), checked: r.checked }
+	dbg { steps: r.m.steps, statements: l.pg.prog.len(), checked: r.checked }
 	echo!(Machine.ended(l.pg, r.m))
 	Ok({})
 }
@@ -65,7 +65,7 @@ batch = |pg, start, tanks| {
 # **THE FULL EVALUATOR'S RUN IS THE MACHINE'S LAST USE**, so it writes in
 # place, and only the fast path's run copies what it writes.
 step : Parse.Program, Machine.M -> { m : Machine.M, checked : U64 }
-step = |pg, m| match List.get(pg.prog, m.pc) {
+step = |pg, m| match pg.prog.get(m.pc) {
 	Ok(SetNum(slot, e)) => match Machine.fast(m, e) {
 		Got(_) => agree(pg, m.pc, Machine.do_set_num(pg, m, slot, e), Machine.do_set_num_slow(pg, m, slot, e), Var(slot))
 		Slow => { m: Machine.step(pg, m), checked: 0 }
@@ -96,7 +96,7 @@ agree = |pg, pc, by_fast, by_full, look| {
 	if a == b {
 		{ m: by_fast, checked: 1 }
 	} else {
-		why = Str.join_with(["fast differs on line ", I64.to_str(Machine.line_of(pg, pc)), ": fast [", shown(a), "] full [", shown(b), "]"], "")
+		why = Str.join_with(["fast differs on line ", Machine.line_of(pg, pc).to_str(), ": fast [", shown(a), "] full [", shown(b), "]"], "")
 		{ m: { ..by_full, done: True, gap: True, err: why }, checked: 1 }
 	}
 }
@@ -132,7 +132,7 @@ seen : Machine.M, [Var(U64), Cells(U64, I64, I64, I64, I64), Control] -> Seen
 seen = |m, look| {
 	d = Machine.devices_of(m)
 	named = match look {
-		Var(slot) => { one: F64.to_bits(Vec.get(m.nums, slot, 0.0)), two: 0 }
+		Var(slot) => { one: Vec.get(m.nums, slot, 0.0).to_bits(), two: 0 }
 		Cells(slot, i, j, k, n) => { one: cell(m, slot, i, j), two: cell(m, slot, k, n) }
 		Control => { one: 0, two: 0 }
 	}
@@ -145,13 +145,13 @@ seen = |m, look| {
 		pause: m.pause,
 		seed: m.seed,
 		mtat: m.mtat,
-		rlast: F64.to_bits(m.rlast),
+		rlast: m.rlast.to_bits(),
 		arrays: m.arr_count,
-		outs: List.len(d.out),
-		last: if List.is_empty(d.out) {
+		outs: d.out.len(),
+		last: if d.out.is_empty() {
 			""
 		} else {
-			List.get(d.out, List.len(d.out) - 1) ?? ""
+			d.out.get(d.out.len() - 1) ?? ""
 		},
 		col: d.col,
 		rdepth: m.rdepth,
@@ -168,7 +168,7 @@ cell = |m, slot, i, j| {
 	if c < 0 {
 		18446744073709551615
 	} else {
-		F64.to_bits(Vec.at((Vec.at(m.arrs, slot)).cells, I64.to_u64_wrap(c)))
+		Vec.at((Vec.at(m.arrs, slot)).cells, c.to_u64_wrap()).to_bits()
 	}
 }
 
@@ -177,7 +177,7 @@ shown = |s|
 	Str.join_with(
 		[
 			"pc",
-			U64.to_str(s.pc),
+			s.pc.to_str(),
 			"done",
 			flag(s.done),
 			"err",
@@ -187,27 +187,27 @@ shown = |s|
 			"waiting",
 			flag(s.waiting),
 			"pause",
-			I64.to_str(s.pause),
+			s.pause.to_str(),
 			"seed",
-			U64.to_str(s.seed),
+			s.seed.to_str(),
 			"mtat",
-			U64.to_str(s.mtat),
+			s.mtat.to_str(),
 			"rlast",
-			F64.to_str(F64.from_bits(s.rlast)),
+			F64.from_bits(s.rlast).to_str(),
 			"arrays",
-			U64.to_str(s.arrays),
+			s.arrays.to_str(),
 			"out",
-			U64.to_str(s.outs),
+			s.outs.to_str(),
 			s.last,
 			"col",
-			I64.to_str(s.col),
+			s.col.to_str(),
 			"rdepth",
-			U64.to_str(s.rdepth),
+			s.rdepth.to_str(),
 			"ldepth",
-			U64.to_str(s.ldepth),
+			s.ldepth.to_str(),
 			"named",
-			F64.to_str(F64.from_bits(s.one)),
-			F64.to_str(F64.from_bits(s.two)),
+			F64.from_bits(s.one).to_str(),
+			F64.from_bits(s.two).to_str(),
 		],
 		" ",
 	)

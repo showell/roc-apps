@@ -13,9 +13,9 @@ import CommandLine
 import Machine
 
 main! = |args| {
-	dialect = List.get(args, 0) ?? ""
-	listing = CommandLine.clean(List.get(args, 1) ?? "")
-	replies = CommandLine.lines_of(CommandLine.clean(List.get(args, 2) ?? ""))
+	dialect = args.get(0) ?? ""
+	listing = CommandLine.clean(args.get(1) ?? "")
+	replies = CommandLine.lines_of(CommandLine.clean(args.get(2) ?? ""))
 	# Every batch run starts from the same seed, so its transcript repeats.
 	seed = 1
 	r = Machine.run_measured(listing, replies, seed, dialect == "ecma")
