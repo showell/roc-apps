@@ -1,5 +1,5 @@
-published 2026-11-16T19:53:13Z
+published 2026-11-18T17:41:26Z
 roc nightly-2026-11-03-34bd006
-commit d98f5b71
-roc-apps d98f5b71
-sha256 5eb4d4bb3b136888  1311929 bytes  solver.wasm
+commit 23067a06
+roc-apps 23067a06
+sha256 809b2eb756e9d4b6  1311913 bytes  solver.wasm
