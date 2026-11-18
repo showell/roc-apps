@@ -42,7 +42,11 @@ zone_lines = |values, { title, zone }| {
 }
 
 main! = |_args| {
-	ranking = Rank.places(colors, "red", "B1")
+	ranking = Rank.places({
+		zone_colors: colors,
+		color: "red",
+		peak: "B1",
+	})
 	values = ranking.place.map(|place| points_for(ranking.worst, place))
 	zones = zone_titles.map_with_index(|title, zone| zone_lines(values, { title, zone }))
 	bullseye = values.get(4 * Board.per_zone) ?? crash "gen_square_values: Rank.places ranks the bullseye"

@@ -111,19 +111,19 @@ Rank :: [].{
 
 	## Every square a piece of `color` can reach the peak from, best first
 	## (ties in board order), over a color's grid built once (Reach.grid_moves).
-	ranked_rows_in : List(Reach.Move), List(Str), Str, Str -> List(Rank.Row)
-	ranked_rows_in = |grid_moves, zone_colors, color, peak| {
+	ranked_rows_in : List(Reach.Move), Reach.Target -> List(Rank.Row)
+	ranked_rows_in = |grid_moves, target| {
 		tables = stages.map(
 			|st| Reach.routes(
 				grid_moves,
-				{ zone_colors, color, peak },
+				target,
 				{ hand: st.hand, face: FreeFace },
 			),
 		)
-		rows = Board.all_locs(zone_colors).map_with_index(
+		rows = Board.all_locs(target.zone_colors).map_with_index(
 			|loc, i| {
 				stage = tables.map(|t| t.get(i) ?? { cards: Board.far, routes: 0 })
-				id = if loc.zone == NormalColor(color) {
+				id = if loc.zone == NormalColor(target.color) {
 					loc.id
 				} else {
 					""
@@ -163,18 +163,13 @@ Rank :: [].{
 	## the peak. `worst` is the place of the last square.
 	Places : { place : List(U64), worst : U64 }
 
-	places : List(Str), Str, Str -> Rank.Places
-	places = |zone_colors, color, peak| places_in(
-		Reach.grid_moves(zone_colors, color),
-		zone_colors,
-		color,
-		peak,
-	)
+	places : Reach.Target -> Rank.Places
+	places = |target| places_in(Reach.grid_moves(target.zone_colors, target.color), target)
 
-	places_in : List(Reach.Move), List(Str), Str, Str -> Rank.Places
-	places_in = |grid_moves, zone_colors, color, peak| {
-		order = ranked_rows_in(grid_moves, zone_colors, color, peak)
-		start = List.repeat(U64.highest, Board.all_locs(zone_colors).len())
+	places_in : List(Reach.Move), Reach.Target -> Rank.Places
+	places_in = |grid_moves, target| {
+		order = ranked_rows_in(grid_moves, target)
+		start = List.repeat(U64.highest, Board.all_locs(target.zone_colors).len())
 		settled = order.map_with_index(|row, i| { row, i }).fold(
 			{
 				place: start,
@@ -225,7 +220,13 @@ places_by_id = |p| |id| p.place.get(
 # Red's places to B3: B4 first (a base square), then B3, B2 and B1; R4 above
 # R3; DS above R4; the pen squares share one place.
 expect {
-	at = places_by_id(Rank.places(colors, "red", "B3"))
+	at = places_by_id(
+		Rank.places({
+			zone_colors: colors,
+			color: "red",
+			peak: "B3",
+		}),
+	)
 	at("B4") == 0 and at("B3") == 1 and at("B2") == 2 and at("B1") == 3 and at("DS") < at("R4") and at("R4") < at("R3") and at("HP1") == at("HP4")
 }
 
@@ -233,6 +234,12 @@ expect {
 # ways in (2, or a face card then A, J, Q or K), above DS, with four (A, J,
 # Q, K -- no joker).
 expect {
-	at = places_by_id(Rank.places(colors, "red", "B1"))
+	at = places_by_id(
+		Rank.places({
+			zone_colors: colors,
+			color: "red",
+			peak: "B1",
+		}),
+	)
 	at("B4") == 0 and at("B3") == 1 and at("B2") == 2 and at("B1") == 3 and at("BR") == 4 and at("DS") == 5
 }

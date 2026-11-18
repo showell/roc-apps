@@ -31,8 +31,13 @@ Routes :: [].{
 	longest = 10
 
 	## The squares after `r`, for a piece whose own zone is zone 0.
-	next : U64, Routes.FastTrackRule, Routes.PenRule, Routes.BullseyeRule -> List(U64)
-	next = |r, fast, pen, bullseye|
+	next : U64,
+	{
+		fast : Routes.FastTrackRule,
+		pen : Routes.PenRule,
+		bullseye : Routes.BullseyeRule,
+	} -> List(U64)
+	next = |r, { fast, pen, bullseye }|
 		if r == Board.bullseye {
 			if bullseye == LeaveBullseye {
 				[Board.square_at(3, Board.ft)]
@@ -123,13 +128,13 @@ Routes :: [].{
 			}
 		}
 
-	## Every walk of `n` steps from `r`, depth first.
-	walks : (U64 -> List(U64)), U64, U64 -> List(List(U64))
-	walks = |step, n, r|
+	## Every walk of `n` steps from `r`, each taken by `step`, depth first.
+	walks : U64, { step : U64 -> List(U64), n : U64 } -> List(List(U64))
+	walks = |r, { step, n }|
 		if n == 0 {
 			[[]]
 		} else {
-			step(r).join_map(|s| walks(step, n - 1, s).map(|rest| rest.prepend(s)))
+			step(r).join_map(|s| walks(s, { step, n: n - 1 }).map(|rest| rest.prepend(s)))
 		}
 
 	## Indexed by `r * (longest + 1) + n`.
@@ -152,14 +157,14 @@ Routes :: [].{
 				} else {
 					StayInBullseye
 				}
-				step = |s| next(s, fast, pen, bullseye)
-				Board.indices(longest + 1).map(|n| walks(step, n, r))
+				step = |s| next(s, { fast, pen, bullseye })
+				Board.indices(longest + 1).map(|n| walks(r, { step, n }))
 			},
 		)
 
 	backward_walks_by_start : List(List(List(U64)))
 	backward_walks_by_start = Board.squares.join_map(
-		|r| Board.indices(longest + 1).map(|n| walks(prev_squares, n, r)),
+		|r| Board.indices(longest + 1).map(|n| walks(r, { step: prev_squares, n })),
 	)
 
 	forward_walks : U64, U64 -> List(List(U64))
