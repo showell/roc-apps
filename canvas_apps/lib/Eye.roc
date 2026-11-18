@@ -18,12 +18,22 @@
 import Point
 
 Eye :: [].{
-	Eye : { width : F64, height : F64, eye_height : F64, focal : F64, heading : F64 }
+	Eye : {
+		width : F64,
+		height : F64,
+		eye_height : F64,
+		focal : F64,
+		heading : F64,
+	}
 
 	## A place on the screen in plain pixels, for the walk's own arithmetic.
 	OnScreen : { x : F64, y : F64 }
 
-	At : { right : F64, forward : F64, height : F64 }
+	At : {
+		right : F64,
+		forward : F64,
+		height : F64,
+	}
 
 	## Nothing nearer than this is drawn: at the eye it would be infinite.
 	near : F64
@@ -50,7 +60,7 @@ Eye :: [].{
 	## is in front of the eye, and projected. Empty when none of it is.
 	screen_corners : Eye.Eye, List(Eye.At) -> List(Point)
 	screen_corners = |eye, points|
-		clipped(turned(eye, points)).map(
+		points_in_front(turned_points(eye, points)).map(
 			|point| {
 				spot = flat(eye, point)
 				Point.at(spot.x, spot.y)
@@ -64,7 +74,11 @@ turn : Eye.Eye, Eye.At -> Eye.At
 turn = |eye, p| {
 	c = eye.heading.cos()
 	s = eye.heading.sin()
-	{ right: p.right * c - p.forward * s, forward: p.right * s + p.forward * c, height: p.height }
+	{
+		right: p.right * c - p.forward * s,
+		forward: p.right * s + p.forward * c,
+		height: p.height,
+	}
 }
 
 # A point the eye has already turned, on the screen.
@@ -74,15 +88,15 @@ flat = |eye, p| {
 	y: eye.height / 2.0 - (p.height - eye.eye_height) / p.forward * eye.focal,
 }
 
-turned : Eye.Eye, List(Eye.At) -> List(Eye.At)
-turned = |eye, points| points.map(|p| turn(eye, p))
+turned_points : Eye.Eye, List(Eye.At) -> List(Eye.At)
+turned_points = |eye, points| points.map(|p| turn(eye, p))
 
 # A polygon is cut rather than dropped. Dropping one the moment a corner goes
 # behind the eye would pop a whole house off the screen while most of it is
 # still in the frame, so this walks the boundary and puts a new corner on the
 # near plane wherever an edge crosses it.
-clipped : List(Eye.At) -> List(Eye.At)
-clipped = |points| {
+points_in_front : List(Eye.At) -> List(Eye.At)
+points_in_front = |points| {
 	neighbours = points.drop_first(1).concat(points.take_first(1))
 	var $out = List.with_capacity(points.len() + 2)
 	for (a, b) in points.map2(neighbours, |a, b| (a, b)) {
@@ -103,5 +117,9 @@ clipped = |points| {
 crossing : Eye.At, Eye.At -> Eye.At
 crossing = |a, b| {
 	t = (Eye.near - a.forward) / (b.forward - a.forward)
-	{ right: a.right + (b.right - a.right) * t, forward: Eye.near, height: a.height + (b.height - a.height) * t }
+	{
+		right: a.right + (b.right - a.right) * t,
+		forward: Eye.near,
+		height: a.height + (b.height - a.height) * t,
+	}
 }
