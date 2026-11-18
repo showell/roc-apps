@@ -43,7 +43,8 @@
 -- once, so a check across files sees the project's own files and no other
 -- app's. The findings are counted per app: a folder under canvas_apps/ or
 -- findings/, else the top-level folder. Each finding line goes to
--- FINDINGS_LOG, and the counts are compared with the baseline, each moved
+-- FINDINGS_LOG, the count's own too (each call it leaves or leaves
+-- unsettled, with its reason), and the counts are compared with the baseline, each moved
 -- count printed. `baseline=write` writes the counts as the new baseline.
 --
 -- An app's own tables and exemptions are its lints', asked of the lint
@@ -1069,6 +1070,11 @@ function count_one(item)
     print("CANT\t" .. f[1] .. " on " .. f[2] .. ": rewrite_method_calls " .. why)
   else
     print("RW\t" .. f[1] .. "\t" .. f[2] .. "\t" .. m.groups[1] .. "\t" .. m.groups[2] .. "\t" .. m.groups[3] .. "\t" .. m.groups[4] .. "\t" .. r.ms)
+    -- Each call the run leaves or leaves unsettled, `path:line: Module.fn:
+    -- why`, for the findings log.
+    for l in own do
+      if re_find(l, "^[^ :]+\\.roc:[0-9]+: ") ~= nil then print("RWF\t" .. f[1] .. "\t" .. f[2] .. "\t" .. l) end
+    end
   end
   return r.cpu_ms
 end
@@ -1077,7 +1083,8 @@ end
 -- `unit<tab>root<tab>files<tab>types file` of the work file, the root's
 -- types read from the file the types stage kept. It prints
 -- `RW<tab>unit<tab>root<tab>files<tab>proven<tab>unsettled<tab>left<tab>ms`
--- a run, and `CANT<tab>why` for one that couldn't run.
+-- a run, then `RWF<tab>unit<tab>root<tab>line` for each call it lists, and
+-- `CANT<tab>why` for one that couldn't run.
 function count_part(work)
   local cpu = 0
   for item in lines(trim(read(work))) do
@@ -1106,6 +1113,7 @@ function full_count(st, reach, hashes, id)
   local th = hashes_of(keys(roots))
   if th == nil then fail("quality: git couldn't hash the kept types of the count's roots") end
   local found = {}
+  local call_lines = {}
   local keys_of = {}
   local misses = {}
   for j in jobs do
@@ -1116,7 +1124,9 @@ function full_count(st, reach, hashes, id)
     local key = join(ls, "\n")
     local hit = cache_read("count", name, key)
     if hit ~= nil then
-      push(found, trim(hit))
+      for l in lines(trim(hit)) do
+        if starts_with(l, "RWF\t") then push(call_lines, l) elseif starts_with(l, "RW\t") then push(found, l) end
+      end
     else
       keys_of[name] = key
       -- A count's run costs about a twentieth of a second a file.
@@ -1127,11 +1137,21 @@ function full_count(st, reach, hashes, id)
   if #misses > 0 then
     res = run_items("count", misses, {})
     for c in res.cant do push(st.cant, c) end
+    local calls_of = {}
+    for l in lines(res.out) do
+      if starts_with(l, "RWF\t") then
+        local f = split(l, "\t")
+        push_at(calls_of, f[2] .. "@" .. f[3], l)
+        push(call_lines, l)
+      end
+    end
     for l in lines(res.out) do
       if starts_with(l, "RW\t") then
         local f = split(l, "\t")
         local name = f[2] .. "@" .. f[3]
-        cache_write("count", name, keys_of[name], l .. "\n")
+        local value = {l}
+        for c in get(calls_of, name, {}) do push(value, c) end
+        cache_write("count", name, keys_of[name], join(value, "\n") .. "\n")
         push(found, l)
       end
     end
@@ -1148,6 +1168,10 @@ function full_count(st, reach, hashes, id)
     files = files + tonumber(f[4])
     proven = proven + tonumber(f[5])
     unsettled = unsettled + tonumber(f[6])
+  end
+  for l in sort(call_lines) do
+    local f = split(l, "\t")
+    push(st.log, join(drop(f, 3), "\t"))
   end
   print("rewrite_method_calls: " .. proven .. " calls the types prove could be method calls, in " .. files .. " files, " .. #jobs .. " runs; " .. unsettled .. " the types leave unsettled, and no trial decides them")
   return nil
