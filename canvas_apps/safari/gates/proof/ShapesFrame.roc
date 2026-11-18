@@ -71,7 +71,7 @@ compare = |tour| {
 		{ roll: SafariFrame.screen_roll(view.roll), shapes: shapes_of_cut(cut_shapes) },
 	)
 	n = a.len()
-	var $differ = 0
+	var $differ = 0.U64
 	for k in 0..<n {
 		if a.get(k) != b.get(k) {
 			$differ = $differ + 1

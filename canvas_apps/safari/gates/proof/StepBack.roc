@@ -15,10 +15,10 @@ import game.Tour
 
 main! = |_args| {
 	var $out = ""
-	var $bad = 0
+	var $bad = 0.I64
 	var $tour = Tour.initial
 	var $k = 0
-	for steps in [10, 1000, 3000, 5000] {
+	for steps in [10.I64, 1000, 3000, 5000] {
 		while $k < steps {
 			$tour = $tour.step_forward()
 			$k = $k + 1
