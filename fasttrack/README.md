@@ -102,7 +102,7 @@ Built on `nightly-2026-09-07-14d9829`, now on the nightly in
 
 | what | now | workaround |
 |---|---|---|
-| LLVM ends a `while $next != $d` loop after one pass when the pass is a local closure | **still wrong on 09-23** | the pass reports whether it changed anything (`Reach.fewest_over`) |
+| LLVM ends a `while $next != $d` loop after one pass when the pass is a local closure | **still wrong on 09-23** | the pass reports whether it changed anything (`Reach.bests_over`) |
 | the dev backend dropped a variable from an interpolated string in a closure | not reproduced small | `Str.concat` (`Game.winner`) |
 | an or-pattern binding a variable in a lambda: `roc check` ran out of memory | not reproduced small | one arm each |
 | a literal list of Strategy records crashed `roc check` | not reproduced small | `List.map` |

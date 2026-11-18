@@ -2,9 +2,10 @@
 #
 # The board's graph as a piece sees it from its own zone (Board.relative):
 # the rules of LegalMove.elm's getNextLocs and getPrevLocs, written for red
-# and so for every color. From a square, `forward` and `backward` hold every
-# walk of 1 to 10 steps, each the squares it passes through ending where it
-# lands, in the order Elm's graph walk (depth first) finds them. A walk that
+# and so for every color. From a square, `forward_walks_by_start` and
+# `backward_walks_by_start` hold every walk of 1 to 10 steps, each the
+# squares it passes through ending where it lands, in the order Elm's graph
+# walk (depth first) finds them. A walk that
 # reaches the same square two ways is two walks: the rules count them.
 #
 # The board decides which walks are open (a piece may not pass or land on its
@@ -96,8 +97,8 @@ Routes :: [].{
 
 	## The squares before `r`, walking backwards: none from the pen, the base
 	## or the bullseye; R4 back to the fast-track square of the zone before.
-	prev : U64 -> List(U64)
-	prev = |r|
+	prev_squares : U64 -> List(U64)
+	prev_squares = |r|
 		if r == Board.bullseye or Board.is_pen(r) or Board.is_base(r) {
 			[]
 		} else {
@@ -132,8 +133,8 @@ Routes :: [].{
 		}
 
 	## Indexed by `r * (longest + 1) + n`.
-	forward : List(List(List(U64)))
-	forward =
+	forward_walks_by_start : List(List(List(U64)))
+	forward_walks_by_start =
 		Board.squares.join_map(
 			|r| {
 				fast = if r != Board.bullseye and Board.local(r) == Board.ft {
@@ -156,14 +157,16 @@ Routes :: [].{
 			},
 		)
 
-	backward : List(List(List(U64)))
-	backward = Board.squares.join_map(|r| Board.indices(longest + 1).map(|n| walks(prev, n, r)))
+	backward_walks_by_start : List(List(List(U64)))
+	backward_walks_by_start = Board.squares.join_map(
+		|r| Board.indices(longest + 1).map(|n| walks(prev_squares, n, r)),
+	)
 
 	forward_walks : U64, U64 -> List(List(U64))
-	forward_walks = |r, n| forward.get(r * (longest + 1) + n) ?? []
+	forward_walks = |r, n| forward_walks_by_start.get(r * (longest + 1) + n) ?? []
 
 	backward_walks : U64, U64 -> List(List(U64))
-	backward_walks = |r, n| backward.get(r * (longest + 1) + n) ?? []
+	backward_walks = |r, n| backward_walks_by_start.get(r * (longest + 1) + n) ?? []
 }
 
 # From L1, 8 steps: L2 L3 L4 FT, then the next zone's R4 R3 R2 R1.

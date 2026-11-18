@@ -12,7 +12,7 @@ Color :: [].{
 	].take_first(num_players)
 
 	rotate_list : U64, List(a) -> List(a)
-	rotate_list = |idx, lst| lst.drop_first(idx).concat(lst.take_first(idx))
+	rotate_list = |idx, colors| colors.drop_first(idx).concat(colors.take_first(idx))
 
 	## The color `step` places after this one. A color that is not there
 	## counts as index -1 going forward and 1 going back, as in Elm.

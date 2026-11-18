@@ -69,30 +69,30 @@ Board :: [].{
 	is_track = |s| !is_pen(s) and !is_base(s)
 
 	## A color's pen squares, HP1 to HP4, and its base squares, B1 to B4.
-	pen_of : U64 -> List(U64)
-	pen_of = |c| [
+	pen_squares : U64 -> List(U64)
+	pen_squares = |c| [
 		square_at(c, 0),
 		square_at(c, 1),
 		square_at(c, 2),
 		square_at(c, 3),
 	]
 
-	base_of : U64 -> List(U64)
-	base_of = |c| [
+	base_squares : U64 -> List(U64)
+	base_squares = |c| [
 		square_at(c, 4),
 		square_at(c, 5),
 		square_at(c, 6),
 		square_at(c, 7),
 	]
 
-	## The translation table: `relative_table` holds, for each color, every
+	## The translation table: `relative_rows` holds, for each color, every
 	## square as that color sees it (its own zone first), and
-	## `absolute_table` the way back. Red's rows are the identity.
-	relative_table : List(List(U64))
-	relative_table = [0, 1, 2, 3].map(|c| squares.map(|s| turn(s, zones - c)))
+	## `absolute_rows` the way back. Red's rows are the identity.
+	relative_rows : List(List(U64))
+	relative_rows = [0, 1, 2, 3].map(|c| squares.map(|s| turn(s, zones - c)))
 
-	absolute_table : List(List(U64))
-	absolute_table = [0, 1, 2, 3].map(|c| squares.map(|r| turn(r, c)))
+	absolute_rows : List(List(U64))
+	absolute_rows = [0, 1, 2, 3].map(|c| squares.map(|r| turn(r, c)))
 
 	## 0 through 88.
 	squares : List(U64)
@@ -119,17 +119,11 @@ Board :: [].{
 
 	## Square `s` as color `c` sees it.
 	relative : U64, U64 -> U64
-	relative = |
-		c,
-		s,
-	| (relative_table.get(c) ?? []).get(s) ?? crash "Board.relative: no such square"
+	relative = |c, s| (relative_rows.get(c) ?? []).get(s) ?? crash "Board.relative: no such square"
 
 	## The square color `c` calls `r`.
 	absolute : U64, U64 -> U64
-	absolute = |
-		c,
-		r,
-	| (absolute_table.get(c) ?? []).get(r) ?? crash "Board.absolute: no such square"
+	absolute = |c, r| (absolute_rows.get(c) ?? []).get(r) ?? crash "Board.absolute: no such square"
 
 	## A color's place in the game's color order.
 	color_index : List(Str), Str -> U64
@@ -164,10 +158,10 @@ Board :: [].{
 	all_locs = |zone_colors| squares.map(|s| loc_of(zone_colors, s))
 }
 
-expect Board.relative(
+expect Board.relative(1, Board.square_at(1, 0)) == 0 and Board.relative(
 	1,
-	Board.square_at(1, 0),
-) == 0 and Board.relative(1, Board.square_at(0, 0)) == 3 * Board.per_zone and Board.relative(0, 57) == 57
+	Board.square_at(0, 0),
+) == 3 * Board.per_zone and Board.relative(0, 57) == 57
 expect Board.absolute(
 	2,
 	Board.relative(2, 40),
@@ -175,6 +169,9 @@ expect Board.absolute(
 expect {
 	colors = ["red", "blue", "green", "purple"]
 	Board.index_of(colors, { zone: NormalColor("green"), id: "L0" }) == Board.square_at(2, Board.l0)
-		and Board.loc_of(colors, Board.square_at(3, Board.ft)) == { zone: NormalColor("purple"), id: "FT" }
+		and Board.loc_of(colors, Board.square_at(3, Board.ft)) == {
+			zone: NormalColor("purple"),
+			id: "FT",
+		}
 		and Board.all_locs(colors).len() == Board.count
 }

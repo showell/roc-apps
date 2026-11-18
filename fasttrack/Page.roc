@@ -117,7 +117,7 @@ Page :: [].{
 		# The board is always drawn as red sees it, so a slot's place is its
 		# square's number (Board.roc).
 		zone_colors = game.zone_colors
-		undo_button = if flags.show_undo {
+		undo_button_trees = if flags.show_undo {
 			[button("", Codes.undo, [text("oops")])]
 		} else {
 			[]
@@ -127,14 +127,14 @@ Page :: [].{
 			if flags.winner != "" {
 				winner_view(flags.winner)
 			} else if flags.clicks == TakesClicks {
-				player_view(active_player, active_color, undo_button)
+				player_view(active_player, active_color, undo_button_trees)
 			} else {
 				computer_view(active_player, active_color)
 			}
 		{
 			board_size: 2.0 * center_offset(side_count) + 3.0 * Config.square_size,
-			slots: board_view(game, zone_colors, active_player, flags.clicks),
-			labels: labels_view(game),
+			slots: board_slots(game, zone_colors, active_player, flags.clicks),
+			labels: board_labels(game),
 			nodes: el(
 				"div",
 				"display: flex; flex-direction: row",
@@ -160,8 +160,8 @@ Page :: [].{
 
 	## Each player's discards toward leaving the pen, next to its pen, while
 	## it has any.
-	labels_view : Type.Game -> List(Wire.Label)
-	labels_view = |game| {
+	board_labels : Type.Game -> List(Wire.Label)
+	board_labels = |game| {
 		side_count = game.zone_colors.len()
 		game.players.map_with_index(
 			|p, i|
@@ -223,8 +223,8 @@ Page :: [].{
 	}
 
 	## Who plays with whom, in a partnership.
-	team_line : Type.Player -> List(Page.Tree)
-	team_line = |player|
+	team_line_trees : Type.Player -> List(Page.Tree)
+	team_line_trees = |player|
 		match player.team {
 			Solo => []
 			Partner(partner) => [div([text("${player.color} plays with ${partner}, and may move either's pieces")])]
@@ -249,11 +249,11 @@ Page :: [].{
 				),
 				div([text("the computer is playing ${color}")]),
 			]
-				.concat(team_line(player)),
+				.concat(team_line_trees(player)),
 		)
 
-	board_view : Type.Game, List(Str), Type.Player, Page.Clicks -> List(Wire.Slot)
-	board_view = |game, zone_colors, active_player, clicks| {
+	board_slots : Type.Game, List(Str), Type.Player, Page.Clicks -> List(Wire.Slot)
+	board_slots = |game, zone_colors, active_player, clicks| {
 		side_count = zone_colors.len()
 		angle = 2.0 * F64.pi / side_count.to_f64()
 		center = center_offset(side_count)
@@ -367,12 +367,12 @@ Page :: [].{
 		}
 
 	player_view : Type.Player, Str, List(Page.Tree) -> Page.Tree
-	player_view = |player, color, undo_button| {
+	player_view = |player, color, undo_button_trees| {
 		playable_cards = Player.get_playable_cards(player)
 		hand_cards = player.hand.map_with_index(
 			|card, idx| hand_card_view(color, player, playable_cards, idx, card),
 		)
-		hand = span([hand_cards, undo_button, rotate_button_view(player)].join())
+		hand = span([hand_cards, undo_button_trees, rotate_button_trees(player)].join())
 		console = match player.turn {
 			TurnNeedDiscard => div([text("click a card to discard")])
 			TurnNeedCover => div([text("click a card to cover")])
@@ -394,7 +394,7 @@ Page :: [].{
 			TurnDone => div([text("ok, now hit 'done' if you're happy")])
 			_ => div([])
 		}
-		div([hand, credits_view(player), console].concat(team_line(player)))
+		div([hand, credits_view(player), console].concat(team_line_trees(player)))
 	}
 
 	need_start_instructions : Type.PlayType -> Str
@@ -475,8 +475,8 @@ Page :: [].{
 			span([])
 		}
 
-	rotate_button_view : Type.Player -> List(Page.Tree)
-	rotate_button_view = |player|
+	rotate_button_trees : Type.Player -> List(Page.Tree)
+	rotate_button_trees = |player|
 		match player.turn {
 			TurnDone => [button("background: lightgreen", Codes.rotate_board, [text("done")])]
 			_ => []

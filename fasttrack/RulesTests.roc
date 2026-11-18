@@ -227,7 +227,10 @@ expect {
 # testEndLocs
 
 # can move 8
-expect RulesTests.locs_are(RulesTests.ends(Piece.empty, RulesTests.square_at("red", "L1"), 8), ["blue.R1"])
+expect RulesTests.locs_are(
+	RulesTests.ends(Piece.empty, RulesTests.square_at("red", "L1"), 8),
+	["blue.R1"],
+)
 
 # seven full
 expect {
@@ -343,6 +346,9 @@ expect !LegalMove.get_can_go_n_spaces(
 
 # A guard on the guard: a wrong expectation must not pass.
 expect !RulesTests.moves_are(
-	RulesTests.moves_for_cards(["7"], RulesTests.board([("blue", "B1", "blue"), ("blue", "L0", "blue")])),
+	RulesTests.moves_for_cards(
+		["7"],
+		RulesTests.board([("blue", "B1", "blue"), ("blue", "L0", "blue")]),
+	),
 	["7 blue.L0 green.R3"],
 )

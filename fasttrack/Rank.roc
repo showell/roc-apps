@@ -113,18 +113,18 @@ Rank :: [].{
 	## (ties in board order).
 	ranked_rows : List(Str), Str, Str -> List(Rank.Row)
 	ranked_rows = |zone_colors, color, peak| ranked_rows_in(
-		Reach.grid(zone_colors, color),
+		Reach.grid_moves(zone_colors, color),
 		zone_colors,
 		color,
 		peak,
 	)
 
-	## `ranked_rows`, over a color's grid built once (Reach.grid).
+	## `ranked_rows`, over a color's grid built once (Reach.grid_moves).
 	ranked_rows_in : List(Reach.Move), List(Str), Str, Str -> List(Rank.Row)
-	ranked_rows_in = |grid, zone_colors, color, peak| {
+	ranked_rows_in = |grid_moves, zone_colors, color, peak| {
 		tables = stages.map(
 			|st| Reach.routes(
-				grid,
+				grid_moves,
 				{ zone_colors, color, peak },
 				{ hand: st.hand, face: FreeFace },
 			),
@@ -174,15 +174,15 @@ Rank :: [].{
 
 	places : List(Str), Str, Str -> Rank.Places
 	places = |zone_colors, color, peak| places_in(
-		Reach.grid(zone_colors, color),
+		Reach.grid_moves(zone_colors, color),
 		zone_colors,
 		color,
 		peak,
 	)
 
 	places_in : List(Reach.Move), List(Str), Str, Str -> Rank.Places
-	places_in = |grid, zone_colors, color, peak| {
-		order = ranked_rows_in(grid, zone_colors, color, peak)
+	places_in = |grid_moves, zone_colors, color, peak| {
+		order = ranked_rows_in(grid_moves, zone_colors, color, peak)
 		start = List.repeat(U64.highest, Board.all_locs(zone_colors).len())
 		settled = order.map_with_index(|row, i| { row, i }).fold(
 			{

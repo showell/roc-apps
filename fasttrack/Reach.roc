@@ -62,12 +62,12 @@ Reach :: [].{
 	## Board.all_locs, and by a card played after one free face card -- face
 	## cards are always played first (Steve: DS to B4 is Q then 3, one card);
 	## such a move's card reads "face+3". Built once; every table filters it
-	## (`usable`).
+	## (`usable_moves`).
 	##
 	## Squares a piece of this color never stands on -- the other colors' pens
 	## and bases -- have no moves.
-	grid : List(Str), Str -> List(Reach.Move)
-	grid = |zone_colors, color|
+	grid_moves : List(Str), Str -> List(Reach.Move)
+	grid_moves = |zone_colors, color|
 		Board.squares.map_with_index(
 			|from, _|
 				if Board.zone(from) != Board.color_index(
@@ -116,9 +116,9 @@ Reach :: [].{
 	## the peak is dropped; one landing on the peak or short of it never
 	## passes the occupied squares.
 	fewest_cards : Reach.Target, [FreeFace, CardsOnly] -> List(Reach.Best)
-	fewest_cards = |target, face| fewest_over(
-		usable(
-			grid(target.zone_colors, target.color),
+	fewest_cards = |target, face| bests_over(
+		usable_moves(
+			grid_moves(target.zone_colors, target.color),
 			target,
 			{ hand: cards, face },
 		),
@@ -139,13 +139,13 @@ Reach :: [].{
 	## has a free one, only the deck's kinds of card, and nothing landing
 	## deeper than the peak -- B4 once it is taken, and so on. A move landing
 	## on the peak or short of it never passes the occupied squares.
-	usable : List(Reach.Move), Reach.Target, Reach.Deck -> List(Reach.Move)
-	usable = |all, target, deck| {
+	usable_moves : List(Reach.Move), Reach.Target, Reach.Deck -> List(Reach.Move)
+	usable_moves = |moves, target, deck| {
 		peak_at = Config.base_locations.find_first_index(|id| id == target.peak) ?? crash "Reach: the peak is a base square"
 		occupied = Config.base_locations.drop_first(peak_at + 1).map(
 			|id| Board.index_of(target.zone_colors, { zone: NormalColor(target.color), id }),
 		)
-		all.drop_if(
+		moves.drop_if(
 			|e| (deck.face == CardsOnly and e.card.starts_with("face+")) or occupied.contains(e.to) or !is_allowed(
 				deck.hand,
 				e.card,
@@ -154,8 +154,8 @@ Reach :: [].{
 	}
 
 	## The fewest cards home over these moves.
-	fewest_over : List(Reach.Move), Reach.Target -> List(Reach.Best)
-	fewest_over = |edges, target| {
+	bests_over : List(Reach.Move), Reach.Target -> List(Reach.Best)
+	bests_over = |edges, target| {
 		far = Board.far
 		home = Board.index_of(
 			target.zone_colors,
@@ -206,11 +206,11 @@ Reach :: [].{
 	## every sequence of moves, a move being a card or a face card and a card.
 	Routes : { cards : I64, routes : U64 }
 
-	## Over a color's grid (`grid`, built once by the caller).
+	## Over a color's grid (`grid_moves`, built once by the caller).
 	routes : List(Reach.Move), Reach.Target, Reach.Deck -> List(Reach.Routes)
-	routes = |all, target, deck| {
-		edges = usable(all, target, deck)
-		best = fewest_over(edges, target)
+	routes = |moves, target, deck| {
+		edges = usable_moves(moves, target, deck)
+		best = bests_over(edges, target)
 		cards_at = |i| (best.get(i) ?? { cards: Board.far, first: [] }).cards
 		home = Board.index_of(
 			target.zone_colors,
@@ -301,9 +301,9 @@ expect {
 # two.
 expect {
 	no_joker = Reach.cards.drop_if(|c| c == "joker")
-	grid = Reach.grid(colors, "red")
+	grid_moves = Reach.grid_moves(colors, "red")
 	at = |hand, id| Reach.routes(
-		grid,
+		grid_moves,
 		{
 			zone_colors: colors,
 			color: "red",

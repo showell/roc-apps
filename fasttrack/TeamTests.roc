@@ -37,8 +37,8 @@ TeamTests :: [].{
 		Assoc.set_from_list(moves.map(|m| "${Piece.get_piece(game.board, game.zone_colors, m.start) ?? crash "TeamTests: a move starts where a piece stands"}@${Board.loc_of(game.zone_colors, m.start).id}"))
 	}
 
-	home : Str -> List((Str, Str, Str))
-	home = |color| ["B1", "B2", "B3", "B4"].map(|id| (color, id, color))
+	home_pieces : Str -> List((Str, Str, Str))
+	home_pieces = |color| ["B1", "B2", "B3", "B4"].map(|id| (color, id, color))
 }
 
 # Who red may move.
@@ -51,7 +51,7 @@ expect {
 	Player.movers(Player.get_player(g.players, 0), g.zone_colors, g.board) == ["red"]
 }
 expect {
-	g = TeamTests.game_with(OnceHome, TeamTests.home("red"), ["2"])
+	g = TeamTests.game_with(OnceHome, TeamTests.home_pieces("red"), ["2"])
 	Player.movers(Player.get_player(g.players, 0), g.zone_colors, g.board) == ["red", "green"]
 }
 expect {
@@ -91,15 +91,17 @@ expect {
 }
 
 # A team wins only with both partners home.
-expect Game.winner(TeamTests.game_with(Anytime, TeamTests.home("red"), ["2"])) == Err(NoWinner)
+expect Game.winner(
+	TeamTests.game_with(Anytime, TeamTests.home_pieces("red"), ["2"]),
+) == Err(NoWinner)
 expect Game.winner(
 	TeamTests.game_with(
 		Anytime,
-		TeamTests.home("red").concat(TeamTests.home("green")),
+		TeamTests.home_pieces("red").concat(TeamTests.home_pieces("green")),
 		["2"],
 	),
 ) == Ok("red and green")
-expect Game.winner(TeamTests.game_with(Solo, TeamTests.home("red"), ["2"])) == Ok("red")
+expect Game.winner(TeamTests.game_with(Solo, TeamTests.home_pieces("red"), ["2"])) == Ok("red")
 
 # With a 3 that would land red's piece on green's, the team's computer does
 # something else.

@@ -48,7 +48,7 @@ Piece :: [].{
 	## The LAST occupied pen square: the one a piece leaves the pen from.
 	piece_to_move_out_of_pen : Type.Board, U64 -> Try(U64, [NotFound])
 	piece_to_move_out_of_pen = |board, c|
-		match Board.pen_of(c).find_last(|s| !is_open(board, s)) {
+		match Board.pen_squares(c).find_last(|s| !is_open(board, s)) {
 			Ok(s) => Ok(s)
 			Err(_) => Err(NotFound)
 		}
@@ -58,7 +58,7 @@ Piece :: [].{
 	open_holding_pen_location = |
 		board,
 		c,
-	| Board.pen_of(c).find_first(|s| is_open(board, s)) ?? crash "Piece: no open pen square"
+	| Board.pen_squares(c).find_first(|s| is_open(board, s)) ?? crash "Piece: no open pen square"
 
 	## Every piece of another color on the open track (the bullseye too): the
 	## squares a jack may trade with.
@@ -117,15 +117,15 @@ Piece :: [].{
 
 	## Every base square of `c` holds a piece of its own.
 	all_home : Type.Board, U64 -> Bool
-	all_home = |board, c| Board.base_of(c).all(|s| holds(board, s, c))
+	all_home = |board, c| Board.base_squares(c).all(|s| holds(board, s, c))
 
 	## A color's pieces in its own base.
 	count_in_base : Type.Board, U64 -> U64
-	count_in_base = |board, c| Board.base_of(c).count_if(|s| holds(board, s, c))
+	count_in_base = |board, c| Board.base_squares(c).count_if(|s| holds(board, s, c))
 
 	## A color's pieces in its pen.
 	count_in_pen : Type.Board, U64 -> U64
-	count_in_pen = |board, c| Board.pen_of(c).count_if(|s| holds(board, s, c))
+	count_in_pen = |board, c| Board.pen_squares(c).count_if(|s| holds(board, s, c))
 
 	config_pieces : Setup.InitSetup, List(Str) -> Type.Board
 	config_pieces = |init_setup, zone_colors| {

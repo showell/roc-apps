@@ -218,8 +218,8 @@ Config :: [].{
 
 	## Suits do not matter in Fast Track. Each player's copy is shuffled once
 	## before the game and drawn from the top (Player.shuffle).
-	full_deck : List(Str)
-	full_deck = [
+	full_deck_cards : List(Str)
+	full_deck_cards = [
 		"2",
 		"3",
 		"4",
@@ -236,8 +236,8 @@ Config :: [].{
 	].repeat(4).join().concat(["joker", "joker"])
 }
 
-expect Config.full_deck.len() == 54
-expect Config.full_deck.take_first(14) == [
+expect Config.full_deck_cards.len() == 54
+expect Config.full_deck_cards.take_first(14) == [
 	"2",
 	"3",
 	"4",

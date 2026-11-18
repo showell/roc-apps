@@ -31,7 +31,7 @@ Search :: [].{
 		match player.turn {
 			TurnNeedCard(_) => {
 				playable = Player.get_playable_cards(player)
-				first_of_each(
+				first_msgs_of_each(
 					player.hand,
 					|card| List.contains(playable, card),
 					|i| ActivateCard(i),
@@ -39,12 +39,12 @@ Search :: [].{
 			}
 			TurnNeedStartLoc(info) => List.map(info.start_locs, |loc| SetStartLocation(loc))
 			TurnNeedEndLoc(info) => List.map(info.end_locs, |loc| SetEndLocation(loc))
-			TurnNeedDiscard => first_of_each(
+			TurnNeedDiscard => first_msgs_of_each(
 				player.hand,
 				|_| Bool.True,
 				|i| DiscardCard(i),
 			)
-			TurnNeedCover => first_of_each(
+			TurnNeedCover => first_msgs_of_each(
 				player.hand,
 				|_| Bool.True,
 				|i| CoverCard(i),
@@ -59,8 +59,8 @@ Search :: [].{
 
 	## The index of the first copy of each card `keep` accepts: two 5s are
 	## one choice, and so are a Q and a K.
-	first_of_each : List(Str), (Str -> Bool), (U64 -> Type.GameMsg) -> List(Type.GameMsg)
-	first_of_each = |hand, keep, make|
+	first_msgs_of_each : List(Str), (Str -> Bool), (U64 -> Type.GameMsg) -> List(Type.GameMsg)
+	first_msgs_of_each = |hand, keep, make|
 		hand.map_with_index(
 			|card, i|
 				if keep(card) and hand.find_first_index(|c| same_card(c, card)) == Ok(i) {
@@ -99,8 +99,8 @@ Search :: [].{
 		}
 
 	## Mid-play (a card chosen, its squares not yet), every way to finish it.
-	settle : Search.Line -> List(Search.Line)
-	settle = |line| {
+	settled_lines : Search.Line -> List(Search.Line)
+	settled_lines = |line| {
 		mid_play = match Player.get_active_player(line.game).turn {
 			TurnNeedStartLoc(_) => Bool.True
 			TurnNeedEndLoc(_) => Bool.True
@@ -108,7 +108,7 @@ Search :: [].{
 		}
 		choices = options(line.game)
 		if mid_play and !line.drew and !choices.is_empty() {
-			choices.join_map(|msg| settle(apply(line, msg)))
+			choices.join_map(|msg| settled_lines(apply(line, msg)))
 		} else {
 			[line]
 		}
@@ -116,7 +116,7 @@ Search :: [].{
 
 	## One card play further, every way.
 	expand : Search.Line -> List(Search.Line)
-	expand = |line| options(line.game).join_map(|msg| settle(apply(line, msg)))
+	expand = |line| options(line.game).join_map(|msg| settled_lines(apply(line, msg)))
 
 	## The same position reached two ways is one line, the first: lines are
 	## the same when their keys are (line_key), found by sorting the keys, not
@@ -181,7 +181,7 @@ Search :: [].{
 	score : Strategy.Strategy, Type.Game, Search.Line -> I64
 	score = |strategy, game, line| {
 		mover = Player.get_active_player(game)
-		colors = Strategy.team(mover)
+		colors = Strategy.team_colors(mover)
 		kept = if line.drew {
 			0
 		} else {
@@ -197,7 +197,7 @@ Search :: [].{
 	## stopped before every line had ended, or dropped lines past max_lines.
 	all_lines : Type.Game -> { lines : List(Search.Line), cut : Bool }
 	all_lines = |game| {
-		start = settle({ game, msgs: [], drew: Bool.False })
+		start = settled_lines({ game, msgs: [], drew: Bool.False })
 		var $level = start
 		var $done = start.drop_if(is_open)
 		var $depth = 0
@@ -342,7 +342,7 @@ Search :: [].{
 	}
 }
 
-expect Search.first_of_each(
+expect Search.first_msgs_of_each(
 	["K", "7", "Q", "K"],
 	|_| Bool.True,
 	|i| ActivateCard(i),

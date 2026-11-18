@@ -59,8 +59,8 @@ LegalMove :: [].{
 
 	## The squares a move of `n` steps from `start` to `end` passes through,
 	## start and end included: its first open walk (Routes' order).
-	walk_between : Type.Board, U64, U64, U64, I64, LegalMove.Direction -> List(U64)
-	walk_between = |
+	squares_between : Type.Board, U64, U64, U64, I64, LegalMove.Direction -> List(U64)
+	squares_between = |
 		board,
 		c,
 		start,

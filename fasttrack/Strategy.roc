@@ -32,8 +32,8 @@ Strategy :: [].{
 	}
 
 	## The colors a player scores: its own, and its partner's.
-	team : Type.Player -> List(Str)
-	team = |player|
+	team_colors : Type.Player -> List(Str)
+	team_colors = |player|
 		match player.team {
 			Solo => [player.color]
 			Partner(p) => [player.color, p]
@@ -65,7 +65,10 @@ Strategy :: [].{
 
 	## A player's pieces in its own base.
 	count_in_base : Type.Game, Str -> U64
-	count_in_base = |game, color| Piece.count_in_base(game.board, Board.color_index(game.zone_colors, color))
+	count_in_base = |game, color| Piece.count_in_base(
+		game.board,
+		Board.color_index(game.zone_colors, color),
+	)
 
 	## What each hoard's cards are worth this turn, given the board it starts
 	## from.

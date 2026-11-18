@@ -20,8 +20,8 @@ Setup :: [].{
 		}
 	}
 
-	starting_hand : Setup.InitSetup, Str -> List(Str)
-	starting_hand = |init_setup, color|
+	starting_hand_cards : Setup.InitSetup, Str -> List(Str)
+	starting_hand_cards = |init_setup, color|
 		match init_setup {
 			ForcedToReverse => ["7", "8", "10", "9", "9"]
 			Cover => ["K", "Q", "Q", "Q", "2"]

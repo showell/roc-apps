@@ -8,15 +8,8 @@
 # History's undo check sees. Roc's `Dict` and `Set` keep another order.
 Assoc :: [].{
 
-	## An association list, as assoc-list has it.
-	AssocDict(k, v) : List(
-		{
-			key : k,
-
-			## The key's value: what the list associates with it.
-			value : v,
-		},
-	)
+	## An association list, as assoc-list has it: each key, and the key's value.
+	AssocDict(k, v) : List({ key : k, value : v })
 
 	AssocSet(a) : List(a)
 

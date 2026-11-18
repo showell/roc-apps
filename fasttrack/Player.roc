@@ -48,7 +48,7 @@ Player :: [].{
 		shuffled = shuffle(seed)
 		{
 			deck: shuffled.deck,
-			hand: Setup.starting_hand(init_setup, color),
+			hand: Setup.starting_hand_cards(init_setup, color),
 			get_out_credits: 0,
 			turn: TurnBegin,
 			color,
@@ -294,7 +294,7 @@ Player :: [].{
 	## A full deck shuffled from `seed`: each card in turn taken from a
 	## random place in what is left. Answers the deck and the seed after.
 	shuffle : ElmRandom.Seed -> { deck : List(Str), seed : ElmRandom.Seed }
-	shuffle = |seed0| shuffle_cards(Config.full_deck, seed0)
+	shuffle = |seed0| shuffle_cards(Config.full_deck_cards, seed0)
 
 	## These cards shuffled from `seed`, the same way.
 	shuffle_cards : List(Str), ElmRandom.Seed -> { deck : List(Str), seed : ElmRandom.Seed }

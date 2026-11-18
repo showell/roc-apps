@@ -81,7 +81,7 @@ Motion :: [].{
 						}
 						walked = {
 							color: name(c),
-							path: LegalMove.walk_between(
+							path: LegalMove.squares_between(
 								board,
 								c,
 								m.start,
