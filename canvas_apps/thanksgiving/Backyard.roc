@@ -254,7 +254,7 @@ fence_shapes = |view| {
 	})
 	gap = Brush.flat(RgbColor.of(0x4A342A))
 	boards : U64
-	boards = 240
+	boards = 120
 	var $out = panel
 	for k in 0..=boards {
 		right = 0.0 - reach + 2.0 * reach * k.to_f64() / boards.to_f64()

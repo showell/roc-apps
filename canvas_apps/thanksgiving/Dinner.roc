@@ -11,7 +11,9 @@
 ## table, each robot's eyes lighting with the bulb above its place, and the
 ## eye eases back to take in the whole table. The banner drops, the leaves
 ## blow across, and a fourth robot walks in and does the robot dance, while
-## the others turn their eyes to watch. The last frame holds its final pose.
+## the others turn their eyes to watch. Mid-dance the eye backs away to show
+## five identical tables dancing in step, and the last frame holds the final
+## pose.
 import lib.Eye
 import Dancer
 import Dishes
@@ -23,7 +25,7 @@ Dinner :: [].{
 
 	## The last tick that moves. Every tick after it shows the same frame.
 	end_tick : I64
-	end_tick = 1670
+	end_tick = 1796
 
 	## When the first bulb blinks on.
 	lights_tick : I64
@@ -176,10 +178,16 @@ Dinner :: [].{
 	}
 	eye_spot = |tick| {
 		back = smooth(ramp(held_tick(tick) - pull_tick, pull_frames))
+		# The reveal: mid-routine, the eye backs away past the other four
+		# tables, which stood behind it until then.
+		reveal = smooth(ramp(held_tick(tick) - reveal_tick, reveal_frames))
+		table_right = -0.4 + 0.4 * back
+		table_forward = 0.0 - 1.8 * back
+		table_height = 1.15 + 0.4 * back
 		{
-			right: -0.4 + 0.4 * back,
-			forward: 0.0 - 1.8 * back,
-			height: 1.15 + 0.4 * back,
+			right: table_right + (0.4 - table_right) * reveal,
+			forward: table_forward + (-25.5 - table_forward) * reveal,
+			height: table_height + (3.4 - table_height) * reveal,
 		}
 	}
 
@@ -246,6 +254,12 @@ pull_tick = 880
 
 pull_frames : I64
 pull_frames = 180
+
+reveal_tick : I64
+reveal_tick = 1330
+
+reveal_frames : I64
+reveal_frames = 260
 
 banner_tick : I64
 banner_tick = 1020
@@ -512,9 +526,21 @@ routine = [
 	{ move: { ..goalpost, left_fore: -1.05, right_fore: 1.05 }, frames: 8 },
 	{ move: { ..goalpost, left_fore: -1.05, right_fore: 1.05, pop: 0.07 }, frames: 6 },
 	{ move: { ..goalpost, left_fore: -1.05, right_fore: 1.05 }, frames: 6 },
+	{ move: { ..arms_out, bounce: 0.05 }, frames: 7 },
+	{ move: arms_out, frames: 7 },
+	{ move: { ..arms_out, bounce: 0.05 }, frames: 7 },
+	{ move: arms_out, frames: 9 },
+	{ move: { ..arms_out, head: 1.0 }, frames: 12 },
+	{ move: { ..arms_out, head: -1.0 }, frames: 12 },
+	{ move: arms_out, frames: 8 },
+	{ move: { ..rest, right_upper: quarter, right_fore: F64.pi }, frames: 12 },
+	{ move: { ..rest, right_upper: quarter, right_fore: 2.09 }, frames: 9 },
+	{ move: { ..rest, right_upper: quarter, right_fore: 1.05 }, frames: 9 },
+	{ move: { ..goalpost, pop: 0.07 }, frames: 10 },
+	{ move: goalpost, frames: 14 },
 	# The final pose: one forearm up, one down, head to the camera, knees
 	# dropped a little. The movie holds on it.
-	{ move: { ..rest, right_upper: quarter, right_fore: F64.pi, left_upper: -quarter, left_fore: 0.0, bounce: 0.03 }, frames: 40 },
+	{ move: { ..rest, right_upper: quarter, right_fore: F64.pi, left_upper: -quarter, left_fore: 0.0, bounce: 0.03 }, frames: 50 },
 ]
 
 snap_frames : I64
