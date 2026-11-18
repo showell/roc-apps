@@ -21,25 +21,26 @@
 --
 -- The full tier runs every parse recipe over every project, roc-types on
 -- every app (TYPED_EXCEPTIONS names the tree it leaves out), and
--- `rewrite_method_calls trials=0` on every file the types reach, which
--- counts the old-style calls the types prove could be method calls
--- (`rewritable`), with no trial compile: a proven call the compiler would
--- refuse is counted, and the recipe's header says which those are. The
--- baseline is its cache ("The full tier's keys"): each app's counts carry
--- the key they were measured at, and a run measures again only the apps
--- whose key moved, with the apps their counts depend on; `fresh=1` measures
--- every app. Each stage runs two at a time ("Two at a time"), and every
+-- `rewrite_method_calls trials=0` over each app's own files that its roots
+-- reach, which counts the old-style calls the types prove could be method
+-- calls (`rewritable`), with no trial compile: a proven call the compiler
+-- would refuse is counted, and the recipe's header says which those are. A
+-- file no root of its app reaches is `unreached`. A shared folder (an app
+-- with no root of its own: canvas_apps/lib, web, native, widget_kit) takes
+-- its typed counts from the apps that reach it: a file of it is unreached
+-- when none does, and its calls are counted on the first of them by name.
+-- The baseline is the full tier's cache ("The full tier's keys"): the parse
+-- counts are keyed by project and the typed counts by app, and a run
+-- measures again only what a moved key names; `fresh=1` measures
+-- everything. Each stage runs two at a time ("Two at a time"), and every
 -- file a run makes (a copy of the tree, each app's types) is in a folder of
--- its own, removed at its end. The apps fall in six groups (`groups_of`):
--- basic, delivery, dog-park, fasttrack and glue each alone, and the 36
--- others together, as every canvas app reaches canvas_apps/lib or web and
--- Safari reaches book_builder and syntax_color. On 2026-11-18, on a box
--- with other work running (load about 2), a cold run (`fresh=1`) took 254 s
--- (roc-types 203 s of CPU over the 56 apps, the parse recipes 41 s, the
--- count 7 s), a run with nothing changed 2.4 s (13 s when the tools'
--- binaries had left the page cache: hashing roc-types' 190 MB is most of
--- it), and one with a file of dog-park changed 11 s. A change in the
--- group of 36 measures that group, most of a cold run.
+-- its own, removed at its end. On 2026-11-18, on a box with other work
+-- running (load 2 to 4), a cold run (`fresh=1`) took 148 to 314 s
+-- (roc-types 233 s of CPU over the 56 roots, the parse recipes 38 s, the
+-- count 7 s); a run with nothing changed 1.6 s; a comment changed in
+-- dog-park 2.9 s (its parse and its one root); and one in pong 17 s
+-- (canvas_apps' parse and pong's two roots). A change to the tools (a new
+-- `shale` among them) moves every key, so the next run is cold.
 -- The parse recipes read a copy of the tracked files
 -- (`tracked_tree`), so a build's ignored output never enters a count. It
 -- needs the cookbook's rewrite recipe to take `trials=0` and `types_from=`;
@@ -347,21 +348,35 @@ function key_of(app, recipe, check)
   return app .. "\t" .. recipe .. "\t" .. check
 end
 
--- The baseline as `{counts, keys}`: each count by `key_of`, and each app's
--- key row (`KEY_ROW` in its second field) as `{folders, text, hash}`, `text`
--- the folders as the row writes them.
-const KEY_ROW = "key"
+-- The baseline's rows besides the counts, each named in its second field.
+-- A project's parse key, `project<tab>parse-key<tab>project<tab>hash`; an
+-- app's types key, `app<tab>types-key<tab>folders<tab>hash`; and a row for
+-- each file of a shared folder (an app with no root of its own),
+-- `app<tab>typed-file<tab>path<tab>n reacher ...`: its count of calls the
+-- types prove, then the apps that reach it.
+const PARSE_KEY = "parse-key"
+const TYPES_KEY = "types-key"
+const TYPED_FILE = "typed-file"
 
+-- The baseline as `{counts, parse_keys, types_keys, typed_files}`: each
+-- count by `key_of`, each key as `{folders, text, hash}` (`text` the
+-- folders as the row writes them), and each shared file's row as `{unit,
+-- n, reachers}`.
 function read_baseline()
-  local out = {counts = {}, keys = {}}
+  local out = {counts = {}, parse_keys = {}, types_keys = {}, typed_files = {}}
   if not exists(BASELINE) then return out end
   local all = lines(read(BASELINE))
   if #all == 0 or all[1] ~= BASELINE_HEADER then fail("quality: " .. BASELINE .. " does not start with its header") end
   for i = 2, #all do
     local f = split(all[i], "\t")
     if #f ~= 4 then fail("quality: " .. BASELINE .. ":" .. i .. " is not four fields") end
-    if f[2] == KEY_ROW then
-      out.keys[f[1]] = {folders = split(f[3], ","), text = f[3], hash = f[4]}
+    if f[2] == PARSE_KEY then
+      out.parse_keys[f[1]] = {folders = split(f[3], ","), text = f[3], hash = f[4]}
+    elseif f[2] == TYPES_KEY then
+      out.types_keys[f[1]] = {folders = split(f[3], ","), text = f[3], hash = f[4]}
+    elseif f[2] == TYPED_FILE then
+      local w = words(f[4])
+      out.typed_files[f[3]] = {unit = f[1], n = tonumber(w[1]), reachers = drop(w, 1)}
     else
       out.counts[key_of(f[1], f[2], f[3])] = tonumber(f[4])
     end
@@ -369,12 +384,19 @@ function read_baseline()
   return out
 end
 
--- Writes the counts and each app's key row, every line sorted, so an app's
--- rows stay together.
-function write_baseline(counts, key_rows)
+-- Writes the counts, the keys and the shared files' rows, every line
+-- sorted, so an app's rows stay together.
+function write_baseline(counts, parse_keys, types_keys, typed_files)
   local ls = {}
   for k in keys(counts) do push(ls, k .. "\t" .. counts[k]) end
-  for app in keys(key_rows) do push(ls, app .. "\t" .. KEY_ROW .. "\t" .. key_rows[app].text .. "\t" .. key_rows[app].hash) end
+  for p in keys(parse_keys) do push(ls, p .. "\t" .. PARSE_KEY .. "\t" .. parse_keys[p].text .. "\t" .. parse_keys[p].hash) end
+  for u in keys(types_keys) do push(ls, u .. "\t" .. TYPES_KEY .. "\t" .. types_keys[u].text .. "\t" .. types_keys[u].hash) end
+  for f in keys(typed_files) do
+    local r = typed_files[f]
+    local w = {"" .. r.n}
+    for x in r.reachers do push(w, x) end
+    push(ls, r.unit .. "\t" .. TYPED_FILE .. "\t" .. f .. "\t" .. join(w, " "))
+  end
   replace(BASELINE, BASELINE_HEADER .. "\n" .. join(sort(ls), "\n") .. "\n")
   return nil
 end
@@ -404,14 +426,12 @@ end
 
 -- ── The full tier's keys ────────────────────────────────────────────────
 
--- The baseline is the full tier's cache: beside each app's counts it holds
--- the key they were measured at, a row `app<tab>key<tab>folders<tab>hash`.
--- The folders, separated by commas, are every folder the counts read; the
--- hash is git's hash of the tools' identity (`tools_identity`) and each
--- folder's content (`folder_id`). A run measures again only the apps whose
--- key moved, and takes every other app's counts from the baseline as they
--- stand, so an app's counts are a function of what its key names. Apps are
--- measured in groups (`groups_of`), and the apps of a group share its key.
+-- The baseline holds the keys its counts were measured at (`read_baseline`):
+-- a project's parse key, and an app's types key, naming its folder and each
+-- its roots reached. A key's hash is of the tools (`tools_identity`) and its
+-- folders (`folder_id`). A run parses each project and types each app whose
+-- key moved, and keeps every other count. A shared folder's typed counts
+-- come every run from its files' rows (`shared_files`).
 
 -- Git's hash of a text, as a blob.
 function blob_hash(text)
@@ -444,12 +464,12 @@ function recipe_closure(path, seen, out)
   return nil
 end
 
--- The git hash of this script's code alone, its comment lines left out, so
--- a change to its prose leaves every key as it was.
+-- The git hash of this script's code alone, its comment and blank lines
+-- left out, so a change to its prose leaves every key as it was.
 function code_hash(path)
   local kept = {}
   for l in lines(read(path)) do
-    if not starts_with(trim(l), "--") then push(kept, l) end
+    if trim(l) ~= "" and not starts_with(trim(l), "--") then push(kept, l) end
   end
   return blob_hash(join(kept, "\n") .. "\n")
 end
@@ -487,12 +507,9 @@ function tools_identity(roc)
   return blob_hash(join(ls, "\n") .. "\n")
 end
 
--- The git tree of each folder as the run reads it: the tracked files as
--- the working copy has them, so an edit counts before it is committed and
--- an untracked file never does. A fresh index of this run's (`read-tree
--- HEAD`, then `add -u`, which hashes the checkout's thousand tracked files
--- in under half a second) is written as a tree, whose folders are listed at
--- the top and under canvas_apps/. Gives each folder's tree hash by path.
+-- Each folder's git tree as the run reads it, the tracked files as the
+-- working copy has them: a fresh index (`read-tree HEAD`, `add -u`, under
+-- half a second) written as a tree, listed at the top and in canvas_apps/.
 function folder_trees(scratch)
   local env = {GIT_INDEX_FILE = real(scratch) .. "/index"}
   must(run({"git", "read-tree", "HEAD"}, {timeout_ms = 60000, whole = 4000, env = env}))
@@ -511,11 +528,9 @@ function folder_trees(scratch)
   return out
 end
 
--- The name a key gives a folder outside the checkout that an app reaches,
--- from its OS path, the same from every checkout on the box: a sibling
--- repo's folder (roc-ray's platform, roc-markdown's package, which a lane's
--- worktree reaches through a link) by its real path under the `repos:`
--- mount, and a folder of Roc's own cache as `roc-cache:` and its path there.
+-- A key's name for a folder outside the checkout, the same from every
+-- checkout on the box: `repos:` and a sibling repo's real path (a lane's
+-- worktree reaches one through a link), or `roc-cache:` and its path there.
 function outside_name(st, dir)
   if has_key(st.outside_names, dir) then return st.outside_names[dir] end
   local canon = trim(must(run({"readlink", "-f", dir}, {timeout_ms = 5000, whole = 4000})).out)
@@ -532,9 +547,8 @@ function outside_name(st, dir)
   return name
 end
 
--- A folder outside the checkout, as `outside_name` names it. A sibling
--- repo's is keyed by the git hash of its .roc files; one of Roc's cache by
--- its name alone, as Roc names such a folder by the hash of what it holds.
+-- A sibling repo's folder is keyed by its .roc files' hashes; one of Roc's
+-- cache by its name, which is the hash of what it holds.
 function outside_folder_id(folder)
   if starts_with(folder, "roc-cache:") then return "named" end
   if not exists(folder) then return "gone" end
@@ -563,123 +577,8 @@ function key_hash(st, folders)
   return blob_hash(join(ls, "\n") .. "\n")
 end
 
--- ── The apps to measure, and their groups ───────────────────────────────
-
 function unit_project(app)
   return split(app, "/")[1]
-end
-
--- The apps whose counts this run measures: with `fresh=1` every app, else
--- each whose key row is missing or no longer matches, and each the
--- baseline holds that has no tracked file now (its counts go to zero).
-function stale_apps(st, names, base)
-  local out = {}
-  local said = {}
-  for u in names do
-    if FRESH or not has_key(base.keys, u) then
-      out[u] = true
-    else
-      local k = base.keys[u]
-      if not has_key(said, k.text) then said[k.text] = key_hash(st, k.folders) end
-      if said[k.text] ~= k.hash then out[u] = true end
-    end
-  end
-  for k in keys(base.counts) do
-    local u = split(k, "\t")[1]
-    if not has_key(st.units, u) then out[u] = true end
-  end
-  for u in keys(base.keys) do
-    if not has_key(st.units, u) then out[u] = true end
-  end
-  return out
-end
-
--- Adds to `m` each app that must be measured beside one already there: an
--- app of the same project, as each parse recipe reads a project whole, and
--- an app of the same recorded group, whose key is theirs.
-function close_over(m, names, base)
-  local grew = true
-  while grew do
-    grew = false
-    local projects = {}
-    local groups = {}
-    for u in keys(m) do
-      projects[unit_project(u)] = true
-      if has_key(base.keys, u) then groups[base.keys[u].text] = true end
-    end
-    for u in names do
-      if not has_key(m, u) then
-        local recorded = has_key(base.keys, u) and has_key(groups, base.keys[u].text)
-        if has_key(projects, unit_project(u)) or recorded then
-          m[u] = true
-          grew = true
-        end
-      end
-    end
-  end
-  return nil
-end
-
--- The groups of the apps measured, as `{members, folders}`. Two apps are
--- in one group when they share a project, as a parse recipe's checks across
--- files read the project whole, or when one's app reaches the other's
--- folder: the reached folder's counts of the typed checks are judged on the
--- apps that reach it (a file no app reaches is `unreached`, and a file's
--- calls are counted on one app that reaches it), and the app's own read
--- the reached folder's types. A group's folders are its apps' own and each
--- folder outside the checkout they reach.
-function groups_of(st, m)
-  local label = {}
-  for u in keys(m) do
-    if has_key(st.units, u) then label[u] = u end
-  end
-  local pairs_ = {}
-  local first_of = {}
-  for u in sort(keys(label)) do
-    local p = unit_project(u)
-    if has_key(first_of, p) then pairs_[first_of[p] .. "\t" .. u] = true else first_of[p] = u end
-  end
-  for app in keys(st.reach) do
-    for f in st.reach[app] do
-      local v = app_of(f)
-      if not has_key(label, v) then fail("quality: " .. app .. " reaches " .. f .. ", of an app this run didn't measure") end
-      if v ~= app_of(app) then pairs_[app_of(app) .. "\t" .. v] = true end
-    end
-  end
-  local edges = {}
-  for k in keys(pairs_) do push(edges, split(k, "\t")) end
-  local moved = true
-  while moved do
-    moved = false
-    for e in edges do
-      local a = label[e[1]]
-      local b = label[e[2]]
-      if a ~= b then
-        local low = a < b and a or b
-        label[e[1]] = low
-        label[e[2]] = low
-        moved = true
-      end
-    end
-  end
-  local by = {}
-  for u in keys(label) do push_at(by, label[u], u) end
-  local outside_of = {}
-  for app in keys(st.outside_reach) do
-    for d in st.outside_reach[app] do
-      if not has_key(outside_of, label[app_of(app)]) then outside_of[label[app_of(app)]] = {} end
-      outside_of[label[app_of(app)]][d] = true
-    end
-  end
-  local out = {}
-  for l in sort(keys(by)) do
-    local members = sort(by[l])
-    local folders = {}
-    for u in members do push(folders, u) end
-    for d in sort(keys(get(outside_of, l, {}))) do push(folders, d) end
-    push(out, {members = members, folders = folders})
-  end
-  return out
 end
 
 -- ── Two at a time ───────────────────────────────────────────────────────
@@ -1053,34 +952,24 @@ function types_take(st, res, tracked)
   return out
 end
 
--- The count's runs. Each file is judged once, on one app that reaches it:
--- an app in the file's own folder (`app_of`) if one does, else the app that
--- reaches the most files. An app's files are run a folder at a time, so
--- each run's count belongs to one folder.
-function rewrite_jobs(reach)
-  local roots_of = {}
-  for a in keys(reach) do
-    for f in reach[a] do push_at(roots_of, f, a) end
-  end
+-- The count's runs for the apps of `roots` (an app's own roots, typed this
+-- run), over its own files alone: each file judged once, on the root that
+-- reaches the most files, then by name.
+function rewrite_jobs(st, unit, roots)
+  local own = set_of(st.units[unit])
   local by = {}
-  for f in sort(keys(roots_of)) do
-    local best = ""
-    local best_key = ""
-    for r in roots_of[f] do
-      -- Its own folder first, then the most files, then by name.
-      local k = (app_of(r) == app_of(f) and "0" or "1") .. "\t" .. (1000000 - #reach[r]) .. "\t" .. r
-      if best == "" or k < best_key then
-        best = r
-        best_key = k
+  for r in roots do
+    for f in get(st.reach, r, {}) do
+      if has_key(own, f) then
+        local k = (1000000 - #st.reach[r]) .. "\t" .. r
+        if not has_key(by, f) or k < by[f] then by[f] = k end
       end
     end
-    push_at(by, best .. "\t" .. app_of(f), f)
   end
+  local files_of = {}
+  for f in sort(keys(by)) do push_at(files_of, split(by[f], "\t")[2], f) end
   local jobs = {}
-  for k in sort(keys(by)) do
-    local parts = split(k, "\t")
-    push(jobs, {root = parts[1], unit = parts[2], files = by[k]})
-  end
+  for r in sort(keys(files_of)) do push(jobs, {root = r, unit = unit, files = files_of[r]}) end
   return jobs
 end
 
@@ -1129,141 +1018,158 @@ function count_part(work)
   return nil
 end
 
--- The old-style calls the types prove could be method calls, in every file
--- the apps measured reach: `rewrite_method_calls trials=0`, a run a job,
--- each reading its root's types from this run's folder.
-function full_count(st, scratch, whole)
-  local jobs = rewrite_jobs(st.reach)
-  if #jobs == 0 then return nil end
-  local items = {}
-  for j in jobs do
-    -- A count's run costs about a twentieth of a second a file.
-    push(items, {part = "count", name = j.unit .. "\t" .. j.root .. "\t" .. join(j.files, ",") .. "\t" .. types_file_of(scratch, j.root), cost = 50 * #j.files + 100})
-  end
-  local res = run_items(scratch, "count", items, {})
-  for c in res.cant do push(st.cant, c) end
-  print("rewrite_method_calls count: " .. #jobs .. " runs " .. WORKERS .. " at once in " .. times_seconds(res.ms))
-  note_stage(st, "rewrite_method_calls count", get(res.cpu, "count", 0), res.ms, #jobs, whole, COUNT_CPU_BUDGET_MS)
-  local found = {}
-  local call_lines = {}
-  for l in lines(res.out) do
-    if starts_with(l, "RWF\t") then push(call_lines, l) elseif starts_with(l, "RW\t") then push(found, l) end
-  end
-  local files = 0
-  local proven = 0
-  local unsettled = 0
-  for l in sort(found) do
-    local f = split(l, "\t")
-    count_finding(st, f[2], "rewrite_method_calls", "rewritable", tonumber(f[5]))
-    push(st.log, "rewrite " .. f[2] .. " on " .. f[3] .. ": " .. f[4] .. " files, " .. f[5] .. " calls the types prove, " .. f[6] .. " unsettled, " .. f[7] .. " left")
-    files = files + tonumber(f[4])
-    proven = proven + tonumber(f[5])
-    unsettled = unsettled + tonumber(f[6])
-  end
-  for l in sort(call_lines) do
-    local f = split(l, "\t")
-    push(st.log, join(drop(f, 3), "\t"))
-  end
-  print("rewrite_method_calls: " .. proven .. " calls the types prove could be method calls, in " .. files .. " files, " .. #jobs .. " runs; " .. unsettled .. " the types leave unsettled, and no trial decides them")
-  return nil
+-- The judge of a shared folder's file: the first app by name that reaches
+-- it, and that app's first root by name that does. Nil for none.
+function judge_of(reachers)
+  if #reachers == 0 then return nil end
+  return sort(reachers)[1]
 end
 
--- Each tracked file of an app measured that no app reaches is counted,
--- `roc-types unreached`: no typed check reads it. Every app that could
--- reach it was typed, as an app reaching a folder is in its group.
-function count_unreached(st, files, m)
-  local reached = {}
-  for app in keys(st.reach) do
-    for f in st.reach[app] do reached[f] = true end
+function judge_root(st, unit, f)
+  for r in sort(st.roots_of[unit]) do
+    if has_item(get(st.reach, r, {}), f) then return r end
   end
-  local n = 0
-  for f in files do
-    if has_key(m, app_of(f)) and not typed_excepted(f) and not has_key(reached, f) then
-      count_finding(st, app_of(f), "roc-types", "unreached", 1)
-      push(st.log, f .. ":1: unreached: no app's types reach it, so no typed check reads it")
-      n = n + 1
+  fail("quality: " .. unit .. " was to judge " .. f .. ", and none of its roots reaches it")
+end
+
+-- Each file of a shared folder as `{unit, n, reachers}`: the apps reaching
+-- it (this run's types for an app typed, else the baseline's), and its
+-- count, measured when its judge was typed, else the baseline's.
+function shared_files(st, base)
+  local out = {}
+  local measure = {}
+  for u in sort(keys(st.units)) do
+    if not has_key(st.roots_of, u) then
+      for f in st.units[u] do
+        local was = get(base.typed_files, f, {unit = u, n = 0, reachers = {}})
+        local reachers = {}
+        for r in was.reachers do
+          if has_key(st.roots_of, r) and not has_key(st.typed_units, r) then push(reachers, r) end
+        end
+        for t in keys(st.typed_units) do
+          for r in st.roots_of[t] do
+            if has_item(get(st.reach, r, {}), f) and not has_item(reachers, t) then push(reachers, t) end
+          end
+        end
+        reachers = sort(reachers)
+        local judge = judge_of(reachers)
+        local row = {unit = u, n = was.n, reachers = reachers}
+        if judge == nil then
+          row.n = 0
+        elseif has_key(st.typed_units, judge) then
+          push(measure, {file = f, unit = u, root = judge_root(st, judge, f)})
+        end
+        out[f] = row
+      end
     end
   end
-  print("roc-types: " .. #keys(st.typed) .. " apps typed, " .. #keys(reached) .. " files reached, " .. n .. " reached by none")
-  for e in TYPED_EXCEPTIONS do print("left out of the typed stages: " .. e.prefix .. " (" .. e.why .. ")") end
-  return nil
+  return {rows = out, measure = measure}
+end
+
+-- The judges a shared file now has that this run didn't type, where the
+-- baseline's judge was another: each must be typed.
+function judges_untyped(st, base)
+  local need = {}
+  for u in keys(st.units) do
+    if not has_key(st.roots_of, u) then
+      for f in st.units[u] do
+        local was = get(base.typed_files, f, nil)
+        local reachers = {}
+        if was ~= nil then
+          for r in was.reachers do
+            if has_key(st.roots_of, r) and not has_key(st.typed_units, r) then push(reachers, r) end
+          end
+        end
+        for t in keys(st.typed_units) do
+          for r in st.roots_of[t] do
+            if has_item(get(st.reach, r, {}), f) and not has_item(reachers, t) then push(reachers, t) end
+          end
+        end
+        local judge = judge_of(reachers)
+        if judge ~= nil and not has_key(st.typed_units, judge) and (was == nil or judge_of(was.reachers) ~= judge) then need[judge] = true end
+      end
+    end
+  end
+  return sort(keys(need))
+end
+
+-- The typed counts: each app typed this run, from its own roots over its
+-- own files (`unreached`, and the calls `rewrite_method_calls trials=0`
+-- proves), and each shared folder from its files' rows (`shared_files`),
+-- the count of those whose judge was typed measured a file at a time.
+function typed_counts(st, base, scratch, whole)
+  local items = {}
+  local jobs = 0
+  for u in sort(keys(st.typed_units)) do
+    local reached = {}
+    for r in st.roots_of[u] do
+      for f in get(st.reach, r, {}) do reached[f] = true end
+    end
+    for f in st.units[u] do
+      if not typed_excepted(f) and not has_key(reached, f) then
+        count_finding(st, u, "roc-types", "unreached", 1)
+        push(st.log, f .. ":1: unreached: no root of " .. u .. " reaches it, so no typed check reads it")
+      end
+    end
+    for j in rewrite_jobs(st, u, st.roots_of[u]) do
+      push(items, {part = "count", name = u .. "\t" .. j.root .. "\t" .. join(j.files, ",") .. "\t" .. types_file_of(scratch, j.root), cost = 50 * #j.files + 100})
+      jobs = jobs + 1
+    end
+  end
+  local sh = shared_files(st, base)
+  for m in sh.measure do
+    push(items, {part = "count", name = m.unit .. "@" .. m.file .. "\t" .. m.root .. "\t" .. m.file .. "\t" .. types_file_of(scratch, m.root), cost = 150})
+  end
+  local res = {out = "", cpu = {}, ms = 0, cant = {}}
+  if #items > 0 then
+    res = run_items(scratch, "count", items, {})
+    for c in res.cant do push(st.cant, c) end
+    print("rewrite_method_calls count: " .. #items .. " runs (" .. #sh.measure .. " a shared file each), " .. WORKERS .. " at once in " .. times_seconds(res.ms))
+  end
+  note_stage(st, "rewrite_method_calls count", get(res.cpu, "count", 0), res.ms, #items, whole, COUNT_CPU_BUDGET_MS)
+  local proven = 0
+  for l in lines(res.out) do
+    if starts_with(l, "RW\t") then
+      local f = split(l, "\t")
+      local at = find(f[2], "@")
+      if at ~= nil then
+        sh.rows[sub(f[2], at + 1)].n = tonumber(f[5])
+      else
+        count_finding(st, f[2], "rewrite_method_calls", "rewritable", tonumber(f[5]))
+        push(st.log, "rewrite " .. f[2] .. " on " .. f[3] .. ": " .. f[4] .. " files, " .. f[5] .. " calls the types prove, " .. f[6] .. " unsettled, " .. f[7] .. " left")
+      end
+      proven = proven + tonumber(f[5])
+    elseif starts_with(l, "RWF\t") then
+      push(st.log, join(drop(split(l, "\t"), 3), "\t"))
+    end
+  end
+  for f in sort(keys(sh.rows)) do
+    local row = sh.rows[f]
+    if #row.reachers == 0 then
+      if not typed_excepted(f) then
+        count_finding(st, row.unit, "roc-types", "unreached", 1)
+        push(st.log, f .. ":1: unreached: no app's types reach it, so no typed check reads it")
+      end
+    else
+      count_finding(st, row.unit, "rewrite_method_calls", "rewritable", row.n)
+    end
+  end
+  print("rewrite_method_calls: " .. proven .. " calls the types prove could be method calls, in the " .. #items .. " runs")
+  return sh.rows
 end
 
 -- ── The full tier ───────────────────────────────────────────────────────
 
--- Measures the apps of `m` and every app that joins them (`close_over`, and
--- an app whose folder a typed app reaches): the parse recipes over each of
--- their projects and roc-types on each of their apps, one pool for both, a
--- round at a time until no app joins.
-function measure(st, scratch, files, m, names, base, whole)
-  local tracked = set_of(files)
-  local parsed = {}
-  local typed_units = {}
-  local parse_cpu = 0
-  local parse_ms = 0
-  local parse_runs = 0
-  local types_cpu = 0
-  local types_ms = 0
-  local types_runs = 0
-  local found = 0
-  local round = 0
-  while true do
-    local todo_p = {}
-    local todo_u = {}
-    for u in keys(m) do
-      if not has_key(parsed, unit_project(u)) then todo_p[unit_project(u)] = true end
-      if not has_key(typed_units, u) then todo_u[u] = true end
-    end
-    if #keys(todo_p) == 0 and #keys(todo_u) == 0 then break end
-    round = round + 1
-    local pp = parse_plan(st, files, todo_p)
-    local items = {}
-    for it in pp.items do push(items, it) end
-    local types_n = 0
-    for app in st.apps do
-      if has_key(todo_u, app_of(app)) then
-        -- A guess at its cost: an app under canvas_apps/ reaches its
-        -- platform's hundred modules, and costs the most.
-        push(items, {part = "types", name = app, cost = starts_with(app, "canvas_apps/") and 4000 or 1000})
-        types_n = types_n + 1
-      end
-    end
-    for p in keys(todo_p) do parsed[p] = true end
-    for u in keys(todo_u) do typed_units[u] = true end
-    if #items > 0 then
-      local tree = #pp.items > 0 and tracked_tree(scratch, pp.copy) or ""
-      local res = run_items(scratch, "round-" .. round, items, {parse = {"tree=" .. tree}, types = {"scratch=" .. scratch}})
-      if tree ~= "" then remove_tree(tree) end
-      for c in res.cant do push(st.cant, c) end
-      print("round " .. round .. ": " .. #pp.items .. " parse runs and roc-types on " .. types_n .. " apps, " .. WORKERS .. " at once in " .. times_seconds(res.ms))
-      found = found + parse_take(st, res)
-      parse_cpu = parse_cpu + get(res.cpu, "parse", 0)
-      types_cpu = types_cpu + get(res.cpu, "types", 0)
-      parse_ms = parse_ms + res.ms
-      types_ms = types_ms + res.ms
-      parse_runs = parse_runs + #pp.items
-      types_runs = types_runs + types_n
-      -- An app whose folder a typed app now reaches joins the apps measured:
-      -- its typed counts are judged on the apps that reach it.
-      for app in types_take(st, res, tracked) do
-        for f in st.reach[app] do
-          if not has_key(m, app_of(f)) then
-            print("measured too: " .. app_of(f) .. ", which " .. app .. " reaches")
-            m[app_of(f)] = true
-          end
-        end
-      end
-      close_over(m, names, base)
-    end
+-- The folders an app's types read: its own, every folder of the checkout
+-- its roots reach, and each outside it they reach.
+function types_folders(st, unit)
+  local set = {}
+  set[unit] = true
+  for r in st.roots_of[unit] do
+    for f in get(st.reach, r, {}) do set[app_of(f)] = true end
+    for d in get(st.outside_reach, r, {}) do set[d] = true end
   end
-  local budget = 0
-  for rc in PARSE_RECIPES do budget = budget + rc.cpu_budget_ms end
-  note_stage(st, "parse recipes", parse_cpu, parse_ms, parse_runs, whole, budget)
-  print("parse recipes: " .. found .. " findings")
-  note_stage(st, "roc-types every app", types_cpu, types_ms, types_runs, whole, TYPES_CPU_BUDGET_MS)
-  count_unreached(st, files, m)
-  full_count(st, scratch, whole)
-  return nil
+  return sort(keys(set))
 end
 
 function full()
@@ -1271,43 +1177,133 @@ function full()
   local units = {}
   for f in files do push_at(units, app_of(f), f) end
   local names = sort(keys(units))
-  print("quality, full: " .. #files .. " files in " .. #names .. " apps")
+  local roots_of = {}
+  local apps = typed_apps()
+  for a in apps do push_at(roots_of, app_of(a), a) end
+  local projects = {}
+  for u in names do projects[unit_project(u)] = true end
+  print("quality, full: " .. #files .. " files in " .. #names .. " apps, " .. #keys(projects) .. " projects")
   local scratch = fresh_dir("build:roc-apps", "quality-run")
   mkdir(scratch .. "/types")
-  local st = {cant = {}, over = {}, counts = {}, log = {}, settings = {}, setting_units = {}, units = units,
-    reach = {}, outside_reach = {}, typed = {}, untracked = {}, outside = {}, outside_names = {}, apps = typed_apps(),
+  local st = {cant = {}, over = {}, counts = {}, log = {}, settings = {}, setting_units = {}, units = units, roots_of = roots_of,
+    reach = {}, outside_reach = {}, typed = {}, typed_units = {}, untracked = {}, outside = {}, outside_names = {}, apps = apps,
     trees = folder_trees(scratch), tools = tools_identity(pinned_roc("quality"))}
   local base = read_baseline()
-  local m = stale_apps(st, names, base)
-  close_over(m, names, base)
-  local kept = 0
-  for u in names do
-    if not has_key(m, u) then kept = kept + 1 end
+  -- The projects to parse: each whose key is missing or moved.
+  local parse = {}
+  for p in sort(keys(projects)) do
+    if FRESH or not has_key(base.parse_keys, p) or key_hash(st, {p}) ~= base.parse_keys[p].hash then parse[p] = true end
   end
-  print("keys: " .. kept .. " of " .. #names .. " apps as " .. BASELINE .. " holds them" .. (FRESH and " (fresh=1 measures every app)" or "") .. ", " .. (#names - kept) .. " to measure")
-  local whole = kept == 0
-  if kept < #names then
+  -- The apps to type: each whose key is missing or moved, and every app
+  -- when a shared folder's file has no row of its own yet.
+  local retype = {}
+  local all_typed = FRESH
+  for u in names do
+    if not has_key(roots_of, u) then
+      for f in units[u] do
+        if not has_key(base.typed_files, f) then all_typed = true end
+      end
+    end
+  end
+  local said = {}
+  for u in sort(keys(roots_of)) do
+    if all_typed or not has_key(base.types_keys, u) then
+      retype[u] = true
+    else
+      local k = base.types_keys[u]
+      if not has_key(said, k.text) then said[k.text] = key_hash(st, k.folders) end
+      if said[k.text] ~= k.hash then retype[u] = true end
+    end
+  end
+  print("keys: " .. #keys(parse) .. " of " .. #keys(projects) .. " projects to parse, " .. #keys(retype) .. " of " .. #keys(roots_of) .. " apps to type" .. (FRESH and " (fresh=1)" or ""))
+  local parse_whole = #keys(parse) == #keys(projects)
+  local types_whole = #keys(retype) == #keys(roots_of)
+  if #keys(parse) > 0 then
     st.settings = project_settings()
     for s in st.settings do print("settings: " .. s.recipe .. " in " .. s.folder .. ", run on its own: " .. join(s.args, " ")) end
-    measure(st, scratch, files, m, names, base, whole)
   end
+  local tracked = set_of(files)
+  local parse_cpu = 0
+  local parse_ms = 0
+  local types_cpu = 0
+  local types_ms = 0
+  local types_runs = 0
+  local found = 0
+  local pp = parse_plan(st, files, parse)
+  local round = 0
+  while true do
+    local items = {}
+    if round == 0 then
+      for it in pp.items do push(items, it) end
+    end
+    local typing = 0
+    for u in sort(keys(retype)) do
+      if not has_key(st.typed_units, u) then
+        for a in roots_of[u] do
+          -- A guess at its cost: an app under canvas_apps/ reaches its
+          -- platform's hundred modules, and costs the most.
+          push(items, {part = "types", name = a, cost = starts_with(a, "canvas_apps/") and 4000 or 1000})
+          typing = typing + 1
+        end
+        st.typed_units[u] = true
+      end
+    end
+    if #items == 0 then break end
+    round = round + 1
+    local tree = (round == 1 and #pp.items > 0) and tracked_tree(scratch, pp.copy) or ""
+    local res = run_items(scratch, "round-" .. round, items, {parse = {"tree=" .. tree}, types = {"scratch=" .. scratch}})
+    if tree ~= "" then remove_tree(tree) end
+    for c in res.cant do push(st.cant, c) end
+    print("round " .. round .. ": " .. (round == 1 and #pp.items or 0) .. " parse runs and roc-types on " .. typing .. " roots, " .. WORKERS .. " at once in " .. times_seconds(res.ms))
+    found = found + parse_take(st, res)
+    parse_cpu = parse_cpu + get(res.cpu, "parse", 0)
+    types_cpu = types_cpu + get(res.cpu, "types", 0)
+    if round == 1 then parse_ms = res.ms end
+    types_ms = types_ms + res.ms
+    types_runs = types_runs + typing
+    types_take(st, res, tracked)
+    for j in judges_untyped(st, base) do
+      print("typed too: " .. j .. ", which now judges a shared file")
+      retype[j] = true
+    end
+  end
+  local budget = 0
+  for rc in PARSE_RECIPES do budget = budget + rc.cpu_budget_ms end
+  note_stage(st, "parse recipes", parse_cpu, parse_ms, #pp.items, parse_whole, budget)
+  print("parse recipes: " .. found .. " findings")
+  note_stage(st, "roc-types every app", types_cpu, types_ms, types_runs, types_whole, TYPES_CPU_BUDGET_MS)
+  for e in TYPED_EXCEPTIONS do print("left out of the typed stages: " .. e.prefix .. " (" .. e.why .. ")") end
+  local typed_files = typed_counts(st, base, scratch, types_whole)
   if #keys(st.untracked) > 0 then print("reached and not tracked, so in no key: " .. #keys(st.untracked) .. " files, " .. join(take(sort(keys(st.untracked)), 5), ", ")) end
-  -- The counts: the measured apps' own, and every other app's from the
-  -- baseline.
+  -- The counts: what this run measured, and the rest as the baseline holds
+  -- them. A parse count is its project's; a typed count its app's, or a
+  -- shared folder's, which every run computes from its files' rows.
   local counts = {}
   for k in keys(base.counts) do
-    if not has_key(m, split(k, "\t")[1]) then counts[k] = base.counts[k] end
+    local f = split(k, "\t")
+    local app = f[1]
+    if has_key(units, app) then
+      local typed = f[2] == "roc-types" or f[2] == "rewrite_method_calls"
+      if typed then
+        if has_key(roots_of, app) and not has_key(st.typed_units, app) then counts[k] = base.counts[k] end
+      elseif not has_key(parse, unit_project(app)) then
+        counts[k] = base.counts[k]
+      end
+    end
   end
   for k in keys(st.counts) do counts[k] = st.counts[k] end
-  local key_rows = {}
-  for u in names do
-    if not has_key(m, u) then key_rows[u] = base.keys[u] end
+  local parse_keys = {}
+  for p in sort(keys(projects)) do
+    if has_key(parse, p) then parse_keys[p] = {text = p, hash = key_hash(st, {p})} else parse_keys[p] = base.parse_keys[p] end
   end
-  local groups = groups_of(st, m)
-  for g in groups do
-    local k = {folders = g.folders, text = join(g.folders, ","), hash = key_hash(st, g.folders)}
-    for u in g.members do key_rows[u] = k end
-    if #g.members > 1 then print("group of " .. #g.members .. ": " .. join(g.members, " ")) end
+  local types_keys = {}
+  for u in sort(keys(roots_of)) do
+    if has_key(st.typed_units, u) then
+      local folders = types_folders(st, u)
+      types_keys[u] = {text = join(folders, ","), hash = key_hash(st, folders)}
+    else
+      types_keys[u] = base.types_keys[u]
+    end
   end
   remove_tree(scratch)
   replace(FINDINGS_LOG, join(st.log, "\n") .. "\n")
@@ -1334,7 +1330,7 @@ function full()
     push(rows, row)
   end
   print(table(rows, cols))
-  print("the findings of the " .. (#names - kept) .. " apps measured: " .. real(FINDINGS_LOG))
+  print("the findings of what this run measured: " .. real(FINDINGS_LOG))
   local moved = moved_counts(base.counts, counts)
   for x in moved do print("moved " .. x) end
   if BASELINE_ARG == "write" then
@@ -1343,8 +1339,8 @@ function full()
       for c in st.over do print("OVER BUDGET " .. c) end
       fail("quality: no baseline written, since a recipe couldn't run or a stage went over its budget")
     end
-    write_baseline(counts, key_rows)
-    print("baseline written: " .. BASELINE .. ", " .. #keys(counts) .. " counts and " .. #keys(key_rows) .. " keys (" .. #moved .. " counts moved)")
+    write_baseline(counts, parse_keys, types_keys, typed_files)
+    print("baseline written: " .. BASELINE .. ", " .. #keys(counts) .. " counts, " .. #keys(parse_keys) .. " parse keys, " .. #keys(types_keys) .. " types keys, " .. #keys(typed_files) .. " shared files (" .. #moved .. " counts moved)")
   else
     print("against " .. BASELINE .. ": " .. #moved .. " counts moved; report mode, so none fails the run, and the keys stay as they were")
   end
@@ -1352,7 +1348,7 @@ function full()
   for c in st.over do print("OVER BUDGET " .. c) end
   if #st.cant > 0 then fail("quality: " .. #st.cant .. " runs couldn't run (named above): a tool gap") end
   if #st.over > 0 then fail("quality: " .. #st.over .. " stages went over their CPU budgets (named above): find which phase took the time") end
-  print("quality, full: every recipe ran on every project measured, roc-types on each of its apps")
+  print("quality, full: every project whose key moved parsed, every app whose key moved typed")
   return nil
 end
 

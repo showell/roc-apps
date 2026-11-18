@@ -10,10 +10,11 @@ The repository's own scripts, beside `check.shale` at its root.
   tier's cache: a run measures again only the apps whose key moved, so a
   run with nothing changed takes seconds, and `fresh=1` measures every app.
 - `quality_baseline.tsv` holds those counts, one `app`, `recipe`, `check`
-  and `count` a line, and beside each app's counts the key they were
-  measured at, one `app`, `key`, folders and hash line: the folders the
-  counts read, separated by commas, and the hash of the tools and of those
-  folders' content. `shale tools/quality.shale tier=full baseline=write`
+  and `count` a line, and the keys they were measured at: a `parse-key`
+  line a project and a `types-key` line an app, each naming its folders
+  (separated by commas) and the hash of the tools and of those folders'
+  content, and a `typed-file` line for each file of a shared folder (its
+  count of provable method calls, then the apps that reach it). `shale tools/quality.shale tier=full baseline=write`
   writes both, and a change that moves a count writes it again in the same
   commit. A key that no longer matches only makes the next full run measure
   its apps again.
