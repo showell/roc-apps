@@ -32,7 +32,7 @@
 -- over the 63 apps, the parse recipes 33 s, the count 7 s) and 3 s with
 -- nothing changed, most of that git hashing the tools; it was 16 minutes
 -- before the cache and the count (945 s on 2026-11-16, 610 s of it the dry
--- run's trial compiles). The cold time holds Shale's roc-types built on
+-- run's trial compiles). The cold time holds the roc-types built on
 -- Roc's own allocator; the one built on the safe allocator takes about 300 s
 -- of CPU, and the run about 3 minutes. The parse recipes read a copy of the tracked files
 -- (`tracked_tree`), so a build's ignored output never enters a count. It
@@ -700,7 +700,7 @@ end
 -- The typed stages' CPU budgets, and each program's own cap, past the
 -- largest of them. On 2026-11-17 roc-types took 155 to 195 s of CPU over the
 -- 63 apps with Roc's own allocator, and about 300 s with the safe one it
--- had before (Shale's tools/roc_types), so the budget holds either; the
+-- was built on before, so the budget holds either; the
 -- count took 6 to 9 s.
 const TYPES_CPU_BUDGET_MS = 400000
 const TYPES_APP_CPU_MS = 60000
@@ -785,7 +785,7 @@ function types_part(work)
   local roc = pinned_roc("quality")
   local exe = roc_types_exe(roc)
   if not exists(exe) then
-    print("CANT\troc-types: no " .. exe .. ": Shale's `shale tools/roc_types/install.shale` installs it")
+    print("CANT\troc-types: no " .. exe .. ": `shale install.shale` in a checkout of https://github.com/showell/roc-types installs it")
     print("CPU\t0")
     return nil
   end
