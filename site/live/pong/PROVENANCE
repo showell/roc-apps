@@ -1,6 +1,5 @@
-published 2026-09-24T11:19:24Z
-roc nightly-2026-09-22-e494788
-roc-apps d9a0124
-rocemit e6a83da
-cobblestone 9f6bdc03 u62-candidate
-sha256 bf2cbfa3fc0fa503  70184 bytes  pong.wasm
+published 2026-11-18T17:43:33Z
+roc nightly-2026-11-03-34bd006
+opt speed
+roc-apps d7cb66f0
+sha256 84e572f26f349cb9  78991 bytes  pong.wasm
