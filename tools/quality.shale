@@ -24,26 +24,33 @@
 -- `rewrite_method_calls trials=0` on every file the types reach, which
 -- counts the old-style calls the types prove could be method calls
 -- (`rewritable`), with no trial compile: a proven call the compiler would
--- refuse is counted, and the recipe's header says which those are. Each
--- answer is kept in a cache under `build:`, keyed by the content of what
--- made it ("The full tier's cache"), so a run re-checks only what changed,
--- and each stage runs two at a time ("Two at a time"). On 2026-11-17 it took
--- about 2 minutes cold on a quiet box (119 to 122 s: roc-types 160 s of CPU
--- over the 63 apps, the parse recipes 33 s, the count 7 s) and 3 s with
--- nothing changed, most of that git hashing the tools; it was 16 minutes
--- before the cache and the count (945 s on 2026-11-16, 610 s of it the dry
--- run's trial compiles). The cold time holds the roc-types built on
--- Roc's own allocator; the one built on the safe allocator takes about 300 s
--- of CPU, and the run about 3 minutes. The parse recipes read a copy of the tracked files
+-- refuse is counted, and the recipe's header says which those are. The
+-- baseline is its cache ("The full tier's keys"): each app's counts carry
+-- the key they were measured at, and a run measures again only the apps
+-- whose key moved, with the apps their counts depend on; `fresh=1` measures
+-- every app. Each stage runs two at a time ("Two at a time"), and every
+-- file a run makes (a copy of the tree, each app's types) is in a folder of
+-- its own, removed at its end. The apps fall in six groups (`groups_of`):
+-- basic, delivery, dog-park, fasttrack and glue each alone, and the 36
+-- others together, as every canvas app reaches canvas_apps/lib or web and
+-- Safari reaches book_builder and syntax_color. On 2026-11-18, on a box
+-- with other work running (load about 2), a cold run (`fresh=1`) took 254 s
+-- (roc-types 203 s of CPU over the 56 apps, the parse recipes 41 s, the
+-- count 7 s), a run with nothing changed 2.4 s (13 s when the tools'
+-- binaries had left the page cache: hashing roc-types' 190 MB is most of
+-- it), and one with a file of dog-park changed 11 s. A change in the
+-- group of 36 measures that group, most of a cold run.
+-- The parse recipes read a copy of the tracked files
 -- (`tracked_tree`), so a build's ignored output never enters a count. It
 -- needs the cookbook's rewrite recipe to take `trials=0` and `types_from=`;
 -- an older one can't run, and says so. A project is a top-level folder.
 -- Each recipe reads a whole project at once, so a check across files sees
 -- the project's own files and no other app's. The findings are counted per
--- app: a folder under canvas_apps/, else the top-level folder. Each finding line goes to
--- FINDINGS_LOG, the count's own too (each call it leaves or leaves
+-- app: a folder under canvas_apps/, else the top-level folder. Each finding
+-- line of the apps measured goes to FINDINGS_LOG, the count's own too (each call it leaves or leaves
 -- unsettled, with its reason), and the counts are compared with the baseline, each moved
--- count printed. `baseline=write` writes the counts as the new baseline.
+-- count printed. `baseline=write` writes the counts and their keys as the
+-- new baseline.
 --
 -- An app's own tables and exemptions are its lints', asked of the lint
 -- scripts in SETTINGS_SOURCES (Safari's first: its name_types.txt, its
@@ -75,6 +82,8 @@ const BASELINE_ARG = arg("baseline", "")
 const PART = arg("part", "")
 const WORK_ARG = arg("work", "")
 const TREE_ARG = arg("tree", "")
+const SCRATCH_ARG = arg("scratch", "")
+const FRESH = arg("fresh", 0) == 1
 
 -- The recipes that only parse. `checks` pairs each count's name in the
 -- recipe's summary with the name its finding lines give; `args` are the
@@ -338,23 +347,35 @@ function key_of(app, recipe, check)
   return app .. "\t" .. recipe .. "\t" .. check
 end
 
+-- The baseline as `{counts, keys}`: each count by `key_of`, and each app's
+-- key row (`KEY_ROW` in its second field) as `{folders, text, hash}`, `text`
+-- the folders as the row writes them.
+const KEY_ROW = "key"
+
 function read_baseline()
-  local counts = {}
-  if not exists(BASELINE) then return counts end
+  local out = {counts = {}, keys = {}}
+  if not exists(BASELINE) then return out end
   local all = lines(read(BASELINE))
   if #all == 0 or all[1] ~= BASELINE_HEADER then fail("quality: " .. BASELINE .. " does not start with its header") end
   for i = 2, #all do
     local f = split(all[i], "\t")
     if #f ~= 4 then fail("quality: " .. BASELINE .. ":" .. i .. " is not four fields") end
-    counts[key_of(f[1], f[2], f[3])] = tonumber(f[4])
+    if f[2] == KEY_ROW then
+      out.keys[f[1]] = {folders = split(f[3], ","), text = f[3], hash = f[4]}
+    else
+      out.counts[key_of(f[1], f[2], f[3])] = tonumber(f[4])
+    end
   end
-  return counts
+  return out
 end
 
-function write_baseline(counts)
-  local text = BASELINE_HEADER .. "\n"
-  for k in sort(keys(counts)) do text = text .. k .. "\t" .. counts[k] .. "\n" end
-  replace(BASELINE, text)
+-- Writes the counts and each app's key row, every line sorted, so an app's
+-- rows stay together.
+function write_baseline(counts, key_rows)
+  local ls = {}
+  for k in keys(counts) do push(ls, k .. "\t" .. counts[k]) end
+  for app in keys(key_rows) do push(ls, app .. "\t" .. KEY_ROW .. "\t" .. key_rows[app].text .. "\t" .. key_rows[app].hash) end
+  replace(BASELINE, BASELINE_HEADER .. "\n" .. join(sort(ls), "\n") .. "\n")
   return nil
 end
 
@@ -375,88 +396,30 @@ function moved_counts(was, now)
   return out
 end
 
-function count_finding(st, app, recipe, check, short, n)
+function count_finding(st, app, recipe, check, n)
   if n == 0 then return nil end
   incr(st.counts, key_of(app, recipe, check), n)
-  if not has_key(st.by_app, app) then st.by_app[app] = {} end
-  incr(st.by_app[app], short, n)
   return nil
 end
 
--- ── The full tier's cache ───────────────────────────────────────────────
+-- ── The full tier's keys ────────────────────────────────────────────────
 
--- Every answer the full tier computes is kept here, under the checkout's
--- own folder, keyed by the content of what it read: the git blob hash of
--- each input file, and of each tool and recipe file that made the answer
--- (`tool_identity`). An answer is used again only when its key is the same
--- text, so a run re-checks only what changed. A file the key doesn't name
--- can't change the answer: a recipe reads only its project's files, an
--- app's types only the modules roc-types said it reached (a new import is a
--- change to a reached file), and a count only its files and its root's
--- types. Nothing here is tracked, and removing the folder only makes the
--- next run cold.
-const CACHE_ROOT = "build:roc-apps/quality-cache"
+-- The baseline is the full tier's cache: beside each app's counts it holds
+-- the key they were measured at, a row `app<tab>key<tab>folders<tab>hash`.
+-- The folders, separated by commas, are every folder the counts read; the
+-- hash is git's hash of the tools' identity (`tools_identity`) and each
+-- folder's content (`folder_id`). A run measures again only the apps whose
+-- key moved, and takes every other app's counts from the baseline as they
+-- stand, so an app's counts are a function of what its key names. Apps are
+-- measured in groups (`groups_of`), and the apps of a group share its key.
 
-function cache_name(s)
-  local n = re_replace(s, "[/:]", "__")
-  if starts_with(n, "__") then n = sub(n, 3) end
-  return n
-end
-
-function checkout_cache()
-  return CACHE_ROOT .. "/" .. cache_name(real("."))
-end
-
-function cache_path(stage, name)
-  return checkout_cache() .. "/" .. stage .. "/" .. cache_name(name) .. ".txt"
-end
-
--- An entry is its key, a line `--`, then its answer. Nil for none.
-function cache_entry(stage, name)
-  local p = cache_path(stage, name)
-  if not exists(p) then return nil end
-  local text = read(p)
-  local sep = find(text, "\n--\n")
-  if sep == nil then return nil end
-  return {key = sub(text, 1, sep - 1), value = sub(text, sep + 4)}
-end
-
-function cache_read(stage, name, key)
-  local e = cache_entry(stage, name)
-  if e == nil or e.key ~= key then return nil end
-  return e.value
-end
-
--- Marks an entry as one this run uses, so `prune_cache` keeps it.
-function cache_keep(st, stage, name)
-  st.kept[stage .. "/" .. cache_name(name) .. ".txt"] = true
-  return nil
-end
-
--- Removes each entry no run of this tree uses any more (an app, a project or
--- a count's run that is gone), so the cache holds one answer a thing.
-function prune_cache(st)
-  for stage in {"parse", "types", "count"} do
-    local dir = checkout_cache() .. "/" .. stage
-    if exists(dir) then
-      for f in ls(dir) do
-        if not has_key(st.kept, stage .. "/" .. f) then remove(dir .. "/" .. f) end
-      end
-    end
-  end
-  return nil
-end
-
-function cache_write(stage, name, key, value)
-  local dir = checkout_cache() .. "/" .. stage
-  if not exists(dir) then mkdir(dir) end
-  replace(cache_path(stage, name), key .. "\n--\n" .. value)
-  return nil
+-- Git's hash of a text, as a blob.
+function blob_hash(text)
+  return trim(must(run({"git", "hash-object", "--stdin"}, {timeout_ms = 30000, whole = 1000, stdin = text})).out)
 end
 
 -- The git blob hash of each file at an OS path, by path, from one program;
--- nil when git can't hash one of them (a file gone since a cached answer
--- named it).
+-- nil when git can't hash one of them.
 function hashes_of(os_paths)
   local out = {}
   if #os_paths == 0 then return out end
@@ -481,20 +444,14 @@ function recipe_closure(path, seen, out)
   return nil
 end
 
-function closure_of(recipe)
-  local out = {}
-  recipe_closure("cookbook:roc/" .. recipe .. ".shale", {}, out)
-  return out
-end
-
 -- The git hash of this script's code alone, its comment lines left out, so
--- a change to its prose leaves the cache as it was.
+-- a change to its prose leaves every key as it was.
 function code_hash(path)
   local kept = {}
   for l in lines(read(path)) do
     if not starts_with(trim(l), "--") then push(kept, l) end
   end
-  return trim(must(run({"git", "hash-object", "--stdin"}, {timeout_ms = 30000, whole = 1000, stdin = join(kept, "\n") .. "\n"})).out)
+  return blob_hash(join(kept, "\n") .. "\n")
 end
 
 -- The `shale` this run's children run: the PATH's, through its link.
@@ -503,37 +460,226 @@ function shale_binary()
   return trim(must(run({"readlink", "-f", w}, {timeout_ms = 5000, whole = 4000})).out)
 end
 
--- Each stage's key lines for the tools that make its answers: `types` the
--- pin, roc-types and this script's code (`code_hash`); `parse[recipe]` and `count` the pin,
--- `shale`, roc-ast, this script and every file of the recipe's closure.
--- `shale` is in each, as its builtins and preludes run every recipe, and
--- so is the repo's prelude, which finds the pinned Roc.
-function tool_identity(roc)
-  local shale = shale_binary()
-  local roc_ast = real("tools:roc-ast/bin/roc-ast")
-  local roc_types = real(roc_types_exe(roc))
-  local self = code_hash(SELF_PATH)
-  local prelude = real(".shale/prelude.shale")
-  local closures = {}
-  local all = {shale, roc_ast, roc_types, prelude}
-  for rc in PARSE_RECIPES do closures[rc.recipe] = closure_of(rc.recipe) end
-  closures["rewrite_method_calls"] = closure_of("rewrite_method_calls")
-  for k in keys(closures) do
-    for p in closures[k] do push(all, real(p)) end
+-- One hash for every tool that makes a count: the Roc pin, `shale` (its
+-- builtins and preludes run every recipe), roc-ast, roc-types, the repo's
+-- prelude (which finds the pinned Roc), this script's code (`code_hash`),
+-- and every file of each recipe's closure and of the types library this
+-- script reads roc-types with.
+function tools_identity(roc)
+  local named = {
+    {"shale", shale_binary()},
+    {"roc-ast", real("tools:roc-ast/bin/roc-ast")},
+    {"roc-types", real(roc_types_exe(roc))},
+    {"prelude", real(".shale/prelude.shale")},
+  }
+  local seen = {}
+  local libs = {}
+  for rc in PARSE_RECIPES do recipe_closure("cookbook:roc/" .. rc.recipe .. ".shale", seen, libs) end
+  recipe_closure("cookbook:roc/rewrite_method_calls.shale", seen, libs)
+  recipe_closure("cookbook:roc/types.shale", seen, libs)
+  for p in libs do push(named, {p, real(p)}) end
+  local paths = {}
+  for n in named do push(paths, n[2]) end
+  local h = hashes_of(unique(paths))
+  if h == nil then fail("quality: git couldn't hash the tools and recipes: " .. join(unique(paths), ", ")) end
+  local ls = {"pin\t" .. trim(read("roc-version")), "self\t" .. code_hash(SELF_PATH)}
+  for n in named do push(ls, n[1] .. "\t" .. h[n[2]]) end
+  return blob_hash(join(ls, "\n") .. "\n")
+end
+
+-- The git tree of each folder as the run reads it: the tracked files as
+-- the working copy has them, so an edit counts before it is committed and
+-- an untracked file never does. A fresh index of this run's (`read-tree
+-- HEAD`, then `add -u`, which hashes the checkout's thousand tracked files
+-- in under half a second) is written as a tree, whose folders are listed at
+-- the top and under canvas_apps/. Gives each folder's tree hash by path.
+function folder_trees(scratch)
+  local env = {GIT_INDEX_FILE = real(scratch) .. "/index"}
+  must(run({"git", "read-tree", "HEAD"}, {timeout_ms = 60000, whole = 4000, env = env}))
+  must(run({"git", "add", "-u", "--", "."}, {timeout_ms = 120000, whole = 4000, env = env}))
+  local tree = trim(must(run({"git", "write-tree"}, {timeout_ms = 60000, whole = 4000, env = env})).out)
+  local out = {}
+  for below in {"", "canvas_apps/"} do
+    local argv = {"git", "ls-tree", "-d", tree}
+    if below ~= "" then push(argv, below) end
+    for l in lines(trim(must(run(argv, {timeout_ms = 60000, whole = 400000})).out)) do
+      -- `040000 tree <hash><tab><path>`
+      local tab = find(l, "\t")
+      if tab ~= nil then out[sub(l, tab + 1)] = split(sub(l, 1, tab - 1), " ")[3] end
+    end
   end
-  local h = hashes_of(unique(all))
-  if h == nil then fail("quality: git couldn't hash the tools and recipes: " .. join(unique(all), ", ")) end
-  local pin = "pin\t" .. trim(read("roc-version"))
-  local common = {pin, "shale\t" .. h[shale], "self\t" .. self, "prelude\t" .. h[prelude]}
-  local id = {types = join({pin, "roc-types\t" .. h[roc_types], "self\t" .. self, "prelude\t" .. h[prelude]}, "\n"), parse = {}}
-  for k in keys(closures) do
-    local ls = {}
-    for l in common do push(ls, l) end
-    push(ls, "roc-ast\t" .. h[roc_ast])
-    for p in closures[k] do push(ls, p .. "\t" .. h[real(p)]) end
-    if k == "rewrite_method_calls" then id.count = join(ls, "\n") else id.parse[k] = join(ls, "\n") end
+  return out
+end
+
+-- The name a key gives a folder outside the checkout that an app reaches,
+-- from its OS path, the same from every checkout on the box: a sibling
+-- repo's folder (roc-ray's platform, roc-markdown's package, which a lane's
+-- worktree reaches through a link) by its real path under the `repos:`
+-- mount, and a folder of Roc's own cache as `roc-cache:` and its path there.
+function outside_name(st, dir)
+  if has_key(st.outside_names, dir) then return st.outside_names[dir] end
+  local canon = trim(must(run({"readlink", "-f", dir}, {timeout_ms = 5000, whole = 4000})).out)
+  local repos = real("repos:") .. "/"
+  local name = ""
+  if starts_with(canon, repos) then
+    name = "repos:" .. sub(canon, #repos + 1)
+  else
+    local at = find(canon, "/.cache/roc/")
+    if at == nil then fail("quality: an app reaches " .. canon .. ", which is outside the checkout, the repos: mount and Roc's cache, so no key can name it") end
+    name = "roc-cache:" .. sub(canon, at + #"/.cache/roc/")
   end
-  return id
+  st.outside_names[dir] = name
+  return name
+end
+
+-- A folder outside the checkout, as `outside_name` names it. A sibling
+-- repo's is keyed by the git hash of its .roc files; one of Roc's cache by
+-- its name alone, as Roc names such a folder by the hash of what it holds.
+function outside_folder_id(folder)
+  if starts_with(folder, "roc-cache:") then return "named" end
+  if not exists(folder) then return "gone" end
+  local paths = {}
+  for n in sort(ls(folder)) do
+    if ends_with(n, ".roc") then push(paths, real(folder .. "/" .. n)) end
+  end
+  local h = hashes_of(paths)
+  if h == nil then fail("quality: git couldn't hash the .roc files of " .. folder) end
+  local ls_ = {}
+  for q in paths do push(ls_, basename(q) .. " " .. h[q]) end
+  return blob_hash(join(ls_, "\n") .. "\n")
+end
+
+function folder_id(st, folder)
+  if contains(folder, ":") then
+    if not has_key(st.outside, folder) then st.outside[folder] = outside_folder_id(folder) end
+    return st.outside[folder]
+  end
+  return get(st.trees, folder, "gone")
+end
+
+function key_hash(st, folders)
+  local ls = {"tools\t" .. st.tools}
+  for f in folders do push(ls, f .. "\t" .. folder_id(st, f)) end
+  return blob_hash(join(ls, "\n") .. "\n")
+end
+
+-- ── The apps to measure, and their groups ───────────────────────────────
+
+function unit_project(app)
+  return split(app, "/")[1]
+end
+
+-- The apps whose counts this run measures: with `fresh=1` every app, else
+-- each whose key row is missing or no longer matches, and each the
+-- baseline holds that has no tracked file now (its counts go to zero).
+function stale_apps(st, names, base)
+  local out = {}
+  local said = {}
+  for u in names do
+    if FRESH or not has_key(base.keys, u) then
+      out[u] = true
+    else
+      local k = base.keys[u]
+      if not has_key(said, k.text) then said[k.text] = key_hash(st, k.folders) end
+      if said[k.text] ~= k.hash then out[u] = true end
+    end
+  end
+  for k in keys(base.counts) do
+    local u = split(k, "\t")[1]
+    if not has_key(st.units, u) then out[u] = true end
+  end
+  for u in keys(base.keys) do
+    if not has_key(st.units, u) then out[u] = true end
+  end
+  return out
+end
+
+-- Adds to `m` each app that must be measured beside one already there: an
+-- app of the same project, as each parse recipe reads a project whole, and
+-- an app of the same recorded group, whose key is theirs.
+function close_over(m, names, base)
+  local grew = true
+  while grew do
+    grew = false
+    local projects = {}
+    local groups = {}
+    for u in keys(m) do
+      projects[unit_project(u)] = true
+      if has_key(base.keys, u) then groups[base.keys[u].text] = true end
+    end
+    for u in names do
+      if not has_key(m, u) then
+        local recorded = has_key(base.keys, u) and has_key(groups, base.keys[u].text)
+        if has_key(projects, unit_project(u)) or recorded then
+          m[u] = true
+          grew = true
+        end
+      end
+    end
+  end
+  return nil
+end
+
+-- The groups of the apps measured, as `{members, folders}`. Two apps are
+-- in one group when they share a project, as a parse recipe's checks across
+-- files read the project whole, or when one's app reaches the other's
+-- folder: the reached folder's counts of the typed checks are judged on the
+-- apps that reach it (a file no app reaches is `unreached`, and a file's
+-- calls are counted on one app that reaches it), and the app's own read
+-- the reached folder's types. A group's folders are its apps' own and each
+-- folder outside the checkout they reach.
+function groups_of(st, m)
+  local label = {}
+  for u in keys(m) do
+    if has_key(st.units, u) then label[u] = u end
+  end
+  local pairs_ = {}
+  local first_of = {}
+  for u in sort(keys(label)) do
+    local p = unit_project(u)
+    if has_key(first_of, p) then pairs_[first_of[p] .. "\t" .. u] = true else first_of[p] = u end
+  end
+  for app in keys(st.reach) do
+    for f in st.reach[app] do
+      local v = app_of(f)
+      if not has_key(label, v) then fail("quality: " .. app .. " reaches " .. f .. ", of an app this run didn't measure") end
+      if v ~= app_of(app) then pairs_[app_of(app) .. "\t" .. v] = true end
+    end
+  end
+  local edges = {}
+  for k in keys(pairs_) do push(edges, split(k, "\t")) end
+  local moved = true
+  while moved do
+    moved = false
+    for e in edges do
+      local a = label[e[1]]
+      local b = label[e[2]]
+      if a ~= b then
+        local low = a < b and a or b
+        label[e[1]] = low
+        label[e[2]] = low
+        moved = true
+      end
+    end
+  end
+  local by = {}
+  for u in keys(label) do push_at(by, label[u], u) end
+  local outside_of = {}
+  for app in keys(st.outside_reach) do
+    for d in st.outside_reach[app] do
+      if not has_key(outside_of, label[app_of(app)]) then outside_of[label[app_of(app)]] = {} end
+      outside_of[label[app_of(app)]][d] = true
+    end
+  end
+  local out = {}
+  for l in sort(keys(by)) do
+    local members = sort(by[l])
+    local folders = {}
+    for u in members do push(folders, u) end
+    for d in sort(keys(get(outside_of, l, {}))) do push(folders, d) end
+    push(out, {members = members, folders = folders})
+  end
+  return out
 end
 
 -- ── Two at a time ───────────────────────────────────────────────────────
@@ -591,12 +737,12 @@ function take_run(res, c, i, ended, code, out)
   return nil
 end
 
--- Runs `part=<part>` on each item's chunk, WORKERS at once, `extra[part]`
--- its further arguments. Gives `{out, cpu, ms, cant}`: every run's output,
--- their programs' CPU by part, the wall time and each failure.
-function run_items(name, items, extra)
-  local dir = checkout_cache() .. "/work/" .. name
-  if exists(dir) then remove_tree(dir) end
+-- Runs `part=<part>` on each item's chunk, WORKERS at once, in a folder of
+-- `scratch`, `extra[part]` its further arguments. Gives `{out, cpu, ms,
+-- cant}`: every run's output, their programs' CPU by part, the wall time
+-- and each failure.
+function run_items(scratch, name, items, extra)
+  local dir = scratch .. "/work/" .. name
   mkdir(dir)
   local chunks = chunks_of(items)
   local t0 = clock_ms()
@@ -632,13 +778,11 @@ function run_items(name, items, extra)
 end
 
 -- Says how a stage ran, and holds its CPU to `budget_ms`. Its time is kept
--- in the book only when it ran every item, as a run partly from the cache
--- says nothing of the stage's speed.
-function note_stage(st, stage, cpu, ms, ran, all, budget_ms)
-  local said = stage .. ": " .. (all - ran) .. " of " .. all .. " from the cache"
-  if ran > 0 then said = said .. ", " .. ran .. " run, cpu " .. times_seconds(cpu) end
-  print(said)
-  if ran == all and ran > 0 and #st.cant == 0 then
+-- in the book only when the run measured every app, as a run of a few says
+-- nothing of the stage's speed.
+function note_stage(st, stage, cpu, ms, runs, whole, budget_ms)
+  print(stage .. ": " .. runs .. " runs, cpu " .. times_seconds(cpu))
+  if whole and runs > 0 and #st.cant == 0 then
     if not exists("build:times") then mkdir("build:times") end
     local change = times_note(times_path(BOOK), stage, {ended = "exit", code = 0, cpu_ms = cpu, ms = ms})
     if change ~= "" then print(change) end
@@ -650,14 +794,14 @@ end
 -- ── The full tier's parse recipes ───────────────────────────────────────
 
 -- A copy of the tracked .roc files `files`, as the working tree has them, at
--- their own paths in a fresh folder of this run's. Most recipes take one
--- glob, and a glob over the checkout also finds what git ignores or doesn't
+-- their own paths in a folder of this run's. Most recipes take one glob,
+-- and a glob over the checkout also finds what git ignores or doesn't
 -- track (a tutorial build's prepared sources, 76 files under
 -- canvas_apps/safari/tutorial/build/); in the copy a glob finds only what
 -- git tracks. Each recipe's count of the files it read is still held to
 -- git's.
-function tracked_tree(files)
-  local tree = fresh_dir("build:roc-apps", "quality-tree")
+function tracked_tree(scratch, files)
+  local tree = fresh_dir(scratch, "tree")
   for f in files do
     local dest = tree .. "/" .. f
     local dir = dirname(dest)
@@ -687,15 +831,14 @@ function parse_one(item, tree)
     print("CANT\t" .. rc.recipe .. " in " .. f[2] .. ": " .. v.why)
   else
     for x in v.findings do print("F\t" .. rc.recipe .. "\t" .. f[2] .. "\t" .. x.check .. "\t" .. x.line) end
-    print("DONE\t" .. rc.recipe .. "\t" .. f[2])
   end
   return r.cpu_ms
 end
 
 -- A child run: each `recipe<tab>project` of the work file, in
 -- `tracked_tree`'s copy `tree`. It prints a line a finding,
--- `F<tab>recipe<tab>project<tab>check<tab>line`, `DONE<tab>recipe<tab>project`
--- for each run that ran, and a line a failure, `CANT<tab>why`.
+-- `F<tab>recipe<tab>project<tab>check<tab>line`, and a line a failure,
+-- `CANT<tab>why`.
 function parse_part(work, tree)
   if tree == "" then fail("quality: part=parse needs tree=, the copy of the tracked files") end
   local cpu = 0
@@ -712,93 +855,61 @@ end
 function take_parse_finding(st, rc, unit, check, line)
   local path = re_find(line, "^([^ :]+\\.roc):").group
   if not has_key(st.setting_units, rc.recipe .. "@" .. unit) and is_under_any(path, settings_folders(st.settings, rc.recipe)) then return nil end
-  count_finding(st, app_of(path), rc.recipe, check, rc.short, 1)
+  count_finding(st, app_of(path), rc.recipe, check, 1)
   push(st.log, line)
   return nil
 end
 
--- Every parse recipe over every project, each run a recipe over one
--- project. A run whose project's files and recipe are as a cached run had
--- them is taken from the cache now; the rest are `misses`, items for
--- `run_items`, with `copy` the files their projects hold.
-function parse_plan(st, files, projects, hashes, id)
-  local by_project = {}
-  for f in files do push_at(by_project, project_of(f), f .. "\t" .. hashes[f]) end
-  -- Each run: a recipe over a project, or over a folder with settings of
-  -- its own (`project_settings`), whose key adds its arguments and tables.
-  local units = {}
+-- The parse runs of the projects `todo`: each recipe over each project, and
+-- over each folder there with settings of its own (`project_settings`).
+-- Gives `{items, copy}`: the items for `run_items`, and the files their
+-- tree holds.
+function parse_plan(st, files, todo)
+  local count_of = {}
+  for f in files do
+    if has_key(todo, project_of(f)) then incr(count_of, project_of(f)) end
+  end
+  local runs = {}
   for rc in PARSE_RECIPES do
-    for p in projects do push(units, {rc = rc, unit = p.name, project = p.name, args = "-", lines = by_project[p.name], files = p.files, tables = {}}) end
+    for p in sort(keys(count_of)) do push(runs, {rc = rc, unit = p, args = "-", files = count_of[p]}) end
   end
-  local table_hashes = {}
+  local tables = {}
   for s in st.settings do
-    local ls = {}
-    for f in files do
-      if starts_with(f, s.folder .. "/") then push(ls, f .. "\t" .. hashes[f]) end
-    end
-    if #ls == 0 then fail("quality: settings for " .. s.recipe .. " in " .. s.folder .. ", which holds no tracked .roc file") end
-    local th = hashes_of(s.files)
-    if th == nil then fail("quality: git couldn't hash the tables " .. join(s.files, ", ")) end
-    for t in s.files do push(ls, "table " .. t .. "\t" .. th[t]) end
-    push(ls, "args\t" .. join(s.args, " "))
-    st.setting_units[s.recipe .. "@" .. s.folder] = true
-    push(units, {rc = parse_recipe(s.recipe), unit = s.folder, project = project_of(s.folder .. "/x.roc"), args = join(s.args, " "), lines = ls, files = #ls - #s.files - 1 - #s.skip, tables = s.files})
-  end
-  local plan = {keys_of = {}, misses = {}, copy = {}, found = 0, all = 0}
-  local need = {}
-  local need_tables = {}
-  for u in units do
-    local rc = u.rc
-    plan.all = plan.all + 1
-    local name = rc.recipe .. "@" .. u.unit
-    cache_keep(st, "parse", name)
-    local key = id.parse[rc.recipe] .. "\n" .. join(u.lines, "\n")
-    local hit = cache_read("parse", name, key)
-    if hit ~= nil then
-      for l in lines(hit) do
-        local tab = find(l, "\t")
-        if tab ~= nil then
-          take_parse_finding(st, rc, u.unit, sub(l, 1, tab - 1), sub(l, tab + 1))
-          plan.found = plan.found + 1
-        end
+    if has_key(todo, project_of(s.folder .. "/x.roc")) then
+      local n = 0
+      for f in files do
+        if starts_with(f, s.folder .. "/") then n = n + 1 end
       end
-    else
-      plan.keys_of[name] = key
-      need[u.project] = true
-      for t in u.tables do need_tables[t] = true end
-      -- A run's cost grows with its unit's files; each also starts a
-      -- recipe and roc-ast.
-      push(plan.misses, {part = "parse", name = rc.recipe .. "\t" .. u.unit .. "\t" .. u.args .. "\t" .. u.files, cost = rc.cpu_measured_ms * u.files // #files + 150})
+      if n == 0 then fail("quality: settings for " .. s.recipe .. " in " .. s.folder .. ", which holds no tracked .roc file") end
+      st.setting_units[s.recipe .. "@" .. s.folder] = true
+      push(runs, {rc = parse_recipe(s.recipe), unit = s.folder, args = join(s.args, " "), files = n - #s.skip})
+      for t in s.files do tables[t] = true end
     end
+  end
+  local plan = {items = {}, copy = {}}
+  -- A run's cost grows with its unit's files; each also starts a recipe and
+  -- roc-ast.
+  for u in runs do
+    push(plan.items, {part = "parse", name = u.rc.recipe .. "\t" .. u.unit .. "\t" .. u.args .. "\t" .. u.files, cost = u.rc.cpu_measured_ms * u.files // #files + 150})
   end
   for f in files do
-    if has_key(need, project_of(f)) then push(plan.copy, f) end
+    if has_key(todo, project_of(f)) then push(plan.copy, f) end
   end
-  for t in sort(keys(need_tables)) do push(plan.copy, t) end
+  for t in sort(keys(tables)) do push(plan.copy, t) end
   return plan
 end
 
--- The parse runs' answers in `res`, counted and kept in the cache.
-function parse_take(st, plan, res)
-  local found = {}
+-- The parse runs' findings in `res`, counted. Gives how many.
+function parse_take(st, res)
+  local found = 0
   for l in lines(res.out) do
     if starts_with(l, "F\t") then
       local f = split(l, "\t")
-      local line = join(drop(f, 4), "\t")
-      push_at(found, f[2] .. "@" .. f[3], f[4] .. "\t" .. line)
-      take_parse_finding(st, parse_recipe(f[2]), f[3], f[4], line)
-      plan.found = plan.found + 1
-    elseif starts_with(l, "DONE\t") then
-      local f = split(l, "\t")
-      local name = f[2] .. "@" .. f[3]
-      cache_write("parse", name, plan.keys_of[name], join(get(found, name, {}), "\n") .. "\n")
+      take_parse_finding(st, parse_recipe(f[2]), f[3], f[4], join(drop(f, 4), "\t"))
+      found = found + 1
     end
   end
-  local budget = 0
-  for rc in PARSE_RECIPES do budget = budget + rc.cpu_budget_ms end
-  note_stage(st, "parse recipes", get(res.cpu, "parse", 0), res.ms, #plan.misses, plan.all, budget)
-  print("parse recipes: " .. plan.found .. " findings")
-  return nil
+  return found
 end
 
 -- ── The full tier's typed stages ────────────────────────────────────────
@@ -840,14 +951,20 @@ function typed_apps()
   return out
 end
 
--- Where an app's types are kept for the count: roc-types' own format, every
--- module's `== ` line, and the records of the modules in this checkout
--- alone, as no other module's calls are counted.
-function types_file_of(app)
-  return checkout_cache() .. "/types/" .. cache_name(app) .. ".types"
+function flat_name(s)
+  local n = re_replace(s, "[/:]", "__")
+  if starts_with(n, "__") then n = sub(n, 3) end
+  return n
 end
 
-function type_one_app(exe, app, want_head)
+-- Where an app's types are kept for the count, in this run's folder:
+-- roc-types' own format, every module's `== ` line, and the records of the
+-- modules in this checkout alone, as no other module's calls are counted.
+function types_file_of(scratch, app)
+  return scratch .. "/types/" .. flat_name(app) .. ".types"
+end
+
+function type_one_app(exe, app, want_head, scratch)
   local here = real(".") .. "/"
   local t = run({exe, real(app)}, {timeout_ms = 300000, whole = TYPES_KEEP, cpu_budget_ms = TYPES_APP_CPU_MS, stage = "roc-types " .. app})
   local text = t.out
@@ -871,22 +988,21 @@ function type_one_app(exe, app, want_head)
   end
   local k = roc_types_keeping(text, {under = here})
   for path in k.paths do print("MOD\t" .. app .. "\t" .. path) end
-  local mods = #k.paths
-  if mods == 0 then
+  if #k.paths == 0 then
     print("CANT\troc-types on " .. app .. ": roc-types named no module")
     return t.cpu_ms
   end
-  replace(types_file_of(app), k.text)
-  print("APP\t" .. app .. "\t" .. t.ms .. "\t" .. t.cpu_ms)
+  replace(types_file_of(scratch, app), k.text)
+  print("APP\t" .. app)
   return t.cpu_ms
 end
 
 -- A child run: roc-types on each app of the work file, the checker of the
 -- tree's pin. It prints `MOD<tab>app<tab>path` for each module the app
--- reaches (its real path), then `APP<tab>app<tab>ms<tab>cpu_ms`, or
--- `CANT<tab>why` for an app it couldn't type, and keeps each app's types
--- (`types_file_of`).
-function types_part(work)
+-- reaches (its real path), then `APP<tab>app`, or `CANT<tab>why` for an app
+-- it couldn't type, and keeps each app's types (`types_file_of`).
+function types_part(work, scratch)
+  if scratch == "" then fail("quality: part=types needs scratch=, the run's folder") end
   local roc = pinned_roc("quality")
   local exe = roc_types_exe(roc)
   if not exists(exe) then
@@ -897,120 +1013,44 @@ function types_part(work)
   local want_head = "roc-types " .. ROC_TYPES_FORMAT .. " " .. trim(read("roc-version"))
   local cpu = 0
   for app in lines(trim(read(work))) do
-    cpu = cpu + type_one_app(real(exe), app, want_head)
+    cpu = cpu + type_one_app(real(exe), app, want_head, scratch)
     yield()
   end
   print("CPU\t" .. cpu)
   return nil
 end
 
--- An app's key: the tools', then each module it reaches with its hash.
-function types_key(id, mods, h)
-  local ls = {id.types}
-  for m in mods do push(ls, m .. "\t" .. h[m]) end
-  return join(ls, "\n")
-end
-
--- roc-types on every app, each app's answer taken from the cache when every
--- module it reached last time is as it was; the rest are `misses`, items
--- for `run_items`.
-function types_plan(st, id)
-  local apps = typed_apps()
-  local old = {}
-  local union = {}
-  for app in apps do
-    cache_keep(st, "types", app)
-    st.kept["types/" .. cache_name(app) .. ".types"] = true
-    local e = cache_entry("types", app)
-    if e ~= nil and exists(types_file_of(app)) then
-      local mods = {}
-      for l in lines(e.value) do
-        if starts_with(l, "MOD\t") then push(mods, sub(l, 5)) end
-      end
-      old[app] = {entry = e, mods = mods}
-      for m in mods do union[m] = true end
-    end
-  end
-  local h = hashes_of(keys(union))
-  if h == nil then
-    print("roc-types: a module a cached app reached is gone, so every app is typed again")
-    old = {}
-  end
-  local plan = {apps = apps, answers = {}, misses = {}}
-  for app in apps do
-    if has_key(old, app) and types_key(id, old[app].mods, h) == old[app].entry.key then
-      plan.answers[app] = old[app].entry.value
-    else
-      -- Its time the last run, else a guess: an app under canvas_apps/
-      -- reaches its platform's hundred modules, and costs the most.
-      local cost = starts_with(app, "canvas_apps/") and 4000 or 1000
-      if has_key(old, app) then
-        for l in lines(old[app].entry.value) do
-          if starts_with(l, "APP\t") then cost = tonumber(split(l, "\t")[3]) end
-        end
-      end
-      push(plan.misses, {part = "types", name = app, cost = cost})
-    end
-  end
-  local dir = checkout_cache() .. "/types"
-  if not exists(dir) then mkdir(dir) end
-  return plan
-end
-
--- The roc-types runs' answers in `res`, kept in the cache. Gives the reach,
--- app to the checkout's paths it reaches. A tracked file no app reaches is
--- counted, `roc-types unreached`: no typed check reads it.
-function types_take(st, plan, res, files, id)
+-- The roc-types runs' answers in `res`: each app typed, the tracked files
+-- of the checkout it reaches (`st.reach`), and the folders outside it that
+-- it reaches (`st.outside_reach`). A file of the checkout git doesn't track
+-- (a build's output) is named in `st.untracked`: no key holds it.
+function types_take(st, res, tracked)
   local here = real(".") .. "/"
-  local answers = plan.answers
-  local mods_of = {}
-  local done = {}
-  local new_union = {}
+  local reach = {}
+  local outside = {}
   for l in lines(res.out) do
     if starts_with(l, "MOD\t") then
       local f = split(l, "\t")
-      push_at(mods_of, f[2], f[3])
-      new_union[f[3]] = true
-    elseif starts_with(l, "APP\t") then
-      local f = split(l, "\t")
-      done[f[2]] = l
-    end
-  end
-  local nh = hashes_of(keys(new_union))
-  for app in keys(done) do
-    local value = {}
-    for m in mods_of[app] do push(value, "MOD\t" .. m) end
-    push(value, done[app])
-    answers[app] = join(value, "\n") .. "\n"
-    if nh ~= nil then cache_write("types", app, types_key(id, mods_of[app], nh), answers[app]) end
-  end
-  local apps = plan.apps
-  local misses = plan.misses
-  note_stage(st, "roc-types every app", get(res.cpu, "types", 0), res.ms, #misses, #apps, TYPES_CPU_BUDGET_MS)
-  local reach = {}
-  local reached = {}
-  local typed = 0
-  for app in sort(keys(answers)) do
-    typed = typed + 1
-    for l in lines(answers[app]) do
-      if starts_with(l, "MOD\t") and starts_with(sub(l, 5), here) then
-        local rel = sub(l, 5 + #here)
-        push_at(reach, app, rel)
-        reached[rel] = true
+      if starts_with(f[3], here) then
+        local rel = sub(f[3], #here + 1)
+        if has_key(tracked, rel) then push_at(reach, f[2], rel) else st.untracked[rel] = true end
+      else
+        if not has_key(outside, f[2]) then outside[f[2]] = {} end
+        outside[f[2]][outside_name(st, dirname(f[3]))] = true
       end
+    elseif starts_with(l, "APP\t") then
+      st.typed[sub(l, 5)] = true
     end
   end
-  local unreached = 0
-  for f in files do
-    if not typed_excepted(f) and not has_key(reached, f) then
-      count_finding(st, app_of(f), "roc-types", "unreached", "untyped", 1)
-      push(st.log, f .. ":1: unreached: no app's types reach it, so no typed check reads it")
-      unreached = unreached + 1
+  local out = {}
+  for app in keys(reach) do
+    if has_key(st.typed, app) then
+      st.reach[app] = reach[app]
+      st.outside_reach[app] = sort(keys(get(outside, app, {})))
+      push(out, app)
     end
   end
-  print("roc-types: " .. typed .. " of " .. #apps .. " apps typed, " .. #keys(reached) .. " files reached, " .. unreached .. " reached by none")
-  for e in TYPED_EXCEPTIONS do print("left out of the typed stages: " .. e.prefix .. " (" .. e.why .. ")") end
-  return reach
+  return out
 end
 
 -- The count's runs. Each file is judged once, on one app that reaches it:
@@ -1063,7 +1103,7 @@ function count_one(item)
   if why ~= "" then
     print("CANT\t" .. f[1] .. " on " .. f[2] .. ": rewrite_method_calls " .. why)
   else
-    print("RW\t" .. f[1] .. "\t" .. f[2] .. "\t" .. m.groups[1] .. "\t" .. m.groups[2] .. "\t" .. m.groups[3] .. "\t" .. m.groups[4] .. "\t" .. r.ms)
+    print("RW\t" .. f[1] .. "\t" .. f[2] .. "\t" .. m.groups[1] .. "\t" .. m.groups[2] .. "\t" .. m.groups[3] .. "\t" .. m.groups[4])
     -- Each call the run leaves or leaves unsettled, `path:line: Module.fn:
     -- why`, for the findings log.
     for l in own do
@@ -1076,8 +1116,8 @@ end
 -- A child run: `rewrite_method_calls trials=0` on each
 -- `unit<tab>root<tab>files<tab>types file` of the work file, the root's
 -- types read from the file the types stage kept. It prints
--- `RW<tab>unit<tab>root<tab>files<tab>proven<tab>unsettled<tab>left<tab>ms`
--- a run, then `RWF<tab>unit<tab>root<tab>line` for each call it lists, and
+-- `RW<tab>unit<tab>root<tab>files<tab>proven<tab>unsettled<tab>left` a run,
+-- then `RWF<tab>unit<tab>root<tab>line` for each call it lists, and
 -- `CANT<tab>why` for one that couldn't run.
 function count_part(work)
   local cpu = 0
@@ -1090,74 +1130,31 @@ function count_part(work)
 end
 
 -- The old-style calls the types prove could be method calls, in every file
--- the types reach: `rewrite_method_calls trials=0`, a run a job, each from
--- the cache when its files and its root's types are as they were.
-function full_count(st, reach, hashes, id)
-  -- An app may reach a file git doesn't track (a build's output); the
-  -- count reads only tracked ones.
-  local tracked = {}
-  for app in keys(reach) do
-    for f in reach[app] do
-      if has_key(hashes, f) then push_at(tracked, app, f) end
-    end
+-- the apps measured reach: `rewrite_method_calls trials=0`, a run a job,
+-- each reading its root's types from this run's folder.
+function full_count(st, scratch, whole)
+  local jobs = rewrite_jobs(st.reach)
+  if #jobs == 0 then return nil end
+  local items = {}
+  for j in jobs do
+    -- A count's run costs about a twentieth of a second a file.
+    push(items, {part = "count", name = j.unit .. "\t" .. j.root .. "\t" .. join(j.files, ",") .. "\t" .. types_file_of(scratch, j.root), cost = 50 * #j.files + 100})
   end
-  local jobs = rewrite_jobs(tracked)
-  local roots = {}
-  for j in jobs do roots[real(types_file_of(j.root))] = true end
-  local th = hashes_of(keys(roots))
-  if th == nil then fail("quality: git couldn't hash the kept types of the count's roots") end
+  local res = run_items(scratch, "count", items, {})
+  for c in res.cant do push(st.cant, c) end
+  print("rewrite_method_calls count: " .. #jobs .. " runs " .. WORKERS .. " at once in " .. times_seconds(res.ms))
+  note_stage(st, "rewrite_method_calls count", get(res.cpu, "count", 0), res.ms, #jobs, whole, COUNT_CPU_BUDGET_MS)
   local found = {}
   local call_lines = {}
-  local keys_of = {}
-  local misses = {}
-  for j in jobs do
-    local name = j.unit .. "@" .. j.root
-    cache_keep(st, "count", name)
-    local ls = {id.count, "types\t" .. th[real(types_file_of(j.root))], "unit\t" .. j.unit}
-    for f in j.files do push(ls, f .. "\t" .. hashes[f]) end
-    local key = join(ls, "\n")
-    local hit = cache_read("count", name, key)
-    if hit ~= nil then
-      for l in lines(trim(hit)) do
-        if starts_with(l, "RWF\t") then push(call_lines, l) elseif starts_with(l, "RW\t") then push(found, l) end
-      end
-    else
-      keys_of[name] = key
-      -- A count's run costs about a twentieth of a second a file.
-      push(misses, {part = "count", name = j.unit .. "\t" .. j.root .. "\t" .. join(j.files, ",") .. "\t" .. types_file_of(j.root), cost = 50 * #j.files + 100})
-    end
+  for l in lines(res.out) do
+    if starts_with(l, "RWF\t") then push(call_lines, l) elseif starts_with(l, "RW\t") then push(found, l) end
   end
-  local res = {out = "", cpu = {}, ms = 0, cant = {}}
-  if #misses > 0 then
-    res = run_items("count", misses, {})
-    for c in res.cant do push(st.cant, c) end
-    local calls_of = {}
-    for l in lines(res.out) do
-      if starts_with(l, "RWF\t") then
-        local f = split(l, "\t")
-        push_at(calls_of, f[2] .. "@" .. f[3], l)
-        push(call_lines, l)
-      end
-    end
-    for l in lines(res.out) do
-      if starts_with(l, "RW\t") then
-        local f = split(l, "\t")
-        local name = f[2] .. "@" .. f[3]
-        local value = {l}
-        for c in get(calls_of, name, {}) do push(value, c) end
-        cache_write("count", name, keys_of[name], join(value, "\n") .. "\n")
-        push(found, l)
-      end
-    end
-  end
-  if #misses > 0 then print("rewrite_method_calls count: " .. #misses .. " runs " .. WORKERS .. " at once in " .. times_seconds(res.ms)) end
-  note_stage(st, "rewrite_method_calls count", get(res.cpu, "count", 0), res.ms, #misses, #jobs, COUNT_CPU_BUDGET_MS)
   local files = 0
   local proven = 0
   local unsettled = 0
   for l in sort(found) do
     local f = split(l, "\t")
-    count_finding(st, f[2], "rewrite_method_calls", "rewritable", "methods", tonumber(f[5]))
+    count_finding(st, f[2], "rewrite_method_calls", "rewritable", tonumber(f[5]))
     push(st.log, "rewrite " .. f[2] .. " on " .. f[3] .. ": " .. f[4] .. " files, " .. f[5] .. " calls the types prove, " .. f[6] .. " unsettled, " .. f[7] .. " left")
     files = files + tonumber(f[4])
     proven = proven + tonumber(f[5])
@@ -1171,72 +1168,191 @@ function full_count(st, reach, hashes, id)
   return nil
 end
 
+-- Each tracked file of an app measured that no app reaches is counted,
+-- `roc-types unreached`: no typed check reads it. Every app that could
+-- reach it was typed, as an app reaching a folder is in its group.
+function count_unreached(st, files, m)
+  local reached = {}
+  for app in keys(st.reach) do
+    for f in st.reach[app] do reached[f] = true end
+  end
+  local n = 0
+  for f in files do
+    if has_key(m, app_of(f)) and not typed_excepted(f) and not has_key(reached, f) then
+      count_finding(st, app_of(f), "roc-types", "unreached", 1)
+      push(st.log, f .. ":1: unreached: no app's types reach it, so no typed check reads it")
+      n = n + 1
+    end
+  end
+  print("roc-types: " .. #keys(st.typed) .. " apps typed, " .. #keys(reached) .. " files reached, " .. n .. " reached by none")
+  for e in TYPED_EXCEPTIONS do print("left out of the typed stages: " .. e.prefix .. " (" .. e.why .. ")") end
+  return nil
+end
+
 -- ── The full tier ───────────────────────────────────────────────────────
+
+-- Measures the apps of `m` and every app that joins them (`close_over`, and
+-- an app whose folder a typed app reaches): the parse recipes over each of
+-- their projects and roc-types on each of their apps, one pool for both, a
+-- round at a time until no app joins.
+function measure(st, scratch, files, m, names, base, whole)
+  local tracked = set_of(files)
+  local parsed = {}
+  local typed_units = {}
+  local parse_cpu = 0
+  local parse_ms = 0
+  local parse_runs = 0
+  local types_cpu = 0
+  local types_ms = 0
+  local types_runs = 0
+  local found = 0
+  local round = 0
+  while true do
+    local todo_p = {}
+    local todo_u = {}
+    for u in keys(m) do
+      if not has_key(parsed, unit_project(u)) then todo_p[unit_project(u)] = true end
+      if not has_key(typed_units, u) then todo_u[u] = true end
+    end
+    if #keys(todo_p) == 0 and #keys(todo_u) == 0 then break end
+    round = round + 1
+    local pp = parse_plan(st, files, todo_p)
+    local items = {}
+    for it in pp.items do push(items, it) end
+    local types_n = 0
+    for app in st.apps do
+      if has_key(todo_u, app_of(app)) then
+        -- A guess at its cost: an app under canvas_apps/ reaches its
+        -- platform's hundred modules, and costs the most.
+        push(items, {part = "types", name = app, cost = starts_with(app, "canvas_apps/") and 4000 or 1000})
+        types_n = types_n + 1
+      end
+    end
+    for p in keys(todo_p) do parsed[p] = true end
+    for u in keys(todo_u) do typed_units[u] = true end
+    if #items > 0 then
+      local tree = #pp.items > 0 and tracked_tree(scratch, pp.copy) or ""
+      local res = run_items(scratch, "round-" .. round, items, {parse = {"tree=" .. tree}, types = {"scratch=" .. scratch}})
+      if tree ~= "" then remove_tree(tree) end
+      for c in res.cant do push(st.cant, c) end
+      print("round " .. round .. ": " .. #pp.items .. " parse runs and roc-types on " .. types_n .. " apps, " .. WORKERS .. " at once in " .. times_seconds(res.ms))
+      found = found + parse_take(st, res)
+      parse_cpu = parse_cpu + get(res.cpu, "parse", 0)
+      types_cpu = types_cpu + get(res.cpu, "types", 0)
+      parse_ms = parse_ms + res.ms
+      types_ms = types_ms + res.ms
+      parse_runs = parse_runs + #pp.items
+      types_runs = types_runs + types_n
+      -- An app whose folder a typed app now reaches joins the apps measured:
+      -- its typed counts are judged on the apps that reach it.
+      for app in types_take(st, res, tracked) do
+        for f in st.reach[app] do
+          if not has_key(m, app_of(f)) then
+            print("measured too: " .. app_of(f) .. ", which " .. app .. " reaches")
+            m[app_of(f)] = true
+          end
+        end
+      end
+      close_over(m, names, base)
+    end
+  end
+  local budget = 0
+  for rc in PARSE_RECIPES do budget = budget + rc.cpu_budget_ms end
+  note_stage(st, "parse recipes", parse_cpu, parse_ms, parse_runs, whole, budget)
+  print("parse recipes: " .. found .. " findings")
+  note_stage(st, "roc-types every app", types_cpu, types_ms, types_runs, whole, TYPES_CPU_BUDGET_MS)
+  count_unreached(st, files, m)
+  full_count(st, scratch, whole)
+  return nil
+end
 
 function full()
   local files = tracked_roc_files()
-  local projects = projects_of(files)
-  print("quality, full: " .. #files .. " files in " .. #projects .. " projects")
-  local here = real(".") .. "/"
-  local os_paths = {}
-  for f in files do push(os_paths, here .. f) end
-  local by_os = hashes_of(os_paths)
-  if by_os == nil then fail("quality: git couldn't hash the tracked .roc files") end
-  local hashes = {}
-  for f in files do hashes[f] = by_os[here .. f] end
-  local id = tool_identity(pinned_roc("quality"))
-  local st = {cant = {}, over = {}, counts = {}, by_app = {}, log = {}, kept = {}, settings = project_settings(), setting_units = {}}
-  for s in st.settings do print("settings: " .. s.recipe .. " in " .. s.folder .. ", run on its own: " .. join(s.args, " ")) end
-  -- The parse recipes and roc-types share one pool, so neither core idles
-  -- at the turn from one to the other; the count needs the kept types.
-  local pp = parse_plan(st, files, projects, hashes, id)
-  local tp = types_plan(st, id)
-  local items = {}
-  for it in pp.misses do push(items, it) end
-  for it in tp.misses do push(items, it) end
-  local res = {out = "", cpu = {}, ms = 0, cant = {}}
-  if #items > 0 then
-    local tree = #pp.misses > 0 and tracked_tree(pp.copy) or ""
-    res = run_items("parse-types", items, {parse = {"tree=" .. tree}})
-    if tree ~= "" then remove_tree(tree) end
-    for c in res.cant do push(st.cant, c) end
-    print("parse recipes and roc-types: " .. #items .. " runs " .. WORKERS .. " at once in " .. times_seconds(res.ms))
+  local units = {}
+  for f in files do push_at(units, app_of(f), f) end
+  local names = sort(keys(units))
+  print("quality, full: " .. #files .. " files in " .. #names .. " apps")
+  local scratch = fresh_dir("build:roc-apps", "quality-run")
+  mkdir(scratch .. "/types")
+  local st = {cant = {}, over = {}, counts = {}, log = {}, settings = {}, setting_units = {}, units = units,
+    reach = {}, outside_reach = {}, typed = {}, untracked = {}, outside = {}, outside_names = {}, apps = typed_apps(),
+    trees = folder_trees(scratch), tools = tools_identity(pinned_roc("quality"))}
+  local base = read_baseline()
+  local m = stale_apps(st, names, base)
+  close_over(m, names, base)
+  local kept = 0
+  for u in names do
+    if not has_key(m, u) then kept = kept + 1 end
   end
-  parse_take(st, pp, res)
-  local reach = types_take(st, tp, res, files, id)
-  full_count(st, reach, hashes, id)
-  prune_cache(st)
+  print("keys: " .. kept .. " of " .. #names .. " apps as " .. BASELINE .. " holds them" .. (FRESH and " (fresh=1 measures every app)" or "") .. ", " .. (#names - kept) .. " to measure")
+  local whole = kept == 0
+  if kept < #names then
+    st.settings = project_settings()
+    for s in st.settings do print("settings: " .. s.recipe .. " in " .. s.folder .. ", run on its own: " .. join(s.args, " ")) end
+    measure(st, scratch, files, m, names, base, whole)
+  end
+  if #keys(st.untracked) > 0 then print("reached and not tracked, so in no key: " .. #keys(st.untracked) .. " files, " .. join(take(sort(keys(st.untracked)), 5), ", ")) end
+  -- The counts: the measured apps' own, and every other app's from the
+  -- baseline.
+  local counts = {}
+  for k in keys(base.counts) do
+    if not has_key(m, split(k, "\t")[1]) then counts[k] = base.counts[k] end
+  end
+  for k in keys(st.counts) do counts[k] = st.counts[k] end
+  local key_rows = {}
+  for u in names do
+    if not has_key(m, u) then key_rows[u] = base.keys[u] end
+  end
+  local groups = groups_of(st, m)
+  for g in groups do
+    local k = {folders = g.folders, text = join(g.folders, ","), hash = key_hash(st, g.folders)}
+    for u in g.members do key_rows[u] = k end
+    if #g.members > 1 then print("group of " .. #g.members .. ": " .. join(g.members, " ")) end
+  end
+  remove_tree(scratch)
   replace(FINDINGS_LOG, join(st.log, "\n") .. "\n")
   local rows = {}
   local cols = {"app"}
-  for rc in PARSE_RECIPES do push(cols, rc.short) end
+  local short_of = {}
+  short_of["roc-types"] = "untyped"
+  short_of["rewrite_method_calls"] = "methods"
+  for rc in PARSE_RECIPES do
+    push(cols, rc.short)
+    short_of[rc.recipe] = rc.short
+  end
   push(cols, "untyped")
   push(cols, "methods")
-  for app in sort(keys(st.by_app)) do
+  local by_app = {}
+  for k in keys(counts) do
+    local f = split(k, "\t")
+    if not has_key(by_app, f[1]) then by_app[f[1]] = {} end
+    incr(by_app[f[1]], short_of[f[2]], counts[k])
+  end
+  for app in sort(keys(by_app)) do
     local row = {app = app}
-    for c in drop(cols, 1) do row[c] = get(st.by_app[app], c, 0) end
+    for c in drop(cols, 1) do row[c] = get(by_app[app], c, 0) end
     push(rows, row)
   end
   print(table(rows, cols))
-  print("every finding: " .. real(FINDINGS_LOG))
-  local moved = moved_counts(read_baseline(), st.counts)
+  print("the findings of the " .. (#names - kept) .. " apps measured: " .. real(FINDINGS_LOG))
+  local moved = moved_counts(base.counts, counts)
+  for x in moved do print("moved " .. x) end
   if BASELINE_ARG == "write" then
     if #st.cant > 0 or #st.over > 0 then
       for c in st.cant do print("CAN'T RUN " .. c) end
       for c in st.over do print("OVER BUDGET " .. c) end
       fail("quality: no baseline written, since a recipe couldn't run or a stage went over its budget")
     end
-    write_baseline(st.counts)
-    print("baseline written: " .. BASELINE .. ", " .. #keys(st.counts) .. " counts (" .. #moved .. " moved)")
+    write_baseline(counts, key_rows)
+    print("baseline written: " .. BASELINE .. ", " .. #keys(counts) .. " counts and " .. #keys(key_rows) .. " keys (" .. #moved .. " counts moved)")
   else
-    for m in moved do print("moved " .. m) end
-    print("against " .. BASELINE .. ": " .. #moved .. " counts moved; report mode, so none fails the run")
+    print("against " .. BASELINE .. ": " .. #moved .. " counts moved; report mode, so none fails the run, and the keys stay as they were")
   end
   for c in st.cant do print("CAN'T RUN " .. c) end
   for c in st.over do print("OVER BUDGET " .. c) end
   if #st.cant > 0 then fail("quality: " .. #st.cant .. " runs couldn't run (named above): a tool gap") end
   if #st.over > 0 then fail("quality: " .. #st.over .. " stages went over their CPU budgets (named above): find which phase took the time") end
-  print("quality, full: every recipe ran on every project, roc-types on every app")
+  print("quality, full: every recipe ran on every project measured, roc-types on each of its apps")
   return nil
 end
 
@@ -1326,7 +1442,7 @@ end
 if PART == "parse" then
   parse_part(WORK_ARG, TREE_ARG)
 elseif PART == "types" then
-  types_part(WORK_ARG)
+  types_part(WORK_ARG, SCRATCH_ARG)
 elseif PART == "count" then
   count_part(WORK_ARG)
 elseif PART ~= "" then
