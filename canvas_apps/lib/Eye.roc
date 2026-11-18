@@ -1,7 +1,8 @@
-## Eye is the child's eye in the Halloween walk: where a thing in the world
-## lands on the screen. Safari has a camera of its own with its screen and its
-## rider's eye fixed; this one takes the screen's size and the eye's height as
-## parameters, so the walk is seen from a child's height.
+## Eye is an eye standing in a flat world: where a thing in the world lands on
+## the screen. Safari has a camera of its own with its screen and its rider's
+## eye fixed; this one takes the screen's size and the eye's height as
+## parameters, so a movie is seen from its character's height: a child's in
+## Trick or Treat, a seated guest's in Thanksgiving.
 ##
 ## The world is three numbers, all in metres and taken from where the eye is:
 ## `right` across, `forward` away and `height` up from the ground. The screen
@@ -14,7 +15,7 @@
 ## behind the eye, where dividing by `forward` says nothing useful, so a
 ## polygon is cut against the near plane on its way to the screen, and a point
 ## is sighted only when it is in front.
-import lib.Point
+import Point
 
 Eye :: [].{
 	Eye : { width : F64, height : F64, eye_height : F64, focal : F64, heading : F64 }

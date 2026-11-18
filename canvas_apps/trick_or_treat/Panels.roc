@@ -11,7 +11,7 @@
 # anything in metres. Nothing here knows what a house or a fence is.
 import lib.Shapes
 import lib.Brush
-import Eye
+import lib.Eye
 
 Panels :: [].{
 	# A polygon whose corners are wherever they are: the door leaf turns out of

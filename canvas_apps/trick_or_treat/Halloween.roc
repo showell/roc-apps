@@ -18,7 +18,7 @@
 # TrickOrTreatApp.roc is what a runner is handed; the scrubbing lives there,
 # as five keys.
 import lib.Shapes
-import Eye
+import lib.Eye
 import Walk
 import Night
 import Fence

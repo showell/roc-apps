@@ -12,6 +12,7 @@ package
 		CanvasApp,
 		ColorShade,
 		ConvexCut,
+		Eye,
 		Font,
 		Fraction,
 		Input,

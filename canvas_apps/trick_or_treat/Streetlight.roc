@@ -10,7 +10,7 @@ import lib.Shapes
 import lib.ArgbColor
 import lib.Brush
 import lib.RgbColor
-import Eye
+import lib.Eye
 import Panels
 
 Streetlight :: [].{

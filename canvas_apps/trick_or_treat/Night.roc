@@ -10,7 +10,7 @@ import lib.Point
 import lib.Shapes
 import lib.Brush
 import lib.RgbColor
-import Eye
+import lib.Eye
 import Panels
 
 Night :: [].{

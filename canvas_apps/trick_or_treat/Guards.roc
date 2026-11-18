@@ -10,7 +10,7 @@
 # flanking the path face each other rather than both facing right.
 import lib.Pixels
 import lib.Shapes
-import Eye
+import lib.Eye
 import Skeleton
 
 Guards :: [].{
