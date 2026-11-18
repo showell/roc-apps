@@ -8,7 +8,6 @@
 # computer player is Search.roc. Elm never said who won; `winner` does.
 import Board
 import Color
-import Config
 import History
 import Move
 import Piece

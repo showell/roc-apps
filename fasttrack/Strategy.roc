@@ -16,7 +16,6 @@
 import Board
 import Game
 import Piece
-import Player
 import SquareValues
 import Type
 

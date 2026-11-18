@@ -9,7 +9,6 @@
 # card must play one. The same position reached two ways is kept once. A line
 # stops where the hand is refilled, so the computer never sees a card it has
 # not drawn; it searches again with the cards it drew.
-import Board
 import Config
 import Game
 import History
