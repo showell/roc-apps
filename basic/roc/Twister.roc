@@ -12,7 +12,10 @@ Twister :: [].{
 		$mt = $mt.append(seed)
 		var $i = 1
 		while $i < 624 {
-			x = U32.times_wrap(1812433253, $prev.bitwise_xor($prev.div_trunc_by(1073741824))).plus_wrap(U64.to_u32_wrap($i))
+			x = U32.times_wrap(
+				1812433253,
+				$prev.bitwise_xor($prev.div_trunc_by(1073741824)),
+			).plus_wrap(U64.to_u32_wrap($i))
 			$mt = $mt.append(x)
 			$prev = x
 			$i = $i + 1
@@ -85,22 +88,44 @@ Twister :: [].{
 	}
 
 	# The next 32-bit output; `at` 624 twists first.
-	next : List(U32), U64 -> { y : U32, mt : List(U32), at : U64 }
+	next : List(U32),
+	U64 -> {
+		y : U32,
+		mt : List(U32),
+		at : U64,
+	}
 	next = |mt, at|
 		if at >= 624 {
 			fresh = Twister.twist(mt)
-			{ y: Twister.temper(fresh.get(0) ?? 0), mt: fresh, at: 1 }
+			{
+				y: Twister.temper(fresh.get(0) ?? 0),
+				mt: fresh,
+				at: 1,
+			}
 		} else {
-			{ y: Twister.temper(mt.get(at) ?? 0), mt: mt, at: at + 1 }
+			{
+				y: Twister.temper(mt.get(at) ?? 0),
+				mt: mt,
+				at: at + 1,
+			}
 		}
 
 	# A float in [0, 1) from two outputs, as Ruby's Random#rand makes it.
-	res53 : List(U32), U64 -> { v : F64, mt : List(U32), at : U64 }
+	res53 : List(U32),
+	U64 -> {
+		v : F64,
+		mt : List(U32),
+		at : U64,
+	}
 	res53 = |mt, at| {
 		a = Twister.next(mt, at)
 		b = Twister.next(a.mt, a.at)
 		hi = a.y.div_trunc_by(32).to_f64()
 		lo = b.y.div_trunc_by(64).to_f64()
-		{ v: (hi * 67108864.0 + lo) / 9007199254740992.0, mt: b.mt, at: b.at }
+		{
+			v: (hi * 67108864.0 + lo) / 9007199254740992.0,
+			mt: b.mt,
+			at: b.at,
+		}
 	}
 }

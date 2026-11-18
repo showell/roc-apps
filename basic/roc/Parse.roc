@@ -58,16 +58,37 @@ Parse :: [].{
 		Fail(Str),
 	]
 
-	Item : [Semi, Comma, Tab(Expr), Show(Expr)]
+	Item : [
+		Semi,
+		Comma,
+		Tab(Expr),
+		Show(Expr),
+	]
 
 	# `Line` is a line number as written; loading resolves it to `To` (a
 	# statement index) or `Missing`.
-	Jump : [To(U64), Missing(I64), Line(I64), Computed(Expr)]
+	Jump : [
+		To(U64),
+		Missing(I64),
+		Line(I64),
+		Computed(Expr),
+	]
 
 	# kind 0 a number, 1 a string, 2 an array element.
-	Target : { kind : U8, slot : U64, one : Expr, two : Expr, pair : Bool }
+	Target : {
+		kind : U8,
+		slot : U64,
+		one : Expr,
+		two : Expr,
+		pair : Bool,
+	}
 
-	DimItem : { slot : U64, one : Expr, two : Expr, pair : Bool }
+	DimItem : {
+		slot : U64,
+		one : Expr,
+		two : Expr,
+		pair : Bool,
+	}
 
 	# The relational operators, by code: 1 =, 2 <>, 3 <=, 4 >=, 5 <, 6 >.
 	Stmt : [
@@ -110,10 +131,19 @@ Parse :: [].{
 
 	# ECMA-55's declarations, in line order: applied before the first
 	# statement runs.
-	Decl : [DeclDim(List(DimItem)), DeclOption(Expr), DeclBad(Str)]
+	Decl : [
+		DeclDim(List(DimItem)),
+		DeclOption(Expr),
+		DeclBad(Str),
+	]
 
 	# A user function by letter. `known` when a DEF for it is in the listing.
-	FnDef : { known : Bool, param : Bool, pslot : U64, body : Expr }
+	FnDef : {
+		known : Bool,
+		param : Bool,
+		pslot : U64,
+		body : Expr,
+	}
 
 	# **EVERYTHING THAT DOES NOT CHANGE ONCE THE LISTING IS READ**: the
 	# statements and their tables, the DATA, the dialect, and how the run is
@@ -143,13 +173,30 @@ Parse :: [].{
 
 	# What an expression parses to: the tree, where it ended, and whether it
 	# ended cleanly. When it did not, the tree stops the machine.
-	P : { e : Expr, at : U64, ok : Bool }
+	P : {
+		e : Expr,
+		at : U64,
+		ok : Bool,
+	}
 
-	Subs : { one : Expr, two : Expr, pair : Bool, at : U64, ok : Bool }
+	Subs : {
+		one : Expr,
+		two : Expr,
+		pair : Bool,
+		at : U64,
+		ok : Bool,
+	}
 
 	# One statement: where it ended, whether its line ends with it, and
 	# whether an IF's THEN statement follows at `at`.
-	St : { stmt : Stmt, at : U64, stop : Bool, then : Bool, letter : U64, def : FnDef }
+	St : {
+		stmt : Stmt,
+		at : U64,
+		stop : Bool,
+		then : Bool,
+		letter : U64,
+		def : FnDef,
+	}
 
 	Cx : { ecma : Bool, fns : List(FnDef) }
 
@@ -163,7 +210,12 @@ Parse :: [].{
 	zero = Num(0.0)
 
 	no_fn : FnDef
-	no_fn = { known: False, param: False, pslot: 0, body: Num(0.0) }
+	no_fn = {
+		known: False,
+		param: False,
+		pslot: 0,
+		body: Num(0.0),
+	}
 
 	# ---- the listing --------------------------------------------------------
 
@@ -183,7 +235,14 @@ Parse :: [].{
 		for l in ls {
 			$firsts = $firsts.append($prog.len())
 			$lines = $lines.append(l.num)
-			got = Parse.line_from(l.src, 0, $line, True, cx, { stmts: [], marks: [], defs: [] })
+			got = Parse.line_from(
+				l.src,
+				0,
+				$line,
+				True,
+				cx,
+				{ stmts: [], marks: [], defs: [] },
+			)
 			$prog = if got.stmts.is_empty() {
 				$prog.append(Nop)
 			} else {
@@ -255,7 +314,10 @@ Parse :: [].{
 		if d == s {
 			{ num: -1, src: [] }
 		} else {
-			{ num: Parse.digits_val(b, s, d, 0), src: Parse.line_bytes(b, Parse.skip_ws(b, d), e, []) }
+			{
+				num: Parse.digits_val(b, s, d, 0),
+				src: Parse.line_bytes(b, Parse.skip_ws(b, d), e, []),
+			}
 		}
 	}
 
@@ -271,9 +333,19 @@ Parse :: [].{
 				Parse.line_bytes(b, i + 1, e, acc)
 			} else if c == 34 {
 				j = Parse.quote_end(b, i + 1, e)
-				Parse.line_bytes(b, j, e, acc.concat(b.sublist({ start: i, len: j - i })))
+				Parse.line_bytes(
+					b,
+					j,
+					e,
+					acc.concat(b.sublist({ start: i, len: j - i })),
+				)
 			} else {
-				Parse.line_bytes(b, i + 1, e, acc.append(Parse.upper(c)))
+				Parse.line_bytes(
+					b,
+					i + 1,
+					e,
+					acc.append(Parse.upper(c)),
+				)
 			}
 		}
 
@@ -289,7 +361,12 @@ Parse :: [].{
 	in_order = |ls, i|
 		if i >= ls.len() {
 			True
-		} else if (ls.get(i - 1) ?? { num: -1, src: [] }).num > (ls.get(i) ?? { num: -1, src: [] }).num {
+		} else if (
+			ls.get(i - 1) ?? {
+				num: -1,
+				src: [],
+			}
+		).num > (ls.get(i) ?? { num: -1, src: [] }).num {
 			False
 		} else {
 			Parse.in_order(ls, i + 1)
@@ -300,7 +377,15 @@ Parse :: [].{
 		if i >= ls.len() {
 			acc
 		} else {
-			Parse.sort_from(ls, i + 1, Parse.insert_line(acc, ls.get(i) ?? { num: -1, src: [] }, 0))
+			Parse.sort_from(
+				ls,
+				i + 1,
+				Parse.insert_line(
+					acc,
+					ls.get(i) ?? { num: -1, src: [] },
+					0,
+				),
+			)
 		}
 
 	insert_line : List(Line), Line, U64 -> List(Line)
@@ -308,7 +393,9 @@ Parse :: [].{
 		if i >= ls.len() {
 			ls.append(l)
 		} else if (ls.get(i) ?? l).num > l.num {
-			ls.sublist({ start: 0, len: i }).append(l).concat(ls.sublist({ start: i, len: ls.len() - i }))
+			ls.sublist({ start: 0, len: i }).append(l).concat(
+				ls.sublist({ start: i, len: ls.len() - i }),
+			)
 		} else {
 			Parse.insert_line(ls, l, i + 1)
 		}
@@ -341,7 +428,13 @@ Parse :: [].{
 	resolve = |s, lines, firsts| match s {
 		Goto(j) => Goto(Parse.resolved(j, lines, firsts))
 		Gosub(j) => Gosub(Parse.resolved(j, lines, firsts))
-		IfGo(l, op, r, j, line) => IfGo(l, op, r, Parse.resolved(j, lines, firsts), line)
+		IfGo(l, op, r, j, line) => IfGo(
+			l,
+			op,
+			r,
+			Parse.resolved(j, lines, firsts),
+			line,
+		)
 		OnGo(e, js) => OnGo(e, js.map(|j| Parse.resolved(j, lines, firsts)))
 		OnGosub(e, js) => OnGosub(e, js.map(|j| Parse.resolved(j, lines, firsts)))
 		_ => s
@@ -415,7 +508,11 @@ Parse :: [].{
 			)
 		} else {
 			e = Parse.item_end(b, j)
-			Parse.data_items(b, e + 1, acc.append(Parse.trim_right(b, j, e)))
+			Parse.data_items(
+				b,
+				e + 1,
+				acc.append(Parse.trim_right(b, j, e)),
+			)
 		}
 	}
 
@@ -480,7 +577,15 @@ Parse :: [].{
 			}
 			first = h.letter < 26 and !(fns.get(h.letter) ?? Parse.no_fn).known
 			next = if first {
-				fns.set(h.letter, { known: True, param: h.param, pslot: h.pslot, body: Parse.zero }) ?? fns
+				fns.set(
+					h.letter,
+					{
+						known: True,
+						param: h.param,
+						pslot: h.pslot,
+						body: Parse.zero,
+					},
+				) ?? fns
 			} else {
 				fns
 			}
@@ -496,10 +601,22 @@ Parse :: [].{
 	# A DEF's head: the letter (26 when the name is not FN and a letter, or
 	# the DEF is malformed), its parameter, and where its body starts. `why`
 	# is the fault.
-	Head : { letter : U64, param : Bool, pslot : U64, body : U64, why : Str }
+	Head : {
+		letter : U64,
+		param : Bool,
+		pslot : U64,
+		body : U64,
+		why : Str,
+	}
 
 	no_head : Head
-	no_head = { letter: 26, param: False, pslot: 0, body: 0, why: "" }
+	no_head = {
+		letter: 26,
+		param: False,
+		pslot: 0,
+		body: 0,
+		why: "",
+	}
 
 	def_head : List(U8), U64 -> Head
 	def_head = |b, w| {
@@ -513,7 +630,13 @@ Parse :: [].{
 		}
 		q = Parse.skip_ws(b, e)
 		if Parse.byte(b, q) == 61 {
-			{ letter: letter, param: False, pslot: 0, body: q + 1, why: "" }
+			{
+				letter: letter,
+				param: False,
+				pslot: 0,
+				body: q + 1,
+				why: "",
+			}
 		} else if Parse.byte(b, q) != 40 {
 			{ ..Parse.no_head, why: "Expected ( after DEF" }
 		} else {
@@ -523,27 +646,58 @@ Parse :: [].{
 			if Parse.byte(b, c) != 41 or Parse.byte(b, eq) != 61 {
 				{ ..Parse.no_head, why: "Malformed DEF" }
 			} else {
-				{ letter: letter, param: pm.found, pslot: pm.slot, body: eq + 1, why: "" }
+				{
+					letter: letter,
+					param: pm.found,
+					pslot: pm.slot,
+					body: eq + 1,
+					why: "",
+				}
 			}
 		}
 	}
 
 	# ---- a line's statements --------------------------------------------------
 
-	Got : { stmts : List(Stmt), marks : List(U8), defs : List({ letter : U64, def : FnDef }) }
+	Got : {
+		stmts : List(Stmt),
+		marks : List(U8),
+		defs : List({ letter : U64, def : FnDef }),
+	}
 
 	# `lead` when the statement at `at` begins the line or follows a colon.
 	line_from : List(U8), U64, U64, Bool, Cx, Got -> Got
-	line_from = |b, at, line, lead, cx, acc| {
+	line_from = |
+		b,
+		at,
+		line,
+		lead,
+		cx,
+		acc,
+	| {
 		i = Parse.skip_ws(b, at)
 		if i >= b.len() {
 			acc
 		} else if Parse.byte(b, i) == 58 {
-			Parse.line_from(b, i + 1, line, True, cx, acc)
+			Parse.line_from(
+				b,
+				i + 1,
+				line,
+				True,
+				cx,
+				acc,
+			)
 		} else {
 			w = Parse.word_end(b, i)
 			k = Parse.text_of(b, i, w)
-			s = Parse.statement(b, i, k, w, line, cx)
+			s = Parse.statement(
+				b,
+				i,
+				k,
+				w,
+				line,
+				cx,
+			)
 			mark = if !lead {
 				0
 			} else if k == "FOR" {
@@ -563,13 +717,27 @@ Parse :: [].{
 				},
 			}
 			if s.then {
-				Parse.line_from(b, s.at, line, False, cx, got)
+				Parse.line_from(
+					b,
+					s.at,
+					line,
+					False,
+					cx,
+					got,
+				)
 			} else if s.stop {
 				got
 			} else {
 				j = Parse.skip_ws(b, s.at)
 				if Parse.byte(b, j) == 58 {
-					Parse.line_from(b, j + 1, line, True, cx, got)
+					Parse.line_from(
+						b,
+						j + 1,
+						line,
+						True,
+						cx,
+						got,
+					)
 				} else {
 					got
 				}
@@ -579,13 +747,34 @@ Parse :: [].{
 
 	# A statement that goes on to the next one, and one that ends its line.
 	on : Stmt, U64 -> St
-	on = |stmt, at| { stmt: stmt, at: at, stop: False, then: False, letter: 26, def: Parse.no_fn }
+	on = |stmt, at| {
+		stmt: stmt,
+		at: at,
+		stop: False,
+		then: False,
+		letter: 26,
+		def: Parse.no_fn,
+	}
 
 	last : Stmt -> St
-	last = |stmt| { stmt: stmt, at: 0, stop: True, then: False, letter: 26, def: Parse.no_fn }
+	last = |stmt| {
+		stmt: stmt,
+		at: 0,
+		stop: True,
+		then: False,
+		letter: 26,
+		def: Parse.no_fn,
+	}
 
 	statement : List(U8), U64, Str, U64, U64, Cx -> St
-	statement = |b, i, k, w, line, cx|
+	statement = |
+		b,
+		i,
+		k,
+		w,
+		line,
+		cx,
+	|
 		if k == "REM" or k == "DATA" {
 			Parse.last(Nop)
 		} else if k == "END" {
@@ -775,7 +964,22 @@ Parse :: [].{
 			} else if t == r.at {
 				Parse.last(Bad(Seq(l.e, r.e), "Expected THEN"))
 			} else if Parse.is_digit(Parse.byte(b, j)) {
-				Parse.last(IfGo(l.e, op.code, r.e, Line(Parse.digits_val(b, j, Parse.digits_end(b, j), 0)), line))
+				Parse.last(
+					IfGo(
+						l.e,
+						op.code,
+						r.e,
+						Line(
+							Parse.digits_val(
+								b,
+								j,
+								Parse.digits_end(b, j),
+								0,
+							),
+						),
+						line,
+					),
+				)
 			} else {
 				{ ..Parse.on(IfThen(l.e, op.code, r.e, line), j), then: True }
 			}
@@ -821,7 +1025,11 @@ Parse :: [].{
 				lim = Parse.sum(b, t, cx)
 				st = Parse.kw(b, lim.at, "STEP")
 				stepped = if st == lim.at {
-					{ e: Num(1.0), at: lim.at, ok: True }
+					{
+						e: Num(1.0),
+						at: lim.at,
+						ok: True,
+					}
 				} else {
 					Parse.sum(b, st, cx)
 				}
@@ -838,55 +1046,133 @@ Parse :: [].{
 
 	# DIM's arrays, up to the first that is not one. `ok` is False when a
 	# subscript is malformed; that item is last, and stops the machine.
-	dim_items : List(U8), U64, Cx, List(DimItem) -> { items : List(DimItem), at : U64, ok : Bool }
+	dim_items : List(U8),
+	U64,
+	Cx,
+	List(DimItem) -> {
+		items : List(DimItem),
+		at : U64,
+		ok : Bool,
+	}
 	dim_items = |b, w, cx, acc| {
 		nm = Parse.name_at(b, w)
 		if !nm.found {
-			{ items: acc, at: Parse.stmt_end(b, w), ok: True }
+			{
+				items: acc,
+				at: Parse.stmt_end(b, w),
+				ok: True,
+			}
 		} else {
 			s = Parse.subscripts(b, Parse.skip_ws(b, nm.at), cx)
-			items = acc.append({ slot: nm.slot, one: s.one, two: s.two, pair: s.pair })
+			items = acc.append({
+				slot: nm.slot,
+				one: s.one,
+				two: s.two,
+				pair: s.pair,
+			})
 			j = Parse.skip_ws(b, s.at)
 			if !s.ok {
-				{ items: items, at: s.at, ok: False }
+				{
+					items: items,
+					at: s.at,
+					ok: False,
+				}
 			} else if Parse.byte(b, j) == 44 {
 				Parse.dim_items(b, j + 1, cx, items)
 			} else {
-				{ items: items, at: s.at, ok: True }
+				{
+					items: items,
+					at: s.at,
+					ok: True,
+				}
 			}
 		}
 	}
 
 	# The variables of a READ or INPUT, up to the first that is not one. A
 	# string variable followed by a subscript ends the list there.
-	target_list : List(U8), U64, Cx, List(Target) -> { items : List(Target), at : U64, ok : Bool }
+	target_list : List(U8),
+	U64,
+	Cx,
+	List(Target) -> {
+		items : List(Target),
+		at : U64,
+		ok : Bool,
+	}
 	target_list = |b, w, cx, acc| {
 		nm = Parse.name_at(b, w)
 		j = Parse.skip_ws(b, nm.at)
 		if !nm.found {
-			{ items: acc, at: Parse.stmt_end(b, w), ok: True }
+			{
+				items: acc,
+				at: Parse.stmt_end(b, w),
+				ok: True,
+			}
 		} else if nm.str {
-			Parse.more_targets(b, nm.at, cx, acc.append({ kind: 1, slot: nm.slot, one: Parse.zero, two: Parse.zero, pair: False }))
+			Parse.more_targets(
+				b,
+				nm.at,
+				cx,
+				acc.append({
+					kind: 1,
+					slot: nm.slot,
+					one: Parse.zero,
+					two: Parse.zero,
+					pair: False,
+				}),
+			)
 		} else if Parse.byte(b, j) == 40 {
 			s = Parse.subscripts(b, j, cx)
-			items = acc.append({ kind: 2, slot: nm.slot, one: s.one, two: s.two, pair: s.pair })
+			items = acc.append({
+				kind: 2,
+				slot: nm.slot,
+				one: s.one,
+				two: s.two,
+				pair: s.pair,
+			})
 			if !s.ok {
-				{ items: items, at: s.at, ok: False }
+				{
+					items: items,
+					at: s.at,
+					ok: False,
+				}
 			} else {
 				Parse.more_targets(b, s.at, cx, items)
 			}
 		} else {
-			Parse.more_targets(b, nm.at, cx, acc.append({ kind: 0, slot: nm.slot, one: Parse.zero, two: Parse.zero, pair: False }))
+			Parse.more_targets(
+				b,
+				nm.at,
+				cx,
+				acc.append({
+					kind: 0,
+					slot: nm.slot,
+					one: Parse.zero,
+					two: Parse.zero,
+					pair: False,
+				}),
+			)
 		}
 	}
 
-	more_targets : List(U8), U64, Cx, List(Target) -> { items : List(Target), at : U64, ok : Bool }
+	more_targets : List(U8),
+	U64,
+	Cx,
+	List(Target) -> {
+		items : List(Target),
+		at : U64,
+		ok : Bool,
+	}
 	more_targets = |b, at, cx, acc| {
 		j = Parse.skip_ws(b, at)
 		if Parse.byte(b, j) == 44 {
 			Parse.target_list(b, j + 1, cx, acc)
 		} else {
-			{ items: acc, at: at, ok: True }
+			{
+				items: acc,
+				at: at,
+				ok: True,
+			}
 		}
 	}
 
@@ -964,7 +1250,10 @@ Parse :: [].{
 			if g != r.at {
 				Parse.last(OnGo(r.e, js))
 			} else {
-				Parse.on(OnGosub(r.e, js), Parse.line_list_end(b, Parse.digits_end(b, Parse.skip_ws(b, sub))))
+				Parse.on(
+					OnGosub(r.e, js),
+					Parse.line_list_end(b, Parse.digits_end(b, Parse.skip_ws(b, sub))),
+				)
 			}
 		}
 	}
@@ -1003,26 +1292,63 @@ Parse :: [].{
 			Parse.last(Bad(Parse.zero, h.why))
 		} else {
 			stop = Parse.stmt_end(b, h.body)
-			body = Parse.expr(b.sublist({ start: h.body, len: stop - h.body }), 0, cx).e
+			body = Parse.expr(
+				b.sublist({ start: h.body, len: stop - h.body }),
+				0,
+				cx,
+			).e
 			if h.letter >= 26 {
 				Parse.on(Nop, stop)
 			} else {
-				{ ..Parse.on(Def(h.letter), stop), letter: h.letter, def: { known: True, param: h.param, pslot: h.pslot, body: body } }
+				{
+					..Parse.on(Def(h.letter), stop),
+					letter: h.letter,
+					def: {
+						known: True,
+						param: h.param,
+						pslot: h.pslot,
+						body: body,
+					},
+				}
 			}
 		}
 	}
 
 	# ---- PRINT ----------------------------------------------------------------
 
-	print_items : List(U8), U64, Bool, Cx, List(Item) -> { items : List(Item), newline : Bool, at : U64 }
+	print_items : List(U8),
+	U64,
+	Bool,
+	Cx,
+	List(Item) -> {
+		items : List(Item),
+		newline : Bool,
+		at : U64,
+	}
 	print_items = |b, i, newline, cx, acc| {
 		j = Parse.skip_ws(b, i)
 		if j >= b.len() or Parse.byte(b, j) == 58 {
-			{ items: acc, newline: newline, at: j }
+			{
+				items: acc,
+				newline: newline,
+				at: j,
+			}
 		} else if Parse.byte(b, j) == 59 {
-			Parse.print_items(b, j + 1, False, cx, acc.append(Semi))
+			Parse.print_items(
+				b,
+				j + 1,
+				False,
+				cx,
+				acc.append(Semi),
+			)
 		} else if Parse.byte(b, j) == 44 {
-			Parse.print_items(b, j + 1, False, cx, acc.append(Comma))
+			Parse.print_items(
+				b,
+				j + 1,
+				False,
+				cx,
+				acc.append(Comma),
+			)
 		} else {
 			t = Parse.kw(b, j, "TAB")
 			if t != j {
@@ -1030,7 +1356,11 @@ Parse :: [].{
 				e = Parse.skip_ws(b, r.at)
 				items = acc.append(Tab(r.e))
 				if !r.ok {
-					{ items: items, newline: True, at: r.at }
+					{
+						items: items,
+						newline: True,
+						at: r.at,
+					}
 				} else {
 					Parse.print_items(
 						b,
@@ -1048,7 +1378,11 @@ Parse :: [].{
 				r = Parse.expr(b, j, cx)
 				items = acc.append(Show(r.e))
 				if !r.ok {
-					{ items: items, newline: True, at: r.at }
+					{
+						items: items,
+						newline: True,
+						at: r.at,
+					}
 				} else {
 					Parse.print_items(b, r.at, True, cx, items)
 				}
@@ -1066,7 +1400,12 @@ Parse :: [].{
 		j = Parse.skip_ws(b, i)
 		if Parse.byte(b, j) == 34 {
 			e = Parse.quote_end(b, j + 1, b.len())
-			Parse.str_sum(b, e, Text(Parse.text_of(b, j + 1, e.minus_wrap(1))), cx)
+			Parse.str_sum(
+				b,
+				e,
+				Text(Parse.text_of(b, j + 1, e.minus_wrap(1))),
+				cx,
+			)
 		} else {
 			w = Parse.word_end(b, j)
 			k = Parse.text_of(b, j, w)
@@ -1090,13 +1429,25 @@ Parse :: [].{
 	str_sum = |b, i, acc, cx| {
 		j = Parse.skip_ws(b, i)
 		if Parse.byte(b, j) != 43 {
-			{ e: acc, at: i, ok: True }
+			{
+				e: acc,
+				at: i,
+				ok: True,
+			}
 		} else {
 			r = Parse.expr(b, j + 1, cx)
 			if !r.ok {
-				{ e: Seq(acc, r.e), at: r.at, ok: False }
+				{
+					e: Seq(acc, r.e),
+					at: r.at,
+					ok: False,
+				}
 			} else {
-				{ e: Cat(acc, r.e), at: r.at, ok: True }
+				{
+					e: Cat(acc, r.e),
+					at: r.at,
+					ok: True,
+				}
 			}
 		}
 	}
@@ -1136,11 +1487,19 @@ Parse :: [].{
 		j = Parse.skip_ws(b, i)
 		c = Parse.byte(b, j)
 		if c != 43 and c != 45 {
-			{ e: acc, at: i, ok: True }
+			{
+				e: acc,
+				at: i,
+				ok: True,
+			}
 		} else {
 			r = Parse.term(b, j + 1, cx)
 			if !r.ok {
-				{ e: Seq(acc, r.e), at: r.at, ok: False }
+				{
+					e: Seq(acc, r.e),
+					at: r.at,
+					ok: False,
+				}
 			} else {
 				Parse.sum_rest(
 					b,
@@ -1171,11 +1530,19 @@ Parse :: [].{
 		j = Parse.skip_ws(b, i)
 		c = Parse.byte(b, j)
 		if c != 42 and c != 47 {
-			{ e: acc, at: i, ok: True }
+			{
+				e: acc,
+				at: i,
+				ok: True,
+			}
 		} else {
 			r = Parse.power(b, j + 1, cx)
 			if !r.ok {
-				{ e: Seq(acc, r.e), at: r.at, ok: False }
+				{
+					e: Seq(acc, r.e),
+					at: r.at,
+					ok: False,
+				}
 			} else {
 				Parse.term_rest(
 					b,
@@ -1224,9 +1591,21 @@ Parse :: [].{
 		} else {
 			e = Parse.primary(b, j + 1, cx)
 			if !e.ok {
-				{ e: Seq(r.e, e.e), at: e.at, ok: False }
+				{
+					e: Seq(r.e, e.e),
+					at: e.at,
+					ok: False,
+				}
 			} else {
-				Parse.power_rest(b, { e: Pow(r.e, e.e), at: e.at, ok: True }, cx)
+				Parse.power_rest(
+					b,
+					{
+						e: Pow(r.e, e.e),
+						at: e.at,
+						ok: True,
+					},
+					cx,
+				)
 			}
 		}
 	}
@@ -1241,7 +1620,11 @@ Parse :: [].{
 			if !r.ok {
 				r
 			} else {
-				{ e: Neg(r.e), at: r.at, ok: True }
+				{
+					e: Neg(r.e),
+					at: r.at,
+					ok: True,
+				}
 			}
 		} else if c == 43 {
 			Parse.primary(b, j + 1, cx)
@@ -1251,22 +1634,42 @@ Parse :: [].{
 			if !r.ok {
 				r
 			} else if Parse.byte(b, k) != 41 {
-				{ e: Seq(r.e, Fail("Expected )")), at: k, ok: False }
+				{
+					e: Seq(r.e, Fail("Expected )")),
+					at: k,
+					ok: False,
+				}
 			} else {
-				{ e: r.e, at: k + 1, ok: True }
+				{
+					e: r.e,
+					at: k + 1,
+					ok: True,
+				}
 			}
 		} else if Parse.is_digit(c) or c == 46 {
 			n = Parse.numeral(b, j)
-			{ e: Num(n.v), at: n.at, ok: True }
+			{
+				e: Num(n.v),
+				at: n.at,
+				ok: True,
+			}
 		} else if Parse.is_alpha(c) {
 			Parse.name_or_call(b, j, cx)
 		} else {
-			{ e: Fail("Expected an expression"), at: j, ok: False }
+			{
+				e: Fail("Expected an expression"),
+				at: j,
+				ok: False,
+			}
 		}
 	}
 
 	fail : Str, U64 -> P
-	fail = |why, at| { e: Fail(why), at: at, ok: False }
+	fail = |why, at| {
+		e: Fail(why),
+		at: at,
+		ok: False,
+	}
 
 	name_or_call : List(U8), U64, Cx -> P
 	name_or_call = |b, i, cx| {
@@ -1277,20 +1680,41 @@ Parse :: [].{
 		} else if Parse.fn_code(k) > 0 {
 			Parse.call_fn(b, w, k, cx)
 		} else if k.starts_with("FN") and k.count_utf8_bytes() == 3 {
-			Parse.call_def(b, w, Parse.byte(b, i + 2), cx)
+			Parse.call_def(
+				b,
+				w,
+				Parse.byte(b, i + 2),
+				cx,
+			)
 		} else {
 			nm = Parse.name_at(b, i)
 			j = Parse.skip_ws(b, nm.at)
 			if nm.str {
-				{ e: StrVar(nm.slot), at: nm.at, ok: True }
+				{
+					e: StrVar(nm.slot),
+					at: nm.at,
+					ok: True,
+				}
 			} else if Parse.byte(b, j) != 40 {
-				{ e: NumVar(nm.slot), at: nm.at, ok: True }
+				{
+					e: NumVar(nm.slot),
+					at: nm.at,
+					ok: True,
+				}
 			} else {
 				s = Parse.subscripts(b, j, cx)
 				if !s.ok {
-					{ e: Seq(s.one, s.two), at: s.at, ok: False }
+					{
+						e: Seq(s.one, s.two),
+						at: s.at,
+						ok: False,
+					}
 				} else {
-					{ e: Elem(nm.slot, s.one, s.two, s.pair), at: s.at, ok: True }
+					{
+						e: Elem(nm.slot, s.one, s.two, s.pair),
+						at: s.at,
+						ok: True,
+					}
 				}
 			}
 		}
@@ -1302,12 +1726,24 @@ Parse :: [].{
 		r = Parse.sum(b, i + 1, cx)
 		k = Parse.skip_ws(b, r.at)
 		if !r.ok {
-			{ one: r.e, two: Parse.zero, pair: False, at: r.at, ok: False }
+			{
+				one: r.e,
+				two: Parse.zero,
+				pair: False,
+				at: r.at,
+				ok: False,
+			}
 		} else if Parse.byte(b, k) == 44 {
 			r2 = Parse.sum(b, k + 1, cx)
 			e = Parse.skip_ws(b, r2.at)
 			if !r2.ok {
-				{ one: r.e, two: r2.e, pair: True, at: r2.at, ok: False }
+				{
+					one: r.e,
+					two: r2.e,
+					pair: True,
+					at: r2.at,
+					ok: False,
+				}
 			} else {
 				{
 					one: r.e,
@@ -1398,7 +1834,11 @@ Parse :: [].{
 		j = Parse.skip_ws(b, i)
 		if Parse.byte(b, j) != 40 {
 			if k == "RND" {
-				{ e: Rnd, at: j, ok: True }
+				{
+					e: Rnd,
+					at: j,
+					ok: True,
+				}
 			} else {
 				Parse.fail("Expected ( after ".concat(k), j)
 			}
@@ -1413,11 +1853,23 @@ Parse :: [].{
 			if !r.ok {
 				r
 			} else if Parse.byte(b, e) != 41 {
-				{ e: Seq(r.e, Fail("Expected )")), at: e, ok: False }
+				{
+					e: Seq(r.e, Fail("Expected )")),
+					at: e,
+					ok: False,
+				}
 			} else if k == "RND" {
-				{ e: RndOf(r.e), at: e + 1, ok: True }
+				{
+					e: RndOf(r.e),
+					at: e + 1,
+					ok: True,
+				}
 			} else {
-				{ e: Call(Parse.fn_code(k), r.e), at: e + 1, ok: True }
+				{
+					e: Call(Parse.fn_code(k), r.e),
+					at: e + 1,
+					ok: True,
+				}
 			}
 		}
 	}
@@ -1434,7 +1886,11 @@ Parse :: [].{
 				a
 			} else if k == "CHR" or k == "STR" {
 				if Parse.byte(b, c) != 41 {
-					{ e: Seq(a.e, Fail("Expected )")), at: c, ok: False }
+					{
+						e: Seq(a.e, Fail("Expected )")),
+						at: c,
+						ok: False,
+					}
 				} else {
 					{
 						e: if k == "CHR" {
@@ -1447,7 +1903,11 @@ Parse :: [].{
 					}
 				}
 			} else if Parse.byte(b, c) != 44 {
-				{ e: Seq(a.e, Fail("Expected , ")), at: c, ok: False }
+				{
+					e: Seq(a.e, Fail("Expected , ")),
+					at: c,
+					ok: False,
+				}
 			} else {
 				n1 = Parse.sum(b, c + 1, cx)
 				d = Parse.skip_ws(b, n1.at)
@@ -1457,19 +1917,39 @@ Parse :: [].{
 					d
 				}
 				if !n1.ok {
-					{ e: Seq(a.e, n1.e), at: n1.at, ok: False }
+					{
+						e: Seq(a.e, n1.e),
+						at: n1.at,
+						ok: False,
+					}
 				} else if k == "LEFT" {
-					{ e: Left(a.e, n1.e), at: past_d, ok: True }
+					{
+						e: Left(a.e, n1.e),
+						at: past_d,
+						ok: True,
+					}
 				} else if k == "RIGHT" {
-					{ e: Right(a.e, n1.e), at: past_d, ok: True }
+					{
+						e: Right(a.e, n1.e),
+						at: past_d,
+						ok: True,
+					}
 				} else if Parse.byte(b, d) != 44 {
 					# MID$(s, from) runs to the end.
-					{ e: Mid(a.e, n1.e), at: past_d, ok: True }
+					{
+						e: Mid(a.e, n1.e),
+						at: past_d,
+						ok: True,
+					}
 				} else {
 					n2 = Parse.sum(b, d + 1, cx)
 					e = Parse.skip_ws(b, n2.at)
 					if !n2.ok {
-						{ e: Seq(Seq(a.e, n1.e), n2.e), at: n2.at, ok: False }
+						{
+							e: Seq(Seq(a.e, n1.e), n2.e),
+							at: n2.at,
+							ok: False,
+						}
 					} else {
 						{
 							e: Mid3(a.e, n1.e, n2.e),
@@ -1507,16 +1987,36 @@ Parse :: [].{
 				ok: True,
 			}
 		} else if Parse.byte(b, j) != 40 {
-			{ e: CallDef(letter, True, Fail("Expected ( after ".concat(name))), at: j, ok: False }
+			{
+				e: CallDef(letter, True, Fail("Expected ( after ".concat(name))),
+				at: j,
+				ok: False,
+			}
 		} else {
 			a = Parse.sum(b, j + 1, cx)
 			e = Parse.skip_ws(b, a.at)
 			if !a.ok {
-				{ e: CallDef(letter, True, a.e), at: a.at, ok: False }
+				{
+					e: CallDef(letter, True, a.e),
+					at: a.at,
+					ok: False,
+				}
 			} else if Parse.byte(b, e) != 41 {
-				{ e: CallDef(letter, True, Seq(a.e, Fail("Expected )"))), at: e, ok: False }
+				{
+					e: CallDef(
+						letter,
+						True,
+						Seq(a.e, Fail("Expected )")),
+					),
+					at: e,
+					ok: False,
+				}
 			} else {
-				{ e: CallDef(letter, True, a.e), at: e + 1, ok: True }
+				{
+					e: CallDef(letter, True, a.e),
+					at: e + 1,
+					ok: True,
+				}
 			}
 		}
 	}
@@ -1580,7 +2080,11 @@ Parse :: [].{
 	whole : List(U8), U64, F64 -> { v : F64, at : U64 }
 	whole = |b, i, acc|
 		if Parse.is_digit(Parse.byte(b, i)) {
-			Parse.whole(b, i + 1, acc * 10.0 + (Parse.byte(b, i).to_i64() - 48).to_f64())
+			Parse.whole(
+				b,
+				i + 1,
+				acc * 10.0 + (Parse.byte(b, i).to_i64() - 48).to_f64(),
+			)
 		} else {
 			{ v: acc, at: i }
 		}
@@ -1590,12 +2094,23 @@ Parse :: [].{
 	# A name is a letter, optionally a digit, optionally `$`. Its slot is
 	# the letter's 11 places (bare, then each digit), past the first 286 when
 	# it ends in `$`.
-	name_at : List(U8), U64 -> { found : Bool, str : Bool, slot : U64, at : U64 }
+	name_at : List(U8),
+	U64 -> {
+		found : Bool,
+		str : Bool,
+		slot : U64,
+		at : U64,
+	}
 	name_at = |b, i| {
 		j = Parse.skip_ws(b, i)
 		c = Parse.byte(b, j)
 		if !Parse.is_alpha(c) {
-			{ found: False, str: False, slot: 0, at: i }
+			{
+				found: False,
+				str: False,
+				slot: 0,
+				at: i,
+			}
 		} else {
 			d = Parse.byte(b, j + 1)
 			digit = Parse.is_digit(d)
@@ -1741,6 +2256,11 @@ Parse :: [].{
 		if i >= e or acc > 99999999 {
 			acc
 		} else {
-			Parse.digits_val(b, i + 1, e, acc * 10 + Parse.byte(b, i).to_i64() - 48)
+			Parse.digits_val(
+				b,
+				i + 1,
+				e,
+				acc * 10 + Parse.byte(b, i).to_i64() - 48,
+			)
 		}
 }

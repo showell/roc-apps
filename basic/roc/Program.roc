@@ -14,10 +14,23 @@ Program :: [].{
 	Tok : { k : U8, v : Str }
 
 	Jump : { from : I64, to : I64 }
-	Loop : { n : I64, open : Bool, v : Str }
+	Loop : {
+		n : I64,
+		open : Bool,
+		v : Str,
+	}
 	Named : { name : Str, n : I64 }
-	Dim : { name : Str, n : I64, arity : U64, low : I64 }
-	Use : { name : Str, n : I64, arity : U64 }
+	Dim : {
+		name : Str,
+		n : I64,
+		arity : U64,
+		low : I64,
+	}
+	Use : {
+		name : Str,
+		n : I64,
+		arity : U64,
+	}
 
 	Facts : {
 		nums : List(I64),
@@ -35,7 +48,23 @@ Program :: [].{
 
 	check : Str -> Listing.Rejection
 	check = |src| {
-		f = Program.collect(src.to_utf8(), 0, { nums: [], jumps: [], loops: [], defs: [], fn_uses: [], dims: [], options: [], arrays: [], simples: [], why: "", at: -1 })
+		f = Program.collect(
+			src.to_utf8(),
+			0,
+			{
+				nums: [],
+				jumps: [],
+				loops: [],
+				defs: [],
+				fn_uses: [],
+				dims: [],
+				options: [],
+				arrays: [],
+				simples: [],
+				why: "",
+				at: -1,
+			},
+		)
 		if f.why != "" {
 			{ why: f.why, num: f.at }
 		} else {
@@ -62,8 +91,22 @@ Program :: [].{
 			} else {
 				d = Listing.digits_end(b, s)
 				n = Listing.digits_val(b, s, d, 0)
-				body = Listing.upper_body(b, Listing.skip_ws(b, d), stop, False, [])
-				Program.collect(b, e + 1, Program.line_facts({ ..f, nums: f.nums.append(n) }, n, Program.tokens(body, 0, [])))
+				body = Listing.upper_body(
+					b,
+					Listing.skip_ws(b, d),
+					stop,
+					False,
+					[],
+				)
+				Program.collect(
+					b,
+					e + 1,
+					Program.line_facts(
+						{ ..f, nums: f.nums.append(n) },
+						n,
+						Program.tokens(body, 0, []),
+					),
+				)
 			}
 		}
 
@@ -88,11 +131,23 @@ Program :: [].{
 				} else if Program.has_tok(ts, body_from, 3, name) {
 					{ ..f1, why: "A function that refers to itself", at: n }
 				} else {
-					Program.refs({ ..f1, defs: f1.defs.append({ name: name, n: n }) }, n, ts, body_from)
+					Program.refs(
+						{ ..f1, defs: f1.defs.append({ name: name, n: n }) },
+						n,
+						ts,
+						body_from,
+					)
 				}
 			} else {
 				f2 = if kw == "FOR" or kw == "NEXT" {
-					{ ..f1, loops: f1.loops.append({ n: n, open: kw == "FOR", v: Program.tok_v(ts, 1) }) }
+					{
+						..f1,
+						loops: f1.loops.append({
+							n: n,
+							open: kw == "FOR",
+							v: Program.tok_v(ts, 1),
+						}),
+					}
 				} else {
 					f1
 				}
@@ -115,7 +170,10 @@ Program :: [].{
 		} else {
 			v = Program.tok_v(ts, idx)
 			after_go = idx > 0 and Program.tok_v(ts, idx - 1) == "GO"
-			jumping = Program.tok_k(ts, idx) == 2 and (v == "GOTO" or v == "GOSUB" or v == "THEN" or (after_go and (v == "TO" or v == "SUB")))
+			jumping = Program.tok_k(
+				ts,
+				idx,
+			) == 2 and (v == "GOTO" or v == "GOSUB" or v == "THEN" or (after_go and (v == "TO" or v == "SUB")))
 			Program.jumps_in(
 				ts,
 				idx + 1,
@@ -201,7 +259,14 @@ Program :: [].{
 				{ ..f, fn_uses: f.fn_uses.append({ name: v, n: n }) }
 			} else if k == 4 and !v.ends_with("$") {
 				if Program.tok_v(ts, idx + 1) == "(" {
-					{ ..f, arrays: f.arrays.append({ name: v, n: n, arity: Program.arity(ts, idx + 1, 0, 1) }) }
+					{
+						..f,
+						arrays: f.arrays.append({
+							name: v,
+							n: n,
+							arity: Program.arity(ts, idx + 1, 0, 1),
+						}),
+					}
 				} else {
 					{ ..f, simples: f.simples.append({ name: v, n: n }) }
 				}
@@ -221,15 +286,30 @@ Program :: [].{
 			if Program.tok_k(ts, j) != 5 {
 				Program.arity(ts, j + 1, depth, count)
 			} else if v == "(" {
-				Program.arity(ts, j + 1, depth + 1, count)
+				Program.arity(
+					ts,
+					j + 1,
+					depth + 1,
+					count,
+				)
 			} else if v == ")" {
 				if depth == 1 {
 					count
 				} else {
-					Program.arity(ts, j + 1, depth - 1, count)
+					Program.arity(
+						ts,
+						j + 1,
+						depth - 1,
+						count,
+					)
 				}
 			} else if v == "," and depth == 1 {
-				Program.arity(ts, j + 1, depth, count + 1)
+				Program.arity(
+					ts,
+					j + 1,
+					depth,
+					count + 1,
+				)
 			} else {
 				Program.arity(ts, j + 1, depth, count)
 			}
@@ -278,30 +358,78 @@ Program :: [].{
 			}
 		}
 
-	Paired : { why : Str, at : I64, blocks : List(Jump) }
+	Paired : {
+		why : Str,
+		at : I64,
+		blocks : List(Jump),
+	}
 
 	# A stack of open FORs; a block is a FOR's line and its NEXT's.
 	pair_loops : List(Loop), U64, List(Loop), List(Jump) -> Paired
 	pair_loops = |ls, i, stack, blocks|
 		if i >= ls.len() {
 			if stack.is_empty() {
-				{ why: "", at: -1, blocks: blocks }
+				{
+					why: "",
+					at: -1,
+					blocks: blocks,
+				}
 			} else {
-				{ why: "A FOR without a NEXT", at: (stack.last() ?? { n: -1, open: True, v: "" }).n, blocks: blocks }
+				{
+					why: "A FOR without a NEXT",
+					at: (
+						stack.last() ?? {
+							n: -1,
+							open: True,
+							v: "",
+						}
+					).n,
+					blocks: blocks,
+				}
 			}
 		} else {
-			l = ls.get(i) ?? { n: -1, open: True, v: "" }
-			top = stack.last() ?? { n: -1, open: True, v: "" }
+			l = ls.get(i) ?? {
+				n: -1,
+				open: True,
+				v: "",
+			}
+			top = stack.last() ?? {
+				n: -1,
+				open: True,
+				v: "",
+			}
 			if l.open and Program.loop_open(stack, l.v, 0) {
-				{ why: "A FOR inside a FOR with the same variable", at: l.n, blocks: blocks }
+				{
+					why: "A FOR inside a FOR with the same variable",
+					at: l.n,
+					blocks: blocks,
+				}
 			} else if l.open {
-				Program.pair_loops(ls, i + 1, stack.append(l), blocks)
+				Program.pair_loops(
+					ls,
+					i + 1,
+					stack.append(l),
+					blocks,
+				)
 			} else if stack.is_empty() {
-				{ why: "A NEXT without a FOR", at: l.n, blocks: blocks }
+				{
+					why: "A NEXT without a FOR",
+					at: l.n,
+					blocks: blocks,
+				}
 			} else if top.v != l.v {
-				{ why: "A NEXT that does not match its FOR", at: l.n, blocks: blocks }
+				{
+					why: "A NEXT that does not match its FOR",
+					at: l.n,
+					blocks: blocks,
+				}
 			} else {
-				Program.pair_loops(ls, i + 1, stack.drop_last(1), blocks.append({ from: top.n, to: l.n }))
+				Program.pair_loops(
+					ls,
+					i + 1,
+					stack.drop_last(1),
+					blocks.append({ from: top.n, to: l.n }),
+				)
 			}
 		}
 
@@ -309,7 +437,13 @@ Program :: [].{
 	loop_open = |stack, v, i|
 		if i >= stack.len() {
 			False
-		} else if (stack.get(i) ?? { n: -1, open: True, v: "" }).v == v {
+		} else if (
+			stack.get(i) ?? {
+				n: -1,
+				open: True,
+				v: "",
+			}
+		).v == v {
 			True
 		} else {
 			Program.loop_open(stack, v, i + 1)
@@ -387,7 +521,14 @@ Program :: [].{
 	any_dim_before = |ds, n, i|
 		if i >= ds.len() {
 			False
-		} else if (ds.get(i) ?? { name: "", n: n, arity: 1, low: 0 }).n < n {
+		} else if (
+			ds.get(i) ?? {
+				name: "",
+				n: n,
+				arity: 1,
+				low: 0,
+			}
+		).n < n {
 			True
 		} else {
 			Program.any_dim_before(ds, n, i + 1)
@@ -397,7 +538,13 @@ Program :: [].{
 	any_use_before = |us, n, i|
 		if i >= us.len() {
 			False
-		} else if (us.get(i) ?? { name: "", n: n, arity: 1 }).n < n {
+		} else if (
+			us.get(i) ?? {
+				name: "",
+				n: n,
+				arity: 1,
+			}
+		).n < n {
 			True
 		} else {
 			Program.any_use_before(us, n, i + 1)
@@ -408,7 +555,12 @@ Program :: [].{
 		if i >= ds.len() {
 			Program.fine
 		} else {
-			d = ds.get(i) ?? { name: "", n: 0, arity: 1, low: base }
+			d = ds.get(i) ?? {
+				name: "",
+				n: 0,
+				arity: 1,
+				low: base,
+			}
 			if d.low < base {
 				{ why: "A DIM bound below OPTION BASE", num: d.n }
 			} else {
@@ -422,9 +574,18 @@ Program :: [].{
 		if i >= us.len() {
 			Program.fine
 		} else {
-			u = us.get(i) ?? { name: "", n: 0, arity: 1 }
+			u = us.get(i) ?? {
+				name: "",
+				n: 0,
+				arity: 1,
+			}
 			di = Program.dim_index(ds, u.name, 0)
-			d = ds.get(di.to_u64_wrap()) ?? { name: "", n: 0, arity: u.arity, low: 0 }
+			d = ds.get(di.to_u64_wrap()) ?? {
+				name: "",
+				n: 0,
+				arity: u.arity,
+				low: 0,
+			}
 			si = Program.use_index(seen, u.name, 0)
 			s = seen.get(si.to_u64_wrap()) ?? u
 			if di >= 0 and u.n < d.n {
@@ -476,7 +637,14 @@ Program :: [].{
 	dim_index = |ds, name, i|
 		if i >= ds.len() {
 			-1
-		} else if (ds.get(i) ?? { name: "", n: 0, arity: 1, low: 0 }).name == name {
+		} else if (
+			ds.get(i) ?? {
+				name: "",
+				n: 0,
+				arity: 1,
+				low: 0,
+			}
+		).name == name {
 			i.to_i64_wrap()
 		} else {
 			Program.dim_index(ds, name, i + 1)
@@ -486,7 +654,13 @@ Program :: [].{
 	use_index = |us, name, i|
 		if i >= us.len() {
 			-1
-		} else if (us.get(i) ?? { name: "", n: 0, arity: 1 }).name == name {
+		} else if (
+			us.get(i) ?? {
+				name: "",
+				n: 0,
+				arity: 1,
+			}
+		).name == name {
 			i.to_i64_wrap()
 		} else {
 			Program.use_index(us, name, i + 1)
@@ -511,7 +685,12 @@ Program :: [].{
 	int_of : Str -> I64
 	int_of = |v| {
 		b = v.to_utf8()
-		Listing.digits_val(b, 0, Listing.digits_end(b, 0), 0)
+		Listing.digits_val(
+			b,
+			0,
+			Listing.digits_end(b, 0),
+			0,
+		)
 	}
 
 	# ---- the tokenizer -----------------------------------------------------
@@ -529,17 +708,33 @@ Program :: [].{
 			} else {
 				q + 1
 			}
-			Program.tokens(b, e, acc.append({ k: 6, v: Listing.text(b, j, e) }))
+			Program.tokens(
+				b,
+				e,
+				acc.append({ k: 6, v: Listing.text(b, j, e) }),
+			)
 		} else if Listing.is_digit(c) or (c == 46 and Listing.is_digit(Listing.byte(b, j + 1))) {
 			e = Listing.number_end(b, j)
-			Program.tokens(b, e, acc.append({ k: 1, v: Listing.text(b, j, e) }))
+			Program.tokens(
+				b,
+				e,
+				acc.append({ k: 1, v: Listing.text(b, j, e) }),
+			)
 		} else if Listing.starts(b, j, "FN") and Listing.is_alpha(Listing.byte(b, j + 2)) {
-			Program.tokens(b, j + 3, acc.append({ k: 3, v: Listing.text(b, j, j + 3) }))
+			Program.tokens(
+				b,
+				j + 3,
+				acc.append({ k: 3, v: Listing.text(b, j, j + 3) }),
+			)
 		} else if Listing.is_alpha(c) {
 			w = Listing.first_kw(b, j, Program.known, 0)
 			if w != "" {
 				e = j + w.to_utf8().len()
-				Program.tokens(b, e, acc.append({ k: 2, v: w }))
+				Program.tokens(
+					b,
+					e,
+					acc.append({ k: 2, v: w }),
+				)
 			} else {
 				e0 = Listing.name_end(b, j)
 				e = if Listing.byte(b, e0) == 36 {
@@ -547,15 +742,74 @@ Program :: [].{
 				} else {
 					e0
 				}
-				Program.tokens(b, e, acc.append({ k: 4, v: Listing.text(b, j, e) }))
+				Program.tokens(
+					b,
+					e,
+					acc.append({ k: 4, v: Listing.text(b, j, e) }),
+				)
 			}
 		} else {
-			Program.tokens(b, j + 1, acc.append({ k: 5, v: Listing.text(b, j, j + 1) }))
+			Program.tokens(
+				b,
+				j + 1,
+				acc.append({ k: 5, v: Listing.text(b, j, j + 1) }),
+			)
 		}
 	}
 
 	# Every word a well-formed line can hold, longest first, so a word is
 	# never read as a shorter one it starts with.
 	known : List(Str)
-	known = ["RANDOMIZE", "RESTORE", "OPTION", "RETURN", "RIGHT$", "GOSUB", "INPUT", "PRINT", "PAUSE", "SLEEP", "LEFT$", "DATA", "GOTO", "NEXT", "STOP", "POKE", "PLOT", "THEN", "STEP", "BASE", "PEEK", "CHR$", "STR$", "MID$", "DEF", "DIM", "END", "FOR", "LET", "REM", "ABS", "ATN", "COS", "EXP", "INT", "LOG", "SGN", "SIN", "SQR", "TAN", "RND", "SUB", "TAB", "LEN", "ASC", "VAL", "GO", "IF", "ON", "TO"]
+	known = [
+		"RANDOMIZE",
+		"RESTORE",
+		"OPTION",
+		"RETURN",
+		"RIGHT$",
+		"GOSUB",
+		"INPUT",
+		"PRINT",
+		"PAUSE",
+		"SLEEP",
+		"LEFT$",
+		"DATA",
+		"GOTO",
+		"NEXT",
+		"STOP",
+		"POKE",
+		"PLOT",
+		"THEN",
+		"STEP",
+		"BASE",
+		"PEEK",
+		"CHR$",
+		"STR$",
+		"MID$",
+		"DEF",
+		"DIM",
+		"END",
+		"FOR",
+		"LET",
+		"REM",
+		"ABS",
+		"ATN",
+		"COS",
+		"EXP",
+		"INT",
+		"LOG",
+		"SGN",
+		"SIN",
+		"SQR",
+		"TAN",
+		"RND",
+		"SUB",
+		"TAB",
+		"LEN",
+		"ASC",
+		"VAL",
+		"GO",
+		"IF",
+		"ON",
+		"TO",
+	]
 }

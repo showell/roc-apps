@@ -38,7 +38,12 @@ CommandLine :: [].{
 				acc
 			}
 		} else if (b.get(i) ?? 0) == 10 {
-			CommandLine.lines_from(b, i + 1, i + 1, acc.append(CommandLine.piece(b, from, i)))
+			CommandLine.lines_from(
+				b,
+				i + 1,
+				i + 1,
+				acc.append(CommandLine.piece(b, from, i)),
+			)
 		} else {
 			CommandLine.lines_from(b, from, i + 1, acc)
 		}

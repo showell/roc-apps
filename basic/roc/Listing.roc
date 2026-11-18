@@ -25,7 +25,11 @@ Listing :: [].{
 
 	# What a recognizer answers: where it stopped, why it refused (empty
 	# when it did not), and whether what it read was a string.
-	Sc : { at : U64, why : Str, str : Bool }
+	Sc : {
+		at : U64,
+		why : Str,
+		str : Bool,
+	}
 
 	# A user function's letter, and whether its DEF takes a parameter.
 	Def : { k : U8, param : Bool }
@@ -88,14 +92,21 @@ Listing :: [].{
 				} else if ended {
 					{ why: "END is not the last line", num: prev }
 				} else {
-					Listing.lines(b, e + 1, n, Listing.is_end(b, g, stop))
+					Listing.lines(
+						b,
+						e + 1,
+						n,
+						Listing.is_end(b, g, stop),
+					)
 				}
 			}
 		}
 
 	is_end : List(U8), U64, U64 -> Bool
 	is_end = |b, g, stop| {
-		spelled = Listing.upper(Listing.byte(b, g)) == 69 and Listing.upper(Listing.byte(b, g + 1)) == 78 and Listing.upper(Listing.byte(b, g + 2)) == 68
+		spelled = Listing.upper(Listing.byte(b, g)) == 69 and Listing.upper(
+			Listing.byte(b, g + 1),
+		) == 78 and Listing.upper(Listing.byte(b, g + 2)) == 68
 		spelled and (g + 3 >= stop or !Listing.is_alpha(Listing.byte(b, g + 3)))
 	}
 
@@ -119,7 +130,13 @@ Listing :: [].{
 				Listing.statements(b, e + 1, fns)
 			} else {
 				d = Listing.digits_end(b, s)
-				body = Listing.upper_body(b, Listing.skip_ws(b, d), stop, False, [])
+				body = Listing.upper_body(
+					b,
+					Listing.skip_ws(b, d),
+					stop,
+					False,
+					[],
+				)
 				r = Listing.statement(body, 0, fns)
 				if r.why != "" {
 					{ why: r.why, num: Listing.digits_val(b, s, d, 0) }
@@ -138,15 +155,28 @@ Listing :: [].{
 		} else {
 			e = Listing.eol(b, i)
 			s = Listing.skip_ws(b, i)
-			body = Listing.upper_body(b, Listing.skip_ws(b, Listing.digits_end(b, s)), e, False, [])
+			body = Listing.upper_body(
+				b,
+				Listing.skip_ws(b, Listing.digits_end(b, s)),
+				e,
+				False,
+				[],
+			)
 			j = Listing.skip_ws(body, 0)
 			k = Listing.skip_ws(body, j + 3)
-			found = Listing.starts(body, j, "DEF") and Listing.starts(body, k, "FN") and Listing.is_alpha(Listing.byte(body, k + 2))
+			found = Listing.starts(
+				body,
+				j,
+				"DEF",
+			) and Listing.starts(body, k, "FN") and Listing.is_alpha(Listing.byte(body, k + 2))
 			Listing.defs(
 				b,
 				e + 1,
 				if found {
-					acc.append({ k: Listing.byte(body, k + 2), param: Listing.next(body, k + 3) == 40 })
+					acc.append({
+						k: Listing.byte(body, k + 2),
+						param: Listing.next(body, k + 3) == 40,
+					})
 				} else {
 					acc
 				},
@@ -186,7 +216,9 @@ Listing :: [].{
 		at = j + kw.to_utf8().len()
 		if kw == "" {
 			Listing.no("A statement with no keyword")
-		} else if kw != "GO" and kw != "REM" and kw != "DATA" and Listing.is_alpha(Listing.byte(b, at)) {
+		} else if kw != "GO" and kw != "REM" and kw != "DATA" and Listing.is_alpha(
+			Listing.byte(b, at),
+		) {
 			Listing.no("A keyword run together with the word after it")
 		} else if kw == "REM" or kw == "POKE" or kw == "PLOT" or kw == "SLEEP" or kw == "PAUSE" {
 			Listing.ok(b.len(), False)
@@ -262,7 +294,33 @@ Listing :: [].{
 
 	# GOSUB before GOTO before GO, and every keyword before a word it starts.
 	keywords : List(Str)
-	keywords = ["DATA", "DEF", "DIM", "END", "FOR", "GOSUB", "GOTO", "GO", "IF", "INPUT", "LET", "NEXT", "ON", "OPTION", "PRINT", "RANDOMIZE", "READ", "REM", "RESTORE", "RETURN", "STOP", "POKE", "PLOT", "SLEEP", "PAUSE"]
+	keywords = [
+		"DATA",
+		"DEF",
+		"DIM",
+		"END",
+		"FOR",
+		"GOSUB",
+		"GOTO",
+		"GO",
+		"IF",
+		"INPUT",
+		"LET",
+		"NEXT",
+		"ON",
+		"OPTION",
+		"PRINT",
+		"RANDOMIZE",
+		"READ",
+		"REM",
+		"RESTORE",
+		"RETURN",
+		"STOP",
+		"POKE",
+		"PLOT",
+		"SLEEP",
+		"PAUSE",
+	]
 
 	first_kw : List(U8), U64, List(Str), U64 -> Str
 	first_kw = |b, j, kws, n|
@@ -321,7 +379,11 @@ Listing :: [].{
 				},
 			)
 		} else if Listing.starts(b, j, "TAB") and Listing.next(b, j + 3) == 40 {
-			e = Listing.num_expr(b, Listing.skip_ws(b, j + 3) + 1, fns)
+			e = Listing.num_expr(
+				b,
+				Listing.skip_ws(b, j + 3) + 1,
+				fns,
+			)
 			k = Listing.skip_ws(b, e.at)
 			if e.why != "" {
 				e
@@ -511,7 +573,11 @@ Listing :: [].{
 				} else if Listing.byte(b, r) != 41 {
 					Listing.no("An unmatched parenthesis")
 				} else {
-					Listing.def_body(b, Listing.skip_ws(b, r + 1), fns)
+					Listing.def_body(
+						b,
+						Listing.skip_ws(b, r + 1),
+						fns,
+					)
 				}
 			}
 		}
@@ -636,7 +702,15 @@ Listing :: [].{
 				)
 			} else {
 				# EXT: `+` joins two strings.
-				Listing.expr_rest(b, { at: u.at, why: "", str: t.str }, fns)
+				Listing.expr_rest(
+					b,
+					{
+						at: u.at,
+						why: "",
+						str: t.str,
+					},
+					fns,
+				)
 			}
 		}
 	}
@@ -728,7 +802,11 @@ Listing :: [].{
 			} else if Listing.byte(b, k) != 41 {
 				Listing.no("An unmatched parenthesis")
 			} else {
-				{ at: k + 1, why: "", str: e.str }
+				{
+					at: k + 1,
+					why: "",
+					str: e.str,
+				}
 			}
 		} else if c == 34 {
 			q = Listing.quote_close(b, j + 1)
@@ -742,11 +820,19 @@ Listing :: [].{
 		} else if !Listing.is_alpha(c) {
 			Listing.no("Expected an expression")
 		} else if Listing.starts(b, j, "FN") and Listing.is_alpha(Listing.byte(b, j + 2)) {
-			Listing.call_fn(b, j + 3, Listing.byte(b, j + 2), fns)
+			Listing.call_fn(
+				b,
+				j + 3,
+				Listing.byte(b, j + 2),
+				fns,
+			)
 		} else {
 			w = Listing.word_end(b, j)
 			name = Listing.text(b, j, w)
-			if Listing.byte(b, w) == 36 and (name == "CHR" or name == "STR" or name == "LEFT" or name == "RIGHT" or name == "MID") {
+			if Listing.byte(
+				b,
+				w,
+			) == 36 and (name == "CHR" or name == "STR" or name == "LEFT" or name == "RIGHT" or name == "MID") {
 				Listing.ok(Listing.loose_args(b, w + 1), True)
 			} else if name == "LEN" or name == "ASC" or name == "VAL" or name == "PEEK" {
 				Listing.ok(Listing.loose_args(b, w), False)
@@ -770,7 +856,11 @@ Listing :: [].{
 		} else if e > j + 1 {
 			Listing.no("An array name that is not a single letter")
 		} else {
-			s1 = Listing.num_expr(b, Listing.skip_ws(b, e) + 1, fns)
+			s1 = Listing.num_expr(
+				b,
+				Listing.skip_ws(b, e) + 1,
+				fns,
+			)
 			k = Listing.skip_ws(b, s1.at)
 			s2 = if s1.why == "" and Listing.byte(b, k) == 44 {
 				Listing.num_expr(b, k + 1, fns)
@@ -894,7 +984,11 @@ Listing :: [].{
 		} else {
 			c = Listing.byte(b, i)
 			if c == 34 {
-				Listing.skip_parens(b, Listing.quote_close(b, i + 1) + 1, depth)
+				Listing.skip_parens(
+					b,
+					Listing.quote_close(b, i + 1) + 1,
+					depth,
+				)
 			} else if c == 40 {
 				Listing.skip_parens(b, i + 1, depth + 1)
 			} else if c == 41 {
@@ -907,10 +1001,18 @@ Listing :: [].{
 	# ---- small pieces ------------------------------------------------------
 
 	ok : U64, Bool -> Sc
-	ok = |at, s| { at: at, why: "", str: s }
+	ok = |at, s| {
+		at: at,
+		why: "",
+		str: s,
+	}
 
 	no : Str -> Sc
-	no = |why| { at: 0, why: why, str: False }
+	no = |why| {
+		at: 0,
+		why: why,
+		str: False,
+	}
 
 	end : List(U8), U64 -> Sc
 	end = |b, i| if Listing.skip_ws(b, i) < b.len() {
@@ -1045,6 +1147,11 @@ Listing :: [].{
 		if i >= e or acc > 99999999 {
 			acc
 		} else {
-			Listing.digits_val(b, i + 1, e, acc * 10 + Listing.byte(b, i).to_i64() - 48)
+			Listing.digits_val(
+				b,
+				i + 1,
+				e,
+				acc * 10 + Listing.byte(b, i).to_i64() - 48,
+			)
 		}
 }

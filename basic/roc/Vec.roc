@@ -17,7 +17,11 @@ Vec :: [].{
 
 	# `n` entries; each child of the root covers `unit` of them, and a leaf
 	# is a root whose `unit` is one.
-	V(a) : { n : U64, unit : U64, root : Tree(a) }
+	V(a) : {
+		n : U64,
+		unit : U64,
+		root : Tree(a),
+	}
 
 	width : U64
 	width = 32
@@ -25,7 +29,11 @@ Vec :: [].{
 	repeat : U64, a -> V(a)
 	repeat = |n, fill| {
 		unit = Vec.unit_for(n, 1)
-		{ n: n, unit: unit, root: Vec.full(unit, fill) }
+		{
+			n: n,
+			unit: unit,
+			root: Vec.full(unit, fill),
+		}
 	}
 
 	unit_for : U64, U64 -> U64
@@ -53,7 +61,11 @@ Vec :: [].{
 	at_in : Tree(a), U64, U64 -> a
 	at_in = |t, unit, i| match t {
 		Leaf(xs) => xs.get(i) ?? crash "Vec.at: outside the vector"
-		Node(ks) => Vec.at_in(ks.get(i.div_trunc_by(unit)) ?? crash "Vec.at: outside the vector", unit.div_trunc_by(Vec.width), i.rem_by(unit))
+		Node(ks) => Vec.at_in(
+			ks.get(i.div_trunc_by(unit)) ?? crash "Vec.at: outside the vector",
+			unit.div_trunc_by(Vec.width),
+			i.rem_by(unit),
+		)
 	}
 
 	# `fill` past the end.
@@ -67,7 +79,12 @@ Vec :: [].{
 	get_in : Tree(a), U64, U64, a -> a
 	get_in = |t, unit, i, fill| match t {
 		Leaf(xs) => xs.get(i) ?? fill
-		Node(ks) => Vec.get_in(ks.get(i.div_trunc_by(unit)) ?? Leaf([]), unit.div_trunc_by(Vec.width), i.rem_by(unit), fill)
+		Node(ks) => Vec.get_in(
+			ks.get(i.div_trunc_by(unit)) ?? Leaf([]),
+			unit.div_trunc_by(Vec.width),
+			i.rem_by(unit),
+			fill,
+		)
 	}
 
 	# Unchanged past the end.
@@ -75,9 +92,17 @@ Vec :: [].{
 	set = |v, i, x| {
 		{ n, unit, root } = v
 		if i >= n {
-			{ n: n, unit: unit, root: root }
+			{
+				n: n,
+				unit: unit,
+				root: root,
+			}
 		} else {
-			{ n: n, unit: unit, root: Vec.set_in(root, unit, i, x) }
+			{
+				n: n,
+				unit: unit,
+				root: Vec.set_in(root, unit, i, x),
+			}
 		}
 	}
 
@@ -87,7 +112,17 @@ Vec :: [].{
 		Node(ks) => {
 			c = i.div_trunc_by(unit)
 			taken = ks.replace(c, Leaf([])) ?? crash "Vec.set: outside a node"
-			Node(taken.list.set(c, Vec.set_in(taken.prev, unit.div_trunc_by(Vec.width), i.rem_by(unit), x)) ?? crash "Vec.set: outside a node")
+			Node(
+				taken.list.set(
+					c,
+					Vec.set_in(
+						taken.prev,
+						unit.div_trunc_by(Vec.width),
+						i.rem_by(unit),
+						x,
+					),
+				) ?? crash "Vec.set: outside a node",
+			)
 		}
 	}
 
@@ -98,10 +133,24 @@ Vec :: [].{
 	replace = |v, i, x, fill| {
 		{ n, unit, root } = v
 		if i >= n {
-			{ v: { n: n, unit: unit, root: root }, prev: fill }
+			{
+				v: {
+					n: n,
+					unit: unit,
+					root: root,
+				},
+				prev: fill,
+			}
 		} else {
 			r = Vec.replace_in(root, unit, i, x)
-			{ v: { n: n, unit: unit, root: r.tree }, prev: r.prev }
+			{
+				v: {
+					n: n,
+					unit: unit,
+					root: r.tree,
+				},
+				prev: r.prev,
+			}
 		}
 	}
 
@@ -114,8 +163,16 @@ Vec :: [].{
 		Node(ks) => {
 			c = i.div_trunc_by(unit)
 			taken = ks.replace(c, Leaf([])) ?? crash "Vec.replace: outside a node"
-			inner = Vec.replace_in(taken.prev, unit.div_trunc_by(Vec.width), i.rem_by(unit), x)
-			{ tree: Node(taken.list.set(c, inner.tree) ?? crash "Vec.replace: outside a node"), prev: inner.prev }
+			inner = Vec.replace_in(
+				taken.prev,
+				unit.div_trunc_by(Vec.width),
+				i.rem_by(unit),
+				x,
+			)
+			{
+				tree: Node(taken.list.set(c, inner.tree) ?? crash "Vec.replace: outside a node"),
+				prev: inner.prev,
+			}
 		}
 	}
 }

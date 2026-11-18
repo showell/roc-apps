@@ -41,4 +41,11 @@ pause = |boxed| Machine.pause_ms((boxed.unbox()).m)
 drop : Box(Model) -> {}
 drop = |_boxed| {}
 
-program = { start, resume, view, status, pause, drop }
+program = {
+	start,
+	resume,
+	view,
+	status,
+	pause,
+	drop,
+}

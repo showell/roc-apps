@@ -22,10 +22,18 @@ main! = |args| {
 	listing = CommandLine.clean(args.get(1) ?? "")
 	replies = CommandLine.lines_of(CommandLine.clean(args.get(2) ?? ""))
 	l = Machine.loaded(listing, dialect == "ecma")
-	r = batch(l.pg, to_effect(l.pg, { m: Machine.started(l, replies, 1), checked: 0 }), 10)
+	r = batch(
+		l.pg,
+		to_effect(l.pg, { m: Machine.started(l, replies, 1), checked: 0 }),
+		10,
+	)
 	# **A CHECK THAT NEVER RAN CHECKED NOTHING**: `checked` is how many fast
 	# answers were compared.
-	dbg { steps: r.m.steps, statements: l.pg.prog.len(), checked: r.checked }
+	dbg {
+		steps: r.m.steps,
+		statements: l.pg.prog.len(),
+		checked: r.checked,
+	}
 	echo!(Machine.ended(l.pg, r.m))
 	Ok({})
 }
@@ -36,7 +44,14 @@ to_effect = |pg, start| {
 	var $m = start.m
 	var $c = start.checked
 	while !($m.done or $m.waiting or $m.pause > 0 or $m.fuel <= 0) {
-		s = step(pg, { ..$m, fuel: $m.fuel - 1, steps: $m.steps + 1 })
+		s = step(
+			pg,
+			{
+				..$m,
+				fuel: $m.fuel - 1,
+				steps: $m.steps + 1,
+			},
+		)
 		$m = s.m
 		$c = $c + s.checked
 	}
@@ -67,21 +82,106 @@ batch = |pg, start, tanks| {
 step : Parse.Program, Machine.M -> { m : Machine.M, checked : U64 }
 step = |pg, m| match pg.prog.get(m.pc) {
 	Ok(SetNum(slot, e)) => match Machine.fast(m, e) {
-		Got(_) => agree(pg, m.pc, Machine.do_set_num(pg, m, slot, e), Machine.do_set_num_slow(pg, m, slot, e), Var(slot))
+		Got(_) => agree(
+			pg,
+			m.pc,
+			Machine.do_set_num(pg, m, slot, e),
+			Machine.do_set_num_slow(pg, m, slot, e),
+			Var(slot),
+		)
 		Slow => { m: Machine.step(pg, m), checked: 0 }
 	}
 	Ok(IfGo(l, op, r, j, line)) => match Machine.fast_test(m, l, op, r) {
 		Unknown => { m: Machine.step(pg, m), checked: 0 }
-		_ => agree(pg, m.pc, Machine.do_if_go(pg, m, l, op, r, j, line), Machine.do_if_go_slow(pg, m, l, op, r, j, line), Control)
+		_ => agree(
+			pg,
+			m.pc,
+			Machine.do_if_go(
+				pg,
+				m,
+				l,
+				op,
+				r,
+				j,
+				line,
+			),
+			Machine.do_if_go_slow(
+				pg,
+				m,
+				l,
+				op,
+				r,
+				j,
+				line,
+			),
+			Control,
+		)
 	}
 	Ok(IfThen(l, op, r, line)) => match Machine.fast_test(m, l, op, r) {
 		Unknown => { m: Machine.step(pg, m), checked: 0 }
-		_ => agree(pg, m.pc, Machine.do_if_then(pg, m, l, op, r, line), Machine.do_if_then_slow(pg, m, l, op, r, line), Control)
+		_ => agree(
+			pg,
+			m.pc,
+			Machine.do_if_then(
+				pg,
+				m,
+				l,
+				op,
+				r,
+				line,
+			),
+			Machine.do_if_then_slow(
+				pg,
+				m,
+				l,
+				op,
+				r,
+				line,
+			),
+			Control,
+		)
 	}
-	Ok(SetElem(slot, one, two, pair, e)) => match Machine.fast_place(m, slot, one, two, pair, e) {
+	Ok(SetElem(slot, one, two, pair, e)) => match Machine.fast_place(
+		m,
+		slot,
+		one,
+		two,
+		pair,
+		e,
+	) {
 		Place(i, j, _) => {
-			full = Machine.subs(pg, m, [], Machine.fresh(m), one, two, pair)
-			agree(pg, m.pc, Machine.do_set_elem(pg, m, slot, one, two, pair, e), Machine.do_set_elem_slow(pg, m, slot, one, two, pair, e), Cells(slot, i, j, full.i, full.j))
+			full = Machine.subs(
+				pg,
+				m,
+				[],
+				Machine.fresh(m),
+				one,
+				two,
+				pair,
+			)
+			agree(
+				pg,
+				m.pc,
+				Machine.do_set_elem(
+					pg,
+					m,
+					slot,
+					one,
+					two,
+					pair,
+					e,
+				),
+				Machine.do_set_elem_slow(
+					pg,
+					m,
+					slot,
+					one,
+					two,
+					pair,
+					e,
+				),
+				Cells(slot, i, j, full.i, full.j),
+			)
 		}
 		Nothing => { m: Machine.step(pg, m), checked: 0 }
 	}
@@ -89,15 +189,42 @@ step = |pg, m| match pg.prog.get(m.pc) {
 }
 
 # The machine the fast path left, when the full evaluator's is the same.
-agree : Parse.Program, U64, Machine.M, Machine.M, [Var(U64), Cells(U64, I64, I64, I64, I64), Control] -> { m : Machine.M, checked : U64 }
+agree : Parse.Program,
+U64,
+Machine.M,
+Machine.M,
+[
+	Var(U64),
+	Cells(U64, I64, I64, I64, I64),
+	Control,
+] -> { m : Machine.M, checked : U64 }
 agree = |pg, pc, by_fast, by_full, look| {
 	a = seen(by_fast, look)
 	b = seen(by_full, look)
 	if a == b {
 		{ m: by_fast, checked: 1 }
 	} else {
-		why = Str.join_with(["fast differs on line ", Machine.line_of(pg, pc).to_str(), ": fast [", shown(a), "] full [", shown(b), "]"], "")
-		{ m: { ..by_full, done: True, gap: True, err: why }, checked: 1 }
+		why = Str.join_with(
+			[
+				"fast differs on line ",
+				Machine.line_of(pg, pc).to_str(),
+				": fast [",
+				shown(a),
+				"] full [",
+				shown(b),
+				"]",
+			],
+			"",
+		)
+		{
+			m: {
+				..by_full,
+				done: True,
+				gap: True,
+				err: why,
+			},
+			checked: 1,
+		}
 	}
 }
 
@@ -128,7 +255,12 @@ Seen : {
 	two : U64,
 }
 
-seen : Machine.M, [Var(U64), Cells(U64, I64, I64, I64, I64), Control] -> Seen
+seen : Machine.M,
+[
+	Var(U64),
+	Cells(U64, I64, I64, I64, I64),
+	Control,
+] -> Seen
 seen = |m, look| {
 	d = Machine.devices_of(m)
 	named = match look {

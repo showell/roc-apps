@@ -52,7 +52,22 @@ Devices :: [].{
 
 	# What the machine holds while its devices are out being written.
 	none : D
-	none = { reply: [], inp: [], ip: 0, asked: False, out: [], col: 0, mem: Vec.repeat(0, 0), scr: [], col_ram: [], top: 0, crow: 0, ccol: 0, pix: [], drew: False }
+	none = {
+		reply: [],
+		inp: [],
+		ip: 0,
+		asked: False,
+		out: [],
+		col: 0,
+		mem: Vec.repeat(0, 0),
+		scr: [],
+		col_ram: [],
+		top: 0,
+		crow: 0,
+		ccol: 0,
+		pix: [],
+		drew: False,
+	}
 
 	# ---- the machine's list of one --------------------------------------------------
 
@@ -96,7 +111,12 @@ Devices :: [].{
 	prompted = |d| { ..d, asked: True }
 
 	replied : D, List(Str) -> D
-	replied = |d, vals| { ..d, ip: d.ip + 1, asked: False, reply: vals }
+	replied = |d, vals| {
+		..d,
+		ip: d.ip + 1,
+		asked: False,
+		reply: vals,
+	}
 
 	typed_in : D, Str -> D
 	typed_in = |d, line| { ..d, inp: d.inp.append(line) }
@@ -108,14 +128,43 @@ Devices :: [].{
 	written : D, Str -> D
 	written = |d, t| {
 		b = t.to_utf8()
-		s = Devices.draw(d.scr, d.col_ram, d.top, d.crow, d.ccol, b)
-		{ ..d, scr: s.scr, col_ram: s.col_ram, top: s.top, crow: s.crow, ccol: s.ccol, out: Devices.append_out(d.out, t), col: Devices.col_after(b, d.col) }
+		s = Devices.draw(
+			d.scr,
+			d.col_ram,
+			d.top,
+			d.crow,
+			d.ccol,
+			b,
+		)
+		{
+			..d,
+			scr: s.scr,
+			col_ram: s.col_ram,
+			top: s.top,
+			crow: s.crow,
+			ccol: s.ccol,
+			out: Devices.append_out(d.out, t),
+			col: Devices.col_after(b, d.col),
+		}
 	}
 
-	Drawn : { scr : List(U8), col_ram : List(U8), top : I64, crow : I64, ccol : I64 }
+	Drawn : {
+		scr : List(U8),
+		col_ram : List(U8),
+		top : I64,
+		crow : I64,
+		ccol : I64,
+	}
 
 	draw : List(U8), List(U8), I64, I64, I64, List(U8) -> Drawn
-	draw = |scr, col_ram, top, crow, ccol, b| {
+	draw = |
+		scr,
+		col_ram,
+		top,
+		crow,
+		ccol,
+		b,
+	| {
 		var $scr = scr
 		var $col_ram = col_ram
 		var $top = top
@@ -123,7 +172,10 @@ Devices :: [].{
 		var $col = ccol
 		for c in b {
 			if c != 10 {
-				$scr = $scr.set(Devices.cell(Devices.row_at($top, $row), $col), Devices.screen_code(c)) ?? crash "draw: outside the screen"
+				$scr = $scr.set(
+					Devices.cell(Devices.row_at($top, $row), $col),
+					Devices.screen_code(c),
+				) ?? crash "draw: outside the screen"
 			} else {
 				{}
 			}
@@ -142,7 +194,13 @@ Devices :: [].{
 				$col = $col + 1
 			}
 		}
-		{ scr: $scr, col_ram: $col_ram, top: $top, crow: $row, ccol: $col }
+		{
+			scr: $scr,
+			col_ram: $col_ram,
+			top: $top,
+			crow: $row,
+			ccol: $col,
+		}
 	}
 
 	screen_w : I64
@@ -220,7 +278,10 @@ Devices :: [].{
 		if out.len() < Devices.scrollback * 2 {
 			out.append(t)
 		} else {
-			out.sublist({ start: Devices.scrollback, len: out.len() - Devices.scrollback }).append(t)
+			out.sublist({
+				start: Devices.scrollback,
+				len: out.len() - Devices.scrollback,
+			}).append(t)
 		}
 
 	# The screen codes and colours in the order shown, then the framebuffer.
@@ -264,7 +325,10 @@ Devices :: [].{
 
 	# A screen address as the cell it is kept in.
 	kept : D, U64 -> U64
-	kept = |d, i| Devices.cell(Devices.row_at(d.top, i.div_trunc_by(40).to_i64_wrap()), i.rem_by(40).to_i64_wrap())
+	kept = |d, i| Devices.cell(
+		Devices.row_at(d.top, i.div_trunc_by(40).to_i64_wrap()),
+		i.rem_by(40).to_i64_wrap(),
+	)
 
 	peek : D, U64 -> U8
 	peek = |d, a|
@@ -281,16 +345,29 @@ Devices :: [].{
 	poked : D, U64, U8 -> D
 	poked = |d, a, v|
 		if a >= Devices.screen_base and a < Devices.screen_base + Devices.screen_cells {
-			{ ..d, scr: d.scr.set(Devices.kept(d, a - Devices.screen_base), v) ?? crash "poke: screen" }
+			{
+				..d,
+				scr: d.scr.set(Devices.kept(d, a - Devices.screen_base), v) ?? crash "poke: screen",
+			}
 		} else if a >= Devices.colour_base and a < Devices.colour_base + Devices.screen_cells {
-			{ ..d, col_ram: d.col_ram.set(Devices.kept(d, a - Devices.colour_base), v) ?? crash "poke: colour" }
+			{
+				..d,
+				col_ram: d.col_ram.set(
+					Devices.kept(d, a - Devices.colour_base),
+					v,
+				) ?? crash "poke: colour",
+			}
 		} else if a >= Devices.hires_base and a < Devices.hires_base + Devices.hires_cells {
 			lit = if d.drew {
 				d.pix
 			} else {
 				List.repeat(0, Devices.hires_cells)
 			}
-			{ ..d, pix: lit.set(a - Devices.hires_base, v) ?? crash "poke: hires", drew: True }
+			{
+				..d,
+				pix: lit.set(a - Devices.hires_base, v) ?? crash "poke: hires",
+				drew: True,
+			}
 		} else {
 			{ ..d, mem: Vec.set(d.mem, a, v) }
 		}
