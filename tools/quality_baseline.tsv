@@ -138,7 +138,7 @@ canvas_apps/rehearsal_widget	check_stacking	wide string	1
 canvas_apps/rehearsal_widget	roc-types	unreached	1
 canvas_apps/route_widget	check_name_types	bare_beside_unit	2
 canvas_apps/route_widget	roc-types	unreached	1
-canvas_apps/safari	check_families	twin_name	3
+canvas_apps/safari	check_families	twin_name	2
 canvas_apps/safari	check_name_types	bare_beside_unit	16
 canvas_apps/safari	check_stacking	long	48
 canvas_apps/safari	check_stacking	wide string	70
@@ -215,31 +215,31 @@ dog-park	hunt_names	preposition_split	1
 dog-park	hunt_names	singular_list	17
 dog-park	hunt_names	world_verb	1
 dog-park	roc-types	unreached	6
-fasttrack	check_boundaries	dead	2
+fasttrack	check_boundaries	dead	10
 fasttrack	check_boundaries	fixed	1
-fasttrack	check_boundaries	single	13
+fasttrack	check_boundaries	single	14
 fasttrack	check_errors	number_fallback	3
 fasttrack	check_errors	placeholder	2
 fasttrack	check_families	twin_name	3
 fasttrack	check_name_types	no_value	2
-fasttrack	check_stacking	long	111
-fasttrack	check_stacking	stack	252
+fasttrack	check_stacking	long	98
+fasttrack	check_stacking	stack	242
 fasttrack	check_stacking	unstack	3
-fasttrack	check_stacking	wide string	45
-fasttrack	find_deep_calls	nested	4
-fasttrack	find_extra_parens	lambda_if	22
+fasttrack	check_stacking	wide string	34
+fasttrack	find_deep_calls	nested	3
+fasttrack	find_extra_parens	lambda_if	16
 fasttrack	find_extra_parens	paren_if	10
 fasttrack	find_unclear_names	module_doc	29
 fasttrack	find_unclear_names	pure_mutator	18
-fasttrack	find_unused_imports	unused_import	7
-fasttrack	hunt_names	bare_participle	5
+fasttrack	find_unused_imports	unused_import	5
+fasttrack	hunt_names	bare_participle	3
 fasttrack	hunt_names	container	4
 fasttrack	hunt_names	noun_effect	1
 fasttrack	hunt_names	phrase_name	11
-fasttrack	hunt_names	singular_list	71
+fasttrack	hunt_names	singular_list	69
 fasttrack	hunt_names	world_verb	2
-fasttrack	rewrite_method_calls	rewritable	485
-fasttrack	roc-types	unreached	4
+fasttrack	rewrite_method_calls	rewritable	285
+fasttrack	roc-types	unreached	8
 glue	check_boundaries	single	1
 glue	check_errors	number_fallback	1
 glue	check_stacking	long	3
