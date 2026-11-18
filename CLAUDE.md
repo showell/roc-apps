@@ -451,8 +451,8 @@ rule as a change of its own.
 - **Use an opaque type for anything validated,** so its validator is the
   only way in ("Make wrong values impossible to build").
 - **Call a value's own functions as methods:** `messages.last()`, not
-  `List.last(messages)`. The same section lists the five places a module
-  call stays. Agents lean toward the module form, so expect to correct it.
+  `List.last(messages)`. The same section lists the six places a module
+  call stays, peers among them (`F64.max(a, b)`, not `a.max(b)`). Agents lean toward the module form, so expect to correct it.
 - **A hosted effect answers a tag or a `Try`, never a Bool**
   ("The host boundary").
 - **A placeholder is not a value.** `?? "bogus"`, `?? "?"` or `?? 4` for

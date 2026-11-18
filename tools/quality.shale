@@ -23,7 +23,8 @@
 -- every app (TYPED_EXCEPTIONS names the tree it leaves out), and
 -- `rewrite_method_calls trials=0` over each app's own files that its roots
 -- reach, which counts the old-style calls the types prove could be method
--- calls (`rewritable`), with no trial compile: a proven call the compiler
+-- calls (`rewritable`) and the method calls whose receiver and first
+-- argument are peers (`peer_receiver`), with no trial compile: a proven call the compiler
 -- would refuse is counted, and the recipe's header says which those are. A
 -- file no root of its app reaches is `unreached`. A shared folder (an app
 -- with no root of its own: canvas_apps/lib, web, native, widget_kit) takes
@@ -352,8 +353,8 @@ end
 -- A project's parse key, `project<tab>parse-key<tab>project<tab>hash`; an
 -- app's types key, `app<tab>types-key<tab>folders<tab>hash`; and a row for
 -- each file of a shared folder (an app with no root of its own),
--- `app<tab>typed-file<tab>path<tab>n reacher ...`: its count of calls the
--- types prove, then the apps that reach it.
+-- `app<tab>typed-file<tab>path<tab>n/p reacher ...`: its count of calls the
+-- types prove and of peer_receiver calls, then the apps that reach it.
 const PARSE_KEY = "parse-key"
 const TYPES_KEY = "types-key"
 const TYPED_FILE = "typed-file"
@@ -376,7 +377,8 @@ function read_baseline()
       out.types_keys[f[1]] = {folders = split(f[3], ","), text = f[3], hash = f[4]}
     elseif f[2] == TYPED_FILE then
       local w = words(f[4])
-      out.typed_files[f[3]] = {unit = f[1], n = tonumber(w[1]), reachers = drop(w, 1)}
+      local c = split(w[1] .. "/0", "/")
+      out.typed_files[f[3]] = {unit = f[1], n = tonumber(c[1]), peers = tonumber(c[2]), reachers = drop(w, 1)}
     else
       out.counts[key_of(f[1], f[2], f[3])] = tonumber(f[4])
     end
@@ -393,7 +395,7 @@ function write_baseline(counts, parse_keys, types_keys, typed_files)
   for u in keys(types_keys) do push(ls, u .. "\t" .. TYPES_KEY .. "\t" .. types_keys[u].text .. "\t" .. types_keys[u].hash) end
   for f in keys(typed_files) do
     local r = typed_files[f]
-    local w = {"" .. r.n}
+    local w = {r.n .. "/" .. r.peers}
     for x in r.reachers do push(w, x) end
     push(ls, r.unit .. "\t" .. TYPED_FILE .. "\t" .. f .. "\t" .. join(w, " "))
   end
@@ -452,14 +454,14 @@ function hashes_of(os_paths)
 end
 
 -- The files a recipe is made of: the recipe and each library it loads, in
--- turn (`use("cookbook:...")`), each once.
+-- turn (`use("cookbook:...")`, or `use("./x.shale")` beside it), each once.
 function recipe_closure(path, seen, out)
   if has_key(seen, path) then return nil end
   seen[path] = true
   push(out, path)
-  for g in grep(path, "use(\"cookbook:") do
-    local m = re_find(g.text, "use\\(\"(cookbook:[^\"]+)\"\\)")
-    if m ~= nil then recipe_closure(m.group, seen, out) end
+  for g in grep(path, "use(\"") do
+    local m = re_find(g.text, "use\\(\"(cookbook:[^\"]+|\\./[^\"]+)\"\\)")
+    if m ~= nil then recipe_closure(starts_with(m.group, "./") and (dirname(path) .. sub(m.group, 2)) or m.group, seen, out) end
   end
   return nil
 end
@@ -497,6 +499,7 @@ function tools_identity(roc)
   for rc in PARSE_RECIPES do recipe_closure("cookbook:roc/" .. rc.recipe .. ".shale", seen, libs) end
   recipe_closure("cookbook:roc/rewrite_method_calls.shale", seen, libs)
   recipe_closure("cookbook:roc/types.shale", seen, libs)
+  recipe_closure("cookbook:roc/builtin_signatures/" .. trim(read("roc-version")) .. ".txt", seen, libs)
   for p in libs do push(named, {p, real(p)}) end
   local paths = {}
   for n in named do push(paths, n[2]) end
@@ -980,7 +983,7 @@ function count_one(item)
     {timeout_ms = 600000, whole = 4000000, cpu_budget_ms = COUNT_JOB_CPU_MS, stage = "count " .. f[1] .. " on " .. f[2]})
   local own = own_lines(r.out)
   local summary = #own > 0 and own[#own] or ""
-  local m = re_find(summary, "^count: files ([0-9]+), candidates [0-9]+, proven ([0-9]+), unsettled ([0-9]+), left ([0-9]+)")
+  local m = re_find(summary, "^count: files ([0-9]+), candidates [0-9]+, proven ([0-9]+), unsettled ([0-9]+), left ([0-9]+), peer_receiver ([0-9]+)")
   local why = ""
   if r.ended ~= "exit" or r.code ~= 0 then
     why = "exited " .. get(r, "code", -1) .. ": " .. (stop_line(r.out) or tail_of(r.out, 4))
@@ -992,7 +995,7 @@ function count_one(item)
   if why ~= "" then
     print("CANT\t" .. f[1] .. " on " .. f[2] .. ": rewrite_method_calls " .. why)
   else
-    print("RW\t" .. f[1] .. "\t" .. f[2] .. "\t" .. m.groups[1] .. "\t" .. m.groups[2] .. "\t" .. m.groups[3] .. "\t" .. m.groups[4])
+    print("RW\t" .. f[1] .. "\t" .. f[2] .. "\t" .. join(m.groups, "\t"))
     -- Each call the run leaves or leaves unsettled, `path:line: Module.fn:
     -- why`, for the findings log.
     for l in own do
@@ -1005,7 +1008,7 @@ end
 -- A child run: `rewrite_method_calls trials=0` on each
 -- `unit<tab>root<tab>files<tab>types file` of the work file, the root's
 -- types read from the file the types stage kept. It prints
--- `RW<tab>unit<tab>root<tab>files<tab>proven<tab>unsettled<tab>left` a run,
+-- `RW<tab>unit<tab>root<tab>files<tab>proven<tab>unsettled<tab>left<tab>peers`,
 -- then `RWF<tab>unit<tab>root<tab>line` for each call it lists, and
 -- `CANT<tab>why` for one that couldn't run.
 function count_part(work)
@@ -1041,7 +1044,7 @@ function shared_files(st, base)
   for u in sort(keys(st.units)) do
     if not has_key(st.roots_of, u) then
       for f in st.units[u] do
-        local was = get(base.typed_files, f, {unit = u, n = 0, reachers = {}})
+        local was = get(base.typed_files, f, {unit = u, n = 0, peers = 0, reachers = {}})
         local reachers = {}
         for r in was.reachers do
           if has_key(st.roots_of, r) and not has_key(st.typed_units, r) then push(reachers, r) end
@@ -1053,9 +1056,10 @@ function shared_files(st, base)
         end
         reachers = sort(reachers)
         local judge = judge_of(reachers)
-        local row = {unit = u, n = was.n, reachers = reachers}
+        local row = {unit = u, n = was.n, peers = was.peers, reachers = reachers}
         if judge == nil then
           row.n = 0
+          row.peers = 0
         elseif has_key(st.typed_units, judge) then
           push(measure, {file = f, unit = u, root = judge_root(st, judge, f)})
         end
@@ -1134,9 +1138,11 @@ function typed_counts(st, base, scratch, whole)
       local at = find(f[2], "@")
       if at ~= nil then
         sh.rows[sub(f[2], at + 1)].n = tonumber(f[5])
+        sh.rows[sub(f[2], at + 1)].peers = tonumber(f[8])
       else
         count_finding(st, f[2], "rewrite_method_calls", "rewritable", tonumber(f[5]))
-        push(st.log, "rewrite " .. f[2] .. " on " .. f[3] .. ": " .. f[4] .. " files, " .. f[5] .. " calls the types prove, " .. f[6] .. " unsettled, " .. f[7] .. " left")
+        count_finding(st, f[2], "rewrite_method_calls", "peer_receiver", tonumber(f[8]))
+        push(st.log, "rewrite " .. f[2] .. " on " .. f[3] .. ": " .. f[4] .. " files, " .. f[5] .. " calls the types prove, " .. f[6] .. " unsettled, " .. f[7] .. " left, " .. f[8] .. " peer_receiver")
       end
       proven = proven + tonumber(f[5])
     elseif starts_with(l, "RWF\t") then
@@ -1152,6 +1158,7 @@ function typed_counts(st, base, scratch, whole)
       end
     else
       count_finding(st, row.unit, "rewrite_method_calls", "rewritable", row.n)
+      count_finding(st, row.unit, "rewrite_method_calls", "peer_receiver", row.peers)
     end
   end
   print("rewrite_method_calls: " .. proven .. " calls the types prove could be method calls, in the " .. #items .. " runs")

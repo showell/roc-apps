@@ -23,5 +23,6 @@ The recipes it relies on are in Shale's `cookbook/roc/` (the `cookbook:`
 mount): `hunt_names`, `check_stacking`, `find_extra_parens`,
 `check_errors`, `find_deep_calls`, `find_unused_imports`,
 `check_name_types`, `check_families`, `find_unclear_names`,
-`check_boundaries` and `rewrite_method_calls` (its `trials=0` count), with the libraries
+`check_boundaries` and `rewrite_method_calls` (its `trials=0` count, and its
+`peer_receiver`), with the libraries
 `types.shale` and, from the cookbook's top, `times.shale`.

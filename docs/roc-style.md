@@ -497,12 +497,37 @@ Roc's own rules are in the langref's
   - the step is the right side of a `|>`;
   - the value is a bare numeral, or a name that only numerals type:
     `I64.to_str(steps)` over `[10, 1000]` prints `10`, and `steps.to_str()`
-    defaults to `Dec` and prints `10.0`.
+    defaults to `Dec` and prints `10.0`;
+  - no argument is the subject (the next rule).
 
   Shale's `cookbook/roc/rewrite_method_calls.shale` (`glob=app/*.roc root=app/main.roc`)
   finds the rest and rewrites them where `roc check` and `roc test` agree: a
   dry run by default, and `apply=1` writes. Only a nominal or opaque type can carry methods, not an
   alias ([static dispatch](https://roc-lang.org/docs/main/langref/static-dispatch/)).
+- **A method call names a subject; when no argument is the subject, call
+  the function through its module.** Two cases:
+  - **Peers:** the function's first two parameters have one type, an alias
+    read as what it names. `max`, `min`, `compare`, `List.concat`,
+    `List.map2` and a unit's `plus` take peers, and so does `Str.concat`,
+    two Strs. Safari's `Across.max` wrote `Across.(a.max(other))`:
+
+    ```roc
+    # Not this:
+    Across.(a.max(other))
+
+    # This:
+    Across.(F64.max(a, other))
+    ```
+
+    A builtin's declaration decides, not the call's types: `xs.fold([],
+    f)` passes two lists, but `List.fold` takes a list and a state, so it
+    stays a method call.
+  - **Context first:** the first argument is the setting, not the thing
+    acted on. No script can see that; a reader can.
+
+  `rewrite_method_calls.shale` never turns a peer call into a method call,
+  lists each peer method call as `peer_receiver`, and with `peers=undo
+  apply=1` turns them back, the compiler judging each.
 - **Structured output goes through one opaque builder, never a string spliced
   by hand.** JSON is `JsonOut :: List(U8)`, with `string`, `number`, `bool`,
   `array`, `object`, and `bytes` the only way out, so every field is a whole,
@@ -1175,7 +1200,8 @@ is the base; these rules sharpen it.
   - `check_stacking.shale`: a group on one line that should stack, a stacked group that should sit on one line (`unstack`),
     or a line over 100 columns (`long`; one that only a string literal
     makes long is reported apart as `wide string`, and no gate holds it);
-  - `rewrite_method_calls.shale`: an old-style `Module.fn(x, ...)` call the compiler accepts as `x.fn(...)`, rewritten by `apply=1`
+  - `rewrite_method_calls.shale`: an old-style `Module.fn(x, ...)` call the compiler accepts as `x.fn(...)`, rewritten by `apply=1`,
+    and `peer_receiver`, a method call on peers (`a.max(b)`), turned back by `peers=undo apply=1`
     ([methods](#make-wrong-values-impossible-to-build)).
 
   A rule added here that a script can check gets a check, and a gate runs
