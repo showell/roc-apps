@@ -2,17 +2,15 @@ app	recipe	check	count
 basic	check_boundaries	dead	7
 basic	check_boundaries	entry	8
 basic	check_boundaries	single	15
-basic	check_errors	number_fallback	25
+basic	check_errors	number_fallback	14
 basic	check_errors	optional_tag	2
 basic	check_errors	placeholder	28
-basic	check_errors	set_fallback	4
 basic	check_families	twin_name	1
 basic	check_name_types	no_value	7
-basic	check_stacking	long	30
-basic	check_stacking	stack	497
-basic	check_stacking	wide string	9
-basic	find_deep_calls	nested	10
-basic	find_extra_parens	lambda_if	32
+basic	check_stacking	long	11
+basic	check_stacking	stack	193
+basic	check_stacking	wide string	10
+basic	find_deep_calls	nested	5
 basic	find_unclear_names	abbreviation	5
 basic	find_unclear_names	module_doc	8
 basic	find_unclear_names	pure_mutator	2
@@ -20,10 +18,8 @@ basic	hunt_names	bare_participle	20
 basic	hunt_names	container	7
 basic	hunt_names	phrase_name	5
 basic	hunt_names	preposition_split	2
-basic	hunt_names	question	2
 basic	hunt_names	singular_list	80
 basic	hunt_names	world_verb	3
-basic	rewrite_method_calls	rewritable	63
 basic	roc-types	unreached	3
 book_builder	check_boundaries	dead	1
 book_builder	check_boundaries	single	2
