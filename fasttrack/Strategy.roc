@@ -87,7 +87,7 @@ Strategy :: [].{
 						} else {
 							last - 1
 						},
-					) ?? 0
+					) ?? crash "Strategy.hoard_worths: the index is under the worths' count"
 				}
 				{ cards: h.cards, worth }
 			},

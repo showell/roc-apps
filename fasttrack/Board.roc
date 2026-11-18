@@ -119,11 +119,11 @@ Board :: [].{
 
 	## Square `s` as color `c` sees it.
 	relative : U64, U64 -> U64
-	relative = |c, s| (relative_rows.get(c) ?? []).get(s) ?? crash "Board.relative: no such square"
+	relative = |c, s| (relative_rows.get(c) ?? crash "Board.relative: no such color").get(s) ?? crash "Board.relative: no such square"
 
 	## The square color `c` calls `r`.
 	absolute : U64, U64 -> U64
-	absolute = |c, r| (absolute_rows.get(c) ?? []).get(r) ?? crash "Board.absolute: no such square"
+	absolute = |c, r| (absolute_rows.get(c) ?? crash "Board.absolute: no such color").get(r) ?? crash "Board.absolute: no such square"
 
 	## A color's place in the game's color order.
 	color_index : List(Str), Str -> U64

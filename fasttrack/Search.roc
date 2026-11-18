@@ -295,8 +295,8 @@ Search :: [].{
 		var $answer = a.len() < b.len()
 		var $decided = Bool.False
 		while !$decided and $i < a.len() and $i < b.len() {
-			x = a.get($i) ?? 0
-			y = b.get($i) ?? 0
+			x = a.get($i) ?? crash "Search.key_before: the loop stays inside both keys"
+			y = b.get($i) ?? crash "Search.key_before: the loop stays inside both keys"
 			if x != y {
 				$answer = x < y
 				$decided = Bool.True
