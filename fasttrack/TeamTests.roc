@@ -94,13 +94,10 @@ expect {
 expect Game.winner(
 	TeamTests.game_with(Anytime, TeamTests.home_pieces("red"), ["2"]),
 ) == Err(NoWinner)
-expect Game.winner(
-	TeamTests.game_with(
-		Anytime,
-		TeamTests.home_pieces("red").concat(TeamTests.home_pieces("green")),
-		["2"],
-	),
-) == Ok("red and green")
+expect {
+	both_home = TeamTests.home_pieces("red").concat(TeamTests.home_pieces("green"))
+	Game.winner(TeamTests.game_with(Anytime, both_home, ["2"])) == Ok("red and green")
+}
 expect Game.winner(TeamTests.game_with(Solo, TeamTests.home_pieces("red"), ["2"])) == Ok("red")
 
 # With a 3 that would land red's piece on green's, the team's computer does

@@ -47,12 +47,10 @@ Assoc :: [].{
 }
 
 expect Assoc.set_from_list([1, 2, 3, 2]) == [2, 3, 1]
-expect Assoc.dict_keys(
-	Assoc.dict_insert(
-		Assoc.dict_insert(Assoc.dict_insert([], "a", 1), "b", 2),
-		"a",
-		3,
-	),
-) == ["a", "b"]
+expect {
+	two = Assoc.dict_insert(Assoc.dict_insert([], "a", 1), "b", 2)
+	again = Assoc.dict_insert(two, "a", 3)
+	Assoc.dict_keys(again) == ["a", "b"]
+}
 expect Assoc.dict_get(Assoc.dict_insert([], "a", 1), "a") == Ok(1)
 expect Assoc.dict_get(Assoc.dict_insert([], "a", 1), "b") == Err(NotFound)
