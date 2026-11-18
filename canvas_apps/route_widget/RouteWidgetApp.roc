@@ -131,9 +131,11 @@ map_plan : PlanView
 map_plan = {
 	road_width = extent.east.minus(extent.west).to_metres()
 	road_height = extent.north.minus(extent.south).to_metres()
+	width_fit = (canvas_width - 2.0 * map_margin) / road_width
+	height_fit = (canvas_height - 2.0 * map_margin) / road_height
 	{
 		origin: Point.at(canvas_width / 2.0, canvas_height / 2.0),
-		pixels_a_metre: ((canvas_width - 2.0 * map_margin) / road_width).min((canvas_height - 2.0 * map_margin) / road_height),
+		pixels_a_metre: width_fit.min(height_fit),
 	}
 }
 

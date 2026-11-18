@@ -263,7 +263,9 @@ large_area = {
 large_anchor : Still -> StillShapes.Anchor
 large_anchor = |still| {
 	extent = extent_of(still)
-	still_height = (large_area.width / extent_width(extent)).min(large_area.height / (extent.top - extent.bottom))
+	width_fit = large_area.width / extent_width(extent)
+	height_fit = large_area.height / (extent.top - extent.bottom)
+	still_height = width_fit.min(height_fit)
 	middle = middle_of(large_area)
 	standing_at(
 		still,
@@ -308,6 +310,7 @@ next_model = |model, input|
 ink : Brush.Rgba
 ink = Brush.opaque_rgba(WidgetPalette.ink_color)
 
+## How many corners the still's polygons hold, all together.
 point_count : Still -> U64
 point_count = |still| still.polygons().fold(0, |sum, polygon| sum + polygon.points.len())
 

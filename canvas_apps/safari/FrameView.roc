@@ -5,7 +5,6 @@ import Angle
 import Clock
 import lib.Fraction
 import Grass
-import GroundPatch
 import GroundSighting
 import Pipeline
 import lib.Pixels

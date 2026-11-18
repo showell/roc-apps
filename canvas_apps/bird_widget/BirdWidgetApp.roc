@@ -16,7 +16,6 @@ import game.Distance
 import game.Lens
 import game.Bird
 import game.Geom
-import game.GroundPatch
 import game.GroundSighting
 import game.Pipeline
 import game.SegmentFromRider
@@ -103,7 +102,10 @@ picture_shapes = |gap|
 road_shapes : List(Shapes.Shape)
 road_shapes =
 	GroundSighting.patches_in_view(World.road_at_start, eye).keep_oks(
-		|patch| patch.patch_shape({ focal_length: Lens.resting_focal_length, darkness: Sky.darkness_at(Clock.start) }),
+		|patch| patch.patch_shape({
+			focal_length: Lens.resting_focal_length,
+			darkness: Sky.darkness_at(Clock.start),
+		}),
 	)
 
 ## The picture's eye, on the middle of the road `eye_to_first_tree` short of
