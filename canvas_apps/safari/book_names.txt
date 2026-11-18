@@ -46,5 +46,5 @@ web.roc: the ride's root, which a reader checks and tests
 Billboard.roc: the file the reader breaks on purpose
 check: `roc check`, the compiler's type check
 version: `roc-version`, the file that names the pinned nightly
-nightly: the pinned Roc nightly's name, `nightly-2026-11-03-34bd006`
+nightly: the pinned Roc nightly's name, `nightly-2026-11-15-f25da45`
 

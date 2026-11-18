@@ -51,7 +51,7 @@ jobs:
         with:
           version: nightly-new-compiler
           # The nightly in roc-version, which pinned-roc.sh requires.
-          nightly-tag: nightly-2026-11-03-34bd006
+          nightly-tag: nightly-2026-11-15-f25da45
 
       # ReleaseFast: a plain `zig build` is a Debug host, whose checked
       # arithmetic and resource-heap checks took a third of Safari's frame.

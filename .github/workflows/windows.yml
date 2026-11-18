@@ -29,7 +29,7 @@ on:
         default: 23eec6e8e93aceff6701df564a9ac336d5d4b9ea
       roc_nightly:
         description: "the Roc nightly, as setup-roc names it"
-        default: nightly-2026-11-03-34bd006
+        default: nightly-2026-11-15-f25da45
       apps:
         description: "the apps to build, space-separated"
         default: snake pong breakout camera workshop particles safari trick_or_treat

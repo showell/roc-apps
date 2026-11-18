@@ -18,7 +18,7 @@ You'll learn two things as you read: Roc, and how a ride like this one is animat
 
 ### Run it yourself
 
-Safari Ride is open source, in the `canvas_apps/safari` folder of [roc-apps](https://github.com/showell/roc-apps). It builds with the Roc nightly that the repository's `roc-version` file names, `nightly-2026-11-03-34bd006`. With that installed, two commands check the whole ride and run its tests:
+Safari Ride is open source, in the `canvas_apps/safari` folder of [roc-apps](https://github.com/showell/roc-apps). It builds with the Roc nightly that the repository's `roc-version` file names, `nightly-2026-11-15-f25da45`. With that installed, two commands check the whole ride and run its tests:
 
 ```text
 cd canvas_apps/safari

@@ -12,7 +12,7 @@ reduced program, `findings/` holds it.
   checkout is for working on the compiler: its checker is quadratic in a file's
   literals, where the nightly's is linear.
 - **The repository builds with one nightly, the one `roc-version` names**
-  (`nightly-2026-11-03-34bd006`), installed at `~/tools/roc-<pin>/roc`. The
+  (`nightly-2026-11-15-f25da45`), installed at `~/tools/roc-<pin>/roc`. The
   glue API that `glue/JsGlue.roc` follows changed at 09-22: provides entries
   carry `exported`, and functions are `RocErasedCallable`.
 - **Judge a build on the ✗ mark, never the exit code.** A warning exits
