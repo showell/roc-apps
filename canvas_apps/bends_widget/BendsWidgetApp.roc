@@ -241,11 +241,14 @@ caption_shapes = |bend|
 fixed_picture_shapes : List(Shapes.Shape)
 fixed_picture_shapes = {
 	backdrop = WidgetPage.picture_backdrop(WidgetPalette.plan_ground_color)
-	picture_shapes = [backdrop].concat(shown_bends.join_map(bend_shapes))
-	WidgetPage.frame_shapes({
-		picture_shapes,
-		status_lines: [],
-	}).concat(shown_bends.join_map(caption_shapes))
+	picture_shapes = List.concat([backdrop], shown_bends.join_map(bend_shapes))
+	List.concat(
+		WidgetPage.frame_shapes({
+			picture_shapes,
+			status_lines: [],
+		}),
+		shown_bends.join_map(caption_shapes),
+	)
 }
 
 # The captions read what the modules say, and the middle bend has the book's
