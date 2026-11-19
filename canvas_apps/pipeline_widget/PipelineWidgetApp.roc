@@ -82,9 +82,11 @@ plain_background = Shapes.rectangle({
 ## It is a function, worked out when the page runs: as a constant, a release
 ## build would bake the whole frame's simulation into the program.
 picture_shapes : {} -> List(Shapes.Shape)
-picture_shapes = |{}| [plain_background].concat(
-	Shapes.shapes_in_space(Screen.leaned_by(paused_frame_view.roll), scene_shapes),
-)
+picture_shapes = |{}|
+	List.concat(
+		[plain_background],
+		Shapes.shapes_in_space(Screen.leaned_by(paused_frame_view.roll), scene_shapes),
+	)
 
 ## The shapes of `renderings`.
 renderings_shapes : List(Rendered) -> List(Shapes.Shape)
@@ -145,6 +147,6 @@ is_in_order_within = |shapes, frame_shapes| {
 # frame, and with the farthest shape moved to the end they are not.
 expect is_in_order_within(drawn_shapes, paused_frame_view.leaned_shapes())
 expect {
-	farthest_last = drawn_shapes.drop_first(1).concat(drawn_shapes.take_first(1))
+	farthest_last = List.concat(drawn_shapes.drop_first(1), drawn_shapes.take_first(1))
 	!is_in_order_within(farthest_last, paused_frame_view.leaned_shapes())
 }
