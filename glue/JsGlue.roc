@@ -28,11 +28,11 @@ make_glue : List(Types) -> Try(List(File), Str)
 make_glue = |types_list|
 	match List.first(types_list) {
 		Err(_) => Err("JsGlue: the compiler passed no type table")
-		Ok(types) => Ok([File.{ name: "roc_glue.js", content: render(types) }])
+		Ok(types) => Ok([File.{ name: "roc_glue.js", content: glue_script(types) }])
 	}
 
-render : Types -> Str
-render = |types| {
+glue_script : Types -> Str
+glue_script = |types| {
 	entries = types.provides_entries
 	Str.concat(
 		Str.concat(header(types), readers(types)),
@@ -64,10 +64,10 @@ str_reader =
 ## reader is defined before anything that calls it.
 readers : Types -> Str
 readers = |types| {
-	n = List.len(types.types)
+	type_count = List.len(types.types)
 	var $out = ""
 	var $i = 0
-	while $i < n {
+	while $i < type_count {
 		$out = Str.concat($out, reader(types, $i))
 		$i = $i + 1
 	}
@@ -90,7 +90,7 @@ readable = |types, id, depth|
 			RocDec => Bool.False
 			# A box of something unreadable is still a handle a page can hold.
 			RocBox(_) => Bool.True
-			RocList(elem) => readable(types, elem, depth + 1)
+			RocList(element_id) => readable(types, element_id, depth + 1)
 			RocRecord(_) => all_readable(types, AbiLayout.record_fields(at(types, id).layout), depth)
 			_ => Bool.True
 		}
@@ -98,10 +98,10 @@ readable = |types, id, depth|
 
 all_readable : Types, List(_), U64 -> Bool
 all_readable = |types, fields, depth| {
-	n = List.len(fields)
+	field_count = List.len(fields)
 	var $ok = Bool.True
 	var $i = 0
-	while $i < n {
+	while $i < field_count {
 		field = List.get(fields, $i) ?? crash ("glue: field out of range")
 		$ok = if field.is_padding {
 			$ok
@@ -123,14 +123,14 @@ reader = |types, id| {
 		Skipped
 	} {
 		Skipped => ""
-		Reads(expr) => "  // ${shape(info.repr)}\n  const ${name} = (view, at) => ${expr};\n\n"
+		Reads(expression) => "  // ${shape(info.repr)}\n  const ${name} = (view, at) => ${expression};\n\n"
 	}
 }
 
 ## The expression that reads one value of this type at `at`.
 body : Types, U64, _ -> [Reads(Str), Skipped]
-body = |types, id, repr|
-	match repr {
+body = |types, id, representation|
+	match representation {
 		RocBool => Reads("view.getUint8(at) !== 0")
 		RocU8 => Reads("view.getUint8(at)")
 		RocU16 => Reads("view.getUint16(at, true)")
@@ -151,7 +151,7 @@ body = |types, id, repr|
 				# An opaque model: a page can hold the pointer and hand it back.
 				Reads("view.getUint32(at, true)")
 			}
-		RocList(elem) => Reads(list_body(types, elem))
+		RocList(element_id) => Reads(list_body(types, element_id))
 		RocRecord(record) => Reads(record_body(types, id, record))
 		RocTagUnion(_) => Reads(tag_union_body(types, id))
 		_ => Skipped
@@ -161,10 +161,10 @@ body = |types, id, repr|
 ## generated reader never references one that was skipped.
 all_tags_readable : Types, List(_), U64 -> Bool
 all_tags_readable = |types, tags, depth| {
-	n = List.len(tags)
+	tag_count = List.len(tags)
 	var $ok = Bool.True
 	var $i = 0
-	while $i < n {
+	while $i < tag_count {
 		tag = List.get(tags, $i) ?? crash ("glue: tag out of range")
 		fine = if List.is_empty(tag.payload_fields) {
 			all_payloads_readable(types, tag.payload, depth)
@@ -182,12 +182,12 @@ all_tags_readable = |types, tags, depth| {
 }
 
 all_payloads_readable : Types, List(U64), U64 -> Bool
-all_payloads_readable = |types, payload, depth| {
-	n = List.len(payload)
+all_payloads_readable = |types, payload_ids, depth| {
+	payload_count = List.len(payload_ids)
 	var $ok = Bool.True
 	var $i = 0
-	while $i < n {
-		id = List.get(payload, $i) ?? crash ("glue: payload out of range")
+	while $i < payload_count {
+		id = List.get(payload_ids, $i) ?? crash ("glue: payload out of range")
 		$ok = if readable(types, id, depth + 1) {
 			$ok
 		} else {
@@ -212,10 +212,10 @@ tag_union_body = |types, id| {
 	layout = at(types, id).layout
 	tags = AbiLayout.tag_layouts(layout)
 	read = discriminant_read(AbiLayout.discriminant_size(layout), AbiLayout.discriminant_offset(layout, Pointer32))
-	n = List.len(tags)
+	tag_count = List.len(tags)
 	var $arms = ""
 	var $i = 0
-	while $i < n {
+	while $i < tag_count {
 		tag = List.get(tags, $i) ?? crash ("glue: tag out of range")
 		$arms = Str.concat($arms, "      case ${U64.to_str(tag.discriminant)}: return ${tag_value(tag)};\n")
 		$i = $i + 1
@@ -255,10 +255,10 @@ tag_value = |tag|
 named_value : _ -> Str
 named_value = |tag| {
 	fields = tag.payload_fields
-	n = List.len(fields)
+	field_count = List.len(fields)
 	var $out = ""
 	var $i = 0
-	while $i < n {
+	while $i < field_count {
 		field = List.get(fields, $i) ?? crash ("glue: payload field out of range")
 		$out = if field.is_padding {
 			$out
@@ -285,11 +285,11 @@ payload_name = |name| if name == "0" {
 ## A list is a pointer, a length and a capacity; the elements sit end to end,
 ## each as wide as the compiler says that element is.
 list_body : Types, U64 -> Str
-list_body = |types, elem| {
-	stride = at(types, elem).layout.size32
+list_body = |types, element_id| {
+	stride = at(types, element_id).layout.size32
 	Str.concat(
 		"{\n    const start = view.getUint32(at, true);\n    const length = view.getUint32(at + 4, true);\n    const out = [];\n",
-		"    for (let i = 0; i < length; i++) out.push(${reader_name(elem)}(view, start + i * ${U64.to_str(stride)}));\n    return out;\n  }",
+		"    for (let i = 0; i < length; i++) out.push(${reader_name(element_id)}(view, start + i * ${U64.to_str(stride)}));\n    return out;\n  }",
 	)
 }
 
@@ -297,10 +297,10 @@ list_body = |types, elem| {
 record_body : Types, U64, _ -> Str
 record_body = |types, id, _record| {
 	fields = AbiLayout.record_fields(at(types, id).layout)
-	n = List.len(fields)
+	field_count = List.len(fields)
 	var $out = "({"
 	var $i = 0
-	while $i < n {
+	while $i < field_count {
 		field = List.get(fields, $i) ?? crash ("glue: field out of range")
 		$out = if field.is_padding {
 			$out
@@ -314,18 +314,21 @@ record_body = |types, id, _record| {
 
 footer : List(_), Types -> Str
 footer = |entries, types| {
-	n = List.len(entries)
-	var $sigs = ""
+	entry_count = List.len(entries)
+	var $signatures = ""
 	var $i = 0
-	while $i < n {
+	while $i < entry_count {
 		entry = List.get(entries, $i) ?? crash ("glue: entry out of range")
-		$sigs = Str.concat($sigs, "  //   ${entry.ffi_symbol} : ${export_shape(types, entry.exported)}\n")
+		$signatures = Str.concat(
+			$signatures,
+			"  //   ${entry.ffi_symbol} : ${export_shape(types, entry.exported)}\n",
+		)
 		$i = $i + 1
 	}
-	sigs = $sigs
+	signatures = $signatures
 	Str.concat(
-		Str.concat(Str.concat("  // What this platform provides:\n", sigs), results(entries, types)),
-		"\n  return { ${exported(types)}${named(entries, types)} };\n})();\n",
+		Str.concat(Str.concat("  // What this platform provides:\n", signatures), results(entries, types)),
+		"\n  return { ${exported_readers(types)}${named_results(entries, types)} };\n})();\n",
 	)
 }
 
@@ -336,14 +339,14 @@ footer = |entries, types| {
 ## binds `RocGlue.frame`, not an accident of ordering.
 results : List(_), Types -> Str
 results = |entries, types| {
-	n = List.len(entries)
+	entry_count = List.len(entries)
 	var $out = ""
 	var $i = 0
-	while $i < n {
+	while $i < entry_count {
 		entry = List.get(entries, $i) ?? crash ("glue: entry out of range")
 		$out = match entry.exported {
-			ProvidedProcedure(f) =>
-				if readable(types, f.ret, 0) {
+			ProvidedProcedure(procedure) =>
+				if readable(types, procedure.ret, 0) {
 					Str.concat($out, "  // ${plain(entry.ffi_symbol)} reads what ${entry.ffi_symbol} answers\n")
 				} else {
 					$out
@@ -355,17 +358,17 @@ results = |entries, types| {
 	$out
 }
 
-named : List(_), Types -> Str
-named = |entries, types| {
-	n = List.len(entries)
+named_results : List(_), Types -> Str
+named_results = |entries, types| {
+	entry_count = List.len(entries)
 	var $out = ""
 	var $i = 0
-	while $i < n {
+	while $i < entry_count {
 		entry = List.get(entries, $i) ?? crash ("glue: entry out of range")
 		$out = match entry.exported {
-			ProvidedProcedure(f) =>
-				if readable(types, f.ret, 0) {
-					Str.concat($out, ", ${plain(entry.ffi_symbol)}: ${reader_name(f.ret)}")
+			ProvidedProcedure(procedure) =>
+				if readable(types, procedure.ret, 0) {
+					Str.concat($out, ", ${plain(entry.ffi_symbol)}: ${reader_name(procedure.ret)}")
 				} else {
 					$out
 				}
@@ -381,7 +384,10 @@ named = |entries, types| {
 export_shape : Types, _ -> Str
 export_shape = |types, export|
 	match export {
-		ProvidedProcedure(f) => "${args_of(f.args)} -> t${U64.to_str(f.ret)}"
+		ProvidedProcedure(procedure) => {
+			arguments = arguments_shape(procedure.args)
+			"${arguments} -> t${U64.to_str(procedure.ret)}"
+		}
 		ProvidedData(id) => shape(at(types, id).repr)
 	}
 
@@ -396,12 +402,12 @@ plain = |symbol|
 	}
 
 ## Every reader that got emitted, so a host can reach them by type id.
-exported : Types -> Str
-exported = |types| {
-	n = List.len(types.types)
+exported_readers : Types -> Str
+exported_readers = |types| {
+	type_count = List.len(types.types)
 	var $out = ""
 	var $i = 0
-	while $i < n {
+	while $i < type_count {
 		$out = if readable(types, $i, 0) {
 			if Str.is_empty($out) {
 				reader_name($i)
@@ -418,8 +424,8 @@ exported = |types| {
 
 ## A one-line description of a type, for the comments.
 shape : _ -> Str
-shape = |repr|
-	match repr {
+shape = |representation|
+	match representation {
 		RocBool => "Bool"
 		RocU8 => "U8"
 		RocU16 => "U16"
@@ -435,7 +441,7 @@ shape = |repr|
 		RocDec => "Dec"
 		RocUnit => "{}"
 		RocBox(inner) => "Box(t${U64.to_str(inner)})"
-		RocList(elem) => "List(t${U64.to_str(elem)})"
+		RocList(element_id) => "List(t${U64.to_str(element_id)})"
 		RocRecord(_) => "a record"
 		RocTagUnion(_) => "a tag union"
 		RocErasedCallable(_) => "a stored function"
@@ -443,21 +449,21 @@ shape = |repr|
 		_ => "a vector"
 	}
 
-args_of : List(U64) -> Str
-args_of = |args| {
-	n = List.len(args)
+arguments_shape : List(U64) -> Str
+arguments_shape = |argument_ids| {
+	argument_count = List.len(argument_ids)
 	var $out = ""
 	var $i = 0
-	while $i < n {
-		$out = Str.concat($out, "t${U64.to_str(List.get(args, $i) ?? 0)}")
-		$out = if $i + 1 < n {
+	while $i < argument_count {
+		$out = Str.concat($out, "t${U64.to_str(List.get(argument_ids, $i) ?? 0)}")
+		$out = if $i + 1 < argument_count {
 			Str.concat($out, ", ")
 		} else {
 			$out
 		}
 		$i = $i + 1
 	}
-	if n == 0 {
+	if argument_count == 0 {
 		"()"
 	} else {
 		$out
