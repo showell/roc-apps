@@ -1,6 +1,6 @@
 //! The canvas_apps wasm host. It has nine exports, which
 //! web/canvas_app_runner.js binds: computeFrame, advance, sounds, toneCount,
-//! toneHertz, toneMs, width, height and fps. The app's model is a Roc value that
+//! toneFreq, toneMs, width, height and fps. The app's model is a Roc value that
 //! the host holds as one boxed pointer, which `roc_init` makes on the first
 //! call. Roc's reference counting keeps it alive between calls.
 //!
@@ -26,7 +26,7 @@ extern fn roc_init() callconv(.c) ?[*]u8;
 extern fn roc_advance(model: ?[*]u8, key_held: u32, key_struck: u32, button_held: u32, button_struck: u32, x: f32, y: f32, wheel: f32) callconv(.c) ?[*]u8;
 extern fn roc_sounds(model: ?[*]u8) callconv(.c) u32;
 extern fn roc_tone_count() callconv(.c) u32;
-extern fn roc_tone_hertz(index: u32) callconv(.c) u32;
+extern fn roc_tone_freq(index: u32) callconv(.c) u32;
 extern fn roc_tone_ms(index: u32) callconv(.c) u32;
 extern fn roc_frame(model: ?[*]u8) callconv(.c) RocList;
 extern fn roc_release(frame: RocList) callconv(.c) void;
@@ -182,8 +182,8 @@ pub export fn toneCount() u32 {
 
 // What one of them sounds like: a pitch in hertz and a length in
 // milliseconds, which is what roc-ray's Audio.gen_tone takes as well.
-pub export fn toneHertz(index: u32) u32 {
-    return roc_tone_hertz(index);
+pub export fn toneFreq(index: u32) u32 {
+    return roc_tone_freq(index);
 }
 
 pub export fn toneMs(index: u32) u32 {

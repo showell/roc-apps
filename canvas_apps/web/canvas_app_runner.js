@@ -155,7 +155,7 @@ const bitsOf = (word) => [...Array(32).keys()].filter((bit) => word & (1 << bit)
 function makeSpeaker(game) {
   let audio = null;
   const tones = [...Array(game.toneCount()).keys()].map((i) => ({
-    hertz: game.toneHertz(i),
+    freq: game.toneFreq(i),
     seconds: game.toneMs(i) / 1000,
   }));
 
@@ -172,7 +172,7 @@ function makeSpeaker(game) {
       if (!tone) continue;
       const osc = audio.createOscillator();
       const gain = audio.createGain();
-      osc.frequency.value = tone.hertz;
+      osc.frequency.value = tone.freq;
       gain.gain.setValueAtTime(0.18, audio.currentTime);
       gain.gain.exponentialRampToValueAtTime(0.001, audio.currentTime + tone.seconds);
       osc.connect(gain).connect(audio.destination);
@@ -217,7 +217,7 @@ function drawSpeaker(ctx, width, height, toneCount, ringing, now) {
 // What the wasm module must provide, checked once so a missing or mismatched
 // export says which, rather than surfacing later as a bare `unreachable` or as
 // `Cannot read properties of undefined`.
-const WANTED = ['memory', 'computeFrame', 'advance', 'sounds', 'toneCount', 'toneHertz', 'toneMs', 'width', 'height', 'fps'];
+const WANTED = ['memory', 'computeFrame', 'advance', 'sounds', 'toneCount', 'toneFreq', 'toneMs', 'width', 'height', 'fps'];
 
 function bindApp(exports) {
   const missing = WANTED.filter((name) => !(name in exports));
