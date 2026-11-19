@@ -39,7 +39,7 @@ building-books	check_stacking	long	3
 building-books	check_stacking	wide string	1
 building-books	parse-key	building-books	9a047fe4d7ae95ca65bc9d8f140d885862b3f3d8
 building-books	types-key	book_builder,building-books,repos:roc-markdown/package,syntax_color	aa33adfad4cc11aa969cadbace6b3461b6970f43
-canvas_apps	parse-key	canvas_apps	deaa2c9523e52ad07d5d0629e17227c90c1b5ccf
+canvas_apps	parse-key	canvas_apps	e8455f908f53bc03b7818f53a019a4ee14e174be
 canvas_apps/beacon_widget	check_families	twin_name	1
 canvas_apps/beacon_widget	check_stacking	wide string	1
 canvas_apps/beacon_widget	roc-types	unreached	1
@@ -55,7 +55,8 @@ canvas_apps/bends_widget	roc-types	unreached	1
 canvas_apps/bends_widget	types-key	canvas_apps/bends_widget,canvas_apps/lib,canvas_apps/safari,canvas_apps/web,canvas_apps/widget_kit	861ec786f67bb8163cf4897f6caf109b5d007bb5
 canvas_apps/bird_widget	roc-types	unreached	1
 canvas_apps/bird_widget	types-key	canvas_apps/bird_widget,canvas_apps/lib,canvas_apps/safari,canvas_apps/web,canvas_apps/widget_kit	0049b2e36ea8216be285f7a421d05063634614ca
-canvas_apps/breakout	check_families	twin_name	5
+canvas_apps/breakout	check_families	family	1
+canvas_apps/breakout	check_families	twin_name	6
 canvas_apps/breakout	check_name_types	bare_beside_unit	1
 canvas_apps/breakout	check_stacking	long	10
 canvas_apps/breakout	check_stacking	stack	40
@@ -70,7 +71,6 @@ canvas_apps/breakout	hunt_names	short_name	13
 canvas_apps/breakout	hunt_names	singular_list	9
 canvas_apps/breakout	rewrite_method_calls	rewritable	31
 canvas_apps/breakout	types-key	canvas_apps/breakout,canvas_apps/lib,canvas_apps/native,canvas_apps/web,repos:roc-ray/platform,roc-cache:packages/6ZUwqYhCS8PU9Mo6MF7oV82ET2o7KYb57CLKDq4cq4sS,roc-cache:packages/HoULZB8QzktiNPYSe9myzy9JQzm1nMbjDPVWoA63QpVf	5a5991828bfcedf71b157aefd75c655d7e2b11f9
-canvas_apps/camera	check_families	family	4
 canvas_apps/camera	check_name_types	bare_beside_unit	5
 canvas_apps/camera	check_stacking	long	4
 canvas_apps/camera	check_stacking	stack	49
@@ -165,12 +165,8 @@ canvas_apps/pong	check_stacking	long	13
 canvas_apps/pong	check_stacking	stack	28
 canvas_apps/pong	check_stacking	unstack	4
 canvas_apps/pong	find_extra_parens	paren_if	33
-canvas_apps/pong	find_unclear_names	abbreviation	3
-canvas_apps/pong	find_unclear_names	module_doc	4
-canvas_apps/pong	hunt_names	short_name	14
-canvas_apps/pong	hunt_names	singular_list	8
 canvas_apps/pong	rewrite_method_calls	rewritable	33
-canvas_apps/pong	types-key	canvas_apps/lib,canvas_apps/native,canvas_apps/pong,canvas_apps/web,repos:roc-ray/platform,roc-cache:packages/6ZUwqYhCS8PU9Mo6MF7oV82ET2o7KYb57CLKDq4cq4sS,roc-cache:packages/HoULZB8QzktiNPYSe9myzy9JQzm1nMbjDPVWoA63QpVf	ad961ad6470a48fb2175ea8667230f4934941e22
+canvas_apps/pong	types-key	canvas_apps/lib,canvas_apps/native,canvas_apps/pong,canvas_apps/web,repos:roc-ray/platform,roc-cache:packages/6ZUwqYhCS8PU9Mo6MF7oV82ET2o7KYb57CLKDq4cq4sS,roc-cache:packages/HoULZB8QzktiNPYSe9myzy9JQzm1nMbjDPVWoA63QpVf	33fd277f7b59e7a07a103af2376caa8c8c1a3214
 canvas_apps/rehearsal_widget	check_name_types	bare_beside_unit	2
 canvas_apps/rehearsal_widget	check_stacking	wide string	1
 canvas_apps/rehearsal_widget	roc-types	unreached	1
@@ -188,6 +184,7 @@ canvas_apps/sky_widget	check_stacking	wide string	2
 canvas_apps/sky_widget	roc-types	unreached	1
 canvas_apps/sky_widget	types-key	canvas_apps/lib,canvas_apps/safari,canvas_apps/sky_widget,canvas_apps/web,canvas_apps/widget_kit	59e22f6bef252cfd1d3f492af7838986e21b7e85
 canvas_apps/snake	check_boundaries	dead	1
+canvas_apps/snake	check_families	family	1
 canvas_apps/snake	check_name_types	bare_beside_unit	12
 canvas_apps/snake	check_name_types	no_value	1
 canvas_apps/snake	check_stacking	long	9
@@ -247,7 +244,6 @@ canvas_apps/widget_kit	typed-file	canvas_apps/widget_kit/WidgetPage.roc	0/0 canv
 canvas_apps/widget_kit	typed-file	canvas_apps/widget_kit/WidgetPalette.roc	0/0 canvas_apps/beacon_widget canvas_apps/bend_animals_widget canvas_apps/bends_widget canvas_apps/bird_widget canvas_apps/cat_widget canvas_apps/conifers_widget canvas_apps/cow_widget canvas_apps/far_tree_widget canvas_apps/frame_widget canvas_apps/gaze_widget canvas_apps/herd_widget canvas_apps/kinds_widget canvas_apps/pipeline_widget canvas_apps/rehearsal_widget canvas_apps/route_widget canvas_apps/safari canvas_apps/shapes_widget canvas_apps/sky_widget canvas_apps/step_widget canvas_apps/stills_widget canvas_apps/truck_widget
 canvas_apps/widget_kit	typed-file	canvas_apps/widget_kit/main.roc	0/0
 canvas_apps/workshop	check_boundaries	fixed	2
-canvas_apps/workshop	check_families	family	4
 canvas_apps/workshop	check_name_types	bare_beside_unit	9
 canvas_apps/workshop	check_stacking	long	5
 canvas_apps/workshop	check_stacking	stack	32
