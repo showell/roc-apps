@@ -46,12 +46,18 @@ Math :: [].{
 	bottom = |rectangle| rectangle.y + rectangle.height
 
 	center : Math.Rect -> Math.Vec2
-	center = |rectangle| { x: rectangle.x + rectangle.width / 2, y: rectangle.y + rectangle.height / 2 }
+	center = |rectangle| {
+		x: rectangle.x + rectangle.width / 2,
+		y: rectangle.y + rectangle.height / 2,
+	}
 
 	## Whether a rectangle contains a point, including its edges.
 	contains : Math.Rect, Math.Vec2 -> Bool
 	contains = |rectangle, point|
-		point.x >= left(rectangle) and point.x <= right(rectangle) and point.y >= top(rectangle) and point.y <= bottom(rectangle)
+		point.x >= left(rectangle)
+			and point.x <= right(rectangle)
+			and point.y >= top(rectangle)
+			and point.y <= bottom(rectangle)
 
 	clamp : F32, F32, F32 -> F32
 	clamp = |value, low, high|
@@ -76,6 +82,9 @@ Math :: [].{
 	circle_rect = |circle_shape, rectangle| {
 		near_x = clamp(circle_shape.center.x, left(rectangle), right(rectangle))
 		near_y = clamp(circle_shape.center.y, top(rectangle), bottom(rectangle))
-		distance_squared(circle_shape.center, { x: near_x, y: near_y }) <= circle_shape.radius * circle_shape.radius
+		distance_squared(
+			circle_shape.center,
+			{ x: near_x, y: near_y },
+		) <= circle_shape.radius * circle_shape.radius
 	}
 }

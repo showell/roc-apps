@@ -134,7 +134,9 @@ quarter_turn_corners = |corners, { center, radius, start_angle, steps }| {
 	var $out = corners
 	for k in 0..=steps {
 		angle = start_angle + half_pi * k.to_f64() / steps.to_f64()
-		$out = $out.append(Point.at(center.x + radius * angle.cos(), center.y + radius * angle.sin()))
+		$out = $out.append(
+			Point.at(center.x + radius * angle.cos(), center.y + radius * angle.sin()),
+		)
 	}
 	$out
 }

@@ -24,9 +24,15 @@ ConvexCut :: [].{
 			match shape {
 				Quad(quad) => cut_shape(
 					shape,
-					{ corners: [quad.first, quad.second, quad.third, quad.fourth], fill: quad.fill },
+					{
+						corners: [quad.first, quad.second, quad.third, quad.fourth],
+						fill: quad.fill,
+					},
 				)
-				Polygon(polygon) => cut_shape(shape, { corners: polygon.corners, fill: polygon.fill })
+				Polygon(polygon) => cut_shape(
+					shape,
+					{ corners: polygon.corners, fill: polygon.fill },
+				)
 				Triangle(_) | Disc(_) | Blend(_) | View(_) | Image(_) | Text(_) => Uncut(shape)
 			},
 	)
@@ -65,7 +71,11 @@ wound_triangles = |triangle_corners| {
 		corner_a = corner(triangle_corners, 3 * k)
 		corner_b = corner(triangle_corners, 3 * k + 1)
 		corner_c = corner(triangle_corners, 3 * k + 2)
-		$out = if cross3({ a: corner_a, b: corner_b, c: corner_c }) > 0.0 {
+		$out = if cross3({
+			a: corner_a,
+			b: corner_b,
+			c: corner_c,
+		}) > 0.0 {
 			$out.append(corner_a).append(corner_c).append(corner_b)
 		} else {
 			$out.append(corner_a).append(corner_b).append(corner_c)

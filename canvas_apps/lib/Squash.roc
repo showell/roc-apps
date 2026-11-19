@@ -57,7 +57,10 @@ Squash :: [].{
 					Image({ ..image, x: span.x, width: span.width })
 				}
 				# Type keeps its letterforms, so only its place moves.
-				Text(text_line) => Text({ ..text_line, x: axis.to_f64() + (text_line.x - axis.to_f64()) * cosine })
+				Text(text_line) => Text({
+					..text_line,
+					x: axis.to_f64() + (text_line.x - axis.to_f64()) * cosine,
+				})
 			},
 	)
 }
