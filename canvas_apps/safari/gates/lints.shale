@@ -89,6 +89,8 @@ const UNTYPED_PATHS = {"game.roc", "main.roc", "web.roc", "gates/", "tutorial/"}
 -- take one glob and a glob can't climb out of safari's folder.
 -- The stack lint judges lib once CanvasApp's step takes a record in place of
 -- its three bare arguments, its last two findings there.
+-- `own_args` are arguments for safari's own files alone, never a shared
+-- folder's: safari's accepted_terms.txt names a term only its code holds.
 -- `folder_args` gives a folder's run arguments of its own: lib's Font.roc is
 -- a table of glyph strokes, and lib's functions whose arguments something
 -- outside the file dictates are in STACK_DICTATED.
@@ -124,7 +126,7 @@ const LINTS = {
     whole_tree = {"bare_beside_unit"}},
   {recipe = "find_bare_floats", args = {"table=bare_floats.txt"}, budget = {}, counts = {{"bare_float", 0}, {"unused_exception", 0}}},
   {recipe = "check_families", args = {}, budget = {}, counts = {{"family", 0}, {"twin_name", 0}}, whole_tree = {"family", "twin_name"}},
-  {recipe = "find_unclear_names", args = {}, budget = {}, counts = {{"pure_mutator", 0}, {"abbreviation", 0}, {"module_doc", 0}},
+  {recipe = "find_unclear_names", args = {}, own_args = {"accepted=accepted_terms.txt"}, budget = {}, counts = {{"pure_mutator", 0}, {"abbreviation", 0}, {"module_doc", 0}},
     folders = SHARED_AND_WIDGETS},
   {recipe = "find_unused_imports", args = {}, budget = {}, from_repo_root = true, counts = {{"unused_import", 0}},
     tree_globs = TREE_GLOBS},
@@ -141,7 +143,10 @@ const LINTS = {
 function setting_lines()
   local out = {}
   for lint in LINTS do
-    local by_folder = {{SAFARI, lint.args, get(lint, "skip", {})}}
+    local own = {}
+    for a in lint.args do push(own, a) end
+    for a in get(lint, "own_args", {}) do push(own, a) end
+    local by_folder = {{SAFARI, own, get(lint, "skip", {})}}
     for fa in get(lint, "folder_args", {}) do
       local args = {}
       local skip = {}
@@ -157,7 +162,7 @@ function setting_lines()
     for f in by_folder do
       local folder = f[1]
       for a in f[2] do
-        local m = re_find(a, "^(words|table|dictated)=(.+)$")
+        local m = re_find(a, "^(words|table|dictated|accepted)=(.+)$")
         if m ~= nil then push(out, "SETTING\t" .. lint.recipe .. "\t" .. folder .. "\t" .. m.groups[1] .. "=" .. folder .. "/" .. m.groups[2]) end
       end
       if #f[3] > 0 then
@@ -178,8 +183,11 @@ end
 function rule_files()
   local rules = {GATES .. "/lints.shale"}
   for lint in LINTS do
-    for a in lint.args do
-      local m = re_find(a, "^(?:words|table)=(.+)$")
+    local own = {}
+    for a in lint.args do push(own, a) end
+    for a in get(lint, "own_args", {}) do push(own, a) end
+    for a in own do
+      local m = re_find(a, "^(?:words|table|accepted)=(.+)$")
       if m ~= nil then push(rules, SAFARI .. "/" .. m.group) end
     end
   end
@@ -209,6 +217,7 @@ function lint_argv(lint, glob)
     push(argv, "glob=" .. (runs_from_repo_root(lint) and (SAFARI .. "/") or "") .. glob)
   end
   for a in lint.args do push(argv, a) end
+  for a in get(lint, "own_args", {}) do push(argv, a) end
   local skip = get(lint, "skip", {})
   if #skip > 0 and glob == WHOLE_TREE then push(argv, "skip=" .. join(skip, ",")) end
   return argv
