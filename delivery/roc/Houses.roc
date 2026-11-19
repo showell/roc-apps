@@ -37,7 +37,7 @@ Houses :: U64.{
 		if i >= bits.shr_zf_wrap(60) {
 			crash "Houses.house_at: past the last house"
 		}
-		bits.shr_zf_wrap(i.to_u8_wrap().shl_wrap(2)).bitwise_and(15).to_u8_wrap()
+		U64.bitwise_and(bits.shr_zf_wrap(i.to_u8_wrap().shl_wrap(2)), 15).to_u8_wrap()
 	}
 
 	append : Houses, U8 -> Houses
@@ -46,8 +46,8 @@ Houses :: U64.{
 		if n >= 15 or h >= 16 {
 			crash "Houses.append: a stop holds at most 15 houses, each numbered under 16"
 		}
-		low = bits.bitwise_and(low_mask).bitwise_or(h.to_u64().shl_wrap(n.to_u8_wrap().shl_wrap(2)))
-		Houses.(low.bitwise_or((n + 1).shl_wrap(60)))
+		low = U64.bitwise_or(U64.bitwise_and(bits, low_mask), h.to_u64().shl_wrap(n.to_u8_wrap().shl_wrap(2)))
+		Houses.(U64.bitwise_or(low, (n + 1).shl_wrap(60)))
 	}
 
 	## These houses, then those.
@@ -70,11 +70,11 @@ Houses :: U64.{
 			have
 		}
 		kept = if k == 15 {
-			bits.bitwise_and(low_mask)
+			U64.bitwise_and(bits, low_mask)
 		} else {
-			bits.bitwise_and(U64.shl_wrap(1, k.to_u8_wrap().shl_wrap(2)) - 1)
+			U64.bitwise_and(bits, U64.shl_wrap(1, k.to_u8_wrap().shl_wrap(2)) - 1)
 		}
-		Houses.(kept.bitwise_or(k.shl_wrap(60)))
+		Houses.(U64.bitwise_or(kept, k.shl_wrap(60)))
 	}
 
 	drop_first : Houses, U64 -> Houses
@@ -85,8 +85,8 @@ Houses :: U64.{
 		} else {
 			have
 		}
-		rest = bits.bitwise_and(low_mask).shr_zf_wrap(k.to_u8_wrap().shl_wrap(2))
-		Houses.(rest.bitwise_or((have - k).shl_wrap(60)))
+		rest = U64.bitwise_and(bits, low_mask).shr_zf_wrap(k.to_u8_wrap().shl_wrap(2))
+		Houses.(U64.bitwise_or(rest, (have - k).shl_wrap(60)))
 	}
 
 	contains : Houses, U8 -> Bool
@@ -117,8 +117,8 @@ Houses :: U64.{
 	with_house_at : Houses, { at : U64, house : U8 } -> Houses
 	with_house_at = |Houses.(bits), { at: i, house: h }| {
 		shift = i.to_u8_wrap().shl_wrap(2)
-		cleared = bits.bitwise_and(U64.shl_wrap(15, shift).bitwise_not())
-		Houses.(cleared.bitwise_or(h.to_u64().shl_wrap(shift)))
+		cleared = U64.bitwise_and(bits, U64.shl_wrap(15, shift).bitwise_not())
+		Houses.(U64.bitwise_or(cleared, h.to_u64().shl_wrap(shift)))
 	}
 
 	is_eq : _
@@ -135,7 +135,7 @@ low_mask = U64.shl_wrap(1, 60) - 1
 expect Houses.from_list([3, 7, 0, 11]).to_list() == [3, 7, 0, 11]
 expect Houses.from_list([]).count() == 0
 expect Houses.from_list(fifteen).to_list() == fifteen
-expect Houses.from_list([4, 5]).concat(Houses.from_list([9])).to_list() == [4, 5, 9]
+expect Houses.concat(Houses.from_list([4, 5]), Houses.from_list([9])).to_list() == [4, 5, 9]
 expect Houses.from_list([4, 5, 9, 2]).take_first(2).to_list() == [4, 5]
 expect Houses.from_list([4, 5, 9, 2]).drop_first(2).to_list() == [9, 2]
 expect Houses.from_list([4, 5]).take_first(9).to_list() == [4, 5]

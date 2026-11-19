@@ -40,10 +40,10 @@ Orders :: [].{
 mulberry32 : U32 -> { state : U32, draw : F64 }
 mulberry32 = |s| {
 	state = s.plus_wrap(0x6d2b79f5)
-	t0 = state.bitwise_xor(state.shr_zf_wrap(15)).times_wrap(state.bitwise_or(1))
-	mixed = t0.bitwise_xor(t0.shr_zf_wrap(7)).times_wrap(t0.bitwise_or(61))
-	t1 = t0.bitwise_xor(t0.plus_wrap(mixed))
-	{ state, draw: t1.bitwise_xor(t1.shr_zf_wrap(14)).to_f64() / 4294967296.0 }
+	t0 = U32.bitwise_xor(state, state.shr_zf_wrap(15)).times_wrap(U32.bitwise_or(state, 1))
+	mixed = U32.bitwise_xor(t0, t0.shr_zf_wrap(7)).times_wrap(U32.bitwise_or(t0, 61))
+	t1 = U32.bitwise_xor(t0, t0.plus_wrap(mixed))
+	{ state, draw: U32.bitwise_xor(t1, t1.shr_zf_wrap(14)).to_f64() / 4294967296.0 }
 }
 
 ## Every house on the map, neighborhood by neighborhood.

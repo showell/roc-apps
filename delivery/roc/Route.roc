@@ -110,7 +110,7 @@ Route :: [].{
 				old = stop_at(stops, e)
 				back = {
 					nbhd: old.nbhd,
-					houses: old.houses.concat(stop.houses),
+					houses: Houses.concat(old.houses, stop.houses),
 					pin: if stop.is_pinned() {
 						stop.pin
 					} else {
@@ -119,7 +119,7 @@ Route :: [].{
 				}
 				front = {
 					nbhd: stop.nbhd,
-					houses: stop.houses.concat(old.houses),
+					houses: Houses.concat(stop.houses, old.houses),
 					pin: if old.is_pinned() {
 						old.pin
 					} else {
@@ -219,7 +219,7 @@ merge_repeats = |stops| {
 					i,
 					{
 						nbhd: prev.nbhd,
-						houses: prev.houses.concat(s.houses),
+						houses: Houses.concat(prev.houses, s.houses),
 						pin,
 					},
 				) ?? crash "Route.coalesce: in range"
@@ -256,10 +256,10 @@ has_repeat = |stops| {
 	var $repeat = False
 	for j in 0..<stops.len() {
 		bit = U64.shl_wrap(1, Route.stop_at(stops, j).nbhd)
-		if $seen.bitwise_and(bit) != 0 {
+		if U64.bitwise_and($seen, bit) != 0 {
 			$repeat = True
 		}
-		$seen = $seen.bitwise_or(bit)
+		$seen = U64.bitwise_or($seen, bit)
 	}
 	$repeat
 }
@@ -267,7 +267,11 @@ has_repeat = |stops| {
 ## The route with the stops from `first` to `last` reversed.
 run_reversed_stops : List(Stop), { first : U64, last : U64 } -> List(Stop)
 run_reversed_stops = |stops, { first, last }|
-	stops
-		.take_first(first)
-		.concat(stops.sublist({ start: first, len: last - first + 1 }).rev())
-		.concat(stops.drop_first(last + 1))
+	List.concat(
+		List.concat(
+			stops
+				.take_first(first),
+			stops.sublist({ start: first, len: last - first + 1 }).rev(),
+		),
+		stops.drop_first(last + 1),
+	)

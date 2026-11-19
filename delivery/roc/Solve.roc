@@ -77,7 +77,7 @@ Solve :: [].{
 						name: variant_name(chunking, { either_way, chosen }),
 						reference_label: reference_label(chunking, { either_way, chosen }),
 						chunking,
-						overflow_neighborhoods: always.concat(chosen),
+						overflow_neighborhoods: List.concat(always, chosen),
 					},
 				),
 		)
@@ -229,7 +229,7 @@ overflow_choices = |either_way|
 		[] => [[]]
 		[first, .. as rest] => {
 			later = overflow_choices(rest)
-			later.map(|c| c.prepend(first)).concat(later)
+			List.concat(later.map(|c| c.prepend(first)), later)
 		}
 	}
 
@@ -248,7 +248,7 @@ variant_name = |chunking, { either_way, chosen }| {
 				"${Seattle.name_of(n)} routed"
 			},
 	)
-	Str.join_with([truck].concat(parts), ", ")
+	Str.join_with(List.concat([truck], parts), ", ")
 }
 
 ## solver.ts's label: `room` or `cost`, then each either-way neighborhood's

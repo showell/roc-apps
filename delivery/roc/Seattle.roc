@@ -587,7 +587,7 @@ Seattle :: [].{
 			0
 		} else {
 			r = neighborhood_of(node).ring_radius
-			points = [norm(entry), norm(exit)].concat(angles.map(norm)).sort_with(float_order)
+			points = List.concat([norm(entry), norm(exit)], angles.map(norm)).sort_with(float_order)
 			n = points.len()
 			first = points.get(0) ?? crash "Seattle.ring_walk_px: the gates are points"
 			var $max_gap = -1.0

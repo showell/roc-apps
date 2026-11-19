@@ -462,7 +462,7 @@ rescue_move = |best, c| {
 							).map(|e| e.stop)
 							new_over = Route.coalesce(raw)
 							new_under = Route.cheapest_insert(under, Route.free_stop(f.nbhd, arc))
-							touched = c.touched.concat(Replay.house_keys(f.nbhd, arc))
+							touched = List.concat(c.touched, Replay.house_keys(f.nbhd, arc))
 							$best =
 								if is_over_a {
 									score_move(

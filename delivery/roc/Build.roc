@@ -142,7 +142,7 @@ Build :: [].{
 		} else {
 			0
 		}
-		var $kept_routes = anchored.concat(clusters.take_first(keep))
+		var $kept_routes = List.concat(anchored, clusters.take_first(keep))
 		surplus = clusters.drop_first(keep)
 		var $moves = built.moves
 		for extra in surplus {
@@ -346,8 +346,8 @@ best_join = |a, b| {
 	# Each way read in place: a then b reversed is the run after a reversed,
 	# a reversed then b the run before it, and both reversed is b then a,
 	# reversed whole.
-	ab = a.concat(b)
-	ba = b.concat(a)
+	ab = List.concat(a, b)
+	ba = List.concat(b, a)
 	n = ab.len()
 	cut = a.len()
 	ways = [
@@ -389,8 +389,8 @@ best_join = |a, b| {
 	}
 	match $best {
 		0 => ab
-		1 => a.concat(b.rev())
-		2 => a.rev().concat(b)
+		1 => List.concat(a, b.rev())
+		2 => List.concat(a.rev(), b)
 		_ => ba.rev()
 	}
 }

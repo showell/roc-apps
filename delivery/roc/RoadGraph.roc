@@ -52,9 +52,12 @@ RoadGraph :: [].{
 				waters = bridge.waters.get(i) ?? crash "RoadGraph.edges: a span's waters"
 				first_turn = waters.first() ?? Seattle.point_of(c)
 				last_turn = waters.last() ?? Seattle.point_of(a)
-				points = [
-					Seattle.gate_point(a, first_turn),
-				].concat(waters).append(Seattle.gate_point(c, last_turn))
+				points = List.concat(
+					[
+						Seattle.gate_point(a, first_turn),
+					],
+					waters,
+				).append(Seattle.gate_point(c, last_turn))
 				on_i5 = Seattle.is_i5_exit(a) or Seattle.is_i5_exit(c)
 				minutes = length_px(points) * factor({ a, b: c }, Bridge) * min_per_px
 				$out = $out.append({
@@ -322,7 +325,7 @@ path_store = paths.join_map(
 		if p.len() > path_most {
 			crash "RoadGraph.path_store: a path longer than path_most"
 		}
-		p.concat(List.repeat(0, path_most - p.len()))
+		List.concat(p, List.repeat(0, path_most - p.len()))
 	},
 )
 

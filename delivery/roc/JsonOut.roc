@@ -28,7 +28,7 @@ JsonOut :: List(U8).{
 			if !$first {
 				$out = $out.append(',')
 			}
-			$out = $out.concat(bytes)
+			$out = List.concat($out, bytes)
 			$first = False
 		}
 		JsonOut.($out.append(']'))
@@ -42,7 +42,7 @@ JsonOut :: List(U8).{
 			if !$first {
 				$out = $out.append(',')
 			}
-			$out = escaped_onto($out, key).append(':').concat(bytes)
+			$out = List.concat(escaped_onto($out, key).append(':'), bytes)
 			$first = False
 		}
 		JsonOut.($out.append('}'))
@@ -61,7 +61,7 @@ escaped_onto = |out, text| {
 		$out = if b == '"' or b == '\\' {
 			$out.append('\\').append(b)
 		} else if b < 0x20 {
-			$out.concat("\\u00".to_utf8()).append(hex_digit(b // 16)).append(hex_digit(b % 16))
+			List.concat($out, "\\u00".to_utf8()).append(hex_digit(b // 16)).append(hex_digit(b % 16))
 		} else {
 			$out.append(b)
 		}

@@ -100,7 +100,7 @@ walk = |stops| {
 				Houses.empty,
 				|hs, s|
 					if s.nbhd == node {
-						hs.concat(s.houses)
+						Houses.concat(hs, s.houses)
 					} else {
 						hs
 					},

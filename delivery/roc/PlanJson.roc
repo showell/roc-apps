@@ -51,7 +51,7 @@ PlanJson :: [].{
 			("service", JsonOut.int(plan.service)),
 			("spread", JsonOut.float(plan.spread)),
 			("log", JsonOut.array([])),
-			("frames", JsonOut.array([start].concat(moves).append(done))),
+			("frames", JsonOut.array(List.concat([start], moves).append(done))),
 			("unrouted", stops_json(plan.unrouted)),
 		])
 	}

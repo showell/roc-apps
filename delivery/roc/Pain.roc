@@ -66,10 +66,10 @@ Pain :: [].{
 		for j in 0..<count {
 			s = stops.get(j) ?? crash "Pain.price_view: in range"
 			$aboard = $aboard + s.houses.count().to_i64_wrap()
-			$served = $served.bitwise_or(U64.shl_wrap(1, s.nbhd))
+			$served = U64.bitwise_or($served, U64.shl_wrap(1, s.nbhd))
 		}
 		if extra.nbhd != Seattle.fc {
-			$served = $served.bitwise_or(U64.shl_wrap(1, extra.nbhd))
+			$served = U64.bitwise_or($served, U64.shl_wrap(1, extra.nbhd))
 		}
 		var $pain = 0
 		var $last = Seattle.fc
@@ -110,10 +110,10 @@ Pain :: [].{
 					$pain = $pain + RoadGraph.minutes($last, node).times_wrap(rate)
 					$last = node
 					bit = U64.shl_wrap(1, node)
-					if $served.bitwise_and(bit) != 0 and $delivered.bitwise_and(bit) == 0 {
+					if U64.bitwise_and($served, bit) != 0 and U64.bitwise_and($delivered, bit) == 0 {
 						ring_rate = empty_pain + tote_pain.times_wrap($aboard)
 						$pain = $pain + ring_unit.times_wrap(ring_rate)
-						$delivered = $delivered.bitwise_or(bit)
+						$delivered = U64.bitwise_or($delivered, bit)
 						for j in 0..<count {
 							s = stops.get(j) ?? crash "Pain.price_view: in range"
 							if s.nbhd == node {
@@ -220,7 +220,7 @@ houses_at = |stops, node| stops.fold(
 	Houses.empty,
 	|hs, s|
 		if s.nbhd == node {
-			hs.concat(s.houses)
+			Houses.concat(hs, s.houses)
 		} else {
 			hs
 		},
