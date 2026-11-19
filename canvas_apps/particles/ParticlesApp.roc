@@ -1,8 +1,9 @@
-# ParticlesApp -- the fountain as a value the canvas apps can run.
-#
-# Upstream's controls: the emitter is wherever the pointer is, and Space widens
-# the spray. Until the pointer has moved over the canvas, the emitter travels
-# upstream's recording figure instead, so the fountain is moving on arrival.
+## ParticlesApp is the particle fountain as a value the canvas apps can run.
+##
+## It keeps upstream's controls: the emitter is wherever the pointer is, and
+## Space widens the spray. Until the pointer has moved over the canvas, the
+## emitter travels upstream's recording figure instead, so the fountain is
+## already moving when the page opens.
 import lib.CanvasApp
 import lib.Input
 import Particles
@@ -15,21 +16,21 @@ ParticlesApp :: [].{
 		size: { width: Particles.width, height: Particles.height },
 		frames_a_second: 60,
 		init: Particles.start,
-		model_at_next_step: |m, input, _dt| step(m, input),
-		frame_shapes: |m| Particles.shapes(m),
-		sounds: |_m| 0,
+		model_at_next_step: |model, input, _dt| step(model, input),
+		frame_shapes: |model| Particles.shapes(model),
+		sounds: |_model| 0,
 		tones: [],
 		title: "Particles",
 	}
 
 	step : ParticlesApp.Model, Input.Snapshot -> ParticlesApp.Model
-	step = |m, input| {
+	step = |model, input| {
 		pointer = input.mouse.position()
 		# A pointer that has never moved reads as the corner, which is
 		# upstream's own test for "nobody is steering".
 		at =
 			if pointer.x == 0 and pointer.y == 0 {
-				Particles.emitter(m.tick)
+				Particles.emitter(model.tick)
 			} else {
 				{ x: F32.to_f64(pointer.x), y: F32.to_f64(pointer.y) }
 			}
@@ -38,6 +39,6 @@ ParticlesApp :: [].{
 		} else {
 			Particles.spread_narrow
 		}
-		Particles.advance(m, at, spread)
+		Particles.advance(model, at, spread)
 	}
 }
