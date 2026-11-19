@@ -61,11 +61,11 @@ zon_answers : Str
 zon_answers = {
 	var $out = ""
 	for w in all_kinds {
-		$out = $out.concat("        .{\n")
+		$out = Str.concat($out, "        .{\n")
 		for s in all_kinds {
-			$out = $out.concat("            .{ .kin = ${zon_rule(Rules.rule(w, s, Bool.True))}, .other = ${zon_rule(Rules.rule(w, s, Bool.False))} },\n")
+			$out = Str.concat($out, "            .{ .kin = ${zon_rule(Rules.rule(w, s, Bool.True))}, .other = ${zon_rule(Rules.rule(w, s, Bool.False))} },\n")
 		}
-		$out = $out.concat("        },\n")
+		$out = Str.concat($out, "        },\n")
 	}
 	$out
 }

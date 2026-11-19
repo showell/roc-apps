@@ -209,7 +209,7 @@ points : Level, Kind -> Str
 points = |lv, kind| {
 	var $out = ""
 	for s in of_kind(lv, kind) {
-		$out = $out.concat("                .{ .x = ${px(s.x).to_str()}, .y = ${px(s.y).to_str()} },\n")
+		$out = Str.concat($out, "                .{ .x = ${px(s.x).to_str()}, .y = ${px(s.y).to_str()} },\n")
 	}
 	$out
 }
@@ -226,13 +226,13 @@ level_lines = |form| {
 				var $spots = ""
 				for k in World.kinds {
 					pts = points(lv, tag_of(k.name))
-					$spots = $spots.concat(if (pts == "") "            .{},\n" else "            .{\n${pts}            },\n")
+					$spots = Str.concat($spots, if (pts == "") "            .{},\n" else "            .{\n${pts}            },\n")
 				}
-				$out = $out.concat("        .{ .world_tiles = ${lv.world_tiles.to_str()}, .park = .{ .first = ${park_first(lv).to_str()}, .tiles = ${lv.park_tiles.to_str()} }, .spots = .{\n${$spots}        } },\n")
+				$out = Str.concat($out, "        .{ .world_tiles = ${lv.world_tiles.to_str()}, .park = .{ .first = ${park_first(lv).to_str()}, .tiles = ${lv.park_tiles.to_str()} }, .spots = .{\n${$spots}        } },\n")
 			}
 			Js => {
 				counts = World.kinds.map(|k| of_kind(lv, tag_of(k.name)).len().to_str())
-				$out = $out.concat("  { world_tiles: ${lv.world_tiles.to_str()}, park_tiles: ${lv.park_tiles.to_str()}, counts: [${Str.join_with(counts, ", ")}] },\n")
+				$out = Str.concat($out, "  { world_tiles: ${lv.world_tiles.to_str()}, park_tiles: ${lv.park_tiles.to_str()}, counts: [${Str.join_with(counts, ", ")}] },\n")
 			}
 		}
 	}

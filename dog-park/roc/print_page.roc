@@ -24,13 +24,13 @@ js_table : List({ kind : Str, lines : List(Str) }) -> Str
 js_table = |table| {
 	var $out = "{\n"
 	for t in table {
-		$out = $out.concat("  ${t.kind}: [\n")
+		$out = Str.concat($out, "  ${t.kind}: [\n")
 		for l in t.lines {
-			$out = $out.concat("    ${js_str(l)},\n")
+			$out = Str.concat($out, "    ${js_str(l)},\n")
 		}
-		$out = $out.concat("  ],\n")
+		$out = Str.concat($out, "  ],\n")
 	}
-	$out.concat("}")
+	Str.concat($out, "}")
 }
 
 words : Str

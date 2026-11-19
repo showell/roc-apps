@@ -31,18 +31,21 @@ Layout := [].{
 			{ kind: Dog, x: far, y: far },
 		]
 		if (col + row) % 2 == 0 {
-			dogs.concat([{ kind: Cow, x: mid, y: mid }])
+			List.concat(dogs, [{ kind: Cow, x: mid, y: mid }])
 		} else {
 			chickens = if lv.chickens {
-				dogs.concat([
-					{ kind: Chicken, x: mid - World.chicken_off, y: mid },
-					{ kind: Chicken, x: mid + World.chicken_off, y: mid },
-				])
+				List.concat(
+					dogs,
+					[
+						{ kind: Chicken, x: mid - World.chicken_off, y: mid },
+						{ kind: Chicken, x: mid + World.chicken_off, y: mid },
+					],
+				)
 			} else {
 				dogs
 			}
 			if lv.goats and row % 2 == 0 and col % 2 == 1 {
-				chickens.concat([{ kind: Goat, x: mid, y: mid - World.goat_above }])
+				List.concat(chickens, [{ kind: Goat, x: mid, y: mid - World.goat_above }])
 			} else {
 				chickens
 			}

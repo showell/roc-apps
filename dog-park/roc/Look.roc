@@ -63,11 +63,11 @@ Look := [].{
 				Ok(s) => s
 				Err(_) => "0"
 			}
-			$out = d.concat($out)
+			$out = Str.concat(d, $out)
 			$v = $v // 16
 			$k = $k + 1
 		}
-		"#".concat($out)
+		Str.concat("#", $out)
 	}
 }
 

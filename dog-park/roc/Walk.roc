@@ -546,7 +546,7 @@ Walk := [].{
 				} else {
 					{}
 				}
-				$bits = $bits.bitwise_and($bits - 1)
+				$bits = U64.bitwise_and($bits, $bits - 1)
 			}
 			$w = $w + 1
 		}
@@ -708,7 +708,7 @@ Walk := [].{
 								} else {
 									{}
 								}
-								$bits = $bits.bitwise_and($bits - 1)
+								$bits = U64.bitwise_and($bits, $bits - 1)
 							}
 							$w = $w + 1
 						}
@@ -954,7 +954,7 @@ Walk := [].{
 							} else {
 								{}
 							}
-							$bits = $bits.bitwise_and($bits - 1)
+							$bits = U64.bitwise_and($bits, $bits - 1)
 						}
 						$w = $w + 1
 					}
@@ -1007,7 +1007,7 @@ Walk := [].{
 							j = $w * 64 + $bits.count_trailing_zero_bits().to_u64()
 							o = get_c(crits, j)
 							$hit = overlap(s.geo, land, ch, pt(o), o.half) and !in_move(g, j)
-							$bits = $bits.bitwise_and($bits - 1)
+							$bits = U64.bitwise_and($bits, $bits - 1)
 						}
 						$w = $w + 1
 					}
@@ -1072,7 +1072,7 @@ Walk := [].{
 		{ cells: c0, crits: k0 } = park0
 		words = c0.len() // (g.side * g.side).to_u64_wrap()
 		dog0 = get_c(k0, 0)
-		if get_u64(c0, cell_at(g, dog0.x, dog0.y) * words).bitwise_and(1) == 1 {
+		if U64.bitwise_and(get_u64(c0, cell_at(g, dog0.x, dog0.y) * words), 1) == 1 {
 			{ cells: c0, crits: k0 }
 		} else {
 			n = k0.len()
@@ -1081,7 +1081,7 @@ Walk := [].{
 			while $j < n {
 				c = get_c(k0, $j)
 				at = cell_at(g, c.x, c.y) * words + $j // 64
-				word = get_u64($cells, at).bitwise_or((1).shl_wrap(($j % 64).to_u8_wrap()))
+				word = U64.bitwise_or(get_u64($cells, at), (1).shl_wrap(($j % 64).to_u8_wrap()))
 				$cells = put($cells, at, word)
 				$j = $j + 1
 			}
@@ -1103,9 +1103,9 @@ Walk := [].{
 			bit = (1).shl_wrap((j % 64).to_u8_wrap())
 			was = was_in * s.words + j // 64
 			now = now_in * s.words + j // 64
-			left = get_u64(cells, was).bitwise_and(bit.bitwise_not())
+			left = U64.bitwise_and(get_u64(cells, was), bit.bitwise_not())
 			cells1 = put(cells, was, left)
-			came = get_u64(cells1, now).bitwise_or(bit)
+			came = U64.bitwise_or(get_u64(cells1, now), bit)
 			{ crits, cells: put(cells1, now, came) }
 		}
 	}
@@ -1397,9 +1397,9 @@ Walk := [].{
 			bit = (1).shl_wrap((j % 64).to_u8_wrap())
 			was = was_in * s.words + j // 64
 			now = now_in * s.words + j // 64
-			left = get_u64(cells, was).bitwise_and(bit.bitwise_not())
+			left = U64.bitwise_and(get_u64(cells, was), bit.bitwise_not())
 			cells1 = put(cells, was, left)
-			came = get_u64(cells1, now).bitwise_or(bit)
+			came = U64.bitwise_or(get_u64(cells1, now), bit)
 			{ crits, cells: put(cells1, now, came) }
 		}
 	}
@@ -1433,7 +1433,7 @@ Walk := [].{
 			var $c = 0
 			while $c < near.cols.n {
 				c = row * s.geo.side + around(near.cols.lo + $c, s.geo.side)
-				$u = $u.bitwise_or(get_u64(park.cells, c.to_u64_wrap() * s.words + w))
+				$u = U64.bitwise_or($u, get_u64(park.cells, c.to_u64_wrap() * s.words + w))
 				$c = $c + 1
 			}
 			$r = $r + 1
@@ -1560,11 +1560,11 @@ Walk := [].{
 	Lanes : U128
 
 	lane_get : Lanes, U64 -> U64
-	lane_get = |l, k| (l.shr_zf_wrap((16 * k).to_u8_wrap()).bitwise_and(0xFFFF)).to_u64_wrap()
+	lane_get = |l, k| (U128.bitwise_and(l.shr_zf_wrap((16 * k).to_u8_wrap()), 0xFFFF)).to_u64_wrap()
 
 	## `l` with lane `k` (empty till now) set to `v`.
 	lane_put : Lanes, U64, U64 -> Lanes
-	lane_put = |l, k, v| l.bitwise_or(v.to_u128().shl_wrap((16 * k).to_u8_wrap()))
+	lane_put = |l, k, v| U128.bitwise_or(l, v.to_u128().shl_wrap((16 * k).to_u8_wrap()))
 
 	## Whether the first `n` lanes hold `v`.
 	lanes_hold : Lanes, U64, U64 -> Bool
@@ -1647,7 +1647,7 @@ walk_of = |cs| Walk.walk(
 )
 
 walk_poop = |cs, px, py, t| {
-	from = List.repeat(0, t + 1).concat(List.repeat(1, 36 - t))
+	from = List.concat(List.repeat(0, t + 1), List.repeat(1, 36 - t))
 	Walk.walk(
 		{ from, poops: [{ slot: 0, x: px * 256, y: py * 256 }], side: test_side },
 		{ depth: List.repeat(0, cs.len()), moving: [], park: park_of(cs) },
@@ -1713,7 +1713,7 @@ expect {
 ## so it slides north, away from that one.
 expect {
 	t = 14
-	from = List.repeat(0, t + 1).concat(List.repeat(2, 36 - t))
+	from = List.concat(List.repeat(0, t + 1), List.repeat(2, 36 - t))
 	poops = [{ slot: 3, x: 1020 * 256, y: 995 * 256 }, { slot: 1, x: 1020 * 256, y: 1005 * 256 }]
 	cs = [dog(1000, 1000)]
 	r = Walk.pixel_tick(
@@ -1802,7 +1802,7 @@ dog_at = |x, y| { ..dog(0, 0), x, y }
 
 ## The walk with poops in tile `t`, slots in order.
 walk_poops = |cs, ps, t| {
-	from = List.repeat(0, t + 1).concat(List.repeat(ps.len().to_u16_wrap(), 36 - t))
+	from = List.concat(List.repeat(0, t + 1), List.repeat(ps.len().to_u16_wrap(), 36 - t))
 	poops = ps.map_with_index(|q, k| { slot: k.to_u16_wrap(), x: q.x * 256, y: q.y * 256 })
 	Walk.walk(
 		{ from, poops, side: test_side },
@@ -1875,7 +1875,7 @@ expect {
 ## Where the poop lands (`lay`), for crits `cs` and poops `ps` (each in
 ## slot its place in the list) all on tile `t`.
 lay_of = |cs, ps, t, how| {
-	from = List.repeat(0, t + 1).concat(List.repeat(ps.len().to_u16_wrap(), 36 - t))
+	from = List.concat(List.repeat(0, t + 1), List.repeat(ps.len().to_u16_wrap(), 36 - t))
 	poops = ps.map(|q| { slot: q.slot, x: q.x * 256, y: q.y * 256 })
 	Walk.lay({ from, geo: Walk.geo_of(test_side), poops, words: 1 }, cs, how)
 }
@@ -1941,7 +1941,7 @@ expect lay_of(
 ## The forage turn of crits `cs` with poops `ps` (each with its slot) all
 ## on tile `t`, each critter's home `away` px west of where it stands.
 turn_of = |cs, ps, t, net, laid, away| {
-	from = List.repeat(0, t + 1).concat(List.repeat(ps.len().to_u16_wrap(), 36 - t))
+	from = List.concat(List.repeat(0, t + 1), List.repeat(ps.len().to_u16_wrap(), 36 - t))
 	poops = ps.map(|q| { slot: q.slot, x: q.x * 256, y: q.y * 256 })
 	park = park_of(cs)
 	Walk.forage_turn(
