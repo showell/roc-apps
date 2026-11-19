@@ -452,7 +452,10 @@ number_end = |bytes, at| {
 			if Bytes.byte_at(bytes, whole) == '.' and Bytes.is_digit(
 				Bytes.byte_at(bytes, whole + 1),
 			) {
-				Bytes.run_end(bytes, { at: whole + 1, keep: |byte| Bytes.is_digit(byte) or byte == '_' })
+				Bytes.run_end(
+					bytes,
+					{ at: whole + 1, keep: |byte| Bytes.is_digit(byte) or byte == '_' },
+				)
 			} else {
 				whole
 			}
