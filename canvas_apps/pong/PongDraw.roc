@@ -9,6 +9,7 @@
 import lib.Pixels
 import lib.Point
 import lib.Shapes
+import lib.CurvedShapes
 import lib.Brush
 import lib.RgbColor
 import lib.Font
@@ -44,7 +45,7 @@ PongDraw :: [].{
 		var $i = 0
 		while $i < 15 {
 			y = 12.0 + I64.to_f64($i) * 40.0
-			$out = List.append($out, Shapes.rounded_rect({ top_left: Point.at(w * 0.5 - 2.0, y), width: Pixels.of(4.0), height: Pixels.of(22.0), corner_radius: Pixels.of(1.0), corner_steps: 4 }, Flat(dash)))
+			$out = List.append($out, CurvedShapes.rounded_rect({ top_left: Point.at(w * 0.5 - 2.0, y), width: Pixels.of(4.0), height: Pixels.of(22.0), corner_radius: Pixels.of(1.0), corner_steps: 4 }, Flat(dash)))
 			$i = $i + 1
 		}
 		$out
@@ -98,8 +99,8 @@ PongDraw :: [].{
 		bx = F32.to_f64(world.ball.pos.x)
 		by = F32.to_f64(world.ball.pos.y)
 		[
-			Shapes.rounded_rect({ top_left: Point.at(F32.to_f64(l.x), F32.to_f64(l.y)), width: Pixels.of(F32.to_f64(l.width)), height: Pixels.of(F32.to_f64(l.height)), corner_radius: Pixels.of(7.0), corner_steps: 8 }, Brush.flat(Rules.left_neon)),
-			Shapes.rounded_rect({ top_left: Point.at(F32.to_f64(r.x), F32.to_f64(r.y)), width: Pixels.of(F32.to_f64(r.width)), height: Pixels.of(F32.to_f64(r.height)), corner_radius: Pixels.of(7.0), corner_steps: 8 }, Brush.flat(Rules.right_neon)),
+			CurvedShapes.rounded_rect({ top_left: Point.at(F32.to_f64(l.x), F32.to_f64(l.y)), width: Pixels.of(F32.to_f64(l.width)), height: Pixels.of(F32.to_f64(l.height)), corner_radius: Pixels.of(7.0), corner_steps: 8 }, Brush.flat(Rules.left_neon)),
+			CurvedShapes.rounded_rect({ top_left: Point.at(F32.to_f64(r.x), F32.to_f64(r.y)), width: Pixels.of(F32.to_f64(r.width)), height: Pixels.of(F32.to_f64(r.height)), corner_radius: Pixels.of(7.0), corner_steps: 8 }, Brush.flat(Rules.right_neon)),
 			Disc({ center: Point.at(bx, by), radius: Pixels.of(10.0), fill: Brush.flat(Rules.ball_neon) }),
 			Disc({ center: Point.at(bx - 2.0, by - 3.0), radius: Pixels.of(4.2), fill: Brush.flat(RgbColor.of(0xffffff)) }),
 		]

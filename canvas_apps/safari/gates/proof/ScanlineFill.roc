@@ -9,6 +9,7 @@
 ## PixelGrid's `blend`. A list threaded down a recursion would be copied on
 ## the next store (docs/roc-notes.md, "Speed and copying").
 import lib.Brush
+import lib.BrushShade
 import lib.Point
 import lib.Shapes
 import PixelGrid
@@ -227,7 +228,7 @@ pixels_with_span = |
 			Flat(flat) => flat
 			Span(_) | Radial(_) | Linear(_) | Ellipse(_) | Glow(_) => {
 				p = roll.to_scene(ScreenRoll.pixel_point({ row, column }))
-				Brush.shade(fill, Point.at(p.x, p.y))
+				BrushShade.shade(fill, Point.at(p.x, p.y))
 			}
 		}
 		$px = PixelGrid.blended_pixels($px, { at, color, mode })

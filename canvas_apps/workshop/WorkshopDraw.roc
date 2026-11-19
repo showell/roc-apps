@@ -16,6 +16,7 @@ import lib.RgbColor
 import lib.Pixels
 import lib.Point
 import lib.Shapes
+import lib.CurvedShapes
 import Rules
 
 WorkshopDraw :: [].{
@@ -124,8 +125,8 @@ WorkshopDraw :: [].{
 		# exact because what it sits on is the panel's flat colour.
 		var $out = []
 		if chosen {
-			$out = List.append($out, Shapes.rounded_rect({ top_left: Point.at(x - 5.0, y - 5.0), width: Pixels.of(w + 10.0), height: Pixels.of(h + 10.0), corner_radius: Pixels.of(11.0), corner_steps: 8 }, Flat(theme.accent)))
-			$out = List.append($out, Shapes.rounded_rect({ top_left: Point.at(x - 3.0, y - 3.0), width: Pixels.of(w + 6.0), height: Pixels.of(h + 6.0), corner_radius: Pixels.of(9.0), corner_steps: 8 }, Flat(theme.panel)))
+			$out = List.append($out, CurvedShapes.rounded_rect({ top_left: Point.at(x - 5.0, y - 5.0), width: Pixels.of(w + 10.0), height: Pixels.of(h + 10.0), corner_radius: Pixels.of(11.0), corner_steps: 8 }, Flat(theme.accent)))
+			$out = List.append($out, CurvedShapes.rounded_rect({ top_left: Point.at(x - 3.0, y - 3.0), width: Pixels.of(w + 6.0), height: Pixels.of(h + 6.0), corner_radius: Pixels.of(9.0), corner_steps: 8 }, Flat(theme.panel)))
 		} else {
 			{}
 		}
@@ -134,8 +135,8 @@ WorkshopDraw :: [].{
 		} else {
 			2.0
 		}
-		$out = List.append($out, Shapes.rounded_rect({ top_left: Point.at(x - lip, y - lip), width: Pixels.of(w + lip * 2.0), height: Pixels.of(h + lip * 2.0), corner_radius: Pixels.of(8.0 + lip), corner_steps: 8 }, Flat(edge)))
-		$out = List.append($out, Shapes.rounded_rect({ top_left: Point.at(x, y), width: Pixels.of(w), height: Pixels.of(h), corner_radius: Pixels.of(8.0), corner_steps: 8 }, Brush.flat(Rules.palette_color(index))))
+		$out = List.append($out, CurvedShapes.rounded_rect({ top_left: Point.at(x - lip, y - lip), width: Pixels.of(w + lip * 2.0), height: Pixels.of(h + lip * 2.0), corner_radius: Pixels.of(8.0 + lip), corner_steps: 8 }, Flat(edge)))
+		$out = List.append($out, CurvedShapes.rounded_rect({ top_left: Point.at(x, y), width: Pixels.of(w), height: Pixels.of(h), corner_radius: Pixels.of(8.0), corner_steps: 8 }, Brush.flat(Rules.palette_color(index))))
 
 		# The number beside the swatch, centred on upstream's anchor.
 		digit = U64.to_str(index + 1)
@@ -153,8 +154,8 @@ WorkshopDraw :: [].{
 	card : { x : F64, y : F64, width : F64, height : F64, corner_radius : F64 } -> List(Shapes.Shape)
 	card = |{ x, y, width, height, corner_radius }|
 		[
-			Shapes.rounded_rect({ top_left: Point.at(x - 1.0, y - 1.0), width: Pixels.of(width + 2.0), height: Pixels.of(height + 2.0), corner_radius: Pixels.of(corner_radius + 1.0), corner_steps: 8 }, Flat(theme.edge)),
-			Shapes.rounded_rect({ top_left: Point.at(x, y), width: Pixels.of(width), height: Pixels.of(height), corner_radius: Pixels.of(corner_radius), corner_steps: 8 }, Flat(theme.panel)),
+			CurvedShapes.rounded_rect({ top_left: Point.at(x - 1.0, y - 1.0), width: Pixels.of(width + 2.0), height: Pixels.of(height + 2.0), corner_radius: Pixels.of(corner_radius + 1.0), corner_steps: 8 }, Flat(theme.edge)),
+			CurvedShapes.rounded_rect({ top_left: Point.at(x, y), width: Pixels.of(width), height: Pixels.of(height), corner_radius: Pixels.of(corner_radius), corner_steps: 8 }, Flat(theme.panel)),
 		]
 
 	# A rectangle's outline, as the four lines it is, drawn on the edge itself.

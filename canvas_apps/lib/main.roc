@@ -8,10 +8,12 @@ package
 		ArgbColor,
 		Brush,
 		BrushGlsl,
+		BrushShade,
 		Camera,
 		CanvasApp,
 		ColorShade,
 		ConvexCut,
+		CurvedShapes,
 		Eye,
 		Font,
 		Fraction,
@@ -24,7 +26,9 @@ package
 		Random,
 		RgbColor,
 		Shapes,
+		Squash,
 		Trig,
 		WasmApp,
+		WidthShading,
 	]
 	{}

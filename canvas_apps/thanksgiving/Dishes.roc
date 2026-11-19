@@ -8,6 +8,7 @@ import lib.Pixels
 import lib.Point
 import lib.RgbColor
 import lib.Shapes
+import lib.CurvedShapes
 
 Dishes :: [].{
 
@@ -253,7 +254,7 @@ potato_shapes = |place| [
 			fill: flat(0xFFF6DC),
 		},
 	),
-	Shapes.rounded_rect(
+	CurvedShapes.rounded_rect(
 		{
 			top_left: screen_point(place, { across: 0.0, up: 0.14 }),
 			width: Pixels.of(0.035 * place.scale),

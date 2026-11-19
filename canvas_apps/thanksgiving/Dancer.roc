@@ -11,6 +11,8 @@ import lib.Pixels
 import lib.Point
 import lib.RgbColor
 import lib.Shapes
+import lib.CurvedShapes
+import lib.Squash
 
 Dancer :: [].{
 
@@ -52,7 +54,7 @@ Dancer :: [].{
 		$out = List.concat($out, head_shapes(place, { head_bottom, turn: pose.head }))
 		$out = List.concat($out, arm_shapes(place, { shoulder: { across: -0.16, up: shoulder_up + (-pose.pop).max(0.0) }, upper: pose.left_upper, fore: pose.left_fore }))
 		$out = List.concat($out, arm_shapes(place, { shoulder: { across: 0.16, up: shoulder_up + F64.max(pose.pop, 0.0) }, upper: pose.right_upper, fore: pose.right_fore }))
-		Shapes.squashed_shapes($out, { axis: feet.x, cosine: pose.turn })
+		Squash.squashed_shapes($out, { axis: feet.x, cosine: pose.turn })
 	}
 }
 
@@ -87,7 +89,7 @@ dot = |place, { at, radius, fill }| Disc({ center: screen_point(place, at), radi
 
 box : Place, { left : F64, bottom : F64, width : F64, height : F64, corner : F64, fill : Brush.Fill } -> Shapes.Shape
 box = |place, { left, bottom, width, height, corner, fill }|
-	Shapes.rounded_rect(
+	CurvedShapes.rounded_rect(
 		{
 			top_left: screen_point(place, { across: left, up: bottom + height }),
 			width: Pixels.of(width * place.scale),

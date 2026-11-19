@@ -1,0 +1,198 @@
+## BrushShade gives the colour a `Brush.Fill` paints at one point of its shape,
+## for a painter that fills pixel by pixel on the CPU. BrushGlsl is the same
+## arithmetic on a GPU and shapes_canvas.js on a canvas, case for case, so all
+## three paint a fill alike: gradients mix unpremultiplied, and an offset
+## outside [0, 1] is clamped, as the canvas specification says.
+import Brush
+import Pixels
+import Point
+import RgbColor
+
+BrushShade :: [].{
+
+	## The colour a brush gives a scene point. A gradient with no length, a
+	## span whose two edges meet, a line from a point to itself or a ring whose
+	## radii meet, gives its far colour everywhere, since there is no distance
+	## along it to share out.
+	shade : Brush.Fill, Point -> Brush.Rgba
+	shade = |fill, point| {
+		x = point.x.to_f64()
+		y = point.y.to_f64()
+		match fill {
+			Flat(color) => color
+			Span(p) => {
+				left_x = p.left_x.to_f64()
+				right_x = p.right_x.to_f64()
+				t = if right_x != left_x {
+					clamp01((x - left_x) / (right_x - left_x))
+				} else {
+					1.0
+				}
+				if t <= 0.5 {
+					Brush.mix({
+						from: p.edge_color,
+						to: p.middle_color,
+						fraction: t * 2.0,
+					})
+				} else {
+					Brush.mix({
+						from: p.middle_color,
+						to: p.edge_color,
+						fraction: (t - 0.5) * 2.0,
+					})
+				}
+			}
+			Radial(p) =>
+				Brush.mix({
+					from: p.inner_color,
+					to: p.outer_color,
+					fraction: radial_fraction(
+						{ x, y },
+						{
+							center: p.center,
+							inner_radius: p.inner_radius,
+							outer_radius: p.outer_radius,
+						},
+					),
+				})
+			Linear(p) => {
+				start_x = p.start_point.x.to_f64()
+				start_y = p.start_point.y.to_f64()
+				dx = p.end_point.x.to_f64() - start_x
+				dy = p.end_point.y.to_f64() - start_y
+				length_squared = dx * dx + dy * dy
+				two_stop(
+					p.stops,
+					if length_squared > 0.0 {
+						clamp01(((x - start_x) * dx + (y - start_y) * dy) / length_squared)
+					} else {
+						1.0
+					},
+				)
+			}
+			Ellipse(p) => {
+				qx = x - p.center.x.to_f64()
+				qy = y - p.center.y.to_f64()
+				inverse = Brush.ellipse_inverse({ axis_u: p.axis_u, axis_v: p.axis_v })
+				ux = inverse.top_row.x * qx + inverse.top_row.y * qy
+				uy = inverse.bottom_row.x * qx + inverse.bottom_row.y * qy
+				two_stop(p.stops, clamp01((ux * ux + uy * uy).sqrt()))
+			}
+			Glow(p) => {
+				t = radial_fraction(
+					{ x, y },
+					{
+						center: p.center,
+						inner_radius: p.inner_radius,
+						outer_radius: p.outer_radius,
+					},
+				)
+				m = p.middle_offset
+				if t <= m {
+					Brush.mix({
+						from: p.inner_color,
+						to: p.middle_color,
+						fraction: t / m,
+					})
+				} else {
+					Brush.mix({
+						from: p.middle_color,
+						to: p.outer_color,
+						fraction: (t - m) / (1.0 - m),
+					})
+				}
+			}
+		}
+	}
+}
+
+clamp01 : F64 -> F64
+clamp01 = |t|
+	if t < 0.0 {
+		0.0
+	} else if t > 1.0 {
+		1.0
+	} else {
+		t
+	}
+
+## How far a point lies from the inner radius to the outer one, clamped to 0..1,
+## or 1 when the radii meet.
+radial_fraction : { x : F64, y : F64 },
+{
+	center : Point,
+	inner_radius : Pixels,
+	outer_radius : Pixels,
+} -> F64
+radial_fraction = |{ x, y }, ring| {
+	cx = ring.center.x.to_f64()
+	cy = ring.center.y.to_f64()
+	inner = ring.inner_radius.to_f64()
+	outer = ring.outer_radius.to_f64()
+	distance = ((x - cx) * (x - cx) + (y - cy) * (y - cy)).sqrt()
+	if outer > inner {
+		clamp01((distance - inner) / (outer - inner))
+	} else {
+		1.0
+	}
+}
+
+## The colour the stops give at `t`, for offsets start_offset <= end_offset.
+two_stop : Brush.TwoStops, F64 -> Brush.Rgba
+two_stop = |stops, t|
+	if t <= stops.start_offset {
+		stops.start_color
+	} else if t >= stops.end_offset {
+		stops.end_color
+	} else {
+		Brush.mix({
+			from: stops.start_color,
+			to: stops.end_color,
+			fraction: (t - stops.start_offset) / (stops.end_offset - stops.start_offset),
+		})
+	}
+
+# A span whose edges meet gives its edge colour everywhere, and one with any
+# width still gives its middle colour halfway.
+expect {
+	edge = Brush.opaque_rgba(RgbColor.of(0x000000))
+	middle = Brush.opaque_rgba(RgbColor.of(0xFFFFFF))
+	met = Span({
+		edge_color: edge,
+		middle_color: middle,
+		left_x: Pixels.of(5.0),
+		right_x: Pixels.of(5.0),
+	})
+	wide = Span({
+		edge_color: edge,
+		middle_color: middle,
+		left_x: Pixels.of(4.0),
+		right_x: Pixels.of(6.0),
+	})
+	BrushShade.shade(met, Point.at(5.0, 0.0)) == edge and BrushShade.shade(wide, Point.at(5.0, 0.0)) == middle
+}
+
+# A line from a point to itself gives its end colour everywhere, and a line
+# with any length gives its start colour at its start.
+expect {
+	stops = {
+		start_color: Brush.opaque_rgba(RgbColor.of(0x000000)),
+		end_color: Brush.opaque_rgba(RgbColor.of(0xFFFFFF)),
+		start_offset: 0.0,
+		end_offset: 1.0,
+	}
+	point = Linear({
+		stops,
+		start_point: Point.at(1.0, 1.0),
+		end_point: Point.at(1.0, 1.0),
+	})
+	line = Linear({
+		stops,
+		start_point: Point.at(1.0, 1.0),
+		end_point: Point.at(1.0, 3.0),
+	})
+	BrushShade.shade(
+		point,
+		Point.at(1.0, 1.0),
+	) == stops.end_color and BrushShade.shade(line, Point.at(1.0, 1.0)) == stops.start_color
+}

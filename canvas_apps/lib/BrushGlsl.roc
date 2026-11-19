@@ -1,11 +1,11 @@
-## BrushGlsl is Brush.shade on a GPU, with the numbers that say which shading.
+## BrushGlsl is BrushShade.shade on a GPU, with the numbers that say which shading.
 ## It shades the six fills a shape can carry on the scene position, for a
 ## platform whose fragment shader can do the arithmetic itself. It sits beside
 ## Brush because it belongs to Brush. No app owns any of it:
 ## native/CanvasAppRunner.roc compiles it once and shades every app's gradients
 ## with it.
 ##
-## `Brush.shade` is the same arithmetic on the CPU, case for case, and the names
+## `BrushShade.shade` is the same arithmetic on the CPU, case for case, and the names
 ## below are its cases, so the two can be read side by side. A player sends
 ## `uniforms` of a shape's fill, each number converted to its own vector type,
 ## and draws the shape in white. Which numbers go in which uniform is decided
@@ -167,7 +167,7 @@ BrushGlsl :: [].{
 			"}",
 			"",
 			# A span whose edges meet, and a line from a point to itself in
-			# linearColor, are at their far end everywhere, as in Brush.shade.
+			# linearColor, are at their far end everywhere, as in BrushShade.shade.
 			"vec4 spanColor() {",
 			"    float t = geom_a.y != geom_a.x ? clamp((scenePos.x - geom_a.x) / (geom_a.y - geom_a.x), 0.0, 1.0) : 1.0;",
 			"    return t <= 0.5 ? mix(color_a, color_b, t * 2.0) : mix(color_b, color_a, (t - 0.5) * 2.0);",

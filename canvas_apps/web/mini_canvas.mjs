@@ -16,7 +16,7 @@
 //
 // Coverage is point-sampled at SS x SS per pixel and box-filtered down, which is
 // where the anti-aliasing comes from. Gradients mix unpremultiplied, as the
-// canvas specification says and Brush.shade does. PNG goes out through node's
+// canvas specification says and BrushShade.shade does. PNG goes out through node's
 // own zlib.
 //
 //   import { createCanvas } from './mini_canvas.mjs';

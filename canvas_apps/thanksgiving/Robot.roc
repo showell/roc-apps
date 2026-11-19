@@ -14,6 +14,7 @@ import lib.Pixels
 import lib.Point
 import lib.RgbColor
 import lib.Shapes
+import lib.CurvedShapes
 
 Robot :: [].{
 
@@ -278,7 +279,7 @@ box = |
 		fill,
 	},
 |
-	Shapes.rounded_rect(
+	CurvedShapes.rounded_rect(
 		{
 			top_left: screen_point(place, { across: left, up: bottom + height }),
 			width: Pixels.of(width * place.scale),

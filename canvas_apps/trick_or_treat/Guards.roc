@@ -10,6 +10,7 @@
 # flanking the path face each other rather than both facing right.
 import lib.Pixels
 import lib.Shapes
+import lib.Squash
 import lib.Eye
 import Skeleton
 
@@ -74,7 +75,7 @@ Guards :: [].{
 					[]
 				} else {
 					k = facing(sx, sz, now, lag, tilt, side)
-					Shapes.squashed_shapes(Skeleton.figure(t, feet.x, feet.y, s), { axis: Pixels.of(feet.x), cosine: k })
+					Squash.squashed_shapes(Skeleton.figure(t, feet.x, feet.y, s), { axis: Pixels.of(feet.x), cosine: k })
 				}
 			}
 			Err(BehindEye) => []

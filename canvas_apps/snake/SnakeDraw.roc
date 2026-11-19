@@ -9,6 +9,7 @@
 import lib.Pixels
 import lib.Point
 import lib.Shapes
+import lib.CurvedShapes
 import lib.ArgbColor
 import lib.Brush
 import lib.RgbColor
@@ -85,8 +86,8 @@ SnakeDraw :: [].{
 	board : {} -> List(Shapes.Shape)
 	board = |{}| {
 		var $out = [
-			Shapes.rounded_rect({ top_left: Point.at(left - 10.0, top - 10.0), width: Pixels.of(board_w + 20.0), height: Pixels.of(board_h + 20.0), corner_radius: Pixels.of(8.0), corner_steps: 8 }, Flat(board_edge)),
-			Shapes.rounded_rect({ top_left: Point.at(left - 8.0, top - 8.0), width: Pixels.of(board_w + 16.0), height: Pixels.of(board_h + 16.0), corner_radius: Pixels.of(7.0), corner_steps: 8 }, Flat(board_fill)),
+			CurvedShapes.rounded_rect({ top_left: Point.at(left - 10.0, top - 10.0), width: Pixels.of(board_w + 20.0), height: Pixels.of(board_h + 20.0), corner_radius: Pixels.of(8.0), corner_steps: 8 }, Flat(board_edge)),
+			CurvedShapes.rounded_rect({ top_left: Point.at(left - 8.0, top - 8.0), width: Pixels.of(board_w + 16.0), height: Pixels.of(board_h + 16.0), corner_radius: Pixels.of(7.0), corner_steps: 8 }, Flat(board_fill)),
 		]
 		var $c = 0
 		while $c <= 25 {
@@ -128,7 +129,7 @@ SnakeDraw :: [].{
 				U64.to_f64($i) / U64.to_f64(n - 1)
 			}
 			p = cell_at(c)
-			$out = List.append($out, Shapes.rounded_rect({ top_left: Point.at(p.x + 2.0, p.y + 2.0), width: Pixels.of(cell - 4.0), height: Pixels.of(cell - 4.0), corner_radius: Pixels.of(5.0), corner_steps: 6 }, Flat(Brush.mix({ from: snake_head, to: snake_tail, fraction: t }))))
+			$out = List.append($out, CurvedShapes.rounded_rect({ top_left: Point.at(p.x + 2.0, p.y + 2.0), width: Pixels.of(cell - 4.0), height: Pixels.of(cell - 4.0), corner_radius: Pixels.of(5.0), corner_steps: 6 }, Flat(Brush.mix({ from: snake_head, to: snake_tail, fraction: t }))))
 			$i = $i + 1
 		}
 		$out

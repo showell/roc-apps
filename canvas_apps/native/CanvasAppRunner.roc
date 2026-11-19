@@ -12,7 +12,7 @@
 #
 # The painting is the canvas apps' own: roc-ray fills the polygons, triangles,
 # discs and rectangles itself, and a shape with a gradient goes through one
-# fragment shader that does Brush.shade's arithmetic on the scene position
+# fragment shader that does BrushShade.shade's arithmetic on the scene position
 # (BrushGlsl). It is anti-aliased by supersampling, since roc-ray offers no
 # multisampling.
 #

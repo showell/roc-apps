@@ -14,6 +14,7 @@ import Sprite
 import lib.Pixels
 import Spot
 import lib.Brush
+import lib.WidthShading
 import lib.RgbColor
 import lib.Point
 import lib.Shapes
@@ -228,7 +229,7 @@ trunk_shape = |outline, { finish, color }| {
 	left = outline.foot.x.minus(width.divided_by(2.0))
 	fill =
 		match finish {
-			Shaded => Brush.width_shade(
+			Shaded => WidthShading.width_shade(
 				{ min_x: left, max_x: left.plus(width) },
 				{ color, strength: Fraction.whole },
 			)
@@ -338,7 +339,7 @@ tier_cone = |tier, { inputs, ring_points, shade }| {
 	apex = Camera.project(inputs.base.at_height(apex_height), inputs.focal_length)
 	ring_on_screen = Camera.projected_points(ring_points, inputs.focal_length)
 	corners = ConvexHull.cone_hull_points(ring_on_screen, apex)
-	fill = Brush.corners_shade(corners, { color: inputs.foliage_color, strength: shade })
+	fill = WidthShading.corners_shade(corners, { color: inputs.foliage_color, strength: shade })
 	Shapes.region_from_corners(corners, fill)
 }
 

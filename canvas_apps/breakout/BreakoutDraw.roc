@@ -7,6 +7,7 @@
 import lib.Pixels
 import lib.Point
 import lib.Shapes
+import lib.CurvedShapes
 import lib.Brush
 import lib.RgbColor
 import lib.Font
@@ -75,7 +76,7 @@ BreakoutDraw :: [].{
 			y = F32.to_f64(b.rect.y)
 			bw = F32.to_f64(b.rect.width)
 			bh = F32.to_f64(b.rect.height)
-			$out = List.append($out, Shapes.rounded_rect({ top_left: Point.at(x, y), width: Pixels.of(bw), height: Pixels.of(bh), corner_radius: Pixels.of(5.0), corner_steps: 6 }, Flat(Brush.with_alpha(b.color, 0.92))))
+			$out = List.append($out, CurvedShapes.rounded_rect({ top_left: Point.at(x, y), width: Pixels.of(bw), height: Pixels.of(bh), corner_radius: Pixels.of(5.0), corner_steps: 6 }, Flat(Brush.with_alpha(b.color, 0.92))))
 			$out = List.append($out, Shapes.rectangle({ top_left: Point.at(x + 5.0, y + 3.0), width: Pixels.of(bw - 10.0), height: Pixels.of(3.0), fill: Flat(Brush.with_alpha(white, 0.43)) }))
 			$i = $i + 1
 		}
@@ -107,7 +108,7 @@ BreakoutDraw :: [].{
 		by = F32.to_f64(world.ball.pos.y)
 		r = F32.to_f64(Ball.radius)
 		[
-			Shapes.rounded_rect({ top_left: Point.at(px, py), width: Pixels.of(pw), height: Pixels.of(ph), corner_radius: Pixels.of(ph / 2.0), corner_steps: 8 }, Brush.flat(paddle_neon)),
+			CurvedShapes.rounded_rect({ top_left: Point.at(px, py), width: Pixels.of(pw), height: Pixels.of(ph), corner_radius: Pixels.of(ph / 2.0), corner_steps: 8 }, Brush.flat(paddle_neon)),
 			Shapes.rectangle({ top_left: Point.at(px + 8.0, py + 3.0), width: Pixels.of(pw - 16.0), height: Pixels.of(3.0), fill: Flat(Brush.with_alpha(white, 0.59)) }),
 			Disc({ center: Point.at(bx, by), radius: Pixels.of(r), fill: Brush.flat(ball_neon) }),
 			Disc({ center: Point.at(bx - 2.0, by - 2.0), radius: Pixels.of(r * 0.4), fill: Flat(Brush.with_alpha(white, 0.82)) }),
@@ -135,8 +136,8 @@ BreakoutDraw :: [].{
 	banner = |line, accent, elapsed| {
 		again = "PRESS SPACE TO PLAY AGAIN"
 		var $out = [
-			Shapes.rounded_rect({ top_left: Point.at(188.0, 274.0), width: Pixels.of(424.0), height: Pixels.of(128.0), corner_radius: Pixels.of(18.0), corner_steps: 8 }, Flat(Brush.with_alpha(accent, 0.47))),
-			Shapes.rounded_rect({ top_left: Point.at(190.0, 276.0), width: Pixels.of(420.0), height: Pixels.of(124.0), corner_radius: Pixels.of(17.0), corner_steps: 8 }, Flat(Brush.with_alpha(field_bottom, 0.91))),
+			CurvedShapes.rounded_rect({ top_left: Point.at(188.0, 274.0), width: Pixels.of(424.0), height: Pixels.of(128.0), corner_radius: Pixels.of(18.0), corner_steps: 8 }, Flat(Brush.with_alpha(accent, 0.47))),
+			CurvedShapes.rounded_rect({ top_left: Point.at(190.0, 276.0), width: Pixels.of(420.0), height: Pixels.of(124.0), corner_radius: Pixels.of(17.0), corner_steps: 8 }, Flat(Brush.with_alpha(field_bottom, 0.91))),
 		]
 		$out = List.concat($out, Font.centered_text_shapes(line, { top_center: Point.at(w / 2.0, 304.0), size: 30.0, color: Brush.opaque_rgba(accent) }))
 		List.concat($out, Font.centered_text_shapes(again, { top_center: Point.at(w / 2.0, 356.0), size: 17.0, color: Brush.with_alpha(hint_color, prompt_alpha(elapsed)) }))

@@ -5,7 +5,7 @@
 ## The sky's rectangle reaches past every corner of a rolled screen, so above
 ## the grass is where the glow is. The frame paints the sun before the ride's
 ## shapes, so the mountains can hide it.
-import lib.Brush
+import lib.BrushShade
 import lib.Point
 import game.Grass
 import PixelGrid
@@ -52,7 +52,7 @@ pixels_with_glow_and_disc = |pixels, { roll, sun }| {
 					$px,
 					{
 						at,
-						color: Brush.shade(look.glow, Point.at(p.x, p.y)),
+						color: BrushShade.shade(look.glow, Point.at(p.x, p.y)),
 						mode: Add,
 					},
 				)
@@ -62,7 +62,7 @@ pixels_with_glow_and_disc = |pixels, { roll, sun }| {
 						lit,
 						{
 							at,
-							color: Brush.shade(look.disc, Point.at(p.x, p.y)),
+							color: BrushShade.shade(look.disc, Point.at(p.x, p.y)),
 							mode: Over,
 						},
 					)
