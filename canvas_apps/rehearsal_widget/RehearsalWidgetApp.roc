@@ -263,8 +263,7 @@ arc_shapes : List(ArcPoint), { color : RgbColor, width : F64 } -> List(Shapes.Sh
 arc_shapes = |path_points, { color, width }| {
 	start = { forward: Distance.zero, across: motorcycle.route_place.road_point.across }
 	points = drawn_points(path_points).prepend(start).map(canvas_point)
-	points
-		.map2(points.drop_first(1), |from, to| { from, to })
+	List.map2(points, points.drop_first(1), |from, to| { from, to })
 		.keep_if(|{ from, to }| from != to)
 		.map(|{ from, to }| Shapes.line({ from, to, width: Pixels.of(width) }, Brush.flat(color)))
 }
@@ -322,11 +321,13 @@ arcs_shown = |stop|
 		Shown(try) => {
 			earlier = rehearsals.take_first(try - 1)
 			newest = rehearsals.drop_first(try - 1).take_first(1)
-			tries_shapes(earlier, 1.0).concat(tries_shapes(newest, 4.0))
+			List.concat(tries_shapes(earlier, 1.0), tries_shapes(newest, 4.0))
 		}
-		Choice => tries_shapes(rehearsals, 1.0).concat(
-			arc_shapes(chosen_points, { color: kept_color, width: 4.0 }),
-		)
+		Choice =>
+			List.concat(
+				tries_shapes(rehearsals, 1.0),
+				arc_shapes(chosen_points, { color: kept_color, width: 4.0 }),
+			)
 	}
 
 ## A lean in degrees, and which way.
@@ -506,10 +507,13 @@ marks = |current|
 ## Everything on the canvas at `stop`.
 shapes_at : Stop -> List(Shapes.Shape)
 shapes_at = |stop|
-	WidgetPage.frame_shapes({
-		picture_shapes: picture_shapes(stop),
-		status_lines: status_lines(stop),
-	}).concat(marks(stop))
+	List.concat(
+		WidgetPage.frame_shapes({
+			picture_shapes: picture_shapes(stop),
+			status_lines: status_lines(stop),
+		}),
+		marks(stop),
+	)
 
 ## How many tries the search makes.
 round_count : U64
