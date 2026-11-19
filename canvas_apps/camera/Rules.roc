@@ -1,15 +1,13 @@
-# Rules -- roc-ray's examples/camera, its world and its update.
-#
-# Upstream's `axis`, `move_player` and the body of its `update!` are here
-# unchanged but for their import lines and the `Exit` that belongs to a runner.
-# Its expects came across word for word, which is the point: a snapshot is a
-# value on both platforms, so a test that drives a game on one drives it on the
-# other.
-#
-# **THE CAMERA IS BUILT FROM THE WORLD, NOT STORED IN IT.** Upstream says why:
-# calculated values kept beside the values they are calculated from can
-# disagree with them. Here it earns a second keep -- the drawing wants the
-# camera and so does the pointer arithmetic, and both get the same one.
+## Rules holds the world of roc-ray's examples/camera and its update.
+## Upstream's `axis`, `move_player` and the body of its `update!` are the same
+## here, but for their import lines and the `Exit`, which belongs to a runner.
+## Its expects are upstream's word for word: a snapshot is a value on both
+## platforms, so a test that drives the game on one drives it on the other.
+##
+## The camera is built from the world, not stored in it. Upstream's reason is
+## that calculated values kept beside the values they come from can disagree
+## with them. Here there is a second reason: the drawing and the pointer
+## arithmetic both want the camera, and both get the same one.
 import lib.Camera
 import lib.Input
 import lib.Math
