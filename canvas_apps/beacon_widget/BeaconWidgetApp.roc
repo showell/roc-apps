@@ -9,7 +9,7 @@ import game.Angle
 import game.Beacon
 import game.Clock
 import game.Distance
-import game.Geom
+import game.Geometry
 import game.Pipeline
 import game.Route
 import game.SegmentFromRider
@@ -87,7 +87,7 @@ picture_shapes = |clock|
 	})
 
 ## The picture's eye, at the start of the route, looking down the road.
-eye : Geom.Vantage
+eye : Geometry.Vantage
 eye = {
 	along: Along.metres(0.0),
 	across: Across.metres(0.0),
@@ -98,7 +98,7 @@ eye = {
 ## top, under the sky at `clock`, or nothing if it stood behind the camera.
 tower_shapes : Distance, { beacon : Beacon, clock : Clock } -> List(Shapes.Shape)
 tower_shapes = |right, { beacon, clock }| {
-	placed_tower : Geom.Placed(Tower)
+	placed_tower : Geometry.Placed(Tower)
 	placed_tower = {
 		road_point: { along: Along.at(tower_forward), across: Across.right_of_middle(right) },
 		lift: Distance.zero,

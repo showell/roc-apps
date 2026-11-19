@@ -3,7 +3,7 @@
 import Across
 import Motorcycle
 import Distance
-import Geom
+import Geometry
 import Steps
 
 Coast :: [].{
@@ -70,7 +70,7 @@ CoastBounds : { left : Across, right : Across }
 ## by `shoulder_margin`, or `start_across` where that is further out.
 coast_bounds : Across -> CoastBounds
 coast_bounds = |start_across| {
-	inset_half_width = Geom.road_half_width.minus(shoulder_margin)
+	inset_half_width = Geometry.road_half_width.minus(shoulder_margin)
 	{
 		left: Across.min(Across.left_of_middle(inset_half_width), start_across),
 		right: Across.max(Across.right_of_middle(inset_half_width), start_across),
@@ -81,8 +81,8 @@ coast_bounds = |start_across| {
 ## `bounds`, and short of `clear_distance` along the road.
 is_coasting : {
 	bounds : CoastBounds,
-	start : Geom.RoadPoint,
-	point : Geom.RoadPoint,
+	start : Geometry.RoadPoint,
+	point : Geometry.RoadPoint,
 } -> Bool
 is_coasting = |{ bounds, start, point }|
 	point.across >= bounds.left

@@ -9,11 +9,11 @@ import Distance
 import RoadAhead
 import RiderView
 import SegmentFromRider
-import Geom
+import Geometry
 
 ## A bend as the rider sees it: where the segment before it lies, and the
 ## bend itself.
-BendInView :: { before : SegmentFromRider, bend : Geom.Bend }.{
+BendInView :: { before : SegmentFromRider, bend : Geometry.Bend }.{
 
 	## The bend at the end of `in_view`.
 	of_in_view : RoadAhead.SegmentInView -> BendInView
@@ -65,8 +65,8 @@ BendInView :: { before : SegmentFromRider, bend : Geom.Bend }.{
 	rider_point_before : BendInView,
 	{
 		road : RoadAhead.RoadView,
-		vantage : Geom.Vantage,
-		road_point : Geom.RoadPoint,
+		vantage : Geometry.Vantage,
+		road_point : Geometry.RoadPoint,
 	} -> RiderView.RiderPoint
 	rider_point_before = |bend_in_view, { road, vantage, road_point }|
 		RoadAhead.rider_point_at(
@@ -79,8 +79,8 @@ BendInView :: { before : SegmentFromRider, bend : Geom.Bend }.{
 	rider_point_after : BendInView,
 	{
 		road : RoadAhead.RoadView,
-		vantage : Geom.Vantage,
-		road_point : Geom.RoadPoint,
+		vantage : Geometry.Vantage,
+		road_point : Geometry.RoadPoint,
 	} -> RiderView.RiderPoint
 	rider_point_after = |bend_in_view, { road, vantage, road_point }|
 		RoadAhead.rider_point_at(
@@ -101,9 +101,9 @@ BendInView :: { before : SegmentFromRider, bend : Geom.Bend }.{
 	## How far across the road its outer edge at a bend is.
 	outer_edge : BendInView -> Across
 	outer_edge = |BendInView.(bend_in_view)|
-		match Geom.outer_side(bend_in_view.bend.turn) {
-			LeftSide => Geom.left_edge
-			RightSide => Geom.right_edge
+		match Geometry.outer_side(bend_in_view.bend.turn) {
+			LeftSide => Geometry.left_edge
+			RightSide => Geometry.right_edge
 		}
 
 	## The corner the road's outer edge turns at a bend: where the outer edge of
@@ -117,11 +117,11 @@ BendInView :: { before : SegmentFromRider, bend : Geom.Bend }.{
 	}
 
 	## The outer corner of a bend, measured on the segment before it.
-	outer_corner : BendInView -> BendInView.OuterCorner(Geom.RoadPoint)
+	outer_corner : BendInView -> BendInView.OuterCorner(Geometry.RoadPoint)
 	outer_corner = |bend_in_view| {
 		across = outer_edge(bend_in_view)
 		BendInView.({ bend, .. }) = bend_in_view
-		start_after = Geom.point_in_segment_before({ along: Along.start, across }, bend)
+		start_after = Geometry.point_in_segment_before({ along: Along.start, across }, bend)
 		turn_radians = bend.turn.to_radians()
 		turn_sine = turn_radians.sin()
 		# Edges that run on straight, or fold straight back, never meet.
@@ -144,7 +144,7 @@ BendInView :: { before : SegmentFromRider, bend : Geom.Bend }.{
 	outer_corner_in_view : BendInView,
 	{
 		road : RoadAhead.RoadView,
-		vantage : Geom.Vantage,
+		vantage : Geometry.Vantage,
 	} -> BendInView.OuterCorner(RiderView.RiderPoint)
 	outer_corner_in_view = |bend_in_view, { road, vantage }| {
 		corner = bend_in_view.outer_corner()
@@ -170,8 +170,8 @@ right_bend = sample_bend(Ahead(SegmentFromRider.Position.first), Angle.Turn.degr
 left_bend : BendInView
 left_bend = sample_bend(Ahead(SegmentFromRider.Position.first), Angle.Turn.degrees(-70.0))
 
-expect right_bend.outer_edge() == Geom.left_edge
-expect left_bend.outer_edge() == Geom.right_edge
+expect right_bend.outer_edge() == Geometry.left_edge
+expect left_bend.outer_edge() == Geometry.right_edge
 
 # The segment after a bend, from each place the segment before can lie.
 expect {

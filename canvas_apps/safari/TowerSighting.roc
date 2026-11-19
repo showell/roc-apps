@@ -15,7 +15,7 @@ import Clock
 import Distance
 import RoadAhead
 import SegmentFromRider
-import Geom
+import Geometry
 import Pipeline
 import Tower
 
@@ -24,7 +24,7 @@ TowerSighting :: [].{
 	## The towers in view, in the order of `RoadAhead.segments_in_view`.
 	towers_in_view : RoadAhead.RoadView,
 	{
-		vantage : Geom.Vantage,
+		vantage : Geometry.Vantage,
 		clock : Clock,
 	} -> List(Pipeline.Sighted(Tower))
 	towers_in_view = |road, { vantage, clock }|
@@ -56,7 +56,7 @@ mid_tower_left_of_middle = Distance.metres(100.0)
 
 ## Where the tower halfway along a segment `segment_length` long stands, off
 ## to the left, if the segment is long enough to have one.
-mid_tower_point : Distance -> Try(Geom.RoadPoint, [NoMidTower])
+mid_tower_point : Distance -> Try(Geometry.RoadPoint, [NoMidTower])
 mid_tower_point = |segment_length|
 	if segment_length > mid_tower_min_length {
 		Ok({
@@ -77,7 +77,7 @@ expect
 ## one halfway along.
 segment_towers : RoadAhead.RoadView,
 {
-	vantage : Geom.Vantage,
+	vantage : Geometry.Vantage,
 	in_view : RoadAhead.SegmentInView,
 	clock : Clock,
 } -> List(Pipeline.Sighted(Tower))
@@ -91,7 +91,7 @@ segment_towers = |road, { vantage, in_view, clock }|
 ## camera and above the horizon.
 end_tower : RoadAhead.RoadView,
 {
-	vantage : Geom.Vantage,
+	vantage : Geometry.Vantage,
 	in_view : RoadAhead.SegmentInView,
 	clock : Clock,
 } -> Try(Pipeline.Sighted(Tower), [OutOfSight])
@@ -115,7 +115,7 @@ end_tower = |road, { vantage, in_view, clock }| {
 ## front of the camera and above the horizon.
 mid_tower : RoadAhead.RoadView,
 {
-	vantage : Geom.Vantage,
+	vantage : Geometry.Vantage,
 	in_view : RoadAhead.SegmentInView,
 	clock : Clock,
 } -> Try(Pipeline.Sighted(Tower), [OutOfSight, NoMidTower])
@@ -138,13 +138,13 @@ mid_tower = |road, { vantage, in_view, clock }| {
 ## shows above the horizon.
 tower_if_ahead : RoadAhead.RoadView,
 {
-	vantage : Geom.Vantage,
+	vantage : Geometry.Vantage,
 	from_rider : SegmentFromRider,
-	road_point : Geom.RoadPoint,
+	road_point : Geometry.RoadPoint,
 	tower : Tower,
 } -> Try(Pipeline.Sighted(Tower), [OutOfSight])
 tower_if_ahead = |road, { vantage, from_rider, road_point, tower }| {
-	placed_tower : Geom.Placed(Tower)
+	placed_tower : Geometry.Placed(Tower)
 	placed_tower = { road_point, lift: Distance.zero, kind: tower }
 	Pipeline.sighting_above_horizon_of(placed_tower, { road, vantage, from_rider })
 }

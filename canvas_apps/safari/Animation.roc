@@ -10,7 +10,7 @@ import Along
 import Distance
 import Easing
 import lib.Fraction
-import Geom
+import Geometry
 import Steps
 
 Animation :: [].{
@@ -21,7 +21,7 @@ Animation :: [].{
 
 	## Where an animal is: a place on its segment, and how high it is off the
 	## ground.
-	Location : { road_point : Geom.RoadPoint, lift : Distance }
+	Location : { road_point : Geometry.RoadPoint, lift : Distance }
 
 	## The location `fraction` of the way from `from` to `to`, in a straight line.
 	location_between : {
@@ -49,7 +49,7 @@ Animation :: [].{
 
 	## `instant` as an object on the road: it stands at the instant's location,
 	## and its kind is the instant's pose.
-	placed_instant : Animation.Instant(pose) -> Geom.Placed({ pose : pose })
+	placed_instant : Animation.Instant(pose) -> Geometry.Placed({ pose : pose })
 	placed_instant = |{ pose, location }| {
 		road_point: location.road_point,
 		lift: location.lift,

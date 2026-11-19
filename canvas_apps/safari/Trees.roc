@@ -8,7 +8,7 @@ import Across
 import Along
 import Conifer
 import Distance
-import Geom
+import Geometry
 
 Trees :: [].{
 
@@ -16,12 +16,12 @@ Trees :: [].{
 	Scheme : [AllGreen, GoldGreen, RedGreen]
 
 	## A tree beside the road: where it stands on its segment, and its kind.
-	RoadsideTree : Geom.Placed(Conifer)
+	RoadsideTree : Geometry.Placed(Conifer)
 
 	## How far from the middle of the road every conifer but the gold one stands,
 	## either side.
 	near_tree_line : Distance
-	near_tree_line = Geom.road_half_width.plus(tree_road_offset)
+	near_tree_line = Geometry.road_half_width.plus(tree_road_offset)
 
 	## A segment's trees, in pairs from its start, each pair's left tree
 	## first.
@@ -60,7 +60,7 @@ Trees :: [].{
 tree_line_distance : Conifer -> Distance
 tree_line_distance = |conifer|
 	match conifer {
-		Gold => Geom.road_half_width.plus(tree_road_offset.times(4.0))
+		Gold => Geometry.road_half_width.plus(tree_road_offset.times(4.0))
 		Green | SmallGreen | Red => Trees.near_tree_line
 	}
 

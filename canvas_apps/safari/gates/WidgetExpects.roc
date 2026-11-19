@@ -59,7 +59,7 @@ import widget.Click
 import widget.ReadoutText
 import widget.WidgetPage
 
-main! = |_args| Ok({})
+main! = |_arguments| Ok({})
 
 ## Each line of type in a frame.
 lines_of_type : List(Shapes.Shape) -> List(Shapes.TextLine)

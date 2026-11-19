@@ -9,7 +9,7 @@ import game.Angle
 import game.Clock
 import game.Conifer
 import game.Distance
-import game.Geom
+import game.Geometry
 import game.Lens
 import game.Pipeline
 import game.SegmentFromRider
@@ -54,7 +54,7 @@ focal_length : Pixels
 focal_length = Lens.resting_focal_length.times(6.0)
 
 ## The camera, at the start of the road, looking down it.
-eye : Geom.Vantage
+eye : Geometry.Vantage
 eye = {
 	along: Along.start,
 	across: Across.middle,
@@ -65,7 +65,7 @@ eye = {
 ## road.
 tree_sighting : Distance -> Try(Pipeline.Sighted(Conifer), [OutOfSight])
 tree_sighting = |ahead| {
-	placed_tree : Geom.Placed(Conifer)
+	placed_tree : Geometry.Placed(Conifer)
 	placed_tree = {
 		road_point: { along: Along.at(ahead), across: Across.middle },
 		lift: Distance.zero,

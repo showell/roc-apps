@@ -12,7 +12,7 @@ import game.EncounterReaction
 import game.Distance
 import lib.Pixels
 import game.Cat
-import game.Geom
+import game.Geometry
 import game.Speed
 import game.StillShapes
 import game.ThrottleLimit
@@ -98,7 +98,7 @@ side_road_color = RgbColor.of(0x8a8a8a)
 ## The sky, the grass, and the road between the verges.
 road_shapes : List(Shapes.Shape)
 road_shapes = {
-	road_width = Geom.road_half_width.to_metres() * 2.0 * pixels_a_metre
+	road_width = Geometry.road_half_width.to_metres() * 2.0 * pixels_a_metre
 	ground_height = ground_bottom_y - ground_top_y
 	[
 		WidgetPage.picture_backdrop(sky_color),

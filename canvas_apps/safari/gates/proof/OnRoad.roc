@@ -13,7 +13,7 @@ app [main!] { game: "../../game.roc", lib: "../../../lib/main.roc" }
 
 import game.Along
 import game.Distance
-import game.Geom
+import game.Geometry
 import game.Tour
 
 # A ride still going after this many steps never finishes. The route takes
@@ -42,7 +42,7 @@ broken_rules = |tour, { step, last_segment }| {
 	from_middle = place_on_route.road_point.across.distance_from_middle()
 	place = place_of(step, tour)
 	off_road =
-		if from_middle >= Geom.road_half_width {
+		if from_middle >= Geometry.road_half_width {
 			["${place}: ${from_middle.to_metres().to_str()} m from the middle, past the road's half width"]
 		} else {
 			[]
@@ -62,7 +62,7 @@ broken_rules = |tour, { step, last_segment }| {
 	List.concat(List.concat(off_road, backwards), past_end)
 }
 
-main! = |_args| {
+main! = |_arguments| {
 	var $tour = Tour.initial
 	var $step = 0
 	var $bad = 0
@@ -90,7 +90,7 @@ main! = |_args| {
 	if !finished {
 		$bad = $bad + 1
 	}
-	half_width = Geom.road_half_width.to_metres().to_str()
+	half_width = Geometry.road_half_width.to_metres().to_str()
 	widest = "widest from the middle ${$widest.to_metres().to_str()} m of ${half_width} m, at ${$widest_place}"
 	finish =
 		if finished {

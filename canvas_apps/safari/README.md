@@ -28,7 +28,7 @@ Thanks to Damian Tedrow, whose [Cobblestone](https://github.com/damiant3/Cobbles
 | `gates/proof/SafariFrame.roc` | a frame painted into pixels in Roc, for the proof tools below |
 | `RideInstant.roc` and the chapter modules | one instant of the ride, the world, the route, the rider, the animals, the scenery, and how each is drawn |
 | `Bird.roc` | the bird, with `BirdFlight.roc`, `EncounterSighting.roc` and `BirdStills.roc` |
-| `Pipeline.roc` | the steps every kind of object takes through a frame: placed (`Geom.Placed`), sighted (`Pipeline.Sighted`), then rendered (`Rendered.roc`, a `Sprite.roc` and its depth). `Conifer.roc`, `Billboard.roc`, `Tower.roc` and `Truck.roc` are among the kinds that go through it, and the depth sort orders the renderings |
+| `Pipeline.roc` | the steps every kind of object takes through a frame: placed (`Geometry.Placed`), sighted (`Pipeline.Sighted`), then rendered (`Rendered.roc`, a `Sprite.roc` and its depth). `Conifer.roc`, `Billboard.roc`, `Tower.roc` and `Truck.roc` are among the kinds that go through it, and the depth sort orders the renderings |
 | `Animation.roc` | what the cat and the bird share: a timeline that turns a stage into an instant |
 | `EncounterPlan.roc` | the ride's plan for the encounter on the rider's segment: when its animation starts, and so the stage it has got to |
 | `EncounterReaction.roc` | what a segment's encounter does to the rider, the one place that matches on it for `Throttle` and `RiderCamera`'s focal length |

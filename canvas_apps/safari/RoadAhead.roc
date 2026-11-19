@@ -5,7 +5,7 @@
 ## the view of a camera standing there.
 import Angle
 import Distance
-import Geom
+import Geometry
 import RiderView
 import Route
 import Segment
@@ -23,8 +23,8 @@ RoadAhead :: [].{
 	RoadView :: {
 		route : Route,
 		segments_ahead : RoadAhead.SegmentsAhead,
-		bends_ahead : List(Geom.WorkedBend),
-		bend_behind : [Behind(Geom.WorkedBend), AtRouteStart],
+		bends_ahead : List(Geometry.WorkedBend),
+		bend_behind : [Behind(Geometry.WorkedBend), AtRouteStart],
 	}.{
 
 		## The road ahead of a rider on the route's segment at `rider_index`: as
@@ -110,9 +110,9 @@ RoadAhead :: [].{
 	## `vantage` on the rider's segment sees it.
 	rider_point_at : RoadAhead.RoadView,
 	{
-		vantage : Geom.Vantage,
+		vantage : Geometry.Vantage,
 		from_rider : SegmentFromRider,
-		road_point : Geom.RoadPoint,
+		road_point : Geometry.RoadPoint,
 	} -> RiderView.RiderPoint
 	rider_point_at = |road, { vantage, from_rider, road_point }|
 		match from_rider {
@@ -121,7 +121,7 @@ RoadAhead :: [].{
 			JustBehind =>
 				match bend_behind(road) {
 					Behind(bend) => {
-						on_rider_segment = Geom.point_after_worked_bend(road_point, bend)
+						on_rider_segment = Geometry.point_after_worked_bend(road_point, bend)
 						to_rider_point(on_rider_segment, vantage)
 					}
 					AtRouteStart => crash "RoadAhead.rider_point_at: a rider on the route's first segment has no segment behind"
@@ -135,9 +135,9 @@ RoadAhead :: [].{
 	## two points a metre apart are enough to find which way that is.
 	road_heading_at : RoadAhead.RoadView,
 	{
-		vantage : Geom.Vantage,
+		vantage : Geometry.Vantage,
 		from_rider : SegmentFromRider,
-		road_point : Geom.RoadPoint,
+		road_point : Geometry.RoadPoint,
 	} -> Angle.Turn
 	road_heading_at = |road, { vantage, from_rider, road_point }| {
 		further_along = { ..road_point, along: road_point.along.plus(Distance.metres(1.0)) }
@@ -169,12 +169,12 @@ most_segments_ahead = 7
 
 ## The bend out of each segment of the road ahead but its last, the rider's
 ## own first, worked out.
-bends_ahead : RoadAhead.RoadView -> List(Geom.WorkedBend)
+bends_ahead : RoadAhead.RoadView -> List(Geometry.WorkedBend)
 bends_ahead = |RoadAhead.RoadView.(road)| road.bends_ahead
 
 ## The bend from the segment just behind the rider into the rider's own,
 ## worked out, unless the rider's is the route's first.
-bend_behind : RoadAhead.RoadView -> [Behind(Geom.WorkedBend), AtRouteStart]
+bend_behind : RoadAhead.RoadView -> [Behind(Geometry.WorkedBend), AtRouteStart]
 bend_behind = |RoadAhead.RoadView.(road)| road.bend_behind
 
 ## The index of the segment the rider is on, which is the road ahead's first.
@@ -190,9 +190,9 @@ previous_segment_index = |road| rider_segment_index(road).previous()
 ## there sees it.
 rider_point_round_bends : RoadAhead.RoadView,
 {
-	vantage : Geom.Vantage,
+	vantage : Geometry.Vantage,
 	position : SegmentFromRider.Position,
-	road_point : Geom.RoadPoint,
+	road_point : Geometry.RoadPoint,
 } -> RiderView.RiderPoint
 rider_point_round_bends = |road, { vantage, position, road_point }| {
 	bends = bends_ahead(road)
@@ -201,13 +201,13 @@ rider_point_round_bends = |road, { vantage, position, road_point }| {
 	while $bends_left > 0 {
 		$bends_left = $bends_left - 1
 		bend = bends.get($bends_left) ?? crash "RoadAhead.rider_point_round_bends: past the road's end"
-		$point = Geom.point_before_worked_bend($point, bend)
+		$point = Geometry.point_before_worked_bend($point, bend)
 	}
 	to_rider_point($point, vantage)
 }
 
 ## A point on the rider's segment, as the camera at `vantage` sees it.
-to_rider_point : Geom.RoadPoint, Geom.Vantage -> RiderView.RiderPoint
+to_rider_point : Geometry.RoadPoint, Geometry.Vantage -> RiderView.RiderPoint
 to_rider_point = |{ along, across }, vantage| {
 	ahead = along.distance_from(vantage.along).to_metres()
 	aside = across.distance_from(vantage.across).to_metres()
@@ -231,19 +231,19 @@ index_at = |road, position| {
 }
 
 ## The bends out of the segments of `segments_ahead` but the last, worked out.
-worked_bends_ahead : Route, RoadAhead.SegmentsAhead -> List(Geom.WorkedBend)
+worked_bends_ahead : Route, RoadAhead.SegmentsAhead -> List(Geometry.WorkedBend)
 worked_bends_ahead = |route, { first_index, count }| {
 	first = first_index.to_u32()
 	List.from_iter(U32.until(0, count - 1)).map(
-		|n| Geom.worked_bend(route.segment_at(Route.SegmentIndex.number(first + n)).bend_out_of()),
+		|n| Geometry.worked_bend(route.segment_at(Route.SegmentIndex.number(first + n)).bend_out_of()),
 	)
 }
 
 ## The bend from the segment behind the one at `rider_index` into it, worked
 ## out, unless that is the route's first.
-worked_bend_behind : Route, Route.SegmentIndex -> [Behind(Geom.WorkedBend), AtRouteStart]
+worked_bend_behind : Route, Route.SegmentIndex -> [Behind(Geometry.WorkedBend), AtRouteStart]
 worked_bend_behind = |route, rider_index|
 	match rider_index.previous() {
-		Previous(index) => Behind(Geom.worked_bend(route.segment_at(index).bend_out_of()))
+		Previous(index) => Behind(Geometry.worked_bend(route.segment_at(index).bend_out_of()))
 		AtRouteStart => AtRouteStart
 	}

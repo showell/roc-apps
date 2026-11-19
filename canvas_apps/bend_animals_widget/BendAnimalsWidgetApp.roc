@@ -12,7 +12,7 @@ import game.Billboard
 import game.Clock
 import game.Distance
 import game.FrameView
-import game.Geom
+import game.Geometry
 import game.Lens
 import game.Pipeline
 import game.Screen
@@ -115,7 +115,7 @@ row_layout = {
 }
 
 ## A billboard at its spot, with the row centered on the road's middle.
-placed_billboard : RowSpot -> Geom.Placed(Billboard)
+placed_billboard : RowSpot -> Geometry.Placed(Billboard)
 placed_billboard = |{ billboard, from_left_edge }| {
 	row_left = Across.left_of_middle(row_layout.width.divided_by(2.0))
 	{
@@ -144,7 +144,7 @@ camera = {
 ## What the camera shows of a billboard, as the ride sights and draws one.
 ## Every billboard stands in front of the camera, well above the size the ride
 ## drops.
-placed_billboard_shapes : Geom.Placed(Billboard) -> List(Shapes.Shape)
+placed_billboard_shapes : Geometry.Placed(Billboard) -> List(Shapes.Shape)
 placed_billboard_shapes = |placed|
 	match Pipeline.scenery_sighting_of(
 		placed,

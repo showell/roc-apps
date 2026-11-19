@@ -10,7 +10,7 @@ import game.Angle
 import game.Clock
 import game.Conifer
 import game.Distance
-import game.Geom
+import game.Geometry
 import game.Lens
 import game.Pipeline
 import game.SegmentFromRider
@@ -64,7 +64,7 @@ stands = [
 ]
 
 ## The camera, at the start of the road, looking down it.
-eye : Geom.Vantage
+eye : Geometry.Vantage
 eye = {
 	along: Along.start,
 	across: Across.middle,
@@ -82,7 +82,7 @@ right_of = |stand| {
 ## A stand's tree as the camera sees it, on the ground `forward` down the road.
 stand_sighting : Stand -> Try(Pipeline.Sighted(Conifer), [OutOfSight])
 stand_sighting = |stand| {
-	placed_tree : Geom.Placed(Conifer)
+	placed_tree : Geometry.Placed(Conifer)
 	placed_tree = {
 		road_point: { along: Along.at(forward), across: Across.right_of_middle(right_of(stand)) },
 		lift: Distance.zero,

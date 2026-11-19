@@ -11,7 +11,7 @@ import Along
 import Angle
 import Billboard
 import Distance
-import Geom
+import Geometry
 import Motorcycle
 import Segment
 
@@ -24,7 +24,7 @@ Gaze :: [].{
 
 	## The pig on `segment` that catches the rider's eye: the standout pig of a herd
 	## the rider finds distracting. A herd the rider passes by catches no eye.
-	eye_catching_pig : Segment -> [CatchesEye(Geom.Placed(Billboard)), NoPigCatchesEye]
+	eye_catching_pig : Segment -> [CatchesEye(Geometry.Placed(Billboard)), NoPigCatchesEye]
 	eye_catching_pig = |segment|
 		match segment.segment_standout_pig() {
 			Standout({ pig, interest: Distracting }) => CatchesEye(pig)
@@ -35,7 +35,7 @@ Gaze :: [].{
 	## starts where an eye-catching pig is `notice_distance` ahead and asks only
 	## where the motorcycle is, so it lasts past the pig to the end of the
 	## segment.
-	noticed_pig : Motorcycle, Segment -> [Noticed(Geom.Placed(Billboard)), NothingNoticed]
+	noticed_pig : Motorcycle, Segment -> [Noticed(Geometry.Placed(Billboard)), NothingNoticed]
 	noticed_pig = |motorcycle, segment| {
 		rider_along = motorcycle.route_place.road_point.along
 		match eye_catching_pig(segment) {
@@ -74,13 +74,13 @@ Gaze :: [].{
 
 ## Whether a motorcycle at `rider_along` has reached the place where `pig` is
 ## noticed.
-is_past_notice : Along, Geom.Placed(Billboard) -> Bool
+is_past_notice : Along, Geometry.Placed(Billboard) -> Bool
 is_past_notice = |rider_along, pig|
 	rider_along >= pig.road_point.along.minus(Gaze.notice_distance)
 
 ## How far `pig` stands from the way a motorcycle at `rider_point` points, its
 ## `yaw`.
-turn_to : { rider_point : Geom.RoadPoint, yaw : Angle.Turn }, Geom.Placed(Billboard) -> Angle.Turn
+turn_to : { rider_point : Geometry.RoadPoint, yaw : Angle.Turn }, Geometry.Placed(Billboard) -> Angle.Turn
 turn_to = |{ rider_point, yaw }, pig|
 	Angle.Turn.radians(
 		F64.atan2({

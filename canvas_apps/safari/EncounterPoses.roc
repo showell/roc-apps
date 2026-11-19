@@ -7,7 +7,7 @@
 ## each frame from the encounter plan and the clock, on the road ahead of the
 ## rider.
 import Animation
-import Geom
+import Geometry
 import Bird
 import Cat
 import RoadAhead
@@ -17,7 +17,7 @@ EncounterPoses :: [].{
 
 	## An animal on a segment in view: where that segment lies from the rider,
 	## and where on it the animal stands and how it is posed.
-	PlacedAnimal(kind) : { from_rider : SegmentFromRider, animal : Geom.Placed(kind) }
+	PlacedAnimal(kind) : { from_rider : SegmentFromRider, animal : Geometry.Placed(kind) }
 
 	## The cats on `road`, with the encounter on the rider's segment at
 	## `encounter_stage`, in the order of `RoadAhead.segments_in_view`.

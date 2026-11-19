@@ -8,7 +8,7 @@ import game.Across
 import game.Angle
 import game.Clock
 import game.Distance
-import game.Geom
+import game.Geometry
 import game.RideInstant
 import game.Steps
 import game.Tour
@@ -199,7 +199,7 @@ lean_shown_at = 3.0
 ## The road from behind, with the rider at `across`, leaning by `lean`.
 shapes_from_behind_rider : { across : Across, lean : Angle.Lean } -> List(Shapes.Shape)
 shapes_from_behind_rider = |{ across, lean }| {
-	road_half_width_on_canvas = Geom.road_half_width.to_metres() * pixels_a_metre
+	road_half_width_on_canvas = Geometry.road_half_width.to_metres() * pixels_a_metre
 	middle = WidgetPage.canvas_width / 2.0
 	foot = middle + across.to_metres() * pixels_a_metre
 	lean_shown = lean.to_radians() * lean_shown_at

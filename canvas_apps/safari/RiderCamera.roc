@@ -7,7 +7,7 @@ import Angle
 import Animation
 import Attention
 import lib.Fraction
-import Geom
+import Geometry
 import Lens
 import Pipeline
 import lib.Pixels
@@ -53,7 +53,7 @@ RiderCamera := {
 
 	## Where this camera stands on its segment, and which way it faces, as the
 	## projection onto the screen takes them.
-	vantage : RiderCamera -> Geom.Vantage
+	vantage : RiderCamera -> Geometry.Vantage
 	vantage = |camera| {
 		along: camera.route_place.road_point.along,
 		across: camera.route_place.road_point.across,

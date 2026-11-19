@@ -7,7 +7,7 @@ import game.Along
 import game.Angle
 import game.Clock
 import game.Distance
-import game.Geom
+import game.Geometry
 import game.Lens
 import game.Pipeline
 import game.SegmentFromRider
@@ -87,7 +87,7 @@ truck_views = [behind_view, behind_left_view, left_side_view]
 ## The trailer's centre, where the truck stands: in the middle of the road, and
 ## as far down the route's first segment as the cameras stand from it, so that
 ## every camera stands on the segment.
-truck_road_point : Geom.RoadPoint
+truck_road_point : Geometry.RoadPoint
 truck_road_point = { along: Along.at(view_distance), across: Across.middle }
 
 ## How far ahead of the trailer's centre the middle of the whole truck is, cab
@@ -101,7 +101,7 @@ truck_middle_ahead = {
 ## The camera for `view`: `view.distance` from the middle of the truck, round
 ## from behind it by `view.seen_from`, and turned so that the middle of the truck
 ## lands on `view.canvas_x`.
-view_vantage : TruckView -> Geom.Vantage
+view_vantage : TruckView -> Geometry.Vantage
 view_vantage = |view| {
 	middle_along = truck_road_point.along.plus(truck_middle_ahead)
 	seen_from_radians = view.seen_from.to_radians()
@@ -119,7 +119,7 @@ view_setting : TruckView -> Sprite.Setting
 view_setting = |view| {
 	vantage = view_vantage(view)
 	from_rider = Ahead(SegmentFromRider.Position.first)
-	placed_truck : Geom.Placed({})
+	placed_truck : Geometry.Placed({})
 	placed_truck = { road_point: truck_road_point, lift: Distance.zero, kind: {} }
 	sighting_result = Pipeline.sighting_of(
 		placed_truck,

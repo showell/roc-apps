@@ -10,7 +10,7 @@ import game.Distance
 import game.RoadAhead
 import game.Route
 import game.SegmentFromRider
-import game.Geom
+import game.Geometry
 import game.RiderView
 import game.GroundSighting
 import game.BendInView
@@ -87,7 +87,7 @@ road_with = |turn| RoadAhead.RoadView.ahead_of(two_segments(turn), Route.Segment
 
 ## Where the camera the road is seen from stands, on the first segment, looking
 ## along it.
-vantage : Geom.Vantage
+vantage : Geometry.Vantage
 vantage = {
 	along: Along.at(segment_length.minus(rider_before_bend)),
 	across: Across.middle,
@@ -192,7 +192,7 @@ bend_shapes = |bend| {
 ## Which edge a bend's outer edge is, in words.
 edge_text : BendInView -> Str
 edge_text = |bend_in_view|
-	match Geom.outer_side(bend_in_view.turn()) {
+	match Geometry.outer_side(bend_in_view.turn()) {
 		LeftSide => "left"
 		RightSide => "right"
 	}

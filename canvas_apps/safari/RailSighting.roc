@@ -8,7 +8,7 @@
 import Along
 import Distance
 import RoadAhead
-import Geom
+import Geometry
 import RiderView
 import GuardRail
 import BendInView
@@ -17,7 +17,7 @@ RailSighting :: [].{
 
 	## The quads of the rails at every bend in view: the bends along the road
 	## ahead, then the bend from the segment behind.
-	rail_quads_in_view : RoadAhead.RoadView, Geom.Vantage -> List(GuardRail.RailQuad)
+	rail_quads_in_view : RoadAhead.RoadView, Geometry.Vantage -> List(GuardRail.RailQuad)
 	rail_quads_in_view = |road, vantage|
 		RoadAhead.segments_in_view(road).join_map(
 			|in_view|
@@ -35,7 +35,7 @@ RailSighting :: [].{
 ## the bend's outer edge: a point a metre, ending at the segment's end.
 runup_points : RoadAhead.RoadView,
 {
-	vantage : Geom.Vantage,
+	vantage : Geometry.Vantage,
 	bend_in_view : BendInView,
 } -> List(RiderView.RiderPoint)
 runup_points = |road, { vantage, bend_in_view }| {
@@ -55,7 +55,7 @@ runup_points = |road, { vantage, bend_in_view }| {
 ## the bend's outer edge: a point a metre, the first a metre in.
 runout_points : RoadAhead.RoadView,
 {
-	vantage : Geom.Vantage,
+	vantage : Geometry.Vantage,
 	bend_in_view : BendInView,
 } -> List(RiderView.RiderPoint)
 runout_points = |road, { vantage, bend_in_view }| {
@@ -118,7 +118,7 @@ leg_points = |{ from, to }| {
 ## and along it.
 rail_points : RoadAhead.RoadView,
 {
-	vantage : Geom.Vantage,
+	vantage : Geometry.Vantage,
 	bend_in_view : BendInView,
 } -> List(RiderView.RiderPoint)
 rail_points = |road, { vantage, bend_in_view }| {

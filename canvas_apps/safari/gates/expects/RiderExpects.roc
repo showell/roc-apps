@@ -14,7 +14,7 @@ import game.EncounterReaction
 import lib.Fraction
 import game.Gawking
 import game.Gaze
-import game.Geom
+import game.Geometry
 import game.LeanSearch
 import game.Lens
 import game.Motorcycle
@@ -491,7 +491,7 @@ passed_by_segment = World.route.segment_at(Route.SegmentIndex.number(11))
 expect Gaze.eye_catching_pig(passed_by_segment) == NoPigCatchesEye
 
 ## The pig that catches the eye on the distracting segment.
-watched_pig : Geom.Placed(Billboard)
+watched_pig : Geometry.Placed(Billboard)
 watched_pig =
 	match Gaze.eye_catching_pig(distracting_segment) {
 		CatchesEye(pig) => pig

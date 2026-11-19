@@ -9,7 +9,7 @@ import game.Angle
 import game.BendInView
 import game.Distance
 import lib.Fraction
-import game.Geom
+import game.Geometry
 import game.RiderView
 import game.GroundPatch
 import game.GroundSighting
@@ -98,7 +98,7 @@ expect {
 
 ## A camera 100 m along the rider's segment, 1 m right of the middle, turned
 ## 0.2 radians to the right.
-turned_vantage : Geom.Vantage
+turned_vantage : Geometry.Vantage
 turned_vantage = {
 	along: Along.metres(100.0),
 	across: Across.metres(1.0),
@@ -325,7 +325,7 @@ patch_shapes = |patches| patches.keep_oks(
 
 ## The ground in view from `rider_vantage` on the road ahead of the route's
 ## first segment. Its first patch is the road along that segment.
-patches_seen_from : Geom.Vantage -> List(GroundPatch)
+patches_seen_from : Geometry.Vantage -> List(GroundPatch)
 patches_seen_from = |rider_vantage|
 	GroundSighting.patches_in_view(Fixtures.road, rider_vantage)
 

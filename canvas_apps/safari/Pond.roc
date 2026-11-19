@@ -7,18 +7,18 @@ import Along
 import Billboard
 import Distance
 import EmojiStill
-import Geom
+import Geometry
 import lib.RgbColor
 
 Pond :: [].{
 
 	## One outline of the pond on the road: its corners, and the color inside.
-	PondOutline : { corners : List(Geom.RoadPoint), color : RgbColor }
+	PondOutline : { corners : List(Geometry.RoadPoint), color : RgbColor }
 
 	## The pond's outlines on the road around `bend`, the bend that ends a
 	## segment, in the order they are painted: its bank, then its water over
 	## the bank's inner edge.
-	pond_outlines : Geom.Bend -> List(Pond.PondOutline)
+	pond_outlines : Geometry.Bend -> List(Pond.PondOutline)
 	pond_outlines = |bend| {
 		on_road = |outline| outline.map(|point| segment_point(point, bend))
 		[
@@ -28,7 +28,7 @@ Pond :: [].{
 	}
 
 	## The ducks, placed at `bend`, the bend that ends a segment.
-	placed_ducks : Geom.Bend -> List(Geom.Placed(Billboard))
+	placed_ducks : Geometry.Bend -> List(Geometry.Placed(Billboard))
 	placed_ducks = |bend|
 		ducks.map(
 			|pond_duck| {
@@ -42,9 +42,9 @@ Pond :: [].{
 ## Which way a duck laid out as facing `facing` faces at `bend`. The ducks are
 ## laid out for a pond on the road's left, at a right turn; at a left turn the
 ## pond is mirrored to the right, and so is every duck.
-facing_at : Billboard.Facing, Geom.Bend -> Billboard.Facing
+facing_at : Billboard.Facing, Geometry.Bend -> Billboard.Facing
 facing_at = |facing, bend|
-	match (Geom.outer_side(bend.turn), facing) {
+	match (Geometry.outer_side(bend.turn), facing) {
 		(LeftSide, _) => facing
 		(RightSide, FacesLeft) => FacesRight
 		(RightSide, FacesRight) => FacesLeft
@@ -130,10 +130,10 @@ bank_color = RgbColor.of(0xC2B280)
 
 ## Where `point` lies on the road around `bend`, the bend that ends a segment.
 ## This is the one place a pond point becomes a road point.
-segment_point : PondPoint, Geom.Bend -> Geom.RoadPoint
+segment_point : PondPoint, Geometry.Bend -> Geometry.RoadPoint
 segment_point = |point, bend| {
 	along: Along.at(bend.segment_length).plus(point.past_end),
-	across: match Geom.outer_side(bend.turn) {
+	across: match Geometry.outer_side(bend.turn) {
 		LeftSide => Across.left_of_middle(point.out_from_middle)
 		RightSide => Across.right_of_middle(point.out_from_middle)
 	},

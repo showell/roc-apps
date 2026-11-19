@@ -164,9 +164,9 @@ The whole route from above, one stretch for each plan. A mark shows where a cat 
 
 The screen shows what a camera on the rider sees. Each thing takes three forms on its way there, and each form is a type. First, a thing has a place on the road:
 
-{{code Geom.Placed}}
+{{code Geometry.Placed}}
 
-The `kind` in parentheses is a type variable: it stands for whatever type fills it. So a cow on the road is a `Geom.Placed(Billboard)`, and one type serves every kind. Next comes the thing as the camera sights it:
+The `kind` in parentheses is a type variable: it stands for whatever type fills it. So a cow on the road is a `Geometry.Placed(Billboard)`, and one type serves every kind. Next comes the thing as the camera sights it:
 
 {{code Pipeline.Sighted}}
 
@@ -415,7 +415,7 @@ digraph bend_life {
 }
 ```
 
-The function that returns a bend's billboards takes the bend's life and the bend itself, a `Geom.Bend`, and takes the life apart with a `match`:
+The function that returns a bend's billboards takes the bend's life and the bend itself, a `Geometry.Bend`, and takes the life apart with a `match`:
 
 {{code Segment.bend_billboards}}
 
@@ -593,7 +593,7 @@ digraph pipeline {
   node [shape=box, fontname="Helvetica", fontsize=18, margin="0.25,0.12"];
   edge [fontname="Helvetica", fontsize=16];
   finder [label="each kind's\nsighting module"];
-  placed [label="Geom.Placed(kind)"];
+  placed [label="Geometry.Placed(kind)"];
   sighted [label="Pipeline.Sighted(kind)"];
   refused [label="a refusal:\nOutOfSight"];
   rendered [label="Rendered"];
@@ -612,11 +612,11 @@ Each sort of thing has a sighting module, such as `TreeSighting`, and some serve
 
 The trip starts from where a thing stands on the road:
 
-{{code Geom.Placed}}
+{{code Geometry.Placed}}
 
-`kind` says what the thing is. Its type is the type variable `kind`, so a placed tree is a `Geom.Placed(Conifer)`, and a placed cow is a `Geom.Placed(Billboard)`. `lift` says how far off the ground it stands, and `road_point` is its place on the road:
+`kind` says what the thing is. Its type is the type variable `kind`, so a placed tree is a `Geometry.Placed(Conifer)`, and a placed cow is a `Geometry.Placed(Billboard)`. `lift` says how far off the ground it stands, and `road_point` is its place on the road:
 
-{{code Geom.RoadPoint}}
+{{code Geometry.RoadPoint}}
 
 `along` is how far the place lies along its segment of road, and `across` is how far it lies from the middle of the road, growing to the right. Each is an opaque type around a number of metres, as `Distance` is:
 
@@ -1985,7 +1985,7 @@ digraph cat {
   plan [label="EncounterPlan\nand the clock"];
   stage [label="Animation.Stage\nwhere the crossing has got to"];
   instant [label="Animation.Instant\nthe cat's pose and location"];
-  placed [label="Geom.Placed\na cat on the road"];
+  placed [label="Geometry.Placed\na cat on the road"];
   sighted [label="a sighted cat\nin the frame"];
   plan -> stage [label="  stage_at\l"];
   stage -> instant [label="  the timeline's instant\l"];
@@ -2080,7 +2080,7 @@ The ride plays only the crossing on the rider's own segment. A cat on a segment 
 
 {{code EncounterPoses.cat_poses}}
 
-A `Cat` is the cat's kind in the frame: a record of its pose, with the methods every kind has. A `PlacedAnimal(Cat)` is a `Geom.Placed` cat, with the segment it stands on. `EncounterSighting` then sights each cat through `Pipeline.scenery_sighting_of`, as the pipeline sights a tree. From there, a cat joins the frame's depth sort like any other thing.
+A `Cat` is the cat's kind in the frame: a record of its pose, with the methods every kind has. A `PlacedAnimal(Cat)` is a `Geometry.Placed` cat, with the segment it stands on. `EncounterSighting` then sights each cat through `Pipeline.scenery_sighting_of`, as the pipeline sights a tree. From there, a cat joins the frame's depth sort like any other thing.
 
 The ride carries one step for the cat, and derives the rest, frame by frame, from that step and the clock. While it crosses, the cat also asks two things of the rider: hold the throttle, and look. After the bird's chapter, the {{chapter What a cat does to the rider}} chapter takes the rider's side.
 
@@ -2263,7 +2263,7 @@ A point on the road is measured within its own segment, and each segment holds o
 
 Each pass is one rotation and one shift:
 
-{{code Geom.point_before_worked_bend}}
+{{code Geometry.point_before_worked_bend}}
 
 `start_after: start` names the record's `start_after` field `start`. Turning a point by an angle mixes its two parts: the cosine says how much of each part stays where it was, and the sine how much moves over into the other. Then the shift moves the point to where the next segment starts. A `WorkedBend` holds that start and the turn's cosine and sine, worked out once for each bend when the road ahead is built.
 
@@ -2588,7 +2588,7 @@ This book uses these words in one sense only.
 | Far scenery | The sun and the mountains: a direction and a height above the horizon, and never any nearer. |
 | Frame | One picture of the ride, for one step. |
 | Invariant | A fact that holds whenever the program is right, such as a share lying between 0 and 1. The ride enforces each one with a `crash`. |
-| Kind | Which sort of thing something is, like `Conifer`, and the type a `Geom.Placed` carries. |
+| Kind | Which sort of thing something is, like `Conifer`, and the type a `Geometry.Placed` carries. |
 | Near plane | The closest the camera can see, 0.4 metres ahead. A sighting refuses a thing whose foot is short of it, and a line or face that crosses it is cut there. |
 | Picture | Everything on the screen in one frame. |
 | Placed | Put on the road, measured `along` and `across` a segment, and `lift` off the ground. |

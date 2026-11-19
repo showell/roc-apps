@@ -18,7 +18,7 @@ import CatCrossing
 import CowHerd
 import Distance
 import Encounter
-import Geom
+import Geometry
 import PigHerd
 import Pond
 import Trees
@@ -62,7 +62,7 @@ Segment := {
 
 	## How a segment ends, with its bend measured: the segment's `Ending`, its
 	## turn joined by the segment's length.
-	MeasuredEnding : [Bends({ bend : Geom.Bend, bend_life : Segment.BendLife }), RouteEnds]
+	MeasuredEnding : [Bends({ bend : Geometry.Bend, bend_life : Segment.BendLife }), RouteEnds]
 
 	## What the route plans for the rider to meet on a segment, before the
 	## segment's trees say where.
@@ -105,7 +105,7 @@ Segment := {
 	}
 
 	## The pigs of `segment`'s herd.
-	segment_pigs : Segment -> List(Geom.Placed(Billboard))
+	segment_pigs : Segment -> List(Geometry.Placed(Billboard))
 	segment_pigs = |segment|
 		match segment.pigs {
 			Herd({ herd, .. }) => herd.herd_pigs(pig_herd_along(segment.length))
@@ -113,13 +113,13 @@ Segment := {
 		}
 
 	## The cows of `segment`'s herd, led by its bull if it has one.
-	segment_cows : Segment -> List(Geom.Placed(Billboard))
+	segment_cows : Segment -> List(Geometry.Placed(Billboard))
 	segment_cows = |segment|
 		segment.cows.herd.herd_cows({ herd_along: cow_herd_along, bull: segment.cows.bull })
 
 	## The billboards at the end of `segment`, placed on it: what lives at its
 	## bend, or nothing at the route's end.
-	segment_bend_billboards : Segment -> List(Geom.Placed(Billboard))
+	segment_bend_billboards : Segment -> List(Geometry.Placed(Billboard))
 	segment_bend_billboards = |segment|
 		match segment.segment_ending() {
 			Bends({ bend, bend_life }) => bend_billboards(bend_life, bend)
@@ -129,7 +129,7 @@ Segment := {
 	## The pig of `segment`'s herd that stands out, and how the rider takes the
 	## herd.
 	segment_standout_pig : Segment -> [
-		Standout({ pig : Geom.Placed(Billboard), interest : Segment.PigInterest }),
+		Standout({ pig : Geometry.Placed(Billboard), interest : Segment.PigInterest }),
 		NoPigs,
 	]
 	segment_standout_pig = |segment|
@@ -152,7 +152,7 @@ Segment := {
 		}
 
 	## The bend at the end of `segment`, which some segment follows.
-	bend_out_of : Segment -> Geom.Bend
+	bend_out_of : Segment -> Geometry.Bend
 	bend_out_of = |segment|
 		match segment.segment_ending() {
 			Bends({ bend, .. }) => bend
@@ -164,7 +164,7 @@ Segment := {
 	commit_along : Segment -> Along
 	commit_along = |segment|
 		match segment.segment_ending() {
-			Bends({ bend, .. }) => Geom.commit_along(bend)
+			Bends({ bend, .. }) => Geometry.commit_along(bend)
 			RouteEnds => Along.at(segment.length)
 		}
 
@@ -180,7 +180,7 @@ Segment := {
 ## The billboards of `bend_life`, placed on the segment that ends at `bend`:
 ## the animal and its baby, or the ducks on the pond, whose places are measured
 ## from the bend.
-bend_billboards : Segment.BendLife, Geom.Bend -> List(Geom.Placed(Billboard))
+bend_billboards : Segment.BendLife, Geometry.Bend -> List(Geometry.Placed(Billboard))
 bend_billboards = |bend_life, bend|
 	match bend_life {
 		Animal(animal) => animal.bend_billboards(bend)

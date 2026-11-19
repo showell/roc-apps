@@ -4,7 +4,7 @@
 import Across
 import Along
 import Distance
-import Geom
+import Geometry
 import Route
 import Segment
 
@@ -16,7 +16,7 @@ RoutePlace := {
 	segment_index : Route.SegmentIndex,
 
 	## Where on that segment the place is, along it and across its road.
-	road_point : Geom.RoadPoint,
+	road_point : Geometry.RoadPoint,
 }.{
 
 	## The start of the route, on the middle of the road.
@@ -55,15 +55,15 @@ RoutePlace := {
 	## This place carried over `bend`, the bend out of its segment, onto the next
 	## segment and measured there. Nothing here asks whether that puts it on the
 	## next segment's road.
-	route_place_past_bend : RoutePlace, Geom.Bend -> RoutePlace
+	route_place_past_bend : RoutePlace, Geometry.Bend -> RoutePlace
 	route_place_past_bend = |place, bend| {
 		segment_index: place.segment_index.next(),
-		road_point: Geom.point_in_segment_after(place.road_point, bend),
+		road_point: Geometry.point_in_segment_after(place.road_point, bend),
 	}
 
 	## Whether this place is on its segment's road, between the edges.
 	is_on_road : RoutePlace -> Bool
-	is_on_road = |place| place.road_point.across.distance_from_middle() < Geom.road_half_width
+	is_on_road = |place| place.road_point.across.distance_from_middle() < Geometry.road_half_width
 
 	is_eq : _
 }

@@ -15,7 +15,7 @@ import game.Clock
 import game.Distance
 import game.Lens
 import game.Bird
-import game.Geom
+import game.Geometry
 import game.GroundSighting
 import game.Pipeline
 import game.SegmentFromRider
@@ -110,7 +110,7 @@ road_shapes =
 
 ## The picture's eye, on the middle of the road `eye_to_first_tree` short of
 ## the first tree, looking down the road.
-eye : Geom.Vantage
+eye : Geometry.Vantage
 eye = {
 	along: World.first_bird_flight.planned_along().minus(eye_to_first_tree),
 	across: Across.middle,
@@ -118,7 +118,7 @@ eye = {
 }
 
 ## `placed` as the picture's eye sees it, if it is in front of the eye.
-sighting_from_eye : Geom.Placed(kind) -> Try(Pipeline.Sighted(kind), [OutOfSight])
+sighting_from_eye : Geometry.Placed(kind) -> Try(Pipeline.Sighted(kind), [OutOfSight])
 sighting_from_eye = |placed|
 	Pipeline.sighting_of(
 		placed,
@@ -138,7 +138,7 @@ tree_shapes = |tree| WidgetPage.resting_lens_shapes(
 ## The bird as `gap` finds it, drawn by Safari's own stills.
 bird_shapes : Distance -> List(Shapes.Shape)
 bird_shapes = |gap| {
-	placed_bird : Geom.Placed(Bird)
+	placed_bird : Geometry.Placed(Bird)
 	placed_bird = Animation.placed_instant(World.first_bird_flight.bird_instant_at(stage_at(gap)))
 	WidgetPage.resting_lens_shapes(sighting_from_eye(placed_bird), Sky.darkness_at(Clock.start))
 }

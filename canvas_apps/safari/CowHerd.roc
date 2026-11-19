@@ -6,7 +6,7 @@ import Along
 import Billboard
 import Distance
 import EmojiStill
-import Geom
+import Geometry
 import Scatter
 import Trees
 
@@ -23,7 +23,7 @@ CowHerd :: { cow_count : U64, rows_behind_front : U64 }.{
 
 	## The herd's cows behind `herd_along`, column by column from the front,
 	## led by the bull at `herd_along` if the herd has one.
-	herd_cows : CowHerd, { herd_along : Along, bull : CowHerd.Bull } -> List(Geom.Placed(Billboard))
+	herd_cows : CowHerd, { herd_along : Along, bull : CowHerd.Bull } -> List(Geometry.Placed(Billboard))
 	herd_cows = |CowHerd.({ cow_count, rows_behind_front }), { herd_along, bull }| {
 		cows =
 			List.from_iter(U64.until(0, cow_count))
@@ -48,7 +48,7 @@ bull_tree_gap : Distance
 bull_tree_gap = Distance.metres(0.5)
 
 ## The bull at `herd_along`, by the trees.
-herd_bull : Along -> Geom.Placed(Billboard)
+herd_bull : Along -> Geometry.Placed(Billboard)
 herd_bull = |herd_along| {
 	bull_billboard = Billboard.adult_billboard(bull, FacesLeft)
 	bull_middle = Trees.near_tree_line.plus(bull_billboard.half_width())
@@ -65,7 +65,7 @@ herd_bull = |herd_along| {
 ## How far from the middle of the road the herd's front row stands, 10 metres
 ## off the road's edge. Each herd sets its own.
 front_row_distance : Distance
-front_row_distance = Geom.road_half_width.plus(Distance.metres(10.0))
+front_row_distance = Geometry.road_half_width.plus(Distance.metres(10.0))
 
 ## How far along the road behind the bull's place the first column's place is,
 ## chosen by eye.
@@ -103,7 +103,7 @@ herd_cow : {
 	herd_along : Along,
 	cow_number : U64,
 	rows_behind_front : U64,
-} -> Geom.Placed(Billboard)
+} -> Geometry.Placed(Billboard)
 herd_cow = |{ herd_along, cow_number, rows_behind_front }| {
 	cows_per_column = rows_behind_front + 1
 	column = cow_number.div_trunc_by(cows_per_column).to_f64()
@@ -161,10 +161,10 @@ expect
 five_cows : CowHerd
 five_cows = CowHerd.herd({ cow_count: 5, rows_behind_front: 1 })
 
-cows_with_bull : List(Geom.Placed(Billboard))
+cows_with_bull : List(Geometry.Placed(Billboard))
 cows_with_bull = five_cows.herd_cows({ herd_along: Along.metres(24.0), bull: WithBull })
 
-cows_without_bull : List(Geom.Placed(Billboard))
+cows_without_bull : List(Geometry.Placed(Billboard))
 cows_without_bull = five_cows.herd_cows({ herd_along: Along.metres(24.0), bull: NoBull })
 
 expect cows_with_bull.len() == 6

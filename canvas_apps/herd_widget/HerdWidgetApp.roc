@@ -12,7 +12,7 @@ import game.Clock
 import game.CowHerd
 import game.Distance
 import game.FrameView
-import game.Geom
+import game.Geometry
 import game.Lens
 import game.Pipeline
 import game.Screen
@@ -76,7 +76,7 @@ cow_canvas_x = |cow_number| (cow_number.to_f64() + 0.5) * canvas_width / cow_cou
 
 ## The cow at `cow_number`, standing `herd_forward` down the road and as far
 ## across it as puts its middle on its `cow_canvas_x`.
-placed_cow : { kind : Billboard, cow_number : U64 } -> Geom.Placed(Billboard)
+placed_cow : { kind : Billboard, cow_number : U64 } -> Geometry.Placed(Billboard)
 placed_cow = |{ kind, cow_number }| {
 	screen_x = WidgetPage.screen_x_at_canvas_x(cow_canvas_x(cow_number))
 	slope = Lens.slope_at_x({ x: screen_x, focal_length: Lens.resting_focal_length })
@@ -104,7 +104,7 @@ camera = {
 
 ## What the camera shows of a cow, as the ride sights and draws a billboard.
 ## Every cow stands in front of the camera, well above the size the ride drops.
-placed_cow_shapes : Geom.Placed(Billboard) -> List(Shapes.Shape)
+placed_cow_shapes : Geometry.Placed(Billboard) -> List(Shapes.Shape)
 placed_cow_shapes = |placed|
 	match Pipeline.scenery_sighting_of(
 		placed,

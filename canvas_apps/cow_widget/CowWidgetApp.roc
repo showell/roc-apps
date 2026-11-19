@@ -12,7 +12,7 @@ import game.Clock
 import game.CowHerd
 import game.Distance
 import game.FrameView
-import game.Geom
+import game.Geometry
 import game.Lens
 import game.Pipeline
 import game.Screen
@@ -85,7 +85,7 @@ bull_spot : { forward : Distance, across : Across }
 bull_spot = { forward: Distance.metres(14.0), across: Across.left_of_middle(Distance.metres(3.5)) }
 
 ## The cow on the grass, `forward` down the road from the camera.
-cow_at : Distance -> Geom.Placed(Billboard)
+cow_at : Distance -> Geometry.Placed(Billboard)
 cow_at = |forward| {
 	road_point: { along: Along.at(forward), across: cow_across },
 	lift: Distance.zero,
@@ -93,7 +93,7 @@ cow_at = |forward| {
 }
 
 ## The bull on the grass at its spot.
-placed_bull : Geom.Placed(Billboard)
+placed_bull : Geometry.Placed(Billboard)
 placed_bull = {
 	road_point: { along: Along.at(bull_spot.forward), across: bull_spot.across },
 	lift: Distance.zero,
@@ -113,7 +113,7 @@ camera = {
 }
 
 ## A billboard as the ride sights one, which drops one too small to see.
-billboard_sighting : Geom.Placed(Billboard) -> Try(Pipeline.Sighted(Billboard), _)
+billboard_sighting : Geometry.Placed(Billboard) -> Try(Pipeline.Sighted(Billboard), _)
 billboard_sighting = |placed_cow|
 	Pipeline.scenery_sighting_of(
 		placed_cow,
@@ -126,7 +126,7 @@ billboard_sighting = |placed_cow|
 
 ## What the camera shows of a placed billboard, or nothing if the ride wouldn't
 ## draw it.
-billboard_shapes : Geom.Placed(Billboard) -> List(Shapes.Shape)
+billboard_shapes : Geometry.Placed(Billboard) -> List(Shapes.Shape)
 billboard_shapes = |placed|
 	match billboard_sighting(placed) {
 		Ok(sighting) => {

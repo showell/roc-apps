@@ -95,12 +95,12 @@ all_stills = [
 is_within_bounds : Still -> Bool
 is_within_bounds = |still|
 	still.polygons().all(
-		|poly| poly.points.all(|pt| pt.x >= -1.0 and pt.x <= 1.0 and pt.y >= 0.0 and pt.y <= 1.0),
+		|polygon| polygon.points.all(|point| point.x >= -1.0 and point.x <= 1.0 and point.y >= 0.0 and point.y <= 1.0),
 	)
 
 # Whether every polygon of a still is one of the logo's two purples.
 is_logo_coloured : Still -> Bool
-is_logo_coloured = |still| still.polygons().all(|poly| poly.fill == Flat(logo_dark) or poly.fill == Flat(logo_light))
+is_logo_coloured = |still| still.polygons().all(|polygon| polygon.fill == Flat(logo_dark) or polygon.fill == Flat(logo_light))
 
 expect all_stills.all(is_within_bounds)
 expect

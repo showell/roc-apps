@@ -7,7 +7,7 @@ import Acceleration
 import Along
 import Angle
 import Distance
-import Geom
+import Geometry
 import RoutePlace
 import Speed
 import VehicleLimits
@@ -67,7 +67,7 @@ Motorcycle := {
 	## This motorcycle carried over `bend`, the bend out of its segment, when
 	## that puts it on the next segment's road: placed on that segment and turned
 	## to its axis. Short of that, it stays where it is.
-	cross_bend_if_on_road : Motorcycle, Geom.Bend -> Motorcycle
+	cross_bend_if_on_road : Motorcycle, Geometry.Bend -> Motorcycle
 	cross_bend_if_on_road = |motorcycle, bend| {
 		on_next = motorcycle.route_place.route_place_past_bend(bend)
 		if on_next.is_on_road() {
@@ -196,7 +196,7 @@ expect {
 }
 
 ## A bend at the end of a 500-metre segment, turning a little to the right.
-gentle_bend : Geom.Bend
+gentle_bend : Geometry.Bend
 gentle_bend = { segment_length: Distance.metres(500.0), turn: Angle.Turn.radians(0.3) }
 
 ## A motorcycle on the middle of the road, `along` metres down its segment.

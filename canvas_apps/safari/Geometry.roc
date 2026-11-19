@@ -8,7 +8,7 @@ import Along
 import Angle
 import Distance
 
-Geom :: [].{
+Geometry :: [].{
 
 	## A point on one segment of the road.
 	RoadPoint : { along : Along, across : Across }
@@ -19,7 +19,7 @@ Geom :: [].{
 	## truck anew for each frame.
 	## `Pipeline.sighting_of` turns it into a `Pipeline.Sighted` for a frame.
 	Placed(kind) : {
-		road_point : Geom.RoadPoint,
+		road_point : Geometry.RoadPoint,
 		lift : Distance,
 		kind : kind,
 	}
@@ -53,7 +53,7 @@ Geom :: [].{
 
 	## The outside of a bend that turns `bend_turn`: the left side when the
 	## road turns right, the right side when it turns left.
-	outer_side : Angle.Turn -> Geom.OuterSide
+	outer_side : Angle.Turn -> Geometry.OuterSide
 	outer_side = |bend_turn|
 		if bend_turn.is_right() {
 			LeftSide
@@ -63,28 +63,28 @@ Geom :: [].{
 
 	## A point on the segment after `bend`, measured on the segment before it:
 	## turned by the bend, then moved to where the segment after starts.
-	point_in_segment_before : Geom.RoadPoint, Geom.Bend -> Geom.RoadPoint
+	point_in_segment_before : Geometry.RoadPoint, Geometry.Bend -> Geometry.RoadPoint
 	point_in_segment_before = |point, bend|
-		Geom.point_before_worked_bend(point, Geom.worked_bend(bend))
+		Geometry.point_before_worked_bend(point, Geometry.worked_bend(bend))
 
 	## A point on the segment before `bend`, measured on the segment after it.
 	## This is `point_in_segment_before` undone.
-	point_in_segment_after : Geom.RoadPoint, Geom.Bend -> Geom.RoadPoint
+	point_in_segment_after : Geometry.RoadPoint, Geometry.Bend -> Geometry.RoadPoint
 	point_in_segment_after = |point, bend|
-		Geom.point_after_worked_bend(point, Geom.worked_bend(bend))
+		Geometry.point_after_worked_bend(point, Geometry.worked_bend(bend))
 
 	## A bend with what carrying a point across it needs worked out once: where
 	## the segment after it starts, measured on the segment before, and the
 	## cosine and sine of its turn. The road ahead keeps its bends this way, so
 	## the many points of a frame don't each work them out again.
 	WorkedBend : {
-		start_after : Geom.RoadPoint,
+		start_after : Geometry.RoadPoint,
 		cos_turn : F64,
 		sin_turn : F64,
 	}
 
 	## `bend`, worked out.
-	worked_bend : Geom.Bend -> Geom.WorkedBend
+	worked_bend : Geometry.Bend -> Geometry.WorkedBend
 	worked_bend = |bend| {
 		cos_turn = bend.turn.to_radians().cos()
 		sin_turn = bend.turn.to_radians().sin()
@@ -98,7 +98,7 @@ Geom :: [].{
 	## `point`, on the segment after a bend already worked out, measured on the
 	## segment before it instead: turned by the bend, and moved to where the
 	## segment after starts.
-	point_before_worked_bend : Geom.RoadPoint, Geom.WorkedBend -> Geom.RoadPoint
+	point_before_worked_bend : Geometry.RoadPoint, Geometry.WorkedBend -> Geometry.RoadPoint
 	point_before_worked_bend = |point, { start_after: start, cos_turn, sin_turn }| {
 		along = point.along.to_metres()
 		across = point.across.to_metres()
@@ -109,7 +109,7 @@ Geom :: [].{
 	}
 
 	## What `point_in_segment_after` gives, for a bend already worked out.
-	point_after_worked_bend : Geom.RoadPoint, Geom.WorkedBend -> Geom.RoadPoint
+	point_after_worked_bend : Geometry.RoadPoint, Geometry.WorkedBend -> Geometry.RoadPoint
 	point_after_worked_bend = |point, { start_after: start, cos_turn, sin_turn }| {
 		past_start = point.along.distance_from(start.along).to_metres()
 		aside = point.across.distance_from(start.across).to_metres()
@@ -121,10 +121,10 @@ Geom :: [].{
 
 	## How far along the segment before `bend` a rider on the middle of the road
 	## comes onto the next segment's road: its edge meets the middle here.
-	commit_along : Geom.Bend -> Along
+	commit_along : Geometry.Bend -> Along
 	commit_along = |bend| {
 		exit_tan = bend.turn.abs().to_radians().tan()
-		Along.at(bend.segment_length.minus(Geom.road_half_width.divided_by(exit_tan)))
+		Along.at(bend.segment_length.minus(Geometry.road_half_width.divided_by(exit_tan)))
 	}
 }
 
@@ -133,9 +133,9 @@ Geom :: [].{
 ## the bend, so this lies past the end of the segment before, and toward the
 ## turn.
 ## The cosine and sine of the bend's turn are `cos_turn` and `sin_turn`.
-start_after : Geom.Bend, { cos_turn : F64, sin_turn : F64 } -> Geom.RoadPoint
+start_after : Geometry.Bend, { cos_turn : F64, sin_turn : F64 } -> Geometry.RoadPoint
 start_after = |bend, { cos_turn, sin_turn }| {
-	half_width = Geom.road_half_width.to_metres()
+	half_width = Geometry.road_half_width.to_metres()
 	toward_turn = half_width * (1.0 - cos_turn)
 	{
 		along: Along.metres(bend.segment_length.to_metres() + half_width * sin_turn.abs()),
@@ -147,15 +147,15 @@ start_after = |bend, { cos_turn, sin_turn }| {
 	}
 }
 
-expect Geom.outer_side(Angle.Turn.degrees(50.0)) == LeftSide
-expect Geom.outer_side(Angle.Turn.degrees(-70.0)) == RightSide
+expect Geometry.outer_side(Angle.Turn.degrees(50.0)) == LeftSide
+expect Geometry.outer_side(Angle.Turn.degrees(-70.0)) == RightSide
 
 ## A bend of `degrees` out of a 300 metre segment.
-bend_of : F64 -> Geom.Bend
+bend_of : F64 -> Geometry.Bend
 bend_of = |degrees| { segment_length: Distance.metres(300.0), turn: Angle.Turn.degrees(degrees) }
 
 ## Whether two road points are within a nanometre of each other.
-is_near : Geom.RoadPoint, Geom.RoadPoint -> Bool
+is_near : Geometry.RoadPoint, Geometry.RoadPoint -> Bool
 is_near = |got, want| {
 	along_miss = got.along.distance_from(want.along).to_metres().abs()
 	across_miss = got.across.distance_from(want.across).to_metres().abs()
@@ -169,10 +169,10 @@ expect
 		|degrees| {
 			start = { along: Along.metres(12.0), across: Across.metres(1.0) }
 			bend = bend_of(degrees)
-			on_next = Geom.point_in_segment_after(start, bend)
-			on_previous = Geom.point_in_segment_before(start, bend)
-			is_near(Geom.point_in_segment_before(on_next, bend), start)
-				and is_near(Geom.point_in_segment_after(on_previous, bend), start)
+			on_next = Geometry.point_in_segment_after(start, bend)
+			on_previous = Geometry.point_in_segment_before(start, bend)
+			is_near(Geometry.point_in_segment_before(on_next, bend), start)
+				and is_near(Geometry.point_in_segment_after(on_previous, bend), start)
 		},
 	)
 
@@ -180,14 +180,14 @@ expect
 # for a right turn, the left edge for a left turn.
 expect
 	[
-		(50.0, Geom.right_edge),
-		(-70.0, Geom.left_edge),
-		(15.0, Geom.right_edge),
+		(50.0, Geometry.right_edge),
+		(-70.0, Geometry.left_edge),
+		(15.0, Geometry.right_edge),
 	].all(
 		|(degrees, inner_edge)| {
 			end_before = { along: Along.metres(300.0), across: inner_edge }
 			next_start = { along: Along.start, across: inner_edge }
-			is_near(Geom.point_in_segment_before(next_start, bend_of(degrees)), end_before)
+			is_near(Geometry.point_in_segment_before(next_start, bend_of(degrees)), end_before)
 		},
 	)
 
@@ -196,7 +196,7 @@ expect
 expect {
 	middle_at_start = { along: Along.start, across: Across.middle }
 	is_near(
-		Geom.point_in_segment_before(middle_at_start, bend_of(90.0)),
+		Geometry.point_in_segment_before(middle_at_start, bend_of(90.0)),
 		{ along: Along.metres(302.0), across: Across.metres(2.0) },
 	)
 }
@@ -207,9 +207,9 @@ expect
 	[50.0, -70.0, 15.0, -80.0].all(
 		|degrees| {
 			bend = bend_of(degrees)
-			commit = Geom.commit_along(bend)
+			commit = Geometry.commit_along(bend)
 			from_next_middle = |along| {
-				on_next = Geom.point_in_segment_after({ along, across: Across.middle }, bend)
+				on_next = Geometry.point_in_segment_after({ along, across: Across.middle }, bend)
 				on_next.across.distance_from_middle().to_metres()
 			}
 			(from_next_middle(commit) - 2.0).abs() <= 0.000000001

@@ -610,8 +610,8 @@ expect {
 	stills = List.concat(side_down, BirdStills.diving_still.polygons())
 	drawn
 		== stills.map(
-			|poly|
-				match poly.fill {
+			|polygon|
+				match polygon.fill {
 					Flat(color) => Brush.flat(color)
 					Shaded(_) => crash "EncounterExpects: a bird's still is flat"
 				},

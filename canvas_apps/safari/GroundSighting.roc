@@ -7,7 +7,7 @@
 import Along
 import Distance
 import RoadAhead
-import Geom
+import Geometry
 import RiderView
 import GroundPatch
 import BendInView
@@ -18,7 +18,7 @@ GroundSighting :: [].{
 
 	## The ground in view, in paint order: each segment in view in the order of
 	## `RoadAhead.segments_in_view`.
-	patches_in_view : RoadAhead.RoadView, Geom.Vantage -> List(GroundPatch)
+	patches_in_view : RoadAhead.RoadView, Geometry.Vantage -> List(GroundPatch)
 	patches_in_view = |road, vantage|
 		RoadAhead.segments_in_view(road).join_map(
 			|in_view| ground_patches(road, { vantage, in_view }),
@@ -43,7 +43,7 @@ chunk_count = |length| {
 ## through as a pale seam.
 road_along : RoadAhead.RoadView,
 {
-	vantage : Geom.Vantage,
+	vantage : Geometry.Vantage,
 	in_view : RoadAhead.SegmentInView,
 } -> GroundPatch
 road_along = |road, { vantage, in_view }| {
@@ -56,11 +56,11 @@ road_along = |road, { vantage, in_view }| {
 	}
 	up_right_edge =
 		List.from_iter(U32.until(0, segment_chunk_count + 1))
-			.map(|number| corner(number, Geom.right_edge))
+			.map(|number| corner(number, Geometry.right_edge))
 	down_left_edge =
 		List.from_iter(U32.until(0, segment_chunk_count))
-			.map(|k| corner(segment_chunk_count - k, Geom.left_edge))
-	road_patch(List.concat(List.concat([corner(0, Geom.left_edge)], up_right_edge), down_left_edge))
+			.map(|k| corner(segment_chunk_count - k, Geometry.left_edge))
+	road_patch(List.concat(List.concat([corner(0, Geometry.left_edge)], up_right_edge), down_left_edge))
 }
 
 road_color : RgbColor
@@ -97,7 +97,7 @@ road_patch = |corners| GroundPatch.of(corners, road_color)
 ## it would show at a bend sharper than a right angle, and the route has none.
 ground_patches : RoadAhead.RoadView,
 {
-	vantage : Geom.Vantage,
+	vantage : Geometry.Vantage,
 	in_view : RoadAhead.SegmentInView,
 } -> List(GroundPatch)
 ground_patches = |road, { vantage, in_view }| {
@@ -129,7 +129,7 @@ ground_patches = |road, { vantage, in_view }| {
 ## that chunk ends, so its edges there are the road's own.
 bend_paving : RoadAhead.RoadView,
 {
-	vantage : Geom.Vantage,
+	vantage : Geometry.Vantage,
 	bend_in_view : BendInView,
 } -> GroundPatch
 bend_paving = |road, { vantage, bend_in_view }| {
@@ -142,10 +142,10 @@ bend_paving = |road, { vantage, bend_in_view }| {
 	end = Along.at(length_before)
 	lead_end = chunk_end(bend_in_view.length_after(road), 1)
 	{ end_before, apex, start_after } = bend_in_view.outer_corner_in_view({ road, vantage })
-	left = Geom.left_edge
-	right = Geom.right_edge
+	left = Geometry.left_edge
+	right = Geometry.right_edge
 	corners =
-		match Geom.outer_side(bend_in_view.turn()) {
+		match Geometry.outer_side(bend_in_view.turn()) {
 			LeftSide => [
 				before(lead_start, left),
 				end_before,
@@ -174,7 +174,7 @@ bend_paving = |road, { vantage, bend_in_view }| {
 ## segment that ends at no pond has none.
 pond_patches : RoadAhead.RoadView,
 {
-	vantage : Geom.Vantage,
+	vantage : Geometry.Vantage,
 	in_view : RoadAhead.SegmentInView,
 } -> List(GroundPatch)
 pond_patches = |road, { vantage, in_view }| {

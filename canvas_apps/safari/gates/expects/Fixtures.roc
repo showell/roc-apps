@@ -9,7 +9,7 @@ import game.BirdFlight
 import game.Conifer
 import game.Distance
 import lib.Fraction
-import game.Geom
+import game.Geometry
 import game.Pipeline
 import lib.Pixels
 import game.RoadAhead
@@ -25,7 +25,7 @@ Fixtures :: [].{
 
 	## The rider at the start of a segment, in the middle of the road, looking
 	## straight down it.
-	origin : Geom.Vantage
+	origin : Geometry.Vantage
 	origin = {
 		along: Along.metres(0.0),
 		across: Across.metres(0.0),

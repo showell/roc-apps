@@ -11,10 +11,10 @@ import Attention
 import Distance
 import EncounterPlan
 import lib.Fraction
-import Geom
+import Geometry
 import Steps
 
-CatCrossing :: { tree : Geom.RoadPoint }.{
+CatCrossing :: { tree : Geometry.RoadPoint }.{
 
 	## How the cat holds itself: walking, it is at rest or mid-stride; then
 	## frozen; then its leap, from the coil through flight and landing to the
@@ -33,7 +33,7 @@ CatCrossing :: { tree : Geom.RoadPoint }.{
 	cat_height = Distance.metres(1.7)
 
 	## Where the tree the cat crosses by stands.
-	tree : CatCrossing -> Geom.RoadPoint
+	tree : CatCrossing -> Geometry.RoadPoint
 	tree = |CatCrossing.(crossing)| crossing.tree
 
 	## How far along its segment the cat crosses: just past its tree.
@@ -48,7 +48,7 @@ CatCrossing :: { tree : Geom.RoadPoint }.{
 	## grass.
 	end_across : Across
 	end_across =
-		Across.left_of_middle(Geom.road_half_width.plus(grass_toehold))
+		Across.left_of_middle(Geometry.road_half_width.plus(grass_toehold))
 			.minus(collapsed_hip_reach)
 
 	## Where every cat freezes across the road: with its head over the middle.
@@ -56,7 +56,7 @@ CatCrossing :: { tree : Geom.RoadPoint }.{
 	mid_across = Across.right_of_middle(frozen_head_reach)
 
 	## The crossing of a cat by `tree`, on the right of the road.
-	by_tree : { tree : Geom.RoadPoint } -> CatCrossing
+	by_tree : { tree : Geometry.RoadPoint } -> CatCrossing
 	by_tree = |{ tree: tree_point }| CatCrossing.({ tree: tree_point })
 
 	## What the ride plans a crossing by: its length, and the gap it ends at.

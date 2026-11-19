@@ -19,7 +19,7 @@ import game.Conifer
 import game.CowHerd
 import game.Distance
 import game.FrameView
-import game.Geom
+import game.Geometry
 import game.Lens
 import game.Pipeline
 import game.Rendered
@@ -133,7 +133,7 @@ bird_stand = {
 }
 
 ## The camera, at the start of the road, looking down it.
-eye : Geom.Vantage
+eye : Geometry.Vantage
 eye = {
 	along: Along.start,
 	across: Across.middle,
@@ -155,7 +155,7 @@ right_of = |stand| {
 ## A stand's thing as the camera sees it, on the ground at its spot.
 stand_sighting : Stand(kind) -> Pipeline.Sighted(kind)
 stand_sighting = |stand| {
-	placed : Geom.Placed(kind)
+	placed : Geometry.Placed(kind)
 	placed = {
 		road_point: {
 			along: Along.at(stand.forward),

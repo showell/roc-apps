@@ -14,7 +14,7 @@ import game.Distance
 import game.Motorcycle
 import game.LeanSearch
 import game.Route
-import game.Geom
+import game.Geometry
 import game.Tour
 import lib.Brush
 import lib.CanvasApp
@@ -210,8 +210,8 @@ road_line = |{ across, color, width }| {
 ## The road from above, with the line the rider is aiming for.
 road_shapes : List(Shapes.Shape)
 road_shapes = {
-	left_edge = Across.left_of_middle(Geom.road_half_width)
-	half_road = Geom.road_half_width.to_metres()
+	left_edge = Across.left_of_middle(Geometry.road_half_width)
+	half_road = Geometry.road_half_width.to_metres()
 	[
 		WidgetPage.picture_backdrop(WidgetPalette.plan_ground_color),
 		Shapes.rectangle({
@@ -229,7 +229,7 @@ road_shapes = {
 			width: 2.0,
 		}),
 		road_line({
-			across: Across.right_of_middle(Geom.road_half_width),
+			across: Across.right_of_middle(Geometry.road_half_width),
 			color: line_color,
 			width: 2.0,
 		}),

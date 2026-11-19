@@ -11,10 +11,10 @@ import game.World
 import game.FrameView
 import game.RideInstant
 
-main! = |args| {
+main! = |arguments| {
 	# With no argument, the run takes its usual number of steps.
 	steps =
-		match args.get(0) {
+		match arguments.get(0) {
 			Ok(text) => I64.from_str(text) ?? crash "FrameBench: steps must be a whole number"
 			Err(OutOfBounds) => 60
 		}

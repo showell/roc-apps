@@ -15,7 +15,7 @@ import game.Conifer
 import game.CowHerd
 import game.Distance
 import lib.Fraction
-import game.Geom
+import game.Geometry
 import game.RiderView
 import game.Lens
 import game.Pipeline
@@ -52,7 +52,7 @@ is_standing_at : Spot,
 {
 	road : RoadAhead.RoadView,
 	from_rider : SegmentFromRider,
-	road_point : Geom.RoadPoint,
+	road_point : Geometry.RoadPoint,
 } -> Bool
 is_standing_at = |spot, { road, from_rider, road_point }| {
 	carried = RoadAhead.rider_point_at(road, { vantage: Fixtures.origin, from_rider, road_point })
@@ -145,7 +145,7 @@ left_edge_point = |from_rider, along|
 		{
 			vantage: Fixtures.origin,
 			from_rider,
-			road_point: { along: Along.metres(along), across: Geom.left_edge },
+			road_point: { along: Along.metres(along), across: Geometry.left_edge },
 		},
 	)
 
@@ -218,7 +218,7 @@ one_cow_segment = {
 	cows: { herd: CowHerd.herd({ cow_count: 1, rows_behind_front: 2 }), bull: NoBull },
 }
 
-lone_cow : Geom.RoadPoint
+lone_cow : Geometry.RoadPoint
 lone_cow = match one_cow_segment.segment_cows() {
 	[cow] => cow.road_point
 	_ => crash "SightingExpects: the one-cow segment holds one cow"
@@ -257,7 +257,7 @@ expect
 
 # BendAnimal: an animal and its baby at each of four bends, the first and third
 # turning right and the second and fourth left.
-billboards_at_four_bends : List(Geom.Placed(Billboard))
+billboards_at_four_bends : List(Geometry.Placed(Billboard))
 billboards_at_four_bends = [
 	BendAnimal.Elephant.bend_billboards(
 		{ segment_length: Distance.metres(100.0), turn: Angle.Turn.degrees(50.0) },
@@ -525,11 +525,11 @@ expect tower_yaws_on_lone_segment(Distance.metres(4340.0)) == [0]
 expect tower_yaws_on_lone_segment(Distance.metres(4320.0)) == [-30, 0]
 
 ## A pond's bend at the end of a segment 100 m long, turning 15° right.
-right_pond_bend : Geom.Bend
+right_pond_bend : Geometry.Bend
 right_pond_bend = { segment_length: Distance.metres(100.0), turn: Angle.Turn.degrees(15.0) }
 
 ## A pond's bend at the end of a segment 100 m long, turning 15° left.
-left_pond_bend : Geom.Bend
+left_pond_bend : Geometry.Bend
 left_pond_bend = { segment_length: Distance.metres(100.0), turn: Angle.Turn.degrees(-15.0) }
 
 # A duck floats as far out from the road at a left turn as at a right one, on
@@ -553,8 +553,8 @@ expect
 expect {
 	pond_acrosses = |bend|
 		Pond.pond_outlines(bend).join_map(|outline| outline.corners.map(|point| point.across))
-	pond_acrosses(right_pond_bend).all(|across| across < Geom.left_edge)
-		and pond_acrosses(left_pond_bend).all(|across| across > Geom.right_edge)
+	pond_acrosses(right_pond_bend).all(|across| across < Geometry.left_edge)
+		and pond_acrosses(left_pond_bend).all(|across| across > Geometry.right_edge)
 }
 
 # The truck on the real route, through TruckJourney.truck_progress_at_next_step.
@@ -643,7 +643,7 @@ expect
 ## What becomes of a truck `lead` metres ahead of a rider on the three-segment road's
 ## first segment, seen from `vantage`, with its lights off. On the first
 ## segment the rider's distance along the route is the vantage's `along`.
-truck_seen_from : Geom.Vantage, F64 -> TruckSighting.TruckFate
+truck_seen_from : Geometry.Vantage, F64 -> TruckSighting.TruckFate
 truck_seen_from = |vantage, lead|
 	TruckSighting.truck_in_view(
 		Fixtures.three_segment_road,
@@ -693,7 +693,7 @@ truck_places = [
 road_middle_at : SegmentFromRider.Position,
 F64 -> {
 	from_rider : SegmentFromRider,
-	road_point : Geom.RoadPoint,
+	road_point : Geometry.RoadPoint,
 }
 road_middle_at = |position, along| {
 	from_rider: Ahead(position),
@@ -811,10 +811,10 @@ route_herd_of = |shape| {
 		?? crash "SightingExpects: the route has a herd of each shape"
 }
 
-route_big_herd_pigs : List(Geom.Placed(Billboard))
+route_big_herd_pigs : List(Geometry.Placed(Billboard))
 route_big_herd_pigs = route_herd_of(Big).herd_pigs(route_herd_along)
 
-route_big_standout : Geom.Placed(Billboard)
+route_big_standout : Geometry.Placed(Billboard)
 route_big_standout = route_herd_of(Big).standout_pig(route_herd_along)
 
 expect route_big_herd_pigs.len() == 49
@@ -825,10 +825,10 @@ expect route_big_herd_pigs.count_if(|herd_member| herd_member == route_big_stand
 expect (route_big_standout.road_point.along.to_metres() - 940.80757).abs() <= 0.00001
 expect (route_big_standout.road_point.across.to_metres() - 11.0332).abs() <= 0.00001
 
-route_two_row_pigs : List(Geom.Placed(Billboard))
+route_two_row_pigs : List(Geometry.Placed(Billboard))
 route_two_row_pigs = route_herd_of(TwoRows).herd_pigs(route_herd_along)
 
-route_two_row_standout : Geom.Placed(Billboard)
+route_two_row_standout : Geometry.Placed(Billboard)
 route_two_row_standout = route_herd_of(TwoRows).standout_pig(route_herd_along)
 
 expect
@@ -866,7 +866,7 @@ expect route_two_row_standout.road_point.across.to_metres() == 12.0
 expect route_two_row_pigs.get(2) == Ok(route_two_row_standout)
 
 ## The route's cows behind 24 m, without a bull.
-route_cows : List(Geom.Placed(Billboard))
+route_cows : List(Geometry.Placed(Billboard))
 route_cows =
 	World.route.segment_at(Route.SegmentIndex.first).cows.herd.herd_cows(
 		{ herd_along: Along.metres(24.0), bull: NoBull },

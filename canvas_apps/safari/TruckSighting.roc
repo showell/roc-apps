@@ -5,7 +5,7 @@
 ## where the rider's camera stands, the route, the truck's progress and the
 ## clock.
 import Distance
-import Geom
+import Geometry
 import Pipeline
 import RoadAhead
 import RoutePlace
@@ -20,14 +20,14 @@ TruckSighting :: [].{
 	## it is on the road ahead and in front of the camera.
 	truck_in_view : RoadAhead.RoadView,
 	{
-		vantage : Geom.Vantage,
+		vantage : Geometry.Vantage,
 		truck : { route_position : Distance, lights : Truck },
 	} -> TruckSighting.TruckFate
 	truck_in_view = |road, { vantage, truck }| {
 		route = road.route()
 		place = RoutePlace.at_distance(route, truck.route_position) ? |PastRouteEnd| OutOfSight
 		position = RoadAhead.position_of(road, place.segment_index) ? |NotAhead| OutOfSight
-		placed_truck : Geom.Placed(Truck)
+		placed_truck : Geometry.Placed(Truck)
 		placed_truck = {
 			road_point: place.road_point,
 			lift: Distance.zero,

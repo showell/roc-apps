@@ -1,5 +1,5 @@
 ## Pipeline carries an object through a frame, by way of three forms of it. An
-## object is placed on the road (`Geom.Placed`), sighted from the camera
+## object is placed on the road (`Geometry.Placed`), sighted from the camera
 ## (`Pipeline.Sighted`) and rendered (`Rendered`). The steps between them are
 ## written once here, for every kind of object. A kind is a type like `Conifer`,
 ## which knows nothing of this module: a `where` clause names the methods a step
@@ -36,7 +36,7 @@ import SegmentFromRider
 import Camera
 import Distance
 import EarthCurve
-import Geom
+import Geometry
 import RiderView
 import Sprite
 import lib.Pixels
@@ -51,14 +51,14 @@ Pipeline :: [].{
 
 	## The camera a sighting is made through: where it stands and faces, and
 	## the focal length of its lens.
-	SightingCamera : { vantage : Geom.Vantage, focal_length : Pixels }
+	SightingCamera : { vantage : Geometry.Vantage, focal_length : Pixels }
 
 	## `placed` as a camera at `vantage` sees it, on the segment that lies at
 	## `from_rider`, if it is at or past the camera's near plane.
-	sighting_of : Geom.Placed(kind),
+	sighting_of : Geometry.Placed(kind),
 	{
 		road : RoadAhead.RoadView,
-		vantage : Geom.Vantage,
+		vantage : Geometry.Vantage,
 		from_rider : SegmentFromRider,
 	} -> Try(Pipeline.Sighted(kind), [OutOfSight])
 	sighting_of = |placed, { road, vantage, from_rider }| {
@@ -74,10 +74,10 @@ Pipeline :: [].{
 	## over the horizon: its top, its kind's height above its lift and lowered
 	## by the ground's drop, is not hidden behind the curve of the ground. Every
 	## kind with a height takes this test here.
-	sighting_above_horizon_of : Geom.Placed(kind),
+	sighting_above_horizon_of : Geometry.Placed(kind),
 	{
 		road : RoadAhead.RoadView,
-		vantage : Geom.Vantage,
+		vantage : Geometry.Vantage,
 		from_rider : SegmentFromRider,
 	} -> Try(Pipeline.Sighted(kind), [OutOfSight])
 		where [kind.scenery_height : kind -> Distance]
@@ -97,7 +97,7 @@ Pipeline :: [].{
 	## through the camera's own lens, so that what is at the edge of sight
 	## comes and goes as the camera widens. Every kind with a size test takes
 	## it here.
-	scenery_sighting_of : Geom.Placed(kind),
+	scenery_sighting_of : Geometry.Placed(kind),
 	{
 		road : RoadAhead.RoadView,
 		camera : Pipeline.SightingCamera,

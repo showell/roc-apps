@@ -5,7 +5,7 @@ app [main!] { lib: "../lib/main.roc" }
 
 import SafariApp
 
-main! = |_args| {
+main! = |_arguments| {
 	# The app is named so the root reaches every module it is built from.
 	_app = SafariApp.canvas_app
 	Ok({})

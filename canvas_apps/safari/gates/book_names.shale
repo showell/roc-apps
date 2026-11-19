@@ -210,7 +210,7 @@ function span_names(span)
 end
 
 -- The code names in a label's text: a dotted name that starts with a capital,
--- such as `Timeline.instant` or the `Geom.Placed` of `Geom.Placed(kind)`, and a
+-- such as `Timeline.instant` or the `Geometry.Placed` of `Geometry.Placed(kind)`, and a
 -- single word in camel case, such as `SceneDraw`. Plain words, a single
 -- capitalized word such as `Cat`, and lower-case dotted names such as `web.roc`
 -- are not read.

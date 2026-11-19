@@ -40,7 +40,7 @@ package
 		FrameView,
 		Gawking,
 		Gaze,
-		Geom,
+		Geometry,
 		Grass,
 		GroundPatch,
 		GroundSighting,

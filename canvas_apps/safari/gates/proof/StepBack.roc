@@ -13,7 +13,7 @@ app [main!] { game: "../../game.roc", lib: "../../../lib/main.roc" }
 import game.Clock
 import game.Tour
 
-main! = |_args| {
+main! = |_arguments| {
 	var $out = ""
 	var $bad = 0.I64
 	var $tour = Tour.initial

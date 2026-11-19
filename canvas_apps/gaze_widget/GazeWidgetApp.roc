@@ -12,7 +12,7 @@ import game.Billboard
 import game.Clock
 import game.Gawking
 import game.Gaze
-import game.Geom
+import game.Geometry
 import game.Rider
 import game.RiderMind
 import game.Segment
@@ -96,7 +96,7 @@ pig_segment : Segment
 pig_segment = World.first_distracting_segment
 
 ## The pig that catches the rider's eye.
-gaze_pig : Geom.Placed(Billboard)
+gaze_pig : Geometry.Placed(Billboard)
 gaze_pig =
 	match Gaze.eye_catching_pig(pig_segment) {
 		CatchesEye(pig) => pig
@@ -193,7 +193,7 @@ canvas_point = |{ along, across }|
 
 road : Shapes.Shape
 road = {
-	half_width = Geom.road_half_width.to_metres() * road_plan.pixels_a_metre
+	half_width = Geometry.road_half_width.to_metres() * road_plan.pixels_a_metre
 	Shapes.rectangle({
 		top_left: Point.at(0.0, road_plan.origin.y.to_f64() - half_width),
 		width: Pixels.of(WidgetPage.canvas_width),
@@ -221,7 +221,7 @@ plan_disc = |{ along, across, radius, color }| {
 }
 
 ## One pig of the herd, the one that catches the eye drawn larger.
-pig_disc : Geom.Placed(Billboard) -> Shapes.Shape
+pig_disc : Geometry.Placed(Billboard) -> Shapes.Shape
 pig_disc = |pig|
 	if pig == gaze_pig {
 		plan_disc({
