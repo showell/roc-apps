@@ -1,20 +1,21 @@
-# Rules -- roc-ray's examples/generated_assets, the Pixel Workshop editor.
-#
-# Upstream's `palette_color`, `initial_pixels`, `palette_from_input`, `cell_at`
-# and the body of `update_editor` are here with their import lines changed and
-# their colours written as RgbColor, and its expects came across word for word.
-#
-# **WHAT DID NOT COME ACROSS IS THE INTERESTING PART.** Upstream's editor
-# answers `Edited : { model, edits }`, where an edit is `Upload(pixels)`,
-# `UploadRegion(region)` or `Play(playback)`: the canvas lives twice, once in
-# the model and once on the GPU, so every branch that changes one has to
-# remember to emit the upload that changes the other. Its own comment says as
-# much -- "returning both together is what keeps the two from drifting apart".
-#
-# Here a frame is a VALUE computed from the model, so there is no second copy
-# to drift, nothing to keep in step, and no upload to forget. Two of the three
-# edits are gone and the type with them; what is left is the sound, which is a
-# thing that HAPPENED and which this seam already carries as a bit per tone.
+## This module is the Pixel Workshop editor from roc-ray's
+## examples/generated_assets. Upstream's `palette_color`, `initial_pixels`,
+## `palette_from_input`, `cell_at` and the body of upstream's `update_editor`
+## are here with their import lines changed and their colours written as
+## RgbColor, and upstream's expects are here word for word.
+##
+## What is left out is the interesting part. Upstream's editor answers
+## `Edited : { model, edits }`, where an edit is `Upload(pixels)`,
+## `UploadRegion(region)` or `Play(playback)`: the canvas lives twice, once in
+## the model and once on the GPU, so every branch that changes one has to
+## remember to emit the upload that changes the other. Upstream's own comment
+## says as much: "returning both together is what keeps the two from drifting
+## apart".
+##
+## Here a frame is a value computed from the model, so there is no second copy
+## to drift, nothing to keep in step, and no upload to forget. The editor
+## answers only the sounds, because a sound is a thing that happens, and this
+## seam carries it as a bit per tone.
 import lib.RgbColor
 import lib.Input
 import lib.Math
@@ -69,10 +70,10 @@ Rules :: [].{
 		List.repeat(RgbColor.of(0xf3f0e8), grid_side * grid_side),
 		|_color, index| {
 			row = index // grid_side
-			col = index % grid_side
-			if row == col or row + col == grid_side - 1 {
+			column = index % grid_side
+			if row == column or row + column == grid_side - 1 {
 				RgbColor.of(0x2f80ed)
-			} else if row >= 6 and row <= 9 and col >= 6 and col <= 9 {
+			} else if row >= 6 and row <= 9 and column >= 6 and column <= 9 {
 				RgbColor.of(0xf9c74f)
 			} else {
 				RgbColor.of(0xf3f0e8)
@@ -132,9 +133,9 @@ Rules :: [].{
 			column = F32.to_u64_try((point.x - canvas_x) / cell_size)
 			row = F32.to_u64_try((point.y - canvas_y) / cell_size)
 			match (column, row) {
-				(Ok(col), Ok(line)) =>
-					if col < grid_side and line < grid_side {
-						Ok(line * grid_side + col)
+				(Ok(column_index), Ok(row_index)) =>
+					if column_index < grid_side and row_index < grid_side {
+						Ok(row_index * grid_side + column_index)
 					} else {
 						Err(Outside)
 					}
@@ -202,7 +203,7 @@ Rules :: [].{
 	tone_paint = |palette| U32.shl_wrap(1, U64.to_u8_wrap(palette) + 1)
 
 	side : U64 -> F32
-	side = |n| I32.to_f32(I64.to_i32_wrap(U64.to_i64_wrap(n)))
+	side = |whole_number| I32.to_f32(I64.to_i32_wrap(U64.to_i64_wrap(whole_number)))
 }
 
 expect Rules.palette_from_input(0, Input.none.with_key_pressed(Key3)) == 2
