@@ -354,5 +354,5 @@ expect
 	picture_shapes
 		== Shapes.lists_in_space(
 			picture_space,
-			[FrameView.backdrop_shapes(backdrop)].concat(kind_shape_lists),
+			List.concat([FrameView.backdrop_shapes(backdrop)], kind_shape_lists),
 		)
