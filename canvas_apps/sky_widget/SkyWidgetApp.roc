@@ -288,7 +288,8 @@ chart_clocks = {
 curve_shapes : Curve -> List(Shapes.Shape)
 curve_shapes = |{ level_at, color, .. }| {
 	points = chart_clocks.map(|clock| chart_point(clock, level_at))
-	points.map2(
+	List.map2(
+		points,
 		points.drop_first(1),
 		|a, b| Shapes.line(
 			{
