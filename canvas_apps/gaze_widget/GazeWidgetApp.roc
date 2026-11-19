@@ -116,7 +116,7 @@ with_buttons = |model, input| {
 ## unplanned; an `expect` below holds the stretch to the ride.
 played_on : GazeWidgetApp.Model -> GazeWidgetApp.Model
 played_on = |model| {
-	reach = stretch_length.min(model.played.len() + played_a_frame)
+	reach = U64.min(stretch_length, model.played.len() + played_a_frame)
 	var $played = model.played
 	while $played.len() < reach {
 		latest = $played.last() ?? crash "GazeWidgetApp.played_on: the stretch starts with a state"
@@ -131,7 +131,7 @@ played_on = |model| {
 shown_offset : GazeWidgetApp.Model -> U64
 shown_offset = |model| {
 	asked_for = model.transport.at.steps_since(Clock.at_step(first_step)).to_u32().to_u64()
-	asked_for.min(model.played.len() - 1)
+	U64.min(asked_for, model.played.len() - 1)
 }
 
 ## The ride's clock at the state on show.
