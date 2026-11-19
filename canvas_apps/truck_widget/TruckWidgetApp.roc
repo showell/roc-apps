@@ -163,10 +163,13 @@ framed_ride_shapes = |ride_shapes| {
 		},
 		ride_shapes,
 	})
-	WidgetPage.frame_shapes({
-		picture_shapes,
-		status_lines: [],
-	}).concat(truck_views.map(caption_shape))
+	List.concat(
+		WidgetPage.frame_shapes({
+			picture_shapes,
+			status_lines: [],
+		}),
+		truck_views.map(caption_shape),
+	)
 }
 
 ## The corners of the straight-edged regions among `shapes`, on the canvas.
