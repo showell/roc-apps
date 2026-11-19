@@ -20,15 +20,15 @@ import lib.CanvasApp
 import lib.Shapes
 import widget.ReadoutText
 import widget.WidgetPage
-import widget.VcrButtons
+import widget.PlaybackButtons
 
 BeaconWidgetApp :: [].{
 
 	## The whole state of the widget: the buttons, which hold the ride's clock.
-	Model : VcrButtons.Transport(Clock)
+	Model : PlaybackButtons.Transport(Clock)
 
 	canvas_app : CanvasApp.CanvasApp(BeaconWidgetApp.Model)
-	canvas_app = VcrButtons.canvas_app({
+	canvas_app = PlaybackButtons.canvas_app({
 		title: "Two beacons",
 		range: blinks,
 		opens_at: blinks.first,
@@ -38,8 +38,8 @@ BeaconWidgetApp :: [].{
 
 ## Two whole blinks, late in the ride, a blink in two seconds. The first step is a
 ## whole number of blinks in, so the range starts where a blink starts.
-blinks : VcrButtons.NumberRange(Clock)
-blinks = VcrButtons.clock_range({
+blinks : PlaybackButtons.NumberRange(Clock)
+blinks = PlaybackButtons.clock_range({
 	first_step: 5400,
 	last_step: 5640,
 	steps_a_frame: 1.0,
@@ -62,7 +62,7 @@ tower_right = Distance.metres(70.0)
 ## Everything on the canvas.
 shapes_at : BeaconWidgetApp.Model -> List(Shapes.Shape)
 shapes_at = |transport|
-	VcrButtons.frame_shapes(
+	PlaybackButtons.frame_shapes(
 		transport,
 		{
 			range: blinks,
@@ -138,5 +138,5 @@ expect picture_shapes(Clock.at_step(5430)) != picture_shapes(Clock.at_step(5431)
 
 # The picture follows the buttons' clock.
 expect
-	shapes_at(VcrButtons.transport_at(Clock.at_step(5430)))
-		!= shapes_at(VcrButtons.transport_at(Clock.at_step(5431)))
+	shapes_at(PlaybackButtons.transport_at(Clock.at_step(5430)))
+		!= shapes_at(PlaybackButtons.transport_at(Clock.at_step(5431)))

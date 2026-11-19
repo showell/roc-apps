@@ -27,16 +27,16 @@ import lib.CanvasApp
 import lib.Shapes
 import widget.ReadoutText
 import widget.WidgetPage
-import widget.VcrButtons
+import widget.PlaybackButtons
 
 BirdWidgetApp :: [].{
 
 	## The whole state of the widget: the buttons, which hold the gap from the
 	## rider to the bird's first tree.
-	Model : VcrButtons.Transport(Distance)
+	Model : PlaybackButtons.Transport(Distance)
 
 	canvas_app : CanvasApp.CanvasApp(BirdWidgetApp.Model)
-	canvas_app = VcrButtons.canvas_app({
+	canvas_app = PlaybackButtons.canvas_app({
 		title: "The bird taking off",
 		range: closing_gap,
 		opens_at: closing_gap.first,
@@ -46,8 +46,8 @@ BirdWidgetApp :: [].{
 
 ## The rider's approach, from a gap past where the bird takes off down to zero, in
 ## ten seconds.
-closing_gap : VcrButtons.NumberRange(Distance)
-closing_gap = VcrButtons.gap_range({ farthest: Distance.metres(75.0), metres_a_frame: 0.125 })
+closing_gap : PlaybackButtons.NumberRange(Distance)
+closing_gap = PlaybackButtons.gap_range({ farthest: Distance.metres(75.0), metres_a_frame: 0.125 })
 
 ## The rider's speed, steady, and the widget's own choice. The flight plays a
 ## frame a step, so this is how much of the gap each frame of the flight takes,
@@ -71,7 +71,7 @@ eye_to_first_tree = Distance.metres(18.0)
 ## Everything on the canvas.
 shapes_at : BirdWidgetApp.Model -> List(Shapes.Shape)
 shapes_at = |transport|
-	VcrButtons.frame_shapes(
+	PlaybackButtons.frame_shapes(
 		transport,
 		{
 			range: closing_gap,

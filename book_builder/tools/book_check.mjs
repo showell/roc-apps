@@ -263,7 +263,7 @@ async function routeTo(page, i, mouseAt) {
   return null;
 }
 
-// The play button of VcrButtons, as shares of the frame.
+// The play button of PlaybackButtons, as shares of the frame.
 const PLAY = { x: 0.384, y: 0.65 };
 
 // A widget that is a fixed picture has nothing to click, so it proves it runs

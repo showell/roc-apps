@@ -24,16 +24,16 @@ import lib.Point
 import lib.Shapes
 import widget.ReadoutText
 import widget.WidgetPage
-import widget.VcrButtons
+import widget.PlaybackButtons
 
 CatWidgetApp :: [].{
 
 	## The whole state of the widget: the buttons, which hold the gap from the
 	## rider to the cat.
-	Model : VcrButtons.Transport(Distance)
+	Model : PlaybackButtons.Transport(Distance)
 
 	canvas_app : CanvasApp.CanvasApp(CatWidgetApp.Model)
-	canvas_app = VcrButtons.canvas_app({
+	canvas_app = PlaybackButtons.canvas_app({
 		title: "The cat crossing",
 		range: closing_gap,
 		opens_at: closing_gap.first,
@@ -42,8 +42,8 @@ CatWidgetApp :: [].{
 }
 
 ## The rider's approach, in about seven seconds.
-closing_gap : VcrButtons.NumberRange(Distance)
-closing_gap = VcrButtons.gap_range({ farthest: Distance.metres(50.0), metres_a_frame: 0.125 })
+closing_gap : PlaybackButtons.NumberRange(Distance)
+closing_gap = PlaybackButtons.gap_range({ farthest: Distance.metres(50.0), metres_a_frame: 0.125 })
 
 ## A typical speed on the ride. At one metre a step, a step of the buttons is a
 ## step of the ride, and the crossing's steps read as metres.
@@ -55,7 +55,7 @@ shapes_at : CatWidgetApp.Model -> List(Shapes.Shape)
 shapes_at = |transport| {
 	gap = transport.at
 	stage = crossing_stage(gap)
-	VcrButtons.frame_shapes(
+	PlaybackButtons.frame_shapes(
 		transport,
 		{
 			range: closing_gap,

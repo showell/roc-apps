@@ -3,7 +3,7 @@
 ## A widget is a small canvas app, and every frame is a pure function of its
 ## state. This module holds the page's sizes, the canvas app around a widget,
 ## and laying out the picture and the text. ReadoutText puts a widget's numbers
-## into words for those lines, VcrButtons reads a widget's buttons into its
+## into words for those lines, PlaybackButtons reads a widget's buttons into its
 ## state, Click reads where the pointer was pressed, PlanView holds the one
 ## mapping of the pictures that look down on the road, and WidgetPalette holds
 ## the colors the widgets share.

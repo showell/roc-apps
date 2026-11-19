@@ -30,13 +30,13 @@ import widget.PlanView
 import widget.ReadoutText
 import widget.WidgetPage
 import widget.WidgetPalette
-import widget.VcrButtons
+import widget.PlaybackButtons
 
 GazeWidgetApp :: [].{
 
 	## The whole state of the widget: the states of the stretch played so far,
 	## first step first, and the buttons, which hold the step asked for.
-	Model : { played : List(Rider), transport : VcrButtons.Transport(Clock) }
+	Model : { played : List(Rider), transport : PlaybackButtons.Transport(Clock) }
 
 	canvas_app : CanvasApp.CanvasApp(GazeWidgetApp.Model)
 	canvas_app = WidgetPage.canvas_app({
@@ -72,8 +72,8 @@ eyes_back_step : U32
 eyes_back_step = 1224
 
 ## The whole stretch, in about eight seconds.
-stretch : VcrButtons.NumberRange(Clock)
-stretch = VcrButtons.clock_range({ first_step, last_step, steps_a_frame: 1.0 })
+stretch : PlaybackButtons.NumberRange(Clock)
+stretch = PlaybackButtons.clock_range({ first_step, last_step, steps_a_frame: 1.0 })
 
 ## How many states the whole stretch holds.
 stretch_length : U64
@@ -89,7 +89,7 @@ first_rider : Rider
 first_rider = Tour.at_step(Clock.at_step(first_step)).instant().rider
 
 starting_model : GazeWidgetApp.Model
-starting_model = { played: [first_rider], transport: VcrButtons.transport_at(stretch.first) }
+starting_model = { played: [first_rider], transport: PlaybackButtons.transport_at(stretch.first) }
 
 ## The first segment of the route whose pigs catch the rider's eye.
 pig_segment : Segment
@@ -107,8 +107,8 @@ gaze_pig =
 ## which the ride may not have reached the one asked for.
 with_buttons : GazeWidgetApp.Model, Input.Snapshot -> GazeWidgetApp.Model
 with_buttons = |model, input| {
-	caught_up = VcrButtons.catch_up(model.transport, { input, shown: shown_clock(model) })
-	{ ..model, transport: VcrButtons.next_transport(caught_up, { input, range: stretch }) }
+	caught_up = PlaybackButtons.catch_up(model.transport, { input, shown: shown_clock(model) })
+	{ ..model, transport: PlaybackButtons.next_transport(caught_up, { input, range: stretch }) }
 }
 
 ## `model` a frame on, with a few more steps played until the stretch is. The
@@ -159,7 +159,7 @@ phase_of = |rider|
 shapes_at : GazeWidgetApp.Model -> List(Shapes.Shape)
 shapes_at = |model| {
 	rider = rider_at(model.played, shown_offset(model))
-	VcrButtons.frame_shapes(
+	PlaybackButtons.frame_shapes(
 		model.transport,
 		{
 			range: stretch,
@@ -374,7 +374,7 @@ expect
 
 ## A model at its start, asking for `step`.
 asking_for : U32 -> GazeWidgetApp.Model
-asking_for = |step| { ..starting_model, transport: VcrButtons.transport_at(Clock.at_step(step)) }
+asking_for = |step| { ..starting_model, transport: PlaybackButtons.transport_at(Clock.at_step(step)) }
 
 ## `model` after `frames` frames with nobody touching it.
 left_alone : GazeWidgetApp.Model, U64 -> GazeWidgetApp.Model
@@ -399,17 +399,17 @@ expect left_alone(starting_model, 59).played.len() == stretch_length
 # with nothing pressed leaves it alone.
 expect with_buttons(
 	starting_model,
-	VcrButtons.click_on(ToEnd),
+	PlaybackButtons.click_on(ToEnd),
 ).transport.at == Clock.at_step(last_step)
 expect with_buttons(
 	asking_for(1000),
-	VcrButtons.click_on(ToStart),
+	PlaybackButtons.click_on(ToStart),
 ).transport.at == Clock.at_step(first_step)
 expect with_buttons(
 	starting_model,
-	VcrButtons.click_on(StepForward),
+	PlaybackButtons.click_on(StepForward),
 ).transport.at == Clock.at_step(861)
-expect with_buttons(starting_model, VcrButtons.click_on(Play)).transport.at == Clock.at_step(861)
+expect with_buttons(starting_model, PlaybackButtons.click_on(Play)).transport.at == Clock.at_step(861)
 expect with_buttons(starting_model, Input.none).transport.at == Clock.at_step(first_step)
 
 # The state on show waits for the ride, then matches the buttons.
@@ -422,7 +422,7 @@ expect shown_offset(left_alone(asking_for(870), 1)) == 8
 # A step while the ride is catching up counts from the step on show.
 expect {
 	catching_up = left_alone(asking_for(last_step), 2)
-	stepped = with_buttons(catching_up, VcrButtons.click_on(StepForward))
+	stepped = with_buttons(catching_up, PlaybackButtons.click_on(StepForward))
 	stepped.transport == {
 		at: Clock.at_step(first_step).plus(Steps.of((2 * played_a_frame + 1).to_u32_wrap())),
 		motion: Stopped,

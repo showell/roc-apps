@@ -24,7 +24,7 @@ import lib.Point
 import widget.ReadoutText
 import widget.WidgetPage
 import widget.WidgetPalette
-import widget.VcrButtons
+import widget.PlaybackButtons
 
 SkyWidgetApp :: [].{
 
@@ -33,7 +33,7 @@ SkyWidgetApp :: [].{
 
 	## The whole state of the widget: the buttons, which hold the ride's clock,
 	## and the job.
-	Model : { transport : VcrButtons.Transport(Clock), job : SkyWidgetApp.Job }
+	Model : { transport : PlaybackButtons.Transport(Clock), job : SkyWidgetApp.Job }
 
 	canvas_app : CanvasApp.CanvasApp(SkyWidgetApp.Model)
 	canvas_app = WidgetPage.canvas_app({
@@ -47,12 +47,12 @@ SkyWidgetApp :: [].{
 
 ## The widget as it opens.
 at_start : SkyWidgetApp.Model
-at_start = { transport: VcrButtons.transport_at(sunset.first), job: SunSets }
+at_start = { transport: PlaybackButtons.transport_at(sunset.first), job: SunSets }
 
 ## The sunset, in twelve seconds, from the ride's start to a little after full
 ## night.
-sunset : VcrButtons.NumberRange(Clock)
-sunset = VcrButtons.clock_range({
+sunset : PlaybackButtons.NumberRange(Clock)
+sunset = PlaybackButtons.clock_range({
 	first_step: 0,
 	last_step: 6000,
 	steps_a_frame: 8.0,
@@ -68,7 +68,7 @@ next_model = |model, input| {
 		} else {
 			model.job
 		}
-	{ transport: VcrButtons.next_transport(model.transport, { input, range: sunset }), job }
+	{ transport: PlaybackButtons.next_transport(model.transport, { input, range: sunset }), job }
 }
 
 next_job : SkyWidgetApp.Job -> SkyWidgetApp.Job
@@ -84,7 +84,7 @@ shapes_at : SkyWidgetApp.Model -> List(Shapes.Shape)
 shapes_at = |{ transport, job }| {
 	clock = transport.at
 	[
-		VcrButtons.frame_shapes(
+		PlaybackButtons.frame_shapes(
 			transport,
 			{
 				range: sunset,
@@ -374,13 +374,13 @@ expect {
 
 ## The widget at `step`, stopped.
 stopped_at : U32 -> SkyWidgetApp.Model
-stopped_at = |step| { ..at_start, transport: VcrButtons.transport_at(Clock.at_step(step)) }
+stopped_at = |step| { ..at_start, transport: PlaybackButtons.transport_at(Clock.at_step(step)) }
 
 ## What a press of `control` does, after that frame.
-pressed_on : SkyWidgetApp.Model, VcrButtons.Control -> SkyWidgetApp.Model
-pressed_on = |model, control| next_model(model, VcrButtons.click_on(control))
+pressed_on : SkyWidgetApp.Model, PlaybackButtons.Control -> SkyWidgetApp.Model
+pressed_on = |model, control| next_model(model, PlaybackButtons.click_on(control))
 
-# The buttons run over the sunset. VcrButtons holds what each button does.
+# The buttons run over the sunset. PlaybackButtons holds what each button does.
 expect pressed_on(at_start, ToEnd).transport.at == sunset.last
 
 # The Right key moves through the jobs, and the pointer leaves them alone.

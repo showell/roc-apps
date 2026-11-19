@@ -24,7 +24,7 @@ import lib.RgbColor
 import widget.ReadoutText
 import widget.WidgetPage
 import widget.WidgetPalette
-import widget.VcrButtons
+import widget.PlaybackButtons
 
 StepWidgetApp :: [].{
 
@@ -32,7 +32,7 @@ StepWidgetApp :: [].{
 	## step it's heading for, and how it last moved.
 	Model : {
 		tour : Tour,
-		transport : VcrButtons.Transport(Clock),
+		transport : PlaybackButtons.Transport(Clock),
 		last_move : [NotYet, Played, ReadBack],
 	}
 
@@ -51,8 +51,8 @@ steps_a_frame : Steps
 steps_a_frame = Steps.of(8)
 
 ## The steps the buttons reach. Play goes as fast as the ride can be worked out.
-step_range : VcrButtons.NumberRange(Clock)
-step_range = VcrButtons.clock_range({
+step_range : PlaybackButtons.NumberRange(Clock)
+step_range = PlaybackButtons.clock_range({
 	first_step: 0,
 	last_step: step_range_end,
 	steps_a_frame: steps_a_frame.to_f64(),
@@ -72,8 +72,8 @@ read_back_a_frame = Steps.of(200)
 ## where the ride is, which may not have reached the step it was heading for.
 aim_transport : StepWidgetApp.Model, Input.Snapshot -> StepWidgetApp.Model
 aim_transport = |model, input| {
-	caught_up = VcrButtons.catch_up(model.transport, { input, shown: model.tour.instant().clock })
-	{ ..model, transport: VcrButtons.next_transport(caught_up, { input, range: step_range }) }
+	caught_up = PlaybackButtons.catch_up(model.transport, { input, shown: model.tour.instant().clock })
+	{ ..model, transport: PlaybackButtons.next_transport(caught_up, { input, range: step_range }) }
 }
 
 ## `model` a frame on: closer to the step it's heading for, or left alone.
@@ -103,7 +103,7 @@ move_tour = |model| {
 ## Everything on the canvas.
 shapes_at : StepWidgetApp.Model -> List(Shapes.Shape)
 shapes_at = |model|
-	VcrButtons.frame_shapes(
+	PlaybackButtons.frame_shapes(
 		model.transport,
 		{
 			range: step_range,
@@ -302,17 +302,17 @@ status_lines = |model| {
 heading_for_step : U32 -> StepWidgetApp.Model
 heading_for_step = |step| {
 	tour: Tour.initial,
-	transport: VcrButtons.transport_at(Clock.at_step(step)),
+	transport: PlaybackButtons.transport_at(Clock.at_step(step)),
 	last_move: NotYet,
 }
 
 ## `model` heading for `step` instead.
 head_for_step : StepWidgetApp.Model, U32 -> StepWidgetApp.Model
-head_for_step = |model, step| { ..model, transport: VcrButtons.transport_at(Clock.at_step(step)) }
+head_for_step = |model, step| { ..model, transport: PlaybackButtons.transport_at(Clock.at_step(step)) }
 
 ## A frame of `model` with a press of `control`.
-pressed_on : StepWidgetApp.Model, VcrButtons.Control -> StepWidgetApp.Model
-pressed_on = |model, control| move_tour(aim_transport(model, VcrButtons.click_on(control)))
+pressed_on : StepWidgetApp.Model, PlaybackButtons.Control -> StepWidgetApp.Model
+pressed_on = |model, control| move_tour(aim_transport(model, PlaybackButtons.click_on(control)))
 
 ## `model` after `frames` frames with nobody touching it.
 left_alone : StepWidgetApp.Model, U64 -> StepWidgetApp.Model
