@@ -49,9 +49,9 @@ CanvasAppRunner :: [].{
 		color_a : Math.Vec4,
 		color_b : Math.Vec4,
 		color_c : Math.Vec4,
-		geom_a : Math.Vec4,
-		geom_b : Math.Vec4,
-		geom_c : Math.Vec4,
+		geometry_a : Math.Vec4,
+		geometry_b : Math.Vec4,
+		geometry_c : Math.Vec4,
 	}
 
 	Model(model) : { state : model, fps : Bool, target : Draw.RenderTexture, shader : Shader(CanvasAppRunner.BrushUniforms) }
@@ -442,9 +442,9 @@ CanvasAppRunner :: [].{
 			color_a: vec(u.color_a),
 			color_b: vec(u.color_b),
 			color_c: vec(u.color_c),
-			geom_a: vec(u.geom_a),
-			geom_b: vec(u.geom_b),
-			geom_c: vec(u.geom_c),
+			geometry_a: vec(u.geometry_a),
+			geometry_b: vec(u.geometry_b),
+			geometry_c: vec(u.geometry_c),
 		}
 	}
 
@@ -456,9 +456,9 @@ CanvasAppRunner :: [].{
 		color_a: zero_vec,
 		color_b: zero_vec,
 		color_c: zero_vec,
-		geom_a: zero_vec,
-		geom_b: zero_vec,
-		geom_c: zero_vec,
+		geometry_a: zero_vec,
+		geometry_b: zero_vec,
+		geometry_c: zero_vec,
 	}
 
 	zero_vec : Math.Vec4

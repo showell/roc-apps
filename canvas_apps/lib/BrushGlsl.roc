@@ -34,9 +34,9 @@ BrushGlsl :: [].{
 		color_a : BrushGlsl.Quad,
 		color_b : BrushGlsl.Quad,
 		color_c : BrushGlsl.Quad,
-		geom_a : BrushGlsl.Quad,
-		geom_b : BrushGlsl.Quad,
-		geom_c : BrushGlsl.Quad,
+		geometry_a : BrushGlsl.Quad,
+		geometry_b : BrushGlsl.Quad,
+		geometry_c : BrushGlsl.Quad,
 	}
 
 	## The fill as the uniforms the fragment shader reads.
@@ -49,7 +49,7 @@ BrushGlsl :: [].{
 				..blank,
 				color_a: color_quad(span.edge_color),
 				color_b: color_quad(span.middle_color),
-				geom_a: {
+				geometry_a: {
 					x: span.left_x.to_f64(),
 					y: span.right_x.to_f64(),
 					z: 0.0,
@@ -60,19 +60,19 @@ BrushGlsl :: [].{
 				..blank,
 				color_a: color_quad(radial.inner_color),
 				color_b: color_quad(radial.outer_color),
-				geom_a: ring_quad(radial),
+				geometry_a: ring_quad(radial),
 			}
 			Linear(linear) => {
 				..blank,
 				color_a: color_quad(linear.stops.start_color),
 				color_b: color_quad(linear.stops.end_color),
-				geom_a: {
+				geometry_a: {
 					x: linear.stops.start_offset,
 					y: linear.stops.end_offset,
 					z: 0.0,
 					w: 0.0,
 				},
-				geom_b: {
+				geometry_b: {
 					x: linear.start_point.x.to_f64(),
 					y: linear.start_point.y.to_f64(),
 					z: linear.end_point.x.to_f64() - linear.start_point.x.to_f64(),
@@ -85,19 +85,19 @@ BrushGlsl :: [].{
 					..blank,
 					color_a: color_quad(ellipse.stops.start_color),
 					color_b: color_quad(ellipse.stops.end_color),
-					geom_a: {
+					geometry_a: {
 						x: ellipse.stops.start_offset,
 						y: ellipse.stops.end_offset,
 						z: 0.0,
 						w: 0.0,
 					},
-					geom_b: {
+					geometry_b: {
 						x: ellipse.center.x.to_f64(),
 						y: ellipse.center.y.to_f64(),
 						z: 0.0,
 						w: 0.0,
 					},
-					geom_c: {
+					geometry_c: {
 						x: inverse.top_row.x,
 						y: inverse.top_row.y,
 						z: inverse.bottom_row.x,
@@ -110,8 +110,8 @@ BrushGlsl :: [].{
 				color_a: color_quad(glow.inner_color),
 				color_b: color_quad(glow.middle_color),
 				color_c: color_quad(glow.outer_color),
-				geom_a: ring_quad(glow),
-				geom_b: {
+				geometry_a: ring_quad(glow),
+				geometry_b: {
 					x: glow.middle_offset,
 					y: 0.0,
 					z: 0.0,
@@ -148,9 +148,9 @@ BrushGlsl :: [].{
 			"uniform vec4 color_a;",
 			"uniform vec4 color_b;",
 			"uniform vec4 color_c;",
-			"uniform vec4 geom_a;",
-			"uniform vec4 geom_b;",
-			"uniform vec4 geom_c;",
+			"uniform vec4 geometry_a;",
+			"uniform vec4 geometry_b;",
+			"uniform vec4 geometry_c;",
 			"out vec4 finalColor;",
 			"",
 			"vec4 twoStop(vec4 c0, float o0, vec4 c1, float o1, float t) {",
@@ -162,14 +162,14 @@ BrushGlsl :: [].{
 			# The distance from a centre as a fraction of the way from the
 			# inner radius to the outer, which Radial and Glow both want.
 			"float ringT() {",
-			"    float d = distance(scenePos, geom_a.xy);",
-			"    return geom_a.w > geom_a.z ? clamp((d - geom_a.z) / (geom_a.w - geom_a.z), 0.0, 1.0) : 1.0;",
+			"    float d = distance(scenePos, geometry_a.xy);",
+			"    return geometry_a.w > geometry_a.z ? clamp((d - geometry_a.z) / (geometry_a.w - geometry_a.z), 0.0, 1.0) : 1.0;",
 			"}",
 			"",
 			# A span whose edges meet, and a line from a point to itself in
 			# linearColor, are at their far end everywhere, as in BrushShade.shade.
 			"vec4 spanColor() {",
-			"    float t = geom_a.y != geom_a.x ? clamp((scenePos.x - geom_a.x) / (geom_a.y - geom_a.x), 0.0, 1.0) : 1.0;",
+			"    float t = geometry_a.y != geometry_a.x ? clamp((scenePos.x - geometry_a.x) / (geometry_a.y - geometry_a.x), 0.0, 1.0) : 1.0;",
 			"    return t <= 0.5 ? mix(color_a, color_b, t * 2.0) : mix(color_b, color_a, (t - 0.5) * 2.0);",
 			"}",
 			"",
@@ -178,20 +178,20 @@ BrushGlsl :: [].{
 			"}",
 			"",
 			"vec4 linearColor() {",
-			"    float length_squared = dot(geom_b.zw, geom_b.zw);",
-			"    float t = length_squared > 0.0 ? clamp(dot(scenePos - geom_b.xy, geom_b.zw) / length_squared, 0.0, 1.0) : 1.0;",
-			"    return twoStop(color_a, geom_a.x, color_b, geom_a.y, t);",
+			"    float length_squared = dot(geometry_b.zw, geometry_b.zw);",
+			"    float t = length_squared > 0.0 ? clamp(dot(scenePos - geometry_b.xy, geometry_b.zw) / length_squared, 0.0, 1.0) : 1.0;",
+			"    return twoStop(color_a, geometry_a.x, color_b, geometry_a.y, t);",
 			"}",
 			"",
 			"vec4 ellipseColor() {",
-			"    vec2 q = scenePos - geom_b.xy;",
-			"    vec2 u = vec2(geom_c.x * q.x + geom_c.y * q.y, geom_c.z * q.x + geom_c.w * q.y);",
-			"    return twoStop(color_a, geom_a.x, color_b, geom_a.y, clamp(length(u), 0.0, 1.0));",
+			"    vec2 q = scenePos - geometry_b.xy;",
+			"    vec2 u = vec2(geometry_c.x * q.x + geometry_c.y * q.y, geometry_c.z * q.x + geometry_c.w * q.y);",
+			"    return twoStop(color_a, geometry_a.x, color_b, geometry_a.y, clamp(length(u), 0.0, 1.0));",
 			"}",
 			"",
 			"vec4 glowColor() {",
 			"    float t = ringT();",
-			"    float m = geom_b.x;",
+			"    float m = geometry_b.x;",
 			"    return t <= m ? mix(color_a, color_b, t / m) : mix(color_b, color_c, (t - m) / (1.0 - m));",
 			"}",
 			"",
@@ -238,9 +238,9 @@ blank_uniforms = {
 	color_a: zero_quad,
 	color_b: zero_quad,
 	color_c: zero_quad,
-	geom_a: zero_quad,
-	geom_b: zero_quad,
-	geom_c: zero_quad,
+	geometry_a: zero_quad,
+	geometry_b: zero_quad,
+	geometry_c: zero_quad,
 }
 
 color_quad : Brush.Rgba -> BrushGlsl.Quad
@@ -313,19 +313,19 @@ expect {
 				z: 1.0,
 				w: 0.0,
 			},
-			geom_a: {
+			geometry_a: {
 				x: 3.0,
 				y: 4.0,
 				z: 1.0,
 				w: 9.0,
 			},
-			geom_b: {
+			geometry_b: {
 				x: 0.25,
 				y: 0.0,
 				z: 0.0,
 				w: 0.0,
 			},
-			geom_c: zero_quad,
+			geometry_c: zero_quad,
 		}
 }
 
@@ -364,20 +364,20 @@ expect {
 		}),
 	)
 	line.mode == 3.0
-		and line.geom_b == {
+		and line.geometry_b == {
 			x: 1.0,
 			y: 2.0,
 			z: 3.0,
 			w: 4.0,
 		}
 		and ellipse.mode == 4.0
-		and ellipse.geom_b == {
+		and ellipse.geometry_b == {
 			x: 7.0,
 			y: 8.0,
 			z: 0.0,
 			w: 0.0,
 		}
-		and ellipse.geom_c == {
+		and ellipse.geometry_c == {
 			x: -3.0,
 			y: 2.5,
 			z: 2.0,
