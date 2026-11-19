@@ -99,7 +99,7 @@ Robot :: [].{
 				Wheel => wheel_shapes(place, { body, pose, hip })
 			},
 		)
-		$out = $out.concat(torso_shapes(place, { body, hip }))
+		$out = List.concat($out, torso_shapes(place, { body, hip }))
 		$out = $out.append(
 			bar(
 				place,
@@ -124,8 +124,8 @@ Robot :: [].{
 				},
 			),
 		)
-		$out = $out.concat(face_shapes(place, { body, head_bottom, glow: pose.eye_glow, look: pose.look }))
-		$out = $out.concat(arm_shapes(place, { body, pose }))
+		$out = List.concat($out, face_shapes(place, { body, head_bottom, glow: pose.eye_glow, look: pose.look }))
+		$out = List.concat($out, arm_shapes(place, { body, pose }))
 		$out
 	}
 }
@@ -336,7 +336,7 @@ leg_shapes = |place, { body, pose, hip }| {
 	swing = pose.phase.sin()
 	lifts = [
 		{ side: -1.0, lift: (-swing).max(0.0) * 0.07 * pose.stride },
-		{ side: 1.0, lift: swing.max(0.0) * 0.07 * pose.stride },
+		{ side: 1.0, lift: F64.max(swing, 0.0) * 0.07 * pose.stride },
 	]
 	var $out = List.with_capacity(8)
 	for leg in lifts {
@@ -571,7 +571,7 @@ face_shapes = |place, { body, head_bottom, glow, look }| {
 		} else {
 			[]
 		}
-	eyes.append(mouth).concat(halos)
+	List.concat(eyes.append(mouth), halos)
 }
 
 # The left arm swings with the walk; the right one carries, so it goes where

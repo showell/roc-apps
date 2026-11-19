@@ -52,10 +52,10 @@ Thanksgiving :: [].{
 		view = view_at(tick)
 		var $out = Backyard.backyard_shapes(view)
 		for offset in tables {
-			$out = $out.concat(party_shapes(view.shifted(offset), tick))
+			$out = List.concat($out, party_shapes(view.shifted(offset), tick))
 		}
-		$out = $out.concat(Banner.banner_shapes(Dinner.banner_drop(tick), { width: width }))
-		$out.concat(Leaves.leaf_shapes(Dinner.gust_seconds(tick), { width: width }))
+		$out = List.concat($out, Banner.banner_shapes(Dinner.banner_drop(tick), { width: width }))
+		List.concat($out, Leaves.leaf_shapes(Dinner.gust_seconds(tick), { width: width }))
 	}
 }
 
@@ -80,18 +80,18 @@ party_shapes : View, I64 -> List(Shapes.Shape)
 party_shapes = |view, tick| {
 	guests = [Tall, Round, Tiny]
 	var $out = Lights.post_shapes(view)
-	$out = $out.concat(Table.shadow_shapes(view))
+	$out = List.concat($out, Table.shadow_shapes(view))
 	for build in guests {
-		$out = $out.concat(Table.chair_shapes(view, build))
-		$out = $out.concat(robot_shapes(view, { build, tick }))
-		$out = $out.concat(dish_shapes(view, { build, tick, layer: Carried }))
+		$out = List.concat($out, Table.chair_shapes(view, build))
+		$out = List.concat($out, robot_shapes(view, { build, tick }))
+		$out = List.concat($out, dish_shapes(view, { build, tick, layer: Carried }))
 	}
-	$out = $out.concat(Table.top_shapes(view))
+	$out = List.concat($out, Table.top_shapes(view))
 	for build in guests {
-		$out = $out.concat(dish_shapes(view, { build, tick, layer: OnTable }))
+		$out = List.concat($out, dish_shapes(view, { build, tick, layer: OnTable }))
 	}
-	$out = $out.concat(dancer_shapes(view, tick))
-	$out.concat(Lights.strand_shapes(view, Dinner.bulb_glows(tick)))
+	$out = List.concat($out, dancer_shapes(view, tick))
+	List.concat($out, Lights.strand_shapes(view, Dinner.bulb_glows(tick)))
 }
 
 robot_shapes : View, { build : Robot.Build, tick : I64 } -> List(Shapes.Shape)

@@ -44,14 +44,14 @@ Dancer :: [].{
 		var $out = List.with_capacity(40)
 		$out = $out.append(bar(place, { from: { across: 0.0, up: head_bottom + 0.21 }, to: { across: 0.0, up: head_bottom + 0.33 }, width: 0.016, fill: trim }))
 		$out = $out.append(dot(place, { at: { across: 0.0, up: head_bottom + 0.34 }, radius: 0.028, fill: Flat(lit_eye) }))
-		$out = $out.concat(leg_shapes(place, { pose, hip }))
+		$out = List.concat($out, leg_shapes(place, { pose, hip }))
 		$out = $out.append(box(place, { left: -0.13, bottom: hip, width: 0.26, height: body_height, corner: 0.03, fill: paint }))
 		$out = $out.append(box(place, { left: -0.08, bottom: hip + 0.25, width: 0.16, height: 0.24, corner: 0.02, fill: trim }))
 		$out = $out.append(dot(place, { at: { across: 0.0, up: hip + 0.37 }, radius: 0.025, fill: Flat(lit_eye) }))
 		$out = $out.append(bar(place, { from: { across: 0.0, up: chest_top - 0.01 }, to: { across: 0.0, up: head_bottom + 0.01 }, width: 0.06, fill: trim }))
-		$out = $out.concat(head_shapes(place, { head_bottom, turn: pose.head }))
-		$out = $out.concat(arm_shapes(place, { shoulder: { across: -0.16, up: shoulder_up + (-pose.pop).max(0.0) }, upper: pose.left_upper, fore: pose.left_fore }))
-		$out = $out.concat(arm_shapes(place, { shoulder: { across: 0.16, up: shoulder_up + pose.pop.max(0.0) }, upper: pose.right_upper, fore: pose.right_fore }))
+		$out = List.concat($out, head_shapes(place, { head_bottom, turn: pose.head }))
+		$out = List.concat($out, arm_shapes(place, { shoulder: { across: -0.16, up: shoulder_up + (-pose.pop).max(0.0) }, upper: pose.left_upper, fore: pose.left_fore }))
+		$out = List.concat($out, arm_shapes(place, { shoulder: { across: 0.16, up: shoulder_up + F64.max(pose.pop, 0.0) }, upper: pose.right_upper, fore: pose.right_fore }))
 		Shapes.squashed_shapes($out, { axis: feet.x, cosine: pose.turn })
 	}
 }
@@ -107,7 +107,7 @@ leg_shapes : Place, { pose : Dancer.Pose, hip : F64 } -> List(Shapes.Shape)
 leg_shapes = |place, { pose, hip }| {
 	swing = pose.phase.sin()
 	var $out = List.with_capacity(8)
-	for leg in [{ side: -1.0, lift: (-swing).max(0.0) * 0.08 * pose.stride }, { side: 1.0, lift: swing.max(0.0) * 0.08 * pose.stride }] {
+	for leg in [{ side: -1.0, lift: (-swing).max(0.0) * 0.08 * pose.stride }, { side: 1.0, lift: F64.max(swing, 0.0) * 0.08 * pose.stride }] {
 		hip_spot = { across: leg.side * 0.07, up: hip }
 		knee = { across: leg.side * (0.08 + pose.bounce * 1.6), up: hip / 2.0 + leg.lift }
 		foot = { across: leg.side * 0.09, up: leg.lift }
@@ -131,7 +131,7 @@ head_shapes = |place, { head_bottom, turn }| {
 		dot(place, { at: { across: slide + 0.05, up: head_bottom + 0.13 }, radius: 0.028, fill: Flat(lit_eye) }),
 		bar(place, { from: { across: slide - 0.045, up: head_bottom + 0.055 }, to: { across: slide + 0.045, up: head_bottom + 0.055 }, width: 0.018, fill: trim }),
 	]
-	bolts.concat(face)
+	List.concat(bolts, face)
 }
 
 arm_shapes : Place, { shoulder : Spot, upper : F64, fore : F64 } -> List(Shapes.Shape)

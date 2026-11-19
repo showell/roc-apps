@@ -40,7 +40,8 @@ Lights :: [].{
 			for post in [0.0, 1.0, 2.0] {
 				right = side * strand_right
 				forward = first_post + post * post_gap
-				$out = $out.concat(
+				$out = List.concat(
+					$out,
 					view.line_shapes({
 						from: { right, forward, height: 0.0 },
 						to: { right, forward, height: post_top + 0.1 },
@@ -67,8 +68,9 @@ Lights :: [].{
 				forward = first_post + 2.0 * post_gap * k.to_f64() / wire_samples.to_f64()
 				$wire = $wire.append({ right, forward, height: wire_height(forward) })
 			}
-			for (a, b) in $wire.drop_last(1).map2($wire.drop_first(1), |a, b| (a, b)) {
-				$out = $out.concat(
+			for (a, b) in List.map2($wire.drop_last(1), $wire.drop_first(1), |a, b| (a, b)) {
+				$out = List.concat(
+					$out,
 					view.line_shapes({
 						from: a,
 						to: b,
@@ -112,7 +114,7 @@ Lights :: [].{
 				}
 			}
 		}
-		$out.concat(Shapes.added_light_shapes($halos))
+		List.concat($out, Shapes.added_light_shapes($halos))
 	}
 }
 

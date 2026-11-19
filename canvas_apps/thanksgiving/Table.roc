@@ -171,7 +171,7 @@ Table :: [].{
 					})
 				Stool => []
 			}
-		back.concat(legs).concat(seat)
+		List.concat(List.concat(back, legs), seat)
 	}
 
 	## The tablecloth, its runner, the near legs under it and a plate at each
@@ -240,7 +240,7 @@ Table :: [].{
 			fill: runner_red,
 		})
 		plates = places.map(|spot| plate_shapes(view, spot)).join()
-		legs.concat(apron).concat(cloth).concat(runner).concat(plates)
+		List.concat(List.concat(List.concat(List.concat(legs, apron), cloth), runner), plates)
 	}
 }
 
@@ -266,7 +266,8 @@ plate_shapes = |view, spot| {
 		forward: spot.forward,
 		radius: 0.085,
 	})
-	view.region_shapes({ corners: rim, fill: plate_rim }).concat(
+	List.concat(
+		view.region_shapes({ corners: rim, fill: plate_rim }),
 		view.region_shapes({ corners: middle, fill: plate_white }),
 	)
 }

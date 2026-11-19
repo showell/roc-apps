@@ -211,7 +211,7 @@ tree_shapes = |view| {
 						Err(BehindEye) => []
 					},
 			).join()
-			stem.concat(crowns)
+			List.concat(stem, crowns)
 		},
 	).join()
 }
@@ -258,7 +258,8 @@ fence_shapes = |view| {
 	var $out = panel
 	for k in 0..=boards {
 		right = 0.0 - reach + 2.0 * reach * k.to_f64() / boards.to_f64()
-		$out = $out.concat(
+		$out = List.concat(
+			$out,
 			view.line_shapes({
 				from: { right, forward: fence_forward, height: 0.0 },
 				to: { right, forward: fence_forward, height: fence_high },
@@ -267,7 +268,8 @@ fence_shapes = |view| {
 			}),
 		)
 	}
-	$out.concat(
+	List.concat(
+		$out,
 		view.line_shapes({
 			from: {
 				right: 0.0 - reach,

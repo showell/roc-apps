@@ -58,17 +58,17 @@ Banner :: [].{
 					Brush.flat(RgbColor.of(0xF2C14E)),
 				),
 			)
-			words = lettering_shapes(
-				"Happy",
-				{ top_center: Point.at(middle, top + 14.0), size: 28.0 },
+			words = List.concat(
+				lettering_shapes(
+					"Happy",
+					{ top_center: Point.at(middle, top + 14.0), size: 28.0 },
+				),
+				lettering_shapes(
+					"Thanksgiving!",
+					{ top_center: Point.at(middle, top + 50.0), size: 24.0 },
+				),
 			)
-				.concat(
-					lettering_shapes(
-						"Thanksgiving!",
-						{ top_center: Point.at(middle, top + 50.0), size: 24.0 },
-					),
-				)
-			cords.append(cloth).concat(trim).concat(words)
+			List.concat(List.concat(cords.append(cloth), trim), words)
 		}
 }
 
