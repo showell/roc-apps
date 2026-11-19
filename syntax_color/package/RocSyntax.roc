@@ -73,7 +73,7 @@ Frame : [
 	Record,
 	Body,
 	TypeBlock,
-	LambdaArgs,
+	LambdaArguments,
 	Interpolation(StringKind),
 ]
 
@@ -231,10 +231,8 @@ token_step = |bytes, { state, byte, next, place, header }| {
 	} else if byte == '$' and Bytes.is_ascii_word_byte(next) {
 		{ ..emit(state, { class: Plain, end: word_end(bytes, at + 1) }), before: Value }
 	} else if byte >= 0x80 {
-		{
-			..emit(state, { class: Plain, end: Bytes.run_end(bytes, { at, keep: |b| b >= 0x80 }) }),
-			before: Value,
-		}
+		end = Bytes.run_end(bytes, { at, keep: |run_byte| run_byte >= 0x80 })
+		{ ..emit(state, { class: Plain, end }), before: Value }
 	} else {
 		symbol_step(bytes, { state, byte, next })
 	}
@@ -338,7 +336,7 @@ symbol_step = |bytes, { state, byte, next }| {
 	} else if byte == '|' {
 		bar_step(state, plain(at + 1, Operator))
 	} else if byte == '.' and next == '.' {
-		plain(Bytes.run_end(bytes, { at, keep: |b| b == '.' }), Operator)
+		plain(Bytes.run_end(bytes, { at, keep: |run_byte| run_byte == '.' }), Operator)
 	} else if byte == '.' {
 		plain(at + 1, Dot)
 	} else if byte == ':' and (next == '=' or next == ':') {
@@ -366,7 +364,7 @@ symbol_step = |bytes, { state, byte, next }| {
 bar_step : State, State -> State
 bar_step = |state, passed|
 	match state.frames.last() {
-		Ok(LambdaArgs) => {
+		Ok(LambdaArguments) => {
 			..passed,
 			frames: state.frames.drop_last(1),
 			before: BarClose,
@@ -377,7 +375,7 @@ bar_step = |state, passed|
 			} else {
 				{
 					..passed,
-					frames: state.frames.append(LambdaArgs),
+					frames: state.frames.append(LambdaArguments),
 					before: BarOpen,
 				}
 			}
@@ -449,12 +447,12 @@ number_end = |bytes, at| {
 	if Bytes.byte_at(bytes, at) == '0' and (prefix == 'x' or prefix == 'o' or prefix == 'b') {
 		Bytes.run_end(bytes, { at: at + 2, keep: Bytes.is_ascii_word_byte })
 	} else {
-		whole = Bytes.run_end(bytes, { at, keep: |b| Bytes.is_digit(b) or b == '_' })
+		whole = Bytes.run_end(bytes, { at, keep: |byte| Bytes.is_digit(byte) or byte == '_' })
 		fraction =
 			if Bytes.byte_at(bytes, whole) == '.' and Bytes.is_digit(
 				Bytes.byte_at(bytes, whole + 1),
 			) {
-				Bytes.run_end(bytes, { at: whole + 1, keep: |b| Bytes.is_digit(b) or b == '_' })
+				Bytes.run_end(bytes, { at: whole + 1, keep: |byte| Bytes.is_digit(byte) or byte == '_' })
 			} else {
 				whole
 			}
@@ -511,26 +509,26 @@ is_interpolation = |frame| match frame {
 
 ## The index of the first byte at or after `at` that isn't a space or a tab.
 space_end : List(U8), U64 -> U64
-space_end = |bytes, at| Bytes.run_end(bytes, { at, keep: |b| b == ' ' or b == '\t' })
+space_end = |bytes, at| Bytes.run_end(bytes, { at, keep: |byte| byte == ' ' or byte == '\t' })
 
 ## Whether a byte ends a value, so that a `-` after it subtracts.
 is_value_end : U8 -> Bool
-is_value_end = |b|
-	Bytes.is_ascii_word_byte(b)
-		or b == ')'
-		or b == ']'
-		or b == '}'
-		or b == '"'
-		or b == '\''
-		or b == '!'
-		or b == '?'
-		or b >= 0x80
+is_value_end = |byte|
+	Bytes.is_ascii_word_byte(byte)
+		or byte == ')'
+		or byte == ']'
+		or byte == '}'
+		or byte == '"'
+		or byte == '\''
+		or byte == '!'
+		or byte == '?'
+		or byte >= 0x80
 
 is_upper : U8 -> Bool
-is_upper = |b| b >= 'A' and b <= 'Z'
+is_upper = |byte| byte >= 'A' and byte <= 'Z'
 
 is_lower : U8 -> Bool
-is_lower = |b| b >= 'a' and b <= 'z'
+is_lower = |byte| byte >= 'a' and byte <= 'z'
 
 ## The runs of `text` that get a color, each with its class and its text: what
 ## the expects below read.

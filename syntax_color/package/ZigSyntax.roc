@@ -60,7 +60,7 @@ Token : {
 
 ## What the token before was, as far as a word cares: `fn`, after which a name
 ## is declared; a `.`, after which a word is a field; or anything else.
-Before : [Fn, Dot, Other]
+Before : [FunctionKeyword, Dot, Other]
 
 ## Zig's keywords, but `anyframe` and `anytype`, which are types here, and the
 ## four primitive values Zig reads as names.
@@ -171,7 +171,7 @@ class_of = |token, before| match token.kind {
 	String => String
 	Number => Number
 	Builtin => Keyword
-	QuotedName if before == Fn => Name
+	QuotedName if before == FunctionKeyword => Name
 	QuotedName => Plain
 	Word(word) =>
 		if before == Dot {
@@ -180,7 +180,7 @@ class_of = |token, before| match token.kind {
 			Type
 		} else if keywords.contains(word) {
 			Keyword
-		} else if before == Fn {
+		} else if before == FunctionKeyword {
 			Name
 		} else {
 			Plain
@@ -192,7 +192,7 @@ next_before : Token, Before -> Before
 next_before = |token, before| match token.kind {
 	Space | Comment => before
 	Dot => Dot
-	Word(word) if word == "fn" and before != Dot => Fn
+	Word(word) if word == "fn" and before != Dot => FunctionKeyword
 	_ => Other
 }
 
@@ -228,7 +228,7 @@ token_at = |bytes, at| {
 	} else if byte == '.' {
 		{ kind: Dot, end: at + 1 }
 	} else if byte >= 0x80 {
-		{ kind: Symbol, end: Bytes.run_end(bytes, { at, keep: |b| b >= 0x80 }) }
+		{ kind: Symbol, end: Bytes.run_end(bytes, { at, keep: |run_byte| run_byte >= 0x80 }) }
 	} else {
 		{ kind: Symbol, end: at + 1 }
 	}
@@ -267,7 +267,7 @@ number_end = |bytes, at| {
 ## An exponent's letter: `e` or `E` for a decimal number, `p` or `P` for a
 ## hexadecimal one. The tokenizer takes either in any base.
 is_exponent_mark : U8 -> Bool
-is_exponent_mark = |b| b == 'e' or b == 'E' or b == 'p' or b == 'P'
+is_exponent_mark = |byte| byte == 'e' or byte == 'E' or byte == 'p' or byte == 'P'
 
 ## The runs of `text` that get a color, each with its class and its text: what
 ## the expects below read.

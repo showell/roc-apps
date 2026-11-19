@@ -21,7 +21,7 @@ Bytes :: [].{
 
 	## The index of the newline at or after `at`, or the length.
 	line_end : List(U8), U64 -> U64
-	line_end = |bytes, at| Bytes.run_end(bytes, { at, keep: |b| b != '\n' })
+	line_end = |bytes, at| Bytes.run_end(bytes, { at, keep: |byte| byte != '\n' })
 
 	## The end of a string quoted by `quote` whose text starts at `at`: just past
 	## the closing quote, or where its line or the text ends. A backslash keeps
@@ -52,29 +52,30 @@ Bytes :: [].{
 	}
 
 	is_digit : U8 -> Bool
-	is_digit = |b| b >= '0' and b <= '9'
+	is_digit = |byte| byte >= '0' and byte <= '9'
 
 	## A space, a tab, a CR or a newline: the whitespace of Shale and of Zig.
 	is_space : U8 -> Bool
-	is_space = |b| b == ' ' or b == '\t' or b == '\r' or b == '\n'
+	is_space = |byte| byte == ' ' or byte == '\t' or byte == '\r' or byte == '\n'
 
 	## An ASCII letter or `_`: the first byte of a word in Shale and in Zig.
 	is_ascii_word_start : U8 -> Bool
-	is_ascii_word_start = |b| (b >= 'a' and b <= 'z') or (b >= 'A' and b <= 'Z') or b == '_'
+	is_ascii_word_start = |byte|
+		(byte >= 'a' and byte <= 'z') or (byte >= 'A' and byte <= 'Z') or byte == '_'
 
 	## An ASCII letter, a digit or `_`: a byte of a word in Roc, Shale and Zig.
 	is_ascii_word_byte : U8 -> Bool
-	is_ascii_word_byte = |b|
-		(b >= 'a' and b <= 'z')
-			or (b >= 'A' and b <= 'Z')
-			or Bytes.is_digit(b)
-			or b == '_'
+	is_ascii_word_byte = |byte|
+		(byte >= 'a' and byte <= 'z')
+			or (byte >= 'A' and byte <= 'Z')
+			or Bytes.is_digit(byte)
+			or byte == '_'
 }
 
 expect Bytes.byte_at([1, 2], 1) == 2
 expect Bytes.byte_at([1, 2], 2) == 0
-expect Bytes.run_end([1, 1, 2], { at: 0, keep: |b| b == 1 }) == 2
-expect Bytes.run_end([1, 1], { at: 0, keep: |b| b == 1 }) == 2
+expect Bytes.run_end([1, 1, 2], { at: 0, keep: |byte| byte == 1 }) == 2
+expect Bytes.run_end([1, 1], { at: 0, keep: |byte| byte == 1 }) == 2
 expect Bytes.line_end("ab\nc".to_utf8(), 0) == 2
 expect Bytes.line_end("ab".to_utf8(), 1) == 2
 expect Bytes.quoted_end("a\\'b'c".to_utf8(), { at: 0, quote: '\'' }) == 5

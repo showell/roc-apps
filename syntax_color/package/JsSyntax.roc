@@ -213,7 +213,7 @@ code_step = |bytes, state| {
 			state,
 			{
 				class: Plain,
-				end: Bytes.run_end(bytes, { at, keep: |b| b == '.' }),
+				end: Bytes.run_end(bytes, { at, keep: |run_byte| run_byte == '.' }),
 				before: Operator,
 			},
 		)
@@ -419,7 +419,7 @@ number_end = |bytes, at| {
 	prefix = Bytes.byte_at(bytes, at + 1)
 	is_radix = ['x', 'X', 'b', 'B', 'o', 'O'].contains(prefix)
 	if Bytes.byte_at(bytes, at) == '0' and is_radix {
-		Bytes.run_end(bytes, { at: at + 2, keep: |b| is_hex_digit(b) or b == '_' })
+		Bytes.run_end(bytes, { at: at + 2, keep: |byte| is_hex_digit(byte) or byte == '_' })
 	} else {
 		whole = Bytes.run_end(bytes, { at, keep: is_digit_or_separator })
 		fraction =
@@ -428,9 +428,9 @@ number_end = |bytes, at| {
 			} else {
 				whole
 			}
-		e = Bytes.byte_at(bytes, fraction)
+		exponent_mark = Bytes.byte_at(bytes, fraction)
 		sign = Bytes.byte_at(bytes, fraction + 1)
-		if (e == 'e' or e == 'E') and (
+		if (exponent_mark == 'e' or exponent_mark == 'E') and (
 			Bytes.is_digit(sign) or (
 				(sign == '+' or sign == '-') and Bytes.is_digit(
 					Bytes.byte_at(bytes, fraction + 2),
@@ -445,18 +445,23 @@ number_end = |bytes, at| {
 }
 
 is_digit_or_separator : U8 -> Bool
-is_digit_or_separator = |b| Bytes.is_digit(b) or b == '_'
+is_digit_or_separator = |byte| Bytes.is_digit(byte) or byte == '_'
 
 is_letter : U8 -> Bool
-is_letter = |b| (b >= 'a' and b <= 'z') or (b >= 'A' and b <= 'Z') or b == '_' or b == '$'
+is_letter = |byte|
+	(byte >= 'a' and byte <= 'z')
+		or (byte >= 'A' and byte <= 'Z')
+		or byte == '_'
+		or byte == '$'
 
 is_hex_digit : U8 -> Bool
-is_hex_digit = |b| Bytes.is_digit(b) or (b >= 'a' and b <= 'f') or (b >= 'A' and b <= 'F')
+is_hex_digit = |byte|
+	Bytes.is_digit(byte) or (byte >= 'a' and byte <= 'f') or (byte >= 'A' and byte <= 'F')
 
 ## A byte of a name: an ASCII letter, a digit, `_`, `$`, or any byte of a
 ## character past ASCII, which JavaScript's names may hold.
 is_word_byte : U8 -> Bool
-is_word_byte = |b| is_letter(b) or Bytes.is_digit(b) or b >= 0x80
+is_word_byte = |byte| is_letter(byte) or Bytes.is_digit(byte) or byte >= 0x80
 
 ## The runs of `text` that get a color, each with its class and its text: what
 ## the expects below read.

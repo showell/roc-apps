@@ -12,8 +12,8 @@ app [main!] { sc: "../package/main.roc" }
 import sc.Span
 import sc.SyntaxColor
 
-main! = |args| {
-	for answer in answers(args) {
+main! = |requests| {
+	for answer in answers(requests) {
 		echo!("<!-- syntax_color answer -->\n${answer}")
 	}
 	Ok({})
@@ -21,10 +21,10 @@ main! = |args| {
 
 ## The answer to each request, in order.
 answers : List(Str) -> List(Str)
-answers = |args| answers_onto([], args)
+answers = |requests| answers_onto([], requests)
 
 answers_onto : List(Str), List(Str) -> List(Str)
-answers_onto = |out, args| match args {
+answers_onto = |out, requests| match requests {
 	[] => out
 	["roc", text, .. as rest] => answers_onto(
 		out.append(SyntaxColor.html(SyntaxColor.roc, text)),

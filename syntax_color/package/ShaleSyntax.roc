@@ -121,7 +121,7 @@ token_at = |bytes, at| {
 		) ?? crash "ShaleSyntax.token_at: a word is ASCII"
 		{ kind: Word(word), end }
 	} else if byte >= 0x80 {
-		{ kind: Symbol, end: Bytes.run_end(bytes, { at, keep: |b| b >= 0x80 }) }
+		{ kind: Symbol, end: Bytes.run_end(bytes, { at, keep: |run_byte| run_byte >= 0x80 }) }
 	} else {
 		{ kind: Symbol, end: at + 1 }
 	}
@@ -143,7 +143,7 @@ long_level = |bytes, at|
 	if Bytes.byte_at(bytes, at) != '[' {
 		Err(NotLong)
 	} else {
-		after = Bytes.run_end(bytes, { at: at + 1, keep: |b| b == '=' })
+		after = Bytes.run_end(bytes, { at: at + 1, keep: |byte| byte == '=' })
 		level = after - (at + 1)
 		if level > 0 and Bytes.byte_at(bytes, after) == '[' {
 			Ok(level)
@@ -172,7 +172,7 @@ long_end = |bytes, { opener, level }| {
 ## Whether a closer of `level` starts at `at`.
 is_closer : List(U8), { at : U64, level : U64 } -> Bool
 is_closer = |bytes, { at, level }| {
-	after = Bytes.run_end(bytes, { at: at + 1, keep: |b| b == '=' })
+	after = Bytes.run_end(bytes, { at: at + 1, keep: |byte| byte == '=' })
 	after - (at + 1) == level and Bytes.byte_at(bytes, after) == ']'
 }
 
