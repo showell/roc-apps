@@ -294,7 +294,10 @@ counted_at = |bytes, atom| {
 			runs: [],
 		})
 		Ok('*') => Ok({
-			steps: List.concat([Split(1, atom_step_count + 2)], shifted_steps(atom.steps, 1)).append(Jump(0)),
+			steps: List.concat(
+				[Split(1, atom_step_count + 2)],
+				shifted_steps(atom.steps, 1),
+			).append(Jump(0)),
 			at: atom.at + 1,
 			runs: [],
 		})

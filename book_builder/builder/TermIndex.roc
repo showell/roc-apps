@@ -190,7 +190,10 @@ category_table = |category, entries| {
 		.map_with_index(|entry, i| { entry, i })
 		.keep_if(|keyed| keyed.entry.term.category == category and keyed.entry.main != Nowhere)
 		.sort_with(
-			|left_keyed, right_keyed| match compare_bytes(sort_key(left_keyed.entry.term.name), sort_key(right_keyed.entry.term.name)) {
+			|left_keyed, right_keyed| match compare_bytes(
+				sort_key(left_keyed.entry.term.name),
+				sort_key(right_keyed.entry.term.name),
+			) {
 				Same if left_keyed.i < right_keyed.i => Before
 				Same if left_keyed.i > right_keyed.i => After
 				order => order
