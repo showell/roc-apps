@@ -277,11 +277,15 @@ to bring its own format-only changes.
   reformatted 27 files for the `if` change above, and four planted faults'
   targets followed. Run `roc fmt` right after moving the pin, and commit
   the result with the pin move, apart from any change in behaviour.
-- **Judge a pure reformat by machine code, not archive bytes.** Roc's
-  procedure names hash the source layout, so a reformat changes the
+- **Judge a pure reformat or a move by machine code, not archive bytes.**
+  Roc's procedure names hash the source layout, so a reformat changes the
   archive's bytes while the code stays the same. Shale's
-  `cookbook/roc/compare_machine_code.shale` compares two builds instruction by
-  instruction with those names masked.
+  `cookbook/roc/compare_machine_code.shale` compares two builds procedure by
+  procedure, as sets of bodies with addresses and those names masked, so a
+  move across modules (which reorders the layout) still reads SAME CODE. A
+  body whose code matches but whose string data differs, such as a crash
+  message naming the new module, is reported apart as DATA ONLY.
+  `by=line` keeps the old instruction-by-instruction comparison.
 
 ## 6. Testing: frozen answers, planted faults, exact counts
 
