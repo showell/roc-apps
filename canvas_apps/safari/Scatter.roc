@@ -18,10 +18,10 @@ Scatter :: [].{
 		jitter_across : Distance,
 	} -> { along : Distance, across : Distance }
 	stray_of = |index, { along_phase, across_phase, jitter_along, jitter_across }| {
-		i = index.to_f64()
+		position = index.to_f64()
 		{
-			along: jitter_along.times((i * along_phase).sin()),
-			across: jitter_across.times((i * across_phase).cos()),
+			along: jitter_along.times((position * along_phase).sin()),
+			across: jitter_across.times((position * across_phase).cos()),
 		}
 	}
 }

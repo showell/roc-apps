@@ -48,41 +48,41 @@ pixels_with_shape = |pixels, { roll, shape, mode }|
 	match shape {
 		# A canvas traces a triangle as the path round its three corners, so it
 		# fills as that polygon does.
-		Triangle(t) => ScanlineFill.polygon_pixels(
+		Triangle(triangle) => ScanlineFill.polygon_pixels(
 			pixels,
 			{
 				roll,
-				corners: [t.first, t.second, t.third],
-				fill: t.fill,
+				corners: [triangle.first, triangle.second, triangle.third],
+				fill: triangle.fill,
 				mode,
 			},
 		)
 		# A quad, likewise, as the path round its four corners.
-		Quad(q) => ScanlineFill.polygon_pixels(
+		Quad(quad) => ScanlineFill.polygon_pixels(
 			pixels,
 			{
 				roll,
-				corners: [q.first, q.second, q.third, q.fourth],
-				fill: q.fill,
+				corners: [quad.first, quad.second, quad.third, quad.fourth],
+				fill: quad.fill,
 				mode,
 			},
 		)
-		Polygon(p) => ScanlineFill.polygon_pixels(
+		Polygon(polygon) => ScanlineFill.polygon_pixels(
 			pixels,
 			{
 				roll,
-				corners: p.corners,
-				fill: p.fill,
+				corners: polygon.corners,
+				fill: polygon.fill,
 				mode,
 			},
 		)
-		Disc(d) => ScanlineFill.disc_pixels(
+		Disc(disc) => ScanlineFill.disc_pixels(
 			pixels,
 			{
 				roll,
-				center: ScreenRoll.ScenePoint.({ x: d.center.x.to_f64(), y: d.center.y.to_f64() }),
-				radius: d.radius.to_f64(),
-				fill: d.fill,
+				center: ScreenRoll.ScenePoint.({ x: disc.center.x.to_f64(), y: disc.center.y.to_f64() }),
+				radius: disc.radius.to_f64(),
+				fill: disc.fill,
 				mode,
 			},
 		)

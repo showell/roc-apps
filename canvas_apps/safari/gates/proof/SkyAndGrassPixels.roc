@@ -41,15 +41,15 @@ SkyAndGrassPixels :: [].{
 				pixel = if y >= Grass.grass_top_y.to_f64() {
 					grass_pixel
 				} else {
-					t = F64.min((y / Screen.horizon_y.to_f64()).max(0.0), 1.0)
+					sky_fraction = F64.min((y / Screen.horizon_y.to_f64()).max(0.0), 1.0)
 					stop = Sky.sky_top_stop.to_f64()
-					color = if t <= stop {
+					color = if sky_fraction <= stop {
 						top_color
 					} else {
 						Brush.mix({
 							from: top_color,
 							to: horizon_color,
-							fraction: (t - stop) / (1.0 - stop),
+							fraction: (sky_fraction - stop) / (1.0 - stop),
 						})
 					}
 					PixelColor.pack({

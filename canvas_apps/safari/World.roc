@@ -415,7 +415,7 @@ herd_count_before = |index|
 		.count_if(|plan| plan.pigs == WithPigs)
 
 route_segment_at : U32 -> Segment
-route_segment_at = |i| World.route.segment_at(Route.SegmentIndex.number(i))
+route_segment_at = |index| World.route.segment_at(Route.SegmentIndex.number(index))
 
 expect
 	[

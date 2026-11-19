@@ -12,9 +12,9 @@ EarthCurve :: [].{
 	## never negative.
 	ground_drop : RiderView.RiderPoint -> Distance
 	ground_drop = |point| {
-		r = point.right.to_metres()
-		f = point.forward.to_metres()
-		Distance.metres((r * r + f * f) / (2.0 * ground_curve_radius.to_metres()))
+		right = point.right.to_metres()
+		forward = point.forward.to_metres()
+		Distance.metres((right * right + forward * forward) / (2.0 * ground_curve_radius.to_metres()))
 	}
 
 	## The lowest height at `point`, measured from the rider's level, that the
@@ -102,9 +102,9 @@ region_within = |reach| {
 ## Whether `point` is within `reach` of the rider, measured on the ground.
 is_within : RiderView.PointAtHeight, Distance -> Bool
 is_within = |point, reach| {
-	r = point.right.to_metres()
-	f = point.forward.to_metres()
-	r * r + f * f <= reach.to_metres() * reach.to_metres()
+	right = point.right.to_metres()
+	forward = point.forward.to_metres()
+	right * right + forward * forward <= reach.to_metres() * reach.to_metres()
 }
 
 ## How far along the edge from `from` to `to` it crosses the circle at `reach`

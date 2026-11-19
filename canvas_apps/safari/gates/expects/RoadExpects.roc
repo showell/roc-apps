@@ -335,8 +335,8 @@ first_road = patches_seen_from(Fixtures.origin).first() ?? crash "RoadExpects: t
 corner : List(RiderView.RiderPoint), U64 -> RiderView.RiderPoint
 corner = |
 	corners,
-	i,
-| corners.get(i) ?? crash "RoadExpects: the road has a corner at each chunk's end on either edge"
+	index,
+| corners.get(index) ?? crash "RoadExpects: the road has a corner at each chunk's end on either edge"
 
 ## The road's corners where chunk `number` starts, on the right edge and the
 ## left: the start, then up the right edge, then back down the left.

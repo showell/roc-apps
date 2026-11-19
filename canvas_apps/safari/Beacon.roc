@@ -136,19 +136,19 @@ beacon_disc = |{ center, radius_on_screen, brightness }| {
 	})
 }
 
-## How far into its blink the beacon past the end of the segment numbered `n`
+## How far into its blink the beacon past the end of the segment numbered `number`
 ## is when the ride starts.
 segment_head_start : U32 -> F64
-segment_head_start = |n| {
-	segment = Route.SegmentIndex.number(n)
+segment_head_start = |number| {
+	segment = Route.SegmentIndex.number(number)
 	head_start({ segment, place: AtEnd }).to_f64()
 }
 
-## How far into its blink the beacon halfway along the segment numbered `n` is
+## How far into its blink the beacon halfway along the segment numbered `number` is
 ## when the ride starts.
 midway_head_start : U32 -> F64
-midway_head_start = |n| {
-	segment = Route.SegmentIndex.number(n)
+midway_head_start = |number| {
+	segment = Route.SegmentIndex.number(number)
 	head_start({ segment, place: Midway }).to_f64()
 }
 
@@ -175,10 +175,10 @@ expect
 	].all(|(got, want)| got == want)
 expect
 	[0, 1, 2, 3, 59, 60, 119].all(
-		|n| {
-			midway = head_start({ segment: Route.SegmentIndex.number(n), place: Midway })
+		|number| {
+			midway = head_start({ segment: Route.SegmentIndex.number(number), place: Midway })
 			back_again = midway.plus(half_period).wrapped_to(Beacon.beacon_period)
-			back_again.to_f64() == segment_head_start(n)
+			back_again.to_f64() == segment_head_start(number)
 		},
 	)
 expect

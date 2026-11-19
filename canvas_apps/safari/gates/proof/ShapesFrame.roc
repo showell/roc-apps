@@ -30,10 +30,10 @@ import ProofRide
 triangles : List(ConvexCut.CutShape) -> U64
 triangles = |cut_shapes| cut_shapes.fold(
 	0,
-	|n, cut_shape|
+	|count, cut_shape|
 		match cut_shape {
-			Triangles(t) => n + t.triangle_corners.len() // 3
-			Uncut(_) => n
+			Triangles(cut) => count + cut.triangle_corners.len() // 3
+			Uncut(_) => count
 		},
 )
 
@@ -64,22 +64,22 @@ compare = |tour| {
 	view = FrameView.frame_view_at(tour.route(), tour.instant())
 	instant_shapes = view.ride_shape_lists().join()
 	cut_shapes = ConvexCut.cut_shapes(instant_shapes)
-	a = SafariFrame.picture_pixels(view)
+	game_pixels = SafariFrame.picture_pixels(view)
 	backdrop = SafariFrame.backdrop_pixels(view)
-	b = ShapesPixels.pixels_with_shapes(
+	cut_pixels = ShapesPixels.pixels_with_shapes(
 		backdrop,
 		{ roll: SafariFrame.screen_roll(view.roll), shapes: shapes_of_cut(cut_shapes) },
 	)
-	n = a.len()
+	pixel_count = game_pixels.len()
 	var $differ = 0.U64
-	for k in 0..<n {
-		if a.get(k) != b.get(k) {
+	for k in 0..<pixel_count {
+		if game_pixels.get(k) != cut_pixels.get(k) {
 			$differ = $differ + 1
 		}
 	}
-	differing = "differ ${$differ.to_str()} of ${n.to_str()}"
+	differing = "differ ${$differ.to_str()} of ${pixel_count.to_str()}"
 	totals = "triangles ${triangles(cut_shapes).to_str()}, shapes ${instant_shapes.len().to_str()}"
-	{ pixels: b, counts: "${differing}, ${totals}" }
+	{ pixels: cut_pixels, counts: "${differing}, ${totals}" }
 }
 
 held_line : I64, Tour -> Str

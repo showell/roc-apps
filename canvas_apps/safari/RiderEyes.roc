@@ -72,9 +72,9 @@ next_look_depth = |eyes, gaze_yaw|
 		)
 	}
 
-## Radians in `d` degrees.
+## Radians in `degrees` degrees.
 radians_of_degrees : F64 -> F64
-radians_of_degrees = |d| Angle.Turn.degrees(d).to_radians()
+radians_of_degrees = |degrees| Angle.Turn.degrees(degrees).to_radians()
 
 ## Eyes looking `gaze_yaw` from straight ahead.
 head : F64 -> RiderEyes

@@ -113,7 +113,7 @@ expect PixelColor.added_pixel(
 ) == 0xFF0000
 
 channel_byte : F64 -> U32
-channel_byte = |v| I64.min(I64.max((v + 0.5).to_i64_wrap(), 0), 255).to_u32_wrap()
+channel_byte = |channel| I64.min(I64.max((channel + 0.5).to_i64_wrap(), 0), 255).to_u32_wrap()
 
 ## A pixel's channels: the mirror of `pack`.
 unpack : U32 -> PixelColor.Rgb

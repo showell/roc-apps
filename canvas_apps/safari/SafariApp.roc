@@ -24,25 +24,25 @@ SafariApp :: [].{
 		frames_a_second: 30,
 		init: initial_model,
 		model_at_next_step: CanvasApp.untimed_model_at_next_step(model_at_next_step),
-		frame_shapes: |m| FrameView.frame_view_at(m.tour.route(), m.tour.instant()).leaned_shapes(),
-		sounds: |_m| 0,
+		frame_shapes: |model| FrameView.frame_view_at(model.tour.route(), model.tour.instant()).leaned_shapes(),
+		sounds: |_model| 0,
 		tones: [],
 		title: "Safari",
 	}
 }
 
 model_at_next_step : SafariApp.Model, Input.Snapshot -> SafariApp.Model
-model_at_next_step = |m, input|
+model_at_next_step = |model, input|
 	if input.key_pressed(KeyR) {
 		initial_model
 	} else {
 		motion = if input.key_pressed(KeySpace) {
-			match m.motion {
+			match model.motion {
 				Playing => Paused
 				Paused => Playing
 			}
 		} else {
-			m.motion
+			model.motion
 		}
 		steps_a_frame = match motion {
 			Paused => Steps.one_step
@@ -50,13 +50,13 @@ model_at_next_step = |m, input|
 		}
 		moved =
 			if input.key_down(KeyRight) {
-				m.tour.steps_forward(steps_a_frame)
+				model.tour.steps_forward(steps_a_frame)
 			} else if input.key_down(KeyLeft) {
-				m.tour.steps_back(steps_a_frame)
+				model.tour.steps_back(steps_a_frame)
 			} else {
 				match motion {
-					Paused => m.tour
-					Playing => m.tour.step_forward()
+					Paused => model.tour
+					Playing => model.tour.step_forward()
 				}
 			}
 		tour = if input.key_pressed(KeyJ) {

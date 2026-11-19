@@ -15,30 +15,30 @@ Route :: List(Segment).{
 	SegmentIndex :: U32.{
 
 		number : U32 -> Route.SegmentIndex
-		number = |n| Route.SegmentIndex.(n)
+		number = |index| Route.SegmentIndex.(index)
 
 		to_u32 : Route.SegmentIndex -> U32
-		to_u32 = |Route.SegmentIndex.(n)| n
+		to_u32 = |Route.SegmentIndex.(index)| index
 
 		## The route's first segment.
 		first : Route.SegmentIndex
 		first = Route.SegmentIndex.(0)
 
 		next : Route.SegmentIndex -> Route.SegmentIndex
-		next = |Route.SegmentIndex.(n)| Route.SegmentIndex.(n + 1)
+		next = |Route.SegmentIndex.(index)| Route.SegmentIndex.(index + 1)
 
 		## The segment before this one, unless this is the first.
 		previous : Route.SegmentIndex -> [Previous(Route.SegmentIndex), AtRouteStart]
-		previous = |Route.SegmentIndex.(n)|
-			if n == 0 {
+		previous = |Route.SegmentIndex.(index)|
+			if index == 0 {
 				AtRouteStart
 			} else {
-				Previous(Route.SegmentIndex.(n - 1))
+				Previous(Route.SegmentIndex.(index - 1))
 			}
 
 		## How many segments come before this one.
 		count_before : Route.SegmentIndex -> U64
-		count_before = |Route.SegmentIndex.(n)| n.to_u64()
+		count_before = |Route.SegmentIndex.(index)| index.to_u64()
 
 		## The segment with `count` segments before it, the inverse of
 		## `count_before`.

@@ -226,7 +226,7 @@ all_pigs : List(Geom.Placed(Billboard))
 all_pigs = PigHerd.BigHerd(three_rows_of_four).herd_pigs(fixture_herd_along)
 
 herd_pig_at : U64 -> Geom.Placed(Billboard)
-herd_pig_at = |i| all_pigs.get(i) ?? crash "PigHerd's expects: the big herd has 12 pigs"
+herd_pig_at = |index| all_pigs.get(index) ?? crash "PigHerd's expects: the big herd has 12 pigs"
 
 # The big herd's standout is the pig of the front row after the columns before
 # it, and it is one pig of the herd.
@@ -250,8 +250,8 @@ expect
 		(10, 954.0, 24.0),
 		(11, 958.0, 24.0),
 	].all(
-		|(i, along, across)| {
-			place = herd_pig_at(i).road_point
+		|(index, along, across)| {
+			place = herd_pig_at(index).road_point
 			along_miss = (place.along.to_metres() - along).abs()
 			across_miss = (place.across.to_metres() - across).abs()
 			along_miss <= 1.2 and across_miss <= 1.0

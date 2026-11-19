@@ -20,7 +20,7 @@ Speed :: F64.{
 		}
 
 	to_metres_a_step : Speed -> F64
-	to_metres_a_step = |Speed.(s)| s
+	to_metres_a_step = |Speed.(speed)| speed
 
 	## Standing still.
 	at_rest : Speed
@@ -29,8 +29,8 @@ Speed :: F64.{
 	## This speed after `acceleration`, the change over one step, or `BelowRest`
 	## when that would take it below zero.
 	accelerated_by_try : Speed, Acceleration -> Try(Speed, [BelowRest])
-	accelerated_by_try = |Speed.(s), acceleration| {
-		after = s + acceleration.to_metres_a_step_each_step()
+	accelerated_by_try = |Speed.(speed), acceleration| {
+		after = speed + acceleration.to_metres_a_step_each_step()
 		if after < 0.0 {
 			Err(BelowRest)
 		} else {
@@ -49,33 +49,33 @@ Speed :: F64.{
 	## The steady acceleration that brings this speed to `target` within this
 	## distance.
 	acceleration_to : Speed, { target : Speed, within : Distance } -> Acceleration
-	acceleration_to = |Speed.(s), { target: Speed.(t), within }|
-		Acceleration.metres_a_step_each_step((t * t - s * s) / (2.0 * within.to_metres()))
+	acceleration_to = |Speed.(speed), { target: Speed.(target), within }|
+		Acceleration.metres_a_step_each_step((target * target - speed * speed) / (2.0 * within.to_metres()))
 
 	times : Speed, F64 -> Speed
-	times = |Speed.(s), factor| Speed.metres_a_step(s * factor)
+	times = |Speed.(speed), factor| Speed.metres_a_step(speed * factor)
 
 	## This fraction of this speed.
 	scaled_by : Speed, Fraction -> Speed
-	scaled_by = |Speed.(s), fraction| Speed.(s * fraction.to_f64())
+	scaled_by = |Speed.(speed), fraction| Speed.(speed * fraction.to_f64())
 
 	## How far this speed covers in `length`.
 	distance_in : Speed, Steps -> Distance
-	distance_in = |Speed.(s), length| Distance.metres(s * length.to_f64())
+	distance_in = |Speed.(speed), length| Distance.metres(speed * length.to_f64())
 
 	## How many whole steps this speed takes to cover `distance`, a part step
 	## dropped. Nothing goes backwards, and a speed at rest covers nothing, so
 	## either means the sum behind it is wrong.
 	steps_to_cover : Speed, Distance -> Steps
-	steps_to_cover = |Speed.(s), distance| {
+	steps_to_cover = |Speed.(speed), distance| {
 		metres = distance.to_metres()
 		if metres < 0.0 {
 			crash "Speed.steps_to_cover: this distance is below zero, so the sum behind it is wrong"
-		} else if s == 0.0 {
+		} else if speed == 0.0 {
 			crash "Speed.steps_to_cover: a speed at rest covers nothing, so the sum behind it is wrong"
 		} else {
 			whole_steps =
-				(metres / s).floor_to_u32_try()
+				(metres / speed).floor_to_u32_try()
 					?? crash "Speed.steps_to_cover: more steps than a ride's clock counts"
 			Steps.of(whole_steps)
 		}
@@ -83,24 +83,24 @@ Speed :: F64.{
 
 	## How far this speed covers in one step.
 	step_length : Speed -> Distance
-	step_length = |Speed.(s)| Distance.metres(s)
+	step_length = |Speed.(speed)| Distance.metres(speed)
 
 	## The smaller of this speed and `other`.
 	min : Speed, Speed -> Speed
-	min = |Speed.(s), Speed.(other)| Speed.(F64.min(s, other))
+	min = |Speed.(speed), Speed.(other)| Speed.(F64.min(speed, other))
 
 	## The larger of this speed and `other`.
 	max : Speed, Speed -> Speed
-	max = |Speed.(s), Speed.(other)| Speed.(F64.max(s, other))
+	max = |Speed.(speed), Speed.(other)| Speed.(F64.max(speed, other))
 
 	is_gt : Speed, Speed -> Bool
-	is_gt = |Speed.(s), Speed.(other)| s > other
+	is_gt = |Speed.(speed), Speed.(other)| speed > other
 
 	is_lt : Speed, Speed -> Bool
-	is_lt = |Speed.(s), Speed.(other)| s < other
+	is_lt = |Speed.(speed), Speed.(other)| speed < other
 
 	is_lte : Speed, Speed -> Bool
-	is_lte = |Speed.(s), Speed.(other)| s <= other
+	is_lte = |Speed.(speed), Speed.(other)| speed <= other
 
 	is_eq : _
 }

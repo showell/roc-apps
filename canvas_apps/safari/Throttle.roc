@@ -50,12 +50,12 @@ exit_speed = |segment|
 brake_decay : Steps
 brake_decay = Steps.of(20)
 
-## The acceleration `a`, held to what `limit` asks.
+## `acceleration`, held to what `limit` asks.
 held_to : Acceleration, ThrottleLimit -> Acceleration
-held_to = |a, limit|
+held_to = |acceleration, limit|
 	match limit {
-		AtMost(most) => Acceleration.min(a, most)
-		NoLimit => a
+		AtMost(most) => Acceleration.min(acceleration, most)
+		NoLimit => acceleration
 	}
 
 ## Whether a motorcycle at `rider_along` is near enough the end of a segment
@@ -105,9 +105,9 @@ shoulder_brake = |speed, steps_to_shoulder|
 	if steps_to_shoulder == Steps.zero {
 		crash "Throttle.shoulder_brake: a coast leaves the road after zero steps, but a coast counts the step that leaves"
 	} else {
-		n = steps_to_shoulder.to_f64()
-		even_braking = -speed.to_metres_a_step() / (2.0 * n)
-		Acceleration.metres_a_step_each_step(even_braking * F64.e.pow(-n / brake_decay.to_f64()))
+		remaining = steps_to_shoulder.to_f64()
+		even_braking = -speed.to_metres_a_step() / (2.0 * remaining)
+		Acceleration.metres_a_step_each_step(even_braking * F64.e.pow(-remaining / brake_decay.to_f64()))
 	}
 
 ## This many metres a step, each step.

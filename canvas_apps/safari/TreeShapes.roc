@@ -481,7 +481,7 @@ expect {
 expect {
 	corners_of = |tier|
 		match tier_triangle(sample_outline, { tier, foliage_color: RgbColor.of(7) }) {
-			Triangle(t) => [t.first, t.second, t.third].join_map(
+			Triangle(triangle) => [triangle.first, triangle.second, triangle.third].join_map(
 				|corner| [corner.x.to_f64(), corner.y.to_f64()],
 			)
 			_ => crash "a tier is one triangle"

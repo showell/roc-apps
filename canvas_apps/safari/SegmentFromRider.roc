@@ -11,14 +11,14 @@ SegmentFromRider := [Ahead(SegmentFromRider.Position), JustBehind].{
 	Position :: U32.{
 
 		to_u32 : SegmentFromRider.Position -> U32
-		to_u32 = |SegmentFromRider.Position.(n)| n
+		to_u32 = |SegmentFromRider.Position.(position)| position
 
 		## The rider's own segment.
 		first : SegmentFromRider.Position
 		first = SegmentFromRider.Position.(0)
 
 		next : SegmentFromRider.Position -> SegmentFromRider.Position
-		next = |SegmentFromRider.Position.(n)| SegmentFromRider.Position.(n + 1)
+		next = |SegmentFromRider.Position.(position)| SegmentFromRider.Position.(position + 1)
 
 		## Every position on a road ahead of `count` segments, the rider's own
 		## first.
@@ -29,11 +29,11 @@ SegmentFromRider := [Ahead(SegmentFromRider.Position), JustBehind].{
 		## Whether this position is the last one on a road ahead of `count`
 		## segments.
 		is_last_in : SegmentFromRider.Position, { count : U32, .. } -> Bool
-		is_last_in = |SegmentFromRider.Position.(n), { count, .. }| n + 1 >= count
+		is_last_in = |SegmentFromRider.Position.(position), { count, .. }| position + 1 >= count
 
 		## Whether this position is among the first `count` of the road ahead.
 		is_within_first : SegmentFromRider.Position, U32 -> Bool
-		is_within_first = |SegmentFromRider.Position.(n), count| n < count
+		is_within_first = |SegmentFromRider.Position.(position), count| position < count
 
 		is_eq : _
 	}
@@ -41,6 +41,6 @@ SegmentFromRider := [Ahead(SegmentFromRider.Position), JustBehind].{
 	is_eq : _
 }
 
-## The position `n` segments ahead of the rider's own.
+## The position `number` segments ahead of the rider's own.
 position_number : U32 -> SegmentFromRider.Position
-position_number = |n| SegmentFromRider.Position.(n)
+position_number = |number| SegmentFromRider.Position.(number)

@@ -6,17 +6,17 @@ Steps :: U32.{
 	of = |count| Steps.(count)
 
 	to_f64 : Steps -> F64
-	to_f64 = |Steps.(n)| n.to_f64()
+	to_f64 = |Steps.(count)| count.to_f64()
 
 	## The steps a list `count` long plays for, a step to each of its items.
 	of_count : U64 -> Steps
 	of_count = |count| Steps.(count.to_u32_try() ?? crash "Steps.of_count: an animation is fewer than 2^32 steps long")
 
 	to_u32 : Steps -> U32
-	to_u32 = |Steps.(n)| n
+	to_u32 = |Steps.(count)| count
 
 	to_u64 : Steps -> U64
-	to_u64 = |Steps.(n)| n.to_u64()
+	to_u64 = |Steps.(count)| count.to_u64()
 
 	zero : Steps
 	zero = Steps.(0)
@@ -25,31 +25,31 @@ Steps :: U32.{
 	one_step = Steps.(1)
 
 	plus : Steps, Steps -> Steps
-	plus = |Steps.(n), Steps.(other)| Steps.(n + other)
+	plus = |Steps.(count), Steps.(other)| Steps.(count + other)
 
 	times : Steps, U32 -> Steps
-	times = |Steps.(n), factor| Steps.(n * factor)
+	times = |Steps.(count), factor| Steps.(count * factor)
 
 	## This many steps as a share of `whole`.
 	ratio_to : Steps, Steps -> F64
-	ratio_to = |Steps.(n), Steps.(whole)| n.to_f64() / whole.to_f64()
+	ratio_to = |Steps.(count), Steps.(whole)| count.to_f64() / whole.to_f64()
 
 	## The fewer of this many steps and `other`.
 	min : Steps, Steps -> Steps
-	min = |Steps.(n), Steps.(other)| Steps.(U32.min(n, other))
+	min = |Steps.(count), Steps.(other)| Steps.(U32.min(count, other))
 
 	## How far into a cycle of `period` steps this many steps land.
 	wrapped_to : Steps, Steps -> Steps
-	wrapped_to = |Steps.(n), Steps.(period)| Steps.(n % period)
+	wrapped_to = |Steps.(count), Steps.(period)| Steps.(count % period)
 
 	is_gt : Steps, Steps -> Bool
-	is_gt = |Steps.(n), Steps.(other)| n > other
+	is_gt = |Steps.(count), Steps.(other)| count > other
 
 	is_gte : Steps, Steps -> Bool
-	is_gte = |Steps.(n), Steps.(other)| n >= other
+	is_gte = |Steps.(count), Steps.(other)| count >= other
 
 	is_lt : Steps, Steps -> Bool
-	is_lt = |Steps.(n), Steps.(other)| n < other
+	is_lt = |Steps.(count), Steps.(other)| count < other
 
 	is_eq : _
 }

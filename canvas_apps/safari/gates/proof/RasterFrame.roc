@@ -19,21 +19,21 @@ import ProofRide
 # 2^57, so it needs no wrapping arithmetic.
 ## One byte folded into an FNV-1a hash.
 fnv_step : I64, I64 -> I64
-fnv_step = |h, byte| (I64.bitwise_xor(h, byte) * 16777619).bitwise_and(4294967295)
+fnv_step = |running_hash, byte| (I64.bitwise_xor(running_hash, byte) * 16777619).bitwise_and(4294967295)
 
-## The byte of `v` that starts `shift` bits up.
+## The byte of `word` that starts `shift` bits up.
 byte_of : I64, U8 -> I64
-byte_of = |v, shift| I64.bitwise_and(v.shr_wrap(shift), 255)
+byte_of = |word, shift| I64.bitwise_and(word.shr_wrap(shift), 255)
 
 hash : List(U32) -> I64
 hash = |pixels| pixels.fold(
 	2166136261,
-	|h, p| {
-		v = p.to_i64()
-		b0 = fnv_step(h, byte_of(v, 0))
-		b1 = fnv_step(b0, byte_of(v, 8))
-		b2 = fnv_step(b1, byte_of(v, 16))
-		fnv_step(b2, byte_of(v, 24))
+	|running_hash, pixel| {
+		word = pixel.to_i64()
+		b0 = fnv_step(running_hash, byte_of(word, 0))
+		b1 = fnv_step(b0, byte_of(word, 8))
+		b2 = fnv_step(b1, byte_of(word, 16))
+		fnv_step(b2, byte_of(word, 24))
 	},
 )
 

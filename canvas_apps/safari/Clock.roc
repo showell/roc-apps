@@ -15,39 +15,39 @@ Clock :: U32.{
 
 	## The clock one step on.
 	next : Clock -> Clock
-	next = |Clock.(n)| Clock.(n + 1)
+	next = |Clock.(step)| Clock.(step + 1)
 
 	## How many steps this clock is past `earlier`. It crashes when this clock
 	## comes before `earlier`.
 	steps_since : Clock, Clock -> Steps
-	steps_since = |Clock.(n), Clock.(earlier)|
-		if n < earlier {
+	steps_since = |Clock.(step), Clock.(earlier)|
+		if step < earlier {
 			crash "Clock.steps_since: this clock comes before the one it counts from"
 		} else {
-			Steps.of(n - earlier)
+			Steps.of(step - earlier)
 		}
 
 	## The clock `length` steps on.
 	plus : Clock, Steps -> Clock
-	plus = |Clock.(n), length| Clock.(n + length.to_u32())
+	plus = |Clock.(step), length| Clock.(step + length.to_u32())
 
 	## The clock `length` steps back. It crashes when that would go back past
 	## step 0, where the ride starts.
 	minus : Clock, Steps -> Clock
-	minus = |Clock.(n), length| {
+	minus = |Clock.(step), length| {
 		back = length.to_u32()
-		if back > n {
+		if back > step {
 			crash "Clock.minus: the ride starts at step 0, and nothing comes before it"
 		} else {
-			Clock.(n - back)
+			Clock.(step - back)
 		}
 	}
 
 	is_lt : Clock, Clock -> Bool
-	is_lt = |Clock.(n), Clock.(other)| n < other
+	is_lt = |Clock.(step), Clock.(other)| step < other
 
 	to_str : Clock -> Str
-	to_str = |Clock.(n)| n.to_str()
+	to_str = |Clock.(step)| step.to_str()
 
 	is_eq : _
 }

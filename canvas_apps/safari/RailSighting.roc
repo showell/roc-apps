@@ -149,7 +149,7 @@ origin_point : RiderView.RiderPoint
 origin_point = { right: Distance.metres(0.0), forward: Distance.metres(0.0) }
 
 point_at : List(RiderView.RiderPoint), U64 -> RiderView.RiderPoint
-point_at = |points, i| points.get(i) ?? crash "RailSighting: an index past the leg's end"
+point_at = |points, index| points.get(index) ?? crash "RailSighting: an index past the leg's end"
 
 straight_points : List(RiderView.RiderPoint)
 straight_points = leg_points({

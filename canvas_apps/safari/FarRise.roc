@@ -14,38 +14,38 @@ FarRise :: F64.{
 	of = |count| FarRise.(count)
 
 	to_f64 : FarRise -> F64
-	to_f64 = |FarRise.(r)| r
+	to_f64 = |FarRise.(rise)| rise
 
 	## The two spans end to end.
 	plus : FarRise, FarRise -> FarRise
-	plus = |FarRise.(r), FarRise.(other)| FarRise.(r + other)
+	plus = |FarRise.(rise), FarRise.(other)| FarRise.(rise + other)
 
 	times : FarRise, F64 -> FarRise
-	times = |FarRise.(r), factor| FarRise.(r * factor)
+	times = |FarRise.(rise), factor| FarRise.(rise * factor)
 
 	## This fraction of this span.
 	scaled_by : FarRise, Fraction -> FarRise
-	scaled_by = |FarRise.(r), fraction| FarRise.(r * fraction.to_f64())
+	scaled_by = |FarRise.(rise), fraction| FarRise.(rise * fraction.to_f64())
 
 	## How long this span is, upward or downward.
 	abs : FarRise -> FarRise
-	abs = |FarRise.(r)| FarRise.(r.abs())
+	abs = |FarRise.(rise)| FarRise.(rise.abs())
 
 	## How many of `whole` this is, which can pass 1 or go negative.
 	ratio_to : FarRise, FarRise -> F64
-	ratio_to = |FarRise.(r), FarRise.(whole)| r / whole
+	ratio_to = |FarRise.(rise), FarRise.(whole)| rise / whole
 
 	is_gt : FarRise, FarRise -> Bool
-	is_gt = |FarRise.(r), FarRise.(other)| r > other
+	is_gt = |FarRise.(rise), FarRise.(other)| rise > other
 
 	is_gte : FarRise, FarRise -> Bool
-	is_gte = |FarRise.(r), FarRise.(other)| r >= other
+	is_gte = |FarRise.(rise), FarRise.(other)| rise >= other
 
 	is_lt : FarRise, FarRise -> Bool
-	is_lt = |FarRise.(r), FarRise.(other)| r < other
+	is_lt = |FarRise.(rise), FarRise.(other)| rise < other
 
 	is_lte : FarRise, FarRise -> Bool
-	is_lte = |FarRise.(r), FarRise.(other)| r <= other
+	is_lte = |FarRise.(rise), FarRise.(other)| rise <= other
 
 	is_eq : _
 }

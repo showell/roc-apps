@@ -1581,7 +1581,7 @@ Each limit is a `ThrottleLimit`: `NoLimit`, or `AtMost` some acceleration. `held
 
 The throttle returns an acceleration, and the motorcycle's step turns it into a speed.
 
-`Speed` and `Acceleration` are a pair like the clock and its steps: a speed is a value, and an acceleration is the change from one speed to another. To brake for a bend, the rider needs the steady acceleration that takes its speed to a target within so much road. That's `Speed.acceleration_to`. Its `within` is a `Distance`: the road the change has to happen in. The formula is the first line of a physics textbook, v² = u² + 2ad, solved for a, with the speed going from `s` to `t` over the distance `within`. In the parameter list, `Speed.(s)` and `target: Speed.(t)` unwrap the two speeds into plain numbers, as `Clock.(n)` does in the {{chapter Opaque types: the clock}} chapter:
+`Speed` and `Acceleration` are a pair like the clock and its steps: a speed is a value, and an acceleration is the change from one speed to another. To brake for a bend, the rider needs the steady acceleration that takes its speed to a target within so much road. That's `Speed.acceleration_to`. Its `within` is a `Distance`: the road the change has to happen in. The formula is the first line of a physics textbook, v² = u² + 2ad, solved for a, with the speed going from `speed` to `target` over the distance `within`. In the parameter list, `Speed.(speed)` and `target: Speed.(target)` unwrap the two speeds into plain numbers, as `Clock.(step)` does in the {{chapter Opaque types: the clock}} chapter:
 
 {{code Speed.acceleration_to}}
 
@@ -2435,7 +2435,7 @@ Mostly, Safari Ride is a screensaver: you sit back and watch it. You can also ta
 
 The snapshot goes to the app's step, `SafariApp.model_at_next_step`. The step takes the model, which is the tour and whether it's paused, and the snapshot, and returns the next model. Here's the part that pauses and steps:
 
-{{code SafariApp.model_at_next_step from "motion = if input.key_pressed(KeySpace)" to "m.tour.step_forward()"}}
+{{code SafariApp.model_at_next_step from "motion = if input.key_pressed(KeySpace)" to "model.tour.step_forward()"}}
 
 `key_pressed` returns whether a key went down since the last step, so one tap of Space pauses the ride once. `key_down` returns whether a key is held, so holding Right keeps the ride moving. The step reads the snapshot every time it runs, so each control answers on the next step.
 

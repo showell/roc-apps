@@ -15,7 +15,7 @@ FarHeight :: F64.{
 	of = |count| FarHeight.(count)
 
 	to_f64 : FarHeight -> F64
-	to_f64 = |FarHeight.(h)| h
+	to_f64 = |FarHeight.(height)| height
 
 	## Level with the horizon.
 	zero : FarHeight
@@ -23,31 +23,31 @@ FarHeight :: F64.{
 
 	## This height raised by `rise`.
 	plus : FarHeight, FarRise -> FarHeight
-	plus = |FarHeight.(h), rise| FarHeight.(h + rise.to_f64())
+	plus = |FarHeight.(height), rise| FarHeight.(height + rise.to_f64())
 
 	## This height lowered by `rise`.
 	lowered_by : FarHeight, FarRise -> FarHeight
-	lowered_by = |FarHeight.(h), rise| FarHeight.(h - rise.to_f64())
+	lowered_by = |FarHeight.(height), rise| FarHeight.(height - rise.to_f64())
 
 	## How far this height stands above `other`, below it once negative.
 	minus : FarHeight, FarHeight -> FarRise
-	minus = |FarHeight.(h), FarHeight.(other)| FarRise.of(h - other)
+	minus = |FarHeight.(height), FarHeight.(other)| FarRise.of(height - other)
 
 	## The higher of this height and `other`.
 	max : FarHeight, FarHeight -> FarHeight
-	max = |FarHeight.(h), FarHeight.(other)| FarHeight.(F64.max(h, other))
+	max = |FarHeight.(height), FarHeight.(other)| FarHeight.(F64.max(height, other))
 
 	is_gt : FarHeight, FarHeight -> Bool
-	is_gt = |FarHeight.(h), FarHeight.(other)| h > other
+	is_gt = |FarHeight.(height), FarHeight.(other)| height > other
 
 	is_gte : FarHeight, FarHeight -> Bool
-	is_gte = |FarHeight.(h), FarHeight.(other)| h >= other
+	is_gte = |FarHeight.(height), FarHeight.(other)| height >= other
 
 	is_lt : FarHeight, FarHeight -> Bool
-	is_lt = |FarHeight.(h), FarHeight.(other)| h < other
+	is_lt = |FarHeight.(height), FarHeight.(other)| height < other
 
 	is_lte : FarHeight, FarHeight -> Bool
-	is_lte = |FarHeight.(h), FarHeight.(other)| h <= other
+	is_lte = |FarHeight.(height), FarHeight.(other)| height <= other
 
 	is_eq : _
 }

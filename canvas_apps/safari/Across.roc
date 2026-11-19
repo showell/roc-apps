@@ -10,7 +10,7 @@ Across :: F64.{
 	metres = |metres| Across.(metres)
 
 	to_metres : Across -> F64
-	to_metres = |Across.(a)| a
+	to_metres = |Across.(across)| across
 
 	## The middle of the road.
 	middle : Across
@@ -26,40 +26,40 @@ Across :: F64.{
 
 	## How far this place is from the middle of the road, to either side.
 	distance_from_middle : Across -> Distance
-	distance_from_middle = |Across.(a)| Distance.metres(a.abs())
+	distance_from_middle = |Across.(across)| Distance.metres(across.abs())
 
 	## The place `distance` further right.
 	plus : Across, Distance -> Across
-	plus = |Across.(a), distance| Across.(a + distance.to_metres())
+	plus = |Across.(across), distance| Across.(across + distance.to_metres())
 
 	## The place `distance` further left.
 	minus : Across, Distance -> Across
-	minus = |Across.(a), distance| Across.(a - distance.to_metres())
+	minus = |Across.(across), distance| Across.(across - distance.to_metres())
 
 	## How far this place is to the right of `other`: negative when it is to
 	## the left.
 	distance_from : Across, Across -> Distance
-	distance_from = |Across.(a), Across.(other)| Distance.metres(a - other)
+	distance_from = |Across.(across), Across.(other)| Distance.metres(across - other)
 
 	## The place further left of this one and `other`.
 	min : Across, Across -> Across
-	min = |Across.(a), Across.(other)| Across.(F64.min(a, other))
+	min = |Across.(across), Across.(other)| Across.(F64.min(across, other))
 
 	## The place further right of this one and `other`.
 	max : Across, Across -> Across
-	max = |Across.(a), Across.(other)| Across.(F64.max(a, other))
+	max = |Across.(across), Across.(other)| Across.(F64.max(across, other))
 
 	is_gt : Across, Across -> Bool
-	is_gt = |Across.(a), Across.(other)| a > other
+	is_gt = |Across.(across), Across.(other)| across > other
 
 	is_gte : Across, Across -> Bool
-	is_gte = |Across.(a), Across.(other)| a >= other
+	is_gte = |Across.(across), Across.(other)| across >= other
 
 	is_lt : Across, Across -> Bool
-	is_lt = |Across.(a), Across.(other)| a < other
+	is_lt = |Across.(across), Across.(other)| across < other
 
 	is_lte : Across, Across -> Bool
-	is_lte = |Across.(a), Across.(other)| a <= other
+	is_lte = |Across.(across), Across.(other)| across <= other
 
 	is_eq : _
 }

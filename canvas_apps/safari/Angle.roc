@@ -28,28 +28,28 @@ Angle :: [].{
 	Bearing :: F64.{
 
 		radians : F64 -> Angle.Bearing
-		radians = |r| Angle.Bearing.(r)
+		radians = |count| Angle.Bearing.(count)
 
 		to_radians : Angle.Bearing -> F64
-		to_radians = |Angle.Bearing.(r)| r
+		to_radians = |Angle.Bearing.(bearing)| bearing
 
 		## The bearing `turn` to the right of this one.
 		plus : Angle.Bearing, Angle.Turn -> Angle.Bearing
-		plus = |Angle.Bearing.(b), Angle.Turn.(t)| Angle.Bearing.(b + t)
+		plus = |Angle.Bearing.(bearing), Angle.Turn.(turn)| Angle.Bearing.(bearing + turn)
 
 		## The shortest turn from `from` round to this bearing, between minus
 		## and plus a half turn.
 		turn_from : Angle.Bearing, Angle.Bearing -> Angle.Turn
-		turn_from = |Angle.Bearing.(b), Angle.Bearing.(from)| Angle.Turn.(wrap(b - from))
+		turn_from = |Angle.Bearing.(bearing), Angle.Bearing.(from)| Angle.Turn.(wrap(bearing - from))
 
 		## The shortest turn from north round to this bearing.
 		turn_from_north : Angle.Bearing -> Angle.Turn
-		turn_from_north = |Angle.Bearing.(b)| Angle.Turn.(wrap(b))
+		turn_from_north = |Angle.Bearing.(bearing)| Angle.Turn.(wrap(bearing))
 
 		## Whether this bearing is no further right than `other`, read without
 		## going round: for a sweep across a stretch of bearings.
 		is_lte : Angle.Bearing, Angle.Bearing -> Bool
-		is_lte = |Angle.Bearing.(b), Angle.Bearing.(other)| b <= other
+		is_lte = |Angle.Bearing.(bearing), Angle.Bearing.(other)| bearing <= other
 
 		is_eq : _
 	}
@@ -57,71 +57,71 @@ Angle :: [].{
 	Turn :: F64.{
 
 		radians : F64 -> Angle.Turn
-		radians = |r| Angle.Turn.(r)
+		radians = |count| Angle.Turn.(count)
 
 		## The turn of this many degrees.
 		degrees : F64 -> Angle.Turn
-		degrees = |d| Angle.Turn.(d * Trig.degree)
+		degrees = |count| Angle.Turn.(count * Trig.degree)
 
 		to_radians : Angle.Turn -> F64
-		to_radians = |Angle.Turn.(r)| r
+		to_radians = |Angle.Turn.(turn)| turn
 
 		## This turn in degrees: negative for a turn to the left.
 		to_degrees : Angle.Turn -> F64
-		to_degrees = |Angle.Turn.(r)| r * Trig.degrees_per_radian
+		to_degrees = |Angle.Turn.(turn)| turn * Trig.degrees_per_radian
 
 		plus : Angle.Turn, Angle.Turn -> Angle.Turn
-		plus = |Angle.Turn.(t), Angle.Turn.(other)| Angle.Turn.(t + other)
+		plus = |Angle.Turn.(turn), Angle.Turn.(other)| Angle.Turn.(turn + other)
 
 		minus : Angle.Turn, Angle.Turn -> Angle.Turn
-		minus = |Angle.Turn.(t), Angle.Turn.(other)| Angle.Turn.(t - other)
+		minus = |Angle.Turn.(turn), Angle.Turn.(other)| Angle.Turn.(turn - other)
 
 		times : Angle.Turn, F64 -> Angle.Turn
-		times = |Angle.Turn.(t), factor| Angle.Turn.(t * factor)
+		times = |Angle.Turn.(turn), factor| Angle.Turn.(turn * factor)
 
 		## The same turn taken to the right.
 		abs : Angle.Turn -> Angle.Turn
-		abs = |Angle.Turn.(t)| Angle.Turn.(t.abs())
+		abs = |Angle.Turn.(turn)| Angle.Turn.(turn.abs())
 
 		## This turn, held to no more than `limit` either way. A limit below zero
 		## is no range, so it crashes.
 		clamped_within : Angle.Turn, Angle.Turn -> Angle.Turn
-		clamped_within = |Angle.Turn.(t), Angle.Turn.(limit)|
+		clamped_within = |Angle.Turn.(turn), Angle.Turn.(limit)|
 			if limit < 0.0 {
 				crash "Angle.Turn.clamped_within: a limit below zero is no range to hold a turn to"
 			} else {
-				Angle.Turn.((0.0 - limit).max(F64.min(limit, t)))
+				Angle.Turn.((0.0 - limit).max(F64.min(limit, turn)))
 			}
 
 		## How many of `whole` this turn is: negative for a turn to the left.
 		ratio_to : Angle.Turn, Angle.Turn -> F64
-		ratio_to = |Angle.Turn.(t), Angle.Turn.(whole)| t / whole
+		ratio_to = |Angle.Turn.(turn), Angle.Turn.(whole)| turn / whole
 
 		## Whether this turn goes right. Straight ahead counts as right, so
 		## every turn lies on one side or the other.
 		is_right : Angle.Turn -> Bool
-		is_right = |Angle.Turn.(t)| t >= 0.0
+		is_right = |Angle.Turn.(turn)| turn >= 0.0
 
 		## Whether this turn leaves the road on one line: within
 		## `straight_or_back_tolerance` of 0 degrees, where it runs straight on, or
 		## of 180 either way, where it folds straight back.
 		is_straight_or_back : Angle.Turn -> Bool
-		is_straight_or_back = |Angle.Turn.(t)| {
+		is_straight_or_back = |Angle.Turn.(turn)| {
 			tolerance_sine = straight_or_back_tolerance.to_radians().sin()
-			t.sin().abs() <= tolerance_sine
+			turn.sin().abs() <= tolerance_sine
 		}
 
 		is_gt : Angle.Turn, Angle.Turn -> Bool
-		is_gt = |Angle.Turn.(t), Angle.Turn.(other)| t > other
+		is_gt = |Angle.Turn.(turn), Angle.Turn.(other)| turn > other
 
 		is_gte : Angle.Turn, Angle.Turn -> Bool
-		is_gte = |Angle.Turn.(t), Angle.Turn.(other)| t >= other
+		is_gte = |Angle.Turn.(turn), Angle.Turn.(other)| turn >= other
 
 		is_lt : Angle.Turn, Angle.Turn -> Bool
-		is_lt = |Angle.Turn.(t), Angle.Turn.(other)| t < other
+		is_lt = |Angle.Turn.(turn), Angle.Turn.(other)| turn < other
 
 		is_lte : Angle.Turn, Angle.Turn -> Bool
-		is_lte = |Angle.Turn.(t), Angle.Turn.(other)| t <= other
+		is_lte = |Angle.Turn.(turn), Angle.Turn.(other)| turn <= other
 
 		is_eq : _
 	}
@@ -129,55 +129,55 @@ Angle :: [].{
 	Lean :: F64.{
 
 		radians : F64 -> Angle.Lean
-		radians = |r| Angle.Lean.(r)
+		radians = |count| Angle.Lean.(count)
 
 		## The lean of this many degrees.
 		degrees : F64 -> Angle.Lean
-		degrees = |d| Angle.Lean.(d * Trig.degree)
+		degrees = |count| Angle.Lean.(count * Trig.degree)
 
 		to_radians : Angle.Lean -> F64
-		to_radians = |Angle.Lean.(r)| r
+		to_radians = |Angle.Lean.(lean)| lean
 
 		## This lean in degrees, as a canvas takes a rotation.
 		to_degrees : Angle.Lean -> F64
-		to_degrees = |Angle.Lean.(r)| r * Trig.degrees_per_radian
+		to_degrees = |Angle.Lean.(lean)| lean * Trig.degrees_per_radian
 
 		## This lean, changed by `change`.
 		plus : Angle.Lean, Angle.LeanChange -> Angle.Lean
-		plus = |Angle.Lean.(l), Angle.LeanChange.(change)| Angle.Lean.(l + change)
+		plus = |Angle.Lean.(lean), Angle.LeanChange.(change)| Angle.Lean.(lean + change)
 
 		## This lean, changed by `change` the other way.
 		minus : Angle.Lean, Angle.LeanChange -> Angle.Lean
-		minus = |Angle.Lean.(l), Angle.LeanChange.(change)| Angle.Lean.(l - change)
+		minus = |Angle.Lean.(lean), Angle.LeanChange.(change)| Angle.Lean.(lean - change)
 
 		## The lean halfway between this one and `other`.
 		halfway_to : Angle.Lean, Angle.Lean -> Angle.Lean
-		halfway_to = |Angle.Lean.(l), Angle.Lean.(other)| Angle.Lean.((l + other) / 2.0)
+		halfway_to = |Angle.Lean.(lean), Angle.Lean.(other)| Angle.Lean.((lean + other) / 2.0)
 
 		## The same lean taken to the right.
 		abs : Angle.Lean -> Angle.Lean
-		abs = |Angle.Lean.(l)| Angle.Lean.(l.abs())
+		abs = |Angle.Lean.(lean)| Angle.Lean.(lean.abs())
 
 		## How many of `whole` this lean is: negative for a lean to the left.
 		ratio_to : Angle.Lean, Angle.Lean -> F64
-		ratio_to = |Angle.Lean.(l), Angle.Lean.(whole)| l / whole
+		ratio_to = |Angle.Lean.(lean), Angle.Lean.(whole)| lean / whole
 
 		## The turn this lean makes at `rate` radians of turn for each radian
 		## of lean.
 		steer : Angle.Lean, F64 -> Angle.Turn
-		steer = |Angle.Lean.(l), rate| Angle.Turn.(rate * l)
+		steer = |Angle.Lean.(lean), rate| Angle.Turn.(rate * lean)
 
 		is_gt : Angle.Lean, Angle.Lean -> Bool
-		is_gt = |Angle.Lean.(l), Angle.Lean.(other)| l > other
+		is_gt = |Angle.Lean.(lean), Angle.Lean.(other)| lean > other
 
 		is_gte : Angle.Lean, Angle.Lean -> Bool
-		is_gte = |Angle.Lean.(l), Angle.Lean.(other)| l >= other
+		is_gte = |Angle.Lean.(lean), Angle.Lean.(other)| lean >= other
 
 		is_lt : Angle.Lean, Angle.Lean -> Bool
-		is_lt = |Angle.Lean.(l), Angle.Lean.(other)| l < other
+		is_lt = |Angle.Lean.(lean), Angle.Lean.(other)| lean < other
 
 		is_lte : Angle.Lean, Angle.Lean -> Bool
-		is_lte = |Angle.Lean.(l), Angle.Lean.(other)| l <= other
+		is_lte = |Angle.Lean.(lean), Angle.Lean.(other)| lean <= other
 
 		is_eq : _
 	}
@@ -188,10 +188,10 @@ Angle :: [].{
 
 		## The change of this many degrees.
 		degrees : F64 -> Angle.LeanChange
-		degrees = |d| Angle.LeanChange.(d * Trig.degree)
+		degrees = |count| Angle.LeanChange.(count * Trig.degree)
 
 		to_radians : Angle.LeanChange -> F64
-		to_radians = |Angle.LeanChange.(r)| r
+		to_radians = |Angle.LeanChange.(change)| change
 
 		is_eq : _
 	}

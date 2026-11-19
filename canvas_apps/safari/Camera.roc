@@ -19,9 +19,9 @@ Camera :: [].{
 	## Where a point in front of the camera lands on the screen, through a
 	## lens of `focal_length`.
 	project : RiderView.PointAtHeightAhead, Pixels -> Point
-	project = |p, focal_length| {
-		slope_right = p.right().ratio_to(p.forward())
-		slope_up = p.height().minus(eye_height).ratio_to(p.forward())
+	project = |point, focal_length| {
+		slope_right = point.right().ratio_to(point.forward())
+		slope_up = point.height().minus(eye_height).ratio_to(point.forward())
 		{
 			x: Lens.x_for_slope({ slope: slope_right, focal_length }),
 			y: Lens.y_for_slope({ slope: slope_up, focal_length }),

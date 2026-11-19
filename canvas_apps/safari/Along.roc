@@ -16,7 +16,7 @@ Along :: F64.{
 	metres = |metres| Along.(metres)
 
 	to_metres : Along -> F64
-	to_metres = |Along.(a)| a
+	to_metres = |Along.(along)| along
 
 	## The segment's start.
 	start : Along
@@ -28,31 +28,31 @@ Along :: F64.{
 
 	## How far this place is from the segment's start.
 	from_start : Along -> Distance
-	from_start = |Along.(a)| Distance.metres(a)
+	from_start = |Along.(along)| Distance.metres(along)
 
 	## The place `distance` further along.
 	plus : Along, Distance -> Along
-	plus = |Along.(a), distance| Along.(a + distance.to_metres())
+	plus = |Along.(along), distance| Along.(along + distance.to_metres())
 
 	## The place `distance` back along.
 	minus : Along, Distance -> Along
-	minus = |Along.(a), distance| Along.(a - distance.to_metres())
+	minus = |Along.(along), distance| Along.(along - distance.to_metres())
 
 	## How far this place is ahead of `other`: negative when it is behind.
 	distance_from : Along, Along -> Distance
-	distance_from = |Along.(a), Along.(other)| Distance.metres(a - other)
+	distance_from = |Along.(along), Along.(other)| Distance.metres(along - other)
 
 	is_gt : Along, Along -> Bool
-	is_gt = |Along.(a), Along.(other)| a > other
+	is_gt = |Along.(along), Along.(other)| along > other
 
 	is_gte : Along, Along -> Bool
-	is_gte = |Along.(a), Along.(other)| a >= other
+	is_gte = |Along.(along), Along.(other)| along >= other
 
 	is_lt : Along, Along -> Bool
-	is_lt = |Along.(a), Along.(other)| a < other
+	is_lt = |Along.(along), Along.(other)| along < other
 
 	is_lte : Along, Along -> Bool
-	is_lte = |Along.(a), Along.(other)| a <= other
+	is_lte = |Along.(along), Along.(other)| along <= other
 
 	is_eq : _
 }

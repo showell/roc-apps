@@ -126,18 +126,18 @@ order_after = |order, { previous, point }|
 ## The order the hull walks points in: left to right, and top to bottom where
 ## they share an x.
 left_to_right : Point, Point -> [Before, Same, After]
-left_to_right = |a, b|
-	if is_before(a, b) {
+left_to_right = |point, other|
+	if is_before(point, other) {
 		Before
-	} else if is_before(b, a) {
+	} else if is_before(other, point) {
 		After
 	} else {
 		Same
 	}
 
-## Whether `a` comes before `b`: left of it, or above it at the same x.
+## Whether `point` comes before `other`: left of it, or above it at the same x.
 is_before : Point, Point -> Bool
-is_before = |a, b| a.x < b.x or (a.x == b.x and a.y < b.y)
+is_before = |point, other| point.x < other.x or (point.x == other.x and point.y < other.y)
 
 ## The hull with its last points taken off while they don't turn clockwise on
 ## the way to `point`. The screen's y grows downward, so a positive `turn` is
@@ -145,11 +145,11 @@ is_before = |a, b| a.x < b.x or (a.x == b.x and a.y < b.y)
 trim_hull : List(Point), Point -> List(Point)
 trim_hull = |hull_corners, point|
 	match hull_corners {
-		[.., a, b] => {
-			edge_x = b.x.minus(a.x).to_f64()
-			edge_y = b.y.minus(a.y).to_f64()
-			reach_x = point.x.minus(a.x).to_f64()
-			reach_y = point.y.minus(a.y).to_f64()
+		[.., second_last_corner, last_corner] => {
+			edge_x = last_corner.x.minus(second_last_corner.x).to_f64()
+			edge_y = last_corner.y.minus(second_last_corner.y).to_f64()
+			reach_x = point.x.minus(second_last_corner.x).to_f64()
+			reach_y = point.y.minus(second_last_corner.y).to_f64()
 			turn = edge_x * reach_y - edge_y * reach_x
 			if turn <= 0.0 {
 				trim_hull(hull_corners.drop_last(1), point)
@@ -270,7 +270,7 @@ expect {
 	)
 }
 expect {
-	top_to_bottom = |a, b| left_to_right({ x: a.y, y: a.x }, { x: b.y, y: b.x })
+	top_to_bottom = |point, other| left_to_right({ x: point.y, y: point.x }, { x: other.y, y: other.x })
 	shuffled = sample_ring_points(0).sort_with(top_to_bottom)
 	apex = Point.at(100.0, 0.0)
 	ConvexHull.cone_hull_points(shuffled, apex) == convex_hull_points(shuffled.append(apex))

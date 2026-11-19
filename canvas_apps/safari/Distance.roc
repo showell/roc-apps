@@ -9,55 +9,55 @@ Distance :: F64.{
 	metres = |metres| Distance.(metres)
 
 	to_metres : Distance -> F64
-	to_metres = |Distance.(d)| d
+	to_metres = |Distance.(distance)| distance
 
 	## No length at all.
 	zero : Distance
 	zero = Distance.(0.0)
 
 	plus : Distance, Distance -> Distance
-	plus = |Distance.(d), Distance.(other)| Distance.(d + other)
+	plus = |Distance.(distance), Distance.(other)| Distance.(distance + other)
 
 	minus : Distance, Distance -> Distance
-	minus = |Distance.(d), Distance.(other)| Distance.(d - other)
+	minus = |Distance.(distance), Distance.(other)| Distance.(distance - other)
 
 	times : Distance, F64 -> Distance
-	times = |Distance.(d), factor| Distance.(d * factor)
+	times = |Distance.(distance), factor| Distance.(distance * factor)
 
 	## This fraction of this length.
 	scaled_by : Distance, Fraction -> Distance
-	scaled_by = |Distance.(d), fraction| Distance.(d * fraction.to_f64())
+	scaled_by = |Distance.(distance), fraction| Distance.(distance * fraction.to_f64())
 
 	divided_by : Distance, F64 -> Distance
-	divided_by = |Distance.(d), divisor| Distance.(d / divisor)
+	divided_by = |Distance.(distance), divisor| Distance.(distance / divisor)
 
 	## This length measured the other way.
 	opposite : Distance -> Distance
-	opposite = |Distance.(d)| Distance.(0.0 - d)
+	opposite = |Distance.(distance)| Distance.(0.0 - distance)
 
 	## How many of `whole` this is, which can pass 1.
 	ratio_to : Distance, Distance -> F64
-	ratio_to = |Distance.(d), Distance.(whole)| d / whole
+	ratio_to = |Distance.(distance), Distance.(whole)| distance / whole
 
 	## The smaller of this length and `other`.
 	min : Distance, Distance -> Distance
-	min = |Distance.(d), Distance.(other)| Distance.(F64.min(d, other))
+	min = |Distance.(distance), Distance.(other)| Distance.(F64.min(distance, other))
 
 	## The larger of this length and `other`.
 	max : Distance, Distance -> Distance
-	max = |Distance.(d), Distance.(other)| Distance.(F64.max(d, other))
+	max = |Distance.(distance), Distance.(other)| Distance.(F64.max(distance, other))
 
 	is_gt : Distance, Distance -> Bool
-	is_gt = |Distance.(d), Distance.(other)| d > other
+	is_gt = |Distance.(distance), Distance.(other)| distance > other
 
 	is_gte : Distance, Distance -> Bool
-	is_gte = |Distance.(d), Distance.(other)| d >= other
+	is_gte = |Distance.(distance), Distance.(other)| distance >= other
 
 	is_lt : Distance, Distance -> Bool
-	is_lt = |Distance.(d), Distance.(other)| d < other
+	is_lt = |Distance.(distance), Distance.(other)| distance < other
 
 	is_lte : Distance, Distance -> Bool
-	is_lte = |Distance.(d), Distance.(other)| d <= other
+	is_lte = |Distance.(distance), Distance.(other)| distance <= other
 
 	is_eq : _
 }

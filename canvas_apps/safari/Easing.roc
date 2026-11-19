@@ -12,12 +12,12 @@ Easing :: [].{
 	} -> F64
 	lerp = |{ from, to, fraction }| from + (to - from) * fraction.to_f64()
 
-	## A fraction that starts and ends gently: `t` itself at 0, a half and 1,
-	## and slower than `t` near either end.
+	## A fraction that starts and ends gently: `fraction` itself at 0, a half and
+	## 1, and slower than `fraction` near either end.
 	smoothstep : Fraction -> Fraction
 	smoothstep = |fraction| {
-		t = fraction.to_f64()
-		Fraction.of(t * t * (3.0 - 2.0 * t))
+		progress = fraction.to_f64()
+		Fraction.of(progress * progress * (3.0 - 2.0 * progress))
 	}
 
 }

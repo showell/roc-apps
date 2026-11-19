@@ -19,7 +19,7 @@ Attention :: F64.{
 	from_fraction = |fraction| Attention.(fraction.to_f64())
 
 	to_f64 : Attention -> F64
-	to_f64 = |Attention.(a)| a
+	to_f64 = |Attention.(attention)| attention
 
 	## Nothing is holding the rider's eye.
 	none : Attention
@@ -27,11 +27,11 @@ Attention :: F64.{
 
 	## This fraction of this attention.
 	scaled_by : Attention, Fraction -> Attention
-	scaled_by = |Attention.(a), fraction| Attention.(fraction.to_f64() * a)
+	scaled_by = |Attention.(attention), fraction| Attention.(fraction.to_f64() * attention)
 
 	## The stronger of this attention and `other`.
 	max : Attention, Attention -> Attention
-	max = |Attention.(a), Attention.(other)| Attention.(F64.max(a, other))
+	max = |Attention.(attention), Attention.(other)| Attention.(F64.max(attention, other))
 
 	is_eq : _
 }

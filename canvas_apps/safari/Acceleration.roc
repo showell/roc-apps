@@ -8,25 +8,25 @@ Acceleration :: F64.{
 	metres_a_step_each_step = |metres| Acceleration.(metres)
 
 	to_metres_a_step_each_step : Acceleration -> F64
-	to_metres_a_step_each_step = |Acceleration.(a)| a
+	to_metres_a_step_each_step = |Acceleration.(acceleration)| acceleration
 
 	## Holding speed.
 	steady : Acceleration
 	steady = Acceleration.(0.0)
 
 	times : Acceleration, F64 -> Acceleration
-	times = |Acceleration.(a), factor| Acceleration.(a * factor)
+	times = |Acceleration.(acceleration), factor| Acceleration.(acceleration * factor)
 
 	## The smaller of this acceleration and `other`: the harder brake, or the
 	## gentler push.
 	min : Acceleration, Acceleration -> Acceleration
-	min = |Acceleration.(a), Acceleration.(other)| Acceleration.(F64.min(a, other))
+	min = |Acceleration.(acceleration), Acceleration.(other)| Acceleration.(F64.min(acceleration, other))
 
 	is_gt : Acceleration, Acceleration -> Bool
-	is_gt = |Acceleration.(a), Acceleration.(other)| a > other
+	is_gt = |Acceleration.(acceleration), Acceleration.(other)| acceleration > other
 
 	is_lt : Acceleration, Acceleration -> Bool
-	is_lt = |Acceleration.(a), Acceleration.(other)| a < other
+	is_lt = |Acceleration.(acceleration), Acceleration.(other)| acceleration < other
 
 	is_eq : _
 }

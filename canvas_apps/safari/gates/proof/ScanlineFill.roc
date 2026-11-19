@@ -114,10 +114,10 @@ WindingWalk : { winding : I64, spans : List(RowSpan) }
 row_edge_crossings : List(Edge), F64 -> List(EdgeCrossing)
 row_edge_crossings = |edges, y|
 	edges.keep_oks(|edge| edge_crossing(edge, y)).sort_with(
-		|a, b|
-			if a.x < b.x {
+		|crossing, other|
+			if crossing.x < other.x {
 				Before
-			} else if a.x > b.x {
+			} else if crossing.x > other.x {
 				After
 			} else {
 				Same
@@ -227,8 +227,8 @@ pixels_with_span = |
 		color = match fill {
 			Flat(flat) => flat
 			Span(_) | Radial(_) | Linear(_) | Ellipse(_) | Glow(_) => {
-				p = roll.to_scene(ScreenRoll.pixel_point({ row, column }))
-				BrushShade.shade(fill, Point.at(p.x, p.y))
+				scene_point = roll.to_scene(ScreenRoll.pixel_point({ row, column }))
+				BrushShade.shade(fill, Point.at(scene_point.x, scene_point.y))
 			}
 		}
 		$px = PixelGrid.blended_pixels($px, { at, color, mode })
