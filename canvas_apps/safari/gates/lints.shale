@@ -181,9 +181,10 @@ end
 
 -- What the lints' verdicts rest on, beside the files judged: this script, the
 -- tables its lints read (a `words=` or `table=` argument, from safari's
--- folder), and the cookbook's Roc recipes. With `reads=rules` this script
--- prints them and stops, so fast.shale judges every file again when one
--- changes.
+-- folder), the cookbook's Roc recipes, and the files of the Roc programs
+-- they launch (the prelude's `roc_launch_files`). With `reads=rules` this
+-- script prints them and stops, so fast.shale judges every file again when
+-- one changes.
 function rule_files()
   local rules = {GATES .. "/lints.shale"}
   for lint in LINTS do
@@ -202,8 +203,11 @@ function rule_files()
   end
   local recipes = glob("cookbook:roc/*.shale")
   if #recipes == 0 then fail("safari lints: no recipes in cookbook:roc/") end
-  for f in recipes do push(rules, real(f)) end
-  return rules
+  for f in recipes do
+    push(rules, real(f))
+    for p in roc_launch_files("safari lints", f) do push(rules, p) end
+  end
+  return unique(rules)
 end
 
 function runs_from_repo_root(lint)

@@ -99,14 +99,17 @@ function read_record(path)
   return held
 end
 
--- The `files=` that lints.shale needs: the changed files, or `every`.
-function changed_files(held, hashes, sources)
+-- The `files=` that lints.shale needs: the changed files, or `every`. A
+-- rule (`rules`, a Roc recipe's program among them) or a file that isn't
+-- Roc judges every file when it changes.
+function changed_files(held, hashes, sources, rules)
   if #keys(held) == 0 then
     print("no green on record for this checkout: judging every file")
     return "every"
   end
+  local is_rule = set_of(rules)
   for p in keys(hashes) do
-    if not ends_with(p, ".roc") and get(held, p, "") ~= hashes[p] then
+    if (has_key(is_rule, p) or not ends_with(p, ".roc")) and get(held, p, "") ~= hashes[p] then
       print("the lints' rules changed in " .. p .. ": judging every file")
       return "every"
     end
@@ -158,12 +161,13 @@ function main()
   local sources = lint_read_files()
   local judged = {}
   for f in sources do push(judged, f) end
-  for f in lints_reads("rules") do push(judged, f) end
+  local rules = lints_reads("rules")
+  for f in rules do push(judged, f) end
   local hashes = hashes_of(judged)
   merge_gate_part("fast_check")
   merge_gate_part("format")
   merge_gate_part("fast_expects")
-  lint_changed_files(changed_files(read_record(record), hashes, sources))
+  lint_changed_files(changed_files(read_record(record), hashes, sources, rules))
   merge_gate_part("fast_frame")
   replace(record, record_of(hashes))
   print("safari fast: green")

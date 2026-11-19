@@ -446,7 +446,8 @@ end
 -- One hash for every tool that makes a count: the Roc pin, `shale` (its
 -- builtins and preludes run every recipe), roc-ast, roc-types, the repo's
 -- prelude (which finds the pinned Roc), this script's code and its keys
--- library's (`code_hash`), and every file of each recipe's closure and of the types library this
+-- library's (`code_hash`), and every file of each recipe's closure (a Roc
+-- recipe's program and platform among them) and of the types library this
 -- script reads roc-types with.
 function tools_identity(roc)
   local named = {
@@ -461,7 +462,7 @@ function tools_identity(roc)
   recipe_closure("cookbook:roc/rewrite_method_calls.shale", seen, libs)
   recipe_closure("cookbook:roc/types.shale", seen, libs)
   recipe_closure("cookbook:roc/symmetric_functions.txt", seen, libs)
-  for p in libs do push(named, {p, real(p)}) end
+  for p in libs do push(named, p) end
   local paths = {}
   for n in named do push(paths, n[2]) end
   local h = hashes_of(unique(paths))

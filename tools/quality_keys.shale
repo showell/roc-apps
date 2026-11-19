@@ -25,12 +25,20 @@ function hashes_of(os_paths)
   return out
 end
 
--- The files a recipe is made of: the recipe and each library it loads, in
--- turn (`use("cookbook:...")`, or `use("./x.shale")` beside it), each once.
+-- The files a recipe is made of, each once, as `{name, real path}`: the
+-- recipe, the files of the Roc program it launches, if any (the prelude's
+-- `roc_launch_files`), and each library it loads, in turn
+-- (`use("cookbook:...")`, or `use("./x.shale")` beside it).
 function recipe_closure(path, seen, out)
   if has_key(seen, path) then return nil end
   seen[path] = true
-  push(out, path)
+  push(out, {path, real(path)})
+  for f in roc_launch_files("quality", path) do
+    if not has_key(seen, f) then
+      seen[f] = true
+      push(out, {f, f})
+    end
+  end
   for g in grep(path, "use(\"") do
     local m = re_find(g.text, "use\\(\"(cookbook:[^\"]+|\\./[^\"]+)\"\\)")
     if m ~= nil then recipe_closure(starts_with(m.group, "./") and (dirname(path) .. sub(m.group, 2)) or m.group, seen, out) end

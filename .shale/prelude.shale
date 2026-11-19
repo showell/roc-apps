@@ -30,6 +30,41 @@ function plain_text(html)
   return text
 end
 
+-- The files the Roc program a cookbook recipe launches is built from, by
+-- their real paths, or none for a recipe that launches no Roc. A launcher
+-- (cookbook/roc/find_unclear_names.shale) names its program in a line
+-- `const SCRIPT = "<path from the Shale checkout>"` and runs it through
+-- roc_platform/run.shale in the checkout its cookbook is in, which builds it
+-- with that checkout's platform and links it with a host compiled from the
+-- checkout's C Shale. So the files are the program and every file git
+-- tracks in roc_platform/ and c/, prose (`.md`) aside. tools/quality.shale's
+-- keys and safari's lints' rules both read it. A launcher with no `const
+-- SCRIPT` line, and a named file that isn't there, stop the run, named for
+-- `who`.
+function roc_launch_files(who, recipe)
+  local launches = false
+  local script = nil
+  for l in lines(read(recipe)) do
+    local t = trim(l)
+    if not starts_with(t, "--") then
+      if find(t, "roc_platform/run.shale") ~= nil then launches = true end
+      local m = re_find(t, "^const SCRIPT = \"([^\"]+)\"")
+      if m ~= nil then script = m.group end
+    end
+  end
+  if not launches then return {} end
+  if script == nil then fail(who .. ": " .. recipe .. " runs roc_platform/run.shale and names no program (`const SCRIPT = \"...\"`)") end
+  local checkout = dirname(dirname(real("cookbook:README.md")))
+  local files = {checkout .. "/" .. script}
+  local tracked = must(run({"git", "-C", checkout, "ls-files", "--", "roc_platform", "c"}, {timeout_ms = 30000, whole = 1000000}))
+  for f in lines(trim(tracked.out)) do
+    if not ends_with(f, ".md") then push(files, checkout .. "/" .. f) end
+  end
+  local hashed = run({"git", "hash-object", "--no-filters", "--stdin-paths"}, {timeout_ms = 60000, tail = 5, stdin = join(files, "\n") .. "\n"})
+  if hashed.ended ~= "exit" or hashed.code ~= 0 then fail(who .. ": " .. recipe .. " builds from a file that isn't there: " .. trim(hashed.out)) end
+  return files
+end
+
 -- Nothing, or a stop when `said`, what `roc version` printed, isn't the pin.
 function check_roc_version(who, roc, pin, said)
   if trim(said) ~= "Roc compiler version " .. pin then
