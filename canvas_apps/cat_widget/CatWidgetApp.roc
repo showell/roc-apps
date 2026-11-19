@@ -59,7 +59,7 @@ shapes_at = |transport| {
 		transport,
 		{
 			range: closing_gap,
-			picture_shapes: road_shapes.concat(cat_shapes(stage)),
+			picture_shapes: List.concat(road_shapes, cat_shapes(stage)),
 			status_lines: status_lines({ gap, stage }),
 		},
 	)
