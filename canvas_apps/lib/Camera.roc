@@ -115,8 +115,8 @@ Camera :: [].{
 	} -> Camera.Camera2D
 	new = |{ target, offset, rotation, zoom }|
 		{
-			target: finite_vec(target),
-			offset: finite_vec(offset),
+			target: finite_vector(target),
+			offset: finite_vector(offset),
 			rotation: finite_scalar(rotation),
 			zoom: invertible_zoom(zoom),
 		}
@@ -133,9 +133,9 @@ Camera :: [].{
 		})
 }
 
-## `v`, widened to the F64 a frame is made of.
+## `vector`, widened to the F64 a frame is made of.
 point_of_vec2 : Math.Vec2 -> Point
-point_of_vec2 = |v| Point.at(v.x.to_f64(), v.y.to_f64())
+point_of_vec2 = |vector| Point.at(vector.x.to_f64(), vector.y.to_f64())
 
 # A number that is not finite has no place on a camera, and comes only from a
 # bug in the game.
@@ -147,8 +147,8 @@ finite_scalar = |value|
 		crash "Camera: a camera's number is not finite"
 	}
 
-finite_vec : Math.Vec2 -> Math.Vec2
-finite_vec = |v| { x: finite_scalar(v.x), y: finite_scalar(v.y) }
+finite_vector : Math.Vec2 -> Math.Vec2
+finite_vector = |vector| { x: finite_scalar(vector.x), y: finite_scalar(vector.y) }
 
 ## A zoom of zero has no inverse, so screen_to_world could not undo it.
 invertible_zoom : F32 -> F32

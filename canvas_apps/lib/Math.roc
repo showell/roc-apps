@@ -27,55 +27,55 @@ Math :: [].{
 
 	## The sum of two vectors.
 	add : Math.Vec2, Math.Vec2 -> Math.Vec2
-	add = |a, b| { x: a.x + b.x, y: a.y + b.y }
+	add = |first, second| { x: first.x + second.x, y: first.y + second.y }
 
-	## `v` stretched by `k` on both axes.
+	## `vector` stretched by `factor` on both axes.
 	scale : Math.Vec2, F32 -> Math.Vec2
-	scale = |v, k| { x: v.x * k, y: v.y * k }
+	scale = |vector, factor| { x: vector.x * factor, y: vector.y * factor }
 
 	left : Math.Rect -> F32
-	left = |r| r.x
+	left = |rectangle| rectangle.x
 
 	right : Math.Rect -> F32
-	right = |r| r.x + r.width
+	right = |rectangle| rectangle.x + rectangle.width
 
 	top : Math.Rect -> F32
-	top = |r| r.y
+	top = |rectangle| rectangle.y
 
 	bottom : Math.Rect -> F32
-	bottom = |r| r.y + r.height
+	bottom = |rectangle| rectangle.y + rectangle.height
 
 	center : Math.Rect -> Math.Vec2
-	center = |r| { x: r.x + r.width / 2, y: r.y + r.height / 2 }
+	center = |rectangle| { x: rectangle.x + rectangle.width / 2, y: rectangle.y + rectangle.height / 2 }
 
 	## Whether a rectangle contains a point, including its edges.
 	contains : Math.Rect, Math.Vec2 -> Bool
-	contains = |r, point|
-		point.x >= left(r) and point.x <= right(r) and point.y >= top(r) and point.y <= bottom(r)
+	contains = |rectangle, point|
+		point.x >= left(rectangle) and point.x <= right(rectangle) and point.y >= top(rectangle) and point.y <= bottom(rectangle)
 
 	clamp : F32, F32, F32 -> F32
-	clamp = |v, lo, hi|
-		if v < lo {
-			lo
-		} else if v > hi {
-			hi
+	clamp = |value, low, high|
+		if value < low {
+			low
+		} else if value > high {
+			high
 		} else {
-			v
+			value
 		}
 
 	distance_squared : Math.Vec2, Math.Vec2 -> F32
-	distance_squared = |a, b| {
-		dx = a.x - b.x
-		dy = a.y - b.y
+	distance_squared = |first, second| {
+		dx = first.x - second.x
+		dy = first.y - second.y
 		dx * dx + dy * dy
 	}
 
 	## Whether a circle touches a rectangle: the closest point on the box to
 	## the centre, and whether that is within the radius.
 	circle_rect : Math.Circle, Math.Rect -> Bool
-	circle_rect = |c, r| {
-		near_x = clamp(c.center.x, left(r), right(r))
-		near_y = clamp(c.center.y, top(r), bottom(r))
-		distance_squared(c.center, { x: near_x, y: near_y }) <= c.radius * c.radius
+	circle_rect = |circle_shape, rectangle| {
+		near_x = clamp(circle_shape.center.x, left(rectangle), right(rectangle))
+		near_y = clamp(circle_shape.center.y, top(rectangle), bottom(rectangle))
+		distance_squared(circle_shape.center, { x: near_x, y: near_y }) <= circle_shape.radius * circle_shape.radius
 	}
 }

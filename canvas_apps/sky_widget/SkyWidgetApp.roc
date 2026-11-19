@@ -291,10 +291,10 @@ curve_shapes = |{ level_at, color, .. }| {
 	List.map2(
 		points,
 		points.drop_first(1),
-		|a, b| Shapes.line(
+		|start_point, end_point| Shapes.line(
 			{
-				from: a,
-				to: b,
+				from: start_point,
+				to: end_point,
 				width: Pixels.of(2.0),
 			},
 			Brush.flat(color),

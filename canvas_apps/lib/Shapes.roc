@@ -169,9 +169,9 @@ Shapes :: [].{
 	region_corners : Shapes.Shape -> Try(List(Point), [NoCorners])
 	region_corners = |shape|
 		match shape {
-			Triangle(t) => Ok([t.first, t.second, t.third])
-			Quad(q) => Ok([q.first, q.second, q.third, q.fourth])
-			Polygon(p) => Ok(p.corners)
+			Triangle(triangle) => Ok([triangle.first, triangle.second, triangle.third])
+			Quad(quad) => Ok([quad.first, quad.second, quad.third, quad.fourth])
+			Polygon(polygon) => Ok(polygon.corners)
 			Disc(_) | Image(_) | Text(_) | Blend(_) | View(_) => Err(NoCorners)
 		}
 

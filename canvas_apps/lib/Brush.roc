@@ -131,10 +131,10 @@ Brush :: [].{
 		bottom_row : Brush.MatrixRow,
 	}
 	ellipse_inverse = |{ axis_u, axis_v }| {
-		det = ellipse_determinant({ axis_u, axis_v })
+		determinant = ellipse_determinant({ axis_u, axis_v })
 		{
-			top_row: { x: axis_v.y.to_f64() / det, y: (0.0 - axis_v.x.to_f64()) / det },
-			bottom_row: { x: (0.0 - axis_u.y.to_f64()) / det, y: axis_u.x.to_f64() / det },
+			top_row: { x: axis_v.y.to_f64() / determinant, y: (0.0 - axis_v.x.to_f64()) / determinant },
+			bottom_row: { x: (0.0 - axis_u.y.to_f64()) / determinant, y: axis_u.x.to_f64() / determinant },
 		}
 	}
 
@@ -229,15 +229,15 @@ Brush :: [].{
 	} -> Brush.Rgba
 	mix = |
 		{
-			from: p,
-			to: q,
-			fraction: t,
+			from,
+			to,
+			fraction,
 		},
 	| {
-		r: p.r + (q.r - p.r) * t,
-		g: p.g + (q.g - p.g) * t,
-		b: p.b + (q.b - p.b) * t,
-		a: p.a + (q.a - p.a) * t,
+		r: from.r + (to.r - from.r) * fraction,
+		g: from.g + (to.g - from.g) * fraction,
+		b: from.b + (to.b - from.b) * fraction,
+		a: from.a + (to.a - from.a) * fraction,
 	}
 }
 

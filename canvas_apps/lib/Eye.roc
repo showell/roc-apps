@@ -71,21 +71,21 @@ Eye :: [].{
 # The point as this eye has it: the world turned the other way by the heading,
 # so `forward` means "in front of this eye" rather than "up the path".
 turn : Eye.Eye, Eye.At -> Eye.At
-turn = |eye, p| {
-	c = eye.heading.cos()
-	s = eye.heading.sin()
+turn = |eye, point| {
+	cosine = eye.heading.cos()
+	sine = eye.heading.sin()
 	{
-		right: p.right * c - p.forward * s,
-		forward: p.right * s + p.forward * c,
-		height: p.height,
+		right: point.right * cosine - point.forward * sine,
+		forward: point.right * sine + point.forward * cosine,
+		height: point.height,
 	}
 }
 
 # A point the eye has already turned, on the screen.
 flat : Eye.Eye, Eye.At -> Eye.OnScreen
-flat = |eye, p| {
-	x: eye.width / 2.0 + p.right / p.forward * eye.focal,
-	y: eye.height / 2.0 - (p.height - eye.eye_height) / p.forward * eye.focal,
+flat = |eye, point| {
+	x: eye.width / 2.0 + point.right / point.forward * eye.focal,
+	y: eye.height / 2.0 - (point.height - eye.eye_height) / point.forward * eye.focal,
 }
 
 # A polygon is cut rather than dropped. Dropping one the moment a corner goes
@@ -113,14 +113,14 @@ points_in_front = |points| {
 	$out
 }
 
-# Where the edge from a to b meets the near plane. It is asked only of an edge
+# Where the edge from `edge_start` to `edge_end` meets the near plane. It is asked only of an edge
 # with one end on each side of the plane, so the two ends' distances differ.
 crossing : Eye.At, Eye.At -> Eye.At
-crossing = |a, b| {
-	t = (Eye.near - a.forward) / (b.forward - a.forward)
+crossing = |edge_start, edge_end| {
+	fraction = (Eye.near - edge_start.forward) / (edge_end.forward - edge_start.forward)
 	{
-		right: a.right + (b.right - a.right) * t,
+		right: edge_start.right + (edge_end.right - edge_start.right) * fraction,
 		forward: Eye.near,
-		height: a.height + (b.height - a.height) * t,
+		height: edge_start.height + (edge_end.height - edge_start.height) * fraction,
 	}
 }

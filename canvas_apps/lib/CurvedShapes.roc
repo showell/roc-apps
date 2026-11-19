@@ -31,9 +31,9 @@ CurvedShapes :: [].{
 			cy = center.y.to_f64()
 			# The last side ends at angle 0 itself, not at a whole turn, so it
 			# meets the first side's corners exactly.
-			rim_point = |r, k| {
-				angle = F64.tau * (k % sides).to_f64() / sides.to_f64()
-				Point.at(cx + r * angle.cos(), cy + r * angle.sin())
+			rim_point = |rim_radius, side| {
+				angle = F64.tau * (side % sides).to_f64() / sides.to_f64()
+				Point.at(cx + rim_radius * angle.cos(), cy + rim_radius * angle.sin())
 			}
 			var $out = List.with_capacity(sides)
 			for k in 0..<sides {
@@ -133,8 +133,8 @@ quarter_turn_corners : List(Point),
 quarter_turn_corners = |corners, { center, radius, start_angle, steps }| {
 	var $out = corners
 	for k in 0..=steps {
-		a = start_angle + half_pi * k.to_f64() / steps.to_f64()
-		$out = $out.append(Point.at(center.x + radius * a.cos(), center.y + radius * a.sin()))
+		angle = start_angle + half_pi * k.to_f64() / steps.to_f64()
+		$out = $out.append(Point.at(center.x + radius * angle.cos(), center.y + radius * angle.sin()))
 	}
 	$out
 }
@@ -163,7 +163,7 @@ expect CurvedShapes.ring_shapes(
 sector_corners : Shapes.Shape -> List(Point)
 sector_corners = |shape|
 	match shape {
-		Quad(q) => [q.first, q.second, q.third, q.fourth]
+		Quad(quad) => [quad.first, quad.second, quad.third, quad.fourth]
 		Triangle(_) | Disc(_) | Polygon(_) | Blend(_) | View(_) | Image(_) | Text(_) => crash "CurvedShapes: a ring's sectors are all quads"
 	}
 

@@ -36,10 +36,10 @@ Font :: [].{
 		stroke_width = (size / 14.0).max(1.0)
 		left = top_left.x.to_f64()
 		words.to_utf8().map_with_index(
-			|byte, i| glyph_shapes(
+			|byte, index| glyph_shapes(
 				byte,
 				{
-					top_left: { x: Pixels.of(left + i.to_f64() * advance * unit), y: top_left.y },
+					top_left: { x: Pixels.of(left + index.to_f64() * advance * unit), y: top_left.y },
 					unit,
 					stroke_width,
 					color,
@@ -174,7 +174,7 @@ glyph_shapes = |byte, { top_left, unit, stroke_width, color }| {
 }
 
 coordinate_at : List(F64), U64 -> F64
-coordinate_at = |xs, i| xs.get(i) ?? crash "Font.coordinate_at:an index past the end of the stroke"
+coordinate_at = |xs, index| xs.get(index) ?? crash "Font.coordinate_at:an index past the end of the stroke"
 
 # The strokes of one glyph. A byte with no glyph crashes, because `width_of`
 # would still leave room for it.

@@ -29,7 +29,7 @@ Fraction :: F64.{
 		}
 
 	to_f64 : Fraction -> F64
-	to_f64 = |Fraction.(f)| f
+	to_f64 = |Fraction.(fraction)| fraction
 
 	zero : Fraction
 	zero = Fraction.(0.0)
@@ -39,24 +39,24 @@ Fraction :: F64.{
 
 	## This fraction of `other`.
 	times : Fraction, Fraction -> Fraction
-	times = |Fraction.(f), Fraction.(other)| Fraction.(f * other)
+	times = |Fraction.(fraction), Fraction.(other)| Fraction.(fraction * other)
 
 	## What is left of the whole after this fraction: the whole less it.
 	complement : Fraction -> Fraction
-	complement = |Fraction.(f)| Fraction.(1.0 - f)
+	complement = |Fraction.(fraction)| Fraction.(1.0 - fraction)
 
 	## The larger of this fraction and `other`.
 	max : Fraction, Fraction -> Fraction
-	max = |Fraction.(f), Fraction.(other)| Fraction.(F64.max(f, other))
+	max = |Fraction.(fraction), Fraction.(other)| Fraction.(F64.max(fraction, other))
 
 	is_lt : Fraction, Fraction -> Bool
-	is_lt = |Fraction.(f), Fraction.(other)| f < other
+	is_lt = |Fraction.(fraction), Fraction.(other)| fraction < other
 
 	is_lte : Fraction, Fraction -> Bool
-	is_lte = |Fraction.(f), Fraction.(other)| f <= other
+	is_lte = |Fraction.(fraction), Fraction.(other)| fraction <= other
 
 	is_gte : Fraction, Fraction -> Bool
-	is_gte = |Fraction.(f), Fraction.(other)| f >= other
+	is_gte = |Fraction.(fraction), Fraction.(other)| fraction >= other
 
 	is_eq : _
 }

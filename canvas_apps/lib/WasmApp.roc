@@ -70,8 +70,8 @@ WasmApp :: [].{
 			release: |_frame| {},
 			sounds: |boxed_model| sounds(Box.unbox(boxed_model)),
 			tone_count: |{}| tone_count_of(game.tones),
-			tone_freq: |i| tone_at(game.tones, i).hertz,
-			tone_ms: |i| tone_at(game.tones, i).milliseconds,
+			tone_freq: |index| tone_at(game.tones, index).hertz,
+			tone_ms: |index| tone_at(game.tones, index).milliseconds,
 			width: |{}| game.size.width.to_u32_try() ?? crash "WasmApp.program: a width outside a U32's range",
 			height: |{}| game.size.height.to_u32_try() ?? crash "WasmApp.program: a height outside a U32's range",
 			fps: |{}| game.frames_a_second,
@@ -102,5 +102,5 @@ expect tone_count_of(List.repeat({ hertz: 440, milliseconds: 80 }, 32)) == 32
 tone_at : List(CanvasApp.Tone), U32 -> CanvasApp.Tone
 tone_at = |
 	tones,
-	i,
-| tones.get(i.to_u64()) ?? crash "WasmApp.tone_at: the host asked for a tone past the end of the app's tones"
+	index,
+| tones.get(index.to_u64()) ?? crash "WasmApp.tone_at: the host asked for a tone past the end of the app's tones"

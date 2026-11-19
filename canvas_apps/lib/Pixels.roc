@@ -13,55 +13,55 @@ Pixels :: F64.{
 	of = |count| Pixels.(count)
 
 	to_f64 : Pixels -> F64
-	to_f64 = |Pixels.(p)| p
+	to_f64 = |Pixels.(pixels)| pixels
 
 	## No length at all.
 	zero : Pixels
 	zero = Pixels.(0.0)
 
 	plus : Pixels, Pixels -> Pixels
-	plus = |Pixels.(p), Pixels.(other)| Pixels.(p + other)
+	plus = |Pixels.(pixels), Pixels.(other)| Pixels.(pixels + other)
 
 	minus : Pixels, Pixels -> Pixels
-	minus = |Pixels.(p), Pixels.(other)| Pixels.(p - other)
+	minus = |Pixels.(pixels), Pixels.(other)| Pixels.(pixels - other)
 
 	times : Pixels, F64 -> Pixels
-	times = |Pixels.(p), factor| Pixels.(p * factor)
+	times = |Pixels.(pixels), factor| Pixels.(pixels * factor)
 
 	## This fraction of this length.
 	scaled_by : Pixels, Fraction -> Pixels
-	scaled_by = |Pixels.(p), fraction| Pixels.(p * fraction.to_f64())
+	scaled_by = |Pixels.(pixels), fraction| Pixels.(pixels * fraction.to_f64())
 
 	divided_by : Pixels, F64 -> Pixels
-	divided_by = |Pixels.(p), divisor| Pixels.(p / divisor)
+	divided_by = |Pixels.(pixels), divisor| Pixels.(pixels / divisor)
 
 	## This length measured the other way.
 	opposite : Pixels -> Pixels
-	opposite = |Pixels.(p)| Pixels.(0.0 - p)
+	opposite = |Pixels.(pixels)| Pixels.(0.0 - pixels)
 
 	## This length, whichever way it is measured.
 	abs : Pixels -> Pixels
-	abs = |Pixels.(p)| Pixels.(p.abs())
+	abs = |Pixels.(pixels)| Pixels.(pixels.abs())
 
 	## How many of `whole` this is, which can pass 1 or go negative.
 	ratio_to : Pixels, Pixels -> F64
-	ratio_to = |Pixels.(p), Pixels.(whole)| p / whole
+	ratio_to = |Pixels.(pixels), Pixels.(whole)| pixels / whole
 
 	## The larger of this length and `other`.
 	max : Pixels, Pixels -> Pixels
-	max = |Pixels.(p), Pixels.(other)| Pixels.(F64.max(p, other))
+	max = |Pixels.(pixels), Pixels.(other)| Pixels.(F64.max(pixels, other))
 
 	is_gt : Pixels, Pixels -> Bool
-	is_gt = |Pixels.(p), Pixels.(other)| p > other
+	is_gt = |Pixels.(pixels), Pixels.(other)| pixels > other
 
 	is_gte : Pixels, Pixels -> Bool
-	is_gte = |Pixels.(p), Pixels.(other)| p >= other
+	is_gte = |Pixels.(pixels), Pixels.(other)| pixels >= other
 
 	is_lt : Pixels, Pixels -> Bool
-	is_lt = |Pixels.(p), Pixels.(other)| p < other
+	is_lt = |Pixels.(pixels), Pixels.(other)| pixels < other
 
 	is_lte : Pixels, Pixels -> Bool
-	is_lte = |Pixels.(p), Pixels.(other)| p <= other
+	is_lte = |Pixels.(pixels), Pixels.(other)| pixels <= other
 
 	is_eq : _
 }

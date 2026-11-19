@@ -20,49 +20,49 @@ BrushShade :: [].{
 		y = point.y.to_f64()
 		match fill {
 			Flat(color) => color
-			Span(p) => {
-				left_x = p.left_x.to_f64()
-				right_x = p.right_x.to_f64()
-				t = if right_x != left_x {
+			Span(span) => {
+				left_x = span.left_x.to_f64()
+				right_x = span.right_x.to_f64()
+				fraction = if right_x != left_x {
 					clamp01((x - left_x) / (right_x - left_x))
 				} else {
 					1.0
 				}
-				if t <= 0.5 {
+				if fraction <= 0.5 {
 					Brush.mix({
-						from: p.edge_color,
-						to: p.middle_color,
-						fraction: t * 2.0,
+						from: span.edge_color,
+						to: span.middle_color,
+						fraction: fraction * 2.0,
 					})
 				} else {
 					Brush.mix({
-						from: p.middle_color,
-						to: p.edge_color,
-						fraction: (t - 0.5) * 2.0,
+						from: span.middle_color,
+						to: span.edge_color,
+						fraction: (fraction - 0.5) * 2.0,
 					})
 				}
 			}
-			Radial(p) =>
+			Radial(radial) =>
 				Brush.mix({
-					from: p.inner_color,
-					to: p.outer_color,
+					from: radial.inner_color,
+					to: radial.outer_color,
 					fraction: radial_fraction(
 						{ x, y },
 						{
-							center: p.center,
-							inner_radius: p.inner_radius,
-							outer_radius: p.outer_radius,
+							center: radial.center,
+							inner_radius: radial.inner_radius,
+							outer_radius: radial.outer_radius,
 						},
 					),
 				})
-			Linear(p) => {
-				start_x = p.start_point.x.to_f64()
-				start_y = p.start_point.y.to_f64()
-				dx = p.end_point.x.to_f64() - start_x
-				dy = p.end_point.y.to_f64() - start_y
+			Linear(linear) => {
+				start_x = linear.start_point.x.to_f64()
+				start_y = linear.start_point.y.to_f64()
+				dx = linear.end_point.x.to_f64() - start_x
+				dy = linear.end_point.y.to_f64() - start_y
 				length_squared = dx * dx + dy * dy
 				two_stop(
-					p.stops,
+					linear.stops,
 					if length_squared > 0.0 {
 						clamp01(((x - start_x) * dx + (y - start_y) * dy) / length_squared)
 					} else {
@@ -70,35 +70,35 @@ BrushShade :: [].{
 					},
 				)
 			}
-			Ellipse(p) => {
-				qx = x - p.center.x.to_f64()
-				qy = y - p.center.y.to_f64()
-				inverse = Brush.ellipse_inverse({ axis_u: p.axis_u, axis_v: p.axis_v })
+			Ellipse(ellipse) => {
+				qx = x - ellipse.center.x.to_f64()
+				qy = y - ellipse.center.y.to_f64()
+				inverse = Brush.ellipse_inverse({ axis_u: ellipse.axis_u, axis_v: ellipse.axis_v })
 				ux = inverse.top_row.x * qx + inverse.top_row.y * qy
 				uy = inverse.bottom_row.x * qx + inverse.bottom_row.y * qy
-				two_stop(p.stops, clamp01((ux * ux + uy * uy).sqrt()))
+				two_stop(ellipse.stops, clamp01((ux * ux + uy * uy).sqrt()))
 			}
-			Glow(p) => {
-				t = radial_fraction(
+			Glow(glow) => {
+				fraction = radial_fraction(
 					{ x, y },
 					{
-						center: p.center,
-						inner_radius: p.inner_radius,
-						outer_radius: p.outer_radius,
+						center: glow.center,
+						inner_radius: glow.inner_radius,
+						outer_radius: glow.outer_radius,
 					},
 				)
-				m = p.middle_offset
-				if t <= m {
+				middle = glow.middle_offset
+				if fraction <= middle {
 					Brush.mix({
-						from: p.inner_color,
-						to: p.middle_color,
-						fraction: t / m,
+						from: glow.inner_color,
+						to: glow.middle_color,
+						fraction: fraction / middle,
 					})
 				} else {
 					Brush.mix({
-						from: p.middle_color,
-						to: p.outer_color,
-						fraction: (t - m) / (1.0 - m),
+						from: glow.middle_color,
+						to: glow.outer_color,
+						fraction: (fraction - middle) / (1.0 - middle),
 					})
 				}
 			}
@@ -107,13 +107,13 @@ BrushShade :: [].{
 }
 
 clamp01 : F64 -> F64
-clamp01 = |t|
-	if t < 0.0 {
+clamp01 = |ratio|
+	if ratio < 0.0 {
 		0.0
-	} else if t > 1.0 {
+	} else if ratio > 1.0 {
 		1.0
 	} else {
-		t
+		ratio
 	}
 
 ## How far a point lies from the inner radius to the outer one, clamped to 0..1,
@@ -137,18 +137,18 @@ radial_fraction = |{ x, y }, ring| {
 	}
 }
 
-## The colour the stops give at `t`, for offsets start_offset <= end_offset.
+## The colour the stops give at `offset`, for offsets start_offset <= end_offset.
 two_stop : Brush.TwoStops, F64 -> Brush.Rgba
-two_stop = |stops, t|
-	if t <= stops.start_offset {
+two_stop = |stops, offset|
+	if offset <= stops.start_offset {
 		stops.start_color
-	} else if t >= stops.end_offset {
+	} else if offset >= stops.end_offset {
 		stops.end_color
 	} else {
 		Brush.mix({
 			from: stops.start_color,
 			to: stops.end_color,
-			fraction: (t - stops.start_offset) / (stops.end_offset - stops.start_offset),
+			fraction: (offset - stops.start_offset) / (stops.end_offset - stops.start_offset),
 		})
 	}
 

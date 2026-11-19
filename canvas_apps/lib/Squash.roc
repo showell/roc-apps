@@ -18,46 +18,46 @@ Squash :: [].{
 	## be squashed: a gradient's geometry would stay where it was while its shape
 	## moved, so a region with a gradient crashes.
 	squashed_shapes : List(Shapes.Shape), { axis : Pixels, cosine : F64 } -> List(Shapes.Shape)
-	squashed_shapes = |shapes, { axis, cosine: k }| shapes.map(
+	squashed_shapes = |shapes, { axis, cosine }| shapes.map(
 		|shape|
 			match shape {
-				Triangle(t) =>
+				Triangle(triangle) =>
 					Triangle({
-						first: pulled_point(t.first, { axis, cosine: k }),
-						second: pulled_point(t.second, { axis, cosine: k }),
-						third: pulled_point(t.third, { axis, cosine: k }),
-						fill: squashable_fill(t.fill),
+						first: pulled_point(triangle.first, { axis, cosine }),
+						second: pulled_point(triangle.second, { axis, cosine }),
+						third: pulled_point(triangle.third, { axis, cosine }),
+						fill: squashable_fill(triangle.fill),
 					})
-				Quad(q) =>
+				Quad(quad) =>
 					Quad({
-						first: pulled_point(q.first, { axis, cosine: k }),
-						second: pulled_point(q.second, { axis, cosine: k }),
-						third: pulled_point(q.third, { axis, cosine: k }),
-						fourth: pulled_point(q.fourth, { axis, cosine: k }),
-						fill: squashable_fill(q.fill),
+						first: pulled_point(quad.first, { axis, cosine }),
+						second: pulled_point(quad.second, { axis, cosine }),
+						third: pulled_point(quad.third, { axis, cosine }),
+						fourth: pulled_point(quad.fourth, { axis, cosine }),
+						fill: squashable_fill(quad.fill),
 					})
-				Polygon(p) => Polygon({
-					corners: p.corners.map(|corner| pulled_point(corner, { axis, cosine: k })),
-					fill: squashable_fill(p.fill),
+				Polygon(polygon) => Polygon({
+					corners: polygon.corners.map(|corner| pulled_point(corner, { axis, cosine })),
+					fill: squashable_fill(polygon.fill),
 				})
-				Disc(d) => Disc({
-					center: pulled_point(d.center, { axis, cosine: k }),
-					radius: d.radius,
-					fill: squashable_fill(d.fill),
+				Disc(disc) => Disc({
+					center: pulled_point(disc.center, { axis, cosine }),
+					radius: disc.radius,
+					fill: squashable_fill(disc.fill),
 				})
-				Blend(m) => Blend(m)
-				View(l) => View(l)
+				Blend(blend) => Blend(blend)
+				View(view) => View(view)
 				# A mirror sends a picture's left edge to its right, and a width is
 				# never negative.
-				Image(i) => {
+				Image(image) => {
 					span = pulled_span(
-						{ x: i.x, width: i.width },
-						{ axis: axis.to_f64(), cosine: k },
+						{ x: image.x, width: image.width },
+						{ axis: axis.to_f64(), cosine },
 					)
-					Image({ ..i, x: span.x, width: span.width })
+					Image({ ..image, x: span.x, width: span.width })
 				}
 				# Type keeps its letterforms, so only its place moves.
-				Text(t) => Text({ ..t, x: axis.to_f64() + (t.x - axis.to_f64()) * k })
+				Text(text_line) => Text({ ..text_line, x: axis.to_f64() + (text_line.x - axis.to_f64()) * cosine })
 			},
 	)
 }
@@ -74,8 +74,8 @@ squashable_fill = |fill|
 
 ## A point's x pulled toward `axis` by `cosine`.
 pulled_point : Point, { axis : Pixels, cosine : F64 } -> Point
-pulled_point = |{ x, y }, { axis, cosine: k }| {
-	x: Pixels.of(axis.to_f64() + (x.to_f64() - axis.to_f64()) * k),
+pulled_point = |{ x, y }, { axis, cosine }| {
+	x: Pixels.of(axis.to_f64() + (x.to_f64() - axis.to_f64()) * cosine),
 	y,
 }
 
@@ -83,9 +83,9 @@ pulled_point = |{ x, y }, { axis, cosine: k }| {
 ## mirror sends the left edge to the right, so the span starts at whichever
 ## edge lands leftmost.
 pulled_span : { x : F64, width : F64 }, { axis : F64, cosine : F64 } -> { x : F64, width : F64 }
-pulled_span = |{ x, width }, { axis, cosine: k }| {
-	start_x = axis + (x - axis) * k
-	end_x = axis + (x + width - axis) * k
+pulled_span = |{ x, width }, { axis, cosine }| {
+	start_x = axis + (x - axis) * cosine
+	end_x = axis + (x + width - axis) * cosine
 	{ x: F64.min(start_x, end_x), width: (end_x - start_x).abs() }
 }
 

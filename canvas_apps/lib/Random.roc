@@ -26,7 +26,7 @@ Random :: [].{
 	Generator(value) : Random.State -> Random.Generation(value)
 
 	seed : U32 -> Random.State
-	seed = |n| State.(n.to_u64())
+	seed = |number| State.(number.to_u64())
 
 	## Draw from a generator, starting a sequence.
 	step : Random.State, Random.Generator(value) -> Random.Generation(value)
@@ -36,20 +36,20 @@ Random :: [].{
 	next : Random.Generation(_), Random.Generator(value) -> Random.Generation(value)
 	next = |generation, generator| generator(generation.state)
 
-	## An integer from `lo` to `hi`, both ends included. A range whose `hi` is
-	## below its `lo` holds no integer, and crashes.
+	## An integer from `low` to `high`, both ends included. A range whose `high`
+	## is below its `low` holds no integer, and crashes.
 	bounded_i32 : I32, I32 -> Random.Generator(I32)
-	bounded_i32 = |lo, hi|
-		if hi < lo {
-			crash "Random.bounded_i32: hi is below lo"
+	bounded_i32 = |low, high|
+		if high < low {
+			crash "Random.bounded_i32: high is below low"
 		} else {
 			|state| {
 				turned = turn(state)
-				span = (hi - lo).to_i64() + 1
+				span = (high - low).to_i64() + 1
 				# The high bits are the well-mixed ones in an LCG, so the draw
 				# comes from the top of the word rather than the bottom.
 				drawn = bits(turned).shr_wrap(8).to_i64_wrap()
-				{ value: lo + drawn.rem_by(span).to_i32_wrap(), state: turned }
+				{ value: low + drawn.rem_by(span).to_i32_wrap(), state: turned }
 			}
 		}
 }
@@ -58,7 +58,7 @@ mask : U64
 mask = 4294967295
 
 bits : Random.State -> U64
-bits = |Random.State.(n)| n
+bits = |Random.State.(state_bits)| state_bits
 
 ## The next state, and the 32 bits it carries.
 turn : Random.State -> Random.State

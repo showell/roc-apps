@@ -44,56 +44,56 @@ BrushGlsl :: [].{
 	uniforms = |fill| {
 		blank = { ..blank_uniforms, mode: mode_of(fill) }
 		match fill {
-			Flat(c) => { ..blank, color_a: color_quad(c) }
-			Span(p) => {
+			Flat(color) => { ..blank, color_a: color_quad(color) }
+			Span(span) => {
 				..blank,
-				color_a: color_quad(p.edge_color),
-				color_b: color_quad(p.middle_color),
+				color_a: color_quad(span.edge_color),
+				color_b: color_quad(span.middle_color),
 				geom_a: {
-					x: p.left_x.to_f64(),
-					y: p.right_x.to_f64(),
+					x: span.left_x.to_f64(),
+					y: span.right_x.to_f64(),
 					z: 0.0,
 					w: 0.0,
 				},
 			}
-			Radial(p) => {
+			Radial(radial) => {
 				..blank,
-				color_a: color_quad(p.inner_color),
-				color_b: color_quad(p.outer_color),
-				geom_a: ring_quad(p),
+				color_a: color_quad(radial.inner_color),
+				color_b: color_quad(radial.outer_color),
+				geom_a: ring_quad(radial),
 			}
-			Linear(p) => {
+			Linear(linear) => {
 				..blank,
-				color_a: color_quad(p.stops.start_color),
-				color_b: color_quad(p.stops.end_color),
+				color_a: color_quad(linear.stops.start_color),
+				color_b: color_quad(linear.stops.end_color),
 				geom_a: {
-					x: p.stops.start_offset,
-					y: p.stops.end_offset,
+					x: linear.stops.start_offset,
+					y: linear.stops.end_offset,
 					z: 0.0,
 					w: 0.0,
 				},
 				geom_b: {
-					x: p.start_point.x.to_f64(),
-					y: p.start_point.y.to_f64(),
-					z: p.end_point.x.to_f64() - p.start_point.x.to_f64(),
-					w: p.end_point.y.to_f64() - p.start_point.y.to_f64(),
+					x: linear.start_point.x.to_f64(),
+					y: linear.start_point.y.to_f64(),
+					z: linear.end_point.x.to_f64() - linear.start_point.x.to_f64(),
+					w: linear.end_point.y.to_f64() - linear.start_point.y.to_f64(),
 				},
 			}
-			Ellipse(p) => {
-				inverse = Brush.ellipse_inverse({ axis_u: p.axis_u, axis_v: p.axis_v })
+			Ellipse(ellipse) => {
+				inverse = Brush.ellipse_inverse({ axis_u: ellipse.axis_u, axis_v: ellipse.axis_v })
 				{
 					..blank,
-					color_a: color_quad(p.stops.start_color),
-					color_b: color_quad(p.stops.end_color),
+					color_a: color_quad(ellipse.stops.start_color),
+					color_b: color_quad(ellipse.stops.end_color),
 					geom_a: {
-						x: p.stops.start_offset,
-						y: p.stops.end_offset,
+						x: ellipse.stops.start_offset,
+						y: ellipse.stops.end_offset,
 						z: 0.0,
 						w: 0.0,
 					},
 					geom_b: {
-						x: p.center.x.to_f64(),
-						y: p.center.y.to_f64(),
+						x: ellipse.center.x.to_f64(),
+						y: ellipse.center.y.to_f64(),
 						z: 0.0,
 						w: 0.0,
 					},
@@ -105,14 +105,14 @@ BrushGlsl :: [].{
 					},
 				}
 			}
-			Glow(p) => {
+			Glow(glow) => {
 				..blank,
-				color_a: color_quad(p.inner_color),
-				color_b: color_quad(p.middle_color),
-				color_c: color_quad(p.outer_color),
-				geom_a: ring_quad(p),
+				color_a: color_quad(glow.inner_color),
+				color_b: color_quad(glow.middle_color),
+				color_c: color_quad(glow.outer_color),
+				geom_a: ring_quad(glow),
 				geom_b: {
-					x: p.middle_offset,
+					x: glow.middle_offset,
 					y: 0.0,
 					z: 0.0,
 					w: 0.0,
@@ -244,11 +244,11 @@ blank_uniforms = {
 }
 
 color_quad : Brush.Rgba -> BrushGlsl.Quad
-color_quad = |c| {
-	x: c.r / 255.0,
-	y: c.g / 255.0,
-	z: c.b / 255.0,
-	w: c.a,
+color_quad = |color| {
+	x: color.r / 255.0,
+	y: color.g / 255.0,
+	z: color.b / 255.0,
+	w: color.a,
 }
 
 ## A radial gradient's center and its two radii, as `ringT` reads them.
