@@ -80,8 +80,8 @@
 <text text-anchor="middle" x="175.5" y="-448.4" font-family="Helvetica,sans-Serif" font-size="12.00">sighting module</text>
 </g>
 <g id="node2" class="node">
-<polygon fill="none" stroke="black" points="241.5,-366 109.5,-366 109.5,-330 241.5,-330 241.5,-366"/>
-<text text-anchor="middle" x="175.5" y="-344.9" font-family="Helvetica,sans-Serif" font-size="12.00">Geom.Placed(kind)</text>
+<polygon fill="none" stroke="black" points="252.5,-366 98.5,-366 98.5,-330 252.5,-330 252.5,-366"/>
+<text text-anchor="middle" x="175.5" y="-344.9" font-family="Helvetica,sans-Serif" font-size="12.00">Geometry.Placed(kind)</text>
 </g>
 <g id="edge1" class="edge">
 <path fill="none" stroke="black" d="M175.5,-439.65C175.5,-422.56 175.5,-396.22 175.5,-376.32"/>
@@ -94,7 +94,7 @@
 <text text-anchor="middle" x="73.5" y="-234.9" font-family="Helvetica,sans-Serif" font-size="12.00">Pipeline.Sighted(kind)</text>
 </g>
 <g id="edge2" class="edge">
-<path fill="none" stroke="black" d="M109.4,-334.79C93.42,-328.57 78.17,-319.18 68.5,-305 60.84,-293.76 61.33,-278.81 64.07,-265.98"/>
+<path fill="none" stroke="black" d="M98.43,-329.92C86.63,-323.95 75.92,-315.88 68.5,-305 60.84,-293.76 61.33,-278.81 64.07,-265.98"/>
 <polygon fill="black" stroke="black" points="67.47,-266.81 66.64,-256.25 60.71,-265.02 67.47,-266.81"/>
 <text text-anchor="middle" x="147" y="-296.2" font-family="Helvetica,sans-Serif" font-size="11.00"> &#160;is sighted by</text>
 <text text-anchor="middle" x="147" y="-284.2" font-family="Helvetica,sans-Serif" font-size="11.00"> &#160;a Pipeline sighting function</text>
@@ -141,8 +141,8 @@
 <text text-anchor="middle" x="153.5" y="-336.4" font-family="Helvetica,sans-Serif" font-size="12.00">sighting module</text>
 </g>
 <g id="node2" class="node">
-<polygon fill="none" stroke="black" points="214.5,-282 92.5,-282 92.5,-246 214.5,-246 214.5,-282"/>
-<text text-anchor="middle" x="153.5" y="-260.9" font-family="Helvetica,sans-Serif" font-size="12.00">Geom.Placed(kind)</text>
+<polygon fill="none" stroke="black" points="225.5,-282 81.5,-282 81.5,-246 225.5,-246 225.5,-282"/>
+<text text-anchor="middle" x="153.5" y="-260.9" font-family="Helvetica,sans-Serif" font-size="12.00">Geometry.Placed(kind)</text>
 </g>
 <g id="edge1" class="edge">
 <path fill="none" stroke="black" d="M153.5,-327.64C153.5,-317.3 153.5,-303.94 153.5,-292.22"/>
@@ -155,7 +155,7 @@
 <text text-anchor="middle" x="68.5" y="-178.9" font-family="Helvetica,sans-Serif" font-size="12.00">Pipeline.Sighted(kind)</text>
 </g>
 <g id="edge2" class="edge">
-<path fill="none" stroke="black" d="M92.1,-251.33C84.12,-247.36 76.87,-242.07 71.5,-235 66.21,-228.04 64.49,-218.92 64.39,-210.26"/>
+<path fill="none" stroke="black" d="M82.8,-245.8C78.53,-242.76 74.69,-239.19 71.5,-235 66.21,-228.04 64.49,-218.92 64.39,-210.26"/>
 <polygon fill="black" stroke="black" points="67.9,-210.29 64.96,-200.11 60.91,-209.9 67.9,-210.29"/>
 <text text-anchor="middle" x="150" y="-226.2" font-family="Helvetica,sans-Serif" font-size="11.00"> &#160;is sighted by</text>
 <text text-anchor="middle" x="150" y="-214.2" font-family="Helvetica,sans-Serif" font-size="11.00"> &#160;a Pipeline sighting function</text>
@@ -195,18 +195,18 @@
 </svg><figcaption>The pipeline</figcaption></figure><p>Each sort of thing has a sighting module, such as <code>TreeSighting</code>, and some serve several kinds: <code>BillboardSighting</code> sights every billboard. A sighting module gathers its placed things on the road ahead, and hands each one to a <code>Pipeline</code> function that sights it, as the <a class="chapter-link" href="refused.html">“Errors as tag unions”</a> chapter shows for <code>TreeSighting</code>.</p>
 <h2 id="placed">Placed <a class="section-link" href="#placed" aria-label="Link to this section">§</a></h2>
 <p>The trip starts from where a thing stands on the road:</p>
-<figure class="listing"><figcaption>Geom.roc</figcaption><pre><code class="language-roc"><span class="syn-comment">## An object on one segment of the road, `lift` off the ground, and what</span>
+<figure class="listing"><figcaption>Geometry.roc</figcaption><pre><code class="language-roc"><span class="syn-comment">## An object on one segment of the road, `lift` off the ground, and what</span>
 <span class="syn-comment">## kind of object it is. A tree is placed once for the whole ride, a cow</span>
 <span class="syn-comment">## from its herd whenever something asks for it, and a cat, a tower or the</span>
 <span class="syn-comment">## truck anew for each frame.</span>
 <span class="syn-comment">## `Pipeline.sighting_of` turns it into a `Pipeline.Sighted` for a frame.</span>
 <span class="syn-type">Placed</span>(kind) : {
-	road_point : <span class="syn-type">Geom.RoadPoint</span>,
+	road_point : <span class="syn-type">Geometry.RoadPoint</span>,
 	lift : <span class="syn-type">Distance</span>,
 	kind : kind,
 }
-</code></pre></figure><p><code>kind</code> says what the thing is. Its type is the type variable <code>kind</code>, so a placed tree is a <code>Geom.Placed(Conifer)</code>, and a placed cow is a <code>Geom.Placed(Billboard)</code>. <code>lift</code> says how far off the ground it stands, and <code>road_point</code> is its place on the road:</p>
-<figure class="listing"><figcaption>Geom.roc</figcaption><pre><code class="language-roc"><span class="syn-comment">## A point on one segment of the road.</span>
+</code></pre></figure><p><code>kind</code> says what the thing is. Its type is the type variable <code>kind</code>, so a placed tree is a <code>Geometry.Placed(Conifer)</code>, and a placed cow is a <code>Geometry.Placed(Billboard)</code>. <code>lift</code> says how far off the ground it stands, and <code>road_point</code> is its place on the road:</p>
+<figure class="listing"><figcaption>Geometry.roc</figcaption><pre><code class="language-roc"><span class="syn-comment">## A point on one segment of the road.</span>
 <span class="syn-type">RoadPoint</span> : { along : <span class="syn-type">Along</span>, across : <span class="syn-type">Across</span> }
 </code></pre></figure><p><code>along</code> is how far the place lies along its segment of road, and <code>across</code> is how far it lies from the middle of the road, growing to the right. Each is an opaque type around a number of metres, as <code>Distance</code> is:</p>
 <figure class="listing"><figcaption>Along.roc, in Along</figcaption><pre><code class="language-roc"><span class="syn-type">Along</span> :: <span class="syn-type">F64</span>.{

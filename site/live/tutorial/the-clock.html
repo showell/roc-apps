@@ -76,7 +76,7 @@
 
 <span class="syn-keyword">import</span> game.<span class="syn-type">Clock</span>
 
-<span class="syn-name">main!</span> = |_args| {
+<span class="syn-name">main!</span> = |_arguments| {
 	later = <span class="syn-type">Clock</span>.start + <span class="syn-number">7</span>
 	echo!(later.to_str())
 	<span class="syn-type">Ok</span>({})
@@ -113,39 +113,39 @@ Other code expects this to have the type:
 
 	<span class="syn-comment">## The clock one step on.</span>
 	<span class="syn-name">next</span> : <span class="syn-type">Clock</span> -&gt; <span class="syn-type">Clock</span>
-	<span class="syn-name">next</span> = |<span class="syn-type">Clock</span>.(n)| <span class="syn-type">Clock</span>.(n + <span class="syn-number">1</span>)
+	<span class="syn-name">next</span> = |<span class="syn-type">Clock</span>.(step)| <span class="syn-type">Clock</span>.(step + <span class="syn-number">1</span>)
 
 	<span class="syn-comment">## How many steps this clock is past `earlier`. It crashes when this clock</span>
 	<span class="syn-comment">## comes before `earlier`.</span>
 	<span class="syn-name">steps_since</span> : <span class="syn-type">Clock</span>, <span class="syn-type">Clock</span> -&gt; <span class="syn-type">Steps</span>
-	<span class="syn-name">steps_since</span> = |<span class="syn-type">Clock</span>.(n), <span class="syn-type">Clock</span>.(earlier)|
-		<span class="syn-keyword">if</span> n &lt; earlier {
+	<span class="syn-name">steps_since</span> = |<span class="syn-type">Clock</span>.(step), <span class="syn-type">Clock</span>.(earlier)|
+		<span class="syn-keyword">if</span> step &lt; earlier {
 			<span class="syn-keyword">crash</span> <span class="syn-string">&quot;Clock.steps_since: this clock comes before the one it counts from&quot;</span>
 		} <span class="syn-keyword">else</span> {
-			<span class="syn-type">Steps</span>.of(n - earlier)
+			<span class="syn-type">Steps</span>.of(step - earlier)
 		}
 
 	<span class="syn-comment">## The clock `length` steps on.</span>
 	<span class="syn-name">plus</span> : <span class="syn-type">Clock</span>, <span class="syn-type">Steps</span> -&gt; <span class="syn-type">Clock</span>
-	<span class="syn-name">plus</span> = |<span class="syn-type">Clock</span>.(n), length| <span class="syn-type">Clock</span>.(n + length.to_u32())
+	<span class="syn-name">plus</span> = |<span class="syn-type">Clock</span>.(step), length| <span class="syn-type">Clock</span>.(step + length.to_u32())
 
 	<span class="syn-comment">## The clock `length` steps back. It crashes when that would go back past</span>
 	<span class="syn-comment">## step 0, where the ride starts.</span>
 	<span class="syn-name">minus</span> : <span class="syn-type">Clock</span>, <span class="syn-type">Steps</span> -&gt; <span class="syn-type">Clock</span>
-	<span class="syn-name">minus</span> = |<span class="syn-type">Clock</span>.(n), length| {
+	<span class="syn-name">minus</span> = |<span class="syn-type">Clock</span>.(step), length| {
 		back = length.to_u32()
-		<span class="syn-keyword">if</span> back &gt; n {
+		<span class="syn-keyword">if</span> back &gt; step {
 			<span class="syn-keyword">crash</span> <span class="syn-string">&quot;Clock.minus: the ride starts at step 0, and nothing comes before it&quot;</span>
 		} <span class="syn-keyword">else</span> {
-			<span class="syn-type">Clock</span>.(n - back)
+			<span class="syn-type">Clock</span>.(step - back)
 		}
 	}
 
 	<span class="syn-name">is_lt</span> : <span class="syn-type">Clock</span>, <span class="syn-type">Clock</span> -&gt; <span class="syn-type">Bool</span>
-	<span class="syn-name">is_lt</span> = |<span class="syn-type">Clock</span>.(n), <span class="syn-type">Clock</span>.(other)| n &lt; other
+	<span class="syn-name">is_lt</span> = |<span class="syn-type">Clock</span>.(step), <span class="syn-type">Clock</span>.(other)| step &lt; other
 
 	<span class="syn-name">to_str</span> : <span class="syn-type">Clock</span> -&gt; <span class="syn-type">Str</span>
-	<span class="syn-name">to_str</span> = |<span class="syn-type">Clock</span>.(n)| n.to_str()
+	<span class="syn-name">to_str</span> = |<span class="syn-type">Clock</span>.(step)| step.to_str()
 
 	<span class="syn-name">is_eq</span> : _
 }

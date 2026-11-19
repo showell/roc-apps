@@ -141,9 +141,9 @@
 <span class="syn-comment">## there sees it.</span>
 <span class="syn-name">rider_point_round_bends</span> : <span class="syn-type">RoadAhead.RoadView</span>,
 {
-	vantage : <span class="syn-type">Geom.Vantage</span>,
+	vantage : <span class="syn-type">Geometry.Vantage</span>,
 	position : <span class="syn-type">SegmentFromRider.Position</span>,
-	road_point : <span class="syn-type">Geom.RoadPoint</span>,
+	road_point : <span class="syn-type">Geometry.RoadPoint</span>,
 } -&gt; <span class="syn-type">RiderView.RiderPoint</span>
 <span class="syn-name">rider_point_round_bends</span> = |road, { vantage, position, road_point }| {
 	bends = bends_ahead(road)
@@ -152,16 +152,16 @@
 	<span class="syn-keyword">while</span> $bends_left &gt; <span class="syn-number">0</span> {
 		$bends_left = $bends_left - <span class="syn-number">1</span>
 		bend = bends.get($bends_left) ?? <span class="syn-keyword">crash</span> <span class="syn-string">&quot;RoadAhead.rider_point_round_bends: past the road&#39;s end&quot;</span>
-		$point = <span class="syn-type">Geom</span>.point_before_worked_bend($point, bend)
+		$point = <span class="syn-type">Geometry</span>.point_before_worked_bend($point, bend)
 	}
 	to_rider_point($point, vantage)
 }
 </code></pre></figure><p><code>position</code> is a <code>SegmentFromRider.Position</code>, the count of bends between the rider&#39;s segment and the point&#39;s. Each pass of the loop sets <code>$point</code> to the same point, measured on the segment before. For an <code>Err</code>, <code>??</code> runs a <code>crash</code>, as it does for the bird&#39;s trees.</p>
 <p>Each pass is one rotation and one shift:</p>
-<figure class="listing"><figcaption>Geom.roc</figcaption><pre><code class="language-roc"><span class="syn-comment">## `point`, on the segment after a bend already worked out, measured on the</span>
+<figure class="listing"><figcaption>Geometry.roc</figcaption><pre><code class="language-roc"><span class="syn-comment">## `point`, on the segment after a bend already worked out, measured on the</span>
 <span class="syn-comment">## segment before it instead: turned by the bend, and moved to where the</span>
 <span class="syn-comment">## segment after starts.</span>
-<span class="syn-name">point_before_worked_bend</span> : <span class="syn-type">Geom.RoadPoint</span>, <span class="syn-type">Geom.WorkedBend</span> -&gt; <span class="syn-type">Geom.RoadPoint</span>
+<span class="syn-name">point_before_worked_bend</span> : <span class="syn-type">Geometry.RoadPoint</span>, <span class="syn-type">Geometry.WorkedBend</span> -&gt; <span class="syn-type">Geometry.RoadPoint</span>
 <span class="syn-name">point_before_worked_bend</span> = |point, { start_after: start, cos_turn, sin_turn }| {
 	along = point.along.to_metres()
 	across = point.across.to_metres()
@@ -174,7 +174,7 @@
 <h2 id="to-the-rider">To the rider <a class="section-link" href="#to-the-rider" aria-label="Link to this section">§</a></h2>
 <p>On the rider&#39;s own segment, one more turn brings the point into the camera&#39;s view:</p>
 <figure class="listing"><figcaption>RoadAhead.roc</figcaption><pre><code class="language-roc"><span class="syn-comment">## A point on the rider&#39;s segment, as the camera at `vantage` sees it.</span>
-<span class="syn-name">to_rider_point</span> : <span class="syn-type">Geom.RoadPoint</span>, <span class="syn-type">Geom.Vantage</span> -&gt; <span class="syn-type">RiderView.RiderPoint</span>
+<span class="syn-name">to_rider_point</span> : <span class="syn-type">Geometry.RoadPoint</span>, <span class="syn-type">Geometry.Vantage</span> -&gt; <span class="syn-type">RiderView.RiderPoint</span>
 <span class="syn-name">to_rider_point</span> = |{ along, across }, vantage| {
 	ahead = along.distance_from(vantage.along).to_metres()
 	aside = across.distance_from(vantage.across).to_metres()
@@ -192,9 +192,9 @@
 <figure class="listing"><figcaption>Camera.roc</figcaption><pre><code class="language-roc"><span class="syn-comment">## Where a point in front of the camera lands on the screen, through a</span>
 <span class="syn-comment">## lens of `focal_length`.</span>
 <span class="syn-name">project</span> : <span class="syn-type">RiderView.PointAtHeightAhead</span>, <span class="syn-type">Pixels</span> -&gt; <span class="syn-type">Point</span>
-<span class="syn-name">project</span> = |p, focal_length| {
-	slope_right = p.right().ratio_to(p.forward())
-	slope_up = p.height().minus(eye_height).ratio_to(p.forward())
+<span class="syn-name">project</span> = |point, focal_length| {
+	slope_right = point.right().ratio_to(point.forward())
+	slope_up = point.height().minus(eye_height).ratio_to(point.forward())
 	{
 		x: <span class="syn-type">Lens</span>.x_for_slope({ slope: slope_right, focal_length }),
 		y: <span class="syn-type">Lens</span>.y_for_slope({ slope: slope_up, focal_length }),
@@ -243,8 +243,12 @@
 <span class="syn-comment">## region and another comes back into it, a straight line joins them.</span>
 <span class="syn-name">points_in_region</span> : <span class="syn-type">List</span>(<span class="syn-type">RiderView.PointAtHeight</span>), <span class="syn-type">RiderView.Region</span>(point) -&gt; <span class="syn-type">List</span>(point)
 <span class="syn-name">points_in_region</span> = |polygon_points, region| {
-	next_corners = polygon_points.drop_first(<span class="syn-number">1</span>).concat(polygon_points.take_first(<span class="syn-number">1</span>))
-	edges = polygon_points.map2(next_corners, |from, to| { from, to, region })
+	next_corners = <span class="syn-type">List</span>.concat(polygon_points.drop_first(<span class="syn-number">1</span>), polygon_points.take_first(<span class="syn-number">1</span>))
+	edges = <span class="syn-type">List</span>.map2(
+		polygon_points,
+		next_corners,
+		|from, to| { from, to, region },
+	)
 	edges.fold(<span class="syn-type">List</span>.with_capacity(<span class="syn-number">2</span> * polygon_points.len()), edge_points_onto)
 }
 </code></pre></figure><p><code>next_corners</code> turns the corners round by one, with <code>drop_first</code> and <code>take_first</code>, so <code>map2</code> can pair each corner with the next. Each pair is an edge. <code>fold</code> builds the cut face from the edges, starting from <code>List.with_capacity</code>, an empty list with room set aside. <code>edge_points_onto</code> keeps an edge&#39;s first corner when it lies in the region, then adds each point where the edge crosses the boundary. The near plane&#39;s cut is one line:</p>

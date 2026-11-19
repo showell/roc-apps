@@ -114,17 +114,17 @@
 </code></pre></figure><p>After a value&#39;s name, the same <code>:</code> gives the value its type, and the lines after it define the value. The <code>World.route</code> value is the whole road, built from the plans once, before the ride starts. So plain records lay out the whole road, as data any module can build and read.</p>
 <figure class="widget"><iframe class="canvas-app" src="../route_widget/" title="The whole route from above, one stretch for each plan. A mark shows where a cat crosses or a bird flies." loading="lazy" style="aspect-ratio: 640 / 220"></iframe><figcaption>The whole route from above, one stretch for each plan. A mark shows where a cat crosses or a bird flies.</figcaption></figure><h2 id="a-type-variable-carries-every-kind">A type variable carries every kind <a class="section-link" href="#a-type-variable-carries-every-kind" aria-label="Link to this section">§</a></h2>
 <p>The screen shows what a camera on the rider sees. Each thing takes three forms on its way there, and each form is a type. First, a thing has a place on the road:</p>
-<figure class="listing"><figcaption>Geom.roc</figcaption><pre><code class="language-roc"><span class="syn-comment">## An object on one segment of the road, `lift` off the ground, and what</span>
+<figure class="listing"><figcaption>Geometry.roc</figcaption><pre><code class="language-roc"><span class="syn-comment">## An object on one segment of the road, `lift` off the ground, and what</span>
 <span class="syn-comment">## kind of object it is. A tree is placed once for the whole ride, a cow</span>
 <span class="syn-comment">## from its herd whenever something asks for it, and a cat, a tower or the</span>
 <span class="syn-comment">## truck anew for each frame.</span>
 <span class="syn-comment">## `Pipeline.sighting_of` turns it into a `Pipeline.Sighted` for a frame.</span>
 <span class="syn-type">Placed</span>(kind) : {
-	road_point : <span class="syn-type">Geom.RoadPoint</span>,
+	road_point : <span class="syn-type">Geometry.RoadPoint</span>,
 	lift : <span class="syn-type">Distance</span>,
 	kind : kind,
 }
-</code></pre></figure><p>The <code>kind</code> in parentheses is a type variable: it stands for whatever type fills it. So a cow on the road is a <code>Geom.Placed(Billboard)</code>, and one type serves every kind. Next comes the thing as the camera sights it:</p>
+</code></pre></figure><p>The <code>kind</code> in parentheses is a type variable: it stands for whatever type fills it. So a cow on the road is a <code>Geometry.Placed(Billboard)</code>, and one type serves every kind. Next comes the thing as the camera sights it:</p>
 <figure class="listing"><figcaption>Pipeline.roc</figcaption><pre><code class="language-roc"><span class="syn-comment">## An object in the rider&#39;s view, and what kind of object it is, for one</span>
 <span class="syn-comment">## frame.</span>
 <span class="syn-type">Sighted</span>(kind) : { spot : <span class="syn-type">Spot</span>, kind : kind }

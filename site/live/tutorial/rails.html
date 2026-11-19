@@ -117,7 +117,7 @@
 <p><code>RailSighting</code> finds the rail at every bend in view:</p>
 <figure class="listing"><figcaption>RailSighting.roc</figcaption><pre><code class="language-roc"><span class="syn-comment">## The quads of the rails at every bend in view: the bends along the road</span>
 <span class="syn-comment">## ahead, then the bend from the segment behind.</span>
-<span class="syn-name">rail_quads_in_view</span> : <span class="syn-type">RoadAhead.RoadView</span>, <span class="syn-type">Geom.Vantage</span> -&gt; <span class="syn-type">List</span>(<span class="syn-type">GuardRail.RailQuad</span>)
+<span class="syn-name">rail_quads_in_view</span> : <span class="syn-type">RoadAhead.RoadView</span>, <span class="syn-type">Geometry.Vantage</span> -&gt; <span class="syn-type">List</span>(<span class="syn-type">GuardRail.RailQuad</span>)
 <span class="syn-name">rail_quads_in_view</span> = |road, vantage|
 	<span class="syn-type">RoadAhead</span>.segments_in_view(road).join_map(
 		|in_view|
@@ -135,7 +135,7 @@
 <span class="syn-comment">## and along it.</span>
 <span class="syn-name">rail_points</span> : <span class="syn-type">RoadAhead.RoadView</span>,
 {
-	vantage : <span class="syn-type">Geom.Vantage</span>,
+	vantage : <span class="syn-type">Geometry.Vantage</span>,
 	bend_in_view : <span class="syn-type">BendInView</span>,
 } -&gt; <span class="syn-type">List</span>(<span class="syn-type">RiderView.RiderPoint</span>)
 <span class="syn-name">rail_points</span> = |road, { vantage, bend_in_view }| {

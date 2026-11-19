@@ -204,7 +204,7 @@
 	above_line = flight_arc.times(<span class="syn-number">4.0</span> * share * (<span class="syn-number">1.0</span> - share))
 	{ ..on_line, lift: on_line.lift.plus(above_line) }
 }
-</code></pre></figure><p><code>Easing.smoothstep</code> turns a share of the way into one that moves slowly at each end and faster in the middle, so the bird eases away from one tree and into the next. For <code>t</code>, the share of the way through, <code>4t(1 − t)</code> is 0 at both ends and 1 halfway, so the arc starts and ends at the treetops. The last line is a record update: the point on the line, with its lift raised.</p>
+</code></pre></figure><p><code>Easing.smoothstep</code> turns a share of the way into one that moves slowly at each end and faster in the middle, so the bird eases away from one tree and into the next. For <code>share</code>, the share of the way through, <code>4 × share × (1 − share)</code> is 0 at both ends and 1 halfway, so the arc starts and ends at the treetops. The last line is a record update: the point on the line, with its lift raised.</p>
 <h2 id="finding-its-trees">Finding its trees <a class="section-link" href="#finding-its-trees" aria-label="Link to this section">§</a></h2>
 <p>A segment gets its bird once, when the world is built. The bird perches on the fifth tree on the left, and flies to the first tree on the far side at least 25 metres farther along:</p>
 <figure class="listing"><figcaption>BirdFlight.roc</figcaption><pre><code class="language-roc"><span class="syn-comment">## The flight of a bird perched on the tree at `perch`, among a segment&#39;s</span>

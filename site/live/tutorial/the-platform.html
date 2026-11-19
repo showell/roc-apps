@@ -176,8 +176,11 @@
 	frames_a_second: <span class="syn-number">30</span>,
 	init: initial_model,
 	model_at_next_step: <span class="syn-type">CanvasApp</span>.untimed_model_at_next_step(model_at_next_step),
-	frame_shapes: |m| <span class="syn-type">FrameView</span>.frame_view_at(m.tour.route(), m.tour.instant()).leaned_shapes(),
-	sounds: |_m| <span class="syn-number">0</span>,
+	frame_shapes: |model| <span class="syn-type">FrameView</span>.frame_view_at(
+		model.tour.route(),
+		model.tour.instant(),
+	).leaned_shapes(),
+	sounds: |_model| <span class="syn-number">0</span>,
 	tones: [],
 	title: <span class="syn-string">&quot;Safari&quot;</span>,
 }
@@ -208,12 +211,12 @@
 <p>The snapshot goes to the app&#39;s step, <code>SafariApp.model_at_next_step</code>. The step takes the model, which is the tour and whether it&#39;s paused, and the snapshot, and returns the next model. Here&#39;s the part that pauses and steps:</p>
 <figure class="listing"><figcaption>SafariApp.roc, in model_at_next_step</figcaption><pre><code class="language-roc"><span class="syn-comment"># ...</span>
 motion = <span class="syn-keyword">if</span> input.key_pressed(<span class="syn-type">KeySpace</span>) {
-	<span class="syn-keyword">match</span> m.motion {
+	<span class="syn-keyword">match</span> model.motion {
 		<span class="syn-type">Playing</span> =&gt; <span class="syn-type">Paused</span>
 		<span class="syn-type">Paused</span> =&gt; <span class="syn-type">Playing</span>
 	}
 } <span class="syn-keyword">else</span> {
-	m.motion
+	model.motion
 }
 steps_a_frame = <span class="syn-keyword">match</span> motion {
 	<span class="syn-type">Paused</span> =&gt; <span class="syn-type">Steps</span>.one_step
@@ -221,13 +224,13 @@ steps_a_frame = <span class="syn-keyword">match</span> motion {
 }
 moved =
 	<span class="syn-keyword">if</span> input.key_down(<span class="syn-type">KeyRight</span>) {
-		m.tour.steps_forward(steps_a_frame)
+		model.tour.steps_forward(steps_a_frame)
 	} <span class="syn-keyword">else</span> <span class="syn-keyword">if</span> input.key_down(<span class="syn-type">KeyLeft</span>) {
-		m.tour.steps_back(steps_a_frame)
+		model.tour.steps_back(steps_a_frame)
 	} <span class="syn-keyword">else</span> {
 		<span class="syn-keyword">match</span> motion {
-			<span class="syn-type">Paused</span> =&gt; m.tour
-			<span class="syn-type">Playing</span> =&gt; m.tour.step_forward()
+			<span class="syn-type">Paused</span> =&gt; model.tour
+			<span class="syn-type">Playing</span> =&gt; model.tour.step_forward()
 			<span class="syn-comment"># ...</span>
 </code></pre></figure><p><code>key_pressed</code> returns whether a key went down since the last step, so one tap of Space pauses the ride once. <code>key_down</code> returns whether a key is held, so holding Right keeps the ride moving. The step reads the snapshot every time it runs, so each control answers on the next step.</p>
 <h2 id="the-host">The host <a class="section-link" href="#the-host" aria-label="Link to this section">§</a></h2>

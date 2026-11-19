@@ -442,7 +442,7 @@
 <figure class="listing"><figcaption>Motorcycle.roc</figcaption><pre><code class="language-roc"><span class="syn-comment">## This motorcycle carried over `bend`, the bend out of its segment, when</span>
 <span class="syn-comment">## that puts it on the next segment&#39;s road: placed on that segment and turned</span>
 <span class="syn-comment">## to its axis. Short of that, it stays where it is.</span>
-<span class="syn-name">cross_bend_if_on_road</span> : <span class="syn-type">Motorcycle</span>, <span class="syn-type">Geom.Bend</span> -&gt; <span class="syn-type">Motorcycle</span>
+<span class="syn-name">cross_bend_if_on_road</span> : <span class="syn-type">Motorcycle</span>, <span class="syn-type">Geometry.Bend</span> -&gt; <span class="syn-type">Motorcycle</span>
 <span class="syn-name">cross_bend_if_on_road</span> = |motorcycle, bend| {
 	on_next = motorcycle.route_place.route_place_past_bend(bend)
 	<span class="syn-keyword">if</span> on_next.is_on_road() {

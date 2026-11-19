@@ -305,7 +305,7 @@ truck = <span class="syn-type">TruckJourney</span>.truck_progress_at_next_step(
 	)
 	<span class="syn-comment"># The steady brake may land a little under its target; `VehicleLimits.braking_to`</span>
 	<span class="syn-comment"># says why. The truck alone keeps to the target here.</span>
-	speed = target_speed.max(progress.speed.accelerated_by(acceleration))
+	speed = <span class="syn-type">Speed</span>.max(target_speed, progress.speed.accelerated_by(acceleration))
 	{
 		route_position: progress.route_position.plus(speed.step_length()),
 		speed,
@@ -323,7 +323,7 @@ truck = <span class="syn-type">TruckJourney</span>.truck_progress_at_next_step(
 <span class="syn-name">progress_toward_tease</span> = |progress, tease| {
 	speed =
 		<span class="syn-keyword">if</span> progress.route_position &lt; tease {
-			chase_top_speed.min(progress.speed.accelerated_by(chase_acceleration))
+			<span class="syn-type">Speed</span>.min(chase_top_speed, progress.speed.accelerated_by(chase_acceleration))
 		} <span class="syn-keyword">else</span> {
 			progress.speed
 		}

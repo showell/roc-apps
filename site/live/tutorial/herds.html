@@ -73,13 +73,17 @@
 <p>The world stores a cow herd as two counts: how many cows, and how many rows stand behind the front one. The route&#39;s herd is fourteen cows, in columns of three:</p>
 <figure class="listing"><figcaption>CowHerd.roc</figcaption><pre><code class="language-roc"><span class="syn-comment">## The herd&#39;s cows behind `herd_along`, column by column from the front,</span>
 <span class="syn-comment">## led by the bull at `herd_along` if the herd has one.</span>
-<span class="syn-name">herd_cows</span> : <span class="syn-type">CowHerd</span>, { herd_along : <span class="syn-type">Along</span>, bull : <span class="syn-type">CowHerd.Bull</span> } -&gt; <span class="syn-type">List</span>(<span class="syn-type">Geom.Placed</span>(<span class="syn-type">Billboard</span>))
+<span class="syn-name">herd_cows</span> : <span class="syn-type">CowHerd</span>,
+{
+	herd_along : <span class="syn-type">Along</span>,
+	bull : <span class="syn-type">CowHerd.Bull</span>,
+} -&gt; <span class="syn-type">List</span>(<span class="syn-type">Geometry.Placed</span>(<span class="syn-type">Billboard</span>))
 <span class="syn-name">herd_cows</span> = |<span class="syn-type">CowHerd</span>.({ cow_count, rows_behind_front }), { herd_along, bull }| {
 	cows =
 		<span class="syn-type">List</span>.from_iter(<span class="syn-type">U64</span>.until(<span class="syn-number">0</span>, cow_count))
 			.map(|cow_number| herd_cow({ herd_along, cow_number, rows_behind_front }))
 	<span class="syn-keyword">match</span> bull {
-		<span class="syn-type">WithBull</span> =&gt; [herd_bull(herd_along)].concat(cows)
+		<span class="syn-type">WithBull</span> =&gt; <span class="syn-type">List</span>.concat([herd_bull(herd_along)], cows)
 		<span class="syn-type">NoBull</span> =&gt; cows
 	}
 }
@@ -91,7 +95,7 @@
 	herd_along : <span class="syn-type">Along</span>,
 	cow_number : <span class="syn-type">U64</span>,
 	rows_behind_front : <span class="syn-type">U64</span>,
-} -&gt; <span class="syn-type">Geom.Placed</span>(<span class="syn-type">Billboard</span>)
+} -&gt; <span class="syn-type">Geometry.Placed</span>(<span class="syn-type">Billboard</span>)
 <span class="syn-name">herd_cow</span> = |{ herd_along, cow_number, rows_behind_front }| {
 	cows_per_column = rows_behind_front + <span class="syn-number">1</span>
 	column = cow_number.div_trunc_by(cows_per_column).to_f64()
@@ -123,7 +127,7 @@
 <h2 id="pigs">Pigs <a class="section-link" href="#pigs" aria-label="Link to this section">§</a></h2>
 <p>A pig herd has two shapes, as a tag union:</p>
 <figure class="listing"><figcaption>PigHerd.roc</figcaption><pre><code class="language-roc"><span class="syn-comment">## The herd&#39;s pigs about `herd_along`.</span>
-<span class="syn-name">herd_pigs</span> : <span class="syn-type">PigHerd</span>, <span class="syn-type">Along</span> -&gt; <span class="syn-type">List</span>(<span class="syn-type">Geom.Placed</span>(<span class="syn-type">Billboard</span>))
+<span class="syn-name">herd_pigs</span> : <span class="syn-type">PigHerd</span>, <span class="syn-type">Along</span> -&gt; <span class="syn-type">List</span>(<span class="syn-type">Geometry.Placed</span>(<span class="syn-type">Billboard</span>))
 <span class="syn-name">herd_pigs</span> = |herd, herd_along|
 	<span class="syn-keyword">match</span> herd {
 		<span class="syn-type">BigHerd</span>(big_herd) =&gt; big_herd_pigs(big_herd, herd_along)

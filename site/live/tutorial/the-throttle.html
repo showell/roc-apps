@@ -335,20 +335,22 @@ limits.fold(offered, held_to)
 <span class="syn-type">ThrottleLimit</span> := [<span class="syn-type">NoLimit</span>, <span class="syn-type">AtMost</span>(<span class="syn-type">Acceleration</span>)].{
 	<span class="syn-name">is_eq</span> : _
 }
-</code></pre></figure><figure class="listing"><figcaption>Throttle.roc</figcaption><pre><code class="language-roc"><span class="syn-comment">## The acceleration `a`, held to what `limit` asks.</span>
+</code></pre></figure><figure class="listing"><figcaption>Throttle.roc</figcaption><pre><code class="language-roc"><span class="syn-comment">## `acceleration`, held to what `limit` asks.</span>
 <span class="syn-name">held_to</span> : <span class="syn-type">Acceleration</span>, <span class="syn-type">ThrottleLimit</span> -&gt; <span class="syn-type">Acceleration</span>
-<span class="syn-name">held_to</span> = |a, limit|
+<span class="syn-name">held_to</span> = |acceleration, limit|
 	<span class="syn-keyword">match</span> limit {
-		<span class="syn-type">AtMost</span>(most) =&gt; a.min(most)
-		<span class="syn-type">NoLimit</span> =&gt; a
+		<span class="syn-type">AtMost</span>(most) =&gt; <span class="syn-type">Acceleration</span>.min(acceleration, most)
+		<span class="syn-type">NoLimit</span> =&gt; acceleration
 	}
 </code></pre></figure><p>The throttle returns an acceleration, and the motorcycle&#39;s step turns it into a speed.</p>
-<p><code>Speed</code> and <code>Acceleration</code> are a pair like the clock and its steps: a speed is a value, and an acceleration is the change from one speed to another. To brake for a bend, the rider needs the steady acceleration that takes its speed to a target within so much road. That&#39;s <code>Speed.acceleration_to</code>. Its <code>within</code> is a <code>Distance</code>: the road the change has to happen in. The formula is the first line of a physics textbook, v² = u² + 2ad, solved for a, with the speed going from <code>s</code> to <code>t</code> over the distance <code>within</code>. In the parameter list, <code>Speed.(s)</code> and <code>target: Speed.(t)</code> unwrap the two speeds into plain numbers, as <code>Clock.(n)</code> does in the <a class="chapter-link" href="the-clock.html">“Opaque types: the clock”</a> chapter:</p>
+<p><code>Speed</code> and <code>Acceleration</code> are a pair like the clock and its steps: a speed is a value, and an acceleration is the change from one speed to another. To brake for a bend, the rider needs the steady acceleration that takes its speed to a target within so much road. That&#39;s <code>Speed.acceleration_to</code>. Its <code>within</code> is a <code>Distance</code>: the road the change has to happen in. The formula is the first line of a physics textbook, v² = u² + 2ad, solved for a, with the speed going from <code>speed</code> to <code>target</code> over the distance <code>within</code>. In the parameter list, <code>Speed.(speed)</code> and <code>target: Speed.(target)</code> unwrap the two speeds into plain numbers, as <code>Clock.(step)</code> does in the <a class="chapter-link" href="the-clock.html">“Opaque types: the clock”</a> chapter:</p>
 <figure class="listing"><figcaption>Speed.roc</figcaption><pre><code class="language-roc"><span class="syn-comment">## The steady acceleration that brings this speed to `target` within this</span>
 <span class="syn-comment">## distance.</span>
 <span class="syn-name">acceleration_to</span> : <span class="syn-type">Speed</span>, { target : <span class="syn-type">Speed</span>, within : <span class="syn-type">Distance</span> } -&gt; <span class="syn-type">Acceleration</span>
-<span class="syn-name">acceleration_to</span> = |<span class="syn-type">Speed</span>.(s), { target: <span class="syn-type">Speed</span>.(t), within }|
-	<span class="syn-type">Acceleration</span>.metres_a_step_each_step((t * t - s * s) / (<span class="syn-number">2.0</span> * within.to_metres()))
+<span class="syn-name">acceleration_to</span> = |<span class="syn-type">Speed</span>.(speed), { target: <span class="syn-type">Speed</span>.(target), within }| {
+	squares_gained = target * target - speed * speed
+	<span class="syn-type">Acceleration</span>.metres_a_step_each_step(squares_gained / (<span class="syn-number">2.0</span> * within.to_metres()))
+}
 </code></pre></figure><p>It has one caller, <code>VehicleLimits.braking_to</code>. That function also holds the speed steady when at most a micrometre of road is left, and enforces the invariant that every speed is zero or more, with a <code>crash</code>. The rider&#39;s bend brake, the gawk brake and the truck all brake through <code>braking_to</code>. The first limit is the bend&#39;s:</p>
 <figure class="listing"><figcaption>Throttle.roc</figcaption><pre><code class="language-roc"><span class="syn-comment">## Near the end of the segment, the brake that brings the rider to the exit</span>
 <span class="syn-comment">## speed at the point where they commit to the turn. Past that point there is</span>

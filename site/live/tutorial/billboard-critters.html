@@ -269,11 +269,11 @@ Missing patterns:
 <text text-anchor="middle" x="385" y="-50.2" font-family="Helvetica,sans-Serif" font-size="11.00"> &#160;carries one of</text>
 </g>
 </g>
-</svg><figcaption>What a bend&#39;s life can be</figcaption></figure><p>The function that returns a bend&#39;s billboards takes the bend&#39;s life and the bend itself, a <code>Geom.Bend</code>, and takes the life apart with a <code>match</code>:</p>
+</svg><figcaption>What a bend&#39;s life can be</figcaption></figure><p>The function that returns a bend&#39;s billboards takes the bend&#39;s life and the bend itself, a <code>Geometry.Bend</code>, and takes the life apart with a <code>match</code>:</p>
 <figure class="listing"><figcaption>Segment.roc</figcaption><pre><code class="language-roc"><span class="syn-comment">## The billboards of `bend_life`, placed on the segment that ends at `bend`:</span>
 <span class="syn-comment">## the animal and its baby, or the ducks on the pond, whose places are measured</span>
 <span class="syn-comment">## from the bend.</span>
-<span class="syn-name">bend_billboards</span> : <span class="syn-type">Segment.BendLife</span>, <span class="syn-type">Geom.Bend</span> -&gt; <span class="syn-type">List</span>(<span class="syn-type">Geom.Placed</span>(<span class="syn-type">Billboard</span>))
+<span class="syn-name">bend_billboards</span> : <span class="syn-type">Segment.BendLife</span>, <span class="syn-type">Geometry.Bend</span> -&gt; <span class="syn-type">List</span>(<span class="syn-type">Geometry.Placed</span>(<span class="syn-type">Billboard</span>))
 <span class="syn-name">bend_billboards</span> = |bend_life, bend|
 	<span class="syn-keyword">match</span> bend_life {
 		<span class="syn-type">Animal</span>(animal) =&gt; animal.bend_billboards(bend)

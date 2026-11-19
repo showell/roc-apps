@@ -79,7 +79,7 @@
 <figure class="listing"><figcaption>GroundSighting.roc, in ground_patches</figcaption><pre><code class="language-roc"><span class="syn-comment"># ...</span>
 <span class="syn-name">ground_patches</span> : <span class="syn-type">RoadAhead.RoadView</span>,
 {
-	vantage : <span class="syn-type">Geom.Vantage</span>,
+	vantage : <span class="syn-type">Geometry.Vantage</span>,
 	in_view : <span class="syn-type">RoadAhead.SegmentInView</span>,
 } -&gt; <span class="syn-type">List</span>(<span class="syn-type">GroundPatch</span>)
 <span class="syn-name">ground_patches</span> = |road, { vantage, in_view }| {
@@ -109,7 +109,7 @@
 <span class="syn-comment">## through as a pale seam.</span>
 <span class="syn-name">road_along</span> : <span class="syn-type">RoadAhead.RoadView</span>,
 {
-	vantage : <span class="syn-type">Geom.Vantage</span>,
+	vantage : <span class="syn-type">Geometry.Vantage</span>,
 	in_view : <span class="syn-type">RoadAhead.SegmentInView</span>,
 } -&gt; <span class="syn-type">GroundPatch</span>
 <span class="syn-name">road_along</span> = |road, { vantage, in_view }| {
@@ -122,11 +122,13 @@
 	}
 	up_right_edge =
 		<span class="syn-type">List</span>.from_iter(<span class="syn-type">U32</span>.until(<span class="syn-number">0</span>, segment_chunk_count + <span class="syn-number">1</span>))
-			.map(|number| corner(number, <span class="syn-type">Geom</span>.right_edge))
+			.map(|number| corner(number, <span class="syn-type">Geometry</span>.right_edge))
 	down_left_edge =
 		<span class="syn-type">List</span>.from_iter(<span class="syn-type">U32</span>.until(<span class="syn-number">0</span>, segment_chunk_count))
-			.map(|k| corner(segment_chunk_count - k, <span class="syn-type">Geom</span>.left_edge))
-	road_patch([corner(<span class="syn-number">0</span>, <span class="syn-type">Geom</span>.left_edge)].concat(up_right_edge).concat(down_left_edge))
+			.map(|k| corner(segment_chunk_count - k, <span class="syn-type">Geometry</span>.left_edge))
+	road_patch(
+		<span class="syn-type">List</span>.concat(<span class="syn-type">List</span>.concat([corner(<span class="syn-number">0</span>, <span class="syn-type">Geometry</span>.left_edge)], up_right_edge), down_left_edge),
+	)
 }
 </code></pre></figure><p><code>corner</code> is a function named inside the body. It uses <code>road</code>, <code>vantage</code> and <code>from_rider</code> from around it, so each call names only a chunk and an edge. A function that uses names from around it like this is a closure.</p>
 <p>The patch starts at the left corner of the segment&#39;s start, runs up the right edge to the end of every chunk, and comes back down the left, so its corners go round in order. So the right edge counts one corner more than the left: the left&#39;s first corner is already the patch&#39;s first. <code>U32.until(0, n)</code> counts from 0 up to just short of <code>n</code>, and <code>List.from_iter</code> collects the count into a list of chunk numbers.</p>
@@ -152,12 +154,12 @@
 <tr>
 <td>Find the corner, on the road</td>
 <td><code>outer_<wbr>corner</code></td>
-<td><code>BendInView -&gt; BendInView.<wbr>OuterCorner(Geom.<wbr>RoadPoint)</code></td>
+<td><code>BendInView -&gt; BendInView.<wbr>OuterCorner(Geometry.<wbr>RoadPoint)</code></td>
 </tr>
 <tr>
 <td>See the corner from the rider</td>
 <td><code>outer_<wbr>corner_<wbr>in_<wbr>view</code></td>
-<td><code>BendInView, { road : RoadAhead.<wbr>RoadView, vantage : Geom.<wbr>Vantage, } -&gt; BendInView.<wbr>OuterCorner(RiderView.<wbr>RiderPoint)</code></td>
+<td><code>BendInView, { road : RoadAhead.<wbr>RoadView, vantage : Geometry.<wbr>Vantage, } -&gt; BendInView.<wbr>OuterCorner(RiderView.<wbr>RiderPoint)</code></td>
 </tr>
 </tbody>
 </table>

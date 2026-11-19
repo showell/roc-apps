@@ -180,10 +180,10 @@
 <p>A sighting function&#39;s answer is a <code>Try</code>, Roc&#39;s type for an answer that can fail. A <code>Try</code> is one of two tags: <code>Ok</code>, holding the answer, or <code>Err</code>, holding a tag that says what went wrong. Here&#39;s the first sighting function, whole:</p>
 <figure class="listing"><figcaption>Pipeline.roc</figcaption><pre><code class="language-roc"><span class="syn-comment">## `placed` as a camera at `vantage` sees it, on the segment that lies at</span>
 <span class="syn-comment">## `from_rider`, if it is at or past the camera&#39;s near plane.</span>
-<span class="syn-name">sighting_of</span> : <span class="syn-type">Geom.Placed</span>(kind),
+<span class="syn-name">sighting_of</span> : <span class="syn-type">Geometry.Placed</span>(kind),
 {
 	road : <span class="syn-type">RoadAhead.RoadView</span>,
-	vantage : <span class="syn-type">Geom.Vantage</span>,
+	vantage : <span class="syn-type">Geometry.Vantage</span>,
 	from_rider : <span class="syn-type">SegmentFromRider</span>,
 } -&gt; <span class="syn-type">Try</span>(<span class="syn-type">Pipeline.Sighted</span>(kind), [<span class="syn-type">OutOfSight</span>])
 <span class="syn-name">sighting_of</span> = |placed, { road, vantage, from_rider }| {
@@ -205,10 +205,10 @@
 <span class="syn-comment">## over the horizon: its top, its kind&#39;s height above its lift and lowered</span>
 <span class="syn-comment">## by the ground&#39;s drop, is not hidden behind the curve of the ground. Every</span>
 <span class="syn-comment">## kind with a height takes this test here.</span>
-<span class="syn-name">sighting_above_horizon_of</span> : <span class="syn-type">Geom.Placed</span>(kind),
+<span class="syn-name">sighting_above_horizon_of</span> : <span class="syn-type">Geometry.Placed</span>(kind),
 {
 	road : <span class="syn-type">RoadAhead.RoadView</span>,
-	vantage : <span class="syn-type">Geom.Vantage</span>,
+	vantage : <span class="syn-type">Geometry.Vantage</span>,
 	from_rider : <span class="syn-type">SegmentFromRider</span>,
 } -&gt; <span class="syn-type">Try</span>(<span class="syn-type">Pipeline.Sighted</span>(kind), [<span class="syn-type">OutOfSight</span>])
 	<span class="syn-keyword">where</span> [kind.scenery_height : kind -&gt; <span class="syn-type">Distance</span>]

@@ -76,7 +76,7 @@
 
 <span class="syn-keyword">import</span> game.<span class="syn-type">Angle</span>
 
-<span class="syn-name">main!</span> = |_args| {
+<span class="syn-name">main!</span> = |_arguments| {
 	north = <span class="syn-type">Angle.Bearing</span>.radians(<span class="syn-number">0.0</span>)
 	quarter = <span class="syn-type">Angle.Turn</span>.radians(<span class="syn-number">1.5</span>)
 	echo!(north.turn_from(quarter).to_radians().to_str())
@@ -155,7 +155,7 @@ But turn_from needs the first argument to be:
 		},
 	)
 	<span class="syn-type">Shapes</span>.region_from_corners(
-		crest.concat([{ x: right, y: base_y }, { x: left, y: base_y }]),
+		<span class="syn-type">List</span>.concat(crest, [{ x: right, y: base_y }, { x: left, y: base_y }]),
 		<span class="syn-type">Brush</span>.flat(color),
 	)
 }

@@ -129,7 +129,7 @@
 <tr>
 <td>Tell whether the rider has noticed a pig</td>
 <td><code>noticed_<wbr>pig</code></td>
-<td><code>Motorcycle, Segment -&gt; [Noticed(Geom.<wbr>Placed(Billboard)), NothingNoticed]</code></td>
+<td><code>Motorcycle, Segment -&gt; [Noticed(Geometry.<wbr>Placed(Billboard)), NothingNoticed]</code></td>
 </tr>
 <tr>
 <td>Work out the brake</td>
@@ -285,7 +285,11 @@
 </code></pre></figure><p>The pig has to be near, and it has to be in sight. Near means from 150 metres before the pig, measured along the road. In sight is an angle:</p>
 <figure class="listing"><figcaption>Gaze.roc</figcaption><pre><code class="language-roc"><span class="syn-comment">## How far `pig` stands from the way a motorcycle at `rider_point` points, its</span>
 <span class="syn-comment">## `yaw`.</span>
-<span class="syn-name">turn_to</span> : { rider_point : <span class="syn-type">Geom.RoadPoint</span>, yaw : <span class="syn-type">Angle.Turn</span> }, <span class="syn-type">Geom.Placed</span>(<span class="syn-type">Billboard</span>) -&gt; <span class="syn-type">Angle.Turn</span>
+<span class="syn-name">turn_to</span> : {
+	rider_point : <span class="syn-type">Geometry.RoadPoint</span>,
+	yaw : <span class="syn-type">Angle.Turn</span>,
+},
+<span class="syn-type">Geometry.Placed</span>(<span class="syn-type">Billboard</span>) -&gt; <span class="syn-type">Angle.Turn</span>
 <span class="syn-name">turn_to</span> = |{ rider_point, yaw }, pig|
 	<span class="syn-type">Angle.Turn</span>.radians(
 		<span class="syn-type">F64</span>.atan2({
@@ -323,7 +327,10 @@
 	<span class="syn-keyword">if</span> gaze_yaw == <span class="syn-type">Angle</span>.straight_ahead {
 		<span class="syn-type">Fraction</span>.clamp(eyes.look_depth.to_f64() - look_depth_decay.to_f64())
 	} <span class="syn-keyword">else</span> {
-		eyes.look_depth.max(<span class="syn-type">Fraction</span>.clamp(gaze_yaw.abs().ratio_to(<span class="syn-type">Gaze</span>.look_release_angle)))
+		<span class="syn-type">Fraction</span>.max(
+			eyes.look_depth,
+			<span class="syn-type">Fraction</span>.clamp(gaze_yaw.abs().ratio_to(<span class="syn-type">Gaze</span>.look_release_angle)),
+		)
 	}
 </code></pre></figure><p>While the gaze is off straight ahead, the depth rises with how far it has turned, and holds there. Once the gaze is home, the depth fades by 0.0012 a step, so a full look takes more than 800 steps to fade.</p>
 <p>The depth has one job. It widens the view:</p>
@@ -338,7 +345,7 @@
 <span class="syn-comment">## starts where an eye-catching pig is `notice_distance` ahead and asks only</span>
 <span class="syn-comment">## where the motorcycle is, so it lasts past the pig to the end of the</span>
 <span class="syn-comment">## segment.</span>
-<span class="syn-name">noticed_pig</span> : <span class="syn-type">Motorcycle</span>, <span class="syn-type">Segment</span> -&gt; [<span class="syn-type">Noticed</span>(<span class="syn-type">Geom.Placed</span>(<span class="syn-type">Billboard</span>)), <span class="syn-type">NothingNoticed</span>]
+<span class="syn-name">noticed_pig</span> : <span class="syn-type">Motorcycle</span>, <span class="syn-type">Segment</span> -&gt; [<span class="syn-type">Noticed</span>(<span class="syn-type">Geometry.Placed</span>(<span class="syn-type">Billboard</span>)), <span class="syn-type">NothingNoticed</span>]
 <span class="syn-name">noticed_pig</span> = |motorcycle, segment| {
 	rider_along = motorcycle.route_place.road_point.along
 	<span class="syn-keyword">match</span> eye_catching_pig(segment) {
@@ -363,7 +370,7 @@
 			<span class="syn-type">AtMost</span>(
 				<span class="syn-type">VehicleLimits</span>.braking_to(
 					motorcycle.speed,
-					{ target: gawk_speed, within: room.max(gawk_least_distance) },
+					{ target: gawk_speed, within: <span class="syn-type">Distance</span>.max(room, gawk_least_distance) },
 				),
 			)
 		}
