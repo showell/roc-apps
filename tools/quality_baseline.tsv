@@ -38,7 +38,7 @@ book_builder	types-key	book_builder,repos:roc-markdown/package	1a43846104c04cba6
 building-books	check_stacking	long	3
 building-books	check_stacking	wide string	1
 building-books	parse-key	building-books	9a047fe4d7ae95ca65bc9d8f140d885862b3f3d8
-building-books	types-key	book_builder,building-books,repos:roc-markdown/package,syntax_color	ab9e6775cfd73d64a7b94cf7ec92dfb2f302950c
+building-books	types-key	book_builder,building-books,repos:roc-markdown/package,syntax_color	aa33adfad4cc11aa969cadbace6b3461b6970f43
 canvas_apps	parse-key	canvas_apps	deaa2c9523e52ad07d5d0629e17227c90c1b5ccf
 canvas_apps/beacon_widget	check_families	twin_name	1
 canvas_apps/beacon_widget	check_stacking	wide string	1
@@ -181,7 +181,7 @@ canvas_apps/route_widget	types-key	canvas_apps/lib,canvas_apps/route_widget,canv
 canvas_apps/safari	check_families	twin_name	2
 canvas_apps/safari	check_stacking	wide string	70
 canvas_apps/safari	roc-types	unreached	11
-canvas_apps/safari	types-key	book_builder,canvas_apps/beacon_widget,canvas_apps/bend_animals_widget,canvas_apps/bends_widget,canvas_apps/bird_widget,canvas_apps/cat_widget,canvas_apps/conifers_widget,canvas_apps/cow_widget,canvas_apps/far_tree_widget,canvas_apps/frame_widget,canvas_apps/gaze_widget,canvas_apps/herd_widget,canvas_apps/kinds_widget,canvas_apps/lib,canvas_apps/native,canvas_apps/pipeline_widget,canvas_apps/rehearsal_widget,canvas_apps/route_widget,canvas_apps/safari,canvas_apps/shapes_widget,canvas_apps/sky_widget,canvas_apps/step_widget,canvas_apps/stills_widget,canvas_apps/truck_widget,canvas_apps/web,canvas_apps/widget_kit,repos:roc-markdown/package,repos:roc-ray/platform,roc-cache:packages/6ZUwqYhCS8PU9Mo6MF7oV82ET2o7KYb57CLKDq4cq4sS,roc-cache:packages/HoULZB8QzktiNPYSe9myzy9JQzm1nMbjDPVWoA63QpVf,syntax_color	cb537b112b465d5f17a6656048834c4bc5afb325
+canvas_apps/safari	types-key	book_builder,canvas_apps/beacon_widget,canvas_apps/bend_animals_widget,canvas_apps/bends_widget,canvas_apps/bird_widget,canvas_apps/cat_widget,canvas_apps/conifers_widget,canvas_apps/cow_widget,canvas_apps/far_tree_widget,canvas_apps/frame_widget,canvas_apps/gaze_widget,canvas_apps/herd_widget,canvas_apps/kinds_widget,canvas_apps/lib,canvas_apps/native,canvas_apps/pipeline_widget,canvas_apps/rehearsal_widget,canvas_apps/route_widget,canvas_apps/safari,canvas_apps/shapes_widget,canvas_apps/sky_widget,canvas_apps/step_widget,canvas_apps/stills_widget,canvas_apps/truck_widget,canvas_apps/web,canvas_apps/widget_kit,repos:roc-markdown/package,repos:roc-ray/platform,roc-cache:packages/6ZUwqYhCS8PU9Mo6MF7oV82ET2o7KYb57CLKDq4cq4sS,roc-cache:packages/HoULZB8QzktiNPYSe9myzy9JQzm1nMbjDPVWoA63QpVf,syntax_color	a16ed369f7f24acde7ebf5cc0cbe14eced18f1e3
 canvas_apps/shapes_widget	roc-types	unreached	1
 canvas_apps/shapes_widget	types-key	canvas_apps/lib,canvas_apps/safari,canvas_apps/shapes_widget,canvas_apps/web,canvas_apps/widget_kit	471f11da9d4528e6e732dda38641a34aeb0b1c1b
 canvas_apps/sky_widget	check_stacking	wide string	2
@@ -311,9 +311,7 @@ glue	types-key	glue,roc-cache:compat-8ef4841088748ac1aa781861c5d51bf4411c8d2407e
 syntax_color	check_errors	number_fallback	1
 syntax_color	check_families	twin_name	3
 syntax_color	check_stacking	wide string	15
-syntax_color	find_unclear_names	abbreviation	3
-syntax_color	hunt_names	short_name	27
-syntax_color	parse-key	syntax_color	0a584bf5f398d812da9255d855f5d03318c8c6fc
+syntax_color	parse-key	syntax_color	c63d6a82b1c20b730e159c902a5840d6ece2e2ad
 syntax_color	rewrite_method_calls	rewritable	2
 syntax_color	roc-types	unreached	1
-syntax_color	types-key	syntax_color	0a584bf5f398d812da9255d855f5d03318c8c6fc
+syntax_color	types-key	syntax_color	c63d6a82b1c20b730e159c902a5840d6ece2e2ad
