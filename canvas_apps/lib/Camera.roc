@@ -77,9 +77,15 @@ Camera :: [].{
 			bottom_left = camera.screen_to_world({ x: 0, y: screen.y })
 			bottom_right = camera.screen_to_world(screen)
 			left = F32.min(F32.min(top_left.x, top_right.x), F32.min(bottom_left.x, bottom_right.x))
-			right = F32.max(F32.max(top_left.x, top_right.x), F32.max(bottom_left.x, bottom_right.x))
+			right = F32.max(
+				F32.max(top_left.x, top_right.x),
+				F32.max(bottom_left.x, bottom_right.x),
+			)
 			top = F32.min(F32.min(top_left.y, top_right.y), F32.min(bottom_left.y, bottom_right.y))
-			bottom = F32.max(F32.max(top_left.y, top_right.y), F32.max(bottom_left.y, bottom_right.y))
+			bottom = F32.max(
+				F32.max(top_left.y, top_right.y),
+				F32.max(bottom_left.y, bottom_right.y),
+			)
 			Math.rect(
 				left,
 				top,

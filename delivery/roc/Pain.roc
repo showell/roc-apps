@@ -110,7 +110,10 @@ Pain :: [].{
 					$pain = $pain + RoadGraph.minutes($last, node).times_wrap(rate)
 					$last = node
 					bit = U64.shl_wrap(1, node)
-					if U64.bitwise_and($served, bit) != 0 and U64.bitwise_and($delivered, bit) == 0 {
+					if U64.bitwise_and($served, bit) != 0 and U64.bitwise_and(
+						$delivered,
+						bit,
+					) == 0 {
 						ring_rate = empty_pain + tote_pain.times_wrap($aboard)
 						$pain = $pain + ring_unit.times_wrap(ring_rate)
 						$delivered = U64.bitwise_or($delivered, bit)

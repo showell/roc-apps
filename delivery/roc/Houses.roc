@@ -46,7 +46,10 @@ Houses :: U64.{
 		if n >= 15 or h >= 16 {
 			crash "Houses.append: a stop holds at most 15 houses, each numbered under 16"
 		}
-		low = U64.bitwise_or(U64.bitwise_and(bits, low_mask), h.to_u64().shl_wrap(n.to_u8_wrap().shl_wrap(2)))
+		low = U64.bitwise_or(
+			U64.bitwise_and(bits, low_mask),
+			h.to_u64().shl_wrap(n.to_u8_wrap().shl_wrap(2)),
+		)
 		Houses.(U64.bitwise_or(low, (n + 1).shl_wrap(60)))
 	}
 

@@ -32,11 +32,17 @@ Twister :: [].{
 		while $k > 0 {
 			prev = $mt.get($i - 1) ?? crash "Twister: an index inside the 624-word state"
 			cur = $mt.get($i) ?? crash "Twister: an index inside the 624-word state"
-			x = U32.bitwise_xor(cur, U32.bitwise_xor(prev, prev.div_trunc_by(1073741824)).times_wrap(1664525)).plus_wrap(seed)
+			x = U32.bitwise_xor(
+				cur,
+				U32.bitwise_xor(prev, prev.div_trunc_by(1073741824)).times_wrap(1664525),
+			).plus_wrap(seed)
 			$mt = $mt.set($i, x) ?? crash "by_array: inside the state"
 			$i = $i + 1
 			if $i >= 624 {
-				$mt = $mt.set(0, $mt.get(623) ?? crash "Twister: an index inside the 624-word state") ?? crash "by_array: inside the state"
+				$mt = $mt.set(
+					0,
+					$mt.get(623) ?? crash "Twister: an index inside the 624-word state",
+				) ?? crash "by_array: inside the state"
 				$i = 1
 			} else {
 				{}
@@ -47,11 +53,17 @@ Twister :: [].{
 		while $k > 0 {
 			prev = $mt.get($i - 1) ?? crash "Twister: an index inside the 624-word state"
 			cur = $mt.get($i) ?? crash "Twister: an index inside the 624-word state"
-			x = U32.bitwise_xor(cur, U32.bitwise_xor(prev, prev.div_trunc_by(1073741824)).times_wrap(1566083941)).minus_wrap(U64.to_u32_wrap($i))
+			x = U32.bitwise_xor(
+				cur,
+				U32.bitwise_xor(prev, prev.div_trunc_by(1073741824)).times_wrap(1566083941),
+			).minus_wrap(U64.to_u32_wrap($i))
 			$mt = $mt.set($i, x) ?? crash "by_array: inside the state"
 			$i = $i + 1
 			if $i >= 624 {
-				$mt = $mt.set(0, $mt.get(623) ?? crash "Twister: an index inside the 624-word state") ?? crash "by_array: inside the state"
+				$mt = $mt.set(
+					0,
+					$mt.get(623) ?? crash "Twister: an index inside the 624-word state",
+				) ?? crash "by_array: inside the state"
 				$i = 1
 			} else {
 				{}
@@ -66,13 +78,19 @@ Twister :: [].{
 		var $mt = state
 		var $kk = 0
 		while $kk < 624 {
-			y = U32.bitwise_or(($mt.get($kk) ?? crash "Twister: an index inside the 624-word state").bitwise_and(2147483648), ($mt.get(($kk + 1).rem_by(624)) ?? crash "Twister: an index inside the 624-word state").bitwise_and(2147483647))
+			y = U32.bitwise_or(
+				($mt.get($kk) ?? crash "Twister: an index inside the 624-word state").bitwise_and(2147483648),
+				($mt.get(($kk + 1).rem_by(624)) ?? crash "Twister: an index inside the 624-word state").bitwise_and(2147483647),
+			)
 			mag = if U32.bitwise_and(y, 1) == 1 {
 				2567483615
 			} else {
 				0
 			}
-			x = U32.bitwise_xor(($mt.get(($kk + 397).rem_by(624)) ?? crash "Twister: an index inside the 624-word state").bitwise_xor(y.div_trunc_by(2)), mag)
+			x = U32.bitwise_xor(
+				($mt.get(($kk + 397).rem_by(624)) ?? crash "Twister: an index inside the 624-word state").bitwise_xor(y.div_trunc_by(2)),
+				mag,
+			)
 			$mt = $mt.set($kk, x) ?? crash "twist: inside the state"
 			$kk = $kk + 1
 		}

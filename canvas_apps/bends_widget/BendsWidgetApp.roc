@@ -243,10 +243,7 @@ fixed_picture_shapes = {
 	backdrop = WidgetPage.picture_backdrop(WidgetPalette.plan_ground_color)
 	picture_shapes = List.concat([backdrop], shown_bends.join_map(bend_shapes))
 	List.concat(
-		WidgetPage.frame_shapes({
-			picture_shapes,
-			status_lines: [],
-		}),
+		WidgetPage.frame_shapes({ picture_shapes, status_lines: [] }),
 		shown_bends.join_map(caption_shapes),
 	)
 }

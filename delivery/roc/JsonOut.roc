@@ -61,7 +61,10 @@ escaped_onto = |out, text| {
 		$out = if b == '"' or b == '\\' {
 			$out.append('\\').append(b)
 		} else if b < 0x20 {
-			List.concat($out, "\\u00".to_utf8()).append(hex_digit(b // 16)).append(hex_digit(b % 16))
+			List.concat(
+				$out,
+				"\\u00".to_utf8(),
+			).append(hex_digit(b // 16)).append(hex_digit(b % 16))
 		} else {
 			$out.append(b)
 		}

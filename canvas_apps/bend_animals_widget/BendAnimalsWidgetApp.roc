@@ -360,7 +360,11 @@ expect {
 # The billboards stand in order from left to right without touching, and the
 # gap between pairs is plainly wider than the gap inside one.
 expect {
-	gaps = List.map2(extents, extents.drop_first(1), |reach, next| next.left - reach.right)
+	gaps = List.map2(
+		extents,
+		extents.drop_first(1),
+		|reach, next| next.left - reach.right,
+	)
 	match gaps {
 		[
 			in_elephant,

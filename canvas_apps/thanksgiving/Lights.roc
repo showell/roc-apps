@@ -68,7 +68,11 @@ Lights :: [].{
 				forward = first_post + 2.0 * post_gap * k.to_f64() / wire_samples.to_f64()
 				$wire = $wire.append({ right, forward, height: wire_height(forward) })
 			}
-			for (a, b) in List.map2($wire.drop_last(1), $wire.drop_first(1), |a, b| (a, b)) {
+			for (a, b) in List.map2(
+				$wire.drop_last(1),
+				$wire.drop_first(1),
+				|a, b| (a, b),
+			) {
 				$out = List.concat(
 					$out,
 					view.line_shapes({

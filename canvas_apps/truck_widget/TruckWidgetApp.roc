@@ -164,10 +164,7 @@ framed_ride_shapes = |ride_shapes| {
 		ride_shapes,
 	})
 	List.concat(
-		WidgetPage.frame_shapes({
-			picture_shapes,
-			status_lines: [],
-		}),
+		WidgetPage.frame_shapes({ picture_shapes, status_lines: [] }),
 		truck_views.map(caption_shape),
 	)
 }

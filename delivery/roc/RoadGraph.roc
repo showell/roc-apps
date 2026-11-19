@@ -53,9 +53,7 @@ RoadGraph :: [].{
 				first_turn = waters.first() ?? Seattle.point_of(c)
 				last_turn = waters.last() ?? Seattle.point_of(a)
 				points = List.concat(
-					[
-						Seattle.gate_point(a, first_turn),
-					],
+					[Seattle.gate_point(a, first_turn)],
 					waters,
 				).append(Seattle.gate_point(c, last_turn))
 				on_i5 = Seattle.is_i5_exit(a) or Seattle.is_i5_exit(c)

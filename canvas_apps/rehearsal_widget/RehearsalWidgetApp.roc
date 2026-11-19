@@ -263,7 +263,11 @@ arc_shapes : List(ArcPoint), { color : RgbColor, width : F64 } -> List(Shapes.Sh
 arc_shapes = |path_points, { color, width }| {
 	start = { forward: Distance.zero, across: motorcycle.route_place.road_point.across }
 	points = drawn_points(path_points).prepend(start).map(canvas_point)
-	List.map2(points, points.drop_first(1), |from, to| { from, to })
+	List.map2(
+		points,
+		points.drop_first(1),
+		|from, to| { from, to },
+	)
 		.keep_if(|{ from, to }| from != to)
 		.map(|{ from, to }| Shapes.line({ from, to, width: Pixels.of(width) }, Brush.flat(color)))
 }

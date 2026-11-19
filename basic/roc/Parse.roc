@@ -1992,7 +1992,11 @@ Parse :: [].{
 			}
 		} else if Parse.byte(b, j) != 40 {
 			{
-				e: CallDef(letter, True, Fail(Str.concat("Expected ( after ", name))),
+				e: CallDef(
+					letter,
+					True,
+					Fail(Str.concat("Expected ( after ", name)),
+				),
 				at: j,
 				ok: False,
 			}

@@ -140,10 +140,7 @@ ride_shapes_on = |on_layers| view_on(on_layers).ride_shape_lists().join()
 ## The frame's shapes on `on_layers`, backdrop and all, in paint order.
 frame_shapes_on : List(Layer) -> List(Shapes.Shape)
 frame_shapes_on = |on_layers| List.concat(
-	piece_shapes(
-		backdrop_parts,
-		on_layers,
-	),
+	piece_shapes(backdrop_parts, on_layers),
 	ride_shapes_on(on_layers),
 )
 

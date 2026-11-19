@@ -87,5 +87,9 @@ Input :: [].{
 		struck : U32,
 		mouse : Mouse.Snapshot,
 	} -> Input.Snapshot
-	of = |{ held, struck, mouse }| Snapshot.{ held: U32.bitwise_or(held, struck), struck, mouse }
+	of = |{ held, struck, mouse }| Snapshot.{
+		held: U32.bitwise_or(held, struck),
+		struck,
+		mouse,
+	}
 }

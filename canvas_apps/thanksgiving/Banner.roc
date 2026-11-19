@@ -59,10 +59,7 @@ Banner :: [].{
 				),
 			)
 			words = List.concat(
-				lettering_shapes(
-					"Happy",
-					{ top_center: Point.at(middle, top + 14.0), size: 28.0 },
-				),
+				lettering_shapes("Happy", { top_center: Point.at(middle, top + 14.0), size: 28.0 }),
 				lettering_shapes(
 					"Thanksgiving!",
 					{ top_center: Point.at(middle, top + 50.0), size: 24.0 },

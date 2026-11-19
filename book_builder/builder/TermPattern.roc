@@ -212,10 +212,7 @@ shifted_steps = |steps, base| steps.map(
 ## One program after another.
 joined_steps : List(Step), List(Step) -> List(Step)
 joined_steps = |first_steps, second_steps|
-	List.concat(
-		first_steps,
-		shifted_steps(second_steps, first_steps.len()),
-	)
+	List.concat(first_steps, shifted_steps(second_steps, first_steps.len()))
 
 ## Either of two programs.
 either_steps : List(Step), List(Step) -> List(Step)

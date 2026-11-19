@@ -347,7 +347,10 @@ Machine :: [].{
 				Str.concat(Str.concat(whole, "."), frac)
 			}
 		} else {
-			Str.concat(Str.concat("0.", "0".repeat((0 - r.e - 1).to_u64_wrap())), Machine.no_zeros(ds))
+			Str.concat(
+				Str.concat("0.", "0".repeat((0 - r.e - 1).to_u64_wrap())),
+				Machine.no_zeros(ds),
+			)
 		}
 	}
 
@@ -965,7 +968,10 @@ Machine :: [].{
 		if !(m.defined.get(letter) ?? False) {
 			Machine.gap_stop(
 				fx,
-				Str.concat("Undefined function: FN", Str.from_utf8([(65 + letter).to_u8_wrap()]) ?? ""),
+				Str.concat(
+					"Undefined function: FN",
+					Str.from_utf8([(65 + letter).to_u8_wrap()]) ?? "",
+				),
 			)
 		} else if !param {
 			Machine.eval(pg, m, env, fx, f.body)

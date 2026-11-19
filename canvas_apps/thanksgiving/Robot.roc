@@ -124,7 +124,18 @@ Robot :: [].{
 				},
 			),
 		)
-		$out = List.concat($out, face_shapes(place, { body, head_bottom, glow: pose.eye_glow, look: pose.look }))
+		$out = List.concat(
+			$out,
+			face_shapes(
+				place,
+				{
+					body,
+					head_bottom,
+					glow: pose.eye_glow,
+					look: pose.look,
+				},
+			),
+		)
 		$out = List.concat($out, arm_shapes(place, { body, pose }))
 		$out
 	}

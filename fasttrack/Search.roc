@@ -217,7 +217,10 @@ Search :: [].{
 	## A search's answer: the lines that ended, and those still open at the
 	## last level it reached, but never the empty line.
 	finals : { done : List(Search.Line), level : List(Search.Line) } -> List(Search.Line)
-	finals = |{ done, level }| List.concat(done, level.keep_if(is_open)).keep_if(|l| !l.msgs.is_empty())
+	finals = |{ done, level }| List.concat(
+		done,
+		level.keep_if(is_open),
+	).keep_if(|l| !l.msgs.is_empty())
 
 	## A line's position as numbers: every piece as its square (Board.roc) and
 	## color, in square order, then
