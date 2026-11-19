@@ -9,15 +9,15 @@
  
  	Spot : { kind : Kind, x : I64, y : I64 }
  
-@@ -32,7 +32,7 @@
+@@ -31,7 +31,7 @@
  			{ kind: Dog, x: far, y: far },
  		]
  		if (col + row) % 2 == 0 {
--			dogs.concat([{ kind: Cow, x: mid, y: mid }])
-+			dogs.concat([{ kind: Cow, x: mid, y: mid }, { kind: Sheep, x: mid, y: World.corner_in }])
+-			List.concat(dogs, [{ kind: Cow, x: mid, y: mid }])
++			List.concat(dogs, [{ kind: Cow, x: mid, y: mid }, { kind: Sheep, x: mid, y: World.corner_in }])
  		} else {
  			chickens = if lv.chickens {
- 				dogs.concat([
+ 				List.concat(
 --- a/roc/Rules.roc
 +++ b/roc/Rules.roc
 @@ -32,7 +32,7 @@
