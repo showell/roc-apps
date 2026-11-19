@@ -17,8 +17,8 @@ View :: { eye : Eye.Eye, stands : { right : F64, forward : F64 } }.{
 
 	## The same eye, seeing a copy of the backyard's things moved by `offset`:
 	## drawing a thing at its own place through this view draws it moved.
-	shifted : View, { right : F64, forward : F64 } -> View
-	shifted = |View.(view), offset| View.({ eye: view.eye, stands: { right: view.stands.right - offset.right, forward: view.stands.forward - offset.forward } })
+	shifted_view : View, { right : F64, forward : F64 } -> View
+	shifted_view = |View.(view), offset| View.({ eye: view.eye, stands: { right: view.stands.right - offset.right, forward: view.stands.forward - offset.forward } })
 
 	## The screen's width and height, in pixels.
 	screen_width : View -> F64

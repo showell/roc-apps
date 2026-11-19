@@ -147,7 +147,7 @@ Proportions : {
 	hip : F64,
 	body_width : F64,
 	body_height : F64,
-	torso : [Boxy, Barrel],
+	torso : [Blocky, Barrel],
 	neck : F64,
 	head_width : F64,
 	head_height : F64,
@@ -167,7 +167,7 @@ proportions = |build|
 			hip: 0.86,
 			body_width: 0.3,
 			body_height: 0.6,
-			torso: Boxy,
+			torso: Blocky,
 			neck: 0.07,
 			head_width: 0.24,
 			head_height: 0.21,
@@ -199,7 +199,7 @@ proportions = |build|
 			hip: 0.22,
 			body_width: 0.24,
 			body_height: 0.2,
-			torso: Boxy,
+			torso: Blocky,
 			neck: 0.03,
 			head_width: 0.3,
 			head_height: 0.22,
@@ -318,7 +318,7 @@ right_shoulder : Proportions, Robot.Pose -> Spot
 right_shoulder = |body, pose| {
 	hip = hip_height(body, pose)
 	match body.torso {
-		Boxy => { across: body.body_width / 2.0 + 0.02, up: hip + body.body_height * 0.88 }
+		Blocky => { across: body.body_width / 2.0 + 0.02, up: hip + body.body_height * 0.88 }
 		Barrel => { across: body.body_width * 0.44, up: hip + body.body_height * 0.72 }
 	}
 }
@@ -462,7 +462,7 @@ torso_shapes = |place, { body, hip }| {
 	paint = Flat(body.paint)
 	trim = Flat(body.trim)
 	match body.torso {
-		Boxy => [
+		Blocky => [
 			box(
 				place,
 				{

@@ -52,7 +52,7 @@ Thanksgiving :: [].{
 		view = view_at(tick)
 		var $out = Backyard.backyard_shapes(view)
 		for offset in tables {
-			$out = List.concat($out, party_shapes(view.shifted(offset), tick))
+			$out = List.concat($out, party_shapes(view.shifted_view(offset), tick))
 		}
 		$out = List.concat($out, Banner.banner_shapes(Dinner.banner_drop(tick), { width: width }))
 		List.concat($out, Leaves.leaf_shapes(Dinner.gust_seconds(tick), { width: width }))

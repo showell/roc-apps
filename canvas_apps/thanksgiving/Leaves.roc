@@ -88,9 +88,12 @@ one_leaf_shapes = |leaf, { seconds, width }| {
 		cosine = angle.cos()
 		sine = angle.sin()
 		at = |along, across| {
-			a = along * leaf.size
-			b = across * leaf.size * flip
-			Point.at(x + a * cosine - b * sine, y + a * sine + b * cosine)
+			scaled_along = along * leaf.size
+			scaled_across = across * leaf.size * flip
+			Point.at(
+				x + scaled_along * cosine - scaled_across * sine,
+				y + scaled_along * sine + scaled_across * cosine,
+			)
 		}
 		outline = [
 			at(-1.0, 0.0),

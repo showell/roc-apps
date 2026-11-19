@@ -142,17 +142,17 @@ Dinner :: [].{
 		} else {
 			lifted = held_dish(build, plan.set_tick)
 			spot = Table.dish_spot(build)
-			u = smooth(ramp(now - plan.set_tick, set_frames))
+			set_down = smooth(ramp(now - plan.set_tick, set_frames))
 			# The dish rises a little on its way over, so it is lowered onto the
 			# cloth rather than slid.
-			arc = 0.08 * (F64.pi * u).sin()
+			arc = 0.08 * (F64.pi * set_down).sin()
 			{
 				at: {
-					right: lifted.at.right + (spot.right - lifted.at.right) * u,
-					forward: lifted.at.forward + (spot.forward - lifted.at.forward) * u,
-					height: lifted.at.height + (spot.height - lifted.at.height) * u + arc,
+					right: lifted.at.right + (spot.right - lifted.at.right) * set_down,
+					forward: lifted.at.forward + (spot.forward - lifted.at.forward) * set_down,
+					height: lifted.at.height + (spot.height - lifted.at.height) * set_down + arc,
 				},
-				tilt: lifted.tilt * (1.0 - u),
+				tilt: lifted.tilt * (1.0 - set_down),
 				layer: OnTable,
 			}
 		}
@@ -194,8 +194,8 @@ Dinner :: [].{
 	## How far the banner has dropped in, from 0 to 1.
 	banner_drop : I64 -> F64
 	banner_drop = |tick| {
-		u = ramp(held_tick(tick) - banner_tick, banner_frames)
-		1.0 - (1.0 - u) * (1.0 - u)
+		drop_progress = ramp(held_tick(tick) - banner_tick, banner_frames)
+		1.0 - (1.0 - drop_progress) * (1.0 - drop_progress)
 	}
 
 	## How many seconds the leaves have been blowing; negative before.
@@ -295,8 +295,8 @@ walked_right : Robot.Build, I64 -> F64
 walked_right = |build, tick| {
 	plan = timing(build)
 	to = Table.chair_of(build).right
-	u = smooth(ramp(tick - plan.enter_tick, plan.arrive_tick - plan.enter_tick))
-	plan.from_right + (to - plan.from_right) * u
+	walk_progress = smooth(ramp(tick - plan.enter_tick, plan.arrive_tick - plan.enter_tick))
+	plan.from_right + (to - plan.from_right) * walk_progress
 }
 
 # How much walking is going on, from the walking itself: the ground covered
@@ -375,33 +375,33 @@ held_dish = |build, tick| {
 					layer: Carried,
 				}
 			} else if tick < fall_start {
-				u = ramp(tick - slip_start, slip_frames)
+				slip_progress = ramp(tick - slip_start, slip_frames)
 				{
-					at: { ..hand, right: hand.right + 0.05 * u },
-					tilt: (0.13 + 0.45 * u) * rock.sin(),
+					at: { ..hand, right: hand.right + 0.05 * slip_progress },
+					tilt: (0.13 + 0.45 * slip_progress) * rock.sin(),
 					layer: Carried,
 				}
 			} else if tick < lift_start {
-				v = ramp(tick - fall_start, fall_frames)
+				fall_progress = ramp(tick - fall_start, fall_frames)
 				# Let go at the top of its slip, the pie falls faster and faster
 				# until the diving hand meets it.
 				top = hand_in_yard(Tiny, fall_start)
 				caught = hand_in_yard(Tiny, lift_start)
-				fall = v * v
+				fall = fall_progress * fall_progress
 				{
 					at: {
-						right: top.right + 0.05 + (caught.right - top.right - 0.05) * v,
+						right: top.right + 0.05 + (caught.right - top.right - 0.05) * fall_progress,
 						forward: top.forward,
 						height: top.height + (caught.height - top.height) * fall,
 					},
-					tilt: (0.58 + 0.4 * v) * rock.sin(),
+					tilt: (0.58 + 0.4 * fall_progress) * rock.sin(),
 					layer: Carried,
 				}
 			} else {
-				w = ramp(tick - lift_start, lift_frames)
+				lift_progress = ramp(tick - lift_start, lift_frames)
 				{
 					at: hand,
-					tilt: 0.98 * (1.0 - w) * (1.0 - w) * rock.sin(),
+					tilt: 0.98 * (1.0 - lift_progress) * (1.0 - lift_progress) * rock.sin(),
 					layer: Carried,
 				}
 			}
@@ -424,20 +424,20 @@ bulb_glow = |index, tick| {
 	}
 }
 
-# How much of the way through something that starts at 0 and takes `len`,
+# How much of the way through something that starts at 0 and takes `duration`,
 # held at each end.
 ramp : I64, I64 -> F64
-ramp = |since, len|
+ramp = |since, duration|
 	if since <= 0 {
 		0.0
-	} else if since >= len {
+	} else if since >= duration {
 		1.0
 	} else {
-		since.to_f64() / len.to_f64()
+		since.to_f64() / duration.to_f64()
 	}
 
 smooth : F64 -> F64
-smooth = |u| u * u * (3.0 - 2.0 * u)
+smooth = |progress| progress * progress * (3.0 - 2.0 * progress)
 
 # The seated robots turn their eyes to the dancer as it walks in.
 watch_tick : I64
@@ -456,8 +456,8 @@ dancer_from = 4.5
 
 dancer_right : I64 -> F64
 dancer_right = |tick| {
-	u = smooth(ramp(tick - walk_in_tick, dance_tick - 6 - walk_in_tick))
-	dancer_from + (1.25 - dancer_from) * u
+	walk_progress = smooth(ramp(tick - walk_in_tick, dance_tick - 6 - walk_in_tick))
+	dancer_from + (1.25 - dancer_from) * walk_progress
 }
 
 # One pose of the dance: the joints and the rest of what Dancer is told,
@@ -481,8 +481,8 @@ arms_out = { ..rest, left_upper: -quarter, left_fore: -quarter, right_upper: qua
 # The routine, a move and how many ticks it lasts. A move snaps into place
 # over its first `snap_frames` ticks and holds for the rest, so the dance
 # goes in clicks rather than easing.
-routine : List({ move : Move, frames : I64 })
-routine = [
+routine_steps : List({ move : Move, frames : I64 })
+routine_steps = [
 	{ move: { ..rest, right_upper: quarter, right_fore: quarter }, frames: 14 },
 	{ move: { ..rest, right_upper: quarter, right_fore: F64.pi }, frames: 18 },
 	{ move: { ..rest, right_upper: quarter, right_fore: 2.62 }, frames: 9 },
@@ -553,9 +553,9 @@ dance_move = |since| {
 	var $start = 0
 	var $found = False
 	var $move = rest
-	for step in routine {
+	for step in routine_steps {
 		if !$found and since < $start + step.frames {
-			$move = snapped({ from: $before, to: step.move, fraction: ramp(since - $start + 1, snap_frames) })
+			$move = snapped_move({ from: $before, to: step.move, fraction: ramp(since - $start + 1, snap_frames) })
 			$found = True
 		}
 		$before = step.move
@@ -568,9 +568,9 @@ dance_move = |since| {
 	}
 }
 
-snapped : { from : Move, to : Move, fraction : F64 } -> Move
-snapped = |{ from, to, fraction }| {
-	mix = |a, b| a + (b - a) * fraction
+snapped_move : { from : Move, to : Move, fraction : F64 } -> Move
+snapped_move = |{ from, to, fraction }| {
+	mix = |from_value, to_value| from_value + (to_value - from_value) * fraction
 	{
 		left_upper: mix(from.left_upper, to.left_upper),
 		left_fore: mix(from.left_fore, to.left_fore),

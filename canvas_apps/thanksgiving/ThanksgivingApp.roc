@@ -19,9 +19,9 @@ ThanksgivingApp :: [].{
 		# The motion is written per tick, so the movie sets the rate.
 		frames_a_second: 60,
 		init: { tick: 0, paused: False },
-		model_at_next_step: |m, input, _dt| step(m, input),
-		frame_shapes: |m| Thanksgiving.shapes({ tick: m.tick }),
-		sounds: |_m| 0,
+		model_at_next_step: |model, input, _dt| step(model, input),
+		frame_shapes: |model| Thanksgiving.shapes({ tick: model.tick }),
+		sounds: |_model| 0,
 		tones: [],
 		title: "Thanksgiving",
 	}
@@ -37,23 +37,23 @@ ThanksgivingApp :: [].{
 		}
 
 	step : ThanksgivingApp.Model, Input.Snapshot -> ThanksgivingApp.Model
-	step = |m, input| {
+	step = |model, input| {
 		paused =
 			if input.key_pressed(KeySpace) {
-				!m.paused
+				!model.paused
 			} else {
-				m.paused
+				model.paused
 			}
 		speed = scrub(paused)
 		moved =
 			if input.key_down(KeyRight) {
-				m.tick + speed
+				model.tick + speed
 			} else if input.key_down(KeyLeft) {
-				m.tick - speed
+				model.tick - speed
 			} else if paused {
-				m.tick
+				model.tick
 			} else {
-				m.tick + 1
+				model.tick + 1
 			}
 		jumped =
 			if input.key_pressed(KeyJ) {
