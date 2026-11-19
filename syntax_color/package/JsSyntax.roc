@@ -336,7 +336,7 @@ template_text_end = |bytes, at| {
 			$at = $at + 1
 		}
 	}
-	$stop.min(bytes.len())
+	U64.min($stop, bytes.len())
 }
 
 ## The end of a quoted string whose text starts at `at`: just past its closing
@@ -360,7 +360,7 @@ quoted_end = |bytes, { at, quote }| {
 			$at = $at + 1
 		}
 	}
-	$end.min(bytes.len())
+	U64.min($end, bytes.len())
 }
 
 ## The end of a regular expression whose body starts at `at`: past its closing
@@ -391,7 +391,7 @@ regex_end = |bytes, at| {
 			$at = $at + 1
 		}
 	}
-	$end.min(bytes.len())
+	U64.min($end, bytes.len())
 }
 
 ## The end of a block comment whose text starts at `at`: past its `*/`, or the

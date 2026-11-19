@@ -65,14 +65,14 @@ SyntaxColor :: [].{
 	range_html = |text, range| {
 		bytes = text.to_utf8()
 		start = range.start
-		stop = range.end.min(bytes.len())
+		stop = U64.min(range.end, bytes.len())
 		covering = range.spans
-		var $out = List.with_capacity(stop - start.min(stop))
+		var $out = List.with_capacity(stop - U64.min(start, stop))
 		var $at = first_span_at(covering, start)
 		while $at < covering.len() {
 			span = covering.get($at) ?? crash "SyntaxColor.range_html: the index is below the length"
-			from = span.start.max(start)
-			to = span.end.min(stop)
+			from = U64.max(span.start, start)
+			to = U64.min(span.end, stop)
 			if span.start >= stop {
 				$at = covering.len()
 			} else {
@@ -125,11 +125,14 @@ html_onto = |out, { bytes, class, from, to }|
 		match Span.css_class(class) {
 			Err(Plain) => inside.fold(out, |so_far, byte| escaped_onto(so_far, byte))
 			Ok(css) => {
-				opened = out.concat("<span class=\"${css}\">".to_utf8())
-				inside.fold(
-					opened,
-					|so_far, byte| escaped_onto(so_far, byte),
-				).concat("</span>".to_utf8())
+				opened = List.concat(out, "<span class=\"${css}\">".to_utf8())
+				List.concat(
+					inside.fold(
+						opened,
+						|so_far, byte| escaped_onto(so_far, byte),
+					),
+					"</span>".to_utf8(),
+				)
 			}
 		}
 	}
@@ -137,11 +140,11 @@ html_onto = |out, { bytes, class, from, to }|
 ## One byte onto `out`, escaped if HTML gives it a meaning.
 escaped_onto : List(U8), U8 -> List(U8)
 escaped_onto = |out, byte| match byte {
-	'&' => out.concat("&amp;".to_utf8())
-	'<' => out.concat("&lt;".to_utf8())
-	'>' => out.concat("&gt;".to_utf8())
-	'"' => out.concat("&quot;".to_utf8())
-	'\'' => out.concat("&#39;".to_utf8())
+	'&' => List.concat(out, "&amp;".to_utf8())
+	'<' => List.concat(out, "&lt;".to_utf8())
+	'>' => List.concat(out, "&gt;".to_utf8())
+	'"' => List.concat(out, "&quot;".to_utf8())
+	'\'' => List.concat(out, "&#39;".to_utf8())
 	_ => out.append(byte)
 }
 
@@ -153,7 +156,7 @@ without_spans = |html| {
 	pieces = closed.split_on("<span class=\"")
 	after_opening = |piece| piece.split_first("\">").map_ok(|parts| parts.after) ?? crash "SyntaxColor.without_spans: an opened span has its `\">`"
 	rest = pieces.drop_first(1).map(after_opening)
-	Str.join_with(pieces.take_first(1).concat(rest), "")
+	Str.join_with(List.concat(pieces.take_first(1), rest), "")
 }
 
 expect SyntaxColor.html(SyntaxColor.roc, "") == ""
@@ -256,19 +259,22 @@ hostile_pieces = [
 hostile_texts : List(Str)
 hostile_texts = {
 	pairs = hostile_pieces.join_map(|first| hostile_pieces.map(|second| Str.concat(first, second)))
-	pairs.concat([
-		"\"\${\"\${\"\${",
-		"\"\${x}\"\${y",
-		"}}}}))))]]]]||||",
-		"x = \"é\${'é'}é\" # é\n\\\\é \${é}",
-		"--[=[ é ]==] [==[ ]=]",
-		"A.B.C.(é).d!",
-		"\u(0)\u(1)\u(7f)\u(80)\u(10ffff)",
-		"'a'...'z' .{ .x = 1.5e-3 } @\"q\" \\\\ é",
-		"x...",
-		Str.repeat("{", 300),
-		Str.repeat("\"\${", 100),
-	])
+	List.concat(
+		pairs,
+		[
+			"\"\${\"\${\"\${",
+			"\"\${x}\"\${y",
+			"}}}}))))]]]]||||",
+			"x = \"é\${'é'}é\" # é\n\\\\é \${é}",
+			"--[=[ é ]==] [==[ ]=]",
+			"A.B.C.(é).d!",
+			"\u(0)\u(1)\u(7f)\u(80)\u(10ffff)",
+			"'a'...'z' .{ .x = 1.5e-3 } @\"q\" \\\\ é",
+			"x...",
+			Str.repeat("{", 300),
+			Str.repeat("\"\${", 100),
+		],
+	)
 }
 
 ## Whether `language` colors `text` without loss: its spans cover every byte
