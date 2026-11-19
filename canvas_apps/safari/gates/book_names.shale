@@ -110,7 +110,7 @@ function module_of_path(path)
   return substitute(basename(path), ".roc", "")
 end
 
--- Adds each word of `dotted`, which may be `.min`, `$out` or `lib.Trig`.
+-- Adds each word of `dotted`, which may be `.min`, `$out` or `lib.Trigonometry`.
 function add_words(words, dotted)
   for word in split(substitute(dotted, "$", "", {missing_ok = true}), ".") do
     if word ~= "" then words[word] = true end

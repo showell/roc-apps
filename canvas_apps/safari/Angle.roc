@@ -21,7 +21,7 @@
 ## through a rate (`steer`), the way a leaning bike follows a curve. The
 ## fourth, a lean change, is how far a lean moves in a step: a change added
 ## to a lean gives a lean.
-import lib.Trig
+import lib.Trigonometry
 
 Angle :: [].{
 
@@ -64,14 +64,14 @@ Angle :: [].{
 
 		## The turn of this many degrees.
 		degrees : F64 -> Angle.Turn
-		degrees = |count| Angle.Turn.(count * Trig.degree)
+		degrees = |count| Angle.Turn.(count * Trigonometry.degree)
 
 		to_radians : Angle.Turn -> F64
 		to_radians = |Angle.Turn.(turn)| turn
 
 		## This turn in degrees: negative for a turn to the left.
 		to_degrees : Angle.Turn -> F64
-		to_degrees = |Angle.Turn.(turn)| turn * Trig.degrees_per_radian
+		to_degrees = |Angle.Turn.(turn)| turn * Trigonometry.degrees_per_radian
 
 		plus : Angle.Turn, Angle.Turn -> Angle.Turn
 		plus = |Angle.Turn.(turn), Angle.Turn.(other)| Angle.Turn.(turn + other)
@@ -136,14 +136,14 @@ Angle :: [].{
 
 		## The lean of this many degrees.
 		degrees : F64 -> Angle.Lean
-		degrees = |count| Angle.Lean.(count * Trig.degree)
+		degrees = |count| Angle.Lean.(count * Trigonometry.degree)
 
 		to_radians : Angle.Lean -> F64
 		to_radians = |Angle.Lean.(lean)| lean
 
 		## This lean in degrees, as a canvas takes a rotation.
 		to_degrees : Angle.Lean -> F64
-		to_degrees = |Angle.Lean.(lean)| lean * Trig.degrees_per_radian
+		to_degrees = |Angle.Lean.(lean)| lean * Trigonometry.degrees_per_radian
 
 		## This lean, changed by `change`.
 		plus : Angle.Lean, Angle.LeanChange -> Angle.Lean
@@ -191,7 +191,7 @@ Angle :: [].{
 
 		## The change of this many degrees.
 		degrees : F64 -> Angle.LeanChange
-		degrees = |count| Angle.LeanChange.(count * Trig.degree)
+		degrees = |count| Angle.LeanChange.(count * Trigonometry.degree)
 
 		to_radians : Angle.LeanChange -> F64
 		to_radians = |Angle.LeanChange.(change)| change

@@ -14,7 +14,7 @@
 import Math
 import Point
 import Shapes
-import Trig
+import Trigonometry
 
 Camera :: [].{
 
@@ -37,7 +37,7 @@ Camera :: [].{
 		## and the canvas both take it.
 		world_to_screen : Camera2D, Math.Vec2 -> Math.Vec2
 		world_to_screen = |camera, world| {
-			radians = camera.rotation * Trig.degree.to_f32_wrap()
+			radians = camera.rotation * Trigonometry.degree.to_f32_wrap()
 			cosine = radians.cos()
 			sine = radians.sin()
 			dx = world.x - camera.target.x
@@ -56,7 +56,7 @@ Camera :: [].{
 		## zoom of zero through.
 		screen_to_world : Camera2D, Math.Vec2 -> Math.Vec2
 		screen_to_world = |camera, screen| {
-			radians = 0 - camera.rotation * Trig.degree.to_f32_wrap()
+			radians = 0 - camera.rotation * Trigonometry.degree.to_f32_wrap()
 			cosine = radians.cos()
 			sine = radians.sin()
 			dx = (screen.x - camera.offset.x) / camera.zoom

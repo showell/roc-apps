@@ -17,7 +17,7 @@ import lib.Font
 import Board
 import Rules
 import Snake
-import lib.Trig
+import lib.Trigonometry
 
 SnakeDraw :: [].{
 	w : F64
@@ -138,7 +138,7 @@ SnakeDraw :: [].{
 	## Halos behind the food and the head, which were additive.
 	glow : Rules.World, F64 -> List(Shapes.Shape)
 	glow = |world, elapsed| {
-		beat = Trig.pulse(elapsed)
+		beat = Trigonometry.pulse(elapsed)
 		food_spot = middle_of(world.food)
 		head_spot = middle_of(world.snake.head())
 		food_center = Point.at(food_spot.x, food_spot.y)
@@ -155,7 +155,7 @@ SnakeDraw :: [].{
 	food : Board.Cell, F64 -> List(Shapes.Shape)
 	food = |at, elapsed| {
 		m = middle_of(at)
-		r = cell * (0.3 + 0.04 * Trig.pulse(elapsed))
+		r = cell * (0.3 + 0.04 * Trigonometry.pulse(elapsed))
 		[
 			Disc({ center: Point.at(m.x, m.y), radius: Pixels.of(r), fill: Flat(food_neon) }),
 			Disc({ center: Point.at(m.x - r * 0.3, m.y - r * 0.35), radius: Pixels.of(r * 0.32), fill: Flat(Brush.translucent(ArgbColor.of(0xbeffffff))) }),
@@ -170,7 +170,7 @@ SnakeDraw :: [].{
 			GameOver => {
 				over = "GAME OVER"
 				again = "PRESS SPACE TO PLAY AGAIN"
-				alpha = 0.59 + 0.41 * Trig.pulse(elapsed)
+				alpha = 0.59 + 0.41 * Trigonometry.pulse(elapsed)
 				var $out = [Shapes.rectangle({ top_left: Point.at(left - 8.0, 236.0), width: Pixels.of(board_w + 16.0), height: Pixels.of(140.0), fill: Flat(Brush.translucent(ArgbColor.of(0xe1060810))) })]
 				$out = List.concat($out, Font.centered_text_shapes(over, { top_center: Point.at(w / 2.0, 262.0), size: 40.0, color: food_neon }))
 				List.concat($out, Font.centered_text_shapes(again, { top_center: Point.at(w / 2.0, 326.0), size: 19.0, color: Brush.with_alpha(hint_color, alpha) }))

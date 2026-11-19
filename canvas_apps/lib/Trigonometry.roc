@@ -1,6 +1,6 @@
-## Trig holds the angle arithmetic that F64's builtins don't have: degrees and a
-## pulse.
-Trig :: [].{
+## Trigonometry holds the angle arithmetic that F64's builtins don't have:
+## degrees and a pulse.
+Trigonometry :: [].{
 
 	## Radians in a degree.
 	degree : F64

@@ -27,7 +27,7 @@ package
 		RgbColor,
 		Shapes,
 		Squash,
-		Trig,
+		Trigonometry,
 		WasmApp,
 		WidthShading,
 	]

@@ -67,7 +67,7 @@ headless.
 | `snake/` | everything about one app: its two app roots, its `page.html`, and its rules and drawing, which cannot tell which runner is running them |
 | `snake/main.roc` | the app on roc-ray, reaching the runner as `native.CanvasAppRunner` |
 | `snake/web.roc` | the app as a page, on `web/platform/`, through `lib.WasmApp` |
-| `lib/` | a package every app shares: `CanvasApp` `WasmApp` `Shapes` `CurvedShapes` `Squash` `Brush` `BrushShade` `WidthShading` `Input` `Keys` `Mouse` `Math` `Camera` `Font` `Random` `Trig` `BrushGlsl` `Eye` `ConvexCut` `RgbColor` `ArgbColor` |
+| `lib/` | a package every app shares: `CanvasApp` `WasmApp` `Shapes` `CurvedShapes` `Squash` `Brush` `BrushShade` `WidthShading` `Input` `Keys` `Mouse` `Math` `Camera` `Font` `Random` `Trigonometry` `BrushGlsl` `Eye` `ConvexCut` `RgbColor` `ArgbColor` |
 | `web/` | the page's end: the wasm platform and host, `build.zig` and `options.zig` (the host object, rebuilt by every page build), `canvas_app_runner.js`, `shapes_canvas.js`, `page_check.mjs`, `mini_canvas.mjs`, `mini_font.mjs`, `camera_check.mjs`, `text_check.mjs` |
 | `native/` | roc-ray's end, as a package: `CanvasAppRunner.roc`; kept for posterity, not current (`native/README.md`) |
 | `widget_kit/` | what the tutorial's widgets share, as a package: `WidgetPage` lays out the picture and the text, `ReadoutText` puts a widget's numbers into words, `VcrButtons` runs a widget's one number with a video recorder's buttons, and `WidgetPalette` holds the colors the widgets share. It sits above `lib/` and Safari's `game` package, because it speaks in `Fraction`s and no other app wants it |

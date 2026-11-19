@@ -12,7 +12,7 @@ import lib.Brush
 import lib.RgbColor
 import lib.Font
 import lib.Math
-import lib.Trig
+import lib.Trigonometry
 import Ball
 import Bricks
 import Rules
@@ -117,7 +117,7 @@ BreakoutDraw :: [].{
 
 	## Waiting text pulses between translucent and opaque.
 	prompt_alpha : F64 -> F64
-	prompt_alpha = |elapsed| 0.59 + 0.41 * Trig.pulse(elapsed)
+	prompt_alpha = |elapsed| 0.59 + 0.41 * Trigonometry.pulse(elapsed)
 
 	## The launch prompt, or the banner a finished match earns.
 	overlay : Rules.World, F64 -> List(Shapes.Shape)
