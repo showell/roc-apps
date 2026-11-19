@@ -139,10 +139,13 @@ ride_shapes_on = |on_layers| view_on(on_layers).ride_shape_lists().join()
 
 ## The frame's shapes on `on_layers`, backdrop and all, in paint order.
 frame_shapes_on : List(Layer) -> List(Shapes.Shape)
-frame_shapes_on = |on_layers| piece_shapes(
-	backdrop_parts,
-	on_layers,
-).concat(ride_shapes_on(on_layers))
+frame_shapes_on = |on_layers| List.concat(
+	piece_shapes(
+		backdrop_parts,
+		on_layers,
+	),
+	ride_shapes_on(on_layers),
+)
 
 ## The space the paused frame leans in, which the game puts the whole frame in.
 lean_space : Shapes.Space
@@ -250,7 +253,7 @@ expect picture_shapes([Trees]) == Shapes.shapes_in_space(lean_space, ride_shapes
 expect frame_shapes_on([Grass, Sky]) == frame_shapes_on([Sky, Grass])
 expect
 	frame_shapes_on([Grass, Sky])
-		== frame_shapes_on([Sky]).concat(frame_shapes_on([Grass]))
+		== List.concat(frame_shapes_on([Sky]), frame_shapes_on([Grass]))
 
 # The page's list of words, which a fence's word is looked up in, is the layers'
 # own: all of them, in order.
@@ -292,4 +295,4 @@ expect next_model(start, Input.none.with_key_pressed(KeyLeft)) == opened_after(0
 
 # The canvas answers the layers.
 expect shapes_at(start) != shapes_at(all_on)
-expect shapes_at(all_on) == [plain_background].concat(picture_shapes(layers))
+expect shapes_at(all_on) == List.concat([plain_background], picture_shapes(layers))
