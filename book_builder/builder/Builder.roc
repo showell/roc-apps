@@ -178,7 +178,7 @@ Builder := [].{
 					prepared: settings.prepared,
 				},
 			)
-				? |problems| problems.concat(gates).concat(lint_problems)
+				? |problems| List.concat(List.concat(problems, gates), lint_problems)
 		indexed = lines_with_index(expanded, { settings, terms: sources.index_terms })
 		book = Manuscript.pages(indexed.lines)
 		front_words = WordCount.prose_words(book.front.source_lines)
@@ -194,8 +194,7 @@ Builder := [].{
 		over = counted.keep_oks(
 			|{ chapter, number, count }| limit_problem(chapter, { settings, number, count }),
 		)
-		fence_problems = [book.front]
-			.concat(book.chapters)
+		fence_problems = List.concat([book.front], book.chapters)
 			.map(
 				|page| Fences.refusals(
 					page.source_lines,
@@ -240,7 +239,7 @@ Builder := [].{
 				)
 				counts = List.map2(
 					made,
-					[front_words].concat(held.map(|chapter| chapter.count)),
+					List.concat([front_words], held.map(|chapter| chapter.count)),
 					|page, count| "${page.file}: ${count.to_str()} words of prose\n",
 				)
 				lint_line =

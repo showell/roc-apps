@@ -25,7 +25,7 @@ BookText := [].{
 	rewritten_after : Str, { opening : Str, rewrite : Str -> Str } -> Str
 	rewritten_after = |text, { opening, rewrite }| match text.split_on(opening) {
 		[before_any, .. as pieces] => Str.join_with(
-			[before_any].concat(pieces.map(rewrite)),
+			List.concat([before_any], pieces.map(rewrite)),
 			opening,
 		)
 		[] => crash "book: Str.split_on answered no pieces"

@@ -98,7 +98,8 @@ Includes := [].{
 				Include(directive) =>
 					match quoted_block_lines(directive, { files, languages }) {
 						Ok(block) => {
-							$out = $out.concat(
+							$out = List.concat(
+								$out,
 								block.map(
 									|placed| {
 										number: line.number,
@@ -283,7 +284,7 @@ quoted_block_lines = |directive, { files, languages }| {
 				Err("${path} holds a fence of its own, and a quote can't")
 			} else {
 				language = language_of(path, languages)
-				fenced = ["```${language} ${label}"].concat(quoted).append("```")
+				fenced = List.concat(["```${language} ${label}"], quoted).append("```")
 				Ok(fenced.map(|line| { text: line, place: Fenced }))
 			}
 		}

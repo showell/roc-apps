@@ -211,18 +211,21 @@ shifted_steps = |steps, base| steps.map(
 
 ## One program after another.
 joined_steps : List(Step), List(Step) -> List(Step)
-joined_steps = |first_steps, second_steps| first_steps.concat(
-	shifted_steps(second_steps, first_steps.len()),
-)
+joined_steps = |first_steps, second_steps|
+	List.concat(
+		first_steps,
+		shifted_steps(second_steps, first_steps.len()),
+	)
 
 ## Either of two programs.
 either_steps : List(Step), List(Step) -> List(Step)
 either_steps = |first_steps, second_steps| {
 	n = first_steps.len()
-	[Split(1, n + 2)]
-		.concat(shifted_steps(first_steps, 1))
-		.append(Jump(n + 2 + second_steps.len()))
-		.concat(shifted_steps(second_steps, n + 2))
+	List.concat(
+		List.concat([Split(1, n + 2)], shifted_steps(first_steps, 1))
+			.append(Jump(n + 2 + second_steps.len())),
+		shifted_steps(second_steps, n + 2),
+	)
 }
 
 ## `alternative|alternative|...` from `at`, up to a `)` or the end.
@@ -234,7 +237,7 @@ alternatives_at = |bytes, at| {
 		Ok({
 			steps: either_steps(first.steps, rest.steps),
 			at: rest.at,
-			runs: first.runs.concat(rest.runs),
+			runs: List.concat(first.runs, rest.runs),
 		})
 	} else {
 		Ok(first)
@@ -289,12 +292,12 @@ counted_at = |bytes, atom| {
 	n = atom.steps.len()
 	counted = match bytes.get(atom.at) {
 		Ok('?') => Ok({
-			steps: [Split(1, n + 1)].concat(shifted_steps(atom.steps, 1)),
+			steps: List.concat([Split(1, n + 1)], shifted_steps(atom.steps, 1)),
 			at: atom.at + 1,
 			runs: [],
 		})
 		Ok('*') => Ok({
-			steps: [Split(1, n + 2)].concat(shifted_steps(atom.steps, 1)).append(Jump(0)),
+			steps: List.concat([Split(1, n + 2)], shifted_steps(atom.steps, 1)).append(Jump(0)),
 			at: atom.at + 1,
 			runs: [],
 		})
@@ -447,7 +450,7 @@ class_at = |bytes, start| {
 					Ok(letter) =>
 						match named_class_ranges(letter) {
 							Ok(ranges) => {
-								$ranges = $ranges.concat(ranges)
+								$ranges = List.concat($ranges, ranges)
 								$at = $at + 2
 							}
 							Err(NotAClass) => {

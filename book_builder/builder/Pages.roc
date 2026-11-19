@@ -103,13 +103,16 @@ Pages := [].{
 		left_titled = left.keep_oks(|chapter| chapter).map(
 			|chapter| { title: chapter.title, number: chapter.number },
 		)
-		files = [front_file].concat(shaped.map(|chapter| chapter.file))
+		files = List.concat([front_file], shaped.map(|chapter| chapter.file))
 		problems =
-			made
-				.concat(left)
-				.keep_oks(problem_of)
-				.concat(look_problems({ chapters: shaped, left_out_chapters: left_titled, look }))
-				.concat(repeated_files(files).map(|file| "book: two pages are named ${file}"))
+			List.concat(
+				List.concat(
+					List.concat(made, left)
+						.keep_oks(problem_of),
+					look_problems({ chapters: shaped, left_out_chapters: left_titled, look }),
+				),
+				repeated_files(files).map(|file| "book: two pages are named ${file}"),
+			)
 		if !problems.is_empty() {
 			Err(problems)
 		} else {
@@ -121,7 +124,7 @@ Pages := [].{
 				},
 			)
 			references = { chapters: reference_chapters, left_out_chapters: left_titled }
-			linked = [front_chapter].concat(shaped).map(
+			linked = List.concat([front_chapter], shaped).map(
 				|chapter| References.linked_html(
 					chapter.body,
 					references,
@@ -158,7 +161,7 @@ Pages := [].{
 								}
 							},
 						)
-						Ok([front_page].concat(chapter_pages))
+						Ok(List.concat([front_page], chapter_pages))
 					}
 					[] => crash "Pages.pages: the front is always among the linked"
 				}

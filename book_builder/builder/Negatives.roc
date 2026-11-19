@@ -44,14 +44,16 @@ Negatives := [].{
 			is_used = |row| prose.found_hits.any(|hit| hit.sentence == row.sentence)
 			unused = exceptions.rows.drop_if(is_used)
 			findings =
-				unlisted
-					.map(
-						|hit| {
-							at = "${manuscript}:${hit.line.to_str()}"
-							"${at}: negative [${hit.chapter}] ${hit.words}: ${hit.sentence}"
-						},
-					)
-					.concat(unused.map(|row| "${table.name}:${row.line.to_str()}: unused_exception: no negative sentence of the prose is `${row.sentence}`"))
+				List.concat(
+					unlisted
+						.map(
+							|hit| {
+								at = "${manuscript}:${hit.line.to_str()}"
+								"${at}: negative [${hit.chapter}] ${hit.words}: ${hit.sentence}"
+							},
+						),
+					unused.map(|row| "${table.name}:${row.line.to_str()}: unused_exception: no negative sentence of the prose is `${row.sentence}`"),
+				)
 			counts = [
 				"negative ${unlisted.len().to_str()}",
 				"unused_exception ${unused.len().to_str()}",
@@ -189,7 +191,7 @@ without_chapter_references = |text| match text.split_on("{{chapter ") {
 				_ => "{{chapter ${piece}"
 			},
 		)
-		Str.join_with([before_any].concat(kept), "")
+		Str.join_with(List.concat([before_any], kept), "")
 	}
 	[] => crash "book: Str.split_on answered no pieces"
 }

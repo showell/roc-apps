@@ -30,7 +30,7 @@ References := [].{
 					Err(NotACitation) => "{{${piece}"
 				},
 			)
-			Str.join_with([before_any].concat(kept), "")
+			Str.join_with(List.concat([before_any], kept), "")
 		}
 		[] => crash "book: Str.split_on answered no pieces"
 	}
@@ -67,7 +67,7 @@ References := [].{
 			titled.html,
 			{ opening: "{{number ", write: |reference| number_link(reference, chapters) },
 		)
-		problems = titled.problems.concat(numbered.problems)
+		problems = List.concat(titled.problems, numbered.problems)
 		if problems.is_empty() {
 			Ok(numbered.html)
 		} else {
