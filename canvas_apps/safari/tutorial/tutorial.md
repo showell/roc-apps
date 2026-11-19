@@ -2152,7 +2152,7 @@ The path runs between the two treetops, eased at each end, and rises in an arc 5
 
 {{code BirdFlight.flight_location}}
 
-`Easing.smoothstep` turns a share of the way into one that moves slowly at each end and faster in the middle, so the bird eases away from one tree and into the next. For `t`, the share of the way through, `4t(1 − t)` is 0 at both ends and 1 halfway, so the arc starts and ends at the treetops. The last line is a record update: the point on the line, with its lift raised.
+`Easing.smoothstep` turns a share of the way into one that moves slowly at each end and faster in the middle, so the bird eases away from one tree and into the next. For `share`, the share of the way through, `4 × share × (1 − share)` is 0 at both ends and 1 halfway, so the arc starts and ends at the treetops. The last line is a record update: the point on the line, with its lift raised.
 
 ### Finding its trees
 
