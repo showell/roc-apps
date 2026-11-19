@@ -24,7 +24,7 @@ ElmRandom :: [].{
 	## What `Bitwise.xor` answers: the low 32 bits, read as a signed Int32.
 	signed32 : U64 -> I64
 	signed32 = |bits| {
-		low = bits.bitwise_and(mask)
+		low = U64.bitwise_and(bits, mask)
 		if low >= 2147483648 {
 			low.to_i64_wrap() - 4294967296
 		} else {
@@ -34,16 +34,16 @@ ElmRandom :: [].{
 
 	## ToUint32 of an integer: its value modulo 2^32.
 	unsigned32 : I64 -> U64
-	unsigned32 = |n| n.to_u64_wrap().bitwise_and(mask)
+	unsigned32 = |n| U64.bitwise_and(n.to_u64_wrap(), mask)
 
 	peel : ElmRandom.Seed -> U64
 	peel = |seed| {
 		state = seed.state
 		shift = (state.shr_zf_wrap(28) + 4).to_u8_wrap()
-		mixed = signed32(state.bitwise_xor(state.shr_zf_wrap(shift)))
+		mixed = signed32(U64.bitwise_xor(state, state.shr_zf_wrap(shift)))
 		# The product as a double, then back: exact for every |x| < 2^63.
 		word = unsigned32((mixed * 277803737).to_f64().to_i64_wrap())
-		word.shr_zf_wrap(22).bitwise_xor(word).bitwise_and(mask)
+		U64.bitwise_and(U64.bitwise_xor(word.shr_zf_wrap(22), word), mask)
 	}
 
 	initial_seed : U64 -> ElmRandom.Seed

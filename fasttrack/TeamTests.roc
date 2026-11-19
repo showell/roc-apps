@@ -95,7 +95,7 @@ expect Game.winner(
 	TeamTests.game_with(Anytime, TeamTests.home_pieces("red"), ["2"]),
 ) == Err(NoWinner)
 expect {
-	both_home = TeamTests.home_pieces("red").concat(TeamTests.home_pieces("green"))
+	both_home = List.concat(TeamTests.home_pieces("red"), TeamTests.home_pieces("green"))
 	Game.winner(TeamTests.game_with(Anytime, both_home, ["2"])) == Ok("red and green")
 }
 expect Game.winner(TeamTests.game_with(Solo, TeamTests.home_pieces("red"), ["2"])) == Ok("red")

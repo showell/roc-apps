@@ -34,7 +34,8 @@ points_for = |worst, place|
 zone_lines : List(I64), { title : Str, zone : U64 } -> Str
 zone_lines = |values, { title, zone }| {
 	zone_values = values.sublist({ start: zone * Board.per_zone, len: Board.per_zone })
-	lines = Config.config_locations.map2(
+	lines = List.map2(
+		Config.config_locations,
 		zone_values,
 		|location, points| "\t\t${points.to_str()}, # ${location.id}\n",
 	)

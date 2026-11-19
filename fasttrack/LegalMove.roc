@@ -201,7 +201,7 @@ LegalMove :: [].{
 						} else {
 							[]
 						}
-						steps.concat(trades)
+						List.concat(steps, trades)
 					} else {
 						ends(
 							board,
@@ -260,7 +260,7 @@ LegalMove :: [].{
 					)
 				},
 			)
-			partial.concat(full)
+			List.concat(partial, full)
 		}
 	}
 

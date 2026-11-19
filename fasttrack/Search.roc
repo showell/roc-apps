@@ -208,7 +208,7 @@ Search :: [].{
 			merged = distinct_lines(grown)
 			$capped = $capped or merged.len() > max_lines
 			$level = merged.take_first(max_lines)
-			$done = $done.concat($level.drop_if(is_open))
+			$done = List.concat($done, $level.drop_if(is_open))
 			$depth = $depth + 1
 		}
 		{ lines: finals({ done: $done, level: $level }), cut: $capped or $level.any(is_open) }
@@ -217,7 +217,7 @@ Search :: [].{
 	## A search's answer: the lines that ended, and those still open at the
 	## last level it reached, but never the empty line.
 	finals : { done : List(Search.Line), level : List(Search.Line) } -> List(Search.Line)
-	finals = |{ done, level }| done.concat(level.keep_if(is_open)).keep_if(|l| !l.msgs.is_empty())
+	finals = |{ done, level }| List.concat(done, level.keep_if(is_open)).keep_if(|l| !l.msgs.is_empty())
 
 	## A line's position as numbers: every piece as its square (Board.roc) and
 	## color, in square order, then

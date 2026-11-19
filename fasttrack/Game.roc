@@ -96,12 +96,12 @@ Game :: [].{
 					Err(NoWinner)
 				}
 				Partner(partner) => if both_home(player.color, partner) {
-					Ok(player.color.concat(" and ".concat(partner)))
+					Ok(Str.concat(player.color, Str.concat(" and ", partner)))
 				} else {
 					Err(NoWinner)
 				}
 				PartnerOnceHome(partner) => if both_home(player.color, partner) {
-					Ok(player.color.concat(" and ".concat(partner)))
+					Ok(Str.concat(player.color, Str.concat(" and ", partner)))
 				} else {
 					Err(NoWinner)
 				}

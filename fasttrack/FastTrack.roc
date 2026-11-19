@@ -39,7 +39,7 @@ FastTrack :: [].{
 	seats_of = |bits|
 		[0, 1, 2, 3].map(
 			|i|
-				if bits.shr_zf_wrap(2 * i).bitwise_and(3) == 0 {
+				if U32.bitwise_and(bits.shr_zf_wrap(2 * i), 3) == 0 {
 					Human
 				} else {
 					Computer(Strategy.champion)

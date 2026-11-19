@@ -91,7 +91,7 @@ Motion :: [].{
 							),
 							sent_home: Bool.False,
 						}
-						[walked].concat(sent_home_motions(board, m.end, name))
+						List.concat([walked], sent_home_motions(board, m.end, name))
 					}
 				}
 			}
@@ -120,13 +120,16 @@ Motion :: [].{
 			c = before.active_player_idx
 			l0 = Board.square_at(c, Board.l0)
 			match Piece.piece_to_move_out_of_pen(before.board, c) {
-				Ok(pen) => [
-					{
-						color: name(c),
-						path: [pen, l0],
-						sent_home: Bool.False,
-					},
-				].concat(sent_home_motions(before.board, l0, name))
+				Ok(pen) => List.concat(
+					[
+						{
+							color: name(c),
+							path: [pen, l0],
+							sent_home: Bool.False,
+						},
+					],
+					sent_home_motions(before.board, l0, name),
+				)
 				Err(_) => []
 			}
 		}

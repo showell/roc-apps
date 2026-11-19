@@ -89,7 +89,7 @@ Reach :: [].{
 									|to| { from, to, card: "face+${card}" },
 								),
 							)
-							plain.concat(with_face)
+							List.concat(plain, with_face)
 						},
 					)
 				},

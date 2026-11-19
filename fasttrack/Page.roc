@@ -43,7 +43,8 @@ Page :: [].{
 			[root],
 			|acc, child| {
 				offset = acc.len().to_u32_wrap()
-				acc.concat(
+				List.concat(
+					acc,
 					child.map(
 						|n|
 							if n.parent == 0 {
@@ -235,21 +236,23 @@ Page :: [].{
 	computer_view : Type.Player, Str -> Page.Tree
 	computer_view = |player, color|
 		div(
-			[
-				span(
-					player.hand.map(
-						|card| el(
-							"button",
-							card_css(color, color),
-							0,
-							Disabled,
-							[text(card)],
+			List.concat(
+				[
+					span(
+						player.hand.map(
+							|card| el(
+								"button",
+								card_css(color, color),
+								0,
+								Disabled,
+								[text(card)],
+							),
 						),
 					),
-				),
-				div([text("the computer is playing ${color}")]),
-			]
-				.concat(team_line_trees(player)),
+					div([text("the computer is playing ${color}")]),
+				],
+				team_line_trees(player),
+			),
 		)
 
 	board_slots : Type.Game, List(Str), Type.Player, Page.Clicks -> List(Wire.Slot)
@@ -394,7 +397,7 @@ Page :: [].{
 			TurnDone => div([text("ok, now hit 'done' if you're happy")])
 			_ => div([])
 		}
-		div([hand, credits_view(player), console].concat(team_line_trees(player)))
+		div(List.concat([hand, credits_view(player), console], team_line_trees(player)))
 	}
 
 	## What the console asks of a player choosing the piece to move.
