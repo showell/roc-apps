@@ -31,7 +31,7 @@ platform ""
 		"roc_release": release_for_host,
 		"roc_sounds": sounds_for_host,
 		"roc_tone_count": tone_count_for_host,
-		"roc_tone_freq": tone_freq_for_host,
+		"roc_tone_freq": tone_frequency_for_host,
 		"roc_tone_ms": tone_ms_for_host,
 		"roc_width": width_for_host,
 	}
@@ -57,7 +57,7 @@ sounds_for_host = program.sounds
 
 tone_count_for_host = program.tone_count
 
-tone_freq_for_host = program.tone_freq
+tone_frequency_for_host = program.tone_freq
 
 tone_ms_for_host = program.tone_ms
 
