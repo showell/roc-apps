@@ -110,10 +110,10 @@ extent_of = |still|
 					top: first.y,
 				},
 				|extent, point| {
-					left: extent.left.min(point.x),
-					right: extent.right.max(point.x),
-					bottom: extent.bottom.min(point.y),
-					top: extent.top.max(point.y),
+					left: F64.min(extent.left, point.x),
+					right: F64.max(extent.right, point.x),
+					bottom: F64.min(extent.bottom, point.y),
+					top: F64.max(extent.top, point.y),
 				},
 			)
 		[] => crash "StillsWidgetApp.extent_of: every still has points"
@@ -237,7 +237,7 @@ cells = {
 		[first, ..] if first.area.height > panel_left => crash "StillsWidgetApp.cells: the bird's row needs more of the panel than the cat's row leaves"
 		_ => {
 			stretched = |cell| { ..cell, area: { ..cell.area, height: panel_left } }
-			cat_cells.concat(bird_cells.map(stretched))
+			List.concat(cat_cells, bird_cells.map(stretched))
 		}
 	}
 }
@@ -265,7 +265,7 @@ large_anchor = |still| {
 	extent = extent_of(still)
 	width_fit = large_area.width / extent_width(extent)
 	height_fit = large_area.height / (extent.top - extent.bottom)
-	still_height = width_fit.min(height_fit)
+	still_height = F64.min(width_fit, height_fit)
 	middle = middle_of(large_area)
 	standing_at(
 		still,
@@ -318,10 +318,13 @@ point_count = |still| still.polygons().fold(0, |sum, polygon| sum + polygon.poin
 read_out_lines : StillsWidgetApp.Pose -> List(Str)
 read_out_lines = |pose| {
 	still = pose_still(pose)
-	pose_name_lines(pose).concat([
-		"${ReadoutText.count_text(still.polygons().len())} polygons",
-		"${ReadoutText.count_text(point_count(still))} points",
-	])
+	List.concat(
+		pose_name_lines(pose),
+		[
+			"${ReadoutText.count_text(still.polygons().len())} polygons",
+			"${ReadoutText.count_text(point_count(still))} points",
+		],
+	)
 }
 
 read_out_size : F64
@@ -360,7 +363,7 @@ text_reach = |shape|
 # hint's first line.
 expect {
 	hint_top = text_reach(hint_line("", 0)).top
-	cat_poses.concat(bird_poses).all(
+	List.concat(cat_poses, bird_poses).all(
 		|pose| {
 			lines = read_out_lines(pose).map_with_index(read_out_line)
 			lines.all(|line| text_reach(line).bottom < hint_top)
@@ -372,8 +375,11 @@ expect {
 outline_shapes : StillShapes.Anchor, Still.Polygon -> List(Shapes.Shape)
 outline_shapes = |anchor, polygon| {
 	corners = StillShapes.screen_points(anchor, polygon.points)
-	corners
-		.map2(corners.drop_first(1).concat(corners.take_first(1)), |from, to| { from, to })
+	List.map2(
+		corners,
+		List.concat(corners.drop_first(1), corners.take_first(1)),
+		|from, to| { from, to },
+	)
 		.map(
 			|{ from, to }|
 				Shapes.line(
@@ -397,7 +403,7 @@ large_shapes = |{ large_pose, outlines }| {
 		Hidden => drawn
 		Shown => {
 			outline = still.polygons().join_map(|polygon| outline_shapes(anchor, polygon))
-			drawn.concat(outline)
+			List.concat(drawn, outline)
 		}
 	}
 }
@@ -426,7 +432,7 @@ cell_shapes = |{ pose, area, anchor, name_top }| {
 			color: ink,
 		})
 	name_lines = pose_name_lines(pose).map_with_index(name_line)
-	StillShapes.still_shapes(anchor, pose_still(pose)).concat(name_lines)
+	List.concat(StillShapes.still_shapes(anchor, pose_still(pose)), name_lines)
 }
 
 ## The grid never changes, so it's worked out once, when the widget is built.
@@ -449,9 +455,13 @@ mark_shapes = |large_pose|
 ## Everything on the canvas.
 shapes_at : StillsWidgetApp.Model -> List(Shapes.Shape)
 shapes_at = |model|
-	WidgetPage.frame_shapes({ picture_shapes: picture_shapes(model), status_lines: [] })
-		.concat(mark_shapes(model.large_pose))
-		.concat(grid_shapes)
+	List.concat(
+		List.concat(
+			WidgetPage.frame_shapes({ picture_shapes: picture_shapes(model), status_lines: [] }),
+			mark_shapes(model.large_pose),
+		),
+		grid_shapes,
+	)
 
 ## Where a point of a still lands on the canvas.
 landing_spot : StillShapes.Anchor, Still.FramePoint -> Point
@@ -576,7 +586,7 @@ expect
 			height = large_anchor(pose_still(pose)).height_on_screen.to_f64()
 			wide_room = large_area.width - height * extent_width(extent)
 			tall_room = large_area.height - height * (extent.top - extent.bottom)
-			wide_room.min(tall_room).abs() <= 0.000001
+			F64.min(wide_room, tall_room).abs() <= 0.000001
 		},
 	)
 
