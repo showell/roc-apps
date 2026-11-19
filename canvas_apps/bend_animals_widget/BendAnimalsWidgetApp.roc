@@ -102,10 +102,13 @@ row_layout = {
 		left_middle = $left_edge.plus(left.half_width())
 		gap_end = left_middle.plus(left.half_width()).plus(sibling_gap)
 		right_middle = gap_end.plus(right.half_width())
-		$spots = $spots.concat([
-			{ billboard: left, from_left_edge: left_middle },
-			{ billboard: right, from_left_edge: right_middle },
-		])
+		$spots = List.concat(
+			$spots,
+			[
+				{ billboard: left, from_left_edge: left_middle },
+				{ billboard: right, from_left_edge: right_middle },
+			],
+		)
 		$left_edge = right_middle.plus(right.half_width()).plus(pair_gap)
 	}
 	{ spots: $spots, width: $left_edge.minus(pair_gap) }
@@ -357,7 +360,7 @@ expect {
 # The billboards stand in order from left to right without touching, and the
 # gap between pairs is plainly wider than the gap inside one.
 expect {
-	gaps = extents.map2(extents.drop_first(1), |reach, next| next.left - reach.right)
+	gaps = List.map2(extents, extents.drop_first(1), |reach, next| next.left - reach.right)
 	match gaps {
 		[
 			in_elephant,
@@ -416,5 +419,5 @@ expect
 	picture_shapes
 		== Shapes.lists_in_space(
 			row_space,
-			[FrameView.backdrop_shapes(backdrop)].concat(billboard_shape_lists),
+			List.concat([FrameView.backdrop_shapes(backdrop)], billboard_shape_lists),
 		)
