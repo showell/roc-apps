@@ -54,7 +54,10 @@ PlaybackButtons :: [].{
 
 	## A range over the gap to something the rider is nearing, from `farthest` down
 	## to zero, where one step is a metre.
-	gap_range : { farthest : Distance, metres_a_frame : F64 } -> PlaybackButtons.NumberRange(Distance)
+	gap_range : {
+		farthest : Distance,
+		metres_a_frame : F64,
+	} -> PlaybackButtons.NumberRange(Distance)
 	gap_range = |{ farthest, metres_a_frame }| {
 		first: farthest,
 		last: Distance.zero,
@@ -98,7 +101,7 @@ PlaybackButtons :: [].{
 				Ok(control) => transport_after_press(transport, { control, range })
 				Err(NoButton) => transport
 			}
-		run_on(pressed, range)
+		run_on({ transport: pressed, range })
 	}
 
 	## `transport` with a press this frame counting from `shown`. A widget whose
@@ -156,7 +159,10 @@ button_light = |control, motion|
 	}
 
 ## `wanted`, or stopped if the number is already `running` that way.
-toggle : { running : PlaybackButtons.Motion, wanted : PlaybackButtons.Motion } -> PlaybackButtons.Motion
+toggle : {
+	running : PlaybackButtons.Motion,
+	wanted : PlaybackButtons.Motion,
+} -> PlaybackButtons.Motion
 toggle = |{ running, wanted }|
 	if running == wanted {
 		Stopped
@@ -182,9 +188,11 @@ transport_moved_by = |transport, { by, range }| {
 }
 
 ## `transport` after a frame of its own run.
-run_on :
-	PlaybackButtons.Transport(number), PlaybackButtons.NumberRange(number) -> PlaybackButtons.Transport(number)
-run_on = |transport, range|
+run_on : {
+	transport : PlaybackButtons.Transport(number),
+	range : PlaybackButtons.NumberRange(number),
+} -> PlaybackButtons.Transport(number)
+run_on = |{ transport, range }|
 	match transport.motion {
 		Stopped => transport
 		Forward => transport_moved_by(transport, { by: range.play_reach, range })
@@ -329,7 +337,8 @@ button_shapes = |button, motion| {
 }
 
 ## A word for a reader who hasn't touched the widget yet, right of the buttons.
-hint_shapes : PlaybackButtons.Transport(number), PlaybackButtons.NumberRange(number) -> List(Shapes.Shape)
+hint_shapes :
+	PlaybackButtons.Transport(number), PlaybackButtons.NumberRange(number) -> List(Shapes.Shape)
 hint_shapes = |transport, range|
 	if transport.motion == Stopped and place_in(
 		range,
@@ -363,7 +372,10 @@ sample_clock_run = PlaybackButtons.clock_range({
 
 ## A range over a gap of 50 metres, a quarter of a metre a frame.
 sample_gap_run : PlaybackButtons.NumberRange(Distance)
-sample_gap_run = PlaybackButtons.gap_range({ farthest: Distance.metres(50.0), metres_a_frame: 0.25 })
+sample_gap_run = PlaybackButtons.gap_range({
+	farthest: Distance.metres(50.0),
+	metres_a_frame: 0.25,
+})
 
 ## The sample clock, stopped at `step`.
 stopped_at : U32 -> PlaybackButtons.Transport(Clock)
@@ -374,7 +386,8 @@ running_at : U32, PlaybackButtons.Motion -> PlaybackButtons.Transport(Clock)
 running_at = |step, motion| { at: Clock.at_step(step), motion }
 
 ## What a press of `control` on the sample clock does, after that frame.
-clock_after_press : PlaybackButtons.Transport(Clock), PlaybackButtons.Control -> PlaybackButtons.Transport(Clock)
+clock_after_press :
+	PlaybackButtons.Transport(Clock), PlaybackButtons.Control -> PlaybackButtons.Transport(Clock)
 clock_after_press = |transport, control|
 	PlaybackButtons.next_transport(
 		transport,
@@ -384,7 +397,10 @@ clock_after_press = |transport, control|
 ## What a click at `spot` on the sample clock does, after that frame.
 clock_after_click : PlaybackButtons.Transport(Clock), Point -> PlaybackButtons.Transport(Clock)
 clock_after_click = |transport, spot|
-	PlaybackButtons.next_transport(transport, { input: Click.click_at(spot), range: sample_clock_run })
+	PlaybackButtons.next_transport(
+		transport,
+		{ input: Click.click_at(spot), range: sample_clock_run },
+	)
 
 ## What a frame with nothing pressed does to the sample clock.
 clock_left_alone : PlaybackButtons.Transport(Clock) -> PlaybackButtons.Transport(Clock)

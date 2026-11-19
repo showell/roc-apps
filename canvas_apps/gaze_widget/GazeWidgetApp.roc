@@ -374,7 +374,10 @@ expect
 
 ## A model at its start, asking for `step`.
 asking_for : U32 -> GazeWidgetApp.Model
-asking_for = |step| { ..starting_model, transport: PlaybackButtons.transport_at(Clock.at_step(step)) }
+asking_for = |step| {
+	..starting_model,
+	transport: PlaybackButtons.transport_at(Clock.at_step(step)),
+}
 
 ## `model` after `frames` frames with nobody touching it.
 left_alone : GazeWidgetApp.Model, U64 -> GazeWidgetApp.Model
@@ -409,7 +412,10 @@ expect with_buttons(
 	starting_model,
 	PlaybackButtons.click_on(StepForward),
 ).transport.at == Clock.at_step(861)
-expect with_buttons(starting_model, PlaybackButtons.click_on(Play)).transport.at == Clock.at_step(861)
+expect with_buttons(
+	starting_model,
+	PlaybackButtons.click_on(Play),
+).transport.at == Clock.at_step(861)
 expect with_buttons(starting_model, Input.none).transport.at == Clock.at_step(first_step)
 
 # The state on show waits for the ride, then matches the buttons.

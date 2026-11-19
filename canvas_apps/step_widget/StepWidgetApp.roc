@@ -72,7 +72,10 @@ read_back_a_frame = Steps.of(200)
 ## where the ride is, which may not have reached the step it was heading for.
 aim_transport : StepWidgetApp.Model, Input.Snapshot -> StepWidgetApp.Model
 aim_transport = |model, input| {
-	caught_up = PlaybackButtons.catch_up(model.transport, { input, shown: model.tour.instant().clock })
+	caught_up = PlaybackButtons.catch_up(
+		model.transport,
+		{ input, shown: model.tour.instant().clock },
+	)
 	{ ..model, transport: PlaybackButtons.next_transport(caught_up, { input, range: step_range }) }
 }
 
@@ -308,7 +311,10 @@ heading_for_step = |step| {
 
 ## `model` heading for `step` instead.
 head_for_step : StepWidgetApp.Model, U32 -> StepWidgetApp.Model
-head_for_step = |model, step| { ..model, transport: PlaybackButtons.transport_at(Clock.at_step(step)) }
+head_for_step = |model, step| {
+	..model,
+	transport: PlaybackButtons.transport_at(Clock.at_step(step)),
+}
 
 ## A frame of `model` with a press of `control`.
 pressed_on : StepWidgetApp.Model, PlaybackButtons.Control -> StepWidgetApp.Model
