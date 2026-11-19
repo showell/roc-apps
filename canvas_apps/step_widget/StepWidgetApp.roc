@@ -82,14 +82,14 @@ move_tour = |model| {
 	now = model.tour.instant().clock
 	wanted = model.transport.at
 	if now < wanted {
-		length = steps_a_frame.min(wanted.steps_since(now))
+		length = Steps.min(steps_a_frame, wanted.steps_since(now))
 		{
 			..model,
 			tour: model.tour.steps_forward(length),
 			last_move: Played,
 		}
 	} else if wanted < now {
-		length = read_back_a_frame.min(now.steps_since(wanted))
+		length = Steps.min(read_back_a_frame, now.steps_since(wanted))
 		{
 			..model,
 			tour: model.tour.steps_back(length),
@@ -138,14 +138,15 @@ route_x = |distance| route_left_x + route_width * distance.ratio_to(route_length
 ## The route as a straight bar, with a mark where each segment ends.
 bar_shapes : List(Shapes.Shape)
 bar_shapes =
-	[
-		Shapes.rectangle({
-			top_left: Point.at(route_left_x, route_y - 4.0),
-			width: Pixels.of(route_width),
-			height: Pixels.of(8.0),
-			fill: Brush.flat(WidgetPalette.plan_road_color),
-		}),
-	].concat(
+	List.concat(
+		[
+			Shapes.rectangle({
+				top_left: Point.at(route_left_x, route_y - 4.0),
+				width: Pixels.of(route_width),
+				height: Pixels.of(8.0),
+				fill: Brush.flat(WidgetPalette.plan_road_color),
+			}),
+		],
 		World.route.segments_with_ends().map(
 			|stretch|
 				Shapes.rectangle({
