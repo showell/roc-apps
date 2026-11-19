@@ -152,7 +152,7 @@
 <span class="syn-name">flight_poses</span> : <span class="syn-type">List</span>(<span class="syn-type">BirdFlight.BirdPose</span>)
 <span class="syn-name">flight_poses</span> = [
 	flap_poses({ up: <span class="syn-type">Side</span>(<span class="syn-type">WingsUp</span>), down: <span class="syn-type">Side</span>(<span class="syn-type">WingsDown</span>) }),
-	<span class="syn-type">List</span>.repeat(flap_poses({ up: <span class="syn-type">Away</span>(<span class="syn-type">WingsUp</span>), down: <span class="syn-type">Away</span>(<span class="syn-type">WingsDown</span>) }), <span class="syn-number">7</span>).join(),
+	flap_poses({ up: <span class="syn-type">Away</span>(<span class="syn-type">WingsUp</span>), down: <span class="syn-type">Away</span>(<span class="syn-type">WingsDown</span>) }).repeat(<span class="syn-number">7</span>).join(),
 	<span class="syn-type">List</span>.repeat(<span class="syn-type">Diving</span>, <span class="syn-number">2</span> * frames_a_half_flap),
 ].join()
 </code></pre></figure><p>Each frame is a pose, and how far through the flight it is:</p>
