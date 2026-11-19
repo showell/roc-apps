@@ -315,14 +315,17 @@ button_shapes = |button, motion| {
 			Lit => WidgetPalette.accent_color
 			Unlit => WidgetPalette.unlit_button_color
 		}
-	[
-		Shapes.rectangle({
-			top_left: Point.at(button.left, button_top),
-			width: Pixels.of(button_width),
-			height: Pixels.of(button_height),
-			fill: Brush.flat(color),
-		}),
-	].concat(icon_shapes(button.control, { middle: button.left + button_width / 2.0, light }))
+	List.concat(
+		[
+			Shapes.rectangle({
+				top_left: Point.at(button.left, button_top),
+				width: Pixels.of(button_width),
+				height: Pixels.of(button_height),
+				fill: Brush.flat(color),
+			}),
+		],
+		icon_shapes(button.control, { middle: button.left + button_width / 2.0, light }),
+	)
 }
 
 ## A word for a reader who hasn't touched the widget yet, right of the buttons.
