@@ -99,6 +99,10 @@ const UNTYPED_PATHS = {"game.roc", "main.roc", "web.roc", "gates/", "tutorial/"}
 -- arguments are dictated: roc-ray's Math API, and the wasm edge, which has no
 -- records. lib's run reads it from lib's folder.
 const STACK_DICTATED = "stack_dictated.txt"
+-- lib's own accepted terms for find_unclear_names, in lib beside the files it
+-- judges: names roc-ray's API dictates (`Vec2`). lib's run reads it from lib's
+-- folder.
+const LIB_ACCEPTED = "accepted_terms.txt"
 const LINTS = {
   {recipe = "hunt_names", args = {}, budget = {}, counts = {
     {"state_effect", 0}, {"question", 0}, {"vague", 0}, {"name_type", 0}, {"negative", 0},
@@ -127,7 +131,7 @@ const LINTS = {
   {recipe = "find_bare_floats", args = {"table=bare_floats.txt"}, budget = {}, counts = {{"bare_float", 0}, {"unused_exception", 0}}},
   {recipe = "check_families", args = {}, budget = {}, counts = {{"family", 0}, {"twin_name", 0}}, whole_tree = {"family", "twin_name"}},
   {recipe = "find_unclear_names", args = {}, own_args = {"accepted=accepted_terms.txt"}, budget = {}, counts = {{"pure_mutator", 0}, {"abbreviation", 0}, {"module_doc", 0}},
-    folders = SHARED_AND_WIDGETS},
+    folders = SHARED_AND_WIDGETS, folder_args = {{"canvas_apps/lib", {"accepted=" .. LIB_ACCEPTED}}}},
   {recipe = "find_unused_imports", args = {}, budget = {}, from_repo_root = true, counts = {{"unused_import", 0}},
     tree_globs = TREE_GLOBS},
 }
@@ -192,6 +196,7 @@ function rule_files()
     end
   end
   push(rules, "canvas_apps/lib/" .. STACK_DICTATED)
+  push(rules, "canvas_apps/lib/" .. LIB_ACCEPTED)
   for f in rules do
     if not exists(f) then fail("safari lints: no rule file " .. f) end
   end
