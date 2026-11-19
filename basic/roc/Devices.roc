@@ -293,11 +293,11 @@ Devices :: [].{
 		var $row = 0
 		while $row < Devices.screen_h {
 			start_at = Devices.cell(Devices.row_at(d.top, $row), 0)
-			$codes = $codes.concat(d.scr.sublist({ start: start_at, len: 40 }))
-			$colours = $colours.concat(d.col_ram.sublist({ start: start_at, len: 40 }))
+			$codes = List.concat($codes, d.scr.sublist({ start: start_at, len: 40 }))
+			$colours = List.concat($colours, d.col_ram.sublist({ start: start_at, len: 40 }))
 			$row = $row + 1
 		}
-		$codes.concat($colours).concat(d.pix)
+		List.concat(List.concat($codes, $colours), d.pix)
 	}
 
 	# ---- memory -----------------------------------------------------------------------

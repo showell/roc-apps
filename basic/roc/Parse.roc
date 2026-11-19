@@ -246,12 +246,12 @@ Parse :: [].{
 			$prog = if got.stmts.is_empty() {
 				$prog.append(Nop)
 			} else {
-				$prog.concat(got.stmts)
+				List.concat($prog, got.stmts)
 			}
 			$marks = if got.marks.is_empty() {
 				$marks.append(0)
 			} else {
-				$marks.concat(got.marks)
+				List.concat($marks, got.marks)
 			}
 			for d in got.defs {
 				if !($bodied.get(d.letter) ?? True) {
@@ -338,7 +338,7 @@ Parse :: [].{
 					b,
 					j,
 					e,
-					acc.concat(b.sublist({ start: i, len: j - i })),
+					List.concat(acc, b.sublist({ start: i, len: j - i })),
 				)
 			} else {
 				Parse.line_bytes(
@@ -395,7 +395,8 @@ Parse :: [].{
 		if i >= ls.len() {
 			ls.append(l)
 		} else if (ls.get(i) ?? l).num > l.num {
-			ls.sublist({ start: 0, len: i }).append(l).concat(
+			List.concat(
+				ls.sublist({ start: 0, len: i }).append(l),
 				ls.sublist({ start: i, len: ls.len() - i }),
 			)
 		} else {
@@ -1843,7 +1844,7 @@ Parse :: [].{
 					ok: True,
 				}
 			} else {
-				Parse.fail("Expected ( after ".concat(k), j)
+				Parse.fail(Str.concat("Expected ( after ", k), j)
 			}
 		} else {
 			# LEN, ASC and VAL take a string.
@@ -1881,7 +1882,7 @@ Parse :: [].{
 	call_str_fn = |b, i, k, cx| {
 		j = Parse.skip_ws(b, i)
 		if Parse.byte(b, j) != 40 {
-			Parse.fail("Expected ( after ".concat(k), j)
+			Parse.fail(Str.concat("Expected ( after ", k), j)
 		} else {
 			a = Parse.expr(b, j + 1, cx)
 			c = Parse.skip_ws(b, a.at)
@@ -1975,10 +1976,10 @@ Parse :: [].{
 	call_def = |b, i, c, cx| {
 		letter = Parse.u64(c) - 65
 		f = cx.fns.get(letter) ?? Parse.no_fn
-		name = "FN".concat(Str.from_utf8([c]) ?? "")
+		name = Str.concat("FN", Str.from_utf8([c]) ?? "")
 		j = Parse.skip_ws(b, i)
 		if !f.known {
-			Parse.fail("Undefined function: ".concat(name), i)
+			Parse.fail(Str.concat("Undefined function: ", name), i)
 		} else if !f.param {
 			{
 				e: CallDef(letter, False, Parse.zero),
@@ -1991,7 +1992,7 @@ Parse :: [].{
 			}
 		} else if Parse.byte(b, j) != 40 {
 			{
-				e: CallDef(letter, True, Fail("Expected ( after ".concat(name))),
+				e: CallDef(letter, True, Fail(Str.concat("Expected ( after ", name))),
 				at: j,
 				ok: False,
 			}
@@ -2160,7 +2161,8 @@ Parse :: [].{
 		} else {
 			Str.from_utf8([(47 + d).to_u8_wrap()]) ?? ""
 		}
-		letter.concat(digit).concat(
+		Str.concat(
+			Str.concat(letter, digit),
 			if slot >= 286 {
 				"$"
 			} else {

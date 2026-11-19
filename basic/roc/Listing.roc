@@ -611,7 +611,7 @@ Listing :: [].{
 		j = Listing.skip_ws(b, i)
 		c = Listing.byte(b, j)
 		if j >= b.len() or c == 44 {
-			Listing.no("An empty entry in the ".concat(what).concat(" list"))
+			Listing.no(Str.concat(Str.concat("An empty entry in the ", what), " list"))
 		} else if !Listing.is_alpha(c) {
 			Listing.no("Expected a variable")
 		} else {
@@ -911,7 +911,7 @@ Listing :: [].{
 	# none when it does not. One with no DEF anywhere is the next pass's.
 	call_fn : List(U8), U64, U8, List(Def) -> Sc
 	call_fn = |b, at, letter, fns| {
-		name = "FN".concat(Str.from_utf8([letter]) ?? "")
+		name = Str.concat("FN", Str.from_utf8([letter]) ?? "")
 		a = Listing.count_args(b, at, name, fns)
 		want = Listing.fn_arity(fns, letter, 0)
 		if a.why != "" {
@@ -967,7 +967,7 @@ Listing :: [].{
 	}
 
 	wrong_args : Str -> Sc
-	wrong_args = |name| Listing.no(name.concat(" given the wrong number of arguments"))
+	wrong_args = |name| Listing.no(Str.concat(name, " given the wrong number of arguments"))
 
 	# The extension functions are not checked: skip a balanced `( ... )`.
 	loose_args : List(U8), U64 -> U64

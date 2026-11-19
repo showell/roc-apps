@@ -28,7 +28,7 @@ view = |boxed| {
 	} else {
 		0
 	}
-	[flag].concat(Machine.screen(r.m)).concat(Machine.transcript(r.m).to_utf8())
+	List.concat(List.concat([flag], Machine.screen(r.m)), Machine.transcript(r.m).to_utf8())
 }
 
 status : Box(Model) -> I64
