@@ -199,11 +199,14 @@ backdrop = {
 ## The herd over the backdrop in `herd_space`, and the numbers on top.
 picture_shapes : List(Shapes.Shape)
 picture_shapes =
-	FrameView.painted_shapes({
-		backdrop,
-		ride_shape_lists: cow_shape_lists,
-		space: herd_space,
-	}).concat(label_shapes)
+	List.concat(
+		FrameView.painted_shapes({
+			backdrop,
+			ride_shape_lists: cow_shape_lists,
+			space: herd_space,
+		}),
+		label_shapes,
+	)
 
 ## Every corner of `shapes`' straight-edged regions on the canvas, or none if
 ## any shape has no corners.
@@ -381,9 +384,12 @@ expect
 # nothing else.
 expect
 	picture_shapes
-		== Shapes.lists_in_space(
-			herd_space,
-			[FrameView.backdrop_shapes(backdrop)].concat(cow_shape_lists),
-		).concat(label_shapes)
+		== List.concat(
+			Shapes.lists_in_space(
+				herd_space,
+				List.concat([FrameView.backdrop_shapes(backdrop)], cow_shape_lists),
+			),
+			label_shapes,
+		)
 expect label_texts(picture_shapes).len() == 20
 expect cow_shape_lists.all(|shapes| !shapes.is_empty())
