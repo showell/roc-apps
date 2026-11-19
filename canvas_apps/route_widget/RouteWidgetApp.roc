@@ -114,10 +114,10 @@ extent =
 			north: Distance.zero,
 		},
 		|{ west, east, south, north }, corner| {
-			west: west.min(corner.east),
-			east: east.max(corner.east),
-			south: south.min(corner.north),
-			north: north.max(corner.north),
+			west: Distance.min(west, corner.east),
+			east: Distance.max(east, corner.east),
+			south: Distance.min(south, corner.north),
+			north: Distance.max(north, corner.north),
 		},
 	)
 
@@ -135,7 +135,7 @@ map_plan = {
 	height_fit = (canvas_height - 2.0 * map_margin) / road_height
 	{
 		origin: Point.at(canvas_width / 2.0, canvas_height / 2.0),
-		pixels_a_metre: width_fit.min(height_fit),
+		pixels_a_metre: F64.min(width_fit, height_fit),
 	}
 }
 
