@@ -26,7 +26,7 @@ main! = |_folder| {
 		name: manuscript_path,
 		text: read_text!(manuscript_path)?,
 	}) ? |problems| Str.join_with(problems.map(|problem| "${problem}\n"), "")
-	drawn = Diagrams.drawn!(
+	drawn = Diagrams.drawn_diagrams!(
 		{
 			diagrams: found.diagrams,
 			folder: prepared_folder,

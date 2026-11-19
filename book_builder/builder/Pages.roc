@@ -144,8 +144,8 @@ Pages := [].{
 							),
 						}
 						chapter_pages = linked_chapters.map_with_index(
-							|chapter, i| {
-								{ previous, next } = neighbours(linked_chapters, i)
+							|chapter, chapter_index| {
+								{ previous, next } = neighbours(linked_chapters, chapter_index)
 								{
 									file: chapter.file,
 									html: chapter_html(
@@ -318,20 +318,20 @@ repeated_files = |files| files.fold(
 ## The page a chapter's turn link goes to on one side.
 Neighbour : [Front, Chapter(Chapter), NoChapter]
 
-## The pages on either side of chapter `i`: the front comes before the first
+## The pages on either side of chapter `chapter_index`: the front comes before the first
 ## chapter, and nothing comes after the last.
 neighbours : List(Chapter), U64 -> { previous : Neighbour, next : Neighbour }
-neighbours = |chapters, i| {
-	previous = if i == 0 {
+neighbours = |chapters, chapter_index| {
+	previous = if chapter_index == 0 {
 		Front
 	} else {
-		neighbour_at(chapters, i - 1)
+		neighbour_at(chapters, chapter_index - 1)
 	}
-	{ previous, next: neighbour_at(chapters, i + 1) }
+	{ previous, next: neighbour_at(chapters, chapter_index + 1) }
 }
 
 neighbour_at : List(Chapter), U64 -> Neighbour
-neighbour_at = |chapters, i| match chapters.get(i) {
+neighbour_at = |chapters, chapter_index| match chapters.get(chapter_index) {
 	Ok(chapter) => Chapter(chapter)
 	Err(OutOfBounds) => NoChapter
 }
@@ -379,12 +379,12 @@ chapter_html :
 	} -> Str
 chapter_html = |chapter, { book_name, chapters, previous, next, look }| {
 	label = match chapter.number {
-		Numbered(n) => "<p class=\"chapter-number\">Chapter ${n.to_str()}</p>\n"
+		Numbered(chapter_number) => "<p class=\"chapter-number\">Chapter ${chapter_number.to_str()}</p>\n"
 		Unnumbered => ""
 	}
 	safe_name = BookText.escaped_text(book_name)
-	back = turn_link(previous, { rel: "prev", word: "Previous" })
-	forward = turn_link(next, { rel: "next", word: "Next" })
+	back = turn_link(previous, { relation: "prev", word: "Previous" })
+	forward = turn_link(next, { relation: "next", word: "Next" })
 	main =
 		\\<main>
 		\\<p class="book-bar"><a href="${front_file}">${safe_name}</a> <a href="#chapters">Chapters</a></p>
@@ -432,7 +432,7 @@ nav_entry = |chapter, here|
 chapter_link : Chapter -> Str
 chapter_link = |chapter| {
 	number = match chapter.number {
-		Numbered(n) => "<span class=\"number\">${n.to_str()}</span>"
+		Numbered(chapter_number) => "<span class=\"number\">${chapter_number.to_str()}</span>"
 		Unnumbered => ""
 	}
 	"<a href=\"${chapter.file}\">${number}${BookText.escaped_text(chapter.title)}</a>"
@@ -455,10 +455,10 @@ section_entry = |chapter, section| {
 
 ## The link out of a chapter on one side. With no chapter there it's an empty
 ## span, which keeps the other link on its own side.
-turn_link : Neighbour, { rel : Str, word : Str } -> Str
-turn_link = |neighbour, { rel, word }| match neighbour {
-	Front => "<a rel=\"${rel}\" href=\"${front_file}\"><small>${word}</small>Contents</a>"
-	Chapter(chapter) => "<a rel=\"${rel}\" href=\"${chapter.file}\"><small>${word}</small>${BookText.escaped_text(chapter.title)}</a>"
+turn_link : Neighbour, { relation : Str, word : Str } -> Str
+turn_link = |neighbour, { relation, word }| match neighbour {
+	Front => "<a rel=\"${relation}\" href=\"${front_file}\"><small>${word}</small>Contents</a>"
+	Chapter(chapter) => "<a rel=\"${relation}\" href=\"${chapter.file}\"><small>${word}</small>${BookText.escaped_text(chapter.title)}</a>"
 	NoChapter => "<span></span>"
 }
 
@@ -645,7 +645,7 @@ expect nav_entry(
 ) == "<li class=\"here\"><a href=\"a.html\">A</a><ol class=\"sections\"><li><a href=\"a.html#s\">S</a></li></ol></li>"
 expect nav_entry(one_section, other_section) == "<li><a href=\"a.html\">A</a></li>"
 expect with_section_links("<p>no sections</p>") == "<p>no sections</p>"
-expect turn_link(NoChapter, { rel: "next", word: "Next" }) == "<span></span>"
+expect turn_link(NoChapter, { relation: "next", word: "Next" }) == "<span></span>"
 expect neighbours([one_section], 0) == { previous: Front, next: NoChapter }
 expect neighbours([one_section, other_section, one_section], 1) == {
 	previous: Chapter(one_section),

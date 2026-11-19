@@ -68,16 +68,16 @@ Negatives := [].{
 	sentences : Str -> List(Str)
 	sentences = |text| {
 		bytes = text.to_utf8()
-		len = bytes.len()
+		byte_count = bytes.len()
 		var $found = []
 		var $at = 0
-		while $at < len {
+		while $at < byte_count {
 			run_end = sentence_run_end(bytes, $at)
 			if run_end == $at {
 				$at = $at + 1
 			} else {
 				var $end = run_end
-				while $end < len and is_stop(byte_at(bytes, $end)) {
+				while $end < byte_count and is_stop(byte_at(bytes, $end)) {
 					$end = $end + 1
 				}
 				sentence = BookText.text_from_bytes(
@@ -100,10 +100,10 @@ Negatives := [].{
 			|> without_chapter_references
 			|> Str.with_ascii_lowercased
 		bytes = plain.to_utf8()
-		len = bytes.len()
+		byte_count = bytes.len()
 		var $found = []
 		var $at = 0
-		while $at < len {
+		while $at < byte_count {
 			match word_list.find_first(
 				|word| is_word_at(bytes, { word: word.to_utf8(), at: $at }),
 			) {
@@ -207,15 +207,15 @@ is_stop = |byte| byte == '.' or byte == '!' or byte == '?'
 ## stop or a backtick follows. `start` itself when none starts there.
 sentence_run_end : List(U8), U64 -> U64
 sentence_run_end = |bytes, start| {
-	len = bytes.len()
+	byte_count = bytes.len()
 	var $at = start
 	var $going = Bool.True
-	while $going and $at < len {
+	while $going and $at < byte_count {
 		byte = byte_at(bytes, $at)
 		if byte == '`' {
 			match bytes.drop_first($at + 1).find_first_index(|b| b == '`') {
-				Ok(n) => {
-					$at = $at + n + 2
+				Ok(close_offset) => {
+					$at = $at + close_offset + 2
 				}
 				Err(NotFound) => {
 					$going = Bool.False

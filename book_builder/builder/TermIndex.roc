@@ -172,10 +172,10 @@ compare_bytes = |left, right| match (left, right) {
 	([], []) => Same
 	([], _) => Before
 	(_, []) => After
-	([l, .. as left_rest], [r, .. as right_rest]) =>
-		if l < r {
+	([left_byte, .. as left_rest], [right_byte, .. as right_rest]) =>
+		if left_byte < right_byte {
 			Before
-		} else if l > r {
+		} else if left_byte > right_byte {
 			After
 		} else {
 			compare_bytes(left_rest, right_rest)
@@ -190,9 +190,9 @@ category_table = |category, entries| {
 		.map_with_index(|entry, i| { entry, i })
 		.keep_if(|keyed| keyed.entry.term.category == category and keyed.entry.main != Nowhere)
 		.sort_with(
-			|a, b| match compare_bytes(sort_key(a.entry.term.name), sort_key(b.entry.term.name)) {
-				Same if a.i < b.i => Before
-				Same if a.i > b.i => After
+			|left_keyed, right_keyed| match compare_bytes(sort_key(left_keyed.entry.term.name), sort_key(right_keyed.entry.term.name)) {
+				Same if left_keyed.i < right_keyed.i => Before
+				Same if left_keyed.i > right_keyed.i => After
 				order => order
 			},
 		)

@@ -301,7 +301,7 @@ is_held : [Numbered(U64), Unnumbered], Builder.Extent -> Bool
 is_held = |number, extent| match (number, extent) {
 	(_, AllChapters) => Bool.True
 	(Unnumbered, FirstChapters(_)) => Bool.True
-	(Numbered(n), FirstChapters(first)) => n <= first
+	(Numbered(chapter_number), FirstChapters(first)) => chapter_number <= first
 }
 
 ## A chapter left out, as its heading alone, which is all its rendering needs
@@ -369,8 +369,8 @@ lines_with_index = |lines, { settings, terms }| {
 				book.chapters,
 				chapter_numbers(book.chapters, settings),
 				|chapter, number| match number {
-					Numbered(n) => Ok({
-						number: n,
+					Numbered(chapter_number) => Ok({
+						number: chapter_number,
 						title: heading_title(chapter),
 						prose_lines: index_prose_lines(chapter),
 					})

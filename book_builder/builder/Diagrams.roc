@@ -111,14 +111,14 @@ Diagrams := [].{
 	## Each diagram with its drawing, read through `read!`, which answers a
 	## file's text or the build's stop naming it. A source the pre-step drew
 	## that differs from the manuscript's stops the build.
-	drawn! :
+	drawn_diagrams! :
 		{
 			diagrams : List(Diagrams.Diagram),
 			folder : Str,
 			manuscript : Str,
 		},
 		(Str => Try(Str, Str)) => Try(List(Diagrams.Drawn), Str)
-	drawn! = |{ diagrams, folder, manuscript }, read!| {
+	drawn_diagrams! = |{ diagrams, folder, manuscript }, read!| {
 		var $drawings = []
 		for diagram in diagrams {
 			source_path = Diagrams.dot_path({ folder, id: diagram.id })

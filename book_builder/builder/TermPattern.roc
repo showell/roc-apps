@@ -77,11 +77,11 @@ TermPattern :: {
 has_match : List(Step), { starts : Starts, line : Str } -> Bool
 has_match = |steps, { starts, line }| {
 	bytes = line.to_utf8()
-	len = bytes.len()
+	byte_count = bytes.len()
 	var $live = []
 	var $at = 0
 	var $found = Bool.False
-	while !$found and $at <= len {
+	while !$found and $at <= byte_count {
 		if $live.is_empty() {
 			$at = next_start(starts, { bytes, at: $at })
 		}
@@ -125,24 +125,24 @@ required_of = |runs|
 ## condition (`\b`, `^`, `$`) taken as met, are the steps a match starts at.
 starts_of : List(Step) -> Starts
 starts_of = |steps| {
-	var $todo = [0]
+	var $pending_places = [0]
 	var $seen = []
 	var $starts = []
 	var $anywhere = Bool.False
-	while !$todo.is_empty() {
-		place = $todo.last() ?? crash "TermPattern.starts_of: the list isn't empty"
-		$todo = $todo.drop_last(1)
+	while !$pending_places.is_empty() {
+		place = $pending_places.last() ?? crash "TermPattern.starts_of: the list isn't empty"
+		$pending_places = $pending_places.drop_last(1)
 		if !$seen.contains(place) {
 			$seen = $seen.append(place)
 			match steps.get(place) {
 				Ok(Split(first, second)) => {
-					$todo = $todo.append(second).append(first)
+					$pending_places = $pending_places.append(second).append(first)
 				}
 				Ok(Jump(target)) => {
-					$todo = $todo.append(target)
+					$pending_places = $pending_places.append(target)
 				}
 				Ok(Boundary) | Ok(LineStart) | Ok(LineEnd) => {
-					$todo = $todo.append(place + 1)
+					$pending_places = $pending_places.append(place + 1)
 				}
 				Ok(Byte(byte)) => {
 					$starts = $starts.append(Byte(byte))
@@ -217,11 +217,11 @@ joined_steps = |first_steps, second_steps|
 ## Either of two programs.
 either_steps : List(Step), List(Step) -> List(Step)
 either_steps = |first_steps, second_steps| {
-	n = first_steps.len()
+	first_step_count = first_steps.len()
 	List.concat(
-		List.concat([Split(1, n + 2)], shifted_steps(first_steps, 1))
-			.append(Jump(n + 2 + second_steps.len())),
-		shifted_steps(second_steps, n + 2),
+		List.concat([Split(1, first_step_count + 2)], shifted_steps(first_steps, 1))
+			.append(Jump(first_step_count + 2 + second_steps.len())),
+		shifted_steps(second_steps, first_step_count + 2),
 	)
 }
 
@@ -286,20 +286,20 @@ sequence_at = |bytes, start| {
 ## The atom with the count after it, if any.
 counted_at : List(U8), Parsed -> Try(Parsed, Str)
 counted_at = |bytes, atom| {
-	n = atom.steps.len()
+	atom_step_count = atom.steps.len()
 	counted = match bytes.get(atom.at) {
 		Ok('?') => Ok({
-			steps: List.concat([Split(1, n + 1)], shifted_steps(atom.steps, 1)),
+			steps: List.concat([Split(1, atom_step_count + 1)], shifted_steps(atom.steps, 1)),
 			at: atom.at + 1,
 			runs: [],
 		})
 		Ok('*') => Ok({
-			steps: List.concat([Split(1, n + 2)], shifted_steps(atom.steps, 1)).append(Jump(0)),
+			steps: List.concat([Split(1, atom_step_count + 2)], shifted_steps(atom.steps, 1)).append(Jump(0)),
 			at: atom.at + 1,
 			runs: [],
 		})
 		Ok('+') => Ok({
-			steps: atom.steps.append(Split(0, n + 1)),
+			steps: atom.steps.append(Split(0, atom_step_count + 1)),
 			at: atom.at + 1,
 			runs: [],
 		})
@@ -502,30 +502,30 @@ closure_places : List(Step),
 closure_places = |steps, { live_places, bytes, at }| {
 	var $kept = []
 	var $seen = []
-	var $todo = live_places
-	while !$todo.is_empty() {
-		place = $todo.last() ?? crash "TermPattern.closure_places: the list isn't empty"
-		$todo = $todo.drop_last(1)
+	var $pending_places = live_places
+	while !$pending_places.is_empty() {
+		place = $pending_places.last() ?? crash "TermPattern.closure_places: the list isn't empty"
+		$pending_places = $pending_places.drop_last(1)
 		if !$seen.contains(place) {
 			$seen = $seen.append(place)
 			match steps.get(place) {
 				Ok(Split(first, second)) => {
-					$todo = $todo.append(second).append(first)
+					$pending_places = $pending_places.append(second).append(first)
 				}
 				Ok(Jump(target)) => {
-					$todo = $todo.append(target)
+					$pending_places = $pending_places.append(target)
 				}
 				Ok(Boundary) =>
 					if is_boundary(bytes, at) {
-						$todo = $todo.append(place + 1)
+						$pending_places = $pending_places.append(place + 1)
 					}
 				Ok(LineStart) =>
 					if at == 0 {
-						$todo = $todo.append(place + 1)
+						$pending_places = $pending_places.append(place + 1)
 					}
 				Ok(LineEnd) =>
 					if at == bytes.len() {
-						$todo = $todo.append(place + 1)
+						$pending_places = $pending_places.append(place + 1)
 					}
 				Ok(_) => {
 					$kept = $kept.append(place)

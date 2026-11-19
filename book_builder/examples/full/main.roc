@@ -17,7 +17,7 @@ main! = |_folder| {
 		name: settings.manuscript,
 		text: read_text!(settings.manuscript)?,
 	}) ? |problems| Str.join_with(problems.map(|problem| "${problem}\n"), "")
-	drawn = Diagrams.drawn!(
+	drawn = Diagrams.drawn_diagrams!(
 		{
 			diagrams: found.diagrams,
 			folder: "drawings",
