@@ -305,14 +305,9 @@ glue	check_stacking	stack	8
 glue	check_stacking	unstack	1
 glue	check_stacking	wide string	11
 glue	find_extra_parens	lambda_if	1
-glue	find_unclear_names	abbreviation	8
-glue	hunt_names	bare_participle	2
-glue	hunt_names	short_name	15
-glue	hunt_names	singular_list	1
-glue	hunt_names	world_verb	1
-glue	parse-key	glue	89e296052e217a574d070caae8a6d4af432cb137
+glue	parse-key	glue	a0e1ab58b6af213f0cffd35ccc0482fc26dd29db
 glue	rewrite_method_calls	rewritable	50
-glue	types-key	glue,roc-cache:compat-8ef4841088748ac1aa781861c5d51bf4411c8d2407e4a9de0f79cabaf7dbd97a/src/compiler-platforms/glue/701f09d0d31715d6518d5cb66edd0f85787bd5d658761b1e6c343b44bb405b74	375cbb3e8652fb8c1f5e98ae9c11c91fcc0c1c57
+glue	types-key	glue,roc-cache:compat-8ef4841088748ac1aa781861c5d51bf4411c8d2407e4a9de0f79cabaf7dbd97a/src/compiler-platforms/glue/701f09d0d31715d6518d5cb66edd0f85787bd5d658761b1e6c343b44bb405b74	964fadbb07547999e10e3670a6ed4032ac7659cb
 syntax_color	check_errors	number_fallback	1
 syntax_color	check_families	twin_name	3
 syntax_color	check_stacking	wide string	15
