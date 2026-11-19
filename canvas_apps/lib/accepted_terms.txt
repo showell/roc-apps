@@ -3,3 +3,4 @@
 -- folder run, and tools/quality.shale asks lints.shale for), added to the
 -- cookbook's words/accepted_terms.txt. A term a line, with its reason after `--`.
 vec2 -- roc-ray's Math API names its vector type `Vec2`, which Math keeps so a ported game reads unchanged (Math.roc)
+freq -- the wasm edge calls WasmApp's `tone_freq` by that name: the web platform's main.roc and every generated roc_glue.js (WasmApp.roc)
