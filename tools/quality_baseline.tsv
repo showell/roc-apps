@@ -39,7 +39,7 @@ building-books	check_stacking	long	3
 building-books	check_stacking	wide string	1
 building-books	parse-key	building-books	9a047fe4d7ae95ca65bc9d8f140d885862b3f3d8
 building-books	types-key	book_builder,building-books,repos:roc-markdown/package,syntax_color	ab9e6775cfd73d64a7b94cf7ec92dfb2f302950c
-canvas_apps	parse-key	canvas_apps	d951d1d0c413d7f3a742294b2825daefddba8f10
+canvas_apps	parse-key	canvas_apps	ec87739f1c78ef7a0b3d69329a24b65f9a8e8fc2
 canvas_apps/beacon_widget	check_families	twin_name	1
 canvas_apps/beacon_widget	check_stacking	wide string	1
 canvas_apps/beacon_widget	roc-types	unreached	1
@@ -214,12 +214,8 @@ canvas_apps/thanksgiving	check_name_types	bare_beside_unit	70
 canvas_apps/thanksgiving	check_stacking	long	5
 canvas_apps/thanksgiving	check_stacking	stack	44
 canvas_apps/thanksgiving	find_deep_calls	nested	1
-canvas_apps/thanksgiving	find_unclear_names	abbreviation	2
-canvas_apps/thanksgiving	hunt_names	bare_participle	2
-canvas_apps/thanksgiving	hunt_names	short_name	16
-canvas_apps/thanksgiving	hunt_names	singular_list	1
 canvas_apps/thanksgiving	rewrite_method_calls	rewritable	1
-canvas_apps/thanksgiving	types-key	canvas_apps/lib,canvas_apps/native,canvas_apps/thanksgiving,canvas_apps/web,repos:roc-ray/platform,roc-cache:packages/6ZUwqYhCS8PU9Mo6MF7oV82ET2o7KYb57CLKDq4cq4sS,roc-cache:packages/HoULZB8QzktiNPYSe9myzy9JQzm1nMbjDPVWoA63QpVf	ac1ed9d67c5a57aee9ea6370ca7e30bff9f2d092
+canvas_apps/thanksgiving	types-key	canvas_apps/lib,canvas_apps/native,canvas_apps/thanksgiving,canvas_apps/web,repos:roc-ray/platform,roc-cache:packages/6ZUwqYhCS8PU9Mo6MF7oV82ET2o7KYb57CLKDq4cq4sS,roc-cache:packages/HoULZB8QzktiNPYSe9myzy9JQzm1nMbjDPVWoA63QpVf	755f29e4793fe3fbb5ae806ce274c36e349306fc
 canvas_apps/trick_or_treat	check_boundaries	fixed	1
 canvas_apps/trick_or_treat	check_boundaries	single	8
 canvas_apps/trick_or_treat	check_errors	number_fallback	2
