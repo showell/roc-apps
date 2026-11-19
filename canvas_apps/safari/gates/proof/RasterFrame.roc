@@ -19,11 +19,11 @@ import ProofRide
 # 2^57, so it needs no wrapping arithmetic.
 ## One byte folded into an FNV-1a hash.
 fnv_step : I64, I64 -> I64
-fnv_step = |h, byte| (h.bitwise_xor(byte) * 16777619).bitwise_and(4294967295)
+fnv_step = |h, byte| (I64.bitwise_xor(h, byte) * 16777619).bitwise_and(4294967295)
 
 ## The byte of `v` that starts `shift` bits up.
 byte_of : I64, U8 -> I64
-byte_of = |v, shift| v.shr_wrap(shift).bitwise_and(255)
+byte_of = |v, shift| I64.bitwise_and(v.shr_wrap(shift), 255)
 
 hash : List(U32) -> I64
 hash = |pixels| pixels.fold(
@@ -57,8 +57,11 @@ print_picture! : I64 => {}
 print_picture! = |steps| {
 	pixels = frame_pixels(ProofRide.ride_on(Tour.initial, steps))
 	var $out = List.with_capacity(pixels.len() * 6 + 32)
-	$out = $out.concat(hash_line(pixels))
-	$out = $out.concat("\n${Screen.width_px.to_str()} ${Screen.height_px.to_str()}\n".to_utf8())
+	$out = List.concat($out, hash_line(pixels))
+	$out = List.concat(
+		$out,
+		"\n${Screen.width_px.to_str()} ${Screen.height_px.to_str()}\n".to_utf8(),
+	)
 	for pixel in pixels {
 		$out = Hex.append_digits($out, { number: pixel.to_i64(), digits: 6 })
 	}

@@ -126,7 +126,7 @@ expect {
 		(at_d0.forward.to_metres(), -49.00332889206208),
 		(second_segment_point.right.to_metres(), -48.11621135085446),
 		(second_segment_point.forward.to_metres(), 431.95658232777186),
-	].all(|(got, want)| (got - want).abs() <= 0.00000005 * want.abs().max(1.0))
+	].all(|(got, want)| (got - want).abs() <= 0.00000005 * F64.max(want.abs(), 1.0))
 }
 
 left_turn : Angle.Turn
@@ -169,7 +169,7 @@ expect
 			turned_point_at(road_past_bend(right_turn), JustBehind).forward.to_metres(),
 			-218.13274420105967,
 		),
-	].all(|(got, want)| (got - want).abs() <= 0.0000001 * want.abs().max(1.0))
+	].all(|(got, want)| (got - want).abs() <= 0.0000001 * F64.max(want.abs(), 1.0))
 
 ## The segment in view just behind the rider on `road_view`, which must have
 ## one.
@@ -203,7 +203,7 @@ expect
 		(apex_after_turn(right_turn).forward.to_metres(), -100.43071597950589),
 		(apex_after_turn(left_turn).right.to_metres(), 21.403438709482494),
 		(apex_after_turn(left_turn).forward.to_metres(), -100.55298847633645),
-	].all(|(got, want)| (got - want).abs() <= 0.0000001 * want.abs().max(1.0))
+	].all(|(got, want)| (got - want).abs() <= 0.0000001 * F64.max(want.abs(), 1.0))
 
 # Each segment ends where the lengths before it and its own add up to.
 expect {

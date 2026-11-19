@@ -30,11 +30,15 @@ ScanlineFill :: [].{
 		)
 		match corners {
 			[first, _, _, ..] => {
-				next_corners = corners.drop_first(1).concat(corners.take_first(1))
-				edges = corners.map2(next_corners, |from, to| { from, to })
+				next_corners = List.concat(corners.drop_first(1), corners.take_first(1))
+				edges = List.map2(
+					corners,
+					next_corners,
+					|from, to| { from, to },
+				)
 				rows = PixelGrid.pixels_between({
-					from: corners.fold(first.y, |top, corner| top.min(corner.y)),
-					to: corners.fold(first.y, |bottom, corner| bottom.max(corner.y)),
+					from: corners.fold(first.y, |top, corner| F64.min(top, corner.y)),
+					to: corners.fold(first.y, |bottom, corner| F64.max(bottom, corner.y)),
 					extent: roll.height_px(),
 				})
 				var $px = pixels
@@ -167,7 +171,11 @@ row_pixels = |pixels, { roll, fill, mode, row, edge_crossings }| {
 ## where the winding is not zero.
 inside_spans : List(EdgeCrossing) -> List(RowSpan)
 inside_spans = |edge_crossings| {
-	neighbours = edge_crossings.map2(edge_crossings.drop_first(1), |left, right| { left, right })
+	neighbours = List.map2(
+		edge_crossings,
+		edge_crossings.drop_first(1),
+		|left, right| { left, right },
+	)
 	neighbours.fold({ winding: 0, spans: [] }, walk_edge_crossing).spans
 }
 

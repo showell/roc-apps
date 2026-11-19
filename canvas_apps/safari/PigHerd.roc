@@ -149,7 +149,7 @@ four_in_front_six_behind = {
 two_row_front_offsets : List(Distance)
 two_row_front_offsets = {
 	row = four_in_front_six_behind.front_row
-	row.offsets_before.append(row.standout_offset).concat(row.offsets_after)
+	List.concat(row.offsets_before.append(row.standout_offset), row.offsets_after)
 }
 
 ## The two-row herd's pig that stands out, about `herd_along`.
@@ -164,8 +164,10 @@ two_row_pigs : Along -> List(Geom.Placed(Billboard))
 two_row_pigs = |herd_along| {
 	herd = four_in_front_six_behind
 	back_across = front_row_across.plus(herd.back_row_depth)
-	row_pigs(herd_along, { across: front_row_across, offsets: two_row_front_offsets })
-		.concat(row_pigs(herd_along, { across: back_across, offsets: herd.back_offsets }))
+	List.concat(
+		row_pigs(herd_along, { across: front_row_across, offsets: two_row_front_offsets }),
+		row_pigs(herd_along, { across: back_across, offsets: herd.back_offsets }),
+	)
 }
 
 ## The big herd's pig in `row` and `column`. The scatter's phases, 2.3 along

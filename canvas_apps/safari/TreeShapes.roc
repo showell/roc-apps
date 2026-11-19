@@ -36,7 +36,9 @@ TreeShapes :: [].{
 				color: Sky.color_at_darkness(trunk_color, darkness),
 			},
 		)
-		Sprite.from_shapes([trunk].concat(tiers.map(|tier| tier_shape(tier, { inputs, crown }))))
+		Sprite.from_shapes(
+			List.concat([trunk], tiers.map(|tier| tier_shape(tier, { inputs, crown }))),
+		)
 	}
 
 	## How a crown is drawn: cones, shaded by how near they are, or flat triangles.
@@ -220,7 +222,7 @@ crown_shade = |forward| Fraction.clamp(forward.ratio_to(crown_shade_reach)).comp
 ## A trunk of `color` under the crown of the tree whose outline is `outline`.
 trunk_shape : Camera.Upright, { finish : TrunkFinish, color : RgbColor } -> Shapes.Shape
 trunk_shape = |outline, { finish, color }| {
-	width = outline.height_on_screen.scaled_by(trunk_width_share).max(min_trunk_width)
+	width = Pixels.max(outline.height_on_screen.scaled_by(trunk_width_share), min_trunk_width)
 	below_crown = outline.height_on_screen.scaled_by(trunk_height_share)
 	height = below_crown.plus(outline.height_on_screen.scaled_by(trunk_overlap_share))
 	left = outline.foot.x.minus(width.divided_by(2.0))
@@ -398,10 +400,12 @@ expect {
 ## Whether two lists of coordinates agree, past rounding.
 is_near : List(F64), List(F64) -> Bool
 is_near = |got, expected|
-	got.len() == expected.len() and got.map2(
-		expected,
-		|x, y| (x - y).abs(),
-	).all(|miss| miss <= 0.000000001)
+	got.len() == expected.len()
+		and List.map2(
+			got,
+			expected,
+			|x, y| (x - y).abs(),
+		).all(|miss| miss <= 0.000000001)
 
 expect
 	is_near(

@@ -129,7 +129,7 @@ progress_braking_for = |progress, bend| {
 	)
 	# The steady brake may land a little under its target; `VehicleLimits.braking_to`
 	# says why. The truck alone keeps to the target here.
-	speed = target_speed.max(progress.speed.accelerated_by(acceleration))
+	speed = Speed.max(target_speed, progress.speed.accelerated_by(acceleration))
 	{
 		route_position: progress.route_position.plus(speed.step_length()),
 		speed,
@@ -147,7 +147,7 @@ progress_toward_tease : TruckJourney.TruckProgress, Distance -> TruckJourney.Tru
 progress_toward_tease = |progress, tease| {
 	speed =
 		if progress.route_position < tease {
-			chase_top_speed.min(progress.speed.accelerated_by(chase_acceleration))
+			Speed.min(chase_top_speed, progress.speed.accelerated_by(chase_acceleration))
 		} else {
 			progress.speed
 		}

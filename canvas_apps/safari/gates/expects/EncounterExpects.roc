@@ -521,7 +521,11 @@ first_corner_coordinates = |shapes| {
 ## Whether each of `got` is within a billionth of its `expected`.
 is_near_each : List(F64), List(F64) -> Bool
 is_near_each = |got, expected| {
-	misses = got.map2(expected, |one, wanted| (one - wanted).abs())
+	misses = List.map2(
+		got,
+		expected,
+		|one, wanted| (one - wanted).abs(),
+	)
 	got.len() == expected.len() and misses.all(|miss| miss <= 0.000000001)
 }
 
@@ -603,7 +607,7 @@ expect {
 		|pose| bird_shapes_at({ pose: pose }, level).map(fill_of),
 	)
 	side_down = BirdStills.side_wings_down_still.polygons()
-	stills = side_down.concat(BirdStills.diving_still.polygons())
+	stills = List.concat(side_down, BirdStills.diving_still.polygons())
 	drawn
 		== stills.map(
 			|poly|
@@ -633,7 +637,7 @@ expect {
 		EmojiStill.cow,
 		EmojiStill.pig,
 	].map(|emoji| emoji.still())
-	bird_stills.concat(emoji_stills).all(
+	List.concat(bird_stills, emoji_stills).all(
 		|still| StillShapes.still_shapes(anchor, still).len() == still.polygons().len(),
 	)
 }

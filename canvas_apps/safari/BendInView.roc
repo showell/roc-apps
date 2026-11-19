@@ -198,7 +198,8 @@ outer_corner_pairs = |turn| {
 is_near : List((F64, F64)), List((F64, F64)) -> Bool
 is_near = |got_pairs, wanted_pairs|
 	got_pairs.len() == wanted_pairs.len()
-		and got_pairs.map2(
+		and List.map2(
+			got_pairs,
 			wanted_pairs,
 			|(a, b), (c, d)| (a - c).abs() <= 0.000001 and (b - d).abs() <= 0.000001,
 		).all(|is_close| is_close)

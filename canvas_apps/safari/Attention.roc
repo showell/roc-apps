@@ -31,7 +31,7 @@ Attention :: F64.{
 
 	## The stronger of this attention and `other`.
 	max : Attention, Attention -> Attention
-	max = |Attention.(a), Attention.(other)| Attention.(a.max(other))
+	max = |Attention.(a), Attention.(other)| Attention.(F64.max(a, other))
 
 	is_eq : _
 }
@@ -41,5 +41,5 @@ expect Attention.of(1.8).to_f64() == 1.8
 expect Attention.of(0.0) == Attention.none
 expect Attention.from_fraction(Fraction.of(0.5)).to_f64() == 0.5
 expect Attention.of(1.8).scaled_by(Fraction.of(0.5)).to_f64() == 0.9
-expect Attention.of(0.3).max(Attention.of(1.4)).to_f64() == 1.4
-expect Attention.of(1.4).max(Attention.of(0.3)).to_f64() == 1.4
+expect Attention.max(Attention.of(0.3), Attention.of(1.4)).to_f64() == 1.4
+expect Attention.max(Attention.of(1.4), Attention.of(0.3)).to_f64() == 1.4

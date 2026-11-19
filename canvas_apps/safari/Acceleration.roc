@@ -20,7 +20,7 @@ Acceleration :: F64.{
 	## The smaller of this acceleration and `other`: the harder brake, or the
 	## gentler push.
 	min : Acceleration, Acceleration -> Acceleration
-	min = |Acceleration.(a), Acceleration.(other)| Acceleration.(a.min(other))
+	min = |Acceleration.(a), Acceleration.(other)| Acceleration.(F64.min(a, other))
 
 	is_gt : Acceleration, Acceleration -> Bool
 	is_gt = |Acceleration.(a), Acceleration.(other)| a > other
@@ -37,7 +37,9 @@ harder = Acceleration.metres_a_step_each_step(-0.5)
 gentler : Acceleration
 gentler = Acceleration.metres_a_step_each_step(-0.25)
 
-expect harder.min(gentler) == harder
-expect gentler.min(harder) == harder
-expect gentler.min(Acceleration.steady) == gentler
-expect Acceleration.steady.min(Acceleration.metres_a_step_each_step(0.25)) == Acceleration.steady
+expect Acceleration.min(harder, gentler) == harder
+expect Acceleration.min(gentler, harder) == harder
+expect Acceleration.min(gentler, Acceleration.steady) == gentler
+expect
+	Acceleration.min(Acceleration.steady, Acceleration.metres_a_step_each_step(0.25))
+		== Acceleration.steady

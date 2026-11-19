@@ -66,7 +66,10 @@ next_look_depth = |eyes, gaze_yaw|
 	if gaze_yaw == Angle.straight_ahead {
 		Fraction.clamp(eyes.look_depth.to_f64() - look_depth_decay.to_f64())
 	} else {
-		eyes.look_depth.max(Fraction.clamp(gaze_yaw.abs().ratio_to(Gaze.look_release_angle)))
+		Fraction.max(
+			eyes.look_depth,
+			Fraction.clamp(gaze_yaw.abs().ratio_to(Gaze.look_release_angle)),
+		)
 	}
 
 ## Radians in `d` degrees.

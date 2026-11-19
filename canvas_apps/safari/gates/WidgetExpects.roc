@@ -92,7 +92,7 @@ words_shown = |canvas_app, inputs| {
 	var $words = words_in(frame_of($model))
 	for input in inputs {
 		$model = model_at_next_step($model, input, CanvasApp.seconds_a_step(canvas_app))
-		$words = $words.concat(words_in(frame_of($model)))
+		$words = List.concat($words, words_in(frame_of($model)))
 	}
 	$words
 }

@@ -35,7 +35,7 @@ FarHeight :: F64.{
 
 	## The higher of this height and `other`.
 	max : FarHeight, FarHeight -> FarHeight
-	max = |FarHeight.(h), FarHeight.(other)| FarHeight.(h.max(other))
+	max = |FarHeight.(h), FarHeight.(other)| FarHeight.(F64.max(h, other))
 
 	is_gt : FarHeight, FarHeight -> Bool
 	is_gt = |FarHeight.(h), FarHeight.(other)| h > other
@@ -62,8 +62,8 @@ expect higher.minus(lower) == FarRise.of(3.0)
 expect lower.minus(higher) == FarRise.of(-3.0)
 expect lower.plus(FarRise.of(3.0)) == higher
 expect higher.lowered_by(FarRise.of(3.0)) == lower
-expect lower.max(higher) == higher
-expect higher.max(lower) == higher
+expect FarHeight.max(lower, higher) == higher
+expect FarHeight.max(higher, lower) == higher
 
 # The sums downstream can see the sign of a zero, so lowering the horizon by
 # nothing stays a positive zero.

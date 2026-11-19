@@ -36,7 +36,7 @@ Steps :: U32.{
 
 	## The fewer of this many steps and `other`.
 	min : Steps, Steps -> Steps
-	min = |Steps.(n), Steps.(other)| Steps.(n.min(other))
+	min = |Steps.(n), Steps.(other)| Steps.(U32.min(n, other))
 
 	## How far into a cycle of `period` steps this many steps land.
 	wrapped_to : Steps, Steps -> Steps
@@ -57,6 +57,6 @@ Steps :: U32.{
 expect [0, 1, 38].all(|count| Steps.of_count(count).to_u64() == count)
 expect Steps.of(3).ratio_to(Steps.of(4)) == 0.75
 expect Steps.of(8).ratio_to(Steps.of(4)) == 2.0
-expect Steps.of(3).min(Steps.of(4)) == Steps.of(3)
-expect Steps.of(5).min(Steps.of(4)) == Steps.of(4)
-expect Steps.of(4).min(Steps.of(4)) == Steps.of(4)
+expect Steps.min(Steps.of(3), Steps.of(4)) == Steps.of(3)
+expect Steps.min(Steps.of(5), Steps.of(4)) == Steps.of(4)
+expect Steps.min(Steps.of(4), Steps.of(4)) == Steps.of(4)

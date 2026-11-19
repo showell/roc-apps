@@ -30,7 +30,7 @@ GuardRail :: [].{
 
 	## The rail along `path_points`: the bars, then the posts.
 	quads_along : List(RiderView.RiderPoint) -> List(GuardRail.RailQuad)
-	quads_along = |path_points| bars(path_points).concat(posts(path_points))
+	quads_along = |path_points| List.concat(bars(path_points), posts(path_points))
 
 	## A quad as the frame draws it, at its own depth, unless it's wholly
 	## behind the camera. A rail quad has no kind for `Pipeline` to ask, so it
@@ -89,16 +89,21 @@ post_half_width = post_width.divided_by(2.0)
 
 ## A stretch of bar between each two neighbouring points of `path_points`.
 bars : List(RiderView.RiderPoint) -> List(GuardRail.RailQuad)
-bars = |path_points| path_points.map2(path_points.drop_first(1), |from, to| bar({ from, to }))
+bars = |path_points| List.map2(
+	path_points,
+	path_points.drop_first(1),
+	|from, to| bar({ from, to }),
+)
 
 ## A post at each point of `path_points`, turned to face along the path from
 ## the point before it to the point after it. A post at an end of the
 ## path takes its own point in place of the one it lacks.
 posts : List(RiderView.RiderPoint) -> List(GuardRail.RailQuad)
 posts = |path_points| {
-	before = path_points.take_first(1).concat(path_points.drop_last(1))
-	after = path_points.drop_first(1).concat(path_points.take_last(1))
-	before.map3(
+	before = List.concat(path_points.take_first(1), path_points.drop_last(1))
+	after = List.concat(path_points.drop_first(1), path_points.take_last(1))
+	List.map3(
+		before,
 		path_points,
 		after,
 		|previous, at, next| post(at, { previous, next }),

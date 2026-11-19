@@ -89,7 +89,10 @@ FrameView := {
 	## skyline, the ground, then each thing beside the road, far to near.
 	ride_shape_lists : FrameView -> List(List(Shapes.Shape))
 	ride_shape_lists = |view|
-		[view.mountain_shapes, view.ground_patch_shapes].concat(view.scene.scene_shape_lists())
+		List.concat(
+			[view.mountain_shapes, view.ground_patch_shapes],
+			view.scene.scene_shape_lists(),
+		)
 
 	## The camera the frame at `instant` is seen through. It is public for
 	## FramePartsBench, which times the camera alone.
@@ -127,7 +130,7 @@ FrameView := {
 	} -> List(Shapes.Shape)
 	painted_shapes = |painted| {
 		backdrop = FrameView.backdrop_shapes(painted.backdrop)
-		Shapes.lists_in_space(painted.space, [backdrop].concat(painted.ride_shape_lists))
+		Shapes.lists_in_space(painted.space, List.concat([backdrop], painted.ride_shape_lists))
 	}
 
 	## What the sightings read from `instant` on `route` beyond the road: where

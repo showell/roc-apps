@@ -15,7 +15,7 @@ PixelColor :: [].{
 	pack = |{ r, g, b }| {
 		red = channel_byte(r).shl_wrap(16)
 		green = channel_byte(g).shl_wrap(8)
-		red.bitwise_or(green).bitwise_or(channel_byte(b))
+		U32.bitwise_or(U32.bitwise_or(red, green), channel_byte(b))
 	}
 
 	## `color` laid over the opaque `pixel`.
@@ -113,12 +113,12 @@ expect PixelColor.added_pixel(
 ) == 0xFF0000
 
 channel_byte : F64 -> U32
-channel_byte = |v| (v + 0.5).to_i64_wrap().max(0).min(255).to_u32_wrap()
+channel_byte = |v| I64.min(I64.max((v + 0.5).to_i64_wrap(), 0), 255).to_u32_wrap()
 
 ## A pixel's channels: the mirror of `pack`.
 unpack : U32 -> PixelColor.Rgb
 unpack = |pixel| {
-	r: pixel.shr_wrap(16).bitwise_and(255).to_f64(),
-	g: pixel.shr_wrap(8).bitwise_and(255).to_f64(),
-	b: pixel.bitwise_and(255).to_f64(),
+	r: U32.bitwise_and(pixel.shr_wrap(16), 255).to_f64(),
+	g: U32.bitwise_and(pixel.shr_wrap(8), 255).to_f64(),
+	b: U32.bitwise_and(pixel, 255).to_f64(),
 }

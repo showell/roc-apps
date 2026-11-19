@@ -218,13 +218,13 @@ lone_bird_shapes = |forward| Scene.scene_shape_lists(lone_bird_scene(forward)).j
 # nearer tree, and over a farther one.
 expect
 	tree_and_bird_shapes({ tree_ahead: 40.0, bird_ahead: 40.0 })
-		== lone_tree_shapes(40.0).concat(lone_bird_shapes(40.0))
+		== List.concat(lone_tree_shapes(40.0), lone_bird_shapes(40.0))
 expect
 	tree_and_bird_shapes({ tree_ahead: 30.0, bird_ahead: 40.0 })
-		== lone_bird_shapes(40.0).concat(lone_tree_shapes(30.0))
+		== List.concat(lone_bird_shapes(40.0), lone_tree_shapes(30.0))
 expect
 	tree_and_bird_shapes({ tree_ahead: 40.0, bird_ahead: 30.0 })
-		== lone_tree_shapes(40.0).concat(lone_bird_shapes(30.0))
+		== List.concat(lone_tree_shapes(40.0), lone_bird_shapes(30.0))
 expect lone_tree_shapes(40.0).len() > 0
 expect lone_bird_shapes(40.0).len() > 0
 

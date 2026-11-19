@@ -200,7 +200,7 @@ is_level_near = |point, (right, forward)| {
 ## Whether each point is near its want.
 are_near : List(RiderView.PointAtHeight), List((F64, F64)) -> Bool
 are_near = |got_points, wants| {
-	is_each_near = got_points.map2(wants, is_level_near).all(|is_close| is_close)
+	is_each_near = List.map2(got_points, wants, is_level_near).all(|is_close| is_close)
 	got_points.len() == wants.len() and is_each_near
 }
 

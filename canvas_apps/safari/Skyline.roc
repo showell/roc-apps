@@ -157,7 +157,7 @@ snow_peak_height = {
 	var $highest = Skyline.north_range_height(first)
 	var $at = first.plus(peak_sample_step)
 	while $at <= last {
-		$highest = $highest.max(Skyline.north_range_height($at))
+		$highest = FarHeight.max($highest, Skyline.north_range_height($at))
 		$at = $at.plus(peak_sample_step)
 	}
 	$highest
@@ -283,7 +283,7 @@ silhouette = |sky_columns, { focal_length, height_at, color, base_y }| {
 		},
 	)
 	Shapes.region_from_corners(
-		crest.concat([{ x: right, y: base_y }, { x: left, y: base_y }]),
+		List.concat(crest, [{ x: right, y: base_y }, { x: left, y: base_y }]),
 		Brush.flat(color),
 	)
 }
@@ -326,7 +326,7 @@ snow_shape = |sky_columns, { focal_length, color }| {
 				back.append({ x: column.x, y: Lens.y_for_height({ height, focal_length }) })
 			},
 		)
-		Ok(Shapes.region_from_corners(crest.concat(snowline_points), Brush.flat(color)))
+		Ok(Shapes.region_from_corners(List.concat(crest, snowline_points), Brush.flat(color)))
 	}
 }
 
@@ -408,10 +408,10 @@ corner_ys = |shape|
 	}
 
 lowest_y : Shapes.Shape -> F64
-lowest_y = |shape| corner_ys(shape).fold(-F64.infinity, |low, y| low.max(y))
+lowest_y = |shape| corner_ys(shape).fold(-F64.infinity, |low, y| F64.max(low, y))
 
 highest_y : Shapes.Shape -> F64
-highest_y = |shape| corner_ys(shape).fold(F64.infinity, |high, y| high.min(y))
+highest_y = |shape| corner_ys(shape).fold(F64.infinity, |high, y| F64.min(high, y))
 
 range_silhouette : { heading : Angle.Bearing, focal_length : Pixels } -> Shapes.Shape
 range_silhouette = |aim| silhouette(

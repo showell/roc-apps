@@ -154,8 +154,12 @@ RiderView :: [].{
 	## region and another comes back into it, a straight line joins them.
 	points_in_region : List(RiderView.PointAtHeight), RiderView.Region(point) -> List(point)
 	points_in_region = |polygon_points, region| {
-		next_corners = polygon_points.drop_first(1).concat(polygon_points.take_first(1))
-		edges = polygon_points.map2(next_corners, |from, to| { from, to, region })
+		next_corners = List.concat(polygon_points.drop_first(1), polygon_points.take_first(1))
+		edges = List.map2(
+			polygon_points,
+			next_corners,
+			|from, to| { from, to, region },
+		)
 		edges.fold(List.with_capacity(2 * polygon_points.len()), edge_points_onto)
 	}
 
@@ -213,7 +217,7 @@ edge_points_onto = |kept_points, { from, to, region }| {
 			Ok(corner) => kept_points.append(corner)
 			Err(Outside) => kept_points
 		}
-	with_corner.concat(edge_crossings({ from, to }))
+	List.concat(with_corner, edge_crossings({ from, to }))
 }
 
 ## The part of the rider's view at or past the near plane. An edge crosses it

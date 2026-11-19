@@ -96,8 +96,8 @@ PixelGrid :: [].{
 ## The coordinate on a row or a column `extent` long nearest `place`.
 nearest_coordinate : { place : I64, extent : PixelGrid.Coordinate } -> PixelGrid.Coordinate
 nearest_coordinate = |{ place, extent: PixelGrid.Coordinate.(extent) }| {
-	on_or_after_first = place.max(0)
-	PixelGrid.Coordinate.from_i64(extent.to_i64().min(on_or_after_first))
+	on_or_after_first = I64.max(place, 0)
+	PixelGrid.Coordinate.from_i64(I64.min(extent.to_i64(), on_or_after_first))
 }
 
 ## The first pixel whose centre is at or past `x`. A coordinate far off the

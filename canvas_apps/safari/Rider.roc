@@ -56,8 +56,10 @@ Rider := { motorcycle : Motorcycle, eyes : RiderEyes }.{
 	attention : Rider, { route : Route, encounter_stage : Animation.Stage } -> Attention
 	attention = |rider, { route, encounter_stage }| {
 		encounter = rider.motorcycle.route_place.segment_on(route).encounter
-		EncounterReaction.encounter_attention(encounter, encounter_stage)
-			.max(rider.eyes.attention())
+		Attention.max(
+			EncounterReaction.encounter_attention(encounter, encounter_stage),
+			rider.eyes.attention(),
+		)
 	}
 
 	## How far the rider's head turns from the way the motorcycle points: the

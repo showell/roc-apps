@@ -49,7 +49,7 @@ main! = |_folder| {
 			text,
 			notes: notes.keep_if(|note| note.source == source),
 		}) ? |why| "${why}\n"
-		$colored = $colored.concat(blocks)
+		$colored = List.concat($colored, blocks)
 	}
 	settings = {
 		..base_settings,

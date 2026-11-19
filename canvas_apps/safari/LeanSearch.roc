@@ -154,8 +154,11 @@ initial_tries = LeanSearch.search_tries(Motorcycle.initial)
 expect initial_tries.len() == LeanSearch.lean_search_round_count.to_u64()
 expect initial_tries.first().map_ok(|first| first.bounds) == Ok(first_bounds(Motorcycle.initial))
 expect
-	initial_tries
-		.map2(initial_tries.drop_first(1), |before, after| after.bounds == bounds_after(before))
+	List.map2(
+		initial_tries,
+		initial_tries.drop_first(1),
+		|before, after| after.bounds == bounds_after(before),
+	)
 		.all(|is_followed| is_followed)
 
 # The lean the search picks is the middle of the half its last try pointed to.

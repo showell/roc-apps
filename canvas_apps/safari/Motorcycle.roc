@@ -109,7 +109,7 @@ turn_per_lean = 0.1
 
 ## The speed the rider may reach: `next_speed`, held to the top speed.
 allowed_speed : Speed -> Speed
-allowed_speed = |next_speed| next_speed.min(VehicleLimits.top_speed)
+allowed_speed = |next_speed| Speed.min(next_speed, VehicleLimits.top_speed)
 
 ## The speed the clamp allows for `next_speed` metres a step.
 clamped_speed : F64 -> F64
@@ -176,7 +176,7 @@ expect
 		(second_step.route_place.road_point.across.to_metres(), 2.8708278851774045),
 		(third_step.route_place.road_point.along.to_metres(), 122.7472448817898),
 		(third_step.route_place.road_point.across.to_metres(), 3.1999869508214647),
-	].all(|(got, want)| (got - want).abs() <= 0.000000001 * want.abs().max(1.0))
+	].all(|(got, want)| (got - want).abs() <= 0.000000001 * F64.max(want.abs(), 1.0))
 
 expect {
 	a = Motorcycle.initial.motorcycle_at_next_step(Motorcycle.initial.steady_controls())

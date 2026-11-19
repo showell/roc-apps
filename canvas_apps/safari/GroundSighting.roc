@@ -33,7 +33,7 @@ chunk_count = |length| {
 	chunks =
 		length.ratio_to(road_chunk_length).ceiling_to_i64_try()
 			?? crash "GroundSighting.chunk_count: a segment's length is finite"
-	chunks.max(1).to_u32_wrap()
+	I64.max(chunks, 1).to_u32_wrap()
 }
 
 ## The road along a segment in view, as one patch: across its start, up its
@@ -60,7 +60,7 @@ road_along = |road, { vantage, in_view }| {
 	down_left_edge =
 		List.from_iter(U32.until(0, segment_chunk_count))
 			.map(|k| corner(segment_chunk_count - k, Geom.left_edge))
-	road_patch([corner(0, Geom.left_edge)].concat(up_right_edge).concat(down_left_edge))
+	road_patch(List.concat(List.concat([corner(0, Geom.left_edge)], up_right_edge), down_left_edge))
 }
 
 road_color : RgbColor

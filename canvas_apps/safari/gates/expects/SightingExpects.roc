@@ -206,7 +206,7 @@ expect {
 	wanted = [(3.5, 36.0), (0.8285126770, 206.8783179687)]
 	is_near_place = |(right, forward), (want_right, want_forward)|
 		(right - want_right).abs() <= 0.000000001 and (forward - want_forward).abs() <= 0.000000001
-	got.len() == wanted.len() and got.map2(wanted, is_near_place).all(|is_near| is_near)
+	got.len() == wanted.len() and List.map2(got, wanted, is_near_place).all(|is_near| is_near)
 }
 
 # BillboardSighting: which billboards are in view, on a road of one segment
@@ -473,7 +473,7 @@ are_towers_at = |rider_number, wants| {
 		is_standing = is_standing_at(tower.spot, { road, from_rider, road_point })
 		is_standing and yaw_gap.abs() <= 0.000000001
 	}
-	towers.len() == wants.len() and towers.map2(wants, is_tower_at).all(|is_at| is_at)
+	towers.len() == wants.len() and List.map2(towers, wants, is_tower_at).all(|is_at| is_at)
 }
 
 expect
@@ -890,6 +890,10 @@ expect {
 		-12.0,
 		-17.0,
 	]
-	misses = route_cows.map2(places, |one, place| (one.road_point.across.to_metres() - place).abs())
+	misses = List.map2(
+		route_cows,
+		places,
+		|one, place| (one.road_point.across.to_metres() - place).abs(),
+	)
 	route_cows.len() == 14 and misses.all(|miss| miss <= 1.2)
 }

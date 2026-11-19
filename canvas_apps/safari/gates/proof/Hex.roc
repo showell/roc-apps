@@ -13,7 +13,7 @@ Hex :: [].{
 		while $k > 0 {
 			$k = $k - 1
 			shift = ($k * 4).to_u8_wrap()
-			nibble = number.shr_wrap(shift).bitwise_and(15)
+			nibble = I64.bitwise_and(number.shr_wrap(shift), 15)
 			# 48 is '0', and 87 is 'a' less ten.
 			code = if nibble < 10 {
 				nibble + 48

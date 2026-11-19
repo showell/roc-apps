@@ -78,7 +78,7 @@ far_shore = {
 }
 
 water_points : List(PondPoint)
-water_points = near_shore_points.concat([far_shore.first, far_shore.middle, far_shore.last])
+water_points = List.concat(near_shore_points, [far_shore.first, far_shore.middle, far_shore.last])
 
 water_color : RgbColor
 water_color = RgbColor.of(0x2F7E8C)
@@ -123,7 +123,7 @@ bank_inner_points = {
 
 ## The bank: its inner edge under the water, then its outer edge.
 bank_points : List(PondPoint)
-bank_points = bank_inner_points.concat(bank_outer_points)
+bank_points = List.concat(bank_inner_points, bank_outer_points)
 
 bank_color : RgbColor
 bank_color = RgbColor.of(0xC2B280)
@@ -183,8 +183,12 @@ is_inside_water = |point| {
 	corners = water_points.map(
 		|corner| { x: corner.past_end.to_metres(), y: corner.out_from_middle.to_metres() },
 	)
-	next_corners = corners.drop_first(1).concat(corners.take_first(1))
-	edges = corners.map2(next_corners, |from, to| { from, to })
+	next_corners = List.concat(corners.drop_first(1), corners.take_first(1))
+	edges = List.map2(
+		corners,
+		next_corners,
+		|from, to| { from, to },
+	)
 	is_crossed = |{ from, to }| {
 		is_spanned = (from.y > y) != (to.y > y)
 		crossing_x = from.x + (y - from.y) / (to.y - from.y) * (to.x - from.x)

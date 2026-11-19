@@ -72,8 +72,8 @@ coast_bounds : Across -> CoastBounds
 coast_bounds = |start_across| {
 	inset_half_width = Geom.road_half_width.minus(shoulder_margin)
 	{
-		left: Across.left_of_middle(inset_half_width).min(start_across),
-		right: Across.right_of_middle(inset_half_width).max(start_across),
+		left: Across.min(Across.left_of_middle(inset_half_width), start_across),
+		right: Across.max(Across.right_of_middle(inset_half_width), start_across),
 	}
 }
 

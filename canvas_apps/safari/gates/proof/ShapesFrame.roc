@@ -91,7 +91,7 @@ print_picture! = |steps| {
 	pixels = comparison.pixels
 	var $out = List.with_capacity(pixels.len() * 6 + 64)
 	size = "${Screen.width_px.to_str()} ${Screen.height_px.to_str()}"
-	$out = $out.concat("${comparison.counts}\nhash 00000000\n${size}\n".to_utf8())
+	$out = List.concat($out, "${comparison.counts}\nhash 00000000\n${size}\n".to_utf8())
 	for pixel in pixels {
 		$out = Hex.append_digits($out, { number: pixel.to_i64(), digits: 6 })
 	}

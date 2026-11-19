@@ -41,11 +41,11 @@ Distance :: F64.{
 
 	## The smaller of this length and `other`.
 	min : Distance, Distance -> Distance
-	min = |Distance.(d), Distance.(other)| Distance.(d.min(other))
+	min = |Distance.(d), Distance.(other)| Distance.(F64.min(d, other))
 
 	## The larger of this length and `other`.
 	max : Distance, Distance -> Distance
-	max = |Distance.(d), Distance.(other)| Distance.(d.max(other))
+	max = |Distance.(d), Distance.(other)| Distance.(F64.max(d, other))
 
 	is_gt : Distance, Distance -> Bool
 	is_gt = |Distance.(d), Distance.(other)| d > other

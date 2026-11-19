@@ -241,8 +241,8 @@ expect {
 ## its own.
 skyline_height : Angle.Bearing -> FarHeight
 skyline_height = |bearing| {
-	north_or_land = Skyline.north_range_height(bearing).max(Skyline.land_height(bearing))
-	Skyline.west_range_height(bearing).max(north_or_land)
+	north_or_land = FarHeight.max(Skyline.north_range_height(bearing), Skyline.land_height(bearing))
+	FarHeight.max(Skyline.west_range_height(bearing), north_or_land)
 }
 
 ## Whether the sun, at `clock`, has sunk behind the skyline.

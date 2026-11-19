@@ -29,7 +29,7 @@ CowHerd :: { cow_count : U64, rows_behind_front : U64 }.{
 			List.from_iter(U64.until(0, cow_count))
 				.map(|cow_number| herd_cow({ herd_along, cow_number, rows_behind_front }))
 		match bull {
-			WithBull => [herd_bull(herd_along)].concat(cows)
+			WithBull => List.concat([herd_bull(herd_along)], cows)
 			NoBull => cows
 		}
 	}
@@ -197,7 +197,8 @@ expect {
 		(36.0, -17.0),
 		(40.0, -12.0),
 	]
-	misses = cows_without_bull.map2(
+	misses = List.map2(
+		cows_without_bull,
 		places,
 		|one, (along, across)| (
 			(one.road_point.along.to_metres() - along).abs(),

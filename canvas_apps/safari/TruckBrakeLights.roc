@@ -84,7 +84,7 @@ lamp_pair_shapes = |setting| {
 		left: box.right.minus(brake_lamp_inner_edge),
 		right: box.right.minus(brake_lamp_outer_edge),
 	}
-	brake_shapes(setting, left_lamp_sides).concat(brake_shapes(setting, right_lamp_sides))
+	List.concat(brake_shapes(setting, left_lamp_sides), brake_shapes(setting, right_lamp_sides))
 }
 
 ## The center of a polygon on screen: the mean of its corners. Each sum

@@ -43,11 +43,11 @@ Across :: F64.{
 
 	## The place further left of this one and `other`.
 	min : Across, Across -> Across
-	min = |Across.(a), Across.(other)| Across.(a.min(other))
+	min = |Across.(a), Across.(other)| Across.(F64.min(a, other))
 
 	## The place further right of this one and `other`.
 	max : Across, Across -> Across
-	max = |Across.(a), Across.(other)| Across.(a.max(other))
+	max = |Across.(a), Across.(other)| Across.(F64.max(a, other))
 
 	is_gt : Across, Across -> Bool
 	is_gt = |Across.(a), Across.(other)| a > other

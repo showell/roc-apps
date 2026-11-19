@@ -153,7 +153,7 @@ part_colored = |part, file| match part {
 					line_end
 				}
 				code = Str.from_utf8(
-					file.bytes.sublist({ start, len: end - start.min(end) }),
+					file.bytes.sublist({ start, len: end - U64.min(start, end) }),
 				) ? |_| "a line cut inside a character"
 				$codes = $codes.append(code)
 				$htmls = $htmls.append(

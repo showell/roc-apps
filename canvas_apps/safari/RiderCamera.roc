@@ -142,7 +142,7 @@ focal_length_for_attention = |attention| {
 
 ## Whether `got` is within 1e-9 of `want`, scaled up by a want past 1.
 is_close : F64, F64 -> Bool
-is_close = |got, want| (got - want).abs() <= 0.000000001 * want.abs().max(1.0)
+is_close = |got, want| (got - want).abs() <= 0.000000001 * F64.max(want.abs(), 1.0)
 
 expect
 	[
@@ -229,7 +229,7 @@ expect {
 	hard_look = Attention.from_fraction(Fraction.whole)
 	both = focal_length_for({ lean: full_lean, attention: hard_look })
 	looking = focal_length_for({ lean: Angle.upright, attention: hard_look })
-	wider = focal_length_at_lean(full_lean).to_f64().min(looking.to_f64())
+	wider = F64.min(focal_length_at_lean(full_lean).to_f64(), looking.to_f64())
 	both.to_f64().to_bits() == wider.to_bits()
 }
 

@@ -42,7 +42,7 @@ expect DepthSort.mean_depth([1.0, 1.0e16, -1.0e16].map(Distance.metres)).to_metr
 ## a depth of 1.
 is_farther : { this : Distance, that : Distance } -> Bool
 is_farther = |{ this, that }| {
-	slack = tie_slack * that.to_metres().abs().max(1.0)
+	slack = tie_slack * F64.max(that.to_metres().abs(), 1.0)
 	this.minus(that).to_metres() > slack
 }
 
@@ -79,7 +79,10 @@ merge = |{ first_items, second_items, depth_of }| {
 			$at_first = $at_first + 1
 		}
 	}
-	$merged.concat(first_items.drop_first($at_first)).concat(second_items.drop_first($at_second))
+	List.concat(
+		List.concat($merged, first_items.drop_first($at_first)),
+		second_items.drop_first($at_second),
+	)
 }
 
 # Ten keys, each with its own place, so the order they come out in shows

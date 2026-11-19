@@ -32,7 +32,7 @@ Gawking :: [].{
 				AtMost(
 					VehicleLimits.braking_to(
 						motorcycle.speed,
-						{ target: gawk_speed, within: room.max(gawk_least_distance) },
+						{ target: gawk_speed, within: Distance.max(room, gawk_least_distance) },
 					),
 				)
 			}

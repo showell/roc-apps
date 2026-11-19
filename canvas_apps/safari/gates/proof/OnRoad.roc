@@ -59,7 +59,7 @@ broken_rules = |tour, { step, last_segment }| {
 		} else {
 			[]
 		}
-	off_road.concat(backwards).concat(past_end)
+	List.concat(List.concat(off_road, backwards), past_end)
 }
 
 main! = |_args| {
@@ -75,7 +75,7 @@ main! = |_args| {
 		$step = $step + 1
 		for line in broken_rules($tour, { step: $step, last_segment }) {
 			if $bad < bad_lines_cap {
-				$out = $out.concat("BAD ${line}\n")
+				$out = Str.concat($out, "BAD ${line}\n")
 			}
 			$bad = $bad + 1
 		}
@@ -104,6 +104,6 @@ main! = |_args| {
 		} else {
 			"${$bad.to_str()} bad: the ride did not stay on the road"
 		}
-	echo!($out.concat("${widest}\n${finish}\n${verdict}\n"))
+	echo!(Str.concat($out, "${widest}\n${finish}\n${verdict}\n"))
 	Ok({})
 }

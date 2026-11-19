@@ -33,7 +33,7 @@ ProofRide :: [].{
 			}
 			$tour = ride_on($tour, depth - $at)
 			$at = depth
-			$out = $out.concat("${held_line(depth, $tour)}\n")
+			$out = Str.concat($out, "${held_line(depth, $tour)}\n")
 		}
 		$out
 	}

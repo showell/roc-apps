@@ -54,7 +54,7 @@ brake_decay = Steps.of(20)
 held_to : Acceleration, ThrottleLimit -> Acceleration
 held_to = |a, limit|
 	match limit {
-		AtMost(most) => a.min(most)
+		AtMost(most) => Acceleration.min(a, most)
 		NoLimit => a
 	}
 

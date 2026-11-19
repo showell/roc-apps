@@ -23,7 +23,7 @@ Screen :: [].{
 	farthest_distance = |points, center|
 		points.fold_rev(
 			Pixels.zero,
-			|corner, farthest| Screen.distance({ from: corner, to: center }).max(farthest),
+			|corner, farthest| Pixels.max(Screen.distance({ from: corner, to: center }), farthest),
 		)
 
 	width_px : I64

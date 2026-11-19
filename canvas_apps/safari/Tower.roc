@@ -50,7 +50,7 @@ Tower :: { yaw : Angle.Turn, beacon : Beacon }.{
 ## lowest height the rider can see there, which is never negative.
 hidden_height : { foot : RiderView.RiderPoint, base_height : Distance } -> Distance
 hidden_height = |{ foot, base_height }|
-	EarthCurve.lowest_visible_height(foot).minus(base_height).max(Distance.zero)
+	Distance.max(EarthCurve.lowest_visible_height(foot).minus(base_height), Distance.zero)
 
 ## A corner of the tower's square footprint, as seen along the route.
 Corner : [BackLeft, BackRight, FrontRight, FrontLeft]
@@ -370,7 +370,10 @@ storey_shapes = |geometry, storey| {
 	if storey_top <= hidden_on_tower(geometry) {
 		[]
 	} else {
-		hidden_in_storey = storey_bottom.max(hidden_on_tower(geometry)).minus(storey_bottom)
+		hidden_in_storey = Distance.max(
+			storey_bottom,
+			hidden_on_tower(geometry),
+		).minus(storey_bottom)
 		hidden_fraction = Fraction.of(hidden_in_storey.ratio_to(storey_height))
 		corners.join_map(
 			|corner| face_brace_shapes(

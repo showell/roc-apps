@@ -44,7 +44,7 @@ main! = |args| {
 	var $report = ""
 	for _ in from..=to {
 		if part == "counts" {
-			$report = $report.concat(counts_line(route, $instant))
+			$report = Str.concat($report, counts_line(route, $instant))
 		} else if part == "sort_only" or part == "flatten_only" or part == "frame_only" {
 			$sum = $sum + prepared_size(part, { route, instant: $instant, reps })
 		} else {
@@ -284,11 +284,25 @@ counts_line = |route, instant| {
 		shapes = renderings.join_map(|r| r.sprite().to_shapes())
 		things = renderings.len().to_str()
 		points = point_count(shapes).to_str()
-		$text = $text.concat("${step} ${name}: ${things} things, ${shapes.len().to_str()} shapes, ${points} points\n")
+		$text = Str.concat(
+			$text,
+			"${step} ${name}: ${things} things, ${shapes.len().to_str()} shapes, ${points} points\n",
+		)
 	}
-	$text
-		.concat("${step} skyline: ${skyline.len().to_str()} shapes, ${point_count(skyline).to_str()} points\n")
-		.concat("${step} ground: ${ground.len().to_str()} shapes, ${point_count(ground).to_str()} points\n")
-		.concat("${step} segments in view: ${RoadAhead.segments_in_view(road).len().to_str()}\n")
-		.concat("${step} trees in sight: ${sighted.len().to_str()}, within 200 m (cones): ${coned.to_str()}\n")
+	$text = Str.concat(
+		$text,
+		"${step} skyline: ${skyline.len().to_str()} shapes, ${point_count(skyline).to_str()} points\n",
+	)
+	$text = Str.concat(
+		$text,
+		"${step} ground: ${ground.len().to_str()} shapes, ${point_count(ground).to_str()} points\n",
+	)
+	$text = Str.concat(
+		$text,
+		"${step} segments in view: ${RoadAhead.segments_in_view(road).len().to_str()}\n",
+	)
+	Str.concat(
+		$text,
+		"${step} trees in sight: ${sighted.len().to_str()}, within 200 m (cones): ${coned.to_str()}\n",
+	)
 }

@@ -34,8 +34,10 @@ segment_billboards : RoadAhead.RoadView,
 	in_view : RoadAhead.SegmentInView,
 } -> List(Pipeline.Sighted(Billboard))
 segment_billboards = |road, { camera, in_view }|
-	farm_sightings(road, { camera, in_view })
-		.concat(bend_sightings(road, { camera, in_view }))
+	List.concat(
+		farm_sightings(road, { camera, in_view }),
+		bend_sightings(road, { camera, in_view }),
+	)
 
 ## The cows, then the pigs, of a segment in view.
 farm_sightings : RoadAhead.RoadView,
@@ -46,8 +48,7 @@ farm_sightings : RoadAhead.RoadView,
 farm_sightings = |road, { camera, in_view }| {
 	from_rider = in_view.from_rider
 	if is_within_reach(from_rider, farm_reach) {
-		in_view.segment.segment_cows()
-			.concat(in_view.segment.segment_pigs())
+		List.concat(in_view.segment.segment_cows(), in_view.segment.segment_pigs())
 			.keep_oks(
 				|billboard| Pipeline.scenery_sighting_of(billboard, { road, camera, from_rider }),
 			)

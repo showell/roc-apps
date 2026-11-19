@@ -87,11 +87,11 @@ Speed :: F64.{
 
 	## The smaller of this speed and `other`.
 	min : Speed, Speed -> Speed
-	min = |Speed.(s), Speed.(other)| Speed.(s.min(other))
+	min = |Speed.(s), Speed.(other)| Speed.(F64.min(s, other))
 
 	## The larger of this speed and `other`.
 	max : Speed, Speed -> Speed
-	max = |Speed.(s), Speed.(other)| Speed.(s.max(other))
+	max = |Speed.(s), Speed.(other)| Speed.(F64.max(s, other))
 
 	is_gt : Speed, Speed -> Bool
 	is_gt = |Speed.(s), Speed.(other)| s > other

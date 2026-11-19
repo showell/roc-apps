@@ -30,7 +30,7 @@ main! = |_args| {
 			$bad = $bad + 1
 		}
 		clocks = "clock ${here.to_str()}, one back -> ${there.to_str()}"
-		$out = $out.concat("${verdict_of(ok)}after ${steps.to_str()} steps: ${clocks}\n")
+		$out = Str.concat($out, "${verdict_of(ok)}after ${steps.to_str()} steps: ${clocks}\n")
 	}
 	while !$tour.instant().rider.is_finished($tour.route()) {
 		$tour = $tour.step_forward()
@@ -41,7 +41,7 @@ main! = |_args| {
 	if !finish_ok {
 		$bad = $bad + 1
 	}
-	$out = $out.concat("${verdict_of(finish_ok)}at the finish: one back went back one step\n")
+	$out = Str.concat($out, "${verdict_of(finish_ok)}at the finish: one back went back one step\n")
 	var $backs = 0
 	while $backs < finish.steps_since(Clock.start).to_u32() {
 		$tour = $tour.step_back()
@@ -53,9 +53,13 @@ main! = |_args| {
 	if !start_ok {
 		$bad = $bad + 1
 	}
-	$out = $out.concat("${verdict_of(start_ok)}from the finish, as many steps back as the ride took: clock ${at_start.to_str()}, one more -> ${past_start.to_str()}\n")
+	$out = Str.concat(
+		$out,
+		"${verdict_of(start_ok)}from the finish, as many steps back as the ride took: clock ${at_start.to_str()}, one more -> ${past_start.to_str()}\n",
+	)
 	echo!(
-		$out.concat(
+		Str.concat(
+			$out,
 			if $bad == 0 {
 				"every step back went back one step\n"
 			} else {

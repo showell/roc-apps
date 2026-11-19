@@ -79,7 +79,7 @@ leg_pieces = |distance| {
 	pieces =
 		distance.to_metres().round_to_i64_try()
 			?? crash "RailSighting.leg_pieces: a leg's length is finite"
-	pieces.max(1).to_u32_wrap()
+	I64.max(pieces, 1).to_u32_wrap()
 }
 
 ## `pieces` + 1 points evenly spaced from `from` to `to`, both included.

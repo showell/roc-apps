@@ -41,7 +41,7 @@ SkyAndGrassPixels :: [].{
 				pixel = if y >= Grass.grass_top_y.to_f64() {
 					grass_pixel
 				} else {
-					t = (y / Screen.horizon_y.to_f64()).max(0.0).min(1.0)
+					t = F64.min((y / Screen.horizon_y.to_f64()).max(0.0), 1.0)
 					stop = Sky.sky_top_stop.to_f64()
 					color = if t <= stop {
 						top_color

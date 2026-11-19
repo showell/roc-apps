@@ -40,7 +40,7 @@ hull_points_of_sorted = |sorted| {
 	add_point = |hull, point| trim_hull(hull, point).append(point)
 	top_chain = sorted.fold(List.with_capacity(room), add_point)
 	bottom_chain = sorted.fold_rev(List.with_capacity(room), |point, hull| add_point(hull, point))
-	top_chain.drop_last(1).concat(bottom_chain.drop_last(1))
+	List.concat(top_chain.drop_last(1), bottom_chain.drop_last(1))
 }
 
 ## What `cone_hull_points` gives for a ring of two or more points.
@@ -246,7 +246,7 @@ sample_ring_points = |start| {
 		$ring = $ring.append(Point.at(100.0 + 40.0 * $angle.cos(), 50.0 + 10.0 * $angle.sin()))
 		$angle = $angle + step
 	}
-	$ring.drop_first(start).concat($ring.take_first(start))
+	List.concat($ring.drop_first(start), $ring.take_first(start))
 }
 
 # The ring's hull with its apex is the convex hull of the points: with the apex

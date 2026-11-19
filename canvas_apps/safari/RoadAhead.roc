@@ -157,7 +157,10 @@ RoadAhead :: [].{
 segments_ahead_of : Route, Route.SegmentIndex -> RoadAhead.SegmentsAhead
 segments_ahead_of = |route, start| {
 	left_on_route = route.segment_count() - start.count_before()
-	{ first_index: start, count: left_on_route.min(most_segments_ahead.to_u64()).to_u32_wrap() }
+	{
+		first_index: start,
+		count: U64.min(left_on_route, most_segments_ahead.to_u64()).to_u32_wrap(),
+	}
 }
 
 ## The most segments the road ahead holds.

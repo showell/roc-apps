@@ -152,7 +152,7 @@ tree_top = |tree| { road_point: tree.road_point, lift: tree.kind.scenery_height(
 flap_poses : { up : BirdFlight.BirdPose, down : BirdFlight.BirdPose } -> List(BirdFlight.BirdPose)
 flap_poses = |{ up, down }| {
 	half_up = List.repeat(up, frames_a_half_flap)
-	half_up.concat(List.repeat(down, frames_a_half_flap))
+	List.concat(half_up, List.repeat(down, frames_a_half_flap))
 }
 
 ## Each bird pose's place in `BirdFlight.all_poses`. The match names every

@@ -90,7 +90,7 @@ Angle :: [].{
 			if limit < 0.0 {
 				crash "Angle.Turn.clamped_within: a limit below zero is no range to hold a turn to"
 			} else {
-				Angle.Turn.((0.0 - limit).max(limit.min(t)))
+				Angle.Turn.((0.0 - limit).max(F64.min(limit, t)))
 			}
 
 		## How many of `whole` this turn is: negative for a turn to the left.

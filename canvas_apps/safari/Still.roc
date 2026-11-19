@@ -106,8 +106,12 @@ polygon_flaw = |polygon|
 		[first, .. as rest] if rest.len() < 2 =>
 			Flawed("the polygon from ${point_text(first)} has ${(rest.len() + 1).to_str()} corners, and it needs three")
 		[first, ..] => {
-			next_corners = polygon.points.drop_first(1).concat([first])
-			edges = polygon.points.map2(next_corners, |from, to| { from, to })
+			next_corners = List.concat(polygon.points.drop_first(1), [first])
+			edges = List.map2(
+				polygon.points,
+				next_corners,
+				|from, to| { from, to },
+			)
 			match edges.find_first(|{ from, to }| from == to) {
 				Ok({ from, .. }) =>
 					Flawed("the polygon from ${point_text(first)} repeats its corner ${point_text(from)}")
@@ -209,7 +213,7 @@ expect {
 	polygon_flaw(flat_polygon(doubled)) == Flawed("the polygon from (0.5, 0) repeats its corner (1, 0)")
 }
 expect
-	polygon_flaw(flat_polygon(sample_corners.concat([{ x: 0.5, y: 0.0 }])))
+	polygon_flaw(flat_polygon(List.concat(sample_corners, [{ x: 0.5, y: 0.0 }])))
 		== Flawed("the polygon from (0.5, 0) repeats its corner (0.5, 0)")
 
 # Stops whose offsets meet are sound, and a start past the end is not.
