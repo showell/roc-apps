@@ -13,7 +13,7 @@ platform ""
 			release : List(Shapes.Shape) -> {},
 			sounds : Box(model) -> U32,
 			tone_count : {} -> U32,
-			tone_freq : U32 -> U32,
+			tone_hertz : U32 -> U32,
 			tone_ms : U32 -> U32,
 			width : {} -> U32,
 			height : {} -> U32,
@@ -31,7 +31,7 @@ platform ""
 		"roc_release": release_for_host,
 		"roc_sounds": sounds_for_host,
 		"roc_tone_count": tone_count_for_host,
-		"roc_tone_freq": tone_freq_for_host,
+		"roc_tone_hertz": tone_hertz_for_host,
 		"roc_tone_ms": tone_ms_for_host,
 		"roc_width": width_for_host,
 	}
@@ -39,7 +39,7 @@ platform ""
 		inputs_dir: "targets/",
 		wasm32: {
 			inputs: ["host.wasm", app],
-			exports: ["computeFrame", "advance", "sounds", "toneCount", "toneFreq", "toneMs", "width", "height", "fps"],
+			exports: ["computeFrame", "advance", "sounds", "toneCount", "toneHertz", "toneMs", "width", "height", "fps"],
 		},
 	}
 
@@ -57,7 +57,7 @@ sounds_for_host = program.sounds
 
 tone_count_for_host = program.tone_count
 
-tone_freq_for_host = program.tone_freq
+tone_hertz_for_host = program.tone_hertz
 
 tone_ms_for_host = program.tone_ms
 
