@@ -34,7 +34,7 @@ function setting_lines()
 end
 
 -- The number a recipe's last line of counts gives for `check`.
-function count_in(summary, check)
+function summary_count(summary, check)
   local found = re_find(summary, "[ ,]" .. check .. " ([0-9]+)")
   if found == nil then return nil end
   return tonumber(found.group)
@@ -52,7 +52,7 @@ function judge()
     end
     local said = {}
     for c in lint.counts do
-      local got = count_in(summary, c[1])
+      local got = summary_count(summary, c[1])
       if got == nil then
         push(wrong, lint.recipe .. ": no count for " .. c[1] .. " in its last line: " .. summary)
       elseif got ~= c[2] then

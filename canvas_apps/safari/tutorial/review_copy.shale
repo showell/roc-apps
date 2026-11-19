@@ -71,12 +71,6 @@ function without_checks(l, open)
   return text
 end
 
-function trim_end(s)
-  local out = s
-  while #out > 0 and sub(out, #out) == " " do out = sub(out, 1, #out - 1) end
-  return out
-end
-
 -- The fence kinds this copy rewrites. Code stays as it is.
 function review_lines(text, found)
   local out = {}
