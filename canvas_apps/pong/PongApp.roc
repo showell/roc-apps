@@ -1,13 +1,12 @@
-# PongApp -- Pong as a value canvas_apps can run.
-#
-# Hand-written: the rules are Rules.roc and the drawing is PongDraw.roc, so
-# what is left here is the keyboard, the clock and the sounds -- everything
-# that lived in roc-ray's main.roc driver.
-#
-# `read_controls` is upstream's, word for word. **IT IS THE FIRST HERE TO READ
-# A HELD KEY**: the paddle moves for as long as W or S is down, where Snake
-# only ever asks whether a key was struck. Both halves of a snapshot are now
-# carrying something.
+## PongApp is Pong as a value canvas_apps can run.
+##
+## The module is written by hand. The rules are Rules.roc and the drawing is
+## PongDraw.roc, so what is left here is the keyboard, the clock and the
+## sounds.
+##
+## `read_controls` reads a held key: the paddle moves for as long as W or S is
+## down, where Snake only asks whether a key was struck. So both halves of an
+## input snapshot carry something.
 import lib.CanvasApp
 import lib.Input
 import lib.Random
@@ -22,9 +21,9 @@ PongApp :: [].{
 		size: { width: 800.0, height: 600.0 },
 		frames_a_second: 60,
 		init: { world: Rules.new_match(Rules.opening(Random.seed(7))), sounds: 0 },
-		model_at_next_step: |m, keys, dt| step(m, keys, dt),
-		frame_shapes: |m| PongDraw.frame(m.world),
-		sounds: |m| m.sounds,
+		model_at_next_step: |model, keys, dt| step(model, keys, dt),
+		frame_shapes: |model| PongDraw.frame_shapes(model.world),
+		sounds: |model| model.sounds,
 		# Paddle, wall, point -- the three tones upstream generates.
 		tones: [{ hertz: 440, milliseconds: 60 }, { hertz: 220, milliseconds: 50 }, { hertz: 160, milliseconds: 200 }],
 		title: "Pong",
@@ -56,12 +55,12 @@ PongApp :: [].{
 	}
 
 	step : PongApp.Model, Input.Snapshot, F32 -> PongApp.Model
-	step = |m, keys, dt| {
+	step = |model, keys, dt| {
 		controls = read_controls(keys)
-		(world, events) = if Rules.is_over(m.world) {
-			Rules.step_game_over(m.world, controls)
+		(world, events) = if Rules.is_over(model.world) {
+			Rules.step_game_over(model.world, controls)
 		} else {
-			Rules.step_playing(m.world, controls, dt)
+			Rules.step_playing(model.world, controls, dt)
 		}
 		{ world, sounds: rung(events) }
 	}
@@ -69,10 +68,10 @@ PongApp :: [].{
 	## Which tones the step set off, a bit each, in `tones` order.
 	rung : List(Rules.GameEvent) -> U32
 	rung = |events| {
-		n = List.len(events)
+		event_count = List.len(events)
 		var $bits = 0
 		var $i = 0
-		while $i < n {
+		while $i < event_count {
 			$bits = U32.bitwise_or(
 				$bits,
 				match List.get(events, $i) ?? PaddleHit {

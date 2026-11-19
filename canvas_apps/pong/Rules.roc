@@ -1,11 +1,8 @@
 ## Pong's pure rules: the ball, the paddles, the scores, and the events a step
 ## reports.
 ##
-## Ported from roc-ray's examples/pong, which keeps all of this in main.roc
-## beside its drawing and its driver. The rules are lifted verbatim, tests and
-## all. `lib.Math` and `lib.Random` offer what `rr.Math` and `rr.Random` offer,
-## under the same names, and the palette's colours are `RgbColor`s, the canvas
-## apps' one way to write a colour.
+## The rules use `lib.Math` and `lib.Random`, and the palette's colours are
+## `RgbColor`s, the canvas apps' one way to write a colour.
 import lib.RgbColor
 import lib.Math
 import lib.Random
@@ -16,7 +13,7 @@ Rules :: [].{
 
 	## Dynamic game and presentation state advanced by the pure game step.
 	Ball : {
-		pos : Math.Vec2,
+		position : Math.Vec2,
 		velocity : Math.Vec2,
 	}
 
@@ -31,9 +28,9 @@ Rules :: [].{
 		right : Player,
 
 		## Presentation state, advanced by the same pure step as the rules.
-		## `trail` is the ball's recent positions, newest first; `flash` decays from
+		## `trail_positions` is the ball's recent positions, newest first; `flash` decays from
 		## 1 to 0 after a hit or a point and tints a full-screen additive wash.
-		trail : List(Math.Vec2),
+		trail_positions : List(Math.Vec2),
 		flash : {
 			intensity : F32,
 			color : RgbColor,
@@ -41,7 +38,7 @@ Rules :: [].{
 
 		## Simulation randomness lives in the model, so a serve is drawn on the
 		## frame that needs it and a run replays exactly from its seed.
-		rng : Random.State,
+		random_state : Random.State,
 	}
 
 	## Gameplay sees intentions, not the keys currently bound to them.
@@ -124,13 +121,16 @@ Rules :: [].{
 	## A world to start from, which upstream builds inside init! beside its
 	## assets. Only new_match ever reads these values; it replaces all of them.
 	opening : Random.State -> World
-	opening = |rng| {
-		ball: { pos: { x: screen_w * 0.5, y: screen_h * 0.5 }, velocity: { x: init_vx, y: 0 } },
+	opening = |random_state| {
+		ball: {
+			position: { x: screen_w * 0.5, y: screen_h * 0.5 },
+			velocity: { x: init_vx, y: 0 },
+		},
 		left: { paddle_y: 250, score: 0 },
 		right: { paddle_y: 250, score: 0 },
-		trail: [],
+		trail_positions: [],
 		flash: { intensity: 0, color: ball_neon },
-		rng,
+		random_state,
 	}
 
 	# A fresh match: ball centred, scores zeroed, served in a random direction.
@@ -138,21 +138,21 @@ Rules :: [].{
 	new_match = |world| {
 		# Direction then speed, drawn in that order from one generator, so the
 		# sequence is the same every time a given seed replays.
-		direction = Random.step(world.rng, Random.bounded_i32(0, 1))
+		direction = Random.step(world.random_state, Random.bounded_i32(0, 1))
 		serve = random_serve_vy(direction.state)
 		{
 			..world,
 			ball: {
-				pos: { x: screen_w * 0.5, y: screen_h * 0.5 },
+				position: { x: screen_w * 0.5, y: screen_h * 0.5 },
 				velocity: {
 					x: if (direction.value == 0) (init_vx * -1) else init_vx,
 					y: serve.value,
 				},
 			},
-			rng: serve.state,
+			random_state: serve.state,
 			left: { paddle_y: 250, score: 0 },
 			right: { paddle_y: 250, score: 0 },
-			trail: [],
+			trail_positions: [],
 			flash: { intensity: 0, color: ball_neon },
 		}
 	}
@@ -162,10 +162,13 @@ Rules :: [].{
 	# dashed line. Recording only once the ball has moved `trail_spacing` pixels
 	# gives the same comet at any frame rate.
 	push_trail : List(Math.Vec2), Math.Vec2 -> List(Math.Vec2)
-	push_trail = |trail, pos|
-		match List.first(trail) {
-			Ok(head) if Math.distance_squared(head, pos) < trail_spacing * trail_spacing => trail
-			_ => List.take_first(List.prepend(trail, pos), trail_length)
+	push_trail = |trail_positions, position|
+		match List.first(trail_positions) {
+			Ok(head) if Math.distance_squared(
+				head,
+				position,
+			) < trail_spacing * trail_spacing => trail_positions
+			_ => List.take_first(List.prepend(trail_positions, position), trail_length)
 		}
 
 	## Significant gameplay occurrences interpreted by the application boundary.
@@ -193,12 +196,12 @@ Rules :: [].{
 
 		# --- Right paddle: simple AI tracks the ball's vertical position ---
 		right_center = world.right.paddle_y + paddle_h * 0.5
-		right_dir = if (world.ball.pos.y < right_center - 4) (ai_speed * -1) else if (world.ball.pos.y > right_center + 4) ai_speed else 0
-		right_y = Math.clamp(world.right.paddle_y + right_dir * dt, 0, screen_h - paddle_h)
+		right_velocity = if (world.ball.position.y < right_center - 4) (ai_speed * -1) else if (world.ball.position.y > right_center + 4) ai_speed else 0
+		right_y = Math.clamp(world.right.paddle_y + right_velocity * dt, 0, screen_h - paddle_h)
 
 		# --- Move ball ---
-		nx0 = world.ball.pos.x + world.ball.velocity.x * dt
-		ny0 = world.ball.pos.y + world.ball.velocity.y * dt
+		nx0 = world.ball.position.x + world.ball.velocity.x * dt
+		ny0 = world.ball.position.y + world.ball.velocity.y * dt
 
 		# Bounce off top / bottom walls
 		hit_top = ny0 - ball_r < 0
@@ -228,10 +231,10 @@ Rules :: [].{
 		# Draw randomness only when a new serve is actually needed.
 		# The generator only advances when a serve is actually needed, so an idle
 		# rally does not consume draws.
-		serve = if (out_left or out_right) random_serve_vy(world.rng) else { value: vy, state: world.rng }
+		serve = if (out_left or out_right) random_serve_vy(world.random_state) else { value: vy, state: world.random_state }
 
 		final_ball = {
-			pos: {
+			position: {
 				x: if (out_left or out_right) (screen_w * 0.5) else nx,
 				y: if (out_left or out_right) (screen_h * 0.5) else ny,
 			},
@@ -264,15 +267,15 @@ Rules :: [].{
 
 		# A serve teleports the ball, so the trail is cleared rather than stretched
 		# across the field as one long streak.
-		trail = if (scored) [] else push_trail(world.trail, final_ball.pos)
+		trail_positions = if (scored) [] else push_trail(world.trail_positions, final_ball.position)
 
 		next = {
 			..world,
 			ball: final_ball,
 			left: left,
 			right: right,
-			rng: serve.state,
-			trail: trail,
+			random_state: serve.state,
+			trail_positions: trail_positions,
 			flash: { intensity: flash_intensity, color: flash_color },
 		}
 
@@ -295,14 +298,14 @@ Rules :: [].{
 test_world : Rules.World
 test_world = {
 	ball: {
-		pos: { x: Rules.screen_w * 0.5, y: Rules.screen_h * 0.5 },
+		position: { x: Rules.screen_w * 0.5, y: Rules.screen_h * 0.5 },
 		velocity: { x: Rules.init_vx, y: 0 },
 	},
 	left: { paddle_y: 250, score: 0 },
 	right: { paddle_y: 250, score: 0 },
-	trail: [],
+	trail_positions: [],
 	flash: { intensity: 0, color: Rules.ball_neon },
-	rng: Random.seed(1),
+	random_state: Random.seed(1),
 }
 
 no_controls : Rules.Controls
@@ -315,7 +318,7 @@ expect Rules.is_over({ ..test_world, right: { ..test_world.right, score: Rules.w
 expect {
 	ball = {
 		..test_world.ball,
-		pos: { ..test_world.ball.pos, y: Rules.ball_r },
+		position: { ..test_world.ball.position, y: Rules.ball_r },
 		velocity: { ..test_world.ball.velocity, y: -100 },
 	}
 	(world, events) = Rules.step_playing({ ..test_world, ball }, no_controls, 0.1)
@@ -325,9 +328,9 @@ expect {
 ## A ball past the right edge scores for the left player and re-serves from the
 ## centre.
 expect {
-	ball = { ..test_world.ball, pos: { ..test_world.ball.pos, x: Rules.screen_w - 5 } }
+	ball = { ..test_world.ball, position: { ..test_world.ball.position, x: Rules.screen_w - 5 } }
 	(world, _) = Rules.step_playing({ ..test_world, ball }, no_controls, 0.1)
-	world.left.score == 1 and world.ball.pos.x == Rules.screen_w * 0.5
+	world.left.score == 1 and world.ball.position.x == Rules.screen_w * 0.5
 }
 
 ## The win screen holds until SPACE, and SPACE starts a whole new match rather
