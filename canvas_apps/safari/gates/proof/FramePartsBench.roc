@@ -122,9 +122,15 @@ kind_size : Str,
 } -> U64
 kind_size = |part, { road, camera, facts }| {
 	sighting_camera = camera.sighting_camera()
-	lens_and_light = { focal_length: sighting_camera.focal_length, darkness: Sky.darkness_at(facts.clock) }
+	lens_and_light = {
+		focal_length: sighting_camera.focal_length,
+		darkness: Sky.darkness_at(facts.clock),
+	}
 	if part == "scene" {
-		Scene.scene_in_view(road, { camera: sighting_camera, facts }).scene_shape_lists().join().len()
+		Scene.scene_in_view(
+			road,
+			{ camera: sighting_camera, facts },
+		).scene_shape_lists().join().len()
 	} else if part == "scene_in_view" {
 		scene_rendering_count(Scene.scene_in_view(road, { camera: sighting_camera, facts }))
 	} else if part == "trees_sight" {
@@ -133,12 +139,16 @@ kind_size = |part, { road, camera, facts }| {
 		trees_seen = TreeSighting.trees_in_view(road, sighting_camera)
 		shape_count(trees_seen.map(|tree| Pipeline.rendering_of(tree, lens_and_light)))
 	} else if part == "towers_sight" {
-		TowerSighting.towers_in_view(road, { vantage: sighting_camera.vantage, clock: facts.clock }).len()
+		TowerSighting.towers_in_view(
+			road,
+			{ vantage: sighting_camera.vantage, clock: facts.clock },
+		).len()
 	} else if part == "towers" {
 		shape_count(
-			TowerSighting.towers_in_view(road, { vantage: sighting_camera.vantage, clock: facts.clock }).map(
-				|tower| Pipeline.rendering_of(tower, lens_and_light),
-			),
+			TowerSighting.towers_in_view(
+				road,
+				{ vantage: sighting_camera.vantage, clock: facts.clock },
+			).map(|tower| Pipeline.rendering_of(tower, lens_and_light)),
 		)
 	} else if part == "billboards_sight" {
 		BillboardSighting.billboards_in_view(road, sighting_camera).len()
@@ -217,12 +227,18 @@ truck_renderings : RoadAhead.RoadView,
 	facts : Scene.RideFacts,
 } -> List(Rendered)
 truck_renderings = |road, { sighting_camera, facts }| {
-	match TruckSighting.truck_in_view(road, { vantage: sighting_camera.vantage, truck: facts.truck }) {
+	match TruckSighting.truck_in_view(
+		road,
+		{ vantage: sighting_camera.vantage, truck: facts.truck },
+	) {
 		Ok(truck) =>
 			[
 				Pipeline.rendering_of(
 					truck,
-					{ focal_length: sighting_camera.focal_length, darkness: Sky.darkness_at(facts.clock) },
+					{
+						focal_length: sighting_camera.focal_length,
+						darkness: Sky.darkness_at(facts.clock),
+					},
 				),
 			]
 		Err(OutOfSight) => []
@@ -261,7 +277,10 @@ counts_line = |route, instant| {
 	camera = FrameView.camera_at(route, instant)
 	road = RoadAhead.RoadView.ahead_of(route, camera.route_place.segment_index)
 	sighting_camera = camera.sighting_camera()
-	scene = Scene.scene_in_view(road, { camera: sighting_camera, facts: FrameView.ride_facts(route, instant) })
+	scene = Scene.scene_in_view(
+		road,
+		{ camera: sighting_camera, facts: FrameView.ride_facts(route, instant) },
+	)
 	kinds = [
 		("trees", scene.trees),
 		("birds", scene.birds),

@@ -19,7 +19,10 @@ import ProofRide
 # 2^57, so it needs no wrapping arithmetic.
 ## One byte folded into an FNV-1a hash.
 fnv_step : I64, I64 -> I64
-fnv_step = |running_hash, byte| (I64.bitwise_xor(running_hash, byte) * 16777619).bitwise_and(4294967295)
+fnv_step = |
+	running_hash,
+	byte,
+| (I64.bitwise_xor(running_hash, byte) * 16777619).bitwise_and(4294967295)
 
 ## The byte of `word` that starts `shift` bits up.
 byte_of : I64, U8 -> I64
@@ -68,8 +71,8 @@ print_picture! = |steps| {
 	echo!(Str.from_utf8_lossy($out.append(10)))
 }
 
-main! = |args| {
-	match args {
+main! = |arguments| {
+	match arguments {
 		["held", .. as depths] => echo!(ProofRide.held_lines(depths, held_line))
 		[steps] => print_picture!(ProofRide.depth_of(steps))
 		# With no argument, the run takes its usual number of steps.

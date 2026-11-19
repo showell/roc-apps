@@ -20,7 +20,10 @@ Acceleration :: F64.{
 	## The smaller of this acceleration and `other`: the harder brake, or the
 	## gentler push.
 	min : Acceleration, Acceleration -> Acceleration
-	min = |Acceleration.(acceleration), Acceleration.(other)| Acceleration.(F64.min(acceleration, other))
+	min = |
+		Acceleration.(acceleration),
+		Acceleration.(other),
+	| Acceleration.(F64.min(acceleration, other))
 
 	is_gt : Acceleration, Acceleration -> Bool
 	is_gt = |Acceleration.(acceleration), Acceleration.(other)| acceleration > other

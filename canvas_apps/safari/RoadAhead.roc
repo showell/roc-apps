@@ -235,7 +235,10 @@ worked_bends_ahead : Route, RoadAhead.SegmentsAhead -> List(Geometry.WorkedBend)
 worked_bends_ahead = |route, { first_index, count }| {
 	first = first_index.to_u32()
 	List.from_iter(U32.until(0, count - 1)).map(
-		|n| Geometry.worked_bend(route.segment_at(Route.SegmentIndex.number(first + n)).bend_out_of()),
+		|offset| {
+			index = Route.SegmentIndex.number(first + offset)
+			Geometry.worked_bend(route.segment_at(index).bend_out_of())
+		},
 	)
 }
 

@@ -107,7 +107,8 @@ shoulder_brake = |speed, steps_to_shoulder|
 	} else {
 		remaining = steps_to_shoulder.to_f64()
 		even_braking = -speed.to_metres_a_step() / (2.0 * remaining)
-		Acceleration.metres_a_step_each_step(even_braking * F64.e.pow(-remaining / brake_decay.to_f64()))
+		decay_factor = F64.e.pow(-remaining / brake_decay.to_f64())
+		Acceleration.metres_a_step_each_step(even_braking * decay_factor)
 	}
 
 ## This many metres a step, each step.

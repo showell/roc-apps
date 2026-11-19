@@ -14,7 +14,8 @@ EarthCurve :: [].{
 	ground_drop = |point| {
 		right = point.right.to_metres()
 		forward = point.forward.to_metres()
-		Distance.metres((right * right + forward * forward) / (2.0 * ground_curve_radius.to_metres()))
+		reach_squared = right * right + forward * forward
+		Distance.metres(reach_squared / (2.0 * ground_curve_radius.to_metres()))
 	}
 
 	## The lowest height at `point`, measured from the rider's level, that the

@@ -179,19 +179,19 @@ expect
 	].all(|(got, want)| (got - want).abs() <= 0.000000001 * F64.max(want.abs(), 1.0))
 
 expect {
-	steady_motorcycle = Motorcycle.initial.motorcycle_at_next_step(Motorcycle.initial.steady_controls())
-	leaning_motorcycle = Motorcycle.motorcycle_at_next_step(
+	steady_step = Motorcycle.initial.motorcycle_at_next_step(Motorcycle.initial.steady_controls())
+	leaning_step = Motorcycle.motorcycle_at_next_step(
 		Motorcycle.initial,
 		{ lean: Angle.Lean.radians(0.5), acceleration: Acceleration.metres_a_step_each_step(0.25) },
 	)
 	[
-		(steady_motorcycle.route_place.road_point.across.to_metres(), 0.0),
-		(steady_motorcycle.yaw.to_radians(), 0.0),
-		(steady_motorcycle.lean.to_radians(), 0.0),
-		(steady_motorcycle.speed.to_metres_a_step(), 0.3),
-		(leaning_motorcycle.lean.to_radians(), 0.5),
-		(leaning_motorcycle.speed.to_metres_a_step(), 0.55),
-		(leaning_motorcycle.yaw.to_radians(), 0.05),
+		(steady_step.route_place.road_point.across.to_metres(), 0.0),
+		(steady_step.yaw.to_radians(), 0.0),
+		(steady_step.lean.to_radians(), 0.0),
+		(steady_step.speed.to_metres_a_step(), 0.3),
+		(leaning_step.lean.to_radians(), 0.5),
+		(leaning_step.speed.to_metres_a_step(), 0.55),
+		(leaning_step.yaw.to_radians(), 0.05),
 	].all(|(got, want)| got == want)
 }
 

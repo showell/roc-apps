@@ -270,7 +270,10 @@ expect {
 	)
 }
 expect {
-	top_to_bottom = |point, other| left_to_right({ x: point.y, y: point.x }, { x: other.y, y: other.x })
+	top_to_bottom = |point, other| left_to_right(
+		{ x: point.y, y: point.x },
+		{ x: other.y, y: other.x },
+	)
 	shuffled = sample_ring_points(0).sort_with(top_to_bottom)
 	apex = Point.at(100.0, 0.0)
 	ConvexHull.cone_hull_points(shuffled, apex) == convex_hull_points(shuffled.append(apex))

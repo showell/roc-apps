@@ -23,7 +23,11 @@ CowHerd :: { cow_count : U64, rows_behind_front : U64 }.{
 
 	## The herd's cows behind `herd_along`, column by column from the front,
 	## led by the bull at `herd_along` if the herd has one.
-	herd_cows : CowHerd, { herd_along : Along, bull : CowHerd.Bull } -> List(Geometry.Placed(Billboard))
+	herd_cows : CowHerd,
+	{
+		herd_along : Along,
+		bull : CowHerd.Bull,
+	} -> List(Geometry.Placed(Billboard))
 	herd_cows = |CowHerd.({ cow_count, rows_behind_front }), { herd_along, bull }| {
 		cows =
 			List.from_iter(U64.until(0, cow_count))

@@ -98,8 +98,8 @@ print_picture! = |steps| {
 	echo!(Str.from_utf8_lossy($out.append(10)))
 }
 
-main! = |args| {
-	match args {
+main! = |arguments| {
+	match arguments {
 		["held", .. as depths] => echo!(ProofRide.held_lines(depths, held_line))
 		[steps] => print_picture!(ProofRide.depth_of(steps))
 		# With no argument, the run takes its usual number of steps.

@@ -60,7 +60,9 @@ road_along = |road, { vantage, in_view }| {
 	down_left_edge =
 		List.from_iter(U32.until(0, segment_chunk_count))
 			.map(|k| corner(segment_chunk_count - k, Geometry.left_edge))
-	road_patch(List.concat(List.concat([corner(0, Geometry.left_edge)], up_right_edge), down_left_edge))
+	road_patch(
+		List.concat(List.concat([corner(0, Geometry.left_edge)], up_right_edge), down_left_edge),
+	)
 }
 
 road_color : RgbColor

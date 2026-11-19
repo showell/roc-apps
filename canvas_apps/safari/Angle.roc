@@ -40,7 +40,10 @@ Angle :: [].{
 		## The shortest turn from `from` round to this bearing, between minus
 		## and plus a half turn.
 		turn_from : Angle.Bearing, Angle.Bearing -> Angle.Turn
-		turn_from = |Angle.Bearing.(bearing), Angle.Bearing.(from)| Angle.Turn.(wrap(bearing - from))
+		turn_from = |
+			Angle.Bearing.(bearing),
+			Angle.Bearing.(from),
+		| Angle.Turn.(wrap(bearing - from))
 
 		## The shortest turn from north round to this bearing.
 		turn_from_north : Angle.Bearing -> Angle.Turn

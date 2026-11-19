@@ -80,7 +80,9 @@ pixels_with_shape = |pixels, { roll, shape, mode }|
 			pixels,
 			{
 				roll,
-				center: ScreenRoll.ScenePoint.({ x: disc.center.x.to_f64(), y: disc.center.y.to_f64() }),
+				center: ScreenRoll.ScenePoint.(
+					{ x: disc.center.x.to_f64(), y: disc.center.y.to_f64() },
+				),
 				radius: disc.radius.to_f64(),
 				fill: disc.fill,
 				mode,

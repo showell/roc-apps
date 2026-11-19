@@ -24,7 +24,10 @@ SafariApp :: [].{
 		frames_a_second: 30,
 		init: initial_model,
 		model_at_next_step: CanvasApp.untimed_model_at_next_step(model_at_next_step),
-		frame_shapes: |model| FrameView.frame_view_at(model.tour.route(), model.tour.instant()).leaned_shapes(),
+		frame_shapes: |model| FrameView.frame_view_at(
+			model.tour.route(),
+			model.tour.instant(),
+		).leaned_shapes(),
 		sounds: |_model| 0,
 		tones: [],
 		title: "Safari",

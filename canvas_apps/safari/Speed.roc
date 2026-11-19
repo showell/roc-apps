@@ -49,8 +49,10 @@ Speed :: F64.{
 	## The steady acceleration that brings this speed to `target` within this
 	## distance.
 	acceleration_to : Speed, { target : Speed, within : Distance } -> Acceleration
-	acceleration_to = |Speed.(speed), { target: Speed.(target), within }|
-		Acceleration.metres_a_step_each_step((target * target - speed * speed) / (2.0 * within.to_metres()))
+	acceleration_to = |Speed.(speed), { target: Speed.(target), within }| {
+		squares_gained = target * target - speed * speed
+		Acceleration.metres_a_step_each_step(squares_gained / (2.0 * within.to_metres()))
+	}
 
 	times : Speed, F64 -> Speed
 	times = |Speed.(speed), factor| Speed.metres_a_step(speed * factor)

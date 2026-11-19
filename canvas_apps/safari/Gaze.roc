@@ -80,7 +80,11 @@ is_past_notice = |rider_along, pig|
 
 ## How far `pig` stands from the way a motorcycle at `rider_point` points, its
 ## `yaw`.
-turn_to : { rider_point : Geometry.RoadPoint, yaw : Angle.Turn }, Geometry.Placed(Billboard) -> Angle.Turn
+turn_to : {
+	rider_point : Geometry.RoadPoint,
+	yaw : Angle.Turn,
+},
+Geometry.Placed(Billboard) -> Angle.Turn
 turn_to = |{ rider_point, yaw }, pig|
 	Angle.Turn.radians(
 		F64.atan2({

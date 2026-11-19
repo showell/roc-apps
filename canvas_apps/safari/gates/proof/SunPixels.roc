@@ -56,13 +56,18 @@ pixels_with_glow_and_disc = |pixels, { roll, sun }| {
 						mode: Add,
 					},
 				)
-				distance = ((scene_point.x - sun_x) * (scene_point.x - sun_x) + (scene_point.y - sun_y) * (scene_point.y - sun_y)).sqrt()
+				dx = scene_point.x - sun_x
+				dy = scene_point.y - sun_y
+				distance = (dx * dx + dy * dy).sqrt()
 				if distance < disc_radius {
 					PixelGrid.blended_pixels(
 						lit,
 						{
 							at,
-							color: BrushShade.shade(look.disc, Point.at(scene_point.x, scene_point.y)),
+							color: BrushShade.shade(
+								look.disc,
+								Point.at(scene_point.x, scene_point.y),
+							),
 							mode: Over,
 						},
 					)
