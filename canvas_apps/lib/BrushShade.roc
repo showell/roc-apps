@@ -169,7 +169,9 @@ expect {
 		left_x: Pixels.of(4.0),
 		right_x: Pixels.of(6.0),
 	})
-	BrushShade.shade(met, Point.at(5.0, 0.0)) == edge and BrushShade.shade(wide, Point.at(5.0, 0.0)) == middle
+	at_met = BrushShade.shade(met, Point.at(5.0, 0.0))
+	at_wide = BrushShade.shade(wide, Point.at(5.0, 0.0))
+	at_met == edge and at_wide == middle
 }
 
 # A line from a point to itself gives its end colour everywhere, and a line

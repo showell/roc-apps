@@ -37,7 +37,10 @@ WidthShading :: [].{
 	## The fill of the region with these corners, shaded across its width as
 	## `width_shade` shades it. A region has a corner, so none crashes.
 	corners_shade : List(Point), WidthShading.WidthShade -> Brush.Fill
-	corners_shade = |corners, width_shading| WidthShading.width_shade(x_span(corners), width_shading)
+	corners_shade = |corners, width_shading| WidthShading.width_shade(
+		x_span(corners),
+		width_shading,
+	)
 }
 
 shade_edge_darken : Fraction
