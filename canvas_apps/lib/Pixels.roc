@@ -49,7 +49,7 @@ Pixels :: F64.{
 
 	## The larger of this length and `other`.
 	max : Pixels, Pixels -> Pixels
-	max = |Pixels.(p), Pixels.(other)| Pixels.(p.max(other))
+	max = |Pixels.(p), Pixels.(other)| Pixels.(F64.max(p, other))
 
 	is_gt : Pixels, Pixels -> Bool
 	is_gt = |Pixels.(p), Pixels.(other)| p > other

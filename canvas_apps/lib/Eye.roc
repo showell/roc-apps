@@ -94,9 +94,9 @@ flat = |eye, p| {
 # near plane wherever an edge crosses it.
 points_in_front : List(Eye.At) -> List(Eye.At)
 points_in_front = |points| {
-	neighbours = points.drop_first(1).concat(points.take_first(1))
+	neighbours = List.concat(points.drop_first(1), points.take_first(1))
 	var $out = List.with_capacity(points.len() + 2)
-	for (a, b) in points.map2(neighbours, |a, b| (a, b)) {
+	for (a, b) in List.map2(points, neighbours, |a, b| (a, b)) {
 		a_in = a.forward > Eye.near
 		b_in = b.forward > Eye.near
 		if a_in {

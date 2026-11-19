@@ -26,20 +26,20 @@ RgbColor :: I64.{
 	from_channels = |channels| {
 		red_bits = channels.red.to_i64().shl_wrap(16)
 		green_bits = channels.green.to_i64().shl_wrap(8)
-		RgbColor.(red_bits.bitwise_or(green_bits).bitwise_or(channels.blue.to_i64()))
+		RgbColor.(I64.bitwise_or(I64.bitwise_or(red_bits, green_bits), channels.blue.to_i64()))
 	}
 
 	to_i64 : RgbColor -> I64
 	to_i64 = |RgbColor.(rgb)| rgb
 
 	red : RgbColor -> U8
-	red = |RgbColor.(rgb)| rgb.shr_wrap(16).bitwise_and(255).to_u8_wrap()
+	red = |RgbColor.(rgb)| I64.bitwise_and(rgb.shr_wrap(16), 255).to_u8_wrap()
 
 	green : RgbColor -> U8
-	green = |RgbColor.(rgb)| rgb.shr_wrap(8).bitwise_and(255).to_u8_wrap()
+	green = |RgbColor.(rgb)| I64.bitwise_and(rgb.shr_wrap(8), 255).to_u8_wrap()
 
 	blue : RgbColor -> U8
-	blue = |RgbColor.(rgb)| rgb.bitwise_and(255).to_u8_wrap()
+	blue = |RgbColor.(rgb)| I64.bitwise_and(rgb, 255).to_u8_wrap()
 
 	is_eq : _
 }

@@ -35,18 +35,18 @@ Input :: [].{
 
 		## Whether a key is held down now, however long it has been.
 		key_down : Snapshot, Keys.Key -> Bool
-		key_down = |snapshot, key| snapshot.held.bitwise_and(Keys.bit(key)) != 0
+		key_down = |snapshot, key| U32.bitwise_and(snapshot.held, Keys.bit(key)) != 0
 
 		## Whether a key went down since the last tick.
 		key_pressed : Snapshot, Keys.Key -> Bool
-		key_pressed = |snapshot, key| snapshot.struck.bitwise_and(Keys.bit(key)) != 0
+		key_pressed = |snapshot, key| U32.bitwise_and(snapshot.struck, Keys.bit(key)) != 0
 
 		## Say that a key is held, as `Input.none.with_key_down(KeyW)`. The native
 		## runner builds a tick's snapshot with this and `with_key_pressed`, and
 		## tests build theirs the same way.
 		with_key_down : Snapshot, Keys.Key -> Snapshot
 		with_key_down = |snapshot, key| Snapshot.{
-			held: snapshot.held.bitwise_or(Keys.bit(key)),
+			held: U32.bitwise_or(snapshot.held, Keys.bit(key)),
 			struck: snapshot.struck,
 			mouse: snapshot.mouse,
 		}
@@ -55,8 +55,8 @@ Input :: [].{
 		with_key_pressed : Snapshot, Keys.Key -> Snapshot
 		with_key_pressed = |snapshot, key|
 			Snapshot.{
-				held: snapshot.held.bitwise_or(Keys.bit(key)),
-				struck: snapshot.struck.bitwise_or(Keys.bit(key)),
+				held: U32.bitwise_or(snapshot.held, Keys.bit(key)),
+				struck: U32.bitwise_or(snapshot.struck, Keys.bit(key)),
 				mouse: snapshot.mouse,
 			}
 
@@ -87,5 +87,5 @@ Input :: [].{
 		struck : U32,
 		mouse : Mouse.Snapshot,
 	} -> Input.Snapshot
-	of = |{ held, struck, mouse }| Snapshot.{ held: held.bitwise_or(struck), struck, mouse }
+	of = |{ held, struck, mouse }| Snapshot.{ held: U32.bitwise_or(held, struck), struck, mouse }
 }

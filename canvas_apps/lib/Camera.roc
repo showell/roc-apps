@@ -76,10 +76,10 @@ Camera :: [].{
 			top_right = camera.screen_to_world({ x: screen.x, y: 0 })
 			bottom_left = camera.screen_to_world({ x: 0, y: screen.y })
 			bottom_right = camera.screen_to_world(screen)
-			left = top_left.x.min(top_right.x).min(bottom_left.x.min(bottom_right.x))
-			right = top_left.x.max(top_right.x).max(bottom_left.x.max(bottom_right.x))
-			top = top_left.y.min(top_right.y).min(bottom_left.y.min(bottom_right.y))
-			bottom = top_left.y.max(top_right.y).max(bottom_left.y.max(bottom_right.y))
+			left = F32.min(F32.min(top_left.x, top_right.x), F32.min(bottom_left.x, bottom_right.x))
+			right = F32.max(F32.max(top_left.x, top_right.x), F32.max(bottom_left.x, bottom_right.x))
+			top = F32.min(F32.min(top_left.y, top_right.y), F32.min(bottom_left.y, bottom_right.y))
+			bottom = F32.max(F32.max(top_left.y, top_right.y), F32.max(bottom_left.y, bottom_right.y))
 			Math.rect(
 				left,
 				top,

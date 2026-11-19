@@ -32,11 +32,11 @@ Mouse :: [].{
 
 		## Whether a button is down now, however long it has been.
 		button_down : Snapshot, Mouse.Button -> Bool
-		button_down = |snapshot, button| snapshot.held.bitwise_and(bit(button)) != 0
+		button_down = |snapshot, button| U32.bitwise_and(snapshot.held, bit(button)) != 0
 
 		## Whether a button went down since the last tick.
 		button_pressed : Snapshot, Mouse.Button -> Bool
-		button_pressed = |snapshot, button| snapshot.struck.bitwise_and(bit(button)) != 0
+		button_pressed = |snapshot, button| U32.bitwise_and(snapshot.struck, bit(button)) != 0
 
 		## Where the pointer is, in the game's coordinates.
 		position : Snapshot -> Math.Vec2
@@ -45,7 +45,7 @@ Mouse :: [].{
 		## Say that a button is held, as `Mouse.none.with_button_down(Left)`.
 		with_button_down : Snapshot, Mouse.Button -> Snapshot
 		with_button_down = |snapshot, button| Snapshot.{
-			held: snapshot.held.bitwise_or(bit(button)),
+			held: U32.bitwise_or(snapshot.held, bit(button)),
 			struck: snapshot.struck,
 			at: snapshot.at,
 			wheel: snapshot.wheel,
@@ -55,8 +55,8 @@ Mouse :: [].{
 		with_button_pressed : Snapshot, Mouse.Button -> Snapshot
 		with_button_pressed = |snapshot, button|
 			Snapshot.{
-				held: snapshot.held.bitwise_or(bit(button)),
-				struck: snapshot.struck.bitwise_or(bit(button)),
+				held: U32.bitwise_or(snapshot.held, bit(button)),
+				struck: U32.bitwise_or(snapshot.struck, bit(button)),
 				at: snapshot.at,
 				wheel: snapshot.wheel,
 			}
@@ -82,7 +82,7 @@ Mouse :: [].{
 		wheel : F32,
 	} -> Mouse.Snapshot
 	of = |{ held, struck, at, wheel }| Snapshot.{
-		held: held.bitwise_or(struck),
+		held: U32.bitwise_or(held, struck),
 		struck,
 		at,
 		wheel,

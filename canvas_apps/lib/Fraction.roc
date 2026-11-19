@@ -47,7 +47,7 @@ Fraction :: F64.{
 
 	## The larger of this fraction and `other`.
 	max : Fraction, Fraction -> Fraction
-	max = |Fraction.(f), Fraction.(other)| Fraction.(f.max(other))
+	max = |Fraction.(f), Fraction.(other)| Fraction.(F64.max(f, other))
 
 	is_lt : Fraction, Fraction -> Bool
 	is_lt = |Fraction.(f), Fraction.(other)| f < other

@@ -148,7 +148,7 @@ Shapes :: [].{
 	lists_in_space = |
 		space,
 		shape_lists,
-	| [[View(space)]].concat(shape_lists).append([View(Screen)]).join()
+	| List.concat([[View(space)]], shape_lists).append([View(Screen)]).join()
 
 	## The region round `corners`, in order, tagged by how many there are: three
 	## make a `Triangle`, four a `Quad`, and any other number a `Polygon`. Every
@@ -371,7 +371,7 @@ Shapes :: [].{
 		width = box.width.to_f64()
 		height = box.height.to_f64()
 		corner_steps = box.corner_steps
-		radius = box.corner_radius.to_f64().min((width / 2.0).min(height / 2.0))
+		radius = F64.min(box.corner_radius.to_f64(), (width / 2.0).min(height / 2.0))
 		if radius <= 0.0 or corner_steps == 0 {
 			Shapes.rectangle({
 				top_left: box.top_left,
@@ -447,7 +447,7 @@ pulled_span : { x : F64, width : F64 }, { axis : F64, cosine : F64 } -> { x : F6
 pulled_span = |{ x, width }, { axis, cosine: k }| {
 	start_x = axis + (x - axis) * k
 	end_x = axis + (x + width - axis) * k
-	{ x: start_x.min(end_x), width: (end_x - start_x).abs() }
+	{ x: F64.min(start_x, end_x), width: (end_x - start_x).abs() }
 }
 
 half_pi : F64
@@ -751,7 +751,8 @@ expect {
 	).map(sector_corners)
 	first = sectors.first() ?? crash "Shapes: a ring of seven sides has sectors"
 	following = sectors.drop_first(1).append(first)
-	shared = sectors.map2(
+	shared = List.map2(
+		sectors,
 		following,
 		|sector, next| sector.get(1) == next.get(0) and sector.get(2) == next.get(3),
 	)
