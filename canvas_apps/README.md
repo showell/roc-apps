@@ -1,56 +1,22 @@
 # Canvas apps
 
-Small interactive Roc programs that run two ways from one set of files: as a
-native program on roc-ray, and as a page in a browser.
+Small interactive Roc programs. Each runs as a page in a browser, and the
+older ones also run natively on roc-ray, from the same files.
 
-Twenty-nine of them, covering a few different kinds of program. `safari` is a
-driving screensaver. `snake`, `pong` and `breakout` are arcade games.
-`particles` is a fountain of four thousand sprites that follows the pointer.
-`camera` is a world larger than the window, with a camera over it and a HUD
-that stays put. `workshop` is a pixel paint program you drag on.
-`trick_or_treat` and `thanksgiving` are movies you can scrub. `cat_widget` is a small page for
-the Safari tutorial: drag across it and the cat's crossing plays under the
-pointer, from Safari's own modules. `sky_widget`, `bird_widget` and `beacon_widget`
-are three more: drag the clock and the sun sets, drag the gap and the bird
-flies, drag the clock and two masts blink opposite each other. `route_widget`
-is a fixed map of the whole route, marking where a cat crosses or a bird flies,
-`bends_widget` is a fixed picture of three bends side by side, `step_widget` plays the ride forward and reads it back, `rehearsal_widget`
-clicks through one step's twelve tries at a lean, `stills_widget` lays out
-every pose of the cat and the bird and shows the one clicked large, with its
-polygons counted, `gaze_widget` drags the rider past the pig that catches
-the eye, `far_tree_widget` is a fixed picture of one
-far conifer through a lens six times the ride's, `conifers_widget` is a fixed
-picture of the four kinds of conifer side by side through the same lens,
-`kinds_widget` is a fixed picture of a conifer, a cow, a tower, the cat and
-the bird side by side, each drawn by `Pipeline.rendering_of`, `truck_widget` is a fixed picture of the
-plain truck seen from behind, from behind and to the left, and from the left,
-`cow_widget` is a fixed picture of one cow on the grass beside the road,
-`herd_widget` is a fixed picture of twenty numbered cows in a row, the calves
-among them half as tall, `bend_animals_widget` is a fixed picture of the four
-bend animals and their babies in a row, two pairs facing each way,
-`frame_widget` is a fixed picture of step 1,529 of the ride
-with the layers its address names, `pipeline_widget` is a fixed picture of the
-same step with only what the pipeline renders, and `shapes_widget` is a fixed picture
-of a triangle and a rectangle, for the book to quote the code under it.
+There are a few kinds. `safari` is a driving screensaver. `snake`, `pong` and
+`breakout` are arcade games. `particles` is a fountain of sprites that follows
+the pointer. `camera` is a world larger than the window, with a camera over it
+and a HUD that stays put. `workshop` is a pixel paint program. `trick_or_treat`
+and `thanksgiving` are movies you can scrub. Each `*_widget` is a small page
+for the Safari tutorial, built from Safari's own modules: some you drag, some
+are fixed pictures. Each app's `<Name>App.roc` says what it is.
 
-Six of the twenty-nine — all but `safari`, the two movies and the widgets — are
-roc-ray's own examples, by Luke Boswell, taken with only small changes to fit this scheme.
+`snake`, `pong`, `breakout`, `camera`, `particles` and `workshop` are roc-ray's
+own examples, by Luke Boswell, adapted to this scheme (below).
 
-**The native side is kept for posterity, and it isn't kept current.** The
-native roc-ray builds (`native/` and each app's `main.roc`) run on roc-ray
-0.12.0 (`23eec6e`) at the repository's pinned nightly; roc-ray names no
-compiler of its own. They don't build at newer Roc nightlies: roc-ray itself
-fails at the 11-15 nightly (as of 2026-11-18). They are out of the code
-sweeps, so a repo-wide rewrite or hunt leaves them as they are
-(`native/README.md`). They show that one set of files can run on roc-ray and
-as a page. The page is the side we keep current: the safari gate and every
-page build judge it, while the native side is checked only by `roc check` at
-the pin here and by the Windows workflow, which builds every app and runs it
-headless.
-
-    canvas_apps/build.sh snake       the page,   http://<box>:9210/snake/
-    canvas_apps/build.sh snake release   the page as `--opt=speed` wasm, which site/publish.sh requires
-    canvas_apps/native.sh snake      the native program
+    canvas_apps/build.sh snake           the page, on the dev channel at :9210/snake/
+    canvas_apps/build.sh snake release   the page as --opt=speed wasm, which site/publish.sh requires
+    canvas_apps/native.sh snake          the native program
     TARGET=x64win canvas_apps/native.sh snake     for Windows
 
     node canvas_apps/web/page_check.mjs snake
@@ -58,41 +24,43 @@ headless.
     node canvas_apps/web/camera_check.mjs
     node canvas_apps/web/text_check.mjs raster
 
-`ARCHITECTURE.md` says how an app runs, and what isn't Roc.
+`ARCHITECTURE.md` says how an app runs, and which parts are JavaScript.
+
+**The page is the side we keep current.** The native side (`native/` and each
+app's `main.roc`) is frozen at the roc-ray release it was written for, at the
+repository's pinned nightly. `check.shale` type-checks it and the Windows and
+macOS workflows build it; the code sweeps pass it by. `native/README.md` has
+the details.
 
 ## Layout
 
-| | |
-|---|---|
-| `snake/` | everything about one app: its two app roots, its `page.html`, and its rules and drawing, which cannot tell which runner is running them |
-| `snake/main.roc` | the app on roc-ray, reaching the runner as `native.CanvasAppRunner` |
-| `snake/web.roc` | the app as a page, on `web/platform/`, through `lib.WasmApp` |
-| `lib/` | a package every app shares: `CanvasApp` `WasmApp` `Shapes` `CurvedShapes` `Squash` `Brush` `BrushShade` `WidthShading` `Input` `Keys` `Mouse` `Math` `Camera` `Font` `Random` `Trigonometry` `BrushGlsl` `Eye` `ConvexCut` `RgbColor` `ArgbColor` |
-| `web/` | the page's end: the wasm platform and host, `build.zig` and `options.zig` (the host object, rebuilt by every page build), `canvas_app_runner.js`, `shapes_canvas.js`, `page_check.mjs`, `mini_canvas.mjs`, `mini_font.mjs`, `camera_check.mjs`, `text_check.mjs` |
-| `native/` | roc-ray's end, as a package: `CanvasAppRunner.roc`; kept for posterity, not current (`native/README.md`) |
-| `widget_kit/` | what the tutorial's widgets share, as a package: `WidgetPage` lays out the picture and the text, `ReadoutText` puts a widget's numbers into words, `PlaybackButtons` runs a widget's one number with a video recorder's buttons, and `WidgetPalette` holds the colors the widgets share. It sits above `lib/` and Safari's `game` package, because it speaks in `Fraction`s and no other app wants it |
+An app's folder holds its `<Name>App.roc` (the `CanvasApp` value), `web.roc`
+(the page's root), `main.roc` (the native root, for an app that has one), a
+`page.html`, a `shot.env`, and its own rules and drawing. The rules and drawing
+run the same under either runner. Everything outside the folder is a package:
 
-An app's own directory holds a `<Name>App.roc` with the `CanvasApp` value in
-it, a `page.html`, and whatever rules and drawing it needs.
+- `lib/`: the vocabulary every app shares (shapes, brushes, input, fonts,
+  cameras).
+- `web/`: the page's end, a wasm platform and host and the JavaScript that runs
+  it.
+- `native/`: roc-ray's end, `CanvasAppRunner.roc`.
+- `widget_kit/`: what the tutorial's widgets share. It sits above `lib/` and
+  Safari's `game` package, because it speaks in `Fraction`s.
 
-**The app root is `main.roc`**, as in roc-ray's own examples, so tooling that
-walks up the tree looking for it finds the native app. `web.roc` beside it is
-the page's root. Both import the app's own modules as siblings, and reach
-everything else as a package: `lib/` for the vocabulary, and `native/` for the
-runner. `native/` is a package that declares roc-ray in its own header,
-because it imports roc-ray's modules and a package may only see a platform it
-names; `lib/` declares none, because both platforms use it.
+Read the modules for the rest.
 
-**roc-ray is named in the source, not by a script.** `<name>/main.roc` and
-`native/main.roc` both say `../../../roc-ray/platform/main.roc`, so roc-ray has
-to be a sibling of `roc-apps` on disk; nothing stages the app or rewrites that
-line on its way into a build. `native.sh` checks it and says so when it is not
-there.
+**The app root is `main.roc`**, as in roc-ray's examples, so tooling that walks
+up the tree to find it lands on the native app. `web.roc` beside it is the
+page's root. `native/` declares roc-ray in its own header, because a package
+sees only a platform it names; `lib/` declares none, so both platforms use it.
+
+**roc-ray must sit beside `roc-apps` on disk.** `<name>/main.roc` and
+`native/main.roc` name `../../../roc-ray/platform/main.roc` in the source.
+`native.sh` checks for it and says so when it is missing.
 
 ## Adding an app
 
-A directory of five files, and `build.sh` exits 2 if `web.roc`, the page or
-the shot is missing:
+Five files:
 
     <name>/main.roc             CanvasAppRunner.program(<Name>App.canvas_app)
     <name>/web.roc              WasmApp.program(<Name>App.canvas_app)
@@ -100,12 +68,11 @@ the shot is missing:
     <name>/page.html            loads three scripts, and sets window.SHOW first
     <name>/shot.env             the keys and pointer that make its picture
 
-Copy an existing app's `main.roc` and `web.roc`; they differ from each other
-only in their platform, the runner they hand the value to, and one comment.
-A tutorial widget lives only on a page, so it has no `main.roc`: `build.sh`
-never reads one, `web.roc` is its one app root, and `native.sh` says there is
-no app. Roc finds a module's packages by walking up to a `main.roc`, so checking
-one of its modules alone takes `roc check --main=web.roc <Module>.roc`.
+`build.sh` exits 2 when `web.roc`, the page or the shot is missing. Copy an
+existing app's roots: the two differ in their platform, their runner and one
+comment. A widget lives on a page alone, so `web.roc` is its one root. Roc
+finds a module's packages by walking up to a `main.roc`, so checking one of a
+widget's modules takes `roc check --main=web.roc <Module>.roc`.
 
 The page's own part is one object, before the script tags:
 
@@ -118,47 +85,40 @@ window.SHOW = { wasm: '<name>.wasm', loading: 'Loading…' };
 <script src="canvas_app_runner.js"></script>
 ```
 
-Copy an existing `page.html`; `canvas_app_runner.js` throws if `window.SHOW` is
-not set.
+Copy an existing `page.html`; `canvas_app_runner.js` throws when `window.SHOW`
+is missing. Three more settings go in it:
 
-**A page says whether its app reads the pointer**, with `readsPointer: true` in
-`window.SHOW`. The wasm can't tell the runner, and the runner needs to know what
-a finger means: on such a canvas it's a drag (`touch-action: none`), and on any
-other canvas it scrolls the page. `web/page_check.mjs` measures whether the
-pointer changes what the app draws, and fails the build if the page says otherwise.
+- **`readsPointer: true`** for an app that reads the pointer. On its canvas a
+  finger drags (`touch-action: none`); on the others it scrolls the page.
+  `page_check.mjs` measures whether the pointer changes the picture, and fails
+  the build when the page says otherwise.
+- **`sharp: true`** for a page with words to read, as every widget has. Its
+  canvas keeps a pixel for each pixel of the screen, at any scale and density.
+  The other pages keep a canvas of the app's own size, which keeps a game's
+  fill small on a dense screen. `DENSITY=2` gives `page_check.mjs` such a
+  screen.
+- **`opensAt`**, the words a page's address may name to open partway:
+  `?start=grass` hands the app Right as many times as `grass` sits down that
+  list, before the first frame. A book fence says it as
+  ```` ```widget frame grass ````, and `SEARCH=` gives `page_check.mjs` the
+  address.
 
-**A page with words to read sets `sharp: true`** in `window.SHOW`, as every widget
-does. Its canvas then keeps one pixel for each pixel of the screen, whatever the
-page's scale and the screen's density, and the runner hands `shapes_canvas.js`
-the scale. The other pages keep a canvas of the app's own size, which spares a
-game four times the fill on a high-density screen. `DENSITY=2` gives
-`page_check.mjs` such a screen.
-
-**The keys an app may read are a closed set of twenty** (`lib/Keys.roc`): the
-four arrows, `W` `A` `S` `D` `Q` `E` `C` `J` `P` `R`, Space, Enter, and `1`–`4`.
-Adding one touches four places — `Keys.Key` and `Keys.bit`, `KEY_BIT` in
-`web/canvas_app_runner.js`, and `watched_keys` plus both match arms in
-`native/CanvasAppRunner.roc` — so a key exists on both ends or on neither.
+**The keys an app may read are a fixed set** (`lib/Keys.roc`). A new key goes
+in four places: `Keys.Key` and `Keys.bit`, `KEY_BIT` in
+`web/canvas_app_runner.js`, and `watched_keys` and both match arms in
+`native/CanvasAppRunner.roc`. So a key exists on both ends at once.
 
 ## In a page of prose
 
-A canvas app goes in a page of prose as an iframe of its own page, sized by an
-`aspect-ratio`, with `loading="lazy"` so it costs nothing until the reader
-comes near. `widget_kit/embed.js` makes the canvas fill the frame, passes the
-wheel on to the prose, gives a clicked or tapped frame the keyboard, and stops a
-frame that's off the screen. `canvas_app_runner.js` is unchanged, and each app is
-still a page of its own. A page that opens partway lists the words its address
-may name as `opensAt` in `window.SHOW`: `?start=grass` hands the app Right as
-many times as `grass` is places down that list, before the first frame. A book
-fence says it as ```` ```widget frame grass ````, and `SEARCH=` gives
-`page_check.mjs` the address. `widget_kit/embed_trial.html` tries it with the ride
-and two widgets; copied with `embed.js` to `~/build/roc-apps/next/embed_trial/`
-it shows on the dev channel, beside the apps it frames.
+An app goes in a page of prose as an iframe of its own page, sized by an
+`aspect-ratio`, with `loading="lazy"`. `widget_kit/embed.js` makes the canvas
+fill the frame, passes the wheel on to the prose, gives a clicked frame the
+keyboard, and pauses a frame that is off the screen. `widget_kit/embed_trial.html`
+tries it with the ride and two widgets.
 
 ## What an app is
 
-`lib/CanvasApp.roc` is the type. An app is a record of eight fields over its
-own model:
+`lib/CanvasApp.roc` is the type: a record over the app's own model.
 
 ```roc
 CanvasApp(model) : {
@@ -168,21 +128,19 @@ CanvasApp(model) : {
     model_at_next_step : model, Input.Snapshot, F32 -> model,
     frame_shapes : model -> List(Shapes.Shape),
     sounds : model -> U32,
-    tones : List({ hertz : U32, milliseconds : U32 }),
+    tones : List(CanvasApp.Tone),
     title : Str,
 }
 ```
 
-`model_at_next_step` takes one step, given what the keyboard and pointer look like now and
-how many seconds the step covers — always `1 / frames_a_second`, since each runner paces to
-the app's own rate. An app whose rules count steps writes
-`model_at_next_step: CanvasApp.untimed_model_at_next_step(step)`, and its `step` takes no seconds at
-all. `frame_shapes` answers what to draw. `sounds` answers a bit per tone the last
-step set off, and `tones` says what each one sounds like, so a runner never has
-to guess how many there are.
+`model_at_next_step` takes one step, given the keyboard and pointer now and the
+seconds the step covers, always `1 / frames_a_second`. An app whose rules count
+steps writes `CanvasApp.untimed_model_at_next_step(step)`, and its `step` sees
+no seconds. `frame_shapes` says what to draw. `sounds` sets a bit for each tone
+the last step set off, and `tones` says what each sounds like.
 
-An app imports no platform, so the same value goes to either runner. Each app
-names its value out loud:
+An app imports no platform, so the same value goes to either runner, named
+out loud:
 
 ```roc
 program = CanvasAppRunner.program(SnakeApp.canvas_app)  # snake/main.roc
@@ -191,235 +149,158 @@ program = WasmApp.program(SnakeApp.canvas_app)          # snake/web.roc
 
 ## What a frame is
 
-A list of `Shapes.Shape` in the app's own coordinates, in `Pixels`. A shape is
-a region and a fill: four regions, each with any `Brush.Fill`, then two more
-shapes and two marks:
+A list of `Shapes.Shape` in the app's own coordinates. A shape is a region and
+a fill: `Triangle`, `Quad`, `Disc` or `Polygon`, each with any `Brush.Fill`.
+`Image` is a grid of pixels stretched over a box, and `Text` a line of words.
+`Blend` and `View` are marks: each changes how the shapes after it are painted,
+until the next mark of its kind. `Blend(Add)` lights instead of painting;
+`View(World(c))` puts the shapes after it in a camera's world and
+`View(Screen)` brings them back. `Shapes.added_light_shapes` and
+`Shapes.shapes_in_space` write the marks in pairs around a run of shapes.
+`lib/Shapes.roc` documents each.
 
-| | |
-|---|---|
-| `Triangle` | three corners and a fill |
-| `Quad` | four corners, in order, and a fill |
-| `Disc` | centre, radius and a fill |
-| `Polygon` | five or more corners, in order, and a fill |
-| `Image` | `cols × rows` of `Brush.Rgba`, stretched over a box without smoothing |
-| `Text` | a line of words, its baseline, a size, `Prose` or `Code`, `Left` or `Center`, and a colour |
-| `Blend` | `Over` or `Add` |
-| `View` | `Screen`, or `World` with a camera's four settings |
+A quad or a polygon may be concave. The canvas fills it as it is; the native
+runner cuts it into triangles with `ConvexCut`, because raylib fills convex
+polygons.
 
-`Shapes.rectangle` makes an upright `Quad`, and `Shapes.region_from_corners`
-tags a list of corners by its length, so the count always matches the tag. A
-quad or a polygon can be concave, and a quad can even cross itself. The native
-runner has `ConvexCut` cut each concave one into triangles, a type of its own
-that no app builds, because roc-ray fills convex polygons only. The canvas
-fills a concave one itself.
+A `Brush.Fill` is a flat colour or one of five gradients, each carrying its
+geometry in scene coordinates, so every painter shades it the same way.
+`lib/Brush.roc` has a maker for each, and `WidthShading` makes the gradient that
+rounds a region across its width. `BrushShade.shade` gives the colour at one
+point, for a painter on the CPU.
 
-A mark is not drawn. It changes how the shapes after it are painted, until the
-next mark of its kind. `Blend(Add)` lights rather than paints. `View(World(c))`
-puts the shapes after it in a camera's world and `View(Screen)` brings them
-back to the window. A frame starts on the screen, painting over. An app writes
-the marks in pairs around a run of shapes, with `Shapes.added_light_shapes` and
-`Shapes.shapes_in_space`.
-
-A `Brush.Fill` is a flat colour or one of five gradients — `Span`,
-`Radial`, `Linear`, `Ellipse`, `Glow` — each carrying its geometry in scene
-coordinates, which is what lets every painter shade it the same way. `Brush`
-has a maker for each: `flat`, `linear_gradient`, `circular_gradient`,
-`elliptical_gradient` and `glow`, and `WidthShading`'s `width_shade` and
-`corners_shade` make the `Span` that rounds a region across its width.
-`BrushShade.shade` is the colour a fill gives one point, for a painter on the
-CPU.
-
-A thick line is a quad, a ring is a band of quads and a rounded rectangle is a
-polygon, and `lib/Shapes.roc` and `lib/CurvedShapes.roc` build them, so no painter has to learn a stroke. `lib/Font.roc` draws a string
-out of the same quads, which is how the games write.
+A thick line is a quad, a ring a band of quads, a rounded rectangle a polygon:
+`lib/Shapes.roc` and `lib/CurvedShapes.roc` build them, so a painter needs
+regions and fills alone. `lib/Font.roc` draws a string out of the same quads,
+which is how the games write.
 
 `Text` is for words that should read well, and the widgets use it. The canvas
-sets it with `fillText` in the viewer's own fonts, a sans serif for `Prose` and a
-monospace for `Code`, so a page loads no font. The viewer's machine measures the
-line, so Roc can't know its width: `Font.room_for` is the room to leave, and a
-line that must sit in the middle says `Center`. The native runner draws
-`Font.plotted_shapes`, the same line as strokes. `ShapesPixels`, which paints only what
-the ride draws, refuses one.
+sets it with `fillText` in the viewer's own fonts, a sans serif for `Prose` and
+a monospace for `Code`. The viewer's machine measures the line, so
+`Font.room_for` gives the room to leave, and a centred line says `Center`. The
+native runner draws `Font.plotted_shapes`, the same line as strokes.
 
 ## Input
 
-`Input.Snapshot` is a value: which keys are held, which were struck since the
-last tick, and the pointer's position, buttons and wheel. Each runner builds
-one — `CanvasAppRunner` from roc-ray's `Devices.Snapshot`, and on the page
-`canvas_app_runner.js` packs seven numbers from the browser's events which
-`lib/WasmApp.roc` turns into a snapshot. The pointer is read through pointer
-events, so a finger or a pen is a mouse with its left button down, and during a
-drag the position may be off the canvas. A test writes one down:
+`Input.Snapshot` is a value: the keys held, the keys struck since the last
+tick, and the pointer's position, buttons and wheel. `CanvasAppRunner` builds
+one from roc-ray's `Devices.Snapshot`; on the page, `canvas_app_runner.js`
+packs seven numbers from the browser's events and `lib/WasmApp.roc` turns them
+into one. The pointer comes from pointer events, so a finger or a pen is a
+mouse with its left button down, and during a drag it may leave the canvas. A
+test writes one down:
 
 ```roc
 Input.none.with_key_down(KeyW)
 ```
 
-`lib/Keys.roc`, `lib/Mouse.roc`, `lib/Math.roc`,
-`lib/Camera.roc` and `lib/Random.roc` mirror roc-ray's surface under roc-ray's
-own names, so a program ported from an example keeps its rules and changes its
-import lines.
-
-It is `Input` rather than `Devices` because `CanvasAppRunner` imports both, and
-two nominal types with the same qualified name are ambiguous to the compiler.
-roc-ray calls a tick's whole input `App.Input`, so that is the name this takes.
-`mouse` and `wheel` are fields rather than methods for the same reason the
-names match at all: `input.mouse.position()` is how roc-ray is read.
+`lib/Keys.roc`, `lib/Mouse.roc`, `lib/Math.roc`, `lib/Camera.roc` and
+`lib/Random.roc` mirror roc-ray's surface under its own names, so a program
+ported from an example keeps its rules and changes its imports. The type is
+`Input` because `CanvasAppRunner` imports roc-ray's `Devices` too, and two
+nominal types with one qualified name are ambiguous.
 
 ## The roc-ray end
 
-The native side is kept for posterity, not kept current (see the top of this
-file, and `native/README.md`).
 `native/CanvasAppRunner.roc` opens a window at the app's `size`, paces to its
-`frames_a_second`, converts roc-ray's snapshot into an `Input.Snapshot`, and paints.
+`frames_a_second`, turns roc-ray's snapshot into an `Input.Snapshot`, and
+paints. Painting cuts the frame into runs at every mark, because raylib takes a
+blend and a camera as scopes. A gradient goes through one fragment shader
+(`lib/BrushGlsl.roc`); a flat colour is drawn directly. The frame is painted at
+twice the window's size and scaled down, for anti-aliasing.
 
-Painting walks the frame once and cuts it into runs at every mark, because
-raylib takes a blend and a camera as scopes; each run is drawn inside the
-scopes its marks named. A gradient goes through one fragment shader
-(`lib/BrushGlsl.roc`) that does the brush arithmetic on the scene position; a
-flat colour is drawn directly. The whole frame is painted into a render texture
-at twice the window and scaled back down, which is where the anti-aliasing
-comes from.
-
-Escape closes the window and F shows the frame rate. Both are read straight off
-roc-ray's snapshot and never enter an app's `Input.Snapshot`, so no app can
-bind a key that behaves differently on the two ends.
-
-**Sound is web-only.** An app reports its tones the same way on both ends; this
-runner ignores what it reports.
+Escape closes the window and F shows the frame rate. Both stay in the runner,
+outside any app's `Input.Snapshot`, so every key an app binds works the same on
+both ends. Sound plays on the page alone.
 
 ## The web end
 
-`web/platform/` is a Roc platform. `main.roc` declares what it needs from an
-app, and names lib's `Shapes.Shape` as what a frame is; `host.zig` is the wasm
-host and holds the model and the current frame.
+`web/platform/` is a Roc platform. Its `main.roc` declares what it needs from
+an app and names lib's `Shapes.Shape` as a frame; `host.zig` is the wasm host
+and holds the model and the current frame. `Frame.Shape` is a structural union,
+so an app's frame unifies with it by shape and goes over unchanged.
 
-```roc
-frame : Box(model) -> List(Shapes.Shape)
-```
+**The frame reader is generated.** `build.sh` runs `roc glue` over the platform
+with `glue/JsGlue.roc`, with the compiler that builds the wasm, and writes
+`roc_glue.js` beside the page. It is a build output, untracked. A page binds
+`RocGlue.frame` by name.
 
-Because `Frame.Shape` is a structural union, `lib/Shapes.roc`'s `Shape`
-unifies with it by shape rather than by name, and an app hands its frame over
-unchanged.
-
-**The frame reader is generated.** `build.sh` runs `roc glue` over that
-platform with `glue/JsGlue.roc`, using the same compiler that builds the wasm,
-and writes `roc_glue.js` beside the page. It is never checked in and never
-edited. It holds one reader per type — scalars, records at the compiler's own
-field offsets, lists with the compiler's element stride, tag unions switching
-on the discriminant — plus a name for each provided function's result, so a
-page binds `RocGlue.frame` rather than a numbered type.
-
-A page loads three scripts in order and the wasm:
+A page loads three scripts in order, then the wasm:
 
     roc_glue.js             reads a frame out of wasm memory
-    shapes_canvas.js            paints shapes onto a canvas
+    shapes_canvas.js        paints shapes onto a canvas
     canvas_app_runner.js    the clock, the keyboard, the pointer, the speaker
 
-**One call for a frame.** `computeFrame()` asks Roc for a new frame and answers
-the address of the Roc list. The `DataView` over wasm memory is built after
-that call and on its own line, because asking for a frame can grow wasm memory,
-and growing it detaches every view over the old buffer.
+**The `DataView` comes after `computeFrame()`.** Asking for a frame can grow
+wasm memory, which detaches every view over the old buffer, so the view is
+built after the call returns.
 
-**The host frees nothing.** The platform requires a `release`, and
-`lib/WasmApp.roc` answers it once for every app with `|_frame| {}` — no app
-file mentions it. The host holds one frame at a time and hands the last one
-back before asking for the next, so Roc drops it using the layout it already
-has.
+**The host holds one frame at a time** and hands the last back before asking
+for the next, so Roc drops it with the layout it already has.
+`lib/WasmApp.roc` supplies the platform's `release` for every app.
 
 The clock is the app's: elapsed time is banked and steps are taken as they fall
-due, so an app runs at its own `frames_a_second` whatever the display does. One animation
-frame may take up to four steps or none, four being where the bank is capped so
-a tab that was in the background does not then race.
+due, so an app runs at its own rate. One animation frame takes up to four
+steps; the cap keeps a tab back from the background from racing.
 
-The speaker plays the tones `sounds` reports, one WebAudio oscillator each at
-the pitch and length `tones` gives, with a pip per tone in the corner. A
-browser will not start audio until the page has been typed in or clicked, so
-the context is made on the first key or button.
+The speaker plays the tones `sounds` reports, one WebAudio oscillator each,
+with a pip per tone in the corner. A browser starts audio after the first key
+or click, so the audio context starts then.
 
-A frame that throws stops the loop and puts the reason on the page and in the
+A frame that throws stops the loop and shows the reason on the page and in the
 console.
 
 ## The checks
 
 **Every page build is checked and photographed.** `build.sh` ends by running
-`page_check.mjs` with the input `<name>/shot.env` scripts — `KEYS=`, `DRAG=`,
-`FRAMES=` — and `SHOT=` set, which saves the page's last frame beside it as
-`shot.png`. That is the picture on the landing page, and it is never older than
-the wasm it shows. A page that fails the check fails the build.
+`page_check.mjs` with the input `<name>/shot.env` scripts (`KEYS=`, `DRAG=`,
+`FRAMES=`), and saves the last frame beside the page as `shot.png`, the
+landing page's picture. A page that fails the check fails the build.
 
-`page_check.mjs` runs a built page the way a browser would, against a canvas
-that records instead of painting, reading the page's own `<script src>` list so
-a script that was never copied fails here rather than in a browser.
-`KEYS=3:Space` presses keys and `DRAG=80,80,500,500` drags the pointer, so an
-app that waits for input is driven. It reports frames, how many were distinct
-pictures, canvas calls, fills, and a hash of everything drawn so one run can be
-compared with another. It fails if the page drew nothing but its background, or
-if the picture never changed.
+`page_check.mjs` runs a built page as a browser would, against a canvas that
+records its calls. It reads the page's own `<script src>` list, so a missing
+script fails here. It reports frames, distinct pictures, canvas calls, fills
+and a hash of everything drawn, and fails a page that draws only its
+background or whose picture stays still. `FRAMES=` sets the length (a long
+movie wants `FRAMES=1500`).
 
-With `SHOT=<file>.png`, every canvas is also a real one: `mini_canvas.mjs`, a
-dependency-free software rasterizer for exactly the canvas calls `shapes_canvas.js`
-and `canvas_app_runner.js` make — paths, nonzero fill, linear and concentric
-radial gradients, clip, the additive composite, images, lines of type —
-supersampled for anti-aliasing, with PNGs through node's own zlib. The real painter runs
-unchanged against it, and it throws on anything outside that list rather than
-painting something plausible. Painting is slow next to recording, so only the
-last four callbacks paint; each of the runner's draws clears first, so the last
-is a whole frame. It is ported from angry-gopher's `mini_canvas.ts`, which does
-the same for the driving game's cat.
+With `SHOT=<file>.png` the canvas also paints, through `mini_canvas.mjs`: a
+software rasterizer for exactly the calls `shapes_canvas.js` and
+`canvas_app_runner.js` make, supersampled, writing PNGs with node's zlib. It
+throws on any other call. The input is scripted and the clock virtual, so a
+build's shot is the same on every run, and a changed picture is a changed
+program.
 
-Because the input is scripted and the clock is virtual, a shot is the same on
-every run of the same build, so a changed picture is a changed program.
+`camera_check.mjs` checks the canvas matrix `shapes_canvas.js` builds for a
+view mark against the same map written geometrically,
+`screen = zoom · R(rotation) · (world − target) + offset`.
 
-`camera_check.mjs` hands `shapes_canvas.js` a view mark and checks the canvas
-matrix it builds against the same map written the geometric way,
-`screen = zoom · R(rotation) · (world − target) + offset`, at four cameras and
-four points.
+`text_check.mjs` checks how `shapes_canvas.js` sets a line of type and scales
+it. For a widget it also sets type on `mini_canvas.mjs` and looks at the ink,
+in fonts `mini_font.mjs` reads from the system, so a widget's build needs
+`fonts-liberation` and `fonts-dejavu-core` installed.
 
-`text_check.mjs` runs on every page build. It checks what `shapes_canvas.js` asks
-a canvas for a line of type, and how a scale reaches the canvas's matrix. For a
-widget it also sets type on `mini_canvas.mjs` and looks at the ink. A shot's type
-comes from `mini_font.mjs`, which reads a sans serif and a monospace from
-`/usr/share/fonts` to stand in for the viewer's, so a widget's page build needs
-`fonts-liberation` and `fonts-dejavu-core` installed, and stops without them. Its
-letters are close to a browser's in size and color, not the same letters.
-
-An app's `expect`s are the third check, and the compiler runs them:
+An app's `expect`s are the third check:
 
     cd canvas_apps/snake && roc test web.roc
 
-## Where things are
+## Build outputs
 
-    ~/build/roc-apps/next/<name>/                 the page and its shot.png, served at :9210/<name>/
-    ~/build/roc-apps/canvas_apps/<name>/          the native binary
+`build.sh` writes the page and its `shot.png` to the dev channel, or to `OUT=`.
+It builds into a staging folder that replaces the page only when the build
+passes, and a failed build prints its Roc or glue log. `native.sh` takes
+`OUT=`, `TARGET=` and `OPT=`; both take `ROC=`, held to the pin
+(`pinned-roc.sh`). Each script's header says the rest.
 
-A page build that fails prints its Roc or glue log; the logs live in the
-build's staging folder, so builds in two worktrees never read each other's.
+## Where the ported apps came from
 
-`build.sh` clears the page directory first, so yesterday's files cannot be
-served beside today's. Both scripts take `ROC=` and `build.sh` takes `ZIG=`,
-both pinned by default to the versions roc-ray pins; `native.sh` takes `OUT=`,
-`TARGET=` and `OPT=`. `page_check.mjs` takes `FRAMES=` (default 30), which a
-long movie wants: `FRAMES=1500`.
+`snake`, `pong`, `breakout`, `camera` and `particles` are roc-ray's examples of
+the same names, and `workshop` is its `generated_assets`, the Pixel Workshop.
+They are © 2024 Luke Boswell, under the UPL 1.0; `LICENSE-roc-ray`, kept with
+them, is roc-ray's license. Each ported file's docstring says what changed. The
+rules keep their arithmetic and change their imports; the drawing is
+rewritten, because here a frame is a value.
 
-## Where each app came from
-
-| app | from |
-|---|---|
-| `snake`, `pong`, `breakout`, `camera`, `particles` | roc-ray's examples of the same names |
-| `workshop` | roc-ray's `generated_assets`, the Pixel Workshop |
-| `safari` | this repository's own screensaver; `safari/README.md` |
-| `trick_or_treat`, `thanksgiving`, and every `*_widget` | this repository's own |
-
-The roc-ray examples were taken at commit `e100c95`. They are © 2024 Luke Boswell, under the UPL
-1.0; `LICENSE-roc-ray` is roc-ray's license, kept with the ported files as the UPL asks. Each ported file says in its own docstring what changed in it and why,
-which is the copy to trust. The shape of the change is the same throughout: the
-rules keep their arithmetic and change their import lines, and the drawing is
-rewritten, because upstream draws into a `Draw.Frame` and here a frame is a
-value.
-
-What these have that upstream does not: `pong` and `breakout` can be played with
-the pointer as well as the keys, and `workshop`'s palette swatches respond to a
-click, which is what their hover highlight offers. `particles` follows upstream's
-interactive controls, and travels upstream's recording figure until the pointer
-has moved over the canvas.
+`pong` and `breakout` also play with the pointer, and `workshop`'s palette
+swatches respond to a click. `particles` follows the pointer once it moves over
+the canvas, and travels upstream's recording figure until then.
