@@ -1,0 +1,152 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="description" content="A small Roc program Steve wrote by hand in March 2026 made the old compiler panic. In November it builds and runs on today's compiler.">
+<title>A March Crash, Fixed by November</title>
+<script src="../shared/home.js"></script>
+<!-- The Roc listings are colored by roc-syntax-color (SyntaxColor.html with
+     SyntaxColor.roc), the package that colors the books' listings. -->
+<style>
+  :root { color-scheme: light dark; --bg: #f7f5f0; --fg: #1d1d1b; --muted: #6b6860; --edge: #d9d4c8; --pane: #ffffff; --link: #1f5fa8; --accent: #5b3ea8; }
+  @media (prefers-color-scheme: dark) {
+    :root { --bg: #1b1b1a; --fg: #e8e6e0; --muted: #9a968c; --edge: #3a3934; --pane: #242422; --link: #8ab4f0; --accent: #a68cf0; }
+  }
+  body { margin: 0; background: var(--bg); color: var(--fg); font: 15px/1.55 system-ui, sans-serif; }
+  main { max-width: 760px; margin: 0 auto; padding: 36px 16px 48px; }
+  @media (max-width: 640px) { main { padding: 24px 12px 36px; } }
+  h1 { font-size: 28px; margin: 0 0 6px; }
+  .lede { color: var(--muted); margin: 0 0 8px; max-width: 66ch; }
+  h2 { font-size: 13px; font-weight: 600; text-transform: uppercase; letter-spacing: .08em; color: var(--muted); margin: 34px 0 10px; }
+  p { max-width: 66ch; }
+  a { color: var(--link); }
+  code { font: 13px ui-monospace, Menlo, Consolas, monospace; }
+  pre { margin: 6px 0 8px; padding: 8px 10px; border-radius: 5px; font: 12px/1.45 ui-monospace, Menlo, Consolas, monospace; overflow-x: auto; tab-size: 4; }
+  pre code { font: inherit; }
+  pre.roc { background: #2b2733; color: #e8e6e0; }
+  pre.plain { background: var(--pane); color: var(--fg); border: 1px solid var(--edge); white-space: pre-wrap; overflow-wrap: anywhere; }
+  .syn-keyword { color: #c792ea; }
+  .syn-type { color: #82aaff; }
+  .syn-string { color: #c3e88d; }
+  .syn-number { color: #f78c6c; }
+  .syn-comment { color: #8a8494; }
+  .syn-name { font-weight: 600; }
+  .caption { font-size: 12px; color: var(--muted); margin: -2px 0 14px; }
+  footer { margin-top: 36px; color: var(--muted); font-size: 13px; }
+</style>
+</head>
+<body>
+<main>
+<h1>A March crash, fixed by November</h1>
+<p class="lede">In March 2026 Steve wrote a small Roc program by hand. One new record field made the compiler panic.
+In November he came back to it. Today's compiler builds it and runs it.</p>
+
+<h2>The program</h2>
+<p><a href="https://github.com/showell/zulip-roc">zulip-roc</a> is a small in-memory database shaped like
+Zulip's. It holds channels, messages and topics, each in a <code>Dict</code> keyed by ID. Its app builds four
+databases and prints each one with <code>dbg</code>.</p>
+
+<h2>The crash</h2>
+<p>On March 15 Steve added a <code>User</code> type and a <code>user_map</code> field. Nothing inserts into it
+yet, so its <code>Dict</code> stays empty.</p>
+<pre class="roc"><code><span class="syn-type">User</span>: {
+    user_id: <span class="syn-type">ID</span>,
+    full_name: <span class="syn-type">Str</span>,
+}
+
+<span class="syn-type">Database</span> : {
+    channel_map : <span class="syn-type">Dict</span> <span class="syn-type">ID</span> <span class="syn-type">Channel</span>,
+    message_map : <span class="syn-type">Dict</span> <span class="syn-type">ID</span> <span class="syn-type">Message</span>,
+    topic_map : <span class="syn-type">Dict</span> <span class="syn-type">ID</span> <span class="syn-type">Topic</span>,
+    user_map : <span class="syn-type">Dict</span> <span class="syn-type">ID</span> <span class="syn-type">User</span>,
+}
+
+<span class="syn-name">new</span> : <span class="syn-type">Database</span>
+<span class="syn-name">new</span> = {
+    channel_map: <span class="syn-type">Dict</span>.empty({}),
+    message_map: <span class="syn-type">Dict</span>.empty({}),
+    topic_map: <span class="syn-type">Dict</span>.empty({}),
+    user_map: <span class="syn-type">Dict</span>.empty({}),
+}</code></pre>
+<p class="caption">From <code>DbTypes.roc</code> and <code>Database.roc</code>, March 2026, in the old syntax.</p>
+<p>With that field the app stopped building. The compiler of the day, the old one written in Rust (a nightly
+from September 2025), panicked:</p>
+<pre class="plain"><code>thread 'main' panicked at crates/compiler/gen_llvm/src/llvm/build.rs:5582:19:
+Error in alias analysis: error in module ModName("UserApp"),
+function definition FuncName(...), definition of value binding ValueId(11):
+could not find func in module ModName("UserApp") with name FuncName(...)</code></pre>
+<p>The commit before it, without the field, built and ran. The likely cause: the function that prints a
+<code>User</code> was never generated. No <code>User</code> exists anywhere except inside an empty
+<code>Dict</code> that <code>dbg</code> prints.</p>
+
+<h2>What changed</h2>
+<p>In November Steve closed the loop. The code needed small changes for Roc's new syntax, and the logic stayed
+the same, <code>user_map</code> included. Claude, an AI coding agent, made the port under Steve's supervision.
+Here are the same types now:</p>
+<pre class="roc"><code><span class="syn-type">DbTypes</span> := [].{
+	...
+	<span class="syn-type">User</span> : {
+		user_id : <span class="syn-type">DbTypes.ID</span>,
+		full_name : <span class="syn-type">Str</span>,
+	}
+}
+
+<span class="syn-type">Database</span> := [].{
+	<span class="syn-type">Database</span> : {
+		channel_map : <span class="syn-type">Dict</span>(<span class="syn-type">DbTypes.ID</span>, <span class="syn-type">DbTypes.Channel</span>),
+		message_map : <span class="syn-type">Dict</span>(<span class="syn-type">DbTypes.ID</span>, <span class="syn-type">DbTypes.Message</span>),
+		topic_map : <span class="syn-type">Dict</span>(<span class="syn-type">DbTypes.ID</span>, <span class="syn-type">DbTypes.Topic</span>),
+		user_map : <span class="syn-type">Dict</span>(<span class="syn-type">DbTypes.ID</span>, <span class="syn-type">DbTypes.User</span>),
+	}
+
+	<span class="syn-name">new</span> : <span class="syn-type">Database.Database</span>
+	<span class="syn-name">new</span> = {
+		channel_map: <span class="syn-type">Dict</span>.empty(),
+		message_map: <span class="syn-type">Dict</span>.empty(),
+		topic_map: <span class="syn-type">Dict</span>.empty(),
+		user_map: <span class="syn-type">Dict</span>.empty(),
+	}
+	...
+}</code></pre>
+<p class="caption">From <code>DbTypes.roc</code> and <code>Database.roc</code>, November 2026.</p>
+<p>Each module is now a type module, <code>Name := [].{ ... }</code>, and its types are named through it. Type
+arguments take parentheses: <code>Dict(ID, Channel)</code>. <code>Dict.empty()</code> takes no argument.</p>
+<p>A record update is <code>{ ..r, f: v }</code>, and a block takes braces. The port calls functions directly
+where the old code used <code>|&gt;</code>:</p>
+<pre class="roc"><code><span class="syn-name">insert_channel</span> : <span class="syn-type">Database</span>, <span class="syn-type">Channel</span> -&gt; <span class="syn-type">Database</span>
+<span class="syn-name">insert_channel</span> = |database, channel|
+    <span class="syn-name">channel_id</span> = channel.channel_id
+    <span class="syn-name">new_map</span> = <span class="syn-type">Dict</span>.insert(database.channel_map, channel_id, channel)
+    { database &amp; channel_map: new_map }</code></pre>
+<pre class="roc"><code><span class="syn-name">insert_channel</span> : <span class="syn-type">Database.Database</span>, <span class="syn-type">DbTypes.Channel</span> -&gt; <span class="syn-type">Database.Database</span>
+<span class="syn-name">insert_channel</span> = |database, channel| {
+	channel_id = channel.channel_id
+	new_map = <span class="syn-type">Dict</span>.insert(database.channel_map, channel_id, channel)
+	{ ..database, channel_map: new_map }
+}</code></pre>
+<p class="caption"><code>insert_channel</code> in <code>Database.roc</code>, March, then November.</p>
+<pre class="roc"><code>db |&gt; <span class="syn-type">Database</span>.insert_channel(channel)</code></pre>
+<pre class="roc"><code><span class="syn-type">Database</span>.insert_channel(db, channel)</code></pre>
+<p class="caption">A call in <code>ZulipGlue.roc</code>, March, then November.</p>
+<p>The rest is just as small: <code>when</code> became <code>match</code>, <code>List.walk</code> became
+<code>List.fold</code>, and numbers print with <code>U32.to_str</code>.</p>
+
+<h2>The output now</h2>
+<p>On today's compiler, the nightly of 2026-11-03, the app builds and prints its four databases. Each has its
+empty <code>user_map</code>:</p>
+<pre class="plain"><code>{ channel_map: Dict.from_list([(101, { channel_id: 101, name: "Engineering" })]), message_map: Dict.from_list([]), topic_map: Dict.from_list([]), user_map: Dict.from_list([]) }
+{ channel_map: Dict.from_list([]), message_map: Dict.from_list([(1001, { channel_id: 99, content: "some content", message_id: 1001, sender_id: 99, topic_id: 99 })]), topic_map: Dict.from_list([]), user_map: Dict.from_list([]) }
+{ channel_map: Dict.from_list([(201, { channel_id: 201, name: "Design" })]), message_map: Dict.from_list([]), topic_map: Dict.from_list([]), user_map: Dict.from_list([]) }
+{ channel_map: Dict.from_list([]), message_map: Dict.from_list([(1001, { channel_id: 101, content: "some content", message_id: 1001, sender_id: 1, topic_id: 1 })]), topic_map: Dict.from_list([(1, { channel_id: 101, topic_id: 1, topic_name: "some topic" })]), user_map: Dict.from_list([]) }</code></pre>
+
+<h2>The commits</h2>
+<p><a href="https://github.com/showell/zulip-roc/commit/bb2e53a4eb38b7d857015e934ba8ac8b1266fcc6">bb2e53a</a>,
+March 15: the <code>user_map</code> field, and the panic.<br>
+<a href="https://github.com/showell/zulip-roc/commit/5e9b35df34bd69df29d054fc159381d56a883806">5e9b35d</a>,
+November 20: the port to today's compiler, on the <code>new-compiler</code> branch.</p>
+
+<footer><a href="../" target="_self">Steve's Roc Work</a></footer>
+</main>
+</body>
+</html>
