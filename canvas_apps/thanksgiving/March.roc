@@ -99,23 +99,27 @@ lead_start = -25.1
 metres_a_tick : F64
 metres_a_tick = 0.02
 
-# The ticks marched so far, which stop at the halt.
-marched : I64 -> I64
-marched = |now| (now - Script.army_tick).min(Script.march_frames)
+# How many ticks the army has marched, which stop at the halt.
+ticks_marched : I64 -> I64
+ticks_marched = |now| (now - Script.army_tick).min(Script.march_frames)
 
 # The step's own clock: one stride, left foot and right, a second. The
 # march lasts a whole number of half strides, so both feet are down at the
 # halt.
 step_phase : I64 -> F64
-step_phase = |now| marched(now).to_f64() * F64.tau / 60.0
+step_phase = |now| ticks_marched(now).to_f64() * F64.tau / 60.0
 
-# How high the knees come up: a proud high step while marching, settling
-# to still over a few ticks after the halt.
-high_step : I64 -> F64
-high_step = |now| 2.4 * (1.0 - Ease.ramp(now - Script.halt_tick, 8))
+# How much the army is marching, 1 on the way and settling to 0 over a few
+# ticks after the halt. The knees come up high while it does, a proud
+# `high_step` times a guest's stride.
+marching : I64 -> F64
+marching = |now| 1.0 - Ease.ramp(now - Script.halt_tick, 8)
+
+high_step : F64
+high_step = 2.4
 
 lead_forward : I64 -> F64
-lead_forward = |now| lead_start + metres_a_tick * marched(now).to_f64()
+lead_forward = |now| lead_start + metres_a_tick * ticks_marched(now).to_f64()
 
 trooper : Slot, I64 -> March.Trooper
 trooper = |slot, now| {
@@ -130,9 +134,9 @@ trooper = |slot, now| {
 		pose: carrying_pose({
 			build: slot.build,
 			phase,
-			stride: high_step(now),
+			stride: high_step * marching(now),
 		}),
-		dish_tilt: 0.07 * (phase + slot.right).sin() * high_step(now) / 2.4,
+		dish_tilt: 0.07 * (phase + slot.right).sin() * marching(now),
 	}
 }
 
@@ -181,17 +185,21 @@ straggler = |now| {
 		},
 		pose: carrying_pose({
 			build: Tiny,
-			phase: rolled / 0.18,
+			phase: rolled / wheel_radius,
 			stride: 2.0 * (1.0 - progress),
 		}),
 		dish_tilt: 0.35 * (now.to_f64() * 0.5).sin() * (1.0 - progress),
 	}
 }
 
+# A tiny robot's wheel, so the straggler's spokes turn as far as it rolls.
+wheel_radius : F64
+wheel_radius = 0.09
+
 drum_major : I64 -> March.DrumMajor
 drum_major = |now| {
 	phase = step_phase(now)
-	pump = 0.35 * (2.0 * phase).sin() * high_step(now) / 2.4
+	pump = 0.35 * (2.0 * phase).sin() * marching(now)
 	# The left hand on the hip, the right holding the drumstick high.
 	pose = {
 		left_upper: -0.75,
@@ -205,7 +213,7 @@ drum_major = |now| {
 		wink: 0.0,
 		antenna_sway: Ease.boing(now - Script.halt_tick),
 		phase,
-		stride: high_step(now),
+		stride: high_step * marching(now),
 	}
 	{
 		feet: {
@@ -222,10 +230,14 @@ drum_major = |now| {
 	}
 }
 
-# On the halt the drumstick goes up out of the hand, turning over three
-# times, and comes down into it again `toss_frames` later.
+# On the halt the drumstick goes up out of the hand, `toss_height` metres
+# at the top, turning over three times, and comes down into it again
+# `toss_frames` later.
 toss_frames : I64
 toss_frames = 56
+
+toss_height : F64
+toss_height = 1.4
 
 tossed_drumstick : {
 	hand : { across : F64, up : F64 },
@@ -235,7 +247,7 @@ tossed_drumstick : {
 tossed_drumstick = |{ hand, angle, since }| {
 	flight = Ease.ramp(since, toss_frames)
 	{
-		grip: { across: hand.across, up: hand.up + 4.0 * 1.4 * flight * (1.0 - flight) },
+		grip: { across: hand.across, up: hand.up + 4.0 * toss_height * flight * (1.0 - flight) },
 		angle: angle + 3.0 * F64.tau * flight,
 	}
 }

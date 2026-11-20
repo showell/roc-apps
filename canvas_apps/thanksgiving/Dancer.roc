@@ -274,7 +274,15 @@ head_shapes : Figure.Place,
 } -> List(Shapes.Shape)
 head_shapes = |place, { head_bottom, turn, wink }| {
 	slide = turn * 0.06
-	bolts = [-1.0, 1.0].keep_if(|side| side * turn > -0.4).map(|side| Figure.dot(place, { at: { across: side * 0.13, up: head_bottom + 0.11 }, radius: 0.025, fill: trim }))
+	bolt = |side| Figure.dot(
+		place,
+		{
+			at: { across: side * 0.13, up: head_bottom + 0.11 },
+			radius: 0.025,
+			fill: trim,
+		},
+	)
+	bolts = [-1.0, 1.0].keep_if(|side| side * turn > -0.4).map(bolt)
 	face = [
 		Figure.box(
 			place,

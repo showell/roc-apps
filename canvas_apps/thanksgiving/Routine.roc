@@ -1,8 +1,8 @@
 ## Routine is the robot dance, move by move: a list of sections, each a list
 ## of moves and how many ticks each lasts. A move snaps into place over its
 ## first few ticks and holds for the rest, so the dance goes in clicks rather
-## than easing. Every dancer at every table dances it in step; Dinner says
-## when it starts, and the eye's path and the copies' pops are timed to its
+## than easing. Every dancer at every table dances it in step. Script says
+## when it starts, and times the eye's path and the copies' pops to its
 ## sections.
 Routine :: [].{
 
@@ -86,7 +86,7 @@ Routine :: [].{
 
 	## The ticks from the start of the Hello section to the wink.
 	wink_offset : I64
-	wink_offset = frames_of(hello_steps.take_first(6))
+	wink_offset = frames_of(glance_steps)
 
 	## The ticks from the start of the Multiply section to each shoulder pop,
 	## one for each copied table.
@@ -156,16 +156,23 @@ opening_steps = [
 	{ move: right_arm(0.52), frames: 12 },
 ]
 
-# In close: the head clicks round to one side, back to the eye, winks at it,
-# and clicks round to the other side.
+# In close: the head clicks round to one side and back to the eye, winks at
+# it, and clicks round to the other side.
 hello_steps : List(Step)
-hello_steps = [
+hello_steps = List.concat(glance_steps, wink_steps)
+
+glance_steps : List(Step)
+glance_steps = [
 	{ move: goalpost, frames: 16 },
 	{ move: { ..goalpost, head: 0.5 }, frames: 8 },
 	{ move: { ..goalpost, head: 1.0 }, frames: 14 },
 	{ move: { ..goalpost, head: 0.5 }, frames: 8 },
 	{ move: goalpost, frames: 8 },
 	{ move: { ..goalpost, pop: 0.04 }, frames: 6 },
+]
+
+wink_steps : List(Step)
+wink_steps = [
 	{ move: { ..goalpost, wink: 1.0 }, frames: 16 },
 	{ move: goalpost, frames: 10 },
 	{ move: { ..goalpost, head: -0.5 }, frames: 8 },

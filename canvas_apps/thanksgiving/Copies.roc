@@ -20,7 +20,7 @@ Copies :: [].{
 		copies = List.map2(
 			copy_offsets,
 			Script.copy_ticks,
-			|offset, pop_tick| { offset, scale: sprung(now - pop_tick) },
+			|offset, pop_tick| { offset, scale: spring_scale(now - pop_tick) },
 		)
 		[{ offset: { right: 0.0, forward: 0.0 }, scale: 1.0 }].concat(copies)
 	}
@@ -42,10 +42,10 @@ copy_offsets = [
 	{ right: 5.5, forward: -17.0 },
 ]
 
-# How far a copy has sprung up `since` ticks after its pop: overshooting a
+# How big a copy is `since` ticks after its pop: overshooting full size a
 # little and settling, in `spring_frames` ticks.
-sprung : I64 -> F64
-sprung = |since| Ease.springy(Ease.ramp(since, spring_frames))
+spring_scale : I64 -> F64
+spring_scale = |since| Ease.springy(Ease.ramp(since, spring_frames))
 
 spring_frames : I64
 spring_frames = 20
