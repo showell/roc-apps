@@ -1,111 +1,87 @@
 # Fast Track
 
 The board game, in Roc: you play red against three computer players in the
-browser. Ported from [showell/elm-fasttrack](https://github.com/showell/elm-fasttrack);
-the rules and the whole page are Roc, and `web/fasttrack.js` only runs the
-wasm and draws what Roc answers.
+browser. Ported from [showell/elm-fasttrack](https://github.com/showell/elm-fasttrack).
+The rules and the whole page are Roc; `web/fasttrack.js` runs the wasm and
+draws what Roc answers.
 
 ## Play
 
     fasttrack/build.sh          tests, builds and checks; publishes the dev page
-    FAST=1 fasttrack/build.sh   the dev backend alone, no checks: a quick look
+    FAST=1 fasttrack/build.sh   the dev backend alone, unchecked: a quick look
 
-It needs the Roc nightly named in `../roc-version` (installed at
-`~/tools/roc-<pin>/roc`, see the top-level README), zig 0.16 at
-`~/zig-0.16.0/zig`, node, and roc-apps beside it: `../glue/JsGlue.roc` writes
-the page's reader, and the page loads `../shared/home.js` (`site/build.sh`).
-A build publishes to `~/build/roc-apps/next/fasttrack/` only if every check
-passed; the dev channel serves that directory (the top-level README).
+It needs the pinned Roc (`../roc-version`, see the top-level README), Zig
+(`ZIG=`, its default in `build.sh`), node, and the rest of roc-apps:
+`../glue/JsGlue.roc` writes the page's reader, and the page loads
+`../shared/home.js` (`site/build.sh`). A build publishes to the dev channel
+once every check passes.
 
-The page is `/fasttrack/` on the dev channel (port 9210). In the URL: `?seed=<n>`
-replays a deal, `?pause=<ms>` is the computer's pause per click (1050),
-`?step=<ms>` a marble's time per square (150), and `?setup=<n>` starts from
-one of Setup.roc's scenarios.
+The page is `/fasttrack/` on the dev channel. In the URL: `?seed=<n>` replays
+a deal, `?pause=<ms>` sets the computer's pause per click, `?step=<ms>` a
+marble's time per square, and `?setup=<n>` starts from one of `Setup.roc`'s
+scenarios. `web/fasttrack.js` has the defaults.
 
 ## The computer player
 
 - **`Search.roc` plays the real rules.** It tries every line of play through
-  the rest of the turn -- each a list of the messages `Game.update_game`
-  answers -- and takes the one its strategy scores highest. It never sees a
-  card it has not drawn. The same position reached two ways is one line;
-  ties are broken by position, so the choice never depends on move order. A
-  level past 20000 lines is cut, and counted (a hand of four jacks and a
-  joker does it); a turn is at most five plays deep, since a line ends when
-  it draws.
+  the rest of the turn, each a list of the messages `Game.update_game`
+  answers, and takes the one its strategy scores highest. It sees the cards
+  it has drawn and those alone. The same position reached two ways is one
+  line, and ties are broken by position, so move order leaves the choice
+  alone. A level past 20000 lines is cut, and counted (a hand of four jacks
+  and a joker does it); a turn is at most five plays deep, since a line ends
+  when it draws.
 - **`Strategy.roc` says what a position is worth**: the squares its pieces
   stand on (`SquareValues.roc`, generated from Steve's ranking of the squares
-  by `gen_square_values.roc` over `Rank.roc` and `Reach.roc`), plus
-  `base_bonus` a step down its own base, plus the cards it hoards while they
-  stay in its hand, worth less as pieces come home. Opponents count for
-  nothing. `Strategy.champion` is what the page's computers play: base bonus
-  2500, A, joker and J worth 1500, 1000, 500, 0 with 0-3 pieces home.
-- **`TUNING.md`** is every experiment and its result, in order: what was
-  tried, what won, what was noise.
-
-## Tuning it
-
-The experiments that tuned the computer, and the harness they ran on (the
-`exp_*.roc` apps, `run_exp.sh`, the native `cli/` platform, `Tables` and most
-of `Arena`), are in git history: `git log -- fasttrack/run_exp.sh` finds them.
-`TUNING.md` is the record of what they found. Strategies were compared
-paired, on the same deals: every seed dealt four times with the decks turned
-a seat (`Game.begin_dealt`), each strategy playing red. 500 seeds (2000
-deals) resolve about 1.5 points of win rate.
-
-What the experiments have taught, in short: the deal decides a lot (winners
-draw more move-again cards), so strategies differ by a point or two of win
-rate; compare them paired on the same deals; distrust anything under a
-thousand deals, and anything not seen again on fresh seeds.
+  by `gen_square_values.roc` over `Rank.roc` and `Reach.roc`), plus a bonus
+  for each step down its own base, plus the cards it hoards, worth less as
+  pieces come home. It scores its own pieces alone. `Strategy.champion` is
+  what the page's computers play.
+- **`TUNING.md`** records every experiment and its result: what was tried,
+  what won, what was noise. Strategies are compared paired, on the same deals:
+  every seed dealt four times with the decks turned a seat
+  (`Game.begin_dealt`), each strategy playing red. The deal decides a lot, so
+  strategies differ by a point or two of win rate, and a result holds once it
+  repeats on fresh seeds over thousands of deals.
 
 ## How it is built
 
-| modules | what |
-|---|---|
-| `Type` `Config` `Setup` `Color` `Piece` `LegalMove` `Player` `Move` `Game` `History` | the rules, ported from the Elm modules of the same names |
-| `Board` `Routes` | every square a number from red's side (0-87 zone by zone, 88 the bullseye), a table turning them for each color, and every walk a card can make precomputed: a move is a lookup and a check that the walk passes no piece of its own color |
-| `Assoc` `ElmRandom` | assoc-list's ordered dict and set; elm/random, to the bit, so a seed deals Elm's cards |
-| `Page` `Motion` `Codes` `FastTrack` | the page as data, what each click moved (for the marbles), a click as a number, and the program the platform runs |
-| `Strategy` `Search` `SquareValues` `Rank` `Reach` | the computer player and its square values |
-| `Arena` | four champions playing a seed to a given turn: the positions `SearchTests` freezes |
-| `RulesTests` `TeamTests` `SearchTests`, expects in the modules | Elm's tests, the partnership rules, and the rest |
+The rule modules (`Game`, `Move`, `LegalMove` and their kin) port the Elm
+modules of the same names. `Board` and `Routes` number every square from red's
+side and precompute every walk a card can make, so a move is a lookup and a
+check that the walk passes no piece of its own colour. `ElmRandom` matches
+elm/random to the bit, so a seed deals Elm's cards. `FastTrack.roc` is the
+program the platform runs; read the modules for the rest.
 
-**The page has no virtual DOM and needs none** (`web/platform/Wire.roc`):
-the board is 89 slots in a fixed order, drawn once and then patched, and the
-rest of the page is a short list of nodes rebuilt on every click. A click
-carries the code Roc gave the thing clicked; `fasttrack.js` knows no rule. A
-view's `motions` are walked square by square before the computer's next
-click. The reader for the view is generated by `glue/JsGlue.roc`.
+**The page is drawn once and patched** (`web/platform/Wire.roc`): the board is
+a fixed list of slots, and the rest of the page is a short list of nodes
+rebuilt on every click. A click carries the code Roc gave the thing clicked,
+so `fasttrack.js` holds no rules. A view's `motions` are walked square by
+square before the computer's next click. The view's reader is generated by
+`glue/JsGlue.roc`.
 
-**The checks** (`build.sh`): the square values must regenerate unchanged;
-`roc test` runs every expect (`web.roc`'s, and `Rank`'s and `SearchTests`',
-which the page does not import; `SearchTests` freezes the
-champion's line in ten positions); the wasm is built by LLVM and by the dev
+**The checks** (`build.sh`): the square values regenerate unchanged; `roc
+test` runs every expect, `SearchTests` among them, which freezes the
+champion's line in several positions; the wasm is built by LLVM and by the dev
 backend, and `web/backends_check.mjs` plays the two in lockstep;
-`web/page_check.mjs` plays the built page against a stand-in document;
-and `tools/gold.shale` plays eleven whole four-computer games through it,
-each held to its frozen answer in `tools/gold.txt` (clicks, winner, last
-page, an md5 of the board), about 15 s. Run it alone on a built page with
-`shale fasttrack/tools/gold.shale page=<build-dir>` from roc-apps' root; a
+`web/page_check.mjs` plays the built page against a stand-in document; and
+`tools/gold.shale` plays whole four-computer games through it, each held to
+its frozen answer in `tools/gold.txt`. Run it alone on a built page with
+`shale fasttrack/tools/gold.shale page=<build-dir>` from roc-apps' root. A
 change meant to move a game re-freezes by copying
 `.zig-cache/fasttrack-gold.txt` over `gold.txt`, and says why in its commit.
-It needs Shale (github.com/showell/shale) on the PATH.
 
-Partnerships (pagat.com's, and a "once home" style) and other seatings are
-in the rules and the checks, but the page offers only red against three
-computers.
+Partnerships (pagat.com's, and a "once home" style) and other seatings are in
+the rules and the checks; the page plays red against three computers.
 
-## The compiler, met
+## Compiler workarounds
 
-Built on `nightly-2026-09-07-14d9829`, now on the nightly in
-`../roc-version`. What the compiler got wrong, and where it stands
-(retested 2026-09-24 on 09-22 and 09-23):
+Three spots in the code step around compiler bugs:
 
-| what | now | workaround |
-|---|---|---|
-| LLVM ends a `while $next != $d` loop after one pass when the pass is a local closure | **still wrong on 09-23** | the pass reports whether it changed anything (`Reach.bests_over`) |
-| the dev backend dropped a variable from an interpolated string in a closure | not reproduced small | `Str.concat` (`Game.winner`) |
-| an or-pattern binding a variable in a lambda: `roc check` ran out of memory | not reproduced small | one arm each |
-| a literal list of Strategy records crashed `roc check` | not reproduced small | `List.map` |
-| a pure call on constants in `main!` is evaluated at compile time (a game simulation there crashed the compiler) | by design; now reported while it runs (#11334) | tie it to the arguments (`seed + 0 * List.len(args)`) |
-| the built-in platform of a headerless app mapped a page per allocation | fixed from 09-23 (#11335) | none needed at the pin |
-| a 09-22 wasm build that reuses an earlier build's cache crashes the compiler | 09-22 | `build.sh` gives the wasm builds a fresh cache |
+- `Reach.bests_over` reports whether a pass changed anything, because LLVM
+  ends a `while $next != $d` loop after one pass when the pass is a local
+  closure.
+- `Game.winner` builds its string with `Str.concat`, where the dev backend
+  dropped a variable from an interpolated string in a closure.
+- `build.sh` gives the wasm builds a fresh cache, because reusing an earlier
+  build's cache can crash the compiler.
