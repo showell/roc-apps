@@ -3,6 +3,8 @@
 Programs in Roc, run on platforms of our own, in the browser or natively. An
 app with a README keeps its map there; the others are mapped below.
 
+The code here was written by AI coding agents (Claude), with human supervision. Point an agent at this repo to add an app or extend one: `CLAUDE.md` gives it the rules.
+
 Thanks to Damian Tedrow, whose [Cobblestone](https://github.com/damiant3/Cobblestone) inspired Safari.
 
 ## The apps
