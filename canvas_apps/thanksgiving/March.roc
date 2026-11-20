@@ -92,12 +92,13 @@ straggler_slot = {
 }
 
 # Where the drum major starts, just in front of the eye at the wide shot,
-# and how far everyone marches: a metre and a fifth a second.
+# and how far everyone marches: a metre and two thirds a second, at the
+# double.
 lead_start : F64
 lead_start = -25.1
 
 metres_a_tick : F64
-metres_a_tick = 0.02
+metres_a_tick = 0.0275
 
 # How many ticks the army has marched, which stop at the halt.
 ticks_marched : I64 -> I64

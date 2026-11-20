@@ -1,7 +1,8 @@
 ## Copies is the robots multiplying: four copies of the whole table, its
 ## party and its dancer, each riding in on a parade float. A float rolls in
-## from far off to one side, pushed by a round robot puffing along behind
-## it, and brakes to a stop on one of the dancer's shoulder pops. A copy is
+## from far off to one side, pushed by a tiny robot puffing along behind
+## it, and brakes to a stop on one of the dancer's shoulder pops. Each float
+## comes in faster than the one before. A copy is
 ## the first table's scene moved and raised onto its float, so every dancer
 ## dances in step, even while it rides.
 import Ease
@@ -35,7 +36,7 @@ Copies :: [].{
 			List.map2(
 				float_routes,
 				Script.float_stop_ticks,
-				|route, stop_tick| (route, now - stop_tick + roll_frames),
+				|route, stop_tick| (route, now - stop_tick + route.roll_frames),
 			)
 				.keep_if(|(_, since)| since > 0)
 				.map(|(route, since)| float_place(route, since))
@@ -47,31 +48,49 @@ Copies :: [].{
 	deck_height = 0.4
 }
 
-# Where a float stops, and which side it comes in from.
-FloatRoute : { stop : { right : F64, forward : F64 }, from_side : F64 }
+# Where a float stops, which side it comes in from, and how many ticks it
+# takes to roll in.
+FloatRoute : {
+	stop : { right : F64, forward : F64 },
+	from_side : F64,
+	roll_frames : I64,
+}
 
 # The floats stand in two rows nearer the eye than the first table, an aisle
 # down the middle, each coming in from its own side. The far row is given
 # first, so the list is in the order they are painted.
 float_routes : List(FloatRoute)
 float_routes = [
-	{ stop: { right: -2.75, forward: -8.5 }, from_side: -1.0 },
-	{ stop: { right: 2.75, forward: -8.5 }, from_side: 1.0 },
-	{ stop: { right: -5.5, forward: -17.0 }, from_side: -1.0 },
-	{ stop: { right: 5.5, forward: -17.0 }, from_side: 1.0 },
+	{
+		stop: { right: -2.75, forward: -8.5 },
+		from_side: -1.0,
+		roll_frames: 200,
+	},
+	{
+		stop: { right: 2.75, forward: -8.5 },
+		from_side: 1.0,
+		roll_frames: 130,
+	},
+	{
+		stop: { right: -5.5, forward: -17.0 },
+		from_side: -1.0,
+		roll_frames: 90,
+	},
+	{
+		stop: { right: 5.5, forward: -17.0 },
+		from_side: 1.0,
+		roll_frames: 60,
+	},
 ]
 
-# How far out a float starts, and how many ticks it takes to roll in. It
-# brakes all the way, so it comes in fast and eases to its stop.
+# How far out a float starts. It brakes all the way, so it comes in fast and
+# eases to its stop.
 roll_metres : F64
 roll_metres = 34.0
 
-roll_frames : I64
-roll_frames = 200
-
 float_place : FloatRoute, I64 -> Copies.TablePlace
 float_place = |route, since| {
-	progress = Ease.ramp(since, roll_frames)
+	progress = Ease.ramp(since, route.roll_frames)
 	left_to_go = (1.0 - progress) * (1.0 - progress)
 	{
 		offset: {
@@ -90,7 +109,7 @@ float_place = |route, since| {
 # side; at the end every float is at its stop, stopped.
 expect Copies.table_places_at(Script.parade_tick).len() == 1
 expect {
-	first_off = (Script.float_stop_ticks.first() ?? 0) - roll_frames + 1
+	first_off = (Script.float_stop_ticks.first() ?? 0) - 200 + 1
 	match Copies.table_places_at(first_off) {
 		[_, just_off] => just_off.offset.right.abs() > 30.0
 		_ => False

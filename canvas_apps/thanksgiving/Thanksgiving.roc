@@ -86,7 +86,7 @@ Thanksgiving :: [].{
 rolled_shapes : List(Shapes.Shape), F64 -> List(Shapes.Shape)
 rolled_shapes = |scene, roll| {
 	middle = Point.at(Thanksgiving.width / 2.0, Thanksgiving.height / 2.0)
-	cover = roll.abs().cos() + roll.abs().sin() * Thanksgiving.width / Thanksgiving.height
+	cover = roll.cos().abs() + roll.sin().abs() * Thanksgiving.width / Thanksgiving.height
 	space = Shapes.world_space({
 		target: middle,
 		offset: middle,

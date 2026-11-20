@@ -1,6 +1,6 @@
 ## Crowd is the robots by the hundred: where each one stands and how it moves
 ## at a tick. First a row of short robots behind the fence, jumping one
-## after another to see over it. Then two great blocks of robots pour in
+## after another to see over it, until the whole row jumps at once. Then two great blocks of robots pour in
 ## from far off to either side of the tables, the inside columns first, and
 ## hop on the beat once they are in place. Twice the whole crowd does the
 ## wave: arms up as it sweeps across the yard, one way and then back.
@@ -78,7 +78,7 @@ block_spots = {
 					right: from_side * (9.5 + shift + 1.3 * column.to_f64()),
 					forward: 8.5 - 1.5 * row.to_f64(),
 					from_side,
-					delay: 22 * column.to_i64_wrap() + 3 * row.to_i64_wrap(),
+					delay: 12 * column.to_i64_wrap() + 2 * row.to_i64_wrap(),
 				})
 			}
 		}
@@ -95,7 +95,7 @@ run_metres : F64
 run_metres = 70.0
 
 run_frames : I64
-run_frames = 140
+run_frames = 100
 
 block_member : BlockSpot, I64 -> Crowd.Member
 block_member = |spot, now| {
@@ -136,7 +136,7 @@ fence_spots = {
 				Tiny
 			},
 			right: -22.0 + 1.1 * place.to_f64(),
-			first_jump: Script.peek_tick + 140 + (37 * place.to_i64_wrap()) % 170,
+			first_jump: Script.peek_tick + 60 + (37 * place.to_i64_wrap()) % 100,
 		})
 	}
 	$out
@@ -153,7 +153,21 @@ jump_frames = 30
 
 fence_member : FenceSpot, I64 -> Crowd.Member
 fence_member = |spot, now| {
-	since = now - spot.first_jump
+	# Just before the flood the whole row jumps at once, twice as high, and
+	# jumps together from then on.
+	together = Script.flood_tick - jump_frames
+	since = now - (
+		if now >= together {
+			together
+		} else {
+			spot.first_jump
+		}
+	)
+	boost = if now >= together and now < Script.flood_tick {
+		2.2
+	} else {
+		1.0
+	}
 	in_jump = since - jump_period * (since // jump_period)
 	up =
 		if since < 0 or in_jump >= jump_frames {
@@ -172,7 +186,7 @@ fence_member = |spot, now| {
 		feet: {
 			right: spot.right,
 			forward: fence_forward,
-			height: jump_height * up,
+			height: boost * jump_height * up,
 		},
 		arms: wave_arms(now, spot.right).max(up),
 		running: 0.0,

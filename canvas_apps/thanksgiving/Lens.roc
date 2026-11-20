@@ -44,107 +44,174 @@ normal = { focal: 380.0, roll: 0.0 }
 
 moves : List(Move)
 moves = [
-	# In on the slipping pie, and out once it is caught.
+	[
+		# In on the slipping pie, and out once it is caught.
+		{
+			start: Dinner.slip_tick - 8,
+			frames: 10,
+			curve: Whip,
+			to: { focal: 700.0, roll: 0.0 },
+		},
+		{
+			start: Dinner.slip_tick + 70,
+			frames: 30,
+			curve: Smooth,
+			to: normal,
+		},
+		# Zoomed in as the eye backs away from the wink, in step, so the
+		# dancer's head stays the size it was: the eye ends up 3.2 times as
+		# far from it.
+		{
+			start: Script.wink_tick - 18,
+			frames: 26,
+			curve: Smooth,
+			to: { ..normal, focal: normal.focal * 3.2 },
+		},
+		# Snapped out past wide and tipped over as the eye flies back, then
+		# righted on the other tip and settled.
+		{
+			start: Script.wide_tick,
+			frames: 20,
+			curve: Whip,
+			to: { focal: 160.0, roll: 0.25 },
+		},
+		{
+			start: Script.wide_tick + 30,
+			frames: 30,
+			curve: Smooth,
+			to: { focal: 260.0, roll: -0.18 },
+		},
+		{
+			start: Script.wide_tick + 65,
+			frames: 34,
+			curve: Smooth,
+			to: normal,
+		},
+	],
+	# The picture jolts as each of the first three floats brakes.
+	Script.float_stop_ticks.take_first(3).map(jolt_moves).join(),
+	[
+		# In on the last float as it brakes, then snapped out, tipped, as
+		# the army steps out, and righted.
+		{
+			start: last_float_stop - 14,
+			frames: 12,
+			curve: Whip,
+			to: { ..normal, focal: 700.0 },
+		},
+		{
+			start: Script.army_tick,
+			frames: 20,
+			curve: Whip,
+			to: { ..normal, roll: -0.2 },
+		},
+		{
+			start: Script.army_tick + 30,
+			frames: 60,
+			curve: Smooth,
+			to: normal,
+		},
+		# In on the drumstick toss, and the long lens kept for the flight to
+		# the fence.
+		{
+			start: Script.halt_tick - 10,
+			frames: 12,
+			curve: Whip,
+			to: { ..normal, focal: 900.0 },
+		},
+		{
+			start: Script.peek_tick,
+			frames: 90,
+			curve: Whip,
+			to: { focal: 760.0, roll: -0.06 },
+		},
+		# Snapped out to the crowd, tipping as it goes, then righted.
+		{
+			start: Script.flood_tick,
+			frames: 40,
+			curve: Whip,
+			to: { focal: 190.0, roll: 0.14 },
+		},
+		{
+			start: Script.flood_tick + 60,
+			frames: 100,
+			curve: Smooth,
+			to: { focal: 330.0, roll: 0.0 },
+		},
+		# A whole barrel roll over the crowd. From here on every roll is
+		# measured from once round.
+		{
+			start: Script.spin_tick,
+			frames: 80,
+			curve: Smooth,
+			to: { focal: 330.0, roll: once_round },
+		},
+		# Tipped one way with the wave, and the other way as it comes back.
+		{
+			start: first_wave - 40,
+			frames: 80,
+			curve: Smooth,
+			to: { focal: 330.0, roll: once_round + 0.12 },
+		},
+		{
+			start: second_wave - 40,
+			frames: 80,
+			curve: Smooth,
+			to: { focal: 330.0, roll: once_round - 0.12 },
+		},
+		# Snapped in for the last wink, and out for the banner, tipped and
+		# righted.
+		{
+			start: Script.final_wink_tick - 50,
+			frames: 40,
+			curve: Whip,
+			to: { focal: 700.0, roll: once_round },
+		},
+		{
+			start: Script.final_wink_tick + 26,
+			frames: 40,
+			curve: Whip,
+			to: { focal: 330.0, roll: once_round + 0.15 },
+		},
+		{
+			start: Script.final_wink_tick + 70,
+			frames: 50,
+			curve: Smooth,
+			to: { focal: 330.0, roll: once_round },
+		},
+	],
+].join()
+
+# A float braking tips the picture a little, and it rocks back.
+jolt_moves : I64 -> List(Move)
+jolt_moves = |stop_tick| [
 	{
-		start: Dinner.slip_tick - 10,
-		frames: 16,
+		start: stop_tick - 2,
+		frames: 6,
 		curve: Whip,
-		to: { focal: 700.0, roll: 0.0 },
+		to: { ..normal, roll: 0.08 },
 	},
 	{
-		start: Dinner.slip_tick + 72,
-		frames: 40,
+		start: stop_tick + 4,
+		frames: 14,
 		curve: Smooth,
 		to: normal,
-	},
-	# Zoomed in as the eye backs away from the wink, in step, so the
-	# dancer's head stays the size it was: the eye ends up 3.2 times as far
-	# from it.
-	{
-		start: Script.wink_tick - 24,
-		frames: 40,
-		curve: Smooth,
-		to: { ..normal, focal: normal.focal * 3.2 },
-	},
-	# Snapped out past wide and tipped over as the eye flies back, then
-	# righted on the other tip and settled.
-	{
-		start: Script.wide_tick,
-		frames: 30,
-		curve: Whip,
-		to: { focal: 160.0, roll: 0.22 },
-	},
-	{
-		start: Script.wide_tick + 40,
-		frames: 60,
-		curve: Smooth,
-		to: { focal: 260.0, roll: -0.15 },
-	},
-	{
-		start: Script.wide_tick + 100,
-		frames: 80,
-		curve: Smooth,
-		to: normal,
-	},
-	# In on the last float as it brakes, and out.
-	{
-		start: last_float_stop - 30,
-		frames: 24,
-		curve: Whip,
-		to: { ..normal, focal: 700.0 },
-	},
-	{
-		start: last_float_stop + 70,
-		frames: 60,
-		curve: Smooth,
-		to: normal,
-	},
-	# In on the drumstick toss, and the long lens kept for the flight to
-	# the fence.
-	{
-		start: Script.halt_tick - 12,
-		frames: 18,
-		curve: Whip,
-		to: { ..normal, focal: 900.0 },
-	},
-	{
-		start: Script.peek_tick,
-		frames: 150,
-		curve: Smooth,
-		to: { focal: 760.0, roll: -0.06 },
-	},
-	# Snapped out to the crowd, tipping as it goes, then righted.
-	{
-		start: Script.flood_tick,
-		frames: 60,
-		curve: Whip,
-		to: { focal: 190.0, roll: 0.14 },
-	},
-	{
-		start: Script.flood_tick + 120,
-		frames: 200,
-		curve: Smooth,
-		to: { focal: 330.0, roll: 0.0 },
-	},
-	# In for the last wink, and out for the banner.
-	{
-		start: Script.final_wink_tick - 75,
-		frames: 65,
-		curve: Smooth,
-		to: { ..normal, focal: 700.0 },
-	},
-	{
-		start: Script.final_wink_tick + 30,
-		frames: 70,
-		curve: Whip,
-		to: { focal: 330.0, roll: 0.0 },
 	},
 ]
+
+once_round : F64
+once_round = F64.tau
+
+first_wave : I64
+first_wave = Script.wave_ticks.first() ?? crash "Lens: the crowd waves"
+
+second_wave : I64
+second_wave = Script.wave_ticks.last() ?? crash "Lens: the crowd waves"
 
 last_float_stop : I64
 last_float_stop = Script.float_stop_ticks.last() ?? crash "Lens: the floats have stops"
 
 # The lens starts and ends as it is meant to: plain at the start, and
-# untipped under the banner.
+# untipped under the banner, once round from where it started.
 expect Lens.setting_at(0) == normal
-expect Lens.setting_at(Script.end_tick).roll == 0.0
+expect (Lens.setting_at(Script.end_tick).roll - once_round).abs() < 0.000001

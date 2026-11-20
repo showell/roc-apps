@@ -170,7 +170,7 @@ Dinner :: [].{
 
 	## When the tiny robot's pie starts to slip.
 	slip_tick : I64
-	slip_tick = 622
+	slip_tick = 402
 
 	## How many seconds the leaves have been blowing; negative before.
 	gust_seconds : I64 -> F64
@@ -192,28 +192,28 @@ timing : Robot.Build -> Timing
 timing = |build|
 	match build {
 		Tall => {
-			enter_tick: 30,
-			arrive_tick: 210,
+			enter_tick: 20,
+			arrive_tick: 160,
 			from_right: -6.0,
 			step: 0.6,
-			set_tick: 215,
-			sit_tick: 258,
+			set_tick: 165,
+			sit_tick: 205,
 		}
 		Round => {
-			enter_tick: 230,
-			arrive_tick: 390,
+			enter_tick: 120,
+			arrive_tick: 260,
 			from_right: -4.6,
 			step: 0.3,
-			set_tick: 395,
-			sit_tick: 438,
+			set_tick: 265,
+			sit_tick: 305,
 		}
 		Tiny => {
-			enter_tick: 450,
-			arrive_tick: 620,
+			enter_tick: 230,
+			arrive_tick: 400,
 			from_right: -3.6,
 			step: 0.22,
-			set_tick: 700,
-			sit_tick: 745,
+			set_tick: 480,
+			sit_tick: 525,
 		}
 	}
 

@@ -70,21 +70,21 @@ moves = [
 	# Whipped round and down onto the tiny robot's pie as it slips, and back
 	# once it is caught.
 	{
-		start: Dinner.slip_tick - 10,
-		frames: 16,
+		start: Dinner.slip_tick - 8,
+		frames: 10,
 		curve: Whip,
 		goes: To({ ..seated, height: 0.95, heading: -0.25 }),
 	},
 	{
-		start: Dinner.slip_tick + 72,
-		frames: 40,
+		start: Dinner.slip_tick + 70,
+		frames: 30,
 		curve: Smooth,
 		goes: To(seated),
 	},
 	# Eased back and up until the whole table is in view.
 	{
 		start: Script.pull_tick,
-		frames: 180,
+		frames: 150,
 		curve: Smooth,
 		goes: By({
 			right: 0.4,
@@ -93,18 +93,18 @@ moves = [
 			heading: 0.0,
 		}),
 	},
-	# Close on the dancer, its head and arms filling the screen.
+	# Snapped close on the dancer, its head and arms filling the screen.
 	{
 		start: Script.close_up_tick,
-		frames: 60,
-		curve: Smooth,
+		frames: 30,
+		curve: Whip,
 		goes: To(close_up),
 	},
 	# Backed away as the dancer winks, while the lens zooms in to keep its
 	# head the same size, so the yard behind stretches away.
 	{
-		start: Script.wink_tick - 24,
-		frames: 40,
+		start: Script.wink_tick - 18,
+		frames: 26,
 		curve: Smooth,
 		goes: To({ ..close_up, forward: close_up.forward - 2.75 }),
 	},
@@ -115,20 +115,14 @@ moves = [
 		curve: Smooth,
 		goes: To(wide),
 	},
-	# Whipped round and down onto the last float as it brakes, and back.
+	# Whipped round and down onto the last float as it brakes.
 	{
-		start: last_float_stop - 30,
-		frames: 24,
+		start: last_float_stop - 14,
+		frames: 12,
 		curve: Whip,
 		goes: To({ ..wide, height: 2.4, heading: 0.4 }),
 	},
-	{
-		start: last_float_stop + 70,
-		frames: 60,
-		curve: Smooth,
-		goes: To(wide),
-	},
-	# Up and back a little as the army marches out under the eye.
+	# Up and back as the army marches out under the eye.
 	{
 		start: Script.army_tick,
 		frames: Script.march_frames,
@@ -137,43 +131,43 @@ moves = [
 	},
 	# Dropped to the drum major's height for the drumstick toss.
 	{
-		start: Script.halt_tick - 12,
-		frames: 18,
+		start: Script.halt_tick - 10,
+		frames: 12,
 		curve: Whip,
 		goes: To({ ..army_watch, height: 2.4 }),
 	},
 	# Flown down the aisle between the floats, toward a noise at the fence.
 	{
 		start: Script.peek_tick,
-		frames: 150,
-		curve: Smooth,
+		frames: 90,
+		curve: Whip,
 		goes: To(fence_watch),
 	},
 	# Snapped far back and high to take in the crowd as it pours in.
 	{
 		start: Script.flood_tick,
-		frames: 100,
+		frames: 60,
 		curve: Whip,
 		goes: To(crowd_watch),
 	},
 	# Down among the crowd, panned with the wave one way and back the other.
 	{
-		start: first_wave - 70,
-		frames: 140,
+		start: first_wave - 40,
+		frames: 80,
 		curve: Smooth,
 		goes: To(wave_watch(0.18)),
 	},
 	{
-		start: second_wave - 70,
-		frames: 140,
+		start: second_wave - 40,
+		frames: 80,
 		curve: Smooth,
 		goes: To(wave_watch(-0.12)),
 	},
 	# All the way back in to the first dancer, for one more wink.
 	{
-		start: Script.final_wink_tick - 75,
-		frames: 65,
-		curve: Smooth,
+		start: Script.final_wink_tick - 50,
+		frames: 40,
+		curve: Whip,
 		goes: To({
 			right: 0.6,
 			forward: -1.0,
@@ -183,8 +177,8 @@ moves = [
 	},
 	# And snapped all the way out for the banner.
 	{
-		start: Script.final_wink_tick + 30,
-		frames: 70,
+		start: Script.final_wink_tick + 26,
+		frames: 40,
 		curve: Whip,
 		goes: To({
 			..crowd_watch,

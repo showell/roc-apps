@@ -31,8 +31,8 @@ Choreography :: [].{
 	wink_offset : I64
 	wink_offset = ticks_of(glance_steps)
 
-	## While the eye backs away: bounces with the arms out, a turn to the
-	## side and back, and the forearms hinging down.
+	## While the eye backs away: bounces with the arms out, and the forearms
+	## hinging down.
 	travel_steps : List(Choreography.Step)
 	travel_steps = [
 		{ move: { ..Moves.arms_out, bounce: 0.05 }, frames: 7 },
@@ -41,14 +41,6 @@ Choreography :: [].{
 		{ move: Moves.arms_out, frames: 7 },
 		{ move: { ..Moves.arms_out, bounce: 0.05 }, frames: 7 },
 		{ move: Moves.arms_out, frames: 9 },
-		{ move: { ..Moves.rest, turn: 0.88 }, frames: 10 },
-		{ move: { ..Moves.rest, turn: 0.75 }, frames: 10 },
-		{ move: { ..Moves.rest, turn: 0.62 }, frames: 10 },
-		{ move: { ..Moves.rest, turn: 0.5 }, frames: 16 },
-		{ move: { ..Moves.rest, turn: 0.62 }, frames: 10 },
-		{ move: { ..Moves.rest, turn: 0.75 }, frames: 10 },
-		{ move: { ..Moves.rest, turn: 0.88 }, frames: 10 },
-		{ move: Moves.rest, frames: 12 },
 		{ move: { ..Moves.goalpost, left_fore: -2.09, right_fore: 2.09 }, frames: 9 },
 		{ move: { ..Moves.goalpost, left_fore: -1.57, right_fore: 1.57 }, frames: 9 },
 		{ move: { ..Moves.goalpost, left_fore: -1.05, right_fore: 1.05 }, frames: 9 },
@@ -73,43 +65,46 @@ Choreography :: [].{
 		{ move: Moves.goalpost, frames: 8 },
 	]
 
-	## While the floats roll in: a groove in the Moves.goalpost, and a shoulder pop,
-	## left and right in turn, as each float brakes to a stop.
+	## While the floats roll in: a groove in the goalpost, and a shoulder pop,
+	## left and right in turn, as each float brakes to a stop. The pops come
+	## faster and faster, as the floats do.
 	parade_steps : List(Choreography.Step)
-	parade_steps = [
-		[{ move: Moves.goalpost, frames: parade_breath }],
-		groove_steps(Moves.goalpost, first_roll_frames),
-		[0.07, -0.07, 0.07, -0.07]
-			.map(
-				|lift| List.concat(
-					pop_steps(lift),
-					groove_steps(Moves.goalpost, pop_gap - pop_frames),
-				),
-			)
-			.join(),
-	].join()
+	parade_steps = {
+		first_stop = pop_offsets.first() ?? crash "Choreography.parade_steps: the floats stop"
+		next_stops = pop_offsets.drop_first(1).append(parade_ticks)
+		pops =
+			List.map3(pop_offsets, next_stops, [0.07, -0.07, 0.07, -0.07], |stop, next, lift| (next - stop, lift))
+				.map(
+					|(gap, lift)| List.concat(
+						pop_steps(lift),
+						groove_steps(Moves.goalpost, gap - pop_frames),
+					),
+				)
+				.join()
+		List.concat(groove_steps(Moves.goalpost, first_stop), pops)
+	}
 
 	## The ticks from the start of the parade to each float's stop, one a
 	## shoulder pop.
 	pop_offsets : List(I64)
-	pop_offsets = [0, 1, 2, 3].map(|float| parade_breath + first_roll_frames + float * pop_gap)
+	pop_offsets = [200, 270, 330, 380]
 
 	## While the army marches in: a bounce on every step of its drum, arms
 	## out, the head clicking toward the marchers every few steps.
 	strut_steps : List(Choreography.Step)
 	strut_steps =
-		[0.0, 0.0, -1.0, 0.0, 0.0, 1.0, 0.0, 0.0, -1.0, 0.0, 0.0, 1.0, 0.0]
+		[0.0, -1.0, 0.0, 1.0, 0.0, -1.0, 0.0, 1.0]
 			.map(|head| beat_steps({ ..Moves.arms_out, head }))
 			.join()
-			.append({ move: Moves.arms_out, frames: 21 })
+			.append({ move: Moves.arms_out, frames: 70 })
 
 	## A noise behind the fence: a hand up to the brow, and the head clicking
 	## from side to side, looking for it.
 	peek_steps : List(Choreography.Step)
 	peek_steps = {
 		brow = { ..Moves.rest, right_upper: 2.5, right_fore: -1.2 }
-		[-1.0, 1.0, -1.0, 1.0, -0.5, 0.5]
-			.map(|head| [{ move: { ..brow, head }, frames: 40 }, { move: brow, frames: 40 }])
+		[-1.0, 1.0, -1.0, 1.0]
+			.map(|head| [{ move: { ..brow, head }, frames: 35 }, { move: brow, frames: 35 }])
 			.join()
 	}
 
@@ -126,7 +121,7 @@ Choreography :: [].{
 					),
 				)
 				.join()
-		List.concat(repeated_steps(round, 3), repeated_steps(beat_steps(Moves.arms_out), 4))
+		List.concat(repeated_steps(round, 2), repeated_steps(beat_steps(Moves.arms_out), 2))
 	}
 
 	## While the crowd does the wave: a groove, and the arms thrown up each
@@ -149,12 +144,12 @@ Choreography :: [].{
 	finale_steps = [
 		{ move: Moves.final_pose, frames: final_wink_offset },
 		{ move: { ..Moves.final_pose, wink: 1.0 }, frames: 24 },
-		{ move: Moves.final_pose, frames: 336 },
+		{ move: Moves.final_pose, frames: 216 },
 	]
 
 	## The ticks from the start of the finale to its wink.
 	final_wink_offset : I64
-	final_wink_offset = 240
+	final_wink_offset = 110
 
 	## How many ticks a list of steps lasts.
 	ticks_of : List(Choreography.Step) -> I64
@@ -207,23 +202,18 @@ pop_steps = |lift| [
 repeated_steps : List(Choreography.Step), U64 -> List(Choreography.Step)
 repeated_steps = |steps, times| List.repeat(steps, times).join()
 
-parade_breath : I64
-parade_breath = 24
-
-first_roll_frames : I64
-first_roll_frames = 210
+# The parade ends a moment after the last float stops.
+parade_ticks : I64
+parade_ticks = 420
 
 pop_frames : I64
 pop_frames = 30
 
-pop_gap : I64
-pop_gap = 180
-
 wave_gap : I64
-wave_gap = 150
+wave_gap = 60
 
 arms_up_frames : I64
-arms_up_frames = 60
+arms_up_frames = 40
 
 # A groove lasts exactly what it is asked for.
 expect Choreography.ticks_of(groove_steps(Moves.goalpost, 100)) == 100
