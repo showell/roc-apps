@@ -4,6 +4,7 @@
 ## sets it down there as Placing has it, and sits as Seating has it. The
 ## tiny robot and its mother are Family's. Each robot's eyes light with the
 ## bulb over its place, and its head turns to watch the dancer.
+import Baby
 import Dinner
 import Ease
 import Family
@@ -32,7 +33,7 @@ Guests :: [].{
 		match build {
 			Tall => serving_at(Tall, { now, look: lit.look, glow: lit.glow })
 			Round => serving_at(Round, { now, look: lit.look, glow: lit.glow })
-			Tiny => Family.baby_at(now, lit)
+			Tiny => Baby.baby_at(now, lit)
 			Mommy => Family.mommy_at(now, lit)
 		}
 	}

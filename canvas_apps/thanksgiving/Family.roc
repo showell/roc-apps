@@ -6,6 +6,9 @@
 ## the chair out for it, waits while it climbs up, and pushes it in. Last she
 ## walks to her own chair and sits as any grown robot does, by Seating.
 ##
+## Baby moves the baby's own arms and its twirl; Stances builds the
+## mother's poses between her walks.
+##
 ## Everything here is in ticks of the movie and the backyard's metres. Each
 ## of the mother's steps is a stretch of ticks, named for what she does in it.
 import lib.Eye
@@ -16,6 +19,7 @@ import Robot
 import RobotBody
 import Seating
 import SideBody
+import Stances
 import Table
 
 Family :: [].{
@@ -70,31 +74,6 @@ Family :: [].{
 		chair_mover: Itself,
 	}
 
-	## The baby at `now`: Seating's, with its arms holding the pie and its
-	## twirl.
-	baby_at : I64, { look : F64, glow : F64 } -> Seating.Guest
-	baby_at = |now, lit| {
-		seated = Seating.guest_at(baby_plan, { now, look: lit.look, glow: lit.glow })
-		if now >= arms_down_tick + 15 {
-			seated
-		} else {
-			body = Robot.proportions(Tiny)
-			hand = baby_hand(body, { hip: seated.pose.hip, now })
-			arms_pose = { ..seated.pose, facing: twirl(now) }
-			{
-				..seated,
-				pose: {
-					..arms_pose,
-					near_arm: SideBody.arm_toward(body, { pose: arms_pose, hand }),
-					far_arm: SideBody.arm_toward(
-						body,
-						{ pose: arms_pose, hand: { ..hand, across: hand.across - 0.03 } },
-					),
-				},
-			}
-		}
-	}
-
 	## How far the baby's chair is pulled out: by the mother, and back in.
 	baby_chair_pulled : I64 -> F64
 	baby_chair_pulled = |now|
@@ -132,22 +111,10 @@ Family :: [].{
 			}
 		}
 
-	## How far the baby is through its slip, fall and catch, as how high its
-	## hands are held from 0, dived, to 1, carrying.
-	baby_carry : I64 -> F64
-	baby_carry = |now| {
-		fall_start = Family.slip_tick + slip_frames
-		lift_start = fall_start + fall_frames
-		if now < fall_start {
-			1.0
-		} else if now < lift_start {
-			dive = Ease.ramp(now - fall_start, fall_frames)
-			lowered = 1.0 - (1.0 - dive) * (1.0 - dive)
-			1.0 - lowered
-		} else {
-			Ease.smooth(Ease.ramp(now - lift_start, lift_frames))
-		}
-	}
+	## When the mother has taken the pie and turns back to the table, and
+	## the baby's arms come down.
+	arms_down_tick : I64
+	arms_down_tick = turn_to_table
 
 	## The slip's three stretches, in ticks.
 	slip_frames : I64
@@ -234,17 +201,6 @@ own_walk_start = 1060
 turn_frames : I64
 turn_frames = 12
 
-# The baby's own ticks: the twirl, after the catch, and its arms coming down
-# once the pie is taken.
-twirl_start : I64
-twirl_start = 618
-
-twirl_frames : I64
-twirl_frames = 36
-
-arms_down_tick : I64
-arms_down_tick = turn_to_table
-
 # The mother's walk in to the table, by Seating's walk.
 arrival_plan : Seating.Plan
 arrival_plan = {
@@ -255,38 +211,6 @@ arrival_plan = {
 	enter_tick: 520,
 	arrive_tick: 640,
 	chair_tick: own_walk_start,
-}
-
-# The baby's facing: once round, over its twirl.
-twirl : I64 -> F64
-twirl = |now| (F64.tau * Ease.smooth(Ease.ramp(now - twirl_start, twirl_frames))).cos()
-
-# Where the baby's hands are, from its spot: carrying the pie in front,
-# diving to catch it, lifting it back, then up over its head until the
-# mother takes it, then down.
-baby_hand : RobotBody.Proportions, { hip : Figure.Spot, now : I64 } -> Figure.Spot
-baby_hand = |body, { hip, now }| {
-	carry = Placing.carrying_hand(body, hip)
-	shoulder = SideBody.shoulder(body, { hip, lean: 0.0 })
-	raised = { across: 0.04, up: shoulder.up + 0.22 }
-	down = { across: 0.03, up: shoulder.up - 0.9 * (body.upper_arm + body.forearm) }
-	held = { ..carry, up: carry.up - 0.18 * (1.0 - Family.baby_carry(now)) }
-	lifted_at = Family.slip_tick + Family.slip_frames + Family.fall_frames + Family.lift_frames
-	if now < lifted_at {
-		held
-	} else if now < arms_down_tick {
-		mix(
-			carry,
-			raised,
-			Ease.smooth(Ease.ramp(now - lifted_at, 8)),
-		)
-	} else {
-		mix(
-			raised,
-			down,
-			Ease.smooth(Ease.ramp(now - arms_down_tick, 15)),
-		)
-	}
 }
 
 mix : Figure.Spot, Figure.Spot, F64 -> Figure.Spot
@@ -315,13 +239,20 @@ helping_at = |body, { now, look, glow }| {
 		forward: lane,
 		height: 0.0,
 	}
-	pose = { body, look, glow }
+	pose = { build: Mommy, look, glow }
 	if now < turn_to_take + turn_frames {
-		standing(
+		Stances.standing(
 			pose,
 			{
 				at: at_table,
-				facing: turned(now, { from: 1.0, start: turn_to_take }),
+				facing: Stances.turned(
+					now,
+					{
+						from: 1.0,
+						start: turn_to_take,
+						frames: turn_frames,
+					},
+				),
 				hand: Free,
 				lean: 0.0,
 			},
@@ -329,18 +260,25 @@ helping_at = |body, { now, look, glow }| {
 	} else if now < turn_to_table {
 		taking(pose, { at: at_table, hip, carry, now })
 	} else if now < place_start {
-		standing(
+		Stances.standing(
 			pose,
 			{
 				at: at_table,
-				facing: turned(now, { from: -1.0, start: turn_to_table }),
+				facing: Stances.turned(
+					now,
+					{
+						from: -1.0,
+						start: turn_to_table,
+						frames: turn_frames,
+					},
+				),
 				hand: Holding(carry),
 				lean: 0.0,
 			},
 		)
 	} else if now < turn_away {
 		reach = placing_reach(body, now)
-		standing(
+		Stances.standing(
 			pose,
 			{
 				at: at_table,
@@ -350,28 +288,36 @@ helping_at = |body, { now, look, glow }| {
 			},
 		)
 	} else if now < walk_back {
-		standing(
+		Stances.standing(
 			pose,
 			{
 				at: at_table,
-				facing: turned(now, { from: 1.0, start: turn_away }),
+				facing: Stances.turned(
+					now,
+					{
+						from: 1.0,
+						start: turn_away,
+						frames: turn_frames,
+					},
+				),
 				hand: Holding(down),
 				lean: 0.0,
 			},
 		)
 	} else if now < turn_to_chair {
-		strolling(
+		Stances.strolling(
 			pose,
 			{
 				from: table_side,
 				to: behind_chair,
+				forward: lane,
 				start: walk_back,
 				frames: turn_to_chair - walk_back,
 				now,
 			},
 		)
 	} else if now < step_behind {
-		standing(
+		Stances.standing(
 			pose,
 			{
 				at: {
@@ -379,13 +325,20 @@ helping_at = |body, { now, look, glow }| {
 					forward: lane,
 					height: 0.0,
 				},
-				facing: turned(now, { from: -1.0, start: turn_to_chair }),
+				facing: Stances.turned(
+					now,
+					{
+						from: -1.0,
+						start: turn_to_chair,
+						frames: turn_frames,
+					},
+				),
 				hand: Holding(down),
 				lean: 0.0,
 			},
 		)
 	} else if now < pull_start {
-		sidestepping(
+		Stances.sidestepping(
 			pose,
 			{
 				right: behind_chair,
@@ -407,7 +360,7 @@ helping_at = |body, { now, look, glow }| {
 			across: baby_chair.right - pulled - 0.21 - at.right,
 			up: baby_chair.seat_height + 0.58,
 		}
-		standing(
+		Stances.standing(
 			pose,
 			{
 				at,
@@ -417,7 +370,7 @@ helping_at = |body, { now, look, glow }| {
 			},
 		)
 	} else if now < step_out {
-		standing(
+		Stances.standing(
 			pose,
 			{
 				at: {
@@ -431,7 +384,7 @@ helping_at = |body, { now, look, glow }| {
 			},
 		)
 	} else {
-		sidestepping(
+		Stances.sidestepping(
 			pose,
 			{
 				right: behind_chair,
@@ -447,11 +400,7 @@ helping_at = |body, { now, look, glow }| {
 
 # Bending to the baby, taking the pie from its raised hands, and coming up
 # with it.
-taking : {
-	body : RobotBody.Proportions,
-	look : F64,
-	glow : F64,
-},
+taking : Stances.Who,
 {
 	at : Eye.At,
 	hip : Figure.Spot,
@@ -461,7 +410,7 @@ taking : {
 taking = |pose, { at, hip, carry, now }| {
 	pie = baby_raised_hand_in_yard
 	target = { across: at.right - pie.right, up: pie.height - 0.02 }
-	bow = Placing.lean_to_reach(pose.body, { hip, target })
+	bow = Placing.lean_to_reach(Robot.proportions(pose.build), { hip, target })
 	reach_start = turn_to_take + turn_frames
 	reaching = Ease.smooth(Ease.ramp(now - reach_start, take_grab - reach_start))
 	rising = Ease.smooth(Ease.ramp(now - take_grab, turn_to_table - take_grab))
@@ -471,7 +420,7 @@ taking = |pose, { at, hip, carry, now }| {
 		} else {
 			mix(target, carry, rising)
 		}
-	standing(
+	Stances.standing(
 		pose,
 		{
 			at,
@@ -510,166 +459,4 @@ placing_reach = |body, now| {
 			progress: Ease.ramp(now - place_start, Placing.placing_frames),
 		},
 	)
-}
-
-# A turn about her upright axis, from facing one way to the other, over
-# `turn_frames`.
-turned : I64, { from : F64, start : I64 } -> F64
-turned = |now, { from, start }| from * (
-	F64.pi * Ease.smooth(
-		Ease.ramp(now - start, turn_frames),
-	)
-).cos()
-
-# The mother standing at `at`, her hands free or held at a spot, leaning
-# `lean` from the hips.
-standing : {
-	body : RobotBody.Proportions,
-	look : F64,
-	glow : F64,
-},
-{
-	at : Eye.At,
-	facing : F64,
-	hand : [Free, Holding(Figure.Spot)],
-	lean : F64,
-} -> Seating.Guest
-standing = |{ body, look, glow }, { at, facing, hand, lean }| {
-	hip = { across: 0.0, up: SideBody.standing_hip(body) }
-	pose = {
-		hip,
-		near_foot: Seating.planted,
-		far_foot: { ..Seating.planted, across: -0.05 },
-		lean,
-		head_tilt: 0.0 - 0.6 * lean,
-		near_arm: Seating.hanging,
-		far_arm: Seating.hanging,
-		wheel_turn: 0.0,
-		look,
-		glow,
-		facing,
-	}
-	arms =
-		match hand {
-			Free => { near: Seating.hanging, far: Seating.hanging }
-			Holding(spot) => {
-				near: SideBody.arm_toward(body, { pose, hand: spot }),
-				far: SideBody.arm_toward(
-					body,
-					{ pose, hand: { ..spot, across: spot.across - 0.04 } },
-				),
-			}
-		}
-	{
-		at,
-		pose: { ..pose, near_arm: arms.near, far_arm: arms.far },
-		chair_pulled: 0.0,
-		walk_phase: 0.0,
-	}
-}
-
-# Walking along her lane from one spot to another, facing the way she goes.
-strolling : {
-	body : RobotBody.Proportions,
-	look : F64,
-	glow : F64,
-},
-{
-	from : F64,
-	to : F64,
-	start : I64,
-	frames : I64,
-	now : I64,
-} -> Seating.Guest
-strolling = |pose, { from, to, start, frames, now }| {
-	progress = Ease.ramp(now - start, frames)
-	right = from + (to - from) * Ease.smooth(progress)
-	walked = (right - from).abs()
-	facing = if to < from {
-		-1.0
-	} else {
-		1.0
-	}
-	gait = Seating.gait_at(
-		Mommy,
-		{
-			step: 1.0,
-			phase: walked * F64.tau,
-			stride: (F64.pi * progress).sin(),
-		},
-	)
-	still = standing(
-		pose,
-		{
-			at: { right, forward: lane, height: 0.0 },
-			facing,
-			hand: Free,
-			lean: 0.04,
-		},
-	)
-	{
-		..still,
-		pose: {
-			..still.pose,
-			hip: gait.hip,
-			near_foot: gait.near_foot,
-			far_foot: gait.far_foot,
-		},
-	}
-}
-
-# Small steps sideways, nearer the eye or farther from it, at one spot
-# across.
-sidestepping : {
-	body : RobotBody.Proportions,
-	look : F64,
-	glow : F64,
-},
-{
-	right : F64,
-	from : F64,
-	to : F64,
-	start : I64,
-	frames : I64,
-	now : I64,
-} -> Seating.Guest
-sidestepping = |
-	pose,
-	{
-		right,
-		from,
-		to,
-		start,
-		frames,
-		now,
-	},
-| {
-	progress = Ease.ramp(now - start, frames)
-	forward = from + (to - from) * Ease.smooth(progress)
-	gait = Seating.gait_at(
-		Mommy,
-		{
-			step: 0.6,
-			phase: 2.0 * F64.tau * progress,
-			stride: 0.35 * (F64.pi * progress).sin(),
-		},
-	)
-	still = standing(
-		pose,
-		{
-			at: { right, forward, height: 0.0 },
-			facing: 1.0,
-			hand: Free,
-			lean: 0.0,
-		},
-	)
-	{
-		..still,
-		pose: {
-			..still.pose,
-			hip: gait.hip,
-			near_foot: gait.near_foot,
-			far_foot: gait.far_foot,
-		},
-	}
 }
