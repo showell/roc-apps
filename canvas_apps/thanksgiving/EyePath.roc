@@ -67,13 +67,28 @@ seated = {
 
 moves : List(Move)
 moves = [
-	# Whipped round and down onto the tiny robot's pie as it slips, and back
+	# Over to the side of the table and down a little, to watch the tall
+	# robot pull its chair out and sit, and back to the seat after.
+	{
+		start: Script.first_sit_tick - 80,
+		frames: 50,
+		curve: Smooth,
+		goes: To(sit_watch),
+	},
+	{
+		start: Script.first_sit_tick + 120,
+		frames: 40,
+		curve: Smooth,
+		goes: To(seated),
+	},
+	# Whipped aside and down onto the tiny robot's pie as it slips, past the
+	# table's corner, and back
 	# once it is caught.
 	{
 		start: Dinner.slip_tick - 8,
 		frames: 10,
 		curve: Whip,
-		goes: To({ ..seated, height: 0.95, heading: -0.25 }),
+		goes: To({ ..seated, right: -0.75, height: 0.95 }),
 	},
 	{
 		start: Dinner.slip_tick + 70,
@@ -188,6 +203,14 @@ moves = [
 		}),
 	},
 ]
+
+sit_watch : EyePath.Spot
+sit_watch = {
+	right: -0.9,
+	forward: 0.0,
+	height: 1.05,
+	heading: 0.0,
+}
 
 close_up : EyePath.Spot
 close_up = {

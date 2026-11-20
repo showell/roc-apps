@@ -1,8 +1,9 @@
-## Robot draws one of the three dinner guests, face on, from what it is told:
-## which build it is, how it stands, where its feet are on the screen and how
-## many pixels a metre is there. A build is proportions and two colors, and a
-## pose is numbers, so a robot knows nothing of when it walks, sits or lights
-## up. RobotBody draws each part from the proportions; this module says
+## Robot draws one of the three builds of robot face on, as the army, the
+## crowd and the float pushers are drawn, from what it is told: which build
+## it is, how it stands, where its feet are on the screen and how many pixels
+## a metre is there; SideBody draws a guest at the table side on. A build is
+## proportions and two colors, and a pose is numbers, so a robot knows
+## nothing of when it walks or lights up. RobotBody draws each part from the proportions; this module says
 ## which build has which, and puts the parts together back to front. The
 ## right hand is the one that carries, and `hand_at` says where it is, so a
 ## dish can be put in it.
@@ -15,20 +16,17 @@ import RobotHead
 
 Robot :: [].{
 
-	## The three guests: a tall thin one, a round one, and a tiny one on a wheel.
+	## The three builds: a tall thin one, a round one, and a tiny one on a wheel.
 	Build : [Tall, Round, Tiny]
 
 	## How a robot stands this frame. `phase` is how far through its walk it
-	## is, in radians, and `stride` how much it is walking, from 0 to 1. `sit`
-	## goes from 0, standing, to 1, sat on a seat `seat_height` up. `reach` goes
+	## is, in radians, and `stride` how much it is walking, from 0 to 1. `reach` goes
 	## from 0, the right arm at its side, to 1, the right hand held up under a
 	## dish. `eye_glow` goes from 0, eyes dark, to 1, lit like the string lights.
 	## `look` slides the eyes from 0, straight ahead, to 1, to the screen's right.
 	Pose : {
 		phase : F64,
 		stride : F64,
-		sit : F64,
-		seat_height : F64,
 		reach : F64,
 		eye_glow : F64,
 		look : F64,
@@ -136,8 +134,6 @@ standing_still : Robot.Pose
 standing_still = {
 	phase: 0.0,
 	stride: 0.0,
-	sit: 0.0,
-	seat_height: 0.4,
 	reach: 0.0,
 	eye_glow: 0.0,
 	look: 0.0,
@@ -162,17 +158,6 @@ expect {
 	tiny = Robot.hand_at(Tiny, standing_still)
 	tall.up > round.up and round.up > tiny.up
 }
-
-# Sitting lowers a legged robot's hips to its seat and lifts a wheeled one
-# onto it.
-expect RobotBody.hip_height(
-	Robot.proportions(Tall),
-	{ ..standing_still, sit: 1.0 },
-) < Robot.proportions(Tall).hip
-expect RobotBody.hip_height(
-	Robot.proportions(Tiny),
-	{ ..standing_still, sit: 1.0 },
-) > Robot.proportions(Tiny).hip
 
 # A figure is drawn at all, and dark eyes add no glow.
 expect {

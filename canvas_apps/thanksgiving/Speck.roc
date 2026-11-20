@@ -26,8 +26,6 @@ Speck :: [].{
 						pose: {
 							phase: member.phase,
 							stride: member.running.min(1.0),
-							sit: 0.0,
-							seat_height: 0.4,
 							reach: member.arms,
 							eye_glow: 1.0,
 							look: 0.0,

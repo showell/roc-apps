@@ -78,8 +78,6 @@ ParadeFloat :: [].{
 					pose: {
 						phase: ride.rolled / 0.09,
 						stride: ride.speed.min(0.6) * 2.0,
-						sit: 0.0,
-						seat_height: 0.4,
 						reach: (ride.speed * 6.0).min(1.0),
 						eye_glow: 1.0,
 						look: 0.5 - 0.5 * ride.from_side,

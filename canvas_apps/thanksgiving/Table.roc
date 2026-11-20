@@ -35,15 +35,15 @@ Table :: [].{
 	chair_of = |build|
 		match build {
 			Tall => {
-				right: 0.0,
-				forward: 6.5,
+				right: -1.02,
+				forward: 5.2,
 				seat_height: 0.48,
 				back: HighBack,
 			}
 			Round => {
 				right: -1.02,
 				forward: 3.9,
-				seat_height: 0.34,
+				seat_height: 0.24,
 				back: HighBack,
 			}
 			Tiny => {
@@ -59,8 +59,8 @@ Table :: [].{
 	dish_spot = |build|
 		match build {
 			Tall => {
-				right: 0.0,
-				forward: 5.45,
+				right: -0.2,
+				forward: 5.5,
 				height: top_height,
 			}
 			Round => {
@@ -88,10 +88,13 @@ Table :: [].{
 			fill: Flat({ ..Brush.opaque_rgba(RgbColor.of(0x10160E)), a: 0.45 }),
 		})
 
-	## A chair, seat and back, or a stool.
-	chair_shapes : View, Robot.Build -> List(Shapes.Shape)
-	chair_shapes = |view, build| {
-		chair = chair_of(build)
+	## A chair, seat and back, or a stool, pulled out from its place by
+	## `pulled` metres, away from the table. Its back is on the side away from
+	## the table, so a robot sitting in it faces the table.
+	chair_shapes : View, { build : Robot.Build, pulled : F64 } -> List(Shapes.Shape)
+	chair_shapes = |view, { build, pulled }| {
+		placed = chair_of(build)
+		chair = { ..placed, right: placed.right - pulled }
 		half = 0.21
 		leg_spots = [
 			{ right: chair.right - half + 0.03, forward: chair.forward - half + 0.03 },
@@ -148,22 +151,22 @@ Table :: [].{
 						corners: [
 							{
 								right: chair.right - half,
+								forward: chair.forward - half,
+								height: chair.seat_height,
+							},
+							{
+								right: chair.right - half,
 								forward: chair.forward + half,
 								height: chair.seat_height,
 							},
 							{
-								right: chair.right + half,
-								forward: chair.forward + half,
-								height: chair.seat_height,
-							},
-							{
-								right: chair.right + half,
+								right: chair.right - half,
 								forward: chair.forward + half,
 								height: chair.seat_height + 0.62,
 							},
 							{
 								right: chair.right - half,
-								forward: chair.forward + half,
+								forward: chair.forward - half,
 								height: chair.seat_height + 0.62,
 							},
 						],
@@ -250,7 +253,7 @@ places = [
 	{ right: -0.3, forward: 0.78 },
 	{ right: -0.38, forward: 2.6 },
 	{ right: -0.38, forward: 3.9 },
-	{ right: 0.0, forward: 5.9 },
+	{ right: -0.38, forward: 5.2 },
 ]
 
 # A plate is a circle on the cloth, so the eye sees it as an oval.

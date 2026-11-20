@@ -32,28 +32,17 @@ RobotBody :: [].{
 	}
 
 	## The part of a robot's pose the body reads: the walk's `phase` and
-	## `stride`, how far it has sat on a seat `seat_height` up, and how far
-	## its right arm has reached up.
+	## `stride`, and how far its right arm has reached up.
 	Stance(others) : {
 		phase : F64,
 		stride : F64,
-		sit : F64,
-		seat_height : F64,
 		reach : F64,
 		..others,
 	}
 
-	## How high the hips are. Legs fold onto the seat; a wheel hops up onto it,
-	## with an arc on the way that is highest halfway.
+	## How high the hips are, bobbing with the walk.
 	hip_height : RobotBody.Proportions, RobotBody.Stance(others) -> F64
-	hip_height = |body, pose|
-		match body.moves_on {
-			Legs => body.hip + (pose.seat_height + 0.05 - body.hip) * pose.sit + bob(body, pose)
-			Wheel => {
-				hop = 0.12 * (F64.pi * pose.sit).sin()
-				body.hip + pose.seat_height * pose.sit + hop + bob(body, pose)
-			}
-		}
+	hip_height = |body, pose| body.hip + bob(body, pose)
 
 	right_shoulder : RobotBody.Proportions, RobotBody.Stance(others) -> Figure.Spot
 	right_shoulder = |body, pose| {
@@ -82,8 +71,7 @@ RobotBody :: [].{
 	leg_shapes = |place, { body, pose, hip }| {
 		spread = body.body_width * 0.28
 		trim = Flat(body.trim)
-		# A walking foot lifts while the other is down; a seated knee comes up to
-		# the seat, its thigh pointing at the camera.
+		# A walking foot lifts while the other is down.
 		swing = pose.phase.sin()
 		lifts = [
 			{ side: -1.0, lift: (-swing).max(0.0) * 0.07 * pose.stride },
@@ -92,9 +80,8 @@ RobotBody :: [].{
 		var $out = List.with_capacity(8)
 		for leg in lifts {
 			hip_spot = { across: leg.side * spread, up: hip }
-			knee_up = body.hip * 0.5 + (pose.seat_height - body.hip * 0.5) * pose.sit + leg.lift
-			knee = { across: leg.side * (spread + 0.04 * pose.sit), up: knee_up }
-			foot = { across: leg.side * (spread + 0.04 * pose.sit), up: leg.lift }
+			knee = { across: leg.side * spread, up: body.hip * 0.5 + leg.lift }
+			foot = { across: leg.side * spread, up: leg.lift }
 			$out = $out.append(
 				Figure.bar(
 					place,

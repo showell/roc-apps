@@ -2,7 +2,8 @@
 ## starts at, sixty ticks a second. Every timeline module asks it when
 ## things happen, and nothing else knows what time it is.
 ##
-## The guests arrive and sit; the pie slips and the eye whips in to watch
+## The guests arrive and sit, the first while the eye moves in to watch it
+## sit down; the pie slips and the eye whips in to watch
 ## the catch. The lights blink on, the eye eases back, the leaves blow, and
 ## a fourth robot walks in and starts the robot dance. The eye snaps in
 ## close, and the dancer winks at it while the yard stretches away behind.
@@ -24,29 +25,34 @@ import Routine
 
 Script :: [].{
 
+	## When the tall robot, the first to sit, starts down onto its seat.
+	## Dinner's plan for it lands here, which its test holds.
+	first_sit_tick : I64
+	first_sit_tick = 260
+
 	## When the first bulb blinks on.
 	lights_tick : I64
-	lights_tick = 580
+	lights_tick = 850
 
 	## When the eye starts to ease back from the guest's seat.
 	pull_tick : I64
-	pull_tick = 640
+	pull_tick = 910
 
 	## When the leaves start to blow.
 	gust_tick : I64
-	gust_tick = 690
+	gust_tick = 960
 
 	## When the dancer starts walking in, and when the seated robots turn
 	## their eyes to watch it.
 	walk_in_tick : I64
-	walk_in_tick = 720
+	walk_in_tick = 990
 
 	watch_tick : I64
-	watch_tick = 740
+	watch_tick = 1010
 
 	## When the routine starts.
 	dance_tick : I64
-	dance_tick = 850
+	dance_tick = 1120
 
 	## When a section of the routine starts.
 	section_tick : Routine.Section -> I64

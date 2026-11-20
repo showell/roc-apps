@@ -154,8 +154,6 @@ carrying_pose = |{ build, phase, stride }| {
 		Tall | Round => phase
 	},
 	stride,
-	sit: 0.0,
-	seat_height: 0.4,
 	reach: 1.0,
 	eye_glow: 1.0,
 	look: 0.0,

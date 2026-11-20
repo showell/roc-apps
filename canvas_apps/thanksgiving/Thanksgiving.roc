@@ -30,6 +30,8 @@ import Lights
 import ParadeFloat
 import Robot
 import Script
+import Seating
+import SideBody
 import Speck
 import Table
 import View
@@ -170,8 +172,9 @@ party_shapes = |view, tick| {
 	var $out = Lights.post_shapes(view)
 	$out = List.concat($out, Table.shadow_shapes(view))
 	for build in guests {
-		$out = List.concat($out, Table.chair_shapes(view, build))
-		$out = List.concat($out, robot_shapes(view, { build, tick }))
+		guest = Dinner.guest_at(build, tick)
+		$out = List.concat($out, Table.chair_shapes(view, { build, pulled: guest.chair_pulled }))
+		$out = List.concat($out, guest_shapes(view, { build, guest }))
 		$out = List.concat($out, dish_shapes(view, { build, tick, layer: Carried }))
 	}
 	$out = List.concat($out, Table.top_shapes(view))
@@ -182,13 +185,14 @@ party_shapes = |view, tick| {
 	List.concat($out, Lights.strand_shapes(view, Dinner.bulb_glows(tick)))
 }
 
-robot_shapes : View, { build : Robot.Build, tick : I64 } -> List(Shapes.Shape)
-robot_shapes = |view, { build, tick }|
-	match view.sighting(Dinner.robot_feet(build, tick)) {
+# A guest side on, as it walks up the side of the table and sits.
+guest_shapes : View, { build : Robot.Build, guest : Seating.Guest } -> List(Shapes.Shape)
+guest_shapes = |view, { build, guest }|
+	match view.sighting(guest.at) {
 		Ok({ point, pixels_per_metre }) =>
-			Robot.figure_shapes({
-				build,
-				pose: Dinner.robot_pose(build, tick),
+			SideBody.figure_shapes({
+				body: Robot.proportions(build),
+				pose: guest.pose,
 				feet: point,
 				pixels_per_metre,
 			})

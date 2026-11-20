@@ -1,15 +1,17 @@
 ## Dinner says where the party at one table is at each tick: where each robot
-## has walked to and how it stands, where each dish is, how bright each
-## string light is, how far the banner has dropped and how long the leaves
-## have blown, and how the dancer moves. It asks Script when the beats are.
-## Every drawing module is handed numbers, so none of them is re-timed when
-## the cut changes.
+## is on its way to its chair and how it stands, where each dish is, how
+## bright each string light is, how far the banner has dropped and how long
+## the leaves have blown, and how the dancer moves. It asks Script when the
+## beats are. Every drawing module is handed numbers, so none of them is
+## re-timed when the cut changes.
 ##
-## The tall robot brings the turkey first, then the round one the potatoes,
-## then the tiny one the pie, which wobbles all the way, slips, and is
-## caught. Once all three sit, the lights blink on down the table, each
-## robot's eyes lighting with the bulb above its place. A fourth robot walks
-## in and dances the routine, while the others turn their eyes to watch.
+## The tall robot brings the turkey first and sits down while the eye
+## watches it, then the round one brings the potatoes, then the tiny one the
+## pie, which wobbles all the way, slips, and is caught. Each sets its dish
+## on the table and sits as Seating has it. Once all three sit, the lights
+## blink on down the table, each robot's eyes lighting with the bulb above
+## its place. A fourth robot walks in and dances the routine, while the
+## others turn their heads to watch.
 import lib.Eye
 import Dancer
 import Dishes
@@ -19,6 +21,8 @@ import Moves
 import Robot
 import Routine
 import Script
+import Seating
+import SideBody
 import Table
 
 Dinner :: [].{
@@ -32,32 +36,43 @@ Dinner :: [].{
 			Tiny => Pie
 		}
 
-	## Where a robot's feet are: walking in from the left along its chair's
-	## line, then standing at its chair.
-	robot_feet : Robot.Build, I64 -> Eye.At
-	robot_feet = |build, tick| {
+	## Where a robot is and how it stands at `tick`: carrying its dish in,
+	## setting it down, then pulling its chair out and sitting.
+	guest_at : Robot.Build, I64 -> Seating.Guest
+	guest_at = |build, tick| {
+		now = Script.held_tick(tick)
 		chair = Table.chair_of(build)
-		{
-			right: walked_right(build, Script.held_tick(tick)),
-			forward: chair.forward,
-			height: 0.0,
-		}
+		Seating.guest_at(
+			guest_plan(build),
+			{
+				now,
+				carry: carrying_arm(build, now),
+				look: Ease.smooth(Ease.ramp(now - Script.watch_tick, 30)),
+				glow: bulb_glow(Lights.nearest_bulb(chair.forward), now),
+			},
+		)
 	}
 
-	## How a robot stands at `tick`.
-	robot_pose : Robot.Build, I64 -> Robot.Pose
-	robot_pose = |build, tick| {
-		now = Script.held_tick(tick)
-		plan = timing(build)
-		walked = walked_right(build, now) - plan.from_right
+	## The plan a robot sits down by.
+	guest_plan : Robot.Build -> Seating.Plan
+	guest_plan = |build| {
+		chair = Table.chair_of(build)
+		walk = walk_of(build)
 		{
-			phase: walked * F64.tau / plan.step,
-			stride: stride(build, now),
-			sit: Ease.smooth(Ease.ramp(now - plan.sit_tick, sit_frames)),
-			seat_height: Table.chair_of(build).seat_height,
-			reach: reach(build, now),
-			eye_glow: bulb_glow(Lights.nearest_bulb(Table.chair_of(build).forward), now),
-			look: Ease.smooth(Ease.ramp(now - Script.watch_tick, 30)),
+			build,
+			walk_from: walk.from_right,
+			stop_right: chair.right + 0.32,
+			aisle_forward: chair.forward - 0.5,
+			chair: {
+				right: chair.right,
+				forward: chair.forward,
+				seat_height: chair.seat_height,
+			},
+			setback: walk.setback,
+			step: walk.step,
+			enter_tick: walk.enter_tick,
+			arrive_tick: walk.arrive_tick,
+			chair_tick: set_tick(build) + set_frames + 5,
 		}
 	}
 
@@ -107,9 +122,9 @@ Dinner :: [].{
 		}
 	}
 
-	## The tick by which a robot is sat down.
+	## The tick by which a robot is sat with its hands on the table.
 	seated_tick : Robot.Build -> I64
-	seated_tick = |build| timing(build).sit_tick + sit_frames
+	seated_tick = |build| Seating.seated_tick(guest_plan(build))
 
 	## Where a robot's dish is and how far it is tipped. A carried dish is
 	## drawn with its robot; a dish on its way down, or down, is drawn on the
@@ -122,19 +137,19 @@ Dinner :: [].{
 	}
 	dish_place = |build, tick| {
 		now = Script.held_tick(tick)
-		plan = timing(build)
-		if now < plan.set_tick {
+		set_at = set_tick(build)
+		if now < set_at {
 			held_dish(build, now)
-		} else if now >= plan.set_tick + set_frames {
+		} else if now >= set_at + set_frames {
 			{
 				at: Table.dish_spot(build),
 				tilt: 0.0,
 				layer: OnTable,
 			}
 		} else {
-			lifted = held_dish(build, plan.set_tick)
+			lifted = held_dish(build, set_at)
 			spot = Table.dish_spot(build)
-			set_down = Ease.smooth(Ease.ramp(now - plan.set_tick, set_frames))
+			set_down = Ease.smooth(Ease.ramp(now - set_at, set_frames))
 			# The dish rises a little on its way over, so it is lowered onto the
 			# cloth rather than slid.
 			arc = 0.08 * (F64.pi * set_down).sin()
@@ -170,58 +185,61 @@ Dinner :: [].{
 
 	## When the tiny robot's pie starts to slip.
 	slip_tick : I64
-	slip_tick = 402
+	slip_tick = 542
 
 	## How many seconds the leaves have been blowing; negative before.
 	gust_seconds : I64 -> F64
 	gust_seconds = |tick| (Script.held_tick(tick) - Script.gust_tick).to_f64() / 60.0
 }
 
-# Each robot's walk, set-down and sit, in ticks, with where it walks in from
-# and the length of its step. The tiny robot's set-down waits for its catch.
-Timing : {
+# Each robot's walk in: when it sets off and arrives, how far left it sets
+# off from, the length of its stride, and how far in front of its seat it
+# stands to sit.
+Walk : {
 	enter_tick : I64,
 	arrive_tick : I64,
 	from_right : F64,
 	step : F64,
-	set_tick : I64,
-	sit_tick : I64,
+	setback : F64,
 }
 
-timing : Robot.Build -> Timing
-timing = |build|
+walk_of : Robot.Build -> Walk
+walk_of = |build|
 	match build {
 		Tall => {
-			enter_tick: 20,
-			arrive_tick: 160,
-			from_right: -6.0,
-			step: 0.6,
-			set_tick: 165,
-			sit_tick: 205,
+			enter_tick: 10,
+			arrive_tick: 150,
+			from_right: -5.0,
+			step: 1.1,
+			setback: 0.25,
 		}
 		Round => {
-			enter_tick: 120,
-			arrive_tick: 260,
-			from_right: -4.6,
-			step: 0.3,
-			set_tick: 265,
-			sit_tick: 305,
+			enter_tick: 300,
+			arrive_tick: 420,
+			from_right: -4.4,
+			step: 0.5,
+			setback: 0.15,
 		}
 		Tiny => {
-			enter_tick: 230,
-			arrive_tick: 400,
+			enter_tick: 400,
+			arrive_tick: 540,
 			from_right: -3.6,
-			step: 0.22,
-			set_tick: 480,
-			sit_tick: 525,
+			step: 0.4,
+			setback: 0.12,
 		}
+	}
+
+# When a robot starts to set its dish down: as soon as it stops, unless it
+# is the tiny one, which waits until its pie is caught.
+set_tick : Robot.Build -> I64
+set_tick = |build|
+	match build {
+		Tall | Round => walk_of(build).arrive_tick + 5
+		Tiny => Dinner.slip_tick + slip_frames + fall_frames + lift_frames + 8
 	}
 
 set_frames : I64
 set_frames = 40
-
-sit_frames : I64
-sit_frames = 35
 
 banner_frames : I64
 banner_frames = 60
@@ -244,31 +262,19 @@ lift_frames = 40
 catch_reach : F64
 catch_reach = 0.5
 
-walked_right : Robot.Build, I64 -> F64
-walked_right = |build, tick| {
-	plan = timing(build)
-	to = Table.chair_of(build).right
-	walk_progress = Ease.smooth(
-		Ease.ramp(tick - plan.enter_tick, plan.arrive_tick - plan.enter_tick),
-	)
-	plan.from_right + (to - plan.from_right) * walk_progress
-}
-
-# How much walking is going on, from the walking itself: the ground covered
-# over the last five ticks, against a brisk pace for that build.
-stride : Robot.Build, I64 -> F64
-stride = |build, tick| {
-	plan = timing(build)
-	covered = (walked_right(build, tick) - walked_right(build, tick - 5)).abs()
-	walk_frames = (plan.arrive_tick - plan.enter_tick).to_f64()
-	brisk = 0.6 * 5.0 * (Table.chair_of(build).right - plan.from_right) / walk_frames
-	(covered / brisk).min(1.0)
+# The carrying arm: hanging at 0, holding a dish up in front at 1, and
+# pushed out toward the table as the dish is set down.
+carrying_arm : Robot.Build, I64 -> SideBody.Arm
+carrying_arm = |build, now| {
+	held = reach(build, now)
+	setting = Ease.ramp(now - set_tick(build), set_frames)
+	out = (F64.pi * setting).sin()
+	{ upper: 0.05 + 0.55 * held + 0.6 * out, fore: 0.1 + 1.45 * held + 0.2 * out }
 }
 
 reach : Robot.Build, I64 -> F64
 reach = |build, tick| {
-	plan = timing(build)
-	set_down = 1.0 - Ease.smooth(Ease.ramp(tick - plan.set_tick, set_frames))
+	set_down = 1.0 - Ease.smooth(Ease.ramp(tick - set_tick(build), set_frames))
 	match build {
 		Tall | Round => set_down
 		Tiny =>
@@ -277,7 +283,7 @@ reach = |build, tick| {
 			} else if tick < Dinner.slip_tick + slip_frames + fall_frames {
 				dive = Ease.ramp(tick - Dinner.slip_tick - slip_frames, fall_frames)
 				1.0 - (1.0 - catch_reach) * (1.0 - (1.0 - dive) * (1.0 - dive))
-			} else if tick < plan.set_tick {
+			} else if tick < set_tick(build) {
 				catch_reach + (1.0 - catch_reach) * Ease.smooth(
 					Ease.ramp(tick - Dinner.slip_tick - slip_frames - fall_frames, lift_frames),
 				)
@@ -287,15 +293,15 @@ reach = |build, tick| {
 	}
 }
 
-# Where the right hand is in the backyard: the robot's feet and the hand's
-# place on the robot, a little in front of its body.
+# Where the near hand is in the backyard: the robot's spot and the hand's
+# place on the robot, a little nearer the eye than its body.
 hand_in_yard : Robot.Build, I64 -> Eye.At
 hand_in_yard = |build, tick| {
-	feet = Dinner.robot_feet(build, tick)
-	hand = Robot.hand_at(build, Dinner.robot_pose(build, tick))
+	guest = Dinner.guest_at(build, tick)
+	hand = SideBody.near_hand_at(Robot.proportions(build), guest.pose)
 	{
-		right: feet.right + hand.across,
-		forward: feet.forward - 0.1,
+		right: guest.at.right + hand.across,
+		forward: guest.at.forward - 0.12,
 		height: hand.up + 0.02,
 	}
 }
@@ -317,8 +323,7 @@ held_dish = |build, tick| {
 			layer: Carried,
 		}
 		Tiny => {
-			pose = Dinner.robot_pose(Tiny, tick)
-			walking_wobble = 0.13 * (pose.phase * 0.5).sin()
+			walking_wobble = 0.13 * (Dinner.guest_at(Tiny, tick).walk_phase * 0.5).sin()
 			slip_start = Dinner.slip_tick
 			fall_start = Dinner.slip_tick + slip_frames
 			lift_start = fall_start + fall_frames
@@ -392,28 +397,36 @@ dancer_right = |tick| {
 	dancer_from + (1.25 - dancer_from) * walk_progress
 }
 
-# Every robot is sat down before the first bulb blinks, and is still sitting
-# down one tick before it is seated.
+# Every robot is sat with its hands on the table before the first bulb
+# blinks, its hips on its seat.
 expect [Tall, Round, Tiny].all(|build| Dinner.seated_tick(build) < Script.lights_tick)
-expect [Tall, Round, Tiny].all(|build| Dinner.robot_pose(build, Script.lights_tick).sit == 1.0)
-expect [Tall, Round, Tiny].all(
-	|build| Dinner.robot_pose(build, Dinner.seated_tick(build) - 1).sit < 1.0,
-)
-
-# Each robot sets its dish down after it arrives and sits after setting it.
 expect
 	[Tall, Round, Tiny].all(
 		|build| {
-			plan = timing(build)
-			plan.arrive_tick <= plan.set_tick and plan.set_tick + set_frames <= plan.sit_tick
+			hip = Dinner.guest_at(build, Script.lights_tick).pose.hip
+			(hip.up - Table.chair_of(build).seat_height - 0.025).abs() < 0.001
 		},
 	)
 
-# Every dish is on its spot on the table once its robot sits.
+# The tall robot starts down onto its seat when Script says the first sit
+# is, so the eye is there to watch it.
+expect Seating.sit_tick(Dinner.guest_plan(Tall)) == Script.first_sit_tick
+
+# The hips are still well off the seat as a robot starts down onto it.
+expect
+	[Tall, Round].all(
+		|build| {
+			hip = Dinner.guest_at(build, Seating.sit_tick(Dinner.guest_plan(build))).pose.hip
+			hip.up > Table.chair_of(build).seat_height + 0.05
+		},
+	)
+
+# Every dish is on its spot on the table before its robot starts on its
+# chair.
 expect
 	[Tall, Round, Tiny].all(
 		|build| {
-			place = Dinner.dish_place(build, timing(build).sit_tick)
+			place = Dinner.dish_place(build, Dinner.guest_plan(build).chair_tick)
 			place.at == Table.dish_spot(build) and place.layer == OnTable
 		},
 	)
@@ -423,13 +436,13 @@ expect Dinner.bulb_glows(Script.lights_tick - 1).all(|glow| glow == 0.0)
 expect Dinner.bulb_glows(Script.end_tick).all(|glow| glow == 1.0)
 
 # The tiny robot's eyes light after the lights start, and are dark before.
-expect Dinner.robot_pose(Tiny, Script.lights_tick - 1).eye_glow == 0.0
-expect Dinner.robot_pose(Tiny, Script.end_tick).eye_glow == 1.0
+expect Dinner.guest_at(Tiny, Script.lights_tick - 1).pose.glow == 0.0
+expect Dinner.guest_at(Tiny, Script.end_tick).pose.glow == 1.0
 
 # The pie falls below the hand's carrying height and is caught again.
 expect {
 	carried = Dinner.dish_place(Tiny, Dinner.slip_tick).at.height
 	falling = Dinner.dish_place(Tiny, Dinner.slip_tick + slip_frames + fall_frames - 1).at.height
-	lifted = Dinner.dish_place(Tiny, timing(Tiny).set_tick - 1).at.height
+	lifted = Dinner.dish_place(Tiny, set_tick(Tiny) - 1).at.height
 	falling < carried - 0.05 and (lifted - carried).abs() < 0.03
 }

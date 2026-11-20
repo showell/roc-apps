@@ -45,12 +45,25 @@ normal = { focal: 380.0, roll: 0.0 }
 moves : List(Move)
 moves = [
 	[
+		# A longer lens for the first sit, and back.
+		{
+			start: Script.first_sit_tick - 80,
+			frames: 50,
+			curve: Smooth,
+			to: { ..normal, focal: 760.0 },
+		},
+		{
+			start: Script.first_sit_tick + 120,
+			frames: 40,
+			curve: Smooth,
+			to: normal,
+		},
 		# In on the slipping pie, and out once it is caught.
 		{
 			start: Dinner.slip_tick - 8,
 			frames: 10,
 			curve: Whip,
-			to: { focal: 700.0, roll: 0.0 },
+			to: { focal: 600.0, roll: 0.0 },
 		},
 		{
 			start: Dinner.slip_tick + 70,

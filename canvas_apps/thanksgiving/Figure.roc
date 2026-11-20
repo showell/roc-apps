@@ -97,4 +97,66 @@ Figure :: [].{
 		across: start.across + angle.sin() * length,
 		up: start.up - angle.cos() * length,
 	}
+
+	## Where the knee of a leg goes, from the hip and the ankle and the two
+	## bones' lengths: the one of the two places the bones can meet that is
+	## in front, toward the screen's right, as a knee bends. An ankle farther
+	## off than the leg is long is out of reach: the leg goes straight toward
+	## it, and `ankle` is where the foot really ends up.
+	knee_between : {
+		hip : Figure.Spot,
+		ankle : Figure.Spot,
+		thigh : F64,
+		shin : F64,
+	} -> { knee : Figure.Spot, ankle : Figure.Spot }
+	knee_between = |{ hip, ankle, thigh, shin }| {
+		dx = ankle.across - hip.across
+		dy = ankle.up - hip.up
+		wanted = (dx * dx + dy * dy).sqrt()
+		reach = (thigh + shin) * 0.999
+		if wanted >= reach or wanted < 0.0001 {
+			# Straight toward the ankle, or straight down when it is at the hip.
+			unit =
+				if wanted < 0.0001 {
+					{ across: 0.0, up: -1.0 }
+				} else {
+					{ across: dx / wanted, up: dy / wanted }
+				}
+			{
+				knee: { across: hip.across + unit.across * thigh, up: hip.up + unit.up * thigh },
+				ankle: { across: hip.across + unit.across * reach, up: hip.up + unit.up * reach },
+			}
+		} else {
+			along = (thigh * thigh - shin * shin + wanted * wanted) / (2.0 * wanted)
+			off = (thigh * thigh - along * along).max(0.0).sqrt()
+			base = { across: hip.across + dx * along / wanted, up: hip.up + dy * along / wanted }
+			# The two sides of the line from hip to ankle; the knee takes the one
+			# farther forward.
+			side = { across: 0.0 - dy / wanted, up: dx / wanted }
+			sign = if side.across >= 0.0 {
+				1.0
+			} else {
+				-1.0
+			}
+			{
+				knee: {
+					across: base.across + sign * off * side.across,
+					up: base.up + sign * off * side.up,
+				},
+				ankle,
+			}
+		}
+	}
+}
+
+# A knee bends forward, and its bones keep their lengths.
+expect {
+	leg = Figure.knee_between({
+		hip: { across: 0.0, up: 0.8 },
+		ankle: { across: 0.1, up: 0.0 },
+		thigh: 0.43,
+		shin: 0.43,
+	})
+	thigh = ((leg.knee.across * leg.knee.across) + (leg.knee.up - 0.8) * (leg.knee.up - 0.8)).sqrt()
+	leg.knee.across > 0.1 and (thigh - 0.43).abs() < 0.0001
 }
