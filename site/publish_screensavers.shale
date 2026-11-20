@@ -35,7 +35,7 @@
 
 const SAVER = "repos:roc-screensaver"
 const SCREENSAVERS = {
-  {name = "lanterns", folder = "welcome-to-roc"},
+  {name = "lanterns", folder = "welcome-to-roc", scripts = {"code_pane.js"}},
   {name = "bubbles", folder = "bubbles"},
   {name = "tides", folder = "tides"},
 }
@@ -66,11 +66,13 @@ function files_under(dir)
   return names
 end
 
--- The files a screensaver's published folder holds, sorted: shot.png among
--- them when its PROVENANCE, from web_build.shale's BUILT, names a shot.
+-- The files a screensaver's published folder holds, sorted: its own
+-- platform's scripts (Lanterns' code pane), and shot.png when its
+-- PROVENANCE, from web_build.shale's BUILT, names a shot.
 function expected_files(s, live)
   local names = {}
   for f in PAGE_FILES do push(names, f) end
+  if has_key(s, "scripts") then for f in s.scripts do push(names, f) end end
   push(names, s.name .. ".wasm")
   if contains(read(live .. "/PROVENANCE"), "\nshot.png: ") then push(names, "shot.png") end
   sort(names)
