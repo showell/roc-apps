@@ -1,21 +1,27 @@
 ## Thanksgiving is the cut: the order the backyard's things are painted in,
-## back to front, at one tick. Dinner says where everything is and how it
-## stands; Backyard, Table, Robot, Dishes, Lights, Banner and Leaves each draw
+## back to front, at one tick. Script says when each beat is; EyePath, Dinner,
+## Copies and March say where everything is and how it stands; Backyard,
+## Table, Robot, Dancer, Dishes, Lights, Army, Banner and Leaves each draw
 ## one thing from the numbers they are handed.
 ##
 ## The robots are painted farthest first, each with its chair and whatever it
 ## carries, and the table goes over them, because from a seated guest's eye
 ## the near end of the table hides their feet. A dish set down goes on the
-## cloth, so it is painted after the table.
+## cloth, so it is painted after the table. Every table stands farther from
+## the eye than the army ever is, so the army goes over all of them.
 import lib.Shapes
+import Army
 import Backyard
 import Banner
+import Copies
 import Dancer
 import Dinner
 import Dishes
+import EyePath
 import Leaves
 import Lights
 import Robot
+import Script
 import Table
 import View
 
@@ -34,7 +40,7 @@ Thanksgiving :: [].{
 	## end of the table sees its whole length.
 	view_at : I64 -> View
 	view_at = |tick| {
-		spot = Dinner.eye_spot(tick)
+		spot = EyePath.eye_spot(tick)
 		View.standing(
 			{
 				width,
@@ -51,9 +57,13 @@ Thanksgiving :: [].{
 	shapes = |{ tick }| {
 		view = view_at(tick)
 		var $out = Backyard.backyard_shapes(view)
-		for offset in tables {
-			$out = List.concat($out, party_shapes(view.shifted_view(offset), tick))
+		for table in Copies.table_places_at(tick) {
+			if table.scale > 0.0 {
+				grown = view.shifted_view(table.offset).grown_view({ about: Copies.middle, scale: table.scale })
+				$out = List.concat($out, party_shapes(grown, tick))
+			}
 		}
+		$out = List.concat($out, Army.army_shapes(view, tick))
 		$out = List.concat($out, Banner.banner_shapes(Dinner.banner_drop(tick), { width: width }))
 		List.concat($out, Leaves.leaf_shapes(Dinner.gust_seconds(tick), { width: width }))
 	}
@@ -61,18 +71,6 @@ Thanksgiving :: [].{
 
 focal : F64
 focal = 380.0
-
-# Five identical tables, farthest first. The first is the one the guest sits
-# at; the other four stand nearer the eye than it ever comes until the
-# reveal, so they are behind it, and out of sight, until it backs away.
-tables : List({ right : F64, forward : F64 })
-tables = [
-	{ right: 0.0, forward: 0.0 },
-	{ right: -2.75, forward: -8.5 },
-	{ right: 2.75, forward: -8.5 },
-	{ right: -5.5, forward: -17.0 },
-	{ right: 5.5, forward: -17.0 },
-]
 
 # One table's whole party at one tick, back to front, through a view moved to
 # that table. Every table is the same scene, so they move in step.
@@ -140,12 +138,13 @@ dish_shapes = |view, { build, tick, layer }| {
 
 # The last frame is the frame after the end too: the movie holds.
 expect {
-	last = Thanksgiving.shapes({ tick: Dinner.end_tick })
-	last == Thanksgiving.shapes({ tick: Dinner.end_tick + 600 })
+	last = Thanksgiving.shapes({ tick: Script.end_tick })
+	last == Thanksgiving.shapes({ tick: Script.end_tick + 600 })
 }
 
-# And it is still moving just before the end, as the last leaf blows off.
+# And it is still moving just before the end, as the drum major's drumstick
+# turns over in the air.
 expect {
-	last = Thanksgiving.shapes({ tick: Dinner.end_tick })
-	last != Thanksgiving.shapes({ tick: Dinner.end_tick - 120 })
+	last = Thanksgiving.shapes({ tick: Script.end_tick })
+	last != Thanksgiving.shapes({ tick: Script.end_tick - 120 })
 }

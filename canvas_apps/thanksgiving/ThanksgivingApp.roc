@@ -5,7 +5,7 @@
 ## movie and a scrub forward both stop at the end.
 import lib.CanvasApp
 import lib.Input
-import Dinner
+import Script
 import Thanksgiving
 
 ThanksgivingApp :: [].{
@@ -65,7 +65,7 @@ ThanksgivingApp :: [].{
 			if input.key_pressed(KeyR) {
 				0
 			} else {
-				Dinner.held_tick(jumped)
+				Script.held_tick(jumped)
 			}
 		{ tick, paused }
 	}
@@ -112,18 +112,18 @@ expect ThanksgivingApp.step(
 ## The movie holds at its last frame: running, scrubbing and jumping all stop
 ## there, and the tick before it still moves on.
 expect ThanksgivingApp.step(
-	{ tick: Dinner.end_tick, paused: False },
+	{ tick: Script.end_tick, paused: False },
 	Input.none,
-).tick == Dinner.end_tick
+).tick == Script.end_tick
 expect ThanksgivingApp.step(
-	{ tick: Dinner.end_tick - 1, paused: False },
+	{ tick: Script.end_tick - 1, paused: False },
 	Input.none,
-).tick == Dinner.end_tick
+).tick == Script.end_tick
 expect ThanksgivingApp.step(
-	{ tick: Dinner.end_tick - 2, paused: False },
+	{ tick: Script.end_tick - 2, paused: False },
 	Input.none,
-).tick == Dinner.end_tick - 1
+).tick == Script.end_tick - 1
 expect ThanksgivingApp.step(
-	{ tick: Dinner.end_tick - 10, paused: True },
+	{ tick: Script.end_tick - 10, paused: True },
 	Input.none.with_key_pressed(KeyJ),
-).tick == Dinner.end_tick
+).tick == Script.end_tick
