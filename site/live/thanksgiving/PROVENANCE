@@ -1,5 +1,5 @@
-published 2026-11-20T19:37:39Z
+published 2026-11-20T19:56:41Z
 roc nightly-2026-11-03-34bd006
 opt speed
-roc-apps a9fe2d2c
-sha256 d416378ee71fc069  222458 bytes  thanksgiving.wasm
+roc-apps 9e55440c
+sha256 c5c1519a56a36251  216385 bytes  thanksgiving.wasm
