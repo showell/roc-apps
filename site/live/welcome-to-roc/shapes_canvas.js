@@ -31,7 +31,7 @@ const twoStopAt = (s, t) => t <= s.start_offset ? s.start_color
   : mix(s.start_color, s.end_color, (t - s.start_offset) / (s.end_offset - s.start_offset));
 
 // A canvas takes offsets in [0, 1] only. An offset past either end becomes a
-// stop at that end in the colour Brush.shade gives there, so the gradient
+// stop at that end in the colour BrushShade.shade gives there, so the gradient
 // matches lib's mix across the whole of [0, 1].
 const twoStops = (s) => [
   [stopAt(s.start_offset), cssColor(s.start_offset >= 0 ? s.start_color : twoStopAt(s, 0))],
@@ -46,13 +46,13 @@ function paintFor(ctx, fill) {
     case "Flat":
       return cssColor(p);
     case "Span":
-      // Brush.shade's t is 1 when the edges meet, all the way from the middle
+      // BrushShade.shade's t is 1 when the edges meet, all the way from the middle
       // colour to the edge colour.
       if (p.right_x === p.left_x) return cssColor(mix(p.middle_color, p.edge_color, 1));
       return withStops(ctx.createLinearGradient(p.left_x, 0, p.right_x, 0),
         [[0, cssColor(p.edge_color)], [0.5, cssColor(p.middle_color)], [1, cssColor(p.edge_color)]]);
     case "Radial":
-      // With no ring to walk, Brush.shade mixes all the way to the outer colour.
+      // With no ring to walk, BrushShade.shade mixes all the way to the outer colour.
       if (!(p.outer_radius > p.inner_radius)) return cssColor(mix(p.inner_color, p.outer_color, 1));
       return withStops(ctx.createRadialGradient(p.center.x, p.center.y, p.inner_radius, p.center.x, p.center.y, p.outer_radius),
         [[0, cssColor(p.inner_color)], [1, cssColor(p.outer_color)]]);
@@ -64,7 +64,7 @@ function paintFor(ctx, fill) {
         twoStops(p.stops));
     }
     case "Glow":
-      // With no ring to walk, Brush.shade takes t = 1, past the middle offset,
+      // With no ring to walk, BrushShade.shade takes t = 1, past the middle offset,
       // and mixes from the middle colour to the outer one.
       if (!(p.outer_radius > p.inner_radius)) {
         return cssColor(mix(p.middle_color, p.outer_color, (1 - p.middle_offset) / (1 - p.middle_offset)));

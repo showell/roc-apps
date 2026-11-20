@@ -24,6 +24,9 @@
 // `?step=N` shows the frame after N steps and stops there, so a page can be
 // laid beside the native harness's frame at the same step (`zig build png`).
 //
+// `?hold=1` holds the start at each edge of the warm-up until a test lets it
+// go on, so the test sees the still frame there for certain (`holdAt`, below).
+//
 // A moving page starts on its first frame, still, under a small "warming up"
 // pill when its skin shows one, while throwaway frames give the browser time to finish compiling the
 // wasm (the warm-up, below); then the ride starts from that same frame.
@@ -32,6 +35,11 @@
 // the warming-up pill, whether to show the keyboard help, which Roc makes from
 // the app's declared controls so it cannot drift from them, and the links. The
 // help and the links go in one quiet line under the canvas (`dressCanvas`).
+//
+// A page may set `pane`, a companion that hears the app after its first model
+// and after every step, and is shown the canvas once it is on the page:
+// `{ heard(game), shown(canvas) }`. Lanterns' code pane is one
+// (web/lanterns_platform/code_pane.js). A page without one is as it was.
 //
 // This file is copied from roc-apps (`canvas_apps/web/canvas_app_runner.js`) on 2026-11-15, and it
 // is allowed to drift from it.
@@ -438,6 +446,26 @@ async function warmUp(game, width, height) {
 
 const NO_WARM_UP = { times: [], ms: 0, stoppedBy: 'a still page' };
 
+// With `?hold=1` in the address, the start waits at each edge of the warm-up,
+// just before it and just after it, until the page's watcher calls
+// `window.canvasAppGoOn()`; `data-held` on the canvas names the edge it waits
+// at. A warm-up can be over in under 200 ms, sooner than tools/web_shots.mjs
+// can look on a busy box, so without the holds the check races it. The holds
+// add nothing else: the warm-up and the ride run as they do on any page.
+const holding = new URLSearchParams(location.search).get('hold') === '1';
+
+function holdAt(canvas, edge) {
+  if (!holding) return Promise.resolve();
+  canvas.dataset.held = edge;
+  return new Promise((done) => {
+    window.canvasAppGoOn = () => {
+      delete canvas.dataset.held;
+      delete window.canvasAppGoOn;
+      done();
+    };
+  });
+}
+
 // A small pill near the top of the canvas: a soft dot that breathes and two
 // quiet words. It sits on the page, not in the canvas, so the canvas holds
 // only the app's frame.
@@ -517,6 +545,8 @@ async function main(show) {
   const stepMs = 1000 / game.fps();
   const dressing = game.dressing();
   if (!dressing.skin.show_loading_indicator) warming.hide();
+  const pane = show.pane ?? null;
+  pane?.heard(game);
 
   const canvas = document.createElement('canvas');
   canvas.width = width;
@@ -551,6 +581,7 @@ async function main(show) {
       y: mouse.y,
       wheel: mouse.wheel,
     });
+    pane?.heard(game);
     const rung = game.sounds();
     if (rung) {
       ringing.at = now;
@@ -640,6 +671,7 @@ async function main(show) {
 
   for (let press = pressesToOpen(show); press > 0; press--) {
     game.advance({ key_held: 0, key_struck: KEY_BIT.ArrowRight, button_held: 0, button_struck: 0, x: 0, y: 0, wheel: 0 });
+    pane?.heard(game);
   }
 
   const loadMs = performance.now() - loadStart;
@@ -650,6 +682,7 @@ async function main(show) {
   }
 
   document.body.appendChild(canvas);
+  pane?.shown(canvas);
   warming.onCanvas(canvas);
   dressCanvas(dressing);
   try {
@@ -671,6 +704,7 @@ async function main(show) {
   canvas.dataset.phase = 'warming';
   const hideWarming = warming.hide;
   await nextPaint();
+  await holdAt(canvas, 'before-warm-up');
   let warm;
   try {
     warm = await warmUp(game, width, height);
@@ -680,6 +714,7 @@ async function main(show) {
     return;
   }
   timer?.loaded(loadMs, warm);
+  await holdAt(canvas, 'after-warm-up');
   hideWarming();
   canvas.dataset.phase = 'riding';
   last = performance.now();
