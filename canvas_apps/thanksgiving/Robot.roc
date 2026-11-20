@@ -11,6 +11,7 @@ import lib.Point
 import lib.RgbColor
 import lib.Shapes
 import RobotBody
+import RobotHead
 
 Robot :: [].{
 
@@ -48,18 +49,30 @@ Robot :: [].{
 	} -> List(Shapes.Shape)
 	figure_shapes = |{ build, pose, feet, pixels_per_metre }| {
 		body = proportions(build)
-		place = { x: feet.x.to_f64(), y: feet.y.to_f64(), scale: pixels_per_metre }
+		place = {
+			x: feet.x.to_f64(),
+			y: feet.y.to_f64(),
+			scale: pixels_per_metre,
+		}
 		hip = RobotBody.hip_height(body, pose)
 		top = hip + body.body_height
 		head_top = top + body.neck + body.head_height
 		[
-			RobotBody.antenna_shapes(place, { body, head_top, glow: pose.eye_glow }),
+			RobotHead.antenna_shapes(place, { body, head_top, glow: pose.eye_glow }),
 			match body.moves_on {
 				Legs => RobotBody.leg_shapes(place, { body, pose, hip })
 				Wheel => RobotBody.wheel_shapes(place, { body, pose, hip })
 			},
 			RobotBody.torso_shapes(place, { body, hip }),
-			RobotBody.head_shapes(place, { body, top, glow: pose.eye_glow, look: pose.look }),
+			RobotHead.head_shapes(
+				place,
+				{
+					body,
+					top,
+					glow: pose.eye_glow,
+					look: pose.look,
+				},
+			),
 			RobotBody.arm_shapes(place, { body, pose }),
 		].join()
 	}
@@ -151,8 +164,14 @@ expect {
 
 # Sitting lowers a legged robot's hips to its seat and lifts a wheeled one
 # onto it.
-expect RobotBody.hip_height(proportions(Tall), { ..standing_still, sit: 1.0 }) < proportions(Tall).hip
-expect RobotBody.hip_height(proportions(Tiny), { ..standing_still, sit: 1.0 }) > proportions(Tiny).hip
+expect RobotBody.hip_height(
+	proportions(Tall),
+	{ ..standing_still, sit: 1.0 },
+) < proportions(Tall).hip
+expect RobotBody.hip_height(
+	proportions(Tiny),
+	{ ..standing_still, sit: 1.0 },
+) > proportions(Tiny).hip
 
 # A figure is drawn at all, and dark eyes add no glow.
 expect {

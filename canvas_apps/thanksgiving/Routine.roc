@@ -47,7 +47,11 @@ Routine :: [].{
 		var $move = rest
 		for step in all_steps {
 			if !$found and since < $start + step.frames {
-				$move = snapped_move({ from: $before, to: step.move, fraction: snap(since - $start + 1) })
+				$move = snapped_move({
+					from: $before,
+					to: step.move,
+					fraction: snap(since - $start + 1),
+				})
 				$found = True
 			}
 			$before = step.move
@@ -117,11 +121,23 @@ quarter = F64.pi / 2.0
 
 # Both arms out and bent up at the elbow, a right angle each.
 goalpost : Routine.Move
-goalpost = { ..Routine.rest, left_upper: -quarter, left_fore: -F64.pi, right_upper: quarter, right_fore: F64.pi }
+goalpost = {
+	..Routine.rest,
+	left_upper: -quarter,
+	left_fore: -F64.pi,
+	right_upper: quarter,
+	right_fore: F64.pi,
+}
 
 # Both arms straight out to the sides.
 arms_out : Routine.Move
-arms_out = { ..Routine.rest, left_upper: -quarter, left_fore: -quarter, right_upper: quarter, right_fore: quarter }
+arms_out = {
+	..Routine.rest,
+	left_upper: -quarter,
+	left_fore: -quarter,
+	right_upper: quarter,
+	right_fore: quarter,
+}
 
 # The right arm out, its forearm at `fore`.
 right_arm : F64 -> Routine.Move
@@ -178,8 +194,24 @@ travel_steps = [
 	{ move: { ..goalpost, left_fore: -2.09, right_fore: 2.09 }, frames: 9 },
 	{ move: { ..goalpost, left_fore: -1.57, right_fore: 1.57 }, frames: 9 },
 	{ move: { ..goalpost, left_fore: -1.05, right_fore: 1.05 }, frames: 9 },
-	{ move: { ..goalpost, left_fore: -1.05, right_fore: 1.05, head: 1.0 }, frames: 10 },
-	{ move: { ..goalpost, left_fore: -1.05, right_fore: 1.05, head: -1.0 }, frames: 10 },
+	{
+		move: {
+			..goalpost,
+			left_fore: -1.05,
+			right_fore: 1.05,
+			head: 1.0,
+		},
+		frames: 10,
+	},
+	{
+		move: {
+			..goalpost,
+			left_fore: -1.05,
+			right_fore: 1.05,
+			head: -1.0,
+		},
+		frames: 10,
+	},
 	{ move: goalpost, frames: 8 },
 ]
 
@@ -196,7 +228,12 @@ multiply_steps : List(Step)
 multiply_steps = [
 	[{ move: goalpost, frames: breath }],
 	[0.07, -0.07, 0.07, -0.07]
-		.map(|lift| [{ move: { ..goalpost, pop: lift }, frames: 8 }, { move: goalpost, frames: pop_beat - 8 }])
+		.map(
+			|lift| [
+				{ move: { ..goalpost, pop: lift }, frames: 8 },
+				{ move: goalpost, frames: pop_beat - 8 },
+			],
+		)
 		.join(),
 	[{ move: goalpost, frames: breath }],
 ].join()
@@ -205,7 +242,10 @@ multiply_steps = [
 # the head clicking toward the marchers every few steps.
 strut_steps : List(Step)
 strut_steps = {
-	beat = |head| [{ move: { ..arms_out, bounce: 0.05, head }, frames: 15 }, { move: { ..arms_out, head }, frames: 15 }]
+	beat = |head| [
+		{ move: { ..arms_out, bounce: 0.05, head }, frames: 15 },
+		{ move: { ..arms_out, head }, frames: 15 },
+	]
 	looks = [0.0, 0.0, -1.0, 0.0, 0.0, 1.0, 0.0, 0.0, -1.0, 0.0, 0.0, 1.0, 0.0]
 	looks.map(beat).join().append({ move: arms_out, frames: 21 })
 }
@@ -215,7 +255,14 @@ strut_steps = {
 finale_steps : List(Step)
 finale_steps = [
 	{
-		move: { ..Routine.rest, right_upper: quarter, right_fore: F64.pi, left_upper: -quarter, left_fore: 0.0, bounce: 0.03 },
+		move: {
+			..Routine.rest,
+			right_upper: quarter,
+			right_fore: F64.pi,
+			left_upper: -quarter,
+			left_fore: 0.0,
+			bounce: 0.03,
+		},
 		frames: 60,
 	},
 ]
@@ -233,7 +280,11 @@ snap = |since|
 		since.to_f64() / snap_frames.to_f64()
 	}
 
-snapped_move : { from : Routine.Move, to : Routine.Move, fraction : F64 } -> Routine.Move
+snapped_move : {
+	from : Routine.Move,
+	to : Routine.Move,
+	fraction : F64,
+} -> Routine.Move
 snapped_move = |{ from, to, fraction }| {
 	mix = |from_value, to_value| from_value + (to_value - from_value) * fraction
 	{

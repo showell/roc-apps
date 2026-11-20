@@ -21,7 +21,12 @@ March :: [].{
 
 	## One marcher in the ranks: its build, where its feet are, how it
 	## stands, and how far its dish is tipped.
-	Trooper : { build : Robot.Build, feet : Eye.At, pose : Robot.Pose, dish_tilt : F64 }
+	Trooper : {
+		build : Robot.Build,
+		feet : Eye.At,
+		pose : Robot.Pose,
+		dish_tilt : F64,
+	}
 
 	## The drum major: where its feet are, how it stands, and the drumstick,
 	## gripped `grip` metres across and up from its feet and pointing `angle`
@@ -57,13 +62,21 @@ March :: [].{
 }
 
 # A place in the army: how far behind the drum major, how far across.
-Slot : { build : Robot.Build, behind : F64, right : F64 }
+Slot : {
+	build : Robot.Build,
+	behind : F64,
+	right : F64,
+}
 
 # Three ranks of four, tall, round, tiny, either side of an aisle the drum
 # major leads down, with the back rank's last place left for the straggler.
 slots : List(Slot)
 slots =
-	[(Tall, 1.5), (Round, 2.6), (Tiny, 3.7)]
+	[
+		(Tall, 1.5),
+		(Round, 2.6),
+		(Tiny, 3.7),
+	]
 		.map(|(build, behind)| files.map(|right| { build, behind, right }))
 		.join()
 		.drop_last(1)
@@ -72,7 +85,11 @@ files : List(F64)
 files = [-1.9, -0.7, 1.5, 2.7]
 
 straggler_slot : Slot
-straggler_slot = { build: Tiny, behind: 3.7, right: 2.7 }
+straggler_slot = {
+	build: Tiny,
+	behind: 3.7,
+	right: 2.7,
+}
 
 # Where the drum major starts, just in front of the eye at the wide shot,
 # and how far everyone marches: a metre and a fifth a second.
@@ -105,15 +122,27 @@ trooper = |slot, now| {
 	phase = step_phase(now)
 	{
 		build: slot.build,
-		feet: { right: slot.right, forward: lead_forward(now) - slot.behind, height: 0.0 },
-		pose: carrying_pose({ build: slot.build, phase, stride: high_step(now) }),
+		feet: {
+			right: slot.right,
+			forward: lead_forward(now) - slot.behind,
+			height: 0.0,
+		},
+		pose: carrying_pose({
+			build: slot.build,
+			phase,
+			stride: high_step(now),
+		}),
 		dish_tilt: 0.07 * (phase + slot.right).sin() * high_step(now) / 2.4,
 	}
 }
 
 # A marcher holding its dish up, eyes lit. A tiny robot's wheel turns twice
 # as fast as the others' legs, as it hurries to keep up.
-carrying_pose : { build : Robot.Build, phase : F64, stride : F64 } -> Robot.Pose
+carrying_pose : {
+	build : Robot.Build,
+	phase : F64,
+	stride : F64,
+} -> Robot.Pose
 carrying_pose = |{ build, phase, stride }| {
 	phase: match build {
 		Tiny => 2.0 * phase
@@ -145,8 +174,16 @@ straggler = |now| {
 	rolled = (spot - from) * braking
 	{
 		build: Tiny,
-		feet: { right: straggler_slot.right, forward: from + rolled, height: 0.0 },
-		pose: carrying_pose({ build: Tiny, phase: rolled / 0.18, stride: 2.0 * (1.0 - progress) }),
+		feet: {
+			right: straggler_slot.right,
+			forward: from + rolled,
+			height: 0.0,
+		},
+		pose: carrying_pose({
+			build: Tiny,
+			phase: rolled / 0.18,
+			stride: 2.0 * (1.0 - progress),
+		}),
 		dish_tilt: 0.35 * (now.to_f64() * 0.5).sin() * (1.0 - progress),
 	}
 }
@@ -171,9 +208,17 @@ drum_major = |now| {
 		stride: high_step(now),
 	}
 	{
-		feet: { right: 0.4, forward: lead_forward(now), height: 0.0 },
+		feet: {
+			right: 0.4,
+			forward: lead_forward(now),
+			height: 0.0,
+		},
 		pose,
-		drumstick: tossed_drumstick({ hand: Dancer.right_hand_at(pose), angle: pose.right_fore, since: now - Script.halt_tick }),
+		drumstick: tossed_drumstick({
+			hand: Dancer.right_hand_at(pose),
+			angle: pose.right_fore,
+			since: now - Script.halt_tick,
+		}),
 	}
 }
 
@@ -182,7 +227,11 @@ drum_major = |now| {
 toss_frames : I64
 toss_frames = 56
 
-tossed_drumstick : { hand : { across : F64, up : F64 }, angle : F64, since : I64 } -> { grip : { across : F64, up : F64 }, angle : F64 }
+tossed_drumstick : {
+	hand : { across : F64, up : F64 },
+	angle : F64,
+	since : I64,
+} -> { grip : { across : F64, up : F64 }, angle : F64 }
 tossed_drumstick = |{ hand, angle, since }| {
 	flight = Ease.ramp(since, toss_frames)
 	{
@@ -193,11 +242,12 @@ tossed_drumstick = |{ hand, angle, since }| {
 
 # Nobody is out before the army steps out; then twelve march, the
 # straggler among them.
-expect March.troopers_at(Script.army_tick - 1) == [] and March.troopers_at(Script.army_tick).len() == 12
+expect March.troopers_at(Script.army_tick - 1) == []
+expect March.troopers_at(Script.army_tick).len() == 12
 expect March.drum_major_at(Script.army_tick - 1) == NotYet
 
 # The army stands still at the end, the straggler in its gap among them.
 expect {
 	at_end = March.troopers_at(Script.end_tick)
-	at_end.all(|marcher| marcher.pose.stride == 0.0) and at_end.all(|marcher| marcher.feet.forward > -24.0)
+	at_end.all(|marcher| marcher.pose.stride == 0.0 and marcher.feet.forward > -24.0)
 }

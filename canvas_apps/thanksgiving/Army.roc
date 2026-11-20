@@ -24,7 +24,10 @@ Army :: [].{
 				Marching(drum_major) => drum_major_shapes(view, drum_major)
 				NotYet => []
 			}
-		List.concat(leader, March.troopers_at(tick).map(|trooper| trooper_shapes(view, trooper)).join())
+		List.concat(
+			leader,
+			March.troopers_at(tick).map(|trooper| trooper_shapes(view, trooper)).join(),
+		)
 	}
 }
 
@@ -35,10 +38,21 @@ trooper_shapes = |view, { build, feet, pose, dish_tilt }|
 		Ok({ point, pixels_per_metre }) => {
 			figure = Robot.figure_shapes({ build, pose, feet: point, pixels_per_metre })
 			hand = Robot.hand_at(build, pose)
-			dish_at = { right: feet.right + hand.across, forward: feet.forward - 0.1, height: hand.up + 0.02 }
+			dish_at = {
+				right: feet.right + hand.across,
+				forward: feet.forward - 0.1,
+				height: hand.up + 0.02,
+			}
 			dish =
 				match view.sighting(dish_at) {
-					Ok(held) => Dishes.dish_shapes(Dinner.dish_of(build), { base: held.point, pixels_per_metre: held.pixels_per_metre, tilt: dish_tilt })
+					Ok(held) => Dishes.dish_shapes(
+						Dinner.dish_of(build),
+						{
+							base: held.point,
+							pixels_per_metre: held.pixels_per_metre,
+							tilt: dish_tilt,
+						},
+					)
 					Err(BehindEye) => []
 				}
 			List.concat(figure, dish)
@@ -50,7 +64,11 @@ drum_major_shapes : View, March.DrumMajor -> List(Shapes.Shape)
 drum_major_shapes = |view, { feet, pose, drumstick }|
 	match view.sighting(feet) {
 		Ok({ point, pixels_per_metre }) => {
-			place = { x: point.x.to_f64(), y: point.y.to_f64(), scale: pixels_per_metre }
+			place = {
+				x: point.x.to_f64(),
+				y: point.y.to_f64(),
+				scale: pixels_per_metre,
+			}
 			Dancer.figure_shapes({ pose, feet: point, pixels_per_metre })
 				.concat(drumstick_shapes(place, drumstick))
 		}
@@ -61,15 +79,67 @@ drum_major_shapes = |view, { feet, pose, drumstick }|
 # the roasted meat at the far end, pointing `angle` from straight down.
 drumstick_shapes : Figure.Place, { grip : Figure.Spot, angle : F64 } -> List(Shapes.Shape)
 drumstick_shapes = |place, { grip, angle }| {
-	along = |metres| { across: grip.across + angle.sin() * metres, up: grip.up - angle.cos() * metres }
+	along = |metres| {
+		across: grip.across + angle.sin() * metres,
+		up: grip.up - angle.cos() * metres,
+	}
 	knuckle = along(-0.07)
 	[
-		Figure.bar(place, { from: knuckle, to: along(0.3), width: 0.035, fill: bone }),
-		Figure.dot(place, { at: { across: knuckle.across + 0.02 * angle.cos(), up: knuckle.up + 0.02 * angle.sin() }, radius: 0.028, fill: bone }),
-		Figure.dot(place, { at: { across: knuckle.across - 0.02 * angle.cos(), up: knuckle.up - 0.02 * angle.sin() }, radius: 0.028, fill: bone }),
-		Figure.dot(place, { at: along(0.27), radius: 0.07, fill: roast }),
-		Figure.dot(place, { at: along(0.36), radius: 0.095, fill: roast }),
-		Figure.dot(place, { at: along(0.38), radius: 0.05, fill: crisp }),
+		Figure.bar(
+			place,
+			{
+				from: knuckle,
+				to: along(0.3),
+				width: 0.035,
+				fill: bone,
+			},
+		),
+		Figure.dot(
+			place,
+			{
+				at: {
+					across: knuckle.across + 0.02 * angle.cos(),
+					up: knuckle.up + 0.02 * angle.sin(),
+				},
+				radius: 0.028,
+				fill: bone,
+			},
+		),
+		Figure.dot(
+			place,
+			{
+				at: {
+					across: knuckle.across - 0.02 * angle.cos(),
+					up: knuckle.up - 0.02 * angle.sin(),
+				},
+				radius: 0.028,
+				fill: bone,
+			},
+		),
+		Figure.dot(
+			place,
+			{
+				at: along(0.27),
+				radius: 0.07,
+				fill: roast,
+			},
+		),
+		Figure.dot(
+			place,
+			{
+				at: along(0.36),
+				radius: 0.095,
+				fill: roast,
+			},
+		),
+		Figure.dot(
+			place,
+			{
+				at: along(0.38),
+				radius: 0.05,
+				fill: crisp,
+			},
+		),
 	]
 }
 

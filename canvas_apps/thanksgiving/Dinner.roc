@@ -63,7 +63,11 @@ Dinner :: [].{
 	## Where the dancer's feet are: walking in from the right, then on its spot
 	## beside the near end of the table.
 	dancer_feet : I64 -> Eye.At
-	dancer_feet = |tick| { right: dancer_right(Script.held_tick(tick)), forward: 1.4, height: 0.0 }
+	dancer_feet = |tick| {
+		right: dancer_right(Script.held_tick(tick)),
+		forward: 1.4,
+		height: 0.0,
+	}
 
 	## How the dancer stands at `tick`: arms swinging in steps on the walk in,
 	## then the routine. Its antenna boings after the wink.
@@ -78,7 +82,11 @@ Dinner :: [].{
 			if now < Script.dance_tick {
 				clicks = (phase.sin() * 2.0 + 2.5).to_i64_wrap() - 2
 				swing = 0.18 * I64.to_f64(clicks) * pace
-				{ ..rest, left_upper: rest.left_upper - swing, right_upper: rest.right_upper - swing }
+				{
+					..rest,
+					left_upper: rest.left_upper - swing,
+					right_upper: rest.right_upper - swing,
+				}
 			} else {
 				Routine.move_at(now - Script.dance_tick)
 			}
@@ -238,7 +246,9 @@ walked_right : Robot.Build, I64 -> F64
 walked_right = |build, tick| {
 	plan = timing(build)
 	to = Table.chair_of(build).right
-	walk_progress = Ease.smooth(Ease.ramp(tick - plan.enter_tick, plan.arrive_tick - plan.enter_tick))
+	walk_progress = Ease.smooth(
+		Ease.ramp(tick - plan.enter_tick, plan.arrive_tick - plan.enter_tick),
+	)
 	plan.from_right + (to - plan.from_right) * walk_progress
 }
 
@@ -374,7 +384,9 @@ dancer_from = 4.5
 
 dancer_right : I64 -> F64
 dancer_right = |tick| {
-	walk_progress = Ease.smooth(Ease.ramp(tick - Script.walk_in_tick, Script.dance_tick - 6 - Script.walk_in_tick))
+	walk_progress = Ease.smooth(
+		Ease.ramp(tick - Script.walk_in_tick, Script.dance_tick - 6 - Script.walk_in_tick),
+	)
 	dancer_from + (1.25 - dancer_from) * walk_progress
 }
 

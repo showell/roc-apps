@@ -17,7 +17,11 @@ Copies :: [].{
 	table_places_at : I64 -> List(Copies.TablePlace)
 	table_places_at = |tick| {
 		now = Script.held_tick(tick)
-		copies = List.map2(copy_offsets, Script.copy_ticks, |offset, pop_tick| { offset, scale: sprung(now - pop_tick) })
+		copies = List.map2(
+			copy_offsets,
+			Script.copy_ticks,
+			|offset, pop_tick| { offset, scale: sprung(now - pop_tick) },
+		)
 		[{ offset: { right: 0.0, forward: 0.0 }, scale: 1.0 }].concat(copies)
 	}
 

@@ -59,7 +59,10 @@ Thanksgiving :: [].{
 		var $out = Backyard.backyard_shapes(view)
 		for table in Copies.table_places_at(tick) {
 			if table.scale > 0.0 {
-				grown = view.shifted_view(table.offset).grown_view({ about: Copies.middle, scale: table.scale })
+				grown = view.shifted_view(table.offset).grown_view({
+					about: Copies.middle,
+					scale: table.scale,
+				})
 				$out = List.concat($out, party_shapes(grown, tick))
 			}
 		}
@@ -110,7 +113,11 @@ robot_shapes = |view, { build, tick }|
 dancer_shapes : View, I64 -> List(Shapes.Shape)
 dancer_shapes = |view, tick|
 	match view.sighting(Dinner.dancer_feet(tick)) {
-		Ok({ point, pixels_per_metre }) => Dancer.figure_shapes({ pose: Dinner.dancer_pose(tick), feet: point, pixels_per_metre })
+		Ok({ point, pixels_per_metre }) => Dancer.figure_shapes({
+			pose: Dinner.dancer_pose(tick),
+			feet: point,
+			pixels_per_metre,
+		})
 		Err(BehindEye) => []
 	}
 

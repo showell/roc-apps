@@ -21,31 +21,75 @@ EyePath :: [].{
 	}
 }
 
-Spot : { right : F64, forward : F64, height : F64 }
+Spot : {
+	right : F64,
+	forward : F64,
+	height : F64,
+}
 
-Move : { start : I64, frames : I64, goes : Going }
+Move : {
+	start : I64,
+	frames : I64,
+	goes : Going,
+}
 
 # A move goes by a distance, or to a spot.
 Going : [By(Spot), To(Spot)]
 
 # The guest's own seat, at the near end of the table.
 seated : Spot
-seated = { right: -0.4, forward: 0.0, height: 1.15 }
+seated = {
+	right: -0.4,
+	forward: 0.0,
+	height: 1.15,
+}
 
 moves : List(Move)
 moves = [
 	# Eased back and up until the whole table is in view.
-	{ start: Script.pull_tick, frames: 180, goes: By({ right: 0.4, forward: -1.8, height: 0.4 }) },
+	{
+		start: Script.pull_tick,
+		frames: 180,
+		goes: By({
+			right: 0.4,
+			forward: -1.8,
+			height: 0.4,
+		}),
+	},
 	# Close on the dancer, its head and arms filling the screen.
-	{ start: Script.close_up_tick, frames: 60, goes: To({ right: 1.25, forward: 0.15, height: 1.75 }) },
+	{
+		start: Script.close_up_tick,
+		frames: 60,
+		goes: To({
+			right: 1.25,
+			forward: 0.15,
+			height: 1.75,
+		}),
+	},
 	# Far back and high, over the empty lawn where the copies will stand.
-	{ start: Script.wide_tick, frames: Script.section_tick(Multiply) - Script.wide_tick, goes: To(wide) },
+	{
+		start: Script.wide_tick,
+		frames: Script.section_tick(Multiply) - Script.wide_tick,
+		goes: To(wide),
+	},
 	# Up and back a little as the army marches out under the eye.
-	{ start: Script.army_tick, frames: Script.march_frames, goes: To({ right: 0.4, forward: -30.0, height: 4.2 }) },
+	{
+		start: Script.army_tick,
+		frames: Script.march_frames,
+		goes: To({
+			right: 0.4,
+			forward: -30.0,
+			height: 4.2,
+		}),
+	},
 ]
 
 wide : Spot
-wide = { right: 0.4, forward: -25.5, height: 3.4 }
+wide = {
+	right: 0.4,
+	forward: -25.5,
+	height: 3.4,
+}
 
 moved_spot : Spot, { goes : Going, fraction : F64 } -> Spot
 moved_spot = |from, { goes, fraction }|

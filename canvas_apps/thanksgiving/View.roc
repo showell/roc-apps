@@ -25,7 +25,15 @@ View :: {
 	## The same eye, seeing a copy of the backyard's things moved by `offset`:
 	## drawing a thing at its own place through this view draws it moved.
 	shifted_view : View, { right : F64, forward : F64 } -> View
-	shifted_view = |View.(view), offset| View.({ ..view, stands: { right: view.stands.right - offset.right, forward: view.stands.forward - offset.forward } })
+	shifted_view = |View.(view), offset| View.(
+		{
+			..view,
+			stands: {
+				right: view.stands.right - offset.right,
+				forward: view.stands.forward - offset.forward,
+			},
+		},
+	)
 
 	## The same eye, seeing a copy of the backyard's things grown `scale`
 	## times about the spot `about` on the ground: 0 shrinks them to a point
