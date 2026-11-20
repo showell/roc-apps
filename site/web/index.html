@@ -3,7 +3,7 @@
 <head>
 <!-- Every link opens in a new tab (Steve's preference). -->
 <base target="_blank">
-<meta name="description" content="Programs written in Roc: the Fast Track board game against computer players, the Dog Park herding game, the Seattle Delivery route planner, the Safari Ride screensaver and the little Roc book about it, the roc-markdown library, a BASIC interpreter, six roc-ray examples, roc-screensaver, a Roc platform in Zig for screensavers that also run as web pages, and three animated shorts.">
+<meta name="description" content="Programs written in Roc: the Fast Track board game against computer players, the Dog Park herding game, the Seattle Delivery route planner, the Safari Ride screensaver and the little Roc book about it, the roc-markdown library, the roc-syntax-color package, a BASIC interpreter, six roc-ray examples, roc-screensaver, a Roc platform in Zig for screensavers that also run as web pages, and three animated shorts.">
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Steve's Roc Work</title>
@@ -57,6 +57,13 @@
   pre.roc { margin: 6px 0 8px; padding: 8px 10px; background: #2b2733; color: #e8e6e0; border-radius: 5px; font: 12px/1.4 ui-monospace, Menlo, Consolas, monospace; overflow-x: auto; }
   pre.roc .k { color: #c792ea; }
   pre.roc .t { color: #82aaff; }
+  /* roc-syntax-color's own classes, in the same two colors and a few more. */
+  pre.roc .syn-keyword { color: #c792ea; }
+  pre.roc .syn-type { color: #82aaff; }
+  pre.roc .syn-string { color: #c3e88d; }
+  pre.roc .syn-number { color: #f78c6c; }
+  pre.roc .syn-comment { color: #8a8494; }
+  pre.roc .syn-name { color: #ffcb6b; }
   .caption { font-size: 12px; color: var(--muted); margin: -4px 0 6px; }
 
   /* Luke's examples: smaller, side by side. */
@@ -72,7 +79,7 @@
 <main>
 <h1>Steve's Roc Work</h1>
 <p class="lede">Steve Howell wrote or refined these <a href="https://www.roc-lang.org/">Roc</a> apps, this book and
-this package through agentic development, with Claude, an AI agent, writing the code. The apps run here in your
+these packages through agentic development, with Claude, an AI agent, writing the code. The apps run here in your
 browser, compiled to WebAssembly.</p>
 <p class="license">Everything on this page is open source under the
 <a href="https://opensource.org/license/upl-1.0">Universal Permissive License (UPL) 1.0</a>, the license Roc itself uses.</p>
@@ -135,6 +142,23 @@ browser, compiled to WebAssembly.</p>
     <div class="stat"><b>473</b><span>expects</span></div>
     <div class="stat"><b>314</b><span>CommonMark and GFM spec examples, each held to a frozen answer</span></div>
     <div class="stat"><b>10,000</b><span>real chat messages, and about a thousand hostile inputs</span></div>
+  </div>
+</section>
+<section class="feature" data-app="syntax-color">
+  <div>
+    <h3><a href="syntax-color/">roc-syntax-color</a></h3>
+    <p>A Roc package that colors source code for web pages: Roc, JavaScript, Shale and Zig. Code goes in and HTML comes out, with a span around each comment, string, number, keyword, name and type, and your stylesheet picks the colors. Any text at all comes out colored, even half a program or a string left open. It colors the code in the Safari book and the books book.</p>
+    <pre class="roc"><span class="syn-name">page_code</span> : <span class="syn-type">Str</span> -&gt; <span class="syn-type">Str</span>
+<span class="syn-name">page_code</span> = |code| <span class="syn-string">&quot;&lt;pre&gt;&lt;code&gt;</span>${<span class="syn-type">SyntaxColor</span>.html(<span class="syn-type">SyntaxColor</span>.roc, code)}<span class="syn-string">&lt;/code&gt;&lt;/pre&gt;&quot;</span></pre>
+    <p class="caption">From the package's README: a page's code block, colored.</p>
+    <p class="opening"><span class="tag">Roc at work</span>The package is pure functions from <code>Str</code> to <code>Str</code>, with no platform of its own, so any Roc app on any platform can import it. Each language is a lexer of its own, and each lexer covers every byte of its text exactly once, in order, so the HTML with its tags removed is exactly the escaped input.</p>
+    <p class="opening"><span class="tag nice">Roc plays nice with others</span>Its checks hold it to real files in all four languages, colored byte for byte as recorded. For Shale, the recording is the Shale cookbook's own colorer, so the Roc lexer agrees with Shale's own on every sample that colorer accepts.</p>
+    <div class="links"><a href="syntax-color/">Code in each language, colored</a><a href="https://github.com/showell/roc-syntax-color">The package</a></div>
+  </div>
+  <div class="stats">
+    <div class="stat"><b>2,887</b><span>lines of Roc in 8 modules</span></div>
+    <div class="stat"><b>182</b><span>expects</span></div>
+    <div class="stat"><b>211</b><span>real files in four languages, held to their recorded coloring</span></div>
   </div>
 </section>
 
