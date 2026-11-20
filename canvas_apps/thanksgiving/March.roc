@@ -13,16 +13,18 @@
 ## rank.
 import lib.Eye
 import Dancer
+import Dishes
 import Ease
 import Robot
 import Script
 
 March :: [].{
 
-	## One marcher in the ranks: its build, where its feet are, how it
-	## stands, and how far its dish is tipped.
+	## One marcher in the ranks: its build, the dish it carries, where its
+	## feet are, how it stands, and how far its dish is tipped.
 	Trooper : {
 		build : Robot.Build,
+		dish : Dishes.Dish,
 		feet : Eye.At,
 		pose : Robot.Pose,
 		dish_tilt : F64,
@@ -64,6 +66,7 @@ March :: [].{
 # A place in the army: how far behind the drum major, how far across.
 Slot : {
 	build : Robot.Build,
+	dish : Dishes.Dish,
 	behind : F64,
 	right : F64,
 }
@@ -73,11 +76,11 @@ Slot : {
 slots : List(Slot)
 slots =
 	[
-		(Tall, 1.5),
-		(Round, 2.6),
-		(Tiny, 3.7),
+		(Tall, Turkey, 1.5),
+		(Round, Potatoes, 2.6),
+		(Tiny, Pie, 3.7),
 	]
-		.map(|(build, behind)| files.map(|right| { build, behind, right }))
+		.map(|(build, dish, behind)| files.map(|right| { build, dish, behind, right }))
 		.join()
 		.drop_last(1)
 
@@ -87,6 +90,7 @@ files = [-1.9, -0.7, 1.5, 2.7]
 straggler_slot : Slot
 straggler_slot = {
 	build: Tiny,
+	dish: Pie,
 	behind: 3.7,
 	right: 2.7,
 }
@@ -127,6 +131,7 @@ trooper = |slot, now| {
 	phase = step_phase(now)
 	{
 		build: slot.build,
+		dish: slot.dish,
 		feet: {
 			right: slot.right,
 			forward: lead_forward(now) - slot.behind,
@@ -151,7 +156,7 @@ carrying_pose : {
 carrying_pose = |{ build, phase, stride }| {
 	phase: match build {
 		Tiny => 2.0 * phase
-		Tall | Round => phase
+		Tall | Round | Mommy => phase
 	},
 	stride,
 	reach: 1.0,
@@ -178,6 +183,7 @@ straggler = |now| {
 	rolled = (spot - from) * braking
 	{
 		build: Tiny,
+		dish: Pie,
 		feet: {
 			right: straggler_slot.right,
 			forward: from + rolled,

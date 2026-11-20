@@ -8,7 +8,6 @@ import lib.RgbColor
 import lib.Shapes
 import Dancer
 import Figure
-import Dinner
 import Dishes
 import March
 import Robot
@@ -33,7 +32,7 @@ Army :: [].{
 
 # A marcher, then its dish held up in its right hand.
 trooper_shapes : View, March.Trooper -> List(Shapes.Shape)
-trooper_shapes = |view, { build, feet, pose, dish_tilt }|
+trooper_shapes = |view, { build, dish, feet, pose, dish_tilt }|
 	match view.sighting(feet) {
 		Ok({ point, pixels_per_metre }) => {
 			figure = Robot.figure_shapes({ build, pose, feet: point, pixels_per_metre })
@@ -43,10 +42,10 @@ trooper_shapes = |view, { build, feet, pose, dish_tilt }|
 				forward: feet.forward - 0.1,
 				height: hand.up + 0.02,
 			}
-			dish =
+			plated =
 				match view.sighting(dish_at) {
 					Ok(held) => Dishes.dish_shapes(
-						Dinner.dish_of(build),
+						dish,
 						{
 							base: held.point,
 							pixels_per_metre: held.pixels_per_metre,
@@ -55,7 +54,7 @@ trooper_shapes = |view, { build, feet, pose, dish_tilt }|
 					)
 					Err(BehindEye) => []
 				}
-			List.concat(figure, dish)
+			List.concat(figure, plated)
 		}
 		Err(BehindEye) => []
 	}

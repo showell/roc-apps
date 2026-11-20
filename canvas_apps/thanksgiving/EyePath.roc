@@ -3,7 +3,7 @@
 ## left it, either by a distance or to a spot. Each is named for the shot it
 ## ends on, so the path reads as a shot list. Lens says what the eye zooms
 ## to on the way.
-import Dinner
+import Family
 import Ease
 import Script
 
@@ -85,13 +85,13 @@ moves = [
 	# table's corner, and back
 	# once it is caught.
 	{
-		start: Dinner.slip_tick - 8,
+		start: Family.slip_tick - 8,
 		frames: 10,
 		curve: Whip,
 		goes: To({ ..seated, right: -0.75, height: 0.95 }),
 	},
 	{
-		start: Dinner.slip_tick + 70,
+		start: Family.slip_tick + 70,
 		frames: 30,
 		curve: Smooth,
 		goes: To(seated),

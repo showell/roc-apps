@@ -24,12 +24,14 @@ import Dancer
 import Dinner
 import Dishes
 import EyePath
+import Guests
 import Leaves
 import Lens
 import Lights
 import ParadeFloat
 import Robot
 import Script
+import Serving
 import Seating
 import SideBody
 import Speck
@@ -168,22 +170,54 @@ table_shapes = |view, { ride, tick }|
 # that table. Every table is the same scene, so they move in step.
 party_shapes : View, I64 -> List(Shapes.Shape)
 party_shapes = |view, tick| {
-	guests = [Tall, Round, Tiny]
 	var $out = Lights.post_shapes(view)
 	$out = List.concat($out, Table.shadow_shapes(view))
-	for build in guests {
-		guest = Dinner.guest_at(build, tick)
-		$out = List.concat($out, Table.chair_shapes(view, { build, pulled: guest.chair_pulled }))
-		$out = List.concat($out, guest_shapes(view, { build, guest }))
-		$out = List.concat($out, dish_shapes(view, { build, tick, layer: Carried }))
+	$out = List.concat($out, chairs_and_guests_shapes(view, tick))
+	for dish in Serving.dishes {
+		$out = List.concat($out, dish_shapes(view, { dish, tick, layer: Carried }))
 	}
 	$out = List.concat($out, Table.top_shapes(view))
-	for build in guests {
-		$out = List.concat($out, dish_shapes(view, { build, tick, layer: OnTable }))
+	for dish in Serving.dishes {
+		$out = List.concat($out, dish_shapes(view, { dish, tick, layer: OnTable }))
 	}
 	$out = List.concat($out, dancer_shapes(view, tick))
 	List.concat($out, Lights.strand_shapes(view, Dinner.bulb_glows(tick)))
 }
+
+# The chairs and the guests, farthest from the eye first. A guest goes over
+# its own chair once it is on it, and under a nearer chair it walks behind.
+chairs_and_guests_shapes : View, I64 -> List(Shapes.Shape)
+chairs_and_guests_shapes = |view, tick|
+	Guests.everyone
+		.map(
+			|build| {
+				guest = Guests.guest_at(build, tick)
+				chair = Table.chair_shapes(
+					view,
+					{ build, pulled: Guests.chair_pulled(build, tick) },
+				)
+				[
+					{ depth: Table.chair_of(build).forward, shapes: chair },
+					{
+						depth: guest.at.forward - 0.01,
+						shapes: guest_shapes(view, { build, guest }),
+					},
+				]
+			},
+		)
+		.join()
+		.sort_with(
+			|a, b|
+				if a.depth > b.depth {
+					Before
+				} else if a.depth < b.depth {
+					After
+				} else {
+					Same
+				},
+		)
+		.map(|layer| layer.shapes)
+		.join()
 
 # A guest side on, as it walks up the side of the table and sits.
 guest_shapes : View, { build : Robot.Build, guest : Seating.Guest } -> List(Shapes.Shape)
@@ -212,21 +246,21 @@ dancer_shapes = |view, tick|
 		Err(BehindEye) => []
 	}
 
-# A robot's dish, when it is in the layer being painted.
+# A dish, when it is in the layer being painted.
 dish_shapes : View,
 {
-	build : Robot.Build,
+	dish : Dishes.Dish,
 	tick : I64,
 	layer : [Carried, OnTable],
 } -> List(Shapes.Shape)
-dish_shapes = |view, { build, tick, layer }| {
-	place = Dinner.dish_place(build, tick)
+dish_shapes = |view, { dish, tick, layer }| {
+	place = Serving.dish_place(dish, tick)
 	if place.layer != layer {
 		[]
 	} else {
 		match view.sighting(place.at) {
 			Ok({ point, pixels_per_metre }) => Dishes.dish_shapes(
-				Dinner.dish_of(build),
+				dish,
 				{ base: point, pixels_per_metre, tilt: place.tilt },
 			)
 			Err(BehindEye) => []

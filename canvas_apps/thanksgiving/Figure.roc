@@ -110,41 +110,91 @@ Figure :: [].{
 		shin : F64,
 	} -> { knee : Figure.Spot, ankle : Figure.Spot }
 	knee_between = |{ hip, ankle, thigh, shin }| {
-		dx = ankle.across - hip.across
-		dy = ankle.up - hip.up
-		wanted = (dx * dx + dy * dy).sqrt()
-		reach = (thigh + shin) * 0.999
-		if wanted >= reach or wanted < 0.0001 {
-			# Straight toward the ankle, or straight down when it is at the hip.
-			unit =
-				if wanted < 0.0001 {
-					{ across: 0.0, up: -1.0 }
-				} else {
-					{ across: dx / wanted, up: dy / wanted }
-				}
-			{
-				knee: { across: hip.across + unit.across * thigh, up: hip.up + unit.up * thigh },
-				ankle: { across: hip.across + unit.across * reach, up: hip.up + unit.up * reach },
-			}
-		} else {
-			along = (thigh * thigh - shin * shin + wanted * wanted) / (2.0 * wanted)
-			off = (thigh * thigh - along * along).max(0.0).sqrt()
-			base = { across: hip.across + dx * along / wanted, up: hip.up + dy * along / wanted }
-			# The two sides of the line from hip to ankle; the knee takes the one
-			# farther forward.
-			side = { across: 0.0 - dy / wanted, up: dx / wanted }
-			sign = if side.across >= 0.0 {
-				1.0
+		leg = two_bones({
+			root: hip,
+			tip: ankle,
+			first: thigh,
+			second: shin,
+			bend: TowardFront,
+		})
+		{ knee: leg.joint, ankle: leg.tip }
+	}
+
+	## Where the elbow of an arm goes, from the shoulder and the hand, as
+	## `knee_between` finds a knee, except that an elbow bends down, toward the
+	## ground. A hand out of reach is where the straight arm points.
+	elbow_between : {
+		shoulder : Figure.Spot,
+		hand : Figure.Spot,
+		upper : F64,
+		fore : F64,
+	} -> { elbow : Figure.Spot, hand : Figure.Spot }
+	elbow_between = |{ shoulder, hand, upper, fore }| {
+		arm = two_bones({
+			root: shoulder,
+			tip: hand,
+			first: upper,
+			second: fore,
+			bend: TowardGround,
+		})
+		{ elbow: arm.joint, hand: arm.tip }
+	}
+
+	## The angle of a bone from `from` to `to`, from straight down, positive
+	## to the screen's right, as `bone_end` takes it.
+	angle_from_down : Figure.Spot, Figure.Spot -> F64
+	angle_from_down = |from, to| F64.atan2({ x: from.up - to.up, y: to.across - from.across })
+}
+
+# Two bones from `root` toward `tip`, and the joint between them on the
+# side `bend` asks for.
+two_bones : {
+	root : Figure.Spot,
+	tip : Figure.Spot,
+	first : F64,
+	second : F64,
+	bend : [TowardFront, TowardGround],
+} -> { joint : Figure.Spot, tip : Figure.Spot }
+two_bones = |{ root, tip, first, second, bend }| {
+	dx = tip.across - root.across
+	dy = tip.up - root.up
+	wanted = (dx * dx + dy * dy).sqrt()
+	reach = (first + second) * 0.999
+	if wanted >= reach or wanted < 0.0001 {
+		# Straight toward the tip, or straight down when it is at the root.
+		unit =
+			if wanted < 0.0001 {
+				{ across: 0.0, up: -1.0 }
 			} else {
-				-1.0
+				{ across: dx / wanted, up: dy / wanted }
 			}
-			{
-				knee: {
-					across: base.across + sign * off * side.across,
-					up: base.up + sign * off * side.up,
-				},
-				ankle,
+		{
+			joint: { across: root.across + unit.across * first, up: root.up + unit.up * first },
+			tip: { across: root.across + unit.across * reach, up: root.up + unit.up * reach },
+		}
+	} else {
+		along = (first * first - second * second + wanted * wanted) / (2.0 * wanted)
+		off = (first * first - along * along).max(0.0).sqrt()
+		base = { across: root.across + dx * along / wanted, up: root.up + dy * along / wanted }
+		# The two sides of the line from root to tip; the joint takes the one
+		# `bend` asks for.
+		side = { across: 0.0 - dy / wanted, up: dx / wanted }
+		leaning =
+			match bend {
+				TowardFront => side.across
+				TowardGround => 0.0 - side.up
 			}
+		sign = if leaning >= 0.0 {
+			1.0
+		} else {
+			-1.0
+		}
+		{
+			joint: {
+				across: base.across + sign * off * side.across,
+				up: base.up + sign * off * side.up,
+			},
+			tip,
 		}
 	}
 }

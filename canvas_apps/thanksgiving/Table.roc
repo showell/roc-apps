@@ -6,6 +6,7 @@ import lib.Brush
 import lib.Eye
 import lib.RgbColor
 import lib.Shapes
+import Dishes
 import Robot
 import View
 
@@ -30,7 +31,6 @@ Table :: [].{
 		right : F64,
 		forward : F64,
 		seat_height : F64,
-		back : [HighBack, Stool],
 	}
 	chair_of = |build|
 		match build {
@@ -38,39 +38,43 @@ Table :: [].{
 				right: -1.02,
 				forward: 5.2,
 				seat_height: 0.48,
-				back: HighBack,
 			}
 			Round => {
 				right: -1.02,
-				forward: 3.9,
+				forward: 4.1,
 				seat_height: 0.24,
-				back: HighBack,
 			}
 			Tiny => {
 				right: -1.08,
-				forward: 2.6,
+				forward: 3.0,
 				seat_height: 0.42,
-				back: Stool,
+			}
+			Mommy => {
+				right: -1.02,
+				forward: 1.9,
+				seat_height: 0.44,
 			}
 		}
 
-	## Where each robot sets its dish, on the tabletop.
-	dish_spot : Robot.Build -> Eye.At
-	dish_spot = |build|
-		match build {
-			Tall => {
-				right: -0.2,
-				forward: 5.5,
+	## Where each dish is set down, on the tabletop: as far down the table as
+	## the hands of whoever sets it down, who stand in the aisle beside the
+	## chairs, so the hands meet it.
+	dish_spot : Dishes.Dish -> Eye.At
+	dish_spot = |dish|
+		match dish {
+			Turkey => {
+				right: -0.3,
+				forward: 4.58,
 				height: top_height,
 			}
-			Round => {
-				right: -0.22,
-				forward: 4.2,
+			Potatoes => {
+				right: -0.42,
+				forward: 3.48,
 				height: top_height,
 			}
-			Tiny => {
-				right: -0.24,
-				forward: 2.95,
+			Pie => {
+				right: -0.3,
+				forward: 2.28,
 				height: top_height,
 			}
 		}
@@ -88,7 +92,7 @@ Table :: [].{
 			fill: Flat({ ..Brush.opaque_rgba(RgbColor.of(0x10160E)), a: 0.45 }),
 		})
 
-	## A chair, seat and back, or a stool, pulled out from its place by
+	## A chair, seat and back, pulled out from its place by
 	## `pulled` metres, away from the table. Its back is on the side away from
 	## the table, so a robot sitting in it faces the table.
 	chair_shapes : View, { build : Robot.Build, pulled : F64 } -> List(Shapes.Shape)
@@ -145,35 +149,31 @@ Table :: [].{
 			fill: wood,
 		})
 		back =
-			match chair.back {
-				HighBack =>
-					view.region_shapes({
-						corners: [
-							{
-								right: chair.right - half,
-								forward: chair.forward - half,
-								height: chair.seat_height,
-							},
-							{
-								right: chair.right - half,
-								forward: chair.forward + half,
-								height: chair.seat_height,
-							},
-							{
-								right: chair.right - half,
-								forward: chair.forward + half,
-								height: chair.seat_height + 0.62,
-							},
-							{
-								right: chair.right - half,
-								forward: chair.forward - half,
-								height: chair.seat_height + 0.62,
-							},
-						],
-						fill: wood_dark,
-					})
-				Stool => []
-			}
+			view.region_shapes({
+				corners: [
+					{
+						right: chair.right - half,
+						forward: chair.forward - half,
+						height: chair.seat_height,
+					},
+					{
+						right: chair.right - half,
+						forward: chair.forward + half,
+						height: chair.seat_height,
+					},
+					{
+						right: chair.right - half,
+						forward: chair.forward + half,
+						height: chair.seat_height + 0.62,
+					},
+					{
+						right: chair.right - half,
+						forward: chair.forward - half,
+						height: chair.seat_height + 0.62,
+					},
+				],
+				fill: wood_dark,
+			})
 		List.concat(List.concat(back, legs), seat)
 	}
 
@@ -251,8 +251,9 @@ Table :: [].{
 places : List({ right : F64, forward : F64 })
 places = [
 	{ right: -0.3, forward: 0.78 },
-	{ right: -0.38, forward: 2.6 },
-	{ right: -0.38, forward: 3.9 },
+	{ right: -0.38, forward: 1.9 },
+	{ right: -0.38, forward: 3.0 },
+	{ right: -0.38, forward: 4.1 },
 	{ right: -0.38, forward: 5.2 },
 ]
 
@@ -360,9 +361,9 @@ plate_white = Brush.flat(RgbColor.of(0xFAF7F0))
 
 # Every dish lands on the tabletop, between its ends and its edges.
 expect
-	[Tall, Round, Tiny].all(
-		|build| {
-			spot = Table.dish_spot(build)
+	[Turkey, Potatoes, Pie].all(
+		|dish| {
+			spot = Table.dish_spot(dish)
 			spot.height == Table.top_height
 				and spot.forward > Table.near_end
 				and spot.forward < Table.far_end
@@ -372,7 +373,7 @@ expect
 
 # Every chair stands off the tabletop, beside the table or past its far end.
 expect
-	[Tall, Round, Tiny].all(
+	[Tall, Round, Tiny, Mommy].all(
 		|build| {
 			chair = Table.chair_of(build)
 			chair.right.abs() > Table.half_width or chair.forward > Table.far_end

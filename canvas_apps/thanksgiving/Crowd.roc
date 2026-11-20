@@ -179,7 +179,7 @@ fence_member = |spot, now| {
 	jump_height =
 		match spot.build {
 			Tiny => 1.6
-			Tall | Round => 1.0
+			Tall | Round | Mommy => 1.0
 		}
 	{
 		build: spot.build,

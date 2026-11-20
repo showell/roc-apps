@@ -9,14 +9,19 @@
 ## wheel has no knees to bend, so instead it puts its hands back on the seat
 ## and hoists itself up onto it.
 ##
+## A small robot can be helped: someone else pulls its chair out, and
+## pushes it in once it is up on the seat, and it only waits, climbs up and
+## rests its hands on the table.
+##
 ## A plan says where the chair is and when the robot sets off, arrives and
-## starts on its chair; each step after that takes its own fixed time.
-## Before the chair the arms are the caller's, so a robot can carry a dish
-## in and set it down.
+## starts on its chair; each step after that takes its own fixed time. The
+## caller can put the arms and the lean somewhere else while the robot
+## stands, so it can carry a dish in and set it down.
 import lib.Eye
 import Ease
 import Figure
 import Robot
+import RobotBody
 import SideBody
 
 Seating :: [].{
@@ -41,6 +46,7 @@ Seating :: [].{
 		enter_tick : I64,
 		arrive_tick : I64,
 		chair_tick : I64,
+		chair_mover : [Itself, Helped({ pulled_tick : I64, pushed_tick : I64 })],
 	}
 
 	## A robot at one tick: the ground spot its pose is measured from, the
@@ -53,16 +59,15 @@ Seating :: [].{
 		walk_phase : F64,
 	}
 
-	## The robot at `now`, its arms carrying as `carry` says until it starts
-	## on its chair, and looking and lit as the caller says throughout.
+	## The robot at `now`, looking and lit as the caller says, facing the
+	## table.
 	guest_at : Seating.Plan,
 	{
 		now : I64,
-		carry : SideBody.Arm,
 		look : F64,
 		glow : F64,
 	} -> Seating.Guest
-	guest_at = |plan, { now, carry, look, glow }| {
+	guest_at = |plan, { now, look, glow }| {
 		stage = stage_at(plan, now)
 		{
 			at: stage.at,
@@ -72,15 +77,12 @@ Seating :: [].{
 				far_foot: stage.far_foot,
 				lean: stage.lean,
 				head_tilt: 0.0 - 0.6 * stage.lean,
-				near_arm: if now < plan.chair_tick {
-					carry
-				} else {
-					stage.near_arm
-				},
+				near_arm: stage.near_arm,
 				far_arm: stage.far_arm,
 				wheel_turn: stage.walked / 0.09,
 				look,
 				glow,
+				facing: 1.0,
 			},
 			chair_pulled: stage.chair_pulled,
 			walk_phase: stage.walked * F64.tau / plan.step,
@@ -90,11 +92,80 @@ Seating :: [].{
 	## The tick by which a robot is sat with its chair in and its hands on the
 	## table.
 	seated_tick : Seating.Plan -> I64
-	seated_tick = |plan| Seating.sit_tick(plan) + sit_frames + scoot_frames + rest_frames
+	seated_tick = |plan| scooted_tick(plan) + scoot_frames + rest_frames
 
 	## The tick its hips start down onto the seat.
 	sit_tick : Seating.Plan -> I64
-	sit_tick = |plan| plan.chair_tick + pull_frames + shuffle_frames
+	sit_tick = |plan| pulled_tick(plan) + shuffle_frames
+
+	## How many ticks the chair takes to go in.
+	scoot_frames : I64
+	scoot_frames = 26
+
+	## Where the hips and the ankles are `phase` radians through a walk,
+	## taking strides `stride` of a full one, a whole stride `step` metres:
+	## each foot is planted for half the stride and slides back under the
+	## hips as they pass over it, then lifts and swings forward. The hips dip
+	## a little as the feet pass.
+	gait_at : Robot.Build,
+	{
+		step : F64,
+		phase : F64,
+		stride : F64,
+	} -> {
+		hip : Figure.Spot,
+		near_foot : Figure.Spot,
+		far_foot : Figure.Spot,
+	}
+	gait_at = |build, { step, phase, stride }| {
+		body = Robot.proportions(build)
+		half = step / 2.0 * stride
+		lift = 0.2 * SideBody.bone_length(body) * stride
+		foot = |turned| {
+			cycle = turned / F64.tau
+			whole = cycle - cycle.to_i64_wrap().to_f64()
+			part = if whole < 0.0 {
+				whole + 1.0
+			} else {
+				whole
+			}
+			if part < 0.5 {
+				{ across: half / 2.0 - half * (part / 0.5), up: SideBody.ankle_height }
+			} else {
+				swing = (part - 0.5) / 0.5
+				{
+					across: 0.0 - half / 2.0 + half * Ease.smooth(swing),
+					up: SideBody.ankle_height + lift * (F64.pi * swing).sin(),
+				}
+			}
+		}
+		dip = 0.02 * stride * (1.0 - (2.0 * phase).cos()) / 2.0
+		{
+			hip: { across: 0.0, up: SideBody.standing_hip(body) - dip },
+			near_foot: foot(phase),
+			far_foot: foot(phase + F64.pi),
+		}
+	}
+
+	## Where a standing robot's feet are planted, a little apart.
+	planted : Figure.Spot
+	planted = { across: 0.05, up: SideBody.ankle_height }
+
+	## An arm hanging at the side.
+	hanging : SideBody.Arm
+	hanging = { upper: 0.05, fore: 0.1 }
+
+	## Where a robot's near hand is in the backyard, turned as it is turned:
+	## from its spot, a little nearer the eye than its body.
+	hand_in_yard : RobotBody.Proportions, Seating.Guest -> Eye.At
+	hand_in_yard = |body, guest| {
+		hand = SideBody.near_hand_at(body, guest.pose)
+		{
+			right: guest.at.right + guest.pose.facing * hand.across,
+			forward: guest.at.forward - 0.12,
+			height: hand.up + 0.02,
+		}
+	}
 
 	## How far a robot pulls its chair out, in metres.
 	pull_metres : F64
@@ -109,9 +180,6 @@ shuffle_frames = 34
 
 sit_frames : I64
 sit_frames = 66
-
-scoot_frames : I64
-scoot_frames = 26
 
 rest_frames : I64
 rest_frames = 22
@@ -129,19 +197,20 @@ Stage : {
 	walked : F64,
 }
 
-hanging : SideBody.Arm
-hanging = { upper: 0.05, fore: 0.1 }
-
 stage_at : Seating.Plan, I64 -> Stage
 stage_at = |plan, now| {
-	pulled_at = plan.chair_tick + pull_frames
+	pulled_at = pulled_tick(plan)
 	shuffled_at = pulled_at + shuffle_frames
 	sat_at = shuffled_at + sit_frames
-	scooted_at = sat_at + scoot_frames
-	if now < plan.chair_tick {
+	scoot_at = scooted_tick(plan)
+	scooted_at = scoot_at + Seating.scoot_frames
+	if now < plan.chair_tick or now < pulled_at - pull_frames {
 		walking_stage(plan, now)
 	} else if now < pulled_at {
-		pulling_stage(plan, Ease.ramp(now - plan.chair_tick, pull_frames))
+		match plan.chair_mover {
+			Itself => pulling_stage(plan, Ease.ramp(now - plan.chair_tick, pull_frames))
+			Helped(_) => walking_stage(plan, now)
+		}
 	} else if now < shuffled_at {
 		shuffling_stage(plan, Ease.ramp(now - pulled_at, shuffle_frames))
 	} else if now < sat_at {
@@ -150,12 +219,29 @@ stage_at = |plan, now| {
 		scooting_stage(
 			plan,
 			{
-				scooted: Ease.ramp(now - sat_at, scoot_frames),
+				scooted: Ease.ramp(now - scoot_at, Seating.scoot_frames),
 				rested: Ease.ramp(now - scooted_at, rest_frames),
 			},
 		)
 	}
 }
+
+# When the chair is out: the robot's own pull's end, or its helper's.
+pulled_tick : Seating.Plan -> I64
+pulled_tick = |plan|
+	match plan.chair_mover {
+		Itself => plan.chair_tick + pull_frames
+		Helped({ pulled_tick: helped_at, .. }) => helped_at
+	}
+
+# When the chair starts in: as soon as the robot is down, or when its helper
+# pushes.
+scooted_tick : Seating.Plan -> I64
+scooted_tick = |plan|
+	match plan.chair_mover {
+		Itself => pulled_tick(plan) + shuffle_frames + sit_frames
+		Helped({ pushed_tick, .. }) => pushed_tick
+	}
 
 # How far along the aisle the robot has walked at `now`.
 walked_right : Seating.Plan, I64 -> F64
@@ -180,57 +266,24 @@ walking_stage = |plan, now| {
 	right = walked_right(plan, now)
 	walked = right - plan.walk_from
 	stride = stride_at(plan, now)
-	gait = gait_at(plan, { phase: walked * F64.tau / plan.step, stride })
+	gait = Seating.gait_at(
+		plan.build,
+		{
+			step: plan.step,
+			phase: walked * F64.tau / plan.step,
+			stride,
+		},
+	)
 	{
 		at: { right, forward: plan.aisle_forward, height: 0.0 },
 		hip: gait.hip,
 		near_foot: gait.near_foot,
 		far_foot: gait.far_foot,
 		lean: 0.05 * stride,
-		near_arm: hanging,
+		near_arm: Seating.hanging,
 		far_arm: { upper: 0.05 - 0.3 * stride * (walked * F64.tau / plan.step).sin(), fore: 0.15 },
 		chair_pulled: 0.0,
 		walked,
-	}
-}
-
-# Where the hips and the ankles are `phase` radians through a walk, taking
-# strides `stride` of a full one: each foot is planted for half the stride
-# and slides back under the hips as they pass over it, then lifts and
-# swings forward. The hips dip a little as the feet pass.
-gait_at : Seating.Plan,
-{ phase : F64, stride : F64 } -> {
-	hip : Figure.Spot,
-	near_foot : Figure.Spot,
-	far_foot : Figure.Spot,
-}
-gait_at = |plan, { phase, stride }| {
-	body = Robot.proportions(plan.build)
-	half = plan.step / 2.0 * stride
-	lift = 0.2 * SideBody.bone_length(body) * stride
-	foot = |turned| {
-		cycle = turned / F64.tau
-		whole = cycle - cycle.to_i64_wrap().to_f64()
-		part = if whole < 0.0 {
-			whole + 1.0
-		} else {
-			whole
-		}
-		if part < 0.5 {
-			{ across: half / 2.0 - half * (part / 0.5), up: SideBody.ankle_height }
-		} else {
-			swing = (part - 0.5) / 0.5
-			{
-				across: 0.0 - half / 2.0 + half * Ease.smooth(swing),
-				up: SideBody.ankle_height + lift * (F64.pi * swing).sin(),
-			}
-		}
-	}
-	dip = 0.02 * stride * (1.0 - (2.0 * phase).cos()) / 2.0
-	{
-		hip: { across: 0.0, up: SideBody.standing_hip(body) - dip },
-		near_foot: foot(phase),
-		far_foot: foot(phase + F64.pi),
 	}
 }
 
@@ -240,9 +293,6 @@ walk_length = |plan| plan.stop_right - plan.walk_from
 
 standing_hip_spot : Seating.Plan -> Figure.Spot
 standing_hip_spot = |plan| { across: 0.0, up: SideBody.standing_hip(Robot.proportions(plan.build)) }
-
-planted : Figure.Spot
-planted = { across: 0.05, up: SideBody.ankle_height }
 
 # Reaching back for the chair and drawing it out: the near arm goes back
 # over the first half, and the chair comes with it over the second.
@@ -257,14 +307,14 @@ pulling_stage = |plan, progress| {
 			height: 0.0,
 		},
 		hip: standing_hip_spot(plan),
-		near_foot: planted,
-		far_foot: { ..planted, across: -0.05 },
+		near_foot: Seating.planted,
+		far_foot: { ..Seating.planted, across: -0.05 },
 		lean: 0.08 * reach,
 		near_arm: {
 			upper: 0.05 - 0.75 * reach + 0.25 * draw,
 			fore: 0.1 - 0.9 * reach + 0.3 * draw,
 		},
-		far_arm: hanging,
+		far_arm: Seating.hanging,
 		chair_pulled: Seating.pull_metres * draw,
 		walked: walk_length(plan),
 	}
@@ -275,9 +325,13 @@ shuffling_stage : Seating.Plan, F64 -> Stage
 shuffling_stage = |plan, progress| {
 	moved = Ease.smooth(progress)
 	to_right = plan.chair.right - Seating.pull_metres + plan.setback
-	gait = gait_at(
-		plan,
-		{ phase: 2.0 * F64.tau * progress, stride: 0.35 * (F64.pi * progress).sin() },
+	gait = Seating.gait_at(
+		plan.build,
+		{
+			step: plan.step,
+			phase: 2.0 * F64.tau * progress,
+			stride: 0.35 * (F64.pi * progress).sin(),
+		},
 	)
 	{
 		at: {
@@ -286,11 +340,17 @@ shuffling_stage = |plan, progress| {
 			height: 0.0,
 		},
 		hip: gait.hip,
-		near_foot: { ..gait.near_foot, across: gait.near_foot.across + planted.across * moved },
-		far_foot: { ..gait.far_foot, across: gait.far_foot.across + planted.across * moved },
+		near_foot: {
+			..gait.near_foot,
+			across: gait.near_foot.across + Seating.planted.across * moved,
+		},
+		far_foot: {
+			..gait.far_foot,
+			across: gait.far_foot.across + Seating.planted.across * moved,
+		},
 		lean: 0.0,
-		near_arm: hanging,
-		far_arm: hanging,
+		near_arm: Seating.hanging,
+		far_arm: Seating.hanging,
 		chair_pulled: Seating.pull_metres,
 		walked: walk_length(plan),
 	}
@@ -324,8 +384,8 @@ sitting_stage = |plan, progress| {
 			height: 0.0,
 		},
 		hip: { across: 0.0 - plan.setback * back, up: stand + (seat - stand) * down - settle },
-		near_foot: planted,
-		far_foot: { ..planted, across: planted.across - 0.06 },
+		near_foot: Seating.planted,
+		far_foot: { ..Seating.planted, across: Seating.planted.across - 0.06 },
 		lean: 0.04 + 0.5 * brace,
 		near_arm: { upper: 0.05 + 0.6 * brace, fore: 0.1 + 0.9 * brace },
 		far_arm: { upper: 0.05 + 0.5 * brace, fore: 0.1 + 0.8 * brace },
@@ -371,8 +431,8 @@ hoisting_stage = |plan, progress| {
 			height: 0.0,
 		},
 		hip: { across: 0.0 - plan.setback * back, up: stand + (seat - stand) * up },
-		near_foot: planted,
-		far_foot: planted,
+		near_foot: Seating.planted,
+		far_foot: Seating.planted,
 		lean: 0.15 * push,
 		near_arm: { upper: 0.05 - 0.55 * push, fore: 0.1 - 0.2 * push },
 		far_arm: { upper: 0.05 - 0.5 * push, fore: 0.1 - 0.2 * push },

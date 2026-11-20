@@ -16,8 +16,9 @@ import RobotHead
 
 Robot :: [].{
 
-	## The three builds: a tall thin one, a round one, and a tiny one on a wheel.
-	Build : [Tall, Round, Tiny]
+	## The builds: a tall thin one, a round one, a tiny one on a wheel, and
+	## the tiny one's mother.
+	Build : [Tall, Round, Tiny, Mommy]
 
 	## How a robot stands this frame. `phase` is how far through its walk it
 	## is, in radians, and `stride` how much it is walking, from 0 to 1. `reach` goes
@@ -72,6 +73,22 @@ Robot :: [].{
 				antenna: 0.0,
 				paint: Brush.opaque_rgba(RgbColor.of(0xD5884A)),
 				trim: Brush.opaque_rgba(RgbColor.of(0x7D4622)),
+			}
+			Mommy => {
+				hip: 0.78,
+				body_width: 0.32,
+				body_height: 0.55,
+				torso: Boxy,
+				neck: 0.06,
+				head_width: 0.26,
+				head_height: 0.22,
+				upper_arm: 0.28,
+				forearm: 0.26,
+				limb_width: 0.05,
+				moves_on: Legs,
+				antenna: 0.07,
+				paint: Brush.opaque_rgba(RgbColor.of(0xD98BB0)),
+				trim: Brush.opaque_rgba(RgbColor.of(0x7A3E5C)),
 			}
 			Tiny => {
 				hip: 0.22,

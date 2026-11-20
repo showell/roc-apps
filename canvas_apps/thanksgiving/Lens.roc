@@ -5,7 +5,7 @@
 ## from wherever the last left off, timed to the same beats, so the zooms
 ## land on the wink, the drumstick and the crowd. Now and then it snaps in or
 ## out on purpose, to throw the viewer.
-import Dinner
+import Family
 import EyePath
 import Script
 
@@ -60,13 +60,13 @@ moves = [
 		},
 		# In on the slipping pie, and out once it is caught.
 		{
-			start: Dinner.slip_tick - 8,
+			start: Family.slip_tick - 8,
 			frames: 10,
 			curve: Whip,
 			to: { focal: 600.0, roll: 0.0 },
 		},
 		{
-			start: Dinner.slip_tick + 70,
+			start: Family.slip_tick + 70,
 			frames: 30,
 			curve: Smooth,
 			to: normal,

@@ -16,6 +16,7 @@ import lib.Brush
 import lib.Point
 import lib.RgbColor
 import lib.Shapes
+import lib.Squash
 import Figure
 import RobotBody
 import RobotHead
@@ -26,7 +27,9 @@ SideBody :: [].{
 	## the ankles are planted, which the legs reach as far as they are long;
 	## `look` turns the head from side on, at 0, to the eye, at 1; `glow`
 	## lights the eyes; `wheel_turn` is how far a wheel has rolled, in
-	## radians.
+	## radians. `facing` is the cosine of the guest's turn about its upright
+	## axis: 1 faces the screen's right, -1 its left, and between it is
+	## turning, squashed as a flat figure turns.
 	Pose : {
 		hip : Figure.Spot,
 		near_foot : Figure.Spot,
@@ -38,6 +41,7 @@ SideBody :: [].{
 		wheel_turn : F64,
 		look : F64,
 		glow : F64,
+		facing : F64,
 	}
 
 	## An arm's two angles: the upper arm's and the forearm's.
@@ -60,12 +64,33 @@ SideBody :: [].{
 	ankle_height : F64
 	ankle_height = 0.045
 
-	## Where the near hand is.
+	## Where the near hand is, before any turn.
 	near_hand_at : RobotBody.Proportions, SideBody.Pose -> Figure.Spot
 	near_hand_at = |body, pose| hand_at(
 		body,
 		{ shoulder: shoulder_at(body, pose), arm: pose.near_arm },
 	)
+
+	## Where the shoulders are, at the top of the leaning torso.
+	shoulder : RobotBody.Proportions, { hip : Figure.Spot, lean : F64, .. } -> Figure.Spot
+	shoulder = |body, pose| shoulder_at(body, pose)
+
+	## The arm that puts the hand at `hand`, the elbow bent down, or as near
+	## as it reaches.
+	arm_toward : RobotBody.Proportions, { pose : SideBody.Pose, hand : Figure.Spot } -> SideBody.Arm
+	arm_toward = |body, { pose, hand }| {
+		from = shoulder_at(body, pose)
+		arm = Figure.elbow_between({
+			shoulder: from,
+			hand,
+			upper: body.upper_arm,
+			fore: body.forearm,
+		})
+		{
+			upper: Figure.angle_from_down(from, arm.elbow),
+			fore: Figure.angle_from_down(arm.elbow, arm.hand),
+		}
+	}
 
 	## The guest, back to front: the far leg and arm, the body, the head, then
 	## the near leg and arm.
@@ -89,7 +114,7 @@ SideBody :: [].{
 			}),
 		)
 		near_trim = Flat(body.trim)
-		shoulder = shoulder_at(body, pose)
+		shoulder_spot = shoulder_at(body, pose)
 		under =
 			match body.moves_on {
 				Legs => leg_shapes(
@@ -122,7 +147,7 @@ SideBody :: [].{
 				place,
 				{
 					body,
-					shoulder,
+					shoulder: shoulder_spot,
 					arm: pose.far_arm,
 					fill: far_trim,
 				},
@@ -134,12 +159,14 @@ SideBody :: [].{
 				place,
 				{
 					body,
-					shoulder,
+					shoulder: shoulder_spot,
 					arm: pose.near_arm,
 					fill: near_trim,
 				},
 			),
-		].join()
+		]
+			.join()
+			|> Squash.squashed_shapes({ axis: feet.x, cosine: pose.facing })
 	}
 }
 
@@ -147,13 +174,13 @@ shadow : Brush.Rgba
 shadow = Brush.opaque_rgba(RgbColor.of(0x000000))
 
 # A spot `metres` along the torso from the hips, which lean the torso.
-along_torso : SideBody.Pose, F64 -> Figure.Spot
+along_torso : { hip : Figure.Spot, lean : F64, .. }, F64 -> Figure.Spot
 along_torso = |pose, metres| {
 	across: pose.hip.across + pose.lean.sin() * metres,
 	up: pose.hip.up + pose.lean.cos() * metres,
 }
 
-shoulder_at : RobotBody.Proportions, SideBody.Pose -> Figure.Spot
+shoulder_at : RobotBody.Proportions, { hip : Figure.Spot, lean : F64, .. } -> Figure.Spot
 shoulder_at = |body, pose|
 	match body.torso {
 		Boxy => along_torso(pose, body.body_height * 0.88)

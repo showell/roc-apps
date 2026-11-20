@@ -26,33 +26,33 @@ import Routine
 Script :: [].{
 
 	## When the tall robot, the first to sit, starts down onto its seat.
-	## Dinner's plan for it lands here, which its test holds.
+	## Guests' plan for it lands here, which its test holds.
 	first_sit_tick : I64
 	first_sit_tick = 260
 
 	## When the first bulb blinks on.
 	lights_tick : I64
-	lights_tick = 850
+	lights_tick = 1300
 
 	## When the eye starts to ease back from the guest's seat.
 	pull_tick : I64
-	pull_tick = 910
+	pull_tick = 1360
 
 	## When the leaves start to blow.
 	gust_tick : I64
-	gust_tick = 960
+	gust_tick = 1410
 
 	## When the dancer starts walking in, and when the seated robots turn
 	## their eyes to watch it.
 	walk_in_tick : I64
-	walk_in_tick = 990
+	walk_in_tick = 1440
 
 	watch_tick : I64
-	watch_tick = 1010
+	watch_tick = 1460
 
 	## When the routine starts.
 	dance_tick : I64
-	dance_tick = 1120
+	dance_tick = 1570
 
 	## When a section of the routine starts.
 	section_tick : Routine.Section -> I64
@@ -144,6 +144,6 @@ expect Script.halt_tick < Script.peek_tick
 expect Script.float_stop_ticks.all(|tick| tick + 20 <= Script.army_tick)
 
 # The banner is the last thing to happen, a few seconds before the end, and
-# the movie runs under a minute.
+# the movie runs a little over a minute.
 expect Script.banner_tick + 180 < Script.end_tick
-expect Script.end_tick < 60 * 60
+expect Script.end_tick < 70 * 60
