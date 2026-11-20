@@ -36,7 +36,8 @@ serves them all on three channels, so a page moves from one channel to the
 next unchanged. The design is
 [notes/roc-web-umbrella.md](https://github.com/showell/essay-repl-server/blob/master/notes/roc-web-umbrella.md).
 
-- **dev**: each app's `build.sh` writes it; `site/build.sh` writes the landing page.
+- **dev**: each app's `build.sh` writes it; `site/build.sh` writes the landing page
+  and its notes (`site/web/notes/`, short pages linked at its foot).
 - **staging**: `site/live/`, tracked, so a clone has the published site.
   `site/publish.sh <app>` copies an app over from dev, with a `PROVENANCE`
   file, and commits it. `site/publish_screensavers.shale` publishes

@@ -1,6 +1,7 @@
 #!/bin/bash
 # The site's own files into the DEV channel: the landing page, the script every
-# page loads for its way home, and the channel's name.
+# page loads for its way home, the notes (short pages the landing page links
+# at its foot) and the channel's name.
 #
 #   site/build.sh
 #
@@ -13,5 +14,7 @@ mkdir -p "$NEXT"
 cp "$HERE/web/index.html" "$NEXT/"
 rm -rf "$NEXT/shared"
 cp -r "$HERE/web/shared" "$NEXT/"
+rm -rf "$NEXT/notes"
+cp -r "$HERE/web/notes" "$NEXT/"
 echo dev > "$NEXT/channel"
 echo "dev: http://localhost:9210/"

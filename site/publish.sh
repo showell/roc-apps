@@ -7,13 +7,13 @@
 #   site/publish.sh tutorial    the Safari Ride book, with every widget and app it
 #                               frames (each published first, if staging differs)
 #   site/publish.sh shale-book  the Shale book, as book/build.shale built it
-#   site/publish.sh home        the landing page and shared/
+#   site/publish.sh home        the landing page, shared/ and notes/
 #
 # An app: copies ~/build/roc-apps/next/<app>/ (what <app>'s build.sh last wrote,
 # and what :9210/<app>/ shows) over site/live/<app>/ whole, writes a PROVENANCE
 # beside it, and commits and pushes that directory alone. A canvas app must be a
 # release build (`canvas_apps/build.sh <app> release`). `home` does the same
-# for the landing page and shared/; dev's `channel` file stays behind, so
+# for the landing page, shared/ and notes/; dev's `channel` file stays behind, so
 # staging holds exactly what prod will. Staging on :9200 serves site/live/ per
 # request with no-store, so it is live at once. Nothing else writes site/live/
 # but site/publish_screensavers.shale, which writes roc-screensaver's folders
@@ -72,13 +72,15 @@ if [ "$app" = home ]; then
     [ -f "$NEXT/index.html" ] || { echo "no landing page at $NEXT; run site/build.sh first"; exit 2; }
     # Dev must show the landing page as site/web has it, or this would publish
     # an older one and say nothing.
-    if ! diff -q "$HERE/web/index.html" "$NEXT/index.html" > /dev/null || ! diff -rq "$HERE/web/shared" "$NEXT/shared" > /dev/null; then
+    if ! diff -q "$HERE/web/index.html" "$NEXT/index.html" > /dev/null || ! diff -rq "$HERE/web/shared" "$NEXT/shared" > /dev/null || ! diff -rq "$HERE/web/notes" "$NEXT/notes" > /dev/null; then
         echo "dev's landing page is older than site/web/; run site/build.sh, look at http://localhost:9210/, then publish"; exit 2
     fi
     cp "$NEXT/index.html" "$LIVE/"
     rm -rf "$LIVE/shared"
     cp -r "$NEXT/shared" "$LIVE/"
-    paths=("$LIVE/index.html" "$LIVE/shared")
+    rm -rf "$LIVE/notes"
+    cp -r "$NEXT/notes" "$LIVE/"
+    paths=("$LIVE/index.html" "$LIVE/shared" "$LIVE/notes")
     what="the landing page"
 else
     # An app is a directory of this repository -- at the top for the older
