@@ -89,8 +89,7 @@
 -- the app roots and the package say nothing about the game, and a picture's
 -- data or an app's shim is named by what it serves.
 --
--- Beside the output goes blocks.jsonl, the note color_roc.shale colors by. It has
--- a line for each ```roc block, in the output's order, giving the block's file
+-- Each ```roc block has a note, in the output's order, giving the block's file
 -- and its parts. A part is a run of the file's lines, `from` and `to`, each less
 -- its first `indent` bytes, with the last stopping before `end_col`. A part may
 -- instead be a `cut`, which holds the `# ...` line as the block shows it. The
@@ -100,9 +99,9 @@
 -- book.shale): the same checks and expansions, each include written to
 -- build/prepared/line-N.md, N its line in the source, as the include's line
 -- then what it becomes. The `{{index}}` line is left to the book builder,
--- which builds the index itself. Beside them goes blocks.jsonl, the note
--- above with each block's `line`, and blocks.txt, the same note for the app
--- to read, a block a line: its include's line, the file, and its parts, each
+-- which builds the index itself. Beside them goes blocks.txt, the note above
+-- for the app to read, a block a line: its include's line, the file, and its
+-- parts, each
 -- `FROM,TO,INDENT,END_COL` or `cutN`, a cut shown after N tabs, separated by
 -- tabs, its file named as its copy, sources/K.roc, K counting the files in the
 -- order the blocks first show them. The copies let the app, which reads only
@@ -651,16 +650,6 @@ function needs_proof(entries)
   return false
 end
 
-function notes_path(output)
-  return dirname(output) .. "/blocks.jsonl"
-end
-
-function notes_text(notes)
-  local rows = {}
-  for note in notes do push(rows, json_write(note) .. "\n") end
-  return join(rows, "")
-end
-
 -- Stops the build on a line of the index's tables with a `{{` that isn't a
 -- chapter reference, or a reference whose title isn't in `titles`, as a line of
 -- the source would. A row that doesn't end in `|` was cut short on its way out
@@ -756,7 +745,6 @@ end
 function prepare(source, dir, folder)
   mkdir(dir)
   for old in glob(dir .. "/line-*.md") do remove(old) end
-  if exists(dir .. "/blocks.jsonl") then remove(dir .. "/blocks.jsonl") end
   if exists(dir .. "/blocks.txt") then remove(dir .. "/blocks.txt") end
   if exists(dir .. "/sources") then remove_tree(dir .. "/sources") end
   local checked = checked_entries(source, folder)
@@ -771,7 +759,6 @@ function prepare(source, dir, folder)
       written = written + 1
     end
   end
-  replace(dir .. "/blocks.jsonl", notes_text(notes))
   local paths = unique(map_paths(notes))
   replace(dir .. "/blocks.txt", notes_for_the_app(notes, paths))
   for k = 1, #paths do copy(paths[k], dir .. "/" .. source_name(k)) end
@@ -782,7 +769,6 @@ end
 -- Builds the book, and gives the number of includes expanded.
 function build(source, output, folder)
   if exists(output) then remove(output) end
-  if exists(notes_path(output)) then remove(notes_path(output)) end
   local checked = checked_entries(source, folder)
   local entries = checked.entries
   local titles = checked.titles
@@ -790,6 +776,7 @@ function build(source, output, folder)
   local notes = {}
   local expanded = 0
   for e in entries do
+    -- The notes are the pre-step's (blocks.txt); a build makes and drops them.
     local text = expansion(e, checked, folder, notes)
     if text == nil then
       push(kept, e.text)
@@ -800,7 +787,6 @@ function build(source, output, folder)
   end
   mkdir(dirname(output))
   replace(output, join(kept, "\n"))
-  replace(notes_path(output), notes_text(notes))
   for i = 1, #entries do
     if has_key(entries[i], "index") then
       kept[i] = book_index(entries[i], output, titles)
@@ -1009,8 +995,8 @@ function check_title_rule(checks, folder)
 end
 
 -- The note says where each kind of block came from, in order, and has no line
--- for anything that isn't a Roc block. One document holds them all, because each
--- document costs programs.
+-- for anything that isn't a Roc block, as the pre-step's blocks.txt has it. One
+-- document holds them all, because each document costs programs.
 function check_note_rule(checks, folder)
   local zoo = folder .. "/Zoo.roc"
   local includes = {
@@ -1024,7 +1010,15 @@ function check_note_rule(checks, folder)
     "A title\n" .. DIAGRAM,
     "{{fails bad}}",
   }
-  local want = notes_text({
+  -- Each include's line in the document: the prose and a blank line, then
+  -- the includes a blank line apart.
+  local at = {}
+  local line = 3
+  for inc in includes do
+    push(at, line)
+    line = line + #split(inc, "\n") + 1
+  end
+  local notes = {
     {path = zoo, parts = {{from = 10, to = 17, indent = 1, end_col = 3}}},
     {path = zoo, parts = {{from = 19, to = 19, indent = 1, end_col = 12}}},
     {path = zoo, parts = {{cut = "# ..."}, {from = 14, to = 16, indent = 2, end_col = 15}, {cut = "# ..."}}},
@@ -1032,11 +1026,18 @@ function check_note_rule(checks, folder)
     {path = zoo, parts = {{from = 12, to = 12, indent = 1, end_col = 20}, {from = 36, to = 36, indent = 0, end_col = 26}}},
     {path = folder .. "/Tight.roc", parts = {{from = 1, to = 1, indent = 0, end_col = 31}}},
     {path = folder .. "/fails/bad.roc", parts = {{from = 1, to = 9, indent = 0, end_col = 2}}},
-  })
-  local r = attempt_include(folder, join(includes, "\n\n"))
+  }
+  -- The includes that make a block: all but the types row and the diagram.
+  local block_includes = {1, 2, 3, 4, 5, 7, 9}
+  for k = 1, #notes do notes[k].line = at[block_includes[k]] end
+  local want = notes_for_the_app(notes, unique(map_paths(notes)))
+  local dir = folder .. "/prepared"
+  replace(folder .. "/doc.md", "prose\n\n" .. join(includes, "\n\n") .. "\n")
+  local r = attempt(prepare, folder .. "/doc.md", dir, folder)
   if not r.ok then fail("self_test: the note's includes stopped: " .. r.error) end
-  local got = read(folder .. "/out/blocks.jsonl")
+  local got = read(dir .. "/blocks.txt")
   if got ~= want then fail("self_test: the note was [" .. got .. "], not [" .. want .. "]") end
+  remove_tree(dir)
   push(checks, "the note of each kind of block")
   return nil
 end
@@ -1055,8 +1056,6 @@ function check_prepare_rule(checks, folder)
   local row = read(dir .. "/line-6.md")
   if row ~= "{{types row Zoo.feed Feed them}}\n| Feed them | `feed` | `Cage -> F64` |\n" then fail("self_test: the pre-step's line-6.md was [" .. row .. "]") end
   if exists(dir .. "/line-9.md") then fail("self_test: the pre-step left an earlier run's file") end
-  local note = read(dir .. "/blocks.jsonl")
-  if not contains(note, "\"line\":3") or #lines(trim(note)) ~= 1 then fail("self_test: the pre-step's note was [" .. note .. "]") end
   local for_app = read(dir .. "/blocks.txt")
   if for_app ~= "3\tsources/1.roc\t19,19,1,12\n" then fail("self_test: the pre-step's blocks.txt was [" .. for_app .. "]") end
   if read(dir .. "/sources/1.roc") ~= read(folder .. "/Zoo.roc") then fail("self_test: the pre-step's copy of Zoo.roc differs") end

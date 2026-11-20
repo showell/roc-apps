@@ -155,7 +155,6 @@ end
 
 const SELF_PATH = GATES .. "/run.shale"
 const TUTORIAL = "canvas_apps/safari/tutorial/build.shale"
-const COLOR_ROC = "canvas_apps/safari/tutorial/color_roc.shale"
 const BOOK_STATS = "canvas_apps/safari/tutorial/book_stats.shale"
 const BOOK_NAMES = GATES .. "/book_names.shale"
 const BOOK_NEGATIVES = GATES .. "/book_negatives.shale"
@@ -617,14 +616,13 @@ function page()
 end
 
 -- tutorial/build.shale's self-test, then the tutorial's build, so a name it
--- includes that is gone from the code fails the gates. Then color_roc.shale's
--- self-test, since roc-syntax-color's oracle records what it colors. Last,
--- tutorial/book_stats.shale reads the expanded tutorial,
--- and fails when a chapter runs over its limit of prose words.
+-- includes that is gone from the code fails the gates. Last,
+-- tutorial/book_stats.shale reads the expanded tutorial, and fails when a
+-- chapter runs over its limit of prose words.
 function tutorial()
   local cache = child_cache("tutorial")
   local env = cache_env(cache)
-  for argv in {{"shale", "--root", ".", TUTORIAL, "self_test=1"}, {"shale", "--root", ".", TUTORIAL}, {"shale", "--root", ".", COLOR_ROC, "self_test=1"}} do
+  for argv in {{"shale", "--root", ".", TUTORIAL, "self_test=1"}, {"shale", "--root", ".", TUTORIAL}} do
     print(trim(must(run(argv, {timeout_ms = 60000, tail = 20, env = env})).out))
   end
   drop_child_cache(cache)
