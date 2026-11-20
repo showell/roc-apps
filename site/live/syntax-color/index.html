@@ -1,0 +1,425 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="description" content="roc-syntax-color, a Roc package that colors Roc, JavaScript, Shale and Zig for web pages, shown on real code from each language.">
+<title>roc-syntax-color</title>
+<script src="../shared/home.js"></script>
+<!-- Every listing below is roc-syntax-color's own output (SyntaxColor.html),
+     pasted in. Each excerpt is verbatim from the file and commit it links. -->
+<style>
+  :root { color-scheme: light dark; --bg: #f7f5f0; --fg: #1d1d1b; --muted: #6b6860; --edge: #d9d4c8; --pane: #ffffff; --link: #1f5fa8; --accent: #5b3ea8; }
+  @media (prefers-color-scheme: dark) {
+    :root { --bg: #1b1b1a; --fg: #e8e6e0; --muted: #9a968c; --edge: #3a3934; --pane: #242422; --link: #8ab4f0; --accent: #a68cf0; }
+  }
+  body { margin: 0; background: var(--bg); color: var(--fg); font: 15px/1.55 system-ui, sans-serif; }
+  main { max-width: 820px; margin: 0 auto; padding: 36px 16px 48px; }
+  @media (max-width: 640px) { main { padding: 24px 12px 36px; } }
+  .top { display: flex; flex-wrap: wrap; gap: 4px 14px; font-size: 14px; margin: 0 0 14px; }
+  h1 { font-size: 28px; margin: 0 0 6px; }
+  .lede { color: var(--muted); margin: 0 0 8px; max-width: 66ch; }
+  h2 { font-size: 19px; margin: 34px 0 4px; }
+  p { max-width: 66ch; }
+  a { color: var(--link); }
+  code { font: 13px ui-monospace, Menlo, Consolas, monospace; }
+  .source { font-size: 13px; color: var(--muted); margin: 0 0 8px; }
+  pre { margin: 6px 0 8px; padding: 10px 12px; border-radius: 5px; background: #2b2733; color: #e8e6e0;
+        font: 12px/1.45 ui-monospace, Menlo, Consolas, monospace; overflow-x: auto; tab-size: 4; }
+  pre code { font: inherit; }
+  .syn-keyword { color: #c792ea; }
+  .syn-type { color: #82aaff; }
+  .syn-string { color: #c3e88d; }
+  .syn-number { color: #f78c6c; }
+  .syn-comment { color: #8a8494; font-style: italic; }
+  .syn-name { color: #ffcb6b; }
+  footer { margin-top: 36px; color: var(--muted); font-size: 13px; }
+</style>
+</head>
+<body>
+<main>
+<div class="top"><a href="../">Steve's Roc Work</a><a href="https://github.com/showell/roc-syntax-color">roc-syntax-color on GitHub</a></div>
+<h1>roc-syntax-color</h1>
+<p class="lede">A Roc package that colors source code for web pages. Code goes in and HTML comes out, with a span
+around each comment, string, number, keyword, name and type. It colors four languages: Roc, JavaScript, Shale and
+Zig. Below is real code in each, colored by the package.</p>
+<p class="lede">Each listing is an excerpt, copied verbatim from the file it links. The package wrote every span.</p>
+
+<h2>Roc</h2>
+<p class="source">From <a href="https://github.com/lukewilliamboswell/roc-ray/blob/23eec6e8e93aceff6701df564a9ac336d5d4b9ea/examples/move_box/main.roc"><code>examples/move_box/main.roc</code></a>
+in Luke Boswell's <a href="https://github.com/lukewilliamboswell/roc-ray">roc-ray</a>, lines 16–95.
+© 2024 Luke Boswell and subsequent authors, under the Universal Permissive License 1.0.
+The lexer: <a href="https://github.com/showell/roc-syntax-color/blob/main/package/RocSyntax.roc"><code>RocSyntax.roc</code></a>.</p>
+<pre><code><span class="syn-comment">## Everything the app remembers between host cycles: where the box&#39;s top-left</span>
+<span class="syn-comment">## corner is, in logical units from the top-left of the window.</span>
+<span class="syn-type">Model</span> : { box : <span class="syn-type">Math.Vec2</span> }
+
+<span class="syn-comment">## The box is a square this many logical units wide.</span>
+<span class="syn-name">box_size</span> = <span class="syn-number">60</span>.<span class="syn-type">F32</span>
+
+<span class="syn-comment">## How far the box moves in one second while a key is held, in logical units.</span>
+<span class="syn-name">speed</span> = <span class="syn-number">300</span>.<span class="syn-type">F32</span>
+
+<span class="syn-name">program</span> = { init!, update!, render! }
+
+<span class="syn-name">init!</span> : <span class="syn-type">App.Init</span>(<span class="syn-type">Model</span>, [])
+<span class="syn-name">init!</span> = <span class="syn-type">App</span>.init(
+	<span class="syn-type">App</span>.default.with_title(<span class="syn-string">&quot;RocRay Move Box&quot;</span>).with_size({ width: <span class="syn-number">800</span>, height: <span class="syn-number">600</span> }),
+	|_io| <span class="syn-type">Ok</span>({ box: { x: <span class="syn-number">370</span>, y: <span class="syn-number">270</span> } }),
+)
+
+<span class="syn-comment">## Turn two opposite keys into one number: -1, 0, or 1. Holding both cancels.</span>
+<span class="syn-name">axis</span> : <span class="syn-type">Bool</span>, <span class="syn-type">Bool</span> -&gt; <span class="syn-type">F32</span>
+<span class="syn-name">axis</span> = |negative, positive|
+	<span class="syn-keyword">if</span> (negative <span class="syn-keyword">and</span> !positive) <span class="syn-number">-1</span> <span class="syn-keyword">else</span> <span class="syn-keyword">if</span> (positive <span class="syn-keyword">and</span> !negative) <span class="syn-number">1</span> <span class="syn-keyword">else</span> <span class="syn-number">0</span>
+
+<span class="syn-comment">## Which way the arrow keys point. Up is negative because screen y grows</span>
+<span class="syn-comment">## downwards.</span>
+<span class="syn-name">direction</span> : <span class="syn-type">Devices.Snapshot</span> -&gt; <span class="syn-type">Math.Vec2</span>
+<span class="syn-name">direction</span> = |devices| {
+	x: axis(devices.key_down(<span class="syn-type">KeyLeft</span>), devices.key_down(<span class="syn-type">KeyRight</span>)),
+	y: axis(devices.key_down(<span class="syn-type">KeyUp</span>), devices.key_down(<span class="syn-type">KeyDown</span>)),
+}
+
+<span class="syn-comment">## The time step to move by. A stall, such as dragging the window, can report a</span>
+<span class="syn-comment">## whole second or more; moving by all of it at once would make the box jump.</span>
+<span class="syn-comment">## Clamping keeps every step small.</span>
+<span class="syn-name">clamp_dt</span> : <span class="syn-type">F32</span> -&gt; <span class="syn-type">F32</span>
+<span class="syn-name">clamp_dt</span> = |seconds| <span class="syn-type">Math</span>.clamp(seconds, <span class="syn-number">0</span>, <span class="syn-number">0.25</span>)
+
+<span class="syn-comment">## The rule of the game: move by direction x speed x time, then keep the whole</span>
+<span class="syn-comment">## box inside the window.</span>
+<span class="syn-name">step_box</span> : <span class="syn-type">Math.Vec2</span>, <span class="syn-type">Math.Vec2</span>, <span class="syn-type">F32</span>, { width : <span class="syn-type">F32</span>, height : <span class="syn-type">F32</span> } -&gt; <span class="syn-type">Math.Vec2</span>
+<span class="syn-name">step_box</span> = |box, dir, dt, window| {
+	x: <span class="syn-type">Math</span>.clamp(box.x + dir.x * speed * dt, <span class="syn-number">0</span>, window.width - box_size),
+	y: <span class="syn-type">Math</span>.clamp(box.y + dir.y * speed * dt, <span class="syn-number">0</span>, window.height - box_size),
+}
+
+<span class="syn-type">Msg</span> : []
+
+<span class="syn-name">update!</span> : <span class="syn-type">Model</span>, <span class="syn-type">App.Input</span>(<span class="syn-type">Msg</span>), <span class="syn-type">App.Io</span> =&gt; <span class="syn-type">Try</span>(<span class="syn-type">Model</span>, [<span class="syn-type">Exit</span>(<span class="syn-type">I64</span>)])
+<span class="syn-name">update!</span> = |model, input, _io| {
+	devices = input.devices
+	dt = clamp_dt(input.time.elapsed_seconds)
+	window = { width: <span class="syn-type">I32</span>.to_f32(input.window.size.width), height: <span class="syn-type">I32</span>.to_f32(input.window.size.height) }
+	<span class="syn-type">Ok</span>({ ..model, box: step_box(model.box, direction(devices), dt, window) })
+}
+
+<span class="syn-name">render!</span> : <span class="syn-type">Model</span>, <span class="syn-type">Draw.Frame</span> =&gt; <span class="syn-type">Try</span>({}, [<span class="syn-type">Exit</span>(<span class="syn-type">I64</span>)])
+<span class="syn-name">render!</span> = |model, frame| {
+	frame.clear!(<span class="syn-type">Color</span>.from_hex_rgb(<span class="syn-number">0x101828</span>))
+	frame.rectangle!({ x: model.box.x, y: model.box.y, width: box_size, height: box_size, style: <span class="syn-type">Draw</span>.filled(<span class="syn-type">Color</span>.from_hex_rgb(<span class="syn-number">0x2f80ed</span>)) })
+	frame.text_at!({ pos: { x: <span class="syn-number">20</span>, y: <span class="syn-number">20</span> }, text: <span class="syn-string">&quot;Arrow keys move the box  -  Escape quits&quot;</span>, size: <span class="syn-number">20</span>, color: <span class="syn-type">Color</span>.from_hex_rgb(<span class="syn-number">0xa8b4cc</span>) })
+	<span class="syn-type">Ok</span>({})
+}
+
+<span class="syn-name">window_800x600</span> = { width: <span class="syn-number">800</span>, height: <span class="syn-number">600</span> }
+
+<span class="syn-comment">## Half a second of holding Right moves the box half of `speed` to the right.</span>
+<span class="syn-keyword">expect</span> step_box({ x: <span class="syn-number">100</span>, y: <span class="syn-number">100</span> }, { x: <span class="syn-number">1</span>, y: <span class="syn-number">0</span> }, <span class="syn-number">0.5</span>, window_800x600) == { x: <span class="syn-number">250</span>, y: <span class="syn-number">100</span> }
+
+<span class="syn-comment">## The box stops at the right edge instead of leaving the window.</span>
+<span class="syn-keyword">expect</span> step_box({ x: <span class="syn-number">730</span>, y: <span class="syn-number">100</span> }, { x: <span class="syn-number">1</span>, y: <span class="syn-number">0</span> }, <span class="syn-number">0.5</span>, window_800x600).x == <span class="syn-number">800</span> - box_size
+
+<span class="syn-comment">## ...and at the top edge.</span>
+<span class="syn-keyword">expect</span> step_box({ x: <span class="syn-number">100</span>, y: <span class="syn-number">10</span> }, { x: <span class="syn-number">0</span>, y: <span class="syn-number">-1</span> }, <span class="syn-number">0.5</span>, window_800x600).y == <span class="syn-number">0</span>
+
+<span class="syn-comment">## Holding Left and Right together cancels out.</span>
+<span class="syn-keyword">expect</span> direction(<span class="syn-type">Devices</span>.none.with_key_down(<span class="syn-type">KeyLeft</span>).with_key_down(<span class="syn-type">KeyRight</span>)).x == <span class="syn-number">0</span>
+<span class="syn-keyword">expect</span> direction(<span class="syn-type">Devices</span>.none.with_key_down(<span class="syn-type">KeyUp</span>)).y == <span class="syn-number">-1</span>
+
+<span class="syn-comment">## A long stall moves the box by a quarter of a second at most.</span>
+<span class="syn-keyword">expect</span> clamp_dt(<span class="syn-number">3</span>) == <span class="syn-number">0.25</span></code></pre>
+
+<h2>JavaScript</h2>
+<p class="source">From <a href="https://github.com/vercel/ms/blob/2.1.3/index.js"><code>index.js</code></a> of
+<a href="https://github.com/vercel/ms">ms</a> 2.1.3, a tiny, much-used millisecond converter,
+lines 1–103. © 2020 Vercel, Inc., under the <a href="https://github.com/vercel/ms/blob/2.1.3/license.md">MIT License</a>.
+The lexer: <a href="https://github.com/showell/roc-syntax-color/blob/main/package/JsSyntax.roc"><code>JsSyntax.roc</code></a>.</p>
+<pre><code><span class="syn-comment">/**
+ * Helpers.
+ */</span>
+
+<span class="syn-keyword">var</span> s = <span class="syn-number">1000</span>;
+<span class="syn-keyword">var</span> m = s * <span class="syn-number">60</span>;
+<span class="syn-keyword">var</span> h = m * <span class="syn-number">60</span>;
+<span class="syn-keyword">var</span> d = h * <span class="syn-number">24</span>;
+<span class="syn-keyword">var</span> w = d * <span class="syn-number">7</span>;
+<span class="syn-keyword">var</span> y = d * <span class="syn-number">365.25</span>;
+
+<span class="syn-comment">/**
+ * Parse or format the given `val`.
+ *
+ * Options:
+ *
+ *  - `long` verbose formatting [false]
+ *
+ * @param {String|Number} val
+ * @param {Object} [options]
+ * @throws {Error} throw an error if val is not a non-empty string or a number
+ * @return {String|Number}
+ * @api public
+ */</span>
+
+module.exports = <span class="syn-keyword">function</span> (val, options) {
+  options = options || {};
+  <span class="syn-keyword">var</span> type = <span class="syn-keyword">typeof</span> val;
+  <span class="syn-keyword">if</span> (type === <span class="syn-string">&#39;string&#39;</span> &amp;&amp; val.length &gt; <span class="syn-number">0</span>) {
+    <span class="syn-keyword">return</span> parse(val);
+  } <span class="syn-keyword">else</span> <span class="syn-keyword">if</span> (type === <span class="syn-string">&#39;number&#39;</span> &amp;&amp; isFinite(val)) {
+    <span class="syn-keyword">return</span> options.long ? fmtLong(val) : fmtShort(val);
+  }
+  <span class="syn-keyword">throw</span> <span class="syn-keyword">new</span> Error(
+    <span class="syn-string">&#39;val is not a non-empty string or a valid number. val=&#39;</span> +
+      JSON.stringify(val)
+  );
+};
+
+<span class="syn-comment">/**
+ * Parse the given `str` and return milliseconds.
+ *
+ * @param {String} str
+ * @return {Number}
+ * @api private
+ */</span>
+
+<span class="syn-keyword">function</span> <span class="syn-name">parse</span>(str) {
+  str = String(str);
+  <span class="syn-keyword">if</span> (str.length &gt; <span class="syn-number">100</span>) {
+    <span class="syn-keyword">return</span>;
+  }
+  <span class="syn-keyword">var</span> match = <span class="syn-string">/^(-?(?:\d+)?\.?\d+) *(milliseconds?|msecs?|ms|seconds?|secs?|s|minutes?|mins?|m|hours?|hrs?|h|days?|d|weeks?|w|years?|yrs?|y)?$/i</span>.exec(
+    str
+  );
+  <span class="syn-keyword">if</span> (!match) {
+    <span class="syn-keyword">return</span>;
+  }
+  <span class="syn-keyword">var</span> n = parseFloat(match[<span class="syn-number">1</span>]);
+  <span class="syn-keyword">var</span> type = (match[<span class="syn-number">2</span>] || <span class="syn-string">&#39;ms&#39;</span>).toLowerCase();
+  <span class="syn-keyword">switch</span> (type) {
+    <span class="syn-keyword">case</span> <span class="syn-string">&#39;years&#39;</span>:
+    <span class="syn-keyword">case</span> <span class="syn-string">&#39;year&#39;</span>:
+    <span class="syn-keyword">case</span> <span class="syn-string">&#39;yrs&#39;</span>:
+    <span class="syn-keyword">case</span> <span class="syn-string">&#39;yr&#39;</span>:
+    <span class="syn-keyword">case</span> <span class="syn-string">&#39;y&#39;</span>:
+      <span class="syn-keyword">return</span> n * y;
+    <span class="syn-keyword">case</span> <span class="syn-string">&#39;weeks&#39;</span>:
+    <span class="syn-keyword">case</span> <span class="syn-string">&#39;week&#39;</span>:
+    <span class="syn-keyword">case</span> <span class="syn-string">&#39;w&#39;</span>:
+      <span class="syn-keyword">return</span> n * w;
+    <span class="syn-keyword">case</span> <span class="syn-string">&#39;days&#39;</span>:
+    <span class="syn-keyword">case</span> <span class="syn-string">&#39;day&#39;</span>:
+    <span class="syn-keyword">case</span> <span class="syn-string">&#39;d&#39;</span>:
+      <span class="syn-keyword">return</span> n * d;
+    <span class="syn-keyword">case</span> <span class="syn-string">&#39;hours&#39;</span>:
+    <span class="syn-keyword">case</span> <span class="syn-string">&#39;hour&#39;</span>:
+    <span class="syn-keyword">case</span> <span class="syn-string">&#39;hrs&#39;</span>:
+    <span class="syn-keyword">case</span> <span class="syn-string">&#39;hr&#39;</span>:
+    <span class="syn-keyword">case</span> <span class="syn-string">&#39;h&#39;</span>:
+      <span class="syn-keyword">return</span> n * h;
+    <span class="syn-keyword">case</span> <span class="syn-string">&#39;minutes&#39;</span>:
+    <span class="syn-keyword">case</span> <span class="syn-string">&#39;minute&#39;</span>:
+    <span class="syn-keyword">case</span> <span class="syn-string">&#39;mins&#39;</span>:
+    <span class="syn-keyword">case</span> <span class="syn-string">&#39;min&#39;</span>:
+    <span class="syn-keyword">case</span> <span class="syn-string">&#39;m&#39;</span>:
+      <span class="syn-keyword">return</span> n * m;
+    <span class="syn-keyword">case</span> <span class="syn-string">&#39;seconds&#39;</span>:
+    <span class="syn-keyword">case</span> <span class="syn-string">&#39;second&#39;</span>:
+    <span class="syn-keyword">case</span> <span class="syn-string">&#39;secs&#39;</span>:
+    <span class="syn-keyword">case</span> <span class="syn-string">&#39;sec&#39;</span>:
+    <span class="syn-keyword">case</span> <span class="syn-string">&#39;s&#39;</span>:
+      <span class="syn-keyword">return</span> n * s;
+    <span class="syn-keyword">case</span> <span class="syn-string">&#39;milliseconds&#39;</span>:
+    <span class="syn-keyword">case</span> <span class="syn-string">&#39;millisecond&#39;</span>:
+    <span class="syn-keyword">case</span> <span class="syn-string">&#39;msecs&#39;</span>:
+    <span class="syn-keyword">case</span> <span class="syn-string">&#39;msec&#39;</span>:
+    <span class="syn-keyword">case</span> <span class="syn-string">&#39;ms&#39;</span>:
+      <span class="syn-keyword">return</span> n;
+    <span class="syn-keyword">default</span>:
+      <span class="syn-keyword">return</span> <span class="syn-keyword">undefined</span>;
+  }
+}</code></pre>
+
+<h2>Shale</h2>
+<p class="source">From <a href="https://github.com/showell/shale/blob/9ab813a145900d9cde6114c4737b2a85d064b924/cookbook/rename_words.shale"><code>cookbook/rename_words.shale</code></a>
+in Steve's <a href="https://github.com/showell/shale">Shale</a>, the whole recipe, 79 lines. Under the Universal Permissive License 1.0.
+The lexer: <a href="https://github.com/showell/roc-syntax-color/blob/main/package/ShaleSyntax.roc"><code>ShaleSyntax.roc</code></a>.</p>
+<pre><code><span class="syn-comment">-- A word renamed across a project, any language: every whole-word `from` in</span>
+<span class="syn-comment">-- the files matching `like` under `in` becomes `to`, one write a file, a</span>
+<span class="syn-comment">-- one-line summary each. Whole words only (`fetchUserName` is left when</span>
+<span class="syn-comment">-- `from` is `fetchUser`), but strings and comments are words too: read the</span>
+<span class="syn-comment">-- summaries, then `git diff`. For Zig, `zig_rename` reads tokens instead</span>
+<span class="syn-comment">-- (SHALE-AGENTS.md, &quot;A symbol renamed across a tree&quot;).</span>
+<span class="syn-comment">--</span>
+<span class="syn-comment">--   shale cookbook:rename_words.shale from=fetchUser to=loadUser in=src ext=ts,tsx</span>
+<span class="syn-comment">--</span>
+<span class="syn-comment">-- `ext` is the extensions to change (plain words for the launch line; a</span>
+<span class="syn-comment">-- glob, `like=`, goes on stdin with `--args-stdin`). `in` is</span>
+<span class="syn-comment">-- comma-separated files or folders (default the root); folders are</span>
+<span class="syn-comment">-- walked past hidden ones (.git, .venv) and node_modules, zig-out and</span>
+<span class="syn-comment">-- .zig-cache. A file that holds `from` only inside longer words is listed,</span>
+<span class="syn-comment">-- not changed.</span>
+<span class="syn-comment">--</span>
+<span class="syn-comment">-- budget: steps=500000000 reads=100000 read_bytes=1000000000 arena_bytes=1000000000</span>
+
+<span class="syn-keyword">const</span> FROM = arg(<span class="syn-string">&quot;from&quot;</span>, <span class="syn-string">&quot;&quot;</span>)
+<span class="syn-keyword">const</span> TO = arg(<span class="syn-string">&quot;to&quot;</span>, <span class="syn-string">&quot;&quot;</span>)
+<span class="syn-keyword">const</span> IN = arg(<span class="syn-string">&quot;in&quot;</span>, <span class="syn-string">&quot;.&quot;</span>)
+<span class="syn-keyword">const</span> LIKE = arg(<span class="syn-string">&quot;like&quot;</span>, <span class="syn-string">&quot;*&quot;</span>)
+<span class="syn-keyword">const</span> EXT = arg(<span class="syn-string">&quot;ext&quot;</span>, <span class="syn-string">&quot;&quot;</span>)
+
+<span class="syn-comment">-- Whether a walked file ends in one of `ext`&#39;s extensions (any, unset).</span>
+<span class="syn-keyword">function</span> <span class="syn-name">wanted</span>(path)
+  <span class="syn-keyword">if</span> EXT == <span class="syn-string">&quot;&quot;</span> <span class="syn-keyword">then</span> <span class="syn-keyword">return</span> <span class="syn-keyword">true</span> <span class="syn-keyword">end</span>
+  <span class="syn-keyword">for</span> e <span class="syn-keyword">in</span> split(EXT, <span class="syn-string">&quot;,&quot;</span>) <span class="syn-keyword">do</span>
+    <span class="syn-keyword">if</span> ends_with(path, <span class="syn-string">&quot;.&quot;</span> .. trim(e)) <span class="syn-keyword">then</span> <span class="syn-keyword">return</span> <span class="syn-keyword">true</span> <span class="syn-keyword">end</span>
+  <span class="syn-keyword">end</span>
+  <span class="syn-keyword">return</span> <span class="syn-keyword">false</span>
+<span class="syn-keyword">end</span>
+
+<span class="syn-keyword">if</span> FROM == <span class="syn-string">&quot;&quot;</span> <span class="syn-keyword">or</span> TO == <span class="syn-string">&quot;&quot;</span> <span class="syn-keyword">then</span> fail(<span class="syn-string">&quot;rename_words: give from=NAME to=NAME [in=dirs] [ext=ts,tsx]&quot;</span>) <span class="syn-keyword">end</span>
+
+<span class="syn-keyword">function</span> <span class="syn-name">passed_by</span>(path)
+  <span class="syn-keyword">for</span> part <span class="syn-keyword">in</span> {<span class="syn-string">&quot;/node_modules/&quot;</span>, <span class="syn-string">&quot;/zig-out/&quot;</span>, <span class="syn-string">&quot;/.zig-cache/&quot;</span>} <span class="syn-keyword">do</span>
+    <span class="syn-keyword">if</span> contains(<span class="syn-string">&quot;/&quot;</span> .. path .. <span class="syn-string">&quot;/&quot;</span>, part) <span class="syn-keyword">then</span> <span class="syn-keyword">return</span> <span class="syn-keyword">true</span> <span class="syn-keyword">end</span>
+  <span class="syn-keyword">end</span>
+  <span class="syn-keyword">return</span> <span class="syn-keyword">false</span>
+<span class="syn-keyword">end</span>
+
+<span class="syn-comment">-- One file&#39;s whole-word edit; its own function, as `attempt` takes one.</span>
+<span class="syn-keyword">function</span> <span class="syn-name">rename_in</span>(p)
+  <span class="syn-keyword">return</span> edit(p, FROM, TO, {all = <span class="syn-keyword">true</span>, word = <span class="syn-keyword">true</span>})
+<span class="syn-keyword">end</span>
+
+<span class="syn-keyword">local</span> renamed = <span class="syn-number">0</span>
+<span class="syn-keyword">local</span> files = <span class="syn-number">0</span>
+<span class="syn-keyword">local</span> only_inside = {}
+<span class="syn-keyword">for</span> given <span class="syn-keyword">in</span> split(IN, <span class="syn-string">&quot;,&quot;</span>) <span class="syn-keyword">do</span>
+  <span class="syn-keyword">local</span> place = trim(given)
+  <span class="syn-keyword">local</span> paths = {}
+  <span class="syn-keyword">if</span> place == <span class="syn-string">&quot;.&quot;</span> <span class="syn-keyword">or</span> is_dir(place) <span class="syn-keyword">then</span>
+    <span class="syn-keyword">local</span> opts = {kind = <span class="syn-string">&quot;file&quot;</span>, skip = <span class="syn-string">&quot;.*&quot;</span>}
+    <span class="syn-keyword">if</span> LIKE ~= <span class="syn-string">&quot;*&quot;</span> <span class="syn-keyword">then</span> opts = {kind = <span class="syn-string">&quot;file&quot;</span>, skip = <span class="syn-string">&quot;.*&quot;</span>, like = LIKE} <span class="syn-keyword">end</span>
+    <span class="syn-keyword">for</span> e <span class="syn-keyword">in</span> walk_all(place, opts) <span class="syn-keyword">do</span>
+      <span class="syn-keyword">if</span> <span class="syn-keyword">not</span> passed_by(e.path) <span class="syn-keyword">and</span> wanted(e.path) <span class="syn-keyword">then</span> push(paths, e.path) <span class="syn-keyword">end</span>
+    <span class="syn-keyword">end</span>
+  <span class="syn-keyword">else</span>
+    push(paths, place)
+  <span class="syn-keyword">end</span>
+  <span class="syn-keyword">for</span> p <span class="syn-keyword">in</span> paths <span class="syn-keyword">do</span>
+    <span class="syn-keyword">if</span> #grep_all(p, FROM) &gt; <span class="syn-number">0</span> <span class="syn-keyword">then</span>
+      <span class="syn-keyword">local</span> r = attempt(rename_in, p)
+      <span class="syn-keyword">if</span> r.ok <span class="syn-keyword">then</span>
+        renamed = renamed + r.value
+        files = files + <span class="syn-number">1</span>
+      <span class="syn-keyword">elseif</span> r.class == <span class="syn-string">&quot;argument&quot;</span> <span class="syn-keyword">then</span>
+        <span class="syn-comment">-- `edit` found no whole word: `from` is only inside longer ones.</span>
+        push(only_inside, p)
+      <span class="syn-keyword">else</span>
+        fail(p .. <span class="syn-string">&quot;: &quot;</span> .. r.error)
+      <span class="syn-keyword">end</span>
+    <span class="syn-keyword">end</span>
+  <span class="syn-keyword">end</span>
+<span class="syn-keyword">end</span>
+print(FROM .. <span class="syn-string">&quot; to &quot;</span> .. TO .. <span class="syn-string">&quot;: &quot;</span> .. renamed .. <span class="syn-string">&quot; in &quot;</span> .. files .. <span class="syn-string">&quot; files&quot;</span>)
+<span class="syn-keyword">if</span> #only_inside &gt; <span class="syn-number">0</span> <span class="syn-keyword">then</span> print(<span class="syn-string">&quot;only inside longer words, left: &quot;</span> .. join(only_inside, <span class="syn-string">&quot;, &quot;</span>)) <span class="syn-keyword">end</span></code></pre>
+
+<h2>Zig</h2>
+<p class="source">From <a href="https://codeberg.org/ziglang/zig/src/tag/0.17.0/lib/std/Random/Xoshiro256.zig"><code>lib/std/Random/Xoshiro256.zig</code></a>
+in the Zig standard library, 0.17.0, lines 1–89: the Xoshiro256++ random number generator, without its tests.
+Zig standard library, MIT License, © Zig contributors.
+The lexer: <a href="https://github.com/showell/roc-syntax-color/blob/main/package/ZigSyntax.roc"><code>ZigSyntax.roc</code></a>.</p>
+<pre><code><span class="syn-comment">//! Xoshiro256++ - https://prng.di.unimi.it/xoshiro256plusplus.c</span>
+<span class="syn-comment">//!</span>
+<span class="syn-comment">//! PRNG</span>
+
+<span class="syn-keyword">const</span> std = <span class="syn-keyword">@import</span>(<span class="syn-string">&quot;std&quot;</span>);
+<span class="syn-keyword">const</span> math = std.math;
+<span class="syn-keyword">const</span> Xoshiro256 = <span class="syn-keyword">@This</span>();
+
+s: [<span class="syn-number">4</span>]<span class="syn-type">u64</span>,
+
+<span class="syn-keyword">pub</span> <span class="syn-keyword">fn</span> <span class="syn-name">init</span>(init_s: <span class="syn-type">u64</span>) Xoshiro256 {
+    <span class="syn-keyword">var</span> x = Xoshiro256{
+        .s = <span class="syn-keyword">undefined</span>,
+    };
+
+    x.seed(init_s);
+    <span class="syn-keyword">return</span> x;
+}
+
+<span class="syn-keyword">pub</span> <span class="syn-keyword">fn</span> <span class="syn-name">random</span>(self: *Xoshiro256) std.Random {
+    <span class="syn-keyword">return</span> std.Random.init(self, fill);
+}
+
+<span class="syn-keyword">pub</span> <span class="syn-keyword">fn</span> <span class="syn-name">next</span>(self: *Xoshiro256) <span class="syn-type">u64</span> {
+    <span class="syn-keyword">const</span> r = math.rotl(<span class="syn-type">u64</span>, self.s[<span class="syn-number">0</span>] +% self.s[<span class="syn-number">3</span>], <span class="syn-number">23</span>) +% self.s[<span class="syn-number">0</span>];
+
+    <span class="syn-keyword">const</span> t = self.s[<span class="syn-number">1</span>] &lt;&lt; <span class="syn-number">17</span>;
+
+    self.s[<span class="syn-number">2</span>] ^= self.s[<span class="syn-number">0</span>];
+    self.s[<span class="syn-number">3</span>] ^= self.s[<span class="syn-number">1</span>];
+    self.s[<span class="syn-number">1</span>] ^= self.s[<span class="syn-number">2</span>];
+    self.s[<span class="syn-number">0</span>] ^= self.s[<span class="syn-number">3</span>];
+
+    self.s[<span class="syn-number">2</span>] ^= t;
+
+    self.s[<span class="syn-number">3</span>] = math.rotl(<span class="syn-type">u64</span>, self.s[<span class="syn-number">3</span>], <span class="syn-number">45</span>);
+
+    <span class="syn-keyword">return</span> r;
+}
+
+<span class="syn-comment">// Skip 2^128 places ahead in the sequence</span>
+<span class="syn-keyword">pub</span> <span class="syn-keyword">fn</span> <span class="syn-name">jump</span>(self: *Xoshiro256) <span class="syn-type">void</span> {
+    <span class="syn-keyword">var</span> s: <span class="syn-type">u256</span> = <span class="syn-number">0</span>;
+
+    <span class="syn-keyword">var</span> table: <span class="syn-type">u256</span> = <span class="syn-number">0x39abdc4529b1661ca9582618e03fc9aad5a61266f0c9392c180ec6d33cfd0aba</span>;
+
+    <span class="syn-keyword">while</span> (table != <span class="syn-number">0</span>) : (table &gt;&gt;= <span class="syn-number">1</span>) {
+        <span class="syn-keyword">if</span> (<span class="syn-keyword">@as</span>(<span class="syn-type">u1</span>, <span class="syn-keyword">@truncate</span>(table)) != <span class="syn-number">0</span>) {
+            s ^= <span class="syn-keyword">@bitCast</span>(self.s);
+        }
+        _ = self.next();
+    }
+
+    self.s = <span class="syn-keyword">@bitCast</span>(s);
+}
+
+<span class="syn-keyword">pub</span> <span class="syn-keyword">fn</span> <span class="syn-name">seed</span>(self: *Xoshiro256, init_s: <span class="syn-type">u64</span>) <span class="syn-type">void</span> {
+    <span class="syn-comment">// Xoshiro requires 256-bits of seed.</span>
+    <span class="syn-keyword">var</span> gen = std.Random.SplitMix64.init(init_s);
+
+    self.s[<span class="syn-number">0</span>] = gen.next();
+    self.s[<span class="syn-number">1</span>] = gen.next();
+    self.s[<span class="syn-number">2</span>] = gen.next();
+    self.s[<span class="syn-number">3</span>] = gen.next();
+}
+
+<span class="syn-keyword">pub</span> <span class="syn-keyword">fn</span> <span class="syn-name">fill</span>(self: *Xoshiro256, buf: []<span class="syn-type">u8</span>) <span class="syn-type">void</span> {
+    <span class="syn-keyword">var</span> i: <span class="syn-type">usize</span> = <span class="syn-number">0</span>;
+    <span class="syn-keyword">const</span> aligned_len = buf.len - (buf.len &amp; <span class="syn-number">7</span>);
+
+    <span class="syn-comment">// Complete 8 byte segments.</span>
+    <span class="syn-keyword">while</span> (i &lt; aligned_len) : (i += <span class="syn-number">8</span>) {
+        <span class="syn-keyword">var</span> n = self.next();
+        <span class="syn-keyword">comptime</span> <span class="syn-keyword">var</span> j: <span class="syn-type">usize</span> = <span class="syn-number">0</span>;
+        <span class="syn-keyword">inline</span> <span class="syn-keyword">while</span> (j &lt; <span class="syn-number">8</span>) : (j += <span class="syn-number">1</span>) {
+            buf[i + j] = <span class="syn-keyword">@as</span>(<span class="syn-type">u8</span>, <span class="syn-keyword">@truncate</span>(n));
+            n &gt;&gt;= <span class="syn-number">8</span>;
+        }
+    }
+
+    <span class="syn-comment">// Remaining. (cuts the stream)</span>
+    <span class="syn-keyword">if</span> (i != buf.len) {
+        <span class="syn-keyword">var</span> n = self.next();
+        <span class="syn-keyword">while</span> (i &lt; buf.len) : (i += <span class="syn-number">1</span>) {
+            buf[i] = <span class="syn-keyword">@as</span>(<span class="syn-type">u8</span>, <span class="syn-keyword">@truncate</span>(n));
+            n &gt;&gt;= <span class="syn-number">8</span>;
+        }
+    }
+}</code></pre>
+
+<footer><a href="../">Steve's Roc Work</a> · <a href="https://github.com/showell/roc-syntax-color">roc-syntax-color on GitHub</a></footer>
+</main>
+</body>
+</html>
