@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<meta name="description" content="roc-syntax-color, a Roc package that colors Roc, JavaScript, Shale and Zig for web pages, shown on real code from each language.">
+<meta name="description" content="roc-syntax-color, a Roc package that colors Roc, JavaScript, Shale, Zig and C for web pages, shown on real code from each language.">
 <title>roc-syntax-color</title>
 <script src="../shared/home.js"></script>
 <!-- Every listing below is roc-syntax-color's own output (SyntaxColor.html),
@@ -41,8 +41,8 @@
 <div class="top"><a href="../">Steve's Roc Work</a><a href="https://github.com/showell/roc-syntax-color">roc-syntax-color on GitHub</a></div>
 <h1>roc-syntax-color</h1>
 <p class="lede">A Roc package that colors source code for web pages. Code goes in and HTML comes out, with a span
-around each comment, string, number, keyword, name and type. It colors four languages: Roc, JavaScript, Shale and
-Zig. Below is real code in each, colored by the package.</p>
+around each comment, string, number, keyword, name and type. It colors five languages: Roc, JavaScript, Shale,
+Zig and C. Below is real code in each, colored by the package.</p>
 <p class="lede">Each listing is an excerpt, copied verbatim from the file it links. The package wrote every span.</p>
 
 <h2>Roc</h2>
@@ -417,6 +417,94 @@ s: [<span class="syn-number">4</span>]<span class="syn-type">u64</span>,
             n &gt;&gt;= <span class="syn-number">8</span>;
         }
     }
+}</code></pre>
+
+<h2>C</h2>
+<p class="source">From <a href="https://github.com/git/git/blob/e83c5163316f89bfbde7d9ab23ca2e25604af290/read-cache.c"><code>read-cache.c</code></a>
+in <a href="https://github.com/git/git/commit/e83c5163316f89bfbde7d9ab23ca2e25604af290">git's first commit</a>,
+“Initial revision of "git", the information manager from hell”, lines 1–80: reading and naming the object files.
+© 2005 Linus Torvalds, who wrote all of that commit, under the
+<a href="https://github.com/git/git/blob/master/COPYING">GNU General Public License, version 2</a>, as git is.
+The lexer: <a href="https://github.com/showell/roc-syntax-color/blob/main/package/CSyntax.roc"><code>CSyntax.roc</code></a>.</p>
+<pre><code><span class="syn-keyword">#include</span> <span class="syn-string">&quot;cache.h&quot;</span>
+
+<span class="syn-keyword">const</span> <span class="syn-type">char</span> *sha1_file_directory = <span class="syn-keyword">NULL</span>;
+<span class="syn-keyword">struct</span> <span class="syn-type">cache_entry</span> **active_cache = <span class="syn-keyword">NULL</span>;
+<span class="syn-type">unsigned</span> <span class="syn-type">int</span> active_nr = <span class="syn-number">0</span>, active_alloc = <span class="syn-number">0</span>;
+
+<span class="syn-type">void</span> <span class="syn-name">usage</span>(<span class="syn-keyword">const</span> <span class="syn-type">char</span> *err)
+{
+	fprintf(stderr, <span class="syn-string">&quot;read-tree: %s\n&quot;</span>, err);
+	exit(<span class="syn-number">1</span>);
+}
+
+<span class="syn-keyword">static</span> <span class="syn-type">unsigned</span> <span class="syn-name">hexval</span>(<span class="syn-type">char</span> c)
+{
+	<span class="syn-keyword">if</span> (c &gt;= <span class="syn-string">&#39;0&#39;</span> &amp;&amp; c &lt;= <span class="syn-string">&#39;9&#39;</span>)
+		<span class="syn-keyword">return</span> c - <span class="syn-string">&#39;0&#39;</span>;
+	<span class="syn-keyword">if</span> (c &gt;= <span class="syn-string">&#39;a&#39;</span> &amp;&amp; c &lt;= <span class="syn-string">&#39;f&#39;</span>)
+		<span class="syn-keyword">return</span> c - <span class="syn-string">&#39;a&#39;</span> + <span class="syn-number">10</span>;
+	<span class="syn-keyword">if</span> (c &gt;= <span class="syn-string">&#39;A&#39;</span> &amp;&amp; c &lt;= <span class="syn-string">&#39;F&#39;</span>)
+		<span class="syn-keyword">return</span> c - <span class="syn-string">&#39;A&#39;</span> + <span class="syn-number">10</span>;
+	<span class="syn-keyword">return</span> ~<span class="syn-number">0</span>;
+}
+
+<span class="syn-type">int</span> <span class="syn-name">get_sha1_hex</span>(<span class="syn-type">char</span> *hex, <span class="syn-type">unsigned</span> <span class="syn-type">char</span> *sha1)
+{
+	<span class="syn-type">int</span> i;
+	<span class="syn-keyword">for</span> (i = <span class="syn-number">0</span>; i &lt; <span class="syn-number">20</span>; i++) {
+		<span class="syn-type">unsigned</span> <span class="syn-type">int</span> val = (hexval(hex[<span class="syn-number">0</span>]) &lt;&lt; <span class="syn-number">4</span>) | hexval(hex[<span class="syn-number">1</span>]);
+		<span class="syn-keyword">if</span> (val &amp; ~<span class="syn-number">0xff</span>)
+			<span class="syn-keyword">return</span> -<span class="syn-number">1</span>;
+		*sha1++ = val;
+		hex += <span class="syn-number">2</span>;
+	}
+	<span class="syn-keyword">return</span> <span class="syn-number">0</span>;
+}
+
+<span class="syn-type">char</span> * <span class="syn-name">sha1_to_hex</span>(<span class="syn-type">unsigned</span> <span class="syn-type">char</span> *sha1)
+{
+	<span class="syn-keyword">static</span> <span class="syn-type">char</span> buffer[<span class="syn-number">50</span>];
+	<span class="syn-keyword">static</span> <span class="syn-keyword">const</span> <span class="syn-type">char</span> hex[] = <span class="syn-string">&quot;0123456789abcdef&quot;</span>;
+	<span class="syn-type">char</span> *buf = buffer;
+	<span class="syn-type">int</span> i;
+
+	<span class="syn-keyword">for</span> (i = <span class="syn-number">0</span>; i &lt; <span class="syn-number">20</span>; i++) {
+		<span class="syn-type">unsigned</span> <span class="syn-type">int</span> val = *sha1++;
+		*buf++ = hex[val &gt;&gt; <span class="syn-number">4</span>];
+		*buf++ = hex[val &amp; <span class="syn-number">0xf</span>];
+	}
+	<span class="syn-keyword">return</span> buffer;
+}
+
+<span class="syn-comment">/*
+ * NOTE! This returns a statically allocated buffer, so you have to be
+ * careful about using it. Do a &quot;strdup()&quot; if you need to save the
+ * filename.
+ */</span>
+<span class="syn-type">char</span> *<span class="syn-name">sha1_file_name</span>(<span class="syn-type">unsigned</span> <span class="syn-type">char</span> *sha1)
+{
+	<span class="syn-type">int</span> i;
+	<span class="syn-keyword">static</span> <span class="syn-type">char</span> *name, *base;
+
+	<span class="syn-keyword">if</span> (!base) {
+		<span class="syn-type">char</span> *sha1_file_directory = getenv(DB_ENVIRONMENT) ? : DEFAULT_DB_ENVIRONMENT;
+		<span class="syn-type">int</span> len = strlen(sha1_file_directory);
+		base = malloc(len + <span class="syn-number">60</span>);
+		memcpy(base, sha1_file_directory, len);
+		memset(base+len, <span class="syn-number">0</span>, <span class="syn-number">60</span>);
+		base[len] = <span class="syn-string">&#39;/&#39;</span>;
+		base[len+<span class="syn-number">3</span>] = <span class="syn-string">&#39;/&#39;</span>;
+		name = base + len + <span class="syn-number">1</span>;
+	}
+	<span class="syn-keyword">for</span> (i = <span class="syn-number">0</span>; i &lt; <span class="syn-number">20</span>; i++) {
+		<span class="syn-keyword">static</span> <span class="syn-type">char</span> hex[] = <span class="syn-string">&quot;0123456789abcdef&quot;</span>;
+		<span class="syn-type">unsigned</span> <span class="syn-type">int</span> val = sha1[i];
+		<span class="syn-type">char</span> *pos = name + i*<span class="syn-number">2</span> + (i &gt; <span class="syn-number">0</span>);
+		*pos++ = hex[val &gt;&gt; <span class="syn-number">4</span>];
+		*pos = hex[val &amp; <span class="syn-number">0xf</span>];
+	}
+	<span class="syn-keyword">return</span> base;
 }</code></pre>
 
 <footer><a href="../">Steve's Roc Work</a> · <a href="https://github.com/showell/roc-syntax-color">roc-syntax-color on GitHub</a></footer>
