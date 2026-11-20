@@ -30,7 +30,13 @@ EyePath :: [].{
 
 	## How far through a camera move it is at `now`: smoothed at both ends,
 	## or whipped, fast off the mark and settling.
-	move_fraction : { start : I64, frames : I64, curve : [Smooth, Whip], .. }, I64 -> F64
+	move_fraction : {
+		start : I64,
+		frames : I64,
+		curve : [Smooth, Whip],
+		..,
+	},
+	I64 -> F64
 	move_fraction = |{ start, frames, curve, .. }, now| {
 		progress = Ease.ramp(now - start, frames)
 		match curve {
@@ -150,18 +156,18 @@ moves = [
 		curve: Whip,
 		goes: To(crowd_watch),
 	},
-	# Panned with the wave one way and back the other.
+	# Down among the crowd, panned with the wave one way and back the other.
 	{
 		start: first_wave - 70,
 		frames: 140,
 		curve: Smooth,
-		goes: To({ ..crowd_watch, heading: 0.18 }),
+		goes: To(wave_watch(0.18)),
 	},
 	{
 		start: second_wave - 70,
 		frames: 140,
 		curve: Smooth,
-		goes: To({ ..crowd_watch, heading: -0.12 }),
+		goes: To(wave_watch(-0.12)),
 	},
 	# All the way back in to the first dancer, for one more wink.
 	{
@@ -180,7 +186,12 @@ moves = [
 		start: Script.final_wink_tick + 30,
 		frames: 70,
 		curve: Whip,
-		goes: To({ ..crowd_watch, forward: -46.0, height: 8.0, heading: 0.0 }),
+		goes: To({
+			..crowd_watch,
+			forward: -46.0,
+			height: 8.0,
+			heading: 0.0,
+		}),
 	},
 ]
 
@@ -217,6 +228,14 @@ crowd_watch = {
 	forward: -40.0,
 	height: 6.5,
 	heading: -0.12,
+}
+
+wave_watch : F64 -> EyePath.Spot
+wave_watch = |heading| {
+	..crowd_watch,
+	forward: -36.0,
+	height: 4.5,
+	heading,
 }
 
 last_float_stop : I64

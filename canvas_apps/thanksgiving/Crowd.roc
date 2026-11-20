@@ -65,9 +65,9 @@ build_at = |index| builds.get(index % 3) ?? crash "Crowd.build_at: three builds"
 block_spots : List(BlockSpot)
 block_spots = {
 	row_count : U64
-	row_count = 25
+	row_count = 22
 	column_count : U64
-	column_count = 10
+	column_count = 9
 	var $out = List.with_capacity(2 * row_count * column_count)
 	for row in 0..<row_count {
 		shift = 0.65 * (row % 2).to_f64()
@@ -117,7 +117,11 @@ block_member = |spot, now| {
 }
 
 # The fence row: short robots only, so the fence hides them until they jump.
-FenceSpot : { build : Robot.Build, right : F64, first_jump : I64 }
+FenceSpot : {
+	build : Robot.Build,
+	right : F64,
+	first_jump : I64,
+}
 
 fence_spots : List(FenceSpot)
 fence_spots = {
@@ -165,7 +169,11 @@ fence_member = |spot, now| {
 		}
 	{
 		build: spot.build,
-		feet: { right: spot.right, forward: fence_forward, height: jump_height * up },
+		feet: {
+			right: spot.right,
+			forward: fence_forward,
+			height: jump_height * up,
+		},
 		arms: wave_arms(now, spot.right).max(up),
 		running: 0.0,
 		phase: 0.0,
@@ -178,7 +186,11 @@ fence_member = |spot, now| {
 # for a moment either side of it.
 wave_arms : I64, F64 -> F64
 wave_arms = |now, right| {
-	passes = List.map2(Script.wave_ticks, [1.0, -1.0], |tick, way| (tick, way))
+	passes = List.map2(
+		Script.wave_ticks,
+		[1.0, -1.0],
+		|tick, way| (tick, way),
+	)
 	passes.fold(
 		0.0,
 		|arms, (tick, way)| {
@@ -197,7 +209,7 @@ wave_speed = 0.6
 expect Crowd.block_members_at(Script.flood_tick) == []
 expect {
 	at_end = Crowd.block_members_at(Script.end_tick)
-	at_end.len() > 400 and at_end.all(|member| member.running == 0.0)
+	at_end.len() > 350 and at_end.all(|member| member.running == 0.0)
 }
 
 # The wave lifts arms in the middle of the yard as it passes, and not well

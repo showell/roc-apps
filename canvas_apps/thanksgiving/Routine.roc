@@ -96,9 +96,15 @@ snap = |since|
 # The sections follow one another, and the routine is their sum.
 expect Routine.section_start(Opening) == 0
 expect Routine.section_start(Hello) == 80
-expect Routine.section_start(Finale) + Choreography.ticks_of(Choreography.finale_steps) == Routine.length
+expect {
+	finale_ticks = Choreography.ticks_of(Choreography.finale_steps)
+	Routine.section_start(Finale) + finale_ticks == Routine.length
+}
 
 # The wink lands on the winking move, and the routine ends on the final pose.
 expect Routine.move_at(Routine.section_start(Hello) + Choreography.wink_offset + 5).wink == 1.0
-expect Routine.move_at(Routine.section_start(Finale) + Choreography.final_wink_offset + 5).wink == 1.0
+expect {
+	final_wink = Routine.section_start(Finale) + Choreography.final_wink_offset
+	Routine.move_at(final_wink + 5).wink == 1.0
+}
 expect Routine.move_at(Routine.length + 100) == Moves.final_pose

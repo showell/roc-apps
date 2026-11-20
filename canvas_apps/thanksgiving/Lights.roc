@@ -54,6 +54,13 @@ Lights :: [].{
 		$out
 	}
 
+	## Nearer than this many pixels a metre, a lit bulb or eye has a glow
+	## around it; farther, the glow would be a few pixels across, and it is
+	## left out, because a glow costs a browser the most to paint and there
+	## are hundreds.
+	halo_scale : F64
+	halo_scale = 12.0
+
 	## The two strands and their bulbs, `glows` giving each bulb's brightness
 	## from 0 to 1, nearest first. They hang above every head, so they are
 	## painted over everything at the table.
@@ -105,7 +112,7 @@ Lights :: [].{
 								fill: Flat(color),
 							}),
 						)
-						if glow > 0.0 {
+						if glow > 0.0 and pixels_per_metre >= Lights.halo_scale {
 							$halos = $halos.append(
 								Shapes.halo(
 									{ center: point, radius: Pixels.of(0.28 * pixels_per_metre) },

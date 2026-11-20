@@ -6,6 +6,7 @@ import lib.Pixels
 import lib.RgbColor
 import lib.Shapes
 import Figure
+import Lights
 import RobotBody
 
 RobotHead :: [].{
@@ -43,7 +44,8 @@ RobotHead :: [].{
 		}
 
 	## The neck and the head, then its two eyes and mouth. Lit eyes add a
-	## glow around them, the color of the string lights; `look` slides them
+	## glow around them, the color of the string lights, unless the robot is
+	## too far off for a glow to show; `look` slides them
 	## toward the screen's right.
 	head_shapes : Figure.Place,
 	{
@@ -127,7 +129,7 @@ face_shapes = |place, { body, head_bottom, glow, look }| {
 		},
 	)
 	halos =
-		if glow > 0.0 {
+		if glow > 0.0 and place.scale >= Lights.halo_scale {
 			Shapes.added_light_shapes(
 				[-1.0, 1.0].map(
 					|side|

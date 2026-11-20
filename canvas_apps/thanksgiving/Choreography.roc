@@ -52,8 +52,24 @@ Choreography :: [].{
 		{ move: { ..Moves.goalpost, left_fore: -2.09, right_fore: 2.09 }, frames: 9 },
 		{ move: { ..Moves.goalpost, left_fore: -1.57, right_fore: 1.57 }, frames: 9 },
 		{ move: { ..Moves.goalpost, left_fore: -1.05, right_fore: 1.05 }, frames: 9 },
-		{ move: { ..Moves.goalpost, left_fore: -1.05, right_fore: 1.05, head: 1.0 }, frames: 10 },
-		{ move: { ..Moves.goalpost, left_fore: -1.05, right_fore: 1.05, head: -1.0 }, frames: 10 },
+		{
+			move: {
+				..Moves.goalpost,
+				left_fore: -1.05,
+				right_fore: 1.05,
+				head: 1.0,
+			},
+			frames: 10,
+		},
+		{
+			move: {
+				..Moves.goalpost,
+				left_fore: -1.05,
+				right_fore: 1.05,
+				head: -1.0,
+			},
+			frames: 10,
+		},
 		{ move: Moves.goalpost, frames: 8 },
 	]
 
@@ -64,7 +80,12 @@ Choreography :: [].{
 		[{ move: Moves.goalpost, frames: parade_breath }],
 		groove_steps(Moves.goalpost, first_roll_frames),
 		[0.07, -0.07, 0.07, -0.07]
-			.map(|lift| List.concat(pop_steps(lift), groove_steps(Moves.goalpost, pop_gap - pop_frames)))
+			.map(
+				|lift| List.concat(
+					pop_steps(lift),
+					groove_steps(Moves.goalpost, pop_gap - pop_frames),
+				),
+			)
 			.join(),
 	].join()
 
@@ -98,7 +119,12 @@ Choreography :: [].{
 	flood_steps = {
 		round =
 			[0.0, 1.0, 0.0, -1.0]
-				.map(|head| List.concat(beat_steps({ ..Moves.arms_out, head }), beat_steps(Moves.arms_out)))
+				.map(
+					|head| List.concat(
+						beat_steps({ ..Moves.arms_out, head }),
+						beat_steps(Moves.arms_out),
+					),
+				)
 				.join()
 		List.concat(repeated_steps(round, 3), repeated_steps(beat_steps(Moves.arms_out), 4))
 	}
@@ -156,10 +182,7 @@ wink_steps = [
 
 # One step of a march: down on the knees, then up, half a second.
 beat_steps : Moves.Move -> List(Choreography.Step)
-beat_steps = |move| [
-	{ move: { ..move, bounce: 0.05 }, frames: 15 },
-	{ move, frames: 15 },
-]
+beat_steps = |move| [{ move: { ..move, bounce: 0.05 }, frames: 15 }, { move, frames: 15 }]
 
 # `move` held for `frames` ticks, bobbing on the knees every quarter second.
 groove_steps : Moves.Move, I64 -> List(Choreography.Step)

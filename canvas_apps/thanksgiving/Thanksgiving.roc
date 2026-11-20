@@ -105,7 +105,10 @@ yard_shapes = |view, tick| {
 	var $out = []
 	var $next_table = 0
 	for member in Crowd.block_members_at(tick) {
-		while $next_table < tables.len() and table_depth(tables, $next_table) > member.feet.forward {
+		while $next_table < tables.len() and table_depth(
+			tables,
+			$next_table,
+		) > member.feet.forward {
 			$out = List.concat($out, table_at_shapes(view, { tables, index: $next_table, tick }))
 			$next_table = $next_table + 1
 		}
@@ -125,7 +128,12 @@ table_depth = |tables, index| {
 	table.offset.forward + 3.3
 }
 
-table_at_shapes : View, { tables : List(Copies.TablePlace), index : U64, tick : I64 } -> List(Shapes.Shape)
+table_at_shapes : View,
+{
+	tables : List(Copies.TablePlace),
+	index : U64,
+	tick : I64,
+} -> List(Shapes.Shape)
 table_at_shapes = |view, { tables, index, tick }| {
 	table = tables.get(index) ?? crash "Thanksgiving.table_at_shapes: a table at every index asked"
 	table_shapes(view.shifted_view(table.offset), { ride: table.ride, tick })
@@ -134,7 +142,11 @@ table_at_shapes = |view, { tables, index, tick }| {
 # One table seen through a view moved to it: its party on the lawn, or on
 # its float with the float's pusher, painted under the deck or over the
 # party by which side of the float it is on.
-table_shapes : View, { ride : [OnLawn, OnFloat(Copies.FloatRide)], tick : I64 } -> List(Shapes.Shape)
+table_shapes : View,
+{
+	ride : [OnLawn, OnFloat(Copies.FloatRide)],
+	tick : I64,
+} -> List(Shapes.Shape)
 table_shapes = |view, { ride, tick }|
 	match ride {
 		OnLawn => party_shapes(view, tick)

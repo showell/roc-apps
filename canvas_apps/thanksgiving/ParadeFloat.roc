@@ -21,15 +21,35 @@ ParadeFloat :: [].{
 		[
 			side_shapes(view),
 			view.region_shapes({
-				corners: upright_corners({ right_from: deck_left, right_to: deck_right, forward: deck_near }),
+				corners: upright_corners({
+					right_from: deck_left,
+					right_to: deck_right,
+					forward: deck_near,
+				}),
 				fill: skirt_red,
 			}),
 			view.region_shapes({
 				corners: [
-					{ right: deck_left, forward: deck_near, height: top },
-					{ right: deck_right, forward: deck_near, height: top },
-					{ right: deck_right, forward: deck_far, height: top },
-					{ right: deck_left, forward: deck_far, height: top },
+					{
+						right: deck_left,
+						forward: deck_near,
+						height: top,
+					},
+					{
+						right: deck_right,
+						forward: deck_near,
+						height: top,
+					},
+					{
+						right: deck_right,
+						forward: deck_far,
+						height: top,
+					},
+					{
+						right: deck_left,
+						forward: deck_far,
+						height: top,
+					},
 				],
 				fill: deck_green,
 			}),
@@ -47,7 +67,11 @@ ParadeFloat :: [].{
 	## spinning, until the float stops and its arms drop.
 	pusher_shapes : View, Copies.FloatRide -> List(Shapes.Shape)
 	pusher_shapes = |view, ride|
-		match view.sighting({ right: ride.from_side * 3.0, forward: 3.3, height: 0.0 }) {
+		match view.sighting({
+			right: ride.from_side * 3.0,
+			forward: 3.3,
+			height: 0.0,
+		}) {
 			Ok({ point, pixels_per_metre }) =>
 				Robot.figure_shapes({
 					build: Tiny,
@@ -111,7 +135,11 @@ side_shapes = |view| {
 
 # A face of the skirt across the float at `forward`, from the bottom of the
 # skirt to the deck.
-upright_corners : { right_from : F64, right_to : F64, forward : F64 } -> List(Eye.At)
+upright_corners : {
+	right_from : F64,
+	right_to : F64,
+	forward : F64,
+} -> List(Eye.At)
 upright_corners = |{ right_from, right_to, forward }| [
 	{ right: right_from, forward, height: Copies.deck_height },
 	{ right: right_to, forward, height: Copies.deck_height },
@@ -134,9 +162,21 @@ bunting_shapes = |view| {
 			$out,
 			view.region_shapes({
 				corners: [
-					{ right: left, forward: deck_near - 0.01, height: top },
-					{ right: left + wide, forward: deck_near - 0.01, height: top },
-					{ right: left + wide / 2.0, forward: deck_near - 0.01, height: top - 0.2 },
+					{
+						right: left,
+						forward: deck_near - 0.01,
+						height: top,
+					},
+					{
+						right: left + wide,
+						forward: deck_near - 0.01,
+						height: top,
+					},
+					{
+						right: left + wide / 2.0,
+						forward: deck_near - 0.01,
+						height: top - 0.2,
+					},
 				],
 				fill,
 			}),
@@ -150,7 +190,11 @@ bunting_shapes = |view| {
 wheel_shapes : View, { right : F64, rolled : F64 } -> List(Shapes.Shape)
 wheel_shapes = |view, { right, rolled }| {
 	radius = 0.17
-	middle = { right, forward: deck_near - 0.05, height: radius }
+	middle = {
+		right,
+		forward: deck_near - 0.05,
+		height: radius,
+	}
 	turned = rolled / radius
 	spoke_end = {
 		..middle,
@@ -160,9 +204,24 @@ wheel_shapes = |view, { right, rolled }| {
 	match view.sighting(middle) {
 		Ok({ point, pixels_per_metre }) =>
 			[
-				Disc({ center: point, radius: Pixels.of(radius * pixels_per_metre), fill: tyre }),
-				Disc({ center: point, radius: Pixels.of(0.45 * radius * pixels_per_metre), fill: hub }),
-			].concat(view.line_shapes({ from: middle, to: spoke_end, width: 0.04, fill: hub }))
+				Disc({
+					center: point,
+					radius: Pixels.of(radius * pixels_per_metre),
+					fill: tyre,
+				}),
+				Disc({
+					center: point,
+					radius: Pixels.of(0.45 * radius * pixels_per_metre),
+					fill: hub,
+				}),
+			].concat(
+				view.line_shapes({
+					from: middle,
+					to: spoke_end,
+					width: 0.04,
+					fill: hub,
+				}),
+			)
 		Err(BehindEye) => []
 	}
 }

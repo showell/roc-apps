@@ -32,7 +32,11 @@ Copies :: [].{
 	table_places_at = |tick| {
 		now = Script.held_tick(tick)
 		floats =
-			List.map2(float_routes, Script.float_stop_ticks, |route, stop_tick| (route, now - stop_tick + roll_frames))
+			List.map2(
+				float_routes,
+				Script.float_stop_ticks,
+				|route, stop_tick| (route, now - stop_tick + roll_frames),
+			)
 				.keep_if(|(_, since)| since > 0)
 				.map(|(route, since)| float_place(route, since))
 		[{ offset: { right: 0.0, forward: 0.0 }, ride: OnLawn }].concat(floats)

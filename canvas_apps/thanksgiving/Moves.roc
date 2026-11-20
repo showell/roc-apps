@@ -104,5 +104,13 @@ Moves :: [].{
 }
 
 # Mixing goes all the way at 1 and nowhere at 0.
-expect Moves.mixed_move({ from: Moves.rest, to: Moves.goalpost, fraction: 0.0 }) == Moves.rest
-expect Moves.mixed_move({ from: Moves.rest, to: Moves.goalpost, fraction: 1.0 }) == Moves.goalpost
+expect Moves.mixed_move({
+	from: Moves.rest,
+	to: Moves.goalpost,
+	fraction: 0.0,
+}) == Moves.rest
+expect Moves.mixed_move({
+	from: Moves.rest,
+	to: Moves.goalpost,
+	fraction: 1.0,
+}) == Moves.goalpost
