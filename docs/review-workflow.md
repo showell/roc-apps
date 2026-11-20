@@ -34,7 +34,7 @@ The process makes code right one module at a time, types first. Cold agents revi
 
 ## Lanes and shared modules
 
-- **Worktrees:** each lane is a worktree under `~/showell_repos/lanes/<lane>`, on its own branch. A lane goes when it merges. Each checkout's gate caches (a GB or so) sit under `~/build/roc-apps/safari-checkout-caches/`, and the next merge gate run in any checkout removes a removed worktree's.
+- **Worktrees:** each lane is a worktree in the lanes folder, on its own branch. A lane goes when it merges. Each checkout's gate caches (a GB or so) sit in the build folder, one per checkout, and the next merge gate run in any checkout removes a removed worktree's.
 - **Shared modules, one lane at a time:**
   - The shared modules are Geometry, RiderView, Pipeline, Picture, RoadAhead, World, Segment, Route, Scene, lib and the unit types.
   - The orchestrator gives each lane its shared modules by name, and only one lane at a time may touch a given one.
@@ -64,7 +64,7 @@ Things the quick tier has missed, which the brief now covers:
 
 - **On the essay surface, never the console.** With four agents reporting, the console is too noisy. Each decision or group of decisions is a note on the surface, with the facts, the options and a recommendation on each item.
 - **Repeat the link.** Repeat its URL at the end of every reply until Steve says he's reading it.
-- **Replies are comments.** They live in the surface's comments folder (`~/essays/comments/<name>.note.jsonl` on the box), one per paragraph, not in the note or in git. Notes and replies are transient: the surface keeps only the newest 20, so a decision that must last goes into this repo.
+- **Replies are comments.** They live in the review surface's comments file for the note, one per paragraph, not in the note or in git. Notes and replies are transient: the surface keeps only the newest 20, so a decision that must last goes into this repo.
 - **Record his answers.** Add them to the note under "Steve's answer" and carry them into the lanes.
 - **One at a time.** Hold agent reports until he's ready, and hand him one note at a time.
 - **Pixel changes wait for one eye-test note,** with before and after renders. Steve tests carefully, so batch them rather than asking piecemeal.

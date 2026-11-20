@@ -21,7 +21,7 @@ TAG
 Shale is a small Lua-like language:
 
 - **Running a program:** `local r = run({"git", "status"}, {timeout_ms = 60000, whole = 20000, want = "any"})`, then `print(r.code)` and `print(r.out)`. Both `timeout_ms` and a keep (`whole`, `head` or `tail`) are required. A text tool such as grep needs a reason, as in `want = "any: callers"`.
-- **Never read `~/.config/shale/mounts`, and never run `shale --help`.** Both show the path of the secrets folder. The `scratch:` mount is `/tmp/claude-1000`, so write scratch files there under `/tmp/claude-1000/<lane>/`.
+- **Never read `~/.config/shale/mounts`, and never run `shale --help`.** Both show the path of the secrets folder. Write scratch files under the `scratch:` mount, in `scratch:<lane>/`.
 - **A scratch Roc module** must declare a type named after its file.
 - **Shale gaps agents keep hitting:**
   - There's no `write` or `write_file`: `replace(path, text)` writes a file.
@@ -38,13 +38,13 @@ Shale is a small Lua-like language:
   - Declare a function with `function name()` at the top level.
   - Walk a map with `for k in keys(m) do`.
   - Join a list with `join(l, sep)`.
-- **Paths:** they're relative to the folder you `cd` to. A `repos:` path names a repo under ~/showell_repos.
+- **Paths:** they're relative to the folder you `cd` to. A `repos:` path names a repo in the folder that holds the checkouts.
 
 The gate enforces this for every agent: any other Bash command is refused. For a real need Shale can't meet, the escape is a first line `# want: <tag>: <text>`, which runs the command and logs it so Steve can see what agents reach for. Use it rarely, and say so in your report.
 
 Never push, never merge, and never touch a checkout that isn't yours.
 
-Several agents share one scratch area, so keep your scratch files under Shale's `scratch:` mount (`/tmp/claude-1000`), in a subfolder named for your lane or review, such as `scratch:<lane>/`, or another agent may overwrite them. Never put scratch files in a repo or a worktree.
+Several agents share one scratch area, so keep your scratch files under Shale's `scratch:` mount, in a subfolder named for your lane or review, such as `scratch:<lane>/`, or another agent may overwrite them. Never put scratch files in a repo or a worktree.
 
 ## Read first, every time
 
@@ -59,10 +59,10 @@ You review one module, or a small family of them, named in your prompt. You chan
 
 ### 1. Walk the types
 
-From `canvas_apps` in the main checkout (`/home/steve/showell_repos/roc-apps`), with the widgets as clients so their uses count. The hook refuses a glob on the command line, so launch the walk from a script:
+From `canvas_apps` in the main roc-apps checkout, with the widgets as clients so their uses count. The hook refuses a glob on the command line, so launch the walk from a script:
 
 ```
-cd /home/steve/showell_repos/roc-apps/canvas_apps && shale <<'TAG'
+cd <roc-apps>/canvas_apps && shale <<'TAG'
 local r = run({"shale", "cookbook:roc/print_module_types.shale", "root=safari", "module=Tower",
   "clients=*_widget", "packages=lib=repos:roc-apps/canvas_apps/lib"}, {whole = 4000000, timeout_ms = 300000})
 print(r.out)
@@ -174,8 +174,8 @@ report.
 
 ### Where you work
 
-Your worktree is named in your prompt, under `/home/steve/showell_repos/lanes/`,
-on its own branch. Work and commit only there. Commit as you go, and end each
+Your worktree is named in your prompt, in the lanes folder, on its own
+branch. Work and commit only there. Commit as you go, and end each
 message with:
 
 ```
@@ -193,7 +193,7 @@ stop that fix and say so in your report. Another lane may be changing it.
 Run only the fast tier, from your worktree's root:
 
 ```
-cd /home/steve/showell_repos/lanes/<lane> && shale canvas_apps/safari/gates/fast.shale <<'TAG'
+cd <lane> && shale canvas_apps/safari/gates/fast.shale <<'TAG'
 TAG
 ```
 
@@ -203,7 +203,7 @@ files, and one frame held to `gates/proof.expected`.
 - **Speed:** about 10 seconds when warm. The first run in a new worktree builds
   its cache, which takes longer.
 - **Widgets:** if you change something a widget imports, also run `roc check web.roc` in that widget's folder (`canvas_apps/<name>_widget`), with the
-  pinned Roc: `/home/steve/tools/roc-nightly-2026-11-03-34bd006/roc`.
+  pinned Roc, the one `roc-version` names.
 - **A change that moves the ride or any pixel:** run `shale canvas_apps/safari/gates/run.shale part=widgets` (every widget's `roc check`, then one `roc test` over all of them, about 35 seconds on a busy box). Several widgets hold numbers from a paused step of the real ride, such as the frame widget's shape counts at step 1529, so they break even when you didn't touch them.
 - **Whole-tree lints:** before you report, also run `shale canvas_apps/safari/gates/lints.shale` from the worktree root (its header says how long it takes). fast.shale skips the lints that read across files (boundaries, families and others), and they catch what a lane's rename or new parameter does elsewhere.
 - **The book:** also run `shale canvas_apps/safari/gates/run.shale part=tutorial`, about a second. It fails only if an include breaks. While the book is parked, its stale names and the rule that it names every module are skipped, loudly (they print SKIPPED with their counts).
