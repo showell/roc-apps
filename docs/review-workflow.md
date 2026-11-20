@@ -1,29 +1,29 @@
 # The review workflow
 
-This workflow is specific to Steve's setup. It needs Shale (the `print_module_types` recipe and the Shale-only shell) and the essay surface ([essay-surface](https://github.com/showell/essay-surface), with its comments). Another agent can run it once those are in place. The agents' own brief is `docs/type-review.md`, and this file is the orchestrator's side.
+This workflow is specific to this project's setup. It needs Shale (the `print_module_types` recipe and the Shale-only shell) and the essay surface ([essay-surface](https://github.com/showell/essay-surface), with its comments). Another agent can run it once those are in place. The agents' own brief is `docs/type-review.md`, and this file is the orchestrator's side.
 
-The process makes code right one module at a time, types first. Cold agents review and clean up in parallel. One orchestrator decides, merges and gates. Steve stays single-threaded, making only the calls that are his. It ran first on Safari, and it should carry over to roc-chat.
+The process makes code right one module at a time, types first. Cold agents review and clean up in parallel. One orchestrator decides, merges and gates. The owner stays single-threaded, making only the owner's calls. It ran first on Safari, and it should carry over to roc-chat.
 
 ## The roles
 
-**Review agent.** It reads the guides (`CLAUDE.md`, `docs/roc-style.md`, `docs/smells.md`), walks a module with `cookbook:roc/print_module_types.shale` and reports findings. It changes nothing. Each finding gives what the smell is, the fix, its reach, whether pixels move, and whether the call is clear or needs Steve. The report ends with how the walk felt, noisy or incomplete, which is how the tool gets tuned.
+**Review agent.** It reads the guides (`CLAUDE.md`, `docs/roc-style.md`, `docs/smells.md`), walks a module with `cookbook:roc/print_module_types.shale` and reports findings. It changes nothing. Each finding gives what the smell is, the fix, its reach, whether pixels move, and whether the call is clear or needs the owner's sign-off. The report ends with how the walk felt, noisy or incomplete, which is how the tool gets tuned.
 
 **Cleanup agent.** It makes only the fixes the orchestrator decided, in a worktree of its own, and runs only the quick checks. It reports the new types, what it did and didn't do, the checks, whether pixels moved, and any book sentence it made plainly false.
 
 **Orchestrator.**
 - Keeps up to four agents busy on mostly disjoint code.
 - Decides most findings itself.
-- Writes the rest up for Steve.
+- Writes the rest up for the owner.
 - Merges lanes, batches the full gate, and updates the smells guide as trends appear.
 
-**Steve.** Makes the calls that are a matter of design or taste, and eye-tests every change that moves pixels.
+**The owner.** Makes the calls that are a matter of design or taste, and eye-tests every change that moves pixels.
 
 ## The loop
 
 1. **Review.** Pick modules whose reach doesn't overlap a running lane. Kinds and leaves go first, the shared substrate later. A review is read-only, so it can run beside anything.
 2. **Decide.** For each finding, choose one of four:
    - **Clear:** goes in a cleanup lane.
-   - **Needs Steve:** goes on the essay surface.
+   - **Needs the owner's sign-off:** goes on the essay surface.
    - **Moves pixels:** waits for the eye-test note.
    - **Rejected:** dropped.
 
@@ -50,7 +50,7 @@ Cleanup agents run the quick tier, about a minute in all:
 - `run.shale part=proof` (every held frame)
 - `part=tutorial` and `part=book_names`
 - `roc check` in every widget the change reaches
-- for apps other than Safari, `roc check` only: that's Steve's bar for them
+- for apps other than Safari, `roc check` only: that's the bar for them
 
 The orchestrator runs the full gate (`gates/run.shale`, whose header says how long it takes) before every push.
 
@@ -60,25 +60,25 @@ Things the quick tier has missed, which the brief now covers:
 
 `part=page`'s `drawn` hash covers every canvas call and its arguments, not pixels. When it moves, build master's page into a scratch `OUT=` and compare `shot.png` byte for byte. Never build into the dev channel.
 
-## Decisions for Steve
+## Decisions for the owner
 
 - **On the essay surface, never the console.** With four agents reporting, the console is too noisy. Each decision or group of decisions is a note on the surface, with the facts, the options and a recommendation on each item.
-- **Repeat the link.** Repeat its URL at the end of every reply until Steve says he's reading it.
+- **Repeat the link.** Repeat its URL at the end of every reply until the owner is reading it.
 - **Replies are comments.** They live in the review surface's comments file for the note, one per paragraph, not in the note or in git. Notes and replies are transient: the surface keeps only the newest 20, so a decision that must last goes into this repo.
-- **Record his answers.** Add them to the note under "Steve's answer" and carry them into the lanes.
-- **One at a time.** Hold agent reports until he's ready, and hand him one note at a time.
-- **Pixel changes wait for one eye-test note,** with before and after renders. Steve tests carefully, so batch them rather than asking piecemeal.
+- **Record the answers.** Add them to the note under "The owner's answer" and carry them into the lanes.
+- **One at a time.** Hold agent reports until the owner is ready, and hand over one note at a time.
+- **Pixel changes wait for one eye-test note,** with before and after renders. The owner tests carefully, so batch them rather than asking piecemeal.
 
 ## The book while it's parked
 
 The tutorial is rewritten later, so lanes never rewrite prose.
 - **Includes:** a lane points a broken include at the new name.
-- **Stale names:** while the book is parked, no count is held. The gate prints the stale names and the unnamed modules as SKIPPED, because a held count only tracked how broken the parked prose was (Steve: "a skip is actually more honest than churning counts").
+- **Stale names:** while the book is parked, no count is held. The gate prints the stale names and the unnamed modules as SKIPPED, because a held count only tracked how broken the parked prose was (a skip is more honest than churning counts).
 - **The log:** the orchestrator logs the sentences each lane made false in `canvas_apps/safari/tutorial/book-parked-sentences.md`.
 
 ## The type walk
 
-`cookbook:roc/print_module_types.shale` grows as reviewers ask; "a bit of feature-itis" is fine. Run it with `module=<Name>` from the app's folder. It prints:
+`cookbook:roc/print_module_types.shale` grows as reviewers ask, and a bit of feature creep is fine. Run it with `module=<Name>` from the app's folder. It prints:
 - the type closure, with less detail at depth;
 - a stop list for hub types;
 - per-member use counts, with receivers typed where the code says, and operators counted;

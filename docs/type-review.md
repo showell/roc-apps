@@ -40,7 +40,7 @@ Shale is a small Lua-like language:
   - Join a list with `join(l, sep)`.
 - **Paths:** they're relative to the folder you `cd` to. A `repos:` path names a repo in the folder that holds the checkouts.
 
-The gate enforces this for every agent: any other Bash command is refused. For a real need Shale can't meet, the escape is a first line `# want: <tag>: <text>`, which runs the command and logs it so Steve can see what agents reach for. Use it rarely, and say so in your report.
+The gate enforces this for every agent: any other Bash command is refused. For a real need Shale can't meet, the escape is a first line `# want: <tag>: <text>`, which runs the command and logs it so the owner can see what agents reach for. Use it rarely, and say so in your report.
 
 Never push, never merge, and never touch a checkout that isn't yours.
 
@@ -49,7 +49,7 @@ Several agents share one scratch area, so keep your scratch files under Shale's 
 ## Read first, every time
 
 1. `CLAUDE.md` at the roc-apps root and `docs/roc-style.md`: the rules.
-2. `docs/smells.md`: Steve's smells, each with a real case. Read it right
+2. `docs/smells.md`: the project's smells, each with a real case. Read it right
    before you review or design, so the smells are fresh.
 3. This file.
 
@@ -94,7 +94,7 @@ The walk has more than the types (the recipe's header lists every setting):
 - **"Imported but not in any printed type":** modules the code uses only in
   function bodies, which the walk can't show. Read them.
 - **"Imported for tests only":** imports used only by `expect`s and the
-  top-level values only expects reach. Each one breaks Steve's rule and is a
+  top-level values only expects reach. Each one breaks the tests rule and is a
   finding: its tests move to their topic's module in `gates/expects/` and the import goes.
 
 ### 2. Read the code behind what smells
@@ -147,7 +147,7 @@ it plain, and don't write long prose. For each finding, worst first, give:
   that imports the module.
 - **Pixels:** whether the fix should leave every pixel as it is, or would move
   some. Say which and why.
-- **Call:** "clear" if the fix is plainly right, or "needs Steve" if it's a
+- **Call:** "clear" if the fix is plainly right, or "needs the owner's sign-off" if it's a
   design question with real weight on both sides. Say what the two sides are.
 
 End with the findings you considered and rejected, one line each, so they
@@ -167,7 +167,7 @@ You make the fixes listed in your prompt, which the orchestrator has decided.
 Make those fixes and nothing else. If you see something more, put it in your
 report.
 
-**Tests (Steve's rule):**
+**Tests (the rule):**
 - A new test that needs nothing its module doesn't already import sits beside the code.
 - A test that needs more goes in its topic's module in `gates/expects/` (RoadExpects, SightingExpects, SceneExpects, EncounterExpects, RideExpects or RiderExpects). A helper two of them need goes in `Fixtures.roc`, and no module there imports another but Fixtures. Never add an import only a test uses.
 - Don't write a test that restates a constant or could never fail usefully. Roc's types already catch most of it.
@@ -219,7 +219,7 @@ moves, find out why. Don't update `proof.expected`.
 A fix decided as "pixels move" will fail fast.shale's frame on purpose. In
 that case, check everything else is green, leave `proof.expected` alone, and
 say in your report which frame moved and what should look different. The
-orchestrator renders it for Steve's eye test.
+orchestrator renders it for the owner's eye test.
 
 ### The book
 
@@ -230,8 +230,7 @@ rewritten later.
 - **A broken include:** if an include such as `{{code Module.name}}` names
   something you moved, point it at the new name.
 - **Stale names and new modules:** leave them. No count is held while the
-  book is parked (Steve: "a skip is actually more honest than churning
-  counts"), and no module list needs a mention added. Name in your report any
+  book is parked (a skip is more honest than churning counts), and no module list needs a mention added. Name in your report any
   sentence your change makes plainly false, so it's logged for the rewrite.
 
 ### Report
