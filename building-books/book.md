@@ -46,18 +46,18 @@ The fourth chapter shows the compiler check, and what it takes to build one for 
 
 ## Getting set up
 
-Start by having Claude set up your machine. You'll give it one prompt, it will fetch five repositories and install a few tools, and you'll finish with this book built on your own machine and open in your browser. Everything after this chapter builds on that setup.
+Start by having Claude set up your machine. You'll give it one prompt, it will fetch six repositories and install a few tools, and you'll finish with this book built on your own machine and open in your browser. Everything after this chapter builds on that setup.
 
 ### What you tell Claude first
 
-Point Claude at the book builder's README before anything else. It says what the builder does, what it needs to build (the Roc compiler roc-apps pins, Zig, and roc-markdown checked out beside roc-apps) and how a book uses it. The steps around the build run as Shale scripts, so Shale's README comes next: it says how to build Shale and set up its mounts, and it points to `docs/SHALE-AGENTS.md`, the guide written for an agent. Open a Claude Code session in an empty folder, here `~/books`, and give it a prompt like this one:
+Point Claude at the book builder's README before anything else. It says what the builder does, what it needs to build (the Roc compiler roc-apps pins, Zig, and roc-markdown and roc-syntax-color checked out beside roc-apps) and how a book uses it. The steps around the build run as Shale scripts, so Shale's README comes next: it says how to build Shale and set up its mounts, and it points to `docs/SHALE-AGENTS.md`, the guide written for an agent. Open a Claude Code session in an empty folder, here `~/books`, and give it a prompt like this one:
 
 ```text
 Read https://github.com/showell/roc-apps/blob/master/book_builder/README.md,
 then https://github.com/showell/shale/blob/master/README.md and
-docs/SHALE-AGENTS.md in the shale repo. Clone these five repos side by side
-in ~/books, all from github.com/showell: roc-apps, roc-markdown, shale,
-zig-webbox and essay-surface. Install Zig 0.17.0; the Roc nightly that
+docs/SHALE-AGENTS.md in the shale repo. Clone these six repos side by side
+in ~/books, all from github.com/showell: roc-apps, roc-markdown,
+roc-syntax-color, shale, zig-webbox and essay-surface. Install Zig 0.17.0; the Roc nightly that
 roc-apps/roc-version names, at ~/tools/roc-<that name>/roc; Node 22 or newer;
 Playwright's Chromium (npx playwright install chromium); and Graphviz with
 the package manager (ask me before you use sudo). Build Shale and set it up as its README says. Write
@@ -71,14 +71,15 @@ Make the build folder. Start a static web server on port 9210 over
 printed.
 ```
 
-### The five repositories
+### The six repositories
 
-Claude clones all five into one folder, side by side, about 115 MB in all:
+Claude clones all six into one folder, side by side, about 120 MB in all:
 
 | repository | what it's for | its size |
 |---|---|---|
 | [roc-apps](https://github.com/showell/roc-apps) | the book builder, this book in `building-books/`, and the Safari Ride program with its book, in `canvas_apps/safari/tutorial/`, whose rules this book quotes | about 1,100 files, 70 MB |
 | [roc-markdown](https://github.com/showell/roc-markdown) | the markdown renderer the builder imports, checked out beside roc-apps | 81 files, 4 MB |
+| [roc-syntax-color](https://github.com/showell/roc-syntax-color) | the code colorer the book's Roc listings use, checked out beside roc-apps | 26 files, 5 MB |
 | [shale](https://github.com/showell/shale) | the scripting language the build's steps run in, and its cookbook of recipes | about 900 files, 35 MB |
 | [zig-webbox](https://github.com/showell/zig-webbox) | a library Shale builds against, checked out beside it | 42 files, 2 MB |
 | [essay-surface](https://github.com/showell/essay-surface) | a small web app where the agent's drafts meet your replies, one option for the fifth chapter's cadence | about 100 files, 3 MB |
