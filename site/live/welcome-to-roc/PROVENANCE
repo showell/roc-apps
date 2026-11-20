@@ -1,5 +1,5 @@
-published 2026-11-20T22:31:19Z
+published 2026-11-20T23:24:59Z
 Roc compiler version nightly-2026-11-03-34bd006
 opt speed
-roc-screensaver 837d529 https://github.com/showell/roc-screensaver/commit/837d529cda5514f257817fdf7ca8e14d2d478419
-sha256 2a3b605b3e77d898  301219 bytes  lanterns.wasm
+roc-screensaver a0ebc90 https://github.com/showell/roc-screensaver/commit/a0ebc90d04b756ce4265f450977f2ce6643d3497
+sha256 e5ff96694dc94a0d  306676 bytes  lanterns.wasm
