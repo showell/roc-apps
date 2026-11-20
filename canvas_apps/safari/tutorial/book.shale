@@ -26,7 +26,8 @@
 -- Roc's dev backend, and runs the program, whose pages go to build/book/ with
 -- the builder's stylesheet. This script adds the book's scripts, and from
 -- there the pages go to the channel. The Roc code is colored by
--- syntax_color/, each quoted block as it reads in its file (app/QuotedColor.roc).
+-- roc-syntax-color (a checkout beside roc-apps), each quoted block as it reads
+-- in its file (app/QuotedColor.roc).
 --
 -- The channel's book is replaced only by one that passed. The pages are staged
 -- in the channel's /tutorial.staging/, beside the widgets they frame. Then

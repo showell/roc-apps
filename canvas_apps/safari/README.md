@@ -70,9 +70,9 @@ them, in three tiers, each run from the roc-apps root:
 The book of the tutorial, one page a chapter, is built by roc-apps' book
 builder (`book_builder/`), as a small app on the book platform,
 `canvas_apps/safari/tutorial/app/main.roc`, its Roc code colored by
-`syntax_color/`. It builds into the dev channel at `/tutorial/` with
+[roc-syntax-color](https://github.com/showell/roc-syntax-color). It builds into the dev channel at `/tutorial/` with
 `nice -n 19 shale canvas_apps/safari/tutorial/book.shale`, on demand and at
-publish, and it needs roc-markdown beside this checkout. It stages the pages,
+publish, and it needs roc-markdown and roc-syntax-color beside this checkout. It stages the pages,
 makes safari's page and the widgets' release builds
 (`tutorial/build_widgets.shale`, which rebuilds only a page whose build reads
 a file that changed), drives the stage in a browser with shots, and only then

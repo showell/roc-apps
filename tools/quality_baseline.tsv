@@ -304,10 +304,3 @@ glue	find_extra_parens	lambda_if	1
 glue	parse-key	glue	a0e1ab58b6af213f0cffd35ccc0482fc26dd29db
 glue	rewrite_method_calls	rewritable	50
 glue	types-key	glue,roc-cache:compat-8ef4841088748ac1aa781861c5d51bf4411c8d2407e4a9de0f79cabaf7dbd97a/src/compiler-platforms/glue/701f09d0d31715d6518d5cb66edd0f85787bd5d658761b1e6c343b44bb405b74	964fadbb07547999e10e3670a6ed4032ac7659cb
-syntax_color	check_errors	number_fallback	1
-syntax_color	check_families	twin_name	3
-syntax_color	check_stacking	wide string	15
-syntax_color	parse-key	syntax_color	c63d6a82b1c20b730e159c902a5840d6ece2e2ad
-syntax_color	rewrite_method_calls	rewritable	2
-syntax_color	roc-types	unreached	1
-syntax_color	types-key	syntax_color	c63d6a82b1c20b730e159c902a5840d6ece2e2ad

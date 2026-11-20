@@ -9,7 +9,7 @@
 app [main!] {
 	bb: "../../book_builder/builder/main.roc",
 	pf: platform "../../book_builder/platform/main.roc",
-	sc: "../../syntax_color/package/main.roc",
+	sc: "../../../roc-syntax-color/package/main.roc",
 }
 
 import pf.Book
@@ -72,7 +72,7 @@ settings = {
 	prepared: Prepared({ folder: prepared_folder, kinds: ["stops"] }),
 }
 
-## Roc, Shale, JavaScript and Zig colored by syntax_color, and any other
+## Roc, Shale, JavaScript and Zig colored by roc-syntax-color, and any other
 ## language left as escaped text.
 colored_code : Fences.Colorer
 colored_code = |{ language, code }|

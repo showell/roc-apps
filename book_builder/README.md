@@ -33,7 +33,9 @@ uses most of the builder. The Safari tutorial's app is
 `canvas_apps/safari/tutorial/app/main.roc`, built and published by that
 folder's `book.shale`, whose pre-step does what needs a program: it quotes
 the game's code through Roc's parser, runs `roc check`, and draws the
-diagrams. Its colorer is `syntax_color/`, behind the coloring hook.
+diagrams. Its colorer is
+[roc-syntax-color](https://github.com/showell/roc-syntax-color), checked out
+beside roc-apps, behind the coloring hook.
 
 ## A book
 

@@ -166,12 +166,12 @@ const EXPECT_ROOTS = {MAIN_EXPECT_ROOT, "web.roc", "../lib/main.roc", "tutorial/
 -- The packages of other repos that a root reaches. Their expects run, and are
 -- that repo's to count, so they are neither held here nor a failure. A `PASS`
 -- outside the checkout from any other folder fails.
-const OTHER_REPO_PACKAGES = {"../../../roc-markdown/package/"}
+const OTHER_REPO_PACKAGES = {"../../../roc-markdown/package/", "../../../roc-syntax-color/package/"}
 -- The packages of roc-apps outside canvas_apps that the book's app reaches, the
--- book builder and its platform and the colorer. Their own gates count their
--- expects (book_builder/tools/verify.shale, syntax_color/tools/verify.shale),
--- so they are neither held here nor a failure.
-const OTHER_TREE_PACKAGES = {"../../book_builder/builder/", "../../book_builder/platform/", "../../syntax_color/package/"}
+-- book builder and its platform. Their own gate counts their expects
+-- (book_builder/tools/verify.shale), so they are neither held here nor a
+-- failure.
+const OTHER_TREE_PACKAGES = {"../../book_builder/builder/", "../../book_builder/platform/"}
 -- The widgets' expect root, from safari's folder, where `roc test` runs, and
 -- from the checkout's root, for git. Its own expects are the widgets', since
 -- only it reaches them.
@@ -618,7 +618,7 @@ end
 
 -- tutorial/build.shale's self-test, then the tutorial's build, so a name it
 -- includes that is gone from the code fails the gates. Then color_roc.shale's
--- self-test, since syntax_color's oracle records what it colors. Last,
+-- self-test, since roc-syntax-color's oracle records what it colors. Last,
 -- tutorial/book_stats.shale reads the expanded tutorial,
 -- and fails when a chapter runs over its limit of prose words.
 function tutorial()

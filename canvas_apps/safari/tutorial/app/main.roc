@@ -9,7 +9,7 @@ app [main!] {
 	bb: "../../../../book_builder/builder/main.roc",
 	md: "../../../../../roc-markdown/package/main.roc",
 	pf: platform "../../../../book_builder/platform/main.roc",
-	sc: "../../../../syntax_color/package/main.roc",
+	sc: "../../../../../roc-syntax-color/package/main.roc",
 }
 
 import pf.Book
