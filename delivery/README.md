@@ -36,7 +36,7 @@ the solver, Zig hosts it, TypeScript draws it.
   page's bundle.
 
 **Why this seam.** The page asks one question, a shift's plan by its seed, and
-the solver needs nothing else from the page. So the Roc takes a seed and
+that seed is all the solver needs. So the Roc takes a seed and
 answers the page's JSON, and the Zig carries bytes. The road graph and the gate
 angles are float geometry, and they are the Roc's too: every float there is
 plain IEEE arithmetic, or `atan2` from Roc's own fdlibm port, the same bits on

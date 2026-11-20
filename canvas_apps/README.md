@@ -135,12 +135,12 @@ CanvasApp(model) : {
 
 `model_at_next_step` takes one step, given the keyboard and pointer now and the
 seconds the step covers, always `1 / frames_a_second`. An app whose rules count
-steps writes `CanvasApp.untimed_model_at_next_step(step)`, and its `step` sees
-no seconds. `frame_shapes` says what to draw. `sounds` sets a bit for each tone
+steps writes `CanvasApp.untimed_model_at_next_step(step)`, and its `step` takes
+the model and the input alone. `frame_shapes` says what to draw. `sounds` sets a bit for each tone
 the last step set off, and `tones` says what each sounds like.
 
-An app imports no platform, so the same value goes to either runner, named
-out loud:
+An app is platform-free, so the same value goes to either runner, named out
+loud:
 
 ```roc
 program = CanvasAppRunner.program(SnakeApp.canvas_app)  # snake/main.roc

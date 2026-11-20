@@ -17,8 +17,7 @@ tag:
     Book.read_file! : Str => Try(Str, [NotAFile, NotFound, NotUtf8, OutsideTheBook, ReadFailed])
 
 `NotUtf8` is decided in Roc (`platform/Book.roc`), where the bytes become
-text. `ReadFailed` covers the rest: a file the reader lacks permission for,
-or one past the host's size cap.
+text. `ReadFailed` covers the rest: an unreadable file, or one past the host's size cap.
 
 It builds the Safari tutorial (`canvas_apps/safari/tutorial/`) and the books
 book (`building-books/`). Each has a `book.shale` whose pre-step does what
@@ -42,7 +41,7 @@ names the book's settings and calls the builder:
     }
 
 The manuscript's `#` heading and the text under it are the front page, which
-holds the contents. Each `##` heading starts a chapter, numbered unless it is
+holds the contents. Each `##` heading starts a chapter. Chapters are numbered, except
 back matter (by default a title starting `Appendix`, or `Credits`), and its
 `###` headings are its sections. The program prints every page after a line
 `<!-- book page: FILE -->`, then a report after `<!-- book report -->`. A

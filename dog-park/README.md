@@ -134,7 +134,7 @@ text, and the independent checks (`overlaps`, `onPoops`, the walk's judge).
 with the Roc, and `src/walk_reference.zig` the plain Zig walk the Roc is
 judged against. The page is `web/index.html`, from `web/park.js`. Read the
 code for the rest. It needs Zig (the version `build.zig.zon` names), the
-pinned Roc, node, and Shale for `build.shale`; it has no Zig dependencies.
+pinned Roc, node, and Shale for `build.shale`; its Zig uses std alone.
 
 ## The checks
 
