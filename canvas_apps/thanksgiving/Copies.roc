@@ -14,6 +14,7 @@ Copies :: [].{
 	## it got there. The first table stands on the lawn; a copy rides a
 	## float.
 	TablePlace : {
+		index : U64,
 		offset : { right : F64, forward : F64 },
 		ride : [OnLawn, OnFloat(Copies.FloatRide)],
 	}
@@ -25,6 +26,7 @@ Copies :: [].{
 		rolled : F64,
 		speed : F64,
 		from_side : F64,
+		deck_height : F64,
 	}
 
 	## Every table at `tick`, farthest first: the first table, always there,
@@ -33,19 +35,52 @@ Copies :: [].{
 	table_places_at = |tick| {
 		now = Script.held_tick(tick)
 		floats =
-			List.map2(
+			List.map3(
 				float_routes,
 				Script.float_stop_ticks,
-				|route, stop_tick| (route, now - stop_tick + route.roll_frames),
+				[1, 2, 3, 4],
+				|route, stop_tick, index| {
+					route,
+					index,
+					since: now - stop_tick + route.roll_frames,
+				},
 			)
-				.keep_if(|(_, since)| since > 0)
-				.map(|(route, since)| float_place(route, since))
-		[{ offset: { right: 0.0, forward: 0.0 }, ride: OnLawn }].concat(floats)
+				.keep_if(|float| float.since > 0)
+				.map(|float| float_place(float, Copies.deck_height_at(now)))
+		[
+			{
+				index: 0,
+				offset: { right: 0.0, forward: 0.0 },
+				ride: OnLawn,
+			},
+		].concat(floats)
 	}
 
-	## How high a float's deck stands off the lawn, in metres.
+	## How high a float's deck stands off the lawn, in metres, until the
+	## floats kneel.
 	deck_height : F64
 	deck_height = 0.4
+
+	## Where table `index` stops: the first table, 0, where it always is,
+	## then the copies in the order they are painted.
+	table_offset : U64 -> { right : F64, forward : F64 }
+	table_offset = |index|
+		if index == 0 {
+			{ right: 0.0, forward: 0.0 }
+		} else {
+			route = float_routes.get(index - 1) ?? crash "Copies.table_offset: four floats"
+			route.stop
+		}
+
+	## How high every deck stands at `tick`: up while the floats roll, then,
+	## as the army halts among them, down onto the lawn with a hiss and a
+	## bounce, like a bus kneeling, so the marchers can walk aboard.
+	deck_height_at : I64 -> F64
+	deck_height_at = |tick| {
+		down = Ease.ramp(Script.held_tick(tick) - Script.kneel_tick, kneel_frames)
+		bounce = 0.03 * (F64.pi * 3.0 * down).sin() * (1.0 - down)
+		(Copies.deck_height * (1.0 - Ease.smooth(down)) + bounce).max(0.0)
+	}
 }
 
 # Where a float stops, which side it comes in from, and how many ticks it
@@ -88,11 +123,20 @@ float_routes = [
 roll_metres : F64
 roll_metres = 34.0
 
-float_place : FloatRoute, I64 -> Copies.TablePlace
-float_place = |route, since| {
+kneel_frames : I64
+kneel_frames = 40
+
+float_place : {
+	route : FloatRoute,
+	index : U64,
+	since : I64,
+},
+F64 -> Copies.TablePlace
+float_place = |{ route, index, since }, deck_height| {
 	progress = Ease.ramp(since, route.roll_frames)
 	left_to_go = (1.0 - progress) * (1.0 - progress)
 	{
+		index,
 		offset: {
 			right: route.stop.right + route.from_side * roll_metres * left_to_go,
 			forward: route.stop.forward,
@@ -101,6 +145,7 @@ float_place = |route, since| {
 			rolled: roll_metres * (1.0 - left_to_go),
 			speed: 1.0 - progress,
 			from_side: route.from_side,
+			deck_height,
 		}),
 	}
 }

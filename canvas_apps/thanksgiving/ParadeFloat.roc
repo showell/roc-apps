@@ -17,11 +17,12 @@ ParadeFloat :: [].{
 	## The deck, its skirt, bunting and wheels, which go under the party.
 	deck_shapes : View, Copies.FloatRide -> List(Shapes.Shape)
 	deck_shapes = |view, ride| {
-		top = Copies.deck_height
+		top = ride.deck_height
 		[
-			side_shapes(view),
+			side_shapes(view, top),
 			view.region_shapes({
 				corners: upright_corners({
+					top,
 					right_from: deck_left,
 					right_to: deck_right,
 					forward: deck_near,
@@ -53,8 +54,8 @@ ParadeFloat :: [].{
 				],
 				fill: deck_green,
 			}),
-			bunting_shapes(view),
-			[-1.8, 0.0, 1.8].map(|right| wheel_shapes(view, { right, rolled: ride.rolled })).join(),
+			bunting_shapes(view, top),
+			[-1.8, 0.0, 1.8].map(|right| wheel_shapes(view, { right, rolled: ride.rolled, top })).join(),
 		].join()
 	}
 
@@ -101,12 +102,14 @@ deck_near = -0.3
 deck_far : F64
 deck_far = 7.0
 
-skirt_bottom : F64
-skirt_bottom = 0.1
+# How far the skirt hangs from the deck: three quarters of the way to the
+# lawn.
+skirt_depth : F64 -> F64
+skirt_depth = |top| 0.75 * top
 
 # The skirt on the deck's end facing the eye, if the eye is off to one side.
-side_shapes : View -> List(Shapes.Shape)
-side_shapes = |view| {
+side_shapes : View, F64 -> List(Shapes.Shape)
+side_shapes = |view, top| {
 	eye = view.eye_ground()
 	side =
 		if eye.right < deck_left {
@@ -120,10 +123,18 @@ side_shapes = |view| {
 		Shown(right) =>
 			view.region_shapes({
 				corners: [
-					{ right, forward: deck_near, height: skirt_bottom },
-					{ right, forward: deck_far, height: skirt_bottom },
-					{ right, forward: deck_far, height: Copies.deck_height },
-					{ right, forward: deck_near, height: Copies.deck_height },
+					{
+						right,
+						forward: deck_near,
+						height: top - skirt_depth(top),
+					},
+					{
+						right,
+						forward: deck_far,
+						height: top - skirt_depth(top),
+					},
+					{ right, forward: deck_far, height: top },
+					{ right, forward: deck_near, height: top },
 				],
 				fill: skirt_shade,
 			})
@@ -134,24 +145,34 @@ side_shapes = |view| {
 # A face of the skirt across the float at `forward`, from the bottom of the
 # skirt to the deck.
 upright_corners : {
+	top : F64,
 	right_from : F64,
 	right_to : F64,
 	forward : F64,
 } -> List(Eye.At)
-upright_corners = |{ right_from, right_to, forward }| [
-	{ right: right_from, forward, height: Copies.deck_height },
-	{ right: right_to, forward, height: Copies.deck_height },
-	{ right: right_to, forward, height: skirt_bottom },
-	{ right: right_from, forward, height: skirt_bottom },
+upright_corners = |{ top, right_from, right_to, forward }| [
+	{ right: right_from, forward, height: top },
+	{ right: right_to, forward, height: top },
+	{
+		right: right_to,
+		forward,
+		height: top - skirt_depth(top),
+	},
+	{
+		right: right_from,
+		forward,
+		height: top - skirt_depth(top),
+	},
 ]
 
 # Pennants hanging from the deck's front edge, three colors in turn.
-bunting_shapes : View -> List(Shapes.Shape)
-bunting_shapes = |view| {
+bunting_shapes : View, F64 -> List(Shapes.Shape)
+bunting_shapes = |view, deck_top| {
 	pennant_count : U64
 	pennant_count = 12
 	wide = (deck_right - deck_left) / pennant_count.to_f64()
-	top = Copies.deck_height - 0.01
+	top = deck_top - 0.01
+	drop = (0.5 * deck_top).min(0.2)
 	var $out = List.with_capacity(pennant_count)
 	for k in 0..<pennant_count {
 		left = deck_left + wide * k.to_f64()
@@ -173,7 +194,7 @@ bunting_shapes = |view| {
 					{
 						right: left + wide / 2.0,
 						forward: deck_near - 0.01,
-						height: top - 0.2,
+						height: top - drop,
 					},
 				],
 				fill,
@@ -184,10 +205,15 @@ bunting_shapes = |view| {
 }
 
 # A wheel on the front of the float: a tyre, a hub and a spoke turned as far
-# as the float has rolled.
-wheel_shapes : View, { right : F64, rolled : F64 } -> List(Shapes.Shape)
-wheel_shapes = |view, { right, rolled }| {
-	radius = 0.17
+# as the float has rolled. It draws up into the float as the deck kneels.
+wheel_shapes : View,
+{
+	right : F64,
+	rolled : F64,
+	top : F64,
+} -> List(Shapes.Shape)
+wheel_shapes = |view, { right, rolled, top }| {
+	radius = 0.17 * top / Copies.deck_height
 	middle = {
 		right,
 		forward: deck_near - 0.05,
@@ -200,6 +226,7 @@ wheel_shapes = |view, { right, rolled }| {
 		height: radius + 0.8 * radius * turned.cos(),
 	}
 	match view.sighting(middle) {
+		Ok(_) if radius < 0.02 => []
 		Ok({ point, pixels_per_metre }) =>
 			[
 				Disc({

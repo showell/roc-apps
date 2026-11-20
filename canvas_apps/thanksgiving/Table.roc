@@ -25,13 +25,16 @@ Table :: [].{
 	half_width : F64
 	half_width = 0.55
 
-	## The chair each robot comes to: where it stands, how high its seat is,
-	## and whether it has a back.
-	chair_of : Robot.Build -> {
+	## A chair: where it stands, and how high its seat is. One on the
+	## table's left faces right, and one on its right faces left.
+	Chair : {
 		right : F64,
 		forward : F64,
 		seat_height : F64,
 	}
+
+	## The chair each robot at the table's left comes to.
+	chair_of : Robot.Build -> Table.Chair
 	chair_of = |build|
 		match build {
 			Tall => {
@@ -92,14 +95,19 @@ Table :: [].{
 			fill: Flat({ ..Brush.opaque_rgba(RgbColor.of(0x10160E)), a: 0.45 }),
 		})
 
-	## A chair, seat and back, pulled out from its place by
-	## `pulled` metres, away from the table. Its back is on the side away from
-	## the table, so a robot sitting in it faces the table.
-	chair_shapes : View, { build : Robot.Build, pulled : F64 } -> List(Shapes.Shape)
-	chair_shapes = |view, { build, pulled }| {
-		placed = chair_of(build)
-		chair = { ..placed, right: placed.right - pulled }
+	## A chair, seat and back, pulled out from its place by `pulled` metres,
+	## away from the table. Its back is on the side away from the table, so a
+	## robot sitting in it faces the table.
+	chair_shapes : View, { chair : Table.Chair, pulled : F64 } -> List(Shapes.Shape)
+	chair_shapes = |view, { chair: placed, pulled }| {
+		away = if placed.right < 0.0 {
+			-1.0
+		} else {
+			1.0
+		}
+		chair = { ..placed, right: placed.right + away * pulled }
 		half = 0.21
+		back_right = chair.right + away * half
 		leg_spots = [
 			{ right: chair.right - half + 0.03, forward: chair.forward - half + 0.03 },
 			{ right: chair.right + half - 0.03, forward: chair.forward - half + 0.03 },
@@ -152,22 +160,22 @@ Table :: [].{
 			view.region_shapes({
 				corners: [
 					{
-						right: chair.right - half,
+						right: back_right,
 						forward: chair.forward - half,
 						height: chair.seat_height,
 					},
 					{
-						right: chair.right - half,
+						right: back_right,
 						forward: chair.forward + half,
 						height: chair.seat_height,
 					},
 					{
-						right: chair.right - half,
+						right: back_right,
 						forward: chair.forward + half,
 						height: chair.seat_height + 0.62,
 					},
 					{
-						right: chair.right - half,
+						right: back_right,
 						forward: chair.forward - half,
 						height: chair.seat_height + 0.62,
 					},

@@ -61,7 +61,7 @@ Baby :: [].{
 # The baby's own ticks: the twirl, after the catch, and its arms coming down
 # once the pie is taken.
 twirl_start : I64
-twirl_start = 618
+twirl_start = 528
 
 twirl_frames : I64
 twirl_frames = 36

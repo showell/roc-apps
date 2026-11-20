@@ -10,7 +10,7 @@ import Moves
 Routine :: [].{
 
 	## The routine's sections, in the order they are danced.
-	Section : [Opening, Hello, Travel, Parade, Strut, Peek, Flood, Wave, Finale]
+	Section : [Opening, Hello, Travel, Parade, Strut, Seat, Peek, Flood, Wave, Finale]
 
 	## The move `since` ticks into the routine, and the last move after it
 	## ends.
@@ -61,7 +61,7 @@ Routine :: [].{
 }
 
 sections_in_order : List(Routine.Section)
-sections_in_order = [Opening, Hello, Travel, Parade, Strut, Peek, Flood, Wave, Finale]
+sections_in_order = [Opening, Hello, Travel, Parade, Strut, Seat, Peek, Flood, Wave, Finale]
 
 steps_of : Routine.Section -> List(Choreography.Step)
 steps_of = |section|
@@ -71,6 +71,7 @@ steps_of = |section|
 		Travel => Choreography.travel_steps
 		Parade => Choreography.parade_steps
 		Strut => Choreography.strut_steps
+		Seat => Choreography.seat_steps
 		Peek => Choreography.peek_steps
 		Flood => Choreography.flood_steps
 		Wave => Choreography.wave_steps

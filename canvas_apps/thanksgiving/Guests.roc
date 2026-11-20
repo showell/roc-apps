@@ -67,6 +67,7 @@ Guests :: [].{
 			enter_tick: walk.enter_tick,
 			arrive_tick: walk.arrive_tick,
 			chair_tick: walk.set_tick + walk.set_frames + 2,
+			facing: 1.0,
 			chair_mover: Itself,
 		}
 	}
@@ -138,13 +139,13 @@ walk_of = |build|
 			set_frames: 46,
 		}
 		Round => {
-			enter_tick: 300,
-			arrive_tick: 420,
+			enter_tick: 270,
+			arrive_tick: 390,
 			from_right: -4.4,
 			stop_right: 0.0 - Table.half_width - 0.02 - Robot.proportions(Round).body_width / 2.0,
 			step: 0.5,
 			setback: 0.15,
-			set_tick: 423,
+			set_tick: 393,
 			set_frames: Placing.placing_frames,
 		}
 	}
@@ -180,11 +181,12 @@ serving_at = |server, { now, look, glow }| {
 	}
 }
 
-# Every robot is sat before the first bulb blinks, its hips on its seat.
+# Every robot is sat by the time the dancer walks in, its hips on its seat;
+# the last sits down as the lights blink on.
 expect
 	Guests.everyone.all(
 		|build| {
-			hip = Guests.guest_at(build, Script.lights_tick).pose.hip
+			hip = Guests.guest_at(build, Script.walk_in_tick).pose.hip
 			(hip.up - Table.chair_of(build).seat_height - 0.025).abs() < 0.001
 		},
 	)
@@ -194,7 +196,7 @@ expect
 expect Seating.sit_tick(Guests.guest_plan(Tall)) == Script.first_sit_tick
 
 # Everyone's chair is back in its place once they are all sat.
-expect Guests.everyone.all(|build| Guests.chair_pulled(build, Script.lights_tick) == 0.0)
+expect Guests.everyone.all(|build| Guests.chair_pulled(build, Script.walk_in_tick) == 0.0)
 
 # The tiny robot's eyes light after the lights start, and are dark before.
 expect Guests.guest_at(Tiny, Script.lights_tick - 1).pose.glow == 0.0

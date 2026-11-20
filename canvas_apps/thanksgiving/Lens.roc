@@ -133,6 +133,12 @@ moves = [
 			to: { ..normal, focal: 900.0 },
 		},
 		{
+			start: Script.seat_tick + 40,
+			frames: 90,
+			curve: Smooth,
+			to: { ..normal, focal: 620.0 },
+		},
+		{
 			start: Script.peek_tick,
 			frames: 90,
 			curve: Whip,

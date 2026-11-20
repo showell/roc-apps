@@ -1,5 +1,6 @@
-## Army draws the robot army March places: the drum major and its drumstick,
-## then the marchers back to front, each with the dish it carries. Every
+## Army draws the robot army on the lawn, face on, as March and Marchers
+## place it: the drum major and its drumstick, and each marcher with the
+## dish it carries, until it reaches its table and turns side on. Every
 ## marcher is sighted through the guest's eye, so one that is still under
 ## the eye is below the screen, and comes up over its bottom edge as it
 ## marches out.
@@ -10,23 +11,27 @@ import Dancer
 import Figure
 import Dishes
 import March
+import Marchers
 import Robot
 import View
 
 Army :: [].{
 
-	## The whole army at `tick`, farthest first.
-	army_shapes : View, I64 -> List(Shapes.Shape)
-	army_shapes = |view, tick| {
+	## Everyone in the army still on the lawn at `tick`, each with how far
+	## down the yard it stands, so the yard can paint it among the tables.
+	army_layers : View, I64 -> List({ depth : F64, shapes : List(Shapes.Shape) })
+	army_layers = |view, tick| {
 		leader =
 			match March.drum_major_at(tick) {
-				Marching(drum_major) => drum_major_shapes(view, drum_major)
+				Marching(drum_major) => [
+					{ depth: drum_major.feet.forward, shapes: drum_major_shapes(view, drum_major) },
+				]
 				NotYet => []
 			}
-		List.concat(
-			leader,
-			March.troopers_at(tick).map(|trooper| trooper_shapes(view, trooper)).join(),
+		runners = Marchers.running_at(tick).map(
+			|trooper| { depth: trooper.feet.forward, shapes: trooper_shapes(view, trooper) },
 		)
+		List.concat(leader, runners)
 	}
 }
 

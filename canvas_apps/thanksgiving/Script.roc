@@ -10,7 +10,10 @@
 ## The eye flies far back, tipping, and four copies of the whole table roll
 ## in on parade floats, each pushed by a robot and each faster than the
 ## last. An army marches in at the double from under the eye, a drum major
-## in front, and halts with a drumstick tossed and caught. Heads pop up over
+## in front, and halts among the floats with a drumstick tossed and caught.
+## The floats kneel to the lawn, and the army breaks ranks and runs for the
+## empty chairs along the floats' far sides, where each marcher sets its dish
+## down and sits as the opening guests did. Heads pop up over
 ## the fence until the whole row jumps at once; then robots pour in from
 ## both sides by the hundred, the eye does a barrel roll, and the whole
 ## crowd does the wave. The dancers strike their final pose, one winks
@@ -32,27 +35,27 @@ Script :: [].{
 
 	## When the first bulb blinks on.
 	lights_tick : I64
-	lights_tick = 1300
+	lights_tick = 1100
 
 	## When the eye starts to ease back from the guest's seat.
 	pull_tick : I64
-	pull_tick = 1360
+	pull_tick = 1150
 
 	## When the leaves start to blow.
 	gust_tick : I64
-	gust_tick = 1410
+	gust_tick = 1180
 
 	## When the dancer starts walking in, and when the seated robots turn
 	## their eyes to watch it.
 	walk_in_tick : I64
-	walk_in_tick = 1440
+	walk_in_tick = 1200
 
 	watch_tick : I64
-	watch_tick = 1460
+	watch_tick = 1220
 
 	## When the routine starts.
 	dance_tick : I64
-	dance_tick = 1570
+	dance_tick = 1330
 
 	## When a section of the routine starts.
 	section_tick : Routine.Section -> I64
@@ -88,6 +91,14 @@ Script :: [].{
 
 	halt_tick : I64
 	halt_tick = army_tick + march_frames
+
+	## The floats kneel as the army halts among them.
+	kneel_tick : I64
+	kneel_tick = halt_tick + 10
+
+	## The army breaks ranks and runs for the empty chairs.
+	seat_tick : I64
+	seat_tick = section_tick(Seat)
 
 	## Heads start popping up over the fence.
 	peek_tick : I64
@@ -145,5 +156,5 @@ expect Script.float_stop_ticks.all(|tick| tick + 20 <= Script.army_tick)
 
 # The banner is the last thing to happen, a few seconds before the end, and
 # the movie runs a little over a minute.
-expect Script.banner_tick + 180 < Script.end_tick
+expect Script.banner_tick + 150 < Script.end_tick
 expect Script.end_tick < 70 * 60

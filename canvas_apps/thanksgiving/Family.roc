@@ -26,7 +26,7 @@ Family :: [].{
 
 	## When the baby's pie starts to slip.
 	slip_tick : I64
-	slip_tick = 542
+	slip_tick = 452
 
 	## When the mother starts setting the pie down.
 	pie_place_tick : I64
@@ -37,7 +37,7 @@ Family :: [].{
 	baby_pulled_tick = pull_start + pull_frames
 
 	baby_pushed_tick : I64
-	baby_pushed_tick = 1000
+	baby_pushed_tick = 910
 
 	## The baby's plan: it walks, or rolls, in, and is helped with its chair.
 	baby_plan : Seating.Plan
@@ -49,9 +49,10 @@ Family :: [].{
 		chair: baby_chair,
 		setback: 0.12,
 		step: 0.4,
-		enter_tick: 400,
-		arrive_tick: 540,
+		enter_tick: 310,
+		arrive_tick: 450,
 		chair_tick: Family.baby_pulled_tick,
+		facing: 1.0,
 		chair_mover: Helped({
 			pulled_tick: Family.baby_pulled_tick,
 			pushed_tick: Family.baby_pushed_tick,
@@ -71,6 +72,7 @@ Family :: [].{
 		enter_tick: own_walk_start,
 		arrive_tick: own_walk_start + 45,
 		chair_tick: own_walk_start + 48,
+		facing: 1.0,
 		chair_mover: Itself,
 	}
 
@@ -163,40 +165,40 @@ behind_chair = baby_chair.right - 0.21 - 0.36
 
 # The mother's ticks, in order.
 turn_to_take : I64
-turn_to_take = 645
+turn_to_take = 555
 
 take_grab : I64
-take_grab = 670
+take_grab = 580
 
 turn_to_table : I64
-turn_to_table = 681
+turn_to_table = 591
 
 place_start : I64
-place_start = 695
+place_start = 605
 
 turn_away : I64
-turn_away = 768
+turn_away = 678
 
 walk_back : I64
-walk_back = 780
+walk_back = 690
 
 turn_to_chair : I64
-turn_to_chair = 830
+turn_to_chair = 740
 
 step_behind : I64
-step_behind = 842
+step_behind = 752
 
 pull_start : I64
-pull_start = 870
+pull_start = 780
 
 pull_frames : I64
 pull_frames = 26
 
 step_out : I64
-step_out = 1030
+step_out = 940
 
 own_walk_start : I64
-own_walk_start = 1060
+own_walk_start = 970
 
 turn_frames : I64
 turn_frames = 12
@@ -208,8 +210,8 @@ arrival_plan = {
 	walk_from: -5.0,
 	stop_right: table_side,
 	aisle_forward: lane,
-	enter_tick: 520,
-	arrive_tick: 640,
+	enter_tick: 430,
+	arrive_tick: 550,
 	chair_tick: own_walk_start,
 }
 

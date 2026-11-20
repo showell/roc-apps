@@ -1,18 +1,15 @@
 ## Thanksgiving is the cut: the order the backyard's things are painted in,
 ## back to front, at one tick. Script says when each beat is; EyePath and Lens
-## say where the eye is and how it is zoomed; Dinner, Copies, March and Crowd
-## say where everything is and how it stands; Backyard, Table, Robot, Dancer,
-## Dishes, Lights, ParadeFloat, Speck, Army, Banner and Leaves each draw one
-## thing from the numbers they are handed.
+## say where the eye is and how it is zoomed; Guests, Family, Copies, March,
+## Marchers and Crowd say where everything is and how it stands; Party draws
+## each table's party, and Backyard, ParadeFloat, Speck, Army, Banner and
+## Leaves each draw one thing from the numbers they are handed.
 ##
-## Behind the fence come the robots jumping to see over it. At a table, the
-## robots are painted farthest first, each with its chair and whatever it
-## carries, and the table goes over them, because from a seated guest's eye
-## the near end of the table hides their feet. A dish set down goes on the
-## cloth, so it is painted after the table. The crowd's blocks stand in rows
-## across the yard, so each table is painted among the rows at its depth.
-## Every table stands farther from the eye than the army ever is, so the army
-## goes over all of them.
+## Behind the fence come the robots jumping to see over it. Across the yard,
+## the tables, the crowd's blocks and the army on the lawn are painted
+## farthest first, each table by its middle and each robot by its feet, so a
+## marcher running between the floats goes behind the near ones and in front
+## of the far ones.
 import lib.Point
 import lib.Shapes
 import Army
@@ -20,22 +17,14 @@ import Backyard
 import Banner
 import Copies
 import Crowd
-import Dancer
 import Dinner
-import Dishes
 import EyePath
-import Guests
 import Leaves
 import Lens
-import Lights
 import ParadeFloat
-import Robot
+import Party
 import Script
-import Serving
-import Seating
-import SideBody
 import Speck
-import Table
 import View
 
 Thanksgiving :: [].{
@@ -75,7 +64,6 @@ Thanksgiving :: [].{
 			Crowd.fence_members_at(tick).map(|member| Speck.member_shapes(view, member)).join(),
 			Backyard.fence_shapes(view),
 			yard_shapes(view, tick),
-			Army.army_shapes(view, tick),
 		].join()
 		[
 			rolled_shapes(scene, Lens.setting_at(tick).roll),
@@ -100,111 +88,20 @@ rolled_shapes = |scene, roll| {
 	Shapes.shapes_in_space(space, scene)
 }
 
-# The tables and the two blocks of the crowd, farthest first. The crowd is
-# already in that order, so each table goes in just before the first robot
-# nearer the eye than the table's middle.
+# The tables, the crowd's two blocks and the army on the lawn, farthest
+# first: each table by its middle, each robot by its feet.
 yard_shapes : View, I64 -> List(Shapes.Shape)
 yard_shapes = |view, tick| {
-	tables = Copies.table_places_at(tick)
-	var $out = []
-	var $next_table = 0
-	for member in Crowd.block_members_at(tick) {
-		while $next_table < tables.len() and table_depth(
-			tables,
-			$next_table,
-		) > member.feet.forward {
-			$out = List.concat($out, table_at_shapes(view, { tables, index: $next_table, tick }))
-			$next_table = $next_table + 1
-		}
-		$out = List.concat($out, Speck.member_shapes(view, member))
-	}
-	while $next_table < tables.len() {
-		$out = List.concat($out, table_at_shapes(view, { tables, index: $next_table, tick }))
-		$next_table = $next_table + 1
-	}
-	$out
-}
-
-# How far down the yard the middle of table `index` stands.
-table_depth : List(Copies.TablePlace), U64 -> F64
-table_depth = |tables, index| {
-	table = tables.get(index) ?? crash "Thanksgiving.table_depth: a table at every index asked"
-	table.offset.forward + 3.3
-}
-
-table_at_shapes : View,
-{
-	tables : List(Copies.TablePlace),
-	index : U64,
-	tick : I64,
-} -> List(Shapes.Shape)
-table_at_shapes = |view, { tables, index, tick }| {
-	table = tables.get(index) ?? crash "Thanksgiving.table_at_shapes: a table at every index asked"
-	table_shapes(view.shifted_view(table.offset), { ride: table.ride, tick })
-}
-
-# One table seen through a view moved to it: its party on the lawn, or on
-# its float with the float's pusher, painted under the deck or over the
-# party by which side of the float it is on.
-table_shapes : View,
-{
-	ride : [OnLawn, OnFloat(Copies.FloatRide)],
-	tick : I64,
-} -> List(Shapes.Shape)
-table_shapes = |view, { ride, tick }|
-	match ride {
-		OnLawn => party_shapes(view, tick)
-		OnFloat(float_ride) => {
-			party = party_shapes(view.raised_view(Copies.deck_height), tick)
-			deck = ParadeFloat.deck_shapes(view, float_ride)
-			pusher = ParadeFloat.pusher_shapes(view, float_ride)
-			if ParadeFloat.is_pusher_near(view, float_ride) {
-				[deck, party, pusher].join()
-			} else {
-				[pusher, deck, party].join()
-			}
-		}
-	}
-
-# One table's whole party at one tick, back to front, through a view moved to
-# that table. Every table is the same scene, so they move in step.
-party_shapes : View, I64 -> List(Shapes.Shape)
-party_shapes = |view, tick| {
-	var $out = Lights.post_shapes(view)
-	$out = List.concat($out, Table.shadow_shapes(view))
-	$out = List.concat($out, chairs_and_guests_shapes(view, tick))
-	for dish in Serving.dishes {
-		$out = List.concat($out, dish_shapes(view, { dish, tick, layer: Carried }))
-	}
-	$out = List.concat($out, Table.top_shapes(view))
-	for dish in Serving.dishes {
-		$out = List.concat($out, dish_shapes(view, { dish, tick, layer: OnTable }))
-	}
-	$out = List.concat($out, dancer_shapes(view, tick))
-	List.concat($out, Lights.strand_shapes(view, Dinner.bulb_glows(tick)))
-}
-
-# The chairs and the guests, farthest from the eye first. A guest goes over
-# its own chair once it is on it, and under a nearer chair it walks behind.
-chairs_and_guests_shapes : View, I64 -> List(Shapes.Shape)
-chairs_and_guests_shapes = |view, tick|
-	Guests.everyone
-		.map(
-			|build| {
-				guest = Guests.guest_at(build, tick)
-				chair = Table.chair_shapes(
-					view,
-					{ build, pulled: Guests.chair_pulled(build, tick) },
-				)
-				[
-					{ depth: Table.chair_of(build).forward, shapes: chair },
-					{
-						depth: guest.at.forward - 0.01,
-						shapes: guest_shapes(view, { build, guest }),
-					},
-				]
-			},
-		)
+	tables = Copies.table_places_at(tick).map(
+		|table| {
+			depth: table.offset.forward + 3.3,
+			shapes: table_shapes(view.shifted_view(table.offset), { table, tick }),
+		},
+	)
+	crowd = Crowd.block_members_at(tick).map(
+		|member| { depth: member.feet.forward, shapes: Speck.member_shapes(view, member) },
+	)
+	[tables, crowd, Army.army_layers(view, tick)]
 		.join()
 		.sort_with(
 			|a, b|
@@ -218,55 +115,29 @@ chairs_and_guests_shapes = |view, tick|
 		)
 		.map(|layer| layer.shapes)
 		.join()
+}
 
-# A guest side on, as it walks up the side of the table and sits.
-guest_shapes : View, { build : Robot.Build, guest : Seating.Guest } -> List(Shapes.Shape)
-guest_shapes = |view, { build, guest }|
-	match view.sighting(guest.at) {
-		Ok({ point, pixels_per_metre }) =>
-			SideBody.figure_shapes({
-				body: Robot.proportions(build),
-				pose: guest.pose,
-				feet: point,
-				pixels_per_metre,
-			})
-		Err(BehindEye) => []
-	}
-
-# The dancer stands beside the near end of the table, nearer than anything
-# on it, so it is painted after the table and its dishes.
-dancer_shapes : View, I64 -> List(Shapes.Shape)
-dancer_shapes = |view, tick|
-	match view.sighting(Dinner.dancer_feet(tick)) {
-		Ok({ point, pixels_per_metre }) => Dancer.figure_shapes({
-			pose: Dinner.dancer_pose(tick),
-			feet: point,
-			pixels_per_metre,
-		})
-		Err(BehindEye) => []
-	}
-
-# A dish, when it is in the layer being painted.
-dish_shapes : View,
-{
-	dish : Dishes.Dish,
-	tick : I64,
-	layer : [Carried, OnTable],
-} -> List(Shapes.Shape)
-dish_shapes = |view, { dish, tick, layer }| {
-	place = Serving.dish_place(dish, tick)
-	if place.layer != layer {
-		[]
-	} else {
-		match view.sighting(place.at) {
-			Ok({ point, pixels_per_metre }) => Dishes.dish_shapes(
-				dish,
-				{ base: point, pixels_per_metre, tilt: place.tilt },
+# One table seen through a view moved to it: its party on the lawn, or on
+# its float with the float's pusher, painted under the deck or over the
+# party by which side of the float it is on.
+table_shapes : View, { table : Copies.TablePlace, tick : I64 } -> List(Shapes.Shape)
+table_shapes = |view, { table, tick }|
+	match table.ride {
+		OnLawn => Party.party_shapes(view, { tick, index: table.index })
+		OnFloat(float_ride) => {
+			party = Party.party_shapes(
+				view.raised_view(float_ride.deck_height),
+				{ tick, index: table.index },
 			)
-			Err(BehindEye) => []
+			deck = ParadeFloat.deck_shapes(view, float_ride)
+			pusher = ParadeFloat.pusher_shapes(view, float_ride)
+			if ParadeFloat.is_pusher_near(view, float_ride) {
+				[deck, party, pusher].join()
+			} else {
+				[pusher, deck, party].join()
+			}
 		}
 	}
-}
 
 # The last frame is the frame after the end too: the movie holds.
 expect {

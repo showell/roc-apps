@@ -151,6 +151,19 @@ moves = [
 		curve: Whip,
 		goes: To({ ..army_watch, height: 2.4 }),
 	},
+	# Round and down toward the near left float, to watch the army take its
+	# seats.
+	{
+		start: Script.seat_tick + 40,
+		frames: 90,
+		curve: Smooth,
+		goes: To({
+			right: -1.0,
+			forward: -24.0,
+			height: 2.0,
+			heading: -0.16,
+		}),
+	},
 	# Flown down the aisle between the floats, toward a noise at the fence.
 	{
 		start: Script.peek_tick,

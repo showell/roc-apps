@@ -98,12 +98,20 @@ Choreography :: [].{
 			.join()
 			.append({ move: Moves.arms_out, frames: 70 })
 
+	## While the army breaks ranks and finds its seats: arms out, bouncing on
+	## the beat, the head clicking after the marchers as they run past.
+	seat_steps : List(Choreography.Step)
+	seat_steps =
+		[0.0, 1.0, 0.0, -1.0, 0.0, 1.0, 0.0, -1.0, 0.0, 1.0, 0.0, -1.0]
+			.map(|head| beat_steps({ ..Moves.arms_out, head }))
+			.join()
+
 	## A noise behind the fence: a hand up to the brow, and the head clicking
 	## from side to side, looking for it.
 	peek_steps : List(Choreography.Step)
 	peek_steps = {
 		brow = { ..Moves.rest, right_upper: 2.5, right_fore: -1.2 }
-		[-1.0, 1.0, -1.0, 1.0]
+		[-1.0, 1.0]
 			.map(|head| [{ move: { ..brow, head }, frames: 35 }, { move: brow, frames: 35 }])
 			.join()
 	}
@@ -111,18 +119,15 @@ Choreography :: [].{
 	## While the crowd floods in: arms out, bouncing on the beat, the head
 	## clicking one way and the other.
 	flood_steps : List(Choreography.Step)
-	flood_steps = {
-		round =
-			[0.0, 1.0, 0.0, -1.0]
-				.map(
-					|head| List.concat(
-						beat_steps({ ..Moves.arms_out, head }),
-						beat_steps(Moves.arms_out),
-					),
-				)
-				.join()
-		List.concat(repeated_steps(round, 2), repeated_steps(beat_steps(Moves.arms_out), 2))
-	}
+	flood_steps =
+		[0.0, 1.0, 0.0, -1.0]
+			.map(
+				|head| List.concat(
+					beat_steps({ ..Moves.arms_out, head }),
+					beat_steps(Moves.arms_out),
+				),
+			)
+			.join()
 
 	## While the crowd does the wave: a groove, and the arms thrown up each
 	## time the wave goes by.
@@ -144,12 +149,12 @@ Choreography :: [].{
 	finale_steps = [
 		{ move: Moves.final_pose, frames: final_wink_offset },
 		{ move: { ..Moves.final_pose, wink: 1.0 }, frames: 24 },
-		{ move: Moves.final_pose, frames: 216 },
+		{ move: Moves.final_pose, frames: 190 },
 	]
 
 	## The ticks from the start of the finale to its wink.
 	final_wink_offset : I64
-	final_wink_offset = 110
+	final_wink_offset = 80
 
 	## How many ticks a list of steps lasts.
 	ticks_of : List(Choreography.Step) -> I64
@@ -210,7 +215,7 @@ pop_frames : I64
 pop_frames = 30
 
 wave_gap : I64
-wave_gap = 60
+wave_gap = 40
 
 arms_up_frames : I64
 arms_up_frames = 40

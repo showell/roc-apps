@@ -29,7 +29,8 @@ Seating :: [].{
 	## Where a robot walks in from and to, its chair, and when it does what.
 	## `walk_from` is how far right it sets off along the aisle, `stop_right`
 	## where it stops beside its chair, and `setback` how far in front of the
-	## seat's middle it stands to sit. `step` is the length of a whole stride,
+	## seat's middle it stands to sit. `facing` is 1 for a chair on the
+	## table's left, which faces right, and -1 for one on its right. `step` is the length of a whole stride,
 	## both feet, in metres.
 	Plan : {
 		build : Robot.Build,
@@ -42,6 +43,7 @@ Seating :: [].{
 			seat_height : F64,
 		},
 		setback : F64,
+		facing : F64,
 		step : F64,
 		enter_tick : I64,
 		arrive_tick : I64,
@@ -60,7 +62,8 @@ Seating :: [].{
 	}
 
 	## The robot at `now`, looking and lit as the caller says, facing the
-	## table.
+	## table, toward the screen's right when `facing` is 1 and its left when
+	## it is -1.
 	guest_at : Seating.Plan,
 	{
 		now : I64,
@@ -82,7 +85,7 @@ Seating :: [].{
 				wheel_turn: stage.walked / 0.09,
 				look,
 				glow,
-				facing: 1.0,
+				facing: plan.facing,
 			},
 			chair_pulled: stage.chair_pulled,
 			walk_phase: stage.walked * F64.tau / plan.step,
@@ -264,7 +267,7 @@ stride_at = |plan, now| {
 walking_stage : Seating.Plan, I64 -> Stage
 walking_stage = |plan, now| {
 	right = walked_right(plan, now)
-	walked = right - plan.walk_from
+	walked = (right - plan.walk_from).abs()
 	stride = stride_at(plan, now)
 	gait = Seating.gait_at(
 		plan.build,
@@ -289,7 +292,7 @@ walking_stage = |plan, now| {
 
 # How far the whole walk in goes, which a wheel keeps turned once it stops.
 walk_length : Seating.Plan -> F64
-walk_length = |plan| plan.stop_right - plan.walk_from
+walk_length = |plan| (plan.stop_right - plan.walk_from).abs()
 
 standing_hip_spot : Seating.Plan -> Figure.Spot
 standing_hip_spot = |plan| { across: 0.0, up: SideBody.standing_hip(Robot.proportions(plan.build)) }
@@ -324,7 +327,7 @@ pulling_stage = |plan, progress| {
 shuffling_stage : Seating.Plan, F64 -> Stage
 shuffling_stage = |plan, progress| {
 	moved = Ease.smooth(progress)
-	to_right = plan.chair.right - Seating.pull_metres + plan.setback
+	to_right = plan.chair.right + plan.facing * (plan.setback - Seating.pull_metres)
 	gait = Seating.gait_at(
 		plan.build,
 		{
@@ -379,7 +382,7 @@ sitting_stage = |plan, progress| {
 	brace = lean_in * (1.0 - lean_out)
 	{
 		at: {
-			right: plan.chair.right - Seating.pull_metres + plan.setback,
+			right: plan.chair.right + plan.facing * (plan.setback - Seating.pull_metres),
 			forward: plan.chair.forward,
 			height: 0.0,
 		},
@@ -404,7 +407,7 @@ scooting_stage = |plan, { scooted, rested }| {
 	table = Ease.smooth(rested)
 	{
 		..settled,
-		at: { ..settled.at, right: settled.at.right + Seating.pull_metres * moved },
+		at: { ..settled.at, right: settled.at.right + plan.facing * Seating.pull_metres * moved },
 		hip: { ..settled.hip, up: settled.hip.up + lifted },
 		near_arm: { upper: 0.05 + 0.6 * table, fore: 0.1 + 1.45 * table },
 		far_arm: { upper: 0.05 + 0.5 * table, fore: 0.1 + 1.35 * table },
@@ -426,7 +429,7 @@ hoisting_stage = |plan, progress| {
 	push = hands * (1.0 - let_go)
 	{
 		at: {
-			right: plan.chair.right - Seating.pull_metres + plan.setback,
+			right: plan.chair.right + plan.facing * (plan.setback - Seating.pull_metres),
 			forward: plan.chair.forward,
 			height: 0.0,
 		},

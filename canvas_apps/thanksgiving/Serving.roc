@@ -173,7 +173,7 @@ babys_pie = |now| {
 expect
 	Serving.dishes.all(
 		|dish| {
-			place = Serving.dish_place(dish, Script.lights_tick)
+			place = Serving.dish_place(dish, Script.walk_in_tick)
 			place.at == Table.dish_spot(dish) and place.layer == OnTable
 		},
 	)
