@@ -1,55 +1,104 @@
 ## Copies is the robots multiplying: four copies of the whole table, its
-## party and its dancer, each springing up out of the lawn at one of the
-## dancer's shoulder pops, once the eye has backed far enough away to see
-## where they stand. A copy is the first table's scene moved, so every
-## dancer dances in step.
+## party and its dancer, each riding in on a parade float. A float rolls in
+## from far off to one side, pushed by a round robot puffing along behind
+## it, and brakes to a stop on one of the dancer's shoulder pops. A copy is
+## the first table's scene moved and raised onto its float, so every dancer
+## dances in step, even while it rides.
 import Ease
 import Script
 
 Copies :: [].{
 
 	## A table: where it stands, moved from the first table's place, and how
-	## far it has sprung up, from 0, not there yet, to 1, full size.
-	TablePlace : { offset : { right : F64, forward : F64 }, scale : F64 }
+	## it got there. The first table stands on the lawn; a copy rides a
+	## float.
+	TablePlace : {
+		offset : { right : F64, forward : F64 },
+		ride : [OnLawn, OnFloat(Copies.FloatRide)],
+	}
+
+	## A float on its way: how far it has rolled, in metres, how fast it is
+	## going, from 1, full speed, to 0, stopped, and which way it came from,
+	## -1 from the left and 1 from the right. Its pusher is on that side.
+	FloatRide : {
+		rolled : F64,
+		speed : F64,
+		from_side : F64,
+	}
 
 	## Every table at `tick`, farthest first: the first table, always there,
-	## then the copies, the far pair before the near pair.
+	## then the copies that have set off, the far pair before the near pair.
 	table_places_at : I64 -> List(Copies.TablePlace)
 	table_places_at = |tick| {
 		now = Script.held_tick(tick)
-		copies = List.map2(
-			copy_offsets,
-			Script.copy_ticks,
-			|offset, pop_tick| { offset, scale: spring_scale(now - pop_tick) },
-		)
-		[{ offset: { right: 0.0, forward: 0.0 }, scale: 1.0 }].concat(copies)
+		floats =
+			List.map2(float_routes, Script.float_stop_ticks, |route, stop_tick| (route, now - stop_tick + roll_frames))
+				.keep_if(|(_, since)| since > 0)
+				.map(|(route, since)| float_place(route, since))
+		[{ offset: { right: 0.0, forward: 0.0 }, ride: OnLawn }].concat(floats)
 	}
 
-	## The spot on the ground a table springs up from, in its own metres:
-	## halfway down the table.
-	middle : { right : F64, forward : F64 }
-	middle = { right: 0.0, forward: 3.3 }
+	## How high a float's deck stands off the lawn, in metres.
+	deck_height : F64
+	deck_height = 0.4
 }
 
-# The copies stand in two rows nearer the eye than the first table, popping
-# up left, right, left, right. The rows are given far row first, so the list
-# is in the order they are painted.
-copy_offsets : List({ right : F64, forward : F64 })
-copy_offsets = [
-	{ right: -2.75, forward: -8.5 },
-	{ right: 2.75, forward: -8.5 },
-	{ right: -5.5, forward: -17.0 },
-	{ right: 5.5, forward: -17.0 },
+# Where a float stops, and which side it comes in from.
+FloatRoute : { stop : { right : F64, forward : F64 }, from_side : F64 }
+
+# The floats stand in two rows nearer the eye than the first table, an aisle
+# down the middle, each coming in from its own side. The far row is given
+# first, so the list is in the order they are painted.
+float_routes : List(FloatRoute)
+float_routes = [
+	{ stop: { right: -2.75, forward: -8.5 }, from_side: -1.0 },
+	{ stop: { right: 2.75, forward: -8.5 }, from_side: 1.0 },
+	{ stop: { right: -5.5, forward: -17.0 }, from_side: -1.0 },
+	{ stop: { right: 5.5, forward: -17.0 }, from_side: 1.0 },
 ]
 
-# How big a copy is `since` ticks after its pop: overshooting full size a
-# little and settling, in `spring_frames` ticks.
-spring_scale : I64 -> F64
-spring_scale = |since| Ease.springy(Ease.ramp(since, spring_frames))
+# How far out a float starts, and how many ticks it takes to roll in. It
+# brakes all the way, so it comes in fast and eases to its stop.
+roll_metres : F64
+roll_metres = 34.0
 
-spring_frames : I64
-spring_frames = 20
+roll_frames : I64
+roll_frames = 200
 
-# Before its pop a copy is not there; after it, it stands full size.
-expect Copies.table_places_at(0).map(|table| table.scale) == [1.0, 0.0, 0.0, 0.0, 0.0]
-expect Copies.table_places_at(Script.end_tick).all(|table| table.scale == 1.0)
+float_place : FloatRoute, I64 -> Copies.TablePlace
+float_place = |route, since| {
+	progress = Ease.ramp(since, roll_frames)
+	left_to_go = (1.0 - progress) * (1.0 - progress)
+	{
+		offset: {
+			right: route.stop.right + route.from_side * roll_metres * left_to_go,
+			forward: route.stop.forward,
+		},
+		ride: OnFloat({
+			rolled: roll_metres * (1.0 - left_to_go),
+			speed: 1.0 - progress,
+			from_side: route.from_side,
+		}),
+	}
+}
+
+# No float is out before the parade; one just set off is far out to its
+# side; at the end every float is at its stop, stopped.
+expect Copies.table_places_at(Script.parade_tick).len() == 1
+expect {
+	first_off = (Script.float_stop_ticks.first() ?? 0) - roll_frames + 1
+	match Copies.table_places_at(first_off) {
+		[_, just_off] => just_off.offset.right.abs() > 30.0
+		_ => False
+	}
+}
+expect
+	Copies.table_places_at(Script.end_tick)
+		.drop_first(1)
+		.all(
+			|table|
+				match table.ride {
+					OnFloat(ride) => ride.speed == 0.0 and table.offset.right.abs() < 6.0
+					OnLawn => False
+				},
+		)

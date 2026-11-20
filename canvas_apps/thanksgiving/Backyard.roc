@@ -1,5 +1,6 @@
 ## Backyard draws everything behind the table: the dusk sky with the sun going
-## down, the lawn, a row of trees and the fence. The world is flat, so the
+## down, the lawn, a row of trees and the fence, in two parts so a crowd can
+## stand between the trees and the fence. The world is flat, so the
 ## horizon sits at eye level whatever the eye does, and the sky and the lawn
 ## are screen rectangles; the sun, the trees and the fence stand in the
 ## backyard's metres and go through the View.
@@ -12,9 +13,9 @@ import View
 
 Backyard :: [].{
 
-	## The sky, the sun, the lawn, the trees and the fence, back to front.
-	backyard_shapes : View -> List(Shapes.Shape)
-	backyard_shapes = |view| {
+	## The sky, the sun, the lawn and the trees, back to front.
+	beyond_fence_shapes : View -> List(Shapes.Shape)
+	beyond_fence_shapes = |view| {
 		width = view.screen_width()
 		horizon = view.screen_height() / 2.0
 		band = horizon * 0.6
@@ -60,8 +61,72 @@ Backyard :: [].{
 			sun_shapes(view),
 			lawn,
 			tree_shapes(view),
-			fence_shapes(view),
 		].join()
+	}
+
+	## A board fence across the back: one panel, a dark gap every board's width,
+	## and a rail along its top.
+	fence_shapes : View -> List(Shapes.Shape)
+	fence_shapes = |view| {
+		reach = 80.0
+		panel = view.region_shapes({
+			corners: [
+				{
+					right: 0.0 - reach,
+					forward: fence_forward,
+					height: 0.0,
+				},
+				{
+					right: reach,
+					forward: fence_forward,
+					height: 0.0,
+				},
+				{
+					right: reach,
+					forward: fence_forward,
+					height: fence_high,
+				},
+				{
+					right: 0.0 - reach,
+					forward: fence_forward,
+					height: fence_high,
+				},
+			],
+			fill: Brush.flat(RgbColor.of(0x6E5040)),
+		})
+		gap = Brush.flat(RgbColor.of(0x4A342A))
+		boards : U64
+		boards = 160
+		var $out = panel
+		for k in 0..=boards {
+			right = 0.0 - reach + 2.0 * reach * k.to_f64() / boards.to_f64()
+			$out = List.concat(
+				$out,
+				view.line_shapes({
+					from: { right, forward: fence_forward, height: 0.0 },
+					to: { right, forward: fence_forward, height: fence_high },
+					width: 0.03,
+					fill: gap,
+				}),
+			)
+		}
+		List.concat(
+			$out,
+			view.line_shapes({
+				from: {
+					right: 0.0 - reach,
+					forward: fence_forward,
+					height: fence_high - 0.25,
+				},
+				to: {
+					right: reach,
+					forward: fence_forward,
+					height: fence_high - 0.25,
+				},
+				width: 0.08,
+				fill: gap,
+			}),
+		)
 	}
 }
 
@@ -221,68 +286,3 @@ fence_forward = 11.0
 
 fence_high : F64
 fence_high = 1.7
-
-# A board fence across the back: one panel, a dark gap every board's width,
-# and a rail along its top.
-fence_shapes : View -> List(Shapes.Shape)
-fence_shapes = |view| {
-	reach = 40.0
-	panel = view.region_shapes({
-		corners: [
-			{
-				right: 0.0 - reach,
-				forward: fence_forward,
-				height: 0.0,
-			},
-			{
-				right: reach,
-				forward: fence_forward,
-				height: 0.0,
-			},
-			{
-				right: reach,
-				forward: fence_forward,
-				height: fence_high,
-			},
-			{
-				right: 0.0 - reach,
-				forward: fence_forward,
-				height: fence_high,
-			},
-		],
-		fill: Brush.flat(RgbColor.of(0x6E5040)),
-	})
-	gap = Brush.flat(RgbColor.of(0x4A342A))
-	boards : U64
-	boards = 120
-	var $out = panel
-	for k in 0..=boards {
-		right = 0.0 - reach + 2.0 * reach * k.to_f64() / boards.to_f64()
-		$out = List.concat(
-			$out,
-			view.line_shapes({
-				from: { right, forward: fence_forward, height: 0.0 },
-				to: { right, forward: fence_forward, height: fence_high },
-				width: 0.03,
-				fill: gap,
-			}),
-		)
-	}
-	List.concat(
-		$out,
-		view.line_shapes({
-			from: {
-				right: 0.0 - reach,
-				forward: fence_forward,
-				height: fence_high - 0.25,
-			},
-			to: {
-				right: reach,
-				forward: fence_forward,
-				height: fence_high - 0.25,
-			},
-			width: 0.08,
-			fill: gap,
-		}),
-	)
-}

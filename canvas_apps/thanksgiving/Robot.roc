@@ -39,6 +39,60 @@ Robot :: [].{
 	hand_at : Robot.Build, Robot.Pose -> { across : F64, up : F64 }
 	hand_at = |build, pose| RobotBody.right_hand_at(proportions(build), pose)
 
+	## A build's proportions and colors.
+	proportions : Robot.Build -> RobotBody.Proportions
+	proportions = |build|
+		match build {
+			Tall => {
+				hip: 0.86,
+				body_width: 0.3,
+				body_height: 0.6,
+				torso: Boxy,
+				neck: 0.07,
+				head_width: 0.24,
+				head_height: 0.21,
+				upper_arm: 0.3,
+				forearm: 0.28,
+				limb_width: 0.055,
+				moves_on: Legs,
+				antenna: 0.12,
+				paint: Brush.opaque_rgba(RgbColor.of(0x8FA9C4)),
+				trim: Brush.opaque_rgba(RgbColor.of(0x3E536B)),
+			}
+			Round => {
+				hip: 0.36,
+				body_width: 0.62,
+				body_height: 0.58,
+				torso: Barrel,
+				neck: 0.03,
+				head_width: 0.34,
+				head_height: 0.22,
+				upper_arm: 0.22,
+				forearm: 0.2,
+				limb_width: 0.075,
+				moves_on: Legs,
+				antenna: 0.0,
+				paint: Brush.opaque_rgba(RgbColor.of(0xD5884A)),
+				trim: Brush.opaque_rgba(RgbColor.of(0x7D4622)),
+			}
+			Tiny => {
+				hip: 0.22,
+				body_width: 0.24,
+				body_height: 0.2,
+				torso: Boxy,
+				neck: 0.03,
+				head_width: 0.3,
+				head_height: 0.22,
+				upper_arm: 0.13,
+				forearm: 0.13,
+				limb_width: 0.045,
+				moves_on: Wheel,
+				antenna: 0.09,
+				paint: Brush.opaque_rgba(RgbColor.of(0x63C29E)),
+				trim: Brush.opaque_rgba(RgbColor.of(0x2D6B55)),
+			}
+		}
+
 	## The robot, back to front: antenna, legs or wheel, body, head, eyes,
 	## then the arms in front of the body.
 	figure_shapes : {
@@ -78,59 +132,6 @@ Robot :: [].{
 	}
 }
 
-proportions : Robot.Build -> RobotBody.Proportions
-proportions = |build|
-	match build {
-		Tall => {
-			hip: 0.86,
-			body_width: 0.3,
-			body_height: 0.6,
-			torso: Boxy,
-			neck: 0.07,
-			head_width: 0.24,
-			head_height: 0.21,
-			upper_arm: 0.3,
-			forearm: 0.28,
-			limb_width: 0.055,
-			moves_on: Legs,
-			antenna: 0.12,
-			paint: Brush.opaque_rgba(RgbColor.of(0x8FA9C4)),
-			trim: Brush.opaque_rgba(RgbColor.of(0x3E536B)),
-		}
-		Round => {
-			hip: 0.36,
-			body_width: 0.62,
-			body_height: 0.58,
-			torso: Barrel,
-			neck: 0.03,
-			head_width: 0.34,
-			head_height: 0.22,
-			upper_arm: 0.22,
-			forearm: 0.2,
-			limb_width: 0.075,
-			moves_on: Legs,
-			antenna: 0.0,
-			paint: Brush.opaque_rgba(RgbColor.of(0xD5884A)),
-			trim: Brush.opaque_rgba(RgbColor.of(0x7D4622)),
-		}
-		Tiny => {
-			hip: 0.22,
-			body_width: 0.24,
-			body_height: 0.2,
-			torso: Boxy,
-			neck: 0.03,
-			head_width: 0.3,
-			head_height: 0.22,
-			upper_arm: 0.13,
-			forearm: 0.13,
-			limb_width: 0.045,
-			moves_on: Wheel,
-			antenna: 0.09,
-			paint: Brush.opaque_rgba(RgbColor.of(0x63C29E)),
-			trim: Brush.opaque_rgba(RgbColor.of(0x2D6B55)),
-		}
-	}
-
 standing_still : Robot.Pose
 standing_still = {
 	phase: 0.0,
@@ -147,7 +148,7 @@ standing_still = {
 expect
 	[Tall, Round, Tiny].all(
 		|build| {
-			shoulder = RobotBody.right_shoulder(proportions(build), standing_still)
+			shoulder = RobotBody.right_shoulder(Robot.proportions(build), standing_still)
 			raised = Robot.hand_at(build, { ..standing_still, reach: 1.0 })
 			lowered = Robot.hand_at(build, standing_still)
 			raised.up > shoulder.up and lowered.up < shoulder.up
@@ -165,13 +166,13 @@ expect {
 # Sitting lowers a legged robot's hips to its seat and lifts a wheeled one
 # onto it.
 expect RobotBody.hip_height(
-	proportions(Tall),
+	Robot.proportions(Tall),
 	{ ..standing_still, sit: 1.0 },
-) < proportions(Tall).hip
+) < Robot.proportions(Tall).hip
 expect RobotBody.hip_height(
-	proportions(Tiny),
+	Robot.proportions(Tiny),
 	{ ..standing_still, sit: 1.0 },
-) > proportions(Tiny).hip
+) > Robot.proportions(Tiny).hip
 
 # A figure is drawn at all, and dark eyes add no glow.
 expect {

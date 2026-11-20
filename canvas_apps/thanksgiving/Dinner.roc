@@ -15,6 +15,7 @@ import Dancer
 import Dishes
 import Ease
 import Lights
+import Moves
 import Robot
 import Routine
 import Script
@@ -77,7 +78,7 @@ Dinner :: [].{
 		walked = dancer_from - dancer_right(now)
 		phase = walked * F64.tau / 0.55
 		pace = ((dancer_right(now - 5) - dancer_right(now)) / 0.09).min(1.0)
-		rest = Routine.rest
+		rest = Moves.rest
 		move =
 			if now < Script.dance_tick {
 				clicks = (phase.sin() * 2.0 + 2.5).to_i64_wrap() - 2
@@ -167,6 +168,10 @@ Dinner :: [].{
 		1.0 - (1.0 - drop_progress) * (1.0 - drop_progress)
 	}
 
+	## When the tiny robot's pie starts to slip.
+	slip_tick : I64
+	slip_tick = 622
+
 	## How many seconds the leaves have been blowing; negative before.
 	gust_seconds : I64 -> F64
 	gust_seconds = |tick| (Script.held_tick(tick) - Script.gust_tick).to_f64() / 60.0
@@ -227,9 +232,6 @@ bulb_gap = 7
 # The tiny robot's slip: the pie rocks harder for `slip_frames`, falls for
 # `fall_frames` while the hand dives to meet it, and is lifted back up over
 # `lift_frames`.
-slip_tick : I64
-slip_tick = 622
-
 slip_frames : I64
 slip_frames = 16
 
@@ -270,14 +272,14 @@ reach = |build, tick| {
 	match build {
 		Tall | Round => set_down
 		Tiny =>
-			if tick < slip_tick + slip_frames {
+			if tick < Dinner.slip_tick + slip_frames {
 				1.0
-			} else if tick < slip_tick + slip_frames + fall_frames {
-				dive = Ease.ramp(tick - slip_tick - slip_frames, fall_frames)
+			} else if tick < Dinner.slip_tick + slip_frames + fall_frames {
+				dive = Ease.ramp(tick - Dinner.slip_tick - slip_frames, fall_frames)
 				1.0 - (1.0 - catch_reach) * (1.0 - (1.0 - dive) * (1.0 - dive))
 			} else if tick < plan.set_tick {
 				catch_reach + (1.0 - catch_reach) * Ease.smooth(
-					Ease.ramp(tick - slip_tick - slip_frames - fall_frames, lift_frames),
+					Ease.ramp(tick - Dinner.slip_tick - slip_frames - fall_frames, lift_frames),
 				)
 			} else {
 				set_down
@@ -317,8 +319,8 @@ held_dish = |build, tick| {
 		Tiny => {
 			pose = Dinner.robot_pose(Tiny, tick)
 			walking_wobble = 0.13 * (pose.phase * 0.5).sin()
-			slip_start = slip_tick
-			fall_start = slip_tick + slip_frames
+			slip_start = Dinner.slip_tick
+			fall_start = Dinner.slip_tick + slip_frames
 			lift_start = fall_start + fall_frames
 			rock = tick.to_f64() * 0.45
 			if tick < slip_start {
@@ -426,8 +428,8 @@ expect Dinner.robot_pose(Tiny, Script.end_tick).eye_glow == 1.0
 
 # The pie falls below the hand's carrying height and is caught again.
 expect {
-	carried = Dinner.dish_place(Tiny, slip_tick).at.height
-	falling = Dinner.dish_place(Tiny, slip_tick + slip_frames + fall_frames - 1).at.height
+	carried = Dinner.dish_place(Tiny, Dinner.slip_tick).at.height
+	falling = Dinner.dish_place(Tiny, Dinner.slip_tick + slip_frames + fall_frames - 1).at.height
 	lifted = Dinner.dish_place(Tiny, timing(Tiny).set_tick - 1).at.height
 	falling < carried - 0.05 and (lifted - carried).abs() < 0.03
 }

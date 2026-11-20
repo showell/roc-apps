@@ -79,6 +79,10 @@ RobotHead :: [].{
 		List.concat(neck_and_head, face_shapes(place, { body, head_bottom, glow, look }))
 	}
 
+	## The color of a lit eye, the string lights' warm white.
+	lit_eye : Brush.Rgba
+	lit_eye = Brush.opaque_rgba(RgbColor.of(0xFFD98A))
+
 }
 
 face_shapes : Figure.Place,
@@ -96,7 +100,7 @@ face_shapes = |place, { body, head_bottom, glow, look }| {
 	eye_fill = Flat(
 		Brush.mix({
 			from: dark_eye,
-			to: lit_eye,
+			to: RobotHead.lit_eye,
 			fraction: glow,
 		}),
 	)
@@ -135,7 +139,7 @@ face_shapes = |place, { body, head_bottom, glow, look }| {
 								),
 								radius: Pixels.of(eye_radius * 2.6 * place.scale),
 							},
-							{ ..lit_eye, a: 0.55 * glow },
+							{ ..RobotHead.lit_eye, a: 0.55 * glow },
 						),
 				),
 			)
@@ -148,12 +152,9 @@ face_shapes = |place, { body, head_bottom, glow, look }| {
 antenna_tip : F64 -> Brush.Rgba
 antenna_tip = |glow| Brush.mix({
 	from: Brush.opaque_rgba(RgbColor.of(0xC0504A)),
-	to: lit_eye,
+	to: RobotHead.lit_eye,
 	fraction: glow,
 })
 
 dark_eye : Brush.Rgba
 dark_eye = Brush.opaque_rgba(RgbColor.of(0x1F2830))
-
-lit_eye : Brush.Rgba
-lit_eye = Brush.opaque_rgba(RgbColor.of(0xFFD98A))

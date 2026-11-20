@@ -161,13 +161,14 @@ carrying_pose = |{ build, phase, stride }| {
 }
 
 # The straggler sets off from under the eye as the others near the halt,
-# rolls fast, and brakes into its gap just before the finale, its pie
+# rolls fast, and brakes into its gap just before heads pop up over the
+# fence, its pie
 # rocking all the way.
 straggler_start : I64
 straggler_start = Script.halt_tick - 60
 
 straggler_frames : I64
-straggler_frames = Script.finale_tick - 8 - straggler_start
+straggler_frames = Script.peek_tick - 8 - straggler_start
 
 straggler : I64 -> March.Trooper
 straggler = |now| {

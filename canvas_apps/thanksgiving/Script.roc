@@ -1,18 +1,21 @@
 ## Script is the Thanksgiving movie's running order: the tick each beat
-## starts at, sixty ticks a second. Dinner, EyePath, Copies and March ask it
-## when things happen, and nothing else knows what time it is.
+## starts at, sixty ticks a second. Every timeline module asks it when
+## things happen, and nothing else knows what time it is.
 ##
-## The guests arrive and sit, the lights blink on and the eye eases back to
-## take in the table. The banner drops, the leaves blow, and a fourth robot
-## walks in and starts the robot dance. The eye moves in close, and the
-## dancer winks at it. Then the eye backs far away over an empty lawn, and
-## at each of the dancer's shoulder pops a copy of the whole table springs
-## up, until there are five. An army of robots marches in from behind the
-## eye, bringing more food, a drum major in front; it halts, a straggler
-## rolls up late, and the dancers strike their final pose.
+## The guests arrive and sit; the pie slips and the eye whips in to watch
+## the catch. The lights blink on, the eye eases back, the leaves blow, and
+## a fourth robot walks in and starts the robot dance. The eye moves in
+## close, and the dancer winks at it while the yard stretches away behind.
+## The eye flies far back over an empty lawn, and four copies of the whole
+## table roll in on parade floats, each pushed by a robot. An army marches
+## in from under the eye, a drum major in front, and halts with a drumstick
+## tossed and caught. Heads pop up over the fence; then robots pour in from
+## both sides by the hundred, and the whole crowd does the wave. The dancers
+## strike their final pose, one winks again, and the banner drops.
 ##
-## From the dance on, the beats are the routine's own sections, so the
-## camera and the copies stay on the dance's beat when the routine changes.
+## From the dance on, the beats are the routine's own sections, so
+## everything stays on the dance's beat when the routine changes.
+import Choreography
 import Routine
 
 Script :: [].{
@@ -25,10 +28,7 @@ Script :: [].{
 	pull_tick : I64
 	pull_tick = 880
 
-	## When the banner starts to drop, and the leaves start to blow.
-	banner_tick : I64
-	banner_tick = 1020
-
+	## When the leaves start to blow.
 	gust_tick : I64
 	gust_tick = 1060
 
@@ -54,18 +54,21 @@ Script :: [].{
 
 	## The dancer winks at the eye, close up.
 	wink_tick : I64
-	wink_tick = section_tick(Hello) + Routine.wink_offset
+	wink_tick = section_tick(Hello) + Choreography.wink_offset
 
-	## The eye backs away to the wide shot while the dancer travels through
-	## its middle section, arriving as the copies begin.
+	## The eye flies back to the wide shot while the dancer travels through
+	## its middle section, arriving as the floats set off.
 	wide_tick : I64
 	wide_tick = section_tick(Travel)
 
-	## The ticks at which each copied table pops up, one a shoulder pop.
-	copy_ticks : List(I64)
-	copy_ticks = Routine.pop_offsets.map(|offset| section_tick(Multiply) + offset)
+	parade_tick : I64
+	parade_tick = section_tick(Parade)
 
-	## The army steps out from behind the eye as the dancers start to strut,
+	## The ticks at which each float brakes to a stop, one a shoulder pop.
+	float_stop_ticks : List(I64)
+	float_stop_ticks = Choreography.pop_offsets.map(|offset| parade_tick + offset)
+
+	## The army steps out from under the eye as the dancers start to strut,
 	## and halts `march_frames` later.
 	army_tick : I64
 	army_tick = section_tick(Strut)
@@ -76,9 +79,29 @@ Script :: [].{
 	halt_tick : I64
 	halt_tick = army_tick + march_frames
 
-	## When the dancers strike the final pose.
+	## Heads start popping up over the fence.
+	peek_tick : I64
+	peek_tick = section_tick(Peek)
+
+	## The crowd starts pouring in from both sides.
+	flood_tick : I64
+	flood_tick = section_tick(Flood)
+
+	## The ticks at which the wave passes the middle of the yard, once each
+	## way.
+	wave_ticks : List(I64)
+	wave_ticks = Choreography.wave_offsets.map(|offset| section_tick(Wave) + offset)
+
+	## When the dancers strike the final pose, and when one winks again.
 	finale_tick : I64
 	finale_tick = section_tick(Finale)
+
+	final_wink_tick : I64
+	final_wink_tick = finale_tick + Choreography.final_wink_offset
+
+	## The banner drops once the eye has backed away from the last wink.
+	banner_tick : I64
+	banner_tick = final_wink_tick + 110
 
 	## The last tick that moves. Every tick after it shows the same frame.
 	end_tick : I64
@@ -101,6 +124,12 @@ expect Script.held_tick(Script.end_tick + 600) == Script.end_tick
 expect Script.held_tick(Script.end_tick - 1) == Script.end_tick - 1
 expect Script.held_tick(-5) == 0
 
-# The army halts before the finale, and every copy is up before it marches.
-expect Script.halt_tick < Script.finale_tick
-expect Script.copy_ticks.all(|tick| tick + 20 <= Script.army_tick)
+# The army halts before heads pop up, and every float has stopped before the
+# army marches.
+expect Script.halt_tick < Script.peek_tick
+expect Script.float_stop_ticks.all(|tick| tick + 20 <= Script.army_tick)
+
+# The banner is the last thing to happen, a few seconds before the end, and
+# the movie runs about a minute and a half.
+expect Script.banner_tick + 180 < Script.end_tick
+expect Script.end_tick > 85 * 60 and Script.end_tick < 92 * 60
