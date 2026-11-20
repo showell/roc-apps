@@ -147,7 +147,7 @@ browser, compiled to WebAssembly.</p>
 <section class="feature" data-app="syntax-color">
   <div>
     <h3><a href="syntax-color/">roc-syntax-color</a></h3>
-    <p>A Roc package that colors source code for web pages: Roc, JavaScript, Shale and Zig. Code goes in and HTML comes out, with a span around each comment, string, number, keyword, name and type, and your stylesheet picks the colors. Any text at all comes out colored, even half a program or a string left open. It colors the code in the Safari book and the books book.</p>
+    <p>A Roc package that colors source code for web pages: Roc, JavaScript, Shale, Zig and C. Code goes in and HTML comes out, with a span around each comment, string, number, keyword, name and type, and your stylesheet picks the colors. Any text at all comes out colored, even half a program or a string left open. It colors the code in the Safari book and the books book.</p>
     <pre class="roc"><span class="syn-name">page_code</span> : <span class="syn-type">Str</span> -&gt; <span class="syn-type">Str</span>
 <span class="syn-name">page_code</span> = |code| <span class="syn-string">&quot;&lt;pre&gt;&lt;code&gt;</span>${<span class="syn-type">SyntaxColor</span>.html(<span class="syn-type">SyntaxColor</span>.roc, code)}<span class="syn-string">&lt;/code&gt;&lt;/pre&gt;&quot;</span></pre>
     <p class="caption">From the package's README: a page's code block, colored.</p>
