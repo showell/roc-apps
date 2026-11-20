@@ -38,6 +38,7 @@ March :: [].{
 		feet : Eye.At,
 		pose : Dancer.Pose,
 		drumstick : { grip : { across : F64, up : F64 }, angle : F64 },
+		drumstick_layer : [OverBody, UnderBody],
 	}
 
 	## A place in the army: the build and dish of the marcher in it, how far
@@ -90,6 +91,10 @@ March :: [].{
 		forward: halt_lead - slot.behind,
 		height: 0.0,
 	}
+
+	## Where the drum major stands once the army has halted.
+	drum_major_halt_spot : Eye.At
+	drum_major_halt_spot = { right: 0.4, forward: halt_lead, height: 0.0 }
 
 	## When the straggler is in its gap.
 	straggler_in_tick : I64
@@ -250,17 +255,14 @@ drum_major = |now| {
 		stride: high_step * marching(now),
 	}
 	{
-		feet: {
-			right: 0.4,
-			forward: lead_forward(now),
-			height: 0.0,
-		},
+		feet: { ..March.drum_major_halt_spot, forward: lead_forward(now) },
 		pose,
 		drumstick: tossed_drumstick({
 			hand: Dancer.right_hand_at(pose),
 			angle: pose.right_fore,
 			since: now - Script.halt_tick,
 		}),
+		drumstick_layer: OverBody,
 	}
 }
 

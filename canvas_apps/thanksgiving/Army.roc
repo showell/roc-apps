@@ -12,6 +12,7 @@ import Figure
 import Dishes
 import March
 import Marchers
+import Seatless
 import Robot
 import View
 
@@ -22,7 +23,7 @@ Army :: [].{
 	army_layers : View, I64 -> List({ depth : F64, shapes : List(Shapes.Shape) })
 	army_layers = |view, tick| {
 		leader =
-			match March.drum_major_at(tick) {
+			match Seatless.drum_major_at(tick) {
 				Marching(drum_major) => [
 					{ depth: drum_major.feet.forward, shapes: drum_major_shapes(view, drum_major) },
 				]
@@ -65,7 +66,7 @@ trooper_shapes = |view, { build, dish, feet, pose, dish_tilt }|
 	}
 
 drum_major_shapes : View, March.DrumMajor -> List(Shapes.Shape)
-drum_major_shapes = |view, { feet, pose, drumstick }|
+drum_major_shapes = |view, { feet, pose, drumstick, drumstick_layer }|
 	match view.sighting(feet) {
 		Ok({ point, pixels_per_metre }) => {
 			place = {
@@ -73,8 +74,12 @@ drum_major_shapes = |view, { feet, pose, drumstick }|
 				y: point.y.to_f64(),
 				scale: pixels_per_metre,
 			}
-			Dancer.figure_shapes({ pose, feet: point, pixels_per_metre })
-				.concat(drumstick_shapes(place, drumstick))
+			body = Dancer.figure_shapes({ pose, feet: point, pixels_per_metre })
+			stick = drumstick_shapes(place, drumstick)
+			match drumstick_layer {
+				OverBody => List.concat(body, stick)
+				UnderBody => List.concat(stick, body)
+			}
 		}
 		Err(BehindEye) => []
 	}

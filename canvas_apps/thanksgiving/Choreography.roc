@@ -102,7 +102,7 @@ Choreography :: [].{
 	## the beat, the head clicking after the marchers as they run past.
 	seat_steps : List(Choreography.Step)
 	seat_steps =
-		[0.0, 1.0, 0.0, -1.0, 0.0, 1.0, 0.0, -1.0, 0.0, 1.0, 0.0, -1.0]
+		[0.0, 1.0, 0.0, -1.0, 0.0, 1.0, 0.0, -1.0, 0.0, 1.0, 0.0, -1.0, 0.0, 1.0]
 			.map(|head| beat_steps({ ..Moves.arms_out, head }))
 			.join()
 

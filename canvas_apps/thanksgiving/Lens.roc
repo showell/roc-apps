@@ -8,6 +8,7 @@
 import Family
 import EyePath
 import Script
+import Seatless
 
 Lens :: [].{
 
@@ -137,6 +138,18 @@ moves = [
 			frames: 90,
 			curve: Smooth,
 			to: { ..normal, focal: 620.0 },
+		},
+		{
+			start: Seatless.last_look_tick - 10,
+			frames: 15,
+			curve: Whip,
+			to: { ..normal, focal: 850.0 },
+		},
+		{
+			start: Seatless.idea_tick - 5,
+			frames: 15,
+			curve: Whip,
+			to: { ..normal, focal: 1250.0 },
 		},
 		{
 			start: Script.peek_tick,

@@ -6,6 +6,7 @@
 import Family
 import Ease
 import Script
+import Seatless
 
 EyePath :: [].{
 
@@ -162,6 +163,30 @@ moves = [
 			forward: -24.0,
 			height: 2.0,
 			heading: -0.16,
+		}),
+	},
+	# Whipped round onto the drum major as it hurries across, looking for a
+	# chair, and in closer as it has its idea.
+	{
+		start: Seatless.last_look_tick - 10,
+		frames: 15,
+		curve: Whip,
+		goes: To({
+			right: -1.0,
+			forward: -24.0,
+			height: 1.5,
+			heading: 0.16,
+		}),
+	},
+	{
+		start: Seatless.idea_tick - 5,
+		frames: 15,
+		curve: Whip,
+		goes: To({
+			right: -1.0,
+			forward: -24.0,
+			height: 1.2,
+			heading: 0.21,
 		}),
 	},
 	# Flown down the aisle between the floats, toward a noise at the fence.

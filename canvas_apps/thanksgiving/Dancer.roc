@@ -206,13 +206,21 @@ lit_eye = Brush.opaque_rgba(RgbColor.of(0x7FF0FF))
 leg_shapes : Figure.Place, { pose : Dancer.Pose, hip : F64 } -> List(Shapes.Shape)
 leg_shapes = |place, { pose, hip }| {
 	swing = pose.phase.sin()
+	# Knees bend outward as they drop a little; dropped far, the robot is
+	# sitting, and seen face on its thighs point at the eye, so the knees
+	# come up toward the hips instead of out.
+	bent = pose.bounce.min(0.12)
+	sitting = ((pose.bounce - 0.15) / 0.3).max(0.0).min(1.0)
 	var $out = List.with_capacity(8)
 	for leg in [
 		{ side: -1.0, lift: (-swing).max(0.0) * 0.08 * pose.stride },
 		{ side: 1.0, lift: F64.max(swing, 0.0) * 0.08 * pose.stride },
 	] {
 		hip_spot = { across: leg.side * 0.07, up: hip }
-		knee = { across: leg.side * (0.08 + pose.bounce * 1.6), up: hip / 2.0 + leg.lift }
+		knee = {
+			across: leg.side * (0.08 + bent * 1.6 + 0.04 * sitting),
+			up: hip / 2.0 + (hip / 2.0 - 0.06) * sitting + leg.lift,
+		}
 		foot = { across: leg.side * 0.09, up: leg.lift }
 		$out = $out.append(
 			Figure.bar(
