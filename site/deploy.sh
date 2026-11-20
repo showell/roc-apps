@@ -2,7 +2,12 @@
 # THE PROD DEPLOY: staging, verbatim, to https://roc.lynrummy.com. Run it on
 # Steve's sign-off of what staging shows.
 #
-#   site/deploy.sh
+#   site/deploy.sh host=<user>@<address>
+#
+# `host=` is the one argument, and it is needed: the ssh destination of the
+# droplet that serves the site, a user who may sudo there and the droplet's
+# IPv4 address. It is the operator's, so the repo names none (roc-chat's
+# tools/deploy.shale takes its `host=` the same way).
 #
 # 1. Refuses when roc.lynrummy.com does not resolve to the prod droplet, when
 #    site/live/ or the site block has uncommitted changes, or when prod's
@@ -20,8 +25,14 @@
 set -eu
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO="$(cd "$HERE/.." && pwd)"
-HOST=steve@162.243.1.123
-IP=162.243.1.123
+case "${1:-}" in
+    host=*) HOST="${1#host=}" ;;
+    *) HOST="" ;;
+esac
+[ "$#" -eq 1 ] && [[ "$HOST" =~ ^[a-z_][a-z0-9_-]*@[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+$ ]] || {
+    echo "deploy: host= is needed, the ssh destination of the droplet that serves the site, <user>@<its IPv4 address>; got '$*'"; exit 1; }
+IP="${HOST#*@}"
+OWNER="${HOST%@*}"
 DIR=/srv/roc-site
 BLOCK=roc.lynrummy.com.caddy
 URL=https://roc.lynrummy.com
@@ -36,7 +47,7 @@ ssh "$HOST" "grep -q '^(access_log) {' /etc/caddy/Caddyfile" || { echo "prod's C
 git -C "$REPO" push -q
 
 echo "copying site/live/ at $(git -C "$REPO" log -1 --format=%h -- site/live) to $HOST:$DIR/"
-ssh "$HOST" "sudo install -d -o steve -g steve -m 755 $DIR"
+ssh "$HOST" "sudo install -d -o $OWNER -g $OWNER -m 755 $DIR"
 rsync -rlt --delete --chmod=D755,F644 "$HERE/live/" "$HOST:$DIR/"
 manifest='find . -type f -print0 | LC_ALL=C sort -z | xargs -0 sha256sum'
 if ! diff <(cd "$HERE/live" && eval "$manifest") <(ssh "$HOST" "cd $DIR && $manifest"); then
