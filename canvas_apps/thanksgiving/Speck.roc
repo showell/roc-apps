@@ -1,9 +1,8 @@
 ## Speck draws a robot in the crowd, cheaply enough for hundreds a frame. Near
 ## the eye it is the whole Robot; farther off, where a robot is a few pixels
 ## tall, it is one flat outline in its build's paint with the marks that
-## still say robot at a few pixels: a box of a head on a neck, a lit visor,
-## an antenna with a red light, square shoulders, a wheel for a tiny one,
-## and, nearer, a chest panel. Its two arms show only while they are up for
+## still say robot at a few pixels: a box of a head on a neck, an antenna
+## with a red light, square shoulders, and, nearer, a lit visor. Its two arms show only while they are up for
 ## the wave. A robot off the screen, or too far off to see, is not drawn at
 ## all.
 import lib.Brush
@@ -78,22 +77,11 @@ block_shapes = |{ build, arms, feet, pixels_per_metre }| {
 	body = Robot.proportions(build)
 	place = { x: feet.x.to_f64(), y: feet.y.to_f64(), pixels_per_metre }
 	shape = silhouette(body)
-	wheel =
-		match body.moves_on {
-			Wheel => [dot_shape(place, { up: wheel_radius, radius: wheel_radius, fill: Flat(body.trim) })]
-			Legs => []
-		}
-	chest =
-		if pixels_per_metre < detail_scale {
+	visor =
+		if pixels_per_metre < visor_scale {
 			[]
 		} else {
-			[chest_shape(place, body)]
-		}
-	stalk =
-		if pixels_per_metre < detail_scale {
-			[]
-		} else {
-			[stalk_shape(place, { body, shape })]
+			[visor_shape(place, shape)]
 		}
 	raised_arms =
 		if arms < 0.05 {
@@ -102,26 +90,24 @@ block_shapes = |{ build, arms, feet, pixels_per_metre }| {
 			[-1.0, 1.0].map(|side| arm_shape(place, { body, side, arms }))
 		}
 	[
-		wheel,
 		[outline_shape(place, { body, shape })],
-		chest,
-		[visor_shape(place, shape)],
-		stalk,
-		[dot_shape(place, { up: shape.crown + antenna_length, radius: 0.05, fill: Flat(beacon) })],
+		visor,
+		[beacon_shape(place, shape)],
 		raised_arms,
 	].join()
 }
 
-# Nearer than this many pixels a metre, a robot in a block has the chest
-# panel and the antenna's stalk too small to see farther off.
-detail_scale : F64
-detail_scale = 10.0
-
-wheel_radius : F64
-wheel_radius = 0.09
+# Farther than this many pixels a metre, a robot in a block is too small
+# for its visor to show, so only the outline and the antenna's light are
+# drawn.
+visor_scale : F64
+visor_scale = 3.0
 
 antenna_length : F64
 antenna_length = 0.16
+
+stalk_half : F64
+stalk_half = 0.016
 
 # A red light on every antenna, which shows as a speck over the head however
 # far off the robot is.
@@ -163,9 +149,9 @@ silhouette = |body| {
 	}
 }
 
-# Legs or a wheel's post, a square-shouldered body, a neck and a box of a
-# head as one region in the build's paint, its corners in order round the
-# edge from between the legs.
+# Legs or a wheel's post, a square-shouldered body, a neck, a box of a head
+# and the antenna's stalk as one region in the build's paint, its corners
+# in order round the edge from the right foot.
 outline_shape : Place, { body : RobotBody.Proportions, shape : Silhouette } -> Shapes.Shape
 outline_shape = |place, { body, shape }| {
 	torso = body.body_width / 2.0
@@ -174,9 +160,9 @@ outline_shape = |place, { body, shape }| {
 		match body.moves_on {
 			Legs => {
 				legs = body.body_width * 0.32
-				[(0.0, 0.45 * body.hip), (0.25 * legs, 0.0), (legs, 0.0), (legs, body.hip)]
+				[(legs, 0.0), (legs, body.hip)]
 			}
-			Wheel => [(0.0, wheel_radius), (0.04, wheel_radius), (0.04, body.hip)]
+			Wheel => [(0.04, 0.0), (0.04, body.hip)]
 		}
 	above = [
 		(torso, body.hip),
@@ -185,6 +171,8 @@ outline_shape = |place, { body, shape }| {
 		(shape.neck_half, shape.head_bottom),
 		(shape.head_half, shape.head_bottom),
 		(shape.head_half, shape.crown),
+		(stalk_half, shape.crown),
+		(stalk_half, shape.crown + antenna_length),
 	]
 	right_side = List.concat(below, above)
 	# The left side is the right one mirrored, walked back from the crown.
@@ -216,43 +204,20 @@ visor_shape = |place, shape| {
 	})
 }
 
-# A panel on the chest in the build's trim.
-chest_shape : Place, RobotBody.Proportions -> Shapes.Shape
-chest_shape = |place, body| {
-	wide = body.body_width * 0.5
+# The antenna's light, a square that is never less than a pixel and a
+# half across, which costs a canvas less than a round dot and looks the
+# same at a few pixels.
+beacon_shape : Place, Silhouette -> Shapes.Shape
+beacon_shape = |place, shape| {
+	side = (0.1 * place.pixels_per_metre).max(1.5)
+	middle = at(place, 0.0, shape.crown + antenna_length)
 	Shapes.rectangle({
-		top_left: at(place, 0.0 - wide / 2.0, body.hip + body.body_height * 0.75),
-		width: Pixels.of(wide * place.pixels_per_metre),
-		height: Pixels.of(body.body_height * 0.4 * place.pixels_per_metre),
-		fill: Flat(body.trim),
+		top_left: Point.at(middle.x.to_f64() - side / 2.0, middle.y.to_f64() - side / 2.0),
+		width: Pixels.of(side),
+		height: Pixels.of(side),
+		fill: Flat(beacon),
 	})
 }
-
-# The antenna's stalk, up from the middle of the head to its light.
-stalk_shape : Place, { body : RobotBody.Proportions, shape : Silhouette } -> Shapes.Shape
-stalk_shape = |place, { body, shape }|
-	Shapes.line(
-		{
-			from: at(place, 0.0, shape.crown),
-			to: at(place, 0.0, shape.crown + antenna_length),
-			width: Pixels.of((0.03 * place.pixels_per_metre).max(1.0)),
-		},
-		Flat(body.trim),
-	)
-
-# A round dot `up` metres over the feet, never less than a pixel across.
-dot_shape : Place,
-{
-	up : F64,
-	radius : F64,
-	fill : Brush.Fill,
-} -> Shapes.Shape
-dot_shape = |place, { up, radius, fill }|
-	Disc({
-		center: at(place, 0.0, up),
-		radius: Pixels.of((radius * place.pixels_per_metre).max(0.8)),
-		fill,
-	})
 
 # An arm swung up from the shoulder on `side`, -1 left and 1 right, as far
 # as `arms` says: from hanging at 0 to straight up at 1, drawn thick enough
