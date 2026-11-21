@@ -351,7 +351,7 @@ else is plain computation that a test can call directly.</li>
 </ul>
 <h2 class="intro">Effects come from a platform</h2>
 <p class="lede">Every Roc application runs on a <em>platform</em>, which supplies its effects: reading files,
-reaching the network and the rest. A program can use the effects its platform offers.
+reaching the network and the rest. A program has only the effects its platform offers.
 <a href="https://github.com/roc-lang/basic-cli">basic-cli</a>,
 Roc's standard platform for command-line programs, offers a wide set: files and folders, the network, environment
 variables, the clock and more. The platform these examples use offers a narrower set, adds a few things of its own,
@@ -394,11 +394,11 @@ Linux on x86-64, GCC and TCC.</p>
 <li><strong>One translation unit.</strong> <code>c/shale.c</code> takes in the whole runtime, so GCC sees every
 function at once and the release build is a single <code>gcc -O2</code>.</li>
 <li><strong>Two compilers.</strong> TCC compiles the whole program in a fraction of GCC's time, for the edit loop. GCC
-builds every binary that runs, with no LLVM involved.</li>
+builds every binary we ship, with no LLVM involved.</li>
 <li><strong>Two tiers of checks.</strong> The fast tier runs every C test in seconds, on each edit. The full tier adds
-the release build, every test under ASan and UBSan, a <code>-Werror</code> build at <code>-O2</code>, planted
-faults that prove each test can fail, and the cookbook's own tests, including the goldens behind the examples
-below. It runs on GitHub, before every merge.</li>
+the release build, every test under ASan and UBSan, a <code>-Werror</code> build at <code>-O2</code>, and the
+cookbook's own tests, including the goldens behind the examples below. It runs on GitHub, before every merge.
+Each test was also proven once, by a planted fault, to be able to fail.</li>
 <li><strong>The builds are Shale scripts.</strong> A new machine builds its first <code>shale</code> by hand with
 TCC and GCC, and from then on Shale builds itself.</li>
 </ul>
