@@ -10,6 +10,6 @@
 # commit whose parent holds the Shale original, the one file named
 # <name>.shale there. This list stands in for shale's cookbook/roc/EXAMPLES.txt
 # until that file lands, and goes when the page reads it.
-count_roc	cookbook/roc/count_roc/count_roc.roc	f7898161	Counts a Roc project folder by folder: its modules and their lines, the same for its test modules, and its expects. It lists each folder's Roc files and reads each one, and the rest is plain Roc.
+count_roc	cookbook/roc/count_roc/count_roc.roc	f7898161	A test-density report for a tree of Roc projects: for each folder, its modules and their lines, its test modules and their lines, and its expects. It lists each folder's Roc files and reads each one, and the rest is plain Roc. For one app's size, Roc's built-in `roc loc` is the tool.
 find_unclear_names	cookbook/roc/find_unclear_names/find_unclear_names.roc	e8cbee93	Finds names and comments in Roc code that say less than they should: a pure function whose name says it changes something, a name with an abbreviated word in it, and a module with no doc comment or a top comment that tells its history. It reads each file's tree from Roc's own parser and the word lists it checks names against, and its self-test runs its planted cases.
 check_module_size	roc_platform/examples/check_module_size.roc	f7898161	Holds each Roc module to a size, 500 lines by default, counting the whole file, with exemptions read from a file of paths and reasons. Its original still stands in the cookbook, and this port is held line for line to its output.
