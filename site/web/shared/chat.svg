@@ -1,0 +1,74 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 300" role="img" aria-label="A message's trip through roc-chat: the browser's script posts it, the Zig host reads the request, the Roc app decides who may post, checks the text, stores it through FileFacts and renders it with roc-markdown, and the host writes the files and streams the message to every open page">
+  <rect width="400" height="300" fill="#ece6d8"/>
+  <!-- the browser: the page the message is sent from, and the pages it reaches -->
+  <text x="47" y="30" text-anchor="middle" font-family="system-ui, sans-serif" font-size="13" font-weight="bold" fill="#2a2620">Browser</text>
+  <rect x="10" y="40" width="74" height="104" rx="5" fill="#fffdf7" stroke="#d8d0bf"/>
+  <g fill="#bdb5a4">
+    <rect x="17" y="50" width="54" height="5" rx="2"/>
+    <rect x="17" y="61" width="40" height="5" rx="2"/>
+    <rect x="17" y="72" width="50" height="5" rx="2"/>
+  </g>
+  <rect x="16" y="84" width="62" height="20" rx="3" fill="#fff" stroke="#bdb5a4"/>
+  <text x="21" y="98" font-family="system-ui, sans-serif" font-size="11" fill="#1d1d1b">Hi, Roc!</text>
+  <rect x="16" y="112" width="24" height="16" rx="3" fill="#f0db4f"/>
+  <text x="28" y="124" text-anchor="middle" font-family="system-ui, sans-serif" font-size="11" font-weight="bold" fill="#2a2620">JS</text>
+  <text x="44" y="124" font-family="system-ui, sans-serif" font-size="11" fill="#2a2620">posts</text>
+  <rect x="10" y="168" width="74" height="40" rx="5" fill="#fffdf7" stroke="#d8d0bf"/>
+  <rect x="17" y="177" width="44" height="5" rx="2" fill="#bdb5a4"/>
+  <rect x="17" y="190" width="58" height="9" rx="2" fill="#c9b8f0"/>
+  <rect x="10" y="216" width="74" height="40" rx="5" fill="#fffdf7" stroke="#d8d0bf"/>
+  <rect x="17" y="225" width="50" height="5" rx="2" fill="#bdb5a4"/>
+  <rect x="17" y="238" width="58" height="9" rx="2" fill="#c9b8f0"/>
+  <text x="47" y="274" text-anchor="middle" font-family="system-ui, sans-serif" font-size="11" fill="#2a2620">open pages</text>
+
+  <!-- the Zig host: the network, the secrets, the search index and the disk -->
+  <rect x="102" y="40" width="74" height="230" rx="6" fill="#f7a41d"/>
+  <g font-family="system-ui, sans-serif" fill="#2a2620" text-anchor="middle">
+    <text x="139" y="59" font-size="13" font-weight="bold">Zig host</text>
+    <text x="139" y="79" font-size="11">reads the</text>
+    <text x="139" y="92" font-size="11">request</text>
+  </g>
+  <g fill="#fde3b0">
+    <rect x="105" y="104" width="68" height="17" rx="3"/>
+    <rect x="105" y="125" width="68" height="17" rx="3"/>
+    <rect x="105" y="146" width="68" height="17" rx="3"/>
+  </g>
+  <g font-family="system-ui, sans-serif" font-size="11" fill="#2a2620" text-anchor="middle">
+    <text x="139" y="116">sockets</text>
+    <text x="139" y="137">secrets</text>
+    <text x="139" y="158" font-size="10.5">search index</text>
+  </g>
+  <!-- the data folder: plain files -->
+  <path d="M125 186 L125 206 A14 5 0 0 0 153 206 L153 186" fill="#fffdf7" stroke="#8a6a2a"/>
+  <ellipse cx="139" cy="186" rx="14" ry="5" fill="#fffdf7" stroke="#8a6a2a"/>
+  <g font-family="system-ui, sans-serif" font-size="11" fill="#2a2620" text-anchor="middle">
+    <text x="139" y="226">writes files</text>
+    <text x="139" y="246">streams it</text>
+    <text x="139" y="259">to pages</text>
+  </g>
+
+  <!-- the Roc app: every decision -->
+  <rect x="194" y="40" width="196" height="230" rx="6" fill="#5b3ea8"/>
+  <g font-family="system-ui, sans-serif" fill="#fff">
+    <text x="206" y="62" font-size="16" font-weight="bold">Roc app</text>
+    <text x="206" y="77" font-size="11" fill="#d9cff5">decides everything</text>
+    <text x="206" y="100" font-size="12" font-weight="bold">Who may post here?</text>
+    <text x="206" y="114" font-size="11" fill="#d9cff5">SignedIn, Access</text>
+    <text x="206" y="136" font-size="12" font-weight="bold">Is the text a message?</text>
+    <text x="206" y="150" font-size="11" fill="#d9cff5">UnvalidatedString, Message</text>
+    <text x="206" y="172" font-size="12" font-weight="bold">Store it</text>
+    <text x="206" y="186" font-size="11" fill="#d9cff5">FileFacts, the only file module</text>
+    <text x="206" y="208" font-size="12" font-weight="bold">Render it</text>
+    <text x="206" y="222" font-size="11" fill="#d9cff5">roc-markdown, TrustedHtml</text>
+    <text x="206" y="252" font-size="11" fill="#fff">files to write, HTML to send</text>
+  </g>
+
+  <!-- the trip: in along the top, out along the bottom -->
+  <g stroke="#2a2620" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M86 120 L99 104 M93 105 L99 104 L99 110"/>
+    <path d="M178 86 L191 86 M186 81 L191 86 L186 91"/>
+    <path d="M191 248 L178 248 M183 243 L178 248 L183 253"/>
+    <path d="M100 196 L87 190 M92 187 L87 190 L91 195"/>
+    <path d="M100 250 L87 238 M89 244 L87 238 L93 239"/>
+  </g>
+</svg>
