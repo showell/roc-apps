@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<meta name="description" content="roc-syntax-color, a Roc package that colors Roc, JavaScript, Shale, Zig and C for web pages, shown on real code from each language.">
+<meta name="description" content="roc-syntax-color, a Roc package that colors Roc, JavaScript, Shale, Zig, C, Odin and Python for web pages, shown on real code from each language.">
 <title>roc-syntax-color</title>
 <script src="../shared/home.js"></script>
 <!-- Every listing below is roc-syntax-color's own output (SyntaxColor.html),
@@ -41,8 +41,8 @@
 <div class="top"><a href="../">Steve's Roc Work</a><a href="https://github.com/showell/roc-syntax-color">roc-syntax-color on GitHub</a></div>
 <h1>roc-syntax-color</h1>
 <p class="lede">A Roc package that colors source code for web pages. Code goes in and HTML comes out, with a span
-around each comment, string, number, keyword, name and type. It colors five languages: Roc, JavaScript, Shale,
-Zig and C. Below is real code in each, colored by the package.</p>
+around each comment, string, number, keyword, name and type. It colors seven languages: Roc, JavaScript, Shale,
+Zig, C, Odin and Python. Below is real code in each, colored by the package.</p>
 <p class="lede">Each listing is an excerpt, copied verbatim from the file it links. The package wrote every span.</p>
 <p class="lede"><a href="../roc-on-shale/">Roc on Shale</a> shows the package at work on whole files: Shale
 recipes ported to Roc, each one's Roc beside its Shale original.</p>
@@ -508,6 +508,173 @@ The lexer: <a href="https://github.com/showell/roc-syntax-color/blob/main/packag
 	}
 	<span class="syn-keyword">return</span> base;
 }</code></pre>
+
+<h2>Odin</h2>
+<p class="source">From <a href="https://github.com/odin-lang/Odin/blob/ba3b9025f1d3751e24e0ba8314603978a28a107c/core/odin/tokenizer/tokenizer.odin#L254-L330"><code>core/odin/tokenizer/tokenizer.odin</code></a>
+in <a href="https://github.com/odin-lang/Odin">Odin</a> at commit <code>ba3b9025</code>, lines 254–330: Odin's own tokenizer reading
+Odin's comments, nested <code>/* */</code> ones included, and the names between them. The package's Odin lexer follows this tokenizer.
+© 2016–2025 Ginger Bill, as Odin's licence says, under the <a href="https://github.com/odin-lang/Odin/blob/ba3b9025f1d3751e24e0ba8314603978a28a107c/LICENSE">zlib License</a>, as Odin is; copied unaltered.
+The lexer: <a href="https://github.com/showell/roc-syntax-color/blob/main/package/OdinSyntax.roc"><code>OdinSyntax.roc</code></a>.</p>
+<pre><code><span class="syn-name">scan_comment</span> :: <span class="syn-keyword">proc</span>(t: ^Tokenizer) -&gt; <span class="syn-type">string</span> {
+	offset := t.offset-<span class="syn-number">1</span>
+	next := -<span class="syn-number">1</span>
+	general: {
+		<span class="syn-keyword">if</span> t.ch == <span class="syn-string">&#39;/&#39;</span> || t.ch == <span class="syn-string">&#39;!&#39;</span> { <span class="syn-comment">// // #! comments</span>
+			advance_rune(t)
+			<span class="syn-keyword">for</span> t.ch != <span class="syn-string">&#39;\n&#39;</span> &amp;&amp; t.ch &gt;= <span class="syn-number">0</span> {
+				advance_rune(t)
+			}
+
+			next = t.offset
+			<span class="syn-keyword">if</span> t.ch == <span class="syn-string">&#39;\n&#39;</span> {
+				next += <span class="syn-number">1</span>
+			}
+			<span class="syn-keyword">break</span> general
+		}
+
+		<span class="syn-comment">/* style comment */</span>
+		advance_rune(t)
+		nest := <span class="syn-number">1</span>
+		<span class="syn-keyword">for</span> t.ch &gt;= <span class="syn-number">0</span> &amp;&amp; nest &gt; <span class="syn-number">0</span> {
+			ch := t.ch
+			advance_rune(t)
+			<span class="syn-keyword">if</span> ch == <span class="syn-string">&#39;/&#39;</span> &amp;&amp; t.ch == <span class="syn-string">&#39;*&#39;</span> {
+				nest += <span class="syn-number">1</span>
+			}
+
+			<span class="syn-keyword">if</span> ch == <span class="syn-string">&#39;*&#39;</span> &amp;&amp; t.ch == <span class="syn-string">&#39;/&#39;</span> {
+				nest -= <span class="syn-number">1</span>
+				advance_rune(t)
+				next = t.offset
+				<span class="syn-keyword">if</span> nest == <span class="syn-number">0</span> {
+					<span class="syn-keyword">break</span> general
+				}
+			}
+		}
+
+		error(t, offset, <span class="syn-string">&quot;comment not terminated&quot;</span>)
+	}
+
+	lit := t.src[offset : t.offset]
+
+	<span class="syn-comment">// NOTE(bill): Strip CR for line comments</span>
+	<span class="syn-keyword">for</span> len(lit) &gt; <span class="syn-number">2</span> &amp;&amp; lit[<span class="syn-number">1</span>] == <span class="syn-string">&#39;/&#39;</span> &amp;&amp; lit[len(lit)-<span class="syn-number">1</span>] == <span class="syn-string">&#39;\r&#39;</span> {
+		lit = lit[:len(lit)-<span class="syn-number">1</span>]
+	}
+
+
+	<span class="syn-keyword">return</span> <span class="syn-type">string</span>(lit)
+}
+
+<span class="syn-name">scan_file_tag</span> :: <span class="syn-keyword">proc</span>(t: ^Tokenizer) -&gt; <span class="syn-type">string</span> {
+	offset := t.offset - <span class="syn-number">1</span>
+
+	<span class="syn-keyword">for</span> t.ch != <span class="syn-string">&#39;\n&#39;</span> &amp;&amp; t.ch != utf8.RUNE_EOF {
+		<span class="syn-keyword">if</span> t.ch == <span class="syn-string">&#39;/&#39;</span> {
+			next := peek_byte(t, <span class="syn-number">0</span>)
+
+			<span class="syn-keyword">if</span> next == <span class="syn-string">&#39;/&#39;</span> || next == <span class="syn-string">&#39;*&#39;</span> {
+				<span class="syn-keyword">break</span>
+			}
+		}
+		advance_rune(t)
+	}
+
+	<span class="syn-keyword">return</span> <span class="syn-type">string</span>(t.src[offset : t.offset])
+}
+
+<span class="syn-name">scan_identifier</span> :: <span class="syn-keyword">proc</span>(t: ^Tokenizer) -&gt; <span class="syn-type">string</span> {
+	offset := t.offset
+
+	<span class="syn-keyword">for</span> is_letter(t.ch) || is_digit(t.ch) {
+		advance_rune(t)
+	}
+
+	<span class="syn-keyword">return</span> <span class="syn-type">string</span>(t.src[offset : t.offset])
+}</code></pre>
+
+<h2>Python</h2>
+<p class="source">From <a href="https://github.com/norvig/pytudes/blob/ebda2935b1ea9fed4c299c0141f9c40586bd4f9c/py/lis.py#L58-L132"><code>py/lis.py</code></a>
+in Peter Norvig's <a href="https://github.com/norvig/pytudes">pytudes</a> at commit <code>ebda2935</code>, lines 58–132: the parser, the REPL
+and <code>eval</code> of <a href="http://norvig.com/lispy.html">Lispy</a>, a Scheme interpreter in Python, most of a Lisp in one screenful.
+The file says “(c) Peter Norvig, 2010-18”; © 2010–2017 Peter Norvig, under the <a href="https://github.com/norvig/pytudes/blob/ebda2935b1ea9fed4c299c0141f9c40586bd4f9c/LICENSE">MIT License</a>, as pytudes is.
+The lexers: <a href="https://github.com/showell/roc-syntax-color/blob/main/package/PythonSyntax.roc"><code>PythonSyntax.roc</code></a>
+and <a href="https://github.com/showell/roc-syntax-color/blob/main/package/PythonLiteral.roc"><code>PythonLiteral.roc</code></a>, where its strings and numbers end.</p>
+<pre><code><span class="syn-comment">################ Parsing: parse, tokenize, and read_from_tokens</span>
+
+<span class="syn-keyword">def</span> <span class="syn-name">parse</span>(program):
+    <span class="syn-string">&quot;Read a Scheme expression from a string.&quot;</span>
+    <span class="syn-keyword">return</span> read_from_tokens(tokenize(program))
+
+<span class="syn-keyword">def</span> <span class="syn-name">tokenize</span>(s):
+    <span class="syn-string">&quot;Convert a string into a list of tokens.&quot;</span>
+    <span class="syn-keyword">return</span> s.replace(<span class="syn-string">&#39;(&#39;</span>,<span class="syn-string">&#39; ( &#39;</span>).replace(<span class="syn-string">&#39;)&#39;</span>,<span class="syn-string">&#39; ) &#39;</span>).split()
+
+<span class="syn-keyword">def</span> <span class="syn-name">read_from_tokens</span>(tokens):
+    <span class="syn-string">&quot;Read an expression from a sequence of tokens.&quot;</span>
+    <span class="syn-keyword">if</span> len(tokens) == <span class="syn-number">0</span>:
+        <span class="syn-keyword">raise</span> SyntaxError(<span class="syn-string">&#39;unexpected EOF while reading&#39;</span>)
+    token = tokens.pop(<span class="syn-number">0</span>)
+    <span class="syn-keyword">if</span> <span class="syn-string">&#39;(&#39;</span> == token:
+        L = []
+        <span class="syn-keyword">while</span> tokens[<span class="syn-number">0</span>] != <span class="syn-string">&#39;)&#39;</span>:
+            L.append(read_from_tokens(tokens))
+        tokens.pop(<span class="syn-number">0</span>) <span class="syn-comment"># pop off &#39;)&#39;</span>
+        <span class="syn-keyword">return</span> L
+    <span class="syn-keyword">elif</span> <span class="syn-string">&#39;)&#39;</span> == token:
+        <span class="syn-keyword">raise</span> SyntaxError(<span class="syn-string">&#39;unexpected )&#39;</span>)
+    <span class="syn-keyword">else</span>:
+        <span class="syn-keyword">return</span> atom(token)
+
+<span class="syn-keyword">def</span> <span class="syn-name">atom</span>(token):
+    <span class="syn-string">&quot;Numbers become numbers; every other token is a symbol.&quot;</span>
+    <span class="syn-keyword">try</span>: <span class="syn-keyword">return</span> <span class="syn-type">int</span>(token)
+    <span class="syn-keyword">except</span> ValueError:
+        <span class="syn-keyword">try</span>: <span class="syn-keyword">return</span> <span class="syn-type">float</span>(token)
+        <span class="syn-keyword">except</span> ValueError:
+            <span class="syn-keyword">return</span> Symbol(token)
+
+<span class="syn-comment">################ Interaction: A REPL</span>
+
+<span class="syn-keyword">def</span> <span class="syn-name">repl</span>(prompt=<span class="syn-string">&#39;lis.py&gt; &#39;</span>):
+    <span class="syn-string">&quot;A prompt-read-eval-print loop.&quot;</span>
+    <span class="syn-keyword">while</span> <span class="syn-keyword">True</span>:
+        val = eval(parse(input(prompt)))
+        <span class="syn-keyword">if</span> val <span class="syn-keyword">is</span> <span class="syn-keyword">not</span> <span class="syn-keyword">None</span>:
+            print(lispstr(val))
+
+<span class="syn-keyword">def</span> <span class="syn-name">lispstr</span>(exp):
+    <span class="syn-string">&quot;Convert a Python object back into a Lisp-readable string.&quot;</span>
+    <span class="syn-keyword">if</span> isinstance(exp, List):
+        <span class="syn-keyword">return</span> <span class="syn-string">&#39;(&#39;</span> + <span class="syn-string">&#39; &#39;</span>.join(map(lispstr, exp)) + <span class="syn-string">&#39;)&#39;</span> 
+    <span class="syn-keyword">else</span>:
+        <span class="syn-keyword">return</span> <span class="syn-type">str</span>(exp)
+
+<span class="syn-comment">################ eval</span>
+
+<span class="syn-keyword">def</span> <span class="syn-name">eval</span>(x, env=global_env):
+    <span class="syn-string">&quot;Evaluate an expression in an environment.&quot;</span>
+    <span class="syn-keyword">if</span> isinstance(x, Symbol):      <span class="syn-comment"># variable reference</span>
+        <span class="syn-keyword">return</span> env[x]
+    <span class="syn-keyword">elif</span> <span class="syn-keyword">not</span> isinstance(x, List):  <span class="syn-comment"># constant literal</span>
+        <span class="syn-keyword">return</span> x                
+    <span class="syn-keyword">elif</span> x[<span class="syn-number">0</span>] == <span class="syn-string">&#39;quote&#39;</span>:          <span class="syn-comment"># (quote exp)</span>
+        (_, exp) = x
+        <span class="syn-keyword">return</span> exp
+    <span class="syn-keyword">elif</span> x[<span class="syn-number">0</span>] == <span class="syn-string">&#39;if&#39;</span>:             <span class="syn-comment"># (if test conseq alt)</span>
+        (_, test, conseq, alt) = x
+        exp = (conseq <span class="syn-keyword">if</span> eval(test, env) <span class="syn-keyword">else</span> alt)
+        <span class="syn-keyword">return</span> eval(exp, env)
+    <span class="syn-keyword">elif</span> x[<span class="syn-number">0</span>] == <span class="syn-string">&#39;define&#39;</span>:         <span class="syn-comment"># (define var exp)</span>
+        (_, var, exp) = x
+        env[var] = eval(exp, env)
+    <span class="syn-keyword">elif</span> x[<span class="syn-number">0</span>] == <span class="syn-string">&#39;lambda&#39;</span>:         <span class="syn-comment"># (lambda (var...) body)</span>
+        (_, parms, body) = x
+        <span class="syn-keyword">return</span> Procedure(parms, body, env)
+    <span class="syn-keyword">else</span>:                          <span class="syn-comment"># (proc arg...)</span>
+        proc = eval(x[<span class="syn-number">0</span>], env)
+        args = [eval(exp, env) <span class="syn-keyword">for</span> exp <span class="syn-keyword">in</span> x[<span class="syn-number">1</span>:]]
+        <span class="syn-keyword">return</span> proc(*args)</code></pre>
 
 <footer><a href="../">Steve's Roc Work</a> · <a href="../roc-on-shale/">Roc on Shale</a> · <a href="https://github.com/showell/roc-syntax-color">roc-syntax-color on GitHub</a></footer>
 </main>
