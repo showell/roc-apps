@@ -205,7 +205,7 @@ Linux on x86-64, GCC and TCC.</p>
 <li><strong>One translation unit.</strong> <code>c/shale.c</code> takes in the whole runtime, so GCC sees every
 function at once and the release build is a single <code>gcc -O2</code>.</li>
 <li><strong>Two compilers.</strong> TCC compiles the whole program in a fraction of GCC's time, for the edit loop. GCC
-builds every binary that runs.</li>
+builds every binary that runs, with no LLVM involved.</li>
 <li><strong>Two tiers of checks.</strong> The fast tier runs every C test in seconds, on each edit. The full tier adds
 the release build, every test under ASan and UBSan, a <code>-Werror</code> build at <code>-O2</code>, planted
 faults that prove each test can fail, and the cookbook's own tests, including the goldens behind the examples
