@@ -2,9 +2,10 @@
 -- recipes from Shale's cookbook ported to Roc on Shale's Roc platform, each
 -- one's Roc beside its Shale original, both colored by roc-syntax-color.
 -- The examples come from shale's cookbook/roc/EXAMPLES.txt (LIST, whose
--- header says the format: name, Roc root, Shale original, commit and
--- description, tab-separated), and everything else on the page comes from
--- the shale checkout's git history:
+-- header says the format: sections, each a heading and a sentence, and
+-- under each its examples, a name, Roc root, Shale original, commit and
+-- description, tab-separated), shown in its order, and everything else on
+-- the page comes from the shale checkout's git history:
 --
 --   - an example's Roc is its app's root and the modules it imports bare,
 --     each read at the last commit that touched any of them, so the page
@@ -69,21 +70,44 @@ function full_hash(rev)
   return git_out({"rev-parse", "--verify", rev .. "^{commit}"})
 end
 
--- Each line of the list, as shale's HEAD has it: {name, roc, original,
--- commit, description}.
+-- The list's sections, as shale's HEAD has them, in order: each {heading,
+-- intro, examples}, each example {name, roc, original, commit, description}.
 function read_list()
-  local out = {}
+  local sections = {}
   local n = 0
   for l in lines(git_show(SHALE, "HEAD:" .. LIST)) do
     n = n + 1
-    if trim(l) ~= "" and not starts_with(l, "#") then
+    local at = LIST .. ":" .. n
+    if starts_with(l, "## ") then
+      local f = split(sub(l, 4), "\t")
+      if #f ~= 2 then fail("build_roc_on_shale: " .. at .. " is a section line with " .. #f .. " tab-separated fields, not 2 (heading, intro)") end
+      push(sections, {heading = trim(f[1]), intro = trim(f[2]), examples = {}, line = n})
+    elseif trim(l) ~= "" and not starts_with(l, "#") then
       local f = split(l, "\t")
-      if #f ~= 5 then fail("build_roc_on_shale: " .. LIST .. ":" .. n .. " has " .. #f .. " tab-separated fields, not 5 (name, roc, original, commit, description)") end
-      push(out, {name = f[1], roc = f[2], original = f[3], commit = f[4], description = trim(f[5])})
+      if #f ~= 5 then fail("build_roc_on_shale: " .. at .. " has " .. #f .. " tab-separated fields, not 5 (name, roc, original, commit, description)") end
+      if #sections == 0 then fail("build_roc_on_shale: " .. at .. " names an example before the first section line (`## heading<TAB>intro`)") end
+      push(sections[#sections].examples, {name = f[1], roc = f[2], original = f[3], commit = f[4], description = trim(f[5])})
     end
   end
-  if #out == 0 then fail("build_roc_on_shale: " .. LIST .. " names no example") end
-  return out
+  if #sections == 0 then fail("build_roc_on_shale: " .. LIST .. " has no section") end
+  for s in sections do
+    if #s.examples == 0 then fail("build_roc_on_shale: " .. LIST .. ":" .. s.line .. ": the section " .. s.heading .. " has no example") end
+  end
+  return sections
+end
+
+-- A text without its leading and trailing hyphens.
+function trim_hyphens(s)
+  local t = s
+  while starts_with(t, "-") do t = sub(t, 2) end
+  while ends_with(t, "-") do t = sub(t, 1, #t - 1) end
+  return t
+end
+
+-- A section's anchor: its heading in lower case, each run of other
+-- characters a hyphen.
+function section_id(heading)
+  return "section-" .. trim_hyphens(re_replace(lower(heading), "[^a-z0-9]+", "-"))
 end
 
 -- The app's root and the modules it reaches by bare imports, root first,
@@ -209,22 +233,29 @@ function step_links(examples, i)
   return "<nav class=\"steps\">" .. join(links, " · ") .. "</nav>"
 end
 
-function section(x, html, steps)
+-- A part's opening: its heading, and the sentence saying what is in it.
+function part_head(s)
+  local id = section_id(s.heading)
+  return "<h2 class=\"part\" id=\"" .. id .. "\"><a href=\"#" .. id .. "\">" .. escaped(s.heading) .. "</a></h2>\n<p class=\"part-intro\">" ..
+    with_code(escaped(s.intro)) .. "</p>"
+end
+
+function example_html(x, html, steps)
   local out = {}
   push(out, "<section class=\"example\" id=\"" .. x.name .. "\">")
   push(out, steps)
-  push(out, "<h2><a href=\"#" .. x.name .. "\">" .. escaped(x.name) .. "</a></h2>")
+  push(out, "<h3><a href=\"#" .. x.name .. "\">" .. escaped(x.name) .. "</a></h3>")
   push(out, "<p>" .. with_code(escaped(x.description)) .. "</p>")
   local effects = {}
   for f in x.effects do push(effects, "<code>" .. escaped(f) .. "</code>") end
   push(out, "<p class=\"facts\">Its effects: " .. join(effects, ", ") .. ".<br>Roc: " .. plural(x.roc_lines, "line", "lines") ..
     " in " .. plural(#x.roc, "file", "files") .. ". Shale original: " .. plural(x.shale.lines, "line", "lines") .. shared_libraries(x.shale) .. ".</p>")
-  push(out, "<h3>Roc</h3>")
+  push(out, "<h4>Roc</h4>")
   for i = 1, #x.roc do
     push(out, "<p class=\"file\">" .. file_link(x.roc_rev, x.roc[i].path) .. ", " .. plural(x.roc[i].lines, "line", "lines") .. "</p>")
     push(out, code_block(html.roc[i]))
   end
-  push(out, "<h3>Shale original</h3>")
+  push(out, "<h4>Shale original</h4>")
   push(out, "<p class=\"file\">" .. file_link(x.shale.rev, x.shale.path) .. ", " .. plural(x.shale.lines, "line", "lines") ..
     ", at <code>" .. sub(x.shale.rev, 1, 8) .. "</code></p>")
   if #x.shale.libraries > 0 then
@@ -260,13 +291,17 @@ const HEAD = [=[<!doctype html>
   .top { display: flex; flex-wrap: wrap; gap: 4px 14px; font-size: 14px; margin: 0 0 14px; }
   h1 { font-size: 28px; margin: 0 0 6px; }
   .lede { margin: 0 0 10px; max-width: 70ch; }
-  h2 { font-size: 21px; margin: 10px 0 4px; }
-  h2 a { color: inherit; text-decoration: none; }
-  h3 { font-size: 16px; margin: 36px 0 4px; color: var(--accent); }
+  h2.part { font-size: 25px; margin: 80px 0 4px; padding-top: 20px; border-top: 3px solid var(--accent); }
+  .part-intro { margin: 0 0 8px; }
+  h3 { font-size: 21px; margin: 10px 0 4px; }
+  h2 a, h3 a { color: inherit; text-decoration: none; }
+  h4 { font-size: 16px; margin: 36px 0 4px; color: var(--accent); }
   p { max-width: 70ch; }
   a { color: var(--link); }
   code { font: 13px ui-monospace, Menlo, Consolas, monospace; }
   .contents { padding-left: 20px; }
+  .contents ul { padding-left: 20px; margin: 2px 0 8px; }
+  .group > .example:first-of-type { margin-top: 32px; }
   .facts { font-size: 14px; color: var(--muted); }
   .file { font-size: 13px; color: var(--muted); margin: 20px 0 0; overflow-wrap: anywhere; }
   .example { margin-top: 72px; padding-top: 24px; border-top: 1px solid var(--edge); }
@@ -303,6 +338,8 @@ runs, its tests sit beside its code, and its modules can be shared. A one-off st
 is a recipe from Shale's cookbook in Roc, followed by the Shale script it was ported from, each file in full and
 colored by <a href="../syntax-color/">roc-syntax-color</a>. The links at each example's top and end skip to the one
 before or after it.</p>
+<p class="lede">The examples are in sections, and the first section is the programs that find flaws in Roc code:
+Roc checking Roc.</p>
 ]=]
 
 const FOOT = [=[
@@ -312,32 +349,54 @@ const FOOT = [=[
 </html>
 ]=]
 
+-- The contents, a list of the sections, each with its examples.
+function contents_html(parts)
+  local items = {}
+  for s in parts do
+    local names = {}
+    for x in s.examples do push(names, "<li><a href=\"#" .. x.name .. "\">" .. escaped(x.name) .. "</a></li>") end
+    push(items, "<li><a href=\"#" .. section_id(s.heading) .. "\">" .. escaped(s.heading) .. "</a>\n<ul>\n" .. join(names, "\n") .. "\n</ul></li>")
+  end
+  return "<ul class=\"contents\" id=\"contents\">\n" .. join(items, "\n") .. "\n</ul>"
+end
+
+-- The page: the sections in the list's order, each its heading, its
+-- sentence and its examples; the previous and next links walk every
+-- example in that order, across the sections.
 function page()
+  local parts = {}
   local examples = {}
   local requests = {}
-  for e in read_list() do
-    local x = example(e)
-    push(examples, x)
-    for f in x.roc do push(requests, {language = "roc", text = f.text}) end
-    push(requests, {language = "shale", text = x.shale.text})
+  for s in read_list() do
+    local part = {heading = s.heading, intro = s.intro, examples = {}}
+    for e in s.examples do
+      local x = example(e)
+      push(part.examples, x)
+      push(examples, x)
+      for f in x.roc do push(requests, {language = "roc", text = f.text}) end
+      push(requests, {language = "shale", text = x.shale.text})
+    end
+    push(parts, part)
   end
   local answers = colored(requests)
-  local out = {HEAD}
-  local contents = {}
-  for x in examples do push(contents, "<li><a href=\"#" .. x.name .. "\">" .. escaped(x.name) .. "</a></li>") end
-  push(out, "<ul class=\"contents\" id=\"contents\">\n" .. join(contents, "\n") .. "\n</ul>")
+  local out = {HEAD, contents_html(parts)}
   local at = 1
   local i = 0
-  for x in examples do
-    i = i + 1
-    local html = {roc = {}}
-    for f in x.roc do
-      push(html.roc, answers[at])
+  for s in parts do
+    push(out, "<div class=\"group\">")
+    push(out, part_head(s))
+    for x in s.examples do
+      i = i + 1
+      local html = {roc = {}}
+      for f in x.roc do
+        push(html.roc, answers[at])
+        at = at + 1
+      end
+      html.shale = answers[at]
       at = at + 1
+      push(out, example_html(x, html, step_links(examples, i)))
     end
-    html.shale = answers[at]
-    at = at + 1
-    push(out, section(x, html, step_links(examples, i)))
+    push(out, "</div>")
   end
   push(out, FOOT)
   return join(out, "\n")
