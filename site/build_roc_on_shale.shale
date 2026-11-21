@@ -199,24 +199,31 @@ function code_block(html)
   return "<pre><code>" .. html .. "</code></pre>"
 end
 
-function section(x, html)
+-- The links at an example's top and end: the one before it, the contents
+-- and the one after it, each where there is one.
+function step_links(examples, i)
+  local links = {}
+  if i > 1 then push(links, "<a href=\"#" .. examples[i - 1].name .. "\">← previous</a>") end
+  push(links, "<a href=\"#contents\">contents</a>")
+  if i < #examples then push(links, "<a href=\"#" .. examples[i + 1].name .. "\">next →</a>") end
+  return "<nav class=\"steps\">" .. join(links, " · ") .. "</nav>"
+end
+
+function section(x, html, steps)
   local out = {}
   push(out, "<section class=\"example\" id=\"" .. x.name .. "\">")
+  push(out, steps)
   push(out, "<h2><a href=\"#" .. x.name .. "\">" .. escaped(x.name) .. "</a></h2>")
   push(out, "<p>" .. with_code(escaped(x.description)) .. "</p>")
   local effects = {}
   for f in x.effects do push(effects, "<code>" .. escaped(f) .. "</code>") end
   push(out, "<p class=\"facts\">Its effects: " .. join(effects, ", ") .. ".<br>Roc: " .. plural(x.roc_lines, "line", "lines") ..
     " in " .. plural(#x.roc, "file", "files") .. ". Shale original: " .. plural(x.shale.lines, "line", "lines") .. shared_libraries(x.shale) .. ".</p>")
-  push(out, "<div class=\"pair\">")
-  push(out, "<div class=\"side\">")
   push(out, "<h3>Roc</h3>")
   for i = 1, #x.roc do
     push(out, "<p class=\"file\">" .. file_link(x.roc_rev, x.roc[i].path) .. ", " .. plural(x.roc[i].lines, "line", "lines") .. "</p>")
     push(out, code_block(html.roc[i]))
   end
-  push(out, "</div>")
-  push(out, "<div class=\"side\">")
   push(out, "<h3>Shale original</h3>")
   push(out, "<p class=\"file\">" .. file_link(x.shale.rev, x.shale.path) .. ", " .. plural(x.shale.lines, "line", "lines") ..
     ", at <code>" .. sub(x.shale.rev, 1, 8) .. "</code></p>")
@@ -226,8 +233,7 @@ function section(x, html)
     push(out, "<p class=\"file\">The libraries it loads: " .. join(libs, ", ") .. ".</p>")
   end
   push(out, code_block(html.shale))
-  push(out, "</div>")
-  push(out, "</div>")
+  push(out, steps)
   push(out, "</section>")
   return join(out, "\n")
 end
@@ -237,7 +243,7 @@ const HEAD = [=[<!doctype html>
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<meta name="description" content="Recipes from Shale's cookbook written in Roc, on a Roc platform whose host is Shale's own runtime, each beside the Shale script it replaced.">
+<meta name="description" content="Recipes from Shale's cookbook written in Roc, on a Roc platform whose host is Shale's own runtime, each followed by the Shale script it replaced.">
 <title>Roc on Shale</title>
 <script src="../shared/home.js"></script>
 <!-- site/build_roc_on_shale.shale writes this page from the shale repository's
@@ -249,24 +255,27 @@ const HEAD = [=[<!doctype html>
     :root { --bg: #1b1b1a; --fg: #e8e6e0; --muted: #9a968c; --edge: #3a3934; --pane: #242422; --link: #8ab4f0; --accent: #a68cf0; }
   }
   body { margin: 0; background: var(--bg); color: var(--fg); font: 15px/1.55 system-ui, sans-serif; }
-  main { max-width: 1240px; margin: 0 auto; padding: 36px 16px 48px; }
+  main { max-width: 960px; margin: 0 auto; padding: 36px 16px 48px; }
   @media (max-width: 640px) { main { padding: 24px 12px 36px; } }
   .top { display: flex; flex-wrap: wrap; gap: 4px 14px; font-size: 14px; margin: 0 0 14px; }
   h1 { font-size: 28px; margin: 0 0 6px; }
   .lede { margin: 0 0 10px; max-width: 70ch; }
-  h2 { font-size: 21px; margin: 40px 0 4px; }
+  h2 { font-size: 21px; margin: 10px 0 4px; }
   h2 a { color: inherit; text-decoration: none; }
-  h3 { font-size: 15px; margin: 10px 0 2px; color: var(--accent); }
+  h3 { font-size: 16px; margin: 36px 0 4px; color: var(--accent); }
   p { max-width: 70ch; }
   a { color: var(--link); }
   code { font: 13px ui-monospace, Menlo, Consolas, monospace; }
   .contents { padding-left: 20px; }
   .facts { font-size: 14px; color: var(--muted); }
-  .file { font-size: 13px; color: var(--muted); margin: 8px 0 0; overflow-wrap: anywhere; }
-  .pair { display: grid; grid-template-columns: minmax(0, 1fr); gap: 0 20px; }
-  @media (min-width: 980px) { .pair { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); } }
-  pre { margin: 6px 0 8px; padding: 10px 12px; border-radius: 5px; background: #2b2733; color: #e8e6e0;
-        font: 12px/1.45 ui-monospace, Menlo, Consolas, monospace; overflow: auto; max-height: 36em; tab-size: 4; }
+  .file { font-size: 13px; color: var(--muted); margin: 20px 0 0; overflow-wrap: anywhere; }
+  .example { margin-top: 72px; padding-top: 24px; border-top: 1px solid var(--edge); }
+  .steps { font-size: 13px; margin: 0 0 8px; }
+  .example > .steps:last-child { margin: 28px 0 0; }
+  /* Every block shows its file whole; a line wider than the block scrolls
+     sideways inside it, so the code keeps its indentation. */
+  pre { margin: 6px 0 12px; padding: 12px 14px; border-radius: 5px; background: #2b2733; color: #e8e6e0;
+        font: 12px/1.45 ui-monospace, Menlo, Consolas, monospace; overflow-x: auto; tab-size: 4; }
   pre code { font: inherit; }
   .syn-keyword { color: #c792ea; }
   .syn-type { color: #82aaff; }
@@ -291,8 +300,9 @@ Shale, held to the same rules and budgets as a Shale script. Everything else is 
 it works.</p>
 <p class="lede">A recipe that is kept for a long time is worth writing in Roc: its types catch mistakes before it
 runs, its tests sit beside its code, and its modules can be shared. A one-off stays in Shale. Each example below
-is a recipe from Shale's cookbook in Roc, beside the Shale script it was ported from, both colored by
-<a href="../syntax-color/">roc-syntax-color</a>.</p>
+is a recipe from Shale's cookbook in Roc, followed by the Shale script it was ported from, each file in full and
+colored by <a href="../syntax-color/">roc-syntax-color</a>. The links at each example's top and end skip to the one
+before or after it.</p>
 ]=]
 
 const FOOT = [=[
@@ -315,9 +325,11 @@ function page()
   local out = {HEAD}
   local contents = {}
   for x in examples do push(contents, "<li><a href=\"#" .. x.name .. "\">" .. escaped(x.name) .. "</a></li>") end
-  push(out, "<ul class=\"contents\">\n" .. join(contents, "\n") .. "\n</ul>")
+  push(out, "<ul class=\"contents\" id=\"contents\">\n" .. join(contents, "\n") .. "\n</ul>")
   local at = 1
+  local i = 0
   for x in examples do
+    i = i + 1
     local html = {roc = {}}
     for f in x.roc do
       push(html.roc, answers[at])
@@ -325,7 +337,7 @@ function page()
     end
     html.shale = answers[at]
     at = at + 1
-    push(out, section(x, html))
+    push(out, section(x, html, step_links(examples, i)))
   end
   push(out, FOOT)
   return join(out, "\n")
