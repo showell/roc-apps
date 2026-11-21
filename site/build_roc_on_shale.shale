@@ -291,6 +291,17 @@ const HEAD = [=[<!doctype html>
   .top { display: flex; flex-wrap: wrap; gap: 4px 14px; font-size: 14px; margin: 0 0 14px; }
   h1 { font-size: 28px; margin: 0 0 6px; }
   .lede { margin: 0 0 10px; max-width: 70ch; }
+  ul.lede { padding-left: 22px; }
+  ul.lede li { margin: 0 0 4px; }
+  h2.intro { font-size: 20px; margin: 30px 0 6px; }
+  h3.intro { font-size: 16px; margin: 18px 0 4px; }
+  /* The drawing is Graphviz's SVG, inline, so its lines and words take the
+     page's colors in either theme. */
+  .diagram { margin: 14px 0 18px; }
+  .diagram svg { max-width: 100%; height: auto; }
+  .diagram text { fill: var(--fg); }
+  .diagram path, .diagram polygon { stroke: var(--fg); }
+  .diagram .edge polygon { fill: var(--fg); }
   h2.part { font-size: 25px; margin: 80px 0 4px; padding-top: 20px; border-top: 3px solid var(--accent); }
   .part-intro { margin: 0 0 8px; }
   h3 { font-size: 21px; margin: 10px 0 4px; }
@@ -328,20 +339,48 @@ const HEAD = [=[<!doctype html>
 <p class="lede">The programs on this page are written in Roc and run on
 <a href="https://github.com/showell/shale">Shale</a>, a runtime for programs that work with files, folders and
 other programs. Each is a check or a report we run on our own code, shown in full.</p>
-<p class="lede">Roc is a fast, friendly, functional language. It compiles to machine code, and its type checker
-infers every type, so a program needs few annotations and still has every call checked before it runs. Its
-functions are pure unless their type says otherwise: a function that reads a file is marked by its name and its
-type, and everything else is plain computation that a test can call directly. Those tests are <code>expect</code>s,
-written beside the code they test.</p>
+<h2 class="intro">What Roc brings</h2>
+<p class="lede">Roc is a fast, friendly, functional language.</p>
+<ul class="lede">
+<li><strong>Fast.</strong> Roc compiles to machine code.</li>
+<li><strong>Checked.</strong> The type checker infers every type, so a program needs few annotations and still has
+every call checked before it runs.</li>
+<li><strong>Pure by default.</strong> A function that reads a file is marked by its name and its type. Everything
+else is plain computation that a test can call directly.</li>
+<li><strong>Tested in place.</strong> Tests are <code>expect</code>s, written beside the code they test.</li>
+</ul>
+<h2 class="intro">A platform decides what a program can do</h2>
 <p class="lede">A Roc program doesn't choose its own effects. It's written against a <em>platform</em>, and the
-platform decides what the program can do. Here that means reading a file, listing a folder, running a program and
-printing. The platform these examples use has Shale's runtime as its host, so each effect is a call into Shale, held
-to the limits Shale sets for the run. Everything else is plain Roc.
+platform alone decides what the program can do. <a href="https://github.com/roc-lang/basic-cli">basic-cli</a>,
+Roc's standard platform for command-line programs, offers a wide set: files and folders, the network, environment
+variables, the clock and more. The platform these examples use is narrower, has a few things basic-cli doesn't, and
+has Shale's runtime as its host, so each effect is a call into Shale, held to the limits Shale sets for the run.
+Everything else is plain Roc.</p>
+<!-- the diagram -->
+<h3 class="intro">What it offers</h3>
+<ul class="lede">
+<li><strong>Files:</strong> read and write a file, ask whether one exists, list a folder, glob and grep.</li>
+<li><strong>Programs:</strong> run one, with a timeout, keeping the head, the tail or the whole of its output.</li>
+<li><strong>The rest:</strong> print, stop with a message, and read the script's arguments.</li>
+</ul>
+<h3 class="intro">What it adds</h3>
+<ul class="lede">
+<li><strong>Roc's parse tree.</strong> <code>roc_tree!</code> hands a program Roc's own parse of a file, so a check
+reads Roc code as Roc reads it.</li>
+<li><strong>Regular expressions,</strong> which Roc doesn't have built in.</li>
+<li><strong>Shale's limits on every effect:</strong> budgets for a run's steps, reads and output; reads only beneath
+the run's root and its named mounts; a program run only when Shale's rules allow it; and a timeout on each one.</li>
+</ul>
+<h3 class="intro">What it leaves out</h3>
+<p class="lede">The network, environment variables, standard input, the clock, and deleting files or making
+folders. The programs here don't use them.
 <a href="https://github.com/showell/shale/blob/master/roc_platform/README.md">The platform's README</a> explains how
 it works.</p>
+<h2 class="intro">The examples</h2>
 <p class="lede">The examples are in sections. The first holds programs that find flaws in Roc code: Roc reading
 Roc, most of them through Roc's own parser. After it come reports on Roc projects, then smaller programs over
 Zig.</p>
+<h2 class="intro">Shale's own language</h2>
 <p class="lede">Shale is also a scripting language of its own, and each example began as a Shale script. Each Roc
 program is followed by the Shale script it was ported from, with both files colored by
 <a href="../syntax-color/">roc-syntax-color</a>. Each port was checked against its original's output. The links at
@@ -366,6 +405,20 @@ function contents_html(parts)
   return "<ul class=\"contents\" id=\"contents\">\n" .. join(items, "\n") .. "\n</ul>"
 end
 
+-- The opening with its drawing in place of DIAGRAM_MARK: Graphviz's SVG of
+-- DIAGRAM_SOURCE, from its `<svg` on, so the page's CSS colors it.
+const DIAGRAM_SOURCE = "site/roc_on_shale_platform.dot"
+const DIAGRAM_MARK = "<!-- the diagram -->"
+function with_diagram(head)
+  local at = find(head, DIAGRAM_MARK)
+  if not at then fail("build_roc_on_shale: the opening has no `" .. DIAGRAM_MARK .. "`") end
+  local svg = must(run({"dot", "-Tsvg", DIAGRAM_SOURCE}, {timeout_ms = 30000, whole = 1000000})).out
+  local start = find(svg, "<svg")
+  if not start then fail("build_roc_on_shale: dot gave no <svg> for " .. DIAGRAM_SOURCE) end
+  return sub(head, 1, at - 1) .. "<div class=\"diagram\">\n" .. trim(sub(svg, start, #svg)) .. "\n</div>" ..
+    sub(head, at + #DIAGRAM_MARK, #head)
+end
+
 -- The page: the sections in the list's order, each its heading, its
 -- sentence and its examples; the previous and next links walk every
 -- example in that order, across the sections.
@@ -385,7 +438,7 @@ function page()
     push(parts, part)
   end
   local answers = colored(requests)
-  local out = {HEAD, contents_html(parts)}
+  local out = {with_diagram(HEAD), contents_html(parts)}
   local at = 1
   local i = 0
   for s in parts do
