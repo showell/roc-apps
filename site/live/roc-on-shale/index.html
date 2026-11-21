@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<meta name="description" content="Recipes from Shale's cookbook written in Roc, on a Roc platform whose host is Shale's own runtime, each beside the Shale script it replaced.">
+<meta name="description" content="Recipes from Shale's cookbook written in Roc, on a Roc platform whose host is Shale's own runtime, each followed by the Shale script it replaced.">
 <title>Roc on Shale</title>
 <script src="../shared/home.js"></script>
 <!-- site/build_roc_on_shale.shale writes this page from the shale repository's
@@ -15,24 +15,27 @@
     :root { --bg: #1b1b1a; --fg: #e8e6e0; --muted: #9a968c; --edge: #3a3934; --pane: #242422; --link: #8ab4f0; --accent: #a68cf0; }
   }
   body { margin: 0; background: var(--bg); color: var(--fg); font: 15px/1.55 system-ui, sans-serif; }
-  main { max-width: 1240px; margin: 0 auto; padding: 36px 16px 48px; }
+  main { max-width: 960px; margin: 0 auto; padding: 36px 16px 48px; }
   @media (max-width: 640px) { main { padding: 24px 12px 36px; } }
   .top { display: flex; flex-wrap: wrap; gap: 4px 14px; font-size: 14px; margin: 0 0 14px; }
   h1 { font-size: 28px; margin: 0 0 6px; }
   .lede { margin: 0 0 10px; max-width: 70ch; }
-  h2 { font-size: 21px; margin: 40px 0 4px; }
+  h2 { font-size: 21px; margin: 10px 0 4px; }
   h2 a { color: inherit; text-decoration: none; }
-  h3 { font-size: 15px; margin: 10px 0 2px; color: var(--accent); }
+  h3 { font-size: 16px; margin: 36px 0 4px; color: var(--accent); }
   p { max-width: 70ch; }
   a { color: var(--link); }
   code { font: 13px ui-monospace, Menlo, Consolas, monospace; }
   .contents { padding-left: 20px; }
   .facts { font-size: 14px; color: var(--muted); }
-  .file { font-size: 13px; color: var(--muted); margin: 8px 0 0; overflow-wrap: anywhere; }
-  .pair { display: grid; grid-template-columns: minmax(0, 1fr); gap: 0 20px; }
-  @media (min-width: 980px) { .pair { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); } }
-  pre { margin: 6px 0 8px; padding: 10px 12px; border-radius: 5px; background: #2b2733; color: #e8e6e0;
-        font: 12px/1.45 ui-monospace, Menlo, Consolas, monospace; overflow: auto; max-height: 36em; tab-size: 4; }
+  .file { font-size: 13px; color: var(--muted); margin: 20px 0 0; overflow-wrap: anywhere; }
+  .example { margin-top: 72px; padding-top: 24px; border-top: 1px solid var(--edge); }
+  .steps { font-size: 13px; margin: 0 0 8px; }
+  .example > .steps:last-child { margin: 28px 0 0; }
+  /* Every block shows its file whole; a line wider than the block scrolls
+     sideways inside it, so the code keeps its indentation. */
+  pre { margin: 6px 0 12px; padding: 12px 14px; border-radius: 5px; background: #2b2733; color: #e8e6e0;
+        font: 12px/1.45 ui-monospace, Menlo, Consolas, monospace; overflow-x: auto; tab-size: 4; }
   pre code { font: inherit; }
   .syn-keyword { color: #c792ea; }
   .syn-type { color: #82aaff; }
@@ -57,10 +60,11 @@ Shale, held to the same rules and budgets as a Shale script. Everything else is 
 it works.</p>
 <p class="lede">A recipe that is kept for a long time is worth writing in Roc: its types catch mistakes before it
 runs, its tests sit beside its code, and its modules can be shared. A one-off stays in Shale. Each example below
-is a recipe from Shale's cookbook in Roc, beside the Shale script it was ported from, both colored by
-<a href="../syntax-color/">roc-syntax-color</a>.</p>
+is a recipe from Shale's cookbook in Roc, followed by the Shale script it was ported from, each file in full and
+colored by <a href="../syntax-color/">roc-syntax-color</a>. The links at each example's top and end skip to the one
+before or after it.</p>
 
-<ul class="contents">
+<ul class="contents" id="contents">
 <li><a href="#count_roc">count_roc</a></li>
 <li><a href="#find_unclear_names">find_unclear_names</a></li>
 <li><a href="#check_module_size">check_module_size</a></li>
@@ -69,11 +73,10 @@ is a recipe from Shale's cookbook in Roc, beside the Shale script it was ported 
 <li><a href="#find_unused_imports">find_unused_imports</a></li>
 </ul>
 <section class="example" id="count_roc">
+<nav class="steps"><a href="#contents">contents</a> · <a href="#find_unclear_names">next →</a></nav>
 <h2><a href="#count_roc">count_roc</a></h2>
 <p>A test-density report for a tree of Roc projects: each folder's modules and lines, its test modules and lines, and its expects, where <code>roc loc</code> gives one app's size.</p>
 <p class="facts">Its effects: <code>Shale.arg!</code>, <code>Shale.exists!</code>, <code>Shale.fail!</code>, <code>Shale.glob!</code>, <code>Shale.print!</code>, <code>Shale.read!</code>.<br>Roc: 240 lines in 1 file. Shale original: 55 lines.</p>
-<div class="pair">
-<div class="side">
 <h3>Roc</h3>
 <p class="file"><a href="https://github.com/showell/shale/blob/e83affc09221298589b69235acf8d98285c98788/cookbook/roc/count_roc/count_roc.roc"><code>cookbook/roc/count_roc/count_roc.roc</code></a>, 240 lines</p>
 <pre><code><span class="syn-comment">## count_roc is a test-density report for a tree of Roc projects: folder by</span>
@@ -317,8 +320,6 @@ is a recipe from Shale's cookbook in Roc, beside the Shale script it was ported 
 	}
 }
 </code></pre>
-</div>
-<div class="side">
 <h3>Shale original</h3>
 <p class="file"><a href="https://github.com/showell/shale/blob/f8b34ec16957a242142ae9be37e4075e4df46003/cookbook/roc/count_roc.shale"><code>cookbook/roc/count_roc.shale</code></a>, 55 lines, at <code>f8b34ec1</code></p>
 <pre><code><span class="syn-comment">-- This recipe counts a Roc project: for each folder of `in`, its modules and</span>
@@ -377,15 +378,13 @@ is a recipe from Shale's cookbook in Roc, beside the Shale script it was ported 
 <span class="syn-keyword">end</span>
 print(table(rows, {<span class="syn-string">&quot;place&quot;</span>, <span class="syn-string">&quot;modules&quot;</span>, <span class="syn-string">&quot;lines&quot;</span>, <span class="syn-string">&quot;test_modules&quot;</span>, <span class="syn-string">&quot;test_lines&quot;</span>, <span class="syn-string">&quot;expects&quot;</span>}))
 </code></pre>
-</div>
-</div>
+<nav class="steps"><a href="#contents">contents</a> · <a href="#find_unclear_names">next →</a></nav>
 </section>
 <section class="example" id="find_unclear_names">
+<nav class="steps"><a href="#count_roc">← previous</a> · <a href="#contents">contents</a> · <a href="#check_module_size">next →</a></nav>
 <h2><a href="#find_unclear_names">find_unclear_names</a></h2>
 <p>A gate over Roc's own parse trees for names and module docs that say too little: a pure function named like a mutation, an abbreviation, a missing or historical doc.</p>
 <p class="facts">Its effects: <code>Shale.arg!</code>, <code>Shale.fail!</code>, <code>Shale.glob!</code>, <code>Shale.print!</code>, <code>Shale.re_find!</code>, <code>Shale.re_lines!</code>, <code>Shale.re_replace!</code>, <code>Shale.read!</code>, <code>Shale.roc_tree!</code>, <code>Shale.run!</code>.<br>Roc: 1,154 lines in 9 files. Shale original: 372 lines, plus 1,374 lines in the 6 libraries it loads, which other recipes share.</p>
-<div class="pair">
-<div class="side">
 <h3>Roc</h3>
 <p class="file"><a href="https://github.com/showell/shale/blob/114b2371598e4f24f678d98370b82c40ae39a1d0/cookbook/roc/find_unclear_names/find_unclear_names.roc"><code>cookbook/roc/find_unclear_names/find_unclear_names.roc</code></a>, 191 lines</p>
 <pre><code><span class="syn-comment">## find_unclear_names, in Roc on Shale&#39;s platform (roc_platform/README.md):</span>
@@ -1559,8 +1558,6 @@ print(table(rows, {<span class="syn-string">&quot;place&quot;</span>, <span clas
 	<span class="syn-name">is_app</span> = |tree| <span class="syn-type">List</span>.any(tree, |n| n.kind == <span class="syn-string">&quot;app&quot;</span>)
 }
 </code></pre>
-</div>
-<div class="side">
 <h3>Shale original</h3>
 <p class="file"><a href="https://github.com/showell/shale/blob/7ec0fd04fc2b98880bd7fd0fb06b747a3e95ffaa/cookbook/roc/find_unclear_names.shale"><code>cookbook/roc/find_unclear_names.shale</code></a>, 372 lines, at <code>7ec0fd04</code></p>
 <p class="file">The libraries it loads: <a href="https://github.com/showell/shale/blob/7ec0fd04fc2b98880bd7fd0fb06b747a3e95ffaa/cookbook/roc/declared.shale"><code>cookbook/roc/declared.shale</code></a> (1,075 lines), <a href="https://github.com/showell/shale/blob/7ec0fd04fc2b98880bd7fd0fb06b747a3e95ffaa/cookbook/findings.shale"><code>cookbook/findings.shale</code></a> (21 lines), <a href="https://github.com/showell/shale/blob/7ec0fd04fc2b98880bd7fd0fb06b747a3e95ffaa/cookbook/roc/parsed.shale"><code>cookbook/roc/parsed.shale</code></a> (34 lines), <a href="https://github.com/showell/shale/blob/7ec0fd04fc2b98880bd7fd0fb06b747a3e95ffaa/cookbook/roc/gate_recipe.shale"><code>cookbook/roc/gate_recipe.shale</code></a> (102 lines), <a href="https://github.com/showell/shale/blob/7ec0fd04fc2b98880bd7fd0fb06b747a3e95ffaa/cookbook/roc/headers.shale"><code>cookbook/roc/headers.shale</code></a> (96 lines), <a href="https://github.com/showell/shale/blob/7ec0fd04fc2b98880bd7fd0fb06b747a3e95ffaa/cookbook/roc/house.shale"><code>cookbook/roc/house.shale</code></a> (46 lines).</p>
@@ -1937,15 +1934,13 @@ use(<span class="syn-string">&quot;./house.shale&quot;</span>)
   <span class="syn-keyword">if</span> #verdict.found &gt; <span class="syn-number">0</span> <span class="syn-keyword">then</span> fail(verdict.summary) <span class="syn-keyword">end</span>
 <span class="syn-keyword">end</span>
 </code></pre>
-</div>
-</div>
+<nav class="steps"><a href="#count_roc">← previous</a> · <a href="#contents">contents</a> · <a href="#check_module_size">next →</a></nav>
 </section>
 <section class="example" id="check_module_size">
+<nav class="steps"><a href="#find_unclear_names">← previous</a> · <a href="#contents">contents</a> · <a href="#list_long_files">next →</a></nav>
 <h2><a href="#check_module_size">check_module_size</a></h2>
 <p>Each Roc module held to a size, the whole file counted, written line for line beside its Shale original, which is still the recipe (the commit is the one that added the Roc).</p>
 <p class="facts">Its effects: <code>Shale.arg!</code>, <code>Shale.exists!</code>, <code>Shale.fail!</code>, <code>Shale.glob!</code>, <code>Shale.print!</code>, <code>Shale.read!</code>.<br>Roc: 254 lines in 1 file. Shale original: 206 lines, plus 21 lines in the library it loads, which other recipes share.</p>
-<div class="pair">
-<div class="side">
 <h3>Roc</h3>
 <p class="file"><a href="https://github.com/showell/shale/blob/ebd03e07976cb66cdbfb9adbd06b19869db4975f/roc_platform/examples/check_module_size.roc"><code>roc_platform/examples/check_module_size.roc</code></a>, 254 lines</p>
 <pre><code><span class="syn-comment">## cookbook/roc/check_module_size.shale, ported to Roc on Shale&#39;s platform:</span>
@@ -2203,8 +2198,6 @@ use(<span class="syn-string">&quot;./house.shale&quot;</span>)
 	{ summary, found: $found, listing: $listing }
 }
 </code></pre>
-</div>
-<div class="side">
 <h3>Shale original</h3>
 <p class="file"><a href="https://github.com/showell/shale/blob/9349d37bb64d5928d2c2ca6cac1d9b9c82f82d2a/cookbook/roc/check_module_size.shale"><code>cookbook/roc/check_module_size.shale</code></a>, 206 lines, at <code>9349d37b</code></p>
 <p class="file">The libraries it loads: <a href="https://github.com/showell/shale/blob/9349d37bb64d5928d2c2ca6cac1d9b9c82f82d2a/cookbook/findings.shale"><code>cookbook/findings.shale</code></a> (21 lines).</p>
@@ -2415,15 +2408,13 @@ use(<span class="syn-string">&quot;cookbook:findings.shale&quot;</span>)
   <span class="syn-keyword">if</span> #r.found &gt; <span class="syn-number">0</span> <span class="syn-keyword">then</span> fail(r.summary) <span class="syn-keyword">end</span>
 <span class="syn-keyword">end</span>
 </code></pre>
-</div>
-</div>
+<nav class="steps"><a href="#find_unclear_names">← previous</a> · <a href="#contents">contents</a> · <a href="#list_long_files">next →</a></nav>
 </section>
 <section class="example" id="list_long_files">
+<nav class="steps"><a href="#check_module_size">← previous</a> · <a href="#contents">contents</a> · <a href="#count_comments">next →</a></nav>
 <h2><a href="#list_long_files">list_long_files</a></h2>
 <p>The .zig files over a thousand lines in the repos we work in, longest first: the smallest walk, a sort and a table.</p>
 <p class="facts">Its effects: <code>Shale.arg!</code>, <code>Shale.fail!</code>, <code>Shale.glob!</code>, <code>Shale.print!</code>, <code>Shale.read!</code>.<br>Roc: 96 lines in 1 file. Shale original: 20 lines.</p>
-<div class="pair">
-<div class="side">
 <h3>Roc</h3>
 <p class="file"><a href="https://github.com/showell/shale/blob/fd5b7e6a4bc357fc9efcbadf3987c34a1cd92da3/cookbook/zig/list_long_files/list_long_files.roc"><code>cookbook/zig/list_long_files/list_long_files.roc</code></a>, 96 lines</p>
 <pre><code><span class="syn-comment">## list_long_files lists the `.zig` files over a thousand lines in the repos</span>
@@ -2523,8 +2514,6 @@ use(<span class="syn-string">&quot;cookbook:findings.shale&quot;</span>)
 <span class="syn-name">right_aligned</span> = |cell, width|
 	<span class="syn-string">&quot;</span>${<span class="syn-string">&quot; &quot;</span>.repeat(width - cell.count_utf8_bytes())}${cell}<span class="syn-string">&quot;</span>
 </code></pre>
-</div>
-<div class="side">
 <h3>Shale original</h3>
 <p class="file"><a href="https://github.com/showell/shale/blob/f789816174f30ef097067b3f7abefcf877d0c427/cookbook/zig/list_long_files.shale"><code>cookbook/zig/list_long_files.shale</code></a>, 20 lines, at <code>f7898161</code></p>
 <pre><code><span class="syn-comment">-- This script lists the .zig files over a thousand lines in the repos we work</span>
@@ -2548,15 +2537,13 @@ sort(long_files, <span class="syn-string">&quot;lines&quot;</span>, <span class=
 print(table(long_files, {<span class="syn-string">&quot;lines&quot;</span>, <span class="syn-string">&quot;path&quot;</span>}))
 print(#long_files .. <span class="syn-string">&quot; of &quot;</span> .. file_count .. <span class="syn-string">&quot; .zig files are over &quot;</span> .. OVER .. <span class="syn-string">&quot; lines&quot;</span>)
 </code></pre>
-</div>
-</div>
+<nav class="steps"><a href="#check_module_size">← previous</a> · <a href="#contents">contents</a> · <a href="#count_comments">next →</a></nav>
 </section>
 <section class="example" id="count_comments">
+<nav class="steps"><a href="#list_long_files">← previous</a> · <a href="#contents">contents</a> · <a href="#find_unused_imports">next →</a></nav>
 <h2><a href="#count_comments">count_comments</a></h2>
 <p>How much each Zig file's comments say and how loudly: each trimmed line a tag (blank, code, doc, plain), per-file ratios, and the regular expressions done as byte patterns in plain Roc.</p>
 <p class="facts">Its effects: <code>Shale.arg!</code>, <code>Shale.exists!</code>, <code>Shale.fail!</code>, <code>Shale.glob!</code>, <code>Shale.print!</code>, <code>Shale.read!</code>.<br>Roc: 477 lines in 1 file. Shale original: 96 lines.</p>
-<div class="pair">
-<div class="side">
 <h3>Roc</h3>
 <p class="file"><a href="https://github.com/showell/shale/blob/8023162fbe9af80e895356486f9db272c170e23d/cookbook/zig/count_comments/count_comments.roc"><code>cookbook/zig/count_comments/count_comments.roc</code></a>, 477 lines</p>
 <pre><code><span class="syn-comment">## count_comments counts how much a Zig tree&#39;s comments say, and how loudly:</span>
@@ -3037,8 +3024,6 @@ print(#long_files .. <span class="syn-string">&quot; of &quot;</span> .. file_co
 	<span class="syn-string">&quot;</span>${file_count.to_str()}<span class="syn-string"> files: </span>${lines}<span class="syn-string"> (</span>${kinds}<span class="syn-string">), </span>${shares}<span class="syn-string">, </span>${marks}<span class="syn-string">&quot;</span>
 }
 </code></pre>
-</div>
-<div class="side">
 <h3>Shale original</h3>
 <p class="file"><a href="https://github.com/showell/shale/blob/e83affc09221298589b69235acf8d98285c98788/cookbook/zig/count_comments.shale"><code>cookbook/zig/count_comments.shale</code></a>, 96 lines, at <code>e83affc0</code></p>
 <pre><code><span class="syn-comment">-- This recipe counts how much a Zig tree&#39;s comments say, and how loudly. For</span>
@@ -3138,15 +3123,13 @@ print(#paths .. <span class="syn-string">&quot; files: &quot;</span> .. all.code
   <span class="syn-string">&quot; plain), &quot;</span> .. per100(comments, all.code) .. <span class="syn-string">&quot; per 100, &quot;</span> .. per100(all.words, comments * <span class="syn-number">100</span>) .. <span class="syn-string">&quot; words a line, &quot;</span> ..
   all.loud .. <span class="syn-string">&quot; loud, &quot;</span> .. all.dated .. <span class="syn-string">&quot; dated&quot;</span>)
 </code></pre>
-</div>
-</div>
+<nav class="steps"><a href="#list_long_files">← previous</a> · <a href="#contents">contents</a> · <a href="#find_unused_imports">next →</a></nav>
 </section>
 <section class="example" id="find_unused_imports">
+<nav class="steps"><a href="#count_comments">← previous</a> · <a href="#contents">contents</a></nav>
 <h2><a href="#find_unused_imports">find_unused_imports</a></h2>
 <p>The import lines a Roc file never uses, read from Roc's own parse tree, a gate with its plants' self-test in Roc too.</p>
 <p class="facts">Its effects: <code>Shale.arg!</code>, <code>Shale.fail!</code>, <code>Shale.glob!</code>, <code>Shale.print!</code>, <code>Shale.re_lines!</code>, <code>Shale.read!</code>, <code>Shale.roc_tree!</code>, <code>Shale.run!</code>.<br>Roc: 570 lines in 3 files. Shale original: 106 lines, plus 261 lines in the 4 libraries it loads, which other recipes share.</p>
-<div class="pair">
-<div class="side">
 <h3>Roc</h3>
 <p class="file"><a href="https://github.com/showell/shale/blob/d08020fffcc9ed980c1c4f3ccd5b8865fe2a05c1/cookbook/roc/find_unused_imports/find_unused_imports.roc"><code>cookbook/roc/find_unused_imports/find_unused_imports.roc</code></a>, 178 lines</p>
 <pre><code><span class="syn-comment">## find_unused_imports, in Roc on Shale&#39;s platform (roc_platform/README.md):</span>
@@ -3724,8 +3707,6 @@ print(#paths .. <span class="syn-string">&quot; files: &quot;</span> .. all.code
 	$faults
 }
 </code></pre>
-</div>
-<div class="side">
 <h3>Shale original</h3>
 <p class="file"><a href="https://github.com/showell/shale/blob/8023162fbe9af80e895356486f9db272c170e23d/cookbook/roc/find_unused_imports.shale"><code>cookbook/roc/find_unused_imports.shale</code></a>, 106 lines, at <code>8023162f</code></p>
 <p class="file">The libraries it loads: <a href="https://github.com/showell/shale/blob/8023162fbe9af80e895356486f9db272c170e23d/cookbook/findings.shale"><code>cookbook/findings.shale</code></a> (21 lines), <a href="https://github.com/showell/shale/blob/8023162fbe9af80e895356486f9db272c170e23d/cookbook/roc/parsed.shale"><code>cookbook/roc/parsed.shale</code></a> (34 lines), <a href="https://github.com/showell/shale/blob/8023162fbe9af80e895356486f9db272c170e23d/cookbook/roc/gate_recipe.shale"><code>cookbook/roc/gate_recipe.shale</code></a> (102 lines), <a href="https://github.com/showell/shale/blob/8023162fbe9af80e895356486f9db272c170e23d/cookbook/roc/imports.shale"><code>cookbook/roc/imports.shale</code></a> (104 lines).</p>
@@ -3836,8 +3817,7 @@ use(<span class="syn-string">&quot;./imports.shale&quot;</span>)
   <span class="syn-keyword">if</span> #verdict.found &gt; <span class="syn-number">0</span> <span class="syn-keyword">then</span> fail(verdict.summary) <span class="syn-keyword">end</span>
 <span class="syn-keyword">end</span>
 </code></pre>
-</div>
-</div>
+<nav class="steps"><a href="#count_comments">← previous</a> · <a href="#contents">contents</a></nav>
 </section>
 <footer><a href="../">Steve's Roc Work</a> · <a href="../syntax-color/">roc-syntax-color</a> · <a href="https://github.com/showell/shale">Shale on GitHub</a></footer>
 </main>

@@ -3,7 +3,7 @@
 <head>
 <!-- Every link opens in a new tab (Steve's preference). -->
 <base target="_blank">
-<meta name="description" content="Programs written in Roc: the Fast Track board game against computer players, the Dog Park herding game, the Seattle Delivery route planner, the Safari Ride screensaver and the little Roc book about it, the roc-markdown library, the roc-syntax-color package, a BASIC interpreter, six roc-ray examples, roc-screensaver, a Roc platform in Zig for screensavers that also run as web pages, and three animated shorts.">
+<meta name="description" content="Programs written in Roc: roc-chat, a live chat for humans and their agents, the Fast Track board game against computer players, the Dog Park herding game, the Seattle Delivery route planner, the Safari Ride screensaver and the little Roc book about it, the roc-markdown library, the roc-syntax-color package, a BASIC interpreter, six roc-ray examples, roc-screensaver, a Roc platform in Zig for screensavers that also run as web pages, and three animated shorts.">
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Steve's Roc Work</title>
@@ -84,6 +84,31 @@ browser, compiled to WebAssembly.</p>
 <p class="license">Everything on this page is open source under the
 <a href="https://opensource.org/license/upl-1.0">Universal Permissive License (UPL) 1.0</a>, the license Roc itself uses.</p>
 
+<section class="feature">
+  <div>
+    <a href="https://chat.lynrummy.com/" aria-hidden="true" tabindex="-1"><img class="shot drawing" src="shared/chat.svg" alt="" loading="lazy"></a>
+    <h3><a href="https://chat.lynrummy.com/">roc-chat</a></h3>
+    <p>A chat for a small group of humans and their agents, live at chat.lynrummy.com: channels with topics, direct messages, Markdown with images, live updates, search, reactions, edits and quote-replies, sign-in by password or GitHub, and agents with keys of their own that read and post like members. It replaced Gopher Chat, the group's earlier chat, written in Zig, matching its behaviour feature by feature.</p>
+    <p class="opening"><span class="tag">Roc at work</span>Everything the chat decides is Roc: what each path means, who may read and post where, every page, and every rule about what's stored. The file system is the database. Users, channels, transcripts and reactions are plain files in one folder, readable with <code>cat</code>, and one module, <code>FileFacts</code>, is the only one that touches them; above it, each feature's module owns its corner of the layout. The security boundaries are types. Text from a request arrives as an <code>UnvalidatedString</code>, which has no way back to a plain <code>Str</code>: each way out runs a check and gives a checked type, such as a <code>Name</code> or a <code>Topic</code>. Markup reaches a page only as <code>TrustedHtml</code>, whose one way in is called <code>dangerously_trust</code> so that every caller stands out. And whatever only a signed-in user may do asks for a <code>SignedIn</code>, which only a checked session or agent key can make. So an unescaped string in a page, or a post from someone unchecked, is a type error rather than a bug for a reviewer to catch.</p>
+    <pre class="roc"><span class="t">check</span> : {
+    acting : <span class="t">SignedIn</span>,
+    place : <span class="t">Place</span>,
+    directory : <span class="t">Directory</span>,
+    act : <span class="t">Access</span>.<span class="t">Act</span>,
+} -> <span class="t">Try</span>({}, [NotAMember, ScopeOff])</pre>
+    <p class="caption">From <code>app/Access.roc</code>: who may post in a conversation, asked of a <code>SignedIn</code>, never of a bare user.</p>
+    <p class="opening">Most modules are pure and small, each with one job, and the effects sit at the edges, in the route, file and stream modules. Each module's <code>expect</code>s sit beside its code, the longer ones in spec modules that read like a specification, and the demo conversation's page is held byte for byte to a frozen copy.</p>
+    <p class="opening"><span class="tag nice">Roc plays nice with others</span>The Roc app runs on a platform of its own, under a Zig host written on Zig's standard library. The host does what Roc leaves to a platform, the sockets, the clock, random bytes and the disk, and it does no routing. It serves plain HTTP on its own machine, behind a proxy. The secrets stay in the host: the Roc asks it to sign a session or to check a signature, and never holds the key. The host also keeps search's index in memory, the one piece of the chat's logic in Zig, as many apps hand search to a component of its own. The rule for every hosted function is that it answers a fact, never a verdict: the host says whether a signature matches, and the Roc decides what that means. Each one's Zig is held to <code>roc glue</code>'s snapshot of the platform at compile time, record field by field and tag by tag, so two swapped fields fail the build. One lock, the turn, is held only while the Roc runs, so the app never sees two requests at once, and bodies are read, answers written and live streams held open outside it. A message is rendered by roc-markdown and its code blocks colored by roc-syntax-color, both Roc packages, both on this page. In the browser, the pages are HTML built in Roc, and JavaScript files send what you type and run the live parts, each carrying its own styles: there is no stylesheet.</p>
+    <div class="links"><a href="https://chat.lynrummy.com/">The live chat</a><a href="https://github.com/showell/roc-chat">The source</a></div>
+  </div>
+  <div class="stats">
+    <div class="stat"><b>about 33,000</b><span>lines of Roc in about 170 modules, and 10,000 more in spec modules</span></div>
+    <div class="stat"><b>about 2,300</b><span>expects</span></div>
+    <div class="stat"><b>29</b><span>hosted functions, each held to <code>roc glue</code>'s layout</span></div>
+    <div class="stat"><b>1</b><span>module that touches files</span></div>
+  </div>
+</section>
+
 <section class="feature" data-app="safari">
   <div>
     <a href="safari/" aria-hidden="true" tabindex="-1"><img class="shot" src="safari/shot.png" alt="" loading="lazy"></a>
@@ -132,7 +157,7 @@ browser, compiled to WebAssembly.</p>
   <div>
     <a href="markdown/" aria-hidden="true" tabindex="-1"><img class="shot drawing" src="shared/markdown.svg" alt="" loading="lazy"></a>
     <h3><a href="markdown/">roc-markdown</a></h3>
-    <p>A finished, complete package, built to a professional standard and in production: a markdown renderer for chat, safe to show whatever a user typed. Each render carries a budget for its work, an ordinary value, so a message built to overload it is refused before it's shown. It renders Gopher Chat on lynrummy.com, and the playground runs it live.</p>
+    <p>A finished, complete package, built to a professional standard and in production: a markdown renderer for chat, safe to show whatever a user typed. Each render carries a budget for its work, an ordinary value, so a message built to overload it is refused before it's shown. It renders every message in roc-chat at chat.lynrummy.com, and the playground runs it live.</p>
     <p class="opening"><span class="tag">Roc at work</span>In Roc only a platform can perform effects, and a package has none, so a renderer fed hostile input can't touch the disk or the network. The same pure functions render chat on a server and, compiled to WebAssembly, in your browser as you type.</p>
     <p class="opening"><span class="tag nice">Roc plays nice with others</span>roc-markdown began as a port of the chat's original renderer, which was written in Zig. In the playground, a small Zig host and a little JavaScript call the same Roc functions that the chat server runs.</p>
     <div class="links"><a href="markdown/">The playground</a><a href="https://github.com/showell/roc-markdown">The package</a></div>
