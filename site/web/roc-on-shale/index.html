@@ -232,6 +232,10 @@ computation.</p>
 <li><a href="#check_name_types">check_name_types</a></li>
 <li><a href="#find_bare_floats">find_bare_floats</a></li>
 </ul></li>
+<li><a href="#section-programs-that-read-shale-itself">Programs that read Shale itself</a>
+<ul>
+<li><a href="#count_shale_stops">count_shale_stops</a></li>
+</ul></li>
 <li><a href="#section-reports-on-roc-projects">Reports on Roc projects</a>
 <ul>
 <li><a href="#count_roc">count_roc</a></li>
@@ -6122,7 +6126,7 @@ use(<span class="syn-string">&quot;./gate_recipe.shale&quot;</span>)
 <nav class="steps"><a href="#check_vocabulary">← previous</a> · <a href="#contents">contents</a> · <a href="#find_bare_floats">next →</a></nav>
 </section>
 <section class="example" id="find_bare_floats">
-<nav class="steps"><a href="#check_name_types">← previous</a> · <a href="#contents">contents</a> · <a href="#count_roc">next →</a></nav>
+<nav class="steps"><a href="#check_name_types">← previous</a> · <a href="#contents">contents</a> · <a href="#count_shale_stops">next →</a></nav>
 <h3><a href="#find_bare_floats">find_bare_floats</a></h3>
 <p>Every bare <code>F64</code> in a project's declarations, read from Roc's own parse trees and judged against the project's table of named exceptions, sparing the helpers only tests use, a gate with its plants' self-test in Roc too.</p>
 <p class="facts">Its effects: <code>Shale.arg!</code>, <code>Shale.exists!</code>, <code>Shale.fail!</code>, <code>Shale.glob!</code>, <code>Shale.print!</code>, <code>Shale.re_find!</code>, <code>Shale.re_lines!</code>, <code>Shale.read!</code>, <code>Shale.roc_tree!</code>, <code>Shale.run!</code>.<br>Roc: 815 lines in 5 files. Shale original: 300 lines, plus 1,232 lines in the 4 libraries it loads, which other recipes share.</p>
@@ -7257,14 +7261,1326 @@ use(<span class="syn-string">&quot;./gate_recipe.shale&quot;</span>)
   <span class="syn-keyword">if</span> #verdict.found &gt; <span class="syn-number">0</span> <span class="syn-keyword">then</span> fail(verdict.summary) <span class="syn-keyword">end</span>
 <span class="syn-keyword">end</span>
 </code></pre>
-<nav class="steps"><a href="#check_name_types">← previous</a> · <a href="#contents">contents</a> · <a href="#count_roc">next →</a></nav>
+<nav class="steps"><a href="#check_name_types">← previous</a> · <a href="#contents">contents</a> · <a href="#count_shale_stops">next →</a></nav>
+</section>
+</div>
+<div class="group">
+<h2 class="part" id="section-programs-that-read-shale-itself"><a href="#section-programs-that-read-shale-itself">Programs that read Shale itself</a></h2>
+<p class="part-intro">Programs that work on Shale itself, such as a count of how an agent's Shale launches ended, read from a Claude Code transcript.</p>
+<section class="example" id="count_shale_stops">
+<nav class="steps"><a href="#find_bare_floats">← previous</a> · <a href="#contents">contents</a> · <a href="#count_roc">next →</a></nav>
+<h3><a href="#count_shale_stops">count_shale_stops</a></h3>
+<p>How an agent's Shale launches went, from a Claude Code transcript: each Bash call paired with its answer, every line's JSON read in Roc as Shale's own json_read reads it, and the stops grouped by kind and by message.</p>
+<p class="facts">Its effects: <code>Shale.arg!</code>, <code>Shale.fail!</code>, <code>Shale.grep_all!</code>, <code>Shale.print!</code>, <code>Shale.re_find!</code>, <code>Shale.re_find_all!</code>, <code>Shale.re_match!</code>, <code>Shale.re_replace!</code>.<br>Roc: 1,123 lines in 5 files. Shale original: 164 lines.</p>
+<h4>Roc</h4>
+<p class="file"><a href="https://github.com/showell/shale/blob/cdb248142fb8c73f2e58a1bb8dc8303cd2b6d638/cookbook/count_shale_stops/count_shale_stops.roc"><code>cookbook/count_shale_stops/count_shale_stops.roc</code></a>, 319 lines</p>
+<pre><code><span class="syn-comment">## count_shale_stops, in Roc on Shale&#39;s platform (roc_platform/README.md):</span>
+<span class="syn-comment">## how an agent&#39;s Shale launches went, from a Claude Code transcript. Each</span>
+<span class="syn-comment">## Bash call&#39;s command is paired with the answer it got by the call&#39;s id. A</span>
+<span class="syn-comment">## launch is a heredoc (`shale &lt;&lt;&#39;TAG&#39;`) or a script (`shale path.shale`),</span>
+<span class="syn-comment">## and each ends one of four ways: it ran, Shale stopped it (`── stopped</span>
+<span class="syn-comment">## at`), the gate refused the call before Shale saw it, or the harness</span>
+<span class="syn-comment">## denied it. A stop by the script&#39;s own `fail` is a check&#39;s verdict,</span>
+<span class="syn-comment">## counted apart; Shale&#39;s other stops are grouped by kind and by message,</span>
+<span class="syn-comment">## quoted values blanked, so one mistake made twice counts as one line. The</span>
+<span class="syn-comment">## calls the heredocs make and the programs they `run` are counted too.</span>
+<span class="syn-comment">##</span>
+<span class="syn-comment">## Its launcher, cookbook/count_shale_stops.shale, is how it is run, and</span>
+<span class="syn-comment">## names the newest transcript when no `transcript=` is given:</span>
+<span class="syn-comment">##</span>
+<span class="syn-comment">##   shale cookbook:count_shale_stops.shale since=2026-11-14T19:50</span>
+<span class="syn-comment">##</span>
+<span class="syn-comment">## The arguments: `transcript` (a Shale path), `since` (an ISO time; only</span>
+<span class="syn-comment">## the lines from then on count) and `most` (how many lines each list</span>
+<span class="syn-comment">## shows, 20).</span>
+<span class="syn-comment">##</span>
+<span class="syn-comment">## The effects: `Shale.arg!` for the arguments, `Shale.grep_all!` for the</span>
+<span class="syn-comment">## transcript&#39;s lines that can hold a call or an answer (any size of file),</span>
+<span class="syn-comment">## `Shale.re_match!`, `Shale.re_find!`, `Shale.re_find_all!` and</span>
+<span class="syn-comment">## `Shale.re_replace!` for the Shale original&#39;s own patterns, and</span>
+<span class="syn-comment">## `Shale.print!` and `Shale.fail!` for the report. ShaleJson, beside this,</span>
+<span class="syn-comment">## reads a line as Shale&#39;s json_read does, its strings by JsonString;</span>
+<span class="syn-comment">## Transcript reads the fields; Tally counts and prints the tables.</span>
+<span class="syn-comment">## budget: steps=900000000 reads=50000 read_bytes=3000000000 arena_bytes=3000000000 roc_cpu_ms=60000</span>
+<span class="syn-keyword">app</span> [main!] { pf: <span class="syn-keyword">platform</span> <span class="syn-string">&quot;../../roc_platform/platform/main.roc&quot;</span> }
+
+<span class="syn-keyword">import</span> pf.<span class="syn-type">Shale</span>
+<span class="syn-keyword">import</span> <span class="syn-type">ShaleJson</span>
+<span class="syn-keyword">import</span> <span class="syn-type">Tally</span>
+<span class="syn-keyword">import</span> <span class="syn-type">Transcript</span>
+
+<span class="syn-comment">## A launch&#39;s kind, and how the report names it.</span>
+<span class="syn-type">Launch</span> : [<span class="syn-type">Heredoc</span>, <span class="syn-type">Script</span>]
+
+<span class="syn-comment">## A part of a message, and the transcript line it is on.</span>
+<span class="syn-type">Part</span> : { part : <span class="syn-type">ShaleJson</span>, line_number : <span class="syn-type">U64</span> }
+
+<span class="syn-comment">## What the run was asked: the transcript, from when, and how many lines</span>
+<span class="syn-comment">## each list shows.</span>
+<span class="syn-type">Asked</span> : {
+	path : <span class="syn-type">Str</span>,
+	since : <span class="syn-type">Str</span>,
+	most : <span class="syn-type">I64</span>,
+}
+
+<span class="syn-comment">## What the run has counted so far.</span>
+<span class="syn-type">Counts</span> : {
+	calls : <span class="syn-type">Dict</span>(<span class="syn-type">Str</span>, <span class="syn-type">Launch</span>),
+	heredocs : <span class="syn-type">U64</span>,
+	scripts : <span class="syn-type">U64</span>,
+	ends : <span class="syn-type">Dict</span>(<span class="syn-type">Str</span>, <span class="syn-type">U64</span>),
+	stop_kinds : <span class="syn-type">Dict</span>(<span class="syn-type">Str</span>, <span class="syn-type">U64</span>),
+	stop_lines : <span class="syn-type">Dict</span>(<span class="syn-type">Str</span>, <span class="syn-type">U64</span>),
+	builtins : <span class="syn-type">Dict</span>(<span class="syn-type">Str</span>, <span class="syn-type">U64</span>),
+	programs : <span class="syn-type">Dict</span>(<span class="syn-type">Str</span>, <span class="syn-type">U64</span>),
+}
+
+<span class="syn-name">main!</span> : {} =&gt; {}
+<span class="syn-name">main!</span> = |{}| {
+	path = <span class="syn-type">Shale</span>.arg!(<span class="syn-string">&quot;transcript&quot;</span>, <span class="syn-string">&quot;&quot;</span>)
+	<span class="syn-keyword">if</span> path == <span class="syn-string">&quot;&quot;</span> {
+		launcher = <span class="syn-string">&quot;the launcher names the newest under projects:&quot;</span>
+		<span class="syn-type">Shale</span>.fail!(<span class="syn-string">&quot;count_shale_stops: no transcript= given (</span>${launcher}<span class="syn-string">)&quot;</span>)
+	}
+	since = <span class="syn-type">Shale</span>.arg!(<span class="syn-string">&quot;since&quot;</span>, <span class="syn-string">&quot;&quot;</span>)
+	most = read_most!({})
+	counts = count_transcript!(path, since)
+	print_report!(counts, { path, since, most })
+}
+
+<span class="syn-comment">## The `most=` count: 20 unless given, and any integer.</span>
+<span class="syn-name">read_most!</span> : {} =&gt; <span class="syn-type">I64</span>
+<span class="syn-name">read_most!</span> = |{}| {
+	given = <span class="syn-type">Shale</span>.arg!(<span class="syn-string">&quot;most&quot;</span>, <span class="syn-string">&quot;20&quot;</span>)
+	<span class="syn-keyword">match</span> <span class="syn-type">I64</span>.from_str(given) {
+		<span class="syn-type">Ok</span>(most) =&gt; most
+		<span class="syn-type">Err</span>(_) =&gt; {
+			<span class="syn-type">Shale</span>.fail!(<span class="syn-string">&quot;count_shale_stops: most=</span>${given}<span class="syn-string"> is not an integer&quot;</span>)
+			<span class="syn-number">0</span>
+		}
+	}
+}
+
+<span class="syn-comment"># ── The count</span>
+
+<span class="syn-comment">## Every line that can hold a Bash call or an answer, read in order. A</span>
+<span class="syn-comment">## line holding neither literal is never read as JSON, as the Shale</span>
+<span class="syn-comment">## original read none.</span>
+<span class="syn-name">count_transcript!</span> : <span class="syn-type">Str</span>, <span class="syn-type">Str</span> =&gt; <span class="syn-type">Counts</span>
+<span class="syn-name">count_transcript!</span> = |path, since| {
+	<span class="syn-keyword">var</span> $counts = {
+		calls: <span class="syn-type">Dict</span>.empty(),
+		heredocs: <span class="syn-number">0</span>,
+		scripts: <span class="syn-number">0</span>,
+		ends: <span class="syn-type">Tally</span>.empty,
+		stop_kinds: <span class="syn-type">Tally</span>.empty,
+		stop_lines: <span class="syn-type">Tally</span>.empty,
+		builtins: <span class="syn-type">Tally</span>.empty,
+		programs: <span class="syn-type">Tally</span>.empty,
+	}
+	<span class="syn-keyword">for</span> hit <span class="syn-keyword">in</span> <span class="syn-type">Shale</span>.grep_all!(path, <span class="syn-string">&quot;\&quot;tool_&quot;</span>) {
+		line = hit.text
+		is_call = line.contains(<span class="syn-string">&quot;\&quot;tool_use\&quot;&quot;</span>) <span class="syn-keyword">and</span> line.contains(<span class="syn-string">&quot;\&quot;Bash\&quot;&quot;</span>)
+		is_answer = line.contains(<span class="syn-string">&quot;\&quot;tool_result\&quot;&quot;</span>)
+		<span class="syn-keyword">if</span> is_call <span class="syn-keyword">or</span> is_answer {
+			value = get_or_stop!(<span class="syn-type">ShaleJson</span>.read(line), hit.line)
+			parts = get_or_stop!(<span class="syn-type">Transcript</span>.recent_parts(value, since), hit.line)
+			<span class="syn-keyword">for</span> part <span class="syn-keyword">in</span> parts {
+				$counts = count_part!($counts, { part, line_number: hit.line })
+			}
+		}
+	}
+	$counts
+}
+
+<span class="syn-comment">## One part of a message counted: a launch and what its heredoc calls, or</span>
+<span class="syn-comment">## the answer to a launch and how it ended.</span>
+<span class="syn-name">count_part!</span> : <span class="syn-type">Counts</span>, <span class="syn-type">Part</span> =&gt; <span class="syn-type">Counts</span>
+<span class="syn-name">count_part!</span> = |counts, { part, line_number }|
+	<span class="syn-keyword">match</span> get_or_stop!(<span class="syn-type">Transcript</span>.part_kind(part), line_number) {
+		<span class="syn-type">ShellCall</span>(command) =&gt;
+			<span class="syn-keyword">match</span> find_launch_kind!(command) {
+				<span class="syn-type">Ok</span>(launch) =&gt; {
+					id = get_or_stop!(<span class="syn-type">Transcript</span>.call_id(part), line_number)
+					counted = { ..counts, calls: counts.calls.insert(id, launch) }
+					<span class="syn-keyword">match</span> launch {
+						<span class="syn-type">Heredoc</span> =&gt; {
+							with_heredoc = { ..counted, heredocs: counted.heredocs + <span class="syn-number">1</span> }
+							count_heredoc!(with_heredoc, command)
+						}
+						<span class="syn-type">Script</span> =&gt; { ..counted, scripts: counted.scripts + <span class="syn-number">1</span> }
+					}
+				}
+				<span class="syn-type">Err</span>(<span class="syn-type">NoLaunch</span>) =&gt; counts
+			}
+		<span class="syn-type">Answer</span>(id) =&gt;
+			<span class="syn-keyword">match</span> counts.calls.get(id) {
+				<span class="syn-type">Ok</span>(launch) =&gt; count_end!(counts, { launch, part, line_number })
+				<span class="syn-type">Err</span>(_) =&gt; counts
+			}
+		<span class="syn-type">Neither</span> =&gt; counts
+	}
+
+<span class="syn-comment">## A command&#39;s launch: a heredoc, a script, or no launch.</span>
+<span class="syn-name">find_launch_kind!</span> : <span class="syn-type">Str</span> =&gt; <span class="syn-type">Try</span>(<span class="syn-type">Launch</span>, [<span class="syn-type">NoLaunch</span>])
+<span class="syn-name">find_launch_kind!</span> = |command|
+	<span class="syn-keyword">if</span> !(command.contains(<span class="syn-string">&quot;shale&quot;</span>)) {
+		<span class="syn-type">Err</span>(<span class="syn-type">NoLaunch</span>)
+	} <span class="syn-keyword">else</span> <span class="syn-keyword">if</span> <span class="syn-type">Shale</span>.re_match!(command, <span class="syn-string">&quot;shale[^\\n]*&lt;&lt;&#39;[A-Za-z]+&#39;&quot;</span>) {
+		<span class="syn-type">Ok</span>(<span class="syn-type">Heredoc</span>)
+	} <span class="syn-keyword">else</span> <span class="syn-keyword">if</span> <span class="syn-type">Shale</span>.re_match!(command, <span class="syn-string">&quot;shale[^\\n]*\\.shale&quot;</span>) {
+		<span class="syn-type">Ok</span>(<span class="syn-type">Script</span>)
+	} <span class="syn-keyword">else</span> {
+		<span class="syn-type">Err</span>(<span class="syn-type">NoLaunch</span>)
+	}
+
+<span class="syn-comment">## A heredoc&#39;s calls (`name(`) and the programs it runs (`run({&quot;name&quot;`).</span>
+<span class="syn-name">count_heredoc!</span> : <span class="syn-type">Counts</span>, <span class="syn-type">Str</span> =&gt; <span class="syn-type">Counts</span>
+<span class="syn-name">count_heredoc!</span> = |counts, command| {
+	called = <span class="syn-type">Shale</span>.re_find_all!(command, <span class="syn-string">&quot;([a-z_][a-z0-9_]*)\\(&quot;</span>).map(first_group)
+	ran = <span class="syn-type">Shale</span>.re_find_all!(command, <span class="syn-string">&quot;run\\(\\{\&quot;([^\&quot;]+)\&quot;&quot;</span>).map(first_group)
+	{
+		..counts,
+		builtins: called.fold(counts.builtins, <span class="syn-type">Tally</span>.bump),
+		programs: ran.fold(counts.programs, <span class="syn-type">Tally</span>.bump),
+	}
+}
+
+<span class="syn-comment">## A match of one of Shale&#39;s patterns, as `Shale.re_find_all!` gives it.</span>
+<span class="syn-type">Match</span> : {
+	at : <span class="syn-type">U64</span>,
+	text : <span class="syn-type">Str</span>,
+	groups : <span class="syn-type">List</span>(<span class="syn-type">Str</span>),
+}
+
+<span class="syn-name">first_group</span> : <span class="syn-type">Match</span> -&gt; <span class="syn-type">Str</span>
+<span class="syn-name">first_group</span> = |found|
+	<span class="syn-keyword">match</span> found.groups.first() {
+		<span class="syn-type">Ok</span>(group) =&gt; group
+		<span class="syn-type">Err</span>(_) =&gt; <span class="syn-keyword">crash</span> <span class="syn-string">&quot;count_shale_stops: a pattern with a group matched without one&quot;</span>
+	}
+
+<span class="syn-comment">## How the launch an answer answers ended, by the answer&#39;s text.</span>
+<span class="syn-comment">## An answer to a launch: the launch, the answer&#39;s part, and its line.</span>
+<span class="syn-type">Answered</span> : {
+	launch : <span class="syn-type">Launch</span>,
+	part : <span class="syn-type">ShaleJson</span>,
+	line_number : <span class="syn-type">U64</span>,
+}
+
+<span class="syn-name">count_end!</span> : <span class="syn-type">Counts</span>, <span class="syn-type">Answered</span> =&gt; <span class="syn-type">Counts</span>
+<span class="syn-name">count_end!</span> = |counts, { launch, part, line_number }| {
+	text = get_or_stop!(<span class="syn-type">Transcript</span>.answer_text(part), line_number)
+	kind = <span class="syn-keyword">match</span> launch {
+		<span class="syn-type">Heredoc</span> =&gt; <span class="syn-string">&quot;heredoc&quot;</span>
+		<span class="syn-type">Script</span> =&gt; <span class="syn-string">&quot;script&quot;</span>
+	}
+	<span class="syn-keyword">match</span> stop_key!(text) {
+		<span class="syn-type">Ok</span>(said) <span class="syn-keyword">if</span> said.starts_with(<span class="syn-string">&quot;fail:&quot;</span>) =&gt; {
+			verdict = <span class="syn-string">&quot;stopped by its own `fail` (a check&#39;s verdict)&quot;</span>
+			{ ..counts, ends: <span class="syn-type">Tally</span>.bump(counts.ends, <span class="syn-string">&quot;</span>${kind}<span class="syn-string">, </span>${verdict}<span class="syn-string">&quot;</span>) }
+		}
+		<span class="syn-type">Ok</span>(said) =&gt; {
+			stop_kind =
+				<span class="syn-keyword">match</span> said.split_first(<span class="syn-string">&quot;:&quot;</span>) {
+					<span class="syn-type">Ok</span>({ before, .. }) =&gt; before
+					<span class="syn-type">Err</span>(_) =&gt; said
+				}
+			{
+				..counts,
+				ends: <span class="syn-type">Tally</span>.bump(counts.ends, <span class="syn-string">&quot;</span>${kind}<span class="syn-string">, stopped by Shale&quot;</span>),
+				stop_kinds: <span class="syn-type">Tally</span>.bump(counts.stop_kinds, stop_kind),
+				stop_lines: <span class="syn-type">Tally</span>.bump(counts.stop_lines, said),
+			}
+		}
+		<span class="syn-type">Err</span>(<span class="syn-type">NoStop</span>) =&gt; {
+			ended =
+				<span class="syn-keyword">if</span> text.contains(<span class="syn-string">&quot;shale-gate:&quot;</span>) {
+					<span class="syn-string">&quot;refused by the gate&quot;</span>
+				} <span class="syn-keyword">else</span> <span class="syn-keyword">if</span> get_or_stop!(<span class="syn-type">Transcript</span>.error_flag(part), line_number) {
+					<span class="syn-keyword">if</span> text.contains(<span class="syn-string">&quot;denied&quot;</span>) {
+						<span class="syn-string">&quot;denied by the harness&quot;</span>
+					} <span class="syn-keyword">else</span> {
+						<span class="syn-string">&quot;nonzero exit, no stop line&quot;</span>
+					}
+				} <span class="syn-keyword">else</span> {
+					<span class="syn-string">&quot;ran&quot;</span>
+				}
+			{ ..counts, ends: <span class="syn-type">Tally</span>.bump(counts.ends, <span class="syn-string">&quot;</span>${kind}<span class="syn-string">, </span>${ended}<span class="syn-string">&quot;</span>) }
+		}
+	}
+}
+
+<span class="syn-comment">## A stop&#39;s line, with quoted values blanked, for grouping: what it says</span>
+<span class="syn-comment">## after its place, cut before its first ` (`, at most 110 bytes and `…`.</span>
+<span class="syn-name">stop_key!</span> : <span class="syn-type">Str</span> =&gt; <span class="syn-type">Try</span>(<span class="syn-type">Str</span>, [<span class="syn-type">NoStop</span>])
+<span class="syn-name">stop_key!</span> = |text|
+	<span class="syn-keyword">match</span> <span class="syn-type">Shale</span>.re_find!(text, <span class="syn-string">&quot;── stopped at [^:]+:[0-9]+:[0-9]+[^:]*: ([^\\n]*)&quot;</span>) {
+		<span class="syn-type">Found</span>(found) =&gt; {
+			said = first_group(found)
+			uncut =
+				<span class="syn-keyword">match</span> said.split_first(<span class="syn-string">&quot; (&quot;</span>) {
+					<span class="syn-type">Ok</span>({ before, .. }) =&gt; before
+					<span class="syn-type">Err</span>(_) =&gt; said
+				}
+			blanked = <span class="syn-type">Shale</span>.re_replace!(uncut, <span class="syn-string">&quot;\&quot;[^\&quot;]*\&quot;&quot;</span>, <span class="syn-string">&quot;\&quot;…\&quot;&quot;</span>)
+			<span class="syn-type">Ok</span>(cut_to_bytes(blanked, <span class="syn-number">110</span>))
+		}
+		<span class="syn-type">NoMatch</span> =&gt; <span class="syn-type">Err</span>(<span class="syn-type">NoStop</span>)
+	}
+
+<span class="syn-comment">## The text cut to `most` bytes and `…` when it is longer. A cut inside a</span>
+<span class="syn-comment">## character goes back to the character&#39;s start: the Shale original cut</span>
+<span class="syn-comment">## the bytes, which a Roc `Str` cannot hold.</span>
+<span class="syn-name">cut_to_bytes</span> : <span class="syn-type">Str</span>, <span class="syn-type">U64</span> -&gt; <span class="syn-type">Str</span>
+<span class="syn-name">cut_to_bytes</span> = |text, most| {
+	bytes = text.to_utf8()
+	<span class="syn-keyword">if</span> bytes.len() &lt;= most {
+		text
+	} <span class="syn-keyword">else</span> {
+		cut = <span class="syn-type">List</span>.from_iter(<span class="syn-type">U64</span>.until(<span class="syn-number">0</span>, <span class="syn-number">4</span>)).find_first(
+			|back| <span class="syn-type">Str</span>.from_utf8(bytes.take_first(most - back)).is_ok(),
+		)
+		kept =
+			<span class="syn-keyword">match</span> cut {
+				<span class="syn-type">Ok</span>(back) =&gt; <span class="syn-type">Str</span>.from_utf8_lossy(bytes.take_first(most - back))
+				<span class="syn-type">Err</span>(_) =&gt; <span class="syn-keyword">crash</span> <span class="syn-string">&quot;count_shale_stops: no character starts within 4 bytes&quot;</span>
+			}
+		<span class="syn-string">&quot;</span>${kept}<span class="syn-string">…&quot;</span>
+	}
+}
+
+<span class="syn-comment">## The value, or the run stopped naming the transcript line that gave the</span>
+<span class="syn-comment">## problem.</span>
+<span class="syn-name">get_or_stop!</span> : <span class="syn-type">Try</span>(a, <span class="syn-type">Str</span>), <span class="syn-type">U64</span> =&gt; a
+<span class="syn-name">get_or_stop!</span> = |got, line_number|
+	<span class="syn-keyword">match</span> got {
+		<span class="syn-type">Ok</span>(value) =&gt; value
+		<span class="syn-type">Err</span>(why) =&gt; {
+			<span class="syn-type">Shale</span>.fail!(<span class="syn-string">&quot;count_shale_stops: line </span>${line_number.to_str()}<span class="syn-string">: </span>${why}<span class="syn-string">&quot;</span>)
+			<span class="syn-keyword">crash</span> <span class="syn-string">&quot;count_shale_stops: Shale.fail! returned&quot;</span>
+		}
+	}
+
+<span class="syn-comment"># ── The report</span>
+
+<span class="syn-comment">## The transcript, the launches, how they ended, Shale&#39;s stops by kind and</span>
+<span class="syn-comment">## by message, and the heredocs&#39; calls and programs, as the Shale original</span>
+<span class="syn-comment">## printed them.</span>
+<span class="syn-name">print_report!</span> : <span class="syn-type">Counts</span>, <span class="syn-type">Asked</span> =&gt; {}
+<span class="syn-name">print_report!</span> = |counts, { path, since, most }| {
+	since_note = <span class="syn-keyword">if</span> since == <span class="syn-string">&quot;&quot;</span> {
+		<span class="syn-string">&quot;&quot;</span>
+	} <span class="syn-keyword">else</span> {
+		<span class="syn-string">&quot;, since </span>${since}<span class="syn-string">&quot;</span>
+	}
+	heredocs = <span class="syn-string">&quot;</span>${counts.heredocs.to_str()}<span class="syn-string"> heredocs&quot;</span>
+	launches = <span class="syn-string">&quot;</span>${heredocs}<span class="syn-string">, </span>${counts.scripts.to_str()}<span class="syn-string"> script launches&quot;</span>
+	<span class="syn-type">Shale</span>.print!(path)
+	<span class="syn-type">Shale</span>.print!(<span class="syn-string">&quot;</span>${launches}${since_note}<span class="syn-string">&quot;</span>)
+	sections = [
+		(<span class="syn-string">&quot;&quot;</span>, counts.ends),
+		(<span class="syn-string">&quot;Shale&#39;s stops, by kind (a script&#39;s own `fail` left out):&quot;</span>, counts.stop_kinds),
+		(<span class="syn-string">&quot;Shale&#39;s stops, by message:&quot;</span>, counts.stop_lines),
+		(<span class="syn-string">&quot;calls in heredocs (builtins and the script&#39;s own functions):&quot;</span>, counts.builtins),
+		(<span class="syn-string">&quot;programs heredocs run:&quot;</span>, counts.programs),
+	]
+	<span class="syn-keyword">for</span> (heading, tally) <span class="syn-keyword">in</span> sections {
+		<span class="syn-type">Shale</span>.print!(<span class="syn-string">&quot;&quot;</span>)
+		<span class="syn-keyword">if</span> heading != <span class="syn-string">&quot;&quot;</span> {
+			<span class="syn-type">Shale</span>.print!(heading)
+		}
+		<span class="syn-type">Shale</span>.print!(<span class="syn-type">Tally</span>.ranked_table(tally, most))
+	}
+}
+</code></pre>
+<p class="file"><a href="https://github.com/showell/shale/blob/cdb248142fb8c73f2e58a1bb8dc8303cd2b6d638/cookbook/count_shale_stops/ShaleJson.roc"><code>cookbook/count_shale_stops/ShaleJson.roc</code></a>, 315 lines</p>
+<pre><code><span class="syn-comment">## ShaleJson is one JSON text read as Shale&#39;s json_read reads it</span>
+<span class="syn-comment">## (c/host/host_json.c), so a transcript line the Shale original read is</span>
+<span class="syn-comment">## read the same here, and a line it refused is refused here, in its words.</span>
+<span class="syn-comment">##</span>
+<span class="syn-comment">## Where Shale&#39;s values are not JSON&#39;s, it does as Shale does: a number</span>
+<span class="syn-comment">## with a fraction or an exponent is kept as its text; an integer past 64</span>
+<span class="syn-comment">## bits, a `null` in an array, a key twice in one object and a text nested</span>
+<span class="syn-comment">## past 64 levels are refused; a member that is `null` is left out of its</span>
+<span class="syn-comment">## object. `{}` and `[]` are both Shale&#39;s empty table, so `is_empty_table`</span>
+<span class="syn-comment">## says which values are one. A refusal is json_read&#39;s own sentence with</span>
+<span class="syn-comment">## its byte, line and column.</span>
+<span class="syn-comment">##</span>
+<span class="syn-comment">## Roc&#39;s builtin Json at the pin decodes into a record of known fields, and</span>
+<span class="syn-comment">## refuses none of what Shale refuses, so this reader is written out, held</span>
+<span class="syn-comment">## to what count_shale_stops reads: one value a line, decoded whole. Its</span>
+<span class="syn-comment">## strings are JsonString&#39;s.</span>
+<span class="syn-keyword">import</span> <span class="syn-type">JsonString</span>
+
+<span class="syn-type">ShaleJson</span> := [
+	<span class="syn-type">Object</span>(<span class="syn-type">List</span>((<span class="syn-type">Str</span>, <span class="syn-type">ShaleJson</span>))),
+	<span class="syn-type">Array</span>(<span class="syn-type">List</span>(<span class="syn-type">ShaleJson</span>)),
+	<span class="syn-type">Text</span>(<span class="syn-type">Str</span>),
+	<span class="syn-type">Integer</span>(<span class="syn-type">I64</span>),
+	<span class="syn-type">Boolean</span>(<span class="syn-type">Bool</span>),
+	<span class="syn-type">NoValue</span>,
+].{
+
+	<span class="syn-comment">## The text&#39;s one value, or why json_read refuses it. `NoValue` is a</span>
+	<span class="syn-comment">## text that is `null`; inside a value, a `null` is left out or refused.</span>
+	<span class="syn-name">read</span> : <span class="syn-type">Str</span> -&gt; <span class="syn-type">Try</span>(<span class="syn-type">ShaleJson</span>, <span class="syn-type">Str</span>)
+	<span class="syn-name">read</span> = |text| {
+		bytes = text.to_utf8()
+		<span class="syn-keyword">match</span> value_at(bytes, { at: <span class="syn-number">0</span>, depth_left: <span class="syn-number">64</span> }) {
+			<span class="syn-type">Ok</span>(got) =&gt; ends_after(bytes, got).map_err(|problem| refusal(bytes, problem))
+			<span class="syn-type">Err</span>(problem) =&gt; <span class="syn-type">Err</span>(refusal(bytes, problem))
+		}
+	}
+
+	<span class="syn-comment">## Whether Shale holds the value as its empty table: `{}` or `[]`.</span>
+	<span class="syn-name">is_empty_table</span> : <span class="syn-type">ShaleJson</span> -&gt; <span class="syn-type">Bool</span>
+	<span class="syn-name">is_empty_table</span> = |value|
+		<span class="syn-keyword">match</span> value {
+			<span class="syn-type">Object</span>(members) =&gt; members.is_empty()
+			<span class="syn-type">Array</span>(items) =&gt; items.is_empty()
+			_ =&gt; <span class="syn-type">False</span>
+		}
+}
+
+<span class="syn-comment">## A value read, and the byte after it.</span>
+<span class="syn-type">Read</span> : { decoded : <span class="syn-type">ShaleJson</span>, next : <span class="syn-type">U64</span> }
+
+<span class="syn-comment">## Where a value starts, and how much deeper the text may nest.</span>
+<span class="syn-type">Place</span> : { at : <span class="syn-type">U64</span>, depth_left : <span class="syn-type">U64</span> }
+
+<span class="syn-comment">## Why the text is refused, and the byte where it went wrong.</span>
+<span class="syn-type">Problem</span> : <span class="syn-type">JsonString.Problem</span>
+
+<span class="syn-comment">## The value, when nothing but space comes after it.</span>
+<span class="syn-name">ends_after</span> : <span class="syn-type">List</span>(<span class="syn-type">U8</span>), <span class="syn-type">Read</span> -&gt; <span class="syn-type">Try</span>(<span class="syn-type">ShaleJson</span>, <span class="syn-type">Problem</span>)
+<span class="syn-name">ends_after</span> = |bytes, got| {
+	after = skip_space(bytes, got.next)
+	<span class="syn-keyword">if</span> after &lt; bytes.len() {
+		<span class="syn-type">Err</span>({ at: after, said: <span class="syn-string">&quot;more after the value: one text is one value&quot;</span> })
+	} <span class="syn-keyword">else</span> {
+		<span class="syn-type">Ok</span>(got.decoded)
+	}
+}
+
+<span class="syn-comment">## The value at the place, after any space before it.</span>
+<span class="syn-name">value_at</span> : <span class="syn-type">List</span>(<span class="syn-type">U8</span>), <span class="syn-type">Place</span> -&gt; <span class="syn-type">Try</span>(<span class="syn-type">Read</span>, <span class="syn-type">Problem</span>)
+<span class="syn-name">value_at</span> = |bytes, place| {
+	at = skip_space(bytes, place.at)
+	<span class="syn-keyword">match</span> bytes.get(at) {
+		<span class="syn-type">Err</span>(_) =&gt; <span class="syn-type">Err</span>({ at, said: <span class="syn-string">&quot;a value was expected and the text ended&quot;</span> })
+		<span class="syn-type">Ok</span>(<span class="syn-string">&#39;{&#39;</span>) =&gt; object_at(bytes, { at, depth_left: place.depth_left })
+		<span class="syn-type">Ok</span>(<span class="syn-string">&#39;[&#39;</span>) =&gt; array_at(bytes, { at, depth_left: place.depth_left })
+		<span class="syn-type">Ok</span>(<span class="syn-string">&#39;&quot;&#39;</span>) =&gt; {
+			got = <span class="syn-type">JsonString</span>.read_at(bytes, at)?
+			<span class="syn-type">Ok</span>({ decoded: <span class="syn-type">ShaleJson.Text</span>(got.text), next: got.next })
+		}
+		<span class="syn-type">Ok</span>(<span class="syn-string">&#39;t&#39;</span>) | <span class="syn-type">Ok</span>(<span class="syn-string">&#39;f&#39;</span>) | <span class="syn-type">Ok</span>(<span class="syn-string">&#39;n&#39;</span>) =&gt; literal_at(bytes, at)
+		<span class="syn-type">Ok</span>(byte) =&gt;
+			<span class="syn-keyword">if</span> byte == <span class="syn-string">&#39;-&#39;</span> <span class="syn-keyword">or</span> is_digit(byte) {
+				number_at(bytes, at)
+			} <span class="syn-keyword">else</span> {
+				unwanted = <span class="syn-string">&quot;</span>${byte_name(byte)}<span class="syn-string"> (0x</span>${<span class="syn-type">JsonString</span>.hex_pair(byte)}<span class="syn-string">)&quot;</span>
+				<span class="syn-type">Err</span>({ at, said: <span class="syn-string">&quot;a value was expected, not </span>${unwanted}<span class="syn-string">&quot;</span> })
+			}
+	}
+}
+
+<span class="syn-comment">## `true`, `false` or `null`, told by its first byte, spelled out whole.</span>
+<span class="syn-name">literal_at</span> : <span class="syn-type">List</span>(<span class="syn-type">U8</span>), <span class="syn-type">U64</span> -&gt; <span class="syn-type">Try</span>(<span class="syn-type">Read</span>, <span class="syn-type">Problem</span>)
+<span class="syn-name">literal_at</span> = |bytes, at| {
+	(word, meaning) =
+		<span class="syn-keyword">match</span> bytes.get(at) {
+			<span class="syn-type">Ok</span>(<span class="syn-string">&#39;t&#39;</span>) =&gt; (<span class="syn-string">&quot;true&quot;</span>, <span class="syn-type">ShaleJson.Boolean</span>(<span class="syn-type">True</span>))
+			<span class="syn-type">Ok</span>(<span class="syn-string">&#39;f&#39;</span>) =&gt; (<span class="syn-string">&quot;false&quot;</span>, <span class="syn-type">ShaleJson.Boolean</span>(<span class="syn-type">False</span>))
+			_ =&gt; (<span class="syn-string">&quot;null&quot;</span>, <span class="syn-type">ShaleJson.NoValue</span>)
+		}
+	spelled = word.to_utf8()
+	<span class="syn-keyword">if</span> bytes.sublist({ start: at, len: spelled.len() }) == spelled {
+		<span class="syn-type">Ok</span>({ decoded: meaning, next: at + spelled.len() })
+	} <span class="syn-keyword">else</span> {
+		<span class="syn-type">Err</span>({ at, said: <span class="syn-string">&quot;`</span>${word}<span class="syn-string">` was expected&quot;</span> })
+	}
+}
+
+<span class="syn-comment">## One level deeper, at the opening bracket, or the refusal past 64.</span>
+<span class="syn-name">deeper</span> : <span class="syn-type">Place</span> -&gt; <span class="syn-type">Try</span>(<span class="syn-type">U64</span>, <span class="syn-type">Problem</span>)
+<span class="syn-name">deeper</span> = |place|
+	<span class="syn-keyword">if</span> place.depth_left == <span class="syn-number">0</span> {
+		<span class="syn-type">Err</span>({ at: place.at, said: <span class="syn-string">&quot;the text nests past its depth budget&quot;</span> })
+	} <span class="syn-keyword">else</span> {
+		<span class="syn-type">Ok</span>(place.depth_left - <span class="syn-number">1</span>)
+	}
+
+<span class="syn-comment">## The object whose `{` is at the place: its members in order, a `null`</span>
+<span class="syn-comment">## one left out, a key twice refused.</span>
+<span class="syn-name">object_at</span> : <span class="syn-type">List</span>(<span class="syn-type">U8</span>), <span class="syn-type">Place</span> -&gt; <span class="syn-type">Try</span>(<span class="syn-type">Read</span>, <span class="syn-type">Problem</span>)
+<span class="syn-name">object_at</span> = |bytes, place| {
+	depth_left = deeper(place)?
+	start = skip_space(bytes, place.at + <span class="syn-number">1</span>)
+	<span class="syn-keyword">if</span> bytes.get(start) == <span class="syn-type">Ok</span>(<span class="syn-string">&#39;}&#39;</span>) {
+		<span class="syn-keyword">return</span> <span class="syn-type">Ok</span>({ decoded: <span class="syn-type">ShaleJson.Object</span>([]), next: start + <span class="syn-number">1</span> })
+	}
+	<span class="syn-keyword">var</span> $members = []
+	<span class="syn-keyword">var</span> $at = start
+	<span class="syn-keyword">while</span> <span class="syn-type">True</span> {
+		key_at = skip_space(bytes, $at)
+		<span class="syn-keyword">if</span> bytes.get(key_at) != <span class="syn-type">Ok</span>(<span class="syn-string">&#39;&quot;&#39;</span>) {
+			<span class="syn-keyword">return</span> <span class="syn-type">Err</span>({ at: key_at, said: <span class="syn-string">&quot;a member&#39;s name, a string, was expected&quot;</span> })
+		}
+		key = <span class="syn-type">JsonString</span>.read_at(bytes, key_at)?
+		colon_at = skip_space(bytes, key.next)
+		<span class="syn-keyword">if</span> bytes.get(colon_at) != <span class="syn-type">Ok</span>(<span class="syn-string">&#39;:&#39;</span>) {
+			<span class="syn-keyword">return</span> <span class="syn-type">Err</span>({ at: colon_at, said: <span class="syn-string">&quot;a colon after a member&#39;s name was expected&quot;</span> })
+		}
+		member = value_at(bytes, { at: colon_at + <span class="syn-number">1</span>, depth_left })?
+		<span class="syn-keyword">if</span> $members.any(|(name, _)| name == key.text) {
+			<span class="syn-keyword">return</span> <span class="syn-type">Err</span>({ at: key_at, said: <span class="syn-string">&quot;the key \&quot;</span>${key.text}<span class="syn-string">\&quot; is in this object twice&quot;</span> })
+		}
+		<span class="syn-keyword">if</span> has_value(member.decoded) {
+			$members = $members.append((key.text, member.decoded))
+		}
+		after = skip_space(bytes, member.next)
+		<span class="syn-keyword">match</span> bytes.get(after) {
+			<span class="syn-type">Err</span>(_) =&gt; <span class="syn-keyword">return</span> <span class="syn-type">Err</span>({ at: after, said: <span class="syn-string">&quot;the text ended inside an object&quot;</span> })
+			<span class="syn-type">Ok</span>(<span class="syn-string">&#39;,&#39;</span>) =&gt; {
+				$at = after + <span class="syn-number">1</span>
+			}
+			<span class="syn-type">Ok</span>(<span class="syn-string">&#39;}&#39;</span>) =&gt; <span class="syn-keyword">return</span> <span class="syn-type">Ok</span>({ decoded: <span class="syn-type">ShaleJson.Object</span>($members), next: after + <span class="syn-number">1</span> })
+			<span class="syn-type">Ok</span>(byte) =&gt; {
+				said = <span class="syn-string">&quot;a comma or `}` was expected, not </span>${byte_name(byte)}<span class="syn-string">&quot;</span>
+				<span class="syn-keyword">return</span> <span class="syn-type">Err</span>({ at: after, said })
+			}
+		}
+	}
+}
+
+<span class="syn-comment">## The array whose `[` is at the place: its items in order, a `null`</span>
+<span class="syn-comment">## refused.</span>
+<span class="syn-name">array_at</span> : <span class="syn-type">List</span>(<span class="syn-type">U8</span>), <span class="syn-type">Place</span> -&gt; <span class="syn-type">Try</span>(<span class="syn-type">Read</span>, <span class="syn-type">Problem</span>)
+<span class="syn-name">array_at</span> = |bytes, place| {
+	depth_left = deeper(place)?
+	start = skip_space(bytes, place.at + <span class="syn-number">1</span>)
+	<span class="syn-keyword">if</span> bytes.get(start) == <span class="syn-type">Ok</span>(<span class="syn-string">&#39;]&#39;</span>) {
+		<span class="syn-keyword">return</span> <span class="syn-type">Ok</span>({ decoded: <span class="syn-type">ShaleJson.Array</span>([]), next: start + <span class="syn-number">1</span> })
+	}
+	<span class="syn-keyword">var</span> $items = []
+	<span class="syn-keyword">var</span> $at = start
+	<span class="syn-keyword">while</span> <span class="syn-type">True</span> {
+		item_at = skip_space(bytes, $at)
+		item = value_at(bytes, { at: item_at, depth_left })?
+		<span class="syn-keyword">if</span> !(has_value(item.decoded)) {
+			cannot_hold = <span class="syn-string">&quot;which a Shale list cannot hold&quot;</span>
+			said = <span class="syn-string">&quot;a null in an array, </span>${cannot_hold}<span class="syn-string">: `{null = v}` names a value to stand for it&quot;</span>
+			<span class="syn-keyword">return</span> <span class="syn-type">Err</span>({ at: item_at, said })
+		}
+		$items = $items.append(item.decoded)
+		after = skip_space(bytes, item.next)
+		<span class="syn-keyword">match</span> bytes.get(after) {
+			<span class="syn-type">Err</span>(_) =&gt; <span class="syn-keyword">return</span> <span class="syn-type">Err</span>({ at: after, said: <span class="syn-string">&quot;the text ended inside an array&quot;</span> })
+			<span class="syn-type">Ok</span>(<span class="syn-string">&#39;,&#39;</span>) =&gt; {
+				$at = after + <span class="syn-number">1</span>
+			}
+			<span class="syn-type">Ok</span>(<span class="syn-string">&#39;]&#39;</span>) =&gt; <span class="syn-keyword">return</span> <span class="syn-type">Ok</span>({ decoded: <span class="syn-type">ShaleJson.Array</span>($items), next: after + <span class="syn-number">1</span> })
+			<span class="syn-type">Ok</span>(byte) =&gt; {
+				said = <span class="syn-string">&quot;a comma or `]` was expected, not </span>${byte_name(byte)}<span class="syn-string">&quot;</span>
+				<span class="syn-keyword">return</span> <span class="syn-type">Err</span>({ at: after, said })
+			}
+		}
+	}
+}
+
+<span class="syn-comment">## The number at `start`: an integer, or the text of one with a fraction</span>
+<span class="syn-comment">## or an exponent.</span>
+<span class="syn-name">number_at</span> : <span class="syn-type">List</span>(<span class="syn-type">U8</span>), <span class="syn-type">U64</span> -&gt; <span class="syn-type">Try</span>(<span class="syn-type">Read</span>, <span class="syn-type">Problem</span>)
+<span class="syn-name">number_at</span> = |bytes, start| {
+	digits_from = <span class="syn-keyword">if</span> bytes.get(start) == <span class="syn-type">Ok</span>(<span class="syn-string">&#39;-&#39;</span>) {
+		start + <span class="syn-number">1</span>
+	} <span class="syn-keyword">else</span> {
+		start
+	}
+	<span class="syn-keyword">if</span> !(digit_at(bytes, digits_from)) {
+		<span class="syn-keyword">return</span> <span class="syn-type">Err</span>({ at: start, said: <span class="syn-string">&quot;a number needs a digit after its sign&quot;</span> })
+	}
+	<span class="syn-keyword">if</span> bytes.get(digits_from) == <span class="syn-type">Ok</span>(<span class="syn-string">&#39;0&#39;</span>) <span class="syn-keyword">and</span> digit_at(bytes, digits_from + <span class="syn-number">1</span>) {
+		<span class="syn-keyword">return</span> <span class="syn-type">Err</span>({ at: start, said: <span class="syn-string">&quot;a number with a leading zero&quot;</span> })
+	}
+	<span class="syn-keyword">var</span> $at = digits_end(bytes, digits_from)
+	<span class="syn-keyword">var</span> $is_whole = <span class="syn-type">True</span>
+	<span class="syn-keyword">if</span> bytes.get($at) == <span class="syn-type">Ok</span>(<span class="syn-string">&#39;.&#39;</span>) {
+		$is_whole = <span class="syn-type">False</span>
+		<span class="syn-keyword">if</span> !(digit_at(bytes, $at + <span class="syn-number">1</span>)) {
+			<span class="syn-keyword">return</span> <span class="syn-type">Err</span>({ at: start, said: <span class="syn-string">&quot;a number needs a digit after its point&quot;</span> })
+		}
+		$at = digits_end(bytes, $at + <span class="syn-number">1</span>)
+	}
+	<span class="syn-keyword">if</span> bytes.get($at) == <span class="syn-type">Ok</span>(<span class="syn-string">&#39;e&#39;</span>) <span class="syn-keyword">or</span> bytes.get($at) == <span class="syn-type">Ok</span>(<span class="syn-string">&#39;E&#39;</span>) {
+		$is_whole = <span class="syn-type">False</span>
+		signed = bytes.get($at + <span class="syn-number">1</span>) == <span class="syn-type">Ok</span>(<span class="syn-string">&#39;+&#39;</span>) <span class="syn-keyword">or</span> bytes.get($at + <span class="syn-number">1</span>) == <span class="syn-type">Ok</span>(<span class="syn-string">&#39;-&#39;</span>)
+		exponent_at = <span class="syn-keyword">if</span> signed {
+			$at + <span class="syn-number">2</span>
+		} <span class="syn-keyword">else</span> {
+			$at + <span class="syn-number">1</span>
+		}
+		<span class="syn-keyword">if</span> !(digit_at(bytes, exponent_at)) {
+			<span class="syn-keyword">return</span> <span class="syn-type">Err</span>({ at: start, said: <span class="syn-string">&quot;a number needs a digit in its exponent&quot;</span> })
+		}
+		$at = digits_end(bytes, exponent_at)
+	}
+	text = <span class="syn-type">Str</span>.from_utf8_lossy(bytes.sublist({ start, len: $at - start }))
+	<span class="syn-keyword">if</span> !$is_whole {
+		<span class="syn-keyword">return</span> <span class="syn-type">Ok</span>({ decoded: <span class="syn-type">ShaleJson.Text</span>(text), next: $at })
+	}
+	<span class="syn-keyword">match</span> <span class="syn-type">I64</span>.from_str(text) {
+		<span class="syn-type">Ok</span>(number) =&gt; <span class="syn-type">Ok</span>({ decoded: <span class="syn-type">ShaleJson.Integer</span>(number), next: $at })
+		<span class="syn-type">Err</span>(_) =&gt; <span class="syn-type">Err</span>({ at: start, said: <span class="syn-string">&quot;the integer </span>${text}<span class="syn-string"> is past 64 bits&quot;</span> })
+	}
+}
+
+<span class="syn-comment">## Whether the value read is one Shale holds: a `null` is none.</span>
+<span class="syn-name">has_value</span> : <span class="syn-type">ShaleJson</span> -&gt; <span class="syn-type">Bool</span>
+<span class="syn-name">has_value</span> = |value|
+	<span class="syn-keyword">match</span> value {
+		<span class="syn-type">NoValue</span> =&gt; <span class="syn-type">False</span>
+		_ =&gt; <span class="syn-type">True</span>
+	}
+
+<span class="syn-name">digit_at</span> : <span class="syn-type">List</span>(<span class="syn-type">U8</span>), <span class="syn-type">U64</span> -&gt; <span class="syn-type">Bool</span>
+<span class="syn-name">digit_at</span> = |bytes, at|
+	<span class="syn-keyword">match</span> bytes.get(at) {
+		<span class="syn-type">Ok</span>(byte) =&gt; is_digit(byte)
+		<span class="syn-type">Err</span>(_) =&gt; <span class="syn-type">False</span>
+	}
+
+<span class="syn-comment">## Where the run of digits from `at` ends.</span>
+<span class="syn-name">digits_end</span> : <span class="syn-type">List</span>(<span class="syn-type">U8</span>), <span class="syn-type">U64</span> -&gt; <span class="syn-type">U64</span>
+<span class="syn-name">digits_end</span> = |bytes, from| {
+	<span class="syn-keyword">var</span> $at = from
+	<span class="syn-keyword">while</span> digit_at(bytes, $at) {
+		$at = $at + <span class="syn-number">1</span>
+	}
+	$at
+}
+
+<span class="syn-name">is_digit</span> : <span class="syn-type">U8</span> -&gt; <span class="syn-type">Bool</span>
+<span class="syn-name">is_digit</span> = |byte| byte &gt;= <span class="syn-string">&#39;0&#39;</span> <span class="syn-keyword">and</span> byte &lt;= <span class="syn-string">&#39;9&#39;</span>
+
+<span class="syn-comment">## Past the space JSON allows between tokens.</span>
+<span class="syn-name">skip_space</span> : <span class="syn-type">List</span>(<span class="syn-type">U8</span>), <span class="syn-type">U64</span> -&gt; <span class="syn-type">U64</span>
+<span class="syn-name">skip_space</span> = |bytes, from| {
+	<span class="syn-keyword">var</span> $at = from
+	<span class="syn-keyword">while</span> is_space(bytes.get($at)) {
+		$at = $at + <span class="syn-number">1</span>
+	}
+	$at
+}
+
+<span class="syn-name">is_space</span> : <span class="syn-type">Try</span>(<span class="syn-type">U8</span>, [<span class="syn-type">OutOfBounds</span>]) -&gt; <span class="syn-type">Bool</span>
+<span class="syn-name">is_space</span> = |got|
+	<span class="syn-keyword">match</span> got {
+		<span class="syn-type">Ok</span>(<span class="syn-string">&#39; &#39;</span>) | <span class="syn-type">Ok</span>(<span class="syn-string">&#39;\t&#39;</span>) | <span class="syn-type">Ok</span>(<span class="syn-string">&#39;\n&#39;</span>) | <span class="syn-type">Ok</span>(<span class="syn-string">&#39;\r&#39;</span>) =&gt; <span class="syn-type">True</span>
+		_ =&gt; <span class="syn-type">False</span>
+	}
+
+<span class="syn-comment">## How json_read names a byte it did not want.</span>
+<span class="syn-name">byte_name</span> : <span class="syn-type">U8</span> -&gt; <span class="syn-type">Str</span>
+<span class="syn-name">byte_name</span> = |byte|
+	<span class="syn-keyword">match</span> byte {
+		<span class="syn-string">&#39;{&#39;</span> =&gt; <span class="syn-string">&quot;`{`&quot;</span>
+		<span class="syn-string">&#39;}&#39;</span> =&gt; <span class="syn-string">&quot;`}`&quot;</span>
+		<span class="syn-string">&#39;[&#39;</span> =&gt; <span class="syn-string">&quot;`[`&quot;</span>
+		<span class="syn-string">&#39;]&#39;</span> =&gt; <span class="syn-string">&quot;`]`&quot;</span>
+		<span class="syn-string">&#39;,&#39;</span> =&gt; <span class="syn-string">&quot;a comma&quot;</span>
+		<span class="syn-string">&#39;:&#39;</span> =&gt; <span class="syn-string">&quot;a colon&quot;</span>
+		<span class="syn-string">&#39;&quot;&#39;</span> =&gt; <span class="syn-string">&quot;a quote&quot;</span>
+		_ =&gt; <span class="syn-string">&quot;a byte&quot;</span>
+	}
+
+<span class="syn-comment">## json_read&#39;s refusal: why, then where, by byte (from 0) and by line and</span>
+<span class="syn-comment">## column (each byte before it a column, a newline a line).</span>
+<span class="syn-name">refusal</span> : <span class="syn-type">List</span>(<span class="syn-type">U8</span>), <span class="syn-type">Problem</span> -&gt; <span class="syn-type">Str</span>
+<span class="syn-name">refusal</span> = |bytes, { at, said }| {
+	before = bytes.take_first(at)
+	line = before.count_if(|byte| byte == <span class="syn-string">&#39;\n&#39;</span>) + <span class="syn-number">1</span>
+	column =
+		<span class="syn-keyword">match</span> before.find_last_index(|byte| byte == <span class="syn-string">&#39;\n&#39;</span>) {
+			<span class="syn-type">Ok</span>(last_newline) =&gt; at - last_newline
+			<span class="syn-type">Err</span>(_) =&gt; at + <span class="syn-number">1</span>
+		}
+	location = <span class="syn-string">&quot;at byte </span>${at.to_str()}<span class="syn-string"> (line </span>${line.to_str()}<span class="syn-string">, column </span>${column.to_str()}<span class="syn-string">)&quot;</span>
+	<span class="syn-string">&quot;`json_read`: </span>${said}<span class="syn-string"> </span>${location}<span class="syn-string">&quot;</span>
+}
+</code></pre>
+<p class="file"><a href="https://github.com/showell/shale/blob/cdb248142fb8c73f2e58a1bb8dc8303cd2b6d638/cookbook/count_shale_stops/Tally.roc"><code>cookbook/count_shale_stops/Tally.roc</code></a>, 90 lines</p>
+<pre><code><span class="syn-comment">## Tally counts texts, each in the order it was first counted, and prints</span>
+<span class="syn-comment">## the most counted as the Shale original printed them, with Shale&#39;s</span>
+<span class="syn-comment">## `table(rows, {&quot;n&quot;, &quot;what&quot;})`: the counts right-aligned under `n`, two</span>
+<span class="syn-comment">## spaces, the text, and no space at a line&#39;s end.</span>
+<span class="syn-type">Tally</span> := [].{
+
+	<span class="syn-comment">## Counts with none counted yet.</span>
+	<span class="syn-name">empty</span> : <span class="syn-type">Dict</span>(<span class="syn-type">Str</span>, <span class="syn-type">U64</span>)
+	<span class="syn-name">empty</span> = <span class="syn-type">Dict</span>.empty()
+
+	<span class="syn-comment">## The counts with one more of `what`. A new text goes after every text</span>
+	<span class="syn-comment">## counted before it, as a Shale map&#39;s keys do.</span>
+	<span class="syn-name">bump</span> : <span class="syn-type">Dict</span>(<span class="syn-type">Str</span>, <span class="syn-type">U64</span>), <span class="syn-type">Str</span> -&gt; <span class="syn-type">Dict</span>(<span class="syn-type">Str</span>, <span class="syn-type">U64</span>)
+	<span class="syn-name">bump</span> = |counts, what|
+		counts.update(
+			what,
+			|was|
+				<span class="syn-keyword">match</span> was {
+					<span class="syn-type">Ok</span>(count) =&gt; <span class="syn-type">Ok</span>(count + <span class="syn-number">1</span>)
+					<span class="syn-type">Err</span>(<span class="syn-type">Missing</span>) =&gt; <span class="syn-type">Ok</span>(<span class="syn-number">1</span>)
+				},
+		)
+
+	<span class="syn-comment">## The `most` texts counted most, highest first, ties in the order</span>
+	<span class="syn-comment">## they were first counted (Shale&#39;s `sort` is stable), as a table.</span>
+	<span class="syn-comment">## `most` under 1 shows the heading alone.</span>
+	<span class="syn-name">ranked_table</span> : <span class="syn-type">Dict</span>(<span class="syn-type">Str</span>, <span class="syn-type">U64</span>), <span class="syn-type">I64</span> -&gt; <span class="syn-type">Str</span>
+	<span class="syn-name">ranked_table</span> = |counts, most| {
+		shown = <span class="syn-keyword">if</span> most &gt; <span class="syn-number">0</span> {
+			most.to_u64_wrap()
+		} <span class="syn-keyword">else</span> {
+			<span class="syn-number">0</span>
+		}
+		rows =
+			counts
+				.to_list()
+				.map_with_index(|(what, count), order| { count, order, what })
+				.sort_with(compare_rows)
+				.take_first(shown)
+		count_cells = rows.map(|row| row.count.to_str())
+		width = count_cells.fold(<span class="syn-number">1</span>, |widest, cell| <span class="syn-type">U64</span>.max(widest, cell.count_utf8_bytes()))
+		<span class="syn-comment"># A column of integers is right-aligned, its heading too; with no</span>
+		<span class="syn-comment"># rows there are none, and Shale aligns the heading left.</span>
+		heading = <span class="syn-keyword">if</span> rows.is_empty() {
+			<span class="syn-string">&quot;n&quot;</span>
+		} <span class="syn-keyword">else</span> {
+			right_aligned(<span class="syn-string">&quot;n&quot;</span>, width)
+		}
+		lines = rows.map(|row| <span class="syn-string">&quot;</span>${right_aligned(row.count.to_str(), width)}<span class="syn-string">  </span>${row.what}<span class="syn-string">&quot;</span>)
+		<span class="syn-type">Str</span>.join_with(lines.prepend(<span class="syn-string">&quot;</span>${heading}<span class="syn-string">  what&quot;</span>).map(without_trailing_spaces), <span class="syn-string">&quot;\n&quot;</span>)
+	}
+}
+
+<span class="syn-comment">## A row of the ranking: its count, where it was first counted, its text.</span>
+<span class="syn-type">Row</span> : {
+	count : <span class="syn-type">U64</span>,
+	order : <span class="syn-type">U64</span>,
+	what : <span class="syn-type">Str</span>,
+}
+
+<span class="syn-name">compare_rows</span> : <span class="syn-type">Row</span>, <span class="syn-type">Row</span> -&gt; [<span class="syn-type">Before</span>, <span class="syn-type">Same</span>, <span class="syn-type">After</span>]
+<span class="syn-name">compare_rows</span> = |left, right|
+	<span class="syn-keyword">if</span> left.count &gt; right.count {
+		<span class="syn-type">Before</span>
+	} <span class="syn-keyword">else</span> <span class="syn-keyword">if</span> left.count &lt; right.count {
+		<span class="syn-type">After</span>
+	} <span class="syn-keyword">else</span> <span class="syn-keyword">if</span> left.order &lt; right.order {
+		<span class="syn-type">Before</span>
+	} <span class="syn-keyword">else</span> <span class="syn-keyword">if</span> left.order &gt; right.order {
+		<span class="syn-type">After</span>
+	} <span class="syn-keyword">else</span> {
+		<span class="syn-type">Same</span>
+	}
+
+<span class="syn-name">right_aligned</span> : <span class="syn-type">Str</span>, <span class="syn-type">U64</span> -&gt; <span class="syn-type">Str</span>
+<span class="syn-name">right_aligned</span> = |cell, width| {
+	gap = width - <span class="syn-type">U64</span>.min(width, cell.count_utf8_bytes())
+	<span class="syn-string">&quot;</span>${<span class="syn-string">&quot; &quot;</span>.repeat(gap)}${cell}<span class="syn-string">&quot;</span>
+}
+
+<span class="syn-comment">## The line with the spaces at its end taken off, as Shale&#39;s `table` does</span>
+<span class="syn-comment">## (spaces only: a tab stays).</span>
+<span class="syn-name">without_trailing_spaces</span> : <span class="syn-type">Str</span> -&gt; <span class="syn-type">Str</span>
+<span class="syn-name">without_trailing_spaces</span> = |line| {
+	bytes = line.to_utf8()
+	<span class="syn-keyword">match</span> bytes.find_last_index(|byte| byte != <span class="syn-string">&#39; &#39;</span>) {
+		<span class="syn-type">Ok</span>(last) =&gt; <span class="syn-type">Str</span>.from_utf8_lossy(bytes.take_first(last + <span class="syn-number">1</span>))
+		<span class="syn-type">Err</span>(_) =&gt; <span class="syn-string">&quot;&quot;</span>
+	}
+}
+</code></pre>
+<p class="file"><a href="https://github.com/showell/shale/blob/cdb248142fb8c73f2e58a1bb8dc8303cd2b6d638/cookbook/count_shale_stops/Transcript.roc"><code>cookbook/count_shale_stops/Transcript.roc</code></a>, 202 lines</p>
+<pre><code><span class="syn-comment">## Transcript reads what count_shale_stops needs from one Claude Code</span>
+<span class="syn-comment">## transcript line, read by ShaleJson: its message&#39;s parts, each a call of</span>
+<span class="syn-comment">## the Bash tool, an answer to a call, or neither, and from an answer its</span>
+<span class="syn-comment">## text and whether it was an error.</span>
+<span class="syn-comment">##</span>
+<span class="syn-comment">## Each field is read where the Shale original read it and no sooner, so a</span>
+<span class="syn-comment">## line it stopped on stops here and a line it passed passes: a field that</span>
+<span class="syn-comment">## isn&#39;t there, or is not what the original&#39;s next step takes, is an `Err`</span>
+<span class="syn-comment">## saying which, in the words of the Shale stop it stands for.</span>
+<span class="syn-keyword">import</span> <span class="syn-type">ShaleJson</span>
+
+<span class="syn-type">Transcript</span> := [].{
+
+	<span class="syn-comment">## The parts of the line&#39;s `message.content`, or none when the line is</span>
+	<span class="syn-comment">## older than `since` or its content is not a list. `since` is `&quot;&quot;` for</span>
+	<span class="syn-comment">## every line, else an ISO time the line&#39;s `timestamp` is held to as</span>
+	<span class="syn-comment">## text.</span>
+	<span class="syn-name">recent_parts</span> : <span class="syn-type">ShaleJson</span>, <span class="syn-type">Str</span> -&gt; <span class="syn-type">Try</span>(<span class="syn-type">List</span>(<span class="syn-type">ShaleJson</span>), <span class="syn-type">Str</span>)
+	<span class="syn-name">recent_parts</span> = |line, since| {
+		is_recent =
+			<span class="syn-keyword">if</span> since == <span class="syn-string">&quot;&quot;</span> {
+				<span class="syn-type">True</span>
+			} <span class="syn-keyword">else</span> {
+				at_least(timestamp(line)?, since)
+			}
+		message = field(line, <span class="syn-string">&quot;message&quot;</span>)?
+		content = field(message, <span class="syn-string">&quot;content&quot;</span>)?
+		<span class="syn-keyword">if</span> is_recent <span class="syn-keyword">and</span> is_list(content) {
+			<span class="syn-keyword">match</span> content {
+				<span class="syn-type">Array</span>(parts) =&gt; <span class="syn-type">Ok</span>(parts)
+				_ =&gt; <span class="syn-type">Ok</span>([])
+			}
+		} <span class="syn-keyword">else</span> {
+			<span class="syn-type">Ok</span>([])
+		}
+	}
+
+	<span class="syn-comment">## What a part of a message is: a call of the Bash tool (its command),</span>
+	<span class="syn-comment">## an answer to a call (the call&#39;s id), or neither.</span>
+	<span class="syn-name">part_kind</span> : <span class="syn-type">ShaleJson</span> -&gt; <span class="syn-type">Try</span>([<span class="syn-type">ShellCall</span>(<span class="syn-type">Str</span>), <span class="syn-type">Answer</span>(<span class="syn-type">Str</span>), <span class="syn-type">Neither</span>], <span class="syn-type">Str</span>)
+	<span class="syn-name">part_kind</span> = |part| {
+		kind = field(part, <span class="syn-string">&quot;type&quot;</span>)?
+		is_shell_call =
+			<span class="syn-keyword">if</span> is_text(kind, <span class="syn-string">&quot;tool_use&quot;</span>) {
+				is_text(field(part, <span class="syn-string">&quot;name&quot;</span>)?, <span class="syn-string">&quot;Bash&quot;</span>)
+			} <span class="syn-keyword">else</span> {
+				<span class="syn-type">False</span>
+			}
+		<span class="syn-keyword">if</span> is_shell_call {
+			input = field(part, <span class="syn-string">&quot;input&quot;</span>)?
+			command = text_of(field(input, <span class="syn-string">&quot;command&quot;</span>)?, <span class="syn-string">&quot;the command&quot;</span>)?
+			<span class="syn-type">Ok</span>(<span class="syn-type">ShellCall</span>(command))
+		} <span class="syn-keyword">else</span> <span class="syn-keyword">if</span> is_text(kind, <span class="syn-string">&quot;tool_result&quot;</span>) {
+			<span class="syn-type">Ok</span>(<span class="syn-type">Answer</span>(text_of(field(part, <span class="syn-string">&quot;tool_use_id&quot;</span>)?, <span class="syn-string">&quot;an answer&#39;s call id&quot;</span>)?))
+		} <span class="syn-keyword">else</span> {
+			<span class="syn-type">Ok</span>(<span class="syn-type">Neither</span>)
+		}
+	}
+
+	<span class="syn-comment">## A call&#39;s id, read once the call is known to be a launch.</span>
+	<span class="syn-name">call_id</span> : <span class="syn-type">ShaleJson</span> -&gt; <span class="syn-type">Try</span>(<span class="syn-type">Str</span>, <span class="syn-type">Str</span>)
+	<span class="syn-name">call_id</span> = |part| text_of(field(part, <span class="syn-string">&quot;id&quot;</span>)?, <span class="syn-string">&quot;a call&#39;s id&quot;</span>)
+
+	<span class="syn-comment">## An answer&#39;s text: its content when that is a string, else the `text`</span>
+	<span class="syn-comment">## of each of its parts, a line apart.</span>
+	<span class="syn-name">answer_text</span> : <span class="syn-type">ShaleJson</span> -&gt; <span class="syn-type">Try</span>(<span class="syn-type">Str</span>, <span class="syn-type">Str</span>)
+	<span class="syn-name">answer_text</span> = |part| {
+		content = field(part, <span class="syn-string">&quot;content&quot;</span>)?
+		<span class="syn-keyword">match</span> content {
+			<span class="syn-type">Text</span>(text) =&gt; <span class="syn-type">Ok</span>(text)
+			<span class="syn-type">Array</span>(items) =&gt; {
+				texts = items.map_try(item_text)?
+				<span class="syn-type">Ok</span>(<span class="syn-type">Str</span>.join_with(texts.keep_oks(|text| text), <span class="syn-string">&quot;\n&quot;</span>))
+			}
+			_ =&gt;
+				<span class="syn-keyword">if</span> <span class="syn-type">ShaleJson</span>.is_empty_table(content) {
+					<span class="syn-type">Ok</span>(<span class="syn-string">&quot;&quot;</span>)
+				} <span class="syn-keyword">else</span> {
+					<span class="syn-type">Err</span>(<span class="syn-string">&quot;`re_find`: its first argument must be a string, not </span>${type_name(content)}<span class="syn-string">&quot;</span>)
+				}
+		}
+	}
+
+	<span class="syn-comment">## The answer&#39;s `is_error` as Shale&#39;s `if` takes it: false when it has</span>
+	<span class="syn-comment">## none, and true when it is anything but `false`.</span>
+	<span class="syn-name">error_flag</span> : <span class="syn-type">ShaleJson</span> -&gt; <span class="syn-type">Try</span>(<span class="syn-type">Bool</span>, <span class="syn-type">Str</span>)
+	<span class="syn-name">error_flag</span> = |part|
+		<span class="syn-keyword">match</span> optional_field(part, <span class="syn-string">&quot;is_error&quot;</span>)? {
+			<span class="syn-type">Ok</span>(<span class="syn-type">Boolean</span>(flag)) =&gt; <span class="syn-type">Ok</span>(flag)
+			<span class="syn-type">Ok</span>(_) =&gt; <span class="syn-type">Ok</span>(<span class="syn-type">True</span>)
+			<span class="syn-type">Err</span>(<span class="syn-type">Missing</span>) =&gt; <span class="syn-type">Ok</span>(<span class="syn-type">False</span>)
+		}
+}
+
+<span class="syn-comment">## A part of a list content&#39;s `text`, `Err(Missing)` for a part without one.</span>
+<span class="syn-comment">## Shale&#39;s `join` writes an integer as its digits.</span>
+<span class="syn-name">item_text</span> : <span class="syn-type">ShaleJson</span> -&gt; <span class="syn-type">Try</span>(<span class="syn-type">Try</span>(<span class="syn-type">Str</span>, [<span class="syn-type">Missing</span>]), <span class="syn-type">Str</span>)
+<span class="syn-name">item_text</span> = |item|
+	<span class="syn-keyword">match</span> optional_field(item, <span class="syn-string">&quot;text&quot;</span>)? {
+		<span class="syn-type">Ok</span>(<span class="syn-type">Text</span>(text)) =&gt; <span class="syn-type">Ok</span>(<span class="syn-type">Ok</span>(text))
+		<span class="syn-type">Ok</span>(<span class="syn-type">Integer</span>(number)) =&gt; <span class="syn-type">Ok</span>(<span class="syn-type">Ok</span>(number.to_str()))
+		<span class="syn-type">Ok</span>(other) =&gt; {
+			taken = <span class="syn-string">&quot;`join` takes strings and integers&quot;</span>
+			<span class="syn-type">Err</span>(<span class="syn-string">&quot;</span>${taken}<span class="syn-string">, and a part&#39;s `text` is </span>${type_name(other)}<span class="syn-string">&quot;</span>)
+		}
+		<span class="syn-type">Err</span>(<span class="syn-type">Missing</span>) =&gt; <span class="syn-type">Ok</span>(<span class="syn-type">Err</span>(<span class="syn-type">Missing</span>))
+	}
+
+<span class="syn-comment">## Whether the value is the string `text`.</span>
+<span class="syn-name">is_text</span> : <span class="syn-type">ShaleJson</span>, <span class="syn-type">Str</span> -&gt; <span class="syn-type">Bool</span>
+<span class="syn-name">is_text</span> = |value, text|
+	<span class="syn-keyword">match</span> value {
+		<span class="syn-type">Text</span>(got) =&gt; got == text
+		_ =&gt; <span class="syn-type">False</span>
+	}
+
+<span class="syn-comment">## The line&#39;s `timestamp`, `&quot;&quot;` when it has none (Shale&#39;s `get`).</span>
+<span class="syn-name">timestamp</span> : <span class="syn-type">ShaleJson</span> -&gt; <span class="syn-type">Try</span>(<span class="syn-type">Str</span>, <span class="syn-type">Str</span>)
+<span class="syn-name">timestamp</span> = |line|
+	<span class="syn-keyword">match</span> line {
+		<span class="syn-type">Array</span>(items) <span class="syn-keyword">if</span> !(items.is_empty()) =&gt;
+			<span class="syn-type">Err</span>(<span class="syn-string">&quot;`get`: a list&#39;s keys are integers: this one is a list, given a string&quot;</span>)
+		<span class="syn-type">Object</span>(_) | <span class="syn-type">Array</span>(_) =&gt;
+			<span class="syn-keyword">match</span> optional_field(line, <span class="syn-string">&quot;timestamp&quot;</span>)? {
+				<span class="syn-type">Ok</span>(<span class="syn-type">Text</span>(text)) =&gt; <span class="syn-type">Ok</span>(text)
+				<span class="syn-type">Ok</span>(other) =&gt; {
+					compared = <span class="syn-string">&quot;`&gt;=` compares a string with a string&quot;</span>
+					<span class="syn-type">Err</span>(<span class="syn-string">&quot;</span>${compared}<span class="syn-string">, and a line&#39;s `timestamp` is </span>${type_name(other)}<span class="syn-string">&quot;</span>)
+				}
+				<span class="syn-type">Err</span>(<span class="syn-type">Missing</span>) =&gt; <span class="syn-type">Ok</span>(<span class="syn-string">&quot;&quot;</span>)
+			}
+		_ =&gt; <span class="syn-type">Err</span>(<span class="syn-string">&quot;`get` takes a map or a list, not </span>${type_name(line)}<span class="syn-string">&quot;</span>)
+	}
+
+<span class="syn-comment">## A map&#39;s member, as Shale&#39;s `v.name` reads it: a stop when it is missing.</span>
+<span class="syn-name">field</span> : <span class="syn-type">ShaleJson</span>, <span class="syn-type">Str</span> -&gt; <span class="syn-type">Try</span>(<span class="syn-type">ShaleJson</span>, <span class="syn-type">Str</span>)
+<span class="syn-name">field</span> = |value, name|
+	<span class="syn-keyword">match</span> optional_field(value, name)? {
+		<span class="syn-type">Ok</span>(member) =&gt; <span class="syn-type">Ok</span>(member)
+		<span class="syn-type">Err</span>(<span class="syn-type">Missing</span>) =&gt; <span class="syn-type">Err</span>(<span class="syn-string">&quot;no key \&quot;</span>${name}<span class="syn-string">\&quot; in the map (`has_key` asks first)&quot;</span>)
+	}
+
+<span class="syn-comment">## A map&#39;s member, or `Missing`; a value that is no map stops.</span>
+<span class="syn-name">optional_field</span> : <span class="syn-type">ShaleJson</span>, <span class="syn-type">Str</span> -&gt; <span class="syn-type">Try</span>(<span class="syn-type">Try</span>(<span class="syn-type">ShaleJson</span>, [<span class="syn-type">Missing</span>]), <span class="syn-type">Str</span>)
+<span class="syn-name">optional_field</span> = |value, name|
+	<span class="syn-keyword">match</span> value {
+		<span class="syn-type">Object</span>(members) =&gt;
+			<span class="syn-keyword">match</span> members.find_first(|(key, _)| key == name) {
+				<span class="syn-type">Ok</span>((_, member)) =&gt; <span class="syn-type">Ok</span>(<span class="syn-type">Ok</span>(member))
+				<span class="syn-type">Err</span>(_) =&gt; <span class="syn-type">Ok</span>(<span class="syn-type">Err</span>(<span class="syn-type">Missing</span>))
+			}
+		<span class="syn-type">Array</span>(items) <span class="syn-keyword">if</span> items.is_empty() =&gt; <span class="syn-type">Ok</span>(<span class="syn-type">Err</span>(<span class="syn-type">Missing</span>))
+		_ =&gt; <span class="syn-type">Err</span>(<span class="syn-string">&quot;`.</span>${name}<span class="syn-string">` reads a map&#39;s member, and this is </span>${type_name(value)}<span class="syn-string">&quot;</span>)
+	}
+
+<span class="syn-comment">## A string where the next step takes one.</span>
+<span class="syn-name">text_of</span> : <span class="syn-type">ShaleJson</span>, <span class="syn-type">Str</span> -&gt; <span class="syn-type">Try</span>(<span class="syn-type">Str</span>, <span class="syn-type">Str</span>)
+<span class="syn-name">text_of</span> = |value, what|
+	<span class="syn-keyword">match</span> value {
+		<span class="syn-type">Text</span>(text) =&gt; <span class="syn-type">Ok</span>(text)
+		_ =&gt; <span class="syn-type">Err</span>(<span class="syn-string">&quot;</span>${what}<span class="syn-string"> is </span>${type_name(value)}<span class="syn-string">, not a string&quot;</span>)
+	}
+
+<span class="syn-comment">## Whether Shale&#39;s `is_list` holds: JSON written back starts with `[`, so a</span>
+<span class="syn-comment">## list or the empty table.</span>
+<span class="syn-name">is_list</span> : <span class="syn-type">ShaleJson</span> -&gt; <span class="syn-type">Bool</span>
+<span class="syn-name">is_list</span> = |value|
+	<span class="syn-keyword">match</span> value {
+		<span class="syn-type">Array</span>(_) =&gt; <span class="syn-type">True</span>
+		_ =&gt; <span class="syn-type">ShaleJson</span>.is_empty_table(value)
+	}
+
+<span class="syn-comment">## Whether `text` sorts at or after `since`, byte by byte, as Shale&#39;s `&gt;=`</span>
+<span class="syn-comment">## compares strings.</span>
+<span class="syn-name">at_least</span> : <span class="syn-type">Str</span>, <span class="syn-type">Str</span> -&gt; <span class="syn-type">Bool</span>
+<span class="syn-name">at_least</span> = |text, since| {
+	text_bytes = text.to_utf8()
+	since_bytes = since.to_utf8()
+	$at : <span class="syn-type">U64</span>
+	<span class="syn-keyword">var</span> $at = <span class="syn-number">0</span>
+	<span class="syn-keyword">while</span> $at &lt; text_bytes.len() <span class="syn-keyword">and</span> text_bytes.get($at) == since_bytes.get($at) {
+		$at = $at + <span class="syn-number">1</span>
+	}
+	<span class="syn-keyword">match</span> (text_bytes.get($at), since_bytes.get($at)) {
+		(<span class="syn-type">Ok</span>(text_byte), <span class="syn-type">Ok</span>(since_byte)) =&gt; text_byte &gt; since_byte
+		(_, <span class="syn-type">Err</span>(_)) =&gt; <span class="syn-type">True</span>
+		(<span class="syn-type">Err</span>(_), <span class="syn-type">Ok</span>(_)) =&gt; <span class="syn-type">False</span>
+	}
+}
+
+<span class="syn-comment">## How a value is named in a stop.</span>
+<span class="syn-name">type_name</span> : <span class="syn-type">ShaleJson</span> -&gt; <span class="syn-type">Str</span>
+<span class="syn-name">type_name</span> = |value|
+	<span class="syn-keyword">match</span> value {
+		<span class="syn-type">Object</span>(members) <span class="syn-keyword">if</span> !(members.is_empty()) =&gt; <span class="syn-string">&quot;a map&quot;</span>
+		<span class="syn-type">Array</span>(items) <span class="syn-keyword">if</span> !(items.is_empty()) =&gt; <span class="syn-string">&quot;a list&quot;</span>
+		<span class="syn-type">Object</span>(_) | <span class="syn-type">Array</span>(_) =&gt; <span class="syn-string">&quot;an empty table&quot;</span>
+		<span class="syn-type">Text</span>(_) =&gt; <span class="syn-string">&quot;a string&quot;</span>
+		<span class="syn-type">Integer</span>(_) =&gt; <span class="syn-string">&quot;an integer&quot;</span>
+		<span class="syn-type">Boolean</span>(_) =&gt; <span class="syn-string">&quot;a boolean&quot;</span>
+		<span class="syn-type">NoValue</span> =&gt; <span class="syn-string">&quot;nil&quot;</span>
+	}
+</code></pre>
+<p class="file"><a href="https://github.com/showell/shale/blob/cdb248142fb8c73f2e58a1bb8dc8303cd2b6d638/cookbook/count_shale_stops/JsonString.roc"><code>cookbook/count_shale_stops/JsonString.roc</code></a>, 197 lines</p>
+<pre><code><span class="syn-comment">## JsonString reads one JSON string as Shale&#39;s json_read reads it</span>
+<span class="syn-comment">## (c/host/host_json.c): its escapes decoded to UTF-8, a `\u` high</span>
+<span class="syn-comment">## surrogate taking the low one after it, and the four hex digits of a `\u`</span>
+<span class="syn-comment">## read as Zig&#39;s parseInt reads them. A refusal says why and at which byte,</span>
+<span class="syn-comment">## for ShaleJson to put as json_read&#39;s sentence.</span>
+<span class="syn-type">JsonString</span> := [].{
+
+	<span class="syn-comment">## Why a text is refused, and the byte where it went wrong.</span>
+	<span class="syn-type">Problem</span> : { at : <span class="syn-type">U64</span>, said : <span class="syn-type">Str</span> }
+
+	<span class="syn-comment">## The string whose opening quote is at `open`, its escapes decoded, and</span>
+	<span class="syn-comment">## the byte after its closing quote. A string with no escape is its own</span>
+	<span class="syn-comment">## bytes; one with escapes is built a stretch at a time.</span>
+	<span class="syn-name">read_at</span> : <span class="syn-type">List</span>(<span class="syn-type">U8</span>), <span class="syn-type">U64</span> -&gt; <span class="syn-type">Try</span>({ text : <span class="syn-type">Str</span>, next : <span class="syn-type">U64</span> }, <span class="syn-type">JsonString.Problem</span>)
+	<span class="syn-name">read_at</span> = |bytes, open| {
+		<span class="syn-keyword">var</span> $at = open + <span class="syn-number">1</span>
+		<span class="syn-keyword">var</span> $copied_to = $at
+		<span class="syn-keyword">var</span> $decoded = []
+		<span class="syn-keyword">var</span> $has_escape = <span class="syn-type">False</span>
+		<span class="syn-keyword">while</span> <span class="syn-type">True</span> {
+			<span class="syn-keyword">match</span> bytes.get($at) {
+				<span class="syn-type">Err</span>(_) =&gt; <span class="syn-keyword">return</span> <span class="syn-type">Err</span>({ at: open, said: <span class="syn-string">&quot;a string that never closes&quot;</span> })
+				<span class="syn-type">Ok</span>(<span class="syn-string">&#39;&quot;&#39;</span>) =&gt; {
+					stretch = { start: $copied_to, len: $at - $copied_to }
+					content =
+						<span class="syn-keyword">if</span> $has_escape {
+							$decoded.append_sublist(bytes, stretch)
+						} <span class="syn-keyword">else</span> {
+							bytes.sublist(stretch)
+						}
+					<span class="syn-keyword">return</span> <span class="syn-keyword">match</span> <span class="syn-type">Str</span>.from_utf8(content) {
+						<span class="syn-type">Ok</span>(text) =&gt; <span class="syn-type">Ok</span>({ text, next: $at + <span class="syn-number">1</span> })
+						<span class="syn-type">Err</span>(_) =&gt; <span class="syn-type">Err</span>({ at: open, said: <span class="syn-string">&quot;a string that is not UTF-8&quot;</span> })
+					}
+				}
+				<span class="syn-type">Ok</span>(<span class="syn-string">&#39;\\&#39;</span>) =&gt; {
+					escape = escape_at(bytes, $at)?
+					stretch = { start: $copied_to, len: $at - $copied_to }
+					$decoded = $decoded.append_sublist(bytes, stretch).concat(escape.decoded)
+					$has_escape = <span class="syn-type">True</span>
+					$at = escape.next
+					$copied_to = $at
+				}
+				<span class="syn-type">Ok</span>(byte) =&gt;
+					<span class="syn-keyword">if</span> byte &lt; <span class="syn-number">0x20</span> {
+						written = <span class="syn-string">&quot;which JSON writes as an escape&quot;</span>
+						code = <span class="syn-type">JsonString</span>.hex_pair(byte)
+						said = <span class="syn-string">&quot;a control byte (0x</span>${code}<span class="syn-string">) inside a string, </span>${written}<span class="syn-string">&quot;</span>
+						<span class="syn-keyword">return</span> <span class="syn-type">Err</span>({ at: $at, said })
+					} <span class="syn-keyword">else</span> {
+						$at = $at + <span class="syn-number">1</span>
+					}
+			}
+		}
+	}
+
+	<span class="syn-comment">## A byte as two lowercase hex digits.</span>
+	<span class="syn-name">hex_pair</span> : <span class="syn-type">U8</span> -&gt; <span class="syn-type">Str</span>
+	<span class="syn-name">hex_pair</span> = |byte| <span class="syn-type">Str</span>.from_utf8_lossy([hex_digit_byte(byte // <span class="syn-number">16</span>), hex_digit_byte(byte % <span class="syn-number">16</span>)])
+}
+
+<span class="syn-comment">## A string&#39;s bytes decoded from an escape, and the byte after it.</span>
+<span class="syn-type">Escape</span> : { decoded : <span class="syn-type">List</span>(<span class="syn-type">U8</span>), next : <span class="syn-type">U64</span> }
+
+<span class="syn-comment">## The escape whose backslash is at `at`. A `\u` high surrogate takes the</span>
+<span class="syn-comment">## low one after it.</span>
+<span class="syn-name">escape_at</span> : <span class="syn-type">List</span>(<span class="syn-type">U8</span>), <span class="syn-type">U64</span> -&gt; <span class="syn-type">Try</span>(<span class="syn-type">Escape</span>, <span class="syn-type">JsonString.Problem</span>)
+<span class="syn-name">escape_at</span> = |bytes, at| {
+	plain = |byte| <span class="syn-type">Ok</span>({ decoded: [byte], next: at + <span class="syn-number">2</span> })
+	<span class="syn-keyword">match</span> bytes.get(at + <span class="syn-number">1</span>) {
+		<span class="syn-type">Err</span>(_) =&gt; <span class="syn-type">Err</span>({ at, said: <span class="syn-string">&quot;a string that ends in a backslash&quot;</span> })
+		<span class="syn-type">Ok</span>(<span class="syn-string">&#39;&quot;&#39;</span>) =&gt; plain(<span class="syn-string">&#39;&quot;&#39;</span>)
+		<span class="syn-type">Ok</span>(<span class="syn-string">&#39;\\&#39;</span>) =&gt; plain(<span class="syn-string">&#39;\\&#39;</span>)
+		<span class="syn-type">Ok</span>(<span class="syn-string">&#39;/&#39;</span>) =&gt; plain(<span class="syn-string">&#39;/&#39;</span>)
+		<span class="syn-type">Ok</span>(<span class="syn-string">&#39;b&#39;</span>) =&gt; plain(<span class="syn-number">8</span>)
+		<span class="syn-type">Ok</span>(<span class="syn-string">&#39;f&#39;</span>) =&gt; plain(<span class="syn-number">12</span>)
+		<span class="syn-type">Ok</span>(<span class="syn-string">&#39;n&#39;</span>) =&gt; plain(<span class="syn-string">&#39;\n&#39;</span>)
+		<span class="syn-type">Ok</span>(<span class="syn-string">&#39;r&#39;</span>) =&gt; plain(<span class="syn-string">&#39;\r&#39;</span>)
+		<span class="syn-type">Ok</span>(<span class="syn-string">&#39;t&#39;</span>) =&gt; plain(<span class="syn-string">&#39;\t&#39;</span>)
+		<span class="syn-type">Ok</span>(<span class="syn-string">&#39;u&#39;</span>) =&gt; unicode_escape_at(bytes, at)
+		<span class="syn-type">Ok</span>(byte) =&gt; {
+			escaped = <span class="syn-type">Str</span>.from_utf8_lossy([byte])
+			<span class="syn-type">Err</span>({ at, said: <span class="syn-string">&quot;the escape `\\</span>${escaped}<span class="syn-string">`, which JSON has not&quot;</span> })
+		}
+	}
+}
+
+<span class="syn-comment">## A `\u` escape at `at`, with the low surrogate&#39;s own escape after a high</span>
+<span class="syn-comment">## one, as UTF-8.</span>
+<span class="syn-name">unicode_escape_at</span> : <span class="syn-type">List</span>(<span class="syn-type">U8</span>), <span class="syn-type">U64</span> -&gt; <span class="syn-type">Try</span>(<span class="syn-type">Escape</span>, <span class="syn-type">JsonString.Problem</span>)
+<span class="syn-name">unicode_escape_at</span> = |bytes, at| {
+	high = hex_four(bytes, at)?
+	after = at + <span class="syn-number">6</span>
+	<span class="syn-keyword">if</span> high &gt;= <span class="syn-number">0xD800</span> <span class="syn-keyword">and</span> high &lt;= <span class="syn-number">0xDBFF</span> {
+		<span class="syn-keyword">if</span> bytes.sublist({ start: after, len: <span class="syn-number">2</span> }) != [<span class="syn-string">&#39;\\&#39;</span>, <span class="syn-string">&#39;u&#39;</span>] {
+			<span class="syn-keyword">return</span> <span class="syn-type">Err</span>({ at, said: <span class="syn-string">&quot;a high surrogate with no low one after it&quot;</span> })
+		}
+		low = hex_four(bytes, after)?
+		<span class="syn-keyword">if</span> low &lt; <span class="syn-number">0xDC00</span> <span class="syn-keyword">or</span> low &gt; <span class="syn-number">0xDFFF</span> {
+			<span class="syn-keyword">return</span> <span class="syn-type">Err</span>({ at: after, said: <span class="syn-string">&quot;a high surrogate followed by no low one&quot;</span> })
+		}
+		code_point = <span class="syn-number">0x10000</span> + (high - <span class="syn-number">0xD800</span>) * <span class="syn-number">0x400</span> + (low - <span class="syn-number">0xDC00</span>)
+		<span class="syn-type">Ok</span>({ decoded: utf8_of(code_point), next: after + <span class="syn-number">6</span> })
+	} <span class="syn-keyword">else</span> <span class="syn-keyword">if</span> high &gt;= <span class="syn-number">0xDC00</span> <span class="syn-keyword">and</span> high &lt;= <span class="syn-number">0xDFFF</span> {
+		<span class="syn-type">Err</span>({ at, said: <span class="syn-string">&quot;a low surrogate with no high one before it&quot;</span> })
+	} <span class="syn-keyword">else</span> {
+		<span class="syn-type">Ok</span>({ decoded: utf8_of(high), next: after })
+	}
+}
+
+<span class="syn-comment">## The four bytes after the `\u` at `at`, read as Zig&#39;s</span>
+<span class="syn-comment">## `std.fmt.parseInt(u16, s, 16)` reads them, as Shale&#39;s reader does: a</span>
+<span class="syn-comment">## `+` or `-` may lead (a `-` only before zero), and `_` may stand between</span>
+<span class="syn-comment">## digits.</span>
+<span class="syn-name">hex_four</span> : <span class="syn-type">List</span>(<span class="syn-type">U8</span>), <span class="syn-type">U64</span> -&gt; <span class="syn-type">Try</span>(<span class="syn-type">U32</span>, <span class="syn-type">JsonString.Problem</span>)
+<span class="syn-name">hex_four</span> = |bytes, at| {
+	refused = <span class="syn-type">Err</span>({ at, said: <span class="syn-string">&quot;`\\u` needs four hex digits&quot;</span> })
+	four = bytes.sublist({ start: at + <span class="syn-number">2</span>, len: <span class="syn-number">4</span> })
+	<span class="syn-keyword">if</span> four.len() &lt; <span class="syn-number">4</span> {
+		<span class="syn-keyword">return</span> refused
+	}
+	is_negative = four.first() == <span class="syn-type">Ok</span>(<span class="syn-string">&#39;-&#39;</span>)
+	digits =
+		<span class="syn-keyword">if</span> is_negative <span class="syn-keyword">or</span> four.first() == <span class="syn-type">Ok</span>(<span class="syn-string">&#39;+&#39;</span>) {
+			four.drop_first(<span class="syn-number">1</span>)
+		} <span class="syn-keyword">else</span> {
+			four
+		}
+	<span class="syn-keyword">if</span> digits.is_empty() <span class="syn-keyword">or</span> digits.first() == <span class="syn-type">Ok</span>(<span class="syn-string">&#39;_&#39;</span>) <span class="syn-keyword">or</span> digits.last() == <span class="syn-type">Ok</span>(<span class="syn-string">&#39;_&#39;</span>) {
+		<span class="syn-keyword">return</span> refused
+	}
+	$code_point : <span class="syn-type">U32</span>
+	<span class="syn-keyword">var</span> $code_point = <span class="syn-number">0</span>
+	<span class="syn-keyword">for</span> byte <span class="syn-keyword">in</span> digits {
+		<span class="syn-keyword">if</span> byte != <span class="syn-string">&#39;_&#39;</span> {
+			<span class="syn-keyword">match</span> hex_digit(byte) {
+				<span class="syn-type">Ok</span>(digit) =&gt; {
+					$code_point = $code_point * <span class="syn-number">16</span> + digit
+				}
+				<span class="syn-type">Err</span>(_) =&gt; <span class="syn-keyword">return</span> refused
+			}
+		}
+	}
+	<span class="syn-keyword">if</span> is_negative <span class="syn-keyword">and</span> $code_point != <span class="syn-number">0</span> {
+		<span class="syn-keyword">return</span> refused
+	}
+	<span class="syn-type">Ok</span>($code_point)
+}
+
+<span class="syn-name">hex_digit</span> : <span class="syn-type">U8</span> -&gt; <span class="syn-type">Try</span>(<span class="syn-type">U32</span>, [<span class="syn-type">NotHex</span>])
+<span class="syn-name">hex_digit</span> = |byte|
+	<span class="syn-keyword">if</span> byte &gt;= <span class="syn-string">&#39;0&#39;</span> <span class="syn-keyword">and</span> byte &lt;= <span class="syn-string">&#39;9&#39;</span> {
+		<span class="syn-type">Ok</span>((byte - <span class="syn-string">&#39;0&#39;</span>).to_u32())
+	} <span class="syn-keyword">else</span> <span class="syn-keyword">if</span> byte &gt;= <span class="syn-string">&#39;a&#39;</span> <span class="syn-keyword">and</span> byte &lt;= <span class="syn-string">&#39;f&#39;</span> {
+		<span class="syn-type">Ok</span>((byte - <span class="syn-string">&#39;a&#39;</span> + <span class="syn-number">10</span>).to_u32())
+	} <span class="syn-keyword">else</span> <span class="syn-keyword">if</span> byte &gt;= <span class="syn-string">&#39;A&#39;</span> <span class="syn-keyword">and</span> byte &lt;= <span class="syn-string">&#39;F&#39;</span> {
+		<span class="syn-type">Ok</span>((byte - <span class="syn-string">&#39;A&#39;</span> + <span class="syn-number">10</span>).to_u32())
+	} <span class="syn-keyword">else</span> {
+		<span class="syn-type">Err</span>(<span class="syn-type">NotHex</span>)
+	}
+
+<span class="syn-comment">## The lowercase hex digit for a value under 16.</span>
+<span class="syn-name">hex_digit_byte</span> : <span class="syn-type">U8</span> -&gt; <span class="syn-type">U8</span>
+<span class="syn-name">hex_digit_byte</span> = |value|
+	<span class="syn-keyword">if</span> value &lt; <span class="syn-number">10</span> {
+		<span class="syn-string">&#39;0&#39;</span> + value
+	} <span class="syn-keyword">else</span> {
+		<span class="syn-string">&#39;a&#39;</span> + value - <span class="syn-number">10</span>
+	}
+
+<span class="syn-comment">## A code point&#39;s UTF-8 bytes: its bits six at a time, after a lead byte</span>
+<span class="syn-comment">## that says how many follow.</span>
+<span class="syn-name">utf8_of</span> : <span class="syn-type">U32</span> -&gt; <span class="syn-type">List</span>(<span class="syn-type">U8</span>)
+<span class="syn-name">utf8_of</span> = |code_point| {
+	<span class="syn-keyword">if</span> code_point &lt; <span class="syn-number">0x80</span> {
+		[code_point.to_u8_wrap()]
+	} <span class="syn-keyword">else</span> <span class="syn-keyword">if</span> code_point &lt; <span class="syn-number">0x800</span> {
+		[(<span class="syn-number">0xC0</span> + code_point // <span class="syn-number">0x40</span>).to_u8_wrap(), low_six(code_point)]
+	} <span class="syn-keyword">else</span> <span class="syn-keyword">if</span> code_point &lt; <span class="syn-number">0x10000</span> {
+		[
+			(<span class="syn-number">0xE0</span> + code_point // <span class="syn-number">0x1000</span>).to_u8_wrap(),
+			low_six(code_point // <span class="syn-number">0x40</span>),
+			low_six(code_point),
+		]
+	} <span class="syn-keyword">else</span> {
+		[
+			(<span class="syn-number">0xF0</span> + code_point // <span class="syn-number">0x40000</span>).to_u8_wrap(),
+			low_six(code_point // <span class="syn-number">0x1000</span>),
+			low_six(code_point // <span class="syn-number">0x40</span>),
+			low_six(code_point),
+		]
+	}
+}
+
+<span class="syn-comment">## A continuation byte: the low six bits of the code point shifted down.</span>
+<span class="syn-name">low_six</span> : <span class="syn-type">U32</span> -&gt; <span class="syn-type">U8</span>
+<span class="syn-name">low_six</span> = |shifted| (<span class="syn-number">0x80</span> + shifted % <span class="syn-number">0x40</span>).to_u8_wrap()
+</code></pre>
+<h4>Shale original</h4>
+<p class="file"><a href="https://github.com/showell/shale/blob/18e1b3c6bd334e2d29cd3ca1eb673ae24820ad4e/cookbook/count_shale_stops.shale"><code>cookbook/count_shale_stops.shale</code></a>, 164 lines, at <code>18e1b3c6</code></p>
+<pre><code><span class="syn-comment">-- This recipe counts how an agent&#39;s Shale launches went, from a Claude Code</span>
+<span class="syn-comment">-- transcript: each Bash call&#39;s command and the answer it got, paired by the</span>
+<span class="syn-comment">-- call&#39;s id. A launch is a heredoc (`shale &lt;&lt;&#39;TAG&#39;`) or a script (`shale</span>
+<span class="syn-comment">-- path.shale`). Each ends one of four ways: it ran, Shale stopped it (`──</span>
+<span class="syn-comment">-- stopped at`), the gate refused the call before Shale saw it, or the</span>
+<span class="syn-comment">-- harness denied it. A stop by the script&#39;s own `fail` is a check&#39;s verdict,</span>
+<span class="syn-comment">-- counted apart; Shale&#39;s other stops are grouped by kind and by message,</span>
+<span class="syn-comment">-- with quoted values blanked so that one mistake made twice counts as one</span>
+<span class="syn-comment">-- line. The calls the heredocs make and the programs they `run` are counted</span>
+<span class="syn-comment">-- too: where the agent works, and where it trips.</span>
+<span class="syn-comment">--</span>
+<span class="syn-comment">-- With no `transcript=`, it reads the newest transcript under the</span>
+<span class="syn-comment">-- `projects:` mount. `since=` is an ISO time; only the calls from then on</span>
+<span class="syn-comment">-- count. `most=N` sets how many lines each list shows (20).</span>
+<span class="syn-comment">--</span>
+<span class="syn-comment">--   shale cookbook:count_shale_stops.shale</span>
+<span class="syn-comment">--   shale cookbook:count_shale_stops.shale since=2026-11-14T19:50</span>
+<span class="syn-comment">--</span>
+<span class="syn-comment">-- budget: steps=2000000000 reads=100000 read_bytes=4000000000 arena_bytes=4000000000</span>
+
+<span class="syn-keyword">const</span> TRANSCRIPT = arg(<span class="syn-string">&quot;transcript&quot;</span>, <span class="syn-string">&quot;&quot;</span>)
+<span class="syn-keyword">const</span> SINCE = arg(<span class="syn-string">&quot;since&quot;</span>, <span class="syn-string">&quot;&quot;</span>)
+<span class="syn-keyword">const</span> MOST = arg(<span class="syn-string">&quot;most&quot;</span>, <span class="syn-number">20</span>)
+<span class="syn-keyword">const</span> PART = <span class="syn-number">8</span> * <span class="syn-number">1024</span> * <span class="syn-number">1024</span>
+
+<span class="syn-keyword">function</span> <span class="syn-name">newest_transcript</span>()
+  <span class="syn-keyword">local</span> best = <span class="syn-keyword">nil</span>
+  <span class="syn-keyword">local</span> best_at = -<span class="syn-number">1</span>
+  <span class="syn-keyword">for</span> p <span class="syn-keyword">in</span> glob(<span class="syn-string">&quot;projects:*/*.jsonl&quot;</span>) <span class="syn-keyword">do</span>
+    <span class="syn-keyword">local</span> s = stat(p)
+    <span class="syn-keyword">if</span> s.modified &gt; best_at <span class="syn-keyword">then</span>
+      best = p
+      best_at = s.modified
+    <span class="syn-keyword">end</span>
+  <span class="syn-keyword">end</span>
+  <span class="syn-keyword">if</span> best == <span class="syn-keyword">nil</span> <span class="syn-keyword">then</span> fail(<span class="syn-string">&quot;count_shale_stops: no transcript under projects:&quot;</span>) <span class="syn-keyword">end</span>
+  <span class="syn-keyword">return</span> best
+<span class="syn-keyword">end</span>
+
+<span class="syn-comment">-- Whether a JSON value read back is a list: Shale has no `type`, so by the</span>
+<span class="syn-comment">-- first byte of its JSON.</span>
+<span class="syn-keyword">function</span> <span class="syn-name">is_list</span>(v)
+  <span class="syn-keyword">return</span> starts_with(json_write(v), <span class="syn-string">&quot;[&quot;</span>)
+<span class="syn-keyword">end</span>
+
+<span class="syn-comment">-- A tool result&#39;s text: a string, or a list of parts with `text`.</span>
+<span class="syn-keyword">function</span> <span class="syn-name">result_text</span>(content)
+  <span class="syn-keyword">if</span> <span class="syn-keyword">not</span> is_list(content) <span class="syn-keyword">then</span> <span class="syn-keyword">return</span> content <span class="syn-keyword">end</span>
+  <span class="syn-keyword">local</span> parts = {}
+  <span class="syn-keyword">for</span> c <span class="syn-keyword">in</span> content <span class="syn-keyword">do</span>
+    <span class="syn-keyword">if</span> has_key(c, <span class="syn-string">&quot;text&quot;</span>) <span class="syn-keyword">then</span> push(parts, c.text) <span class="syn-keyword">end</span>
+  <span class="syn-keyword">end</span>
+  <span class="syn-keyword">return</span> join(parts, <span class="syn-string">&quot;\n&quot;</span>)
+<span class="syn-keyword">end</span>
+
+<span class="syn-keyword">function</span> <span class="syn-name">launch_kind</span>(command)
+  <span class="syn-keyword">if</span> find(command, <span class="syn-string">&quot;shale&quot;</span>) == <span class="syn-keyword">nil</span> <span class="syn-keyword">then</span> <span class="syn-keyword">return</span> <span class="syn-string">&quot;&quot;</span> <span class="syn-keyword">end</span>
+  <span class="syn-keyword">if</span> re_find(command, <span class="syn-string">&quot;shale[^\\n]*&lt;&lt;&#39;[A-Za-z]+&#39;&quot;</span>) ~= <span class="syn-keyword">nil</span> <span class="syn-keyword">then</span> <span class="syn-keyword">return</span> <span class="syn-string">&quot;heredoc&quot;</span> <span class="syn-keyword">end</span>
+  <span class="syn-keyword">if</span> re_find(command, <span class="syn-string">&quot;shale[^\\n]*\\.shale&quot;</span>) ~= <span class="syn-keyword">nil</span> <span class="syn-keyword">then</span> <span class="syn-keyword">return</span> <span class="syn-string">&quot;script&quot;</span> <span class="syn-keyword">end</span>
+  <span class="syn-keyword">return</span> <span class="syn-string">&quot;&quot;</span>
+<span class="syn-keyword">end</span>
+
+<span class="syn-comment">-- One stop&#39;s line, with quoted values blanked, for grouping.</span>
+<span class="syn-keyword">function</span> <span class="syn-name">stop_key</span>(text)
+  <span class="syn-keyword">local</span> m = re_find(text, <span class="syn-string">&quot;── stopped at [^:]+:[0-9]+:[0-9]+[^:]*: ([^\\n]*)&quot;</span>)
+  <span class="syn-keyword">if</span> m == <span class="syn-keyword">nil</span> <span class="syn-keyword">then</span> <span class="syn-keyword">return</span> <span class="syn-keyword">nil</span> <span class="syn-keyword">end</span>
+  <span class="syn-keyword">local</span> said = m.groups[<span class="syn-number">1</span>]
+  <span class="syn-keyword">local</span> cut = find(said, <span class="syn-string">&quot; (&quot;</span>)
+  <span class="syn-keyword">if</span> cut ~= <span class="syn-keyword">nil</span> <span class="syn-keyword">then</span> said = sub(said, <span class="syn-number">1</span>, cut - <span class="syn-number">1</span>) <span class="syn-keyword">end</span>
+  said = re_replace(said, <span class="syn-string">&quot;\&quot;[^\&quot;]*\&quot;&quot;</span>, <span class="syn-string">&quot;\&quot;…\&quot;&quot;</span>)
+  <span class="syn-keyword">if</span> #said &gt; <span class="syn-number">110</span> <span class="syn-keyword">then</span> said = sub(said, <span class="syn-number">1</span>, <span class="syn-number">110</span>) .. <span class="syn-string">&quot;…&quot;</span> <span class="syn-keyword">end</span>
+  <span class="syn-keyword">return</span> said
+<span class="syn-keyword">end</span>
+
+<span class="syn-keyword">function</span> <span class="syn-name">bump</span>(counts, key)
+  counts[key] = get(counts, key, <span class="syn-number">0</span>) + <span class="syn-number">1</span>
+<span class="syn-keyword">end</span>
+
+<span class="syn-keyword">function</span> <span class="syn-name">ranked</span>(counts)
+  <span class="syn-keyword">local</span> rows = {}
+  <span class="syn-keyword">for</span> k <span class="syn-keyword">in</span> keys(counts) <span class="syn-keyword">do</span> push(rows, {n = counts[k], what = k}) <span class="syn-keyword">end</span>
+  sort(rows, <span class="syn-string">&quot;n&quot;</span>, <span class="syn-string">&quot;desc&quot;</span>)
+  <span class="syn-keyword">local</span> top = {}
+  <span class="syn-keyword">for</span> r <span class="syn-keyword">in</span> rows <span class="syn-keyword">do</span> <span class="syn-keyword">if</span> #top &lt; MOST <span class="syn-keyword">then</span> push(top, r) <span class="syn-keyword">end</span> <span class="syn-keyword">end</span>
+  <span class="syn-keyword">return</span> top
+<span class="syn-keyword">end</span>
+
+<span class="syn-keyword">local</span> path = TRANSCRIPT
+<span class="syn-keyword">if</span> path == <span class="syn-string">&quot;&quot;</span> <span class="syn-keyword">then</span> path = newest_transcript() <span class="syn-keyword">end</span>
+
+<span class="syn-keyword">local</span> calls = {}
+<span class="syn-keyword">local</span> tally = {heredoc = <span class="syn-number">0</span>, script = <span class="syn-number">0</span>}
+<span class="syn-keyword">local</span> ends = {}
+<span class="syn-keyword">local</span> stop_kinds = {}
+<span class="syn-keyword">local</span> stop_lines = {}
+<span class="syn-keyword">local</span> builtins = {}
+<span class="syn-keyword">local</span> programs = {}
+<span class="syn-keyword">local</span> at = <span class="syn-number">0</span>
+<span class="syn-keyword">local</span> done = <span class="syn-keyword">false</span>
+<span class="syn-keyword">while</span> <span class="syn-keyword">not</span> done <span class="syn-keyword">do</span>
+  <span class="syn-keyword">local</span> part = read_lines(path, at, PART)
+  <span class="syn-keyword">for</span> l <span class="syn-keyword">in</span> part.lines <span class="syn-keyword">do</span>
+    <span class="syn-keyword">local</span> is_call = find(l, <span class="syn-string">&quot;\&quot;tool_use\&quot;&quot;</span>) ~= <span class="syn-keyword">nil</span> <span class="syn-keyword">and</span> find(l, <span class="syn-string">&quot;\&quot;Bash\&quot;&quot;</span>) ~= <span class="syn-keyword">nil</span>
+    <span class="syn-keyword">local</span> is_answer = find(l, <span class="syn-string">&quot;\&quot;tool_result\&quot;&quot;</span>) ~= <span class="syn-keyword">nil</span>
+    <span class="syn-keyword">if</span> is_call <span class="syn-keyword">or</span> is_answer <span class="syn-keyword">then</span>
+      <span class="syn-keyword">local</span> v = json_read(l)
+      <span class="syn-keyword">local</span> recent = SINCE == <span class="syn-string">&quot;&quot;</span> <span class="syn-keyword">or</span> get(v, <span class="syn-string">&quot;timestamp&quot;</span>, <span class="syn-string">&quot;&quot;</span>) &gt;= SINCE
+      <span class="syn-keyword">local</span> content = v.message.content
+      <span class="syn-keyword">if</span> recent <span class="syn-keyword">and</span> is_list(content) <span class="syn-keyword">then</span>
+        <span class="syn-keyword">for</span> c <span class="syn-keyword">in</span> content <span class="syn-keyword">do</span>
+          <span class="syn-keyword">if</span> c.type == <span class="syn-string">&quot;tool_use&quot;</span> <span class="syn-keyword">and</span> c.name == <span class="syn-string">&quot;Bash&quot;</span> <span class="syn-keyword">then</span>
+            <span class="syn-keyword">local</span> kind = launch_kind(c.input.command)
+            <span class="syn-keyword">if</span> kind ~= <span class="syn-string">&quot;&quot;</span> <span class="syn-keyword">then</span>
+              calls[c.id] = kind
+              tally[kind] = tally[kind] + <span class="syn-number">1</span>
+              <span class="syn-keyword">if</span> kind == <span class="syn-string">&quot;heredoc&quot;</span> <span class="syn-keyword">then</span>
+                <span class="syn-keyword">for</span> b <span class="syn-keyword">in</span> re_find_all(c.input.command, <span class="syn-string">&quot;([a-z_][a-z0-9_]*)\\(&quot;</span>) <span class="syn-keyword">do</span> bump(builtins, b.groups[<span class="syn-number">1</span>]) <span class="syn-keyword">end</span>
+                <span class="syn-keyword">for</span> p <span class="syn-keyword">in</span> re_find_all(c.input.command, <span class="syn-string">&quot;run\\(\\{\&quot;([^\&quot;]+)\&quot;&quot;</span>) <span class="syn-keyword">do</span> bump(programs, p.groups[<span class="syn-number">1</span>]) <span class="syn-keyword">end</span>
+              <span class="syn-keyword">end</span>
+            <span class="syn-keyword">end</span>
+          <span class="syn-keyword">elseif</span> c.type == <span class="syn-string">&quot;tool_result&quot;</span> <span class="syn-keyword">and</span> has_key(calls, c.tool_use_id) <span class="syn-keyword">then</span>
+            <span class="syn-keyword">local</span> text = result_text(c.content)
+            <span class="syn-keyword">local</span> kind = calls[c.tool_use_id]
+            <span class="syn-keyword">local</span> key = stop_key(text)
+            <span class="syn-keyword">if</span> key ~= <span class="syn-keyword">nil</span> <span class="syn-keyword">and</span> starts_with(key, <span class="syn-string">&quot;fail:&quot;</span>) <span class="syn-keyword">then</span>
+              bump(ends, kind .. <span class="syn-string">&quot;, stopped by its own `fail` (a check&#39;s verdict)&quot;</span>)
+            <span class="syn-keyword">elseif</span> key ~= <span class="syn-keyword">nil</span> <span class="syn-keyword">then</span>
+              bump(ends, kind .. <span class="syn-string">&quot;, stopped by Shale&quot;</span>)
+              bump(stop_kinds, split(key, <span class="syn-string">&quot;:&quot;</span>)[<span class="syn-number">1</span>])
+              bump(stop_lines, key)
+            <span class="syn-keyword">elseif</span> find(text, <span class="syn-string">&quot;shale-gate:&quot;</span>) ~= <span class="syn-keyword">nil</span> <span class="syn-keyword">then</span>
+              bump(ends, kind .. <span class="syn-string">&quot;, refused by the gate&quot;</span>)
+            <span class="syn-keyword">elseif</span> find(text, <span class="syn-string">&quot;denied&quot;</span>) ~= <span class="syn-keyword">nil</span> <span class="syn-keyword">and</span> get(c, <span class="syn-string">&quot;is_error&quot;</span>, <span class="syn-keyword">false</span>) <span class="syn-keyword">then</span>
+              bump(ends, kind .. <span class="syn-string">&quot;, denied by the harness&quot;</span>)
+            <span class="syn-keyword">elseif</span> get(c, <span class="syn-string">&quot;is_error&quot;</span>, <span class="syn-keyword">false</span>) <span class="syn-keyword">then</span>
+              bump(ends, kind .. <span class="syn-string">&quot;, nonzero exit, no stop line&quot;</span>)
+            <span class="syn-keyword">else</span>
+              bump(ends, kind .. <span class="syn-string">&quot;, ran&quot;</span>)
+            <span class="syn-keyword">end</span>
+          <span class="syn-keyword">end</span>
+        <span class="syn-keyword">end</span>
+      <span class="syn-keyword">end</span>
+    <span class="syn-keyword">end</span>
+  <span class="syn-keyword">end</span>
+  at = part.next
+  done = part.done
+<span class="syn-keyword">end</span>
+
+print(path)
+print(tally.heredoc .. <span class="syn-string">&quot; heredocs, &quot;</span> .. tally.script .. <span class="syn-string">&quot; script launches&quot;</span> .. (SINCE == <span class="syn-string">&quot;&quot;</span> <span class="syn-keyword">and</span> <span class="syn-string">&quot;&quot;</span> <span class="syn-keyword">or</span> <span class="syn-string">&quot;, since &quot;</span> .. SINCE))
+print(<span class="syn-string">&quot;&quot;</span>)
+print(table(ranked(ends), {<span class="syn-string">&quot;n&quot;</span>, <span class="syn-string">&quot;what&quot;</span>}))
+print(<span class="syn-string">&quot;&quot;</span>)
+print(<span class="syn-string">&quot;Shale&#39;s stops, by kind (a script&#39;s own `fail` left out):&quot;</span>)
+print(table(ranked(stop_kinds), {<span class="syn-string">&quot;n&quot;</span>, <span class="syn-string">&quot;what&quot;</span>}))
+print(<span class="syn-string">&quot;&quot;</span>)
+print(<span class="syn-string">&quot;Shale&#39;s stops, by message:&quot;</span>)
+print(table(ranked(stop_lines), {<span class="syn-string">&quot;n&quot;</span>, <span class="syn-string">&quot;what&quot;</span>}))
+print(<span class="syn-string">&quot;&quot;</span>)
+print(<span class="syn-string">&quot;calls in heredocs (builtins and the script&#39;s own functions):&quot;</span>)
+print(table(ranked(builtins), {<span class="syn-string">&quot;n&quot;</span>, <span class="syn-string">&quot;what&quot;</span>}))
+print(<span class="syn-string">&quot;&quot;</span>)
+print(<span class="syn-string">&quot;programs heredocs run:&quot;</span>)
+print(table(ranked(programs), {<span class="syn-string">&quot;n&quot;</span>, <span class="syn-string">&quot;what&quot;</span>}))
+</code></pre>
+<nav class="steps"><a href="#find_bare_floats">← previous</a> · <a href="#contents">contents</a> · <a href="#count_roc">next →</a></nav>
 </section>
 </div>
 <div class="group">
 <h2 class="part" id="section-reports-on-roc-projects"><a href="#section-reports-on-roc-projects">Reports on Roc projects</a></h2>
 <p class="part-intro">A report to read rather than a gate to pass: what a tree of Roc projects holds, counted.</p>
 <section class="example" id="count_roc">
-<nav class="steps"><a href="#find_bare_floats">← previous</a> · <a href="#contents">contents</a> · <a href="#list_long_files">next →</a></nav>
+<nav class="steps"><a href="#count_shale_stops">← previous</a> · <a href="#contents">contents</a> · <a href="#list_long_files">next →</a></nav>
 <h3><a href="#count_roc">count_roc</a></h3>
 <p>A test-density report for a tree of Roc projects: each folder's modules and lines, its test modules and lines, and its expects, where <code>roc loc</code> gives one app's size.</p>
 <p class="facts">Its effects: <code>Shale.arg!</code>, <code>Shale.exists!</code>, <code>Shale.fail!</code>, <code>Shale.glob!</code>, <code>Shale.print!</code>, <code>Shale.read!</code>.<br>Roc: 240 lines in 1 file. Shale original: 55 lines.</p>
@@ -7569,7 +8885,7 @@ use(<span class="syn-string">&quot;./gate_recipe.shale&quot;</span>)
 <span class="syn-keyword">end</span>
 print(table(rows, {<span class="syn-string">&quot;place&quot;</span>, <span class="syn-string">&quot;modules&quot;</span>, <span class="syn-string">&quot;lines&quot;</span>, <span class="syn-string">&quot;test_modules&quot;</span>, <span class="syn-string">&quot;test_lines&quot;</span>, <span class="syn-string">&quot;expects&quot;</span>}))
 </code></pre>
-<nav class="steps"><a href="#find_bare_floats">← previous</a> · <a href="#contents">contents</a> · <a href="#list_long_files">next →</a></nav>
+<nav class="steps"><a href="#count_shale_stops">← previous</a> · <a href="#contents">contents</a> · <a href="#list_long_files">next →</a></nav>
 </section>
 </div>
 <div class="group">
