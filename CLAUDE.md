@@ -677,16 +677,16 @@ part, so a machine checks it, not a reader.
 - **Where the host mirrors a record by hand, check it against `roc glue`
   field by field.** A size assertion misses two same-sized fields swapped,
   and the host then silently reads the wrong one. roc-chat
-  `host/seam/glue_test.zig` holds every record in `chat_abi.zig` to glue's
-  snapshot (`host/seam/glue/`) at compile time, by name and offset, and
-  every tag union tag by tag.
+  `host/seam_test.zig` holds every function of the seam to glue's snapshot
+  (`host/glue/platform_abi.zig`) at compile time, each record field by
+  field by name and offset, and every tag union tag by tag.
 - **A wasm export must be named in the platform's `exports:`.** Otherwise
   it silently isn't one (`docs/roc-notes.md`, "The language"). See
   `canvas_apps/web/platform/main.roc` for a list that matches its host.
-- **A Roc crash is a 500, not a dead server.** roc-chat
-  `host/seam/sljmp.zig` jumps back to where the call began, and the
-  request's arena goes with it. Planted crashes, one per way the Roc can
-  die, prove it (`app/test/crash.roc`, `host/crash_test.zig`).
+- **A Roc crash stops the server.** A `crash` is a promise the app broke,
+  so roc-chat's host answers nothing after one: `roc_crashed` in
+  `host/seam_call.zig` stops the process with Roc's message (roc-chat
+  `docs/platform.md`, "Memory and crashes").
 - **Let the host check the Roc's work.** In Dog Park
   (`dog-park/README.md`, "Changing the game in Roc"), the physics and the
   rules are Roc under a Zig board, compiled to the page's wasm. `zig build
@@ -742,9 +742,7 @@ crosses it.)
   code or login.
 - **Neither a judge nor an error page prints private text.** roc-markdown's
   judge prints counts and failing case ids, never a case's text, so it can
-  judge real messages (`TESTING.md`). roc-chat's 500 after a Roc crash
-  carries nothing of the request, and `host/crash_test.zig` sends a
-  `secret-header-value` to prove it.
+  judge real messages (`TESTING.md`).
 
 ## 15. Agents: the long builds are the orchestrator's
 
