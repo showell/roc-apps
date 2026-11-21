@@ -9,11 +9,15 @@
 ## close, and the dancer winks at it while the yard stretches away behind.
 ## The eye flies far back, tipping, and four copies of the whole table roll
 ## in on parade floats, each pushed by a robot and each faster than the
-## last. An army marches in at the double from under the eye, a drum major
-## in front, and halts among the floats with a drumstick tossed and caught.
-## The floats kneel to the lawn, and the army breaks ranks and runs for the
-## empty chairs along the floats' far sides, where each marcher sets its dish
-## down and sits as the opening guests did. Heads pop up over
+## last. The eye whips round to the lawn for a game of musical chairs:
+## four robots and a drum major go round four chairs to a boombox, the
+## music stops, and the drum major is left standing, so it plants its
+## drumstick, sits on it and winks. Then it leaps up and leads its army in
+## at the double from under the eye, to halt among the floats with the
+## drumstick tossed and caught. The floats kneel to the lawn, and the army
+## breaks ranks and runs for the empty chairs along the floats' far sides,
+## where each marcher sets its dish down and sits as the opening guests
+## did, while the drum major sits on its drumstick again. Heads pop up over
 ## the fence until the whole row jumps at once; then robots pour in from
 ## both sides by the hundred, the eye does a barrel roll, and the whole
 ## crowd does the wave. The dancers strike their final pose, one winks
@@ -80,6 +84,14 @@ Script :: [].{
 	## The ticks at which each float brakes to a stop, one a shoulder pop.
 	float_stop_ticks : List(I64)
 	float_stop_ticks = Choreography.pop_offsets.map(|offset| parade_tick + offset)
+
+	## Musical chairs on the lawn once the floats are in, and when its music
+	## stops.
+	chairs_tick : I64
+	chairs_tick = section_tick(Chairs)
+
+	music_stop_tick : I64
+	music_stop_tick = chairs_tick + Choreography.music_offset
 
 	## The army steps out from under the eye as the dancers start to strut,
 	## and halts `march_frames` later.

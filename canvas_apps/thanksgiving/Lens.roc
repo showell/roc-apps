@@ -7,6 +7,7 @@
 ## out on purpose, to throw the viewer.
 import Family
 import EyePath
+import MusicalChairs
 import Script
 import Seatless
 
@@ -105,14 +106,42 @@ moves = [
 	# The picture jolts as each of the first three floats brakes.
 	Script.float_stop_ticks.take_first(3).map(jolt_moves).join(),
 	[
-		# In on the last float as it brakes, then snapped out, tipped, as
-		# the army steps out, and righted.
+		# In on the last float as it brakes, then out to take in the
+		# musical chairs.
 		{
 			start: last_float_stop - 14,
 			frames: 12,
 			curve: Whip,
 			to: { ..normal, focal: 700.0 },
 		},
+		{
+			start: Script.chairs_tick,
+			frames: 24,
+			curve: Whip,
+			to: { ..normal, focal: 540.0 },
+		},
+		# Snapped in and tipped as everyone freezes, and back out for the
+		# scramble.
+		{
+			start: MusicalChairs.music_stop_tick,
+			frames: 8,
+			curve: Whip,
+			to: { focal: 700.0, roll: 0.07 },
+		},
+		{
+			start: MusicalChairs.scramble_tick,
+			frames: 10,
+			curve: Smooth,
+			to: { ..normal, focal: 540.0 },
+		},
+		# In close for the drum major's idea, its sit and its wink.
+		{
+			start: Seatless.idea_tick - 5,
+			frames: 15,
+			curve: Whip,
+			to: { ..normal, focal: 600.0 },
+		},
+		# Snapped out, tipped, as the army steps out, and righted.
 		{
 			start: Script.army_tick,
 			frames: 20,
@@ -138,18 +167,6 @@ moves = [
 			frames: 90,
 			curve: Smooth,
 			to: { ..normal, focal: 620.0 },
-		},
-		{
-			start: Seatless.last_look_tick - 10,
-			frames: 15,
-			curve: Whip,
-			to: { ..normal, focal: 850.0 },
-		},
-		{
-			start: Seatless.idea_tick - 5,
-			frames: 15,
-			curve: Whip,
-			to: { ..normal, focal: 1250.0 },
 		},
 		{
 			start: Script.peek_tick,

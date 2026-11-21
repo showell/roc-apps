@@ -5,7 +5,9 @@
 ## camera and shrink into the sky: the path is laid out from where the eye
 ## stands, and the same projection as everything else does the shrinking.
 ##
-## A drum major in front pumps a drumstick on the beat. Behind it come
+## A drum major in front pumps a drumstick on the beat. It starts out on the
+## lawn, up off its drumstick from the musical chairs, and runs to the head
+## of its army as the army comes out from under the eye. Behind it come
 ## three ranks, each carrying more food: tall robots with turkeys, round ones
 ## with potatoes, tiny ones with pies, the tiny ones rolling at double time
 ## to keep up. The army marches up between the near floats and halts among
@@ -16,6 +18,7 @@ import lib.Eye
 import Dancer
 import Dishes
 import Ease
+import MusicalChairs
 import Robot
 import Script
 
@@ -95,6 +98,14 @@ March :: [].{
 	## Where the drum major stands once the army has halted.
 	drum_major_halt_spot : Eye.At
 	drum_major_halt_spot = { right: 0.4, forward: halt_lead, height: 0.0 }
+
+	## When the drum major, up off its drumstick, sets off for the head of
+	## its army, and when it gets there, just ahead of the first rank.
+	run_start_tick : I64
+	run_start_tick = Script.army_tick + 16
+
+	join_tick : I64
+	join_tick = Script.army_tick + 70
 
 	## When the straggler is in its gap.
 	straggler_in_tick : I64
@@ -235,10 +246,40 @@ straggler = |now| {
 wheel_radius : F64
 wheel_radius = 0.09
 
+# Where the drum major is: running from where it lost the musical chairs
+# to the head of the army, then leading it.
+drum_major_feet : I64 -> Eye.At
+drum_major_feet = |now| {
+	head = { ..March.drum_major_halt_spot, forward: lead_forward(now) }
+	from = MusicalChairs.stand_spot
+	to = { ..head, forward: lead_forward(March.join_tick) }
+	run = Ease.smooth(Ease.ramp(now - March.run_start_tick, March.join_tick - March.run_start_tick))
+	if now >= March.join_tick {
+		head
+	} else {
+		{
+			right: from.right + (to.right - from.right) * run,
+			forward: from.forward + (to.forward - from.forward) * run,
+			height: 0.0,
+		}
+	}
+}
+
 drum_major : I64 -> March.DrumMajor
 drum_major = |now| {
-	phase = step_phase(now)
-	pump = 0.35 * (2.0 * phase).sin() * marching(now)
+	running = now < March.join_tick
+	phase =
+		if running {
+			Ease.ramp(now - March.run_start_tick, March.join_tick - March.run_start_tick) * 30.0
+		} else {
+			step_phase(now)
+		}
+	pump =
+		if running {
+			0.0
+		} else {
+			0.35 * (2.0 * phase).sin() * marching(now)
+		}
 	# The left hand on the hip, the right holding the drumstick high.
 	pose = {
 		left_upper: -0.75,
@@ -252,10 +293,14 @@ drum_major = |now| {
 		wink: 0.0,
 		antenna_sway: Ease.boing(now - Script.halt_tick),
 		phase,
-		stride: high_step * marching(now),
+		stride: if running {
+			1.6
+		} else {
+			high_step * marching(now)
+		},
 	}
 	{
-		feet: { ..March.drum_major_halt_spot, forward: lead_forward(now) },
+		feet: drum_major_feet(now),
 		pose,
 		drumstick: tossed_drumstick({
 			hand: Dancer.right_hand_at(pose),

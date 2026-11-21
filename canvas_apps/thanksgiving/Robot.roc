@@ -116,8 +116,23 @@ Robot :: [].{
 		feet : Point,
 		pixels_per_metre : F64,
 	} -> List(Shapes.Shape)
-	figure_shapes = |{ build, pose, feet, pixels_per_metre }| {
-		body = proportions(build)
+	figure_shapes = |{ build, pose, feet, pixels_per_metre }|
+		perched_figure_shapes({ build, pose, feet, pixels_per_metre, hips_up: 0.0 })
+
+	## The robot with its hips `hips_up` metres higher than standing puts
+	## them, or lower, as a seat puts them: the body, the head and the arms
+	## go with the hips, the legs reach from them to the ground, and a wheel
+	## hangs from them.
+	perched_figure_shapes : {
+		build : Robot.Build,
+		pose : Robot.Pose,
+		feet : Point,
+		pixels_per_metre : F64,
+		hips_up : F64,
+	} -> List(Shapes.Shape)
+	perched_figure_shapes = |{ build, pose, feet, pixels_per_metre, hips_up }| {
+		standing = proportions(build)
+		body = { ..standing, hip: standing.hip + hips_up }
 		place = {
 			x: feet.x.to_f64(),
 			y: feet.y.to_f64(),
@@ -130,7 +145,7 @@ Robot :: [].{
 			RobotHead.antenna_shapes(place, { body, head_top, glow: pose.eye_glow }),
 			match body.moves_on {
 				Legs => RobotBody.leg_shapes(place, { body, pose, hip })
-				Wheel => RobotBody.wheel_shapes(place, { body, pose, hip })
+				Wheel => RobotBody.wheel_shapes(place, { body: standing, pose, hip })
 			},
 			RobotBody.torso_shapes(place, { body, hip }),
 			RobotHead.head_shapes(

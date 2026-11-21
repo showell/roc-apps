@@ -18,23 +18,26 @@ import View
 
 Army :: [].{
 
-	## Everyone in the army still on the lawn at `tick`, each with how far
-	## down the yard it stands, so the yard can paint it among the tables.
-	army_layers : View, I64 -> List({ depth : F64, shapes : List(Shapes.Shape) })
+	## Everyone in the army still on the lawn at `tick`, each with the spot
+	## it stands on, so the yard can paint it among the tables.
+	army_layers : View, I64 -> List({ spot : { right : F64, forward : F64 }, shapes : List(Shapes.Shape) })
 	army_layers = |view, tick| {
 		leader =
 			match Seatless.drum_major_at(tick) {
 				Marching(drum_major) => [
-					{ depth: drum_major.feet.forward, shapes: drum_major_shapes(view, drum_major) },
+					{ spot: ground_spot(drum_major.feet), shapes: drum_major_shapes(view, drum_major) },
 				]
 				NotYet => []
 			}
 		runners = Marchers.running_at(tick).map(
-			|trooper| { depth: trooper.feet.forward, shapes: trooper_shapes(view, trooper) },
+			|trooper| { spot: ground_spot(trooper.feet), shapes: trooper_shapes(view, trooper) },
 		)
 		List.concat(leader, runners)
 	}
 }
+
+ground_spot : { right : F64, forward : F64, .. } -> { right : F64, forward : F64 }
+ground_spot = |{ right, forward, .. }| { right, forward }
 
 # A marcher, then its dish held up in its right hand.
 trooper_shapes : View, March.Trooper -> List(Shapes.Shape)

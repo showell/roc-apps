@@ -89,6 +89,19 @@ Choreography :: [].{
 	pop_offsets : List(I64)
 	pop_offsets = [200, 270, 330, 380]
 
+	## While the robots play musical chairs: a groove while the music plays,
+	## and when it stops, a freeze like everyone else's, the head turned to
+	## the chairs, until the army marches in.
+	chairs_steps : List(Choreography.Step)
+	chairs_steps = List.concat(
+		groove_steps(Moves.goalpost, music_offset),
+		[{ move: { ..Moves.goalpost, head: -1.0 }, frames: chairs_ticks - music_offset }],
+	)
+
+	## The ticks from the start of the musical chairs to the music stopping.
+	music_offset : I64
+	music_offset = 240
+
 	## While the army marches in: a bounce on every step of its drum, arms
 	## out, the head clicking toward the marchers every few steps.
 	strut_steps : List(Choreography.Step)
@@ -102,7 +115,7 @@ Choreography :: [].{
 	## the beat, the head clicking after the marchers as they run past.
 	seat_steps : List(Choreography.Step)
 	seat_steps =
-		[0.0, 1.0, 0.0, -1.0, 0.0, 1.0, 0.0, -1.0, 0.0, 1.0, 0.0, -1.0, 0.0, 1.0]
+		[0.0, 1.0, 0.0, -1.0, 0.0, 1.0, 0.0, -1.0, 0.0, 1.0, 0.0, -1.0]
 			.map(|head| beat_steps({ ..Moves.arms_out, head }))
 			.join()
 
@@ -206,6 +219,11 @@ pop_steps = |lift| [
 
 repeated_steps : List(Choreography.Step), U64 -> List(Choreography.Step)
 repeated_steps = |steps, times| List.repeat(steps, times).join()
+
+# The musical chairs, from the boombox dropping in to the drum major's wink
+# and a moment after.
+chairs_ticks : I64
+chairs_ticks = 510
 
 # The parade ends a moment after the last float stops.
 parade_ticks : I64

@@ -2,19 +2,21 @@
 ## back to front, at one tick. Script says when each beat is; EyePath and Lens
 ## say where the eye is and how it is zoomed; Guests, Family, Copies, March,
 ## Marchers and Crowd say where everything is and how it stands; Party draws
-## each table's party, and Backyard, ParadeFloat, Speck, Army, Banner and
-## Leaves each draw one thing from the numbers they are handed.
+## each table's party, ChairGame the musical chairs, and Backyard,
+## ParadeFloat, Speck, Army, Banner and Leaves each draw one thing from the
+## numbers they are handed.
 ##
 ## Behind the fence come the robots jumping to see over it. Across the yard,
 ## the tables, the crowd's blocks and the army on the lawn are painted
-## farthest first, each table by its middle and each robot by its feet, so a
-## marcher running between the floats goes behind the near ones and in front
-## of the far ones.
+## farthest from the eye first, along the way it faces, each table by its
+## middle and each robot by its feet, so a marcher running between the
+## floats goes behind the near ones and in front of the far ones.
 import lib.Point
 import lib.Shapes
 import Army
 import Backyard
 import Banner
+import ChairGame
 import Copies
 import Crowd
 import Dinner
@@ -64,6 +66,7 @@ Thanksgiving :: [].{
 			Crowd.fence_members_at(tick).map(|member| Speck.member_shapes(view, member)).join(),
 			Backyard.fence_shapes(view),
 			yard_shapes(view, tick),
+			ChairGame.note_shapes(view, tick),
 		].join()
 		[
 			rolled_shapes(scene, Lens.setting_at(tick).roll),
@@ -88,21 +91,29 @@ rolled_shapes = |scene, roll| {
 	Shapes.shapes_in_space(space, scene)
 }
 
-# The tables, the crowd's two blocks and the army on the lawn, farthest
-# first: each table by its middle, each robot by its feet.
+# The tables, the crowd's two blocks, the musical chairs and the army on
+# the lawn, farthest from the eye first, along the way it faces: each table
+# by its middle, each robot by its feet.
 yard_shapes : View, I64 -> List(Shapes.Shape)
 yard_shapes = |view, tick| {
+	eye = EyePath.eye_spot(tick)
+	depth = |spot|
+		(spot.right - eye.right) * eye.heading.sin() + (spot.forward - eye.forward) * eye.heading.cos()
 	tables = Copies.table_places_at(tick).map(
 		|table| {
-			depth: table.offset.forward + 3.3,
+			spot: { right: table.offset.right, forward: table.offset.forward + 3.3 },
 			shapes: table_shapes(view.shifted_view(table.offset), { table, tick }),
 		},
 	)
 	crowd = Crowd.block_members_at(tick).map(
-		|member| { depth: member.feet.forward, shapes: Speck.member_shapes(view, member) },
+		|member| {
+			spot: { right: member.feet.right, forward: member.feet.forward },
+			shapes: Speck.member_shapes(view, member),
+		},
 	)
-	[tables, crowd, Army.army_layers(view, tick)]
+	[tables, crowd, ChairGame.game_layers(view, tick), Army.army_layers(view, tick)]
 		.join()
+		.map(|layer| { depth: depth(layer.spot), shapes: layer.shapes })
 		.sort_with(
 			|a, b|
 				if a.depth > b.depth {

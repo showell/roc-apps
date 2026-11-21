@@ -5,6 +5,7 @@
 ## to on the way.
 import Family
 import Ease
+import MusicalChairs
 import Script
 import Seatless
 
@@ -138,10 +139,38 @@ moves = [
 		curve: Whip,
 		goes: To({ ..wide, height: 2.4, heading: 0.4 }),
 	},
-	# Up and back as the army marches out under the eye.
+	# Whip-panned round and down to the lawn, looking left across it from
+	# the aisle at the musical chairs, with nothing else going on behind.
+	{
+		start: Script.chairs_tick,
+		frames: 24,
+		curve: Whip,
+		goes: To(chairs_watch),
+	},
+	# Whipped in close on the drum major as it has its idea, and kept there
+	# for the sit and the wink.
+	{
+		start: Seatless.idea_tick - 5,
+		frames: 15,
+		curve: Whip,
+		goes: To({
+			..chairs_watch,
+			right: MusicalChairs.stand_spot.right + 4.0,
+			forward: MusicalChairs.stand_spot.forward - 1.2,
+		}),
+	},
+	# Whipped up and round to look up the aisle as the drum major leaps up
+	# and runs to the head of the army coming out from under the eye, then
+	# up and back as the army marches.
 	{
 		start: Script.army_tick,
-		frames: Script.march_frames,
+		frames: 24,
+		curve: Whip,
+		goes: To(march_start),
+	},
+	{
+		start: Script.army_tick + 24,
+		frames: Script.march_frames - 24,
 		curve: Smooth,
 		goes: To(army_watch),
 	},
@@ -163,30 +192,6 @@ moves = [
 			forward: -24.0,
 			height: 2.0,
 			heading: -0.16,
-		}),
-	},
-	# Whipped round onto the drum major as it hurries across, looking for a
-	# chair, and in closer as it has its idea.
-	{
-		start: Seatless.last_look_tick - 10,
-		frames: 15,
-		curve: Whip,
-		goes: To({
-			right: -1.0,
-			forward: -24.0,
-			height: 1.5,
-			heading: 0.16,
-		}),
-	},
-	{
-		start: Seatless.idea_tick - 5,
-		frames: 15,
-		curve: Whip,
-		goes: To({
-			right: -1.0,
-			forward: -24.0,
-			height: 1.2,
-			heading: 0.21,
 		}),
 	},
 	# Flown down the aisle between the floats, toward a noise at the fence.
@@ -264,6 +269,27 @@ wide = {
 	forward: -25.5,
 	height: 3.4,
 	heading: 0.0,
+}
+
+# In the aisle beside the musical chairs, eye high to a seated robot,
+# looking across the lawn at them and turned a little more, so the near
+# float is off the screen's right edge.
+chairs_watch : EyePath.Spot
+chairs_watch = {
+	right: 1.0,
+	forward: -21.5,
+	height: 1.1,
+	heading: -0.5 * F64.pi - 0.1,
+}
+
+# Over where the army comes out, turned a little toward where the drum
+# major gets up.
+march_start : EyePath.Spot
+march_start = {
+	right: 0.4,
+	forward: -27.5,
+	height: 3.6,
+	heading: -0.25,
 }
 
 army_watch : EyePath.Spot

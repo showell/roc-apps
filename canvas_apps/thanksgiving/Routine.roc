@@ -2,15 +2,15 @@
 ## another, and the move danced any number of ticks in. A move snaps into
 ## place over its first few ticks and holds for the rest, so the dance goes
 ## in clicks rather than easing. Every dancer at every table dances it in
-## step. Script says when it starts, and times the eye, the floats, the army
-## and the crowd to its sections.
+## step. Script says when it starts, and times the eye, the floats, the game
+## of musical chairs, the army and the crowd to its sections.
 import Choreography
 import Moves
 
 Routine :: [].{
 
 	## The routine's sections, in the order they are danced.
-	Section : [Opening, Hello, Travel, Parade, Strut, Seat, Peek, Flood, Wave, Finale]
+	Section : [Opening, Hello, Travel, Parade, Chairs, Strut, Seat, Peek, Flood, Wave, Finale]
 
 	## The move `since` ticks into the routine, and the last move after it
 	## ends.
@@ -61,7 +61,7 @@ Routine :: [].{
 }
 
 sections_in_order : List(Routine.Section)
-sections_in_order = [Opening, Hello, Travel, Parade, Strut, Seat, Peek, Flood, Wave, Finale]
+sections_in_order = [Opening, Hello, Travel, Parade, Chairs, Strut, Seat, Peek, Flood, Wave, Finale]
 
 steps_of : Routine.Section -> List(Choreography.Step)
 steps_of = |section|
@@ -70,6 +70,7 @@ steps_of = |section|
 		Hello => Choreography.hello_steps
 		Travel => Choreography.travel_steps
 		Parade => Choreography.parade_steps
+		Chairs => Choreography.chairs_steps
 		Strut => Choreography.strut_steps
 		Seat => Choreography.seat_steps
 		Peek => Choreography.peek_steps
