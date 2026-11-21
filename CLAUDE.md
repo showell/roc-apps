@@ -123,15 +123,15 @@ trusting it.
   nightly's tag (roc-chat `roc-version`, roc-markdown `roc-version`), and
   every tool reads that file rather than keeping its own copy of the pin.
 - **Pins live side by side at `~/tools/roc-<pin>/roc`; the PATH is never
-  touched.** roc-chat `tools/get_roc.sh` downloads the pinned nightly there,
-  checks that `roc version` names the pin, and does nothing if it's already
-  installed.
-- **The build refuses a mismatch.** roc-chat `build.zig` `rocCompiler` takes
+  touched.** roc-chat's README, "Working on it", says where its pin goes,
+  and roc-markdown's build says so when it finds none there.
+- **The build uses the pin and nothing else.** roc-chat `build.zig`
+  `rocCompiler` takes `~/tools/roc-<pin>/roc`, the pin read from
+  `roc-version`, never `roc` on the PATH. roc-markdown `build.zig` takes
   `-Droc=<path>`, then `~/tools/roc-<pin>/roc`, then `roc` on the PATH, and
-  stops with an error if `roc version` isn't the pin. roc-markdown
-  `build.zig` does the same. The scripts read the same file: `roc_at` in
-  roc-chat `tools/verify.shale`, `pinned_roc` in roc-markdown
-  `tools/verify.shale`, and roc-chat `tools/chat_glue.shale`.
+  stops with an error if `roc version` isn't the pin. The scripts read the
+  same file: `ROC` in roc-chat `tools/verify.shale`, roc-chat
+  `tools/glue.shale`, and `pinned_roc` in roc-markdown `tools/verify.shale`.
 - **A sandbox that can't reach roc-lang's releases uses ours.** The
   roc-apps GitHub release `toolchain-2026-10-30-0602c5f` carries the pinned nightly,
   repacked unmodified, plus `roc-ast`, each with its sha256. Check the hash
@@ -143,7 +143,7 @@ trusting it.
   next gets features.
 - **A pin move is its own commit.** Change `roc-version`, then run the full
   verify and regenerate any ABI snapshot with `roc glue` (roc-chat
-  `tools/chat_glue.shale`) to check the seam hasn't moved. If `roc fmt` now
+  `tools/glue.shale`) to check the seam hasn't moved. If `roc fmt` now
   lays code out differently, the reformat goes with the pin move, never
   mixed with a change in behaviour (§5).
 - **Before you debug the compiler, ask "is it already fixed?"** Try the
@@ -565,10 +565,11 @@ one.
 - **Write in the present tense.** Say what the code does and why. How it
   came to be that way, and what it replaced, belongs in the commit message,
   where it is dated and attached to the change.
-- **A comment carries a why, or it goes.** roc-chat `app/Store.roc`'s
-  `append_audit!` says its failure is "the host's to log alone", because
-  the audit is a record of what happened, not the request's work. That is
-  a reason the code can't show; a restatement of the code is not.
+- **A comment carries a why, or it goes.** roc-chat `app/Transcript.roc`'s
+  `most_bytes` says the app refuses a record that would grow a transcript
+  past it "so every transcript the chat writes stays one the host will
+  read", the host's own cap sitting above it. That is a reason the code
+  can't show; a restatement of the code is not.
 - **A file's top comment says what the file does, in plain, complete
   sentences for a reader who arrives cold.** roc-chat
   `app/ConversationRoute.roc` opens: "This module moves data between the web
@@ -662,11 +663,13 @@ part, so a machine checks it, not a reader.
 - **On a server, Zig carries the network.** roc-chat's `host/` is a Zig
   server on `std.http` under a Roc app (`app/`, on `platform/`). One mutex,
   the turn, is held only while a request's Roc call runs. A body is read
-  whole before the turn and the answer is written after it, and an SSE
-  stream holds its own task outside it (roc-chat README, "The model").
+  whole between the head's call and the request's, the answer is written
+  after it, and an SSE stream holds its own task outside it (roc-chat
+  `docs/platform.md`, "HTTP, with no routing").
 - **A hosted function answers a fact, never a verdict.** The host keeps
-  only what needs its secrets or its state: the Roc asks `sign!` and
-  `verify!`, and never holds the key. The rules for this seam are in
+  only what needs its secrets or its state: the Roc asks
+  `hmac_sha256_with_server_secret!` and
+  `hmac_sha256_with_server_secret_matches!`, and never holds the key. The rules for this seam are in
   `docs/roc-style.md`, "The host boundary". Read that section before
   adding a hosted function.
 - **Generate the other side of the seam; don't hand-write it.** Roc lays a
@@ -707,9 +710,10 @@ fault, and nothing we write down or print carries a secret or private
 text. (§13 covers the seam itself; this section is about what
 crosses it.)
 
-- **Secrets never cross the seam.** The Roc asks the host to `sign!` and
-  `verify!`, and never holds the signing key. GitHub's client secret and
-  token stay on the host side too (roc-chat `README.md`, "The model").
+- **Secrets never cross the seam.** The Roc asks the host to sign bytes
+  with the server's secret and to check a signature, and never holds the
+  key. GitHub's client secret and token stay on the host side too (roc-chat
+  `docs/platform.md`, "Passwords and the server's secret" and "GitHub").
 - **Bound the cost before doing the work.** roc-markdown charges every
   render step to a work budget sized by the message's length, and
   `Md.hostility` answers `Renderable` or `TooMuchFormatting` before you
@@ -718,28 +722,29 @@ crosses it.)
   same rule: it asks the Roc to judge a request's head (origin and size
   allowance) before reading its body, and caps the bytes in flight across
   all connections, so a hostile page can't fill memory with bodies that
-  will only be refused (roc-chat `app/main.roc`, `admission`).
+  will only be refused (roc-chat `app/Admission.roc`).
 - **A cross-site GET is a request too.** A page's stream, image or script
   can be fetched by another site's page in the viewer's browser. Refuse a
   foreign `Origin` on every method, and a cross-site `Sec-Fetch-Site` on a
   GET that isn't a top-level navigation (roc-chat `app/RequestOrigin.roc`).
 - **Decode at the door into an opaque type.** Only its own module can
   build one, so the checks are the only way in (`docs/roc-style.md`, "Make
-  wrong values impossible to build"). roc-chat `app/Principal.roc`'s ids
-  are opaque and refuse 0. An `AuditCodec` entry is made only by its
-  constructors or `decode`.
-- **The host allowlists what the Roc may set.** roc-chat
-  `host/call.zig` `allowed_headers` is `set-cookie`, `cache-control` and
-  `location`. Any other name, or a CR, LF or NUL, is a 500, because it is
-  the Roc's bug. The host owns `content-length` and `connection`.
+  wrong values impossible to build"). roc-chat `app/UserId.roc`'s ids are
+  opaque and refuse 0, and `app/GitHubId.roc`'s refuse it too.
+- **The host checks what the Roc answers.** In roc-chat `host/http.zig`, a
+  header whose name is empty or whose name or value holds a CR, LF or NUL
+  (`header_safe`), a status that isn't a real one, or a malformed stream
+  is a 500, because it is the Roc's bug. The host writes `connection:
+  close` on every answer itself.
 - **Each refusal is a planted fault in verify.** A check that refuses
   something counts once a copy of the tree with that refusal removed goes
-  red: roc-chat `tools/verify.shale` plants a forged session cookie, a
-  revoked key that still works, and a cross-origin POST. roc-markdown's
+  red. roc-chat's end to end (`host/end_to_end.zig`, run by
+  `tools/verify.shale`) sends a forged session cookie, a revoked agent key
+  and cross-origin POSTs, and checks each is refused. roc-markdown's
   verify plants an image from another origin and a `javascript:` src.
-- **An audit never holds a secret.** roc-chat `app/AuditCodec.roc` records
-  public numbers and words only, never a token, hash, cookie, nonce, OAuth
-  code or login.
+- **A log never holds a secret.** roc-chat's host logs a failed file
+  primitive's name, path and error, and `roc-chat hash-password` keeps the
+  password out of every log and argument list (`docs/platform.md`).
 - **Neither a judge nor an error page prints private text.** roc-markdown's
   judge prints counts and failing case ids, never a case's text, so it can
   judge real messages (`TESTING.md`).

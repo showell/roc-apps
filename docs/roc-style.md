@@ -841,10 +841,11 @@ is the base; these rules sharpen it.
   `EmojiStill` is the type, and the traced animals are its values
   (`EmojiStill.cow`). A module of plain values of an outside type, such as
   `CatStills`, keeps its plural name.
-- **A resource is reached through one module.** In the chat, `Files.roc` is
-  the only caller of the host's file functions, and it keeps missing and
-  failed apart as a `Try`'s two error tags. Every other module asks it; a
-  [hunt](#testing-and-enforcement) flags any call that bypasses it.
+- **A resource is reached through one module.** In the chat, `FileFacts.roc`
+  is the only caller of the host's file functions, and it names each failure
+  apart (`Missing`, `Damaged`, and the host's own), so a file that can't be
+  read never looks absent. Every other module asks it, through each
+  feature's `*Files` module.
 - **A flow is read in one module, not five** (Steve: "We don't want to
   force folks to read 5 different modules to understand a code flow").
   A module whose every caller is one other module belongs with that
@@ -908,13 +909,14 @@ is the base; these rules sharpen it.
   memory is misread or corrupted. So the seam holds every record of every
   hosted function to what `roc glue` generates, at compile time, by name and
   offset, and every tag union tag by tag, by number (roc-chat's
-  `host/seam/glue_test.zig`). With that check a record can be as large as
+  `host/seam_test.zig`). With that check a record can be as large as
   the data is: there is no limit on its size, and a list of small records
   is a choice made for the data, not for the mirror.
 - **A hosted function answers a fact, never a verdict.** When the Roc can
   decide from what the host can tell it, the host gives the fact and the Roc
-  gives the verdict: `identify!` says who is asking, and `Members.admit!`
-  decides whether they may use the chat. The host keeps only what needs its
+  gives the verdict: `hmac_sha256_with_server_secret_matches!` says whether
+  a session's signature matches, and `Session.admit` decides whether the
+  session admits anyone. The host keeps only what needs its
   secrets or its state (an HMAC check, a key compare). A fact a request needs
   everywhere is read once, at the door, and passed to every route as a
   value, never as a lazy `[Known, Unasked]` cache.
