@@ -20,6 +20,17 @@
   .top { display: flex; flex-wrap: wrap; gap: 4px 14px; font-size: 14px; margin: 0 0 14px; }
   h1 { font-size: 28px; margin: 0 0 6px; }
   .lede { margin: 0 0 10px; max-width: 70ch; }
+  ul.lede { padding-left: 22px; }
+  ul.lede li { margin: 0 0 4px; }
+  h2.intro { font-size: 20px; margin: 30px 0 6px; }
+  h3.intro { font-size: 16px; margin: 18px 0 4px; }
+  /* The drawing is Graphviz's SVG, inline, so its lines and words take the
+     page's colors in either theme. */
+  .diagram { margin: 14px 0 18px; }
+  .diagram svg { max-width: 100%; height: auto; }
+  .diagram text { fill: var(--fg); }
+  .diagram path, .diagram polygon { stroke: var(--fg); }
+  .diagram .edge polygon { fill: var(--fg); }
   h2.part { font-size: 25px; margin: 80px 0 4px; padding-top: 20px; border-top: 3px solid var(--accent); }
   .part-intro { margin: 0 0 8px; }
   h3 { font-size: 21px; margin: 10px 0 4px; }
@@ -57,20 +68,131 @@
 <p class="lede">The programs on this page are written in Roc and run on
 <a href="https://github.com/showell/shale">Shale</a>, a runtime for programs that work with files, folders and
 other programs. Each is a check or a report we run on our own code, shown in full.</p>
-<p class="lede">Roc is a fast, friendly, functional language. It compiles to machine code, and its type checker
-infers every type, so a program needs few annotations and still has every call checked before it runs. Its
-functions are pure unless their type says otherwise: a function that reads a file is marked by its name and its
-type, and everything else is plain computation that a test can call directly. Those tests are <code>expect</code>s,
-written beside the code they test.</p>
+<h2 class="intro">What Roc brings</h2>
+<p class="lede">Roc is a fast, friendly, functional language.</p>
+<ul class="lede">
+<li><strong>Fast.</strong> Roc compiles to machine code.</li>
+<li><strong>Checked.</strong> The type checker infers every type, so a program needs few annotations and still has
+every call checked before it runs.</li>
+<li><strong>Pure by default.</strong> A function that reads a file is marked by its name and its type. Everything
+else is plain computation that a test can call directly.</li>
+<li><strong>Tested in place.</strong> Tests are <code>expect</code>s, written beside the code they test.</li>
+</ul>
+<h2 class="intro">A platform decides what a program can do</h2>
 <p class="lede">A Roc program doesn't choose its own effects. It's written against a <em>platform</em>, and the
-platform decides what the program can do. Here that means reading a file, listing a folder, running a program and
-printing. The platform these examples use has Shale's runtime as its host, so each effect is a call into Shale, held
-to the limits Shale sets for the run. Everything else is plain Roc.
+platform alone decides what the program can do. <a href="https://github.com/roc-lang/basic-cli">basic-cli</a>,
+Roc's standard platform for command-line programs, offers a wide set: files and folders, the network, environment
+variables, the clock and more. The platform these examples use is narrower, has a few things basic-cli doesn't, and
+has Shale's runtime as its host, so each effect is a call into Shale, held to the limits Shale sets for the run.
+Everything else is plain Roc.</p>
+<div class="diagram">
+<svg width="410pt" height="316pt"
+ viewBox="0.00 0.00 409.50 316.00" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+<g id="graph0" class="graph" transform="scale(1 1) rotate(0) translate(4 312)">
+<title>platform</title>
+<g id="clust1" class="cluster">
+<title>cluster_roc</title>
+<path fill="transparent" stroke="black" stroke-dasharray="5,2" d="M114,-143C114,-143 268,-143 268,-143 274,-143 280,-149 280,-155 280,-155 280,-288 280,-288 280,-294 274,-300 268,-300 268,-300 114,-300 114,-300 108,-300 102,-294 102,-288 102,-288 102,-155 102,-155 102,-149 108,-143 114,-143"/>
+<text text-anchor="middle" x="191" y="-286.4" font-family="sans-serif" font-size="12.00">Roc</text>
+</g>
+<!-- program -->
+<g id="node1" class="node">
+<title>program</title>
+<path fill="none" stroke="black" d="M259,-271C259,-271 123,-271 123,-271 117,-271 111,-265 111,-259 111,-259 111,-245 111,-245 111,-239 117,-233 123,-233 123,-233 259,-233 259,-233 265,-233 271,-239 271,-245 271,-245 271,-259 271,-259 271,-265 265,-271 259,-271"/>
+<text text-anchor="middle" x="191" y="-255.4" font-family="sans-serif" font-size="12.00">the program</text>
+<text text-anchor="middle" x="191" y="-242.4" font-family="sans-serif" font-size="12.00">pure functions, expects</text>
+</g>
+<!-- api -->
+<g id="node2" class="node">
+<title>api</title>
+<path fill="none" stroke="black" d="M260,-189C260,-189 122,-189 122,-189 116,-189 110,-183 110,-177 110,-177 110,-163 110,-163 110,-157 116,-151 122,-151 122,-151 260,-151 260,-151 266,-151 272,-157 272,-163 272,-163 272,-177 272,-177 272,-183 266,-189 260,-189"/>
+<text text-anchor="middle" x="191" y="-173.4" font-family="sans-serif" font-size="12.00">Shale.roc</text>
+<text text-anchor="middle" x="191" y="-160.4" font-family="sans-serif" font-size="12.00">the platform&#39;s functions</text>
+</g>
+<!-- program&#45;&gt;api -->
+<g id="edge1" class="edge">
+<title>program&#45;&gt;api</title>
+<path fill="none" stroke="black" d="M191,-232.85C191,-222 191,-208.07 191,-196.18"/>
+<polygon fill="black" stroke="black" points="193.45,-196.08 191,-189.08 188.55,-196.08 193.45,-196.08"/>
+<text text-anchor="middle" x="203.5" y="-208.2" font-family="sans-serif" font-size="11.00">calls</text>
+</g>
+<!-- rules -->
+<g id="node3" class="node">
+<title>rules</title>
+<path fill="none" stroke="black" stroke-width="2" d="M283,-107C283,-107 99,-107 99,-107 93,-107 87,-101 87,-95 87,-95 87,-81 87,-81 87,-75 93,-69 99,-69 99,-69 283,-69 283,-69 289,-69 295,-75 295,-81 295,-81 295,-95 295,-95 295,-101 289,-107 283,-107"/>
+<text text-anchor="middle" x="191" y="-91.4" font-family="sans-serif" font-size="12.00">Shale&#39;s runtime, the host</text>
+<text text-anchor="middle" x="191" y="-78.4" font-family="sans-serif" font-size="12.00">budgets · root · rules · timeouts</text>
+</g>
+<!-- api&#45;&gt;rules -->
+<g id="edge2" class="edge">
+<title>api&#45;&gt;rules</title>
+<path fill="none" stroke="black" d="M191,-150.85C191,-140 191,-126.07 191,-114.18"/>
+<polygon fill="black" stroke="black" points="193.45,-114.08 191,-107.08 188.55,-114.08 193.45,-114.08"/>
+<text text-anchor="middle" x="222" y="-126.2" font-family="sans-serif" font-size="11.00">each effect</text>
+</g>
+<!-- files -->
+<g id="node4" class="node">
+<title>files</title>
+<path fill="none" stroke="black" d="M104,-36C104,-36 12,-36 12,-36 6,-36 0,-30 0,-24 0,-24 0,-12 0,-12 0,-6 6,0 12,0 12,0 104,0 104,0 110,0 116,-6 116,-12 116,-12 116,-24 116,-24 116,-30 110,-36 104,-36"/>
+<text text-anchor="middle" x="58" y="-14.9" font-family="sans-serif" font-size="12.00">files and folders</text>
+</g>
+<!-- rules&#45;&gt;files -->
+<g id="edge3" class="edge">
+<title>rules&#45;&gt;files</title>
+<path fill="none" stroke="black" d="M155.71,-68.96C138.02,-59.91 116.53,-48.93 98.21,-39.56"/>
+<polygon fill="black" stroke="black" points="98.97,-37.2 91.62,-36.19 96.74,-41.56 98.97,-37.2"/>
+</g>
+<!-- programs -->
+<g id="node5" class="node">
+<title>programs</title>
+<path fill="none" stroke="black" d="M236,-36C236,-36 146,-36 146,-36 140,-36 134,-30 134,-24 134,-24 134,-12 134,-12 134,-6 140,0 146,0 146,0 236,0 236,0 242,0 248,-6 248,-12 248,-12 248,-24 248,-24 248,-30 242,-36 236,-36"/>
+<text text-anchor="middle" x="191" y="-14.9" font-family="sans-serif" font-size="12.00">other programs</text>
+</g>
+<!-- rules&#45;&gt;programs -->
+<g id="edge4" class="edge">
+<title>rules&#45;&gt;programs</title>
+<path fill="none" stroke="black" d="M191,-68.78C191,-60.99 191,-51.78 191,-43.41"/>
+<polygon fill="black" stroke="black" points="193.45,-43.34 191,-36.34 188.55,-43.34 193.45,-43.34"/>
+</g>
+<!-- parser -->
+<g id="node6" class="node">
+<title>parser</title>
+<path fill="none" stroke="black" d="M389.5,-36C389.5,-36 278.5,-36 278.5,-36 272.5,-36 266.5,-30 266.5,-24 266.5,-24 266.5,-12 266.5,-12 266.5,-6 272.5,0 278.5,0 278.5,0 389.5,0 389.5,0 395.5,0 401.5,-6 401.5,-12 401.5,-12 401.5,-24 401.5,-24 401.5,-30 395.5,-36 389.5,-36"/>
+<text text-anchor="middle" x="334" y="-14.9" font-family="sans-serif" font-size="12.00">Roc&#39;s parser, regex</text>
+</g>
+<!-- rules&#45;&gt;parser -->
+<g id="edge5" class="edge">
+<title>rules&#45;&gt;parser</title>
+<path fill="none" stroke="black" d="M228.95,-68.96C248.13,-59.84 271.47,-48.73 291.28,-39.31"/>
+<polygon fill="black" stroke="black" points="292.58,-41.41 297.85,-36.19 290.48,-36.98 292.58,-41.41"/>
+</g>
+</g>
+</svg>
+</div>
+<h3 class="intro">What it offers</h3>
+<ul class="lede">
+<li><strong>Files:</strong> read and write a file, ask whether one exists, list a folder, glob and grep.</li>
+<li><strong>Programs:</strong> run one, with a timeout, keeping the head, the tail or the whole of its output.</li>
+<li><strong>The rest:</strong> print, stop with a message, and read the script's arguments.</li>
+</ul>
+<h3 class="intro">What it adds</h3>
+<ul class="lede">
+<li><strong>Roc's parse tree.</strong> <code>roc_tree!</code> hands a program Roc's own parse of a file, so a check
+reads Roc code as Roc reads it.</li>
+<li><strong>Regular expressions,</strong> which Roc doesn't have built in.</li>
+<li><strong>Shale's limits on every effect:</strong> budgets for a run's steps, reads and output; reads only beneath
+the run's root and its named mounts; a program run only when Shale's rules allow it; and a timeout on each one.</li>
+</ul>
+<h3 class="intro">What it leaves out</h3>
+<p class="lede">The network, environment variables, standard input, the clock, and deleting files or making
+folders. The programs here don't use them.
 <a href="https://github.com/showell/shale/blob/master/roc_platform/README.md">The platform's README</a> explains how
 it works.</p>
+<h2 class="intro">The examples</h2>
 <p class="lede">The examples are in sections. The first holds programs that find flaws in Roc code: Roc reading
 Roc, most of them through Roc's own parser. After it come reports on Roc projects, then smaller programs over
 Zig.</p>
+<h2 class="intro">Shale's own language</h2>
 <p class="lede">Shale is also a scripting language of its own, and each example began as a Shale script. Each Roc
 program is followed by the Shale script it was ported from, with both files colored by
 <a href="../syntax-color/">roc-syntax-color</a>. Each port was checked against its original's output. The links at
