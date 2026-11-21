@@ -197,6 +197,27 @@ Zig.</p>
 program is followed by the Shale script it was ported from, with both files colored by
 <a href="../syntax-color/">roc-syntax-color</a>. Each port was checked against its original's output. The links at
 the top and end of each example go to the one before or after it.</p>
+<h2 class="intro">How the runtime is built</h2>
+<p class="lede">Shale's runtime is written in C, in
+<a href="https://github.com/showell/shale/tree/master/c">its repository's <code>c/</code> folder</a>, and needs only
+Linux on x86-64, GCC and TCC.</p>
+<ul class="lede">
+<li><strong>One translation unit.</strong> <code>c/shale.c</code> takes in the whole runtime, so GCC sees every
+function at once and the release build is a single <code>gcc -O2</code>.</li>
+<li><strong>Two compilers.</strong> TCC compiles the whole program in a fraction of GCC's time, for the edit loop. GCC
+builds every binary that runs, with no LLVM involved.</li>
+<li><strong>Two tiers of checks.</strong> The fast tier runs every C test in seconds, on each edit. The full tier adds
+the release build, every test under ASan and UBSan, a <code>-Werror</code> build at <code>-O2</code>, planted
+faults that prove each test can fail, and the cookbook's own tests, including the goldens behind the examples
+below. It runs on GitHub, before every merge.</li>
+<li><strong>The builds are Shale scripts.</strong> A new machine builds its first <code>shale</code> by hand with
+TCC and GCC, and from then on Shale builds itself.</li>
+</ul>
+<p class="lede">The Roc platform's host is that same C, with a small driver added. It's compiled once with
+<code>gcc -O2</code> into an object and cached. Each Roc script is built by the pinned Roc compiler into an archive
+and linked with that object, and the program is cached by a hash of every file it's built from. The Roc runs on a
+stack of its own, takes its memory from an arena held to the run's budget, and has a CPU budget for its own
+computation.</p>
 
 <ul class="contents" id="contents">
 <li><a href="#section-finding-flaws-in-roc-code">Finding flaws in Roc code</a>
