@@ -191,8 +191,9 @@ deleting files or making folders. The programs here need only what's listed abov
 it works.</p>
 <h2 class="intro">The examples</h2>
 <p class="lede">The examples are in sections. The first holds programs that find flaws in Roc code: Roc reading
-Roc, most of them through Roc's own parser. After it come reports on Roc projects, then smaller programs over
-Zig.</p>
+Roc, most of them through Roc's own parser. After it come programs that read Shale itself, then reports on Roc
+projects, then smaller programs over Zig. The shared packages the examples import are shown once, at the
+end.</p>
 <h2 class="intro">Shale's own language</h2>
 <p class="lede">Shale is also a scripting language of its own, and each example began as a Shale script. Each Roc
 program is followed by the Shale script it was ported from, with both files colored by
@@ -9609,7 +9610,7 @@ print(#paths .. <span class="syn-string">&quot; files: &quot;</span> .. all.code
 </div>
 <div class="group">
 <h2 class="part" id="shared-library"><a href="#shared-library">The shared Roc library</a></h2>
-<p class="part-intro">The modules the Roc ports share, as a package each app names in its header and imports as <code>lib.X</code>: Roc's parse tree read into records, a file's lines and words, a module's declarations, and a finding's line. Each example above names the ones it imports.</p>
+<p class="part-intro">The modules the ports over Roc code share, as a package each app names in its header and imports as <code>lib.X</code>: Roc's parse tree read into records, a file's lines and words, a module's declarations, and a finding's line. Each example that imports it names the modules it uses.</p>
 <section class="example">
 <p class="file"><a href="https://github.com/showell/shale/blob/dc17d43e31cdc4be7fc3619977bc1c28bab072a6/cookbook/roc/lib/Declarations.roc"><code>cookbook/roc/lib/Declarations.roc</code></a>, 342 lines</p>
 <pre><code><span class="syn-comment">## What a file declares at its top level or as a module type&#39;s member, read</span>

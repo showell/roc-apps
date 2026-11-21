@@ -131,48 +131,66 @@ function roc_files(root)
   return files
 end
 
--- The cookbook's shared Roc package: its folder, and the part of the page
--- that shows it once, after every section.
-const LIB_DIR = "cookbook/roc/lib"
-const LIB_ID = "shared-library"
-const LIB_HEADING = "The shared Roc library"
-const LIB_INTRO = "The modules the Roc ports share, as a package each app names in its header and imports as `lib.X`: Roc's parse tree read into records, a file's lines and words, a module's declarations, and a finding's line. Each example above names the ones it imports."
+-- The cookbook's shared Roc packages, each shown once in a part of its own
+-- after every section: the name an app's header gives it (`import name.X`),
+-- its folder, the part's anchor, heading and sentence. An example that
+-- imports a package this table lacks stops the run.
+const PACKAGES = {
+  {name = "lib", dir = "cookbook/roc/lib", id = "shared-library", heading = "The shared Roc library",
+    intro = "The modules the ports over Roc code share, as a package each app names in its header and imports as `lib.X`: Roc's parse tree read into records, a file's lines and words, a module's declarations, and a finding's line."},
+  {name = "items", dir = "cookbook/c/items", id = "c-splitter", heading = "The C splitter",
+    intro = "The package the programs over Shale's C share, imported as `items.X`: it blanks strings and comments, then splits a file into its top-level items, each with its kind, name, lines, head and body."},
+}
 
--- The shared package's modules that `files` import (`import lib.X`), as
--- HEAD has them, sorted; a module the package lacks stops the run.
-function lib_imports(files)
-  local names = {}
+-- The packages `files` import, as HEAD has them: each {package, names}, in
+-- the table's order, its module names sorted; a module the package lacks,
+-- or a package the table lacks, stops the run.
+function package_imports(files)
+  local found = {}
   for p in files do
-    for m in re_lines(git_show(SHALE, "HEAD:" .. p), "^import lib\\.([A-Z][A-Za-z0-9_]*)[ \t]*$") do
-      push(names, trim(sub(m.text, 12)))
+    for m in re_lines(git_show(SHALE, "HEAD:" .. p), "^import [a-z][a-z0-9_]*\\.[A-Z][A-Za-z0-9_]*[ \t]*$") do
+      local parts = split(trim(sub(m.text, 8)), ".")
+      if not has_key(found, parts[1]) then found[parts[1]] = {} end
+      push(found[parts[1]], parts[2])
     end
   end
-  local out = unique(names)
-  sort(out)
-  for n in out do
-    if git_out({"ls-tree", "--name-only", "HEAD", LIB_DIR .. "/" .. n .. ".roc"}) == "" then fail("build_roc_on_shale: an example imports lib." .. n .. ", and " .. LIB_DIR .. " has no " .. n .. ".roc") end
+  local out = {}
+  local known = {pf = true}
+  for pkg in PACKAGES do
+    known[pkg.name] = true
+    if has_key(found, pkg.name) then
+      local names = unique(found[pkg.name])
+      sort(names)
+      for n in names do
+        if git_out({"ls-tree", "--name-only", "HEAD", pkg.dir .. "/" .. n .. ".roc"}) == "" then fail("build_roc_on_shale: an example imports " .. pkg.name .. "." .. n .. ", and " .. pkg.dir .. " has no " .. n .. ".roc") end
+      end
+      push(out, {package = pkg, names = names})
+    end
+  end
+  for name in keys(found) do
+    if not has_key(known, name) then fail("build_roc_on_shale: an example imports the package `" .. name .. "`, which PACKAGES doesn't name: add its folder, anchor, heading and sentence") end
   end
   return out
 end
 
--- The shared package's files as HEAD has them, each {path, text, lines},
--- main.roc last, read at the last commit that touched the folder.
-function library()
+-- A package's files as HEAD has them, each {path, text, lines}, main.roc
+-- last, read at the last commit that touched its folder.
+function package_files(pkg)
   local paths = {}
   local main = ""
-  for p in lines(git_out({"ls-tree", "--name-only", "HEAD", LIB_DIR .. "/"})) do
+  for p in lines(git_out({"ls-tree", "--name-only", "HEAD", pkg.dir .. "/"})) do
     if ends_with(p, "/main.roc") then main = p elseif ends_with(p, ".roc") then push(paths, p) end
   end
   sort(paths)
   if main ~= "" then push(paths, main) end
-  if #paths == 0 then return {rev = "", files = {}} end
-  local rev = full_hash(git_log(SHALE, {n = 1, paths = {LIB_DIR}})[1].hash)
+  if #paths == 0 then fail("build_roc_on_shale: " .. pkg.dir .. " holds no Roc at HEAD") end
+  local rev = full_hash(git_log(SHALE, {n = 1, paths = {pkg.dir}})[1].hash)
   local files = {}
   for p in paths do
     local text = git_show(SHALE, rev .. ":" .. p)
     push(files, {path = p, text = text, lines = #lines(text)})
   end
-  return {rev = rev, files = files}
+  return {package = pkg, rev = rev, files = files}
 end
 
 function sorted_unique(list)
@@ -210,7 +228,7 @@ function example(e)
   end
   return {
     name = e.name, description = e.description, roc = roc, roc_rev = roc_rev, roc_lines = roc_lines,
-    lib = lib_imports(files),
+    packages = package_imports(files),
     effects = sorted_unique(effects),
     shale = {path = path, text = text, lines = #lines(text), rev = parent, libraries = libraries, library_lines = library_lines},
   }
@@ -296,10 +314,10 @@ function example_html(x, html, steps)
   push(out, "<p class=\"facts\">Its effects: " .. join(effects, ", ") .. ".<br>Roc: " .. plural(x.roc_lines, "line", "lines") ..
     " in " .. plural(#x.roc, "file", "files") .. ". Shale original: " .. plural(x.shale.lines, "line", "lines") .. shared_libraries(x.shale) .. ".</p>")
   push(out, "<h4>Roc</h4>")
-  if #x.lib > 0 then
+  for used in x.packages do
     local names = {}
-    for n in x.lib do push(names, "<code>" .. n .. "</code>") end
-    push(out, "<p class=\"file\">It also imports " .. join(names, ", ") .. " from <a href=\"#" .. LIB_ID .. "\">the shared Roc library</a>.</p>")
+    for n in used.names do push(names, "<code>" .. n .. "</code>") end
+    push(out, "<p class=\"file\">It also imports " .. join(names, ", ") .. " from <a href=\"#" .. used.package.id .. "\">" .. escaped(lower(sub(used.package.heading, 1, 1)) .. sub(used.package.heading, 2)) .. "</a>.</p>")
   end
   for i = 1, #x.roc do
     push(out, "<p class=\"file\">" .. file_link(x.roc_rev, x.roc[i].path) .. ", " .. plural(x.roc[i].lines, "line", "lines") .. "</p>")
@@ -429,8 +447,9 @@ deleting files or making folders. The programs here need only what's listed abov
 it works.</p>
 <h2 class="intro">The examples</h2>
 <p class="lede">The examples are in sections. The first holds programs that find flaws in Roc code: Roc reading
-Roc, most of them through Roc's own parser. After it come reports on Roc projects, then smaller programs over
-Zig.</p>
+Roc, most of them through Roc's own parser. After it come programs that read Shale itself, then reports on Roc
+projects, then smaller programs over Zig. The shared packages the examples import are shown once, at the
+end.</p>
 <h2 class="intro">Shale's own language</h2>
 <p class="lede">Shale is also a scripting language of its own, and each example began as a Shale script. Each Roc
 program is followed by the Shale script it was ported from, with both files colored by
@@ -466,15 +485,16 @@ const FOOT = [=[
 </html>
 ]=]
 
--- The contents, a list of the sections, each with its examples.
-function contents_html(parts)
+-- The contents, a list of the sections, each with its examples, then the
+-- packages shown.
+function contents_html(parts, packages)
   local items = {}
   for s in parts do
     local names = {}
     for x in s.examples do push(names, "<li><a href=\"#" .. x.name .. "\">" .. escaped(x.name) .. "</a></li>") end
     push(items, "<li><a href=\"#" .. section_id(s.heading) .. "\">" .. escaped(s.heading) .. "</a>\n<ul>\n" .. join(names, "\n") .. "\n</ul></li>")
   end
-  push(items, "<li><a href=\"#" .. LIB_ID .. "\">" .. escaped(LIB_HEADING) .. "</a></li>")
+  for shown in packages do push(items, "<li><a href=\"#" .. shown.package.id .. "\">" .. escaped(shown.package.heading) .. "</a></li>") end
   return "<ul class=\"contents\" id=\"contents\">\n" .. join(items, "\n") .. "\n</ul>"
 end
 
@@ -510,10 +530,22 @@ function page()
     end
     push(parts, part)
   end
-  local lib = library()
-  for f in lib.files do push(requests, {language = "roc", text = f.text}) end
+  -- Each package an example imports, in the table's order.
+  local packages = {}
+  for pkg in PACKAGES do
+    local used = false
+    for x in examples do
+      for u in x.packages do
+        if u.package.name == pkg.name then used = true end
+      end
+    end
+    if used then push(packages, package_files(pkg)) end
+  end
+  for shown in packages do
+    for f in shown.files do push(requests, {language = "roc", text = f.text}) end
+  end
   local answers = colored(requests)
-  local out = {with_diagram(HEAD), contents_html(parts)}
+  local out = {with_diagram(HEAD), contents_html(parts, packages)}
   local at = 1
   local i = 0
   for s in parts do
@@ -532,13 +564,14 @@ function page()
     end
     push(out, "</div>")
   end
-  if #lib.files > 0 then
+  for shown in packages do
+    local pkg = shown.package
     push(out, "<div class=\"group\">")
-    push(out, "<h2 class=\"part\" id=\"" .. LIB_ID .. "\"><a href=\"#" .. LIB_ID .. "\">" .. escaped(LIB_HEADING) .. "</a></h2>\n<p class=\"part-intro\">" ..
-      with_code(escaped(LIB_INTRO)) .. "</p>")
+    push(out, "<h2 class=\"part\" id=\"" .. pkg.id .. "\"><a href=\"#" .. pkg.id .. "\">" .. escaped(pkg.heading) .. "</a></h2>\n<p class=\"part-intro\">" ..
+      with_code(escaped(pkg.intro)) .. " Each example that imports it names the modules it uses.</p>")
     push(out, "<section class=\"example\">")
-    for f in lib.files do
-      push(out, "<p class=\"file\">" .. file_link(lib.rev, f.path) .. ", " .. plural(f.lines, "line", "lines") .. "</p>")
+    for f in shown.files do
+      push(out, "<p class=\"file\">" .. file_link(shown.rev, f.path) .. ", " .. plural(f.lines, "line", "lines") .. "</p>")
       push(out, code_block(answers[at]))
       at = at + 1
     end
