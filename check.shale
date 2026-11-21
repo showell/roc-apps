@@ -17,6 +17,10 @@
 -- and git merges them to the right list (or conflicts where they collide),
 -- where two edits of one count from N to N+1 merged silently to one short.
 --
+-- It also fails when site/web/roc-on-shale/index.html isn't what
+-- site/build_roc_on_shale.shale would write now, which needs the shale and
+-- roc-syntax-color checkouts beside this one.
+--
 -- A few places are left out, each for the reason beside it in EXCEPTIONS.
 -- Each is a debt, named here and nowhere else.
 --
@@ -133,12 +137,17 @@ function all()
   for w in wrongs do print("FAIL apps: " .. w) end
   if #wrongs > 0 then fail("check: the apps found differ from " .. APPS_LIST .. " (" .. #wrongs .. " above); add or remove its lines") end
   print("apps: " .. #apps .. " found, each listed in " .. APPS_LIST)
+  local failed = {}
+  -- The Roc on Shale page is written from the shale and roc-syntax-color
+  -- checkouts beside this one; a missing one fails here, named.
+  local page = run({"shale", "--root", ".", "site/build_roc_on_shale.shale", "check=1"}, {timeout_ms = 300000, tail = 10})
+  print(trim(page.out))
+  if page.code ~= 0 then push(failed, "the Roc on Shale page") end
   local roc = pinned_roc("check")
   local files = roc_files(false)
   local fmt = {roc, "fmt", "--check"}
   for f in files do push(fmt, f) end
   local f = run(fmt, {timeout_ms = 600000, whole = 4000000, want = WANT})
-  local failed = {}
   if f.code ~= 0 then
     print("FAIL roc fmt --check: " .. trim(f.out))
     push(failed, "fmt")

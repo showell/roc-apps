@@ -42,6 +42,21 @@ function escaped(s)
   return join(split(t, "\""), "&quot;")
 end
 
+-- Escaped text with each matched pair of backticks made a <code>; a lone
+-- backtick stays as it is.
+function with_code(html)
+  return re_replace(html, "`([^`]+)`", "<code>\\1</code>")
+end
+
+-- Nothing, or a stop naming the sibling checkout this page needs and lacks.
+function require_siblings()
+  if not exists(SHALE) then fail("build_roc_on_shale: no shale checkout at " .. SHALE .. ": clone github.com/showell/shale beside roc-apps (or name one with shale=)") end
+  local colorer = dirname(real(".")) .. "/roc-syntax-color"
+  local r = run({"git", "-C", colorer, "rev-parse", "--show-toplevel"}, {timeout_ms = 30000, tail = 3})
+  if r.code ~= 0 then fail("build_roc_on_shale: no roc-syntax-color checkout beside roc-apps: clone github.com/showell/roc-syntax-color there; tools/color_code imports it") end
+  return nil
+end
+
 function git_out(argv)
   local full = {"git"}
   for a in argv do push(full, a) end
@@ -197,7 +212,7 @@ function section(x, html)
   local out = {}
   push(out, "<section class=\"example\" id=\"" .. x.name .. "\">")
   push(out, "<h2><a href=\"#" .. x.name .. "\">" .. escaped(x.name) .. "</a></h2>")
-  push(out, "<p>" .. escaped(x.description) .. "</p>")
+  push(out, "<p>" .. with_code(escaped(x.description)) .. "</p>")
   local effects = {}
   for f in x.effects do push(effects, "<code>" .. escaped(f) .. "</code>") end
   push(out, "<p class=\"facts\">Its effects: " .. join(effects, ", ") .. ".<br>Roc: " .. plural(x.roc_lines, "line", "lines") ..
@@ -325,6 +340,7 @@ function page()
   return join(out, "\n")
 end
 
+require_siblings()
 local text = page()
 if CHECK then
   if not exists(PAGE) or read(PAGE) ~= text then fail("build_roc_on_shale: " .. PAGE .. " is stale: run shale site/build_roc_on_shale.shale") end
