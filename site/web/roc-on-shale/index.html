@@ -64,18 +64,25 @@ is a recipe from Shale's cookbook in Roc, beside the Shale script it was ported 
 <li><a href="#count_roc">count_roc</a></li>
 <li><a href="#find_unclear_names">find_unclear_names</a></li>
 <li><a href="#check_module_size">check_module_size</a></li>
+<li><a href="#list_long_files">list_long_files</a></li>
+<li><a href="#count_comments">count_comments</a></li>
+<li><a href="#find_unused_imports">find_unused_imports</a></li>
 </ul>
 <section class="example" id="count_roc">
 <h2><a href="#count_roc">count_roc</a></h2>
-<p>A test-density report for a tree of Roc projects: for each folder, its modules and their lines, its test modules and their lines, and its expects. It lists each folder's Roc files and reads each one, and the rest is plain Roc. For one app's size, Roc's built-in <code>roc loc</code> is the tool.</p>
-<p class="facts">Its effects: <code>Shale.arg!</code>, <code>Shale.exists!</code>, <code>Shale.fail!</code>, <code>Shale.glob!</code>, <code>Shale.print!</code>, <code>Shale.read!</code>.<br>Roc: 231 lines in 1 file. Shale original: 55 lines.</p>
+<p>A test-density report for a tree of Roc projects: each folder's modules and lines, its test modules and lines, and its expects, where <code>roc loc</code> gives one app's size.</p>
+<p class="facts">Its effects: <code>Shale.arg!</code>, <code>Shale.exists!</code>, <code>Shale.fail!</code>, <code>Shale.glob!</code>, <code>Shale.print!</code>, <code>Shale.read!</code>.<br>Roc: 240 lines in 1 file. Shale original: 55 lines.</p>
 <div class="pair">
 <div class="side">
 <h3>Roc</h3>
-<p class="file"><a href="https://github.com/showell/shale/blob/f789816174f30ef097067b3f7abefcf877d0c427/cookbook/roc/count_roc/count_roc.roc"><code>cookbook/roc/count_roc/count_roc.roc</code></a>, 231 lines</p>
-<pre><code><span class="syn-comment">## count_roc counts a Roc project, folder by folder: its modules and their</span>
-<span class="syn-comment">## lines, the same for its test modules, and its `expect`s. These are the</span>
-<span class="syn-comment">## numbers a landing page or a review quotes. Its launcher,</span>
+<p class="file"><a href="https://github.com/showell/shale/blob/e83affc09221298589b69235acf8d98285c98788/cookbook/roc/count_roc/count_roc.roc"><code>cookbook/roc/count_roc/count_roc.roc</code></a>, 240 lines</p>
+<pre><code><span class="syn-comment">## count_roc is a test-density report for a tree of Roc projects: folder by</span>
+<span class="syn-comment">## folder, its modules and their lines, the same for its test modules, and</span>
+<span class="syn-comment">## its `expect`s. For one app&#39;s size, `roc loc main.roc` counts what its</span>
+<span class="syn-comment">## imports reach; count_roc counts every `.roc` file under each folder,</span>
+<span class="syn-comment">## with a row a folder, so it sees a whole tree of apps, the tests `roc loc`</span>
+<span class="syn-comment">## doesn&#39;t count, and the modules no import reaches (specs a test root</span>
+<span class="syn-comment">## alone imports). Its launcher,</span>
 <span class="syn-comment">## cookbook/roc/count_roc.shale, is how it is run, and says the arguments.</span>
 <span class="syn-comment">##</span>
 <span class="syn-comment">##   cd ~/showell_repos &amp;&amp; shale cookbook:roc/count_roc.shale in=roc-chat,roc-markdown/package</span>
@@ -105,7 +112,7 @@ is a recipe from Shale's cookbook in Roc, beside the Shale script it was ported 
 <span class="syn-name">main!</span> : {} =&gt; {}
 <span class="syn-name">main!</span> = |{}| {
 	markers = {
-		tests: literals(<span class="syn-type">Shale</span>.arg!(<span class="syn-string">&quot;tests&quot;</span>, <span class="syn-string">&quot;/gates/,/tests/,Tests.roc,Expects.roc,_test.roc&quot;</span>)),
+		tests: literals(<span class="syn-type">Shale</span>.arg!(<span class="syn-string">&quot;tests&quot;</span>, default_tests)),
 		skips: literals(<span class="syn-type">Shale</span>.arg!(<span class="syn-string">&quot;skip&quot;</span>, <span class="syn-string">&quot;&quot;</span>)),
 	}
 	<span class="syn-keyword">var</span> $counts = []
@@ -114,6 +121,11 @@ is a recipe from Shale's cookbook in Roc, beside the Shale script it was ported 
 	}
 	<span class="syn-type">Shale</span>.print!(count_table($counts))
 }
+
+<span class="syn-comment">## The literals of a test module&#39;s path unless `tests=` is given: the</span>
+<span class="syn-comment">## folders and file endings our Roc repos give their tests, specs and gates.</span>
+<span class="syn-name">default_tests</span> : <span class="syn-type">Str</span>
+<span class="syn-name">default_tests</span> = <span class="syn-string">&quot;/gates/,/tests/,Tests.roc,Expects.roc,_test.roc,Spec.roc,Specs.roc,/specs&quot;</span>
 
 <span class="syn-comment">## A comma-separated list&#39;s items, each trimmed, the empty ones dropped.</span>
 <span class="syn-name">literals</span> : <span class="syn-type">Str</span> -&gt; <span class="syn-type">List</span>(<span class="syn-type">Str</span>)
@@ -370,7 +382,7 @@ print(table(rows, {<span class="syn-string">&quot;place&quot;</span>, <span clas
 </section>
 <section class="example" id="find_unclear_names">
 <h2><a href="#find_unclear_names">find_unclear_names</a></h2>
-<p>Finds names and comments in Roc code that say less than they should: a pure function whose name says it changes something, a name with an abbreviated word in it, and a module with no doc comment or a top comment that tells its history. It reads each file's tree from Roc's own parser and the word lists it checks names against, and its self-test runs its planted cases.</p>
+<p>A gate over Roc's own parse trees for names and module docs that say too little: a pure function named like a mutation, an abbreviation, a missing or historical doc.</p>
 <p class="facts">Its effects: <code>Shale.arg!</code>, <code>Shale.fail!</code>, <code>Shale.glob!</code>, <code>Shale.print!</code>, <code>Shale.re_find!</code>, <code>Shale.re_lines!</code>, <code>Shale.re_replace!</code>, <code>Shale.read!</code>, <code>Shale.roc_tree!</code>, <code>Shale.run!</code>.<br>Roc: 1,154 lines in 9 files. Shale original: 372 lines, plus 1,374 lines in the 6 libraries it loads, which other recipes share.</p>
 <div class="pair">
 <div class="side">
@@ -1930,7 +1942,7 @@ use(<span class="syn-string">&quot;./house.shale&quot;</span>)
 </section>
 <section class="example" id="check_module_size">
 <h2><a href="#check_module_size">check_module_size</a></h2>
-<p>Holds each Roc module to a size, 500 lines by default, counting the whole file, with exemptions read from a file of paths and reasons. Its original still stands in the cookbook, and this port is held line for line to its output.</p>
+<p>Each Roc module held to a size, the whole file counted, written line for line beside its Shale original, which is still the recipe (the commit is the one that added the Roc).</p>
 <p class="facts">Its effects: <code>Shale.arg!</code>, <code>Shale.exists!</code>, <code>Shale.fail!</code>, <code>Shale.glob!</code>, <code>Shale.print!</code>, <code>Shale.read!</code>.<br>Roc: 254 lines in 1 file. Shale original: 206 lines, plus 21 lines in the library it loads, which other recipes share.</p>
 <div class="pair">
 <div class="side">
@@ -2194,8 +2206,8 @@ use(<span class="syn-string">&quot;./house.shale&quot;</span>)
 </div>
 <div class="side">
 <h3>Shale original</h3>
-<p class="file"><a href="https://github.com/showell/shale/blob/f8b34ec16957a242142ae9be37e4075e4df46003/cookbook/roc/check_module_size.shale"><code>cookbook/roc/check_module_size.shale</code></a>, 206 lines, at <code>f8b34ec1</code></p>
-<p class="file">The libraries it loads: <a href="https://github.com/showell/shale/blob/f8b34ec16957a242142ae9be37e4075e4df46003/cookbook/findings.shale"><code>cookbook/findings.shale</code></a> (21 lines).</p>
+<p class="file"><a href="https://github.com/showell/shale/blob/9349d37bb64d5928d2c2ca6cac1d9b9c82f82d2a/cookbook/roc/check_module_size.shale"><code>cookbook/roc/check_module_size.shale</code></a>, 206 lines, at <code>9349d37b</code></p>
+<p class="file">The libraries it loads: <a href="https://github.com/showell/shale/blob/9349d37bb64d5928d2c2ca6cac1d9b9c82f82d2a/cookbook/findings.shale"><code>cookbook/findings.shale</code></a> (21 lines).</p>
 <pre><code><span class="syn-comment">-- This recipe holds each Roc module to a size: 500 lines is our most, the</span>
 <span class="syn-comment">-- whole file counted, its expects, blank lines and comments included.</span>
 <span class="syn-comment">-- Someone composing a program from ours should be able to take a module</span>
@@ -2222,7 +2234,7 @@ use(<span class="syn-string">&quot;./house.shale&quot;</span>)
 <span class="syn-comment">--              `cookbook/roc/plants/check_module_size/` (run from the shale</span>
 <span class="syn-comment">--              checkout&#39;s root).</span>
 <span class="syn-comment">--</span>
-<span class="syn-comment">-- Tests have no limit, so a file of a test root is</span>
+<span class="syn-comment">-- Tests have no limit (Steve, 2026-11-19), so a file of a test root is</span>
 <span class="syn-comment">-- left out of the check by rule, not by an exemption line: a Spec is where a</span>
 <span class="syn-comment">-- module&#39;s extensive tests go once they would crowd it, and what someone</span>
 <span class="syn-comment">-- takes whole is the module, not its tests. A module&#39;s own expects count,</span>
@@ -2401,6 +2413,1427 @@ use(<span class="syn-string">&quot;cookbook:findings.shale&quot;</span>)
 <span class="syn-keyword">else</span>
   <span class="syn-keyword">local</span> r = run_check()
   <span class="syn-keyword">if</span> #r.found &gt; <span class="syn-number">0</span> <span class="syn-keyword">then</span> fail(r.summary) <span class="syn-keyword">end</span>
+<span class="syn-keyword">end</span>
+</code></pre>
+</div>
+</div>
+</section>
+<section class="example" id="list_long_files">
+<h2><a href="#list_long_files">list_long_files</a></h2>
+<p>The .zig files over a thousand lines in the repos we work in, longest first: the smallest walk, a sort and a table.</p>
+<p class="facts">Its effects: <code>Shale.arg!</code>, <code>Shale.fail!</code>, <code>Shale.glob!</code>, <code>Shale.print!</code>, <code>Shale.read!</code>.<br>Roc: 96 lines in 1 file. Shale original: 20 lines.</p>
+<div class="pair">
+<div class="side">
+<h3>Roc</h3>
+<p class="file"><a href="https://github.com/showell/shale/blob/fd5b7e6a4bc357fc9efcbadf3987c34a1cd92da3/cookbook/zig/list_long_files/list_long_files.roc"><code>cookbook/zig/list_long_files/list_long_files.roc</code></a>, 96 lines</p>
+<pre><code><span class="syn-comment">## list_long_files lists the `.zig` files over a thousand lines in the repos</span>
+<span class="syn-comment">## we work in, longest first, then how many of all their `.zig` files that</span>
+<span class="syn-comment">## is. Its launcher, cookbook/zig/list_long_files.shale, is how it is run,</span>
+<span class="syn-comment">## from the folder that holds the repos:</span>
+<span class="syn-comment">##</span>
+<span class="syn-comment">##   cd ~/showell_repos &amp;&amp; shale cookbook:zig/list_long_files.shale over=500</span>
+<span class="syn-comment">##</span>
+<span class="syn-comment">## The work is plain Roc over three of Shale&#39;s effects: `Shale.glob!` names a</span>
+<span class="syn-comment">## repo&#39;s `.zig` files, `Shale.read!` gives each one&#39;s text, and</span>
+<span class="syn-comment">## `Shale.print!` writes the table. `Shale.arg!` reads `over`, and</span>
+<span class="syn-comment">## `Shale.fail!` stops the run on an `over` that is no integer.</span>
+<span class="syn-comment">## budget: steps=200000000 reads=100000 read_bytes=1000000000 arena_bytes=1000000000</span>
+<span class="syn-keyword">app</span> [main!] { pf: <span class="syn-keyword">platform</span> <span class="syn-string">&quot;../../../roc_platform/platform/main.roc&quot;</span> }
+
+<span class="syn-keyword">import</span> pf.<span class="syn-type">Shale</span>
+
+<span class="syn-comment">## The repos it walks, each a folder of the root it runs in. A repo that</span>
+<span class="syn-comment">## isn&#39;t there adds nothing.</span>
+<span class="syn-name">repos</span> : <span class="syn-type">List</span>(<span class="syn-type">Str</span>)
+<span class="syn-name">repos</span> = [<span class="syn-string">&quot;shale&quot;</span>, <span class="syn-string">&quot;angry-gopher&quot;</span>, <span class="syn-string">&quot;zig-ast&quot;</span>]
+
+<span class="syn-comment">## A `.zig` file and its lines.</span>
+<span class="syn-type">ZigFile</span> : { lines : <span class="syn-type">U64</span>, path : <span class="syn-type">Str</span> }
+
+<span class="syn-name">main!</span> : {} =&gt; {}
+<span class="syn-name">main!</span> = |{}| {
+	over = read_limit!({})
+	<span class="syn-keyword">var</span> $files = []
+	<span class="syn-keyword">for</span> repo <span class="syn-keyword">in</span> repos {
+		<span class="syn-keyword">for</span> path <span class="syn-keyword">in</span> <span class="syn-type">Shale</span>.glob!(<span class="syn-string">&quot;</span>${repo}<span class="syn-string">/**/*.zig&quot;</span>) {
+			$files = $files.append({ lines: line_count(read_text!(path)), path })
+		}
+	}
+	long_files = $files.keep_if(|file| file.lines.to_i64_wrap() &gt; over)
+	longest_first = long_files.sort_by_reversed(|file| file.lines)
+	<span class="syn-type">Shale</span>.print!(long_files_table(longest_first))
+	counts = <span class="syn-string">&quot;</span>${long_files.len().to_str()}<span class="syn-string"> of </span>${$files.len().to_str()}<span class="syn-string">&quot;</span>
+	<span class="syn-type">Shale</span>.print!(<span class="syn-string">&quot;</span>${counts}<span class="syn-string"> .zig files are over </span>${over.to_str()}<span class="syn-string"> lines&quot;</span>)
+}
+
+<span class="syn-comment">## The `over=` limit: 1000 unless given, and any integer, so `over=-1`</span>
+<span class="syn-comment">## lists every file.</span>
+<span class="syn-name">read_limit!</span> : {} =&gt; <span class="syn-type">I64</span>
+<span class="syn-name">read_limit!</span> = |{}| {
+	given = <span class="syn-type">Shale</span>.arg!(<span class="syn-string">&quot;over&quot;</span>, <span class="syn-string">&quot;1000&quot;</span>)
+	<span class="syn-keyword">match</span> <span class="syn-type">I64</span>.from_str(given) {
+		<span class="syn-type">Ok</span>(limit) =&gt; limit
+		<span class="syn-type">Err</span>(_) =&gt; {
+			<span class="syn-type">Shale</span>.fail!(<span class="syn-string">&quot;list_long_files: over=</span>${given}<span class="syn-string"> is not an integer&quot;</span>)
+			<span class="syn-number">0</span>
+		}
+	}
+}
+
+<span class="syn-comment">## The file&#39;s text. A file the glob named and the read finds gone stops the</span>
+<span class="syn-comment">## run.</span>
+<span class="syn-name">read_text!</span> : <span class="syn-type">Str</span> =&gt; <span class="syn-type">Str</span>
+<span class="syn-name">read_text!</span> = |path|
+	<span class="syn-keyword">match</span> <span class="syn-type">Shale</span>.read!(path) {
+		<span class="syn-type">Found</span>(text) =&gt; text
+		<span class="syn-type">Missing</span> =&gt; {
+			<span class="syn-type">Shale</span>.fail!(<span class="syn-string">&quot;list_long_files: </span>${path}<span class="syn-string"> went missing during the walk&quot;</span>)
+			<span class="syn-string">&quot;&quot;</span>
+		}
+	}
+
+<span class="syn-comment">## The newlines, and a last line that has none, as Shale&#39;s `count_lines`</span>
+<span class="syn-comment">## counts them.</span>
+<span class="syn-name">line_count</span> : <span class="syn-type">Str</span> -&gt; <span class="syn-type">U64</span>
+<span class="syn-name">line_count</span> = |text| {
+	bytes = text.to_utf8()
+	newlines = bytes.count_if(|byte| byte == <span class="syn-string">&#39;\n&#39;</span>)
+	<span class="syn-keyword">match</span> bytes.last() {
+		<span class="syn-type">Ok</span>(<span class="syn-string">&#39;\n&#39;</span>) =&gt; newlines
+		<span class="syn-type">Ok</span>(_) =&gt; newlines + <span class="syn-number">1</span>
+		<span class="syn-type">Err</span>(_) =&gt; <span class="syn-number">0</span>
+	}
+}
+
+<span class="syn-comment">## The files as Shale&#39;s `table` prints them: a line of headings, then a line</span>
+<span class="syn-comment">## a file, the line counts right-aligned under `lines` and the paths after</span>
+<span class="syn-comment">## two spaces.</span>
+<span class="syn-name">long_files_table</span> : <span class="syn-type">List</span>(<span class="syn-type">ZigFile</span>) -&gt; <span class="syn-type">Str</span>
+<span class="syn-name">long_files_table</span> = |files| {
+	width = files.fold(
+		<span class="syn-string">&quot;lines&quot;</span>.count_utf8_bytes(),
+		|widest, file| <span class="syn-type">U64</span>.max(widest, file.lines.to_str().count_utf8_bytes()),
+	)
+	heading = <span class="syn-string">&quot;</span>${right_aligned(<span class="syn-string">&quot;lines&quot;</span>, width)}<span class="syn-string">  path&quot;</span>
+	rows = files.map(|file| <span class="syn-string">&quot;</span>${right_aligned(file.lines.to_str(), width)}<span class="syn-string">  </span>${file.path}<span class="syn-string">&quot;</span>)
+	<span class="syn-type">Str</span>.join_with(rows.prepend(heading), <span class="syn-string">&quot;\n&quot;</span>)
+}
+
+<span class="syn-name">right_aligned</span> : <span class="syn-type">Str</span>, <span class="syn-type">U64</span> -&gt; <span class="syn-type">Str</span>
+<span class="syn-name">right_aligned</span> = |cell, width|
+	<span class="syn-string">&quot;</span>${<span class="syn-string">&quot; &quot;</span>.repeat(width - cell.count_utf8_bytes())}${cell}<span class="syn-string">&quot;</span>
+</code></pre>
+</div>
+<div class="side">
+<h3>Shale original</h3>
+<p class="file"><a href="https://github.com/showell/shale/blob/f789816174f30ef097067b3f7abefcf877d0c427/cookbook/zig/list_long_files.shale"><code>cookbook/zig/list_long_files.shale</code></a>, 20 lines, at <code>f7898161</code></p>
+<pre><code><span class="syn-comment">-- This script lists the .zig files over a thousand lines in the repos we work</span>
+<span class="syn-comment">-- in, longest first. `over=N` sets another limit. Run it from the folder that</span>
+<span class="syn-comment">-- holds the repos:</span>
+<span class="syn-comment">--   cd ~/showell_repos &amp;&amp; shale &lt;shale&gt;/cookbook/zig/list_long_files.shale [over=N]</span>
+
+<span class="syn-keyword">const</span> OVER = arg(<span class="syn-string">&quot;over&quot;</span>, <span class="syn-number">1000</span>)
+
+<span class="syn-keyword">local</span> repos = {<span class="syn-string">&quot;shale&quot;</span>, <span class="syn-string">&quot;angry-gopher&quot;</span>, <span class="syn-string">&quot;zig-ast&quot;</span>}
+<span class="syn-keyword">local</span> long_files = {}
+<span class="syn-keyword">local</span> file_count = <span class="syn-number">0</span>
+<span class="syn-keyword">for</span> repo <span class="syn-keyword">in</span> repos <span class="syn-keyword">do</span>
+  <span class="syn-keyword">for</span> path <span class="syn-keyword">in</span> glob(repo .. <span class="syn-string">&quot;/**/*.zig&quot;</span>) <span class="syn-keyword">do</span>
+    file_count = file_count + <span class="syn-number">1</span>
+    <span class="syn-keyword">local</span> line_count = count_lines(path)
+    <span class="syn-keyword">if</span> line_count &gt; OVER <span class="syn-keyword">then</span> push(long_files, {lines = line_count, path = path}) <span class="syn-keyword">end</span>
+  <span class="syn-keyword">end</span>
+<span class="syn-keyword">end</span>
+sort(long_files, <span class="syn-string">&quot;lines&quot;</span>, <span class="syn-string">&quot;desc&quot;</span>)
+print(table(long_files, {<span class="syn-string">&quot;lines&quot;</span>, <span class="syn-string">&quot;path&quot;</span>}))
+print(#long_files .. <span class="syn-string">&quot; of &quot;</span> .. file_count .. <span class="syn-string">&quot; .zig files are over &quot;</span> .. OVER .. <span class="syn-string">&quot; lines&quot;</span>)
+</code></pre>
+</div>
+</div>
+</section>
+<section class="example" id="count_comments">
+<h2><a href="#count_comments">count_comments</a></h2>
+<p>How much each Zig file's comments say and how loudly: each trimmed line a tag (blank, code, doc, plain), per-file ratios, and the regular expressions done as byte patterns in plain Roc.</p>
+<p class="facts">Its effects: <code>Shale.arg!</code>, <code>Shale.exists!</code>, <code>Shale.fail!</code>, <code>Shale.glob!</code>, <code>Shale.print!</code>, <code>Shale.read!</code>.<br>Roc: 477 lines in 1 file. Shale original: 96 lines.</p>
+<div class="pair">
+<div class="side">
+<h3>Roc</h3>
+<p class="file"><a href="https://github.com/showell/shale/blob/8023162fbe9af80e895356486f9db272c170e23d/cookbook/zig/count_comments/count_comments.roc"><code>cookbook/zig/count_comments/count_comments.roc</code></a>, 477 lines</p>
+<pre><code><span class="syn-comment">## count_comments counts how much a Zig tree&#39;s comments say, and how loudly:</span>
+<span class="syn-comment">## for each file its code lines, its doc lines (`///`, `//!`), its plain `//`</span>
+<span class="syn-comment">## lines, comment lines per 100 lines of code, words a comment line, and the</span>
+<span class="syn-comment">## loud and dated comment lines; the loudest first, then the whole&#39;s totals.</span>
+<span class="syn-comment">## Its launcher, cookbook/zig/count_comments.shale, is how it is run, and its</span>
+<span class="syn-comment">## header says the arguments and the rules.</span>
+<span class="syn-comment">##</span>
+<span class="syn-comment">##   cd &lt;repo&gt; &amp;&amp; shale cookbook:zig/count_comments.shale top=10</span>
+<span class="syn-comment">##</span>
+<span class="syn-comment">## The work is plain Roc over Shale&#39;s effects: `Shale.arg!` reads `dir`,</span>
+<span class="syn-comment">## `files` and `top`; `Shale.glob!` and `Shale.exists!` name the files;</span>
+<span class="syn-comment">## `Shale.read!` gives each one&#39;s text; `Shale.print!` writes the table; and</span>
+<span class="syn-comment">## `Shale.fail!` stops the run when no file matches or `top` is no integer.</span>
+<span class="syn-comment">## Each line is read as bytes, so a word boundary is a regular expression&#39;s</span>
+<span class="syn-comment">## `\b`: an ASCII letter, digit or `_` against anything else.</span>
+<span class="syn-comment">## budget: steps=900000000 reads=100000 read_bytes=400000000 arena_bytes=2000000000</span>
+<span class="syn-keyword">app</span> [main!] { pf: <span class="syn-keyword">platform</span> <span class="syn-string">&quot;../../../roc_platform/platform/main.roc&quot;</span> }
+
+<span class="syn-keyword">import</span> pf.<span class="syn-type">Shale</span>
+
+<span class="syn-comment">## What a line is, once its indent and its ends are trimmed: nothing, code</span>
+<span class="syn-comment">## (a comment after code counts as code), or a comment line alone.</span>
+<span class="syn-type">LineKind</span> : [<span class="syn-type">Blank</span>, <span class="syn-type">Code</span>, <span class="syn-type">Doc</span>, <span class="syn-type">Plain</span>]
+
+<span class="syn-comment">## The counts of a file, or of the whole.</span>
+<span class="syn-type">Tally</span> : {
+	code : <span class="syn-type">U64</span>,
+	doc : <span class="syn-type">U64</span>,
+	plain : <span class="syn-type">U64</span>,
+	words : <span class="syn-type">U64</span>,
+	loud : <span class="syn-type">U64</span>,
+	dated : <span class="syn-type">U64</span>,
+}
+
+<span class="syn-comment">## A file&#39;s row: the path as the table shows it, and its counts.</span>
+<span class="syn-type">Row</span> : { file : <span class="syn-type">Str</span>, tally : <span class="syn-type">Tally</span> }
+
+<span class="syn-name">main!</span> : {} =&gt; {}
+<span class="syn-name">main!</span> = |{}| {
+	folder = <span class="syn-type">Shale</span>.arg!(<span class="syn-string">&quot;dir&quot;</span>, <span class="syn-string">&quot;.&quot;</span>)
+	patterns = <span class="syn-type">Shale</span>.arg!(<span class="syn-string">&quot;files&quot;</span>, <span class="syn-string">&quot;src/**/*.zig,tools/*.zig,build.zig&quot;</span>)
+	top = read_top!({})
+	paths = find_files!(folder, patterns)
+	<span class="syn-keyword">if</span> paths.is_empty() {
+		<span class="syn-type">Shale</span>.fail!(<span class="syn-string">&quot;count_comments: no file matches </span>${patterns}<span class="syn-string"> under </span>${folder}<span class="syn-string">&quot;</span>)
+	}
+	<span class="syn-keyword">var</span> $rows = []
+	<span class="syn-keyword">for</span> path <span class="syn-keyword">in</span> paths {
+		tally = tally_lines(read_text!(path).to_utf8())
+		$rows = $rows.append({ file: shown_path(folder, path), tally })
+	}
+	total = $rows.fold(no_lines, |sum, row| sum_of(sum, row.tally))
+	loudest_first = $rows.sort_by_reversed(|row| row.tally.loud)
+	shown_rows = <span class="syn-keyword">if</span> top &gt; <span class="syn-number">0</span> {
+		loudest_first.take_first(top.to_u64_wrap())
+	} <span class="syn-keyword">else</span> {
+		loudest_first
+	}
+	<span class="syn-type">Shale</span>.print!(rows_table(shown_rows))
+	file_count = paths.len()
+	<span class="syn-type">Shale</span>.print!(summary(file_count, total))
+}
+
+<span class="syn-comment">## The `top=` row count: 0, every row, unless given.</span>
+<span class="syn-name">read_top!</span> : {} =&gt; <span class="syn-type">I64</span>
+<span class="syn-name">read_top!</span> = |{}| {
+	given = <span class="syn-type">Shale</span>.arg!(<span class="syn-string">&quot;top&quot;</span>, <span class="syn-string">&quot;0&quot;</span>)
+	<span class="syn-keyword">match</span> <span class="syn-type">I64</span>.from_str(given) {
+		<span class="syn-type">Ok</span>(count) =&gt; count
+		<span class="syn-type">Err</span>(_) =&gt; {
+			<span class="syn-type">Shale</span>.fail!(<span class="syn-string">&quot;count_comments: top=</span>${given}<span class="syn-string"> is not an integer&quot;</span>)
+			<span class="syn-number">0</span>
+		}
+	}
+}
+
+<span class="syn-comment"># ── The files</span>
+
+<span class="syn-comment">## The files the comma-separated globs name under the folder, each once, in</span>
+<span class="syn-comment">## the order named. A pattern with no `*` is a file&#39;s path, kept when it is</span>
+<span class="syn-comment">## there.</span>
+<span class="syn-name">find_files!</span> : <span class="syn-type">Str</span>, <span class="syn-type">Str</span> =&gt; <span class="syn-type">List</span>(<span class="syn-type">Str</span>)
+<span class="syn-name">find_files!</span> = |folder, patterns| {
+	<span class="syn-keyword">var</span> $paths = []
+	<span class="syn-keyword">var</span> $seen = <span class="syn-type">Set</span>.empty()
+	<span class="syn-keyword">for</span> pattern <span class="syn-keyword">in</span> patterns.split_on(<span class="syn-string">&quot;,&quot;</span>) {
+		<span class="syn-keyword">for</span> path <span class="syn-keyword">in</span> find_pattern_files!(folder, trim_ends(pattern)) {
+			<span class="syn-keyword">if</span> !($seen.contains(path)) {
+				$seen = $seen.insert(path)
+				$paths = $paths.append(path)
+			}
+		}
+	}
+	$paths
+}
+
+<span class="syn-name">find_pattern_files!</span> : <span class="syn-type">Str</span>, <span class="syn-type">Str</span> =&gt; <span class="syn-type">List</span>(<span class="syn-type">Str</span>)
+<span class="syn-name">find_pattern_files!</span> = |folder, pattern| {
+	full = <span class="syn-keyword">if</span> folder == <span class="syn-string">&quot;.&quot;</span> {
+		pattern
+	} <span class="syn-keyword">else</span> {
+		<span class="syn-string">&quot;</span>${folder}<span class="syn-string">/</span>${pattern}<span class="syn-string">&quot;</span>
+	}
+	<span class="syn-keyword">if</span> pattern.contains(<span class="syn-string">&quot;*&quot;</span>) {
+		<span class="syn-type">Shale</span>.glob!(full)
+	} <span class="syn-keyword">else</span> <span class="syn-keyword">if</span> <span class="syn-type">Shale</span>.exists!(full) {
+		[full]
+	} <span class="syn-keyword">else</span> {
+		[]
+	}
+}
+
+<span class="syn-comment">## The file&#39;s text. A file named a moment ago and gone now stops the run.</span>
+<span class="syn-name">read_text!</span> : <span class="syn-type">Str</span> =&gt; <span class="syn-type">Str</span>
+<span class="syn-name">read_text!</span> = |path|
+	<span class="syn-keyword">match</span> <span class="syn-type">Shale</span>.read!(path) {
+		<span class="syn-type">Found</span>(text) =&gt; text
+		<span class="syn-type">Missing</span> =&gt; {
+			<span class="syn-type">Shale</span>.fail!(<span class="syn-string">&quot;count_comments: </span>${path}<span class="syn-string"> went missing during the count&quot;</span>)
+			<span class="syn-string">&quot;&quot;</span>
+		}
+	}
+
+<span class="syn-comment">## The path as the table shows it: below the folder, without the folder.</span>
+<span class="syn-name">shown_path</span> : <span class="syn-type">Str</span>, <span class="syn-type">Str</span> -&gt; <span class="syn-type">Str</span>
+<span class="syn-name">shown_path</span> = |folder, path|
+	<span class="syn-keyword">if</span> folder != <span class="syn-string">&quot;.&quot;</span> <span class="syn-keyword">and</span> path.starts_with(<span class="syn-string">&quot;</span>${folder}<span class="syn-string">/&quot;</span>) {
+		path.drop_prefix(<span class="syn-string">&quot;</span>${folder}<span class="syn-string">/&quot;</span>)
+	} <span class="syn-keyword">else</span> {
+		path
+	}
+
+<span class="syn-comment">## The text without the spaces, tabs, carriage returns and newlines at its</span>
+<span class="syn-comment">## ends, as Shale&#39;s `trim` takes them.</span>
+<span class="syn-name">trim_ends</span> : <span class="syn-type">Str</span> -&gt; <span class="syn-type">Str</span>
+<span class="syn-name">trim_ends</span> = |text| {
+	kept = trimmed_bytes(text.to_utf8())
+	<span class="syn-type">Str</span>.from_utf8(kept) ?? text
+}
+
+<span class="syn-comment"># ── Counting a file&#39;s lines</span>
+
+<span class="syn-name">no_lines</span> : <span class="syn-type">Tally</span>
+<span class="syn-name">no_lines</span> = {
+	code: <span class="syn-number">0</span>,
+	doc: <span class="syn-number">0</span>,
+	plain: <span class="syn-number">0</span>,
+	words: <span class="syn-number">0</span>,
+	loud: <span class="syn-number">0</span>,
+	dated: <span class="syn-number">0</span>,
+}
+
+<span class="syn-comment">## A file&#39;s counts, from its bytes: each line, split at its newlines,</span>
+<span class="syn-comment">## trimmed and counted.</span>
+<span class="syn-name">tally_lines</span> : <span class="syn-type">List</span>(<span class="syn-type">U8</span>) -&gt; <span class="syn-type">Tally</span>
+<span class="syn-name">tally_lines</span> = |bytes|
+	bytes.split_on(<span class="syn-string">&#39;\n&#39;</span>).fold(no_lines, |tally, line| with_line(tally, trimmed_bytes(line)))
+
+<span class="syn-comment">## The tally with one trimmed line more.</span>
+<span class="syn-name">with_line</span> : <span class="syn-type">Tally</span>, <span class="syn-type">List</span>(<span class="syn-type">U8</span>) -&gt; <span class="syn-type">Tally</span>
+<span class="syn-name">with_line</span> = |tally, line|
+	<span class="syn-keyword">match</span> line_kind(line) {
+		<span class="syn-type">Blank</span> =&gt; tally
+		<span class="syn-type">Code</span> =&gt; { ..tally, code: tally.code + <span class="syn-number">1</span> }
+		<span class="syn-type">Doc</span> =&gt; with_comment({ ..tally, doc: tally.doc + <span class="syn-number">1</span> }, line)
+		<span class="syn-type">Plain</span> =&gt; with_comment({ ..tally, plain: tally.plain + <span class="syn-number">1</span> }, line)
+	}
+
+<span class="syn-name">line_kind</span> : <span class="syn-type">List</span>(<span class="syn-type">U8</span>) -&gt; <span class="syn-type">LineKind</span>
+<span class="syn-name">line_kind</span> = |line|
+	<span class="syn-keyword">if</span> line.is_empty() {
+		<span class="syn-type">Blank</span>
+	} <span class="syn-keyword">else</span> <span class="syn-keyword">if</span> line.starts_with([<span class="syn-string">&#39;/&#39;</span>, <span class="syn-string">&#39;/&#39;</span>, <span class="syn-string">&#39;/&#39;</span>]) <span class="syn-keyword">or</span> line.starts_with([<span class="syn-string">&#39;/&#39;</span>, <span class="syn-string">&#39;/&#39;</span>, <span class="syn-string">&#39;!&#39;</span>]) {
+		<span class="syn-type">Doc</span>
+	} <span class="syn-keyword">else</span> <span class="syn-keyword">if</span> line.starts_with([<span class="syn-string">&#39;/&#39;</span>, <span class="syn-string">&#39;/&#39;</span>]) {
+		<span class="syn-type">Plain</span>
+	} <span class="syn-keyword">else</span> {
+		<span class="syn-type">Code</span>
+	}
+
+<span class="syn-comment">## A comment line&#39;s words (after its first three bytes, the `//` and the</span>
+<span class="syn-comment">## space or mark after it), and whether it is loud or dated.</span>
+<span class="syn-name">with_comment</span> : <span class="syn-type">Tally</span>, <span class="syn-type">List</span>(<span class="syn-type">U8</span>) -&gt; <span class="syn-type">Tally</span>
+<span class="syn-name">with_comment</span> = |tally, line| {
+	..tally,
+	words: tally.words + word_count(line.drop_first(<span class="syn-number">3</span>)),
+	loud: tally.loud + one_if(is_loud(line)),
+	dated: tally.dated + one_if(is_dated(line)),
+}
+
+<span class="syn-name">one_if</span> : <span class="syn-type">Bool</span> -&gt; <span class="syn-type">U64</span>
+<span class="syn-name">one_if</span> = |holds|
+	<span class="syn-keyword">if</span> holds {
+		<span class="syn-number">1</span>
+	} <span class="syn-keyword">else</span> {
+		<span class="syn-number">0</span>
+	}
+
+<span class="syn-name">sum_of</span> : <span class="syn-type">Tally</span>, <span class="syn-type">Tally</span> -&gt; <span class="syn-type">Tally</span>
+<span class="syn-name">sum_of</span> = |sum, more| {
+	code: sum.code + more.code,
+	doc: sum.doc + more.doc,
+	plain: sum.plain + more.plain,
+	words: sum.words + more.words,
+	loud: sum.loud + more.loud,
+	dated: sum.dated + more.dated,
+}
+
+<span class="syn-comment"># ── Reading a line&#39;s bytes</span>
+
+<span class="syn-comment">## The bytes between the line&#39;s leading and trailing spaces, tabs, carriage</span>
+<span class="syn-comment">## returns and newlines.</span>
+<span class="syn-name">trimmed_bytes</span> : <span class="syn-type">List</span>(<span class="syn-type">U8</span>) -&gt; <span class="syn-type">List</span>(<span class="syn-type">U8</span>)
+<span class="syn-name">trimmed_bytes</span> = |bytes|
+	<span class="syn-keyword">match</span> bytes.find_first_index(|byte| !(is_trimmed_byte(byte))) {
+		<span class="syn-type">Ok</span>(start) =&gt; {
+			end = bytes.find_last_index(|byte| !(is_trimmed_byte(byte))) ?? start
+			bytes.sublist({ start, len: end + <span class="syn-number">1</span> - start })
+		}
+		<span class="syn-type">Err</span>(_) =&gt; []
+	}
+
+<span class="syn-name">is_trimmed_byte</span> : <span class="syn-type">U8</span> -&gt; <span class="syn-type">Bool</span>
+<span class="syn-name">is_trimmed_byte</span> = |byte|
+	byte == <span class="syn-string">&#39; &#39;</span> <span class="syn-keyword">or</span> byte == <span class="syn-string">&#39;\t&#39;</span> <span class="syn-keyword">or</span> byte == <span class="syn-string">&#39;\r&#39;</span> <span class="syn-keyword">or</span> byte == <span class="syn-string">&#39;\n&#39;</span>
+
+<span class="syn-comment">## The words, as Shale&#39;s `words` splits them: at spaces, tabs, newlines,</span>
+<span class="syn-comment">## carriage returns, vertical tabs and form feeds.</span>
+<span class="syn-name">word_count</span> : <span class="syn-type">List</span>(<span class="syn-type">U8</span>) -&gt; <span class="syn-type">U64</span>
+<span class="syn-name">word_count</span> = |bytes| {
+	counted = bytes.fold(
+		{ words: <span class="syn-number">0</span>, in_word: <span class="syn-type">Bool.False</span> },
+		|so_far, byte|
+			<span class="syn-keyword">if</span> is_word_gap(byte) {
+				{ ..so_far, in_word: <span class="syn-type">Bool.False</span> }
+			} <span class="syn-keyword">else</span> <span class="syn-keyword">if</span> so_far.in_word {
+				so_far
+			} <span class="syn-keyword">else</span> {
+				{ words: so_far.words + <span class="syn-number">1</span>, in_word: <span class="syn-type">Bool.True</span> }
+			},
+	)
+	counted.words
+}
+
+<span class="syn-name">is_word_gap</span> : <span class="syn-type">U8</span> -&gt; <span class="syn-type">Bool</span>
+<span class="syn-name">is_word_gap</span> = |byte|
+	is_trimmed_byte(byte) <span class="syn-keyword">or</span> byte == <span class="syn-number">0x0b</span> <span class="syn-keyword">or</span> byte == <span class="syn-number">0x0c</span>
+
+<span class="syn-comment">## A letter, a digit or `_`: what a regular expression&#39;s `\w` matches.</span>
+<span class="syn-name">is_word_byte</span> : <span class="syn-type">U8</span> -&gt; <span class="syn-type">Bool</span>
+<span class="syn-name">is_word_byte</span> = |byte|
+	is_upper(byte) <span class="syn-keyword">or</span> (byte &gt;= <span class="syn-string">&#39;a&#39;</span> <span class="syn-keyword">and</span> byte &lt;= <span class="syn-string">&#39;z&#39;</span>) <span class="syn-keyword">or</span> (byte &gt;= <span class="syn-string">&#39;0&#39;</span> <span class="syn-keyword">and</span> byte &lt;= <span class="syn-string">&#39;9&#39;</span>) <span class="syn-keyword">or</span> byte == <span class="syn-string">&#39;_&#39;</span>
+
+<span class="syn-name">is_upper</span> : <span class="syn-type">U8</span> -&gt; <span class="syn-type">Bool</span>
+<span class="syn-name">is_upper</span> = |byte|
+	byte &gt;= <span class="syn-string">&#39;A&#39;</span> <span class="syn-keyword">and</span> byte &lt;= <span class="syn-string">&#39;Z&#39;</span>
+
+<span class="syn-comment">## A part of a pattern: a byte as it is, or any digit.</span>
+<span class="syn-type">Part</span> : [<span class="syn-type">Byte</span>(<span class="syn-type">U8</span>), <span class="syn-type">Digit</span>]
+
+<span class="syn-name">literal_parts</span> : <span class="syn-type">Str</span> -&gt; <span class="syn-type">List</span>(<span class="syn-type">Part</span>)
+<span class="syn-name">literal_parts</span> = |text|
+	text.to_utf8().map(|byte| <span class="syn-type">Byte</span>(byte))
+
+<span class="syn-comment">## Whether `holds_at` holds at some place of a line of `length` bytes.</span>
+<span class="syn-name">any_place</span> : <span class="syn-type">U64</span>, (<span class="syn-type">U64</span> -&gt; <span class="syn-type">Bool</span>) -&gt; <span class="syn-type">Bool</span>
+<span class="syn-name">any_place</span> = |length, holds_at|
+	<span class="syn-type">U64</span>.until(<span class="syn-number">0</span>, length).fold(<span class="syn-type">Bool.False</span>, |found, at| found <span class="syn-keyword">or</span> holds_at(at))
+
+<span class="syn-comment">## Whether the bytes start with the pattern&#39;s parts.</span>
+<span class="syn-name">starts_with_parts</span> : <span class="syn-type">List</span>(<span class="syn-type">U8</span>), <span class="syn-type">List</span>(<span class="syn-type">Part</span>) -&gt; <span class="syn-type">Bool</span>
+<span class="syn-name">starts_with_parts</span> = |bytes, parts| {
+	fits_each = |fits, offset| fits <span class="syn-keyword">and</span> part_fits(bytes.get(offset), parts.get(offset))
+	parts.len() &lt;= bytes.len() <span class="syn-keyword">and</span> <span class="syn-type">U64</span>.until(<span class="syn-number">0</span>, parts.len()).fold(<span class="syn-type">Bool.True</span>, fits_each)
+}
+
+<span class="syn-name">part_fits</span> : <span class="syn-type">Try</span>(<span class="syn-type">U8</span>, [<span class="syn-type">OutOfBounds</span>]), <span class="syn-type">Try</span>(<span class="syn-type">Part</span>, [<span class="syn-type">OutOfBounds</span>]) -&gt; <span class="syn-type">Bool</span>
+<span class="syn-name">part_fits</span> = |byte, part|
+	<span class="syn-keyword">match</span> (byte, part) {
+		(<span class="syn-type">Ok</span>(got), <span class="syn-type">Ok</span>(<span class="syn-type">Byte</span>(wanted))) =&gt; got == wanted
+		(<span class="syn-type">Ok</span>(got), <span class="syn-type">Ok</span>(<span class="syn-type">Digit</span>)) =&gt; got &gt;= <span class="syn-string">&#39;0&#39;</span> <span class="syn-keyword">and</span> got &lt;= <span class="syn-string">&#39;9&#39;</span>
+		_ =&gt; <span class="syn-type">Bool.False</span>
+	}
+
+<span class="syn-comment">## Whether the pattern&#39;s parts are anywhere in the bytes.</span>
+<span class="syn-name">holds</span> : <span class="syn-type">List</span>(<span class="syn-type">U8</span>), <span class="syn-type">List</span>(<span class="syn-type">Part</span>) -&gt; <span class="syn-type">Bool</span>
+<span class="syn-name">holds</span> = |bytes, parts|
+	any_place(bytes.len(), |at| starts_with_parts(bytes.drop_first(at), parts))
+
+<span class="syn-comment">## Whether the pattern is in the bytes as a word of its own, with no word</span>
+<span class="syn-comment">## byte just before it or just after it. Every pattern this asks of starts</span>
+<span class="syn-comment">## and ends with a word byte, so this is a regular expression&#39;s `\b...\b`.</span>
+<span class="syn-name">holds_word</span> : <span class="syn-type">List</span>(<span class="syn-type">U8</span>), <span class="syn-type">List</span>(<span class="syn-type">Part</span>) -&gt; <span class="syn-type">Bool</span>
+<span class="syn-name">holds_word</span> = |bytes, parts| {
+	is_word_at_place = |at| {
+		fits = starts_with_parts(bytes.drop_first(at), parts)
+		fits <span class="syn-keyword">and</span> is_boundary(bytes, at) <span class="syn-keyword">and</span> is_boundary(bytes, at + parts.len())
+	}
+	any_place(bytes.len(), is_word_at_place)
+}
+
+<span class="syn-comment">## Whether the place before byte `at` is a regular expression&#39;s `\b`: a word</span>
+<span class="syn-comment">## byte on one side of it and none on the other, the line&#39;s ends counting as</span>
+<span class="syn-comment">## none.</span>
+<span class="syn-name">is_boundary</span> : <span class="syn-type">List</span>(<span class="syn-type">U8</span>), <span class="syn-type">U64</span> -&gt; <span class="syn-type">Bool</span>
+<span class="syn-name">is_boundary</span> = |bytes, at| {
+	word_before = <span class="syn-keyword">if</span> at == <span class="syn-number">0</span> {
+		<span class="syn-type">Bool.False</span>
+	} <span class="syn-keyword">else</span> {
+		is_word_at(bytes, at - <span class="syn-number">1</span>)
+	}
+	word_before != is_word_at(bytes, at)
+}
+
+<span class="syn-name">is_word_at</span> : <span class="syn-type">List</span>(<span class="syn-type">U8</span>), <span class="syn-type">U64</span> -&gt; <span class="syn-type">Bool</span>
+<span class="syn-name">is_word_at</span> = |bytes, at|
+	<span class="syn-keyword">match</span> bytes.get(at) {
+		<span class="syn-type">Ok</span>(byte) =&gt; is_word_byte(byte)
+		<span class="syn-type">Err</span>(_) =&gt; <span class="syn-type">Bool.False</span>
+	}
+
+<span class="syn-comment">## A loud line holds `**`, a `──` banner, or a heading of two upper-case</span>
+<span class="syn-comment">## words or more (`THE HUNT`).</span>
+<span class="syn-name">is_loud</span> : <span class="syn-type">List</span>(<span class="syn-type">U8</span>) -&gt; <span class="syn-type">Bool</span>
+<span class="syn-name">is_loud</span> = |line|
+	holds(line, double_star_parts) <span class="syn-keyword">or</span> holds(line, banner_parts) <span class="syn-keyword">or</span> holds_heading(line)
+
+<span class="syn-name">double_star_parts</span> : <span class="syn-type">List</span>(<span class="syn-type">Part</span>)
+<span class="syn-name">double_star_parts</span> = literal_parts(<span class="syn-string">&quot;**&quot;</span>)
+
+<span class="syn-name">banner_parts</span> : <span class="syn-type">List</span>(<span class="syn-type">Part</span>)
+<span class="syn-name">banner_parts</span> = literal_parts(<span class="syn-string">&quot;──&quot;</span>)
+
+<span class="syn-comment">## Whether a word starts with two capitals or more, then a space, then two</span>
+<span class="syn-comment">## capitals or more: the regular expression `\b[A-Z][A-Z]+ [A-Z][A-Z]+`.</span>
+<span class="syn-name">holds_heading</span> : <span class="syn-type">List</span>(<span class="syn-type">U8</span>) -&gt; <span class="syn-type">Bool</span>
+<span class="syn-name">holds_heading</span> = |line|
+	any_place(line.len(), |at| is_heading_at(line, at))
+
+<span class="syn-name">is_heading_at</span> : <span class="syn-type">List</span>(<span class="syn-type">U8</span>), <span class="syn-type">U64</span> -&gt; <span class="syn-type">Bool</span>
+<span class="syn-name">is_heading_at</span> = |line, at| {
+	capitals = capitals_from(line, at)
+	capitals &gt;= <span class="syn-number">2</span>
+		<span class="syn-keyword">and</span> is_boundary(line, at)
+		<span class="syn-keyword">and</span> line.get(at + capitals) == <span class="syn-type">Ok</span>(<span class="syn-string">&#39; &#39;</span>)
+		<span class="syn-keyword">and</span> capitals_from(line, at + capitals + <span class="syn-number">1</span>) &gt;= <span class="syn-number">2</span>
+}
+
+<span class="syn-comment">## How many capitals in a row start at `at`.</span>
+<span class="syn-name">capitals_from</span> : <span class="syn-type">List</span>(<span class="syn-type">U8</span>), <span class="syn-type">U64</span> -&gt; <span class="syn-type">U64</span>
+<span class="syn-name">capitals_from</span> = |line, at|
+	<span class="syn-keyword">match</span> line.drop_first(at).find_first_index(|byte| !(is_upper(byte))) {
+		<span class="syn-type">Ok</span>(count) =&gt; count
+		<span class="syn-type">Err</span>(_) =&gt; line.len() - <span class="syn-type">U64</span>.min(at, line.len())
+	}
+
+<span class="syn-comment">## A dated line names a QUEUE or FEEDBACK item, a date (`2026-10-20`), or a</span>
+<span class="syn-comment">## person (`Steve`, `the box`, `CC`), each a word of its own but the items.</span>
+<span class="syn-name">is_dated</span> : <span class="syn-type">List</span>(<span class="syn-type">U8</span>) -&gt; <span class="syn-type">Bool</span>
+<span class="syn-name">is_dated</span> = |line|
+	items.any(|item| holds(line, item)) <span class="syn-keyword">or</span> dated_words.any(|word| holds_word(line, word))
+
+<span class="syn-name">items</span> : <span class="syn-type">List</span>(<span class="syn-type">List</span>(<span class="syn-type">Part</span>))
+<span class="syn-name">items</span> = [literal_parts(<span class="syn-string">&quot;QUEUE&quot;</span>), literal_parts(<span class="syn-string">&quot;FEEDBACK&quot;</span>)]
+
+<span class="syn-name">dated_words</span> : <span class="syn-type">List</span>(<span class="syn-type">List</span>(<span class="syn-type">Part</span>))
+<span class="syn-name">dated_words</span> = [
+	date_parts,
+	literal_parts(<span class="syn-string">&quot;Steve&quot;</span>),
+	literal_parts(<span class="syn-string">&quot;the box&quot;</span>),
+	literal_parts(<span class="syn-string">&quot;CC&quot;</span>),
+]
+
+<span class="syn-comment">## `20` and six more digits as a year, a month and a day: `2026-10-20`.</span>
+<span class="syn-name">date_parts</span> : <span class="syn-type">List</span>(<span class="syn-type">Part</span>)
+<span class="syn-name">date_parts</span> = [
+	<span class="syn-type">Byte</span>(<span class="syn-string">&#39;2&#39;</span>),
+	<span class="syn-type">Byte</span>(<span class="syn-string">&#39;0&#39;</span>),
+	<span class="syn-type">Digit</span>,
+	<span class="syn-type">Digit</span>,
+	<span class="syn-type">Byte</span>(<span class="syn-string">&#39;-&#39;</span>),
+	<span class="syn-type">Digit</span>,
+	<span class="syn-type">Digit</span>,
+	<span class="syn-type">Byte</span>(<span class="syn-string">&#39;-&#39;</span>),
+	<span class="syn-type">Digit</span>,
+	<span class="syn-type">Digit</span>,
+]
+
+<span class="syn-comment"># ── The table and the totals</span>
+
+<span class="syn-comment">## A share as `n.d`, of `part` per 100 of `whole`, rounded; `-` of nothing.</span>
+<span class="syn-name">per100</span> : <span class="syn-type">U64</span>, <span class="syn-type">U64</span> -&gt; <span class="syn-type">Str</span>
+<span class="syn-name">per100</span> = |part, whole|
+	<span class="syn-keyword">if</span> whole == <span class="syn-number">0</span> {
+		<span class="syn-string">&quot;-&quot;</span>
+	} <span class="syn-keyword">else</span> {
+		tenths = (part * <span class="syn-number">1000</span> + whole // <span class="syn-number">2</span>) // whole
+		<span class="syn-string">&quot;</span>${(tenths // <span class="syn-number">10</span>).to_str()}<span class="syn-string">.</span>${(tenths % <span class="syn-number">10</span>).to_str()}<span class="syn-string">&quot;</span>
+	}
+
+<span class="syn-comment">## A column&#39;s heading and which side its cells line up on.</span>
+<span class="syn-type">Column</span> : { heading : <span class="syn-type">Str</span>, alignment : [<span class="syn-type">Left</span>, <span class="syn-type">Right</span>] }
+
+<span class="syn-name">columns</span> : <span class="syn-type">List</span>(<span class="syn-type">Column</span>)
+<span class="syn-name">columns</span> = [
+	{ heading: <span class="syn-string">&quot;file&quot;</span>, alignment: <span class="syn-type">Left</span> },
+	{ heading: <span class="syn-string">&quot;code&quot;</span>, alignment: <span class="syn-type">Right</span> },
+	{ heading: <span class="syn-string">&quot;doc&quot;</span>, alignment: <span class="syn-type">Right</span> },
+	{ heading: <span class="syn-string">&quot;plain&quot;</span>, alignment: <span class="syn-type">Right</span> },
+	{ heading: <span class="syn-string">&quot;per100&quot;</span>, alignment: <span class="syn-type">Left</span> },
+	{ heading: <span class="syn-string">&quot;words&quot;</span>, alignment: <span class="syn-type">Left</span> },
+	{ heading: <span class="syn-string">&quot;loud&quot;</span>, alignment: <span class="syn-type">Right</span> },
+	{ heading: <span class="syn-string">&quot;dated&quot;</span>, alignment: <span class="syn-type">Right</span> },
+]
+
+<span class="syn-name">row_cells</span> : <span class="syn-type">Row</span> -&gt; <span class="syn-type">List</span>(<span class="syn-type">Str</span>)
+<span class="syn-name">row_cells</span> = |row| {
+	tally = row.tally
+	comments = tally.doc + tally.plain
+	[
+		row.file,
+		tally.code.to_str(),
+		tally.doc.to_str(),
+		tally.plain.to_str(),
+		per100(comments, tally.code),
+		per100(tally.words, comments * <span class="syn-number">100</span>),
+		tally.loud.to_str(),
+		tally.dated.to_str(),
+	]
+}
+
+<span class="syn-comment">## The rows as Shale&#39;s `table` prints them: a line of headings, then a line</span>
+<span class="syn-comment">## a file, each column as wide as its widest cell, columns two spaces</span>
+<span class="syn-comment">## apart, the counts right-aligned and the shares, which are text, left.</span>
+<span class="syn-name">rows_table</span> : <span class="syn-type">List</span>(<span class="syn-type">Row</span>) -&gt; <span class="syn-type">Str</span>
+<span class="syn-name">rows_table</span> = |rows| {
+	cells = rows.map(row_cells).prepend(columns.map(|column| column.heading))
+	widths = cells.fold(columns.map(|_| <span class="syn-number">0</span>), with_row)
+	layouts = <span class="syn-type">List</span>.map2(
+		columns,
+		widths,
+		|column, width| { alignment: column.alignment, width },
+	)
+	table_lines = cells.map(|row| <span class="syn-type">Str</span>.join_with(<span class="syn-type">List</span>.map2(layouts, row, padded_cell), <span class="syn-string">&quot;  &quot;</span>))
+	<span class="syn-type">Str</span>.join_with(table_lines, <span class="syn-string">&quot;\n&quot;</span>)
+}
+
+<span class="syn-comment">## Each column&#39;s width so far, widened to fit the row&#39;s cell.</span>
+<span class="syn-name">with_row</span> : <span class="syn-type">List</span>(<span class="syn-type">U64</span>), <span class="syn-type">List</span>(<span class="syn-type">Str</span>) -&gt; <span class="syn-type">List</span>(<span class="syn-type">U64</span>)
+<span class="syn-name">with_row</span> = |widths, cells|
+	<span class="syn-type">List</span>.map2(
+		widths,
+		cells,
+		|width, cell| <span class="syn-type">U64</span>.max(width, cell.count_utf8_bytes()),
+	)
+
+<span class="syn-name">padded_cell</span> : { alignment : [<span class="syn-type">Left</span>, <span class="syn-type">Right</span>], width : <span class="syn-type">U64</span> }, <span class="syn-type">Str</span> -&gt; <span class="syn-type">Str</span>
+<span class="syn-name">padded_cell</span> = |layout, cell| {
+	gap = <span class="syn-string">&quot; &quot;</span>.repeat(layout.width - cell.count_utf8_bytes())
+	<span class="syn-keyword">match</span> layout.alignment {
+		<span class="syn-type">Left</span> =&gt; <span class="syn-string">&quot;</span>${cell}${gap}<span class="syn-string">&quot;</span>
+		<span class="syn-type">Right</span> =&gt; <span class="syn-string">&quot;</span>${gap}${cell}<span class="syn-string">&quot;</span>
+	}
+}
+
+<span class="syn-comment">## The whole&#39;s line under the table.</span>
+<span class="syn-name">summary</span> : <span class="syn-type">U64</span>, <span class="syn-type">Tally</span> -&gt; <span class="syn-type">Str</span>
+<span class="syn-name">summary</span> = |file_count, total| {
+	comments = total.doc + total.plain
+	lines = <span class="syn-string">&quot;</span>${total.code.to_str()}<span class="syn-string"> code lines, </span>${comments.to_str()}<span class="syn-string"> comment lines&quot;</span>
+	kinds = <span class="syn-string">&quot;</span>${total.doc.to_str()}<span class="syn-string"> doc, </span>${total.plain.to_str()}<span class="syn-string"> plain&quot;</span>
+	per_code = per100(comments, total.code)
+	per_comment = per100(total.words, comments * <span class="syn-number">100</span>)
+	shares = <span class="syn-string">&quot;</span>${per_code}<span class="syn-string"> per 100, </span>${per_comment}<span class="syn-string"> words a line&quot;</span>
+	marks = <span class="syn-string">&quot;</span>${total.loud.to_str()}<span class="syn-string"> loud, </span>${total.dated.to_str()}<span class="syn-string"> dated&quot;</span>
+	<span class="syn-string">&quot;</span>${file_count.to_str()}<span class="syn-string"> files: </span>${lines}<span class="syn-string"> (</span>${kinds}<span class="syn-string">), </span>${shares}<span class="syn-string">, </span>${marks}<span class="syn-string">&quot;</span>
+}
+</code></pre>
+</div>
+<div class="side">
+<h3>Shale original</h3>
+<p class="file"><a href="https://github.com/showell/shale/blob/e83affc09221298589b69235acf8d98285c98788/cookbook/zig/count_comments.shale"><code>cookbook/zig/count_comments.shale</code></a>, 96 lines, at <code>e83affc0</code></p>
+<pre><code><span class="syn-comment">-- This recipe counts how much a Zig tree&#39;s comments say, and how loudly. For</span>
+<span class="syn-comment">-- each file it gives its code lines, its doc lines (`///`, `//!`), its plain</span>
+<span class="syn-comment">-- `//` lines, comment lines per 100 lines of code, words a comment line, and</span>
+<span class="syn-comment">-- the loud and dated comment lines. Run before and after a commit that</span>
+<span class="syn-comment">-- rewrites comments, it shows what the commit changed.</span>
+<span class="syn-comment">--</span>
+<span class="syn-comment">--   cd &lt;repo&gt; &amp;&amp; shale &lt;shale&gt;/cookbook/zig/count_comments.shale</span>
+<span class="syn-comment">--   shale &lt;shale&gt;/cookbook/zig/count_comments.shale dir=zig:lib/std/zig files=AstGen.zig,Parse.zig,Zir.zig</span>
+<span class="syn-comment">--   cd &lt;repo&gt; &amp;&amp; shale &lt;shale&gt;/cookbook/zig/count_comments.shale top=10</span>
+<span class="syn-comment">--</span>
+<span class="syn-comment">-- `files` is comma-separated globs under `dir` (default `.`, the root;</span>
+<span class="syn-comment">-- a mount works): default `src/**/*.zig,tools/*.zig,build.zig`. A glob&#39;s</span>
+<span class="syn-comment">-- `*` on the command line is the shell&#39;s unless quoted.</span>
+<span class="syn-comment">--</span>
+<span class="syn-comment">-- A line is code when it holds anything but a comment, a comment line</span>
+<span class="syn-comment">-- when it is only one (a comment after code counts as code). A loud line</span>
+<span class="syn-comment">-- holds `**`, a heading of two upper-case words or more (`THE HUNT`), or a</span>
+<span class="syn-comment">-- `──` banner. A dated line names a QUEUE or</span>
+<span class="syn-comment">-- FEEDBACK item, a date (`2026-10-20`), or a person (`Steve`, `the box`,</span>
+<span class="syn-comment">-- `CC`). The table is the loudest first, `top` rows of it (default all),</span>
+<span class="syn-comment">-- then the whole&#39;s totals.</span>
+<span class="syn-comment">--</span>
+<span class="syn-comment">-- budget: steps=900000000 reads=100000 read_bytes=400000000 arena_bytes=2000000000</span>
+
+<span class="syn-keyword">const</span> DIR = arg(<span class="syn-string">&quot;dir&quot;</span>, <span class="syn-string">&quot;.&quot;</span>)
+<span class="syn-keyword">const</span> FILES = arg(<span class="syn-string">&quot;files&quot;</span>, <span class="syn-string">&quot;src/**/*.zig,tools/*.zig,build.zig&quot;</span>)
+<span class="syn-keyword">const</span> TOP = arg(<span class="syn-string">&quot;top&quot;</span>, <span class="syn-number">0</span>)
+
+<span class="syn-keyword">function</span> <span class="syn-name">is_loud</span>(c)
+  <span class="syn-keyword">return</span> contains(c, <span class="syn-string">&quot;**&quot;</span>) <span class="syn-keyword">or</span> contains(c, <span class="syn-string">&quot;──&quot;</span>) <span class="syn-keyword">or</span> re_match(c, <span class="syn-string">&quot;\\b[A-Z][A-Z]+ [A-Z][A-Z]+&quot;</span>)
+<span class="syn-keyword">end</span>
+
+<span class="syn-keyword">function</span> <span class="syn-name">is_dated</span>(c)
+  <span class="syn-keyword">return</span> re_match(c, <span class="syn-string">&quot;QUEUE|FEEDBACK|\\b20\\d\\d-\\d\\d-\\d\\d\\b|\\bSteve\\b|\\bthe box\\b|\\bCC\\b&quot;</span>)
+<span class="syn-keyword">end</span>
+
+<span class="syn-comment">-- The files `FILES` names under `DIR`, each once, in the order named.</span>
+<span class="syn-keyword">local</span> paths = {}
+<span class="syn-keyword">local</span> seen = {}
+<span class="syn-keyword">for</span> pattern <span class="syn-keyword">in</span> split(FILES, <span class="syn-string">&quot;,&quot;</span>) <span class="syn-keyword">do</span>
+  <span class="syn-keyword">local</span> p = trim(pattern)
+  <span class="syn-keyword">local</span> full = p
+  <span class="syn-keyword">if</span> DIR ~= <span class="syn-string">&quot;.&quot;</span> <span class="syn-keyword">then</span> full = DIR .. <span class="syn-string">&quot;/&quot;</span> .. p <span class="syn-keyword">end</span>
+  <span class="syn-keyword">local</span> got = {}
+  <span class="syn-keyword">if</span> contains(p, <span class="syn-string">&quot;*&quot;</span>) <span class="syn-keyword">then</span> got = glob(full) <span class="syn-keyword">elseif</span> exists(full) <span class="syn-keyword">then</span> got = {full} <span class="syn-keyword">end</span>
+  <span class="syn-keyword">for</span> g <span class="syn-keyword">in</span> got <span class="syn-keyword">do</span>
+    <span class="syn-keyword">if</span> <span class="syn-keyword">not</span> get(seen, g, <span class="syn-keyword">false</span>) <span class="syn-keyword">then</span>
+      seen[g] = <span class="syn-keyword">true</span>
+      push(paths, g)
+    <span class="syn-keyword">end</span>
+  <span class="syn-keyword">end</span>
+<span class="syn-keyword">end</span>
+<span class="syn-keyword">if</span> #paths == <span class="syn-number">0</span> <span class="syn-keyword">then</span> fail(<span class="syn-string">&quot;count_comments: no file matches &quot;</span> .. FILES .. <span class="syn-string">&quot; under &quot;</span> .. DIR) <span class="syn-keyword">end</span>
+
+<span class="syn-keyword">local</span> rows = {}
+<span class="syn-keyword">local</span> all = {code = <span class="syn-number">0</span>, doc = <span class="syn-number">0</span>, plain = <span class="syn-number">0</span>, words = <span class="syn-number">0</span>, loud = <span class="syn-number">0</span>, dated = <span class="syn-number">0</span>}
+<span class="syn-keyword">for</span> p <span class="syn-keyword">in</span> paths <span class="syn-keyword">do</span>
+  <span class="syn-keyword">local</span> r = {code = <span class="syn-number">0</span>, doc = <span class="syn-number">0</span>, plain = <span class="syn-number">0</span>, words = <span class="syn-number">0</span>, loud = <span class="syn-number">0</span>, dated = <span class="syn-number">0</span>}
+  <span class="syn-keyword">for</span> l <span class="syn-keyword">in</span> lines(read(p)) <span class="syn-keyword">do</span>
+    <span class="syn-keyword">local</span> t = trim(l)
+    <span class="syn-keyword">if</span> t ~= <span class="syn-string">&quot;&quot;</span> <span class="syn-keyword">then</span>
+      <span class="syn-keyword">if</span> starts_with(t, <span class="syn-string">&quot;//&quot;</span>) <span class="syn-keyword">then</span>
+        <span class="syn-keyword">if</span> starts_with(t, <span class="syn-string">&quot;///&quot;</span>) <span class="syn-keyword">or</span> starts_with(t, <span class="syn-string">&quot;//!&quot;</span>) <span class="syn-keyword">then</span> r.doc = r.doc + <span class="syn-number">1</span> <span class="syn-keyword">else</span> r.plain = r.plain + <span class="syn-number">1</span> <span class="syn-keyword">end</span>
+        r.words = r.words + #words(sub(t, <span class="syn-number">4</span>))
+        <span class="syn-keyword">if</span> is_loud(t) <span class="syn-keyword">then</span> r.loud = r.loud + <span class="syn-number">1</span> <span class="syn-keyword">end</span>
+        <span class="syn-keyword">if</span> is_dated(t) <span class="syn-keyword">then</span> r.dated = r.dated + <span class="syn-number">1</span> <span class="syn-keyword">end</span>
+      <span class="syn-keyword">else</span>
+        r.code = r.code + <span class="syn-number">1</span>
+      <span class="syn-keyword">end</span>
+    <span class="syn-keyword">end</span>
+  <span class="syn-keyword">end</span>
+  <span class="syn-keyword">for</span> k <span class="syn-keyword">in</span> keys(all) <span class="syn-keyword">do</span> all[k] = all[k] + r[k] <span class="syn-keyword">end</span>
+  <span class="syn-keyword">local</span> shown = p
+  <span class="syn-keyword">if</span> DIR ~= <span class="syn-string">&quot;.&quot;</span> <span class="syn-keyword">and</span> starts_with(p, DIR .. <span class="syn-string">&quot;/&quot;</span>) <span class="syn-keyword">then</span> shown = sub(p, #DIR + <span class="syn-number">2</span>) <span class="syn-keyword">end</span>
+  push(rows, {file = shown, code = r.code, doc = r.doc, plain = r.plain, loud = r.loud, dated = r.dated, r = r})
+<span class="syn-keyword">end</span>
+
+<span class="syn-comment">-- A share as `n.d`, of `part` per 100 of `whole`.</span>
+<span class="syn-keyword">function</span> <span class="syn-name">per100</span>(part, whole)
+  <span class="syn-keyword">if</span> whole == <span class="syn-number">0</span> <span class="syn-keyword">then</span> <span class="syn-keyword">return</span> <span class="syn-string">&quot;-&quot;</span> <span class="syn-keyword">end</span>
+  <span class="syn-keyword">local</span> tenths = (part * <span class="syn-number">1000</span> + whole // <span class="syn-number">2</span>) // whole
+  <span class="syn-keyword">return</span> (tenths // <span class="syn-number">10</span>) .. <span class="syn-string">&quot;.&quot;</span> .. (tenths % <span class="syn-number">10</span>)
+<span class="syn-keyword">end</span>
+
+<span class="syn-keyword">for</span> row <span class="syn-keyword">in</span> rows <span class="syn-keyword">do</span>
+  <span class="syn-keyword">local</span> comments = row.r.doc + row.r.plain
+  row.per100 = per100(comments, row.r.code)
+  row.words = per100(row.r.words, comments * <span class="syn-number">100</span>)
+<span class="syn-keyword">end</span>
+<span class="syn-keyword">local</span> sorted = sort(rows, <span class="syn-string">&quot;loud&quot;</span>, <span class="syn-string">&quot;desc&quot;</span>)
+<span class="syn-keyword">if</span> TOP &gt; <span class="syn-number">0</span> <span class="syn-keyword">then</span> sorted = take(sorted, TOP) <span class="syn-keyword">end</span>
+print(table(sorted, {<span class="syn-string">&quot;file&quot;</span>, <span class="syn-string">&quot;code&quot;</span>, <span class="syn-string">&quot;doc&quot;</span>, <span class="syn-string">&quot;plain&quot;</span>, <span class="syn-string">&quot;per100&quot;</span>, <span class="syn-string">&quot;words&quot;</span>, <span class="syn-string">&quot;loud&quot;</span>, <span class="syn-string">&quot;dated&quot;</span>}))
+<span class="syn-keyword">local</span> comments = all.doc + all.plain
+print(#paths .. <span class="syn-string">&quot; files: &quot;</span> .. all.code .. <span class="syn-string">&quot; code lines, &quot;</span> .. comments .. <span class="syn-string">&quot; comment lines (&quot;</span> .. all.doc .. <span class="syn-string">&quot; doc, &quot;</span> .. all.plain ..
+  <span class="syn-string">&quot; plain), &quot;</span> .. per100(comments, all.code) .. <span class="syn-string">&quot; per 100, &quot;</span> .. per100(all.words, comments * <span class="syn-number">100</span>) .. <span class="syn-string">&quot; words a line, &quot;</span> ..
+  all.loud .. <span class="syn-string">&quot; loud, &quot;</span> .. all.dated .. <span class="syn-string">&quot; dated&quot;</span>)
+</code></pre>
+</div>
+</div>
+</section>
+<section class="example" id="find_unused_imports">
+<h2><a href="#find_unused_imports">find_unused_imports</a></h2>
+<p>The import lines a Roc file never uses, read from Roc's own parse tree, a gate with its plants' self-test in Roc too.</p>
+<p class="facts">Its effects: <code>Shale.arg!</code>, <code>Shale.fail!</code>, <code>Shale.glob!</code>, <code>Shale.print!</code>, <code>Shale.re_lines!</code>, <code>Shale.read!</code>, <code>Shale.roc_tree!</code>, <code>Shale.run!</code>.<br>Roc: 570 lines in 3 files. Shale original: 106 lines, plus 261 lines in the 4 libraries it loads, which other recipes share.</p>
+<div class="pair">
+<div class="side">
+<h3>Roc</h3>
+<p class="file"><a href="https://github.com/showell/shale/blob/d08020fffcc9ed980c1c4f3ccd5b8865fe2a05c1/cookbook/roc/find_unused_imports/find_unused_imports.roc"><code>cookbook/roc/find_unused_imports/find_unused_imports.roc</code></a>, 178 lines</p>
+<pre><code><span class="syn-comment">## find_unused_imports, in Roc on Shale&#39;s platform (roc_platform/README.md):</span>
+<span class="syn-comment">## the import lines a Roc file never uses, since Roc doesn&#39;t warn of one. Its</span>
+<span class="syn-comment">## launcher, cookbook/roc/find_unused_imports.shale, is how it is run, and</span>
+<span class="syn-comment">## its header says the rule, `unused_import`. check_goldens.shale, beside</span>
+<span class="syn-comment">## this, holds its output on the plants to its goldens, line for line.</span>
+<span class="syn-comment">##</span>
+<span class="syn-comment">##   cd &lt;repo&gt; &amp;&amp; shale cookbook:roc/find_unused_imports.shale glob=app/**/*.roc</span>
+<span class="syn-comment">##   shale cookbook:roc/find_unused_imports.shale self_test=1</span>
+<span class="syn-comment">##</span>
+<span class="syn-comment">## The arguments: `glob` (`**/*.roc`; several, separated by commas) and</span>
+<span class="syn-comment">## `self_test` (`self_test=1` runs the plants, each through the launcher).</span>
+<span class="syn-comment">##</span>
+<span class="syn-comment">## This root globs the files, has Roc&#39;s parser read them (`Shale.roc_tree!`)</span>
+<span class="syn-comment">## and each one&#39;s text (`Shale.read!`), and prints the verdict</span>
+<span class="syn-comment">## (`Shale.print!`, `Shale.fail!`). Imports, beside it, is the rule;</span>
+<span class="syn-comment">## SelfTest is the plants&#39; run.</span>
+<span class="syn-comment">## budget: steps=800000000 arena_bytes=2000000000 output_bytes=4000000 programs=100</span>
+<span class="syn-keyword">app</span> [main!] { pf: <span class="syn-keyword">platform</span> <span class="syn-string">&quot;../../../roc_platform/platform/main.roc&quot;</span> }
+
+<span class="syn-keyword">import</span> pf.<span class="syn-type">Shale</span>
+<span class="syn-keyword">import</span> <span class="syn-type">Imports</span>
+<span class="syn-keyword">import</span> <span class="syn-type">SelfTest</span>
+
+<span class="syn-comment">## A finding: the file, the line and what is unused there.</span>
+<span class="syn-type">Finding</span> : {
+	path : <span class="syn-type">Str</span>,
+	line : <span class="syn-type">U64</span>,
+	what : <span class="syn-type">Str</span>,
+}
+
+<span class="syn-name">main!</span> : {} =&gt; {}
+<span class="syn-name">main!</span> = |{}| {
+	<span class="syn-keyword">if</span> <span class="syn-type">Shale</span>.arg!(<span class="syn-string">&quot;self_test&quot;</span>, <span class="syn-string">&quot;&quot;</span>) == <span class="syn-string">&quot;1&quot;</span> {
+		<span class="syn-type">SelfTest</span>.run!({})
+	} <span class="syn-keyword">else</span> {
+		run_check!({})
+	}
+}
+
+<span class="syn-comment">## The check over the glob&#39;s files: the verdict printed, then a stop when a</span>
+<span class="syn-comment">## file didn&#39;t parse, or when there are findings, the summary the last line</span>
+<span class="syn-comment">## a caller reads.</span>
+<span class="syn-name">run_check!</span> : {} =&gt; {}
+<span class="syn-name">run_check!</span> = |{}| {
+	paths = list_files!(<span class="syn-type">Shale</span>.arg!(<span class="syn-string">&quot;glob&quot;</span>, <span class="syn-string">&quot;**/*.roc&quot;</span>))
+	<span class="syn-keyword">var</span> $report = []
+	<span class="syn-keyword">var</span> $refused = []
+	<span class="syn-keyword">for</span> file <span class="syn-keyword">in</span> <span class="syn-type">Shale</span>.roc_tree!(paths) {
+		<span class="syn-keyword">if</span> file.err == <span class="syn-string">&quot;&quot;</span> {
+			source_lines = read_text!(file.path).split_on(<span class="syn-string">&quot;\n&quot;</span>)
+			<span class="syn-keyword">for</span> unused <span class="syn-keyword">in</span> <span class="syn-type">Imports</span>.unused_imports(file.nodes, source_lines) {
+				what = <span class="syn-string">&quot;</span>${unused.label}<span class="syn-string"> is imported and never used: delete the line&quot;</span>
+				$report = $report.append({ path: file.path, line: unused.line, what })
+			}
+		} <span class="syn-keyword">else</span> <span class="syn-keyword">if</span> file.err.starts_with(file.path) {
+			$refused = $refused.append(file.err)
+		} <span class="syn-keyword">else</span> {
+			$refused = $refused.append(<span class="syn-string">&quot;</span>${file.path}<span class="syn-string">: </span>${file.err}<span class="syn-string">&quot;</span>)
+		}
+	}
+	found = $report.sort_with(finding_order).map(finding_line)
+	counts = <span class="syn-string">&quot;</span>${paths.len().to_str()}<span class="syn-string"> files; unused_import </span>${found.len().to_str()}<span class="syn-string">&quot;</span>
+	summary = <span class="syn-string">&quot;find_unused_imports (Roc): </span>${counts}<span class="syn-string">&quot;</span>
+	print_findings!(summary, found)
+	<span class="syn-keyword">if</span> !($refused.is_empty()) {
+		<span class="syn-keyword">for</span> refusal <span class="syn-keyword">in</span> $refused {
+			<span class="syn-type">Shale</span>.print!(<span class="syn-string">&quot;refused: </span>${refusal}<span class="syn-string">&quot;</span>)
+		}
+		refused_count = $refused.len().to_str()
+		refusals = <span class="syn-string">&quot;roc-ast refused </span>${refused_count}<span class="syn-string"> files (named above)&quot;</span>
+		why = <span class="syn-string">&quot;which have no tree to judge; every other file was judged&quot;</span>
+		<span class="syn-type">Shale</span>.fail!(<span class="syn-string">&quot;find_unused_imports: </span>${refusals}<span class="syn-string">, </span>${why}<span class="syn-string">&quot;</span>)
+	}
+	<span class="syn-keyword">if</span> !(found.is_empty()) {
+		<span class="syn-type">Shale</span>.fail!(summary)
+	}
+}
+
+<span class="syn-comment">## The files of each comma-separated glob, in the order given, a file twice</span>
+<span class="syn-comment">## when two globs name it.</span>
+<span class="syn-name">list_files!</span> : <span class="syn-type">Str</span> =&gt; <span class="syn-type">List</span>(<span class="syn-type">Str</span>)
+<span class="syn-name">list_files!</span> = |patterns| {
+	<span class="syn-keyword">var</span> $paths = []
+	<span class="syn-keyword">for</span> pattern <span class="syn-keyword">in</span> patterns.split_on(<span class="syn-string">&quot;,&quot;</span>) {
+		matching = <span class="syn-type">Shale</span>.glob!(trim_ends(pattern))
+		$paths = $paths.concat(matching)
+	}
+	$paths
+}
+
+<span class="syn-comment">## The file&#39;s text. A file the parser read and the read finds gone stops the</span>
+<span class="syn-comment">## run.</span>
+<span class="syn-name">read_text!</span> : <span class="syn-type">Str</span> =&gt; <span class="syn-type">Str</span>
+<span class="syn-name">read_text!</span> = |path|
+	<span class="syn-keyword">match</span> <span class="syn-type">Shale</span>.read!(path) {
+		<span class="syn-type">Found</span>(text) =&gt; text
+		<span class="syn-type">Missing</span> =&gt; {
+			<span class="syn-type">Shale</span>.fail!(<span class="syn-string">&quot;find_unused_imports: </span>${path}<span class="syn-string"> went missing during the check&quot;</span>)
+			<span class="syn-string">&quot;&quot;</span>
+		}
+	}
+
+<span class="syn-comment">## The text without the spaces, tabs, carriage returns and newlines at its</span>
+<span class="syn-comment">## ends, as Shale&#39;s `trim` takes them.</span>
+<span class="syn-name">trim_ends</span> : <span class="syn-type">Str</span> -&gt; <span class="syn-type">Str</span>
+<span class="syn-name">trim_ends</span> = |text| {
+	bytes = text.to_utf8()
+	is_kept = |byte| !(byte == <span class="syn-string">&#39; &#39;</span> <span class="syn-keyword">or</span> byte == <span class="syn-string">&#39;\t&#39;</span> <span class="syn-keyword">or</span> byte == <span class="syn-string">&#39;\r&#39;</span> <span class="syn-keyword">or</span> byte == <span class="syn-string">&#39;\n&#39;</span>)
+	<span class="syn-keyword">match</span> bytes.find_first_index(is_kept) {
+		<span class="syn-type">Ok</span>(start) =&gt; {
+			end = bytes.find_last_index(is_kept) ?? start
+			<span class="syn-type">Str</span>.from_utf8(bytes.sublist({ start, len: end + <span class="syn-number">1</span> - start })) ?? text
+		}
+		<span class="syn-type">Err</span>(_) =&gt; <span class="syn-string">&quot;&quot;</span>
+	}
+}
+
+<span class="syn-comment"># ── The verdict</span>
+
+<span class="syn-name">finding_line</span> : <span class="syn-type">Finding</span> -&gt; <span class="syn-type">Str</span>
+<span class="syn-name">finding_line</span> = |finding|
+	<span class="syn-string">&quot;</span>${finding.path}<span class="syn-string">:</span>${finding.line.to_str()}<span class="syn-string">: unused_import: </span>${finding.what}<span class="syn-string">&quot;</span>
+
+<span class="syn-comment">## By path, then line, then what is said, each path and saying bytewise, as</span>
+<span class="syn-comment">## the Shale original sorted its report.</span>
+<span class="syn-name">finding_order</span> : <span class="syn-type">Finding</span>, <span class="syn-type">Finding</span> -&gt; [<span class="syn-type">Before</span>, <span class="syn-type">Same</span>, <span class="syn-type">After</span>]
+<span class="syn-name">finding_order</span> = |first, second|
+	<span class="syn-keyword">match</span> byte_order(first.path, second.path) {
+		<span class="syn-type">Same</span> =&gt;
+			<span class="syn-keyword">if</span> first.line &lt; second.line {
+				<span class="syn-type">Before</span>
+			} <span class="syn-keyword">else</span> <span class="syn-keyword">if</span> first.line &gt; second.line {
+				<span class="syn-type">After</span>
+			} <span class="syn-keyword">else</span> {
+				byte_order(first.what, second.what)
+			}
+		other =&gt; other
+	}
+
+<span class="syn-comment">## Two texts in the order of their bytes, a text before every longer one it</span>
+<span class="syn-comment">## starts.</span>
+<span class="syn-name">byte_order</span> : <span class="syn-type">Str</span>, <span class="syn-type">Str</span> -&gt; [<span class="syn-type">Before</span>, <span class="syn-type">Same</span>, <span class="syn-type">After</span>]
+<span class="syn-name">byte_order</span> = |first, second| {
+	pairs = <span class="syn-type">List</span>.map2(
+		first.to_utf8(),
+		second.to_utf8(),
+		|x, y| (x, y),
+	)
+	<span class="syn-keyword">match</span> pairs.find_first(|(x, y)| x != y) {
+		<span class="syn-type">Ok</span>((x, y)) =&gt;
+			<span class="syn-keyword">if</span> x &lt; y {
+				<span class="syn-type">Before</span>
+			} <span class="syn-keyword">else</span> {
+				<span class="syn-type">After</span>
+			}
+		<span class="syn-type">Err</span>(_) =&gt;
+			<span class="syn-keyword">if</span> first.count_utf8_bytes() &lt; second.count_utf8_bytes() {
+				<span class="syn-type">Before</span>
+			} <span class="syn-keyword">else</span> <span class="syn-keyword">if</span> first.count_utf8_bytes() &gt; second.count_utf8_bytes() {
+				<span class="syn-type">After</span>
+			} <span class="syn-keyword">else</span> {
+				<span class="syn-type">Same</span>
+			}
+	}
+}
+
+<span class="syn-comment">## The summary, each finding, then the summary again (cookbook/findings.shale):</span>
+<span class="syn-comment">## the first copy survives a cut output, and a gate reads the last line.</span>
+<span class="syn-name">print_findings!</span> : <span class="syn-type">Str</span>, <span class="syn-type">List</span>(<span class="syn-type">Str</span>) =&gt; {}
+<span class="syn-name">print_findings!</span> = |summary, finding_lines| {
+	<span class="syn-type">Shale</span>.print!(summary)
+	<span class="syn-keyword">if</span> !(finding_lines.is_empty()) {
+		<span class="syn-keyword">for</span> line <span class="syn-keyword">in</span> finding_lines {
+			<span class="syn-type">Shale</span>.print!(line)
+		}
+		<span class="syn-type">Shale</span>.print!(summary)
+	}
+}
+</code></pre>
+<p class="file"><a href="https://github.com/showell/shale/blob/d08020fffcc9ed980c1c4f3ccd5b8865fe2a05c1/cookbook/roc/find_unused_imports/Imports.roc"><code>cookbook/roc/find_unused_imports/Imports.roc</code></a>, 239 lines</p>
+<pre><code><span class="syn-comment">## A Roc file&#39;s imports, read from Roc&#39;s own tree of it, and the ones the file</span>
+<span class="syn-comment">## never uses. The rules are the recipe&#39;s `unused_import`</span>
+<span class="syn-comment">## (cookbook/roc/find_unused_imports.shale&#39;s header says what counts as a</span>
+<span class="syn-comment">## use); cookbook/roc/imports.shale holds the same rules for the Shale</span>
+<span class="syn-comment">## recipes that ask them of a file, rewrite_method_calls.shale among them.</span>
+<span class="syn-type">Imports</span> := [].{
+
+	<span class="syn-comment">## A parsed file&#39;s node, as `Shale.roc_tree!` gives it (the platform names</span>
+	<span class="syn-comment">## its fields): `parent` and `kids` are places in the file&#39;s nodes</span>
+	<span class="syn-comment">## counted from 1.</span>
+	<span class="syn-type">SyntaxNode</span> : {
+		kind : <span class="syn-type">Str</span>,
+		depth : <span class="syn-type">U64</span>,
+		parent : <span class="syn-type">U64</span>,
+		kids : <span class="syn-type">List</span>(<span class="syn-type">U64</span>),
+		line : <span class="syn-type">U64</span>,
+		col : <span class="syn-type">U64</span>,
+		end_line : <span class="syn-type">U64</span>,
+		end_col : <span class="syn-type">U64</span>,
+		attrs : <span class="syn-type">List</span>({ name : <span class="syn-type">Str</span>, value : <span class="syn-type">Str</span> }),
+	}
+
+	<span class="syn-comment">## An import line no name of the file uses: its line and how a finding</span>
+	<span class="syn-comment">## names it.</span>
+	<span class="syn-type">UnusedImport</span> : { line : <span class="syn-type">U64</span>, label : <span class="syn-type">Str</span> }
+
+	<span class="syn-comment">## Each import of the file whose names it never uses, from its tree and</span>
+	<span class="syn-comment">## its source lines, which hold the qualifier of a pattern&#39;s tag that the</span>
+	<span class="syn-comment">## tree drops.</span>
+	<span class="syn-name">unused_imports</span> : <span class="syn-type">List</span>(<span class="syn-type">Imports.SyntaxNode</span>), <span class="syn-type">List</span>(<span class="syn-type">Str</span>) -&gt; <span class="syn-type">List</span>(<span class="syn-type">Imports.UnusedImport</span>)
+	<span class="syn-name">unused_imports</span> = |nodes, source_lines| {
+		used = heads_used(nodes, source_lines)
+		imports_of(nodes)
+			.drop_if(|line_import| line_import.names.any(|name| used.contains(name)))
+			.map(|line_import| { line: line_import.line, label: line_import.label })
+	}
+}
+
+<span class="syn-comment">## An import line: its line, how a finding names it, and the names a use of</span>
+<span class="syn-comment">## it may start with.</span>
+<span class="syn-type">Import</span> : {
+	line : <span class="syn-type">U64</span>,
+	label : <span class="syn-type">Str</span>,
+	names : <span class="syn-type">List</span>(<span class="syn-type">Str</span>),
+}
+
+<span class="syn-comment">## The node at a place of the file&#39;s nodes; a place the tree gives always</span>
+<span class="syn-comment">## holds one.</span>
+<span class="syn-name">node_at</span> : <span class="syn-type">List</span>(<span class="syn-type">Imports.SyntaxNode</span>), <span class="syn-type">U64</span> -&gt; <span class="syn-type">Imports.SyntaxNode</span>
+<span class="syn-name">node_at</span> = |nodes, at|
+	<span class="syn-keyword">match</span> nodes.get(at - <span class="syn-number">1</span>) {
+		<span class="syn-type">Ok</span>(node) =&gt; node
+		<span class="syn-type">Err</span>(_) =&gt; <span class="syn-keyword">crash</span> <span class="syn-string">&quot;find_unused_imports: the nodes has no node </span>${at.to_str()}<span class="syn-string">&quot;</span>
+	}
+
+<span class="syn-comment">## A node&#39;s attribute, `&quot;&quot;` where the tree gives it none.</span>
+<span class="syn-name">attribute</span> : <span class="syn-type">Imports.SyntaxNode</span>, <span class="syn-type">Str</span> -&gt; <span class="syn-type">Str</span>
+<span class="syn-name">attribute</span> = |node, name|
+	<span class="syn-keyword">match</span> node.attrs.find_first(|attribute_entry| attribute_entry.name == name) {
+		<span class="syn-type">Ok</span>(attribute_entry) =&gt; attribute_entry.value
+		<span class="syn-type">Err</span>(_) =&gt; <span class="syn-string">&quot;&quot;</span>
+	}
+
+<span class="syn-comment">## The kids of a node, as nodes.</span>
+<span class="syn-name">kid_nodes</span> : <span class="syn-type">List</span>(<span class="syn-type">Imports.SyntaxNode</span>), <span class="syn-type">Imports.SyntaxNode</span> -&gt; <span class="syn-type">List</span>(<span class="syn-type">Imports.SyntaxNode</span>)
+<span class="syn-name">kid_nodes</span> = |nodes, node|
+	node.kids.map(|at| node_at(nodes, at))
+
+<span class="syn-comment"># ── The imports</span>
+
+<span class="syn-comment">## Each import of the file, in order: `import pkg.Mod`, its alias and what it</span>
+<span class="syn-comment">## exposes, and each file import, `import &quot;page.html&quot; as page : Str`.</span>
+<span class="syn-name">imports_of</span> : <span class="syn-type">List</span>(<span class="syn-type">Imports.SyntaxNode</span>) -&gt; <span class="syn-type">List</span>(<span class="syn-type">Import</span>)
+<span class="syn-name">imports_of</span> = |nodes|
+	nodes.join_map(
+		|node|
+			<span class="syn-keyword">if</span> node.kind == <span class="syn-string">&quot;s-import&quot;</span> {
+				[module_import(nodes, node)]
+			} <span class="syn-keyword">else</span> <span class="syn-keyword">if</span> node.kind == <span class="syn-string">&quot;s-file-import&quot;</span> {
+				file_imports(nodes, node)
+			} <span class="syn-keyword">else</span> {
+				[]
+			},
+	)
+
+<span class="syn-comment">## A module&#39;s import. Its name is the alias of `import pkg.Mod as M`, else</span>
+<span class="syn-comment">## the last part of the module&#39;s path; a name it exposes is one too.</span>
+<span class="syn-name">module_import</span> : <span class="syn-type">List</span>(<span class="syn-type">Imports.SyntaxNode</span>), <span class="syn-type">Imports.SyntaxNode</span> -&gt; <span class="syn-type">Import</span>
+<span class="syn-name">module_import</span> = |nodes, node| {
+	path = attribute(node, <span class="syn-string">&quot;raw&quot;</span>)
+	alias = attribute(node, <span class="syn-string">&quot;alias&quot;</span>)
+	name = <span class="syn-keyword">if</span> alias == <span class="syn-string">&quot;&quot;</span> {
+		path.split_on(<span class="syn-string">&quot;.&quot;</span>).last() ?? path
+	} <span class="syn-keyword">else</span> {
+		alias
+	}
+	label = <span class="syn-keyword">if</span> alias == <span class="syn-string">&quot;&quot;</span> {
+		<span class="syn-string">&quot;`</span>${path}<span class="syn-string">`&quot;</span>
+	} <span class="syn-keyword">else</span> {
+		<span class="syn-string">&quot;`</span>${path}<span class="syn-string">` as `</span>${alias}<span class="syn-string">`&quot;</span>
+	}
+	exposing_lists = kid_nodes(nodes, node).keep_if(|kid| kid.kind == <span class="syn-string">&quot;exposing&quot;</span>)
+	exposed = exposing_lists.join_map(|list| exposed_names(nodes, list))
+	{
+		line: node.line,
+		label,
+		names: exposed.prepend(name),
+	}
+}
+
+<span class="syn-comment">## The names an `exposing [...]` list names: a type&#39;s `text`, and each</span>
+<span class="syn-comment">## value&#39;s name, held by the value&#39;s own kids.</span>
+<span class="syn-name">exposed_names</span> : <span class="syn-type">List</span>(<span class="syn-type">Imports.SyntaxNode</span>), <span class="syn-type">Imports.SyntaxNode</span> -&gt; <span class="syn-type">List</span>(<span class="syn-type">Str</span>)
+<span class="syn-name">exposed_names</span> = |nodes, list|
+	kid_nodes(nodes, list).join_map(
+		|entry|
+			<span class="syn-keyword">if</span> entry.kind == <span class="syn-string">&quot;exposed-upper-ident&quot;</span> {
+				[attribute(entry, <span class="syn-string">&quot;text&quot;</span>)]
+			} <span class="syn-keyword">else</span> <span class="syn-keyword">if</span> entry.kind == <span class="syn-string">&quot;exposed-lower-ident&quot;</span> {
+				kid_nodes(nodes, entry).map(|name| attribute(name, <span class="syn-string">&quot;value&quot;</span>))
+			} <span class="syn-keyword">else</span> {
+				[]
+			},
+	)
+
+<span class="syn-comment">## A file import&#39;s name, used when the file refers to it.</span>
+<span class="syn-name">file_imports</span> : <span class="syn-type">List</span>(<span class="syn-type">Imports.SyntaxNode</span>), <span class="syn-type">Imports.SyntaxNode</span> -&gt; <span class="syn-type">List</span>(<span class="syn-type">Import</span>)
+<span class="syn-name">file_imports</span> = |nodes, node|
+	kid_nodes(nodes, node)
+		.keep_if(|kid| kid.kind == <span class="syn-string">&quot;name&quot;</span>)
+		.map(
+			|kid| {
+				name = attribute(kid, <span class="syn-string">&quot;value&quot;</span>)
+				{
+					line: node.line,
+					label: <span class="syn-string">&quot;the file import `</span>${name}<span class="syn-string">`&quot;</span>,
+					names: [name],
+				}
+			},
+		)
+
+<span class="syn-comment"># ── The uses</span>
+
+<span class="syn-comment">## The first part of every value, tag and type name the file uses. A bare</span>
+<span class="syn-comment">## tag (`Other`, in an expression, a pattern or a tag union type) names no</span>
+<span class="syn-comment">## module, so only a qualified one counts, or one that is a nominal type&#39;s</span>
+<span class="syn-comment">## name (`Point.{ x: 0 }`). A platform header&#39;s `hosted { &quot;sym&quot;: Host.f! }`</span>
+<span class="syn-comment">## entry uses its module.</span>
+<span class="syn-name">heads_used</span> : <span class="syn-type">List</span>(<span class="syn-type">Imports.SyntaxNode</span>), <span class="syn-type">List</span>(<span class="syn-type">Str</span>) -&gt; <span class="syn-type">Set</span>(<span class="syn-type">Str</span>)
+<span class="syn-name">heads_used</span> = |nodes, source_lines| {
+	union_tags = kids_of_kind(nodes, <span class="syn-string">&quot;tags&quot;</span>)
+	nominal_names = kids_of_kind(nodes, <span class="syn-string">&quot;mapper&quot;</span>)
+	names = nodes.map_with_index(
+		|node, index| {
+			at = index + <span class="syn-number">1</span>
+			<span class="syn-keyword">if</span> node.kind == <span class="syn-string">&quot;e-ident&quot;</span> {
+				attribute(node, <span class="syn-string">&quot;raw&quot;</span>)
+			} <span class="syn-keyword">else</span> <span class="syn-keyword">if</span> node.kind == <span class="syn-string">&quot;e-tag&quot;</span> {
+				tag_use(node, nominal_names.contains(at))
+			} <span class="syn-keyword">else</span> <span class="syn-keyword">if</span> node.kind == <span class="syn-string">&quot;ty&quot;</span> <span class="syn-keyword">and</span> !(union_tags.contains(at)) {
+				attribute(node, <span class="syn-string">&quot;name&quot;</span>)
+			} <span class="syn-keyword">else</span> <span class="syn-keyword">if</span> node.kind == <span class="syn-string">&quot;symbol-map-entry&quot;</span> {
+				attribute(node, <span class="syn-string">&quot;module&quot;</span>)
+			} <span class="syn-keyword">else</span> <span class="syn-keyword">if</span> node.kind == <span class="syn-string">&quot;p-tag&quot;</span> {
+				pattern_tag_use(node, source_lines)
+			} <span class="syn-keyword">else</span> {
+				<span class="syn-string">&quot;&quot;</span>
+			}
+		},
+	)
+	<span class="syn-type">Set</span>.from_list(names.drop_if(<span class="syn-type">Str</span>.is_empty).map(head_of))
+}
+
+<span class="syn-comment">## An expression&#39;s tag, when it names a module: qualified, or a nominal</span>
+<span class="syn-comment">## type&#39;s name.</span>
+<span class="syn-name">tag_use</span> : <span class="syn-type">Imports.SyntaxNode</span>, <span class="syn-type">Bool</span> -&gt; <span class="syn-type">Str</span>
+<span class="syn-name">tag_use</span> = |node, names_nominal| {
+	raw = attribute(node, <span class="syn-string">&quot;raw&quot;</span>)
+	<span class="syn-keyword">if</span> raw.contains(<span class="syn-string">&quot;.&quot;</span>) <span class="syn-keyword">or</span> names_nominal {
+		raw
+	} <span class="syn-keyword">else</span> {
+		<span class="syn-string">&quot;&quot;</span>
+	}
+}
+
+<span class="syn-comment">## A pattern&#39;s tag, when it is qualified. roc-ast drops a pattern tag&#39;s</span>
+<span class="syn-comment">## qualifier (`Color.Red =&gt;` comes as `.Red`), so the tag is read from the</span>
+<span class="syn-comment">## source at the pattern&#39;s column.</span>
+<span class="syn-name">pattern_tag_use</span> : <span class="syn-type">Imports.SyntaxNode</span>, <span class="syn-type">List</span>(<span class="syn-type">Str</span>) -&gt; <span class="syn-type">Str</span>
+<span class="syn-name">pattern_tag_use</span> = |node, source_lines| {
+	raw = attribute(node, <span class="syn-string">&quot;raw&quot;</span>)
+	written = <span class="syn-keyword">if</span> raw.starts_with(<span class="syn-string">&quot;.&quot;</span>) {
+		source_line = <span class="syn-keyword">match</span> source_lines.get(node.line - <span class="syn-number">1</span>) {
+			<span class="syn-type">Ok</span>(text) =&gt; text
+			<span class="syn-type">Err</span>(_) =&gt; <span class="syn-keyword">crash</span> <span class="syn-string">&quot;find_unused_imports: a pattern&#39;s tag past the file&#39;s end&quot;</span>
+		}
+		written_name(source_line.to_utf8().drop_first(node.col - <span class="syn-number">1</span>))
+	} <span class="syn-keyword">else</span> {
+		raw
+	}
+	<span class="syn-keyword">if</span> written.contains(<span class="syn-string">&quot;.&quot;</span>) {
+		written
+	} <span class="syn-keyword">else</span> {
+		<span class="syn-string">&quot;&quot;</span>
+	}
+}
+
+<span class="syn-comment">## The dotted name the bytes start with: a letter or `_`, then letters,</span>
+<span class="syn-comment">## digits, `_` and `.`; `&quot;&quot;` when they start with none.</span>
+<span class="syn-name">written_name</span> : <span class="syn-type">List</span>(<span class="syn-type">U8</span>) -&gt; <span class="syn-type">Str</span>
+<span class="syn-name">written_name</span> = |bytes|
+	<span class="syn-keyword">match</span> bytes.first() {
+		<span class="syn-type">Ok</span>(first) <span class="syn-keyword">if</span> is_letter(first) <span class="syn-keyword">or</span> first == <span class="syn-string">&#39;_&#39;</span> =&gt; {
+			length = bytes.find_first_index(|byte| !(is_name_byte(byte))) ?? bytes.len()
+			<span class="syn-keyword">match</span> <span class="syn-type">Str</span>.from_utf8(bytes.take_first(length)) {
+				<span class="syn-type">Ok</span>(name) =&gt; name
+				<span class="syn-type">Err</span>(_) =&gt; <span class="syn-keyword">crash</span> <span class="syn-string">&quot;find_unused_imports: a name of ASCII bytes is UTF-8&quot;</span>
+			}
+		}
+		_ =&gt; <span class="syn-string">&quot;&quot;</span>
+	}
+
+<span class="syn-name">is_letter</span> : <span class="syn-type">U8</span> -&gt; <span class="syn-type">Bool</span>
+<span class="syn-name">is_letter</span> = |byte|
+	(byte &gt;= <span class="syn-string">&#39;a&#39;</span> <span class="syn-keyword">and</span> byte &lt;= <span class="syn-string">&#39;z&#39;</span>) <span class="syn-keyword">or</span> (byte &gt;= <span class="syn-string">&#39;A&#39;</span> <span class="syn-keyword">and</span> byte &lt;= <span class="syn-string">&#39;Z&#39;</span>)
+
+<span class="syn-name">is_name_byte</span> : <span class="syn-type">U8</span> -&gt; <span class="syn-type">Bool</span>
+<span class="syn-name">is_name_byte</span> = |byte|
+	is_letter(byte) <span class="syn-keyword">or</span> (byte &gt;= <span class="syn-string">&#39;0&#39;</span> <span class="syn-keyword">and</span> byte &lt;= <span class="syn-string">&#39;9&#39;</span>) <span class="syn-keyword">or</span> byte == <span class="syn-string">&#39;_&#39;</span> <span class="syn-keyword">or</span> byte == <span class="syn-string">&#39;.&#39;</span>
+
+<span class="syn-comment">## The first part of a dotted name: `Mod` of `Mod.Type.name`.</span>
+<span class="syn-name">head_of</span> : <span class="syn-type">Str</span> -&gt; <span class="syn-type">Str</span>
+<span class="syn-name">head_of</span> = |name|
+	name.split_on(<span class="syn-string">&quot;.&quot;</span>).first() ?? name
+
+<span class="syn-comment">## The places of the nodes that are kids of a node of the kind.</span>
+<span class="syn-name">kids_of_kind</span> : <span class="syn-type">List</span>(<span class="syn-type">Imports.SyntaxNode</span>), <span class="syn-type">Str</span> -&gt; <span class="syn-type">Set</span>(<span class="syn-type">U64</span>)
+<span class="syn-name">kids_of_kind</span> = |nodes, kind|
+	<span class="syn-type">Set</span>.from_list(nodes.keep_if(|node| node.kind == kind).join_map(|node| node.kids))
+</code></pre>
+<p class="file"><a href="https://github.com/showell/shale/blob/d08020fffcc9ed980c1c4f3ccd5b8865fe2a05c1/cookbook/roc/find_unused_imports/SelfTest.roc"><code>cookbook/roc/find_unused_imports/SelfTest.roc</code></a>, 153 lines</p>
+<pre><code><span class="syn-comment">## The recipe&#39;s self-test: each plant under</span>
+<span class="syn-comment">## cookbook/roc/plants/find_unused_imports/ run through the launcher, held to</span>
+<span class="syn-comment">## its findings, its exit and what it says (cookbook/roc/gate_recipe.shale&#39;s</span>
+<span class="syn-comment">## `check_plants`).</span>
+<span class="syn-keyword">import</span> pf.<span class="syn-type">Shale</span>
+
+<span class="syn-type">SelfTest</span> := [].{
+
+	<span class="syn-comment">## Each row run as a child of its own, through the launcher; a run that</span>
+	<span class="syn-comment">## fires no `unused_import` anywhere fails too, since the check could be</span>
+	<span class="syn-comment">## blind.</span>
+	<span class="syn-name">run!</span> : {} =&gt; {}
+	<span class="syn-name">run!</span> = |{}| {
+		<span class="syn-keyword">var</span> $wrong = <span class="syn-number">0</span>
+		<span class="syn-keyword">for</span> row <span class="syn-keyword">in</span> rows {
+			pattern = <span class="syn-string">&quot;</span>${plants}${row.plant}<span class="syn-string">&quot;</span>
+			command = [<span class="syn-string">&quot;shale&quot;</span>, launcher, <span class="syn-string">&quot;glob=</span>${pattern}<span class="syn-string">&quot;</span>]
+			result = <span class="syn-type">Shale</span>.run!({
+				argv: command,
+				keep: <span class="syn-type">Whole</span>(<span class="syn-number">4000000</span>),
+				timeout_ms: <span class="syn-number">120000</span>,
+				want: <span class="syn-string">&quot;&quot;</span>,
+			})
+			faults = find_faults!(row, result)
+			<span class="syn-keyword">if</span> faults.is_empty() {
+				<span class="syn-type">Shale</span>.print!(<span class="syn-string">&quot;ok   </span>${pattern}<span class="syn-string">&quot;</span>)
+			} <span class="syn-keyword">else</span> {
+				<span class="syn-type">Shale</span>.print!(<span class="syn-string">&quot;FAIL </span>${pattern}<span class="syn-string">: </span>${<span class="syn-type">Str</span>.join_with(faults, <span class="syn-string">&quot;; &quot;</span>)}<span class="syn-string">&quot;</span>)
+				$wrong = $wrong + <span class="syn-number">1</span>
+				<span class="syn-type">Shale</span>.print!(result.out)
+			}
+		}
+		<span class="syn-keyword">if</span> !(rows.any(|row| row.findings &gt; <span class="syn-number">0</span>)) {
+			<span class="syn-type">Shale</span>.print!(<span class="syn-string">&quot;FAIL `unused_import` has no plant&quot;</span>)
+			$wrong = $wrong + <span class="syn-number">1</span>
+		}
+		<span class="syn-keyword">if</span> $wrong &gt; <span class="syn-number">0</span> {
+			<span class="syn-type">Shale</span>.fail!(<span class="syn-string">&quot;find_unused_imports self_test: </span>${$wrong.to_str()}<span class="syn-string"> wrong&quot;</span>)
+		}
+		row_count = rows.len().to_str()
+		proof = <span class="syn-string">&quot;each plant gives its findings and a nonzero exit, each clean case none and exit 0&quot;</span>
+		<span class="syn-type">Shale</span>.print!(<span class="syn-string">&quot;find_unused_imports self_test: PASS (</span>${row_count}<span class="syn-string"> rows: </span>${proof}<span class="syn-string">)&quot;</span>)
+	}
+}
+
+<span class="syn-comment">## The launcher, which the self-test runs each plant through.</span>
+<span class="syn-name">launcher</span> : <span class="syn-type">Str</span>
+<span class="syn-name">launcher</span> = <span class="syn-string">&quot;cookbook:roc/find_unused_imports.shale&quot;</span>
+
+<span class="syn-name">plants</span> : <span class="syn-type">Str</span>
+<span class="syn-name">plants</span> = <span class="syn-string">&quot;cookbook:roc/plants/find_unused_imports/&quot;</span>
+
+<span class="syn-comment">## A plant&#39;s run: its files below `plants`, the findings it must print, the</span>
+<span class="syn-comment">## literals its output must hold, and whether it must stop without a finding.</span>
+<span class="syn-type">Row</span> : {
+	plant : <span class="syn-type">Str</span>,
+	findings : <span class="syn-type">U64</span>,
+	says : <span class="syn-type">List</span>(<span class="syn-type">Str</span>),
+	stops : <span class="syn-type">Bool</span>,
+}
+
+<span class="syn-comment">## A plant with no finding to give.</span>
+<span class="syn-name">quiet</span> : <span class="syn-type">Str</span> -&gt; <span class="syn-type">Row</span>
+<span class="syn-name">quiet</span> = |plant| {
+	plant,
+	findings: <span class="syn-number">0</span>,
+	says: [],
+	stops: <span class="syn-type">Bool.False</span>,
+}
+
+<span class="syn-comment">## A plant with one finding, and what it says.</span>
+<span class="syn-name">fires_once</span> : <span class="syn-type">Str</span>, <span class="syn-type">Str</span> -&gt; <span class="syn-type">Row</span>
+<span class="syn-name">fires_once</span> = |plant, saying| {
+	plant,
+	findings: <span class="syn-number">1</span>,
+	says: [saying],
+	stops: <span class="syn-type">Bool.False</span>,
+}
+
+<span class="syn-name">rows</span> : <span class="syn-type">List</span>(<span class="syn-type">Row</span>)
+<span class="syn-name">rows</span> = [
+	fires_once(<span class="syn-string">&quot;unused.roc&quot;</span>, <span class="syn-string">&quot;unused.roc:3: unused_import: `game.Polygon` is imported&quot;</span>),
+	fires_once(<span class="syn-string">&quot;unused_alias.roc&quot;</span>, <span class="syn-string">&quot;`game.Distance` as `D` is imported and never used&quot;</span>),
+	fires_once(<span class="syn-string">&quot;unused_exposing.roc&quot;</span>, <span class="syn-string">&quot;`pf.Stdout` is imported&quot;</span>),
+	fires_once(<span class="syn-string">&quot;unused_file_import.roc&quot;</span>, <span class="syn-string">&quot;the file import `page` is imported&quot;</span>),
+	fires_once(<span class="syn-string">&quot;unused_in_prose.roc&quot;</span>, <span class="syn-string">&quot;`game.Polygon` is imported&quot;</span>),
+	fires_once(<span class="syn-string">&quot;unused_method_only.roc&quot;</span>, <span class="syn-string">&quot;`game.Distance` is imported&quot;</span>),
+	fires_once(<span class="syn-string">&quot;unused_tag_namesake.roc&quot;</span>, <span class="syn-string">&quot;`game.Other` is imported&quot;</span>),
+	fires_once(<span class="syn-string">&quot;unused_beside_hosted.roc&quot;</span>, <span class="syn-string">&quot;unused_beside_hosted.roc:24: unused_import: `Http`&quot;</span>),
+	{
+		plant: <span class="syn-string">&quot;unused.roc,</span>${plants}<span class="syn-string">unused_alias.roc&quot;</span>,
+		findings: <span class="syn-number">2</span>,
+		says: [],
+		stops: <span class="syn-type">Bool.False</span>,
+	},
+	quiet(<span class="syn-string">&quot;quiet_qualified.roc&quot;</span>),
+	quiet(<span class="syn-string">&quot;quiet_annotation.roc&quot;</span>),
+	quiet(<span class="syn-string">&quot;quiet_expect.roc&quot;</span>),
+	quiet(<span class="syn-string">&quot;quiet_pattern_tag.roc&quot;</span>),
+	quiet(<span class="syn-string">&quot;quiet_tag.roc&quot;</span>),
+	quiet(<span class="syn-string">&quot;quiet_exposing.roc&quot;</span>),
+	quiet(<span class="syn-string">&quot;quiet_alias.roc&quot;</span>),
+	quiet(<span class="syn-string">&quot;quiet_interpolation.roc&quot;</span>),
+	quiet(<span class="syn-string">&quot;quiet_file_import.roc&quot;</span>),
+	quiet(<span class="syn-string">&quot;quiet_hosted.roc&quot;</span>),
+	{
+		plant: <span class="syn-string">&quot;broken/*.roc&quot;</span>,
+		findings: <span class="syn-number">0</span>,
+		says: [<span class="syn-string">&quot;refused: &quot;</span>],
+		stops: <span class="syn-type">Bool.True</span>,
+	},
+]
+
+<span class="syn-comment">## The last line of `out` that isn&#39;t one of Shale&#39;s `──` lines.</span>
+<span class="syn-name">last_said</span> : <span class="syn-type">Str</span> -&gt; <span class="syn-type">Str</span>
+<span class="syn-name">last_said</span> = |out|
+	out.trim().split_on(<span class="syn-string">&quot;\n&quot;</span>).fold(
+		<span class="syn-string">&quot;&quot;</span>,
+		|last, line|
+			<span class="syn-keyword">if</span> line.starts_with(<span class="syn-string">&quot;──&quot;</span>) <span class="syn-keyword">or</span> line.trim() == <span class="syn-string">&quot;&quot;</span> {
+				last
+			} <span class="syn-keyword">else</span> {
+				line
+			},
+	)
+
+<span class="syn-comment">## What is wrong with one row&#39;s run (cookbook/roc/gate_recipe.shale&#39;s</span>
+<span class="syn-comment">## `row_faults`).</span>
+<span class="syn-name">find_faults!</span> : <span class="syn-type">Row</span>, { code : <span class="syn-type">I64</span>, out : <span class="syn-type">Str</span> } =&gt; <span class="syn-type">List</span>(<span class="syn-type">Str</span>)
+<span class="syn-name">find_faults!</span> = |row, result| {
+	must_fail = row.stops <span class="syn-keyword">or</span> row.findings &gt; <span class="syn-number">0</span>
+	<span class="syn-keyword">var</span> $faults = []
+	<span class="syn-keyword">if</span> must_fail <span class="syn-keyword">and</span> result.code == <span class="syn-number">0</span> {
+		$faults = $faults.append(<span class="syn-string">&quot;it exited 0&quot;</span>)
+	}
+	<span class="syn-keyword">if</span> !(must_fail) <span class="syn-keyword">and</span> result.code != <span class="syn-number">0</span> {
+		$faults = $faults.append(<span class="syn-string">&quot;it exited </span>${result.code.to_str()}<span class="syn-string">&quot;</span>)
+	}
+	found = <span class="syn-type">Shale</span>.re_lines!(result.out, <span class="syn-string">&quot;^[^ ]+:[0-9]+: unused_import: &quot;</span>).len()
+	<span class="syn-keyword">if</span> found != row.findings {
+		printed = <span class="syn-string">&quot;unused_import printed </span>${found.to_str()}<span class="syn-string">&quot;</span>
+		$faults = $faults.append(<span class="syn-string">&quot;</span>${printed}<span class="syn-string">, not </span>${row.findings.to_str()}<span class="syn-string">&quot;</span>)
+	}
+	<span class="syn-keyword">if</span> !(row.stops) <span class="syn-keyword">and</span> !(last_said(result.out).contains(<span class="syn-string">&quot; files; &quot;</span>)) {
+		$faults = $faults.append(<span class="syn-string">&quot;its last line is no summary: </span>${last_said(result.out)}<span class="syn-string">&quot;</span>)
+	}
+	<span class="syn-keyword">for</span> literal <span class="syn-keyword">in</span> row.says {
+		<span class="syn-keyword">if</span> !(result.out.contains(literal)) {
+			$faults = $faults.append(<span class="syn-string">&quot;its output lacks `</span>${literal}<span class="syn-string">`&quot;</span>)
+		}
+	}
+	$faults
+}
+</code></pre>
+</div>
+<div class="side">
+<h3>Shale original</h3>
+<p class="file"><a href="https://github.com/showell/shale/blob/8023162fbe9af80e895356486f9db272c170e23d/cookbook/roc/find_unused_imports.shale"><code>cookbook/roc/find_unused_imports.shale</code></a>, 106 lines, at <code>8023162f</code></p>
+<p class="file">The libraries it loads: <a href="https://github.com/showell/shale/blob/8023162fbe9af80e895356486f9db272c170e23d/cookbook/findings.shale"><code>cookbook/findings.shale</code></a> (21 lines), <a href="https://github.com/showell/shale/blob/8023162fbe9af80e895356486f9db272c170e23d/cookbook/roc/parsed.shale"><code>cookbook/roc/parsed.shale</code></a> (34 lines), <a href="https://github.com/showell/shale/blob/8023162fbe9af80e895356486f9db272c170e23d/cookbook/roc/gate_recipe.shale"><code>cookbook/roc/gate_recipe.shale</code></a> (102 lines), <a href="https://github.com/showell/shale/blob/8023162fbe9af80e895356486f9db272c170e23d/cookbook/roc/imports.shale"><code>cookbook/roc/imports.shale</code></a> (104 lines).</p>
+<pre><code><span class="syn-comment">-- This recipe finds import lines that the file never uses, since Roc doesn&#39;t</span>
+<span class="syn-comment">-- warn of one.</span>
+<span class="syn-comment">--</span>
+<span class="syn-comment">--   cd &lt;repo&gt; &amp;&amp; shale &lt;shale&gt;/cookbook/roc/find_unused_imports.shale</span>
+<span class="syn-comment">--   shale cookbook:roc/find_unused_imports.shale self_test=1</span>
+<span class="syn-comment">--</span>
+<span class="syn-comment">-- The arguments:</span>
+<span class="syn-comment">--   glob       the files to check, `**/*.roc` by default; several globs may</span>
+<span class="syn-comment">--              be given, separated by commas;</span>
+<span class="syn-comment">--   self_test  with `self_test=1`, check the plants in</span>
+<span class="syn-comment">--              `cookbook/roc/plants/find_unused_imports/`.</span>
+<span class="syn-comment">--</span>
+<span class="syn-comment">-- The check:</span>
+<span class="syn-comment">--</span>
+<span class="syn-comment">--   unused_import  An `import` line whose name the file never refers to. The</span>
+<span class="syn-comment">--              name is the alias of `import pkg.Mod as M`, else the last part</span>
+<span class="syn-comment">--              of the module&#39;s path: `Mod` of `import pkg.Mod` and of</span>
+<span class="syn-comment">--              `import Mod`. A use is a value, tag or type whose first part</span>
+<span class="syn-comment">--              is that name: `Mod.name`, `Mod.Type`, `Mod.Tag(x)`, the</span>
+<span class="syn-comment">--              module&#39;s own type `Mod`, in an annotation, a pattern, an</span>
+<span class="syn-comment">--              expect or an interpolation alike. A name the line exposes</span>
+<span class="syn-comment">--              (`exposing [line!]`) and the file uses is a use of the line.</span>
+<span class="syn-comment">--              A file import, `import &quot;page.html&quot; as page : Str`, is used</span>
+<span class="syn-comment">--              when the file refers to `page`. An entry of a platform</span>
+<span class="syn-comment">--              header&#39;s `hosted { ... }` block uses the module it names</span>
+<span class="syn-comment">--              (`&quot;sym&quot;: Host.f!` uses `Host`). A name in a comment or a</span>
+<span class="syn-comment">--              string is no use.</span>
+<span class="syn-comment">--</span>
+<span class="syn-comment">-- A method call never names its module, so a module whose only use is a</span>
+<span class="syn-comment">-- method on a value of its type is unused here, and Roc agrees: the method</span>
+<span class="syn-comment">-- resolves through the value&#39;s type without the import. A bare tag that</span>
+<span class="syn-comment">-- shares a module&#39;s name (`Other`, in an expression, a pattern or a tag union</span>
+<span class="syn-comment">-- type) is no use of the module, but a nominal type&#39;s name before its record</span>
+<span class="syn-comment">-- (`Point.{ x: 0 }`) is.</span>
+<span class="syn-comment">--</span>
+<span class="syn-comment">-- roc-ast drops the qualifier of a tag in a pattern (`Color.Red =&gt;` comes as</span>
+<span class="syn-comment">-- `.Red`), so that name is read from the source at the pattern&#39;s column.</span>
+<span class="syn-comment">--</span>
+<span class="syn-comment">-- The output is the counts, one line per finding, and the counts again</span>
+<span class="syn-comment">-- (cookbook/findings.shale). The run fails if there are findings, or if</span>
+<span class="syn-comment">-- any file doesn&#39;t parse, and the files that do parse are judged either way.</span>
+<span class="syn-comment">-- budget: steps=800000000 arena_bytes=2000000000 output_bytes=4000000</span>
+
+<span class="syn-keyword">const</span> SELF_TEST = arg(<span class="syn-string">&quot;self_test&quot;</span>, <span class="syn-string">&quot;&quot;</span>) == <span class="syn-string">&quot;1&quot;</span>
+<span class="syn-keyword">const</span> GLOB = arg(<span class="syn-string">&quot;glob&quot;</span>, <span class="syn-string">&quot;**/*.roc&quot;</span>)
+use(<span class="syn-string">&quot;cookbook:findings.shale&quot;</span>)
+use(<span class="syn-string">&quot;./parsed.shale&quot;</span>)
+use(<span class="syn-string">&quot;./gate_recipe.shale&quot;</span>)
+use(<span class="syn-string">&quot;./imports.shale&quot;</span>)
+<span class="syn-keyword">const</span> CHECKS = {<span class="syn-string">&quot;unused_import&quot;</span>}
+
+<span class="syn-keyword">function</span> <span class="syn-name">judge_file</span>(f, report)
+  <span class="syn-keyword">for</span> imp <span class="syn-keyword">in</span> unused_imports(f.nodes, split(read(f.path), <span class="syn-string">&quot;\n&quot;</span>)) <span class="syn-keyword">do</span>
+    push(report, {path = f.path, line = imp.line, check = <span class="syn-string">&quot;unused_import&quot;</span>, what = imp.label .. <span class="syn-string">&quot; is imported and never used: delete the line&quot;</span>})
+  <span class="syn-keyword">end</span>
+  <span class="syn-keyword">return</span> <span class="syn-keyword">nil</span>
+<span class="syn-keyword">end</span>
+<span class="syn-keyword">function</span> <span class="syn-name">self_test</span>()
+  <span class="syn-keyword">local</span> at = <span class="syn-string">&quot;cookbook:roc/plants/find_unused_imports/&quot;</span>
+  check_plants(<span class="syn-string">&quot;find_unused_imports&quot;</span>, <span class="syn-string">&quot;cookbook:roc/find_unused_imports.shale&quot;</span>, CHECKS, {
+    {glob = at .. <span class="syn-string">&quot;unused.roc&quot;</span>, counts = {unused_import = <span class="syn-number">1</span>}, says = {<span class="syn-string">&quot;unused.roc:3: unused_import: `game.Polygon` is imported and never used&quot;</span>}},
+    {glob = at .. <span class="syn-string">&quot;unused_alias.roc&quot;</span>, counts = {unused_import = <span class="syn-number">1</span>}, says = {<span class="syn-string">&quot;`game.Distance` as `D` is imported and never used&quot;</span>}},
+    {glob = at .. <span class="syn-string">&quot;unused_exposing.roc&quot;</span>, counts = {unused_import = <span class="syn-number">1</span>}, says = {<span class="syn-string">&quot;`pf.Stdout` is imported&quot;</span>}},
+    {glob = at .. <span class="syn-string">&quot;unused_file_import.roc&quot;</span>, counts = {unused_import = <span class="syn-number">1</span>}, says = {<span class="syn-string">&quot;the file import `page` is imported&quot;</span>}},
+    {glob = at .. <span class="syn-string">&quot;unused_in_prose.roc&quot;</span>, counts = {unused_import = <span class="syn-number">1</span>}, says = {<span class="syn-string">&quot;`game.Polygon` is imported&quot;</span>}},
+    {glob = at .. <span class="syn-string">&quot;unused_method_only.roc&quot;</span>, counts = {unused_import = <span class="syn-number">1</span>}, says = {<span class="syn-string">&quot;`game.Distance` is imported&quot;</span>}},
+    {glob = at .. <span class="syn-string">&quot;unused_tag_namesake.roc&quot;</span>, counts = {unused_import = <span class="syn-number">1</span>}, says = {<span class="syn-string">&quot;`game.Other` is imported&quot;</span>}},
+    {glob = at .. <span class="syn-string">&quot;unused_beside_hosted.roc&quot;</span>, counts = {unused_import = <span class="syn-number">1</span>}, says = {<span class="syn-string">&quot;unused_beside_hosted.roc:24: unused_import: `Http` is imported&quot;</span>}},
+    {glob = at .. <span class="syn-string">&quot;unused.roc,&quot;</span> .. at .. <span class="syn-string">&quot;unused_alias.roc&quot;</span>, counts = {unused_import = <span class="syn-number">2</span>}},
+    {glob = at .. <span class="syn-string">&quot;quiet_qualified.roc&quot;</span>},
+    {glob = at .. <span class="syn-string">&quot;quiet_annotation.roc&quot;</span>},
+    {glob = at .. <span class="syn-string">&quot;quiet_expect.roc&quot;</span>},
+    {glob = at .. <span class="syn-string">&quot;quiet_pattern_tag.roc&quot;</span>},
+    {glob = at .. <span class="syn-string">&quot;quiet_tag.roc&quot;</span>},
+    {glob = at .. <span class="syn-string">&quot;quiet_exposing.roc&quot;</span>},
+    {glob = at .. <span class="syn-string">&quot;quiet_alias.roc&quot;</span>},
+    {glob = at .. <span class="syn-string">&quot;quiet_interpolation.roc&quot;</span>},
+    {glob = at .. <span class="syn-string">&quot;quiet_file_import.roc&quot;</span>},
+    {glob = at .. <span class="syn-string">&quot;quiet_hosted.roc&quot;</span>},
+    {glob = at .. <span class="syn-string">&quot;broken/*.roc&quot;</span>, stops = <span class="syn-keyword">true</span>, says = {<span class="syn-string">&quot;refused: &quot;</span>}},
+  })
+  <span class="syn-keyword">return</span> <span class="syn-keyword">nil</span>
+<span class="syn-keyword">end</span>
+
+<span class="syn-keyword">function</span> <span class="syn-name">run_check</span>()
+  <span class="syn-keyword">local</span> paths = {}
+  <span class="syn-keyword">for</span> g <span class="syn-keyword">in</span> split(GLOB, <span class="syn-string">&quot;,&quot;</span>) <span class="syn-keyword">do</span>
+    <span class="syn-keyword">for</span> p <span class="syn-keyword">in</span> glob(trim(g)) <span class="syn-keyword">do</span> push(paths, p) <span class="syn-keyword">end</span>
+  <span class="syn-keyword">end</span>
+  <span class="syn-keyword">local</span> parsed = parse_roc_files(paths)
+  <span class="syn-keyword">local</span> report = {}
+  <span class="syn-keyword">for</span> f <span class="syn-keyword">in</span> parsed.files <span class="syn-keyword">do</span> judge_file(f, report) <span class="syn-keyword">end</span>
+  <span class="syn-keyword">local</span> verdict = verdict_of(<span class="syn-string">&quot;find_unused_imports&quot;</span>, CHECKS, report, #paths)
+  print_findings(verdict.summary, verdict.found)
+  fail_if_refused(<span class="syn-string">&quot;find_unused_imports&quot;</span>, parsed.refused)
+  <span class="syn-keyword">return</span> verdict
+<span class="syn-keyword">end</span>
+
+<span class="syn-comment">-- This `fail` stands at the top level so the summary is the last line a</span>
+<span class="syn-comment">-- caller reads: a stop inside a function prints the calls after it.</span>
+<span class="syn-keyword">if</span> SELF_TEST <span class="syn-keyword">then</span>
+  self_test()
+<span class="syn-keyword">else</span>
+  <span class="syn-keyword">local</span> verdict = run_check()
+  <span class="syn-keyword">if</span> #verdict.found &gt; <span class="syn-number">0</span> <span class="syn-keyword">then</span> fail(verdict.summary) <span class="syn-keyword">end</span>
 <span class="syn-keyword">end</span>
 </code></pre>
 </div>
