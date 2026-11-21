@@ -178,18 +178,18 @@ browser, compiled to WebAssembly.</p>
 <section class="feature" data-app="syntax-color">
   <div>
     <h3><a href="syntax-color/">roc-syntax-color</a></h3>
-    <p>A Roc package that colors source code for web pages: Roc, JavaScript, Shale, Zig and C. Code goes in and HTML comes out, with a span around each comment, string, number, keyword, name and type, and your stylesheet picks the colors. Any text at all comes out colored, even half a program or a string left open. It colors the code in the Safari book and the books book.</p>
+    <p>A Roc package that colors source code for web pages, in seven languages: Roc, JavaScript, Shale, Zig, C, Odin and Python. Code goes in and HTML comes out, with a span around each comment, string, number, keyword, name and type, and your stylesheet picks the colors. Any text at all comes out colored, even half a program or a string left open. It colors the code in the Safari book and the books book.</p>
     <pre class="roc"><span class="syn-name">page_code</span> : <span class="syn-type">Str</span> -&gt; <span class="syn-type">Str</span>
 <span class="syn-name">page_code</span> = |code| <span class="syn-string">&quot;&lt;pre&gt;&lt;code&gt;</span>${<span class="syn-type">SyntaxColor</span>.html(<span class="syn-type">SyntaxColor</span>.roc, code)}<span class="syn-string">&lt;/code&gt;&lt;/pre&gt;&quot;</span></pre>
     <p class="caption">From the package's README: a page's code block, colored.</p>
     <p class="opening"><span class="tag">Roc at work</span>The package is pure functions from <code>Str</code> to <code>Str</code>, with no platform of its own, so any Roc app on any platform can import it. Each language is a lexer of its own, and each lexer covers every byte of its text exactly once, in order, so the HTML with its tags removed is exactly the escaped input.</p>
-    <p class="opening"><span class="tag nice">Roc plays nice with others</span>Its checks hold it to real files in all four languages, colored byte for byte as recorded. For Shale, the recording is the Shale cookbook's own colorer, so the Roc lexer agrees with Shale's own on every sample that colorer accepts.</p>
+    <p class="opening"><span class="tag nice">Roc plays nice with others</span>Its checks hold it to real files in all seven languages, from git's first commit to CPython's standard library, each colored byte for byte as recorded. Its Odin lexer follows Odin's own tokenizer, and its Python lexer the language reference's chapter on lexical analysis.</p>
     <div class="links"><a href="syntax-color/">Code in each language, colored</a><a href="roc-on-shale/">Roc on Shale: recipes in Roc beside their Shale originals</a><a href="https://github.com/showell/roc-syntax-color">The package</a></div>
   </div>
   <div class="stats">
-    <div class="stat"><b>2,887</b><span>lines of Roc in 8 modules</span></div>
-    <div class="stat"><b>182</b><span>expects</span></div>
-    <div class="stat"><b>211</b><span>real files in four languages, held to their recorded coloring</span></div>
+    <div class="stat"><b>5,242</b><span>lines of Roc in 15 modules</span></div>
+    <div class="stat"><b>269</b><span>expects</span></div>
+    <div class="stat"><b>250</b><span>real files in seven languages, held to their recorded coloring</span></div>
   </div>
 </section>
 
