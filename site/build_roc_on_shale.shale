@@ -325,21 +325,27 @@ const HEAD = [=[<!doctype html>
 <main>
 <div class="top"><a href="../">Steve's Roc Work</a><a href="../syntax-color/">roc-syntax-color</a><a href="https://github.com/showell/shale">Shale on GitHub</a></div>
 <h1>Roc on Shale</h1>
-<p class="lede"><a href="https://github.com/showell/shale">Shale</a> is a small scripting language for the work an
-agent does on a machine. Every run has budgets for its steps, its reads and its output, reads only beneath the
-folder it is rooted at, and runs a program only when its rules allow it.</p>
-<p class="lede">Shale can also run a Roc app as a script. The app is built on a Roc platform whose host is Shale's
-own runtime, so each effect it makes (reading a file, listing a folder, running a program, printing) is a call into
-Shale, held to the same rules and budgets as a Shale script. Everything else is plain Roc.
+<p class="lede">The programs on this page are written in Roc and run on
+<a href="https://github.com/showell/shale">Shale</a>, a runtime for programs that work with files, folders and
+other programs. Each is a check or a report we run on our own code, shown in full.</p>
+<p class="lede">Roc is a fast, friendly, functional language. It compiles to machine code, and its type checker
+infers every type, so a program needs few annotations and still has every call checked before it runs. Its
+functions are pure unless their type says otherwise: a function that reads a file is marked by its name and its
+type, and everything else is plain computation that a test can call directly. Those tests are <code>expect</code>s,
+written beside the code they test.</p>
+<p class="lede">A Roc program doesn't choose its own effects. It's written against a <em>platform</em>, and the
+platform decides what the program can do. Here that means reading a file, listing a folder, running a program and
+printing. The platform these examples use has Shale's runtime as its host, so each effect is a call into Shale, held
+to the limits Shale sets for the run. Everything else is plain Roc.
 <a href="https://github.com/showell/shale/blob/master/roc_platform/README.md">The platform's README</a> explains how
 it works.</p>
-<p class="lede">A recipe that is kept for a long time is worth writing in Roc: its types catch mistakes before it
-runs, its tests sit beside its code, and its modules can be shared. A one-off stays in Shale. Each example below
-is a recipe from Shale's cookbook in Roc, followed by the Shale script it was ported from, each file in full and
-colored by <a href="../syntax-color/">roc-syntax-color</a>. The links at each example's top and end skip to the one
-before or after it.</p>
-<p class="lede">The examples are in sections, and the first section is the programs that find flaws in Roc code:
-Roc checking Roc.</p>
+<p class="lede">The examples are in sections. The first holds programs that find flaws in Roc code: Roc reading
+Roc, most of them through Roc's own parser. After it come reports on Roc projects, then smaller programs over
+Zig.</p>
+<p class="lede">Shale is also a scripting language of its own, and each example began as a Shale script. Each Roc
+program is followed by the Shale script it was ported from, with both files colored by
+<a href="../syntax-color/">roc-syntax-color</a>. Each port was checked against its original's output. The links at
+the top and end of each example go to the one before or after it.</p>
 ]=]
 
 const FOOT = [=[
