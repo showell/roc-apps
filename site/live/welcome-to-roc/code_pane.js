@@ -6,9 +6,9 @@
 // The Roc decides everything the pane shows (screensavers/lanterns/CodePane.roc
 // and CodeCues.roc): after the first model and after every step the page asks
 // the wasm's computeCode, and the answer, read through the glue, is either
-// `{ tag: 'ModuleSource', value: { file, html, top_line, pane_lines } }`, a new
-// module, its code as coloured and escaped HTML, or `{ tag: 'ScrollTo', value }`,
-// the line now at the pane's top. Lines are the Roc's unit: the page sizes its
+// `{ tag: 'ModuleSource', value: { file, html, top_line, pane_lines, page } }`, a
+// new module, its code as coloured and escaped HTML, on a `Dark` or `Light`
+// page, or `{ tag: 'ScrollTo', value }`, the line now at the pane's top. Lines are the Roc's unit: the page sizes its
 // lines so that `pane_lines` of them fill the code's area exactly, and turns a
 // line into pixels by that height, so the Roc's last scroll puts a module's
 // last line at the pane's foot. A pause holds the scroll, since the Roc's
@@ -58,6 +58,16 @@ const LanternsCodePane = (() => {
       #code-pane .syn-number { color: #f78c6c; }
       #code-pane .syn-comment { color: #8a8494; font-style: italic; }
       #code-pane .syn-name { color: #ffcb6b; }
+      #code-pane.light { background: #ffffff; border-color: #d0d7de; }
+      #code-pane.light #code-file { color: #57606a; border-bottom-color: #d0d7de; }
+      #code-pane.light #code-file b { color: #953800; }
+      #code-pane.light pre { color: #24292f; }
+      #code-pane.light .syn-keyword { color: #cf222e; }
+      #code-pane.light .syn-type { color: #116329; }
+      #code-pane.light .syn-string { color: #0a3069; }
+      #code-pane.light .syn-number { color: #0550ae; }
+      #code-pane.light .syn-comment { color: #6e7781; }
+      #code-pane.light .syn-name { color: #8250df; }
     }`;
 
   const wide = window.matchMedia(`(min-width: ${WIDE_PX}px)`);
@@ -84,9 +94,11 @@ const LanternsCodePane = (() => {
     }
   };
 
-  // A new module: its name in the strip and its code, the strip lit and the
-  // code faded in for a moment, so its arrival shows.
+  // A new module: its name in the strip and its code on the page the Roc
+  // names, the strip lit and the code faded in for a moment, so its arrival
+  // shows.
   const arrive = () => {
+    parts.pane.classList.toggle('light', module.page.tag === 'Light');
     parts.folder.textContent = FOLDER;
     parts.name.textContent = module.file;
     parts.pre.innerHTML = module.html;
@@ -132,7 +144,7 @@ const LanternsCodePane = (() => {
     const pre = document.createElement('pre');
     lines.append(pre);
     pane.append(strip, lines);
-    parts = { strip, folder, name, lines, pre };
+    parts = { pane, strip, folder, name, lines, pre };
     canvas.replaceWith(stage);
     stage.append(canvas, pane);
     requestAnimationFrame(render);
