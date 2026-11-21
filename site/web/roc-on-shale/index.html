@@ -78,12 +78,12 @@ every call checked before it runs.</li>
 else is plain computation that a test can call directly.</li>
 <li><strong>Tested in place.</strong> Tests are <code>expect</code>s, written beside the code they test.</li>
 </ul>
-<h2 class="intro">A platform decides what a program can do</h2>
-<p class="lede">A Roc program doesn't choose its own effects. It's written against a <em>platform</em>, and the
-platform alone decides what the program can do. <a href="https://github.com/roc-lang/basic-cli">basic-cli</a>,
+<h2 class="intro">Effects come from a platform</h2>
+<p class="lede">Every Roc application runs on a <em>platform</em>, which supplies its effects: reading files,
+reaching the network and the rest. A program can use the effects its platform offers.<a href="https://github.com/roc-lang/basic-cli">basic-cli</a>,
 Roc's standard platform for command-line programs, offers a wide set: files and folders, the network, environment
-variables, the clock and more. The platform these examples use is narrower, has a few things basic-cli doesn't, and
-has Shale's runtime as its host, so each effect is a call into Shale, held to the limits Shale sets for the run.
+variables, the clock and more. The platform these examples use offers a narrower set, adds a few things of its own,
+and has Shale's runtime as its host, so each effect is a call into Shale, held to the limits Shale sets for the run.
 Everything else is plain Roc.</p>
 <div class="diagram">
 <svg width="410pt" height="316pt"
@@ -179,13 +179,13 @@ Everything else is plain Roc.</p>
 <ul class="lede">
 <li><strong>Roc's parse tree.</strong> <code>roc_tree!</code> hands a program Roc's own parse of a file, so a check
 reads Roc code as Roc reads it.</li>
-<li><strong>Regular expressions,</strong> which Roc doesn't have built in.</li>
+<li><strong>Regular expressions,</strong> supplied by the host.</li>
 <li><strong>Shale's limits on every effect:</strong> budgets for a run's steps, reads and output; reads only beneath
 the run's root and its named mounts; a program run only when Shale's rules allow it; and a timeout on each one.</li>
 </ul>
-<h3 class="intro">What it leaves out</h3>
-<p class="lede">The network, environment variables, standard input, the clock, and deleting files or making
-folders. The programs here don't use them.
+<h3 class="intro">Beyond this platform</h3>
+<p class="lede">basic-cli also offers the network, environment variables, standard input, the clock, and
+deleting files or making folders. The programs here need only what's listed above.
 <a href="https://github.com/showell/shale/blob/master/roc_platform/README.md">The platform's README</a> explains how
 it works.</p>
 <h2 class="intro">The examples</h2>
@@ -205,7 +205,7 @@ Linux on x86-64, GCC and TCC.</p>
 <li><strong>One translation unit.</strong> <code>c/shale.c</code> takes in the whole runtime, so GCC sees every
 function at once and the release build is a single <code>gcc -O2</code>.</li>
 <li><strong>Two compilers.</strong> TCC compiles the whole program in a fraction of GCC's time, for the edit loop. GCC
-builds every binary that runs, with no LLVM involved.</li>
+builds every binary that runs.</li>
 <li><strong>Two tiers of checks.</strong> The fast tier runs every C test in seconds, on each edit. The full tier adds
 the release build, every test under ASan and UBSan, a <code>-Werror</code> build at <code>-O2</code>, planted
 faults that prove each test can fail, and the cookbook's own tests, including the goldens behind the examples
