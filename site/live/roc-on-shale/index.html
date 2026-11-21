@@ -243,6 +243,7 @@ computation.</p>
 <li><a href="#list_long_functions">list_long_functions</a></li>
 <li><a href="#list_deep_nesting">list_deep_nesting</a></li>
 <li><a href="#find_clones">find_clones</a></li>
+<li><a href="#find_dead_code">find_dead_code</a></li>
 </ul></li>
 <li><a href="#section-reports-on-roc-projects">Reports on Roc projects</a>
 <ul>
@@ -11620,10 +11621,10 @@ print(table(ranked(programs), {<span class="syn-string">&quot;n&quot;</span>, <s
 <nav class="steps"><a href="#count_shale_stops">← previous</a> · <a href="#contents">contents</a> · <a href="#list_long_functions">next →</a></nav>
 <h3><a href="#map_file">map_file</a></h3>
 <p>A file of Shale's C mapped, one line an item, by the splitter in Roc that reads the C's dialect with no parser: a masker, a line reader and its regular expressions done by hand.</p>
-<p class="facts">Its effects: <code>Shale.arg!</code>, <code>Shale.fail!</code>, <code>Shale.glob!</code>, <code>Shale.print!</code>, <code>Shale.read!</code>.<br>Roc: 377 lines in 2 files. Shale original: 192 lines, plus 499 lines in the library it loads, which other recipes share.</p>
+<p class="facts">Its effects: <code>Shale.arg!</code>, <code>Shale.fail!</code>, <code>Shale.glob!</code>, <code>Shale.list!</code>, <code>Shale.print!</code>, <code>Shale.read!</code>.<br>Roc: 377 lines in 2 files. Shale original: 192 lines, plus 499 lines in the library it loads, which other recipes share.</p>
 <h4>Roc</h4>
-<p class="file">It also imports <code>Item</code>, <code>Mask</code>, <code>Split</code>, <code>Words</code> from <a href="#c-splitter">the C splitter</a>.</p>
-<p class="file"><a href="https://github.com/showell/shale/blob/11ebc28288e3af2e1c5641046a47705f22a2b81c/cookbook/c/map_file/map_file.roc"><code>cookbook/c/map_file/map_file.roc</code></a>, 175 lines</p>
+<p class="file">It also imports <code>Item</code>, <code>Mask</code>, <code>Paths</code>, <code>Split</code>, <code>Words</code> from <a href="#c-splitter">the C splitter</a>.</p>
+<p class="file"><a href="https://github.com/showell/shale/blob/a3bfc843a75e287128a10a8845679dcfb51a4608/cookbook/c/map_file/map_file.roc"><code>cookbook/c/map_file/map_file.roc</code></a>, 175 lines</p>
 <pre><code><span class="syn-comment">## map_file, in Roc on Shale&#39;s platform (roc_platform/README.md): a file of</span>
 <span class="syn-comment">## Shale&#39;s C mapped, each top-level item one line, `first-last kind name`,</span>
 <span class="syn-comment">## from the splitter the C recipes share (cookbook/c/items/, a package),</span>
@@ -11648,6 +11649,7 @@ print(table(ranked(programs), {<span class="syn-string">&quot;n&quot;</span>, <s
 
 <span class="syn-keyword">import</span> pf.<span class="syn-type">Shale</span>
 <span class="syn-keyword">import</span> items.<span class="syn-type">Item</span>
+<span class="syn-keyword">import</span> items.<span class="syn-type">Paths</span>
 <span class="syn-keyword">import</span> items.<span class="syn-type">Split</span>
 <span class="syn-keyword">import</span> items.<span class="syn-type">Words</span>
 <span class="syn-keyword">import</span> <span class="syn-type">SelfTest</span>
@@ -11713,17 +11715,16 @@ print(table(ranked(programs), {<span class="syn-string">&quot;n&quot;</span>, <s
 	}
 
 <span class="syn-comment">## The C files under the folder, sorted, any folder named `out` (c/out, the</span>
-<span class="syn-comment">## build&#39;s output) left out.</span>
+<span class="syn-comment">## build&#39;s output) left out. A folder that is not there stops the run, in</span>
+<span class="syn-comment">## the words of the Shale original&#39;s walk: a check that can&#39;t run fails.</span>
 <span class="syn-name">c_files_under!</span> : <span class="syn-type">Str</span> =&gt; <span class="syn-type">List</span>(<span class="syn-type">Str</span>)
 <span class="syn-name">c_files_under!</span> = |folder| {
+	<span class="syn-keyword">if</span> <span class="syn-type">Shale</span>.list!(folder) == <span class="syn-type">Missing</span> {
+		<span class="syn-type">Shale</span>.fail!(<span class="syn-string">&quot;`walk(\&quot;</span>${folder}<span class="syn-string">\&quot;)`: not found (FileNotFound)&quot;</span>)
+	}
 	paths = <span class="syn-type">Shale</span>.glob!(<span class="syn-string">&quot;</span>${folder}<span class="syn-string">/**/*.c&quot;</span>).concat(<span class="syn-type">Shale</span>.glob!(<span class="syn-string">&quot;</span>${folder}<span class="syn-string">/**/*.h&quot;</span>))
-	paths.keep_if(|path| !(is_in_out_folder(folder, path))).sort_with(<span class="syn-type">Words</span>.byte_order)
+	paths.keep_if(|path| !(<span class="syn-type">Paths</span>.is_in_out_folder(folder, path))).sort_with(<span class="syn-type">Words</span>.byte_order)
 }
-
-<span class="syn-comment">## Whether a folder below `folder` on the way to `path` is named `out`.</span>
-<span class="syn-name">is_in_out_folder</span> : <span class="syn-type">Str</span>, <span class="syn-type">Str</span> -&gt; <span class="syn-type">Bool</span>
-<span class="syn-name">is_in_out_folder</span> = |folder, path|
-	path.drop_prefix(<span class="syn-string">&quot;</span>${folder}<span class="syn-string">/&quot;</span>).split_on(<span class="syn-string">&quot;/&quot;</span>).drop_last(<span class="syn-number">1</span>).contains(<span class="syn-string">&quot;out&quot;</span>)
 
 <span class="syn-comment">## Every C file under the folder split and accounted for, in one line: the</span>
 <span class="syn-comment">## files, their lines and their items by kind.</span>
@@ -11800,7 +11801,7 @@ print(table(ranked(programs), {<span class="syn-string">&quot;n&quot;</span>, <s
 			},
 	)
 </code></pre>
-<p class="file"><a href="https://github.com/showell/shale/blob/11ebc28288e3af2e1c5641046a47705f22a2b81c/cookbook/c/map_file/SelfTest.roc"><code>cookbook/c/map_file/SelfTest.roc</code></a>, 202 lines</p>
+<p class="file"><a href="https://github.com/showell/shale/blob/a3bfc843a75e287128a10a8845679dcfb51a4608/cookbook/c/map_file/SelfTest.roc"><code>cookbook/c/map_file/SelfTest.roc</code></a>, 202 lines</p>
 <pre><code><span class="syn-comment">## map_file&#39;s self-test: the splitter held to the plants in</span>
 <span class="syn-comment">## cookbook/c/plants/map_file/, a header and a .c file holding an item of</span>
 <span class="syn-comment">## each kind, each mapped and held to its map, its comments, heads, bodies</span>
@@ -12206,10 +12207,10 @@ use(<span class="syn-string">&quot;./items.shale&quot;</span>)
 <nav class="steps"><a href="#map_file">← previous</a> · <a href="#contents">contents</a> · <a href="#list_deep_nesting">next →</a></nav>
 <h3><a href="#list_long_functions">list_long_functions</a></h3>
 <p>Shale's C functions past a length in lines of code, their comment and blank lines counted apart, past the tree's 95th percentile unless told, with the distribution first.</p>
-<p class="facts">Its effects: <code>Shale.arg!</code>, <code>Shale.fail!</code>, <code>Shale.glob!</code>, <code>Shale.print!</code>, <code>Shale.read!</code>.<br>Roc: 314 lines in 3 files. Shale original: 143 lines, plus 499 lines in the library it loads, which other recipes share.</p>
+<p class="facts">Its effects: <code>Shale.arg!</code>, <code>Shale.fail!</code>, <code>Shale.glob!</code>, <code>Shale.list!</code>, <code>Shale.print!</code>, <code>Shale.read!</code>.<br>Roc: 314 lines in 3 files. Shale original: 143 lines, plus 499 lines in the library it loads, which other recipes share.</p>
 <h4>Roc</h4>
-<p class="file">It also imports <code>Item</code>, <code>Mask</code>, <code>Split</code>, <code>Words</code> from <a href="#c-splitter">the C splitter</a>.</p>
-<p class="file"><a href="https://github.com/showell/shale/blob/dfe2eaaa415bf7813c3c50c157a01603da73ef7b/cookbook/c/list_long_functions/list_long_functions.roc"><code>cookbook/c/list_long_functions/list_long_functions.roc</code></a>, 133 lines</p>
+<p class="file">It also imports <code>Item</code>, <code>Mask</code>, <code>Paths</code>, <code>Split</code>, <code>Words</code> from <a href="#c-splitter">the C splitter</a>.</p>
+<p class="file"><a href="https://github.com/showell/shale/blob/a3bfc843a75e287128a10a8845679dcfb51a4608/cookbook/c/list_long_functions/list_long_functions.roc"><code>cookbook/c/list_long_functions/list_long_functions.roc</code></a>, 133 lines</p>
 <pre><code><span class="syn-comment">## list_long_functions, in Roc on Shale&#39;s platform (roc_platform/README.md):</span>
 <span class="syn-comment">## Shale&#39;s C functions past a length, longest first, from the splitter the</span>
 <span class="syn-comment">## C recipes share (cookbook/c/items/, a package). A function&#39;s length is</span>
@@ -12234,6 +12235,7 @@ use(<span class="syn-string">&quot;./items.shale&quot;</span>)
 
 <span class="syn-keyword">import</span> pf.<span class="syn-type">Shale</span>
 <span class="syn-keyword">import</span> items.<span class="syn-type">Item</span>
+<span class="syn-keyword">import</span> items.<span class="syn-type">Paths</span>
 <span class="syn-keyword">import</span> items.<span class="syn-type">Split</span>
 <span class="syn-keyword">import</span> items.<span class="syn-type">Words</span>
 <span class="syn-keyword">import</span> <span class="syn-type">Length</span>
@@ -12332,19 +12334,18 @@ use(<span class="syn-string">&quot;./items.shale&quot;</span>)
 	}
 
 <span class="syn-comment">## The C files under the folder, sorted, any folder named `out` (c/out, the</span>
-<span class="syn-comment">## build&#39;s output) left out.</span>
+<span class="syn-comment">## build&#39;s output) left out. A folder that is not there stops the run, in</span>
+<span class="syn-comment">## the words of the Shale original&#39;s walk: a check that can&#39;t run fails.</span>
 <span class="syn-name">c_files_under!</span> : <span class="syn-type">Str</span> =&gt; <span class="syn-type">List</span>(<span class="syn-type">Str</span>)
 <span class="syn-name">c_files_under!</span> = |folder| {
+	<span class="syn-keyword">if</span> <span class="syn-type">Shale</span>.list!(folder) == <span class="syn-type">Missing</span> {
+		<span class="syn-type">Shale</span>.fail!(<span class="syn-string">&quot;`walk(\&quot;</span>${folder}<span class="syn-string">\&quot;)`: not found (FileNotFound)&quot;</span>)
+	}
 	paths = <span class="syn-type">Shale</span>.glob!(<span class="syn-string">&quot;</span>${folder}<span class="syn-string">/**/*.c&quot;</span>).concat(<span class="syn-type">Shale</span>.glob!(<span class="syn-string">&quot;</span>${folder}<span class="syn-string">/**/*.h&quot;</span>))
-	paths.keep_if(|path| !(is_in_out_folder(folder, path))).sort_with(<span class="syn-type">Words</span>.byte_order)
+	paths.keep_if(|path| !(<span class="syn-type">Paths</span>.is_in_out_folder(folder, path))).sort_with(<span class="syn-type">Words</span>.byte_order)
 }
-
-<span class="syn-comment">## Whether a folder below `folder` on the way to `path` is named `out`.</span>
-<span class="syn-name">is_in_out_folder</span> : <span class="syn-type">Str</span>, <span class="syn-type">Str</span> -&gt; <span class="syn-type">Bool</span>
-<span class="syn-name">is_in_out_folder</span> = |folder, path|
-	path.drop_prefix(<span class="syn-string">&quot;</span>${folder}<span class="syn-string">/&quot;</span>).split_on(<span class="syn-string">&quot;/&quot;</span>).drop_last(<span class="syn-number">1</span>).contains(<span class="syn-string">&quot;out&quot;</span>)
 </code></pre>
-<p class="file"><a href="https://github.com/showell/shale/blob/dfe2eaaa415bf7813c3c50c157a01603da73ef7b/cookbook/c/list_long_functions/Length.roc"><code>cookbook/c/list_long_functions/Length.roc</code></a>, 120 lines</p>
+<p class="file"><a href="https://github.com/showell/shale/blob/a3bfc843a75e287128a10a8845679dcfb51a4608/cookbook/c/list_long_functions/Length.roc"><code>cookbook/c/list_long_functions/Length.roc</code></a>, 120 lines</p>
 <pre><code><span class="syn-comment">## A function&#39;s length and the listing of the long ones. A function&#39;s</span>
 <span class="syn-comment">## length is its body&#39;s lines of code: a blank line and a `//` line are</span>
 <span class="syn-comment">## counted beside it, and a body that shares its head&#39;s line</span>
@@ -12466,7 +12467,7 @@ use(<span class="syn-string">&quot;./items.shale&quot;</span>)
 	<span class="syn-string">&quot;</span>${each.path}<span class="syn-string">:</span>${each.line.to_str()}<span class="syn-string">: long: </span>${each.name}<span class="syn-string">: </span>${counts}<span class="syn-string">&quot;</span>
 }
 </code></pre>
-<p class="file"><a href="https://github.com/showell/shale/blob/dfe2eaaa415bf7813c3c50c157a01603da73ef7b/cookbook/c/list_long_functions/SelfTest.roc"><code>cookbook/c/list_long_functions/SelfTest.roc</code></a>, 61 lines</p>
+<p class="file"><a href="https://github.com/showell/shale/blob/a3bfc843a75e287128a10a8845679dcfb51a4608/cookbook/c/list_long_functions/SelfTest.roc"><code>cookbook/c/list_long_functions/SelfTest.roc</code></a>, 61 lines</p>
 <pre><code><span class="syn-comment">## list_long_functions&#39; self-test: the recipe run over</span>
 <span class="syn-comment">## cookbook/c/plants/list_long_functions/ and held to the plants&#39; known</span>
 <span class="syn-comment">## lengths, exactly: the distribution, the default threshold, an `over=` that</span>
@@ -12682,10 +12683,10 @@ use(<span class="syn-string">&quot;./items.shale&quot;</span>)
 <nav class="steps"><a href="#list_long_functions">← previous</a> · <a href="#contents">contents</a> · <a href="#find_clones">next →</a></nav>
 <h3><a href="#list_deep_nesting">list_deep_nesting</a></h3>
 <p>Shale's C functions ranked by how deeply their braces nest, each body line read through the splitter's masker so a brace in a string or a comment is none.</p>
-<p class="facts">Its effects: <code>Shale.arg!</code>, <code>Shale.fail!</code>, <code>Shale.glob!</code>, <code>Shale.print!</code>, <code>Shale.read!</code>.<br>Roc: 312 lines in 3 files. Shale original: 156 lines, plus 499 lines in the library it loads, which other recipes share.</p>
+<p class="facts">Its effects: <code>Shale.arg!</code>, <code>Shale.fail!</code>, <code>Shale.glob!</code>, <code>Shale.list!</code>, <code>Shale.print!</code>, <code>Shale.read!</code>.<br>Roc: 312 lines in 3 files. Shale original: 156 lines, plus 499 lines in the library it loads, which other recipes share.</p>
 <h4>Roc</h4>
-<p class="file">It also imports <code>Item</code>, <code>Mask</code>, <code>Split</code>, <code>Words</code> from <a href="#c-splitter">the C splitter</a>.</p>
-<p class="file"><a href="https://github.com/showell/shale/blob/b8e624ffe1d6462104356dfc1b5dab116eab324c/cookbook/c/list_deep_nesting/list_deep_nesting.roc"><code>cookbook/c/list_deep_nesting/list_deep_nesting.roc</code></a>, 127 lines</p>
+<p class="file">It also imports <code>Item</code>, <code>Mask</code>, <code>Paths</code>, <code>Split</code>, <code>Words</code> from <a href="#c-splitter">the C splitter</a>.</p>
+<p class="file"><a href="https://github.com/showell/shale/blob/a3bfc843a75e287128a10a8845679dcfb51a4608/cookbook/c/list_deep_nesting/list_deep_nesting.roc"><code>cookbook/c/list_deep_nesting/list_deep_nesting.roc</code></a>, 127 lines</p>
 <pre><code><span class="syn-comment">## list_deep_nesting, in Roc on Shale&#39;s platform (roc_platform/README.md):</span>
 <span class="syn-comment">## Shale&#39;s C functions by how deeply their blocks nest, deepest first, from</span>
 <span class="syn-comment">## the splitter the C recipes share (cookbook/c/items/, a package). The</span>
@@ -12710,6 +12711,7 @@ use(<span class="syn-string">&quot;./items.shale&quot;</span>)
 
 <span class="syn-keyword">import</span> pf.<span class="syn-type">Shale</span>
 <span class="syn-keyword">import</span> items.<span class="syn-type">Item</span>
+<span class="syn-keyword">import</span> items.<span class="syn-type">Paths</span>
 <span class="syn-keyword">import</span> items.<span class="syn-type">Split</span>
 <span class="syn-keyword">import</span> items.<span class="syn-type">Words</span>
 <span class="syn-keyword">import</span> <span class="syn-type">Depth</span>
@@ -12802,19 +12804,18 @@ use(<span class="syn-string">&quot;./items.shale&quot;</span>)
 	}
 
 <span class="syn-comment">## The C files under the folder, sorted, any folder named `out` (c/out, the</span>
-<span class="syn-comment">## build&#39;s output) left out.</span>
+<span class="syn-comment">## build&#39;s output) left out. A folder that is not there stops the run, in</span>
+<span class="syn-comment">## the words of the Shale original&#39;s walk: a check that can&#39;t run fails.</span>
 <span class="syn-name">c_files_under!</span> : <span class="syn-type">Str</span> =&gt; <span class="syn-type">List</span>(<span class="syn-type">Str</span>)
 <span class="syn-name">c_files_under!</span> = |folder| {
+	<span class="syn-keyword">if</span> <span class="syn-type">Shale</span>.list!(folder) == <span class="syn-type">Missing</span> {
+		<span class="syn-type">Shale</span>.fail!(<span class="syn-string">&quot;`walk(\&quot;</span>${folder}<span class="syn-string">\&quot;)`: not found (FileNotFound)&quot;</span>)
+	}
 	paths = <span class="syn-type">Shale</span>.glob!(<span class="syn-string">&quot;</span>${folder}<span class="syn-string">/**/*.c&quot;</span>).concat(<span class="syn-type">Shale</span>.glob!(<span class="syn-string">&quot;</span>${folder}<span class="syn-string">/**/*.h&quot;</span>))
-	paths.keep_if(|path| !(is_in_out_folder(folder, path))).sort_with(<span class="syn-type">Words</span>.byte_order)
+	paths.keep_if(|path| !(<span class="syn-type">Paths</span>.is_in_out_folder(folder, path))).sort_with(<span class="syn-type">Words</span>.byte_order)
 }
-
-<span class="syn-comment">## Whether a folder below `folder` on the way to `path` is named `out`.</span>
-<span class="syn-name">is_in_out_folder</span> : <span class="syn-type">Str</span>, <span class="syn-type">Str</span> -&gt; <span class="syn-type">Bool</span>
-<span class="syn-name">is_in_out_folder</span> = |folder, path|
-	path.drop_prefix(<span class="syn-string">&quot;</span>${folder}<span class="syn-string">/&quot;</span>).split_on(<span class="syn-string">&quot;/&quot;</span>).drop_last(<span class="syn-number">1</span>).contains(<span class="syn-string">&quot;out&quot;</span>)
 </code></pre>
-<p class="file"><a href="https://github.com/showell/shale/blob/b8e624ffe1d6462104356dfc1b5dab116eab324c/cookbook/c/list_deep_nesting/Depth.roc"><code>cookbook/c/list_deep_nesting/Depth.roc</code></a>, 117 lines</p>
+<p class="file"><a href="https://github.com/showell/shale/blob/a3bfc843a75e287128a10a8845679dcfb51a4608/cookbook/c/list_deep_nesting/Depth.roc"><code>cookbook/c/list_deep_nesting/Depth.roc</code></a>, 117 lines</p>
 <pre><code><span class="syn-comment">## How deeply a function&#39;s blocks nest, and the listing of the deep ones. A</span>
 <span class="syn-comment">## function&#39;s own body is depth 1, and each block a `{` opens inside it is</span>
 <span class="syn-comment">## one deeper. Each body line is read through the splitter&#39;s masker, so a</span>
@@ -12933,7 +12934,7 @@ use(<span class="syn-string">&quot;./items.shale&quot;</span>)
 		order =&gt; order
 	}
 </code></pre>
-<p class="file"><a href="https://github.com/showell/shale/blob/b8e624ffe1d6462104356dfc1b5dab116eab324c/cookbook/c/list_deep_nesting/SelfTest.roc"><code>cookbook/c/list_deep_nesting/SelfTest.roc</code></a>, 68 lines</p>
+<p class="file"><a href="https://github.com/showell/shale/blob/a3bfc843a75e287128a10a8845679dcfb51a4608/cookbook/c/list_deep_nesting/SelfTest.roc"><code>cookbook/c/list_deep_nesting/SelfTest.roc</code></a>, 68 lines</p>
 <pre><code><span class="syn-comment">## list_deep_nesting&#39;s self-test: the recipe run over</span>
 <span class="syn-comment">## cookbook/c/plants/list_deep_nesting/ and held to every plant&#39;s known depth</span>
 <span class="syn-comment">## and line, exactly: depths 3, 4 and 5, braces in a string, a character</span>
@@ -13166,13 +13167,13 @@ use(<span class="syn-string">&quot;./items.shale&quot;</span>)
 <nav class="steps"><a href="#list_long_functions">← previous</a> · <a href="#contents">contents</a> · <a href="#find_clones">next →</a></nav>
 </section>
 <section class="example" id="find_clones">
-<nav class="steps"><a href="#list_deep_nesting">← previous</a> · <a href="#contents">contents</a> · <a href="#count_roc">next →</a></nav>
+<nav class="steps"><a href="#list_deep_nesting">← previous</a> · <a href="#contents">contents</a> · <a href="#find_dead_code">next →</a></nav>
 <h3><a href="#find_clones">find_clones</a></h3>
 <p>The same code twice in Shale's C: twin functions of one shape once every name, number and string is masked, scored by Dice's coefficient, and runs of lines alike as written.</p>
-<p class="facts">Its effects: <code>Shale.arg!</code>, <code>Shale.fail!</code>, <code>Shale.glob!</code>, <code>Shale.print!</code>, <code>Shale.read!</code>.<br>Roc: 679 lines in 4 files. Shale original: 327 lines, plus 499 lines in the library it loads, which other recipes share.</p>
+<p class="facts">Its effects: <code>Shale.arg!</code>, <code>Shale.fail!</code>, <code>Shale.glob!</code>, <code>Shale.list!</code>, <code>Shale.print!</code>, <code>Shale.read!</code>.<br>Roc: 666 lines in 4 files. Shale original: 327 lines, plus 499 lines in the library it loads, which other recipes share.</p>
 <h4>Roc</h4>
-<p class="file">It also imports <code>Item</code>, <code>Mask</code>, <code>Split</code>, <code>Words</code> from <a href="#c-splitter">the C splitter</a>.</p>
-<p class="file"><a href="https://github.com/showell/shale/blob/3a618627e0987d324009f0dae954b027d17ff4c1/cookbook/c/find_clones/find_clones.roc"><code>cookbook/c/find_clones/find_clones.roc</code></a>, 142 lines</p>
+<p class="file">It also imports <code>Item</code>, <code>Mask</code>, <code>Paths</code>, <code>Split</code>, <code>Words</code> from <a href="#c-splitter">the C splitter</a>.</p>
+<p class="file"><a href="https://github.com/showell/shale/blob/a3bfc843a75e287128a10a8845679dcfb51a4608/cookbook/c/find_clones/find_clones.roc"><code>cookbook/c/find_clones/find_clones.roc</code></a>, 142 lines</p>
 <pre><code><span class="syn-comment">## find_clones, in Roc on Shale&#39;s platform (roc_platform/README.md): the</span>
 <span class="syn-comment">## same code twice in Shale&#39;s C, from the splitter the C recipes share</span>
 <span class="syn-comment">## (cookbook/c/items/, a package), as twin functions of one shape and runs</span>
@@ -13196,6 +13197,7 @@ use(<span class="syn-string">&quot;./items.shale&quot;</span>)
 
 <span class="syn-keyword">import</span> pf.<span class="syn-type">Shale</span>
 <span class="syn-keyword">import</span> items.<span class="syn-type">Item</span>
+<span class="syn-keyword">import</span> items.<span class="syn-type">Paths</span>
 <span class="syn-keyword">import</span> items.<span class="syn-type">Split</span>
 <span class="syn-keyword">import</span> items.<span class="syn-type">Words</span>
 <span class="syn-keyword">import</span> <span class="syn-type">Clones</span>
@@ -13267,7 +13269,7 @@ use(<span class="syn-string">&quot;./items.shale&quot;</span>)
 	<span class="syn-keyword">for</span> path <span class="syn-keyword">in</span> c_files_under!(folder) {
 		text = read_text!(path)
 		lines = <span class="syn-type">Split</span>.lines(text)
-		is_kept_file = tests <span class="syn-keyword">or</span> !(<span class="syn-type">Shape</span>.is_test_path(folder, path))
+		is_kept_file = tests <span class="syn-keyword">or</span> !(<span class="syn-type">Paths</span>.is_test_path(folder, path))
 		<span class="syn-keyword">for</span> item <span class="syn-keyword">in</span> split_or_stop!(path, text) {
 			is_read = item.kind == <span class="syn-type">Function</span> <span class="syn-keyword">or</span> (tests <span class="syn-keyword">and</span> item.kind == <span class="syn-type">Test</span>)
 			has_body = item.body_first != <span class="syn-number">0</span> <span class="syn-keyword">and</span> item.body_first != item.sig_last
@@ -13304,19 +13306,18 @@ use(<span class="syn-string">&quot;./items.shale&quot;</span>)
 	}
 
 <span class="syn-comment">## The C files under the folder, sorted, any folder named `out` (c/out, the</span>
-<span class="syn-comment">## build&#39;s output) left out.</span>
+<span class="syn-comment">## build&#39;s output) left out. A folder that is not there stops the run, in</span>
+<span class="syn-comment">## the words of the Shale original&#39;s walk: a check that can&#39;t run fails.</span>
 <span class="syn-name">c_files_under!</span> : <span class="syn-type">Str</span> =&gt; <span class="syn-type">List</span>(<span class="syn-type">Str</span>)
 <span class="syn-name">c_files_under!</span> = |folder| {
+	<span class="syn-keyword">if</span> <span class="syn-type">Shale</span>.list!(folder) == <span class="syn-type">Missing</span> {
+		<span class="syn-type">Shale</span>.fail!(<span class="syn-string">&quot;`walk(\&quot;</span>${folder}<span class="syn-string">\&quot;)`: not found (FileNotFound)&quot;</span>)
+	}
 	paths = <span class="syn-type">Shale</span>.glob!(<span class="syn-string">&quot;</span>${folder}<span class="syn-string">/**/*.c&quot;</span>).concat(<span class="syn-type">Shale</span>.glob!(<span class="syn-string">&quot;</span>${folder}<span class="syn-string">/**/*.h&quot;</span>))
-	paths.keep_if(|path| !(is_in_out_folder(folder, path))).sort_with(<span class="syn-type">Words</span>.byte_order)
+	paths.keep_if(|path| !(<span class="syn-type">Paths</span>.is_in_out_folder(folder, path))).sort_with(<span class="syn-type">Words</span>.byte_order)
 }
-
-<span class="syn-comment">## Whether a folder below `folder` on the way to `path` is named `out`.</span>
-<span class="syn-name">is_in_out_folder</span> : <span class="syn-type">Str</span>, <span class="syn-type">Str</span> -&gt; <span class="syn-type">Bool</span>
-<span class="syn-name">is_in_out_folder</span> = |folder, path|
-	path.drop_prefix(<span class="syn-string">&quot;</span>${folder}<span class="syn-string">/&quot;</span>).split_on(<span class="syn-string">&quot;/&quot;</span>).drop_last(<span class="syn-number">1</span>).contains(<span class="syn-string">&quot;out&quot;</span>)
 </code></pre>
-<p class="file"><a href="https://github.com/showell/shale/blob/3a618627e0987d324009f0dae954b027d17ff4c1/cookbook/c/find_clones/Clones.roc"><code>cookbook/c/find_clones/Clones.roc</code></a>, 298 lines</p>
+<p class="file"><a href="https://github.com/showell/shale/blob/a3bfc843a75e287128a10a8845679dcfb51a4608/cookbook/c/find_clones/Clones.roc"><code>cookbook/c/find_clones/Clones.roc</code></a>, 298 lines</p>
 <pre><code><span class="syn-comment">## The clone finder over functions read for clones (Shape): the twin pairs,</span>
 <span class="syn-comment">## two functions of one shape, and the runs of lines alike as written in two</span>
 <span class="syn-comment">## places. The launcher&#39;s header says the rules; this is the Shale</span>
@@ -13616,7 +13617,7 @@ use(<span class="syn-string">&quot;./items.shale&quot;</span>)
 <span class="syn-name">down</span> : <span class="syn-type">U64</span>, <span class="syn-type">U64</span> -&gt; [<span class="syn-type">Before</span>, <span class="syn-type">Same</span>, <span class="syn-type">After</span>]
 <span class="syn-name">down</span> = |x, y| up(y, x)
 </code></pre>
-<p class="file"><a href="https://github.com/showell/shale/blob/3a618627e0987d324009f0dae954b027d17ff4c1/cookbook/c/find_clones/SelfTest.roc"><code>cookbook/c/find_clones/SelfTest.roc</code></a>, 47 lines</p>
+<p class="file"><a href="https://github.com/showell/shale/blob/a3bfc843a75e287128a10a8845679dcfb51a4608/cookbook/c/find_clones/SelfTest.roc"><code>cookbook/c/find_clones/SelfTest.roc</code></a>, 47 lines</p>
 <pre><code><span class="syn-comment">## find_clones&#39; self-test: the recipe run over cookbook/c/plants/find_clones/</span>
 <span class="syn-comment">## and held to the plants&#39; findings exactly: a twin with every name and</span>
 <span class="syn-comment">## number changed, a run of six lines in two unlike functions, and their</span>
@@ -13665,7 +13666,7 @@ use(<span class="syn-string">&quot;./items.shale&quot;</span>)
 <span class="syn-name">joined</span> : <span class="syn-type">List</span>(<span class="syn-type">Str</span>) -&gt; <span class="syn-type">Str</span>
 <span class="syn-name">joined</span> = |lines| <span class="syn-type">Str</span>.join_with(lines, <span class="syn-string">&quot;\n&quot;</span>)
 </code></pre>
-<p class="file"><a href="https://github.com/showell/shale/blob/3a618627e0987d324009f0dae954b027d17ff4c1/cookbook/c/find_clones/Shape.roc"><code>cookbook/c/find_clones/Shape.roc</code></a>, 192 lines</p>
+<p class="file"><a href="https://github.com/showell/shale/blob/a3bfc843a75e287128a10a8845679dcfb51a4608/cookbook/c/find_clones/Shape.roc"><code>cookbook/c/find_clones/Shape.roc</code></a>, 179 lines</p>
 <pre><code><span class="syn-comment">## A function&#39;s counted lines, as the clone finder compares them. A line</span>
 <span class="syn-comment">## counts when it does something: a blank line, a comment and a line of</span>
 <span class="syn-comment">## brackets alone (`}`, `} else {`, `default:`) are passed by. Each counted</span>
@@ -13706,19 +13707,6 @@ use(<span class="syn-string">&quot;./items.shale&quot;</span>)
 			$number = $number + <span class="syn-number">1</span>
 		}
 		{ path, first: item.first, last: item.last, name: item.name, lines: $counted }
-	}
-
-	<span class="syn-comment">## Whether `path`, below the folder, is the tests&#39;: in a `tests` folder,</span>
-	<span class="syn-comment">## or a file whose name starts with `test` (c/foundation/test.h, the</span>
-	<span class="syn-comment">## tests&#39; runner).</span>
-	<span class="syn-name">is_test_path</span> : <span class="syn-type">Str</span>, <span class="syn-type">Str</span> -&gt; <span class="syn-type">Bool</span>
-	<span class="syn-name">is_test_path</span> = |folder, path| {
-		below = <span class="syn-type">Str</span>.from_utf8_lossy(path.to_utf8().drop_first(folder.count_utf8_bytes() + <span class="syn-number">1</span>))
-		file_name = <span class="syn-keyword">match</span> below.split_on(<span class="syn-string">&quot;/&quot;</span>).last() {
-			<span class="syn-type">Ok</span>(last) =&gt; last
-			<span class="syn-type">Err</span>(_) =&gt; below
-		}
-		below.starts_with(<span class="syn-string">&quot;tests/&quot;</span>) <span class="syn-keyword">or</span> below.contains(<span class="syn-string">&quot;/tests/&quot;</span>) <span class="syn-keyword">or</span> file_name.starts_with(<span class="syn-string">&quot;test&quot;</span>)
 	}
 }
 
@@ -14190,14 +14178,771 @@ use(<span class="syn-string">&quot;./items.shale&quot;</span>)
   print(<span class="syn-string">&quot;find_clones: &quot;</span> .. r.functions .. <span class="syn-string">&quot; functions under &quot;</span> .. dir .. (o.tests <span class="syn-keyword">and</span> <span class="syn-string">&quot;, tests included&quot;</span> <span class="syn-keyword">or</span> <span class="syn-string">&quot;, tests left out&quot;</span>) .. <span class="syn-string">&quot;; &quot;</span> .. #r.twins .. <span class="syn-string">&quot; twins (structure &quot;</span> .. o.score .. <span class="syn-string">&quot;%+ over runs of &quot;</span> .. o.k .. <span class="syn-string">&quot;), &quot;</span> .. #r.runs .. <span class="syn-string">&quot; runs of &quot;</span> .. o.window .. <span class="syn-string">&quot;+ lines alike&quot;</span>)
 <span class="syn-keyword">end</span>
 </code></pre>
-<nav class="steps"><a href="#list_deep_nesting">← previous</a> · <a href="#contents">contents</a> · <a href="#count_roc">next →</a></nav>
+<nav class="steps"><a href="#list_deep_nesting">← previous</a> · <a href="#contents">contents</a> · <a href="#find_dead_code">next →</a></nav>
+</section>
+<section class="example" id="find_dead_code">
+<nav class="steps"><a href="#find_clones">← previous</a> · <a href="#contents">contents</a> · <a href="#count_roc">next →</a></nav>
+<h3><a href="#find_dead_code">find_dead_code</a></h3>
+<p>The functions and generators in Shale's C that no program reaches, and those only the tests reach: every item a node, its masked words its edges, walked from each program's main and the tests.</p>
+<p class="facts">Its effects: <code>Shale.arg!</code>, <code>Shale.fail!</code>, <code>Shale.glob!</code>, <code>Shale.list!</code>, <code>Shale.print!</code>, <code>Shale.read!</code>.<br>Roc: 461 lines in 3 files. Shale original: 277 lines, plus 503 lines in the library it loads, which other recipes share.</p>
+<h4>Roc</h4>
+<p class="file">It also imports <code>Item</code>, <code>Paths</code>, <code>Split</code>, <code>Words</code> from <a href="#c-splitter">the C splitter</a>.</p>
+<p class="file"><a href="https://github.com/showell/shale/blob/a3bfc843a75e287128a10a8845679dcfb51a4608/cookbook/c/find_dead_code/find_dead_code.roc"><code>cookbook/c/find_dead_code/find_dead_code.roc</code></a>, 165 lines</p>
+<pre><code><span class="syn-comment">## find_dead_code, in Roc on Shale&#39;s platform (roc_platform/README.md): the</span>
+<span class="syn-comment">## functions and generators in Shale&#39;s C that no program reaches, from the</span>
+<span class="syn-comment">## splitter the C recipes share (cookbook/c/items/, a package). Its</span>
+<span class="syn-comment">## launcher, cookbook/c/find_dead_code.shale, is how it is run, and its</span>
+<span class="syn-comment">## header says the arguments and the rules. check_goldens.shale, beside</span>
+<span class="syn-comment">## this, holds its output on the plants to its goldens, line for line.</span>
+<span class="syn-comment">##</span>
+<span class="syn-comment">##   shale cookbook:c/find_dead_code.shale dir=c/host</span>
+<span class="syn-comment">##   shale cookbook:c/find_dead_code.shale self_test=1</span>
+<span class="syn-comment">##</span>
+<span class="syn-comment">## The effects: `Shale.arg!` for the arguments, `Shale.glob!` for the files,</span>
+<span class="syn-comment">## `Shale.read!` for each one&#39;s text, and `Shale.print!` and `Shale.fail!`</span>
+<span class="syn-comment">## for the verdict. Graph, beside this, finds what no program reaches;</span>
+<span class="syn-comment">## SelfTest holds it to the plants.</span>
+<span class="syn-comment">## budget: steps=200000000 arena_bytes=2000000000 roc_cpu_ms=600000</span>
+<span class="syn-keyword">app</span> [main!] {
+	items: <span class="syn-string">&quot;../items/main.roc&quot;</span>,
+	pf: <span class="syn-keyword">platform</span> <span class="syn-string">&quot;../../../roc_platform/platform/main.roc&quot;</span>,
+}
+
+<span class="syn-keyword">import</span> pf.<span class="syn-type">Shale</span>
+<span class="syn-keyword">import</span> items.<span class="syn-type">Item</span>
+<span class="syn-keyword">import</span> items.<span class="syn-type">Paths</span>
+<span class="syn-keyword">import</span> items.<span class="syn-type">Split</span>
+<span class="syn-keyword">import</span> items.<span class="syn-type">Words</span>
+<span class="syn-keyword">import</span> <span class="syn-type">Graph</span>
+<span class="syn-keyword">import</span> <span class="syn-type">SelfTest</span>
+
+<span class="syn-name">main!</span> : {} =&gt; {}
+<span class="syn-name">main!</span> = |{}| {
+	<span class="syn-keyword">if</span> integer_or_stop!(<span class="syn-string">&quot;self_test&quot;</span>, <span class="syn-type">Shale</span>.arg!(<span class="syn-string">&quot;self_test&quot;</span>, <span class="syn-string">&quot;0&quot;</span>)) == <span class="syn-number">1</span> {
+		<span class="syn-type">SelfTest</span>.run!(find!)
+	} <span class="syn-keyword">else</span> {
+		folder = <span class="syn-type">Shale</span>.arg!(<span class="syn-string">&quot;dir&quot;</span>, <span class="syn-string">&quot;c&quot;</span>)
+		found = find!(folder)
+		<span class="syn-keyword">for</span> each <span class="syn-keyword">in</span> found.findings {
+			<span class="syn-type">Shale</span>.print!(<span class="syn-type">Graph</span>.finding_line(each))
+		}
+		<span class="syn-keyword">for</span> line <span class="syn-keyword">in</span> summary(folder, found) {
+			<span class="syn-type">Shale</span>.print!(line)
+		}
+	}
+}
+
+<span class="syn-comment">## A value given as `name=`, which must be an integer, as Shale&#39;s `arg` reads</span>
+<span class="syn-comment">## one whose default is.</span>
+<span class="syn-name">integer_or_stop!</span> : <span class="syn-type">Str</span>, <span class="syn-type">Str</span> =&gt; <span class="syn-type">I64</span>
+<span class="syn-name">integer_or_stop!</span> = |name, given|
+	<span class="syn-keyword">match</span> <span class="syn-type">I64</span>.from_str(given) {
+		<span class="syn-type">Ok</span>(value) =&gt; value
+		<span class="syn-type">Err</span>(_) =&gt; {
+			<span class="syn-type">Shale</span>.fail!(<span class="syn-string">&quot;find_dead_code: </span>${name}<span class="syn-string">=</span>${given}<span class="syn-string"> is not an integer&quot;</span>)
+			<span class="syn-number">0</span>
+		}
+	}
+
+<span class="syn-comment">## What was found under a folder: the findings, and how many items were</span>
+<span class="syn-comment">## nodes.</span>
+<span class="syn-type">Found</span> : { findings : <span class="syn-type">List</span>(<span class="syn-type">Graph.Finding</span>), nodes : <span class="syn-type">U64</span> }
+
+<span class="syn-comment">## The findings over the folder.</span>
+<span class="syn-name">find!</span> : <span class="syn-type">Str</span> =&gt; <span class="syn-type">Found</span>
+<span class="syn-name">find!</span> = |folder| {
+	nodes = read_nodes!(folder)
+	{ findings: <span class="syn-type">Graph</span>.findings(nodes), nodes: nodes.len() }
+}
+
+<span class="syn-comment">## The summary: the counts by rule, then by folder and rule.</span>
+<span class="syn-name">summary</span> : <span class="syn-type">Str</span>, <span class="syn-type">Found</span> -&gt; <span class="syn-type">List</span>(<span class="syn-type">Str</span>)
+<span class="syn-name">summary</span> = |folder, found| {
+	rules = found.findings.fold(<span class="syn-type">Dict</span>.empty(), |counts, each| counted(counts, each.rule))
+	folders = found.findings.fold(<span class="syn-type">Dict</span>.empty(), |counts, each| counted(counts, <span class="syn-string">&quot;</span>${folder_of(each.path)}<span class="syn-string"> </span>${each.rule}<span class="syn-string">&quot;</span>))
+	parts = sorted_counts(rules).map(|(rule, count)| <span class="syn-string">&quot;</span>${count.to_str()}<span class="syn-string"> </span>${rule}<span class="syn-string">&quot;</span>)
+	counts = <span class="syn-string">&quot;</span>${found.findings.len().to_str()}<span class="syn-string"> findings: </span>${<span class="syn-type">Str</span>.join_with(parts, <span class="syn-string">&quot;, &quot;</span>)}<span class="syn-string">&quot;</span>
+	head = <span class="syn-string">&quot;find_dead_code: </span>${found.nodes.to_str()}<span class="syn-string"> items under </span>${folder}<span class="syn-string">; </span>${counts}<span class="syn-string">&quot;</span>
+	sorted_counts(folders).map(|(key, count)| <span class="syn-string">&quot;  </span>${key}<span class="syn-string">: </span>${count.to_str()}<span class="syn-string">&quot;</span>).prepend(head)
+}
+
+<span class="syn-comment">## The counts with one more of `key`.</span>
+<span class="syn-name">counted</span> : <span class="syn-type">Dict</span>(<span class="syn-type">Str</span>, <span class="syn-type">U64</span>), <span class="syn-type">Str</span> -&gt; <span class="syn-type">Dict</span>(<span class="syn-type">Str</span>, <span class="syn-type">U64</span>)
+<span class="syn-name">counted</span> = |counts, key| counts.insert(key, (counts.get(key) ?? <span class="syn-number">0</span>) + <span class="syn-number">1</span>)
+
+<span class="syn-comment">## The counts, by key in the order of their bytes.</span>
+<span class="syn-name">sorted_counts</span> : <span class="syn-type">Dict</span>(<span class="syn-type">Str</span>, <span class="syn-type">U64</span>) -&gt; <span class="syn-type">List</span>((<span class="syn-type">Str</span>, <span class="syn-type">U64</span>))
+<span class="syn-name">sorted_counts</span> = |counts| counts.to_list().sort_with(|(x, _), (y, _)| <span class="syn-type">Words</span>.byte_order(x, y))
+
+<span class="syn-comment">## The folder a path is in, as Shale&#39;s `dirname` gives it: up to its last</span>
+<span class="syn-comment">## `/`, or &quot;&quot; when it has none.</span>
+<span class="syn-name">folder_of</span> : <span class="syn-type">Str</span> -&gt; <span class="syn-type">Str</span>
+<span class="syn-name">folder_of</span> = |path| {
+	bytes = path.to_utf8()
+	<span class="syn-keyword">match</span> bytes.find_last_index(|byte| byte == <span class="syn-string">&#39;/&#39;</span>) {
+		<span class="syn-type">Ok</span>(slash) =&gt; <span class="syn-type">Str</span>.from_utf8_lossy(bytes.take_first(slash))
+		<span class="syn-type">Err</span>(_) =&gt; <span class="syn-string">&quot;&quot;</span>
+	}
+}
+
+<span class="syn-comment">## The kinds of item that are nodes: each names others, or is named. A type</span>
+<span class="syn-comment">## is one, since a generator&#39;s type may be named only in a struct&#39;s field.</span>
+<span class="syn-name">node_kinds</span> : <span class="syn-type">List</span>(<span class="syn-type">Item.Kind</span>)
+<span class="syn-name">node_kinds</span> = [<span class="syn-type">Function</span>, <span class="syn-type">Test</span>, <span class="syn-type">TestList</span>, <span class="syn-type">Data</span>, <span class="syn-type">Macro</span>, <span class="syn-type">Generator</span>, <span class="syn-type">Struct</span>, <span class="syn-type">Union</span>, <span class="syn-type">Enum</span>, <span class="syn-type">Typedef</span>]
+
+<span class="syn-comment">## The kinds whose words are the whole item&#39;s text, not a body&#39;s uses.</span>
+<span class="syn-name">whole_kinds</span> : <span class="syn-type">List</span>(<span class="syn-type">Item.Kind</span>)
+<span class="syn-name">whole_kinds</span> = [<span class="syn-type">Data</span>, <span class="syn-type">Macro</span>, <span class="syn-type">Generator</span>, <span class="syn-type">Struct</span>, <span class="syn-type">Union</span>, <span class="syn-type">Enum</span>, <span class="syn-type">Typedef</span>]
+
+<span class="syn-comment">## The tree&#39;s nodes, one for each item of a node&#39;s kind, in file order.</span>
+<span class="syn-name">read_nodes!</span> : <span class="syn-type">Str</span> =&gt; <span class="syn-type">List</span>(<span class="syn-type">Graph.Node</span>)
+<span class="syn-name">read_nodes!</span> = |folder| {
+	<span class="syn-keyword">var</span> $nodes = []
+	<span class="syn-keyword">for</span> path <span class="syn-keyword">in</span> c_files_under!(folder) {
+		text = read_text!(path)
+		lines = <span class="syn-type">Split</span>.lines(text)
+		test = <span class="syn-type">Paths</span>.is_test_path(folder, path)
+		<span class="syn-keyword">for</span> item <span class="syn-keyword">in</span> split_or_stop!(path, text) {
+			<span class="syn-keyword">if</span> node_kinds.contains(item.kind) {
+				words =
+					<span class="syn-keyword">if</span> whole_kinds.contains(item.kind) {
+						<span class="syn-type">Words</span>.uses(<span class="syn-type">Split</span>.masked_text(lines, { first: item.first, last: item.last }))
+					} <span class="syn-keyword">else</span> {
+						item.uses
+					}
+				node = { path, line: item.first, kind: item.kind, name: item.name, test, words, macro: item.macro, makes: item.makes }
+				$nodes = $nodes.append(node)
+			}
+		}
+	}
+	$nodes
+}
+
+<span class="syn-comment">## The file&#39;s text. A file the glob named and the read finds gone stops the</span>
+<span class="syn-comment">## run.</span>
+<span class="syn-name">read_text!</span> : <span class="syn-type">Str</span> =&gt; <span class="syn-type">Str</span>
+<span class="syn-name">read_text!</span> = |path|
+	<span class="syn-keyword">match</span> <span class="syn-type">Shale</span>.read!(path) {
+		<span class="syn-type">Found</span>(text) =&gt; text
+		<span class="syn-type">Missing</span> =&gt; {
+			<span class="syn-type">Shale</span>.fail!(<span class="syn-string">&quot;find_dead_code: </span>${path}<span class="syn-string"> went missing during the walk&quot;</span>)
+			<span class="syn-string">&quot;&quot;</span>
+		}
+	}
+
+<span class="syn-comment">## The file&#39;s items, each body&#39;s uses read, or the run stopped with the line</span>
+<span class="syn-comment">## the dialect does not account for.</span>
+<span class="syn-name">split_or_stop!</span> : <span class="syn-type">Str</span>, <span class="syn-type">Str</span> =&gt; <span class="syn-type">List</span>(<span class="syn-type">Item</span>)
+<span class="syn-name">split_or_stop!</span> = |path, text|
+	<span class="syn-keyword">match</span> <span class="syn-type">Split</span>.items({ path, text, uses: <span class="syn-type">Bool.True</span> }) {
+		<span class="syn-type">Ok</span>(items) =&gt; items
+		<span class="syn-type">Err</span>(why) =&gt; {
+			<span class="syn-type">Shale</span>.fail!(why)
+			[]
+		}
+	}
+
+<span class="syn-comment">## The C files under the folder, sorted, any folder named `out` (c/out, the</span>
+<span class="syn-comment">## build&#39;s output) left out. A folder that is not there stops the run, in</span>
+<span class="syn-comment">## the words of the Shale original&#39;s walk: a check that can&#39;t run fails.</span>
+<span class="syn-name">c_files_under!</span> : <span class="syn-type">Str</span> =&gt; <span class="syn-type">List</span>(<span class="syn-type">Str</span>)
+<span class="syn-name">c_files_under!</span> = |folder| {
+	<span class="syn-keyword">if</span> <span class="syn-type">Shale</span>.list!(folder) == <span class="syn-type">Missing</span> {
+		<span class="syn-type">Shale</span>.fail!(<span class="syn-string">&quot;`walk(\&quot;</span>${folder}<span class="syn-string">\&quot;)`: not found (FileNotFound)&quot;</span>)
+	}
+	paths = <span class="syn-type">Shale</span>.glob!(<span class="syn-string">&quot;</span>${folder}<span class="syn-string">/**/*.c&quot;</span>).concat(<span class="syn-type">Shale</span>.glob!(<span class="syn-string">&quot;</span>${folder}<span class="syn-string">/**/*.h&quot;</span>))
+	paths.keep_if(|path| !(<span class="syn-type">Paths</span>.is_in_out_folder(folder, path))).sort_with(<span class="syn-type">Words</span>.byte_order)
+}
+</code></pre>
+<p class="file"><a href="https://github.com/showell/shale/blob/a3bfc843a75e287128a10a8845679dcfb51a4608/cookbook/c/find_dead_code/Graph.roc"><code>cookbook/c/find_dead_code/Graph.roc</code></a>, 251 lines</p>
+<pre><code><span class="syn-comment">## The tree&#39;s names as a graph, and what no program reaches. Every</span>
+<span class="syn-comment">## function, test, test list, data item, macro, generator and type is a</span>
+<span class="syn-comment">## node; its edges are the nodes its words name. A word resolves to its own</span>
+<span class="syn-comment">## file&#39;s node of that name when the file has one, else to every node of</span>
+<span class="syn-comment">## that name in the tree, never to the node itself. A generator answers to</span>
+<span class="syn-comment">## its type&#39;s name and to each function its macro makes (`Ints`,</span>
+<span class="syn-comment">## `Ints_make`, `Ints_push`). The roots are the programs: production&#39;s each</span>
+<span class="syn-comment">## `main` outside the tests, the tests&#39; each test, test list and `main` of</span>
+<span class="syn-comment">## theirs.</span>
+<span class="syn-keyword">import</span> items.<span class="syn-type">Item</span>
+<span class="syn-keyword">import</span> items.<span class="syn-type">Words</span>
+
+<span class="syn-type">Graph</span> := [].{
+
+	<span class="syn-comment">## A node: where its item is, its kind and name, whether its file is the</span>
+	<span class="syn-comment">## tests&#39;, the words it names, and a generator&#39;s macro or a macro&#39;s own</span>
+	<span class="syn-comment">## functions (`make`, `push`).</span>
+	<span class="syn-type">Node</span> : {
+		path : <span class="syn-type">Str</span>,
+		line : <span class="syn-type">U64</span>,
+		kind : <span class="syn-type">Item.Kind</span>,
+		name : <span class="syn-type">Str</span>,
+		test : <span class="syn-type">Bool</span>,
+		words : <span class="syn-type">List</span>(<span class="syn-type">Str</span>),
+		macro : <span class="syn-type">Str</span>,
+		makes : <span class="syn-type">List</span>(<span class="syn-type">Str</span>),
+	}
+
+	<span class="syn-comment">## A finding: where it is, its rule (`dead` or `test_only`) and its text.</span>
+	<span class="syn-type">Finding</span> : { path : <span class="syn-type">Str</span>, line : <span class="syn-type">U64</span>, rule : <span class="syn-type">Str</span>, text : <span class="syn-type">Str</span> }
+
+	<span class="syn-comment">## The findings over the nodes, sorted by place: each function (not a</span>
+	<span class="syn-comment">## `main`) and generator no program reaches, `dead`, and each outside</span>
+	<span class="syn-comment">## the tests&#39; files that only the tests reach, `test_only`.</span>
+	<span class="syn-name">findings</span> : <span class="syn-type">List</span>(<span class="syn-type">Graph.Node</span>) -&gt; <span class="syn-type">List</span>(<span class="syn-type">Graph.Finding</span>)
+	<span class="syn-name">findings</span> = |nodes| {
+		edges = edges_of(nodes, index_of(nodes))
+		roots = roots_of(nodes)
+		in_production = reached(edges, roots.production)
+		in_tests = reached(edges, roots.tests)
+		users = users_of(edges)
+		<span class="syn-keyword">var</span> $found = []
+		$at : <span class="syn-type">U64</span>
+		<span class="syn-keyword">var</span> $at = <span class="syn-number">0</span>
+		<span class="syn-keyword">for</span> node <span class="syn-keyword">in</span> nodes {
+			is_judged = (node.kind == <span class="syn-type">Function</span> <span class="syn-keyword">and</span> node.name != <span class="syn-string">&quot;main&quot;</span>) <span class="syn-keyword">or</span> node.kind == <span class="syn-type">Generator</span>
+			rule =
+				<span class="syn-keyword">if</span> !(is_judged) <span class="syn-keyword">or</span> is_marked(in_production, $at) {
+					<span class="syn-string">&quot;&quot;</span>
+				} <span class="syn-keyword">else</span> <span class="syn-keyword">if</span> is_marked(in_tests, $at) {
+					<span class="syn-keyword">if</span> node.test {
+						<span class="syn-string">&quot;&quot;</span>
+					} <span class="syn-keyword">else</span> {
+						<span class="syn-string">&quot;test_only&quot;</span>
+					}
+				} <span class="syn-keyword">else</span> {
+					<span class="syn-string">&quot;dead&quot;</span>
+				}
+			<span class="syn-keyword">if</span> rule != <span class="syn-string">&quot;&quot;</span> {
+				generated =
+					<span class="syn-keyword">if</span> node.kind == <span class="syn-type">Generator</span> {
+						<span class="syn-string">&quot; (a </span>${node.macro}<span class="syn-string"> generator)&quot;</span>
+					} <span class="syn-keyword">else</span> {
+						<span class="syn-string">&quot;&quot;</span>
+					}
+				named_by =
+					<span class="syn-keyword">match</span> users.get($at) {
+						<span class="syn-type">Ok</span>(who) <span class="syn-keyword">if</span> rule == <span class="syn-string">&quot;dead&quot;</span> =&gt; <span class="syn-string">&quot; (named only by unreached code: </span>${user_names(nodes, who)}<span class="syn-string">)&quot;</span>
+						_ =&gt; <span class="syn-string">&quot;&quot;</span>
+					}
+				$found = $found.append({ path: node.path, line: node.line, rule, text: <span class="syn-string">&quot;</span>${node.name}${generated}${named_by}<span class="syn-string">&quot;</span> })
+			}
+			$at = $at + <span class="syn-number">1</span>
+		}
+		$found.sort_with(place_order)
+	}
+
+	<span class="syn-comment">## A finding&#39;s line: `path:line: rule: text`.</span>
+	<span class="syn-name">finding_line</span> : <span class="syn-type">Graph.Finding</span> -&gt; <span class="syn-type">Str</span>
+	<span class="syn-name">finding_line</span> = |found| <span class="syn-string">&quot;</span>${found.path}<span class="syn-string">:</span>${found.line.to_str()}<span class="syn-string">: </span>${found.rule}<span class="syn-string">: </span>${found.text}<span class="syn-string">&quot;</span>
+}
+
+<span class="syn-comment">## The names to their nodes, each node&#39;s place counted from 0: `by_name`</span>
+<span class="syn-comment">## every node of a name, `by_file` a file&#39;s own node of it (the last, when</span>
+<span class="syn-comment">## the file has two).</span>
+<span class="syn-type">Index</span> : { by_name : <span class="syn-type">Dict</span>(<span class="syn-type">Str</span>, <span class="syn-type">List</span>(<span class="syn-type">U64</span>)), by_file : <span class="syn-type">Dict</span>((<span class="syn-type">Str</span>, <span class="syn-type">Str</span>), <span class="syn-type">U64</span>) }
+
+<span class="syn-comment">## The names each node answers to, indexed: its own, and a generator&#39;s</span>
+<span class="syn-comment">## functions. A test list answers to none: its name is its macro&#39;s</span>
+<span class="syn-comment">## (`TEST_MAIN`), and a list is a root.</span>
+<span class="syn-name">index_of</span> : <span class="syn-type">List</span>(<span class="syn-type">Graph.Node</span>) -&gt; <span class="syn-type">Index</span>
+<span class="syn-name">index_of</span> = |nodes| {
+	makes = nodes.fold(
+		<span class="syn-type">Dict</span>.empty(),
+		|so_far, node|
+			<span class="syn-keyword">if</span> node.kind == <span class="syn-type">Macro</span> {
+				so_far.insert(node.name, node.makes)
+			} <span class="syn-keyword">else</span> {
+				so_far
+			},
+	)
+	<span class="syn-keyword">var</span> $by_name = <span class="syn-type">Dict</span>.empty()
+	<span class="syn-keyword">var</span> $by_file = <span class="syn-type">Dict</span>.empty()
+	$at : <span class="syn-type">U64</span>
+	<span class="syn-keyword">var</span> $at = <span class="syn-number">0</span>
+	<span class="syn-keyword">for</span> node <span class="syn-keyword">in</span> nodes {
+		<span class="syn-keyword">if</span> node.name != <span class="syn-string">&quot;&quot;</span> <span class="syn-keyword">and</span> node.kind != <span class="syn-type">TestList</span> {
+			made =
+				<span class="syn-keyword">if</span> node.kind == <span class="syn-type">Generator</span> {
+					(makes.get(node.macro) ?? []).map(|suffix| <span class="syn-string">&quot;</span>${node.name}<span class="syn-string">_</span>${suffix}<span class="syn-string">&quot;</span>)
+				} <span class="syn-keyword">else</span> {
+					[]
+				}
+			<span class="syn-keyword">for</span> name <span class="syn-keyword">in</span> made.prepend(node.name) {
+				$by_name = $by_name.insert(name, ($by_name.get(name) ?? []).append($at))
+				$by_file = $by_file.insert((node.path, name), $at)
+			}
+		}
+		$at = $at + <span class="syn-number">1</span>
+	}
+	{ by_name: $by_name, by_file: $by_file }
+}
+
+<span class="syn-comment">## Each node&#39;s edges, the nodes its words resolve to, in its words&#39; order.</span>
+<span class="syn-name">edges_of</span> : <span class="syn-type">List</span>(<span class="syn-type">Graph.Node</span>), <span class="syn-type">Index</span> -&gt; <span class="syn-type">List</span>(<span class="syn-type">List</span>(<span class="syn-type">U64</span>))
+<span class="syn-name">edges_of</span> = |nodes, index|
+	nodes.map_with_index(|node, at| node.words.fold([], |out, word| out.concat(resolved(index, { node, at, word }))))
+
+<span class="syn-comment">## The nodes a word of the node at `at` resolves to: its file&#39;s own of that</span>
+<span class="syn-comment">## name, else every one of it, never the node itself.</span>
+<span class="syn-name">resolved</span> : <span class="syn-type">Index</span>, { node : <span class="syn-type">Graph.Node</span>, at : <span class="syn-type">U64</span>, word : <span class="syn-type">Str</span> } -&gt; <span class="syn-type">List</span>(<span class="syn-type">U64</span>)
+<span class="syn-name">resolved</span> = |index, { node, at, word }| {
+	named =
+		<span class="syn-keyword">match</span> index.by_file.get((node.path, word)) {
+			<span class="syn-type">Ok</span>(own) =&gt; [own]
+			<span class="syn-type">Err</span>(_) =&gt; index.by_name.get(word) ?? []
+		}
+	named.keep_if(|target| target != at)
+}
+
+<span class="syn-comment">## The roots: production&#39;s, each `main` outside the tests; the tests&#39;, each</span>
+<span class="syn-comment">## test, test list and `main` of theirs.</span>
+<span class="syn-name">roots_of</span> : <span class="syn-type">List</span>(<span class="syn-type">Graph.Node</span>) -&gt; { production : <span class="syn-type">List</span>(<span class="syn-type">U64</span>), tests : <span class="syn-type">List</span>(<span class="syn-type">U64</span>) }
+<span class="syn-name">roots_of</span> = |nodes| {
+	<span class="syn-keyword">var</span> $production = []
+	<span class="syn-keyword">var</span> $tests = []
+	$at : <span class="syn-type">U64</span>
+	<span class="syn-keyword">var</span> $at = <span class="syn-number">0</span>
+	<span class="syn-keyword">for</span> node <span class="syn-keyword">in</span> nodes {
+		<span class="syn-keyword">if</span> node.kind == <span class="syn-type">Function</span> <span class="syn-keyword">and</span> node.name == <span class="syn-string">&quot;main&quot;</span> {
+			<span class="syn-keyword">if</span> node.test {
+				$tests = $tests.append($at)
+			} <span class="syn-keyword">else</span> {
+				$production = $production.append($at)
+			}
+		} <span class="syn-keyword">else</span> <span class="syn-keyword">if</span> node.kind == <span class="syn-type">Test</span> <span class="syn-keyword">or</span> node.kind == <span class="syn-type">TestList</span> {
+			$tests = $tests.append($at)
+		}
+		$at = $at + <span class="syn-number">1</span>
+	}
+	{ production: $production, tests: $tests }
+}
+
+<span class="syn-comment">## Which nodes the roots reach, a mark a node by its place.</span>
+<span class="syn-name">reached</span> : <span class="syn-type">List</span>(<span class="syn-type">List</span>(<span class="syn-type">U64</span>)), <span class="syn-type">List</span>(<span class="syn-type">U64</span>) -&gt; <span class="syn-type">List</span>(<span class="syn-type">Bool</span>)
+<span class="syn-name">reached</span> = |edges, roots| {
+	<span class="syn-keyword">var</span> $marks = <span class="syn-type">List</span>.repeat(<span class="syn-type">Bool.False</span>, edges.len())
+	<span class="syn-keyword">var</span> $work = []
+	<span class="syn-keyword">for</span> root <span class="syn-keyword">in</span> roots {
+		<span class="syn-keyword">if</span> !(is_marked($marks, root)) {
+			$marks = marked($marks, root)
+			$work = $work.append(root)
+		}
+	}
+	$next : <span class="syn-type">U64</span>
+	<span class="syn-keyword">var</span> $next = <span class="syn-number">0</span>
+	<span class="syn-keyword">while</span> $next &lt; $work.len() {
+		at = $work.get($next) ?? <span class="syn-number">0</span>
+		$next = $next + <span class="syn-number">1</span>
+		<span class="syn-keyword">for</span> target <span class="syn-keyword">in</span> edges.get(at) ?? [] {
+			<span class="syn-keyword">if</span> !(is_marked($marks, target)) {
+				$marks = marked($marks, target)
+				$work = $work.append(target)
+			}
+		}
+	}
+	$marks
+}
+
+<span class="syn-name">is_marked</span> : <span class="syn-type">List</span>(<span class="syn-type">Bool</span>), <span class="syn-type">U64</span> -&gt; <span class="syn-type">Bool</span>
+<span class="syn-name">is_marked</span> = |marks, at| marks.get(at) ?? <span class="syn-type">Bool.False</span>
+
+<span class="syn-name">marked</span> : <span class="syn-type">List</span>(<span class="syn-type">Bool</span>), <span class="syn-type">U64</span> -&gt; <span class="syn-type">List</span>(<span class="syn-type">Bool</span>)
+<span class="syn-name">marked</span> = |marks, at|
+	<span class="syn-keyword">match</span> marks.set(at, <span class="syn-type">Bool.True</span>) {
+		<span class="syn-type">Ok</span>(now) =&gt; now
+		<span class="syn-type">Err</span>(_) =&gt; <span class="syn-keyword">crash</span> <span class="syn-string">&quot;find_dead_code: an edge past the last node&quot;</span>
+	}
+
+<span class="syn-comment">## Who names each node: a node&#39;s place to the places of the nodes whose</span>
+<span class="syn-comment">## edges reach it, once for each edge.</span>
+<span class="syn-name">users_of</span> : <span class="syn-type">List</span>(<span class="syn-type">List</span>(<span class="syn-type">U64</span>)) -&gt; <span class="syn-type">Dict</span>(<span class="syn-type">U64</span>, <span class="syn-type">List</span>(<span class="syn-type">U64</span>))
+<span class="syn-name">users_of</span> = |edges| {
+	<span class="syn-keyword">var</span> $users = <span class="syn-type">Dict</span>.empty()
+	$at : <span class="syn-type">U64</span>
+	<span class="syn-keyword">var</span> $at = <span class="syn-number">0</span>
+	<span class="syn-keyword">for</span> out <span class="syn-keyword">in</span> edges {
+		<span class="syn-keyword">for</span> target <span class="syn-keyword">in</span> out {
+			$users = $users.insert(target, ($users.get(target) ?? []).append($at))
+		}
+		$at = $at + <span class="syn-number">1</span>
+	}
+	$users
+}
+
+<span class="syn-comment">## The names of the nodes at the places, sorted, each once, joined by `, `.</span>
+<span class="syn-name">user_names</span> : <span class="syn-type">List</span>(<span class="syn-type">Graph.Node</span>), <span class="syn-type">List</span>(<span class="syn-type">U64</span>) -&gt; <span class="syn-type">Str</span>
+<span class="syn-name">user_names</span> = |nodes, places| {
+	names = places
+		.map(|place| (nodes.get(place) ?? no_node).name)
+		.sort_with(<span class="syn-type">Words</span>.byte_order)
+	once = names.fold(
+		[],
+		|kept, name|
+			<span class="syn-keyword">if</span> kept.last() == <span class="syn-type">Ok</span>(name) {
+				kept
+			} <span class="syn-keyword">else</span> {
+				kept.append(name)
+			},
+	)
+	<span class="syn-type">Str</span>.join_with(once, <span class="syn-string">&quot;, &quot;</span>)
+}
+
+<span class="syn-comment">## The node a place past the last would be, which no edge reaches.</span>
+<span class="syn-name">no_node</span> : <span class="syn-type">Graph.Node</span>
+<span class="syn-name">no_node</span> = { path: <span class="syn-string">&quot;&quot;</span>, line: <span class="syn-number">0</span>, kind: <span class="syn-type">Function</span>, name: <span class="syn-string">&quot;&quot;</span>, test: <span class="syn-type">Bool.False</span>, words: [], macro: <span class="syn-string">&quot;&quot;</span>, makes: [] }
+
+<span class="syn-comment">## Findings by path, in the order of their bytes, then by line.</span>
+<span class="syn-name">place_order</span> : <span class="syn-type">Graph.Finding</span>, <span class="syn-type">Graph.Finding</span> -&gt; [<span class="syn-type">Before</span>, <span class="syn-type">Same</span>, <span class="syn-type">After</span>]
+<span class="syn-name">place_order</span> = |x, y|
+	<span class="syn-keyword">match</span> <span class="syn-type">Words</span>.byte_order(x.path, y.path) {
+		<span class="syn-type">Same</span> =&gt;
+			<span class="syn-keyword">if</span> x.line &lt; y.line {
+				<span class="syn-type">Before</span>
+			} <span class="syn-keyword">else</span> <span class="syn-keyword">if</span> x.line &gt; y.line {
+				<span class="syn-type">After</span>
+			} <span class="syn-keyword">else</span> {
+				<span class="syn-type">Same</span>
+			}
+		other =&gt; other
+	}
+</code></pre>
+<p class="file"><a href="https://github.com/showell/shale/blob/a3bfc843a75e287128a10a8845679dcfb51a4608/cookbook/c/find_dead_code/SelfTest.roc"><code>cookbook/c/find_dead_code/SelfTest.roc</code></a>, 45 lines</p>
+<pre><code><span class="syn-comment">## find_dead_code&#39;s self-test: the recipe run over</span>
+<span class="syn-comment">## cookbook/c/plants/find_dead_code/ and held to the plants&#39; own list of</span>
+<span class="syn-comment">## findings, exactly: each way to be used (a call, a pointer in a table, a</span>
+<span class="syn-comment">## macro, a generator&#39;s function or its type) and each near miss (a comment,</span>
+<span class="syn-comment">## a string, a member, a prototype, recursion, a macro nobody uses, a</span>
+<span class="syn-comment">## same-named helper in another test file).</span>
+<span class="syn-keyword">import</span> pf.<span class="syn-type">Shale</span>
+<span class="syn-keyword">import</span> <span class="syn-type">Graph</span>
+
+<span class="syn-type">SelfTest</span> := [].{
+
+	<span class="syn-comment">## The check, a stop when it fails, then the PASS line. `find!` is the</span>
+	<span class="syn-comment">## recipe&#39;s own, the findings over a folder.</span>
+	<span class="syn-name">run!</span> : (<span class="syn-type">Str</span> =&gt; { findings : <span class="syn-type">List</span>(<span class="syn-type">Graph.Finding</span>), nodes : <span class="syn-type">U64</span> }) =&gt; {}
+	<span class="syn-name">run!</span> = |find!| {
+		got = joined(find!(plants).findings.map(<span class="syn-type">Graph</span>.finding_line))
+		want = [
+			<span class="syn-string">&quot;lib.c:6: dead: Chars (a VEC_DEFINE generator)&quot;</span>,
+			<span class="syn-string">&quot;lib.c:18: dead: lib_proto_only&quot;</span>,
+			<span class="syn-string">&quot;lib.c:43: dead: lib_in_unused_macro (named only by unreached code: LIB_UNUSED_CALL)&quot;</span>,
+			<span class="syn-string">&quot;lib.c:50: dead: lib_recursive&quot;</span>,
+			<span class="syn-string">&quot;lib.c:56: dead: lib_by_dead (named only by unreached code: lib_recursive)&quot;</span>,
+			<span class="syn-string">&quot;lib.c:61: dead: lib_in_comment&quot;</span>,
+			<span class="syn-string">&quot;lib.c:66: dead: lib_member&quot;</span>,
+			<span class="syn-string">&quot;lib.c:71: test_only: lib_tested&quot;</span>,
+			<span class="syn-string">&quot;lib.h:11: dead: lib_header_dead&quot;</span>,
+			<span class="syn-string">&quot;lib.h:14: test_only: lib_header_tested&quot;</span>,
+			<span class="syn-string">&quot;test.h:14: dead: test_unused_kit&quot;</span>,
+			<span class="syn-string">&quot;tests/test_lib.c:10: dead: test_lib_stray&quot;</span>,
+			<span class="syn-string">&quot;tests/test_lib.c:16: dead: pick&quot;</span>,
+		]
+		wanted = joined(want.map(|line| <span class="syn-string">&quot;</span>${plants}<span class="syn-string">/</span>${line}<span class="syn-string">&quot;</span>))
+		<span class="syn-keyword">if</span> got != wanted {
+			<span class="syn-type">Shale</span>.fail!(<span class="syn-string">&quot;find_dead_code self-test: the plants&#39; findings are\n</span>${got}<span class="syn-string">\nthey should be\n</span>${wanted}<span class="syn-string">&quot;</span>)
+		}
+		<span class="syn-type">Shale</span>.print!(<span class="syn-string">&quot;PASS find_dead_code self-test: </span>${want.len().to_str()}<span class="syn-string"> findings over the plants, exactly, and each near miss left alone&quot;</span>)
+	}
+}
+
+<span class="syn-comment">## Where the plants are.</span>
+<span class="syn-name">plants</span> : <span class="syn-type">Str</span>
+<span class="syn-name">plants</span> = <span class="syn-string">&quot;cookbook/c/plants/find_dead_code&quot;</span>
+
+<span class="syn-name">joined</span> : <span class="syn-type">List</span>(<span class="syn-type">Str</span>) -&gt; <span class="syn-type">Str</span>
+<span class="syn-name">joined</span> = |lines| <span class="syn-type">Str</span>.join_with(lines, <span class="syn-string">&quot;\n&quot;</span>)
+</code></pre>
+<h4>Shale original</h4>
+<p class="file"><a href="https://github.com/showell/shale/blob/616dab127f39ff93e5dbaa34e1c749c6b96b8918/cookbook/c/find_dead_code.shale"><code>cookbook/c/find_dead_code.shale</code></a>, 277 lines, at <code>616dab12</code></p>
+<p class="file">The libraries it loads: <a href="https://github.com/showell/shale/blob/616dab127f39ff93e5dbaa34e1c749c6b96b8918/cookbook/c/items.shale"><code>cookbook/c/items.shale</code></a> (503 lines).</p>
+<pre><code><span class="syn-comment">-- Finds Shale&#39;s C that no program reaches, from cookbook/c/items.shale&#39;s</span>
+<span class="syn-comment">-- splitter. GCC&#39;s unused-function warning passes by every `static inline`</span>
+<span class="syn-comment">-- function (each header&#39;s and those of .c files a unit may not call), and a</span>
+<span class="syn-comment">-- function some other dead function calls is no warning at all, so this reads</span>
+<span class="syn-comment">-- the whole tree&#39;s names instead:</span>
+<span class="syn-comment">--</span>
+<span class="syn-comment">--   dead       a function, or a generator (`VEC_DEFINE(Name, T)`), that no</span>
+<span class="syn-comment">--              program reaches: no item names it, or only items that are</span>
+<span class="syn-comment">--              themselves unreached do (`named only by unreached code: ...`);</span>
+<span class="syn-comment">--   test_only  a function outside the tests that only tests reach.</span>
+<span class="syn-comment">--</span>
+<span class="syn-comment">-- One line a finding, `path:line: dead: name` or `path:line: test_only:</span>
+<span class="syn-comment">-- name`, then the counts by rule and by folder.</span>
+<span class="syn-comment">--</span>
+<span class="syn-comment">--   shale cookbook:c/find_dead_code.shale            over c/</span>
+<span class="syn-comment">--   shale cookbook:c/find_dead_code.shale dir=c/host</span>
+<span class="syn-comment">--   shale cookbook:c/find_dead_code.shale self_test=1</span>
+<span class="syn-comment">--</span>
+<span class="syn-comment">-- How it reads a use. Every function, test, test list, data item, macro and</span>
+<span class="syn-comment">-- generator is a node; its edges are the identifiers its masked text names</span>
+<span class="syn-comment">-- (items.shale&#39;s `uses` for a body, the whole item&#39;s words for data, a</span>
+<span class="syn-comment">-- macro and a generator), so a comment, a string and a member after `.` or</span>
+<span class="syn-comment">-- `-&gt;` are never a use, a prototype is none, and a name taken without a</span>
+<span class="syn-comment">-- call (a function pointer in a table) is one. A name resolves to its own</span>
+<span class="syn-comment">-- file&#39;s item of that name when the file has one (two test files may each</span>
+<span class="syn-comment">-- have a `pick`), else to every item of that name in the tree. A generator</span>
+<span class="syn-comment">-- answers to its type&#39;s name and to each function its macro `makes`</span>
+<span class="syn-comment">-- (`VEC_DEFINE(Ints, int)` to `Ints`, `Ints_make`, `Ints_push`), so a use of</span>
+<span class="syn-comment">-- `Ints_push` reaches it. A macro is reached by being named, and reaches the</span>
+<span class="syn-comment">-- names in its body.</span>
+<span class="syn-comment">--</span>
+<span class="syn-comment">-- The programs are the roots: each `int main(` outside a `tests` folder</span>
+<span class="syn-comment">-- (c/shale.c, c/shale_gate.c) is production&#39;s; each test, test list and</span>
+<span class="syn-comment">-- `main` under one is the tests&#39;. A function of the tests&#39; own files (under</span>
+<span class="syn-comment">-- a `tests` folder, or a file named `test*`, as c/foundation/test.h, the</span>
+<span class="syn-comment">-- runner) that the tests reach is a test&#39;s helper, never a finding.</span>
+<span class="syn-comment">--</span>
+<span class="syn-comment">-- What it can&#39;t see: a name made by `##` outside a generator (only</span>
+<span class="syn-comment">-- test.h&#39;s `TEST` and `TEST_PART` do that, and tests are roots), and a</span>
+<span class="syn-comment">-- use that a preprocessor branch compiles out: every branch counts.</span>
+<span class="syn-comment">--</span>
+<span class="syn-comment">-- `self_test=1` runs it over cookbook/c/plants/find_dead_code/ and holds the</span>
+<span class="syn-comment">-- findings to the plants&#39; own list, exactly: each way to be used (a call, a</span>
+<span class="syn-comment">-- pointer in a table, a macro, a generator&#39;s function or its type) and each</span>
+<span class="syn-comment">-- near miss (a comment, a string, a member, a prototype, recursion, a macro</span>
+<span class="syn-comment">-- nobody uses, a same-named helper in another test file).</span>
+<span class="syn-comment">--</span>
+<span class="syn-comment">-- budget: steps=400000000 arena_bytes=1000000000 kept_bytes=268435456</span>
+
+use(<span class="syn-string">&quot;./items.shale&quot;</span>)
+
+<span class="syn-keyword">const</span> PLANTS = <span class="syn-string">&quot;cookbook/c/plants/find_dead_code&quot;</span>
+
+<span class="syn-comment">-- The C files under `dir`, sorted, c/out (the build&#39;s output) left out.</span>
+<span class="syn-keyword">function</span> <span class="syn-name">c_files_under</span>(dir)
+  <span class="syn-keyword">local</span> files = {}
+  <span class="syn-keyword">for</span> e <span class="syn-keyword">in</span> walk_all(dir, {kind = <span class="syn-string">&quot;file&quot;</span>, skip = <span class="syn-string">&quot;out&quot;</span>}) <span class="syn-keyword">do</span>
+    <span class="syn-keyword">if</span> ends_with(e.path, <span class="syn-string">&quot;.c&quot;</span>) <span class="syn-keyword">or</span> ends_with(e.path, <span class="syn-string">&quot;.h&quot;</span>) <span class="syn-keyword">then</span> push(files, e.path) <span class="syn-keyword">end</span>
+  <span class="syn-keyword">end</span>
+  sort(files)
+  <span class="syn-keyword">return</span> files
+<span class="syn-keyword">end</span>
+
+<span class="syn-comment">-- Whether `p`, below `dir`, is the tests&#39;: in a `tests` folder, or a file</span>
+<span class="syn-comment">-- whose name starts with `test` (c/foundation/test.h, the tests&#39; runner).</span>
+<span class="syn-keyword">function</span> <span class="syn-name">is_test_path</span>(dir, p)
+  <span class="syn-keyword">local</span> rel = sub(p, #dir + <span class="syn-number">2</span>)
+  <span class="syn-keyword">return</span> starts_with(rel, <span class="syn-string">&quot;tests/&quot;</span>) <span class="syn-keyword">or</span> contains(rel, <span class="syn-string">&quot;/tests/&quot;</span>) <span class="syn-keyword">or</span> starts_with(basename(p), <span class="syn-string">&quot;test&quot;</span>)
+<span class="syn-keyword">end</span>
+
+<span class="syn-comment">-- The kinds that are nodes: each names others, or is named. A type is one,</span>
+<span class="syn-comment">-- since a generator&#39;s type may be named only in a struct&#39;s field.</span>
+<span class="syn-keyword">const</span> NODE_KINDS = {<span class="syn-string">&quot;function&quot;</span>, <span class="syn-string">&quot;test&quot;</span>, <span class="syn-string">&quot;test_list&quot;</span>, <span class="syn-string">&quot;data&quot;</span>, <span class="syn-string">&quot;macro&quot;</span>, <span class="syn-string">&quot;generator&quot;</span>, <span class="syn-string">&quot;struct&quot;</span>, <span class="syn-string">&quot;union&quot;</span>, <span class="syn-string">&quot;enum&quot;</span>, <span class="syn-string">&quot;typedef&quot;</span>}
+
+<span class="syn-comment">-- The kinds whose words are the whole item&#39;s text, not a body&#39;s `uses`.</span>
+<span class="syn-keyword">const</span> WHOLE_KINDS = {<span class="syn-string">&quot;data&quot;</span>, <span class="syn-string">&quot;macro&quot;</span>, <span class="syn-string">&quot;generator&quot;</span>, <span class="syn-string">&quot;struct&quot;</span>, <span class="syn-string">&quot;union&quot;</span>, <span class="syn-string">&quot;enum&quot;</span>, <span class="syn-string">&quot;typedef&quot;</span>}
+
+<span class="syn-comment">-- The tree&#39;s nodes, one for each item that names others or is named:</span>
+<span class="syn-comment">-- `{path, line, kind, name, test, words, macro}`, `test` whether its file is</span>
+<span class="syn-comment">-- under a `tests` folder.</span>
+<span class="syn-keyword">function</span> <span class="syn-name">read_nodes</span>(dir)
+  <span class="syn-keyword">local</span> nodes = {}
+  <span class="syn-keyword">for</span> p <span class="syn-keyword">in</span> c_files_under(dir) <span class="syn-keyword">do</span>
+    <span class="syn-keyword">local</span> all = lines(read(p))
+    <span class="syn-keyword">local</span> test = is_test_path(dir, p)
+    <span class="syn-keyword">for</span> it <span class="syn-keyword">in</span> c_items(p, {uses = <span class="syn-keyword">true</span>}) <span class="syn-keyword">do</span>
+      <span class="syn-keyword">local</span> k = it.kind
+      <span class="syn-keyword">if</span> has_item(NODE_KINDS, k) <span class="syn-keyword">then</span>
+        <span class="syn-keyword">local</span> words = it.uses
+        <span class="syn-keyword">if</span> has_item(WHOLE_KINDS, k) <span class="syn-keyword">then</span> words = c_words_used(c_masked_text(all, it.first, it.last)) <span class="syn-keyword">end</span>
+        push(nodes, {path = p, line = it.first, kind = k, name = it.name, test = test, words = words, macro = it.macro, makes = it.makes})
+      <span class="syn-keyword">end</span>
+    <span class="syn-keyword">end</span>
+    yield()
+  <span class="syn-keyword">end</span>
+  <span class="syn-keyword">return</span> nodes
+<span class="syn-keyword">end</span>
+
+<span class="syn-comment">-- The names each node answers to: its own, and a generator&#39;s functions. A</span>
+<span class="syn-comment">-- test list answers to none: its name is its macro&#39;s (`TEST_MAIN`), and a</span>
+<span class="syn-comment">-- list is a root.</span>
+<span class="syn-comment">-- Gives `{by_name, by_file}`: a name to its nodes&#39; indexes, and</span>
+<span class="syn-comment">-- `path|name` to the file&#39;s own node.</span>
+<span class="syn-keyword">function</span> <span class="syn-name">index_nodes</span>(nodes)
+  <span class="syn-keyword">local</span> makes = {}
+  <span class="syn-keyword">for</span> n <span class="syn-keyword">in</span> nodes <span class="syn-keyword">do</span>
+    <span class="syn-keyword">if</span> n.kind == <span class="syn-string">&quot;macro&quot;</span> <span class="syn-keyword">then</span> makes[n.name] = n.makes <span class="syn-keyword">end</span>
+  <span class="syn-keyword">end</span>
+  <span class="syn-keyword">local</span> by_name = {}
+  <span class="syn-keyword">local</span> by_file = {}
+  <span class="syn-keyword">local</span> i = <span class="syn-number">0</span>
+  <span class="syn-keyword">for</span> n <span class="syn-keyword">in</span> nodes <span class="syn-keyword">do</span>
+    i = i + <span class="syn-number">1</span>
+    <span class="syn-keyword">if</span> n.name ~= <span class="syn-string">&quot;&quot;</span> <span class="syn-keyword">and</span> n.kind ~= <span class="syn-string">&quot;test_list&quot;</span> <span class="syn-keyword">then</span>
+      <span class="syn-keyword">local</span> names = {n.name}
+      <span class="syn-keyword">if</span> n.kind == <span class="syn-string">&quot;generator&quot;</span> <span class="syn-keyword">then</span>
+        <span class="syn-keyword">for</span> m <span class="syn-keyword">in</span> get(makes, n.macro, {}) <span class="syn-keyword">do</span> push(names, n.name .. <span class="syn-string">&quot;_&quot;</span> .. m) <span class="syn-keyword">end</span>
+      <span class="syn-keyword">end</span>
+      <span class="syn-keyword">for</span> nm <span class="syn-keyword">in</span> names <span class="syn-keyword">do</span>
+        push_at(by_name, nm, i)
+        by_file[n.path .. <span class="syn-string">&quot;|&quot;</span> .. nm] = i
+      <span class="syn-keyword">end</span>
+    <span class="syn-keyword">end</span>
+  <span class="syn-keyword">end</span>
+  <span class="syn-keyword">return</span> {by_name = by_name, by_file = by_file}
+<span class="syn-keyword">end</span>
+
+<span class="syn-comment">-- Each node&#39;s edges, the nodes its words resolve to (never itself).</span>
+<span class="syn-keyword">function</span> <span class="syn-name">resolve_edges</span>(nodes, index)
+  <span class="syn-keyword">local</span> edges = {}
+  <span class="syn-keyword">local</span> i = <span class="syn-number">0</span>
+  <span class="syn-keyword">for</span> n <span class="syn-keyword">in</span> nodes <span class="syn-keyword">do</span>
+    i = i + <span class="syn-number">1</span>
+    <span class="syn-keyword">local</span> out = {}
+    <span class="syn-keyword">for</span> w <span class="syn-keyword">in</span> n.words <span class="syn-keyword">do</span>
+      <span class="syn-keyword">local</span> own = n.path .. <span class="syn-string">&quot;|&quot;</span> .. w
+      <span class="syn-keyword">if</span> has_key(index.by_file, own) <span class="syn-keyword">then</span>
+        <span class="syn-keyword">if</span> index.by_file[own] ~= i <span class="syn-keyword">then</span> push(out, index.by_file[own]) <span class="syn-keyword">end</span>
+      <span class="syn-keyword">else</span>
+        <span class="syn-keyword">for</span> t <span class="syn-keyword">in</span> get(index.by_name, w, {}) <span class="syn-keyword">do</span>
+          <span class="syn-keyword">if</span> t ~= i <span class="syn-keyword">then</span> push(out, t) <span class="syn-keyword">end</span>
+        <span class="syn-keyword">end</span>
+      <span class="syn-keyword">end</span>
+    <span class="syn-keyword">end</span>
+    push(edges, out)
+  <span class="syn-keyword">end</span>
+  <span class="syn-keyword">return</span> edges
+<span class="syn-keyword">end</span>
+
+<span class="syn-comment">-- The nodes reached from `roots`, as a map of index strings.</span>
+<span class="syn-keyword">function</span> <span class="syn-name">reach</span>(edges, roots)
+  <span class="syn-keyword">local</span> seen = {}
+  <span class="syn-keyword">local</span> work = {}
+  <span class="syn-keyword">for</span> r <span class="syn-keyword">in</span> roots <span class="syn-keyword">do</span>
+    <span class="syn-keyword">if</span> <span class="syn-keyword">not</span> has_key(seen, <span class="syn-string">&quot;&quot;</span> .. r) <span class="syn-keyword">then</span>
+      seen[<span class="syn-string">&quot;&quot;</span> .. r] = <span class="syn-keyword">true</span>
+      push(work, r)
+    <span class="syn-keyword">end</span>
+  <span class="syn-keyword">end</span>
+  <span class="syn-keyword">local</span> next = <span class="syn-number">1</span>
+  <span class="syn-keyword">while</span> next &lt;= #work <span class="syn-keyword">do</span>
+    <span class="syn-keyword">local</span> at = work[next]
+    next = next + <span class="syn-number">1</span>
+    <span class="syn-keyword">for</span> t <span class="syn-keyword">in</span> edges[at] <span class="syn-keyword">do</span>
+      <span class="syn-keyword">if</span> <span class="syn-keyword">not</span> has_key(seen, <span class="syn-string">&quot;&quot;</span> .. t) <span class="syn-keyword">then</span>
+        seen[<span class="syn-string">&quot;&quot;</span> .. t] = <span class="syn-keyword">true</span>
+        push(work, t)
+      <span class="syn-keyword">end</span>
+    <span class="syn-keyword">end</span>
+  <span class="syn-keyword">end</span>
+  <span class="syn-keyword">return</span> seen
+<span class="syn-keyword">end</span>
+
+<span class="syn-comment">-- The findings over `dir`, sorted by place: `{path, line, rule, name, text}`.</span>
+<span class="syn-keyword">function</span> <span class="syn-name">find_dead</span>(dir)
+  <span class="syn-keyword">local</span> nodes = read_nodes(dir)
+  <span class="syn-keyword">local</span> index = index_nodes(nodes)
+  <span class="syn-keyword">local</span> edges = resolve_edges(nodes, index)
+  <span class="syn-keyword">local</span> prod_roots = {}
+  <span class="syn-keyword">local</span> test_roots = {}
+  <span class="syn-keyword">local</span> i = <span class="syn-number">0</span>
+  <span class="syn-keyword">for</span> n <span class="syn-keyword">in</span> nodes <span class="syn-keyword">do</span>
+    i = i + <span class="syn-number">1</span>
+    <span class="syn-keyword">if</span> n.kind == <span class="syn-string">&quot;function&quot;</span> <span class="syn-keyword">and</span> n.name == <span class="syn-string">&quot;main&quot;</span> <span class="syn-keyword">then</span>
+      <span class="syn-keyword">if</span> n.test <span class="syn-keyword">then</span> push(test_roots, i) <span class="syn-keyword">else</span> push(prod_roots, i) <span class="syn-keyword">end</span>
+    <span class="syn-keyword">elseif</span> n.kind == <span class="syn-string">&quot;test&quot;</span> <span class="syn-keyword">or</span> n.kind == <span class="syn-string">&quot;test_list&quot;</span> <span class="syn-keyword">then</span>
+      push(test_roots, i)
+    <span class="syn-keyword">end</span>
+  <span class="syn-keyword">end</span>
+  <span class="syn-keyword">local</span> prod = reach(edges, prod_roots)
+  <span class="syn-keyword">local</span> tested = reach(edges, test_roots)
+  <span class="syn-comment">-- Who names each node, for a dead one&#39;s line.</span>
+  <span class="syn-keyword">local</span> users = {}
+  i = <span class="syn-number">0</span>
+  <span class="syn-keyword">for</span> out <span class="syn-keyword">in</span> edges <span class="syn-keyword">do</span>
+    i = i + <span class="syn-number">1</span>
+    <span class="syn-keyword">for</span> t <span class="syn-keyword">in</span> out <span class="syn-keyword">do</span> push_at(users, <span class="syn-string">&quot;&quot;</span> .. t, i) <span class="syn-keyword">end</span>
+  <span class="syn-keyword">end</span>
+  <span class="syn-keyword">local</span> found = {}
+  i = <span class="syn-number">0</span>
+  <span class="syn-keyword">for</span> n <span class="syn-keyword">in</span> nodes <span class="syn-keyword">do</span>
+    i = i + <span class="syn-number">1</span>
+    <span class="syn-keyword">local</span> key = <span class="syn-string">&quot;&quot;</span> .. i
+    <span class="syn-keyword">if</span> (n.kind == <span class="syn-string">&quot;function&quot;</span> <span class="syn-keyword">and</span> n.name ~= <span class="syn-string">&quot;main&quot;</span>) <span class="syn-keyword">or</span> n.kind == <span class="syn-string">&quot;generator&quot;</span> <span class="syn-keyword">then</span>
+      <span class="syn-keyword">local</span> rule = <span class="syn-string">&quot;&quot;</span>
+      <span class="syn-keyword">if</span> has_key(prod, key) <span class="syn-keyword">then</span>
+        rule = <span class="syn-string">&quot;&quot;</span>
+      <span class="syn-keyword">elseif</span> has_key(tested, key) <span class="syn-keyword">then</span>
+        <span class="syn-keyword">if</span> <span class="syn-keyword">not</span> n.test <span class="syn-keyword">then</span> rule = <span class="syn-string">&quot;test_only&quot;</span> <span class="syn-keyword">end</span>
+      <span class="syn-keyword">else</span>
+        rule = <span class="syn-string">&quot;dead&quot;</span>
+      <span class="syn-keyword">end</span>
+      <span class="syn-keyword">if</span> rule ~= <span class="syn-string">&quot;&quot;</span> <span class="syn-keyword">then</span>
+        <span class="syn-keyword">local</span> text = n.name
+        <span class="syn-keyword">if</span> n.kind == <span class="syn-string">&quot;generator&quot;</span> <span class="syn-keyword">then</span> text = text .. <span class="syn-string">&quot; (a &quot;</span> .. n.macro .. <span class="syn-string">&quot; generator)&quot;</span> <span class="syn-keyword">end</span>
+        <span class="syn-keyword">if</span> rule == <span class="syn-string">&quot;dead&quot;</span> <span class="syn-keyword">and</span> has_key(users, key) <span class="syn-keyword">then</span>
+          <span class="syn-keyword">local</span> who = {}
+          <span class="syn-keyword">for</span> u <span class="syn-keyword">in</span> users[key] <span class="syn-keyword">do</span> push(who, nodes[u].name) <span class="syn-keyword">end</span>
+          text = text .. <span class="syn-string">&quot; (named only by unreached code: &quot;</span> .. join(unique(sort(who)), <span class="syn-string">&quot;, &quot;</span>) .. <span class="syn-string">&quot;)&quot;</span>
+        <span class="syn-keyword">end</span>
+        push(found, {path = n.path, line = n.line, rule = rule, name = n.name, text = text})
+      <span class="syn-keyword">end</span>
+    <span class="syn-keyword">end</span>
+  <span class="syn-keyword">end</span>
+  sort(found, {<span class="syn-string">&quot;path&quot;</span>, <span class="syn-string">&quot;line&quot;</span>})
+  <span class="syn-keyword">return</span> {found = found, nodes = #nodes}
+<span class="syn-keyword">end</span>
+
+<span class="syn-comment">-- The findings&#39; lines.</span>
+<span class="syn-keyword">function</span> <span class="syn-name">finding_lines</span>(found)
+  <span class="syn-keyword">local</span> out = {}
+  <span class="syn-keyword">for</span> f <span class="syn-keyword">in</span> found <span class="syn-keyword">do</span> push(out, f.path .. <span class="syn-string">&quot;:&quot;</span> .. f.line .. <span class="syn-string">&quot;: &quot;</span> .. f.rule .. <span class="syn-string">&quot;: &quot;</span> .. f.text) <span class="syn-keyword">end</span>
+  <span class="syn-keyword">return</span> out
+<span class="syn-keyword">end</span>
+
+<span class="syn-keyword">function</span> <span class="syn-name">self_test</span>()
+  <span class="syn-keyword">local</span> got = finding_lines(find_dead(PLANTS).found)
+  <span class="syn-keyword">local</span> P = PLANTS .. <span class="syn-string">&quot;/&quot;</span>
+  <span class="syn-keyword">local</span> want = {
+    P .. <span class="syn-string">&quot;lib.c:6: dead: Chars (a VEC_DEFINE generator)&quot;</span>,
+    P .. <span class="syn-string">&quot;lib.c:18: dead: lib_proto_only&quot;</span>,
+    P .. <span class="syn-string">&quot;lib.c:43: dead: lib_in_unused_macro (named only by unreached code: LIB_UNUSED_CALL)&quot;</span>,
+    P .. <span class="syn-string">&quot;lib.c:50: dead: lib_recursive&quot;</span>,
+    P .. <span class="syn-string">&quot;lib.c:56: dead: lib_by_dead (named only by unreached code: lib_recursive)&quot;</span>,
+    P .. <span class="syn-string">&quot;lib.c:61: dead: lib_in_comment&quot;</span>,
+    P .. <span class="syn-string">&quot;lib.c:66: dead: lib_member&quot;</span>,
+    P .. <span class="syn-string">&quot;lib.c:71: test_only: lib_tested&quot;</span>,
+    P .. <span class="syn-string">&quot;lib.h:11: dead: lib_header_dead&quot;</span>,
+    P .. <span class="syn-string">&quot;lib.h:14: test_only: lib_header_tested&quot;</span>,
+    P .. <span class="syn-string">&quot;test.h:14: dead: test_unused_kit&quot;</span>,
+    P .. <span class="syn-string">&quot;tests/test_lib.c:10: dead: test_lib_stray&quot;</span>,
+    P .. <span class="syn-string">&quot;tests/test_lib.c:16: dead: pick&quot;</span>,
+  }
+  <span class="syn-keyword">local</span> g = join(got, <span class="syn-string">&quot;\n&quot;</span>)
+  <span class="syn-keyword">local</span> w = join(want, <span class="syn-string">&quot;\n&quot;</span>)
+  <span class="syn-keyword">if</span> g ~= w <span class="syn-keyword">then</span> fail(<span class="syn-string">&quot;find_dead_code self-test: the plants&#39; findings are\n&quot;</span> .. g .. <span class="syn-string">&quot;\nthey should be\n&quot;</span> .. w) <span class="syn-keyword">end</span>
+  print(<span class="syn-string">&quot;PASS find_dead_code self-test: &quot;</span> .. #want .. <span class="syn-string">&quot; findings over the plants, exactly, and each near miss left alone&quot;</span>)
+  <span class="syn-keyword">return</span> <span class="syn-keyword">nil</span>
+<span class="syn-keyword">end</span>
+
+<span class="syn-keyword">if</span> arg(<span class="syn-string">&quot;self_test&quot;</span>, <span class="syn-number">0</span>) == <span class="syn-number">1</span> <span class="syn-keyword">then</span>
+  self_test()
+<span class="syn-keyword">else</span>
+  <span class="syn-keyword">local</span> dir = arg(<span class="syn-string">&quot;dir&quot;</span>, <span class="syn-string">&quot;c&quot;</span>)
+  <span class="syn-keyword">local</span> r = find_dead(dir)
+  <span class="syn-keyword">for</span> l <span class="syn-keyword">in</span> finding_lines(r.found) <span class="syn-keyword">do</span> print(l) <span class="syn-keyword">end</span>
+  <span class="syn-keyword">local</span> rules = {}
+  <span class="syn-keyword">local</span> folders = {}
+  <span class="syn-keyword">for</span> f <span class="syn-keyword">in</span> r.found <span class="syn-keyword">do</span>
+    incr(rules, f.rule)
+    incr(folders, dirname(f.path) .. <span class="syn-string">&quot; &quot;</span> .. f.rule)
+  <span class="syn-keyword">end</span>
+  <span class="syn-keyword">local</span> parts = {}
+  <span class="syn-keyword">for</span> k <span class="syn-keyword">in</span> sort(keys(rules)) <span class="syn-keyword">do</span> push(parts, rules[k] .. <span class="syn-string">&quot; &quot;</span> .. k) <span class="syn-keyword">end</span>
+  print(<span class="syn-string">&quot;find_dead_code: &quot;</span> .. r.nodes .. <span class="syn-string">&quot; items under &quot;</span> .. dir .. <span class="syn-string">&quot;; &quot;</span> .. #r.found .. <span class="syn-string">&quot; findings: &quot;</span> .. join(parts, <span class="syn-string">&quot;, &quot;</span>))
+  <span class="syn-keyword">for</span> k <span class="syn-keyword">in</span> sort(keys(folders)) <span class="syn-keyword">do</span> print(<span class="syn-string">&quot;  &quot;</span> .. k .. <span class="syn-string">&quot;: &quot;</span> .. folders[k]) <span class="syn-keyword">end</span>
+<span class="syn-keyword">end</span>
+</code></pre>
+<nav class="steps"><a href="#find_clones">← previous</a> · <a href="#contents">contents</a> · <a href="#count_roc">next →</a></nav>
 </section>
 </div>
 <div class="group">
 <h2 class="part" id="section-reports-on-roc-projects"><a href="#section-reports-on-roc-projects">Reports on Roc projects</a></h2>
 <p class="part-intro">A report to read rather than a gate to pass: what a tree of Roc projects holds, counted.</p>
 <section class="example" id="count_roc">
-<nav class="steps"><a href="#find_clones">← previous</a> · <a href="#contents">contents</a> · <a href="#list_long_files">next →</a></nav>
+<nav class="steps"><a href="#find_dead_code">← previous</a> · <a href="#contents">contents</a> · <a href="#list_long_files">next →</a></nav>
 <h3><a href="#count_roc">count_roc</a></h3>
 <p>A test-density report for a tree of Roc projects: each folder's modules and lines, its test modules and lines, and its expects, where <code>roc loc</code> gives one app's size.</p>
 <p class="facts">Its effects: <code>Shale.arg!</code>, <code>Shale.exists!</code>, <code>Shale.fail!</code>, <code>Shale.glob!</code>, <code>Shale.print!</code>, <code>Shale.read!</code>.<br>Roc: 240 lines in 1 file. Shale original: 55 lines.</p>
@@ -14502,7 +15247,7 @@ use(<span class="syn-string">&quot;./items.shale&quot;</span>)
 <span class="syn-keyword">end</span>
 print(table(rows, {<span class="syn-string">&quot;place&quot;</span>, <span class="syn-string">&quot;modules&quot;</span>, <span class="syn-string">&quot;lines&quot;</span>, <span class="syn-string">&quot;test_modules&quot;</span>, <span class="syn-string">&quot;test_lines&quot;</span>, <span class="syn-string">&quot;expects&quot;</span>}))
 </code></pre>
-<nav class="steps"><a href="#find_clones">← previous</a> · <a href="#contents">contents</a> · <a href="#list_long_files">next →</a></nav>
+<nav class="steps"><a href="#find_dead_code">← previous</a> · <a href="#contents">contents</a> · <a href="#list_long_files">next →</a></nav>
 </section>
 </div>
 <div class="group">
@@ -16237,7 +16982,7 @@ print(#paths .. <span class="syn-string">&quot; files: &quot;</span> .. all.code
 <h2 class="part" id="c-splitter"><a href="#c-splitter">The C splitter</a></h2>
 <p class="part-intro">The package the programs over Shale's C share, imported as <code>items.X</code>: it blanks strings and comments, then splits a file into its top-level items, each with its kind, name, lines, head and body. Each example that imports it names the modules it uses.</p>
 <section class="example">
-<p class="file"><a href="https://github.com/showell/shale/blob/0cd5078920dfe50c34107bd501374789847b57a5/cookbook/c/items/Guard.roc"><code>cookbook/c/items/Guard.roc</code></a>, 81 lines</p>
+<p class="file"><a href="https://github.com/showell/shale/blob/616dab127f39ff93e5dbaa34e1c749c6b96b8918/cookbook/c/items/Guard.roc"><code>cookbook/c/items/Guard.roc</code></a>, 81 lines</p>
 <pre><code><span class="syn-comment">## A header&#39;s guard, framed: Split.items gives a header&#39;s items to</span>
 <span class="syn-comment">## Guard.framed, which makes its `#ifndef` and `#define` one item and its</span>
 <span class="syn-comment">## `#endif` another.</span>
@@ -16320,7 +17065,7 @@ print(#paths .. <span class="syn-string">&quot; files: &quot;</span> .. all.code
 <span class="syn-name">unaccounted</span> = |path, number, why, shown|
 	<span class="syn-string">&quot;</span>${path}<span class="syn-string">:</span>${number.to_str()}<span class="syn-string">: </span>${why}<span class="syn-string">: </span>${shown}<span class="syn-string">&quot;</span>
 </code></pre>
-<p class="file"><a href="https://github.com/showell/shale/blob/0cd5078920dfe50c34107bd501374789847b57a5/cookbook/c/items/Head.roc"><code>cookbook/c/items/Head.roc</code></a>, 365 lines</p>
+<p class="file"><a href="https://github.com/showell/shale/blob/616dab127f39ff93e5dbaa34e1c749c6b96b8918/cookbook/c/items/Head.roc"><code>cookbook/c/items/Head.roc</code></a>, 365 lines</p>
 <pre><code><span class="syn-comment">## The readers of an item&#39;s opening line or head, each over masked bytes</span>
 <span class="syn-comment">## (Mask.masked), each the regular expression of cookbook/c/items.shale,</span>
 <span class="syn-comment">## the Shale original, done by hand: the one match a backtracking search</span>
@@ -16687,7 +17432,7 @@ print(#paths .. <span class="syn-string">&quot; files: &quot;</span> .. all.code
 	<span class="syn-type">Err</span>(<span class="syn-type">NoName</span>)
 }
 </code></pre>
-<p class="file"><a href="https://github.com/showell/shale/blob/0cd5078920dfe50c34107bd501374789847b57a5/cookbook/c/items/Item.roc"><code>cookbook/c/items/Item.roc</code></a>, 112 lines</p>
+<p class="file"><a href="https://github.com/showell/shale/blob/616dab127f39ff93e5dbaa34e1c749c6b96b8918/cookbook/c/items/Item.roc"><code>cookbook/c/items/Item.roc</code></a>, 112 lines</p>
 <pre><code><span class="syn-comment">## A top-level item of a file of Shale&#39;s C, as Split.items gives it: its</span>
 <span class="syn-comment">## kind, the name it declares, and its lines. Every field is set, so none is</span>
 <span class="syn-comment">## missing: a line field is 0 and a text field &quot;&quot; where the item has none.</span>
@@ -16801,7 +17546,7 @@ print(#paths .. <span class="syn-string">&quot; files: &quot;</span> .. all.code
 		}
 }
 </code></pre>
-<p class="file"><a href="https://github.com/showell/shale/blob/0cd5078920dfe50c34107bd501374789847b57a5/cookbook/c/items/Mask.roc"><code>cookbook/c/items/Mask.roc</code></a>, 229 lines</p>
+<p class="file"><a href="https://github.com/showell/shale/blob/616dab127f39ff93e5dbaa34e1c749c6b96b8918/cookbook/c/items/Mask.roc"><code>cookbook/c/items/Mask.roc</code></a>, 229 lines</p>
 <pre><code><span class="syn-comment">## The masker the splitter reads Shale&#39;s C with, and the byte classes it</span>
 <span class="syn-comment">## reads by. A line is its bytes, as Shale&#39;s strings are, so a column is a</span>
 <span class="syn-comment">## byte&#39;s place. The classes are the regular expressions&#39; and the builtins&#39;</span>
@@ -17032,7 +17777,32 @@ print(#paths .. <span class="syn-string">&quot; files: &quot;</span> .. all.code
 <span class="syn-name">blanked</span> = |bytes, { start, end }|
 	bytes.take_first(start).concat(<span class="syn-type">List</span>.repeat(<span class="syn-string">&#39; &#39;</span>, end - start)).concat(bytes.drop_first(end))
 </code></pre>
-<p class="file"><a href="https://github.com/showell/shale/blob/0cd5078920dfe50c34107bd501374789847b57a5/cookbook/c/items/Split.roc"><code>cookbook/c/items/Split.roc</code></a>, 440 lines</p>
+<p class="file"><a href="https://github.com/showell/shale/blob/616dab127f39ff93e5dbaa34e1c749c6b96b8918/cookbook/c/items/Paths.roc"><code>cookbook/c/items/Paths.roc</code></a>, 23 lines</p>
+<pre><code><span class="syn-comment">## How the C recipes read a file&#39;s path below the folder they walk: whether</span>
+<span class="syn-comment">## it is the tests&#39;, and whether it is under a folder named `out`, the</span>
+<span class="syn-comment">## build&#39;s output, which no recipe reads.</span>
+<span class="syn-type">Paths</span> := [].{
+
+	<span class="syn-comment">## Whether `path`, below the folder, is the tests&#39;: in a `tests` folder,</span>
+	<span class="syn-comment">## or a file whose name starts with `test` (c/foundation/test.h, the</span>
+	<span class="syn-comment">## tests&#39; runner).</span>
+	<span class="syn-name">is_test_path</span> : <span class="syn-type">Str</span>, <span class="syn-type">Str</span> -&gt; <span class="syn-type">Bool</span>
+	<span class="syn-name">is_test_path</span> = |folder, path| {
+		below = <span class="syn-type">Str</span>.from_utf8_lossy(path.to_utf8().drop_first(folder.count_utf8_bytes() + <span class="syn-number">1</span>))
+		file_name = <span class="syn-keyword">match</span> below.split_on(<span class="syn-string">&quot;/&quot;</span>).last() {
+			<span class="syn-type">Ok</span>(last) =&gt; last
+			<span class="syn-type">Err</span>(_) =&gt; below
+		}
+		below.starts_with(<span class="syn-string">&quot;tests/&quot;</span>) <span class="syn-keyword">or</span> below.contains(<span class="syn-string">&quot;/tests/&quot;</span>) <span class="syn-keyword">or</span> file_name.starts_with(<span class="syn-string">&quot;test&quot;</span>)
+	}
+
+	<span class="syn-comment">## Whether a folder below `folder` on the way to `path` is named `out`.</span>
+	<span class="syn-name">is_in_out_folder</span> : <span class="syn-type">Str</span>, <span class="syn-type">Str</span> -&gt; <span class="syn-type">Bool</span>
+	<span class="syn-name">is_in_out_folder</span> = |folder, path|
+		path.drop_prefix(<span class="syn-string">&quot;</span>${folder}<span class="syn-string">/&quot;</span>).split_on(<span class="syn-string">&quot;/&quot;</span>).drop_last(<span class="syn-number">1</span>).contains(<span class="syn-string">&quot;out&quot;</span>)
+}
+</code></pre>
+<p class="file"><a href="https://github.com/showell/shale/blob/616dab127f39ff93e5dbaa34e1c749c6b96b8918/cookbook/c/items/Split.roc"><code>cookbook/c/items/Split.roc</code></a>, 441 lines</p>
 <pre><code><span class="syn-comment">## The splitter: a file of Shale&#39;s C split into its top-level items, in</span>
 <span class="syn-comment">## order. There is no C parser on the box, and none is wanted:</span>
 <span class="syn-comment">## c/check_discipline.shale holds the C to a shape a line reader can trust,</span>
@@ -17117,6 +17887,22 @@ print(#paths .. <span class="syn-string">&quot; files: &quot;</span> .. all.code
 			<span class="syn-type">Ok</span>($items)
 		}
 	}
+
+	<span class="syn-comment">## The masked text of the file&#39;s lines from `first` to `last`, counted from</span>
+	<span class="syn-comment">## 1, joined by newlines: Shale&#39;s `c_masked_text`.</span>
+	<span class="syn-name">masked_text</span> : <span class="syn-type">List</span>(<span class="syn-type">List</span>(<span class="syn-type">U8</span>)), { first : <span class="syn-type">U64</span>, last : <span class="syn-type">U64</span> } -&gt; <span class="syn-type">List</span>(<span class="syn-type">U8</span>)
+	<span class="syn-name">masked_text</span> = |file_lines, { first, last }| {
+		<span class="syn-keyword">var</span> $text = []
+		<span class="syn-keyword">var</span> $at = first
+		<span class="syn-keyword">while</span> $at &lt;= last {
+			<span class="syn-keyword">if</span> $at &gt; first {
+				$text = $text.append(<span class="syn-string">&#39;\n&#39;</span>)
+			}
+			$text = $text.concat(<span class="syn-type">Mask</span>.masked(file_lines.get($at - <span class="syn-number">1</span>) ?? []))
+			$at = $at + <span class="syn-number">1</span>
+		}
+		$text
+	}
 }
 
 <span class="syn-comment">## A file being split: its path, for the errors, and its lines.</span>
@@ -17144,7 +17930,7 @@ print(#paths .. <span class="syn-string">&quot; files: &quot;</span> .. all.code
 	has_body = item.body_first != <span class="syn-number">0</span>
 	is_code = item.kind == <span class="syn-type">Function</span> <span class="syn-keyword">or</span> item.kind == <span class="syn-type">Test</span> <span class="syn-keyword">or</span> item.kind == <span class="syn-type">TestList</span>
 	<span class="syn-keyword">if</span> wanted <span class="syn-keyword">and</span> has_body <span class="syn-keyword">and</span> is_code {
-		text = masked_text(file, { first: item.body_first, last: item.body_last })
+		text = <span class="syn-type">Split</span>.masked_text(file.lines, { first: item.body_first, last: item.body_last })
 		body =
 			<span class="syn-keyword">if</span> item.body_first == item.sig_last <span class="syn-keyword">and</span> item.kind != <span class="syn-type">TestList</span> {
 				<span class="syn-keyword">match</span> <span class="syn-type">Mask</span>.byte_from(text, <span class="syn-string">&#39;{&#39;</span>, <span class="syn-number">0</span>) {
@@ -17158,21 +17944,6 @@ print(#paths .. <span class="syn-string">&quot; files: &quot;</span> .. all.code
 	} <span class="syn-keyword">else</span> {
 		item
 	}
-}
-
-<span class="syn-comment">## The masked text of the lines from `first` to `last`, joined by newlines.</span>
-<span class="syn-name">masked_text</span> : <span class="syn-type">CFile</span>, { first : <span class="syn-type">U64</span>, last : <span class="syn-type">U64</span> } -&gt; <span class="syn-type">List</span>(<span class="syn-type">U8</span>)
-<span class="syn-name">masked_text</span> = |file, { first, last }| {
-	<span class="syn-keyword">var</span> $text = []
-	<span class="syn-keyword">var</span> $at = first
-	<span class="syn-keyword">while</span> $at &lt;= last {
-		<span class="syn-keyword">if</span> $at &gt; first {
-			$text = $text.append(<span class="syn-string">&#39;\n&#39;</span>)
-		}
-		$text = $text.concat(<span class="syn-type">Mask</span>.masked(line_at(file, $at)))
-		$at = $at + <span class="syn-number">1</span>
-	}
-	$text
 }
 
 <span class="syn-comment">## The line that closes the braced item opened at line `from`: the first</span>
@@ -17279,7 +18050,7 @@ print(#paths .. <span class="syn-string">&quot; files: &quot;</span> .. all.code
 <span class="syn-name">static_item</span> : <span class="syn-type">CFile</span>, <span class="syn-type">U64</span>, <span class="syn-type">Str</span> -&gt; <span class="syn-type">Try</span>(<span class="syn-type">Item</span>, <span class="syn-type">Str</span>)
 <span class="syn-name">static_item</span> = |file, at, storage| {
 	last = head_close(file, at)?
-	flat = spaces_made_one(masked_text(file, { first: at, last }))
+	flat = spaces_made_one(<span class="syn-type">Split</span>.masked_text(file.lines, { first: at, last }))
 	ending = last_code_byte(line_at(file, last))
 	<span class="syn-keyword">match</span> <span class="syn-type">Head</span>.function_head(flat) {
 		<span class="syn-type">Ok</span>({ return_type, name }) =&gt; {
@@ -17345,7 +18116,7 @@ print(#paths .. <span class="syn-string">&quot; files: &quot;</span> .. all.code
 		} <span class="syn-keyword">else</span> {
 			headed
 		}
-	text = masked_text(file, { first: at, last: braced.last })
+	text = <span class="syn-type">Split</span>.masked_text(file.lines, { first: at, last: braced.last })
 	declared =
 		<span class="syn-keyword">if</span> code.starts_with(<span class="syn-string">&quot;typedef&quot;</span>.to_utf8()) {
 			<span class="syn-keyword">match</span> (kind, <span class="syn-type">Head</span>.pointer_name(text, <span class="syn-type">WithoutConst</span>), <span class="syn-type">Head</span>.declared_name(text)) {
@@ -17393,7 +18164,7 @@ print(#paths .. <span class="syn-string">&quot; files: &quot;</span> .. all.code
 		<span class="syn-type">Ok</span>({ word, argument }) <span class="syn-keyword">if</span> word == <span class="syn-string">&quot;define&quot;</span> =&gt; {
 			defined = <span class="syn-type">Item</span>.new(<span class="syn-type">Macro</span>, argument, { first: at, last })
 			<span class="syn-keyword">if</span> last &gt; at {
-				makes = <span class="syn-type">Words</span>.suffixes(masked_text(file, { first: at, last }))
+				makes = <span class="syn-type">Words</span>.suffixes(<span class="syn-type">Split</span>.masked_text(file.lines, { first: at, last }))
 				<span class="syn-type">Ok</span>({ ..defined, body_first: at + <span class="syn-number">1</span>, body_last: last, makes })
 			} <span class="syn-keyword">else</span> {
 				<span class="syn-type">Ok</span>(defined)
@@ -17456,7 +18227,7 @@ print(#paths .. <span class="syn-string">&quot; files: &quot;</span> .. all.code
 <span class="syn-name">static_assert_item</span> : <span class="syn-type">CFile</span>, <span class="syn-type">U64</span> -&gt; <span class="syn-type">Try</span>(<span class="syn-type">Item</span>, <span class="syn-type">Str</span>)
 <span class="syn-name">static_assert_item</span> = |file, at| {
 	close = paren_close(file, at)?
-	names = <span class="syn-type">Words</span>.names(masked_text(file, { first: at, last: close }))
+	names = <span class="syn-type">Words</span>.names(<span class="syn-type">Split</span>.masked_text(file.lines, { first: at, last: close }))
 	name = names.find_first(|each| each != <span class="syn-string">&quot;_Static_assert&quot;</span> <span class="syn-keyword">and</span> each != <span class="syn-string">&quot;sizeof&quot;</span>) ?? <span class="syn-string">&quot;&quot;</span>
 	<span class="syn-type">Ok</span>(<span class="syn-type">Item</span>.new(<span class="syn-type">StaticAssert</span>, name, { first: at, last: close }))
 }
@@ -17474,7 +18245,7 @@ print(#paths .. <span class="syn-string">&quot; files: &quot;</span> .. all.code
 	}
 }
 </code></pre>
-<p class="file"><a href="https://github.com/showell/shale/blob/0cd5078920dfe50c34107bd501374789847b57a5/cookbook/c/items/Words.roc"><code>cookbook/c/items/Words.roc</code></a>, 292 lines</p>
+<p class="file"><a href="https://github.com/showell/shale/blob/616dab127f39ff93e5dbaa34e1c749c6b96b8918/cookbook/c/items/Words.roc"><code>cookbook/c/items/Words.roc</code></a>, 292 lines</p>
 <pre><code><span class="syn-comment">## The words of an item&#39;s masked text: its names, the names its body uses,</span>
 <span class="syn-comment">## an enum&#39;s constants and a generator macro&#39;s own functions, each the</span>
 <span class="syn-comment">## regular expression of cookbook/c/items.shale, the Shale original, done by</span>
@@ -17768,20 +18539,21 @@ print(#paths .. <span class="syn-string">&quot; files: &quot;</span> .. all.code
 	<span class="syn-type">Err</span>(<span class="syn-type">Missing</span>)
 }
 </code></pre>
-<p class="file"><a href="https://github.com/showell/shale/blob/0cd5078920dfe50c34107bd501374789847b57a5/cookbook/c/items/main.roc"><code>cookbook/c/items/main.roc</code></a>, 13 lines</p>
+<p class="file"><a href="https://github.com/showell/shale/blob/616dab127f39ff93e5dbaa34e1c749c6b96b8918/cookbook/c/items/main.roc"><code>cookbook/c/items/main.roc</code></a>, 14 lines</p>
 <pre><code><span class="syn-comment">## The splitter the recipes that read Shale&#39;s C share: a file of Shale&#39;s C</span>
 <span class="syn-comment">## split into its top-level items, from the dialect c/check_discipline.shale</span>
 <span class="syn-comment">## holds. A recipe names it by a relative path in its app&#39;s header (`items:</span>
 <span class="syn-comment">## &quot;../items/main.roc&quot;`, then `import items.Split`). It reaches no effect:</span>
 <span class="syn-comment">## a recipe reads the file and hands Split.items its text.</span>
 <span class="syn-comment">##</span>
-<span class="syn-comment">##   Split   the splitter, and Shale&#39;s `lines`</span>
+<span class="syn-comment">##   Split   the splitter, Shale&#39;s `lines` and an item&#39;s masked text</span>
 <span class="syn-comment">##   Guard   a header&#39;s guard, framed</span>
 <span class="syn-comment">##   Item    an item and its kinds</span>
 <span class="syn-comment">##   Mask    the masker, and the byte classes the readers read by</span>
 <span class="syn-comment">##   Head    the readers of an item&#39;s opening line or head</span>
 <span class="syn-comment">##   Words   the names in an item&#39;s text: its uses, an enum&#39;s constants</span>
-<span class="syn-keyword">package</span> [<span class="syn-type">Guard</span>, <span class="syn-type">Head</span>, <span class="syn-type">Item</span>, <span class="syn-type">Mask</span>, <span class="syn-type">Split</span>, <span class="syn-type">Words</span>] {}
+<span class="syn-comment">##   Paths   a file&#39;s path read: the tests&#39;, or under a folder named `out`</span>
+<span class="syn-keyword">package</span> [<span class="syn-type">Guard</span>, <span class="syn-type">Head</span>, <span class="syn-type">Item</span>, <span class="syn-type">Mask</span>, <span class="syn-type">Paths</span>, <span class="syn-type">Split</span>, <span class="syn-type">Words</span>] {}
 </code></pre>
 <nav class="steps"><a href="#contents">contents</a></nav>
 </section>
