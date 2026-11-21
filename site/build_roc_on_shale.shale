@@ -1,0 +1,336 @@
+-- This script writes the Roc on Shale page, site/web/roc-on-shale/index.html:
+-- recipes from Shale's cookbook ported to Roc on Shale's Roc platform, each
+-- one's Roc beside its Shale original, both colored by roc-syntax-color.
+-- The examples come from a list (LIST, its header says the format), and
+-- everything else on the page comes from the shale checkout's git history:
+--
+--   - an example's Roc is its app's root and the modules it imports bare,
+--     each read at the last commit that touched any of them, so the page
+--     moves only when the Roc does;
+--   - its Shale original is the one file named <name>.shale in the parent
+--     of the commit its line records, with the libraries beside it that it
+--     loads (`use("./x.shale")`) named and linked;
+--   - its effects are the `Shale.x!` calls its Roc makes.
+--
+-- Uncommitted changes in the shale checkout never reach the page. The
+-- coloring is tools/color_code, built here with the pinned Roc from the
+-- roc-syntax-color checkout beside this one, as the books import it.
+--
+--   cd <roc-apps checkout> && shale site/build_roc_on_shale.shale            # writes the page
+--   cd <roc-apps checkout> && shale site/build_roc_on_shale.shale check=1    # fails if the page is stale
+--
+-- `shale=` names the shale checkout (`repos:shale` unset), through a mount.
+-- Then site/build.sh copies the page into the dev channel.
+--
+-- budget: steps=200000000 arena_bytes=1000000000 output_bytes=200000
+
+const LIST = "site/roc_on_shale_examples.txt"
+const PAGE_DIR = "site/web/roc-on-shale"
+const PAGE = "site/web/roc-on-shale/index.html"
+const GITHUB = "https://github.com/showell/shale/blob/"
+const MARK = "<!-- color_code answer -->\n"
+const WANT_ROC = "roc-pin: roc-apps' pinned nightly"
+const WANT_TOOL = "color-code: tools/color_code, roc-apps' own coloring app, built by this run"
+
+const SHALE = arg("shale", "repos:shale")
+const CHECK = arg("check", "0") == "1"
+
+function escaped(s)
+  local t = join(split(s, "&"), "&amp;")
+  t = join(split(t, "<"), "&lt;")
+  t = join(split(t, ">"), "&gt;")
+  return join(split(t, "\""), "&quot;")
+end
+
+function git_out(argv)
+  local full = {"git"}
+  for a in argv do push(full, a) end
+  return trim(must(run(full, {cwd = SHALE, timeout_ms = 30000, whole = 8000000})).out)
+end
+
+function full_hash(rev)
+  return git_out({"rev-parse", "--verify", rev .. "^{commit}"})
+end
+
+-- Each line of the list: {name, roc, commit, description}.
+function read_list()
+  local out = {}
+  local n = 0
+  for l in lines(read(LIST)) do
+    n = n + 1
+    if trim(l) ~= "" and not starts_with(l, "#") then
+      local m = re_find(l, "^([^ \t]+)[ \t]+([^ \t]+)[ \t]+([^ \t]+)[ \t]+(.+)$")
+      if m == nil then fail("build_roc_on_shale: " .. LIST .. ":" .. n .. " is not `name roc commit description`") end
+      push(out, {name = m.groups[1], roc = m.groups[2], commit = m.groups[3], description = trim(m.groups[4])})
+    end
+  end
+  if #out == 0 then fail("build_roc_on_shale: " .. LIST .. " names no example") end
+  return out
+end
+
+-- The app's root and the modules it reaches by bare imports, root first,
+-- then each module as the files before it first import it, as HEAD has them.
+function roc_files(name, roc)
+  local root = roc
+  if not ends_with(roc, ".roc") then root = roc .. "/" .. name .. ".roc" end
+  local files = {root}
+  local seen = {}
+  seen[root] = true
+  local i = 1
+  while i <= #files do
+    local text = git_show(SHALE, "HEAD:" .. files[i])
+    for m in re_lines(text, "^import ([A-Z][A-Za-z0-9_]*)[ \t]*$") do
+      local module = dirname(files[i]) .. "/" .. trim(sub(m.text, 8)) .. ".roc"
+      if not has_key(seen, module) then
+        seen[module] = true
+        push(files, module)
+      end
+    end
+    i = i + 1
+  end
+  return files
+end
+
+-- The one path named <name>.shale in `rev`'s tree, the plants left out.
+function original_path(name, rev)
+  local found = {}
+  for p in lines(git_out({"ls-tree", "-r", "--name-only", rev})) do
+    if (p == name .. ".shale" or ends_with(p, "/" .. name .. ".shale")) and find(p, "/plants/") == nil then push(found, p) end
+  end
+  if #found ~= 1 then fail("build_roc_on_shale: " .. rev .. " holds " .. #found .. " files named " .. name .. ".shale, not one: " .. join(found, ", ")) end
+  return found[1]
+end
+
+function sorted_unique(list)
+  local u = unique(list)
+  sort(u)
+  return u
+end
+
+-- Everything the page shows of one example but its colored code.
+function example(e)
+  local files = roc_files(e.name, e.roc)
+  local roc_rev = full_hash(git_log(SHALE, {n = 1, paths = files})[1].hash)
+  local roc = {}
+  local effects = {}
+  local roc_lines = 0
+  for p in files do
+    local text = git_show(SHALE, roc_rev .. ":" .. p)
+    push(roc, {path = p, text = text, lines = #lines(text)})
+    roc_lines = roc_lines + #lines(text)
+    for m in re_find_all(text, "Shale\\.([a-z_]+!)") do push(effects, "Shale." .. m.group) end
+  end
+  local commit = full_hash(e.commit)
+  local parent = full_hash(commit .. "^")
+  local path = original_path(e.name, parent)
+  local text = git_show(SHALE, parent .. ":" .. path)
+  local libraries = {}
+  local library_lines = 0
+  for m in re_lines(text, "^use\\(\"(\\./|cookbook:)[^\"]+\"\\)") do
+    local u = re_find(m.text, "\"(\\./|cookbook:)([^\"]+)\"")
+    local lib = "cookbook/" .. u.groups[2]
+    if u.groups[1] == "./" then lib = dirname(path) .. "/" .. u.groups[2] end
+    local n = #lines(git_show(SHALE, parent .. ":" .. lib))
+    push(libraries, {path = lib, lines = n})
+    library_lines = library_lines + n
+  end
+  return {
+    name = e.name, description = e.description, roc = roc, roc_rev = roc_rev, roc_lines = roc_lines,
+    effects = sorted_unique(effects),
+    shale = {path = path, text = text, lines = #lines(text), rev = parent, libraries = libraries, library_lines = library_lines},
+  }
+end
+
+-- The colored HTML of each {language, text}, in order, from one run of
+-- tools/color_code.
+function colored(requests)
+  local roc = pinned_roc("build_roc_on_shale")
+  local work = fresh_dir("build:roc-apps", "color-code")
+  local tool = real(work) .. "/color_code"
+  must(run({roc, "build", "--opt=dev", "main.roc", "--output=" .. tool}, {cwd = "tools/color_code", timeout_ms = 300000, tail = 20, want = WANT_ROC}))
+  local argv = {tool}
+  for r in requests do
+    push(argv, r.language)
+    push(argv, r.text)
+  end
+  local r = must(run(argv, {timeout_ms = 60000, whole = 20000000, want = WANT_TOOL}))
+  remove_tree(work)
+  local pieces = split(r.out, MARK)
+  if pieces[1] ~= "" then fail("build_roc_on_shale: color_code printed something before its first answer") end
+  if #pieces - 1 ~= #requests then fail("build_roc_on_shale: " .. #requests .. " texts got " .. (#pieces - 1) .. " answers") end
+  return drop(pieces, 1)
+end
+
+-- A count as the site writes one, a comma between each three digits.
+function grouped(n)
+  local s = "" .. n
+  local out = ""
+  while #s > 3 do
+    out = "," .. sub(s, #s - 2, #s) .. out
+    s = sub(s, 1, #s - 3)
+  end
+  return s .. out
+end
+
+function plural(n, one, many)
+  if n == 1 then return "1 " .. one end
+  return grouped(n) .. " " .. many
+end
+
+-- What the facts line says of the libraries a Shale original loads.
+function shared_libraries(s)
+  if #s.libraries == 0 then return "" end
+  local which = "the library it loads"
+  if #s.libraries > 1 then which = "the " .. #s.libraries .. " libraries it loads" end
+  return ", plus " .. plural(s.library_lines, "line", "lines") .. " in " .. which .. ", which other recipes share"
+end
+
+function file_link(rev, path)
+  return "<a href=\"" .. GITHUB .. rev .. "/" .. path .. "\"><code>" .. escaped(path) .. "</code></a>"
+end
+
+function code_block(html)
+  return "<pre><code>" .. html .. "</code></pre>"
+end
+
+function section(x, html)
+  local out = {}
+  push(out, "<section class=\"example\" id=\"" .. x.name .. "\">")
+  push(out, "<h2><a href=\"#" .. x.name .. "\">" .. escaped(x.name) .. "</a></h2>")
+  push(out, "<p>" .. escaped(x.description) .. "</p>")
+  local effects = {}
+  for f in x.effects do push(effects, "<code>" .. escaped(f) .. "</code>") end
+  push(out, "<p class=\"facts\">Its effects: " .. join(effects, ", ") .. ".<br>Roc: " .. plural(x.roc_lines, "line", "lines") ..
+    " in " .. plural(#x.roc, "file", "files") .. ". Shale original: " .. plural(x.shale.lines, "line", "lines") .. shared_libraries(x.shale) .. ".</p>")
+  push(out, "<div class=\"pair\">")
+  push(out, "<div class=\"side\">")
+  push(out, "<h3>Roc</h3>")
+  for i = 1, #x.roc do
+    push(out, "<p class=\"file\">" .. file_link(x.roc_rev, x.roc[i].path) .. ", " .. plural(x.roc[i].lines, "line", "lines") .. "</p>")
+    push(out, code_block(html.roc[i]))
+  end
+  push(out, "</div>")
+  push(out, "<div class=\"side\">")
+  push(out, "<h3>Shale original</h3>")
+  push(out, "<p class=\"file\">" .. file_link(x.shale.rev, x.shale.path) .. ", " .. plural(x.shale.lines, "line", "lines") ..
+    ", at <code>" .. sub(x.shale.rev, 1, 8) .. "</code></p>")
+  if #x.shale.libraries > 0 then
+    local libs = {}
+    for l in x.shale.libraries do push(libs, file_link(x.shale.rev, l.path) .. " (" .. plural(l.lines, "line", "lines") .. ")") end
+    push(out, "<p class=\"file\">The libraries it loads: " .. join(libs, ", ") .. ".</p>")
+  end
+  push(out, code_block(html.shale))
+  push(out, "</div>")
+  push(out, "</div>")
+  push(out, "</section>")
+  return join(out, "\n")
+end
+
+const HEAD = [=[<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="description" content="Recipes from Shale's cookbook written in Roc, on a Roc platform whose host is Shale's own runtime, each beside the Shale script it replaced.">
+<title>Roc on Shale</title>
+<script src="../shared/home.js"></script>
+<!-- site/build_roc_on_shale.shale writes this page from the shale repository's
+     history; run it again rather than editing here. The code is colored by
+     roc-syntax-color (SyntaxColor.html). -->
+<style>
+  :root { color-scheme: light dark; --bg: #f7f5f0; --fg: #1d1d1b; --muted: #6b6860; --edge: #d9d4c8; --pane: #ffffff; --link: #1f5fa8; --accent: #5b3ea8; }
+  @media (prefers-color-scheme: dark) {
+    :root { --bg: #1b1b1a; --fg: #e8e6e0; --muted: #9a968c; --edge: #3a3934; --pane: #242422; --link: #8ab4f0; --accent: #a68cf0; }
+  }
+  body { margin: 0; background: var(--bg); color: var(--fg); font: 15px/1.55 system-ui, sans-serif; }
+  main { max-width: 1240px; margin: 0 auto; padding: 36px 16px 48px; }
+  @media (max-width: 640px) { main { padding: 24px 12px 36px; } }
+  .top { display: flex; flex-wrap: wrap; gap: 4px 14px; font-size: 14px; margin: 0 0 14px; }
+  h1 { font-size: 28px; margin: 0 0 6px; }
+  .lede { margin: 0 0 10px; max-width: 70ch; }
+  h2 { font-size: 21px; margin: 40px 0 4px; }
+  h2 a { color: inherit; text-decoration: none; }
+  h3 { font-size: 15px; margin: 10px 0 2px; color: var(--accent); }
+  p { max-width: 70ch; }
+  a { color: var(--link); }
+  code { font: 13px ui-monospace, Menlo, Consolas, monospace; }
+  .contents { padding-left: 20px; }
+  .facts { font-size: 14px; color: var(--muted); }
+  .file { font-size: 13px; color: var(--muted); margin: 8px 0 0; overflow-wrap: anywhere; }
+  .pair { display: grid; grid-template-columns: minmax(0, 1fr); gap: 0 20px; }
+  @media (min-width: 980px) { .pair { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); } }
+  pre { margin: 6px 0 8px; padding: 10px 12px; border-radius: 5px; background: #2b2733; color: #e8e6e0;
+        font: 12px/1.45 ui-monospace, Menlo, Consolas, monospace; overflow: auto; max-height: 36em; tab-size: 4; }
+  pre code { font: inherit; }
+  .syn-keyword { color: #c792ea; }
+  .syn-type { color: #82aaff; }
+  .syn-string { color: #c3e88d; }
+  .syn-number { color: #f78c6c; }
+  .syn-comment { color: #8a8494; font-style: italic; }
+  .syn-name { color: #ffcb6b; }
+  footer { margin-top: 36px; color: var(--muted); font-size: 13px; }
+</style>
+</head>
+<body>
+<main>
+<div class="top"><a href="../">Steve's Roc Work</a><a href="../syntax-color/">roc-syntax-color</a><a href="https://github.com/showell/shale">Shale on GitHub</a></div>
+<h1>Roc on Shale</h1>
+<p class="lede"><a href="https://github.com/showell/shale">Shale</a> is a small scripting language for the work an
+agent does on a machine. Every run has budgets for its steps, its reads and its output, reads only beneath the
+folder it is rooted at, and runs a program only when its rules allow it.</p>
+<p class="lede">Shale can also run a Roc app as a script. The app is built on a Roc platform whose host is Shale's
+own runtime, so each effect it makes (reading a file, listing a folder, running a program, printing) is a call into
+Shale, held to the same rules and budgets as a Shale script. Everything else is plain Roc.
+<a href="https://github.com/showell/shale/blob/master/roc_platform/README.md">The platform's README</a> explains how
+it works.</p>
+<p class="lede">A recipe that is kept for a long time is worth writing in Roc: its types catch mistakes before it
+runs, its tests sit beside its code, and its modules can be shared. A one-off stays in Shale. Each example below
+is a recipe from Shale's cookbook in Roc, beside the Shale script it was ported from, both colored by
+<a href="../syntax-color/">roc-syntax-color</a>.</p>
+]=]
+
+const FOOT = [=[
+<footer><a href="../">Steve's Roc Work</a> · <a href="../syntax-color/">roc-syntax-color</a> · <a href="https://github.com/showell/shale">Shale on GitHub</a></footer>
+</main>
+</body>
+</html>
+]=]
+
+function page()
+  local examples = {}
+  local requests = {}
+  for e in read_list() do
+    local x = example(e)
+    push(examples, x)
+    for f in x.roc do push(requests, {language = "roc", text = f.text}) end
+    push(requests, {language = "shale", text = x.shale.text})
+  end
+  local answers = colored(requests)
+  local out = {HEAD}
+  local contents = {}
+  for x in examples do push(contents, "<li><a href=\"#" .. x.name .. "\">" .. escaped(x.name) .. "</a></li>") end
+  push(out, "<ul class=\"contents\">\n" .. join(contents, "\n") .. "\n</ul>")
+  local at = 1
+  for x in examples do
+    local html = {roc = {}}
+    for f in x.roc do
+      push(html.roc, answers[at])
+      at = at + 1
+    end
+    html.shale = answers[at]
+    at = at + 1
+    push(out, section(x, html))
+  end
+  push(out, FOOT)
+  return join(out, "\n")
+end
+
+local text = page()
+if CHECK then
+  if not exists(PAGE) or read(PAGE) ~= text then fail("build_roc_on_shale: " .. PAGE .. " is stale: run shale site/build_roc_on_shale.shale") end
+  print("build_roc_on_shale: " .. PAGE .. " is up to date")
+else
+  mkdir(PAGE_DIR)
+  if exists(PAGE) then replace(PAGE, text) else create(PAGE, text) end
+  print("build_roc_on_shale: wrote " .. PAGE .. ", " .. #text .. " bytes")
+end
