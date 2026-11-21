@@ -11,6 +11,7 @@ import lib.Brush
 import lib.Point
 import lib.RgbColor
 import lib.Shapes
+import Figure
 import RobotBody
 import RobotHead
 
@@ -121,8 +122,9 @@ Robot :: [].{
 
 	## The robot with its hips `hips_up` metres higher than standing puts
 	## them, or lower, as a seat puts them: the body, the head and the arms
-	## go with the hips, the legs reach from them to the ground, and a wheel
-	## hangs from them.
+	## go with the hips, and the legs reach from them to the ground, knees
+	## apart when the hips are lowered onto a seat, or a wheel hangs from
+	## them.
 	perched_figure_shapes : {
 		build : Robot.Build,
 		pose : Robot.Pose,
@@ -144,6 +146,7 @@ Robot :: [].{
 		[
 			RobotHead.antenna_shapes(place, { body, head_top, glow: pose.eye_glow }),
 			match body.moves_on {
+				Legs if hips_up < 0.0 => sat_leg_shapes(place, { body, hip })
 				Legs => RobotBody.leg_shapes(place, { body, pose, hip })
 				Wheel => RobotBody.wheel_shapes(place, { body: standing, pose, hip })
 			},
@@ -160,6 +163,62 @@ Robot :: [].{
 			RobotBody.arm_shapes(place, { body, pose }),
 		].join()
 	}
+}
+
+# Legs sat on a seat, face on: the thighs come toward the eye, so the knees
+# show just under the hips and out to the sides, and the shins go straight
+# down from them to the feet.
+sat_leg_shapes : Figure.Place, { body : RobotBody.Proportions, hip : F64 } -> List(Shapes.Shape)
+sat_leg_shapes = |place, { body, hip }| {
+	spread = body.body_width * 0.28
+	trim = Flat(body.trim)
+	[-1.0, 1.0]
+		.map(
+			|side| {
+				knee = { across: side * (spread + 0.07), up: hip - 0.05 }
+				foot = { across: knee.across, up: 0.0 }
+				[
+					Figure.bar(
+						place,
+						{
+							from: { across: side * spread, up: hip },
+							to: knee,
+							width: body.limb_width * 1.3,
+							fill: trim,
+						},
+					),
+					Figure.bar(
+						place,
+						{
+							from: knee,
+							to: foot,
+							width: body.limb_width,
+							fill: trim,
+						},
+					),
+					Figure.dot(
+						place,
+						{
+							at: knee,
+							radius: body.limb_width * 0.8,
+							fill: Flat(body.paint),
+						},
+					),
+					Figure.box(
+						place,
+						{
+							left: foot.across - 0.06,
+							bottom: 0.0,
+							width: 0.12,
+							height: 0.045,
+							corner: 0.02,
+							fill: trim,
+						},
+					),
+				]
+			},
+		)
+		.join()
 }
 
 standing_still : Robot.Pose

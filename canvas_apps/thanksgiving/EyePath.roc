@@ -156,7 +156,7 @@ moves = [
 		goes: To({
 			..chairs_watch,
 			right: MusicalChairs.stand_spot.right + 4.0,
-			forward: MusicalChairs.stand_spot.forward - 1.2,
+			forward: MusicalChairs.stand_spot.forward - 0.6,
 		}),
 	},
 	# Whipped up and round to look up the aisle as the drum major leaps up
@@ -272,14 +272,14 @@ wide = {
 }
 
 # In the aisle beside the musical chairs, eye high to a seated robot,
-# looking across the lawn at them and turned a little more, so the near
-# float is off the screen's right edge.
+# looking across the lawn at them, the boombox at one edge of the screen
+# and the drum major's spot at the other.
 chairs_watch : EyePath.Spot
 chairs_watch = {
 	right: 1.0,
-	forward: -21.5,
+	forward: -23.7,
 	height: 1.1,
-	heading: -0.5 * F64.pi - 0.1,
+	heading: -0.5 * F64.pi - 0.075,
 }
 
 # Over where the army comes out, turned a little toward where the drum

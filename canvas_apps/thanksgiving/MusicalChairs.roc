@@ -147,10 +147,10 @@ MusicalChairs :: [].{
 	}
 }
 
-# The middle of the row, on the lawn in front of the near left float, off
-# the army's way up the aisle.
+# The middle of the row, on the lawn well in front of the near left float,
+# so the float is out of the shot, and off the army's way up the aisle.
 row : { right : F64, forward : F64 }
-row = { right: -4.6, forward: -21.5 }
+row = { right: -4.6, forward: -24.0 }
 
 seat_height : F64
 seat_height = 0.45

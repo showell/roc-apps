@@ -118,7 +118,7 @@ moves = [
 			start: Script.chairs_tick,
 			frames: 24,
 			curve: Whip,
-			to: { ..normal, focal: 540.0 },
+			to: { ..normal, focal: 500.0 },
 		},
 		# Snapped in and tipped as everyone freezes, and back out for the
 		# scramble.
@@ -132,7 +132,7 @@ moves = [
 			start: MusicalChairs.scramble_tick,
 			frames: 10,
 			curve: Smooth,
-			to: { ..normal, focal: 540.0 },
+			to: { ..normal, focal: 500.0 },
 		},
 		# In close for the drum major's idea, its sit and its wink.
 		{
