@@ -3,7 +3,7 @@
 <head>
 <!-- Every link opens in a new tab (Steve's preference). -->
 <base target="_blank">
-<meta name="description" content="Programs written in Roc: roc-chat, a live chat for humans and their agents, the Fast Track board game against computer players, the Dog Park herding game, the Seattle Delivery route planner, the Safari Ride screensaver and the little Roc book about it, the roc-markdown library, the roc-syntax-color package, a BASIC interpreter, six roc-ray examples, roc-screensaver, a Roc platform in Zig for screensavers that also run as web pages, and three animated shorts.">
+<meta name="description" content="Programs written in Roc: roc-chat, a live chat for humans and their agents, the Fast Track board game against computer players, the Dog Park herding game, the Seattle Delivery route planner, the Safari Ride screensaver and the little Roc book about it, the roc-markdown library, the roc-syntax-color package, a BASIC interpreter, two chess toys (the Knight's Tour and Eight Queens), six roc-ray examples, roc-screensaver, a Roc platform in Zig for screensavers that also run as web pages, and three animated shorts.">
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Steve's Roc Work</title>
@@ -42,6 +42,8 @@
   /* A board game's picture is its whole square board, on the page's white. */
   .shot.board { aspect-ratio: 1 / 1; object-fit: contain; background: #fff; }
   .shot.drawing { object-fit: contain; background: #ece6d8; }
+  /* A tall page's whole frame, on black. */
+  .shot.whole { object-fit: contain; }
   /* The BASIC REPL's screen, as the REPL draws it: its real output, as text. */
   .screen { display: block; margin: 0 0 12px; padding: 10px 12px; background: #000; color: #33ff66;
             border: 8px solid #1d4d2a; border-radius: 4px; font: 12px/1.35 ui-monospace, Menlo, Consolas, monospace;
@@ -265,6 +267,44 @@ N             SQR(N)        NEWTON
   <div class="stats">
     <div class="stat"><b>4,704</b><span>lines of Roc in 17 files: the map, the cost, the merges and the local search</span></div>
     <div class="stat"><b>22</b><span>expects, and the gold: twenty shifts held bit for bit</span></div>
+  </div>
+</section>
+
+<section class="feature" data-app="knights_tour">
+  <div>
+    <a href="knights_tour/" aria-hidden="true" tabindex="-1"><img class="shot whole" src="knights_tour/shot.png" alt="" loading="lazy"></a>
+    <h3><a href="knights_tour/">Knight's Tour</a></h3>
+    <p>A knight visits all 64 squares of a chessboard, landing on each exactly once. Click a square and a depth-first search starts there. Knights pile on, hit dead ends, and are pulled back off. Play, step, rewind and a speed slider let you watch the search think, in both directions. Steve's original was hand-written in CoffeeScript circa 2011. This Roc version is a port of a later one in Zig.</p>
+    <p>The search tries each knight's moves fewest onward moves first. It finishes from every start square: in 64 moves from b2, with no backtracking, and in 2,520,884 from g6.</p>
+    <p class="opening"><span class="tag">Roc at work</span>The search speaks only by adding moves to an event tape, one byte a move. The board you see is a cursor walking that tape, so a step back undoes one move, and rewinding falls out of the data. A red square, where a knight was placed and then pulled off, comes from the board alone, so it is right at any point on the tape.</p>
+    <pre class="roc"><span class="syn-type">Move</span> : [<span class="syn-type">Place</span>(<span class="syn-type">U8</span>), <span class="syn-type">Remove</span>(<span class="syn-type">U8</span>), <span class="syn-type">RemoveAndGiveUp</span>(<span class="syn-type">U8</span>), <span class="syn-type">GiveUp</span>]</pre>
+    <p class="caption">From <code>canvas_apps/chess_kit/Tape.roc</code>: everything a search can say.</p>
+    <p class="opening"><span class="tag nice">Roc plays nice with others</span>The search and the board are Roc, compiled to WebAssembly with the canvas apps' small Zig host. A little JavaScript keeps the clock, the keys and the pointer, and paints each frame the Roc answers.</p>
+    <div class="links"><a href="knights_tour/">Play</a><a href="chess/code/">The code, all on one page</a><a href="https://github.com/showell/roc-apps/tree/master/canvas_apps/knights_tour">The source</a></div>
+  </div>
+  <div class="stats">
+    <div class="stat"><b>179</b><span>lines of Roc in the machine, <code>Knight.roc</code></span></div>
+    <div class="stat"><b>1,415</b><span>lines of Roc in the chess kit it shares with Eight Queens</span></div>
+    <div class="stat"><b>64</b><span>start squares, each held to its frozen count of moves</span></div>
+  </div>
+</section>
+
+<section class="feature" data-app="eight_queens">
+  <div>
+    <a href="eight_queens/" aria-hidden="true" tabindex="-1"><img class="shot whole" src="eight_queens/shot.png" alt="" loading="lazy"></a>
+    <h3><a href="eight_queens/">Eight Queens</a></h3>
+    <p>Eight queens on a chessboard, none attacking another. Click a square to pin the first queen there. The search fills the other seven rows, one queen a row, and backs up when a row has no safe column. Every square is on some solution, so every pin finds one. Steve's original was hand-written in CoffeeScript circa 2011. This Roc version is a port of a later one in Zig, and runs on the same event tape as the Knight's Tour.</p>
+    <p class="opening"><span class="tag">Roc at work</span>The whole puzzle also fits in two lines of Roc. They work breadth-first: each step of the fold extends every board with every safe column, so nothing ever backtracks, unlike the search you watch. A column is safe when no queen shares it and no queen is as many columns away as it is rows. The two lines find all 92 solutions, the first <code>[0, 4, 7, 5, 2, 6, 1, 3]</code>.</p>
+    <pre class="roc"><span class="syn-name">r</span> = [<span class="syn-number">0</span>, <span class="syn-number">1</span>, <span class="syn-number">2</span>, <span class="syn-number">3</span>, <span class="syn-number">4</span>, <span class="syn-number">5</span>, <span class="syn-number">6</span>, <span class="syn-number">7</span>]
+<span class="syn-name">all</span> = r.fold([[]], |bs, _| bs.join_map(|b| r.keep_if(|c| b.map_with_index(|q, i| q != c <span class="syn-keyword">and</span> (<span class="syn-keyword">if</span> q &gt; c q - c <span class="syn-keyword">else</span> c - q) != b.len() - i).all(|ok| ok)).map(|c| b.append(c))))</pre>
+    <p class="caption">Steve's golf: every solution, one row at a time.</p>
+    <p class="opening"><span class="tag nice">Roc plays nice with others</span>The search and the board are Roc, compiled to WebAssembly with the canvas apps' small Zig host. A little JavaScript keeps the clock, the keys and the pointer, and paints each frame the Roc answers.</p>
+    <div class="links"><a href="eight_queens/">Play</a><a href="chess/code/">The code, all on one page</a><a href="https://github.com/showell/roc-apps/tree/master/canvas_apps/eight_queens">The source</a></div>
+  </div>
+  <div class="stats">
+    <div class="stat"><b>137</b><span>lines of Roc in the machine, <code>Queens.roc</code></span></div>
+    <div class="stat"><b>1,415</b><span>lines of Roc in the chess kit it shares with the Knight's Tour</span></div>
+    <div class="stat"><b>64</b><span>pins, each held to its frozen count of moves and a checked solution</span></div>
   </div>
 </section>
 
