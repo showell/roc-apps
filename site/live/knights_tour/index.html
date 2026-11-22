@@ -1,0 +1,27 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Knight's Tour</title>
+</head>
+<body>
+<!-- The Knight's Tour, one of the chess toys: a backtracking search you can
+     watch think, and scrub in both directions. The search, the tape and the
+     drawing are Roc; the page only keeps the clock, the keys and the
+     pointer. The links go to the toys' index and to their code. -->
+<div style="font:12px ui-monospace,Menlo,monospace;letter-spacing:0.4px;margin:6px 0">
+<a href="../chess/" style="color:#8a93a0">chess toys</a><span style="color:#4a4d55"> · </span><a href="../chess/code/" style="color:#8a93a0">under the hood</a>
+</div>
+<script>
+window.SHOW = {
+  wasm: 'knights_tour.wasm',
+  loading: 'Saddling the knight…',
+  readsPointer: true,
+  sharp: true,
+};
+</script>
+<script src="roc_glue.js"></script>
+<script src="shapes_canvas.js"></script>
+<script src="canvas_app_runner.js"></script>
+</body>
+</html>
