@@ -59,6 +59,12 @@ const STEPS = {
     {step = "build-speed", target = "screensavers/lanterns/web.roc", cwd = "screensavers/lanterns", args = {"build", "web.roc", "--target=wasm32", "--opt=speed"}, output = "lanterns.wasm", root = "screensavers/lanterns/web.roc", imports_in = "lib"},
     {step = "test", target = "screensavers/lanterns/main.roc", cwd = "", args = {"test", "screensavers/lanterns/main.roc"}, root = "screensavers/lanterns/main.roc", imports_in = "lib"},
   },
+  ["roc-apps"] = {
+    {step = "check", target = "canvas_apps/safari/web.roc", cwd = "canvas_apps/safari", args = {"check", "web.roc"}, root = "canvas_apps/safari/web.roc", imports_in = "canvas_apps/safari"},
+    {step = "build-dev", target = "canvas_apps/safari/web.roc", cwd = "canvas_apps/safari", args = {"build", "web.roc", "--target=wasm32", "--opt=dev"}, output = "safari.wasm", root = "canvas_apps/safari/web.roc", imports_in = "canvas_apps/safari"},
+    {step = "build-speed", target = "canvas_apps/safari/web.roc", cwd = "canvas_apps/safari", args = {"build", "web.roc", "--target=wasm32", "--opt=speed"}, output = "safari.wasm", root = "canvas_apps/safari/web.roc", imports_in = "canvas_apps/safari"},
+    {step = "test", target = "canvas_apps/safari/web.roc", cwd = "canvas_apps/safari", args = {"test", "web.roc"}, root = "canvas_apps/safari/web.roc", imports_in = "canvas_apps/safari"},
+  },
   ["roc-markdown"] = {
     {step = "check", target = "judge/answers.roc", cwd = "", args = {"check", "judge/answers.roc"}, root = "judge/answers.roc", imports_in = "package"},
     {step = "build-dev", target = "judge/answers.roc", cwd = "", args = {"build", "judge/answers.roc", "--target=x64musl", "--opt=dev"}, output = "answers-x64musl.a", root = "judge/answers.roc", imports_in = "package"},
