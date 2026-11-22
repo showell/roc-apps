@@ -64,19 +64,20 @@ this write? What does this request cost? Each fix adds one of those questions, a
 and as a check where it can't.</p>
 
 <h2>What we'd ask of Roc</h2>
-<p>These are recommendations from one project's experience. The first is the one this page keeps running into.</p>
+<p>This is a recommendation from one project's experience. There is one so far, and this page keeps running into
+it.</p>
 <h3>Linear types</h3>
 <p>A value of a <em>linear</em> type must be used exactly once: it can't be copied, and it can't be dropped. An
 <em>affine</em> type is looser: at most once, so it can't be copied but may be dropped. Roc has neither. It tracks at
 run time whether a value is unique, to update it in place, but the type checker doesn't. Roc already goes part of
-the way: a statement must evaluate to <code>{}</code>, so a function's result can't be dropped by accident. (At our pinned nightly, an opaque type
-whose backing type is <code>{}</code> slips past that rule; a token carrying a user's id doesn't.) But
+the way: a statement must evaluate to <code>{}</code>, so a function's result can't be dropped by accident. But
 <code>_ = revoke!(...)</code> drops it on purpose and compiles.</p>
 <p>Three places on this page would use linear types:</p>
 <ul>
 <li><strong>A revocation that must be ended.</strong> Each revoking write would return a linear value naming whose
-streams to end, and only <code>UserStreams.end_every_stream!</code> would take it. A sign-out that forgot the ending,
-on any path, early returns included, would fail to compile. That would replace the check's
+streams to end, and only <code>UserStreams.end_every_stream!</code> would take it. Only the "can't be dropped" half
+matters here, since ending streams twice does no harm. If each writer returned the value on failure too, a sign-out
+that forgot the ending, on any path, early returns included, would fail to compile. That would replace the check's
 <code>unended_streams</code> finding, and close two of its gaps: the check judges by line order, not by path, and it
 reads names, not values, where the value would carry the user. It would also keep the layers apart: the writer
 returns the value and the action ends the streams. It still wouldn't decide which writes revoke something; the
@@ -88,8 +89,8 @@ proof is opaque but can be copied, so code holding one could call the writer twi
 credential table names the one caller, but the type would make it impossible. It wouldn't replace the credential
 check, which also covers the writers that take no proof.</li>
 <li><strong>A claim spent by its join.</strong> A linear <code>HumanClaim.Unclaimed</code> would be spent by the join
-that redeems it, so one judgment couldn't serve two joins. Today the invite's own state, spent after one join, stops a
-second redemption at run time. Linearity alone wouldn't tie the claim to the invite's human, though. That is the
+that redeems it, so within one request one judgment couldn't serve two joins. A second request makes its own
+judgment, and there the spent invite on disk, and the claim it changes, stop a second join at run time. Linearity alone wouldn't tie the claim to the invite's human, though. That is the
 runtime id check in <code>HumanInvites.join</code>. To retire it, one loader would also have to hand back the claim
 and the invite as a single value.</li>
 </ul>
@@ -99,7 +100,7 @@ record, so any module could set its stream fields. Roc's opaque types would let 
 do.</p>
 <h3>What Roc already gives us</h3>
 <p>Current Roc already does a lot for a service like this. A pure function can't do I/O, and every effect is marked
-by <code>!</code> and <code>=&gt;</code>, so a reader can see where the effects are. An opaque type is the only way to
+by <code>=&gt;</code> and by the <code>!</code> the compiler asks for, so a reader can see where the effects are. Only an opaque type's own module can
 make its values, which is what <code>AccountProof</code> and <code>HumanClaim</code> stand on. <code>match</code> is
 exhaustive, which is what <code>RouteCost</code> depends on, and there are no nulls.</p>
 
