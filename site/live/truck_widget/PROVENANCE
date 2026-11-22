@@ -1,5 +1,5 @@
-published 2026-11-19T16:25:15Z
-roc nightly-2026-11-03-34bd006
+published 2026-11-22T21:13:20Z
+roc 0.1.0_RC1
 opt speed
-roc-apps d8f21bf0
-sha256 4984cb44109beb84  121845 bytes  truck_widget.wasm
+roc-apps b4c879af
+sha256 3d22cc704df46494  258548 bytes  truck_widget.wasm
