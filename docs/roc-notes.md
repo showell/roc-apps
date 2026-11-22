@@ -10,8 +10,9 @@ anyone writing or emitting Roc in this repository. How the Roc is *written*
   roc-lang/roc's own releases page is the old compiler. A debug build of the
   checkout is for working on the compiler: its checker is quadratic in a file's
   literals, where the nightly's is linear.
-- **The repository builds with one nightly, the one `roc-version` names**
-  (`nightly-2026-11-03-34bd006`), installed at `~/tools/roc-<pin>/roc`. The
+- **The repository builds with one Roc, the one `roc-version` names**
+  (`0.1.0_RC1`, roc-lang/roc's release candidate, built from 15177e9),
+  installed at `~/tools/roc-<pin>/roc`. The
   glue API that `glue/JsGlue.roc` follows changed at 09-22: provides entries
   carry `exported`, and functions are `RocErasedCallable`.
 - **Judge a build on the ✗ mark, never the exit code.** A warning exits

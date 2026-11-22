@@ -25,8 +25,11 @@ end
 
 const roc = pinned_roc("glue")
 const pin = trim(read("roc-version"))
+-- A nightly's pin ends in its commit. A release's names none, so the commit
+-- its binaries were built from is here (roc-lang/roc's tag 0.1.0_RC1).
+const RELEASE_COMMITS = {["0.1.0_RC1"] = "15177e9"}
 local parts = split(pin, "-")
-local commit = parts[#parts]
+local commit = get(RELEASE_COMMITS, pin, parts[#parts])
 local spec = "tools:roc-" .. commit .. "/src/glue/src/ZigGlue.roc"
 if not exists(spec) then
   fail("glue: no glue spec at " .. spec .. ": check out roc-lang/roc at " .. commit .. " as ~/tools/roc-" .. commit)
