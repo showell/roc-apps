@@ -9,7 +9,11 @@ import { mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 
-const CHROME = `${process.env.HOME}/.cache/ms-playwright/chromium-1140/chrome-linux/chrome`;
+// Playwright's browsers are where PLAYWRIGHT_BROWSERS_PATH says (Shale sets
+// it, build:cache/ms-playwright, for every program it runs), else under
+// ~/.cache/ms-playwright, where `npx playwright install chromium` puts them.
+const BROWSERS = process.env.PLAYWRIGHT_BROWSERS_PATH || `${process.env.HOME}/.cache/ms-playwright`;
+const CHROME = `${BROWSERS}/chromium-1140/chrome-linux/chrome`;
 
 export const sleep = (ms) => new Promise((done) => setTimeout(done, ms));
 

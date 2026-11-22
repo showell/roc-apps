@@ -13,8 +13,10 @@
 // widgets is held to the same checks, and its widget count is zero.
 //
 // The browser is the binary BOOK_CHECK_CHROMIUM names, when it's set, and
-// otherwise the newest Chromium Playwright installed under
-// ~/.cache/ms-playwright (`npx playwright install chromium` puts one there).
+// otherwise the newest Chromium Playwright installed where
+// PLAYWRIGHT_BROWSERS_PATH says (Shale sets it, build:cache/ms-playwright,
+// for every program it runs), else under ~/.cache/ms-playwright (`npx
+// playwright install chromium` puts one there).
 // When neither is there, the check stops before it starts, saying both.
 //
 // The checks are the same either way. The second argument says whether to
@@ -39,7 +41,7 @@ import { existsSync, mkdirSync, mkdtempSync, readdirSync, rmSync, writeFileSync 
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 
-const PLAYWRIGHT_CACHE = `${process.env.HOME}/.cache/ms-playwright`;
+const PLAYWRIGHT_CACHE = process.env.PLAYWRIGHT_BROWSERS_PATH || `${process.env.HOME}/.cache/ms-playwright`;
 function chromiumPath() {
   const named = process.env.BOOK_CHECK_CHROMIUM;
   if (named) {
