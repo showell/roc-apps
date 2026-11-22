@@ -16,11 +16,11 @@ import chess.Tape
 
 ## The backtracking search for a tour, and the square of its first knight,
 ## which comes off when no tour is left to try.
-Knight :: { search : Backtrack(Knight.Position), first : U8 }.{
+Knight :: { search : Backtrack(Knight.PartialTour), first : U8 }.{
 
 	## Where a partial tour stands: the newest knight's square, and the squares
 	## the tour covers, a bit each.
-	Position : { square : U8, visited : U64 }
+	PartialTour : { square : U8, visited : U64 }
 
 	## The tour's first knight, on `square`.
 	start : U8 -> Knight
@@ -71,13 +71,13 @@ square_bit = |square| U64.shl_wrap(1, square)
 
 ## The tour as a puzzle: the option at `index` is the knight's move there in
 ## the search's order, refused onto a square the tour covers.
-tour : Backtrack.Puzzle(Knight.Position)
+tour : Backtrack.Puzzle(Knight.PartialTour)
 tour = |{ square, visited }, index| {
 	span = landing_spans.get(square.to_u64()) ?? crash "Knight.tour: a square past the board"
 	if index >= span.count {
 		End
 	} else {
-		landing = landings_end_to_end.get(span.start + index) ?? crash "Knight.tour: a move inside its square's span"
+		landing = landings_end_to_end.get(span.offset + index) ?? crash "Knight.tour: a move inside its square's span"
 		if U64.bitwise_and(visited, square_bit(landing)) != 0 {
 			Refused
 		} else {
@@ -94,13 +94,13 @@ landings_end_to_end : List(U8)
 landings_end_to_end = knight_moves.join()
 
 ## Where each square's moves sit in `landings_end_to_end`.
-landing_spans : List({ start : U64, count : U64 })
+landing_spans : List({ offset : U64, count : U64 })
 landing_spans = {
-	var $start = 0
+	var $offset = 0
 	var $spans = []
 	for landings in knight_moves {
-		$spans = $spans.append({ start: $start, count: landings.len() })
-		$start = $start + landings.len()
+		$spans = $spans.append({ offset: $offset, count: landings.len() })
+		$offset = $offset + landings.len()
 	}
 	$spans
 }

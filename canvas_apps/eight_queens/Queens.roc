@@ -14,13 +14,13 @@ import chess.Backtrack
 import chess.Tape
 
 ## The backtracking search for a solution.
-Queens :: Backtrack(Queens.Position).{
+Queens :: Backtrack(Queens.PartialSolution).{
 
 	## Where a partial solution stands: the newest queen's square, the pin's
 	## row, how many other rows hold a queen, and the columns and the two
 	## families of diagonals the queens on the board, the pin among them,
 	## attack, a bit each.
-	Position : {
+	PartialSolution : {
 		square : U8,
 		pin_row : U8,
 		rows_filled : U8,
@@ -92,7 +92,7 @@ is_attack = |from, to| {
 
 ## Eight Queens as a puzzle: the option at `index` is that column of the next
 ## row to fill, refused where a queen attacks it.
-solution : Backtrack.Puzzle(Queens.Position)
+solution : Backtrack.Puzzle(Queens.PartialSolution)
 solution = |position, index|
 	if index >= 8 {
 		End
@@ -110,7 +110,7 @@ solution = |position, index|
 	}
 
 ## The row the search fills next: the rows in order, the pin's left out.
-next_row : Queens.Position -> U8
+next_row : Queens.PartialSolution -> U8
 next_row = |{ pin_row, rows_filled, .. }|
 	if rows_filled >= 7 {
 		crash "Queens.next_row: every row is filled, and the search is solved then"
@@ -122,7 +122,7 @@ next_row = |{ pin_row, rows_filled, .. }|
 
 ## The position with a queen on `square` added to its attacks, or, where one
 ## is there, taken out: each bit flips.
-with_attacks : Queens.Position, U8 -> Queens.Position
+with_attacks : Queens.PartialSolution, U8 -> Queens.PartialSolution
 with_attacks = |position, square| {
 	row = square // 8
 	column = square % 8
@@ -136,7 +136,7 @@ with_attacks = |position, square| {
 
 ## Whether a queen on the board attacks `square`, along its column or a
 ## diagonal; the search never puts two queens in a row.
-is_attacked : Queens.Position, U8 -> Bool
+is_attacked : Queens.PartialSolution, U8 -> Bool
 is_attacked = |position, square| {
 	row = square // 8
 	column = square % 8

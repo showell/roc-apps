@@ -7,14 +7,14 @@ Backtrack(state) :: { frames : List({ state : state, after : U64 }), next : U64 
 	Puzzle(state) : state, U64 -> [Child(state), Refused, End]
 
 	## A state entered, the top state left, or the root out of options.
-	Step(state) : [Entered(state), Left(state), Exhausted]
+	Change(state) : [Entered(state), Left(state), Exhausted]
 
 	## The search from its root, `state`.
 	start : state -> Backtrack(state)
 	start = |state| Backtrack.({ frames: [{ state, after: 0 }], next: 0 })
 
-	## The search one transition on, and the transition.
-	step : Backtrack(state), Backtrack.Puzzle(state) -> (Backtrack(state), Backtrack.Step(state))
+	## The search one transition on, and the change it made.
+	step : Backtrack(state), Backtrack.Puzzle(state) -> (Backtrack(state), Backtrack.Change(state))
 	step = |Backtrack.({ frames, next }), puzzle| {
 		top = frames.last() ?? crash "Backtrack.step: a search holds its root"
 		match puzzle(top.state, next) {
