@@ -787,7 +787,7 @@ route_herd_along = Along.metres(940.0)
 ## The route's herds of pigs, in the order the rider meets them.
 route_pig_herds : List(PigHerd)
 route_pig_herds =
-	World.route.route_segments().join_map(
+	World.segments.join_map(
 		|segment|
 			match segment.pigs {
 				Herd({ herd, .. }) => [herd]

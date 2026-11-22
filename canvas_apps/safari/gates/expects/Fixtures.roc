@@ -112,7 +112,7 @@ Fixtures :: [].{
 
 	## The flights of the route.
 	route_flights : List(BirdFlight)
-	route_flights = World.route.route_segments().join_map(
+	route_flights = World.segments.join_map(
 		|segment|
 			match segment.encounter {
 				BirdHere(flight) => [flight]
@@ -124,7 +124,7 @@ Fixtures :: [].{
 	longest_segment_index : Route.SegmentIndex
 	longest_segment_index = {
 		(_, longest_at) =
-			World.route.route_segments()
+			World.segments
 				.map_with_index(|segment, at| (segment.length, at))
 				.fold(
 					(Distance.zero, 0),

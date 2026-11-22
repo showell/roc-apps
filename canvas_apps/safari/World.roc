@@ -282,6 +282,10 @@ World :: [].{
 		Route.from_segments(bending_segments.append(last_segment))
 	}
 
+	## The route's segments, in order.
+	segments : List(Segment)
+	segments = World.route.route_segments()
+
 	## The road ahead of a rider on the route's first segment. What stands on
 	## that segment has no bend between it and the rider.
 	road_at_start : RoadAhead.RoadView
@@ -290,7 +294,7 @@ World :: [].{
 	## The route's first segment with a cat.
 	first_cat_segment : Segment
 	first_cat_segment =
-		World.route.route_segments().find_first(
+		World.segments.find_first(
 			|segment|
 				match segment.encounter {
 					CatCrosses(_) => True
@@ -318,7 +322,7 @@ World :: [].{
 	## The route's first segment whose pigs draw the rider's eye.
 	first_distracting_segment : Segment
 	first_distracting_segment =
-		World.route.route_segments().find_first(Segment.has_distracting_pigs)
+		World.segments.find_first(Segment.has_distracting_pigs)
 			?? crash "World.first_distracting_segment: the route has a distracting herd"
 }
 
@@ -335,7 +339,7 @@ last_plan = {
 ## The route's first segment with a bird.
 first_bird_segment : Segment
 first_bird_segment =
-	World.route.route_segments().find_first(
+	World.segments.find_first(
 		|segment|
 			match segment.encounter {
 				BirdHere(_) => True
@@ -454,7 +458,7 @@ expect World.bending_plans.all(|{ turn, .. }| !turn.is_straight_or_back())
 # Each encounter's animal waits before its segment's commit_along, because
 # EncounterPlan.plan_at_next_step forgets the plan once the rider leaves the segment.
 expect
-	World.route.route_segments().all(
+	World.segments.all(
 		|segment|
 			match segment.encounter.encounter_span() {
 				Ok({ planned_along, .. }) => planned_along < segment.commit_along()
@@ -465,7 +469,7 @@ expect
 # Every pig and cow stands on its own segment, between its start and its length, where
 # Segment's pig_distance_before_end and cow_herd_along mean to place the herds.
 expect
-	World.route.route_segments().all(
+	World.segments.all(
 		|segment| {
 			is_on_segment = |placed| {
 				along = placed.road_point.along.from_start()

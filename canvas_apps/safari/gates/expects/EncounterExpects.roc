@@ -96,7 +96,7 @@ far_top = Conifer.Gold.scenery_height().to_metres()
 # one to fly to, or building the segment crashes: every bird flies, and each
 # segment meets what its plan says.
 expect
-	World.route.route_segments().map(
+	World.segments.map(
 		|segment|
 			match segment.encounter {
 				CatCrosses(_) => CatCrosses
@@ -270,7 +270,7 @@ expect ride_sightings(600.0).len() == 0
 # a segment no further along than that.
 ## The cats of the route, each with its segment.
 route_cats : List({ segment : Segment, crossing : CatCrossing })
-route_cats = World.route.route_segments().join_map(
+route_cats = World.segments.join_map(
 	|segment|
 		match segment.encounter {
 			CatCrosses(crossing) => [{ segment, crossing }]

@@ -345,7 +345,7 @@ expect {
 		and played.eyes.gaze_yaw == ridden.eyes.gaze_yaw
 		and played.eyes.look_depth.to_f64() == ridden.eyes.look_depth.to_f64()
 }
-expect World.route.route_segments().take_first(2).all(|segment| segment.pigs == NoPigs)
+expect World.segments.take_first(2).all(|segment| segment.pigs == NoPigs)
 
 # Each of the four phases shows on the stretch, at the steps above.
 # gates/expects/RiderExpects.roc holds where each starts on the ride.

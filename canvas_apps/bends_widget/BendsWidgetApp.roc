@@ -68,7 +68,7 @@ rider_before_bend = Distance.metres(25.0)
 two_segments : Angle.Turn -> Route
 two_segments = |turn|
 	Route.from_segments(
-		World.route.route_segments().take_first(2).map_with_index(
+		World.segments.take_first(2).map_with_index(
 			|segment, index| {
 				..segment,
 				length: segment_length,

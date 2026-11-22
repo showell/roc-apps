@@ -164,7 +164,7 @@ takeoff_gap = EncounterPlan.planning_gap(BirdFlight.flight_span, rider_speed)
 # The bird flies on the route's first segment, the one `World.road_at_start`
 # and the eye's `Ahead(SegmentFromRider.Position.first)` stand on.
 expect
-	match World.route.route_segments() {
+	match World.segments {
 		[first, ..] =>
 			match first.encounter {
 				BirdHere(_) => True
