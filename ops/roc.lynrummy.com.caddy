@@ -17,8 +17,11 @@ roc.lynrummy.com {
 	import access_log roc
 	root * /srv/roc-site
 	# Caddy's default list leaves application/octet-stream out, which is how
-	# safari-walk's 4.8 MB asset bundle (index.data) is served; it shrinks to
-	# 1.5 MB under zstd. Images keep their own types and stay uncompressed.
+	# safari-walk's 5 MB asset bundle (index.data) is served. On the fly it
+	# shrinks to about 2.8 MB; site/publish_safari_walk.shale also writes
+	# index.data.zst (zstd -19, about 1.5 MB) and index.data.gz beside it,
+	# which file_server's `precompressed` sends instead to a browser that
+	# accepts them. Images keep their own types and stay uncompressed.
 	encode {
 		zstd
 		gzip
@@ -41,7 +44,9 @@ roc.lynrummy.com {
 		Referrer-Policy "strict-origin-when-cross-origin"
 		X-Frame-Options "SAMEORIGIN"
 	}
-	file_server
+	file_server {
+		precompressed zstd gzip
+	}
 }
 
 # Dog Park's old address, from when it ran on its own droplet: every path

@@ -21,6 +21,12 @@
 -- writes a PROVENANCE: the safari-walk commit, rocco-engine's branch and
 -- commit, the Roc pin, each file's size, and a hash of the wasm.
 --
+-- The asset bundle, index.data, is the page's biggest file (about 5 MB), and
+-- Caddy's compression on the fly reaches only about 2.8 MB of it. So the
+-- script writes index.data.zst (zstd -19, about 1.5 MB) and index.data.gz
+-- (gzip -9) beside it, which ops/roc.lynrummy.com.caddy's `file_server
+-- { precompressed zstd gzip }` sends to a browser that accepts them.
+--
 -- Then it checks the folder holds exactly the page's files and that the
 -- page's URLs are relative. There is no staging check: staging is plain
 -- http on :9200, where a browser gives a page no WebGPU, so the page can
@@ -34,7 +40,7 @@ const ENGINE = "repos:safari-walk/rocco-engine"
 const FORK = "https://github.com/showell/rocco-engine.git"
 const FORK_BRANCH = "firefox-fixes"
 const LIVE = "site/live/safari-walk"
-const PAGE_FILES = {"PROVENANCE", "index.data", "index.data.js", "index.html", "index.js", "index.wasm", "rocco.js"}
+const PAGE_FILES = {"PROVENANCE", "index.data", "index.data.gz", "index.data.js", "index.data.zst", "index.html", "index.js", "index.wasm", "rocco.js"}
 
 -- The full hash of HEAD in `repo`.
 function head_of(repo)
@@ -90,8 +96,24 @@ function provenance(walk, engine)
   for f in PAGE_FILES do
     if f ~= "PROVENANCE" then text = text .. stat(LIVE .. "/" .. f).size .. " bytes  " .. f .. "\n" end
   end
+  text = text .. "index.data.zst and index.data.gz are index.data compressed (zstd -19, gzip -9)\n"
   text = text .. "sha256 " .. sha256_16(LIVE .. "/index.wasm") .. "  index.wasm\n"
   return text
+end
+
+-- index.data.zst and index.data.gz beside index.data, each checked to
+-- decompress to it exactly.
+function compress_data()
+  local data = real(LIVE .. "/index.data")
+  must(run({"zstd", "-19", "-q", "-f", data, "-o", data .. ".zst"}, {timeout_ms = 240000, tail = 5, nice = 19}))
+  must(run({"gzip", "-9", "-k", "-f", "-n", data}, {timeout_ms = 120000, tail = 5, nice = 19}))
+  must(run({"zstd", "-t", "-q", data .. ".zst"}, {timeout_ms = 60000, tail = 5}))
+  local want = sha256_16(LIVE .. "/index.data")
+  local zstd_sum = trim(must(run({"sh", "-c", "zstd -d -c -q \"$1\" | sha256sum", "sh", data .. ".zst"}, {timeout_ms = 60000, tail = 2, want = "publish: a pipe from zstd to sha256sum checks the copy"})).out)
+  local gzip_sum = trim(must(run({"sh", "-c", "gzip -d -c \"$1\" | sha256sum", "sh", data .. ".gz"}, {timeout_ms = 60000, tail = 2, want = "publish: a pipe from gzip to sha256sum checks the copy"})).out)
+  if sub(zstd_sum, 1, 16) ~= want or sub(gzip_sum, 1, 16) ~= want then fail("publish_safari_walk: a compressed index.data does not decompress to index.data") end
+  print("index.data " .. stat(LIVE .. "/index.data").size .. " bytes; .zst " .. stat(LIVE .. "/index.data.zst").size .. ", .gz " .. stat(LIVE .. "/index.data.gz").size)
+  return nil
 end
 
 -- One check's line; a failed one stops the publish.
@@ -135,6 +157,7 @@ function main()
   for f in files_under(LIVE) do
     if ends_with(f, "-web.zip") then remove(LIVE .. "/" .. f) end
   end
+  compress_data()
   create(LIVE .. "/PROVENANCE", provenance(walk, engine))
   print(read(LIVE .. "/PROVENANCE"))
 
