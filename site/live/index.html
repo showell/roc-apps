@@ -318,8 +318,8 @@ miniature.</p>
 out: their signatures use <code>-></code>, not <code>=></code>, so the compiler guarantees they do no I/O. So the
 rules moved to the browser with their arithmetic untouched, changing only import lines and a file name or two.
 Claude adapted the rest for the browser, a light modification: the drawing was rewritten, from roc-ray's drawing
-calls to a frame described as a value, and each ported file says in its own comment what changed and why. The same
-files still type-check against roc-ray.</p>
+calls to a frame described as a value, and each ported file says in its own comment what changed and why. We've
+had successful roc-ray builds of them in the past, but stopped verifying native builds after some compiler churn.</p>
 <p class="lede"><span class="tag nice">Roc plays nice with others</span>roc-ray's host is Zig over
 raylib, a C library. In the browser, the same rules run on a Zig wasm host, and JavaScript draws on a canvas.</p>
 <div class="minis">

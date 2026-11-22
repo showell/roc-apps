@@ -2311,10 +2311,9 @@ the pages are built from. Also on
 		<span class="syn-string">&quot;NOT SOLVED&quot;</span>
 	}
 </code></pre></div>
-<div class="file"><div class="name"><a href="https://github.com/showell/roc-apps/blob/master/canvas_apps/web/canvas_app_runner.js">canvas_apps/web/canvas_app_runner.js</a>, 469 lines</div>
+<div class="file"><div class="name"><a href="https://github.com/showell/roc-apps/blob/master/canvas_apps/web/canvas_app_runner.js">canvas_apps/web/canvas_app_runner.js</a>, 467 lines</div>
 <p class="about">The browser's half, shared by every canvas app: the clock, the keys and the pointer.</p>
-<pre><code><span class="syn-comment">// canvas_app_runner — the browser half of canvas_apps, and the twin of</span>
-<span class="syn-comment">// native/CanvasAppRunner.roc. It loads an app&#39;s wasm, runs the clock and the</span>
+<pre><code><span class="syn-comment">// canvas_app_runner — the browser half of canvas_apps. It loads an app&#39;s wasm, runs the clock and the</span>
 <span class="syn-comment">// keyboard, and hands each frame to ShapesCanvas to paint.</span>
 <span class="syn-comment">//</span>
 <span class="syn-comment">// Not every program built against this file is a game: `camera` is a world</span>
@@ -2323,8 +2322,8 @@ the pages are built from. Also on
 <span class="syn-comment">// drawn from what it answers. The `game` in the names below is older than</span>
 <span class="syn-comment">// that.</span>
 <span class="syn-comment">//</span>
-<span class="syn-comment">// The app is the same Roc that runs natively. What is in here is only what a</span>
-<span class="syn-comment">// browser does differently: keep the input, pace the clock, show the speaker.</span>
+<span class="syn-comment">// The app is platform-free Roc. What is in here is only what a browser does:</span>
+<span class="syn-comment">// keep the input, pace the clock, show the speaker.</span>
 <span class="syn-comment">// Reading a frame and filling a canvas is shapes_canvas.js, which this loads</span>
 <span class="syn-comment">// first and which knows nothing about any of them.</span>
 <span class="syn-comment">//</span>
@@ -2700,8 +2699,7 @@ the pages are built from. Also on
 
   <span class="syn-keyword">const</span> draw = (now) =&gt; {
     <span class="syn-keyword">const</span> scale = show.sharp ? matchScreen() : <span class="syn-number">1</span>;
-    <span class="syn-comment">// The canvas keeps what was drawn, so a frame starts from nothing —</span>
-    <span class="syn-comment">// as the native runner&#39;s clear does.</span>
+    <span class="syn-comment">// The canvas keeps what was drawn, so a frame starts from nothing.</span>
     ctx.globalCompositeOperation = <span class="syn-string">&#39;source-over&#39;</span>;
     ctx.fillStyle = <span class="syn-string">&#39;#000&#39;</span>;
     ctx.fillRect(<span class="syn-number">0</span>, <span class="syn-number">0</span>, width, height);
