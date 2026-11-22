@@ -341,9 +341,9 @@ function places_of(nodes, module, name)
       if here and annotated then
         local place = places[#places]
         place.end_line = s.end_line
-        place.end_col = s.end_col
+        place.end_column = s.end_column
       elseif here then
-        push(places, {line = s.line, col = s.col, end_line = s.end_line, end_col = s.end_col})
+        push(places, {line = s.line, column = s.column, end_line = s.end_line, end_column = s.end_column})
       end
       annotated = here and s.kind == "s-type-anno"
     end
@@ -379,12 +379,12 @@ end
 -- The lines from `first` to the end of `place`, dedented, each with its line in
 -- the module.
 function span_lines(entry, source_lines, first, place)
-  local indent = place.col - 1
+  local indent = place.column - 1
   local kept = {}
   local at = first
   while at <= place.end_line do
     local l = source_lines[at]
-    if at == place.end_line then l = sub(l, 1, place.end_col - 1) end
+    if at == place.end_line then l = sub(l, 1, place.end_column - 1) end
     if trim(sub(l, 1, indent)) ~= "" then
       stop(entry, entry.path .. ":" .. at .. " is not indented as the definition is")
     end

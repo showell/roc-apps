@@ -213,9 +213,9 @@ end
 function text_between(source, from_node, to_node)
   if from_node.end_line == 0 or to_node.line == 0 then return "" end
   if from_node.end_line == to_node.line then
-    return sub(source[to_node.line], from_node.end_col, to_node.col - 1)
+    return sub(source[to_node.line], from_node.end_column, to_node.column - 1)
   end
-  local text = sub(source[from_node.end_line], from_node.end_col, #source[from_node.end_line])
+  local text = sub(source[from_node.end_line], from_node.end_column, #source[from_node.end_line])
   local at = from_node.end_line + 1
   while at <= to_node.line do
     text = text .. "\n" .. source[at]
@@ -227,7 +227,7 @@ end
 function type_decl_features(nodes, i, source, found)
   local kids = nodes[i].kids
   local header = nodes[kids[1]]
-  local rest = trim(sub(source[header.end_line], header.end_col, #source[header.end_line]))
+  local rest = trim(sub(source[header.end_line], header.end_column, #source[header.end_line]))
   if starts_with(rest, ":=") then
     push(found, "nominal")
   elseif starts_with(rest, "::") then
@@ -263,7 +263,7 @@ function pattern_features(nodes, i, source, found)
   local node = nodes[i]
   local kind = node.kind
   if kind == "p-tag" then
-    if sub(source[node.line], node.col + #node.raw, node.col + #node.raw + 1) == ".(" then
+    if sub(source[node.line], node.column + #node.raw, node.column + #node.raw + 1) == ".(" then
       push(found, "unwrap")
     else
       push(found, "tag-pattern")
