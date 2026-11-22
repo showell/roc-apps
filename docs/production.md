@@ -39,7 +39,7 @@ Two droplets serve the domain.
 
 | File in `/etc/caddy/sites/` | Its source | Installed by |
 |---|---|---|
-| `roc.lynrummy.com.caddy` (roc and dogpark) | roc-apps `ops/roc.lynrummy.com.caddy` | roc-apps `site/deploy.sh` |
+| `roc.lynrummy.com.caddy` (roc and dogpark) | roc-apps `ops/roc.lynrummy.com.caddy` | roc-apps `site/deploy.shale` |
 | `chat.lynrummy.com.caddy` | roc-chat `deploy/chat.lynrummy.com.caddy` | roc-chat `tools/deploy.shale` |
 
 - **Every site logs.** Each block starts with `import access_log <name>`,
@@ -107,9 +107,13 @@ Apps"):
   in safari-walk; they reach prod only through staging here;
 - **prod** is staging's files verbatim.
 
-**Deploying** is `site/deploy.sh host=<host>`, which the owner runs on his
-sign-off of what staging shows. It refuses when the name does not resolve
-to the host or `site/live/` has uncommitted changes, copies `site/live/`
+**Deploying** is `shale site/deploy.shale`, run on the owner's sign-off
+of what staging shows. It takes no argument: the droplet's ssh destination,
+`<user>@<IPv4>`, is the secret `keys:prod-ssh`, stored once with `shale
+--secrets`, which reaches ssh, rsync and scp only through Shale's
+`secret_args`, so no script, log or report on this box shows it. It
+refuses when the name does not resolve to that address or `site/live/` has
+uncommitted changes, copies `site/live/`
 with `rsync --delete`, proves every file's sha256, installs the site block
 when it changed, and checks the landing page over HTTPS. Its header lists
 every step.

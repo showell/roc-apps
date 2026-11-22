@@ -1,7 +1,7 @@
 # Steve's Roc Apps in prod, https://roc.lynrummy.com. The prod droplet's
 # Caddyfile (angry-gopher's deploy/Caddyfile) imports /etc/caddy/sites/*.caddy,
-# where site/deploy.sh installs this file beside lynrummy.com's site block.
-# It serves /srv/roc-site/, which site/deploy.sh copies verbatim from staging,
+# where site/deploy.shale installs this file beside lynrummy.com's site block.
+# It serves /srv/roc-site/, which site/deploy.shale copies verbatim from staging,
 # and redirects Dog Park's old address, dogpark.lynrummy.com, to its page.
 #
 # no-cache where staging has no-store: a browser keeps a module and asks

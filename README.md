@@ -44,8 +44,8 @@ next unchanged. The design is
   file, and commits it. `site/publish_screensavers.shale` publishes
   roc-screensaver's screensavers.
 - **prod**: [roc.lynrummy.com](https://roc.lynrummy.com/), staging's files
-  verbatim, copied by `site/deploy.sh`, which takes the droplet as
-  `host=` so the repo names none.
+  verbatim, copied by `site/deploy.shale`, which takes the droplet from
+  the secret `keys:prod-ssh` so the repo names none.
 
 ```
 site/build.sh                         # the landing page into dev
@@ -54,7 +54,7 @@ shale site/check_mobile.shale channel=dev   # the landing page fits a phone
 site/publish.sh safari                # dev to staging
 site/publish.sh tutorial              # the book, once each widget it frames is published
 shale site/publish_screensavers.shale # roc-screensaver's screensavers to staging
-site/deploy.sh host=<user>@<address>  # staging to prod (the droplet's ssh destination)
+shale site/deploy.shale               # staging to prod (the droplet is the secret keys:prod-ssh)
 ```
 
 Staging changes only by a publish. Both channels send no-store, so each is

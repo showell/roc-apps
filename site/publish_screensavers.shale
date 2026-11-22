@@ -30,7 +30,7 @@
 -- warming-up pill, the ride, and the skin's help and links. A failed check
 -- stops before git, leaving the new files in site/live/ uncommitted. Each
 -- screensaver's folder is committed alone, with its PROVENANCE in the
--- message, and the commits are pushed at the end. site/deploy.sh takes them
+-- message, and the commits are pushed at the end. site/deploy.shale takes them
 -- to prod with the rest.
 
 const SAVER = "repos:roc-screensaver"

@@ -27,7 +27,7 @@
 -- only show its "no WebGPU" message there. A failed check stops before git,
 -- leaving the new files in site/live/ uncommitted. The folder is committed
 -- alone, with its PROVENANCE in the message. Push the branch after; the
--- site/deploy.sh run takes it to prod with the rest.
+-- site/deploy.shale run takes it to prod with the rest.
 
 const WALK = "repos:safari-walk"
 const ENGINE = "repos:safari-walk/rocco-engine"
@@ -142,7 +142,7 @@ function main()
 
   must(run({"git", "add", "-A", "--", LIVE}, {timeout_ms = 30000, tail = 5}))
   git_commit("", "site: publish safari-walk, the Rocco spike, unlisted\n\n" .. read(LIVE .. "/PROVENANCE") .. "\nCo-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>\n")
-  print("committed " .. LIVE .. "; push the branch, then site/deploy.sh takes it to prod")
+  print("committed " .. LIVE .. "; push the branch, then site/deploy.shale takes it to prod")
   return nil
 end
 

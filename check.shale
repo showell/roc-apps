@@ -21,7 +21,10 @@
 -- site/build_roc_on_shale.shale would write now, which needs the shale and
 -- roc-syntax-color checkouts beside this one, and when the chess toys' code
 -- page, site/web/chess/code/index.html, isn't what site/build_chess_code.shale
--- would write from the sources as they stand.
+-- would write from the sources as they stand. And it runs
+-- site/deploy_test.shale, the prod deploy's refusals before it reaches prod,
+-- which needs a shale with `run`'s `secret_args` and asks 1.1.1.1 for
+-- roc.lynrummy.com.
 --
 -- A few places are left out, each for the reason beside it in EXCEPTIONS.
 -- Each is a debt, named here and nowhere else.
@@ -148,6 +151,9 @@ function all()
   local chess = run({"shale", "--root", ".", "site/build_chess_code.shale", "check=1"}, {timeout_ms = 300000, tail = 10})
   print(trim(chess.out))
   if chess.code ~= 0 then push(failed, "the chess code page") end
+  local deploy = run({"shale", "--root", ".", "site/deploy_test.shale"}, {timeout_ms = 300000, tail = 40})
+  print(trim(deploy.out))
+  if deploy.code ~= 0 then push(failed, "the deploy's refusals") end
   local roc = pinned_roc("check")
   local files = roc_files(false)
   local fmt = {roc, "fmt", "--check"}

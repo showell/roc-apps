@@ -1,0 +1,231 @@
+-- THE PROD DEPLOY: staging, verbatim, to https://roc.lynrummy.com. Run it on
+-- Steve's sign-off of what staging shows, from roc-apps' root:
+--
+--   shale site/deploy.shale
+--
+-- It takes no argument. The prod droplet's ssh destination, a user who may
+-- sudo there and the droplet's IPv4 address, `<user>@<IPv4>`, is the secret
+-- keys:prod-ssh, which the owner stores once with `shale --secrets` (its
+-- `store`, the name `prod-ssh`). It is the operator's, so the repo names
+-- none, and this script never sees it either: every ssh, rsync and scp, and
+-- the two `expr` checks below, get it through `run`'s `secret_args`, at
+-- `<secret PROD>`, and Shale scrubs it from what they print. ssh's own
+-- messages are off (LogLevel=QUIET), because they name the bare address,
+-- which the scrubber does not know; a step whose ssh fails says so by its
+-- exit, 255, and `ssh <user>@<address> true` by hand says why.
+--
+-- Each step refuses, by name, what it cannot do:
+--
+-- 1. The secret must be `<user>@<IPv4>`, and roc.lynrummy.com must resolve
+--    (through 1.1.1.1) to its address: `expr` matches the secret against
+--    the address dig gives, so only "the same or not" reaches the script.
+-- 2. site/live/ and ops/roc.lynrummy.com.caddy must have no uncommitted
+--    changes.
+-- 3. prod's Caddyfile must import /etc/caddy/sites/*.caddy and define the
+--    `access_log` snippet the site block imports. That Caddyfile is
+--    angry-gopher's deploy/Caddyfile; this script never edits it.
+-- 4. It pushes.
+-- 5. It makes /srv/roc-site/ on the droplet (the ssh user's), copies
+--    site/live/ there with rsync --delete, and proves the copy verbatim:
+--    every file's sha256 on prod must equal staging's, and no file may be
+--    missing or extra.
+-- 6. It installs ops/roc.lynrummy.com.caddy in /etc/caddy/sites/ only when it
+--    differs from prod's copy, its access log
+--    (/var/log/caddy/roc-access.log) made Caddy's first. Caddy validates the
+--    whole config before the reload, and the old block goes back if the new
+--    one fails.
+-- 7. It waits for the landing page to answer over HTTPS: a new name's
+--    certificate takes Caddy a few seconds.
+-- 8. The landing page must be staging's byte for byte, and Safari's wasm
+--    module must answer.
+--
+-- site/deploy_test.shale tests what can be tested without prod: the
+-- refusals of step 1, under a planted secrets mount.
+--
+-- budget: programs=100
+
+const SECRET = "keys:prod-ssh"
+const NAME = "roc.lynrummy.com"
+const URL = "https://roc.lynrummy.com"
+const DIR = "/srv/roc-site"
+const BLOCK = "roc.lynrummy.com.caddy"
+const LIVE = "site/live"
+-- The ssh options every connection takes: no prompt, and none of ssh's own
+-- messages, which would name the address (the header).
+const SSH_E = "ssh -o BatchMode=yes -o LogLevel=QUIET"
+
+-- The deploy's stop, every refusal's one form.
+function refuse(why)
+  fail("deploy: " .. why)
+end
+
+-- `run`'s options `o` with the secret at `<secret PROD>`.
+function with_dest(o)
+  o.secret_args = {PROD = SECRET}
+  return o
+end
+
+-- `cmd` run on prod by its shell, whatever its exit.
+function on_prod(cmd, o)
+  return run({"ssh", "-o", "BatchMode=yes", "-o", "LogLevel=QUIET", "<secret PROD>", cmd}, with_dest(o))
+end
+
+-- What a failed ssh says: 255 is ssh's own failure, any other exit the
+-- command's.
+function ssh_said(r, what)
+  local code = get(r, "code", -1)
+  if code == 255 then return what .. ": ssh to the prod host failed (exit 255; its messages are off, so `ssh <user>@<address> true` by hand says why)" end
+  return what .. ": exit " .. code .. ", " .. trim(r.out)
+end
+
+-- `cmd` on prod, which must exit 0.
+function must_on_prod(cmd, what)
+  local r = on_prod(cmd, {timeout_ms = 120000, tail = 20})
+  if get(r, "code", -1) ~= 0 then refuse(ssh_said(r, what)) end
+  return r
+end
+
+-- `cmd` on prod whose exit is an answer: 0 is yes, 1 is no.
+function asks_prod(cmd, what)
+  local r = on_prod(cmd, {timeout_ms = 60000, tail = 20})
+  local code = get(r, "code", -1)
+  if code ~= 0 and code ~= 1 then refuse(ssh_said(r, what)) end
+  return code == 0
+end
+
+-- Whether the secret matches the BRE `pattern`, whole: expr prints the
+-- match's length, which stays here, and exits 0 for a match, 1 for none.
+function secret_matches(pattern)
+  local r = run({"expr", "<secret PROD>", ":", pattern}, with_dest({timeout_ms = 10000, tail = 1}))
+  local code = get(r, "code", -1)
+  if code ~= 0 and code ~= 1 then refuse("expr could not match " .. SECRET .. ": exit " .. code .. ", " .. trim(r.out)) end
+  return code == 0
+end
+
+-- The sha256 manifest's lines, `<hash>  ./<path>`, as a set.
+function manifest_set(text)
+  local set = {}
+  for l in lines(text) do
+    if trim(l) ~= "" then set[l] = true end
+  end
+  return set
+end
+
+-- The lines of `a` that `b` lacks, sorted.
+function lines_missing(a, b)
+  local out = {}
+  for l in keys(a) do
+    if not has_key(b, l) then push(out, l) end
+  end
+  sort(out)
+  return out
+end
+
+if not exists(LIVE .. "/index.html") or not exists("ops/" .. BLOCK) then refuse("run it from roc-apps' root") end
+
+-- 1. The secret's shape, then the name's address against it.
+if not secret_matches("[a-z_][a-z0-9_-]*@[0-9][0-9]*\\.[0-9][0-9]*\\.[0-9][0-9]*\\.[0-9][0-9]*$") then
+  refuse(SECRET .. " is not `<user>@<IPv4>`, the ssh destination of the droplet that serves the site: store it again with `shale --secrets`")
+end
+local dns = run({"dig", "+short", "@1.1.1.1", "A", NAME}, {timeout_ms = 30000, tail = 5})
+local ip = ""
+for l in lines(trim(dns.out)) do ip = trim(l) end
+if get(dns, "code", -1) ~= 0 or re_find(ip, "^[0-9]+\\.[0-9]+\\.[0-9]+\\.[0-9]+$") == nil then
+  refuse(NAME .. " does not resolve to an IPv4 address through 1.1.1.1 (dig said '" .. trim(dns.out) .. "'); the DNS record comes first")
+end
+if not secret_matches(".*@" .. join(split(ip, "."), "\\.") .. "$") then
+  refuse(NAME .. " resolves to " .. ip .. ", not the address in " .. SECRET .. "; the DNS record comes first")
+end
+
+-- 2. Staging is committed.
+local dirty = {}
+for s in git_status(".") do
+  if starts_with(s.path, LIVE .. "/") or s.path == "ops/" .. BLOCK then push(dirty, s.code .. " " .. s.path) end
+end
+if #dirty > 0 then refuse(LIVE .. "/ or ops/" .. BLOCK .. " has uncommitted changes:\n" .. join(dirty, "\n")) end
+
+-- 3. prod's Caddyfile.
+if not asks_prod("grep -qxF 'import /etc/caddy/sites/*.caddy' /etc/caddy/Caddyfile", "prod's Caddyfile") then
+  refuse("prod's Caddyfile does not import /etc/caddy/sites/*.caddy")
+end
+-- The site block imports `access_log` (metal-vmm QUEUE 221), which prod's
+-- Caddyfile, angry-gopher's deploy/Caddyfile, defines.
+if not asks_prod("grep -q '^(access_log) {' /etc/caddy/Caddyfile", "prod's Caddyfile") then
+  refuse("prod's Caddyfile does not define the access_log snippet ops/" .. BLOCK .. " imports: install angry-gopher's deploy/Caddyfile first")
+end
+
+-- 4. The push.
+git_push(".")
+
+-- 5. The copy, proved.
+print("copying " .. LIVE .. "/ at " .. git_log(".", {n = 1, paths = {LIVE}})[1].hash .. " to prod's " .. DIR .. "/")
+must_on_prod("sudo install -d -o \"$(id -un)\" -g \"$(id -un)\" -m 755 " .. DIR, "making " .. DIR)
+local sync = run({"rsync", "-rlt", "--delete", "--chmod=D755,F644", "-e", SSH_E, LIVE .. "/", "<secret PROD>:" .. DIR .. "/"},
+  with_dest({timeout_ms = 600000, tail = 20}))
+if get(sync, "code", -1) ~= 0 then refuse("rsync to prod's " .. DIR .. "/ exited " .. get(sync, "code", -1) .. ": " .. trim(sync.out)) end
+local files = {}
+for e in walk_all(LIVE, {kind = "file"}) do push(files, "./" .. sub(e.path, #LIVE + 2)) end
+sort(files)
+local argv = {"sha256sum"}
+for f in files do push(argv, f) end
+local here = must(run(argv, {cwd = LIVE, timeout_ms = 120000, whole = 4000000}))
+local there = on_prod("cd " .. DIR .. " && find . -type f -print0 | LC_ALL=C sort -z | xargs -0 sha256sum", {timeout_ms = 120000, whole = 4000000})
+if get(there, "code", -1) ~= 0 then refuse(ssh_said(there, "prod's manifest")) end
+local mine = manifest_set(here.out)
+local theirs = manifest_set(there.out)
+local only_here = lines_missing(mine, theirs)
+local only_there = lines_missing(theirs, mine)
+if #only_here + #only_there > 0 then
+  for l in take(only_here, 20) do print("staging, not prod: " .. l) end
+  for l in take(only_there, 20) do print("prod, not staging: " .. l) end
+  refuse("prod's files are not staging's: " .. #only_here .. " lines of staging's manifest are not prod's, " .. #only_there .. " of prod's are not staging's")
+end
+print(#files .. " files on prod, each staging's")
+
+-- 6. The site block, installed only when it changed. cmp exits 2 on a file
+-- that is not there, so a first deploy's block counts as changed.
+local same = on_prod("cmp -s - /etc/caddy/sites/" .. BLOCK, {timeout_ms = 60000, tail = 20, stdin = read("ops/" .. BLOCK)})
+if get(same, "code", -1) == 255 then refuse(ssh_said(same, "comparing the site block")) end
+if get(same, "code", -1) == 0 then
+  print("the site block is unchanged")
+else
+  print("installing the site block")
+  local cp = run({"scp", "-q", "-o", "BatchMode=yes", "-o", "LogLevel=QUIET", "ops/" .. BLOCK, "<secret PROD>:/tmp/" .. BLOCK},
+    with_dest({timeout_ms = 120000, tail = 20}))
+  if get(cp, "code", -1) ~= 0 then refuse("scp of ops/" .. BLOCK .. " to prod's /tmp exited " .. get(cp, "code", -1) .. ": " .. trim(cp.out)) end
+  -- A remote shell script of constants alone: BLOCK, and the paths.
+  local B = "/etc/caddy/sites/" .. BLOCK
+  local T = "/tmp/" .. BLOCK
+  must_on_prod("set -e\n"
+    .. "sudo install -d -m 755 /etc/caddy/sites\n"
+    .. "# The block's access log, Caddy's before validate: validate runs as root\n"
+    .. "# and would make it root's, and the reload would then fail.\n"
+    .. "[ -f /var/log/caddy/roc-access.log ] || sudo install -o caddy -g caddy -m 640 /dev/null /var/log/caddy/roc-access.log\n"
+    .. "[ -f " .. B .. " ] && sudo cp " .. B .. " " .. T .. ".old || sudo rm -f " .. T .. ".old\n"
+    .. "sudo install -m 644 " .. T .. " " .. B .. "\n"
+    .. "if ! sudo caddy validate --adapter caddyfile --config /etc/caddy/Caddyfile >" .. T .. ".validate 2>&1; then\n"
+    .. "  tail -5 " .. T .. ".validate\n"
+    .. "  if [ -f " .. T .. ".old ]; then sudo install -m 644 " .. T .. ".old " .. B .. "; else sudo rm -f " .. B .. "; fi\n"
+    .. "  echo 'the new block did not validate; the old one is back'; exit 1\n"
+    .. "fi\n"
+    .. "sudo systemctl reload caddy\n"
+    .. "# sudo cp made the .old root's, and /tmp is sticky, so only root removes it.\n"
+    .. "rm -f " .. T .. " " .. T .. ".validate\n"
+    .. "sudo rm -f " .. T .. ".old", "installing the site block")
+end
+
+-- 7. The HTTPS wait: a new name's certificate takes Caddy a few seconds.
+local tries = 0
+while tries < 30 do
+  local r = run({"curl", "-fsS", "-o", "/dev/null", URL .. "/"}, {timeout_ms = 30000, tail = 5})
+  if get(r, "code", -1) == 0 then break end
+  tries = tries + 1
+  sleep(2000)
+end
+
+-- 8. The landing page, byte for byte, and the wasm module.
+local want = read(LIVE .. "/index.html")
+local page = run({"curl", "-fsS", URL .. "/"}, {timeout_ms = 30000, whole = #want + 65536})
+if get(page, "code", -1) ~= 0 or page.out ~= want then refuse(URL .. "/ is not staging's landing page") end
+print(trim(must(run({"curl", "-fsS", "-o", "/dev/null", "-w", "safari.wasm: %{http_code} %{content_type} %{size_download} bytes\n", URL .. "/safari/safari.wasm"}, {timeout_ms = 60000, tail = 5})).out))
+print("prod: " .. URL .. "/")
