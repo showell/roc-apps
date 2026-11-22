@@ -1,5 +1,5 @@
-published 2026-11-19T16:25:14Z
-roc nightly-2026-11-03-34bd006
+published 2026-11-22T21:13:19Z
+roc 0.1.0_RC1
 opt speed
-roc-apps 33aca088
-sha256 6160e38ee52ac1dd  168144 bytes  step_widget.wasm
+roc-apps 2be587a8
+sha256 330d9383fa30d30a  182651 bytes  step_widget.wasm
