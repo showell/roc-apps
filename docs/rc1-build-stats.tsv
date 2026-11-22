@@ -119,3 +119,8 @@ date	repo	commit	pin	step	target	condition	runs	wall_s	cpu_s	wall_s_each	cpu_s_e
 2026-11-22	roc-apps	1ec61df8	0.1.0_RC1	test	canvas_apps/safari/web.roc	warm	3	0.07	0.08	0.07,0.07,0.10	0.08,0.08,0.10	1.51	roc 0, zig 0, node 0, shale 2	0				431	78143	635 tests passed
 2026-11-22	roc-apps	1ec61df8	0.1.0_RC1	test	canvas_apps/safari/web.roc	root_changed	3	0.09	0.09	0.08,0.09,0.11	0.08,0.09,0.11	1.51	roc 0, zig 0, node 0, shale 2	0				431	78143	635 tests passed
 2026-11-22	roc-apps	1ec61df8	0.1.0_RC1	test	canvas_apps/safari/web.roc	import_changed	3	0.56	0.77	0.56,0.56,0.72	0.77,0.76,0.98	1.51	roc 0, zig 0, node 0, shale 2	0				431	78143	635 tests passed; changed canvas_apps/safari/Distance.roc
+2026-11-22	roc-apps	df198a64	nightly-2026-11-03-34bd006	run-dev	canvas_apps/knights_tour/KnightProof.roc	warm	1		15.60		15.60			0						the program's run, not its build: the chess gate's --opt=dev KnightProof, CPU as the gate prints it
+2026-11-22	roc-apps	da93e9b4	0.1.0_RC1	run-dev	canvas_apps/knights_tour/KnightProof.roc	warm	1		344.73		344.73			0						the program's run: --opt=dev, RC1's default boxy lowering; 22x the nightly's
+2026-11-22	roc-apps	da93e9b4	0.1.0_RC1	run-dev-specialized	canvas_apps/knights_tour/KnightProof.roc	warm	1	17.61	15.82	17.61	15.82			0						the program's run: --opt=dev --specialize=yes (lambda-set specialization)
+2026-11-22	roc-apps	df198a64	nightly-2026-11-03-34bd006	run-speed	canvas_apps/knights_tour/KnightProof.roc	warm	1	1.05	0.92	1.05	0.92			0						the program's run: --opt=speed
+2026-11-22	roc-apps	da93e9b4	0.1.0_RC1	run-speed	canvas_apps/knights_tour/KnightProof.roc	warm	1	0.53	0.33	0.53	0.33			0						the program's run: --opt=speed
