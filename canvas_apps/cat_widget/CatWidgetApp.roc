@@ -43,12 +43,12 @@ CatWidgetApp :: [].{
 
 ## The rider's approach, in about seven seconds.
 closing_gap : PlaybackButtons.NumberRange(Distance)
-closing_gap = PlaybackButtons.gap_range({ farthest: Distance.metres(50.0), metres_a_frame: 0.125 })
+closing_gap = PlaybackButtons.gap_range({ farthest: Distance.from_metres(50.0), metres_a_frame: 0.125 })
 
 ## A typical speed on the ride. At one metre a step, a step of the buttons is a
 ## step of the ride, and the crossing's steps read as metres.
 rider_speed : Speed
-rider_speed = Speed.metres_a_step(1.0)
+rider_speed = Speed.from_metres_a_step(1.0)
 
 ## Everything on the canvas.
 shapes_at : CatWidgetApp.Model -> List(Shapes.Shape)
@@ -177,24 +177,24 @@ lines_at : Distance -> List(Str)
 lines_at = |gap| status_lines({ gap, stage: crossing_stage(gap) })
 
 expect
-	lines_at(Distance.metres(50.0))
+	lines_at(Distance.from_metres(50.0))
 		== ["Waiting", "Pose: Rest", "Gap: 50.0 m", "The rider may accelerate"]
 
 expect
-	lines_at(Distance.metres(1.5))
+	lines_at(Distance.from_metres(1.5))
 		== ["Past", "Pose: Collapse", "Gap: 1.5 m", "The rider may accelerate"]
 
 # The crossing starts 41 m short of the cat, 3 m for the gap it ends at and 38
 # for its steps, and plays a frame a metre.
 expect
-	lines_at(Distance.metres(41.0))
+	lines_at(Distance.from_metres(41.0))
 		== ["Playing: frame 1", "Pose: Stride", "Gap: 41.0 m", "The rider may not accelerate"]
 expect
-	lines_at(Distance.metres(41.125))
+	lines_at(Distance.from_metres(41.125))
 		== ["Waiting", "Pose: Rest", "Gap: 41.1 m", "The rider may accelerate"]
 expect
-	lines_at(Distance.metres(3.5))
+	lines_at(Distance.from_metres(3.5))
 		== ["Playing: frame 38", "Pose: Land", "Gap: 3.5 m", "The rider may not accelerate"]
 expect
-	lines_at(Distance.metres(3.0))
+	lines_at(Distance.from_metres(3.0))
 		== ["Past", "Pose: Collapse", "Gap: 3.0 m", "The rider may accelerate"]

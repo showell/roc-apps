@@ -72,17 +72,17 @@ bull = {
 
 ## Three metres off the road's left edge, so the road runs clear of the cow.
 cow_across : Across
-cow_across = Across.left_of_middle(Distance.metres(5.0))
+cow_across = Across.left_of_middle(Distance.from_metres(5.0))
 
 ## Near enough to fill a good part of the frame, and far enough that all of it
 ## is in view.
 cow_forward : Distance
-cow_forward = Distance.metres(10.0)
+cow_forward = Distance.from_metres(10.0)
 
 ## Farther off than the cow and nearer the road, so on the screen the bull
 ## stands to the cow's right, and the two face each other.
 bull_spot : { forward : Distance, across : Across }
-bull_spot = { forward: Distance.metres(14.0), across: Across.left_of_middle(Distance.metres(3.5)) }
+bull_spot = { forward: Distance.from_metres(14.0), across: Across.left_of_middle(Distance.from_metres(3.5)) }
 
 ## The cow on the grass, `forward` down the road from the camera.
 cow_at : Distance -> Geometry.Placed(Billboard)
@@ -214,8 +214,8 @@ is_plain_to_see = |forward| {
 # The cow is all in the picture and a good size. Much farther and it is small,
 # and nearer it leaves the canvas at the left.
 expect is_plain_to_see(cow_forward)
-expect !is_plain_to_see(Distance.metres(20.0))
-expect !is_plain_to_see(Distance.metres(6.0))
+expect !is_plain_to_see(Distance.from_metres(20.0))
+expect !is_plain_to_see(Distance.from_metres(6.0))
 
 # The cow stands left of the middle of the screen, where the road runs.
 expect

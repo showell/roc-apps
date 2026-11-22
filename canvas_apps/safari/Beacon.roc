@@ -105,7 +105,7 @@ beacon_brightness = |phase| {
 }
 
 beacon_radius : Distance
-beacon_radius = Distance.metres(3.0)
+beacon_radius = Distance.from_metres(3.0)
 
 beacon_color : RgbColor
 beacon_color = RgbColor.of(0xFF2FE6)

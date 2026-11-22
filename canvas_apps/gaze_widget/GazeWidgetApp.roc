@@ -474,7 +474,7 @@ expect {
 				..first_rider.motorcycle.route_place,
 				road_point: {
 					..first_rider.motorcycle.route_place.road_point,
-					along: Along.metres(200.0),
+					along: Along.from_metres(200.0),
 				},
 			},
 		},

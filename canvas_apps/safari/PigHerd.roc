@@ -47,7 +47,7 @@ PigHerd := [BigHerd(PigHerd.BigPigHerd), TwoRows].{
 ## How far from the middle of the road the row of pigs nearest it stands, 10
 ## metres off the road's edge. Each herd sets its own.
 front_row_distance : Distance
-front_row_distance = Geometry.road_half_width.plus(Distance.metres(10.0))
+front_row_distance = Geometry.road_half_width.plus(Distance.from_metres(10.0))
 
 ## Where the row of pigs nearest the road stands across it.
 front_row_across : Across
@@ -55,7 +55,7 @@ front_row_across = Across.right_of_middle(front_row_distance)
 
 ## How every pig looks: the pig emoji, a little over a metre tall.
 pig_species : Billboard.Species
-pig_species = { emoji: EmojiStill.pig, adult_height: Distance.metres(1.1) }
+pig_species = { emoji: EmojiStill.pig, adult_height: Distance.from_metres(1.1) }
 
 placed_pig : { along : Along, across : Across } -> Geometry.Placed(Billboard)
 placed_pig = |{ along, across }| {
@@ -67,26 +67,26 @@ placed_pig = |{ along, across }| {
 ## Where the big herd's first column is along the road, from the herd's place,
 ## chosen by eye.
 big_herd_first_column_offset : Distance
-big_herd_first_column_offset = Distance.metres(-6.0)
+big_herd_first_column_offset = Distance.from_metres(-6.0)
 
 ## The distance between the big herd's columns, along the road, chosen by eye.
 big_herd_column_spacing : Distance
-big_herd_column_spacing = Distance.metres(4.0)
+big_herd_column_spacing = Distance.from_metres(4.0)
 
 ## How much farther from the road each row of the big herd stands than the one
 ## in front, and how much farther along it, chosen by eye.
 big_herd_row_depth : Distance
-big_herd_row_depth = Distance.metres(6.0)
+big_herd_row_depth = Distance.from_metres(6.0)
 
 ## How far a pig of the big herd strays from its place along the road, chosen
 ## by eye.
 big_herd_jitter_along : Distance
-big_herd_jitter_along = Distance.metres(1.2)
+big_herd_jitter_along = Distance.from_metres(1.2)
 
 ## How far a pig of the big herd strays from its place across the road, chosen
 ## by eye.
 big_herd_jitter_across : Distance
-big_herd_jitter_across = Distance.metres(1.0)
+big_herd_jitter_across = Distance.from_metres(1.0)
 
 ## The big herd's pigs about `herd_along`, row by row from the road.
 big_herd_pigs : PigHerd.BigPigHerd, Along -> List(Geometry.Placed(Billboard))
@@ -129,9 +129,9 @@ four_in_front_six_behind : {
 }
 four_in_front_six_behind = {
 	front_row: {
-		offsets_before: [-6.0, -2.0].map(Distance.metres),
-		standout_offset: Distance.metres(2.0),
-		offsets_after: [6.0].map(Distance.metres),
+		offsets_before: [-6.0, -2.0].map(Distance.from_metres),
+		standout_offset: Distance.from_metres(2.0),
+		offsets_after: [6.0].map(Distance.from_metres),
 	},
 	back_offsets: [
 		-10.0,
@@ -140,8 +140,8 @@ four_in_front_six_behind = {
 		2.0,
 		6.0,
 		10.0,
-	].map(Distance.metres),
-	back_row_depth: Distance.metres(6.0),
+	].map(Distance.from_metres),
+	back_row_depth: Distance.from_metres(6.0),
 }
 
 ## Where the two-row herd's front row pigs are along the road, from the herd's
@@ -213,11 +213,11 @@ three_rows_of_four = {
 
 ## Where this herd stands along the road.
 fixture_herd_along : Along
-fixture_herd_along = Along.metres(940.0)
+fixture_herd_along = Along.from_metres(940.0)
 
 # A big herd has a pig for each row and column, wherever the herd stands.
 expect PigHerd.BigHerd(three_rows_of_four).herd_pigs(fixture_herd_along).len() == 12
-expect PigHerd.BigHerd(three_rows_of_four).herd_pigs(Along.metres(440.0)).len() == 12
+expect PigHerd.BigHerd(three_rows_of_four).herd_pigs(Along.from_metres(440.0)).len() == 12
 
 eye_catcher : Geometry.Placed(Billboard)
 eye_catcher = PigHerd.BigHerd(three_rows_of_four).standout_pig(fixture_herd_along)

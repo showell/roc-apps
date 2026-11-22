@@ -30,7 +30,7 @@ CatCrossing :: { tree : Geometry.RoadPoint }.{
 
 	## How tall a cat stands.
 	cat_height : Distance
-	cat_height = Distance.metres(1.7)
+	cat_height = Distance.from_metres(1.7)
 
 	## Where the tree the cat crosses by stands.
 	tree : CatCrossing -> Geometry.RoadPoint
@@ -90,19 +90,19 @@ collapsed_hip_reach = CatCrossing.cat_height.times(0.7)
 
 ## How far behind its tree, away from the road, the cat starts.
 cat_behind_tree : Distance
-cat_behind_tree = Distance.metres(1.5)
+cat_behind_tree = Distance.from_metres(1.5)
 
 ## How far past its tree, along the road, the cat crosses.
 cat_beyond_tree : Distance
-cat_beyond_tree = Distance.metres(2.0)
+cat_beyond_tree = Distance.from_metres(2.0)
 
 ## How far onto the far verge's grass the collapsed cat's hips lie.
 grass_toehold : Distance
-grass_toehold = Distance.metres(0.3)
+grass_toehold = Distance.from_metres(0.3)
 
 ## How far short of the cat the rider is when its crossing ends.
 clear_gap : Distance
-clear_gap = Distance.metres(3.0)
+clear_gap = Distance.from_metres(3.0)
 
 ## How the cat looks walking out: two strides, a frame each step.
 walking_poses : List(CatCrossing.CatPose)
@@ -130,10 +130,10 @@ frozen_frames = 24
 leap_frames : List(CrossingFrame)
 leap_frames = [
 	{ pose: Coil, way: Leaping({ way_to_verge: Fraction.zero, lift: Distance.zero }) },
-	{ pose: Flight, way: Leaping({ way_to_verge: Fraction.of(0.4), lift: Distance.metres(0.27) }) },
+	{ pose: Flight, way: Leaping({ way_to_verge: Fraction.of(0.4), lift: Distance.from_metres(0.27) }) },
 	{
 		pose: Flight,
-		way: Leaping({ way_to_verge: Fraction.of(0.85), lift: Distance.metres(0.17) }),
+		way: Leaping({ way_to_verge: Fraction.of(0.85), lift: Distance.from_metres(0.17) }),
 	},
 	{ pose: Land, way: Leaping({ way_to_verge: Fraction.whole, lift: Distance.zero }) },
 ]
@@ -196,12 +196,12 @@ crossing_timeline = |crossing| {
 }
 
 the_cat : CatCrossing
-the_cat = CatCrossing.by_tree({ tree: { along: Along.metres(100.0), across: Across.metres(3.0) } })
+the_cat = CatCrossing.by_tree({ tree: { along: Along.from_metres(100.0), across: Across.from_metres(3.0) } })
 
 ## The same cat by a tree farther from the road.
 the_cat_by_a_far_tree : CatCrossing
 the_cat_by_a_far_tree = CatCrossing.by_tree({
-	tree: { along: Along.metres(100.0), across: Across.metres(8.0) },
+	tree: { along: Along.from_metres(100.0), across: Across.from_metres(8.0) },
 })
 
 ## Each cat pose's place in `CatCrossing.all_poses`. The match names every

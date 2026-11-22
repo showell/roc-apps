@@ -32,12 +32,12 @@ cat_scene = Scene.scene_in_view(
 	{
 		camera: {
 			..Fixtures.origin_camera,
-			vantage: { ..Fixtures.origin, along: Along.metres(300.0) },
+			vantage: { ..Fixtures.origin, along: Along.from_metres(300.0) },
 		},
 		facts: {
 			encounter_stage: Waiting,
 			truck: {
-				route_position: Distance.metres(500.0),
+				route_position: Distance.from_metres(500.0),
 				lights: { headlights: Off, brake_lights: Off },
 			},
 			clock: Clock.start,
@@ -80,7 +80,7 @@ sighted_ahead : kind, F64 -> Pipeline.Sighted(kind)
 sighted_ahead = |kind, forward|
 	Pipeline.sighting_of(
 		{
-			road_point: { along: Along.metres(forward), across: Across.middle },
+			road_point: { along: Along.from_metres(forward), across: Across.middle },
 			lift: Distance.zero,
 			kind,
 		},
@@ -113,9 +113,9 @@ post_sighting : F64 -> Try(Pipeline.Sighted(Post), [OutOfSight])
 post_sighting = |along|
 	Pipeline.sighting_of(
 		{
-			road_point: { along: Along.metres(along), across: Across.metres(1.5) },
+			road_point: { along: Along.from_metres(along), across: Across.from_metres(1.5) },
 			lift: Distance.zero,
-			kind: Post.({ height: Distance.metres(1.0) }),
+			kind: Post.({ height: Distance.from_metres(1.0) }),
 		},
 		{
 			road: one_segment_road,
@@ -136,14 +136,14 @@ expect
 # 128 pixels, the smallest height drawn.
 expect
 	[
-		(Distance.metres(0.99), Err(OutOfSight)),
-		(Distance.metres(1.0), Ok(Seen)),
-		(Distance.metres(1.01), Ok(Seen)),
+		(Distance.from_metres(0.99), Err(OutOfSight)),
+		(Distance.from_metres(1.0), Ok(Seen)),
+		(Distance.from_metres(1.01), Ok(Seen)),
 	].all(
 		|(height, outcome)|
 			Pipeline.scenery_sighting_of(
 				{
-					road_point: { along: Along.metres(64.0), across: Across.metres(1.5) },
+					road_point: { along: Along.from_metres(64.0), across: Across.from_metres(1.5) },
 					lift: Distance.zero,
 					kind: Post.({ height: height }),
 				},
@@ -160,11 +160,11 @@ expect
 # the line from the eye that grazes the horizon passes 3.699 m below level there.
 # A post 1.4 m tall shows its top over the horizon; one 1.2 m tall is hidden.
 expect
-	[(Distance.metres(1.2), Err(OutOfSight)), (Distance.metres(1.4), Ok(Seen))].all(
+	[(Distance.from_metres(1.2), Err(OutOfSight)), (Distance.from_metres(1.4), Ok(Seen))].all(
 		|(height, outcome)|
 			Pipeline.sighting_above_horizon_of(
 				{
-					road_point: { along: Along.metres(1000.0), across: Across.metres(1.5) },
+					road_point: { along: Along.from_metres(1000.0), across: Across.from_metres(1.5) },
 					lift: Distance.zero,
 					kind: Post.({ height: height }),
 				},

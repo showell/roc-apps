@@ -42,7 +42,7 @@ canvas_height = 240.0
 
 ## Just past the reach of the cones, so the crown is flat triangles.
 forward : Distance
-forward = Distance.metres(210.0)
+forward = Distance.from_metres(210.0)
 
 ## The tallest kind, so the tree fills the most of the picture.
 conifer : Conifer
@@ -136,7 +136,7 @@ share_of_height = |{ ahead, lens }| {
 # cones, so the distance matters.
 expect TreeShapes.crown_of(forward) == Triangles
 expect
-	match TreeShapes.crown_of(Distance.metres(150.0)) {
+	match TreeShapes.crown_of(Distance.from_metres(150.0)) {
 		Cones(_) => True
 		Triangles => False
 	}

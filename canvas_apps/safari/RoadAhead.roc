@@ -140,7 +140,7 @@ RoadAhead :: [].{
 		road_point : Geometry.RoadPoint,
 	} -> Angle.Turn
 	road_heading_at = |road, { vantage, from_rider, road_point }| {
-		further_along = { ..road_point, along: road_point.along.plus(Distance.metres(1.0)) }
+		further_along = { ..road_point, along: road_point.along.plus(Distance.from_metres(1.0)) }
 		here = RoadAhead.rider_point_at(road, { vantage, from_rider, road_point })
 		there = RoadAhead.rider_point_at(road, { vantage, from_rider, road_point: further_along })
 		Angle.Turn.radians(
@@ -214,8 +214,8 @@ to_rider_point = |{ along, across }, vantage| {
 	cos_yaw = vantage.yaw.to_radians().cos()
 	sin_yaw = vantage.yaw.to_radians().sin()
 	{
-		forward: Distance.metres(ahead * cos_yaw + aside * sin_yaw),
-		right: Distance.metres((0.0 - ahead) * sin_yaw + aside * cos_yaw),
+		forward: Distance.from_metres(ahead * cos_yaw + aside * sin_yaw),
+		right: Distance.from_metres((0.0 - ahead) * sin_yaw + aside * cos_yaw),
 	}
 }
 

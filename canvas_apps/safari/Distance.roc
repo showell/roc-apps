@@ -5,8 +5,8 @@ import lib.Fraction
 
 Distance :: F64.{
 
-	metres : F64 -> Distance
-	metres = |amount| Distance.(amount)
+	from_metres : F64 -> Distance
+	from_metres = |metres| Distance.(metres)
 
 	to_metres : Distance -> F64
 	to_metres = |Distance.(distance)| distance
@@ -71,8 +71,8 @@ expect
 		(3.0, [False, False, True, True, False]),
 	].all(
 		|(metres, want)| {
-			length = Distance.metres(metres)
-			held = Distance.metres(2.5)
+			length = Distance.from_metres(metres)
+			held = Distance.from_metres(2.5)
 			[
 				length < held,
 				length <= held,

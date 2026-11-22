@@ -140,7 +140,7 @@ const PARSE_RECIPES = {
     {"name_type", "name_type"}, {"bare_beside_unit", "bare_beside_unit"}, {"no_value", "no_value"},
   }, cross = {"bare_beside_unit"}},
   {recipe = "check_families", short = "family", fails_on_findings = true, cpu_measured_ms = 1832, cpu_budget_ms = 7000, checks = {
-    {"family", "family"}, {"twin_name", "twin_name"},
+    {"family", "family"}, {"twin_name", "twin_name"}, {"unpaired_conversion", "unpaired_conversion"},
   }, cross = {"family", "twin_name"}},
   {recipe = "find_unclear_names", short = "unclear", fails_on_findings = true, cpu_measured_ms = 1778, cpu_budget_ms = 7000, checks = {
     {"pure_mutator", "pure_mutator"}, {"abbreviation", "abbreviation"}, {"module_doc", "module_doc"},

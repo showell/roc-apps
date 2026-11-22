@@ -65,11 +65,11 @@ NextBend : [BendAhead(ComingBend), NoBendAhead]
 
 ## How far ahead of the rider the tease puts the truck at the route's start.
 tease_start_lead : Distance
-tease_start_lead = Distance.metres(500.0)
+tease_start_lead = Distance.from_metres(500.0)
 
 ## How far ahead of the rider the tease puts the truck at the route's end.
 tease_finish_lead : Distance
-tease_finish_lead = Distance.metres(100.0)
+tease_finish_lead = Distance.from_metres(100.0)
 
 ## The truck takes a bend at this fraction of the speed the bend allows, to
 ## leave a margin.
@@ -78,7 +78,7 @@ turn_caution = Fraction.of(0.8)
 
 ## The truck starts to brake when a bend is this close.
 brake_distance : Distance
-brake_distance = Distance.metres(60.0)
+brake_distance = Distance.from_metres(60.0)
 
 ## The truck outdoes the rider by 10%, in both its acceleration and its top
 ## speed.
@@ -163,8 +163,8 @@ progress_toward_tease = |progress, tease| {
 tease_at : F64 -> F64
 tease_at = |rider_distance|
 	tease_position({
-		rider_distance: Distance.metres(rider_distance),
-		route_length: Distance.metres(1000.0),
+		rider_distance: Distance.from_metres(rider_distance),
+		route_length: Distance.from_metres(1000.0),
 	}).to_metres()
 
 expect tease_at(0.0) == 500.0

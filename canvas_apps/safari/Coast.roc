@@ -15,7 +15,7 @@ Coast :: [].{
 	## How far ahead the rehearsal needs to look: 25 m along the road. A coast
 	## that runs this far without leaving the road ends there.
 	clear_distance : Distance
-	clear_distance = Distance.metres(25.0)
+	clear_distance = Distance.from_metres(25.0)
 
 	## Where a coast from `motorcycle` ends up.
 	coast_outcome : Motorcycle -> Coast.Outcome
@@ -97,7 +97,7 @@ coasting_step = |motorcycle| motorcycle.motorcycle_at_next_step(motorcycle.stead
 ## A coast that crosses this inset edge counts as leaving the road, so the
 ## line the search keeps never grazes the shoulder itself.
 shoulder_margin : Distance
-shoulder_margin = Distance.metres(0.05)
+shoulder_margin = Distance.from_metres(0.05)
 
 ## A slow rider who leans can circle on the road and never get clear of where
 ## they started, so a coast ends after this many steps.

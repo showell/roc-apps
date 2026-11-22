@@ -66,7 +66,7 @@ is_near_end = |rider_along, segment_length|
 
 ## How far short of a segment's end the rider starts to brake for its bend.
 bend_approach : Distance
-bend_approach = Distance.metres(60.0)
+bend_approach = Distance.from_metres(60.0)
 
 ## Near the end of the segment, the brake that brings the rider to the exit
 ## speed at the point where they commit to the turn. Past that point there is
@@ -108,12 +108,12 @@ shoulder_brake = |speed, steps_to_shoulder|
 		remaining = steps_to_shoulder.to_f64()
 		even_braking = -speed.to_metres_a_step() / (2.0 * remaining)
 		decay_factor = F64.e.pow(-remaining / brake_decay.to_f64())
-		Acceleration.metres_a_step_each_step(even_braking * decay_factor)
+		Acceleration.from_metres_a_step_each_step(even_braking * decay_factor)
 	}
 
 ## This many metres a step, each step.
 acceleration_of : F64 -> Acceleration
-acceleration_of = |metres| Acceleration.metres_a_step_each_step(metres)
+acceleration_of = |metres| Acceleration.from_metres_a_step_each_step(metres)
 
 # A limit lowers what it is offered, and never raises it.
 expect held_to(Acceleration.steady, NoLimit) == Acceleration.steady
@@ -124,7 +124,7 @@ expect held_to(acceleration_of(-0.5), AtMost(Acceleration.steady)) == accelerati
 ## The shoulder brake at 1 metre a step.
 brake_after : U32 -> Acceleration
 brake_after = |steps_to_shoulder|
-	shoulder_brake(Speed.metres_a_step(1.0), Steps.of(steps_to_shoulder))
+	shoulder_brake(Speed.from_metres_a_step(1.0), Steps.of(steps_to_shoulder))
 
 expect brake_after(40) < Acceleration.steady
 expect brake_after(40) > brake_after(2)

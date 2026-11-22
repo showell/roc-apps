@@ -31,7 +31,7 @@ Conifer := [Green, SmallGreen, Red, Gold].{
 
 ## A small green tree's height, chosen by eye.
 small_height : Distance
-small_height = Distance.metres(4.896)
+small_height = Distance.from_metres(4.896)
 
 ## A green tree's height, 1.3 times a small one's, a size chosen by eye.
 green_height : Distance

@@ -33,14 +33,14 @@ Animation :: [].{
 		between = |start, end| Easing.lerp({ from: start, to: end, fraction })
 		{
 			road_point: {
-				along: Along.metres(
+				along: Along.from_metres(
 					between(from.road_point.along.to_metres(), to.road_point.along.to_metres()),
 				),
-				across: Across.metres(
+				across: Across.from_metres(
 					between(from.road_point.across.to_metres(), to.road_point.across.to_metres()),
 				),
 			},
-			lift: Distance.metres(between(from.lift.to_metres(), to.lift.to_metres())),
+			lift: Distance.from_metres(between(from.lift.to_metres(), to.lift.to_metres())),
 		}
 	}
 
@@ -97,7 +97,7 @@ Note : [First, Second, Third, Fourth, BeforeIt, AfterIt]
 
 sideways_location : F64 -> Animation.Location
 sideways_location = |across| {
-	road_point: { along: Along.metres(0.0), across: Across.metres(across) },
+	road_point: { along: Along.from_metres(0.0), across: Across.from_metres(across) },
 	lift: Distance.zero,
 }
 
@@ -137,14 +137,14 @@ expect
 
 start_location : Animation.Location
 start_location = {
-	road_point: { along: Along.metres(10.0), across: Across.metres(20.0) },
-	lift: Distance.metres(30.0),
+	road_point: { along: Along.from_metres(10.0), across: Across.from_metres(20.0) },
+	lift: Distance.from_metres(30.0),
 }
 
 end_location : Animation.Location
 end_location = {
-	road_point: { along: Along.metres(18.0), across: Across.metres(4.0) },
-	lift: Distance.metres(46.0),
+	road_point: { along: Along.from_metres(18.0), across: Across.from_metres(4.0) },
+	lift: Distance.from_metres(46.0),
 }
 
 ## The location's three parts, `fraction` of the way from `start_location` to `end_location`.

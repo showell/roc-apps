@@ -53,11 +53,11 @@ beacon_at = |place, clock| Beacon.at({ segment: Route.SegmentIndex.first, place 
 ## How far down the road from the picture's eye the towers stand, so that their
 ## tops fit.
 tower_forward : Distance
-tower_forward = Distance.metres(200.0)
+tower_forward = Distance.from_metres(200.0)
 
 ## How far to each side of the road a tower stands.
 tower_right : Distance
-tower_right = Distance.metres(70.0)
+tower_right = Distance.from_metres(70.0)
 
 ## Everything on the canvas.
 shapes_at : BeaconWidgetApp.Model -> List(Shapes.Shape)
@@ -89,8 +89,8 @@ picture_shapes = |clock|
 ## The picture's eye, at the start of the route, looking down the road.
 eye : Geometry.Vantage
 eye = {
-	along: Along.metres(0.0),
-	across: Across.metres(0.0),
+	along: Along.from_metres(0.0),
+	across: Across.from_metres(0.0),
 	yaw: Angle.straight_ahead,
 }
 

@@ -30,12 +30,12 @@ DepthSort :: [].{
 			.divided_by(depths.len().to_f64())
 }
 
-expect DepthSort.mean_depth([10.0, 20.0, 30.0, 40.0].map(Distance.metres)).to_metres() == 25.0
-expect DepthSort.mean_depth([1.0, 2.0, 6.0].map(Distance.metres)).to_metres() == 3.0
+expect DepthSort.mean_depth([10.0, 20.0, 30.0, 40.0].map(Distance.from_metres)).to_metres() == 25.0
+expect DepthSort.mean_depth([1.0, 2.0, 6.0].map(Distance.from_metres)).to_metres() == 3.0
 
 # Summed first to last, the 1 is lost in the rounding next to 1e16; summed last
 # to first, it would survive and the mean would be a third.
-expect DepthSort.mean_depth([1.0, 1.0e16, -1.0e16].map(Distance.metres)).to_metres() == 0.0
+expect DepthSort.mean_depth([1.0, 1.0e16, -1.0e16].map(Distance.from_metres)).to_metres() == 0.0
 
 ## Whether depth `this` is farther than `that` by more than a tie's
 ## slack. The slack is relative to `that`, but never less than it is at
@@ -90,38 +90,38 @@ merge = |{ first_items, second_items, depth_of }| {
 expect
 	DepthSort.sort_by(
 		[
-			{ forward: Distance.metres(30.0), place: 0 },
-			{ forward: Distance.metres(10.0), place: 1 },
-			{ forward: Distance.metres(30.0), place: 2 },
-			{ forward: Distance.metres(50.0), place: 3 },
-			{ forward: Distance.metres(10.0), place: 4 },
-			{ forward: Distance.metres(20.0), place: 5 },
-			{ forward: Distance.metres(30.0), place: 6 },
-			{ forward: Distance.metres(40.0), place: 7 },
-			{ forward: Distance.metres(10.0), place: 8 },
-			{ forward: Distance.metres(5.0), place: 9 },
+			{ forward: Distance.from_metres(30.0), place: 0 },
+			{ forward: Distance.from_metres(10.0), place: 1 },
+			{ forward: Distance.from_metres(30.0), place: 2 },
+			{ forward: Distance.from_metres(50.0), place: 3 },
+			{ forward: Distance.from_metres(10.0), place: 4 },
+			{ forward: Distance.from_metres(20.0), place: 5 },
+			{ forward: Distance.from_metres(30.0), place: 6 },
+			{ forward: Distance.from_metres(40.0), place: 7 },
+			{ forward: Distance.from_metres(10.0), place: 8 },
+			{ forward: Distance.from_metres(5.0), place: 9 },
 		],
 		|key| key.forward,
 	)
 		== [
-			{ forward: Distance.metres(50.0), place: 3 },
-			{ forward: Distance.metres(40.0), place: 7 },
-			{ forward: Distance.metres(30.0), place: 0 },
-			{ forward: Distance.metres(30.0), place: 2 },
-			{ forward: Distance.metres(30.0), place: 6 },
-			{ forward: Distance.metres(20.0), place: 5 },
-			{ forward: Distance.metres(10.0), place: 1 },
-			{ forward: Distance.metres(10.0), place: 4 },
-			{ forward: Distance.metres(10.0), place: 8 },
-			{ forward: Distance.metres(5.0), place: 9 },
+			{ forward: Distance.from_metres(50.0), place: 3 },
+			{ forward: Distance.from_metres(40.0), place: 7 },
+			{ forward: Distance.from_metres(30.0), place: 0 },
+			{ forward: Distance.from_metres(30.0), place: 2 },
+			{ forward: Distance.from_metres(30.0), place: 6 },
+			{ forward: Distance.from_metres(20.0), place: 5 },
+			{ forward: Distance.from_metres(10.0), place: 1 },
+			{ forward: Distance.from_metres(10.0), place: 4 },
+			{ forward: Distance.from_metres(10.0), place: 8 },
+			{ forward: Distance.from_metres(5.0), place: 9 },
 		]
 
 ## A pair of things at these depths, first 0 and then 1, as the sort orders them.
 sorted_places : { first : F64, second : F64 } -> List(U64)
 sorted_places = |{ first, second }| {
 	keys = [
-		{ forward: Distance.metres(first), place: 0 },
-		{ forward: Distance.metres(second), place: 1 },
+		{ forward: Distance.from_metres(first), place: 0 },
+		{ forward: Distance.from_metres(second), place: 1 },
 	]
 	DepthSort.sort_by(keys, |key| key.forward).map(|key| key.place)
 }

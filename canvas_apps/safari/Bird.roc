@@ -68,4 +68,4 @@ expect
 
 ## How tall a bird stands, chosen by eye.
 bird_height : Distance
-bird_height = Distance.metres(2.2)
+bird_height = Distance.from_metres(2.2)

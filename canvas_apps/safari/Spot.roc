@@ -81,10 +81,10 @@ Spot :: {
 		rightward_metres = offset.rightward.to_metres()
 		{
 			forward: spot.foot().forward().plus(
-				Distance.metres(ahead_metres * turn.cos() - rightward_metres * turn.sin()),
+				Distance.from_metres(ahead_metres * turn.cos() - rightward_metres * turn.sin()),
 			),
 			right: spot.foot().right().plus(
-				Distance.metres(ahead_metres * turn.sin() + rightward_metres * turn.cos()),
+				Distance.from_metres(ahead_metres * turn.sin() + rightward_metres * turn.cos()),
 			),
 			height: spot.lift().plus(offset.height).minus(spot.drop()),
 		}

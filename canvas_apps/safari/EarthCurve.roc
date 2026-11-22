@@ -15,7 +15,7 @@ EarthCurve :: [].{
 		right = point.right.to_metres()
 		forward = point.forward.to_metres()
 		reach_squared = right * right + forward * forward
-		Distance.metres(reach_squared / (2.0 * ground_curve_radius.to_metres()))
+		Distance.from_metres(reach_squared / (2.0 * ground_curve_radius.to_metres()))
 	}
 
 	## The lowest height at `point`, measured from the rider's level, that the
@@ -37,7 +37,7 @@ EarthCurve :: [].{
 			EarthCurve.ground_drop(point).opposite()
 		} else {
 			eye = Camera.eye_height.to_metres()
-			Distance.metres(eye - 2.0 * eye * reach / horizon)
+			Distance.from_metres(eye - 2.0 * eye * reach / horizon)
 		}
 	}
 
@@ -60,7 +60,7 @@ EarthCurve :: [].{
 ## The radius the ground curves away over. From the rider's eye it puts
 ## the horizon 490 metres out.
 ground_curve_radius : Distance
-ground_curve_radius = Distance.metres(100000.0)
+ground_curve_radius = Distance.from_metres(100000.0)
 
 ## How far `point` is from the rider, along the ground.
 distance_from_rider : RiderView.RiderPoint -> Distance
@@ -73,7 +73,7 @@ distance_from_rider = |point|
 horizon_distance : Distance
 horizon_distance = {
 	radius = ground_curve_radius.to_metres()
-	Distance.metres((2.0 * radius * Camera.eye_height.to_metres()).sqrt())
+	Distance.from_metres((2.0 * radius * Camera.eye_height.to_metres()).sqrt())
 }
 
 ## A point on the ground, lowered by the earth's curve.
@@ -141,25 +141,25 @@ circle_crossings = |{ from, to, reach }| {
 }
 
 expect EarthCurve.ground_drop({
-	right: Distance.metres(0.0),
-	forward: Distance.metres(0.0),
+	right: Distance.from_metres(0.0),
+	forward: Distance.from_metres(0.0),
 }).to_metres() == 0.0
 expect EarthCurve.ground_drop({
-	right: Distance.metres(3.0),
-	forward: Distance.metres(10.0),
+	right: Distance.from_metres(3.0),
+	forward: Distance.from_metres(10.0),
 }).to_metres() == 0.000545
 expect EarthCurve.ground_drop({
-	right: Distance.metres(-5.0),
-	forward: Distance.metres(40.0),
+	right: Distance.from_metres(-5.0),
+	forward: Distance.from_metres(40.0),
 }).to_metres() == 0.008125
 expect EarthCurve.ground_drop({
-	right: Distance.metres(12.5),
-	forward: Distance.metres(100.0),
+	right: Distance.from_metres(12.5),
+	forward: Distance.from_metres(100.0),
 }).to_metres() == 0.05078125
 
 ## A point `forward` metres straight ahead of the rider.
 straight_ahead : F64 -> RiderView.RiderPoint
-straight_ahead = |forward| { right: Distance.zero, forward: Distance.metres(forward) }
+straight_ahead = |forward| { right: Distance.zero, forward: Distance.from_metres(forward) }
 
 # The horizon is 490 m out. Within it the lowest height in view is the
 # ground's: 400 m out it has dropped 0.8 m. At the horizon the grazing line
@@ -178,15 +178,15 @@ expect
 
 # 1000 m out, a top 3.6 m below level shows over the horizon, and one 3.8 m below
 # is hidden. Within the horizon nothing is hidden, even a top down on the ground.
-expect !EarthCurve.is_below_horizon({ point: straight_ahead(1000.0), top: Distance.metres(-3.6) })
-expect EarthCurve.is_below_horizon({ point: straight_ahead(1000.0), top: Distance.metres(-3.8) })
-expect !EarthCurve.is_below_horizon({ point: straight_ahead(400.0), top: Distance.metres(-0.8) })
+expect !EarthCurve.is_below_horizon({ point: straight_ahead(1000.0), top: Distance.from_metres(-3.6) })
+expect EarthCurve.is_below_horizon({ point: straight_ahead(1000.0), top: Distance.from_metres(-3.8) })
+expect !EarthCurve.is_below_horizon({ point: straight_ahead(400.0), top: Distance.from_metres(-0.8) })
 
 ## A point on the level of the rider, `right` and `forward` in metres.
 level_at : F64, F64 -> RiderView.PointAtHeight
 level_at = |right, forward| {
-	right: Distance.metres(right),
-	forward: Distance.metres(forward),
+	right: Distance.from_metres(right),
+	forward: Distance.from_metres(forward),
 	height: Distance.zero,
 }
 
@@ -208,7 +208,7 @@ are_near = |got_points, wants| {
 ## The polygon cut to what lies within 10 m of the rider.
 points_within_ten_metres : List(RiderView.PointAtHeight) -> List(RiderView.PointAtHeight)
 points_within_ten_metres = |polygon_points| {
-	reach = region_within(Distance.metres(10.0))
+	reach = region_within(Distance.from_metres(10.0))
 	RiderView.points_in_region(polygon_points, reach)
 }
 
@@ -255,9 +255,9 @@ expect {
 
 # A point on the ground keeps its right and forward, and sits the drop below level.
 expect
-	ground_point({ right: Distance.metres(3.0), forward: Distance.metres(10.0) })
+	ground_point({ right: Distance.from_metres(3.0), forward: Distance.from_metres(10.0) })
 		== {
-			right: Distance.metres(3.0),
-			forward: Distance.metres(10.0),
-			height: Distance.metres(-0.000545),
+			right: Distance.from_metres(3.0),
+			forward: Distance.from_metres(10.0),
+			height: Distance.from_metres(-0.000545),
 		}

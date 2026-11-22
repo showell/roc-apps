@@ -20,7 +20,7 @@ Gaze :: [].{
 	## How far short of a pig the rider notices it, measured along the road.
 	## The look and the gawking both start here.
 	notice_distance : Distance
-	notice_distance = Distance.metres(150.0)
+	notice_distance = Distance.from_metres(150.0)
 
 	## The pig on `segment` that catches the rider's eye: the standout pig of a herd
 	## the rider finds distracting. A herd the rider passes by catches no eye.

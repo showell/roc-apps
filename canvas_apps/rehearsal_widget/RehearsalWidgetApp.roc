@@ -587,7 +587,7 @@ expect
 # The step shown is just after the first bend: the rider is on the second
 # segment, under 10 metres along it.
 expect motorcycle.route_place.segment_index == Route.SegmentIndex.number(1)
-expect motorcycle.route_place.road_point.along < Along.metres(10.0)
+expect motorcycle.route_place.road_point.along < Along.from_metres(10.0)
 
 # An arc is drawn by fewer points than it has, and it still ends at its end.
 expect
@@ -615,8 +615,8 @@ expect lean_text(Angle.Lean.degrees(12.0)) == "12.00 right"
 expect lean_text(Angle.Lean.degrees(12.05)) == "12.05 right"
 expect lean_text(Angle.Lean.degrees(-0.5)) == "0.50 left"
 
-expect across_text(Across.metres(-0.5)) == "0.5 m left"
-expect across_text(Across.metres(0.5)) == "0.5 m right"
+expect across_text(Across.from_metres(-0.5)) == "0.5 m left"
+expect across_text(Across.from_metres(0.5)) == "0.5 m right"
 
 expect verdict_text(MoreRight) == "So try further right"
 expect verdict_text(MoreLeft) == "So try further left"

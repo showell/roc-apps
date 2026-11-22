@@ -73,17 +73,17 @@ BirdFlight := { from : Trees.RoadsideTree, to : Trees.RoadsideTree }.{
 ## How far short of the tree it left the rider is when the bird lands, so
 ## that the rider sees the landing before passing the tree.
 landing_gap : Distance
-landing_gap = Distance.metres(15.0)
+landing_gap = Distance.from_metres(15.0)
 
 ## How far above a straight line the top of its path is, chosen by eye.
 flight_arc : Distance
-flight_arc = Distance.metres(5.0)
+flight_arc = Distance.from_metres(5.0)
 
 ## The bird flies to a tree at least this far along from the one it left,
 ## so that its path runs ahead of the rider as well as across the road. The
 ## length is chosen by eye.
 shortest_hop : Distance
-shortest_hop = Distance.metres(25.0)
+shortest_hop = Distance.from_metres(25.0)
 
 ## How many steps each half of a flap of the wings takes, up or down.
 frames_a_half_flap : U64

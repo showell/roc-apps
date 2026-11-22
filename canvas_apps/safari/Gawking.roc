@@ -42,11 +42,11 @@ Gawking :: [].{
 
 ## The speed a gawking rider brakes down to.
 gawk_speed : Speed
-gawk_speed = Speed.metres_a_step(0.2)
+gawk_speed = Speed.from_metres_a_step(0.2)
 
 ## How far short of the pig a gawking rider aims to reach `gawk_speed`.
 gawk_settle_distance : Distance
-gawk_settle_distance = Distance.metres(25.0)
+gawk_settle_distance = Distance.from_metres(25.0)
 
 ## The shortest distance the brake for a pig is worked out over. Past the
 ## settle distance the rider is still coming down to `gawk_speed`, so the
@@ -55,4 +55,4 @@ gawk_settle_distance = Distance.metres(25.0)
 ## reaches a bend has no more road to brake on, and a rider who reaches
 ## the pig has the rest of the segment.
 gawk_least_distance : Distance
-gawk_least_distance = Distance.metres(1.0)
+gawk_least_distance = Distance.from_metres(1.0)

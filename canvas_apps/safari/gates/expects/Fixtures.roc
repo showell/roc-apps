@@ -27,8 +27,8 @@ Fixtures :: [].{
 	## straight down it.
 	origin : Geometry.Vantage
 	origin = {
-		along: Along.metres(0.0),
-		across: Across.metres(0.0),
+		along: Along.from_metres(0.0),
+		across: Across.from_metres(0.0),
 		yaw: Angle.straight_ahead,
 	}
 
@@ -65,7 +65,7 @@ Fixtures :: [].{
 
 	tree_at : F64, F64 -> Trees.RoadsideTree
 	tree_at = |along, across| {
-		road_point: { along: Along.metres(along), across: Across.metres(across) },
+		road_point: { along: Along.from_metres(along), across: Across.from_metres(across) },
 		lift: Distance.zero,
 		kind: Conifer.Red,
 	}
@@ -75,7 +75,7 @@ Fixtures :: [].{
 	segment_of : List(Trees.RoadsideTree) -> Segment
 	segment_of = |trees| {
 		..World.route.segment_at(Route.SegmentIndex.first),
-		length: Distance.metres(200.0),
+		length: Distance.from_metres(200.0),
 		trees,
 		ending: RouteEnds,
 		encounter: QuietRoad,
@@ -142,8 +142,8 @@ Fixtures :: [].{
 	## right into the next, and the road ahead of a rider on the first of them.
 	three_segment_road : RoadAhead.RoadView
 	three_segment_road = crafted_road([
-		{ ..bending_right(segment_of([])), length: Distance.metres(500.0) },
-		{ ..bending_right(segment_of([])), length: Distance.metres(320.0) },
-		{ ..segment_of([]), length: Distance.metres(400.0) },
+		{ ..bending_right(segment_of([])), length: Distance.from_metres(500.0) },
+		{ ..bending_right(segment_of([])), length: Distance.from_metres(320.0) },
+		{ ..segment_of([]), length: Distance.from_metres(400.0) },
 	])
 }

@@ -35,11 +35,11 @@ TowerSighting :: [].{
 
 ## How far past the end of its segment a tower stands.
 end_tower_beyond_end : Distance
-end_tower_beyond_end = Distance.metres(160.0)
+end_tower_beyond_end = Distance.from_metres(160.0)
 
 ## How far right of the road's middle a tower past a segment's end stands.
 end_tower_right_of_middle : Distance
-end_tower_right_of_middle = Distance.metres(20.0)
+end_tower_right_of_middle = Distance.from_metres(20.0)
 
 ## How far a tower past a segment's end is turned from square with the road:
 ## a turn to the left, as a positive turn is to the right.
@@ -48,11 +48,11 @@ end_tower_yaw = Angle.Turn.degrees(-30.0)
 
 ## A segment longer than this has a tower halfway along.
 mid_tower_min_length : Distance
-mid_tower_min_length = Distance.metres(1000.0)
+mid_tower_min_length = Distance.from_metres(1000.0)
 
 ## How far left of the road's middle a tower halfway along a segment stands.
 mid_tower_left_of_middle : Distance
-mid_tower_left_of_middle = Distance.metres(100.0)
+mid_tower_left_of_middle = Distance.from_metres(100.0)
 
 ## Where the tower halfway along a segment `segment_length` long stands, off
 ## to the left, if the segment is long enough to have one.
@@ -68,10 +68,10 @@ mid_tower_point = |segment_length|
 	}
 
 # Only a segment longer than a kilometre has a tower halfway along.
-expect mid_tower_point(Distance.metres(1000.0)) == Err(NoMidTower)
+expect mid_tower_point(Distance.from_metres(1000.0)) == Err(NoMidTower)
 expect
-	mid_tower_point(Distance.metres(1000.5))
-		== Ok({ along: Along.metres(500.25), across: Across.metres(-100.0) })
+	mid_tower_point(Distance.from_metres(1000.5))
+		== Ok({ along: Along.from_metres(500.25), across: Across.from_metres(-100.0) })
 
 ## The towers in view of a segment in view: the one past its end, then the
 ## one halfway along.

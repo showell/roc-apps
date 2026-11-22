@@ -190,17 +190,17 @@ bend_billboards = |bend_life, bend|
 
 ## How far before the end of its segment a herd of pigs stands.
 pig_distance_before_end : Distance
-pig_distance_before_end = Distance.metres(60.0)
+pig_distance_before_end = Distance.from_metres(60.0)
 
 ## Where the cow herd stands along its segment: the bull's place, with the
 ## cows behind him.
 cow_herd_along : Along
-cow_herd_along = Along.metres(24.0)
+cow_herd_along = Along.from_metres(24.0)
 
 ## Where a segment's cat starts looking for its tree: it waits by the first
 ## tree on the right from here on.
 cat_along : Along
-cat_along = Along.metres(105.0)
+cat_along = Along.from_metres(105.0)
 
 ## The nearest tree on the right at or past `along`, which a segment's cat waits
 ## by. A segment's trees are planted in order along the road, so the first found
@@ -227,22 +227,22 @@ pig_herd_along = |length| Along.at(length.minus(pig_distance_before_end))
 ## The trees of a gold segment 300 m long, where each pair on the right has one
 ## tree near the road and one far from it.
 gold_trees : List(Trees.RoadsideTree)
-gold_trees = Trees.roadside_trees({ scheme: GoldGreen, length: Distance.metres(300.0) })
+gold_trees = Trees.roadside_trees({ scheme: GoldGreen, length: Distance.from_metres(300.0) })
 
 # On a gold segment the pairs differ. The tree found is whichever comes next, near
 # the road or far from it, and never one on the left.
-expect nearest_tree_ahead(gold_trees, cat_along).road_point.across == Across.metres(3.5)
-expect nearest_tree_ahead(gold_trees, Along.metres(90.0)).road_point.across == Across.metres(8.0)
-expect nearest_tree_ahead(gold_trees, Along.metres(90.0)).road_point.along == Along.metres(96.0)
-expect nearest_tree_ahead(gold_trees, Along.metres(96.0)).road_point.along == Along.metres(96.0)
-expect nearest_tree_ahead(gold_trees, Along.metres(96.5)).road_point.along == Along.metres(126.0)
+expect nearest_tree_ahead(gold_trees, cat_along).road_point.across == Across.from_metres(3.5)
+expect nearest_tree_ahead(gold_trees, Along.from_metres(90.0)).road_point.across == Across.from_metres(8.0)
+expect nearest_tree_ahead(gold_trees, Along.from_metres(90.0)).road_point.along == Along.from_metres(96.0)
+expect nearest_tree_ahead(gold_trees, Along.from_metres(96.0)).road_point.along == Along.from_metres(96.0)
+expect nearest_tree_ahead(gold_trees, Along.from_metres(96.5)).road_point.along == Along.from_metres(126.0)
 
 ## A tree at `along` and `across` metres, of whatever kind a gold segment starts
 ## with.
 tree_at : F64, F64 -> Trees.RoadsideTree
 tree_at = |along, across| {
 	..(gold_trees.first() ?? crash "Segment.tree_at: a gold segment has trees"),
-	road_point: { along: Along.metres(along), across: Across.metres(across) },
+	road_point: { along: Along.from_metres(along), across: Across.from_metres(across) },
 }
 
 ## A left and a right tree at each of `alongs`.
@@ -261,6 +261,6 @@ expect fifth_along(pairs_at([10.0, 20.0, 30.0, 40.0, 50.0])) == Ok(50.0)
 expect fifth_along(pairs_at([10.0, 20.0, 30.0, 40.0, 50.0, 60.0])) == Ok(50.0)
 expect fifth_along([50.0, 60.0, 70.0, 80.0, 90.0].map(|along| tree_at(along, 6.0))) == Err(NoPerch)
 expect {
-	short_trees = Trees.roadside_trees({ scheme: RedGreen, length: Distance.metres(50.0) })
+	short_trees = Trees.roadside_trees({ scheme: RedGreen, length: Distance.from_metres(50.0) })
 	fifth_along(short_trees) == Err(NoPerch)
 }

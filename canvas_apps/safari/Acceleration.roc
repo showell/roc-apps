@@ -4,8 +4,8 @@
 ## applies one to a speed and works one out from two.
 Acceleration :: F64.{
 
-	metres_a_step_each_step : F64 -> Acceleration
-	metres_a_step_each_step = |metres| Acceleration.(metres)
+	from_metres_a_step_each_step : F64 -> Acceleration
+	from_metres_a_step_each_step = |metres| Acceleration.(metres)
 
 	to_metres_a_step_each_step : Acceleration -> F64
 	to_metres_a_step_each_step = |Acceleration.(acceleration)| acceleration
@@ -35,14 +35,14 @@ Acceleration :: F64.{
 }
 
 harder : Acceleration
-harder = Acceleration.metres_a_step_each_step(-0.5)
+harder = Acceleration.from_metres_a_step_each_step(-0.5)
 
 gentler : Acceleration
-gentler = Acceleration.metres_a_step_each_step(-0.25)
+gentler = Acceleration.from_metres_a_step_each_step(-0.25)
 
 expect Acceleration.min(harder, gentler) == harder
 expect Acceleration.min(gentler, harder) == harder
 expect Acceleration.min(gentler, Acceleration.steady) == gentler
 expect
-	Acceleration.min(Acceleration.steady, Acceleration.metres_a_step_each_step(0.25))
+	Acceleration.min(Acceleration.steady, Acceleration.from_metres_a_step_each_step(0.25))
 		== Acceleration.steady

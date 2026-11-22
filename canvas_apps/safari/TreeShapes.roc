@@ -72,19 +72,19 @@ tree_parts = 136
 
 ## A tree nearer than this has cones for a crown.
 cone_reach : Distance
-cone_reach = Distance.metres(200.0)
+cone_reach = Distance.from_metres(200.0)
 
 ## A tree's crown is shaded fully at the camera, less the farther off it
 ## is, and not at all from this far on.
 crown_shade_reach : Distance
-crown_shade_reach = Distance.metres(80.0)
+crown_shade_reach = Distance.from_metres(80.0)
 
 ## A tree nearer than this gets a shaded trunk, which looks round. Past it, a
 ## trunk is only a few pixels wide on the screen, too narrow for the shading
 ## to show, so it is drawn flat. The reach is two pairs of trees deep, chosen
 ## by eye.
 round_trunk_reach : Distance
-round_trunk_reach = Distance.metres(60.0)
+round_trunk_reach = Distance.from_metres(60.0)
 
 ## How a tree's trunk is drawn: shaded, which looks round, or flat.
 TrunkFinish : [Shaded, Flat]
@@ -343,32 +343,32 @@ tier_cone = |tier, { inputs, ring_points, shade }| {
 	Shapes.region_from_corners(corners, fill)
 }
 
-expect crown_shade(Distance.metres(0.0)).to_f64() == 1.0
-expect crown_shade(Distance.metres(20.0)).to_f64() == 0.75
-expect crown_shade(Distance.metres(40.0)).to_f64() == 0.5
-expect crown_shade(Distance.metres(80.0)).to_f64() == 0.0
-expect crown_shade(Distance.metres(200.0)).to_f64() == 0.0
-expect crown_shade(Distance.metres(-50.0)).to_f64() == 1.0
+expect crown_shade(Distance.from_metres(0.0)).to_f64() == 1.0
+expect crown_shade(Distance.from_metres(20.0)).to_f64() == 0.75
+expect crown_shade(Distance.from_metres(40.0)).to_f64() == 0.5
+expect crown_shade(Distance.from_metres(80.0)).to_f64() == 0.0
+expect crown_shade(Distance.from_metres(200.0)).to_f64() == 0.0
+expect crown_shade(Distance.from_metres(-50.0)).to_f64() == 1.0
 
-expect TreeShapes.crown_of(Distance.metres(40.0)) == Cones({ shade: Fraction.of(0.5) })
-expect TreeShapes.crown_of(Distance.metres(199.0)) == Cones({ shade: Fraction.zero })
-expect TreeShapes.crown_of(Distance.metres(200.0)) == Triangles
+expect TreeShapes.crown_of(Distance.from_metres(40.0)) == Cones({ shade: Fraction.of(0.5) })
+expect TreeShapes.crown_of(Distance.from_metres(199.0)) == Cones({ shade: Fraction.zero })
+expect TreeShapes.crown_of(Distance.from_metres(200.0)) == Triangles
 
-expect [0.0, 59.9].all(|metres| trunk_finish_of(Distance.metres(metres)) == Shaded)
-expect [60.0, 60.1].all(|metres| trunk_finish_of(Distance.metres(metres)) == Flat)
+expect [0.0, 59.9].all(|metres| trunk_finish_of(Distance.from_metres(metres)) == Shaded)
+expect [60.0, 60.1].all(|metres| trunk_finish_of(Distance.from_metres(metres)) == Flat)
 
 ## The sample tree's base, the middle of its foot, at `lift` off the ground.
 sample_base : Distance -> RiderView.PointAtHeightAhead
 sample_base = |lift|
 	RiderView.point_at_height_ahead({
-		right: Distance.metres(0.0),
-		forward: Distance.metres(2.0),
+		right: Distance.from_metres(0.0),
+		forward: Distance.from_metres(2.0),
 		height: lift,
 	})
 		?? crash "the sample tree is past the near plane"
 
 sample_height : Distance
-sample_height = Distance.metres(4.352)
+sample_height = Distance.from_metres(4.352)
 
 sample_outline : Camera.Upright
 sample_outline = Camera.upright_on_screen(
@@ -379,7 +379,7 @@ sample_outline = Camera.upright_on_screen(
 # A lifted tree's cones measure from its foot: the ring under the bottom tier
 # sits the trunk's share of the height above the foot, which here is 2 m up.
 expect {
-	base = sample_base(Distance.metres(2.0))
+	base = sample_base(Distance.from_metres(2.0))
 	height = sample_height
 	focal_length = Pixels.of(500.0)
 	inputs = {
@@ -392,7 +392,7 @@ expect {
 	bottom_tier = tiers.last() ?? crash "a tree has tiers"
 	want = 2.0 + 4.352 * 55.0 / 136.0
 	is_at_want = |point| (point.height().to_metres() - want).abs() <= 0.000000001
-	match cone_ring_points(bottom_tier, { inputs, cone_radius: Distance.metres(1.0) }) {
+	match cone_ring_points(bottom_tier, { inputs, cone_radius: Distance.from_metres(1.0) }) {
 		Ok(ring_points) => ring_points.len() == ring_point_count and ring_points.all(is_at_want)
 		Err(BehindCamera) => False
 	}

@@ -109,7 +109,7 @@ bounds_after = |{ bounds, outcome }| {
 
 ## A coast that ends `metres` across the road.
 ending_at : F64 -> Coast.Outcome
-ending_at = |metres| EndsAt(Across.metres(metres))
+ending_at = |metres| EndsAt(Across.from_metres(metres))
 
 expect LeanSearch.lean_correction(ending_at(-0.1)) == MoreRight
 expect LeanSearch.lean_correction(ending_at(0.1)) == MoreLeft
@@ -138,7 +138,7 @@ searched_lean = |across, lean_radians|
 			..Motorcycle.initial.route_place,
 			road_point: {
 				..Motorcycle.initial.route_place.road_point,
-				across: Across.metres(across),
+				across: Across.from_metres(across),
 			},
 		},
 		lean: Angle.Lean.radians(lean_radians),

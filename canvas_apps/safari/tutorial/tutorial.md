@@ -128,9 +128,9 @@ This book shows Safari Ride's types first, and they reach every part of the prog
 
 Safari Ride's types are built from numbers. A length and a speed are both an `F64` underneath, so the ride gives each a type of its own. Here's the start of a length's:
 
-{{code Distance.Distance from "Distance ::" to "metres = |amount|"}}
+{{code Distance.Distance from "Distance ::" to "from_metres = |metres|"}}
 
-The `::` makes `Distance` opaque: inside is an `F64`, and only the `Distance` module opens it. `metres` wraps a number of metres as a `Distance`. So a `Distance` is more precise than an `F64`: its type says what the number means, and the compiler keeps a length apart from a speed or any other number. The {{chapter Opaque types: the clock}} chapter shows that precision catching a bug.
+The `::` makes `Distance` opaque: inside is an `F64`, and only the `Distance` module opens it. `from_metres` wraps a number of metres as a `Distance`: `Distance.(metres)` builds one, and only the `Distance` module can write it. So a `Distance` is more precise than an `F64`: its type says what the number means, and the compiler keeps a length apart from a speed or any other number. The {{chapter Opaque types: the clock}} chapter shows that precision catching a bug.
 
 ### A billboard spells out its fields and its choices
 
@@ -237,11 +237,11 @@ Because a function is a value, the chapters ahead pass functions to other functi
 
 ### A body is one expression
 
-A function's body is always one expression. A block is one kind, and a short body can be a plain expression, written straight after the `|`. The `Distance` module's `metres` turns a number of metres, an `F64`, into a length:
+A function's body is always one expression. A block is one kind, and a short body can be a plain expression, written straight after the `|`. The `SunPath` module's `bearing_at` returns the sun's bearing at a step of the ride, its direction on the compass:
 
-{{code Distance.metres}}
+{{code SunPath.bearing_at}}
 
-Inside the body, `amount` is the argument. The compiler warns when an argument has the same name as a definition at the module's top level, because inside the function the argument hides the definition. Named `metres`, the argument would make every `metres` in the body mean the number. A different name, `amount`, keeps the argument apart from the function. `Distance.(amount)` wraps the number as a `Distance`. So a one-line function and a ten-line one have the same shape: arguments in, one expression's value out.
+`sun_direction_at(clock)` returns a record of the sun's bearing and height, and `.bearing` reads one of its fields. So a one-line function and a ten-line one have the same shape: arguments in, one expression's value out.
 
 ### An annotation states the contract
 
@@ -620,7 +620,7 @@ The trip starts from where a thing stands on the road:
 
 `along` is how far the place lies along its segment of road, and `across` is how far it lies from the middle of the road, growing to the right. Each is an opaque type around a number of metres, as `Distance` is:
 
-{{code Along.Along from "Along ::" to "metres = |amount|"}}
+{{code Along.Along from "Along ::" to "from_metres = |metres|"}}
 
 So the compiler rejects a call that passes an `across` where an `along` belongs.
 

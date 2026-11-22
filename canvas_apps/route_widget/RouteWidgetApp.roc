@@ -73,8 +73,8 @@ laid_onto = |{ laid, at }, { plan, index }| {
 	metres = plan.length.to_metres()
 	bearing = map_bearing(index).to_radians()
 	end = {
-		east: Distance.metres(at.east.to_metres() + metres * bearing.sin()),
-		north: Distance.metres(at.north.to_metres() + metres * bearing.cos()),
+		east: Distance.from_metres(at.east.to_metres() + metres * bearing.sin()),
+		north: Distance.from_metres(at.north.to_metres() + metres * bearing.cos()),
 	}
 	{ laid: laid.append({ plan, start: at, end }), at: end }
 }

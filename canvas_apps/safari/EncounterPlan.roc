@@ -148,7 +148,7 @@ plan_for = |span, { gap, speed, now }|
 
 ## A span of 10 steps that ends 3 m short of the animal.
 ten_step_span : EncounterPlan.StepSpan
-ten_step_span = { length: Steps.of(10), ends_at: Distance.metres(3.0) }
+ten_step_span = { length: Steps.of(10), ends_at: Distance.from_metres(3.0) }
 
 ## The start a rider `metres_off` the animal, going `metres_a_step`, plans at
 ## step 100.
@@ -157,8 +157,8 @@ planned_at = |{ metres_off, metres_a_step }|
 	plan_for(
 		ten_step_span,
 		{
-			gap: Distance.metres(metres_off),
-			speed: Speed.metres_a_step(metres_a_step),
+			gap: Distance.from_metres(metres_off),
+			speed: Speed.from_metres_a_step(metres_a_step),
 			now: Clock.at_step(100),
 		},
 	)
@@ -175,7 +175,7 @@ expect planned_at({ metres_off: 23.1, metres_a_step: 2.0 }) == Unplanned
 expect planned_at({ metres_off: 2.0, metres_a_step: 0.0 }) == Unplanned
 
 # At 2.5 m a step the plan is made 3 + 2.5 × 10 = 28 m off.
-expect EncounterPlan.planning_gap(ten_step_span, Speed.metres_a_step(2.5)) == Distance.metres(28.0)
+expect EncounterPlan.planning_gap(ten_step_span, Speed.from_metres_a_step(2.5)) == Distance.from_metres(28.0)
 expect planned_at({ metres_off: 28.0, metres_a_step: 2.5 }) == StartsAt(Clock.at_step(100))
 
 ## A rider 8 m off the animal at 1 m a step, whom `plan_for` plans for at
@@ -183,8 +183,8 @@ expect planned_at({ metres_off: 28.0, metres_a_step: 2.5 }) == StartsAt(Clock.at
 near_approach : EncounterPlan.Approach
 near_approach = Approaching({
 	span: ten_step_span,
-	gap: Distance.metres(8.0),
-	speed: Speed.metres_a_step(1.0),
+	gap: Distance.from_metres(8.0),
+	speed: Speed.from_metres_a_step(1.0),
 })
 
 ## The plan a step after `plan`, at step 100, for a rider on the same segment

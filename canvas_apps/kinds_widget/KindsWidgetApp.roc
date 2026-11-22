@@ -69,7 +69,7 @@ Stand(kind) : {
 tree_stand : Stand(Conifer)
 tree_stand = {
 	kind: Conifer.Green,
-	forward: Distance.metres(35.0),
+	forward: Distance.from_metres(35.0),
 	canvas_x: 64.0,
 }
 
@@ -86,7 +86,7 @@ cow = {
 cow_stand : Stand(Billboard)
 cow_stand = {
 	kind: cow,
-	forward: Distance.metres(7.0),
+	forward: Distance.from_metres(7.0),
 	canvas_x: 192.0,
 }
 
@@ -102,7 +102,7 @@ tower = Tower.standing({
 tower_stand : Stand(Tower)
 tower_stand = {
 	kind: tower,
-	forward: Distance.metres(400.0),
+	forward: Distance.from_metres(400.0),
 	canvas_x: 320.0,
 }
 
@@ -117,7 +117,7 @@ cat = { pose: Stride }
 cat_stand : Stand(Cat)
 cat_stand = {
 	kind: cat,
-	forward: Distance.metres(12.5),
+	forward: Distance.from_metres(12.5),
 	canvas_x: 436.0,
 }
 
@@ -128,7 +128,7 @@ bird = { pose: Perched }
 bird_stand : Stand(Bird)
 bird_stand = {
 	kind: bird,
-	forward: Distance.metres(12.0),
+	forward: Distance.from_metres(12.0),
 	canvas_x: 576.0,
 }
 

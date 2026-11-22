@@ -14,7 +14,7 @@ Camera :: [].{
 
 	## The camera's height above the ground.
 	eye_height : Distance
-	eye_height = Distance.metres(1.2)
+	eye_height = Distance.from_metres(1.2)
 
 	## Where a point in front of the camera lands on the screen, through a
 	## lens of `focal_length`.
@@ -90,81 +90,81 @@ screen_point : RiderView.PointAtHeight -> Point
 screen_point = |point| Camera.project(ahead(point), Pixels.of(800.0))
 
 expect screen_point({
-	right: Distance.metres(0.0),
-	forward: Distance.metres(10.0),
-	height: Distance.metres(1.2),
+	right: Distance.from_metres(0.0),
+	forward: Distance.from_metres(10.0),
+	height: Distance.from_metres(1.2),
 }).x.to_f64() == 480.0
 expect screen_point({
-	right: Distance.metres(10.0),
-	forward: Distance.metres(10.0),
-	height: Distance.metres(1.2),
+	right: Distance.from_metres(10.0),
+	forward: Distance.from_metres(10.0),
+	height: Distance.from_metres(1.2),
 }).x.to_f64() == 1280.0
 expect screen_point({
-	right: Distance.metres(-5.0),
-	forward: Distance.metres(10.0),
-	height: Distance.metres(1.2),
+	right: Distance.from_metres(-5.0),
+	forward: Distance.from_metres(10.0),
+	height: Distance.from_metres(1.2),
 }).x.to_f64() == 80.0
 expect screen_point({
-	right: Distance.metres(10.0),
-	forward: Distance.metres(5.0),
-	height: Distance.metres(1.2),
+	right: Distance.from_metres(10.0),
+	forward: Distance.from_metres(5.0),
+	height: Distance.from_metres(1.2),
 }).x.to_f64() == 2080.0
 expect screen_point({
-	right: Distance.metres(0.0),
-	forward: Distance.metres(10.0),
-	height: Distance.metres(1.2),
+	right: Distance.from_metres(0.0),
+	forward: Distance.from_metres(10.0),
+	height: Distance.from_metres(1.2),
 }).y.to_f64() == 300.0
 expect screen_point({
-	right: Distance.metres(0.0),
-	forward: Distance.metres(10.0),
-	height: Distance.metres(11.2),
+	right: Distance.from_metres(0.0),
+	forward: Distance.from_metres(10.0),
+	height: Distance.from_metres(11.2),
 }).y.to_f64() == -500.0
 expect screen_point({
-	right: Distance.metres(0.0),
-	forward: Distance.metres(10.0),
-	height: Distance.metres(6.2),
+	right: Distance.from_metres(0.0),
+	forward: Distance.from_metres(10.0),
+	height: Distance.from_metres(6.2),
 }).y.to_f64() == -100.0
 expect screen_point({
-	right: Distance.metres(0.0),
-	forward: Distance.metres(10.0),
-	height: Distance.metres(0.2),
+	right: Distance.from_metres(0.0),
+	forward: Distance.from_metres(10.0),
+	height: Distance.from_metres(0.2),
 }).y.to_f64() == 380.0
 expect screen_point({
-	right: Distance.metres(0.0),
-	forward: Distance.metres(4.0),
-	height: Distance.metres(3.2),
+	right: Distance.from_metres(0.0),
+	forward: Distance.from_metres(4.0),
+	height: Distance.from_metres(3.2),
 }).y.to_f64() == -100.0
 
 # The same point twice as far off is half as far from the screen's middle.
 expect screen_point({
-	right: Distance.metres(4.0),
-	forward: Distance.metres(4.0),
-	height: Distance.metres(1.2),
+	right: Distance.from_metres(4.0),
+	forward: Distance.from_metres(4.0),
+	height: Distance.from_metres(1.2),
 }).x.to_f64() == 1280.0
 expect screen_point({
-	right: Distance.metres(4.0),
-	forward: Distance.metres(8.0),
-	height: Distance.metres(1.2),
+	right: Distance.from_metres(4.0),
+	forward: Distance.from_metres(8.0),
+	height: Distance.from_metres(1.2),
 }).x.to_f64() == 880.0
 expect screen_point({
-	right: Distance.metres(4.0),
-	forward: Distance.metres(16.0),
-	height: Distance.metres(1.2),
+	right: Distance.from_metres(4.0),
+	forward: Distance.from_metres(16.0),
+	height: Distance.from_metres(1.2),
 }).x.to_f64() == 680.0
 expect screen_point({
-	right: Distance.metres(0.0),
-	forward: Distance.metres(4.0),
-	height: Distance.metres(5.2),
+	right: Distance.from_metres(0.0),
+	forward: Distance.from_metres(4.0),
+	height: Distance.from_metres(5.2),
 }).y.to_f64() == -500.0
 expect screen_point({
-	right: Distance.metres(0.0),
-	forward: Distance.metres(8.0),
-	height: Distance.metres(5.2),
+	right: Distance.from_metres(0.0),
+	forward: Distance.from_metres(8.0),
+	height: Distance.from_metres(5.2),
 }).y.to_f64() == -100.0
 expect screen_point({
-	right: Distance.metres(0.0),
-	forward: Distance.metres(16.0),
-	height: Distance.metres(5.2),
+	right: Distance.from_metres(0.0),
+	forward: Distance.from_metres(16.0),
+	height: Distance.from_metres(5.2),
 }).y.to_f64() == 100.0
 expect
 	[
@@ -175,7 +175,7 @@ expect
 	].all(
 		|(height, forward, focal_length, on_screen)|
 			Camera.height_on_screen(
-				{ height: Distance.metres(height), forward: Distance.metres(forward) },
+				{ height: Distance.from_metres(height), forward: Distance.from_metres(forward) },
 				Pixels.of(focal_length),
 			)
 				== Pixels.of(on_screen),
@@ -185,19 +185,19 @@ expect
 	Camera.projected_points(
 		[
 			{
-				right: Distance.metres(0.0),
-				forward: Distance.metres(10.0),
-				height: Distance.metres(1.2),
+				right: Distance.from_metres(0.0),
+				forward: Distance.from_metres(10.0),
+				height: Distance.from_metres(1.2),
 			},
 			{
-				right: Distance.metres(10.0),
-				forward: Distance.metres(10.0),
-				height: Distance.metres(1.2),
+				right: Distance.from_metres(10.0),
+				forward: Distance.from_metres(10.0),
+				height: Distance.from_metres(1.2),
 			},
 			{
-				right: Distance.metres(0.0),
-				forward: Distance.metres(10.0),
-				height: Distance.metres(11.2),
+				right: Distance.from_metres(0.0),
+				forward: Distance.from_metres(10.0),
+				height: Distance.from_metres(11.2),
 			},
 		].map(ahead),
 		Pixels.of(800.0),

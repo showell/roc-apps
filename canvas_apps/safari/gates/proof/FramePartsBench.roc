@@ -297,7 +297,7 @@ counts_line = |route, instant| {
 	)
 	step = instant.clock.to_str()
 	sighted = TreeSighting.trees_in_view(road, sighting_camera)
-	coned = sighted.count_if(|tree| tree.spot.foot().forward() < Distance.metres(200.0))
+	coned = sighted.count_if(|tree| tree.spot.foot().forward() < Distance.from_metres(200.0))
 	var $text = ""
 	for (name, renderings) in kinds {
 		shapes = renderings.join_map(|r| r.sprite().to_shapes())

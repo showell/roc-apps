@@ -100,8 +100,8 @@ expect {
 ## 0.2 radians to the right.
 turned_vantage : Geometry.Vantage
 turned_vantage = {
-	along: Along.metres(100.0),
-	across: Across.metres(1.0),
+	along: Along.from_metres(100.0),
+	across: Across.from_metres(1.0),
 	yaw: Angle.Turn.radians(0.2),
 }
 
@@ -114,7 +114,7 @@ turned_point_at = |road_view, from_rider|
 		{
 			vantage: turned_vantage,
 			from_rider,
-			road_point: { along: Along.metres(50.0), across: Across.metres(1.0) },
+			road_point: { along: Along.from_metres(50.0), across: Across.from_metres(1.0) },
 		},
 	)
 
@@ -143,7 +143,7 @@ road_past_bend = |turn|
 		Route.from_segments([
 			{
 				..Fixtures.segment_of([]),
-				length: Distance.metres(300.0),
+				length: Distance.from_metres(300.0),
 				ending: Bends({ turn, bend_life: Quiet }),
 			},
 			Fixtures.segment_of([]),
@@ -209,9 +209,9 @@ expect
 expect {
 	stretches =
 		Route.from_segments([
-			{ ..Fixtures.bending_right(Fixtures.segment_of([])), length: Distance.metres(300.0) },
-			{ ..Fixtures.bending_right(Fixtures.segment_of([])), length: Distance.metres(150.0) },
-			{ ..Fixtures.segment_of([]), length: Distance.metres(50.0) },
+			{ ..Fixtures.bending_right(Fixtures.segment_of([])), length: Distance.from_metres(300.0) },
+			{ ..Fixtures.bending_right(Fixtures.segment_of([])), length: Distance.from_metres(150.0) },
+			{ ..Fixtures.segment_of([]), length: Distance.from_metres(50.0) },
 		]).segments_with_ends()
 	lengths = stretches.map(|stretch| stretch.segment.length.to_metres())
 	ends = stretches.map(|stretch| stretch.end.to_metres())
@@ -226,8 +226,8 @@ expect {
 			Fixtures.road,
 			{
 				vantage: {
-					along: Along.metres(5.0),
-					across: Across.metres(0.5),
+					along: Along.from_metres(5.0),
+					across: Across.from_metres(0.5),
 					yaw: Angle.Turn.radians(yaw),
 				},
 				from_rider: Ahead(SegmentFromRider.Position.first),
@@ -236,28 +236,28 @@ expect {
 		)
 	[
 		(
-			seen_from({ along: Along.metres(0.0), across: Across.metres(-3.0) }, 0.0),
-			{ right: Distance.metres(-3.5), forward: Distance.metres(-5.0) },
+			seen_from({ along: Along.from_metres(0.0), across: Across.from_metres(-3.0) }, 0.0),
+			{ right: Distance.from_metres(-3.5), forward: Distance.from_metres(-5.0) },
 		),
 		(
-			seen_from({ along: Along.metres(12.0), across: Across.metres(0.0) }, 0.35),
+			seen_from({ along: Along.from_metres(12.0), across: Across.from_metres(0.0) }, 0.35),
 			{
-				right: Distance.metres(-2.869971008611849),
-				forward: Distance.metres(6.404160086203927),
+				right: Distance.from_metres(-2.869971008611849),
+				forward: Distance.from_metres(6.404160086203927),
 			},
 		),
 		(
-			seen_from({ along: Along.metres(40.0), across: Across.metres(-5.0) }, -0.6),
+			seen_from({ along: Along.from_metres(40.0), across: Across.from_metres(-5.0) }, -0.6),
 			{
-				right: Distance.metres(15.223140686823006),
-				forward: Distance.metres(31.992280125511435),
+				right: Distance.from_metres(15.223140686823006),
+				forward: Distance.from_metres(31.992280125511435),
 			},
 		),
 		(
-			seen_from({ along: Along.metres(7.5), across: Across.metres(3.25) }, 1.2),
+			seen_from({ along: Along.from_metres(7.5), across: Across.from_metres(3.25) }, 1.2),
 			{
-				right: Distance.metres(-1.333613890107213),
-				forward: Distance.metres(3.4690018726015563),
+				right: Distance.from_metres(-1.333613890107213),
+				forward: Distance.from_metres(3.4690018726015563),
 			},
 		),
 	].all(
@@ -289,28 +289,28 @@ patch_outcome = |shape|
 # A patch that straddles the horizon is kept, and one wholly past it is not.
 expect
 	sample_patch_shape([
-		{ right: Distance.metres(-2.0), forward: Distance.metres(480.0) },
-		{ right: Distance.metres(2.0), forward: Distance.metres(480.0) },
-		{ right: Distance.metres(2.0), forward: Distance.metres(505.0) },
-		{ right: Distance.metres(-2.0), forward: Distance.metres(505.0) },
+		{ right: Distance.from_metres(-2.0), forward: Distance.from_metres(480.0) },
+		{ right: Distance.from_metres(2.0), forward: Distance.from_metres(480.0) },
+		{ right: Distance.from_metres(2.0), forward: Distance.from_metres(505.0) },
+		{ right: Distance.from_metres(-2.0), forward: Distance.from_metres(505.0) },
 	]).is_ok()
 expect
 	patch_outcome(
 		sample_patch_shape([
-			{ right: Distance.metres(-2.0), forward: Distance.metres(495.0) },
-			{ right: Distance.metres(2.0), forward: Distance.metres(495.0) },
-			{ right: Distance.metres(2.0), forward: Distance.metres(520.0) },
-			{ right: Distance.metres(-2.0), forward: Distance.metres(520.0) },
+			{ right: Distance.from_metres(-2.0), forward: Distance.from_metres(495.0) },
+			{ right: Distance.from_metres(2.0), forward: Distance.from_metres(495.0) },
+			{ right: Distance.from_metres(2.0), forward: Distance.from_metres(520.0) },
+			{ right: Distance.from_metres(-2.0), forward: Distance.from_metres(520.0) },
 		]),
 	)
 		== PastHorizon
 expect
 	patch_outcome(
 		sample_patch_shape([
-			{ right: Distance.metres(-5.0), forward: Distance.metres(-10.0) },
-			{ right: Distance.metres(5.0), forward: Distance.metres(-10.0) },
-			{ right: Distance.metres(5.0), forward: Distance.metres(-20.0) },
-			{ right: Distance.metres(-5.0), forward: Distance.metres(-20.0) },
+			{ right: Distance.from_metres(-5.0), forward: Distance.from_metres(-10.0) },
+			{ right: Distance.from_metres(5.0), forward: Distance.from_metres(-10.0) },
+			{ right: Distance.from_metres(5.0), forward: Distance.from_metres(-20.0) },
+			{ right: Distance.from_metres(-5.0), forward: Distance.from_metres(-20.0) },
 		]),
 	)
 		== BehindCamera
@@ -368,7 +368,7 @@ strip_shapes = patch_shapes([first_road])
 
 expect {
 	road_behind =
-		patches_seen_from({ ..Fixtures.origin, along: Along.metres(5000.0) }).take_first(1)
+		patches_seen_from({ ..Fixtures.origin, along: Along.from_metres(5000.0) }).take_first(1)
 	road_behind.len() == 1 and patch_shapes(road_behind).len() == 0
 }
 last_shape : Shapes.Shape
@@ -394,14 +394,14 @@ expect
 ## The place `metres` along the three-segment road's route.
 three_segment_route_place : F64 -> Try(RoutePlace, [PastRouteEnd])
 three_segment_route_place = |metres|
-	RoutePlace.at_distance(Fixtures.three_segment_road.route(), Distance.metres(metres))
+	RoutePlace.at_distance(Fixtures.three_segment_road.route(), Distance.from_metres(metres))
 
 ## The place on the three-segment road's segment at `count_before`, `along` metres
 ## from its start, on the middle of the road.
 three_segment_route_place_on : U32, F64 -> RoutePlace
 three_segment_route_place_on = |count_before, along| {
 	segment_index: Route.SegmentIndex.number(count_before),
-	road_point: { along: Along.metres(along), across: Across.middle },
+	road_point: { along: Along.from_metres(along), across: Across.middle },
 }
 
 # A place found by its distance is on the segment it falls on, and a distance at
@@ -437,8 +437,8 @@ sample_clipped_polygon = |forwards|
 			color: RgbColor.of(0x2F7E8C),
 			corners: forwards.map(
 				|forward| {
-					right: Distance.metres(forward),
-					forward: Distance.metres(forward),
+					right: Distance.from_metres(forward),
+					forward: Distance.from_metres(forward),
 					height: Distance.zero,
 				},
 			),

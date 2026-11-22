@@ -142,20 +142,20 @@ TruckShape :: [].{
 	}
 
 	truck_width : Distance
-	truck_width = Distance.metres(2.4)
+	truck_width = Distance.from_metres(2.4)
 
 	truck_height : Distance
-	truck_height = Distance.metres(3.6)
+	truck_height = Distance.from_metres(3.6)
 
 	cab_length : Distance
-	cab_length = Distance.metres(3.5)
+	cab_length = Distance.from_metres(3.5)
 
 	tire_radius : Distance
-	tire_radius = Distance.metres(0.5)
+	tire_radius = Distance.from_metres(0.5)
 
 	## The trailer's floor clears the top of its tires by 12 cm.
 	trailer_bottom : Distance
-	trailer_bottom = tire_radius.times(2.0).plus(Distance.metres(0.12))
+	trailer_bottom = tire_radius.times(2.0).plus(Distance.from_metres(0.12))
 
 	## The cab's floor is level with its axle.
 	cab_bottom : Distance
@@ -239,7 +239,7 @@ across_truck = |color, edges| {
 }
 
 trailer_length : Distance
-trailer_length = Distance.metres(8.4)
+trailer_length = Distance.from_metres(8.4)
 
 ## How far forward of the trailer the cab's flat roof reaches, as a fraction
 ## of the cab's length, a proportion chosen by eye.
@@ -252,11 +252,11 @@ tire_sides = 16
 
 ## How far in from each end of the trailer the middle of its pair of axles is.
 trailer_axle_inset : Distance
-trailer_axle_inset = Distance.metres(1.6)
+trailer_axle_inset = Distance.from_metres(1.6)
 
 ## The distance between the two axles of a pair.
 axle_pair_gap : Distance
-axle_pair_gap = Distance.metres(1.2)
+axle_pair_gap = Distance.from_metres(1.2)
 
 ## How far forward of the trailer the cab's axle is, as a fraction of the
 ## cab's length.
@@ -283,10 +283,10 @@ axles = {
 
 expect
 	TruckShape.strip_corners(
-		{ left: Distance.metres(-1.0), right: Distance.metres(1.0) },
+		{ left: Distance.from_metres(-1.0), right: Distance.from_metres(1.0) },
 		{
-			near: { ahead: Distance.metres(2.0), height: Distance.metres(3.0) },
-			far: { ahead: Distance.metres(5.0), height: Distance.metres(7.0) },
+			near: { ahead: Distance.from_metres(2.0), height: Distance.from_metres(3.0) },
+			far: { ahead: Distance.from_metres(5.0), height: Distance.from_metres(7.0) },
 		},
 	).map(
 		|corner| (

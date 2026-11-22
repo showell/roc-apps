@@ -42,14 +42,14 @@ CowHerd :: { cow_count : U64, rows_behind_front : U64 }.{
 }
 
 cow : Billboard.Species
-cow = { emoji: EmojiStill.cow, adult_height: Distance.metres(1.4) }
+cow = { emoji: EmojiStill.cow, adult_height: Distance.from_metres(1.4) }
 
 bull : Billboard.Species
 bull = { emoji: EmojiStill.bull, adult_height: cow.adult_height.times(1.15) }
 
 ## The gap between the bull's side and the trees.
 bull_tree_gap : Distance
-bull_tree_gap = Distance.metres(0.5)
+bull_tree_gap = Distance.from_metres(0.5)
 
 ## The bull at `herd_along`, by the trees.
 herd_bull : Along -> Geometry.Placed(Billboard)
@@ -69,33 +69,33 @@ herd_bull = |herd_along| {
 ## How far from the middle of the road the herd's front row stands, 10 metres
 ## off the road's edge. Each herd sets its own.
 front_row_distance : Distance
-front_row_distance = Geometry.road_half_width.plus(Distance.metres(10.0))
+front_row_distance = Geometry.road_half_width.plus(Distance.from_metres(10.0))
 
 ## How far along the road behind the bull's place the first column's place is,
 ## chosen by eye.
 gap_behind_bull : Distance
-gap_behind_bull = Distance.metres(4.0)
+gap_behind_bull = Distance.from_metres(4.0)
 
 ## The distance between the herd's columns, along the road, chosen by eye.
 column_spacing : Distance
-column_spacing = Distance.metres(6.0)
+column_spacing = Distance.from_metres(6.0)
 
 ## How far along the road each row back is moved from the one in front, chosen
 ## by eye. A column's place is where its front row stands.
 row_stagger : Distance
-row_stagger = Distance.metres(2.0)
+row_stagger = Distance.from_metres(2.0)
 
 ## The distance between the herd's rows, away from the road, chosen by eye.
 row_depth : Distance
-row_depth = Distance.metres(5.0)
+row_depth = Distance.from_metres(5.0)
 
 ## How far a cow strays from its place along the road, chosen by eye.
 jitter_along : Distance
-jitter_along = Distance.metres(1.5)
+jitter_along = Distance.from_metres(1.5)
 
 ## How far a cow strays from its place across the road, chosen by eye.
 jitter_across : Distance
-jitter_across = Distance.metres(1.2)
+jitter_across = Distance.from_metres(1.2)
 
 ## Every fourth cow, starting with cow 1, is a calf.
 is_calf : U64 -> Bool
@@ -147,7 +147,7 @@ cow_billboard = |cow_number|
 	}
 
 expect {
-	bull_height = herd_bull(Along.metres(24.0)).kind.scenery_height()
+	bull_height = herd_bull(Along.from_metres(24.0)).kind.scenery_height()
 	(bull_height.to_metres() - 1.61).abs() <= 0.000000000001
 }
 
@@ -166,17 +166,17 @@ five_cows : CowHerd
 five_cows = CowHerd.herd({ cow_count: 5, rows_behind_front: 1 })
 
 cows_with_bull : List(Geometry.Placed(Billboard))
-cows_with_bull = five_cows.herd_cows({ herd_along: Along.metres(24.0), bull: WithBull })
+cows_with_bull = five_cows.herd_cows({ herd_along: Along.from_metres(24.0), bull: WithBull })
 
 cows_without_bull : List(Geometry.Placed(Billboard))
-cows_without_bull = five_cows.herd_cows({ herd_along: Along.metres(24.0), bull: NoBull })
+cows_without_bull = five_cows.herd_cows({ herd_along: Along.from_metres(24.0), bull: NoBull })
 
 expect cows_with_bull.len() == 6
 expect cows_without_bull.len() == 5
 
 # The bull leads, facing left, and the cows follow him in their own order, facing
 # right.
-expect cows_with_bull.take_first(1).map(|leader| leader.road_point.along) == [Along.metres(24.0)]
+expect cows_with_bull.take_first(1).map(|leader| leader.road_point.along) == [Along.from_metres(24.0)]
 expect
 	cows_with_bull.take_first(1).map(|leader| leader.kind)
 		== [Billboard.adult_billboard(bull, FacesLeft)]

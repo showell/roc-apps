@@ -129,7 +129,7 @@ const LINTS = {
   {recipe = "check_name_types", args = {"table=name_types.txt"}, budget = {}, counts = {{"name_type", 0}, {"bare_beside_unit", 0}, {"no_value", 0}},
     whole_tree = {"bare_beside_unit"}},
   {recipe = "find_bare_floats", args = {"table=bare_floats.txt"}, budget = {}, counts = {{"bare_float", 0}, {"unused_exception", 0}}},
-  {recipe = "check_families", args = {}, budget = {}, counts = {{"family", 0}, {"twin_name", 0}}, whole_tree = {"family", "twin_name"}},
+  {recipe = "check_families", args = {}, budget = {}, counts = {{"family", 0}, {"twin_name", 0}, {"unpaired_conversion", 0}}, whole_tree = {"family", "twin_name"}},
   {recipe = "find_unclear_names", args = {}, own_args = {"accepted=accepted_terms.txt"}, budget = {}, counts = {{"pure_mutator", 0}, {"abbreviation", 0}, {"module_doc", 0}},
     folders = SHARED_AND_WIDGETS, folder_args = {{"canvas_apps/lib", {"accepted=" .. LIB_ACCEPTED}}}},
   {recipe = "find_unused_imports", args = {}, budget = {}, from_repo_root = true, counts = {{"unused_import", 0}},

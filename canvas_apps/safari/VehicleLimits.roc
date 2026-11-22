@@ -8,13 +8,13 @@ import Speed
 VehicleLimits :: [].{
 
 	cruise_acceleration : Acceleration
-	cruise_acceleration = Acceleration.metres_a_step_each_step(0.01)
+	cruise_acceleration = Acceleration.from_metres_a_step_each_step(0.01)
 
 	starting_speed : Speed
-	starting_speed = Speed.metres_a_step(0.3)
+	starting_speed = Speed.from_metres_a_step(0.3)
 
 	top_speed : Speed
-	top_speed = Speed.metres_a_step(2.5)
+	top_speed = Speed.from_metres_a_step(2.5)
 
 	## The acceleration that brings `speed` to `target` within a distance. A
 	## target closer than `least_braking_distance` counts as reached, and the
@@ -60,17 +60,17 @@ VehicleLimits :: [].{
 
 ## The shortest distance `braking_to` works a brake out over.
 least_braking_distance : Distance
-least_braking_distance = Distance.metres(0.000001)
+least_braking_distance = Distance.from_metres(0.000001)
 
 ## The turns a route can make, in whole degrees, and the speed each is taken at.
 turn_speeds : List({ whole_degrees : U32, speed : Speed })
 turn_speeds = [
-	{ whole_degrees: 15, speed: Speed.metres_a_step(1.297) },
-	{ whole_degrees: 20, speed: Speed.metres_a_step(0.84) },
-	{ whole_degrees: 30, speed: Speed.metres_a_step(0.461) },
-	{ whole_degrees: 50, speed: Speed.metres_a_step(0.222) },
-	{ whole_degrees: 70, speed: Speed.metres_a_step(0.139) },
-	{ whole_degrees: 80, speed: Speed.metres_a_step(0.117) },
+	{ whole_degrees: 15, speed: Speed.from_metres_a_step(1.297) },
+	{ whole_degrees: 20, speed: Speed.from_metres_a_step(0.84) },
+	{ whole_degrees: 30, speed: Speed.from_metres_a_step(0.461) },
+	{ whole_degrees: 50, speed: Speed.from_metres_a_step(0.222) },
+	{ whole_degrees: 70, speed: Speed.from_metres_a_step(0.139) },
+	{ whole_degrees: 80, speed: Speed.from_metres_a_step(0.117) },
 ]
 
 ## One step of `braking_to`'s brake, from `speed`.
@@ -84,20 +84,20 @@ speed_after_braking = |speed, { target, within }|
 # holds.
 expect
 	speed_after_braking(
-		Speed.metres_a_step(0.5),
-		{ target: Speed.at_rest, within: Distance.metres(0.25) },
+		Speed.from_metres_a_step(0.5),
+		{ target: Speed.at_rest, within: Distance.from_metres(0.25) },
 	)
 		== Speed.at_rest
 
 # At the first bend the steady brake lands a little under the bend's speed,
 # and that undershoot is kept.
 expect {
-	bend_speed = Speed.metres_a_step(0.222)
+	bend_speed = Speed.from_metres_a_step(0.222)
 	landed = speed_after_braking(
-		Speed.metres_a_step(0.239),
-		{ target: bend_speed, within: Distance.metres(0.115) },
+		Speed.from_metres_a_step(0.239),
+		{ target: bend_speed, within: Distance.from_metres(0.115) },
 	)
-	landed < bend_speed and landed > Speed.metres_a_step(0.204)
+	landed < bend_speed and landed > Speed.from_metres_a_step(0.204)
 }
 
 ## The speed for a turn of this many degrees.

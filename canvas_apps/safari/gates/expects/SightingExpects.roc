@@ -95,7 +95,7 @@ is_one_tree_behind = |degrees|
 				{
 					road: past_bend_road(degrees),
 					from_rider: JustBehind,
-					road_point: { along: Along.metres(195.0), across: Across.middle },
+					road_point: { along: Along.from_metres(195.0), across: Across.middle },
 				},
 			)
 		_ => False
@@ -115,7 +115,7 @@ right_angle_road : RoadAhead.RoadView
 right_angle_road = Fixtures.crafted_road([
 	{
 		..Fixtures.segment_of([]),
-		length: Distance.metres(300.0),
+		length: Distance.from_metres(300.0),
 		ending: Bends({ turn: Angle.Turn.degrees(90.0), bend_life: Quiet }),
 	},
 	Fixtures.segment_of([]),
@@ -145,7 +145,7 @@ left_edge_point = |from_rider, along|
 		{
 			vantage: Fixtures.origin,
 			from_rider,
-			road_point: { along: Along.metres(along), across: Geometry.left_edge },
+			road_point: { along: Along.from_metres(along), across: Geometry.left_edge },
 		},
 	)
 
@@ -171,7 +171,7 @@ tree_places : List(Segment), Pixels -> List((F64, F64))
 tree_places = |segments, focal_length|
 	TreeSighting.trees_in_view(
 		Fixtures.crafted_road(segments),
-		{ vantage: { ..Fixtures.origin, along: Along.metres(10.0) }, focal_length },
+		{ vantage: { ..Fixtures.origin, along: Along.from_metres(10.0) }, focal_length },
 	).map(|tree| (tree.spot.foot().right().to_metres(), tree.spot.foot().forward().to_metres()))
 
 ## A tree behind the rider, then a far one, then a near pair.
@@ -229,8 +229,8 @@ lone_cow = match one_cow_segment.segment_cows() {
 is_cow_seen_from : F64 -> Bool
 is_cow_seen_from = |forward| {
 	rider = {
-		along: Along.metres(lone_cow.along.to_metres() - forward),
-		across: Across.metres(lone_cow.across.to_metres() - 2.5),
+		along: Along.from_metres(lone_cow.along.to_metres() - forward),
+		across: Across.from_metres(lone_cow.across.to_metres() - 2.5),
 		yaw: Angle.straight_ahead,
 	}
 	cow_road = Fixtures.crafted_road([one_cow_segment])
@@ -260,16 +260,16 @@ expect
 billboards_at_four_bends : List(Geometry.Placed(Billboard))
 billboards_at_four_bends = [
 	BendAnimal.Elephant.bend_billboards(
-		{ segment_length: Distance.metres(100.0), turn: Angle.Turn.degrees(50.0) },
+		{ segment_length: Distance.from_metres(100.0), turn: Angle.Turn.degrees(50.0) },
 	),
 	BendAnimal.Giraffe.bend_billboards(
-		{ segment_length: Distance.metres(50.0), turn: Angle.Turn.degrees(-70.0) },
+		{ segment_length: Distance.from_metres(50.0), turn: Angle.Turn.degrees(-70.0) },
 	),
 	BendAnimal.Zebra.bend_billboards(
-		{ segment_length: Distance.metres(10.0), turn: Angle.Turn.degrees(50.0) },
+		{ segment_length: Distance.from_metres(10.0), turn: Angle.Turn.degrees(50.0) },
 	),
 	BendAnimal.Rhino.bend_billboards(
-		{ segment_length: Distance.metres(0.0), turn: Angle.Turn.degrees(-70.0) },
+		{ segment_length: Distance.from_metres(0.0), turn: Angle.Turn.degrees(-70.0) },
 	),
 ].join()
 
@@ -303,7 +303,7 @@ shapes_of_tower_100_ahead = {
 	sighted =
 		Pipeline.sighting_of(
 			{
-				road_point: { along: Along.metres(100.0), across: Across.middle },
+				road_point: { along: Along.from_metres(100.0), across: Across.middle },
 				lift: Distance.zero,
 				kind: plain_tower,
 			},
@@ -391,41 +391,41 @@ expect
 		(
 			rod_end(0, From),
 			{
-				right: Distance.metres(-6.0),
-				forward: Distance.metres(94.0),
-				height: Distance.metres(-0.05),
+				right: Distance.from_metres(-6.0),
+				forward: Distance.from_metres(94.0),
+				height: Distance.from_metres(-0.05),
 			},
 		),
 		(
 			rod_end(8, From),
 			{
-				right: Distance.metres(-3.0),
-				forward: Distance.metres(97.0),
-				height: Distance.metres(39.95),
+				right: Distance.from_metres(-3.0),
+				forward: Distance.from_metres(97.0),
+				height: Distance.from_metres(39.95),
 			},
 		),
 		(
 			rod_end(0, To),
 			{
-				right: Distance.metres(0.0),
-				forward: Distance.metres(100.0),
-				height: Distance.metres(79.95),
+				right: Distance.from_metres(0.0),
+				forward: Distance.from_metres(100.0),
+				height: Distance.from_metres(79.95),
 			},
 		),
 		(
 			rod_end(10, From),
 			{
-				right: Distance.metres(3.0),
-				forward: Distance.metres(103.0),
-				height: Distance.metres(39.95),
+				right: Distance.from_metres(3.0),
+				forward: Distance.from_metres(103.0),
+				height: Distance.from_metres(39.95),
 			},
 		),
 		(
 			rod_end(2, To),
 			{
-				right: Distance.metres(0.0),
-				forward: Distance.metres(100.0),
-				height: Distance.metres(79.95),
+				right: Distance.from_metres(0.0),
+				forward: Distance.from_metres(100.0),
+				height: Distance.from_metres(79.95),
 			},
 		),
 	].all(
@@ -440,7 +440,7 @@ expect
 # along, 100 m left and not turned.
 ## A segment 1200 m long, holding nothing, which ends a route.
 long_segment : Segment
-long_segment = { ..Fixtures.segment_of([]), length: Distance.metres(1200.0) }
+long_segment = { ..Fixtures.segment_of([]), length: Distance.from_metres(1200.0) }
 
 ## The towers in view at `clock` from the origin of the segment at `rider_number` on a
 ## route of a 200 m segment bending right into the long one.
@@ -468,7 +468,7 @@ are_towers_at = |rider_number, wants| {
 	towers = towers_on_short_then_long(rider_number, Clock.start)
 	road = short_then_long_road(rider_number)
 	is_tower_at = |tower, (from_rider, along, across, yaw_degrees)| {
-		road_point = { along: Along.metres(along), across: Across.metres(across) }
+		road_point = { along: Along.from_metres(along), across: Across.from_metres(across) }
 		yaw_gap = tower.kind.yaw().to_degrees() - yaw_degrees
 		is_standing = is_standing_at(tower.spot, { road, from_rider, road_point })
 		is_standing and yaw_gap.abs() <= 0.000000001
@@ -500,7 +500,7 @@ expect
 expect
 	TowerSighting.towers_in_view(
 		Fixtures.crafted_road([Fixtures.segment_of([])]),
-		{ vantage: { ..Fixtures.origin, along: Along.metres(5000.0) }, clock: Clock.start },
+		{ vantage: { ..Fixtures.origin, along: Along.from_metres(5000.0) }, clock: Clock.start },
 	).len()
 		== 0
 
@@ -521,16 +521,16 @@ tower_yaws_on_lone_segment = |length|
 # The tower past the end of a segment 4340 m long stands 4500 m ahead, where
 # the horizon hides all 80 m of it, so only the tower halfway along is
 # sighted. Past a segment 4320 m long, 4480 m ahead, its tip still shows.
-expect tower_yaws_on_lone_segment(Distance.metres(4340.0)) == [0]
-expect tower_yaws_on_lone_segment(Distance.metres(4320.0)) == [-30, 0]
+expect tower_yaws_on_lone_segment(Distance.from_metres(4340.0)) == [0]
+expect tower_yaws_on_lone_segment(Distance.from_metres(4320.0)) == [-30, 0]
 
 ## A pond's bend at the end of a segment 100 m long, turning 15° right.
 right_pond_bend : Geometry.Bend
-right_pond_bend = { segment_length: Distance.metres(100.0), turn: Angle.Turn.degrees(15.0) }
+right_pond_bend = { segment_length: Distance.from_metres(100.0), turn: Angle.Turn.degrees(15.0) }
 
 ## A pond's bend at the end of a segment 100 m long, turning 15° left.
 left_pond_bend : Geometry.Bend
-left_pond_bend = { segment_length: Distance.metres(100.0), turn: Angle.Turn.degrees(-15.0) }
+left_pond_bend = { segment_length: Distance.from_metres(100.0), turn: Angle.Turn.degrees(-15.0) }
 
 # A duck floats as far out from the road at a left turn as at a right one, on
 # the other side.
@@ -569,8 +569,8 @@ truck_after = |route_position, speed|
 	TruckJourney.truck_progress_at_next_step(
 		{
 			..TruckJourney.initial,
-			route_position: Distance.metres(route_position),
-			speed: Speed.metres_a_step(speed),
+			route_position: Distance.from_metres(route_position),
+			speed: Speed.from_metres_a_step(speed),
 		},
 		{ rider_distance: Distance.zero, route: World.route },
 	)
@@ -599,7 +599,7 @@ expect
 
 # The chase holds a truck to one top speed, whatever it was going.
 expect truck_after(100.0, 5.0).speed == truck_after(100.0, 9.0).speed
-expect truck_after(100.0, 5.0).speed < Speed.metres_a_step(5.0)
+expect truck_after(100.0, 5.0).speed < Speed.from_metres_a_step(5.0)
 expect chasing_truck.pace == NotSlowing
 
 ## A truck 50 m short of the first bend.
@@ -617,8 +617,8 @@ expect braking_truck.pace == Slowing
 settled_truck : TruckJourney.TruckProgress
 settled_truck = TruckJourney.truck_progress_at_next_step(
 	{
-		route_position: Distance.metres(450.0),
-		speed: Speed.metres_a_step(0.1776),
+		route_position: Distance.from_metres(450.0),
+		speed: Speed.from_metres_a_step(0.1776),
 		pace: Slowing,
 	},
 	{ rider_distance: Distance.zero, route: World.route },
@@ -628,8 +628,8 @@ expect settled_truck.pace == NotSlowing
 expect F64.to_bits(settled_truck.speed.to_metres_a_step()) == F64.to_bits(0.1776)
 
 # The truck brakes for a bend from 60 m short of it, and not a metre sooner.
-expect truck_after(440.0, 0.3).speed < Speed.metres_a_step(0.3)
-expect !(truck_after(439.0, 0.3).speed < Speed.metres_a_step(0.3))
+expect truck_after(440.0, 0.3).speed < Speed.from_metres_a_step(0.3)
+expect !(truck_after(439.0, 0.3).speed < Speed.from_metres_a_step(0.3))
 
 # Short of a bend the truck brakes for it. At a bend's own end the next bend is
 # the one ahead, and past the last bend, with only the route's end ahead, the
@@ -637,7 +637,7 @@ expect !(truck_after(439.0, 0.3).speed < Speed.metres_a_step(0.3))
 expect [499.0, 800.0, 7219.0].all(|route_position| truck_after(route_position, 0.3).pace == Slowing)
 expect
 	[500.0, 820.0, 7220.0, 7519.0, 7600.0].all(
-		|route_position| truck_after(route_position, 0.3).speed == Speed.metres_a_step(0.3),
+		|route_position| truck_after(route_position, 0.3).speed == Speed.from_metres_a_step(0.3),
 	)
 
 ## What becomes of a truck `lead` metres ahead of a rider on the three-segment road's
@@ -650,7 +650,7 @@ truck_seen_from = |vantage, lead|
 		{
 			vantage,
 			truck: {
-				route_position: Distance.metres(vantage.along.to_metres() + lead),
+				route_position: Distance.from_metres(vantage.along.to_metres() + lead),
 				lights: { headlights: Off, brake_lights: Off },
 			},
 		},
@@ -697,7 +697,7 @@ F64 -> {
 }
 road_middle_at = |position, along| {
 	from_rider: Ahead(position),
-	road_point: { along: Along.metres(along), across: Across.middle },
+	road_point: { along: Along.from_metres(along), across: Across.middle },
 }
 
 expect
@@ -767,8 +767,8 @@ expect
 			].all(
 				|(ahead, rightward)| {
 					on_truck = {
-						ahead: Distance.metres(ahead),
-						rightward: Distance.metres(rightward),
+						ahead: Distance.from_metres(ahead),
+						rightward: Distance.from_metres(rightward),
 						height: Distance.zero,
 					}
 					truck_point_off_road(place, on_truck) < 0.000001
@@ -782,7 +782,7 @@ expect
 # herd is fourteen cows in columns of three.
 ## Where the route's herds of pigs stand along the road, for these expects.
 route_herd_along : Along
-route_herd_along = Along.metres(940.0)
+route_herd_along = Along.from_metres(940.0)
 
 ## The route's herds of pigs, in the order the rider meets them.
 route_pig_herds : List(PigHerd)
@@ -869,7 +869,7 @@ expect route_two_row_pigs.get(2) == Ok(route_two_row_standout)
 route_cows : List(Geometry.Placed(Billboard))
 route_cows =
 	World.route.segment_at(Route.SegmentIndex.first).cows.herd.herd_cows(
-		{ herd_along: Along.metres(24.0), bull: NoBull },
+		{ herd_along: Along.from_metres(24.0), bull: NoBull },
 	)
 
 # Fourteen cows in columns of three, each within the jitter of its row.

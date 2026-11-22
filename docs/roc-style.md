@@ -188,6 +188,13 @@ Roc's own rules are in the langref's
   one finds the others. Shale's `families` reports a member that lacks a public
   name most of its family has (`family`; a member that differs says so in its
   `##` doc), and a `Pose` that has two shapes in two modules (`twin_name`).
+- **A conversion pair is named both ways: `from_<noun>` into the type,
+  `to_<noun>` out of it.** `Distance.to_metres` gives a length's metres, so
+  the way in is `Distance.from_metres`. A bare `Distance.metres` beside it
+  leaves the reader to guess which way it goes. A constructor with no `to_`
+  partner keeps its own name (`Clock.at_step`). Shale's `families` reports a
+  function in a type's braces, named for a noun and giving the type, beside
+  that type's `to_<noun>` (`unpaired_conversion`).
 - **A top-level value or a field is never one letter.** `board_width`, not
   `w`; `row`, not `y`. It is read far from where it is set, so its name is
   all the reader has. Three sets of letters are the exception, each the words
@@ -415,7 +422,7 @@ Roc's own rules are in the langref's
   # This:
   w = width.to_metres()
   h = height.to_metres()
-  Distance.metres((w * w + h * h).sqrt())
+  Distance.from_metres((w * w + h * h).sqrt())
   ```
 - **A new type is opaque (`::`) by default; nominal (`:=`) needs a reason.**
   An opaque type can change its insides without touching a caller, and
@@ -1082,7 +1089,7 @@ is the base; these rules sharpen it.
   ```
 
   Two items stay side by side, whatever they hold: a pair reads as a pair,
-  like `{ along: Along.metres(33.0), across: Across.metres(-17.0) }` or a
+  like `{ along: Along.from_metres(33.0), across: Across.from_metres(-17.0) }` or a
   table's `(agent_added(full, { name: "Bot", owner: zed }), Err(NoSuchOwner))`.
   A row of literals stays side by side too, like
   `[1.0, 2.0, 3.0, 4.0, 5.0, 6.0]`, and may stand stacked. A group with a

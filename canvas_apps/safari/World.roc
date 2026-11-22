@@ -65,7 +65,7 @@ World :: [].{
 	bending_plans = [
 		{
 			segment_plan: {
-				length: Distance.metres(500.0),
+				length: Distance.from_metres(500.0),
 				scheme: AllGreen,
 				encounter: BirdHere,
 				pigs: NoPigs,
@@ -76,7 +76,7 @@ World :: [].{
 		},
 		{
 			segment_plan: {
-				length: Distance.metres(320.0),
+				length: Distance.from_metres(320.0),
 				scheme: AllGreen,
 				encounter: QuietRoad,
 				pigs: NoPigs,
@@ -87,7 +87,7 @@ World :: [].{
 		},
 		{
 			segment_plan: {
-				length: Distance.metres(400.0),
+				length: Distance.from_metres(400.0),
 				scheme: AllGreen,
 				encounter: BirdHere,
 				pigs: WithPigs,
@@ -98,7 +98,7 @@ World :: [].{
 		},
 		{
 			segment_plan: {
-				length: Distance.metres(300.0),
+				length: Distance.from_metres(300.0),
 				scheme: GoldGreen,
 				encounter: CatCrosses,
 				pigs: NoPigs,
@@ -109,7 +109,7 @@ World :: [].{
 		},
 		{
 			segment_plan: {
-				length: Distance.metres(300.0),
+				length: Distance.from_metres(300.0),
 				scheme: AllGreen,
 				encounter: QuietRoad,
 				pigs: NoPigs,
@@ -120,7 +120,7 @@ World :: [].{
 		},
 		{
 			segment_plan: {
-				length: Distance.metres(300.0),
+				length: Distance.from_metres(300.0),
 				scheme: AllGreen,
 				encounter: BirdHere,
 				pigs: NoPigs,
@@ -131,7 +131,7 @@ World :: [].{
 		},
 		{
 			segment_plan: {
-				length: Distance.metres(1200.0),
+				length: Distance.from_metres(1200.0),
 				scheme: RedGreen,
 				encounter: QuietRoad,
 				pigs: NoPigs,
@@ -142,7 +142,7 @@ World :: [].{
 		},
 		{
 			segment_plan: {
-				length: Distance.metres(300.0),
+				length: Distance.from_metres(300.0),
 				scheme: AllGreen,
 				encounter: QuietRoad,
 				pigs: NoPigs,
@@ -153,7 +153,7 @@ World :: [].{
 		},
 		{
 			segment_plan: {
-				length: Distance.metres(300.0),
+				length: Distance.from_metres(300.0),
 				scheme: AllGreen,
 				encounter: QuietRoad,
 				pigs: NoPigs,
@@ -164,7 +164,7 @@ World :: [].{
 		},
 		{
 			segment_plan: {
-				length: Distance.metres(800.0),
+				length: Distance.from_metres(800.0),
 				scheme: AllGreen,
 				encounter: CatCrosses,
 				pigs: NoPigs,
@@ -175,7 +175,7 @@ World :: [].{
 		},
 		{
 			segment_plan: {
-				length: Distance.metres(300.0),
+				length: Distance.from_metres(300.0),
 				scheme: AllGreen,
 				encounter: QuietRoad,
 				pigs: WithPigs,
@@ -186,7 +186,7 @@ World :: [].{
 		},
 		{
 			segment_plan: {
-				length: Distance.metres(300.0),
+				length: Distance.from_metres(300.0),
 				scheme: AllGreen,
 				encounter: QuietRoad,
 				pigs: WithPigs,
@@ -197,7 +197,7 @@ World :: [].{
 		},
 		{
 			segment_plan: {
-				length: Distance.metres(300.0),
+				length: Distance.from_metres(300.0),
 				scheme: RedGreen,
 				encounter: QuietRoad,
 				pigs: WithPigs,
@@ -208,7 +208,7 @@ World :: [].{
 		},
 		{
 			segment_plan: {
-				length: Distance.metres(400.0),
+				length: Distance.from_metres(400.0),
 				scheme: AllGreen,
 				encounter: QuietRoad,
 				pigs: WithPigs,
@@ -219,7 +219,7 @@ World :: [].{
 		},
 		{
 			segment_plan: {
-				length: Distance.metres(300.0),
+				length: Distance.from_metres(300.0),
 				scheme: AllGreen,
 				encounter: BirdHere,
 				pigs: WithPigs,
@@ -230,7 +230,7 @@ World :: [].{
 		},
 		{
 			segment_plan: {
-				length: Distance.metres(300.0),
+				length: Distance.from_metres(300.0),
 				scheme: RedGreen,
 				encounter: QuietRoad,
 				pigs: NoPigs,
@@ -241,7 +241,7 @@ World :: [].{
 		},
 		{
 			segment_plan: {
-				length: Distance.metres(300.0),
+				length: Distance.from_metres(300.0),
 				scheme: AllGreen,
 				encounter: QuietRoad,
 				pigs: WithPigs,
@@ -252,7 +252,7 @@ World :: [].{
 		},
 		{
 			segment_plan: {
-				length: Distance.metres(300.0),
+				length: Distance.from_metres(300.0),
 				scheme: AllGreen,
 				encounter: QuietRoad,
 				pigs: WithPigs,
@@ -329,7 +329,7 @@ World :: [].{
 ## The route's last segment, which ends it.
 last_plan : World.SegmentPlan
 last_plan = {
-	length: Distance.metres(300.0),
+	length: Distance.from_metres(300.0),
 	scheme: RedGreen,
 	encounter: CatCrosses,
 	pigs: WithPigs,

@@ -43,7 +43,7 @@ canvas_height = 240.0
 
 ## Just past the reach of the cones, so every crown is flat triangles.
 forward : Distance
-forward = Distance.metres(210.0)
+forward = Distance.from_metres(210.0)
 
 ## Six times the ride's lens at rest, which puts the tallest tip near the top of
 ## the picture.

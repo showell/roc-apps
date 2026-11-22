@@ -33,8 +33,8 @@ sample_stray = |index|
 		{
 			along_phase: 2.0,
 			across_phase: 3.0,
-			jitter_along: Distance.metres(0.4),
-			jitter_across: Distance.metres(0.6),
+			jitter_along: Distance.from_metres(0.4),
+			jitter_across: Distance.from_metres(0.6),
 		},
 	)
 
@@ -43,7 +43,7 @@ is_near = |got, want| (got.to_metres() - want).abs() <= 0.000000001
 
 # The first animal strays only across the road, its whole reach: the sine of 0
 # is 0 and the cosine is 1.
-expect sample_stray(0) == { along: Distance.metres(0.0), across: Distance.metres(0.6) }
+expect sample_stray(0) == { along: Distance.from_metres(0.0), across: Distance.from_metres(0.6) }
 
 # Later animals stray by the sine and cosine of their number times the phases,
 # each phase on its own side.

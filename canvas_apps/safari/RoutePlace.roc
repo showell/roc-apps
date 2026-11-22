@@ -72,7 +72,7 @@ RoutePlace := {
 place_across : F64 -> RoutePlace
 place_across = |across| {
 	..RoutePlace.route_start,
-	road_point: { ..RoutePlace.route_start.road_point, across: Across.metres(across) },
+	road_point: { ..RoutePlace.route_start.road_point, across: Across.from_metres(across) },
 }
 
 # The road's edges are off the road, and just inside them is on it.

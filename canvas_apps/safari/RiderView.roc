@@ -18,7 +18,7 @@ RiderView :: [].{
 	ground_distance = |{ from, to }| {
 		rightward = to.right.minus(from.right).to_metres()
 		forward = to.forward.minus(from.forward).to_metres()
-		Distance.metres((rightward * rightward + forward * forward).sqrt())
+		Distance.from_metres((rightward * rightward + forward * forward).sqrt())
 	}
 
 	## A point in the rider's view, at a height above the level of the rider.
@@ -182,7 +182,7 @@ RiderView :: [].{
 
 ## The closest distance ahead that the camera can see.
 near_plane : Distance
-near_plane = Distance.metres(0.4)
+near_plane = Distance.from_metres(0.4)
 
 ## Whether a point `forward` of the camera is at or past the near plane,
 ## where the camera can see it.
@@ -241,16 +241,16 @@ near_plane_region = {
 straight_ahead : F64 -> RiderView.PointAtHeight
 straight_ahead = |forward| {
 	right: Distance.zero,
-	forward: Distance.metres(forward),
+	forward: Distance.from_metres(forward),
 	height: Distance.zero,
 }
 
 ## A point 2 m right, 9 m ahead and 1 m up.
 sample_point : RiderView.PointAtHeight
 sample_point = {
-	right: Distance.metres(2.0),
-	forward: Distance.metres(9.0),
-	height: Distance.metres(1.0),
+	right: Distance.from_metres(2.0),
+	forward: Distance.from_metres(9.0),
+	height: Distance.from_metres(1.0),
 }
 
 # A point past the near plane gives back each of its parts.
@@ -282,9 +282,9 @@ expect {
 		Err(BehindCamera) => False
 	}
 }
-expect RiderView.rider_point_ahead({ right: Distance.zero, forward: Distance.metres(0.4) }).is_ok()
+expect RiderView.rider_point_ahead({ right: Distance.zero, forward: Distance.from_metres(0.4) }).is_ok()
 expect {
-	short_of_plane = { right: Distance.zero, forward: Distance.metres(0.39) }
+	short_of_plane = { right: Distance.zero, forward: Distance.from_metres(0.39) }
 	RiderView.rider_point_ahead(short_of_plane) == Err(BehindCamera)
 }
 
@@ -296,7 +296,7 @@ expect
 		forward: sample_point.forward,
 	}) {
 		Ok(point) =>
-			[Distance.metres(3.0), Distance.zero, Distance.metres(-1.0)].all(
+			[Distance.from_metres(3.0), Distance.zero, Distance.from_metres(-1.0)].all(
 				|height| point.at_height(height).to_point_at_height() == { ..sample_point, height },
 			)
 		Err(BehindCamera) => False
@@ -317,12 +317,12 @@ expect RiderView.points_at_height_ahead([]) == Ok([])
 expect
 	match RiderView.point_at_height_ahead(sample_point) {
 		Ok(point) => {
-			moved = point.at_height(Distance.metres(3.0)).at_right(Distance.metres(-4.0))
+			moved = point.at_height(Distance.from_metres(3.0)).at_right(Distance.from_metres(-4.0))
 			moved.to_point_at_height()
 				== {
-					right: Distance.metres(-4.0),
-					forward: Distance.metres(9.0),
-					height: Distance.metres(3.0),
+					right: Distance.from_metres(-4.0),
+					forward: Distance.from_metres(9.0),
+					height: Distance.from_metres(3.0),
 				}
 		}
 		Err(BehindCamera) => False
@@ -331,20 +331,20 @@ expect
 expect
 	near_plane_crossing({
 		from: {
-			right: Distance.metres(0.0),
-			forward: Distance.metres(0.0),
-			height: Distance.metres(10.0),
+			right: Distance.from_metres(0.0),
+			forward: Distance.from_metres(0.0),
+			height: Distance.from_metres(10.0),
 		},
 		to: {
-			right: Distance.metres(8.0),
-			forward: Distance.metres(0.8),
-			height: Distance.metres(30.0),
+			right: Distance.from_metres(8.0),
+			forward: Distance.from_metres(0.8),
+			height: Distance.from_metres(30.0),
 		},
 	}).to_point_at_height()
 		== {
-			right: Distance.metres(4.0),
-			forward: Distance.metres(0.4),
-			height: Distance.metres(20.0),
+			right: Distance.from_metres(4.0),
+			forward: Distance.from_metres(0.4),
+			height: Distance.from_metres(20.0),
 		}
 
 ## How far ahead each end of the part of a line straight ahead, from `from`
@@ -368,77 +368,77 @@ expect ahead_line_ends(-5.0, 0.2) == Err(BehindCamera)
 expect
 	RiderView.clipped_points([
 		{
-			right: Distance.metres(-1.0),
-			forward: Distance.metres(2.0),
-			height: Distance.metres(0.0),
+			right: Distance.from_metres(-1.0),
+			forward: Distance.from_metres(2.0),
+			height: Distance.from_metres(0.0),
 		},
 		{
-			right: Distance.metres(1.0),
-			forward: Distance.metres(2.0),
-			height: Distance.metres(0.5),
+			right: Distance.from_metres(1.0),
+			forward: Distance.from_metres(2.0),
+			height: Distance.from_metres(0.5),
 		},
 		{
-			right: Distance.metres(1.0),
-			forward: Distance.metres(-1.0),
-			height: Distance.metres(1.0),
+			right: Distance.from_metres(1.0),
+			forward: Distance.from_metres(-1.0),
+			height: Distance.from_metres(1.0),
 		},
 		{
-			right: Distance.metres(-1.0),
-			forward: Distance.metres(-1.0),
-			height: Distance.metres(1.5),
+			right: Distance.from_metres(-1.0),
+			forward: Distance.from_metres(-1.0),
+			height: Distance.from_metres(1.5),
 		},
 	]).map(RiderView.PointAtHeightAhead.to_point_at_height)
 		== [
 			{
-				right: Distance.metres(-1.0),
-				forward: Distance.metres(2.0),
-				height: Distance.metres(0.0),
+				right: Distance.from_metres(-1.0),
+				forward: Distance.from_metres(2.0),
+				height: Distance.from_metres(0.0),
 			},
 			{
-				right: Distance.metres(1.0),
-				forward: Distance.metres(2.0),
-				height: Distance.metres(0.5),
+				right: Distance.from_metres(1.0),
+				forward: Distance.from_metres(2.0),
+				height: Distance.from_metres(0.5),
 			},
 			{
-				right: Distance.metres(1.0),
-				forward: Distance.metres(0.4),
-				height: Distance.metres(0.7666666666666666),
+				right: Distance.from_metres(1.0),
+				forward: Distance.from_metres(0.4),
+				height: Distance.from_metres(0.7666666666666666),
 			},
 			{
-				right: Distance.metres(-1.0),
-				forward: Distance.metres(0.4),
-				height: Distance.metres(0.8),
+				right: Distance.from_metres(-1.0),
+				forward: Distance.from_metres(0.4),
+				height: Distance.from_metres(0.8),
 			},
 		]
 
 expect
 	RiderView.point_between({
 		from: {
-			right: Distance.metres(0.0),
-			forward: Distance.metres(10.0),
-			height: Distance.metres(20.0),
+			right: Distance.from_metres(0.0),
+			forward: Distance.from_metres(10.0),
+			height: Distance.from_metres(20.0),
 		},
 		to: {
-			right: Distance.metres(8.0),
-			forward: Distance.metres(30.0),
-			height: Distance.metres(0.0),
+			right: Distance.from_metres(8.0),
+			forward: Distance.from_metres(30.0),
+			height: Distance.from_metres(0.0),
 		},
 		fraction: Fraction.of(0.25),
 	})
 		== {
-			right: Distance.metres(2.0),
-			forward: Distance.metres(15.0),
-			height: Distance.metres(15.0),
+			right: Distance.from_metres(2.0),
+			forward: Distance.from_metres(15.0),
+			height: Distance.from_metres(15.0),
 		}
 
 # Along the ground, whichever way the second point lies from the first.
 expect
 	[
-		({ right: Distance.metres(-1.0), forward: Distance.metres(2.0) }, 5.0),
-		({ right: Distance.metres(2.0), forward: Distance.metres(6.0) }, 0.0),
+		({ right: Distance.from_metres(-1.0), forward: Distance.from_metres(2.0) }, 5.0),
+		({ right: Distance.from_metres(2.0), forward: Distance.from_metres(6.0) }, 0.0),
 	].all(
 		|(from, want)| {
-			to = { right: Distance.metres(2.0), forward: Distance.metres(6.0) }
+			to = { right: Distance.from_metres(2.0), forward: Distance.from_metres(6.0) }
 			RiderView.ground_distance({ from, to }).to_metres() == want
 		},
 	)

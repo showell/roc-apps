@@ -52,7 +52,7 @@ third_width = WidgetPage.canvas_width / 3.0
 ## still. This is far enough for every view, and 32 metres is too near for the
 ## view from behind, as the expects below hold.
 view_distance : Distance
-view_distance = Distance.metres(45.0)
+view_distance = Distance.from_metres(45.0)
 
 ## Only the truck's back shows.
 behind_view : TruckView
@@ -201,5 +201,5 @@ expect {
 # views' distance loses its tires under the panel, and one seen from the side
 # much nearer runs out of its third.
 expect truck_views.all(is_in_its_third)
-expect !is_in_its_third({ ..behind_view, distance: Distance.metres(32.0) })
-expect !is_in_its_third({ ..left_side_view, distance: Distance.metres(20.0) })
+expect !is_in_its_third({ ..behind_view, distance: Distance.from_metres(32.0) })
+expect !is_in_its_third({ ..left_side_view, distance: Distance.from_metres(20.0) })

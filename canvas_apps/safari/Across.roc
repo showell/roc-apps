@@ -6,8 +6,8 @@ import Distance
 
 Across :: F64.{
 
-	metres : F64 -> Across
-	metres = |amount| Across.(amount)
+	from_metres : F64 -> Across
+	from_metres = |metres| Across.(metres)
 
 	to_metres : Across -> F64
 	to_metres = |Across.(across)| across
@@ -26,7 +26,7 @@ Across :: F64.{
 
 	## How far this place is from the middle of the road, to either side.
 	distance_from_middle : Across -> Distance
-	distance_from_middle = |Across.(across)| Distance.metres(across.abs())
+	distance_from_middle = |Across.(across)| Distance.from_metres(across.abs())
 
 	## The place `distance` further right.
 	plus : Across, Distance -> Across
@@ -39,7 +39,7 @@ Across :: F64.{
 	## How far this place is to the right of `other`: negative when it is to
 	## the left.
 	distance_from : Across, Across -> Distance
-	distance_from = |Across.(across), Across.(other)| Distance.metres(across - other)
+	distance_from = |Across.(across), Across.(other)| Distance.from_metres(across - other)
 
 	## The place further left of this one and `other`.
 	min : Across, Across -> Across
@@ -73,8 +73,8 @@ expect
 		(3.0, [False, False, True, True, False]),
 	].all(
 		|(metres, want)| {
-			across = Across.metres(metres)
-			held = Across.metres(2.5)
+			across = Across.from_metres(metres)
+			held = Across.from_metres(2.5)
 			[
 				across < held,
 				across <= held,

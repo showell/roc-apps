@@ -36,7 +36,7 @@ finished_ride = {
 		motorcycle: {
 			route_place: {
 				segment_index: Route.SegmentIndex.number(last_segment_index),
-				road_point: { along: Along.metres(400.0), across: Across.metres(0.0) },
+				road_point: { along: Along.from_metres(400.0), across: Across.from_metres(0.0) },
 			},
 			yaw: Angle.Turn.radians(0.0),
 			speed: Speed.at_rest,
@@ -45,8 +45,8 @@ finished_ride = {
 		eyes: { gaze_yaw: Angle.Turn.radians(0.0), look_depth: Fraction.of(0.9) },
 	},
 	truck: {
-		route_position: Distance.metres(9000.0),
-		speed: Speed.metres_a_step(2.0),
+		route_position: Distance.from_metres(9000.0),
+		speed: Speed.from_metres_a_step(2.0),
 		pace: Slowing,
 	},
 	clock: Clock.at_step(12345),
@@ -126,7 +126,7 @@ placed_rider = |index, along| {
 		route_place: {
 			..Motorcycle.initial.route_place,
 			segment_index: Route.SegmentIndex.number(index),
-			road_point: { ..Motorcycle.initial.route_place.road_point, along: Along.metres(along) },
+			road_point: { ..Motorcycle.initial.route_place.road_point, along: Along.from_metres(along) },
 		},
 	},
 }
@@ -174,10 +174,10 @@ motorcycle_at_first_seam : Motorcycle
 motorcycle_at_first_seam = {
 	route_place: {
 		..Motorcycle.initial.route_place,
-		road_point: { along: Along.metres(499.0), across: Across.metres(0.5) },
+		road_point: { along: Along.from_metres(499.0), across: Across.from_metres(0.5) },
 	},
 	yaw: Angle.Turn.radians(0.1),
-	speed: Speed.metres_a_step(1.25),
+	speed: Speed.from_metres_a_step(1.25),
 	lean: Angle.Lean.radians(0.05),
 }
 

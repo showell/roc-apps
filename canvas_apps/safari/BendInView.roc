@@ -134,7 +134,7 @@ BendInView :: { before : SegmentFromRider, bend : Geometry.Bend }.{
 		along_to_apex = toward_edge * turn_radians.cos() / turn_sine
 		{
 			end_before: { along: Along.at(bend.segment_length), across },
-			apex: { along: start_after.along.plus(Distance.metres(along_to_apex)), across },
+			apex: { along: start_after.along.plus(Distance.from_metres(along_to_apex)), across },
 			start_after,
 		}
 	}
@@ -160,7 +160,7 @@ BendInView :: { before : SegmentFromRider, bend : Geometry.Bend }.{
 ## A bend of `turn` from a segment 300 m long at `before`.
 sample_bend : SegmentFromRider, Angle.Turn -> BendInView
 sample_bend = |before, turn| {
-	bend = { segment_length: Distance.metres(300.0), turn }
+	bend = { segment_length: Distance.from_metres(300.0), turn }
 	BendInView.({ before, bend })
 }
 

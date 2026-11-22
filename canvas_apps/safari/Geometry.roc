@@ -38,7 +38,7 @@ Geometry :: [].{
 	## How far the road reaches from its middle to either edge. The road is
 	## twice this wide.
 	road_half_width : Distance
-	road_half_width = Distance.metres(2.0)
+	road_half_width = Distance.from_metres(2.0)
 
 	## The road's left edge.
 	left_edge : Across
@@ -103,8 +103,8 @@ Geometry :: [].{
 		along = point.along.to_metres()
 		across = point.across.to_metres()
 		{
-			along: start.along.plus(Distance.metres(cos_turn * along - sin_turn * across)),
-			across: start.across.plus(Distance.metres(sin_turn * along + cos_turn * across)),
+			along: start.along.plus(Distance.from_metres(cos_turn * along - sin_turn * across)),
+			across: start.across.plus(Distance.from_metres(sin_turn * along + cos_turn * across)),
 		}
 	}
 
@@ -114,8 +114,8 @@ Geometry :: [].{
 		past_start = point.along.distance_from(start.along).to_metres()
 		aside = point.across.distance_from(start.across).to_metres()
 		{
-			along: Along.metres(cos_turn * past_start + sin_turn * aside),
-			across: Across.metres((0.0 - sin_turn) * past_start + cos_turn * aside),
+			along: Along.from_metres(cos_turn * past_start + sin_turn * aside),
+			across: Across.from_metres((0.0 - sin_turn) * past_start + cos_turn * aside),
 		}
 	}
 
@@ -138,11 +138,11 @@ start_after = |bend, { cos_turn, sin_turn }| {
 	half_width = Geometry.road_half_width.to_metres()
 	toward_turn = half_width * (1.0 - cos_turn)
 	{
-		along: Along.metres(bend.segment_length.to_metres() + half_width * sin_turn.abs()),
+		along: Along.from_metres(bend.segment_length.to_metres() + half_width * sin_turn.abs()),
 		across: if bend.turn.is_right() {
-			Across.metres(toward_turn)
+			Across.from_metres(toward_turn)
 		} else {
-			Across.metres(0.0 - toward_turn)
+			Across.from_metres(0.0 - toward_turn)
 		},
 	}
 }
@@ -152,7 +152,7 @@ expect Geometry.outer_side(Angle.Turn.degrees(-70.0)) == RightSide
 
 ## A bend of `degrees` out of a 300 metre segment.
 bend_of : F64 -> Geometry.Bend
-bend_of = |degrees| { segment_length: Distance.metres(300.0), turn: Angle.Turn.degrees(degrees) }
+bend_of = |degrees| { segment_length: Distance.from_metres(300.0), turn: Angle.Turn.degrees(degrees) }
 
 ## Whether two road points are within a nanometre of each other.
 is_near : Geometry.RoadPoint, Geometry.RoadPoint -> Bool
@@ -167,7 +167,7 @@ is_near = |got, want| {
 expect
 	[50.0, -70.0, 15.0, -15.0].all(
 		|degrees| {
-			start = { along: Along.metres(12.0), across: Across.metres(1.0) }
+			start = { along: Along.from_metres(12.0), across: Across.from_metres(1.0) }
 			bend = bend_of(degrees)
 			on_next = Geometry.point_in_segment_after(start, bend)
 			on_previous = Geometry.point_in_segment_before(start, bend)
@@ -185,7 +185,7 @@ expect
 		(15.0, Geometry.right_edge),
 	].all(
 		|(degrees, inner_edge)| {
-			end_before = { along: Along.metres(300.0), across: inner_edge }
+			end_before = { along: Along.from_metres(300.0), across: inner_edge }
 			next_start = { along: Along.start, across: inner_edge }
 			is_near(Geometry.point_in_segment_before(next_start, bend_of(degrees)), end_before)
 		},
@@ -197,7 +197,7 @@ expect {
 	middle_at_start = { along: Along.start, across: Across.middle }
 	is_near(
 		Geometry.point_in_segment_before(middle_at_start, bend_of(90.0)),
-		{ along: Along.metres(302.0), across: Across.metres(2.0) },
+		{ along: Along.from_metres(302.0), across: Across.from_metres(2.0) },
 	)
 }
 
@@ -213,7 +213,7 @@ expect
 				on_next.across.distance_from_middle().to_metres()
 			}
 			(from_next_middle(commit) - 2.0).abs() <= 0.000000001
-				and from_next_middle(commit.minus(Distance.metres(0.01))) > 2.0
-				and from_next_middle(commit.plus(Distance.metres(0.01))) < 2.0
+				and from_next_middle(commit.minus(Distance.from_metres(0.01))) > 2.0
+				and from_next_middle(commit.plus(Distance.from_metres(0.01))) < 2.0
 		},
 	)

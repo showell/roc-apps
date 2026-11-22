@@ -65,21 +65,21 @@ tree_line_distance = |conifer|
 	}
 
 tree_spacing : Distance
-tree_spacing = Distance.metres(30.0)
+tree_spacing = Distance.from_metres(30.0)
 
 ## How far from the road's edge a tree stands; a gold one, four times
 ## as far.
 tree_road_offset : Distance
-tree_road_offset = Distance.metres(1.5)
+tree_road_offset = Distance.from_metres(1.5)
 
 ## How far into a segment its first pair stands, chosen by eye.
 tree_start_inset : Distance
-tree_start_inset = Distance.metres(6.0)
+tree_start_inset = Distance.from_metres(6.0)
 
 ## No pair stands closer than this to a segment's end, a distance chosen by
 ## eye.
 tree_end_inset : Distance
-tree_end_inset = Distance.metres(85.0)
+tree_end_inset = Distance.from_metres(85.0)
 
 ## The conifer that sets off a scheme's green.
 accent_conifer : Trees.Scheme -> Conifer
@@ -92,7 +92,7 @@ accent_conifer = |scheme|
 
 ## Seven pairs, alternating green and gold.
 gold_green_trees : List(Trees.RoadsideTree)
-gold_green_trees = Trees.roadside_trees({ scheme: GoldGreen, length: Distance.metres(300.0) })
+gold_green_trees = Trees.roadside_trees({ scheme: GoldGreen, length: Distance.from_metres(300.0) })
 
 expect
 	gold_green_trees.map(|tree| tree.road_point.along.to_metres())
@@ -151,5 +151,5 @@ expect
 			Conifer.Green,
 		]
 
-expect Trees.roadside_trees({ scheme: AllGreen, length: Distance.metres(100.0) }).len() == 2
-expect Trees.roadside_trees({ scheme: AllGreen, length: Distance.metres(50.0) }).len() == 0
+expect Trees.roadside_trees({ scheme: AllGreen, length: Distance.from_metres(100.0) }).len() == 2
+expect Trees.roadside_trees({ scheme: AllGreen, length: Distance.from_metres(50.0) }).len() == 0

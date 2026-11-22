@@ -67,7 +67,7 @@ ride_sightings = |along| {
 		{
 			camera: {
 				..Fixtures.origin_camera,
-				vantage: { ..Fixtures.origin, along: Along.metres(along) },
+				vantage: { ..Fixtures.origin, along: Along.from_metres(along) },
 			},
 			encounter_stage: Waiting,
 		},
@@ -146,7 +146,7 @@ birds_on = |segment, { rider_along, focal_length, encounter_clock }|
 		Fixtures.crafted_road([segment]),
 		{
 			camera: {
-				vantage: { ..Fixtures.origin, along: Along.metres(rider_along) },
+				vantage: { ..Fixtures.origin, along: Along.from_metres(rider_along) },
 				focal_length,
 			},
 			encounter_clock,
@@ -304,9 +304,9 @@ steady_flight_stage = |gap|
 	EncounterPlan.steady_approach_stage(
 		BirdFlight.flight_span,
 		{
-			gap_at_start: Distance.metres(75.0),
-			speed: Speed.metres_a_step(1.25),
-			gap: Distance.metres(gap),
+			gap_at_start: Distance.from_metres(75.0),
+			speed: Speed.from_metres_a_step(1.25),
+			gap: Distance.from_metres(gap),
 		},
 	)
 
@@ -320,7 +320,7 @@ expect steady_flight_stage(15.125) == Playing(Steps.of(35))
 ## middle of a road 2 m either side.
 crossing_cat : CatCrossing
 crossing_cat = CatCrossing.by_tree({
-	tree: { along: Along.metres(100.0), across: Across.metres(3.0) },
+	tree: { along: Along.from_metres(100.0), across: Across.from_metres(3.0) },
 })
 
 ## The cat `steps_in` steps into its crossing.
@@ -495,7 +495,7 @@ sample_cat_shapes : Cat, Distance -> List(Shapes.Shape)
 sample_cat_shapes = |cat, lift|
 	cat.scenery_sprite({
 		spot: posed_spot_at({
-			forward: Distance.metres(100.0),
+			forward: Distance.from_metres(100.0),
 			right: Distance.zero,
 			lift,
 		}),
@@ -534,7 +534,7 @@ is_near_each = |got, expected| {
 expect
 	[
 		(Distance.zero, [480.0782, 302.41395]),
-		(Distance.metres(1.0), [480.0782, 297.41395]),
+		(Distance.from_metres(1.0), [480.0782, 297.41395]),
 	].all(|(lift, want)| is_near_each(first_cat_corner_coordinates({ pose: Rest }, lift), want))
 
 # Each cat pose draws every polygon of its still.
@@ -551,7 +551,7 @@ expect
 ## the eye, less the ground's drop beneath them: 6 cm, about a quarter of a pixel.
 bird_shapes_at : Bird, { right : Distance, lift : Distance } -> List(Shapes.Shape)
 bird_shapes_at = |bird, { right, lift }| {
-	spot = posed_spot_at({ forward: Distance.metres(110.0), right, lift })
+	spot = posed_spot_at({ forward: Distance.from_metres(110.0), right, lift })
 	bird.scenery_sprite({
 		spot,
 		focal_length: Pixels.of(500.0),
@@ -575,9 +575,9 @@ bird_height_on_screen = |forward, focal_length| {
 
 expect
 	[
-		(bird_height_on_screen(Distance.metres(110.0), Pixels.of(500.0)), 10.0),
-		(bird_height_on_screen(Distance.metres(220.0), Pixels.of(500.0)), 5.0),
-		(bird_height_on_screen(Distance.metres(110.0), Pixels.of(1000.0)), 20.0),
+		(bird_height_on_screen(Distance.from_metres(110.0), Pixels.of(500.0)), 10.0),
+		(bird_height_on_screen(Distance.from_metres(220.0), Pixels.of(500.0)), 5.0),
+		(bird_height_on_screen(Distance.from_metres(110.0), Pixels.of(1000.0)), 20.0),
 	].all(|(got, want)| (got - want).abs() <= 0.000000001)
 
 # The perched still's first corner is (-0.0344, 0.5715), at a height of 10 px
@@ -586,9 +586,9 @@ expect
 # there lowers the feet 0.27775 px.
 expect {
 	first_corner = |perch| first_corner_coordinates(bird_shapes_at({ pose: Perched }, perch))
-	raised = { right: Distance.metres(11.0), lift: Camera.eye_height.plus(Distance.metres(11.0)) }
+	raised = { right: Distance.from_metres(11.0), lift: Camera.eye_height.plus(Distance.from_metres(11.0)) }
 	[
-		({ right: Distance.metres(0.0), lift: Camera.eye_height }, [479.656, 294.56]),
+		({ right: Distance.from_metres(0.0), lift: Camera.eye_height }, [479.656, 294.56]),
 		(raised, [529.656, 244.56275]),
 	].all(|(perch, want)| is_near_each(first_corner(perch), want))
 }
@@ -602,7 +602,7 @@ expect {
 			Polygon(polygon) => polygon.fill
 			Disc(_) | Blend(_) | View(_) | Image(_) | Text(_) => crash "EncounterExpects: a bird's still is straight-edged regions"
 		}
-	level = { right: Distance.metres(0.0), lift: Camera.eye_height }
+	level = { right: Distance.from_metres(0.0), lift: Camera.eye_height }
 	drawn = [Side(WingsDown), Diving].join_map(
 		|pose| bird_shapes_at({ pose: pose }, level).map(fill_of),
 	)

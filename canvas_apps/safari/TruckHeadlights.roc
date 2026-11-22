@@ -47,24 +47,24 @@ headlights_on_darkness = Fraction.of(0.412)
 
 ## How high the headlights are, and how far in from the truck's sides.
 headlight_height : Distance
-headlight_height = Distance.metres(1.0)
+headlight_height = Distance.from_metres(1.0)
 
 headlight_inset : Distance
-headlight_inset = Distance.metres(0.3)
+headlight_inset = Distance.from_metres(0.3)
 
 ## A beam is a vertical wedge from its lamp, widening to where it ends
 ## `beam_length` ahead of the cab's nose.
 beam_half_height_at_lamp : Distance
-beam_half_height_at_lamp = Distance.metres(0.25)
+beam_half_height_at_lamp = Distance.from_metres(0.25)
 
 beam_length : Distance
-beam_length = Distance.metres(20.4)
+beam_length = Distance.from_metres(20.4)
 
 beam_far_center : Distance
-beam_far_center = Distance.metres(0.7)
+beam_far_center = Distance.from_metres(0.7)
 
 beam_far_half_height : Distance
-beam_far_half_height = Distance.metres(0.9)
+beam_far_half_height = Distance.from_metres(0.9)
 
 ## The beam is one warm white, more opaque at the lamp than at its edge.
 beam_core : ArgbColor

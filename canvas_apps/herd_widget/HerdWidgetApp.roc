@@ -67,7 +67,7 @@ herd_billboards = {
 ## How far down the road every cow stands: near enough that a grown cow is a
 ## good size, and far enough that twenty of them fit across the picture.
 herd_forward : Distance
-herd_forward = Distance.metres(24.0)
+herd_forward = Distance.from_metres(24.0)
 
 ## The x on the canvas of the middle of the cow at `cow_number`: the canvas is
 ## cut into one equal slot a cow, and each cow stands in the middle of its own.

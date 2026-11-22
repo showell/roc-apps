@@ -11,10 +11,10 @@ Speed :: F64.{
 
 	## A speed of this many metres a step. Nothing in the ride goes backwards,
 	## so a negative speed means the sum behind it is wrong.
-	metres_a_step : F64 -> Speed
-	metres_a_step = |metres|
+	from_metres_a_step : F64 -> Speed
+	from_metres_a_step = |metres|
 		if metres < 0.0 {
-			crash "Speed.metres_a_step: this speed is below zero, so the sum behind it is wrong"
+			crash "Speed.from_metres_a_step: this speed is below zero, so the sum behind it is wrong"
 		} else {
 			Speed.(metres)
 		}
@@ -51,11 +51,11 @@ Speed :: F64.{
 	acceleration_to : Speed, { target : Speed, within : Distance } -> Acceleration
 	acceleration_to = |Speed.(speed), { target: Speed.(target), within }| {
 		squares_gained = target * target - speed * speed
-		Acceleration.metres_a_step_each_step(squares_gained / (2.0 * within.to_metres()))
+		Acceleration.from_metres_a_step_each_step(squares_gained / (2.0 * within.to_metres()))
 	}
 
 	times : Speed, F64 -> Speed
-	times = |Speed.(speed), factor| Speed.metres_a_step(speed * factor)
+	times = |Speed.(speed), factor| Speed.from_metres_a_step(speed * factor)
 
 	## This fraction of this speed.
 	scaled_by : Speed, Fraction -> Speed
@@ -63,7 +63,7 @@ Speed :: F64.{
 
 	## How far this speed covers in `length`.
 	distance_in : Speed, Steps -> Distance
-	distance_in = |Speed.(speed), length| Distance.metres(speed * length.to_f64())
+	distance_in = |Speed.(speed), length| Distance.from_metres(speed * length.to_f64())
 
 	## How many whole steps this speed takes to cover `distance`, a part step
 	## dropped. Nothing goes backwards, and a speed at rest covers nothing, so
@@ -85,7 +85,7 @@ Speed :: F64.{
 
 	## How far this speed covers in one step.
 	step_length : Speed -> Distance
-	step_length = |Speed.(speed)| Distance.metres(speed)
+	step_length = |Speed.(speed)| Distance.from_metres(speed)
 
 	## The smaller of this speed and `other`.
 	min : Speed, Speed -> Speed
@@ -108,7 +108,7 @@ Speed :: F64.{
 }
 
 # Rest is the slowest speed, and still a speed.
-expect Speed.metres_a_step(0.0) == Speed.at_rest
+expect Speed.from_metres_a_step(0.0) == Speed.at_rest
 
 # A part step is dropped: just short of a whole number of steps, at it, and
 # just past it.
@@ -120,28 +120,28 @@ expect
 		(10.1, 8),
 	].all(
 		|(metres, steps)| {
-			speed = Speed.metres_a_step(1.25)
-			speed.steps_to_cover(Distance.metres(metres)) == Steps.of(steps)
+			speed = Speed.from_metres_a_step(1.25)
+			speed.steps_to_cover(Distance.from_metres(metres)) == Steps.of(steps)
 		},
 	)
 
 half_metre_a_step : Speed
-half_metre_a_step = Speed.metres_a_step(0.5)
+half_metre_a_step = Speed.from_metres_a_step(0.5)
 
 # Braking to rest exactly, or short of it, is a speed, and a hair harder goes
 # below rest.
 expect
 	[
-		(-0.25, Ok(Speed.metres_a_step(0.25))),
+		(-0.25, Ok(Speed.from_metres_a_step(0.25))),
 		(-0.5, Ok(Speed.at_rest)),
 		(-0.5000001, Err(BelowRest)),
 	].all(
 		|(loss, want)| {
-			acceleration = Acceleration.metres_a_step_each_step(loss)
+			acceleration = Acceleration.from_metres_a_step_each_step(loss)
 			half_metre_a_step.accelerated_by_try(acceleration) == want
 		},
 	)
 
 # Scaling by nothing is rest, and by a positive factor a speed.
 expect half_metre_a_step.times(0.0) == Speed.at_rest
-expect half_metre_a_step.times(3.0) == Speed.metres_a_step(1.5)
+expect half_metre_a_step.times(3.0) == Speed.from_metres_a_step(1.5)

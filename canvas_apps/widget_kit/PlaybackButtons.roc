@@ -62,7 +62,7 @@ PlaybackButtons :: [].{
 		first: farthest,
 		last: Distance.zero,
 		place_of: |gap| farthest.minus(gap).to_metres(),
-		number_at: |place| farthest.minus(Distance.metres(place)),
+		number_at: |place| farthest.minus(Distance.from_metres(place)),
 		play_reach: metres_a_frame,
 	}
 
@@ -373,7 +373,7 @@ sample_clock_run = PlaybackButtons.clock_range({
 ## A range over a gap of 50 metres, a quarter of a metre a frame.
 sample_gap_run : PlaybackButtons.NumberRange(Distance)
 sample_gap_run = PlaybackButtons.gap_range({
-	farthest: Distance.metres(50.0),
+	farthest: Distance.from_metres(50.0),
 	metres_a_frame: 0.25,
 })
 
@@ -502,11 +502,11 @@ expect button_shapes({ control: Play, left: 24.0 }, Forward) != button_shapes(
 )
 
 # A gap's range falls from its farthest to zero, and a metre is a step.
-expect PlaybackButtons.transport_at(Distance.metres(50.0)).at == sample_gap_run.first
+expect PlaybackButtons.transport_at(Distance.from_metres(50.0)).at == sample_gap_run.first
 expect sample_gap_run.last == Distance.zero
-expect place_in(sample_gap_run, Distance.metres(50.0)) == 0.0
+expect place_in(sample_gap_run, Distance.from_metres(50.0)) == 0.0
 expect place_in(sample_gap_run, Distance.zero) == 50.0
-expect (sample_gap_run.number_at)(10.0) == Distance.metres(40.0)
+expect (sample_gap_run.number_at)(10.0) == Distance.from_metres(40.0)
 
 ## What a press of `control` on the sample gap does, after that frame.
 gap_after_press : Distance, PlaybackButtons.Control -> PlaybackButtons.Transport(Distance)
@@ -516,12 +516,12 @@ gap_after_press = |gap, control|
 		{ input: PlaybackButtons.click_on(control), range: sample_gap_run },
 	)
 
-expect gap_after_press(Distance.metres(20.0), StepForward).at == Distance.metres(19.0)
-expect gap_after_press(Distance.metres(20.0), StepBack).at == Distance.metres(21.0)
-expect gap_after_press(Distance.metres(20.0), Play).at == Distance.metres(19.75)
-expect gap_after_press(Distance.metres(20.0), ToStart).at == Distance.metres(50.0)
-expect gap_after_press(Distance.metres(20.0), ToEnd).at == Distance.zero
-expect gap_after_press(Distance.metres(50.0), StepBack).at == Distance.metres(50.0)
+expect gap_after_press(Distance.from_metres(20.0), StepForward).at == Distance.from_metres(19.0)
+expect gap_after_press(Distance.from_metres(20.0), StepBack).at == Distance.from_metres(21.0)
+expect gap_after_press(Distance.from_metres(20.0), Play).at == Distance.from_metres(19.75)
+expect gap_after_press(Distance.from_metres(20.0), ToStart).at == Distance.from_metres(50.0)
+expect gap_after_press(Distance.from_metres(20.0), ToEnd).at == Distance.zero
+expect gap_after_press(Distance.from_metres(50.0), StepBack).at == Distance.from_metres(50.0)
 expect gap_after_press(Distance.zero, StepForward).at == Distance.zero
 
 # A spot picks the button under it, and a spot past the last button picks none.

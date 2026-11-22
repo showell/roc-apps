@@ -134,7 +134,7 @@ and on the guard rail. Either the limit is a rule of the world and is named as
 one, or it goes.
 
 **A test restates a constant.** `expect Trees.tree_spacing ==
-Distance.metres(30.0)` is a second copy of the number, not a test, and it has to
+Distance.from_metres(30.0)` is a second copy of the number, not a test, and it has to
 change whenever the number does. Test what the constant does.
 
 **A silent fallback.** A default that hides a missing case turns a bug into a

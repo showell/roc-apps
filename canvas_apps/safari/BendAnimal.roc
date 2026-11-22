@@ -43,18 +43,18 @@ BendAnimal := [Elephant, Giraffe, Zebra, Rhino].{
 	species_of : BendAnimal -> Billboard.Species
 	species_of = |animal|
 		match animal {
-			Elephant => { emoji: EmojiStill.elephant, adult_height: Distance.metres(2.8) }
-			Giraffe => { emoji: EmojiStill.giraffe, adult_height: Distance.metres(4.5) }
-			Zebra => { emoji: EmojiStill.zebra, adult_height: Distance.metres(1.6) }
-			Rhino => { emoji: EmojiStill.rhino, adult_height: Distance.metres(2.2) }
+			Elephant => { emoji: EmojiStill.elephant, adult_height: Distance.from_metres(2.8) }
+			Giraffe => { emoji: EmojiStill.giraffe, adult_height: Distance.from_metres(4.5) }
+			Zebra => { emoji: EmojiStill.zebra, adult_height: Distance.from_metres(1.6) }
+			Rhino => { emoji: EmojiStill.rhino, adult_height: Distance.from_metres(2.2) }
 		}
 }
 
 ## How far beyond the guard rail the grown animal stands.
 adult_rail_buffer : Distance
-adult_rail_buffer = Distance.metres(1.5)
+adult_rail_buffer = Distance.from_metres(1.5)
 
 ## How far the baby stands past the bend, straight on along the segment that
 ## ends there, in the middle of where its road would run.
 baby_beyond : Distance
-baby_beyond = Distance.metres(14.0)
+baby_beyond = Distance.from_metres(14.0)

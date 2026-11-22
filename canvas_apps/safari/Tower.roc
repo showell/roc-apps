@@ -122,19 +122,19 @@ tower_shapes = |Tower.(tower), { footprint, spot, focal_length, rod_color }| {
 }
 
 tower_height : Distance
-tower_height = Distance.metres(80.0)
+tower_height = Distance.from_metres(80.0)
 
 tower_half_width : Distance
-tower_half_width = Distance.metres(6.0)
+tower_half_width = Distance.from_metres(6.0)
 
 storey_height : Distance
-storey_height = Distance.metres(20.0)
+storey_height = Distance.from_metres(20.0)
 
 brace_storeys : U64
 brace_storeys = 2
 
 rod_half_width : Distance
-rod_half_width = Distance.metres(0.12)
+rod_half_width = Distance.from_metres(0.12)
 
 rod_width : Distance
 rod_width = rod_half_width.times(2.0)
@@ -304,7 +304,7 @@ rod_shape = |geometry, line| {
 metre_on_screen : { at : RiderView.RiderPointAhead, focal_length : Pixels } -> Pixels
 metre_on_screen = |{ at, focal_length }| {
 	on_level = at.at_height(Distance.zero)
-	one_metre_right = Camera.project(on_level.at_right(Distance.metres(1.0)), focal_length)
+	one_metre_right = Camera.project(on_level.at_right(Distance.from_metres(1.0)), focal_length)
 	on_level_point = Camera.project(on_level.at_right(Distance.zero), focal_length)
 	one_metre_right.x.minus(on_level_point.x)
 }
@@ -454,7 +454,7 @@ expect
 ## 500 px focal length.
 metre_ahead : F64 -> F64
 metre_ahead = |forward| {
-	at = ahead({ right: Distance.metres(3.0), forward: Distance.metres(forward) })
+	at = ahead({ right: Distance.from_metres(3.0), forward: Distance.from_metres(forward) })
 	metre_on_screen({ at, focal_length: Pixels.of(500.0) }).to_f64()
 }
 
@@ -467,7 +467,7 @@ expect metre_ahead(50.0) == 10.0
 ## horizon.
 hidden_ahead : F64 -> { hidden : Distance, is_below_horizon : Bool }
 hidden_ahead = |forward| {
-	foot = { right: Distance.zero, forward: Distance.metres(forward) }
+	foot = { right: Distance.zero, forward: Distance.from_metres(forward) }
 	base_height = EarthCurve.ground_drop(foot).opposite()
 	top = base_height.plus(tower_height)
 	{

@@ -71,12 +71,12 @@ road_color = RgbColor.of(0x34353C)
 ## The road's edges are laid in chunks no longer than this. Chunks at most
 ## 25 m long keep the chord cut at the horizon below a pixel.
 road_chunk_length : Distance
-road_chunk_length = Distance.metres(25.0)
+road_chunk_length = Distance.from_metres(25.0)
 
 ## A bend's paving starts this far before the end of the segment that
 ## bends.
 lead_in_length : Distance
-lead_in_length = Distance.metres(40.0)
+lead_in_length = Distance.from_metres(40.0)
 
 ## Where chunk `chunk_number` of the road along a segment `segment_length` long
 ## ends, the chunks counted from 1. Chunk 0 ends where the segment starts.
@@ -202,4 +202,4 @@ expect
 		(500.0, 20),
 		(320.0, 13),
 		(1200.0, 48),
-	].all(|(length, want)| chunk_count(Distance.metres(length)).to_i64() == want)
+	].all(|(length, want)| chunk_count(Distance.from_metres(length)).to_i64() == want)

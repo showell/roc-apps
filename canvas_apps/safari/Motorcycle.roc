@@ -113,7 +113,7 @@ allowed_speed = |next_speed| Speed.min(next_speed, VehicleLimits.top_speed)
 
 ## The speed the clamp allows for `next_speed` metres a step.
 clamped_speed : F64 -> F64
-clamped_speed = |next_speed| allowed_speed(Speed.metres_a_step(next_speed)).to_metres_a_step()
+clamped_speed = |next_speed| allowed_speed(Speed.from_metres_a_step(next_speed)).to_metres_a_step()
 
 # Up to the top speed the speed is as asked, and past it it is held there.
 expect clamped_speed(1.0) == 1.0
@@ -128,12 +128,12 @@ riding = {
 	route_place: {
 		..RoutePlace.route_start,
 		road_point: {
-			along: Along.metres(120.5),
-			across: RoutePlace.route_start.road_point.across.plus(Distance.metres(2.25)),
+			along: Along.from_metres(120.5),
+			across: RoutePlace.route_start.road_point.across.plus(Distance.from_metres(2.25)),
 		},
 	},
 	yaw: Angle.Turn.radians(0.375),
-	speed: Speed.metres_a_step(0.8),
+	speed: Speed.from_metres_a_step(0.8),
 	lean: Angle.Lean.radians(0.125),
 }
 
@@ -142,13 +142,13 @@ riding = {
 first_step : Motorcycle
 first_step = riding.motorcycle_at_next_step({
 	lean: Angle.Lean.radians(0.175),
-	acceleration: Acceleration.metres_a_step_each_step(0.01),
+	acceleration: Acceleration.from_metres_a_step_each_step(0.01),
 })
 
 second_step : Motorcycle
 second_step = first_step.motorcycle_at_next_step({
 	lean: Angle.Lean.radians(0.155),
-	acceleration: Acceleration.metres_a_step_each_step(0.005),
+	acceleration: Acceleration.from_metres_a_step_each_step(0.005),
 })
 
 third_step : Motorcycle
@@ -182,7 +182,7 @@ expect {
 	steady_step = Motorcycle.initial.motorcycle_at_next_step(Motorcycle.initial.steady_controls())
 	leaning_step = Motorcycle.motorcycle_at_next_step(
 		Motorcycle.initial,
-		{ lean: Angle.Lean.radians(0.5), acceleration: Acceleration.metres_a_step_each_step(0.25) },
+		{ lean: Angle.Lean.radians(0.5), acceleration: Acceleration.from_metres_a_step_each_step(0.25) },
 	)
 	[
 		(steady_step.route_place.road_point.across.to_metres(), 0.0),
@@ -197,7 +197,7 @@ expect {
 
 ## A bend at the end of a 500-metre segment, turning a little to the right.
 gentle_bend : Geometry.Bend
-gentle_bend = { segment_length: Distance.metres(500.0), turn: Angle.Turn.radians(0.3) }
+gentle_bend = { segment_length: Distance.from_metres(500.0), turn: Angle.Turn.radians(0.3) }
 
 ## A motorcycle on the middle of the road, `along` metres down its segment.
 motorcycle_at : F64 -> Motorcycle
@@ -205,7 +205,7 @@ motorcycle_at = |along| {
 	..Motorcycle.initial,
 	route_place: {
 		..RoutePlace.route_start,
-		road_point: { ..RoutePlace.route_start.road_point, along: Along.metres(along) },
+		road_point: { ..RoutePlace.route_start.road_point, along: Along.from_metres(along) },
 	},
 }
 
@@ -217,7 +217,7 @@ place_past_bend = |along| motorcycle_at(along).route_place.route_place_past_bend
 # Carried over the bend from well short of it, a place lands far off the next
 # segment's road, and from the bend itself it lands on it. Either way it is on
 # the next segment.
-expect place_past_bend(100.0).road_point.across.distance_from_middle() > Distance.metres(100.0)
+expect place_past_bend(100.0).road_point.across.distance_from_middle() > Distance.from_metres(100.0)
 expect place_past_bend(500.0).is_on_road()
 expect {
 	next_index = RoutePlace.route_start.segment_index.next()
@@ -233,6 +233,6 @@ expect {
 	crossed.route_place.segment_index == next_index and crossed.yaw.to_radians() == -0.3
 }
 
-expect motorcycle_at(300.0).has_reached(Along.metres(300.0))
-expect motorcycle_at(310.0).has_reached(Along.metres(300.0))
-expect !motorcycle_at(299.99).has_reached(Along.metres(300.0))
+expect motorcycle_at(300.0).has_reached(Along.from_metres(300.0))
+expect motorcycle_at(310.0).has_reached(Along.from_metres(300.0))
+expect !motorcycle_at(299.99).has_reached(Along.from_metres(300.0))

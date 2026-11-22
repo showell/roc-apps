@@ -219,7 +219,7 @@ cat_throttle_change = |encounter_clock| {
 			..Motorcycle.initial.route_place,
 			segment_index: Route.SegmentIndex.number(3),
 		},
-		speed: Speed.metres_a_step(0.3),
+		speed: Speed.from_metres_a_step(0.3),
 	}
 	throttle_change_at(motorcycle, encounter_clock)
 }
@@ -261,23 +261,23 @@ coast_of = |across, lean_radians|
 			..Motorcycle.initial.route_place,
 			road_point: {
 				..Motorcycle.initial.route_place.road_point,
-				across: Across.metres(across),
+				across: Across.from_metres(across),
 			},
 		},
 		lean: Angle.Lean.radians(lean_radians),
 	})
 
-expect coast_of(3.0, 0.0) == EndsAt(Across.metres(3.0))
+expect coast_of(3.0, 0.0) == EndsAt(Across.from_metres(3.0))
 expect {
 	resting = { ..Motorcycle.initial, speed: Speed.at_rest }
-	Coast.coast_outcome(resting) == EndsAt(Across.metres(0.0))
+	Coast.coast_outcome(resting) == EndsAt(Across.from_metres(0.0))
 }
 
 # A rider this slow and this far over circles on the road, and the coast still ends.
 expect {
 	circling = Coast.coast_outcome({
 		..Motorcycle.initial,
-		speed: Speed.metres_a_step(0.01),
+		speed: Speed.from_metres_a_step(0.01),
 		lean: Angle.Lean.radians(0.5),
 	})
 	match circling {
@@ -294,7 +294,7 @@ expect {
 	state = {
 		..Motorcycle.initial,
 		yaw: Angle.Turn.radians(-1.5),
-		speed: Speed.metres_a_step(0.7),
+		speed: Speed.from_metres_a_step(0.7),
 	}
 	path = Coast.path_motorcycles(state)
 	match Coast.coast_outcome(state) {
@@ -306,7 +306,7 @@ expect {
 	state = {
 		..Motorcycle.initial,
 		yaw: Angle.Turn.radians(1.5),
-		speed: Speed.metres_a_step(0.7),
+		speed: Speed.from_metres_a_step(0.7),
 	}
 	path = Coast.path_motorcycles(state)
 	match Coast.coast_outcome(state) {
@@ -319,7 +319,7 @@ expect {
 		..Motorcycle.initial,
 		route_place: {
 			..Motorcycle.initial.route_place,
-			road_point: { ..Motorcycle.initial.route_place.road_point, across: Across.metres(1.0) },
+			road_point: { ..Motorcycle.initial.route_place.road_point, across: Across.from_metres(1.0) },
 		},
 	}
 	match (Coast.coast_outcome(state), Coast.path_motorcycles(state).last()) {
@@ -335,7 +335,7 @@ expect {
 expect {
 	circling = {
 		..Motorcycle.initial,
-		speed: Speed.metres_a_step(0.01),
+		speed: Speed.from_metres_a_step(0.01),
 		lean: Angle.Lean.radians(0.5),
 	}
 	path = Coast.path_motorcycles(circling)
@@ -374,7 +374,7 @@ wide_of_road = |lean| {
 			..Motorcycle.initial.route_place,
 			road_point: {
 				..Motorcycle.initial.route_place.road_point,
-				across: Across.metres(100.0),
+				across: Across.from_metres(100.0),
 			},
 		},
 		lean: Angle.Lean.radians(lean),
@@ -396,9 +396,9 @@ centered_motorcycle = |along, speed| {
 	..Motorcycle.initial,
 	route_place: {
 		..Motorcycle.initial.route_place,
-		road_point: { ..Motorcycle.initial.route_place.road_point, along: Along.metres(along) },
+		road_point: { ..Motorcycle.initial.route_place.road_point, along: Along.from_metres(along) },
 	},
-	speed: Speed.metres_a_step(speed),
+	speed: Speed.from_metres_a_step(speed),
 }
 
 ## The same motorcycle on the real route's segment `index`.
@@ -446,16 +446,16 @@ change_leaning = |speed, lean|
 # Each is within 1e-12 of its want.
 expect
 	[
-		(change_leaning(Speed.metres_a_step(0.3), 0.0), 0.01),
+		(change_leaning(Speed.from_metres_a_step(0.3), 0.0), 0.01),
 		(change_leaning(VehicleLimits.top_speed, 0.0), 0.0),
 		(change_leaning(Speed.at_rest, 0.0), 0.01),
 	].all(|(got, want)| (got - want).abs() <= 0.000000000001)
 
 # On the middle of the road, a lean that coasts off it brakes, either way, and a
 # slight one speeds up.
-expect change_leaning(Speed.metres_a_step(0.3), 0.034) < 0.0
-expect change_leaning(Speed.metres_a_step(0.3), 0.001) > 0.0
-expect change_leaning(Speed.metres_a_step(0.3), -0.034) < 0.0
+expect change_leaning(Speed.from_metres_a_step(0.3), 0.034) < 0.0
+expect change_leaning(Speed.from_metres_a_step(0.3), 0.001) > 0.0
+expect change_leaning(Speed.from_metres_a_step(0.3), -0.034) < 0.0
 
 ## A motorcycle at the start of the first segment, steering hard left at
 ## `speed`.
@@ -509,7 +509,7 @@ motorcycle_at = |along| {
 		..Motorcycle.initial.route_place,
 		road_point: {
 			..Motorcycle.initial.route_place.road_point,
-			along: Motorcycle.initial.route_place.road_point.along.plus(Distance.metres(along)),
+			along: Motorcycle.initial.route_place.road_point.along.plus(Distance.from_metres(along)),
 		},
 	},
 }
@@ -522,7 +522,7 @@ short_of_pig = |metres| {
 		..Motorcycle.initial.route_place,
 		road_point: {
 			..Motorcycle.initial.route_place.road_point,
-			along: watched_pig.road_point.along.minus(Distance.metres(metres)),
+			along: watched_pig.road_point.along.minus(Distance.from_metres(metres)),
 		},
 	},
 }
@@ -543,7 +543,7 @@ expect Gawking.gawk_brake(motorcycle_at(100.0), distracting_segment) == NoLimit
 ## step.
 brake_short_of_pig : F64, F64 -> F64
 brake_short_of_pig = |metres, speed| {
-	motorcycle = { ..short_of_pig(metres), speed: Speed.metres_a_step(speed) }
+	motorcycle = { ..short_of_pig(metres), speed: Speed.from_metres_a_step(speed) }
 	match Gawking.gawk_brake(motorcycle, distracting_segment) {
 		AtMost(brake) => brake.to_metres_a_step_each_step()
 		NoLimit => crash "RiderExpects: this rider is gawking"

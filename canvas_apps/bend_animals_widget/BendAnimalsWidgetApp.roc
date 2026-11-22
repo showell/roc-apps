@@ -78,16 +78,16 @@ pair_billboards = |{ animal, facing }| {
 
 ## The room between a baby and its mother.
 sibling_gap : Distance
-sibling_gap = Distance.metres(0.9)
+sibling_gap = Distance.from_metres(0.9)
 
 ## The room between one pair and the next.
 pair_gap : Distance
-pair_gap = Distance.metres(2.5)
+pair_gap = Distance.from_metres(2.5)
 
 ## How far down the road every billboard stands: near enough that the babies
 ## are a good size, and far enough that the whole row fits across the picture.
 row_forward : Distance
-row_forward = Distance.metres(21.0)
+row_forward = Distance.from_metres(21.0)
 
 ## A billboard and how far its middle is from the row's left edge.
 RowSpot : { billboard : Billboard, from_left_edge : Distance }

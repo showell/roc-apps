@@ -47,13 +47,13 @@ BirdWidgetApp :: [].{
 ## The rider's approach, from a gap past where the bird takes off down to zero, in
 ## ten seconds.
 closing_gap : PlaybackButtons.NumberRange(Distance)
-closing_gap = PlaybackButtons.gap_range({ farthest: Distance.metres(75.0), metres_a_frame: 0.125 })
+closing_gap = PlaybackButtons.gap_range({ farthest: Distance.from_metres(75.0), metres_a_frame: 0.125 })
 
 ## The rider's speed, steady, and the widget's own choice. The flight plays a
 ## frame a step, so this is how much of the gap each frame of the flight takes,
 ## and it sets the gap the flight starts at.
 rider_speed : Speed
-rider_speed = Speed.metres_a_step(1.25)
+rider_speed = Speed.from_metres_a_step(1.25)
 
 ## Where the flight has got to with the rider `gap` from the bird's first tree.
 stage_at : Distance -> Animation.Stage
@@ -66,7 +66,7 @@ stage_at = |gap|
 ## How far the picture's eye stands short of the first tree: far enough for
 ## the bird perched on top of it to fit.
 eye_to_first_tree : Distance
-eye_to_first_tree = Distance.metres(18.0)
+eye_to_first_tree = Distance.from_metres(18.0)
 
 ## Everything on the canvas.
 shapes_at : BirdWidgetApp.Model -> List(Shapes.Shape)
@@ -181,21 +181,21 @@ expect takeoff_gap < closing_gap.first
 expect BirdFlight.flight_span.ends_at > closing_gap.last
 
 expect
-	status_lines(Distance.metres(61.0))
+	status_lines(Distance.from_metres(61.0))
 		== ["Waiting", "Pose: Perched", "Gap: 61.0 m", "Height: 6.4 m"]
 
 expect
-	status_lines(Distance.metres(58.0))
+	status_lines(Distance.from_metres(58.0))
 		== ["Playing: frame 2", "Pose: Side on, wings up", "Gap: 58.0 m", "Height: 6.9 m"]
 
 expect
-	status_lines(Distance.metres(30.0))
+	status_lines(Distance.from_metres(30.0))
 		== ["Playing: frame 25", "Pose: Flying away, wings up", "Gap: 30.0 m", "Height: 9.6 m"]
 
 expect
-	status_lines(Distance.metres(4.7))
+	status_lines(Distance.from_metres(4.7))
 		== ["Past", "Pose: Perched", "Gap: 4.7 m", "Height: 4.9 m"]
 
 # The picture depends on the gap, and it doesn't change once the bird is down.
-expect picture_shapes(Distance.metres(30.0)) != picture_shapes(Distance.metres(31.0))
-expect picture_shapes(Distance.metres(5.0)) == picture_shapes(Distance.metres(4.0))
+expect picture_shapes(Distance.from_metres(30.0)) != picture_shapes(Distance.from_metres(31.0))
+expect picture_shapes(Distance.from_metres(5.0)) == picture_shapes(Distance.from_metres(4.0))

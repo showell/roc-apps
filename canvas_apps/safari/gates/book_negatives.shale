@@ -25,7 +25,7 @@
 -- words are read, so `doesn't` in a quoted name is never a hit, and so is a
 -- link to a chapter, `{{chapter Refused}}`, whose title is no sentence's voice. A table row's
 -- cells are read one by one. A sentence ends at `.`, `!` or `?` followed by a
--- space or the line's end, so `4.5` and `Distance.metres` stay in one.
+-- space or the line's end, so `4.5` and `Distance.from_metres` stay in one.
 --
 -- A negative is a sentence holding one of NEGATIVE_WORDS, matched as a whole
 -- word with any case. A sentence counts once, however many it holds.

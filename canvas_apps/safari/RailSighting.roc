@@ -44,7 +44,7 @@ runup_points = |road, { vantage, bend_in_view }| {
 	run_on_metres = leg_pieces(rail_run_on)
 	List.from_iter(U32.to(0, run_on_metres)).map(
 		|metres_in| {
-			metres_left = Distance.metres((run_on_metres - metres_in).to_f64())
+			metres_left = Distance.from_metres((run_on_metres - metres_in).to_f64())
 			road_point = { along: Along.at(length.minus(metres_left)), across }
 			bend_in_view.rider_point_before({ road, vantage, road_point })
 		},
@@ -62,7 +62,7 @@ runout_points = |road, { vantage, bend_in_view }| {
 	across = bend_in_view.outer_edge()
 	List.from_iter(U32.to(1, leg_pieces(rail_run_on))).map(
 		|metres_in| {
-			road_point = { along: Along.metres(metres_in.to_f64()), across }
+			road_point = { along: Along.from_metres(metres_in.to_f64()), across }
 			bend_in_view.rider_point_after({ road, vantage, road_point })
 		},
 	)
@@ -70,7 +70,7 @@ runout_points = |road, { vantage, bend_in_view }| {
 
 ## How far the rail runs on, a post a metre, past each end of a bend.
 rail_run_on : Distance
-rail_run_on = Distance.metres(10.0)
+rail_run_on = Distance.from_metres(10.0)
 
 ## How many pieces a leg `distance` long is cut into: one a metre, and at
 ## least one.
@@ -143,10 +143,10 @@ expect
 		(10.0, 10),
 		(49.6, 50),
 		(50.0, 50),
-	].all(|(distance, want)| leg_pieces(Distance.metres(distance)).to_i64() == want)
+	].all(|(distance, want)| leg_pieces(Distance.from_metres(distance)).to_i64() == want)
 
 origin_point : RiderView.RiderPoint
-origin_point = { right: Distance.metres(0.0), forward: Distance.metres(0.0) }
+origin_point = { right: Distance.from_metres(0.0), forward: Distance.from_metres(0.0) }
 
 point_at : List(RiderView.RiderPoint), U64 -> RiderView.RiderPoint
 point_at = |points, index| points.get(index) ?? crash "RailSighting: an index past the leg's end"
@@ -154,7 +154,7 @@ point_at = |points, index| points.get(index) ?? crash "RailSighting: an index pa
 straight_points : List(RiderView.RiderPoint)
 straight_points = leg_points({
 	from: origin_point,
-	to: { right: Distance.metres(0.0), forward: Distance.metres(10.0) },
+	to: { right: Distance.from_metres(0.0), forward: Distance.from_metres(10.0) },
 })
 
 expect straight_points.len() == 10
@@ -167,7 +167,7 @@ expect point_at(straight_points, 9).right.to_metres() == 0.0
 diagonal_points : List(RiderView.RiderPoint)
 diagonal_points = leg_points({
 	from: origin_point,
-	to: { right: Distance.metres(30.0), forward: Distance.metres(40.0) },
+	to: { right: Distance.from_metres(30.0), forward: Distance.from_metres(40.0) },
 })
 
 expect diagonal_points.len() == 50
@@ -177,19 +177,19 @@ expect point_at(diagonal_points, 24).right.to_metres() == 15.0
 expect point_at(diagonal_points, 24).forward.to_metres() == 20.0
 expect {
 	in_place = leg_points({
-		from: { right: Distance.metres(3.0), forward: Distance.metres(4.0) },
-		to: { right: Distance.metres(3.0), forward: Distance.metres(4.0) },
+		from: { right: Distance.from_metres(3.0), forward: Distance.from_metres(4.0) },
+		to: { right: Distance.from_metres(3.0), forward: Distance.from_metres(4.0) },
 	})
 	in_place.len() == 1 and point_at(in_place, 0) == {
-		right: Distance.metres(3.0),
-		forward: Distance.metres(4.0),
+		right: Distance.from_metres(3.0),
+		forward: Distance.from_metres(4.0),
 	}
 }
 
 expect {
 	spaced = evenly_spaced({
 		from: origin_point,
-		to: { right: Distance.metres(0.0), forward: Distance.metres(10.0) },
+		to: { right: Distance.from_metres(0.0), forward: Distance.from_metres(10.0) },
 		pieces: 10,
 	})
 	spaced.len() == 11

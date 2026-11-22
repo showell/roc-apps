@@ -58,11 +58,11 @@ shown_bends = [left_bend, right_bend, sharp_bend]
 
 ## How long each of the two segments is.
 segment_length : Distance
-segment_length = Distance.metres(60.0)
+segment_length = Distance.from_metres(60.0)
 
 ## How far before the bend the view is taken from.
 rider_before_bend : Distance
-rider_before_bend = Distance.metres(25.0)
+rider_before_bend = Distance.from_metres(25.0)
 
 ## A route of two segments of the route, cut to length, with `turn` between.
 two_segments : Angle.Turn -> Route

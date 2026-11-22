@@ -7,7 +7,7 @@
 ## Code spans, between backticks, are taken out before the words are read, and
 ## so is a chapter reference, `{{chapter Title}}`. A table row's cells are read
 ## one by one. A sentence ends at `.`, `!` or `?` followed by a space or the
-## line's end, so `4.5` and `Distance.metres` stay in one. A curly apostrophe
+## line's end, so `4.5` and `Distance.from_metres` stay in one. A curly apostrophe
 ## reads as a straight one. A negative is a sentence holding one of the words
 ## file's words, matched as a whole word in any case, and it counts once
 ## however many it holds.

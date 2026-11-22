@@ -58,10 +58,10 @@ PondPoint : { past_end : Distance, out_from_middle : Distance }
 ## round to the far shore.
 near_shore_points : List(PondPoint)
 near_shore_points = [
-	{ past_end: Distance.metres(16.0), out_from_middle: Distance.metres(3.0) },
-	{ past_end: Distance.metres(3.0), out_from_middle: Distance.metres(4.0) },
-	{ past_end: Distance.metres(3.0), out_from_middle: Distance.metres(30.0) },
-	{ past_end: Distance.metres(14.0), out_from_middle: Distance.metres(33.0) },
+	{ past_end: Distance.from_metres(16.0), out_from_middle: Distance.from_metres(3.0) },
+	{ past_end: Distance.from_metres(3.0), out_from_middle: Distance.from_metres(4.0) },
+	{ past_end: Distance.from_metres(3.0), out_from_middle: Distance.from_metres(30.0) },
+	{ past_end: Distance.from_metres(14.0), out_from_middle: Distance.from_metres(33.0) },
 ]
 
 ## The water's shore farthest along the road, where the bank meets it, running
@@ -72,9 +72,9 @@ far_shore : {
 	last : PondPoint,
 }
 far_shore = {
-	first: { past_end: Distance.metres(28.0), out_from_middle: Distance.metres(28.0) },
-	middle: { past_end: Distance.metres(32.0), out_from_middle: Distance.metres(17.0) },
-	last: { past_end: Distance.metres(29.0), out_from_middle: Distance.metres(7.0) },
+	first: { past_end: Distance.from_metres(28.0), out_from_middle: Distance.from_metres(28.0) },
+	middle: { past_end: Distance.from_metres(32.0), out_from_middle: Distance.from_metres(17.0) },
+	last: { past_end: Distance.from_metres(29.0), out_from_middle: Distance.from_metres(7.0) },
 }
 
 water_points : List(PondPoint)
@@ -86,9 +86,9 @@ water_color = RgbColor.of(0x2F7E8C)
 ## The bank's edge away from the water, running the way the far shore runs.
 bank_outer_points : List(PondPoint)
 bank_outer_points = [
-	{ past_end: Distance.metres(29.0), out_from_middle: Distance.metres(28.0) },
-	{ past_end: Distance.metres(33.0), out_from_middle: Distance.metres(17.0) },
-	{ past_end: Distance.metres(30.0), out_from_middle: Distance.metres(7.0) },
+	{ past_end: Distance.from_metres(29.0), out_from_middle: Distance.from_metres(28.0) },
+	{ past_end: Distance.from_metres(33.0), out_from_middle: Distance.from_metres(17.0) },
+	{ past_end: Distance.from_metres(30.0), out_from_middle: Distance.from_metres(7.0) },
 ]
 
 ## How far back from the far shore the bank's inner edge runs, under the
@@ -98,7 +98,7 @@ bank_outer_points = [
 ## so the overlap is generous; it only has to keep the inner edge inside the
 ## water.
 bank_under_water : Distance
-bank_under_water = Distance.metres(10.0)
+bank_under_water = Distance.from_metres(10.0)
 
 ## How far the bank's two inner end corners are pulled in toward the road.
 ## Left in line with the far shore's ends, each end of the bank would leave the
@@ -106,7 +106,7 @@ bank_under_water = Distance.metres(10.0)
 ## the browser's antialiasing would leave a seam of grass between them. Pulled
 ## in, each end edge crosses the shore beside the corner at an angle.
 bank_end_pull_in : Distance
-bank_end_pull_in = Distance.metres(2.0)
+bank_end_pull_in = Distance.from_metres(2.0)
 
 ## The bank's inner edge: the far shore from its last point back to its first,
 ## moved back under the water, with its two ends pulled in toward the road.
@@ -141,7 +141,7 @@ segment_point = |point, bend| {
 
 ## The duck's still, and how tall a duck stands.
 duck : Billboard.Species
-duck = { emoji: EmojiStill.duck, adult_height: Distance.metres(0.9) }
+duck = { emoji: EmojiStill.duck, adult_height: Distance.from_metres(0.9) }
 
 ## A duck on the pond, where it floats and which way it faces.
 PondDuck : { at : PondPoint, facing : Billboard.Facing }
@@ -149,27 +149,27 @@ PondDuck : { at : PondPoint, facing : Billboard.Facing }
 ducks : List(PondDuck)
 ducks = [
 	{
-		at: { past_end: Distance.metres(11.0), out_from_middle: Distance.metres(10.0) },
+		at: { past_end: Distance.from_metres(11.0), out_from_middle: Distance.from_metres(10.0) },
 		facing: FacesRight,
 	},
 	{
-		at: { past_end: Distance.metres(17.0), out_from_middle: Distance.metres(18.0) },
+		at: { past_end: Distance.from_metres(17.0), out_from_middle: Distance.from_metres(18.0) },
 		facing: FacesLeft,
 	},
 	{
-		at: { past_end: Distance.metres(21.0), out_from_middle: Distance.metres(11.0) },
+		at: { past_end: Distance.from_metres(21.0), out_from_middle: Distance.from_metres(11.0) },
 		facing: FacesRight,
 	},
 	{
-		at: { past_end: Distance.metres(6.0), out_from_middle: Distance.metres(6.0) },
+		at: { past_end: Distance.from_metres(6.0), out_from_middle: Distance.from_metres(6.0) },
 		facing: FacesRight,
 	},
 	{
-		at: { past_end: Distance.metres(7.0), out_from_middle: Distance.metres(14.0) },
+		at: { past_end: Distance.from_metres(7.0), out_from_middle: Distance.from_metres(14.0) },
 		facing: FacesLeft,
 	},
 	{
-		at: { past_end: Distance.metres(8.0), out_from_middle: Distance.metres(22.0) },
+		at: { past_end: Distance.from_metres(8.0), out_from_middle: Distance.from_metres(22.0) },
 		facing: FacesRight,
 	},
 ]
@@ -206,12 +206,12 @@ expect bank_inner_points.all(is_inside_water)
 # A point just inside each edge of the water is in it, and one just past is not.
 expect
 	[
-		({ past_end: Distance.metres(3.1), out_from_middle: Distance.metres(10.0) }, True),
-		({ past_end: Distance.metres(2.9), out_from_middle: Distance.metres(10.0) }, False),
-		({ past_end: Distance.metres(31.9), out_from_middle: Distance.metres(17.0) }, True),
-		({ past_end: Distance.metres(32.1), out_from_middle: Distance.metres(17.0) }, False),
-		({ past_end: Distance.metres(10.0), out_from_middle: Distance.metres(3.9) }, True),
-		({ past_end: Distance.metres(10.0), out_from_middle: Distance.metres(3.3) }, False),
+		({ past_end: Distance.from_metres(3.1), out_from_middle: Distance.from_metres(10.0) }, True),
+		({ past_end: Distance.from_metres(2.9), out_from_middle: Distance.from_metres(10.0) }, False),
+		({ past_end: Distance.from_metres(31.9), out_from_middle: Distance.from_metres(17.0) }, True),
+		({ past_end: Distance.from_metres(32.1), out_from_middle: Distance.from_metres(17.0) }, False),
+		({ past_end: Distance.from_metres(10.0), out_from_middle: Distance.from_metres(3.9) }, True),
+		({ past_end: Distance.from_metres(10.0), out_from_middle: Distance.from_metres(3.3) }, False),
 	].all(|(at, inside)| is_inside_water(at) == inside)
 
 expect

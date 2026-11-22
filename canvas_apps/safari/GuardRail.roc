@@ -64,13 +64,13 @@ quad_shape = |quad, focal_length|
 	}
 
 bar_middle_height : Distance
-bar_middle_height = Distance.metres(0.5)
+bar_middle_height = Distance.from_metres(0.5)
 
 bar_thickness : Distance
-bar_thickness = Distance.metres(0.1)
+bar_thickness = Distance.from_metres(0.1)
 
 post_width : Distance
-post_width = Distance.metres(0.02)
+post_width = Distance.from_metres(0.02)
 
 bar_color : RgbColor
 bar_color = RgbColor.of(0xC2C7CF)
@@ -163,9 +163,9 @@ first_post = |route_points| posts(route_points).first() ?? crash "a route of two
 
 straight_points : List(RiderView.RiderPoint)
 straight_points = [
-	{ right: Distance.metres(0.0), forward: Distance.metres(10.0) },
-	{ right: Distance.metres(0.0), forward: Distance.metres(20.0) },
-	{ right: Distance.metres(0.0), forward: Distance.metres(30.0) },
+	{ right: Distance.from_metres(0.0), forward: Distance.from_metres(10.0) },
+	{ right: Distance.from_metres(0.0), forward: Distance.from_metres(20.0) },
+	{ right: Distance.from_metres(0.0), forward: Distance.from_metres(30.0) },
 ]
 
 straight_quads : List(GuardRail.RailQuad)
@@ -187,8 +187,8 @@ expect
 
 behind_bar : GuardRail.RailQuad
 behind_bar = bar({
-	from: { right: Distance.metres(0.0), forward: Distance.metres(-20.0) },
-	to: { right: Distance.metres(0.0), forward: Distance.metres(-10.0) },
+	from: { right: Distance.from_metres(0.0), forward: Distance.from_metres(-20.0) },
+	to: { right: Distance.from_metres(0.0), forward: Distance.from_metres(-10.0) },
 })
 
 # A quad stands at its own depth, and one wholly behind the camera isn't drawn.
@@ -229,8 +229,8 @@ expect straight_post.corners.low_end.right.to_metres() == 0.0
 
 diagonal_post : GuardRail.RailQuad
 diagonal_post = first_post([
-	{ right: Distance.metres(0.0), forward: Distance.metres(10.0) },
-	{ right: Distance.metres(30.0), forward: Distance.metres(50.0) },
+	{ right: Distance.from_metres(0.0), forward: Distance.from_metres(10.0) },
+	{ right: Distance.from_metres(30.0), forward: Distance.from_metres(50.0) },
 ])
 
 expect diagonal_post.corners.low_start.right.to_metres() == -0.006
@@ -240,8 +240,8 @@ expect diagonal_post.corners.low_end.forward.to_metres() == 10.008
 
 doubled_points : List(RiderView.RiderPoint)
 doubled_points = [
-	{ right: Distance.metres(0.0), forward: Distance.metres(10.0) },
-	{ right: Distance.metres(0.0), forward: Distance.metres(10.0) },
+	{ right: Distance.from_metres(0.0), forward: Distance.from_metres(10.0) },
+	{ right: Distance.from_metres(0.0), forward: Distance.from_metres(10.0) },
 ]
 
 doubled_post : GuardRail.RailQuad
@@ -255,4 +255,4 @@ expect doubled_post.corners.low_start.forward.to_metres() == 10.0
 expect doubled_post.corners.low_end.forward.to_metres() == 10.0
 expect doubled_post.corners.high_end.height.to_metres() == 0.55
 
-expect bars([{ right: Distance.metres(0.0), forward: Distance.metres(10.0) }]).len() == 0
+expect bars([{ right: Distance.from_metres(0.0), forward: Distance.from_metres(10.0) }]).len() == 0

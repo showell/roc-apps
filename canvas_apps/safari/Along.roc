@@ -12,8 +12,8 @@ import Distance
 
 Along :: F64.{
 
-	metres : F64 -> Along
-	metres = |amount| Along.(amount)
+	from_metres : F64 -> Along
+	from_metres = |metres| Along.(metres)
 
 	to_metres : Along -> F64
 	to_metres = |Along.(along)| along
@@ -28,7 +28,7 @@ Along :: F64.{
 
 	## How far this place is from the segment's start.
 	from_start : Along -> Distance
-	from_start = |Along.(along)| Distance.metres(along)
+	from_start = |Along.(along)| Distance.from_metres(along)
 
 	## The place `distance` further along.
 	plus : Along, Distance -> Along
@@ -40,7 +40,7 @@ Along :: F64.{
 
 	## How far this place is ahead of `other`: negative when it is behind.
 	distance_from : Along, Along -> Distance
-	distance_from = |Along.(along), Along.(other)| Distance.metres(along - other)
+	distance_from = |Along.(along), Along.(other)| Distance.from_metres(along - other)
 
 	is_gt : Along, Along -> Bool
 	is_gt = |Along.(along), Along.(other)| along > other
@@ -66,8 +66,8 @@ expect
 		(3.0, [False, False, True, True, False]),
 	].all(
 		|(metres, want)| {
-			along = Along.metres(metres)
-			held = Along.metres(2.5)
+			along = Along.from_metres(metres)
+			held = Along.from_metres(2.5)
 			[
 				along < held,
 				along <= held,
