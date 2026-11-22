@@ -1,11 +1,11 @@
-published 2026-11-22T16:38:17Z
-safari-walk 3ad28c1 (3ad28c18469b4a7b16c2d6e9447b40376225d3ce); the repo has no remote yet
-rocco-engine firefox-fixes 400a208 (400a208fff5e59f8ae6c161048f2a5cfc15b46d3), on firefox-fixes at https://github.com/showell/rocco-engine.git
+published 2026-11-22T17:01:54Z
+safari-walk 751f85c (751f85c0b8a15f73e32cb0667f8e9cc81216506d); the repo has no remote yet
+rocco-engine firefox-fixes f4e3b8d (f4e3b8d976d6301f826b043538684bb13df4f27f), on firefox-fixes at https://github.com/showell/rocco-engine.git
 roc 0.1.0-rc1; web host built release (scripts/build_web_host.shale)
-4800838 bytes  index.data
+4803236 bytes  index.data
 2464 bytes  index.data.js
-13562 bytes  index.html
-329285 bytes  index.js
-2320027 bytes  index.wasm
+21569 bytes  index.html
+329542 bytes  index.js
+2324326 bytes  index.wasm
 4463 bytes  rocco.js
-sha256 587f31c7d75da858  index.wasm
+sha256 bc63a0532e230d05  index.wasm

@@ -6,8 +6,12 @@
 <title>Safari Walk</title>
 <link rel="icon" href="data:,">
 <style>
-html, body { margin: 0; height: 100%; background: #000; color: #ddd; font: 15px sans-serif; overflow: hidden; }
-canvas { display: block; width: 100%; height: 100%; }
+html, body { margin: 0; height: 100%; background: #06080f; color: #ddd; font: 15px sans-serif; overflow: hidden; }
+body { display: flex; flex-direction: column; align-items: center; justify-content: center; }
+/* The walk draws to 960 by 600 pixels, as the canvas Safari does, and the
+   page scales the picture to fit the window: at most 960 by 600 CSS pixels,
+   the window's width and 88 percent of its height, as Safari's page does. */
+canvas { display: block; background: #06080f; width: min(960px, 100%, calc(88vh * 1.6)); height: auto; aspect-ratio: 960 / 600; }
 #message { display: none; position: absolute; inset: 0; padding: 2em; box-sizing: border-box; text-align: center; align-content: center; line-height: 1.5; }
 #message button { margin-top: 1em; font: inherit; padding: 0.4em 1.2em; }
 #loading { position: absolute; inset: 0; background: #000; text-align: center; align-content: center; line-height: 1.6; pointer-events: none; transition: opacity 1.2s; }
@@ -40,6 +44,7 @@ canvas { display: block; width: 100%; height: 100%; }
 	function finish() {
 		if (done) return;
 		done = true;
+		window.dispatchEvent(new Event("walk:shown"));
 		clearInterval(ticking);
 		loading.style.opacity = "0";
 		setTimeout(function () { loading.style.display = "none"; }, 1300);
@@ -87,33 +92,94 @@ canvas { display: block; width: 100%; height: 100%; }
 		return box;
 	};
 })();
-// The F key shows or hides the frame readout. Over the last five seconds it
-// says:
-// - the frames a second, the longest frame, and how many frames took over
-//   33 ms (each one a frame that missed 30 a second), with that count since
-//   F was pressed too;
-// - the GPU's time a frame and each kind of pass's share of it, where the
-//   browser gives the page WebGPU's timestamp queries;
-// - the engine's own CPU time a frame (Roc's steps and views, and the host's
-//   drawing calls), the draw calls, instances, triangles and render passes it
-//   sends a frame, and the canvas's size and MSAA.
-// It counts by wrapping WebGPU's calls before the engine starts. Hidden, it
-// measures nothing: each wrapper only checks a flag.
+// The drawing surface stays 960 by 600 pixels whatever the window and its
+// pixel ratio: the engine sizes its surface as the canvas's CSS size times
+// the pixel ratio, so the page answers a ratio that makes that product 960
+// across. `?scale=0.5` draws 480 by 300 instead, scaled up the same way.
+var walkView = (function () {
+	var query = new URLSearchParams(location.search);
+	var scale = parseFloat(query.get("scale") || "1");
+	if (!(scale >= 0.1 && scale <= 4)) scale = 1;
+	var realRatio = window.devicePixelRatio || 1;
+	var canvas = document.getElementById("canvas");
+	Object.defineProperty(window, "devicePixelRatio", {
+		configurable: true,
+		get: function () {
+			var width = canvas.getBoundingClientRect().width;
+			return width > 0 ? 960 * scale / width : scale;
+		},
+	});
+	var switches = [];
+	query.forEach(function (value, name) { switches.push(value === "" ? name : name + "=" + value); });
+	return { scale: scale, realRatio: realRatio, switches: switches };
+})();
+// Frame measurement, for the F readout and the console report. It counts
+// by wrapping WebGPU's calls and the animation frame callbacks before the
+// engine starts, at a cost of a few calls a frame. A frame is one engine
+// frame: it ends in the engine's one submit, and its length is the time from
+// the submit before. The walk's frames count from the moment the loading line
+// goes; the frames while Space has paused the walk, and the first after it
+// walks on, never count.
+//
+// The F key shows or hides the readout, over the last five seconds of the
+// walk's frames: the frames a second, the longest frame, how many took over
+// 33 ms (each one missed 30 a second); the GPU's time a frame by kind of
+// pass, where the browser gives the page WebGPU's timestamp queries; the
+// engine's CPU time a frame (Roc's steps and views, and the host's drawing
+// calls); the draws, instances, triangles and passes a frame; and the
+// canvas.
+//
+// Every 20 seconds of walking, the page writes a report to the console as
+// plain text to copy into a chat: the frame times by percentile and as a
+// histogram, the five longest frames with where the walk was, the GPU's time
+// by pass, the engine's, the canvas, the URL's switches, the GPU adapter and
+// the browser.
 (function () {
 	var rate = document.getElementById("rate");
 	var shown = false;
-	var WINDOW_MS = 5000;
 	var SLOW_MS = 33;
+	var REPORT_MS = 20000;
 	var QUERY_PASSES = 64;
 
-	// What the engine sends in the frame being recorded, and the frames
-	// of the last five seconds.
-	function blank() { return { passes: 0, draws: 0, instances: 0, triangles: 0, cpu: 0, gpu: null, kinds: null, gap: null }; }
+	function blank() { return { passes: 0, draws: 0, instances: 0, triangles: 0, cpu: null, gpu: null, kinds: null, gap: null }; }
 	var sending = blank();
-	var frames = [];
-	var slowSinceShown = 0;
+	var recent = [];
+	var reportFrames = [];
+	var reports = 0;
 	var lastSubmit = 0;
 	var samples = 1;
+	var adapter = null;
+	var adapterInfo = null;
+
+	// The walk as the page follows it: whether the loading line is gone,
+	// whether Space has paused it, and how far down the road it is (the
+	// engine's clock, which takes at most a quarter second a frame, at the
+	// walk's 4 m/s; the keys 1 to 4 jump as the game does). Only the
+	// report's notes on the longest frames read the distance.
+	var walk = { shown: false, paused: false, skipNext: false, walked: 0, started: false };
+	window.addEventListener("walk:shown", function () { walk.shown = true; });
+	window.addEventListener("rocco:ready", function () { walk.started = true; });
+	var JUMPS = { Digit1: 44, Digit2: 200, Digit3: 260, Digit4: 95 };
+	window.addEventListener("keydown", function (event) {
+		if (event.repeat) return;
+		if (event.code === "Space") {
+			walk.paused = !walk.paused;
+			if (!walk.paused) walk.skipNext = true;
+		}
+		if (event.code in JUMPS) walk.walked = JUMPS[event.code];
+	}, true);
+
+	// What the walk passes at `walked` metres (Zebra.roc, Daylight.roc,
+	// Roadside.roc and Walk.roc place them).
+	function happening(walked) {
+		var notes = [];
+		if (walked < 6 || walked > 388) notes.push("the fade at the loop's end and restart");
+		if (walked > 20 && walked < 62) notes.push("zebra 1 crossing ahead");
+		if (walked > 200 && walked < 274) notes.push("zebra 2 crossing ahead");
+		if (walked > 59 && walked < 252) notes.push("sky blend re-blending (sunset)");
+		if (walked > 125 && walked < 160) notes.push("passing the near mast and its light");
+		return notes.length ? notes.join("; ") : "nothing new: trees and grass move to the next lap as they fall behind";
+	}
 
 	function wrap(proto, name, around) {
 		if (!proto || !proto[name]) return;
@@ -122,9 +188,9 @@ canvas { display: block; width: 100%; height: 100%; }
 	}
 
 	// The GPU's time for each render pass, through timestamp queries: the
-	// device asks for them when the adapter has them, each pass of a shown
-	// frame writes two, the encoder resolves them as it finishes, and a copy
-	// maps after the submit.
+	// device asks for them when the adapter has them, each pass writes two,
+	// the encoder resolves them as it finishes, and a copy maps after the
+	// submit.
 	var timer = { device: null, set: null, resolve: null, free: [], used: 0, kinds: [], reads: [] };
 	function timerReady() {
 		if (timer.set || !timer.device) return timer.set !== null;
@@ -151,10 +217,13 @@ canvas { display: block; width: 100%; height: 100%; }
 
 	if (window.GPUAdapter) {
 		wrap(GPUAdapter.prototype, "requestDevice", function (original, args) {
+			adapter = this;
 			var d = Object.assign({}, args[0] || {});
 			var timed = this.features && this.features.has("timestamp-query");
 			var features = Array.from(d.requiredFeatures || []);
 			if (timed && features.indexOf("timestamp-query") < 0) d.requiredFeatures = features.concat(["timestamp-query"]);
+			if (this.info) adapterInfo = this.info;
+			else if (this.requestAdapterInfo) this.requestAdapterInfo().then(function (info) { adapterInfo = info; }, function () {});
 			return original.call(this, d).then(function (device) {
 				if (timed) timer.device = device;
 				return device;
@@ -170,14 +239,12 @@ canvas { display: block; width: 100%; height: 100%; }
 	}
 	if (window.GPUCommandEncoder) {
 		wrap(GPUCommandEncoder.prototype, "beginRenderPass", function (original, args) {
-			if (shown) {
-				var d = args[0] || {};
-				sending.passes += 1;
-				if (timerReady() && timer.used < QUERY_PASSES && !d.timestampWrites) {
-					var i = timer.used++;
-					timer.kinds.push(d.label || "other");
-					args = [Object.assign({}, d, { timestampWrites: { querySet: timer.set, beginningOfPassWriteIndex: 2 * i, endOfPassWriteIndex: 2 * i + 1 } })];
-				}
+			var d = args[0] || {};
+			sending.passes += 1;
+			if (walk.started && timerReady() && timer.used < QUERY_PASSES && !d.timestampWrites) {
+				var i = timer.used++;
+				timer.kinds.push(d.label || "other");
+				args = [Object.assign({}, d, { timestampWrites: { querySet: timer.set, beginningOfPassWriteIndex: 2 * i, endOfPassWriteIndex: 2 * i + 1 } })];
 			}
 			return original.apply(this, args);
 		});
@@ -196,48 +263,44 @@ canvas { display: block; width: 100%; height: 100%; }
 		});
 	}
 	if (window.GPURenderPassEncoder) {
-		function counted(original, args) {
-			if (shown) {
-				var instances = args[1] === undefined ? 1 : args[1];
-				sending.draws += 1;
-				sending.instances += instances;
-				sending.triangles += Math.floor((args[0] || 0) / 3) * instances;
-			}
+		var counted = function (original, args) {
+			var instances = args[1] === undefined ? 1 : args[1];
+			sending.draws += 1;
+			sending.instances += instances;
+			sending.triangles += Math.floor((args[0] || 0) / 3) * instances;
 			return original.apply(this, args);
-		}
+		};
 		wrap(GPURenderPassEncoder.prototype, "draw", counted);
 		wrap(GPURenderPassEncoder.prototype, "drawIndexed", counted);
 	}
-	// Each engine frame ends in one submit, so a frame's length is the time
-	// from one submit to the next. (The browser may run more animation
-	// frames than the engine draws while the GPU is behind.)
 	var submitted = null;
 	if (window.GPUQueue) {
 		wrap(GPUQueue.prototype, "submit", function (original, args) {
 			var r = original.apply(this, args);
-			if (shown && sending.passes > 0) {
+			if (sending.passes > 0) {
 				var reads = timer.reads;
 				timer.reads = [];
 				reads.forEach(timerRead);
-				sending.at = performance.now();
-				if (lastSubmit > 0) {
-					sending.gap = sending.at - lastSubmit;
-					if (sending.gap > SLOW_MS) slowSinceShown += 1;
-				}
-				lastSubmit = sending.at;
-				frames.push(sending);
-				submitted = sending;
+				var frame = sending;
 				sending = blank();
+				frame.at = performance.now();
+				if (lastSubmit > 0) frame.gap = frame.at - lastSubmit;
+				lastSubmit = frame.at;
+				if (frame.gap !== null && !walk.paused) walk.walked = (walk.walked + 4 * Math.min(frame.gap, 250) / 1000) % 400;
+				frame.walked = walk.walked;
+				var counts = walk.shown && !walk.paused && !walk.skipNext && frame.gap !== null;
+				if (!walk.paused && walk.shown) walk.skipNext = false;
+				submitted = frame;
+				if (counts) took(frame);
 			}
 			return r;
 		});
 	}
-	// The engine's frame runs in an animation frame callback; its length
-	// is the engine's CPU time for the frame.
+	// The engine's frame runs in an animation frame callback; its length is
+	// the engine's CPU time for the frame.
 	var request = window.requestAnimationFrame.bind(window);
 	window.requestAnimationFrame = function (callback) {
 		return request(function (stamp) {
-			if (!shown) return callback(stamp);
 			var start = performance.now();
 			submitted = null;
 			try { return callback(stamp); } finally {
@@ -246,57 +309,106 @@ canvas { display: block; width: 100%; height: 100%; }
 		});
 	};
 
+	function took(frame) {
+		if (shown) recent.push(frame);
+		reportFrames.push(frame);
+		var span = reportFrames.reduce(function (a, f) { return a + f.gap; }, 0);
+		if (span >= REPORT_MS) {
+			var frames = reportFrames;
+			reportFrames = [];
+			// The CPU and GPU times arrive after the frame's submit.
+			setTimeout(function () { report(frames, span); }, 500);
+		}
+	}
+
 	function mean(list, key) {
-		var have = list.filter(function (f) { return f[key] !== null; });
+		var have = list.filter(function (f) { return f[key] !== null && f[key] !== undefined; });
 		if (have.length === 0) return null;
 		return have.reduce(function (a, f) { return a + f[key]; }, 0) / have.length;
 	}
-	function ms(x) { return x < 10 ? x.toFixed(1) : Math.round(x).toString(); }
+	function ms(x) { return x === null ? "-" : x < 10 ? x.toFixed(1) : Math.round(x).toString(); }
 	function thousands(x) { return x >= 10000 ? Math.round(x / 1000) + "k" : Math.round(x).toString(); }
-
-	function show(now) {
-		while (frames.length > 0 && now - frames[0].at > WINDOW_MS) frames.shift();
-		var gaps = frames.filter(function (f) { return f.gap !== null; }).map(function (f) { return f.gap; });
-		if (gaps.length === 0) return;
-		var span = gaps.reduce(function (a, g) { return a + g; }, 0);
-		var fps = gaps.length * 1000 / span;
-		var longest = Math.max.apply(null, gaps);
-		var slow = gaps.filter(function (g) { return g > SLOW_MS; }).length;
-		var lines = [(fps < 10 ? fps.toFixed(1) : Math.round(fps)) + " fps   longest frame " + Math.round(longest) + " ms   over " + SLOW_MS + " ms: " + slow + " (" + slowSinceShown + " since F)"];
-		var gpu = mean(frames, "gpu");
-		if (gpu !== null) {
-			var kinds = {}, timed = frames.filter(function (f) { return f.kinds; });
-			timed.forEach(function (f) { Object.keys(f.kinds).forEach(function (k) { kinds[k] = (kinds[k] || 0) + f.kinds[k] / timed.length; }); });
-			var parts = Object.keys(kinds).sort(function (a, b) { return kinds[b] - kinds[a]; }).map(function (k) { return k + " " + ms(kinds[k]); });
-			lines.push("GPU " + ms(gpu) + " ms a frame: " + parts.join(", "));
-		} else if (timer.device) {
-			lines.push("GPU time: waiting for the first timings");
-		} else {
-			lines.push("GPU time: this browser gives the page no timestamp queries");
-		}
+	function percentile(sorted, p) { return sorted[Math.min(sorted.length - 1, Math.floor(sorted.length * p))]; }
+	function passKinds(frames) {
+		var kinds = {}, timed = frames.filter(function (f) { return f.kinds; });
+		timed.forEach(function (f) { Object.keys(f.kinds).forEach(function (k) { kinds[k] = (kinds[k] || 0) + f.kinds[k] / timed.length; }); });
+		return Object.keys(kinds).sort(function (a, b) { return kinds[b] - kinds[a]; }).map(function (k) { return k + " " + ms(kinds[k]); }).join(", ");
+	}
+	function canvasLine() {
 		var canvas = document.getElementById("canvas");
-		lines.push("engine CPU " + ms(mean(frames, "cpu")) + " ms a frame");
-		lines.push(Math.round(mean(frames, "draws")) + " draws, " + thousands(mean(frames, "instances")) + " instances, " + thousands(mean(frames, "triangles")) + " triangles, " + Math.round(mean(frames, "passes")) + " passes a frame");
-		lines.push("canvas " + canvas.width + " x " + canvas.height + ", " + (samples > 1 ? samples + "x MSAA" : "no MSAA"));
-		rate.textContent = lines.join("\n");
+		var box = canvas.getBoundingClientRect();
+		return "canvas " + canvas.width + " x " + canvas.height + " = " + (canvas.width * canvas.height).toLocaleString("en") + " pixels drawn, shown at " +
+			Math.round(box.width) + " x " + Math.round(box.height) + " CSS px; devicePixelRatio " + walkView.realRatio + "; " + (samples > 1 ? samples + "x MSAA" : "no MSAA");
 	}
 
-	// The readout's own animation frames only refresh the text, four times
-	// a second.
+	function report(frames, span) {
+		reports += 1;
+		var gaps = frames.map(function (f) { return f.gap; });
+		var sorted = gaps.slice().sort(function (a, b) { return a - b; });
+		var bins = [0, 0, 0, 0, 0];
+		gaps.forEach(function (g) { bins[g <= 16.7 ? 0 : g <= 33 ? 1 : g <= 50 ? 2 : g <= 100 ? 3 : 4] += 1; });
+		var longest = frames.slice().sort(function (a, b) { return b.gap - a.gap; }).slice(0, 5);
+		var lines = [];
+		lines.push("Safari Walk frame report " + reports + " (the page writes one every 20 s of walking; a second paste confirms the first)");
+		lines.push("page: " + location.href);
+		lines.push("switches: " + (walkView.switches.length ? walkView.switches.join(" ") : "none") + "; drawing scale " + walkView.scale);
+		lines.push("frames: " + gaps.length + " in " + (span / 1000).toFixed(1) + " s of walking = " + (gaps.length * 1000 / span).toFixed(1) + " fps (paused time, the first frame after each resume and the loading frames left out)");
+		lines.push("frame ms: p50 " + ms(percentile(sorted, 0.5)) + ", p90 " + ms(percentile(sorted, 0.9)) + ", p99 " + ms(percentile(sorted, 0.99)) + ", max " + ms(sorted[sorted.length - 1]));
+		lines.push("frames by length: up to 16.7 ms " + bins[0] + ", to 33 ms " + bins[1] + ", to 50 ms " + bins[2] + ", to 100 ms " + bins[3] + ", over 100 ms " + bins[4]);
+		lines.push("the 5 longest frames:");
+		longest.forEach(function (f) {
+			lines.push("  " + ms(f.gap) + " ms at " + Math.round(f.walked) + " m (" + (f.walked / 4).toFixed(1) + " s into the walk): " + happening(f.walked));
+		});
+		var gpu = frames.filter(function (f) { return f.gpu !== null; }).map(function (f) { return f.gpu; }).sort(function (a, b) { return a - b; });
+		if (gpu.length > 0) {
+			lines.push("GPU ms a frame (timestamp queries, " + gpu.length + " frames): p50 " + ms(percentile(gpu, 0.5)) + ", p90 " + ms(percentile(gpu, 0.9)) + ", max " + ms(gpu[gpu.length - 1]) + "; by pass (mean): " + passKinds(frames));
+			lines.push("the GPU is busy " + ms(percentile(gpu, 0.5)) + " ms of a " + ms(percentile(sorted, 0.5)) + " ms frame (p50s): near equal means the GPU sets the pace");
+		} else if (timer.device) {
+			lines.push("GPU ms a frame: no timings came back from the timestamp queries");
+		} else {
+			lines.push("GPU ms a frame: this browser gives the page no timestamp queries on this adapter");
+		}
+		var cpu = frames.filter(function (f) { return f.cpu !== null; }).map(function (f) { return f.cpu; }).sort(function (a, b) { return a - b; });
+		if (cpu.length > 0) lines.push("engine CPU ms a frame: p50 " + ms(percentile(cpu, 0.5)) + ", p90 " + ms(percentile(cpu, 0.9)) + ", max " + ms(cpu[cpu.length - 1]));
+		lines.push("a frame sends: " + Math.round(mean(frames, "draws")) + " draws, " + thousands(mean(frames, "instances")) + " instances, " + thousands(mean(frames, "triangles")) + " triangles, " + Math.round(mean(frames, "passes")) + " render passes");
+		lines.push(canvasLine());
+		lines.push("round 4 drew the whole window instead: here " + window.innerWidth + " x " + window.innerHeight + " CSS px = " + (window.innerWidth * window.innerHeight).toLocaleString("en") + " pixels");
+		var info = adapterInfo || {};
+		var fields = ["vendor", "architecture", "device", "description"].filter(function (k) { return info[k]; }).map(function (k) { return k + " " + info[k]; });
+		lines.push("GPU adapter: " + (fields.length ? fields.join(", ") : "the browser names nothing") + (adapter && adapter.isFallbackAdapter ? " (a fallback adapter)" : ""));
+		lines.push("browser: " + navigator.userAgent);
+		console.log(lines.join("\n"));
+	}
+
+	function show() {
+		var now = performance.now();
+		while (recent.length > 0 && now - recent[0].at > 5000) recent.shift();
+		if (recent.length === 0) { rate.textContent = walk.paused ? "paused: not counting" : "counting frames"; return; }
+		var gaps = recent.map(function (f) { return f.gap; });
+		var span = gaps.reduce(function (a, g) { return a + g; }, 0);
+		var fps = gaps.length * 1000 / span;
+		var slow = gaps.filter(function (g) { return g > SLOW_MS; }).length;
+		var lines = [(fps < 10 ? fps.toFixed(1) : Math.round(fps)) + " fps   longest frame " + Math.round(Math.max.apply(null, gaps)) + " ms   over " + SLOW_MS + " ms: " + slow + (walk.paused ? "   (paused: not counting)" : "")];
+		var gpu = mean(recent, "gpu");
+		if (gpu !== null) lines.push("GPU " + ms(gpu) + " ms a frame: " + passKinds(recent));
+		else lines.push(timer.device ? "GPU time: waiting for the first timings" : "GPU time: this browser gives the page no timestamp queries");
+		lines.push("engine CPU " + ms(mean(recent, "cpu")) + " ms a frame");
+		lines.push(Math.round(mean(recent, "draws")) + " draws, " + thousands(mean(recent, "instances")) + " instances, " + thousands(mean(recent, "triangles")) + " triangles, " + Math.round(mean(recent, "passes")) + " passes a frame");
+		lines.push(canvasLine());
+		lines.push("a report goes to the console every 20 s of walking");
+		rate.textContent = lines.join("\n");
+	}
 	var drawn = 0;
 	function tick(now) {
 		if (!shown) return;
-		if (now - drawn > 250) { drawn = now; show(performance.now()); }
+		if (now - drawn > 250) { drawn = now; show(); }
 		request(tick);
 	}
 	window.addEventListener("keydown", function (event) {
 		if (event.code !== "KeyF" || event.repeat) return;
 		shown = !shown;
 		rate.style.display = shown ? "block" : "none";
-		lastSubmit = 0;
-		frames = [];
-		sending = blank();
-		slowSinceShown = 0;
+		recent = [];
 		if (shown) { rate.textContent = "counting frames"; request(tick); }
 	}, true);
 })();
