@@ -1,0 +1,149 @@
+-- budget: steps=60000000 read_bytes=200000000
+-- This script publishes Safari Walk, the Rocco spike in the safari-walk repo
+-- (repos:safari-walk), to site/live/safari-walk/, as
+-- site/publish_screensavers.shale does for roc-screensaver's pages. The page
+-- is unlisted: no landing page or other page links it.
+--
+--   cd <roc-apps checkout> && shale site/publish_safari_walk.shale
+--
+-- The page's sources stay in safari-walk, and the script refuses that
+-- checkout when it has changes of any kind, so what is published is always a
+-- commit. safari-walk has no remote yet, so its PROVENANCE says so; the
+-- rocco-engine submodule's commit is checked against the fork's
+-- firefox-fixes branch on GitHub, and PROVENANCE says whether it is there.
+--
+-- It builds the page there with safari-walk's own scripts/build_web.shale
+-- (Rocco's rocco_web.py, against the release web host in
+-- rocco-engine/platform/targets/wasm32, which scripts/build_web_host.shale
+-- builds), checks the build left the checkout clean, copies build/web over
+-- site/live/safari-walk/ whole, less the zip rocco_web.py writes beside the
+-- page (a download bundle of the same files, not part of the page), and
+-- writes a PROVENANCE: the safari-walk commit, rocco-engine's branch and
+-- commit, the Roc pin, each file's size, and a hash of the wasm.
+--
+-- Then it checks the folder holds exactly the page's files and that the
+-- page's URLs are relative. There is no staging check: staging is plain
+-- http on :9200, where a browser gives a page no WebGPU, so the page can
+-- only show its "no WebGPU" message there. A failed check stops before git,
+-- leaving the new files in site/live/ uncommitted. The folder is committed
+-- alone, with its PROVENANCE in the message. Push the branch after; the
+-- site/deploy.sh run takes it to prod with the rest.
+
+const WALK = "repos:safari-walk"
+const ENGINE = "repos:safari-walk/rocco-engine"
+const FORK = "https://github.com/showell/rocco-engine.git"
+const FORK_BRANCH = "firefox-fixes"
+const LIVE = "site/live/safari-walk"
+const PAGE_FILES = {"PROVENANCE", "index.data", "index.data.js", "index.html", "index.js", "index.wasm", "rocco.js"}
+
+-- The full hash of HEAD in `repo`.
+function head_of(repo)
+  return trim(must(run({"git", "rev-parse", "HEAD"}, {cwd = repo, timeout_ms = 10000, tail = 2})).out)
+end
+
+-- Stops the publish when `repo` has a change of any kind.
+function refuse_changes(repo, when)
+  if not git_is_clean(repo) then
+    for s in git_status(repo) do print(s.code .. " " .. s.path) end
+    fail("publish_safari_walk: " .. repo .. " has changes " .. when .. "; commit them first")
+  end
+  return nil
+end
+
+-- Every file below `dir`, by its name under it, sorted.
+function files_under(dir)
+  local names = {}
+  for e in walk_all(dir, {kind = "file"}) do push(names, sub(e.path, #dir + 2, #e.path)) end
+  sort(names)
+  return names
+end
+
+-- The first 16 hex digits of a file's sha256.
+function sha256_16(p)
+  local r = must(run({"sha256sum", real(p)}, {timeout_ms = 10000, tail = 2}))
+  return sub(trim(r.out), 1, 16)
+end
+
+-- Whether the fork's firefox-fixes branch on GitHub is at `engine`.
+function fork_line(engine)
+  local r = run({"git", "ls-remote", FORK, FORK_BRANCH}, {timeout_ms = 60000, tail = 3})
+  local at = ""
+  if r.code == 0 and trim(r.out) ~= "" then at = sub(trim(r.out), 1, 40) end
+  if at == engine then return "on " .. FORK_BRANCH .. " at " .. FORK end
+  if at == "" then return "NOT on GitHub: " .. FORK .. " has no " .. FORK_BRANCH end
+  return "NOT on GitHub yet: " .. FORK .. " " .. FORK_BRANCH .. " is at " .. sub(at, 1, 7)
+end
+
+-- The Roc pin in the game's app header, as `roc: "<pin>"`.
+function roc_pin()
+  local found = re_find(read(WALK .. "/game/main.roc"), [=[roc: "([^"]+)"]=])
+  if found == nil then fail("publish_safari_walk: game/main.roc's header names no Roc pin") end
+  return found.group
+end
+
+function provenance(walk, engine)
+  local stamp = trim(must(run({"date", "-u", "+%Y-%m-%dT%H:%M:%SZ"}, {timeout_ms = 5000, tail = 2})).out)
+  local text = "published " .. stamp .. "\n"
+  text = text .. "safari-walk " .. sub(walk, 1, 7) .. " (" .. walk .. "); the repo has no remote yet\n"
+  text = text .. "rocco-engine " .. FORK_BRANCH .. " " .. sub(engine, 1, 7) .. " (" .. engine .. "), " .. fork_line(engine) .. "\n"
+  text = text .. "roc " .. roc_pin() .. "; web host built release (scripts/build_web_host.shale)\n"
+  for f in PAGE_FILES do
+    if f ~= "PROVENANCE" then text = text .. stat(LIVE .. "/" .. f).size .. " bytes  " .. f .. "\n" end
+  end
+  text = text .. "sha256 " .. sha256_16(LIVE .. "/index.wasm") .. "  index.wasm\n"
+  return text
+end
+
+-- One check's line; a failed one stops the publish.
+function check_line(name, ok, detail)
+  local verdict = "PASS"
+  if not ok then verdict = "FAIL" end
+  print(verdict .. "  " .. name .. ": " .. detail)
+  if not ok then fail("publish_safari_walk: the check of " .. name .. " failed; site/live/ is changed and not committed") end
+  return nil
+end
+
+function check_published()
+  local found = files_under(LIVE)
+  local want = {}
+  for f in PAGE_FILES do push(want, f) end
+  sort(want)
+  check_line("files", join(found, " ") == join(want, " "), LIVE .. " holds " .. join(found, " ") .. "; expected " .. join(want, " "))
+
+  local absolute = 0
+  for f in {"index.html", "rocco.js", "index.data.js"} do
+    absolute = absolute + #re_find_all(read(LIVE .. "/" .. f), [=[(?:src|href)\s*=\s*["'](?:/|[a-z]+://)|fetch\(\s*["'](?:/|[a-z]+://)]=])
+  end
+  check_line("relative URLs", absolute == 0, absolute .. " src, href or fetch URLs in index.html, rocco.js and index.data.js start with / or a scheme")
+  return nil
+end
+
+function main()
+  refuse_changes(WALK, "before the build")
+  local walk = head_of(WALK)
+  local engine = head_of(ENGINE)
+  local staged = run({"git", "diff", "--cached", "--quiet"}, {timeout_ms = 10000, tail = 5})
+  if staged.code ~= 0 then fail("publish_safari_walk: roc-apps' index already holds staged changes; commit or unstage them first") end
+
+  local b = run({"shale", "scripts/build_web.shale"}, {cwd = WALK, timeout_ms = 300000, tail = 30})
+  print(trim(b.out))
+  if b.code ~= 0 then fail("publish_safari_walk: safari-walk's web build failed") end
+  refuse_changes(WALK, "after the build (it rewrote a tracked file)")
+
+  if exists(LIVE) then remove_tree(LIVE) end
+  copy(WALK .. "/build/web", LIVE)
+  for f in files_under(LIVE) do
+    if ends_with(f, "-web.zip") then remove(LIVE .. "/" .. f) end
+  end
+  create(LIVE .. "/PROVENANCE", provenance(walk, engine))
+  print(read(LIVE .. "/PROVENANCE"))
+
+  check_published()
+
+  must(run({"git", "add", "-A", "--", LIVE}, {timeout_ms = 30000, tail = 5}))
+  git_commit("", "site: publish safari-walk, the Rocco spike, unlisted\n\n" .. read(LIVE .. "/PROVENANCE") .. "\nCo-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>\n")
+  print("committed " .. LIVE .. "; push the branch, then site/deploy.sh takes it to prod")
+  return nil
+end
+
+main()
