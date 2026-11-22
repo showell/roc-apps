@@ -222,7 +222,7 @@ var walkView = (function () {
 	if (startAt >= 0 && startAt < 399) walk.walked = startAt;
 	window.addEventListener("walk:shown", function () { walk.shown = true; });
 	window.addEventListener("rocco:ready", function () { walk.started = true; });
-	var JUMPS = { Digit1: 44, Digit2: 200, Digit3: 260, Digit4: 95, Digit5: 36, Digit6: 88, Digit7: 240 };
+	var JUMPS = { Digit1: 44, Digit2: 200, Digit3: 260, Digit4: 95, Digit5: 36, Digit6: 83, Digit7: 240 };
 	window.addEventListener("keydown", function (event) {
 		if (event.repeat) return;
 		if (event.code === "Space") {
