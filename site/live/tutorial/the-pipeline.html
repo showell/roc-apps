@@ -212,7 +212,7 @@
 <figure class="listing"><figcaption>Along.roc, in Along</figcaption><pre><code class="language-roc"><span class="syn-type">Along</span> :: <span class="syn-type">F64</span>.{
 
 	<span class="syn-name">metres</span> : <span class="syn-type">F64</span> -&gt; <span class="syn-type">Along</span>
-	<span class="syn-name">metres</span> = |metres| <span class="syn-type">Along</span>.(metres)
+	<span class="syn-name">metres</span> = |amount| <span class="syn-type">Along</span>.(amount)
 	<span class="syn-comment"># ...</span>
 </code></pre></figure><p>So the compiler rejects a call that passes an <code>across</code> where an <code>along</code> belongs.</p>
 <h2 id="sighted">Sighted <a class="section-link" href="#sighted" aria-label="Link to this section">§</a></h2>
@@ -240,7 +240,7 @@
 
 	<span class="syn-comment">## The rendering of `sprite`, standing `depth` ahead of the camera.</span>
 	<span class="syn-name">of</span> : <span class="syn-type">Distance</span>, <span class="syn-type">Sprite</span> -&gt; <span class="syn-type">Rendered</span>
-	<span class="syn-name">of</span> = |depth, sprite| <span class="syn-type">Rendered</span>.({ depth, sprite })
+	<span class="syn-name">of</span> = |ahead, picture| <span class="syn-type">Rendered</span>.({ depth: ahead, sprite: picture })
 	<span class="syn-comment"># ...</span>
 </code></pre></figure><p>A <code>Rendered</code> holds a depth and a sprite. The <code>::</code> makes it opaque, as it does <code>Distance</code>. The sprite is what a kind&#39;s <code>scenery_sprite</code> returns from a setting, and the depth is how far ahead of the camera the thing stands. A tree&#39;s rendering and a cow&#39;s have the same type.</p>
 <h2 id="one-list">One list <a class="section-link" href="#one-list" aria-label="Link to this section">§</a></h2>

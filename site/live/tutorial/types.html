@@ -75,7 +75,7 @@
 <figure class="listing"><figcaption>Distance.roc, in Distance</figcaption><pre><code class="language-roc"><span class="syn-type">Distance</span> :: <span class="syn-type">F64</span>.{
 
 	<span class="syn-name">metres</span> : <span class="syn-type">F64</span> -&gt; <span class="syn-type">Distance</span>
-	<span class="syn-name">metres</span> = |metres| <span class="syn-type">Distance</span>.(metres)
+	<span class="syn-name">metres</span> = |amount| <span class="syn-type">Distance</span>.(amount)
 	<span class="syn-comment"># ...</span>
 </code></pre></figure><p>The <code>::</code> makes <code>Distance</code> opaque: inside is an <code>F64</code>, and only the <code>Distance</code> module opens it. <code>metres</code> wraps a number of metres as a <code>Distance</code>. So a <code>Distance</code> is more precise than an <code>F64</code>: its type says what the number means, and the compiler keeps a length apart from a speed or any other number. The <a class="chapter-link" href="the-clock.html">“Opaque types: the clock”</a> chapter shows that precision catching a bug.</p>
 <h2 id="a-billboard-spells-out-its-fields-and-its-choices">A billboard spells out its fields and its choices <a class="section-link" href="#a-billboard-spells-out-its-fields-and-its-choices" aria-label="Link to this section">§</a></h2>

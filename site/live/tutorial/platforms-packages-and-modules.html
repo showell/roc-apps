@@ -69,10 +69,9 @@
 <p class="chapter-number">Chapter 4</p>
 <h1 id="platforms-packages-and-modules">Platforms, packages and modules</h1>
 <p>A Roc program runs on a platform, it&#39;s made of modules, and it can use packages. Those three words say where Safari Ride&#39;s code lives.</p>
-<p>A platform is the layer underneath a Roc program that deals with the outside world. For Safari Ride, that&#39;s the screen and the keyboard. The Roc code describes each frame, and the platform paints it. In this page, the platform is WebAssembly and a little JavaScript. On a desktop, the same Roc code runs on a native platform called roc-ray.</p>
+<p>A platform is the layer underneath a Roc program that deals with the outside world. For Safari Ride, that&#39;s the screen and the keyboard. The Roc code describes each frame, and the platform paints it. In this page, the platform is WebAssembly and a little JavaScript.</p>
 <p>Each Roc program is an app, and the app&#39;s first line of code names its platform. Here&#39;s Safari Ride&#39;s app for the web, the whole file:</p>
-<figure class="listing"><figcaption>web.roc, the whole file</figcaption><pre><code class="language-roc"><span class="syn-comment"># Safari, as a page: the wasm module a browser runs. main.roc beside it</span>
-<span class="syn-comment"># is the same app on roc-ray.</span>
+<figure class="listing"><figcaption>web.roc, the whole file</figcaption><pre><code class="language-roc"><span class="syn-comment"># Safari, as a page: the wasm module a browser runs.</span>
 <span class="syn-keyword">app</span> [<span class="syn-type">Model</span>, program] { lib: <span class="syn-string">&quot;../lib/main.roc&quot;</span>, pf: <span class="syn-keyword">platform</span> <span class="syn-string">&quot;../web/platform/main.roc&quot;</span> }
 
 <span class="syn-keyword">import</span> lib.<span class="syn-type">WasmApp</span>

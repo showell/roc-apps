@@ -138,7 +138,7 @@ pre {
 }
 pre code { font-size: inherit; }
 
-/* color_roc.shale marks Roc's code. A few quiet colors are enough to read by. */
+/* roc-syntax-color marks the code's runs. A few quiet colors are enough to read by. */
 
 .syn-comment { color: var(--quiet); }
 .syn-string, .syn-number { color: var(--code-literal); }

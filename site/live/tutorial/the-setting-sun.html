@@ -118,12 +118,12 @@
 <span class="syn-name">sun_shapes</span> = |sun_sighting|
 	<span class="syn-keyword">match</span> sun_sighting {
 		<span class="syn-type">InView</span>(sun) =&gt; {
-			look = <span class="syn-type">Sun</span>.look(sun)
-			<span class="syn-type">Shapes</span>.added_light_shapes([<span class="syn-type">Screen</span>.above_horizon_rect(look.glow)]).append(
+			sun_look = <span class="syn-type">Sun</span>.look(sun)
+			<span class="syn-type">Shapes</span>.added_light_shapes([<span class="syn-type">Screen</span>.above_horizon_rect(sun_look.glow)]).append(
 				<span class="syn-type">Disc</span>({
 					center: sun.center,
 					radius: <span class="syn-type">Sun</span>.disc_radius_on_screen(sun),
-					fill: look.disc,
+					fill: sun_look.disc,
 				}),
 			)
 		}

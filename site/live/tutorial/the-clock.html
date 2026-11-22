@@ -81,16 +81,20 @@
 	echo!(later.to_str())
 	<span class="syn-type">Ok</span>({})
 }
-</code></pre></figure><figure class="listing"><figcaption>roc check on clock_plus_seven.roc</figcaption><pre><code class="language-text">── ✗ type mismatch ─────────────────────────────────── clock_plus_seven.roc:6:24
+</code></pre></figure><figure class="listing"><figcaption>roc check on clock_plus_seven.roc</figcaption><pre><code class="language-text">── ✗ type mismatch ─────────────────────────────────── clock_plus_seven.roc:6:10
 
-This number is being used where a non-number type is needed.
+The plus method on Clock has an incompatible type.
 
 later = Clock.start + 7
-                      ^
+        ^^^^^^^^^^^
 
-Other code expects this to have the type:
+The method plus has the type:
 
-    Steps
+    Clock, Steps -&gt; Clock
+
+But I need it to have the type:
+
+    Clock, Clock -&gt; Clock
 
 ── 1 error and 0 warnings ───────────────────────────────── clock_plus_seven.roc
 </code></pre></figure><p>The compiler rejects the line. <code>+</code> calls the <code>plus</code> method, and <code>Clock.plus</code> takes a <code>Steps</code>. The line passes it a bare 7. With the types right, a mixed-up sum is a compile error, found before the ride ever runs. The <a class="chapter-link" href="mountains.html">“Mountains”</a> chapter splits direction the same way: a <code>Bearing</code> is a direction, and a <code>Turn</code> is a change of direction.</p>
