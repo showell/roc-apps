@@ -14,26 +14,45 @@ body { display: flex; flex-direction: column; align-items: center; justify-conte
 canvas { display: block; background: #06080f; width: min(960px, 100%, calc(88vh * 1.6)); height: auto; aspect-ratio: 960 / 600; }
 #message { display: none; position: absolute; inset: 0; padding: 2em; box-sizing: border-box; text-align: center; align-content: center; line-height: 1.5; }
 #message button { margin-top: 1em; font: inherit; padding: 0.4em 1.2em; }
-#loading { position: absolute; inset: 0; background: #000; text-align: center; align-content: center; line-height: 1.6; pointer-events: none; }
-#loading small { color: #999; }
+/* While the walk loads, a few paragraphs about it, in the landing page's
+   type, with the stage and a clock beneath. */
+#loading { position: absolute; inset: 0; background: #06080f; color: #d8d6cf; overflow: auto; display: flex; align-items: center; justify-content: center; font: 15px/1.5 system-ui, sans-serif; }
+#loading article { max-width: 62ch; padding: 24px 16px; }
+#loading h1 { font-size: 26px; margin: 0 0 10px; color: #efede6; }
+#loading p { margin: 0 0 12px; }
+#loading kbd { font: 13px monospace; border: 1px solid #4a4a46; border-radius: 3px; padding: 0 4px; }
+#loading .progress { margin-top: 18px; color: #8f8c84; font-size: 13px; }
+#loading .bar { height: 3px; background: #23252c; margin-top: 6px; overflow: hidden; }
+#loading .bar span { display: block; height: 100%; width: 0; background: #b48a3c; transition: width 0.4s; }
 #rate { display: none; position: absolute; top: 8px; left: 8px; max-width: calc(100% - 32px); white-space: pre-wrap; padding: 4px 8px; background: rgba(0, 0, 0, 0.55); color: #eee; font: 13px monospace; pointer-events: none; }
 </style>
 </head>
 <body>
 <!-- sokol_app finds the canvas by its default selector, #canvas. -->
 <canvas id="canvas" tabindex="-1" oncontextmenu="event.preventDefault()"></canvas>
-<div id="loading"><span id="stage">Downloading the walk (about 7 MB)</span><br><small id="clock"></small></div>
+<div id="loading"><article>
+<h1>Safari Walk</h1>
+<p>A walk down a dirt road across a dry savanna at golden hour. Grass bends in the wind, conifers line the verges, two zebras cross the road, and three radio towers blink their aviation lamps as the sun sets ahead of you. It is a new take on Safari Ride, the canvas game on this site, drawn in 3D.</p>
+<p>The walk's logic is written in Roc. It runs on Rocco, Braeden Foster's 3D engine for games written in Roc, from Steve's fork of it, which adds a few changes so that it runs in Firefox. The page needs a browser with WebGPU. The code was written by AI agents (Claude), under Steve Howell's supervision.</p>
+<p><kbd>Space</kbd> pauses the walk, and everything in it, and walks on. <kbd>F</kbd> shows a frame readout. <kbd>1</kbd> to <kbd>4</kbd> jump down the road. Every 20 seconds of walking, the page writes a frame report to the browser's console, ready to copy into a message.</p>
+<p>The first load can take half a minute: the browser readies the GPU's shaders before the first frame.</p>
+<div class="progress"><span id="stage">Downloading the walk (about 7 MB)</span> <span id="clock"></span><div class="bar"><span id="bar"></span></div></div>
+</article></div>
 <div id="message"></div>
 <div id="rate"></div>
 <script src="rocco.js"></script>
 <script>
-// The loading line says which stage the page is in, and stays up until the
-// frames come steadily, so the walk is moving when it shows. The stages:
-// the download, then the engine preparing the trees and the sky's light,
-// then the browser readying the GPU's shaders for the first frames.
+// The loading screen says which stage the page is in, and stays up until
+// the frames come steadily, so the walk is moving when it shows. The
+// stages: the download, then the engine preparing the trees and the sky's
+// light, then the browser readying the GPU's shaders for the first frames.
+// walkLoad keeps when each ended, for the console report.
+var walkLoad = { files: null, shaders_first: null, shaders_last: null, first_frame: null, shown: null };
 (function () {
 	var stage = document.getElementById("stage");
 	var clock = document.getElementById("clock");
+	var bar = document.getElementById("bar");
+	function progress(share) { bar.style.width = Math.round(share * 100) + "%"; }
 	var loading = document.getElementById("loading");
 	var start = performance.now();
 	var done = false;
@@ -44,6 +63,7 @@ canvas { display: block; background: #06080f; width: min(960px, 100%, calc(88vh 
 	function finish() {
 		if (done) return;
 		done = true;
+		walkLoad.shown = performance.now();
 		window.dispatchEvent(new Event("walk:shown"));
 		clearInterval(ticking);
 		// No fade here: the walk fades in from black itself, and a layer
@@ -60,8 +80,10 @@ canvas { display: block; background: #06080f; width: min(960px, 100%, calc(88vh 
 		entries.forEach(function (entry) {
 			delete waiting[entry.name.split("/").pop()];
 		});
-		if (!done && Object.keys(waiting).length === 0) {
-			stage.textContent = "Preparing the trees and the light of the sky";
+		if (!done && Object.keys(waiting).length === 0 && walkLoad.files === null) {
+			walkLoad.files = performance.now();
+			stage.textContent = "Preparing the trees, the light of the sky and the GPU's shaders";
+			progress(0.35);
 		}
 	}
 	try {
@@ -73,7 +95,9 @@ canvas { display: block; background: #06080f; width: min(960px, 100%, calc(88vh 
 	// After the first frame, wait for 20 frames in a row each under 100 ms,
 	// or 15 seconds, whichever comes first.
 	window.addEventListener("rocco:ready", function () {
+		walkLoad.first_frame = performance.now();
 		stage.textContent = "Starting the walk";
+		progress(0.85);
 		var steady = 0;
 		var last = performance.now();
 		var ready = last;
@@ -234,6 +258,12 @@ var walkView = (function () {
 		});
 	}
 	if (window.GPUDevice) {
+		wrap(GPUDevice.prototype, "createShaderModule", function (original, args) {
+			if (walkLoad.shaders_first === null) walkLoad.shaders_first = performance.now();
+			var r = original.apply(this, args);
+			if (walkLoad.first_frame === null) walkLoad.shaders_last = performance.now();
+			return r;
+		});
 		wrap(GPUDevice.prototype, "createTexture", function (original, args) {
 			var d = args[0] || {};
 			if (d.sampleCount > samples) samples = d.sampleCount;
@@ -344,6 +374,16 @@ var walkView = (function () {
 			Math.round(box.width) + " x " + Math.round(box.height) + " CSS px; devicePixelRatio " + walkView.realRatio + "; " + (samples > 1 ? samples + "x MSAA" : "no MSAA");
 	}
 
+	// Where the load's time went, in seconds from the page's start: the two
+	// big files in, the engine's first and last shader handed to the
+	// browser (the time before the first is the engine preparing meshes and
+	// the sky's light), the first frame (the time after the last shader is
+	// mostly the browser compiling them), and the loading screen gone.
+	function loadLine() {
+		function s(t) { return t === null ? "-" : (t / 1000).toFixed(1); }
+		return "load (s from the page's start): files in " + s(walkLoad.files) + ", first shader " + s(walkLoad.shaders_first) + ", last shader " + s(walkLoad.shaders_last) + ", first frame " + s(walkLoad.first_frame) + ", walk shown " + s(walkLoad.shown);
+	}
+
 	function report(frames, span) {
 		reports += 1;
 		var gaps = frames.map(function (f) { return f.gap; });
@@ -355,6 +395,7 @@ var walkView = (function () {
 		lines.push("Safari Walk frame report " + reports + " (the page writes one every 20 s of walking; a second paste confirms the first)");
 		lines.push("page: " + location.href);
 		lines.push("switches: " + (walkView.switches.length ? walkView.switches.join(" ") : "none") + "; drawing scale " + walkView.scale);
+		lines.push(loadLine());
 		lines.push("frames: " + gaps.length + " in " + (span / 1000).toFixed(1) + " s of walking = " + (gaps.length * 1000 / span).toFixed(1) + " fps (paused time, the first frame after each resume and the loading frames left out)");
 		lines.push("frame ms: p50 " + ms(percentile(sorted, 0.5)) + ", p90 " + ms(percentile(sorted, 0.9)) + ", p99 " + ms(percentile(sorted, 0.99)) + ", max " + ms(sorted[sorted.length - 1]));
 		lines.push("frames by length: up to 16.7 ms " + bins[0] + ", to 33 ms " + bins[1] + ", to 50 ms " + bins[2] + ", to 100 ms " + bins[3] + ", over 100 ms " + bins[4]);
