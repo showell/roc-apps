@@ -1,5 +1,5 @@
-published 2026-11-19T16:25:04Z
-roc nightly-2026-11-03-34bd006
+published 2026-11-22T21:13:10Z
+roc 0.1.0_RC1
 opt speed
-roc-apps 0498e666
-sha256 7e1cc91eb5feaf2f  343322 bytes  kinds_widget.wasm
+roc-apps 78c99c86
+sha256 c0cb031b7253cde4  355592 bytes  kinds_widget.wasm

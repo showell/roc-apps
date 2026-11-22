@@ -1,5 +1,4 @@
-// canvas_app_runner — the browser half of canvas_apps, and the twin of
-// native/CanvasAppRunner.roc. It loads an app's wasm, runs the clock and the
+// canvas_app_runner — the browser half of canvas_apps. It loads an app's wasm, runs the clock and the
 // keyboard, and hands each frame to ShapesCanvas to paint.
 //
 // Not every program built against this file is a game: `camera` is a world
@@ -8,8 +7,8 @@
 // drawn from what it answers. The `game` in the names below is older than
 // that.
 //
-// The app is the same Roc that runs natively. What is in here is only what a
-// browser does differently: keep the input, pace the clock, show the speaker.
+// The app is platform-free Roc. What is in here is only what a browser does:
+// keep the input, pace the clock, show the speaker.
 // Reading a frame and filling a canvas is shapes_canvas.js, which this loads
 // first and which knows nothing about any of them.
 //
@@ -385,8 +384,7 @@ async function main(show) {
 
   const draw = (now) => {
     const scale = show.sharp ? matchScreen() : 1;
-    // The canvas keeps what was drawn, so a frame starts from nothing —
-    // as the native runner's clear does.
+    // The canvas keeps what was drawn, so a frame starts from nothing.
     ctx.globalCompositeOperation = 'source-over';
     ctx.fillStyle = '#000';
     ctx.fillRect(0, 0, width, height);
