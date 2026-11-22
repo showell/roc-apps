@@ -1,5 +1,5 @@
-published 2026-11-19T16:24:59Z
-roc nightly-2026-11-03-34bd006
+published 2026-11-22T21:13:06Z
+roc 0.1.0_RC1
 opt speed
-roc-apps 0c79762d
-sha256 fee7568f13dddee5  495938 bytes  frame_widget.wasm
+roc-apps aa6d85c1
+sha256 23a2e5ba579057d4  496309 bytes  frame_widget.wasm
