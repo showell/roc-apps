@@ -2,18 +2,22 @@
 -- the Roc idioms that guard roc-chat against the classes of bug a black-box
 -- test of the live chat found. The prose is site/security_idioms.html, and
 -- each `<!-- snippet NAME -->` line in it becomes that snippet: lines of a
--- roc-chat file as the commit REV holds them, each range quoted exactly,
+-- roc-chat file as the commit REV holds them (or the snippet's own `rev`,
+-- for code shown as it was before a change), each range quoted exactly,
 -- the ranges joined by a `...` line and their common leading tabs taken
 -- off, with a link to those lines on GitHub. Roc and Shale are colored by
 -- tools/color_code (roc-syntax-color), built here with the pinned Roc; a
--- table of plain text is shown as it is.
+-- table of plain text is shown as it is. Each `<!-- diagram NAME -->` line
+-- becomes Graphviz's SVG of that diagram's .dot file, inline, so the page's
+-- CSS colors it in either theme.
 --
 --   cd <roc-apps checkout> && shale site/build_security_idioms.shale            # writes the page
 --   cd <roc-apps checkout> && shale site/build_security_idioms.shale check=1    # fails if the page is stale
 --
 -- `roc_chat=` names the roc-chat checkout (`repos:roc-chat` unset), through
--- a mount; it must hold REV. A snippet the prose doesn't name, or a name
--- the prose holds and SNIPPETS lacks, stops the run. Then site/build.sh
+-- a mount; it must hold REV and every snippet's `rev`. A snippet or a
+-- diagram the prose doesn't name, or a name the prose holds and SNIPPETS or
+-- DIAGRAMS lacks, stops the run. Then site/build.sh
 -- copies the page into the dev channel.
 --
 -- budget: steps=50000000 arena_bytes=500000000 output_bytes=100000
@@ -21,7 +25,10 @@
 const PROSE = "site/security_idioms.html"
 const PAGE_DIR = "site/web/security-idioms"
 const PAGE = "site/web/security-idioms/index.html"
-const REV = "53fe270531163f14b2d82aeee8b9d8e0043321ed"
+const REV = "2e8f4fd89f65ede752945ce5ef5e7189c2c1b905"
+-- HumanClaim.judge before the allow-list sweep (2362e67) named its one
+-- unclaimed shape.
+const BEFORE_ALLOW_LIST = "53fe270531163f14b2d82aeee8b9d8e0043321ed"
 const GITHUB = "https://github.com/showell/roc-chat/blob/"
 const MARK = "<!-- color_code answer -->\n"
 const WANT_ROC = "roc-pin: roc-apps' pinned nightly"
@@ -31,23 +38,35 @@ const ROC_CHAT = arg("roc_chat", "repos:roc-chat")
 const CHECK = arg("check", "0") == "1"
 
 -- Each snippet: its name in the prose, its file, its language (`roc`,
--- `shale` or `plain`) and its line ranges, first to last, inclusive.
+-- `shale` or `plain`) and its line ranges, first to last, inclusive; and,
+-- for code shown as it was, the commit `rev` it is quoted at, else REV.
 const SNIPPETS = {
   {name = "user-streams", path = "app/UserStreams.roc", language = "roc", ranges = {{1, 23}}},
-  {name = "stream-holder", path = "app/StreamHolder.roc", language = "roc", ranges = {{12, 25}}},
-  {name = "http-stream", path = "app/HttpAnswer.roc", language = "roc", ranges = {{193, 201}}},
+  {name = "stream-holder", path = "app/StreamHolder.roc", language = "roc", ranges = {{13, 26}}},
+  {name = "http-stream", path = "app/HttpAnswer.roc", language = "roc", ranges = {{193, 209}}},
   {name = "sign-out-others", path = "app/DeviceSessionsRoute.roc", language = "roc", ranges = {{119, 129}}},
   {name = "stream-table", path = "tools/stream_endings.txt", language = "plain", ranges = {{18, 18}, {21, 23}, {33, 33}, {49, 49}}},
-  {name = "stream-findings", path = "tools/check_stream_endings.shale", language = "shale", ranges = {{17, 31}}},
-  {name = "human-claim", path = "app/HumanClaim.roc", language = "roc", ranges = {{11, 39}}},
-  {name = "create-invite", path = "app/InviteFiles.roc", language = "roc", ranges = {{97, 104}}},
+  {name = "stream-findings", path = "tools/check_stream_endings.shale", language = "shale", ranges = {{17, 41}}},
+  {name = "human-claim", path = "app/HumanClaim.roc", language = "roc", ranges = {{11, 30}, {42, 42}}},
+  {name = "create-invite", path = "app/InviteFiles.roc", language = "roc", ranges = {{105, 112}}},
   {name = "account-proof", path = "app/AccountProof.roc", language = "roc", ranges = {{12, 21}}},
   {name = "password-writer", path = "app/AccountFiles.roc", language = "roc", ranges = {{178, 189}}},
   {name = "join", path = "app/HumanInvitesRoute.roc", language = "roc", ranges = {{460, 460}, {464, 464}, {479, 480}, {491, 496}}},
+  {name = "damaged-invite", path = "app/InviteFiles.roc", language = "roc", ranges = {{66, 72}, {78, 87}}},
   {name = "credential-table", path = "tools/credential_writers.txt", language = "plain", ranges = {{30, 30}, {37, 37}, {59, 59}}},
   {name = "login-code-route", path = "app/Route.roc", language = "roc", ranges = {{431, 433}}},
   {name = "route-cost", path = "app/RouteCost.roc", language = "roc", ranges = {{17, 21}, {24, 41}, {49, 53}, {79, 81}, {86, 89}}},
   {name = "cost-probes", path = "app/route_cost_probes.txt", language = "plain", ranges = {{10, 10}, {14, 14}, {24, 24}, {29, 29}, {31, 31}}},
+  {name = "judge-before", path = "app/HumanClaim.roc", language = "roc", ranges = {{30, 38}}, rev = BEFORE_ALLOW_LIST},
+  {name = "judge-after", path = "app/HumanClaim.roc", language = "roc", ranges = {{32, 41}, {44, 51}}},
+}
+
+-- Each diagram: its name in the prose and its Graphviz source.
+const DIAGRAMS = {
+  {name = "streams", path = "site/security_idioms_streams.dot"},
+  {name = "proof", path = "site/security_idioms_proof.dot"},
+  {name = "writers", path = "site/security_idioms_writers.dot"},
+  {name = "allow-list", path = "site/security_idioms_allow_list.dot"},
 }
 
 function escaped(s)
@@ -59,8 +78,10 @@ end
 -- Nothing, or a stop naming the sibling checkout this page needs and lacks.
 function require_siblings()
   if not exists(ROC_CHAT) then fail("build_security_idioms: no roc-chat checkout at " .. ROC_CHAT .. ": clone github.com/showell/roc-chat beside roc-apps (or name one with roc_chat=)") end
-  local has = run({"git", "cat-file", "-e", REV .. "^{commit}"}, {cwd = ROC_CHAT, timeout_ms = 30000, tail = 3})
-  if has.code ~= 0 then fail("build_security_idioms: the roc-chat checkout at " .. ROC_CHAT .. " has no commit " .. REV .. ": fetch it") end
+  for rev in {REV, BEFORE_ALLOW_LIST} do
+    local has = run({"git", "cat-file", "-e", rev .. "^{commit}"}, {cwd = ROC_CHAT, timeout_ms = 30000, tail = 3})
+    if has.code ~= 0 then fail("build_security_idioms: the roc-chat checkout at " .. ROC_CHAT .. " has no commit " .. rev .. ": fetch it") end
+  end
   local colorer = dirname(real(".")) .. "/roc-syntax-color"
   local r = run({"git", "-C", colorer, "rev-parse", "--show-toplevel"}, {timeout_ms = 30000, tail = 3})
   if r.code ~= 0 then fail("build_security_idioms: no roc-syntax-color checkout beside roc-apps: clone github.com/showell/roc-syntax-color there; tools/color_code imports it") end
@@ -85,10 +106,15 @@ function string_rep(s, n)
   return out
 end
 
+-- The commit a snippet is quoted at.
+function snippet_rev(s)
+  return get(s, "rev", REV)
+end
+
 -- A snippet's text: each range's lines, a `...` line between ranges at the
 -- next range's indent, and the tabs every quoted line shares taken off.
 function snippet_text(s)
-  local all = lines(git_show(ROC_CHAT, REV .. ":" .. s.path))
+  local all = lines(git_show(ROC_CHAT, snippet_rev(s) .. ":" .. s.path))
   local quoted = {}
   for i = 1, #s.ranges do
     local r = s.ranges[i]
@@ -134,7 +160,8 @@ function colored(requests)
   return drop(pieces, 1)
 end
 
--- A snippet's link: its file and lines on GitHub, at REV.
+-- A snippet's link: its file and lines on GitHub, at its commit; one
+-- quoted at an older commit says which.
 function snippet_link(s)
   local first = s.ranges[1][1]
   local last = s.ranges[#s.ranges][2]
@@ -146,7 +173,18 @@ function snippet_link(s)
   end
   local trimmed = ""
   if #s.ranges > 1 then trimmed = ", trimmed" end
-  return "<p class=\"file\"><a href=\"" .. GITHUB .. REV .. "/" .. s.path .. where .. "\"><code>" .. escaped(s.path) .. "</code></a>, " .. what .. trimmed .. "</p>"
+  local at = ""
+  if snippet_rev(s) ~= REV then at = ", at " .. sub(snippet_rev(s), 1, 7) end
+  return "<p class=\"file\"><a href=\"" .. GITHUB .. snippet_rev(s) .. "/" .. s.path .. where .. "\"><code>" .. escaped(s.path) .. "</code></a>, " .. what .. trimmed .. at .. "</p>"
+end
+
+-- A diagram as the page shows it: Graphviz's SVG of its source, from its
+-- `<svg` on, in a `diagram` block.
+function diagram_html(d)
+  local svg = must(run({"dot", "-Tsvg", d.path}, {timeout_ms = 30000, whole = 1000000})).out
+  local start = find(svg, "<svg")
+  if not start then fail("build_security_idioms: dot gave no <svg> for " .. d.path) end
+  return "<div class=\"diagram\">\n" .. trim(sub(svg, start, #svg)) .. "\n</div>"
 end
 
 function page()
@@ -163,9 +201,20 @@ function page()
   for i = 1, #requests do html[requests[i].name] = answers[i] end
   local used = {}
   local out = {}
+  local drawn = {}
   for l in lines(prose) do
     local m = re_find(l, "^<!-- snippet ([a-z0-9-]+) -->$")
-    if m == nil then
+    local d = re_find(l, "^<!-- diagram ([a-z0-9-]+) -->$")
+    if d ~= nil then
+      local found = nil
+      for g in DIAGRAMS do
+        if g.name == d.group then found = g end
+      end
+      if found == nil then fail("build_security_idioms: " .. PROSE .. " names the diagram " .. d.group .. ", which DIAGRAMS lacks") end
+      if has_key(drawn, found.name) then fail("build_security_idioms: " .. PROSE .. " names the diagram " .. found.name .. " twice") end
+      drawn[found.name] = true
+      push(out, diagram_html(found))
+    elseif m == nil then
       push(out, l)
     else
       local found = nil
@@ -185,6 +234,9 @@ function page()
   end
   for s in SNIPPETS do
     if not has_key(used, s.name) then fail("build_security_idioms: the snippet " .. s.name .. " is in no `<!-- snippet " .. s.name .. " -->` line of " .. PROSE) end
+  end
+  for g in DIAGRAMS do
+    if not has_key(drawn, g.name) then fail("build_security_idioms: the diagram " .. g.name .. " is in no `<!-- diagram " .. g.name .. " -->` line of " .. PROSE) end
   end
   return join(out, "\n") .. "\n"
 end

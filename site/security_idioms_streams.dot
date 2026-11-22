@@ -1,0 +1,21 @@
+// The security idioms page's drawing of a revocation reaching every open
+// stream: the action writes, then UserStreams ends the user's streams under
+// each holder StreamHolder names. site/build_security_idioms.shale renders
+// it with Graphviz and puts the SVG in the page.
+digraph streams {
+  graph [rankdir=TB, bgcolor="transparent", nodesep=0.3, ranksep=0.4, fontname="sans-serif", fontsize=12];
+  node [shape=box, style="rounded", fontname="sans-serif", fontsize=12, margin="0.14,0.08"];
+  edge [fontname="sans-serif", fontsize=11, arrowsize=0.7];
+
+  action [label="an action that revokes\nsign_out_others!, a join, a GitHub link, ..."];
+  write [label="its write\nan ends writer"];
+  ending [label="UserStreams.end_every_stream!(id)", style="rounded,bold"];
+  host [label="the host ends every stream\nheld under that name"];
+  reconnect [label="each stream reconnects\nand is judged again"];
+
+  action -> write [label="first"];
+  action -> ending [label="then"];
+  ending -> host [label="StreamHolder.user(id)"];
+  ending -> host [label="StreamHolder.agent(id)"];
+  host -> reconnect;
+}

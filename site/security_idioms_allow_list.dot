@@ -1,0 +1,20 @@
+// The security idioms page's drawing of the allow-list idiom: what a new
+// invite state did to HumanClaim.judge before and after it named the one
+// unclaimed shape. site/build_security_idioms.shale renders it with Graphviz
+// and puts the SVG in the page.
+digraph allow_list {
+  graph [rankdir=TB, bgcolor="transparent", nodesep=0.4, ranksep=0.4, fontname="sans-serif", fontsize=12];
+  node [shape=box, style="rounded", fontname="sans-serif", fontsize=12, margin="0.14,0.08"];
+  edge [fontname="sans-serif", fontsize=11, arrowsize=0.7];
+
+  added [label="a new invite state\nExpired, say"];
+  before [label="before: !invites.contains(Spent)\nnames what is refused"];
+  after [label="after: is_live matches\nLive and Spent, no wildcard"];
+  open [label="judged unclaimed:\nan invite could set the password"];
+  refused [label="roc check fails:\nMissing patterns: Expired", style="rounded,bold"];
+
+  added -> before;
+  added -> after;
+  before -> open [label="passes quietly"];
+  after -> refused [label="someone must decide"];
+}

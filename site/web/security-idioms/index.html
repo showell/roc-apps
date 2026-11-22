@@ -40,6 +40,13 @@
   .syn-name { color: #ffcb6b; }
   .file { font-size: 13px; color: var(--muted); margin: 16px 0 0; overflow-wrap: anywhere; }
   .commits { font-size: 14px; }
+  /* Each drawing is Graphviz's SVG, inline, so its lines and words take the
+     page's colors in either theme. */
+  .diagram { margin: 14px 0 18px; }
+  .diagram svg { max-width: 100%; height: auto; }
+  .diagram text { fill: var(--fg); }
+  .diagram path, .diagram polygon { stroke: var(--fg); }
+  .diagram .edge polygon { fill: var(--fg); }
   footer { margin-top: 36px; color: var(--muted); font-size: 13px; }
 </style>
 </head>
@@ -49,10 +56,12 @@
 <p class="lede"><a href="https://github.com/showell/roc-chat">roc-chat</a> is a chat server written in Roc, live at
 chat.lynrummy.com. In November 2026, notramo tested the live site as a black box and reported what he found. We fixed
 each bug. For the bigger ones, we then looked for the class each belonged to, and added a type or a check aimed at
-the whole class. Each section says what its type or check can't see. Two of the bugs here came from our own follow-up, a Markdown spec and an audit of what each request costs; the page says which.</p>
+the whole class. Each section says what its type or check can't see. Some of the bugs here came from our own follow-up
+instead, among them a Markdown spec, an audit of what each request costs, and a sweep for decisions that let a new
+case through; the page says which.</p>
 <p class="lede">Claude, an AI coding agent, wrote the fixes, the checks and this page under Steve's supervision. Every
-snippet is quoted from roc-chat at commit 53fe270, its main branch when this page was written, with a link to its
-lines.</p>
+snippet is quoted from roc-chat at commit 2e8f4fd, its main branch when this page was last updated, with a link to its
+lines; the one older snippet says so.</p>
 
 <h2>What the types already said</h2>
 <p>roc-chat's types already answered one question well: <em>who is acting?</em> A route that only the acting user may
@@ -60,8 +69,8 @@ take asks for a <code>SignedIn</code> in its type, and a <code>SignedIn</code> c
 checked agent key. (One escape hatch checks nothing; only the first start, the demo page and tests call it.) None of
 the bugs below got past that.</p>
 <p>Each bug was a question the types didn't ask. Whose credential is this call changing? What else must happen after
-this write? What does this request cost? Each fix adds one of those questions, as a type where a type can ask it,
-and as a check where it can't.</p>
+this write? What does this request cost? What happens when a new case comes along? Each fix adds one of those
+questions, as a type where a type can ask it, and as a check where it can't.</p>
 
 <h2>What we'd ask of Roc</h2>
 <p>This is a recommendation from one project's experience. There is one so far, and this page keeps running into
@@ -96,13 +105,14 @@ and the invite as a single value.</li>
 </ul>
 <h3>Nothing else, so far</h3>
 <p>The other gaps on this page are our own design choices, not Roc's. For example, the platform's answer is a plain
-record, so any module could set its stream fields. Roc's opaque types would let us close them, and that is ours to
-do.</p>
+record, so Roc's types let any module set the name its stream is held under. A check holds that today. Roc's opaque
+types would let us close it, by wrapping the answer in a type of the app's own, which about 35 modules would then
+use. That is ours to do.</p>
 <h3>What Roc already gives us</h3>
 <p>Current Roc already does a lot for a service like this. A pure function can't do I/O, and every effect is marked
 by <code>=&gt;</code> and by the <code>!</code> the compiler asks for, so a reader can see where the effects are. Only an opaque type's own module can
 make its values, which is what <code>AccountProof</code> and <code>HumanClaim</code> stand on. <code>match</code> is
-exhaustive, which is what <code>RouteCost</code> depends on, and there are no nulls.</p>
+exhaustive, which is what <code>RouteCost</code> and the allow-lists below depend on, and there are no nulls.</p>
 
 <h2>Streams that outlived a sign-out</h2>
 <h3>The bug</h3>
@@ -117,7 +127,83 @@ ends streams, to be safe.)</p>
 <h3>The fix: one place ends a user's streams</h3>
 <p><code>UserStreams.end_every_stream!</code> is the one place the app ends a user's streams. The host does the
 ending; this function names whose.</p>
-<p class="file"><a href="https://github.com/showell/roc-chat/blob/53fe270531163f14b2d82aeee8b9d8e0043321ed/app/UserStreams.roc#L1-L23"><code>app/UserStreams.roc</code></a>, lines 1-23</p>
+<div class="diagram">
+<svg width="489pt" height="275pt"
+ viewBox="0.00 0.00 488.50 275.00" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+<g id="graph0" class="graph" transform="scale(1 1) rotate(0) translate(4 271)">
+<title>streams</title>
+<!-- action -->
+<g id="node1" class="node">
+<title>action</title>
+<path fill="none" stroke="black" d="M249,-267C249,-267 12,-267 12,-267 6,-267 0,-261 0,-255 0,-255 0,-241 0,-241 0,-235 6,-229 12,-229 12,-229 249,-229 249,-229 255,-229 261,-235 261,-241 261,-241 261,-255 261,-255 261,-261 255,-267 249,-267"/>
+<text text-anchor="middle" x="130.5" y="-251.4" font-family="sans-serif" font-size="12.00">an action that revokes</text>
+<text text-anchor="middle" x="130.5" y="-238.4" font-family="sans-serif" font-size="12.00">sign_out_others!, a join, a GitHub link, ...</text>
+</g>
+<!-- write -->
+<g id="node2" class="node">
+<title>write</title>
+<path fill="none" stroke="black" d="M148,-187C148,-187 65,-187 65,-187 59,-187 53,-181 53,-175 53,-175 53,-161 53,-161 53,-155 59,-149 65,-149 65,-149 148,-149 148,-149 154,-149 160,-155 160,-161 160,-161 160,-175 160,-175 160,-181 154,-187 148,-187"/>
+<text text-anchor="middle" x="106.5" y="-171.4" font-family="sans-serif" font-size="12.00">its write</text>
+<text text-anchor="middle" x="106.5" y="-158.4" font-family="sans-serif" font-size="12.00">an ends writer</text>
+</g>
+<!-- action&#45;&gt;write -->
+<g id="edge1" class="edge">
+<title>action&#45;&gt;write</title>
+<path fill="none" stroke="black" d="M124.93,-228.91C121.75,-218.55 117.7,-205.39 114.21,-194.05"/>
+<polygon fill="black" stroke="black" points="116.52,-193.23 112.12,-187.26 111.84,-194.67 116.52,-193.23"/>
+<text text-anchor="middle" x="131.5" y="-205.2" font-family="sans-serif" font-size="11.00">first</text>
+</g>
+<!-- ending -->
+<g id="node3" class="node">
+<title>ending</title>
+<path fill="none" stroke="black" stroke-width="2" d="M406.5,-186C406.5,-186 194.5,-186 194.5,-186 188.5,-186 182.5,-180 182.5,-174 182.5,-174 182.5,-162 182.5,-162 182.5,-156 188.5,-150 194.5,-150 194.5,-150 406.5,-150 406.5,-150 412.5,-150 418.5,-156 418.5,-162 418.5,-162 418.5,-174 418.5,-174 418.5,-180 412.5,-186 406.5,-186"/>
+<text text-anchor="middle" x="300.5" y="-164.9" font-family="sans-serif" font-size="12.00">UserStreams.end_every_stream!(id)</text>
+</g>
+<!-- action&#45;&gt;ending -->
+<g id="edge2" class="edge">
+<title>action&#45;&gt;ending</title>
+<path fill="none" stroke="black" d="M169.93,-228.91C195.88,-217 229.88,-201.4 256.68,-189.11"/>
+<polygon fill="black" stroke="black" points="257.98,-191.2 263.32,-186.06 255.94,-186.75 257.98,-191.2"/>
+<text text-anchor="middle" x="239" y="-205.2" font-family="sans-serif" font-size="11.00">then</text>
+</g>
+<!-- host -->
+<g id="node4" class="node">
+<title>host</title>
+<path fill="none" stroke="black" d="M380,-107C380,-107 219,-107 219,-107 213,-107 207,-101 207,-95 207,-95 207,-81 207,-81 207,-75 213,-69 219,-69 219,-69 380,-69 380,-69 386,-69 392,-75 392,-81 392,-81 392,-95 392,-95 392,-101 386,-107 380,-107"/>
+<text text-anchor="middle" x="299.5" y="-91.4" font-family="sans-serif" font-size="12.00">the host ends every stream</text>
+<text text-anchor="middle" x="299.5" y="-78.4" font-family="sans-serif" font-size="12.00">held under that name</text>
+</g>
+<!-- ending&#45;&gt;host -->
+<g id="edge3" class="edge">
+<title>ending&#45;&gt;host</title>
+<path fill="none" stroke="black" d="M241.94,-149.8C235.46,-145.62 229.7,-140.43 225.5,-134 219.56,-124.89 222.88,-117.34 230.7,-111.19"/>
+<polygon fill="black" stroke="black" points="232.3,-113.07 236.78,-107.16 229.59,-108.99 232.3,-113.07"/>
+<text text-anchor="middle" x="286.5" y="-125.2" font-family="sans-serif" font-size="11.00">StreamHolder.user(id)</text>
+</g>
+<!-- ending&#45;&gt;host -->
+<g id="edge4" class="edge">
+<title>ending&#45;&gt;host</title>
+<path fill="none" stroke="black" d="M336.19,-149.98C346.8,-142.42 354.24,-132.79 348.5,-122 346.57,-118.38 344.05,-115.08 341.17,-112.1"/>
+<polygon fill="black" stroke="black" points="342.47,-109.97 335.64,-107.07 339.17,-113.59 342.47,-109.97"/>
+<text text-anchor="middle" x="415.5" y="-125.2" font-family="sans-serif" font-size="11.00">StreamHolder.agent(id)</text>
+</g>
+<!-- reconnect -->
+<g id="node5" class="node">
+<title>reconnect</title>
+<path fill="none" stroke="black" d="M370,-38C370,-38 229,-38 229,-38 223,-38 217,-32 217,-26 217,-26 217,-12 217,-12 217,-6 223,0 229,0 229,0 370,0 370,0 376,0 382,-6 382,-12 382,-12 382,-26 382,-26 382,-32 376,-38 370,-38"/>
+<text text-anchor="middle" x="299.5" y="-22.4" font-family="sans-serif" font-size="12.00">each stream reconnects</text>
+<text text-anchor="middle" x="299.5" y="-9.4" font-family="sans-serif" font-size="12.00">and is judged again</text>
+</g>
+<!-- host&#45;&gt;reconnect -->
+<g id="edge5" class="edge">
+<title>host&#45;&gt;reconnect</title>
+<path fill="none" stroke="black" d="M299.5,-68.69C299.5,-61.6 299.5,-53.36 299.5,-45.69"/>
+<polygon fill="black" stroke="black" points="301.95,-45.29 299.5,-38.29 297.05,-45.29 301.95,-45.29"/>
+</g>
+</g>
+</svg>
+</div>
+<p class="file"><a href="https://github.com/showell/roc-chat/blob/2e8f4fd89f65ede752945ce5ef5e7189c2c1b905/app/UserStreams.roc#L1-L23"><code>app/UserStreams.roc</code></a>, lines 1-23</p>
 <pre class="roc"><code><span class="syn-comment">## This module ends a user&#39;s open streams, the one place the app does. A</span>
 <span class="syn-comment">## stream is judged once, when it opens, and the host holds it for up to an</span>
 <span class="syn-comment">## hour (`Limits.stream_most_ms`) without asking again, so every action in</span>
@@ -142,10 +228,10 @@ ending; this function names whose.</p>
 	}
 }</code></pre>
 <p>It ends streams under each holder <code>StreamHolder</code> names. <code>StreamHolder</code> is an opaque type,
-the one home of those names, and <code>HttpAnswer.stream</code> takes one. <code>HttpAnswer.stream</code> is the
-only code that makes a stream answer today. The platform's answer is a plain record, though, so that is a habit the
-code keeps, not something the types enforce.</p>
-<p class="file"><a href="https://github.com/showell/roc-chat/blob/53fe270531163f14b2d82aeee8b9d8e0043321ed/app/StreamHolder.roc#L12-L25"><code>app/StreamHolder.roc</code></a>, lines 12-25</p>
+the one home of those names, and <code>HttpAnswer.stream</code> takes one and sets the answer's
+<code>stream_holder</code> from it. The platform's answer is a plain record, though, so Roc's types would let any
+module set <code>stream_holder</code> itself. The check below holds that instead.</p>
+<p class="file"><a href="https://github.com/showell/roc-chat/blob/2e8f4fd89f65ede752945ce5ef5e7189c2c1b905/app/StreamHolder.roc#L13-L26"><code>app/StreamHolder.roc</code></a>, lines 13-26</p>
 <pre class="roc"><code><span class="syn-type">StreamHolder</span> :: <span class="syn-type">List</span>(<span class="syn-type">U8</span>).{
 
 	<span class="syn-comment">## Who holds the streams of the pages `user` opens: the user, by id.</span>
@@ -160,7 +246,7 @@ code keeps, not something the types enforce.</p>
 	<span class="syn-name">to_bytes</span> : <span class="syn-type">StreamHolder</span> -&gt; <span class="syn-type">List</span>(<span class="syn-type">U8</span>)
 	<span class="syn-name">to_bytes</span> = |<span class="syn-type">StreamHolder</span>.(bytes)| bytes
 }</code></pre>
-<p class="file"><a href="https://github.com/showell/roc-chat/blob/53fe270531163f14b2d82aeee8b9d8e0043321ed/app/HttpAnswer.roc#L193-L201"><code>app/HttpAnswer.roc</code></a>, lines 193-201</p>
+<p class="file"><a href="https://github.com/showell/roc-chat/blob/2e8f4fd89f65ede752945ce5ef5e7189c2c1b905/app/HttpAnswer.roc#L193-L209"><code>app/HttpAnswer.roc</code></a>, lines 193-209</p>
 <pre class="roc"><code><span class="syn-comment">## An event stream the host holds open on the bus keys `keys`, 1 to 4,</span>
 <span class="syn-comment">## for `holder`: `backlog` first, then every frame published to any of</span>
 <span class="syn-comment">## `keys`. The host writes the stream&#39;s type; it is not sniffed.</span>
@@ -169,12 +255,20 @@ code keeps, not something the types enforce.</p>
 	holder : <span class="syn-type">StreamHolder</span>,
 	backlog : <span class="syn-type">List</span>(<span class="syn-type">U8</span>),
 } -&gt; <span class="syn-type">Http.Response</span>
-<span class="syn-name">stream</span> = |{ keys, holder, backlog }| {</code></pre>
+<span class="syn-name">stream</span> = |{ keys, holder, backlog }| {
+	status: <span class="syn-number">200</span>,
+	headers: [nosniff],
+	body: backlog,
+	kind: <span class="syn-type">Stream</span>,
+	stream_keys: keys,
+	stream_holder: holder.to_bytes(),
+	write_grace_ms: <span class="syn-number">0</span>,
+}</code></pre>
 <p>Every action in the app that ends a session, revokes a credential or removes someone's access calls it after its
 writes.
 Each stream then reconnects and is judged again. Here is the sign-out, which ends the streams even when a write
 failed partway:</p>
-<p class="file"><a href="https://github.com/showell/roc-chat/blob/53fe270531163f14b2d82aeee8b9d8e0043321ed/app/DeviceSessionsRoute.roc#L119-L129"><code>app/DeviceSessionsRoute.roc</code></a>, lines 119-129</p>
+<p class="file"><a href="https://github.com/showell/roc-chat/blob/2e8f4fd89f65ede752945ce5ef5e7189c2c1b905/app/DeviceSessionsRoute.roc#L119-L129"><code>app/DeviceSessionsRoute.roc</code></a>, lines 119-129</p>
 <pre class="roc"><code><span class="syn-name">sign_out_others!</span> : <span class="syn-type">UserId</span> =&gt; <span class="syn-type">Try</span>({}, [<span class="syn-type">FileSystem</span>(<span class="syn-type">FileFacts.Fault</span>)])
 <span class="syn-name">sign_out_others!</span> = |id| {
 	<span class="syn-type">DeviceCodeFiles</span>.revoke_or_log!(id)
@@ -194,12 +288,14 @@ only ending the streams would take. Roc refuses a statement whose value isn't <c
 drop it by accident. But with no linear types, <code>_ =</code> drops it on purpose, and that compiles. The other way to force it, ending the streams inside the writer itself,
 would put the ending in the wrong layer. In roc-chat only <code>FileFacts</code> touches files, through each
 feature's <code>*Files</code> module, and those modules do only file work; they decide nothing.</p>
-<p>So a check holds the rule. <code>tools/check_stream_endings.shale</code> reads every app module with Roc's own
-parser. Every function that writes a file is judged once in <code>tools/stream_endings.txt</code>: <code>ends</code>
-if its write ends a session, a credential or someone's access, and <code>keeps</code> if not. Separately, an
+<p>So a check holds the rule. <code>tools/check_stream_endings.shale</code> reads every app module but the specs with
+Roc's own parser. Every function that calls one of <code>FileFacts</code>' writers (listed in
+<code>tools/file_writers.txt</code>, which the credential check below reads too) is judged once in
+<code>tools/stream_endings.txt</code>: <code>ends</code> if its write ends a session, a credential or someone's
+access, and <code>keeps</code> if not. Separately, an
 <code>exempt</code> line names a function and an <code>ends</code> writer it calls that needs no ending there, with
 the reason.</p>
-<p class="file"><a href="https://github.com/showell/roc-chat/blob/53fe270531163f14b2d82aeee8b9d8e0043321ed/tools/stream_endings.txt#L18-L49"><code>tools/stream_endings.txt</code></a>, lines 18-49, trimmed</p>
+<p class="file"><a href="https://github.com/showell/roc-chat/blob/2e8f4fd89f65ede752945ce5ef5e7189c2c1b905/tools/stream_endings.txt#L18-L49"><code>tools/stream_endings.txt</code></a>, lines 18-49, trimmed</p>
 <pre class="plain"><code>ends    AccountFiles.replace_password_hash!        a new password ends every session signed over the old one
 ...
 ends    AccountFiles.replace_session_generation!   "Sign out other devices": every session signed before admits no one
@@ -211,9 +307,11 @@ keeps   AgentFiles.create_agent_key!               a new key admits; it ends not
 exempt  ChannelMembersRoute.add!  DirectoryFiles.replace_channel_members!  adding a member removes no one's access</code></pre>
 <p>Then the check walks the calls. Any function outside a <code>*Files</code> module that calls an
 <code>ends</code> writer, directly or through a <code>*Files</code> function, must call <code>UserStreams.end_every_stream!</code> after it, unless an <code>exempt</code>
-line names that call. These are its findings:</p>
-<p class="file"><a href="https://github.com/showell/roc-chat/blob/53fe270531163f14b2d82aeee8b9d8e0043321ed/tools/check_stream_endings.shale#L17-L31"><code>tools/check_stream_endings.shale</code></a>, lines 17-31</p>
-<pre class="roc"><code><span class="syn-comment">--   unjudged_writer   a function that writes a file and has no `ends` or</span>
+line names that call. It also holds the holders to their one home: <code>stray_holder</code> names any module but
+<code>HttpAnswer</code> that sets a <code>stream_holder</code> field. These are its findings:</p>
+<p class="file"><a href="https://github.com/showell/roc-chat/blob/2e8f4fd89f65ede752945ce5ef5e7189c2c1b905/tools/check_stream_endings.shale#L17-L41"><code>tools/check_stream_endings.shale</code></a>, lines 17-41</p>
+<pre class="roc"><code><span class="syn-comment">--</span>
+<span class="syn-comment">--   unjudged_writer   a function that writes a file and has no `ends` or</span>
 <span class="syn-comment">--                     `keeps` line, so a new writer is judged when it comes;</span>
 <span class="syn-comment">--   stale_entry       a line for no function, an `ends` or `keeps` line for</span>
 <span class="syn-comment">--                     a function that writes no file, or an `exempt` line</span>
@@ -227,10 +325,20 @@ line names that call. These are its findings:</p>
 <span class="syn-comment">--                     `UserStreams.end_every_stream!`;</span>
 <span class="syn-comment">--   unended_holder    a `StreamHolder` function that makes a holder (every</span>
 <span class="syn-comment">--                     one but `to_bytes`) that `UserStreams.end_every_stream!`</span>
-<span class="syn-comment">--                     doesn&#39;t call, so a stream held under it would outlive</span></code></pre>
+<span class="syn-comment">--                     doesn&#39;t call, so a stream held under it would outlive</span>
+<span class="syn-comment">--                     every revocation;</span>
+<span class="syn-comment">--   stray_holder      a record field `stream_holder` set in any module but</span>
+<span class="syn-comment">--                     `HttpAnswer`. `Http.Response` is the platform&#39;s plain</span>
+<span class="syn-comment">--                     record, so Roc&#39;s types let any module name a holder;</span>
+<span class="syn-comment">--                     `HttpAnswer.stream`, which takes a `StreamHolder`, is</span>
+<span class="syn-comment">--                     the one place that sets it to a holder (its `Whole`</span>
+<span class="syn-comment">--                     answer sets it empty), and this finding holds every</span>
+<span class="syn-comment">--                     other module to that, so every stream is held under</span>
+<span class="syn-comment">--                     a name `StreamHolder` makes.</span></code></pre>
 <p>The gate, <code>tools/verify.shale</code>, holds it at zero. A new writer fails it until someone judges it, so the
 table can't go stale. Planted faults show it sees: removing the ending from <code>sign_out_others!</code>,
-the original bug, gives <code>unended_streams</code>.</p>
+the original bug, gives <code>unended_streams</code>, and a record update that sets <code>stream_holder</code> in
+<code>AgentStream.roc</code> gives <code>stray_holder</code>.</p>
 <p>What it doesn't catch: it reads names, not values, so it can't tell whether the ending names the same user as the
 write. It checks that an ending comes later in the function than the first revoking call, by line, not that every
 path reaches it: an early return between the two would pass. It can't see a writer reached as a method on a value;
@@ -247,20 +355,23 @@ the account. It was broken object-level authorization: the password's writer too
 type said whose proof stood behind the call.</p>
 
 <h3>The fix: a claim, and a proof the writer demands</h3>
-<p><code>HumanClaim</code> judges a human <code>Unclaimed</code> (no password, no GitHub link, no invite spent) or
-<code>Claimed</code>. <code>Unclaimed</code> is opaque, and only <code>judge</code> makes one.</p>
-<p class="file"><a href="https://github.com/showell/roc-chat/blob/53fe270531163f14b2d82aeee8b9d8e0043321ed/app/HumanClaim.roc#L11-L39"><code>app/HumanClaim.roc</code></a>, lines 11-39</p>
+<p><code>HumanClaim</code> judges a human <code>Unclaimed</code> (no password, no GitHub link, every invite live) or
+<code>Claimed</code>. <code>Unclaimed</code> is opaque, and only <code>judge</code> makes one; <code>judge</code>
+itself is the example in <a href="#allow-lists">the allow-lists section</a>, below.</p>
+<p class="file"><a href="https://github.com/showell/roc-chat/blob/2e8f4fd89f65ede752945ce5ef5e7189c2c1b905/app/HumanClaim.roc#L11-L42"><code>app/HumanClaim.roc</code></a>, lines 11-42, trimmed</p>
 <pre class="roc"><code><span class="syn-type">HumanClaim</span> :: [].{
 
 	<span class="syn-comment">## What decides it, as the human&#39;s files hold them: each invite&#39;s state</span>
-	<span class="syn-comment">## (`HumanInvite.State`).</span>
+	<span class="syn-comment">## (`HumanInvite.State`). A damaged invite never reaches here, as its</span>
+	<span class="syn-comment">## read fails (`InviteFiles.read_human_invites!`), so no request judges a</span>
+	<span class="syn-comment">## human unclaimed without every invite of theirs read.</span>
 	<span class="syn-type">Facts</span> : {
 		password : [<span class="syn-type">NoPassword</span>, <span class="syn-type">HasPassword</span>],
 		github : [<span class="syn-type">NotLinked</span>, <span class="syn-type">Linked</span>],
 		invites : <span class="syn-type">List</span>([<span class="syn-type">Live</span>, <span class="syn-type">Spent</span>]),
 	}
 
-	<span class="syn-comment">## A human with no password, no GitHub link and no invite spent: the only</span>
+	<span class="syn-comment">## A human with no password, no GitHub link and every invite live: the only</span>
 	<span class="syn-comment">## human an invite is made for, or redeems for. Only `judge` makes one.</span>
 	<span class="syn-type">Unclaimed</span> :: <span class="syn-type">Users.Human</span>.{
 
@@ -268,22 +379,14 @@ type said whose proof stood behind the call.</p>
 		<span class="syn-name">human</span> : <span class="syn-type">HumanClaim.Unclaimed</span> -&gt; <span class="syn-type">Users.Human</span>
 		<span class="syn-name">human</span> = |<span class="syn-type">HumanClaim.Unclaimed</span>.(unclaimed)| unclaimed
 	}
-
-	<span class="syn-comment">## Whether `human`, whose files say `facts`, is `Unclaimed`, or has</span>
-	<span class="syn-comment">## `Claimed` their account.</span>
-	<span class="syn-name">judge</span> : <span class="syn-type">Users.Human</span>, <span class="syn-type">HumanClaim.Facts</span> -&gt; [<span class="syn-type">Unclaimed</span>(<span class="syn-type">HumanClaim.Unclaimed</span>), <span class="syn-type">Claimed</span>]
-	<span class="syn-name">judge</span> = |human, { password, github, invites }|
-		<span class="syn-keyword">if</span> password == <span class="syn-type">NoPassword</span> <span class="syn-keyword">and</span> github == <span class="syn-type">NotLinked</span> <span class="syn-keyword">and</span> !invites.contains(<span class="syn-type">Spent</span>) {
-			<span class="syn-type">Unclaimed</span>(<span class="syn-type">HumanClaim.Unclaimed</span>.(human))
-		} <span class="syn-keyword">else</span> {
-			<span class="syn-type">Claimed</span>
-		}
+...
 }</code></pre>
 <p>Writing an invite takes an <code>Unclaimed</code>, so the chat writes no invite for a human who has joined.
 Inviting one again is a 403 saying a new link would change nothing. A join judges the link's invitee first
 (<code>InviteRights.load_unclaimed_invitee!</code>), and redeeming takes the <code>Unclaimed</code> that gives, so a
-link made before the human joined redeems nothing after.</p>
-<p class="file"><a href="https://github.com/showell/roc-chat/blob/53fe270531163f14b2d82aeee8b9d8e0043321ed/app/InviteFiles.roc#L97-L104"><code>app/InviteFiles.roc</code></a>, lines 97-104</p>
+link made before the human joined redeems nothing after. For the same reason, a joined human's live invites don't
+count toward their inviter's cap of 10 open invites.</p>
+<p class="file"><a href="https://github.com/showell/roc-chat/blob/2e8f4fd89f65ede752945ce5ef5e7189c2c1b905/app/InviteFiles.roc#L105-L112"><code>app/InviteFiles.roc</code></a>, lines 105-112</p>
 <pre class="roc"><code><span class="syn-comment">## A new invite in the account folder of `unclaimed`, a human who has</span>
 <span class="syn-comment">## claimed nothing (`HumanClaim`), made once, its hash last.</span>
 <span class="syn-name">create_human_invite!</span> : <span class="syn-type">HumanClaim.Unclaimed</span>,
@@ -294,8 +397,103 @@ link made before the human joined redeems nothing after.</p>
 <span class="syn-name">create_human_invite!</span> = |unclaimed, invite| {</code></pre>
 <p>The password's one writer takes an <code>AccountProof</code> in place of a bare id. Only
 <code>of_first_join</code> makes one, from an <code>Admission</code>, and only <code>HumanInvite.redeem</code> makes
-an <code>Admission</code>.</p>
-<p class="file"><a href="https://github.com/showell/roc-chat/blob/53fe270531163f14b2d82aeee8b9d8e0043321ed/app/AccountProof.roc#L12-L21"><code>app/AccountProof.roc</code></a>, lines 12-21</p>
+an <code>Admission</code>. Each value in this chain is opaque, and each arrow below is the one function that makes
+the next:</p>
+<div class="diagram">
+<svg width="402pt" height="364pt"
+ viewBox="0.00 0.00 401.50 364.00" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+<g id="graph0" class="graph" transform="scale(1 1) rotate(0) translate(4 360)">
+<title>proof</title>
+<!-- facts -->
+<g id="node1" class="node">
+<title>facts</title>
+<path fill="none" stroke="black" d="M183,-356C183,-356 12,-356 12,-356 6,-356 0,-350 0,-344 0,-344 0,-330 0,-330 0,-324 6,-318 12,-318 12,-318 183,-318 183,-318 189,-318 195,-324 195,-330 195,-330 195,-344 195,-344 195,-350 189,-356 183,-356"/>
+<text text-anchor="middle" x="97.5" y="-340.4" font-family="sans-serif" font-size="12.00">the human&#39;s files</text>
+<text text-anchor="middle" x="97.5" y="-327.4" font-family="sans-serif" font-size="12.00">password, GitHub link, invites</text>
+</g>
+<!-- unclaimed -->
+<g id="node2" class="node">
+<title>unclaimed</title>
+<path fill="none" stroke="black" d="M168,-275C168,-275 27,-275 27,-275 21,-275 15,-269 15,-263 15,-263 15,-251 15,-251 15,-245 21,-239 27,-239 27,-239 168,-239 168,-239 174,-239 180,-245 180,-251 180,-251 180,-263 180,-263 180,-269 174,-275 168,-275"/>
+<text text-anchor="middle" x="97.5" y="-253.9" font-family="sans-serif" font-size="12.00">HumanClaim.Unclaimed</text>
+</g>
+<!-- facts&#45;&gt;unclaimed -->
+<g id="edge1" class="edge">
+<title>facts&#45;&gt;unclaimed</title>
+<path fill="none" stroke="black" d="M97.5,-317.91C97.5,-307.35 97.5,-293.89 97.5,-282.4"/>
+<polygon fill="black" stroke="black" points="99.95,-282.19 97.5,-275.19 95.05,-282.19 99.95,-282.19"/>
+<text text-anchor="middle" x="149.5" y="-294.2" font-family="sans-serif" font-size="11.00">HumanClaim.judge</text>
+</g>
+<!-- invite -->
+<g id="node4" class="node">
+<title>invite</title>
+<path fill="none" stroke="black" d="M160.5,-196C160.5,-196 34.5,-196 34.5,-196 28.5,-196 22.5,-190 22.5,-184 22.5,-184 22.5,-170 22.5,-170 22.5,-164 28.5,-158 34.5,-158 34.5,-158 160.5,-158 160.5,-158 166.5,-158 172.5,-164 172.5,-170 172.5,-170 172.5,-184 172.5,-184 172.5,-190 166.5,-196 160.5,-196"/>
+<text text-anchor="middle" x="97.5" y="-180.4" font-family="sans-serif" font-size="12.00">create_human_invite!</text>
+<text text-anchor="middle" x="97.5" y="-167.4" font-family="sans-serif" font-size="12.00">a new invite</text>
+</g>
+<!-- unclaimed&#45;&gt;invite -->
+<g id="edge2" class="edge">
+<title>unclaimed&#45;&gt;invite</title>
+<path fill="none" stroke="black" d="M97.5,-238.69C97.5,-228.31 97.5,-214.92 97.5,-203.36"/>
+<polygon fill="black" stroke="black" points="99.95,-203.08 97.5,-196.08 95.05,-203.08 99.95,-203.08"/>
+</g>
+<!-- admission -->
+<g id="node5" class="node">
+<title>admission</title>
+<path fill="none" stroke="black" d="M352.5,-195C352.5,-195 214.5,-195 214.5,-195 208.5,-195 202.5,-189 202.5,-183 202.5,-183 202.5,-171 202.5,-171 202.5,-165 208.5,-159 214.5,-159 214.5,-159 352.5,-159 352.5,-159 358.5,-159 364.5,-165 364.5,-171 364.5,-171 364.5,-183 364.5,-183 364.5,-189 358.5,-195 352.5,-195"/>
+<text text-anchor="middle" x="283.5" y="-173.9" font-family="sans-serif" font-size="12.00">HumanInvite.Admission</text>
+</g>
+<!-- unclaimed&#45;&gt;admission -->
+<g id="edge3" class="edge">
+<title>unclaimed&#45;&gt;admission</title>
+<path fill="none" stroke="black" d="M119.81,-238.96C132.85,-229.65 149.96,-218.51 166.5,-211 178.01,-205.77 190.54,-201.18 202.98,-197.22"/>
+<polygon fill="black" stroke="black" points="203.92,-199.5 209.88,-195.08 202.47,-194.81 203.92,-199.5"/>
+<text text-anchor="middle" x="224.5" y="-214.2" font-family="sans-serif" font-size="11.00">HumanInvite.redeem</text>
+</g>
+<!-- redeemable -->
+<g id="node3" class="node">
+<title>redeemable</title>
+<path fill="none" stroke="black" d="M366.5,-276C366.5,-276 214.5,-276 214.5,-276 208.5,-276 202.5,-270 202.5,-264 202.5,-264 202.5,-250 202.5,-250 202.5,-244 208.5,-238 214.5,-238 214.5,-238 366.5,-238 366.5,-238 372.5,-238 378.5,-244 378.5,-250 378.5,-250 378.5,-264 378.5,-264 378.5,-270 372.5,-276 366.5,-276"/>
+<text text-anchor="middle" x="290.5" y="-260.4" font-family="sans-serif" font-size="12.00">HumanInvite.Redeemable</text>
+<text text-anchor="middle" x="290.5" y="-247.4" font-family="sans-serif" font-size="12.00">the link&#39;s open invite</text>
+</g>
+<!-- redeemable&#45;&gt;admission -->
+<g id="edge4" class="edge">
+<title>redeemable&#45;&gt;admission</title>
+<path fill="none" stroke="black" d="M288.88,-237.91C287.93,-227.35 286.72,-213.89 285.69,-202.4"/>
+<polygon fill="black" stroke="black" points="288.11,-201.94 285.04,-195.19 283.23,-202.38 288.11,-201.94"/>
+</g>
+<!-- proof -->
+<g id="node6" class="node">
+<title>proof</title>
+<path fill="none" stroke="black" d="M321.5,-116C321.5,-116 245.5,-116 245.5,-116 239.5,-116 233.5,-110 233.5,-104 233.5,-104 233.5,-92 233.5,-92 233.5,-86 239.5,-80 245.5,-80 245.5,-80 321.5,-80 321.5,-80 327.5,-80 333.5,-86 333.5,-92 333.5,-92 333.5,-104 333.5,-104 333.5,-110 327.5,-116 321.5,-116"/>
+<text text-anchor="middle" x="283.5" y="-94.9" font-family="sans-serif" font-size="12.00">AccountProof</text>
+</g>
+<!-- admission&#45;&gt;proof -->
+<g id="edge5" class="edge">
+<title>admission&#45;&gt;proof</title>
+<path fill="none" stroke="black" d="M283.5,-158.91C283.5,-148.44 283.5,-134.88 283.5,-123.31"/>
+<polygon fill="black" stroke="black" points="285.95,-123.04 283.5,-116.04 281.05,-123.04 285.95,-123.04"/>
+<text text-anchor="middle" x="315" y="-134.2" font-family="sans-serif" font-size="11.00">of_first_join</text>
+</g>
+<!-- writer -->
+<g id="node7" class="node">
+<title>writer</title>
+<path fill="none" stroke="black" stroke-width="2" d="M358.5,-38C358.5,-38 208.5,-38 208.5,-38 202.5,-38 196.5,-32 196.5,-26 196.5,-26 196.5,-12 196.5,-12 196.5,-6 202.5,0 208.5,0 208.5,0 358.5,0 358.5,0 364.5,0 370.5,-6 370.5,-12 370.5,-12 370.5,-26 370.5,-26 370.5,-32 364.5,-38 358.5,-38"/>
+<text text-anchor="middle" x="283.5" y="-22.4" font-family="sans-serif" font-size="12.00">replace_password_hash!</text>
+<text text-anchor="middle" x="283.5" y="-9.4" font-family="sans-serif" font-size="12.00">the password&#39;s one writer</text>
+</g>
+<!-- proof&#45;&gt;writer -->
+<g id="edge6" class="edge">
+<title>proof&#45;&gt;writer</title>
+<path fill="none" stroke="black" d="M283.5,-79.91C283.5,-69.73 283.5,-56.63 283.5,-45.28"/>
+<polygon fill="black" stroke="black" points="285.95,-45.11 283.5,-38.11 281.05,-45.11 285.95,-45.11"/>
+<text text-anchor="middle" x="338.5" y="-56.2" font-family="sans-serif" font-size="11.00">in place of a bare id</text>
+</g>
+</g>
+</svg>
+</div>
+<p class="file"><a href="https://github.com/showell/roc-chat/blob/2e8f4fd89f65ede752945ce5ef5e7189c2c1b905/app/AccountProof.roc#L12-L21"><code>app/AccountProof.roc</code></a>, lines 12-21</p>
 <pre class="roc"><code><span class="syn-type">AccountProof</span> :: <span class="syn-type">UserId</span>.{
 
 	<span class="syn-comment">## The proof of a first join: the human an invite&#39;s redemption admitted.</span>
@@ -306,7 +504,7 @@ an <code>Admission</code>.</p>
 	<span class="syn-name">human</span> : <span class="syn-type">AccountProof</span> -&gt; <span class="syn-type">UserId</span>
 	<span class="syn-name">human</span> = |<span class="syn-type">AccountProof</span>.(id)| id
 }</code></pre>
-<p class="file"><a href="https://github.com/showell/roc-chat/blob/53fe270531163f14b2d82aeee8b9d8e0043321ed/app/AccountFiles.roc#L178-L189"><code>app/AccountFiles.roc</code></a>, lines 178-189</p>
+<p class="file"><a href="https://github.com/showell/roc-chat/blob/2e8f4fd89f65ede752945ce5ef5e7189c2c1b905/app/AccountFiles.roc#L178-L189"><code>app/AccountFiles.roc</code></a>, lines 178-189</p>
 <pre class="roc"><code><span class="syn-comment">## The password&#39;s bcrypt hash of the human whose account `proof` proves,</span>
 <span class="syn-comment">## written whole over the one before, atomically: a redeemed invite&#39;s</span>
 <span class="syn-comment">## choice, at their first join (`AccountProof`), so nothing writes one</span>
@@ -321,7 +519,7 @@ an <code>Admission</code>.</p>
 	<span class="syn-type">FileFacts</span>.replace_fact!(password_path(proof.human()), hash.bytes())</code></pre>
 <p>The join is the one caller. It loads the invitee as <code>Unclaimed</code>, redeems, and passes the proof to the
 writer:</p>
-<p class="file"><a href="https://github.com/showell/roc-chat/blob/53fe270531163f14b2d82aeee8b9d8e0043321ed/app/HumanInvitesRoute.roc#L460-L496"><code>app/HumanInvitesRoute.roc</code></a>, lines 460-496, trimmed</p>
+<p class="file"><a href="https://github.com/showell/roc-chat/blob/2e8f4fd89f65ede752945ce5ef5e7189c2c1b905/app/HumanInvitesRoute.roc#L460-L496"><code>app/HumanInvitesRoute.roc</code></a>, lines 460-496, trimmed</p>
 <pre class="roc"><code><span class="syn-name">join_by_invite!</span> = |request| {
 	...
 	{ human: invited, unclaimed } = <span class="syn-type">InviteRights</span>.load_unclaimed_invitee!(request.directory, code)?
@@ -337,19 +535,45 @@ writer:</p>
 }</code></pre>
 <p>To see that the types hold, we planted calls to <code>create_human_invite!</code> and
 <code>replace_password_hash!</code> with a bare id. <code>roc check</code> refused both. What the types prove is
-that <code>judge</code> ran and that a first join made the proof. Which facts reach <code>judge</code> is the loader's
-job, read from the human's files, and which human a join redeems for is a runtime check:
+that <code>judge</code> ran and that a first join made the proof. Which human a join redeems for is a runtime check:
 <code>HumanInvites.join</code> compares the <code>Unclaimed</code> human's id with the invite's. Once a human has
 joined, nothing in the app changes their password: the only <code>AccountProof</code> is a first join's, and there is
 no admin reset.</p>
+<p>Which facts reach <code>judge</code> is the loader's job, read from the human's files, and the types can't see it.
+Our own follow-up found a gap there. The reader of a human's invites left out any invite whose files it couldn't
+read. Take a spent invite whose <code>state</code> file is garbled, for a human with no password yet (a crash between
+the spend and the password's write). It was left out, so the human read as unclaimed, and an invite or a join could
+then set their password. The reader now tells two cases apart. An invite with no <code>hash</code>, the file written
+last, was cut short before it could admit anyone, and is still left out. One with its <code>hash</code> and another
+file missing or unreadable fails the read as <code>Damaged</code>, with a line in the server's log. Every request
+that reads that human's invites then answers a 500 and grants nothing, until the files are mended:</p>
+<p class="file"><a href="https://github.com/showell/roc-chat/blob/2e8f4fd89f65ede752945ce5ef5e7189c2c1b905/app/InviteFiles.roc#L66-L87"><code>app/InviteFiles.roc</code></a>, lines 66-87, trimmed</p>
+<pre class="roc"><code><span class="syn-comment">## The invites in the human `human`&#39;s account folder, each whole. One cut</span>
+<span class="syn-comment">## short, with no `hash`, the file written last, was never redeemable and</span>
+<span class="syn-comment">## is left out. One damaged, with its `hash` but another file missing or</span>
+<span class="syn-comment">## any file holding no fact, fails the read (`Damaged`, logged): left</span>
+<span class="syn-comment">## out, it could be the spent invite that says the human joined, and an</span>
+<span class="syn-comment">## invite or a join would then set their password.</span>
+<span class="syn-name">read_human_invites!</span> : <span class="syn-type">UserId</span> =&gt; <span class="syn-type">Try</span>(<span class="syn-type">List</span>(<span class="syn-type">HumanInvite</span>), [<span class="syn-type">Damaged</span>, <span class="syn-type">NotUtf8</span>, <span class="syn-type">PathRefused</span>, <span class="syn-type">Failed</span>])
+		...
+		<span class="syn-keyword">match</span> read_human_invite_facts!(human_invite_folder_path(human, id)) {
+			<span class="syn-type">Ok</span>(<span class="syn-type">Whole</span>(files)) =&gt;
+				<span class="syn-keyword">match</span> <span class="syn-type">InviteFiles</span>.human_invite_from_files(id, files) {
+					<span class="syn-type">Ok</span>(invite) =&gt; {
+						$invites = $invites.append(invite)
+					}
+					<span class="syn-type">Err</span>(<span class="syn-type">BadFact</span>(fact)) =&gt; <span class="syn-keyword">return</span> <span class="syn-type">Err</span>(log_damage!({ human, id, fact }))
+				}
+			<span class="syn-type">Ok</span>(<span class="syn-type">CutShort</span>) =&gt; {}
+			<span class="syn-type">Err</span>(<span class="syn-type">Missing</span>(fact)) =&gt; <span class="syn-keyword">return</span> <span class="syn-type">Err</span>(log_damage!({ human, id, fact }))</code></pre>
 
 <h3>The check: every path to a credential, judged</h3>
 <p><code>AccountProof</code> guards one writer. The chat has more credentials than a password: GitHub links, session
 secrets and the session generation, device keys, device codes, agent keys and invites. <code>tools/check_credential_writers.shale</code> holds
-them all to one table, <code>tools/credential_writers.txt</code>. Every function that writes a file is a
-<code>writes</code> line, marked <code>credential</code> or <code>other</code>. Every call of a credential writer is a
+them all to one table, <code>tools/credential_writers.txt</code>. Every function that calls one of
+<code>FileFacts</code>' writers is a <code>writes</code> line, marked <code>credential</code> or <code>other</code>. Every call of a credential writer is a
 <code>calls</code> line naming the caller and the proof that guards it:</p>
-<p class="file"><a href="https://github.com/showell/roc-chat/blob/53fe270531163f14b2d82aeee8b9d8e0043321ed/tools/credential_writers.txt#L30-L59"><code>tools/credential_writers.txt</code></a>, lines 30-59, trimmed</p>
+<p class="file"><a href="https://github.com/showell/roc-chat/blob/2e8f4fd89f65ede752945ce5ef5e7189c2c1b905/tools/credential_writers.txt#L30-L59"><code>tools/credential_writers.txt</code></a>, lines 30-59, trimmed</p>
 <pre class="plain"><code>calls AccountFiles.replace_password_hash! HumanInvitesRoute.join_by_invite! unclaimed an AccountProof of a first join: the account's live invite code, redeemed only for a human who has claimed nothing (InviteRights.load_unclaimed_invitee!)
 ...
 calls DeviceSessionsRoute.sign_out_others! DeviceSessionsRoute.sign_out_other_devices! own-session acting.human_in_session(): the acting human's own devices, by a full session (FullSessionRoutes)
@@ -360,6 +584,100 @@ calls InviteFiles.create_human_invite! HumanInvitesRoute.issue_invite! unclaimed
 spends a credential). A caller that only passes the write on is marked <code>passes-on</code>, and its own callers
 are judged in turn. The gate holds three counts at zero: a writer or a call the table doesn't name, a line for code
 that is gone, and a proof that isn't the account's own. Before the fix the invite was that last one.</p>
+<p>The two checks read one list of what a write is, <code>tools/file_writers.txt</code>. It names
+<code>FileFacts</code>' six writers, <code>make_folder!</code> among them: the app reads some folders' names as facts
+(each account is a folder), so making a folder can bring a fact into being. The stream check counted
+<code>make_folder!</code> and this one didn't, so a function that only made a folder was judged by one check and not
+the other. Each check still keeps its own table:</p>
+<div class="diagram">
+<svg width="501pt" height="193pt"
+ viewBox="0.00 0.00 501.00 193.00" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+<g id="graph0" class="graph" transform="scale(1 1) rotate(0) translate(4 189)">
+<title>writers</title>
+<!-- streams_table -->
+<g id="node1" class="node">
+<title>streams_table</title>
+<path fill="none" stroke="black" d="M121,-185C121,-185 12,-185 12,-185 6,-185 0,-179 0,-173 0,-173 0,-146 0,-146 0,-140 6,-134 12,-134 12,-134 121,-134 121,-134 127,-134 133,-140 133,-146 133,-146 133,-173 133,-173 133,-179 127,-185 121,-185"/>
+<text text-anchor="middle" x="66.5" y="-169.4" font-family="sans-serif" font-size="12.00">stream_endings.txt</text>
+<text text-anchor="middle" x="66.5" y="-156.4" font-family="sans-serif" font-size="12.00">ends, keeps,</text>
+<text text-anchor="middle" x="66.5" y="-143.4" font-family="sans-serif" font-size="12.00">exempt</text>
+</g>
+<!-- streams -->
+<g id="node4" class="node">
+<title>streams</title>
+<path fill="none" stroke="black" d="M218.5,-105C218.5,-105 88.5,-105 88.5,-105 82.5,-105 76.5,-99 76.5,-93 76.5,-93 76.5,-79 76.5,-79 76.5,-73 82.5,-67 88.5,-67 88.5,-67 218.5,-67 218.5,-67 224.5,-67 230.5,-73 230.5,-79 230.5,-79 230.5,-93 230.5,-93 230.5,-99 224.5,-105 218.5,-105"/>
+<text text-anchor="middle" x="153.5" y="-89.4" font-family="sans-serif" font-size="12.00">check_stream_endings</text>
+<text text-anchor="middle" x="153.5" y="-76.4" font-family="sans-serif" font-size="12.00">Roc&#39;s parse tree</text>
+</g>
+<!-- streams_table&#45;&gt;streams -->
+<g id="edge1" class="edge">
+<title>streams_table&#45;&gt;streams</title>
+<path fill="none" stroke="black" d="M96.44,-133.89C105.97,-126.07 116.45,-117.45 125.81,-109.76"/>
+<polygon fill="black" stroke="black" points="127.62,-111.44 131.47,-105.1 124.51,-107.65 127.62,-111.44"/>
+</g>
+<!-- list -->
+<g id="node2" class="node">
+<title>list</title>
+<path fill="none" stroke="black" stroke-width="2" d="M318,-185C318,-185 163,-185 163,-185 157,-185 151,-179 151,-173 151,-173 151,-146 151,-146 151,-140 157,-134 163,-134 163,-134 318,-134 318,-134 324,-134 330,-140 330,-146 330,-146 330,-173 330,-173 330,-179 324,-185 318,-185"/>
+<text text-anchor="middle" x="240.5" y="-169.4" font-family="sans-serif" font-size="12.00">file_writers.txt</text>
+<text text-anchor="middle" x="240.5" y="-156.4" font-family="sans-serif" font-size="12.00">FileFacts&#39; six writers,</text>
+<text text-anchor="middle" x="240.5" y="-143.4" font-family="sans-serif" font-size="12.00">make_folder! among them</text>
+</g>
+<!-- list&#45;&gt;streams -->
+<g id="edge2" class="edge">
+<title>list&#45;&gt;streams</title>
+<path fill="none" stroke="black" d="M210.56,-133.89C201.03,-126.07 190.55,-117.45 181.19,-109.76"/>
+<polygon fill="black" stroke="black" points="182.49,-107.65 175.53,-105.1 179.38,-111.44 182.49,-107.65"/>
+</g>
+<!-- credentials -->
+<g id="node5" class="node">
+<title>credentials</title>
+<path fill="none" stroke="black" d="M402.5,-105C402.5,-105 260.5,-105 260.5,-105 254.5,-105 248.5,-99 248.5,-93 248.5,-93 248.5,-79 248.5,-79 248.5,-73 254.5,-67 260.5,-67 260.5,-67 402.5,-67 402.5,-67 408.5,-67 414.5,-73 414.5,-79 414.5,-79 414.5,-93 414.5,-93 414.5,-99 408.5,-105 402.5,-105"/>
+<text text-anchor="middle" x="331.5" y="-89.4" font-family="sans-serif" font-size="12.00">check_credential_writers</text>
+<text text-anchor="middle" x="331.5" y="-76.4" font-family="sans-serif" font-size="12.00">regular expressions</text>
+</g>
+<!-- list&#45;&gt;credentials -->
+<g id="edge3" class="edge">
+<title>list&#45;&gt;credentials</title>
+<path fill="none" stroke="black" d="M271.82,-133.89C281.87,-125.99 292.96,-117.28 302.82,-109.54"/>
+<polygon fill="black" stroke="black" points="304.47,-111.35 308.46,-105.1 301.44,-107.5 304.47,-111.35"/>
+</g>
+<!-- credentials_table -->
+<g id="node3" class="node">
+<title>credentials_table</title>
+<path fill="none" stroke="black" d="M481,-185C481,-185 360,-185 360,-185 354,-185 348,-179 348,-173 348,-173 348,-146 348,-146 348,-140 354,-134 360,-134 360,-134 481,-134 481,-134 487,-134 493,-140 493,-146 493,-146 493,-173 493,-173 493,-179 487,-185 481,-185"/>
+<text text-anchor="middle" x="420.5" y="-169.4" font-family="sans-serif" font-size="12.00">credential_writers.txt</text>
+<text text-anchor="middle" x="420.5" y="-156.4" font-family="sans-serif" font-size="12.00">writes, calls,</text>
+<text text-anchor="middle" x="420.5" y="-143.4" font-family="sans-serif" font-size="12.00">their proofs</text>
+</g>
+<!-- credentials_table&#45;&gt;credentials -->
+<g id="edge4" class="edge">
+<title>credentials_table&#45;&gt;credentials</title>
+<path fill="none" stroke="black" d="M389.87,-133.89C380.04,-125.99 369.2,-117.28 359.55,-109.54"/>
+<polygon fill="black" stroke="black" points="361.02,-107.58 354.03,-105.1 357.95,-111.4 361.02,-107.58"/>
+</g>
+<!-- verify -->
+<g id="node6" class="node">
+<title>verify</title>
+<path fill="none" stroke="black" d="M291.5,-38C291.5,-38 193.5,-38 193.5,-38 187.5,-38 181.5,-32 181.5,-26 181.5,-26 181.5,-12 181.5,-12 181.5,-6 187.5,0 193.5,0 193.5,0 291.5,0 291.5,0 297.5,0 303.5,-6 303.5,-12 303.5,-12 303.5,-26 303.5,-26 303.5,-32 297.5,-38 291.5,-38"/>
+<text text-anchor="middle" x="242.5" y="-22.4" font-family="sans-serif" font-size="12.00">tools/verify.shale</text>
+<text text-anchor="middle" x="242.5" y="-9.4" font-family="sans-serif" font-size="12.00">each held at zero</text>
+</g>
+<!-- streams&#45;&gt;verify -->
+<g id="edge5" class="edge">
+<title>streams&#45;&gt;verify</title>
+<path fill="none" stroke="black" d="M178.29,-66.89C188.71,-59.29 200.93,-50.36 211.9,-42.35"/>
+<polygon fill="black" stroke="black" points="213.63,-44.12 217.84,-38.01 210.74,-40.16 213.63,-44.12"/>
+</g>
+<!-- credentials&#45;&gt;verify -->
+<g id="edge6" class="edge">
+<title>credentials&#45;&gt;verify</title>
+<path fill="none" stroke="black" d="M306.71,-66.89C296.29,-59.29 284.07,-50.36 273.1,-42.35"/>
+<polygon fill="black" stroke="black" points="274.26,-40.16 267.16,-38.01 271.37,-44.12 274.26,-40.16"/>
+</g>
+</g>
+</svg>
+</div>
 <p>What it doesn't do: it reads lines with regular expressions, not the parse tree, so it sees a call written by its
 name, and not a writer passed as a value or called as a method. And it can't decide whether a
 proof is really the account's own; a reader decides that, once, on each line. What the check promises is that no
@@ -374,16 +692,17 @@ bar showed "POST only", and a reload of any refused sign-in posted again. Now a 
 303 to <code>/login</code>, and the sign-in script puts its form's own GET page in the POST's place in the history
 (<code>history.replaceState</code>). The sign-in routes are one <code>match</code> over each path and method
 (<code>sign_in_choice</code>), and these are its lines for <code>/login/code</code>:</p>
-<p class="file"><a href="https://github.com/showell/roc-chat/blob/53fe270531163f14b2d82aeee8b9d8e0043321ed/app/Route.roc#L431-L433"><code>app/Route.roc</code></a>, lines 431-433</p>
+<p class="file"><a href="https://github.com/showell/roc-chat/blob/2e8f4fd89f65ede752945ce5ef5e7189c2c1b905/app/Route.roc#L431-L433"><code>app/Route.roc</code></a>, lines 431-433</p>
 <pre class="roc"><code>(<span class="syn-type">LoginCode</span>, <span class="syn-type">Get</span>) =&gt; <span class="syn-type">Open</span>(<span class="syn-type">ReturnToLogin</span>)
 (<span class="syn-type">LoginCode</span>, <span class="syn-type">Post</span>) =&gt; <span class="syn-type">Open</span>(<span class="syn-type">RedeemDeviceCode</span>)
 (<span class="syn-type">LoginCode</span>, <span class="syn-type">Other</span>) =&gt; <span class="syn-type">MethodNotAllowed</span>(<span class="syn-type">GetAndPost</span>)</code></pre>
 <h3>A doubled header</h3>
 <p>The Caddy site block in front of the chat added <code>X-Content-Type-Options: nosniff</code> on top of the app's
-own, and Mozilla's Observatory scored the doubled header invalid. The app sends it on every answer it makes (the host's
-own refusals, such as a 413 or a 429, are plain text and carry none), and the end-to-end tests check it on pages,
-scripts, images and streams, so the
-<a href="https://github.com/showell/roc-chat/blob/53fe270531163f14b2d82aeee8b9d8e0043321ed/deploy/chat.lynrummy.com.caddy">site block</a>
+own, and Mozilla's Observatory scored the doubled header invalid. The app sends it on every answer it makes, and the
+end-to-end tests check it on pages, scripts, images and streams. The host's own answers, its refusals (a 408, 413,
+429, 431 or 503, and a 400 for a bad head) and its own 500s, carried none; our follow-up found that, and they send it
+too now, which the host's tests check on each. So the
+<a href="https://github.com/showell/roc-chat/blob/2e8f4fd89f65ede752945ce5ef5e7189c2c1b905/deploy/chat.lynrummy.com.caddy">site block</a>
 no longer adds one.</p>
 <h3>A class from a message</h3>
 <p>roc-chat's own Markdown spec found this one while testing what a message can put in the page. A form feed or a CR
@@ -404,7 +723,7 @@ many humans the chat has), <code>PerReaderPlaces</code> (a listing for each plac
 <code>PerHuman</code> (a read of every human's files). It is one <code>match</code> with no catch-all arm, so a new
 route fails to compile there until someone decides its class. (A new kind inside an existing route's payload, such
 as a new script, takes that route's class.)</p>
-<p class="file"><a href="https://github.com/showell/roc-chat/blob/53fe270531163f14b2d82aeee8b9d8e0043321ed/app/RouteCost.roc#L17-L89"><code>app/RouteCost.roc</code></a>, lines 17-89, trimmed</p>
+<p class="file"><a href="https://github.com/showell/roc-chat/blob/2e8f4fd89f65ede752945ce5ef5e7189c2c1b905/app/RouteCost.roc#L17-L89"><code>app/RouteCost.roc</code></a>, lines 17-89, trimmed</p>
 <pre class="roc"><code><span class="syn-comment">## Every route is written out, so a new route must declare its cost before</span>
 <span class="syn-comment">## it compiles. `zig build cost-check` (host/cost_check.zig) measures each</span>
 <span class="syn-comment">## probe of app/route_cost_probes.txt at 10 and 300 humans and holds it to</span>
@@ -450,7 +769,7 @@ the same at both sizes, and any other must cost more at 300. So a route declared
 declared growing that doesn't, fails; the measure can't tell <code>PerReaderPlaces</code> from
 <code>PerHuman</code>. It counts
 file calls, not time, so a busy machine can't make it flaky.</p>
-<p class="file"><a href="https://github.com/showell/roc-chat/blob/53fe270531163f14b2d82aeee8b9d8e0043321ed/app/route_cost_probes.txt#L10-L31"><code>app/route_cost_probes.txt</code></a>, lines 10-31, trimmed</p>
+<p class="file"><a href="https://github.com/showell/roc-chat/blob/2e8f4fd89f65ede752945ce5ef5e7189c2c1b905/app/route_cost_probes.txt#L10-L31"><code>app/route_cost_probes.txt</code></a>, lines 10-31, trimmed</p>
 <pre class="plain"><code>Constant anyone GET /favicon.ico
 ...
 Constant anyone POST /login name=Tam&amp;password=wrong
@@ -469,6 +788,141 @@ quiet directory: the request after any change in the directory's folders reads t
 request that brings them online lists every other human's conversation with them, whatever its route. And a class
 bounds how calls grow with the number of humans, not with what one request names, such as a long transcript.</p>
 
+<h2 id="allow-lists">Decisions that let a new case through</h2>
+<h3>The bug</h3>
+<p>Our own follow-up read every decision that says yes to some cases and no to the rest. Several named what they
+refused and let everything else through, by a wildcard arm, a <code>!=</code> or a <code>!contains</code>. Each was
+right for the cases it had, but a new case, such as a new tag in a type, would have been let through without a word.
+<code>HumanClaim.judge</code> was one. It counted a human unclaimed unless an invite was <code>Spent</code>, so an
+invite state added later, an <code>Expired</code> say, would have counted its human as unclaimed, and an invite could
+then set their password.</p>
+<p class="file"><a href="https://github.com/showell/roc-chat/blob/53fe270531163f14b2d82aeee8b9d8e0043321ed/app/HumanClaim.roc#L30-L38"><code>app/HumanClaim.roc</code></a>, lines 30-38, at 53fe270</p>
+<pre class="roc"><code><span class="syn-comment">## Whether `human`, whose files say `facts`, is `Unclaimed`, or has</span>
+<span class="syn-comment">## `Claimed` their account.</span>
+<span class="syn-name">judge</span> : <span class="syn-type">Users.Human</span>, <span class="syn-type">HumanClaim.Facts</span> -&gt; [<span class="syn-type">Unclaimed</span>(<span class="syn-type">HumanClaim.Unclaimed</span>), <span class="syn-type">Claimed</span>]
+<span class="syn-name">judge</span> = |human, { password, github, invites }|
+	<span class="syn-keyword">if</span> password == <span class="syn-type">NoPassword</span> <span class="syn-keyword">and</span> github == <span class="syn-type">NotLinked</span> <span class="syn-keyword">and</span> !invites.contains(<span class="syn-type">Spent</span>) {
+		<span class="syn-type">Unclaimed</span>(<span class="syn-type">HumanClaim.Unclaimed</span>.(human))
+	} <span class="syn-keyword">else</span> {
+		<span class="syn-type">Claimed</span>
+	}</code></pre>
+
+<h3>The fix: name the allowed shape once, and match the rest</h3>
+<p>The judge now matches on the password and GitHub facts. It names the one unclaimed shape once, with every invite
+live, and calls every other shape <code>Claimed</code>. <code>is_live</code> matches each invite state with no
+wildcard, so a new state stops <code>roc check</code> there until someone decides what it means. Planting
+<code>Expired</code> in the facts' invite states gave "Missing patterns: Expired".</p>
+<p class="file"><a href="https://github.com/showell/roc-chat/blob/2e8f4fd89f65ede752945ce5ef5e7189c2c1b905/app/HumanClaim.roc#L32-L51"><code>app/HumanClaim.roc</code></a>, lines 32-51, trimmed</p>
+<pre class="roc"><code>	<span class="syn-comment">## Whether `human`, whose files say `facts`, is `Unclaimed`, or has</span>
+	<span class="syn-comment">## `Claimed` their account. Unclaimed is one shape, named once: no</span>
+	<span class="syn-comment">## password, no GitHub link, and every invite live. Any other is claimed.</span>
+	<span class="syn-name">judge</span> : <span class="syn-type">Users.Human</span>, <span class="syn-type">HumanClaim.Facts</span> -&gt; [<span class="syn-type">Unclaimed</span>(<span class="syn-type">HumanClaim.Unclaimed</span>), <span class="syn-type">Claimed</span>]
+	<span class="syn-name">judge</span> = |human, { password, github, invites }|
+		<span class="syn-keyword">match</span> (password, github) {
+			(<span class="syn-type">NoPassword</span>, <span class="syn-type">NotLinked</span>) <span class="syn-keyword">if</span> invites.all(is_live) =&gt;
+				<span class="syn-type">Unclaimed</span>(<span class="syn-type">HumanClaim.Unclaimed</span>.(human))
+			(<span class="syn-type">NoPassword</span>, <span class="syn-type">NotLinked</span>) | (<span class="syn-type">HasPassword</span>, _) | (_, <span class="syn-type">Linked</span>) =&gt; <span class="syn-type">Claimed</span>
+		}
+...
+<span class="syn-comment">## Whether an invite in `state` leaves its human unclaimed: a live one does,</span>
+<span class="syn-comment">## and a spent one was their join.</span>
+<span class="syn-name">is_live</span> : [<span class="syn-type">Live</span>, <span class="syn-type">Spent</span>] -&gt; <span class="syn-type">Bool</span>
+<span class="syn-name">is_live</span> = |state|
+	<span class="syn-keyword">match</span> state {
+		<span class="syn-type">Live</span> =&gt; <span class="syn-type">Bool.True</span>
+		<span class="syn-type">Spent</span> =&gt; <span class="syn-type">Bool.False</span>
+	}</code></pre>
+<div class="diagram">
+<svg width="462pt" height="195pt"
+ viewBox="0.00 0.00 461.50 195.00" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+<g id="graph0" class="graph" transform="scale(1 1) rotate(0) translate(4 191)">
+<title>allow_list</title>
+<!-- added -->
+<g id="node1" class="node">
+<title>added</title>
+<path fill="none" stroke="black" d="M269.5,-187C269.5,-187 167.5,-187 167.5,-187 161.5,-187 155.5,-181 155.5,-175 155.5,-175 155.5,-161 155.5,-161 155.5,-155 161.5,-149 167.5,-149 167.5,-149 269.5,-149 269.5,-149 275.5,-149 281.5,-155 281.5,-161 281.5,-161 281.5,-175 281.5,-175 281.5,-181 275.5,-187 269.5,-187"/>
+<text text-anchor="middle" x="218.5" y="-171.4" font-family="sans-serif" font-size="12.00">a new invite state</text>
+<text text-anchor="middle" x="218.5" y="-158.4" font-family="sans-serif" font-size="12.00">Expired, say</text>
+</g>
+<!-- before -->
+<g id="node2" class="node">
+<title>before</title>
+<path fill="none" stroke="black" d="M198,-118C198,-118 15,-118 15,-118 9,-118 3,-112 3,-106 3,-106 3,-92 3,-92 3,-86 9,-80 15,-80 15,-80 198,-80 198,-80 204,-80 210,-86 210,-92 210,-92 210,-106 210,-106 210,-112 204,-118 198,-118"/>
+<text text-anchor="middle" x="106.5" y="-102.4" font-family="sans-serif" font-size="12.00">before: !invites.contains(Spent)</text>
+<text text-anchor="middle" x="106.5" y="-89.4" font-family="sans-serif" font-size="12.00">names what is refused</text>
+</g>
+<!-- added&#45;&gt;before -->
+<g id="edge1" class="edge">
+<title>added&#45;&gt;before</title>
+<path fill="none" stroke="black" d="M188.19,-148.87C174.25,-140.53 157.59,-130.56 142.96,-121.81"/>
+<polygon fill="black" stroke="black" points="144.1,-119.64 136.83,-118.15 141.58,-123.84 144.1,-119.64"/>
+</g>
+<!-- after -->
+<g id="node3" class="node">
+<title>after</title>
+<path fill="none" stroke="black" d="M412,-118C412,-118 251,-118 251,-118 245,-118 239,-112 239,-106 239,-106 239,-92 239,-92 239,-86 245,-80 251,-80 251,-80 412,-80 412,-80 418,-80 424,-86 424,-92 424,-92 424,-106 424,-106 424,-112 418,-118 412,-118"/>
+<text text-anchor="middle" x="331.5" y="-102.4" font-family="sans-serif" font-size="12.00">after: is_live matches</text>
+<text text-anchor="middle" x="331.5" y="-89.4" font-family="sans-serif" font-size="12.00">Live and Spent, no wildcard</text>
+</g>
+<!-- added&#45;&gt;after -->
+<g id="edge2" class="edge">
+<title>added&#45;&gt;after</title>
+<path fill="none" stroke="black" d="M249.08,-148.87C263.15,-140.53 279.96,-130.56 294.71,-121.81"/>
+<polygon fill="black" stroke="black" points="296.12,-123.82 300.9,-118.15 293.63,-119.61 296.12,-123.82"/>
+</g>
+<!-- open -->
+<g id="node4" class="node">
+<title>open</title>
+<path fill="none" stroke="black" d="M201,-38C201,-38 12,-38 12,-38 6,-38 0,-32 0,-26 0,-26 0,-12 0,-12 0,-6 6,0 12,0 12,0 201,0 201,0 207,0 213,-6 213,-12 213,-12 213,-26 213,-26 213,-32 207,-38 201,-38"/>
+<text text-anchor="middle" x="106.5" y="-22.4" font-family="sans-serif" font-size="12.00">judged unclaimed:</text>
+<text text-anchor="middle" x="106.5" y="-9.4" font-family="sans-serif" font-size="12.00">an invite could set the password</text>
+</g>
+<!-- before&#45;&gt;open -->
+<g id="edge3" class="edge">
+<title>before&#45;&gt;open</title>
+<path fill="none" stroke="black" d="M106.5,-79.91C106.5,-69.65 106.5,-56.64 106.5,-45.37"/>
+<polygon fill="black" stroke="black" points="108.95,-45.26 106.5,-38.26 104.05,-45.26 108.95,-45.26"/>
+<text text-anchor="middle" x="146.5" y="-56.2" font-family="sans-serif" font-size="11.00">passes quietly</text>
+</g>
+<!-- refused -->
+<g id="node5" class="node">
+<title>refused</title>
+<path fill="none" stroke="black" stroke-width="2" d="M404,-38C404,-38 259,-38 259,-38 253,-38 247,-32 247,-26 247,-26 247,-12 247,-12 247,-6 253,0 259,0 259,0 404,0 404,0 410,0 416,-6 416,-12 416,-12 416,-26 416,-26 416,-32 410,-38 404,-38"/>
+<text text-anchor="middle" x="331.5" y="-22.4" font-family="sans-serif" font-size="12.00">roc check fails:</text>
+<text text-anchor="middle" x="331.5" y="-9.4" font-family="sans-serif" font-size="12.00">Missing patterns: Expired</text>
+</g>
+<!-- after&#45;&gt;refused -->
+<g id="edge4" class="edge">
+<title>after&#45;&gt;refused</title>
+<path fill="none" stroke="black" d="M331.5,-79.91C331.5,-69.65 331.5,-56.64 331.5,-45.37"/>
+<polygon fill="black" stroke="black" points="333.95,-45.26 331.5,-38.26 329.05,-45.26 333.95,-45.26"/>
+<text text-anchor="middle" x="392.5" y="-56.2" font-family="sans-serif" font-size="11.00">someone must decide</text>
+</g>
+</g>
+</svg>
+</div>
+<p>The same sweep made the same change wherever a decision had a default:</p>
+<ul>
+<li><code>FullSessionRoutes</code>: the route table answers <code>FullSession</code> or <code>AnySession</code>, not a
+Bool, and <code>refusal_for</code> names every pair of session and route.</li>
+<li><code>RequestOrigin</code>: a GET is served only for the <code>Sec-Fetch-Site</code> values it names (none
+sent, <code>same-origin</code>, <code>none</code>, or another site's page when the browser navigates), and any other
+value is a 403. This one changed an answer: an unknown value, such as <code>Same-Origin</code> or an empty one, was
+served before. No browser sends one.</li>
+<li><code>DeviceCodeLimit</code> and <code>MessageRate</code> name each pair of kept states that starts a fresh
+tally, and <code>SearchLimit</code> names the two kinds of slot that are free for a search.</li>
+<li><code>DeviceCode</code>'s <code>is_live</code> and <code>is_redeemable_at</code> match every state. A sign-out
+cancels the codes <code>is_live</code> picks, so a new live-like state would have stayed uncancelled.</li>
+<li><code>GitHubRoute</code>: the start of a GitHub sign-in matches who is asking, not <code>!= Anonymous</code>,
+so a new kind of actor isn't taken through a sign-in by default.</li>
+<li><code>Access.check</code> now reads in the rule's order: a member is asked for their credential's reach, and
+anyone else is <code>NotAMember</code>. It gives the same answers as before.</li>
+</ul>
+<p>Where a new tag could come, its commit planted one, and <code>roc check</code> stopped at the new match.</p>
+<p>What it doesn't do: the compiler makes someone decide a new case, not decide it well. It can't help where the
+cases are bytes, not tags, as <code>Sec-Fetch-Site</code>'s values are; there the named values are tests. And no
+check finds a new wildcard arm or <code>!=</code>; a reader does.</p>
+
 <h2>The lesson</h2>
 <p>The types answered "who acts?" They didn't ask "whose credential?", "what else must happen?" or "what does a
 request cost?" Each idiom adds one question:</p>
@@ -480,9 +934,12 @@ doesn't compile. The credential check makes sure every other path to a credentia
 it, a check over Roc's parse tree holds it, at zero, in the gate.</li>
 <li><strong>What does a request cost?</strong> A <code>match</code> with no catch-all makes every route declare
 its class, and a measurement holds the probed routes to it.</li>
+<li><strong>What if a new case comes?</strong> Name the allowed shape once and match the rest exhaustively, so a new
+tag is a compile error instead of a quiet yes.</li>
 </ul>
 <p>In each case the rule has one home: one function ends streams, one type names their holders, one writer sets a
-password, each check's table judges every write, and one <code>match</code> names every route's cost.</p>
+password, one list says what a write is, each check's table judges every write, one <code>match</code> names every
+route's cost, and one arm names who is unclaimed.</p>
 
 <h2>The commits</h2>
 <p class="commits">In <a href="https://github.com/showell/roc-chat">roc-chat</a>:</p>
@@ -492,16 +949,27 @@ password, each check's table judges every write, and one <code>match</code> name
 <a href="https://github.com/showell/roc-chat/commit/4751710ba01df299d43fd9b49e3923df1f2b20c7">4751710</a> (the
 check), <a href="https://github.com/showell/roc-chat/commit/67bf20d2285ea7459d935733a1b7f7f5fb891b92">67bf20d</a>
 (end-to-end steps), <a href="https://github.com/showell/roc-chat/commit/cda9a51ed341bdf5184ba396b364e7c25328c99b">cda9a51</a>
-(a stale import).</li>
+(a stale import), <a href="https://github.com/showell/roc-chat/commit/b98a8431454ffc747f7b5106e83e3d6ac05ff041">b98a843</a>
+(<code>stray_holder</code>, and the comments say the check holds it, not the types).</li>
 <li>Invites: <a href="https://github.com/showell/roc-chat/commit/c1f27319921319bb0a8b923d19777e309fc55ca3">c1f2731</a>
 (the takeover, reproduced end to end),
 <a href="https://github.com/showell/roc-chat/commit/22088b681b01b03b43edddbb6d2a66432aa41cff">22088b6</a> (the
 check), <a href="https://github.com/showell/roc-chat/commit/b7e71dc28b579c5ff527ed341b01392794b467f4">b7e71dc</a>
 (<code>HumanClaim</code> and <code>AccountProof</code>),
-<a href="https://github.com/showell/roc-chat/commit/30ab83a84bde730f84f3e3350f281b973ad2cab2">30ab83a</a> (style).</li>
+<a href="https://github.com/showell/roc-chat/commit/30ab83a84bde730f84f3e3350f281b973ad2cab2">30ab83a</a> (style),
+<a href="https://github.com/showell/roc-chat/commit/e5a342d720b00b609f1a8133484ec995f12f217e">e5a342d</a> (a joined
+human's invites off the cap),
+<a href="https://github.com/showell/roc-chat/commit/157b64ee80a1a94c03a696fd33469940ad9015ae">157b64e</a> (a damaged
+invite fails the read),
+<a href="https://github.com/showell/roc-chat/commit/2e8f4fd89f65ede752945ce5ef5e7189c2c1b905">2e8f4fd</a>
+(layout).</li>
+<li>The write checks: <a href="https://github.com/showell/roc-chat/commit/f61ccdb2d07e2af388e52fd8870db20c6b0795d2">f61ccdb</a>
+(one list of writers, <code>make_folder!</code> among them).</li>
 <li>The reload: <a href="https://github.com/showell/roc-chat/commit/3c5509311f01c4dcb2ed71e7060c5df6519a08de">3c55093</a>,
 <a href="https://github.com/showell/roc-chat/commit/0d8585c9d75a8ea9f0f6a40752edde59316ba19e">0d8585c</a> (tests).</li>
-<li>The header: <a href="https://github.com/showell/roc-chat/commit/bf09e6e6b4decd51ac30d61ecc217bfad5665b6f">bf09e6e</a>.</li>
+<li>The header: <a href="https://github.com/showell/roc-chat/commit/bf09e6e6b4decd51ac30d61ecc217bfad5665b6f">bf09e6e</a>,
+<a href="https://github.com/showell/roc-chat/commit/bd9c64e5a21958c246a762b66deea06f3c1b914d">bd9c64e</a> (the
+host's own answers).</li>
 <li>Cost: <a href="https://github.com/showell/roc-chat/commit/3cb576515f4197ae06f6140bf9e7548e7bcf2b74">3cb5765</a>
 (counting a request's file calls),
 <a href="https://github.com/showell/roc-chat/commit/0c184e7c0cfa28d8ce23135436721ea18d634494">0c184e7</a> (a plain
@@ -516,6 +984,23 @@ route's class, held in the gate),
 <code>Growth</code>),
 <a href="https://github.com/showell/roc-chat/commit/7bbed48004845a389b7eeffa8e43b5d05b5d0a0f">7bbed48</a> (probes for
 the sign-in, join and member routes).</li>
+<li>Allow-lists: <a href="https://github.com/showell/roc-chat/commit/2362e67375af85298684266599efc6dc7925b5be">2362e67</a>
+(<code>HumanClaim.judge</code>),
+<a href="https://github.com/showell/roc-chat/commit/02e54c3983c94687b45772ff0ae4b1475159ae5f">02e54c3</a>
+(<code>FullSessionRoutes</code>),
+<a href="https://github.com/showell/roc-chat/commit/febda31ca98686a0be49667fcd8638e4215550c9">febda31</a>
+(<code>RequestOrigin</code>),
+<a href="https://github.com/showell/roc-chat/commit/843fc574d99ed0823bf681a8aa2df8c5d5a9c04d">843fc57</a> (the rate
+limits), <a href="https://github.com/showell/roc-chat/commit/bdfe832df109d849e1a2bc162ebc268f763cd35c">bdfe832</a>
+(<code>DeviceCode</code>),
+<a href="https://github.com/showell/roc-chat/commit/196ea93bccd4dde1470a071196eebb50224c6451">196ea93</a>
+(<code>GitHubRoute</code>),
+<a href="https://github.com/showell/roc-chat/commit/4aeb47fd1c2aaff45842c50aad0bb9409a417da9">4aeb47f</a>
+(<code>Access</code>),
+<a href="https://github.com/showell/roc-chat/commit/dff2ef1aa6906272602e771a04190115bee6e4c9">dff2ef1</a>
+(layout).</li>
+<li>The deploy: <a href="https://github.com/showell/roc-chat/commit/23878d06c6346b3ce5281e141252d72dd9e8e370">23878d0</a>
+(the production host from a Shale secret, never an argument).</li>
 <li>The Markdown spec: <a href="https://github.com/showell/roc-chat/commit/40329593810066775322a5020831950ecfa8b2f6">4032959</a>,
 <a href="https://github.com/showell/roc-chat/commit/3af8f83d1da428c3806856e9682db87c9c9d4274">3af8f83</a>.</li>
 </ul>

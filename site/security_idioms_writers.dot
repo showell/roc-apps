@@ -1,0 +1,23 @@
+// The security idioms page's drawing of the two write checks: each reads
+// one list of what a write is, tools/file_writers.txt, beside its own table.
+// site/build_security_idioms.shale renders it with Graphviz and puts the SVG
+// in the page.
+digraph writers {
+  graph [rankdir=TB, bgcolor="transparent", nodesep=0.25, ranksep=0.4, fontname="sans-serif", fontsize=12];
+  node [shape=box, style="rounded", fontname="sans-serif", fontsize=12, margin="0.12,0.08"];
+  edge [fontname="sans-serif", fontsize=11, arrowsize=0.7];
+
+  streams_table [label="stream_endings.txt\nends, keeps,\nexempt"];
+  list [label="file_writers.txt\nFileFacts' six writers,\nmake_folder! among them", style="rounded,bold"];
+  credentials_table [label="credential_writers.txt\nwrites, calls,\ntheir proofs"];
+  streams [label="check_stream_endings\nRoc's parse tree"];
+  credentials [label="check_credential_writers\nregular expressions"];
+  verify [label="tools/verify.shale\neach held at zero"];
+
+  streams_table -> streams;
+  list -> streams;
+  list -> credentials;
+  credentials_table -> credentials;
+  streams -> verify;
+  credentials -> verify;
+}

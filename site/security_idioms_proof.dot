@@ -1,0 +1,24 @@
+// The security idioms page's drawing of the proof a password's writer takes:
+// each opaque value, and the one function that makes it.
+// site/build_security_idioms.shale renders it with Graphviz and puts the SVG
+// in the page.
+digraph proof {
+  graph [rankdir=TB, bgcolor="transparent", nodesep=0.3, ranksep=0.4, fontname="sans-serif", fontsize=12];
+  node [shape=box, style="rounded", fontname="sans-serif", fontsize=12, margin="0.14,0.08"];
+  edge [fontname="sans-serif", fontsize=11, arrowsize=0.7];
+
+  facts [label="the human's files\npassword, GitHub link, invites"];
+  unclaimed [label="HumanClaim.Unclaimed"];
+  redeemable [label="HumanInvite.Redeemable\nthe link's open invite"];
+  invite [label="create_human_invite!\na new invite"];
+  admission [label="HumanInvite.Admission"];
+  proof [label="AccountProof"];
+  writer [label="replace_password_hash!\nthe password's one writer", style="rounded,bold"];
+
+  facts -> unclaimed [label="HumanClaim.judge"];
+  unclaimed -> invite;
+  unclaimed -> admission [label="HumanInvite.redeem"];
+  redeemable -> admission;
+  admission -> proof [label="of_first_join"];
+  proof -> writer [label="in place of a bare id"];
+}
