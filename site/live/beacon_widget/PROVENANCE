@@ -1,5 +1,5 @@
-published 2026-11-19T16:24:49Z
-roc nightly-2026-11-03-34bd006
+published 2026-11-22T21:12:57Z
+roc 0.1.0_RC1
 opt speed
-roc-apps c86d27c6
-sha256 647e6e59c54a2d44  87878 bytes  beacon_widget.wasm
+roc-apps b06872b2
+sha256 a6ca54aff87e0658  83413 bytes  beacon_widget.wasm
