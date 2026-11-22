@@ -42,9 +42,13 @@ animation pausable and scrubbable in both directions: rewinding is not a feature
 search, it falls out of the data. The engine also owns the red overlay: a square where a piece was
 placed, found doomed, and pulled off ("empty and once touched", which are the same thing, because a
 square's moves strictly alternate place and remove).</p>
-<p>Each toy is then just a <b>machine</b>: <b>Knight.roc</b> builds the knight-move graph and runs a
-depth-first search for a full tour; <b>Queens.roc</b> runs the classic row-by-row eight-queens search
-with column and diagonal bitmasks. A machine answers four things: how many pieces mean solved, its
+<p>The search itself is shared too. <b>Backtrack.roc</b> is depth-first backtracking in 30 lines,
+for any puzzle that can say where the option at an index leads from a state, or refuse it. Its
+frames are values, so backing up only drops the top frame: nothing is undone by hand. Each step
+enters a state, leaves one, or finds the root out of options, and a toy turns those into tape moves.</p>
+<p>Each toy is then just a <b>machine</b>: <b>Knight.roc</b> builds the knight-move graph and states
+the tour as a puzzle for that search; <b>Queens.roc</b> states the classic row-by-row eight-queens
+puzzle with column and diagonal bitmasks. A machine answers four things: how many pieces mean solved, its
 next move (one search transition, one event), how it starts from the clicked square, and its own
 "impossible right now" overlay (the indigo squares: unreachable for the knight, attacked for the
 queens). <b>ChessApp.roc</b> takes a machine and makes the page, so the toys cannot drift apart.</p>
@@ -55,6 +59,39 @@ the pages are built from. Also on
 <a href="https://github.com/showell/roc-apps/tree/master/canvas_apps/chess_kit">GitHub</a>.</p>
 </div>
 
+<div class="file"><div class="name"><a href="https://github.com/showell/roc-apps/blob/master/canvas_apps/chess_kit/Backtrack.roc">canvas_apps/chess_kit/Backtrack.roc</a>, 30 lines</div>
+<p class="about">The shared search: depth-first backtracking, a transition at a time, for any puzzle.</p>
+<pre><code><span class="syn-comment">## Backtrack is depth-first search, a transition at a time, for any puzzle that</span>
+<span class="syn-comment">## says where the option at an index leads from a state. Each frame is a state</span>
+<span class="syn-comment">## and where its parent resumes; states are values, so backing up drops a frame.</span>
+<span class="syn-type">Backtrack</span>(state) :: { frames : <span class="syn-type">List</span>({ state : state, after : <span class="syn-type">U64</span> }), next : <span class="syn-type">U64</span> }.{
+
+	<span class="syn-comment">## A puzzle: the state the option at an index leads to, refused, or the end.</span>
+	<span class="syn-type">Puzzle</span>(state) : state, <span class="syn-type">U64</span> -&gt; [<span class="syn-type">Child</span>(state), <span class="syn-type">Refused</span>, <span class="syn-type">End</span>]
+
+	<span class="syn-comment">## A state entered, the top state left, or the root out of options.</span>
+	<span class="syn-type">Step</span>(state) : [<span class="syn-type">Entered</span>(state), <span class="syn-type">Left</span>(state), <span class="syn-type">Exhausted</span>]
+
+	<span class="syn-comment">## The search from its root, `state`.</span>
+	<span class="syn-name">start</span> : state -&gt; <span class="syn-type">Backtrack</span>(state)
+	<span class="syn-name">start</span> = |state| <span class="syn-type">Backtrack</span>.({ frames: [{ state, after: <span class="syn-number">0</span> }], next: <span class="syn-number">0</span> })
+
+	<span class="syn-comment">## The search one transition on, and the transition.</span>
+	<span class="syn-name">step</span> : <span class="syn-type">Backtrack</span>(state), <span class="syn-type">Backtrack.Puzzle</span>(state) -&gt; (<span class="syn-type">Backtrack</span>(state), <span class="syn-type">Backtrack.Step</span>(state))
+	<span class="syn-name">step</span> = |<span class="syn-type">Backtrack</span>.({ frames, next }), puzzle| {
+		top = frames.last() ?? <span class="syn-keyword">crash</span> <span class="syn-string">&quot;Backtrack.step: a search holds its root&quot;</span>
+		<span class="syn-keyword">match</span> puzzle(top.state, next) {
+			<span class="syn-type">Child</span>(state) =&gt; {
+				entered = frames.append({ state, after: next + <span class="syn-number">1</span> })
+				(<span class="syn-type">Backtrack</span>.({ frames: entered, next: <span class="syn-number">0</span> }), <span class="syn-type">Entered</span>(state))
+			}
+			<span class="syn-type">Refused</span> =&gt; <span class="syn-type">Backtrack</span>.({ frames, next: next + <span class="syn-number">1</span> }).step(puzzle)
+			<span class="syn-type">End</span> <span class="syn-keyword">if</span> frames.len() == <span class="syn-number">1</span> =&gt; (<span class="syn-type">Backtrack</span>.({ frames, next }), <span class="syn-type">Exhausted</span>)
+			<span class="syn-type">End</span> =&gt; (<span class="syn-type">Backtrack</span>.({ frames: frames.drop_last(<span class="syn-number">1</span>), next: top.after }), <span class="syn-type">Left</span>(top.state))
+		}
+	}
+}
+</code></pre></div>
 <div class="file"><div class="name"><a href="https://github.com/showell/roc-apps/blob/master/canvas_apps/chess_kit/Tape.roc">canvas_apps/chess_kit/Tape.roc</a>, 398 lines</div>
 <p class="about">The shared engine: the event tape, the scrubbing display, and the red overlay.</p>
 <pre><code><span class="syn-comment">## Tape is the engine both chess toys run on. A search speaks only by</span>
@@ -456,13 +493,13 @@ the pages are built from. Also on
 		<span class="syn-keyword">and</span> shown.pieces_shown() == <span class="syn-number">0</span>
 }
 </code></pre></div>
-<div class="file"><div class="name"><a href="https://github.com/showell/roc-apps/blob/master/canvas_apps/knights_tour/Knight.roc">canvas_apps/knights_tour/Knight.roc</a>, 179 lines</div>
-<p class="about">The Knight's Tour machine: the move graph, the depth-first search, and the squares cut off from the tour.</p>
+<div class="file"><div class="name"><a href="https://github.com/showell/roc-apps/blob/master/canvas_apps/knights_tour/Knight.roc">canvas_apps/knights_tour/Knight.roc</a>, 206 lines</div>
+<p class="about">The Knight's Tour machine: the move graph, the tour as a puzzle, and the squares cut off from the tour.</p>
 <pre><code><span class="syn-comment">## Knight is the Knight&#39;s Tour machine: a depth-first search for a path</span>
 <span class="syn-comment">## that visits all 64 squares exactly once, a knight&#39;s move at a time. The</span>
-<span class="syn-comment">## tape, the display and the dead-end overlay are the chess kit&#39;s; what is</span>
-<span class="syn-comment">## knight-shaped is here: the move graph, the search, and which squares the</span>
-<span class="syn-comment">## tour can no longer reach.</span>
+<span class="syn-comment">## backtracking, the tape, the display and the dead-end overlay are the chess</span>
+<span class="syn-comment">## kit&#39;s; what is knight-shaped is here: the move graph, the tour as a puzzle</span>
+<span class="syn-comment">## for the kit&#39;s search, and which squares the tour can no longer reach.</span>
 <span class="syn-comment">##</span>
 <span class="syn-comment">## Each square&#39;s moves are tried in order of how few onward moves their</span>
 <span class="syn-comment">## target has, fewest first, ties in the order the graph lists them: a</span>
@@ -471,43 +508,36 @@ the pages are built from. Also on
 <span class="syn-comment">## finishes from every start, within 2,520,884 moves from g6, the worst, and</span>
 <span class="syn-comment">## with no backtracking at all from b2. KnightProof.roc holds every start&#39;s</span>
 <span class="syn-comment">## count.</span>
+<span class="syn-keyword">import</span> chess.<span class="syn-type">Backtrack</span>
 <span class="syn-keyword">import</span> chess.<span class="syn-type">Tape</span>
 
-<span class="syn-comment">## The search&#39;s path from the first knight, each knight with the index of the</span>
-<span class="syn-comment">## next of its moves to try, and the squares the path covers, a bit each.</span>
-<span class="syn-type">Knight</span> :: { path : <span class="syn-type">List</span>({ square : <span class="syn-type">U8</span>, next : <span class="syn-type">U64</span> }), visited : <span class="syn-type">U64</span> }.{
+<span class="syn-comment">## The backtracking search for a tour, and the square of its first knight,</span>
+<span class="syn-comment">## which comes off when no tour is left to try.</span>
+<span class="syn-type">Knight</span> :: { search : <span class="syn-type">Backtrack</span>(<span class="syn-type">Knight.Position</span>), first : <span class="syn-type">U8</span> }.{
+
+	<span class="syn-comment">## Where a partial tour stands: the newest knight&#39;s square, and the squares</span>
+	<span class="syn-comment">## the tour covers, a bit each.</span>
+	<span class="syn-type">Position</span> : { square : <span class="syn-type">U8</span>, visited : <span class="syn-type">U64</span> }
 
 	<span class="syn-comment">## The tour&#39;s first knight, on `square`.</span>
 	<span class="syn-name">start</span> : <span class="syn-type">U8</span> -&gt; <span class="syn-type">Knight</span>
-	<span class="syn-name">start</span> = |square| <span class="syn-type">Knight</span>.({ path: [{ square, next: <span class="syn-number">0</span> }], visited: square_bit(square) })
+	<span class="syn-name">start</span> = |square| {
+		search = <span class="syn-type">Backtrack</span>.start({ square, visited: square_bit(square) })
+		<span class="syn-type">Knight</span>.({ search, first: square })
+	}
 
 	<span class="syn-comment">## The search one transition on: the newest knight&#39;s next untried move to</span>
 	<span class="syn-comment">## an empty square, or, with none left, that knight taken off.</span>
 	<span class="syn-name">next_move</span> : <span class="syn-type">Knight</span> -&gt; (<span class="syn-type">Knight</span>, <span class="syn-type">Tape.Move</span>)
-	<span class="syn-name">next_move</span> = |<span class="syn-type">Knight</span>.(knight)| {
-		last = knight.path.len() - <span class="syn-number">1</span>
-		newest = knight.path.get(last) ?? <span class="syn-keyword">crash</span> <span class="syn-string">&quot;Knight.next_move: the search has given up, and no move is asked of it then&quot;</span>
-		landings = knight_moves.get(newest.square.to_u64()) ?? <span class="syn-keyword">crash</span> <span class="syn-string">&quot;Knight.next_move: a square past the board&quot;</span>
-		<span class="syn-keyword">match</span> first_open_move(landings, { from: newest.next, visited: knight.visited }) {
-			<span class="syn-type">Ok</span>({ index, square }) =&gt; {
-				marked = knight.path.set(last, { ..newest, next: index + <span class="syn-number">1</span> }) ?? <span class="syn-keyword">crash</span> <span class="syn-string">&quot;Knight.next_move: the newest knight is on the path&quot;</span>
-				(
-					<span class="syn-type">Knight</span>.({ path: marked.append({ square, next: <span class="syn-number">0</span> }), visited: <span class="syn-type">U64</span>.bitwise_or(knight.visited, square_bit(square)) }),
-					<span class="syn-type">Place</span>(square),
-				)
+	<span class="syn-name">next_move</span> = |<span class="syn-type">Knight</span>.({ search, first })| {
+		(stepped, step) = search.step(tour)
+		move =
+			<span class="syn-keyword">match</span> step {
+				<span class="syn-type">Entered</span>({ square, .. }) =&gt; <span class="syn-type">Place</span>(square)
+				<span class="syn-type">Left</span>({ square, .. }) =&gt; <span class="syn-type">Remove</span>(square)
+				<span class="syn-type">Exhausted</span> =&gt; <span class="syn-type">RemoveAndGiveUp</span>(first)
 			}
-			<span class="syn-type">Err</span>(<span class="syn-type">NoneOpen</span>) =&gt; {
-				path = knight.path.drop_last(<span class="syn-number">1</span>)
-				visited = <span class="syn-type">U64</span>.bitwise_xor(knight.visited, square_bit(newest.square))
-				move =
-					<span class="syn-keyword">if</span> path.is_empty() {
-						<span class="syn-type">RemoveAndGiveUp</span>(newest.square)
-					} <span class="syn-keyword">else</span> {
-						<span class="syn-type">Remove</span>(newest.square)
-					}
-				(<span class="syn-type">Knight</span>.({ path, visited }), move)
-			}
-		}
+		(<span class="syn-type">Knight</span>.({ search: stepped, first }), move)
 	}
 
 	<span class="syn-comment">## Each empty square the tour can never enter from where it stands: no</span>
@@ -521,7 +551,8 @@ the pages are built from. Also on
 			<span class="syn-type">Err</span>(<span class="syn-type">EmptyBoard</span>) =&gt; <span class="syn-type">List</span>.repeat(<span class="syn-type">Bool.False</span>, <span class="syn-number">64</span>)
 			<span class="syn-type">Ok</span>(head) =&gt; {
 				reached = squares_reached(board, head)
-				board.map_with_index(|number, square| number &lt; <span class="syn-number">0</span> <span class="syn-keyword">and</span> <span class="syn-type">U64</span>.bitwise_and(reached, square_bit(square.to_u8_wrap())) == <span class="syn-number">0</span>)
+				is_reached = |square| <span class="syn-type">U64</span>.bitwise_and(reached, square_bit(square.to_u8_wrap())) != <span class="syn-number">0</span>
+				board.map_with_index(|number, square| number &lt; <span class="syn-number">0</span> <span class="syn-keyword">and</span> !is_reached(square))
 			}
 		}
 	}
@@ -535,28 +566,47 @@ the pages are built from. Also on
 <span class="syn-name">square_bit</span> : <span class="syn-type">U8</span> -&gt; <span class="syn-type">U64</span>
 <span class="syn-name">square_bit</span> = |square| <span class="syn-type">U64</span>.shl_wrap(<span class="syn-number">1</span>, square)
 
-<span class="syn-comment">## The first of `landings`, from index `from` on, whose square is empty.</span>
-<span class="syn-name">first_open_move</span> : <span class="syn-type">List</span>(<span class="syn-type">U8</span>), { from : <span class="syn-type">U64</span>, visited : <span class="syn-type">U64</span> } -&gt; <span class="syn-type">Try</span>({ index : <span class="syn-type">U64</span>, square : <span class="syn-type">U8</span> }, [<span class="syn-type">NoneOpen</span>])
-<span class="syn-name">first_open_move</span> = |landings, { from, visited }| {
-	<span class="syn-keyword">var</span> $index = from
-	<span class="syn-keyword">var</span> $found = <span class="syn-type">Err</span>(<span class="syn-type">NoneOpen</span>)
-	<span class="syn-keyword">while</span> $index &lt; landings.len() {
-		square = landings.get($index) ?? <span class="syn-keyword">crash</span> <span class="syn-string">&quot;Knight.first_open_move: the index is inside the list&quot;</span>
-		<span class="syn-keyword">if</span> <span class="syn-type">U64</span>.bitwise_and(visited, square_bit(square)) == <span class="syn-number">0</span> {
-			$found = <span class="syn-type">Ok</span>({ index: $index, square })
-			$index = landings.len()
+<span class="syn-comment">## The tour as a puzzle: the option at `index` is the knight&#39;s move there in</span>
+<span class="syn-comment">## the search&#39;s order, refused onto a square the tour covers.</span>
+<span class="syn-name">tour</span> : <span class="syn-type">Backtrack.Puzzle</span>(<span class="syn-type">Knight.Position</span>)
+<span class="syn-name">tour</span> = |{ square, visited }, index| {
+	span = landing_spans.get(square.to_u64()) ?? <span class="syn-keyword">crash</span> <span class="syn-string">&quot;Knight.tour: a square past the board&quot;</span>
+	<span class="syn-keyword">if</span> index &gt;= span.count {
+		<span class="syn-type">End</span>
+	} <span class="syn-keyword">else</span> {
+		landing = landings_end_to_end.get(span.start + index) ?? <span class="syn-keyword">crash</span> <span class="syn-string">&quot;Knight.tour: a move inside its square&#39;s span&quot;</span>
+		<span class="syn-keyword">if</span> <span class="syn-type">U64</span>.bitwise_and(visited, square_bit(landing)) != <span class="syn-number">0</span> {
+			<span class="syn-type">Refused</span>
 		} <span class="syn-keyword">else</span> {
-			$index = $index + <span class="syn-number">1</span>
+			<span class="syn-type">Child</span>({ square: landing, visited: <span class="syn-type">U64</span>.bitwise_or(visited, square_bit(landing)) })
 		}
 	}
-	$found
+}
+
+<span class="syn-comment">## Every square&#39;s knight moves end to end, the squares in order and each</span>
+<span class="syn-comment">## square&#39;s moves in the search&#39;s order. The search reads a move here rather</span>
+<span class="syn-comment">## than from the square&#39;s own list in `knight_moves`, whose reference count,</span>
+<span class="syn-comment">## taken for every option tried, costs a fifth of the tour&#39;s time.</span>
+<span class="syn-name">landings_end_to_end</span> : <span class="syn-type">List</span>(<span class="syn-type">U8</span>)
+<span class="syn-name">landings_end_to_end</span> = knight_moves.join()
+
+<span class="syn-comment">## Where each square&#39;s moves sit in `landings_end_to_end`.</span>
+<span class="syn-name">landing_spans</span> : <span class="syn-type">List</span>({ start : <span class="syn-type">U64</span>, count : <span class="syn-type">U64</span> })
+<span class="syn-name">landing_spans</span> = {
+	<span class="syn-keyword">var</span> $start = <span class="syn-number">0</span>
+	<span class="syn-keyword">var</span> $spans = []
+	<span class="syn-keyword">for</span> landings <span class="syn-keyword">in</span> knight_moves {
+		$spans = $spans.append({ start: $start, count: landings.len() })
+		$start = $start + landings.len()
+	}
+	$spans
 }
 
 <span class="syn-comment">## The empty squares a flood reaches from `head` through empty squares, a bit</span>
 <span class="syn-comment">## each.</span>
 <span class="syn-name">squares_reached</span> : <span class="syn-type">List</span>(<span class="syn-type">I8</span>), <span class="syn-type">U8</span> -&gt; <span class="syn-type">U64</span>
-<span class="syn-name">squares_reached</span> = |board, head| {
-	is_empty = |square| (board.get(square.to_u64()) ?? <span class="syn-keyword">crash</span> <span class="syn-string">&quot;Knight.squares_reached: a square past the board&quot;</span>) &lt; <span class="syn-number">0</span>
+<span class="syn-name">squares_reached</span> = |move_numbers, head| {
+	is_empty = |square| (move_numbers.get(square.to_u64()) ?? <span class="syn-keyword">crash</span> <span class="syn-string">&quot;Knight.squares_reached: a square past the board&quot;</span>) &lt; <span class="syn-number">0</span>
 	<span class="syn-keyword">var</span> $reached = <span class="syn-number">0</span>
 	<span class="syn-keyword">var</span> $frontier = [head]
 	<span class="syn-keyword">while</span> !$frontier.is_empty() {
@@ -576,7 +626,7 @@ the pages are built from. Also on
 <span class="syn-name">knight_moves</span> : <span class="syn-type">List</span>(<span class="syn-type">List</span>(<span class="syn-type">U8</span>))
 <span class="syn-name">knight_moves</span> = {
 	geometric = <span class="syn-type">List</span>.from_iter(<span class="syn-type">U64</span>.until(<span class="syn-number">0</span>, <span class="syn-number">64</span>)).map(geometric_moves)
-	geometric.map(|landings| by_fewest_onward(landings, geometric))
+	geometric.map(|landings| landings_by_fewest_onward(landings, geometric))
 }
 
 <span class="syn-comment">## The squares a knight reaches from `square`, in the order the deltas</span>
@@ -585,7 +635,16 @@ the pages are built from. Also on
 <span class="syn-name">geometric_moves</span> = |square| {
 	rank = square.to_i64_wrap() // <span class="syn-number">8</span>
 	file = square.to_i64_wrap() % <span class="syn-number">8</span>
-	deltas = [(<span class="syn-number">1</span>, <span class="syn-number">2</span>), (<span class="syn-number">2</span>, <span class="syn-number">1</span>), (<span class="syn-number">2</span>, <span class="syn-number">-1</span>), (<span class="syn-number">1</span>, <span class="syn-number">-2</span>), (<span class="syn-number">-1</span>, <span class="syn-number">-2</span>), (<span class="syn-number">-2</span>, <span class="syn-number">-1</span>), (<span class="syn-number">-2</span>, <span class="syn-number">1</span>), (<span class="syn-number">-1</span>, <span class="syn-number">2</span>)]
+	deltas = [
+		(<span class="syn-number">1</span>, <span class="syn-number">2</span>),
+		(<span class="syn-number">2</span>, <span class="syn-number">1</span>),
+		(<span class="syn-number">2</span>, <span class="syn-number">-1</span>),
+		(<span class="syn-number">1</span>, <span class="syn-number">-2</span>),
+		(<span class="syn-number">-1</span>, <span class="syn-number">-2</span>),
+		(<span class="syn-number">-2</span>, <span class="syn-number">-1</span>),
+		(<span class="syn-number">-2</span>, <span class="syn-number">1</span>),
+		(<span class="syn-number">-1</span>, <span class="syn-number">2</span>),
+	]
 	<span class="syn-keyword">var</span> $landings = []
 	<span class="syn-keyword">for</span> (rank_step, file_step) <span class="syn-keyword">in</span> deltas {
 		to_rank = rank + rank_step
@@ -597,19 +656,20 @@ the pages are built from. Also on
 	$landings
 }
 
-<span class="syn-comment">## `landings` in order of how many moves each has in `graph`, fewest first;</span>
-<span class="syn-comment">## the sort is an insertion sort, so ties keep their order.</span>
-<span class="syn-name">by_fewest_onward</span> : <span class="syn-type">List</span>(<span class="syn-type">U8</span>), <span class="syn-type">List</span>(<span class="syn-type">List</span>(<span class="syn-type">U8</span>)) -&gt; <span class="syn-type">List</span>(<span class="syn-type">U8</span>)
-<span class="syn-name">by_fewest_onward</span> = |landings, graph| {
-	degree = |square| (graph.get(square.to_u64()) ?? <span class="syn-keyword">crash</span> <span class="syn-string">&quot;Knight.by_fewest_onward: a square past the board&quot;</span>).len()
+<span class="syn-comment">## `landings` in order of how many moves each has in `landing_lists`, a list a</span>
+<span class="syn-comment">## square, fewest first; the sort is an insertion sort, so ties keep their</span>
+<span class="syn-comment">## order.</span>
+<span class="syn-name">landings_by_fewest_onward</span> : <span class="syn-type">List</span>(<span class="syn-type">U8</span>), <span class="syn-type">List</span>(<span class="syn-type">List</span>(<span class="syn-type">U8</span>)) -&gt; <span class="syn-type">List</span>(<span class="syn-type">U8</span>)
+<span class="syn-name">landings_by_fewest_onward</span> = |landings, landing_lists| {
+	degree = |square| (landing_lists.get(square.to_u64()) ?? <span class="syn-keyword">crash</span> <span class="syn-string">&quot;Knight.landings_by_fewest_onward: a square past the board&quot;</span>).len()
 	<span class="syn-keyword">var</span> $sorted = []
 	<span class="syn-keyword">for</span> target <span class="syn-keyword">in</span> landings {
 		<span class="syn-keyword">var</span> $count = <span class="syn-number">0</span>
-		<span class="syn-keyword">while</span> $count &lt; $sorted.len() <span class="syn-keyword">and</span> degree($sorted.get($count) ?? <span class="syn-keyword">crash</span> <span class="syn-string">&quot;Knight.by_fewest_onward: the count is inside the list&quot;</span>) &lt;= degree(target) {
+		<span class="syn-keyword">while</span> $count &lt; $sorted.len() <span class="syn-keyword">and</span> degree($sorted.get($count) ?? <span class="syn-keyword">crash</span> <span class="syn-string">&quot;Knight.landings_by_fewest_onward: the count is inside the list&quot;</span>) &lt;= degree(target) {
 			$count = $count + <span class="syn-number">1</span>
 		}
 		count = $count
-		$sorted = <span class="syn-type">List</span>.join([$sorted.take_first(count), [target], $sorted.drop_first(count)])
+		$sorted = [$sorted.take_first(count), [target], $sorted.drop_first(count)].join()
 	}
 	$sorted
 }
@@ -617,10 +677,10 @@ the pages are built from. Also on
 <span class="syn-comment"># The graph has 336 moves, each one two ways; a corner has 2 and the centre 8.</span>
 <span class="syn-keyword">expect</span> {
 	counts = knight_moves.map(<span class="syn-type">List</span>.len)
-	is_symmetric =
-		knight_moves.map_with_index(
-			|landings, square| landings.all(|target| (knight_moves.get(target.to_u64()) ?? <span class="syn-keyword">crash</span> <span class="syn-string">&quot;a move lands on the board&quot;</span>).contains(square.to_u8_wrap())),
-		).all(|holds| holds)
+	landings_from = |square| knight_moves.get(square.to_u64()) ?? <span class="syn-keyword">crash</span> <span class="syn-string">&quot;a move lands on the board&quot;</span>
+	squares = <span class="syn-type">List</span>.from_iter(<span class="syn-type">U8</span>.until(<span class="syn-number">0</span>, <span class="syn-number">64</span>))
+	is_two_way = |square| landings_from(square).all(|target| landings_from(target).contains(square))
+	is_symmetric = squares.all(is_two_way)
 	counts.sum() == <span class="syn-number">336</span> <span class="syn-keyword">and</span> counts.get(<span class="syn-number">0</span>) == <span class="syn-type">Ok</span>(<span class="syn-number">2</span>) <span class="syn-keyword">and</span> counts.get(<span class="syn-number">27</span>) == <span class="syn-type">Ok</span>(<span class="syn-number">8</span>) <span class="syn-keyword">and</span> is_symmetric
 }
 
@@ -633,17 +693,21 @@ the pages are built from. Also on
 	knight_moves.all(
 		|landings| {
 			degrees = landings.map(degree)
-			<span class="syn-type">List</span>.map2(degrees, degrees.drop_first(<span class="syn-number">1</span>), |before, after| before &lt;= after).all(|holds| holds)
+			<span class="syn-type">List</span>.map2(
+				degrees,
+				degrees.drop_first(<span class="syn-number">1</span>),
+				|before, after| before &lt;= after,
+			).all(|holds| holds)
 		},
 	)
 }
 </code></pre></div>
-<div class="file"><div class="name"><a href="https://github.com/showell/roc-apps/blob/master/canvas_apps/eight_queens/Queens.roc">canvas_apps/eight_queens/Queens.roc</a>, 137 lines</div>
-<p class="about">The Eight Queens machine: the row-by-row search with column and diagonal bitmasks, and the attacked squares.</p>
+<div class="file"><div class="name"><a href="https://github.com/showell/roc-apps/blob/master/canvas_apps/eight_queens/Queens.roc">canvas_apps/eight_queens/Queens.roc</a>, 163 lines</div>
+<p class="about">The Eight Queens machine: the row-by-row puzzle with column and diagonal bitmasks, and the attacked squares.</p>
 <pre><code><span class="syn-comment">## Queens is the Eight Queens machine: eight queens on the board, none</span>
-<span class="syn-comment">## attacking another. The tape, the display and the dead-end overlay are the</span>
-<span class="syn-comment">## chess kit&#39;s; what is queen-shaped is here: the search, and which squares</span>
-<span class="syn-comment">## are attacked.</span>
+<span class="syn-comment">## attacking another. The backtracking, the tape, the display and the</span>
+<span class="syn-comment">## dead-end overlay are the chess kit&#39;s; what is queen-shaped is here: the</span>
+<span class="syn-comment">## puzzle the kit&#39;s search solves, and which squares are attacked.</span>
 <span class="syn-comment">##</span>
 <span class="syn-comment">## The click pins the first queen. It is move 0, it is never retracted, and</span>
 <span class="syn-comment">## the search fills the other seven rows in order around it, one queen a row</span>
@@ -652,62 +716,51 @@ the pages are built from. Also on
 <span class="syn-comment">## with none left taking the previous row&#39;s queen back off and resuming from</span>
 <span class="syn-comment">## its next column. Every square of the board is on some solution, so no pin</span>
 <span class="syn-comment">## exhausts; QueensProof.roc holds every pin&#39;s count.</span>
+<span class="syn-keyword">import</span> chess.<span class="syn-type">Backtrack</span>
 <span class="syn-keyword">import</span> chess.<span class="syn-type">Tape</span>
 
-<span class="syn-comment">## The rows the search fills, in order, the pin&#39;s left out; the column of</span>
-<span class="syn-comment">## each queen it has placed, a row each; the column to try next in the row</span>
-<span class="syn-comment">## being filled; and the columns and the two families of diagonals the</span>
-<span class="syn-comment">## queens on the board, the pin among them, attack, a bit each.</span>
-<span class="syn-type">Queens</span> :: {
-	rows : <span class="syn-type">List</span>(<span class="syn-type">U8</span>),
-	columns_placed : <span class="syn-type">List</span>(<span class="syn-type">U8</span>),
-	trying : <span class="syn-type">U8</span>,
-	columns : <span class="syn-type">U16</span>,
-	sums : <span class="syn-type">U16</span>,
-	differences : <span class="syn-type">U16</span>,
-}.{
+<span class="syn-comment">## The backtracking search for a solution.</span>
+<span class="syn-type">Queens</span> :: <span class="syn-type">Backtrack</span>(<span class="syn-type">Queens.Position</span>).{
+
+	<span class="syn-comment">## Where a partial solution stands: the newest queen&#39;s square, the pin&#39;s</span>
+	<span class="syn-comment">## row, how many other rows hold a queen, and the columns and the two</span>
+	<span class="syn-comment">## families of diagonals the queens on the board, the pin among them,</span>
+	<span class="syn-comment">## attack, a bit each.</span>
+	<span class="syn-type">Position</span> : {
+		square : <span class="syn-type">U8</span>,
+		pin_row : <span class="syn-type">U8</span>,
+		rows_filled : <span class="syn-type">U8</span>,
+		columns : <span class="syn-type">U16</span>,
+		sums : <span class="syn-type">U16</span>,
+		differences : <span class="syn-type">U16</span>,
+	}
 
 	<span class="syn-comment">## The search with its pinned queen on `square`.</span>
 	<span class="syn-name">start</span> : <span class="syn-type">U8</span> -&gt; <span class="syn-type">Queens</span>
 	<span class="syn-name">start</span> = |square| {
-		pin_row = square // <span class="syn-number">8</span>
-		with_attacks(
-			<span class="syn-type">Queens</span>.(
-				{
-					rows: <span class="syn-type">List</span>.from_iter(<span class="syn-type">U8</span>.until(<span class="syn-number">0</span>, <span class="syn-number">8</span>)).drop_if(|row| row == pin_row),
-					columns_placed: [],
-					trying: <span class="syn-number">0</span>,
-					columns: <span class="syn-number">0</span>,
-					sums: <span class="syn-number">0</span>,
-					differences: <span class="syn-number">0</span>,
-				},
-			),
-			{ row: pin_row, column: square % <span class="syn-number">8</span> },
-		)
+		empty = {
+			square,
+			pin_row: square // <span class="syn-number">8</span>,
+			rows_filled: <span class="syn-number">0</span>,
+			columns: <span class="syn-number">0</span>,
+			sums: <span class="syn-number">0</span>,
+			differences: <span class="syn-number">0</span>,
+		}
+		<span class="syn-type">Queens</span>.(<span class="syn-type">Backtrack</span>.start(with_attacks(empty, square)))
 	}
 
 	<span class="syn-comment">## The search one transition on: a queen in the next open column of the</span>
 	<span class="syn-comment">## row being filled, or, with none, the previous row&#39;s queen taken off.</span>
 	<span class="syn-name">next_move</span> : <span class="syn-type">Queens</span> -&gt; (<span class="syn-type">Queens</span>, <span class="syn-type">Tape.Move</span>)
-	<span class="syn-name">next_move</span> = |queens| {
-		<span class="syn-type">Queens</span>.(search) = queens
-		row = search.rows.get(search.columns_placed.len()) ?? <span class="syn-keyword">crash</span> <span class="syn-string">&quot;Queens.next_move: every row is filled, and the search is solved then&quot;</span>
-		<span class="syn-keyword">match</span> first_open_column(queens, { row, from: search.trying }) {
-			<span class="syn-type">Ok</span>(column) =&gt; {
-				<span class="syn-type">Queens</span>.(attacked) = with_attacks(queens, { row, column })
-				(<span class="syn-type">Queens</span>.({ ..attacked, columns_placed: attacked.columns_placed.append(column), trying: <span class="syn-number">0</span> }), <span class="syn-type">Place</span>(row * <span class="syn-number">8</span> + column))
+	<span class="syn-name">next_move</span> = |<span class="syn-type">Queens</span>.(search)| {
+		(stepped, step) = search.step(solution)
+		move =
+			<span class="syn-keyword">match</span> step {
+				<span class="syn-type">Entered</span>({ square, .. }) =&gt; <span class="syn-type">Place</span>(square)
+				<span class="syn-type">Left</span>({ square, .. }) =&gt; <span class="syn-type">Remove</span>(square)
+				<span class="syn-type">Exhausted</span> =&gt; <span class="syn-type">GiveUp</span>
 			}
-			<span class="syn-type">Err</span>(<span class="syn-type">NoColumn</span>) =&gt;
-				<span class="syn-keyword">match</span> search.columns_placed.last() {
-					<span class="syn-type">Err</span>(<span class="syn-type">ListWasEmpty</span>) =&gt; (queens, <span class="syn-type">GiveUp</span>)
-					<span class="syn-type">Ok</span>(column) =&gt; {
-						placed = search.columns_placed.drop_last(<span class="syn-number">1</span>)
-						back_row = search.rows.get(placed.len()) ?? <span class="syn-keyword">crash</span> <span class="syn-string">&quot;Queens.next_move: a placed queen has its row&quot;</span>
-						<span class="syn-type">Queens</span>.(freed) = with_attacks(queens, { row: back_row, column })
-						(<span class="syn-type">Queens</span>.({ ..freed, columns_placed: placed, trying: column + <span class="syn-number">1</span> }), <span class="syn-type">Remove</span>(back_row * <span class="syn-number">8</span> + column))
-					}
-				}
-		}
+		(<span class="syn-type">Queens</span>.(stepped), move)
 	}
 
 	<span class="syn-comment">## Each empty square a queen on the board attacks, along a row, a column</span>
@@ -715,14 +768,20 @@ the pages are built from. Also on
 	<span class="syn-name">impossible_squares</span> : <span class="syn-type">Tape</span> -&gt; <span class="syn-type">List</span>(<span class="syn-type">Bool</span>)
 	<span class="syn-name">impossible_squares</span> = |tape| {
 		board = tape.board()
-		queens = board.map_with_index(|number, square| (number, square.to_u8_wrap())).keep_if(|(number, _)| number &gt;= <span class="syn-number">0</span>).map(|(_, square)| square)
-		board.map_with_index(|number, square| number &lt; <span class="syn-number">0</span> <span class="syn-keyword">and</span> queens.any(|queen| is_attack(queen, square.to_u8_wrap())))
+		numbered = board.map_with_index(|number, square| (number, square.to_u8_wrap()))
+		queens = numbered.keep_if(|(number, _)| number &gt;= <span class="syn-number">0</span>).map(|(_, square)| square)
+		is_under_attack = |square| queens.any(|queen| is_attack(queen, square))
+		board.map_with_index(|number, square| number &lt; <span class="syn-number">0</span> <span class="syn-keyword">and</span> is_under_attack(square.to_u8_wrap()))
 	}
 
 	<span class="syn-comment">## The squares a queen on each square attacks, in square order.</span>
 	<span class="syn-name">moves_from</span> : <span class="syn-type">List</span>(<span class="syn-type">List</span>(<span class="syn-type">U8</span>))
-	<span class="syn-name">moves_from</span> = <span class="syn-type">List</span>.from_iter(<span class="syn-type">U8</span>.until(<span class="syn-number">0</span>, <span class="syn-number">64</span>)).map(|square| <span class="syn-type">List</span>.from_iter(<span class="syn-type">U8</span>.until(<span class="syn-number">0</span>, <span class="syn-number">64</span>)).keep_if(|other| other != square <span class="syn-keyword">and</span> is_attack(square, other)))
+	<span class="syn-name">moves_from</span> = squares.map(|from| squares.keep_if(|to| to != from <span class="syn-keyword">and</span> is_attack(from, to)))
 }
+
+<span class="syn-comment">## Every square of the board, a1 first.</span>
+<span class="syn-name">squares</span> : <span class="syn-type">List</span>(<span class="syn-type">U8</span>)
+<span class="syn-name">squares</span> = <span class="syn-type">List</span>.from_iter(<span class="syn-type">U8</span>.until(<span class="syn-number">0</span>, <span class="syn-number">64</span>))
 
 <span class="syn-comment">## Whether queens on the two squares share a row, a column or a diagonal.</span>
 <span class="syn-name">is_attack</span> : <span class="syn-type">U8</span>, <span class="syn-type">U8</span> -&gt; <span class="syn-type">Bool</span>
@@ -731,43 +790,74 @@ the pages are built from. Also on
 	from_column = (from % <span class="syn-number">8</span>).to_i64()
 	to_row = (to // <span class="syn-number">8</span>).to_i64()
 	to_column = (to % <span class="syn-number">8</span>).to_i64()
-	from_row == to_row <span class="syn-keyword">or</span> from_column == to_column <span class="syn-keyword">or</span> from_row + from_column == to_row + to_column <span class="syn-keyword">or</span> from_row - from_column == to_row - to_column
+	from_row == to_row
+		<span class="syn-keyword">or</span> from_column == to_column
+		<span class="syn-keyword">or</span> from_row + from_column == to_row + to_column
+		<span class="syn-keyword">or</span> from_row - from_column == to_row - to_column
 }
 
-<span class="syn-comment">## The search with a queen at `row` and `column` added to its attacks, or,</span>
-<span class="syn-comment">## where one is there, taken out: each bit flips.</span>
-<span class="syn-name">with_attacks</span> : <span class="syn-type">Queens</span>, { row : <span class="syn-type">U8</span>, column : <span class="syn-type">U8</span> } -&gt; <span class="syn-type">Queens</span>
-<span class="syn-name">with_attacks</span> = |<span class="syn-type">Queens</span>.(search), { row, column }|
-	<span class="syn-type">Queens</span>.(
-		{
-			..search,
-			columns: <span class="syn-type">U16</span>.bitwise_xor(search.columns, <span class="syn-type">U16</span>.shl_wrap(<span class="syn-number">1</span>, column)),
-			sums: <span class="syn-type">U16</span>.bitwise_xor(search.sums, <span class="syn-type">U16</span>.shl_wrap(<span class="syn-number">1</span>, row + column)),
-			differences: <span class="syn-type">U16</span>.bitwise_xor(search.differences, <span class="syn-type">U16</span>.shl_wrap(<span class="syn-number">1</span>, row + <span class="syn-number">7</span> - column)),
-		},
-	)
-
-<span class="syn-comment">## The first column of `row`, from `from` on, that no queen attacks.</span>
-<span class="syn-name">first_open_column</span> : <span class="syn-type">Queens</span>, { row : <span class="syn-type">U8</span>, from : <span class="syn-type">U8</span> } -&gt; <span class="syn-type">Try</span>(<span class="syn-type">U8</span>, [<span class="syn-type">NoColumn</span>])
-<span class="syn-name">first_open_column</span> = |<span class="syn-type">Queens</span>.(search), { row, from }| {
-	is_free = |column|
-		<span class="syn-type">U16</span>.bitwise_and(search.columns, <span class="syn-type">U16</span>.shl_wrap(<span class="syn-number">1</span>, column)) == <span class="syn-number">0</span>
-			<span class="syn-keyword">and</span> <span class="syn-type">U16</span>.bitwise_and(search.sums, <span class="syn-type">U16</span>.shl_wrap(<span class="syn-number">1</span>, row + column)) == <span class="syn-number">0</span>
-			<span class="syn-keyword">and</span> <span class="syn-type">U16</span>.bitwise_and(search.differences, <span class="syn-type">U16</span>.shl_wrap(<span class="syn-number">1</span>, row + <span class="syn-number">7</span> - column)) == <span class="syn-number">0</span>
-	<span class="syn-keyword">match</span> <span class="syn-type">List</span>.from_iter(<span class="syn-type">U8</span>.until(from, <span class="syn-number">8</span>)).find_first(is_free) {
-		<span class="syn-type">Ok</span>(column) =&gt; <span class="syn-type">Ok</span>(column)
-		<span class="syn-type">Err</span>(<span class="syn-type">NotFound</span>) =&gt; <span class="syn-type">Err</span>(<span class="syn-type">NoColumn</span>)
+<span class="syn-comment">## Eight Queens as a puzzle: the option at `index` is that column of the next</span>
+<span class="syn-comment">## row to fill, refused where a queen attacks it.</span>
+<span class="syn-name">solution</span> : <span class="syn-type">Backtrack.Puzzle</span>(<span class="syn-type">Queens.Position</span>)
+<span class="syn-name">solution</span> = |position, index|
+	<span class="syn-keyword">if</span> index &gt;= <span class="syn-number">8</span> {
+		<span class="syn-type">End</span>
+	} <span class="syn-keyword">else</span> {
+		square = next_row(position) * <span class="syn-number">8</span> + index.to_u8_wrap()
+		<span class="syn-keyword">if</span> is_attacked(position, square) {
+			<span class="syn-type">Refused</span>
+		} <span class="syn-keyword">else</span> {
+			<span class="syn-type">Child</span>({
+				..with_attacks(position, square),
+				square,
+				rows_filled: position.rows_filled + <span class="syn-number">1</span>,
+			})
+		}
 	}
+
+<span class="syn-comment">## The row the search fills next: the rows in order, the pin&#39;s left out.</span>
+<span class="syn-name">next_row</span> : <span class="syn-type">Queens.Position</span> -&gt; <span class="syn-type">U8</span>
+<span class="syn-name">next_row</span> = |{ pin_row, rows_filled, .. }|
+	<span class="syn-keyword">if</span> rows_filled &gt;= <span class="syn-number">7</span> {
+		<span class="syn-keyword">crash</span> <span class="syn-string">&quot;Queens.next_row: every row is filled, and the search is solved then&quot;</span>
+	} <span class="syn-keyword">else</span> <span class="syn-keyword">if</span> rows_filled &lt; pin_row {
+		rows_filled
+	} <span class="syn-keyword">else</span> {
+		rows_filled + <span class="syn-number">1</span>
+	}
+
+<span class="syn-comment">## The position with a queen on `square` added to its attacks, or, where one</span>
+<span class="syn-comment">## is there, taken out: each bit flips.</span>
+<span class="syn-name">with_attacks</span> : <span class="syn-type">Queens.Position</span>, <span class="syn-type">U8</span> -&gt; <span class="syn-type">Queens.Position</span>
+<span class="syn-name">with_attacks</span> = |position, square| {
+	row = square // <span class="syn-number">8</span>
+	column = square % <span class="syn-number">8</span>
+	{
+		..position,
+		columns: <span class="syn-type">U16</span>.bitwise_xor(position.columns, <span class="syn-type">U16</span>.shl_wrap(<span class="syn-number">1</span>, column)),
+		sums: <span class="syn-type">U16</span>.bitwise_xor(position.sums, <span class="syn-type">U16</span>.shl_wrap(<span class="syn-number">1</span>, row + column)),
+		differences: <span class="syn-type">U16</span>.bitwise_xor(position.differences, <span class="syn-type">U16</span>.shl_wrap(<span class="syn-number">1</span>, row + <span class="syn-number">7</span> - column)),
+	}
+}
+
+<span class="syn-comment">## Whether a queen on the board attacks `square`, along its column or a</span>
+<span class="syn-comment">## diagonal; the search never puts two queens in a row.</span>
+<span class="syn-name">is_attacked</span> : <span class="syn-type">Queens.Position</span>, <span class="syn-type">U8</span> -&gt; <span class="syn-type">Bool</span>
+<span class="syn-name">is_attacked</span> = |position, square| {
+	row = square // <span class="syn-number">8</span>
+	column = square % <span class="syn-number">8</span>
+	<span class="syn-type">U16</span>.bitwise_and(position.columns, <span class="syn-type">U16</span>.shl_wrap(<span class="syn-number">1</span>, column)) != <span class="syn-number">0</span>
+		<span class="syn-keyword">or</span> <span class="syn-type">U16</span>.bitwise_and(position.sums, <span class="syn-type">U16</span>.shl_wrap(<span class="syn-number">1</span>, row + column)) != <span class="syn-number">0</span>
+		<span class="syn-keyword">or</span> <span class="syn-type">U16</span>.bitwise_and(position.differences, <span class="syn-type">U16</span>.shl_wrap(<span class="syn-number">1</span>, row + <span class="syn-number">7</span> - column)) != <span class="syn-number">0</span>
 }
 
 <span class="syn-comment"># A queen on a1 attacks 21 squares, one on d4 27, each attack goes both ways,</span>
 <span class="syn-comment"># and the board holds 1,456 in all.</span>
 <span class="syn-keyword">expect</span> {
 	counts = <span class="syn-type">Queens</span>.moves_from.map(<span class="syn-type">List</span>.len)
-	is_symmetric =
-		<span class="syn-type">Queens</span>.moves_from.map_with_index(
-			|attacked, square| attacked.all(|other| (<span class="syn-type">Queens</span>.moves_from.get(other.to_u64()) ?? <span class="syn-keyword">crash</span> <span class="syn-string">&quot;an attack lands on the board&quot;</span>).contains(square.to_u8_wrap())),
-		).all(|holds| holds)
+	attacked_from = |square| <span class="syn-type">Queens</span>.moves_from.get(square.to_u64()) ?? <span class="syn-keyword">crash</span> <span class="syn-string">&quot;an attack lands on the board&quot;</span>
+	is_two_way = |square| attacked_from(square).all(|other| attacked_from(other).contains(square))
+	is_symmetric = squares.all(is_two_way)
 	counts.get(<span class="syn-number">0</span>) == <span class="syn-type">Ok</span>(<span class="syn-number">21</span>) <span class="syn-keyword">and</span> counts.get(<span class="syn-number">27</span>) == <span class="syn-type">Ok</span>(<span class="syn-number">27</span>) <span class="syn-keyword">and</span> counts.sum() == <span class="syn-number">1456</span> <span class="syn-keyword">and</span> is_symmetric
 }
 
