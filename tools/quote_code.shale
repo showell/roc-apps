@@ -1,0 +1,495 @@
+-- budget: steps=400000000 arena_bytes=1000000000 reads=20000 read_bytes=400000000 output_bytes=100000
+-- This script quotes code by name for every page of roc-apps that shows
+-- code: the Safari book's pre-step (canvas_apps/safari/tutorial/build.shale),
+-- the security idioms page (site/build_security_idioms.shale) and the Roc on
+-- Shale pages (site/build_roc_on_shale.shale). Each asks for its quotes in a
+-- JSON file and reads the answers from another:
+--
+--   cd <roc-apps checkout> && shale tools/quote_code.shale quotes=<file> answers=<file>
+--   ... lock=<file> mode=write    # a page's build: the answers, and the lock
+--   ... lock=<file> mode=check    # a page's check: stops when a quote moved
+--
+-- `quotes` is a list. Each quote names its file by `path`: a path of the
+-- run's, or with `repo` (a git checkout, through a mount) and `rev`, the
+-- file's path in the checkout, quoted as that revision holds it. A branch
+-- moves; a commit is a fixed, historical quote. Its `kind` is one of:
+--
+--   definition   (the default) the Roc definition `name`, looked for at the
+--                file's top level and in the block of the type `module`
+--                (the file's own name unset), through Roc's parser
+--                (roc_tree), from the `##` doc comment directly above it
+--                through its end, its annotation included; a local in a
+--                body or a member of another type is not found;
+--   annotation   the annotation of `name` alone;
+--   expect_after the `expect` right after the definition of `name`, with the
+--                plain `#` comment lines directly above it;
+--   file         the whole file.
+--
+-- A quote may keep only some of those lines. `pieces`, a list of `{from,
+-- to}`, keeps each run from the line holding the text `from` through the one
+-- holding `to` (from the first line, or through the last, when one is left
+-- out); each text must be in the definition, or the file, exactly once, so
+-- an edit that removes or repeats it stops the build. `members`, the names
+-- of members of a type's block, keeps the type's head (its doc and its first
+-- line), each member and its last line.
+--
+-- Each answer, in the quotes' order, is `{id, ok, ...}`. A quote that can't
+-- be made answers `ok = false` and its `error`, so a book can name the line
+-- that asked for it. Otherwise it gives `lines`, each `{at, text}`: the
+-- source's lines, the last cut where the definition ends; `indent`, the
+-- definition's column less one, which every line has as spaces or tabs;
+-- `pieces`, each `{first, last}` an index into `lines` (one piece of every
+-- line unless the quote kept some); and `rev`, the commit quoted, in full.
+-- A whole file answers its `text` alone.
+--
+-- The lock is what a page was built from, so its check can say when the
+-- code moved under it. `mode=write` quotes each at its `rev`, as a build
+-- does, and writes the lock: each quote's `id`, the commit it was quoted at
+-- and git's blob hash of its text (the kept lines, `...` between pieces).
+-- `mode=check` quotes each again at its `rev` and stops, naming each quote
+-- whose text has changed since the lock was written, and each quote the
+-- lock doesn't hold or holds and isn't asked for. The page is then stale
+-- until it is built again and the prose around each moved quote read
+-- again: the check never rebuilds it. When none moved, the answers are the
+-- quotes at the lock's commits, so the page's check builds it as it was
+-- built, links and all. With a lock, any quote that can't be made stops the
+-- run, and every quote needs an `id` and a `rev`.
+
+const QUOTES = arg("quotes", "")
+const ANSWERS = arg("answers", "")
+const LOCK = arg("lock", "")
+const MODE = arg("mode", "")
+const WORK = "build:roc-apps"
+const CUT = "..."
+const LOCK_HEAD = "# Written by tools/quote_code.shale: a quote a line, its id, the commit it was quoted at, git's hash of its text, its file and what it keeps.\n"
+
+-- How a message names a quote's file: its path, and for a revision's copy,
+-- the checkout and the commit too.
+function shown_of(q)
+  if not has_key(q, "rev") then return q.path end
+  return q.repo .. "/" .. q.path .. " at " .. sub(q.resolved, 1, 7)
+end
+
+-- What a quote keeps, in words, for the lock and the check's message.
+function what_of(q)
+  local kind = get(q, "kind", "definition")
+  local what = kind
+  if kind == "definition" or kind == "annotation" or kind == "expect_after" then what = kind .. " " .. q.name end
+  if has_key(q, "members") then what = what .. ", members " .. join(q.members, " ") end
+  if has_key(q, "pieces") then what = what .. ", " .. #q.pieces .. " pieces" end
+  return what
+end
+
+-- The full hash of the commit `rev` names in the checkout `repo`.
+function resolved_rev(cache, repo, rev)
+  local key = repo .. "\t" .. rev
+  if not has_key(cache, key) then
+    local r = run({"git", "rev-parse", "--verify", "--quiet", rev .. "^{commit}"}, {cwd = repo, timeout_ms = 30000, whole = 1000})
+    if r.code ~= 0 then fail("quote_code: the checkout " .. repo .. " has no commit " .. rev .. ": fetch it") end
+    cache[key] = trim(r.out)
+  end
+  return cache[key]
+end
+
+-- Each quote's file to read, `q.file`: its path, or a copy of the file as
+-- its revision holds it, made once in `work`.
+function place_files(quotes, work)
+  local revs = {}
+  local copies = {}
+  local n = 0
+  for q in quotes do
+    if has_key(q, "rev") then
+      if not has_key(q, "repo") then fail("quote_code: the quote " .. get(q, "id", q.path) .. " has a rev and no repo") end
+      q.resolved = resolved_rev(revs, q.repo, q.rev)
+      local key = q.repo .. "\t" .. q.resolved .. "\t" .. q.path
+      if not has_key(copies, key) then
+        n = n + 1
+        local dir = work .. "/" .. n
+        mkdir(dir)
+        local copy_path = dir .. "/" .. basename(q.path)
+        create(copy_path, git_show(q.repo, q.resolved .. ":" .. q.path))
+        copies[key] = copy_path
+      end
+      q.file = copies[key]
+    else
+      q.file = q.path
+    end
+  end
+  return nil
+end
+
+-- One roc-ast run for every Roc file a quote reads, by its file.
+function parse_files(quotes)
+  local paths = {}
+  for q in quotes do
+    if get(q, "kind", "definition") ~= "file" and exists(q.file) then push(paths, q.file) end
+  end
+  local trees = {}
+  if #paths == 0 then return trees end
+  for tree in roc_tree(unique(paths)) do trees[tree.path] = tree end
+  return trees
+end
+
+function searched_blocks(nodes, module)
+  local blocks = {}
+  for n in nodes do
+    if n.kind == "statements" and n.depth == 1 then push(blocks, n) end
+    if n.kind == "associated" and nodes[nodes[n.parent].kids[1]].name == module then push(blocks, n) end
+  end
+  return blocks
+end
+
+function defined_name(nodes, statement)
+  if statement.kind == "s-type-anno" then return statement.name end
+  if statement.kind == "s-type-decl" then return nodes[statement.kids[1]].name end
+  if statement.kind == "s-decl" then return get(nodes[statement.kids[1]], "raw", "") end
+  return ""
+end
+
+-- Each place `name` is defined. An annotation and the definition under it
+-- are one place.
+function places_of(nodes, module, name)
+  local places = {}
+  for block in searched_blocks(nodes, module) do
+    local annotated = false
+    for k in block.kids do
+      local s = nodes[k]
+      local here = defined_name(nodes, s) == name
+      if here and annotated then
+        local place = places[#places]
+        place.end_line = s.end_line
+        place.end_column = s.end_column
+      elseif here then
+        push(places, {line = s.line, column = s.column, end_line = s.end_line, end_column = s.end_column})
+      end
+      annotated = here and s.kind == "s-type-anno"
+    end
+  end
+  return places
+end
+
+-- The one place `name` is defined, or a stop saying there is none or more.
+function one_place(q, nodes, module, name)
+  local places = places_of(nodes, module, name)
+  if #places == 0 then fail("no such name in " .. shown_of(q)) end
+  if #places > 1 then
+    local at = {}
+    for p in sort(places, "line") do push(at, "" .. p.line) end
+    fail("found " .. #places .. " times in " .. shown_of(q) .. ", at lines " .. join(at, ", "))
+  end
+  return places[1]
+end
+
+function doc_comment_start(source_lines, line)
+  local first = line
+  while first > 1 and starts_with(trim(source_lines[first - 1]), "##") do first = first - 1 end
+  return first
+end
+
+-- The answer's lines from `first` to the end of `place`, the last cut where
+-- it ends, each indented at least as the definition is.
+function span_answer(q, source_lines, first, place)
+  local indent = place.column - 1
+  local kept = {}
+  local at = first
+  while at <= place.end_line do
+    local l = source_lines[at]
+    if at == place.end_line then l = sub(l, 1, place.end_column - 1) end
+    if trim(sub(l, 1, indent)) ~= "" then fail(shown_of(q) .. ":" .. at .. " is not indented as the definition is") end
+    push(kept, {at = at, text = l})
+    at = at + 1
+  end
+  return {indent = indent, lines = kept}
+end
+
+-- Where in the answer's lines the one line holding `anchor` is, read as the
+-- quote shows it, less its indent.
+function anchor_index(q, a, anchor, within)
+  local hits = {}
+  local at = {}
+  for i = 1, #a.lines do
+    for hit in find_all(sub(a.lines[i].text, a.indent + 1), anchor) do
+      push(hits, i)
+      push(at, "" .. a.lines[i].at)
+    end
+  end
+  local quoted = "\"" .. anchor .. "\""
+  if #hits == 0 then fail(quoted .. " is not in the " .. within) end
+  if #hits > 1 then fail(quoted .. " found " .. #hits .. " times in " .. shown_of(q) .. ", at lines " .. join(at, ", ")) end
+  return hits[1]
+end
+
+-- The pieces a quote's anchors keep, each `{first, last}`.
+function anchored_pieces(q, a, within)
+  local pieces = {}
+  for p in q.pieces do
+    local first = 1
+    local last = #a.lines
+    if has_key(p, "from") then first = anchor_index(q, a, p.from, within) end
+    if has_key(p, "to") then last = anchor_index(q, a, p.to, within) end
+    if last < first then fail("\"" .. p.to .. "\" is above \"" .. p.from .. "\", at line " .. a.lines[last].at .. " and line " .. a.lines[first].at) end
+    push(pieces, {first = first, last = last})
+  end
+  return pieces
+end
+
+-- The pieces that keep a type's head, the members `q.members` and its last
+-- line, in order.
+function member_pieces(q, nodes, source_lines, place, a)
+  local base = a.lines[1].at - 1
+  local pieces = {{first = 1, last = place.line - base}}
+  for m in q.members do
+    local mp = places_of(nodes, q.name, m)
+    if #mp ~= 1 then fail("the member " .. m .. " of " .. q.name .. " is found " .. #mp .. " times in " .. shown_of(q)) end
+    local first = doc_comment_start(source_lines, mp[1].line) - base
+    local last = mp[1].end_line - base
+    if first <= pieces[#pieces].last or last >= #a.lines then fail(m .. " is not a member of " .. q.name .. " after the one before it, in " .. shown_of(q)) end
+    push(pieces, {first = first, last = last})
+  end
+  push(pieces, {first = #a.lines, last = #a.lines})
+  return pieces
+end
+
+function tree_of(q, trees)
+  if not exists(q.file) then fail("no file " .. shown_of(q)) end
+  local tree = trees[q.file]
+  if tree.err ~= "" then fail("roc-ast refused " .. shown_of(q) .. ": " .. tree.err) end
+  return tree
+end
+
+function default_module(q)
+  local name = basename(q.path)
+  if ends_with(name, ".roc") then return sub(name, 1, #name - 4) end
+  return name
+end
+
+function definition_answer(q, trees)
+  local tree = tree_of(q, trees)
+  local module = get(q, "module", default_module(q))
+  local place = one_place(q, tree.nodes, module, q.name)
+  local source_lines = split(read(q.file), "\n")
+  local a = span_answer(q, source_lines, doc_comment_start(source_lines, place.line), place)
+  if has_key(q, "members") then
+    a.pieces = member_pieces(q, tree.nodes, source_lines, place, a)
+  elseif has_key(q, "pieces") then
+    a.pieces = anchored_pieces(q, a, "definition")
+  end
+  return a
+end
+
+function annotation_answer(q, trees)
+  local tree = tree_of(q, trees)
+  local found = {}
+  for block in searched_blocks(tree.nodes, get(q, "module", default_module(q))) do
+    for k in block.kids do
+      local s = tree.nodes[k]
+      if s.kind == "s-type-anno" and s.name == q.name then push(found, s) end
+    end
+  end
+  if #found == 0 then fail("no annotation of " .. q.name .. " in " .. shown_of(q)) end
+  if #found > 1 then fail(q.name .. " has " .. #found .. " annotations in " .. shown_of(q)) end
+  return span_answer(q, split(read(q.file), "\n"), found[1].line, found[1])
+end
+
+-- The `expect` statement right after the definition of `name`, in the block
+-- that defines it, or nil when the statement after it is something else.
+function expect_after_definition(nodes, module, name)
+  for block in searched_blocks(nodes, module) do
+    local found = nil
+    for k in block.kids do
+      local s = nodes[k]
+      if defined_name(nodes, s) == name then
+        found = s
+      elseif found ~= nil then
+        if s.kind == "s-expect" then return s end
+        return nil
+      end
+    end
+  end
+  return nil
+end
+
+function expect_answer(q, trees)
+  local tree = tree_of(q, trees)
+  local statement = expect_after_definition(tree.nodes, get(q, "module", default_module(q)), q.name)
+  if statement == nil then fail("no expect right after " .. q.name .. " in " .. shown_of(q)) end
+  local source_lines = split(read(q.file), "\n")
+  local first = statement.line
+  while first > 1 and starts_with(trim(source_lines[first - 1]), "#") and not starts_with(trim(source_lines[first - 1]), "##") do
+    first = first - 1
+  end
+  return span_answer(q, source_lines, first, statement)
+end
+
+function file_answer(q)
+  if not exists(q.file) then fail("no file " .. shown_of(q)) end
+  local text = read(q.file)
+  if not has_key(q, "pieces") then return {text = text} end
+  local kept = {}
+  local all = split(text, "\n")
+  for i = 1, #all do push(kept, {at = i, text = all[i]}) end
+  local a = {indent = 0, lines = kept}
+  a.pieces = anchored_pieces(q, a, "file")
+  return a
+end
+
+-- One quote's answer, or a stop saying why it can't be made.
+function answer_of(q, trees)
+  local kind = get(q, "kind", "definition")
+  local a = nil
+  if kind == "definition" then
+    a = definition_answer(q, trees)
+  elseif kind == "annotation" then
+    a = annotation_answer(q, trees)
+  elseif kind == "expect_after" then
+    a = expect_answer(q, trees)
+  elseif kind == "file" then
+    a = file_answer(q)
+  else
+    fail("quote_code: no kind " .. kind .. ": definition, annotation, expect_after or file")
+  end
+  if has_key(a, "lines") and not has_key(a, "pieces") then a.pieces = {{first = 1, last = #a.lines}} end
+  return a
+end
+
+-- Every quote's answer, in order.
+function answers_of(quotes, strict)
+  local work = fresh_dir(WORK, "quote-code")
+  place_files(quotes, work)
+  local trees = parse_files(quotes)
+  local answers = {}
+  for q in quotes do
+    local r = attempt(answer_of, q, trees)
+    local a = {ok = r.ok}
+    if r.ok then a = r.value end
+    a.ok = r.ok
+    if has_key(q, "id") then a.id = q.id end
+    if has_key(q, "rev") then a.rev = q.resolved end
+    if not r.ok then
+      if strict then fail("quote_code: " .. get(q, "id", q.path) .. ": " .. r.error) end
+      a.error = r.error
+    end
+    push(answers, a)
+  end
+  remove_tree(work)
+  return answers
+end
+
+-- The text a quote keeps, as its hash is taken: a whole file's text, or the
+-- kept lines with a `...` line between pieces.
+function quoted_text(a)
+  if has_key(a, "text") then return a.text end
+  local parts = {}
+  for p in a.pieces do
+    local kept = {}
+    for i = p.first, p.last do push(kept, a.lines[i].text) end
+    push(parts, join(kept, "\n"))
+  end
+  return join(parts, "\n" .. CUT .. "\n") .. "\n"
+end
+
+-- Git's blob hash of each answer's text, in order, from one program.
+function hashes_of(answers)
+  local work = fresh_dir(WORK, "quote-hash")
+  local paths = {}
+  for i = 1, #answers do
+    local p = work .. "/" .. i
+    create(p, quoted_text(answers[i]))
+    push(paths, real(p))
+  end
+  local r = must(run({"git", "hash-object", "--no-filters", "--stdin-paths"}, {timeout_ms = 120000, whole = 1000000, stdin = join(paths, "\n") .. "\n"}))
+  remove_tree(work)
+  local hashes = lines(trim(r.out))
+  if #hashes ~= #answers then fail("quote_code: git hashed " .. #hashes .. " of " .. #answers .. " texts") end
+  return hashes
+end
+
+-- The lock's quotes, in order, each `{id, rev, hash, path, what}`.
+function read_lock()
+  if not exists(LOCK) then fail("quote_code: no lock " .. LOCK .. ": build the page, which writes it") end
+  local held = {}
+  for l in lines(read(LOCK)) do
+    if trim(l) ~= "" and not starts_with(l, "#") then
+      local f = split(l, "\t")
+      if #f ~= 5 then fail("quote_code: " .. LOCK .. " has a line of " .. #f .. " fields, not 5: " .. l) end
+      push(held, {id = f[1], rev = f[2], hash = f[3], path = f[4], what = f[5]})
+    end
+  end
+  return held
+end
+
+function write_lock(quotes, answers, hashes)
+  local out = {LOCK_HEAD}
+  for i = 1, #quotes do
+    local q = quotes[i]
+    push(out, q.id .. "\t" .. answers[i].rev .. "\t" .. hashes[i] .. "\t" .. q.path .. "\t" .. what_of(q) .. "\n")
+  end
+  replace(LOCK, join(out, ""))
+  return nil
+end
+
+-- Stops when the quotes asked for aren't the lock's, naming each the one
+-- has and the other doesn't.
+function check_same_quotes(quotes, held)
+  local asked = {}
+  local locked = {}
+  for q in quotes do asked[q.id] = true end
+  for h in held do locked[h.id] = true end
+  local wrongs = {}
+  for q in quotes do
+    if not has_key(locked, q.id) then push(wrongs, q.id .. " is quoted and not in the lock") end
+  end
+  for h in held do
+    if not has_key(asked, h.id) then push(wrongs, h.id .. " is in the lock and no longer quoted") end
+  end
+  if #wrongs > 0 then fail("quote_code: the quotes differ from " .. LOCK .. ": " .. join(wrongs, "; ")) end
+  return nil
+end
+
+-- The check: each quote again at its rev, against the lock's hash; then,
+-- when none moved, the answers at the lock's commits.
+function checked_answers(quotes)
+  local held = read_lock()
+  check_same_quotes(quotes, held)
+  local by_id = {}
+  for h in held do by_id[h.id] = h end
+  local now = answers_of(quotes, true)
+  local hashes = hashes_of(now)
+  local moved = {}
+  for i = 1, #quotes do
+    local h = by_id[quotes[i].id]
+    if hashes[i] ~= h.hash then push(moved, quotes[i].id .. " (" .. h.what .. " in " .. h.path .. ", quoted at " .. sub(h.rev, 1, 7) .. ", now " .. sub(now[i].rev, 1, 7) .. ")") end
+  end
+  if #moved > 0 then fail("quote_code: " .. #moved .. " of " .. #quotes .. " quotes moved since " .. LOCK .. " was written: " .. join(moved, "; ")) end
+  local again = {}
+  for q in quotes do
+    local h = by_id[q.id]
+    local at = {}
+    for k in keys(q) do at[k] = q[k] end
+    at.rev = h.rev
+    push(again, at)
+  end
+  return answers_of(again, true)
+end
+
+if QUOTES == "" or ANSWERS == "" then fail("quote_code: name the quotes and the answers, quotes=<file> answers=<file>") end
+local quotes = json_read(read(QUOTES))
+local answers = {}
+if LOCK == "" then
+  if MODE ~= "" then fail("quote_code: mode=" .. MODE .. " needs a lock=") end
+  answers = answers_of(quotes, false)
+else
+  for q in quotes do
+    if not has_key(q, "id") or not has_key(q, "rev") then fail("quote_code: with a lock, every quote needs an id and a rev, and " .. json_write(q) .. " lacks one") end
+  end
+  if MODE == "write" then
+    answers = answers_of(quotes, true)
+    write_lock(quotes, answers, hashes_of(answers))
+  elseif MODE == "check" then
+    answers = checked_answers(quotes)
+  else
+    fail("quote_code: a lock's mode is write or check, not " .. MODE)
+  end
+end
+replace(ANSWERS, json_write(answers))
+print("quote_code: " .. #answers .. " quotes answered")
