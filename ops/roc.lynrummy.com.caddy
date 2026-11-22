@@ -31,8 +31,11 @@ roc.lynrummy.com {
 
 # Dog Park's old address, from when it ran on its own droplet: every path
 # goes to the game's page here. 302, so a later change of target reaches a
-# browser that followed this one before.
+# browser that followed this one before. It sends lynrummy.com's HSTS header
+# too, as every lynrummy.com host does now that the domain is submitted for
+# HSTS preload (2026-11-22).
 dogpark.lynrummy.com {
 	import access_log dogpark
+	header Strict-Transport-Security "max-age=31536000; includeSubDomains; preload"
 	redir https://roc.lynrummy.com/dog-park/ 302
 }
