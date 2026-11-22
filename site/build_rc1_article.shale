@@ -10,7 +10,9 @@
 --                            says of it, run here;
 --   <!-- knightproof -->    the chess proof's run times, from the stats TSV;
 --   <!-- stats REPO -->     one repository's build times, from the stats TSV;
---   <!-- sizes -->          every build's output size, from the stats TSV.
+--   <!-- sizes -->          every build's output size, from the stats TSV;
+--   <!-- overview -->       every project, largest first, with its lines of
+--                            Roc and two build times (OVERVIEW).
 --
 -- The stats TSV is docs/rc1-build-stats.tsv, which tools/measure_roc_builds.shale
 -- writes. Code is colored by tools/color_code (roc-syntax-color), built here
@@ -63,6 +65,22 @@ const REPROS = {
   {name = "nominal", dir = "site/rc1_repros/nominal", files = {"Cat.roc", "main.roc"}},
   {name = "shadow", dir = "site/rc1_repros/shadow", files = {"Distance.roc", "main.roc"}},
   {name = "literal", dir = "site/rc1_repros/literal", files = {"main.roc"}},
+}
+
+-- Every project, largest first by lines of Roc. A measured one's size and
+-- times come from the stats TSV; for the rest, `lines` is its tracked .roc
+-- files' lines on its main branch at `at` (counted as
+-- tools/measure_roc_builds.shale counts them), and `why` says why it has no
+-- times. `pending` marks a project whose times wait for its move.
+const OVERVIEW = {
+  {repo = "roc-apps", measured = true},
+  {repo = "roc-chat", lines = "45272", at = "bab918d", why = "pending", pending = true},
+  {repo = "shale", label = "Shale", lines = "33253", at = "eeb0aaa4", why = "not timed: its Roc is recipes and their tests"},
+  {repo = "roc-screensaver", measured = true},
+  {repo = "roc-markdown", measured = true},
+  {repo = "roc-syntax-color", measured = true},
+  {repo = "roc-types", lines = "76", at = "879e1f8", why = "a Zig program; its Roc is test fixtures"},
+  {repo = "roc-ast", lines = "7", at = "0d054a2", why = "a Zig program; its Roc is test fixtures"},
 }
 
 -- The steps and conditions of the stats tables, in the order they show.
@@ -338,11 +356,12 @@ function stats_html(rows, repo)
   return join(out, "\n")
 end
 
--- Every build's output size on each compiler, as its cold run left it.
+-- Every build's output size on each compiler, as its cold run left it, the
+-- largest project first.
 function sizes_html(rows)
   local repos = {}
-  for r in rows do
-    if (r.step == "build-dev" or r.step == "build-speed") and not has_item(repos, r.repo) then push(repos, r.repo) end
+  for o in OVERVIEW do
+    if has_key(o, "measured") then push(repos, o.repo) end
   end
   local out = {"<div class=\"table\"><table>", "<thead><tr><th>repository</th><th>build</th><th class=\"num\">bytes, old</th><th class=\"num\">bytes, RC1</th></tr></thead>", "<tbody>"}
   for repo in repos do
@@ -353,6 +372,34 @@ function sizes_html(rows)
         local what = st.label .. ", " .. escaped(basename(new.target))
         push(out, "<tr><td>" .. repo .. "</td><td>" .. what .. "</td><td class=\"num\">" .. commas(old.output_bytes) .. "</td><td class=\"num\">" .. commas(new.output_bytes) .. "</td></tr>")
       end
+    end
+  end
+  push(out, "</tbody></table></div>")
+  return join(out, "\n")
+end
+
+-- "old → RC1" for one step and condition's median wall seconds.
+function pair_cell(rows, repo, step, condition)
+  local old = stats_row(rows, repo, OLD_PIN, step, condition)
+  local new = stats_row(rows, repo, NEW_PIN, step, condition)
+  if old == nil or new == nil then fail("build_rc1_article: " .. STATS .. " lacks " .. repo .. " " .. step .. " " .. condition .. " on a compiler") end
+  return "<td class=\"num\">" .. old.wall_s .. " → " .. new.wall_s .. "</td>"
+end
+
+-- Every project, largest first: its lines of Roc, and its dev build after
+-- a root change and its cold check, old nightly against RC1.
+function overview_html(rows)
+  local out = {"<div class=\"table\"><table>", "<thead><tr><th>project</th><th class=\"num\">lines of Roc</th><th class=\"num\">dev build after an edit, s</th><th class=\"num\">cold check, s</th></tr></thead>", "<tbody>"}
+  for o in OVERVIEW do
+    local name = "<a href=\"https://github.com/showell/" .. o.repo .. "\">" .. get(o, "label", o.repo) .. "</a>"
+    if has_key(o, "measured") then
+      local r = stats_row(rows, o.repo, NEW_PIN, "check", "cold")
+      if r == nil then fail("build_rc1_article: " .. STATS .. " has no RC1 cold check for " .. o.repo) end
+      push(out, "<tr><td>" .. name .. "</td><td class=\"num\">" .. commas(r.roc_lines) .. "</td>" .. pair_cell(rows, o.repo, "build-dev", "root_changed") .. pair_cell(rows, o.repo, "check", "cold") .. "</tr>")
+    else
+      local why = escaped(o.why)
+      if has_key(o, "pending") then why = "<span class=\"pending\">pending</span>" end
+      push(out, "<tr><td>" .. name .. "</td><td class=\"num\">" .. commas(o.lines) .. "</td><td colspan=\"2\">" .. why .. "</td></tr>")
     end
   end
   push(out, "</tbody></table></div>")
@@ -386,11 +433,17 @@ function page()
   local out = {}
   for l in lines(prose) do
     local m = re_find(l, "^<!-- (snippet|repro|stats) ([a-z0-9-]+) -->$")
-    local bare = re_find(l, "^<!-- (knightproof|sizes) -->$")
+    local bare = re_find(l, "^<!-- (knightproof|sizes|overview) -->$")
     if bare ~= nil then
       if has_key(used, bare.group) then fail("build_rc1_article: " .. PROSE .. " names " .. bare.group .. " twice") end
       used[bare.group] = true
-      if bare.group == "knightproof" then push(out, knightproof_html(rows)) else push(out, sizes_html(rows)) end
+      if bare.group == "knightproof" then
+        push(out, knightproof_html(rows))
+      elseif bare.group == "sizes" then
+        push(out, sizes_html(rows))
+      else
+        push(out, overview_html(rows))
+      end
     elseif m == nil then
       push(out, l)
     else

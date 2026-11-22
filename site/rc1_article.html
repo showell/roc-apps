@@ -65,37 +65,68 @@ compiler. Each thing worth reporting has a reduced program beside it.</p>
 <p class="lede">Claude, an AI coding agent, made the moves, ran the measurements and wrote this page under Steve's
 supervision. Every commit linked here is on GitHub.</p>
 
-<h2>Summary</h2>
+<h2 id="ran">What we ran</h2>
+<p>Each project below runs its own full gate, and each gate is green at RC1 (roc-chat's is
+<span class="pending">pending</span>):</p>
+<ul>
+<li><strong>roc-apps</strong>: <code>roc check</code> of its 51 apps with no errors or warnings and 414 files
+formatted; Safari's gate (974 expects, 20 widgets built and 1089 of their tests, the tutorial, the proof, the page's
+drawing held to its frozen checksum); the chess gate; Dog Park's checks; Seattle Delivery's tests; book_builder's
+verify.</li>
+<li><strong>roc-screensaver</strong>: its 34 checks, among them <code>roc check</code> of 9 roots with no errors or
+warnings, <code>roc test</code> at its held counts, the PNG harness's frame checksums unchanged, the Windows
+cross-builds, and the three pages built with <code>--opt=speed</code> and seen running in a headless browser.</li>
+<li><strong>Shale</strong>: its Roc platform's self-test (15 runs held) and <code>roc check</code> of the cookbook's
+and the platform's 31 Roc roots, no errors or warnings.</li>
+<li><strong>roc-markdown</strong> and <strong>roc-syntax-color</strong>: their gates, green.</li>
+<li><strong>roc-types</strong> and <strong>roc-ast</strong>, our two tools built on the compiler's own code: rebuilt
+against RC1's commit, tested and published.</li>
+</ul>
+
+<h2 id="summary">Summary</h2>
+<h3>Possible issues for the Roc team</h3>
 <ul class="summary">
-<li><strong>RC1's dev builds default to "boxy" specialization</strong> (every build but <code>--opt=speed</code> does). Our chess proof, KnightProof, ran 22 times
-slower at run time built with <code>--opt=dev</code>: 344.7 s of CPU, against 15.6 s on the old nightly.
-<code>--specialize=yes</code> brings it back to 15.8 s, and the chess gate, the one dev-built check whose run time it
-moved, now passes it. <a href="#boxy">Read more below.</a></li>
+<li><strong>RC1's dev builds default to "boxy" specialization</strong> (every build but <code>--opt=speed</code>
+does). Our chess proof, KnightProof, ran 22 times slower at run time built with <code>--opt=dev</code>: 344.7 s of
+CPU, against 15.6 s on the old nightly. <code>--specialize=yes</code> brings it back to 15.8 s, and the chess gate,
+the one dev-built check whose run time it moved, now passes it. <a href="#boxy">Read more below.</a></li>
 <li><strong>A "duplicate definition" warning we think is a false one.</strong> A nested type's member that shares a
 name with a member of the type around it (<code>Crate.width</code> and <code>Crate.Lid.width</code>) gets the warning.
-The program runs correctly, and we have a reduced repro. roc-chat has five such sites, and renaming them so it can
+The program runs correctly, and there is a reduced repro. roc-chat has five such sites, and renaming them so it can
 move now is <span class="pending">pending</span>. <a href="#nested">Read more below.</a></li>
-<li><strong>The stricter nominal-type check caught a real mistake in our code.</strong> Our Safari code passed a plain
-record where the nominal type <code>Cat</code> (and <code>Bird</code>) was wanted, and the old nightly accepted it.
-The check also finds 15 errors in our checkout of roc-ray's platform, Luke Boswell's repository, which we don't
-maintain and which hasn't moved to RC1 yet.
-<a href="#nominal">Read more below.</a></li>
-<li><strong>A new shadowing warning.</strong> A parameter named like a definition at its module's top level, a type's
-own members included, now gets a "duplicate definition" warning. It found 88 real shadows in our code.
-<a href="#shadowing">Read more below.</a></li>
-<li><strong>Unsuffixed number literals no longer get a concrete type from a method call on them.</strong>
-<code>(0.0).to_bits()</code> is now a "missing method" error; <code>(0.0.F64).to_bits()</code> is fine.
-<a href="#literals">Read more below.</a></li>
-<li><strong>Glue changes.</strong> The erased callable's payload gains <code>on_copy</code> and
-<code>capture_size</code>, and there are new <code>RocOpaqueList</code> and <code>RocHeldList</code> types. Regenerating
-the glue showed both in its diff, our seam checks passed against it, and it was all our hosts needed. <a href="#glue">Read more below.</a></li>
-<li><strong>RC1 calls each hosted function through a generated wrapper</strong>, which moved where Shale's Roc
-platform says a script stopped. A frame-pointer walk in the host fixed it. <a href="#wrapper">Read more below.</a></li>
-<li><strong>Build times.</strong> Cold checks took more CPU in two of our four measured repositories and less in
-one. Warm checks, dev builds and tests were mostly 10 to 60 times faster, and rebuilds after an edit were faster by
-less. Release builds took the same time or less, and their outputs are about 10% bigger.
+<li><strong>Cold checks took about 2.4 times the CPU</strong> in two of our four timed projects, roc-syntax-color and
+roc-markdown (still under 1.5 s of CPU each); about the same in roc-screensaver, and less in roc-apps.
 <a href="#stats">Read more below.</a></li>
+<li><strong>Release outputs are 8 to 13% bigger.</strong> A small thing, noted for completeness.
+<a href="#sizes">Read more below.</a></li>
 </ul>
+<h3>Things we simply had to fix in our own code</h3>
+<ul class="summary">
+<li><strong>The new shadowing warning</strong>: a parameter named like a definition at its module's top level, a
+type's own members included. We renamed 88 real shadows. <a href="#shadowing">Read more below.</a></li>
+<li><strong>Unsuffixed number literals</strong> no longer get a concrete type from a method call on them
+(<code>(0.0).to_bits()</code>); we gave 14 of them a type. <a href="#literals">Read more below.</a></li>
+<li><strong>The stricter nominal-type check</strong> caught our Safari code passing a plain record where
+<code>Cat</code> and <code>Bird</code> were wanted, a real mistake the old nightly let through.
+<a href="#nominal">Read more below.</a></li>
+<li><strong>Glue changes</strong>: the erased callable's payload gains <code>on_copy</code> and
+<code>capture_size</code>, and there are new <code>RocOpaqueList</code> and <code>RocHeldList</code> types. We
+regenerated our glue, and our seam checks passed against it. <a href="#glue">Read more below.</a></li>
+<li><strong>Shale's stop sites.</strong> RC1 calls each hosted function through a generated wrapper, which moved where
+Shale's Roc platform said a script stopped; a frame-pointer walk in its host fixed that. <a href="#wrapper">Read more
+below.</a></li>
+<li><strong>The native roc-ray builds retired.</strong> roc-ray, Luke Boswell's platform, hasn't moved to RC1 yet (the
+nominal check finds 15 errors in our checkout of it), so our canvas apps run as web pages only.
+<a href="#nominal">Read more below.</a></li>
+</ul>
+
+<h2 id="glance">Every project at a glance</h2>
+<p>Largest first. The two times are the waits that matter most in a developer's day: a dev build after an edit,
+which is the inner loop, and a cold check, the first wait on a fresh checkout or a CI runner. Each is the median of
+three runs in wall seconds, old nightly → RC1; the <a href="#stats">build times</a> section has the rest, with CPU
+times. roc-syntax-color's cold check is mostly wall time that isn't CPU: its CPU went from 0.55 s to 1.34 s. Lines
+of Roc are counted at the commit timed, and for the projects not timed, on their main branch today.</p>
+<!-- overview -->
 
 <h2 id="knightproof">KnightProof's run time</h2>
 <p>CPU seconds of one run of the Knight's Tour proof's search, built each way. The program's run, not its build.</p>
@@ -105,7 +136,7 @@ less. Release builds took the same time or less, and their outputs are about 10%
 <h2 id="cost">What moving cost us</h2>
 <p>One line for each kind of change, with its reason:</p>
 <ul>
-<li><strong>88 parameters and locals renamed</strong> (48 in roc-chat, 31 in roc-apps, 5 in Shale, 4 in
+<li><strong>88 parameters and locals renamed</strong> (31 in roc-apps, 48 in roc-chat, 5 in Shale, 4 in
 roc-screensaver), for <a href="#shadowing">the shadowing warning</a>. Our gates fail on any warning.</li>
 <li><strong>14 number literals given a type</strong> (5 in roc-apps, 9 in roc-screensaver), for
 <a href="#literals">literal typing</a>.</li>
@@ -113,7 +144,7 @@ roc-screensaver), for <a href="#shadowing">the shadowing warning</a>. Our gates 
 <a href="#nominal">the nominal check</a>.</li>
 <li><strong>Shale's stop sites found by a frame-pointer walk</strong>, for <a href="#wrapper">the hosted-call
 wrapper</a>.</li>
-<li><strong>The glue regenerated</strong> in roc-screensaver, Shale's Roc platform and roc-apps' book_builder, for
+<li><strong>The glue regenerated</strong> in roc-apps' book_builder, Shale's Roc platform and roc-screensaver, for
 <a href="#glue">the glue changes</a>. roc-types also passes <code>BuildEnv.init</code> its new seventh argument, the
 specialization strategy.</li>
 <li><strong>One flag, <code>--specialize=yes</code>, in the chess gate</strong>, for <a href="#boxy">the boxy
@@ -129,30 +160,10 @@ own function, and a plain record passed where a nominal type was wanted. Our own
 <code>metres = |metres|</code> as an example. In those places RC1 surfaced our mistakes.</p>
 
 <h3>Repository by repository</h3>
+<p>Largest first.</p>
 <div class="table"><table>
 <thead><tr><th>repository</th><th>what the move took</th><th>commits</th></tr></thead>
 <tbody>
-<tr><td><a href="https://github.com/showell/roc-syntax-color">roc-syntax-color</a></td><td>The pin only; its gates
-are green.</td><td><a href="https://github.com/showell/roc-syntax-color/commit/5ba4459d1f9cf6fae51180192f727a5672c2eca8">5ba4459</a></td></tr>
-<tr><td><a href="https://github.com/showell/roc-markdown">roc-markdown</a></td><td>The pin only; its gates are
-green.</td><td><a href="https://github.com/showell/roc-markdown/commit/f3bc41af836a66a484f63bc23d70c1a7c3860274">f3bc41a</a></td></tr>
-<tr><td><a href="https://github.com/showell/roc-screensaver">roc-screensaver</a></td><td>4 renames, 9 typed literals
-and the glue. Its rendered frames are pixel-identical: the PNG harness's checksums didn't change.</td><td><a href="https://github.com/showell/roc-screensaver/commit/29774b1a6e26ac06c23dd836c6863415bfbbd3c7">29774b1</a>,
-<a href="https://github.com/showell/roc-screensaver/commit/a14102b87c01dacb3f3f4c9b4cb0cbbb37b8ef8d">a14102b</a>,
-<a href="https://github.com/showell/roc-screensaver/commit/094031915dd110f1f3021410491238d23df15ce1">0940319</a></td></tr>
-<tr><td><a href="https://github.com/showell/roc-ast">roc-ast</a></td><td>Rebuilt against 15177e9 and published as
-<a href="https://github.com/showell/roc-ast/releases/tag/roc-ast-flat1-0.1.0_RC1">roc-ast-flat1-0.1.0_RC1</a>.</td><td><a href="https://github.com/showell/roc-ast/commit/6ef6c4592b55b25c050c1091ff1ab1dfffeb995f">6ef6c45</a>,
-<a href="https://github.com/showell/roc-ast/commit/0d054a25dbfacfa5674f77c9be4b89c7fdf0c062">0d054a2</a></td></tr>
-<tr><td><a href="https://github.com/showell/roc-types">roc-types</a></td><td>Rebuilt against 15177e9 and published as
-<a href="https://github.com/showell/roc-types/releases/tag/roc-types-1-0.1.0_RC1">roc-types-1-0.1.0_RC1</a>, passing
-the new specialization strategy and stripping its release build.</td><td><a href="https://github.com/showell/roc-types/commit/6d522d34d0d8fee0da510f92c274ada6372d94a0">6d522d3</a>,
-<a href="https://github.com/showell/roc-types/commit/8e7a5e7f9c60779aeaac37d057b0df0b97aa1a16">8e7a5e7</a>,
-<a href="https://github.com/showell/roc-types/commit/ec68d81bb355ac76ef088d0d92119a0d1e0f298a">ec68d81</a>,
-<a href="https://github.com/showell/roc-types/commit/879e1f8652153ce705f4c620ed125e8368b1ea41">879e1f8</a></td></tr>
-<tr><td><a href="https://github.com/showell/shale">Shale</a> (its Roc platform and cookbook)</td><td>5 renames in
-the cookbook's Roc, and the platform's glue and frame-pointer stop sites.</td><td><a href="https://github.com/showell/shale/commit/0c451bc67134e8c71182fa1d4e6c379a57b907bc">0c451bc</a>,
-<a href="https://github.com/showell/shale/commit/9a842a26107ddbc8ddf252aa771a17abb43b3195">9a842a2</a>,
-<a href="https://github.com/showell/shale/commit/64e4892e310d9f52314b1f96cddd7052a5c2fafd">64e4892</a></td></tr>
 <tr><td><a href="https://github.com/showell/roc-apps">roc-apps</a></td><td>31 renames, the nominal Cat and Bird, 5
 typed literals, the chess gate's flag, the glue, and the native builds retired. The workaround for the crash that
 <a href="https://github.com/roc-lang/roc/pull/12925">roc#12925</a> fixed was already gone.</td><td><a href="https://github.com/showell/roc-apps/commit/6784d48a53f54bf118545237af34ac0024adfff8">6784d48</a>,
@@ -166,6 +177,27 @@ typed literals, the chess gate's flag, the glue, and the native builds retired. 
 <tr><td><a href="https://github.com/showell/roc-chat">roc-chat</a></td><td>48 renames, made at the old pin. The five
 nested-member sites, the pin move and its gates: <span class="pending">pending</span>.</td><td><a href="https://github.com/showell/roc-chat/commit/d56daed96a7d00614d6498f4078545e0f1356fbb">d56daed</a>;
 the move: <span class="pending">pending</span></td></tr>
+<tr><td><a href="https://github.com/showell/shale">Shale</a> (its Roc platform and cookbook)</td><td>5 renames in
+the cookbook's Roc, and the platform's glue and frame-pointer stop sites.</td><td><a href="https://github.com/showell/shale/commit/0c451bc67134e8c71182fa1d4e6c379a57b907bc">0c451bc</a>,
+<a href="https://github.com/showell/shale/commit/9a842a26107ddbc8ddf252aa771a17abb43b3195">9a842a2</a>,
+<a href="https://github.com/showell/shale/commit/64e4892e310d9f52314b1f96cddd7052a5c2fafd">64e4892</a></td></tr>
+<tr><td><a href="https://github.com/showell/roc-screensaver">roc-screensaver</a></td><td>4 renames, 9 typed literals
+and the glue. Its rendered frames are pixel-identical: the PNG harness's checksums didn't change.</td><td><a href="https://github.com/showell/roc-screensaver/commit/29774b1a6e26ac06c23dd836c6863415bfbbd3c7">29774b1</a>,
+<a href="https://github.com/showell/roc-screensaver/commit/a14102b87c01dacb3f3f4c9b4cb0cbbb37b8ef8d">a14102b</a>,
+<a href="https://github.com/showell/roc-screensaver/commit/094031915dd110f1f3021410491238d23df15ce1">0940319</a></td></tr>
+<tr><td><a href="https://github.com/showell/roc-markdown">roc-markdown</a></td><td>The pin only; its gates are
+green.</td><td><a href="https://github.com/showell/roc-markdown/commit/f3bc41af836a66a484f63bc23d70c1a7c3860274">f3bc41a</a></td></tr>
+<tr><td><a href="https://github.com/showell/roc-syntax-color">roc-syntax-color</a></td><td>The pin only; its gates
+are green.</td><td><a href="https://github.com/showell/roc-syntax-color/commit/5ba4459d1f9cf6fae51180192f727a5672c2eca8">5ba4459</a></td></tr>
+<tr><td><a href="https://github.com/showell/roc-types">roc-types</a></td><td>Rebuilt against 15177e9 and published as
+<a href="https://github.com/showell/roc-types/releases/tag/roc-types-1-0.1.0_RC1">roc-types-1-0.1.0_RC1</a>, passing
+the new specialization strategy and stripping its release build.</td><td><a href="https://github.com/showell/roc-types/commit/6d522d34d0d8fee0da510f92c274ada6372d94a0">6d522d3</a>,
+<a href="https://github.com/showell/roc-types/commit/8e7a5e7f9c60779aeaac37d057b0df0b97aa1a16">8e7a5e7</a>,
+<a href="https://github.com/showell/roc-types/commit/ec68d81bb355ac76ef088d0d92119a0d1e0f298a">ec68d81</a>,
+<a href="https://github.com/showell/roc-types/commit/879e1f8652153ce705f4c620ed125e8368b1ea41">879e1f8</a></td></tr>
+<tr><td><a href="https://github.com/showell/roc-ast">roc-ast</a></td><td>Rebuilt against 15177e9 and published as
+<a href="https://github.com/showell/roc-ast/releases/tag/roc-ast-flat1-0.1.0_RC1">roc-ast-flat1-0.1.0_RC1</a>.</td><td><a href="https://github.com/showell/roc-ast/commit/6ef6c4592b55b25c050c1091ff1ab1dfffeb995f">6ef6c45</a>,
+<a href="https://github.com/showell/roc-ast/commit/0d054a25dbfacfa5674f77c9be4b89c7fdf0c062">0d054a2</a></td></tr>
 </tbody></table></div>
 
 <h2 id="boxy">Dev builds default to boxy specialization</h2>
@@ -210,7 +242,7 @@ so we retired our native builds rather than wait.</p>
 "duplicate definition" warning, and in a type module that includes the type's own members. The old nightly checks
 this program clean:</p>
 <!-- repro shadow -->
-<p>The warning found 88 such names across roc-chat, roc-apps, Shale and roc-screensaver, most often a getter's name
+<p>The warning found 88 such names across roc-apps, roc-chat, Shale and roc-screensaver, most often a getter's name
 reused for the parameter of the constructor beside it. Inside such a function, the parameter hides the top-level
 definition, so each shadow was a body that could seem to mean the function. Our Safari book used one as an example;
 the code it quotes went from this:</p>
@@ -229,7 +261,7 @@ fold whose accumulator calls <code>max</code> and <code>min</code> needed it:</p
 type. The compiler's message says exactly what to do, and each of our 14 fixes was that one change.</p>
 
 <h2 id="glue">Glue changes</h2>
-<p>Three of our hosts, roc-screensaver's, Shale's Roc platform and roc-apps' book_builder, keep a snapshot of
+<p>Three of our hosts, roc-apps' book_builder, Shale's Roc platform and roc-screensaver's, keep a snapshot of
 <code>roc glue</code>'s output that a pin move regenerates, so the changes showed up in its diff. The erased
 callable's payload has two new fields:</p>
 <!-- snippet erased-payload -->
@@ -292,17 +324,17 @@ change to an imported module, they were 1.3 to 11 times faster.</li>
 roc-apps, the one wasm dev build we measured.</li>
 </ul>
 
-<h3>roc-syntax-color</h3>
-<!-- stats roc-syntax-color -->
-<h3>roc-markdown</h3>
-<!-- stats roc-markdown -->
-<h3>roc-screensaver</h3>
-<!-- stats roc-screensaver -->
 <h3>roc-apps (Safari)</h3>
 <!-- stats roc-apps -->
 <h3>roc-chat</h3>
 <p>roc-chat's build times: <span class="pending">pending</span>, with its move.</p>
-<h3>Output sizes</h3>
+<h3>roc-screensaver</h3>
+<!-- stats roc-screensaver -->
+<h3>roc-markdown</h3>
+<!-- stats roc-markdown -->
+<h3>roc-syntax-color</h3>
+<!-- stats roc-syntax-color -->
+<h3 id="sizes">Output sizes</h3>
 <p>Each build's output on each compiler, in bytes. roc-syntax-color's is an executable; roc-markdown's builds and
 roc-screensaver's dev build are x64 musl archives; the rest are wasm.</p>
 <!-- sizes -->
