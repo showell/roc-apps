@@ -1,6 +1,6 @@
 published 2026-11-22T13:49:07Z
 safari-walk 64e8b76 (64e8b76fe1ea10bb6ed19ddc4402c0554ca30e92); the repo has no remote yet
-rocco-engine firefox-fixes 400a208 (400a208fff5e59f8ae6c161048f2a5cfc15b46d3), NOT on GitHub yet: https://github.com/showell/rocco-engine.git firefox-fixes is at a431d1d
+rocco-engine firefox-fixes 400a208 (400a208fff5e59f8ae6c161048f2a5cfc15b46d3), on GitHub: https://github.com/showell/rocco-engine/tree/firefox-fixes
 roc 0.1.0-rc1; web host built release (scripts/build_web_host.shale)
 4536718 bytes  index.data
 2359 bytes  index.data.js
