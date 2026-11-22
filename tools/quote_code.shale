@@ -29,7 +29,9 @@
 -- to}`, keeps each run from the line holding the text `from` through the one
 -- holding `to` (from the first line, or through the last, when one is left
 -- out); each text must be in the definition, or the file, exactly once, so
--- an edit that removes or repeats it stops the build. `members`, the names
+-- an edit that removes or repeats it stops the build. A piece `{line}` is
+-- the one line that is that text, for a line that is the start of others.
+-- `members`, the names
 -- of members of a type's block, keeps the type's head (its doc and its first
 -- line), each member and its last line.
 --
@@ -219,12 +221,27 @@ function anchor_index(q, a, anchor, within)
   return hits[1]
 end
 
+-- Where in the answer's lines the one line that is `text`, less its
+-- indent, is.
+function line_index(q, a, text, within)
+  local hits = {}
+  for i = 1, #a.lines do
+    if sub(a.lines[i].text, a.indent + 1) == text then push(hits, i) end
+  end
+  if #hits ~= 1 then fail("the line \"" .. text .. "\" is in the " .. within .. " " .. #hits .. " times, and a piece's line must be there once, in " .. shown_of(q)) end
+  return hits[1]
+end
+
 -- The pieces a quote's anchors keep, each `{first, last}`.
 function anchored_pieces(q, a, within)
   local pieces = {}
   for p in q.pieces do
     local first = 1
     local last = #a.lines
+    if has_key(p, "line") then
+      first = line_index(q, a, p.line, within)
+      last = first
+    end
     if has_key(p, "from") then first = anchor_index(q, a, p.from, within) end
     if has_key(p, "to") then last = anchor_index(q, a, p.to, within) end
     if last < first then fail("\"" .. p.to .. "\" is above \"" .. p.from .. "\", at line " .. a.lines[last].at .. " and line " .. a.lines[first].at) end

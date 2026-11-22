@@ -23,3 +23,10 @@ The repository's own scripts, beside `check.shale` at its root.
   the medians to `docs/rc1-build-stats.tsv`, whose header names every
   column; `docs/rc1-build-box.txt` describes the box they ran on. Its header
   says how to run it.
+- `quote_code.shale` quotes code by name for every page that shows code: a
+  Roc definition through Roc's parser, or a file, from the tree or at a git
+  commit, cut to the pieces a quote asks for. The Safari book's pre-step,
+  the security idioms page and the Roc on Shale pages all quote through it.
+  A page that quotes another repository keeps a lock beside its builder,
+  each quote's commit and text hash, so its check fails, naming the quote,
+  when the code under it moves. Its header says the format.
