@@ -1,5 +1,5 @@
-published 2026-11-19T16:25:12Z
-roc nightly-2026-11-03-34bd006
+published 2026-11-22T21:13:18Z
+roc 0.1.0_RC1
 opt speed
-roc-apps e7f109d8
-sha256 99b14d3494f4403f  79292 bytes  sky_widget.wasm
+roc-apps 68ce6abf
+sha256 197362f115972101  86950 bytes  sky_widget.wasm
