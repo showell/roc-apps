@@ -238,6 +238,7 @@ computation.</p>
 <li><a href="#check_stacking">check_stacking</a></li>
 <li><a href="#hunt_names">hunt_names</a></li>
 <li><a href="#check_boundaries">check_boundaries</a></li>
+<li><a href="#wrap_long_lines">wrap_long_lines</a></li>
 </ul></li>
 <li><a href="#section-programs-that-read-shale-itself">Programs that read Shale itself</a>
 <ul>
@@ -16057,7 +16058,7 @@ fail_if_refused(<span class="syn-string">&quot;hunt_names&quot;</span>, parsed.r
 <nav class="steps"><a href="#check_stacking">← previous</a> · <a href="#contents">contents</a> · <a href="#check_boundaries">next →</a></nav>
 </section>
 <section class="example" id="check_boundaries">
-<nav class="steps"><a href="#hunt_names">← previous</a> · <a href="#contents">contents</a> · <a href="#count_shale_stops">next →</a></nav>
+<nav class="steps"><a href="#hunt_names">← previous</a> · <a href="#contents">contents</a> · <a href="#wrap_long_lines">next →</a></nav>
 <h3><a href="#check_boundaries">check_boundaries</a></h3>
 <p>Whether each function's boundary earns its keep and each parameter is really one, from Roc's own parse trees across a tree: a one-caller wrapper, a parameter every call fills with the same literal, a constant written as a function, dead code, alike branches and, with the types, a <code>Bool</code> flag passed as a literal.</p>
 <p class="facts">Its effects: <code>Shale.arg!</code>, <code>Shale.exists!</code>, <code>Shale.fail!</code>, <code>Shale.glob!</code>, <code>Shale.print!</code>, <code>Shale.re_find!</code>, <code>Shale.read!</code>, <code>Shale.real!</code>, <code>Shale.roc_tree!</code>, <code>Shale.run!</code>.<br>Roc: 1,686 lines in 7 files. Shale original: 830 lines, plus 497 lines in the 5 libraries it loads, which other recipes share.</p>
@@ -18597,14 +18598,1165 @@ fail_if_refused(<span class="syn-string">&quot;check_boundaries&quot;</span>, pa
   print(<span class="syn-string">&quot;check_boundaries (Roc) self_test: PASS (each check fires on its plants alone, the quiet_ plants on none)&quot;</span>)
 <span class="syn-keyword">end</span>
 </code></pre>
-<nav class="steps"><a href="#hunt_names">← previous</a> · <a href="#contents">contents</a> · <a href="#count_shale_stops">next →</a></nav>
+<nav class="steps"><a href="#hunt_names">← previous</a> · <a href="#contents">contents</a> · <a href="#wrap_long_lines">next →</a></nav>
+</section>
+<section class="example" id="wrap_long_lines">
+<nav class="steps"><a href="#check_boundaries">← previous</a> · <a href="#contents">contents</a> · <a href="#count_shale_stops">next →</a></nav>
+<h3><a href="#wrap_long_lines">wrap_long_lines</a></h3>
+<p>Long Roc lines shortened and groups laid out by the stacking rule, through trailing commas that <code>roc fmt</code> reads, on a work copy pass after pass until nothing changes, by the Roc library that is now the rule's one home, the lines left wide listed after.</p>
+<p class="facts">Its effects: <code>Shale.arg!</code>, <code>Shale.exists!</code>, <code>Shale.fail!</code>, <code>Shale.glob!</code>, <code>Shale.mkdir!</code>, <code>Shale.print!</code>, <code>Shale.re_find!</code>, <code>Shale.re_replace!</code>, <code>Shale.read!</code>, <code>Shale.real!</code>, <code>Shale.remove_tree!</code>, <code>Shale.roc_tree!</code>, <code>Shale.run!</code>, <code>Shale.write!</code>.<br>Roc: 725 lines in 4 files. Shale original: 405 lines, plus 540 lines in the 4 libraries it loads, which other recipes share.</p>
+<h4>Roc</h4>
+<p class="file">It also imports <code>Bytes</code>, <code>Stacking</code>, <code>Text</code> from <a href="#shared-library">the shared Roc library</a>.</p>
+<p class="file"><a href="https://github.com/showell/shale/blob/fbf5379c0f24c6f2b2beea9b82910f4a75554d85/cookbook/roc/wrap_long_lines/wrap_long_lines.roc"><code>cookbook/roc/wrap_long_lines/wrap_long_lines.roc</code></a>, 158 lines</p>
+<pre><code><span class="syn-comment">## wrap_long_lines, in Roc on Shale&#39;s platform (roc_platform/README.md): long</span>
+<span class="syn-comment">## Roc lines shortened, and with `tokens=N` groups laid out by the stacking</span>
+<span class="syn-comment">## rule, by trailing commas that `roc fmt` reads. Its launcher,</span>
+<span class="syn-comment">## cookbook/roc/wrap_long_lines.shale, is how it is run, and its header says</span>
+<span class="syn-comment">## the rule, the rewrite and the list it prints. check_goldens.shale, beside</span>
+<span class="syn-comment">## this, holds its output and the files it rewrites to its goldens.</span>
+<span class="syn-comment">##</span>
+<span class="syn-comment">##   cd &lt;repo&gt; &amp;&amp; shale cookbook:roc/wrap_long_lines.shale dir=roc width=100</span>
+<span class="syn-comment">##   cd &lt;repo&gt; &amp;&amp; shale cookbook:roc/wrap_long_lines.shale dir=app,platform tokens=6</span>
+<span class="syn-comment">##   shale cookbook:roc/wrap_long_lines.shale self_test=1</span>
+<span class="syn-comment">##</span>
+<span class="syn-comment">## The arguments: `dir` (`roc`; several, comma-separated), `width` (100),</span>
+<span class="syn-comment">## `tokens` (0, wide lines alone), `write` (`write=0` reports and writes</span>
+<span class="syn-comment">## nothing), `self_test` and `work_base`, the folder the work copies go in,</span>
+<span class="syn-comment">## which the launcher gives.</span>
+<span class="syn-comment">##</span>
+<span class="syn-comment">## This root reads the arguments, rewrites each folder (Rewrite) and prints</span>
+<span class="syn-comment">## the lines left wide (WideLines); SelfTest is the self-test. Groups,</span>
+<span class="syn-comment">## Stacking, Packed and Bytes are the cookbook&#39;s Roc library,</span>
+<span class="syn-comment">## cookbook/roc/lib/, the one home of the stacking rule.</span>
+<span class="syn-comment">## budget: steps=1000000000 read_bytes=2000000000 arena_bytes=2000000000 output_bytes=4000000 changes=5000 roc_cpu_ms=600000</span>
+<span class="syn-keyword">app</span> [main!] { lib: <span class="syn-string">&quot;../lib/main.roc&quot;</span>, pf: <span class="syn-keyword">platform</span> <span class="syn-string">&quot;../../../roc_platform/platform/main.roc&quot;</span> }
+
+<span class="syn-keyword">import</span> pf.<span class="syn-type">Shale</span>
+<span class="syn-keyword">import</span> lib.<span class="syn-type">Stacking</span>
+<span class="syn-keyword">import</span> lib.<span class="syn-type">Text</span>
+<span class="syn-keyword">import</span> <span class="syn-type">Rewrite</span>
+<span class="syn-keyword">import</span> <span class="syn-type">SelfTest</span>
+<span class="syn-keyword">import</span> <span class="syn-type">WideLines</span>
+
+<span class="syn-name">main!</span> : {} =&gt; {}
+<span class="syn-name">main!</span> = |{}| {
+	self_test = <span class="syn-type">Shale</span>.arg!(<span class="syn-string">&quot;self_test&quot;</span>, <span class="syn-string">&quot;&quot;</span>) == <span class="syn-string">&quot;1&quot;</span>
+	work_base = <span class="syn-type">Shale</span>.arg!(<span class="syn-string">&quot;work_base&quot;</span>, <span class="syn-string">&quot;scratch:&quot;</span>)
+	dirs_given = <span class="syn-type">Shale</span>.arg!(<span class="syn-string">&quot;dir&quot;</span>, <span class="syn-string">&quot;roc&quot;</span>)
+	width = integer_of!(<span class="syn-string">&quot;width&quot;</span>, <span class="syn-type">Shale</span>.arg!(<span class="syn-string">&quot;width&quot;</span>, <span class="syn-string">&quot;100&quot;</span>))
+	tokens = <span class="syn-keyword">if</span> self_test {
+		<span class="syn-type">Stacking</span>.stack_tokens
+	} <span class="syn-keyword">else</span> {
+		integer_of!(<span class="syn-string">&quot;tokens&quot;</span>, <span class="syn-type">Shale</span>.arg!(<span class="syn-string">&quot;tokens&quot;</span>, <span class="syn-string">&quot;0&quot;</span>))
+	}
+	write_given = <span class="syn-type">Shale</span>.arg!(<span class="syn-string">&quot;write&quot;</span>, <span class="syn-string">&quot;1&quot;</span>)
+	<span class="syn-keyword">if</span> write_given != <span class="syn-string">&quot;0&quot;</span> <span class="syn-keyword">and</span> write_given != <span class="syn-string">&quot;1&quot;</span> {
+		<span class="syn-type">Shale</span>.fail!(<span class="syn-string">&quot;wrap_long_lines: write=</span>${write_given}<span class="syn-string">: write must be 1 (the default) or 0&quot;</span>)
+	}
+	write = self_test <span class="syn-keyword">or</span> write_given == <span class="syn-string">&quot;1&quot;</span>
+	roc = <span class="syn-type">Rewrite</span>.roc_bin!(self_test)
+	settings = { rule: { tokens, width }, roc, work_base }
+	<span class="syn-keyword">if</span> self_test {
+		<span class="syn-type">SelfTest</span>.run!(settings)
+	} <span class="syn-keyword">else</span> {
+		<span class="syn-keyword">var</span> $report = <span class="syn-type">WideLines</span>.fresh
+		<span class="syn-keyword">for</span> dir <span class="syn-keyword">in</span> dirs_of!(dirs_given) {
+			work = <span class="syn-type">Rewrite</span>.work_of!(dir, { self_test: <span class="syn-type">Bool.False</span>, work_base })
+			done = <span class="syn-keyword">match</span> <span class="syn-type">Rewrite</span>.rewrite_in_work!(dir, { work, settings }) {
+				<span class="syn-type">Ok</span>(finished) =&gt; finished
+				<span class="syn-type">Err</span>(<span class="syn-type">StillChanging</span>(touched)) =&gt; {
+					<span class="syn-type">Shale</span>.fail!(<span class="syn-type">Rewrite</span>.still_changing(touched))
+					{ work, paths: [] }
+				}
+			}
+			at = <span class="syn-keyword">if</span> write {
+				<span class="syn-type">Rewrite</span>.write_back!(dir, done)
+				dir
+			} <span class="syn-keyword">else</span> {
+				done.work
+			}
+			$report = <span class="syn-type">WideLines</span>.report_wide_lines!($report, { dir, at, paths: done.paths, width })
+			<span class="syn-type">Shale</span>.remove_tree!(done.work)
+		}
+		remove_work_base!(work_base)
+		report = $report
+		said = <span class="syn-keyword">if</span> write {
+			<span class="syn-string">&quot;&quot;</span>
+		} <span class="syn-keyword">else</span> {
+			<span class="syn-string">&quot;report, nothing written: &quot;</span>
+		}
+		print_findings!(<span class="syn-string">&quot;</span>${said}${<span class="syn-type">WideLines</span>.summary(report, width)}<span class="syn-string">&quot;</span>, report.long)
+		fail_if_refused!(report.refused)
+	}
+	<span class="syn-keyword">if</span> self_test {
+		remove_work_base!(work_base)
+	}
+}
+
+<span class="syn-comment">## The whole number an argument gives; another value stops the run, as</span>
+<span class="syn-comment">## Shale&#39;s `arg` does for an integer default. (Each `Shale.arg!` names its</span>
+<span class="syn-comment">## argument as a literal, so the launcher&#39;s check of the values finds it.)</span>
+<span class="syn-name">integer_of!</span> : <span class="syn-type">Str</span>, <span class="syn-type">Str</span> =&gt; <span class="syn-type">U64</span>
+<span class="syn-name">integer_of!</span> = |name, given|
+	<span class="syn-keyword">match</span> <span class="syn-type">I64</span>.from_str(given) {
+		<span class="syn-type">Ok</span>(value) <span class="syn-keyword">if</span> value &gt;= <span class="syn-number">0</span> =&gt; value.to_u64_wrap()
+		<span class="syn-type">Ok</span>(_) =&gt; {
+			<span class="syn-type">Shale</span>.fail!(<span class="syn-string">&quot;wrap_long_lines: </span>${name}<span class="syn-string">=</span>${given}<span class="syn-string"> is below 0&quot;</span>)
+			<span class="syn-number">0</span>
+		}
+		<span class="syn-type">Err</span>(_) =&gt; {
+			<span class="syn-type">Shale</span>.fail!(<span class="syn-string">&quot;`arg`: </span>${name}<span class="syn-string">=</span>${given}<span class="syn-string"> is not an integer, and its default is one&quot;</span>)
+			<span class="syn-number">0</span>
+		}
+	}
+
+<span class="syn-comment">## The folders `dir=` names, each held to be a path and not an option.</span>
+<span class="syn-name">dirs_of!</span> : <span class="syn-type">Str</span> =&gt; <span class="syn-type">List</span>(<span class="syn-type">Str</span>)
+<span class="syn-name">dirs_of!</span> = |given| {
+	<span class="syn-keyword">var</span> $dirs = []
+	<span class="syn-keyword">for</span> piece <span class="syn-keyword">in</span> given.split_on(<span class="syn-string">&quot;,&quot;</span>) {
+		dir = <span class="syn-type">Text</span>.trim(piece)
+		<span class="syn-keyword">if</span> dir.starts_with(<span class="syn-string">&quot;-&quot;</span>) {
+			<span class="syn-type">Shale</span>.fail!(<span class="syn-string">&quot;`wrap_long_lines`&#39;s `dir` is \&quot;</span>${dir}<span class="syn-string">\&quot;: a value that starts with `-` would be one of the program&#39;s options&quot;</span>)
+		}
+		<span class="syn-keyword">if</span> dir != <span class="syn-string">&quot;&quot;</span> {
+			$dirs = $dirs.append(dir)
+		}
+	}
+	<span class="syn-keyword">if</span> $dirs.is_empty() {
+		<span class="syn-type">Shale</span>.fail!(<span class="syn-string">&quot;wrap_long_lines: dir= names no folder&quot;</span>)
+	}
+	$dirs
+}
+
+<span class="syn-comment">## The work folder, when the launcher made a fresh one for want of a</span>
+<span class="syn-comment">## `scratch:` mount, removed once the run has finished.</span>
+<span class="syn-name">remove_work_base!</span> : <span class="syn-type">Str</span> =&gt; {}
+<span class="syn-name">remove_work_base!</span> = |work_base| {
+	<span class="syn-keyword">if</span> work_base != <span class="syn-string">&quot;scratch:&quot;</span> {
+		<span class="syn-type">Shale</span>.remove_tree!(work_base)
+	}
+}
+
+<span class="syn-comment">## The summary, each line listed, then the summary again</span>
+<span class="syn-comment">## (cookbook/findings.shale): the first copy survives a cut output, and a</span>
+<span class="syn-comment">## gate reads the last line.</span>
+<span class="syn-name">print_findings!</span> : <span class="syn-type">Str</span>, <span class="syn-type">List</span>(<span class="syn-type">Str</span>) =&gt; {}
+<span class="syn-name">print_findings!</span> = |summary, listed| {
+	<span class="syn-type">Shale</span>.print!(summary)
+	<span class="syn-keyword">if</span> !(listed.is_empty()) {
+		<span class="syn-keyword">for</span> line <span class="syn-keyword">in</span> listed {
+			<span class="syn-type">Shale</span>.print!(line)
+		}
+		<span class="syn-type">Shale</span>.print!(summary)
+	}
+}
+
+<span class="syn-comment">## The files Roc&#39;s parser refused, named, then a stop</span>
+<span class="syn-comment">## (cookbook/roc/parsed.shale&#39;s `fail_if_refused`); nothing when it refused</span>
+<span class="syn-comment">## none.</span>
+<span class="syn-name">fail_if_refused!</span> : <span class="syn-type">List</span>(<span class="syn-type">Str</span>) =&gt; {}
+<span class="syn-name">fail_if_refused!</span> = |refused| {
+	<span class="syn-keyword">if</span> !(refused.is_empty()) {
+		<span class="syn-keyword">for</span> refusal <span class="syn-keyword">in</span> refused {
+			<span class="syn-type">Shale</span>.print!(<span class="syn-string">&quot;refused: </span>${refusal}<span class="syn-string">&quot;</span>)
+		}
+		refusals = <span class="syn-string">&quot;roc-ast refused </span>${refused.len().to_str()}<span class="syn-string"> files (named above)&quot;</span>
+		why = <span class="syn-string">&quot;which have no tree to judge; every other file was judged&quot;</span>
+		<span class="syn-type">Shale</span>.fail!(<span class="syn-string">&quot;wrap_long_lines: </span>${refusals}<span class="syn-string">, </span>${why}<span class="syn-string">&quot;</span>)
+	}
+}
+</code></pre>
+<p class="file"><a href="https://github.com/showell/shale/blob/fbf5379c0f24c6f2b2beea9b82910f4a75554d85/cookbook/roc/wrap_long_lines/Rewrite.roc"><code>cookbook/roc/wrap_long_lines/Rewrite.roc</code></a>, 271 lines</p>
+<pre><code><span class="syn-comment">## The rewrite of a folder: its .roc files copied to a work copy, then pass</span>
+<span class="syn-comment">## after pass, each a trailing comma given to each line&#39;s group that should</span>
+<span class="syn-comment">## stack and taken from each stacked group that should sit on one line, with</span>
+<span class="syn-comment">## `roc fmt` run on the work copy after each, until a pass changes nothing.</span>
+<span class="syn-comment">## The changed files are written back only once the rewrite has finished, so</span>
+<span class="syn-comment">## a rewrite that never settles leaves the folder as it was. The rule and its</span>
+<span class="syn-comment">## pieces are the cookbook&#39;s Roc library&#39;s Stacking; the Roc is the tree&#39;s</span>
+<span class="syn-comment">## own (cookbook/roc/pinned.shale), run by its OS path.</span>
+<span class="syn-keyword">import</span> pf.<span class="syn-type">Shale</span>
+<span class="syn-keyword">import</span> lib.<span class="syn-type">Bytes</span>
+<span class="syn-keyword">import</span> lib.<span class="syn-type">Stacking</span>
+<span class="syn-keyword">import</span> lib.<span class="syn-type">Text</span>
+
+<span class="syn-type">Rewrite</span> := [].{
+
+	<span class="syn-comment">## What a rewrite runs by: the stacking rule (`tokens` 0 wraps wide lines</span>
+	<span class="syn-comment">## alone), the Roc&#39;s OS path, and the folder the work copies go in.</span>
+	<span class="syn-type">Settings</span> : { rule : <span class="syn-type">Stacking.Rule</span>, roc : <span class="syn-type">Str</span>, work_base : <span class="syn-type">Str</span> }
+
+	<span class="syn-comment">## A finished rewrite: the work copy that holds it, and the folder&#39;s .roc</span>
+	<span class="syn-comment">## files, each as its path inside the folder.</span>
+	<span class="syn-type">Done</span> : { work : <span class="syn-type">Str</span>, paths : <span class="syn-type">List</span>(<span class="syn-type">Str</span>) }
+
+	<span class="syn-comment">## The most passes a rewrite makes.</span>
+	<span class="syn-name">max_passes</span> : <span class="syn-type">U64</span>
+	<span class="syn-name">max_passes</span> = <span class="syn-number">8</span>
+
+	<span class="syn-comment">## The work copy of folder `dir`: the self-test&#39;s is a name of its own,</span>
+	<span class="syn-comment">## any other&#39;s is named for the folder&#39;s OS path.</span>
+	<span class="syn-name">work_of!</span> : <span class="syn-type">Str</span>, { self_test : <span class="syn-type">Bool</span>, work_base : <span class="syn-type">Str</span> } =&gt; <span class="syn-type">Str</span>
+	<span class="syn-name">work_of!</span> = |dir, given|
+		<span class="syn-keyword">if</span> given.self_test {
+			<span class="syn-type">Text</span>.path_under(given.work_base, <span class="syn-string">&quot;roc_commas_work/self_test&quot;</span>)
+		} <span class="syn-keyword">else</span> {
+			named = <span class="syn-type">Shale</span>.re_replace!(<span class="syn-type">Shale</span>.real!(dir), <span class="syn-string">&quot;[^A-Za-z0-9]&quot;</span>, <span class="syn-string">&quot;_&quot;</span>)
+			<span class="syn-type">Text</span>.path_under(given.work_base, <span class="syn-string">&quot;roc_commas_work/</span>${named}<span class="syn-string">&quot;</span>)
+		}
+
+	<span class="syn-comment">## The .roc files of folder `dir`, each as its path inside it.</span>
+	<span class="syn-name">roc_paths_in_dir!</span> : <span class="syn-type">Str</span> =&gt; <span class="syn-type">List</span>(<span class="syn-type">Str</span>)
+	<span class="syn-name">roc_paths_in_dir!</span> = |dir| {
+		cut = dir.count_utf8_bytes() + <span class="syn-number">1</span>
+		<span class="syn-type">Shale</span>.glob!(<span class="syn-string">&quot;</span>${dir}<span class="syn-string">/**/*.roc&quot;</span>).map(|path| <span class="syn-type">Text</span>.bytes_of(path, { start: cut, count: path.count_utf8_bytes() }))
+	}
+
+	<span class="syn-comment">## Rewrites the work copy `work` of folder `dir` until a pass changes</span>
+	<span class="syn-comment">## nothing, printing each pass. A rewrite still changing after</span>
+	<span class="syn-comment">## `max_passes` passes is `StillChanging`, with the files the last pass</span>
+	<span class="syn-comment">## changed, named as the folder&#39;s.</span>
+	<span class="syn-name">rewrite_in_work!</span> : <span class="syn-type">Str</span>, { work : <span class="syn-type">Str</span>, settings : <span class="syn-type">Rewrite.Settings</span> } =&gt; <span class="syn-type">Try</span>(<span class="syn-type">Rewrite.Done</span>, [<span class="syn-type">StillChanging</span>(<span class="syn-type">List</span>(<span class="syn-type">Str</span>))])
+	<span class="syn-name">rewrite_in_work!</span> = |dir, at| {
+		work = at.work
+		rule = at.settings.rule
+		paths = <span class="syn-type">Rewrite</span>.roc_paths_in_dir!(dir)
+		fresh_work_copy!(dir, { work, paths })
+		run_roc_fmt!(work, at.settings.roc)
+		$pass : <span class="syn-type">U64</span>
+		<span class="syn-keyword">var</span> $pass = <span class="syn-number">1</span>
+		$changed : <span class="syn-type">U64</span>
+		<span class="syn-keyword">var</span> $changed = <span class="syn-number">1</span>
+		<span class="syn-keyword">var</span> $touched = []
+		<span class="syn-comment"># A file&#39;s text when a pass last left it alone. A later pass would</span>
+		<span class="syn-comment"># leave the same text alone again, so it is not read for groups twice.</span>
+		<span class="syn-keyword">var</span> $settled = <span class="syn-type">Dict</span>.empty()
+		<span class="syn-keyword">while</span> $changed &gt; <span class="syn-number">0</span> <span class="syn-keyword">and</span> $pass &lt;= <span class="syn-type">Rewrite</span>.max_passes {
+			$changed = <span class="syn-number">0</span>
+			$touched = []
+			<span class="syn-keyword">for</span> path <span class="syn-keyword">in</span> paths {
+				text = <span class="syn-type">Rewrite</span>.read_text!(<span class="syn-string">&quot;</span>${work}<span class="syn-string">/</span>${path}<span class="syn-string">&quot;</span>)
+				<span class="syn-keyword">if</span> $settled.get(path) != <span class="syn-type">Ok</span>(text) {
+					n = rewrite_file!(<span class="syn-string">&quot;</span>${work}<span class="syn-string">/</span>${path}<span class="syn-string">&quot;</span>, { text, rule })
+					<span class="syn-keyword">if</span> n &gt; <span class="syn-number">0</span> {
+						$changed = $changed + n
+						$touched = $touched.append(<span class="syn-string">&quot;</span>${dir}<span class="syn-string">/</span>${path}<span class="syn-string">&quot;</span>)
+					} <span class="syn-keyword">else</span> {
+						$settled = $settled.insert(path, text)
+					}
+				}
+			}
+			<span class="syn-type">Shale</span>.print!(<span class="syn-string">&quot;</span>${dir}<span class="syn-string">: pass </span>${$pass.to_str()}<span class="syn-string">: </span>${$changed.to_str()}<span class="syn-string"> trailing commas added or taken out&quot;</span>)
+			run_roc_fmt!(work, at.settings.roc)
+			$pass = $pass + <span class="syn-number">1</span>
+		}
+		<span class="syn-keyword">if</span> $changed &gt; <span class="syn-number">0</span> {
+			<span class="syn-type">Err</span>(<span class="syn-type">StillChanging</span>($touched))
+		} <span class="syn-keyword">else</span> {
+			<span class="syn-type">Ok</span>({ work, paths })
+		}
+	}
+
+	<span class="syn-comment">## The stop a rewrite still changing makes, naming the files it changed.</span>
+	<span class="syn-name">still_changing</span> : <span class="syn-type">List</span>(<span class="syn-type">Str</span>) -&gt; <span class="syn-type">Str</span>
+	<span class="syn-name">still_changing</span> = |touched|
+		<span class="syn-string">&quot;wrap_long_lines: still changing after </span>${<span class="syn-type">Rewrite</span>.max_passes.to_str()}<span class="syn-string"> passes, so no file was written: </span>${<span class="syn-type">Str</span>.join_with(touched, <span class="syn-string">&quot;, &quot;</span>)}<span class="syn-string">&quot;</span>
+
+	<span class="syn-comment">## Writes each file the rewrite changed back to folder `dir`, and says</span>
+	<span class="syn-comment">## how many.</span>
+	<span class="syn-name">write_back!</span> : <span class="syn-type">Str</span>, <span class="syn-type">Rewrite.Done</span> =&gt; {}
+	<span class="syn-name">write_back!</span> = |dir, done| {
+		<span class="syn-keyword">var</span> $changed = []
+		<span class="syn-keyword">for</span> path <span class="syn-keyword">in</span> done.paths {
+			text = <span class="syn-type">Rewrite</span>.read_text!(<span class="syn-string">&quot;</span>${done.work}<span class="syn-string">/</span>${path}<span class="syn-string">&quot;</span>)
+			<span class="syn-keyword">if</span> text != <span class="syn-type">Rewrite</span>.read_text!(<span class="syn-string">&quot;</span>${dir}<span class="syn-string">/</span>${path}<span class="syn-string">&quot;</span>) {
+				$changed = $changed.append({ path: <span class="syn-string">&quot;</span>${dir}<span class="syn-string">/</span>${path}<span class="syn-string">&quot;</span>, text })
+			}
+		}
+		<span class="syn-keyword">for</span> change <span class="syn-keyword">in</span> $changed {
+			<span class="syn-type">Shale</span>.write!(change.path, change.text)
+		}
+		<span class="syn-type">Shale</span>.print!(<span class="syn-string">&quot;</span>${dir}<span class="syn-string">: </span>${$changed.len().to_str()}<span class="syn-string"> files rewritten&quot;</span>)
+	}
+
+	<span class="syn-comment">## A file&#39;s text; a file gone since the glob stops the run.</span>
+	<span class="syn-name">read_text!</span> : <span class="syn-type">Str</span> =&gt; <span class="syn-type">Str</span>
+	<span class="syn-name">read_text!</span> = |path|
+		<span class="syn-keyword">match</span> <span class="syn-type">Shale</span>.read!(path) {
+			<span class="syn-type">Found</span>(text) =&gt; text
+			<span class="syn-type">Missing</span> =&gt; {
+				<span class="syn-type">Shale</span>.fail!(<span class="syn-string">&quot;wrap_long_lines: no file </span>${path}<span class="syn-string">&quot;</span>)
+				<span class="syn-string">&quot;&quot;</span>
+			}
+		}
+
+	<span class="syn-comment">## Whether a line is a comment&#39;s, which no trailing comma shortens.</span>
+	<span class="syn-name">is_comment</span> : <span class="syn-type">Str</span> -&gt; <span class="syn-type">Bool</span>
+	<span class="syn-name">is_comment</span> = |text| <span class="syn-type">Text</span>.trim(text).starts_with(<span class="syn-string">&quot;#&quot;</span>)
+
+	<span class="syn-comment">## The OS path of the Roc to rewrite with: in a self-test the pin every</span>
+	<span class="syn-comment">## recipe&#39;s self-test runs (pinned.shale&#39;s `SELF_TEST_PIN`, read there),</span>
+	<span class="syn-comment">## else the one the `roc-version` where the run starts names.</span>
+	<span class="syn-name">roc_bin!</span> : <span class="syn-type">Bool</span> =&gt; <span class="syn-type">Str</span>
+	<span class="syn-name">roc_bin!</span> = |self_test| {
+		pin = <span class="syn-keyword">if</span> self_test {
+			self_test_pin!({})
+		} <span class="syn-keyword">else</span> {
+			<span class="syn-keyword">if</span> !(<span class="syn-type">Shale</span>.exists!(<span class="syn-string">&quot;roc-version&quot;</span>)) {
+				<span class="syn-type">Shale</span>.fail!(<span class="syn-string">&quot;wrap_long_lines: no roc-version where the run starts: run it from the repository&#39;s root, whose roc-version pins its Roc&quot;</span>)
+			}
+			<span class="syn-type">Text</span>.trim(<span class="syn-type">Rewrite</span>.read_text!(<span class="syn-string">&quot;roc-version&quot;</span>))
+		}
+		roc = <span class="syn-string">&quot;tools:roc-</span>${pin}<span class="syn-string">/roc&quot;</span>
+		<span class="syn-keyword">if</span> !(<span class="syn-type">Shale</span>.exists!(roc)) {
+			<span class="syn-type">Shale</span>.fail!(<span class="syn-string">&quot;wrap_long_lines: no </span>${roc}<span class="syn-string">: install Roc </span>${pin}<span class="syn-string"> into ~/tools/roc-</span>${pin}<span class="syn-string">/ (roc-apps&#39;s toolchain release carries it)&quot;</span>)
+		}
+		<span class="syn-type">Shale</span>.real!(roc)
+	}
+}
+
+<span class="syn-comment">## The work copy made afresh: the folder&#39;s .roc files copied into it.</span>
+<span class="syn-name">fresh_work_copy!</span> : <span class="syn-type">Str</span>, { work : <span class="syn-type">Str</span>, paths : <span class="syn-type">List</span>(<span class="syn-type">Str</span>) } =&gt; {}
+<span class="syn-name">fresh_work_copy!</span> = |dir, copy| {
+	<span class="syn-keyword">if</span> <span class="syn-type">Shale</span>.exists!(copy.work) {
+		<span class="syn-type">Shale</span>.remove_tree!(copy.work)
+	}
+	<span class="syn-type">Shale</span>.mkdir!(copy.work)
+	<span class="syn-keyword">for</span> path <span class="syn-keyword">in</span> copy.paths {
+		<span class="syn-type">Shale</span>.write!(<span class="syn-string">&quot;</span>${copy.work}<span class="syn-string">/</span>${path}<span class="syn-string">&quot;</span>, <span class="syn-type">Rewrite</span>.read_text!(<span class="syn-string">&quot;</span>${dir}<span class="syn-string">/</span>${path}<span class="syn-string">&quot;</span>))
+	}
+}
+
+<span class="syn-comment">## `roc fmt` run on the work copy; a file that does not parse stops the run,</span>
+<span class="syn-comment">## after its output.</span>
+<span class="syn-name">run_roc_fmt!</span> : <span class="syn-type">Str</span>, <span class="syn-type">Str</span> =&gt; {}
+<span class="syn-name">run_roc_fmt!</span> = |work, roc| {
+	result = <span class="syn-type">Shale</span>.run!({
+		argv: [roc, <span class="syn-string">&quot;fmt&quot;</span>, <span class="syn-type">Shale</span>.real!(work)],
+		keep: <span class="syn-type">Tail</span>(<span class="syn-number">20</span>),
+		timeout_ms: <span class="syn-number">60000</span>,
+		want: <span class="syn-string">&quot;&quot;</span>,
+	})
+	<span class="syn-keyword">if</span> result.code != <span class="syn-number">0</span> {
+		<span class="syn-type">Shale</span>.print!(result.out)
+		<span class="syn-type">Shale</span>.fail!(<span class="syn-string">&quot;roc fmt failed&quot;</span>)
+	}
+}
+
+<span class="syn-comment">## One pass over one file, whose text is `text`: the groups that should</span>
+<span class="syn-comment">## unstack lose their trailing commas, then each code line gets one for its</span>
+<span class="syn-comment">## group that should stack, if any; the file is written when any changed,</span>
+<span class="syn-comment">## and the answer is how many did.</span>
+<span class="syn-name">rewrite_file!</span> : <span class="syn-type">Str</span>, { text : <span class="syn-type">Str</span>, rule : <span class="syn-type">Stacking.Rule</span> } =&gt; <span class="syn-type">U64</span>
+<span class="syn-name">rewrite_file!</span> = |path, given| {
+	rule = given.rule
+	source_lines = given.text.split_on(<span class="syn-string">&quot;\n&quot;</span>)
+	unstacked = <span class="syn-keyword">if</span> rule.tokens &gt; <span class="syn-number">0</span> {
+		<span class="syn-keyword">match</span> <span class="syn-type">Stacking</span>.groups_to_unstack(source_lines, rule) {
+			<span class="syn-type">Ok</span>(found) =&gt; found
+			<span class="syn-type">Err</span>(<span class="syn-type">NoComma</span>(line)) =&gt; {
+				<span class="syn-type">Shale</span>.fail!(<span class="syn-string">&quot;groups: line </span>${line.to_str()}<span class="syn-string"> does not end in its group&#39;s trailing comma&quot;</span>)
+				[]
+			}
+		}
+	} <span class="syn-keyword">else</span> {
+		[]
+	}
+	unstacked_lines = <span class="syn-type">Stacking</span>.without_trailing_commas(source_lines, unstacked)
+	reachable = <span class="syn-type">Stacking</span>.without_targets_section(unstacked_lines)
+	<span class="syn-keyword">var</span> $lines = unstacked_lines
+	$changed : <span class="syn-type">U64</span>
+	<span class="syn-keyword">var</span> $changed = unstacked.len()
+	$index : <span class="syn-type">U64</span>
+	<span class="syn-keyword">var</span> $index = <span class="syn-number">0</span>
+	<span class="syn-keyword">for</span> text <span class="syn-keyword">in</span> unstacked_lines {
+		<span class="syn-keyword">if</span> !(<span class="syn-type">Rewrite</span>.is_comment(text)) {
+			<span class="syn-keyword">match</span> line_with_comma(reachable.get($index) ?? <span class="syn-string">&quot;&quot;</span>, rule) {
+				<span class="syn-type">Ok</span>(with_comma) =&gt; {
+					$lines = $lines.set($index, with_comma) ?? <span class="syn-keyword">crash</span> <span class="syn-string">&quot;wrap_long_lines: a line past the file&#39;s end&quot;</span>
+					$changed = $changed + <span class="syn-number">1</span>
+				}
+				<span class="syn-type">Err</span>(_) =&gt; {}
+			}
+		}
+		$index = $index + <span class="syn-number">1</span>
+	}
+	<span class="syn-keyword">if</span> $changed &gt; <span class="syn-number">0</span> {
+		<span class="syn-type">Shale</span>.write!(path, <span class="syn-type">Str</span>.join_with($lines, <span class="syn-string">&quot;\n&quot;</span>))
+	}
+	$changed
+}
+
+<span class="syn-comment">## The line with a trailing comma for its outermost group that should</span>
+<span class="syn-comment">## stack, or else, when it is wider than the width, for the group that</span>
+<span class="syn-comment">## stacking brings within it. A line of data gets none.</span>
+<span class="syn-name">line_with_comma</span> : <span class="syn-type">Str</span>, <span class="syn-type">Stacking.Rule</span> -&gt; <span class="syn-type">Try</span>(<span class="syn-type">Str</span>, [<span class="syn-type">NoComma</span>])
+<span class="syn-name">line_with_comma</span> = |text, rule| {
+	few_commas = rule.tokens == <span class="syn-number">0</span> <span class="syn-keyword">or</span> commas_before_the_last(text) &lt; <span class="syn-type">Stacking</span>.stack_items - <span class="syn-number">1</span>
+	<span class="syn-keyword">if</span> <span class="syn-type">Bytes</span>.line_width(text) &lt;= rule.width <span class="syn-keyword">and</span> few_commas {
+		<span class="syn-type">Err</span>(<span class="syn-type">NoComma</span>)
+	} <span class="syn-keyword">else</span> {
+		<span class="syn-keyword">match</span> <span class="syn-type">Stacking</span>.group_to_stack(text, rule) {
+			<span class="syn-type">Ok</span>(group) =&gt; <span class="syn-type">Ok</span>(<span class="syn-type">Stacking</span>.with_trailing_comma({ line: text, group }))
+			<span class="syn-type">Err</span>(_) =&gt; <span class="syn-type">Err</span>(<span class="syn-type">NoComma</span>)
+		}
+	}
+}
+
+<span class="syn-comment">## How many commas a line holds, not counting one that ends it. A group of</span>
+<span class="syn-comment">## `stack_items` items that opens and closes on the line holds one fewer at</span>
+<span class="syn-comment">## least, so a line that fits with fewer has no group to stack. Counting is</span>
+<span class="syn-comment">## far cheaper than reading the line&#39;s groups, and most of a data file&#39;s</span>
+<span class="syn-comment">## lines are like `{ x: 0.5, y: 0.25 },`.</span>
+<span class="syn-name">commas_before_the_last</span> : <span class="syn-type">Str</span> -&gt; <span class="syn-type">U64</span>
+<span class="syn-name">commas_before_the_last</span> = |text| {
+	bytes = text.to_utf8()
+	commas = bytes.count_if(|byte| byte == <span class="syn-string">&#39;,&#39;</span>)
+	<span class="syn-keyword">if</span> <span class="syn-type">Bytes</span>.trimmed_end(bytes).last() == <span class="syn-type">Ok</span>(<span class="syn-string">&#39;,&#39;</span>) {
+		commas - <span class="syn-number">1</span>
+	} <span class="syn-keyword">else</span> {
+		commas
+	}
+}
+
+<span class="syn-comment">## pinned.shale&#39;s `SELF_TEST_PIN`, the one home of the self-tests&#39; Roc.</span>
+<span class="syn-name">self_test_pin!</span> : {} =&gt; <span class="syn-type">Str</span>
+<span class="syn-name">self_test_pin!</span> = |{}| {
+	pinned = <span class="syn-string">&quot;cookbook:roc/pinned.shale&quot;</span>
+	groups = <span class="syn-keyword">match</span> <span class="syn-type">Shale</span>.re_find!(
+		<span class="syn-type">Rewrite</span>.read_text!(pinned),
+		<span class="syn-string">&quot;\nconst SELF_TEST_PIN = \&quot;([^\&quot;]+)\&quot;&quot;</span>,
+	) {
+		<span class="syn-type">Found</span>(found) =&gt; found.groups
+		<span class="syn-type">NoMatch</span> =&gt; []
+	}
+	<span class="syn-keyword">match</span> groups {
+		[pin, ..] =&gt; pin
+		[] =&gt; {
+			<span class="syn-type">Shale</span>.fail!(<span class="syn-string">&quot;wrap_long_lines: no SELF_TEST_PIN in </span>${pinned}<span class="syn-string">&quot;</span>)
+			<span class="syn-string">&quot;&quot;</span>
+		}
+	}
+}
+</code></pre>
+<p class="file"><a href="https://github.com/showell/shale/blob/fbf5379c0f24c6f2b2beea9b82910f4a75554d85/cookbook/roc/wrap_long_lines/SelfTest.roc"><code>cookbook/roc/wrap_long_lines/SelfTest.roc</code></a>, 171 lines</p>
+<pre><code><span class="syn-comment">## The recipe&#39;s self-test, the Shale original&#39;s: the plants in</span>
+<span class="syn-comment">## cookbook/roc/plants/wrap_long_lines/ are copied into the work folder and</span>
+<span class="syn-comment">## rewritten there with the rule&#39;s six tokens and the self-tests&#39; Roc. The</span>
+<span class="syn-comment">## rewrite must end, each plant must come out as its `.want` file, no group</span>
+<span class="syn-comment">## may be left to stack or to unstack, and the lines left wide must be</span>
+<span class="syn-comment">## exactly `long_plants`&#39; listed, with `wide_string_plants` wide strings and</span>
+<span class="syn-comment">## `data_plants` lines of data counted. Then `too_deep/too_deep.roc`, one</span>
+<span class="syn-comment">## group deeper than the passes reach, must stop the rewrite, naming its</span>
+<span class="syn-comment">## file, and be left as it was.</span>
+<span class="syn-keyword">import</span> pf.<span class="syn-type">Shale</span>
+<span class="syn-keyword">import</span> lib.<span class="syn-type">Stacking</span>
+<span class="syn-keyword">import</span> lib.<span class="syn-type">Text</span>
+<span class="syn-keyword">import</span> <span class="syn-type">Rewrite</span>
+<span class="syn-keyword">import</span> <span class="syn-type">WideLines</span>
+
+<span class="syn-type">SelfTest</span> := [].{
+
+	<span class="syn-comment">## The self-test, its copies and work copies under `settings.work_base`.</span>
+	<span class="syn-name">run!</span> : <span class="syn-type">Rewrite.Settings</span> =&gt; {}
+	<span class="syn-name">run!</span> = |settings| {
+		dir = <span class="syn-type">Text</span>.path_under(settings.work_base, <span class="syn-string">&quot;wrap_long_lines&quot;</span>)
+		work = <span class="syn-type">Rewrite</span>.work_of!(dir, { self_test: <span class="syn-type">Bool.True</span>, work_base: settings.work_base })
+		fresh_copies!(dir, plants)
+		<span class="syn-keyword">match</span> <span class="syn-type">Rewrite</span>.rewrite_in_work!(dir, { work, settings }) {
+			<span class="syn-type">Ok</span>(done) =&gt; {
+				<span class="syn-type">Rewrite</span>.write_back!(dir, done)
+				<span class="syn-type">Shale</span>.remove_tree!(done.work)
+			}
+			<span class="syn-type">Err</span>(<span class="syn-type">StillChanging</span>(touched)) =&gt; <span class="syn-type">Shale</span>.fail!(<span class="syn-type">Rewrite</span>.still_changing(touched))
+		}
+		$bad : <span class="syn-type">U64</span>
+		<span class="syn-keyword">var</span> $bad = <span class="syn-number">0</span>
+		<span class="syn-keyword">for</span> plant <span class="syn-keyword">in</span> <span class="syn-type">Shale</span>.glob!(<span class="syn-string">&quot;</span>${plants}<span class="syn-string">/*.roc&quot;</span>) {
+			$bad = $bad + plant_wrong!(plant, { dir, rule: settings.rule })
+		}
+		$bad = $bad + report_wrong!(dir, settings.rule.width)
+		<span class="syn-keyword">if</span> $bad &gt; <span class="syn-number">0</span> {
+			<span class="syn-type">Shale</span>.fail!(<span class="syn-string">&quot;</span>${$bad.to_str()}<span class="syn-string"> checks failed&quot;</span>)
+		}
+		<span class="syn-keyword">if</span> <span class="syn-type">Shale</span>.exists!(work) {
+			<span class="syn-type">Shale</span>.fail!(<span class="syn-string">&quot;wrap_long_lines: a finished rewrite should remove its work copy, </span>${work}<span class="syn-string">&quot;</span>)
+		}
+		fresh_copies!(dir, <span class="syn-string">&quot;</span>${plants}<span class="syn-string">/too_deep&quot;</span>)
+		named = <span class="syn-type">Rewrite</span>.still_changing([<span class="syn-string">&quot;</span>${dir}<span class="syn-string">/too_deep.roc&quot;</span>])
+		stopped = <span class="syn-keyword">match</span> <span class="syn-type">Rewrite</span>.rewrite_in_work!(dir, { work, settings }) {
+			<span class="syn-type">Ok</span>(_) =&gt; <span class="syn-type">Bool.False</span>
+			<span class="syn-type">Err</span>(<span class="syn-type">StillChanging</span>(touched)) =&gt; <span class="syn-type">Rewrite</span>.still_changing(touched) == named
+		}
+		<span class="syn-keyword">if</span> !(stopped) {
+			<span class="syn-type">Shale</span>.fail!(<span class="syn-string">&quot;wrap_long_lines: too_deep.roc should stop with `</span>${named.drop_prefix(<span class="syn-string">&quot;wrap_long_lines: &quot;</span>)}<span class="syn-string">`&quot;</span>)
+		}
+		copy = <span class="syn-type">Rewrite</span>.read_text!(<span class="syn-string">&quot;</span>${dir}<span class="syn-string">/too_deep.roc&quot;</span>)
+		<span class="syn-keyword">if</span> copy != <span class="syn-type">Rewrite</span>.read_text!(<span class="syn-string">&quot;</span>${plants}<span class="syn-string">/too_deep/too_deep.roc&quot;</span>) {
+			<span class="syn-type">Shale</span>.fail!(<span class="syn-string">&quot;wrap_long_lines: a rewrite that stops should leave too_deep.roc as it was&quot;</span>)
+		}
+		<span class="syn-type">Shale</span>.print!(<span class="syn-string">&quot;ok   too_deep.roc: stops naming its file, and is left as it was&quot;</span>)
+		<span class="syn-type">Shale</span>.remove_tree!(work)
+		<span class="syn-type">Shale</span>.remove_tree!(dir)
+		<span class="syn-type">Shale</span>.print!(<span class="syn-string">&quot;PASS: the rewrite ends, every plant comes out as its .want, no group is left to stack or to unstack, the lines left wide are listed or counted, and a rewrite past its passes stops naming its file and changes none&quot;</span>)
+	}
+}
+
+<span class="syn-comment">## The plants, whose `*.roc` the self-test rewrites.</span>
+<span class="syn-name">plants</span> : <span class="syn-type">Str</span>
+<span class="syn-name">plants</span> = <span class="syn-string">&quot;cookbook:roc/plants/wrap_long_lines&quot;</span>
+
+<span class="syn-comment">## The plant lines left wide with nothing to stack.</span>
+<span class="syn-name">long_plants</span> : <span class="syn-type">List</span>(<span class="syn-type">Str</span>)
+<span class="syn-name">long_plants</span> = [<span class="syn-string">&quot;function_type.roc:4&quot;</span>]
+
+<span class="syn-comment">## How many plant lines are wide only for their strings.</span>
+<span class="syn-name">wide_string_plants</span> : <span class="syn-type">U64</span>
+<span class="syn-name">wide_string_plants</span> = <span class="syn-number">1</span>
+
+<span class="syn-comment">## How many plant lines are numeric data.</span>
+<span class="syn-name">data_plants</span> : <span class="syn-type">U64</span>
+<span class="syn-name">data_plants</span> = <span class="syn-number">2</span>
+
+<span class="syn-comment">## The start of a verdict&#39;s line.</span>
+<span class="syn-name">verdict</span> : <span class="syn-type">Bool</span> -&gt; <span class="syn-type">Str</span>
+<span class="syn-name">verdict</span> = |ok|
+	<span class="syn-keyword">if</span> ok {
+		<span class="syn-string">&quot;ok   &quot;</span>
+	} <span class="syn-keyword">else</span> {
+		<span class="syn-string">&quot;FAIL &quot;</span>
+	}
+
+<span class="syn-comment">## Folder `dir` made afresh with a copy of each `*.roc` in folder `from`.</span>
+<span class="syn-name">fresh_copies!</span> : <span class="syn-type">Str</span>, <span class="syn-type">Str</span> =&gt; {}
+<span class="syn-name">fresh_copies!</span> = |dir, from| {
+	<span class="syn-keyword">if</span> <span class="syn-type">Shale</span>.exists!(dir) {
+		<span class="syn-type">Shale</span>.remove_tree!(dir)
+	}
+	<span class="syn-type">Shale</span>.mkdir!(dir)
+	<span class="syn-keyword">for</span> plant <span class="syn-keyword">in</span> <span class="syn-type">Shale</span>.glob!(<span class="syn-string">&quot;</span>${from}<span class="syn-string">/*.roc&quot;</span>) {
+		<span class="syn-type">Shale</span>.write!(<span class="syn-string">&quot;</span>${dir}<span class="syn-string">/</span>${<span class="syn-type">Text</span>.basename(plant)}<span class="syn-string">&quot;</span>, <span class="syn-type">Rewrite</span>.read_text!(plant))
+	}
+}
+
+<span class="syn-comment">## One plant&#39;s rewrite held to its `.want`, and to no group left to stack or</span>
+<span class="syn-comment">## to unstack, a line printed for each wrong: the answer is how many were.</span>
+<span class="syn-name">plant_wrong!</span> : <span class="syn-type">Str</span>, { dir : <span class="syn-type">Str</span>, rule : <span class="syn-type">Stacking.Rule</span> } =&gt; <span class="syn-type">U64</span>
+<span class="syn-name">plant_wrong!</span> = |plant, given| {
+	name = <span class="syn-type">Text</span>.basename(plant)
+	want = <span class="syn-string">&quot;</span>${plants}<span class="syn-string">/</span>${name.drop_suffix(<span class="syn-string">&quot;.roc&quot;</span>)}<span class="syn-string">.want&quot;</span>
+	got = <span class="syn-type">Rewrite</span>.read_text!(<span class="syn-string">&quot;</span>${given.dir}<span class="syn-string">/</span>${name}<span class="syn-string">&quot;</span>)
+	ok = got == <span class="syn-type">Rewrite</span>.read_text!(want)
+	<span class="syn-type">Shale</span>.print!(<span class="syn-string">&quot;</span>${verdict(ok)}${name}<span class="syn-string">: comes out as its .want&quot;</span>)
+	$bad : <span class="syn-type">U64</span>
+	<span class="syn-keyword">var</span> $bad = <span class="syn-keyword">if</span> ok {
+		<span class="syn-number">0</span>
+	} <span class="syn-keyword">else</span> {
+		<span class="syn-number">1</span>
+	}
+	got_lines = got.split_on(<span class="syn-string">&quot;\n&quot;</span>)
+	$number : <span class="syn-type">U64</span>
+	<span class="syn-keyword">var</span> $number = <span class="syn-number">0</span>
+	<span class="syn-keyword">for</span> text <span class="syn-keyword">in</span> <span class="syn-type">Stacking</span>.without_targets_section(got_lines) {
+		$number = $number + <span class="syn-number">1</span>
+		left = !(<span class="syn-type">Rewrite</span>.is_comment(text)) <span class="syn-keyword">and</span> <span class="syn-type">Stacking</span>.group_to_stack(text, given.rule) != <span class="syn-type">Err</span>(<span class="syn-type">NoGroup</span>)
+		<span class="syn-keyword">if</span> left {
+			<span class="syn-type">Shale</span>.print!(<span class="syn-string">&quot;FAIL </span>${name}<span class="syn-string">:</span>${$number.to_str()}<span class="syn-string">: a group left to stack: </span>${<span class="syn-type">Text</span>.trim(text)}<span class="syn-string">&quot;</span>)
+			$bad = $bad + <span class="syn-number">1</span>
+		}
+	}
+	unstacked = <span class="syn-keyword">match</span> <span class="syn-type">Stacking</span>.groups_to_unstack(got_lines, given.rule) {
+		<span class="syn-type">Ok</span>(found) =&gt; found
+		<span class="syn-type">Err</span>(<span class="syn-type">NoComma</span>(line)) =&gt; {
+			<span class="syn-type">Shale</span>.fail!(<span class="syn-string">&quot;groups: line </span>${line.to_str()}<span class="syn-string"> does not end in its group&#39;s trailing comma&quot;</span>)
+			[]
+		}
+	}
+	<span class="syn-keyword">for</span> found <span class="syn-keyword">in</span> unstacked {
+		<span class="syn-type">Shale</span>.print!(<span class="syn-string">&quot;FAIL </span>${name}<span class="syn-string">:</span>${found.group.line.to_str()}<span class="syn-string">: a group left to unstack&quot;</span>)
+		$bad = $bad + <span class="syn-number">1</span>
+	}
+	$bad
+}
+
+<span class="syn-comment">## The lines the rewrite left wide held to `long_plants`, and the wide</span>
+<span class="syn-comment">## strings and data counted, a line printed for each: the answer is how many</span>
+<span class="syn-comment">## were wrong.</span>
+<span class="syn-name">report_wrong!</span> : <span class="syn-type">Str</span>, <span class="syn-type">U64</span> =&gt; <span class="syn-type">U64</span>
+<span class="syn-name">report_wrong!</span> = |dir, width| {
+	report = <span class="syn-type">WideLines</span>.report_wide_lines!(
+		<span class="syn-type">WideLines</span>.fresh,
+		{ dir, at: dir, paths: <span class="syn-type">Rewrite</span>.roc_paths_in_dir!(dir), width },
+	)
+	cut = dir.count_utf8_bytes() + <span class="syn-number">1</span>
+	listed = report.long.map(
+		|line| {
+			place = <span class="syn-type">Text</span>.before_first(line, <span class="syn-string">&quot; &quot;</span>)
+			<span class="syn-type">Text</span>.bytes_of(place, { start: cut, count: place.count_utf8_bytes() })
+		},
+	)
+	list_ok = <span class="syn-type">Text</span>.sort_bytewise(listed) == <span class="syn-type">Text</span>.sort_bytewise(long_plants)
+	<span class="syn-type">Shale</span>.print!(<span class="syn-string">&quot;</span>${verdict(list_ok)}<span class="syn-string">the list of lines left wide is </span>${<span class="syn-type">Str</span>.join_with(long_plants, <span class="syn-string">&quot;, &quot;</span>)}<span class="syn-string"> (</span>${<span class="syn-type">Str</span>.join_with(report.long, <span class="syn-string">&quot;; &quot;</span>)}<span class="syn-string">)&quot;</span>)
+	counts = <span class="syn-string">&quot;</span>${report.wide_strings.to_str()}<span class="syn-string"> lines wide only for their strings and </span>${report.data.to_str()}<span class="syn-string"> of numeric data&quot;</span>
+	wanted = <span class="syn-string">&quot;want </span>${wide_string_plants.to_str()}<span class="syn-string"> and </span>${data_plants.to_str()}<span class="syn-string"> (</span>${report.refused.len().to_str()}<span class="syn-string"> refused)&quot;</span>
+	counts_ok = report.wide_strings == wide_string_plants <span class="syn-keyword">and</span> report.data == data_plants <span class="syn-keyword">and</span> report.refused.is_empty()
+	<span class="syn-type">Shale</span>.print!(<span class="syn-string">&quot;</span>${verdict(counts_ok)}${counts}<span class="syn-string">, counted and not listed, </span>${wanted}<span class="syn-string">&quot;</span>)
+	$bad : <span class="syn-type">U64</span>
+	<span class="syn-keyword">var</span> $bad = <span class="syn-number">0</span>
+	<span class="syn-keyword">if</span> !(list_ok) {
+		$bad = $bad + <span class="syn-number">1</span>
+	}
+	<span class="syn-keyword">if</span> !(counts_ok) {
+		$bad = $bad + <span class="syn-number">1</span>
+	}
+	$bad
+}
+</code></pre>
+<p class="file"><a href="https://github.com/showell/shale/blob/fbf5379c0f24c6f2b2beea9b82910f4a75554d85/cookbook/roc/wrap_long_lines/WideLines.roc"><code>cookbook/roc/wrap_long_lines/WideLines.roc</code></a>, 125 lines</p>
+<pre><code><span class="syn-comment">## The lines a rewrite leaves wider than the width. A comment, a line wide</span>
+<span class="syn-comment">## only for the text of its strings (by Roc&#39;s parser, as check_stacking&#39;s</span>
+<span class="syn-comment">## `wide string`) and a line of numeric data, which stays packed, are</span>
+<span class="syn-comment">## counted, as no trailing comma shortens one; any other is listed, as</span>
+<span class="syn-comment">## `path:line (width): nothing to stack: text`. Only a file with a wide line</span>
+<span class="syn-comment">## is parsed, for its strings.</span>
+<span class="syn-keyword">import</span> pf.<span class="syn-type">Shale</span>
+<span class="syn-keyword">import</span> lib.<span class="syn-type">Bytes</span>
+<span class="syn-keyword">import</span> lib.<span class="syn-type">Stacking</span>
+<span class="syn-keyword">import</span> lib.<span class="syn-type">Text</span>
+<span class="syn-keyword">import</span> <span class="syn-type">Rewrite</span>
+
+<span class="syn-type">WideLines</span> := [].{
+
+	<span class="syn-comment">## The lines left wide so far: those listed, the counts of the rest, and</span>
+	<span class="syn-comment">## why each file roc-ast refused was refused.</span>
+	<span class="syn-type">Report</span> : {
+		long : <span class="syn-type">List</span>(<span class="syn-type">Str</span>),
+		wide_strings : <span class="syn-type">U64</span>,
+		data : <span class="syn-type">U64</span>,
+		comments : <span class="syn-type">U64</span>,
+		refused : <span class="syn-type">List</span>(<span class="syn-type">Str</span>),
+	}
+
+	<span class="syn-comment">## A report with nothing in it yet.</span>
+	<span class="syn-name">fresh</span> : <span class="syn-type">WideLines.Report</span>
+	<span class="syn-name">fresh</span> = { long: [], wide_strings: <span class="syn-number">0</span>, data: <span class="syn-number">0</span>, comments: <span class="syn-number">0</span>, refused: [] }
+
+	<span class="syn-comment">## The report with the lines wider than `width` in the files `paths` of</span>
+	<span class="syn-comment">## folder `at` added, each named as folder `dir`&#39;s.</span>
+	<span class="syn-name">report_wide_lines!</span> : <span class="syn-type">WideLines.Report</span>,
+	{
+		dir : <span class="syn-type">Str</span>,
+		at : <span class="syn-type">Str</span>,
+		paths : <span class="syn-type">List</span>(<span class="syn-type">Str</span>),
+		width : <span class="syn-type">U64</span>,
+	} =&gt; <span class="syn-type">WideLines.Report</span>
+	<span class="syn-name">report_wide_lines!</span> = |before, given| {
+		width = given.width
+		is_wide = |text| <span class="syn-type">Bytes</span>.line_width(text) &gt; width
+		<span class="syn-keyword">var</span> $wide = []
+		<span class="syn-keyword">for</span> path <span class="syn-keyword">in</span> given.paths {
+			at_path = <span class="syn-string">&quot;</span>${given.at}<span class="syn-string">/</span>${path}<span class="syn-string">&quot;</span>
+			<span class="syn-keyword">if</span> <span class="syn-type">Rewrite</span>.read_text!(at_path).split_on(<span class="syn-string">&quot;\n&quot;</span>).any(is_wide) {
+				$wide = $wide.append(at_path)
+			}
+		}
+		wide = $wide
+		<span class="syn-keyword">if</span> wide.is_empty() {
+			<span class="syn-keyword">return</span> before
+		}
+		<span class="syn-keyword">var</span> $report = before
+		<span class="syn-keyword">var</span> $parsed = []
+		<span class="syn-keyword">for</span> file <span class="syn-keyword">in</span> <span class="syn-type">Shale</span>.roc_tree!(wide) {
+			<span class="syn-keyword">if</span> file.err == <span class="syn-string">&quot;&quot;</span> {
+				$parsed = $parsed.append(file)
+			} <span class="syn-keyword">else</span> <span class="syn-keyword">if</span> file.err.starts_with(file.path) {
+				$report = { ..$report, refused: $report.refused.append(file.err) }
+			} <span class="syn-keyword">else</span> {
+				$report = { ..$report, refused: $report.refused.append(<span class="syn-string">&quot;</span>${file.path}<span class="syn-string">: </span>${file.err}<span class="syn-string">&quot;</span>) }
+			}
+		}
+		cut = given.at.count_utf8_bytes()
+		<span class="syn-keyword">for</span> file <span class="syn-keyword">in</span> $parsed {
+			source_lines = <span class="syn-type">Rewrite</span>.read_text!(file.path).split_on(<span class="syn-string">&quot;\n&quot;</span>)
+			strings = <span class="syn-keyword">match</span> <span class="syn-type">Stacking</span>.string_columns_on_lines(file.nodes, source_lines) {
+				<span class="syn-type">Ok</span>(by_line) =&gt; by_line
+				<span class="syn-type">Err</span>(<span class="syn-type">CrossesLine</span>(line)) =&gt; {
+					<span class="syn-type">Shale</span>.fail!(<span class="syn-string">&quot;wrap_long_lines: </span>${file.path}<span class="syn-string">: line </span>${line.to_str()}<span class="syn-string">: a run of string text crosses a line&quot;</span>)
+					<span class="syn-type">Dict</span>.empty()
+				}
+			}
+			named = <span class="syn-string">&quot;</span>${given.dir}${<span class="syn-type">Text</span>.bytes_of(file.path, { start: cut, count: file.path.count_utf8_bytes() })}<span class="syn-string">&quot;</span>
+			$number : <span class="syn-type">U64</span>
+			<span class="syn-keyword">var</span> $number = <span class="syn-number">0</span>
+			<span class="syn-keyword">for</span> text <span class="syn-keyword">in</span> source_lines {
+				$number = $number + <span class="syn-number">1</span>
+				line_width = <span class="syn-type">Bytes</span>.line_width(text)
+				<span class="syn-keyword">if</span> line_width &gt; width {
+					$report = judged_line(
+						$report,
+						{
+							text,
+							line_width,
+							string_width: strings.get($number) ?? <span class="syn-number">0</span>,
+							place: <span class="syn-string">&quot;</span>${named}<span class="syn-string">:</span>${$number.to_str()}<span class="syn-string">&quot;</span>,
+							width,
+						},
+					)
+				}
+			}
+		}
+		$report
+	}
+
+	<span class="syn-comment">## The report&#39;s counts, as its summary line says them.</span>
+	<span class="syn-name">summary</span> : <span class="syn-type">WideLines.Report</span>, <span class="syn-type">U64</span> -&gt; <span class="syn-type">Str</span>
+	<span class="syn-name">summary</span> = |report, width| {
+		listed = <span class="syn-string">&quot;</span>${report.long.len().to_str()}<span class="syn-string"> code lines with nothing to stack&quot;</span>
+		counted = <span class="syn-string">&quot;</span>${report.wide_strings.to_str()}<span class="syn-string"> wide only for their strings, </span>${report.data.to_str()}<span class="syn-string"> of numeric data, </span>${report.comments.to_str()}<span class="syn-string"> comment lines&quot;</span>
+		<span class="syn-string">&quot;still over </span>${width.to_str()}<span class="syn-string">: </span>${listed}<span class="syn-string">, </span>${counted}<span class="syn-string">&quot;</span>
+	}
+}
+
+<span class="syn-comment">## The report with one line wider than the width counted or listed.</span>
+<span class="syn-name">judged_line</span> : <span class="syn-type">WideLines.Report</span>,
+{
+	text : <span class="syn-type">Str</span>,
+	line_width : <span class="syn-type">U64</span>,
+	string_width : <span class="syn-type">U64</span>,
+	place : <span class="syn-type">Str</span>,
+	width : <span class="syn-type">U64</span>,
+} -&gt; <span class="syn-type">WideLines.Report</span>
+<span class="syn-name">judged_line</span> = |report, line|
+	<span class="syn-keyword">if</span> <span class="syn-type">Rewrite</span>.is_comment(line.text) {
+		{ ..report, comments: report.comments + <span class="syn-number">1</span> }
+	} <span class="syn-keyword">else</span> <span class="syn-keyword">if</span> line.line_width - line.string_width &lt;= line.width {
+		{ ..report, wide_strings: report.wide_strings + <span class="syn-number">1</span> }
+	} <span class="syn-keyword">else</span> <span class="syn-keyword">if</span> <span class="syn-type">Stacking</span>.is_data_line(line.text, line.width) {
+		{ ..report, data: report.data + <span class="syn-number">1</span> }
+	} <span class="syn-keyword">else</span> {
+		shown = <span class="syn-type">Str</span>.from_utf8_lossy(<span class="syn-type">Bytes</span>.trimmed(<span class="syn-type">Bytes</span>.span(line.text.to_utf8(), <span class="syn-number">1</span>, <span class="syn-number">140</span>)))
+		listed = <span class="syn-string">&quot;</span>${line.place}<span class="syn-string"> (</span>${line.line_width.to_str()}<span class="syn-string">): nothing to stack: </span>${shown}<span class="syn-string">&quot;</span>
+		{ ..report, long: report.long.append(listed) }
+	}
+</code></pre>
+<h4>Shale original</h4>
+<p class="file"><a href="https://github.com/showell/shale/blob/00559b61570abf9e1f502f4a3dd0e04f3a9770fc/cookbook/roc/wrap_long_lines.shale"><code>cookbook/roc/wrap_long_lines.shale</code></a>, 405 lines, at <code>00559b61</code></p>
+<p class="file">The libraries it loads: <a href="https://github.com/showell/shale/blob/00559b61570abf9e1f502f4a3dd0e04f3a9770fc/cookbook/findings.shale"><code>cookbook/findings.shale</code></a> (21 lines), <a href="https://github.com/showell/shale/blob/00559b61570abf9e1f502f4a3dd0e04f3a9770fc/cookbook/roc/pinned.shale"><code>cookbook/roc/pinned.shale</code></a> (20 lines), <a href="https://github.com/showell/shale/blob/00559b61570abf9e1f502f4a3dd0e04f3a9770fc/cookbook/roc/groups.shale"><code>cookbook/roc/groups.shale</code></a> (465 lines), <a href="https://github.com/showell/shale/blob/00559b61570abf9e1f502f4a3dd0e04f3a9770fc/cookbook/roc/parsed.shale"><code>cookbook/roc/parsed.shale</code></a> (34 lines).</p>
+<pre><code><span class="syn-comment">-- Shorten long Roc lines by letting `roc fmt` lay them out. roc fmt never</span>
+<span class="syn-comment">-- wraps a line, but it puts the items of a record, list, call or lambda&#39;s</span>
+<span class="syn-comment">-- arguments one to a line when the last item has a trailing comma. For each</span>
+<span class="syn-comment">-- code line wider than `width`, this script adds that comma to the widest</span>
+<span class="syn-comment">-- group of two or more items whose stacking brings the line within `width`:</span>
+<span class="syn-comment">-- the text up to its opening bracket fits, and so does its closing bracket</span>
+<span class="syn-comment">-- with what follows it (groups.shale&#39;s `group_to_wrap`). A group beside the</span>
+<span class="syn-comment">-- wide part, as a list pattern in a `match` arm whose string makes the line</span>
+<span class="syn-comment">-- wide, is left alone, and so are a function type&#39;s arguments, which can&#39;t</span>
+<span class="syn-comment">-- take the comma. It runs roc fmt, and repeats until no line changes; a</span>
+<span class="syn-comment">-- folder still changing after 8 passes stops the run, naming its files. The</span>
+<span class="syn-comment">-- passes work on a copy of the folder&#39;s .roc files under</span>
+<span class="syn-comment">-- `scratch:roc_commas_work/`, and the changed files are written back only</span>
+<span class="syn-comment">-- once the rewrite has finished, so a run that stops, on a pass too many or</span>
+<span class="syn-comment">-- on a budget, leaves the folder as it was. Under a mounts file with no</span>
+<span class="syn-comment">-- `scratch:` mount, the copies go in a fresh hidden folder at the root</span>
+<span class="syn-comment">-- instead (`.wrap_long_lines.XXXXXX`, named in the output), removed when the</span>
+<span class="syn-comment">-- run ends; a run that stops leaves it, for `git status` to show.</span>
+<span class="syn-comment">--</span>
+<span class="syn-comment">-- Then it lists each code line still too wide, as `path:line (width): why:</span>
+<span class="syn-comment">-- text`, `why` being `nothing to stack`: no group whose stacking would bring</span>
+<span class="syn-comment">-- it within `width`. A line wide only for the text of its strings, by Roc&#39;s</span>
+<span class="syn-comment">-- parser (as check_stacking.shale&#39;s `wide string`), and a comment line are</span>
+<span class="syn-comment">-- counted, not listed, as no trailing comma shortens either; so is a line</span>
+<span class="syn-comment">-- of numeric data, which stays packed (below). The list is</span>
+<span class="syn-comment">-- printed between its counts, as cookbook/findings.shale describes. It runs</span>
+<span class="syn-comment">-- the Roc that the repository&#39;s roc-version file names.</span>
+<span class="syn-comment">--</span>
+<span class="syn-comment">-- With `tokens=N`, the script holds the folder to roc-style.md&#39;s stacking</span>
+<span class="syn-comment">-- rule, whose six tokens are `tokens=6`, whatever a line&#39;s width: a group of</span>
+<span class="syn-comment">-- three or more items and N or more tokens gets the trailing comma, and a</span>
+<span class="syn-comment">-- stacked group that should sit on one line loses it, which is how `roc fmt`</span>
+<span class="syn-comment">-- is asked to join it. A group and its tokens are read as check_stacking.shale reads</span>
+<span class="syn-comment">-- them (cookbook/roc/groups.shale), so after `tokens=6` check_stacking.shale finds no</span>
+<span class="syn-comment">-- group left to stack or to unstack. A line&#39;s outermost group goes first, and</span>
+<span class="syn-comment">-- the next pass reaches the groups inside it. A function type&#39;s arguments and</span>
+<span class="syn-comment">-- a row of literals are left alone, as check_stacking.shale leaves them, and so is a</span>
+<span class="syn-comment">-- platform header&#39;s `targets:` section, which `roc fmt` lays out by itself.</span>
+<span class="syn-comment">--</span>
+<span class="syn-comment">-- The arguments:</span>
+<span class="syn-comment">--   dir     the folders to rewrite, `roc` by default; several may be given,</span>
+<span class="syn-comment">--           separated by commas, each rewritten in turn.</span>
+<span class="syn-comment">--   width   the widest a line may be, 100 by default.</span>
+<span class="syn-comment">--   tokens  the stacking rule&#39;s tokens, as above; 0 (the default) wraps</span>
+<span class="syn-comment">--           wide lines alone.</span>
+<span class="syn-comment">--   write   with `write=0`, the rewrite runs in the work copy, the list is</span>
+<span class="syn-comment">--           of the lines it would leave, and no folder is written: a</span>
+<span class="syn-comment">--           report.</span>
+<span class="syn-comment">--</span>
+<span class="syn-comment">--   cd &lt;repo&gt; &amp;&amp; shale &lt;shale&gt;/cookbook/roc/wrap_long_lines.shale dir=roc width=100</span>
+<span class="syn-comment">--   cd &lt;repo&gt; &amp;&amp; shale &lt;shale&gt;/cookbook/roc/wrap_long_lines.shale dir=app,platform tokens=6</span>
+<span class="syn-comment">--   cd &lt;repo&gt; &amp;&amp; shale &lt;shale&gt;/cookbook/roc/wrap_long_lines.shale dir=roc tokens=6 write=0</span>
+<span class="syn-comment">--   shale cookbook:roc/wrap_long_lines.shale self_test=1</span>
+<span class="syn-comment">--</span>
+<span class="syn-comment">-- `self_test=1` copies the plants in `cookbook/roc/plants/wrap_long_lines/` to</span>
+<span class="syn-comment">-- `scratch:wrap_long_lines/` (or the hidden folder above), rewrites them there with `tokens=6` and the</span>
+<span class="syn-comment">-- self-test&#39;s Roc, and checks that the rewrite ends, that each plant comes</span>
+<span class="syn-comment">-- out as its `.want` file, that no group is left to stack or to unstack, and</span>
+<span class="syn-comment">-- that the list holds exactly `LONG_PLANTS`&#39; lines and counts</span>
+<span class="syn-comment">-- `WIDE_STRING_PLANTS` wide strings and `DATA_PLANTS` lines of data.</span>
+<span class="syn-comment">-- `at_the_cap.roc` nests as deep as 8 passes reach, and `too_deep/` one group</span>
+<span class="syn-comment">-- deeper, which has to stop the rewrite, name its file and leave it as it was.</span>
+<span class="syn-comment">--</span>
+<span class="syn-comment">-- Numeric data stays packed, as groups.shale&#39;s is_data_line and</span>
+<span class="syn-comment">-- is_number_data say: a number list never stacks, and nothing on a line wider</span>
+<span class="syn-comment">-- than `width` that holds one does. `numbers.roc` in the plants checks both</span>
+<span class="syn-comment">-- and that a list of names beside them still stacks.</span>
+<span class="syn-comment">--</span>
+<span class="syn-comment">-- roc-apps&#39; canvas_apps/safari, with its 70,000-byte lines of polygon data,</span>
+<span class="syn-comment">-- takes about 160,000,000 steps with `tokens=6`.</span>
+<span class="syn-comment">--</span>
+<span class="syn-comment">-- budget: steps=1000000000 arena_bytes=2000000000 output_bytes=4000000 changes=5000</span>
+
+use(<span class="syn-string">&quot;cookbook:findings.shale&quot;</span>)
+use(<span class="syn-string">&quot;./pinned.shale&quot;</span>)
+use(<span class="syn-string">&quot;./groups.shale&quot;</span>)
+use(<span class="syn-string">&quot;./parsed.shale&quot;</span>)
+<span class="syn-keyword">const</span> SELF_TEST = arg(<span class="syn-string">&quot;self_test&quot;</span>, <span class="syn-string">&quot;&quot;</span>) == <span class="syn-string">&quot;1&quot;</span>
+<span class="syn-keyword">const</span> PLANTS = <span class="syn-string">&quot;cookbook:roc/plants/wrap_long_lines&quot;</span>
+
+<span class="syn-comment">-- Where the work copies go: `scratch:` when the mounts file has it, else a</span>
+<span class="syn-comment">-- fresh hidden folder at the root, which the run removes when it ends.</span>
+<span class="syn-keyword">function</span> <span class="syn-name">work_base</span>()
+  <span class="syn-keyword">if</span> attempt(real, <span class="syn-string">&quot;scratch:.&quot;</span>).ok <span class="syn-keyword">then</span> <span class="syn-keyword">return</span> <span class="syn-string">&quot;scratch:&quot;</span> <span class="syn-keyword">end</span>
+  <span class="syn-keyword">local</span> base = fresh_dir(<span class="syn-string">&quot;&quot;</span>, <span class="syn-string">&quot;.wrap_long_lines&quot;</span>)
+  print(<span class="syn-string">&quot;wrap_long_lines: no `scratch:` mount, so the work copies go in &quot;</span> .. base .. <span class="syn-string">&quot;, removed when the run ends&quot;</span>)
+  <span class="syn-keyword">return</span> base
+<span class="syn-keyword">end</span>
+
+<span class="syn-keyword">const</span> WORK_BASE = work_base()
+<span class="syn-keyword">const</span> SELF_TEST_DIR = path_under(WORK_BASE, <span class="syn-string">&quot;wrap_long_lines&quot;</span>)
+<span class="syn-keyword">const</span> DIRS_ARG = SELF_TEST <span class="syn-keyword">and</span> SELF_TEST_DIR <span class="syn-keyword">or</span> arg(<span class="syn-string">&quot;dir&quot;</span>, <span class="syn-string">&quot;roc&quot;</span>)
+<span class="syn-keyword">const</span> WIDTH = arg(<span class="syn-string">&quot;width&quot;</span>, <span class="syn-number">100</span>)
+<span class="syn-keyword">const</span> TOKENS = SELF_TEST <span class="syn-keyword">and</span> STACK_TOKENS <span class="syn-keyword">or</span> arg(<span class="syn-string">&quot;tokens&quot;</span>, <span class="syn-number">0</span>)
+<span class="syn-keyword">const</span> WRITE_ARG = arg(<span class="syn-string">&quot;write&quot;</span>, <span class="syn-string">&quot;1&quot;</span>)
+<span class="syn-keyword">if</span> WRITE_ARG ~= <span class="syn-string">&quot;0&quot;</span> <span class="syn-keyword">and</span> WRITE_ARG ~= <span class="syn-string">&quot;1&quot;</span> <span class="syn-keyword">then</span> fail(<span class="syn-string">&quot;wrap_long_lines: write=&quot;</span> .. WRITE_ARG .. <span class="syn-string">&quot;: write must be 1 (the default) or 0&quot;</span>) <span class="syn-keyword">end</span>
+<span class="syn-keyword">const</span> WRITE = SELF_TEST <span class="syn-keyword">or</span> WRITE_ARG == <span class="syn-string">&quot;1&quot;</span>
+<span class="syn-keyword">const</span> MAX_PASSES = <span class="syn-number">8</span>
+<span class="syn-keyword">const</span> ROC = roc_bin(<span class="syn-string">&quot;wrap_long_lines&quot;</span>, SELF_TEST)
+
+<span class="syn-comment">-- The self-test&#39;s list: the plant lines left wide with nothing to stack, and</span>
+<span class="syn-comment">-- how many lines are wide only for their strings.</span>
+<span class="syn-keyword">const</span> LONG_PLANTS = {<span class="syn-string">&quot;function_type.roc:4&quot;</span>}
+<span class="syn-keyword">const</span> WIDE_STRING_PLANTS = <span class="syn-number">1</span>
+<span class="syn-keyword">const</span> DATA_PLANTS = <span class="syn-number">2</span>
+
+<span class="syn-keyword">function</span> <span class="syn-name">is_comment</span>(line)
+  <span class="syn-keyword">return</span> starts_with(trim(line), <span class="syn-string">&quot;#&quot;</span>)
+<span class="syn-keyword">end</span>
+
+<span class="syn-comment">-- The folders of `dir=`, each held to be a path and not an option.</span>
+<span class="syn-keyword">function</span> <span class="syn-name">dirs_of</span>(text)
+  <span class="syn-keyword">local</span> out = {}
+  <span class="syn-keyword">for</span> d <span class="syn-keyword">in</span> split(text, <span class="syn-string">&quot;,&quot;</span>) <span class="syn-keyword">do</span>
+    <span class="syn-keyword">local</span> dir = trim(d)
+    not_option(<span class="syn-string">&quot;wrap_long_lines&quot;</span>, <span class="syn-string">&quot;dir&quot;</span>, dir)
+    <span class="syn-keyword">if</span> dir ~= <span class="syn-string">&quot;&quot;</span> <span class="syn-keyword">then</span> push(out, dir) <span class="syn-keyword">end</span>
+  <span class="syn-keyword">end</span>
+  <span class="syn-keyword">if</span> #out == <span class="syn-number">0</span> <span class="syn-keyword">then</span> fail(<span class="syn-string">&quot;wrap_long_lines: dir= names no folder&quot;</span>) <span class="syn-keyword">end</span>
+  <span class="syn-keyword">return</span> out
+<span class="syn-keyword">end</span>
+
+<span class="syn-keyword">function</span> <span class="syn-name">roc_files</span>(dir)
+  <span class="syn-keyword">local</span> out = {}
+  <span class="syn-keyword">for</span> e <span class="syn-keyword">in</span> walk_all(dir) <span class="syn-keyword">do</span>
+    <span class="syn-keyword">if</span> e.kind == <span class="syn-string">&quot;file&quot;</span> <span class="syn-keyword">and</span> ends_with(e.path, <span class="syn-string">&quot;.roc&quot;</span>) <span class="syn-keyword">then</span> push(out, e.path) <span class="syn-keyword">end</span>
+  <span class="syn-keyword">end</span>
+  <span class="syn-keyword">return</span> out
+<span class="syn-keyword">end</span>
+
+<span class="syn-comment">-- The .roc files of `dir`, each as its path inside it.</span>
+<span class="syn-keyword">function</span> <span class="syn-name">roc_paths_in_dir</span>(dir)
+  <span class="syn-keyword">local</span> out = {}
+  <span class="syn-keyword">for</span> path <span class="syn-keyword">in</span> roc_files(dir) <span class="syn-keyword">do</span> push(out, sub(path, #dir + <span class="syn-number">2</span>)) <span class="syn-keyword">end</span>
+  <span class="syn-keyword">return</span> out
+<span class="syn-keyword">end</span>
+
+<span class="syn-comment">-- The rewrite of `dir` works on a copy of its .roc files, so a run that</span>
+<span class="syn-comment">-- stops, on a budget or a pass too many, leaves the folder as it was.</span>
+<span class="syn-keyword">function</span> <span class="syn-name">work_of</span>(dir)
+  <span class="syn-keyword">if</span> SELF_TEST <span class="syn-keyword">then</span> <span class="syn-keyword">return</span> path_under(WORK_BASE, <span class="syn-string">&quot;roc_commas_work/self_test&quot;</span>) <span class="syn-keyword">end</span>
+  <span class="syn-keyword">return</span> path_under(WORK_BASE, <span class="syn-string">&quot;roc_commas_work/&quot;</span> .. re_replace(real(dir), <span class="syn-string">&quot;[^A-Za-z0-9]&quot;</span>, <span class="syn-string">&quot;_&quot;</span>))
+<span class="syn-keyword">end</span>
+
+<span class="syn-keyword">function</span> <span class="syn-name">fresh_work_copy</span>(dir, work, paths)
+  <span class="syn-keyword">if</span> is_dir(work) <span class="syn-keyword">then</span> remove_tree(work) <span class="syn-keyword">end</span>
+  mkdir(work)
+  <span class="syn-keyword">for</span> p <span class="syn-keyword">in</span> paths <span class="syn-keyword">do</span> replace(work .. <span class="syn-string">&quot;/&quot;</span> .. p, read(dir .. <span class="syn-string">&quot;/&quot;</span> .. p)) <span class="syn-keyword">end</span>
+<span class="syn-keyword">end</span>
+
+<span class="syn-comment">-- Writes each file the rewrite changed back to the folder. It reads them all</span>
+<span class="syn-comment">-- first and checks that what is left of the budgets covers every write, so</span>
+<span class="syn-comment">-- the folder gets all of the rewrite or none of it.</span>
+<span class="syn-keyword">function</span> <span class="syn-name">write_back</span>(dir, work, paths)
+  <span class="syn-keyword">local</span> changed = {}
+  <span class="syn-keyword">local</span> bytes = <span class="syn-number">0</span>
+  <span class="syn-keyword">for</span> p <span class="syn-keyword">in</span> paths <span class="syn-keyword">do</span>
+    <span class="syn-keyword">local</span> text = read(work .. <span class="syn-string">&quot;/&quot;</span> .. p)
+    <span class="syn-keyword">if</span> text ~= read(dir .. <span class="syn-string">&quot;/&quot;</span> .. p) <span class="syn-keyword">then</span>
+      push(changed, {path = dir .. <span class="syn-string">&quot;/&quot;</span> .. p, text = text})
+      bytes = bytes + #text
+    <span class="syn-keyword">end</span>
+  <span class="syn-keyword">end</span>
+  <span class="syn-keyword">local</span> left = budget()
+  <span class="syn-keyword">if</span> left.changes &lt; #changed + <span class="syn-number">1</span> <span class="syn-keyword">or</span> left.change_bytes &lt; bytes <span class="syn-keyword">or</span> left.steps &lt; <span class="syn-number">2</span> * bytes + <span class="syn-number">1000</span> * #changed + <span class="syn-number">100000</span> <span class="syn-keyword">then</span>
+    fail(<span class="syn-string">&quot;wrap_long_lines: too little budget left to write the &quot;</span> .. #changed .. <span class="syn-string">&quot; changed files, so none was written&quot;</span>)
+  <span class="syn-keyword">end</span>
+  <span class="syn-keyword">for</span> c <span class="syn-keyword">in</span> changed <span class="syn-keyword">do</span> replace(c.path, c.text) <span class="syn-keyword">end</span>
+  print(dir .. <span class="syn-string">&quot;: &quot;</span> .. #changed .. <span class="syn-string">&quot; files rewritten&quot;</span>)
+<span class="syn-keyword">end</span>
+
+<span class="syn-keyword">function</span> <span class="syn-name">run_roc_fmt</span>(work)
+  <span class="syn-keyword">local</span> r = run({ROC, <span class="syn-string">&quot;fmt&quot;</span>, real(work)}, {timeout_ms = <span class="syn-number">60000</span>, tail = <span class="syn-number">20</span>})
+  <span class="syn-keyword">if</span> r.code ~= <span class="syn-number">0</span> <span class="syn-keyword">then</span>
+    print(r.out)
+    fail(<span class="syn-string">&quot;roc fmt failed&quot;</span>)
+  <span class="syn-keyword">end</span>
+<span class="syn-keyword">end</span>
+
+<span class="syn-comment">-- How many commas line `l` holds, not counting one that ends it. A group of</span>
+<span class="syn-comment">-- STACK_ITEMS items that opens and closes on the line holds STACK_ITEMS - 1 of</span>
+<span class="syn-comment">-- them at least, and a comma that ends the line is inside no such group, so a</span>
+<span class="syn-comment">-- line that fits with fewer has no group to stack. Counting is far cheaper</span>
+<span class="syn-comment">-- than reading the line&#39;s groups, and most of a data file&#39;s lines are like</span>
+<span class="syn-comment">-- `{ x: 0.5, y: 0.25 },`.</span>
+<span class="syn-keyword">function</span> <span class="syn-name">commas_before_the_last</span>(l)
+  <span class="syn-keyword">local</span> commas = #split(l, <span class="syn-string">&quot;,&quot;</span>) - <span class="syn-number">1</span>
+  <span class="syn-keyword">if</span> ends_with(trim_end(l), <span class="syn-string">&quot;,&quot;</span>) <span class="syn-keyword">then</span> commas = commas - <span class="syn-number">1</span> <span class="syn-keyword">end</span>
+  <span class="syn-keyword">return</span> commas
+<span class="syn-keyword">end</span>
+
+<span class="syn-comment">-- Line `l` with a trailing comma for its outermost group that should stack,</span>
+<span class="syn-comment">-- or else, when it is wider than WIDTH, for groups.shale&#39;s `group_to_wrap`.</span>
+<span class="syn-comment">-- nil when it gets none. A line of data, by groups.shale&#39;s is_data_line,</span>
+<span class="syn-comment">-- gets none.</span>
+<span class="syn-keyword">function</span> <span class="syn-name">line_with_comma</span>(l)
+  <span class="syn-keyword">if</span> line_width(l) &lt;= WIDTH <span class="syn-keyword">and</span> (TOKENS == <span class="syn-number">0</span> <span class="syn-keyword">or</span> commas_before_the_last(l) &lt; STACK_ITEMS - <span class="syn-number">1</span>) <span class="syn-keyword">then</span> <span class="syn-keyword">return</span> <span class="syn-keyword">nil</span> <span class="syn-keyword">end</span>
+  <span class="syn-keyword">local</span> g = group_to_stack(l, TOKENS, WIDTH)
+  <span class="syn-keyword">if</span> g == <span class="syn-keyword">nil</span> <span class="syn-keyword">then</span> <span class="syn-keyword">return</span> <span class="syn-keyword">nil</span> <span class="syn-keyword">end</span>
+  <span class="syn-keyword">return</span> with_trailing_comma(l, g)
+<span class="syn-keyword">end</span>
+
+<span class="syn-comment">-- Takes the trailing comma from each group of the file at `path`, whose text</span>
+<span class="syn-comment">-- is `text`, that should unstack, adds one to each code line that should get</span>
+<span class="syn-comment">-- one, and returns how many groups and lines it changed.</span>
+<span class="syn-keyword">function</span> <span class="syn-name">rewrite_trailing_commas</span>(path, text)
+  <span class="syn-keyword">local</span> ls = split(text, <span class="syn-string">&quot;\n&quot;</span>)
+  <span class="syn-keyword">local</span> unstacked = {}
+  <span class="syn-keyword">if</span> TOKENS &gt; <span class="syn-number">0</span> <span class="syn-keyword">then</span> unstacked = groups_to_unstack(ls, TOKENS, WIDTH) <span class="syn-keyword">end</span>
+  ls = without_trailing_commas(ls, unstacked)
+  <span class="syn-keyword">local</span> reachable = without_targets_section(ls)
+  <span class="syn-keyword">local</span> changed = #unstacked
+  <span class="syn-keyword">for</span> i = <span class="syn-number">1</span>, #ls <span class="syn-keyword">do</span>
+    <span class="syn-keyword">if</span> <span class="syn-keyword">not</span> is_comment(ls[i]) <span class="syn-keyword">then</span>
+      <span class="syn-keyword">local</span> with_comma = line_with_comma(reachable[i])
+      <span class="syn-keyword">if</span> with_comma ~= <span class="syn-keyword">nil</span> <span class="syn-keyword">then</span>
+        ls[i] = with_comma
+        changed = changed + <span class="syn-number">1</span>
+      <span class="syn-keyword">end</span>
+    <span class="syn-keyword">end</span>
+  <span class="syn-keyword">end</span>
+  <span class="syn-keyword">if</span> changed &gt; <span class="syn-number">0</span> <span class="syn-keyword">then</span> replace(path, join(ls, <span class="syn-string">&quot;\n&quot;</span>)) <span class="syn-keyword">end</span>
+  <span class="syn-keyword">return</span> changed
+<span class="syn-keyword">end</span>
+
+<span class="syn-comment">-- Rewrites commas and runs roc fmt in `dir`&#39;s work copy until a pass changes</span>
+<span class="syn-comment">-- nothing. Files still changing after MAX_PASSES stop the run, since the list</span>
+<span class="syn-comment">-- of long lines would otherwise judge a rewrite that never finished. Returns</span>
+<span class="syn-comment">-- `{work, paths}`, the work copy holding the rewrite.</span>
+<span class="syn-keyword">function</span> <span class="syn-name">rewrite_in_work</span>(dir)
+  <span class="syn-keyword">local</span> work = work_of(dir)
+  <span class="syn-keyword">local</span> paths = roc_paths_in_dir(dir)
+  fresh_work_copy(dir, work, paths)
+  run_roc_fmt(work)
+  <span class="syn-keyword">local</span> pass = <span class="syn-number">1</span>
+  <span class="syn-keyword">local</span> changed = <span class="syn-number">1</span>
+  <span class="syn-keyword">local</span> touched = {}
+  <span class="syn-comment">-- A file&#39;s text when a pass last left it alone. A later pass would leave</span>
+  <span class="syn-comment">-- the same text alone again, so it is not read for groups a second time.</span>
+  <span class="syn-keyword">local</span> settled = {}
+  <span class="syn-keyword">while</span> changed &gt; <span class="syn-number">0</span> <span class="syn-keyword">and</span> pass &lt;= MAX_PASSES <span class="syn-keyword">do</span>
+    changed = <span class="syn-number">0</span>
+    touched = {}
+    <span class="syn-keyword">for</span> p <span class="syn-keyword">in</span> paths <span class="syn-keyword">do</span>
+      <span class="syn-keyword">local</span> text = read(work .. <span class="syn-string">&quot;/&quot;</span> .. p)
+      <span class="syn-keyword">if</span> <span class="syn-keyword">not</span> has_key(settled, p) <span class="syn-keyword">or</span> settled[p] ~= text <span class="syn-keyword">then</span>
+        <span class="syn-keyword">local</span> n = rewrite_trailing_commas(work .. <span class="syn-string">&quot;/&quot;</span> .. p, text)
+        <span class="syn-keyword">if</span> n &gt; <span class="syn-number">0</span> <span class="syn-keyword">then</span>
+          changed = changed + n
+          push(touched, dir .. <span class="syn-string">&quot;/&quot;</span> .. p)
+        <span class="syn-keyword">else</span>
+          settled[p] = text
+        <span class="syn-keyword">end</span>
+      <span class="syn-keyword">end</span>
+    <span class="syn-keyword">end</span>
+    print(dir .. <span class="syn-string">&quot;: pass &quot;</span> .. pass .. <span class="syn-string">&quot;: &quot;</span> .. changed .. <span class="syn-string">&quot; trailing commas added or taken out&quot;</span>)
+    run_roc_fmt(work)
+    pass = pass + <span class="syn-number">1</span>
+  <span class="syn-keyword">end</span>
+  <span class="syn-keyword">if</span> changed &gt; <span class="syn-number">0</span> <span class="syn-keyword">then</span> fail(<span class="syn-string">&quot;wrap_long_lines: still changing after &quot;</span> .. MAX_PASSES .. <span class="syn-string">&quot; passes, so no file was written: &quot;</span> .. join(touched, <span class="syn-string">&quot;, &quot;</span>)) <span class="syn-keyword">end</span>
+  <span class="syn-keyword">return</span> {work = work, paths = paths}
+<span class="syn-keyword">end</span>
+
+<span class="syn-comment">-- Rewrites `dir` and writes it back (with WRITE).</span>
+<span class="syn-keyword">function</span> <span class="syn-name">rewrite_dir</span>(dir)
+  <span class="syn-keyword">local</span> r = rewrite_in_work(dir)
+  <span class="syn-keyword">if</span> WRITE <span class="syn-keyword">then</span> write_back(dir, r.work, r.paths) <span class="syn-keyword">end</span>
+  remove_tree(r.work)
+  <span class="syn-keyword">return</span> <span class="syn-keyword">nil</span>
+<span class="syn-keyword">end</span>
+
+<span class="syn-comment">-- The self-test&#39;s folder rewritten, for its `attempt`, which takes no</span>
+<span class="syn-comment">-- arguments.</span>
+<span class="syn-keyword">function</span> <span class="syn-name">rewrite_self_test_dir</span>()
+  <span class="syn-keyword">return</span> rewrite_dir(SELF_TEST_DIR)
+<span class="syn-keyword">end</span>
+
+<span class="syn-comment">-- The lines wider than WIDTH in the files `paths` of folder `at`, named as</span>
+<span class="syn-comment">-- `dir`&#39;s, added to `report`: a comment and a line wide only for its strings&#39;</span>
+<span class="syn-comment">-- text are counted, any other is listed. Only a file with a wide line is</span>
+<span class="syn-comment">-- parsed, for its strings; a file roc-ast refuses goes in `report.refused`.</span>
+<span class="syn-keyword">function</span> <span class="syn-name">report_wide_lines</span>(report, dir, at, paths)
+  <span class="syn-keyword">local</span> wide = {}
+  <span class="syn-keyword">for</span> p <span class="syn-keyword">in</span> paths <span class="syn-keyword">do</span>
+    <span class="syn-keyword">for</span> l <span class="syn-keyword">in</span> lines(read(at .. <span class="syn-string">&quot;/&quot;</span> .. p)) <span class="syn-keyword">do</span>
+      <span class="syn-keyword">if</span> line_width(l) &gt; WIDTH <span class="syn-keyword">then</span>
+        push(wide, at .. <span class="syn-string">&quot;/&quot;</span> .. p)
+        <span class="syn-keyword">break</span>
+      <span class="syn-keyword">end</span>
+    <span class="syn-keyword">end</span>
+  <span class="syn-keyword">end</span>
+  <span class="syn-keyword">if</span> #wide == <span class="syn-number">0</span> <span class="syn-keyword">then</span> <span class="syn-keyword">return</span> <span class="syn-keyword">nil</span> <span class="syn-keyword">end</span>
+  <span class="syn-keyword">local</span> parsed = parse_roc_files(wide)
+  <span class="syn-keyword">for</span> r <span class="syn-keyword">in</span> parsed.refused <span class="syn-keyword">do</span> push(report.refused, r) <span class="syn-keyword">end</span>
+  <span class="syn-keyword">for</span> f <span class="syn-keyword">in</span> parsed.files <span class="syn-keyword">do</span>
+    <span class="syn-keyword">local</span> ls = split(read(f.path), <span class="syn-string">&quot;\n&quot;</span>)
+    <span class="syn-keyword">local</span> strings = string_columns_on_lines(f.nodes, ls, <span class="syn-string">&quot;wrap_long_lines: &quot;</span> .. f.path)
+    <span class="syn-keyword">local</span> named = dir .. sub(f.path, #at + <span class="syn-number">1</span>)
+    <span class="syn-keyword">for</span> i = <span class="syn-number">1</span>, #ls <span class="syn-keyword">do</span>
+      <span class="syn-keyword">local</span> w = line_width(ls[i])
+      <span class="syn-keyword">if</span> w &gt; WIDTH <span class="syn-keyword">then</span>
+        <span class="syn-keyword">if</span> is_comment(ls[i]) <span class="syn-keyword">then</span>
+          report.comments = report.comments + <span class="syn-number">1</span>
+        <span class="syn-keyword">elseif</span> w - get(strings, <span class="syn-string">&quot;&quot;</span> .. i, <span class="syn-number">0</span>) &lt;= WIDTH <span class="syn-keyword">then</span>
+          report.wide_strings = report.wide_strings + <span class="syn-number">1</span>
+        <span class="syn-keyword">elseif</span> is_data_line(ls[i], WIDTH) <span class="syn-keyword">then</span>
+          report.data = report.data + <span class="syn-number">1</span>
+        <span class="syn-keyword">else</span>
+          push(report.long, named .. <span class="syn-string">&quot;:&quot;</span> .. i .. <span class="syn-string">&quot; (&quot;</span> .. w .. <span class="syn-string">&quot;): nothing to stack: &quot;</span> .. trim(sub(ls[i], <span class="syn-number">1</span>, <span class="syn-number">140</span>)))
+        <span class="syn-keyword">end</span>
+      <span class="syn-keyword">end</span>
+    <span class="syn-keyword">end</span>
+  <span class="syn-keyword">end</span>
+  <span class="syn-keyword">return</span> <span class="syn-keyword">nil</span>
+<span class="syn-keyword">end</span>
+
+<span class="syn-keyword">function</span> <span class="syn-name">fresh_report</span>()
+  <span class="syn-keyword">return</span> {long = {}, wide_strings = <span class="syn-number">0</span>, data = <span class="syn-number">0</span>, comments = <span class="syn-number">0</span>, refused = {}}
+<span class="syn-keyword">end</span>
+
+<span class="syn-keyword">function</span> <span class="syn-name">report_summary</span>(report)
+  <span class="syn-keyword">return</span> <span class="syn-string">&quot;still over &quot;</span> .. WIDTH .. <span class="syn-string">&quot;: &quot;</span> .. #report.long .. <span class="syn-string">&quot; code lines with nothing to stack, &quot;</span> .. report.wide_strings .. <span class="syn-string">&quot; wide only for their strings, &quot;</span> .. report.data .. <span class="syn-string">&quot; of numeric data, &quot;</span> .. report.comments .. <span class="syn-string">&quot; comment lines&quot;</span>
+<span class="syn-keyword">end</span>
+
+<span class="syn-keyword">function</span> <span class="syn-name">fresh_copies</span>(plants)
+  <span class="syn-keyword">if</span> is_dir(SELF_TEST_DIR) <span class="syn-keyword">then</span> remove_tree(SELF_TEST_DIR) <span class="syn-keyword">end</span>
+  mkdir(SELF_TEST_DIR)
+  <span class="syn-keyword">for</span> p <span class="syn-keyword">in</span> glob(plants .. <span class="syn-string">&quot;/*.roc&quot;</span>) <span class="syn-keyword">do</span> replace(SELF_TEST_DIR .. <span class="syn-string">&quot;/&quot;</span> .. basename(p), read(p)) <span class="syn-keyword">end</span>
+<span class="syn-keyword">end</span>
+
+<span class="syn-keyword">function</span> <span class="syn-name">self_test</span>()
+  <span class="syn-keyword">local</span> dir = SELF_TEST_DIR
+  fresh_copies(PLANTS)
+  rewrite_dir(dir)
+  <span class="syn-keyword">local</span> bad = <span class="syn-number">0</span>
+  <span class="syn-keyword">for</span> p <span class="syn-keyword">in</span> glob(PLANTS .. <span class="syn-string">&quot;/*.roc&quot;</span>) <span class="syn-keyword">do</span>
+    <span class="syn-keyword">local</span> name = basename(p)
+    <span class="syn-keyword">local</span> want = PLANTS .. <span class="syn-string">&quot;/&quot;</span> .. sub(name, <span class="syn-number">1</span>, #name - <span class="syn-number">4</span>) .. <span class="syn-string">&quot;.want&quot;</span>
+    <span class="syn-keyword">local</span> got = read(dir .. <span class="syn-string">&quot;/&quot;</span> .. name)
+    <span class="syn-keyword">local</span> ok = got == read(want)
+    print((ok <span class="syn-keyword">and</span> <span class="syn-string">&quot;ok   &quot;</span> <span class="syn-keyword">or</span> <span class="syn-string">&quot;FAIL &quot;</span>) .. name .. <span class="syn-string">&quot;: comes out as its .want&quot;</span>)
+    <span class="syn-keyword">if</span> <span class="syn-keyword">not</span> ok <span class="syn-keyword">then</span> bad = bad + <span class="syn-number">1</span> <span class="syn-keyword">end</span>
+    <span class="syn-keyword">local</span> reachable = without_targets_section(split(got, <span class="syn-string">&quot;\n&quot;</span>))
+    <span class="syn-keyword">for</span> n = <span class="syn-number">1</span>, #reachable <span class="syn-keyword">do</span>
+      <span class="syn-keyword">local</span> l = reachable[n]
+      <span class="syn-keyword">if</span> <span class="syn-keyword">not</span> is_comment(l) <span class="syn-keyword">and</span> group_to_stack(l, TOKENS, WIDTH) ~= <span class="syn-keyword">nil</span> <span class="syn-keyword">then</span>
+        print(<span class="syn-string">&quot;FAIL &quot;</span> .. name .. <span class="syn-string">&quot;:&quot;</span> .. n .. <span class="syn-string">&quot;: a group left to stack: &quot;</span> .. trim(l))
+        bad = bad + <span class="syn-number">1</span>
+      <span class="syn-keyword">end</span>
+    <span class="syn-keyword">end</span>
+    <span class="syn-keyword">for</span> g <span class="syn-keyword">in</span> groups_to_unstack(split(got, <span class="syn-string">&quot;\n&quot;</span>), TOKENS, WIDTH) <span class="syn-keyword">do</span>
+      print(<span class="syn-string">&quot;FAIL &quot;</span> .. name .. <span class="syn-string">&quot;:&quot;</span> .. g.line .. <span class="syn-string">&quot;: a group left to unstack&quot;</span>)
+      bad = bad + <span class="syn-number">1</span>
+    <span class="syn-keyword">end</span>
+  <span class="syn-keyword">end</span>
+  <span class="syn-comment">-- The list after the rewrite: exactly LONG_PLANTS&#39; lines, and the wide</span>
+  <span class="syn-comment">-- strings counted.</span>
+  <span class="syn-keyword">local</span> report = fresh_report()
+  report_wide_lines(report, dir, dir, roc_paths_in_dir(dir))
+  <span class="syn-keyword">local</span> listed = {}
+  <span class="syn-keyword">for</span> l <span class="syn-keyword">in</span> report.long <span class="syn-keyword">do</span> push(listed, sub(split(l, <span class="syn-string">&quot; &quot;</span>)[<span class="syn-number">1</span>], #dir + <span class="syn-number">2</span>)) <span class="syn-keyword">end</span>
+  <span class="syn-keyword">local</span> list_ok = join(sort(listed), <span class="syn-string">&quot;,&quot;</span>) == join(sort(LONG_PLANTS), <span class="syn-string">&quot;,&quot;</span>)
+  print((list_ok <span class="syn-keyword">and</span> <span class="syn-string">&quot;ok   &quot;</span> <span class="syn-keyword">or</span> <span class="syn-string">&quot;FAIL &quot;</span>) .. <span class="syn-string">&quot;the list of lines left wide is &quot;</span> .. join(LONG_PLANTS, <span class="syn-string">&quot;, &quot;</span>) .. <span class="syn-string">&quot; (&quot;</span> .. join(report.long, <span class="syn-string">&quot;; &quot;</span>) .. <span class="syn-string">&quot;)&quot;</span>)
+  <span class="syn-keyword">if</span> <span class="syn-keyword">not</span> list_ok <span class="syn-keyword">then</span> bad = bad + <span class="syn-number">1</span> <span class="syn-keyword">end</span>
+  <span class="syn-keyword">local</span> wide_ok = report.wide_strings == WIDE_STRING_PLANTS <span class="syn-keyword">and</span> report.data == DATA_PLANTS <span class="syn-keyword">and</span> #report.refused == <span class="syn-number">0</span>
+  print((wide_ok <span class="syn-keyword">and</span> <span class="syn-string">&quot;ok   &quot;</span> <span class="syn-keyword">or</span> <span class="syn-string">&quot;FAIL &quot;</span>) .. report.wide_strings .. <span class="syn-string">&quot; lines wide only for their strings and &quot;</span> .. report.data .. <span class="syn-string">&quot; of numeric data, counted and not listed, want &quot;</span> .. WIDE_STRING_PLANTS .. <span class="syn-string">&quot; and &quot;</span> .. DATA_PLANTS .. <span class="syn-string">&quot; (&quot;</span> .. #report.refused .. <span class="syn-string">&quot; refused)&quot;</span>)
+  <span class="syn-keyword">if</span> <span class="syn-keyword">not</span> wide_ok <span class="syn-keyword">then</span> bad = bad + <span class="syn-number">1</span> <span class="syn-keyword">end</span>
+  <span class="syn-keyword">if</span> bad &gt; <span class="syn-number">0</span> <span class="syn-keyword">then</span> fail(bad .. <span class="syn-string">&quot; checks failed&quot;</span>) <span class="syn-keyword">end</span>
+  <span class="syn-keyword">if</span> is_dir(work_of(dir)) <span class="syn-keyword">then</span> fail(<span class="syn-string">&quot;wrap_long_lines: a finished rewrite should remove its work copy, &quot;</span> .. work_of(dir)) <span class="syn-keyword">end</span>
+  fresh_copies(PLANTS .. <span class="syn-string">&quot;/too_deep&quot;</span>)
+  <span class="syn-keyword">local</span> stopped = attempt(rewrite_self_test_dir)
+  <span class="syn-keyword">local</span> named = <span class="syn-string">&quot;still changing after &quot;</span> .. MAX_PASSES .. <span class="syn-string">&quot; passes, so no file was written: &quot;</span> .. dir .. <span class="syn-string">&quot;/too_deep.roc&quot;</span>
+  <span class="syn-keyword">if</span> stopped.ok <span class="syn-keyword">or</span> <span class="syn-keyword">not</span> contains(stopped.error, named) <span class="syn-keyword">then</span> fail(<span class="syn-string">&quot;wrap_long_lines: too_deep.roc should stop with `&quot;</span> .. named .. <span class="syn-string">&quot;`&quot;</span>) <span class="syn-keyword">end</span>
+  <span class="syn-keyword">if</span> read(dir .. <span class="syn-string">&quot;/too_deep.roc&quot;</span>) ~= read(PLANTS .. <span class="syn-string">&quot;/too_deep/too_deep.roc&quot;</span>) <span class="syn-keyword">then</span> fail(<span class="syn-string">&quot;wrap_long_lines: a rewrite that stops should leave too_deep.roc as it was&quot;</span>) <span class="syn-keyword">end</span>
+  print(<span class="syn-string">&quot;ok   too_deep.roc: stops naming its file, and is left as it was&quot;</span>)
+  remove_tree(work_of(dir))
+  remove_tree(SELF_TEST_DIR)
+  print(<span class="syn-string">&quot;PASS: the rewrite ends, every plant comes out as its .want, no group is left to stack or to unstack, the lines left wide are listed or counted, and a rewrite past its passes stops naming its file and changes none&quot;</span>)
+<span class="syn-keyword">end</span>
+
+<span class="syn-comment">-- The hidden work folder, when there is no `scratch:`, goes once the run</span>
+<span class="syn-comment">-- has finished.</span>
+<span class="syn-keyword">function</span> <span class="syn-name">remove_work_base</span>()
+  <span class="syn-keyword">if</span> WORK_BASE ~= <span class="syn-string">&quot;scratch:&quot;</span> <span class="syn-keyword">then</span> remove_tree(WORK_BASE) <span class="syn-keyword">end</span>
+<span class="syn-keyword">end</span>
+
+<span class="syn-keyword">if</span> SELF_TEST <span class="syn-keyword">then</span>
+  self_test()
+  remove_work_base()
+<span class="syn-keyword">else</span>
+  <span class="syn-keyword">local</span> report = fresh_report()
+  <span class="syn-keyword">for</span> dir <span class="syn-keyword">in</span> dirs_of(DIRS_ARG) <span class="syn-keyword">do</span>
+    <span class="syn-keyword">local</span> r = rewrite_in_work(dir)
+    <span class="syn-keyword">if</span> WRITE <span class="syn-keyword">then</span>
+      write_back(dir, r.work, r.paths)
+      report_wide_lines(report, dir, dir, r.paths)
+    <span class="syn-keyword">else</span>
+      report_wide_lines(report, dir, r.work, r.paths)
+    <span class="syn-keyword">end</span>
+    remove_tree(r.work)
+  <span class="syn-keyword">end</span>
+  remove_work_base()
+  print_findings((WRITE <span class="syn-keyword">and</span> <span class="syn-string">&quot;&quot;</span> <span class="syn-keyword">or</span> <span class="syn-string">&quot;report, nothing written: &quot;</span>) .. report_summary(report), report.long)
+  fail_if_refused(<span class="syn-string">&quot;wrap_long_lines&quot;</span>, report.refused)
+<span class="syn-keyword">end</span>
+</code></pre>
+<nav class="steps"><a href="#check_boundaries">← previous</a> · <a href="#contents">contents</a> · <a href="#count_shale_stops">next →</a></nav>
 </section>
 </div>
 <div class="group">
 <h2 class="part" id="section-programs-that-read-shale-itself"><a href="#section-programs-that-read-shale-itself">Programs that read Shale itself</a></h2>
 <p class="part-intro">Programs that work on Shale itself: how an agent's Shale launches ended, read from a Claude Code transcript, and Shale's own C, split into functions by a splitter written in Roc.</p>
 <section class="example" id="count_shale_stops">
-<nav class="steps"><a href="#check_boundaries">← previous</a> · <a href="#contents">contents</a> · <a href="#map_file">next →</a></nav>
+<nav class="steps"><a href="#wrap_long_lines">← previous</a> · <a href="#contents">contents</a> · <a href="#map_file">next →</a></nav>
 <h3><a href="#count_shale_stops">count_shale_stops</a></h3>
 <p>How an agent's Shale launches went, from a Claude Code transcript: each Bash call paired with its answer, every line's JSON read in Roc as Shale's own json_read reads it, and the stops grouped by kind and by message.</p>
 <p class="facts">Its effects: <code>Shale.arg!</code>, <code>Shale.fail!</code>, <code>Shale.grep_all!</code>, <code>Shale.print!</code>, <code>Shale.re_find!</code>, <code>Shale.re_find_all!</code>, <code>Shale.re_match!</code>, <code>Shale.re_replace!</code>.<br>Roc: 1,123 lines in 5 files. Shale original: 164 lines.</p>
@@ -19909,7 +21061,7 @@ print(<span class="syn-string">&quot;&quot;</span>)
 print(<span class="syn-string">&quot;programs heredocs run:&quot;</span>)
 print(table(ranked(programs), {<span class="syn-string">&quot;n&quot;</span>, <span class="syn-string">&quot;what&quot;</span>}))
 </code></pre>
-<nav class="steps"><a href="#check_boundaries">← previous</a> · <a href="#contents">contents</a> · <a href="#map_file">next →</a></nav>
+<nav class="steps"><a href="#wrap_long_lines">← previous</a> · <a href="#contents">contents</a> · <a href="#map_file">next →</a></nav>
 </section>
 <section class="example" id="map_file">
 <nav class="steps"><a href="#count_shale_stops">← previous</a> · <a href="#contents">contents</a> · <a href="#list_long_functions">next →</a></nav>
@@ -25517,7 +26669,7 @@ print(#paths .. <span class="syn-string">&quot; files: &quot;</span> .. all.code
 <h2 class="part" id="shared-library"><a href="#shared-library">The shared Roc library</a></h2>
 <p class="part-intro">The modules the ports over Roc code share, as a package each app names in its header and imports as <code>lib.X</code>: Roc's parse tree read into records, a file's lines and words, a module's declarations, and a finding's line. Each example that imports it names the modules it uses.</p>
 <section class="example">
-<p class="file"><a href="https://github.com/showell/shale/blob/83631c0f7b2c6901fa9cec036ff0a791040110d5/cookbook/roc/lib/Bytes.roc"><code>cookbook/roc/lib/Bytes.roc</code></a>, 128 lines</p>
+<p class="file"><a href="https://github.com/showell/shale/blob/fbf5379c0f24c6f2b2beea9b82910f4a75554d85/cookbook/roc/lib/Bytes.roc"><code>cookbook/roc/lib/Bytes.roc</code></a>, 128 lines</p>
 <pre><code><span class="syn-comment">## A line&#39;s bytes read as Shale&#39;s builtins read a string: a place counted</span>
 <span class="syn-comment">## from 1, cut as `sub` cuts, trimmed as `trim` trims, and a width that is</span>
 <span class="syn-comment">## the bytes with a tab counting four. A recipe that scans Roc a byte at a</span>
@@ -25647,7 +26799,7 @@ print(#paths .. <span class="syn-string">&quot; files: &quot;</span> .. all.code
 <span class="syn-name">is_blank</span> : <span class="syn-type">U8</span> -&gt; <span class="syn-type">Bool</span>
 <span class="syn-name">is_blank</span> = |byte| byte == <span class="syn-string">&#39; &#39;</span> <span class="syn-keyword">or</span> byte == <span class="syn-string">&#39;\t&#39;</span> <span class="syn-keyword">or</span> byte == <span class="syn-string">&#39;\r&#39;</span> <span class="syn-keyword">or</span> byte == <span class="syn-string">&#39;\n&#39;</span>
 </code></pre>
-<p class="file"><a href="https://github.com/showell/shale/blob/83631c0f7b2c6901fa9cec036ff0a791040110d5/cookbook/roc/lib/Declarations.roc"><code>cookbook/roc/lib/Declarations.roc</code></a>, 342 lines</p>
+<p class="file"><a href="https://github.com/showell/shale/blob/fbf5379c0f24c6f2b2beea9b82910f4a75554d85/cookbook/roc/lib/Declarations.roc"><code>cookbook/roc/lib/Declarations.roc</code></a>, 342 lines</p>
 <pre><code><span class="syn-comment">## What a file declares at its top level or as a module type&#39;s member, read</span>
 <span class="syn-comment">## from its tree in file order (cookbook/roc/declared.shale&#39;s</span>
 <span class="syn-comment">## `declarations_of`): its types, its values and the record fields of its</span>
@@ -25991,7 +27143,7 @@ print(#paths .. <span class="syn-string">&quot; files: &quot;</span> .. all.code
 	}
 }
 </code></pre>
-<p class="file"><a href="https://github.com/showell/shale/blob/83631c0f7b2c6901fa9cec036ff0a791040110d5/cookbook/roc/lib/Finding.roc"><code>cookbook/roc/lib/Finding.roc</code></a>, 42 lines</p>
+<p class="file"><a href="https://github.com/showell/shale/blob/fbf5379c0f24c6f2b2beea9b82910f4a75554d85/cookbook/roc/lib/Finding.roc"><code>cookbook/roc/lib/Finding.roc</code></a>, 42 lines</p>
 <pre><code><span class="syn-comment">## A finding of one of a recipe&#39;s checks: the file, the line, the check and</span>
 <span class="syn-comment">## what is wrong there, ordered as the Shale originals sorted their reports</span>
 <span class="syn-comment">## (cookbook/roc/gate_recipe.shale&#39;s `verdict_of`) and printed as their lines.</span>
@@ -26035,7 +27187,7 @@ print(#paths .. <span class="syn-string">&quot; files: &quot;</span> .. all.code
 	}
 }
 </code></pre>
-<p class="file"><a href="https://github.com/showell/shale/blob/83631c0f7b2c6901fa9cec036ff0a791040110d5/cookbook/roc/lib/Forest.roc"><code>cookbook/roc/lib/Forest.roc</code></a>, 124 lines</p>
+<p class="file"><a href="https://github.com/showell/shale/blob/fbf5379c0f24c6f2b2beea9b82910f4a75554d85/cookbook/roc/lib/Forest.roc"><code>cookbook/roc/lib/Forest.roc</code></a>, 124 lines</p>
 <pre><code><span class="syn-comment">## Every parsed file&#39;s tree joined into one list of nodes, as the Shale</span>
 <span class="syn-comment">## originals of check_errors and check_boundaries join them: each node&#39;s</span>
 <span class="syn-comment">## `parent` and `kids` are places in the joined list, counted from 1, a</span>
@@ -26161,10 +27313,10 @@ print(#paths .. <span class="syn-string">&quot; files: &quot;</span> .. all.code
 		}
 }
 </code></pre>
-<p class="file"><a href="https://github.com/showell/shale/blob/83631c0f7b2c6901fa9cec036ff0a791040110d5/cookbook/roc/lib/Groups.roc"><code>cookbook/roc/lib/Groups.roc</code></a>, 472 lines</p>
-<pre><code><span class="syn-comment">## Roc&#39;s bracket groups read from a file&#39;s lines, as cookbook/roc/groups.shale</span>
-<span class="syn-comment">## reads them for check_stacking and wrap_long_lines: each pair of brackets or</span>
-<span class="syn-comment">## a lambda&#39;s `|...|`, where it opens and closes, its items counted by the</span>
+<p class="file"><a href="https://github.com/showell/shale/blob/fbf5379c0f24c6f2b2beea9b82910f4a75554d85/cookbook/roc/lib/Groups.roc"><code>cookbook/roc/lib/Groups.roc</code></a>, 472 lines</p>
+<pre><code><span class="syn-comment">## Roc&#39;s bracket groups read from a file&#39;s lines, for check_stacking and</span>
+<span class="syn-comment">## wrap_long_lines (ported from the Shale groups.shale): each pair of</span>
+<span class="syn-comment">## brackets or a lambda&#39;s `|...|`, where it opens and closes, its items counted by the</span>
 <span class="syn-comment">## commas at its own depth and its tokens. A token is a name (a dotted path</span>
 <span class="syn-comment">## like `Angle.Bearing` is one), a number, a string or a character;</span>
 <span class="syn-comment">## punctuation and operators are none. The rule the groups are judged by is</span>
@@ -26635,7 +27787,7 @@ print(#paths .. <span class="syn-string">&quot; files: &quot;</span> .. all.code
 	}
 }
 </code></pre>
-<p class="file"><a href="https://github.com/showell/shale/blob/83631c0f7b2c6901fa9cec036ff0a791040110d5/cookbook/roc/lib/Headers.roc"><code>cookbook/roc/lib/Headers.roc</code></a>, 133 lines</p>
+<p class="file"><a href="https://github.com/showell/shale/blob/fbf5379c0f24c6f2b2beea9b82910f4a75554d85/cookbook/roc/lib/Headers.roc"><code>cookbook/roc/lib/Headers.roc</code></a>, 133 lines</p>
 <pre><code><span class="syn-comment">## What a Roc file&#39;s header says about who chooses its names, as</span>
 <span class="syn-comment">## cookbook/roc/headers.shale reads it: a name an app&#39;s platform asks for, a</span>
 <span class="syn-comment">## hook a platform hands its host and a method Roc calls by name were chosen</span>
@@ -26770,9 +27922,9 @@ print(#paths .. <span class="syn-string">&quot; files: &quot;</span> .. all.code
 <span class="syn-name">bracketed_names</span> = |text|
 	(<span class="syn-type">Text</span>.between(text, <span class="syn-string">&quot;[&quot;</span>, <span class="syn-string">&quot;]&quot;</span>) ?? <span class="syn-string">&quot;&quot;</span>).split_on(<span class="syn-string">&quot;,&quot;</span>).map(<span class="syn-type">Text</span>.trim).keep_if(|name| name != <span class="syn-string">&quot;&quot;</span>)
 </code></pre>
-<p class="file"><a href="https://github.com/showell/shale/blob/83631c0f7b2c6901fa9cec036ff0a791040110d5/cookbook/roc/lib/Packed.roc"><code>cookbook/roc/lib/Packed.roc</code></a>, 277 lines</p>
-<pre><code><span class="syn-comment">## The groups that stay packed whatever the stacking rule says, as</span>
-<span class="syn-comment">## cookbook/roc/groups.shale reads them: a row of literals, read at a glance,</span>
+<p class="file"><a href="https://github.com/showell/shale/blob/fbf5379c0f24c6f2b2beea9b82910f4a75554d85/cookbook/roc/lib/Packed.roc"><code>cookbook/roc/lib/Packed.roc</code></a>, 277 lines</p>
+<pre><code><span class="syn-comment">## The groups that stay packed whatever the stacking rule says, as the Shale</span>
+<span class="syn-comment">## groups.shale read them: a row of literals, read at a glance,</span>
 <span class="syn-comment">## and numeric data, such as a polygon&#39;s points. A number is a literal or a</span>
 <span class="syn-comment">## negative written `(0.0 - 0.5)`; a flat number record is a record of</span>
 <span class="syn-comment">## numbers, `{ x: 0.5, y: (0.0 - 0.25) }`; and a number list is a list of two</span>
@@ -27049,7 +28201,7 @@ print(#paths .. <span class="syn-string">&quot; files: &quot;</span> .. all.code
 	number_record_end,
 )
 </code></pre>
-<p class="file"><a href="https://github.com/showell/shale/blob/83631c0f7b2c6901fa9cec036ff0a791040110d5/cookbook/roc/lib/RocTypes.roc"><code>cookbook/roc/lib/RocTypes.roc</code></a>, 215 lines</p>
+<p class="file"><a href="https://github.com/showell/shale/blob/fbf5379c0f24c6f2b2beea9b82910f4a75554d85/cookbook/roc/lib/RocTypes.roc"><code>cookbook/roc/lib/RocTypes.roc</code></a>, 215 lines</p>
 <pre><code><span class="syn-comment">## roc-types&#39; output read: the type Roc&#39;s own checker gives each expression</span>
 <span class="syn-comment">## and pattern of an app&#39;s modules, by region, in version 1 of the format</span>
 <span class="syn-comment">## (https://github.com/showell/roc-types, its FORMAT.md), as</span>
@@ -27266,10 +28418,11 @@ print(#paths .. <span class="syn-string">&quot; files: &quot;</span> .. all.code
 	<span class="syn-type">Ok</span>(<span class="syn-type">Str</span>.from_utf8_lossy($out))
 }
 </code></pre>
-<p class="file"><a href="https://github.com/showell/shale/blob/83631c0f7b2c6901fa9cec036ff0a791040110d5/cookbook/roc/lib/Stacking.roc"><code>cookbook/roc/lib/Stacking.roc</code></a>, 449 lines</p>
-<pre><code><span class="syn-comment">## The stacking rule, cookbook/roc/groups.shale&#39;s, over Groups&#39; groups: a</span>
-<span class="syn-comment">## group of three or more items and `tokens` or more tokens stacks, one item</span>
-<span class="syn-comment">## a line, and any other group sits on one line while that line fits `width`.</span>
+<p class="file"><a href="https://github.com/showell/shale/blob/fbf5379c0f24c6f2b2beea9b82910f4a75554d85/cookbook/roc/lib/Stacking.roc"><code>cookbook/roc/lib/Stacking.roc</code></a>, 450 lines</p>
+<pre><code><span class="syn-comment">## The stacking rule&#39;s one home, over Groups&#39; groups (ported from the Shale</span>
+<span class="syn-comment">## groups.shale, since retired): a group of three or more items and `tokens`</span>
+<span class="syn-comment">## or more tokens stacks, one item a line, and any other group sits on one</span>
+<span class="syn-comment">## line while that line fits `width`.</span>
 <span class="syn-comment">## A function type&#39;s arguments can&#39;t take a trailing comma, and a row of</span>
 <span class="syn-comment">## literals or a line of numeric data stays packed. The rewrite&#39;s own pieces</span>
 <span class="syn-comment">## are here too: the group a line&#39;s rewrite gives a trailing comma, the</span>
@@ -27717,7 +28870,7 @@ print(#paths .. <span class="syn-string">&quot; files: &quot;</span> .. all.code
 		<span class="syn-type">Bytes</span>.width_of(indent.concat(<span class="syn-type">Bytes</span>.rest_from(at.bytes, at.group.close))) &lt;= width
 	}
 </code></pre>
-<p class="file"><a href="https://github.com/showell/shale/blob/83631c0f7b2c6901fa9cec036ff0a791040110d5/cookbook/roc/lib/Text.roc"><code>cookbook/roc/lib/Text.roc</code></a>, 214 lines</p>
+<p class="file"><a href="https://github.com/showell/shale/blob/fbf5379c0f24c6f2b2beea9b82910f4a75554d85/cookbook/roc/lib/Text.roc"><code>cookbook/roc/lib/Text.roc</code></a>, 214 lines</p>
 <pre><code><span class="syn-comment">## Text cut, trimmed, lowered and ordered as Shale&#39;s builtins and preludes do</span>
 <span class="syn-comment">## it (`lines`, `words`, `trim`, `lower`, `sub`, `split`, `between`,</span>
 <span class="syn-comment">## `basename`, `dirname`, `path_under`, `sort`), and a name&#39;s words as</span>
@@ -27933,7 +29086,7 @@ print(#paths .. <span class="syn-string">&quot; files: &quot;</span> .. all.code
 		words.append(<span class="syn-type">Text</span>.lower(<span class="syn-type">Str</span>.from_utf8_lossy(bytes)))
 	}
 </code></pre>
-<p class="file"><a href="https://github.com/showell/shale/blob/83631c0f7b2c6901fa9cec036ff0a791040110d5/cookbook/roc/lib/Tree.roc"><code>cookbook/roc/lib/Tree.roc</code></a>, 169 lines</p>
+<p class="file"><a href="https://github.com/showell/shale/blob/fbf5379c0f24c6f2b2beea9b82910f4a75554d85/cookbook/roc/lib/Tree.roc"><code>cookbook/roc/lib/Tree.roc</code></a>, 169 lines</p>
 <pre><code><span class="syn-comment">## Roc&#39;s tree of a file, as `Shale.roc_tree!` gives it, read: a node by its</span>
 <span class="syn-comment">## place, its attributes and kids, a type written back as Roc writes it or as</span>
 <span class="syn-comment">## a shape, the module a file holds, and whether the file is an app.</span>
@@ -28104,7 +29257,7 @@ print(#paths .. <span class="syn-string">&quot; files: &quot;</span> .. all.code
 	}
 }
 </code></pre>
-<p class="file"><a href="https://github.com/showell/shale/blob/83631c0f7b2c6901fa9cec036ff0a791040110d5/cookbook/roc/lib/main.roc"><code>cookbook/roc/lib/main.roc</code></a>, 12 lines</p>
+<p class="file"><a href="https://github.com/showell/shale/blob/fbf5379c0f24c6f2b2beea9b82910f4a75554d85/cookbook/roc/lib/main.roc"><code>cookbook/roc/lib/main.roc</code></a>, 12 lines</p>
 <pre><code><span class="syn-comment">## The modules the cookbook&#39;s Roc recipes share, a package each recipe&#39;s app</span>
 <span class="syn-comment">## names by a relative path (`lib: &quot;../lib/main.roc&quot;`, then `import lib.Tree`):</span>
 <span class="syn-comment">## Roc&#39;s tree of a file read (Tree), several files&#39; trees joined (Forest),</span>
