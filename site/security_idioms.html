@@ -48,8 +48,8 @@
 <h1>Security idioms in roc-chat</h1>
 <p class="lede"><a href="https://github.com/showell/roc-chat">roc-chat</a> is a chat server written in Roc, live at
 chat.lynrummy.com. In November 2026, notramo tested the live site as a black box and reported what he found. We fixed
-each bug. For the bigger ones, we then looked for the class each belonged to, and added a type or a check that holds
-the whole class. Two of the bugs here came from our own follow-up, a Markdown spec and an audit of what each request costs; the page says which.</p>
+each bug. For the bigger ones, we then looked for the class each belonged to, and added a type or a check aimed at
+the whole class. Each section says what its type or check can't see. Two of the bugs here came from our own follow-up, a Markdown spec and an audit of what each request costs; the page says which.</p>
 <p class="lede">Claude, an AI coding agent, wrote the fixes, the checks and this page under Steve's supervision. Every
 snippet is quoted from roc-chat at commit 53fe270, its main branch when this page was written, with a link to its
 lines.</p>
@@ -70,7 +70,8 @@ every other device's key and advanced the session generation, so no old session 
 updates come over an event stream, and the server judges a stream once, when it opens, then holds it for up to an
 hour. So a stream opened with a stolen cookie kept hearing Recent's tiles, notices and a conversation after the owner
 signed the other devices out. A join by an invite and a GitHub link end every session too, and they left streams
-open the same way.</p>
+open the same way. (Since the invite fix below, a join is only ever a first join, with no session to end; it still
+ends streams, to be safe.)</p>
 
 <h3>The fix: one place ends a user's streams</h3>
 <p><code>UserStreams.end_every_stream!</code> is the one place the app ends a user's streams. The host does the
@@ -98,23 +99,23 @@ feature's <code>*Files</code> module, and those modules do only file work; they 
 <p>So a check holds the rule. <code>tools/check_stream_endings.shale</code> reads every app module with Roc's own
 parser. Every function that writes a file is judged once in <code>tools/stream_endings.txt</code>: <code>ends</code>
 if its write ends a session, a credential or someone's access, and <code>keeps</code> if not. Separately, an
-<code>exempt</code> line names one call an action makes to an <code>ends</code> writer that needs no ending, with the
-reason.</p>
+<code>exempt</code> line names a function and an <code>ends</code> writer it calls that needs no ending there, with
+the reason.</p>
 <!-- snippet stream-table -->
-<p>Then the check walks the calls. Any function outside a <code>*Files</code> module that reaches an
-<code>ends</code> writer must call <code>UserStreams.end_every_stream!</code> after it, unless an <code>exempt</code>
+<p>Then the check walks the calls. Any function outside a <code>*Files</code> module that calls an
+<code>ends</code> writer, directly or through a <code>*Files</code> function, must call <code>UserStreams.end_every_stream!</code> after it, unless an <code>exempt</code>
 line names that call. These are its findings:</p>
 <!-- snippet stream-findings -->
 <p>The gate, <code>tools/verify.shale</code>, holds it at zero. A new writer fails it until someone judges it, so the
-table can't go stale. Planted faults proved it can see: removing the ending from <code>sign_out_others!</code>,
+table can't go stale. Planted faults show it sees: removing the ending from <code>sign_out_others!</code>,
 the original bug, gives <code>unended_streams</code>.</p>
 <p>What it doesn't catch: it reads names, not values, so it can't tell whether the ending names the same user as the
 write. It checks that an ending comes later in the function than the first revoking call, by line, not that every
 path reaches it: an early return between the two would pass. It can't see a writer reached as a method on a value;
 every writer is called by its module's name today. And it covers the app's own actions: a password or GitHub file
 edited by hand on the server, or a crash between the write and the ending, leaves a stream open until its hour.
-The end-to-end tests cover the real cases: an open stream ends on "Sign out other devices", on a join by invite, and
-on a GitHub link.</p>
+The end-to-end tests cover the real cases: an open stream ends on "Sign out other devices", on a GitHub link, on a
+sign-out, on an agent key's revoke and on a member's removal.</p>
 
 <h2>An invite that acted as a password reset</h2>
 <h3>The bug</h3>
@@ -142,9 +143,11 @@ writer:</p>
 <!-- snippet join -->
 <p>To see that the types hold, we planted calls to <code>create_human_invite!</code> and
 <code>replace_password_hash!</code> with a bare id. <code>roc check</code> refused both. What the types prove is
-that <code>judge</code> ran and that a first join made the proof; which facts reach <code>judge</code>, and which
-human a join redeems for, is the loader's job, read from the human's files. A joined human's password now changes only
-with their own proof, and there is no admin reset.</p>
+that <code>judge</code> ran and that a first join made the proof. Which facts reach <code>judge</code> is the loader's
+job, read from the human's files, and which human a join redeems for is a runtime check:
+<code>HumanInvites.join</code> compares the <code>Unclaimed</code> human's id with the invite's. Once a human has
+joined, nothing in the app changes their password: the only <code>AccountProof</code> is a first join's, and there is
+no admin reset.</p>
 
 <h3>The check: every path to a credential, judged</h3>
 <p><code>AccountProof</code> guards one writer. The chat has more credentials than a password: GitHub links, session
@@ -175,8 +178,9 @@ bar showed "POST only", and a reload of any refused sign-in posted again. Now a 
 <!-- snippet login-code-route -->
 <h3>A doubled header</h3>
 <p>The Caddy site block in front of the chat added <code>X-Content-Type-Options: nosniff</code> on top of the app's
-own, and Mozilla's Observatory scored the doubled header invalid. The app sends it on every answer, and the end-to-end
-tests check it there, so the
+own, and Mozilla's Observatory scored the doubled header invalid. The app sends it on every answer it makes (the host's
+own refusals, such as a 413 or a 429, are plain text and carry none), and the end-to-end tests check it on pages,
+scripts, images and streams, so the
 <a href="https://github.com/showell/roc-chat/blob/53fe270531163f14b2d82aeee8b9d8e0043321ed/deploy/chat.lynrummy.com.caddy">site block</a>
 no longer adds one.</p>
 <h3>A class from a message</h3>
@@ -196,7 +200,8 @@ may grow with the chat, so nothing caught it.</p>
 <p><code>RouteCost.growth_of</code> gives every route a cost class: <code>Constant</code> (the same file calls however
 many humans the chat has), <code>PerReaderPlaces</code> (a listing for each place the reader may open) or
 <code>PerHuman</code> (a read of every human's files). It is one <code>match</code> with no catch-all arm, so a new
-route fails to compile there until someone decides its class.</p>
+route fails to compile there until someone decides its class. (A new kind inside an existing route's payload, such
+as a new script, takes that route's class.)</p>
 <!-- snippet route-cost -->
 <p>A declaration alone is a claim, so a probe measures it. <code>zig build cost-check</code> runs the real server on
 chats of 10 and 300 humans and counts each probe's reads, listings, writes and folder watches. A <code>Constant</code> probe must cost
@@ -206,7 +211,7 @@ declared growing that doesn't, fails; the measure can't tell <code>PerReaderPlac
 file calls, not time, so a busy machine can't make it flaky.</p>
 <!-- snippet cost-probes -->
 <p>The gate runs the cost check last and holds the probes out of class at zero. The fixes that brought the routes
-into their classes came first: a plain read is admitted from its origin alone, and the server keeps the directory in
+into their classes came first: a plain read (a GET with no <code>Authorization</code> header) is admitted from its origin alone, and the server keeps the directory in
 memory, reading it again whenever its folders change. While the directory is unchanged, the favicon makes no file
 reads.</p>
 <p>What it doesn't do: a route no probe reaches is declared, not measured. The counts are for a warm server with a
@@ -253,8 +258,8 @@ check), <a href="https://github.com/showell/roc-chat/commit/b7e71dc28b579c5ff527
 read's head reads no directory),
 <a href="https://github.com/showell/roc-chat/commit/83a0b32b05aa128fcd80c4c028021993aac345ab">83a0b32</a> (the
 directory kept in memory),
-<a href="https://github.com/showell/roc-chat/commit/1aa9e8353bbd7cf26a60415966aae008c6fda73f">1aa9e83</a> (the kept
-directory's watches, made sturdier),
+<a href="https://github.com/showell/roc-chat/commit/1aa9e8353bbd7cf26a60415966aae008c6fda73f">1aa9e83</a> (four holes a
+cold audit found in the kept directory, closed),
 <a href="https://github.com/showell/roc-chat/commit/cdb43f18131da2cab6fab3246e28e9690f17ee20">cdb43f1</a> (every
 route's class, held in the gate),
 <a href="https://github.com/showell/roc-chat/commit/0fbcbbde149e8fc263452aa71a01bce71d5aba0e">0fbcbbd</a> (named

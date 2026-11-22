@@ -38,7 +38,7 @@ const SNIPPETS = {
   {name = "http-stream", path = "app/HttpAnswer.roc", language = "roc", ranges = {{193, 201}}},
   {name = "sign-out-others", path = "app/DeviceSessionsRoute.roc", language = "roc", ranges = {{119, 129}}},
   {name = "stream-table", path = "tools/stream_endings.txt", language = "plain", ranges = {{18, 18}, {21, 23}, {33, 33}, {49, 49}}},
-  {name = "stream-findings", path = "tools/check_stream_endings.shale", language = "shale", ranges = {{17, 34}}},
+  {name = "stream-findings", path = "tools/check_stream_endings.shale", language = "shale", ranges = {{17, 31}}},
   {name = "human-claim", path = "app/HumanClaim.roc", language = "roc", ranges = {{11, 39}}},
   {name = "create-invite", path = "app/InviteFiles.roc", language = "roc", ranges = {{97, 104}}},
   {name = "account-proof", path = "app/AccountProof.roc", language = "roc", ranges = {{12, 21}}},
