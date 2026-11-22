@@ -12,13 +12,15 @@ canvas { display: block; width: 100%; height: 100%; }
 #message button { margin-top: 1em; font: inherit; padding: 0.4em 1.2em; }
 #loading { position: absolute; inset: 0; background: #000; text-align: center; align-content: center; line-height: 1.6; pointer-events: none; transition: opacity 1.2s; }
 #loading small { color: #999; }
+#rate { display: none; position: absolute; top: 8px; left: 8px; padding: 4px 8px; background: rgba(0, 0, 0, 0.55); color: #eee; font: 13px monospace; white-space: pre; pointer-events: none; }
 </style>
 </head>
 <body>
 <!-- sokol_app finds the canvas by its default selector, #canvas. -->
 <canvas id="canvas" tabindex="-1" oncontextmenu="event.preventDefault()"></canvas>
-<div id="loading"><span id="stage">Downloading the walk (about 6 MB)</span><br><small id="clock"></small></div>
+<div id="loading"><span id="stage">Downloading the walk (about 7 MB)</span><br><small id="clock"></small></div>
 <div id="message"></div>
+<div id="rate"></div>
 <script src="rocco.js"></script>
 <script>
 // The loading line says which stage the page is in, and stays up until the
@@ -84,6 +86,36 @@ canvas { display: block; width: 100%; height: 100%; }
 		document.getElementById("canvas").style.display = "none";
 		return box;
 	};
+})();
+// The F key shows or hides the frame rate over the last second of frames
+// (at least the last frame), and the longest of them. It is the page's own
+// count of animation frames, so it costs the game nothing, and nothing
+// while hidden.
+(function () {
+	var rate = document.getElementById("rate");
+	var shown = false;
+	var last = 0;
+	var gaps = [];
+	function tick(now) {
+		if (!shown) return;
+		if (last > 0) gaps.push(now - last);
+		last = now;
+		var sum = gaps.reduce(function (a, b) { return a + b; }, 0);
+		while (gaps.length > 1 && sum - gaps[0] >= 1000) sum -= gaps.shift();
+		if (gaps.length > 0) {
+			var fps = gaps.length * 1000 / sum;
+			rate.textContent = (fps < 10 ? fps.toFixed(1) : Math.round(fps)) + " fps, longest frame " + Math.round(Math.max.apply(null, gaps)) + " ms";
+		}
+		requestAnimationFrame(tick);
+	}
+	window.addEventListener("keydown", function (event) {
+		if (event.code !== "KeyF" || event.repeat) return;
+		shown = !shown;
+		rate.style.display = shown ? "block" : "none";
+		last = 0;
+		gaps = [];
+		if (shown) { rate.textContent = "counting frames"; requestAnimationFrame(tick); }
+	}, true);
 })();
 window.addEventListener("rocco:unsupported", function (event) { rocco_message(event.detail.message); });
 window.addEventListener("rocco:stopped", function (event) { rocco_message(event.detail.message); });
