@@ -13,20 +13,34 @@
 import chess.Backtrack
 import chess.Tape
 
-## The backtracking search for a solution, its choices the squares the queens
-## stand on.
-Queens :: Backtrack(Queens.Position, U8).{
+## The backtracking search for a solution.
+Queens :: Backtrack(Queens.Position).{
 
-	## Where a partial solution stands: the pin's row, how many other rows hold
-	## a queen, and the columns and the two families of diagonals the queens on
-	## the board, the pin among them, attack, a bit each.
-	Position : { pin_row : U8, rows_filled : U8, columns : U16, sums : U16, differences : U16 }
+	## Where a partial solution stands: the newest queen's square, the pin's
+	## row, how many other rows hold a queen, and the columns and the two
+	## families of diagonals the queens on the board, the pin among them,
+	## attack, a bit each.
+	Position : {
+		square : U8,
+		pin_row : U8,
+		rows_filled : U8,
+		columns : U16,
+		sums : U16,
+		differences : U16,
+	}
 
 	## The search with its pinned queen on `square`.
 	start : U8 -> Queens
 	start = |square| {
-		empty = { pin_row: square // 8, rows_filled: 0, columns: 0, sums: 0, differences: 0 }
-		Queens.(Backtrack.start(with_attacks(empty, square), square))
+		empty = {
+			square,
+			pin_row: square // 8,
+			rows_filled: 0,
+			columns: 0,
+			sums: 0,
+			differences: 0,
+		}
+		Queens.(Backtrack.start(with_attacks(empty, square)))
 	}
 
 	## The search one transition on: a queen in the next open column of the
@@ -36,9 +50,9 @@ Queens :: Backtrack(Queens.Position, U8).{
 		(stepped, step) = search.step(solution)
 		move =
 			match step {
-				Entered(square) => Place(square)
-				Left(square) => Remove(square)
-				Exhausted(_) => GiveUp
+				Entered({ square, .. }) => Place(square)
+				Left({ square, .. }) => Remove(square)
+				Exhausted => GiveUp
 			}
 		(Queens.(stepped), move)
 	}
@@ -67,31 +81,31 @@ is_attack = |from, to| {
 	from_row == to_row or from_column == to_column or from_row + from_column == to_row + to_column or from_row - from_column == to_row - to_column
 }
 
-## Eight Queens as a puzzle: from a position, the squares of the next row
-## to fill, and a square some queen attacks refused.
-solution : Backtrack.Puzzle(Queens.Position, U8)
-solution = {
-	options: |position| row_squares.get(next_row(position).to_u64()) ?? crash "Queens.solution: every row is filled, and the search is solved then",
-	child: |position, square|
+## Eight Queens as a puzzle: the option at `index` is that column of the next
+## row to fill, refused where a queen attacks it.
+solution : Backtrack.Puzzle(Queens.Position)
+solution = |position, index|
+	if index >= 8 {
+		NoMore
+	} else {
+		square = next_row(position) * 8 + index.to_u8_wrap()
 		if is_attacked(position, square) {
-			Err(Refused)
+			Refused
 		} else {
-			Ok({ ..with_attacks(position, square), rows_filled: position.rows_filled + 1 })
-		},
-}
+			Child({ ..with_attacks(position, square), square, rows_filled: position.rows_filled + 1 })
+		}
+	}
 
 ## The row the search fills next: the rows in order, the pin's left out.
 next_row : Queens.Position -> U8
 next_row = |{ pin_row, rows_filled, .. }|
-	if rows_filled < pin_row {
+	if rows_filled >= 7 {
+		crash "Queens.next_row: every row is filled, and the search is solved then"
+	} else if rows_filled < pin_row {
 		rows_filled
 	} else {
 		rows_filled + 1
 	}
-
-## Each row's squares, a list a row.
-row_squares : List(List(U8))
-row_squares = List.from_iter(U8.until(0, 8)).map(|row| List.from_iter((row * 8).until(row * 8 + 8)))
 
 ## The position with a queen on `square` added to its attacks, or, where one
 ## is there, taken out: each bit flips.

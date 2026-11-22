@@ -14,9 +14,9 @@
 import chess.Backtrack
 import chess.Tape
 
-## The backtracking search for a tour, its choices the squares the knights
-## land on.
-Knight :: Backtrack(Knight.Position, U8).{
+## The backtracking search for a tour, and the square of its first knight,
+## which comes off when no tour is left to try.
+Knight :: { search : Backtrack(Knight.Position), first : U8 }.{
 
 	## Where a partial tour stands: the newest knight's square, and the squares
 	## the tour covers, a bit each.
@@ -24,20 +24,20 @@ Knight :: Backtrack(Knight.Position, U8).{
 
 	## The tour's first knight, on `square`.
 	start : U8 -> Knight
-	start = |square| Knight.(Backtrack.start({ square, visited: square_bit(square) }, square))
+	start = |square| Knight.({ search: Backtrack.start({ square, visited: square_bit(square) }), first: square })
 
 	## The search one transition on: the newest knight's next untried move to
 	## an empty square, or, with none left, that knight taken off.
 	next_move : Knight -> (Knight, Tape.Move)
-	next_move = |Knight.(search)| {
+	next_move = |Knight.({ search, first })| {
 		(stepped, step) = search.step(tour)
 		move =
 			match step {
-				Entered(square) => Place(square)
-				Left(square) => Remove(square)
-				Exhausted(square) => RemoveAndGiveUp(square)
+				Entered({ square, .. }) => Place(square)
+				Left({ square, .. }) => Remove(square)
+				Exhausted => RemoveAndGiveUp(first)
 			}
-		(Knight.(stepped), move)
+		(Knight.({ search: stepped, first }), move)
 	}
 
 	## Each empty square the tour can never enter from where it stands: no
@@ -65,17 +65,40 @@ Knight :: Backtrack(Knight.Position, U8).{
 square_bit : U8 -> U64
 square_bit = |square| U64.shl_wrap(1, square)
 
-## The tour as a puzzle: from a square, the knight's moves, and a move onto a
-## square the tour covers refused.
-tour : Backtrack.Puzzle(Knight.Position, U8)
-tour = {
-	options: |{ square, .. }| knight_moves.get(square.to_u64()) ?? crash "Knight.tour: a square past the board",
-	child: |{ visited, .. }, square|
-		if U64.bitwise_and(visited, square_bit(square)) == 0 {
-			Ok({ square, visited: U64.bitwise_or(visited, square_bit(square)) })
+## The tour as a puzzle: the option at `index` is the knight's move there in
+## the search's order, refused onto a square the tour covers.
+tour : Backtrack.Puzzle(Knight.Position)
+tour = |{ square, visited }, index| {
+	span = landing_spans.get(square.to_u64()) ?? crash "Knight.tour: a square past the board"
+	if index >= span.count {
+		NoMore
+	} else {
+		landing = landings_end_to_end.get(span.start + index) ?? crash "Knight.tour: a move inside its square's span"
+		if U64.bitwise_and(visited, square_bit(landing)) != 0 {
+			Refused
 		} else {
-			Err(Refused)
-		},
+			Child({ square: landing, visited: U64.bitwise_or(visited, square_bit(landing)) })
+		}
+	}
+}
+
+## Every square's knight moves end to end, the squares in order and each
+## square's moves in the search's order. The search reads a move here rather
+## than from the square's own list in `knight_moves`, whose reference count,
+## taken for every option tried, costs a fifth of the tour's time.
+landings_end_to_end : List(U8)
+landings_end_to_end = knight_moves.join()
+
+## Where each square's moves sit in `landings_end_to_end`.
+landing_spans : List({ start : U64, count : U64 })
+landing_spans = {
+	var $start = 0
+	var $spans = []
+	for landings in knight_moves {
+		$spans = $spans.append({ start: $start, count: landings.len() })
+		$start = $start + landings.len()
+	}
+	$spans
 }
 
 ## The empty squares a flood reaches from `head` through empty squares, a bit
