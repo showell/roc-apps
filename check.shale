@@ -19,7 +19,9 @@
 --
 -- It also fails when site/web/roc-on-shale/index.html isn't what
 -- site/build_roc_on_shale.shale would write now, which needs the shale and
--- roc-syntax-color checkouts beside this one.
+-- roc-syntax-color checkouts beside this one, and when the chess toys' code
+-- page, site/web/chess/code/index.html, isn't what site/build_chess_code.shale
+-- would write from the sources as they stand.
 --
 -- A few places are left out, each for the reason beside it in EXCEPTIONS.
 -- Each is a debt, named here and nowhere else.
@@ -143,6 +145,9 @@ function all()
   local page = run({"shale", "--root", ".", "site/build_roc_on_shale.shale", "check=1"}, {timeout_ms = 300000, tail = 10})
   print(trim(page.out))
   if page.code ~= 0 then push(failed, "the Roc on Shale page") end
+  local chess = run({"shale", "--root", ".", "site/build_chess_code.shale", "check=1"}, {timeout_ms = 300000, tail = 10})
+  print(trim(chess.out))
+  if chess.code ~= 0 then push(failed, "the chess code page") end
   local roc = pinned_roc("check")
   local files = roc_files(false)
   local fmt = {roc, "fmt", "--check"}

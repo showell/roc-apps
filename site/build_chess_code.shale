@@ -1,0 +1,165 @@
+-- This script writes the chess toys' code page, site/web/chess/code/index.html:
+-- every source the Knight's Tour and Eight Queens are built from, whole and
+-- colored by roc-syntax-color, under a few paragraphs on how they fit. The
+-- code is part of the product, so the page shows the files as they stand in
+-- this checkout, and check.shale fails when the page isn't what this script
+-- would write now: a commit that changes a toy's code changes its page.
+--
+-- The coloring is tools/color_code, built here with the pinned Roc from the
+-- roc-syntax-color checkout beside this one.
+--
+--   cd <roc-apps checkout> && shale site/build_chess_code.shale            # writes the page
+--   cd <roc-apps checkout> && shale site/build_chess_code.shale check=1    # fails if the page is stale
+--
+-- Then site/build.sh copies the page into the dev channel.
+--
+-- budget: steps=50000000 arena_bytes=500000000 output_bytes=100000
+
+const PAGE_DIR = "site/web/chess/code"
+const PAGE = "site/web/chess/code/index.html"
+const GITHUB = "https://github.com/showell/roc-apps/blob/master/"
+const MARK = "<!-- color_code answer -->\n"
+const WANT_ROC = "roc-pin: roc-apps' pinned nightly"
+const WANT_TOOL = "color-code: tools/color_code, roc-apps' own coloring app, built by this run"
+
+const CHECK = arg("check", "0") == "1"
+
+-- The files, in the order the page shows them, each with its language and
+-- the sentence above it.
+const FILES = {
+  {path = "canvas_apps/chess_kit/Tape.roc", language = "roc", about = "The shared engine: the event tape, the scrubbing display, and the red overlay."},
+  {path = "canvas_apps/knights_tour/Knight.roc", language = "roc", about = "The Knight's Tour machine: the move graph, the depth-first search, and the squares cut off from the tour."},
+  {path = "canvas_apps/eight_queens/Queens.roc", language = "roc", about = "The Eight Queens machine: the row-by-row search with column and diagonal bitmasks, and the attacked squares."},
+  {path = "canvas_apps/chess_kit/ChessApp.roc", language = "roc", about = "A toy as a canvas app: the clicks, the keys, the transport and the rate."},
+  {path = "canvas_apps/chess_kit/ChessBoard.roc", language = "roc", about = "The board, its overlays, the hover marks and the pieces, as shapes."},
+  {path = "canvas_apps/chess_kit/ChessControls.roc", language = "roc", about = "The title, the status line, the transport row and the slider, as shapes."},
+  {path = "canvas_apps/knights_tour/KnightsTourApp.roc", language = "roc", about = "The Knight's Tour: its machine and its words."},
+  {path = "canvas_apps/eight_queens/EightQueensApp.roc", language = "roc", about = "Eight Queens: its machine and its words."},
+  {path = "canvas_apps/knights_tour/KnightProof.roc", language = "roc", about = "The knight's frozen answers: every start's move count, the overlays checked at every step of e4's search."},
+  {path = "canvas_apps/eight_queens/QueensProof.roc", language = "roc", about = "The queens' frozen answers: every pin's move count and solution, the overlays, the scrub."},
+  {path = "canvas_apps/web/canvas_app_runner.js", language = "js", about = "The browser's half, shared by every canvas app: the clock, the keys and the pointer."},
+  {path = "canvas_apps/web/shapes_canvas.js", language = "js", about = "The painter, shared by every canvas app: each shape onto the canvas."},
+}
+
+function escaped(s)
+  local t = join(split(s, "&"), "&amp;")
+  t = join(split(t, "<"), "&lt;")
+  return join(split(t, ">"), "&gt;")
+end
+
+-- Nothing, or a stop naming the sibling checkout this page needs and lacks.
+function require_colorer()
+  local colorer = dirname(real(".")) .. "/roc-syntax-color"
+  local r = run({"git", "-C", colorer, "rev-parse", "--show-toplevel"}, {timeout_ms = 30000, tail = 3})
+  if r.code ~= 0 then fail("build_chess_code: no roc-syntax-color checkout beside roc-apps: clone github.com/showell/roc-syntax-color there; tools/color_code imports it") end
+  return nil
+end
+
+-- The colored HTML of each file, in order, from one run of tools/color_code.
+function colored(texts)
+  local roc = pinned_roc("build_chess_code")
+  local work = fresh_dir("build:roc-apps", "chess-code")
+  local tool = real(work) .. "/color_code"
+  must(run({roc, "build", "--opt=dev", "main.roc", "--output=" .. tool}, {cwd = "tools/color_code", timeout_ms = 300000, tail = 20, nice = 19, want = WANT_ROC}))
+  local argv = {tool}
+  for i = 1, #FILES do
+    push(argv, FILES[i].language)
+    push(argv, texts[i])
+  end
+  local r = must(run(argv, {timeout_ms = 60000, whole = 20000000, want = WANT_TOOL}))
+  remove_tree(work)
+  local pieces = split(r.out, MARK)
+  if pieces[1] ~= "" then fail("build_chess_code: color_code printed something before its first answer") end
+  if #pieces - 1 ~= #FILES then fail("build_chess_code: " .. #FILES .. " files got " .. (#pieces - 1) .. " answers") end
+  return drop(pieces, 1)
+end
+
+const HEAD = [=[<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="description" content="The code of the chess toys, the Knight's Tour and Eight Queens: backtracking searches written in Roc on one event tape, every source shown whole.">
+<title>Chess Toys — under the hood</title>
+<script src="../../shared/home.js"></script>
+<!-- site/build_chess_code.shale writes this page from the sources it shows;
+     run it again rather than editing here. The code is colored by
+     roc-syntax-color. -->
+<style>
+  body { margin: 0; background: #0b0b0d; color: #cfd2d6; font: 14px/1.55 ui-monospace, Menlo, monospace; }
+  main { display: flex; flex-direction: column; align-items: center; gap: 14px; padding: 36px 16px; }
+  a { color: #8a93a0; }
+  .intro { max-width: 760px; color: #b9bec6; }
+  .file { width: min(900px, 100%); }
+  .name { font-size: 13px; color: #e8e2d6; margin: 18px 0 2px; overflow-wrap: anywhere; }
+  .about { font-size: 12px; color: #9aa0a6; margin: 0 0 6px; }
+  /* Every block shows its file whole; a line wider than the block scrolls
+     sideways inside it, so the code keeps its indentation. */
+  pre { margin: 0; padding: 14px; background: #14161a; border: 1px solid #2a2d33; border-radius: 6px;
+        overflow-x: auto; font-size: 12px; line-height: 1.45; color: #c4cad2; tab-size: 4; }
+  pre code { font: inherit; }
+  .syn-keyword { color: #c792ea; }
+  .syn-type { color: #82aaff; }
+  .syn-string { color: #c3e88d; }
+  .syn-number { color: #f78c6c; }
+  .syn-comment { color: #8a8494; font-style: italic; }
+  .syn-name { color: #ffcb6b; }
+</style>
+</head>
+<body>
+<main>
+<div style="font-size:12px"><a href="../">chess toys</a></div>
+<div style="font-size:22px;letter-spacing:1px;color:#e8e2d6">Under the hood</div>
+<div class="intro">
+<p>Both toys are one architecture. <b>Tape.roc</b> is the shared engine: a search emits an <b>event
+tape</b> (place a piece, remove a piece, one byte a move) and the display just walks a cursor over
+that tape, applying moves forward or undoing them backward. That single idea is what makes every
+animation pausable and scrubbable in both directions: rewinding is not a feature bolted onto the
+search, it falls out of the data. The engine also owns the red overlay: a square where a piece was
+placed, found doomed, and pulled off ("empty and once touched", which are the same thing, because a
+square's moves strictly alternate place and remove).</p>
+<p>Each toy is then just a <b>machine</b>: <b>Knight.roc</b> builds the knight-move graph and runs a
+depth-first search for a full tour; <b>Queens.roc</b> runs the classic row-by-row eight-queens search
+with column and diagonal bitmasks. A machine answers four things: how many pieces mean solved, its
+next move (one search transition, one event), how it starts from the clicked square, and its own
+"impossible right now" overlay (the indigo squares: unreachable for the knight, attacked for the
+queens). <b>ChessApp.roc</b> takes a machine and makes the page, so the toys cannot drift apart.</p>
+<p>Everything above is Roc, compiled to WebAssembly. The browser's side is two small files every
+canvas app here shares: <b>canvas_app_runner.js</b> keeps the clock, the keys and the pointer, and
+<b>shapes_canvas.js</b> paints the shapes the Roc answers each frame. These are the exact sources
+the pages are built from. Also on
+<a href="https://github.com/showell/roc-apps/tree/master/canvas_apps/chess_kit">GitHub</a>.</p>
+</div>
+]=]
+
+const FOOT = [=[
+</main>
+</body>
+</html>
+]=]
+
+function page()
+  local texts = {}
+  for f in FILES do push(texts, read(f.path)) end
+  local answers = colored(texts)
+  local out = {HEAD}
+  for i = 1, #FILES do
+    local f = FILES[i]
+    push(out, "<div class=\"file\"><div class=\"name\"><a href=\"" .. GITHUB .. f.path .. "\">" .. escaped(f.path) .. "</a>, " .. #lines(texts[i]) .. " lines</div>")
+    push(out, "<p class=\"about\">" .. escaped(f.about) .. "</p>")
+    push(out, "<pre><code>" .. answers[i] .. "</code></pre></div>")
+  end
+  push(out, FOOT)
+  return join(out, "\n")
+end
+
+require_colorer()
+local text = page()
+if CHECK then
+  if not exists(PAGE) or read(PAGE) ~= text then fail("build_chess_code: " .. PAGE .. " is stale: run shale site/build_chess_code.shale") end
+  print("build_chess_code: " .. PAGE .. " is up to date")
+else
+  if not exists(PAGE_DIR) then mkdir(PAGE_DIR) end
+  if exists(PAGE) then replace(PAGE, text) else create(PAGE, text) end
+  print("build_chess_code: wrote " .. PAGE .. ", " .. #text .. " bytes")
+end

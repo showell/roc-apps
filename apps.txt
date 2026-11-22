@@ -13,11 +13,15 @@ canvas_apps/camera/web.roc
 canvas_apps/cat_widget/web.roc
 canvas_apps/conifers_widget/web.roc
 canvas_apps/cow_widget/web.roc
+canvas_apps/eight_queens/QueensProof.roc
+canvas_apps/eight_queens/web.roc
 canvas_apps/far_tree_widget/web.roc
 canvas_apps/frame_widget/web.roc
 canvas_apps/gaze_widget/web.roc
 canvas_apps/herd_widget/web.roc
 canvas_apps/kinds_widget/web.roc
+canvas_apps/knights_tour/KnightProof.roc
+canvas_apps/knights_tour/web.roc
 canvas_apps/particles/main.roc
 canvas_apps/particles/web.roc
 canvas_apps/pipeline_widget/web.roc
