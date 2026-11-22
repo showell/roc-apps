@@ -67,7 +67,7 @@ expect FarHeight.max(higher, lower) == higher
 
 # The sums downstream can see the sign of a zero, so lowering the horizon by
 # nothing stays a positive zero.
-expect FarHeight.zero.lowered_by(FarRise.of(0.0)).to_f64().to_bits() == (0.0).to_bits()
+expect FarHeight.zero.lowered_by(FarRise.of(0.0)).to_f64().to_bits() == (0.0.F64).to_bits()
 
 expect lower < higher
 expect !(higher < higher)

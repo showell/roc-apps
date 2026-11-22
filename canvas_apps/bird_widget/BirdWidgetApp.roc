@@ -139,7 +139,7 @@ tree_shapes = |tree| WidgetPage.resting_lens_shapes(
 bird_shapes : Distance -> List(Shapes.Shape)
 bird_shapes = |gap| {
 	placed_bird : Geometry.Placed(Bird)
-	placed_bird = Animation.placed_instant(World.first_bird_flight.bird_instant_at(stage_at(gap)))
+	placed_bird = Animation.placed_instant(World.first_bird_flight.bird_instant_at(stage_at(gap)), |posed| Bird.(posed))
 	WidgetPage.resting_lens_shapes(sighting_from_eye(placed_bird), Sky.darkness_at(Clock.start))
 }
 

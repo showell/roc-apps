@@ -48,12 +48,12 @@ Animation :: [].{
 	Instant(pose) : { pose : pose, location : Animation.Location }
 
 	## `instant` as an object on the road: it stands at the instant's location,
-	## and its kind is the instant's pose.
-	placed_instant : Animation.Instant(pose) -> Geometry.Placed({ pose : pose })
-	placed_instant = |{ pose, location }| {
+	## and its kind is the animal `animal_of` makes of the instant's pose.
+	placed_instant : Animation.Instant(pose), ({ pose : pose } -> kind) -> Geometry.Placed(kind)
+	placed_instant = |{ pose, location }, animal_of| {
 		road_point: location.road_point,
 		lift: location.lift,
-		kind: { pose: pose },
+		kind: animal_of({ pose: pose }),
 	}
 
 	## A whole animation: the animal at rest before, the frames it plays through,

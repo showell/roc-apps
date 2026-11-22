@@ -67,7 +67,7 @@ Pixels :: F64.{
 }
 
 # The sums downstream can see the sign of a zero, so `opposite` is a subtraction.
-expect Pixels.zero.opposite().to_f64().to_bits() == (0.0).to_bits()
+expect Pixels.zero.opposite().to_f64().to_bits() == (0.0.F64).to_bits()
 
 lesser : Pixels
 lesser = Pixels.of(-1.0)

@@ -1081,7 +1081,7 @@ Walk := [].{
 			while $j < n {
 				c = get_c(k0, $j)
 				at = cell_at(g, c.x, c.y) * words + $j // 64
-				word = U64.bitwise_or(get_u64($cells, at), (1).shl_wrap(($j % 64).to_u8_wrap()))
+				word = U64.bitwise_or(get_u64($cells, at), (1.U64).shl_wrap(($j % 64).to_u8_wrap()))
 				$cells = put($cells, at, word)
 				$j = $j + 1
 			}
@@ -1100,7 +1100,7 @@ Walk := [].{
 		if now_in == was_in {
 			{ cells, crits }
 		} else {
-			bit = (1).shl_wrap((j % 64).to_u8_wrap())
+			bit = (1.U64).shl_wrap((j % 64).to_u8_wrap())
 			was = was_in * s.words + j // 64
 			now = now_in * s.words + j // 64
 			left = U64.bitwise_and(get_u64(cells, was), bit.bitwise_not())
@@ -1394,7 +1394,7 @@ Walk := [].{
 		if now_in == was_in {
 			{ cells, crits }
 		} else {
-			bit = (1).shl_wrap((j % 64).to_u8_wrap())
+			bit = (1.U64).shl_wrap((j % 64).to_u8_wrap())
 			was = was_in * s.words + j // 64
 			now = now_in * s.words + j // 64
 			left = U64.bitwise_and(get_u64(cells, was), bit.bitwise_not())
