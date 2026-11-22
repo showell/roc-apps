@@ -380,7 +380,10 @@ planted cases, and let the compiler judge any rewrite.
   nightlies.
 - **Run the rewriters lazily, on the files you touch.** Before you commit
   a change to a Roc file, run the recipes that rewrite code over it, from
-  the repo's root and at the repo's pin, with `--undo-on-stop`: first
+  the repo's root and at the repo's pin, on a clean checkout (commit
+  first): both are Roc programs that write the files themselves, which
+  Shale's `--undo-on-stop` doesn't reach, so git is how a stopped run is
+  put back. First
   `rewrite_method_calls.shale apply=1` (an old-style `Module.fn(x, ...)` call becomes
   `x.fn(...)`), then `wrap_long_lines.shale tokens=6` (groups stacked or joined
   by the rule, long lines stacked), then `roc fmt`. Then run the hunts over
