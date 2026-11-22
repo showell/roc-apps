@@ -217,7 +217,7 @@ var walkView = (function () {
 	var walk = { shown: false, paused: false, held: false, skipNext: false, walked: 0, started: false };
 	window.addEventListener("walk:shown", function () { walk.shown = true; });
 	window.addEventListener("rocco:ready", function () { walk.started = true; });
-	var JUMPS = { Digit1: 44, Digit2: 200, Digit3: 260, Digit4: 95, Digit5: 36 };
+	var JUMPS = { Digit1: 44, Digit2: 200, Digit3: 260, Digit4: 95, Digit5: 36, Digit6: 88 };
 	window.addEventListener("keydown", function (event) {
 		if (event.repeat) return;
 		if (event.code === "Space") {
@@ -236,6 +236,7 @@ var walkView = (function () {
 		if (walked > 388) notes.push("the fade out at the road's end, before the walk starts again");
 		if (walked > 20 && walked < 62) notes.push("zebra 1 crossing ahead");
 		if (walked > 15 && walked < 85) notes.push("the duck pond ahead on the right");
+		if (walked > 80 && walked < 125) notes.push("the kangaroo crossing ahead");
 		if (walked > 200 && walked < 274) notes.push("zebra 2 crossing ahead");
 		if (walked > 59 && walked < 252) notes.push("sky blend re-blending (sunset)");
 		if (walked > 125 && walked < 160) notes.push("passing the near mast and its light");
