@@ -49,6 +49,8 @@ canvas { display: block; background: #06080f; width: min(960px, 100%, calc(88vh 
 // walkLoad keeps when each ended, for the console report.
 var walkLoad = { files: null, shaders_first: null, shaders_last: null, first_frame: null, shown: null, settle: null, made_after: [] };
 var STEADY_FRAMES = 30, STEADY_LIMIT_MS = 40;
+// The walk's pace in metres a second, as game/Walk.roc has it.
+var WALK_PACE = 4.8;
 (function () {
 	var stage = document.getElementById("stage");
 	var clock = document.getElementById("clock");
@@ -373,7 +375,7 @@ var walkView = (function () {
 				frame.at = performance.now();
 				if (lastSubmit > 0) frame.gap = frame.at - lastSubmit;
 				lastSubmit = frame.at;
-				if (frame.gap !== null && !walk.paused && !walk.held) walk.walked = (walk.walked + 4 * Math.min(frame.gap, 250) / 1000) % 400;
+				if (frame.gap !== null && !walk.paused && !walk.held) walk.walked = (walk.walked + WALK_PACE * Math.min(frame.gap, 250) / 1000) % 400;
 				frame.walked = walk.walked;
 				if (frame.gap !== null && frame.gap > STALL_MS && walkLoad.first_frame !== null) {
 					stalls.push({ gap: frame.gap, after: (frame.at - walkLoad.first_frame) / 1000, walked: walk.walked, when: !walk.shown ? "loading" : walk.paused ? "paused" : "walking" });
@@ -475,7 +477,7 @@ var walkView = (function () {
 		}).join("; ")));
 		lines.push("the 5 longest frames:");
 		longest.forEach(function (f) {
-			lines.push("  " + ms(f.gap) + " ms at " + Math.round(f.walked) + " m (" + (f.walked / 4).toFixed(1) + " s into the walk, " + ((f.at - walkLoad.first_frame) / 1000).toFixed(1) + " s after the first frame; engine CPU " + ms(f.cpu) + ", GPU " + ms(f.gpu) + "): " + happening(f.walked));
+			lines.push("  " + ms(f.gap) + " ms at " + Math.round(f.walked) + " m (" + (f.walked / WALK_PACE).toFixed(1) + " s into the walk, " + ((f.at - walkLoad.first_frame) / 1000).toFixed(1) + " s after the first frame; engine CPU " + ms(f.cpu) + ", GPU " + ms(f.gpu) + "): " + happening(f.walked));
 		});
 		var gpu = frames.filter(function (f) { return f.gpu !== null; }).map(function (f) { return f.gpu; }).sort(function (a, b) { return a - b; });
 		if (gpu.length > 0) {
