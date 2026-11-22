@@ -113,10 +113,10 @@ Missing patterns:
 <span class="syn-name">species_of</span> : <span class="syn-type">BendAnimal</span> -&gt; <span class="syn-type">Billboard.Species</span>
 <span class="syn-name">species_of</span> = |animal|
 	<span class="syn-keyword">match</span> animal {
-		<span class="syn-type">Elephant</span> =&gt; { emoji: <span class="syn-type">EmojiStill</span>.elephant, adult_height: <span class="syn-type">Distance</span>.metres(<span class="syn-number">2.8</span>) }
-		<span class="syn-type">Giraffe</span> =&gt; { emoji: <span class="syn-type">EmojiStill</span>.giraffe, adult_height: <span class="syn-type">Distance</span>.metres(<span class="syn-number">4.5</span>) }
-		<span class="syn-type">Zebra</span> =&gt; { emoji: <span class="syn-type">EmojiStill</span>.zebra, adult_height: <span class="syn-type">Distance</span>.metres(<span class="syn-number">1.6</span>) }
-		<span class="syn-type">Rhino</span> =&gt; { emoji: <span class="syn-type">EmojiStill</span>.rhino, adult_height: <span class="syn-type">Distance</span>.metres(<span class="syn-number">2.2</span>) }
+		<span class="syn-type">Elephant</span> =&gt; { emoji: <span class="syn-type">EmojiStill</span>.elephant, adult_height: <span class="syn-type">Distance</span>.from_metres(<span class="syn-number">2.8</span>) }
+		<span class="syn-type">Giraffe</span> =&gt; { emoji: <span class="syn-type">EmojiStill</span>.giraffe, adult_height: <span class="syn-type">Distance</span>.from_metres(<span class="syn-number">4.5</span>) }
+		<span class="syn-type">Zebra</span> =&gt; { emoji: <span class="syn-type">EmojiStill</span>.zebra, adult_height: <span class="syn-type">Distance</span>.from_metres(<span class="syn-number">1.6</span>) }
+		<span class="syn-type">Rhino</span> =&gt; { emoji: <span class="syn-type">EmojiStill</span>.rhino, adult_height: <span class="syn-type">Distance</span>.from_metres(<span class="syn-number">2.2</span>) }
 	}
 </code></pre></figure><p>The <code>match</code> has one line for each of the four tags, so every bend animal has a species, and a grown giraffe is always 4.5 metres tall.</p>
 <h2 id="a-tag-carries-a-value">A tag carries a value <a class="section-link" href="#a-tag-carries-a-value" aria-label="Link to this section">§</a></h2>

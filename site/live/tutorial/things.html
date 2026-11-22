@@ -76,7 +76,7 @@
 <h2 id="a-species-record-names-the-animal">A species record names the animal <a class="section-link" href="#a-species-record-names-the-animal" aria-label="Link to this section">§</a></h2>
 <p>A billboard animal starts from a record of the <code>Billboard.Species</code> type: its emoji, and how tall a grown one stands. A plain <code>:</code> names that type, so any module reads its fields. Here are the cow&#39;s and the bull&#39;s, from the <code>CowHerd</code> module:</p>
 <figure class="listing"><figcaption>CowHerd.roc</figcaption><pre><code class="language-roc"><span class="syn-name">cow</span> : <span class="syn-type">Billboard.Species</span>
-<span class="syn-name">cow</span> = { emoji: <span class="syn-type">EmojiStill</span>.cow, adult_height: <span class="syn-type">Distance</span>.metres(<span class="syn-number">1.4</span>) }
+<span class="syn-name">cow</span> = { emoji: <span class="syn-type">EmojiStill</span>.cow, adult_height: <span class="syn-type">Distance</span>.from_metres(<span class="syn-number">1.4</span>) }
 </code></pre></figure><figure class="listing"><figcaption>CowHerd.roc</figcaption><pre><code class="language-roc"><span class="syn-name">bull</span> : <span class="syn-type">Billboard.Species</span>
 <span class="syn-name">bull</span> = { emoji: <span class="syn-type">EmojiStill</span>.bull, adult_height: cow.adult_height.times(<span class="syn-number">1.15</span>) }
 </code></pre></figure><p>The bull&#39;s height comes from the cow&#39;s: <code>cow.adult_height</code> reads a field of the <code>cow</code> record, and <code>.times(1.15)</code> is a method call on that <code>Distance</code>. So the bull derives from the cow, and a change to the cow&#39;s height carries over to the bull.</p>

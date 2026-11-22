@@ -349,7 +349,7 @@ limits.fold(offered, held_to)
 <span class="syn-name">acceleration_to</span> : <span class="syn-type">Speed</span>, { target : <span class="syn-type">Speed</span>, within : <span class="syn-type">Distance</span> } -&gt; <span class="syn-type">Acceleration</span>
 <span class="syn-name">acceleration_to</span> = |<span class="syn-type">Speed</span>.(speed), { target: <span class="syn-type">Speed</span>.(target), within }| {
 	squares_gained = target * target - speed * speed
-	<span class="syn-type">Acceleration</span>.metres_a_step_each_step(squares_gained / (<span class="syn-number">2.0</span> * within.to_metres()))
+	<span class="syn-type">Acceleration</span>.from_metres_a_step_each_step(squares_gained / (<span class="syn-number">2.0</span> * within.to_metres()))
 }
 </code></pre></figure><p>It has one caller, <code>VehicleLimits.braking_to</code>. That function also holds the speed steady when at most a micrometre of road is left, and enforces the invariant that every speed is zero or more, with a <code>crash</code>. The rider&#39;s bend brake, the gawk brake and the truck all brake through <code>braking_to</code>. The first limit is the bend&#39;s:</p>
 <figure class="listing"><figcaption>Throttle.roc</figcaption><pre><code class="language-roc"><span class="syn-comment">## Near the end of the segment, the brake that brings the rider to the exit</span>

@@ -69,15 +69,15 @@
 <p class="chapter-number">Chapter 5</p>
 <h1 id="types">Types</h1>
 <p>Types are at the heart of every Roc program. A type says what a value holds, and the compiler checks every value against its type. That gives this book its rule: get the types right, and everything else follows. A type that holds just the values that make sense leaves each function a plain job, and the compiler checks the rest. So a good way to meet a Roc program is to read its types.</p>
-<p>This book shows Safari Ride&#39;s types first, and they reach every part of the program, from a single number to the whole ride. Types describe the structure of a program&#39;s data and the rules it keeps, and each stop shows one way they do it.</p>
+<p>This book shows Safari Ride&#39;s types first, from a single number to the whole ride. Types describe the structure of a program&#39;s data and the rules it keeps, and each stop shows one way they do it.</p>
 <h2 id="distance-pins-down-a-number">Distance pins down a number <a class="section-link" href="#distance-pins-down-a-number" aria-label="Link to this section">§</a></h2>
 <p>Safari Ride&#39;s types are built from numbers. A length and a speed are both an <code>F64</code> underneath, so the ride gives each a type of its own. Here&#39;s the start of a length&#39;s:</p>
 <figure class="listing"><figcaption>Distance.roc, in Distance</figcaption><pre><code class="language-roc"><span class="syn-type">Distance</span> :: <span class="syn-type">F64</span>.{
 
-	<span class="syn-name">metres</span> : <span class="syn-type">F64</span> -&gt; <span class="syn-type">Distance</span>
-	<span class="syn-name">metres</span> = |amount| <span class="syn-type">Distance</span>.(amount)
+	<span class="syn-name">from_metres</span> : <span class="syn-type">F64</span> -&gt; <span class="syn-type">Distance</span>
+	<span class="syn-name">from_metres</span> = |metres| <span class="syn-type">Distance</span>.(metres)
 	<span class="syn-comment"># ...</span>
-</code></pre></figure><p>The <code>::</code> makes <code>Distance</code> opaque: inside is an <code>F64</code>, and only the <code>Distance</code> module opens it. <code>metres</code> wraps a number of metres as a <code>Distance</code>. So a <code>Distance</code> is more precise than an <code>F64</code>: its type says what the number means, and the compiler keeps a length apart from a speed or any other number. The <a class="chapter-link" href="the-clock.html">“Opaque types: the clock”</a> chapter shows that precision catching a bug.</p>
+</code></pre></figure><p>The <code>::</code> makes <code>Distance</code> opaque: inside is an <code>F64</code>, and only the <code>Distance</code> module opens it. <code>from_metres</code> wraps a number of metres as a <code>Distance</code>: <code>Distance.(metres)</code> builds one, and only the <code>Distance</code> module can write it. So a <code>Distance</code> is more precise than an <code>F64</code>: its type says what the number means, and the compiler keeps a length apart from a speed or any other number. The <a class="chapter-link" href="the-clock.html">“Opaque types: the clock”</a> chapter shows that precision catching a bug.</p>
 <h2 id="a-billboard-spells-out-its-fields-and-its-choices">A billboard spells out its fields and its choices <a class="section-link" href="#a-billboard-spells-out-its-fields-and-its-choices" aria-label="Link to this section">§</a></h2>
 <figure class="widget"><iframe class="canvas-app" src="../frame_widget/?start=moving" title="Step 1,529 of the ride, held still: the frame these types describe." loading="lazy" style="aspect-ratio: 960 / 600"></iframe><figcaption>Step 1,529 of the ride, held still: the frame these types describe.</figcaption></figure><p>Every thing beside the road has a kind, and each kind is a type, such as <code>Conifer</code> for a tree. A cow is a <code>Billboard</code>, an emoji that stands on the grass, looking left or right:</p>
 <figure class="listing"><figcaption>Billboard.roc, in Billboard</figcaption><pre><code class="language-roc"><span class="syn-type">Billboard</span> :: {
@@ -105,7 +105,7 @@
 <figure class="listing"><figcaption>World.roc</figcaption><pre><code class="language-roc"><span class="syn-comment">## The route&#39;s last segment, which ends it.</span>
 <span class="syn-name">last_plan</span> : <span class="syn-type">World.SegmentPlan</span>
 <span class="syn-name">last_plan</span> = {
-	length: <span class="syn-type">Distance</span>.metres(<span class="syn-number">300.0</span>),
+	length: <span class="syn-type">Distance</span>.from_metres(<span class="syn-number">300.0</span>),
 	scheme: <span class="syn-type">RedGreen</span>,
 	encounter: <span class="syn-type">CatCrosses</span>,
 	pigs: <span class="syn-type">WithPigs</span>,

@@ -211,8 +211,8 @@
 </code></pre></figure><p><code>along</code> is how far the place lies along its segment of road, and <code>across</code> is how far it lies from the middle of the road, growing to the right. Each is an opaque type around a number of metres, as <code>Distance</code> is:</p>
 <figure class="listing"><figcaption>Along.roc, in Along</figcaption><pre><code class="language-roc"><span class="syn-type">Along</span> :: <span class="syn-type">F64</span>.{
 
-	<span class="syn-name">metres</span> : <span class="syn-type">F64</span> -&gt; <span class="syn-type">Along</span>
-	<span class="syn-name">metres</span> = |amount| <span class="syn-type">Along</span>.(amount)
+	<span class="syn-name">from_metres</span> : <span class="syn-type">F64</span> -&gt; <span class="syn-type">Along</span>
+	<span class="syn-name">from_metres</span> = |metres| <span class="syn-type">Along</span>.(metres)
 	<span class="syn-comment"># ...</span>
 </code></pre></figure><p>So the compiler rejects a call that passes an <code>across</code> where an <code>along</code> belongs.</p>
 <h2 id="sighted">Sighted <a class="section-link" href="#sighted" aria-label="Link to this section">§</a></h2>

@@ -258,10 +258,13 @@
 <span class="syn-name">leap_frames</span> : <span class="syn-type">List</span>(<span class="syn-type">CrossingFrame</span>)
 <span class="syn-name">leap_frames</span> = [
 	{ pose: <span class="syn-type">Coil</span>, way: <span class="syn-type">Leaping</span>({ way_to_verge: <span class="syn-type">Fraction</span>.zero, lift: <span class="syn-type">Distance</span>.zero }) },
-	{ pose: <span class="syn-type">Flight</span>, way: <span class="syn-type">Leaping</span>({ way_to_verge: <span class="syn-type">Fraction</span>.of(<span class="syn-number">0.4</span>), lift: <span class="syn-type">Distance</span>.metres(<span class="syn-number">0.27</span>) }) },
 	{
 		pose: <span class="syn-type">Flight</span>,
-		way: <span class="syn-type">Leaping</span>({ way_to_verge: <span class="syn-type">Fraction</span>.of(<span class="syn-number">0.85</span>), lift: <span class="syn-type">Distance</span>.metres(<span class="syn-number">0.17</span>) }),
+		way: <span class="syn-type">Leaping</span>({ way_to_verge: <span class="syn-type">Fraction</span>.of(<span class="syn-number">0.4</span>), lift: <span class="syn-type">Distance</span>.from_metres(<span class="syn-number">0.27</span>) }),
+	},
+	{
+		pose: <span class="syn-type">Flight</span>,
+		way: <span class="syn-type">Leaping</span>({ way_to_verge: <span class="syn-type">Fraction</span>.of(<span class="syn-number">0.85</span>), lift: <span class="syn-type">Distance</span>.from_metres(<span class="syn-number">0.17</span>) }),
 	},
 	{ pose: <span class="syn-type">Land</span>, way: <span class="syn-type">Leaping</span>({ way_to_verge: <span class="syn-type">Fraction</span>.whole, lift: <span class="syn-type">Distance</span>.zero }) },
 ]

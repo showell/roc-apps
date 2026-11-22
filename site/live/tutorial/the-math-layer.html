@@ -166,8 +166,8 @@
 	along = point.along.to_metres()
 	across = point.across.to_metres()
 	{
-		along: start.along.plus(<span class="syn-type">Distance</span>.metres(cos_turn * along - sin_turn * across)),
-		across: start.across.plus(<span class="syn-type">Distance</span>.metres(sin_turn * along + cos_turn * across)),
+		along: start.along.plus(<span class="syn-type">Distance</span>.from_metres(cos_turn * along - sin_turn * across)),
+		across: start.across.plus(<span class="syn-type">Distance</span>.from_metres(sin_turn * along + cos_turn * across)),
 	}
 }
 </code></pre></figure><p><code>start_after: start</code> names the record&#39;s <code>start_after</code> field <code>start</code>. Turning a point by an angle mixes its two parts: the cosine says how much of each part stays where it was, and the sine how much moves over into the other. Then the shift moves the point to where the next segment starts. A <code>WorkedBend</code> holds that start and the turn&#39;s cosine and sine, worked out once for each bend when the road ahead is built.</p>
@@ -181,8 +181,8 @@
 	cos_yaw = vantage.yaw.to_radians().cos()
 	sin_yaw = vantage.yaw.to_radians().sin()
 	{
-		forward: <span class="syn-type">Distance</span>.metres(ahead * cos_yaw + aside * sin_yaw),
-		right: <span class="syn-type">Distance</span>.metres((<span class="syn-number">0.0</span> - ahead) * sin_yaw + aside * cos_yaw),
+		forward: <span class="syn-type">Distance</span>.from_metres(ahead * cos_yaw + aside * sin_yaw),
+		right: <span class="syn-type">Distance</span>.from_metres((<span class="syn-number">0.0</span> - ahead) * sin_yaw + aside * cos_yaw),
 	}
 }
 </code></pre></figure><p>The camera stands at <code>vantage</code>, and its yaw is the way it points, as a turn from straight down the segment. Turning the camera one way turns the world the other way in its view, so the point turns by minus the yaw into <code>forward</code> and <code>right</code>.</p>
