@@ -378,18 +378,18 @@ function sizes_html(rows)
   return join(out, "\n")
 end
 
--- "old → RC1" for one step and condition's median wall seconds.
+-- "old → RC1" for one step and condition's median CPU seconds.
 function pair_cell(rows, repo, step, condition)
   local old = stats_row(rows, repo, OLD_PIN, step, condition)
   local new = stats_row(rows, repo, NEW_PIN, step, condition)
   if old == nil or new == nil then fail("build_rc1_article: " .. STATS .. " lacks " .. repo .. " " .. step .. " " .. condition .. " on a compiler") end
-  return "<td class=\"num\">" .. old.wall_s .. " → " .. new.wall_s .. "</td>"
+  return "<td class=\"num\">" .. old.cpu_s .. " → " .. new.cpu_s .. "</td>"
 end
 
 -- Every project, largest first: its lines of Roc, and its dev build after
 -- a root change and its cold check, old nightly against RC1.
 function overview_html(rows)
-  local out = {"<div class=\"table\"><table>", "<thead><tr><th>project</th><th class=\"num\">lines of Roc</th><th class=\"num\">dev build after an edit, s</th><th class=\"num\">cold check, s</th></tr></thead>", "<tbody>"}
+  local out = {"<div class=\"table\"><table>", "<thead><tr><th>project</th><th class=\"num\">lines of Roc</th><th class=\"num\">dev build after an edit, CPU s</th><th class=\"num\">cold check, CPU s</th></tr></thead>", "<tbody>"}
   for o in OVERVIEW do
     local name = "<a href=\"https://github.com/showell/" .. o.repo .. "\">" .. get(o, "label", o.repo) .. "</a>"
     if has_key(o, "measured") then
