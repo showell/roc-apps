@@ -122,7 +122,7 @@ The brackets after `app` name the two things the app hands the platform, and the
 
 Types are at the heart of every Roc program. A type says what a value holds, and the compiler checks every value against its type. That gives this book its rule: get the types right, and everything else follows. A type that holds just the values that make sense leaves each function a plain job, and the compiler checks the rest. So a good way to meet a Roc program is to read its types.
 
-This book shows Safari Ride's types first, and they reach every part of the program, from a single number to the whole ride. Types describe the structure of a program's data and the rules it keeps, and each stop shows one way they do it.
+This book shows Safari Ride's types first, from a single number to the whole ride. Types describe the structure of a program's data and the rules it keeps, and each stop shows one way they do it.
 
 ### Distance pins down a number
 
