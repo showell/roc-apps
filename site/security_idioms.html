@@ -63,6 +63,46 @@ the bugs below got past that.</p>
 this write? What does this request cost? Each fix adds one of those questions, as a type where a type can ask it,
 and as a check where it can't.</p>
 
+<h2>What we'd ask of Roc</h2>
+<p>These are recommendations from one project's experience. The first is the one this page keeps running into.</p>
+<h3>Linear types</h3>
+<p>A value of a <em>linear</em> type must be used exactly once: it can't be copied, and it can't be dropped. An
+<em>affine</em> type is looser: at most once, so it can't be copied but may be dropped. Roc has neither. It tracks at
+run time whether a value is unique, to update it in place, but the type checker doesn't. Roc already goes part of
+the way: a statement must evaluate to <code>{}</code>, so a function's result can't be dropped by accident. (At our pinned nightly, an opaque type
+whose backing type is <code>{}</code> slips past that rule; a token carrying a user's id doesn't.) But
+<code>_ = revoke!(...)</code> drops it on purpose and compiles.</p>
+<p>Three places on this page would use linear types:</p>
+<ul>
+<li><strong>A revocation that must be ended.</strong> Each revoking write would return a linear value naming whose
+streams to end, and only <code>UserStreams.end_every_stream!</code> would take it. A sign-out that forgot the ending,
+on any path, early returns included, would fail to compile. That would replace the check's
+<code>unended_streams</code> finding, and close two of its gaps: the check judges by line order, not by path, and it
+reads names, not values, where the value would carry the user. It would also keep the layers apart: the writer
+returns the value and the action ends the streams. It still wouldn't decide which writes revoke something; the
+table's <code>ends</code> and <code>keeps</code> stay a reader's call. And it can't help with a crash between the
+write and the ending, or a file edited by hand.</li>
+<li><strong>A proof spent once.</strong> If <code>replace_password_hash!</code> consumed its <code>AccountProof</code>,
+a proof could set one password, once, and couldn't be kept for later. An affine type is enough for this. Today the
+proof is opaque but can be copied, so code holding one could call the writer twice. No code does, and the
+credential table names the one caller, but the type would make it impossible. It wouldn't replace the credential
+check, which also covers the writers that take no proof.</li>
+<li><strong>A claim spent by its join.</strong> A linear <code>HumanClaim.Unclaimed</code> would be spent by the join
+that redeems it, so one judgment couldn't serve two joins. Today the invite's own state, spent after one join, stops a
+second redemption at run time. Linearity alone wouldn't tie the claim to the invite's human, though. That is the
+runtime id check in <code>HumanInvites.join</code>. To retire it, one loader would also have to hand back the claim
+and the invite as a single value.</li>
+</ul>
+<h3>Nothing else, so far</h3>
+<p>The other gaps on this page are our own design choices, not Roc's. For example, the platform's answer is a plain
+record, so any module could set its stream fields. Roc's opaque types would let us close them, and that is ours to
+do.</p>
+<h3>What Roc already gives us</h3>
+<p>Current Roc already does a lot for a service like this. A pure function can't do I/O, and every effect is marked
+by <code>!</code> and <code>=&gt;</code>, so a reader can see where the effects are. An opaque type is the only way to
+make its values, which is what <code>AccountProof</code> and <code>HumanClaim</code> stand on. <code>match</code> is
+exhaustive, which is what <code>RouteCost</code> depends on, and there are no nulls.</p>
+
 <h2>Streams that outlived a sign-out</h2>
 <h3>The bug</h3>
 <p>The devices page has a button, "Sign out other devices" (<code>POST /devices/sign-out-others</code>). It revoked
@@ -90,10 +130,10 @@ failed partway:</p>
 <!-- snippet sign-out-others -->
 
 <h3>Why a check, and not a type</h3>
-<p>The rule is "after this write, also do that." A type can demand a value before a call. It can't demand a step
-after one. We considered a <code>Revocation</code> value that each revoking write would return, and that only ending
-the streams would take. Roc has no linear types, so nothing makes a caller use a value it was given: a caller could
-drop the <code>Revocation</code> and compile. The other way to force it, ending the streams inside the writer itself,
+<p>The rule is "after this write, also do that." In Roc today, a type can demand a value before a call. It can't
+demand a step after one. We considered a <code>Revocation</code> value that each revoking write would return, and that
+only ending the streams would take. Roc refuses a statement whose value isn't <code>{}</code>, so a caller couldn't
+drop it by accident. But with no linear types, <code>_ =</code> drops it on purpose, and that compiles. The other way to force it, ending the streams inside the writer itself,
 would put the ending in the wrong layer. In roc-chat only <code>FileFacts</code> touches files, through each
 feature's <code>*Files</code> module, and those modules do only file work; they decide nothing.</p>
 <p>So a check holds the rule. <code>tools/check_stream_endings.shale</code> reads every app module with Roc's own
