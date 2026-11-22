@@ -21,14 +21,14 @@ Still :: List(Still.Polygon).{
 	## starts where it ends, or a radial one whose axes span less than
 	## `min_axes_area`.
 	of : List(Still.Polygon) -> Still
-	of = |polygons| {
-		for polygon in polygons {
+	of = |given_polygons| {
+		for polygon in given_polygons {
 			match polygon_flaw(polygon) {
 				Sound => {}
 				Flawed(reason) => crash "Still.of: ${reason}"
 			}
 		}
-		Still.(polygons)
+		Still.(given_polygons)
 	}
 
 	## A place in the still's frame: a corner of a polygon, or where a

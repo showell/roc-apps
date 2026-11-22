@@ -25,7 +25,7 @@ Tower :: { yaw : Angle.Turn, beacon : Beacon }.{
 
 	## A tower turned by `yaw`, with `beacon` on top.
 	standing : { yaw : Angle.Turn, beacon : Beacon } -> Tower
-	standing = |{ yaw, beacon }| Tower.({ yaw, beacon })
+	standing = |{ yaw: turn, beacon }| Tower.({ yaw: turn, beacon })
 
 	## How far the tower is turned from square with the road, positive to the
 	## right.

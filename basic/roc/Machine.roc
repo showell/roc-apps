@@ -1153,13 +1153,13 @@ Machine :: [].{
 						fx: $fx,
 					}
 					Comma => {
-						next = $col + Machine.zone - $col.rem_by(Machine.zone)
+						next_zone = $col + Machine.zone - $col.rem_by(Machine.zone)
 						{
 							said: "",
-							t: if w > 0 and next >= w {
+							t: if w > 0 and next_zone >= w {
 								"\n"
 							} else {
-								Machine.spaces(next - $col)
+								Machine.spaces(next_zone - $col)
 							},
 							fx: $fx,
 						}
@@ -1643,14 +1643,14 @@ Machine :: [].{
 		}
 		x = Machine.num_of(f.v)
 		limit = Machine.num_of(l.v)
-		step = Machine.num_of(s.v)
+		step_size = Machine.num_of(s.v)
 		if Machine.plain(m, s.fx) {
 			Machine.enter_for(
 				pg,
 				m,
 				v,
 				limit,
-				step,
+				step_size,
 				x,
 			)
 		} else {
@@ -1663,7 +1663,7 @@ Machine :: [].{
 					d,
 					v,
 					limit,
-					step,
+					step_size,
 					x,
 				)
 			}
@@ -1680,13 +1680,13 @@ Machine :: [].{
 		m,
 		v,
 		limit,
-		step,
+		step_size,
 		x,
 	| {
 		f = {
 			v: v,
 			limit: limit,
-			step: step,
+			step: step_size,
 			after: m.pc + 1,
 		}
 		keep = Machine.outside(m.loops, m.ldepth, f.after)

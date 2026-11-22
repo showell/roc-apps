@@ -141,8 +141,8 @@ the pages are built from. Also on
 	<span class="syn-comment">## A new search whose first piece is on `square`, already shown, which is</span>
 	<span class="syn-comment">## solved when `target_count` pieces stand on the board.</span>
 	<span class="syn-name">start</span> : { square : <span class="syn-type">U8</span>, target_count : <span class="syn-type">U64</span> } -&gt; <span class="syn-type">Tape</span>
-	<span class="syn-name">start</span> = |{ square, target_count }| {
-		running = <span class="syn-type">Tape</span>.({ ..empty_parts, search: <span class="syn-type">Running</span>, target_count })
+	<span class="syn-name">start</span> = |{ square, target_count: wanted_count }| {
+		running = <span class="syn-type">Tape</span>.({ ..empty_parts, search: <span class="syn-type">Running</span>, target_count: wanted_count })
 		placed = running.with_move(<span class="syn-type">Place</span>(<span class="syn-type">U8</span>.bitwise_and(square, square_bits)))
 		<span class="syn-keyword">match</span> placed.step_forward() {
 			<span class="syn-type">Ok</span>(shown) =&gt; shown
@@ -156,7 +156,7 @@ the pages are built from. Also on
 		<span class="syn-keyword">match</span> move {
 			<span class="syn-type">Place</span>(square) =&gt; {
 				at_end = tape.pieces_at_end + <span class="syn-number">1</span>
-				search =
+				next_search =
 					<span class="syn-keyword">if</span> at_end == tape.target_count {
 						<span class="syn-type">Solved</span>
 					} <span class="syn-keyword">else</span> {
@@ -168,7 +168,7 @@ the pages are built from. Also on
 						events: tape.events.append(<span class="syn-type">U8</span>.bitwise_or(place_bit, square)),
 						pieces_at_end: at_end,
 						deepest: <span class="syn-type">U64</span>.max(tape.deepest, at_end),
-						search,
+						search: next_search,
 					},
 				)
 			}
@@ -262,8 +262,8 @@ the pages are built from. Also on
 		<span class="syn-keyword">if</span> tape.cursor == <span class="syn-number">0</span> {
 			<span class="syn-type">Err</span>(<span class="syn-type">AtStart</span>)
 		} <span class="syn-keyword">else</span> {
-			cursor = tape.cursor - <span class="syn-number">1</span>
-			event = tape.events.get(cursor) ?? <span class="syn-keyword">crash</span> <span class="syn-string">&quot;Tape.step_back: the cursor is past the tape&quot;</span>
+			back_at = tape.cursor - <span class="syn-number">1</span>
+			event = tape.events.get(back_at) ?? <span class="syn-keyword">crash</span> <span class="syn-string">&quot;Tape.step_back: the cursor is past the tape&quot;</span>
 			square = <span class="syn-type">U8</span>.bitwise_and(event, square_bits).to_u64()
 			touched = tape.touches.get(square) ?? <span class="syn-keyword">crash</span> <span class="syn-string">&quot;Tape.step_back: a square past the board&quot;</span>
 			<span class="syn-keyword">if</span> <span class="syn-type">U8</span>.bitwise_and(event, place_bit) != <span class="syn-number">0</span> {
@@ -271,7 +271,7 @@ the pages are built from. Also on
 					<span class="syn-type">Tape</span>.(
 						{
 							..tape,
-							cursor,
+							cursor: back_at,
 							touches: tape.touches.set(square, touched - <span class="syn-number">1</span>) ?? <span class="syn-keyword">crash</span> <span class="syn-string">&quot;Tape.step_back: a square past the board&quot;</span>,
 							board: tape.board.set(square, <span class="syn-number">-1</span>) ?? <span class="syn-keyword">crash</span> <span class="syn-string">&quot;Tape.step_back: a square past the board&quot;</span>,
 							pieces_shown: tape.pieces_shown - <span class="syn-number">1</span>,
@@ -283,7 +283,7 @@ the pages are built from. Also on
 					<span class="syn-type">Tape</span>.(
 						{
 							..tape,
-							cursor,
+							cursor: back_at,
 							touches: tape.touches.set(square, touched - <span class="syn-number">1</span>) ?? <span class="syn-keyword">crash</span> <span class="syn-string">&quot;Tape.step_back: a square past the board&quot;</span>,
 							board: tape.board.set(square, move_number(tape.pieces_shown)) ?? <span class="syn-keyword">crash</span> <span class="syn-string">&quot;Tape.step_back: a square past the board&quot;</span>,
 							pieces_shown: tape.pieces_shown + <span class="syn-number">1</span>,

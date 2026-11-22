@@ -240,7 +240,7 @@ Walk := [].{
 	Ticked : { bump : Bump, poop : Laid, step : Pt, walk : Walked, walked : I32 }
 
 	pixel_tick : Lent, Work, I32, I32, U32, U32 -> Ticked
-	pixel_tick = |lent, work0, axis, inc, before, laid| {
+	pixel_tick = |lent, work0, axis, inc, walked_before, laid| {
 		s = {
 			from: lent.from,
 			poops: lent.poops,
@@ -261,7 +261,7 @@ Walk := [].{
 			{ anchor, pooper, work: work2 } = w
 			{ depth: d2, moving: m2, park: park2 } = work2
 			{ cells: c2, crits: k2 } = park2
-			poop = if poops_due(before, walked) == 0 {
+			poop = if poops_due(walked_before, walked) == 0 {
 				no_poop
 			} else {
 				lay(s, k2, { anchor, pooper, step, laid })
@@ -301,8 +301,8 @@ Walk := [].{
 	poop_slots = Rules.poop.slots.to_u64_wrap()
 
 	poops_due : U32, I32 -> U64
-	poops_due = |before, walked| {
-		b = before.to_u64()
+	poops_due = |walked_before, walked| {
+		b = walked_before.to_u64()
 		a = b + walked.to_u64_wrap()
 		after = if (a > 4294967295) 4294967295 else a
 		due = after // poop_every - b // poop_every
@@ -458,7 +458,7 @@ Walk := [].{
 		k1 = put(k0, 0, { ..me, kin: no_kin })
 		{ by, bump, park: park1 } = sweep(s, { cells: c0, crits: k1 }, axis, inc)
 		park2 = if (by != 0) move_to(s, park1, 0, wrapped(s.geo, plus(from, on_axis(axis, by)))) else park1
-		{ park: park3, went, walked: more } = if bump.kind == bump_none {
+		{ park: park3, went: moved, walked: more } = if bump.kind == bump_none {
 			{ park: park2, went: Bool.True, walked: 0 }
 		} else {
 			go_around(s, park2, axis, inc - by, inc.abs(), bump)
@@ -467,7 +467,7 @@ Walk := [].{
 		me3 = get_c(k3, 0)
 		k4 = put(k3, 0, { ..me3, kin: me.kin })
 		{
-			bump: if (went) no_bump else bump,
+			bump: if (moved) no_bump else bump,
 			park: { cells: c3, crits: k4 },
 			walked: by.abs() + more,
 		}

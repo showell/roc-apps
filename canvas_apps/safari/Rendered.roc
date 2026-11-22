@@ -9,7 +9,7 @@ Rendered :: { depth : Distance, sprite : Sprite }.{
 
 	## The rendering of `sprite`, standing `depth` ahead of the camera.
 	of : Distance, Sprite -> Rendered
-	of = |depth, sprite| Rendered.({ depth, sprite })
+	of = |ahead, picture| Rendered.({ depth: ahead, sprite: picture })
 
 	## How far ahead of the camera it is, negative for what is behind the rider.
 	depth : Rendered -> Distance

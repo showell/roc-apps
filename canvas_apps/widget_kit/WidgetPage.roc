@@ -85,12 +85,20 @@ WidgetPage :: [].{
 		model_at_next_step : model, Input.Snapshot -> model,
 		frame_shapes : model -> List(Shapes.Shape),
 	} -> CanvasApp.CanvasApp(model)
-	canvas_app = |{ title, frames_a_second, init, model_at_next_step, frame_shapes }| {
+	canvas_app = |
+		{
+			title,
+			frames_a_second,
+			init,
+			model_at_next_step,
+			frame_shapes: draw_frame,
+		},
+	| {
 		size: { width: canvas_width, height: canvas_height },
 		frames_a_second,
 		init,
 		model_at_next_step: CanvasApp.untimed_model_at_next_step(model_at_next_step),
-		frame_shapes,
+		frame_shapes: draw_frame,
 		sounds: |_model| 0,
 		tones: [],
 		title,
@@ -181,8 +189,8 @@ WidgetPage :: [].{
 		picture_shapes : List(Shapes.Shape),
 		status_lines : List(Str),
 	} -> List(Shapes.Shape)
-	frame_shapes = |{ picture_shapes, status_lines }|
-		[picture_shapes, [panel], status_lines.map_with_index(status_line)].join()
+	frame_shapes = |{ picture_shapes: picture, status_lines }|
+		[picture, [panel], status_lines.map_with_index(status_line)].join()
 
 	## The ride's `ride_shapes` over its `backdrop`, at the canvas's share of
 	## Safari's screen, so a widget's picture is what the ride's frame shows.

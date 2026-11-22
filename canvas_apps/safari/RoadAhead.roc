@@ -30,14 +30,14 @@ RoadAhead :: [].{
 		## The road ahead of a rider on the route's segment at `rider_index`: as
 		## far as the rider can see, or to the route's end.
 		ahead_of : Route, Route.SegmentIndex -> RoadAhead.RoadView
-		ahead_of = |route, rider_index| {
-			segments_ahead = segments_ahead_of(route, rider_index)
+		ahead_of = |on_route, rider_index| {
+			ahead = segments_ahead_of(on_route, rider_index)
 			RoadAhead.RoadView.(
 				{
-					route,
-					segments_ahead,
-					bends_ahead: worked_bends_ahead(route, segments_ahead),
-					bend_behind: worked_bend_behind(route, rider_index),
+					route: on_route,
+					segments_ahead: ahead,
+					bends_ahead: worked_bends_ahead(on_route, ahead),
+					bend_behind: worked_bend_behind(on_route, rider_index),
 				},
 			)
 		}

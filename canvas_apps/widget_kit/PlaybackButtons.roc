@@ -77,7 +77,7 @@ PlaybackButtons :: [].{
 		opens_at : number,
 		frame_shapes : PlaybackButtons.Transport(number) -> List(Shapes.Shape),
 	} -> CanvasApp.CanvasApp(PlaybackButtons.Transport(number))
-	canvas_app = |{ title, range, opens_at, frame_shapes }|
+	canvas_app = |{ title, range, opens_at, frame_shapes: draw_frame }|
 		WidgetPage.canvas_app({
 			title,
 			frames_a_second: WidgetPage.moving_frames_a_second,
@@ -86,7 +86,7 @@ PlaybackButtons :: [].{
 				transport,
 				{ input, range },
 			),
-			frame_shapes,
+			frame_shapes: draw_frame,
 		})
 
 	## The buttons after one frame: a press, then the number's own run.

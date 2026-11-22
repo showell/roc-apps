@@ -78,12 +78,12 @@ Sun :: [].{
 	sun_shapes = |sun_sighting|
 		match sun_sighting {
 			InView(sun) => {
-				look = Sun.look(sun)
-				Shapes.added_light_shapes([Screen.above_horizon_rect(look.glow)]).append(
+				sun_look = Sun.look(sun)
+				Shapes.added_light_shapes([Screen.above_horizon_rect(sun_look.glow)]).append(
 					Disc({
 						center: sun.center,
 						radius: Sun.disc_radius_on_screen(sun),
-						fill: look.disc,
+						fill: sun_look.disc,
 					}),
 				)
 			}

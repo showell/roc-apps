@@ -45,8 +45,8 @@ Tape :: {
 	## A new search whose first piece is on `square`, already shown, which is
 	## solved when `target_count` pieces stand on the board.
 	start : { square : U8, target_count : U64 } -> Tape
-	start = |{ square, target_count }| {
-		running = Tape.({ ..empty_parts, search: Running, target_count })
+	start = |{ square, target_count: wanted_count }| {
+		running = Tape.({ ..empty_parts, search: Running, target_count: wanted_count })
 		placed = running.with_move(Place(U8.bitwise_and(square, square_bits)))
 		match placed.step_forward() {
 			Ok(shown) => shown
@@ -60,7 +60,7 @@ Tape :: {
 		match move {
 			Place(square) => {
 				at_end = tape.pieces_at_end + 1
-				search =
+				next_search =
 					if at_end == tape.target_count {
 						Solved
 					} else {
@@ -72,7 +72,7 @@ Tape :: {
 						events: tape.events.append(U8.bitwise_or(place_bit, square)),
 						pieces_at_end: at_end,
 						deepest: U64.max(tape.deepest, at_end),
-						search,
+						search: next_search,
 					},
 				)
 			}
@@ -166,8 +166,8 @@ Tape :: {
 		if tape.cursor == 0 {
 			Err(AtStart)
 		} else {
-			cursor = tape.cursor - 1
-			event = tape.events.get(cursor) ?? crash "Tape.step_back: the cursor is past the tape"
+			back_at = tape.cursor - 1
+			event = tape.events.get(back_at) ?? crash "Tape.step_back: the cursor is past the tape"
 			square = U8.bitwise_and(event, square_bits).to_u64()
 			touched = tape.touches.get(square) ?? crash "Tape.step_back: a square past the board"
 			if U8.bitwise_and(event, place_bit) != 0 {
@@ -175,7 +175,7 @@ Tape :: {
 					Tape.(
 						{
 							..tape,
-							cursor,
+							cursor: back_at,
 							touches: tape.touches.set(square, touched - 1) ?? crash "Tape.step_back: a square past the board",
 							board: tape.board.set(square, -1) ?? crash "Tape.step_back: a square past the board",
 							pieces_shown: tape.pieces_shown - 1,
@@ -187,7 +187,7 @@ Tape :: {
 					Tape.(
 						{
 							..tape,
-							cursor,
+							cursor: back_at,
 							touches: tape.touches.set(square, touched - 1) ?? crash "Tape.step_back: a square past the board",
 							board: tape.board.set(square, move_number(tape.pieces_shown)) ?? crash "Tape.step_back: a square past the board",
 							pieces_shown: tape.pieces_shown + 1,
