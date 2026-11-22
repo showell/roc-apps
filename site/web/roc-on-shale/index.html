@@ -2251,11 +2251,11 @@ use(<span class="syn-string">&quot;cookbook:findings.shale&quot;</span>)
 <section class="example" id="check_families">
 <nav class="steps"><a href="#check_module_size">← previous</a> · <a href="#contents">contents</a> · <a href="#find_deep_calls">next →</a></nav>
 <h3><a href="#check_families">check_families</a></h3>
-<p>Modules that look alike but are spelled unlike, and one type name declared in two shapes, read from Roc's own parse trees across a whole tree, a gate with its plants' self-test in Roc too.</p>
-<p class="facts">Its effects: <code>Shale.arg!</code>, <code>Shale.fail!</code>, <code>Shale.glob!</code>, <code>Shale.print!</code>, <code>Shale.re_lines!</code>, <code>Shale.read!</code>, <code>Shale.roc_tree!</code>, <code>Shale.run!</code>.<br>Roc: 675 lines in 4 files. Shale original: 183 lines, plus 1,328 lines in the 5 libraries it loads, which other recipes share.</p>
+<p>Modules that look alike but are spelled unlike, one type name declared in two shapes, and a conversion into a type not named <code>from_</code>, read from Roc's own parse trees across a whole tree, a gate with its plants' self-test in Roc too.</p>
+<p class="facts">Its effects: <code>Shale.arg!</code>, <code>Shale.fail!</code>, <code>Shale.glob!</code>, <code>Shale.print!</code>, <code>Shale.re_lines!</code>, <code>Shale.read!</code>, <code>Shale.roc_tree!</code>, <code>Shale.run!</code>.<br>Roc: 727 lines in 5 files. Shale original: 183 lines, plus 1,328 lines in the 5 libraries it loads, which other recipes share.</p>
 <h4>Roc</h4>
 <p class="file">It also imports <code>Declarations</code>, <code>Finding</code>, <code>Headers</code>, <code>Text</code>, <code>Tree</code> from <a href="#shared-library">the shared Roc library</a>.</p>
-<p class="file"><a href="https://github.com/showell/shale/blob/e319d9497afb46e30c6b3116e43f72208cada380/cookbook/roc/check_families/check_families.roc"><code>cookbook/roc/check_families/check_families.roc</code></a>, 177 lines</p>
+<p class="file"><a href="https://github.com/showell/shale/blob/965d516500623c2d5b642ae1511c12cb692a13c0/cookbook/roc/check_families/check_families.roc"><code>cookbook/roc/check_families/check_families.roc</code></a>, 180 lines</p>
 <pre><code><span class="syn-comment">## check_families, in Roc on Shale&#39;s platform (roc_platform/README.md):</span>
 <span class="syn-comment">## modules that look alike but are spelled unlike, and one type name with two</span>
 <span class="syn-comment">## meanings. A reader who knows `TreeSighting.trees_in_view` looks for</span>
@@ -2263,7 +2263,7 @@ use(<span class="syn-string">&quot;cookbook:findings.shale&quot;</span>)
 <span class="syn-comment">## `Geom.Pose` as the same thing, so a family spelled unlike or a twin of</span>
 <span class="syn-comment">## another shape costs every reader a wrong guess. Its launcher,</span>
 <span class="syn-comment">## cookbook/roc/check_families.shale, is how it is run, and its header says</span>
-<span class="syn-comment">## the rules, `family` and `twin_name`. check_goldens.shale, beside this,</span>
+<span class="syn-comment">## the rules, `family`, `twin_name` and `unpaired_conversion`. check_goldens.shale, beside this,</span>
 <span class="syn-comment">## holds its output on the plants to its goldens, line for line.</span>
 <span class="syn-comment">##</span>
 <span class="syn-comment">##   cd &lt;repo&gt; &amp;&amp; shale cookbook:roc/check_families.shale roles=tools/type_roles.txt</span>
@@ -2276,7 +2276,7 @@ use(<span class="syn-string">&quot;cookbook:findings.shale&quot;</span>)
 <span class="syn-comment">## This root globs the files (`Shale.glob!`), has Roc&#39;s parser read them</span>
 <span class="syn-comment">## (`Shale.roc_tree!`) and each one&#39;s text (`Shale.read!`), reads the roles</span>
 <span class="syn-comment">## file, and prints the verdict (`Shale.print!`, `Shale.fail!`). Its modules</span>
-<span class="syn-comment">## are beside it, a module a check (Family, Twin) and SelfTest; what they read</span>
+<span class="syn-comment">## are beside it, a module a check (Family, Twin, Conversion) and SelfTest; what they read</span>
 <span class="syn-comment">## (Tree, Declarations, Text) and Finding are the cookbook&#39;s Roc library,</span>
 <span class="syn-comment">## cookbook/roc/lib/.</span>
 <span class="syn-comment">## budget: steps=800000000 arena_bytes=2000000000 output_bytes=4000000 programs=100</span>
@@ -2287,6 +2287,7 @@ use(<span class="syn-string">&quot;cookbook:findings.shale&quot;</span>)
 <span class="syn-keyword">import</span> lib.<span class="syn-type">Finding</span>
 <span class="syn-keyword">import</span> lib.<span class="syn-type">Text</span>
 <span class="syn-keyword">import</span> lib.<span class="syn-type">Tree</span>
+<span class="syn-keyword">import</span> <span class="syn-type">Conversion</span>
 <span class="syn-keyword">import</span> <span class="syn-type">Family</span>
 <span class="syn-keyword">import</span> <span class="syn-type">SelfTest</span>
 <span class="syn-keyword">import</span> <span class="syn-type">Twin</span>
@@ -2343,7 +2344,7 @@ use(<span class="syn-string">&quot;cookbook:findings.shale&quot;</span>)
 	}
 }
 
-<span class="syn-comment">## Both checks over the files that parsed, the roles file read for</span>
+<span class="syn-comment">## The checks over the files that parsed, the roles file read for</span>
 <span class="syn-comment">## `twin_name`.</span>
 <span class="syn-name">run_checks!</span> : <span class="syn-type">List</span>(<span class="syn-type">ParsedFile</span>) =&gt; <span class="syn-type">List</span>(<span class="syn-type">Finding</span>)
 <span class="syn-name">run_checks!</span> = |files| {
@@ -2357,7 +2358,8 @@ use(<span class="syn-string">&quot;cookbook:findings.shale&quot;</span>)
 	twin_files = files
 		.keep_if(|file| !(file.is_app))
 		.map(|file| { path: file.read.path, types: file.read.declared.types })
-	family_findings.concat(<span class="syn-type">Twin</span>.findings(twin_files, roles))
+	conversion_findings = <span class="syn-type">Conversion</span>.findings(files.map(|file| file.read.declared.values).join())
+	family_findings.concat(<span class="syn-type">Twin</span>.findings(twin_files, roles)).concat(conversion_findings)
 }
 
 <span class="syn-comment">## The modules among the files read, in their order.</span>
@@ -2413,9 +2415,10 @@ use(<span class="syn-string">&quot;cookbook:findings.shale&quot;</span>)
 
 <span class="syn-comment">## The checks, in the order the summary counts them.</span>
 <span class="syn-name">checks</span> : <span class="syn-type">List</span>(<span class="syn-type">Str</span>)
-<span class="syn-name">checks</span> = [<span class="syn-string">&quot;family&quot;</span>, <span class="syn-string">&quot;twin_name&quot;</span>]
+<span class="syn-name">checks</span> = [<span class="syn-string">&quot;family&quot;</span>, <span class="syn-string">&quot;twin_name&quot;</span>, <span class="syn-string">&quot;unpaired_conversion&quot;</span>]
 
-<span class="syn-comment">## The counts, `check_families (Roc): N files; family N, twin_name N`.</span>
+<span class="syn-comment">## The counts, `check_families (Roc): N files; family N, twin_name N,</span>
+<span class="syn-comment">## unpaired_conversion N`.</span>
 <span class="syn-name">summary_of</span> : <span class="syn-type">List</span>(<span class="syn-type">Finding</span>), <span class="syn-type">U64</span> -&gt; <span class="syn-type">Str</span>
 <span class="syn-name">summary_of</span> = |findings, file_count| {
 	<span class="syn-string">&quot;check_families (Roc): </span>${file_count.to_str()}<span class="syn-string"> files; </span>${<span class="syn-type">Finding</span>.counts_of(findings, checks)}<span class="syn-string">&quot;</span>
@@ -2434,7 +2437,51 @@ use(<span class="syn-string">&quot;cookbook:findings.shale&quot;</span>)
 	}
 }
 </code></pre>
-<p class="file"><a href="https://github.com/showell/shale/blob/e319d9497afb46e30c6b3116e43f72208cada380/cookbook/roc/check_families/Family.roc"><code>cookbook/roc/check_families/Family.roc</code></a>, 198 lines</p>
+<p class="file"><a href="https://github.com/showell/shale/blob/965d516500623c2d5b642ae1511c12cb692a13c0/cookbook/roc/check_families/Conversion.roc"><code>cookbook/roc/check_families/Conversion.roc</code></a>, 42 lines</p>
+<pre><code><span class="syn-comment">## The `unpaired_conversion` check: inside a type&#39;s braces, a function named</span>
+<span class="syn-comment">## for a noun that gives the type, such as `Distance.metres : F64 -&gt;</span>
+<span class="syn-comment">## Distance`, when the same type has `to_&lt;noun&gt;`. `Distance.to_metres` turns</span>
+<span class="syn-comment">## a distance into metres, so the way back reads `Distance.from_metres`, and</span>
+<span class="syn-comment">## a bare `metres` beside it leaves the reader to guess which way it goes. A</span>
+<span class="syn-comment">## constructor with no `to_` partner, such as `Clock.at_step`, is no finding.</span>
+<span class="syn-keyword">import</span> lib.<span class="syn-type">Declarations</span>
+<span class="syn-keyword">import</span> lib.<span class="syn-type">Finding</span>
+
+<span class="syn-type">Conversion</span> := [].{
+
+	<span class="syn-comment">## Each function that gives its own type and has a `to_` partner of its</span>
+	<span class="syn-comment">## name in the same type, a finding, in the order of `values`.</span>
+	<span class="syn-name">findings</span> : <span class="syn-type">List</span>(<span class="syn-type">Declarations.ValueDeclared</span>) -&gt; <span class="syn-type">List</span>(<span class="syn-type">Finding</span>)
+	<span class="syn-name">findings</span> = |values| {
+		names = <span class="syn-type">Set</span>.from_list(values.map(member_key))
+		is_unpaired = |value| {
+			gives_its_type = value.is_function <span class="syn-keyword">and</span> value.result_type == value.owner
+			partner = member_key({ ..value, name: <span class="syn-string">&quot;to_</span>${value.name}<span class="syn-string">&quot;</span> })
+			value.owner != <span class="syn-string">&quot;&quot;</span> <span class="syn-keyword">and</span> gives_its_type <span class="syn-keyword">and</span> names.contains(partner)
+		}
+		values.keep_if(is_unpaired).map(unpaired_finding)
+	}
+}
+
+<span class="syn-comment">## A type&#39;s member, by its file, its type and its name.</span>
+<span class="syn-name">member_key</span> : <span class="syn-type">Declarations.ValueDeclared</span> -&gt; <span class="syn-type">Str</span>
+<span class="syn-name">member_key</span> = |value| <span class="syn-string">&quot;</span>${value.path}<span class="syn-string"> </span>${value.owner}<span class="syn-string">.</span>${value.name}<span class="syn-string">&quot;</span>
+
+<span class="syn-comment">## The finding of a conversion into the type that isn&#39;t named `from_`.</span>
+<span class="syn-name">unpaired_finding</span> : <span class="syn-type">Declarations.ValueDeclared</span> -&gt; <span class="syn-type">Finding</span>
+<span class="syn-name">unpaired_finding</span> = |value| {
+	owner = value.owner
+	name = value.name
+	beside = <span class="syn-string">&quot;`</span>${owner}<span class="syn-string">.</span>${name}<span class="syn-string">` gives its own type beside `</span>${owner}<span class="syn-string">.to_</span>${name}<span class="syn-string">`&quot;</span>
+	{
+		path: value.path,
+		line: value.line,
+		check: <span class="syn-string">&quot;unpaired_conversion&quot;</span>,
+		what: <span class="syn-string">&quot;</span>${beside}<span class="syn-string">: name it `from_</span>${name}<span class="syn-string">`, the way back&quot;</span>,
+	}
+}
+</code></pre>
+<p class="file"><a href="https://github.com/showell/shale/blob/965d516500623c2d5b642ae1511c12cb692a13c0/cookbook/roc/check_families/Family.roc"><code>cookbook/roc/check_families/Family.roc</code></a>, 198 lines</p>
 <pre><code><span class="syn-comment">## The `family` check. Modules whose names end in the same word form a family</span>
 <span class="syn-comment">## when there are three or more of them (`CatSighting`, `TreeSighting`,</span>
 <span class="syn-comment">## `RailSighting`). A public name that more than half of a family&#39;s members</span>
@@ -2634,7 +2681,7 @@ use(<span class="syn-string">&quot;cookbook:findings.shale&quot;</span>)
 	<span class="syn-type">Str</span>.join_with($parts, <span class="syn-string">&quot; &quot;</span>)
 }
 </code></pre>
-<p class="file"><a href="https://github.com/showell/shale/blob/e319d9497afb46e30c6b3116e43f72208cada380/cookbook/roc/check_families/SelfTest.roc"><code>cookbook/roc/check_families/SelfTest.roc</code></a>, 208 lines</p>
+<p class="file"><a href="https://github.com/showell/shale/blob/965d516500623c2d5b642ae1511c12cb692a13c0/cookbook/roc/check_families/SelfTest.roc"><code>cookbook/roc/check_families/SelfTest.roc</code></a>, 215 lines</p>
 <pre><code><span class="syn-comment">## The recipe&#39;s self-test: each plant under</span>
 <span class="syn-comment">## cookbook/roc/plants/check_families/ run through the launcher, held to its</span>
 <span class="syn-comment">## findings, its exit and what it says.</span>
@@ -2787,6 +2834,13 @@ use(<span class="syn-string">&quot;cookbook:findings.shale&quot;</span>)
 		counts: [(<span class="syn-string">&quot;twin_name&quot;</span>, <span class="syn-number">1</span>)],
 		says: [<span class="syn-string">&quot;`Lamp` is also declared at&quot;</span>],
 	}),
+	fires({
+		plant: <span class="syn-string">&quot;conversion/*.roc&quot;</span>,
+		arguments: [],
+		counts: [(<span class="syn-string">&quot;unpaired_conversion&quot;</span>, <span class="syn-number">1</span>)],
+		says: [<span class="syn-string">&quot;Span.roc:4: unpaired_conversion: `Span.metres` gives its own type beside `Span.to_metres`&quot;</span>],
+	}),
+	quiet(<span class="syn-string">&quot;conversion_paired/*.roc&quot;</span>, []),
 	stops({ plant: <span class="syn-string">&quot;broken/*.roc&quot;</span>, arguments: [], says: [<span class="syn-string">&quot;refused: &quot;</span>] }),
 ]
 
@@ -2844,7 +2898,7 @@ use(<span class="syn-string">&quot;cookbook:findings.shale&quot;</span>)
 	$faults
 }
 </code></pre>
-<p class="file"><a href="https://github.com/showell/shale/blob/e319d9497afb46e30c6b3116e43f72208cada380/cookbook/roc/check_families/Twin.roc"><code>cookbook/roc/check_families/Twin.roc</code></a>, 92 lines</p>
+<p class="file"><a href="https://github.com/showell/shale/blob/965d516500623c2d5b642ae1511c12cb692a13c0/cookbook/roc/check_families/Twin.roc"><code>cookbook/roc/check_families/Twin.roc</code></a>, 92 lines</p>
 <pre><code><span class="syn-comment">## The `twin_name` check: one type name declared in two modules with two</span>
 <span class="syn-comment">## different shapes, such as `Cat.Pose` and `Geom.Pose`, one word with two</span>
 <span class="syn-comment">## meanings, so a reader who knows one guesses the other wrong. It is</span>
