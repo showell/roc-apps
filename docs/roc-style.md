@@ -778,6 +778,52 @@ is the base; these rules sharpen it.
 - **Pure decisions live outside effects,** so `expect`s can reach them. An
   effect gathers input, calls a pure function for the decision, and acts on
   its answer. See [testing](#testing-and-enforcement).
+- **When one action must always follow another, the first takes a handle
+  that only a bracket function makes, and the bracket does the second
+  itself.** Ending a user's streams after a revocation, releasing after
+  acquiring: a caller asked to remember the second step forgets it. The
+  chat's "Sign out other devices" revoked the other devices' keys and left
+  their open streams running, which was notramo's finding. Now every
+  revoking write takes a `UserStreams.Revoker`, an
+  [opaque type](#make-wrong-values-impossible-to-build) nested in
+  `UserStreams`, and only `UserStreams.with_streams_ended!` makes one. It
+  runs its body with the handle, then ends the user's streams however the
+  body ended; a `?` or a `return` leaves only the body. A revoking write
+  outside the bracket has no handle to pass, so it doesn't compile, and
+  the handle carries the user, so the write and the ending can't name two.
+  **Fix the body's answer type:** with a generic `Try(a, e)`,
+  `|revoker| Ok(revoker)` hands the handle out of the bracket, and it
+  compiles. A `defer` is weaker, since code that leaves it out compiles;
+  this is Haskell's `bracket`, plus opacity (roc-chat `app/UserStreams.roc`
+  and `app/DeviceSessionsRoute.roc`):
+
+  ```roc
+  with_streams_ended! : UserId,
+  (UserStreams.Revoker => Try({}, [FileSystem(FileFacts.Fault)])) => Try(
+  	{},
+  	[FileSystem(FileFacts.Fault)],
+  )
+  with_streams_ended! = |id, revoke!| {
+  	revoked = revoke!(UserStreams.Revoker.(id))
+  	end_every_stream!(id)
+  	revoked
+  }
+
+  # A caller: each revoking write takes the handle.
+  UserStreams.with_streams_ended!(
+  	id,
+  	|revoker| {
+  		DeviceKeyFiles.revoke_every_active_device_key!(revoker)?
+  		SignInFiles.advance_session_generation!(revoker)
+  	},
+  )
+  ```
+
+  The types can't say which writes need the handle, so a table judges
+  every writer, and a hunt holds each one judged revoking to taking it
+  (roc-chat's `tools/check_stream_endings.shale`). A step that may
+  rightly be skipped (a cleanup only some callers want) is no bracket's:
+  it stays the caller's.
 - **Best-effort work runs in an aside, and gives back what it could not
   spend.** Work the request does not stand on (a broadcast, a welcome)
   runs between `Host.mark_aside!(Begin)` and `Host.mark_aside!(End)`: a read
