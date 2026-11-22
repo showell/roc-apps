@@ -93,7 +93,9 @@ var walkLoad = { files: null, shaders_first: null, shaders_last: null, first_fra
 	}
 
 	// After the first frame, wait for 20 frames in a row each under 100 ms,
-	// or 15 seconds, whichever comes first.
+	// or 4 seconds, whichever comes first. (On a real GPU the frames after
+	// the first came unsteadily for 10 seconds, so the walk waited that long
+	// behind this screen; now it shows them, and the reports count them.)
 	window.addEventListener("rocco:ready", function () {
 		walkLoad.first_frame = performance.now();
 		stage.textContent = "Starting the walk";
@@ -104,7 +106,7 @@ var walkLoad = { files: null, shaders_first: null, shaders_last: null, first_fra
 		function tick(now) {
 			steady = now - last < 100 ? steady + 1 : 0;
 			last = now;
-			if (steady >= 20 || now - ready > 15000) finish(); else requestAnimationFrame(tick);
+			if (steady >= 20 || now - ready > 4000) finish(); else requestAnimationFrame(tick);
 		}
 		requestAnimationFrame(tick);
 	});
@@ -401,7 +403,7 @@ var walkView = (function () {
 		lines.push("frames by length: up to 16.7 ms " + bins[0] + ", to 33 ms " + bins[1] + ", to 50 ms " + bins[2] + ", to 100 ms " + bins[3] + ", over 100 ms " + bins[4]);
 		lines.push("the 5 longest frames:");
 		longest.forEach(function (f) {
-			lines.push("  " + ms(f.gap) + " ms at " + Math.round(f.walked) + " m (" + (f.walked / 4).toFixed(1) + " s into the walk): " + happening(f.walked));
+			lines.push("  " + ms(f.gap) + " ms at " + Math.round(f.walked) + " m (" + (f.walked / 4).toFixed(1) + " s into the walk, " + ((f.at - walkLoad.first_frame) / 1000).toFixed(1) + " s after the first frame; engine CPU " + ms(f.cpu) + ", GPU " + ms(f.gpu) + "): " + happening(f.walked));
 		});
 		var gpu = frames.filter(function (f) { return f.gpu !== null; }).map(function (f) { return f.gpu; }).sort(function (a, b) { return a - b; });
 		if (gpu.length > 0) {
