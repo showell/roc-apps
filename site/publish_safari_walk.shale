@@ -97,7 +97,7 @@ function provenance(walk, engine)
     if f ~= "PROVENANCE" then text = text .. stat(LIVE .. "/" .. f).size .. " bytes  " .. f .. "\n" end
   end
   text = text .. "index.data.zst and index.data.gz are index.data compressed (zstd -19, gzip -9)\n"
-  text = text .. "models: conifers, grass and zebra Quaternius CC0 1.0; towers made by safari-walk's make_towers.roc; ducks and the kangaroo drawn from Rocco's primitive sphere, cube and cylinder (no CC0 duck or kangaroo model found); safari-walk's README lists each\n"
+  text = text .. "models: conifers, grass and zebra Quaternius CC0 1.0; towers made by safari-walk's make_towers.roc; ducks, the kangaroo and the tavern drawn from Rocco's primitive sphere, cube and cylinder (no CC0 duck, kangaroo or building model found); safari-walk's README lists each\n"
   text = text .. "sha256 " .. sha256_16(LIVE .. "/index.wasm") .. "  index.wasm\n"
   return text
 end
