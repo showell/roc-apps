@@ -75,6 +75,23 @@ questions, as a type where a type can ask it, and as a check where it can't.</p>
 <h2>What we'd ask of Roc</h2>
 <p>This is a recommendation from one project's experience. There is one so far, and this page keeps running into
 it.</p>
+<p>The idea in one sketch. Roc has no linear types, so <code>linear</code> here is made-up syntax, and the names are
+simplified from roc-chat's:</p>
+<pre class="roc"># Today: this compiles, and the other devices' open streams
+# outlive the sign-out. Only an outside check catches it.
+sign_out_others! = |user|
+    DeviceKeys.revoke_all!(user)
+    Ok({})  # forgot UserStreams.end_every_stream!(user)
+
+# With a linear type: revoking hands back a value that must
+# be used exactly once, and only ending the streams uses it.
+DeviceKeys.revoke_all! : UserId =&gt; linear OpenStreams
+UserStreams.end_every_stream! : linear OpenStreams =&gt; {}
+
+sign_out_others! = |user|
+    streams = DeviceKeys.revoke_all!(user)
+    Ok({})  # compile error: `streams` is never used</pre>
+<p>A value the compiler won't let you drop turns "you must remember to do this after that" into a type error.</p>
 <h3>Linear types</h3>
 <p>A value of a <em>linear</em> type must be used exactly once: it can't be copied, and it can't be dropped. An
 <em>affine</em> type is looser: at most once, so it can't be copied but may be dropped. Roc has neither. It tracks at
