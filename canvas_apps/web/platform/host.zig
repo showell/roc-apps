@@ -181,7 +181,7 @@ pub export fn toneCount() u32 {
 }
 
 // What one of them sounds like: a pitch in hertz and a length in
-// milliseconds, which is what roc-ray's Audio.gen_tone takes as well.
+// milliseconds.
 pub export fn toneFreq(index: u32) u32 {
     return roc_tone_freq(index);
 }

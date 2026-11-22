@@ -12,8 +12,8 @@
 ## (`Shapes.Mode`), which paints over it or adds light to it, in proportion to
 ## that alpha either way.
 ##
-## A CPU painter shades a brush with `BrushShade.shade`, BrushGlsl does it on
-## the GPU and shapes_canvas.js on a canvas, all from what is here. The tags are the ones
+## A CPU painter shades a brush with `BrushShade.shade`, and shapes_canvas.js
+## on a canvas, both from what is here. The tags are the ones
 ## shapes_canvas.js reads, and so is what they mean: gradients mix
 ## unpremultiplied, as the canvas specification says, and an offset outside
 ## [0, 1] is clamped as shapes_canvas.js clamps it.
@@ -125,7 +125,7 @@ Brush :: [].{
 	## The matrix that takes an offset from an ellipse's center to the unit
 	## circle, the inverse of the one whose columns are its axes. An offset
 	## (dx, dy) goes to (top_row.x * dx + top_row.y * dy, bottom_row.x * dx +
-	## bottom_row.y * dy). BrushShade.shade and BrushGlsl's uniforms both use it.
+	## bottom_row.y * dy). BrushShade.shade uses it.
 	ellipse_inverse : { axis_u : Point, axis_v : Point } -> {
 		top_row : Brush.MatrixRow,
 		bottom_row : Brush.MatrixRow,

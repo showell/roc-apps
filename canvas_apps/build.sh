@@ -12,8 +12,7 @@
 # package reference may.
 set -eu
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-# The compiler every roc-apps build uses, so both ends of a game are built
-# by one.
+# The compiler every roc-apps build uses.
 . "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/../pinned-roc.sh"
 name="${1:?usage: canvas_apps/build.sh <app> [release]}"
 case "${2:-}" in
@@ -62,8 +61,7 @@ if grep -q -e "✗" -e "●" "$LOG" || [ ! -s "$OUT/$name.wasm" ]; then cat "$LO
 rm -f "$LOG" "$GLUE_LOG"
 cp "$HERE/web/shapes_canvas.js" "$HERE/web/canvas_app_runner.js" "$OUT/"
 # Which compiler built this is recorded where the build happens rather than
-# guessed later: these pin the nightly roc-ray pins, and the `roc` symlink
-# points at a different one.
+# guessed later: this is the pin, and the `roc` on the PATH may be another.
 "$ROC" version | sed 's/Roc compiler version /roc /' > "$OUT/BUILT"
 echo "opt $opt" >> "$OUT/BUILT"
 cp "$HERE/$name/page.html" "$OUT/index.html"

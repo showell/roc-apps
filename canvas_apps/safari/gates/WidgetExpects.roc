@@ -97,8 +97,8 @@ words_shown = |canvas_app, inputs| {
 	$words
 }
 
-# The native runner plots every line of type with Font, which crashes on a
-# byte it has no glyph for, so each word a widget shows must have one. Every
+# Font.plotted_shapes draws a line of type as strokes, and crashes on a byte
+# it has no glyph for, so each word a widget shows must have one. Every
 # widget's first frame is read. The line named is there to show the words
 # were found at all.
 expect {

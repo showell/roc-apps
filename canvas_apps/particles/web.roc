@@ -1,5 +1,4 @@
-# Particles, as a page: the wasm module a browser runs. main.roc beside it
-# is the same app on roc-ray.
+# Particles, as a page: the wasm module a browser runs.
 app [Model, program] {
 	lib: "../lib/main.roc",
 	pf: platform "../web/platform/main.roc",

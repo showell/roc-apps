@@ -2,14 +2,11 @@
 
 A screensaver of a ride, as a canvas app: a rider on a motorcycle, a route of
 nineteen segments through fields, forests and towns, and animals that cross
-when they like. It runs as a page and as a native program on roc-ray, like the
-other canvas apps (`../README.md`). **The page is the maintained side**; the
-native program is the canvas apps' roc-ray spike, which proved the concept and
-is not kept current.
+when they like. It runs as a page, like the other canvas apps
+(`../README.md`).
 
     canvas_apps/build.sh safari       the page, http://<box>:9210/safari/
     canvas_apps/build.sh safari release   the same page as release wasm, which is what publishes
-    canvas_apps/native.sh safari      the native program (the spike, not kept current)
 
 Space pauses. Left and Right step back and forward through the ride's history —
 a frame at a time while paused, faster while it runs. J jumps to the next
@@ -54,7 +51,7 @@ ride stays on the road. `FrameBench.roc` and `FramePartsBench.roc` are loops ove
 the frame and its parts for `perf`. RasterFrame and ShapesFrame write their hex through
 `Hex.roc`.
 
-They are not built by `build.sh` or `native.sh`; the gates build and judge
+They are not built by `build.sh`; the gates build and judge
 them, in three tiers, each run from the roc-apps root:
 
     nice -n 19 shale canvas_apps/safari/gates/fast.shale       each edit

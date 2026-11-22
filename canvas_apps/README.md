@@ -1,7 +1,6 @@
 # Canvas apps
 
-Small interactive Roc programs. Each runs as a page in a browser, and the
-older ones also run natively on roc-ray, from the same files.
+Small interactive Roc programs. Each runs as a page in a browser.
 
 There are a few kinds. `safari` is a driving screensaver. `snake`, `pong` and
 `breakout` are arcade games. `particles` is a fountain of sprites that follows
@@ -16,8 +15,6 @@ own examples, by Luke Boswell, adapted to this scheme (below).
 
     canvas_apps/build.sh snake           the page, on the dev channel at :9210/snake/
     canvas_apps/build.sh snake release   the page as --opt=speed wasm, which site/publish.sh requires
-    canvas_apps/native.sh snake          the native program
-    TARGET=x64win canvas_apps/native.sh snake     for Windows
 
     node canvas_apps/web/page_check.mjs snake
     KEYS=3:Space DRAG=200,100,200,500 node canvas_apps/web/page_check.mjs pong
@@ -26,43 +23,32 @@ own examples, by Luke Boswell, adapted to this scheme (below).
 
 `ARCHITECTURE.md` says how an app runs, and which parts are JavaScript.
 
-**The page is the side we keep current.** The native side (`native/` and each
-app's `main.roc`) is frozen at the roc-ray release it was written for, at the
-repository's pinned nightly. `check.shale` type-checks it and the Windows and
-macOS workflows build it; the code sweeps pass it by. `native/README.md` has
-the details.
+The ported games once also built as native programs on roc-ray, from the same
+files. We stopped verifying native builds after some compiler churn, and the
+page is the one end now.
 
 ## Layout
 
 An app's folder holds its `<Name>App.roc` (the `CanvasApp` value), `web.roc`
-(the page's root), `main.roc` (the native root, for an app that has one), a
-`page.html`, a `shot.env`, and its own rules and drawing. The rules and drawing
-run the same under either runner. Everything outside the folder is a package:
+(the page's root), a `page.html`, a `shot.env`, and its own rules and drawing.
+Everything outside the folder is a package:
 
 - `lib/`: the vocabulary every app shares (shapes, brushes, input, fonts,
   cameras).
 - `web/`: the page's end, a wasm platform and host and the JavaScript that runs
   it.
-- `native/`: roc-ray's end, `CanvasAppRunner.roc`.
 - `widget_kit/`: what the tutorial's widgets share. It sits above `lib/` and
   Safari's `game` package, because it speaks in `Fraction`s.
 
 Read the modules for the rest.
 
-**The app root is `main.roc`**, as in roc-ray's examples, so tooling that walks
-up the tree to find it lands on the native app. `web.roc` beside it is the
-page's root. `native/` declares roc-ray in its own header, because a package
-sees only a platform it names; `lib/` declares none, so both platforms use it.
-
-**roc-ray must sit beside `roc-apps` on disk.** `<name>/main.roc` and
-`native/main.roc` name `../../../roc-ray/platform/main.roc` in the source.
-`native.sh` checks for it and says so when it is missing.
+**The app root is `web.roc`**, the page's. `lib/` declares no platform, so an
+app's rules and drawing are platform-free.
 
 ## Adding an app
 
-Five files:
+Four files:
 
-    <name>/main.roc             CanvasAppRunner.program(<Name>App.canvas_app)
     <name>/web.roc              WasmApp.program(<Name>App.canvas_app)
     <name>/<Name>App.roc        the CanvasApp value
     <name>/page.html            loads three scripts, and sets window.SHOW first
@@ -104,9 +90,8 @@ is missing. Three more settings go in it:
   address.
 
 **The keys an app may read are a fixed set** (`lib/Keys.roc`). A new key goes
-in four places: `Keys.Key` and `Keys.bit`, `KEY_BIT` in
-`web/canvas_app_runner.js`, and `watched_keys` and both match arms in
-`native/CanvasAppRunner.roc`. So a key exists on both ends at once.
+in three places: `Keys.Key` and `Keys.bit`, and `KEY_BIT` in
+`web/canvas_app_runner.js`.
 
 ## In a page of prose
 
@@ -139,11 +124,10 @@ steps writes `CanvasApp.untimed_model_at_next_step(step)`, and its `step` takes
 the model and the input alone. `frame_shapes` says what to draw. `sounds` sets a bit for each tone
 the last step set off, and `tones` says what each sounds like.
 
-An app is platform-free, so the same value goes to either runner, named out
-loud:
+An app is platform-free, and its page's root hands the value to the runner,
+named out loud:
 
 ```roc
-program = CanvasAppRunner.program(SnakeApp.canvas_app)  # snake/main.roc
 program = WasmApp.program(SnakeApp.canvas_app)          # snake/web.roc
 ```
 
@@ -159,9 +143,9 @@ until the next mark of its kind. `Blend(Add)` lights instead of painting;
 `Shapes.shapes_in_space` write the marks in pairs around a run of shapes.
 `lib/Shapes.roc` documents each.
 
-A quad or a polygon may be concave. The canvas fills it as it is; the native
-runner cuts it into triangles with `ConvexCut`, because raylib fills convex
-polygons.
+A quad or a polygon may be concave. The canvas fills it as it is; a painter
+that fills only convex polygons cuts it into triangles with `ConvexCut`, as
+Safari's frame proofs do.
 
 A `Brush.Fill` is a flat colour or one of five gradients, each carrying its
 geometry in scene coordinates, so every painter shades it the same way.
@@ -177,16 +161,15 @@ which is how the games write.
 `Text` is for words that should read well, and the widgets use it. The canvas
 sets it with `fillText` in the viewer's own fonts, a sans serif for `Prose` and
 a monospace for `Code`. The viewer's machine measures the line, so
-`Font.room_for` gives the room to leave, and a centred line says `Center`. The
-native runner draws `Font.plotted_shapes`, the same line as strokes.
+`Font.room_for` gives the room to leave, and a centred line says `Center`.
+`Font.plotted_shapes` draws the same line as strokes.
 
 ## Input
 
 `Input.Snapshot` is a value: the keys held, the keys struck since the last
-tick, and the pointer's position, buttons and wheel. `CanvasAppRunner` builds
-one from roc-ray's `Devices.Snapshot`; on the page, `canvas_app_runner.js`
-packs seven numbers from the browser's events and `lib/WasmApp.roc` turns them
-into one. The pointer comes from pointer events, so a finger or a pen is a
+tick, and the pointer's position, buttons and wheel. On the page,
+`canvas_app_runner.js` packs seven numbers from the browser's events and
+`lib/WasmApp.roc` turns them into one. The pointer comes from pointer events, so a finger or a pen is a
 mouse with its left button down, and during a drag it may leave the canvas. A
 test writes one down:
 
@@ -196,22 +179,7 @@ Input.none.with_key_down(KeyW)
 
 `lib/Keys.roc`, `lib/Mouse.roc`, `lib/Math.roc`, `lib/Camera.roc` and
 `lib/Random.roc` mirror roc-ray's surface under its own names, so a program
-ported from an example keeps its rules and changes its imports. The type is
-`Input` because `CanvasAppRunner` imports roc-ray's `Devices` too, and two
-nominal types with one qualified name are ambiguous.
-
-## The roc-ray end
-
-`native/CanvasAppRunner.roc` opens a window at the app's `size`, paces to its
-`frames_a_second`, turns roc-ray's snapshot into an `Input.Snapshot`, and
-paints. Painting cuts the frame into runs at every mark, because raylib takes a
-blend and a camera as scopes. A gradient goes through one fragment shader
-(`lib/BrushGlsl.roc`); a flat colour is drawn directly. The frame is painted at
-twice the window's size and scaled down, for anti-aliasing.
-
-Escape closes the window and F shows the frame rate. Both stay in the runner,
-outside any app's `Input.Snapshot`, so every key an app binds works the same on
-both ends. Sound plays on the page alone.
+ported from one of Luke's examples keeps its rules and changes its imports.
 
 ## The web end
 
@@ -288,9 +256,8 @@ An app's `expect`s are the third check:
 
 `build.sh` writes the page and its `shot.png` to the dev channel, or to `OUT=`.
 It builds into a staging folder that replaces the page only when the build
-passes, and a failed build prints its Roc or glue log. `native.sh` takes
-`OUT=`, `TARGET=` and `OPT=`; both take `ROC=`, held to the pin
-(`pinned-roc.sh`). Each script's header says the rest.
+passes, and a failed build prints its Roc or glue log. It takes `ROC=`, held
+to the pin (`pinned-roc.sh`). Its header says the rest.
 
 ## Where the ported apps came from
 

@@ -1,6 +1,6 @@
 # roc-apps
 
-Programs in Roc, run on platforms of our own, in the browser or natively. An
+Programs in Roc, run on platforms of our own, in the browser and on the command line. An
 app with a README keeps its map there.
 
 The code here was written by AI coding agents (Claude), with human supervision. Point an agent at this repo to add an app or extend one: `CLAUDE.md` gives it the rules.
@@ -11,7 +11,7 @@ Thanks to Damian Tedrow, whose [Cobblestone](https://github.com/damiant3/Cobbles
 
 | where | what |
 |---|---|
-| `canvas_apps/` | Safari, small games and scenes, and the widgets the Safari tutorial embeds: each runs as a page from one set of files, and the apps also run natively on roc-ray (`canvas_apps/native/`, frozen) |
+| `canvas_apps/` | Safari, small games and scenes, and the widgets the Safari tutorial embeds: each runs as a page |
 | `delivery/` | Seattle Delivery, a screensaver with an algorithm at its heart: eight trucks deliver a hundred orders across a map of Seattle, planned by a Roc solver under a Zig host, compiled to WebAssembly |
 | `dog-park/` | Dog Park, a herding game: drag a dog through a park and herd the cows into one bunch; the physics is Roc under a Zig board, compiled to WebAssembly |
 | `fasttrack/` | Fast Track, the board game, ported from Steve's elm-fasttrack: the rules and the whole page in Roc |

@@ -1,7 +1,7 @@
 ## ShapesFrame checks that cutting a frame changes nothing on screen. The
-## browser fills a concave polygon itself, but roc-ray fills only convex ones,
-## so the native runner draws what ConvexCut makes of a frame: each concave
-## polygon as triangles. Safari's gate runs this check (see SafariFrame for
+## browser fills a concave polygon itself, and a painter that fills only convex
+## ones draws what ConvexCut makes of a frame: each concave polygon as
+## triangles. Safari's gate runs this check (see SafariFrame for
 ## more context). It paints a frame twice with ShapesPixels: once as
 ## SafariFrame paints it, with its polygons whole, and once with them cut.
 ## Gradients included, the two agree pixel for pixel when the triangles cover

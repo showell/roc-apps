@@ -3,30 +3,22 @@
 ## It is shaped like roc-ray's `Devices.Snapshot` on purpose. A game's
 ## `read_controls` is the one function that touches input, and it takes a
 ## snapshot as a value rather than performing an effect, so with `key_down`,
-## `mouse.button_pressed` and the rest named alike, such a function ports
-## between the two platforms with its import line changed and nothing else.
+## `mouse.button_pressed` and the rest named alike, a game that starts from one
+## of roc-ray's examples keeps that function with its import line changed.
 ##
 ## A snapshot is data, so a page can make one. The browser's event loop owns
 ## the keyboard and the pointer, keeps what is down, and hands one of these to
-## every tick. On roc-ray the runner converts the host's snapshot into one.
+## every tick.
 ##
 ## `pressed` is the edge, struck since the last tick, and implies `down`.
 ## Snake turns on the edge, and Pong's paddle moves while a key is held.
-##
-## It mirrors roc-ray's Devices.Snapshot but is named for roc-ray's App.Input,
-## a tick's whole input, which on roc-ray also carries the window, the time
-## and messages. CanvasAppRunner imports both modules, and two nominal types
-## with the same qualified name are ambiguous to the compiler, which still
-## reports two `Devices.Snapshot`s when roc-ray's module is imported under
-## another name. Mouse can share roc-ray's name because its type never has to
-## be named on both sides of one signature.
 import Keys
 import Mouse
 
 Input :: [].{
 
 	## `mouse` is a field rather than a method, so a game reaches the pointer
-	## exactly as it does on roc-ray: `input.mouse.position()`.
+	## as roc-ray's examples do: `input.mouse.position()`.
 	Snapshot := {
 		held : U32,
 		struck : U32,
@@ -41,9 +33,8 @@ Input :: [].{
 		key_pressed : Snapshot, Keys.Key -> Bool
 		key_pressed = |snapshot, key| U32.bitwise_and(snapshot.struck, Keys.bit(key)) != 0
 
-		## Say that a key is held, as `Input.none.with_key_down(KeyW)`. The native
-		## runner builds a tick's snapshot with this and `with_key_pressed`, and
-		## tests build theirs the same way.
+		## Say that a key is held, as `Input.none.with_key_down(KeyW)`. Tests build
+		## a tick's snapshot with this and `with_key_pressed`.
 		with_key_down : Snapshot, Keys.Key -> Snapshot
 		with_key_down = |snapshot, key| Snapshot.{
 			held: U32.bitwise_or(snapshot.held, Keys.bit(key)),
@@ -70,8 +61,7 @@ Input :: [].{
 
 	}
 
-	## Nothing touched: where the native runner starts each tick's snapshot,
-	## and where a test starts.
+	## Nothing touched: where a test starts a tick's snapshot.
 	none : Input.Snapshot
 	none = Snapshot.{
 		held: 0,
@@ -80,8 +70,7 @@ Input :: [].{
 	}
 
 	## A tick's input from the keys held and struck, as bits, and the pointer,
-	## which is how WasmApp packs what the page hands it. The native runner packs
-	## its input the other way, from `none` with the `with_*` makers.
+	## which is how WasmApp packs what the page hands it.
 	of : {
 		held : U32,
 		struck : U32,

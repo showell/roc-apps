@@ -1,13 +1,12 @@
 # The vocabulary every canvas app shares, as a package.
 #
-# An app's two roots, main.roc and web.roc, sit in the app's own directory and
-# reach this as `lib: "../lib/main.roc"`; every module of the app then says
-# `import lib.Shapes`. It declares no platform, because both platforms use it.
+# An app's root, web.roc, sits in the app's own directory and reaches this as
+# `lib: "../lib/main.roc"`; every module of the app then says
+# `import lib.Shapes`. It declares no platform, so the rules stay platform-free.
 package
 	[
 		ArgbColor,
 		Brush,
-		BrushGlsl,
 		BrushShade,
 		Camera,
 		CanvasApp,

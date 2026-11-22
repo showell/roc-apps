@@ -14,7 +14,7 @@ import Input
 CanvasApp :: [].{
 
 	## A sound an app can set off: a pitch in hertz and a length in
-	## milliseconds, which is all either runner needs to make it.
+	## milliseconds, which is all the page's runner needs to make it.
 	Tone : { hertz : U32, milliseconds : U32 }
 
 	CanvasApp(model) : {

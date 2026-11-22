@@ -1,7 +1,7 @@
 ## PongDraw draws the neon court as shapes.
 ##
-## A frame is a value, so this module answers a list of shapes, and the same
-## list is filled by a canvas in a browser and by roc-ray in a window.
+## A frame is a value, so this module answers a list of shapes, which a canvas
+## fills in a browser.
 ##
 ## The comet, the halos and the flash are additive: one run of added light
 ## covers all three.

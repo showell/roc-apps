@@ -27,7 +27,7 @@
 -- peers (`peer_receiver`, `a.max(b)`), with no trial compile: a proven call the compiler
 -- would refuse is counted, and the recipe's header says which those are. A
 -- file no root of its app reaches is `unreached`. A shared folder (an app
--- with no root of its own: canvas_apps/lib, web, native, widget_kit) takes
+-- with no root of its own: canvas_apps/lib, web, widget_kit) takes
 -- its typed counts from the apps that reach it: a file of it is unreached
 -- when none does, and its calls are counted on the first of them by name.
 -- The baseline is the full tier's cache ("The full tier's keys"): the parse

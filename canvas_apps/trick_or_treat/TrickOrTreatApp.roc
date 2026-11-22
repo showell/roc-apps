@@ -16,7 +16,7 @@
 # So the six fields became five keys and a `paused` flag, and a movie needs no
 # seam of its own. The old player owned the scrubbing and each runner had to
 # implement it; here it is in the movie, written once, and it runs on a page
-# and on roc-ray without either knowing a movie from a game.
+# that never knows a movie from a game.
 import lib.CanvasApp
 import lib.Input
 import Halloween

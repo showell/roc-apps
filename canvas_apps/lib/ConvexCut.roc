@@ -1,5 +1,5 @@
 ## ConvexCut cuts each concave quad and polygon of a frame into triangles, for a
-## painter that fills only convex polygons, as roc-ray does. A triangle is always
+## painter that fills only convex polygons, as raylib does. A triangle is always
 ## convex, and passes through. A canvas fills a concave polygon itself and
 ## doesn't ask for this. A frame paints the same either way, which the gates'
 ## ShapesFrame checks.
@@ -11,7 +11,7 @@ ConvexCut :: [].{
 
 	## One shape of a cut frame: a shape the cut leaves as it is, or the
 	## triangles of one concave quad or polygon, three corners each. Only
-	## `cut_shapes` makes these, and only the native runner paints them.
+	## `cut_shapes` makes these, and ShapesFrame paints them.
 	CutShape : [
 		Uncut(Shapes.Shape),
 		Triangles({ triangle_corners : List(Point), fill : Brush.Fill }),

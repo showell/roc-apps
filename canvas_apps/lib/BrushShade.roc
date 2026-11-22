@@ -1,7 +1,6 @@
 ## BrushShade gives the colour a `Brush.Fill` paints at one point of its shape,
-## for a painter that fills pixel by pixel on the CPU. BrushGlsl is the same
-## arithmetic on a GPU and shapes_canvas.js on a canvas, case for case, so all
-## three paint a fill alike: gradients mix unpremultiplied, and an offset
+## for a painter that fills pixel by pixel on the CPU. shapes_canvas.js is the
+## same arithmetic on a canvas, case for case, so the two paint a fill alike: gradients mix unpremultiplied, and an offset
 ## outside [0, 1] is clamped, as the canvas specification says.
 import Brush
 import Pixels

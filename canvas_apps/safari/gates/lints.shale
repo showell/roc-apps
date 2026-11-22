@@ -74,8 +74,8 @@ const SHARED_AND_WIDGETS = shared_and_widgets
 -- `lib:` of its own, which roc-types doesn't follow; nor does it follow the
 -- web platform's own `lib:`, so web.roc, which reaches what types_root.roc does,
 -- has no types. The tutorial's fails/ don't compile, on purpose. game.roc is
--- only a package header, and main.roc needs roc-ray beside the checkout.
-const UNTYPED_PATHS = {"game.roc", "main.roc", "web.roc", "gates/", "tutorial/"}
+-- only a package header.
+const UNTYPED_PATHS = {"game.roc", "web.roc", "gates/", "tutorial/"}
 
 -- `whole_tree` names the checks that one file can't answer, because they read
 -- across files. The fast tier skips them, and a recipe with nothing else in it.

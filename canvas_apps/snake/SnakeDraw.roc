@@ -2,8 +2,7 @@
 #
 # Ported from roc-ray's examples/snake Render.roc, which draws imperatively
 # into a Draw.Frame. Here a frame is a VALUE -- a list of shapes -- so this
-# answers one instead, and the same list is filled by a canvas in a browser and
-# by roc-ray in a window.
+# answers one instead, which a canvas fills in a browser.
 #
 # The halos are additive, as upstream's are: they are a run of added light.
 import lib.Pixels

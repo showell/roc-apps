@@ -657,8 +657,7 @@ runs the network under a Roc app. The seam between the two is the risky
 part, so a machine checks it, not a reader.
 
 - **In the browser, JS draws and Roc decides.** roc-apps `canvas_apps/`
-  runs one set of Roc files two ways: natively on roc-ray
-  (`<app>/main.roc`) and as a page (`<app>/web.roc`). The page's
+  runs each app as a page (`<app>/web.roc`). The page's
   `web/canvas_app_runner.js` only keeps the input and paces the clock, and
   `web/shapes_canvas.js` paints each frame. roc-apps `fasttrack/` and
   roc-markdown `playground/` (the package on a wasm32-freestanding host,

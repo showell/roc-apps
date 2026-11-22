@@ -9,10 +9,8 @@ Keys :: [].{
 	## list is short on purpose: adding one is a bit here and a line in
 	## canvas_app_runner.js, and a gate holds the two lists equal.
 	##
-	## Escape and F belong to the runners, not to games: Escape closes a
-	## native window and F shows its frame rate, and a page can do neither.
-	## A key a game could bind on one end and not the other would behave
-	## differently on the two, so no game is given them at all.
+	## Escape and F are left out, so no game binds a key a browser or a
+	## window keeps for itself.
 	Key := [
 		KeyUp,
 		KeyDown,

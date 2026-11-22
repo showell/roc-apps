@@ -11,7 +11,7 @@
 ## frame's pixels, so we can confirm that a change which shouldn't alter the
 ## picture leaves the hash the same. ShapesFrame paints a frame with its
 ## polygons whole, as the browser is given them, paints it again with them cut
-## into triangles, as the native runner is given them, and counts the pixels
+## into triangles, as a convex-only painter needs them, and counts the pixels
 ## that differ; the gate requires none.
 ##
 ## The game itself paints differently. In the browser, the Roc program (built

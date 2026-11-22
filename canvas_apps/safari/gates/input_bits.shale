@@ -2,8 +2,8 @@
 -- lib/Mouse.roc number each key and button by hand in their `bit`, and
 -- web/canvas_app_runner.js copies the numbers into KEY_BIT and MOUSE_BIT. A
 -- number that differs would bind the wrong key, silently, so this reads both
--- sides and fails on any difference. It also holds `Keys.all_keys`, which the
--- native runner walks, to the keys `bit` numbers, and the names of the tick's
+-- sides and fails on any difference. It also holds `Keys.all_keys` to the keys
+-- `bit` numbers, and the names of the tick's
 -- seven numbers, in order, equal on every side of the wasm edge.
 --
 --   cd <roc-apps checkout> && shale canvas_apps/safari/gates/input_bits.shale

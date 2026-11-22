@@ -102,7 +102,7 @@ Before the first piece, three short chapters cover Roc itself: how a program is 
 
 A Roc program runs on a platform, it's made of modules, and it can use packages. Those three words say where Safari Ride's code lives.
 
-A platform is the layer underneath a Roc program that deals with the outside world. For Safari Ride, that's the screen and the keyboard. The Roc code describes each frame, and the platform paints it. In this page, the platform is WebAssembly and a little JavaScript. On a desktop, the same Roc code runs on a native platform called roc-ray.
+A platform is the layer underneath a Roc program that deals with the outside world. For Safari Ride, that's the screen and the keyboard. The Roc code describes each frame, and the platform paints it. In this page, the platform is WebAssembly and a little JavaScript.
 
 Each Roc program is an app, and the app's first line of code names its platform. Here's Safari Ride's app for the web, the whole file:
 

@@ -1,6 +1,6 @@
 # How a canvas app runs
 
-A canvas app is a Roc value: its size, its pace, how it advances, and what a frame looks like. The app's rules and drawing are pure Roc, and they can't tell which runner is running them. Everything that touches a screen, a clock or a keyboard is outside the app.
+A canvas app is a Roc value: its size, its pace, how it advances, and what a frame looks like. The app's rules and drawing are pure Roc. Everything that touches a screen, a clock or a keyboard is outside the app.
 
 ## In a browser
 
@@ -21,10 +21,6 @@ Each tick goes round this loop:
 | `web/shapes_canvas.js` | JS | The browser's canvas |
 
 The JS knows nothing about any one app. The app knows nothing about the canvas.
-
-## Natively
-
-The same app also builds on roc-ray: `<app>/main.roc` hands the value to `native/CanvasAppRunner.roc`, in place of `web.roc` and `lib.WasmApp`. The rules and drawing are unchanged.
 
 ## How it's checked
 

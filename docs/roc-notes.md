@@ -40,9 +40,7 @@ anyone writing or emitting Roc in this repository. How the Roc is *written*
   one alone). A scratch directory still shouldn't use that prefix. Roc honours
   `TMPDIR`, which gives parallel builds their own.
 - **Linking.** `x64win` is MSVC-ABI and looks for an installed Windows SDK, so it
-  cannot link on Linux (`.github/workflows/windows.yml` builds on Windows).
-  `arm64mac` and `x64mac` link on Linux against roc-ray's sysroot. The wasm dev
-  backend writes a constant record's relocations out of offset order when field
+  cannot link on Linux. The wasm dev backend writes a constant record's relocations out of offset order when field
   order and layout order differ (roc-lang/roc#11419).
 - `ROC_LIR_DUMP=` (empty for every procedure) prints the LIR under source names.
   `roc build --debug` names wasm procedures only `roc__proc_<hex>`, and `perf`
@@ -121,5 +119,4 @@ anyone writing or emitting Roc in this repository. How the Roc is *written*
   so it suits parts never written after they are made.
 - The dev backend's code is mostly stack moves (86% of the instructions in one
   hot function). LLVM (`--opt=speed`) ran BASIC's slowest program 2.7 times
-  faster, building in 1,420 s where the dev backend takes 6 s; Safari on roc-ray
-  builds with LLVM in 12 s.
+  faster, building in 1,420 s where the dev backend takes 6 s.

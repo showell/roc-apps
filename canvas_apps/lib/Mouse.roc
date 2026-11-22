@@ -1,5 +1,5 @@
 ## Mouse is where the pointer is and which buttons are down. It is shaped like
-## roc-ray's Mouse.Snapshot, so a game reads it the same way on both ends:
+## roc-ray's Mouse.Snapshot, so a game from its examples reads it alike:
 ## `input.mouse.button_down(Left)`, `input.mouse.position()`. Only the three
 ## buttons a browser reports are here, where roc-ray names seven.
 ##
