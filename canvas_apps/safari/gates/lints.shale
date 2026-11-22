@@ -103,19 +103,11 @@ const STACK_DICTATED = "stack_dictated.txt"
 -- judges: names roc-ray's API dictates (`Vec2`). lib's run reads it from lib's
 -- folder.
 const LIB_ACCEPTED = "accepted_terms.txt"
--- A count's third number, where there is one, is what each of its `folders`
--- is held to, in place of safari's.
---
--- hunt_names' `short_name` is held at 3 in safari, and 0 in its folders: Distance.metres, Along.metres and
--- Across.metres each take `|m|` (Steve, 2026-11-22). Their argument can't
--- take the function's own name, which Roc 0.1.0_RC1 warns of, and the book's
--- Functions chapter says why a short name is plain there: the one-line body
--- and the type say what `m` is.
 const LINTS = {
   {recipe = "hunt_names", args = {}, budget = {}, counts = {
     {"state_effect", 0}, {"question", 0}, {"vague", 0}, {"name_type", 0}, {"negative", 0},
     {"noun_effect", 0}, {"command_tense", 0}, {"mixed_tense", 0}, {"container", 0},
-    {"preposition_split", 0}, {"short_name", 3, 0}, {"worker_name", 0}, {"stacked_preposition", 0},
+    {"preposition_split", 0}, {"short_name", 0}, {"worker_name", 0}, {"stacked_preposition", 0},
     {"taken_word", 0}, {"bare_participle", 0},
     {"phrase_name", 0},
     {"singular_list", 0}, {"world_verb", 0}, {"where_name", 0},
@@ -388,11 +380,9 @@ function judge_folder_part(lint, folder)
     if not is_whole_tree(lint, c[1]) then
       local got = count_in_summary(summary, c[1])
       if got == nil then fail("safari lints: " .. lint.recipe .. " in " .. folder .. ": no count for " .. c[1] .. " in its last line: " .. summary) end
-      local held = c[2]
-      if #c >= 3 then held = c[3] end
-      if got ~= held then
+      if got ~= c[2] then
         for l in findings_of(r.out, c[1]) do print(folder_finding(folder, l)) end
-        fail("safari lints: " .. lint.recipe .. ": " .. got .. " " .. c[1] .. " in " .. folder .. ", held at " .. held)
+        fail("safari lints: " .. lint.recipe .. ": " .. got .. " " .. c[1] .. " in " .. folder .. ", held at " .. c[2])
       end
     end
   end
@@ -447,13 +437,11 @@ function judge_tree()
       local folder_said = {}
       for c in lint.counts do
         local got = count_in_summary(folder_summary, c[1])
-        local held = c[2]
-        if #c >= 3 then held = c[3] end
         if got == nil then
           push(wrong, lint.recipe .. " in " .. folder .. ": no count for " .. c[1] .. " in its last line: " .. folder_summary)
-        elseif got ~= held then
+        elseif got ~= c[2] then
           for l in findings_of(fr.out, c[1]) do print(folder_finding(folder, l)) end
-          push(wrong, lint.recipe .. " in " .. folder .. ": " .. c[1] .. " is " .. got .. ", held at " .. held)
+          push(wrong, lint.recipe .. " in " .. folder .. ": " .. c[1] .. " is " .. got .. ", held at " .. c[2])
         end
         push(folder_said, c[1] .. " " .. tostring(got))
       end

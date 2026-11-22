@@ -128,7 +128,7 @@ This book shows Safari Ride's types first, and they reach every part of the prog
 
 Safari Ride's types are built from numbers. A length and a speed are both an `F64` underneath, so the ride gives each a type of its own. Here's the start of a length's:
 
-{{code Distance.Distance from "Distance ::" to "metres = |m|"}}
+{{code Distance.Distance from "Distance ::" to "metres = |amount|"}}
 
 The `::` makes `Distance` opaque: inside is an `F64`, and only the `Distance` module opens it. `metres` wraps a number of metres as a `Distance`. So a `Distance` is more precise than an `F64`: its type says what the number means, and the compiler keeps a length apart from a speed or any other number. The {{chapter Opaque types: the clock}} chapter shows that precision catching a bug.
 
@@ -241,7 +241,7 @@ A function's body is always one expression. A block is one kind, and a short bod
 
 {{code Distance.metres}}
 
-Inside the body, `m` is the argument. The compiler warns when an argument has the same name as a definition at the module's top level, because inside the function the argument hides the definition. Named `metres`, the argument would make every `metres` in the body mean the number. A short name like `m` keeps the two apart, and the one-line body and the type make its meaning plain. `Distance.(m)` wraps the number as a `Distance`. So a one-line function and a ten-line one have the same shape: arguments in, one expression's value out.
+Inside the body, `amount` is the argument. The compiler warns when an argument has the same name as a definition at the module's top level, because inside the function the argument hides the definition. Named `metres`, the argument would make every `metres` in the body mean the number. A different name, `amount`, keeps the argument apart from the function. `Distance.(amount)` wraps the number as a `Distance`. So a one-line function and a ten-line one have the same shape: arguments in, one expression's value out.
 
 ### An annotation states the contract
 
@@ -620,7 +620,7 @@ The trip starts from where a thing stands on the road:
 
 `along` is how far the place lies along its segment of road, and `across` is how far it lies from the middle of the road, growing to the right. Each is an opaque type around a number of metres, as `Distance` is:
 
-{{code Along.Along from "Along ::" to "metres = |m|"}}
+{{code Along.Along from "Along ::" to "metres = |amount|"}}
 
 So the compiler rejects a call that passes an `across` where an `along` belongs.
 

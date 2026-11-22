@@ -6,7 +6,7 @@ import lib.Fraction
 Distance :: F64.{
 
 	metres : F64 -> Distance
-	metres = |m| Distance.(m)
+	metres = |amount| Distance.(amount)
 
 	to_metres : Distance -> F64
 	to_metres = |Distance.(distance)| distance

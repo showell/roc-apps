@@ -13,7 +13,7 @@ import Distance
 Along :: F64.{
 
 	metres : F64 -> Along
-	metres = |m| Along.(m)
+	metres = |amount| Along.(amount)
 
 	to_metres : Along -> F64
 	to_metres = |Along.(along)| along
