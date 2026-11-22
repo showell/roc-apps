@@ -84,8 +84,10 @@ roc-chat's server runs on prod as the systemd unit `roc-chat`
 `/var/lib/roc-chat`, which holds the data root: the whole chat and its
 secrets.
 
-- **Deploying** is `shale tools/deploy.shale host=<host>` from roc-chat's
-  root, on a clean `main` that has passed `shale tools/verify.shale`. By
+- **Deploying** is `shale tools/deploy.shale` from roc-chat's root, on a
+  clean `main` that has passed `shale tools/verify.shale`. It takes no
+  argument: its ssh destination is the same secret, `keys:prod-ssh`, as
+  roc.lynrummy.com's deploy (below), through `secret_args` alike. By
   the repo's policy an agent runs it after a verified change; every other
   step that writes to prod is the owner's.
 - roc-chat's [`docs/deploy.md`](https://github.com/showell/roc-chat/blob/main/docs/deploy.md)
