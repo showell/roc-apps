@@ -1,5 +1,5 @@
-published 2026-11-19T16:25:06Z
-roc nightly-2026-11-03-34bd006
+published 2026-11-22T21:13:11Z
+roc 0.1.0_RC1
 opt speed
-roc-apps 2136643a
-sha256 1d40b3b3d47112ec  378752 bytes  pipeline_widget.wasm
+roc-apps 8f871fd4
+sha256 abe4c9acf3a2cefa  376518 bytes  pipeline_widget.wasm
