@@ -17,3 +17,8 @@ The repository's own scripts, beside `check.shale` at its root.
   tools/quality.shale tier=full baseline=write` writes it, and a change that
   moves a count writes it again in the same commit. A stale key makes the
   next full run measure its apps again.
+- `measure_roc_builds.shale` times one repository's `roc check`, `roc
+  build` and `roc test` on its old pin and on Roc 0.1.0_RC1, cold, warm and
+  after a change to the root or to the most imported module, and appends
+  the medians to `docs/rc1-build-stats.tsv`, whose header names every
+  column. Its header says how to run it.

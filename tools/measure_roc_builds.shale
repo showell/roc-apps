@@ -1,0 +1,232 @@
+-- budget: steps=2000000000 reads=400000 read_bytes=8000000000 arena_bytes=2000000000 output_bytes=400000 call_bytes=40000000
+-- This script times one repository's Roc builds on two compilers, its old
+-- pin and Roc 0.1.0_RC1, and appends a line a measurement to a TSV that
+-- docs/rc1-build-stats.tsv keeps (its header names every column). From
+-- roc-apps' root:
+--
+--   shale tools/measure_roc_builds.shale repo=roc-syntax-color old=build:lanes/rc1-survey/roc-syntax-color new=build:lanes/rc1-roc-syntax-color
+--
+-- `old` and `new` are checkouts of the repository, the first at its old pin
+-- and the second at RC1; each one's roc-version names the compiler it runs
+-- (tools:roc-<pin>/roc). The steps a repository is timed on (`roc check`,
+-- `roc build --opt=dev`, `roc build --opt=speed` where it ships a release
+-- build, `roc test`) are STEPS below.
+--
+-- Each step is timed under four conditions, the ones Richard Feldman's RC1
+-- announcement names:
+--   cold            Roc's cache emptied, then a hello-world app built, so
+--                   only the builtins are cached;
+--   warm            the same step again at once;
+--   root_changed    a comment line appended to the step's root module;
+--   import_changed  a comment line appended to the module the repository's
+--                   own modules import most.
+-- Each appended line is taken out again after its run. Every condition is
+-- run `reps` times (3) and the median kept; the two compilers take turns
+-- within each repetition, so both see the same box. Every run is niced to
+-- 19 and has a throwaway cache (ROC_CACHE_DIR) and TMPDIR of its own under
+-- `work`, so no other build's cache is touched. The box's one-minute load
+-- average is read before each step's runs.
+
+const REPO = arg("repo", "")
+const OLD = arg("old", "")
+const NEW = arg("new", "")
+const OUT = arg("out", "docs/rc1-build-stats.tsv")
+const WORK = arg("work", "build:lanes/rc1-stats-work")
+const REPS = arg("reps", 3)
+const ONLY = arg("only", "")
+const NOTE = arg("note", "")
+
+const HEADER = "date\trepo\tcommit\tpin\tstep\ttarget\tcondition\truns\twall_s\tcpu_s\twall_s_each\tcpu_s_each\tload1\texit\terrors\twarnings\toutput_bytes\troc_modules\troc_lines\tnote"
+
+-- Each repository's steps: `step` (the TSV's name for it), `args` (after
+-- `roc`), `cwd` (below the checkout), `root` (the module the root_changed
+-- condition changes, below the checkout), `output` (a build's file name,
+-- whose size is kept) and `imports_in` (the folder whose most imported
+-- module the import_changed condition changes).
+const STEPS = {
+  ["roc-syntax-color"] = {
+    {step = "check", target = "harness/main.roc", cwd = "harness", args = {"check", "main.roc"}, root = "harness/main.roc", imports_in = "package"},
+    {step = "build-dev", target = "harness/main.roc", cwd = "harness", args = {"build", "--opt=dev", "main.roc"}, output = "harness", root = "harness/main.roc", imports_in = "package"},
+    {step = "test", target = "package/main.roc", cwd = "package", args = {"test", "main.roc"}, root = "package/main.roc", imports_in = "package"},
+  },
+  ["roc-markdown"] = {
+    {step = "check", target = "judge/answers.roc", cwd = "", args = {"check", "judge/answers.roc"}, root = "judge/answers.roc", imports_in = "package"},
+    {step = "build-dev", target = "judge/answers.roc", cwd = "", args = {"build", "judge/answers.roc", "--target=x64musl", "--opt=dev"}, output = "answers-x64musl.a", root = "judge/answers.roc", imports_in = "package"},
+    {step = "build-speed", target = "judge/answers.roc", cwd = "", args = {"build", "judge/answers.roc", "--target=x64musl", "--opt=speed"}, output = "answers-x64musl.a", root = "judge/answers.roc", imports_in = "package"},
+    {step = "test", target = "package/main.roc", cwd = "", args = {"test", "package/main.roc"}, root = "package/main.roc", imports_in = "package"},
+  },
+}
+
+const HELLO = [=[app [main!] {}
+
+main! = |_args| {
+	echo!("hello")
+	Ok({})
+}
+]=]
+
+function median(xs)
+  local s = {}
+  for x in xs do push(s, x) end
+  sort(s)
+  return s[(#s + 1) // 2]
+end
+
+function as_seconds(ms)
+  local whole = ms // 1000
+  local frac = (ms % 1000) // 10
+  return whole .. "." .. (frac < 10 and "0" or "") .. frac
+end
+
+function load1()
+  local u = must(run({"uptime"}, {timeout_ms = 5000, tail = 2})).out
+  local m = re_find(u, "load average: ([0-9.]+)")
+  if m == nil then fail("measure: no load average in `uptime`: " .. u) end
+  return m.group
+end
+
+-- The module of `dir` (below the checkout) that the checkout's own modules
+-- import most, by `import Name` lines: its path below the checkout.
+function most_imported(checkout, dir)
+  local count = {}
+  for e in walk_all(checkout, {kind = "file", like = "*.roc", skip = ".zig-cache"}) do
+    for h in grep(e.path, "import ") do
+      local m = re_find(h.text, "^import ([A-Za-z0-9_.]+)")
+      if m ~= nil then incr(count, m.group) end
+    end
+  end
+  local best = ""
+  local best_n = 0
+  local names = keys(count)
+  sort(names)
+  for name in names do
+    local parts = split(name, ".")
+    local file = dir .. "/" .. parts[#parts] .. ".roc"
+    if exists(checkout .. "/" .. file) and count[name] > best_n then
+      best = file
+      best_n = count[name]
+    end
+  end
+  if best == "" then fail("measure: no module of " .. dir .. " is imported in " .. checkout) end
+  return best
+end
+
+function tracked_roc(checkout)
+  local files = lines(trim(must(run({"git", "ls-files", "*.roc"}, {cwd = checkout, timeout_ms = 30000, whole = 2000000})).out))
+  local n = 0
+  local total = 0
+  for f in files do
+    if f ~= "" then
+      n = n + 1
+      total = total + count_lines(checkout .. "/" .. f)
+    end
+  end
+  return {modules = n, lines = total}
+end
+
+function pin_of(checkout)
+  return trim(read(checkout .. "/roc-version"))
+end
+
+-- One timed run of a step in `checkout` with the cache `cache`.
+function timed(side, step)
+  local argv = {side.roc}
+  for a in step.args do push(argv, a) end
+  if has_key(step, "output") then push(argv, "--output=" .. real(side.dir) .. "/" .. step.output) end
+  local cwd = step.cwd == "" and side.checkout or (side.checkout .. "/" .. step.cwd)
+  local r = run(argv, {cwd = cwd, timeout_ms = 1800000, tail = 60, nice = 19, env = {ROC_CACHE_DIR = real(side.cache), TMPDIR = real(side.tmp)}})
+  local errs = ""
+  local warns = ""
+  local m = re_find(r.out, "([0-9]+) errors? and ([0-9]+) warnings?")
+  if m ~= nil then errs = m.groups[1] warns = m.groups[2] end
+  if contains(r.out, "No errors found") then errs = "0" warns = "0" end
+  local note = ""
+  local t = re_find(r.out, "All \\(([0-9]+)\\) tests passed")
+  if t ~= nil then note = t.group .. " tests passed" end
+  if r.code ~= 0 and errs == "" then note = "exit " .. r.code .. ": " .. sub(trim(last(lines(trim(r.out)), 1)[1] or ""), 1, 120) end
+  return {ms = r.ms, cpu_ms = r.cpu_ms, code = r.code, errors = errs, warnings = warns, note = note}
+end
+
+function cold_cache(side)
+  if exists(side.cache) then remove_tree(side.cache) end
+  mkdir(side.cache)
+  replace(side.dir .. "/hello.roc", HELLO)
+  must(run({side.roc, "build", "--opt=dev", "hello.roc", "--output=" .. real(side.dir) .. "/hello"}, {cwd = side.dir, timeout_ms = 600000, tail = 20, nice = 19, env = {ROC_CACHE_DIR = real(side.cache), TMPDIR = real(side.tmp)}}))
+  if #ls(side.cache) == 0 then fail("measure: Roc " .. side.pin .. " left nothing in ROC_CACHE_DIR " .. side.cache .. ": it doesn't honour it") end
+  return nil
+end
+
+function with_line_added(path, side, step)
+  local was = read(path)
+  replace(path, was .. "\n# A comment line the build-time measurement adds and takes out.\n")
+  local got = timed(side, step)
+  replace(path, was)
+  return got
+end
+
+if REPO == "" or OLD == "" or NEW == "" then fail("measure: give repo=, old= and new=") end
+if not has_key(STEPS, REPO) then fail("measure: no STEPS for " .. REPO) end
+if not exists(OUT) then replace(OUT, HEADER .. "\n") end
+if trim(head_lines(OUT, 1)[1]) ~= HEADER then fail("measure: " .. OUT .. "'s header is not this script's") end
+mkdir(WORK)
+local today = trim(must(run({"date", "+%Y-%m-%d"}, {timeout_ms = 5000, tail = 1})).out)
+local sides = {}
+for pair in {{"old", OLD}, {"new", NEW}} do
+  local pin = pin_of(pair[2])
+  local dir = WORK .. "/" .. REPO .. "-" .. pair[1]
+  if exists(dir) then remove_tree(dir) end
+  mkdir(dir)
+  mkdir(dir .. "/tmp")
+  local size = tracked_roc(pair[2])
+  push(sides, {name = pair[1], checkout = pair[2], pin = pin, roc = real("tools:roc-" .. pin .. "/roc"), dir = dir, cache = dir .. "/cache", tmp = dir .. "/tmp", commit = git_head(pair[2]), size = size})
+end
+local conditions = {"cold", "warm", "root_changed", "import_changed"}
+for step in STEPS[REPO] do
+  if ONLY == "" or ONLY == step.step then
+    local import_file = most_imported(NEW, step.imports_in)
+    local load = load1()
+    local runs = {}
+    for side in sides do
+      runs[side.name] = {}
+      for c in conditions do runs[side.name][c] = {} end
+    end
+    for rep = 1, REPS do
+      for side in sides do
+        cold_cache(side)
+        push(runs[side.name].cold, timed(side, step))
+        push(runs[side.name].warm, timed(side, step))
+        push(runs[side.name].root_changed, with_line_added(side.checkout .. "/" .. step.root, side, step))
+        push(runs[side.name].import_changed, with_line_added(side.checkout .. "/" .. import_file, side, step))
+      end
+      yield()
+    end
+    for side in sides do
+      for c in conditions do
+        local rs = runs[side.name][c]
+        local walls = {}
+        local cpus = {}
+        local wall_each = {}
+        local cpu_each = {}
+        for r in rs do
+          push(walls, r.ms)
+          push(cpus, r.cpu_ms)
+          push(wall_each, as_seconds(r.ms))
+          push(cpu_each, as_seconds(r.cpu_ms))
+        end
+        local first = rs[1]
+        local bytes = ""
+        if has_key(step, "output") and exists(side.dir .. "/" .. step.output) then bytes = tostring(stat(side.dir .. "/" .. step.output).size) end
+        local note = first.note
+        if c == "import_changed" then note = (note == "" and "" or note .. "; ") .. "changed " .. import_file end
+        if NOTE ~= "" then note = (note == "" and "" or note .. "; ") .. NOTE end
+        local row = {today, REPO, side.commit, side.pin, step.step, step.target, c, tostring(#rs), as_seconds(median(walls)), as_seconds(median(cpus)),
+          join(wall_each, ","), join(cpu_each, ","), load, tostring(first.code), first.errors, first.warnings, bytes,
+          tostring(side.size.modules), tostring(side.size.lines), note}
+        append(OUT, join(row, "\t") .. "\n")
+        print(join(row, "\t"))
+      end
+    end
+  end
+end
+for side in sides do remove_tree(side.dir) end
+print("measure: " .. REPO .. " done")
