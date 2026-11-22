@@ -12,7 +12,7 @@ canvas { display: block; width: 100%; height: 100%; }
 #message button { margin-top: 1em; font: inherit; padding: 0.4em 1.2em; }
 #loading { position: absolute; inset: 0; background: #000; text-align: center; align-content: center; line-height: 1.6; pointer-events: none; transition: opacity 1.2s; }
 #loading small { color: #999; }
-#rate { display: none; position: absolute; top: 8px; left: 8px; padding: 4px 8px; background: rgba(0, 0, 0, 0.55); color: #eee; font: 13px monospace; white-space: pre; pointer-events: none; }
+#rate { display: none; position: absolute; top: 8px; left: 8px; max-width: calc(100% - 32px); white-space: pre-wrap; padding: 4px 8px; background: rgba(0, 0, 0, 0.55); color: #eee; font: 13px monospace; pointer-events: none; }
 </style>
 </head>
 <body>
@@ -87,34 +87,217 @@ canvas { display: block; width: 100%; height: 100%; }
 		return box;
 	};
 })();
-// The F key shows or hides the frame rate over the last second of frames
-// (at least the last frame), and the longest of them. It is the page's own
-// count of animation frames, so it costs the game nothing, and nothing
-// while hidden.
+// The F key shows or hides the frame readout. Over the last five seconds it
+// says:
+// - the frames a second, the longest frame, and how many frames took over
+//   33 ms (each one a frame that missed 30 a second), with that count since
+//   F was pressed too;
+// - the GPU's time a frame and each kind of pass's share of it, where the
+//   browser gives the page WebGPU's timestamp queries;
+// - the engine's own CPU time a frame (Roc's steps and views, and the host's
+//   drawing calls), the draw calls, instances, triangles and render passes it
+//   sends a frame, and the canvas's size and MSAA.
+// It counts by wrapping WebGPU's calls before the engine starts. Hidden, it
+// measures nothing: each wrapper only checks a flag.
 (function () {
 	var rate = document.getElementById("rate");
 	var shown = false;
-	var last = 0;
-	var gaps = [];
+	var WINDOW_MS = 5000;
+	var SLOW_MS = 33;
+	var QUERY_PASSES = 64;
+
+	// What the engine sends in the frame being recorded, and the frames
+	// of the last five seconds.
+	function blank() { return { passes: 0, draws: 0, instances: 0, triangles: 0, cpu: 0, gpu: null, kinds: null, gap: null }; }
+	var sending = blank();
+	var frames = [];
+	var slowSinceShown = 0;
+	var lastSubmit = 0;
+	var samples = 1;
+
+	function wrap(proto, name, around) {
+		if (!proto || !proto[name]) return;
+		var original = proto[name];
+		proto[name] = function () { return around.call(this, original, arguments); };
+	}
+
+	// The GPU's time for each render pass, through timestamp queries: the
+	// device asks for them when the adapter has them, each pass of a shown
+	// frame writes two, the encoder resolves them as it finishes, and a copy
+	// maps after the submit.
+	var timer = { device: null, set: null, resolve: null, free: [], used: 0, kinds: [], reads: [] };
+	function timerReady() {
+		if (timer.set || !timer.device) return timer.set !== null;
+		timer.set = timer.device.createQuerySet({ type: "timestamp", count: QUERY_PASSES * 2 });
+		timer.resolve = timer.device.createBuffer({ size: QUERY_PASSES * 16, usage: GPUBufferUsage.QUERY_RESOLVE | GPUBufferUsage.COPY_SRC });
+		for (var i = 0; i < 4; i++) timer.free.push(timer.device.createBuffer({ size: QUERY_PASSES * 16, usage: GPUBufferUsage.MAP_READ | GPUBufferUsage.COPY_DST }));
+		return true;
+	}
+	function timerRead(read) {
+		read.buffer.mapAsync(GPUMapMode.READ).then(function () {
+			var t = new BigInt64Array(read.buffer.getMappedRange(0, read.count * 16));
+			var sum = 0, kinds = {};
+			for (var i = 0; i < read.count; i++) {
+				var ms = Number(t[2 * i + 1] - t[2 * i]) / 1e6;
+				sum += ms;
+				kinds[read.kinds[i]] = (kinds[read.kinds[i]] || 0) + ms;
+			}
+			read.frame.gpu = sum;
+			read.frame.kinds = kinds;
+			read.buffer.unmap();
+			timer.free.push(read.buffer);
+		}, function () { timer.free.push(read.buffer); });
+	}
+
+	if (window.GPUAdapter) {
+		wrap(GPUAdapter.prototype, "requestDevice", function (original, args) {
+			var d = Object.assign({}, args[0] || {});
+			var timed = this.features && this.features.has("timestamp-query");
+			var features = Array.from(d.requiredFeatures || []);
+			if (timed && features.indexOf("timestamp-query") < 0) d.requiredFeatures = features.concat(["timestamp-query"]);
+			return original.call(this, d).then(function (device) {
+				if (timed) timer.device = device;
+				return device;
+			});
+		});
+	}
+	if (window.GPUDevice) {
+		wrap(GPUDevice.prototype, "createTexture", function (original, args) {
+			var d = args[0] || {};
+			if (d.sampleCount > samples) samples = d.sampleCount;
+			return original.apply(this, args);
+		});
+	}
+	if (window.GPUCommandEncoder) {
+		wrap(GPUCommandEncoder.prototype, "beginRenderPass", function (original, args) {
+			if (shown) {
+				var d = args[0] || {};
+				sending.passes += 1;
+				if (timerReady() && timer.used < QUERY_PASSES && !d.timestampWrites) {
+					var i = timer.used++;
+					timer.kinds.push(d.label || "other");
+					args = [Object.assign({}, d, { timestampWrites: { querySet: timer.set, beginningOfPassWriteIndex: 2 * i, endOfPassWriteIndex: 2 * i + 1 } })];
+				}
+			}
+			return original.apply(this, args);
+		});
+		wrap(GPUCommandEncoder.prototype, "finish", function (original, args) {
+			if (timer.used > 0) {
+				if (timer.free.length > 0) {
+					var buffer = timer.free.pop();
+					this.resolveQuerySet(timer.set, 0, timer.used * 2, timer.resolve, 0);
+					this.copyBufferToBuffer(timer.resolve, 0, buffer, 0, timer.used * 16);
+					timer.reads.push({ buffer: buffer, count: timer.used, kinds: timer.kinds, frame: sending });
+				}
+				timer.used = 0;
+				timer.kinds = [];
+			}
+			return original.apply(this, args);
+		});
+	}
+	if (window.GPURenderPassEncoder) {
+		function counted(original, args) {
+			if (shown) {
+				var instances = args[1] === undefined ? 1 : args[1];
+				sending.draws += 1;
+				sending.instances += instances;
+				sending.triangles += Math.floor((args[0] || 0) / 3) * instances;
+			}
+			return original.apply(this, args);
+		}
+		wrap(GPURenderPassEncoder.prototype, "draw", counted);
+		wrap(GPURenderPassEncoder.prototype, "drawIndexed", counted);
+	}
+	// Each engine frame ends in one submit, so a frame's length is the time
+	// from one submit to the next. (The browser may run more animation
+	// frames than the engine draws while the GPU is behind.)
+	var submitted = null;
+	if (window.GPUQueue) {
+		wrap(GPUQueue.prototype, "submit", function (original, args) {
+			var r = original.apply(this, args);
+			if (shown && sending.passes > 0) {
+				var reads = timer.reads;
+				timer.reads = [];
+				reads.forEach(timerRead);
+				sending.at = performance.now();
+				if (lastSubmit > 0) {
+					sending.gap = sending.at - lastSubmit;
+					if (sending.gap > SLOW_MS) slowSinceShown += 1;
+				}
+				lastSubmit = sending.at;
+				frames.push(sending);
+				submitted = sending;
+				sending = blank();
+			}
+			return r;
+		});
+	}
+	// The engine's frame runs in an animation frame callback; its length
+	// is the engine's CPU time for the frame.
+	var request = window.requestAnimationFrame.bind(window);
+	window.requestAnimationFrame = function (callback) {
+		return request(function (stamp) {
+			if (!shown) return callback(stamp);
+			var start = performance.now();
+			submitted = null;
+			try { return callback(stamp); } finally {
+				if (submitted) submitted.cpu = performance.now() - start;
+			}
+		});
+	};
+
+	function mean(list, key) {
+		var have = list.filter(function (f) { return f[key] !== null; });
+		if (have.length === 0) return null;
+		return have.reduce(function (a, f) { return a + f[key]; }, 0) / have.length;
+	}
+	function ms(x) { return x < 10 ? x.toFixed(1) : Math.round(x).toString(); }
+	function thousands(x) { return x >= 10000 ? Math.round(x / 1000) + "k" : Math.round(x).toString(); }
+
+	function show(now) {
+		while (frames.length > 0 && now - frames[0].at > WINDOW_MS) frames.shift();
+		var gaps = frames.filter(function (f) { return f.gap !== null; }).map(function (f) { return f.gap; });
+		if (gaps.length === 0) return;
+		var span = gaps.reduce(function (a, g) { return a + g; }, 0);
+		var fps = gaps.length * 1000 / span;
+		var longest = Math.max.apply(null, gaps);
+		var slow = gaps.filter(function (g) { return g > SLOW_MS; }).length;
+		var lines = [(fps < 10 ? fps.toFixed(1) : Math.round(fps)) + " fps   longest frame " + Math.round(longest) + " ms   over " + SLOW_MS + " ms: " + slow + " (" + slowSinceShown + " since F)"];
+		var gpu = mean(frames, "gpu");
+		if (gpu !== null) {
+			var kinds = {}, timed = frames.filter(function (f) { return f.kinds; });
+			timed.forEach(function (f) { Object.keys(f.kinds).forEach(function (k) { kinds[k] = (kinds[k] || 0) + f.kinds[k] / timed.length; }); });
+			var parts = Object.keys(kinds).sort(function (a, b) { return kinds[b] - kinds[a]; }).map(function (k) { return k + " " + ms(kinds[k]); });
+			lines.push("GPU " + ms(gpu) + " ms a frame: " + parts.join(", "));
+		} else if (timer.device) {
+			lines.push("GPU time: waiting for the first timings");
+		} else {
+			lines.push("GPU time: this browser gives the page no timestamp queries");
+		}
+		var canvas = document.getElementById("canvas");
+		lines.push("engine CPU " + ms(mean(frames, "cpu")) + " ms a frame");
+		lines.push(Math.round(mean(frames, "draws")) + " draws, " + thousands(mean(frames, "instances")) + " instances, " + thousands(mean(frames, "triangles")) + " triangles, " + Math.round(mean(frames, "passes")) + " passes a frame");
+		lines.push("canvas " + canvas.width + " x " + canvas.height + ", " + (samples > 1 ? samples + "x MSAA" : "no MSAA"));
+		rate.textContent = lines.join("\n");
+	}
+
+	// The readout's own animation frames only refresh the text, four times
+	// a second.
+	var drawn = 0;
 	function tick(now) {
 		if (!shown) return;
-		if (last > 0) gaps.push(now - last);
-		last = now;
-		var sum = gaps.reduce(function (a, b) { return a + b; }, 0);
-		while (gaps.length > 1 && sum - gaps[0] >= 1000) sum -= gaps.shift();
-		if (gaps.length > 0) {
-			var fps = gaps.length * 1000 / sum;
-			rate.textContent = (fps < 10 ? fps.toFixed(1) : Math.round(fps)) + " fps, longest frame " + Math.round(Math.max.apply(null, gaps)) + " ms";
-		}
-		requestAnimationFrame(tick);
+		if (now - drawn > 250) { drawn = now; show(performance.now()); }
+		request(tick);
 	}
 	window.addEventListener("keydown", function (event) {
 		if (event.code !== "KeyF" || event.repeat) return;
 		shown = !shown;
 		rate.style.display = shown ? "block" : "none";
-		last = 0;
-		gaps = [];
-		if (shown) { rate.textContent = "counting frames"; requestAnimationFrame(tick); }
+		lastSubmit = 0;
+		frames = [];
+		sending = blank();
+		slowSinceShown = 0;
+		if (shown) { rate.textContent = "counting frames"; request(tick); }
 	}, true);
 })();
 window.addEventListener("rocco:unsupported", function (event) { rocco_message(event.detail.message); });
