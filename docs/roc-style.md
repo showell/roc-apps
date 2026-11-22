@@ -789,8 +789,10 @@ is the base; these rules sharpen it.
   `UserStreams`, and only `UserStreams.with_streams_ended!` makes one. It
   runs its body with the handle, then ends the user's streams however the
   body ended; a `?` or a `return` leaves only the body. A revoking write
-  outside the bracket has no handle to pass, so it doesn't compile, and
-  the handle carries the user, so the write and the ending can't name two.
+  outside the bracket has no handle to pass, so it doesn't compile. Each
+  writer writes for the handle's user, so the write and the ending don't
+  name two, and one also handed a value naming a user crashes if the two
+  differ.
   **Fix the body's answer type:** with a generic `Try(a, e)`,
   `|revoker| Ok(revoker)` hands the handle out of the bracket, and it
   compiles. A `defer` is weaker, since code that leaves it out compiles;

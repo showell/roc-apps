@@ -109,7 +109,7 @@ the way: a statement must evaluate to <code>{}</code>, so a function's result ca
 <ul>
 <li><strong>A revocation that must be ended.</strong> The bracket already holds this one: each revoking write takes a
 <code>UserStreams.Revoker</code>, and only <code>UserStreams.with_streams_ended!</code> makes one. A linear
-<code>Revoker</code> would lift the bracket's one constraint, its fixed answer type: a body could hand the handle out,
+<code>Revoker</code> would lift the bracket's main constraint, its fixed answer type: a body could hand the handle out,
 and the code that took it would still have to spend it on an ending. Only the "can't be dropped" half matters here,
 since ending streams twice does no harm. Neither would decide which writes revoke something; the table's
 <code>ends</code> and <code>keeps</code> stay a reader's call. And neither helps with a file edited by hand.</li>
@@ -133,7 +133,8 @@ an answer would then use. That is ours to do.</p>
 <p>Current Roc already does a lot for a service like this. A pure function can't do I/O, and every effect is marked
 by <code>=&gt;</code> and by the <code>!</code> the compiler asks for, so a reader can see where the effects are. Only an opaque type's own module can
 make its values, which is what <code>AccountProof</code>, <code>HumanClaim</code> and the streams' bracket stand on.
-With a function that takes an effect as its argument, that is enough for a step the compiler won't let you skip. <code>match</code> is
+With a function that takes an effect as its argument, and that effect's answer type fixed, that is enough for a
+step the compiler won't let you skip. <code>match</code> is
 exhaustive, which is what <code>RouteCost</code> and the allow-lists below depend on, and there are no nulls.</p>
 
 <h2 id="streams">Streams that outlived a sign-out</h2>
@@ -189,7 +190,8 @@ it. The platform's answer is a plain record, though, so Roc's types would let an
 
 <h3>The rule, held by a bracket with an opaque handle</h3>
 <p>The rule is "after this write, also do that." Every write that ends a session, revokes a credential or removes
-someone's access takes a <code>UserStreams.Revoker</code> in place of a user id. <code>Revoker</code> is an opaque type
+someone's access takes a <code>UserStreams.Revoker</code>, in place of a user id (the password's writer takes it beside
+its proof). <code>Revoker</code> is an opaque type
 nested in <code>UserStreams</code>, and only <code>UserStreams.with_streams_ended!(id, revoke!)</code> makes one. It
 hands its body, <code>revoke!</code>, a <code>Revoker</code> for <code>id</code>, then ends <code>id</code>'s streams,
 whatever the body answered. A revoking write outside the bracket has no <code>Revoker</code> to pass, so it doesn't
@@ -308,10 +310,13 @@ compile. Each stream then reconnects and is judged again.</p>
 }</code></pre>
 <p>Three things make it hold:</p>
 <ul>
-<li><strong>The write's user is the ending's user.</strong> A revoking writer writes for <code>revoker.user()</code>,
-the user the bracket ends, and takes no other id for the write. A writer that is also handed a value naming a user
-crashes when the two differ: the password's writer compares its <code>AccountProof</code>'s human (shown in
-<a href="#invites">the invite section</a>), and the GitHub link's writer compares its link's.</li>
+<li><strong>The write's user is the ending's user.</strong> Each revoking writer is written to write for
+<code>revoker.user()</code>, the user the bracket ends, and takes no other id for the write. That is how the writers
+are written, and a reader holds it; neither the types nor the check do, since a writer could take a second id beside
+the <code>Revoker</code> and compile. Where a write is also handed a value naming a user, it crashes at run time
+when the two differ: the password's writer compares its <code>AccountProof</code>'s human (shown in
+<a href="#invites">the invite section</a>), and <code>SignInFiles.write_github_link!</code>, which makes the GitHub
+link's two writes, compares its link's.</li>
 <li><strong>The body's answer type is fixed</strong>, as <code>Try({}, [FileSystem(FileFacts.Fault)])</code>. A body
 whose answer was a generic <code>Try(answer, fault)</code> could hand the <code>Revoker</code> out,
 <code>|revoker| Ok(revoker)</code>, and write with it after the streams were ended. The plants below show both.</li>
@@ -458,7 +463,9 @@ the table can. The writer fails the check until it is judged, and judged <code>e
 <code>Revoker</code>. Judged <code>keeps</code> by mistake, it passes: the verdict is a reader's.</li>
 <li><strong>The channel's whole-set writer.</strong> Whether <code>DirectoryFiles.replace_channel_members!</code>
 removes anyone depends on the member list it is handed, which its type doesn't say. Each <code>exempt</code> line is
-a reader's judgement that its call removes no one.</li>
+a reader's judgement that its call removes no one. And a function that takes a <code>Revoker</code> may call the
+writer with no <code>exempt</code> line, so it is trusted to remove only the <code>Revoker</code>'s user; only
+<code>replace_channel_members_without!</code> checks that, at run time.</li>
 <li><strong>A write straight through <code>FileFacts</code>.</strong> A function that calls <code>FileFacts</code>'
 writers itself needs no <code>Revoker</code> to compile. It is a new writer, so the check makes someone judge it. A
 write that reaches the files other than through <code>FileFacts</code> is out of the check's sight; roc-chat's rule
@@ -466,6 +473,8 @@ that only <code>FileFacts</code> touches files keeps it out.</li>
 <li><strong>A file edited by hand.</strong> A password or GitHub file edited on the server, outside the app, leaves a
 stream open until its hour.</li>
 </ul>
+<p>A crash between the write and the ending is no gap: on a Roc crash the host panics, the server stops, and every
+stream ends with it.</p>
 <p>The end-to-end tests cover the real cases: an open stream ends on "Sign out other devices", on a GitHub link, on a
 sign-out, on an agent key's revoke and on a member's removal.</p>
 
@@ -1094,7 +1103,7 @@ check), <a href="https://github.com/showell/roc-chat/commit/67bf20d2285ea7459d93
 <li>The bracket: <a href="https://github.com/showell/roc-chat/commit/1e651c0bd37de6cf581e8854ba2b37d554b9b066">1e651c0</a>
 (revoking writes take a <code>UserStreams.Revoker</code>, made only by <code>with_streams_ended!</code>, and the check
 narrowed), <a href="https://github.com/showell/roc-chat/commit/7240a34b9f38543854b7062b41bc7171032cc095">7240a34</a>
-(the docs, and the plants), <a href="https://github.com/showell/roc-chat/commit/d275ae7e1cad016f1a978f6ae6500f48d8d5874a">d275ae7</a>
+(the docs, and a record of the plants), <a href="https://github.com/showell/roc-chat/commit/d275ae7e1cad016f1a978f6ae6500f48d8d5874a">d275ae7</a>
 (layout).</li>
 <li>Invites: <a href="https://github.com/showell/roc-chat/commit/c1f27319921319bb0a8b923d19777e309fc55ca3">c1f2731</a>
 (the takeover, reproduced end to end),
