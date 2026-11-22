@@ -41,9 +41,12 @@ function hold_expects(roc, toy)
 end
 
 -- Nothing, or a stop naming the toy's proof and where its output differs.
+-- `--specialize=yes` because Roc 0.1.0_RC1 lowers a dev build the boxy way
+-- unless told otherwise, and KnightProof's search ran 22 times slower so: 344.7 s
+-- of CPU, against 15.8 s specialized (15.6 s at nightly-2026-11-03-34bd006).
 function hold_proof(roc, toy, work)
   local bin = real(work) .. "/" .. toy.proof
-  local b = run({roc, "build", "--opt=dev", toy.proof .. ".roc", "--output=" .. bin}, {cwd = toy.folder, timeout_ms = 600000, tail = 40, nice = 19, want = WANT})
+  local b = run({roc, "build", "--opt=dev", "--specialize=yes", toy.proof .. ".roc", "--output=" .. bin}, {cwd = toy.folder, timeout_ms = 600000, tail = 40, nice = 19, want = WANT})
   if contains(b.out, "✗") or contains(b.out, "●") or not exists(work .. "/" .. toy.proof) then
     print(trim(b.out))
     fail("chess gate: " .. toy.proof .. " didn't build clean")
