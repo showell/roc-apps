@@ -9,7 +9,8 @@
 #   site/publish.sh shale-book  the Shale book, as book/build.shale built it
 #   site/publish.sh home        the landing page and the site's own folders
 #                               (shared/, notes/, syntax-color/, roc-on-shale/,
-#                               security-idioms/, chess/)
+#                               security-idioms/, release-candidate-compiles/,
+#                               chess/)
 #
 # An app: copies ~/build/roc-apps/next/<app>/ (what <app>'s build.sh last wrote,
 # and what :9210/<app>/ shows) over site/live/<app>/ whole, writes a PROVENANCE
@@ -74,7 +75,7 @@ if [ "$app" = home ]; then
     [ -f "$NEXT/index.html" ] || { echo "no landing page at $NEXT; run site/build.sh first"; exit 2; }
     # Dev must show the landing page as site/web has it, or this would publish
     # an older one and say nothing.
-    site_dirs=(shared notes syntax-color roc-on-shale security-idioms chess)
+    site_dirs=(shared notes syntax-color roc-on-shale security-idioms release-candidate-compiles chess)
     diff -q "$HERE/web/index.html" "$NEXT/index.html" > /dev/null || stale=1
     for dir in "${site_dirs[@]}"; do diff -rq "$HERE/web/$dir" "$NEXT/$dir" > /dev/null || stale=1; done
     if [ -n "${stale:-}" ]; then

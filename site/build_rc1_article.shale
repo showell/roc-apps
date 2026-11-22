@@ -1,0 +1,443 @@
+-- This script writes the RC1 article, site/web/release-candidate-compiles/index.html:
+-- what moving our Roc projects to Roc 0.1.0-RC1 cost, what it found, and how
+-- long the builds take on each compiler. The prose is site/rc1_article.html,
+-- and the script fills in its marker lines:
+--
+--   <!-- snippet NAME -->   lines of a repository's file as a commit holds them
+--                            (SNIPPETS), with a link to them on GitHub;
+--   <!-- repro NAME -->     each file of a reduced program in site/rc1_repros/
+--                            (REPROS), then what the pinned Roc's `roc check`
+--                            says of it, run here;
+--   <!-- knightproof -->    the chess proof's run times, from the stats TSV;
+--   <!-- stats REPO -->     one repository's build times, from the stats TSV;
+--   <!-- sizes -->          every build's output size, from the stats TSV.
+--
+-- The stats TSV is docs/rc1-build-stats.tsv, which tools/measure_roc_builds.shale
+-- writes. Code is colored by tools/color_code (roc-syntax-color), built here
+-- with the pinned Roc; `plain` text is shown as it is.
+--
+--   cd <roc-apps checkout> && shale site/build_rc1_article.shale            # writes the page
+--   cd <roc-apps checkout> && shale site/build_rc1_article.shale check=1    # fails if the page is stale
+--
+-- A snippet's repository is roc-apps itself (`roc-apps`) or a sibling
+-- checkout through the `repos` mount (`repos:shale`); each must hold the
+-- snippet's commit. A marker the prose holds that the script lacks, or a
+-- snippet or repro the prose doesn't name, stops the run. Then site/build.sh
+-- copies the page into the dev channel.
+--
+-- budget: steps=80000000 arena_bytes=500000000 output_bytes=100000
+
+const PROSE = "site/rc1_article.html"
+const PAGE_DIR = "site/web/release-candidate-compiles"
+const PAGE = "site/web/release-candidate-compiles/index.html"
+const STATS = "docs/rc1-build-stats.tsv"
+const OLD_PIN = "nightly-2026-11-03-34bd006"
+const NEW_PIN = "0.1.0_RC1"
+const MARK = "<!-- color_code answer -->\n"
+const WANT_ROC = "roc-pin: roc-apps' pinned Roc"
+const WANT_TOOL = "color-code: tools/color_code, roc-apps' own coloring app, built by this run"
+
+const CHECK = arg("check", "0") == "1"
+
+-- Each snippet: its name in the prose, its repository (`roc-apps`, or a
+-- sibling checkout's name), the commit it is quoted at, its file, its
+-- language (`roc`, `shale`, `zig`, `c` or `plain`) and its line ranges,
+-- first to last, inclusive.
+const SNIPPETS = {
+  {name = "specialize", repo = "roc-apps", rev = "a44c405f885fa87328f165aa3a689358876f4c7d", path = "canvas_apps/chess_kit/gates/run.shale", language = "shale", ranges = {{44, 49}}},
+  {name = "placed-instant", repo = "roc-apps", rev = "4b4a9d350cacf3d5350fa485d643a14c474091f4", path = "canvas_apps/safari/Animation.roc", language = "roc", ranges = {{52, 57}}},
+  {name = "animal-of", repo = "roc-apps", rev = "4b4a9d350cacf3d5350fa485d643a14c474091f4", path = "canvas_apps/safari/EncounterPoses.roc", language = "roc", ranges = {{52, 52}, {71, 71}}},
+  {name = "metres-before", repo = "roc-apps", rev = "6784d48a53f54bf118545237af34ac0024adfff8", path = "canvas_apps/safari/Distance.roc", language = "roc", ranges = {{8, 9}}},
+  {name = "metres-after", repo = "roc-apps", rev = "b61317a79249d1eacea752bea688b60cf9c54069", path = "canvas_apps/safari/Distance.roc", language = "roc", ranges = {{8, 9}}},
+  {name = "typed-literal", repo = "roc-screensaver", rev = "a14102b87c01dacb3f3f4c9b4cb0cbbb37b8ef8d", path = "screensavers/lanterns/JetFlyBy.roc", language = "roc", ranges = {{325, 326}}},
+  {name = "erased-payload", repo = "roc-screensaver", rev = "094031915dd110f1f3021410491238d23df15ce1", path = "host/glue/platform_abi.zig", language = "zig", ranges = {{81, 86}}},
+  {name = "opaque-lists", repo = "roc-screensaver", rev = "094031915dd110f1f3021410491238d23df15ce1", path = "host/glue/platform_abi.zig", language = "zig", ranges = {{573, 576}, {602, 606}}},
+  {name = "shim-frame", repo = "shale", rev = "64e4892e310d9f52314b1f96cddd7052a5c2fafd", path = "c/builtin_table.shale", language = "shale", ranges = {{742, 742}}},
+  {name = "frame-walk", repo = "shale", rev = "64e4892e310d9f52314b1f96cddd7052a5c2fafd", path = "roc_platform/host/host.c", language = "c", ranges = {{619, 631}}},
+}
+
+-- Each reduced program: its name in the prose, its folder, and its files in
+-- the order the page shows them. `roc check main.roc` runs in the folder.
+const REPROS = {
+  {name = "nested", dir = "site/rc1_repros/nested", files = {"Crate.roc", "main.roc"}},
+  {name = "nominal", dir = "site/rc1_repros/nominal", files = {"Cat.roc", "main.roc"}},
+  {name = "shadow", dir = "site/rc1_repros/shadow", files = {"Distance.roc", "main.roc"}},
+  {name = "literal", dir = "site/rc1_repros/literal", files = {"main.roc"}},
+}
+
+-- The steps and conditions of the stats tables, in the order they show.
+const STEPS = {
+  {step = "check", label = "roc check"},
+  {step = "build-dev", label = "build, dev"},
+  {step = "build-speed", label = "build, speed"},
+  {step = "test", label = "roc test"},
+}
+const CONDITIONS = {
+  {condition = "cold", label = "cold"},
+  {condition = "warm", label = "warm"},
+  {condition = "root_changed", label = "root changed"},
+  {condition = "import_changed", label = "import changed"},
+}
+
+function escaped(s)
+  local t = join(split(s, "&"), "&amp;")
+  t = join(split(t, "<"), "&lt;")
+  return join(split(t, ">"), "&gt;")
+end
+
+-- The checkout a snippet's repository is read from.
+function checkout_of(repo)
+  if repo == "roc-apps" then return "" end
+  return "repos:" .. repo
+end
+
+-- Nothing, or a stop naming the sibling checkout or commit this page needs
+-- and lacks.
+function require_siblings()
+  for s in SNIPPETS do
+    local place = checkout_of(s.repo)
+    if place ~= "" and not exists(place) then fail("build_rc1_article: no " .. s.repo .. " checkout at " .. place .. ": clone github.com/showell/" .. s.repo .. " beside roc-apps") end
+    local cwd = place
+    if cwd == "" then cwd = "." end
+    local has = run({"git", "cat-file", "-e", s.rev .. "^{commit}"}, {cwd = cwd, timeout_ms = 30000, tail = 3})
+    if has.code ~= 0 then fail("build_rc1_article: the " .. s.repo .. " checkout has no commit " .. s.rev .. ": fetch it") end
+  end
+  local colorer = dirname(real(".")) .. "/roc-syntax-color"
+  local r = run({"git", "-C", colorer, "rev-parse", "--show-toplevel"}, {timeout_ms = 30000, tail = 3})
+  if r.code ~= 0 then fail("build_rc1_article: no roc-syntax-color checkout beside roc-apps: clone github.com/showell/roc-syntax-color there; tools/color_code imports it") end
+  return nil
+end
+
+-- The leading tabs of a line, as a count.
+function tabs_of(l)
+  local n = 0
+  while n < #l and sub(l, n + 1, n + 1) == "\t" do n = n + 1 end
+  return n
+end
+
+-- `s` written `n` times.
+function string_rep(s, n)
+  local out = ""
+  local i = 0
+  while i < n do
+    out = out .. s
+    i = i + 1
+  end
+  return out
+end
+
+-- A snippet's text: each range's lines, a `...` line between ranges at the
+-- next range's indent, and the tabs every quoted line shares taken off.
+function snippet_text(s)
+  local all = lines(git_show(checkout_of(s.repo), s.rev .. ":" .. s.path))
+  local quoted = {}
+  for i = 1, #s.ranges do
+    local r = s.ranges[i]
+    if r[1] < 1 or r[2] > #all or r[1] > r[2] then fail("build_rc1_article: " .. s.name .. ": lines " .. r[1] .. "-" .. r[2] .. " of " .. s.path .. ", which has " .. #all) end
+    if i > 1 then push(quoted, {gap = true, indent = tabs_of(all[r[1]])}) end
+    for n = r[1], r[2] do push(quoted, {text = all[n]}) end
+  end
+  local shared = 1000
+  for q in quoted do
+    if not has_key(q, "gap") and trim(q.text) ~= "" and tabs_of(q.text) < shared then shared = tabs_of(q.text) end
+  end
+  local out = {}
+  for q in quoted do
+    if has_key(q, "gap") then
+      push(out, string_rep("\t", q.indent - shared) .. "...")
+    elseif trim(q.text) == "" then
+      push(out, "")
+    else
+      push(out, sub(q.text, shared + 1))
+    end
+  end
+  return join(out, "\n")
+end
+
+-- The colored HTML of each {language, text}, in order, from one run of
+-- tools/color_code.
+function colored(roc, requests)
+  if #requests == 0 then return {} end
+  local work = fresh_dir("build:roc-apps", "rc1-article")
+  local tool = real(work) .. "/color_code"
+  must(run({roc, "build", "--opt=dev", "main.roc", "--output=" .. tool}, {cwd = "tools/color_code", timeout_ms = 300000, tail = 20, nice = 19, want = WANT_ROC}))
+  local argv = {tool}
+  for r in requests do
+    push(argv, r.language)
+    push(argv, r.text)
+  end
+  local r = must(run(argv, {timeout_ms = 60000, whole = 20000000, want = WANT_TOOL}))
+  remove_tree(work)
+  local pieces = split(r.out, MARK)
+  if pieces[1] ~= "" then fail("build_rc1_article: color_code printed something before its first answer") end
+  if #pieces - 1 ~= #requests then fail("build_rc1_article: " .. #requests .. " texts got " .. (#pieces - 1) .. " answers") end
+  return drop(pieces, 1)
+end
+
+-- A snippet's link: its repository, file and lines on GitHub, at its commit.
+function snippet_link(s)
+  local first = s.ranges[1][1]
+  local last = s.ranges[#s.ranges][2]
+  local where = "#L" .. first .. "-L" .. last
+  local what = "lines " .. first .. "-" .. last
+  if first == last then
+    where = "#L" .. first
+    what = "line " .. first
+  end
+  local trimmed = ""
+  if #s.ranges > 1 then trimmed = ", trimmed" end
+  local url = "https://github.com/showell/" .. s.repo .. "/blob/" .. s.rev .. "/" .. s.path .. where
+  return "<p class=\"file\">" .. s.repo .. " <a href=\"" .. url .. "\"><code>" .. escaped(s.path) .. "</code></a>, " .. what .. trimmed .. ", at " .. sub(s.rev, 1, 7) .. "</p>"
+end
+
+-- What the pinned Roc's `roc check main.roc` says of a reduced program,
+-- each line's trailing space taken off.
+function check_output(roc, p)
+  local r = run({roc, "check", "main.roc"}, {cwd = p.dir, timeout_ms = 300000, whole = 200000, nice = 19, want = WANT_ROC})
+  if r.code == 0 then fail("build_rc1_article: the reduced program " .. p.name .. " checks clean, so it shows nothing") end
+  local out = {}
+  for l in lines(r.out) do push(out, re_replace(l, "\\s+$", "")) end
+  return trim(join(out, "\n"))
+end
+
+-- The stats TSV's rows, each a map by the header's names.
+function stats_rows()
+  local all = lines(trim(read(STATS)))
+  local names = split(all[1], "\t")
+  local rows = {}
+  for i = 2, #all do
+    local cells = split(all[i], "\t")
+    if #cells ~= #names then fail("build_rc1_article: " .. STATS .. ":" .. i .. " has " .. #cells .. " cells, not " .. #names) end
+    local row = {}
+    for k = 1, #names do row[names[k]] = cells[k] end
+    push(rows, row)
+  end
+  return rows
+end
+
+-- The one row for a repository, pin, step and condition, or nil.
+function stats_row(rows, repo, pin, step, condition)
+  local found = nil
+  for r in rows do
+    if r.repo == repo and r.pin == pin and r.step == step and r.condition == condition then
+      if found ~= nil then fail("build_rc1_article: " .. STATS .. " has two rows for " .. repo .. " " .. pin .. " " .. step .. " " .. condition) end
+      found = r
+    end
+  end
+  return found
+end
+
+-- A decimal like "3.73" as hundredths, for comparing.
+function hundredths(s)
+  local parts = split(s, ".")
+  local whole = parse_int(parts[1])
+  if #parts == 1 then return whole * 100 end
+  local frac = sub(parts[2] .. "00", 1, 2)
+  return whole * 100 + parse_int(frac)
+end
+
+-- A whole number with commas between its thousands.
+function commas(s)
+  local out = ""
+  local n = #s
+  for i = 1, n do
+    out = out .. sub(s, i, i)
+    local left = n - i
+    if left > 0 and left % 3 == 0 then out = out .. "," end
+  end
+  return out
+end
+
+-- A table cell of seconds, or a dash where there is no number.
+function seconds_cell(v)
+  if v == "" then return "<td class=\"num\">–</td>" end
+  return "<td class=\"num\">" .. v .. "</td>"
+end
+
+-- The chess proof's run times: CPU seconds of KnightProof's search, built
+-- each way, on each compiler.
+function knightproof_html(rows)
+  local builds = {
+    {label = "<code>--opt=dev</code>", step = "run-dev"},
+    {label = "<code>--opt=dev --specialize=yes</code>", step = "run-dev-specialized"},
+    {label = "<code>--opt=speed</code>", step = "run-speed"},
+  }
+  local out = {"<div class=\"table\"><table>", "<thead><tr><th>build</th><th class=\"num\">old nightly (2026-11-03)</th><th class=\"num\">RC1</th></tr></thead>", "<tbody>"}
+  for b in builds do
+    local cells = {}
+    for pin in {OLD_PIN, NEW_PIN} do
+      local r = stats_row(rows, "roc-apps", pin, b.step, "warm")
+      if r == nil then
+        push(cells, "<td class=\"num\">n/a</td>")
+      else
+        push(cells, "<td class=\"num\">" .. r.cpu_s .. " s</td>")
+      end
+    end
+    push(out, "<tr><td>" .. b.label .. "</td>" .. join(cells, "") .. "</tr>")
+  end
+  push(out, "</tbody></table></div>")
+  return join(out, "\n")
+end
+
+-- A repository's build times: for each step and condition, the median wall
+-- and CPU seconds of three runs on each compiler, with a line above saying
+-- what was built and how loaded the box was.
+function stats_html(rows, repo)
+  local mine = {}
+  for r in rows do
+    if r.repo == repo and (r.step == "check" or r.step == "build-dev" or r.step == "build-speed" or r.step == "test") then push(mine, r) end
+  end
+  if #mine == 0 then fail("build_rc1_article: " .. STATS .. " has no build rows for " .. repo) end
+  local low = mine[1].load1
+  local high = mine[1].load1
+  local old_commit = ""
+  local new_commit = ""
+  local modules = ""
+  local loc = ""
+  for r in mine do
+    if hundredths(r.load1) < hundredths(low) then low = r.load1 end
+    if hundredths(r.load1) > hundredths(high) then high = r.load1 end
+    if r.pin == OLD_PIN then old_commit = r.commit end
+    if r.pin == NEW_PIN then
+      new_commit = r.commit
+      modules = r.roc_modules
+      loc = r.roc_lines
+    end
+  end
+  local targets = {}
+  for st in STEPS do
+    local r = stats_row(rows, repo, NEW_PIN, st.step, "cold")
+    if r ~= nil and not has_item(targets, r.target) then push(targets, r.target) end
+  end
+  local codes = {}
+  for t in targets do push(codes, "<code>" .. escaped(t) .. "</code>") end
+  local out = {}
+  push(out, "<p class=\"meta\">" .. commas(modules) .. " modules, " .. commas(loc) .. " lines of Roc; built from " .. join(codes, " and ") .. "; the old nightly at " .. old_commit .. ", RC1 at " .. new_commit .. ". The one-minute load average was " .. low .. " to " .. high .. " as the steps began.</p>")
+  push(out, "<div class=\"table\"><table>")
+  push(out, "<thead><tr><th>step</th><th>condition</th><th class=\"num\">wall, old</th><th class=\"num\">wall, RC1</th><th class=\"num\">CPU, old</th><th class=\"num\">CPU, RC1</th></tr></thead>")
+  push(out, "<tbody>")
+  for st in STEPS do
+    if stats_row(rows, repo, NEW_PIN, st.step, "cold") ~= nil then
+      local first = true
+      for c in CONDITIONS do
+        local old = stats_row(rows, repo, OLD_PIN, st.step, c.condition)
+        local new = stats_row(rows, repo, NEW_PIN, st.step, c.condition)
+        if old == nil or new == nil then fail("build_rc1_article: " .. STATS .. " lacks " .. repo .. " " .. st.step .. " " .. c.condition .. " on a compiler") end
+        local label = ""
+        local cls = ""
+        if first then
+          label = st.label
+          cls = " class=\"group\""
+        end
+        first = false
+        push(out, "<tr" .. cls .. "><td>" .. label .. "</td><td>" .. c.label .. "</td>" .. seconds_cell(old.wall_s) .. seconds_cell(new.wall_s) .. seconds_cell(old.cpu_s) .. seconds_cell(new.cpu_s) .. "</tr>")
+      end
+    end
+  end
+  push(out, "</tbody></table></div>")
+  return join(out, "\n")
+end
+
+-- Every build's output size on each compiler, as its cold run left it.
+function sizes_html(rows)
+  local repos = {}
+  for r in rows do
+    if (r.step == "build-dev" or r.step == "build-speed") and not has_item(repos, r.repo) then push(repos, r.repo) end
+  end
+  local out = {"<div class=\"table\"><table>", "<thead><tr><th>repository</th><th>build</th><th class=\"num\">bytes, old</th><th class=\"num\">bytes, RC1</th></tr></thead>", "<tbody>"}
+  for repo in repos do
+    for st in {{step = "build-dev", label = "dev"}, {step = "build-speed", label = "speed"}} do
+      local old = stats_row(rows, repo, OLD_PIN, st.step, "cold")
+      local new = stats_row(rows, repo, NEW_PIN, st.step, "cold")
+      if old ~= nil and new ~= nil then
+        local what = st.label .. ", " .. escaped(basename(new.target))
+        push(out, "<tr><td>" .. repo .. "</td><td>" .. what .. "</td><td class=\"num\">" .. commas(old.output_bytes) .. "</td><td class=\"num\">" .. commas(new.output_bytes) .. "</td></tr>")
+      end
+    end
+  end
+  push(out, "</tbody></table></div>")
+  return join(out, "\n")
+end
+
+-- The snippet or repro named `name`, or nil.
+function named(list, name)
+  local found = nil
+  for x in list do
+    if x.name == name then found = x end
+  end
+  return found
+end
+
+function page()
+  local roc = pinned_roc("build_rc1_article")
+  local prose = read(PROSE)
+  local rows = stats_rows()
+  local requests = {}
+  for s in SNIPPETS do
+    if s.language ~= "plain" then push(requests, {language = s.language, text = snippet_text(s), key = "snippet " .. s.name}) end
+  end
+  for p in REPROS do
+    for f in p.files do push(requests, {language = "roc", text = trim(read(p.dir .. "/" .. f)), key = "repro " .. p.name .. " " .. f}) end
+  end
+  local answers = colored(roc, requests)
+  local html = {}
+  for i = 1, #requests do html[requests[i].key] = answers[i] end
+  local used = {}
+  local out = {}
+  for l in lines(prose) do
+    local m = re_find(l, "^<!-- (snippet|repro|stats) ([a-z0-9-]+) -->$")
+    local bare = re_find(l, "^<!-- (knightproof|sizes) -->$")
+    if bare ~= nil then
+      if has_key(used, bare.group) then fail("build_rc1_article: " .. PROSE .. " names " .. bare.group .. " twice") end
+      used[bare.group] = true
+      if bare.group == "knightproof" then push(out, knightproof_html(rows)) else push(out, sizes_html(rows)) end
+    elseif m == nil then
+      push(out, l)
+    else
+      local kind = m.groups[1]
+      local name = m.groups[2]
+      local key = kind .. " " .. name
+      if has_key(used, key) then fail("build_rc1_article: " .. PROSE .. " names the " .. key .. " twice") end
+      used[key] = true
+      if kind == "stats" then
+        push(out, stats_html(rows, name))
+      elseif kind == "snippet" then
+        local s = named(SNIPPETS, name)
+        if s == nil then fail("build_rc1_article: " .. PROSE .. " names the snippet " .. name .. ", which SNIPPETS lacks") end
+        push(out, snippet_link(s))
+        if s.language == "plain" then
+          push(out, "<pre class=\"plain\"><code>" .. escaped(snippet_text(s)) .. "</code></pre>")
+        else
+          push(out, "<pre class=\"roc\"><code>" .. html[key] .. "</code></pre>")
+        end
+      else
+        local p = named(REPROS, name)
+        if p == nil then fail("build_rc1_article: " .. PROSE .. " names the repro " .. name .. ", which REPROS lacks") end
+        for f in p.files do
+          push(out, "<p class=\"file\"><code>" .. f .. "</code></p>")
+          push(out, "<pre class=\"roc\"><code>" .. html["repro " .. name .. " " .. f] .. "</code></pre>")
+        end
+        push(out, "<p class=\"file\"><code>roc check main.roc</code>, at " .. NEW_PIN .. "</p>")
+        push(out, "<pre class=\"plain\"><code>" .. escaped(check_output(roc, p)) .. "</code></pre>")
+      end
+    end
+  end
+  for s in SNIPPETS do
+    if not has_key(used, "snippet " .. s.name) then fail("build_rc1_article: the snippet " .. s.name .. " is in no `<!-- snippet " .. s.name .. " -->` line of " .. PROSE) end
+  end
+  for p in REPROS do
+    if not has_key(used, "repro " .. p.name) then fail("build_rc1_article: the repro " .. p.name .. " is in no `<!-- repro " .. p.name .. " -->` line of " .. PROSE) end
+  end
+  return join(out, "\n") .. "\n"
+end
+
+require_siblings()
+local text = page()
+if CHECK then
+  if not exists(PAGE) or read(PAGE) ~= text then fail("build_rc1_article: " .. PAGE .. " is stale: run shale site/build_rc1_article.shale") end
+  print("build_rc1_article: " .. PAGE .. " is up to date")
+else
+  if not exists(PAGE_DIR) then mkdir(PAGE_DIR) end
+  if exists(PAGE) then replace(PAGE, text) else create(PAGE, text) end
+  print("build_rc1_article: wrote " .. PAGE .. ", " .. #text .. " bytes")
+end

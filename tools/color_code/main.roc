@@ -1,7 +1,8 @@
 ## This app colors code for the site's pages with roc-syntax-color, on Roc's
-## echo platform. site/build_roc_on_shale.shale, site/build_chess_code.shale and
-## site/build_security_idioms.shale run it: its arguments are pairs, a language (`roc`, `shale` or `js`) and a
-## text, and it prints each text colored whole, in order, each after a line
+## echo platform. site/build_roc_on_shale.shale, site/build_chess_code.shale,
+## site/build_security_idioms.shale and site/build_rc1_article.shale run it:
+## its arguments are pairs, a language (`roc`, `shale`, `js`, `zig` or `c`) and
+## a text, and it prints each text colored whole, in order, each after a line
 ## `<!-- color_code answer -->`. No answer can hold that line, since the
 ## coloring escapes every `<`.
 app [main!] { sc: "../../../roc-syntax-color/package/main.roc" }
@@ -25,6 +26,8 @@ answers_onto = |out, requests| match requests {
 	["roc", text, .. as rest] => answers_onto(out.append(SyntaxColor.html(SyntaxColor.roc, text)), rest)
 	["shale", text, .. as rest] => answers_onto(out.append(SyntaxColor.html(SyntaxColor.shale, text)), rest)
 	["js", text, .. as rest] => answers_onto(out.append(SyntaxColor.html(SyntaxColor.js, text)), rest)
+	["zig", text, .. as rest] => answers_onto(out.append(SyntaxColor.html(SyntaxColor.zig, text)), rest)
+	["c", text, .. as rest] => answers_onto(out.append(SyntaxColor.html(SyntaxColor.c, text)), rest)
 	[stray, ..] => crash "color_code: a language it doesn't take: ${stray}"
 }
 
