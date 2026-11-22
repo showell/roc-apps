@@ -11,43 +11,33 @@
 ## finishes from every start, within 2,520,884 moves from g6, the worst, and
 ## with no backtracking at all from b2. KnightProof.roc holds every start's
 ## count.
+import chess.Backtrack
 import chess.Tape
 
-## The search's path from the first knight, each knight with the index of the
-## next of its moves to try, and the squares the path covers, a bit each.
-Knight :: { path : List({ square : U8, next : U64 }), visited : U64 }.{
+## The backtracking search for a tour, its choices the squares the knights
+## land on.
+Knight :: Backtrack(Knight.Position, U8).{
+
+	## Where a partial tour stands: the newest knight's square, and the squares
+	## the tour covers, a bit each.
+	Position : { square : U8, visited : U64 }
 
 	## The tour's first knight, on `square`.
 	start : U8 -> Knight
-	start = |square| Knight.({ path: [{ square, next: 0 }], visited: square_bit(square) })
+	start = |square| Knight.(Backtrack.start({ square, visited: square_bit(square) }, square))
 
 	## The search one transition on: the newest knight's next untried move to
 	## an empty square, or, with none left, that knight taken off.
 	next_move : Knight -> (Knight, Tape.Move)
-	next_move = |Knight.(knight)| {
-		last = knight.path.len() - 1
-		newest = knight.path.get(last) ?? crash "Knight.next_move: the search has given up, and no move is asked of it then"
-		landings = knight_moves.get(newest.square.to_u64()) ?? crash "Knight.next_move: a square past the board"
-		match first_open_move(landings, { from: newest.next, visited: knight.visited }) {
-			Ok({ index, square }) => {
-				marked = knight.path.set(last, { ..newest, next: index + 1 }) ?? crash "Knight.next_move: the newest knight is on the path"
-				(
-					Knight.({ path: marked.append({ square, next: 0 }), visited: U64.bitwise_or(knight.visited, square_bit(square)) }),
-					Place(square),
-				)
+	next_move = |Knight.(search)| {
+		(stepped, step) = search.step(tour)
+		move =
+			match step {
+				Entered(square) => Place(square)
+				Left(square) => Remove(square)
+				Exhausted(square) => RemoveAndGiveUp(square)
 			}
-			Err(NoneOpen) => {
-				path = knight.path.drop_last(1)
-				visited = U64.bitwise_xor(knight.visited, square_bit(newest.square))
-				move =
-					if path.is_empty() {
-						RemoveAndGiveUp(newest.square)
-					} else {
-						Remove(newest.square)
-					}
-				(Knight.({ path, visited }), move)
-			}
-		}
+		(Knight.(stepped), move)
 	}
 
 	## Each empty square the tour can never enter from where it stands: no
@@ -75,21 +65,17 @@ Knight :: { path : List({ square : U8, next : U64 }), visited : U64 }.{
 square_bit : U8 -> U64
 square_bit = |square| U64.shl_wrap(1, square)
 
-## The first of `landings`, from index `from` on, whose square is empty.
-first_open_move : List(U8), { from : U64, visited : U64 } -> Try({ index : U64, square : U8 }, [NoneOpen])
-first_open_move = |landings, { from, visited }| {
-	var $index = from
-	var $found = Err(NoneOpen)
-	while $index < landings.len() {
-		square = landings.get($index) ?? crash "Knight.first_open_move: the index is inside the list"
+## The tour as a puzzle: from a square, the knight's moves, and a move onto a
+## square the tour covers refused.
+tour : Backtrack.Puzzle(Knight.Position, U8)
+tour = {
+	options: |{ square, .. }| knight_moves.get(square.to_u64()) ?? crash "Knight.tour: a square past the board",
+	child: |{ visited, .. }, square|
 		if U64.bitwise_and(visited, square_bit(square)) == 0 {
-			$found = Ok({ index: $index, square })
-			$index = landings.len()
+			Ok({ square, visited: U64.bitwise_or(visited, square_bit(square)) })
 		} else {
-			$index = $index + 1
-		}
-	}
-	$found
+			Err(Refused)
+		},
 }
 
 ## The empty squares a flood reaches from `head` through empty squares, a bit
