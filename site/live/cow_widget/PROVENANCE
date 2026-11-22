@@ -1,5 +1,5 @@
-published 2026-11-19T16:24:56Z
-roc nightly-2026-11-03-34bd006
+published 2026-11-22T21:13:04Z
+roc 0.1.0_RC1
 opt speed
-roc-apps 270def1c
-sha256 0e0fbfb74f72a869  43865 bytes  cow_widget.wasm
+roc-apps ffb884ad
+sha256 540c5293afd29e7b  68825 bytes  cow_widget.wasm
