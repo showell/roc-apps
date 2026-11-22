@@ -1,5 +1,5 @@
-published 2026-11-19T16:24:52Z
-roc nightly-2026-11-03-34bd006
+published 2026-11-22T21:13:00Z
+roc 0.1.0_RC1
 opt speed
-roc-apps 3987492c
-sha256 87b1a1b579676d10  240468 bytes  bends_widget.wasm
+roc-apps e8006f81
+sha256 325d1e3e6fae52b9  520049 bytes  bends_widget.wasm
