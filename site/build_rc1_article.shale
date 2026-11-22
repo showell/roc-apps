@@ -376,12 +376,38 @@ function sizes_html(rows)
   return join(out, "\n")
 end
 
--- "old → RC1" for one step and condition's median CPU seconds.
+-- How RC1's time compares with the old one's: "about the same" under a 10%
+-- change, else the larger over the smaller to one decimal, faster or
+-- slower; and whether it is slower.
+function factor_of(old_s, new_s)
+  local old = hundredths(old_s)
+  local new = hundredths(new_s)
+  if old <= 0 or new <= 0 then fail("build_rc1_article: a time of zero (" .. old_s .. ", " .. new_s .. ") has no factor") end
+  local diff = new - old
+  if diff < 0 then diff = -diff end
+  if diff * 10 < old then return {text = "about the same", slower = false} end
+  local big = old
+  local small = new
+  local word = "faster"
+  if new > old then
+    big = new
+    small = old
+    word = "slower"
+  end
+  local tenths = (big * 10 + small // 2) // small
+  return {text = (tenths // 10) .. "." .. (tenths % 10) .. "× " .. word, slower = new > old}
+end
+
+-- "old → RC1 (factor)" for one step and condition's median CPU seconds, a
+-- slower one marked.
 function pair_cell(rows, repo, step, condition)
   local old = stats_row(rows, repo, OLD_PIN, step, condition)
   local new = stats_row(rows, repo, NEW_PIN, step, condition)
   if old == nil or new == nil then fail("build_rc1_article: " .. STATS .. " lacks " .. repo .. " " .. step .. " " .. condition .. " on a compiler") end
-  return "<td class=\"num\">" .. old.cpu_s .. " → " .. new.cpu_s .. "</td>"
+  local f = factor_of(old.cpu_s, new.cpu_s)
+  local cls = "num"
+  if f.slower then cls = "num slower" end
+  return "<td class=\"" .. cls .. "\">" .. old.cpu_s .. " → " .. new.cpu_s .. " (" .. f.text .. ")</td>"
 end
 
 -- Every project, largest first: its lines of Roc, and its dev build after

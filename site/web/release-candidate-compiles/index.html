@@ -51,6 +51,7 @@
   .num { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
   tr.group td { border-top: 2px solid var(--edge); }
   .pending { color: var(--wait); font-weight: 600; }
+  .slower { color: var(--wait); }
   .summary li { margin-bottom: 10px; }
   footer { margin-top: 36px; color: var(--muted); font-size: 13px; }
 </style>
@@ -60,14 +61,15 @@
 <h1>Moving to Roc 0.1.0 RC1</h1>
 <p class="lede"><strong>Six projects, about 99,000 lines of Roc, all checks green at RC1.</strong> roc-chat is still
 moving: <span class="pending">pending</span>.</p>
+<p>Each project's previous pin, nightly-2026-11-03-34bd006, against RC1:</p>
 <div class="table"><table>
 <thead><tr><th>project</th><th class="num">lines of Roc</th><th class="num">dev build after an edit, CPU s</th><th class="num">cold check, CPU s</th><th>RC1 checks</th></tr></thead>
 <tbody>
-<tr><td><a href="https://github.com/showell/roc-apps">roc-apps</a></td><td class="num">78,143</td><td class="num">5.24 → 0.61</td><td class="num">6.83 → 4.55</td><td>green: 51 apps, Safari's and four other gates</td></tr>
+<tr><td><a href="https://github.com/showell/roc-apps">roc-apps</a></td><td class="num">78,143</td><td class="num">5.24 → 0.61 (8.6× faster)</td><td class="num">6.83 → 4.55 (1.5× faster)</td><td>green: 51 apps, Safari's and four other gates</td></tr>
 <tr><td><a href="https://github.com/showell/roc-chat">roc-chat</a></td><td class="num">45,272</td><td colspan="3"><span class="pending">pending</span></td></tr>
-<tr><td><a href="https://github.com/showell/roc-screensaver">roc-screensaver</a></td><td class="num">8,904</td><td class="num">1.28 → 0.15</td><td class="num">1.74 → 1.83</td><td>green: 34 checks, frames pixel-identical</td></tr>
-<tr><td><a href="https://github.com/showell/roc-markdown">roc-markdown</a></td><td class="num">6,413</td><td class="num">0.52 → 0.07</td><td class="num">0.56 → 1.33</td><td>green: its gates</td></tr>
-<tr><td><a href="https://github.com/showell/roc-syntax-color">roc-syntax-color</a></td><td class="num">5,329</td><td class="num">1.06 → 0.05</td><td class="num">0.55 → 1.34</td><td>green: its gates</td></tr>
+<tr><td><a href="https://github.com/showell/roc-screensaver">roc-screensaver</a></td><td class="num">8,904</td><td class="num">1.28 → 0.15 (8.5× faster)</td><td class="num">1.74 → 1.83 (about the same)</td><td>green: 34 checks, frames pixel-identical</td></tr>
+<tr><td><a href="https://github.com/showell/roc-markdown">roc-markdown</a></td><td class="num">6,413</td><td class="num">0.52 → 0.07 (7.4× faster)</td><td class="num slower">0.56 → 1.33 (2.4× slower)</td><td>green: its gates</td></tr>
+<tr><td><a href="https://github.com/showell/roc-syntax-color">roc-syntax-color</a></td><td class="num">5,329</td><td class="num">1.06 → 0.05 (21.2× faster)</td><td class="num slower">0.55 → 1.34 (2.4× slower)</td><td>green: its gates</td></tr>
 <tr><td><a href="https://github.com/showell/roc-types">roc-types</a></td><td class="num">76</td><td colspan="2">a Zig program; its Roc is test fixtures</td><td>rebuilt, tested, published</td></tr>
 <tr><td><a href="https://github.com/showell/roc-ast">roc-ast</a></td><td class="num">7</td><td colspan="2">a Zig program; its Roc is test fixtures</td><td>rebuilt, tested, published</td></tr>
 </tbody></table></div>
