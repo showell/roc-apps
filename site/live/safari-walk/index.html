@@ -16,20 +16,24 @@ canvas { display: block; background: #06080f; width: min(960px, 100%, calc(88vh 
 #message button { margin-top: 1em; font: inherit; padding: 0.4em 1.2em; }
 /* While the walk loads, a few paragraphs about it, in the landing page's
    type, with the stage and a clock beneath. */
-#loading { position: absolute; inset: 0; background: #06080f; color: #d8d6cf; overflow: auto; display: flex; align-items: center; justify-content: center; font: 15px/1.5 system-ui, sans-serif; }
-#loading article { max-width: 62ch; padding: 24px 16px; }
+/* The loading screen leaves the canvas uncovered: its background is
+   transparent, so the canvas (held black at the walk's start) shows
+   through around the text. A canvas fully covered by an opaque layer can
+   be throttled by the browser, which stalled the warm-up for seconds at a
+   time on a real GPU and made it never steady. */
+#loading { position: absolute; inset: 0; background: transparent; color: #d8d6cf; overflow: auto; display: flex; align-items: center; justify-content: center; font: 15px/1.5 system-ui, sans-serif; }
+#loading article { max-width: 62ch; padding: 24px 16px; text-shadow: 0 0 6px #000; }
 #loading h1 { font-size: 26px; margin: 0 0 10px; color: #efede6; }
 #loading p { margin: 0 0 12px; }
 #loading kbd { font: 13px monospace; border: 1px solid #4a4a46; border-radius: 3px; padding: 0 4px; }
 /* The waiting state comes first and large, so nobody takes the page for
-   finished: the stage, the seconds so far, a broad bar and a calm pulse. */
+   finished: the stage, the seconds so far and a broad bar. */
 #loading .progress { margin: 0 0 28px; padding: 16px 18px; border: 1px solid #2c2e36; border-radius: 8px; background: #0d1018; }
 #loading .status { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; font-size: 20px; font-weight: 600; color: #efe3c6; }
 #loading #clock { font: 16px monospace; color: #b48a3c; white-space: nowrap; }
 #loading .bar { height: 10px; background: #23252c; border-radius: 5px; margin-top: 12px; overflow: hidden; }
-#loading .bar span { display: block; height: 100%; width: 3%; border-radius: 5px; background: #d19a3e; transition: width 0.4s; animation: walk-pulse 1.8s ease-in-out infinite; }
+#loading .bar span { display: block; height: 100%; width: 3%; border-radius: 5px; background: #d19a3e; transition: width 0.4s; }
 #loading .note { margin-top: 10px; color: #8f8c84; font-size: 13px; }
-@keyframes walk-pulse { 50% { opacity: 0.6; } }
 @media (max-width: 480px) { #loading .status { font-size: 17px; } #loading h1 { font-size: 22px; } }
 #rate { display: none; position: absolute; top: 8px; left: 8px; max-width: calc(100% - 32px); white-space: pre-wrap; padding: 4px 8px; background: rgba(0, 0, 0, 0.55); color: #eee; font: 13px monospace; pointer-events: none; }
 </style>
@@ -57,7 +61,21 @@ canvas { display: block; background: #06080f; width: min(960px, 100%, calc(88vh 
 // stages: the download, then the engine preparing the trees and the sky's
 // light, then the browser readying the GPU's shaders for the first frames.
 // walkLoad keeps when each ended, for the console report.
-var walkLoad = { files: null, shaders_first: null, shaders_last: null, first_frame: null, shown: null, settle: null, made_after: [] };
+var walkLoad = { files: null, shaders_first: null, shaders_last: null, first_frame: null, shown: null, settle: null, made_after: [], resized: [] };
+// Each change of the canvas's drawing size after the first frame, with when
+// and the CSS size and pixel ratio then (the engine rebuilds its targets).
+(function () {
+	var canvas = document.getElementById("canvas");
+	var last = null;
+	setInterval(function () {
+		var size = canvas.width + "x" + canvas.height;
+		if (last !== null && size !== last && walkLoad.first_frame !== null) {
+			var box = canvas.getBoundingClientRect();
+			walkLoad.resized.push(last + " to " + size + " at " + ((performance.now() - walkLoad.first_frame) / 1000).toFixed(1) + " s (CSS " + box.width.toFixed(1) + " x " + box.height.toFixed(1) + ", window " + window.innerWidth + " x " + window.innerHeight + ")");
+		}
+		last = size;
+	}, 200);
+})();
 var STEADY_FRAMES = 30, STEADY_LIMIT_MS = 40;
 // The walk's pace in metres a second, as game/Walk.roc has it.
 var WALK_PACE = 6.4;
@@ -65,7 +83,12 @@ var WALK_PACE = 6.4;
 	var stage = document.getElementById("stage");
 	var clock = document.getElementById("clock");
 	var bar = document.getElementById("bar");
-	function progress(share) { bar.style.width = Math.round(share * 100) + "%"; }
+	// The bar never moves backward: it shows the furthest share reached.
+	var barShare = 0;
+	function progress(share) {
+		barShare = Math.max(barShare, Math.min(1, share));
+		bar.style.width = (barShare * 100).toFixed(1) + "%";
+	}
 	var loading = document.getElementById("loading");
 	var start = performance.now();
 	var done = false;
@@ -79,6 +102,7 @@ var WALK_PACE = 6.4;
 		if (done) return;
 		done = true;
 		walkLoad.shown = performance.now();
+		progress(1);
 		window.dispatchEvent(new Event("walk:shown"));
 		clearInterval(ticking);
 		// No fade here: the walk fades in from black itself, and a layer
@@ -137,7 +161,10 @@ var WALK_PACE = 6.4;
 			if (gap > longest) longest = gap;
 			steady = gap < STEADY_MS ? steady + 1 : 0;
 			last = now;
-			progress(0.7 + 0.3 * steady / STEADY);
+			// The run of steady frames resets on a slow frame, so the bar
+			// follows the best run so far, and creeps on a little each frame
+			// regardless, up to 95 percent; it fills when the walk shows.
+			progress(Math.min(0.95, Math.max(0.7 + 0.25 * steady / STEADY, barShare + 0.002)));
 			if (steady >= STEADY || now - ready > SETTLE_CAP_MS) {
 				walkLoad.settle = { ms: now - ready, frames: frames, longest: longest, steady: steady >= STEADY };
 				// Let the walk go, then hide this screen three frames later,
@@ -170,10 +197,13 @@ var walkView = (function () {
 	if (!(scale >= 0.1 && scale <= 4)) scale = 1;
 	var realRatio = window.devicePixelRatio || 1;
 	var canvas = document.getElementById("canvas");
+	// The ratio follows the canvas's whole CSS width, so a fraction of a
+	// pixel's change in layout never changes it (and never makes the engine
+	// rebuild its targets).
 	Object.defineProperty(window, "devicePixelRatio", {
 		configurable: true,
 		get: function () {
-			var width = canvas.getBoundingClientRect().width;
+			var width = Math.round(canvas.getBoundingClientRect().width);
 			return width > 0 ? 960 * scale / width : scale;
 		},
 	});
@@ -465,11 +495,12 @@ var walkView = (function () {
 	// few with their times.
 	function madeLine() {
 		var made = walkLoad.made_after;
-		if (made.length === 0) return "GPU objects made after the first frame: none";
+		var resized = walkLoad.resized.length ? "; the canvas changed size: " + walkLoad.resized.join("; ") : "";
+		if (made.length === 0) return "GPU objects made after the first frame: none" + resized;
 		var kinds = {};
 		made.forEach(function (m) { kinds[m.what] = (kinds[m.what] || 0) + 1; });
 		return "GPU objects made after the first frame: " + Object.keys(kinds).map(function (k) { return kinds[k] + " " + k; }).join(", ") + "; the first: " +
-			made.slice(0, 12).map(function (m) { return m.what + (m.label ? " " + m.label : "") + " at " + m.at.toFixed(1) + " s"; }).join("; ");
+			made.slice(0, 12).map(function (m) { return m.what + (m.label ? " " + m.label : "") + " at " + m.at.toFixed(1) + " s"; }).join("; ") + resized;
 	}
 
 	function report(frames, span) {
