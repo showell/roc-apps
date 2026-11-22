@@ -32,9 +32,9 @@ canvas { display: block; background: #06080f; width: min(960px, 100%, calc(88vh 
 <canvas id="canvas" tabindex="-1" oncontextmenu="event.preventDefault()"></canvas>
 <div id="loading"><article>
 <h1>Safari Walk</h1>
-<p>A walk down a dirt road across a dry savanna at golden hour. Grass bends in the wind, conifers line the verges, two zebras cross the road, and three radio towers blink their aviation lamps as the sun sets ahead of you. It is a new take on Safari Ride, the canvas game on this site, drawn in 3D.</p>
+<p>A walk down a dirt road across a dry savanna at golden hour. Grass bends in the wind, conifers line the verges, ducks paddle on a pond, two zebras cross the road, and three radio towers blink their aviation lamps as the sun sets ahead of you. It is a new take on Safari Ride, the canvas game on this site, drawn in 3D.</p>
 <p>The walk's logic is written in Roc. It runs on Rocco, Braeden Foster's 3D engine for games written in Roc, from Steve's fork of it, which adds a few changes so that it runs in Firefox. The page needs a browser with WebGPU. The code was written by AI agents (Claude), under Steve Howell's supervision.</p>
-<p><kbd>Space</kbd> pauses the walk, and everything in it, and walks on. <kbd>F</kbd> shows a frame readout. <kbd>1</kbd> to <kbd>4</kbd> jump down the road. Every 20 seconds of walking, the page writes a frame report to the browser's console, ready to copy into a message.</p>
+<p><kbd>Space</kbd> pauses the walk, and everything in it, and walks on. <kbd>F</kbd> shows a frame readout. <kbd>1</kbd> to <kbd>5</kbd> jump down the road. Every 20 seconds of walking, the page writes a frame report to the browser's console, ready to copy into a message.</p>
 <p>The first load can take half a minute: the browser readies the GPU's shaders before the first frame.</p>
 <div class="progress"><span id="stage">Downloading the walk (about 7 MB)</span> <span id="clock"></span><div class="bar"><span id="bar"></span></div></div>
 </article></div>
@@ -217,7 +217,7 @@ var walkView = (function () {
 	var walk = { shown: false, paused: false, held: false, skipNext: false, walked: 0, started: false };
 	window.addEventListener("walk:shown", function () { walk.shown = true; });
 	window.addEventListener("rocco:ready", function () { walk.started = true; });
-	var JUMPS = { Digit1: 44, Digit2: 200, Digit3: 260, Digit4: 95 };
+	var JUMPS = { Digit1: 44, Digit2: 200, Digit3: 260, Digit4: 95, Digit5: 36 };
 	window.addEventListener("keydown", function (event) {
 		if (event.repeat) return;
 		if (event.code === "Space") {
@@ -235,6 +235,7 @@ var walkView = (function () {
 		if (walked < 6) notes.push("the walk's first metres, fading in from black");
 		if (walked > 388) notes.push("the fade out at the road's end, before the walk starts again");
 		if (walked > 20 && walked < 62) notes.push("zebra 1 crossing ahead");
+		if (walked > 15 && walked < 85) notes.push("the duck pond ahead on the right");
 		if (walked > 200 && walked < 274) notes.push("zebra 2 crossing ahead");
 		if (walked > 59 && walked < 252) notes.push("sky blend re-blending (sunset)");
 		if (walked > 125 && walked < 160) notes.push("passing the near mast and its light");
