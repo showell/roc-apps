@@ -47,7 +47,8 @@ canvas { display: block; background: #06080f; width: min(960px, 100%, calc(88vh 
 // stages: the download, then the engine preparing the trees and the sky's
 // light, then the browser readying the GPU's shaders for the first frames.
 // walkLoad keeps when each ended, for the console report.
-var walkLoad = { files: null, shaders_first: null, shaders_last: null, first_frame: null, shown: null };
+var walkLoad = { files: null, shaders_first: null, shaders_last: null, first_frame: null, shown: null, settle: null, made_after: [] };
+var STEADY_FRAMES = 30, STEADY_LIMIT_MS = 40;
 (function () {
 	var stage = document.getElementById("stage");
 	var clock = document.getElementById("clock");
@@ -92,21 +93,45 @@ var walkLoad = { files: null, shaders_first: null, shaders_last: null, first_fra
 		console.error(error);
 	}
 
-	// After the first frame, wait for 20 frames in a row each under 100 ms,
-	// or 4 seconds, whichever comes first. (On a real GPU the frames after
-	// the first came unsteadily for 10 seconds, so the walk waited that long
-	// behind this screen; now it shows them, and the reports count them.)
+	// The 0 key holds the walk at its start (main.roc), so the page holds it
+	// from the first frame until the frames come steadily, and lets it go
+	// when it shows it.
+	function pressZero() {
+		var init = { code: "Digit0", key: "0", bubbles: true, cancelable: true };
+		window.dispatchEvent(new KeyboardEvent("keydown", init));
+		setTimeout(function () { window.dispatchEvent(new KeyboardEvent("keyup", init)); }, 60);
+	}
+
+	// After the first frame, wait for STEADY frames in a row each under
+	// STEADY_MS, or SETTLE_CAP_MS, whichever comes first. On a real GPU in
+	// Firefox the second frame came 10 s after the first: the browser's GPU
+	// process compiles the engine's pipelines after the first frame is sent.
+	// The walk waits behind this screen until that is over.
+	var STEADY = STEADY_FRAMES, STEADY_MS = STEADY_LIMIT_MS, SETTLE_CAP_MS = 30000;
 	window.addEventListener("rocco:ready", function () {
 		walkLoad.first_frame = performance.now();
-		stage.textContent = "Starting the walk";
-		progress(0.85);
+		pressZero();
+		stage.textContent = "Readying the GPU's shaders, then starting the walk";
+		progress(0.7);
 		var steady = 0;
 		var last = performance.now();
 		var ready = last;
+		var longest = 0, frames = 0;
 		function tick(now) {
-			steady = now - last < 100 ? steady + 1 : 0;
+			var gap = now - last;
+			frames += 1;
+			if (gap > longest) longest = gap;
+			steady = gap < STEADY_MS ? steady + 1 : 0;
 			last = now;
-			if (steady >= 20 || now - ready > 4000) finish(); else requestAnimationFrame(tick);
+			progress(0.7 + 0.3 * steady / STEADY);
+			if (steady >= STEADY || now - ready > SETTLE_CAP_MS) {
+				walkLoad.settle = { ms: now - ready, frames: frames, longest: longest, steady: steady >= STEADY };
+				// Let the walk go, then hide this screen three frames later,
+				// once the warm-up's objects are gone from the picture.
+				pressZero();
+				var left = 4;
+				(function after() { if (--left > 0) requestAnimationFrame(after); else finish(); })();
+			} else requestAnimationFrame(tick);
 		}
 		requestAnimationFrame(tick);
 	});
@@ -173,6 +198,10 @@ var walkView = (function () {
 	function blank() { return { passes: 0, draws: 0, instances: 0, triangles: 0, cpu: null, gpu: null, kinds: null, gap: null }; }
 	var sending = blank();
 	var recent = [];
+	// Every frame over STALL_MS from the first frame on, loading included,
+	// for the report's stalls line.
+	var STALL_MS = 250;
+	var stalls = [];
 	var reportFrames = [];
 	var reports = 0;
 	var lastSubmit = 0;
@@ -185,7 +214,7 @@ var walkView = (function () {
 	// engine's clock, which takes at most a quarter second a frame, at the
 	// walk's 4 m/s; the keys 1 to 4 jump as the game does). Only the
 	// report's notes on the longest frames read the distance.
-	var walk = { shown: false, paused: false, skipNext: false, walked: 0, started: false };
+	var walk = { shown: false, paused: false, held: false, skipNext: false, walked: 0, started: false };
 	window.addEventListener("walk:shown", function () { walk.shown = true; });
 	window.addEventListener("rocco:ready", function () { walk.started = true; });
 	var JUMPS = { Digit1: 44, Digit2: 200, Digit3: 260, Digit4: 95 };
@@ -195,6 +224,7 @@ var walkView = (function () {
 			walk.paused = !walk.paused;
 			if (!walk.paused) walk.skipNext = true;
 		}
+		if (event.code === "Digit0") walk.held = !walk.held;
 		if (event.code in JUMPS) walk.walked = JUMPS[event.code];
 	}, true);
 
@@ -202,7 +232,8 @@ var walkView = (function () {
 	// Roadside.roc and Walk.roc place them).
 	function happening(walked) {
 		var notes = [];
-		if (walked < 6 || walked > 388) notes.push("the fade at the loop's end and restart");
+		if (walked < 6) notes.push("the walk's first metres, fading in from black");
+		if (walked > 388) notes.push("the fade out at the road's end, before the walk starts again");
 		if (walked > 20 && walked < 62) notes.push("zebra 1 crossing ahead");
 		if (walked > 200 && walked < 274) notes.push("zebra 2 crossing ahead");
 		if (walked > 59 && walked < 252) notes.push("sky blend re-blending (sunset)");
@@ -223,10 +254,21 @@ var walkView = (function () {
 	var timer = { device: null, set: null, resolve: null, free: [], used: 0, kinds: [], reads: [] };
 	function timerReady() {
 		if (timer.set || !timer.device) return timer.set !== null;
+		timer.making = true;
 		timer.set = timer.device.createQuerySet({ type: "timestamp", count: QUERY_PASSES * 2 });
 		timer.resolve = timer.device.createBuffer({ size: QUERY_PASSES * 16, usage: GPUBufferUsage.QUERY_RESOLVE | GPUBufferUsage.COPY_SRC });
 		for (var i = 0; i < 4; i++) timer.free.push(timer.device.createBuffer({ size: QUERY_PASSES * 16, usage: GPUBufferUsage.MAP_READ | GPUBufferUsage.COPY_DST }));
+		timer.making = false;
 		return true;
+	}
+
+	// Every GPU object the engine makes after the first frame, with when:
+	// a pipeline or shader made then is one the browser compiles mid-walk.
+	// The page's own timing objects are left out.
+	function madeAfter(what, args) {
+		if (walkLoad.first_frame === null || timer.making) return;
+		var d = args[0] || {};
+		walkLoad.made_after.push({ at: (performance.now() - walkLoad.first_frame) / 1000, what: what, label: d.label || "" });
 	}
 	function timerRead(read) {
 		read.buffer.mapAsync(GPUMapMode.READ).then(function () {
@@ -262,11 +304,19 @@ var walkView = (function () {
 	if (window.GPUDevice) {
 		wrap(GPUDevice.prototype, "createShaderModule", function (original, args) {
 			if (walkLoad.shaders_first === null) walkLoad.shaders_first = performance.now();
+			madeAfter("createShaderModule", args);
 			var r = original.apply(this, args);
 			if (walkLoad.first_frame === null) walkLoad.shaders_last = performance.now();
 			return r;
 		});
+		["createRenderPipeline", "createRenderPipelineAsync", "createComputePipeline", "createBindGroupLayout", "createPipelineLayout", "createBuffer", "createSampler"].forEach(function (name) {
+			wrap(GPUDevice.prototype, name, function (original, args) {
+				madeAfter(name, args);
+				return original.apply(this, args);
+			});
+		});
 		wrap(GPUDevice.prototype, "createTexture", function (original, args) {
+			madeAfter("createTexture", args);
 			var d = args[0] || {};
 			if (d.sampleCount > samples) samples = d.sampleCount;
 			return original.apply(this, args);
@@ -321,8 +371,11 @@ var walkView = (function () {
 				frame.at = performance.now();
 				if (lastSubmit > 0) frame.gap = frame.at - lastSubmit;
 				lastSubmit = frame.at;
-				if (frame.gap !== null && !walk.paused) walk.walked = (walk.walked + 4 * Math.min(frame.gap, 250) / 1000) % 400;
+				if (frame.gap !== null && !walk.paused && !walk.held) walk.walked = (walk.walked + 4 * Math.min(frame.gap, 250) / 1000) % 400;
 				frame.walked = walk.walked;
+				if (frame.gap !== null && frame.gap > STALL_MS && walkLoad.first_frame !== null) {
+					stalls.push({ gap: frame.gap, after: (frame.at - walkLoad.first_frame) / 1000, walked: walk.walked, when: !walk.shown ? "loading" : walk.paused ? "paused" : "walking" });
+				}
 				var counts = walk.shown && !walk.paused && !walk.skipNext && frame.gap !== null;
 				if (!walk.paused && walk.shown) walk.skipNext = false;
 				submitted = frame;
@@ -383,7 +436,20 @@ var walkView = (function () {
 	// mostly the browser compiling them), and the loading screen gone.
 	function loadLine() {
 		function s(t) { return t === null ? "-" : (t / 1000).toFixed(1); }
-		return "load (s from the page's start): files in " + s(walkLoad.files) + ", first shader " + s(walkLoad.shaders_first) + ", last shader " + s(walkLoad.shaders_last) + ", first frame " + s(walkLoad.first_frame) + ", walk shown " + s(walkLoad.shown);
+		var settle = walkLoad.settle;
+		var settled = settle ? "; the walk waited " + (settle.ms / 1000).toFixed(1) + " s after the first frame, " + settle.frames + " frames, the longest " + Math.round(settle.longest) + " ms, " + (settle.steady ? "until " + STEADY_FRAMES + " frames in a row came under " + STEADY_LIMIT_MS + " ms" : "until the 30 s cap, never steady") : "";
+		return "load (s from the page's start): files in " + s(walkLoad.files) + ", first shader " + s(walkLoad.shaders_first) + ", last shader " + s(walkLoad.shaders_last) + ", first frame " + s(walkLoad.first_frame) + ", walk shown " + s(walkLoad.shown) + settled;
+	}
+
+	// What the engine made after the first frame, by kind, and the first
+	// few with their times.
+	function madeLine() {
+		var made = walkLoad.made_after;
+		if (made.length === 0) return "GPU objects made after the first frame: none";
+		var kinds = {};
+		made.forEach(function (m) { kinds[m.what] = (kinds[m.what] || 0) + 1; });
+		return "GPU objects made after the first frame: " + Object.keys(kinds).map(function (k) { return kinds[k] + " " + k; }).join(", ") + "; the first: " +
+			made.slice(0, 12).map(function (m) { return m.what + (m.label ? " " + m.label : "") + " at " + m.at.toFixed(1) + " s"; }).join("; ");
 	}
 
 	function report(frames, span) {
@@ -398,9 +464,13 @@ var walkView = (function () {
 		lines.push("page: " + location.href);
 		lines.push("switches: " + (walkView.switches.length ? walkView.switches.join(" ") : "none") + "; drawing scale " + walkView.scale);
 		lines.push(loadLine());
+		lines.push(madeLine());
 		lines.push("frames: " + gaps.length + " in " + (span / 1000).toFixed(1) + " s of walking = " + (gaps.length * 1000 / span).toFixed(1) + " fps (paused time, the first frame after each resume and the loading frames left out)");
 		lines.push("frame ms: p50 " + ms(percentile(sorted, 0.5)) + ", p90 " + ms(percentile(sorted, 0.9)) + ", p99 " + ms(percentile(sorted, 0.99)) + ", max " + ms(sorted[sorted.length - 1]));
 		lines.push("frames by length: up to 16.7 ms " + bins[0] + ", to 33 ms " + bins[1] + ", to 50 ms " + bins[2] + ", to 100 ms " + bins[3] + ", over 100 ms " + bins[4]);
+		lines.push("stalls (every frame over " + STALL_MS + " ms since the first frame, loading and paused included): " + (stalls.length === 0 ? "none" : stalls.map(function (s) {
+			return Math.round(s.gap) + " ms at " + s.after.toFixed(1) + " s after the first frame (" + s.when + ", " + Math.round(s.walked) + " m)";
+		}).join("; ")));
 		lines.push("the 5 longest frames:");
 		longest.forEach(function (f) {
 			lines.push("  " + ms(f.gap) + " ms at " + Math.round(f.walked) + " m (" + (f.walked / 4).toFixed(1) + " s into the walk, " + ((f.at - walkLoad.first_frame) / 1000).toFixed(1) + " s after the first frame; engine CPU " + ms(f.cpu) + ", GPU " + ms(f.gpu) + "): " + happening(f.walked));
