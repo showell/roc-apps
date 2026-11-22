@@ -1,0 +1,16 @@
+The box the Roc 0.1.0_RC1 build times in rc1-build-stats.tsv were measured on,
+as read on 2026-11-22.
+
+CPU      DO-Premium-Intel (Intel family 6, model 85, stepping 7; AVX2), under KVM
+Cores    2 cores, 1 thread a core: 2 CPUs
+Caches   L1d 64 KiB, L1i 64 KiB, L2 8 MiB (2 instances each)
+RAM      7.8 GiB
+Swap     none
+Disk     160 GB virtual disk (virtio, vda); 82 GB free of 154 GB on /
+OS       Ubuntu 24.04.4 LTS, Linux 6.8.0-138-generic
+
+It is a DigitalOcean cloud droplet that several agent lanes share. The runs
+didn't wait for a quiet box: each row's load1 is the one-minute load average
+when its step started, and its `others` column counts the roc, zig, node and
+shale programs of other work running then. Each run was niced to 19, and each
+time is the median of three.

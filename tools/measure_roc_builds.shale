@@ -4,11 +4,12 @@
 -- docs/rc1-build-stats.tsv keeps (its header names every column). From
 -- roc-apps' root:
 --
---   shale tools/measure_roc_builds.shale repo=roc-syntax-color old=build:lanes/rc1-survey/roc-syntax-color new=build:lanes/rc1-roc-syntax-color
+--   shale tools/measure_roc_builds.shale repo=roc-screensaver old=<checkout> new=<checkout>
 --
 -- `old` and `new` are checkouts of the repository, the first at its old pin
 -- and the second at RC1; each one's roc-version names the compiler it runs
--- (tools:roc-<pin>/roc). The steps a repository is timed on (`roc check`,
+-- (tools:roc-<pin>/roc), refused unless its `roc version` is exactly the
+-- pin. The steps a repository is timed on (`roc check`,
 -- `roc build --opt=dev`, `roc build --opt=speed` where it ships a release
 -- build, `roc test`) are STEPS below.
 --
@@ -25,7 +26,10 @@
 -- within each repetition, so both see the same box. Every run is niced to
 -- 19 and has a throwaway cache (ROC_CACHE_DIR) and TMPDIR of its own under
 -- `work`, so no other build's cache is touched. The box's one-minute load
--- average is read before each step's runs.
+-- average is read before each step's runs, and `others` counts the
+-- programs of other work running then (roc, zig, node and shale), since the
+-- box is shared and the runs don't wait for it to go quiet. The box itself
+-- is docs/rc1-build-box.txt.
 
 const REPO = arg("repo", "")
 const OLD = arg("old", "")
@@ -36,7 +40,7 @@ const REPS = arg("reps", 3)
 const ONLY = arg("only", "")
 const NOTE = arg("note", "")
 
-const HEADER = "date\trepo\tcommit\tpin\tstep\ttarget\tcondition\truns\twall_s\tcpu_s\twall_s_each\tcpu_s_each\tload1\texit\terrors\twarnings\toutput_bytes\troc_modules\troc_lines\tnote"
+const HEADER = "date\trepo\tcommit\tpin\tstep\ttarget\tcondition\truns\twall_s\tcpu_s\twall_s_each\tcpu_s_each\tload1\tothers\texit\terrors\twarnings\toutput_bytes\troc_modules\troc_lines\tnote"
 
 -- Each repository's steps: `step` (the TSV's name for it), `args` (after
 -- `roc`), `cwd` (below the checkout), `root` (the module the root_changed
@@ -48,6 +52,12 @@ const STEPS = {
     {step = "check", target = "harness/main.roc", cwd = "harness", args = {"check", "main.roc"}, root = "harness/main.roc", imports_in = "package"},
     {step = "build-dev", target = "harness/main.roc", cwd = "harness", args = {"build", "--opt=dev", "main.roc"}, output = "harness", root = "harness/main.roc", imports_in = "package"},
     {step = "test", target = "package/main.roc", cwd = "package", args = {"test", "main.roc"}, root = "package/main.roc", imports_in = "package"},
+  },
+  ["roc-screensaver"] = {
+    {step = "check", target = "screensavers/lanterns/main.roc", cwd = "", args = {"check", "screensavers/lanterns/main.roc"}, root = "screensavers/lanterns/main.roc", imports_in = "lib"},
+    {step = "build-dev", target = "screensavers/lanterns/main.roc", cwd = "", args = {"build", "screensavers/lanterns/main.roc", "--target=x64musl", "--opt=dev"}, output = "lanterns-x64musl.a", root = "screensavers/lanterns/main.roc", imports_in = "lib"},
+    {step = "build-speed", target = "screensavers/lanterns/web.roc", cwd = "screensavers/lanterns", args = {"build", "web.roc", "--target=wasm32", "--opt=speed"}, output = "lanterns.wasm", root = "screensavers/lanterns/web.roc", imports_in = "lib"},
+    {step = "test", target = "screensavers/lanterns/main.roc", cwd = "", args = {"test", "screensavers/lanterns/main.roc"}, root = "screensavers/lanterns/main.roc", imports_in = "lib"},
   },
   ["roc-markdown"] = {
     {step = "check", target = "judge/answers.roc", cwd = "", args = {"check", "judge/answers.roc"}, root = "judge/answers.roc", imports_in = "package"},
@@ -128,6 +138,15 @@ function pin_of(checkout)
   return trim(read(checkout .. "/roc-version"))
 end
 
+-- The other work running now, by its programs' names.
+function others()
+  local count = {roc = 0, zig = 0, node = 0, shale = 0}
+  for p in procs() do
+    if has_key(count, p.name) then count[p.name] = count[p.name] + 1 end
+  end
+  return "roc " .. count.roc .. ", zig " .. count.zig .. ", node " .. count.node .. ", shale " .. count.shale
+end
+
 -- One timed run of a step in `checkout` with the cache `cache`.
 function timed(side, step)
   local argv = {side.roc}
@@ -178,13 +197,14 @@ for pair in {{"old", OLD}, {"new", NEW}} do
   mkdir(dir)
   mkdir(dir .. "/tmp")
   local size = tracked_roc(pair[2])
-  push(sides, {name = pair[1], checkout = pair[2], pin = pin, roc = real("tools:roc-" .. pin .. "/roc"), dir = dir, cache = dir .. "/cache", tmp = dir .. "/tmp", commit = git_head(pair[2]), size = size})
+  push(sides, {name = pair[1], checkout = pair[2], pin = pin, roc = pinned_roc("measure", pair[2] .. "/roc-version"), dir = dir, cache = dir .. "/cache", tmp = dir .. "/tmp", commit = git_head(pair[2]), size = size})
 end
 local conditions = {"cold", "warm", "root_changed", "import_changed"}
 for step in STEPS[REPO] do
   if ONLY == "" or ONLY == step.step then
     local import_file = most_imported(NEW, step.imports_in)
     local load = load1()
+    local busy = others()
     local runs = {}
     for side in sides do
       runs[side.name] = {}
@@ -220,7 +240,7 @@ for step in STEPS[REPO] do
         if c == "import_changed" then note = (note == "" and "" or note .. "; ") .. "changed " .. import_file end
         if NOTE ~= "" then note = (note == "" and "" or note .. "; ") .. NOTE end
         local row = {today, REPO, side.commit, side.pin, step.step, step.target, c, tostring(#rs), as_seconds(median(walls)), as_seconds(median(cpus)),
-          join(wall_each, ","), join(cpu_each, ","), load, tostring(first.code), first.errors, first.warnings, bytes,
+          join(wall_each, ","), join(cpu_each, ","), load, busy, tostring(first.code), first.errors, first.warnings, bytes,
           tostring(side.size.modules), tostring(side.size.lines), note}
         append(OUT, join(row, "\t") .. "\n")
         print(join(row, "\t"))
