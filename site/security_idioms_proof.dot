@@ -17,8 +17,8 @@ digraph proof {
 
   facts -> unclaimed [label="HumanClaim.judge"];
   unclaimed -> invite;
-  unclaimed -> admission [label="HumanInvite.redeem"];
-  redeemable -> admission;
+  unclaimed -> admission [label="required"];
+  redeemable -> admission [label="HumanInvite.redeem"];
   admission -> proof [label="of_first_join"];
   proof -> writer [label="in place of a bare id"];
 }

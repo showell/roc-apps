@@ -106,8 +106,8 @@ and the invite as a single value.</li>
 <h3>Nothing else, so far</h3>
 <p>The other gaps on this page are our own design choices, not Roc's. For example, the platform's answer is a plain
 record, so Roc's types let any module set the name its stream is held under. A check holds that today. Roc's opaque
-types would let us close it, by wrapping the answer in a type of the app's own, which about 35 modules would then
-use. That is ours to do.</p>
+types would let us close it, by wrapping the answer in a type of the app's own, which the 31 modules that make
+an answer would then use. That is ours to do.</p>
 <h3>What Roc already gives us</h3>
 <p>Current Roc already does a lot for a service like this. A pure function can't do I/O, and every effect is marked
 by <code>=&gt;</code> and by the <code>!</code> the compiler asks for, so a reader can see where the effects are. Only an opaque type's own module can
@@ -168,7 +168,9 @@ the original bug, gives <code>unended_streams</code>, and a record update that s
 <p>What it doesn't catch: it reads names, not values, so it can't tell whether the ending names the same user as the
 write. It checks that an ending comes later in the function than the first revoking call, by line, not that every
 path reaches it: an early return between the two would pass. It can't see a writer reached as a method on a value;
-every writer is called by its module's name today. And it covers the app's own actions: a password or GitHub file
+every writer is called by its module's name today. And it skips a function that has its own <code>ends</code> or
+<code>keeps</code> line, so an action that both wrote a file itself and revoked would pass; today the only such
+function outside a <code>*Files</code> module is <code>FileFacts</code>' own primitive. And it covers the app's own actions: a password or GitHub file
 edited by hand on the server, or a crash between the write and the ending, leaves a stream open until its hour.
 The end-to-end tests cover the real cases: an open stream ends on "Sign out other devices", on a GitHub link, on a
 sign-out, on an agent key's revoke and on a member's removal.</p>
@@ -193,8 +195,10 @@ count toward their inviter's cap of 10 open invites.</p>
 <!-- snippet create-invite -->
 <p>The password's one writer takes an <code>AccountProof</code> in place of a bare id. Only
 <code>of_first_join</code> makes one, from an <code>Admission</code>, and only <code>HumanInvite.redeem</code> makes
-an <code>Admission</code>. Each value in this chain is opaque, and an arrow that makes one is labelled with the only
-function that does:</p>
+an <code>Admission</code>. <code>Unclaimed</code>, <code>Redeemable</code>, <code>Admission</code> and
+<code>AccountProof</code> are opaque, and an arrow that makes one is labelled with the only function that does.
+<code>redeem</code> admits the invite's own human and only requires the claim; the id check below ties the two
+together:</p>
 <!-- diagram proof -->
 <!-- snippet account-proof -->
 <!-- snippet password-writer -->
@@ -202,7 +206,9 @@ function that does:</p>
 writer:</p>
 <!-- snippet join -->
 <p>To see that the types hold, we planted calls to <code>create_human_invite!</code> and
-<code>replace_password_hash!</code> with a bare id. <code>roc check</code> refused both. What the types prove is
+<code>replace_password_hash!</code> with a bare id. <code>roc check</code> refused both. That shows the types differ
+from an id; that only their own modules can make one is what opacity adds, and stops a forged proof. What the types
+prove is
 that <code>judge</code> ran and that a first join made the proof. Which human a join redeems for is a runtime check:
 <code>HumanInvites.join</code> compares the <code>Unclaimed</code> human's id with the invite's. Once a human has
 joined, nothing in the app changes their password: the only <code>AccountProof</code> is a first join's, and there is
@@ -213,8 +219,10 @@ read. Take a spent invite whose <code>state</code> file is garbled, for a human 
 the spend and the password's write). It was left out, so the human read as unclaimed, and an invite or a join could
 then set their password. The reader now tells two cases apart. An invite with no <code>hash</code>, the file written
 last, was cut short before it could admit anyone, and is still left out. One with its <code>hash</code> and another
-file missing or unreadable fails the read as <code>Damaged</code>, with a line in the server's log. Every request
-that reads that human's invites then answers a 500 and grants nothing, until the files are mended:</p>
+file missing, or any file garbled so it holds no fact, fails the read as <code>Damaged</code>, with a line in the
+server's log. Every request that reads that human's invites then answers a 500 and grants nothing, until the files
+are mended. That includes every new invite in the chat, by anyone, since the cap on open invites reads every human's
+invites:</p>
 <!-- snippet damaged-invite -->
 
 <h3>The check: every path to a credential, judged</h3>
