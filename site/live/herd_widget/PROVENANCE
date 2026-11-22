@@ -1,5 +1,5 @@
-published 2026-11-19T16:25:03Z
-roc nightly-2026-11-03-34bd006
+published 2026-11-22T21:13:09Z
+roc 0.1.0_RC1
 opt speed
-roc-apps bb4af502
-sha256 b5041893b5c6d5ed  185771 bytes  herd_widget.wasm
+roc-apps ae376ecf
+sha256 0cb4a7d377718c8f  183693 bytes  herd_widget.wasm
