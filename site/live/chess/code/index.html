@@ -70,14 +70,14 @@ the pages are built from. Also on
 	<span class="syn-type">Puzzle</span>(state) : state, <span class="syn-type">U64</span> -&gt; [<span class="syn-type">Child</span>(state), <span class="syn-type">Refused</span>, <span class="syn-type">End</span>]
 
 	<span class="syn-comment">## A state entered, the top state left, or the root out of options.</span>
-	<span class="syn-type">Step</span>(state) : [<span class="syn-type">Entered</span>(state), <span class="syn-type">Left</span>(state), <span class="syn-type">Exhausted</span>]
+	<span class="syn-type">Change</span>(state) : [<span class="syn-type">Entered</span>(state), <span class="syn-type">Left</span>(state), <span class="syn-type">Exhausted</span>]
 
 	<span class="syn-comment">## The search from its root, `state`.</span>
 	<span class="syn-name">start</span> : state -&gt; <span class="syn-type">Backtrack</span>(state)
 	<span class="syn-name">start</span> = |state| <span class="syn-type">Backtrack</span>.({ frames: [{ state, after: <span class="syn-number">0</span> }], next: <span class="syn-number">0</span> })
 
-	<span class="syn-comment">## The search one transition on, and the transition.</span>
-	<span class="syn-name">step</span> : <span class="syn-type">Backtrack</span>(state), <span class="syn-type">Backtrack.Puzzle</span>(state) -&gt; (<span class="syn-type">Backtrack</span>(state), <span class="syn-type">Backtrack.Step</span>(state))
+	<span class="syn-comment">## The search one transition on, and the change it made.</span>
+	<span class="syn-name">step</span> : <span class="syn-type">Backtrack</span>(state), <span class="syn-type">Backtrack.Puzzle</span>(state) -&gt; (<span class="syn-type">Backtrack</span>(state), <span class="syn-type">Backtrack.Change</span>(state))
 	<span class="syn-name">step</span> = |<span class="syn-type">Backtrack</span>.({ frames, next }), puzzle| {
 		top = frames.last() ?? <span class="syn-keyword">crash</span> <span class="syn-string">&quot;Backtrack.step: a search holds its root&quot;</span>
 		<span class="syn-keyword">match</span> puzzle(top.state, next) {
@@ -513,11 +513,11 @@ the pages are built from. Also on
 
 <span class="syn-comment">## The backtracking search for a tour, and the square of its first knight,</span>
 <span class="syn-comment">## which comes off when no tour is left to try.</span>
-<span class="syn-type">Knight</span> :: { search : <span class="syn-type">Backtrack</span>(<span class="syn-type">Knight.Position</span>), first : <span class="syn-type">U8</span> }.{
+<span class="syn-type">Knight</span> :: { search : <span class="syn-type">Backtrack</span>(<span class="syn-type">Knight.PartialTour</span>), first : <span class="syn-type">U8</span> }.{
 
 	<span class="syn-comment">## Where a partial tour stands: the newest knight&#39;s square, and the squares</span>
 	<span class="syn-comment">## the tour covers, a bit each.</span>
-	<span class="syn-type">Position</span> : { square : <span class="syn-type">U8</span>, visited : <span class="syn-type">U64</span> }
+	<span class="syn-type">PartialTour</span> : { square : <span class="syn-type">U8</span>, visited : <span class="syn-type">U64</span> }
 
 	<span class="syn-comment">## The tour&#39;s first knight, on `square`.</span>
 	<span class="syn-name">start</span> : <span class="syn-type">U8</span> -&gt; <span class="syn-type">Knight</span>
@@ -568,13 +568,13 @@ the pages are built from. Also on
 
 <span class="syn-comment">## The tour as a puzzle: the option at `index` is the knight&#39;s move there in</span>
 <span class="syn-comment">## the search&#39;s order, refused onto a square the tour covers.</span>
-<span class="syn-name">tour</span> : <span class="syn-type">Backtrack.Puzzle</span>(<span class="syn-type">Knight.Position</span>)
+<span class="syn-name">tour</span> : <span class="syn-type">Backtrack.Puzzle</span>(<span class="syn-type">Knight.PartialTour</span>)
 <span class="syn-name">tour</span> = |{ square, visited }, index| {
 	span = landing_spans.get(square.to_u64()) ?? <span class="syn-keyword">crash</span> <span class="syn-string">&quot;Knight.tour: a square past the board&quot;</span>
 	<span class="syn-keyword">if</span> index &gt;= span.count {
 		<span class="syn-type">End</span>
 	} <span class="syn-keyword">else</span> {
-		landing = landings_end_to_end.get(span.start + index) ?? <span class="syn-keyword">crash</span> <span class="syn-string">&quot;Knight.tour: a move inside its square&#39;s span&quot;</span>
+		landing = landings_end_to_end.get(span.offset + index) ?? <span class="syn-keyword">crash</span> <span class="syn-string">&quot;Knight.tour: a move inside its square&#39;s span&quot;</span>
 		<span class="syn-keyword">if</span> <span class="syn-type">U64</span>.bitwise_and(visited, square_bit(landing)) != <span class="syn-number">0</span> {
 			<span class="syn-type">Refused</span>
 		} <span class="syn-keyword">else</span> {
@@ -591,13 +591,13 @@ the pages are built from. Also on
 <span class="syn-name">landings_end_to_end</span> = knight_moves.join()
 
 <span class="syn-comment">## Where each square&#39;s moves sit in `landings_end_to_end`.</span>
-<span class="syn-name">landing_spans</span> : <span class="syn-type">List</span>({ start : <span class="syn-type">U64</span>, count : <span class="syn-type">U64</span> })
+<span class="syn-name">landing_spans</span> : <span class="syn-type">List</span>({ offset : <span class="syn-type">U64</span>, count : <span class="syn-type">U64</span> })
 <span class="syn-name">landing_spans</span> = {
-	<span class="syn-keyword">var</span> $start = <span class="syn-number">0</span>
+	<span class="syn-keyword">var</span> $offset = <span class="syn-number">0</span>
 	<span class="syn-keyword">var</span> $spans = []
 	<span class="syn-keyword">for</span> landings <span class="syn-keyword">in</span> knight_moves {
-		$spans = $spans.append({ start: $start, count: landings.len() })
-		$start = $start + landings.len()
+		$spans = $spans.append({ offset: $offset, count: landings.len() })
+		$offset = $offset + landings.len()
 	}
 	$spans
 }
@@ -720,13 +720,13 @@ the pages are built from. Also on
 <span class="syn-keyword">import</span> chess.<span class="syn-type">Tape</span>
 
 <span class="syn-comment">## The backtracking search for a solution.</span>
-<span class="syn-type">Queens</span> :: <span class="syn-type">Backtrack</span>(<span class="syn-type">Queens.Position</span>).{
+<span class="syn-type">Queens</span> :: <span class="syn-type">Backtrack</span>(<span class="syn-type">Queens.PartialSolution</span>).{
 
 	<span class="syn-comment">## Where a partial solution stands: the newest queen&#39;s square, the pin&#39;s</span>
 	<span class="syn-comment">## row, how many other rows hold a queen, and the columns and the two</span>
 	<span class="syn-comment">## families of diagonals the queens on the board, the pin among them,</span>
 	<span class="syn-comment">## attack, a bit each.</span>
-	<span class="syn-type">Position</span> : {
+	<span class="syn-type">PartialSolution</span> : {
 		square : <span class="syn-type">U8</span>,
 		pin_row : <span class="syn-type">U8</span>,
 		rows_filled : <span class="syn-type">U8</span>,
@@ -798,7 +798,7 @@ the pages are built from. Also on
 
 <span class="syn-comment">## Eight Queens as a puzzle: the option at `index` is that column of the next</span>
 <span class="syn-comment">## row to fill, refused where a queen attacks it.</span>
-<span class="syn-name">solution</span> : <span class="syn-type">Backtrack.Puzzle</span>(<span class="syn-type">Queens.Position</span>)
+<span class="syn-name">solution</span> : <span class="syn-type">Backtrack.Puzzle</span>(<span class="syn-type">Queens.PartialSolution</span>)
 <span class="syn-name">solution</span> = |position, index|
 	<span class="syn-keyword">if</span> index &gt;= <span class="syn-number">8</span> {
 		<span class="syn-type">End</span>
@@ -816,7 +816,7 @@ the pages are built from. Also on
 	}
 
 <span class="syn-comment">## The row the search fills next: the rows in order, the pin&#39;s left out.</span>
-<span class="syn-name">next_row</span> : <span class="syn-type">Queens.Position</span> -&gt; <span class="syn-type">U8</span>
+<span class="syn-name">next_row</span> : <span class="syn-type">Queens.PartialSolution</span> -&gt; <span class="syn-type">U8</span>
 <span class="syn-name">next_row</span> = |{ pin_row, rows_filled, .. }|
 	<span class="syn-keyword">if</span> rows_filled &gt;= <span class="syn-number">7</span> {
 		<span class="syn-keyword">crash</span> <span class="syn-string">&quot;Queens.next_row: every row is filled, and the search is solved then&quot;</span>
@@ -828,7 +828,7 @@ the pages are built from. Also on
 
 <span class="syn-comment">## The position with a queen on `square` added to its attacks, or, where one</span>
 <span class="syn-comment">## is there, taken out: each bit flips.</span>
-<span class="syn-name">with_attacks</span> : <span class="syn-type">Queens.Position</span>, <span class="syn-type">U8</span> -&gt; <span class="syn-type">Queens.Position</span>
+<span class="syn-name">with_attacks</span> : <span class="syn-type">Queens.PartialSolution</span>, <span class="syn-type">U8</span> -&gt; <span class="syn-type">Queens.PartialSolution</span>
 <span class="syn-name">with_attacks</span> = |position, square| {
 	row = square // <span class="syn-number">8</span>
 	column = square % <span class="syn-number">8</span>
@@ -842,7 +842,7 @@ the pages are built from. Also on
 
 <span class="syn-comment">## Whether a queen on the board attacks `square`, along its column or a</span>
 <span class="syn-comment">## diagonal; the search never puts two queens in a row.</span>
-<span class="syn-name">is_attacked</span> : <span class="syn-type">Queens.Position</span>, <span class="syn-type">U8</span> -&gt; <span class="syn-type">Bool</span>
+<span class="syn-name">is_attacked</span> : <span class="syn-type">Queens.PartialSolution</span>, <span class="syn-type">U8</span> -&gt; <span class="syn-type">Bool</span>
 <span class="syn-name">is_attacked</span> = |position, square| {
 	row = square // <span class="syn-number">8</span>
 	column = square % <span class="syn-number">8</span>
