@@ -1,0 +1,256 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="description" content="A black-box test of roc-chat found bugs the Roc types let through. Each fix added a type or a check that asks one more question of the code, shown here in real Roc.">
+<title>Security Idioms in roc-chat</title>
+<script src="../shared/home.js"></script>
+<!-- site/build_security_idioms.shale writes this page from this file and
+     roc-chat's history; edit site/security_idioms.html and run it again
+     rather than editing the page. The code is colored by roc-syntax-color. -->
+<style>
+  :root { color-scheme: light dark; --bg: #f7f5f0; --fg: #1d1d1b; --muted: #6b6860; --edge: #d9d4c8; --pane: #ffffff; --link: #1f5fa8; --accent: #5b3ea8; }
+  @media (prefers-color-scheme: dark) {
+    :root { --bg: #1b1b1a; --fg: #e8e6e0; --muted: #9a968c; --edge: #3a3934; --pane: #242422; --link: #8ab4f0; --accent: #a68cf0; }
+  }
+  body { margin: 0; background: var(--bg); color: var(--fg); font: 15px/1.55 system-ui, sans-serif; }
+  main { max-width: 760px; margin: 0 auto; padding: 36px 16px 48px; }
+  @media (max-width: 640px) { main { padding: 24px 12px 36px; } }
+  h1 { font-size: 28px; margin: 0 0 6px; }
+  .lede { color: var(--muted); margin: 0 0 8px; max-width: 66ch; }
+  h2 { font-size: 21px; margin: 44px 0 8px; padding-top: 14px; border-top: 2px solid var(--accent); }
+  h3 { font-size: 13px; font-weight: 600; text-transform: uppercase; letter-spacing: .08em; color: var(--muted); margin: 26px 0 8px; }
+  p, ul { max-width: 66ch; }
+  li { margin: 0 0 4px; }
+  a { color: var(--link); }
+  code { font: 13px ui-monospace, Menlo, Consolas, monospace; overflow-wrap: anywhere; }
+  pre code { overflow-wrap: normal; }
+  /* A line wider than its block scrolls sideways inside it, so the code
+     keeps its indentation. */
+  pre { margin: 4px 0 14px; padding: 10px 12px; border-radius: 5px; font: 12px/1.45 ui-monospace, Menlo, Consolas, monospace; overflow-x: auto; tab-size: 4; }
+  pre code { font: inherit; }
+  pre.roc { background: #2b2733; color: #e8e6e0; }
+  pre.plain { background: var(--pane); color: var(--fg); border: 1px solid var(--edge); white-space: pre-wrap; overflow-wrap: anywhere; }
+  .syn-keyword { color: #c792ea; }
+  .syn-type { color: #82aaff; }
+  .syn-string { color: #c3e88d; }
+  .syn-number { color: #f78c6c; }
+  .syn-comment { color: #8a8494; font-style: italic; }
+  .syn-name { color: #ffcb6b; }
+  .file { font-size: 13px; color: var(--muted); margin: 16px 0 0; overflow-wrap: anywhere; }
+  .commits { font-size: 14px; }
+  footer { margin-top: 36px; color: var(--muted); font-size: 13px; }
+</style>
+</head>
+<body>
+<main>
+<h1>Security idioms in roc-chat</h1>
+<p class="lede"><a href="https://github.com/showell/roc-chat">roc-chat</a> is a chat server written in Roc, live at
+chat.lynrummy.com. In November 2026, notramo tested the live site as a black box and reported what he found. We fixed
+each bug, then looked for the class it belonged to, and added a type or a check that holds the whole class. Two of the
+bugs here came from our own follow-up, a Markdown spec and an audit of what each request costs; the page says which.</p>
+<p class="lede">Claude, an AI coding agent, wrote the fixes, the checks and this page under Steve's supervision. Every
+snippet is quoted from roc-chat's main branch, with a link to its lines.</p>
+
+<h2>What the types already said</h2>
+<p>roc-chat's types already answered one question well: <em>who is acting?</em> A route that only the acting user may
+take asks for a <code>SignedIn</code> in its type, and a <code>SignedIn</code> comes from a checked session or a
+checked agent key. (One escape hatch checks nothing; only the first start, the demo page and tests call it.) None of
+the bugs below got past that.</p>
+<p>Each bug was a question the types didn't ask. Whose credential is this call changing? What else must happen after
+this write? What does this request cost? Each fix adds one of those questions, as a type where a type can ask it,
+and as a check where it can't.</p>
+
+<h2>Streams that outlived a sign-out</h2>
+<h3>The bug</h3>
+<p>The devices page has a button, "Sign out other devices" (<code>POST /devices/sign-out-others</code>). It revoked
+every other device's key and advanced the session generation, so no old session cookie worked again. But a page's live
+updates come over an event stream, and the server judges a stream once, when it opens, then holds it for up to an
+hour. So a stream opened with a stolen cookie kept hearing Recent's tiles, notices and a conversation after the owner
+signed the other devices out. A join by an invite and a GitHub link end every session too, and they left streams
+open the same way.</p>
+
+<h3>The fix: one place ends a user's streams</h3>
+<p><code>UserStreams.end_every_stream!</code> is the one place the app ends a user's streams. The host does the
+ending; this function names whose.</p>
+<!-- snippet user-streams -->
+<p>It ends streams under each holder <code>StreamHolder</code> names. <code>StreamHolder</code> is an opaque type,
+the one home of those names, and <code>HttpAnswer.stream</code> takes one. So no stream is held under a name made
+anywhere else, and no stream is held under a name the ending doesn't know.</p>
+<!-- snippet stream-holder -->
+<!-- snippet http-stream -->
+<p>Every action that ends a session, revokes a credential or removes someone's access calls it after its writes.
+Each stream then reconnects and is judged again. Here is the sign-out, which ends the streams even when a write
+failed partway:</p>
+<!-- snippet sign-out-others -->
+
+<h3>Why a check, and not a type</h3>
+<p>The rule is "after this write, also do that." A type can demand a value before a call. It can't demand a step
+after one. We considered a <code>Revocation</code> value that each revoking write would return, and that only ending
+the streams would take. Roc has no linear types, so nothing makes a caller use a value it was given: a caller could
+drop the <code>Revocation</code> and compile. The other way to force it, ending the streams inside the writer itself,
+would put the ending in the wrong layer. In roc-chat only <code>FileFacts</code> touches files, through each
+feature's <code>*Files</code> module, and those modules only write.</p>
+<p>So a check holds the rule. <code>tools/check_stream_endings.shale</code> reads every app module with Roc's own
+parser. Every function that writes a file is judged once in <code>tools/stream_endings.txt</code>: <code>ends</code>
+if its write ends a session, a credential or someone's access, <code>keeps</code> if not, and <code>exempt</code> for
+one named call that needs no ending, with the reason.</p>
+<!-- snippet stream-table -->
+<p>Then the check walks the calls. Any function outside a <code>*Files</code> module that reaches an
+<code>ends</code> writer must call <code>UserStreams.end_every_stream!</code> after it, unless an <code>exempt</code>
+line names that call. These are its findings:</p>
+<!-- snippet stream-findings -->
+<p>The gate, <code>tools/verify.shale</code>, holds it at zero. A new writer fails it until someone judges it, so the
+table can't go stale. Planted faults proved it can see: removing the ending from <code>sign_out_others!</code>,
+the original bug, gives <code>unended_streams</code>.</p>
+<p>What it doesn't catch: it reads names, not values, so it can't tell whether the ending names the same user as the
+write. And it can't see a writer reached as a method on a value; every writer is called by its module's name today.
+The end-to-end tests cover the real cases: an open stream ends on "Sign out other devices", on a join by invite, and
+on a GitHub link.</p>
+
+<h2>An invite that acted as a password reset</h2>
+<h3>The bug</h3>
+<p>An inviter could make a new link for a human who had already joined. Redeeming that link set whatever password
+the redeemer chose, and ended the joined human's own password and session. So whoever made the link could take over
+the account. The shape is a familiar one, an IDOR (in API terms, BOLA): the password's writer took a bare user id,
+and nothing in its type said whose proof stood behind the call.</p>
+
+<h3>The fix: a claim, and a proof the writer demands</h3>
+<p><code>HumanClaim</code> judges a human <code>Unclaimed</code> (no password, no GitHub link, no invite spent) or
+<code>Claimed</code>. <code>Unclaimed</code> is opaque, and only <code>judge</code> makes one.</p>
+<!-- snippet human-claim -->
+<p>Writing an invite takes an <code>Unclaimed</code>, so the chat writes no invite for a human who has joined.
+Inviting one again is a 403 saying a new link would change nothing. Redeeming takes one too, so a link made before
+the human joined redeems nothing after.</p>
+<!-- snippet create-invite -->
+<p>The password's one writer takes an <code>AccountProof</code> in place of a bare id. Only
+<code>of_first_join</code> makes one, from an <code>Admission</code>, and only <code>HumanInvite.redeem</code> makes
+an <code>Admission</code>.</p>
+<!-- snippet account-proof -->
+<!-- snippet password-writer -->
+<p>The join is the one caller. It loads the invitee as <code>Unclaimed</code>, redeems, and passes the proof to the
+writer:</p>
+<!-- snippet join -->
+<p>To see that the types hold, we planted calls to <code>create_human_invite!</code> and
+<code>replace_password_hash!</code> with a bare id. <code>roc check</code> refused both. A joined human's password
+now changes only with their own proof, and there is no admin reset.</p>
+
+<h3>The check: every path to a credential, judged</h3>
+<p><code>AccountProof</code> guards one writer. The chat has more credentials than a password: GitHub links, session
+secrets, device keys, device codes, agent keys and invites. <code>tools/check_credential_writers.shale</code> holds
+them all to one table, <code>tools/credential_writers.txt</code>. Every function that writes a file is a
+<code>writes</code> line, marked <code>credential</code> or <code>other</code>. Every call of a credential writer is a
+<code>calls</code> line naming the caller and the proof that guards it:</p>
+<!-- snippet credential-table -->
+<p>A proof is one of a short list that are the account's own: <code>own-session</code>, <code>own-github</code>,
+<code>own-code</code>, <code>unclaimed</code>, <code>agent-keeper</code>, or <code>revokes</code> (it only ends or
+spends a credential). A caller that only passes the write on is marked <code>passes-on</code>, and its own callers
+are judged in turn. The gate holds three counts at zero: a writer or a call the table doesn't name, a line for code
+that is gone, and a proof that isn't the account's own. Before the fix the invite was that last one.</p>
+<p>What it doesn't do: it reads lines with regular expressions, not the parse tree. And it can't decide whether a
+proof is really the account's own; a reader decides that, once, on each line. What the check promises is that no
+path to a credential goes unjudged.</p>
+
+<h2>Smaller fixes</h2>
+<p>These three bugs weren't type questions. The first two came from notramo's testing, the third from our own
+Markdown spec.</p>
+<h3>A reload after a refused sign-in</h3>
+<p>A refused device code was answered at <code>/login/code</code>, whose GET was a bare 405. Enter in the address
+bar showed "POST only", and a reload of any refused sign-in posted again. Now a GET of <code>/login/code</code> is a
+303 to <code>/login</code>, and the sign-in script puts its form's own GET page in the POST's place in the history
+(<code>history.replaceState</code>). The route table is one <code>match</code> over every path and method, and these
+are its lines for <code>/login/code</code>:</p>
+<!-- snippet login-code-route -->
+<h3>A doubled header</h3>
+<p>The Caddy site block in front of the chat added <code>X-Content-Type-Options: nosniff</code> on top of the app's
+own, and Mozilla's Observatory scored the doubled header invalid. The app sends it on every answer, and the end-to-end
+tests check it there, so the
+<a href="https://github.com/showell/roc-chat/blob/53fe270531163f14b2d82aeee8b9d8e0043321ed/deploy/chat.lynrummy.com.caddy">site block</a>
+no longer adds one.</p>
+<h3>A class from a message</h3>
+<p>roc-chat's own Markdown spec found this one while testing what a message can put in the page. A form feed or a CR
+in a code fence's info string stayed in the language's name: <code>```x&lt;FF&gt;top-bar</code> rendered
+<code>class="language-x&lt;FF&gt;top-bar"</code>, which a browser reads as two classes. So a message could give its
+code block any class of the page's own. In roc-markdown, a fence's language now ends at any of HTML's spaces.</p>
+
+<h2>What a request costs</h2>
+<h3>The bug</h3>
+<p>A client with no account can still make the server work. Our audit of what each request costs found that every
+request read the whole directory of accounts and channels from disk, twice: once to judge the request's head and once
+to answer it. At 300 humans a request for the favicon made 1,804 file reads. Nothing in the code said which routes
+may grow with the chat, so nothing caught it.</p>
+
+<h3>The fix: every route declares its cost</h3>
+<p><code>RouteCost.growth_of</code> gives every route a cost class: <code>Constant</code> (the same file calls however
+many humans the chat has), <code>PerReaderPlaces</code> (a listing for each place the reader may open) or
+<code>PerHuman</code> (a read of every human's files). It is one <code>match</code> with no wildcard, so a new route
+fails to compile there until someone decides its class.</p>
+<!-- snippet route-cost -->
+<p>A declaration alone is a claim, so a probe measures it. <code>zig build cost-check</code> runs the real server on
+chats of 10 and 300 humans and counts each probe's reads, listings and writes. A <code>Constant</code> probe must cost
+the same at both sizes, and any other must cost more at 300, so a class that is wrong either way fails. It counts
+file calls, not time, so a busy machine can't make it flaky.</p>
+<!-- snippet cost-probes -->
+<p>The gate runs the cost check last and holds the probes out of class at zero. The fixes that brought the routes
+into their classes came first: a plain read is admitted from its origin alone, and the server keeps the directory in
+memory, reading it again whenever its folders change. The favicon now makes no file reads.</p>
+<p>What it doesn't do: a route no probe reaches is declared, not measured. And a class bounds how calls grow with the
+number of humans, not with what one request names, such as a long transcript.</p>
+
+<h2>The lesson</h2>
+<p>The types answered "who acts?" They didn't ask "whose credential?", "what else must happen?" or "what does a
+request cost?" Each idiom adds one question:</p>
+<ul>
+<li><strong>Whose credential?</strong> A writer takes a proof, not an id. <code>AccountProof</code> and
+<code>HumanClaim.Unclaimed</code> are opaque, and only the code that checked the facts can make one, so a wrong call
+doesn't compile. The credential check makes sure every other path to a credential names its proof.</li>
+<li><strong>What else must happen?</strong> Where the rule is "after this, that", and the type system can't force
+it, a check over Roc's parse tree holds it, at zero, in the gate.</li>
+<li><strong>What does a request cost?</strong> An exhaustive <code>match</code> makes every route declare its
+class, and a measurement holds the probed routes to it.</li>
+</ul>
+<p>In each case the rule has one home: one function ends streams, one type names their holders, one writer sets a
+password, one table judges every write, and one <code>match</code> names every route's cost.</p>
+
+<h2>The commits</h2>
+<p class="commits">In <a href="https://github.com/showell/roc-chat">roc-chat</a>:</p>
+<ul class="commits">
+<li>Streams: <a href="https://github.com/showell/roc-chat/commit/c8c599bf83c6fad2813d38c5e0d3d9c58b2e9d86">c8c599b</a>
+(<code>UserStreams</code> and <code>StreamHolder</code>),
+<a href="https://github.com/showell/roc-chat/commit/4751710ba01df299d43fd9b49e3923df1f2b20c7">4751710</a> (the
+check), <a href="https://github.com/showell/roc-chat/commit/67bf20d2285ea7459d935733a1b7f7f5fb891b92">67bf20d</a>
+(end-to-end steps), <a href="https://github.com/showell/roc-chat/commit/cda9a51ed341bdf5184ba396b364e7c25328c99b">cda9a51</a>
+(a stale import).</li>
+<li>Invites: <a href="https://github.com/showell/roc-chat/commit/c1f27319921319bb0a8b923d19777e309fc55ca3">c1f2731</a>
+(the takeover, reproduced end to end),
+<a href="https://github.com/showell/roc-chat/commit/22088b681b01b03b43edddbb6d2a66432aa41cff">22088b6</a> (the
+check), <a href="https://github.com/showell/roc-chat/commit/b7e71dc28b579c5ff527ed341b01392794b467f4">b7e71dc</a>
+(<code>HumanClaim</code> and <code>AccountProof</code>),
+<a href="https://github.com/showell/roc-chat/commit/30ab83a84bde730f84f3e3350f281b973ad2cab2">30ab83a</a> (style).</li>
+<li>The reload: <a href="https://github.com/showell/roc-chat/commit/3c5509311f01c4dcb2ed71e7060c5df6519a08de">3c55093</a>,
+<a href="https://github.com/showell/roc-chat/commit/0d8585c9d75a8ea9f0f6a40752edde59316ba19e">0d8585c</a> (tests).</li>
+<li>The header: <a href="https://github.com/showell/roc-chat/commit/bf09e6e6b4decd51ac30d61ecc217bfad5665b6f">bf09e6e</a>.</li>
+<li>Cost: <a href="https://github.com/showell/roc-chat/commit/3cb576515f4197ae06f6140bf9e7548e7bcf2b74">3cb5765</a>
+(counting a request's file calls),
+<a href="https://github.com/showell/roc-chat/commit/0c184e7c0cfa28d8ce23135436721ea18d634494">0c184e7</a> (a plain
+read's head reads no directory),
+<a href="https://github.com/showell/roc-chat/commit/83a0b32b05aa128fcd80c4c028021993aac345ab">83a0b32</a> (the
+directory kept in memory),
+<a href="https://github.com/showell/roc-chat/commit/cdb43f18131da2cab6fab3246e28e9690f17ee20">cdb43f1</a> (every
+route's class, held in the gate),
+<a href="https://github.com/showell/roc-chat/commit/0fbcbbde149e8fc263452aa71a01bce71d5aba0e">0fbcbbd</a> (named
+<code>Growth</code>),
+<a href="https://github.com/showell/roc-chat/commit/7bbed48004845a389b7eeffa8e43b5d05b5d0a0f">7bbed48</a> (probes for
+the sign-in, join and member routes).</li>
+<li>The Markdown spec: <a href="https://github.com/showell/roc-chat/commit/40329593810066775322a5020831950ecfa8b2f6">4032959</a>,
+<a href="https://github.com/showell/roc-chat/commit/3af8f83d1da428c3806856e9682db87c9c9d4274">3af8f83</a>.</li>
+</ul>
+<p class="commits">In <a href="https://github.com/showell/roc-markdown">roc-markdown</a>:
+<a href="https://github.com/showell/roc-markdown/commit/c3ced12c13ab465976626969df5bb7d24115a98e">c3ced12</a> (a
+fence's language ends at any HTML space).</p>
+
+<footer><a href="../" target="_self">Steve's Roc Work</a></footer>
+</main>
+</body>
+</html>

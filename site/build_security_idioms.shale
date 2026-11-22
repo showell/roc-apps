@@ -1,0 +1,201 @@
+-- This script writes the security idioms page, site/web/security-idioms/index.html:
+-- the Roc idioms that guard roc-chat against the classes of bug a black-box
+-- test of the live chat found. The prose is site/security_idioms.html, and
+-- each `<!-- snippet NAME -->` line in it becomes that snippet: lines of a
+-- roc-chat file as the commit REV holds them, each range quoted exactly,
+-- the ranges joined by a `...` line and their common leading tabs taken
+-- off, with a link to those lines on GitHub. Roc and Shale are colored by
+-- tools/color_code (roc-syntax-color), built here with the pinned Roc; a
+-- table of plain text is shown as it is.
+--
+--   cd <roc-apps checkout> && shale site/build_security_idioms.shale            # writes the page
+--   cd <roc-apps checkout> && shale site/build_security_idioms.shale check=1    # fails if the page is stale
+--
+-- `roc_chat=` names the roc-chat checkout (`repos:roc-chat` unset), through
+-- a mount; it must hold REV. A snippet the prose doesn't name, or a name
+-- the prose holds and SNIPPETS lacks, stops the run. Then site/build.sh
+-- copies the page into the dev channel.
+--
+-- budget: steps=50000000 arena_bytes=500000000 output_bytes=100000
+
+const PROSE = "site/security_idioms.html"
+const PAGE_DIR = "site/web/security-idioms"
+const PAGE = "site/web/security-idioms/index.html"
+const REV = "53fe270531163f14b2d82aeee8b9d8e0043321ed"
+const GITHUB = "https://github.com/showell/roc-chat/blob/"
+const MARK = "<!-- color_code answer -->\n"
+const WANT_ROC = "roc-pin: roc-apps' pinned nightly"
+const WANT_TOOL = "color-code: tools/color_code, roc-apps' own coloring app, built by this run"
+
+const ROC_CHAT = arg("roc_chat", "repos:roc-chat")
+const CHECK = arg("check", "0") == "1"
+
+-- Each snippet: its name in the prose, its file, its language (`roc`,
+-- `shale` or `plain`) and its line ranges, first to last, inclusive.
+const SNIPPETS = {
+  {name = "user-streams", path = "app/UserStreams.roc", language = "roc", ranges = {{1, 23}}},
+  {name = "stream-holder", path = "app/StreamHolder.roc", language = "roc", ranges = {{12, 25}}},
+  {name = "http-stream", path = "app/HttpAnswer.roc", language = "roc", ranges = {{193, 201}}},
+  {name = "sign-out-others", path = "app/DeviceSessionsRoute.roc", language = "roc", ranges = {{119, 129}}},
+  {name = "stream-table", path = "tools/stream_endings.txt", language = "plain", ranges = {{18, 18}, {21, 23}, {33, 33}, {49, 49}}},
+  {name = "stream-findings", path = "tools/check_stream_endings.shale", language = "shale", ranges = {{17, 34}}},
+  {name = "human-claim", path = "app/HumanClaim.roc", language = "roc", ranges = {{11, 39}}},
+  {name = "create-invite", path = "app/InviteFiles.roc", language = "roc", ranges = {{97, 104}}},
+  {name = "account-proof", path = "app/AccountProof.roc", language = "roc", ranges = {{12, 21}}},
+  {name = "password-writer", path = "app/AccountFiles.roc", language = "roc", ranges = {{178, 189}}},
+  {name = "join", path = "app/HumanInvitesRoute.roc", language = "roc", ranges = {{460, 460}, {464, 464}, {479, 480}, {491, 496}}},
+  {name = "credential-table", path = "tools/credential_writers.txt", language = "plain", ranges = {{30, 30}, {37, 37}, {59, 59}}},
+  {name = "login-code-route", path = "app/Route.roc", language = "roc", ranges = {{431, 433}}},
+  {name = "route-cost", path = "app/RouteCost.roc", language = "roc", ranges = {{17, 21}, {24, 41}, {49, 53}, {79, 81}, {86, 89}}},
+  {name = "cost-probes", path = "app/route_cost_probes.txt", language = "plain", ranges = {{10, 10}, {14, 14}, {24, 24}, {29, 29}, {31, 31}}},
+}
+
+function escaped(s)
+  local t = join(split(s, "&"), "&amp;")
+  t = join(split(t, "<"), "&lt;")
+  return join(split(t, ">"), "&gt;")
+end
+
+-- Nothing, or a stop naming the sibling checkout this page needs and lacks.
+function require_siblings()
+  if not exists(ROC_CHAT) then fail("build_security_idioms: no roc-chat checkout at " .. ROC_CHAT .. ": clone github.com/showell/roc-chat beside roc-apps (or name one with roc_chat=)") end
+  local has = run({"git", "cat-file", "-e", REV .. "^{commit}"}, {cwd = ROC_CHAT, timeout_ms = 30000, tail = 3})
+  if has.code ~= 0 then fail("build_security_idioms: the roc-chat checkout at " .. ROC_CHAT .. " has no commit " .. REV .. ": fetch it") end
+  local colorer = dirname(real(".")) .. "/roc-syntax-color"
+  local r = run({"git", "-C", colorer, "rev-parse", "--show-toplevel"}, {timeout_ms = 30000, tail = 3})
+  if r.code ~= 0 then fail("build_security_idioms: no roc-syntax-color checkout beside roc-apps: clone github.com/showell/roc-syntax-color there; tools/color_code imports it") end
+  return nil
+end
+
+-- The leading tabs of a line, as a count.
+function tabs_of(l)
+  local n = 0
+  while n < #l and sub(l, n + 1, n + 1) == "\t" do n = n + 1 end
+  return n
+end
+
+-- `s` written `n` times.
+function string_rep(s, n)
+  local out = ""
+  local i = 0
+  while i < n do
+    out = out .. s
+    i = i + 1
+  end
+  return out
+end
+
+-- A snippet's text: each range's lines, a `...` line between ranges at the
+-- next range's indent, and the tabs every quoted line shares taken off.
+function snippet_text(s)
+  local all = lines(git_show(ROC_CHAT, REV .. ":" .. s.path))
+  local quoted = {}
+  for i = 1, #s.ranges do
+    local r = s.ranges[i]
+    if r[1] < 1 or r[2] > #all or r[1] > r[2] then fail("build_security_idioms: " .. s.name .. ": lines " .. r[1] .. "-" .. r[2] .. " of " .. s.path .. ", which has " .. #all) end
+    if i > 1 then push(quoted, {gap = true, indent = tabs_of(all[r[1]])}) end
+    for n = r[1], r[2] do push(quoted, {text = all[n]}) end
+  end
+  local shared = 1000
+  for q in quoted do
+    if not has_key(q, "gap") and trim(q.text) ~= "" and tabs_of(q.text) < shared then shared = tabs_of(q.text) end
+  end
+  local out = {}
+  for q in quoted do
+    if has_key(q, "gap") then
+      push(out, string_rep("\t", q.indent - shared) .. "...")
+    elseif trim(q.text) == "" then
+      push(out, "")
+    else
+      push(out, sub(q.text, shared + 1))
+    end
+  end
+  return join(out, "\n")
+end
+
+-- The colored HTML of each {language, text}, in order, from one run of
+-- tools/color_code.
+function colored(requests)
+  if #requests == 0 then return {} end
+  local roc = pinned_roc("build_security_idioms")
+  local work = fresh_dir("build:roc-apps", "security-idioms")
+  local tool = real(work) .. "/color_code"
+  must(run({roc, "build", "--opt=dev", "main.roc", "--output=" .. tool}, {cwd = "tools/color_code", timeout_ms = 300000, tail = 20, nice = 19, want = WANT_ROC}))
+  local argv = {tool}
+  for r in requests do
+    push(argv, r.language)
+    push(argv, r.text)
+  end
+  local r = must(run(argv, {timeout_ms = 60000, whole = 20000000, want = WANT_TOOL}))
+  remove_tree(work)
+  local pieces = split(r.out, MARK)
+  if pieces[1] ~= "" then fail("build_security_idioms: color_code printed something before its first answer") end
+  if #pieces - 1 ~= #requests then fail("build_security_idioms: " .. #requests .. " texts got " .. (#pieces - 1) .. " answers") end
+  return drop(pieces, 1)
+end
+
+-- A snippet's link: its file and lines on GitHub, at REV.
+function snippet_link(s)
+  local first = s.ranges[1][1]
+  local last = s.ranges[#s.ranges][2]
+  local where = "#L" .. first .. "-L" .. last
+  local what = "lines " .. first .. "-" .. last
+  if first == last then
+    where = "#L" .. first
+    what = "line " .. first
+  end
+  local trimmed = ""
+  if #s.ranges > 1 then trimmed = ", trimmed" end
+  return "<p class=\"file\"><a href=\"" .. GITHUB .. REV .. "/" .. s.path .. where .. "\"><code>" .. escaped(s.path) .. "</code></a>, " .. what .. trimmed .. "</p>"
+end
+
+function page()
+  local prose = read(PROSE)
+  local texts = {}
+  local requests = {}
+  for s in SNIPPETS do
+    local text = snippet_text(s)
+    texts[s.name] = text
+    if s.language ~= "plain" then push(requests, {language = s.language, text = text, name = s.name}) end
+  end
+  local answers = colored(requests)
+  local html = {}
+  for i = 1, #requests do html[requests[i].name] = answers[i] end
+  local used = {}
+  local out = {}
+  for l in lines(prose) do
+    local m = re_find(l, "^<!-- snippet ([a-z0-9-]+) -->$")
+    if m == nil then
+      push(out, l)
+    else
+      local found = nil
+      for s in SNIPPETS do
+        if s.name == m.group then found = s end
+      end
+      if found == nil then fail("build_security_idioms: " .. PROSE .. " names the snippet " .. m.group .. ", which SNIPPETS lacks") end
+      if has_key(used, found.name) then fail("build_security_idioms: " .. PROSE .. " names the snippet " .. found.name .. " twice") end
+      used[found.name] = true
+      push(out, snippet_link(found))
+      if found.language == "plain" then
+        push(out, "<pre class=\"plain\"><code>" .. escaped(texts[found.name]) .. "</code></pre>")
+      else
+        push(out, "<pre class=\"roc\"><code>" .. html[found.name] .. "</code></pre>")
+      end
+    end
+  end
+  for s in SNIPPETS do
+    if not has_key(used, s.name) then fail("build_security_idioms: the snippet " .. s.name .. " is in no `<!-- snippet " .. s.name .. " -->` line of " .. PROSE) end
+  end
+  return join(out, "\n") .. "\n"
+end
+
+require_siblings()
+local text = page()
+if CHECK then
+  if not exists(PAGE) or read(PAGE) ~= text then fail("build_security_idioms: " .. PAGE .. " is stale: run shale site/build_security_idioms.shale") end
+  print("build_security_idioms: " .. PAGE .. " is up to date")
+else
+  if not exists(PAGE_DIR) then mkdir(PAGE_DIR) end
+  if exists(PAGE) then replace(PAGE, text) else create(PAGE, text) end
+  print("build_security_idioms: wrote " .. PAGE .. ", " .. #text .. " bytes")
+end

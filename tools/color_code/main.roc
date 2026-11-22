@@ -1,6 +1,6 @@
 ## This app colors code for the site's pages with roc-syntax-color, on Roc's
-## echo platform. site/build_roc_on_shale.shale and site/build_chess_code.shale
-## run it: its arguments are pairs, a language (`roc`, `shale` or `js`) and a
+## echo platform. site/build_roc_on_shale.shale, site/build_chess_code.shale and
+## site/build_security_idioms.shale run it: its arguments are pairs, a language (`roc`, `shale` or `js`) and a
 ## text, and it prints each text colored whole, in order, each after a line
 ## `<!-- color_code answer -->`. No answer can hold that line, since the
 ## coloring escapes every `<`.
