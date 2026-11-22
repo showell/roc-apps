@@ -1,8 +1,8 @@
 ## Knight is the Knight's Tour machine: a depth-first search for a path
 ## that visits all 64 squares exactly once, a knight's move at a time. The
-## tape, the display and the dead-end overlay are the chess kit's; what is
-## knight-shaped is here: the move graph, the search, and which squares the
-## tour can no longer reach.
+## backtracking, the tape, the display and the dead-end overlay are the chess
+## kit's; what is knight-shaped is here: the move graph, the tour as a puzzle
+## for the kit's search, and which squares the tour can no longer reach.
 ##
 ## Each square's moves are tried in order of how few onward moves their
 ## target has, fewest first, ties in the order the graph lists them: a
@@ -24,7 +24,10 @@ Knight :: { search : Backtrack(Knight.Position), first : U8 }.{
 
 	## The tour's first knight, on `square`.
 	start : U8 -> Knight
-	start = |square| Knight.({ search: Backtrack.start({ square, visited: square_bit(square) }), first: square })
+	start = |square| {
+		search = Backtrack.start({ square, visited: square_bit(square) })
+		Knight.({ search, first: square })
+	}
 
 	## The search one transition on: the newest knight's next untried move to
 	## an empty square, or, with none left, that knight taken off.
@@ -51,7 +54,8 @@ Knight :: { search : Backtrack(Knight.Position), first : U8 }.{
 			Err(EmptyBoard) => List.repeat(Bool.False, 64)
 			Ok(head) => {
 				reached = squares_reached(board, head)
-				board.map_with_index(|number, square| number < 0 and U64.bitwise_and(reached, square_bit(square.to_u8_wrap())) == 0)
+				is_reached = |square| U64.bitwise_and(reached, square_bit(square.to_u8_wrap())) != 0
+				board.map_with_index(|number, square| number < 0 and !is_reached(square))
 			}
 		}
 	}
@@ -71,7 +75,7 @@ tour : Backtrack.Puzzle(Knight.Position)
 tour = |{ square, visited }, index| {
 	span = landing_spans.get(square.to_u64()) ?? crash "Knight.tour: a square past the board"
 	if index >= span.count {
-		NoMore
+		End
 	} else {
 		landing = landings_end_to_end.get(span.start + index) ?? crash "Knight.tour: a move inside its square's span"
 		if U64.bitwise_and(visited, square_bit(landing)) != 0 {
@@ -104,8 +108,8 @@ landing_spans = {
 ## The empty squares a flood reaches from `head` through empty squares, a bit
 ## each.
 squares_reached : List(I8), U8 -> U64
-squares_reached = |board, head| {
-	is_empty = |square| (board.get(square.to_u64()) ?? crash "Knight.squares_reached: a square past the board") < 0
+squares_reached = |move_numbers, head| {
+	is_empty = |square| (move_numbers.get(square.to_u64()) ?? crash "Knight.squares_reached: a square past the board") < 0
 	var $reached = 0
 	var $frontier = [head]
 	while !$frontier.is_empty() {
@@ -125,7 +129,7 @@ squares_reached = |board, head| {
 knight_moves : List(List(U8))
 knight_moves = {
 	geometric = List.from_iter(U64.until(0, 64)).map(geometric_moves)
-	geometric.map(|landings| by_fewest_onward(landings, geometric))
+	geometric.map(|landings| landings_by_fewest_onward(landings, geometric))
 }
 
 ## The squares a knight reaches from `square`, in the order the deltas
@@ -134,7 +138,16 @@ geometric_moves : U64 -> List(U8)
 geometric_moves = |square| {
 	rank = square.to_i64_wrap() // 8
 	file = square.to_i64_wrap() % 8
-	deltas = [(1, 2), (2, 1), (2, -1), (1, -2), (-1, -2), (-2, -1), (-2, 1), (-1, 2)]
+	deltas = [
+		(1, 2),
+		(2, 1),
+		(2, -1),
+		(1, -2),
+		(-1, -2),
+		(-2, -1),
+		(-2, 1),
+		(-1, 2),
+	]
 	var $landings = []
 	for (rank_step, file_step) in deltas {
 		to_rank = rank + rank_step
@@ -146,15 +159,16 @@ geometric_moves = |square| {
 	$landings
 }
 
-## `landings` in order of how many moves each has in `graph`, fewest first;
-## the sort is an insertion sort, so ties keep their order.
-by_fewest_onward : List(U8), List(List(U8)) -> List(U8)
-by_fewest_onward = |landings, graph| {
-	degree = |square| (graph.get(square.to_u64()) ?? crash "Knight.by_fewest_onward: a square past the board").len()
+## `landings` in order of how many moves each has in `landing_lists`, a list a
+## square, fewest first; the sort is an insertion sort, so ties keep their
+## order.
+landings_by_fewest_onward : List(U8), List(List(U8)) -> List(U8)
+landings_by_fewest_onward = |landings, landing_lists| {
+	degree = |square| (landing_lists.get(square.to_u64()) ?? crash "Knight.landings_by_fewest_onward: a square past the board").len()
 	var $sorted = []
 	for target in landings {
 		var $count = 0
-		while $count < $sorted.len() and degree($sorted.get($count) ?? crash "Knight.by_fewest_onward: the count is inside the list") <= degree(target) {
+		while $count < $sorted.len() and degree($sorted.get($count) ?? crash "Knight.landings_by_fewest_onward: the count is inside the list") <= degree(target) {
 			$count = $count + 1
 		}
 		count = $count
@@ -166,10 +180,10 @@ by_fewest_onward = |landings, graph| {
 # The graph has 336 moves, each one two ways; a corner has 2 and the centre 8.
 expect {
 	counts = knight_moves.map(List.len)
-	is_symmetric =
-		knight_moves.map_with_index(
-			|landings, square| landings.all(|target| (knight_moves.get(target.to_u64()) ?? crash "a move lands on the board").contains(square.to_u8_wrap())),
-		).all(|holds| holds)
+	landings_from = |square| knight_moves.get(square.to_u64()) ?? crash "a move lands on the board"
+	squares = List.from_iter(U8.until(0, 64))
+	is_two_way = |square| landings_from(square).all(|target| landings_from(target).contains(square))
+	is_symmetric = squares.all(is_two_way)
 	counts.sum() == 336 and counts.get(0) == Ok(2) and counts.get(27) == Ok(8) and is_symmetric
 }
 
@@ -182,7 +196,11 @@ expect {
 	knight_moves.all(
 		|landings| {
 			degrees = landings.map(degree)
-			List.map2(degrees, degrees.drop_first(1), |before, after| before <= after).all(|holds| holds)
+			List.map2(
+				degrees,
+				degrees.drop_first(1),
+				|before, after| before <= after,
+			).all(|holds| holds)
 		},
 	)
 }

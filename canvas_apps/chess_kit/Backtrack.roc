@@ -3,8 +3,8 @@
 ## and where its parent resumes; states are values, so backing up drops a frame.
 Backtrack(state) :: { frames : List({ state : state, after : U64 }), next : U64 }.{
 
-	## A puzzle: the state an option leads to, refused, or no option at the index.
-	Puzzle(state) : state, U64 -> [Child(state), Refused, NoMore]
+	## A puzzle: the state the option at an index leads to, refused, or the end.
+	Puzzle(state) : state, U64 -> [Child(state), Refused, End]
 
 	## A state entered, the top state left, or the root out of options.
 	Step(state) : [Entered(state), Left(state), Exhausted]
@@ -23,8 +23,8 @@ Backtrack(state) :: { frames : List({ state : state, after : U64 }), next : U64 
 				(Backtrack.({ frames: entered, next: 0 }), Entered(state))
 			}
 			Refused => Backtrack.({ frames, next: next + 1 }).step(puzzle)
-			NoMore if frames.len() == 1 => (Backtrack.({ frames, next }), Exhausted)
-			NoMore => (Backtrack.({ frames: frames.drop_last(1), next: top.after }), Left(top.state))
+			End if frames.len() == 1 => (Backtrack.({ frames, next }), Exhausted)
+			End => (Backtrack.({ frames: frames.drop_last(1), next: top.after }), Left(top.state))
 		}
 	}
 }

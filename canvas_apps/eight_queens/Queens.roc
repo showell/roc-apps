@@ -1,7 +1,7 @@
 ## Queens is the Eight Queens machine: eight queens on the board, none
-## attacking another. The tape, the display and the dead-end overlay are the
-## chess kit's; what is queen-shaped is here: the search, and which squares
-## are attacked.
+## attacking another. The backtracking, the tape, the display and the
+## dead-end overlay are the chess kit's; what is queen-shaped is here: the
+## puzzle the kit's search solves, and which squares are attacked.
 ##
 ## The click pins the first queen. It is move 0, it is never retracted, and
 ## the search fills the other seven rows in order around it, one queen a row
@@ -62,14 +62,20 @@ Queens :: Backtrack(Queens.Position).{
 	impossible_squares : Tape -> List(Bool)
 	impossible_squares = |tape| {
 		board = tape.board()
-		queens = board.map_with_index(|number, square| (number, square.to_u8_wrap())).keep_if(|(number, _)| number >= 0).map(|(_, square)| square)
-		board.map_with_index(|number, square| number < 0 and queens.any(|queen| is_attack(queen, square.to_u8_wrap())))
+		numbered = board.map_with_index(|number, square| (number, square.to_u8_wrap()))
+		queens = numbered.keep_if(|(number, _)| number >= 0).map(|(_, square)| square)
+		is_under_attack = |square| queens.any(|queen| is_attack(queen, square))
+		board.map_with_index(|number, square| number < 0 and is_under_attack(square.to_u8_wrap()))
 	}
 
 	## The squares a queen on each square attacks, in square order.
 	moves_from : List(List(U8))
-	moves_from = List.from_iter(U8.until(0, 64)).map(|square| List.from_iter(U8.until(0, 64)).keep_if(|other| other != square and is_attack(square, other)))
+	moves_from = squares.map(|from| squares.keep_if(|to| to != from and is_attack(from, to)))
 }
+
+## Every square of the board, a1 first.
+squares : List(U8)
+squares = List.from_iter(U8.until(0, 64))
 
 ## Whether queens on the two squares share a row, a column or a diagonal.
 is_attack : U8, U8 -> Bool
@@ -78,7 +84,10 @@ is_attack = |from, to| {
 	from_column = (from % 8).to_i64()
 	to_row = (to // 8).to_i64()
 	to_column = (to % 8).to_i64()
-	from_row == to_row or from_column == to_column or from_row + from_column == to_row + to_column or from_row - from_column == to_row - to_column
+	from_row == to_row
+		or from_column == to_column
+		or from_row + from_column == to_row + to_column
+		or from_row - from_column == to_row - to_column
 }
 
 ## Eight Queens as a puzzle: the option at `index` is that column of the next
@@ -86,13 +95,17 @@ is_attack = |from, to| {
 solution : Backtrack.Puzzle(Queens.Position)
 solution = |position, index|
 	if index >= 8 {
-		NoMore
+		End
 	} else {
 		square = next_row(position) * 8 + index.to_u8_wrap()
 		if is_attacked(position, square) {
 			Refused
 		} else {
-			Child({ ..with_attacks(position, square), square, rows_filled: position.rows_filled + 1 })
+			Child({
+				..with_attacks(position, square),
+				square,
+				rows_filled: position.rows_filled + 1,
+			})
 		}
 	}
 
@@ -136,10 +149,9 @@ is_attacked = |position, square| {
 # and the board holds 1,456 in all.
 expect {
 	counts = Queens.moves_from.map(List.len)
-	is_symmetric =
-		Queens.moves_from.map_with_index(
-			|attacked, square| attacked.all(|other| (Queens.moves_from.get(other.to_u64()) ?? crash "an attack lands on the board").contains(square.to_u8_wrap())),
-		).all(|holds| holds)
+	attacked_from = |square| Queens.moves_from.get(square.to_u64()) ?? crash "an attack lands on the board"
+	is_two_way = |square| attacked_from(square).all(|other| attacked_from(other).contains(square))
+	is_symmetric = squares.all(is_two_way)
 	counts.get(0) == Ok(21) and counts.get(27) == Ok(27) and counts.sum() == 1456 and is_symmetric
 }
 
