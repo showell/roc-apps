@@ -106,7 +106,7 @@ browser, compiled to WebAssembly.</p>
     <p class="opening">The pages are HTML built in Roc. JavaScript files send what you type and run the live parts. The server sends no stylesheet; the scripts carry the styles.</p>
     <p class="opening">Search's index is in Zig. The host keeps it in memory, for speed, and the app decides who may search what. One lock lets only one Roc call run at a time. The host reads and writes the network outside the lock. A password check or a GitHub sign-in lets go of the lock while it works, so another Roc call can run.</p>
     <p class="opening">A hosted function is a Zig function that Roc calls for an effect. A test holds each one to the layout that Roc's glue tool reports, field by field and tag by tag. Two swapped fields fail the build's tests.</p>
-    <div class="links"><a href="https://chat.lynrummy.com/">The live chat</a><a href="https://github.com/showell/roc-chat">The source</a></div>
+    <div class="links"><a href="https://chat.lynrummy.com/">The live chat</a><a href="https://github.com/showell/roc-chat">The source</a><a href="security-idioms/">How Roc's types keep it secure</a></div>
   </div>
   <div class="stats">
     <div class="stat"><b>about 33,000</b><span>lines of Roc in 171 modules (24,000 without comments and blank lines)</span></div>
