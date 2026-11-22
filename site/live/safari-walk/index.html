@@ -21,9 +21,16 @@ canvas { display: block; background: #06080f; width: min(960px, 100%, calc(88vh 
 #loading h1 { font-size: 26px; margin: 0 0 10px; color: #efede6; }
 #loading p { margin: 0 0 12px; }
 #loading kbd { font: 13px monospace; border: 1px solid #4a4a46; border-radius: 3px; padding: 0 4px; }
-#loading .progress { margin-top: 18px; color: #8f8c84; font-size: 13px; }
-#loading .bar { height: 3px; background: #23252c; margin-top: 6px; overflow: hidden; }
-#loading .bar span { display: block; height: 100%; width: 0; background: #b48a3c; transition: width 0.4s; }
+/* The waiting state comes first and large, so nobody takes the page for
+   finished: the stage, the seconds so far, a broad bar and a calm pulse. */
+#loading .progress { margin: 0 0 28px; padding: 16px 18px; border: 1px solid #2c2e36; border-radius: 8px; background: #0d1018; }
+#loading .status { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; font-size: 20px; font-weight: 600; color: #efe3c6; }
+#loading #clock { font: 16px monospace; color: #b48a3c; white-space: nowrap; }
+#loading .bar { height: 10px; background: #23252c; border-radius: 5px; margin-top: 12px; overflow: hidden; }
+#loading .bar span { display: block; height: 100%; width: 3%; border-radius: 5px; background: #d19a3e; transition: width 0.4s; animation: walk-pulse 1.8s ease-in-out infinite; }
+#loading .note { margin-top: 10px; color: #8f8c84; font-size: 13px; }
+@keyframes walk-pulse { 50% { opacity: 0.6; } }
+@media (max-width: 480px) { #loading .status { font-size: 17px; } #loading h1 { font-size: 22px; } }
 #rate { display: none; position: absolute; top: 8px; left: 8px; max-width: calc(100% - 32px); white-space: pre-wrap; padding: 4px 8px; background: rgba(0, 0, 0, 0.55); color: #eee; font: 13px monospace; pointer-events: none; }
 </style>
 </head>
@@ -31,12 +38,15 @@ canvas { display: block; background: #06080f; width: min(960px, 100%, calc(88vh 
 <!-- sokol_app finds the canvas by its default selector, #canvas. -->
 <canvas id="canvas" tabindex="-1" oncontextmenu="event.preventDefault()"></canvas>
 <div id="loading"><article>
+<div class="progress" role="status" aria-live="polite">
+<div class="status"><span id="stage">Downloading the walk</span><span id="clock"></span></div>
+<div class="bar"><span id="bar"></span></div>
+<div class="note">The first load takes up to half a minute while the GPU gets ready.</div>
+</div>
 <h1>Safari Walk</h1>
-<p>A walk down a dirt road across a dry savanna at golden hour. Grass bends in the wind, conifers line the verges, ducks paddle on a pond, two zebras cross the road, and three radio towers blink their aviation lamps as the sun sets ahead of you. It is a new take on Safari Ride, the canvas game on this site, drawn in 3D.</p>
-<p>The walk's logic is written in Roc. It runs on Rocco, Braeden Foster's 3D engine for games written in Roc, from Steve's fork of it, which adds a few changes so that it runs in Firefox. The page needs a browser with WebGPU. The code was written by AI agents (Claude), under Steve Howell's supervision.</p>
-<p><kbd>Space</kbd> pauses the walk, and everything in it, and walks on. <kbd>F</kbd> shows a frame readout. <kbd>1</kbd> to <kbd>5</kbd> jump down the road. Every 20 seconds of walking, the page writes a frame report to the browser's console, ready to copy into a message.</p>
-<p>The first load can take half a minute: the browser readies the GPU's shaders before the first frame.</p>
-<div class="progress"><span id="stage">Downloading the walk (about 7 MB)</span> <span id="clock"></span><div class="bar"><span id="bar"></span></div></div>
+<p>A walk down a dirt road across a dry savanna at golden hour, as the sun sets ahead of you: a new take on Safari Ride, the canvas game on this site, in 3D.</p>
+<p>Its logic is written in Roc, on Rocco, Braeden Foster's 3D engine for Roc games, from Steve's fork with changes for Firefox. It needs a browser with WebGPU. AI agents (Claude) wrote the code, under Steve Howell's supervision.</p>
+<p><kbd>Space</kbd> pauses and resumes. <kbd>F</kbd> shows a frame readout. Every 20 seconds of walking, a frame report goes to the browser's console, ready to copy.</p>
 </article></div>
 <div id="message"></div>
 <div id="rate"></div>
@@ -61,6 +71,8 @@ var WALK_PACE = 5.3;
 	var done = false;
 	var ticking = setInterval(function () {
 		clock.textContent = Math.round((performance.now() - start) / 1000) + " s";
+		// While the files come, the bar creeps toward its first stage's mark.
+		if (walkLoad.files === null) progress(Math.min(0.3, (performance.now() - start) / 20000));
 	}, 250);
 
 	function finish() {
@@ -85,7 +97,7 @@ var WALK_PACE = 5.3;
 		});
 		if (!done && Object.keys(waiting).length === 0 && walkLoad.files === null) {
 			walkLoad.files = performance.now();
-			stage.textContent = "Preparing the trees, the light of the sky and the GPU's shaders";
+			stage.textContent = "Preparing the scene";
 			progress(0.35);
 		}
 	}
@@ -113,7 +125,7 @@ var WALK_PACE = 5.3;
 	window.addEventListener("rocco:ready", function () {
 		walkLoad.first_frame = performance.now();
 		pressZero();
-		stage.textContent = "Readying the GPU's shaders, then starting the walk";
+		stage.textContent = "Warming up the GPU";
 		progress(0.7);
 		var steady = 0;
 		var last = performance.now();
