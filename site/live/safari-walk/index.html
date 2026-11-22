@@ -50,7 +50,7 @@ canvas { display: block; background: #06080f; width: min(960px, 100%, calc(88vh 
 var walkLoad = { files: null, shaders_first: null, shaders_last: null, first_frame: null, shown: null, settle: null, made_after: [] };
 var STEADY_FRAMES = 30, STEADY_LIMIT_MS = 40;
 // The walk's pace in metres a second, as game/Walk.roc has it.
-var WALK_PACE = 4.8;
+var WALK_PACE = 5.3;
 (function () {
 	var stage = document.getElementById("stage");
 	var clock = document.getElementById("clock");
@@ -219,10 +219,10 @@ var walkView = (function () {
 	var walk = { shown: false, paused: false, held: false, skipNext: false, walked: 0, started: false };
 	// ?start= begins the walk farther down the road (Switches.roc).
 	var startAt = parseFloat(new URLSearchParams(location.search).get("start") || "0");
-	if (startAt >= 0 && startAt < 399) walk.walked = startAt;
+	if (startAt >= 0 && startAt < 319) walk.walked = startAt;
 	window.addEventListener("walk:shown", function () { walk.shown = true; });
 	window.addEventListener("rocco:ready", function () { walk.started = true; });
-	var JUMPS = { Digit1: 44, Digit2: 200, Digit3: 260, Digit4: 95, Digit5: 36, Digit6: 83, Digit7: 240 };
+	var JUMPS = { Digit1: 44, Digit2: 170, Digit3: 215, Digit4: 95, Digit5: 36, Digit6: 83, Digit7: 150 };
 	window.addEventListener("keydown", function (event) {
 		if (event.repeat) return;
 		if (event.code === "Space") {
@@ -238,13 +238,13 @@ var walkView = (function () {
 	function happening(walked) {
 		var notes = [];
 		if (walked < 6) notes.push("the walk's first metres, fading in from black");
-		if (walked > 388) notes.push("the fade out at the road's end, before the walk starts again");
+		if (walked > 308) notes.push("the fade out at the road's end, before the walk starts again");
 		if (walked > 20 && walked < 62) notes.push("zebra 1 crossing ahead");
 		if (walked > 15 && walked < 85) notes.push("the duck pond ahead on the right");
 		if (walked > 80 && walked < 125) notes.push("the kangaroo crossing ahead");
-		if (walked > 230) notes.push("the tavern's neon sign ahead");
-		if (walked > 200 && walked < 274) notes.push("zebra 2 crossing ahead");
-		if (walked > 59 && walked < 252) notes.push("sky blend re-blending (sunset)");
+		if (walked > 150) notes.push("the tavern's neon sign ahead");
+		if (walked > 150 && walked < 210) notes.push("zebra 2 crossing ahead");
+		if (walked > 47 && walked < 202) notes.push("sky blend re-blending (sunset)");
 		if (walked > 125 && walked < 160) notes.push("passing the near mast and its light");
 		return notes.length ? notes.join("; ") : "nothing new: trees and grass move to the next lap as they fall behind";
 	}
@@ -379,7 +379,7 @@ var walkView = (function () {
 				frame.at = performance.now();
 				if (lastSubmit > 0) frame.gap = frame.at - lastSubmit;
 				lastSubmit = frame.at;
-				if (frame.gap !== null && !walk.paused && !walk.held) walk.walked = (walk.walked + WALK_PACE * Math.min(frame.gap, 250) / 1000) % 400;
+				if (frame.gap !== null && !walk.paused && !walk.held) walk.walked = (walk.walked + WALK_PACE * Math.min(frame.gap, 250) / 1000) % 320;
 				frame.walked = walk.walked;
 				if (frame.gap !== null && frame.gap > STALL_MS && walkLoad.first_frame !== null) {
 					stalls.push({ gap: frame.gap, after: (frame.at - walkLoad.first_frame) / 1000, walked: walk.walked, when: !walk.shown ? "loading" : walk.paused ? "paused" : "walking" });

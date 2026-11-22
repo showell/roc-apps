@@ -1,5 +1,5 @@
-published 2026-11-22T22:54:09Z
-safari-walk 92982c1 (92982c17525985d1e33caee2acaf21621e539440); the repo has no remote yet
+published 2026-11-22T23:02:56Z
+safari-walk 4de0762 (4de076207aa2891127a76e50d238968f124f51ae); the repo has no remote yet
 rocco-engine firefox-fixes f4e3b8d (f4e3b8d976d6301f826b043538684bb13df4f27f), on firefox-fixes at https://github.com/showell/rocco-engine.git
 roc 0.1.0-rc1; web host built release (scripts/build_web_host.shale)
 5775070 bytes  index.data
@@ -8,8 +8,8 @@ roc 0.1.0-rc1; web host built release (scripts/build_web_host.shale)
 1570324 bytes  index.data.zst
 29959 bytes  index.html
 329542 bytes  index.js
-2414313 bytes  index.wasm
+2414183 bytes  index.wasm
 4463 bytes  rocco.js
 index.data.zst and index.data.gz are index.data compressed (zstd -19, gzip -9)
 models: conifers, grass and zebra Quaternius CC0 1.0; towers made by safari-walk's make_towers.roc; ducks, the kangaroo and the tavern drawn from Rocco's primitive sphere, cube and cylinder (no CC0 duck, kangaroo or building model found); safari-walk's README lists each
-sha256 cc41713a55caa4aa  index.wasm
+sha256 4800c910f928d277  index.wasm
