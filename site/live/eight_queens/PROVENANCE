@@ -1,5 +1,5 @@
-published 2026-11-22T16:41:07Z
+published 2026-11-22T17:10:01Z
 roc nightly-2026-11-03-34bd006
 opt speed
-roc-apps 5a72639e
-sha256 bf3c247ef8efba03  144811 bytes  eight_queens.wasm
+roc-apps ce620f3c
+sha256 e0bdc69b955a94ae  137902 bytes  eight_queens.wasm
