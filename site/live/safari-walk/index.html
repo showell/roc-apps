@@ -14,7 +14,7 @@ body { display: flex; flex-direction: column; align-items: center; justify-conte
 canvas { display: block; background: #06080f; width: min(960px, 100%, calc(88vh * 1.6)); height: auto; aspect-ratio: 960 / 600; }
 #message { display: none; position: absolute; inset: 0; padding: 2em; box-sizing: border-box; text-align: center; align-content: center; line-height: 1.5; }
 #message button { margin-top: 1em; font: inherit; padding: 0.4em 1.2em; }
-#loading { position: absolute; inset: 0; background: #000; text-align: center; align-content: center; line-height: 1.6; pointer-events: none; transition: opacity 1.2s; }
+#loading { position: absolute; inset: 0; background: #000; text-align: center; align-content: center; line-height: 1.6; pointer-events: none; }
 #loading small { color: #999; }
 #rate { display: none; position: absolute; top: 8px; left: 8px; max-width: calc(100% - 32px); white-space: pre-wrap; padding: 4px 8px; background: rgba(0, 0, 0, 0.55); color: #eee; font: 13px monospace; pointer-events: none; }
 </style>
@@ -46,8 +46,11 @@ canvas { display: block; background: #06080f; width: min(960px, 100%, calc(88vh 
 		done = true;
 		window.dispatchEvent(new Event("walk:shown"));
 		clearInterval(ticking);
-		loading.style.opacity = "0";
-		setTimeout(function () { loading.style.display = "none"; }, 1300);
+		// No fade here: the walk fades in from black itself, and a layer
+		// fading over the WebGPU canvas is compositing work in the walk's
+		// first seconds, where the first report from a real GPU found most
+		// of its longest frames.
+		loading.style.display = "none";
 	}
 
 	// index.wasm and index.data are the two big files. Once both are in,
