@@ -1,0 +1,488 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="description" content="A black-box test of roc-chat, and our own follow-up, found bugs the Roc types let through. The bigger fixes each added a type or a check that asks one more question of the code, shown here in real Roc.">
+<title>Security Idioms in roc-chat</title>
+<script src="../shared/home.js"></script>
+<!-- site/build_security_idioms.shale writes this page from this file and
+     roc-chat's history; edit site/security_idioms.html and run it again
+     rather than editing the page. The code is colored by roc-syntax-color. -->
+<style>
+  :root { color-scheme: light dark; --bg: #f7f5f0; --fg: #1d1d1b; --muted: #6b6860; --edge: #d9d4c8; --pane: #ffffff; --link: #1f5fa8; --accent: #5b3ea8; }
+  @media (prefers-color-scheme: dark) {
+    :root { --bg: #1b1b1a; --fg: #e8e6e0; --muted: #9a968c; --edge: #3a3934; --pane: #242422; --link: #8ab4f0; --accent: #a68cf0; }
+  }
+  body { margin: 0; background: var(--bg); color: var(--fg); font: 15px/1.55 system-ui, sans-serif; }
+  main { max-width: 760px; margin: 0 auto; padding: 36px 16px 48px; }
+  @media (max-width: 640px) { main { padding: 24px 12px 36px; } }
+  h1 { font-size: 28px; margin: 0 0 6px; }
+  .lede { color: var(--muted); margin: 0 0 8px; max-width: 66ch; }
+  h2 { font-size: 21px; margin: 44px 0 8px; padding-top: 14px; border-top: 2px solid var(--accent); }
+  h3 { font-size: 13px; font-weight: 600; text-transform: uppercase; letter-spacing: .08em; color: var(--muted); margin: 26px 0 8px; }
+  p, ul { max-width: 66ch; }
+  li { margin: 0 0 4px; }
+  a { color: var(--link); }
+  code { font: 13px ui-monospace, Menlo, Consolas, monospace; overflow-wrap: anywhere; }
+  pre code { overflow-wrap: normal; }
+  /* A line wider than its block scrolls sideways inside it, so the code
+     keeps its indentation. */
+  pre { margin: 4px 0 14px; padding: 10px 12px; border-radius: 5px; font: 12px/1.45 ui-monospace, Menlo, Consolas, monospace; overflow-x: auto; tab-size: 4; }
+  pre code { font: inherit; }
+  pre.roc { background: #2b2733; color: #e8e6e0; }
+  pre.plain { background: var(--pane); color: var(--fg); border: 1px solid var(--edge); white-space: pre-wrap; overflow-wrap: anywhere; }
+  .syn-keyword { color: #c792ea; }
+  .syn-type { color: #82aaff; }
+  .syn-string { color: #c3e88d; }
+  .syn-number { color: #f78c6c; }
+  .syn-comment { color: #8a8494; font-style: italic; }
+  .syn-name { color: #ffcb6b; }
+  .file { font-size: 13px; color: var(--muted); margin: 16px 0 0; overflow-wrap: anywhere; }
+  .commits { font-size: 14px; }
+  footer { margin-top: 36px; color: var(--muted); font-size: 13px; }
+</style>
+</head>
+<body>
+<main>
+<h1>Security idioms in roc-chat</h1>
+<p class="lede"><a href="https://github.com/showell/roc-chat">roc-chat</a> is a chat server written in Roc, live at
+chat.lynrummy.com. In November 2026, notramo tested the live site as a black box and reported what he found. We fixed
+each bug. For the bigger ones, we then looked for the class each belonged to, and added a type or a check aimed at
+the whole class. Each section says what its type or check can't see. Two of the bugs here came from our own follow-up, a Markdown spec and an audit of what each request costs; the page says which.</p>
+<p class="lede">Claude, an AI coding agent, wrote the fixes, the checks and this page under Steve's supervision. Every
+snippet is quoted from roc-chat at commit 53fe270, its main branch when this page was written, with a link to its
+lines.</p>
+
+<h2>What the types already said</h2>
+<p>roc-chat's types already answered one question well: <em>who is acting?</em> A route that only the acting user may
+take asks for a <code>SignedIn</code> in its type, and a <code>SignedIn</code> comes from a checked session or a
+checked agent key. (One escape hatch checks nothing; only the first start, the demo page and tests call it.) None of
+the bugs below got past that.</p>
+<p>Each bug was a question the types didn't ask. Whose credential is this call changing? What else must happen after
+this write? What does this request cost? Each fix adds one of those questions, as a type where a type can ask it,
+and as a check where it can't.</p>
+
+<h2>Streams that outlived a sign-out</h2>
+<h3>The bug</h3>
+<p>The devices page has a button, "Sign out other devices" (<code>POST /devices/sign-out-others</code>). It revoked
+every other device's key and advanced the session generation, so no old session cookie worked again. But a page's live
+updates come over an event stream, and the server judges a stream once, when it opens, then holds it for up to an
+hour. So a stream opened with a stolen cookie kept hearing Recent's tiles, notices and a conversation after the owner
+signed the other devices out. A join by an invite and a GitHub link end every session too, and they left streams
+open the same way. (Since the invite fix below, a join is only ever a first join, with no session to end; it still
+ends streams, to be safe.)</p>
+
+<h3>The fix: one place ends a user's streams</h3>
+<p><code>UserStreams.end_every_stream!</code> is the one place the app ends a user's streams. The host does the
+ending; this function names whose.</p>
+<p class="file"><a href="https://github.com/showell/roc-chat/blob/53fe270531163f14b2d82aeee8b9d8e0043321ed/app/UserStreams.roc#L1-L23"><code>app/UserStreams.roc</code></a>, lines 1-23</p>
+<pre class="roc"><code><span class="syn-comment">## This module ends a user&#39;s open streams, the one place the app does. A</span>
+<span class="syn-comment">## stream is judged once, when it opens, and the host holds it for up to an</span>
+<span class="syn-comment">## hour (`Limits.stream_most_ms`) without asking again, so every action in</span>
+<span class="syn-comment">## the app that ends a session, revokes a credential or removes someone&#39;s</span>
+<span class="syn-comment">## access calls `end_every_stream!` after its write: each stream reconnects</span>
+<span class="syn-comment">## and is judged again, admitted only by what still admits it.</span>
+<span class="syn-comment">## tools/check_stream_endings.shale holds the app to that, and to every</span>
+<span class="syn-comment">## holder `StreamHolder` names being one this module ends.</span>
+<span class="syn-keyword">import</span> pf.<span class="syn-type">Host</span>
+<span class="syn-keyword">import</span> <span class="syn-type">StreamHolder</span>
+<span class="syn-keyword">import</span> <span class="syn-type">UserId</span>
+
+<span class="syn-type">UserStreams</span> :: [].{
+
+	<span class="syn-comment">## Every stream the user `id` holds ended now, under each holder</span>
+	<span class="syn-comment">## `StreamHolder` names: their pages&#39; streams (a conversation&#39;s, Recent&#39;s</span>
+	<span class="syn-comment">## and the device code page&#39;s) and an agent&#39;s own stream.</span>
+	<span class="syn-name">end_every_stream!</span> : <span class="syn-type">UserId</span> =&gt; {}
+	<span class="syn-name">end_every_stream!</span> = |id| {
+		<span class="syn-type">Host</span>.end_every_stream_of_holder!(<span class="syn-type">StreamHolder</span>.user(id).to_bytes())
+		<span class="syn-type">Host</span>.end_every_stream_of_holder!(<span class="syn-type">StreamHolder</span>.agent(id).to_bytes())
+	}
+}</code></pre>
+<p>It ends streams under each holder <code>StreamHolder</code> names. <code>StreamHolder</code> is an opaque type,
+the one home of those names, and <code>HttpAnswer.stream</code> takes one. <code>HttpAnswer.stream</code> is the
+only code that makes a stream answer today. The platform's answer is a plain record, though, so that is a habit the
+code keeps, not something the types enforce.</p>
+<p class="file"><a href="https://github.com/showell/roc-chat/blob/53fe270531163f14b2d82aeee8b9d8e0043321ed/app/StreamHolder.roc#L12-L25"><code>app/StreamHolder.roc</code></a>, lines 12-25</p>
+<pre class="roc"><code><span class="syn-type">StreamHolder</span> :: <span class="syn-type">List</span>(<span class="syn-type">U8</span>).{
+
+	<span class="syn-comment">## Who holds the streams of the pages `user` opens: the user, by id.</span>
+	<span class="syn-name">user</span> : <span class="syn-type">UserId</span> -&gt; <span class="syn-type">StreamHolder</span>
+	<span class="syn-name">user</span> = |id| <span class="syn-type">StreamHolder</span>.(id.to_str().to_utf8())
+
+	<span class="syn-comment">## Who holds the agent `agent`&#39;s own stream (`AgentStream`).</span>
+	<span class="syn-name">agent</span> : <span class="syn-type">UserId</span> -&gt; <span class="syn-type">StreamHolder</span>
+	<span class="syn-name">agent</span> = |id| <span class="syn-type">StreamHolder</span>.(<span class="syn-string">&quot;agent-</span>${id.to_str()}<span class="syn-string">&quot;</span>.to_utf8())
+
+	<span class="syn-comment">## The holder&#39;s name, for the host.</span>
+	<span class="syn-name">to_bytes</span> : <span class="syn-type">StreamHolder</span> -&gt; <span class="syn-type">List</span>(<span class="syn-type">U8</span>)
+	<span class="syn-name">to_bytes</span> = |<span class="syn-type">StreamHolder</span>.(bytes)| bytes
+}</code></pre>
+<p class="file"><a href="https://github.com/showell/roc-chat/blob/53fe270531163f14b2d82aeee8b9d8e0043321ed/app/HttpAnswer.roc#L193-L201"><code>app/HttpAnswer.roc</code></a>, lines 193-201</p>
+<pre class="roc"><code><span class="syn-comment">## An event stream the host holds open on the bus keys `keys`, 1 to 4,</span>
+<span class="syn-comment">## for `holder`: `backlog` first, then every frame published to any of</span>
+<span class="syn-comment">## `keys`. The host writes the stream&#39;s type; it is not sniffed.</span>
+<span class="syn-name">stream</span> : {
+	keys : <span class="syn-type">List</span>(<span class="syn-type">List</span>(<span class="syn-type">U8</span>)),
+	holder : <span class="syn-type">StreamHolder</span>,
+	backlog : <span class="syn-type">List</span>(<span class="syn-type">U8</span>),
+} -&gt; <span class="syn-type">Http.Response</span>
+<span class="syn-name">stream</span> = |{ keys, holder, backlog }| {</code></pre>
+<p>Every action in the app that ends a session, revokes a credential or removes someone's access calls it after its
+writes.
+Each stream then reconnects and is judged again. Here is the sign-out, which ends the streams even when a write
+failed partway:</p>
+<p class="file"><a href="https://github.com/showell/roc-chat/blob/53fe270531163f14b2d82aeee8b9d8e0043321ed/app/DeviceSessionsRoute.roc#L119-L129"><code>app/DeviceSessionsRoute.roc</code></a>, lines 119-129</p>
+<pre class="roc"><code><span class="syn-name">sign_out_others!</span> : <span class="syn-type">UserId</span> =&gt; <span class="syn-type">Try</span>({}, [<span class="syn-type">FileSystem</span>(<span class="syn-type">FileFacts.Fault</span>)])
+<span class="syn-name">sign_out_others!</span> = |id| {
+	<span class="syn-type">DeviceCodeFiles</span>.revoke_or_log!(id)
+	signed_out =
+		<span class="syn-keyword">match</span> <span class="syn-type">DeviceKeyFiles</span>.revoke_every_active_device_key!(id) {
+			<span class="syn-type">Ok</span>({}) =&gt; <span class="syn-type">SignInFiles</span>.advance_session_generation!(id)
+			<span class="syn-type">Err</span>(fault) =&gt; <span class="syn-type">Err</span>(fault)
+		}
+	<span class="syn-type">UserStreams</span>.end_every_stream!(id)
+	signed_out
+}</code></pre>
+
+<h3>Why a check, and not a type</h3>
+<p>The rule is "after this write, also do that." A type can demand a value before a call. It can't demand a step
+after one. We considered a <code>Revocation</code> value that each revoking write would return, and that only ending
+the streams would take. Roc has no linear types, so nothing makes a caller use a value it was given: a caller could
+drop the <code>Revocation</code> and compile. The other way to force it, ending the streams inside the writer itself,
+would put the ending in the wrong layer. In roc-chat only <code>FileFacts</code> touches files, through each
+feature's <code>*Files</code> module, and those modules do only file work; they decide nothing.</p>
+<p>So a check holds the rule. <code>tools/check_stream_endings.shale</code> reads every app module with Roc's own
+parser. Every function that writes a file is judged once in <code>tools/stream_endings.txt</code>: <code>ends</code>
+if its write ends a session, a credential or someone's access, and <code>keeps</code> if not. Separately, an
+<code>exempt</code> line names a function and an <code>ends</code> writer it calls that needs no ending there, with
+the reason.</p>
+<p class="file"><a href="https://github.com/showell/roc-chat/blob/53fe270531163f14b2d82aeee8b9d8e0043321ed/tools/stream_endings.txt#L18-L49"><code>tools/stream_endings.txt</code></a>, lines 18-49, trimmed</p>
+<pre class="plain"><code>ends    AccountFiles.replace_password_hash!        a new password ends every session signed over the old one
+...
+ends    AccountFiles.replace_session_generation!   "Sign out other devices": every session signed before admits no one
+ends    AgentFiles.replace_agent_key_state!        an agent's key revoked
+ends    DeviceKeyFiles.revoke_device_key!          a device's key revoked, and the session bound to it
+...
+keeps   AgentFiles.create_agent_key!               a new key admits; it ends nothing
+...
+exempt  ChannelMembersRoute.add!  DirectoryFiles.replace_channel_members!  adding a member removes no one's access</code></pre>
+<p>Then the check walks the calls. Any function outside a <code>*Files</code> module that calls an
+<code>ends</code> writer, directly or through a <code>*Files</code> function, must call <code>UserStreams.end_every_stream!</code> after it, unless an <code>exempt</code>
+line names that call. These are its findings:</p>
+<p class="file"><a href="https://github.com/showell/roc-chat/blob/53fe270531163f14b2d82aeee8b9d8e0043321ed/tools/check_stream_endings.shale#L17-L31"><code>tools/check_stream_endings.shale</code></a>, lines 17-31</p>
+<pre class="roc"><code><span class="syn-comment">--   unjudged_writer   a function that writes a file and has no `ends` or</span>
+<span class="syn-comment">--                     `keeps` line, so a new writer is judged when it comes;</span>
+<span class="syn-comment">--   stale_entry       a line for no function, an `ends` or `keeps` line for</span>
+<span class="syn-comment">--                     a function that writes no file, or an `exempt` line</span>
+<span class="syn-comment">--                     for a call the function doesn&#39;t make or that reaches</span>
+<span class="syn-comment">--                     no `ends` writer;</span>
+<span class="syn-comment">--   unended_streams   a function outside a `*Files` module that reaches an</span>
+<span class="syn-comment">--                     `ends` writer (directly, or through a `*Files`</span>
+<span class="syn-comment">--                     function that calls one) and calls no</span>
+<span class="syn-comment">--                     `UserStreams.end_every_stream!` after that call;</span>
+<span class="syn-comment">--   stray_ending      `Host.end_every_stream_of_holder!` called anywhere but</span>
+<span class="syn-comment">--                     `UserStreams.end_every_stream!`;</span>
+<span class="syn-comment">--   unended_holder    a `StreamHolder` function that makes a holder (every</span>
+<span class="syn-comment">--                     one but `to_bytes`) that `UserStreams.end_every_stream!`</span>
+<span class="syn-comment">--                     doesn&#39;t call, so a stream held under it would outlive</span></code></pre>
+<p>The gate, <code>tools/verify.shale</code>, holds it at zero. A new writer fails it until someone judges it, so the
+table can't go stale. Planted faults show it sees: removing the ending from <code>sign_out_others!</code>,
+the original bug, gives <code>unended_streams</code>.</p>
+<p>What it doesn't catch: it reads names, not values, so it can't tell whether the ending names the same user as the
+write. It checks that an ending comes later in the function than the first revoking call, by line, not that every
+path reaches it: an early return between the two would pass. It can't see a writer reached as a method on a value;
+every writer is called by its module's name today. And it covers the app's own actions: a password or GitHub file
+edited by hand on the server, or a crash between the write and the ending, leaves a stream open until its hour.
+The end-to-end tests cover the real cases: an open stream ends on "Sign out other devices", on a GitHub link, on a
+sign-out, on an agent key's revoke and on a member's removal.</p>
+
+<h2>An invite that acted as a password reset</h2>
+<h3>The bug</h3>
+<p>An inviter could make a new link for a human who had already joined. Redeeming that link set whatever password
+the redeemer chose, and ended the joined human's own password and session. So whoever made the link could take over
+the account. It was broken object-level authorization: the password's writer took a bare user id, and nothing in its
+type said whose proof stood behind the call.</p>
+
+<h3>The fix: a claim, and a proof the writer demands</h3>
+<p><code>HumanClaim</code> judges a human <code>Unclaimed</code> (no password, no GitHub link, no invite spent) or
+<code>Claimed</code>. <code>Unclaimed</code> is opaque, and only <code>judge</code> makes one.</p>
+<p class="file"><a href="https://github.com/showell/roc-chat/blob/53fe270531163f14b2d82aeee8b9d8e0043321ed/app/HumanClaim.roc#L11-L39"><code>app/HumanClaim.roc</code></a>, lines 11-39</p>
+<pre class="roc"><code><span class="syn-type">HumanClaim</span> :: [].{
+
+	<span class="syn-comment">## What decides it, as the human&#39;s files hold them: each invite&#39;s state</span>
+	<span class="syn-comment">## (`HumanInvite.State`).</span>
+	<span class="syn-type">Facts</span> : {
+		password : [<span class="syn-type">NoPassword</span>, <span class="syn-type">HasPassword</span>],
+		github : [<span class="syn-type">NotLinked</span>, <span class="syn-type">Linked</span>],
+		invites : <span class="syn-type">List</span>([<span class="syn-type">Live</span>, <span class="syn-type">Spent</span>]),
+	}
+
+	<span class="syn-comment">## A human with no password, no GitHub link and no invite spent: the only</span>
+	<span class="syn-comment">## human an invite is made for, or redeems for. Only `judge` makes one.</span>
+	<span class="syn-type">Unclaimed</span> :: <span class="syn-type">Users.Human</span>.{
+
+		<span class="syn-comment">## The human who has claimed nothing.</span>
+		<span class="syn-name">human</span> : <span class="syn-type">HumanClaim.Unclaimed</span> -&gt; <span class="syn-type">Users.Human</span>
+		<span class="syn-name">human</span> = |<span class="syn-type">HumanClaim.Unclaimed</span>.(unclaimed)| unclaimed
+	}
+
+	<span class="syn-comment">## Whether `human`, whose files say `facts`, is `Unclaimed`, or has</span>
+	<span class="syn-comment">## `Claimed` their account.</span>
+	<span class="syn-name">judge</span> : <span class="syn-type">Users.Human</span>, <span class="syn-type">HumanClaim.Facts</span> -&gt; [<span class="syn-type">Unclaimed</span>(<span class="syn-type">HumanClaim.Unclaimed</span>), <span class="syn-type">Claimed</span>]
+	<span class="syn-name">judge</span> = |human, { password, github, invites }|
+		<span class="syn-keyword">if</span> password == <span class="syn-type">NoPassword</span> <span class="syn-keyword">and</span> github == <span class="syn-type">NotLinked</span> <span class="syn-keyword">and</span> !invites.contains(<span class="syn-type">Spent</span>) {
+			<span class="syn-type">Unclaimed</span>(<span class="syn-type">HumanClaim.Unclaimed</span>.(human))
+		} <span class="syn-keyword">else</span> {
+			<span class="syn-type">Claimed</span>
+		}
+}</code></pre>
+<p>Writing an invite takes an <code>Unclaimed</code>, so the chat writes no invite for a human who has joined.
+Inviting one again is a 403 saying a new link would change nothing. A join judges the link's invitee first
+(<code>InviteRights.load_unclaimed_invitee!</code>), and redeeming takes the <code>Unclaimed</code> that gives, so a
+link made before the human joined redeems nothing after.</p>
+<p class="file"><a href="https://github.com/showell/roc-chat/blob/53fe270531163f14b2d82aeee8b9d8e0043321ed/app/InviteFiles.roc#L97-L104"><code>app/InviteFiles.roc</code></a>, lines 97-104</p>
+<pre class="roc"><code><span class="syn-comment">## A new invite in the account folder of `unclaimed`, a human who has</span>
+<span class="syn-comment">## claimed nothing (`HumanClaim`), made once, its hash last.</span>
+<span class="syn-name">create_human_invite!</span> : <span class="syn-type">HumanClaim.Unclaimed</span>,
+<span class="syn-type">HumanInvite</span> =&gt; <span class="syn-type">Try</span>(
+	{},
+	[<span class="syn-type">AlreadyExists</span>, <span class="syn-type">MissingDirectory</span>, <span class="syn-type">NotUtf8</span>, <span class="syn-type">PathRefused</span>, <span class="syn-type">Failed</span>],
+)
+<span class="syn-name">create_human_invite!</span> = |unclaimed, invite| {</code></pre>
+<p>The password's one writer takes an <code>AccountProof</code> in place of a bare id. Only
+<code>of_first_join</code> makes one, from an <code>Admission</code>, and only <code>HumanInvite.redeem</code> makes
+an <code>Admission</code>.</p>
+<p class="file"><a href="https://github.com/showell/roc-chat/blob/53fe270531163f14b2d82aeee8b9d8e0043321ed/app/AccountProof.roc#L12-L21"><code>app/AccountProof.roc</code></a>, lines 12-21</p>
+<pre class="roc"><code><span class="syn-type">AccountProof</span> :: <span class="syn-type">UserId</span>.{
+
+	<span class="syn-comment">## The proof of a first join: the human an invite&#39;s redemption admitted.</span>
+	<span class="syn-name">of_first_join</span> : <span class="syn-type">HumanInvite.Admission</span> -&gt; <span class="syn-type">AccountProof</span>
+	<span class="syn-name">of_first_join</span> = |admission| <span class="syn-type">AccountProof</span>.(admission.human().id())
+
+	<span class="syn-comment">## The human whose account it proves.</span>
+	<span class="syn-name">human</span> : <span class="syn-type">AccountProof</span> -&gt; <span class="syn-type">UserId</span>
+	<span class="syn-name">human</span> = |<span class="syn-type">AccountProof</span>.(id)| id
+}</code></pre>
+<p class="file"><a href="https://github.com/showell/roc-chat/blob/53fe270531163f14b2d82aeee8b9d8e0043321ed/app/AccountFiles.roc#L178-L189"><code>app/AccountFiles.roc</code></a>, lines 178-189</p>
+<pre class="roc"><code><span class="syn-comment">## The password&#39;s bcrypt hash of the human whose account `proof` proves,</span>
+<span class="syn-comment">## written whole over the one before, atomically: a redeemed invite&#39;s</span>
+<span class="syn-comment">## choice, at their first join (`AccountProof`), so nothing writes one</span>
+<span class="syn-comment">## without the account&#39;s own proof. The hash is the host&#39;s</span>
+<span class="syn-comment">## (`Host.bcrypt_hash_of_password!`); the password is never kept.</span>
+<span class="syn-name">replace_password_hash!</span> : <span class="syn-type">AccountProof</span>,
+<span class="syn-type">PasswordHash</span> =&gt; <span class="syn-type">Try</span>(
+	{},
+	[<span class="syn-type">MissingDirectory</span>, <span class="syn-type">NotUtf8</span>, <span class="syn-type">PathRefused</span>, <span class="syn-type">Failed</span>],
+)
+<span class="syn-name">replace_password_hash!</span> = |proof, hash|
+	<span class="syn-type">FileFacts</span>.replace_fact!(password_path(proof.human()), hash.bytes())</code></pre>
+<p>The join is the one caller. It loads the invitee as <code>Unclaimed</code>, redeems, and passes the proof to the
+writer:</p>
+<p class="file"><a href="https://github.com/showell/roc-chat/blob/53fe270531163f14b2d82aeee8b9d8e0043321ed/app/HumanInvitesRoute.roc#L460-L496"><code>app/HumanInvitesRoute.roc</code></a>, lines 460-496, trimmed</p>
+<pre class="roc"><code><span class="syn-name">join_by_invite!</span> = |request| {
+	...
+	{ human: invited, unclaimed } = <span class="syn-type">InviteRights</span>.load_unclaimed_invitee!(request.directory, code)?
+	...
+	joined = <span class="syn-type">HumanInvites</span>.join(directory, { code, name, unclaimed }) ? |why| <span class="syn-type">Refused</span>(why)
+	human = joined.admission.human()
+	...
+	hash = <span class="syn-type">PasswordHash</span>.of_bcrypt_answer(<span class="syn-type">Host</span>.bcrypt_hash_of_password!(password.bytes_to_check()))
+	proof = <span class="syn-type">AccountProof</span>.of_first_join(joined.admission)
+	<span class="syn-type">AccountFiles</span>.replace_password_hash!(proof, hash) ? |fault| <span class="syn-type">FileSystem</span>(fault)
+	<span class="syn-type">UserStreams</span>.end_every_stream!(human.id())
+	<span class="syn-type">Ok</span>({ admission: joined.admission, password_hash: hash, next })
+}</code></pre>
+<p>To see that the types hold, we planted calls to <code>create_human_invite!</code> and
+<code>replace_password_hash!</code> with a bare id. <code>roc check</code> refused both. What the types prove is
+that <code>judge</code> ran and that a first join made the proof. Which facts reach <code>judge</code> is the loader's
+job, read from the human's files, and which human a join redeems for is a runtime check:
+<code>HumanInvites.join</code> compares the <code>Unclaimed</code> human's id with the invite's. Once a human has
+joined, nothing in the app changes their password: the only <code>AccountProof</code> is a first join's, and there is
+no admin reset.</p>
+
+<h3>The check: every path to a credential, judged</h3>
+<p><code>AccountProof</code> guards one writer. The chat has more credentials than a password: GitHub links, session
+secrets and the session generation, device keys, device codes, agent keys and invites. <code>tools/check_credential_writers.shale</code> holds
+them all to one table, <code>tools/credential_writers.txt</code>. Every function that writes a file is a
+<code>writes</code> line, marked <code>credential</code> or <code>other</code>. Every call of a credential writer is a
+<code>calls</code> line naming the caller and the proof that guards it:</p>
+<p class="file"><a href="https://github.com/showell/roc-chat/blob/53fe270531163f14b2d82aeee8b9d8e0043321ed/tools/credential_writers.txt#L30-L59"><code>tools/credential_writers.txt</code></a>, lines 30-59, trimmed</p>
+<pre class="plain"><code>calls AccountFiles.replace_password_hash! HumanInvitesRoute.join_by_invite! unclaimed an AccountProof of a first join: the account's live invite code, redeemed only for a human who has claimed nothing (InviteRights.load_unclaimed_invitee!)
+...
+calls DeviceSessionsRoute.sign_out_others! DeviceSessionsRoute.sign_out_other_devices! own-session acting.human_in_session(): the acting human's own devices, by a full session (FullSessionRoutes)
+...
+calls InviteFiles.create_human_invite! HumanInvitesRoute.issue_invite! unclaimed a HumanClaim.Unclaimed, which InviteRights.load_unclaimed! makes only for a human with no password, GitHub link or spent invite, so an invite again for a joined human is refused (Joined)</code></pre>
+<p>A proof is one of a short list that are the account's own: <code>own-session</code>, <code>own-github</code>,
+<code>own-code</code>, <code>unclaimed</code>, <code>agent-keeper</code>, or <code>revokes</code> (it only ends or
+spends a credential). A caller that only passes the write on is marked <code>passes-on</code>, and its own callers
+are judged in turn. The gate holds three counts at zero: a writer or a call the table doesn't name, a line for code
+that is gone, and a proof that isn't the account's own. Before the fix the invite was that last one.</p>
+<p>What it doesn't do: it reads lines with regular expressions, not the parse tree, so it sees a call written by its
+name, and not a writer passed as a value or called as a method. And it can't decide whether a
+proof is really the account's own; a reader decides that, once, on each line. What the check promises is that no
+path to a credential goes unjudged.</p>
+
+<h2>Smaller fixes</h2>
+<p>These three bugs weren't type questions. The first two came from notramo's testing, the third from our own
+Markdown spec.</p>
+<h3>A reload after a refused sign-in</h3>
+<p>A refused device code was answered at <code>/login/code</code>, whose GET was a bare 405. Enter in the address
+bar showed "POST only", and a reload of any refused sign-in posted again. Now a GET of <code>/login/code</code> is a
+303 to <code>/login</code>, and the sign-in script puts its form's own GET page in the POST's place in the history
+(<code>history.replaceState</code>). The sign-in routes are one <code>match</code> over each path and method
+(<code>sign_in_choice</code>), and these are its lines for <code>/login/code</code>:</p>
+<p class="file"><a href="https://github.com/showell/roc-chat/blob/53fe270531163f14b2d82aeee8b9d8e0043321ed/app/Route.roc#L431-L433"><code>app/Route.roc</code></a>, lines 431-433</p>
+<pre class="roc"><code>(<span class="syn-type">LoginCode</span>, <span class="syn-type">Get</span>) =&gt; <span class="syn-type">Open</span>(<span class="syn-type">ReturnToLogin</span>)
+(<span class="syn-type">LoginCode</span>, <span class="syn-type">Post</span>) =&gt; <span class="syn-type">Open</span>(<span class="syn-type">RedeemDeviceCode</span>)
+(<span class="syn-type">LoginCode</span>, <span class="syn-type">Other</span>) =&gt; <span class="syn-type">MethodNotAllowed</span>(<span class="syn-type">GetAndPost</span>)</code></pre>
+<h3>A doubled header</h3>
+<p>The Caddy site block in front of the chat added <code>X-Content-Type-Options: nosniff</code> on top of the app's
+own, and Mozilla's Observatory scored the doubled header invalid. The app sends it on every answer it makes (the host's
+own refusals, such as a 413 or a 429, are plain text and carry none), and the end-to-end tests check it on pages,
+scripts, images and streams, so the
+<a href="https://github.com/showell/roc-chat/blob/53fe270531163f14b2d82aeee8b9d8e0043321ed/deploy/chat.lynrummy.com.caddy">site block</a>
+no longer adds one.</p>
+<h3>A class from a message</h3>
+<p>roc-chat's own Markdown spec found this one while testing what a message can put in the page. A form feed or a CR
+in a code fence's info string stayed in the language's name: <code>```x&lt;FF&gt;top-bar</code> rendered
+<code>class="language-x&lt;FF&gt;top-bar"</code>, which a browser reads as two classes. So a message could give its
+code block any class of the page's own. In roc-markdown, a fence's language now ends at any of HTML's spaces.</p>
+
+<h2>What a request costs</h2>
+<h3>The bug</h3>
+<p>A client with no account can still make the server work. Our audit of what each request costs found that every
+request read the whole directory of accounts and channels from disk, twice: once to judge the request's head and once
+to answer it. At 300 humans a request for the favicon made 1,804 file reads. Nothing in the code said which routes
+may grow with the chat, so nothing caught it.</p>
+
+<h3>The fix: every route declares its cost</h3>
+<p><code>RouteCost.growth_of</code> gives every route a cost class: <code>Constant</code> (the same file calls however
+many humans the chat has), <code>PerReaderPlaces</code> (a listing for each place the reader may open) or
+<code>PerHuman</code> (a read of every human's files). It is one <code>match</code> with no catch-all arm, so a new
+route fails to compile there until someone decides its class. (A new kind inside an existing route's payload, such
+as a new script, takes that route's class.)</p>
+<p class="file"><a href="https://github.com/showell/roc-chat/blob/53fe270531163f14b2d82aeee8b9d8e0043321ed/app/RouteCost.roc#L17-L89"><code>app/RouteCost.roc</code></a>, lines 17-89, trimmed</p>
+<pre class="roc"><code><span class="syn-comment">## Every route is written out, so a new route must declare its cost before</span>
+<span class="syn-comment">## it compiles. `zig build cost-check` (host/cost_check.zig) measures each</span>
+<span class="syn-comment">## probe of app/route_cost_probes.txt at 10 and 300 humans and holds it to</span>
+<span class="syn-comment">## its class, and `RouteCostSpec` holds each probe&#39;s route to the class its</span>
+<span class="syn-comment">## line names.</span>
+...
+<span class="syn-type">RouteCost</span> :: [].{
+
+	<span class="syn-comment">## How a route&#39;s file calls grow with the chat&#39;s humans: its cost class.</span>
+	<span class="syn-type">Growth</span> : [<span class="syn-type">Constant</span>, <span class="syn-type">PerReaderPlaces</span>, <span class="syn-type">PerHuman</span>]
+
+	<span class="syn-comment">## The class of the route `choice`.</span>
+	<span class="syn-name">growth_of</span> : <span class="syn-type">Route.Choice</span> -&gt; <span class="syn-type">RouteCost.Growth</span>
+	<span class="syn-name">growth_of</span> = |choice|
+		<span class="syn-keyword">match</span> choice {
+			<span class="syn-type">Open</span>(<span class="syn-type">ResumeOrBrowse</span>) =&gt; <span class="syn-type">Constant</span>
+			<span class="syn-type">Open</span>(<span class="syn-type">ServeScript</span>(_)) =&gt; <span class="syn-type">Constant</span>
+			<span class="syn-type">Open</span>(<span class="syn-type">ServeFavicon</span>) =&gt; <span class="syn-type">Constant</span>
+			<span class="syn-type">Open</span>(<span class="syn-type">ServeAlertIcon</span>) =&gt; <span class="syn-type">Constant</span>
+			<span class="syn-type">Open</span>(<span class="syn-type">ShowLogin</span>) =&gt; <span class="syn-type">Constant</span>
+			<span class="syn-type">Open</span>(<span class="syn-type">SignIn</span>) =&gt; <span class="syn-type">Constant</span>
+			<span class="syn-type">Open</span>(<span class="syn-type">SignOut</span>) =&gt; <span class="syn-type">Constant</span>
+			<span class="syn-type">Open</span>(<span class="syn-type">StartGitHubSignIn</span>) =&gt; <span class="syn-type">Constant</span>
+			<span class="syn-type">Open</span>(<span class="syn-type">FinishGitHubSignIn</span>) =&gt; <span class="syn-type">PerHuman</span>
+			...
+			<span class="syn-type">Open</span>(<span class="syn-type">RedeemDeviceCode</span>) =&gt; <span class="syn-type">PerHuman</span>
+			<span class="syn-type">Open</span>(<span class="syn-type">ReturnToLogin</span>) =&gt; <span class="syn-type">Constant</span>
+			<span class="syn-type">SignedInOnly</span>(<span class="syn-type">StartGitHubLink</span>) =&gt; <span class="syn-type">Constant</span>
+			<span class="syn-type">SignedInOnly</span>(<span class="syn-type">ShowBrowse</span>) =&gt; <span class="syn-type">PerReaderPlaces</span>
+			<span class="syn-type">SignedInOnly</span>(<span class="syn-type">ShowRecent</span>) =&gt; <span class="syn-type">PerReaderPlaces</span>
+			...
+			<span class="syn-type">SignedInOnly</span>(<span class="syn-type">ShowInvites</span>) =&gt; <span class="syn-type">PerHuman</span>
+			<span class="syn-type">SignedInOnly</span>(<span class="syn-type">InviteHuman</span>) =&gt; <span class="syn-type">PerHuman</span>
+			<span class="syn-type">SignedInOnly</span>(<span class="syn-type">InviteHumanAgain</span>(_)) =&gt; <span class="syn-type">PerHuman</span>
+			...
+			<span class="syn-type">SignedInOnly</span>(<span class="syn-type">SignOutOtherDevices</span>) =&gt; <span class="syn-type">Constant</span>
+			<span class="syn-type">NotFound</span> =&gt; <span class="syn-type">Constant</span>
+			<span class="syn-type">MethodNotAllowed</span>(_) =&gt; <span class="syn-type">Constant</span>
+		}</code></pre>
+<p>A declaration alone is a claim, so a probe measures it. <code>zig build cost-check</code> runs the real server on
+chats of 10 and 300 humans and counts each probe's reads, listings, writes and folder watches. A <code>Constant</code> probe must cost
+the same at both sizes, and any other must cost more at 300. So a route declared <code>Constant</code> that grows, or
+declared growing that doesn't, fails; the measure can't tell <code>PerReaderPlaces</code> from
+<code>PerHuman</code>. It counts
+file calls, not time, so a busy machine can't make it flaky.</p>
+<p class="file"><a href="https://github.com/showell/roc-chat/blob/53fe270531163f14b2d82aeee8b9d8e0043321ed/app/route_cost_probes.txt#L10-L31"><code>app/route_cost_probes.txt</code></a>, lines 10-31, trimmed</p>
+<pre class="plain"><code>Constant anyone GET /favicon.ico
+...
+Constant anyone POST /login name=Tam&amp;password=wrong
+...
+PerReaderPlaces human GET /chat
+...
+PerHuman human GET /invites
+...
+PerHuman anyone POST /login/code code=12345678</code></pre>
+<p>The gate runs the cost check last and holds the probes out of class at zero. The fixes that brought the routes
+into their classes came first: a plain read (a GET with no <code>Authorization</code> header) is admitted from its origin alone, and the server keeps the directory in
+memory, reading it again whenever its folders change. While the directory is unchanged, the favicon makes no file
+reads.</p>
+<p>What it doesn't do: a route no probe reaches is declared, not measured. The counts are for a warm server with a
+quiet directory: the request after any change in the directory's folders reads the directory again, and a human's
+request that brings them online lists every other human's conversation with them, whatever its route. And a class
+bounds how calls grow with the number of humans, not with what one request names, such as a long transcript.</p>
+
+<h2>The lesson</h2>
+<p>The types answered "who acts?" They didn't ask "whose credential?", "what else must happen?" or "what does a
+request cost?" Each idiom adds one question:</p>
+<ul>
+<li><strong>Whose credential?</strong> A writer takes a proof, not an id. <code>AccountProof</code> and
+<code>HumanClaim.Unclaimed</code> are opaque, and only their own modules make them, so a call with a bare id
+doesn't compile. The credential check makes sure every other path to a credential names its proof.</li>
+<li><strong>What else must happen?</strong> Where the rule is "after this, that", and the type system can't force
+it, a check over Roc's parse tree holds it, at zero, in the gate.</li>
+<li><strong>What does a request cost?</strong> A <code>match</code> with no catch-all makes every route declare
+its class, and a measurement holds the probed routes to it.</li>
+</ul>
+<p>In each case the rule has one home: one function ends streams, one type names their holders, one writer sets a
+password, each check's table judges every write, and one <code>match</code> names every route's cost.</p>
+
+<h2>The commits</h2>
+<p class="commits">In <a href="https://github.com/showell/roc-chat">roc-chat</a>:</p>
+<ul class="commits">
+<li>Streams: <a href="https://github.com/showell/roc-chat/commit/c8c599bf83c6fad2813d38c5e0d3d9c58b2e9d86">c8c599b</a>
+(<code>UserStreams</code> and <code>StreamHolder</code>),
+<a href="https://github.com/showell/roc-chat/commit/4751710ba01df299d43fd9b49e3923df1f2b20c7">4751710</a> (the
+check), <a href="https://github.com/showell/roc-chat/commit/67bf20d2285ea7459d935733a1b7f7f5fb891b92">67bf20d</a>
+(end-to-end steps), <a href="https://github.com/showell/roc-chat/commit/cda9a51ed341bdf5184ba396b364e7c25328c99b">cda9a51</a>
+(a stale import).</li>
+<li>Invites: <a href="https://github.com/showell/roc-chat/commit/c1f27319921319bb0a8b923d19777e309fc55ca3">c1f2731</a>
+(the takeover, reproduced end to end),
+<a href="https://github.com/showell/roc-chat/commit/22088b681b01b03b43edddbb6d2a66432aa41cff">22088b6</a> (the
+check), <a href="https://github.com/showell/roc-chat/commit/b7e71dc28b579c5ff527ed341b01392794b467f4">b7e71dc</a>
+(<code>HumanClaim</code> and <code>AccountProof</code>),
+<a href="https://github.com/showell/roc-chat/commit/30ab83a84bde730f84f3e3350f281b973ad2cab2">30ab83a</a> (style).</li>
+<li>The reload: <a href="https://github.com/showell/roc-chat/commit/3c5509311f01c4dcb2ed71e7060c5df6519a08de">3c55093</a>,
+<a href="https://github.com/showell/roc-chat/commit/0d8585c9d75a8ea9f0f6a40752edde59316ba19e">0d8585c</a> (tests).</li>
+<li>The header: <a href="https://github.com/showell/roc-chat/commit/bf09e6e6b4decd51ac30d61ecc217bfad5665b6f">bf09e6e</a>.</li>
+<li>Cost: <a href="https://github.com/showell/roc-chat/commit/3cb576515f4197ae06f6140bf9e7548e7bcf2b74">3cb5765</a>
+(counting a request's file calls),
+<a href="https://github.com/showell/roc-chat/commit/0c184e7c0cfa28d8ce23135436721ea18d634494">0c184e7</a> (a plain
+read's head reads no directory),
+<a href="https://github.com/showell/roc-chat/commit/83a0b32b05aa128fcd80c4c028021993aac345ab">83a0b32</a> (the
+directory kept in memory),
+<a href="https://github.com/showell/roc-chat/commit/1aa9e8353bbd7cf26a60415966aae008c6fda73f">1aa9e83</a> (four holes a
+cold audit found in the kept directory, closed),
+<a href="https://github.com/showell/roc-chat/commit/cdb43f18131da2cab6fab3246e28e9690f17ee20">cdb43f1</a> (every
+route's class, held in the gate),
+<a href="https://github.com/showell/roc-chat/commit/0fbcbbde149e8fc263452aa71a01bce71d5aba0e">0fbcbbd</a> (named
+<code>Growth</code>),
+<a href="https://github.com/showell/roc-chat/commit/7bbed48004845a389b7eeffa8e43b5d05b5d0a0f">7bbed48</a> (probes for
+the sign-in, join and member routes).</li>
+<li>The Markdown spec: <a href="https://github.com/showell/roc-chat/commit/40329593810066775322a5020831950ecfa8b2f6">4032959</a>,
+<a href="https://github.com/showell/roc-chat/commit/3af8f83d1da428c3806856e9682db87c9c9d4274">3af8f83</a>.</li>
+</ul>
+<p class="commits">In <a href="https://github.com/showell/roc-markdown">roc-markdown</a>:
+<a href="https://github.com/showell/roc-markdown/commit/c3ced12c13ab465976626969df5bb7d24115a98e">c3ced12</a> (a
+fence's language ends at any HTML space).</p>
+
+<footer><a href="../" target="_self">Steve's Roc Work</a></footer>
+</main>
+</body>
+</html>
