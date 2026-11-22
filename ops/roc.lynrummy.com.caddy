@@ -16,7 +16,22 @@
 roc.lynrummy.com {
 	import access_log roc
 	root * /srv/roc-site
-	encode zstd gzip
+	# Caddy's default list leaves application/octet-stream out, which is how
+	# safari-walk's 4.8 MB asset bundle (index.data) is served; it shrinks to
+	# 1.5 MB under zstd. Images keep their own types and stay uncompressed.
+	encode {
+		zstd
+		gzip
+		match {
+			header Content-Type text/*
+			header Content-Type application/javascript*
+			header Content-Type application/json*
+			header Content-Type application/wasm*
+			header Content-Type application/xml*
+			header Content-Type image/svg+xml*
+			header Content-Type application/octet-stream*
+		}
+	}
 	header {
 		Cache-Control "no-cache"
 		Cross-Origin-Opener-Policy "same-origin"
