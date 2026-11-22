@@ -12,7 +12,12 @@
 -- `<secret PROD>`, and Shale scrubs it from what they print. ssh's own
 -- messages are off (LogLevel=QUIET), because they name the bare address,
 -- which the scrubber does not know; a step whose ssh fails says so by its
--- exit, 255, and `ssh <user>@<address> true` by hand says why.
+-- exit, 255, and `ssh <user>@<address> true` by hand says why. Shale
+-- confines every program to its mounts, and ssh's key is outside them, so
+-- each ssh, rsync and scp to prod runs `unconfined` (`to_prod`), which Shale
+-- allows for a host of the box's hosts file (~/.config/shale/hosts) alone,
+-- and the push is `git_push`'s, unconfined over ssh to a remote of the
+-- remotes file (~/.config/shale/remotes) alone.
 --
 -- Each step refuses, by name, what it cannot do:
 --
@@ -24,7 +29,8 @@
 -- 3. prod's Caddyfile must import /etc/caddy/sites/*.caddy and define the
 --    `access_log` snippet the site block imports. That Caddyfile is
 --    angry-gopher's deploy/Caddyfile; this script never edits it.
--- 4. It pushes.
+-- 4. It pushes, by `git_push(".")`: the branch HEAD is on, to its
+--    upstream's branch of the same name, and refused when it has none.
 -- 5. It makes /srv/roc-site/ on the droplet (the ssh user's), copies
 --    site/live/ there with rsync --delete, and proves the copy verbatim:
 --    every file's sha256 on prod must equal staging's, and no file may be
@@ -65,9 +71,18 @@ function with_dest(o)
   return o
 end
 
+-- `run`'s options `o` for an ssh, scp or rsync to prod: the secret at
+-- `<secret PROD>`, and outside Shale's confinement, since ssh reads its key,
+-- which no confined program may (`unconfined`: the prod host of the box's
+-- hosts file alone).
+function to_prod(o)
+  o.unconfined = "deploy: ssh reads its key, outside the mounts"
+  return with_dest(o)
+end
+
 -- `cmd` run on prod by its shell, whatever its exit.
 function on_prod(cmd, o)
-  return run({"ssh", "-o", "BatchMode=yes", "-o", "LogLevel=QUIET", "<secret PROD>", cmd}, with_dest(o))
+  return run({"ssh", "-o", "BatchMode=yes", "-o", "LogLevel=QUIET", "<secret PROD>", cmd}, to_prod(o))
 end
 
 -- What a failed ssh says: 255 is ssh's own failure, any other exit the
@@ -154,14 +169,16 @@ if not asks_prod("grep -q '^(access_log) {' /etc/caddy/Caddyfile", "prod's Caddy
   refuse("prod's Caddyfile does not define the access_log snippet ops/" .. BLOCK .. " imports: install angry-gopher's deploy/Caddyfile first")
 end
 
--- 4. The push.
+-- 4. The push: git_push's, which runs it unconfined over ssh (its key is
+-- outside the mounts) and refuses a branch with no upstream, or one whose
+-- upstream has another name.
 git_push(".")
 
 -- 5. The copy, proved.
 print("copying " .. LIVE .. "/ at " .. git_log(".", {n = 1, paths = {LIVE}})[1].hash .. " to prod's " .. DIR .. "/")
 must_on_prod("sudo install -d -o \"$(id -un)\" -g \"$(id -un)\" -m 755 " .. DIR, "making " .. DIR)
 local sync = run({"rsync", "-rlt", "--delete", "--chmod=D755,F644", "-e", SSH_E, LIVE .. "/", "<secret PROD>:" .. DIR .. "/"},
-  with_dest({timeout_ms = 600000, tail = 20}))
+  to_prod({timeout_ms = 600000, tail = 20}))
 if get(sync, "code", -1) ~= 0 then refuse("rsync to prod's " .. DIR .. "/ exited " .. get(sync, "code", -1) .. ": " .. trim(sync.out)) end
 local files = {}
 for e in walk_all(LIVE, {kind = "file"}) do push(files, "./" .. sub(e.path, #LIVE + 2)) end
@@ -191,7 +208,7 @@ if get(same, "code", -1) == 0 then
 else
   print("installing the site block")
   local cp = run({"scp", "-q", "-o", "BatchMode=yes", "-o", "LogLevel=QUIET", "ops/" .. BLOCK, "<secret PROD>:/tmp/" .. BLOCK},
-    with_dest({timeout_ms = 120000, tail = 20}))
+    to_prod({timeout_ms = 120000, tail = 20}))
   if get(cp, "code", -1) ~= 0 then refuse("scp of ops/" .. BLOCK .. " to prod's /tmp exited " .. get(cp, "code", -1) .. ": " .. trim(cp.out)) end
   -- A remote shell script of constants alone: BLOCK, and the paths.
   local B = "/etc/caddy/sites/" .. BLOCK
