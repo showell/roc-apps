@@ -282,7 +282,10 @@ expect {
 		Err(BehindCamera) => False
 	}
 }
-expect RiderView.rider_point_ahead({ right: Distance.zero, forward: Distance.from_metres(0.4) }).is_ok()
+expect RiderView.rider_point_ahead({
+	right: Distance.zero,
+	forward: Distance.from_metres(0.4),
+}).is_ok()
 expect {
 	short_of_plane = { right: Distance.zero, forward: Distance.from_metres(0.39) }
 	RiderView.rider_point_ahead(short_of_plane) == Err(BehindCamera)

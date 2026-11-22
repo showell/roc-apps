@@ -182,7 +182,10 @@ expect {
 	steady_step = Motorcycle.initial.motorcycle_at_next_step(Motorcycle.initial.steady_controls())
 	leaning_step = Motorcycle.motorcycle_at_next_step(
 		Motorcycle.initial,
-		{ lean: Angle.Lean.radians(0.5), acceleration: Acceleration.from_metres_a_step_each_step(0.25) },
+		{
+			lean: Angle.Lean.radians(0.5),
+			acceleration: Acceleration.from_metres_a_step_each_step(0.25),
+		},
 	)
 	[
 		(steady_step.route_place.road_point.across.to_metres(), 0.0),

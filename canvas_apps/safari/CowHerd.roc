@@ -176,7 +176,9 @@ expect cows_without_bull.len() == 5
 
 # The bull leads, facing left, and the cows follow him in their own order, facing
 # right.
-expect cows_with_bull.take_first(1).map(|leader| leader.road_point.along) == [Along.from_metres(24.0)]
+expect
+	cows_with_bull.take_first(1).map(|leader| leader.road_point.along)
+		== [Along.from_metres(24.0)]
 expect
 	cows_with_bull.take_first(1).map(|leader| leader.kind)
 		== [Billboard.adult_billboard(bull, FacesLeft)]

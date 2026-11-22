@@ -175,7 +175,10 @@ expect planned_at({ metres_off: 23.1, metres_a_step: 2.0 }) == Unplanned
 expect planned_at({ metres_off: 2.0, metres_a_step: 0.0 }) == Unplanned
 
 # At 2.5 m a step the plan is made 3 + 2.5 × 10 = 28 m off.
-expect EncounterPlan.planning_gap(ten_step_span, Speed.from_metres_a_step(2.5)) == Distance.from_metres(28.0)
+expect EncounterPlan.planning_gap(
+	ten_step_span,
+	Speed.from_metres_a_step(2.5),
+) == Distance.from_metres(28.0)
 expect planned_at({ metres_off: 28.0, metres_a_step: 2.5 }) == StartsAt(Clock.at_step(100))
 
 ## A rider 8 m off the animal at 1 m a step, whom `plan_for` plans for at

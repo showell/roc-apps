@@ -319,7 +319,10 @@ expect {
 		..Motorcycle.initial,
 		route_place: {
 			..Motorcycle.initial.route_place,
-			road_point: { ..Motorcycle.initial.route_place.road_point, across: Across.from_metres(1.0) },
+			road_point: {
+				..Motorcycle.initial.route_place.road_point,
+				across: Across.from_metres(1.0),
+			},
 		},
 	}
 	match (Coast.coast_outcome(state), Coast.path_motorcycles(state).last()) {
@@ -396,7 +399,10 @@ centered_motorcycle = |along, speed| {
 	..Motorcycle.initial,
 	route_place: {
 		..Motorcycle.initial.route_place,
-		road_point: { ..Motorcycle.initial.route_place.road_point, along: Along.from_metres(along) },
+		road_point: {
+			..Motorcycle.initial.route_place.road_point,
+			along: Along.from_metres(along),
+		},
 	},
 	speed: Speed.from_metres_a_step(speed),
 }
@@ -504,14 +510,17 @@ expect distracting_segment.segment_pigs().count_if(|pig| pig == watched_pig) == 
 ## A motorcycle `along` metres into its segment, at rest in every other way.
 motorcycle_at : F64 -> Motorcycle
 motorcycle_at = |along| {
-	..Motorcycle.initial,
-	route_place: {
-		..Motorcycle.initial.route_place,
-		road_point: {
-			..Motorcycle.initial.route_place.road_point,
-			along: Motorcycle.initial.route_place.road_point.along.plus(Distance.from_metres(along)),
+	initial_place = Motorcycle.initial.route_place
+	{
+		..Motorcycle.initial,
+		route_place: {
+			..initial_place,
+			road_point: {
+				..initial_place.road_point,
+				along: initial_place.road_point.along.plus(Distance.from_metres(along)),
+			},
 		},
-	},
+	}
 }
 
 ## A motorcycle on the distracting segment, `metres` short of the pig.

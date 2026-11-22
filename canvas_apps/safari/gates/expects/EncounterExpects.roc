@@ -586,7 +586,10 @@ expect
 # there lowers the feet 0.27775 px.
 expect {
 	first_corner = |perch| first_corner_coordinates(bird_shapes_at({ pose: Perched }, perch))
-	raised = { right: Distance.from_metres(11.0), lift: Camera.eye_height.plus(Distance.from_metres(11.0)) }
+	raised = {
+		right: Distance.from_metres(11.0),
+		lift: Camera.eye_height.plus(Distance.from_metres(11.0)),
+	}
 	[
 		({ right: Distance.from_metres(0.0), lift: Camera.eye_height }, [479.656, 294.56]),
 		(raised, [529.656, 244.56275]),

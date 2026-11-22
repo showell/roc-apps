@@ -43,7 +43,10 @@ CatWidgetApp :: [].{
 
 ## The rider's approach, in about seven seconds.
 closing_gap : PlaybackButtons.NumberRange(Distance)
-closing_gap = PlaybackButtons.gap_range({ farthest: Distance.from_metres(50.0), metres_a_frame: 0.125 })
+closing_gap = PlaybackButtons.gap_range({
+	farthest: Distance.from_metres(50.0),
+	metres_a_frame: 0.125,
+})
 
 ## A typical speed on the ride. At one metre a step, a step of the buttons is a
 ## step of the ride, and the crossing's steps read as metres.

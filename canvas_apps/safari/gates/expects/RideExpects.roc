@@ -126,7 +126,10 @@ placed_rider = |index, along| {
 		route_place: {
 			..Motorcycle.initial.route_place,
 			segment_index: Route.SegmentIndex.number(index),
-			road_point: { ..Motorcycle.initial.route_place.road_point, along: Along.from_metres(along) },
+			road_point: {
+				..Motorcycle.initial.route_place.road_point,
+				along: Along.from_metres(along),
+			},
 		},
 	},
 }

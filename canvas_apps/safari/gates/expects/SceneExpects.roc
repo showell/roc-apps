@@ -164,7 +164,10 @@ expect
 		|(height, outcome)|
 			Pipeline.sighting_above_horizon_of(
 				{
-					road_point: { along: Along.from_metres(1000.0), across: Across.from_metres(1.5) },
+					road_point: {
+						along: Along.from_metres(1000.0),
+						across: Across.from_metres(1.5),
+					},
 					lift: Distance.zero,
 					kind: Post.({ height: height }),
 				},

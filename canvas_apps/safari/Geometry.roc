@@ -152,7 +152,10 @@ expect Geometry.outer_side(Angle.Turn.degrees(-70.0)) == RightSide
 
 ## A bend of `degrees` out of a 300 metre segment.
 bend_of : F64 -> Geometry.Bend
-bend_of = |degrees| { segment_length: Distance.from_metres(300.0), turn: Angle.Turn.degrees(degrees) }
+bend_of = |degrees| {
+	segment_length: Distance.from_metres(300.0),
+	turn: Angle.Turn.degrees(degrees),
+}
 
 ## Whether two road points are within a nanometre of each other.
 is_near : Geometry.RoadPoint, Geometry.RoadPoint -> Bool

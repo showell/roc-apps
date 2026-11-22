@@ -206,12 +206,30 @@ expect bank_inner_points.all(is_inside_water)
 # A point just inside each edge of the water is in it, and one just past is not.
 expect
 	[
-		({ past_end: Distance.from_metres(3.1), out_from_middle: Distance.from_metres(10.0) }, True),
-		({ past_end: Distance.from_metres(2.9), out_from_middle: Distance.from_metres(10.0) }, False),
-		({ past_end: Distance.from_metres(31.9), out_from_middle: Distance.from_metres(17.0) }, True),
-		({ past_end: Distance.from_metres(32.1), out_from_middle: Distance.from_metres(17.0) }, False),
-		({ past_end: Distance.from_metres(10.0), out_from_middle: Distance.from_metres(3.9) }, True),
-		({ past_end: Distance.from_metres(10.0), out_from_middle: Distance.from_metres(3.3) }, False),
+		(
+			{ past_end: Distance.from_metres(3.1), out_from_middle: Distance.from_metres(10.0) },
+			True,
+		),
+		(
+			{ past_end: Distance.from_metres(2.9), out_from_middle: Distance.from_metres(10.0) },
+			False,
+		),
+		(
+			{ past_end: Distance.from_metres(31.9), out_from_middle: Distance.from_metres(17.0) },
+			True,
+		),
+		(
+			{ past_end: Distance.from_metres(32.1), out_from_middle: Distance.from_metres(17.0) },
+			False,
+		),
+		(
+			{ past_end: Distance.from_metres(10.0), out_from_middle: Distance.from_metres(3.9) },
+			True,
+		),
+		(
+			{ past_end: Distance.from_metres(10.0), out_from_middle: Distance.from_metres(3.3) },
+			False,
+		),
 	].all(|(at, inside)| is_inside_water(at) == inside)
 
 expect

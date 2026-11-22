@@ -33,7 +33,10 @@ BendsWidgetApp :: [].{
 	Model : {}
 
 	canvas_app : CanvasApp.CanvasApp(BendsWidgetApp.Model)
-	canvas_app = WidgetPage.fixed_picture_app({ title: "Three bends in the road", shapes: fixed_picture_shapes })
+	canvas_app = WidgetPage.fixed_picture_app({
+		title: "Three bends in the road",
+		shapes: fixed_picture_shapes,
+	})
 }
 
 ## A bend in the picture: how far it turns, and the x on the canvas of the

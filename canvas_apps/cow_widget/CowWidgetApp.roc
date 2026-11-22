@@ -82,7 +82,10 @@ cow_forward = Distance.from_metres(10.0)
 ## Farther off than the cow and nearer the road, so on the screen the bull
 ## stands to the cow's right, and the two face each other.
 bull_spot : { forward : Distance, across : Across }
-bull_spot = { forward: Distance.from_metres(14.0), across: Across.left_of_middle(Distance.from_metres(3.5)) }
+bull_spot = {
+	forward: Distance.from_metres(14.0),
+	across: Across.left_of_middle(Distance.from_metres(3.5)),
+}
 
 ## The cow on the grass, `forward` down the road from the camera.
 cow_at : Distance -> Geometry.Placed(Billboard)

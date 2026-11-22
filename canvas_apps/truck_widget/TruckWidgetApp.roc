@@ -28,7 +28,10 @@ TruckWidgetApp :: [].{
 	Model : {}
 
 	canvas_app : CanvasApp.CanvasApp(TruckWidgetApp.Model)
-	canvas_app = WidgetPage.fixed_picture_app({ title: "A truck three ways", shapes: fixed_picture_shapes })
+	canvas_app = WidgetPage.fixed_picture_app({
+		title: "A truck three ways",
+		shapes: fixed_picture_shapes,
+	})
 }
 
 ## One truck in the picture: the words under it, how far round toward the

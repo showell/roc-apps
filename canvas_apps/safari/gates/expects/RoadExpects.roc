@@ -209,8 +209,14 @@ expect
 expect {
 	stretches =
 		Route.from_segments([
-			{ ..Fixtures.bending_right(Fixtures.segment_of([])), length: Distance.from_metres(300.0) },
-			{ ..Fixtures.bending_right(Fixtures.segment_of([])), length: Distance.from_metres(150.0) },
+			{
+				..Fixtures.bending_right(Fixtures.segment_of([])),
+				length: Distance.from_metres(300.0),
+			},
+			{
+				..Fixtures.bending_right(Fixtures.segment_of([])),
+				length: Distance.from_metres(150.0),
+			},
 			{ ..Fixtures.segment_of([]), length: Distance.from_metres(50.0) },
 		]).segments_with_ends()
 	lengths = stretches.map(|stretch| stretch.segment.length.to_metres())

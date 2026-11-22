@@ -130,7 +130,10 @@ frozen_frames = 24
 leap_frames : List(CrossingFrame)
 leap_frames = [
 	{ pose: Coil, way: Leaping({ way_to_verge: Fraction.zero, lift: Distance.zero }) },
-	{ pose: Flight, way: Leaping({ way_to_verge: Fraction.of(0.4), lift: Distance.from_metres(0.27) }) },
+	{
+		pose: Flight,
+		way: Leaping({ way_to_verge: Fraction.of(0.4), lift: Distance.from_metres(0.27) }),
+	},
 	{
 		pose: Flight,
 		way: Leaping({ way_to_verge: Fraction.of(0.85), lift: Distance.from_metres(0.17) }),
@@ -196,7 +199,9 @@ crossing_timeline = |crossing| {
 }
 
 the_cat : CatCrossing
-the_cat = CatCrossing.by_tree({ tree: { along: Along.from_metres(100.0), across: Across.from_metres(3.0) } })
+the_cat = CatCrossing.by_tree({
+	tree: { along: Along.from_metres(100.0), across: Across.from_metres(3.0) },
+})
 
 ## The same cat by a tree farther from the road.
 the_cat_by_a_far_tree : CatCrossing

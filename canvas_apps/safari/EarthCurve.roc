@@ -178,9 +178,18 @@ expect
 
 # 1000 m out, a top 3.6 m below level shows over the horizon, and one 3.8 m below
 # is hidden. Within the horizon nothing is hidden, even a top down on the ground.
-expect !EarthCurve.is_below_horizon({ point: straight_ahead(1000.0), top: Distance.from_metres(-3.6) })
-expect EarthCurve.is_below_horizon({ point: straight_ahead(1000.0), top: Distance.from_metres(-3.8) })
-expect !EarthCurve.is_below_horizon({ point: straight_ahead(400.0), top: Distance.from_metres(-0.8) })
+expect !EarthCurve.is_below_horizon({
+	point: straight_ahead(1000.0),
+	top: Distance.from_metres(-3.6),
+})
+expect EarthCurve.is_below_horizon({
+	point: straight_ahead(1000.0),
+	top: Distance.from_metres(-3.8),
+})
+expect !EarthCurve.is_below_horizon({
+	point: straight_ahead(400.0),
+	top: Distance.from_metres(-0.8),
+})
 
 ## A point on the level of the rider, `right` and `forward` in metres.
 level_at : F64, F64 -> RiderView.PointAtHeight

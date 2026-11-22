@@ -47,7 +47,10 @@ BirdWidgetApp :: [].{
 ## The rider's approach, from a gap past where the bird takes off down to zero, in
 ## ten seconds.
 closing_gap : PlaybackButtons.NumberRange(Distance)
-closing_gap = PlaybackButtons.gap_range({ farthest: Distance.from_metres(75.0), metres_a_frame: 0.125 })
+closing_gap = PlaybackButtons.gap_range({
+	farthest: Distance.from_metres(75.0),
+	metres_a_frame: 0.125,
+})
 
 ## The rider's speed, steady, and the widget's own choice. The flight plays a
 ## frame a step, so this is how much of the gap each frame of the flight takes,
