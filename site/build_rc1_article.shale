@@ -12,7 +12,7 @@
 --   <!-- stats REPO -->     one repository's build times, from the stats TSV;
 --   <!-- sizes -->          every build's output size, from the stats TSV;
 --   <!-- overview -->       every project, largest first, with its lines of
---                            Roc and two build times (OVERVIEW).
+--                            Roc, two build times and what passed (OVERVIEW).
 --
 -- The stats TSV is docs/rc1-build-stats.tsv, which tools/measure_roc_builds.shale
 -- writes. Code is colored by tools/color_code (roc-syntax-color), built here
@@ -22,7 +22,7 @@
 --   cd <roc-apps checkout> && shale site/build_rc1_article.shale check=1    # fails if the page is stale
 --
 -- A snippet's repository is roc-apps itself (`roc-apps`) or a sibling
--- checkout through the `repos` mount (`repos:shale`); each must hold the
+-- checkout through the `repos` mount (`repos:roc-screensaver`); each must hold the
 -- snippet's commit. A marker the prose holds that the script lacks, or a
 -- snippet or repro the prose doesn't name, stops the run. Then site/build.sh
 -- copies the page into the dev channel.
@@ -54,8 +54,6 @@ const SNIPPETS = {
   {name = "typed-literal", repo = "roc-screensaver", rev = "a14102b87c01dacb3f3f4c9b4cb0cbbb37b8ef8d", path = "screensavers/lanterns/JetFlyBy.roc", language = "roc", ranges = {{325, 326}}},
   {name = "erased-payload", repo = "roc-screensaver", rev = "094031915dd110f1f3021410491238d23df15ce1", path = "host/glue/platform_abi.zig", language = "zig", ranges = {{81, 86}}},
   {name = "opaque-lists", repo = "roc-screensaver", rev = "094031915dd110f1f3021410491238d23df15ce1", path = "host/glue/platform_abi.zig", language = "zig", ranges = {{573, 576}, {602, 606}}},
-  {name = "shim-frame", repo = "shale", rev = "64e4892e310d9f52314b1f96cddd7052a5c2fafd", path = "c/builtin_table.shale", language = "shale", ranges = {{742, 742}}},
-  {name = "frame-walk", repo = "shale", rev = "64e4892e310d9f52314b1f96cddd7052a5c2fafd", path = "roc_platform/host/host.c", language = "c", ranges = {{619, 631}}},
 }
 
 -- Each reduced program: its name in the prose, its folder, and its files in
@@ -71,16 +69,16 @@ const REPROS = {
 -- times come from the stats TSV; for the rest, `lines` is its tracked .roc
 -- files' lines on its main branch at `at` (counted as
 -- tools/measure_roc_builds.shale counts them), and `why` says why it has no
--- times. `pending` marks a project whose times wait for its move.
+-- times. `pending` marks a project whose times and checks wait for its
+-- move. `checks` says what passed at RC1, from the move's commits.
 const OVERVIEW = {
-  {repo = "roc-apps", measured = true},
+  {repo = "roc-apps", measured = true, checks = "green: 51 apps, Safari's and four other gates"},
   {repo = "roc-chat", lines = "45272", at = "bab918d", why = "pending", pending = true},
-  {repo = "shale", label = "Shale", lines = "33253", at = "eeb0aaa4", why = "not timed: its Roc is recipes and their tests"},
-  {repo = "roc-screensaver", measured = true},
-  {repo = "roc-markdown", measured = true},
-  {repo = "roc-syntax-color", measured = true},
-  {repo = "roc-types", lines = "76", at = "879e1f8", why = "a Zig program; its Roc is test fixtures"},
-  {repo = "roc-ast", lines = "7", at = "0d054a2", why = "a Zig program; its Roc is test fixtures"},
+  {repo = "roc-screensaver", measured = true, checks = "green: 34 checks, frames pixel-identical"},
+  {repo = "roc-markdown", measured = true, checks = "green: its gates"},
+  {repo = "roc-syntax-color", measured = true, checks = "green: its gates"},
+  {repo = "roc-types", lines = "76", at = "879e1f8", why = "a Zig program; its Roc is test fixtures", checks = "rebuilt, tested, published"},
+  {repo = "roc-ast", lines = "7", at = "0d054a2", why = "a Zig program; its Roc is test fixtures", checks = "rebuilt, tested, published"},
 }
 
 -- The steps and conditions of the stats tables, in the order they show.
@@ -389,17 +387,17 @@ end
 -- Every project, largest first: its lines of Roc, and its dev build after
 -- a root change and its cold check, old nightly against RC1.
 function overview_html(rows)
-  local out = {"<div class=\"table\"><table>", "<thead><tr><th>project</th><th class=\"num\">lines of Roc</th><th class=\"num\">dev build after an edit, CPU s</th><th class=\"num\">cold check, CPU s</th></tr></thead>", "<tbody>"}
+  local out = {"<div class=\"table\"><table>", "<thead><tr><th>project</th><th class=\"num\">lines of Roc</th><th class=\"num\">dev build after an edit, CPU s</th><th class=\"num\">cold check, CPU s</th><th>RC1 checks</th></tr></thead>", "<tbody>"}
   for o in OVERVIEW do
     local name = "<a href=\"https://github.com/showell/" .. o.repo .. "\">" .. get(o, "label", o.repo) .. "</a>"
     if has_key(o, "measured") then
       local r = stats_row(rows, o.repo, NEW_PIN, "check", "cold")
       if r == nil then fail("build_rc1_article: " .. STATS .. " has no RC1 cold check for " .. o.repo) end
-      push(out, "<tr><td>" .. name .. "</td><td class=\"num\">" .. commas(r.roc_lines) .. "</td>" .. pair_cell(rows, o.repo, "build-dev", "root_changed") .. pair_cell(rows, o.repo, "check", "cold") .. "</tr>")
+      push(out, "<tr><td>" .. name .. "</td><td class=\"num\">" .. commas(r.roc_lines) .. "</td>" .. pair_cell(rows, o.repo, "build-dev", "root_changed") .. pair_cell(rows, o.repo, "check", "cold") .. "<td>" .. escaped(o.checks) .. "</td></tr>")
+    elseif has_key(o, "pending") then
+      push(out, "<tr><td>" .. name .. "</td><td class=\"num\">" .. commas(o.lines) .. "</td><td colspan=\"3\"><span class=\"pending\">pending</span></td></tr>")
     else
-      local why = escaped(o.why)
-      if has_key(o, "pending") then why = "<span class=\"pending\">pending</span>" end
-      push(out, "<tr><td>" .. name .. "</td><td class=\"num\">" .. commas(o.lines) .. "</td><td colspan=\"2\">" .. why .. "</td></tr>")
+      push(out, "<tr><td>" .. name .. "</td><td class=\"num\">" .. commas(o.lines) .. "</td><td colspan=\"2\">" .. escaped(o.why) .. "</td><td>" .. escaped(o.checks) .. "</td></tr>")
     end
   end
   push(out, "</tbody></table></div>")

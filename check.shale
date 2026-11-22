@@ -28,7 +28,7 @@
 -- one, and when the RC1 article, site/web/release-candidate-compiles/index.html,
 -- isn't what site/build_rc1_article.shale would write from its prose, the
 -- stats TSV, its reduced programs and the commits it quotes, which needs the
--- shale and roc-screensaver checkouts beside this one. And it runs
+-- roc-screensaver checkout beside this one. And it runs
 -- site/deploy_test.shale, the prod deploy's refusals before it reaches prod,
 -- which needs a shale with `run`'s `secret_args` and asks 1.1.1.1 for
 -- roc.lynrummy.com.
