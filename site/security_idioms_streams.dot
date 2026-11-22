@@ -1,21 +1,24 @@
-// The security idioms page's drawing of a revocation reaching every open
-// stream: the action writes, then UserStreams ends the user's streams under
-// each holder StreamHolder names. site/build_security_idioms.shale renders
-// it with Graphviz and puts the SVG in the page.
+// The security idioms page's drawing of the bracket that ends a user's
+// streams: the action calls UserStreams.with_streams_ended!, which hands its
+// body the Revoker every revoking write takes, then ends the user's streams
+// under each holder StreamHolder names. A write outside the bracket has no
+// Revoker. site/build_security_idioms.shale renders it with Graphviz and
+// puts the SVG in the page.
 digraph streams {
   graph [rankdir=TB, bgcolor="transparent", nodesep=0.3, ranksep=0.4, fontname="sans-serif", fontsize=12];
   node [shape=box, style="rounded", fontname="sans-serif", fontsize=12, margin="0.14,0.08"];
   edge [fontname="sans-serif", fontsize=11, arrowsize=0.7];
 
   action [label="an action that revokes\nsign_out_others!, a join, a GitHub link, ..."];
-  write [label="its write\nan ends writer"];
-  ending [label="UserStreams.end_every_stream!(id)", style="rounded,bold"];
-  host [label="the host ends every stream\nheld under that name"];
+  bracket [label="UserStreams.with_streams_ended!(id, revoke!)", style="rounded,bold"];
+  write [label="revoke!'s writes\neach takes the Revoker"];
+  outside [label="a revoking write outside\nhas no Revoker: no compile", style="rounded,dashed"];
+  host [label="the host ends every stream held under\nStreamHolder.user(id) and .agent(id)"];
   reconnect [label="each stream reconnects\nand is judged again"];
+  { rank=same; write; outside; }
 
-  action -> write [label="first"];
-  action -> ending [label="then"];
-  ending -> host [label="StreamHolder.user(id)"];
-  ending -> host [label="StreamHolder.agent(id)"];
+  action -> bracket;
+  bracket -> write [label="1. a Revoker for id"];
+  write -> host [label="2. then, always, it ends"];
   host -> reconnect;
 }
