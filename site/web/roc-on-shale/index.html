@@ -273,7 +273,7 @@ computation.</p>
 <p class="facts">Its effects: <code>Shale.arg!</code>, <code>Shale.fail!</code>, <code>Shale.glob!</code>, <code>Shale.print!</code>, <code>Shale.re_find!</code>, <code>Shale.re_lines!</code>, <code>Shale.re_replace!</code>, <code>Shale.read!</code>, <code>Shale.roc_tree!</code>, <code>Shale.run!</code>.<br>Roc: 727 lines in 5 files. Shale original: 372 lines, plus 1,374 lines in the 6 libraries it loads, which other recipes share.</p>
 <h4>Roc</h4>
 <p class="file">It also imports <code>Declarations</code>, <code>Finding</code>, <code>Headers</code>, <code>Text</code>, <code>Tree</code> from <a href="#shared-library">the shared Roc library</a>.</p>
-<p class="file"><a href="https://github.com/showell/shale/blob/ef3cb9bdf660ffdf58b97ad825751475f0254ec8/cookbook/roc/find_unclear_names/find_unclear_names.roc"><code>cookbook/roc/find_unclear_names/find_unclear_names.roc</code></a>, 191 lines</p>
+<p class="file"><a href="https://github.com/showell/shale/blob/e319d9497afb46e30c6b3116e43f72208cada380/cookbook/roc/find_unclear_names/find_unclear_names.roc"><code>cookbook/roc/find_unclear_names/find_unclear_names.roc</code></a>, 191 lines</p>
 <pre><code><span class="syn-comment">## find_unclear_names, in Roc on Shale&#39;s platform (roc_platform/README.md):</span>
 <span class="syn-comment">## names and top comments that say less than they should. Its launcher,</span>
 <span class="syn-comment">## cookbook/roc/find_unclear_names.shale, is how it is run, and its header</span>
@@ -466,7 +466,7 @@ computation.</p>
 	}
 }
 </code></pre>
-<p class="file"><a href="https://github.com/showell/shale/blob/ef3cb9bdf660ffdf58b97ad825751475f0254ec8/cookbook/roc/find_unclear_names/Abbreviation.roc"><code>cookbook/roc/find_unclear_names/Abbreviation.roc</code></a>, 191 lines</p>
+<p class="file"><a href="https://github.com/showell/shale/blob/e319d9497afb46e30c6b3116e43f72208cada380/cookbook/roc/find_unclear_names/Abbreviation.roc"><code>cookbook/roc/find_unclear_names/Abbreviation.roc</code></a>, 191 lines</p>
 <pre><code><span class="syn-comment">## The `abbreviation` check: a name with a word short for another, read from</span>
 <span class="syn-comment">## every name a file gives or says (the launcher&#39;s header says the rule).</span>
 <span class="syn-keyword">import</span> lib.<span class="syn-type">Declarations</span>
@@ -659,7 +659,7 @@ computation.</p>
 	)
 }
 </code></pre>
-<p class="file"><a href="https://github.com/showell/shale/blob/ef3cb9bdf660ffdf58b97ad825751475f0254ec8/cookbook/roc/find_unclear_names/ModuleDoc.roc"><code>cookbook/roc/find_unclear_names/ModuleDoc.roc</code></a>, 134 lines</p>
+<p class="file"><a href="https://github.com/showell/shale/blob/e319d9497afb46e30c6b3116e43f72208cada380/cookbook/roc/find_unclear_names/ModuleDoc.roc"><code>cookbook/roc/find_unclear_names/ModuleDoc.roc</code></a>, 134 lines</p>
 <pre><code><span class="syn-comment">## The `module_doc` check: a module with no `##` doc, or a top comment or a</span>
 <span class="syn-comment">## doc above its type that tells history (the launcher&#39;s header says the</span>
 <span class="syn-comment">## rule). A package&#39;s or platform&#39;s main.roc says which modules it keeps to</span>
@@ -795,7 +795,7 @@ computation.</p>
 	exposed.is_package <span class="syn-keyword">and</span> !(<span class="syn-type">List</span>.contains(exposed.modules, <span class="syn-type">Tree</span>.module_name(path))) <span class="syn-keyword">and</span> <span class="syn-type">Text</span>.basename(path) != <span class="syn-string">&quot;main.roc&quot;</span>
 }
 </code></pre>
-<p class="file"><a href="https://github.com/showell/shale/blob/ef3cb9bdf660ffdf58b97ad825751475f0254ec8/cookbook/roc/find_unclear_names/PureMutator.roc"><code>cookbook/roc/find_unclear_names/PureMutator.roc</code></a>, 74 lines</p>
+<p class="file"><a href="https://github.com/showell/shale/blob/e319d9497afb46e30c6b3116e43f72208cada380/cookbook/roc/find_unclear_names/PureMutator.roc"><code>cookbook/roc/find_unclear_names/PureMutator.roc</code></a>, 74 lines</p>
 <pre><code><span class="syn-comment">## The `pure_mutator` check: an annotated pure function whose first word</span>
 <span class="syn-comment">## says it changes something though nothing is being added to (the</span>
 <span class="syn-comment">## launcher&#39;s header says the rule).</span>
@@ -871,7 +871,7 @@ computation.</p>
 <span class="syn-name">is_mutation_word</span> : <span class="syn-type">Str</span> -&gt; <span class="syn-type">Bool</span>
 <span class="syn-name">is_mutation_word</span> = |w| w == <span class="syn-string">&quot;push&quot;</span> <span class="syn-keyword">or</span> w == <span class="syn-string">&quot;fill&quot;</span> <span class="syn-keyword">or</span> w == <span class="syn-string">&quot;set&quot;</span> <span class="syn-keyword">or</span> w == <span class="syn-string">&quot;append&quot;</span> <span class="syn-keyword">or</span> w == <span class="syn-string">&quot;add&quot;</span>
 </code></pre>
-<p class="file"><a href="https://github.com/showell/shale/blob/ef3cb9bdf660ffdf58b97ad825751475f0254ec8/cookbook/roc/find_unclear_names/SelfTest.roc"><code>cookbook/roc/find_unclear_names/SelfTest.roc</code></a>, 137 lines</p>
+<p class="file"><a href="https://github.com/showell/shale/blob/e319d9497afb46e30c6b3116e43f72208cada380/cookbook/roc/find_unclear_names/SelfTest.roc"><code>cookbook/roc/find_unclear_names/SelfTest.roc</code></a>, 137 lines</p>
 <pre><code><span class="syn-comment">## The recipe&#39;s self-test: each plant under</span>
 <span class="syn-comment">## cookbook/roc/plants/find_unclear_names/ run through the launcher, held to</span>
 <span class="syn-comment">## its findings, its exit and what it says.</span>
@@ -884,7 +884,7 @@ computation.</p>
 	<span class="syn-comment">## `checks` no row fires fails too, since it could be blind.</span>
 	<span class="syn-name">run!</span> : <span class="syn-type">List</span>(<span class="syn-type">Str</span>) =&gt; {}
 	<span class="syn-name">run!</span> = |checks| {
-		<span class="syn-keyword">var</span> $wrong = <span class="syn-number">0</span>
+		<span class="syn-keyword">var</span> $wrong = <span class="syn-number">0</span>.<span class="syn-type">U64</span>
 		<span class="syn-keyword">var</span> $fired = <span class="syn-type">Set</span>.empty()
 		<span class="syn-keyword">for</span> row <span class="syn-keyword">in</span> rows {
 			argv = <span class="syn-type">List</span>.concat([<span class="syn-string">&quot;shale&quot;</span>, launcher, <span class="syn-string">&quot;glob=</span>${row.glob}<span class="syn-string">&quot;</span>], row.args)
@@ -1395,7 +1395,7 @@ use(<span class="syn-string">&quot;./house.shale&quot;</span>)
 <p class="facts">Its effects: <code>Shale.arg!</code>, <code>Shale.fail!</code>, <code>Shale.glob!</code>, <code>Shale.print!</code>, <code>Shale.re_lines!</code>, <code>Shale.read!</code>, <code>Shale.roc_tree!</code>, <code>Shale.run!</code>.<br>Roc: 263 lines in 2 files. Shale original: 106 lines, plus 261 lines in the 4 libraries it loads, which other recipes share.</p>
 <h4>Roc</h4>
 <p class="file">It also imports <code>Finding</code>, <code>Imports</code>, <code>Text</code> from <a href="#shared-library">the shared Roc library</a>.</p>
-<p class="file"><a href="https://github.com/showell/shale/blob/ef3cb9bdf660ffdf58b97ad825751475f0254ec8/cookbook/roc/find_unused_imports/find_unused_imports.roc"><code>cookbook/roc/find_unused_imports/find_unused_imports.roc</code></a>, 112 lines</p>
+<p class="file"><a href="https://github.com/showell/shale/blob/e319d9497afb46e30c6b3116e43f72208cada380/cookbook/roc/find_unused_imports/find_unused_imports.roc"><code>cookbook/roc/find_unused_imports/find_unused_imports.roc</code></a>, 112 lines</p>
 <pre><code><span class="syn-comment">## find_unused_imports, in Roc on Shale&#39;s platform (roc_platform/README.md):</span>
 <span class="syn-comment">## the import lines a Roc file never uses, since Roc doesn&#39;t warn of one. Its</span>
 <span class="syn-comment">## launcher, cookbook/roc/find_unused_imports.shale, is how it is run, and</span>
@@ -1509,7 +1509,7 @@ use(<span class="syn-string">&quot;./house.shale&quot;</span>)
 	}
 }
 </code></pre>
-<p class="file"><a href="https://github.com/showell/shale/blob/ef3cb9bdf660ffdf58b97ad825751475f0254ec8/cookbook/roc/find_unused_imports/SelfTest.roc"><code>cookbook/roc/find_unused_imports/SelfTest.roc</code></a>, 151 lines</p>
+<p class="file"><a href="https://github.com/showell/shale/blob/e319d9497afb46e30c6b3116e43f72208cada380/cookbook/roc/find_unused_imports/SelfTest.roc"><code>cookbook/roc/find_unused_imports/SelfTest.roc</code></a>, 151 lines</p>
 <pre><code><span class="syn-comment">## The recipe&#39;s self-test: each plant under</span>
 <span class="syn-comment">## cookbook/roc/plants/find_unused_imports/ run through the launcher, held to</span>
 <span class="syn-comment">## its findings, its exit and what it says.</span>
@@ -1522,7 +1522,7 @@ use(<span class="syn-string">&quot;./house.shale&quot;</span>)
 	<span class="syn-comment">## blind.</span>
 	<span class="syn-name">run!</span> : {} =&gt; {}
 	<span class="syn-name">run!</span> = |{}| {
-		<span class="syn-keyword">var</span> $wrong = <span class="syn-number">0</span>
+		<span class="syn-keyword">var</span> $wrong = <span class="syn-number">0</span>.<span class="syn-type">U64</span>
 		<span class="syn-keyword">for</span> row <span class="syn-keyword">in</span> rows {
 			pattern = <span class="syn-string">&quot;</span>${plants}${row.plant}<span class="syn-string">&quot;</span>
 			command = [<span class="syn-string">&quot;shale&quot;</span>, launcher, <span class="syn-string">&quot;glob=</span>${pattern}<span class="syn-string">&quot;</span>]
@@ -2255,7 +2255,7 @@ use(<span class="syn-string">&quot;cookbook:findings.shale&quot;</span>)
 <p class="facts">Its effects: <code>Shale.arg!</code>, <code>Shale.fail!</code>, <code>Shale.glob!</code>, <code>Shale.print!</code>, <code>Shale.re_lines!</code>, <code>Shale.read!</code>, <code>Shale.roc_tree!</code>, <code>Shale.run!</code>.<br>Roc: 675 lines in 4 files. Shale original: 183 lines, plus 1,328 lines in the 5 libraries it loads, which other recipes share.</p>
 <h4>Roc</h4>
 <p class="file">It also imports <code>Declarations</code>, <code>Finding</code>, <code>Headers</code>, <code>Text</code>, <code>Tree</code> from <a href="#shared-library">the shared Roc library</a>.</p>
-<p class="file"><a href="https://github.com/showell/shale/blob/ef3cb9bdf660ffdf58b97ad825751475f0254ec8/cookbook/roc/check_families/check_families.roc"><code>cookbook/roc/check_families/check_families.roc</code></a>, 177 lines</p>
+<p class="file"><a href="https://github.com/showell/shale/blob/e319d9497afb46e30c6b3116e43f72208cada380/cookbook/roc/check_families/check_families.roc"><code>cookbook/roc/check_families/check_families.roc</code></a>, 177 lines</p>
 <pre><code><span class="syn-comment">## check_families, in Roc on Shale&#39;s platform (roc_platform/README.md):</span>
 <span class="syn-comment">## modules that look alike but are spelled unlike, and one type name with two</span>
 <span class="syn-comment">## meanings. A reader who knows `TreeSighting.trees_in_view` looks for</span>
@@ -2434,7 +2434,7 @@ use(<span class="syn-string">&quot;cookbook:findings.shale&quot;</span>)
 	}
 }
 </code></pre>
-<p class="file"><a href="https://github.com/showell/shale/blob/ef3cb9bdf660ffdf58b97ad825751475f0254ec8/cookbook/roc/check_families/Family.roc"><code>cookbook/roc/check_families/Family.roc</code></a>, 198 lines</p>
+<p class="file"><a href="https://github.com/showell/shale/blob/e319d9497afb46e30c6b3116e43f72208cada380/cookbook/roc/check_families/Family.roc"><code>cookbook/roc/check_families/Family.roc</code></a>, 198 lines</p>
 <pre><code><span class="syn-comment">## The `family` check. Modules whose names end in the same word form a family</span>
 <span class="syn-comment">## when there are three or more of them (`CatSighting`, `TreeSighting`,</span>
 <span class="syn-comment">## `RailSighting`). A public name that more than half of a family&#39;s members</span>
@@ -2634,7 +2634,7 @@ use(<span class="syn-string">&quot;cookbook:findings.shale&quot;</span>)
 	<span class="syn-type">Str</span>.join_with($parts, <span class="syn-string">&quot; &quot;</span>)
 }
 </code></pre>
-<p class="file"><a href="https://github.com/showell/shale/blob/ef3cb9bdf660ffdf58b97ad825751475f0254ec8/cookbook/roc/check_families/SelfTest.roc"><code>cookbook/roc/check_families/SelfTest.roc</code></a>, 208 lines</p>
+<p class="file"><a href="https://github.com/showell/shale/blob/e319d9497afb46e30c6b3116e43f72208cada380/cookbook/roc/check_families/SelfTest.roc"><code>cookbook/roc/check_families/SelfTest.roc</code></a>, 208 lines</p>
 <pre><code><span class="syn-comment">## The recipe&#39;s self-test: each plant under</span>
 <span class="syn-comment">## cookbook/roc/plants/check_families/ run through the launcher, held to its</span>
 <span class="syn-comment">## findings, its exit and what it says.</span>
@@ -2646,7 +2646,7 @@ use(<span class="syn-string">&quot;cookbook:findings.shale&quot;</span>)
 	<span class="syn-comment">## `checks` no row fires fails too, since it could be blind.</span>
 	<span class="syn-name">run!</span> : <span class="syn-type">List</span>(<span class="syn-type">Str</span>) =&gt; {}
 	<span class="syn-name">run!</span> = |checks| {
-		<span class="syn-keyword">var</span> $wrong = <span class="syn-number">0</span>
+		<span class="syn-keyword">var</span> $wrong = <span class="syn-number">0</span>.<span class="syn-type">U64</span>
 		<span class="syn-keyword">var</span> $fired = <span class="syn-type">Set</span>.empty()
 		<span class="syn-keyword">for</span> row <span class="syn-keyword">in</span> rows {
 			command = [<span class="syn-string">&quot;shale&quot;</span>, launcher, <span class="syn-string">&quot;glob=</span>${row.plant}<span class="syn-string">&quot;</span>].concat(row.arguments)
@@ -2844,7 +2844,7 @@ use(<span class="syn-string">&quot;cookbook:findings.shale&quot;</span>)
 	$faults
 }
 </code></pre>
-<p class="file"><a href="https://github.com/showell/shale/blob/ef3cb9bdf660ffdf58b97ad825751475f0254ec8/cookbook/roc/check_families/Twin.roc"><code>cookbook/roc/check_families/Twin.roc</code></a>, 92 lines</p>
+<p class="file"><a href="https://github.com/showell/shale/blob/e319d9497afb46e30c6b3116e43f72208cada380/cookbook/roc/check_families/Twin.roc"><code>cookbook/roc/check_families/Twin.roc</code></a>, 92 lines</p>
 <pre><code><span class="syn-comment">## The `twin_name` check: one type name declared in two modules with two</span>
 <span class="syn-comment">## different shapes, such as `Cat.Pose` and `Geom.Pose`, one word with two</span>
 <span class="syn-comment">## meanings, so a reader who knows one guesses the other wrong. It is</span>
@@ -4882,7 +4882,7 @@ use(<span class="syn-string">&quot;./gate_recipe.shale&quot;</span>)
 <p class="facts">Its effects: <code>Shale.arg!</code>, <code>Shale.exists!</code>, <code>Shale.fail!</code>, <code>Shale.glob!</code>, <code>Shale.print!</code>, <code>Shale.re_find!</code>, <code>Shale.re_lines!</code>, <code>Shale.read!</code>, <code>Shale.roc_tree!</code>, <code>Shale.run!</code>.<br>Roc: 748 lines in 6 files. Shale original: 207 lines, plus 1,232 lines in the 4 libraries it loads, which other recipes share.</p>
 <h4>Roc</h4>
 <p class="file">It also imports <code>Declarations</code>, <code>Finding</code>, <code>Text</code>, <code>Tree</code> from <a href="#shared-library">the shared Roc library</a>.</p>
-<p class="file"><a href="https://github.com/showell/shale/blob/ef3cb9bdf660ffdf58b97ad825751475f0254ec8/cookbook/roc/check_name_types/check_name_types.roc"><code>cookbook/roc/check_name_types/check_name_types.roc</code></a>, 121 lines</p>
+<p class="file"><a href="https://github.com/showell/shale/blob/e319d9497afb46e30c6b3116e43f72208cada380/cookbook/roc/check_name_types/check_name_types.roc"><code>cookbook/roc/check_name_types/check_name_types.roc</code></a>, 121 lines</p>
 <pre><code><span class="syn-comment">## check_name_types, in Roc on Shale&#39;s platform (roc_platform/README.md):</span>
 <span class="syn-comment">## names that disagree with their types. A reader who sees `bull_dist` takes</span>
 <span class="syn-comment">## it for a `Distance`, one who sees `forward : F64` beside `forward :</span>
@@ -5005,7 +5005,7 @@ use(<span class="syn-string">&quot;./gate_recipe.shale&quot;</span>)
 	}
 }
 </code></pre>
-<p class="file"><a href="https://github.com/showell/shale/blob/ef3cb9bdf660ffdf58b97ad825751475f0254ec8/cookbook/roc/check_name_types/BareBesideUnit.roc"><code>cookbook/roc/check_name_types/BareBesideUnit.roc</code></a>, 78 lines</p>
+<p class="file"><a href="https://github.com/showell/shale/blob/e319d9497afb46e30c6b3116e43f72208cada380/cookbook/roc/check_name_types/BareBesideUnit.roc"><code>cookbook/roc/check_name_types/BareBesideUnit.roc</code></a>, 78 lines</p>
 <pre><code><span class="syn-comment">## The `bare_beside_unit` check: a field that is a bare number in one record</span>
 <span class="syn-comment">## and a unit in another, a unit being a nominal type built on a number and</span>
 <span class="syn-comment">## declared in the files read. It means a retyping stopped halfway. Each bare</span>
@@ -5085,7 +5085,7 @@ use(<span class="syn-string">&quot;./gate_recipe.shale&quot;</span>)
 	}
 }
 </code></pre>
-<p class="file"><a href="https://github.com/showell/shale/blob/ef3cb9bdf660ffdf58b97ad825751475f0254ec8/cookbook/roc/check_name_types/NameType.roc"><code>cookbook/roc/check_name_types/NameType.roc</code></a>, 113 lines</p>
+<p class="file"><a href="https://github.com/showell/shale/blob/e319d9497afb46e30c6b3116e43f72208cada380/cookbook/roc/check_name_types/NameType.roc"><code>cookbook/roc/check_name_types/NameType.roc</code></a>, 113 lines</p>
 <pre><code><span class="syn-comment">## The `name_type` check: a name whose last word is in the project&#39;s table has</span>
 <span class="syn-comment">## a type the table doesn&#39;t allow. A function is judged by what it returns,</span>
 <span class="syn-comment">## and a type by its last part, so `Geom.Distance` is `Distance`. In a name</span>
@@ -5200,7 +5200,7 @@ use(<span class="syn-string">&quot;./gate_recipe.shale&quot;</span>)
 	}
 }
 </code></pre>
-<p class="file"><a href="https://github.com/showell/shale/blob/ef3cb9bdf660ffdf58b97ad825751475f0254ec8/cookbook/roc/check_name_types/NoValue.roc"><code>cookbook/roc/check_name_types/NoValue.roc</code></a>, 70 lines</p>
+<p class="file"><a href="https://github.com/showell/shale/blob/e319d9497afb46e30c6b3116e43f72208cada380/cookbook/roc/check_name_types/NoValue.roc"><code>cookbook/roc/check_name_types/NoValue.roc</code></a>, 70 lines</p>
 <pre><code><span class="syn-comment">## The `no_value` check: a constant whose first word is `no`, `none` or</span>
 <span class="syn-comment">## `unset` and whose type is not a `Bool` or a tag union. An ordinary value</span>
 <span class="syn-comment">## kept to mean &quot;none&quot; should be a tag. A `List` has its own empty case, and a</span>
@@ -5272,7 +5272,7 @@ use(<span class="syn-string">&quot;./gate_recipe.shale&quot;</span>)
 	what: <span class="syn-string">&quot;`</span>${value.name}<span class="syn-string">` means none and is a `</span>${value.written_type}<span class="syn-string">`: keep the case as a tag&quot;</span>,
 }
 </code></pre>
-<p class="file"><a href="https://github.com/showell/shale/blob/ef3cb9bdf660ffdf58b97ad825751475f0254ec8/cookbook/roc/check_name_types/SelfTest.roc"><code>cookbook/roc/check_name_types/SelfTest.roc</code></a>, 226 lines</p>
+<p class="file"><a href="https://github.com/showell/shale/blob/e319d9497afb46e30c6b3116e43f72208cada380/cookbook/roc/check_name_types/SelfTest.roc"><code>cookbook/roc/check_name_types/SelfTest.roc</code></a>, 226 lines</p>
 <pre><code><span class="syn-comment">## The recipe&#39;s self-test: each plant under</span>
 <span class="syn-comment">## cookbook/roc/plants/check_name_types/ run through the launcher, held to its</span>
 <span class="syn-comment">## findings, its exit and what it says. It copies</span>
@@ -5285,7 +5285,7 @@ use(<span class="syn-string">&quot;./gate_recipe.shale&quot;</span>)
 	<span class="syn-comment">## `checks` no row fires fails too, since it could be blind.</span>
 	<span class="syn-name">run!</span> : <span class="syn-type">List</span>(<span class="syn-type">Str</span>) =&gt; {}
 	<span class="syn-name">run!</span> = |checks| {
-		<span class="syn-keyword">var</span> $wrong = <span class="syn-number">0</span>
+		<span class="syn-keyword">var</span> $wrong = <span class="syn-number">0</span>.<span class="syn-type">U64</span>
 		<span class="syn-keyword">var</span> $fired = <span class="syn-type">Set</span>.empty()
 		<span class="syn-keyword">for</span> row <span class="syn-keyword">in</span> rows {
 			command = [<span class="syn-string">&quot;shale&quot;</span>, launcher, <span class="syn-string">&quot;glob=</span>${row.plant}<span class="syn-string">&quot;</span>].concat(row.arguments)
@@ -5500,7 +5500,7 @@ use(<span class="syn-string">&quot;./gate_recipe.shale&quot;</span>)
 	$faults
 }
 </code></pre>
-<p class="file"><a href="https://github.com/showell/shale/blob/ef3cb9bdf660ffdf58b97ad825751475f0254ec8/cookbook/roc/check_name_types/Words.roc"><code>cookbook/roc/check_name_types/Words.roc</code></a>, 140 lines</p>
+<p class="file"><a href="https://github.com/showell/shale/blob/e319d9497afb46e30c6b3116e43f72208cada380/cookbook/roc/check_name_types/Words.roc"><code>cookbook/roc/check_name_types/Words.roc</code></a>, 140 lines</p>
 <pre><code><span class="syn-comment">## The words the checks read beside the code: the prepositions</span>
 <span class="syn-comment">## (cookbook/words/prepositions.txt) and a project&#39;s table of words and the</span>
 <span class="syn-comment">## types its names must hold, as the `table=` file gives it. Each line of the</span>
@@ -5862,7 +5862,7 @@ use(<span class="syn-string">&quot;./gate_recipe.shale&quot;</span>)
 <p class="facts">Its effects: <code>Shale.arg!</code>, <code>Shale.exists!</code>, <code>Shale.fail!</code>, <code>Shale.glob!</code>, <code>Shale.print!</code>, <code>Shale.re_find!</code>, <code>Shale.re_lines!</code>, <code>Shale.read!</code>, <code>Shale.roc_tree!</code>, <code>Shale.run!</code>.<br>Roc: 814 lines in 5 files. Shale original: 300 lines, plus 1,232 lines in the 4 libraries it loads, which other recipes share.</p>
 <h4>Roc</h4>
 <p class="file">It also imports <code>Finding</code>, <code>Text</code>, <code>Tree</code> from <a href="#shared-library">the shared Roc library</a>.</p>
-<p class="file"><a href="https://github.com/showell/shale/blob/ef3cb9bdf660ffdf58b97ad825751475f0254ec8/cookbook/roc/find_bare_floats/find_bare_floats.roc"><code>cookbook/roc/find_bare_floats/find_bare_floats.roc</code></a>, 116 lines</p>
+<p class="file"><a href="https://github.com/showell/shale/blob/e319d9497afb46e30c6b3116e43f72208cada380/cookbook/roc/find_bare_floats/find_bare_floats.roc"><code>cookbook/roc/find_bare_floats/find_bare_floats.roc</code></a>, 116 lines</p>
 <pre><code><span class="syn-comment">## find_bare_floats, in Roc on Shale&#39;s platform (roc_platform/README.md):</span>
 <span class="syn-comment">## every bare `F64` in a project&#39;s declarations, for a project that keeps its</span>
 <span class="syn-comment">## floats inside unit types, where a `Metres` says what an `F64` doesn&#39;t.</span>
@@ -5980,7 +5980,7 @@ use(<span class="syn-string">&quot;./gate_recipe.shale&quot;</span>)
 	}
 }
 </code></pre>
-<p class="file"><a href="https://github.com/showell/shale/blob/ef3cb9bdf660ffdf58b97ad825751475f0254ec8/cookbook/roc/find_bare_floats/Exceptions.roc"><code>cookbook/roc/find_bare_floats/Exceptions.roc</code></a>, 124 lines</p>
+<p class="file"><a href="https://github.com/showell/shale/blob/e319d9497afb46e30c6b3116e43f72208cada380/cookbook/roc/find_bare_floats/Exceptions.roc"><code>cookbook/roc/find_bare_floats/Exceptions.roc</code></a>, 124 lines</p>
 <pre><code><span class="syn-comment">## A project&#39;s table of the floats that stay floats (`table=`), read: each</span>
 <span class="syn-comment">## line `Name: reason`, a name a module or what is in it (`Pixels`,</span>
 <span class="syn-comment">## `Scene.fade`, `Animation.Spot.lift`). The longest line that fits a</span>
@@ -6106,7 +6106,7 @@ use(<span class="syn-string">&quot;./gate_recipe.shale&quot;</span>)
 		<span class="syn-type">Err</span>(_) =&gt; <span class="syn-keyword">crash</span> <span class="syn-string">&quot;find_bare_floats: the table&#39;s pattern has a group, the name&quot;</span>
 	}
 </code></pre>
-<p class="file"><a href="https://github.com/showell/shale/blob/ef3cb9bdf660ffdf58b97ad825751475f0254ec8/cookbook/roc/find_bare_floats/Floats.roc"><code>cookbook/roc/find_bare_floats/Floats.roc</code></a>, 145 lines</p>
+<p class="file"><a href="https://github.com/showell/shale/blob/e319d9497afb46e30c6b3116e43f72208cada380/cookbook/roc/find_bare_floats/Floats.roc"><code>cookbook/roc/find_bare_floats/Floats.roc</code></a>, 145 lines</p>
 <pre><code><span class="syn-comment">## The rule, `bare_float`: an `F64` in a top-level or member annotation or in</span>
 <span class="syn-comment">## a type declaration, however deep in the type (a field, a list&#39;s element, a</span>
 <span class="syn-comment">## tag&#39;s payload), each `F64` a finding, unless the table excuses it or a</span>
@@ -6253,7 +6253,7 @@ use(<span class="syn-string">&quot;./gate_recipe.shale&quot;</span>)
 	}
 }
 </code></pre>
-<p class="file"><a href="https://github.com/showell/shale/blob/ef3cb9bdf660ffdf58b97ad825751475f0254ec8/cookbook/roc/find_bare_floats/SelfTest.roc"><code>cookbook/roc/find_bare_floats/SelfTest.roc</code></a>, 268 lines</p>
+<p class="file"><a href="https://github.com/showell/shale/blob/e319d9497afb46e30c6b3116e43f72208cada380/cookbook/roc/find_bare_floats/SelfTest.roc"><code>cookbook/roc/find_bare_floats/SelfTest.roc</code></a>, 268 lines</p>
 <pre><code><span class="syn-comment">## The recipe&#39;s self-test: each plant under</span>
 <span class="syn-comment">## cookbook/roc/plants/find_bare_floats/ run through the launcher, held to its</span>
 <span class="syn-comment">## findings, its exit and what it says. It copies</span>
@@ -6269,7 +6269,7 @@ use(<span class="syn-string">&quot;./gate_recipe.shale&quot;</span>)
 	<span class="syn-name">run!</span> : <span class="syn-type">List</span>(<span class="syn-type">Str</span>) =&gt; {}
 	<span class="syn-name">run!</span> = |checks| {
 		$wrong : <span class="syn-type">U64</span>
-		<span class="syn-keyword">var</span> $wrong = <span class="syn-number">0</span>
+		<span class="syn-keyword">var</span> $wrong = <span class="syn-number">0</span>.<span class="syn-type">U64</span>
 		<span class="syn-keyword">var</span> $fired = <span class="syn-type">Set</span>.empty()
 		<span class="syn-keyword">for</span> row <span class="syn-keyword">in</span> rows {
 			command = [<span class="syn-string">&quot;shale&quot;</span>, launcher, <span class="syn-string">&quot;glob=</span>${row.plant}<span class="syn-string">&quot;</span>].concat(row.arguments)
@@ -6523,7 +6523,7 @@ use(<span class="syn-string">&quot;./gate_recipe.shale&quot;</span>)
 	$faults
 }
 </code></pre>
-<p class="file"><a href="https://github.com/showell/shale/blob/ef3cb9bdf660ffdf58b97ad825751475f0254ec8/cookbook/roc/find_bare_floats/TestHelpers.roc"><code>cookbook/roc/find_bare_floats/TestHelpers.roc</code></a>, 161 lines</p>
+<p class="file"><a href="https://github.com/showell/shale/blob/e319d9497afb46e30c6b3116e43f72208cada380/cookbook/roc/find_bare_floats/TestHelpers.roc"><code>cookbook/roc/find_bare_floats/TestHelpers.roc</code></a>, 161 lines</p>
 <pre><code><span class="syn-comment">## The helpers only tests use, whose floats aren&#39;t judged. A helper is a</span>
 <span class="syn-comment">## definition at the top level of a type module, outside the type&#39;s block,</span>
 <span class="syn-comment">## which the compiler lets no other module reach, so the file&#39;s own tree</span>
@@ -6996,10 +6996,10 @@ use(<span class="syn-string">&quot;./gate_recipe.shale&quot;</span>)
 <nav class="steps"><a href="#find_bare_floats">← previous</a> · <a href="#contents">contents</a> · <a href="#check_errors">next →</a></nav>
 <h3><a href="#find_extra_parens">find_extra_parens</a></h3>
 <p>The parentheses and braceless <code>if</code>s a code emitter leaves in Roc, found from Roc's own parse trees and, with write=1, taken off by the parser's spans and put through <code>roc fmt</code> until a pass changes nothing, its self-test rewriting copies of its plants.</p>
-<p class="facts">Its effects: <code>Shale.arg!</code>, <code>Shale.exists!</code>, <code>Shale.fail!</code>, <code>Shale.glob!</code>, <code>Shale.mkdir!</code>, <code>Shale.print!</code>, <code>Shale.re_find!</code>, <code>Shale.read!</code>, <code>Shale.real!</code>, <code>Shale.remove_tree!</code>, <code>Shale.roc_tree!</code>, <code>Shale.run!</code>, <code>Shale.write!</code>.<br>Roc: 980 lines in 6 files. Shale original: 442 lines, plus 121 lines in the 4 libraries it loads, which other recipes share.</p>
+<p class="facts">Its effects: <code>Shale.arg!</code>, <code>Shale.exists!</code>, <code>Shale.fail!</code>, <code>Shale.glob!</code>, <code>Shale.mkdir!</code>, <code>Shale.print!</code>, <code>Shale.re_find!</code>, <code>Shale.read!</code>, <code>Shale.real!</code>, <code>Shale.remove_tree!</code>, <code>Shale.roc_tree!</code>, <code>Shale.run!</code>, <code>Shale.write!</code>.<br>Roc: 985 lines in 6 files. Shale original: 442 lines, plus 121 lines in the 4 libraries it loads, which other recipes share.</p>
 <h4>Roc</h4>
 <p class="file">It also imports <code>Finding</code>, <code>Text</code>, <code>Tree</code> from <a href="#shared-library">the shared Roc library</a>.</p>
-<p class="file"><a href="https://github.com/showell/shale/blob/68cceeee2cdf46b63cd1ae437847f7a579c143a2/cookbook/roc/find_extra_parens/find_extra_parens.roc"><code>cookbook/roc/find_extra_parens/find_extra_parens.roc</code></a>, 89 lines</p>
+<p class="file"><a href="https://github.com/showell/shale/blob/0de24e62b5c65d644696261a413e22792d4b8b31/cookbook/roc/find_extra_parens/find_extra_parens.roc"><code>cookbook/roc/find_extra_parens/find_extra_parens.roc</code></a>, 89 lines</p>
 <pre><code><span class="syn-comment">## find_extra_parens, in Roc on Shale&#39;s platform (roc_platform/README.md):</span>
 <span class="syn-comment">## the parentheses and braceless `if`s that a code emitter leaves in Roc,</span>
 <span class="syn-comment">## which neither `roc check` nor `roc fmt` sees, found and, with `write=1`,</span>
@@ -7090,7 +7090,7 @@ use(<span class="syn-string">&quot;./gate_recipe.shale&quot;</span>)
 		<span class="syn-type">Shale</span>.fail!(<span class="syn-string">&quot;find_extra_parens: </span>${refusals}<span class="syn-string">, </span>${why}<span class="syn-string">&quot;</span>)
 	}
 </code></pre>
-<p class="file"><a href="https://github.com/showell/shale/blob/68cceeee2cdf46b63cd1ae437847f7a579c143a2/cookbook/roc/find_extra_parens/Report.roc"><code>cookbook/roc/find_extra_parens/Report.roc</code></a>, 124 lines</p>
+<p class="file"><a href="https://github.com/showell/shale/blob/0de24e62b5c65d644696261a413e22792d4b8b31/cookbook/roc/find_extra_parens/Report.roc"><code>cookbook/roc/find_extra_parens/Report.roc</code></a>, 124 lines</p>
 <pre><code><span class="syn-comment">## The findings across a run&#39;s files, as the lines the recipe prints, with</span>
 <span class="syn-comment">## its summary and the files Roc&#39;s parser refused. Findings stay in the files&#39;</span>
 <span class="syn-comment">## order and the tree&#39;s, as the Shale original printed them, never sorted.</span>
@@ -7216,7 +7216,7 @@ use(<span class="syn-string">&quot;./gate_recipe.shale&quot;</span>)
 		<span class="syn-type">LeftOut</span> =&gt; !(house_style.contains(check))
 	}
 </code></pre>
-<p class="file"><a href="https://github.com/showell/shale/blob/68cceeee2cdf46b63cd1ae437847f7a579c143a2/cookbook/roc/find_extra_parens/Rewriting.roc"><code>cookbook/roc/find_extra_parens/Rewriting.roc</code></a>, 167 lines</p>
+<p class="file"><a href="https://github.com/showell/shale/blob/0de24e62b5c65d644696261a413e22792d4b8b31/cookbook/roc/find_extra_parens/Rewriting.roc"><code>cookbook/roc/find_extra_parens/Rewriting.roc</code></a>, 172 lines</p>
 <pre><code><span class="syn-comment">## `write=1`: the files rewritten, one check a pass (Edits), each pass&#39;s</span>
 <span class="syn-comment">## files put through `roc fmt`, until a pass changes nothing, because taking</span>
 <span class="syn-comment">## off one pair of brackets can show the next. The Roc is the tree&#39;s own</span>
@@ -7277,7 +7277,12 @@ use(<span class="syn-string">&quot;./gate_recipe.shale&quot;</span>)
 		<span class="syn-keyword">if</span> !(<span class="syn-type">Shale</span>.exists!(roc)) {
 			<span class="syn-type">Shale</span>.fail!(<span class="syn-string">&quot;find_extra_parens: no </span>${roc}<span class="syn-string">: install Roc </span>${pin}<span class="syn-string"> into ~/tools/roc-</span>${pin}<span class="syn-string">/ (roc-apps&#39;s toolchain release carries it)&quot;</span>)
 		}
-		<span class="syn-type">Shale</span>.real!(roc)
+		real = <span class="syn-type">Shale</span>.real!(roc)
+		said = <span class="syn-type">Shale</span>.run!({ argv: [real, <span class="syn-string">&quot;version&quot;</span>], keep: <span class="syn-type">Whole</span>(<span class="syn-number">4000</span>), timeout_ms: <span class="syn-number">30000</span>, want: <span class="syn-string">&quot;&quot;</span> })
+		<span class="syn-keyword">if</span> <span class="syn-type">Text</span>.trim(said.out) != <span class="syn-string">&quot;Roc compiler version </span>${pin}<span class="syn-string">&quot;</span> {
+			<span class="syn-type">Shale</span>.fail!(<span class="syn-string">&quot;find_extra_parens: </span>${roc}<span class="syn-string"> says </span>${<span class="syn-type">Text</span>.trim(said.out)}<span class="syn-string">, not Roc compiler version </span>${pin}<span class="syn-string">&quot;</span>)
+		}
+		real
 	}
 }
 
@@ -7385,7 +7390,7 @@ use(<span class="syn-string">&quot;./gate_recipe.shale&quot;</span>)
 	}
 }
 </code></pre>
-<p class="file"><a href="https://github.com/showell/shale/blob/68cceeee2cdf46b63cd1ae437847f7a579c143a2/cookbook/roc/find_extra_parens/SelfTest.roc"><code>cookbook/roc/find_extra_parens/SelfTest.roc</code></a>, 111 lines</p>
+<p class="file"><a href="https://github.com/showell/shale/blob/0de24e62b5c65d644696261a413e22792d4b8b31/cookbook/roc/find_extra_parens/SelfTest.roc"><code>cookbook/roc/find_extra_parens/SelfTest.roc</code></a>, 111 lines</p>
 <pre><code><span class="syn-comment">## The recipe&#39;s self-test, the Shale original&#39;s: each plant in</span>
 <span class="syn-comment">## cookbook/roc/plants/find_extra_parens/ held to its marks (a line ending</span>
 <span class="syn-comment">## `# paren_if`, `# wrapped_body`, `# else_block` or `# lambda_if` must give</span>
@@ -7498,7 +7503,7 @@ use(<span class="syn-string">&quot;./gate_recipe.shale&quot;</span>)
 	{ wrong: $wrong, marks: $marks }
 }
 </code></pre>
-<p class="file"><a href="https://github.com/showell/shale/blob/68cceeee2cdf46b63cd1ae437847f7a579c143a2/cookbook/roc/find_extra_parens/Checks.roc"><code>cookbook/roc/find_extra_parens/Checks.roc</code></a>, 145 lines</p>
+<p class="file"><a href="https://github.com/showell/shale/blob/0de24e62b5c65d644696261a413e22792d4b8b31/cookbook/roc/find_extra_parens/Checks.roc"><code>cookbook/roc/find_extra_parens/Checks.roc</code></a>, 145 lines</p>
 <pre><code><span class="syn-comment">## The four checks of find_extra_parens, over Roc&#39;s tree of a file: the</span>
 <span class="syn-comment">## parentheses and braceless `if`s that a code emitter leaves (the launcher,</span>
 <span class="syn-comment">## cookbook/roc/find_extra_parens.shale, says each rule). A finding names</span>
@@ -7645,7 +7650,7 @@ use(<span class="syn-string">&quot;./gate_recipe.shale&quot;</span>)
 	}
 }
 </code></pre>
-<p class="file"><a href="https://github.com/showell/shale/blob/68cceeee2cdf46b63cd1ae437847f7a579c143a2/cookbook/roc/find_extra_parens/Edits.roc"><code>cookbook/roc/find_extra_parens/Edits.roc</code></a>, 344 lines</p>
+<p class="file"><a href="https://github.com/showell/shale/blob/0de24e62b5c65d644696261a413e22792d4b8b31/cookbook/roc/find_extra_parens/Edits.roc"><code>cookbook/roc/find_extra_parens/Edits.roc</code></a>, 344 lines</p>
 <pre><code><span class="syn-comment">## The edits that fix one check&#39;s findings in a file, made by the parser&#39;s</span>
 <span class="syn-comment">## spans, and the file&#39;s text with them made. Places in the text are counted</span>
 <span class="syn-comment">## from 1, as Shale&#39;s `sub` counts: an edit at `at` cuts `cut` bytes there and</span>
@@ -8443,10 +8448,10 @@ fail_if_refused(<span class="syn-string">&quot;find_extra_parens&quot;</span>, f
 <nav class="steps"><a href="#find_extra_parens">← previous</a> · <a href="#contents">contents</a> · <a href="#check_stacking">next →</a></nav>
 <h3><a href="#check_errors">check_errors</a></h3>
 <p>How Roc code reports failure, read from Roc's own parse trees and, when asked, Roc's own type checker: an error named by a shared alias of tags, a tag named like an optional, and a <code>??</code> that falls back to the list it stores into, a placeholder string or a number after an index.</p>
-<p class="facts">Its effects: <code>Shale.arg!</code>, <code>Shale.exists!</code>, <code>Shale.fail!</code>, <code>Shale.glob!</code>, <code>Shale.print!</code>, <code>Shale.re_find!</code>, <code>Shale.read!</code>, <code>Shale.real!</code>, <code>Shale.roc_tree!</code>, <code>Shale.run!</code>.<br>Roc: 889 lines in 6 files. Shale original: 462 lines, plus 376 lines in the 4 libraries it loads, which other recipes share.</p>
+<p class="facts">Its effects: <code>Shale.arg!</code>, <code>Shale.exists!</code>, <code>Shale.fail!</code>, <code>Shale.glob!</code>, <code>Shale.print!</code>, <code>Shale.re_find!</code>, <code>Shale.read!</code>, <code>Shale.real!</code>, <code>Shale.roc_tree!</code>, <code>Shale.run!</code>.<br>Roc: 893 lines in 6 files. Shale original: 462 lines, plus 376 lines in the 4 libraries it loads, which other recipes share.</p>
 <h4>Roc</h4>
 <p class="file">It also imports <code>Finding</code>, <code>Forest</code>, <code>RocTypes</code>, <code>Text</code>, <code>Tree</code> from <a href="#shared-library">the shared Roc library</a>.</p>
-<p class="file"><a href="https://github.com/showell/shale/blob/c5427f75e1627e4686e52866b4478922b04770d3/cookbook/roc/check_errors/check_errors.roc"><code>cookbook/roc/check_errors/check_errors.roc</code></a>, 185 lines</p>
+<p class="file"><a href="https://github.com/showell/shale/blob/0de24e62b5c65d644696261a413e22792d4b8b31/cookbook/roc/check_errors/check_errors.roc"><code>cookbook/roc/check_errors/check_errors.roc</code></a>, 185 lines</p>
 <pre><code><span class="syn-comment">## check_errors, in Roc on Shale&#39;s platform (roc_platform/README.md): how Roc</span>
 <span class="syn-comment">## code reports failure, against the rules in roc-apps docs/roc-style.md</span>
 <span class="syn-comment">## (&quot;Errors and failure&quot;). Its launcher, cookbook/roc/check_errors.shale, is</span>
@@ -8633,7 +8638,7 @@ fail_if_refused(<span class="syn-string">&quot;find_extra_parens&quot;</span>, f
 	}
 }
 </code></pre>
-<p class="file"><a href="https://github.com/showell/shale/blob/c5427f75e1627e4686e52866b4478922b04770d3/cookbook/roc/check_errors/ErrorAlias.roc"><code>cookbook/roc/check_errors/ErrorAlias.roc</code></a>, 214 lines</p>
+<p class="file"><a href="https://github.com/showell/shale/blob/0de24e62b5c65d644696261a413e22792d4b8b31/cookbook/roc/check_errors/ErrorAlias.roc"><code>cookbook/roc/check_errors/ErrorAlias.roc</code></a>, 214 lines</p>
 <pre><code><span class="syn-comment">## The `error_alias` check: a function&#39;s result is a `Try` whose error is an</span>
 <span class="syn-comment">## alias of tags (`ReadError : [Missing, Failed]`, or a module&#39;s</span>
 <span class="syn-comment">## `Accounts.Unreadable`) instead of the tags written in place. The alias is</span>
@@ -8849,7 +8854,7 @@ fail_if_refused(<span class="syn-string">&quot;find_extra_parens&quot;</span>, f
 	}
 }
 </code></pre>
-<p class="file"><a href="https://github.com/showell/shale/blob/c5427f75e1627e4686e52866b4478922b04770d3/cookbook/roc/check_errors/Fallbacks.roc"><code>cookbook/roc/check_errors/Fallbacks.roc</code></a>, 173 lines</p>
+<p class="file"><a href="https://github.com/showell/shale/blob/0de24e62b5c65d644696261a413e22792d4b8b31/cookbook/roc/check_errors/Fallbacks.roc"><code>cookbook/roc/check_errors/Fallbacks.roc</code></a>, 173 lines</p>
 <pre><code><span class="syn-comment">## The checks of what a `??` falls back to:</span>
 <span class="syn-comment">##</span>
 <span class="syn-comment">## - `set_fallback`: `List.set(l, i, v) ?? l`, or `l.set(i, v) ?? l`, where</span>
@@ -9024,7 +9029,7 @@ fail_if_refused(<span class="syn-string">&quot;find_extra_parens&quot;</span>, f
 	kind == <span class="syn-string">&quot;e-int&quot;</span> <span class="syn-keyword">or</span> kind == <span class="syn-string">&quot;e-frac&quot;</span>
 }
 </code></pre>
-<p class="file"><a href="https://github.com/showell/shale/blob/c5427f75e1627e4686e52866b4478922b04770d3/cookbook/roc/check_errors/OptionalTag.roc"><code>cookbook/roc/check_errors/OptionalTag.roc</code></a>, 87 lines</p>
+<p class="file"><a href="https://github.com/showell/shale/blob/0de24e62b5c65d644696261a413e22792d4b8b31/cookbook/roc/check_errors/OptionalTag.roc"><code>cookbook/roc/check_errors/OptionalTag.roc</code></a>, 87 lines</p>
 <pre><code><span class="syn-comment">## The `optional_tag` check: a tag named like an optional (`Some`, `None`,</span>
 <span class="syn-comment">## `Nothing`; cookbook/words/optionals.txt lists them), matched by its whole</span>
 <span class="syn-comment">## name. A type that names one beside a tag with a payload is a finding at</span>
@@ -9113,7 +9118,7 @@ fail_if_refused(<span class="syn-string">&quot;find_extra_parens&quot;</span>, f
 	tag: place.tag,
 }
 </code></pre>
-<p class="file"><a href="https://github.com/showell/shale/blob/c5427f75e1627e4686e52866b4478922b04770d3/cookbook/roc/check_errors/SelfTest.roc"><code>cookbook/roc/check_errors/SelfTest.roc</code></a>, 130 lines</p>
+<p class="file"><a href="https://github.com/showell/shale/blob/0de24e62b5c65d644696261a413e22792d4b8b31/cookbook/roc/check_errors/SelfTest.roc"><code>cookbook/roc/check_errors/SelfTest.roc</code></a>, 130 lines</p>
 <pre><code><span class="syn-comment">## The recipe&#39;s self-test, run after the checks over the plants in</span>
 <span class="syn-comment">## cookbook/roc/plants/check_errors/ and its typed/ folder: each plant is</span>
 <span class="syn-comment">## named for the check it holds, and that check must fire on it and on no</span>
@@ -9245,7 +9250,7 @@ fail_if_refused(<span class="syn-string">&quot;find_extra_parens&quot;</span>, f
 <span class="syn-name">is_plant_for</span> : <span class="syn-type">Str</span>, <span class="syn-type">Str</span> -&gt; <span class="syn-type">Bool</span>
 <span class="syn-name">is_plant_for</span> = |name, check| name == <span class="syn-string">&quot;</span>${check}<span class="syn-string">.roc&quot;</span> <span class="syn-keyword">or</span> name.starts_with(<span class="syn-string">&quot;</span>${check}<span class="syn-string">_&quot;</span>)
 </code></pre>
-<p class="file"><a href="https://github.com/showell/shale/blob/c5427f75e1627e4686e52866b4478922b04770d3/cookbook/roc/check_errors/Types.roc"><code>cookbook/roc/check_errors/Types.roc</code></a>, 100 lines</p>
+<p class="file"><a href="https://github.com/showell/shale/blob/0de24e62b5c65d644696261a413e22792d4b8b31/cookbook/roc/check_errors/Types.roc"><code>cookbook/roc/check_errors/Types.roc</code></a>, 104 lines</p>
 <pre><code><span class="syn-comment">## The effects of a recipe&#39;s `types=1`: the tree&#39;s Roc found, and roc-types</span>
 <span class="syn-comment">## (Roc&#39;s own checker, https://github.com/showell/roc-types) run on each app</span>
 <span class="syn-comment">## of `root=`, its pin held to the tree&#39;s Roc. Reading and joining its output</span>
@@ -9273,9 +9278,13 @@ fail_if_refused(<span class="syn-string">&quot;find_extra_parens&quot;</span>, f
 		roc = <span class="syn-type">RocTypes</span>.roc_of_pin(pin)
 		<span class="syn-keyword">if</span> !(<span class="syn-type">Shale</span>.exists!(roc)) {
 			must!(<span class="syn-type">Err</span>(<span class="syn-string">&quot;</span>${who}<span class="syn-string">: no </span>${roc}<span class="syn-string">: install Roc </span>${pin}<span class="syn-string"> into ~/tools/roc-</span>${pin}<span class="syn-string">/ (roc-apps&#39;s toolchain release carries it)&quot;</span>))
-		} <span class="syn-keyword">else</span> {
-			<span class="syn-type">Shale</span>.real!(roc)
 		}
+		real = <span class="syn-type">Shale</span>.real!(roc)
+		said = <span class="syn-type">Shale</span>.run!({ argv: [real, <span class="syn-string">&quot;version&quot;</span>], keep: <span class="syn-type">Whole</span>(<span class="syn-number">4000</span>), timeout_ms: <span class="syn-number">30000</span>, want: <span class="syn-string">&quot;&quot;</span> })
+		<span class="syn-keyword">if</span> <span class="syn-type">Text</span>.trim(said.out) != <span class="syn-string">&quot;Roc compiler version </span>${pin}<span class="syn-string">&quot;</span> {
+			must!(<span class="syn-type">Err</span>(<span class="syn-string">&quot;</span>${who}<span class="syn-string">: </span>${roc}<span class="syn-string"> says </span>${<span class="syn-type">Text</span>.trim(said.out)}<span class="syn-string">, not Roc compiler version </span>${pin}<span class="syn-string">&quot;</span>))
+		}
+		real
 	}
 
 	<span class="syn-comment">## The types of the nodes of `kind` in the files `paths`, from roc-types</span>
@@ -9819,10 +9828,10 @@ fail_if_refused(<span class="syn-string">&quot;check_errors&quot;</span>, PARSED
 <nav class="steps"><a href="#check_errors">← previous</a> · <a href="#contents">contents</a> · <a href="#hunt_names">next →</a></nav>
 <h3><a href="#check_stacking">check_stacking</a></h3>
 <p>Groups laid out against the stacking rule, both ways, and lines past the width, read a byte at a time by the Roc library's Groups and Stacking, with <code>write=1</code> adding and taking trailing commas for <code>roc fmt</code> until a pass changes nothing.</p>
-<p class="facts">Its effects: <code>Shale.arg!</code>, <code>Shale.exists!</code>, <code>Shale.fail!</code>, <code>Shale.glob!</code>, <code>Shale.mkdir!</code>, <code>Shale.print!</code>, <code>Shale.re_find!</code>, <code>Shale.read!</code>, <code>Shale.real!</code>, <code>Shale.remove_tree!</code>, <code>Shale.roc_tree!</code>, <code>Shale.run!</code>, <code>Shale.write!</code>.<br>Roc: 1,203 lines in 5 files. Shale original: 610 lines, plus 681 lines in the 6 libraries it loads, which other recipes share.</p>
+<p class="facts">Its effects: <code>Shale.arg!</code>, <code>Shale.exists!</code>, <code>Shale.fail!</code>, <code>Shale.glob!</code>, <code>Shale.mkdir!</code>, <code>Shale.print!</code>, <code>Shale.re_find!</code>, <code>Shale.read!</code>, <code>Shale.real!</code>, <code>Shale.remove_tree!</code>, <code>Shale.roc_tree!</code>, <code>Shale.run!</code>, <code>Shale.write!</code>.<br>Roc: 1,208 lines in 5 files. Shale original: 610 lines, plus 681 lines in the 6 libraries it loads, which other recipes share.</p>
 <h4>Roc</h4>
 <p class="file">It also imports <code>Bytes</code>, <code>Finding</code>, <code>Groups</code>, <code>Headers</code>, <code>Stacking</code>, <code>Text</code>, <code>Tree</code> from <a href="#shared-library">the shared Roc library</a>.</p>
-<p class="file"><a href="https://github.com/showell/shale/blob/e4e0f7f0e2810f0763ea3e538b03d623ee25ff0b/cookbook/roc/check_stacking/check_stacking.roc"><code>cookbook/roc/check_stacking/check_stacking.roc</code></a>, 157 lines</p>
+<p class="file"><a href="https://github.com/showell/shale/blob/e319d9497afb46e30c6b3116e43f72208cada380/cookbook/roc/check_stacking/check_stacking.roc"><code>cookbook/roc/check_stacking/check_stacking.roc</code></a>, 157 lines</p>
 <pre><code><span class="syn-comment">## check_stacking, in Roc on Shale&#39;s platform (roc_platform/README.md): the</span>
 <span class="syn-comment">## groups in .roc files laid out against the stacking rule and the lines</span>
 <span class="syn-comment">## past the width, found and, with `write=1`, laid out by the rule. Its</span>
@@ -9981,7 +9990,7 @@ fail_if_refused(<span class="syn-string">&quot;check_errors&quot;</span>, PARSED
 	}
 }
 </code></pre>
-<p class="file"><a href="https://github.com/showell/shale/blob/e4e0f7f0e2810f0763ea3e538b03d623ee25ff0b/cookbook/roc/check_stacking/Report.roc"><code>cookbook/roc/check_stacking/Report.roc</code></a>, 392 lines</p>
+<p class="file"><a href="https://github.com/showell/shale/blob/e319d9497afb46e30c6b3116e43f72208cada380/cookbook/roc/check_stacking/Report.roc"><code>cookbook/roc/check_stacking/Report.roc</code></a>, 392 lines</p>
 <pre><code><span class="syn-comment">## Every finding in a run&#39;s files, in the files&#39; order and each file&#39;s line</span>
 <span class="syn-comment">## order, as the Shale original found them: a group on one line that should</span>
 <span class="syn-comment">## stack, a function type&#39;s bare arguments, a stacked group that should sit</span>
@@ -10375,7 +10384,7 @@ fail_if_refused(<span class="syn-string">&quot;check_errors&quot;</span>, PARSED
 		<span class="syn-type">Same</span>
 	}
 </code></pre>
-<p class="file"><a href="https://github.com/showell/shale/blob/e4e0f7f0e2810f0763ea3e538b03d623ee25ff0b/cookbook/roc/check_stacking/Rewrite.roc"><code>cookbook/roc/check_stacking/Rewrite.roc</code></a>, 157 lines</p>
+<p class="file"><a href="https://github.com/showell/shale/blob/e319d9497afb46e30c6b3116e43f72208cada380/cookbook/roc/check_stacking/Rewrite.roc"><code>cookbook/roc/check_stacking/Rewrite.roc</code></a>, 162 lines</p>
 <pre><code><span class="syn-comment">## `write=1`: the files rewritten pass after pass until a pass changes</span>
 <span class="syn-comment">## nothing. A pass takes the trailing comma from each group that should</span>
 <span class="syn-comment">## unstack and gives one to each line&#39;s group that should stack, and `roc</span>
@@ -10465,7 +10474,12 @@ fail_if_refused(<span class="syn-string">&quot;check_errors&quot;</span>, PARSED
 		<span class="syn-keyword">if</span> !(<span class="syn-type">Shale</span>.exists!(roc)) {
 			<span class="syn-type">Shale</span>.fail!(<span class="syn-string">&quot;check_stacking: no </span>${roc}<span class="syn-string">: install Roc </span>${pin}<span class="syn-string"> into ~/tools/roc-</span>${pin}<span class="syn-string">/ (roc-apps&#39;s toolchain release carries it)&quot;</span>)
 		}
-		<span class="syn-type">Shale</span>.real!(roc)
+		real = <span class="syn-type">Shale</span>.real!(roc)
+		said = <span class="syn-type">Shale</span>.run!({ argv: [real, <span class="syn-string">&quot;version&quot;</span>], keep: <span class="syn-type">Whole</span>(<span class="syn-number">4000</span>), timeout_ms: <span class="syn-number">30000</span>, want: <span class="syn-string">&quot;&quot;</span> })
+		<span class="syn-keyword">if</span> <span class="syn-type">Text</span>.trim(said.out) != <span class="syn-string">&quot;Roc compiler version </span>${pin}<span class="syn-string">&quot;</span> {
+			<span class="syn-type">Shale</span>.fail!(<span class="syn-string">&quot;check_stacking: </span>${roc}<span class="syn-string"> says </span>${<span class="syn-type">Text</span>.trim(said.out)}<span class="syn-string">, not Roc compiler version </span>${pin}<span class="syn-string">&quot;</span>)
+		}
+		real
 	}
 }
 
@@ -10534,7 +10548,7 @@ fail_if_refused(<span class="syn-string">&quot;check_errors&quot;</span>, PARSED
 	}
 }
 </code></pre>
-<p class="file"><a href="https://github.com/showell/shale/blob/e4e0f7f0e2810f0763ea3e538b03d623ee25ff0b/cookbook/roc/check_stacking/SelfTest.roc"><code>cookbook/roc/check_stacking/SelfTest.roc</code></a>, 193 lines</p>
+<p class="file"><a href="https://github.com/showell/shale/blob/e319d9497afb46e30c6b3116e43f72208cada380/cookbook/roc/check_stacking/SelfTest.roc"><code>cookbook/roc/check_stacking/SelfTest.roc</code></a>, 193 lines</p>
 <pre><code><span class="syn-comment">## The recipe&#39;s self-test, the Shale original&#39;s: each plant in</span>
 <span class="syn-comment">## cookbook/roc/plants/check_stacking/ must give a finding of the kind its</span>
 <span class="syn-comment">## name starts with (`long`, `wide`, `unstack`, or else `stack`), a `long`</span>
@@ -10588,7 +10602,7 @@ fail_if_refused(<span class="syn-string">&quot;check_errors&quot;</span>, PARSED
 			<span class="syn-type">Shale</span>.fail!(<span class="syn-string">&quot;check_stacking: a rewritten plant no longer parses&quot;</span>)
 		}
 		$came_out_wrong : <span class="syn-type">U64</span>
-		<span class="syn-keyword">var</span> $came_out_wrong = <span class="syn-number">0</span>
+		<span class="syn-keyword">var</span> $came_out_wrong = <span class="syn-number">0</span>.<span class="syn-type">U64</span>
 		<span class="syn-keyword">for</span> want <span class="syn-keyword">in</span> <span class="syn-type">Shale</span>.glob!(<span class="syn-string">&quot;</span>${plants}<span class="syn-string">/*.want&quot;</span>) {
 			name = <span class="syn-type">Text</span>.basename(want).drop_suffix(<span class="syn-string">&quot;.want&quot;</span>)
 			ok = <span class="syn-type">Report</span>.read_text!(<span class="syn-string">&quot;</span>${scratch}<span class="syn-string">/</span>${name}<span class="syn-string">.roc&quot;</span>) == <span class="syn-type">Report</span>.read_text!(want)
@@ -10729,7 +10743,7 @@ fail_if_refused(<span class="syn-string">&quot;check_errors&quot;</span>, PARSED
 	$bad
 }
 </code></pre>
-<p class="file"><a href="https://github.com/showell/shale/blob/e4e0f7f0e2810f0763ea3e538b03d623ee25ff0b/cookbook/roc/check_stacking/Annotations.roc"><code>cookbook/roc/check_stacking/Annotations.roc</code></a>, 304 lines</p>
+<p class="file"><a href="https://github.com/showell/shale/blob/e319d9497afb46e30c6b3116e43f72208cada380/cookbook/roc/check_stacking/Annotations.roc"><code>cookbook/roc/check_stacking/Annotations.roc</code></a>, 304 lines</p>
 <pre><code><span class="syn-comment">## A function type&#39;s bare arguments, which no trailing comma can stack, read</span>
 <span class="syn-comment">## as the Shale original read them: an annotation (`name : A, B, C -&gt; R`) or a</span>
 <span class="syn-comment">## type alias of a function (`Pick(a) : a, a, a -&gt; a`) to its first arrow,</span>
@@ -11655,10 +11669,10 @@ use(<span class="syn-string">&quot;./house.shale&quot;</span>)
 <nav class="steps"><a href="#check_stacking">← previous</a> · <a href="#contents">contents</a> · <a href="#check_boundaries">next →</a></nav>
 <h3><a href="#hunt_names">hunt_names</a></h3>
 <p>Awkward names hunted across a whole tree from Roc's own parse trees and, when asked, its type checker: an effect named like a state, a question that gives no <code>Bool</code>, tense in tags, container words, a one-word <code>where</code> method, a pure function named to act outside, and docs naming what is gone.</p>
-<p class="facts">Its effects: <code>Shale.arg!</code>, <code>Shale.exists!</code>, <code>Shale.fail!</code>, <code>Shale.glob!</code>, <code>Shale.print!</code>, <code>Shale.re_find!</code>, <code>Shale.re_find_all!</code>, <code>Shale.re_match!</code>, <code>Shale.read!</code>, <code>Shale.real!</code>, <code>Shale.roc_tree!</code>, <code>Shale.run!</code>.<br>Roc: 3,243 lines in 13 files. Shale original: 718 lines, plus 1,999 lines in the 10 libraries it loads, which other recipes share.</p>
+<p class="facts">Its effects: <code>Shale.arg!</code>, <code>Shale.exists!</code>, <code>Shale.fail!</code>, <code>Shale.glob!</code>, <code>Shale.print!</code>, <code>Shale.re_find!</code>, <code>Shale.re_find_all!</code>, <code>Shale.re_match!</code>, <code>Shale.read!</code>, <code>Shale.real!</code>, <code>Shale.roc_tree!</code>, <code>Shale.run!</code>.<br>Roc: 3,246 lines in 13 files. Shale original: 718 lines, plus 1,999 lines in the 10 libraries it loads, which other recipes share.</p>
 <h4>Roc</h4>
 <p class="file">It also imports <code>Finding</code>, <code>Headers</code>, <code>RocTypes</code>, <code>Text</code>, <code>Tree</code> from <a href="#shared-library">the shared Roc library</a>.</p>
-<p class="file"><a href="https://github.com/showell/shale/blob/ef3cb9bdf660ffdf58b97ad825751475f0254ec8/cookbook/roc/hunt_names/hunt_names.roc"><code>cookbook/roc/hunt_names/hunt_names.roc</code></a>, 311 lines</p>
+<p class="file"><a href="https://github.com/showell/shale/blob/9a842a26107ddbc8ddf252aa771a17abb43b3195/cookbook/roc/hunt_names/hunt_names.roc"><code>cookbook/roc/hunt_names/hunt_names.roc</code></a>, 311 lines</p>
 <pre><code><span class="syn-comment">## hunt_names, in Roc on Shale&#39;s platform (roc_platform/README.md): awkward</span>
 <span class="syn-comment">## names in every .roc file of a tree, from Roc&#39;s own parser&#39;s trees. Its</span>
 <span class="syn-comment">## launcher, cookbook/roc/hunt_names.shale, is how it is run, and its header</span>
@@ -11971,7 +11985,7 @@ use(<span class="syn-string">&quot;./house.shale&quot;</span>)
 	}
 }
 </code></pre>
-<p class="file"><a href="https://github.com/showell/shale/blob/ef3cb9bdf660ffdf58b97ad825751475f0254ec8/cookbook/roc/hunt_names/DocNames.roc"><code>cookbook/roc/hunt_names/DocNames.roc</code></a>, 399 lines</p>
+<p class="file"><a href="https://github.com/showell/shale/blob/9a842a26107ddbc8ddf252aa771a17abb43b3195/cookbook/roc/hunt_names/DocNames.roc"><code>cookbook/roc/hunt_names/DocNames.roc</code></a>, 399 lines</p>
 <pre><code><span class="syn-comment">## What hunt_names&#39; `stale_doc_name` reads (the Shale original&#39;s</span>
 <span class="syn-comment">## doc_names.shale): the names a file&#39;s comment lines put in backticks, and whether each still</span>
 <span class="syn-comment">## names something in the file, the modules it imports, or the module a</span>
@@ -12372,7 +12386,7 @@ use(<span class="syn-string">&quot;./house.shale&quot;</span>)
 		},
 	)
 </code></pre>
-<p class="file"><a href="https://github.com/showell/shale/blob/ef3cb9bdf660ffdf58b97ad825751475f0254ec8/cookbook/roc/hunt_names/Facts.roc"><code>cookbook/roc/hunt_names/Facts.roc</code></a>, 222 lines</p>
+<p class="file"><a href="https://github.com/showell/shale/blob/9a842a26107ddbc8ddf252aa771a17abb43b3195/cookbook/roc/hunt_names/Facts.roc"><code>cookbook/roc/hunt_names/Facts.roc</code></a>, 222 lines</p>
 <pre><code><span class="syn-comment">## The facts the reading of the files gathers for the checks judged over the</span>
 <span class="syn-comment">## whole tree: each file&#39;s declared</span>
 <span class="syn-comment">## keywords, the tag unions types name, the aliases of `Bool`, the kinds of</span>
@@ -12596,7 +12610,7 @@ use(<span class="syn-string">&quot;./house.shale&quot;</span>)
 	<span class="syn-type">Str</span>.join_with($parts, <span class="syn-string">&quot; &quot;</span>)
 }
 </code></pre>
-<p class="file"><a href="https://github.com/showell/shale/blob/ef3cb9bdf660ffdf58b97ad825751475f0254ec8/cookbook/roc/hunt_names/Judge.roc"><code>cookbook/roc/hunt_names/Judge.roc</code></a>, 346 lines</p>
+<p class="file"><a href="https://github.com/showell/shale/blob/9a842a26107ddbc8ddf252aa771a17abb43b3195/cookbook/roc/hunt_names/Judge.roc"><code>cookbook/roc/hunt_names/Judge.roc</code></a>, 346 lines</p>
 <pre><code><span class="syn-comment">## hunt_names&#39; checks of one definition (the Shale original&#39;s</span>
 <span class="syn-comment">## `judge_definition`): every check but `container`, `preposition_split`,</span>
 <span class="syn-comment">## `where_name`, `stale_doc_name` and the bindings&#39; `short_name`, which are</span>
@@ -12944,7 +12958,7 @@ use(<span class="syn-string">&quot;./house.shale&quot;</span>)
 <span class="syn-name">integer_types</span> : <span class="syn-type">List</span>(<span class="syn-type">Str</span>)
 <span class="syn-name">integer_types</span> = [<span class="syn-string">&quot;U8&quot;</span>, <span class="syn-string">&quot;U16&quot;</span>, <span class="syn-string">&quot;U32&quot;</span>, <span class="syn-string">&quot;U64&quot;</span>, <span class="syn-string">&quot;U128&quot;</span>, <span class="syn-string">&quot;I8&quot;</span>, <span class="syn-string">&quot;I16&quot;</span>, <span class="syn-string">&quot;I32&quot;</span>, <span class="syn-string">&quot;I64&quot;</span>, <span class="syn-string">&quot;I128&quot;</span>]
 </code></pre>
-<p class="file"><a href="https://github.com/showell/shale/blob/ef3cb9bdf660ffdf58b97ad825751475f0254ec8/cookbook/roc/hunt_names/ListNames.roc"><code>cookbook/roc/hunt_names/ListNames.roc</code></a>, 217 lines</p>
+<p class="file"><a href="https://github.com/showell/shale/blob/9a842a26107ddbc8ddf252aa771a17abb43b3195/cookbook/roc/hunt_names/ListNames.roc"><code>cookbook/roc/hunt_names/ListNames.roc</code></a>, 217 lines</p>
 <pre><code><span class="syn-comment">## What hunt_names&#39; `singular_list` reads of a name whose type says many:</span>
 <span class="syn-comment">## the word that counts,</span>
 <span class="syn-comment">## whether it reads as a plural, and the names a finding offers instead. A</span>
@@ -13163,7 +13177,7 @@ use(<span class="syn-string">&quot;./house.shale&quot;</span>)
 	<span class="syn-string">&quot;`</span>${<span class="syn-type">Str</span>.join_with($plural_words, <span class="syn-string">&quot;_&quot;</span>)}<span class="syn-string">`, or `</span>${bare}<span class="syn-string">_list`&quot;</span>
 }
 </code></pre>
-<p class="file"><a href="https://github.com/showell/shale/blob/ef3cb9bdf660ffdf58b97ad825751475f0254ec8/cookbook/roc/hunt_names/Passes.roc"><code>cookbook/roc/hunt_names/Passes.roc</code></a>, 237 lines</p>
+<p class="file"><a href="https://github.com/showell/shale/blob/9a842a26107ddbc8ddf252aa771a17abb43b3195/cookbook/roc/hunt_names/Passes.roc"><code>cookbook/roc/hunt_names/Passes.roc</code></a>, 237 lines</p>
 <pre><code><span class="syn-comment">## hunt_names&#39; checks judged over what the whole read gathered, once every</span>
 <span class="syn-comment">## file is read (the Shale original&#39;s naming_passes.shale):</span>
 <span class="syn-comment">## `preposition_split`, from</span>
@@ -13402,7 +13416,7 @@ use(<span class="syn-string">&quot;./house.shale&quot;</span>)
 	}
 }
 </code></pre>
-<p class="file"><a href="https://github.com/showell/shale/blob/ef3cb9bdf660ffdf58b97ad825751475f0254ec8/cookbook/roc/hunt_names/Reading.roc"><code>cookbook/roc/hunt_names/Reading.roc</code></a>, 334 lines</p>
+<p class="file"><a href="https://github.com/showell/shale/blob/9a842a26107ddbc8ddf252aa771a17abb43b3195/cookbook/roc/hunt_names/Reading.roc"><code>cookbook/roc/hunt_names/Reading.roc</code></a>, 334 lines</p>
 <pre><code><span class="syn-comment">## What hunt_names reads of each file: a record for every top-level and module-member</span>
 <span class="syn-comment">## annotation and definition, leaving out the names the file&#39;s header</span>
 <span class="syn-comment">## dictates, and along the way the facts (Facts) the checks judged over the</span>
@@ -13738,7 +13752,7 @@ use(<span class="syn-string">&quot;./house.shale&quot;</span>)
 	})
 }
 </code></pre>
-<p class="file"><a href="https://github.com/showell/shale/blob/ef3cb9bdf660ffdf58b97ad825751475f0254ec8/cookbook/roc/hunt_names/SelfTest.roc"><code>cookbook/roc/hunt_names/SelfTest.roc</code></a>, 153 lines</p>
+<p class="file"><a href="https://github.com/showell/shale/blob/9a842a26107ddbc8ddf252aa771a17abb43b3195/cookbook/roc/hunt_names/SelfTest.roc"><code>cookbook/roc/hunt_names/SelfTest.roc</code></a>, 153 lines</p>
 <pre><code><span class="syn-comment">## The recipe&#39;s self-test (the Shale original&#39;s naming_plants.shale),</span>
 <span class="syn-comment">## run after the checks over the plants in cookbook/roc/plants/hunt_names/ and its typed/</span>
 <span class="syn-comment">## folder: each plant is named for the check it holds, and that check must</span>
@@ -13893,7 +13907,7 @@ use(<span class="syn-string">&quot;./house.shale&quot;</span>)
 	<span class="syn-type">Str</span>.from_utf8_lossy($out)
 }
 </code></pre>
-<p class="file"><a href="https://github.com/showell/shale/blob/ef3cb9bdf660ffdf58b97ad825751475f0254ec8/cookbook/roc/hunt_names/ShortNames.roc"><code>cookbook/roc/hunt_names/ShortNames.roc</code></a>, 289 lines</p>
+<p class="file"><a href="https://github.com/showell/shale/blob/9a842a26107ddbc8ddf252aa771a17abb43b3195/cookbook/roc/hunt_names/ShortNames.roc"><code>cookbook/roc/hunt_names/ShortNames.roc</code></a>, 289 lines</p>
 <pre><code><span class="syn-comment">## hunt_names&#39; `short_name` for what a file binds inside its definitions:</span>
 <span class="syn-comment">## each local,</span>
 <span class="syn-comment">## parameter, match binding, record destructuring and `var` whose name, past</span>
@@ -14184,7 +14198,7 @@ use(<span class="syn-string">&quot;./house.shale&quot;</span>)
 	}
 }
 </code></pre>
-<p class="file"><a href="https://github.com/showell/shale/blob/ef3cb9bdf660ffdf58b97ad825751475f0254ec8/cookbook/roc/hunt_names/Types.roc"><code>cookbook/roc/hunt_names/Types.roc</code></a>, 100 lines</p>
+<p class="file"><a href="https://github.com/showell/shale/blob/9a842a26107ddbc8ddf252aa771a17abb43b3195/cookbook/roc/hunt_names/Types.roc"><code>cookbook/roc/hunt_names/Types.roc</code></a>, 104 lines</p>
 <pre><code><span class="syn-comment">## The effects of a recipe&#39;s `types=1`: the tree&#39;s Roc found, and roc-types</span>
 <span class="syn-comment">## (Roc&#39;s own checker, https://github.com/showell/roc-types) run on each app</span>
 <span class="syn-comment">## of `root=`, its pin held to the tree&#39;s Roc. Reading and joining its output</span>
@@ -14212,9 +14226,13 @@ use(<span class="syn-string">&quot;./house.shale&quot;</span>)
 		roc = <span class="syn-type">RocTypes</span>.roc_of_pin(pin)
 		<span class="syn-keyword">if</span> !(<span class="syn-type">Shale</span>.exists!(roc)) {
 			must!(<span class="syn-type">Err</span>(<span class="syn-string">&quot;</span>${who}<span class="syn-string">: no </span>${roc}<span class="syn-string">: install Roc </span>${pin}<span class="syn-string"> into ~/tools/roc-</span>${pin}<span class="syn-string">/ (roc-apps&#39;s toolchain release carries it)&quot;</span>))
-		} <span class="syn-keyword">else</span> {
-			<span class="syn-type">Shale</span>.real!(roc)
 		}
+		real = <span class="syn-type">Shale</span>.real!(roc)
+		said = <span class="syn-type">Shale</span>.run!({ argv: [real, <span class="syn-string">&quot;version&quot;</span>], keep: <span class="syn-type">Whole</span>(<span class="syn-number">4000</span>), timeout_ms: <span class="syn-number">30000</span>, want: <span class="syn-string">&quot;&quot;</span> })
+		<span class="syn-keyword">if</span> <span class="syn-type">Text</span>.trim(said.out) != <span class="syn-string">&quot;Roc compiler version </span>${pin}<span class="syn-string">&quot;</span> {
+			must!(<span class="syn-type">Err</span>(<span class="syn-string">&quot;</span>${who}<span class="syn-string">: </span>${roc}<span class="syn-string"> says </span>${<span class="syn-type">Text</span>.trim(said.out)}<span class="syn-string">, not Roc compiler version </span>${pin}<span class="syn-string">&quot;</span>))
+		}
+		real
 	}
 
 	<span class="syn-comment">## The types of the nodes of `kind` in the files `paths`, from roc-types</span>
@@ -14286,7 +14304,7 @@ use(<span class="syn-string">&quot;./house.shale&quot;</span>)
 		}
 	}
 </code></pre>
-<p class="file"><a href="https://github.com/showell/shale/blob/ef3cb9bdf660ffdf58b97ad825751475f0254ec8/cookbook/roc/hunt_names/Words.roc"><code>cookbook/roc/hunt_names/Words.roc</code></a>, 207 lines</p>
+<p class="file"><a href="https://github.com/showell/shale/blob/9a842a26107ddbc8ddf252aa771a17abb43b3195/cookbook/roc/hunt_names/Words.roc"><code>cookbook/roc/hunt_names/Words.roc</code></a>, 206 lines</p>
 <pre><code><span class="syn-comment">## The word lists hunt_names judges names by, read from their one home each:</span>
 <span class="syn-comment">## cookbook/words/ (verbs, participles, the vague and container words,</span>
 <span class="syn-comment">## prepositions, namespaces, Roc&#39;s own words and the numbers, list names,</span>
@@ -14493,9 +14511,8 @@ use(<span class="syn-string">&quot;./house.shale&quot;</span>)
 	}
 	$terms
 }
-
 </code></pre>
-<p class="file"><a href="https://github.com/showell/shale/blob/ef3cb9bdf660ffdf58b97ad825751475f0254ec8/cookbook/roc/hunt_names/TypeText.roc"><code>cookbook/roc/hunt_names/TypeText.roc</code></a>, 306 lines</p>
+<p class="file"><a href="https://github.com/showell/shale/blob/9a842a26107ddbc8ddf252aa771a17abb43b3195/cookbook/roc/hunt_names/TypeText.roc"><code>cookbook/roc/hunt_names/TypeText.roc</code></a>, 306 lines</p>
 <pre><code><span class="syn-comment">## What hunt_names reads of a type, in the tree or written as text</span>
 <span class="syn-comment">## a tag union&#39;s tags, an argument&#39;s shape, the types an</span>
 <span class="syn-comment">## annotation mentions, a function type&#39;s parts, a `Try`&#39;s success and a</span>
@@ -14803,7 +14820,7 @@ use(<span class="syn-string">&quot;./house.shale&quot;</span>)
 		_ =&gt; word
 	}
 </code></pre>
-<p class="file"><a href="https://github.com/showell/shale/blob/ef3cb9bdf660ffdf58b97ad825751475f0254ec8/cookbook/roc/hunt_names/Makers.roc"><code>cookbook/roc/hunt_names/Makers.roc</code></a>, 122 lines</p>
+<p class="file"><a href="https://github.com/showell/shale/blob/9a842a26107ddbc8ddf252aa771a17abb43b3195/cookbook/roc/hunt_names/Makers.roc"><code>cookbook/roc/hunt_names/Makers.roc</code></a>, 122 lines</p>
 <pre><code><span class="syn-comment">## What hunt_names&#39; `phrase_name` passes as a maker: a constructor that gives</span>
 <span class="syn-comment">## its own module&#39;s type, a</span>
 <span class="syn-comment">## conversion (`to_*`, `into_*`, and a `from_*` that takes or gives its</span>
@@ -15655,10 +15672,10 @@ fail_if_refused(<span class="syn-string">&quot;hunt_names&quot;</span>, parsed.r
 <nav class="steps"><a href="#hunt_names">← previous</a> · <a href="#contents">contents</a> · <a href="#wrap_long_lines">next →</a></nav>
 <h3><a href="#check_boundaries">check_boundaries</a></h3>
 <p>Whether each function's boundary earns its keep and each parameter is really one, from Roc's own parse trees across a tree: a one-caller wrapper, a parameter every call fills with the same literal, a constant written as a function, dead code, alike branches and, with the types, a <code>Bool</code> flag passed as a literal.</p>
-<p class="facts">Its effects: <code>Shale.arg!</code>, <code>Shale.exists!</code>, <code>Shale.fail!</code>, <code>Shale.glob!</code>, <code>Shale.print!</code>, <code>Shale.read!</code>, <code>Shale.real!</code>, <code>Shale.roc_tree!</code>, <code>Shale.run!</code>.<br>Roc: 1,587 lines in 7 files. Shale original: 830 lines, plus 497 lines in the 5 libraries it loads, which other recipes share.</p>
+<p class="facts">Its effects: <code>Shale.arg!</code>, <code>Shale.exists!</code>, <code>Shale.fail!</code>, <code>Shale.glob!</code>, <code>Shale.print!</code>, <code>Shale.read!</code>, <code>Shale.real!</code>, <code>Shale.roc_tree!</code>, <code>Shale.run!</code>.<br>Roc: 1,591 lines in 7 files. Shale original: 830 lines, plus 497 lines in the 5 libraries it loads, which other recipes share.</p>
 <h4>Roc</h4>
 <p class="file">It also imports <code>Bytes</code>, <code>Finding</code>, <code>Forest</code>, <code>Headers</code>, <code>RocTypes</code>, <code>Text</code>, <code>Tree</code> from <a href="#shared-library">the shared Roc library</a>.</p>
-<p class="file"><a href="https://github.com/showell/shale/blob/ef3cb9bdf660ffdf58b97ad825751475f0254ec8/cookbook/roc/check_boundaries/check_boundaries.roc"><code>cookbook/roc/check_boundaries/check_boundaries.roc</code></a>, 283 lines</p>
+<p class="file"><a href="https://github.com/showell/shale/blob/0de24e62b5c65d644696261a413e22792d4b8b31/cookbook/roc/check_boundaries/check_boundaries.roc"><code>cookbook/roc/check_boundaries/check_boundaries.roc</code></a>, 283 lines</p>
 <pre><code><span class="syn-comment">## check_boundaries, in Roc on Shale&#39;s platform (roc_platform/README.md):</span>
 <span class="syn-comment">## whether each function&#39;s boundary earns its keep, and whether each of its</span>
 <span class="syn-comment">## parameters is really a parameter. Its launcher,</span>
@@ -15943,7 +15960,7 @@ fail_if_refused(<span class="syn-string">&quot;hunt_names&quot;</span>, parsed.r
 	}
 }
 </code></pre>
-<p class="file"><a href="https://github.com/showell/shale/blob/ef3cb9bdf660ffdf58b97ad825751475f0254ec8/cookbook/roc/check_boundaries/Checks.roc"><code>cookbook/roc/check_boundaries/Checks.roc</code></a>, 264 lines</p>
+<p class="file"><a href="https://github.com/showell/shale/blob/0de24e62b5c65d644696261a413e22792d4b8b31/cookbook/roc/check_boundaries/Checks.roc"><code>cookbook/roc/check_boundaries/Checks.roc</code></a>, 264 lines</p>
 <pre><code><span class="syn-comment">## The checks of check_boundaries, each function judged in the order of its</span>
 <span class="syn-comment">## key, then each `if`: `dead` or `unused_api`, `single`, `fixed` or</span>
 <span class="syn-comment">## `entry`, `constant`, `bool_param` and `same_branches`. The launcher&#39;s</span>
@@ -16209,7 +16226,7 @@ fail_if_refused(<span class="syn-string">&quot;hunt_names&quot;</span>, parsed.r
 	}
 }
 </code></pre>
-<p class="file"><a href="https://github.com/showell/shale/blob/ef3cb9bdf660ffdf58b97ad825751475f0254ec8/cookbook/roc/check_boundaries/Functions.roc"><code>cookbook/roc/check_boundaries/Functions.roc</code></a>, 325 lines</p>
+<p class="file"><a href="https://github.com/showell/shale/blob/0de24e62b5c65d644696261a413e22792d4b8b31/cookbook/roc/check_boundaries/Functions.roc"><code>cookbook/roc/check_boundaries/Functions.roc</code></a>, 325 lines</p>
 <pre><code><span class="syn-comment">## The first pass of check_boundaries: what each node&#39;s ancestors say, and</span>
 <span class="syn-comment">## each function defined at a file&#39;s top level or as a module type&#39;s member,</span>
 <span class="syn-comment">## with what the checks read of its body, its `##` doc and its parameters.</span>
@@ -16536,7 +16553,7 @@ fail_if_refused(<span class="syn-string">&quot;hunt_names&quot;</span>, parsed.r
 		<span class="syn-type">Err</span>(_) =&gt; []
 	}
 </code></pre>
-<p class="file"><a href="https://github.com/showell/shale/blob/ef3cb9bdf660ffdf58b97ad825751475f0254ec8/cookbook/roc/check_boundaries/References.roc"><code>cookbook/roc/check_boundaries/References.roc</code></a>, 358 lines</p>
+<p class="file"><a href="https://github.com/showell/shale/blob/0de24e62b5c65d644696261a413e22792d4b8b31/cookbook/roc/check_boundaries/References.roc"><code>cookbook/roc/check_boundaries/References.roc</code></a>, 358 lines</p>
 <pre><code><span class="syn-comment">## The second pass of check_boundaries: every reference to a function the</span>
 <span class="syn-comment">## checked files declare, with the call it heads, tallied by function. A</span>
 <span class="syn-comment">## reference is a function&#39;s bare name in the file that defines it,</span>
@@ -16896,7 +16913,7 @@ fail_if_refused(<span class="syn-string">&quot;hunt_names&quot;</span>, parsed.r
 	$calls
 }
 </code></pre>
-<p class="file"><a href="https://github.com/showell/shale/blob/ef3cb9bdf660ffdf58b97ad825751475f0254ec8/cookbook/roc/check_boundaries/SelfTest.roc"><code>cookbook/roc/check_boundaries/SelfTest.roc</code></a>, 107 lines</p>
+<p class="file"><a href="https://github.com/showell/shale/blob/0de24e62b5c65d644696261a413e22792d4b8b31/cookbook/roc/check_boundaries/SelfTest.roc"><code>cookbook/roc/check_boundaries/SelfTest.roc</code></a>, 107 lines</p>
 <pre><code><span class="syn-comment">## The recipe&#39;s self-test, run after the checks over the plants in</span>
 <span class="syn-comment">## cookbook/roc/plants/check_boundaries/: each plant is named for the check it</span>
 <span class="syn-comment">## holds (`fixed_string.roc` holds `fixed`), and each check must fire on its</span>
@@ -17005,7 +17022,7 @@ fail_if_refused(<span class="syn-string">&quot;hunt_names&quot;</span>, parsed.r
 	<span class="syn-type">Str</span>.from_utf8_lossy($out)
 }
 </code></pre>
-<p class="file"><a href="https://github.com/showell/shale/blob/ef3cb9bdf660ffdf58b97ad825751475f0254ec8/cookbook/roc/check_boundaries/Types.roc"><code>cookbook/roc/check_boundaries/Types.roc</code></a>, 100 lines</p>
+<p class="file"><a href="https://github.com/showell/shale/blob/0de24e62b5c65d644696261a413e22792d4b8b31/cookbook/roc/check_boundaries/Types.roc"><code>cookbook/roc/check_boundaries/Types.roc</code></a>, 104 lines</p>
 <pre><code><span class="syn-comment">## The effects of a recipe&#39;s `types=1`: the tree&#39;s Roc found, and roc-types</span>
 <span class="syn-comment">## (Roc&#39;s own checker, https://github.com/showell/roc-types) run on each app</span>
 <span class="syn-comment">## of `root=`, its pin held to the tree&#39;s Roc. Reading and joining its output</span>
@@ -17033,9 +17050,13 @@ fail_if_refused(<span class="syn-string">&quot;hunt_names&quot;</span>, parsed.r
 		roc = <span class="syn-type">RocTypes</span>.roc_of_pin(pin)
 		<span class="syn-keyword">if</span> !(<span class="syn-type">Shale</span>.exists!(roc)) {
 			must!(<span class="syn-type">Err</span>(<span class="syn-string">&quot;</span>${who}<span class="syn-string">: no </span>${roc}<span class="syn-string">: install Roc </span>${pin}<span class="syn-string"> into ~/tools/roc-</span>${pin}<span class="syn-string">/ (roc-apps&#39;s toolchain release carries it)&quot;</span>))
-		} <span class="syn-keyword">else</span> {
-			<span class="syn-type">Shale</span>.real!(roc)
 		}
+		real = <span class="syn-type">Shale</span>.real!(roc)
+		said = <span class="syn-type">Shale</span>.run!({ argv: [real, <span class="syn-string">&quot;version&quot;</span>], keep: <span class="syn-type">Whole</span>(<span class="syn-number">4000</span>), timeout_ms: <span class="syn-number">30000</span>, want: <span class="syn-string">&quot;&quot;</span> })
+		<span class="syn-keyword">if</span> <span class="syn-type">Text</span>.trim(said.out) != <span class="syn-string">&quot;Roc compiler version </span>${pin}<span class="syn-string">&quot;</span> {
+			must!(<span class="syn-type">Err</span>(<span class="syn-string">&quot;</span>${who}<span class="syn-string">: </span>${roc}<span class="syn-string"> says </span>${<span class="syn-type">Text</span>.trim(said.out)}<span class="syn-string">, not Roc compiler version </span>${pin}<span class="syn-string">&quot;</span>))
+		}
+		real
 	}
 
 	<span class="syn-comment">## The types of the nodes of `kind` in the files `paths`, from roc-types</span>
@@ -17107,7 +17128,7 @@ fail_if_refused(<span class="syn-string">&quot;hunt_names&quot;</span>, parsed.r
 		}
 	}
 </code></pre>
-<p class="file"><a href="https://github.com/showell/shale/blob/ef3cb9bdf660ffdf58b97ad825751475f0254ec8/cookbook/roc/check_boundaries/Source.roc"><code>cookbook/roc/check_boundaries/Source.roc</code></a>, 150 lines</p>
+<p class="file"><a href="https://github.com/showell/shale/blob/0de24e62b5c65d644696261a413e22792d4b8b31/cookbook/roc/check_boundaries/Source.roc"><code>cookbook/roc/check_boundaries/Source.roc</code></a>, 150 lines</p>
 <pre><code><span class="syn-comment">## The source text the checks compare: a node&#39;s text squeezed onto one line,</span>
 <span class="syn-comment">## a call&#39;s argument texts slot by slot and the texts its calls agree on, a</span>
 <span class="syn-comment">## branch&#39;s text without its braces, and whether a text is a literal.</span>
@@ -18099,10 +18120,10 @@ fail_if_refused(<span class="syn-string">&quot;check_boundaries&quot;</span>, pa
 <nav class="steps"><a href="#check_boundaries">← previous</a> · <a href="#contents">contents</a> · <a href="#rewrite_method_calls">next →</a></nav>
 <h3><a href="#wrap_long_lines">wrap_long_lines</a></h3>
 <p>Long Roc lines shortened and groups laid out by the stacking rule, through trailing commas that <code>roc fmt</code> reads, on a work copy pass after pass until nothing changes, by the Roc library that is now the rule's one home, the lines left wide listed after.</p>
-<p class="facts">Its effects: <code>Shale.arg!</code>, <code>Shale.exists!</code>, <code>Shale.fail!</code>, <code>Shale.glob!</code>, <code>Shale.mkdir!</code>, <code>Shale.print!</code>, <code>Shale.re_find!</code>, <code>Shale.re_replace!</code>, <code>Shale.read!</code>, <code>Shale.real!</code>, <code>Shale.remove_tree!</code>, <code>Shale.roc_tree!</code>, <code>Shale.run!</code>, <code>Shale.write!</code>.<br>Roc: 725 lines in 4 files. Shale original: 405 lines, plus 540 lines in the 4 libraries it loads, which other recipes share.</p>
+<p class="facts">Its effects: <code>Shale.arg!</code>, <code>Shale.exists!</code>, <code>Shale.fail!</code>, <code>Shale.glob!</code>, <code>Shale.mkdir!</code>, <code>Shale.print!</code>, <code>Shale.re_find!</code>, <code>Shale.re_replace!</code>, <code>Shale.read!</code>, <code>Shale.real!</code>, <code>Shale.remove_tree!</code>, <code>Shale.roc_tree!</code>, <code>Shale.run!</code>, <code>Shale.write!</code>.<br>Roc: 730 lines in 4 files. Shale original: 405 lines, plus 540 lines in the 4 libraries it loads, which other recipes share.</p>
 <h4>Roc</h4>
 <p class="file">It also imports <code>Bytes</code>, <code>Stacking</code>, <code>Text</code> from <a href="#shared-library">the shared Roc library</a>.</p>
-<p class="file"><a href="https://github.com/showell/shale/blob/fbf5379c0f24c6f2b2beea9b82910f4a75554d85/cookbook/roc/wrap_long_lines/wrap_long_lines.roc"><code>cookbook/roc/wrap_long_lines/wrap_long_lines.roc</code></a>, 158 lines</p>
+<p class="file"><a href="https://github.com/showell/shale/blob/0de24e62b5c65d644696261a413e22792d4b8b31/cookbook/roc/wrap_long_lines/wrap_long_lines.roc"><code>cookbook/roc/wrap_long_lines/wrap_long_lines.roc</code></a>, 158 lines</p>
 <pre><code><span class="syn-comment">## wrap_long_lines, in Roc on Shale&#39;s platform (roc_platform/README.md): long</span>
 <span class="syn-comment">## Roc lines shortened, and with `tokens=N` groups laid out by the stacking</span>
 <span class="syn-comment">## rule, by trailing commas that `roc fmt` reads. Its launcher,</span>
@@ -18262,7 +18283,7 @@ fail_if_refused(<span class="syn-string">&quot;check_boundaries&quot;</span>, pa
 	}
 }
 </code></pre>
-<p class="file"><a href="https://github.com/showell/shale/blob/fbf5379c0f24c6f2b2beea9b82910f4a75554d85/cookbook/roc/wrap_long_lines/Rewrite.roc"><code>cookbook/roc/wrap_long_lines/Rewrite.roc</code></a>, 271 lines</p>
+<p class="file"><a href="https://github.com/showell/shale/blob/0de24e62b5c65d644696261a413e22792d4b8b31/cookbook/roc/wrap_long_lines/Rewrite.roc"><code>cookbook/roc/wrap_long_lines/Rewrite.roc</code></a>, 276 lines</p>
 <pre><code><span class="syn-comment">## The rewrite of a folder: its .roc files copied to a work copy, then pass</span>
 <span class="syn-comment">## after pass, each a trailing comma given to each line&#39;s group that should</span>
 <span class="syn-comment">## stack and taken from each stacked group that should sit on one line, with</span>
@@ -18407,7 +18428,12 @@ fail_if_refused(<span class="syn-string">&quot;check_boundaries&quot;</span>, pa
 		<span class="syn-keyword">if</span> !(<span class="syn-type">Shale</span>.exists!(roc)) {
 			<span class="syn-type">Shale</span>.fail!(<span class="syn-string">&quot;wrap_long_lines: no </span>${roc}<span class="syn-string">: install Roc </span>${pin}<span class="syn-string"> into ~/tools/roc-</span>${pin}<span class="syn-string">/ (roc-apps&#39;s toolchain release carries it)&quot;</span>)
 		}
-		<span class="syn-type">Shale</span>.real!(roc)
+		real = <span class="syn-type">Shale</span>.real!(roc)
+		said = <span class="syn-type">Shale</span>.run!({ argv: [real, <span class="syn-string">&quot;version&quot;</span>], keep: <span class="syn-type">Whole</span>(<span class="syn-number">4000</span>), timeout_ms: <span class="syn-number">30000</span>, want: <span class="syn-string">&quot;&quot;</span> })
+		<span class="syn-keyword">if</span> <span class="syn-type">Text</span>.trim(said.out) != <span class="syn-string">&quot;Roc compiler version </span>${pin}<span class="syn-string">&quot;</span> {
+			<span class="syn-type">Shale</span>.fail!(<span class="syn-string">&quot;wrap_long_lines: </span>${roc}<span class="syn-string"> says </span>${<span class="syn-type">Text</span>.trim(said.out)}<span class="syn-string">, not Roc compiler version </span>${pin}<span class="syn-string">&quot;</span>)
+		}
+		real
 	}
 }
 
@@ -18535,7 +18561,7 @@ fail_if_refused(<span class="syn-string">&quot;check_boundaries&quot;</span>, pa
 	}
 }
 </code></pre>
-<p class="file"><a href="https://github.com/showell/shale/blob/fbf5379c0f24c6f2b2beea9b82910f4a75554d85/cookbook/roc/wrap_long_lines/SelfTest.roc"><code>cookbook/roc/wrap_long_lines/SelfTest.roc</code></a>, 171 lines</p>
+<p class="file"><a href="https://github.com/showell/shale/blob/0de24e62b5c65d644696261a413e22792d4b8b31/cookbook/roc/wrap_long_lines/SelfTest.roc"><code>cookbook/roc/wrap_long_lines/SelfTest.roc</code></a>, 171 lines</p>
 <pre><code><span class="syn-comment">## The recipe&#39;s self-test, the Shale original&#39;s: the plants in</span>
 <span class="syn-comment">## cookbook/roc/plants/wrap_long_lines/ are copied into the work folder and</span>
 <span class="syn-comment">## rewritten there with the rule&#39;s six tokens and the self-tests&#39; Roc. The</span>
@@ -18708,7 +18734,7 @@ fail_if_refused(<span class="syn-string">&quot;check_boundaries&quot;</span>, pa
 	$bad
 }
 </code></pre>
-<p class="file"><a href="https://github.com/showell/shale/blob/fbf5379c0f24c6f2b2beea9b82910f4a75554d85/cookbook/roc/wrap_long_lines/WideLines.roc"><code>cookbook/roc/wrap_long_lines/WideLines.roc</code></a>, 125 lines</p>
+<p class="file"><a href="https://github.com/showell/shale/blob/0de24e62b5c65d644696261a413e22792d4b8b31/cookbook/roc/wrap_long_lines/WideLines.roc"><code>cookbook/roc/wrap_long_lines/WideLines.roc</code></a>, 125 lines</p>
 <pre><code><span class="syn-comment">## The lines a rewrite leaves wider than the width. A comment, a line wide</span>
 <span class="syn-comment">## only for the text of its strings (by Roc&#39;s parser, as check_stacking&#39;s</span>
 <span class="syn-comment">## `wide string`) and a line of numeric data, which stays packed, are</span>
@@ -19250,10 +19276,10 @@ use(<span class="syn-string">&quot;./parsed.shale&quot;</span>)
 <nav class="steps"><a href="#wrap_long_lines">← previous</a> · <a href="#contents">contents</a> · <a href="#count_shale_stops">next →</a></nav>
 <h3><a href="#rewrite_method_calls">rewrite_method_calls</a></h3>
 <p>Old-style calls such as <code>List.map(xs, f)</code> rewritten as method calls where Roc's own type checker proves the first argument the module's own type or the compiler, trial by trial, accepts the rewrite with <code>roc test</code> unchanged, each call that stays given its reason and each file a failed trial touched put back byte for byte.</p>
-<p class="facts">Its effects: <code>Shale.arg!</code>, <code>Shale.exists!</code>, <code>Shale.fail!</code>, <code>Shale.glob!</code>, <code>Shale.list!</code>, <code>Shale.mkdir!</code>, <code>Shale.print!</code>, <code>Shale.re_find!</code>, <code>Shale.read!</code>, <code>Shale.real!</code>, <code>Shale.remove_tree!</code>, <code>Shale.roc_tree!</code>, <code>Shale.run!</code>, <code>Shale.write!</code>.<br>Roc: 2,840 lines in 15 files. Shale original: 1,195 lines, plus 888 lines in the 7 libraries it loads, which other recipes share.</p>
+<p class="facts">Its effects: <code>Shale.arg!</code>, <code>Shale.exists!</code>, <code>Shale.fail!</code>, <code>Shale.glob!</code>, <code>Shale.list!</code>, <code>Shale.mkdir!</code>, <code>Shale.print!</code>, <code>Shale.re_find!</code>, <code>Shale.read!</code>, <code>Shale.real!</code>, <code>Shale.remove_tree!</code>, <code>Shale.roc_tree!</code>, <code>Shale.run!</code>, <code>Shale.write!</code>.<br>Roc: 2,846 lines in 15 files. Shale original: 1,195 lines, plus 888 lines in the 7 libraries it loads, which other recipes share.</p>
 <h4>Roc</h4>
 <p class="file">It also imports <code>Imports</code>, <code>RocTypes</code>, <code>Text</code>, <code>Tree</code> from <a href="#shared-library">the shared Roc library</a>.</p>
-<p class="file"><a href="https://github.com/showell/shale/blob/ef3cb9bdf660ffdf58b97ad825751475f0254ec8/cookbook/roc/rewrite_method_calls/rewrite_method_calls.roc"><code>cookbook/roc/rewrite_method_calls/rewrite_method_calls.roc</code></a>, 151 lines</p>
+<p class="file"><a href="https://github.com/showell/shale/blob/9a842a26107ddbc8ddf252aa771a17abb43b3195/cookbook/roc/rewrite_method_calls/rewrite_method_calls.roc"><code>cookbook/roc/rewrite_method_calls/rewrite_method_calls.roc</code></a>, 151 lines</p>
 <pre><code><span class="syn-comment">## rewrite_method_calls, in Roc on Shale&#39;s platform (roc_platform/README.md):</span>
 <span class="syn-comment">## old-style Roc calls rewritten as method calls, `List.map(xs, f)` as</span>
 <span class="syn-comment">## `xs.map(f)`, wherever the compiler agrees it is the same call. Its</span>
@@ -19406,7 +19432,7 @@ use(<span class="syn-string">&quot;./parsed.shale&quot;</span>)
 	}
 }
 </code></pre>
-<p class="file"><a href="https://github.com/showell/shale/blob/ef3cb9bdf660ffdf58b97ad825751475f0254ec8/cookbook/roc/rewrite_method_calls/Compiler.roc"><code>cookbook/roc/rewrite_method_calls/Compiler.roc</code></a>, 119 lines</p>
+<p class="file"><a href="https://github.com/showell/shale/blob/9a842a26107ddbc8ddf252aa771a17abb43b3195/cookbook/roc/rewrite_method_calls/Compiler.roc"><code>cookbook/roc/rewrite_method_calls/Compiler.roc</code></a>, 125 lines</p>
 <pre><code><span class="syn-comment">## The tree&#39;s own Roc, which judges each rewrite: `roc check` and its errors,</span>
 <span class="syn-comment">## `roc test`&#39;s summary, and `roc fmt`. The Roc is the one the tree pins</span>
 <span class="syn-comment">## (its `roc-version`), since method lookup has changed</span>
@@ -19433,10 +19459,16 @@ use(<span class="syn-string">&quot;./parsed.shale&quot;</span>)
 			<span class="syn-type">Compiler</span>.stop!(<span class="syn-string">&quot;rewrite_method_calls: no roc-version where the run starts: run it from the repository&#39;s root, whose roc-version pins its Roc&quot;</span>)
 		}
 		roc = <span class="syn-string">&quot;tools:roc-</span>${pin}<span class="syn-string">/roc&quot;</span>
-		<span class="syn-keyword">if</span> <span class="syn-type">Shale</span>.exists!(roc) {
-			<span class="syn-type">Shale</span>.real!(roc)
-		} <span class="syn-keyword">else</span> {
+		<span class="syn-keyword">if</span> !(<span class="syn-type">Shale</span>.exists!(roc)) {
 			<span class="syn-type">Compiler</span>.stop!(<span class="syn-string">&quot;rewrite_method_calls: no </span>${roc}<span class="syn-string">: install Roc </span>${pin}<span class="syn-string"> into ~/tools/roc-</span>${pin}<span class="syn-string">/ (roc-apps&#39;s toolchain release carries it)&quot;</span>)
+		} <span class="syn-keyword">else</span> {
+			real = <span class="syn-type">Shale</span>.real!(roc)
+			said = <span class="syn-type">Shale</span>.run!({ argv: [real, <span class="syn-string">&quot;version&quot;</span>], keep: <span class="syn-type">Whole</span>(<span class="syn-number">4000</span>), timeout_ms: <span class="syn-number">30000</span>, want: <span class="syn-string">&quot;&quot;</span> })
+			<span class="syn-keyword">if</span> <span class="syn-type">Text</span>.trim(said.out) == <span class="syn-string">&quot;Roc compiler version </span>${pin}<span class="syn-string">&quot;</span> {
+				real
+			} <span class="syn-keyword">else</span> {
+				<span class="syn-type">Compiler</span>.stop!(<span class="syn-string">&quot;rewrite_method_calls: </span>${roc}<span class="syn-string"> says </span>${<span class="syn-type">Text</span>.trim(said.out)}<span class="syn-string">, not Roc compiler version </span>${pin}<span class="syn-string">&quot;</span>)
+			}
 		}
 	}
 
@@ -19527,7 +19559,7 @@ use(<span class="syn-string">&quot;./parsed.shale&quot;</span>)
 <span class="syn-name">roc_run!</span> : <span class="syn-type">List</span>(<span class="syn-type">Str</span>), [<span class="syn-type">Head</span>(<span class="syn-type">U64</span>), <span class="syn-type">Tail</span>(<span class="syn-type">U64</span>), <span class="syn-type">Whole</span>(<span class="syn-type">U64</span>)], <span class="syn-type">U64</span> =&gt; { code : <span class="syn-type">I64</span>, out : <span class="syn-type">Str</span> }
 <span class="syn-name">roc_run!</span> = |argv, keep, timeout_ms| <span class="syn-type">Shale</span>.run!({ argv, keep, timeout_ms, want: <span class="syn-string">&quot;&quot;</span> })
 </code></pre>
-<p class="file"><a href="https://github.com/showell/shale/blob/ef3cb9bdf660ffdf58b97ad825751475f0254ec8/cookbook/roc/rewrite_method_calls/Run.roc"><code>cookbook/roc/rewrite_method_calls/Run.roc</code></a>, 420 lines</p>
+<p class="file"><a href="https://github.com/showell/shale/blob/9a842a26107ddbc8ddf252aa771a17abb43b3195/cookbook/roc/rewrite_method_calls/Run.roc"><code>cookbook/roc/rewrite_method_calls/Run.roc</code></a>, 420 lines</p>
 <pre><code><span class="syn-comment">## The rewrite of a list of files, each judged on its root: their trees read,</span>
 <span class="syn-comment">## their candidates found, the types read of each root and judging them, then</span>
 <span class="syn-comment">## the confirm and the trials in the files&#39; order, as far as the run&#39;s</span>
@@ -19949,7 +19981,7 @@ use(<span class="syn-string">&quot;./parsed.shale&quot;</span>)
 	$total
 }
 </code></pre>
-<p class="file"><a href="https://github.com/showell/shale/blob/ef3cb9bdf660ffdf58b97ad825751475f0254ec8/cookbook/roc/rewrite_method_calls/SelfTest.roc"><code>cookbook/roc/rewrite_method_calls/SelfTest.roc</code></a>, 296 lines</p>
+<p class="file"><a href="https://github.com/showell/shale/blob/9a842a26107ddbc8ddf252aa771a17abb43b3195/cookbook/roc/rewrite_method_calls/SelfTest.roc"><code>cookbook/roc/rewrite_method_calls/SelfTest.roc</code></a>, 296 lines</p>
 <pre><code><span class="syn-comment">## The recipe&#39;s self-test: each plant in</span>
 <span class="syn-comment">## cookbook/roc/plants/rewrite_method_calls/ judged in a child run of its own,</span>
 <span class="syn-comment">## through the launcher (`plant=&lt;Name&gt;`), so each plant gets a run&#39;s</span>
@@ -20247,7 +20279,7 @@ use(<span class="syn-string">&quot;./parsed.shale&quot;</span>)
 	<span class="syn-string">&quot;{</span>${<span class="syn-type">Str</span>.join_with(members, <span class="syn-string">&quot;,&quot;</span>)}<span class="syn-string">}&quot;</span>
 }
 </code></pre>
-<p class="file"><a href="https://github.com/showell/shale/blob/ef3cb9bdf660ffdf58b97ad825751475f0254ec8/cookbook/roc/rewrite_method_calls/Sweep.roc"><code>cookbook/roc/rewrite_method_calls/Sweep.roc</code></a>, 111 lines</p>
+<p class="file"><a href="https://github.com/showell/shale/blob/9a842a26107ddbc8ddf252aa771a17abb43b3195/cookbook/roc/rewrite_method_calls/Sweep.roc"><code>cookbook/roc/rewrite_method_calls/Sweep.roc</code></a>, 111 lines</p>
 <pre><code><span class="syn-comment">## What the rewrites left for a sweep to fix in the same pass, which the</span>
 <span class="syn-comment">## recipe reports and does not fix: each import that a file used before its</span>
 <span class="syn-comment">## rewrite and no longer uses after it, by the cookbook&#39;s one home of that</span>
@@ -20360,7 +20392,7 @@ use(<span class="syn-string">&quot;./parsed.shale&quot;</span>)
 	bytes.len() + <span class="syn-number">3</span> * bytes.count_if(|byte| byte == <span class="syn-string">&#39;\t&#39;</span>)
 }
 </code></pre>
-<p class="file"><a href="https://github.com/showell/shale/blob/ef3cb9bdf660ffdf58b97ad825751475f0254ec8/cookbook/roc/rewrite_method_calls/Candidates.roc"><code>cookbook/roc/rewrite_method_calls/Candidates.roc</code></a>, 262 lines</p>
+<p class="file"><a href="https://github.com/showell/shale/blob/9a842a26107ddbc8ddf252aa771a17abb43b3195/cookbook/roc/rewrite_method_calls/Candidates.roc"><code>cookbook/roc/rewrite_method_calls/Candidates.roc</code></a>, 262 lines</p>
 <pre><code><span class="syn-comment">## The calls a file offers to turn, `Module.fn(first, ...)`, each with why it</span>
 <span class="syn-comment">## must stay when it must, and what a trial&#39;s `roc check` errors say of them.</span>
 <span class="syn-keyword">import</span> <span class="syn-type">Literals</span>
@@ -20624,7 +20656,7 @@ use(<span class="syn-string">&quot;./parsed.shale&quot;</span>)
 	{ cands: $cands, hit: $hit }
 }
 </code></pre>
-<p class="file"><a href="https://github.com/showell/shale/blob/ef3cb9bdf660ffdf58b97ad825751475f0254ec8/cookbook/roc/rewrite_method_calls/Judging.roc"><code>cookbook/roc/rewrite_method_calls/Judging.roc</code></a>, 158 lines</p>
+<p class="file"><a href="https://github.com/showell/shale/blob/9a842a26107ddbc8ddf252aa771a17abb43b3195/cookbook/roc/rewrite_method_calls/Judging.roc"><code>cookbook/roc/rewrite_method_calls/Judging.roc</code></a>, 158 lines</p>
 <pre><code><span class="syn-comment">## The candidates of a file judged by Roc&#39;s own types, as roc-types gives</span>
 <span class="syn-comment">## them by region: a call whose first argument&#39;s type is the module&#39;s own is</span>
 <span class="syn-comment">## proven, one of a concrete other type stays, a symmetric call of peers</span>
@@ -20784,7 +20816,7 @@ use(<span class="syn-string">&quot;./parsed.shale&quot;</span>)
 	}
 }
 </code></pre>
-<p class="file"><a href="https://github.com/showell/shale/blob/ef3cb9bdf660ffdf58b97ad825751475f0254ec8/cookbook/roc/rewrite_method_calls/Peers.roc"><code>cookbook/roc/rewrite_method_calls/Peers.roc</code></a>, 267 lines</p>
+<p class="file"><a href="https://github.com/showell/shale/blob/9a842a26107ddbc8ddf252aa771a17abb43b3195/cookbook/roc/rewrite_method_calls/Peers.roc"><code>cookbook/roc/rewrite_method_calls/Peers.roc</code></a>, 267 lines</p>
 <pre><code><span class="syn-comment">## Which calls are peer calls (peer_calls.shale). A method call names a</span>
 <span class="syn-comment">## subject, so a symmetric function, one where no argument is the subject, is</span>
 <span class="syn-comment">## called through its module: `U64.max(a, b)`, `Str.concat(a, b)`,</span>
@@ -21053,7 +21085,7 @@ use(<span class="syn-string">&quot;./parsed.shale&quot;</span>)
 	}
 }
 </code></pre>
-<p class="file"><a href="https://github.com/showell/shale/blob/ef3cb9bdf660ffdf58b97ad825751475f0254ec8/cookbook/roc/rewrite_method_calls/Source.roc"><code>cookbook/roc/rewrite_method_calls/Source.roc</code></a>, 158 lines</p>
+<p class="file"><a href="https://github.com/showell/shale/blob/9a842a26107ddbc8ddf252aa771a17abb43b3195/cookbook/roc/rewrite_method_calls/Source.roc"><code>cookbook/roc/rewrite_method_calls/Source.roc</code></a>, 158 lines</p>
 <pre><code><span class="syn-comment">## A file as the rewrite reads it: Roc&#39;s tree of it, each node&#39;s span as byte</span>
 <span class="syn-comment">## offsets into its text, and where each line starts, so a byte&#39;s line is</span>
 <span class="syn-comment">## found and a span&#39;s text cut out.</span>
@@ -21213,7 +21245,7 @@ use(<span class="syn-string">&quot;./parsed.shale&quot;</span>)
 	}
 }
 </code></pre>
-<p class="file"><a href="https://github.com/showell/shale/blob/ef3cb9bdf660ffdf58b97ad825751475f0254ec8/cookbook/roc/rewrite_method_calls/Tally.roc"><code>cookbook/roc/rewrite_method_calls/Tally.roc</code></a>, 69 lines</p>
+<p class="file"><a href="https://github.com/showell/shale/blob/9a842a26107ddbc8ddf252aa771a17abb43b3195/cookbook/roc/rewrite_method_calls/Tally.roc"><code>cookbook/roc/rewrite_method_calls/Tally.roc</code></a>, 69 lines</p>
 <pre><code><span class="syn-comment">## What a run has done so far: the programs it started, its checks, the</span>
 <span class="syn-comment">## files the confirm kept, the rewrites that passed (for what they leave the</span>
 <span class="syn-comment">## sweep), the kinds of type the types found, and the roots they were read</span>
@@ -21284,7 +21316,7 @@ use(<span class="syn-string">&quot;./parsed.shale&quot;</span>)
 	}
 }
 </code></pre>
-<p class="file"><a href="https://github.com/showell/shale/blob/ef3cb9bdf660ffdf58b97ad825751475f0254ec8/cookbook/roc/rewrite_method_calls/Trial.roc"><code>cookbook/roc/rewrite_method_calls/Trial.roc</code></a>, 181 lines</p>
+<p class="file"><a href="https://github.com/showell/shale/blob/9a842a26107ddbc8ddf252aa771a17abb43b3195/cookbook/roc/rewrite_method_calls/Trial.roc"><code>cookbook/roc/rewrite_method_calls/Trial.roc</code></a>, 181 lines</p>
 <pre><code><span class="syn-comment">## The compiler&#39;s judgement of a rewrite: one file&#39;s open calls tried round</span>
 <span class="syn-comment">## by round until `roc check` passes (the trial), and the files whose calls</span>
 <span class="syn-comment">## the types all prove written at once and checked together (the confirm).</span>
@@ -21467,7 +21499,7 @@ use(<span class="syn-string">&quot;./parsed.shale&quot;</span>)
 	{ cands: $cands, refused: $refused, stray: $stray }
 }
 </code></pre>
-<p class="file"><a href="https://github.com/showell/shale/blob/ef3cb9bdf660ffdf58b97ad825751475f0254ec8/cookbook/roc/rewrite_method_calls/Types.roc"><code>cookbook/roc/rewrite_method_calls/Types.roc</code></a>, 132 lines</p>
+<p class="file"><a href="https://github.com/showell/shale/blob/9a842a26107ddbc8ddf252aa771a17abb43b3195/cookbook/roc/rewrite_method_calls/Types.roc"><code>cookbook/roc/rewrite_method_calls/Types.roc</code></a>, 132 lines</p>
 <pre><code><span class="syn-comment">## Every expression&#39;s type in an app, from roc-types (Roc&#39;s own checker,</span>
 <span class="syn-comment">## https://github.com/showell/roc-types) run on the root with its pin held</span>
 <span class="syn-comment">## to the tree&#39;s Roc, or read from a file a gate kept, and read by</span>
@@ -21601,7 +21633,7 @@ use(<span class="syn-string">&quot;./parsed.shale&quot;</span>)
 	}
 }
 </code></pre>
-<p class="file"><a href="https://github.com/showell/shale/blob/ef3cb9bdf660ffdf58b97ad825751475f0254ec8/cookbook/roc/rewrite_method_calls/Plants.roc"><code>cookbook/roc/rewrite_method_calls/Plants.roc</code></a>, 145 lines</p>
+<p class="file"><a href="https://github.com/showell/shale/blob/9a842a26107ddbc8ddf252aa771a17abb43b3195/cookbook/roc/rewrite_method_calls/Plants.roc"><code>cookbook/roc/rewrite_method_calls/Plants.roc</code></a>, 145 lines</p>
 <pre><code><span class="syn-comment">## What each plant in cookbook/roc/plants/rewrite_method_calls/ must come to</span>
 <span class="syn-comment">## (rewrite_method_calls.shale&#39;s `EXPECT`), and the plants that serve only</span>
 <span class="syn-comment">## as roots for others.</span>
@@ -21663,7 +21695,7 @@ use(<span class="syn-string">&quot;./parsed.shale&quot;</span>)
 		{ ..typed(<span class="syn-string">&quot;ProvenFails&quot;</span>, <span class="syn-string">&quot;TypedApp&quot;</span>, <span class="syn-number">1</span>, <span class="syn-number">2</span>), left: <span class="syn-number">2</span>, why: <span class="syn-string">&quot;roc check: type mismatch&quot;</span> },
 		{ ..plain(<span class="syn-string">&quot;Unrooted&quot;</span>), types: <span class="syn-type">Bool.True</span>, stop: <span class="syn-string">&quot;the types need root=&quot;</span> },
 		{ ..plain(<span class="syn-string">&quot;NotApp&quot;</span>), types: <span class="syn-type">Bool.True</span>, root: <span class="syn-string">&quot;Proven&quot;</span>, stop: <span class="syn-string">&quot;is not an app&quot;</span> },
-		{ ..plain(<span class="syn-string">&quot;Pin&quot;</span>), types: <span class="syn-type">Bool.True</span>, root: <span class="syn-string">&quot;TypedApp&quot;</span>, stop: <span class="syn-string">&quot;roc-types reads Roc nightly-2026-11-03-34bd006&quot;</span>, tree_pin: <span class="syn-string">&quot;nightly-2026-10-29-a0a9fc2&quot;</span> },
+		{ ..plain(<span class="syn-string">&quot;Pin&quot;</span>), types: <span class="syn-type">Bool.True</span>, root: <span class="syn-string">&quot;TypedApp&quot;</span>, stop: <span class="syn-string">&quot;roc-types reads Roc 0.1.0_RC1&quot;</span>, tree_pin: <span class="syn-string">&quot;nightly-2026-10-29-a0a9fc2&quot;</span> },
 		{ ..typed(<span class="syn-string">&quot;Second&quot;</span>, <span class="syn-string">&quot;TypedApp,SecondApp&quot;</span>, <span class="syn-number">1</span>, <span class="syn-number">0</span>), left: <span class="syn-number">0</span> },
 		<span class="syn-comment"># A file no root reaches is listed, and the run goes on to the next.</span>
 		{ ..typed(<span class="syn-string">&quot;Unreached&quot;</span>, <span class="syn-string">&quot;TypedApp,SecondApp&quot;</span>, <span class="syn-number">1</span>, <span class="syn-number">0</span>), file: <span class="syn-string">&quot;Proven&quot;</span>, beside: <span class="syn-string">&quot;Unreached&quot;</span>, left: <span class="syn-number">0</span>, unreached: <span class="syn-number">1</span> },
@@ -21748,7 +21780,7 @@ use(<span class="syn-string">&quot;./parsed.shale&quot;</span>)
 <span class="syn-name">counted</span> : <span class="syn-type">Str</span>, <span class="syn-type">Str</span>, <span class="syn-type">U64</span> -&gt; <span class="syn-type">Plants.Expect</span>
 <span class="syn-name">counted</span> = |name, file, proven| { ..plain(name), file, root: <span class="syn-string">&quot;TypedApp&quot;</span>, types: <span class="syn-type">Bool.True</span>, count: <span class="syn-type">Bool.True</span>, proven }
 </code></pre>
-<p class="file"><a href="https://github.com/showell/shale/blob/ef3cb9bdf660ffdf58b97ad825751475f0254ec8/cookbook/roc/rewrite_method_calls/Literals.roc"><code>cookbook/roc/rewrite_method_calls/Literals.roc</code></a>, 203 lines</p>
+<p class="file"><a href="https://github.com/showell/shale/blob/9a842a26107ddbc8ddf252aa771a17abb43b3195/cookbook/roc/rewrite_method_calls/Literals.roc"><code>cookbook/roc/rewrite_method_calls/Literals.roc</code></a>, 203 lines</p>
 <pre><code><span class="syn-comment">## Whether a value&#39;s type comes from unsuffixed number literals alone, read</span>
 <span class="syn-comment">## from the file&#39;s tree (number_literals.shale). Such a value&#39;s type</span>
 <span class="syn-comment">## defaults (to `Dec`) when it is a method call&#39;s receiver, so</span>
@@ -21953,7 +21985,7 @@ use(<span class="syn-string">&quot;./parsed.shale&quot;</span>)
 	field.kind == <span class="syn-string">&quot;field&quot;</span> <span class="syn-keyword">and</span> field.field == name <span class="syn-keyword">and</span> field.kids.len() == <span class="syn-number">1</span>
 }
 </code></pre>
-<p class="file"><a href="https://github.com/showell/shale/blob/ef3cb9bdf660ffdf58b97ad825751475f0254ec8/cookbook/roc/rewrite_method_calls/Rewritten.roc"><code>cookbook/roc/rewrite_method_calls/Rewritten.roc</code></a>, 168 lines</p>
+<p class="file"><a href="https://github.com/showell/shale/blob/9a842a26107ddbc8ddf252aa771a17abb43b3195/cookbook/roc/rewrite_method_calls/Rewritten.roc"><code>cookbook/roc/rewrite_method_calls/Rewritten.roc</code></a>, 168 lines</p>
 <pre><code><span class="syn-comment">## A file&#39;s text written back with chosen calls turned: `Module.fn(first,</span>
 <span class="syn-comment">## rest...)` into `first.fn(rest...)`, or a peer method call back into a</span>
 <span class="syn-comment">## module call, `a.max(b)` into `U64.max(a, b)` (method_text.shale&#39;s</span>
