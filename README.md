@@ -60,6 +60,10 @@ site/deploy.sh host=<user>@<address>  # staging to prod (the droplet's ssh desti
 Staging changes only by a publish. Both channels send no-store, so each is
 live the moment its file is. Each script's header says the rest.
 
+[docs/production.md](docs/production.md) is the map of everything served
+under lynrummy.com: the droplets, Caddy, each site and the repo that owns
+it, how each is deployed, the logs and HSTS.
+
 ## The compiler
 
 **One nightly for the whole repository, named in `roc-version`.**
