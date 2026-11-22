@@ -7,7 +7,7 @@ import Distance
 Across :: F64.{
 
 	metres : F64 -> Across
-	metres = |metres| Across.(metres)
+	metres = |m| Across.(m)
 
 	to_metres : Across -> F64
 	to_metres = |Across.(across)| across
