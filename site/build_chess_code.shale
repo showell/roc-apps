@@ -27,9 +27,10 @@ const CHECK = arg("check", "0") == "1"
 -- The files, in the order the page shows them, each with its language and
 -- the sentence above it.
 const FILES = {
+  {path = "canvas_apps/chess_kit/Backtrack.roc", language = "roc", about = "The shared search: depth-first backtracking, a transition at a time, for any puzzle."},
   {path = "canvas_apps/chess_kit/Tape.roc", language = "roc", about = "The shared engine: the event tape, the scrubbing display, and the red overlay."},
-  {path = "canvas_apps/knights_tour/Knight.roc", language = "roc", about = "The Knight's Tour machine: the move graph, the depth-first search, and the squares cut off from the tour."},
-  {path = "canvas_apps/eight_queens/Queens.roc", language = "roc", about = "The Eight Queens machine: the row-by-row search with column and diagonal bitmasks, and the attacked squares."},
+  {path = "canvas_apps/knights_tour/Knight.roc", language = "roc", about = "The Knight's Tour machine: the move graph, the tour as a puzzle, and the squares cut off from the tour."},
+  {path = "canvas_apps/eight_queens/Queens.roc", language = "roc", about = "The Eight Queens machine: the row-by-row puzzle with column and diagonal bitmasks, and the attacked squares."},
   {path = "canvas_apps/chess_kit/ChessApp.roc", language = "roc", about = "A toy as a canvas app: the clicks, the keys, the transport and the rate."},
   {path = "canvas_apps/chess_kit/ChessBoard.roc", language = "roc", about = "The board, its overlays, the hover marks and the pieces, as shapes."},
   {path = "canvas_apps/chess_kit/ChessControls.roc", language = "roc", about = "The title, the status line, the transport row and the slider, as shapes."},
@@ -118,9 +119,13 @@ animation pausable and scrubbable in both directions: rewinding is not a feature
 search, it falls out of the data. The engine also owns the red overlay: a square where a piece was
 placed, found doomed, and pulled off ("empty and once touched", which are the same thing, because a
 square's moves strictly alternate place and remove).</p>
-<p>Each toy is then just a <b>machine</b>: <b>Knight.roc</b> builds the knight-move graph and runs a
-depth-first search for a full tour; <b>Queens.roc</b> runs the classic row-by-row eight-queens search
-with column and diagonal bitmasks. A machine answers four things: how many pieces mean solved, its
+<p>The search itself is shared too. <b>Backtrack.roc</b> is depth-first backtracking in 30 lines,
+for any puzzle that can say where the option at an index leads from a state, or refuse it. Its
+frames are values, so backing up only drops the top frame: nothing is undone by hand. Each step
+enters a state, leaves one, or finds the root out of options, and a toy turns those into tape moves.</p>
+<p>Each toy is then just a <b>machine</b>: <b>Knight.roc</b> builds the knight-move graph and states
+the tour as a puzzle for that search; <b>Queens.roc</b> states the classic row-by-row eight-queens
+puzzle with column and diagonal bitmasks. A machine answers four things: how many pieces mean solved, its
 next move (one search transition, one event), how it starts from the clicked square, and its own
 "impossible right now" overlay (the indigo squares: unreachable for the knight, attacked for the
 queens). <b>ChessApp.roc</b> takes a machine and makes the page, so the toys cannot drift apart.</p>
