@@ -135,7 +135,7 @@ by_fewest_onward = |landings, graph| {
 			$count = $count + 1
 		}
 		count = $count
-		$sorted = List.join([$sorted.take_first(count), [target], $sorted.drop_first(count)])
+		$sorted = [$sorted.take_first(count), [target], $sorted.drop_first(count)].join()
 	}
 	$sorted
 }

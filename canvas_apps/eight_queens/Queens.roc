@@ -91,7 +91,7 @@ next_row = |{ pin_row, rows_filled, .. }|
 
 ## Each row's squares, a list a row.
 row_squares : List(List(U8))
-row_squares = List.from_iter(U8.until(0, 8)).map(|row| List.from_iter(U8.until(row * 8, row * 8 + 8)))
+row_squares = List.from_iter(U8.until(0, 8)).map(|row| List.from_iter((row * 8).until(row * 8 + 8)))
 
 ## The position with a queen on `square` added to its attacks, or, where one
 ## is there, taken out: each bit flips.
