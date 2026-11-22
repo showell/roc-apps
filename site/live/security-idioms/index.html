@@ -60,7 +60,7 @@ the whole class. Each section says what its type or check can't see. Some of the
 instead, among them a Markdown spec, an audit of what each request costs, and a sweep for decisions that let a new
 case through; the page says which.</p>
 <p class="lede">Claude, an AI coding agent, wrote the fixes, the checks and this page under Steve's supervision. Every
-snippet is quoted from roc-chat at commit 2e8f4fd, its main branch when this page was last updated, with a link to its
+snippet is quoted from roc-chat at commit d275ae7, its main branch when this page was last updated, with a link to its
 lines; the one older snippet says so.</p>
 
 <h2>What the types already said</h2>
@@ -92,6 +92,13 @@ sign_out_others! = |user|
     streams = DeviceKeys.revoke_all!(user)
     Ok({})  # compile error: `streams` is never used</pre>
 <p>A value the compiler won't let you drop turns "you must remember to do this after that" into a type error.</p>
+<p>roc-chat gets that one case today without linear types. A bracket with an opaque handle, shown in
+<a href="#streams">the streams section</a>, makes each revoking write take a handle that only the function that ends
+the streams can make, so a sign-out that forgets the ending doesn't compile. Linear types would still close what
+the bracket can't. The bracket has to fix its body's answer type, or the body could hand the handle out, and a
+linear handle could leave the body and still have to be spent. And the two uses below that need "at most once"
+have no bracket form. Neither the bracket nor a linear type decides which writes need the handle: a new writer that
+forgets to take it is left for a check to catch.</p>
 <h3>Linear types</h3>
 <p>A value of a <em>linear</em> type must be used exactly once: it can't be copied, and it can't be dropped. An
 <em>affine</em> type is looser: at most once, so it can't be copied but may be dropped. Roc has neither. It tracks at
@@ -100,15 +107,12 @@ the way: a statement must evaluate to <code>{}</code>, so a function's result ca
 <code>_ = revoke!(...)</code> drops it on purpose and compiles.</p>
 <p>Three places on this page would use linear types:</p>
 <ul>
-<li><strong>A revocation that must be ended.</strong> Each revoking write would return a linear value naming whose
-streams to end, and only <code>UserStreams.end_every_stream!</code> would take it. Only the "can't be dropped" half
-matters here, since ending streams twice does no harm. If each writer returned the value on failure too, a sign-out
-that forgot the ending, on any path, early returns included, would fail to compile. That would replace the check's
-<code>unended_streams</code> finding, and close two of its gaps: the check judges by line order, not by path, and it
-reads names, not values, where the value would carry the user. It would also keep the layers apart: the writer
-returns the value and the action ends the streams. It still wouldn't decide which writes revoke something; the
-table's <code>ends</code> and <code>keeps</code> stay a reader's call. And it can't help with a crash between the
-write and the ending, or a file edited by hand.</li>
+<li><strong>A revocation that must be ended.</strong> The bracket already holds this one: each revoking write takes a
+<code>UserStreams.Revoker</code>, and only <code>UserStreams.with_streams_ended!</code> makes one. A linear
+<code>Revoker</code> would lift the bracket's main constraint, its fixed answer type: a body could hand the handle out,
+and the code that took it would still have to spend it on an ending. Only the "can't be dropped" half matters here,
+since ending streams twice does no harm. Neither would decide which writes revoke something; the table's
+<code>ends</code> and <code>keeps</code> stay a reader's call. And neither helps with a file edited by hand.</li>
 <li><strong>A proof spent once.</strong> If <code>replace_password_hash!</code> consumed its <code>AccountProof</code>,
 a proof could set one password, once, and couldn't be kept for later. An affine type is enough for this. Today the
 proof is opaque but can be copied, so code holding one could call the writer twice. No code does, and the
@@ -128,10 +132,12 @@ an answer would then use. That is ours to do.</p>
 <h3>What Roc already gives us</h3>
 <p>Current Roc already does a lot for a service like this. A pure function can't do I/O, and every effect is marked
 by <code>=&gt;</code> and by the <code>!</code> the compiler asks for, so a reader can see where the effects are. Only an opaque type's own module can
-make its values, which is what <code>AccountProof</code> and <code>HumanClaim</code> stand on. <code>match</code> is
+make its values, which is what <code>AccountProof</code>, <code>HumanClaim</code> and the streams' bracket stand on.
+With a function that takes an effect as its argument, and that effect's answer type fixed, that is enough for a
+step the compiler won't let you skip. <code>match</code> is
 exhaustive, which is what <code>RouteCost</code> and the allow-lists below depend on, and there are no nulls.</p>
 
-<h2>Streams that outlived a sign-out</h2>
+<h2 id="streams">Streams that outlived a sign-out</h2>
 <h3>The bug</h3>
 <p>The devices page has a button, "Sign out other devices" (<code>POST /devices/sign-out-others</code>). It revoked
 every other device's key and advanced the session generation, so no old session cookie worked again. But a page's live
@@ -142,113 +148,13 @@ open the same way. (Since the invite fix below, a join is only ever a first join
 ends streams, to be safe.)</p>
 
 <h3>The fix: one place ends a user's streams</h3>
-<p><code>UserStreams.end_every_stream!</code> is the one place the app ends a user's streams. The host does the
-ending; this function names whose.</p>
-<div class="diagram">
-<svg width="489pt" height="275pt"
- viewBox="0.00 0.00 488.50 275.00" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
-<g id="graph0" class="graph" transform="scale(1 1) rotate(0) translate(4 271)">
-<title>streams</title>
-<!-- action -->
-<g id="node1" class="node">
-<title>action</title>
-<path fill="none" stroke="black" d="M249,-267C249,-267 12,-267 12,-267 6,-267 0,-261 0,-255 0,-255 0,-241 0,-241 0,-235 6,-229 12,-229 12,-229 249,-229 249,-229 255,-229 261,-235 261,-241 261,-241 261,-255 261,-255 261,-261 255,-267 249,-267"/>
-<text text-anchor="middle" x="130.5" y="-251.4" font-family="sans-serif" font-size="12.00">an action that revokes</text>
-<text text-anchor="middle" x="130.5" y="-238.4" font-family="sans-serif" font-size="12.00">sign_out_others!, a join, a GitHub link, ...</text>
-</g>
-<!-- write -->
-<g id="node2" class="node">
-<title>write</title>
-<path fill="none" stroke="black" d="M148,-187C148,-187 65,-187 65,-187 59,-187 53,-181 53,-175 53,-175 53,-161 53,-161 53,-155 59,-149 65,-149 65,-149 148,-149 148,-149 154,-149 160,-155 160,-161 160,-161 160,-175 160,-175 160,-181 154,-187 148,-187"/>
-<text text-anchor="middle" x="106.5" y="-171.4" font-family="sans-serif" font-size="12.00">its write</text>
-<text text-anchor="middle" x="106.5" y="-158.4" font-family="sans-serif" font-size="12.00">an ends writer</text>
-</g>
-<!-- action&#45;&gt;write -->
-<g id="edge1" class="edge">
-<title>action&#45;&gt;write</title>
-<path fill="none" stroke="black" d="M124.93,-228.91C121.75,-218.55 117.7,-205.39 114.21,-194.05"/>
-<polygon fill="black" stroke="black" points="116.52,-193.23 112.12,-187.26 111.84,-194.67 116.52,-193.23"/>
-<text text-anchor="middle" x="131.5" y="-205.2" font-family="sans-serif" font-size="11.00">first</text>
-</g>
-<!-- ending -->
-<g id="node3" class="node">
-<title>ending</title>
-<path fill="none" stroke="black" stroke-width="2" d="M406.5,-186C406.5,-186 194.5,-186 194.5,-186 188.5,-186 182.5,-180 182.5,-174 182.5,-174 182.5,-162 182.5,-162 182.5,-156 188.5,-150 194.5,-150 194.5,-150 406.5,-150 406.5,-150 412.5,-150 418.5,-156 418.5,-162 418.5,-162 418.5,-174 418.5,-174 418.5,-180 412.5,-186 406.5,-186"/>
-<text text-anchor="middle" x="300.5" y="-164.9" font-family="sans-serif" font-size="12.00">UserStreams.end_every_stream!(id)</text>
-</g>
-<!-- action&#45;&gt;ending -->
-<g id="edge2" class="edge">
-<title>action&#45;&gt;ending</title>
-<path fill="none" stroke="black" d="M169.93,-228.91C195.88,-217 229.88,-201.4 256.68,-189.11"/>
-<polygon fill="black" stroke="black" points="257.98,-191.2 263.32,-186.06 255.94,-186.75 257.98,-191.2"/>
-<text text-anchor="middle" x="239" y="-205.2" font-family="sans-serif" font-size="11.00">then</text>
-</g>
-<!-- host -->
-<g id="node4" class="node">
-<title>host</title>
-<path fill="none" stroke="black" d="M380,-107C380,-107 219,-107 219,-107 213,-107 207,-101 207,-95 207,-95 207,-81 207,-81 207,-75 213,-69 219,-69 219,-69 380,-69 380,-69 386,-69 392,-75 392,-81 392,-81 392,-95 392,-95 392,-101 386,-107 380,-107"/>
-<text text-anchor="middle" x="299.5" y="-91.4" font-family="sans-serif" font-size="12.00">the host ends every stream</text>
-<text text-anchor="middle" x="299.5" y="-78.4" font-family="sans-serif" font-size="12.00">held under that name</text>
-</g>
-<!-- ending&#45;&gt;host -->
-<g id="edge3" class="edge">
-<title>ending&#45;&gt;host</title>
-<path fill="none" stroke="black" d="M241.94,-149.8C235.46,-145.62 229.7,-140.43 225.5,-134 219.56,-124.89 222.88,-117.34 230.7,-111.19"/>
-<polygon fill="black" stroke="black" points="232.3,-113.07 236.78,-107.16 229.59,-108.99 232.3,-113.07"/>
-<text text-anchor="middle" x="286.5" y="-125.2" font-family="sans-serif" font-size="11.00">StreamHolder.user(id)</text>
-</g>
-<!-- ending&#45;&gt;host -->
-<g id="edge4" class="edge">
-<title>ending&#45;&gt;host</title>
-<path fill="none" stroke="black" d="M336.19,-149.98C346.8,-142.42 354.24,-132.79 348.5,-122 346.57,-118.38 344.05,-115.08 341.17,-112.1"/>
-<polygon fill="black" stroke="black" points="342.47,-109.97 335.64,-107.07 339.17,-113.59 342.47,-109.97"/>
-<text text-anchor="middle" x="415.5" y="-125.2" font-family="sans-serif" font-size="11.00">StreamHolder.agent(id)</text>
-</g>
-<!-- reconnect -->
-<g id="node5" class="node">
-<title>reconnect</title>
-<path fill="none" stroke="black" d="M370,-38C370,-38 229,-38 229,-38 223,-38 217,-32 217,-26 217,-26 217,-12 217,-12 217,-6 223,0 229,0 229,0 370,0 370,0 376,0 382,-6 382,-12 382,-12 382,-26 382,-26 382,-32 376,-38 370,-38"/>
-<text text-anchor="middle" x="299.5" y="-22.4" font-family="sans-serif" font-size="12.00">each stream reconnects</text>
-<text text-anchor="middle" x="299.5" y="-9.4" font-family="sans-serif" font-size="12.00">and is judged again</text>
-</g>
-<!-- host&#45;&gt;reconnect -->
-<g id="edge5" class="edge">
-<title>host&#45;&gt;reconnect</title>
-<path fill="none" stroke="black" d="M299.5,-68.69C299.5,-61.6 299.5,-53.36 299.5,-45.69"/>
-<polygon fill="black" stroke="black" points="301.95,-45.29 299.5,-38.29 297.05,-45.29 301.95,-45.29"/>
-</g>
-</g>
-</svg>
-</div>
-<p class="file"><a href="https://github.com/showell/roc-chat/blob/2e8f4fd89f65ede752945ce5ef5e7189c2c1b905/app/UserStreams.roc#L1-L23"><code>app/UserStreams.roc</code></a>, lines 1-23</p>
-<pre class="roc"><code><span class="syn-comment">## This module ends a user&#39;s open streams, the one place the app does. A</span>
-<span class="syn-comment">## stream is judged once, when it opens, and the host holds it for up to an</span>
-<span class="syn-comment">## hour (`Limits.stream_most_ms`) without asking again, so every action in</span>
-<span class="syn-comment">## the app that ends a session, revokes a credential or removes someone&#39;s</span>
-<span class="syn-comment">## access calls `end_every_stream!` after its write: each stream reconnects</span>
-<span class="syn-comment">## and is judged again, admitted only by what still admits it.</span>
-<span class="syn-comment">## tools/check_stream_endings.shale holds the app to that, and to every</span>
-<span class="syn-comment">## holder `StreamHolder` names being one this module ends.</span>
-<span class="syn-keyword">import</span> pf.<span class="syn-type">Host</span>
-<span class="syn-keyword">import</span> <span class="syn-type">StreamHolder</span>
-<span class="syn-keyword">import</span> <span class="syn-type">UserId</span>
-
-<span class="syn-type">UserStreams</span> :: [].{
-
-	<span class="syn-comment">## Every stream the user `id` holds ended now, under each holder</span>
-	<span class="syn-comment">## `StreamHolder` names: their pages&#39; streams (a conversation&#39;s, Recent&#39;s</span>
-	<span class="syn-comment">## and the device code page&#39;s) and an agent&#39;s own stream.</span>
-	<span class="syn-name">end_every_stream!</span> : <span class="syn-type">UserId</span> =&gt; {}
-	<span class="syn-name">end_every_stream!</span> = |id| {
-		<span class="syn-type">Host</span>.end_every_stream_of_holder!(<span class="syn-type">StreamHolder</span>.user(id).to_bytes())
-		<span class="syn-type">Host</span>.end_every_stream_of_holder!(<span class="syn-type">StreamHolder</span>.agent(id).to_bytes())
-	}
-}</code></pre>
-<p>It ends streams under each holder <code>StreamHolder</code> names. <code>StreamHolder</code> is an opaque type,
-the one home of those names, and <code>HttpAnswer.stream</code> takes one and sets the answer's
-<code>stream_holder</code> from it. The platform's answer is a plain record, though, so Roc's types would let any
-module set <code>stream_holder</code> itself. The check below holds that instead.</p>
-<p class="file"><a href="https://github.com/showell/roc-chat/blob/2e8f4fd89f65ede752945ce5ef5e7189c2c1b905/app/StreamHolder.roc#L13-L26"><code>app/StreamHolder.roc</code></a>, lines 13-26</p>
+<p><code>UserStreams</code> is the one place the app ends a user's streams. The host does the ending; the module
+names whose. Its <code>end_every_stream!</code> ends them under each holder <code>StreamHolder</code> names, and it is
+private to the module: the bracket below is its one caller. <code>StreamHolder</code> is an opaque type, the one home
+of those names, and <code>HttpAnswer.stream</code> takes one and sets the answer's <code>stream_holder</code> from
+it. The platform's answer is a plain record, though, so Roc's types would let any module set
+<code>stream_holder</code> itself. The check below holds that instead.</p>
+<p class="file"><a href="https://github.com/showell/roc-chat/blob/d275ae7e1cad016f1a978f6ae6500f48d8d5874a/app/StreamHolder.roc#L13-L26"><code>app/StreamHolder.roc</code></a>, lines 13-26</p>
 <pre class="roc"><code><span class="syn-type">StreamHolder</span> :: <span class="syn-type">List</span>(<span class="syn-type">U8</span>).{
 
 	<span class="syn-comment">## Who holds the streams of the pages `user` opens: the user, by id.</span>
@@ -263,7 +169,7 @@ module set <code>stream_holder</code> itself. The check below holds that instead
 	<span class="syn-name">to_bytes</span> : <span class="syn-type">StreamHolder</span> -&gt; <span class="syn-type">List</span>(<span class="syn-type">U8</span>)
 	<span class="syn-name">to_bytes</span> = |<span class="syn-type">StreamHolder</span>.(bytes)| bytes
 }</code></pre>
-<p class="file"><a href="https://github.com/showell/roc-chat/blob/2e8f4fd89f65ede752945ce5ef5e7189c2c1b905/app/HttpAnswer.roc#L193-L209"><code>app/HttpAnswer.roc</code></a>, lines 193-209</p>
+<p class="file"><a href="https://github.com/showell/roc-chat/blob/d275ae7e1cad016f1a978f6ae6500f48d8d5874a/app/HttpAnswer.roc#L193-L209"><code>app/HttpAnswer.roc</code></a>, lines 193-209</p>
 <pre class="roc"><code><span class="syn-comment">## An event stream the host holds open on the bus keys `keys`, 1 to 4,</span>
 <span class="syn-comment">## for `holder`: `backlog` first, then every frame published to any of</span>
 <span class="syn-comment">## `keys`. The host writes the stream&#39;s type; it is not sniffed.</span>
@@ -281,63 +187,249 @@ module set <code>stream_holder</code> itself. The check below holds that instead
 	stream_holder: holder.to_bytes(),
 	write_grace_ms: <span class="syn-number">0</span>,
 }</code></pre>
-<p>Every action in the app that ends a session, revokes a credential or removes someone's access calls it after its
-writes.
-Each stream then reconnects and is judged again. Here is the sign-out, which ends the streams even when a write
-failed partway:</p>
-<p class="file"><a href="https://github.com/showell/roc-chat/blob/2e8f4fd89f65ede752945ce5ef5e7189c2c1b905/app/DeviceSessionsRoute.roc#L119-L129"><code>app/DeviceSessionsRoute.roc</code></a>, lines 119-129</p>
+
+<h3>The rule, held by a bracket with an opaque handle</h3>
+<p>The rule is "after this write, also do that." Every write that ends a session, revokes a credential or removes
+someone's access takes a <code>UserStreams.Revoker</code>, in place of a user id (the password's writer takes it beside
+its proof). <code>Revoker</code> is an opaque type
+nested in <code>UserStreams</code>, and only <code>UserStreams.with_streams_ended!(id, revoke!)</code> makes one. It
+hands its body, <code>revoke!</code>, a <code>Revoker</code> for <code>id</code>, then ends <code>id</code>'s streams,
+whatever the body answered. A revoking write outside the bracket has no <code>Revoker</code> to pass, so it doesn't
+compile. Each stream then reconnects and is judged again.</p>
+<div class="diagram">
+<svg width="447pt" height="342pt"
+ viewBox="0.00 0.00 447.00 342.00" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+<g id="graph0" class="graph" transform="scale(1 1) rotate(0) translate(4 338)">
+<title>streams</title>
+<!-- action -->
+<g id="node1" class="node">
+<title>action</title>
+<path fill="none" stroke="black" d="M268.5,-334C268.5,-334 31.5,-334 31.5,-334 25.5,-334 19.5,-328 19.5,-322 19.5,-322 19.5,-308 19.5,-308 19.5,-302 25.5,-296 31.5,-296 31.5,-296 268.5,-296 268.5,-296 274.5,-296 280.5,-302 280.5,-308 280.5,-308 280.5,-322 280.5,-322 280.5,-328 274.5,-334 268.5,-334"/>
+<text text-anchor="middle" x="150" y="-318.4" font-family="sans-serif" font-size="12.00">an action that revokes</text>
+<text text-anchor="middle" x="150" y="-305.4" font-family="sans-serif" font-size="12.00">sign_out_others!, a join, a GitHub link, ...</text>
+</g>
+<!-- bracket -->
+<g id="node2" class="node">
+<title>bracket</title>
+<path fill="none" stroke="black" stroke-width="2" d="M288,-265C288,-265 12,-265 12,-265 6,-265 0,-259 0,-253 0,-253 0,-241 0,-241 0,-235 6,-229 12,-229 12,-229 288,-229 288,-229 294,-229 300,-235 300,-241 300,-241 300,-253 300,-253 300,-259 294,-265 288,-265"/>
+<text text-anchor="middle" x="150" y="-243.9" font-family="sans-serif" font-size="12.00">UserStreams.with_streams_ended!(id, revoke!)</text>
+</g>
+<!-- action&#45;&gt;bracket -->
+<g id="edge1" class="edge">
+<title>action&#45;&gt;bracket</title>
+<path fill="none" stroke="black" d="M150,-295.97C150,-288.75 150,-280.33 150,-272.57"/>
+<polygon fill="black" stroke="black" points="152.45,-272.1 150,-265.1 147.55,-272.1 152.45,-272.1"/>
+</g>
+<!-- write -->
+<g id="node3" class="node">
+<title>write</title>
+<path fill="none" stroke="black" d="M219,-187C219,-187 81,-187 81,-187 75,-187 69,-181 69,-175 69,-175 69,-161 69,-161 69,-155 75,-149 81,-149 81,-149 219,-149 219,-149 225,-149 231,-155 231,-161 231,-161 231,-175 231,-175 231,-181 225,-187 219,-187"/>
+<text text-anchor="middle" x="150" y="-171.4" font-family="sans-serif" font-size="12.00">revoke!&#39;s writes</text>
+<text text-anchor="middle" x="150" y="-158.4" font-family="sans-serif" font-size="12.00">each takes the Revoker</text>
+</g>
+<!-- bracket&#45;&gt;write -->
+<g id="edge2" class="edge">
+<title>bracket&#45;&gt;write</title>
+<path fill="none" stroke="black" d="M150,-228.91C150,-218.73 150,-205.63 150,-194.28"/>
+<polygon fill="black" stroke="black" points="152.45,-194.11 150,-187.11 147.55,-194.11 152.45,-194.11"/>
+<text text-anchor="middle" x="201.5" y="-205.2" font-family="sans-serif" font-size="11.00">1. a Revoker for id</text>
+</g>
+<!-- host -->
+<g id="node5" class="node">
+<title>host</title>
+<path fill="none" stroke="black" d="M264.5,-107C264.5,-107 35.5,-107 35.5,-107 29.5,-107 23.5,-101 23.5,-95 23.5,-95 23.5,-81 23.5,-81 23.5,-75 29.5,-69 35.5,-69 35.5,-69 264.5,-69 264.5,-69 270.5,-69 276.5,-75 276.5,-81 276.5,-81 276.5,-95 276.5,-95 276.5,-101 270.5,-107 264.5,-107"/>
+<text text-anchor="middle" x="150" y="-91.4" font-family="sans-serif" font-size="12.00">the host ends every stream held under</text>
+<text text-anchor="middle" x="150" y="-78.4" font-family="sans-serif" font-size="12.00">StreamHolder.user(id) and .agent(id)</text>
+</g>
+<!-- write&#45;&gt;host -->
+<g id="edge3" class="edge">
+<title>write&#45;&gt;host</title>
+<path fill="none" stroke="black" d="M150,-148.91C150,-138.65 150,-125.64 150,-114.37"/>
+<polygon fill="black" stroke="black" points="152.45,-114.26 150,-107.26 147.55,-114.26 152.45,-114.26"/>
+<text text-anchor="middle" x="215" y="-125.2" font-family="sans-serif" font-size="11.00">2. then, always, it ends</text>
+</g>
+<!-- outside -->
+<g id="node4" class="node">
+<title>outside</title>
+<path fill="none" stroke="black" stroke-dasharray="5,2" d="M427,-187C427,-187 265,-187 265,-187 259,-187 253,-181 253,-175 253,-175 253,-161 253,-161 253,-155 259,-149 265,-149 265,-149 427,-149 427,-149 433,-149 439,-155 439,-161 439,-161 439,-175 439,-175 439,-181 433,-187 427,-187"/>
+<text text-anchor="middle" x="346" y="-171.4" font-family="sans-serif" font-size="12.00">a revoking write outside</text>
+<text text-anchor="middle" x="346" y="-158.4" font-family="sans-serif" font-size="12.00">has no Revoker: no compile</text>
+</g>
+<!-- reconnect -->
+<g id="node6" class="node">
+<title>reconnect</title>
+<path fill="none" stroke="black" d="M220.5,-38C220.5,-38 79.5,-38 79.5,-38 73.5,-38 67.5,-32 67.5,-26 67.5,-26 67.5,-12 67.5,-12 67.5,-6 73.5,0 79.5,0 79.5,0 220.5,0 220.5,0 226.5,0 232.5,-6 232.5,-12 232.5,-12 232.5,-26 232.5,-26 232.5,-32 226.5,-38 220.5,-38"/>
+<text text-anchor="middle" x="150" y="-22.4" font-family="sans-serif" font-size="12.00">each stream reconnects</text>
+<text text-anchor="middle" x="150" y="-9.4" font-family="sans-serif" font-size="12.00">and is judged again</text>
+</g>
+<!-- host&#45;&gt;reconnect -->
+<g id="edge4" class="edge">
+<title>host&#45;&gt;reconnect</title>
+<path fill="none" stroke="black" d="M150,-68.69C150,-61.6 150,-53.36 150,-45.69"/>
+<polygon fill="black" stroke="black" points="152.45,-45.29 150,-38.29 147.55,-45.29 152.45,-45.29"/>
+</g>
+</g>
+</svg>
+</div>
+<p class="file"><a href="https://github.com/showell/roc-chat/blob/d275ae7e1cad016f1a978f6ae6500f48d8d5874a/app/UserStreams.roc#L22-L57"><code>app/UserStreams.roc</code></a>, lines 22-57</p>
+<pre class="roc"><code><span class="syn-type">UserStreams</span> :: [].{
+
+	<span class="syn-comment">## The right to make the revoking writes of one user, whose streams</span>
+	<span class="syn-comment">## `with_streams_ended!` ends after them. Only `with_streams_ended!`</span>
+	<span class="syn-comment">## makes one, and its body&#39;s answer holds none, so none outlives it.</span>
+	<span class="syn-type">Revoker</span> :: <span class="syn-type">UserId</span>.{
+
+		<span class="syn-comment">## The user whose sessions, credentials or access the writes revoke.</span>
+		<span class="syn-name">user</span> : <span class="syn-type">UserStreams.Revoker</span> -&gt; <span class="syn-type">UserId</span>
+		<span class="syn-name">user</span> = |<span class="syn-type">UserStreams.Revoker</span>.(id)| id
+	}
+
+	<span class="syn-comment">## `revoke!` run with the right to revoke the user `id`&#39;s sessions,</span>
+	<span class="syn-comment">## credentials or access, then every stream `id` holds ended: when</span>
+	<span class="syn-comment">## `revoke!` succeeds, and when it fails or returns early too, since a</span>
+	<span class="syn-comment">## write may have landed before the failure.</span>
+	<span class="syn-name">with_streams_ended!</span> : <span class="syn-type">UserId</span>,
+	(<span class="syn-type">UserStreams.Revoker</span> =&gt; <span class="syn-type">Try</span>({}, [<span class="syn-type">FileSystem</span>(<span class="syn-type">FileFacts.Fault</span>)])) =&gt; <span class="syn-type">Try</span>(
+		{},
+		[<span class="syn-type">FileSystem</span>(<span class="syn-type">FileFacts.Fault</span>)],
+	)
+	<span class="syn-name">with_streams_ended!</span> = |id, revoke!| {
+		revoked = revoke!(<span class="syn-type">UserStreams.Revoker</span>.(id))
+		end_every_stream!(id)
+		revoked
+	}
+}
+
+<span class="syn-comment">## Every stream the user `id` holds ended now, under each holder</span>
+<span class="syn-comment">## `StreamHolder` names: their pages&#39; streams (a conversation&#39;s, Recent&#39;s</span>
+<span class="syn-comment">## and the device code page&#39;s) and an agent&#39;s own stream.</span>
+<span class="syn-name">end_every_stream!</span> : <span class="syn-type">UserId</span> =&gt; {}
+<span class="syn-name">end_every_stream!</span> = |id| {
+	<span class="syn-type">Host</span>.end_every_stream_of_holder!(<span class="syn-type">StreamHolder</span>.user(id).to_bytes())
+	<span class="syn-type">Host</span>.end_every_stream_of_holder!(<span class="syn-type">StreamHolder</span>.agent(id).to_bytes())
+}</code></pre>
+<p>Three things make it hold:</p>
+<ul>
+<li><strong>The write's user is the ending's user.</strong> Each revoking writer is written to write for
+<code>revoker.user()</code>, the user the bracket ends, and takes no other id for the write. That is how the writers
+are written, and a reader holds it; neither the types nor the check do, since a writer could take a second id beside
+the <code>Revoker</code> and compile. Where a write is also handed a value naming a user, it crashes at run time
+when the two differ: the password's writer compares its <code>AccountProof</code>'s human (shown in
+<a href="#invites">the invite section</a>), and <code>SignInFiles.write_github_link!</code>, which makes the GitHub
+link's two writes, compares its link's.</li>
+<li><strong>The body's answer type is fixed</strong>, as <code>Try({}, [FileSystem(FileFacts.Fault)])</code>. A body
+whose answer was a generic <code>Try(answer, fault)</code> could hand the <code>Revoker</code> out,
+<code>|revoker| Ok(revoker)</code>, and write with it after the streams were ended. The plants below show both.</li>
+<li><strong><code>?</code> and <code>return</code> in the body leave only the body.</strong> An early exit is the
+body's answer, and the bracket still ends the streams. A plant put <code>return Ok({})</code> after the write in the
+agent key's revoke, and the end-to-end step that checks the agent's open stream ends still passed.</li>
+</ul>
+<p>Here is the sign-out, converted. The <code>?</code> stops at the first failed write, and the streams are ended
+either way:</p>
+<p class="file"><a href="https://github.com/showell/roc-chat/blob/d275ae7e1cad016f1a978f6ae6500f48d8d5874a/app/DeviceSessionsRoute.roc#L119-L129"><code>app/DeviceSessionsRoute.roc</code></a>, lines 119-129</p>
 <pre class="roc"><code><span class="syn-name">sign_out_others!</span> : <span class="syn-type">UserId</span> =&gt; <span class="syn-type">Try</span>({}, [<span class="syn-type">FileSystem</span>(<span class="syn-type">FileFacts.Fault</span>)])
 <span class="syn-name">sign_out_others!</span> = |id| {
 	<span class="syn-type">DeviceCodeFiles</span>.revoke_or_log!(id)
-	signed_out =
-		<span class="syn-keyword">match</span> <span class="syn-type">DeviceKeyFiles</span>.revoke_every_active_device_key!(id) {
-			<span class="syn-type">Ok</span>({}) =&gt; <span class="syn-type">SignInFiles</span>.advance_session_generation!(id)
-			<span class="syn-type">Err</span>(fault) =&gt; <span class="syn-type">Err</span>(fault)
-		}
-	<span class="syn-type">UserStreams</span>.end_every_stream!(id)
-	signed_out
+	<span class="syn-type">UserStreams</span>.with_streams_ended!(
+		id,
+		|revoker| {
+			<span class="syn-type">DeviceKeyFiles</span>.revoke_every_active_device_key!(revoker)?
+			<span class="syn-type">SignInFiles</span>.advance_session_generation!(revoker)
+		},
+	)
 }</code></pre>
+<p>Six actions go through the bracket: "Sign out other devices", the sign-out of a device a code signed in, a join by
+an invite, a GitHub link, an agent key's revoke and a member's removal from a channel. One answer changed with them:
+a revoking write that fails now ends the streams too, since a write may have landed before the failure. Only "Sign
+out other devices" did that before.</p>
 
-<h3>Why a check, and not a type</h3>
-<p>The rule is "after this write, also do that." In Roc today, a type can demand a value before a call. It can't
-demand a step after one. We considered a <code>Revocation</code> value that each revoking write would return, and that
-only ending the streams would take. Roc refuses a statement whose value isn't <code>{}</code>, so a caller couldn't
-drop it by accident. But with no linear types, <code>_ =</code> drops it on purpose, and that compiles. The other way to force it, ending the streams inside the writer itself,
-would put the ending in the wrong layer. In roc-chat only <code>FileFacts</code> touches files, through each
-feature's <code>*Files</code> module, and those modules do only file work; they decide nothing.</p>
-<p>So a check holds the rule. <code>tools/check_stream_endings.shale</code> reads every app module but the specs with
-Roc's own parser. Every function that calls one of <code>FileFacts</code>' writers (listed in
-<code>tools/file_writers.txt</code>, which the credential check below reads too) is judged once in
-<code>tools/stream_endings.txt</code>: <code>ends</code> if its write ends a session, a credential or someone's
-access, and <code>keeps</code> if not. Separately, an
-<code>exempt</code> line names a function and an <code>ends</code> writer it calls that needs no ending there, with
-the reason.</p>
-<p class="file"><a href="https://github.com/showell/roc-chat/blob/2e8f4fd89f65ede752945ce5ef5e7189c2c1b905/tools/stream_endings.txt#L18-L49"><code>tools/stream_endings.txt</code></a>, lines 18-49, trimmed</p>
-<pre class="plain"><code>ends    AccountFiles.replace_password_hash!        a new password ends every session signed over the old one
+<h3>What the compiler refuses</h3>
+<p>We planted each of these in a copy of roc-chat at d275ae7, ran the pinned <code>roc check app/main.roc</code>, and
+threw the copy away. (Roc's rules of dashes are shortened here.) First, a revoking write outside the bracket, in the
+agent key's revoke:</p>
+<pre class="plain"><code>── ✗ type mismatch ── app/AgentsRoute.roc:284:38
+
+The first argument being passed to this function has the wrong type.
+
+AgentFiles.replace_agent_key_state!(agent, revoked) ? |fault| FileSystem(fault)
+                                    ^^^^^
+
+This argument has the type:
+
+    UserId
+
+But the function needs the first argument to be:
+
+    UserStreams.Revoker</code></pre>
+<p>Then a body that hands the <code>Revoker</code> out, to write with it after the bracket:</p>
+<pre class="roc">kept = UserStreams.with_streams_ended!(agent, |revoker| Ok(revoker))?
+AgentFiles.replace_agent_key_state!(kept, revoked).map_err(|fault| FileSystem(fault))</pre>
+<pre class="plain"><code>── ✗ type mismatch ── app/AgentsRoute.roc:284:48
+
+The second argument being passed to this function has the wrong type.
+
+kept = UserStreams.with_streams_ended!(agent, |revoker| Ok(revoker))?
+                                              ^^^^^^^^^
+
+This argument has the type:
+
+    UserStreams.Revoker -&gt; [Err([FileSystem(FileFacts.Fault)]),
+    Ok(UserStreams.Revoker)]
+
+But the function needs the second argument to be:
+
+    UserStreams.Revoker =&gt; Try({}, [FileSystem(FileFacts.Fault)])</code></pre>
+<p>With the bracket's signature made generic, <code>(UserStreams.Revoker =&gt; Try(answer, fault)) =&gt; Try(answer,
+fault)</code>, the same two lines checked clean ("No errors found"). The fixed answer type is what keeps the handle
+inside the bracket.</p>
+
+<h3>Why a bracket, and not <code>defer</code></h3>
+<p>This came from a question of Steve's: would Odin's <code>defer</code> make sense in Roc? A <code>defer</code> runs
+a step when its block ends, however it ends, but only where someone wrote it, and code that leaves it out compiles.
+The bracket is stronger: the first step needs a handle that only the bracket makes, and the bracket does the second
+step itself, so the second step can't be left out. It needs no new language feature, only an opaque type and a
+function that takes an effect. It is Haskell's <code>bracket</code>, plus opacity.</p>
+
+<h3>The check, narrowed to what the types can't see</h3>
+<p>The types can't say which writes revoke. That is a reader's call, and a check holds it.
+<code>tools/check_stream_endings.shale</code> reads every app module but the specs with Roc's own parser. Every
+function that calls one of <code>FileFacts</code>' writers (listed in <code>tools/file_writers.txt</code>, which the
+credential check below reads too) is judged once in <code>tools/stream_endings.txt</code>: <code>ends</code> if its
+write ends a session, a credential or someone's access, <code>keeps</code> if not, and <code>may_end</code> for the
+one writer whose value decides, a channel's members written whole. An <code>exempt</code> line names a function and a
+<code>may_end</code> writer it calls without removing anyone, with the reason.</p>
+<p class="file"><a href="https://github.com/showell/roc-chat/blob/d275ae7e1cad016f1a978f6ae6500f48d8d5874a/tools/stream_endings.txt#L22-L54"><code>tools/stream_endings.txt</code></a>, lines 22-54, trimmed</p>
+<pre class="plain"><code>ends     AccountFiles.replace_password_hash!        a new password ends every session signed over the old one
 ...
-ends    AccountFiles.replace_session_generation!   "Sign out other devices": every session signed before admits no one
-ends    AgentFiles.replace_agent_key_state!        an agent's key revoked
-ends    DeviceKeyFiles.revoke_device_key!          a device's key revoked, and the session bound to it
+ends     AccountFiles.replace_session_generation!   "Sign out other devices": every session signed before admits no one
+ends     AgentFiles.replace_agent_key_state!        an agent's key revoked
+ends     DeviceKeyFiles.revoke_device_key!          a device's key revoked, and the session bound to it
 ...
-keeps   AgentFiles.create_agent_key!               a new key admits; it ends nothing
+may_end  DirectoryFiles.replace_channel_members!    a channel's members written whole: a member left out loses its conversations
 ...
-exempt  ChannelMembersRoute.add!  DirectoryFiles.replace_channel_members!  adding a member removes no one's access</code></pre>
-<p>Then the check walks the calls. Any function outside a <code>*Files</code> module that calls an
-<code>ends</code> writer, directly or through a <code>*Files</code> function, must call <code>UserStreams.end_every_stream!</code> after it, unless an <code>exempt</code>
-line names that call. It also holds the holders to their one home: <code>stray_holder</code> names any module but
-<code>HttpAnswer</code> that sets a <code>stream_holder</code> field. These are its findings:</p>
-<p class="file"><a href="https://github.com/showell/roc-chat/blob/2e8f4fd89f65ede752945ce5ef5e7189c2c1b905/tools/check_stream_endings.shale#L17-L41"><code>tools/check_stream_endings.shale</code></a>, lines 17-41</p>
-<pre class="roc"><code><span class="syn-comment">--</span>
-<span class="syn-comment">--   unjudged_writer   a function that writes a file and has no `ends` or</span>
-<span class="syn-comment">--                     `keeps` line, so a new writer is judged when it comes;</span>
-<span class="syn-comment">--   stale_entry       a line for no function, an `ends` or `keeps` line for</span>
-<span class="syn-comment">--                     a function that writes no file, or an `exempt` line</span>
-<span class="syn-comment">--                     for a call the function doesn&#39;t make or that reaches</span>
-<span class="syn-comment">--                     no `ends` writer;</span>
-<span class="syn-comment">--   unended_streams   a function outside a `*Files` module that reaches an</span>
-<span class="syn-comment">--                     `ends` writer (directly, or through a `*Files`</span>
-<span class="syn-comment">--                     function that calls one) and calls no</span>
-<span class="syn-comment">--                     `UserStreams.end_every_stream!` after that call;</span>
+keeps    AccountFiles.create_account!               a new account, which no stream holds yet
+...
+exempt   ChannelMembersRoute.add!  DirectoryFiles.replace_channel_members!  adding a member removes no one's access</code></pre>
+<p>An <code>ends</code> writer whose annotation takes no <code>UserStreams.Revoker</code> is an
+<code>unguarded_writer</code>. A call of the <code>may_end</code> writer from a function that takes no
+<code>Revoker</code> and has no <code>exempt</code> line is an <code>unjudged_call</code>. A member's removal goes
+through <code>DirectoryFiles.replace_channel_members_without!</code>, which takes a <code>Revoker</code> and crashes
+if its user is still in the channel. The check also holds the holders to their one home: <code>stray_holder</code>
+names any module but <code>HttpAnswer</code> that sets a <code>stream_holder</code> field. These are its
+findings:</p>
+<p class="file"><a href="https://github.com/showell/roc-chat/blob/d275ae7e1cad016f1a978f6ae6500f48d8d5874a/tools/check_stream_endings.shale#L25-L55"><code>tools/check_stream_endings.shale</code></a>, lines 25-55</p>
+<pre class="roc"><code><span class="syn-comment">--   unjudged_writer   a function that writes a file and has no `ends`,</span>
+<span class="syn-comment">--                     `may_end` or `keeps` line, so a new writer is judged</span>
+<span class="syn-comment">--                     when it comes;</span>
+<span class="syn-comment">--   stale_entry       a line for no function, a verdict for a function that</span>
+<span class="syn-comment">--                     writes no file, or an `exempt` line for a call the</span>
+<span class="syn-comment">--                     function doesn&#39;t make or of no `may_end` writer;</span>
+<span class="syn-comment">--   unguarded_writer  an `ends` writer whose annotation takes no</span>
+<span class="syn-comment">--                     `UserStreams.Revoker`, so a caller could revoke</span>
+<span class="syn-comment">--                     without ending streams;</span>
+<span class="syn-comment">--   unjudged_call     a call of a `may_end` writer from a function that</span>
+<span class="syn-comment">--                     neither takes a `UserStreams.Revoker` nor has an</span>
+<span class="syn-comment">--                     `exempt` line for it;</span>
 <span class="syn-comment">--   stray_ending      `Host.end_every_stream_of_holder!` called anywhere but</span>
 <span class="syn-comment">--                     `UserStreams.end_every_stream!`;</span>
 <span class="syn-comment">--   unended_holder    a `StreamHolder` function that makes a holder (every</span>
@@ -351,22 +443,42 @@ line names that call. It also holds the holders to their one home: <code>stray_h
 <span class="syn-comment">--                     the one place that sets it to a holder (its `Whole`</span>
 <span class="syn-comment">--                     answer sets it empty), and this finding holds every</span>
 <span class="syn-comment">--                     other module to that, so every stream is held under</span>
-<span class="syn-comment">--                     a name `StreamHolder` makes.</span></code></pre>
-<p>The gate, <code>tools/verify.shale</code>, holds it at zero. A new writer fails it until someone judges it, so the
-table can't go stale. Planted faults show it sees: removing the ending from <code>sign_out_others!</code>,
-the original bug, gives <code>unended_streams</code>, and a record update that sets <code>stream_holder</code> in
-<code>AgentStream.roc</code> gives <code>stray_holder</code>.</p>
-<p>What it doesn't catch: it reads names, not values, so it can't tell whether the ending names the same user as the
-write. It checks that an ending comes later in the function than the first revoking call, by line, not that every
-path reaches it: an early return between the two would pass. It can't see a writer reached as a method on a value;
-every writer is called by its module's name today. And it skips a function that has its own <code>ends</code> or
-<code>keeps</code> line, so an action that both wrote a file itself and revoked would pass; today the only such
-function outside a <code>*Files</code> module is <code>FileFacts</code>' own primitive. And it covers the app's own actions: a password or GitHub file
-edited by hand on the server, or a crash between the write and the ending, leaves a stream open until its hour.
-The end-to-end tests cover the real cases: an open stream ends on "Sign out other devices", on a GitHub link, on a
+<span class="syn-comment">--                     a name `StreamHolder` makes.</span>
+<span class="syn-comment">--</span>
+<span class="syn-comment">-- What the check can&#39;t see: a `may_end` call it is told removes no one</span>
+<span class="syn-comment">-- (each `exempt` line is a reader&#39;s judgement), and a write that reaches</span>
+<span class="syn-comment">-- the host&#39;s files other than through FileFacts, which CLAUDE.md&#39;s rule</span>
+<span class="syn-comment">-- (only FileFacts touches files) keeps out.</span></code></pre>
+<p>Before the bracket, the check walked the calls from each action to the revoking writes it reached, and its
+<code>unended_streams</code> finding named an action with no ending after the write. The types hold that now, so the
+walk and the finding are gone; the table and the holder rules stay. The gate, <code>tools/verify.shale</code>, holds
+the check at zero, and a new writer fails it until someone judges it, so the table can't go stale. Planted faults
+show it sees: an <code>ends</code> writer taking a <code>UserId</code> gives <code>unguarded_writer</code>, a removal
+through the plain channel writer gives <code>unjudged_call</code>, and a record update that sets
+<code>stream_holder</code> in <code>AgentStream.roc</code> gives <code>stray_holder</code>.</p>
+<p>What the bracket and the check don't catch:</p>
+<ul>
+<li><strong>A new revoking writer that forgets to take a <code>Revoker</code>.</strong> The bracket can't see it, but
+the table can. The writer fails the check until it is judged, and judged <code>ends</code> it must take a
+<code>Revoker</code>. Judged <code>keeps</code> by mistake, it passes: the verdict is a reader's.</li>
+<li><strong>The channel's whole-set writer.</strong> Whether <code>DirectoryFiles.replace_channel_members!</code>
+removes anyone depends on the member list it is handed, which its type doesn't say. Each <code>exempt</code> line is
+a reader's judgement that its call removes no one. And a function that takes a <code>Revoker</code> may call the
+writer with no <code>exempt</code> line, so it is trusted to remove only the <code>Revoker</code>'s user; only
+<code>replace_channel_members_without!</code> checks that, at run time.</li>
+<li><strong>A write straight through <code>FileFacts</code>.</strong> A function that calls <code>FileFacts</code>'
+writers itself needs no <code>Revoker</code> to compile. It is a new writer, so the check makes someone judge it. A
+write that reaches the files other than through <code>FileFacts</code> is out of the check's sight; roc-chat's rule
+that only <code>FileFacts</code> touches files keeps it out.</li>
+<li><strong>A file edited by hand.</strong> A password or GitHub file edited on the server, outside the app, leaves a
+stream open until its hour.</li>
+</ul>
+<p>A crash between the write and the ending is no gap: on a Roc crash the host panics, the server stops, and every
+stream ends with it.</p>
+<p>The end-to-end tests cover the real cases: an open stream ends on "Sign out other devices", on a GitHub link, on a
 sign-out, on an agent key's revoke and on a member's removal.</p>
 
-<h2>An invite that acted as a password reset</h2>
+<h2 id="invites">An invite that acted as a password reset</h2>
 <h3>The bug</h3>
 <p>An inviter could make a new link for a human who had already joined. Redeeming that link set whatever password
 the redeemer chose, and ended the joined human's own password and session. So whoever made the link could take over
@@ -377,7 +489,7 @@ type said whose proof stood behind the call.</p>
 <p><code>HumanClaim</code> judges a human <code>Unclaimed</code> (no password, no GitHub link, every invite live) or
 <code>Claimed</code>. <code>Unclaimed</code> is opaque, and only <code>judge</code> makes one; <code>judge</code>
 itself is the example in <a href="#allow-lists">the allow-lists section</a>, below.</p>
-<p class="file"><a href="https://github.com/showell/roc-chat/blob/2e8f4fd89f65ede752945ce5ef5e7189c2c1b905/app/HumanClaim.roc#L11-L42"><code>app/HumanClaim.roc</code></a>, lines 11-42, trimmed</p>
+<p class="file"><a href="https://github.com/showell/roc-chat/blob/d275ae7e1cad016f1a978f6ae6500f48d8d5874a/app/HumanClaim.roc#L11-L42"><code>app/HumanClaim.roc</code></a>, lines 11-42, trimmed</p>
 <pre class="roc"><code><span class="syn-type">HumanClaim</span> :: [].{
 
 	<span class="syn-comment">## What decides it, as the human&#39;s files hold them: each invite&#39;s state</span>
@@ -405,7 +517,7 @@ Inviting one again is a 403 saying a new link would change nothing. A join judge
 (<code>InviteRights.load_unclaimed_invitee!</code>), and redeeming takes the <code>Unclaimed</code> that gives, so a
 link made before the human joined redeems nothing after. For the same reason, a joined human's live invites don't
 count toward their inviter's cap of 10 open invites.</p>
-<p class="file"><a href="https://github.com/showell/roc-chat/blob/2e8f4fd89f65ede752945ce5ef5e7189c2c1b905/app/InviteFiles.roc#L105-L112"><code>app/InviteFiles.roc</code></a>, lines 105-112</p>
+<p class="file"><a href="https://github.com/showell/roc-chat/blob/d275ae7e1cad016f1a978f6ae6500f48d8d5874a/app/InviteFiles.roc#L105-L112"><code>app/InviteFiles.roc</code></a>, lines 105-112</p>
 <pre class="roc"><code><span class="syn-comment">## A new invite in the account folder of `unclaimed`, a human who has</span>
 <span class="syn-comment">## claimed nothing (`HumanClaim`), made once, its hash last.</span>
 <span class="syn-name">create_human_invite!</span> : <span class="syn-type">HumanClaim.Unclaimed</span>,
@@ -414,7 +526,9 @@ count toward their inviter's cap of 10 open invites.</p>
 	[<span class="syn-type">AlreadyExists</span>, <span class="syn-type">MissingDirectory</span>, <span class="syn-type">NotUtf8</span>, <span class="syn-type">PathRefused</span>, <span class="syn-type">Failed</span>],
 )
 <span class="syn-name">create_human_invite!</span> = |unclaimed, invite| {</code></pre>
-<p>The password's one writer takes an <code>AccountProof</code> in place of a bare id. Only
+<p>The password's one writer takes an <code>AccountProof</code> in place of a bare id. (A new password ends every
+session, so the writer also takes the <code>UserStreams.Revoker</code> from <a href="#streams">the streams
+section</a>, and crashes if the two name different users.) Only
 <code>of_first_join</code> makes one, from an <code>Admission</code>, and only <code>HumanInvite.redeem</code> makes
 an <code>Admission</code>. <code>Unclaimed</code>, <code>Redeemable</code>, <code>Admission</code> and
 <code>AccountProof</code> are opaque, and an arrow that makes one is labelled with the only function that does.
@@ -515,7 +629,7 @@ together:</p>
 </g>
 </svg>
 </div>
-<p class="file"><a href="https://github.com/showell/roc-chat/blob/2e8f4fd89f65ede752945ce5ef5e7189c2c1b905/app/AccountProof.roc#L12-L21"><code>app/AccountProof.roc</code></a>, lines 12-21</p>
+<p class="file"><a href="https://github.com/showell/roc-chat/blob/d275ae7e1cad016f1a978f6ae6500f48d8d5874a/app/AccountProof.roc#L12-L21"><code>app/AccountProof.roc</code></a>, lines 12-21</p>
 <pre class="roc"><code><span class="syn-type">AccountProof</span> :: <span class="syn-type">UserId</span>.{
 
 	<span class="syn-comment">## The proof of a first join: the human an invite&#39;s redemption admitted.</span>
@@ -526,22 +640,27 @@ together:</p>
 	<span class="syn-name">human</span> : <span class="syn-type">AccountProof</span> -&gt; <span class="syn-type">UserId</span>
 	<span class="syn-name">human</span> = |<span class="syn-type">AccountProof</span>.(id)| id
 }</code></pre>
-<p class="file"><a href="https://github.com/showell/roc-chat/blob/2e8f4fd89f65ede752945ce5ef5e7189c2c1b905/app/AccountFiles.roc#L178-L189"><code>app/AccountFiles.roc</code></a>, lines 178-189</p>
+<p class="file"><a href="https://github.com/showell/roc-chat/blob/d275ae7e1cad016f1a978f6ae6500f48d8d5874a/app/AccountFiles.roc#L179-L195"><code>app/AccountFiles.roc</code></a>, lines 179-195</p>
 <pre class="roc"><code><span class="syn-comment">## The password&#39;s bcrypt hash of the human whose account `proof` proves,</span>
 <span class="syn-comment">## written whole over the one before, atomically: a redeemed invite&#39;s</span>
 <span class="syn-comment">## choice, at their first join (`AccountProof`), so nothing writes one</span>
-<span class="syn-comment">## without the account&#39;s own proof. The hash is the host&#39;s</span>
+<span class="syn-comment">## without the account&#39;s own proof, nor without their streams ended</span>
+<span class="syn-comment">## (`revoker`, whose user `proof` must prove). The hash is the host&#39;s</span>
 <span class="syn-comment">## (`Host.bcrypt_hash_of_password!`); the password is never kept.</span>
-<span class="syn-name">replace_password_hash!</span> : <span class="syn-type">AccountProof</span>,
-<span class="syn-type">PasswordHash</span> =&gt; <span class="syn-type">Try</span>(
+<span class="syn-name">replace_password_hash!</span> : <span class="syn-type">UserStreams.Revoker</span>,
+{ proof : <span class="syn-type">AccountProof</span>, hash : <span class="syn-type">PasswordHash</span> } =&gt; <span class="syn-type">Try</span>(
 	{},
 	[<span class="syn-type">MissingDirectory</span>, <span class="syn-type">NotUtf8</span>, <span class="syn-type">PathRefused</span>, <span class="syn-type">Failed</span>],
 )
-<span class="syn-name">replace_password_hash!</span> = |proof, hash|
-	<span class="syn-type">FileFacts</span>.replace_fact!(password_path(proof.human()), hash.bytes())</code></pre>
+<span class="syn-name">replace_password_hash!</span> = |revoker, { proof, hash }|
+	<span class="syn-keyword">if</span> proof.human() == revoker.user() {
+		<span class="syn-type">FileFacts</span>.replace_fact!(password_path(proof.human()), hash.bytes())
+	} <span class="syn-keyword">else</span> {
+		<span class="syn-keyword">crash</span> <span class="syn-string">&quot;AccountFiles.replace_password_hash!: the proof and the revoker name two users&quot;</span>
+	}</code></pre>
 <p>The join is the one caller. It loads the invitee as <code>Unclaimed</code>, redeems, and passes the proof to the
-writer:</p>
-<p class="file"><a href="https://github.com/showell/roc-chat/blob/2e8f4fd89f65ede752945ce5ef5e7189c2c1b905/app/HumanInvitesRoute.roc#L460-L496"><code>app/HumanInvitesRoute.roc</code></a>, lines 460-496, trimmed</p>
+writer, inside the streams' bracket:</p>
+<p class="file"><a href="https://github.com/showell/roc-chat/blob/d275ae7e1cad016f1a978f6ae6500f48d8d5874a/app/HumanInvitesRoute.roc#L460-L499"><code>app/HumanInvitesRoute.roc</code></a>, lines 460-499, trimmed</p>
 <pre class="roc"><code><span class="syn-name">join_by_invite!</span> = |request| {
 	...
 	{ human: invited, unclaimed } = <span class="syn-type">InviteRights</span>.load_unclaimed_invitee!(request.directory, code)?
@@ -551,10 +670,13 @@ writer:</p>
 	...
 	hash = <span class="syn-type">PasswordHash</span>.of_bcrypt_answer(<span class="syn-type">Host</span>.bcrypt_hash_of_password!(password.bytes_to_check()))
 	proof = <span class="syn-type">AccountProof</span>.of_first_join(joined.admission)
-	<span class="syn-type">AccountFiles</span>.replace_password_hash!(proof, hash) ? |fault| <span class="syn-type">FileSystem</span>(fault)
-	<span class="syn-type">UserStreams</span>.end_every_stream!(human.id())
-	<span class="syn-type">Ok</span>({ admission: joined.admission, password_hash: hash, next })
-}</code></pre>
+	<span class="syn-type">UserStreams</span>.with_streams_ended!(
+		human.id(),
+		|revoker|
+			<span class="syn-type">AccountFiles</span>.replace_password_hash!(revoker, { proof, hash })
+				.map_err(|fault| <span class="syn-type">FileSystem</span>(fault)),
+	)?
+	<span class="syn-type">Ok</span>({ admission: joined.admission, password_hash: hash, next })</code></pre>
 <p>To see that the types hold, we planted calls to <code>create_human_invite!</code> and
 <code>replace_password_hash!</code> with a bare id. <code>roc check</code> refused both. That shows the types differ
 from an id; that only their own modules can make one is what opacity adds, and stops a forged proof. What the types
@@ -573,7 +695,7 @@ file missing, or any file garbled so it holds no fact, fails the read as <code>D
 server's log. Every request that reads that human's invites then answers a 500 and grants nothing, until the files
 are mended. That includes every new invite in the chat, by anyone, since the cap on open invites reads every human's
 invites:</p>
-<p class="file"><a href="https://github.com/showell/roc-chat/blob/2e8f4fd89f65ede752945ce5ef5e7189c2c1b905/app/InviteFiles.roc#L66-L87"><code>app/InviteFiles.roc</code></a>, lines 66-87, trimmed</p>
+<p class="file"><a href="https://github.com/showell/roc-chat/blob/d275ae7e1cad016f1a978f6ae6500f48d8d5874a/app/InviteFiles.roc#L66-L87"><code>app/InviteFiles.roc</code></a>, lines 66-87, trimmed</p>
 <pre class="roc"><code><span class="syn-comment">## The invites in the human `human`&#39;s account folder, each whole. One cut</span>
 <span class="syn-comment">## short, with no `hash`, the file written last, was never redeemable and</span>
 <span class="syn-comment">## is left out. One damaged, with its `hash` but another file missing or</span>
@@ -599,7 +721,7 @@ secrets and the session generation, device keys, device codes, agent keys and in
 them all to one table, <code>tools/credential_writers.txt</code>. Every function that calls one of
 <code>FileFacts</code>' writers is a <code>writes</code> line, marked <code>credential</code> or <code>other</code>. Every call of a credential writer is a
 <code>calls</code> line naming the caller and the proof that guards it:</p>
-<p class="file"><a href="https://github.com/showell/roc-chat/blob/2e8f4fd89f65ede752945ce5ef5e7189c2c1b905/tools/credential_writers.txt#L30-L59"><code>tools/credential_writers.txt</code></a>, lines 30-59, trimmed</p>
+<p class="file"><a href="https://github.com/showell/roc-chat/blob/d275ae7e1cad016f1a978f6ae6500f48d8d5874a/tools/credential_writers.txt#L30-L59"><code>tools/credential_writers.txt</code></a>, lines 30-59, trimmed</p>
 <pre class="plain"><code>calls AccountFiles.replace_password_hash! HumanInvitesRoute.join_by_invite! unclaimed an AccountProof of a first join: the account's live invite code, redeemed only for a human who has claimed nothing (InviteRights.load_unclaimed_invitee!)
 ...
 calls DeviceSessionsRoute.sign_out_others! DeviceSessionsRoute.sign_out_other_devices! own-session acting.human_in_session(): the acting human's own devices, by a full session (FullSessionRoutes)
@@ -718,7 +840,7 @@ bar showed "POST only", and a reload of any refused sign-in posted again. Now a 
 303 to <code>/login</code>, and the sign-in script puts its form's own GET page in the POST's place in the history
 (<code>history.replaceState</code>). The sign-in routes are one <code>match</code> over each path and method
 (<code>sign_in_choice</code>), and these are its lines for <code>/login/code</code>:</p>
-<p class="file"><a href="https://github.com/showell/roc-chat/blob/2e8f4fd89f65ede752945ce5ef5e7189c2c1b905/app/Route.roc#L431-L433"><code>app/Route.roc</code></a>, lines 431-433</p>
+<p class="file"><a href="https://github.com/showell/roc-chat/blob/d275ae7e1cad016f1a978f6ae6500f48d8d5874a/app/Route.roc#L431-L433"><code>app/Route.roc</code></a>, lines 431-433</p>
 <pre class="roc"><code>(<span class="syn-type">LoginCode</span>, <span class="syn-type">Get</span>) =&gt; <span class="syn-type">Open</span>(<span class="syn-type">ReturnToLogin</span>)
 (<span class="syn-type">LoginCode</span>, <span class="syn-type">Post</span>) =&gt; <span class="syn-type">Open</span>(<span class="syn-type">RedeemDeviceCode</span>)
 (<span class="syn-type">LoginCode</span>, <span class="syn-type">Other</span>) =&gt; <span class="syn-type">MethodNotAllowed</span>(<span class="syn-type">GetAndPost</span>)</code></pre>
@@ -728,7 +850,7 @@ own, and Mozilla's Observatory scored the doubled header invalid. The app sends 
 end-to-end tests check it on pages, scripts, images and streams. The host's own answers, its refusals (a 408, 413,
 429, 431 or 503, and a 400 for a bad head) and its own 500s, carried none; our follow-up found that, and they send it
 too now, which the host's tests check on each. So the
-<a href="https://github.com/showell/roc-chat/blob/2e8f4fd89f65ede752945ce5ef5e7189c2c1b905/deploy/chat.lynrummy.com.caddy">site block</a>
+<a href="https://github.com/showell/roc-chat/blob/d275ae7e1cad016f1a978f6ae6500f48d8d5874a/deploy/chat.lynrummy.com.caddy">site block</a>
 no longer adds one.</p>
 <h3>A class from a message</h3>
 <p>roc-chat's own Markdown spec found this one while testing what a message can put in the page. A form feed or a CR
@@ -749,7 +871,7 @@ many humans the chat has), <code>PerReaderPlaces</code> (a listing for each plac
 <code>PerHuman</code> (a read of every human's files). It is one <code>match</code> with no catch-all arm, so a new
 route fails to compile there until someone decides its class. (A new kind inside an existing route's payload, such
 as a new script, takes that route's class.)</p>
-<p class="file"><a href="https://github.com/showell/roc-chat/blob/2e8f4fd89f65ede752945ce5ef5e7189c2c1b905/app/RouteCost.roc#L17-L89"><code>app/RouteCost.roc</code></a>, lines 17-89, trimmed</p>
+<p class="file"><a href="https://github.com/showell/roc-chat/blob/d275ae7e1cad016f1a978f6ae6500f48d8d5874a/app/RouteCost.roc#L17-L89"><code>app/RouteCost.roc</code></a>, lines 17-89, trimmed</p>
 <pre class="roc"><code><span class="syn-comment">## Every route is written out, so a new route must declare its cost before</span>
 <span class="syn-comment">## it compiles. `zig build cost-check` (host/cost_check.zig) measures each</span>
 <span class="syn-comment">## probe of app/route_cost_probes.txt at 10 and 300 humans and holds it to</span>
@@ -795,7 +917,7 @@ the same at both sizes, and any other must cost more at 300. So a route declared
 declared growing that doesn't, fails; the measure can't tell <code>PerReaderPlaces</code> from
 <code>PerHuman</code>. It counts
 file calls, not time, so a busy machine can't make it flaky.</p>
-<p class="file"><a href="https://github.com/showell/roc-chat/blob/2e8f4fd89f65ede752945ce5ef5e7189c2c1b905/app/route_cost_probes.txt#L10-L31"><code>app/route_cost_probes.txt</code></a>, lines 10-31, trimmed</p>
+<p class="file"><a href="https://github.com/showell/roc-chat/blob/d275ae7e1cad016f1a978f6ae6500f48d8d5874a/app/route_cost_probes.txt#L10-L31"><code>app/route_cost_probes.txt</code></a>, lines 10-31, trimmed</p>
 <pre class="plain"><code>Constant anyone GET /favicon.ico
 ...
 Constant anyone POST /login name=Tam&amp;password=wrong
@@ -838,7 +960,7 @@ then set their password.</p>
 live, and calls every other shape <code>Claimed</code>. <code>is_live</code> matches each invite state with no
 wildcard, so a new state stops <code>roc check</code> there until someone decides what it means. Planting
 <code>Expired</code> in the facts' invite states gave "Missing patterns: Expired".</p>
-<p class="file"><a href="https://github.com/showell/roc-chat/blob/2e8f4fd89f65ede752945ce5ef5e7189c2c1b905/app/HumanClaim.roc#L32-L51"><code>app/HumanClaim.roc</code></a>, lines 32-51, trimmed</p>
+<p class="file"><a href="https://github.com/showell/roc-chat/blob/d275ae7e1cad016f1a978f6ae6500f48d8d5874a/app/HumanClaim.roc#L32-L51"><code>app/HumanClaim.roc</code></a>, lines 32-51, trimmed</p>
 <pre class="roc"><code>	<span class="syn-comment">## Whether `human`, whose files say `facts`, is `Unclaimed`, or has</span>
 	<span class="syn-comment">## `Claimed` their account. Unclaimed is one shape, named once: no</span>
 	<span class="syn-comment">## password, no GitHub link, and every invite live. Any other is claimed.</span>
@@ -956,14 +1078,15 @@ request cost?" Each idiom adds one question:</p>
 <li><strong>Whose credential?</strong> A writer takes a proof, not an id. <code>AccountProof</code> and
 <code>HumanClaim.Unclaimed</code> are opaque, and only their own modules make them, so a call with a bare id
 doesn't compile. The credential check makes sure every other path to a credential names its proof.</li>
-<li><strong>What else must happen?</strong> Where the rule is "after this, that", and the type system can't force
-it, a check over Roc's parse tree holds it, at zero, in the gate.</li>
+<li><strong>What else must happen?</strong> Where the rule is "after this, that", the first step takes a handle that
+only a bracket can make, and the bracket does the second step itself, so leaving it out doesn't compile. A check
+over Roc's parse tree holds which steps need the handle, at zero, in the gate.</li>
 <li><strong>What does a request cost?</strong> A <code>match</code> with no catch-all makes every route declare
 its class, and a measurement holds the probed routes to it.</li>
 <li><strong>What if a new case comes?</strong> Name the allowed shape once and match the rest exhaustively, so a new
 tag is a compile error instead of a quiet yes.</li>
 </ul>
-<p>In each case the rule has one home: one function ends streams, one type names their holders, one writer sets a
+<p>In each case the rule has one home: one bracket makes the right to revoke and ends the streams, one type names their holders, one writer sets a
 password, one list says what a write is, each check's table judges every write, one <code>match</code> names every
 route's cost, and one arm names who is unclaimed.</p>
 
@@ -977,6 +1100,11 @@ check), <a href="https://github.com/showell/roc-chat/commit/67bf20d2285ea7459d93
 (end-to-end steps), <a href="https://github.com/showell/roc-chat/commit/cda9a51ed341bdf5184ba396b364e7c25328c99b">cda9a51</a>
 (a stale import), <a href="https://github.com/showell/roc-chat/commit/b98a8431454ffc747f7b5106e83e3d6ac05ff041">b98a843</a>
 (<code>stray_holder</code>, and the comments say the check holds it, not the types).</li>
+<li>The bracket: <a href="https://github.com/showell/roc-chat/commit/1e651c0bd37de6cf581e8854ba2b37d554b9b066">1e651c0</a>
+(revoking writes take a <code>UserStreams.Revoker</code>, made only by <code>with_streams_ended!</code>, and the check
+narrowed), <a href="https://github.com/showell/roc-chat/commit/7240a34b9f38543854b7062b41bc7171032cc095">7240a34</a>
+(the docs, and a record of the plants), <a href="https://github.com/showell/roc-chat/commit/d275ae7e1cad016f1a978f6ae6500f48d8d5874a">d275ae7</a>
+(layout).</li>
 <li>Invites: <a href="https://github.com/showell/roc-chat/commit/c1f27319921319bb0a8b923d19777e309fc55ca3">c1f2731</a>
 (the takeover, reproduced end to end),
 <a href="https://github.com/showell/roc-chat/commit/22088b681b01b03b43edddbb6d2a66432aa41cff">22088b6</a> (the
