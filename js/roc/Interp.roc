@@ -282,12 +282,12 @@ Interp :: [].{
 		}
 	}
 
-	## The session with its clock moved to `t` seconds, every event due by
+	## The session with its clock moved to `seconds`, every event due by
 	## then run in its order: the clicks the page queued, the timers, and the
 	## frame of that time. They share one budget, `limits`, afresh. A session
 	## that has stopped is answered as it is.
 	##
-	## The page and the recording host call it with `t` the frame's number over
+	## The page and the recording host call it with `seconds` the frame's number over
 	## `Canvas.frames_per_second`, computed as `Interp.frame_time` computes it,
 	## so a frame's event is due exactly at its tick.
 	tick! : Canvas.Host, Interp.Session, F64, Interp.Limits => Interp.Session
@@ -387,12 +387,12 @@ Interp :: [].{
 			and (!session.machine.events.pending_events.is_empty()
 				or session.machine.events.on_click != NoHandler)
 
-	## The time of frame `n`, in seconds, as the page and the recording host
+	## The time of frame `number`, in seconds, as the page and the recording host
 	## compute it.
 	frame_time : U64 -> F64
 	frame_time = |number| number.to_f64() / Canvas.frames_per_second.to_f64()
 
-	# The clock's time, in ms, of frame `n`'s tick.
+	# The clock's time, in ms, of frame `number`'s tick.
 	frame_due : U64 -> F64
 	frame_due = |number| Interp.frame_time(number) * 1000.0
 
