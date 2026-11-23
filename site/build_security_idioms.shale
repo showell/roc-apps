@@ -172,6 +172,18 @@ function quotes_of()
   return quotes
 end
 
+-- A child run's output less the runner's own report (its budget, step and
+-- time lines and the calls that led to a stop), its stop line kept, so the
+-- stop's why is what is left.
+function stop_of(out)
+  local kept = {}
+  for l in lines(out) do
+    local report = starts_with(l, "── ") and not starts_with(l, "── stopped at ")
+    if not report and not starts_with(trim(l), "called from ") then push(kept, l) end
+  end
+  return trim(join(kept, "\n"))
+end
+
 -- Every quote's answer, from one run of tools/quote_code.shale: a build
 -- quotes at `main` and writes the lock; a check holds the quotes to it.
 function quoted(quotes)
@@ -179,10 +191,10 @@ function quoted(quotes)
   replace(work .. "/quotes.json", json_write(quotes))
   local mode = "write"
   if CHECK then mode = "check" end
-  local r = run({"shale", "--root", ".", QUOTE_CODE, "quotes=" .. work .. "/quotes.json", "answers=" .. work .. "/answers.json", "lock=" .. LOCK, "mode=" .. mode}, {timeout_ms = 300000, tail = 20})
+  local r = run({"shale", "--root", ".", QUOTE_CODE, "quotes=" .. work .. "/quotes.json", "answers=" .. work .. "/answers.json", "lock=" .. LOCK, "mode=" .. mode}, {timeout_ms = 300000, tail = 40})
   if r.ended ~= "exit" or r.code ~= 0 then
     remove_tree(work)
-    fail("build_security_idioms: " .. QUOTE_CODE .. " mode=" .. mode .. " failed: " .. trim(r.out))
+    fail("build_security_idioms: " .. QUOTE_CODE .. " mode=" .. mode .. " failed: " .. stop_of(r.out))
   end
   local answers = json_read(read(work .. "/answers.json"))
   remove_tree(work)
