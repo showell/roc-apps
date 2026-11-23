@@ -17,6 +17,6 @@ const tick = setInterval(() => {
   } else {
     clearInterval(tick);
     show("go!", "#2e8b57");
-    setTimeout(() => show("once more? Run", "#555"), 900);
+    setTimeout(() => show("again?", "#555"), 900);
   }
 }, 600);
