@@ -308,7 +308,12 @@ fails unless every program passes.
 `js/build.shale` builds `JsApp.roc` into a wasm32 archive, links it with
 Zig 0.16 and `js/wasm/host.zig` into `js.wasm`, writes `js_samples.js` from
 `js/canvas/`, and replaces the page only after `js/page_check.mjs` passes.
-The check drives the page's own `js_runner.js` and `js_page.js` under node:
+Every file but `index.html` is named by its bytes (`js_page.<hash>.js`,
+`js.<hash>.wasm`, the first 16 hex digits of its sha256), each file's
+references to the others rewritten first, so a deploy can't leave a browser
+running a stale script beside a new page; the check finds the files from
+`index.html` as a browser does, and fails on a name that leads nowhere or a
+file nothing names. The check drives the page's own `js_runner.js` and `js_page.js` under node:
 it holds the wasm to node on every corpus program and refusal (ticking each
 program's clock as the page does, so its timers run, and node's timers
 waited for), to the golden logs on every canvas sample, and runs every sample on the page, the

@@ -2,7 +2,12 @@
 //
 //   node js/page_check.mjs <build-dir> <tests-dir> <canvas-dir>
 //
-// It loads <build-dir>/js.wasm through the page's own js_runner.js and:
+// It finds the page's files as a browser does, by their hashed names
+// (js/build.shale names each by its bytes): index.html's module script,
+// then the runner and the wasm that script names. Every file a page file
+// names (a module's `./` import, the wasm it fetches, the HTML's script)
+// must be in <build-dir>. It loads the wasm through the page's own
+// js_runner.js and:
 //
 // - runs every program in <tests-dir> through it, each held to what node
 //   itself prints for it (the program run in a fresh context whose
@@ -40,8 +45,33 @@ if (!dir || !tests || !canvasDir) {
 let failures = 0;
 function fail(why) { failures++; console.error(`page_check: FAIL ${why}`); }
 
-const { loadRunner, transcriptOf } = await import(pathToFileURL(join(dir, "js_runner.js")).href);
-const runner = await loadRunner(readFileSync(join(dir, "js.wasm")));
+// Each name a page file gives another: the HTML's module script, a
+// module's `./` imports and the wasm it fetches.
+function namedIn(file) {
+  const text = readFileSync(join(dir, file), "utf8");
+  const pattern = file.endsWith(".html") ? /<script type="module" src="([^"]+)"/g : /from "\.\/([^"]+)"|fetch\("([^"]+)"\)/g;
+  return [...text.matchAll(pattern)].map((m) => m[1] ?? m[2]);
+}
+const built = new Set(readdirSync(dir));
+const named = new Map();
+for (let queue = ["index.html"]; queue.length > 0;) {
+  const file = queue.shift();
+  if (named.has(file)) continue;
+  if (!built.has(file)) { fail(`the page names ${file}, which the build doesn't hold`); named.set(file, []); continue; }
+  named.set(file, file.endsWith(".wasm") ? [] : namedIn(file));
+  queue.push(...named.get(file));
+}
+for (const f of built) {
+  if (!named.has(f)) fail(`the build holds ${f}, which the page never names`);
+  else if (f !== "index.html" && !/\.[0-9a-f]{16}\.(js|wasm)$/.test(f)) fail(`${f} isn't named by its bytes`);
+}
+const pageFile = named.get("index.html")[0];
+const runnerFile = named.get(pageFile).find((f) => f.startsWith("js_runner."));
+const wasmFile = named.get(pageFile).find((f) => f.endsWith(".wasm"));
+if (failures > 0 || !runnerFile || !wasmFile) { console.error("page_check: the page's files don't link up"); process.exit(1); }
+
+const { loadRunner, transcriptOf } = await import(pathToFileURL(join(dir, runnerFile)).href);
+const runner = await loadRunner(readFileSync(join(dir, wasmFile)));
 
 // What node prints for a program, its timers run on node's own clock until
 // none is left.
@@ -170,7 +200,7 @@ const frames = [];
 const env = { setTimeout: (f) => f(), requestAnimationFrame: (f) => frames.push(f) };
 const settled = () => new Promise((done) => setImmediate(done));
 
-const { buildPage, SAMPLES } = await import(pathToFileURL(join(dir, "js_page.js")).href);
+const { buildPage, SAMPLES } = await import(pathToFileURL(join(dir, pageFile)).href);
 const page = buildPage(runner, env);
 if (SAMPLES.length < goldens.length + 2) fail(`the page offers ${SAMPLES.length} samples`);
 
@@ -237,6 +267,6 @@ else {
   if (shown() !== "not run" || page.status.textContent !== "") fail(`after an edit the page shows ${shown()}, status \`${page.status.textContent}\``);
 }
 
-const total = programs.length + refused.length + goldens.length + SAMPLES.length + 2;
+const total = programs.length + refused.length + goldens.length + SAMPLES.length + 3;
 if (failures > 0) { console.error(`page_check: ${failures} of ${total} failed`); process.exit(1); }
-console.log(`page_check: ${programs.length} programs print what node prints, ${refused.length} refused, ${goldens.length} canvas samples match their logs, ${SAMPLES.length} samples run on the page (${looped} three frames on), slow motion paints and prints what full speed does, nothing shows before Run and Stop keeps the drawing`);
+console.log(`page_check: ${named.size} files, each linked and named by its bytes; ${programs.length} programs print what node prints, ${refused.length} refused, ${goldens.length} canvas samples match their logs, ${SAMPLES.length} samples run on the page (${looped} three frames on), slow motion paints and prints what full speed does, nothing shows before Run and Stop keeps the drawing`);

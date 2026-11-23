@@ -6,6 +6,17 @@
 -- is its title). The page is replaced only by a build that
 -- js/page_check.mjs passed.
 --
+-- **EVERY FILE BUT index.html IS NAMED BY ITS BYTES**, as roc-chat names its
+-- scripts: `js_page.<hash>.js`, `js.<hash>.wasm`, the hash the first 16 hex
+-- digits of the file's sha256. Each file's references to the others are
+-- rewritten to their hashed names before it is hashed itself, leaves first
+-- (the wasm, js_runner.js and js_samples.js, then js_painter.js, which
+-- imports js_runner.js, then js_page.js, then index.html), so a changed
+-- file changes the name of every file that leads to it. A browser that kept
+-- an old script can't run it beside a new page: the new page names new
+-- files. index.html, the one fixed name, is what the site's `Cache-Control:
+-- no-cache` makes the browser ask about each visit.
+--
 --   cd <roc-apps checkout> && shale js/build.shale
 --
 -- It lands at build:roc-apps/next/js/, served on :9210 by roc-site. It is
@@ -29,6 +40,55 @@ function samples_module()
     push(items, "  { title: " .. json_write(sub(first, 4, #first)) .. ", source: " .. json_write(source) .. " },")
   end
   return "// Written by js/build.shale from js/canvas/*.js; not checked in.\nexport const CANVAS_SAMPLES = [\n" .. join(items, "\n") .. "\n];\n"
+end
+
+-- The first 16 hex digits of the file's sha256.
+function hash_of(path)
+  local r = must(run({"sha256sum", real(path)}, {timeout_ms = 60000, whole = 400}))
+  return sub(r.out, 1, 16)
+end
+
+-- `text` with its one `old` made `new`: a reference that isn't there, or is
+-- there twice, stops the build rather than leave a name unrewritten.
+function swapped(text, old, new, who)
+  local n = #find_all(text, old)
+  if n ~= 1 then fail("js/build.shale: " .. who .. " names " .. old .. " " .. n .. " times, not once") end
+  return substitute(text, old, new)
+end
+
+-- `name.ext` in `dir` renamed by its bytes, `name.<hash>.ext`; answers the new name.
+function named_by_bytes(dir, name, ext)
+  local from = dir .. "/" .. name .. "." .. ext
+  local to = name .. "." .. hash_of(from) .. "." .. ext
+  copy(from, dir .. "/" .. to)
+  remove(from)
+  return to
+end
+
+-- `"./<file>"`, as a module imports it.
+function import_of(file)
+  return "\"./" .. file .. "\""
+end
+
+-- The page's text files written into `dir` under their hashed names, each
+-- with its references rewritten; the wasm is already there as js.wasm.
+function write_hashed(dir)
+  local wasm = named_by_bytes(dir, "js", "wasm")
+  create(dir .. "/js_runner.js", read("js/web/js_runner.js"))
+  local runner = named_by_bytes(dir, "js_runner", "js")
+  create(dir .. "/js_samples.js", samples_module())
+  local samples = named_by_bytes(dir, "js_samples", "js")
+  create(dir .. "/js_painter.js", swapped(read("js/web/js_painter.js"), import_of("js_runner.js"), import_of(runner), "js_painter.js"))
+  local painter = named_by_bytes(dir, "js_painter", "js")
+  local page = read("js/web/js_page.js")
+  page = swapped(page, import_of("js_runner.js"), import_of(runner), "js_page.js")
+  page = swapped(page, import_of("js_painter.js"), import_of(painter), "js_page.js")
+  page = swapped(page, import_of("js_samples.js"), import_of(samples), "js_page.js")
+  page = swapped(page, "fetch(\"js.wasm\")", "fetch(\"" .. wasm .. "\")", "js_page.js")
+  create(dir .. "/js_page.js", page)
+  local entry = named_by_bytes(dir, "js_page", "js")
+  create(dir .. "/index.html", swapped(read("js/web/index.html"), "src=\"js_page.js\"", "src=\"" .. entry .. "\"", "index.html"))
+  print("hashed: " .. join({entry, runner, painter, samples, wasm}, ", "))
 end
 
 function main()
@@ -58,8 +118,7 @@ function main()
   end
   print("zig build-exe js.wasm: " .. z.ms .. " ms")
   remove(staging .. "/js.a")
-  for f in {"index.html", "js_page.js", "js_runner.js", "js_painter.js"} do copy("js/web/" .. f, staging .. "/" .. f) end
-  create(staging .. "/js_samples.js", samples_module())
+  write_hashed(staging)
   local c = run({"node", "js/page_check.mjs", out, "js/tests", "js/canvas"}, {timeout_ms = 300000, tail = 40, want = WANT_NODE})
   print(trim(c.out))
   if c.code ~= 0 then fail("js/build.shale: the page check failed") end
