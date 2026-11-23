@@ -351,7 +351,7 @@ Lexer :: [].{
 				return Err(Lexer.fault_at(s, "a string that never ends"))
 			} else if c == '\\' {
 				e = Lexer.escape_at(src, s, $i)?
-				$out = $out.concat(e.bytes)
+				$out = List.concat($out, e.bytes)
 				$i = e.next
 			} else {
 				$out = $out.append(c)
@@ -385,7 +385,7 @@ Lexer :: [].{
 				return Err(Lexer.fault_at(start, "a template literal that never ends"))
 			} else if c == '\\' {
 				e = Lexer.escape_at(src, s, $i)?
-				$out = $out.concat(e.bytes)
+				$out = List.concat($out, e.bytes)
 				$i = e.next
 			} else {
 				if c == '\n' {

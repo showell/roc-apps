@@ -170,7 +170,7 @@ Heap :: [].{
 	with_items_pushed = |cells, id, vals| {
 		taken = Heap.taken_out(cells, id)
 		match taken.prev {
-			Arr(items) => Heap.put_back(taken.list, id, Arr(items.concat(vals)))
+			Arr(items) => Heap.put_back(taken.list, id, Arr(List.concat(items, vals)))
 			_ => crash "Heap.with_items_pushed: the interpreter pushes only onto arrays"
 		}
 	}

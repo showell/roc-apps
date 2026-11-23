@@ -42,7 +42,7 @@ NumberText :: [].{
 			Ok({ before, after }) => { whole: before.to_utf8(), fraction: after.to_utf8() }
 			Err(NotFound) => { whole: mantissa.to_utf8(), fraction: [] }
 		}
-		all = whole.concat(fraction)
+		all = List.concat(whole, fraction)
 		leading = NumberText.leading_zero_count(all)
 		trimmed = NumberText.without_trailing_zeros(all.drop_first(leading))
 		{
@@ -80,12 +80,12 @@ NumberText :: [].{
 		{ digits, point } = NumberText.digits_of(x)
 		k = digits.len().to_i64_wrap()
 		text = if k <= point and point <= 21 {
-			digits.concat(List.repeat('0', (point - k).to_u64_wrap()))
+			List.concat(digits, List.repeat('0', (point - k).to_u64_wrap()))
 		} else if 0 < point and point <= 21 {
 			at = point.to_u64_wrap()
-			digits.sublist({ start: 0, len: at }).append('.').concat(digits.drop_first(at))
+			List.concat(digits.sublist({ start: 0, len: at }).append('.'), digits.drop_first(at))
 		} else if -6 < point and point <= 0 {
-			['0', '.'].concat(List.repeat('0', (-point).to_u64_wrap())).concat(digits)
+			List.concat(List.concat(['0', '.'], List.repeat('0', (-point).to_u64_wrap())), digits)
 		} else {
 			exponent = point - 1
 			sign = if exponent < 0 {
@@ -98,9 +98,9 @@ NumberText :: [].{
 			mantissa = if rest.is_empty() {
 				first
 			} else {
-				first.append('.').concat(rest)
+				List.concat(first.append('.'), rest)
 			}
-			mantissa.concat("e${sign}${exponent.abs().to_str()}".to_utf8())
+			List.concat(mantissa, "e${sign}${exponent.abs().to_str()}".to_utf8())
 		}
 		Str.from_utf8(text) ?? crash "NumberText.of_positive: digits are ASCII"
 	}

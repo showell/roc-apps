@@ -25,11 +25,11 @@ run_program = |bytes| {
 		Ok(program) => {
 			outcome = Interp.run(program, page_step_limit)
 			match outcome.status {
-				Running => [0].concat(outcome.out.to_utf8())
-				Faulted(why) => [1].concat("${outcome.out}js: ${why}\n".to_utf8())
+				Running => List.concat([0], outcome.out.to_utf8())
+				Faulted(why) => List.concat([1], "${outcome.out}js: ${why}\n".to_utf8())
 			}
 		}
-		Err(f) => [2].concat("js: ${f.why} (line ${f.line.to_str()}, column ${f.col.to_str()})\n".to_utf8())
+		Err(f) => List.concat([2], "js: ${f.why} (line ${f.line.to_str()}, column ${f.col.to_str()})\n".to_utf8())
 	}
 }
 

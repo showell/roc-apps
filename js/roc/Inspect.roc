@@ -242,7 +242,7 @@ Inspect :: [].{
 				Same
 			},
 		)
-		sorted.map(|x| x.prop).concat($named)
+		List.concat(sorted.map(|x| x.prop), $named)
 	}
 
 	# The array index a key names: its digits with no leading zero, below
@@ -334,25 +334,25 @@ Inspect :: [].{
 			c = b.get($i) ?? crash "Inspect.escaped: inside the text"
 			next = b.get($i + 1) ?? 0
 			if c == 0xC2 and next >= 0x80 and next <= 0x9F {
-				$out = $out.concat(Inspect.hex_escape(next))
+				$out = List.concat($out, Inspect.hex_escape(next))
 				$i = $i + 2
 			} else {
 				$out = if c == quote and c == '\'' {
-					$out.concat(['\\', '\''])
+					List.concat($out, ['\\', '\''])
 				} else if c == '\\' {
-					$out.concat(['\\', '\\'])
+					List.concat($out, ['\\', '\\'])
 				} else if c == 8 {
-					$out.concat(['\\', 'b'])
+					List.concat($out, ['\\', 'b'])
 				} else if c == '\t' {
-					$out.concat(['\\', 't'])
+					List.concat($out, ['\\', 't'])
 				} else if c == '\n' {
-					$out.concat(['\\', 'n'])
+					List.concat($out, ['\\', 'n'])
 				} else if c == 12 {
-					$out.concat(['\\', 'f'])
+					List.concat($out, ['\\', 'f'])
 				} else if c == '\r' {
-					$out.concat(['\\', 'r'])
+					List.concat($out, ['\\', 'r'])
 				} else if c < 32 or c == 127 {
-					$out.concat(Inspect.hex_escape(c))
+					List.concat($out, Inspect.hex_escape(c))
 				} else {
 					$out.append(c)
 				}

@@ -2023,7 +2023,7 @@ Interp :: [].{
 				for a in args {
 					$out = match a {
 						Ref(other) => match Heap.cell_at(st.cells, other) {
-							Arr(more) => $out.concat(more)
+							Arr(more) => List.concat($out, more)
 							_ => $out.append(a)
 						}
 						_ => $out.append(a)
