@@ -1,0 +1,192 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="description" content="The .zig files over a thousand lines in the repos we work in, longest first: the smallest walk, a sort and a table.">
+<title>list_long_files · Roc on Shale</title>
+<script src="../../shared/home.js"></script>
+<!-- site/build_roc_on_shale.shale writes this page from the shale repository's
+     history; run it again rather than editing here. The code is colored by
+     roc-syntax-color (SyntaxColor.html). -->
+<style>
+  :root { color-scheme: light dark; --bg: #f7f5f0; --fg: #1d1d1b; --muted: #6b6860; --edge: #d9d4c8; --pane: #ffffff; --link: #1f5fa8; --accent: #5b3ea8; }
+  @media (prefers-color-scheme: dark) {
+    :root { --bg: #1b1b1a; --fg: #e8e6e0; --muted: #9a968c; --edge: #3a3934; --pane: #242422; --link: #8ab4f0; --accent: #a68cf0; }
+  }
+  body { margin: 0; background: var(--bg); color: var(--fg); font: 15px/1.55 system-ui, sans-serif; }
+  main { max-width: 960px; margin: 0 auto; padding: 36px 16px 48px; }
+  @media (max-width: 640px) { main { padding: 24px 12px 36px; } }
+  .top { display: flex; flex-wrap: wrap; gap: 4px 14px; font-size: 14px; margin: 0 0 14px; }
+  h1 { font-size: 28px; margin: 0 0 6px; overflow-wrap: anywhere; }
+  .lede { margin: 0 0 10px; max-width: 70ch; }
+  ul.lede { padding-left: 22px; }
+  ul.lede li { margin: 0 0 4px; }
+  h2.intro { font-size: 20px; margin: 30px 0 6px; }
+  h3.intro { font-size: 16px; margin: 18px 0 4px; }
+  /* The drawing is Graphviz's SVG, inline, so its lines and words take the
+     page's colors in either theme. */
+  .diagram { margin: 14px 0 18px; }
+  .diagram svg { max-width: 100%; height: auto; }
+  .diagram text { fill: var(--fg); }
+  .diagram path, .diagram polygon { stroke: var(--fg); }
+  .diagram .edge polygon { fill: var(--fg); }
+  h2.part { font-size: 25px; margin: 64px 0 4px; padding-top: 20px; border-top: 3px solid var(--accent); }
+  .part-intro { margin: 0 0 8px; }
+  h3 { font-size: 19px; margin: 10px 0 4px; overflow-wrap: anywhere; }
+  h2.part a { color: inherit; text-decoration: none; }
+  h2.code { font-size: 16px; margin: 36px 0 4px; color: var(--accent); }
+  p { max-width: 70ch; }
+  a { color: var(--link); }
+  code { font: 13px ui-monospace, Menlo, Consolas, monospace; }
+  .contents { padding-left: 20px; }
+  .contents ul { padding-left: 20px; margin: 2px 0 8px; }
+  .contents a { overflow-wrap: anywhere; }
+  .facts { font-size: 14px; color: var(--muted); }
+  .file { font-size: 13px; color: var(--muted); margin: 20px 0 0; overflow-wrap: anywhere; }
+  .entry { margin-top: 28px; padding-top: 14px; border-top: 1px solid var(--edge); }
+  .steps { font-size: 13px; margin: 0 0 8px; }
+  main > .steps:last-child { margin: 28px 0 0; }
+  /* Every block shows its file whole; a line wider than the block scrolls
+     sideways inside it, so the code keeps its indentation. */
+  pre { margin: 6px 0 12px; padding: 12px 14px; border-radius: 5px; background: #2b2733; color: #e8e6e0;
+        font: 12px/1.45 ui-monospace, Menlo, Consolas, monospace; overflow-x: auto; tab-size: 4; }
+  pre code { font: inherit; }
+  .syn-keyword { color: #c792ea; }
+  .syn-type { color: #82aaff; }
+  .syn-string { color: #c3e88d; }
+  .syn-number { color: #f78c6c; }
+  .syn-comment { color: #8a8494; font-style: italic; }
+  .syn-name { color: #ffcb6b; }
+  footer { margin-top: 36px; color: var(--muted); font-size: 13px; }
+</style>
+</head>
+<body>
+<main>
+<nav class="steps"><a href="../count_roc_modules_lines_and_tests/">← previous</a> · <a href="../#list_long_files">Roc on Shale</a> · <a href="../count_comments/">next →</a></nav>
+<h1>list_long_files</h1>
+<h2 class="code">Roc</h2>
+<p class="file"><a href="https://github.com/showell/shale/blob/fd5b7e6a4bc357fc9efcbadf3987c34a1cd92da3/cookbook/zig/list_long_files/list_long_files.roc"><code>cookbook/zig/list_long_files/list_long_files.roc</code></a>, 96 lines</p>
+<pre><code><span class="syn-comment">## list_long_files lists the `.zig` files over a thousand lines in the repos</span>
+<span class="syn-comment">## we work in, longest first, then how many of all their `.zig` files that</span>
+<span class="syn-comment">## is. Its launcher, cookbook/zig/list_long_files.shale, is how it is run,</span>
+<span class="syn-comment">## from the folder that holds the repos:</span>
+<span class="syn-comment">##</span>
+<span class="syn-comment">##   cd ~/showell_repos &amp;&amp; shale cookbook:zig/list_long_files.shale over=500</span>
+<span class="syn-comment">##</span>
+<span class="syn-comment">## The work is plain Roc over three of Shale&#39;s effects: `Shale.glob!` names a</span>
+<span class="syn-comment">## repo&#39;s `.zig` files, `Shale.read!` gives each one&#39;s text, and</span>
+<span class="syn-comment">## `Shale.print!` writes the table. `Shale.arg!` reads `over`, and</span>
+<span class="syn-comment">## `Shale.fail!` stops the run on an `over` that is no integer.</span>
+<span class="syn-comment">## budget: steps=200000000 reads=100000 read_bytes=1000000000 arena_bytes=1000000000</span>
+<span class="syn-keyword">app</span> [main!] { pf: <span class="syn-keyword">platform</span> <span class="syn-string">&quot;../../../roc_platform/platform/main.roc&quot;</span> }
+
+<span class="syn-keyword">import</span> pf.<span class="syn-type">Shale</span>
+
+<span class="syn-comment">## The repos it walks, each a folder of the root it runs in. A repo that</span>
+<span class="syn-comment">## isn&#39;t there adds nothing.</span>
+<span class="syn-name">repos</span> : <span class="syn-type">List</span>(<span class="syn-type">Str</span>)
+<span class="syn-name">repos</span> = [<span class="syn-string">&quot;shale&quot;</span>, <span class="syn-string">&quot;angry-gopher&quot;</span>, <span class="syn-string">&quot;zig-ast&quot;</span>]
+
+<span class="syn-comment">## A `.zig` file and its lines.</span>
+<span class="syn-type">ZigFile</span> : { lines : <span class="syn-type">U64</span>, path : <span class="syn-type">Str</span> }
+
+<span class="syn-name">main!</span> : {} =&gt; {}
+<span class="syn-name">main!</span> = |{}| {
+	over = read_limit!({})
+	<span class="syn-keyword">var</span> $files = []
+	<span class="syn-keyword">for</span> repo <span class="syn-keyword">in</span> repos {
+		<span class="syn-keyword">for</span> path <span class="syn-keyword">in</span> <span class="syn-type">Shale</span>.glob!(<span class="syn-string">&quot;</span>${repo}<span class="syn-string">/**/*.zig&quot;</span>) {
+			$files = $files.append({ lines: line_count(read_text!(path)), path })
+		}
+	}
+	long_files = $files.keep_if(|file| file.lines.to_i64_wrap() &gt; over)
+	longest_first = long_files.sort_by_reversed(|file| file.lines)
+	<span class="syn-type">Shale</span>.print!(long_files_table(longest_first))
+	counts = <span class="syn-string">&quot;</span>${long_files.len().to_str()}<span class="syn-string"> of </span>${$files.len().to_str()}<span class="syn-string">&quot;</span>
+	<span class="syn-type">Shale</span>.print!(<span class="syn-string">&quot;</span>${counts}<span class="syn-string"> .zig files are over </span>${over.to_str()}<span class="syn-string"> lines&quot;</span>)
+}
+
+<span class="syn-comment">## The `over=` limit: 1000 unless given, and any integer, so `over=-1`</span>
+<span class="syn-comment">## lists every file.</span>
+<span class="syn-name">read_limit!</span> : {} =&gt; <span class="syn-type">I64</span>
+<span class="syn-name">read_limit!</span> = |{}| {
+	given = <span class="syn-type">Shale</span>.arg!(<span class="syn-string">&quot;over&quot;</span>, <span class="syn-string">&quot;1000&quot;</span>)
+	<span class="syn-keyword">match</span> <span class="syn-type">I64</span>.from_str(given) {
+		<span class="syn-type">Ok</span>(limit) =&gt; limit
+		<span class="syn-type">Err</span>(_) =&gt; {
+			<span class="syn-type">Shale</span>.fail!(<span class="syn-string">&quot;list_long_files: over=</span>${given}<span class="syn-string"> is not an integer&quot;</span>)
+			<span class="syn-number">0</span>
+		}
+	}
+}
+
+<span class="syn-comment">## The file&#39;s text. A file the glob named and the read finds gone stops the</span>
+<span class="syn-comment">## run.</span>
+<span class="syn-name">read_text!</span> : <span class="syn-type">Str</span> =&gt; <span class="syn-type">Str</span>
+<span class="syn-name">read_text!</span> = |path|
+	<span class="syn-keyword">match</span> <span class="syn-type">Shale</span>.read!(path) {
+		<span class="syn-type">Found</span>(text) =&gt; text
+		<span class="syn-type">Missing</span> =&gt; {
+			<span class="syn-type">Shale</span>.fail!(<span class="syn-string">&quot;list_long_files: </span>${path}<span class="syn-string"> went missing during the walk&quot;</span>)
+			<span class="syn-string">&quot;&quot;</span>
+		}
+	}
+
+<span class="syn-comment">## The newlines, and a last line that has none, as Shale&#39;s `count_lines`</span>
+<span class="syn-comment">## counts them.</span>
+<span class="syn-name">line_count</span> : <span class="syn-type">Str</span> -&gt; <span class="syn-type">U64</span>
+<span class="syn-name">line_count</span> = |text| {
+	bytes = text.to_utf8()
+	newlines = bytes.count_if(|byte| byte == <span class="syn-string">&#39;\n&#39;</span>)
+	<span class="syn-keyword">match</span> bytes.last() {
+		<span class="syn-type">Ok</span>(<span class="syn-string">&#39;\n&#39;</span>) =&gt; newlines
+		<span class="syn-type">Ok</span>(_) =&gt; newlines + <span class="syn-number">1</span>
+		<span class="syn-type">Err</span>(_) =&gt; <span class="syn-number">0</span>
+	}
+}
+
+<span class="syn-comment">## The files as Shale&#39;s `table` prints them: a line of headings, then a line</span>
+<span class="syn-comment">## a file, the line counts right-aligned under `lines` and the paths after</span>
+<span class="syn-comment">## two spaces.</span>
+<span class="syn-name">long_files_table</span> : <span class="syn-type">List</span>(<span class="syn-type">ZigFile</span>) -&gt; <span class="syn-type">Str</span>
+<span class="syn-name">long_files_table</span> = |files| {
+	width = files.fold(
+		<span class="syn-string">&quot;lines&quot;</span>.count_utf8_bytes(),
+		|widest, file| <span class="syn-type">U64</span>.max(widest, file.lines.to_str().count_utf8_bytes()),
+	)
+	heading = <span class="syn-string">&quot;</span>${right_aligned(<span class="syn-string">&quot;lines&quot;</span>, width)}<span class="syn-string">  path&quot;</span>
+	rows = files.map(|file| <span class="syn-string">&quot;</span>${right_aligned(file.lines.to_str(), width)}<span class="syn-string">  </span>${file.path}<span class="syn-string">&quot;</span>)
+	<span class="syn-type">Str</span>.join_with(rows.prepend(heading), <span class="syn-string">&quot;\n&quot;</span>)
+}
+
+<span class="syn-name">right_aligned</span> : <span class="syn-type">Str</span>, <span class="syn-type">U64</span> -&gt; <span class="syn-type">Str</span>
+<span class="syn-name">right_aligned</span> = |cell, width|
+	<span class="syn-string">&quot;</span>${<span class="syn-string">&quot; &quot;</span>.repeat(width - cell.count_utf8_bytes())}${cell}<span class="syn-string">&quot;</span>
+</code></pre>
+<h2 class="code">Shale original</h2>
+<p class="file"><a href="https://github.com/showell/shale/blob/f789816174f30ef097067b3f7abefcf877d0c427/cookbook/zig/list_long_files.shale"><code>cookbook/zig/list_long_files.shale</code></a>, 20 lines, at <code>f7898161</code></p>
+<pre><code><span class="syn-comment">-- This script lists the .zig files over a thousand lines in the repos we work</span>
+<span class="syn-comment">-- in, longest first. `over=N` sets another limit. Run it from the folder that</span>
+<span class="syn-comment">-- holds the repos:</span>
+<span class="syn-comment">--   cd ~/showell_repos &amp;&amp; shale &lt;shale&gt;/cookbook/zig/list_long_files.shale [over=N]</span>
+
+<span class="syn-keyword">const</span> OVER = arg(<span class="syn-string">&quot;over&quot;</span>, <span class="syn-number">1000</span>)
+
+<span class="syn-keyword">local</span> repos = {<span class="syn-string">&quot;shale&quot;</span>, <span class="syn-string">&quot;angry-gopher&quot;</span>, <span class="syn-string">&quot;zig-ast&quot;</span>}
+<span class="syn-keyword">local</span> long_files = {}
+<span class="syn-keyword">local</span> file_count = <span class="syn-number">0</span>
+<span class="syn-keyword">for</span> repo <span class="syn-keyword">in</span> repos <span class="syn-keyword">do</span>
+  <span class="syn-keyword">for</span> path <span class="syn-keyword">in</span> glob(repo .. <span class="syn-string">&quot;/**/*.zig&quot;</span>) <span class="syn-keyword">do</span>
+    file_count = file_count + <span class="syn-number">1</span>
+    <span class="syn-keyword">local</span> line_count = count_lines(path)
+    <span class="syn-keyword">if</span> line_count &gt; OVER <span class="syn-keyword">then</span> push(long_files, {lines = line_count, path = path}) <span class="syn-keyword">end</span>
+  <span class="syn-keyword">end</span>
+<span class="syn-keyword">end</span>
+sort(long_files, <span class="syn-string">&quot;lines&quot;</span>, <span class="syn-string">&quot;desc&quot;</span>)
+print(table(long_files, {<span class="syn-string">&quot;lines&quot;</span>, <span class="syn-string">&quot;path&quot;</span>}))
+print(#long_files .. <span class="syn-string">&quot; of &quot;</span> .. file_count .. <span class="syn-string">&quot; .zig files are over &quot;</span> .. OVER .. <span class="syn-string">&quot; lines&quot;</span>)
+</code></pre>
+<nav class="steps"><a href="../count_roc_modules_lines_and_tests/">← previous</a> · <a href="../#list_long_files">Roc on Shale</a> · <a href="../count_comments/">next →</a></nav></main>
+</body>
+</html>

@@ -1,0 +1,1645 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="description" content="The package the programs over Shale's C share, imported as `items.X`: it blanks strings and comments, then splits a file into its top-level items, each with its kind, name, lines, head and body.">
+<title>The C splitter · Roc on Shale</title>
+<script src="../../shared/home.js"></script>
+<!-- site/build_roc_on_shale.shale writes this page from the shale repository's
+     history; run it again rather than editing here. The code is colored by
+     roc-syntax-color (SyntaxColor.html). -->
+<style>
+  :root { color-scheme: light dark; --bg: #f7f5f0; --fg: #1d1d1b; --muted: #6b6860; --edge: #d9d4c8; --pane: #ffffff; --link: #1f5fa8; --accent: #5b3ea8; }
+  @media (prefers-color-scheme: dark) {
+    :root { --bg: #1b1b1a; --fg: #e8e6e0; --muted: #9a968c; --edge: #3a3934; --pane: #242422; --link: #8ab4f0; --accent: #a68cf0; }
+  }
+  body { margin: 0; background: var(--bg); color: var(--fg); font: 15px/1.55 system-ui, sans-serif; }
+  main { max-width: 960px; margin: 0 auto; padding: 36px 16px 48px; }
+  @media (max-width: 640px) { main { padding: 24px 12px 36px; } }
+  .top { display: flex; flex-wrap: wrap; gap: 4px 14px; font-size: 14px; margin: 0 0 14px; }
+  h1 { font-size: 28px; margin: 0 0 6px; overflow-wrap: anywhere; }
+  .lede { margin: 0 0 10px; max-width: 70ch; }
+  ul.lede { padding-left: 22px; }
+  ul.lede li { margin: 0 0 4px; }
+  h2.intro { font-size: 20px; margin: 30px 0 6px; }
+  h3.intro { font-size: 16px; margin: 18px 0 4px; }
+  /* The drawing is Graphviz's SVG, inline, so its lines and words take the
+     page's colors in either theme. */
+  .diagram { margin: 14px 0 18px; }
+  .diagram svg { max-width: 100%; height: auto; }
+  .diagram text { fill: var(--fg); }
+  .diagram path, .diagram polygon { stroke: var(--fg); }
+  .diagram .edge polygon { fill: var(--fg); }
+  h2.part { font-size: 25px; margin: 64px 0 4px; padding-top: 20px; border-top: 3px solid var(--accent); }
+  .part-intro { margin: 0 0 8px; }
+  h3 { font-size: 19px; margin: 10px 0 4px; overflow-wrap: anywhere; }
+  h2.part a { color: inherit; text-decoration: none; }
+  h2.code { font-size: 16px; margin: 36px 0 4px; color: var(--accent); }
+  p { max-width: 70ch; }
+  a { color: var(--link); }
+  code { font: 13px ui-monospace, Menlo, Consolas, monospace; }
+  .contents { padding-left: 20px; }
+  .contents ul { padding-left: 20px; margin: 2px 0 8px; }
+  .contents a { overflow-wrap: anywhere; }
+  .facts { font-size: 14px; color: var(--muted); }
+  .file { font-size: 13px; color: var(--muted); margin: 20px 0 0; overflow-wrap: anywhere; }
+  .entry { margin-top: 28px; padding-top: 14px; border-top: 1px solid var(--edge); }
+  .steps { font-size: 13px; margin: 0 0 8px; }
+  main > .steps:last-child { margin: 28px 0 0; }
+  /* Every block shows its file whole; a line wider than the block scrolls
+     sideways inside it, so the code keeps its indentation. */
+  pre { margin: 6px 0 12px; padding: 12px 14px; border-radius: 5px; background: #2b2733; color: #e8e6e0;
+        font: 12px/1.45 ui-monospace, Menlo, Consolas, monospace; overflow-x: auto; tab-size: 4; }
+  pre code { font: inherit; }
+  .syn-keyword { color: #c792ea; }
+  .syn-type { color: #82aaff; }
+  .syn-string { color: #c3e88d; }
+  .syn-number { color: #f78c6c; }
+  .syn-comment { color: #8a8494; font-style: italic; }
+  .syn-name { color: #ffcb6b; }
+  footer { margin-top: 36px; color: var(--muted); font-size: 13px; }
+</style>
+</head>
+<body>
+<main>
+<nav class="steps"><a href="../#c-splitter">Roc on Shale</a></nav>
+<h1>The C splitter</h1>
+<p class="file"><a href="https://github.com/showell/shale/blob/0c451bc67134e8c71182fa1d4e6c379a57b907bc/cookbook/c/items/Guard.roc"><code>cookbook/c/items/Guard.roc</code></a>, 81 lines</p>
+<pre><code><span class="syn-comment">## A header&#39;s guard, framed: Split.items gives a header&#39;s items to</span>
+<span class="syn-comment">## Guard.framed, which makes its `#ifndef` and `#define` one item and its</span>
+<span class="syn-comment">## `#endif` another.</span>
+<span class="syn-keyword">import</span> <span class="syn-type">Item</span>
+
+<span class="syn-type">Guard</span> := [].{
+
+	<span class="syn-comment">## A header&#39;s items with its guard framed: its `#ifndef SHALE_&lt;NAME&gt;_H` and</span>
+	<span class="syn-comment">## the `#define` after it made one item, and the `#endif` that ends the file</span>
+	<span class="syn-comment">## another, each of kind `Guard`, named for the guard. A header without that</span>
+	<span class="syn-comment">## framing is an error.</span>
+	<span class="syn-name">framed</span> : <span class="syn-type">Str</span>, <span class="syn-type">List</span>(<span class="syn-type">Item</span>) -&gt; <span class="syn-type">Try</span>(<span class="syn-type">List</span>(<span class="syn-type">Item</span>), <span class="syn-type">Str</span>)
+	<span class="syn-name">framed</span> = |path, items| {
+		name = file_name(path)
+		stem = <span class="syn-type">Str</span>.from_utf8_lossy(name.to_utf8().drop_last(<span class="syn-number">2</span>))
+		guard = <span class="syn-string">&quot;SHALE_</span>${upper(stem)}<span class="syn-string">_H&quot;</span>
+		opening = <span class="syn-string">&quot;ifndef </span>${guard}<span class="syn-string">&quot;</span>
+		<span class="syn-keyword">var</span> $out = []
+		<span class="syn-keyword">var</span> $is_framed = <span class="syn-type">Bool.False</span>
+		<span class="syn-keyword">var</span> $at = <span class="syn-number">0</span>
+		<span class="syn-keyword">while</span> $at &lt; items.len() {
+			item = items.get($at) ?? <span class="syn-type">Item</span>.new(<span class="syn-type">Directive</span>, <span class="syn-string">&quot;&quot;</span>, { first: <span class="syn-number">0</span>, last: <span class="syn-number">0</span> })
+			<span class="syn-keyword">if</span> !($is_framed) <span class="syn-keyword">and</span> item.kind == <span class="syn-type">Directive</span> <span class="syn-keyword">and</span> item.name == opening {
+				<span class="syn-keyword">match</span> items.get($at + <span class="syn-number">1</span>) {
+					<span class="syn-type">Ok</span>(define) <span class="syn-keyword">if</span> define.kind == <span class="syn-type">Macro</span> <span class="syn-keyword">and</span> define.name == guard =&gt; {
+						guard_item = { ..<span class="syn-type">Item</span>.new(<span class="syn-type">Guard</span>, guard, { first: item.first, last: define.last }), comment_first: item.comment_first, comment_last: item.comment_last }
+						$out = $out.append(guard_item)
+						$is_framed = <span class="syn-type">Bool.True</span>
+						$at = $at + <span class="syn-number">2</span>
+					}
+					_ =&gt; {
+						why = <span class="syn-string">&quot;a guard&#39;s `#ifndef` with no `#define </span>${guard}<span class="syn-string">` after it&quot;</span>
+						<span class="syn-keyword">return</span> <span class="syn-type">Err</span>(unaccounted(path, item.first, why, <span class="syn-string">&quot;#ifndef </span>${guard}<span class="syn-string">&quot;</span>))
+					}
+				}
+			} <span class="syn-keyword">else</span> {
+				$out = $out.append(item)
+				$at = $at + <span class="syn-number">1</span>
+			}
+		}
+		<span class="syn-keyword">if</span> !($is_framed) {
+			<span class="syn-keyword">return</span> <span class="syn-type">Err</span>(unaccounted(path, <span class="syn-number">1</span>, <span class="syn-string">&quot;a header with no `#ifndef </span>${guard}<span class="syn-string">`&quot;</span>, name))
+		}
+		<span class="syn-keyword">match</span> $out.last() {
+			<span class="syn-type">Ok</span>(tail) <span class="syn-keyword">if</span> tail.kind == <span class="syn-type">Directive</span> <span class="syn-keyword">and</span> tail.name == <span class="syn-string">&quot;endif&quot;</span> =&gt;
+				<span class="syn-type">Ok</span>($out.drop_last(<span class="syn-number">1</span>).append({ ..tail, kind: <span class="syn-type">Guard</span>, name: guard }))
+			<span class="syn-type">Ok</span>(tail) =&gt; <span class="syn-type">Err</span>(unaccounted(path, tail.first, <span class="syn-string">&quot;a header whose last item is not its guard&#39;s `#endif`&quot;</span>, tail.name))
+			<span class="syn-type">Err</span>(_) =&gt; <span class="syn-type">Err</span>(unaccounted(path, <span class="syn-number">1</span>, <span class="syn-string">&quot;a header with no `#ifndef </span>${guard}<span class="syn-string">`&quot;</span>, name))
+		}
+	}
+}
+
+<span class="syn-comment">## The path&#39;s last part, after its last `/`.</span>
+<span class="syn-name">file_name</span> : <span class="syn-type">Str</span> -&gt; <span class="syn-type">Str</span>
+<span class="syn-name">file_name</span> = |path| {
+	bytes = path.to_utf8()
+	<span class="syn-keyword">match</span> bytes.find_last_index(|byte| byte == <span class="syn-string">&#39;/&#39;</span>) {
+		<span class="syn-type">Ok</span>(slash) =&gt; <span class="syn-type">Str</span>.from_utf8_lossy(bytes.drop_first(slash + <span class="syn-number">1</span>))
+		<span class="syn-type">Err</span>(_) =&gt; path
+	}
+}
+
+<span class="syn-comment">## The text with its ASCII letters made capitals, as Shale&#39;s `upper` does.</span>
+<span class="syn-name">upper</span> : <span class="syn-type">Str</span> -&gt; <span class="syn-type">Str</span>
+<span class="syn-name">upper</span> = |text|
+	<span class="syn-type">Str</span>.from_utf8_lossy(
+		text.to_utf8().map(
+			|byte|
+				<span class="syn-keyword">if</span> byte &gt;= <span class="syn-string">&#39;a&#39;</span> <span class="syn-keyword">and</span> byte &lt;= <span class="syn-string">&#39;z&#39;</span> {
+					byte - <span class="syn-number">32</span>
+				} <span class="syn-keyword">else</span> {
+					byte
+				},
+		),
+	)
+
+<span class="syn-comment">## The error for line `number` of the file at `path`: its place and why</span>
+<span class="syn-comment">## first, then what the line shows.</span>
+<span class="syn-name">unaccounted</span> : <span class="syn-type">Str</span>, <span class="syn-type">U64</span>, <span class="syn-type">Str</span>, <span class="syn-type">Str</span> -&gt; <span class="syn-type">Str</span>
+<span class="syn-name">unaccounted</span> = |path, number, why, shown|
+	<span class="syn-string">&quot;</span>${path}<span class="syn-string">:</span>${number.to_str()}<span class="syn-string">: </span>${why}<span class="syn-string">: </span>${shown}<span class="syn-string">&quot;</span>
+</code></pre>
+<p class="file"><a href="https://github.com/showell/shale/blob/0c451bc67134e8c71182fa1d4e6c379a57b907bc/cookbook/c/items/Head.roc"><code>cookbook/c/items/Head.roc</code></a>, 365 lines</p>
+<pre><code><span class="syn-comment">## The readers of an item&#39;s opening line or head, each over masked bytes</span>
+<span class="syn-comment">## (Mask.masked), each the regular expression of the Shale original</span>
+<span class="syn-comment">## (c/build/c_items.shale, the fast tier&#39;s copy of this splitter), done by</span>
+<span class="syn-comment">## hand: the one match a backtracking search would find, with its groups.</span>
+<span class="syn-keyword">import</span> <span class="syn-type">Mask</span>
+
+<span class="syn-type">Head</span> := [].{
+
+	<span class="syn-comment">## A head read as a function&#39;s, its return type and its name, or</span>
+	<span class="syn-comment">## `NoFunction` when it declares none (a variable, a function pointer, a</span>
+	<span class="syn-comment">## value whose `=` comes before its first `(`). Its storage and</span>
+	<span class="syn-comment">## `STATUS_MUST_USE` go first, then a leading `__attribute__((...))`; the</span>
+	<span class="syn-comment">## type is what is left before the name, `void` among them.</span>
+	<span class="syn-name">function_head</span> : <span class="syn-type">List</span>(<span class="syn-type">U8</span>) -&gt; <span class="syn-type">Try</span>({ return_type : <span class="syn-type">Str</span>, name : <span class="syn-type">Str</span> }, [<span class="syn-type">NoFunction</span>])
+	<span class="syn-name">function_head</span> = |code| {
+		after_storage = code.drop_first(storage_end(code))
+		head = after_storage.drop_first(attribute_end(after_storage))
+		<span class="syn-keyword">match</span> <span class="syn-type">Mask</span>.byte_from(head, <span class="syn-string">&#39;(&#39;</span>, <span class="syn-number">0</span>) {
+			<span class="syn-type">Err</span>(_) =&gt; <span class="syn-type">Err</span>(<span class="syn-type">NoFunction</span>)
+			<span class="syn-type">Ok</span>(open) =&gt; {
+				is_value = <span class="syn-keyword">match</span> <span class="syn-type">Mask</span>.byte_from(head, <span class="syn-string">&#39;=&#39;</span>, <span class="syn-number">0</span>) {
+					<span class="syn-type">Ok</span>(equals) =&gt; equals &lt; open
+					<span class="syn-type">Err</span>(_) =&gt; <span class="syn-type">Bool.False</span>
+				}
+				before = <span class="syn-type">Mask</span>.trimmed(head.take_first(open))
+				<span class="syn-comment"># `^(.*[\s*])([A-Za-z_]\w*)$`: the name is what follows the last</span>
+				<span class="syn-comment"># space or `*`.</span>
+				<span class="syn-keyword">match</span> before.find_last_index(|byte| <span class="syn-type">Mask</span>.is_space(byte) <span class="syn-keyword">or</span> byte == <span class="syn-string">&#39;*&#39;</span>) {
+					<span class="syn-type">Ok</span>(cut) <span class="syn-keyword">if</span> !(is_value) =&gt; {
+						name = before.drop_first(cut + <span class="syn-number">1</span>)
+						return_type = <span class="syn-type">Mask</span>.trimmed(before.take_first(cut + <span class="syn-number">1</span>))
+						<span class="syn-keyword">if</span> is_name(name) <span class="syn-keyword">and</span> !(return_type.is_empty()) {
+							<span class="syn-type">Ok</span>({ return_type: <span class="syn-type">Mask</span>.text(return_type), name: <span class="syn-type">Mask</span>.text(name) })
+						} <span class="syn-keyword">else</span> {
+							<span class="syn-type">Err</span>(<span class="syn-type">NoFunction</span>)
+						}
+					}
+					_ =&gt; <span class="syn-type">Err</span>(<span class="syn-type">NoFunction</span>)
+				}
+			}
+		}
+	}
+
+	<span class="syn-comment">## A `VEC_DEFINE(`, `MAP_DEFINE(` or `SLICE_TYPE(` line read as its macro,</span>
+	<span class="syn-comment">## the name it makes and the type it holds, or `NoGenerator` when it is</span>
+	<span class="syn-comment">## none or its arguments are not a name and a type:</span>
+	<span class="syn-comment">## `^(VEC_DEFINE|MAP_DEFINE|SLICE_TYPE)\(\s*(\w+)\s*,\s*([^)]*\S)\s*\)`.</span>
+	<span class="syn-name">generator</span> : <span class="syn-type">List</span>(<span class="syn-type">U8</span>) -&gt; <span class="syn-type">Try</span>({ macro : <span class="syn-type">Str</span>, name : <span class="syn-type">Str</span>, held_type : <span class="syn-type">Str</span> }, [<span class="syn-type">NoGenerator</span>])
+	<span class="syn-name">generator</span> = |code| {
+		macros = [<span class="syn-string">&quot;VEC_DEFINE&quot;</span>, <span class="syn-string">&quot;MAP_DEFINE&quot;</span>, <span class="syn-string">&quot;SLICE_TYPE&quot;</span>]
+		<span class="syn-keyword">match</span> macros.find_first(|macro| <span class="syn-type">Mask</span>.holds_at(code, <span class="syn-number">0</span>, <span class="syn-string">&quot;</span>${macro}<span class="syn-string">(&quot;</span>)) {
+			<span class="syn-type">Err</span>(_) =&gt; <span class="syn-type">Err</span>(<span class="syn-type">NoGenerator</span>)
+			<span class="syn-type">Ok</span>(macro) =&gt; {
+				name_start = <span class="syn-type">Mask</span>.spaces_end(code, macro.count_utf8_bytes() + <span class="syn-number">1</span>)
+				name_end = <span class="syn-type">Mask</span>.word_end(code, name_start)
+				comma = <span class="syn-type">Mask</span>.spaces_end(code, name_end)
+				<span class="syn-keyword">if</span> name_end == name_start <span class="syn-keyword">or</span> code.get(comma) != <span class="syn-type">Ok</span>(<span class="syn-string">&#39;,&#39;</span>) {
+					<span class="syn-type">Err</span>(<span class="syn-type">NoGenerator</span>)
+				} <span class="syn-keyword">else</span> {
+					held_start = <span class="syn-type">Mask</span>.spaces_end(code, comma + <span class="syn-number">1</span>)
+					<span class="syn-keyword">match</span> held_type_end(code, held_start) {
+						<span class="syn-type">Ok</span>(held_end) =&gt; {
+							name = <span class="syn-type">Mask</span>.text(code.sublist({ start: name_start, len: name_end - name_start }))
+							held_type = <span class="syn-type">Mask</span>.text(code.sublist({ start: held_start, len: held_end + <span class="syn-number">1</span> - held_start }))
+							<span class="syn-type">Ok</span>({ macro, name, held_type })
+						}
+						<span class="syn-type">Err</span>(_) =&gt; <span class="syn-type">Err</span>(<span class="syn-type">NoGenerator</span>)
+					}
+				}
+			}
+		}
+	}
+
+	<span class="syn-comment">## The name a data item&#39;s head declares: a function pointer&#39;s `(*name)`,</span>
+	<span class="syn-comment">## else the last word before its `=`, `[`, `;` or `{`, or &quot;&quot; for none.</span>
+	<span class="syn-name">data_name</span> : <span class="syn-type">List</span>(<span class="syn-type">U8</span>) -&gt; <span class="syn-type">Str</span>
+	<span class="syn-name">data_name</span> = |code|
+		<span class="syn-keyword">match</span> <span class="syn-type">Head</span>.pointer_name(code, <span class="syn-type">WithConst</span>) {
+			<span class="syn-type">Ok</span>(name) =&gt; name
+			<span class="syn-type">Err</span>(_) =&gt; {
+				is_stop = |byte| byte == <span class="syn-string">&#39;=&#39;</span> <span class="syn-keyword">or</span> byte == <span class="syn-string">&#39;[&#39;</span> <span class="syn-keyword">or</span> byte == <span class="syn-string">&#39;;&#39;</span> <span class="syn-keyword">or</span> byte == <span class="syn-string">&#39;{&#39;</span>
+				head = <span class="syn-keyword">match</span> code.find_first_index(is_stop) {
+					<span class="syn-type">Ok</span>(stop) =&gt; code.take_first(stop)
+					<span class="syn-type">Err</span>(_) =&gt; code
+				}
+				trailing_word(<span class="syn-type">Mask</span>.trimmed(head))
+			}
+		}
+
+	<span class="syn-comment">## The first function pointer&#39;s name in the text, `(*name)`, a `const`</span>
+	<span class="syn-comment">## before the name allowed when asked: `\(\s*\*\s*(const\s+)?(\w+)\s*\)`.</span>
+	<span class="syn-name">pointer_name</span> : <span class="syn-type">List</span>(<span class="syn-type">U8</span>), [<span class="syn-type">WithConst</span>, <span class="syn-type">WithoutConst</span>] -&gt; <span class="syn-type">Try</span>(<span class="syn-type">Str</span>, [<span class="syn-type">NoPointer</span>])
+	<span class="syn-name">pointer_name</span> = |code, consts| {
+		<span class="syn-keyword">var</span> $at = <span class="syn-number">0</span>
+		<span class="syn-keyword">while</span> $at &lt; code.len() {
+			<span class="syn-keyword">if</span> code.get($at) == <span class="syn-type">Ok</span>(<span class="syn-string">&#39;(&#39;</span>) {
+				star = <span class="syn-type">Mask</span>.spaces_end(code, $at + <span class="syn-number">1</span>)
+				<span class="syn-keyword">if</span> code.get(star) == <span class="syn-type">Ok</span>(<span class="syn-string">&#39;*&#39;</span>) {
+					after = <span class="syn-type">Mask</span>.spaces_end(code, star + <span class="syn-number">1</span>)
+					is_const = consts == <span class="syn-type">WithConst</span> <span class="syn-keyword">and</span> <span class="syn-type">Mask</span>.holds_at(code, after, <span class="syn-string">&quot;const&quot;</span>) <span class="syn-keyword">and</span> <span class="syn-type">Mask</span>.is_space_at(code, after + <span class="syn-number">5</span>)
+					with_const = <span class="syn-keyword">if</span> is_const {
+						closed_word(code, <span class="syn-type">Mask</span>.spaces_end(code, after + <span class="syn-number">5</span>))
+					} <span class="syn-keyword">else</span> {
+						<span class="syn-type">Err</span>(<span class="syn-type">NoPointer</span>)
+					}
+					<span class="syn-keyword">match</span> with_const {
+						<span class="syn-type">Ok</span>(name) =&gt; <span class="syn-keyword">return</span> <span class="syn-type">Ok</span>(name)
+						<span class="syn-type">Err</span>(_) =&gt;
+							<span class="syn-keyword">match</span> closed_word(code, after) {
+								<span class="syn-type">Ok</span>(name) =&gt; <span class="syn-keyword">return</span> <span class="syn-type">Ok</span>(name)
+								<span class="syn-type">Err</span>(_) =&gt; {}
+							}
+					}
+				}
+			}
+			$at = $at + <span class="syn-number">1</span>
+		}
+		<span class="syn-type">Err</span>(<span class="syn-type">NoPointer</span>)
+	}
+
+	<span class="syn-comment">## The type keyword a `typedef` or `enum` line opens with, after any</span>
+	<span class="syn-comment">## `typedef`: `^(typedef\s+)?(struct|enum|union)\b`.</span>
+	<span class="syn-name">type_keyword</span> : <span class="syn-type">List</span>(<span class="syn-type">U8</span>) -&gt; [<span class="syn-type">Struct</span>, <span class="syn-type">Enum</span>, <span class="syn-type">Union</span>, <span class="syn-type">NoKeyword</span>]
+	<span class="syn-name">type_keyword</span> = |code| {
+		at = <span class="syn-keyword">if</span> <span class="syn-type">Mask</span>.holds_at(code, <span class="syn-number">0</span>, <span class="syn-string">&quot;typedef&quot;</span>) <span class="syn-keyword">and</span> <span class="syn-type">Mask</span>.is_space_at(code, <span class="syn-number">7</span>) {
+			<span class="syn-type">Mask</span>.spaces_end(code, <span class="syn-number">7</span>)
+		} <span class="syn-keyword">else</span> {
+			<span class="syn-number">0</span>
+		}
+		is_keyword = |word| <span class="syn-type">Mask</span>.holds_at(code, at, word) <span class="syn-keyword">and</span> !(<span class="syn-type">Mask</span>.is_word_at(code, at + word.count_utf8_bytes()))
+		<span class="syn-keyword">if</span> is_keyword(<span class="syn-string">&quot;struct&quot;</span>) {
+			<span class="syn-type">Struct</span>
+		} <span class="syn-keyword">else</span> <span class="syn-keyword">if</span> is_keyword(<span class="syn-string">&quot;enum&quot;</span>) {
+			<span class="syn-type">Enum</span>
+		} <span class="syn-keyword">else</span> <span class="syn-keyword">if</span> is_keyword(<span class="syn-string">&quot;union&quot;</span>) {
+			<span class="syn-type">Union</span>
+		} <span class="syn-keyword">else</span> {
+			<span class="syn-type">NoKeyword</span>
+		}
+	}
+
+	<span class="syn-comment">## The name a type&#39;s masked text declares last, before its closing `;`:</span>
+	<span class="syn-comment">## `(\w+)\s*(\[[^\]]*\])?\s*;\s*$`.</span>
+	<span class="syn-name">declared_name</span> : <span class="syn-type">List</span>(<span class="syn-type">U8</span>) -&gt; <span class="syn-type">Try</span>(<span class="syn-type">Str</span>, [<span class="syn-type">NoName</span>])
+	<span class="syn-name">declared_name</span> = |text| {
+		<span class="syn-keyword">match</span> text.find_last_index(|byte| !(<span class="syn-type">Mask</span>.is_space(byte))) {
+			<span class="syn-type">Ok</span>(semicolon) <span class="syn-keyword">if</span> text.get(semicolon) == <span class="syn-type">Ok</span>(<span class="syn-string">&#39;;&#39;</span>) =&gt;
+				<span class="syn-keyword">match</span> last_unspaced(text, semicolon) {
+					<span class="syn-type">Ok</span>(before) <span class="syn-keyword">if</span> text.get(before) == <span class="syn-type">Ok</span>(<span class="syn-string">&#39;]&#39;</span>) =&gt; bracketed_name(text, before)
+					<span class="syn-type">Ok</span>(before) <span class="syn-keyword">if</span> <span class="syn-type">Mask</span>.is_word_at(text, before) =&gt; <span class="syn-type">Ok</span>(word_ending_at(text, before))
+					_ =&gt; <span class="syn-type">Err</span>(<span class="syn-type">NoName</span>)
+				}
+			_ =&gt; <span class="syn-type">Err</span>(<span class="syn-type">NoName</span>)
+		}
+	}
+
+	<span class="syn-comment">## A named `enum`&#39;s tag: `^enum\s+(\w+)`.</span>
+	<span class="syn-name">enum_tag</span> : <span class="syn-type">List</span>(<span class="syn-type">U8</span>) -&gt; <span class="syn-type">Try</span>(<span class="syn-type">Str</span>, [<span class="syn-type">NoTag</span>])
+	<span class="syn-name">enum_tag</span> = |code| {
+		start = <span class="syn-type">Mask</span>.spaces_end(code, <span class="syn-number">4</span>)
+		end = <span class="syn-type">Mask</span>.word_end(code, start)
+		<span class="syn-keyword">if</span> <span class="syn-type">Mask</span>.holds_at(code, <span class="syn-number">0</span>, <span class="syn-string">&quot;enum&quot;</span>) <span class="syn-keyword">and</span> <span class="syn-type">Mask</span>.is_space_at(code, <span class="syn-number">4</span>) <span class="syn-keyword">and</span> end &gt; start {
+			<span class="syn-type">Ok</span>(<span class="syn-type">Mask</span>.text(code.sublist({ start, len: end - start })))
+		} <span class="syn-keyword">else</span> {
+			<span class="syn-type">Err</span>(<span class="syn-type">NoTag</span>)
+		}
+	}
+
+	<span class="syn-comment">## A `#` line&#39;s directive and its first argument, &quot;&quot; for none:</span>
+	<span class="syn-comment">## `^#\s*(\w+)\s*(\w*)`.</span>
+	<span class="syn-name">directive</span> : <span class="syn-type">List</span>(<span class="syn-type">U8</span>) -&gt; <span class="syn-type">Try</span>({ word : <span class="syn-type">Str</span>, argument : <span class="syn-type">Str</span> }, [<span class="syn-type">NoDirective</span>])
+	<span class="syn-name">directive</span> = |code| {
+		word_start = <span class="syn-type">Mask</span>.spaces_end(code, <span class="syn-number">1</span>)
+		word_end = <span class="syn-type">Mask</span>.word_end(code, word_start)
+		argument_start = <span class="syn-type">Mask</span>.spaces_end(code, word_end)
+		argument_end = <span class="syn-type">Mask</span>.word_end(code, argument_start)
+		<span class="syn-keyword">if</span> code.get(<span class="syn-number">0</span>) == <span class="syn-type">Ok</span>(<span class="syn-string">&#39;#&#39;</span>) <span class="syn-keyword">and</span> word_end &gt; word_start {
+			word = <span class="syn-type">Mask</span>.text(code.sublist({ start: word_start, len: word_end - word_start }))
+			argument = <span class="syn-type">Mask</span>.text(code.sublist({ start: argument_start, len: argument_end - argument_start }))
+			<span class="syn-type">Ok</span>({ word, argument })
+		} <span class="syn-keyword">else</span> {
+			<span class="syn-type">Err</span>(<span class="syn-type">NoDirective</span>)
+		}
+	}
+
+	<span class="syn-comment">## An `#include` line&#39;s path, from the raw line: `^#\s*include\s*[&quot;&lt;]([^&quot;&gt;]+)[&quot;&gt;]`.</span>
+	<span class="syn-name">include_path</span> : <span class="syn-type">List</span>(<span class="syn-type">U8</span>) -&gt; <span class="syn-type">Try</span>(<span class="syn-type">Str</span>, [<span class="syn-type">NoPath</span>])
+	<span class="syn-name">include_path</span> = |raw| {
+		keyword = <span class="syn-type">Mask</span>.spaces_end(raw, <span class="syn-number">1</span>)
+		open = <span class="syn-type">Mask</span>.spaces_end(raw, keyword + <span class="syn-number">7</span>)
+		is_open = raw.get(open) == <span class="syn-type">Ok</span>(<span class="syn-string">&#39;&quot;&#39;</span>) <span class="syn-keyword">or</span> raw.get(open) == <span class="syn-type">Ok</span>(<span class="syn-string">&#39;&lt;&#39;</span>)
+		is_close = |byte| byte == <span class="syn-string">&#39;&quot;&#39;</span> <span class="syn-keyword">or</span> byte == <span class="syn-string">&#39;&gt;&#39;</span>
+		is_framed = raw.get(<span class="syn-number">0</span>) == <span class="syn-type">Ok</span>(<span class="syn-string">&#39;#&#39;</span>) <span class="syn-keyword">and</span> <span class="syn-type">Mask</span>.holds_at(raw, keyword, <span class="syn-string">&quot;include&quot;</span>) <span class="syn-keyword">and</span> is_open
+		<span class="syn-keyword">match</span> raw.drop_first(open + <span class="syn-number">1</span>).find_first_index(is_close) {
+			<span class="syn-type">Ok</span>(length) <span class="syn-keyword">if</span> is_framed <span class="syn-keyword">and</span> length &gt; <span class="syn-number">0</span> =&gt; <span class="syn-type">Ok</span>(<span class="syn-type">Mask</span>.text(raw.sublist({ start: open + <span class="syn-number">1</span>, len: length })))
+			_ =&gt; <span class="syn-type">Err</span>(<span class="syn-type">NoPath</span>)
+		}
+	}
+
+	<span class="syn-comment">## A `TEST(name) {` line&#39;s name: `^TEST\(\s*(\w+)\s*\)\s*\{\s*$`.</span>
+	<span class="syn-name">test_name</span> : <span class="syn-type">List</span>(<span class="syn-type">U8</span>) -&gt; <span class="syn-type">Try</span>(<span class="syn-type">Str</span>, [<span class="syn-type">NoTest</span>])
+	<span class="syn-name">test_name</span> = |code| {
+		start = <span class="syn-type">Mask</span>.spaces_end(code, <span class="syn-number">5</span>)
+		end = <span class="syn-type">Mask</span>.word_end(code, start)
+		close = <span class="syn-type">Mask</span>.spaces_end(code, end)
+		brace = <span class="syn-type">Mask</span>.spaces_end(code, close + <span class="syn-number">1</span>)
+		is_test =
+			<span class="syn-type">Mask</span>.holds_at(code, <span class="syn-number">0</span>, <span class="syn-string">&quot;TEST(&quot;</span>)
+				<span class="syn-keyword">and</span> end &gt; start
+				<span class="syn-keyword">and</span> code.get(close) == <span class="syn-type">Ok</span>(<span class="syn-string">&#39;)&#39;</span>)
+				<span class="syn-keyword">and</span> code.get(brace) == <span class="syn-type">Ok</span>(<span class="syn-string">&#39;{&#39;</span>)
+				<span class="syn-keyword">and</span> <span class="syn-type">Mask</span>.spaces_end(code, brace + <span class="syn-number">1</span>) == code.len()
+		<span class="syn-keyword">if</span> is_test {
+			<span class="syn-type">Ok</span>(<span class="syn-type">Mask</span>.text(code.sublist({ start, len: end - start })))
+		} <span class="syn-keyword">else</span> {
+			<span class="syn-type">Err</span>(<span class="syn-type">NoTest</span>)
+		}
+	}
+
+	<span class="syn-comment">## A test list&#39;s macro and its first argument, &quot;&quot; for none:</span>
+	<span class="syn-comment">## `^(\w+)\(\s*(\w*)`, of a line that starts with the macro and `(`.</span>
+	<span class="syn-name">test_list</span> : <span class="syn-type">List</span>(<span class="syn-type">U8</span>) -&gt; { macro : <span class="syn-type">Str</span>, argument : <span class="syn-type">Str</span> }
+	<span class="syn-name">test_list</span> = |code| {
+		macro_end = <span class="syn-type">Mask</span>.word_end(code, <span class="syn-number">0</span>)
+		argument_start = <span class="syn-type">Mask</span>.spaces_end(code, macro_end + <span class="syn-number">1</span>)
+		argument_end = <span class="syn-type">Mask</span>.word_end(code, argument_start)
+		{
+			macro: <span class="syn-type">Mask</span>.text(code.take_first(macro_end)),
+			argument: <span class="syn-type">Mask</span>.text(code.sublist({ start: argument_start, len: argument_end - argument_start })),
+		}
+	}
+}
+
+<span class="syn-comment">## Where `^static\s+(inline\s+)?(STATUS_MUST_USE\s+)?` ends, or 0.</span>
+<span class="syn-name">storage_end</span> : <span class="syn-type">List</span>(<span class="syn-type">U8</span>) -&gt; <span class="syn-type">U64</span>
+<span class="syn-name">storage_end</span> = |code|
+	<span class="syn-keyword">if</span> <span class="syn-type">Mask</span>.holds_at(code, <span class="syn-number">0</span>, <span class="syn-string">&quot;static&quot;</span>) <span class="syn-keyword">and</span> <span class="syn-type">Mask</span>.is_space_at(code, <span class="syn-number">6</span>) {
+		after_static = <span class="syn-type">Mask</span>.spaces_end(code, <span class="syn-number">6</span>)
+		after_inline = word_and_spaces_end(code, after_static, <span class="syn-string">&quot;inline&quot;</span>)
+		word_and_spaces_end(code, after_inline, <span class="syn-string">&quot;STATUS_MUST_USE&quot;</span>)
+	} <span class="syn-keyword">else</span> {
+		<span class="syn-number">0</span>
+	}
+
+<span class="syn-comment">## Past `word\s+` at `at`, or `at` when it is not there.</span>
+<span class="syn-name">word_and_spaces_end</span> : <span class="syn-type">List</span>(<span class="syn-type">U8</span>), <span class="syn-type">U64</span>, <span class="syn-type">Str</span> -&gt; <span class="syn-type">U64</span>
+<span class="syn-name">word_and_spaces_end</span> = |code, at, word| {
+	after = at + word.count_utf8_bytes()
+	<span class="syn-keyword">if</span> <span class="syn-type">Mask</span>.holds_at(code, at, word) <span class="syn-keyword">and</span> <span class="syn-type">Mask</span>.is_space_at(code, after) {
+		<span class="syn-type">Mask</span>.spaces_end(code, after)
+	} <span class="syn-keyword">else</span> {
+		at
+	}
+}
+
+<span class="syn-comment">## Where `^__attribute__\(\([\w\s,]*\)\)\s+` ends, or 0.</span>
+<span class="syn-name">attribute_end</span> : <span class="syn-type">List</span>(<span class="syn-type">U8</span>) -&gt; <span class="syn-type">U64</span>
+<span class="syn-name">attribute_end</span> = |code| {
+	is_inside = |byte| <span class="syn-type">Mask</span>.is_word(byte) <span class="syn-keyword">or</span> <span class="syn-type">Mask</span>.is_space(byte) <span class="syn-keyword">or</span> byte == <span class="syn-string">&#39;,&#39;</span>
+	inside_start = <span class="syn-number">15</span>
+	inside_end = <span class="syn-keyword">match</span> code.drop_first(inside_start).find_first_index(|byte| !(is_inside(byte))) {
+		<span class="syn-type">Ok</span>(length) =&gt; inside_start + length
+		<span class="syn-type">Err</span>(_) =&gt; code.len()
+	}
+	is_attribute =
+		<span class="syn-type">Mask</span>.holds_at(code, <span class="syn-number">0</span>, <span class="syn-string">&quot;__attribute__((&quot;</span>)
+			<span class="syn-keyword">and</span> <span class="syn-type">Mask</span>.holds_at(code, inside_end, <span class="syn-string">&quot;))&quot;</span>)
+			<span class="syn-keyword">and</span> <span class="syn-type">Mask</span>.is_space_at(code, inside_end + <span class="syn-number">2</span>)
+	<span class="syn-keyword">if</span> is_attribute {
+		<span class="syn-type">Mask</span>.spaces_end(code, inside_end + <span class="syn-number">2</span>)
+	} <span class="syn-keyword">else</span> {
+		<span class="syn-number">0</span>
+	}
+}
+
+<span class="syn-comment">## Whether the bytes are a C name: `[A-Za-z_]\w*`, whole.</span>
+<span class="syn-name">is_name</span> : <span class="syn-type">List</span>(<span class="syn-type">U8</span>) -&gt; <span class="syn-type">Bool</span>
+<span class="syn-name">is_name</span> = |bytes|
+	<span class="syn-keyword">match</span> bytes.first() {
+		<span class="syn-type">Ok</span>(first) =&gt; <span class="syn-type">Mask</span>.is_name_start(first) <span class="syn-keyword">and</span> bytes.all(<span class="syn-type">Mask</span>.is_word)
+		<span class="syn-type">Err</span>(_) =&gt; <span class="syn-type">Bool.False</span>
+	}
+
+<span class="syn-comment">## The last byte of a generator&#39;s held type, from `start`: `([^)]*\S)\s*\)`,</span>
+<span class="syn-comment">## the longest run of no `)` whose last byte is no space and after which a</span>
+<span class="syn-comment">## `)` follows, past any spaces.</span>
+<span class="syn-name">held_type_end</span> : <span class="syn-type">List</span>(<span class="syn-type">U8</span>), <span class="syn-type">U64</span> -&gt; <span class="syn-type">Try</span>(<span class="syn-type">U64</span>, [<span class="syn-type">NoType</span>])
+<span class="syn-name">held_type_end</span> = |code, start|
+	<span class="syn-keyword">match</span> <span class="syn-type">Mask</span>.byte_from(code, <span class="syn-string">&#39;)&#39;</span>, start) {
+		<span class="syn-type">Err</span>(_) =&gt; <span class="syn-type">Err</span>(<span class="syn-type">NoType</span>)
+		<span class="syn-type">Ok</span>(first_close) =&gt; {
+			<span class="syn-keyword">var</span> $end = first_close
+			<span class="syn-keyword">while</span> $end &gt;= start {
+				closes = code.get(<span class="syn-type">Mask</span>.spaces_end(code, $end + <span class="syn-number">1</span>)) == <span class="syn-type">Ok</span>(<span class="syn-string">&#39;)&#39;</span>)
+				<span class="syn-keyword">if</span> !(<span class="syn-type">Mask</span>.is_space_at(code, $end)) <span class="syn-keyword">and</span> closes {
+					<span class="syn-keyword">return</span> <span class="syn-type">Ok</span>($end)
+				}
+				<span class="syn-keyword">if</span> $end == <span class="syn-number">0</span> {
+					<span class="syn-keyword">return</span> <span class="syn-type">Err</span>(<span class="syn-type">NoType</span>)
+				}
+				$end = $end - <span class="syn-number">1</span>
+			}
+			<span class="syn-type">Err</span>(<span class="syn-type">NoType</span>)
+		}
+	}
+
+<span class="syn-comment">## The word at `at`, when a `)` follows it past any spaces: `(\w+)\s*\)`.</span>
+<span class="syn-name">closed_word</span> : <span class="syn-type">List</span>(<span class="syn-type">U8</span>), <span class="syn-type">U64</span> -&gt; <span class="syn-type">Try</span>(<span class="syn-type">Str</span>, [<span class="syn-type">NoPointer</span>])
+<span class="syn-name">closed_word</span> = |code, at| {
+	end = <span class="syn-type">Mask</span>.word_end(code, at)
+	<span class="syn-keyword">if</span> end &gt; at <span class="syn-keyword">and</span> code.get(<span class="syn-type">Mask</span>.spaces_end(code, end)) == <span class="syn-type">Ok</span>(<span class="syn-string">&#39;)&#39;</span>) {
+		<span class="syn-type">Ok</span>(<span class="syn-type">Mask</span>.text(code.sublist({ start: at, len: end - at })))
+	} <span class="syn-keyword">else</span> {
+		<span class="syn-type">Err</span>(<span class="syn-type">NoPointer</span>)
+	}
+}
+
+<span class="syn-comment">## The `\w` run that ends the bytes, &quot;&quot; for none: `(\w+)$`.</span>
+<span class="syn-name">trailing_word</span> : <span class="syn-type">List</span>(<span class="syn-type">U8</span>) -&gt; <span class="syn-type">Str</span>
+<span class="syn-name">trailing_word</span> = |bytes|
+	<span class="syn-keyword">match</span> bytes.find_last_index(|byte| !(<span class="syn-type">Mask</span>.is_word(byte))) {
+		<span class="syn-type">Ok</span>(last_other) =&gt; <span class="syn-type">Mask</span>.text(bytes.drop_first(last_other + <span class="syn-number">1</span>))
+		<span class="syn-type">Err</span>(_) =&gt; <span class="syn-type">Mask</span>.text(bytes)
+	}
+
+<span class="syn-comment">## The last place before `end` that is no `\s`.</span>
+<span class="syn-name">last_unspaced</span> : <span class="syn-type">List</span>(<span class="syn-type">U8</span>), <span class="syn-type">U64</span> -&gt; <span class="syn-type">Try</span>(<span class="syn-type">U64</span>, [<span class="syn-type">Missing</span>])
+<span class="syn-name">last_unspaced</span> = |bytes, end|
+	<span class="syn-keyword">match</span> bytes.take_first(end).find_last_index(|byte| !(<span class="syn-type">Mask</span>.is_space(byte))) {
+		<span class="syn-type">Ok</span>(at) =&gt; <span class="syn-type">Ok</span>(at)
+		<span class="syn-type">Err</span>(_) =&gt; <span class="syn-type">Err</span>(<span class="syn-type">Missing</span>)
+	}
+
+<span class="syn-comment">## The `\w` run that ends at `last`, whole.</span>
+<span class="syn-name">word_ending_at</span> : <span class="syn-type">List</span>(<span class="syn-type">U8</span>), <span class="syn-type">U64</span> -&gt; <span class="syn-type">Str</span>
+<span class="syn-name">word_ending_at</span> = |bytes, last| {
+	before = bytes.take_first(last + <span class="syn-number">1</span>)
+	trailing_word(before)
+}
+
+<span class="syn-comment">## The name before a `[...]` that closes at `close`: the leftmost `[` of the</span>
+<span class="syn-comment">## brackets (no `]` between it and `close`) with a word before it, past any</span>
+<span class="syn-comment">## spaces, is the match a leftmost search finds.</span>
+<span class="syn-name">bracketed_name</span> : <span class="syn-type">List</span>(<span class="syn-type">U8</span>), <span class="syn-type">U64</span> -&gt; <span class="syn-type">Try</span>(<span class="syn-type">Str</span>, [<span class="syn-type">NoName</span>])
+<span class="syn-name">bracketed_name</span> = |text, close| {
+	<span class="syn-keyword">var</span> $opens = []
+	<span class="syn-keyword">var</span> $at = close
+	<span class="syn-keyword">var</span> $is_open = <span class="syn-type">Bool.True</span>
+	<span class="syn-keyword">while</span> $is_open <span class="syn-keyword">and</span> $at &gt; <span class="syn-number">0</span> {
+		$at = $at - <span class="syn-number">1</span>
+		byte = text.get($at) ?? <span class="syn-number">0</span>
+		<span class="syn-keyword">if</span> byte == <span class="syn-string">&#39;]&#39;</span> {
+			$is_open = <span class="syn-type">Bool.False</span>
+		} <span class="syn-keyword">else</span> <span class="syn-keyword">if</span> byte == <span class="syn-string">&#39;[&#39;</span> {
+			$opens = $opens.prepend($at)
+		}
+	}
+	<span class="syn-keyword">for</span> open <span class="syn-keyword">in</span> $opens {
+		<span class="syn-keyword">match</span> last_unspaced(text, open) {
+			<span class="syn-type">Ok</span>(before) <span class="syn-keyword">if</span> <span class="syn-type">Mask</span>.is_word_at(text, before) =&gt; <span class="syn-keyword">return</span> <span class="syn-type">Ok</span>(word_ending_at(text, before))
+			_ =&gt; {}
+		}
+	}
+	<span class="syn-type">Err</span>(<span class="syn-type">NoName</span>)
+}
+</code></pre>
+<p class="file"><a href="https://github.com/showell/shale/blob/0c451bc67134e8c71182fa1d4e6c379a57b907bc/cookbook/c/items/Item.roc"><code>cookbook/c/items/Item.roc</code></a>, 112 lines</p>
+<pre><code><span class="syn-comment">## A top-level item of a file of Shale&#39;s C, as Split.items gives it: its</span>
+<span class="syn-comment">## kind, the name it declares, and its lines. Every field is set, so none is</span>
+<span class="syn-comment">## missing: a line field is 0 and a text field &quot;&quot; where the item has none.</span>
+<span class="syn-comment">##</span>
+<span class="syn-comment">##   kind           what it is (Item.Kind; Item.kind_name prints it);</span>
+<span class="syn-comment">##   name           the name it declares: a function&#39;s, a type&#39;s, a macro&#39;s,</span>
+<span class="syn-comment">##                  an include&#39;s path, a generator&#39;s type, a test&#39;s; a</span>
+<span class="syn-comment">##                  directive&#39;s word and first argument (`if defined`); an</span>
+<span class="syn-comment">##                  anonymous `enum`&#39;s first enumerator;</span>
+<span class="syn-comment">##   first, last    its lines, from its opening line to its closing one;</span>
+<span class="syn-comment">##   comment_first, comment_last</span>
+<span class="syn-comment">##                  the `//` lines directly above it, no blank between;</span>
+<span class="syn-comment">##   sig_first, sig_last</span>
+<span class="syn-comment">##                  its head: a function&#39;s or a test&#39;s lines up to the one</span>
+<span class="syn-comment">##                  its body&#39;s `{` ends, a wrapped prototype&#39;s lines; else its</span>
+<span class="syn-comment">##                  first line alone;</span>
+<span class="syn-comment">##   body_first, body_last</span>
+<span class="syn-comment">##                  a function&#39;s or a test&#39;s body (both its line, when the</span>
+<span class="syn-comment">##                  body shares the head&#39;s line), a braced item&#39;s inside;</span>
+<span class="syn-comment">##   storage        `static inline`, `static` or &quot;&quot;;</span>
+<span class="syn-comment">##   return_type    a function&#39;s or a prototype&#39;s return type, as written;</span>
+<span class="syn-comment">##   macro, held_type</span>
+<span class="syn-comment">##                  a generator&#39;s macro (`VEC_DEFINE`) and the type it holds;</span>
+<span class="syn-comment">##   makes          a generator macro&#39;s own functions, its `Name##_&lt;x&gt;(`</span>
+<span class="syn-comment">##                  suffixes (`make`, `push`);</span>
+<span class="syn-comment">##   enumerators    an enum&#39;s constants, in order;</span>
+<span class="syn-comment">##   uses           when asked for, the identifiers a function&#39;s, a test&#39;s or</span>
+<span class="syn-comment">##                  a test list&#39;s body names, sorted, each once.</span>
+<span class="syn-type">Item</span> := {
+	kind : <span class="syn-type">Item.Kind</span>,
+	name : <span class="syn-type">Str</span>,
+	first : <span class="syn-type">U64</span>,
+	last : <span class="syn-type">U64</span>,
+	comment_first : <span class="syn-type">U64</span>,
+	comment_last : <span class="syn-type">U64</span>,
+	sig_first : <span class="syn-type">U64</span>,
+	sig_last : <span class="syn-type">U64</span>,
+	body_first : <span class="syn-type">U64</span>,
+	body_last : <span class="syn-type">U64</span>,
+	storage : <span class="syn-type">Str</span>,
+	return_type : <span class="syn-type">Str</span>,
+	macro : <span class="syn-type">Str</span>,
+	held_type : <span class="syn-type">Str</span>,
+	makes : <span class="syn-type">List</span>(<span class="syn-type">Str</span>),
+	enumerators : <span class="syn-type">List</span>(<span class="syn-type">Str</span>),
+	uses : <span class="syn-type">List</span>(<span class="syn-type">Str</span>),
+}.{
+
+	<span class="syn-comment">## The kinds of item the dialect has.</span>
+	<span class="syn-type">Kind</span> : [
+		<span class="syn-type">Function</span>,
+		<span class="syn-type">Prototype</span>,
+		<span class="syn-type">Data</span>,
+		<span class="syn-type">Struct</span>,
+		<span class="syn-type">Enum</span>,
+		<span class="syn-type">Union</span>,
+		<span class="syn-type">Typedef</span>,
+		<span class="syn-type">Macro</span>,
+		<span class="syn-type">Guard</span>,
+		<span class="syn-type">Include</span>,
+		<span class="syn-type">Directive</span>,
+		<span class="syn-type">Generator</span>,
+		<span class="syn-type">Test</span>,
+		<span class="syn-type">TestList</span>,
+		<span class="syn-type">StaticAssert</span>,
+	]
+
+	<span class="syn-comment">## An item of a kind and a name over its lines, every other field empty:</span>
+	<span class="syn-comment">## the caller sets what its kind has.</span>
+	<span class="syn-name">new</span> : <span class="syn-type">Item.Kind</span>, <span class="syn-type">Str</span>, { first : <span class="syn-type">U64</span>, last : <span class="syn-type">U64</span> } -&gt; <span class="syn-type">Item</span>
+	<span class="syn-name">new</span> = |kind, name, { first, last }| {
+		kind,
+		name,
+		first,
+		last,
+		comment_first: <span class="syn-number">0</span>,
+		comment_last: <span class="syn-number">0</span>,
+		sig_first: first,
+		sig_last: first,
+		body_first: <span class="syn-number">0</span>,
+		body_last: <span class="syn-number">0</span>,
+		storage: <span class="syn-string">&quot;&quot;</span>,
+		return_type: <span class="syn-string">&quot;&quot;</span>,
+		macro: <span class="syn-string">&quot;&quot;</span>,
+		held_type: <span class="syn-string">&quot;&quot;</span>,
+		makes: [],
+		enumerators: [],
+		uses: [],
+	}
+
+	<span class="syn-comment">## A kind&#39;s name as the Shale original printed it: `function`,</span>
+	<span class="syn-comment">## `test_list`, `static_assert`.</span>
+	<span class="syn-name">kind_name</span> : <span class="syn-type">Item.Kind</span> -&gt; <span class="syn-type">Str</span>
+	<span class="syn-name">kind_name</span> = |kind|
+		<span class="syn-keyword">match</span> kind {
+			<span class="syn-type">Function</span> =&gt; <span class="syn-string">&quot;function&quot;</span>
+			<span class="syn-type">Prototype</span> =&gt; <span class="syn-string">&quot;prototype&quot;</span>
+			<span class="syn-type">Data</span> =&gt; <span class="syn-string">&quot;data&quot;</span>
+			<span class="syn-type">Struct</span> =&gt; <span class="syn-string">&quot;struct&quot;</span>
+			<span class="syn-type">Enum</span> =&gt; <span class="syn-string">&quot;enum&quot;</span>
+			<span class="syn-type">Union</span> =&gt; <span class="syn-string">&quot;union&quot;</span>
+			<span class="syn-type">Typedef</span> =&gt; <span class="syn-string">&quot;typedef&quot;</span>
+			<span class="syn-type">Macro</span> =&gt; <span class="syn-string">&quot;macro&quot;</span>
+			<span class="syn-type">Guard</span> =&gt; <span class="syn-string">&quot;guard&quot;</span>
+			<span class="syn-type">Include</span> =&gt; <span class="syn-string">&quot;include&quot;</span>
+			<span class="syn-type">Directive</span> =&gt; <span class="syn-string">&quot;directive&quot;</span>
+			<span class="syn-type">Generator</span> =&gt; <span class="syn-string">&quot;generator&quot;</span>
+			<span class="syn-type">Test</span> =&gt; <span class="syn-string">&quot;test&quot;</span>
+			<span class="syn-type">TestList</span> =&gt; <span class="syn-string">&quot;test_list&quot;</span>
+			<span class="syn-type">StaticAssert</span> =&gt; <span class="syn-string">&quot;static_assert&quot;</span>
+		}
+}
+</code></pre>
+<p class="file"><a href="https://github.com/showell/shale/blob/0c451bc67134e8c71182fa1d4e6c379a57b907bc/cookbook/c/items/Mask.roc"><code>cookbook/c/items/Mask.roc</code></a>, 229 lines</p>
+<pre><code><span class="syn-comment">## The masker the splitter reads Shale&#39;s C with, and the byte classes it</span>
+<span class="syn-comment">## reads by. A line is its bytes, as Shale&#39;s strings are, so a column is a</span>
+<span class="syn-comment">## byte&#39;s place. The classes are the regular expressions&#39; and the builtins&#39;</span>
+<span class="syn-comment">## of c/build/c_items.shale, the Shale original: `\s` is a space, a tab, a</span>
+<span class="syn-comment">## newline, a carriage return, a vertical tab or a form feed; `\w` an ASCII</span>
+<span class="syn-comment">## letter, a digit or `_`; `trim` takes a space, a tab, a carriage return</span>
+<span class="syn-comment">## and a newline.</span>
+<span class="syn-type">Mask</span> := [].{
+
+	<span class="syn-comment">## The line with its strings, character literals and comments blanked,</span>
+	<span class="syn-comment">## each to spaces between its quotes (a comment wholly to spaces), so every</span>
+	<span class="syn-comment">## column stays where it was. The quotes go first, leftmost first, so a</span>
+	<span class="syn-comment">## `&quot;` in `&#39;&quot;&#39;` is the literal&#39;s and a `//` or a `/*` left after them is a</span>
+	<span class="syn-comment">## comment&#39;s; a quote that nothing closes is left as it is.</span>
+	<span class="syn-name">masked</span> : <span class="syn-type">List</span>(<span class="syn-type">U8</span>) -&gt; <span class="syn-type">List</span>(<span class="syn-type">U8</span>)
+	<span class="syn-name">masked</span> = |line|
+		<span class="syn-keyword">if</span> line.contains(<span class="syn-string">&#39;&quot;&#39;</span>) <span class="syn-keyword">or</span> line.contains(<span class="syn-string">&#39;\&#39;&#39;</span>) <span class="syn-keyword">or</span> line.contains(<span class="syn-string">&#39;/&#39;</span>) {
+			masked_slowly(line)
+		} <span class="syn-keyword">else</span> {
+			line
+		}
+
+	<span class="syn-comment">## A regular expression&#39;s `\s`.</span>
+	<span class="syn-name">is_space</span> : <span class="syn-type">U8</span> -&gt; <span class="syn-type">Bool</span>
+	<span class="syn-name">is_space</span> = |byte|
+		byte == <span class="syn-string">&#39; &#39;</span> <span class="syn-keyword">or</span> byte == <span class="syn-string">&#39;\t&#39;</span> <span class="syn-keyword">or</span> byte == <span class="syn-string">&#39;\n&#39;</span> <span class="syn-keyword">or</span> byte == <span class="syn-string">&#39;\r&#39;</span> <span class="syn-keyword">or</span> byte == <span class="syn-number">0x0b</span> <span class="syn-keyword">or</span> byte == <span class="syn-number">0x0c</span>
+
+	<span class="syn-comment">## A regular expression&#39;s `\w`: an ASCII letter, a digit or `_`.</span>
+	<span class="syn-name">is_word</span> : <span class="syn-type">U8</span> -&gt; <span class="syn-type">Bool</span>
+	<span class="syn-name">is_word</span> = |byte|
+		<span class="syn-type">Mask</span>.is_name_start(byte) <span class="syn-keyword">or</span> (byte &gt;= <span class="syn-string">&#39;0&#39;</span> <span class="syn-keyword">and</span> byte &lt;= <span class="syn-string">&#39;9&#39;</span>)
+
+	<span class="syn-comment">## The first byte of a C name: an ASCII letter or `_`.</span>
+	<span class="syn-name">is_name_start</span> : <span class="syn-type">U8</span> -&gt; <span class="syn-type">Bool</span>
+	<span class="syn-name">is_name_start</span> = |byte|
+		(byte &gt;= <span class="syn-string">&#39;a&#39;</span> <span class="syn-keyword">and</span> byte &lt;= <span class="syn-string">&#39;z&#39;</span>) <span class="syn-keyword">or</span> (byte &gt;= <span class="syn-string">&#39;A&#39;</span> <span class="syn-keyword">and</span> byte &lt;= <span class="syn-string">&#39;Z&#39;</span>) <span class="syn-keyword">or</span> byte == <span class="syn-string">&#39;_&#39;</span>
+
+	<span class="syn-comment">## Whether the byte at `at` is a `\w`, past the end being none.</span>
+	<span class="syn-name">is_word_at</span> : <span class="syn-type">List</span>(<span class="syn-type">U8</span>), <span class="syn-type">U64</span> -&gt; <span class="syn-type">Bool</span>
+	<span class="syn-name">is_word_at</span> = |bytes, at|
+		<span class="syn-keyword">match</span> bytes.get(at) {
+			<span class="syn-type">Ok</span>(byte) =&gt; <span class="syn-type">Mask</span>.is_word(byte)
+			<span class="syn-type">Err</span>(_) =&gt; <span class="syn-type">Bool.False</span>
+		}
+
+	<span class="syn-comment">## Whether the byte at `at` is a `\s`, past the end being none.</span>
+	<span class="syn-name">is_space_at</span> : <span class="syn-type">List</span>(<span class="syn-type">U8</span>), <span class="syn-type">U64</span> -&gt; <span class="syn-type">Bool</span>
+	<span class="syn-name">is_space_at</span> = |bytes, at|
+		<span class="syn-keyword">match</span> bytes.get(at) {
+			<span class="syn-type">Ok</span>(byte) =&gt; <span class="syn-type">Mask</span>.is_space(byte)
+			<span class="syn-type">Err</span>(_) =&gt; <span class="syn-type">Bool.False</span>
+		}
+
+	<span class="syn-comment">## The bytes without the spaces, tabs, carriage returns and newlines at</span>
+	<span class="syn-comment">## their ends, as Shale&#39;s `trim` takes them.</span>
+	<span class="syn-name">trimmed</span> : <span class="syn-type">List</span>(<span class="syn-type">U8</span>) -&gt; <span class="syn-type">List</span>(<span class="syn-type">U8</span>)
+	<span class="syn-name">trimmed</span> = |bytes|
+		<span class="syn-keyword">match</span> bytes.find_first_index(|byte| !(is_blank(byte))) {
+			<span class="syn-type">Ok</span>(start) =&gt; {
+				end = bytes.find_last_index(|byte| !(is_blank(byte))) ?? start
+				bytes.sublist({ start, len: end + <span class="syn-number">1</span> - start })
+			}
+			<span class="syn-type">Err</span>(_) =&gt; []
+		}
+
+	<span class="syn-comment">## The first place at `at` or after it that is no `\s`: the end of `\s*`.</span>
+	<span class="syn-name">spaces_end</span> : <span class="syn-type">List</span>(<span class="syn-type">U8</span>), <span class="syn-type">U64</span> -&gt; <span class="syn-type">U64</span>
+	<span class="syn-name">spaces_end</span> = |bytes, at| {
+		<span class="syn-keyword">var</span> $end = at
+		<span class="syn-keyword">while</span> <span class="syn-type">Mask</span>.is_space_at(bytes, $end) {
+			$end = $end + <span class="syn-number">1</span>
+		}
+		$end
+	}
+
+	<span class="syn-comment">## The first place at `at` or after it that is no `\w`: the end of `\w*`.</span>
+	<span class="syn-name">word_end</span> : <span class="syn-type">List</span>(<span class="syn-type">U8</span>), <span class="syn-type">U64</span> -&gt; <span class="syn-type">U64</span>
+	<span class="syn-name">word_end</span> = |bytes, at| {
+		<span class="syn-keyword">var</span> $end = at
+		<span class="syn-keyword">while</span> <span class="syn-type">Mask</span>.is_word_at(bytes, $end) {
+			$end = $end + <span class="syn-number">1</span>
+		}
+		$end
+	}
+
+	<span class="syn-comment">## Whether the bytes hold the text at `at`.</span>
+	<span class="syn-name">holds_at</span> : <span class="syn-type">List</span>(<span class="syn-type">U8</span>), <span class="syn-type">U64</span>, <span class="syn-type">Str</span> -&gt; <span class="syn-type">Bool</span>
+	<span class="syn-name">holds_at</span> = |bytes, at, wanted_text| {
+		wanted = wanted_text.to_utf8()
+		bytes.sublist({ start: at, len: wanted.len() }) == wanted
+	}
+
+	<span class="syn-comment">## The place of the first two bytes `pair` at `from` or after it.</span>
+	<span class="syn-name">pair_from</span> : <span class="syn-type">List</span>(<span class="syn-type">U8</span>), (<span class="syn-type">U8</span>, <span class="syn-type">U8</span>), <span class="syn-type">U64</span> -&gt; <span class="syn-type">Try</span>(<span class="syn-type">U64</span>, [<span class="syn-type">Missing</span>])
+	<span class="syn-name">pair_from</span> = |bytes, (first, second), from| {
+		<span class="syn-keyword">var</span> $at = from
+		<span class="syn-keyword">while</span> $at + <span class="syn-number">1</span> &lt; bytes.len() {
+			<span class="syn-keyword">match</span> <span class="syn-type">Mask</span>.byte_from(bytes, first, $at) {
+				<span class="syn-type">Ok</span>(found) <span class="syn-keyword">if</span> bytes.get(found + <span class="syn-number">1</span>) == <span class="syn-type">Ok</span>(second) =&gt; <span class="syn-keyword">return</span> <span class="syn-type">Ok</span>(found)
+				<span class="syn-type">Ok</span>(found) =&gt; {
+					$at = found + <span class="syn-number">1</span>
+				}
+				<span class="syn-type">Err</span>(_) =&gt; <span class="syn-keyword">return</span> <span class="syn-type">Err</span>(<span class="syn-type">Missing</span>)
+			}
+		}
+		<span class="syn-type">Err</span>(<span class="syn-type">Missing</span>)
+	}
+
+	<span class="syn-comment">## The place of the first `byte` at `from` or after it.</span>
+	<span class="syn-name">byte_from</span> : <span class="syn-type">List</span>(<span class="syn-type">U8</span>), <span class="syn-type">U8</span>, <span class="syn-type">U64</span> -&gt; <span class="syn-type">Try</span>(<span class="syn-type">U64</span>, [<span class="syn-type">Missing</span>])
+	<span class="syn-name">byte_from</span> = |bytes, byte, from|
+		<span class="syn-keyword">match</span> bytes.drop_first(from).find_first_index(|each| each == byte) {
+			<span class="syn-type">Ok</span>(offset) =&gt; <span class="syn-type">Ok</span>(from + offset)
+			<span class="syn-type">Err</span>(_) =&gt; <span class="syn-type">Err</span>(<span class="syn-type">Missing</span>)
+		}
+
+	<span class="syn-comment">## The bytes as text: Shale&#39;s C is UTF-8, and a mask cuts only at ASCII.</span>
+	<span class="syn-name">text</span> : <span class="syn-type">List</span>(<span class="syn-type">U8</span>) -&gt; <span class="syn-type">Str</span>
+	<span class="syn-name">text</span> = |bytes| <span class="syn-type">Str</span>.from_utf8_lossy(bytes)
+}
+
+<span class="syn-comment">## The masker&#39;s work on a line that holds a quote or a `/`.</span>
+<span class="syn-name">masked_slowly</span> : <span class="syn-type">List</span>(<span class="syn-type">U8</span>) -&gt; <span class="syn-type">List</span>(<span class="syn-type">U8</span>)
+<span class="syn-name">masked_slowly</span> = |line| {
+	has_double = line.contains(<span class="syn-string">&#39;&quot;&#39;</span>)
+	has_single = line.contains(<span class="syn-string">&#39;\&#39;&#39;</span>)
+	quotes_blanked =
+		<span class="syn-keyword">if</span> has_double <span class="syn-keyword">or</span> has_single {
+			blank_quotes(line, { double: has_double, single: has_single })
+		} <span class="syn-keyword">else</span> {
+			line
+		}
+	comments_blanked =
+		<span class="syn-keyword">if</span> <span class="syn-type">Mask</span>.pair_from(quotes_blanked, (<span class="syn-string">&#39;/&#39;</span>, <span class="syn-string">&#39;*&#39;</span>), <span class="syn-number">0</span>) != <span class="syn-type">Err</span>(<span class="syn-type">Missing</span>) {
+			blank_block_comments(quotes_blanked)
+		} <span class="syn-keyword">else</span> {
+			quotes_blanked
+		}
+	<span class="syn-keyword">match</span> <span class="syn-type">Mask</span>.pair_from(comments_blanked, (<span class="syn-string">&#39;/&#39;</span>, <span class="syn-string">&#39;/&#39;</span>), <span class="syn-number">0</span>) {
+		<span class="syn-type">Ok</span>(cut) =&gt; comments_blanked.take_first(cut).concat(<span class="syn-type">List</span>.repeat(<span class="syn-string">&#39; &#39;</span>, comments_blanked.len() - cut))
+		<span class="syn-type">Err</span>(_) =&gt; comments_blanked
+	}
+}
+
+<span class="syn-comment">## A byte Shale&#39;s `trim` takes off a text&#39;s ends.</span>
+<span class="syn-name">is_blank</span> : <span class="syn-type">U8</span> -&gt; <span class="syn-type">Bool</span>
+<span class="syn-name">is_blank</span> = |byte| byte == <span class="syn-string">&#39; &#39;</span> <span class="syn-keyword">or</span> byte == <span class="syn-string">&#39;\t&#39;</span> <span class="syn-keyword">or</span> byte == <span class="syn-string">&#39;\r&#39;</span> <span class="syn-keyword">or</span> byte == <span class="syn-string">&#39;\n&#39;</span>
+
+<span class="syn-comment">## The line with each string (`double`) or character literal (`single`)</span>
+<span class="syn-comment">## blanked between its quotes, leftmost first: a quote opens one, `\` and the</span>
+<span class="syn-comment">## byte after it are inside it, and the same quote closes it. One that the</span>
+<span class="syn-comment">## line does not close is no literal, and the search goes on after its quote.</span>
+<span class="syn-name">blank_quotes</span> : <span class="syn-type">List</span>(<span class="syn-type">U8</span>), { double : <span class="syn-type">Bool</span>, single : <span class="syn-type">Bool</span> } -&gt; <span class="syn-type">List</span>(<span class="syn-type">U8</span>)
+<span class="syn-name">blank_quotes</span> = |line, kinds| {
+	count = line.len()
+	<span class="syn-keyword">var</span> $out = line
+	<span class="syn-keyword">var</span> $at = <span class="syn-number">0</span>
+	<span class="syn-keyword">while</span> $at &lt; count {
+		byte = line.get($at) ?? <span class="syn-number">0</span>
+		is_open = (byte == <span class="syn-string">&#39;&quot;&#39;</span> <span class="syn-keyword">and</span> kinds.double) <span class="syn-keyword">or</span> (byte == <span class="syn-string">&#39;\&#39;&#39;</span> <span class="syn-keyword">and</span> kinds.single)
+		closed = <span class="syn-keyword">if</span> is_open {
+			quote_close(line, $at, byte)
+		} <span class="syn-keyword">else</span> {
+			<span class="syn-type">Err</span>(<span class="syn-type">Unclosed</span>)
+		}
+		<span class="syn-keyword">match</span> closed {
+			<span class="syn-type">Ok</span>(close) =&gt; {
+				$out = blanked($out, { start: $at + <span class="syn-number">1</span>, end: close })
+				$at = close + <span class="syn-number">1</span>
+			}
+			<span class="syn-type">Err</span>(_) =&gt; {
+				$at = $at + <span class="syn-number">1</span>
+			}
+		}
+	}
+	$out
+}
+
+<span class="syn-comment">## Where the literal opened by `quote` at `open` closes: `[^&quot;\\]*(?:\\.[^&quot;\\]*)*&quot;`.</span>
+<span class="syn-name">quote_close</span> : <span class="syn-type">List</span>(<span class="syn-type">U8</span>), <span class="syn-type">U64</span>, <span class="syn-type">U8</span> -&gt; <span class="syn-type">Try</span>(<span class="syn-type">U64</span>, [<span class="syn-type">Unclosed</span>])
+<span class="syn-name">quote_close</span> = |line, open, quote| {
+	count = line.len()
+	<span class="syn-keyword">var</span> $at = open + <span class="syn-number">1</span>
+	<span class="syn-keyword">while</span> $at &lt; count {
+		byte = line.get($at) ?? <span class="syn-number">0</span>
+		<span class="syn-keyword">if</span> byte == quote {
+			<span class="syn-keyword">return</span> <span class="syn-type">Ok</span>($at)
+		}
+		<span class="syn-keyword">if</span> byte == <span class="syn-string">&#39;\\&#39;</span> {
+			<span class="syn-comment"># `\\.`: the escape takes any byte but a newline after it.</span>
+			<span class="syn-keyword">if</span> $at + <span class="syn-number">1</span> &gt;= count <span class="syn-keyword">or</span> line.get($at + <span class="syn-number">1</span>) == <span class="syn-type">Ok</span>(<span class="syn-string">&#39;\n&#39;</span>) {
+				<span class="syn-keyword">return</span> <span class="syn-type">Err</span>(<span class="syn-type">Unclosed</span>)
+			}
+			$at = $at + <span class="syn-number">2</span>
+		} <span class="syn-keyword">else</span> {
+			$at = $at + <span class="syn-number">1</span>
+		}
+	}
+	<span class="syn-type">Err</span>(<span class="syn-type">Unclosed</span>)
+}
+
+<span class="syn-comment">## The line with each `/* */` comment wholly spaces: `/\*[^*]*\*/`, so a</span>
+<span class="syn-comment">## comment that holds a `*` of its own is none.</span>
+<span class="syn-name">blank_block_comments</span> : <span class="syn-type">List</span>(<span class="syn-type">U8</span>) -&gt; <span class="syn-type">List</span>(<span class="syn-type">U8</span>)
+<span class="syn-name">blank_block_comments</span> = |line| {
+	<span class="syn-keyword">var</span> $out = line
+	<span class="syn-keyword">var</span> $at = <span class="syn-number">0</span>
+	<span class="syn-keyword">while</span> $at + <span class="syn-number">1</span> &lt; line.len() {
+		<span class="syn-keyword">if</span> line.get($at) == <span class="syn-type">Ok</span>(<span class="syn-string">&#39;/&#39;</span>) <span class="syn-keyword">and</span> line.get($at + <span class="syn-number">1</span>) == <span class="syn-type">Ok</span>(<span class="syn-string">&#39;*&#39;</span>) {
+			<span class="syn-keyword">match</span> <span class="syn-type">Mask</span>.byte_from(line, <span class="syn-string">&#39;*&#39;</span>, $at + <span class="syn-number">2</span>) {
+				<span class="syn-type">Ok</span>(star) <span class="syn-keyword">if</span> line.get(star + <span class="syn-number">1</span>) == <span class="syn-type">Ok</span>(<span class="syn-string">&#39;/&#39;</span>) =&gt; {
+					$out = blanked($out, { start: $at, end: star + <span class="syn-number">2</span> })
+					$at = star + <span class="syn-number">2</span>
+				}
+				_ =&gt; {
+					$at = $at + <span class="syn-number">1</span>
+				}
+			}
+		} <span class="syn-keyword">else</span> {
+			$at = $at + <span class="syn-number">1</span>
+		}
+	}
+	$out
+}
+
+<span class="syn-comment">## The bytes with those from `start` up to `end` made spaces.</span>
+<span class="syn-name">blanked</span> : <span class="syn-type">List</span>(<span class="syn-type">U8</span>), { start : <span class="syn-type">U64</span>, end : <span class="syn-type">U64</span> } -&gt; <span class="syn-type">List</span>(<span class="syn-type">U8</span>)
+<span class="syn-name">blanked</span> = |bytes, { start, end }|
+	bytes.take_first(start).concat(<span class="syn-type">List</span>.repeat(<span class="syn-string">&#39; &#39;</span>, end - start)).concat(bytes.drop_first(end))
+</code></pre>
+<p class="file"><a href="https://github.com/showell/shale/blob/0c451bc67134e8c71182fa1d4e6c379a57b907bc/cookbook/c/items/Paths.roc"><code>cookbook/c/items/Paths.roc</code></a>, 23 lines</p>
+<pre><code><span class="syn-comment">## How the C recipes read a file&#39;s path below the folder they walk: whether</span>
+<span class="syn-comment">## it is the tests&#39;, and whether it is under a folder named `out`, the</span>
+<span class="syn-comment">## build&#39;s output, which no recipe reads.</span>
+<span class="syn-type">Paths</span> := [].{
+
+	<span class="syn-comment">## Whether `path`, below the folder, is the tests&#39;: in a `tests` folder,</span>
+	<span class="syn-comment">## or a file whose name starts with `test` (c/foundation/test.h, the</span>
+	<span class="syn-comment">## tests&#39; runner).</span>
+	<span class="syn-name">is_test_path</span> : <span class="syn-type">Str</span>, <span class="syn-type">Str</span> -&gt; <span class="syn-type">Bool</span>
+	<span class="syn-name">is_test_path</span> = |folder, path| {
+		below = <span class="syn-type">Str</span>.from_utf8_lossy(path.to_utf8().drop_first(folder.count_utf8_bytes() + <span class="syn-number">1</span>))
+		file_name = <span class="syn-keyword">match</span> below.split_on(<span class="syn-string">&quot;/&quot;</span>).last() {
+			<span class="syn-type">Ok</span>(last) =&gt; last
+			<span class="syn-type">Err</span>(_) =&gt; below
+		}
+		below.starts_with(<span class="syn-string">&quot;tests/&quot;</span>) <span class="syn-keyword">or</span> below.contains(<span class="syn-string">&quot;/tests/&quot;</span>) <span class="syn-keyword">or</span> file_name.starts_with(<span class="syn-string">&quot;test&quot;</span>)
+	}
+
+	<span class="syn-comment">## Whether a folder below `folder` on the way to `path` is named `out`.</span>
+	<span class="syn-name">is_in_out_folder</span> : <span class="syn-type">Str</span>, <span class="syn-type">Str</span> -&gt; <span class="syn-type">Bool</span>
+	<span class="syn-name">is_in_out_folder</span> = |folder, path|
+		path.drop_prefix(<span class="syn-string">&quot;</span>${folder}<span class="syn-string">/&quot;</span>).split_on(<span class="syn-string">&quot;/&quot;</span>).drop_last(<span class="syn-number">1</span>).contains(<span class="syn-string">&quot;out&quot;</span>)
+}
+</code></pre>
+<p class="file"><a href="https://github.com/showell/shale/blob/0c451bc67134e8c71182fa1d4e6c379a57b907bc/cookbook/c/items/Split.roc"><code>cookbook/c/items/Split.roc</code></a>, 441 lines</p>
+<pre><code><span class="syn-comment">## The splitter: a file of Shale&#39;s C split into its top-level items, in</span>
+<span class="syn-comment">## order. There is no C parser on the box, and none is wanted:</span>
+<span class="syn-comment">## c/check_discipline.shale holds the C to a shape a line reader can trust,</span>
+<span class="syn-comment">## and the build fails when a file breaks it, so the dialect is this</span>
+<span class="syn-comment">## reader&#39;s contract (c/docs/style.md, &quot;The top level&quot;):</span>
+<span class="syn-comment">##</span>
+<span class="syn-comment">##   - every line at column 0 opens a top-level item or closes one, and</span>
+<span class="syn-comment">##     everything inside an item is indented;</span>
+<span class="syn-comment">##   - every function starts at column 0 with `static` (or is `int main(`);</span>
+<span class="syn-comment">##   - an opening brace ends its line, and a declaration is one a line;</span>
+<span class="syn-comment">##   - comments are `//`, `/* */` only inside a macro; there are no tabs;</span>
+<span class="syn-comment">##   - a header is framed by `// &lt;name&gt;: ...`, its guard and `#endif`.</span>
+<span class="syn-comment">##</span>
+<span class="syn-comment">## Every line of the file is in exactly one item, or is blank, or is a `//`</span>
+<span class="syn-comment">## comment line between items. A line that is none of these is an error</span>
+<span class="syn-comment">## naming the file and its line, never a guess. It is c/build/c_items.shale&#39;s</span>
+<span class="syn-comment">## `c_items`, the Shale original, a second copy of this logic, which the fast</span>
+<span class="syn-comment">## tier&#39;s discipline block splits every C file with, since it builds no Roc.</span>
+<span class="syn-keyword">import</span> <span class="syn-type">Guard</span>
+<span class="syn-keyword">import</span> <span class="syn-type">Head</span>
+<span class="syn-keyword">import</span> <span class="syn-type">Item</span>
+<span class="syn-keyword">import</span> <span class="syn-type">Mask</span>
+<span class="syn-keyword">import</span> <span class="syn-type">Words</span>
+
+<span class="syn-type">Split</span> := [].{
+
+	<span class="syn-comment">## The text&#39;s lines as Shale&#39;s `lines` splits them: at each newline, with</span>
+	<span class="syn-comment">## no empty last line after a final one.</span>
+	<span class="syn-name">lines</span> : <span class="syn-type">Str</span> -&gt; <span class="syn-type">List</span>(<span class="syn-type">List</span>(<span class="syn-type">U8</span>))
+	<span class="syn-name">lines</span> = |text| {
+		bytes = text.to_utf8()
+		<span class="syn-keyword">if</span> bytes.is_empty() {
+			[]
+		} <span class="syn-keyword">else</span> <span class="syn-keyword">if</span> bytes.last() == <span class="syn-type">Ok</span>(<span class="syn-string">&#39;\n&#39;</span>) {
+			bytes.split_on(<span class="syn-string">&#39;\n&#39;</span>).drop_last(<span class="syn-number">1</span>)
+		} <span class="syn-keyword">else</span> {
+			bytes.split_on(<span class="syn-string">&#39;\n&#39;</span>)
+		}
+	}
+
+	<span class="syn-comment">## The items of the C file at `path`, its text `text`, in order (Item has</span>
+	<span class="syn-comment">## their fields); `uses` fills each function&#39;s, test&#39;s and test list&#39;s</span>
+	<span class="syn-comment">## uses. A line the dialect does not account for is an error, the stop&#39;s</span>
+	<span class="syn-comment">## words: `&lt;path&gt;:&lt;line&gt;: &lt;why&gt;: &lt;the line&gt;`.</span>
+	<span class="syn-name">items</span> : { path : <span class="syn-type">Str</span>, text : <span class="syn-type">Str</span>, uses : <span class="syn-type">Bool</span> } -&gt; <span class="syn-type">Try</span>(<span class="syn-type">List</span>(<span class="syn-type">Item</span>), <span class="syn-type">Str</span>)
+	<span class="syn-name">items</span> = |{ path, text, uses }| {
+		file = { path, lines: <span class="syn-type">Split</span>.lines(text) }
+		count = file.lines.len()
+		<span class="syn-keyword">var</span> $items = []
+		<span class="syn-keyword">var</span> $comment_first = <span class="syn-number">0</span>
+		<span class="syn-keyword">var</span> $comment_last = <span class="syn-number">0</span>
+		<span class="syn-keyword">var</span> $at = <span class="syn-number">1</span>
+		<span class="syn-keyword">while</span> $at &lt;= count {
+			raw = line_at(file, $at)
+			<span class="syn-keyword">if</span> raw.is_empty() {
+				$comment_first = <span class="syn-number">0</span>
+				$at = $at + <span class="syn-number">1</span>
+			} <span class="syn-keyword">else</span> <span class="syn-keyword">if</span> raw.starts_with([<span class="syn-string">&#39;/&#39;</span>, <span class="syn-string">&#39;/&#39;</span>]) {
+				<span class="syn-keyword">if</span> $comment_first == <span class="syn-number">0</span> {
+					$comment_first = $at
+				}
+				$comment_last = $at
+				$at = $at + <span class="syn-number">1</span>
+			} <span class="syn-keyword">else</span> <span class="syn-keyword">if</span> raw.starts_with([<span class="syn-string">&#39; &#39;</span>]) {
+				<span class="syn-keyword">return</span> <span class="syn-type">Err</span>(unaccounted(file, $at, <span class="syn-string">&quot;an indented line outside every item&quot;</span>))
+			} <span class="syn-keyword">else</span> {
+				opened = item_at(file, $at, <span class="syn-type">Mask</span>.masked(raw))?
+				commented =
+					<span class="syn-keyword">if</span> $comment_first == <span class="syn-number">0</span> {
+						opened
+					} <span class="syn-keyword">else</span> {
+						{ ..opened, comment_first: $comment_first, comment_last: $comment_last }
+					}
+				$items = $items.append(with_uses(file, commented, uses))
+				$comment_first = <span class="syn-number">0</span>
+				$at = commented.last + <span class="syn-number">1</span>
+			}
+		}
+		<span class="syn-keyword">if</span> path.ends_with(<span class="syn-string">&quot;.h&quot;</span>) {
+			<span class="syn-type">Guard</span>.framed(path, $items)
+		} <span class="syn-keyword">else</span> {
+			<span class="syn-type">Ok</span>($items)
+		}
+	}
+
+	<span class="syn-comment">## The masked text of the file&#39;s lines from `first` to `last`, counted from</span>
+	<span class="syn-comment">## 1, joined by newlines: Shale&#39;s `c_masked_text`.</span>
+	<span class="syn-name">masked_text</span> : <span class="syn-type">List</span>(<span class="syn-type">List</span>(<span class="syn-type">U8</span>)), { first : <span class="syn-type">U64</span>, last : <span class="syn-type">U64</span> } -&gt; <span class="syn-type">List</span>(<span class="syn-type">U8</span>)
+	<span class="syn-name">masked_text</span> = |file_lines, { first, last }| {
+		<span class="syn-keyword">var</span> $text = []
+		<span class="syn-keyword">var</span> $at = first
+		<span class="syn-keyword">while</span> $at &lt;= last {
+			<span class="syn-keyword">if</span> $at &gt; first {
+				$text = $text.append(<span class="syn-string">&#39;\n&#39;</span>)
+			}
+			$text = $text.concat(<span class="syn-type">Mask</span>.masked(file_lines.get($at - <span class="syn-number">1</span>) ?? []))
+			$at = $at + <span class="syn-number">1</span>
+		}
+		$text
+	}
+}
+
+<span class="syn-comment">## A file being split: its path, for the errors, and its lines.</span>
+<span class="syn-type">CFile</span> : { path : <span class="syn-type">Str</span>, lines : <span class="syn-type">List</span>(<span class="syn-type">List</span>(<span class="syn-type">U8</span>)) }
+
+<span class="syn-comment">## Line `number` of the file, counted from 1.</span>
+<span class="syn-name">line_at</span> : <span class="syn-type">CFile</span>, <span class="syn-type">U64</span> -&gt; <span class="syn-type">List</span>(<span class="syn-type">U8</span>)
+<span class="syn-name">line_at</span> = |file, number| file.lines.get(number - <span class="syn-number">1</span>) ?? []
+
+<span class="syn-comment">## The error for line `number`, which the dialect does not account for: its</span>
+<span class="syn-comment">## place and why first, then the line.</span>
+<span class="syn-name">unaccounted</span> : <span class="syn-type">CFile</span>, <span class="syn-type">U64</span>, <span class="syn-type">Str</span> -&gt; <span class="syn-type">Str</span>
+<span class="syn-name">unaccounted</span> = |file, number, why|
+	unaccounted_text(file, number, why, <span class="syn-type">Mask</span>.text(line_at(file, number)))
+
+<span class="syn-comment">## The error for line `number`, with `shown` in place of the line.</span>
+<span class="syn-name">unaccounted_text</span> : <span class="syn-type">CFile</span>, <span class="syn-type">U64</span>, <span class="syn-type">Str</span>, <span class="syn-type">Str</span> -&gt; <span class="syn-type">Str</span>
+<span class="syn-name">unaccounted_text</span> = |file, number, why, shown|
+	<span class="syn-string">&quot;</span>${file.path}<span class="syn-string">:</span>${number.to_str()}<span class="syn-string">: </span>${why}<span class="syn-string">: </span>${shown}<span class="syn-string">&quot;</span>
+
+<span class="syn-comment">## The item&#39;s uses, when asked for and it is a function, a test or a test</span>
+<span class="syn-comment">## list with a body. A body on its head&#39;s line is what follows its `{`.</span>
+<span class="syn-name">with_uses</span> : <span class="syn-type">CFile</span>, <span class="syn-type">Item</span>, <span class="syn-type">Bool</span> -&gt; <span class="syn-type">Item</span>
+<span class="syn-name">with_uses</span> = |file, item, wanted| {
+	has_body = item.body_first != <span class="syn-number">0</span>
+	is_code = item.kind == <span class="syn-type">Function</span> <span class="syn-keyword">or</span> item.kind == <span class="syn-type">Test</span> <span class="syn-keyword">or</span> item.kind == <span class="syn-type">TestList</span>
+	<span class="syn-keyword">if</span> wanted <span class="syn-keyword">and</span> has_body <span class="syn-keyword">and</span> is_code {
+		text = <span class="syn-type">Split</span>.masked_text(file.lines, { first: item.body_first, last: item.body_last })
+		body =
+			<span class="syn-keyword">if</span> item.body_first == item.sig_last <span class="syn-keyword">and</span> item.kind != <span class="syn-type">TestList</span> {
+				<span class="syn-keyword">match</span> <span class="syn-type">Mask</span>.byte_from(text, <span class="syn-string">&#39;{&#39;</span>, <span class="syn-number">0</span>) {
+					<span class="syn-type">Ok</span>(brace) =&gt; text.drop_first(brace)
+					<span class="syn-type">Err</span>(_) =&gt; text
+				}
+			} <span class="syn-keyword">else</span> {
+				text
+			}
+		{ ..item, uses: <span class="syn-type">Words</span>.uses(body) }
+	} <span class="syn-keyword">else</span> {
+		item
+	}
+}
+
+<span class="syn-comment">## The line that closes the braced item opened at line `from`: the first</span>
+<span class="syn-comment">## line after it at column 0, which must start with `}`. A blank line, an</span>
+<span class="syn-comment">## indented one or a `#` directive (which C writes at column 0, as an</span>
+<span class="syn-comment">## `#ifdef` in a body is) is inside; anything else at column 0 is an error.</span>
+<span class="syn-name">brace_close</span> : <span class="syn-type">CFile</span>, <span class="syn-type">U64</span>, <span class="syn-type">Str</span> -&gt; <span class="syn-type">Try</span>(<span class="syn-type">U64</span>, <span class="syn-type">Str</span>)
+<span class="syn-name">brace_close</span> = |file, from, what| {
+	count = file.lines.len()
+	<span class="syn-keyword">var</span> $at = from + <span class="syn-number">1</span>
+	<span class="syn-keyword">while</span> $at &lt;= count {
+		<span class="syn-keyword">match</span> line_at(file, $at).first() {
+			<span class="syn-type">Ok</span>(<span class="syn-string">&#39;}&#39;</span>) =&gt; <span class="syn-keyword">return</span> <span class="syn-type">Ok</span>($at)
+			<span class="syn-type">Ok</span>(byte) <span class="syn-keyword">if</span> byte != <span class="syn-string">&#39; &#39;</span> <span class="syn-keyword">and</span> byte != <span class="syn-string">&#39;#&#39;</span> =&gt; {
+				why = <span class="syn-string">&quot;a line at column 0 inside </span>${what}<span class="syn-string"> opened at line </span>${from.to_str()}<span class="syn-string">, which only a `}` may close&quot;</span>
+				<span class="syn-keyword">return</span> <span class="syn-type">Err</span>(unaccounted(file, $at, why))
+			}
+			_ =&gt; {}
+		}
+		$at = $at + <span class="syn-number">1</span>
+	}
+	<span class="syn-type">Err</span>(unaccounted(file, from, <span class="syn-string">&quot;</span>${what}<span class="syn-string"> that no `}` at column 0 closes&quot;</span>))
+}
+
+<span class="syn-comment">## The last line of the parenthesized item that opens at line `from`: where</span>
+<span class="syn-comment">## its masked parentheses balance. A line after the first is indented, or</span>
+<span class="syn-comment">## starts with the closing `)` at column 0.</span>
+<span class="syn-name">paren_close</span> : <span class="syn-type">CFile</span>, <span class="syn-type">U64</span> -&gt; <span class="syn-type">Try</span>(<span class="syn-type">U64</span>, <span class="syn-type">Str</span>)
+<span class="syn-name">paren_close</span> = |file, from| {
+	count = file.lines.len()
+	<span class="syn-keyword">var</span> $depth = <span class="syn-number">0</span>
+	<span class="syn-keyword">var</span> $at = from
+	<span class="syn-keyword">while</span> $at &lt;= count {
+		raw = line_at(file, $at)
+		<span class="syn-keyword">if</span> $at &gt; from <span class="syn-keyword">and</span> !(raw.starts_with([<span class="syn-string">&#39; &#39;</span>])) <span class="syn-keyword">and</span> !(raw.starts_with([<span class="syn-string">&#39;)&#39;</span>])) {
+			<span class="syn-keyword">return</span> <span class="syn-type">Err</span>(unaccounted(file, $at, <span class="syn-string">&quot;a line at column 0 inside the parentheses opened at line </span>${from.to_str()}<span class="syn-string">&quot;</span>))
+		}
+		code = <span class="syn-type">Mask</span>.masked(raw)
+		opens = code.count_if(|byte| byte == <span class="syn-string">&#39;(&#39;</span>).to_i64_wrap()
+		closes = code.count_if(|byte| byte == <span class="syn-string">&#39;)&#39;</span>).to_i64_wrap()
+		$depth = $depth + opens - closes
+		<span class="syn-keyword">if</span> $depth &lt;= <span class="syn-number">0</span> {
+			<span class="syn-keyword">return</span> <span class="syn-type">Ok</span>($at)
+		}
+		$at = $at + <span class="syn-number">1</span>
+	}
+	<span class="syn-type">Err</span>(unaccounted(file, from, <span class="syn-string">&quot;parentheses that never close&quot;</span>))
+}
+
+<span class="syn-comment">## The last line of a head that opens at line `from`: the first whose masked</span>
+<span class="syn-comment">## code ends with `{`, `;` or `}`. A line after the first is indented.</span>
+<span class="syn-name">head_close</span> : <span class="syn-type">CFile</span>, <span class="syn-type">U64</span> -&gt; <span class="syn-type">Try</span>(<span class="syn-type">U64</span>, <span class="syn-type">Str</span>)
+<span class="syn-name">head_close</span> = |file, from| {
+	count = file.lines.len()
+	<span class="syn-keyword">var</span> $at = from
+	<span class="syn-keyword">while</span> $at &lt;= count {
+		raw = line_at(file, $at)
+		<span class="syn-keyword">if</span> $at &gt; from <span class="syn-keyword">and</span> !(raw.starts_with([<span class="syn-string">&#39; &#39;</span>])) {
+			<span class="syn-keyword">return</span> <span class="syn-type">Err</span>(unaccounted(file, $at, <span class="syn-string">&quot;a line at column 0 inside the head opened at line </span>${from.to_str()}<span class="syn-string">&quot;</span>))
+		}
+		<span class="syn-keyword">match</span> last_code_byte(raw) {
+			<span class="syn-type">Ok</span>(byte) <span class="syn-keyword">if</span> byte == <span class="syn-string">&#39;{&#39;</span> <span class="syn-keyword">or</span> byte == <span class="syn-string">&#39;;&#39;</span> <span class="syn-keyword">or</span> byte == <span class="syn-string">&#39;}&#39;</span> =&gt; <span class="syn-keyword">return</span> <span class="syn-type">Ok</span>($at)
+			_ =&gt; {}
+		}
+		$at = $at + <span class="syn-number">1</span>
+	}
+	<span class="syn-type">Err</span>(unaccounted(file, from, <span class="syn-string">&quot;a head that no `{` or `;` ends&quot;</span>))
+}
+
+<span class="syn-comment">## The last byte of a line&#39;s masked code, trimmed.</span>
+<span class="syn-name">last_code_byte</span> : <span class="syn-type">List</span>(<span class="syn-type">U8</span>) -&gt; <span class="syn-type">Try</span>(<span class="syn-type">U8</span>, [<span class="syn-type">ListWasEmpty</span>])
+<span class="syn-name">last_code_byte</span> = |raw| <span class="syn-type">Mask</span>.trimmed(<span class="syn-type">Mask</span>.masked(raw)).last()
+
+<span class="syn-comment">## The item that line `at` opens, its masked code `code`.</span>
+<span class="syn-name">item_at</span> : <span class="syn-type">CFile</span>, <span class="syn-type">U64</span>, <span class="syn-type">List</span>(<span class="syn-type">U8</span>) -&gt; <span class="syn-type">Try</span>(<span class="syn-type">Item</span>, <span class="syn-type">Str</span>)
+<span class="syn-name">item_at</span> = |file, at, code| {
+	raw = line_at(file, at)
+	opens = |text| raw.starts_with(text.to_utf8())
+	<span class="syn-keyword">if</span> opens(<span class="syn-string">&quot;#&quot;</span>) {
+		hash_item(file, at, code)
+	} <span class="syn-keyword">else</span> <span class="syn-keyword">if</span> opens(<span class="syn-string">&quot;static inline &quot;</span>) {
+		static_item(file, at, <span class="syn-string">&quot;static inline&quot;</span>)
+	} <span class="syn-keyword">else</span> <span class="syn-keyword">if</span> opens(<span class="syn-string">&quot;static &quot;</span>) {
+		static_item(file, at, <span class="syn-string">&quot;static&quot;</span>)
+	} <span class="syn-keyword">else</span> <span class="syn-keyword">if</span> opens(<span class="syn-string">&quot;typedef &quot;</span>) <span class="syn-keyword">or</span> opens(<span class="syn-string">&quot;enum &quot;</span>) {
+		type_item(file, at, code)
+	} <span class="syn-keyword">else</span> <span class="syn-keyword">if</span> opens(<span class="syn-string">&quot;SLICE_TYPE(&quot;</span>) <span class="syn-keyword">or</span> opens(<span class="syn-string">&quot;VEC_DEFINE(&quot;</span>) <span class="syn-keyword">or</span> opens(<span class="syn-string">&quot;MAP_DEFINE(&quot;</span>) {
+		generator_item(file, at, code)
+	} <span class="syn-keyword">else</span> <span class="syn-keyword">if</span> opens(<span class="syn-string">&quot;TEST(&quot;</span>) {
+		test_item(file, at, code)
+	} <span class="syn-keyword">else</span> <span class="syn-keyword">if</span> opens(<span class="syn-string">&quot;TEST_MAIN(&quot;</span>) <span class="syn-keyword">or</span> opens(<span class="syn-string">&quot;TEST_PART(&quot;</span>) <span class="syn-keyword">or</span> opens(<span class="syn-string">&quot;TEST_PARTS_MAIN(&quot;</span>) {
+		test_list_item(file, at, code)
+	} <span class="syn-keyword">else</span> <span class="syn-keyword">if</span> opens(<span class="syn-string">&quot;_Static_assert(&quot;</span>) {
+		static_assert_item(file, at)
+	} <span class="syn-keyword">else</span> <span class="syn-keyword">if</span> opens(<span class="syn-string">&quot;int main(&quot;</span>) {
+		main_item(file, at)
+	} <span class="syn-keyword">else</span> {
+		<span class="syn-type">Err</span>(unaccounted(file, at, <span class="syn-string">&quot;a line at column 0 that opens no item the dialect knows&quot;</span>))
+	}
+}
+
+<span class="syn-comment">## The `static` or `static inline` item at line `at`: a function, a</span>
+<span class="syn-comment">## prototype or data.</span>
+<span class="syn-name">static_item</span> : <span class="syn-type">CFile</span>, <span class="syn-type">U64</span>, <span class="syn-type">Str</span> -&gt; <span class="syn-type">Try</span>(<span class="syn-type">Item</span>, <span class="syn-type">Str</span>)
+<span class="syn-name">static_item</span> = |file, at, storage| {
+	last = head_close(file, at)?
+	flat = spaces_made_one(<span class="syn-type">Split</span>.masked_text(file.lines, { first: at, last }))
+	ending = last_code_byte(line_at(file, last))
+	<span class="syn-keyword">match</span> <span class="syn-type">Head</span>.function_head(flat) {
+		<span class="syn-type">Ok</span>({ return_type, name }) =&gt; {
+			head = { ..<span class="syn-type">Item</span>.new(<span class="syn-type">Prototype</span>, name, { first: at, last }), storage, return_type, sig_last: last }
+			<span class="syn-keyword">match</span> ending {
+				<span class="syn-type">Ok</span>(<span class="syn-string">&#39;;&#39;</span>) =&gt; <span class="syn-type">Ok</span>(head)
+				<span class="syn-type">Ok</span>(<span class="syn-string">&#39;}&#39;</span>) =&gt; <span class="syn-type">Ok</span>({ ..head, kind: <span class="syn-type">Function</span>, body_first: last, body_last: last })
+				_ =&gt; {
+					close = brace_close(file, last, <span class="syn-string">&quot;the function `</span>${name}<span class="syn-string">`&quot;</span>)?
+					function = { ..head, kind: <span class="syn-type">Function</span>, last: close }
+					<span class="syn-keyword">if</span> close &gt; last + <span class="syn-number">1</span> {
+						<span class="syn-type">Ok</span>({ ..function, body_first: last + <span class="syn-number">1</span>, body_last: close - <span class="syn-number">1</span> })
+					} <span class="syn-keyword">else</span> {
+						<span class="syn-type">Ok</span>(function)
+					}
+				}
+			}
+		}
+		<span class="syn-type">Err</span>(_) =&gt; {
+			name = <span class="syn-type">Head</span>.data_name(flat)
+			data = { ..<span class="syn-type">Item</span>.new(<span class="syn-type">Data</span>, name, { first: at, last }), storage, sig_last: last }
+			<span class="syn-keyword">if</span> ending == <span class="syn-type">Ok</span>(<span class="syn-string">&#39;{&#39;</span>) {
+				close = brace_close(file, last, <span class="syn-string">&quot;the data `</span>${name}<span class="syn-string">`&quot;</span>)?
+				<span class="syn-type">Ok</span>({ ..data, last: close, body_first: last + <span class="syn-number">1</span>, body_last: close - <span class="syn-number">1</span> })
+			} <span class="syn-keyword">else</span> {
+				<span class="syn-type">Ok</span>(data)
+			}
+		}
+	}
+}
+
+<span class="syn-comment">## The text with each run of `\s` made one space.</span>
+<span class="syn-name">spaces_made_one</span> : <span class="syn-type">List</span>(<span class="syn-type">U8</span>) -&gt; <span class="syn-type">List</span>(<span class="syn-type">U8</span>)
+<span class="syn-name">spaces_made_one</span> = |text|
+	text.fold(
+		[],
+		|out, byte|
+			<span class="syn-keyword">if</span> !(<span class="syn-type">Mask</span>.is_space(byte)) {
+				out.append(byte)
+			} <span class="syn-keyword">else</span> <span class="syn-keyword">if</span> out.last() == <span class="syn-type">Ok</span>(<span class="syn-string">&#39; &#39;</span>) {
+				<span class="syn-comment"># A space is `\s`, so one that ends `out` is a run&#39;s already.</span>
+				out
+			} <span class="syn-keyword">else</span> {
+				out.append(<span class="syn-string">&#39; &#39;</span>)
+			},
+	)
+
+<span class="syn-comment">## The `typedef` or `enum` item at line `at`.</span>
+<span class="syn-name">type_item</span> : <span class="syn-type">CFile</span>, <span class="syn-type">U64</span>, <span class="syn-type">List</span>(<span class="syn-type">U8</span>) -&gt; <span class="syn-type">Try</span>(<span class="syn-type">Item</span>, <span class="syn-type">Str</span>)
+<span class="syn-name">type_item</span> = |file, at, code| {
+	kind = <span class="syn-keyword">match</span> <span class="syn-type">Head</span>.type_keyword(code) {
+		<span class="syn-type">Struct</span> =&gt; <span class="syn-type">Struct</span>
+		<span class="syn-type">Enum</span> =&gt; <span class="syn-type">Enum</span>
+		<span class="syn-type">Union</span> =&gt; <span class="syn-type">Union</span>
+		<span class="syn-type">NoKeyword</span> =&gt; <span class="syn-type">Typedef</span>
+	}
+	last = head_close(file, at)?
+	headed = { ..<span class="syn-type">Item</span>.new(kind, <span class="syn-string">&quot;&quot;</span>, { first: at, last }), sig_last: last }
+	braced =
+		<span class="syn-keyword">if</span> last_code_byte(line_at(file, last)) == <span class="syn-type">Ok</span>(<span class="syn-string">&#39;{&#39;</span>) {
+			close = brace_close(file, last, <span class="syn-string">&quot;the </span>${<span class="syn-type">Item</span>.kind_name(kind)}<span class="syn-string">&quot;</span>)?
+			{ ..headed, last: close, body_first: last + <span class="syn-number">1</span>, body_last: close - <span class="syn-number">1</span> }
+		} <span class="syn-keyword">else</span> {
+			headed
+		}
+	text = <span class="syn-type">Split</span>.masked_text(file.lines, { first: at, last: braced.last })
+	declared =
+		<span class="syn-keyword">if</span> code.starts_with(<span class="syn-string">&quot;typedef&quot;</span>.to_utf8()) {
+			<span class="syn-keyword">match</span> (kind, <span class="syn-type">Head</span>.pointer_name(text, <span class="syn-type">WithoutConst</span>), <span class="syn-type">Head</span>.declared_name(text)) {
+				(<span class="syn-type">Typedef</span>, <span class="syn-type">Ok</span>(pointer), _) =&gt; pointer
+				(_, _, <span class="syn-type">Ok</span>(name)) =&gt; name
+				_ =&gt; <span class="syn-string">&quot;&quot;</span>
+			}
+		} <span class="syn-keyword">else</span> {
+			<span class="syn-type">Head</span>.enum_tag(code) ?? <span class="syn-string">&quot;&quot;</span>
+		}
+	enumerators = <span class="syn-keyword">if</span> kind == <span class="syn-type">Enum</span> {
+		<span class="syn-type">Words</span>.enumerators(text)
+	} <span class="syn-keyword">else</span> {
+		[]
+	}
+	name =
+		<span class="syn-keyword">match</span> enumerators.first() {
+			<span class="syn-type">Ok</span>(first) <span class="syn-keyword">if</span> declared == <span class="syn-string">&quot;&quot;</span> =&gt; first
+			_ =&gt; declared
+		}
+	<span class="syn-keyword">if</span> name == <span class="syn-string">&quot;&quot;</span> {
+		<span class="syn-type">Err</span>(unaccounted(file, at, <span class="syn-string">&quot;a </span>${<span class="syn-type">Item</span>.kind_name(kind)}<span class="syn-string"> whose name this reader can&#39;t find&quot;</span>))
+	} <span class="syn-keyword">else</span> {
+		<span class="syn-type">Ok</span>({ ..braced, name, enumerators })
+	}
+}
+
+<span class="syn-comment">## The `#` item at line `at`: an include, a macro (to its last `\` line),</span>
+<span class="syn-comment">## the header&#39;s guard (Split.items frames it), or another directive.</span>
+<span class="syn-name">hash_item</span> : <span class="syn-type">CFile</span>, <span class="syn-type">U64</span>, <span class="syn-type">List</span>(<span class="syn-type">U8</span>) -&gt; <span class="syn-type">Try</span>(<span class="syn-type">Item</span>, <span class="syn-type">Str</span>)
+<span class="syn-name">hash_item</span> = |file, at, code| {
+	count = file.lines.len()
+	<span class="syn-keyword">var</span> $last = at
+	<span class="syn-keyword">while</span> line_at(file, $last).last() == <span class="syn-type">Ok</span>(<span class="syn-string">&#39;\\&#39;</span>) <span class="syn-keyword">and</span> $last &lt; count {
+		$last = $last + <span class="syn-number">1</span>
+	}
+	last = $last
+	<span class="syn-keyword">match</span> <span class="syn-type">Head</span>.directive(code) {
+		<span class="syn-type">Err</span>(_) =&gt; <span class="syn-type">Err</span>(unaccounted(file, at, <span class="syn-string">&quot;a `#` line with no directive&quot;</span>))
+		<span class="syn-type">Ok</span>({ word, argument: _ }) <span class="syn-keyword">if</span> word == <span class="syn-string">&quot;include&quot;</span> =&gt;
+			<span class="syn-keyword">match</span> <span class="syn-type">Head</span>.include_path(line_at(file, at)) {
+				<span class="syn-type">Ok</span>(path) =&gt; <span class="syn-type">Ok</span>(<span class="syn-type">Item</span>.new(<span class="syn-type">Include</span>, path, { first: at, last }))
+				<span class="syn-type">Err</span>(_) =&gt; <span class="syn-type">Err</span>(unaccounted(file, at, <span class="syn-string">&quot;an `#include` with no path&quot;</span>))
+			}
+		<span class="syn-type">Ok</span>({ word, argument }) <span class="syn-keyword">if</span> word == <span class="syn-string">&quot;define&quot;</span> =&gt; {
+			defined = <span class="syn-type">Item</span>.new(<span class="syn-type">Macro</span>, argument, { first: at, last })
+			<span class="syn-keyword">if</span> last &gt; at {
+				makes = <span class="syn-type">Words</span>.suffixes(<span class="syn-type">Split</span>.masked_text(file.lines, { first: at, last }))
+				<span class="syn-type">Ok</span>({ ..defined, body_first: at + <span class="syn-number">1</span>, body_last: last, makes })
+			} <span class="syn-keyword">else</span> {
+				<span class="syn-type">Ok</span>(defined)
+			}
+		}
+		<span class="syn-type">Ok</span>({ word, argument }) =&gt; {
+			name = <span class="syn-keyword">if</span> argument == <span class="syn-string">&quot;&quot;</span> {
+				word
+			} <span class="syn-keyword">else</span> {
+				<span class="syn-string">&quot;</span>${word}<span class="syn-string"> </span>${argument}<span class="syn-string">&quot;</span>
+			}
+			<span class="syn-type">Ok</span>(<span class="syn-type">Item</span>.new(<span class="syn-type">Directive</span>, name, { first: at, last }))
+		}
+	}
+}
+
+<span class="syn-comment">## The `VEC_DEFINE(`, `MAP_DEFINE(` or `SLICE_TYPE(` item at line `at`.</span>
+<span class="syn-name">generator_item</span> : <span class="syn-type">CFile</span>, <span class="syn-type">U64</span>, <span class="syn-type">List</span>(<span class="syn-type">U8</span>) -&gt; <span class="syn-type">Try</span>(<span class="syn-type">Item</span>, <span class="syn-type">Str</span>)
+<span class="syn-name">generator_item</span> = |file, at, code|
+	<span class="syn-keyword">match</span> <span class="syn-type">Head</span>.generator(code) {
+		<span class="syn-type">Err</span>(_) =&gt; <span class="syn-type">Err</span>(unaccounted(file, at, <span class="syn-string">&quot;a generator line whose name and type this reader can&#39;t find&quot;</span>))
+		<span class="syn-type">Ok</span>({ macro, name, held_type }) =&gt; {
+			close = paren_close(file, at)?
+			<span class="syn-type">Ok</span>({ ..<span class="syn-type">Item</span>.new(<span class="syn-type">Generator</span>, name, { first: at, last: close }), macro, held_type })
+		}
+	}
+
+<span class="syn-comment">## The `TEST(name) {` item at line `at`.</span>
+<span class="syn-name">test_item</span> : <span class="syn-type">CFile</span>, <span class="syn-type">U64</span>, <span class="syn-type">List</span>(<span class="syn-type">U8</span>) -&gt; <span class="syn-type">Try</span>(<span class="syn-type">Item</span>, <span class="syn-type">Str</span>)
+<span class="syn-name">test_item</span> = |file, at, code|
+	<span class="syn-keyword">match</span> <span class="syn-type">Head</span>.test_name(code) {
+		<span class="syn-type">Err</span>(_) =&gt; <span class="syn-type">Err</span>(unaccounted(file, at, <span class="syn-string">&quot;a `TEST(` line that is not `TEST(name) {`&quot;</span>))
+		<span class="syn-type">Ok</span>(name) =&gt; {
+			close = brace_close(file, at, <span class="syn-string">&quot;the test `</span>${name}<span class="syn-string">`&quot;</span>)?
+			test = <span class="syn-type">Item</span>.new(<span class="syn-type">Test</span>, name, { first: at, last: close })
+			<span class="syn-keyword">if</span> close &gt; at + <span class="syn-number">1</span> {
+				<span class="syn-type">Ok</span>({ ..test, body_first: at + <span class="syn-number">1</span>, body_last: close - <span class="syn-number">1</span> })
+			} <span class="syn-keyword">else</span> {
+				<span class="syn-type">Ok</span>(test)
+			}
+		}
+	}
+
+<span class="syn-comment">## The `TEST_MAIN(`, `TEST_PART(` or `TEST_PARTS_MAIN(` item at line `at`,</span>
+<span class="syn-comment">## named for its macro, or a `TEST_PART(` for its part.</span>
+<span class="syn-name">test_list_item</span> : <span class="syn-type">CFile</span>, <span class="syn-type">U64</span>, <span class="syn-type">List</span>(<span class="syn-type">U8</span>) -&gt; <span class="syn-type">Try</span>(<span class="syn-type">Item</span>, <span class="syn-type">Str</span>)
+<span class="syn-name">test_list_item</span> = |file, at, code| {
+	head = <span class="syn-type">Head</span>.test_list(code)
+	close = paren_close(file, at)?
+	name = <span class="syn-keyword">if</span> head.macro == <span class="syn-string">&quot;TEST_PART&quot;</span> <span class="syn-keyword">and</span> head.argument != <span class="syn-string">&quot;&quot;</span> {
+		head.argument
+	} <span class="syn-keyword">else</span> {
+		head.macro
+	}
+	<span class="syn-type">Ok</span>({ ..<span class="syn-type">Item</span>.new(<span class="syn-type">TestList</span>, name, { first: at, last: close }), body_first: at, body_last: close })
+}
+
+<span class="syn-comment">## The `_Static_assert(` item at line `at`, named for its first name that is</span>
+<span class="syn-comment">## not `_Static_assert` or `sizeof`.</span>
+<span class="syn-name">static_assert_item</span> : <span class="syn-type">CFile</span>, <span class="syn-type">U64</span> -&gt; <span class="syn-type">Try</span>(<span class="syn-type">Item</span>, <span class="syn-type">Str</span>)
+<span class="syn-name">static_assert_item</span> = |file, at| {
+	close = paren_close(file, at)?
+	names = <span class="syn-type">Words</span>.names(<span class="syn-type">Split</span>.masked_text(file.lines, { first: at, last: close }))
+	name = names.find_first(|each| each != <span class="syn-string">&quot;_Static_assert&quot;</span> <span class="syn-keyword">and</span> each != <span class="syn-string">&quot;sizeof&quot;</span>) ?? <span class="syn-string">&quot;&quot;</span>
+	<span class="syn-type">Ok</span>(<span class="syn-type">Item</span>.new(<span class="syn-type">StaticAssert</span>, name, { first: at, last: close }))
+}
+
+<span class="syn-comment">## The `int main(` function at line `at`.</span>
+<span class="syn-name">main_item</span> : <span class="syn-type">CFile</span>, <span class="syn-type">U64</span> -&gt; <span class="syn-type">Try</span>(<span class="syn-type">Item</span>, <span class="syn-type">Str</span>)
+<span class="syn-name">main_item</span> = |file, at| {
+	last = head_close(file, at)?
+	close = brace_close(file, last, <span class="syn-string">&quot;the function `main`&quot;</span>)?
+	main = { ..<span class="syn-type">Item</span>.new(<span class="syn-type">Function</span>, <span class="syn-string">&quot;main&quot;</span>, { first: at, last: close }), return_type: <span class="syn-string">&quot;int&quot;</span>, sig_last: last }
+	<span class="syn-keyword">if</span> close &gt; last + <span class="syn-number">1</span> {
+		<span class="syn-type">Ok</span>({ ..main, body_first: last + <span class="syn-number">1</span>, body_last: close - <span class="syn-number">1</span> })
+	} <span class="syn-keyword">else</span> {
+		<span class="syn-type">Ok</span>(main)
+	}
+}
+</code></pre>
+<p class="file"><a href="https://github.com/showell/shale/blob/0c451bc67134e8c71182fa1d4e6c379a57b907bc/cookbook/c/items/Words.roc"><code>cookbook/c/items/Words.roc</code></a>, 294 lines</p>
+<pre><code><span class="syn-comment">## The words of an item&#39;s masked text: its names, the names its body uses,</span>
+<span class="syn-comment">## an enum&#39;s constants and a generator macro&#39;s own functions, each the</span>
+<span class="syn-comment">## regular expression of the Shale original, done by hand: for the names,</span>
+<span class="syn-comment">## c/build/c_items.shale&#39;s; for a body&#39;s uses, the `c_words_used` of</span>
+<span class="syn-comment">## cookbook/c/items.shale, retired (git history), which the fast tier&#39;s</span>
+<span class="syn-comment">## copy left out, since it wants no uses.</span>
+<span class="syn-keyword">import</span> <span class="syn-type">Mask</span>
+
+<span class="syn-type">Words</span> := [].{
+
+	<span class="syn-comment">## The names in the text, in order, each as often as it is there:</span>
+	<span class="syn-comment">## `\b[A-Za-z_]\w*`, a `\w` run that starts with a letter or `_`.</span>
+	<span class="syn-name">names</span> : <span class="syn-type">List</span>(<span class="syn-type">U8</span>) -&gt; <span class="syn-type">List</span>(<span class="syn-type">Str</span>)
+	<span class="syn-name">names</span> = |text| {
+		<span class="syn-keyword">var</span> $names = []
+		<span class="syn-keyword">var</span> $at = <span class="syn-number">0</span>
+		<span class="syn-keyword">while</span> $at &lt; text.len() {
+			end = <span class="syn-type">Mask</span>.word_end(text, $at)
+			<span class="syn-keyword">if</span> end &gt; $at {
+				<span class="syn-keyword">if</span> <span class="syn-type">Mask</span>.is_name_start(text.get($at) ?? <span class="syn-number">0</span>) {
+					$names = $names.append(<span class="syn-type">Mask</span>.text(text.sublist({ start: $at, len: end - $at })))
+				}
+				$at = end
+			} <span class="syn-keyword">else</span> {
+				$at = $at + <span class="syn-number">1</span>
+			}
+		}
+		$names
+	}
+
+	<span class="syn-comment">## The identifiers the text names, sorted, each once: no keyword, no</span>
+	<span class="syn-comment">## number, no member after `.` or `-&gt;`, and no directive&#39;s own word</span>
+	<span class="syn-comment">## (`ifdef`), though the names a directive tests are uses.</span>
+	<span class="syn-name">uses</span> : <span class="syn-type">List</span>(<span class="syn-type">U8</span>) -&gt; <span class="syn-type">List</span>(<span class="syn-type">Str</span>)
+	<span class="syn-name">uses</span> = |text| {
+		bare = without_directive_words(without_members(text))
+		sorted = <span class="syn-type">Words</span>.names(bare)
+			.keep_if(|name| !(keywords.contains(name)))
+			.sort_with(<span class="syn-type">Words</span>.byte_order)
+		sorted.fold(
+			[],
+			|once, name|
+				<span class="syn-keyword">if</span> once.last() == <span class="syn-type">Ok</span>(name) {
+					once
+				} <span class="syn-keyword">else</span> {
+					once.append(name)
+				},
+		)
+	}
+
+	<span class="syn-comment">## An enum&#39;s constants, from its masked text: each name that starts an</span>
+	<span class="syn-comment">## item of its braces, `^\s*([A-Za-z_]\w*)` in each part between commas.</span>
+	<span class="syn-name">enumerators</span> : <span class="syn-type">List</span>(<span class="syn-type">U8</span>) -&gt; <span class="syn-type">List</span>(<span class="syn-type">Str</span>)
+	<span class="syn-name">enumerators</span> = |text|
+		<span class="syn-keyword">match</span> <span class="syn-type">Mask</span>.byte_from(text, <span class="syn-string">&#39;{&#39;</span>, <span class="syn-number">0</span>) {
+			<span class="syn-type">Err</span>(_) =&gt; []
+			<span class="syn-type">Ok</span>(open) =&gt;
+				<span class="syn-keyword">match</span> <span class="syn-type">Mask</span>.byte_from(text, <span class="syn-string">&#39;}&#39;</span>, open + <span class="syn-number">1</span>) {
+					<span class="syn-type">Err</span>(_) =&gt; []
+					<span class="syn-type">Ok</span>(close) =&gt; {
+						inside = text.sublist({ start: open + <span class="syn-number">1</span>, len: close - open - <span class="syn-number">1</span> })
+						inside.split_on(<span class="syn-string">&#39;,&#39;</span>).fold(
+							[],
+							|found, part|
+								<span class="syn-keyword">match</span> leading_name(part) {
+									<span class="syn-type">Ok</span>(name) =&gt; found.append(name)
+									<span class="syn-type">Err</span>(_) =&gt; found
+								},
+						)
+					}
+				}
+		}
+
+	<span class="syn-comment">## A generator macro&#39;s own functions, its `Name##_&lt;x&gt;(` suffixes, from its</span>
+	<span class="syn-comment">## definition&#39;s masked text, each once, in order: each match of</span>
+	<span class="syn-comment">## `static\s[^(]*##_(\w+)\s*\(`.</span>
+	<span class="syn-name">suffixes</span> : <span class="syn-type">List</span>(<span class="syn-type">U8</span>) -&gt; <span class="syn-type">List</span>(<span class="syn-type">Str</span>)
+	<span class="syn-name">suffixes</span> = |text| {
+		<span class="syn-keyword">var</span> $found = []
+		<span class="syn-keyword">var</span> $at = <span class="syn-number">0</span>
+		<span class="syn-keyword">while</span> $at &lt; text.len() {
+			<span class="syn-keyword">match</span> suffix_at(text, $at) {
+				<span class="syn-type">Ok</span>({ suffix, open }) =&gt; {
+					<span class="syn-keyword">if</span> !($found.contains(suffix)) {
+						$found = $found.append(suffix)
+					}
+					$at = open + <span class="syn-number">1</span>
+				}
+				<span class="syn-type">Err</span>(_) =&gt; {
+					$at = $at + <span class="syn-number">1</span>
+				}
+			}
+		}
+		$found
+	}
+
+	<span class="syn-comment">## Two texts in the order of their bytes, a text before every longer one</span>
+	<span class="syn-comment">## it starts, as Shale&#39;s `sort` puts strings.</span>
+	<span class="syn-name">byte_order</span> : <span class="syn-type">Str</span>, <span class="syn-type">Str</span> -&gt; [<span class="syn-type">Before</span>, <span class="syn-type">Same</span>, <span class="syn-type">After</span>]
+	<span class="syn-name">byte_order</span> = |first, second| {
+		pairs = <span class="syn-type">List</span>.map2(first.to_utf8(), second.to_utf8(), |x, y| (x, y))
+		<span class="syn-keyword">match</span> pairs.find_first(|(x, y)| x != y) {
+			<span class="syn-type">Ok</span>((x, y)) =&gt;
+				<span class="syn-keyword">if</span> x &lt; y {
+					<span class="syn-type">Before</span>
+				} <span class="syn-keyword">else</span> {
+					<span class="syn-type">After</span>
+				}
+			<span class="syn-type">Err</span>(_) =&gt;
+				<span class="syn-keyword">if</span> first.count_utf8_bytes() &lt; second.count_utf8_bytes() {
+					<span class="syn-type">Before</span>
+				} <span class="syn-keyword">else</span> <span class="syn-keyword">if</span> first.count_utf8_bytes() &gt; second.count_utf8_bytes() {
+					<span class="syn-type">After</span>
+				} <span class="syn-keyword">else</span> {
+					<span class="syn-type">Same</span>
+				}
+		}
+	}
+}
+
+<span class="syn-comment">## C&#39;s keywords and the words of its types and storage, which are no use of</span>
+<span class="syn-comment">## a name.</span>
+<span class="syn-name">keywords</span> : <span class="syn-type">List</span>(<span class="syn-type">Str</span>)
+<span class="syn-name">keywords</span> = [
+	<span class="syn-string">&quot;auto&quot;</span>,
+	<span class="syn-string">&quot;break&quot;</span>,
+	<span class="syn-string">&quot;case&quot;</span>,
+	<span class="syn-string">&quot;char&quot;</span>,
+	<span class="syn-string">&quot;const&quot;</span>,
+	<span class="syn-string">&quot;continue&quot;</span>,
+	<span class="syn-string">&quot;default&quot;</span>,
+	<span class="syn-string">&quot;do&quot;</span>,
+	<span class="syn-string">&quot;double&quot;</span>,
+	<span class="syn-string">&quot;else&quot;</span>,
+	<span class="syn-string">&quot;enum&quot;</span>,
+	<span class="syn-string">&quot;extern&quot;</span>,
+	<span class="syn-string">&quot;float&quot;</span>,
+	<span class="syn-string">&quot;for&quot;</span>,
+	<span class="syn-string">&quot;goto&quot;</span>,
+	<span class="syn-string">&quot;if&quot;</span>,
+	<span class="syn-string">&quot;inline&quot;</span>,
+	<span class="syn-string">&quot;int&quot;</span>,
+	<span class="syn-string">&quot;long&quot;</span>,
+	<span class="syn-string">&quot;register&quot;</span>,
+	<span class="syn-string">&quot;restrict&quot;</span>,
+	<span class="syn-string">&quot;return&quot;</span>,
+	<span class="syn-string">&quot;short&quot;</span>,
+	<span class="syn-string">&quot;signed&quot;</span>,
+	<span class="syn-string">&quot;sizeof&quot;</span>,
+	<span class="syn-string">&quot;static&quot;</span>,
+	<span class="syn-string">&quot;struct&quot;</span>,
+	<span class="syn-string">&quot;switch&quot;</span>,
+	<span class="syn-string">&quot;typedef&quot;</span>,
+	<span class="syn-string">&quot;union&quot;</span>,
+	<span class="syn-string">&quot;unsigned&quot;</span>,
+	<span class="syn-string">&quot;void&quot;</span>,
+	<span class="syn-string">&quot;volatile&quot;</span>,
+	<span class="syn-string">&quot;while&quot;</span>,
+	<span class="syn-string">&quot;_Alignof&quot;</span>,
+	<span class="syn-string">&quot;_Bool&quot;</span>,
+	<span class="syn-string">&quot;_Static_assert&quot;</span>,
+	<span class="syn-string">&quot;bool&quot;</span>,
+	<span class="syn-string">&quot;true&quot;</span>,
+	<span class="syn-string">&quot;false&quot;</span>,
+	<span class="syn-string">&quot;NULL&quot;</span>,
+]
+
+<span class="syn-comment">## The text with each member after `.` or `-&gt;` made one space:</span>
+<span class="syn-comment">## `(\.|-&gt;)\s*[A-Za-z_]\w*`.</span>
+<span class="syn-name">without_members</span> : <span class="syn-type">List</span>(<span class="syn-type">U8</span>) -&gt; <span class="syn-type">List</span>(<span class="syn-type">U8</span>)
+<span class="syn-name">without_members</span> = |text| {
+	<span class="syn-keyword">var</span> $out = []
+	<span class="syn-keyword">var</span> $at = <span class="syn-number">0</span>
+	<span class="syn-keyword">while</span> $at &lt; text.len() {
+		byte = text.get($at) ?? <span class="syn-number">0</span>
+		after = <span class="syn-keyword">if</span> byte == <span class="syn-string">&#39;.&#39;</span> {
+			$at + <span class="syn-number">1</span>
+		} <span class="syn-keyword">else</span> <span class="syn-keyword">if</span> byte == <span class="syn-string">&#39;-&#39;</span> <span class="syn-keyword">and</span> text.get($at + <span class="syn-number">1</span>) == <span class="syn-type">Ok</span>(<span class="syn-string">&#39;&gt;&#39;</span>) {
+			$at + <span class="syn-number">2</span>
+		} <span class="syn-keyword">else</span> {
+			<span class="syn-number">0</span>
+		}
+		start = <span class="syn-type">Mask</span>.spaces_end(text, after)
+		<span class="syn-keyword">if</span> after &gt; <span class="syn-number">0</span> <span class="syn-keyword">and</span> <span class="syn-type">Mask</span>.is_name_start(text.get(start) ?? <span class="syn-number">0</span>) {
+			$out = $out.append(<span class="syn-string">&#39; &#39;</span>)
+			$at = <span class="syn-type">Mask</span>.word_end(text, start)
+		} <span class="syn-keyword">else</span> {
+			$out = $out.append(byte)
+			$at = $at + <span class="syn-number">1</span>
+		}
+	}
+	$out
+}
+
+<span class="syn-comment">## The text with each directive&#39;s `#` and word gone, at the start or after a</span>
+<span class="syn-comment">## newline, the newline kept: `(^|\n)#\s*\w+`.</span>
+<span class="syn-name">without_directive_words</span> : <span class="syn-type">List</span>(<span class="syn-type">U8</span>) -&gt; <span class="syn-type">List</span>(<span class="syn-type">U8</span>)
+<span class="syn-name">without_directive_words</span> = |text| {
+	<span class="syn-keyword">var</span> $out = []
+	<span class="syn-keyword">var</span> $at = <span class="syn-number">0</span>
+	<span class="syn-keyword">while</span> $at &lt; text.len() {
+		byte = text.get($at) ?? <span class="syn-number">0</span>
+		<span class="syn-keyword">match</span> directive_word_end(text, $at) {
+			<span class="syn-type">Ok</span>(end) =&gt; {
+				$at = end
+			}
+			<span class="syn-type">Err</span>(_) =&gt;
+				<span class="syn-keyword">if</span> byte == <span class="syn-string">&#39;\n&#39;</span> {
+					<span class="syn-keyword">match</span> directive_word_end(text, $at + <span class="syn-number">1</span>) {
+						<span class="syn-type">Ok</span>(end) =&gt; {
+							$out = $out.append(<span class="syn-string">&#39;\n&#39;</span>)
+							$at = end
+						}
+						<span class="syn-type">Err</span>(_) =&gt; {
+							$out = $out.append(byte)
+							$at = $at + <span class="syn-number">1</span>
+						}
+					}
+				} <span class="syn-keyword">else</span> {
+					$out = $out.append(byte)
+					$at = $at + <span class="syn-number">1</span>
+				}
+		}
+	}
+	$out
+}
+
+<span class="syn-comment">## Where `#\s*\w+` at `at` ends, at the text&#39;s start or after a newline; the</span>
+<span class="syn-comment">## start alone is asked of at 0.</span>
+<span class="syn-name">directive_word_end</span> : <span class="syn-type">List</span>(<span class="syn-type">U8</span>), <span class="syn-type">U64</span> -&gt; <span class="syn-type">Try</span>(<span class="syn-type">U64</span>, [<span class="syn-type">NoDirective</span>])
+<span class="syn-name">directive_word_end</span> = |text, at| {
+	is_line_start = at == <span class="syn-number">0</span> <span class="syn-keyword">or</span> text.get(at - <span class="syn-number">1</span>) == <span class="syn-type">Ok</span>(<span class="syn-string">&#39;\n&#39;</span>)
+	word_start = <span class="syn-type">Mask</span>.spaces_end(text, at + <span class="syn-number">1</span>)
+	word_end = <span class="syn-type">Mask</span>.word_end(text, word_start)
+	<span class="syn-keyword">if</span> is_line_start <span class="syn-keyword">and</span> text.get(at) == <span class="syn-type">Ok</span>(<span class="syn-string">&#39;#&#39;</span>) <span class="syn-keyword">and</span> word_end &gt; word_start {
+		<span class="syn-type">Ok</span>(word_end)
+	} <span class="syn-keyword">else</span> {
+		<span class="syn-type">Err</span>(<span class="syn-type">NoDirective</span>)
+	}
+}
+
+<span class="syn-comment">## The name an enum&#39;s part starts with, past any spaces.</span>
+<span class="syn-name">leading_name</span> : <span class="syn-type">List</span>(<span class="syn-type">U8</span>) -&gt; <span class="syn-type">Try</span>(<span class="syn-type">Str</span>, [<span class="syn-type">NoName</span>])
+<span class="syn-name">leading_name</span> = |part| {
+	start = <span class="syn-type">Mask</span>.spaces_end(part, <span class="syn-number">0</span>)
+	end = <span class="syn-type">Mask</span>.word_end(part, start)
+	<span class="syn-keyword">if</span> end &gt; start <span class="syn-keyword">and</span> <span class="syn-type">Mask</span>.is_name_start(part.get(start) ?? <span class="syn-number">0</span>) {
+		<span class="syn-type">Ok</span>(<span class="syn-type">Mask</span>.text(part.sublist({ start, len: end - start })))
+	} <span class="syn-keyword">else</span> {
+		<span class="syn-type">Err</span>(<span class="syn-type">NoName</span>)
+	}
+}
+
+<span class="syn-comment">## The suffix of `static\s[^(]*##_(\w+)\s*\(` at `at`, and its `(`: the last</span>
+<span class="syn-comment">## `##_` before the first `(` after `static`, which only a name and spaces</span>
+<span class="syn-comment">## may follow up to that `(`.</span>
+<span class="syn-name">suffix_at</span> : <span class="syn-type">List</span>(<span class="syn-type">U8</span>), <span class="syn-type">U64</span> -&gt; <span class="syn-type">Try</span>({ suffix : <span class="syn-type">Str</span>, open : <span class="syn-type">U64</span> }, [<span class="syn-type">NoSuffix</span>])
+<span class="syn-name">suffix_at</span> = |text, at| {
+	after = at + <span class="syn-number">7</span>
+	<span class="syn-keyword">if</span> !(<span class="syn-type">Mask</span>.holds_at(text, at, <span class="syn-string">&quot;static&quot;</span>)) <span class="syn-keyword">or</span> !(<span class="syn-type">Mask</span>.is_space_at(text, at + <span class="syn-number">6</span>)) {
+		<span class="syn-keyword">return</span> <span class="syn-type">Err</span>(<span class="syn-type">NoSuffix</span>)
+	}
+	<span class="syn-keyword">match</span> <span class="syn-type">Mask</span>.byte_from(text, <span class="syn-string">&#39;(&#39;</span>, after) {
+		<span class="syn-type">Err</span>(_) =&gt; <span class="syn-type">Err</span>(<span class="syn-type">NoSuffix</span>)
+		<span class="syn-type">Ok</span>(open) =&gt; {
+			span = text.sublist({ start: after, len: open - after })
+			<span class="syn-keyword">match</span> last_paste(span) {
+				<span class="syn-type">Err</span>(_) =&gt; <span class="syn-type">Err</span>(<span class="syn-type">NoSuffix</span>)
+				<span class="syn-type">Ok</span>(paste) =&gt; {
+					start = after + paste + <span class="syn-number">3</span>
+					end = <span class="syn-type">Mask</span>.word_end(text, start)
+					<span class="syn-keyword">if</span> end &gt; start <span class="syn-keyword">and</span> <span class="syn-type">Mask</span>.spaces_end(text, end) == open {
+						<span class="syn-type">Ok</span>({ suffix: <span class="syn-type">Mask</span>.text(text.sublist({ start, len: end - start })), open })
+					} <span class="syn-keyword">else</span> {
+						<span class="syn-type">Err</span>(<span class="syn-type">NoSuffix</span>)
+					}
+				}
+			}
+		}
+	}
+}
+
+<span class="syn-comment">## The place of the last `##_` in the bytes.</span>
+<span class="syn-name">last_paste</span> : <span class="syn-type">List</span>(<span class="syn-type">U8</span>) -&gt; <span class="syn-type">Try</span>(<span class="syn-type">U64</span>, [<span class="syn-type">Missing</span>])
+<span class="syn-name">last_paste</span> = |bytes| {
+	<span class="syn-keyword">var</span> $at = bytes.len()
+	<span class="syn-keyword">while</span> $at &gt;= <span class="syn-number">3</span> {
+		$at = $at - <span class="syn-number">1</span>
+		<span class="syn-keyword">if</span> <span class="syn-type">Mask</span>.holds_at(bytes, $at - <span class="syn-number">2</span>, <span class="syn-string">&quot;##_&quot;</span>) {
+			<span class="syn-keyword">return</span> <span class="syn-type">Ok</span>($at - <span class="syn-number">2</span>)
+		}
+	}
+	<span class="syn-type">Err</span>(<span class="syn-type">Missing</span>)
+}
+</code></pre>
+<p class="file"><a href="https://github.com/showell/shale/blob/0c451bc67134e8c71182fa1d4e6c379a57b907bc/cookbook/c/items/main.roc"><code>cookbook/c/items/main.roc</code></a>, 14 lines</p>
+<pre><code><span class="syn-comment">## The splitter the recipes that read Shale&#39;s C share: a file of Shale&#39;s C</span>
+<span class="syn-comment">## split into its top-level items, from the dialect c/check_discipline.shale</span>
+<span class="syn-comment">## holds. A recipe names it by a relative path in its app&#39;s header (`items:</span>
+<span class="syn-comment">## &quot;../items/main.roc&quot;`, then `import items.Split`). It reaches no effect:</span>
+<span class="syn-comment">## a recipe reads the file and hands Split.items its text.</span>
+<span class="syn-comment">##</span>
+<span class="syn-comment">##   Split   the splitter, Shale&#39;s `lines` and an item&#39;s masked text</span>
+<span class="syn-comment">##   Guard   a header&#39;s guard, framed</span>
+<span class="syn-comment">##   Item    an item and its kinds</span>
+<span class="syn-comment">##   Mask    the masker, and the byte classes the readers read by</span>
+<span class="syn-comment">##   Head    the readers of an item&#39;s opening line or head</span>
+<span class="syn-comment">##   Words   the names in an item&#39;s text: its uses, an enum&#39;s constants</span>
+<span class="syn-comment">##   Paths   a file&#39;s path read: the tests&#39;, or under a folder named `out`</span>
+<span class="syn-keyword">package</span> [<span class="syn-type">Guard</span>, <span class="syn-type">Head</span>, <span class="syn-type">Item</span>, <span class="syn-type">Mask</span>, <span class="syn-type">Paths</span>, <span class="syn-type">Split</span>, <span class="syn-type">Words</span>] {}
+</code></pre>
+<nav class="steps"><a href="../#c-splitter">Roc on Shale</a></nav></main>
+</body>
+</html>

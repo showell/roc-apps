@@ -1,0 +1,900 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="description" content="A project held to the words it has decided on: each identifier, read from Roc's own parse tree, and each comment that holds a word the project's words file retires, a gate with its plants' self-test in Roc too.">
+<title>find_retired_words · Roc on Shale</title>
+<script src="../../shared/home.js"></script>
+<!-- site/build_roc_on_shale.shale writes this page from the shale repository's
+     history; run it again rather than editing here. The code is colored by
+     roc-syntax-color (SyntaxColor.html). -->
+<style>
+  :root { color-scheme: light dark; --bg: #f7f5f0; --fg: #1d1d1b; --muted: #6b6860; --edge: #d9d4c8; --pane: #ffffff; --link: #1f5fa8; --accent: #5b3ea8; }
+  @media (prefers-color-scheme: dark) {
+    :root { --bg: #1b1b1a; --fg: #e8e6e0; --muted: #9a968c; --edge: #3a3934; --pane: #242422; --link: #8ab4f0; --accent: #a68cf0; }
+  }
+  body { margin: 0; background: var(--bg); color: var(--fg); font: 15px/1.55 system-ui, sans-serif; }
+  main { max-width: 960px; margin: 0 auto; padding: 36px 16px 48px; }
+  @media (max-width: 640px) { main { padding: 24px 12px 36px; } }
+  .top { display: flex; flex-wrap: wrap; gap: 4px 14px; font-size: 14px; margin: 0 0 14px; }
+  h1 { font-size: 28px; margin: 0 0 6px; overflow-wrap: anywhere; }
+  .lede { margin: 0 0 10px; max-width: 70ch; }
+  ul.lede { padding-left: 22px; }
+  ul.lede li { margin: 0 0 4px; }
+  h2.intro { font-size: 20px; margin: 30px 0 6px; }
+  h3.intro { font-size: 16px; margin: 18px 0 4px; }
+  /* The drawing is Graphviz's SVG, inline, so its lines and words take the
+     page's colors in either theme. */
+  .diagram { margin: 14px 0 18px; }
+  .diagram svg { max-width: 100%; height: auto; }
+  .diagram text { fill: var(--fg); }
+  .diagram path, .diagram polygon { stroke: var(--fg); }
+  .diagram .edge polygon { fill: var(--fg); }
+  h2.part { font-size: 25px; margin: 64px 0 4px; padding-top: 20px; border-top: 3px solid var(--accent); }
+  .part-intro { margin: 0 0 8px; }
+  h3 { font-size: 19px; margin: 10px 0 4px; overflow-wrap: anywhere; }
+  h2.part a { color: inherit; text-decoration: none; }
+  h2.code { font-size: 16px; margin: 36px 0 4px; color: var(--accent); }
+  p { max-width: 70ch; }
+  a { color: var(--link); }
+  code { font: 13px ui-monospace, Menlo, Consolas, monospace; }
+  .contents { padding-left: 20px; }
+  .contents ul { padding-left: 20px; margin: 2px 0 8px; }
+  .contents a { overflow-wrap: anywhere; }
+  .facts { font-size: 14px; color: var(--muted); }
+  .file { font-size: 13px; color: var(--muted); margin: 20px 0 0; overflow-wrap: anywhere; }
+  .entry { margin-top: 28px; padding-top: 14px; border-top: 1px solid var(--edge); }
+  .steps { font-size: 13px; margin: 0 0 8px; }
+  main > .steps:last-child { margin: 28px 0 0; }
+  /* Every block shows its file whole; a line wider than the block scrolls
+     sideways inside it, so the code keeps its indentation. */
+  pre { margin: 6px 0 12px; padding: 12px 14px; border-radius: 5px; background: #2b2733; color: #e8e6e0;
+        font: 12px/1.45 ui-monospace, Menlo, Consolas, monospace; overflow-x: auto; tab-size: 4; }
+  pre code { font: inherit; }
+  .syn-keyword { color: #c792ea; }
+  .syn-type { color: #82aaff; }
+  .syn-string { color: #c3e88d; }
+  .syn-number { color: #f78c6c; }
+  .syn-comment { color: #8a8494; font-style: italic; }
+  .syn-name { color: #ffcb6b; }
+  footer { margin-top: 36px; color: var(--muted); font-size: 13px; }
+</style>
+</head>
+<body>
+<main>
+<nav class="steps"><a href="../find_calls_nested_three_deep/">← previous</a> · <a href="../#find_retired_words">Roc on Shale</a> · <a href="../find_names_that_disagree_with_their_types/">next →</a></nav>
+<h1>find_retired_words</h1>
+<h2 class="code">Roc</h2>
+<p class="file">It also imports <code>Finding</code>, <code>Text</code>, <code>Tree</code> from <a href="../shared-library/">the shared Roc library</a>.</p>
+<p class="file"><a href="https://github.com/showell/shale/blob/e3c753adf065dc7856e5d49422daf99f9969f91a/cookbook/roc/find_retired_words/find_retired_words.roc"><code>cookbook/roc/find_retired_words/find_retired_words.roc</code></a>, 117 lines</p>
+<pre><code><span class="syn-comment">## find_retired_words, in Roc on Shale&#39;s platform (roc_platform/README.md): a</span>
+<span class="syn-comment">## project held to the words it has decided on. The project keeps a file of</span>
+<span class="syn-comment">## them, `kept: retired, retired` a line, and the recipe reports each</span>
+<span class="syn-comment">## identifier and comment in its .roc files that uses a retired word. Its</span>
+<span class="syn-comment">## launcher, cookbook/roc/find_retired_words.shale, is how it is run, and its</span>
+<span class="syn-comment">## header says the rules, `retired_name` and `retired_comment`.</span>
+<span class="syn-comment">## check_goldens.shale, beside this, holds its output on the plants to its</span>
+<span class="syn-comment">## goldens, line for line.</span>
+<span class="syn-comment">##</span>
+<span class="syn-comment">##   cd &lt;repo&gt; &amp;&amp; shale cookbook:roc/find_retired_words.shale words=vocabulary.txt</span>
+<span class="syn-comment">##   shale cookbook:roc/find_retired_words.shale self_test=1</span>
+<span class="syn-comment">##</span>
+<span class="syn-comment">## The arguments: `glob` (`**/*.roc`), `words` (the project&#39;s file of</span>
+<span class="syn-comment">## decided words, which must be given) and `self_test` (`self_test=1` runs</span>
+<span class="syn-comment">## the plants, each through the launcher).</span>
+<span class="syn-comment">##</span>
+<span class="syn-comment">## This root reads the words file (Words), globs the files (`Shale.glob!`),</span>
+<span class="syn-comment">## has Roc&#39;s parser read them (`Shale.roc_tree!`) and each one&#39;s text</span>
+<span class="syn-comment">## (`Shale.read!`), and prints the verdict (`Shale.print!`, `Shale.fail!`).</span>
+<span class="syn-comment">## Its modules are beside it: Retired, the two checks, over Identifiers and</span>
+<span class="syn-comment">## Words; and SelfTest. Tree, Text and Finding are the cookbook&#39;s Roc</span>
+<span class="syn-comment">## library, cookbook/roc/lib/.</span>
+<span class="syn-comment">## budget: steps=800000000 arena_bytes=2000000000 output_bytes=4000000 programs=100 roc_cpu_ms=600000</span>
+<span class="syn-keyword">app</span> [main!] { lib: <span class="syn-string">&quot;../lib/main.roc&quot;</span>, pf: <span class="syn-keyword">platform</span> <span class="syn-string">&quot;../../../roc_platform/platform/main.roc&quot;</span> }
+
+<span class="syn-keyword">import</span> pf.<span class="syn-type">Shale</span>
+<span class="syn-keyword">import</span> lib.<span class="syn-type">Finding</span>
+<span class="syn-keyword">import</span> <span class="syn-type">Retired</span>
+<span class="syn-keyword">import</span> <span class="syn-type">SelfTest</span>
+<span class="syn-keyword">import</span> <span class="syn-type">Words</span>
+
+<span class="syn-name">main!</span> : {} =&gt; {}
+<span class="syn-name">main!</span> = |{}| {
+	is_self_test = <span class="syn-type">Shale</span>.arg!(<span class="syn-string">&quot;self_test&quot;</span>, <span class="syn-string">&quot;&quot;</span>) == <span class="syn-string">&quot;1&quot;</span>
+	pattern = <span class="syn-type">Shale</span>.arg!(<span class="syn-string">&quot;glob&quot;</span>, <span class="syn-string">&quot;**/*.roc&quot;</span>)
+	words_file = <span class="syn-type">Shale</span>.arg!(<span class="syn-string">&quot;words&quot;</span>, <span class="syn-string">&quot;&quot;</span>)
+	<span class="syn-keyword">if</span> is_self_test {
+		<span class="syn-type">SelfTest</span>.run!(checks)
+	} <span class="syn-keyword">else</span> {
+		run_check!({ pattern, words_file })
+	}
+}
+
+<span class="syn-comment">## The check over the glob&#39;s files: the verdict printed, then a stop when a</span>
+<span class="syn-comment">## file didn&#39;t parse, or else when there are findings, the summary the last</span>
+<span class="syn-comment">## line a caller reads.</span>
+<span class="syn-name">run_check!</span> : { pattern : <span class="syn-type">Str</span>, words_file : <span class="syn-type">Str</span> } =&gt; {}
+<span class="syn-name">run_check!</span> = |{ pattern, words_file }| {
+	<span class="syn-keyword">if</span> words_file == <span class="syn-string">&quot;&quot;</span> {
+		<span class="syn-type">Shale</span>.fail!(<span class="syn-string">&quot;find_retired_words: give words=&lt;the project&#39;s file of decided words&gt;&quot;</span>)
+	}
+	decided = <span class="syn-type">Words</span>.read!(words_file)
+	paths = <span class="syn-type">Shale</span>.glob!(pattern)
+	<span class="syn-keyword">var</span> $findings = []
+	<span class="syn-keyword">var</span> $refused = []
+	<span class="syn-keyword">for</span> file <span class="syn-keyword">in</span> <span class="syn-type">Shale</span>.roc_tree!(paths) {
+		<span class="syn-keyword">if</span> file.err == <span class="syn-string">&quot;&quot;</span> {
+			names = <span class="syn-type">Retired</span>.names({ path: file.path, syntax_nodes: file.nodes }, decided)
+			comments = <span class="syn-type">Retired</span>.comments({ path: file.path, text: read_text!(file.path) }, decided)
+			$findings = $findings.concat(names).concat(comments)
+		} <span class="syn-keyword">else</span> <span class="syn-keyword">if</span> file.err.starts_with(file.path) {
+			$refused = $refused.append(file.err)
+		} <span class="syn-keyword">else</span> {
+			$refused = $refused.append(<span class="syn-string">&quot;</span>${file.path}<span class="syn-string">: </span>${file.err}<span class="syn-string">&quot;</span>)
+		}
+	}
+	found = $findings.sort_with(<span class="syn-type">Finding</span>.order).map(<span class="syn-type">Finding</span>.line_of)
+	summary = summary_of($findings, paths.len())
+	print_findings!(summary, found)
+	<span class="syn-keyword">if</span> !($refused.is_empty()) {
+		<span class="syn-keyword">for</span> refusal <span class="syn-keyword">in</span> $refused {
+			<span class="syn-type">Shale</span>.print!(<span class="syn-string">&quot;refused: </span>${refusal}<span class="syn-string">&quot;</span>)
+		}
+		refusals = <span class="syn-string">&quot;roc-ast refused </span>${$refused.len().to_str()}<span class="syn-string"> files (named above)&quot;</span>
+		why = <span class="syn-string">&quot;which have no tree to judge; every other file was judged&quot;</span>
+		<span class="syn-type">Shale</span>.fail!(<span class="syn-string">&quot;find_retired_words: </span>${refusals}<span class="syn-string">, </span>${why}<span class="syn-string">&quot;</span>)
+	}
+	<span class="syn-keyword">if</span> !(found.is_empty()) {
+		<span class="syn-type">Shale</span>.fail!(summary)
+	}
+}
+
+<span class="syn-comment">## The file&#39;s text. A file the parser read and the read finds gone stops the</span>
+<span class="syn-comment">## run.</span>
+<span class="syn-name">read_text!</span> : <span class="syn-type">Str</span> =&gt; <span class="syn-type">Str</span>
+<span class="syn-name">read_text!</span> = |path|
+	<span class="syn-keyword">match</span> <span class="syn-type">Shale</span>.read!(path) {
+		<span class="syn-type">Found</span>(text) =&gt; text
+		<span class="syn-type">Missing</span> =&gt; {
+			<span class="syn-type">Shale</span>.fail!(<span class="syn-string">&quot;find_retired_words: </span>${path}<span class="syn-string"> went missing during the check&quot;</span>)
+			<span class="syn-string">&quot;&quot;</span>
+		}
+	}
+
+<span class="syn-comment">## The checks, in the order the summary counts them.</span>
+<span class="syn-name">checks</span> : <span class="syn-type">List</span>(<span class="syn-type">Str</span>)
+<span class="syn-name">checks</span> = [<span class="syn-string">&quot;retired_name&quot;</span>, <span class="syn-string">&quot;retired_comment&quot;</span>]
+
+<span class="syn-comment">## The counts, `find_retired_words (Roc): N files; retired_name N,</span>
+<span class="syn-comment">## retired_comment N`.</span>
+<span class="syn-name">summary_of</span> : <span class="syn-type">List</span>(<span class="syn-type">Finding</span>), <span class="syn-type">U64</span> -&gt; <span class="syn-type">Str</span>
+<span class="syn-name">summary_of</span> = |findings, file_count| {
+	<span class="syn-string">&quot;find_retired_words (Roc): </span>${file_count.to_str()}<span class="syn-string"> files; </span>${<span class="syn-type">Finding</span>.counts_of(findings, checks)}<span class="syn-string">&quot;</span>
+}
+
+<span class="syn-comment">## The summary, each finding, then the summary again (cookbook/findings.shale):</span>
+<span class="syn-comment">## the first copy survives a cut output, and a gate reads the last line.</span>
+<span class="syn-name">print_findings!</span> : <span class="syn-type">Str</span>, <span class="syn-type">List</span>(<span class="syn-type">Str</span>) =&gt; {}
+<span class="syn-name">print_findings!</span> = |summary, finding_lines| {
+	<span class="syn-type">Shale</span>.print!(summary)
+	<span class="syn-keyword">if</span> !(finding_lines.is_empty()) {
+		<span class="syn-keyword">for</span> line <span class="syn-keyword">in</span> finding_lines {
+			<span class="syn-type">Shale</span>.print!(line)
+		}
+		<span class="syn-type">Shale</span>.print!(summary)
+	}
+}
+</code></pre>
+<p class="file"><a href="https://github.com/showell/shale/blob/e3c753adf065dc7856e5d49422daf99f9969f91a/cookbook/roc/find_retired_words/Retired.roc"><code>cookbook/roc/find_retired_words/Retired.roc</code></a>, 110 lines</p>
+<pre><code><span class="syn-comment">## The two checks, one for each place a retired word can be: `retired_name`,</span>
+<span class="syn-comment">## an identifier that holds one, read from Roc&#39;s own tree, and</span>
+<span class="syn-comment">## `retired_comment`, a comment that holds one, read from the file&#39;s lines.</span>
+<span class="syn-keyword">import</span> lib.<span class="syn-type">Finding</span>
+<span class="syn-keyword">import</span> <span class="syn-type">Identifiers</span>
+<span class="syn-keyword">import</span> lib.<span class="syn-type">Text</span>
+<span class="syn-keyword">import</span> lib.<span class="syn-type">Tree</span>
+<span class="syn-keyword">import</span> <span class="syn-type">Words</span>
+
+<span class="syn-type">Retired</span> := [].{
+
+	<span class="syn-comment">## Each identifier in the tree that holds a retired word, a finding at</span>
+	<span class="syn-comment">## its node&#39;s line, once a line for each name and word.</span>
+	<span class="syn-name">names</span> : { path : <span class="syn-type">Str</span>, syntax_nodes : <span class="syn-type">List</span>(<span class="syn-type">Tree.Node</span>) }, <span class="syn-type">Words.Decided</span> -&gt; <span class="syn-type">List</span>(<span class="syn-type">Finding</span>)
+	<span class="syn-name">names</span> = |file, decided| {
+		<span class="syn-keyword">var</span> $found = []
+		<span class="syn-keyword">var</span> $seen = <span class="syn-type">Set</span>.empty()
+		<span class="syn-keyword">var</span> $place = <span class="syn-number">0</span>
+		<span class="syn-keyword">for</span> node <span class="syn-keyword">in</span> file.syntax_nodes {
+			$place = $place + <span class="syn-number">1</span>
+			<span class="syn-keyword">for</span> name <span class="syn-keyword">in</span> <span class="syn-type">Identifiers</span>.of_node(file.syntax_nodes, node) {
+				<span class="syn-keyword">for</span> word <span class="syn-keyword">in</span> <span class="syn-type">Words</span>.retired_in(name.to_utf8(), decided) {
+					line = line_of(file.syntax_nodes, $place)
+					key = <span class="syn-string">&quot;</span>${line.to_str()}<span class="syn-string">|</span>${name}<span class="syn-string">|</span>${word}<span class="syn-string">&quot;</span>
+					<span class="syn-keyword">if</span> !($seen.contains(key)) {
+						$seen = $seen.insert(key)
+						what = <span class="syn-string">&quot;</span>${name}<span class="syn-string">: </span>${word}<span class="syn-string"> is </span>${<span class="syn-type">Words</span>.kept_for(decided, word)}<span class="syn-string"> here&quot;</span>
+						$found = $found.append({ path: file.path, line, check: <span class="syn-string">&quot;retired_name&quot;</span>, what })
+					}
+				}
+			}
+		}
+		$found
+	}
+
+	<span class="syn-comment">## Each retired word in a comment of the file&#39;s text, a finding at its</span>
+	<span class="syn-comment">## line, once a line.</span>
+	<span class="syn-name">comments</span> : { path : <span class="syn-type">Str</span>, text : <span class="syn-type">Str</span> }, <span class="syn-type">Words.Decided</span> -&gt; <span class="syn-type">List</span>(<span class="syn-type">Finding</span>)
+	<span class="syn-name">comments</span> = |file, decided| {
+		<span class="syn-keyword">var</span> $found = []
+		<span class="syn-keyword">var</span> $number = <span class="syn-number">0</span>
+		<span class="syn-keyword">for</span> source_line <span class="syn-keyword">in</span> <span class="syn-type">Text</span>.lines(file.text) {
+			$number = $number + <span class="syn-number">1</span>
+			<span class="syn-keyword">match</span> comment_on_line(source_line) {
+				<span class="syn-type">Comment</span>(comment) =&gt;
+					<span class="syn-keyword">for</span> word <span class="syn-keyword">in</span> <span class="syn-type">Words</span>.retired_in(comment, decided) {
+						what = <span class="syn-string">&quot;</span>${word}<span class="syn-string"> is </span>${<span class="syn-type">Words</span>.kept_for(decided, word)}<span class="syn-string"> here&quot;</span>
+						$found = $found.append({ path: file.path, line: $number, check: <span class="syn-string">&quot;retired_comment&quot;</span>, what })
+					}
+				<span class="syn-type">NoComment</span> =&gt; {}
+			}
+		}
+		$found
+	}
+}
+
+<span class="syn-comment">## The line of the node at `place`, or of the nearest node around it that</span>
+<span class="syn-comment">## has one; 0 when none does (the Shale original&#39;s `node_line`).</span>
+<span class="syn-name">line_of</span> : <span class="syn-type">List</span>(<span class="syn-type">Tree.Node</span>), <span class="syn-type">U64</span> -&gt; <span class="syn-type">U64</span>
+<span class="syn-name">line_of</span> = |syntax_nodes, place| {
+	<span class="syn-keyword">var</span> $place = place
+	<span class="syn-keyword">var</span> $line = <span class="syn-number">0</span>
+	<span class="syn-keyword">while</span> $place != <span class="syn-number">0</span> <span class="syn-keyword">and</span> $line == <span class="syn-number">0</span> {
+		node = <span class="syn-type">Tree</span>.node_at(syntax_nodes, $place)
+		<span class="syn-keyword">if</span> node.line == <span class="syn-number">0</span> {
+			$place = node.parent
+		} <span class="syn-keyword">else</span> {
+			$line = node.line
+		}
+	}
+	$line
+}
+
+<span class="syn-comment">## The bytes after the `#` that starts the line&#39;s comment, or `NoComment`.</span>
+<span class="syn-comment">## A `#` inside a string or a character starts none, and a line of a `\\`</span>
+<span class="syn-comment">## multiline string has no comment at all.</span>
+<span class="syn-name">comment_on_line</span> : <span class="syn-type">Str</span> -&gt; [<span class="syn-type">Comment</span>(<span class="syn-type">List</span>(<span class="syn-type">U8</span>)), <span class="syn-type">NoComment</span>]
+<span class="syn-name">comment_on_line</span> = |line| {
+	bytes = line.to_utf8()
+	<span class="syn-keyword">if</span> !(bytes.contains(<span class="syn-string">&#39;#&#39;</span>)) {
+		<span class="syn-keyword">return</span> <span class="syn-type">NoComment</span>
+	}
+	count = bytes.len()
+	start = bytes.find_first_index(|byte| !(is_space(byte))) ?? count
+	<span class="syn-keyword">if</span> (bytes.get(start) ?? <span class="syn-number">0</span>) == <span class="syn-string">&#39;\\&#39;</span> <span class="syn-keyword">and</span> (bytes.get(start + <span class="syn-number">1</span>) ?? <span class="syn-number">0</span>) == <span class="syn-string">&#39;\\&#39;</span> {
+		<span class="syn-keyword">return</span> <span class="syn-type">NoComment</span>
+	}
+	<span class="syn-keyword">var</span> $at = <span class="syn-number">0</span>
+	<span class="syn-keyword">while</span> $at &lt; count {
+		byte = bytes.get($at) ?? <span class="syn-number">0</span>
+		<span class="syn-keyword">if</span> byte == <span class="syn-string">&#39;&quot;&#39;</span> <span class="syn-keyword">or</span> byte == <span class="syn-string">&#39;\&#39;&#39;</span> {
+			$at = $at + <span class="syn-number">1</span>
+			<span class="syn-keyword">while</span> $at &lt; count <span class="syn-keyword">and</span> (bytes.get($at) ?? <span class="syn-number">0</span>) != byte {
+				<span class="syn-keyword">if</span> (bytes.get($at) ?? <span class="syn-number">0</span>) == <span class="syn-string">&#39;\\&#39;</span> {
+					$at = $at + <span class="syn-number">1</span>
+				}
+				$at = $at + <span class="syn-number">1</span>
+			}
+		} <span class="syn-keyword">else</span> <span class="syn-keyword">if</span> byte == <span class="syn-string">&#39;#&#39;</span> {
+			<span class="syn-keyword">return</span> <span class="syn-type">Comment</span>(bytes.drop_first($at + <span class="syn-number">1</span>))
+		}
+		$at = $at + <span class="syn-number">1</span>
+	}
+	<span class="syn-type">NoComment</span>
+}
+
+<span class="syn-comment">## A byte Shale&#39;s `trim` takes off a text&#39;s ends: a space, a tab, a carriage</span>
+<span class="syn-comment">## return or a newline.</span>
+<span class="syn-name">is_space</span> : <span class="syn-type">U8</span> -&gt; <span class="syn-type">Bool</span>
+<span class="syn-name">is_space</span> = |byte| byte == <span class="syn-string">&#39; &#39;</span> <span class="syn-keyword">or</span> byte == <span class="syn-string">&#39;\t&#39;</span> <span class="syn-keyword">or</span> byte == <span class="syn-string">&#39;\r&#39;</span> <span class="syn-keyword">or</span> byte == <span class="syn-string">&#39;\n&#39;</span>
+</code></pre>
+<p class="file"><a href="https://github.com/showell/shale/blob/e3c753adf065dc7856e5d49422daf99f9969f91a/cookbook/roc/find_retired_words/SelfTest.roc"><code>cookbook/roc/find_retired_words/SelfTest.roc</code></a>, 196 lines</p>
+<pre><code><span class="syn-comment">## The recipe&#39;s self-test: each plant under</span>
+<span class="syn-comment">## cookbook/roc/plants/find_retired_words/ run through the launcher, held to</span>
+<span class="syn-comment">## its findings, its exit and what it says. It copies</span>
+<span class="syn-comment">## cookbook/roc/find_names_that_differ_across_lookalike_modules/SelfTest.roc&#39;s running and judging of a row,</span>
+<span class="syn-comment">## on purpose: a row is run through `Shale.run!`, and cookbook/roc/lib/, a</span>
+<span class="syn-comment">## package, reaches no effect.</span>
+<span class="syn-keyword">import</span> pf.<span class="syn-type">Shale</span>
+
+<span class="syn-type">SelfTest</span> := [].{
+
+	<span class="syn-comment">## Each row run as a child of its own, through `launcher`; a check of</span>
+	<span class="syn-comment">## `checks` no row fires fails too, since it could be blind.</span>
+	<span class="syn-name">run!</span> : <span class="syn-type">List</span>(<span class="syn-type">Str</span>) =&gt; {}
+	<span class="syn-name">run!</span> = |checks| {
+		<span class="syn-keyword">var</span> $wrong = <span class="syn-number">0</span>.<span class="syn-type">U64</span>
+		<span class="syn-keyword">var</span> $fired = <span class="syn-type">Set</span>.empty()
+		<span class="syn-keyword">for</span> row <span class="syn-keyword">in</span> rows {
+			command = [<span class="syn-string">&quot;shale&quot;</span>, launcher, <span class="syn-string">&quot;glob=</span>${row.plant}<span class="syn-string">&quot;</span>].concat(row.arguments)
+			result = <span class="syn-type">Shale</span>.run!({
+				argv: command,
+				keep: <span class="syn-type">Whole</span>(<span class="syn-number">4000000</span>),
+				timeout_ms: <span class="syn-number">120000</span>,
+				want: <span class="syn-string">&quot;&quot;</span>,
+			})
+			faults = find_faults!(row, result, checks)
+			<span class="syn-keyword">for</span> (check, _) <span class="syn-keyword">in</span> row.counts {
+				$fired = $fired.insert(check)
+			}
+			<span class="syn-keyword">if</span> faults.is_empty() {
+				<span class="syn-type">Shale</span>.print!(<span class="syn-string">&quot;ok   </span>${row.plant}<span class="syn-string">&quot;</span>)
+			} <span class="syn-keyword">else</span> {
+				<span class="syn-type">Shale</span>.print!(<span class="syn-string">&quot;FAIL </span>${row.plant}<span class="syn-string">: </span>${<span class="syn-type">Str</span>.join_with(faults, <span class="syn-string">&quot;; &quot;</span>)}<span class="syn-string">&quot;</span>)
+				$wrong = $wrong + <span class="syn-number">1</span>
+				<span class="syn-type">Shale</span>.print!(result.out)
+			}
+		}
+		<span class="syn-keyword">for</span> check <span class="syn-keyword">in</span> checks {
+			<span class="syn-keyword">if</span> !($fired.contains(check)) {
+				<span class="syn-type">Shale</span>.print!(<span class="syn-string">&quot;FAIL `</span>${check}<span class="syn-string">` has no plant&quot;</span>)
+				$wrong = $wrong + <span class="syn-number">1</span>
+			}
+		}
+		<span class="syn-keyword">if</span> $wrong &gt; <span class="syn-number">0</span> {
+			<span class="syn-type">Shale</span>.fail!(<span class="syn-string">&quot;find_retired_words self_test: </span>${$wrong.to_str()}<span class="syn-string"> wrong&quot;</span>)
+		}
+		row_count = rows.len().to_str()
+		proof = <span class="syn-string">&quot;each plant gives its findings and a nonzero exit, each clean case none and exit 0&quot;</span>
+		<span class="syn-type">Shale</span>.print!(<span class="syn-string">&quot;find_retired_words self_test: PASS (</span>${row_count}<span class="syn-string"> rows: </span>${proof}<span class="syn-string">)&quot;</span>)
+	}
+}
+
+<span class="syn-comment">## The launcher, which the self-test runs each plant through.</span>
+<span class="syn-name">launcher</span> : <span class="syn-type">Str</span>
+<span class="syn-name">launcher</span> = <span class="syn-string">&quot;cookbook:roc/find_retired_words.shale&quot;</span>
+
+<span class="syn-name">plants</span> : <span class="syn-type">Str</span>
+<span class="syn-name">plants</span> = <span class="syn-string">&quot;cookbook:roc/plants/find_retired_words/&quot;</span>
+
+<span class="syn-comment">## The plants&#39; own words file, as the argument that names it.</span>
+<span class="syn-name">words</span> : <span class="syn-type">Str</span>
+<span class="syn-name">words</span> = <span class="syn-string">&quot;words=</span>${plants}<span class="syn-string">words.txt&quot;</span>
+
+<span class="syn-comment">## A plant&#39;s run: its files (a glob below `plants`) and its other arguments,</span>
+<span class="syn-comment">## the findings each check must print, the literals its output must hold,</span>
+<span class="syn-comment">## and whether it must stop nonzero whatever its findings.</span>
+<span class="syn-type">Row</span> : {
+	plant : <span class="syn-type">Str</span>,
+	arguments : <span class="syn-type">List</span>(<span class="syn-type">Str</span>),
+	counts : <span class="syn-type">List</span>((<span class="syn-type">Str</span>, <span class="syn-type">U64</span>)),
+	says : <span class="syn-type">List</span>(<span class="syn-type">Str</span>),
+	stops : <span class="syn-type">Bool</span>,
+}
+
+<span class="syn-comment">## What a plant is run with and must give: its findings, and what its</span>
+<span class="syn-comment">## output must hold.</span>
+<span class="syn-type">Wanted</span> : {
+	plant : <span class="syn-type">Str</span>,
+	arguments : <span class="syn-type">List</span>(<span class="syn-type">Str</span>),
+	counts : <span class="syn-type">List</span>((<span class="syn-type">Str</span>, <span class="syn-type">U64</span>)),
+	says : <span class="syn-type">List</span>(<span class="syn-type">Str</span>),
+}
+
+<span class="syn-comment">## A plant that must give its findings, and exit nonzero when it has any.</span>
+<span class="syn-name">fires</span> : <span class="syn-type">Wanted</span> -&gt; <span class="syn-type">Row</span>
+<span class="syn-name">fires</span> = |wanted| {
+	plant: <span class="syn-string">&quot;</span>${plants}${wanted.plant}<span class="syn-string">&quot;</span>,
+	arguments: wanted.arguments,
+	counts: wanted.counts,
+	says: wanted.says,
+	stops: <span class="syn-type">Bool.False</span>,
+}
+
+<span class="syn-comment">## A plant that must stop, with no summary as its last line.</span>
+<span class="syn-name">stops</span> : <span class="syn-type">Wanted</span> -&gt; <span class="syn-type">Row</span>
+<span class="syn-name">stops</span> = |wanted| {
+	firing = fires(wanted)
+	{ ..firing, stops: <span class="syn-type">Bool.True</span> }
+}
+
+<span class="syn-comment">## A words file below `plants` the plant `clean.roc` is run with, which must</span>
+<span class="syn-comment">## stop the run saying what it says.</span>
+<span class="syn-name">stops_on_words</span> : <span class="syn-type">Str</span>, <span class="syn-type">Str</span> -&gt; <span class="syn-type">Row</span>
+<span class="syn-name">stops_on_words</span> = |words_file, said|
+	stops({ plant: <span class="syn-string">&quot;clean.roc&quot;</span>, arguments: [<span class="syn-string">&quot;words=</span>${plants}${words_file}<span class="syn-string">&quot;</span>], counts: [], says: [said] })
+
+<span class="syn-name">rows</span> : <span class="syn-type">List</span>(<span class="syn-type">Row</span>)
+<span class="syn-name">rows</span> = [
+	fires({
+		plant: <span class="syn-string">&quot;names.roc&quot;</span>,
+		arguments: [words],
+		counts: [(<span class="syn-string">&quot;retired_name&quot;</span>, <span class="syn-number">9</span>)],
+		says: [
+			<span class="syn-string">&quot;names.roc:6: retired_name: tilt_step: tilt is lean here&quot;</span>,
+			<span class="syn-string">&quot;RideTour: tour is ride here&quot;</span>,
+			<span class="syn-string">&quot;names.roc:12: retired_name: tour_stops&quot;</span>,
+			<span class="syn-string">&quot;names.roc:16: retired_name: .tilt&quot;</span>,
+		],
+	}),
+	fires({
+		plant: <span class="syn-string">&quot;names_unseen.roc&quot;</span>,
+		arguments: [words],
+		counts: [(<span class="syn-string">&quot;retired_name&quot;</span>, <span class="syn-number">3</span>)],
+		says: [
+			<span class="syn-string">&quot;names_unseen.roc:3: retired_name: tilt_now&quot;</span>,
+			<span class="syn-string">&quot;names_unseen.roc:7: retired_name: tilt_of&quot;</span>,
+			<span class="syn-string">&quot;names_unseen.roc:12: retired_name: tilt_pair&quot;</span>,
+		],
+	}),
+	fires({
+		plant: <span class="syn-string">&quot;comments.roc&quot;</span>,
+		arguments: [words],
+		counts: [(<span class="syn-string">&quot;retired_comment&quot;</span>, <span class="syn-number">3</span>)],
+		says: [<span class="syn-string">&quot;comments.roc:2: retired_comment: tilt is lean here&quot;</span>],
+	}),
+	fires({ plant: <span class="syn-string">&quot;clean.roc&quot;</span>, arguments: [words], counts: [], says: [] }),
+	stops({ plant: <span class="syn-string">&quot;broken/*.roc&quot;</span>, arguments: [words], counts: [(<span class="syn-string">&quot;retired_name&quot;</span>, <span class="syn-number">1</span>)], says: [<span class="syn-string">&quot;refused: &quot;</span>] }),
+	stops({ plant: <span class="syn-string">&quot;clean.roc&quot;</span>, arguments: [], counts: [], says: [<span class="syn-string">&quot;give words=&quot;</span>] }),
+	stops_on_words(<span class="syn-string">&quot;no_such.txt&quot;</span>, <span class="syn-string">&quot;no words file&quot;</span>),
+	stops_on_words(<span class="syn-string">&quot;words_malformed.txt&quot;</span>, <span class="syn-string">&quot;words_malformed.txt:2: expected&quot;</span>),
+	stops_on_words(<span class="syn-string">&quot;words_twice.txt&quot;</span>, <span class="syn-string">&quot;`tilt` is retired twice&quot;</span>),
+	stops_on_words(<span class="syn-string">&quot;words_both.txt&quot;</span>, <span class="syn-string">&quot;`tilt` is both kept and retired&quot;</span>),
+]
+
+<span class="syn-comment">## The last line of `out` that isn&#39;t one of Shale&#39;s `──` lines.</span>
+<span class="syn-name">last_said</span> : <span class="syn-type">Str</span> -&gt; <span class="syn-type">Str</span>
+<span class="syn-name">last_said</span> = |out|
+	out.trim().split_on(<span class="syn-string">&quot;\n&quot;</span>).fold(
+		<span class="syn-string">&quot;&quot;</span>,
+		|last, line|
+			<span class="syn-keyword">if</span> line.starts_with(<span class="syn-string">&quot;──&quot;</span>) <span class="syn-keyword">or</span> line.trim() == <span class="syn-string">&quot;&quot;</span> {
+				last
+			} <span class="syn-keyword">else</span> {
+				line
+			},
+	)
+
+<span class="syn-comment">## The findings `row` wants of `check`.</span>
+<span class="syn-name">wanted_count</span> : <span class="syn-type">Row</span>, <span class="syn-type">Str</span> -&gt; <span class="syn-type">U64</span>
+<span class="syn-name">wanted_count</span> = |row, check| {
+	<span class="syn-keyword">var</span> $wanted = <span class="syn-number">0</span>
+	<span class="syn-keyword">for</span> (counted, count) <span class="syn-keyword">in</span> row.counts {
+		<span class="syn-keyword">if</span> counted == check {
+			$wanted = count
+		}
+	}
+	$wanted
+}
+
+<span class="syn-comment">## What is wrong with one row&#39;s run.</span>
+<span class="syn-name">find_faults!</span> : <span class="syn-type">Row</span>, { code : <span class="syn-type">I64</span>, out : <span class="syn-type">Str</span> }, <span class="syn-type">List</span>(<span class="syn-type">Str</span>) =&gt; <span class="syn-type">List</span>(<span class="syn-type">Str</span>)
+<span class="syn-name">find_faults!</span> = |row, result, checks| {
+	must_fail = row.stops <span class="syn-keyword">or</span> !(row.counts.is_empty())
+	<span class="syn-keyword">var</span> $faults = []
+	<span class="syn-keyword">if</span> must_fail <span class="syn-keyword">and</span> result.code == <span class="syn-number">0</span> {
+		$faults = $faults.append(<span class="syn-string">&quot;it exited 0&quot;</span>)
+	}
+	<span class="syn-keyword">if</span> !(must_fail) <span class="syn-keyword">and</span> result.code != <span class="syn-number">0</span> {
+		$faults = $faults.append(<span class="syn-string">&quot;it exited </span>${result.code.to_str()}<span class="syn-string">&quot;</span>)
+	}
+	<span class="syn-keyword">for</span> check <span class="syn-keyword">in</span> checks {
+		found = <span class="syn-type">Shale</span>.re_lines!(result.out, <span class="syn-string">&quot;^[^ ]+:[0-9]+: </span>${check}<span class="syn-string">: &quot;</span>).len()
+		wanted = wanted_count(row, check)
+		<span class="syn-keyword">if</span> found != wanted {
+			$faults = $faults.append(<span class="syn-string">&quot;</span>${check}<span class="syn-string"> printed </span>${found.to_str()}<span class="syn-string">, not </span>${wanted.to_str()}<span class="syn-string">&quot;</span>)
+		}
+	}
+	<span class="syn-keyword">if</span> !(row.stops) <span class="syn-keyword">and</span> !(last_said(result.out).contains(<span class="syn-string">&quot; files; &quot;</span>)) {
+		$faults = $faults.append(<span class="syn-string">&quot;its last line is no summary: </span>${last_said(result.out)}<span class="syn-string">&quot;</span>)
+	}
+	<span class="syn-keyword">for</span> literal <span class="syn-keyword">in</span> row.says {
+		<span class="syn-keyword">if</span> !(result.out.contains(literal)) {
+			$faults = $faults.append(<span class="syn-string">&quot;its output lacks `</span>${literal}<span class="syn-string">`&quot;</span>)
+		}
+	}
+	$faults
+}
+</code></pre>
+<p class="file"><a href="https://github.com/showell/shale/blob/e3c753adf065dc7856e5d49422daf99f9969f91a/cookbook/roc/find_retired_words/Words.roc"><code>cookbook/roc/find_retired_words/Words.roc</code></a>, 123 lines</p>
+<pre><code><span class="syn-comment">## A project&#39;s decided words, read from its words file: each line</span>
+<span class="syn-comment">## `kept: retired, retired`, in lower case, such as `lean: tilt`, a blank</span>
+<span class="syn-comment">## line or one starting with `#` skipped. A missing file, a malformed line, a</span>
+<span class="syn-comment">## word retired twice or a word both kept and retired stops the run, as the</span>
+<span class="syn-comment">## Shale original did, on the same line and in the same words.</span>
+<span class="syn-keyword">import</span> pf.<span class="syn-type">Shale</span>
+<span class="syn-keyword">import</span> lib.<span class="syn-type">Text</span>
+
+<span class="syn-type">Words</span> := [].{
+
+	<span class="syn-comment">## Each retired word, with the word kept for it.</span>
+	<span class="syn-type">Decided</span> : <span class="syn-type">Dict</span>(<span class="syn-type">Str</span>, <span class="syn-type">Str</span>)
+
+	<span class="syn-comment">## The words file at `path`, read and checked.</span>
+	<span class="syn-name">read!</span> : <span class="syn-type">Str</span> =&gt; <span class="syn-type">Words.Decided</span>
+	<span class="syn-name">read!</span> = |path| {
+		<span class="syn-keyword">if</span> !(<span class="syn-type">Shale</span>.exists!(path)) {
+			<span class="syn-type">Shale</span>.fail!(<span class="syn-string">&quot;find_retired_words: no words file </span>${path}<span class="syn-string">&quot;</span>)
+		}
+		text = <span class="syn-keyword">match</span> <span class="syn-type">Shale</span>.read!(path) {
+			<span class="syn-type">Found</span>(found) =&gt; found
+			<span class="syn-type">Missing</span> =&gt; {
+				<span class="syn-type">Shale</span>.fail!(<span class="syn-string">&quot;find_retired_words: no words file </span>${path}<span class="syn-string">&quot;</span>)
+				<span class="syn-string">&quot;&quot;</span>
+			}
+		}
+		<span class="syn-keyword">var</span> $decided = <span class="syn-type">Dict</span>.empty()
+		<span class="syn-keyword">var</span> $retired_in_order = []
+		<span class="syn-keyword">var</span> $kept = <span class="syn-type">Set</span>.empty()
+		<span class="syn-keyword">var</span> $number = <span class="syn-number">0</span>.<span class="syn-type">U64</span>
+		<span class="syn-keyword">for</span> raw_line <span class="syn-keyword">in</span> <span class="syn-type">Text</span>.lines(text) {
+			$number = $number + <span class="syn-number">1</span>
+			line = <span class="syn-type">Text</span>.trim(raw_line)
+			<span class="syn-keyword">if</span> line != <span class="syn-string">&quot;&quot;</span> <span class="syn-keyword">and</span> !(line.starts_with(<span class="syn-string">&quot;#&quot;</span>)) {
+				place = <span class="syn-string">&quot;</span>${path}<span class="syn-string">:</span>${$number.to_str()}<span class="syn-string">&quot;</span>
+				entry = read_entry!(line, place)
+				$kept = $kept.insert(entry.kept)
+				<span class="syn-keyword">for</span> word <span class="syn-keyword">in</span> entry.retired {
+					<span class="syn-keyword">if</span> $decided.contains(word) {
+						<span class="syn-type">Shale</span>.fail!(<span class="syn-string">&quot;find_retired_words: </span>${place}<span class="syn-string">: `</span>${word}<span class="syn-string">` is retired twice&quot;</span>)
+					}
+					$decided = $decided.insert(word, entry.kept)
+					$retired_in_order = $retired_in_order.append(word)
+				}
+			}
+		}
+		<span class="syn-keyword">for</span> word <span class="syn-keyword">in</span> $retired_in_order {
+			<span class="syn-keyword">if</span> $kept.contains(word) {
+				<span class="syn-type">Shale</span>.fail!(<span class="syn-string">&quot;find_retired_words: </span>${path}<span class="syn-string">: `</span>${word}<span class="syn-string">` is both kept and retired&quot;</span>)
+			}
+		}
+		$decided
+	}
+
+	<span class="syn-comment">## Each retired word in `text`, once, sorted bytewise: the words of each</span>
+	<span class="syn-comment">## name in it (a run of letters, digits and underscores) looked up.</span>
+	<span class="syn-name">retired_in</span> : <span class="syn-type">List</span>(<span class="syn-type">U8</span>), <span class="syn-type">Words.Decided</span> -&gt; <span class="syn-type">List</span>(<span class="syn-type">Str</span>)
+	<span class="syn-name">retired_in</span> = |text, decided| {
+		<span class="syn-keyword">var</span> $found = []
+		<span class="syn-keyword">for</span> run <span class="syn-keyword">in</span> name_runs(text) {
+			<span class="syn-keyword">for</span> word <span class="syn-keyword">in</span> <span class="syn-type">Text</span>.name_words(<span class="syn-type">Str</span>.from_utf8_lossy(run)) {
+				<span class="syn-keyword">if</span> decided.contains(word) <span class="syn-keyword">and</span> !($found.contains(word)) {
+					$found = $found.append(word)
+				}
+			}
+		}
+		$found.sort_with(<span class="syn-type">Text</span>.byte_order)
+	}
+
+	<span class="syn-comment">## The word kept for a retired one.</span>
+	<span class="syn-name">kept_for</span> : <span class="syn-type">Words.Decided</span>, <span class="syn-type">Str</span> -&gt; <span class="syn-type">Str</span>
+	<span class="syn-name">kept_for</span> = |decided, retired|
+		<span class="syn-keyword">match</span> decided.get(retired) {
+			<span class="syn-type">Ok</span>(kept) =&gt; kept
+			<span class="syn-type">Err</span>(_) =&gt; <span class="syn-keyword">crash</span> <span class="syn-string">&quot;find_retired_words: `</span>${retired}<span class="syn-string">` is not retired&quot;</span>
+		}
+}
+
+<span class="syn-comment">## One line of the words file, trimmed: the kept word and the words it</span>
+<span class="syn-comment">## retires. A line of another shape stops the run, naming its place.</span>
+<span class="syn-name">read_entry!</span> : <span class="syn-type">Str</span>, <span class="syn-type">Str</span> =&gt; { kept : <span class="syn-type">Str</span>, retired : <span class="syn-type">List</span>(<span class="syn-type">Str</span>) }
+<span class="syn-name">read_entry!</span> = |line, place|
+	<span class="syn-keyword">match</span> <span class="syn-type">Shale</span>.re_find!(line, entry_pattern) {
+		<span class="syn-type">Found</span>(found) =&gt;
+			<span class="syn-keyword">match</span> found.groups {
+				[kept, retired] =&gt; { kept, retired: retired.split_on(<span class="syn-string">&quot;,&quot;</span>).map(<span class="syn-type">Text</span>.trim) }
+				_ =&gt; <span class="syn-keyword">crash</span> <span class="syn-string">&quot;find_retired_words: the entry pattern has two groups&quot;</span>
+			}
+		<span class="syn-type">NoMatch</span> =&gt; {
+			<span class="syn-type">Shale</span>.fail!(<span class="syn-string">&quot;find_retired_words: </span>${place}<span class="syn-string">: expected `kept: retired, retired`, in lower case&quot;</span>)
+			{ kept: <span class="syn-string">&quot;&quot;</span>, retired: [] }
+		}
+	}
+
+<span class="syn-comment">## A words file&#39;s line: the kept word, a colon, and the retired words</span>
+<span class="syn-comment">## separated by commas.</span>
+<span class="syn-name">entry_pattern</span> : <span class="syn-type">Str</span>
+<span class="syn-name">entry_pattern</span> = <span class="syn-string">&quot;^([a-z0-9]+): *([a-z0-9]+(?:, *[a-z0-9]+)*)$&quot;</span>
+
+<span class="syn-comment">## The runs of letters, digits and underscores in the bytes, left to right</span>
+<span class="syn-comment">## (the Shale original&#39;s `[A-Za-z0-9_]+`, every match).</span>
+<span class="syn-name">name_runs</span> : <span class="syn-type">List</span>(<span class="syn-type">U8</span>) -&gt; <span class="syn-type">List</span>(<span class="syn-type">List</span>(<span class="syn-type">U8</span>))
+<span class="syn-name">name_runs</span> = |bytes| {
+	<span class="syn-keyword">var</span> $runs = []
+	<span class="syn-keyword">var</span> $run = []
+	<span class="syn-keyword">for</span> byte <span class="syn-keyword">in</span> bytes {
+		<span class="syn-keyword">if</span> is_name_byte(byte) {
+			$run = $run.append(byte)
+		} <span class="syn-keyword">else</span> <span class="syn-keyword">if</span> !($run.is_empty()) {
+			$runs = $runs.append($run)
+			$run = []
+		}
+	}
+	<span class="syn-keyword">if</span> $run.is_empty() {
+		$runs
+	} <span class="syn-keyword">else</span> {
+		$runs.append($run)
+	}
+}
+
+<span class="syn-name">is_name_byte</span> : <span class="syn-type">U8</span> -&gt; <span class="syn-type">Bool</span>
+<span class="syn-name">is_name_byte</span> = |byte|
+	<span class="syn-type">Text</span>.is_capital(byte) <span class="syn-keyword">or</span> <span class="syn-type">Text</span>.is_small_letter(byte) <span class="syn-keyword">or</span> <span class="syn-type">Text</span>.is_digit(byte) <span class="syn-keyword">or</span> byte == <span class="syn-string">&#39;_&#39;</span>
+</code></pre>
+<p class="file"><a href="https://github.com/showell/shale/blob/e3c753adf065dc7856e5d49422daf99f9969f91a/cookbook/roc/find_retired_words/Identifiers.roc"><code>cookbook/roc/find_retired_words/Identifiers.roc</code></a>, 59 lines</p>
+<pre><code><span class="syn-comment">## The identifiers a node of Roc&#39;s tree holds, by its kind: the attribute</span>
+<span class="syn-comment">## that holds the name, or for a name a header or an import exposes in lower</span>
+<span class="syn-comment">## case, the `value` of a `text` kid.</span>
+<span class="syn-keyword">import</span> lib.<span class="syn-type">Tree</span>
+
+<span class="syn-type">Identifiers</span> := [].{
+
+	<span class="syn-comment">## The identifiers a node of the tree holds, in the order the Shale</span>
+	<span class="syn-comment">## original read them: each named attribute that is not empty, then each</span>
+	<span class="syn-comment">## `text` kid&#39;s value.</span>
+	<span class="syn-name">of_node</span> : <span class="syn-type">List</span>(<span class="syn-type">Tree.Node</span>), <span class="syn-type">Tree.Node</span> -&gt; <span class="syn-type">List</span>(<span class="syn-type">Str</span>)
+	<span class="syn-name">of_node</span> = |syntax_nodes, node| {
+		named = name_attributes(node.kind)
+			.map(|attribute_name| <span class="syn-type">Tree</span>.attribute(node, attribute_name))
+			.keep_if(|name| name != <span class="syn-string">&quot;&quot;</span>)
+		<span class="syn-keyword">if</span> node.kind == <span class="syn-string">&quot;exposed-lower-ident&quot;</span> {
+			named.concat(text_kid_values(syntax_nodes, node))
+		} <span class="syn-keyword">else</span> {
+			named
+		}
+	}
+}
+
+<span class="syn-comment">## Which attributes hold the identifier in each kind of node that has one. A</span>
+<span class="syn-comment">## `field` node may hold a field&#39;s name under either attribute. A `method` is</span>
+<span class="syn-comment">## a `where` clause&#39;s constraint, and a `p-as` the name an `as` pattern gives.</span>
+<span class="syn-name">name_attributes</span> : <span class="syn-type">Str</span> -&gt; <span class="syn-type">List</span>(<span class="syn-type">Str</span>)
+<span class="syn-name">name_attributes</span> = |kind|
+	<span class="syn-keyword">match</span> kind {
+		<span class="syn-string">&quot;ty&quot;</span> =&gt; [<span class="syn-string">&quot;name&quot;</span>]
+		<span class="syn-string">&quot;ty-var&quot;</span> =&gt; [<span class="syn-string">&quot;raw&quot;</span>]
+		<span class="syn-string">&quot;e-ident&quot;</span> =&gt; [<span class="syn-string">&quot;raw&quot;</span>]
+		<span class="syn-string">&quot;p-ident&quot;</span> =&gt; [<span class="syn-string">&quot;raw&quot;</span>]
+		<span class="syn-string">&quot;e-tag&quot;</span> =&gt; [<span class="syn-string">&quot;raw&quot;</span>]
+		<span class="syn-string">&quot;p-tag&quot;</span> =&gt; [<span class="syn-string">&quot;raw&quot;</span>]
+		<span class="syn-string">&quot;s-type-anno&quot;</span> =&gt; [<span class="syn-string">&quot;name&quot;</span>]
+		<span class="syn-string">&quot;s-import&quot;</span> =&gt; [<span class="syn-string">&quot;raw&quot;</span>]
+		<span class="syn-string">&quot;s-var&quot;</span> =&gt; [<span class="syn-string">&quot;name&quot;</span>]
+		<span class="syn-string">&quot;anno-record-field&quot;</span> =&gt; [<span class="syn-string">&quot;name&quot;</span>]
+		<span class="syn-string">&quot;record-field&quot;</span> =&gt; [<span class="syn-string">&quot;name&quot;</span>]
+		<span class="syn-string">&quot;header&quot;</span> =&gt; [<span class="syn-string">&quot;name&quot;</span>]
+		<span class="syn-string">&quot;field&quot;</span> =&gt; [<span class="syn-string">&quot;field&quot;</span>, <span class="syn-string">&quot;name&quot;</span>]
+		<span class="syn-string">&quot;segment&quot;</span> =&gt; [<span class="syn-string">&quot;field&quot;</span>]
+		<span class="syn-string">&quot;e-method-call&quot;</span> =&gt; [<span class="syn-string">&quot;method&quot;</span>]
+		<span class="syn-string">&quot;p-list-rest&quot;</span> =&gt; [<span class="syn-string">&quot;name&quot;</span>]
+		<span class="syn-string">&quot;method&quot;</span> =&gt; [<span class="syn-string">&quot;name&quot;</span>]
+		<span class="syn-string">&quot;p-as&quot;</span> =&gt; [<span class="syn-string">&quot;name&quot;</span>]
+		<span class="syn-string">&quot;exposed-upper-ident&quot;</span> =&gt; [<span class="syn-string">&quot;text&quot;</span>]
+		_ =&gt; []
+	}
+
+<span class="syn-comment">## The values of the node&#39;s `text` kids, those that are not empty.</span>
+<span class="syn-name">text_kid_values</span> : <span class="syn-type">List</span>(<span class="syn-type">Tree.Node</span>), <span class="syn-type">Tree.Node</span> -&gt; <span class="syn-type">List</span>(<span class="syn-type">Str</span>)
+<span class="syn-name">text_kid_values</span> = |syntax_nodes, node|
+	node.kids
+		.map(|kid| <span class="syn-type">Tree</span>.node_at(syntax_nodes, kid))
+		.keep_if(|kid| kid.kind == <span class="syn-string">&quot;text&quot;</span>)
+		.map(|kid| <span class="syn-type">Tree</span>.attribute(kid, <span class="syn-string">&quot;value&quot;</span>))
+		.keep_if(|value| value != <span class="syn-string">&quot;&quot;</span>)
+</code></pre>
+<h2 class="code">Shale original</h2>
+<p class="file"><a href="https://github.com/showell/shale/blob/0bfe89046709038dd929127382a9fedd019de48b/cookbook/roc/check_vocabulary.shale"><code>cookbook/roc/check_vocabulary.shale</code></a>, 209 lines, at <code>0bfe8904</code></p>
+<p class="file">The libraries it loads: <a href="https://github.com/showell/shale/blob/0bfe89046709038dd929127382a9fedd019de48b/cookbook/roc/declared.shale"><code>cookbook/roc/declared.shale</code></a> (1,075 lines), <a href="https://github.com/showell/shale/blob/0bfe89046709038dd929127382a9fedd019de48b/cookbook/findings.shale"><code>cookbook/findings.shale</code></a> (21 lines), <a href="https://github.com/showell/shale/blob/0bfe89046709038dd929127382a9fedd019de48b/cookbook/roc/parsed.shale"><code>cookbook/roc/parsed.shale</code></a> (34 lines), <a href="https://github.com/showell/shale/blob/0bfe89046709038dd929127382a9fedd019de48b/cookbook/roc/gate_recipe.shale"><code>cookbook/roc/gate_recipe.shale</code></a> (102 lines).</p>
+<pre><code><span class="syn-comment">-- This recipe holds a project to the words it has decided on. The project</span>
+<span class="syn-comment">-- keeps a file of them, and the recipe reports each identifier and comment</span>
+<span class="syn-comment">-- in its .roc files that uses a word the file retires. The word lists belong</span>
+<span class="syn-comment">-- to the project, so none is built in here.</span>
+<span class="syn-comment">--</span>
+<span class="syn-comment">--   cd &lt;repo&gt; &amp;&amp; shale &lt;shale&gt;/cookbook/roc/check_vocabulary.shale words=vocabulary.txt</span>
+<span class="syn-comment">--   shale cookbook:roc/check_vocabulary.shale self_test=1</span>
+<span class="syn-comment">--</span>
+<span class="syn-comment">-- The arguments:</span>
+<span class="syn-comment">--   glob       the files to check, `**/*.roc` by default;</span>
+<span class="syn-comment">--   words      the project&#39;s file of decided words, which must be given;</span>
+<span class="syn-comment">--   self_test  with `self_test=1`, check the plants in</span>
+<span class="syn-comment">--              `cookbook/roc/plants/check_vocabulary/`.</span>
+<span class="syn-comment">--</span>
+<span class="syn-comment">-- Each line of the words file is `kept: retired, retired`, in lower case,</span>
+<span class="syn-comment">-- such as `lean: tilt`. A blank line or one starting with `#` is skipped.</span>
+<span class="syn-comment">-- The file is matched by whole words, so a plural that should go needs its</span>
+<span class="syn-comment">-- own entry, and a word with a good second meaning can&#39;t be listed at all.</span>
+<span class="syn-comment">-- A malformed line stops the run, as does a word retired twice or a word</span>
+<span class="syn-comment">-- both kept and retired.</span>
+<span class="syn-comment">--</span>
+<span class="syn-comment">-- Identifiers are read from the tree of Roc&#39;s own parser and split into words</span>
+<span class="syn-comment">-- at underscores and capitals, so `TiltStep` and `tilt_step` both hold</span>
+<span class="syn-comment">-- `tilt`. They include the names a header or an import exposes, a `where`</span>
+<span class="syn-comment">-- clause&#39;s methods and an `as` pattern&#39;s name. Comments are read as words too, and the text of a string doesn&#39;t</span>
+<span class="syn-comment">-- count. There are two checks, one for each place a word can be:</span>
+<span class="syn-comment">--</span>
+<span class="syn-comment">--   retired_name     an identifier that holds a retired word;</span>
+<span class="syn-comment">--   retired_comment  a comment that holds one.</span>
+<span class="syn-comment">--</span>
+<span class="syn-comment">-- The output is the counts, one line per finding,</span>
+<span class="syn-comment">-- `path:line: retired_name: tilt_step: tilt is lean here`, and the counts</span>
+<span class="syn-comment">-- again (cookbook/findings.shale). Each word is reported once a line for</span>
+<span class="syn-comment">-- each name that holds it. The run fails if there are findings, or if any</span>
+<span class="syn-comment">-- file doesn&#39;t parse, and the files that do parse are judged either way.</span>
+<span class="syn-comment">-- budget: steps=800000000 arena_bytes=2000000000 output_bytes=4000000</span>
+
+<span class="syn-keyword">const</span> SELF_TEST = arg(<span class="syn-string">&quot;self_test&quot;</span>, <span class="syn-string">&quot;&quot;</span>) == <span class="syn-string">&quot;1&quot;</span>
+<span class="syn-keyword">const</span> GLOB = arg(<span class="syn-string">&quot;glob&quot;</span>, <span class="syn-string">&quot;**/*.roc&quot;</span>)
+<span class="syn-keyword">const</span> WORDS_FILE = arg(<span class="syn-string">&quot;words&quot;</span>, <span class="syn-string">&quot;&quot;</span>)
+use(<span class="syn-string">&quot;./declared.shale&quot;</span>)
+use(<span class="syn-string">&quot;cookbook:findings.shale&quot;</span>)
+use(<span class="syn-string">&quot;./parsed.shale&quot;</span>)
+use(<span class="syn-string">&quot;./gate_recipe.shale&quot;</span>)
+<span class="syn-keyword">const</span> CHECKS = {<span class="syn-string">&quot;retired_name&quot;</span>, <span class="syn-string">&quot;retired_comment&quot;</span>}
+
+<span class="syn-comment">-- Which attribute holds the identifier in each kind of node that has one. A</span>
+<span class="syn-comment">-- `field` node may hold a field&#39;s name under either attribute. A `method` is a</span>
+<span class="syn-comment">-- `where` clause&#39;s constraint, and a `p-as` the name an `as` pattern gives.</span>
+<span class="syn-keyword">const</span> IDENTIFIER_ATTRIBUTES = {
+  ty = {<span class="syn-string">&quot;name&quot;</span>},
+  [<span class="syn-string">&quot;ty-var&quot;</span>] = {<span class="syn-string">&quot;raw&quot;</span>},
+  [<span class="syn-string">&quot;e-ident&quot;</span>] = {<span class="syn-string">&quot;raw&quot;</span>},
+  [<span class="syn-string">&quot;p-ident&quot;</span>] = {<span class="syn-string">&quot;raw&quot;</span>},
+  [<span class="syn-string">&quot;e-tag&quot;</span>] = {<span class="syn-string">&quot;raw&quot;</span>},
+  [<span class="syn-string">&quot;p-tag&quot;</span>] = {<span class="syn-string">&quot;raw&quot;</span>},
+  [<span class="syn-string">&quot;s-type-anno&quot;</span>] = {<span class="syn-string">&quot;name&quot;</span>},
+  [<span class="syn-string">&quot;s-import&quot;</span>] = {<span class="syn-string">&quot;raw&quot;</span>},
+  [<span class="syn-string">&quot;s-var&quot;</span>] = {<span class="syn-string">&quot;name&quot;</span>},
+  [<span class="syn-string">&quot;anno-record-field&quot;</span>] = {<span class="syn-string">&quot;name&quot;</span>},
+  [<span class="syn-string">&quot;record-field&quot;</span>] = {<span class="syn-string">&quot;name&quot;</span>},
+  header = {<span class="syn-string">&quot;name&quot;</span>},
+  field = {<span class="syn-string">&quot;field&quot;</span>, <span class="syn-string">&quot;name&quot;</span>},
+  segment = {<span class="syn-string">&quot;field&quot;</span>},
+  [<span class="syn-string">&quot;e-method-call&quot;</span>] = {<span class="syn-string">&quot;method&quot;</span>},
+  [<span class="syn-string">&quot;p-list-rest&quot;</span>] = {<span class="syn-string">&quot;name&quot;</span>},
+  method = {<span class="syn-string">&quot;name&quot;</span>},
+  [<span class="syn-string">&quot;p-as&quot;</span>] = {<span class="syn-string">&quot;name&quot;</span>},
+  [<span class="syn-string">&quot;exposed-upper-ident&quot;</span>] = {<span class="syn-string">&quot;text&quot;</span>},
+}
+
+<span class="syn-comment">-- The kinds of node whose identifier is the `value` of a `text` node among its</span>
+<span class="syn-comment">-- kids: a lower-case name a header or an import exposes.</span>
+<span class="syn-keyword">const</span> TEXT_KID_IDENTIFIERS = {[<span class="syn-string">&quot;exposed-lower-ident&quot;</span>] = <span class="syn-keyword">true</span>}
+
+<span class="syn-comment">-- The identifiers node `i` of `tree` holds.</span>
+<span class="syn-keyword">function</span> <span class="syn-name">identifiers_at</span>(tree, i)
+  <span class="syn-keyword">local</span> out = {}
+  <span class="syn-keyword">local</span> node = tree[i]
+  <span class="syn-keyword">for</span> name_attribute <span class="syn-keyword">in</span> get(IDENTIFIER_ATTRIBUTES, node.kind, {}) <span class="syn-keyword">do</span>
+    <span class="syn-keyword">local</span> name = attribute(tree, i, name_attribute)
+    <span class="syn-keyword">if</span> name ~= <span class="syn-string">&quot;&quot;</span> <span class="syn-keyword">then</span> push(out, name) <span class="syn-keyword">end</span>
+  <span class="syn-keyword">end</span>
+  <span class="syn-keyword">if</span> has_key(TEXT_KID_IDENTIFIERS, node.kind) <span class="syn-keyword">then</span>
+    <span class="syn-keyword">for</span> k <span class="syn-keyword">in</span> node.kids <span class="syn-keyword">do</span>
+      <span class="syn-keyword">if</span> tree[k].kind == <span class="syn-string">&quot;text&quot;</span> <span class="syn-keyword">and</span> get(tree[k], <span class="syn-string">&quot;value&quot;</span>, <span class="syn-string">&quot;&quot;</span>) ~= <span class="syn-string">&quot;&quot;</span> <span class="syn-keyword">then</span> push(out, tree[k].value) <span class="syn-keyword">end</span>
+    <span class="syn-keyword">end</span>
+  <span class="syn-keyword">end</span>
+  <span class="syn-keyword">return</span> out
+<span class="syn-keyword">end</span>
+
+<span class="syn-comment">-- The words file as a map from each retired word to the word kept for it.</span>
+<span class="syn-keyword">function</span> <span class="syn-name">retired_words</span>(path)
+  <span class="syn-keyword">if</span> <span class="syn-keyword">not</span> exists(path) <span class="syn-keyword">then</span> fail(<span class="syn-string">&quot;check_vocabulary: no words file &quot;</span> .. path) <span class="syn-keyword">end</span>
+  <span class="syn-keyword">local</span> kept_by_retired = {}
+  <span class="syn-keyword">local</span> kept_words = {}
+  <span class="syn-keyword">local</span> number = <span class="syn-number">0</span>
+  <span class="syn-keyword">for</span> raw <span class="syn-keyword">in</span> lines(read(path)) <span class="syn-keyword">do</span>
+    number = number + <span class="syn-number">1</span>
+    <span class="syn-keyword">local</span> l = trim(raw)
+    <span class="syn-keyword">if</span> l ~= <span class="syn-string">&quot;&quot;</span> <span class="syn-keyword">and</span> <span class="syn-keyword">not</span> starts_with(l, <span class="syn-string">&quot;#&quot;</span>) <span class="syn-keyword">then</span>
+      <span class="syn-keyword">local</span> m = re_find(l, <span class="syn-string">&quot;^([a-z0-9]+): *([a-z0-9]+(?:, *[a-z0-9]+)*)$&quot;</span>)
+      <span class="syn-keyword">if</span> m == <span class="syn-keyword">nil</span> <span class="syn-keyword">then</span> fail(<span class="syn-string">&quot;check_vocabulary: &quot;</span> .. path .. <span class="syn-string">&quot;:&quot;</span> .. number .. <span class="syn-string">&quot;: expected `kept: retired, retired`, in lower case&quot;</span>) <span class="syn-keyword">end</span>
+      kept_words[m.groups[<span class="syn-number">1</span>]] = <span class="syn-keyword">true</span>
+      <span class="syn-keyword">for</span> retired <span class="syn-keyword">in</span> split(m.groups[<span class="syn-number">2</span>], <span class="syn-string">&quot;,&quot;</span>) <span class="syn-keyword">do</span>
+        <span class="syn-keyword">local</span> word = trim(retired)
+        <span class="syn-keyword">if</span> has_key(kept_by_retired, word) <span class="syn-keyword">then</span> fail(<span class="syn-string">&quot;check_vocabulary: &quot;</span> .. path .. <span class="syn-string">&quot;:&quot;</span> .. number .. <span class="syn-string">&quot;: `&quot;</span> .. word .. <span class="syn-string">&quot;` is retired twice&quot;</span>) <span class="syn-keyword">end</span>
+        kept_by_retired[word] = m.groups[<span class="syn-number">1</span>]
+      <span class="syn-keyword">end</span>
+    <span class="syn-keyword">end</span>
+  <span class="syn-keyword">end</span>
+  <span class="syn-keyword">for</span> word <span class="syn-keyword">in</span> keys(kept_by_retired) <span class="syn-keyword">do</span>
+    <span class="syn-keyword">if</span> has_key(kept_words, word) <span class="syn-keyword">then</span> fail(<span class="syn-string">&quot;check_vocabulary: &quot;</span> .. path .. <span class="syn-string">&quot;: `&quot;</span> .. word .. <span class="syn-string">&quot;` is both kept and retired&quot;</span>) <span class="syn-keyword">end</span>
+  <span class="syn-keyword">end</span>
+  <span class="syn-keyword">return</span> kept_by_retired
+<span class="syn-keyword">end</span>
+
+<span class="syn-comment">-- The line of node `at`, or of the nearest node around it that has one.</span>
+<span class="syn-keyword">function</span> <span class="syn-name">node_line</span>(tree, at)
+  <span class="syn-keyword">local</span> k = at
+  <span class="syn-keyword">while</span> k ~= <span class="syn-number">0</span> <span class="syn-keyword">and</span> tree[k].line == <span class="syn-number">0</span> <span class="syn-keyword">do</span> k = tree[k].parent <span class="syn-keyword">end</span>
+  <span class="syn-keyword">return</span> k == <span class="syn-number">0</span> <span class="syn-keyword">and</span> <span class="syn-number">0</span> <span class="syn-keyword">or</span> tree[k].line
+<span class="syn-keyword">end</span>
+
+<span class="syn-comment">-- Each retired word in `text`, once, as the words of the names in it.</span>
+<span class="syn-keyword">function</span> <span class="syn-name">retired_in</span>(text, kept_by_retired)
+  <span class="syn-keyword">local</span> found = {}
+  <span class="syn-keyword">for</span> m <span class="syn-keyword">in</span> re_find_all(text, <span class="syn-string">&quot;[A-Za-z0-9_]+&quot;</span>) <span class="syn-keyword">do</span>
+    <span class="syn-keyword">for</span> w <span class="syn-keyword">in</span> name_words(m.text) <span class="syn-keyword">do</span>
+      <span class="syn-keyword">if</span> has_key(kept_by_retired, w) <span class="syn-keyword">then</span> found[w] = <span class="syn-keyword">true</span> <span class="syn-keyword">end</span>
+    <span class="syn-keyword">end</span>
+  <span class="syn-keyword">end</span>
+  <span class="syn-keyword">return</span> sort(keys(found))
+<span class="syn-keyword">end</span>
+
+<span class="syn-keyword">function</span> <span class="syn-name">judge_names</span>(f, kept_by_retired, report)
+  <span class="syn-keyword">local</span> tree = f.nodes
+  <span class="syn-keyword">local</span> seen = {}
+  <span class="syn-keyword">for</span> i = <span class="syn-number">1</span>, #tree <span class="syn-keyword">do</span>
+    <span class="syn-keyword">for</span> name <span class="syn-keyword">in</span> identifiers_at(tree, i) <span class="syn-keyword">do</span>
+      <span class="syn-keyword">for</span> w <span class="syn-keyword">in</span> retired_in(name, kept_by_retired) <span class="syn-keyword">do</span>
+        <span class="syn-keyword">local</span> line = node_line(tree, i)
+        <span class="syn-keyword">local</span> key = line .. <span class="syn-string">&quot;|&quot;</span> .. name .. <span class="syn-string">&quot;|&quot;</span> .. w
+        <span class="syn-keyword">if</span> <span class="syn-keyword">not</span> has_key(seen, key) <span class="syn-keyword">then</span>
+          seen[key] = <span class="syn-keyword">true</span>
+          push(report, {path = f.path, line = line, check = <span class="syn-string">&quot;retired_name&quot;</span>, what = name .. <span class="syn-string">&quot;: &quot;</span> .. w .. <span class="syn-string">&quot; is &quot;</span> .. kept_by_retired[w] .. <span class="syn-string">&quot; here&quot;</span>})
+        <span class="syn-keyword">end</span>
+      <span class="syn-keyword">end</span>
+    <span class="syn-keyword">end</span>
+  <span class="syn-keyword">end</span>
+  <span class="syn-keyword">return</span> <span class="syn-keyword">nil</span>
+<span class="syn-keyword">end</span>
+
+<span class="syn-keyword">function</span> <span class="syn-name">judge_comments</span>(f, kept_by_retired, report)
+  <span class="syn-keyword">local</span> number = <span class="syn-number">0</span>
+  <span class="syn-keyword">for</span> l <span class="syn-keyword">in</span> lines(read(f.path)) <span class="syn-keyword">do</span>
+    number = number + <span class="syn-number">1</span>
+    <span class="syn-keyword">local</span> comment = comment_on_line(l)
+    <span class="syn-keyword">if</span> comment ~= <span class="syn-keyword">nil</span> <span class="syn-keyword">then</span>
+      <span class="syn-keyword">for</span> w <span class="syn-keyword">in</span> retired_in(comment, kept_by_retired) <span class="syn-keyword">do</span>
+        push(report, {path = f.path, line = number, check = <span class="syn-string">&quot;retired_comment&quot;</span>, what = w .. <span class="syn-string">&quot; is &quot;</span> .. kept_by_retired[w] .. <span class="syn-string">&quot; here&quot;</span>})
+      <span class="syn-keyword">end</span>
+    <span class="syn-keyword">end</span>
+  <span class="syn-keyword">end</span>
+  <span class="syn-keyword">return</span> <span class="syn-keyword">nil</span>
+<span class="syn-keyword">end</span>
+
+<span class="syn-keyword">function</span> <span class="syn-name">self_test</span>()
+  <span class="syn-keyword">local</span> at = <span class="syn-string">&quot;cookbook:roc/plants/check_vocabulary/&quot;</span>
+  <span class="syn-keyword">local</span> words = <span class="syn-string">&quot;words=&quot;</span> .. at .. <span class="syn-string">&quot;words.txt&quot;</span>
+  check_plants(<span class="syn-string">&quot;check_vocabulary&quot;</span>, <span class="syn-string">&quot;cookbook:roc/check_vocabulary.shale&quot;</span>, CHECKS, {
+    {glob = at .. <span class="syn-string">&quot;names.roc&quot;</span>, args = {words}, counts = {retired_name = <span class="syn-number">9</span>}, says = {<span class="syn-string">&quot;names.roc:6: retired_name: tilt_step: tilt is lean here&quot;</span>, <span class="syn-string">&quot;RideTour: tour is ride here&quot;</span>, <span class="syn-string">&quot;names.roc:12: retired_name: tour_stops&quot;</span>, <span class="syn-string">&quot;names.roc:16: retired_name: .tilt&quot;</span>}},
+    {glob = at .. <span class="syn-string">&quot;names_unseen.roc&quot;</span>, args = {words}, counts = {retired_name = <span class="syn-number">3</span>}, says = {<span class="syn-string">&quot;names_unseen.roc:3: retired_name: tilt_now&quot;</span>, <span class="syn-string">&quot;names_unseen.roc:7: retired_name: tilt_of&quot;</span>, <span class="syn-string">&quot;names_unseen.roc:12: retired_name: tilt_pair&quot;</span>}},
+    {glob = at .. <span class="syn-string">&quot;comments.roc&quot;</span>, args = {words}, counts = {retired_comment = <span class="syn-number">3</span>}, says = {<span class="syn-string">&quot;comments.roc:2: retired_comment: tilt is lean here&quot;</span>}},
+    {glob = at .. <span class="syn-string">&quot;clean.roc&quot;</span>, args = {words}},
+    {glob = at .. <span class="syn-string">&quot;broken/*.roc&quot;</span>, args = {words}, stops = <span class="syn-keyword">true</span>, counts = {retired_name = <span class="syn-number">1</span>}, says = {<span class="syn-string">&quot;refused: &quot;</span>}},
+    {glob = at .. <span class="syn-string">&quot;clean.roc&quot;</span>, stops = <span class="syn-keyword">true</span>, says = {<span class="syn-string">&quot;give words=&quot;</span>}},
+    {glob = at .. <span class="syn-string">&quot;clean.roc&quot;</span>, args = {<span class="syn-string">&quot;words=&quot;</span> .. at .. <span class="syn-string">&quot;no_such.txt&quot;</span>}, stops = <span class="syn-keyword">true</span>, says = {<span class="syn-string">&quot;no words file&quot;</span>}},
+    {glob = at .. <span class="syn-string">&quot;clean.roc&quot;</span>, args = {<span class="syn-string">&quot;words=&quot;</span> .. at .. <span class="syn-string">&quot;words_malformed.txt&quot;</span>}, stops = <span class="syn-keyword">true</span>, says = {<span class="syn-string">&quot;words_malformed.txt:2: expected&quot;</span>}},
+    {glob = at .. <span class="syn-string">&quot;clean.roc&quot;</span>, args = {<span class="syn-string">&quot;words=&quot;</span> .. at .. <span class="syn-string">&quot;words_twice.txt&quot;</span>}, stops = <span class="syn-keyword">true</span>, says = {<span class="syn-string">&quot;`tilt` is retired twice&quot;</span>}},
+    {glob = at .. <span class="syn-string">&quot;clean.roc&quot;</span>, args = {<span class="syn-string">&quot;words=&quot;</span> .. at .. <span class="syn-string">&quot;words_both.txt&quot;</span>}, stops = <span class="syn-keyword">true</span>, says = {<span class="syn-string">&quot;`tilt` is both kept and retired&quot;</span>}},
+  })
+  <span class="syn-keyword">return</span> <span class="syn-keyword">nil</span>
+<span class="syn-keyword">end</span>
+
+<span class="syn-keyword">function</span> <span class="syn-name">run_check</span>()
+  <span class="syn-keyword">if</span> WORDS_FILE == <span class="syn-string">&quot;&quot;</span> <span class="syn-keyword">then</span> fail(<span class="syn-string">&quot;check_vocabulary: give words=&lt;the project&#39;s file of decided words&gt;&quot;</span>) <span class="syn-keyword">end</span>
+  <span class="syn-keyword">local</span> kept_by_retired = retired_words(WORDS_FILE)
+  <span class="syn-keyword">local</span> paths = glob(GLOB)
+  <span class="syn-keyword">local</span> parsed = parse_roc_files(paths)
+  <span class="syn-keyword">local</span> report = {}
+  <span class="syn-keyword">for</span> f <span class="syn-keyword">in</span> parsed.files <span class="syn-keyword">do</span>
+    judge_names(f, kept_by_retired, report)
+    judge_comments(f, kept_by_retired, report)
+  <span class="syn-keyword">end</span>
+  <span class="syn-keyword">local</span> verdict = verdict_of(<span class="syn-string">&quot;check_vocabulary&quot;</span>, CHECKS, report, #paths)
+  print_findings(verdict.summary, verdict.found)
+  fail_if_refused(<span class="syn-string">&quot;check_vocabulary&quot;</span>, parsed.refused)
+  <span class="syn-keyword">return</span> verdict
+<span class="syn-keyword">end</span>
+
+<span class="syn-comment">-- This `fail` stands at the top level so the summary is the last line a</span>
+<span class="syn-comment">-- caller reads: a stop inside a function prints the calls after it.</span>
+<span class="syn-keyword">if</span> SELF_TEST <span class="syn-keyword">then</span>
+  self_test()
+<span class="syn-keyword">else</span>
+  <span class="syn-keyword">local</span> verdict = run_check()
+  <span class="syn-keyword">if</span> #verdict.found &gt; <span class="syn-number">0</span> <span class="syn-keyword">then</span> fail(verdict.summary) <span class="syn-keyword">end</span>
+<span class="syn-keyword">end</span>
+</code></pre>
+<nav class="steps"><a href="../find_calls_nested_three_deep/">← previous</a> · <a href="../#find_retired_words">Roc on Shale</a> · <a href="../find_names_that_disagree_with_their_types/">next →</a></nav></main>
+</body>
+</html>

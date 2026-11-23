@@ -1,0 +1,539 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="description" content="Shale's C functions past a length in lines of code, their comment and blank lines counted apart, past the tree's 95th percentile unless told, with the distribution first.">
+<title>list_long_functions · Roc on Shale</title>
+<script src="../../shared/home.js"></script>
+<!-- site/build_roc_on_shale.shale writes this page from the shale repository's
+     history; run it again rather than editing here. The code is colored by
+     roc-syntax-color (SyntaxColor.html). -->
+<style>
+  :root { color-scheme: light dark; --bg: #f7f5f0; --fg: #1d1d1b; --muted: #6b6860; --edge: #d9d4c8; --pane: #ffffff; --link: #1f5fa8; --accent: #5b3ea8; }
+  @media (prefers-color-scheme: dark) {
+    :root { --bg: #1b1b1a; --fg: #e8e6e0; --muted: #9a968c; --edge: #3a3934; --pane: #242422; --link: #8ab4f0; --accent: #a68cf0; }
+  }
+  body { margin: 0; background: var(--bg); color: var(--fg); font: 15px/1.55 system-ui, sans-serif; }
+  main { max-width: 960px; margin: 0 auto; padding: 36px 16px 48px; }
+  @media (max-width: 640px) { main { padding: 24px 12px 36px; } }
+  .top { display: flex; flex-wrap: wrap; gap: 4px 14px; font-size: 14px; margin: 0 0 14px; }
+  h1 { font-size: 28px; margin: 0 0 6px; overflow-wrap: anywhere; }
+  .lede { margin: 0 0 10px; max-width: 70ch; }
+  ul.lede { padding-left: 22px; }
+  ul.lede li { margin: 0 0 4px; }
+  h2.intro { font-size: 20px; margin: 30px 0 6px; }
+  h3.intro { font-size: 16px; margin: 18px 0 4px; }
+  /* The drawing is Graphviz's SVG, inline, so its lines and words take the
+     page's colors in either theme. */
+  .diagram { margin: 14px 0 18px; }
+  .diagram svg { max-width: 100%; height: auto; }
+  .diagram text { fill: var(--fg); }
+  .diagram path, .diagram polygon { stroke: var(--fg); }
+  .diagram .edge polygon { fill: var(--fg); }
+  h2.part { font-size: 25px; margin: 64px 0 4px; padding-top: 20px; border-top: 3px solid var(--accent); }
+  .part-intro { margin: 0 0 8px; }
+  h3 { font-size: 19px; margin: 10px 0 4px; overflow-wrap: anywhere; }
+  h2.part a { color: inherit; text-decoration: none; }
+  h2.code { font-size: 16px; margin: 36px 0 4px; color: var(--accent); }
+  p { max-width: 70ch; }
+  a { color: var(--link); }
+  code { font: 13px ui-monospace, Menlo, Consolas, monospace; }
+  .contents { padding-left: 20px; }
+  .contents ul { padding-left: 20px; margin: 2px 0 8px; }
+  .contents a { overflow-wrap: anywhere; }
+  .facts { font-size: 14px; color: var(--muted); }
+  .file { font-size: 13px; color: var(--muted); margin: 20px 0 0; overflow-wrap: anywhere; }
+  .entry { margin-top: 28px; padding-top: 14px; border-top: 1px solid var(--edge); }
+  .steps { font-size: 13px; margin: 0 0 8px; }
+  main > .steps:last-child { margin: 28px 0 0; }
+  /* Every block shows its file whole; a line wider than the block scrolls
+     sideways inside it, so the code keeps its indentation. */
+  pre { margin: 6px 0 12px; padding: 12px 14px; border-radius: 5px; background: #2b2733; color: #e8e6e0;
+        font: 12px/1.45 ui-monospace, Menlo, Consolas, monospace; overflow-x: auto; tab-size: 4; }
+  pre code { font: inherit; }
+  .syn-keyword { color: #c792ea; }
+  .syn-type { color: #82aaff; }
+  .syn-string { color: #c3e88d; }
+  .syn-number { color: #f78c6c; }
+  .syn-comment { color: #8a8494; font-style: italic; }
+  .syn-name { color: #ffcb6b; }
+  footer { margin-top: 36px; color: var(--muted); font-size: 13px; }
+</style>
+</head>
+<body>
+<main>
+<nav class="steps"><a href="../map_file/">← previous</a> · <a href="../#list_long_functions">Roc on Shale</a> · <a href="../list_deep_nesting/">next →</a></nav>
+<h1>list_long_functions</h1>
+<h2 class="code">Roc</h2>
+<p class="file">It also imports <code>Item</code>, <code>Mask</code>, <code>Paths</code>, <code>Split</code>, <code>Words</code> from <a href="../c-splitter/">the C splitter</a>.</p>
+<p class="file"><a href="https://github.com/showell/shale/blob/a3bfc843a75e287128a10a8845679dcfb51a4608/cookbook/c/list_long_functions/list_long_functions.roc"><code>cookbook/c/list_long_functions/list_long_functions.roc</code></a>, 133 lines</p>
+<pre><code><span class="syn-comment">## list_long_functions, in Roc on Shale&#39;s platform (roc_platform/README.md):</span>
+<span class="syn-comment">## Shale&#39;s C functions past a length, longest first, from the splitter the</span>
+<span class="syn-comment">## C recipes share (cookbook/c/items/, a package). A function&#39;s length is</span>
+<span class="syn-comment">## its body&#39;s lines of code; its comment lines and blank lines are counted</span>
+<span class="syn-comment">## beside it, never in it. Its launcher, cookbook/c/list_long_functions.shale,</span>
+<span class="syn-comment">## is how it is run, and its header says the arguments and the rules.</span>
+<span class="syn-comment">## check_goldens.shale, beside this, holds its output on the plants to its</span>
+<span class="syn-comment">## goldens, line for line.</span>
+<span class="syn-comment">##</span>
+<span class="syn-comment">##   shale cookbook:c/list_long_functions.shale over=60</span>
+<span class="syn-comment">##   shale cookbook:c/list_long_functions.shale self_test=1</span>
+<span class="syn-comment">##</span>
+<span class="syn-comment">## The effects: `Shale.arg!` for the arguments, `Shale.glob!` for the files,</span>
+<span class="syn-comment">## `Shale.read!` for each one&#39;s text, and `Shale.print!` and `Shale.fail!`</span>
+<span class="syn-comment">## for the verdict. Length, beside this, measures and lists; SelfTest holds</span>
+<span class="syn-comment">## it to the plants.</span>
+<span class="syn-comment">## budget: steps=200000000 arena_bytes=1000000000 roc_cpu_ms=600000</span>
+<span class="syn-keyword">app</span> [main!] {
+	items: <span class="syn-string">&quot;../items/main.roc&quot;</span>,
+	pf: <span class="syn-keyword">platform</span> <span class="syn-string">&quot;../../../roc_platform/platform/main.roc&quot;</span>,
+}
+
+<span class="syn-keyword">import</span> pf.<span class="syn-type">Shale</span>
+<span class="syn-keyword">import</span> items.<span class="syn-type">Item</span>
+<span class="syn-keyword">import</span> items.<span class="syn-type">Paths</span>
+<span class="syn-keyword">import</span> items.<span class="syn-type">Split</span>
+<span class="syn-keyword">import</span> items.<span class="syn-type">Words</span>
+<span class="syn-keyword">import</span> <span class="syn-type">Length</span>
+<span class="syn-keyword">import</span> <span class="syn-type">SelfTest</span>
+
+<span class="syn-name">main!</span> : {} =&gt; {}
+<span class="syn-name">main!</span> = |{}| {
+	<span class="syn-keyword">if</span> integer_or_stop!(<span class="syn-string">&quot;self_test&quot;</span>, <span class="syn-type">Shale</span>.arg!(<span class="syn-string">&quot;self_test&quot;</span>, <span class="syn-string">&quot;0&quot;</span>)) == <span class="syn-number">1</span> {
+		<span class="syn-type">SelfTest</span>.run!(measure!)
+	} <span class="syn-keyword">else</span> {
+		folder = <span class="syn-type">Shale</span>.arg!(<span class="syn-string">&quot;dir&quot;</span>, <span class="syn-string">&quot;c&quot;</span>)
+		tests = integer_or_stop!(<span class="syn-string">&quot;tests&quot;</span>, <span class="syn-type">Shale</span>.arg!(<span class="syn-string">&quot;tests&quot;</span>, <span class="syn-string">&quot;0&quot;</span>)) == <span class="syn-number">1</span>
+		over = integer_or_stop!(<span class="syn-string">&quot;over&quot;</span>, <span class="syn-type">Shale</span>.arg!(<span class="syn-string">&quot;over&quot;</span>, <span class="syn-string">&quot;0&quot;</span>))
+		limit = <span class="syn-keyword">if</span> over &gt; <span class="syn-number">0</span> {
+			<span class="syn-type">Given</span>(over.to_u64_wrap())
+		} <span class="syn-keyword">else</span> {
+			<span class="syn-type">Percentile</span>
+		}
+		listing = <span class="syn-keyword">match</span> <span class="syn-type">Length</span>.listing(measure!(folder, tests), limit) {
+			<span class="syn-type">Ok</span>(listed) =&gt; listed
+			<span class="syn-type">Err</span>(why) =&gt; {
+				<span class="syn-type">Shale</span>.fail!(why)
+				{ summary: <span class="syn-string">&quot;&quot;</span>, threshold: <span class="syn-number">0</span>, lines: [] }
+			}
+		}
+		which = <span class="syn-keyword">if</span> tests {
+			<span class="syn-string">&quot;tests included&quot;</span>
+		} <span class="syn-keyword">else</span> {
+			<span class="syn-string">&quot;tests left out&quot;</span>
+		}
+		<span class="syn-type">Shale</span>.print!(<span class="syn-string">&quot;list_long_functions: </span>${folder}<span class="syn-string">, </span>${which}<span class="syn-string">: </span>${listing.summary}<span class="syn-string">&quot;</span>)
+		<span class="syn-keyword">for</span> line <span class="syn-keyword">in</span> listing.lines {
+			<span class="syn-type">Shale</span>.print!(line)
+		}
+		how = <span class="syn-keyword">match</span> limit {
+			<span class="syn-type">Given</span>(_) =&gt; <span class="syn-string">&quot;over=&quot;</span>
+			<span class="syn-type">Percentile</span> =&gt; <span class="syn-string">&quot;the 95th percentile&quot;</span>
+		}
+		past = <span class="syn-string">&quot;</span>${listing.lines.len().to_str()}<span class="syn-string"> functions past </span>${listing.threshold.to_str()}<span class="syn-string"> code lines&quot;</span>
+		<span class="syn-type">Shale</span>.print!(<span class="syn-string">&quot;list_long_functions: </span>${past}<span class="syn-string"> (</span>${how}<span class="syn-string">)&quot;</span>)
+	}
+}
+
+<span class="syn-comment">## A value given as `name=`, which must be an integer, as Shale&#39;s `arg` reads</span>
+<span class="syn-comment">## one whose default is.</span>
+<span class="syn-name">integer_or_stop!</span> : <span class="syn-type">Str</span>, <span class="syn-type">Str</span> =&gt; <span class="syn-type">I64</span>
+<span class="syn-name">integer_or_stop!</span> = |name, given|
+	<span class="syn-keyword">match</span> <span class="syn-type">I64</span>.from_str(given) {
+		<span class="syn-type">Ok</span>(value) =&gt; value
+		<span class="syn-type">Err</span>(_) =&gt; {
+			<span class="syn-type">Shale</span>.fail!(<span class="syn-string">&quot;list_long_functions: </span>${name}<span class="syn-string">=</span>${given}<span class="syn-string"> is not an integer&quot;</span>)
+			<span class="syn-number">0</span>
+		}
+	}
+
+<span class="syn-comment">## Each function&#39;s body under the folder (and each test&#39;s, `tests`),</span>
+<span class="syn-comment">## measured.</span>
+<span class="syn-name">measure!</span> : <span class="syn-type">Str</span>, <span class="syn-type">Bool</span> =&gt; <span class="syn-type">List</span>(<span class="syn-type">Length.Measured</span>)
+<span class="syn-name">measure!</span> = |folder, tests| {
+	<span class="syn-keyword">var</span> $measured = []
+	<span class="syn-keyword">for</span> path <span class="syn-keyword">in</span> c_files_under!(folder) {
+		text = read_text!(path)
+		lines = <span class="syn-type">Split</span>.lines(text)
+		<span class="syn-keyword">for</span> item <span class="syn-keyword">in</span> split_or_stop!(path, text) {
+			is_measured = item.kind == <span class="syn-type">Function</span> <span class="syn-keyword">or</span> (tests <span class="syn-keyword">and</span> item.kind == <span class="syn-type">Test</span>)
+			<span class="syn-keyword">if</span> is_measured <span class="syn-keyword">and</span> item.body_first != <span class="syn-number">0</span> {
+				$measured = $measured.append(<span class="syn-type">Length</span>.of_body(path, lines, item))
+			}
+		}
+	}
+	$measured
+}
+
+<span class="syn-comment">## The file&#39;s text. A file the glob named and the read finds gone stops the</span>
+<span class="syn-comment">## run.</span>
+<span class="syn-name">read_text!</span> : <span class="syn-type">Str</span> =&gt; <span class="syn-type">Str</span>
+<span class="syn-name">read_text!</span> = |path|
+	<span class="syn-keyword">match</span> <span class="syn-type">Shale</span>.read!(path) {
+		<span class="syn-type">Found</span>(text) =&gt; text
+		<span class="syn-type">Missing</span> =&gt; {
+			<span class="syn-type">Shale</span>.fail!(<span class="syn-string">&quot;list_long_functions: </span>${path}<span class="syn-string"> went missing during the walk&quot;</span>)
+			<span class="syn-string">&quot;&quot;</span>
+		}
+	}
+
+<span class="syn-comment">## The file&#39;s items, or the run stopped with the line the dialect does not</span>
+<span class="syn-comment">## account for.</span>
+<span class="syn-name">split_or_stop!</span> : <span class="syn-type">Str</span>, <span class="syn-type">Str</span> =&gt; <span class="syn-type">List</span>(<span class="syn-type">Item</span>)
+<span class="syn-name">split_or_stop!</span> = |path, text|
+	<span class="syn-keyword">match</span> <span class="syn-type">Split</span>.items({ path, text, uses: <span class="syn-type">Bool.False</span> }) {
+		<span class="syn-type">Ok</span>(items) =&gt; items
+		<span class="syn-type">Err</span>(why) =&gt; {
+			<span class="syn-type">Shale</span>.fail!(why)
+			[]
+		}
+	}
+
+<span class="syn-comment">## The C files under the folder, sorted, any folder named `out` (c/out, the</span>
+<span class="syn-comment">## build&#39;s output) left out. A folder that is not there stops the run, in</span>
+<span class="syn-comment">## the words of the Shale original&#39;s walk: a check that can&#39;t run fails.</span>
+<span class="syn-name">c_files_under!</span> : <span class="syn-type">Str</span> =&gt; <span class="syn-type">List</span>(<span class="syn-type">Str</span>)
+<span class="syn-name">c_files_under!</span> = |folder| {
+	<span class="syn-keyword">if</span> <span class="syn-type">Shale</span>.list!(folder) == <span class="syn-type">Missing</span> {
+		<span class="syn-type">Shale</span>.fail!(<span class="syn-string">&quot;`walk(\&quot;</span>${folder}<span class="syn-string">\&quot;)`: not found (FileNotFound)&quot;</span>)
+	}
+	paths = <span class="syn-type">Shale</span>.glob!(<span class="syn-string">&quot;</span>${folder}<span class="syn-string">/**/*.c&quot;</span>).concat(<span class="syn-type">Shale</span>.glob!(<span class="syn-string">&quot;</span>${folder}<span class="syn-string">/**/*.h&quot;</span>))
+	paths.keep_if(|path| !(<span class="syn-type">Paths</span>.is_in_out_folder(folder, path))).sort_with(<span class="syn-type">Words</span>.byte_order)
+}
+</code></pre>
+<p class="file"><a href="https://github.com/showell/shale/blob/a3bfc843a75e287128a10a8845679dcfb51a4608/cookbook/c/list_long_functions/Length.roc"><code>cookbook/c/list_long_functions/Length.roc</code></a>, 120 lines</p>
+<pre><code><span class="syn-comment">## A function&#39;s length and the listing of the long ones. A function&#39;s</span>
+<span class="syn-comment">## length is its body&#39;s lines of code: a blank line and a `//` line are</span>
+<span class="syn-comment">## counted beside it, and a body that shares its head&#39;s line</span>
+<span class="syn-comment">## (`{ return x; }`) is one line of code. A `#` line in a body is code.</span>
+<span class="syn-keyword">import</span> items.<span class="syn-type">Item</span>
+<span class="syn-keyword">import</span> items.<span class="syn-type">Mask</span>
+<span class="syn-keyword">import</span> items.<span class="syn-type">Words</span>
+
+<span class="syn-type">Length</span> := [].{
+
+	<span class="syn-comment">## A function&#39;s body measured: where it starts and its name, then its</span>
+	<span class="syn-comment">## lines of code, of comment and blank.</span>
+	<span class="syn-type">Measured</span> : {
+		path : <span class="syn-type">Str</span>,
+		line : <span class="syn-type">U64</span>,
+		name : <span class="syn-type">Str</span>,
+		code : <span class="syn-type">U64</span>,
+		comment : <span class="syn-type">U64</span>,
+		blank : <span class="syn-type">U64</span>,
+	}
+
+	<span class="syn-comment">## The body of the item, a function or a test of the file at `path`</span>
+	<span class="syn-comment">## whose lines are `lines`, measured.</span>
+	<span class="syn-name">of_body</span> : <span class="syn-type">Str</span>, <span class="syn-type">List</span>(<span class="syn-type">List</span>(<span class="syn-type">U8</span>)), <span class="syn-type">Item</span> -&gt; <span class="syn-type">Length.Measured</span>
+	<span class="syn-name">of_body</span> = |path, lines, item| {
+		start = { path, line: item.first, name: item.name, code: <span class="syn-number">0</span>, comment: <span class="syn-number">0</span>, blank: <span class="syn-number">0</span> }
+		<span class="syn-keyword">if</span> item.body_first == item.sig_last {
+			{ ..start, code: <span class="syn-number">1</span> }
+		} <span class="syn-keyword">else</span> {
+			body = lines.sublist({ start: item.body_first - <span class="syn-number">1</span>, len: item.body_last + <span class="syn-number">1</span> - item.body_first })
+			body.fold(start, with_line)
+		}
+	}
+
+	<span class="syn-comment">## The listing of the measured functions past the limit (`Percentile`:</span>
+	<span class="syn-comment">## the 95th percentile of their lengths): the distribution, the</span>
+	<span class="syn-comment">## threshold and a line for each function past it, longest first, or the</span>
+	<span class="syn-comment">## stop&#39;s words when there is no function.</span>
+	<span class="syn-name">listing</span> : <span class="syn-type">List</span>(<span class="syn-type">Length.Measured</span>), [<span class="syn-type">Given</span>(<span class="syn-type">U64</span>), <span class="syn-type">Percentile</span>] -&gt; <span class="syn-type">Try</span>({ summary : <span class="syn-type">Str</span>, threshold : <span class="syn-type">U64</span>, lines : <span class="syn-type">List</span>(<span class="syn-type">Str</span>) }, <span class="syn-type">Str</span>)
+	<span class="syn-name">listing</span> = |functions, limit| {
+		lengths = functions.map(|each| each.code).sort_with(up)
+		<span class="syn-keyword">if</span> lengths.is_empty() {
+			<span class="syn-keyword">return</span> <span class="syn-type">Err</span>(<span class="syn-string">&quot;list_long_functions: no function to measure&quot;</span>)
+		}
+		at = |pct| percentile(lengths, pct).to_str()
+		longest = (lengths.last() ?? <span class="syn-number">0</span>).to_str()
+		shares = <span class="syn-string">&quot;median </span>${at(<span class="syn-number">50</span>)}<span class="syn-string">, p75 </span>${at(<span class="syn-number">75</span>)}<span class="syn-string">, p90 </span>${at(<span class="syn-number">90</span>)}<span class="syn-string">, p95 </span>${at(<span class="syn-number">95</span>)}<span class="syn-string">, p99 </span>${at(<span class="syn-number">99</span>)}<span class="syn-string">&quot;</span>
+		summary = <span class="syn-string">&quot;</span>${lengths.len().to_str()}<span class="syn-string"> functions: </span>${shares}<span class="syn-string">, max </span>${longest}<span class="syn-string"> code lines&quot;</span>
+		threshold = <span class="syn-keyword">match</span> limit {
+			<span class="syn-type">Given</span>(over) =&gt; over
+			<span class="syn-type">Percentile</span> =&gt; percentile(lengths, <span class="syn-number">95</span>)
+		}
+		long_lines = functions
+			.keep_if(|each| each.code &gt; threshold)
+			.sort_with(longest_first)
+			.map(long_line)
+		<span class="syn-type">Ok</span>({ summary, threshold, lines: long_lines })
+	}
+}
+
+<span class="syn-comment">## Two lengths, the shorter first.</span>
+<span class="syn-name">up</span> : <span class="syn-type">U64</span>, <span class="syn-type">U64</span> -&gt; [<span class="syn-type">Before</span>, <span class="syn-type">Same</span>, <span class="syn-type">After</span>]
+<span class="syn-name">up</span> = |a, b|
+	<span class="syn-keyword">if</span> a &lt; b {
+		<span class="syn-type">Before</span>
+	} <span class="syn-keyword">else</span> <span class="syn-keyword">if</span> a &gt; b {
+		<span class="syn-type">After</span>
+	} <span class="syn-keyword">else</span> {
+		<span class="syn-type">Same</span>
+	}
+
+<span class="syn-comment">## The measure with one more of the body&#39;s lines counted.</span>
+<span class="syn-name">with_line</span> : <span class="syn-type">Length.Measured</span>, <span class="syn-type">List</span>(<span class="syn-type">U8</span>) -&gt; <span class="syn-type">Length.Measured</span>
+<span class="syn-name">with_line</span> = |so_far, raw| {
+	trimmed = <span class="syn-type">Mask</span>.trimmed(raw)
+	<span class="syn-keyword">if</span> trimmed.is_empty() {
+		{ ..so_far, blank: so_far.blank + <span class="syn-number">1</span> }
+	} <span class="syn-keyword">else</span> <span class="syn-keyword">if</span> trimmed.starts_with([<span class="syn-string">&#39;/&#39;</span>, <span class="syn-string">&#39;/&#39;</span>]) {
+		{ ..so_far, comment: so_far.comment + <span class="syn-number">1</span> }
+	} <span class="syn-keyword">else</span> {
+		{ ..so_far, code: so_far.code + <span class="syn-number">1</span> }
+	}
+}
+
+<span class="syn-comment">## The value at a percentile of the lengths, sorted up: the one at rank</span>
+<span class="syn-comment">## ceil(pct n / 100), counted from 1.</span>
+<span class="syn-name">percentile</span> : <span class="syn-type">List</span>(<span class="syn-type">U64</span>), <span class="syn-type">U64</span> -&gt; <span class="syn-type">U64</span>
+<span class="syn-name">percentile</span> = |sorted, pct| {
+	rank = <span class="syn-type">U64</span>.max(<span class="syn-number">1</span>, (pct * sorted.len() + <span class="syn-number">99</span>) // <span class="syn-number">100</span>)
+	sorted.get(rank - <span class="syn-number">1</span>) ?? <span class="syn-number">0</span>
+}
+
+<span class="syn-comment">## Longest first, then by path and line.</span>
+<span class="syn-name">longest_first</span> : <span class="syn-type">Length.Measured</span>, <span class="syn-type">Length.Measured</span> -&gt; [<span class="syn-type">Before</span>, <span class="syn-type">Same</span>, <span class="syn-type">After</span>]
+<span class="syn-name">longest_first</span> = |a, b|
+	<span class="syn-keyword">if</span> a.code &gt; b.code {
+		<span class="syn-type">Before</span>
+	} <span class="syn-keyword">else</span> <span class="syn-keyword">if</span> a.code &lt; b.code {
+		<span class="syn-type">After</span>
+	} <span class="syn-keyword">else</span> {
+		<span class="syn-keyword">match</span> <span class="syn-type">Words</span>.byte_order(a.path, b.path) {
+			<span class="syn-type">Same</span> =&gt;
+				<span class="syn-keyword">if</span> a.line &lt; b.line {
+					<span class="syn-type">Before</span>
+				} <span class="syn-keyword">else</span> <span class="syn-keyword">if</span> a.line &gt; b.line {
+					<span class="syn-type">After</span>
+				} <span class="syn-keyword">else</span> {
+					<span class="syn-type">Same</span>
+				}
+			order =&gt; order
+		}
+	}
+
+<span class="syn-comment">## A long function&#39;s line: `path:line: long: name: N code lines (C</span>
+<span class="syn-comment">## comment, B blank)`.</span>
+<span class="syn-name">long_line</span> : <span class="syn-type">Length.Measured</span> -&gt; <span class="syn-type">Str</span>
+<span class="syn-name">long_line</span> = |each| {
+	counts = <span class="syn-string">&quot;</span>${each.code.to_str()}<span class="syn-string"> code lines (</span>${each.comment.to_str()}<span class="syn-string"> comment, </span>${each.blank.to_str()}<span class="syn-string"> blank)&quot;</span>
+	<span class="syn-string">&quot;</span>${each.path}<span class="syn-string">:</span>${each.line.to_str()}<span class="syn-string">: long: </span>${each.name}<span class="syn-string">: </span>${counts}<span class="syn-string">&quot;</span>
+}
+</code></pre>
+<p class="file"><a href="https://github.com/showell/shale/blob/a3bfc843a75e287128a10a8845679dcfb51a4608/cookbook/c/list_long_functions/SelfTest.roc"><code>cookbook/c/list_long_functions/SelfTest.roc</code></a>, 61 lines</p>
+<pre><code><span class="syn-comment">## list_long_functions&#39; self-test: the recipe run over</span>
+<span class="syn-comment">## cookbook/c/plants/list_long_functions/ and held to the plants&#39; known</span>
+<span class="syn-comment">## lengths, exactly: the distribution, the default threshold, an `over=` that</span>
+<span class="syn-comment">## a function&#39;s comments and blank lines would pass but its code does not,</span>
+<span class="syn-comment">## and `tests=1`.</span>
+<span class="syn-keyword">import</span> pf.<span class="syn-type">Shale</span>
+<span class="syn-keyword">import</span> <span class="syn-type">Length</span>
+
+<span class="syn-type">SelfTest</span> := [].{
+
+	<span class="syn-comment">## Every check, each a stop when it fails, then the PASS line. `measure!`</span>
+	<span class="syn-comment">## is the recipe&#39;s own, a folder&#39;s functions (and tests, when asked)</span>
+	<span class="syn-comment">## measured.</span>
+	<span class="syn-name">run!</span> : (<span class="syn-type">Str</span>, <span class="syn-type">Bool</span> =&gt; <span class="syn-type">List</span>(<span class="syn-type">Length.Measured</span>)) =&gt; {}
+	<span class="syn-name">run!</span> = |measure!| {
+		file = <span class="syn-string">&quot;</span>${plants}<span class="syn-string">/lengths.c&quot;</span>
+		functions = measure!(plants, <span class="syn-type">Bool.False</span>)
+		default = listed!(functions, <span class="syn-type">Percentile</span>)
+		same!(<span class="syn-string">&quot;the distribution&quot;</span>, default.summary, <span class="syn-string">&quot;4 functions: median 2, p75 4, p90 6, p95 6, p99 6, max 6 code lines&quot;</span>)
+		same!(<span class="syn-string">&quot;the default threshold&quot;</span>, default.threshold.to_str(), <span class="syn-string">&quot;6&quot;</span>)
+		same!(<span class="syn-string">&quot;the list past the 95th percentile&quot;</span>, joined(default.lines), <span class="syn-string">&quot;&quot;</span>)
+		past_three = [
+			<span class="syn-string">&quot;</span>${file}<span class="syn-string">:25: long: six_lines: 6 code lines (1 comment, 0 blank)&quot;</span>,
+			<span class="syn-string">&quot;</span>${file}<span class="syn-string">:13: long: four_with_comments: 4 code lines (3 comment, 2 blank)&quot;</span>,
+		]
+		same!(<span class="syn-string">&quot;the list past 3&quot;</span>, joined(listed!(functions, <span class="syn-type">Given</span>(<span class="syn-number">3</span>)).lines), joined(past_three))
+		<span class="syn-comment"># Nine lines of body, four of them code: not past 4.</span>
+		past_four = <span class="syn-string">&quot;</span>${file}<span class="syn-string">:25: long: six_lines: 6 code lines (1 comment, 0 blank)&quot;</span>
+		same!(<span class="syn-string">&quot;the list past 4&quot;</span>, joined(listed!(functions, <span class="syn-type">Given</span>(<span class="syn-number">4</span>)).lines), past_four)
+		with_tests = listed!(measure!(plants, <span class="syn-type">Bool.True</span>), <span class="syn-type">Given</span>(<span class="syn-number">6</span>))
+		past_six = <span class="syn-string">&quot;</span>${file}<span class="syn-string">:35: long: a_long_test: 8 code lines (0 comment, 0 blank)&quot;</span>
+		same!(<span class="syn-string">&quot;the list past 6 with the tests&quot;</span>, joined(with_tests.lines), past_six)
+		checks = <span class="syn-string">&quot;6 checks, the distribution, the default threshold and three lists over the plants&quot;</span>
+		<span class="syn-type">Shale</span>.print!(<span class="syn-string">&quot;PASS list_long_functions self-test: </span>${checks}<span class="syn-string">&quot;</span>)
+	}
+}
+
+<span class="syn-comment">## Where the plants are.</span>
+<span class="syn-name">plants</span> : <span class="syn-type">Str</span>
+<span class="syn-name">plants</span> = <span class="syn-string">&quot;cookbook/c/plants/list_long_functions&quot;</span>
+
+<span class="syn-comment">## The listing, or the self-test stopped.</span>
+<span class="syn-name">listed!</span> : <span class="syn-type">List</span>(<span class="syn-type">Length.Measured</span>), [<span class="syn-type">Given</span>(<span class="syn-type">U64</span>), <span class="syn-type">Percentile</span>] =&gt; { summary : <span class="syn-type">Str</span>, threshold : <span class="syn-type">U64</span>, lines : <span class="syn-type">List</span>(<span class="syn-type">Str</span>) }
+<span class="syn-name">listed!</span> = |measured, limit|
+	<span class="syn-keyword">match</span> <span class="syn-type">Length</span>.listing(measured, limit) {
+		<span class="syn-type">Ok</span>(listing) =&gt; listing
+		<span class="syn-type">Err</span>(why) =&gt; {
+			<span class="syn-type">Shale</span>.fail!(why)
+			{ summary: <span class="syn-string">&quot;&quot;</span>, threshold: <span class="syn-number">0</span>, lines: [] }
+		}
+	}
+
+<span class="syn-comment">## `got` equal to `want`, or the self-test stops, naming `what`.</span>
+<span class="syn-name">same!</span> : <span class="syn-type">Str</span>, <span class="syn-type">Str</span>, <span class="syn-type">Str</span> =&gt; {}
+<span class="syn-name">same!</span> = |what, got, want|
+	<span class="syn-keyword">if</span> got != want {
+		<span class="syn-type">Shale</span>.fail!(<span class="syn-string">&quot;list_long_functions self-test: </span>${what}<span class="syn-string"> is\n</span>${got}<span class="syn-string">\nit should be\n</span>${want}<span class="syn-string">&quot;</span>)
+	}
+
+<span class="syn-name">joined</span> : <span class="syn-type">List</span>(<span class="syn-type">Str</span>) -&gt; <span class="syn-type">Str</span>
+<span class="syn-name">joined</span> = |lines| <span class="syn-type">Str</span>.join_with(lines, <span class="syn-string">&quot;\n&quot;</span>)
+</code></pre>
+<h2 class="code">Shale original</h2>
+<p class="file"><a href="https://github.com/showell/shale/blob/0cd5078920dfe50c34107bd501374789847b57a5/cookbook/c/list_long_functions.shale"><code>cookbook/c/list_long_functions.shale</code></a>, 143 lines, at <code>0cd50789</code></p>
+<p class="file">The libraries it loads: <a href="https://github.com/showell/shale/blob/0cd5078920dfe50c34107bd501374789847b57a5/cookbook/c/items.shale"><code>cookbook/c/items.shale</code></a> (499 lines).</p>
+<pre><code><span class="syn-comment">-- Lists Shale&#39;s C functions past a length, longest first, from</span>
+<span class="syn-comment">-- cookbook/c/items.shale&#39;s splitter. A function&#39;s length is its body&#39;s lines</span>
+<span class="syn-comment">-- of code; its comment lines and blank lines are counted beside it, never in</span>
+<span class="syn-comment">-- it, so a well-commented function is not taken for a long one.</span>
+<span class="syn-comment">--</span>
+<span class="syn-comment">--   shale cookbook:c/list_long_functions.shale             over c/, past its 95th percentile</span>
+<span class="syn-comment">--   shale cookbook:c/list_long_functions.shale over=60     past 60 lines of code</span>
+<span class="syn-comment">--   shale cookbook:c/list_long_functions.shale dir=c/host tests=1</span>
+<span class="syn-comment">--   shale cookbook:c/list_long_functions.shale self_test=1</span>
+<span class="syn-comment">--</span>
+<span class="syn-comment">-- The threshold, unless `over=` sets one, is the 95th percentile of the</span>
+<span class="syn-comment">-- functions&#39; code lines (the length at rank ceil(0.95 n) of n, sorted), so</span>
+<span class="syn-comment">-- the run lists the longest twentieth, about. The first line is the</span>
+<span class="syn-comment">-- distribution: how many functions, and the median, 75th, 90th, 95th and</span>
+<span class="syn-comment">-- 99th percentiles and the longest. Then one line a function past it:</span>
+<span class="syn-comment">--</span>
+<span class="syn-comment">--   path:line: long: name: N code lines (C comment, B blank)</span>
+<span class="syn-comment">--</span>
+<span class="syn-comment">-- `tests=1` counts each `TEST(` body as a function too; by default a test is</span>
+<span class="syn-comment">-- left out of both the distribution and the list, since a test&#39;s length is</span>
+<span class="syn-comment">-- its setup&#39;s. `main` is a function like any other. A body that shares its</span>
+<span class="syn-comment">-- head&#39;s line (`{ return x; }`) is one line of code. A `#` line in a body</span>
+<span class="syn-comment">-- is code.</span>
+<span class="syn-comment">--</span>
+<span class="syn-comment">-- `self_test=1` runs it over cookbook/c/plants/list_long_functions/ and holds</span>
+<span class="syn-comment">-- the distribution and the lists to the plants&#39; known lengths, exactly: the</span>
+<span class="syn-comment">-- default threshold, an `over=` that a function&#39;s comments and blank lines</span>
+<span class="syn-comment">-- would pass but its code does not, and `tests=1`.</span>
+<span class="syn-comment">--</span>
+<span class="syn-comment">-- budget: steps=200000000 arena_bytes=1000000000 kept_bytes=268435456</span>
+
+use(<span class="syn-string">&quot;./items.shale&quot;</span>)
+
+<span class="syn-keyword">const</span> PLANTS = <span class="syn-string">&quot;cookbook/c/plants/list_long_functions&quot;</span>
+
+<span class="syn-comment">-- The C files under `dir`, sorted, c/out (the build&#39;s output) left out.</span>
+<span class="syn-keyword">function</span> <span class="syn-name">c_files_under</span>(dir)
+  <span class="syn-keyword">local</span> files = {}
+  <span class="syn-keyword">for</span> e <span class="syn-keyword">in</span> walk_all(dir, {kind = <span class="syn-string">&quot;file&quot;</span>, skip = <span class="syn-string">&quot;out&quot;</span>}) <span class="syn-keyword">do</span>
+    <span class="syn-keyword">if</span> ends_with(e.path, <span class="syn-string">&quot;.c&quot;</span>) <span class="syn-keyword">or</span> ends_with(e.path, <span class="syn-string">&quot;.h&quot;</span>) <span class="syn-keyword">then</span> push(files, e.path) <span class="syn-keyword">end</span>
+  <span class="syn-keyword">end</span>
+  sort(files)
+  <span class="syn-keyword">return</span> files
+<span class="syn-keyword">end</span>
+
+<span class="syn-comment">-- Each function&#39;s body under `dir` (and each test&#39;s, `tests`), measured:</span>
+<span class="syn-comment">-- `{path, line, name, code, comment, blank}`.</span>
+<span class="syn-keyword">function</span> <span class="syn-name">measure</span>(dir, tests)
+  <span class="syn-keyword">local</span> got = {}
+  <span class="syn-keyword">for</span> p <span class="syn-keyword">in</span> c_files_under(dir) <span class="syn-keyword">do</span>
+    <span class="syn-keyword">local</span> all = lines(read(p))
+    <span class="syn-keyword">for</span> it <span class="syn-keyword">in</span> c_items(p) <span class="syn-keyword">do</span>
+      <span class="syn-keyword">if</span> (it.kind == <span class="syn-string">&quot;function&quot;</span> <span class="syn-keyword">or</span> (tests <span class="syn-keyword">and</span> it.kind == <span class="syn-string">&quot;test&quot;</span>)) <span class="syn-keyword">and</span> it.body_first ~= <span class="syn-number">0</span> <span class="syn-keyword">then</span>
+        <span class="syn-keyword">local</span> m = {path = p, line = it.first, name = it.name, code = <span class="syn-number">0</span>, comment = <span class="syn-number">0</span>, blank = <span class="syn-number">0</span>}
+        <span class="syn-keyword">if</span> it.body_first == it.sig_last <span class="syn-keyword">then</span>
+          m.code = <span class="syn-number">1</span>
+        <span class="syn-keyword">else</span>
+          <span class="syn-keyword">local</span> k = it.body_first
+          <span class="syn-keyword">while</span> k &lt;= it.body_last <span class="syn-keyword">do</span>
+            <span class="syn-keyword">local</span> t = trim(all[k])
+            <span class="syn-keyword">if</span> t == <span class="syn-string">&quot;&quot;</span> <span class="syn-keyword">then</span>
+              m.blank = m.blank + <span class="syn-number">1</span>
+            <span class="syn-keyword">elseif</span> starts_with(t, <span class="syn-string">&quot;//&quot;</span>) <span class="syn-keyword">then</span>
+              m.comment = m.comment + <span class="syn-number">1</span>
+            <span class="syn-keyword">else</span>
+              m.code = m.code + <span class="syn-number">1</span>
+            <span class="syn-keyword">end</span>
+            k = k + <span class="syn-number">1</span>
+          <span class="syn-keyword">end</span>
+        <span class="syn-keyword">end</span>
+        push(got, m)
+      <span class="syn-keyword">end</span>
+    <span class="syn-keyword">end</span>
+    yield()
+  <span class="syn-keyword">end</span>
+  <span class="syn-keyword">return</span> got
+<span class="syn-keyword">end</span>
+
+<span class="syn-comment">-- The value at percentile `pct` of `sorted`, ascending: rank ceil(pct n / 100).</span>
+<span class="syn-keyword">function</span> <span class="syn-name">percentile</span>(sorted, pct)
+  <span class="syn-keyword">local</span> rank = (pct * #sorted + <span class="syn-number">99</span>) // <span class="syn-number">100</span>
+  <span class="syn-keyword">if</span> rank &lt; <span class="syn-number">1</span> <span class="syn-keyword">then</span> rank = <span class="syn-number">1</span> <span class="syn-keyword">end</span>
+  <span class="syn-keyword">return</span> sorted[rank]
+<span class="syn-keyword">end</span>
+
+<span class="syn-comment">-- The listing of `measured` past `over` (nil: the 95th percentile), as</span>
+<span class="syn-comment">-- `{summary, threshold, lines}`.</span>
+<span class="syn-keyword">function</span> <span class="syn-name">list_long</span>(measured, over)
+  <span class="syn-keyword">local</span> lens = {}
+  <span class="syn-keyword">for</span> m <span class="syn-keyword">in</span> measured <span class="syn-keyword">do</span> push(lens, m.code) <span class="syn-keyword">end</span>
+  sort(lens)
+  <span class="syn-keyword">if</span> #lens == <span class="syn-number">0</span> <span class="syn-keyword">then</span> fail(<span class="syn-string">&quot;list_long_functions: no function to measure&quot;</span>) <span class="syn-keyword">end</span>
+  <span class="syn-keyword">local</span> summary = #lens .. <span class="syn-string">&quot; functions: median &quot;</span> .. percentile(lens, <span class="syn-number">50</span>) .. <span class="syn-string">&quot;, p75 &quot;</span> .. percentile(lens, <span class="syn-number">75</span>) .. <span class="syn-string">&quot;, p90 &quot;</span> .. percentile(lens, <span class="syn-number">90</span>) .. <span class="syn-string">&quot;, p95 &quot;</span> .. percentile(lens, <span class="syn-number">95</span>) .. <span class="syn-string">&quot;, p99 &quot;</span> .. percentile(lens, <span class="syn-number">99</span>) .. <span class="syn-string">&quot;, max &quot;</span> .. lens[#lens] .. <span class="syn-string">&quot; code lines&quot;</span>
+  <span class="syn-keyword">local</span> threshold = over
+  <span class="syn-keyword">if</span> threshold == <span class="syn-keyword">nil</span> <span class="syn-keyword">then</span> threshold = percentile(lens, <span class="syn-number">95</span>) <span class="syn-keyword">end</span>
+  <span class="syn-keyword">local</span> long = {}
+  <span class="syn-keyword">for</span> m <span class="syn-keyword">in</span> measured <span class="syn-keyword">do</span>
+    <span class="syn-keyword">if</span> m.code &gt; threshold <span class="syn-keyword">then</span> push(long, m) <span class="syn-keyword">end</span>
+  <span class="syn-keyword">end</span>
+  sort(long, {{key = <span class="syn-string">&quot;code&quot;</span>, desc = <span class="syn-keyword">true</span>}, <span class="syn-string">&quot;path&quot;</span>, <span class="syn-string">&quot;line&quot;</span>})
+  <span class="syn-keyword">local</span> out = {}
+  <span class="syn-keyword">for</span> m <span class="syn-keyword">in</span> long <span class="syn-keyword">do</span> push(out, m.path .. <span class="syn-string">&quot;:&quot;</span> .. m.line .. <span class="syn-string">&quot;: long: &quot;</span> .. m.name .. <span class="syn-string">&quot;: &quot;</span> .. m.code .. <span class="syn-string">&quot; code lines (&quot;</span> .. m.comment .. <span class="syn-string">&quot; comment, &quot;</span> .. m.blank .. <span class="syn-string">&quot; blank)&quot;</span>) <span class="syn-keyword">end</span>
+  <span class="syn-keyword">return</span> {summary = summary, threshold = threshold, lines = out}
+<span class="syn-keyword">end</span>
+
+<span class="syn-comment">-- `got` equal to `want`, or the self-test fails, naming `what`.</span>
+<span class="syn-keyword">function</span> <span class="syn-name">same_or_fail</span>(what, got, want)
+  <span class="syn-keyword">if</span> got ~= want <span class="syn-keyword">then</span> fail(<span class="syn-string">&quot;list_long_functions self-test: &quot;</span> .. what .. <span class="syn-string">&quot; is\n&quot;</span> .. got .. <span class="syn-string">&quot;\nit should be\n&quot;</span> .. want) <span class="syn-keyword">end</span>
+  <span class="syn-keyword">return</span> <span class="syn-keyword">nil</span>
+<span class="syn-keyword">end</span>
+
+<span class="syn-keyword">function</span> <span class="syn-name">self_test</span>()
+  <span class="syn-keyword">local</span> P = PLANTS .. <span class="syn-string">&quot;/lengths.c&quot;</span>
+  <span class="syn-keyword">local</span> fns = measure(PLANTS, <span class="syn-keyword">false</span>)
+  <span class="syn-keyword">local</span> d = list_long(fns, <span class="syn-keyword">nil</span>)
+  same_or_fail(<span class="syn-string">&quot;the distribution&quot;</span>, d.summary, <span class="syn-string">&quot;4 functions: median 2, p75 4, p90 6, p95 6, p99 6, max 6 code lines&quot;</span>)
+  same_or_fail(<span class="syn-string">&quot;the default threshold&quot;</span>, <span class="syn-string">&quot;&quot;</span> .. d.threshold, <span class="syn-string">&quot;6&quot;</span>)
+  same_or_fail(<span class="syn-string">&quot;the list past the 95th percentile&quot;</span>, join(d.lines, <span class="syn-string">&quot;\n&quot;</span>), <span class="syn-string">&quot;&quot;</span>)
+  same_or_fail(<span class="syn-string">&quot;the list past 3&quot;</span>, join(list_long(fns, <span class="syn-number">3</span>).lines, <span class="syn-string">&quot;\n&quot;</span>), join({
+    P .. <span class="syn-string">&quot;:25: long: six_lines: 6 code lines (1 comment, 0 blank)&quot;</span>,
+    P .. <span class="syn-string">&quot;:13: long: four_with_comments: 4 code lines (3 comment, 2 blank)&quot;</span>}, <span class="syn-string">&quot;\n&quot;</span>))
+  <span class="syn-comment">-- Nine lines of body, four of them code: not past 4.</span>
+  same_or_fail(<span class="syn-string">&quot;the list past 4&quot;</span>, join(list_long(fns, <span class="syn-number">4</span>).lines, <span class="syn-string">&quot;\n&quot;</span>), P .. <span class="syn-string">&quot;:25: long: six_lines: 6 code lines (1 comment, 0 blank)&quot;</span>)
+  same_or_fail(<span class="syn-string">&quot;the list past 6 with the tests&quot;</span>, join(list_long(measure(PLANTS, <span class="syn-keyword">true</span>), <span class="syn-number">6</span>).lines, <span class="syn-string">&quot;\n&quot;</span>), P .. <span class="syn-string">&quot;:35: long: a_long_test: 8 code lines (0 comment, 0 blank)&quot;</span>)
+  print(<span class="syn-string">&quot;PASS list_long_functions self-test: 6 checks, the distribution, the default threshold and three lists over the plants&quot;</span>)
+  <span class="syn-keyword">return</span> <span class="syn-keyword">nil</span>
+<span class="syn-keyword">end</span>
+
+<span class="syn-keyword">if</span> arg(<span class="syn-string">&quot;self_test&quot;</span>, <span class="syn-number">0</span>) == <span class="syn-number">1</span> <span class="syn-keyword">then</span>
+  self_test()
+<span class="syn-keyword">else</span>
+  <span class="syn-keyword">local</span> dir = arg(<span class="syn-string">&quot;dir&quot;</span>, <span class="syn-string">&quot;c&quot;</span>)
+  <span class="syn-keyword">local</span> tests = arg(<span class="syn-string">&quot;tests&quot;</span>, <span class="syn-number">0</span>) == <span class="syn-number">1</span>
+  <span class="syn-keyword">local</span> over = arg(<span class="syn-string">&quot;over&quot;</span>, <span class="syn-number">0</span>)
+  <span class="syn-keyword">local</span> given = <span class="syn-keyword">nil</span>
+  <span class="syn-keyword">if</span> over &gt; <span class="syn-number">0</span> <span class="syn-keyword">then</span> given = over <span class="syn-keyword">end</span>
+  <span class="syn-keyword">local</span> r = list_long(measure(dir, tests), given)
+  print(<span class="syn-string">&quot;list_long_functions: &quot;</span> .. dir .. (tests <span class="syn-keyword">and</span> <span class="syn-string">&quot;, tests included&quot;</span> <span class="syn-keyword">or</span> <span class="syn-string">&quot;, tests left out&quot;</span>) .. <span class="syn-string">&quot;: &quot;</span> .. r.summary)
+  <span class="syn-keyword">for</span> l <span class="syn-keyword">in</span> r.lines <span class="syn-keyword">do</span> print(l) <span class="syn-keyword">end</span>
+  <span class="syn-keyword">local</span> how = <span class="syn-string">&quot;the 95th percentile&quot;</span>
+  <span class="syn-keyword">if</span> given ~= <span class="syn-keyword">nil</span> <span class="syn-keyword">then</span> how = <span class="syn-string">&quot;over=&quot;</span> <span class="syn-keyword">end</span>
+  print(<span class="syn-string">&quot;list_long_functions: &quot;</span> .. #r.lines .. <span class="syn-string">&quot; functions past &quot;</span> .. r.threshold .. <span class="syn-string">&quot; code lines (&quot;</span> .. how .. <span class="syn-string">&quot;)&quot;</span>)
+<span class="syn-keyword">end</span>
+</code></pre>
+<nav class="steps"><a href="../map_file/">← previous</a> · <a href="../#list_long_functions">Roc on Shale</a> · <a href="../list_deep_nesting/">next →</a></nav></main>
+</body>
+</html>

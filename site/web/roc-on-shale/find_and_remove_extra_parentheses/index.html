@@ -1,0 +1,1515 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="description" content="The parentheses and braceless `if`s a code emitter leaves in Roc, found from Roc's own parse trees and, with write=1, taken off by the parser's spans and put through `roc fmt` until a pass changes nothing, its self-test rewriting copies of its plants.">
+<title>find_and_remove_extra_parentheses · Roc on Shale</title>
+<script src="../../shared/home.js"></script>
+<!-- site/build_roc_on_shale.shale writes this page from the shale repository's
+     history; run it again rather than editing here. The code is colored by
+     roc-syntax-color (SyntaxColor.html). -->
+<style>
+  :root { color-scheme: light dark; --bg: #f7f5f0; --fg: #1d1d1b; --muted: #6b6860; --edge: #d9d4c8; --pane: #ffffff; --link: #1f5fa8; --accent: #5b3ea8; }
+  @media (prefers-color-scheme: dark) {
+    :root { --bg: #1b1b1a; --fg: #e8e6e0; --muted: #9a968c; --edge: #3a3934; --pane: #242422; --link: #8ab4f0; --accent: #a68cf0; }
+  }
+  body { margin: 0; background: var(--bg); color: var(--fg); font: 15px/1.55 system-ui, sans-serif; }
+  main { max-width: 960px; margin: 0 auto; padding: 36px 16px 48px; }
+  @media (max-width: 640px) { main { padding: 24px 12px 36px; } }
+  .top { display: flex; flex-wrap: wrap; gap: 4px 14px; font-size: 14px; margin: 0 0 14px; }
+  h1 { font-size: 28px; margin: 0 0 6px; overflow-wrap: anywhere; }
+  .lede { margin: 0 0 10px; max-width: 70ch; }
+  ul.lede { padding-left: 22px; }
+  ul.lede li { margin: 0 0 4px; }
+  h2.intro { font-size: 20px; margin: 30px 0 6px; }
+  h3.intro { font-size: 16px; margin: 18px 0 4px; }
+  /* The drawing is Graphviz's SVG, inline, so its lines and words take the
+     page's colors in either theme. */
+  .diagram { margin: 14px 0 18px; }
+  .diagram svg { max-width: 100%; height: auto; }
+  .diagram text { fill: var(--fg); }
+  .diagram path, .diagram polygon { stroke: var(--fg); }
+  .diagram .edge polygon { fill: var(--fg); }
+  h2.part { font-size: 25px; margin: 64px 0 4px; padding-top: 20px; border-top: 3px solid var(--accent); }
+  .part-intro { margin: 0 0 8px; }
+  h3 { font-size: 19px; margin: 10px 0 4px; overflow-wrap: anywhere; }
+  h2.part a { color: inherit; text-decoration: none; }
+  h2.code { font-size: 16px; margin: 36px 0 4px; color: var(--accent); }
+  p { max-width: 70ch; }
+  a { color: var(--link); }
+  code { font: 13px ui-monospace, Menlo, Consolas, monospace; }
+  .contents { padding-left: 20px; }
+  .contents ul { padding-left: 20px; margin: 2px 0 8px; }
+  .contents a { overflow-wrap: anywhere; }
+  .facts { font-size: 14px; color: var(--muted); }
+  .file { font-size: 13px; color: var(--muted); margin: 20px 0 0; overflow-wrap: anywhere; }
+  .entry { margin-top: 28px; padding-top: 14px; border-top: 1px solid var(--edge); }
+  .steps { font-size: 13px; margin: 0 0 8px; }
+  main > .steps:last-child { margin: 28px 0 0; }
+  /* Every block shows its file whole; a line wider than the block scrolls
+     sideways inside it, so the code keeps its indentation. */
+  pre { margin: 6px 0 12px; padding: 12px 14px; border-radius: 5px; background: #2b2733; color: #e8e6e0;
+        font: 12px/1.45 ui-monospace, Menlo, Consolas, monospace; overflow-x: auto; tab-size: 4; }
+  pre code { font: inherit; }
+  .syn-keyword { color: #c792ea; }
+  .syn-type { color: #82aaff; }
+  .syn-string { color: #c3e88d; }
+  .syn-number { color: #f78c6c; }
+  .syn-comment { color: #8a8494; font-style: italic; }
+  .syn-name { color: #ffcb6b; }
+  footer { margin-top: 36px; color: var(--muted); font-size: 13px; }
+</style>
+</head>
+<body>
+<main>
+<nav class="steps"><a href="../find_floats_outside_unit_types/">← previous</a> · <a href="../#find_and_remove_extra_parentheses">Roc on Shale</a> · <a href="../check_how_failure_is_reported/">next →</a></nav>
+<h1>find_and_remove_extra_parentheses</h1>
+<h2 class="code">Roc</h2>
+<p class="file">It also imports <code>Finding</code>, <code>Text</code>, <code>Tree</code> from <a href="../shared-library/">the shared Roc library</a>.</p>
+<p class="file"><a href="https://github.com/showell/shale/blob/e3c753adf065dc7856e5d49422daf99f9969f91a/cookbook/roc/find_and_remove_extra_parentheses/find_and_remove_extra_parentheses.roc"><code>cookbook/roc/find_and_remove_extra_parentheses/find_and_remove_extra_parentheses.roc</code></a>, 89 lines</p>
+<pre><code><span class="syn-comment">## find_and_remove_extra_parentheses, in Roc on Shale&#39;s platform (roc_platform/README.md):</span>
+<span class="syn-comment">## the parentheses and braceless `if`s that a code emitter leaves in Roc,</span>
+<span class="syn-comment">## which neither `roc check` nor `roc fmt` sees, found and, with `write=1`,</span>
+<span class="syn-comment">## rewritten. Its launcher, cookbook/roc/find_and_remove_extra_parentheses.shale, is how it</span>
+<span class="syn-comment">## is run, and its header says the checks (`paren_if`, `wrapped_body`,</span>
+<span class="syn-comment">## `else_block`, `lambda_if`) and the rewrite. check_goldens.shale, beside</span>
+<span class="syn-comment">## this, holds its output on the plants to its goldens, line for line.</span>
+<span class="syn-comment">##</span>
+<span class="syn-comment">##   cd &lt;repo&gt; &amp;&amp; shale cookbook:roc/find_and_remove_extra_parentheses.shale glob=chat/**/*.roc</span>
+<span class="syn-comment">##   cd &lt;repo&gt; &amp;&amp; shale cookbook:roc/find_and_remove_extra_parentheses.shale glob=chat/**/*.roc write=1</span>
+<span class="syn-comment">##   shale cookbook:roc/find_and_remove_extra_parentheses.shale self_test=1</span>
+<span class="syn-comment">##</span>
+<span class="syn-comment">## The arguments: `glob` (`**/*.roc`), `house` (`house=0` leaves out the</span>
+<span class="syn-comment">## house style, `paren_if` and `lambda_if`), `write` (`write=1` rewrites the</span>
+<span class="syn-comment">## files) and `self_test` (`self_test=1` checks the plants and rewrites</span>
+<span class="syn-comment">## copies of them).</span>
+<span class="syn-comment">##</span>
+<span class="syn-comment">## This root globs the files (`Shale.glob!`), rewrites them when asked</span>
+<span class="syn-comment">## (Rewriting, by Edits), reports (Report, by Checks) and prints the verdict</span>
+<span class="syn-comment">## (`Shale.print!`, `Shale.fail!`); SelfTest is the self-test. Finding, Text</span>
+<span class="syn-comment">## and Tree are the cookbook&#39;s Roc library, cookbook/roc/lib/.</span>
+<span class="syn-comment">## budget: steps=900000000 read_bytes=1000000000 arena_bytes=2000000000 output_bytes=4000000 programs=100</span>
+<span class="syn-keyword">app</span> [main!] { lib: <span class="syn-string">&quot;../lib/main.roc&quot;</span>, pf: <span class="syn-keyword">platform</span> <span class="syn-string">&quot;../../../roc_platform/platform/main.roc&quot;</span> }
+
+<span class="syn-keyword">import</span> pf.<span class="syn-type">Shale</span>
+<span class="syn-keyword">import</span> lib.<span class="syn-type">Finding</span>
+<span class="syn-keyword">import</span> <span class="syn-type">Report</span>
+<span class="syn-keyword">import</span> <span class="syn-type">Rewriting</span>
+<span class="syn-keyword">import</span> <span class="syn-type">SelfTest</span>
+
+<span class="syn-name">main!</span> : {} =&gt; {}
+<span class="syn-name">main!</span> = |{}| {
+	self_test = <span class="syn-type">Shale</span>.arg!(<span class="syn-string">&quot;self_test&quot;</span>, <span class="syn-string">&quot;&quot;</span>) == <span class="syn-string">&quot;1&quot;</span>
+	pattern = <span class="syn-keyword">if</span> self_test {
+		<span class="syn-string">&quot;</span>${<span class="syn-type">SelfTest</span>.plants}<span class="syn-string">/*.roc&quot;</span>
+	} <span class="syn-keyword">else</span> {
+		<span class="syn-type">Shale</span>.arg!(<span class="syn-string">&quot;glob&quot;</span>, <span class="syn-string">&quot;**/*.roc&quot;</span>)
+	}
+	write = <span class="syn-type">Shale</span>.arg!(<span class="syn-string">&quot;write&quot;</span>, <span class="syn-string">&quot;&quot;</span>) == <span class="syn-string">&quot;1&quot;</span>
+	paths = <span class="syn-type">Shale</span>.glob!(pattern)
+	settled = <span class="syn-keyword">if</span> write {
+		refuse_house_rewrite!({})
+		rewritten = <span class="syn-type">Rewriting</span>.rewrite!(paths, <span class="syn-type">Rewriting</span>.roc_bin!(<span class="syn-type">Bool.False</span>))
+		<span class="syn-type">Shale</span>.print!(<span class="syn-string">&quot;find_and_remove_extra_parentheses: </span>${rewritten.made.to_str()}<span class="syn-string"> edits&quot;</span>)
+		rewritten.settled
+	} <span class="syn-keyword">else</span> {
+		<span class="syn-type">Dict</span>.empty()
+	}
+	found = <span class="syn-type">Report</span>.make!(paths, settled)
+	print_findings!(found.summary, found.findings.map(<span class="syn-type">Finding</span>.line_of))
+	fail_if_refused!(found.refused)
+	<span class="syn-keyword">if</span> self_test {
+		<span class="syn-type">SelfTest</span>.run!(paths, found)
+	}
+}
+
+<span class="syn-comment">## A rewrite applies our house style, so `house=0` refuses one.</span>
+<span class="syn-name">refuse_house_rewrite!</span> : {} =&gt; {}
+<span class="syn-name">refuse_house_rewrite!</span> = |{}|
+	<span class="syn-keyword">match</span> <span class="syn-type">Report</span>.read_house!({}) {
+		<span class="syn-type">Kept</span> =&gt; {}
+		<span class="syn-type">LeftOut</span> =&gt; <span class="syn-type">Shale</span>.fail!(<span class="syn-string">&quot;find_and_remove_extra_parentheses: write=1 applies our house style, so it refuses house=0&quot;</span>)
+	}
+
+<span class="syn-comment">## The summary, each finding, then the summary again (cookbook/findings.shale):</span>
+<span class="syn-comment">## the first copy survives a cut output, and a gate reads the last line.</span>
+<span class="syn-name">print_findings!</span> : <span class="syn-type">Str</span>, <span class="syn-type">List</span>(<span class="syn-type">Str</span>) =&gt; {}
+<span class="syn-name">print_findings!</span> = |summary, finding_lines| {
+	<span class="syn-type">Shale</span>.print!(summary)
+	<span class="syn-keyword">if</span> !(finding_lines.is_empty()) {
+		<span class="syn-keyword">for</span> line <span class="syn-keyword">in</span> finding_lines {
+			<span class="syn-type">Shale</span>.print!(line)
+		}
+		<span class="syn-type">Shale</span>.print!(summary)
+	}
+}
+
+<span class="syn-comment">## The files Roc&#39;s parser refused, named, then a stop (cookbook/roc/parsed.shale&#39;s</span>
+<span class="syn-comment">## `fail_if_refused`); nothing when it refused none.</span>
+<span class="syn-name">fail_if_refused!</span> : <span class="syn-type">List</span>(<span class="syn-type">Str</span>) =&gt; {}
+<span class="syn-name">fail_if_refused!</span> = |refused|
+	<span class="syn-keyword">if</span> !(refused.is_empty()) {
+		<span class="syn-keyword">for</span> refusal <span class="syn-keyword">in</span> refused {
+			<span class="syn-type">Shale</span>.print!(<span class="syn-string">&quot;refused: </span>${refusal}<span class="syn-string">&quot;</span>)
+		}
+		refusals = <span class="syn-string">&quot;roc-ast refused </span>${refused.len().to_str()}<span class="syn-string"> files (named above)&quot;</span>
+		why = <span class="syn-string">&quot;which have no tree to judge; every other file was judged&quot;</span>
+		<span class="syn-type">Shale</span>.fail!(<span class="syn-string">&quot;find_and_remove_extra_parentheses: </span>${refusals}<span class="syn-string">, </span>${why}<span class="syn-string">&quot;</span>)
+	}
+</code></pre>
+<p class="file"><a href="https://github.com/showell/shale/blob/e3c753adf065dc7856e5d49422daf99f9969f91a/cookbook/roc/find_and_remove_extra_parentheses/Report.roc"><code>cookbook/roc/find_and_remove_extra_parentheses/Report.roc</code></a>, 124 lines</p>
+<pre><code><span class="syn-comment">## The findings across a run&#39;s files, as the lines the recipe prints, with</span>
+<span class="syn-comment">## its summary and the files Roc&#39;s parser refused. Findings stay in the files&#39;</span>
+<span class="syn-comment">## order and the tree&#39;s, as the Shale original printed them, never sorted.</span>
+<span class="syn-keyword">import</span> pf.<span class="syn-type">Shale</span>
+<span class="syn-keyword">import</span> <span class="syn-type">Checks</span>
+<span class="syn-keyword">import</span> lib.<span class="syn-type">Finding</span>
+<span class="syn-keyword">import</span> lib.<span class="syn-type">Text</span>
+
+<span class="syn-type">Report</span> := [].{
+
+	<span class="syn-comment">## A run&#39;s report: its summary, its findings (each `path:line: check:</span>
+	<span class="syn-comment">## source line`) and why each refused file was refused.</span>
+	<span class="syn-type">Report</span> : {
+		summary : <span class="syn-type">Str</span>,
+		findings : <span class="syn-type">List</span>(<span class="syn-type">Finding</span>),
+		refused : <span class="syn-type">List</span>(<span class="syn-type">Str</span>),
+	}
+
+	<span class="syn-comment">## The report over `paths`. Under `house=0`, the house style</span>
+	<span class="syn-comment">## (cookbook/roc/house.shale&#39;s `paren_if` and `lambda_if`) is left out.</span>
+	<span class="syn-comment">## `settled` is what a rewrite already knows of a file it read last,</span>
+	<span class="syn-comment">## unchanged since: `&quot;&quot;` for no finding, else why it was refused</span>
+	<span class="syn-comment">## (`Report.refusal_of`); those files are not read again, as Roc&#39;s arena</span>
+	<span class="syn-comment">## frees nothing and a large tree&#39;s second parse would not fit beside its</span>
+	<span class="syn-comment">## first.</span>
+	<span class="syn-name">make!</span> : <span class="syn-type">List</span>(<span class="syn-type">Str</span>), <span class="syn-type">Dict</span>(<span class="syn-type">Str</span>, <span class="syn-type">Str</span>) =&gt; <span class="syn-type">Report.Report</span>
+	<span class="syn-name">make!</span> = |paths, settled| {
+		house = <span class="syn-type">Report</span>.read_house!({})
+		unsettled = paths.keep_if(|path| !(settled.contains(path)))
+		parsed = <span class="syn-keyword">if</span> unsettled.is_empty() {
+			[]
+		} <span class="syn-keyword">else</span> {
+			<span class="syn-type">Shale</span>.roc_tree!(unsettled)
+		}
+		<span class="syn-keyword">var</span> $findings = []
+		<span class="syn-keyword">var</span> $refused = []
+		$next : <span class="syn-type">U64</span>
+		<span class="syn-keyword">var</span> $next = <span class="syn-number">0</span>
+		<span class="syn-keyword">for</span> path <span class="syn-keyword">in</span> paths {
+			<span class="syn-keyword">match</span> settled.get(path) {
+				<span class="syn-type">Ok</span>(refusal) =&gt;
+					<span class="syn-keyword">if</span> refusal != <span class="syn-string">&quot;&quot;</span> {
+						$refused = $refused.append(refusal)
+					}
+				<span class="syn-type">Err</span>(_) =&gt; {
+					file = <span class="syn-keyword">match</span> parsed.get($next) {
+						<span class="syn-type">Ok</span>(found) =&gt; found
+						<span class="syn-type">Err</span>(_) =&gt; <span class="syn-keyword">crash</span> <span class="syn-string">&quot;Report.make!: roc_tree! gave fewer files than it was asked for&quot;</span>
+					}
+					$next = $next + <span class="syn-number">1</span>
+					<span class="syn-keyword">if</span> file.err == <span class="syn-string">&quot;&quot;</span> {
+						source_lines = <span class="syn-type">Report</span>.read_text!(file.path).split_on(<span class="syn-string">&quot;\n&quot;</span>)
+						<span class="syn-keyword">for</span> found <span class="syn-keyword">in</span> <span class="syn-type">Checks</span>.findings_in(file.nodes, source_lines) {
+							<span class="syn-keyword">if</span> is_kept(house, found.check) {
+								$findings = $findings.append({
+									path: file.path,
+									line: found.line,
+									check: found.check,
+									what: <span class="syn-type">Text</span>.trim(<span class="syn-type">Text</span>.line_at(source_lines, found.line)),
+								})
+							}
+						}
+					} <span class="syn-keyword">else</span> {
+						$refused = $refused.append(<span class="syn-type">Report</span>.refusal_of(file.path, file.err))
+					}
+				}
+			}
+		}
+		house_note = <span class="syn-keyword">match</span> house {
+			<span class="syn-type">Kept</span> =&gt; <span class="syn-string">&quot;&quot;</span>
+			<span class="syn-type">LeftOut</span> =&gt; <span class="syn-string">&quot;; left out as house style: </span>${<span class="syn-type">Str</span>.join_with(house_style, <span class="syn-string">&quot;, &quot;</span>)}<span class="syn-string">&quot;</span>
+		}
+		counts = <span class="syn-type">Finding</span>.counts_of($findings, <span class="syn-type">Checks</span>.names)
+		summary = <span class="syn-string">&quot;find_and_remove_extra_parentheses (Roc): </span>${paths.len().to_str()}<span class="syn-string"> files; </span>${counts}${house_note}<span class="syn-string">&quot;</span>
+		{ summary, findings: $findings, refused: $refused }
+	}
+
+	<span class="syn-comment">## Why roc-ast refused a file, beginning with its path</span>
+	<span class="syn-comment">## (cookbook/roc/parsed.shale&#39;s `parse_roc_files`).</span>
+	<span class="syn-name">refusal_of</span> : <span class="syn-type">Str</span>, <span class="syn-type">Str</span> -&gt; <span class="syn-type">Str</span>
+	<span class="syn-name">refusal_of</span> = |path, err|
+		<span class="syn-keyword">if</span> err.starts_with(path) {
+			err
+		} <span class="syn-keyword">else</span> {
+			<span class="syn-string">&quot;</span>${path}<span class="syn-string">: </span>${err}<span class="syn-string">&quot;</span>
+		}
+
+	<span class="syn-comment">## Whether `house=0` leaves the house style out (cookbook/roc/house.shale).</span>
+	<span class="syn-name">read_house!</span> : {} =&gt; [<span class="syn-type">Kept</span>, <span class="syn-type">LeftOut</span>]
+	<span class="syn-name">read_house!</span> = |{}| {
+		house = <span class="syn-type">Shale</span>.arg!(<span class="syn-string">&quot;house&quot;</span>, <span class="syn-string">&quot;1&quot;</span>)
+		<span class="syn-keyword">if</span> house != <span class="syn-string">&quot;0&quot;</span> <span class="syn-keyword">and</span> house != <span class="syn-string">&quot;1&quot;</span> {
+			<span class="syn-type">Shale</span>.fail!(<span class="syn-string">&quot;house must be 1 (the default) or 0, not </span>${house}<span class="syn-string">&quot;</span>)
+		}
+		<span class="syn-keyword">if</span> house == <span class="syn-string">&quot;0&quot;</span> {
+			<span class="syn-type">LeftOut</span>
+		} <span class="syn-keyword">else</span> {
+			<span class="syn-type">Kept</span>
+		}
+	}
+
+	<span class="syn-comment">## A file&#39;s text; a file gone since the glob stops the run.</span>
+	<span class="syn-name">read_text!</span> : <span class="syn-type">Str</span> =&gt; <span class="syn-type">Str</span>
+	<span class="syn-name">read_text!</span> = |path|
+		<span class="syn-keyword">match</span> <span class="syn-type">Shale</span>.read!(path) {
+			<span class="syn-type">Found</span>(text) =&gt; text
+			<span class="syn-type">Missing</span> =&gt; {
+				<span class="syn-type">Shale</span>.fail!(<span class="syn-string">&quot;find_and_remove_extra_parentheses: no file </span>${path}<span class="syn-string">&quot;</span>)
+				<span class="syn-string">&quot;&quot;</span>
+			}
+		}
+}
+
+<span class="syn-comment">## The checks that are only our house style (cookbook/roc/house.shale).</span>
+<span class="syn-name">house_style</span> : <span class="syn-type">List</span>(<span class="syn-type">Str</span>)
+<span class="syn-name">house_style</span> = [<span class="syn-string">&quot;paren_if&quot;</span>, <span class="syn-string">&quot;lambda_if&quot;</span>]
+
+<span class="syn-comment">## Whether a finding of `check` is reported.</span>
+<span class="syn-name">is_kept</span> : [<span class="syn-type">Kept</span>, <span class="syn-type">LeftOut</span>], <span class="syn-type">Str</span> -&gt; <span class="syn-type">Bool</span>
+<span class="syn-name">is_kept</span> = |house, check|
+	<span class="syn-keyword">match</span> house {
+		<span class="syn-type">Kept</span> =&gt; <span class="syn-type">Bool.True</span>
+		<span class="syn-type">LeftOut</span> =&gt; !(house_style.contains(check))
+	}
+</code></pre>
+<p class="file"><a href="https://github.com/showell/shale/blob/e3c753adf065dc7856e5d49422daf99f9969f91a/cookbook/roc/find_and_remove_extra_parentheses/Rewriting.roc"><code>cookbook/roc/find_and_remove_extra_parentheses/Rewriting.roc</code></a>, 172 lines</p>
+<pre><code><span class="syn-comment">## `write=1`: the files rewritten, one check a pass (Edits), each pass&#39;s</span>
+<span class="syn-comment">## files put through `roc fmt`, until a pass changes nothing, because taking</span>
+<span class="syn-comment">## off one pair of brackets can show the next. The Roc is the tree&#39;s own</span>
+<span class="syn-comment">## (cookbook/roc/pinned.shale), run by its OS path.</span>
+<span class="syn-keyword">import</span> pf.<span class="syn-type">Shale</span>
+<span class="syn-keyword">import</span> <span class="syn-type">Checks</span>
+<span class="syn-keyword">import</span> <span class="syn-type">Edits</span>
+<span class="syn-keyword">import</span> <span class="syn-type">Report</span>
+<span class="syn-keyword">import</span> lib.<span class="syn-type">Text</span>
+<span class="syn-keyword">import</span> lib.<span class="syn-type">Tree</span>
+
+<span class="syn-type">Rewriting</span> := [].{
+
+	<span class="syn-comment">## Rewrites `paths` until a pass changes nothing, and answers how many</span>
+	<span class="syn-comment">## edits it made and what it knows of each file it read last: `settled`,</span>
+	<span class="syn-comment">## `&quot;&quot;` for a file with no finding, else why roc-ast refused it</span>
+	<span class="syn-comment">## (Report.make!&#39;s `settled`). Such a file is read no more, since no edit</span>
+	<span class="syn-comment">## will touch it, so a large tree is parsed whole once, not four times a</span>
+	<span class="syn-comment">## pass, which Roc&#39;s arena (it frees nothing) would not hold.</span>
+	<span class="syn-name">rewrite!</span> : <span class="syn-type">List</span>(<span class="syn-type">Str</span>), <span class="syn-type">Str</span> =&gt; { made : <span class="syn-type">U64</span>, settled : <span class="syn-type">Dict</span>(<span class="syn-type">Str</span>, <span class="syn-type">Str</span>) }
+	<span class="syn-name">rewrite!</span> = |paths, roc| {
+		$made : <span class="syn-type">U64</span>
+		<span class="syn-keyword">var</span> $made = <span class="syn-number">0</span>
+		<span class="syn-keyword">var</span> $live = paths
+		<span class="syn-keyword">var</span> $settled = <span class="syn-type">Dict</span>.empty()
+		<span class="syn-keyword">var</span> $changed = <span class="syn-type">Bool.True</span>
+		<span class="syn-keyword">while</span> $changed {
+			$changed = <span class="syn-type">Bool.False</span>
+			<span class="syn-keyword">for</span> check <span class="syn-keyword">in</span> <span class="syn-type">Checks</span>.names {
+				pass = rewrite_check!($live, check, roc)
+				$live = pass.live
+				<span class="syn-keyword">for</span> (path, verdict) <span class="syn-keyword">in</span> pass.settled {
+					$settled = $settled.insert(path, verdict)
+				}
+				<span class="syn-keyword">if</span> pass.made &gt; <span class="syn-number">0</span> {
+					$made = $made + pass.made
+					$changed = <span class="syn-type">Bool.True</span>
+				}
+			}
+		}
+		{ made: $made, settled: $settled }
+	}
+
+	<span class="syn-comment">## The OS path of the Roc to rewrite with: in a self-test the pin every</span>
+	<span class="syn-comment">## recipe&#39;s self-test runs (pinned.shale&#39;s `SELF_TEST_PIN`, read there),</span>
+	<span class="syn-comment">## else the one the `roc-version` where the run starts names.</span>
+	<span class="syn-name">roc_bin!</span> : <span class="syn-type">Bool</span> =&gt; <span class="syn-type">Str</span>
+	<span class="syn-name">roc_bin!</span> = |self_test| {
+		pin = <span class="syn-keyword">if</span> self_test {
+			self_test_pin!({})
+		} <span class="syn-keyword">else</span> {
+			<span class="syn-keyword">if</span> !(<span class="syn-type">Shale</span>.exists!(<span class="syn-string">&quot;roc-version&quot;</span>)) {
+				<span class="syn-type">Shale</span>.fail!(<span class="syn-string">&quot;find_and_remove_extra_parentheses: no roc-version where the run starts: run it from the repository&#39;s root, whose roc-version pins its Roc&quot;</span>)
+			}
+			<span class="syn-type">Text</span>.trim(<span class="syn-type">Report</span>.read_text!(<span class="syn-string">&quot;roc-version&quot;</span>))
+		}
+		roc = <span class="syn-string">&quot;tools:roc-</span>${pin}<span class="syn-string">/roc&quot;</span>
+		<span class="syn-keyword">if</span> !(<span class="syn-type">Shale</span>.exists!(roc)) {
+			<span class="syn-type">Shale</span>.fail!(<span class="syn-string">&quot;find_and_remove_extra_parentheses: no </span>${roc}<span class="syn-string">: install Roc </span>${pin}<span class="syn-string"> into ~/tools/roc-</span>${pin}<span class="syn-string">/ (roc-apps&#39;s toolchain release carries it)&quot;</span>)
+		}
+		real = <span class="syn-type">Shale</span>.real!(roc)
+		said = <span class="syn-type">Shale</span>.run!({ argv: [real, <span class="syn-string">&quot;version&quot;</span>], keep: <span class="syn-type">Whole</span>(<span class="syn-number">4000</span>), timeout_ms: <span class="syn-number">30000</span>, want: <span class="syn-string">&quot;&quot;</span> })
+		<span class="syn-keyword">if</span> <span class="syn-type">Text</span>.trim(said.out) != <span class="syn-string">&quot;Roc compiler version </span>${pin}<span class="syn-string">&quot;</span> {
+			<span class="syn-type">Shale</span>.fail!(<span class="syn-string">&quot;find_and_remove_extra_parentheses: </span>${roc}<span class="syn-string"> says </span>${<span class="syn-type">Text</span>.trim(said.out)}<span class="syn-string">, not Roc compiler version </span>${pin}<span class="syn-string">&quot;</span>)
+		}
+		real
+	}
+}
+
+<span class="syn-comment">## Makes one kind of edit across `paths`, and answers how many it made, which</span>
+<span class="syn-comment">## files had a finding of any check (the files still worth reading) and what</span>
+<span class="syn-comment">## is settled of the rest, each `(path, verdict)` as `rewrite!` keeps it.</span>
+<span class="syn-name">rewrite_check!</span> : <span class="syn-type">List</span>(<span class="syn-type">Str</span>), <span class="syn-type">Str</span>, <span class="syn-type">Str</span> =&gt; { made : <span class="syn-type">U64</span>, live : <span class="syn-type">List</span>(<span class="syn-type">Str</span>), settled : <span class="syn-type">List</span>((<span class="syn-type">Str</span>, <span class="syn-type">Str</span>)) }
+<span class="syn-name">rewrite_check!</span> = |paths, check, roc| {
+	$made : <span class="syn-type">U64</span>
+	<span class="syn-keyword">var</span> $made = <span class="syn-number">0</span>
+	<span class="syn-keyword">var</span> $touched = []
+	<span class="syn-keyword">var</span> $live = []
+	<span class="syn-keyword">var</span> $settled = []
+	<span class="syn-keyword">if</span> !(paths.is_empty()) {
+		<span class="syn-keyword">for</span> file <span class="syn-keyword">in</span> <span class="syn-type">Shale</span>.roc_tree!(paths) {
+			<span class="syn-keyword">if</span> file.err == <span class="syn-string">&quot;&quot;</span> {
+				done = rewrite_file!({ path: file.path, nodes: file.nodes }, check)
+				<span class="syn-keyword">if</span> done.found_any {
+					$live = $live.append(file.path)
+				} <span class="syn-keyword">else</span> {
+					$settled = $settled.append((file.path, <span class="syn-string">&quot;&quot;</span>))
+				}
+				<span class="syn-keyword">if</span> done.made &gt; <span class="syn-number">0</span> {
+					$made = $made + done.made
+					$touched = $touched.append(file.path)
+				}
+			} <span class="syn-keyword">else</span> {
+				$settled = $settled.append((file.path, <span class="syn-type">Report</span>.refusal_of(file.path, file.err)))
+			}
+		}
+	}
+	<span class="syn-keyword">if</span> !($touched.is_empty()) {
+		format!($touched, roc)
+	}
+	{ made: $made, live: $live, settled: $settled }
+}
+
+<span class="syn-comment">## One kind of edit in one file: how many it made, and whether the file had a</span>
+<span class="syn-comment">## finding of any check. A finding inside another&#39;s span of the same kind is</span>
+<span class="syn-comment">## safe: its brackets are its own.</span>
+<span class="syn-name">rewrite_file!</span> : { path : <span class="syn-type">Str</span>, nodes : <span class="syn-type">List</span>(<span class="syn-type">Tree.Node</span>) }, <span class="syn-type">Str</span> =&gt; { made : <span class="syn-type">U64</span>, found_any : <span class="syn-type">Bool</span> }
+<span class="syn-name">rewrite_file!</span> = |file, check| {
+	text = <span class="syn-type">Report</span>.read_text!(file.path)
+	source_lines = text.split_on(<span class="syn-string">&quot;\n&quot;</span>)
+	findings = <span class="syn-type">Checks</span>.findings_in(file.nodes, source_lines)
+	bytes = text.to_utf8()
+	source = { path: file.path, text: bytes, nodes: file.nodes }
+	found_any = !(findings.is_empty())
+	<span class="syn-keyword">match</span> <span class="syn-type">Edits</span>.for_check(source, findings, check) {
+		<span class="syn-type">Err</span>(why) =&gt; {
+			<span class="syn-type">Shale</span>.fail!(why)
+			{ made: <span class="syn-number">0</span>, found_any }
+		}
+		<span class="syn-type">Ok</span>([]) =&gt; { made: <span class="syn-number">0</span>, found_any }
+		<span class="syn-type">Ok</span>(edits) =&gt;
+			<span class="syn-keyword">match</span> <span class="syn-type">Edits</span>.applied(bytes, edits) {
+				<span class="syn-type">Err</span>(why) =&gt; {
+					<span class="syn-type">Shale</span>.fail!(why)
+					{ made: <span class="syn-number">0</span>, found_any }
+				}
+				<span class="syn-type">Ok</span>(rewritten) =&gt; {
+					<span class="syn-type">Shale</span>.write!(file.path, <span class="syn-type">Str</span>.from_utf8_lossy(rewritten))
+					{ made: edits.len(), found_any }
+				}
+			}
+	}
+}
+
+<span class="syn-comment">## The files put through the tree&#39;s own formatter.</span>
+<span class="syn-name">format!</span> : <span class="syn-type">List</span>(<span class="syn-type">Str</span>), <span class="syn-type">Str</span> =&gt; {}
+<span class="syn-name">format!</span> = |paths, roc| {
+	<span class="syn-keyword">var</span> $argv = [roc, <span class="syn-string">&quot;fmt&quot;</span>]
+	<span class="syn-keyword">for</span> path <span class="syn-keyword">in</span> paths {
+		$argv = $argv.append(<span class="syn-type">Shale</span>.real!(path))
+	}
+	result = <span class="syn-type">Shale</span>.run!({
+		argv: $argv,
+		keep: <span class="syn-type">Tail</span>(<span class="syn-number">20</span>),
+		timeout_ms: <span class="syn-number">120000</span>,
+		want: <span class="syn-string">&quot;roc-pin: the tree&#39;s own formatter&quot;</span>,
+	})
+	<span class="syn-keyword">if</span> result.code != <span class="syn-number">0</span> {
+		<span class="syn-type">Shale</span>.print!(result.out)
+		<span class="syn-type">Shale</span>.fail!(<span class="syn-string">&quot;find_and_remove_extra_parentheses: `</span>${roc}<span class="syn-string"> fmt` exited </span>${result.code.to_str()}<span class="syn-string">&quot;</span>)
+	}
+}
+
+<span class="syn-comment">## pinned.shale&#39;s `SELF_TEST_PIN`, the one home of the self-tests&#39; Roc.</span>
+<span class="syn-name">self_test_pin!</span> : {} =&gt; <span class="syn-type">Str</span>
+<span class="syn-name">self_test_pin!</span> = |{}| {
+	pinned = <span class="syn-string">&quot;cookbook:roc/pinned.shale&quot;</span>
+	<span class="syn-keyword">match</span> <span class="syn-type">Shale</span>.re_find!(<span class="syn-type">Report</span>.read_text!(pinned), <span class="syn-string">&quot;\nconst SELF_TEST_PIN = \&quot;([^\&quot;]+)\&quot;&quot;</span>) {
+		<span class="syn-type">Found</span>(found) =&gt;
+			<span class="syn-keyword">match</span> found.groups {
+				[pin] =&gt; pin
+				_ =&gt; {
+					<span class="syn-type">Shale</span>.fail!(<span class="syn-string">&quot;find_and_remove_extra_parentheses: no SELF_TEST_PIN in </span>${pinned}<span class="syn-string">&quot;</span>)
+					<span class="syn-string">&quot;&quot;</span>
+				}
+			}
+		<span class="syn-type">NoMatch</span> =&gt; {
+			<span class="syn-type">Shale</span>.fail!(<span class="syn-string">&quot;find_and_remove_extra_parentheses: no SELF_TEST_PIN in </span>${pinned}<span class="syn-string">&quot;</span>)
+			<span class="syn-string">&quot;&quot;</span>
+		}
+	}
+}
+</code></pre>
+<p class="file"><a href="https://github.com/showell/shale/blob/e3c753adf065dc7856e5d49422daf99f9969f91a/cookbook/roc/find_and_remove_extra_parentheses/SelfTest.roc"><code>cookbook/roc/find_and_remove_extra_parentheses/SelfTest.roc</code></a>, 111 lines</p>
+<pre><code><span class="syn-comment">## The recipe&#39;s self-test, the Shale original&#39;s: each plant in</span>
+<span class="syn-comment">## cookbook/roc/plants/find_and_remove_extra_parentheses/ held to its marks (a line ending</span>
+<span class="syn-comment">## `# paren_if`, `# wrapped_body`, `# else_block` or `# lambda_if` must give</span>
+<span class="syn-comment">## that finding, and no unmarked line may give one), then the plants copied</span>
+<span class="syn-comment">## to `scratch:parens/` and rewritten there: every file must still parse, no</span>
+<span class="syn-comment">## finding may be left, a second rewrite must change nothing, and a plant with</span>
+<span class="syn-comment">## a `.want` file must come out as it.</span>
+<span class="syn-keyword">import</span> pf.<span class="syn-type">Shale</span>
+<span class="syn-keyword">import</span> <span class="syn-type">Checks</span>
+<span class="syn-keyword">import</span> <span class="syn-type">Report</span>
+<span class="syn-keyword">import</span> <span class="syn-type">Rewriting</span>
+<span class="syn-keyword">import</span> lib.<span class="syn-type">Finding</span>
+<span class="syn-keyword">import</span> lib.<span class="syn-type">Text</span>
+
+<span class="syn-type">SelfTest</span> := [].{
+
+	<span class="syn-comment">## The plants, whose `*.roc` a self-test checks.</span>
+	<span class="syn-name">plants</span> : <span class="syn-type">Str</span>
+	<span class="syn-name">plants</span> = <span class="syn-string">&quot;cookbook:roc/plants/find_and_remove_extra_parentheses&quot;</span>
+
+	<span class="syn-comment">## The self-test of `paths`, the plants, given their report.</span>
+	<span class="syn-name">run!</span> : <span class="syn-type">List</span>(<span class="syn-type">Str</span>), <span class="syn-type">Report.Report</span> =&gt; {}
+	<span class="syn-name">run!</span> = |paths, found| {
+		marked = check_marks!(paths, found.findings)
+		<span class="syn-keyword">var</span> $wrong = marked.wrong
+		<span class="syn-keyword">if</span> marked.marks == <span class="syn-number">0</span> {
+			$wrong = $wrong.append(<span class="syn-string">&quot;no plant holds a mark&quot;</span>)
+		}
+		<span class="syn-keyword">if</span> <span class="syn-type">Shale</span>.exists!(scratch) {
+			<span class="syn-type">Shale</span>.remove_tree!(scratch)
+		}
+		<span class="syn-type">Shale</span>.mkdir!(scratch)
+		copies = paths.map(copy_of)
+		<span class="syn-keyword">for</span> path <span class="syn-keyword">in</span> paths {
+			<span class="syn-type">Shale</span>.write!(copy_of(path), <span class="syn-type">Report</span>.read_text!(path))
+		}
+		roc = <span class="syn-type">Rewriting</span>.roc_bin!(<span class="syn-type">Bool.True</span>)
+		rewritten = <span class="syn-type">Rewriting</span>.rewrite!(copies, roc)
+		left = <span class="syn-type">Report</span>.make!(copies, rewritten.settled)
+		<span class="syn-keyword">for</span> finding <span class="syn-keyword">in</span> left.findings {
+			$wrong = $wrong.append(<span class="syn-string">&quot;left after the rewrite: </span>${<span class="syn-type">Finding</span>.line_of(finding)}<span class="syn-string">&quot;</span>)
+		}
+		<span class="syn-keyword">for</span> refusal <span class="syn-keyword">in</span> left.refused {
+			$wrong = $wrong.append(<span class="syn-string">&quot;the rewrite broke a file: </span>${refusal}<span class="syn-string">&quot;</span>)
+		}
+		<span class="syn-keyword">for</span> path <span class="syn-keyword">in</span> paths {
+			want = <span class="syn-string">&quot;</span>${<span class="syn-type">Text</span>.bytes_of(path, { start: <span class="syn-number">0</span>, count: path.count_utf8_bytes() - <span class="syn-number">4</span> })}<span class="syn-string">.want&quot;</span>
+			copy = copy_of(path)
+			<span class="syn-keyword">if</span> <span class="syn-type">Shale</span>.exists!(want) <span class="syn-keyword">and</span> <span class="syn-type">Report</span>.read_text!(copy) != <span class="syn-type">Report</span>.read_text!(want) {
+				$wrong = $wrong.append(<span class="syn-string">&quot;</span>${copy}<span class="syn-string">: not as </span>${want}<span class="syn-string">&quot;</span>)
+			}
+		}
+		<span class="syn-keyword">if</span> <span class="syn-type">Rewriting</span>.rewrite!(copies, roc).made != <span class="syn-number">0</span> {
+			$wrong = $wrong.append(<span class="syn-string">&quot;a second rewrite changed something&quot;</span>)
+		}
+		<span class="syn-type">Shale</span>.remove_tree!(scratch)
+		<span class="syn-keyword">for</span> wrong <span class="syn-keyword">in</span> $wrong {
+			<span class="syn-type">Shale</span>.print!(<span class="syn-string">&quot;FAIL </span>${wrong}<span class="syn-string">&quot;</span>)
+		}
+		<span class="syn-keyword">if</span> !($wrong.is_empty()) {
+			<span class="syn-type">Shale</span>.fail!(<span class="syn-string">&quot;find_and_remove_extra_parentheses self_test: </span>${$wrong.len().to_str()}<span class="syn-string"> plants wrong&quot;</span>)
+		}
+		proof = <span class="syn-string">&quot;each marked line gives its finding, no other line one; the rewrite leaves none, and a second changes nothing&quot;</span>
+		<span class="syn-type">Shale</span>.print!(<span class="syn-string">&quot;find_and_remove_extra_parentheses (Roc) self_test: PASS (</span>${proof}<span class="syn-string">)&quot;</span>)
+	}
+}
+
+<span class="syn-comment">## Where the self-test rewrites its copies of the plants.</span>
+<span class="syn-name">scratch</span> : <span class="syn-type">Str</span>
+<span class="syn-name">scratch</span> = <span class="syn-string">&quot;scratch:parens&quot;</span>
+
+<span class="syn-comment">## A plant&#39;s copy in `scratch`.</span>
+<span class="syn-name">copy_of</span> : <span class="syn-type">Str</span> -&gt; <span class="syn-type">Str</span>
+<span class="syn-name">copy_of</span> = |path| <span class="syn-string">&quot;</span>${scratch}<span class="syn-string">/</span>${<span class="syn-type">Text</span>.basename(path)}<span class="syn-string">&quot;</span>
+
+<span class="syn-comment">## Each plant&#39;s lines held to the findings: what is wrong, and how many marks</span>
+<span class="syn-comment">## there were.</span>
+<span class="syn-name">check_marks!</span> : <span class="syn-type">List</span>(<span class="syn-type">Str</span>), <span class="syn-type">List</span>(<span class="syn-type">Finding</span>) =&gt; { wrong : <span class="syn-type">List</span>(<span class="syn-type">Str</span>), marks : <span class="syn-type">U64</span> }
+<span class="syn-name">check_marks!</span> = |paths, findings| {
+	<span class="syn-keyword">var</span> $wrong = []
+	$marks : <span class="syn-type">U64</span>
+	<span class="syn-keyword">var</span> $marks = <span class="syn-number">0</span>
+	<span class="syn-keyword">for</span> path <span class="syn-keyword">in</span> paths {
+		$number : <span class="syn-type">U64</span>
+		<span class="syn-keyword">var</span> $number = <span class="syn-number">0</span>
+		<span class="syn-keyword">for</span> line <span class="syn-keyword">in</span> <span class="syn-type">Text</span>.lines(<span class="syn-type">Report</span>.read_text!(path)) {
+			$number = $number + <span class="syn-number">1</span>
+			number = $number
+			key = <span class="syn-string">&quot;</span>${path}<span class="syn-string">:</span>${number.to_str()}<span class="syn-string">&quot;</span>
+			got = findings
+				.keep_if(|finding| finding.path == path <span class="syn-keyword">and</span> finding.line == number)
+				.map(|finding| finding.check)
+			<span class="syn-keyword">match</span> <span class="syn-type">Checks</span>.names.find_first(|check| line.ends_with(<span class="syn-string">&quot;# </span>${check}<span class="syn-string">&quot;</span>)) {
+				<span class="syn-type">Ok</span>(mark) =&gt; {
+					$marks = $marks + <span class="syn-number">1</span>
+					<span class="syn-keyword">if</span> !(got.contains(mark)) {
+						$wrong = $wrong.append(<span class="syn-string">&quot;</span>${key}<span class="syn-string">: no </span>${mark}<span class="syn-string"> finding&quot;</span>)
+					}
+					<span class="syn-keyword">if</span> got.len() &gt; <span class="syn-number">1</span> {
+						$wrong = $wrong.append(<span class="syn-string">&quot;</span>${key}<span class="syn-string">: more than the one finding marked&quot;</span>)
+					}
+				}
+				<span class="syn-type">Err</span>(_) =&gt;
+					<span class="syn-keyword">if</span> !(got.is_empty()) {
+						$wrong = $wrong.append(<span class="syn-string">&quot;</span>${key}<span class="syn-string">: a finding (</span>${<span class="syn-type">Str</span>.join_with(got, <span class="syn-string">&quot;, &quot;</span>)}<span class="syn-string">) on a line not marked for one&quot;</span>)
+					}
+			}
+		}
+	}
+	{ wrong: $wrong, marks: $marks }
+}
+</code></pre>
+<p class="file"><a href="https://github.com/showell/shale/blob/e3c753adf065dc7856e5d49422daf99f9969f91a/cookbook/roc/find_and_remove_extra_parentheses/Checks.roc"><code>cookbook/roc/find_and_remove_extra_parentheses/Checks.roc</code></a>, 145 lines</p>
+<pre><code><span class="syn-comment">## The four checks of find_and_remove_extra_parentheses, over Roc&#39;s tree of a file: the</span>
+<span class="syn-comment">## parentheses and braceless `if`s that a code emitter leaves (the launcher,</span>
+<span class="syn-comment">## cookbook/roc/find_and_remove_extra_parentheses.shale, says each rule). A finding names</span>
+<span class="syn-comment">## the node it stands on, so a rewrite (Edits) can take its brackets off.</span>
+<span class="syn-keyword">import</span> lib.<span class="syn-type">Text</span>
+<span class="syn-keyword">import</span> lib.<span class="syn-type">Tree</span>
+
+<span class="syn-type">Checks</span> := [].{
+
+	<span class="syn-comment">## A finding: its check, its line, and the place of the node it stands</span>
+	<span class="syn-comment">## on, counted from 1 as the tree counts.</span>
+	<span class="syn-type">Found</span> : { check : <span class="syn-type">Str</span>, line : <span class="syn-type">U64</span>, at : <span class="syn-type">U64</span> }
+
+	<span class="syn-comment">## The checks, in the order the summary counts them and a rewrite makes</span>
+	<span class="syn-comment">## them.</span>
+	<span class="syn-name">names</span> : <span class="syn-type">List</span>(<span class="syn-type">Str</span>)
+	<span class="syn-name">names</span> = [<span class="syn-string">&quot;paren_if&quot;</span>, <span class="syn-string">&quot;wrapped_body&quot;</span>, <span class="syn-string">&quot;else_block&quot;</span>, <span class="syn-string">&quot;lambda_if&quot;</span>]
+
+	<span class="syn-comment">## Each finding in a file, node by node in the tree&#39;s order; at one node,</span>
+	<span class="syn-comment">## `wrapped_body`, `paren_if`, `else_block`, then `lambda_if`.</span>
+	<span class="syn-comment">## `source_lines` is the file&#39;s text split at each newline.</span>
+	<span class="syn-name">findings_in</span> : <span class="syn-type">List</span>(<span class="syn-type">Tree.Node</span>), <span class="syn-type">List</span>(<span class="syn-type">Str</span>) -&gt; <span class="syn-type">List</span>(<span class="syn-type">Checks.Found</span>)
+	<span class="syn-name">findings_in</span> = |nodes, source_lines| {
+		<span class="syn-keyword">var</span> $found = []
+		$place : <span class="syn-type">U64</span>
+		<span class="syn-keyword">var</span> $place = <span class="syn-number">1</span>
+		<span class="syn-keyword">for</span> node <span class="syn-keyword">in</span> nodes {
+			at = $place
+			<span class="syn-keyword">if</span> wraps_body(nodes, at) {
+				$found = $found.append({ check: <span class="syn-string">&quot;wrapped_body&quot;</span>, line: node.line, at })
+			}
+			<span class="syn-keyword">if</span> <span class="syn-type">Checks</span>.is_paren_if(nodes, at) {
+				$found = $found.append({ check: <span class="syn-string">&quot;paren_if&quot;</span>, line: node.line, at })
+			}
+			<span class="syn-keyword">if</span> is_else_block(nodes, at) {
+				$found = $found.append({ check: <span class="syn-string">&quot;else_block&quot;</span>, line: node.line, at })
+			}
+			<span class="syn-keyword">if</span> is_lambda_if(nodes, at, source_lines) {
+				$found = $found.append({ check: <span class="syn-string">&quot;lambda_if&quot;</span>, line: node.line, at })
+			}
+			$place = $place + <span class="syn-number">1</span>
+		}
+		$found
+	}
+
+	<span class="syn-comment">## Whether a node is a pair of parentheses: a one-item tuple.</span>
+	<span class="syn-name">is_parens</span> : <span class="syn-type">Tree.Node</span> -&gt; <span class="syn-type">Bool</span>
+	<span class="syn-name">is_parens</span> = |node| node.kind == <span class="syn-string">&quot;e-tuple&quot;</span> <span class="syn-keyword">and</span> node.kids.len() == <span class="syn-number">1</span>
+
+	<span class="syn-comment">## Whether a branch is a block, in braces.</span>
+	<span class="syn-name">has_braces</span> : <span class="syn-type">Tree.Node</span> -&gt; <span class="syn-type">Bool</span>
+	<span class="syn-name">has_braces</span> = |node| node.kind == <span class="syn-string">&quot;e-block&quot;</span>
+
+	<span class="syn-comment">## Whether an `else` branch needs no braces added: it has them, or it is</span>
+	<span class="syn-comment">## the next `if` of an `else if`.</span>
+	<span class="syn-name">else_is_braced</span> : <span class="syn-type">Tree.Node</span> -&gt; <span class="syn-type">Bool</span>
+	<span class="syn-name">else_is_braced</span> = |otherwise|
+		<span class="syn-type">Checks</span>.has_braces(otherwise) <span class="syn-keyword">or</span> otherwise.kind == <span class="syn-string">&quot;e-if-then-else&quot;</span>
+
+	<span class="syn-comment">## Whether the node at `at` is an `if` with its condition wholly in</span>
+	<span class="syn-comment">## parentheses, or a branch with no braces.</span>
+	<span class="syn-name">is_paren_if</span> : <span class="syn-type">List</span>(<span class="syn-type">Tree.Node</span>), <span class="syn-type">U64</span> -&gt; <span class="syn-type">Bool</span>
+	<span class="syn-name">is_paren_if</span> = |nodes, at| {
+		node = <span class="syn-type">Tree</span>.node_at(nodes, at)
+		<span class="syn-keyword">if</span> node.kind != <span class="syn-string">&quot;e-if-then-else&quot;</span> {
+			<span class="syn-type">Bool.False</span>
+		} <span class="syn-keyword">else</span> {
+			condition = <span class="syn-type">Tree</span>.node_at(nodes, <span class="syn-type">Tree</span>.kid_at(node, <span class="syn-number">1</span>))
+			then_branch = <span class="syn-type">Tree</span>.node_at(nodes, <span class="syn-type">Tree</span>.kid_at(node, <span class="syn-number">2</span>))
+			otherwise = <span class="syn-type">Tree</span>.node_at(nodes, <span class="syn-type">Tree</span>.kid_at(node, <span class="syn-number">3</span>))
+			<span class="syn-type">Checks</span>.is_parens(condition) <span class="syn-keyword">or</span> !(<span class="syn-type">Checks</span>.has_braces(then_branch)) <span class="syn-keyword">or</span> !(<span class="syn-type">Checks</span>.else_is_braced(otherwise))
+		}
+	}
+}
+
+<span class="syn-comment">## Whether the node at `at` is the last of its parent&#39;s kids.</span>
+<span class="syn-name">is_last_kid</span> : <span class="syn-type">List</span>(<span class="syn-type">Tree.Node</span>), <span class="syn-type">U64</span> -&gt; <span class="syn-type">Bool</span>
+<span class="syn-name">is_last_kid</span> = |nodes, at| {
+	node = <span class="syn-type">Tree</span>.node_at(nodes, at)
+	<span class="syn-type">Tree</span>.last_kid(<span class="syn-type">Tree</span>.node_at(nodes, node.parent)) == at
+}
+
+<span class="syn-comment">## Whether parentheses at `at` wrap a whole body. The value of a declaration</span>
+<span class="syn-comment">## counts only over several lines; a statement counts wherever it stands, and</span>
+<span class="syn-comment">## `if`&#39;s branches are paren_if&#39;s and the block&#39;s own.</span>
+<span class="syn-name">wraps_body</span> : <span class="syn-type">List</span>(<span class="syn-type">Tree.Node</span>), <span class="syn-type">U64</span> -&gt; <span class="syn-type">Bool</span>
+<span class="syn-name">wraps_body</span> = |nodes, at| {
+	node = <span class="syn-type">Tree</span>.node_at(nodes, at)
+	<span class="syn-keyword">if</span> !(<span class="syn-type">Checks</span>.is_parens(node)) <span class="syn-keyword">or</span> node.parent == <span class="syn-number">0</span> {
+		<span class="syn-type">Bool.False</span>
+	} <span class="syn-keyword">else</span> {
+		parent_kind = <span class="syn-type">Tree</span>.node_at(nodes, node.parent).kind
+		<span class="syn-keyword">if</span> parent_kind == <span class="syn-string">&quot;statements&quot;</span> {
+			<span class="syn-type">Bool.True</span>
+		} <span class="syn-keyword">else</span> <span class="syn-keyword">if</span> parent_kind == <span class="syn-string">&quot;e-lambda&quot;</span> <span class="syn-keyword">or</span> parent_kind == <span class="syn-string">&quot;branch&quot;</span> {
+			is_last_kid(nodes, at)
+		} <span class="syn-keyword">else</span> <span class="syn-keyword">if</span> parent_kind == <span class="syn-string">&quot;s-decl&quot;</span> {
+			is_last_kid(nodes, at) <span class="syn-keyword">and</span> node.end_line &gt; node.line
+		} <span class="syn-keyword">else</span> {
+			<span class="syn-type">Bool.False</span>
+		}
+	}
+}
+
+<span class="syn-comment">## Whether the node at `at` is an `if` whose `else` is a block holding only</span>
+<span class="syn-comment">## another `if`: `else { if ... }`, which is `else if ...`.</span>
+<span class="syn-name">is_else_block</span> : <span class="syn-type">List</span>(<span class="syn-type">Tree.Node</span>), <span class="syn-type">U64</span> -&gt; <span class="syn-type">Bool</span>
+<span class="syn-name">is_else_block</span> = |nodes, at| {
+	node = <span class="syn-type">Tree</span>.node_at(nodes, at)
+	<span class="syn-keyword">if</span> node.kind != <span class="syn-string">&quot;e-if-then-else&quot;</span> {
+		<span class="syn-type">Bool.False</span>
+	} <span class="syn-keyword">else</span> {
+		otherwise = <span class="syn-type">Tree</span>.node_at(nodes, <span class="syn-type">Tree</span>.kid_at(node, <span class="syn-number">3</span>))
+		<span class="syn-type">Checks</span>.has_braces(otherwise) <span class="syn-keyword">and</span> holds_only_an_if(nodes, otherwise)
+	}
+}
+
+<span class="syn-comment">## Whether a block&#39;s one statement is an `if`.</span>
+<span class="syn-name">holds_only_an_if</span> : <span class="syn-type">List</span>(<span class="syn-type">Tree.Node</span>), <span class="syn-type">Tree.Node</span> -&gt; <span class="syn-type">Bool</span>
+<span class="syn-name">holds_only_an_if</span> = |nodes, block| {
+	statements = <span class="syn-type">Tree</span>.node_at(nodes, <span class="syn-type">Tree</span>.first_kid(block))
+	<span class="syn-keyword">match</span> statements.kids {
+		[only] =&gt; <span class="syn-type">Tree</span>.node_at(nodes, only).kind == <span class="syn-string">&quot;e-if-then-else&quot;</span>
+		_ =&gt; <span class="syn-type">Bool.False</span>
+	}
+}
+
+<span class="syn-comment">## Whether the node at `at` is an `if` that is a lambda&#39;s whole body and</span>
+<span class="syn-comment">## shares its line with what comes before it, which can only be the lambda&#39;s</span>
+<span class="syn-comment">## `|`.</span>
+<span class="syn-name">is_lambda_if</span> : <span class="syn-type">List</span>(<span class="syn-type">Tree.Node</span>), <span class="syn-type">U64</span>, <span class="syn-type">List</span>(<span class="syn-type">Str</span>) -&gt; <span class="syn-type">Bool</span>
+<span class="syn-name">is_lambda_if</span> = |nodes, at, source_lines| {
+	node = <span class="syn-type">Tree</span>.node_at(nodes, at)
+	<span class="syn-keyword">if</span> node.kind != <span class="syn-string">&quot;e-if-then-else&quot;</span> <span class="syn-keyword">or</span> node.parent == <span class="syn-number">0</span> {
+		<span class="syn-type">Bool.False</span>
+	} <span class="syn-keyword">else</span> <span class="syn-keyword">if</span> <span class="syn-type">Tree</span>.node_at(nodes, node.parent).kind != <span class="syn-string">&quot;e-lambda&quot;</span> <span class="syn-keyword">or</span> !(is_last_kid(nodes, at)) {
+		<span class="syn-type">Bool.False</span>
+	} <span class="syn-keyword">else</span> <span class="syn-keyword">if</span> <span class="syn-type">Checks</span>.is_paren_if(nodes, at) {
+		<span class="syn-type">Bool.False</span>
+	} <span class="syn-keyword">else</span> {
+		line = <span class="syn-type">Text</span>.line_at(source_lines, node.line)
+		before = <span class="syn-type">Text</span>.bytes_of(line, { start: <span class="syn-number">0</span>, count: node.column - <span class="syn-number">1</span> })
+		<span class="syn-type">Text</span>.trim(before) != <span class="syn-string">&quot;&quot;</span>
+	}
+}
+</code></pre>
+<p class="file"><a href="https://github.com/showell/shale/blob/e3c753adf065dc7856e5d49422daf99f9969f91a/cookbook/roc/find_and_remove_extra_parentheses/Edits.roc"><code>cookbook/roc/find_and_remove_extra_parentheses/Edits.roc</code></a>, 344 lines</p>
+<pre><code><span class="syn-comment">## The edits that fix one check&#39;s findings in a file, made by the parser&#39;s</span>
+<span class="syn-comment">## spans, and the file&#39;s text with them made. Places in the text are counted</span>
+<span class="syn-comment">## from 1, as Shale&#39;s `sub` counts: an edit at `at` cuts `cut` bytes there and</span>
+<span class="syn-comment">## puts `put` in their place. A span the tree lacks, or two edits that</span>
+<span class="syn-comment">## overlap, is an `Err` saying so, which the caller stops the run with: a</span>
+<span class="syn-comment">## guess here would write braces into the wrong place.</span>
+<span class="syn-keyword">import</span> <span class="syn-type">Checks</span>
+<span class="syn-keyword">import</span> lib.<span class="syn-type">Tree</span>
+
+<span class="syn-type">Edits</span> := [].{
+
+	<span class="syn-comment">## A file being rewritten: its path, its text&#39;s bytes and its tree.</span>
+	<span class="syn-type">Source</span> : { path : <span class="syn-type">Str</span>, text : <span class="syn-type">List</span>(<span class="syn-type">U8</span>), nodes : <span class="syn-type">List</span>(<span class="syn-type">Tree.Node</span>) }
+
+	<span class="syn-comment">## One edit: `cut` bytes at `at` taken out, `put` put there.</span>
+	<span class="syn-type">Edit</span> : { at : <span class="syn-type">U64</span>, cut : <span class="syn-type">U64</span>, put : <span class="syn-type">Str</span> }
+
+	<span class="syn-comment">## The edits that fix the findings of `check` among `findings`.</span>
+	<span class="syn-name">for_check</span> : <span class="syn-type">Edits.Source</span>, <span class="syn-type">List</span>(<span class="syn-type">Checks.Found</span>), <span class="syn-type">Str</span> -&gt; <span class="syn-type">Try</span>(<span class="syn-type">List</span>(<span class="syn-type">Edits.Edit</span>), <span class="syn-type">Str</span>)
+	<span class="syn-name">for_check</span> = |source, findings, check| {
+		src = { path: source.path, text: source.text, nodes: source.nodes, starts: line_starts(source.text) }
+		<span class="syn-keyword">var</span> $edits = []
+		<span class="syn-keyword">for</span> finding <span class="syn-keyword">in</span> findings {
+			<span class="syn-keyword">if</span> finding.check == check {
+				$edits = $edits.concat(edits_of(src, finding)?)
+			}
+		}
+		<span class="syn-type">Ok</span>($edits)
+	}
+
+	<span class="syn-comment">## The text with the edits made. At one place, an edit that only inserts</span>
+	<span class="syn-comment">## goes first, so that a closing brace nested in a branch&#39;s end stands</span>
+	<span class="syn-comment">## before the one that cuts the space after it; edits equal in both keep</span>
+	<span class="syn-comment">## their order.</span>
+	<span class="syn-name">applied</span> : <span class="syn-type">List</span>(<span class="syn-type">U8</span>), <span class="syn-type">List</span>(<span class="syn-type">Edits.Edit</span>) -&gt; <span class="syn-type">Try</span>(<span class="syn-type">List</span>(<span class="syn-type">U8</span>), <span class="syn-type">Str</span>)
+	<span class="syn-name">applied</span> = |text, edits| {
+		<span class="syn-keyword">var</span> $numbered = []
+		<span class="syn-keyword">for</span> edit <span class="syn-keyword">in</span> edits {
+			$numbered = $numbered.append({ edit, number: $numbered.len() })
+		}
+		ordered = $numbered.sort_with(edit_order).map(|numbered| numbered.edit)
+		<span class="syn-keyword">var</span> $pieces = []
+		$from : <span class="syn-type">U64</span>
+		<span class="syn-keyword">var</span> $from = <span class="syn-number">1</span>
+		<span class="syn-keyword">for</span> edit <span class="syn-keyword">in</span> ordered {
+			<span class="syn-keyword">if</span> edit.at &lt; $from {
+				<span class="syn-keyword">return</span> <span class="syn-type">Err</span>(<span class="syn-string">&quot;find_and_remove_extra_parentheses: two edits overlap at index </span>${edit.at.to_str()}<span class="syn-string">&quot;</span>)
+			}
+			$pieces = $pieces.concat(span(text, $from, edit.at - <span class="syn-number">1</span>)).concat(edit.put.to_utf8())
+			$from = edit.at + edit.cut
+		}
+		<span class="syn-type">Ok</span>($pieces.concat(span(text, $from, text.len())))
+	}
+}
+
+<span class="syn-comment">## A file being rewritten, with where each of its lines starts.</span>
+<span class="syn-type">Src</span> : { path : <span class="syn-type">Str</span>, text : <span class="syn-type">List</span>(<span class="syn-type">U8</span>), nodes : <span class="syn-type">List</span>(<span class="syn-type">Tree.Node</span>), starts : <span class="syn-type">List</span>(<span class="syn-type">U64</span>) }
+
+<span class="syn-comment">## By place, then by what is cut, then by the order they were made in.</span>
+<span class="syn-name">edit_order</span> : { edit : <span class="syn-type">Edits.Edit</span>, number : <span class="syn-type">U64</span> }, { edit : <span class="syn-type">Edits.Edit</span>, number : <span class="syn-type">U64</span> } -&gt; [<span class="syn-type">Before</span>, <span class="syn-type">Same</span>, <span class="syn-type">After</span>]
+<span class="syn-name">edit_order</span> = |first, second|
+	<span class="syn-keyword">match</span> compare(first.edit.at, second.edit.at) {
+		<span class="syn-type">Same</span> =&gt;
+			<span class="syn-keyword">match</span> compare(first.edit.cut, second.edit.cut) {
+				<span class="syn-type">Same</span> =&gt; compare(first.number, second.number)
+				other =&gt; other
+			}
+		other =&gt; other
+	}
+
+<span class="syn-name">compare</span> : <span class="syn-type">U64</span>, <span class="syn-type">U64</span> -&gt; [<span class="syn-type">Before</span>, <span class="syn-type">Same</span>, <span class="syn-type">After</span>]
+<span class="syn-name">compare</span> = |first, second|
+	<span class="syn-keyword">if</span> first &lt; second {
+		<span class="syn-type">Before</span>
+	} <span class="syn-keyword">else</span> <span class="syn-keyword">if</span> first &gt; second {
+		<span class="syn-type">After</span>
+	} <span class="syn-keyword">else</span> {
+		<span class="syn-type">Same</span>
+	}
+
+<span class="syn-comment">## The edits that fix one finding.</span>
+<span class="syn-name">edits_of</span> : <span class="syn-type">Src</span>, <span class="syn-type">Checks.Found</span> -&gt; <span class="syn-type">Try</span>(<span class="syn-type">List</span>(<span class="syn-type">Edits.Edit</span>), <span class="syn-type">Str</span>)
+<span class="syn-name">edits_of</span> = |src, finding| {
+	nodes = src.nodes
+	node = <span class="syn-type">Tree</span>.node_at(nodes, finding.at)
+	<span class="syn-keyword">if</span> finding.check == <span class="syn-string">&quot;wrapped_body&quot;</span> {
+		inner = <span class="syn-type">Tree</span>.node_at(nodes, <span class="syn-type">Tree</span>.first_kid(node))
+		<span class="syn-type">Ok</span>(bracket_removal(src, node, keeps_break(nodes, node, inner)))
+	} <span class="syn-keyword">else</span> <span class="syn-keyword">if</span> finding.check == <span class="syn-string">&quot;else_block&quot;</span> {
+		<span class="syn-type">Ok</span>(bracket_removal(src, <span class="syn-type">Tree</span>.node_at(nodes, <span class="syn-type">Tree</span>.kid_at(node, <span class="syn-number">3</span>)), <span class="syn-type">Bool.False</span>))
+	} <span class="syn-keyword">else</span> <span class="syn-keyword">if</span> finding.check == <span class="syn-string">&quot;lambda_if&quot;</span> {
+		from = start_of(src, finding.at)?
+		after = before_space(src.text, from)
+		<span class="syn-type">Ok</span>([{ at: after, cut: from - after, put: <span class="syn-string">&quot;\n&quot;</span> }])
+	} <span class="syn-keyword">else</span> {
+		paren_if_edits(src, node)
+	}
+}
+
+<span class="syn-comment">## The edits that take an `if`&#39;s condition out of its parentheses and put</span>
+<span class="syn-comment">## braces around each branch that has none.</span>
+<span class="syn-name">paren_if_edits</span> : <span class="syn-type">Src</span>, <span class="syn-type">Tree.Node</span> -&gt; <span class="syn-type">Try</span>(<span class="syn-type">List</span>(<span class="syn-type">Edits.Edit</span>), <span class="syn-type">Str</span>)
+<span class="syn-name">paren_if_edits</span> = |src, node| {
+	nodes = src.nodes
+	condition_at = <span class="syn-type">Tree</span>.kid_at(node, <span class="syn-number">1</span>)
+	then_at = <span class="syn-type">Tree</span>.kid_at(node, <span class="syn-number">2</span>)
+	otherwise_at = <span class="syn-type">Tree</span>.kid_at(node, <span class="syn-number">3</span>)
+	<span class="syn-keyword">var</span> $edits = []
+	<span class="syn-keyword">if</span> <span class="syn-type">Checks</span>.is_parens(<span class="syn-type">Tree</span>.node_at(nodes, condition_at)) {
+		$edits = $edits.concat(bracket_removal(src, <span class="syn-type">Tree</span>.node_at(nodes, condition_at), <span class="syn-type">Bool.False</span>))
+	}
+	<span class="syn-keyword">if</span> !(<span class="syn-type">Checks</span>.has_braces(<span class="syn-type">Tree</span>.node_at(nodes, then_at))) {
+		$edits = $edits.append(opening_brace(src, then_at, end_of(src, condition_at)?)?)
+		$edits = $edits.append(brace_before_else(src, then_at)?)
+	}
+	<span class="syn-keyword">if</span> !(<span class="syn-type">Checks</span>.else_is_braced(<span class="syn-type">Tree</span>.node_at(nodes, otherwise_at))) {
+		after_else = past_else(src, end_of(src, then_at)?)?
+		$edits = $edits.append(opening_brace(src, otherwise_at, after_else)?)
+		$edits = $edits.append({ at: end_of(src, otherwise_at)?, cut: <span class="syn-number">0</span>, put: <span class="syn-string">&quot; }&quot;</span> })
+	}
+	<span class="syn-type">Ok</span>($edits)
+}
+
+<span class="syn-comment">## Where each line starts in `text`, the first line at 1.</span>
+<span class="syn-name">line_starts</span> : <span class="syn-type">List</span>(<span class="syn-type">U8</span>) -&gt; <span class="syn-type">List</span>(<span class="syn-type">U64</span>)
+<span class="syn-name">line_starts</span> = |text| {
+	<span class="syn-keyword">var</span> $starts = [<span class="syn-number">1</span>]
+	$place : <span class="syn-type">U64</span>
+	<span class="syn-keyword">var</span> $place = <span class="syn-number">1</span>
+	<span class="syn-keyword">for</span> byte <span class="syn-keyword">in</span> text {
+		<span class="syn-keyword">if</span> byte == <span class="syn-string">&#39;\n&#39;</span> {
+			$starts = $starts.append($place + <span class="syn-number">1</span>)
+		}
+		$place = $place + <span class="syn-number">1</span>
+	}
+	$starts
+}
+
+<span class="syn-comment">## The place of a line&#39;s column, both counted from 1.</span>
+<span class="syn-name">offset_of</span> : <span class="syn-type">Src</span>, <span class="syn-type">U64</span>, <span class="syn-type">U64</span> -&gt; <span class="syn-type">U64</span>
+<span class="syn-name">offset_of</span> = |src, line, column| {
+	start = <span class="syn-keyword">match</span> src.starts.get(line - <span class="syn-number">1</span>) {
+		<span class="syn-type">Ok</span>(found) =&gt; found
+		<span class="syn-type">Err</span>(_) =&gt; <span class="syn-keyword">crash</span> <span class="syn-string">&quot;find_and_remove_extra_parentheses: </span>${src.path}<span class="syn-string"> has no line </span>${line.to_str()}<span class="syn-string">&quot;</span>
+	}
+	start + column - <span class="syn-number">1</span>
+}
+
+<span class="syn-comment">## The byte at a place counted from 1, 0 past either end.</span>
+<span class="syn-name">byte_at</span> : <span class="syn-type">List</span>(<span class="syn-type">U8</span>), <span class="syn-type">U64</span> -&gt; <span class="syn-type">U8</span>
+<span class="syn-name">byte_at</span> = |text, at|
+	<span class="syn-keyword">if</span> at == <span class="syn-number">0</span> {
+		<span class="syn-number">0</span>
+	} <span class="syn-keyword">else</span> {
+		text.get(at - <span class="syn-number">1</span>) ?? <span class="syn-number">0</span>
+	}
+
+<span class="syn-comment">## The bytes from place `from` to place `to`, both counted from 1 and kept</span>
+<span class="syn-comment">## inside the text, as Shale&#39;s `sub` takes them.</span>
+<span class="syn-name">span</span> : <span class="syn-type">List</span>(<span class="syn-type">U8</span>), <span class="syn-type">U64</span>, <span class="syn-type">U64</span> -&gt; <span class="syn-type">List</span>(<span class="syn-type">U8</span>)
+<span class="syn-name">span</span> = |text, from, to| {
+	start = <span class="syn-keyword">if</span> from &lt; <span class="syn-number">1</span> {
+		<span class="syn-number">1</span>
+	} <span class="syn-keyword">else</span> {
+		from
+	}
+	<span class="syn-keyword">if</span> to &lt; start {
+		[]
+	} <span class="syn-keyword">else</span> {
+		text.sublist({ start: start - <span class="syn-number">1</span>, len: to + <span class="syn-number">1</span> - start })
+	}
+}
+
+<span class="syn-comment">## Whether the bytes from `from` to `to` hold a `#`.</span>
+<span class="syn-name">has_comment</span> : <span class="syn-type">List</span>(<span class="syn-type">U8</span>), <span class="syn-type">U64</span>, <span class="syn-type">U64</span> -&gt; <span class="syn-type">Bool</span>
+<span class="syn-name">has_comment</span> = |text, from, to| span(text, from, to).contains(<span class="syn-string">&#39;#&#39;</span>)
+
+<span class="syn-comment">## Whether the bytes from `from` on spell `word`.</span>
+<span class="syn-name">spells</span> : <span class="syn-type">List</span>(<span class="syn-type">U8</span>), <span class="syn-type">U64</span>, <span class="syn-type">Str</span> -&gt; <span class="syn-type">Bool</span>
+<span class="syn-name">spells</span> = |text, from, word| span(text, from, from + word.count_utf8_bytes() - <span class="syn-number">1</span>) == word.to_utf8()
+
+<span class="syn-name">is_space</span> : <span class="syn-type">List</span>(<span class="syn-type">U8</span>), <span class="syn-type">U64</span> -&gt; <span class="syn-type">Bool</span>
+<span class="syn-name">is_space</span> = |text, at| {
+	byte = byte_at(text, at)
+	byte == <span class="syn-string">&#39; &#39;</span> <span class="syn-keyword">or</span> byte == <span class="syn-string">&#39;\t&#39;</span> <span class="syn-keyword">or</span> byte == <span class="syn-string">&#39;\n&#39;</span>
+}
+
+<span class="syn-comment">## The first place at or past `at` that isn&#39;t white space.</span>
+<span class="syn-name">past_space</span> : <span class="syn-type">List</span>(<span class="syn-type">U8</span>), <span class="syn-type">U64</span> -&gt; <span class="syn-type">U64</span>
+<span class="syn-name">past_space</span> = |text, at| {
+	<span class="syn-keyword">var</span> $place = at
+	<span class="syn-keyword">while</span> is_space(text, $place) {
+		$place = $place + <span class="syn-number">1</span>
+	}
+	$place
+}
+
+<span class="syn-comment">## The last place before `at` that isn&#39;t white space, plus one.</span>
+<span class="syn-name">before_space</span> : <span class="syn-type">List</span>(<span class="syn-type">U8</span>), <span class="syn-type">U64</span> -&gt; <span class="syn-type">U64</span>
+<span class="syn-name">before_space</span> = |text, at| {
+	<span class="syn-keyword">var</span> $place = at
+	<span class="syn-keyword">while</span> $place &gt; <span class="syn-number">1</span> <span class="syn-keyword">and</span> is_space(text, $place - <span class="syn-number">1</span>) {
+		$place = $place - <span class="syn-number">1</span>
+	}
+	$place
+}
+
+<span class="syn-comment">## Where the line holding the place just before `at` starts.</span>
+<span class="syn-name">last_line_start</span> : <span class="syn-type">List</span>(<span class="syn-type">U8</span>), <span class="syn-type">U64</span> -&gt; <span class="syn-type">U64</span>
+<span class="syn-name">last_line_start</span> = |text, at| {
+	<span class="syn-keyword">var</span> $place = at - <span class="syn-number">1</span>
+	<span class="syn-keyword">while</span> $place &gt; <span class="syn-number">1</span> <span class="syn-keyword">and</span> byte_at(text, $place - <span class="syn-number">1</span>) != <span class="syn-string">&#39;\n&#39;</span> {
+		$place = $place - <span class="syn-number">1</span>
+	}
+	$place
+}
+
+<span class="syn-comment">## The first place at or past `at` outside white space and comments.</span>
+<span class="syn-name">past_comments</span> : <span class="syn-type">List</span>(<span class="syn-type">U8</span>), <span class="syn-type">U64</span> -&gt; <span class="syn-type">U64</span>
+<span class="syn-name">past_comments</span> = |text, at| {
+	<span class="syn-keyword">var</span> $place = past_space(text, at)
+	<span class="syn-keyword">while</span> byte_at(text, $place) == <span class="syn-string">&#39;#&#39;</span> {
+		<span class="syn-keyword">while</span> $place &lt;= text.len() <span class="syn-keyword">and</span> byte_at(text, $place) != <span class="syn-string">&#39;\n&#39;</span> {
+			$place = $place + <span class="syn-number">1</span>
+		}
+		$place = past_space(text, $place)
+	}
+	$place
+}
+
+<span class="syn-comment">## The edits that take off the brackets at the ends of `node`: the space</span>
+<span class="syn-comment">## inside them goes too, so nothing is left of a line that held a bracket</span>
+<span class="syn-comment">## alone. With `keep_break`, the line break after the opening bracket stays,</span>
+<span class="syn-comment">## as a body on its own line wants. A comment beside a bracket keeps its line.</span>
+<span class="syn-name">bracket_removal</span> : <span class="syn-type">Src</span>, <span class="syn-type">Tree.Node</span>, <span class="syn-type">Bool</span> -&gt; <span class="syn-type">List</span>(<span class="syn-type">Edits.Edit</span>)
+<span class="syn-name">bracket_removal</span> = |src, node, keep_break| {
+	text = src.text
+	opening = offset_of(src, node.line, node.column)
+	closing = offset_of(src, node.end_line, node.end_column) - <span class="syn-number">1</span>
+	past_opening = past_space(text, opening + <span class="syn-number">1</span>)
+	cut_to = <span class="syn-keyword">if</span> keep_break <span class="syn-keyword">or</span> byte_at(text, past_opening) == <span class="syn-string">&#39;#&#39;</span> {
+		opening + <span class="syn-number">1</span>
+	} <span class="syn-keyword">else</span> {
+		past_opening
+	}
+	before_closing = before_space(text, closing)
+	cut_from = <span class="syn-keyword">if</span> has_comment(text, last_line_start(text, before_closing), before_closing - <span class="syn-number">1</span>) {
+		closing
+	} <span class="syn-keyword">else</span> {
+		before_closing
+	}
+	[
+		{ at: opening, cut: cut_to - opening, put: <span class="syn-string">&quot;&quot;</span> },
+		{ at: cut_from, cut: closing + <span class="syn-number">1</span> - cut_from, put: <span class="syn-string">&quot;&quot;</span> },
+	]
+}
+
+<span class="syn-comment">## A body keeps its own line after `|x|`, `=&gt;` or `=`, unless it is a block,</span>
+<span class="syn-comment">## whose brace sits there. A statement has nothing before it to keep.</span>
+<span class="syn-name">keeps_break</span> : <span class="syn-type">List</span>(<span class="syn-type">Tree.Node</span>), <span class="syn-type">Tree.Node</span>, <span class="syn-type">Tree.Node</span> -&gt; <span class="syn-type">Bool</span>
+<span class="syn-name">keeps_break</span> = |nodes, node, inner|
+	<span class="syn-type">Tree</span>.node_at(nodes, node.parent).kind != <span class="syn-string">&quot;statements&quot;</span> <span class="syn-keyword">and</span> inner.kind != <span class="syn-string">&quot;e-block&quot;</span>
+
+<span class="syn-name">no_span</span> : <span class="syn-type">Src</span>, <span class="syn-type">Tree.Node</span> -&gt; <span class="syn-type">Try</span>(<span class="syn-type">U64</span>, <span class="syn-type">Str</span>)
+<span class="syn-name">no_span</span> = |src, node| <span class="syn-type">Err</span>(<span class="syn-string">&quot;find_and_remove_extra_parentheses: </span>${src.path}<span class="syn-string">: can&#39;t find the ends of a </span>${node.kind}<span class="syn-string">, which the tree gives no span&quot;</span>)
+
+<span class="syn-comment">## Where the node at `at` starts. Roc&#39;s tree gives a `match` and a unary</span>
+<span class="syn-comment">## operator no span of their own, so their ends are found from the nodes they</span>
+<span class="syn-comment">## hold; any other kind with no span is an `Err`.</span>
+<span class="syn-name">start_of</span> : <span class="syn-type">Src</span>, <span class="syn-type">U64</span> -&gt; <span class="syn-type">Try</span>(<span class="syn-type">U64</span>, <span class="syn-type">Str</span>)
+<span class="syn-name">start_of</span> = |src, at| {
+	node = <span class="syn-type">Tree</span>.node_at(src.nodes, at)
+	<span class="syn-keyword">if</span> node.line != <span class="syn-number">0</span> {
+		<span class="syn-type">Ok</span>(offset_of(src, node.line, node.column))
+	} <span class="syn-keyword">else</span> <span class="syn-keyword">if</span> node.kind != <span class="syn-string">&quot;unary&quot;</span> <span class="syn-keyword">and</span> node.kind != <span class="syn-string">&quot;e-match&quot;</span> {
+		no_span(src, node)
+	} <span class="syn-keyword">else</span> {
+		before = before_space(src.text, start_of(src, <span class="syn-type">Tree</span>.first_kid(node))?)
+		<span class="syn-keyword">if</span> node.kind == <span class="syn-string">&quot;unary&quot;</span> {
+			<span class="syn-type">Ok</span>(before - <span class="syn-number">1</span>)
+		} <span class="syn-keyword">else</span> <span class="syn-keyword">if</span> before &gt; <span class="syn-number">5</span> <span class="syn-keyword">and</span> spells(src.text, before - <span class="syn-number">5</span>, <span class="syn-string">&quot;match&quot;</span>) {
+			<span class="syn-type">Ok</span>(before - <span class="syn-number">5</span>)
+		} <span class="syn-keyword">else</span> {
+			no_span(src, node)
+		}
+	}
+}
+
+<span class="syn-comment">## The place just past the node at `at`.</span>
+<span class="syn-name">end_of</span> : <span class="syn-type">Src</span>, <span class="syn-type">U64</span> -&gt; <span class="syn-type">Try</span>(<span class="syn-type">U64</span>, <span class="syn-type">Str</span>)
+<span class="syn-name">end_of</span> = |src, at| {
+	node = <span class="syn-type">Tree</span>.node_at(src.nodes, at)
+	<span class="syn-keyword">if</span> node.line != <span class="syn-number">0</span> {
+		<span class="syn-type">Ok</span>(offset_of(src, node.end_line, node.end_column))
+	} <span class="syn-keyword">else</span> <span class="syn-keyword">if</span> node.kind == <span class="syn-string">&quot;unary&quot;</span> {
+		end_of(src, <span class="syn-type">Tree</span>.first_kid(node))
+	} <span class="syn-keyword">else</span> <span class="syn-keyword">if</span> node.kind != <span class="syn-string">&quot;e-match&quot;</span> {
+		no_span(src, node)
+	} <span class="syn-keyword">else</span> {
+		branches = <span class="syn-type">Tree</span>.node_at(src.nodes, <span class="syn-type">Tree</span>.kid_at(node, <span class="syn-number">2</span>))
+		closing = past_comments(src.text, end_of(src, <span class="syn-type">Tree</span>.last_kid(branches))?)
+		<span class="syn-keyword">if</span> byte_at(src.text, closing) == <span class="syn-string">&#39;}&#39;</span> {
+			<span class="syn-type">Ok</span>(closing + <span class="syn-number">1</span>)
+		} <span class="syn-keyword">else</span> {
+			no_span(src, node)
+		}
+	}
+}
+
+<span class="syn-comment">## The opening brace of the branch at `at`, on the line of what stands before</span>
+<span class="syn-comment">## it, which ends at `after`, since `roc fmt` keeps a line break before a</span>
+<span class="syn-comment">## brace. A comment there keeps its place after the brace.</span>
+<span class="syn-name">opening_brace</span> : <span class="syn-type">Src</span>, <span class="syn-type">U64</span>, <span class="syn-type">U64</span> -&gt; <span class="syn-type">Try</span>(<span class="syn-type">Edits.Edit</span>, <span class="syn-type">Str</span>)
+<span class="syn-name">opening_brace</span> = |src, at, after| {
+	from = start_of(src, at)?
+	<span class="syn-keyword">if</span> has_comment(src.text, after, from - <span class="syn-number">1</span>) {
+		<span class="syn-type">Ok</span>({ at: after, cut: <span class="syn-number">0</span>, put: <span class="syn-string">&quot; {&quot;</span> })
+	} <span class="syn-keyword">else</span> {
+		<span class="syn-type">Ok</span>({ at: after, cut: from - after, put: <span class="syn-string">&quot; { &quot;</span> })
+	}
+}
+
+<span class="syn-comment">## The place just past the `else` that follows `then_end`.</span>
+<span class="syn-name">past_else</span> : <span class="syn-type">Src</span>, <span class="syn-type">U64</span> -&gt; <span class="syn-type">Try</span>(<span class="syn-type">U64</span>, <span class="syn-type">Str</span>)
+<span class="syn-name">past_else</span> = |src, then_end| {
+	at = past_comments(src.text, then_end)
+	<span class="syn-keyword">if</span> spells(src.text, at, <span class="syn-string">&quot;else&quot;</span>) {
+		<span class="syn-type">Ok</span>(at + <span class="syn-number">4</span>)
+	} <span class="syn-keyword">else</span> {
+		<span class="syn-type">Err</span>(<span class="syn-string">&quot;find_and_remove_extra_parentheses: </span>${src.path}<span class="syn-string">: no `else` where a branch ended&quot;</span>)
+	}
+}
+
+<span class="syn-comment">## The closing brace of a `then` branch, with `else` brought up to it.</span>
+<span class="syn-name">brace_before_else</span> : <span class="syn-type">Src</span>, <span class="syn-type">U64</span> -&gt; <span class="syn-type">Try</span>(<span class="syn-type">Edits.Edit</span>, <span class="syn-type">Str</span>)
+<span class="syn-name">brace_before_else</span> = |src, at| {
+	to = end_of(src, at)?
+	next_word = past_space(src.text, to)
+	<span class="syn-keyword">if</span> spells(src.text, next_word, <span class="syn-string">&quot;else&quot;</span>) {
+		<span class="syn-type">Ok</span>({ at: to, cut: next_word - to, put: <span class="syn-string">&quot; } &quot;</span> })
+	} <span class="syn-keyword">else</span> {
+		<span class="syn-type">Ok</span>({ at: to, cut: <span class="syn-number">0</span>, put: <span class="syn-string">&quot; }&quot;</span> })
+	}
+}
+</code></pre>
+<h2 class="code">Shale original</h2>
+<p class="file"><a href="https://github.com/showell/shale/blob/95f59de8af6ce8402305b2f3c9c5a2b6978e13b1/cookbook/roc/find_extra_parens.shale"><code>cookbook/roc/find_extra_parens.shale</code></a>, 442 lines, at <code>95f59de8</code></p>
+<p class="file">The libraries it loads: <a href="https://github.com/showell/shale/blob/95f59de8af6ce8402305b2f3c9c5a2b6978e13b1/cookbook/findings.shale"><code>cookbook/findings.shale</code></a> (21 lines), <a href="https://github.com/showell/shale/blob/95f59de8af6ce8402305b2f3c9c5a2b6978e13b1/cookbook/roc/house.shale"><code>cookbook/roc/house.shale</code></a> (46 lines), <a href="https://github.com/showell/shale/blob/95f59de8af6ce8402305b2f3c9c5a2b6978e13b1/cookbook/roc/parsed.shale"><code>cookbook/roc/parsed.shale</code></a> (34 lines), <a href="https://github.com/showell/shale/blob/95f59de8af6ce8402305b2f3c9c5a2b6978e13b1/cookbook/roc/pinned.shale"><code>cookbook/roc/pinned.shale</code></a> (20 lines).</p>
+<pre><code><span class="syn-comment">-- This recipe finds the parentheses and braceless `if`s that a code emitter</span>
+<span class="syn-comment">-- leaves in Roc, and with `write=1` rewrites them. Roc&#39;s own formatter keeps</span>
+<span class="syn-comment">-- both, and adds the condition&#39;s parentheses itself to an `if` with no braces,</span>
+<span class="syn-comment">-- so neither `roc check` nor `roc fmt` sees them. The recipe reads each file&#39;s</span>
+<span class="syn-comment">-- syntax tree from Roc&#39;s own parser (cookbook/roc/parsed.shale).</span>
+<span class="syn-comment">--</span>
+<span class="syn-comment">--   cd &lt;repo&gt; &amp;&amp; shale &lt;shale&gt;/cookbook/roc/find_extra_parens.shale glob=chat/**/*.roc</span>
+<span class="syn-comment">--   cd &lt;repo&gt; &amp;&amp; shale &lt;shale&gt;/cookbook/roc/find_extra_parens.shale glob=chat/**/*.roc write=1</span>
+<span class="syn-comment">--   shale cookbook:roc/find_extra_parens.shale self_test=1</span>
+<span class="syn-comment">--</span>
+<span class="syn-comment">-- The arguments:</span>
+<span class="syn-comment">--   glob   the files to check, `**/*.roc` by default;</span>
+<span class="syn-comment">--   house  with `house=0`, leave out `paren_if` and `lambda_if`, which are</span>
+<span class="syn-comment">--          only our house style (cookbook/roc/house.shale): Luke Boswell&#39;s</span>
+<span class="syn-comment">--          roc-style.md asks for `if (x) a else b`;</span>
+<span class="syn-comment">--   write  with `write=1`, rewrite the files (see below).</span>
+<span class="syn-comment">--</span>
+<span class="syn-comment">-- Each finding is one line, `path:line: check: source line`:</span>
+<span class="syn-comment">--   paren_if      an `if` written `if (x) a else b`, or with a condition wholly</span>
+<span class="syn-comment">--                 in parentheses, or a branch with no braces;</span>
+<span class="syn-comment">--   wrapped_body  parentheses around the whole of a lambda&#39;s body, a match</span>
+<span class="syn-comment">--                 branch&#39;s body, a statement or a declaration&#39;s multi-line</span>
+<span class="syn-comment">--                 value (`|x| (...)`, `Some =&gt; (...)`, `y = (\n...\n)`);</span>
+<span class="syn-comment">--   else_block    `else { if ... }`, which is `else if ...`;</span>
+<span class="syn-comment">--   lambda_if     an `if` that is a lambda&#39;s whole body and hangs off its `|`</span>
+<span class="syn-comment">--                 (`|x| if x &gt; 1 {`). It starts its own line. An `if` that</span>
+<span class="syn-comment">--                 paren_if also finds gets this finding once that one is fixed.</span>
+<span class="syn-comment">--</span>
+<span class="syn-comment">-- Parentheses around one operand or one argument are left alone: they group,</span>
+<span class="syn-comment">-- and a float&#39;s order of operations can rest on them. So is a one-line</span>
+<span class="syn-comment">-- declaration such as `width = (half * 2.0)`, which holds no structure to hide.</span>
+<span class="syn-comment">--</span>
+<span class="syn-comment">-- The output is the counts, the findings, and the counts again</span>
+<span class="syn-comment">-- (cookbook/findings.shale). Files that don&#39;t parse are listed after the</span>
+<span class="syn-comment">-- findings, and then the run fails.</span>
+<span class="syn-comment">--</span>
+<span class="syn-comment">-- With `write=1`, the recipe makes each of these edits by the parser&#39;s spans,</span>
+<span class="syn-comment">-- runs `roc fmt` on the files it changed, and repeats until a pass changes</span>
+<span class="syn-comment">-- nothing, because taking off one pair can show the next. A comment inside a</span>
+<span class="syn-comment">-- bracket stays, so it can leave a line a reader tidies. It runs the Roc the</span>
+<span class="syn-comment">-- tree is built with (cookbook/roc/pinned.shale), from the repository&#39;s root.</span>
+<span class="syn-comment">--</span>
+<span class="syn-comment">-- `self_test=1` checks the plants in `cookbook/roc/plants/find_extra_parens/`. A plant</span>
+<span class="syn-comment">-- line ending `# paren_if`, `# wrapped_body`, `# else_block` or `# lambda_if`</span>
+<span class="syn-comment">-- must give that finding, and no unmarked line may give one. Then the test copies the plants</span>
+<span class="syn-comment">-- to `scratch:parens/` and rewrites them there: every file must still parse, no</span>
+<span class="syn-comment">-- finding may be left, a second rewrite must change nothing, and a plant with a</span>
+<span class="syn-comment">-- `.want` file must come out as it.</span>
+<span class="syn-comment">--</span>
+<span class="syn-comment">-- budget: steps=900000000 read_bytes=1000000000 arena_bytes=2000000000 output_bytes=4000000</span>
+
+<span class="syn-keyword">const</span> SELF_TEST = arg(<span class="syn-string">&quot;self_test&quot;</span>, <span class="syn-string">&quot;&quot;</span>) == <span class="syn-string">&quot;1&quot;</span>
+<span class="syn-keyword">const</span> PLANTS = <span class="syn-string">&quot;cookbook:roc/plants/find_extra_parens&quot;</span>
+<span class="syn-keyword">const</span> SCRATCH = <span class="syn-string">&quot;scratch:parens&quot;</span>
+<span class="syn-keyword">const</span> GLOB = SELF_TEST <span class="syn-keyword">and</span> (PLANTS .. <span class="syn-string">&quot;/*.roc&quot;</span>) <span class="syn-keyword">or</span> arg(<span class="syn-string">&quot;glob&quot;</span>, <span class="syn-string">&quot;**/*.roc&quot;</span>)
+<span class="syn-keyword">const</span> WRITE = arg(<span class="syn-string">&quot;write&quot;</span>, <span class="syn-string">&quot;&quot;</span>) == <span class="syn-string">&quot;1&quot;</span>
+<span class="syn-keyword">const</span> CHECKS = {<span class="syn-string">&quot;paren_if&quot;</span>, <span class="syn-string">&quot;wrapped_body&quot;</span>, <span class="syn-string">&quot;else_block&quot;</span>, <span class="syn-string">&quot;lambda_if&quot;</span>}
+use(<span class="syn-string">&quot;cookbook:findings.shale&quot;</span>)
+use(<span class="syn-string">&quot;./house.shale&quot;</span>)
+use(<span class="syn-string">&quot;./parsed.shale&quot;</span>)
+use(<span class="syn-string">&quot;./pinned.shale&quot;</span>)
+
+<span class="syn-comment">-- A one-item tuple is a pair of parentheses.</span>
+<span class="syn-keyword">function</span> <span class="syn-name">is_parens</span>(node)
+  <span class="syn-keyword">return</span> node.kind == <span class="syn-string">&quot;e-tuple&quot;</span> <span class="syn-keyword">and</span> #node.kids == <span class="syn-number">1</span>
+<span class="syn-keyword">end</span>
+
+<span class="syn-keyword">function</span> <span class="syn-name">is_last_kid</span>(nodes, i)
+  <span class="syn-keyword">local</span> kids = nodes[nodes[i].parent].kids
+  <span class="syn-keyword">return</span> kids[#kids] == i
+<span class="syn-keyword">end</span>
+
+<span class="syn-comment">-- Whether parentheses at `i` wrap a whole body. The value of a declaration</span>
+<span class="syn-comment">-- counts only over several lines; a statement counts wherever it stands, and</span>
+<span class="syn-comment">-- `if`&#39;s branches are paren_if&#39;s and the block&#39;s own.</span>
+<span class="syn-keyword">function</span> <span class="syn-name">wraps_body</span>(nodes, i)
+  <span class="syn-keyword">local</span> node = nodes[i]
+  <span class="syn-keyword">if</span> <span class="syn-keyword">not</span> is_parens(node) <span class="syn-keyword">or</span> node.parent == <span class="syn-number">0</span> <span class="syn-keyword">then</span> <span class="syn-keyword">return</span> <span class="syn-keyword">false</span> <span class="syn-keyword">end</span>
+  <span class="syn-keyword">local</span> kind = nodes[node.parent].kind
+  <span class="syn-keyword">if</span> kind == <span class="syn-string">&quot;statements&quot;</span> <span class="syn-keyword">then</span> <span class="syn-keyword">return</span> <span class="syn-keyword">true</span> <span class="syn-keyword">end</span>
+  <span class="syn-keyword">if</span> kind == <span class="syn-string">&quot;e-lambda&quot;</span> <span class="syn-keyword">or</span> kind == <span class="syn-string">&quot;branch&quot;</span> <span class="syn-keyword">then</span> <span class="syn-keyword">return</span> is_last_kid(nodes, i) <span class="syn-keyword">end</span>
+  <span class="syn-keyword">if</span> kind == <span class="syn-string">&quot;s-decl&quot;</span> <span class="syn-keyword">then</span> <span class="syn-keyword">return</span> is_last_kid(nodes, i) <span class="syn-keyword">and</span> node.end_line &gt; node.line <span class="syn-keyword">end</span>
+  <span class="syn-keyword">return</span> <span class="syn-keyword">false</span>
+<span class="syn-keyword">end</span>
+
+<span class="syn-keyword">function</span> <span class="syn-name">has_braces</span>(node)
+  <span class="syn-keyword">return</span> node.kind == <span class="syn-string">&quot;e-block&quot;</span>
+<span class="syn-keyword">end</span>
+
+<span class="syn-keyword">function</span> <span class="syn-name">is_paren_if</span>(nodes, i)
+  <span class="syn-keyword">local</span> node = nodes[i]
+  <span class="syn-keyword">if</span> node.kind ~= <span class="syn-string">&quot;e-if-then-else&quot;</span> <span class="syn-keyword">then</span> <span class="syn-keyword">return</span> <span class="syn-keyword">false</span> <span class="syn-keyword">end</span>
+  <span class="syn-keyword">local</span> kids = node.kids
+  <span class="syn-keyword">local</span> otherwise = nodes[kids[<span class="syn-number">3</span>]]
+  <span class="syn-keyword">return</span> is_parens(nodes[kids[<span class="syn-number">1</span>]]) <span class="syn-keyword">or</span> <span class="syn-keyword">not</span> has_braces(nodes[kids[<span class="syn-number">2</span>]])
+    <span class="syn-keyword">or</span> <span class="syn-keyword">not</span> (has_braces(otherwise) <span class="syn-keyword">or</span> otherwise.kind == <span class="syn-string">&quot;e-if-then-else&quot;</span>)
+<span class="syn-keyword">end</span>
+
+<span class="syn-comment">-- The `if` that is the whole of a block, or 0: the block&#39;s one statement.</span>
+<span class="syn-keyword">function</span> <span class="syn-name">only_if_in</span>(nodes, block)
+  <span class="syn-keyword">local</span> statements = nodes[nodes[block].kids[<span class="syn-number">1</span>]]
+  <span class="syn-keyword">if</span> #statements.kids ~= <span class="syn-number">1</span> <span class="syn-keyword">then</span> <span class="syn-keyword">return</span> <span class="syn-number">0</span> <span class="syn-keyword">end</span>
+  <span class="syn-keyword">local</span> only = statements.kids[<span class="syn-number">1</span>]
+  <span class="syn-keyword">if</span> nodes[only].kind == <span class="syn-string">&quot;e-if-then-else&quot;</span> <span class="syn-keyword">then</span> <span class="syn-keyword">return</span> only <span class="syn-keyword">end</span>
+  <span class="syn-keyword">return</span> <span class="syn-number">0</span>
+<span class="syn-keyword">end</span>
+
+<span class="syn-keyword">function</span> <span class="syn-name">is_else_block</span>(nodes, i)
+  <span class="syn-keyword">local</span> node = nodes[i]
+  <span class="syn-keyword">if</span> node.kind ~= <span class="syn-string">&quot;e-if-then-else&quot;</span> <span class="syn-keyword">then</span> <span class="syn-keyword">return</span> <span class="syn-keyword">false</span> <span class="syn-keyword">end</span>
+  <span class="syn-keyword">local</span> otherwise = node.kids[<span class="syn-number">3</span>]
+  <span class="syn-keyword">return</span> has_braces(nodes[otherwise]) <span class="syn-keyword">and</span> only_if_in(nodes, otherwise) ~= <span class="syn-number">0</span>
+<span class="syn-keyword">end</span>
+
+<span class="syn-comment">-- Whether the node at `i` is an `if` that is a lambda&#39;s whole body and shares</span>
+<span class="syn-comment">-- its line with what comes before it, which can only be the lambda&#39;s `|`.</span>
+<span class="syn-keyword">function</span> <span class="syn-name">is_lambda_if</span>(nodes, i, source)
+  <span class="syn-keyword">local</span> node = nodes[i]
+  <span class="syn-keyword">if</span> node.kind ~= <span class="syn-string">&quot;e-if-then-else&quot;</span> <span class="syn-keyword">or</span> node.parent == <span class="syn-number">0</span> <span class="syn-keyword">then</span> <span class="syn-keyword">return</span> <span class="syn-keyword">false</span> <span class="syn-keyword">end</span>
+  <span class="syn-keyword">if</span> nodes[node.parent].kind ~= <span class="syn-string">&quot;e-lambda&quot;</span> <span class="syn-keyword">or</span> <span class="syn-keyword">not</span> is_last_kid(nodes, i) <span class="syn-keyword">then</span> <span class="syn-keyword">return</span> <span class="syn-keyword">false</span> <span class="syn-keyword">end</span>
+  <span class="syn-keyword">if</span> is_paren_if(nodes, i) <span class="syn-keyword">then</span> <span class="syn-keyword">return</span> <span class="syn-keyword">false</span> <span class="syn-keyword">end</span>
+  <span class="syn-keyword">return</span> trim(sub(source[node.line], <span class="syn-number">1</span>, node.col - <span class="syn-number">1</span>)) ~= <span class="syn-string">&quot;&quot;</span>
+<span class="syn-keyword">end</span>
+
+<span class="syn-comment">-- Each file&#39;s findings: `{check, line}`, with the node they stand on.</span>
+<span class="syn-keyword">function</span> <span class="syn-name">findings_in</span>(file)
+  <span class="syn-keyword">local</span> found = {}
+  <span class="syn-keyword">local</span> source = split(read(file.path), <span class="syn-string">&quot;\n&quot;</span>)
+  <span class="syn-keyword">local</span> i = <span class="syn-number">1</span>
+  <span class="syn-keyword">while</span> i &lt;= #file.nodes <span class="syn-keyword">do</span>
+    <span class="syn-keyword">local</span> node = file.nodes[i]
+    <span class="syn-keyword">if</span> wraps_body(file.nodes, i) <span class="syn-keyword">then</span> push(found, {check = <span class="syn-string">&quot;wrapped_body&quot;</span>, line = node.line, at = i}) <span class="syn-keyword">end</span>
+    <span class="syn-keyword">if</span> is_paren_if(file.nodes, i) <span class="syn-keyword">then</span> push(found, {check = <span class="syn-string">&quot;paren_if&quot;</span>, line = node.line, at = i}) <span class="syn-keyword">end</span>
+    <span class="syn-keyword">if</span> is_else_block(file.nodes, i) <span class="syn-keyword">then</span> push(found, {check = <span class="syn-string">&quot;else_block&quot;</span>, line = node.line, at = i}) <span class="syn-keyword">end</span>
+    <span class="syn-keyword">if</span> is_lambda_if(file.nodes, i, source) <span class="syn-keyword">then</span> push(found, {check = <span class="syn-string">&quot;lambda_if&quot;</span>, line = node.line, at = i}) <span class="syn-keyword">end</span>
+    i = i + <span class="syn-number">1</span>
+  <span class="syn-keyword">end</span>
+  <span class="syn-keyword">return</span> found
+<span class="syn-keyword">end</span>
+
+<span class="syn-comment">-- Where each line starts in `text`, as an index into it.</span>
+<span class="syn-keyword">function</span> <span class="syn-name">line_starts</span>(text)
+  <span class="syn-keyword">local</span> starts = {<span class="syn-number">1</span>}
+  <span class="syn-keyword">for</span> at <span class="syn-keyword">in</span> find_all(text, <span class="syn-string">&quot;\n&quot;</span>) <span class="syn-keyword">do</span> push(starts, at + <span class="syn-number">1</span>) <span class="syn-keyword">end</span>
+  <span class="syn-keyword">return</span> starts
+<span class="syn-keyword">end</span>
+
+<span class="syn-keyword">function</span> <span class="syn-name">offset_of</span>(starts, line, col)
+  <span class="syn-keyword">return</span> starts[line] + col - <span class="syn-number">1</span>
+<span class="syn-keyword">end</span>
+
+<span class="syn-keyword">function</span> <span class="syn-name">is_space</span>(text, at)
+  <span class="syn-keyword">local</span> c = sub(text, at, at)
+  <span class="syn-keyword">return</span> c == <span class="syn-string">&quot; &quot;</span> <span class="syn-keyword">or</span> c == <span class="syn-string">&quot;\t&quot;</span> <span class="syn-keyword">or</span> c == <span class="syn-string">&quot;\n&quot;</span>
+<span class="syn-keyword">end</span>
+
+<span class="syn-comment">-- The first index past `at` that isn&#39;t white space.</span>
+<span class="syn-keyword">function</span> <span class="syn-name">past_space</span>(text, at)
+  <span class="syn-keyword">local</span> i = at
+  <span class="syn-keyword">while</span> is_space(text, i) <span class="syn-keyword">do</span> i = i + <span class="syn-number">1</span> <span class="syn-keyword">end</span>
+  <span class="syn-keyword">return</span> i
+<span class="syn-keyword">end</span>
+
+<span class="syn-comment">-- The last index before `at` that isn&#39;t white space, plus one.</span>
+<span class="syn-keyword">function</span> <span class="syn-name">before_space</span>(text, at)
+  <span class="syn-keyword">local</span> i = at
+  <span class="syn-keyword">while</span> is_space(text, i - <span class="syn-number">1</span>) <span class="syn-keyword">do</span> i = i - <span class="syn-number">1</span> <span class="syn-keyword">end</span>
+  <span class="syn-keyword">return</span> i
+<span class="syn-keyword">end</span>
+
+<span class="syn-comment">-- Where the line holding the index just before `at` starts.</span>
+<span class="syn-keyword">function</span> <span class="syn-name">last_line_start</span>(text, at)
+  <span class="syn-keyword">local</span> i = at - <span class="syn-number">1</span>
+  <span class="syn-keyword">while</span> i &gt; <span class="syn-number">1</span> <span class="syn-keyword">and</span> sub(text, i - <span class="syn-number">1</span>, i - <span class="syn-number">1</span>) ~= <span class="syn-string">&quot;\n&quot;</span> <span class="syn-keyword">do</span> i = i - <span class="syn-number">1</span> <span class="syn-keyword">end</span>
+  <span class="syn-keyword">return</span> i
+<span class="syn-keyword">end</span>
+
+<span class="syn-comment">-- The edits that take off the brackets at the ends of `node`: the space inside</span>
+<span class="syn-comment">-- them goes too, so nothing is left of a line that held a bracket alone. With</span>
+<span class="syn-comment">-- `keep_break`, the line break after the opening bracket stays, as a body on</span>
+<span class="syn-comment">-- its own line wants. A comment beside a bracket keeps its line.</span>
+<span class="syn-keyword">function</span> <span class="syn-name">push_bracket_removal</span>(edits, text, starts, node, keep_break)
+  <span class="syn-keyword">local</span> opening = offset_of(starts, node.line, node.col)
+  <span class="syn-keyword">local</span> closing = offset_of(starts, node.end_line, node.end_col) - <span class="syn-number">1</span>
+  <span class="syn-keyword">local</span> cut_to = past_space(text, opening + <span class="syn-number">1</span>)
+  <span class="syn-keyword">if</span> keep_break <span class="syn-keyword">or</span> sub(text, cut_to, cut_to) == <span class="syn-string">&quot;#&quot;</span> <span class="syn-keyword">then</span> cut_to = opening + <span class="syn-number">1</span> <span class="syn-keyword">end</span>
+  push(edits, {at = opening, cut = cut_to - opening, put = <span class="syn-string">&quot;&quot;</span>})
+  <span class="syn-keyword">local</span> cut_from = before_space(text, closing)
+  <span class="syn-keyword">local</span> last_line_from = last_line_start(text, cut_from)
+  <span class="syn-keyword">if</span> contains(sub(text, last_line_from, cut_from - <span class="syn-number">1</span>), <span class="syn-string">&quot;#&quot;</span>) <span class="syn-keyword">then</span> cut_from = closing <span class="syn-keyword">end</span>
+  push(edits, {at = cut_from, cut = closing + <span class="syn-number">1</span> - cut_from, put = <span class="syn-string">&quot;&quot;</span>})
+<span class="syn-keyword">end</span>
+
+<span class="syn-comment">-- The first index at or past `at` outside white space and comments.</span>
+<span class="syn-keyword">function</span> <span class="syn-name">past_comments</span>(text, at)
+  <span class="syn-keyword">local</span> i = past_space(text, at)
+  <span class="syn-keyword">while</span> sub(text, i, i) == <span class="syn-string">&quot;#&quot;</span> <span class="syn-keyword">do</span>
+    <span class="syn-keyword">while</span> i &lt;= #text <span class="syn-keyword">and</span> sub(text, i, i) ~= <span class="syn-string">&quot;\n&quot;</span> <span class="syn-keyword">do</span> i = i + <span class="syn-number">1</span> <span class="syn-keyword">end</span>
+    i = past_space(text, i)
+  <span class="syn-keyword">end</span>
+  <span class="syn-keyword">return</span> i
+<span class="syn-keyword">end</span>
+
+<span class="syn-keyword">function</span> <span class="syn-name">fail_no_span</span>(src, node)
+  fail(<span class="syn-string">&quot;find_extra_parens: &quot;</span> .. src.path .. <span class="syn-string">&quot;: can&#39;t find the ends of a &quot;</span> .. node.kind .. <span class="syn-string">&quot;, which the tree gives no span&quot;</span>)
+<span class="syn-keyword">end</span>
+
+<span class="syn-comment">-- Roc&#39;s tree gives a `match` and a unary operator no span of their own, so an</span>
+<span class="syn-comment">-- edit finds their ends from the nodes they hold. Any other kind with no span</span>
+<span class="syn-comment">-- stops the run: a guess here would write braces into the wrong place.</span>
+<span class="syn-keyword">function</span> <span class="syn-name">start_of</span>(src, i)
+  <span class="syn-keyword">local</span> node = src.nodes[i]
+  <span class="syn-keyword">if</span> node.line ~= <span class="syn-number">0</span> <span class="syn-keyword">then</span> <span class="syn-keyword">return</span> offset_of(src.starts, node.line, node.col) <span class="syn-keyword">end</span>
+  <span class="syn-keyword">if</span> node.kind ~= <span class="syn-string">&quot;unary&quot;</span> <span class="syn-keyword">and</span> node.kind ~= <span class="syn-string">&quot;e-match&quot;</span> <span class="syn-keyword">then</span> fail_no_span(src, node) <span class="syn-keyword">end</span>
+  <span class="syn-keyword">local</span> before = before_space(src.text, start_of(src, node.kids[<span class="syn-number">1</span>]))
+  <span class="syn-keyword">if</span> node.kind == <span class="syn-string">&quot;unary&quot;</span> <span class="syn-keyword">then</span> <span class="syn-keyword">return</span> before - <span class="syn-number">1</span> <span class="syn-keyword">end</span>
+  <span class="syn-keyword">if</span> sub(src.text, before - <span class="syn-number">5</span>, before - <span class="syn-number">1</span>) ~= <span class="syn-string">&quot;match&quot;</span> <span class="syn-keyword">then</span> fail_no_span(src, node) <span class="syn-keyword">end</span>
+  <span class="syn-keyword">return</span> before - <span class="syn-number">5</span>
+<span class="syn-keyword">end</span>
+
+<span class="syn-comment">-- The index just past the node at `i`.</span>
+<span class="syn-keyword">function</span> <span class="syn-name">end_of</span>(src, i)
+  <span class="syn-keyword">local</span> node = src.nodes[i]
+  <span class="syn-keyword">if</span> node.line ~= <span class="syn-number">0</span> <span class="syn-keyword">then</span> <span class="syn-keyword">return</span> offset_of(src.starts, node.end_line, node.end_col) <span class="syn-keyword">end</span>
+  <span class="syn-keyword">if</span> node.kind == <span class="syn-string">&quot;unary&quot;</span> <span class="syn-keyword">then</span> <span class="syn-keyword">return</span> end_of(src, node.kids[<span class="syn-number">1</span>]) <span class="syn-keyword">end</span>
+  <span class="syn-keyword">if</span> node.kind ~= <span class="syn-string">&quot;e-match&quot;</span> <span class="syn-keyword">then</span> fail_no_span(src, node) <span class="syn-keyword">end</span>
+  <span class="syn-keyword">local</span> branches = src.nodes[node.kids[<span class="syn-number">2</span>]].kids
+  <span class="syn-keyword">local</span> closing = past_comments(src.text, end_of(src, branches[#branches]))
+  <span class="syn-keyword">if</span> sub(src.text, closing, closing) ~= <span class="syn-string">&quot;}&quot;</span> <span class="syn-keyword">then</span> fail_no_span(src, node) <span class="syn-keyword">end</span>
+  <span class="syn-keyword">return</span> closing + <span class="syn-number">1</span>
+<span class="syn-keyword">end</span>
+
+<span class="syn-comment">-- The opening brace of the branch at `i`, on the line of what stands before it,</span>
+<span class="syn-comment">-- which ends at `after`, since `roc fmt` keeps a line break before a brace. A</span>
+<span class="syn-comment">-- comment there keeps its place after the brace.</span>
+<span class="syn-keyword">function</span> <span class="syn-name">push_opening_brace</span>(edits, src, i, after)
+  <span class="syn-keyword">local</span> from = start_of(src, i)
+  <span class="syn-keyword">if</span> contains(sub(src.text, after, from - <span class="syn-number">1</span>), <span class="syn-string">&quot;#&quot;</span>) <span class="syn-keyword">then</span>
+    push(edits, {at = after, cut = <span class="syn-number">0</span>, put = <span class="syn-string">&quot; {&quot;</span>})
+  <span class="syn-keyword">else</span>
+    push(edits, {at = after, cut = from - after, put = <span class="syn-string">&quot; { &quot;</span>})
+  <span class="syn-keyword">end</span>
+<span class="syn-keyword">end</span>
+
+<span class="syn-comment">-- The index just past the `else` that follows `then_end`.</span>
+<span class="syn-keyword">function</span> <span class="syn-name">past_else</span>(src, then_end)
+  <span class="syn-keyword">local</span> at = past_comments(src.text, then_end)
+  <span class="syn-keyword">if</span> sub(src.text, at, at + <span class="syn-number">3</span>) ~= <span class="syn-string">&quot;else&quot;</span> <span class="syn-keyword">then</span> fail(<span class="syn-string">&quot;find_extra_parens: &quot;</span> .. src.path .. <span class="syn-string">&quot;: no `else` where a branch ended&quot;</span>) <span class="syn-keyword">end</span>
+  <span class="syn-keyword">return</span> at + <span class="syn-number">4</span>
+<span class="syn-keyword">end</span>
+
+<span class="syn-comment">-- The closing brace of a `then` branch, with `else` brought up to it.</span>
+<span class="syn-keyword">function</span> <span class="syn-name">push_brace_before_else</span>(edits, src, i)
+  <span class="syn-keyword">local</span> to = end_of(src, i)
+  <span class="syn-keyword">local</span> next_word = past_space(src.text, to)
+  <span class="syn-keyword">if</span> sub(src.text, next_word, next_word + <span class="syn-number">3</span>) == <span class="syn-string">&quot;else&quot;</span> <span class="syn-keyword">then</span>
+    push(edits, {at = to, cut = next_word - to, put = <span class="syn-string">&quot; } &quot;</span>})
+  <span class="syn-keyword">else</span>
+    push(edits, {at = to, cut = <span class="syn-number">0</span>, put = <span class="syn-string">&quot; }&quot;</span>})
+  <span class="syn-keyword">end</span>
+<span class="syn-keyword">end</span>
+
+<span class="syn-comment">-- A body keeps its own line after `|x|`, `=&gt;` or `=`, unless it is a block,</span>
+<span class="syn-comment">-- whose brace sits there. A statement has nothing before it to keep.</span>
+<span class="syn-keyword">function</span> <span class="syn-name">keeps_break</span>(nodes, node, inner)
+  <span class="syn-keyword">return</span> nodes[node.parent].kind ~= <span class="syn-string">&quot;statements&quot;</span> <span class="syn-keyword">and</span> inner.kind ~= <span class="syn-string">&quot;e-block&quot;</span>
+<span class="syn-keyword">end</span>
+
+<span class="syn-keyword">function</span> <span class="syn-name">push_edits</span>(edits, src, finding)
+  <span class="syn-keyword">local</span> nodes = src.nodes
+  <span class="syn-keyword">local</span> text = src.text
+  <span class="syn-keyword">local</span> starts = src.starts
+  <span class="syn-keyword">local</span> node = nodes[finding.at]
+  <span class="syn-keyword">if</span> finding.check == <span class="syn-string">&quot;wrapped_body&quot;</span> <span class="syn-keyword">then</span>
+    push_bracket_removal(edits, text, starts, node, keeps_break(nodes, node, nodes[node.kids[<span class="syn-number">1</span>]]))
+  <span class="syn-keyword">elseif</span> finding.check == <span class="syn-string">&quot;else_block&quot;</span> <span class="syn-keyword">then</span>
+    push_bracket_removal(edits, text, starts, nodes[node.kids[<span class="syn-number">3</span>]], <span class="syn-keyword">false</span>)
+  <span class="syn-keyword">elseif</span> finding.check == <span class="syn-string">&quot;lambda_if&quot;</span> <span class="syn-keyword">then</span>
+    <span class="syn-keyword">local</span> from = start_of(src, finding.at)
+    <span class="syn-keyword">local</span> after = before_space(text, from)
+    push(edits, {at = after, cut = from - after, put = <span class="syn-string">&quot;\n&quot;</span>})
+  <span class="syn-keyword">else</span>
+    <span class="syn-keyword">local</span> condition = nodes[node.kids[<span class="syn-number">1</span>]]
+    <span class="syn-keyword">local</span> then_branch = nodes[node.kids[<span class="syn-number">2</span>]]
+    <span class="syn-keyword">local</span> otherwise = nodes[node.kids[<span class="syn-number">3</span>]]
+    <span class="syn-keyword">if</span> is_parens(condition) <span class="syn-keyword">then</span> push_bracket_removal(edits, text, starts, condition, <span class="syn-keyword">false</span>) <span class="syn-keyword">end</span>
+    <span class="syn-keyword">if</span> <span class="syn-keyword">not</span> has_braces(then_branch) <span class="syn-keyword">then</span>
+      push_opening_brace(edits, src, node.kids[<span class="syn-number">2</span>], end_of(src, node.kids[<span class="syn-number">1</span>]))
+      push_brace_before_else(edits, src, node.kids[<span class="syn-number">2</span>])
+    <span class="syn-keyword">end</span>
+    <span class="syn-keyword">if</span> <span class="syn-keyword">not</span> (has_braces(otherwise) <span class="syn-keyword">or</span> otherwise.kind == <span class="syn-string">&quot;e-if-then-else&quot;</span>) <span class="syn-keyword">then</span>
+      push_opening_brace(edits, src, node.kids[<span class="syn-number">3</span>], past_else(src, end_of(src, node.kids[<span class="syn-number">2</span>])))
+      push(edits, {at = end_of(src, node.kids[<span class="syn-number">3</span>]), cut = <span class="syn-number">0</span>, put = <span class="syn-string">&quot; }&quot;</span>})
+    <span class="syn-keyword">end</span>
+  <span class="syn-keyword">end</span>
+<span class="syn-keyword">end</span>
+
+<span class="syn-comment">-- At one index, an edit that only inserts goes first, so that a closing brace</span>
+<span class="syn-comment">-- nested in a branch&#39;s end stands before the one that cuts the space after it.</span>
+<span class="syn-keyword">function</span> <span class="syn-name">with_edits</span>(text, edits)
+  sort(edits, {<span class="syn-string">&quot;at&quot;</span>, <span class="syn-string">&quot;cut&quot;</span>})
+  <span class="syn-keyword">local</span> pieces = {}
+  <span class="syn-keyword">local</span> from = <span class="syn-number">1</span>
+  <span class="syn-keyword">for</span> e <span class="syn-keyword">in</span> edits <span class="syn-keyword">do</span>
+    <span class="syn-keyword">if</span> e.at &lt; from <span class="syn-keyword">then</span> fail(<span class="syn-string">&quot;find_extra_parens: two edits overlap at index &quot;</span> .. e.at) <span class="syn-keyword">end</span>
+    <span class="syn-keyword">if</span> e.at &gt; from <span class="syn-keyword">then</span> push(pieces, sub(text, from, e.at - <span class="syn-number">1</span>)) <span class="syn-keyword">end</span>
+    push(pieces, e.put)
+    from = e.at + e.cut
+  <span class="syn-keyword">end</span>
+  <span class="syn-keyword">if</span> from &lt;= #text <span class="syn-keyword">then</span> push(pieces, sub(text, from, #text)) <span class="syn-keyword">end</span>
+  <span class="syn-keyword">return</span> join(pieces, <span class="syn-string">&quot;&quot;</span>)
+<span class="syn-keyword">end</span>
+
+<span class="syn-comment">-- One kind of edit a pass, so no two edits of a pass touch one place. A finding</span>
+<span class="syn-comment">-- inside another&#39;s span of the same kind is safe: its brackets are its own.</span>
+<span class="syn-keyword">function</span> <span class="syn-name">rewrite_pass</span>(file, check)
+  <span class="syn-keyword">local</span> edits = {}
+  <span class="syn-keyword">local</span> text = read(file.path)
+  <span class="syn-keyword">local</span> src = {path = file.path, text = text, starts = line_starts(text), nodes = file.nodes}
+  <span class="syn-keyword">for</span> finding <span class="syn-keyword">in</span> findings_in(file) <span class="syn-keyword">do</span>
+    <span class="syn-keyword">if</span> finding.check == check <span class="syn-keyword">then</span> push_edits(edits, src, finding) <span class="syn-keyword">end</span>
+  <span class="syn-keyword">end</span>
+  <span class="syn-keyword">if</span> #edits == <span class="syn-number">0</span> <span class="syn-keyword">then</span> <span class="syn-keyword">return</span> <span class="syn-number">0</span> <span class="syn-keyword">end</span>
+  replace(file.path, with_edits(text, edits))
+  <span class="syn-keyword">return</span> #edits
+<span class="syn-keyword">end</span>
+
+<span class="syn-comment">-- Makes one kind of edit across `paths`, and answers how many it made.</span>
+<span class="syn-keyword">function</span> <span class="syn-name">rewrite_check</span>(paths, check, roc)
+  <span class="syn-keyword">local</span> made = <span class="syn-number">0</span>
+  <span class="syn-keyword">local</span> touched = {}
+  <span class="syn-keyword">for</span> file <span class="syn-keyword">in</span> parse_roc_files(paths).files <span class="syn-keyword">do</span>
+    <span class="syn-keyword">local</span> n = rewrite_pass(file, check)
+    <span class="syn-keyword">if</span> n &gt; <span class="syn-number">0</span> <span class="syn-keyword">then</span>
+      made = made + n
+      push(touched, file.path)
+    <span class="syn-keyword">end</span>
+  <span class="syn-keyword">end</span>
+  <span class="syn-keyword">if</span> #touched &gt; <span class="syn-number">0</span> <span class="syn-keyword">then</span>
+    <span class="syn-keyword">local</span> argv = {roc, <span class="syn-string">&quot;fmt&quot;</span>}
+    <span class="syn-keyword">for</span> p <span class="syn-keyword">in</span> touched <span class="syn-keyword">do</span> push(argv, real(p)) <span class="syn-keyword">end</span>
+    must(run(argv, {timeout_ms = <span class="syn-number">120000</span>, tail = <span class="syn-number">20</span>, want = <span class="syn-string">&quot;roc-pin: the tree&#39;s own formatter&quot;</span>}))
+  <span class="syn-keyword">end</span>
+  <span class="syn-keyword">return</span> made
+<span class="syn-keyword">end</span>
+
+<span class="syn-comment">-- Rewrites `paths` until a pass changes nothing, and answers how many edits it</span>
+<span class="syn-comment">-- made. Each kind runs in its own call, so a tree&#39;s parse is gone by the `yield`.</span>
+<span class="syn-keyword">function</span> <span class="syn-name">rewrite</span>(paths, roc)
+  <span class="syn-keyword">local</span> made = <span class="syn-number">0</span>
+  <span class="syn-keyword">local</span> changed = <span class="syn-keyword">true</span>
+  <span class="syn-keyword">while</span> changed <span class="syn-keyword">do</span>
+    changed = <span class="syn-keyword">false</span>
+    <span class="syn-keyword">for</span> check <span class="syn-keyword">in</span> CHECKS <span class="syn-keyword">do</span>
+      <span class="syn-keyword">local</span> n = rewrite_check(paths, check, roc)
+      <span class="syn-keyword">if</span> n &gt; <span class="syn-number">0</span> <span class="syn-keyword">then</span>
+        made = made + n
+        changed = <span class="syn-keyword">true</span>
+      <span class="syn-keyword">end</span>
+      yield()
+    <span class="syn-keyword">end</span>
+  <span class="syn-keyword">end</span>
+  <span class="syn-keyword">return</span> made
+<span class="syn-keyword">end</span>
+
+<span class="syn-comment">-- The findings across `paths`, as lines, with the counts.</span>
+<span class="syn-keyword">function</span> <span class="syn-name">report</span>(paths)
+  <span class="syn-keyword">local</span> parsed = parse_roc_files(paths)
+  <span class="syn-keyword">local</span> lines_found = {}
+  <span class="syn-keyword">local</span> counts = {}
+  <span class="syn-keyword">for</span> c <span class="syn-keyword">in</span> CHECKS <span class="syn-keyword">do</span> counts[c] = <span class="syn-number">0</span> <span class="syn-keyword">end</span>
+  <span class="syn-keyword">local</span> at_line = {}
+  <span class="syn-keyword">for</span> file <span class="syn-keyword">in</span> parsed.files <span class="syn-keyword">do</span>
+    <span class="syn-keyword">local</span> source = split(read(file.path), <span class="syn-string">&quot;\n&quot;</span>)
+    <span class="syn-keyword">for</span> f <span class="syn-keyword">in</span> findings_in(file) <span class="syn-keyword">do</span>
+      <span class="syn-keyword">if</span> <span class="syn-keyword">not</span> house_leaves_out(<span class="syn-string">&quot;find_extra_parens&quot;</span>, f.check) <span class="syn-keyword">then</span>
+        counts[f.check] = counts[f.check] + <span class="syn-number">1</span>
+        push(lines_found, file.path .. <span class="syn-string">&quot;:&quot;</span> .. f.line .. <span class="syn-string">&quot;: &quot;</span> .. f.check .. <span class="syn-string">&quot;: &quot;</span> .. trim(source[f.line]))
+        push_at(at_line, file.path .. <span class="syn-string">&quot;:&quot;</span> .. f.line, f.check)
+      <span class="syn-keyword">end</span>
+    <span class="syn-keyword">end</span>
+  <span class="syn-keyword">end</span>
+  <span class="syn-keyword">local</span> said = {}
+  <span class="syn-keyword">for</span> c <span class="syn-keyword">in</span> CHECKS <span class="syn-keyword">do</span> push(said, c .. <span class="syn-string">&quot; &quot;</span> .. counts[c]) <span class="syn-keyword">end</span>
+  <span class="syn-keyword">return</span> {summary = <span class="syn-string">&quot;find_extra_parens (Roc): &quot;</span> .. #paths .. <span class="syn-string">&quot; files; &quot;</span> .. join(said, <span class="syn-string">&quot;, &quot;</span>) .. house_note(<span class="syn-string">&quot;find_extra_parens&quot;</span>), lines = lines_found, at_line = at_line, refused = parsed.refused, total = #lines_found}
+<span class="syn-keyword">end</span>
+
+<span class="syn-keyword">function</span> <span class="syn-name">self_test</span>(paths, found)
+  <span class="syn-keyword">local</span> wrong = {}
+  <span class="syn-keyword">local</span> marks = <span class="syn-number">0</span>
+  <span class="syn-keyword">for</span> p <span class="syn-keyword">in</span> paths <span class="syn-keyword">do</span>
+    <span class="syn-keyword">local</span> n = <span class="syn-number">0</span>
+    <span class="syn-keyword">for</span> l <span class="syn-keyword">in</span> lines(read(p)) <span class="syn-keyword">do</span>
+      n = n + <span class="syn-number">1</span>
+      <span class="syn-keyword">local</span> key = p .. <span class="syn-string">&quot;:&quot;</span> .. n
+      <span class="syn-keyword">local</span> got = {}
+      <span class="syn-keyword">if</span> has_key(found.at_line, key) <span class="syn-keyword">then</span> got = found.at_line[key] <span class="syn-keyword">end</span>
+      <span class="syn-keyword">local</span> mark = re_find(l, <span class="syn-string">&quot;# (paren_if|wrapped_body|else_block|lambda_if)$&quot;</span>)
+      <span class="syn-keyword">if</span> mark ~= <span class="syn-keyword">nil</span> <span class="syn-keyword">then</span>
+        marks = marks + <span class="syn-number">1</span>
+        <span class="syn-keyword">if</span> <span class="syn-keyword">not</span> has_item(got, mark.group) <span class="syn-keyword">then</span> push(wrong, key .. <span class="syn-string">&quot;: no &quot;</span> .. mark.group .. <span class="syn-string">&quot; finding&quot;</span>) <span class="syn-keyword">end</span>
+        <span class="syn-keyword">if</span> #got &gt; <span class="syn-number">1</span> <span class="syn-keyword">then</span> push(wrong, key .. <span class="syn-string">&quot;: more than the one finding marked&quot;</span>) <span class="syn-keyword">end</span>
+      <span class="syn-keyword">elseif</span> #got &gt; <span class="syn-number">0</span> <span class="syn-keyword">then</span>
+        push(wrong, key .. <span class="syn-string">&quot;: a finding (&quot;</span> .. join(got, <span class="syn-string">&quot;, &quot;</span>) .. <span class="syn-string">&quot;) on a line not marked for one&quot;</span>)
+      <span class="syn-keyword">end</span>
+    <span class="syn-keyword">end</span>
+  <span class="syn-keyword">end</span>
+  <span class="syn-keyword">if</span> marks == <span class="syn-number">0</span> <span class="syn-keyword">then</span> push(wrong, <span class="syn-string">&quot;no plant holds a mark&quot;</span>) <span class="syn-keyword">end</span>
+  <span class="syn-keyword">if</span> exists(SCRATCH) <span class="syn-keyword">then</span> remove_tree(SCRATCH) <span class="syn-keyword">end</span>
+  mkdir(SCRATCH)
+  <span class="syn-keyword">local</span> copies = {}
+  <span class="syn-keyword">for</span> p <span class="syn-keyword">in</span> paths <span class="syn-keyword">do</span>
+    <span class="syn-keyword">local</span> copy = SCRATCH .. <span class="syn-string">&quot;/&quot;</span> .. basename(p)
+    replace(copy, read(p))
+    push(copies, copy)
+  <span class="syn-keyword">end</span>
+  <span class="syn-keyword">local</span> roc = roc_bin(<span class="syn-string">&quot;find_extra_parens&quot;</span>, <span class="syn-keyword">true</span>)
+  rewrite(copies, roc)
+  <span class="syn-keyword">local</span> left = report(copies)
+  <span class="syn-keyword">for</span> l <span class="syn-keyword">in</span> left.lines <span class="syn-keyword">do</span> push(wrong, <span class="syn-string">&quot;left after the rewrite: &quot;</span> .. l) <span class="syn-keyword">end</span>
+  <span class="syn-keyword">for</span> r <span class="syn-keyword">in</span> left.refused <span class="syn-keyword">do</span> push(wrong, <span class="syn-string">&quot;the rewrite broke a file: &quot;</span> .. r) <span class="syn-keyword">end</span>
+  <span class="syn-keyword">for</span> p <span class="syn-keyword">in</span> paths <span class="syn-keyword">do</span>
+    <span class="syn-keyword">local</span> want = sub(p, <span class="syn-number">1</span>, #p - <span class="syn-number">4</span>) .. <span class="syn-string">&quot;.want&quot;</span>
+    <span class="syn-keyword">local</span> copy = SCRATCH .. <span class="syn-string">&quot;/&quot;</span> .. basename(p)
+    <span class="syn-keyword">if</span> exists(want) <span class="syn-keyword">and</span> read(copy) ~= read(want) <span class="syn-keyword">then</span> push(wrong, copy .. <span class="syn-string">&quot;: not as &quot;</span> .. want) <span class="syn-keyword">end</span>
+  <span class="syn-keyword">end</span>
+  <span class="syn-keyword">if</span> rewrite(copies, roc) ~= <span class="syn-number">0</span> <span class="syn-keyword">then</span> push(wrong, <span class="syn-string">&quot;a second rewrite changed something&quot;</span>) <span class="syn-keyword">end</span>
+  remove_tree(SCRATCH)
+  <span class="syn-keyword">for</span> w <span class="syn-keyword">in</span> wrong <span class="syn-keyword">do</span> print(<span class="syn-string">&quot;FAIL &quot;</span> .. w) <span class="syn-keyword">end</span>
+  <span class="syn-keyword">if</span> #wrong &gt; <span class="syn-number">0</span> <span class="syn-keyword">then</span> fail(<span class="syn-string">&quot;find_extra_parens self_test: &quot;</span> .. #wrong .. <span class="syn-string">&quot; plants wrong&quot;</span>) <span class="syn-keyword">end</span>
+  print(<span class="syn-string">&quot;find_extra_parens (Roc) self_test: PASS (each marked line gives its finding, no other line one; the rewrite leaves none, and a second changes nothing)&quot;</span>)
+<span class="syn-keyword">end</span>
+
+<span class="syn-keyword">const</span> paths = glob(GLOB)
+<span class="syn-keyword">if</span> WRITE <span class="syn-keyword">then</span>
+  refuse_house_rewrite(<span class="syn-string">&quot;find_extra_parens&quot;</span>)
+  print(<span class="syn-string">&quot;find_extra_parens: &quot;</span> .. rewrite(paths, roc_bin(<span class="syn-string">&quot;find_extra_parens&quot;</span>, <span class="syn-keyword">false</span>)) .. <span class="syn-string">&quot; edits&quot;</span>)
+<span class="syn-keyword">end</span>
+<span class="syn-keyword">local</span> found = report(paths)
+print_findings(found.summary, found.lines)
+fail_if_refused(<span class="syn-string">&quot;find_extra_parens&quot;</span>, found.refused)
+<span class="syn-keyword">if</span> SELF_TEST <span class="syn-keyword">then</span> self_test(paths, found) <span class="syn-keyword">end</span>
+</code></pre>
+<nav class="steps"><a href="../find_floats_outside_unit_types/">← previous</a> · <a href="../#find_and_remove_extra_parentheses">Roc on Shale</a> · <a href="../check_how_failure_is_reported/">next →</a></nav></main>
+</body>
+</html>

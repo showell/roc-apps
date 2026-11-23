@@ -1,0 +1,974 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="description" content="Calls nested three or more deep, read inside out, found from Roc's own parse tree: each node's call depth worked out from its kids, the outermost call of each nest reported with the call at its bottom.">
+<title>find_calls_nested_three_deep · Roc on Shale</title>
+<script src="../../shared/home.js"></script>
+<!-- site/build_roc_on_shale.shale writes this page from the shale repository's
+     history; run it again rather than editing here. The code is colored by
+     roc-syntax-color (SyntaxColor.html). -->
+<style>
+  :root { color-scheme: light dark; --bg: #f7f5f0; --fg: #1d1d1b; --muted: #6b6860; --edge: #d9d4c8; --pane: #ffffff; --link: #1f5fa8; --accent: #5b3ea8; }
+  @media (prefers-color-scheme: dark) {
+    :root { --bg: #1b1b1a; --fg: #e8e6e0; --muted: #9a968c; --edge: #3a3934; --pane: #242422; --link: #8ab4f0; --accent: #a68cf0; }
+  }
+  body { margin: 0; background: var(--bg); color: var(--fg); font: 15px/1.55 system-ui, sans-serif; }
+  main { max-width: 960px; margin: 0 auto; padding: 36px 16px 48px; }
+  @media (max-width: 640px) { main { padding: 24px 12px 36px; } }
+  .top { display: flex; flex-wrap: wrap; gap: 4px 14px; font-size: 14px; margin: 0 0 14px; }
+  h1 { font-size: 28px; margin: 0 0 6px; overflow-wrap: anywhere; }
+  .lede { margin: 0 0 10px; max-width: 70ch; }
+  ul.lede { padding-left: 22px; }
+  ul.lede li { margin: 0 0 4px; }
+  h2.intro { font-size: 20px; margin: 30px 0 6px; }
+  h3.intro { font-size: 16px; margin: 18px 0 4px; }
+  /* The drawing is Graphviz's SVG, inline, so its lines and words take the
+     page's colors in either theme. */
+  .diagram { margin: 14px 0 18px; }
+  .diagram svg { max-width: 100%; height: auto; }
+  .diagram text { fill: var(--fg); }
+  .diagram path, .diagram polygon { stroke: var(--fg); }
+  .diagram .edge polygon { fill: var(--fg); }
+  h2.part { font-size: 25px; margin: 64px 0 4px; padding-top: 20px; border-top: 3px solid var(--accent); }
+  .part-intro { margin: 0 0 8px; }
+  h3 { font-size: 19px; margin: 10px 0 4px; overflow-wrap: anywhere; }
+  h2.part a { color: inherit; text-decoration: none; }
+  h2.code { font-size: 16px; margin: 36px 0 4px; color: var(--accent); }
+  p { max-width: 70ch; }
+  a { color: var(--link); }
+  code { font: 13px ui-monospace, Menlo, Consolas, monospace; }
+  .contents { padding-left: 20px; }
+  .contents ul { padding-left: 20px; margin: 2px 0 8px; }
+  .contents a { overflow-wrap: anywhere; }
+  .facts { font-size: 14px; color: var(--muted); }
+  .file { font-size: 13px; color: var(--muted); margin: 20px 0 0; overflow-wrap: anywhere; }
+  .entry { margin-top: 28px; padding-top: 14px; border-top: 1px solid var(--edge); }
+  .steps { font-size: 13px; margin: 0 0 8px; }
+  main > .steps:last-child { margin: 28px 0 0; }
+  /* Every block shows its file whole; a line wider than the block scrolls
+     sideways inside it, so the code keeps its indentation. */
+  pre { margin: 6px 0 12px; padding: 12px 14px; border-radius: 5px; background: #2b2733; color: #e8e6e0;
+        font: 12px/1.45 ui-monospace, Menlo, Consolas, monospace; overflow-x: auto; tab-size: 4; }
+  pre code { font: inherit; }
+  .syn-keyword { color: #c792ea; }
+  .syn-type { color: #82aaff; }
+  .syn-string { color: #c3e88d; }
+  .syn-number { color: #f78c6c; }
+  .syn-comment { color: #8a8494; font-style: italic; }
+  .syn-name { color: #ffcb6b; }
+  footer { margin-top: 36px; color: var(--muted); font-size: 13px; }
+</style>
+</head>
+<body>
+<main>
+<nav class="steps"><a href="../find_names_that_differ_across_lookalike_modules/">← previous</a> · <a href="../#find_calls_nested_three_deep">Roc on Shale</a> · <a href="../find_retired_words/">next →</a></nav>
+<h1>find_calls_nested_three_deep</h1>
+<h2 class="code">Roc</h2>
+<p class="file">It also imports <code>Text</code>, <code>Tree</code> from <a href="../shared-library/">the shared Roc library</a>.</p>
+<p class="file"><a href="https://github.com/showell/shale/blob/e3c753adf065dc7856e5d49422daf99f9969f91a/cookbook/roc/find_calls_nested_three_deep/find_calls_nested_three_deep.roc"><code>cookbook/roc/find_calls_nested_three_deep/find_calls_nested_three_deep.roc</code></a>, 224 lines</p>
+<pre><code><span class="syn-comment">## find_calls_nested_three_deep, in Roc on Shale&#39;s platform (roc_platform/README.md):</span>
+<span class="syn-comment">## calls nested three or more deep, like `f(g(h(x)))`, which have to be read</span>
+<span class="syn-comment">## from the inside out, where Roc&#39;s style guide (roc-apps docs/roc-style.md)</span>
+<span class="syn-comment">## asks for code that reads left to right: a method chain, a pipe or a named</span>
+<span class="syn-comment">## middle step. Its launcher, cookbook/roc/find_calls_nested_three_deep.shale, is how it</span>
+<span class="syn-comment">## is run, and its header says the rule. check_goldens.shale, beside this,</span>
+<span class="syn-comment">## holds its output on the plants to its goldens, line for line.</span>
+<span class="syn-comment">##</span>
+<span class="syn-comment">##   cd &lt;repo&gt; &amp;&amp; shale cookbook:roc/find_calls_nested_three_deep.shale glob=app/**/*.roc min=4</span>
+<span class="syn-comment">##   shale cookbook:roc/find_calls_nested_three_deep.shale self_test=1</span>
+<span class="syn-comment">##</span>
+<span class="syn-comment">## The arguments: `glob` (`**/*.roc`), `min` (3), `loose` (`loose=1` passes a</span>
+<span class="syn-comment">## record&#39;s, list&#39;s or tuple&#39;s depth through), `house` (`house=0` leaves out</span>
+<span class="syn-comment">## the house style, which here is the whole check) and `self_test`</span>
+<span class="syn-comment">## (`self_test=1` checks the plants&#39; marks).</span>
+<span class="syn-comment">##</span>
+<span class="syn-comment">## The effects: `Shale.arg!` for the arguments, `Shale.glob!` for the files,</span>
+<span class="syn-comment">## `Shale.roc_tree!` for Roc&#39;s own parser&#39;s tree of each, `Shale.read!` for</span>
+<span class="syn-comment">## a finding&#39;s source line, and `Shale.print!` and `Shale.fail!` for the</span>
+<span class="syn-comment">## verdict. Nest, beside this, is the rule, over Tree; NestFinding is how a</span>
+<span class="syn-comment">## finding prints; SelfTest checks the plants.</span>
+<span class="syn-comment">## budget: steps=800000000 arena_bytes=3000000000 output_bytes=4000000 roc_cpu_ms=600000</span>
+<span class="syn-keyword">app</span> [main!] { lib: <span class="syn-string">&quot;../lib/main.roc&quot;</span>, pf: <span class="syn-keyword">platform</span> <span class="syn-string">&quot;../../../roc_platform/platform/main.roc&quot;</span> }
+
+<span class="syn-keyword">import</span> pf.<span class="syn-type">Shale</span>
+<span class="syn-keyword">import</span> <span class="syn-type">NestFinding</span>
+<span class="syn-keyword">import</span> <span class="syn-type">Nest</span>
+<span class="syn-keyword">import</span> <span class="syn-type">SelfTest</span>
+<span class="syn-keyword">import</span> lib.<span class="syn-type">Text</span>
+<span class="syn-keyword">import</span> lib.<span class="syn-type">Tree</span>
+
+<span class="syn-comment">## What a run checks: the files a glob names, and the rule, or the plants</span>
+<span class="syn-comment">## at the self-test&#39;s own `min`.</span>
+<span class="syn-type">Settings</span> : {
+	pattern : <span class="syn-type">Str</span>,
+	rule : <span class="syn-type">Nest.Rule</span>,
+	house : [<span class="syn-type">Kept</span>, <span class="syn-type">LeftOut</span>],
+}
+
+<span class="syn-name">main!</span> : {} =&gt; {}
+<span class="syn-name">main!</span> = |{}| {
+	is_self_test = <span class="syn-type">Shale</span>.arg!(<span class="syn-string">&quot;self_test&quot;</span>, <span class="syn-string">&quot;&quot;</span>) == <span class="syn-string">&quot;1&quot;</span>
+	settings = read_settings!(is_self_test)
+	checked = run_check!(settings)
+	<span class="syn-keyword">if</span> is_self_test {
+		<span class="syn-type">SelfTest</span>.run!(checked)
+	}
+}
+
+<span class="syn-comment"># ── The arguments</span>
+
+<span class="syn-comment">## The settings the arguments give. `min` is read before the files are</span>
+<span class="syn-comment">## globbed and `house` after, as the Shale original read them, so a run</span>
+<span class="syn-comment">## given two bad values stops on the same one.</span>
+<span class="syn-name">read_settings!</span> : <span class="syn-type">Bool</span> =&gt; <span class="syn-type">Settings</span>
+<span class="syn-name">read_settings!</span> = |is_self_test| {
+	pattern = <span class="syn-keyword">if</span> is_self_test {
+		<span class="syn-string">&quot;</span>${<span class="syn-type">SelfTest</span>.plants}<span class="syn-string">*.roc&quot;</span>
+	} <span class="syn-keyword">else</span> {
+		<span class="syn-type">Shale</span>.arg!(<span class="syn-string">&quot;glob&quot;</span>, <span class="syn-string">&quot;**/*.roc&quot;</span>)
+	}
+	strictness = <span class="syn-keyword">if</span> <span class="syn-type">Shale</span>.arg!(<span class="syn-string">&quot;loose&quot;</span>, <span class="syn-string">&quot;&quot;</span>) == <span class="syn-string">&quot;1&quot;</span> {
+		<span class="syn-type">Loose</span>
+	} <span class="syn-keyword">else</span> {
+		<span class="syn-type">Strict</span>
+	}
+	min = <span class="syn-keyword">if</span> is_self_test {
+		<span class="syn-number">3</span>
+	} <span class="syn-keyword">else</span> {
+		read_min!({})
+	}
+	{
+		pattern,
+		rule: { min, strictness },
+		house: <span class="syn-type">Kept</span>,
+	}
+}
+
+<span class="syn-comment">## The `min=` depth: 3 unless given, and any integer.</span>
+<span class="syn-name">read_min!</span> : {} =&gt; <span class="syn-type">I64</span>
+<span class="syn-name">read_min!</span> = |{}| {
+	given = <span class="syn-type">Shale</span>.arg!(<span class="syn-string">&quot;min&quot;</span>, <span class="syn-string">&quot;3&quot;</span>)
+	<span class="syn-keyword">match</span> <span class="syn-type">I64</span>.from_str(given) {
+		<span class="syn-type">Ok</span>(min) =&gt; min
+		<span class="syn-type">Err</span>(_) =&gt; {
+			<span class="syn-type">Shale</span>.fail!(<span class="syn-string">&quot;find_calls_nested_three_deep: min=</span>${given}<span class="syn-string"> is not an integer&quot;</span>)
+			<span class="syn-number">0</span>
+		}
+	}
+}
+
+<span class="syn-comment">## Whether `house=0` leaves the house style out (cookbook/roc/house.shale):</span>
+<span class="syn-comment">## here that is every finding, since `nested` is house style.</span>
+<span class="syn-name">read_house!</span> : {} =&gt; [<span class="syn-type">Kept</span>, <span class="syn-type">LeftOut</span>]
+<span class="syn-name">read_house!</span> = |{}| {
+	house = <span class="syn-type">Shale</span>.arg!(<span class="syn-string">&quot;house&quot;</span>, <span class="syn-string">&quot;1&quot;</span>)
+	<span class="syn-keyword">if</span> house != <span class="syn-string">&quot;0&quot;</span> <span class="syn-keyword">and</span> house != <span class="syn-string">&quot;1&quot;</span> {
+		<span class="syn-type">Shale</span>.fail!(<span class="syn-string">&quot;house must be 1 (the default) or 0, not </span>${house}<span class="syn-string">&quot;</span>)
+	}
+	<span class="syn-keyword">if</span> house == <span class="syn-string">&quot;0&quot;</span> {
+		<span class="syn-type">LeftOut</span>
+	} <span class="syn-keyword">else</span> {
+		<span class="syn-type">Kept</span>
+	}
+}
+
+<span class="syn-comment"># ── The run</span>
+
+<span class="syn-comment">## The check over the glob&#39;s files: the verdict printed, then a stop when a</span>
+<span class="syn-comment">## file didn&#39;t parse. The findings are a report, not a failure, so a run</span>
+<span class="syn-comment">## that parses every file exits 0; a caller holds the count.</span>
+<span class="syn-name">run_check!</span> : <span class="syn-type">Settings</span> =&gt; { paths : <span class="syn-type">List</span>(<span class="syn-type">Str</span>), findings : <span class="syn-type">List</span>(<span class="syn-type">NestFinding</span>) }
+<span class="syn-name">run_check!</span> = |given| {
+	paths = <span class="syn-type">Shale</span>.glob!(given.pattern)
+	settings = { ..given, house: read_house!({}) }
+	<span class="syn-keyword">var</span> $findings = []
+	<span class="syn-keyword">var</span> $refused = []
+	<span class="syn-keyword">for</span> file <span class="syn-keyword">in</span> <span class="syn-type">Shale</span>.roc_tree!(paths) {
+		<span class="syn-keyword">if</span> file.err == <span class="syn-string">&quot;&quot;</span> {
+			parsed = { path: file.path, syntax_nodes: file.nodes }
+			$findings = $findings.concat(find_file_findings!(parsed, settings))
+		} <span class="syn-keyword">else</span> <span class="syn-keyword">if</span> file.err.starts_with(file.path) {
+			$refused = $refused.append(file.err)
+		} <span class="syn-keyword">else</span> {
+			$refused = $refused.append(<span class="syn-string">&quot;</span>${file.path}<span class="syn-string">: </span>${file.err}<span class="syn-string">&quot;</span>)
+		}
+	}
+	summary_line = summary($findings, { file_count: paths.len(), settings })
+	print_findings!(summary_line, $findings.map(<span class="syn-type">NestFinding</span>.finding_line))
+	<span class="syn-keyword">if</span> !($refused.is_empty()) {
+		<span class="syn-keyword">for</span> refusal <span class="syn-keyword">in</span> $refused {
+			<span class="syn-type">Shale</span>.print!(<span class="syn-string">&quot;refused: </span>${refusal}<span class="syn-string">&quot;</span>)
+		}
+		refusals = <span class="syn-string">&quot;roc-ast refused </span>${$refused.len().to_str()}<span class="syn-string"> files (named above)&quot;</span>
+		why = <span class="syn-string">&quot;which have no tree to judge; every other file was judged&quot;</span>
+		<span class="syn-type">Shale</span>.fail!(<span class="syn-string">&quot;find_calls_nested_three_deep: </span>${refusals}<span class="syn-string">, </span>${why}<span class="syn-string">&quot;</span>)
+	}
+	{ paths, findings: $findings }
+}
+
+<span class="syn-comment">## A parsed file&#39;s findings. Its text is read only when it has a nest, for</span>
+<span class="syn-comment">## the source lines; a file the parser read and the read finds gone stops</span>
+<span class="syn-comment">## the run.</span>
+<span class="syn-name">find_file_findings!</span> : { path : <span class="syn-type">Str</span>, syntax_nodes : <span class="syn-type">List</span>(<span class="syn-type">Tree.Node</span>) }, <span class="syn-type">Settings</span> =&gt; <span class="syn-type">List</span>(<span class="syn-type">NestFinding</span>)
+<span class="syn-name">find_file_findings!</span> = |file, settings| {
+	nests = <span class="syn-keyword">match</span> settings.house {
+		<span class="syn-type">Kept</span> =&gt; <span class="syn-type">Nest</span>.nests_in(file.syntax_nodes, settings.rule)
+		<span class="syn-type">LeftOut</span> =&gt; []
+	}
+	<span class="syn-keyword">if</span> nests.is_empty() {
+		[]
+	} <span class="syn-keyword">else</span> {
+		source_lines = <span class="syn-keyword">match</span> <span class="syn-type">Shale</span>.read!(file.path) {
+			<span class="syn-type">Found</span>(text) =&gt; text.split_on(<span class="syn-string">&quot;\n&quot;</span>)
+			<span class="syn-type">Missing</span> =&gt; {
+				<span class="syn-type">Shale</span>.fail!(<span class="syn-string">&quot;find_calls_nested_three_deep: </span>${file.path}<span class="syn-string"> went missing during the check&quot;</span>)
+				[]
+			}
+		}
+		nests.map(
+			|nest| {
+				source_line = <span class="syn-keyword">match</span> source_lines.get(nest.line - <span class="syn-number">1</span>) {
+					<span class="syn-type">Ok</span>(text) =&gt; text
+					<span class="syn-type">Err</span>(_) =&gt; <span class="syn-keyword">crash</span> <span class="syn-string">&quot;find_calls_nested_three_deep: a nest starts past its file&#39;s last line&quot;</span>
+				}
+				{ path: file.path, nest, source_line }
+			},
+		)
+	}
+}
+
+<span class="syn-comment"># ── The verdict</span>
+
+<span class="syn-comment">## `find_calls_nested_three_deep (Roc): 9 files; nested 14 (min 3, strict); depth 3 11,</span>
+<span class="syn-comment">## depth 4 3`: the files, the findings, the rule, and how many at each depth,</span>
+<span class="syn-comment">## the depths in the order of their text, as the Shale original sorted them.</span>
+<span class="syn-name">summary</span> : <span class="syn-type">List</span>(<span class="syn-type">NestFinding</span>), { file_count : <span class="syn-type">U64</span>, settings : <span class="syn-type">Settings</span> } -&gt; <span class="syn-type">Str</span>
+<span class="syn-name">summary</span> = |findings, { file_count, settings }| {
+	rule = settings.rule
+	strictness = <span class="syn-keyword">match</span> rule.strictness {
+		<span class="syn-type">Strict</span> =&gt; <span class="syn-string">&quot;strict&quot;</span>
+		<span class="syn-type">Loose</span> =&gt; <span class="syn-string">&quot;loose&quot;</span>
+	}
+	counted = <span class="syn-string">&quot;nested </span>${findings.len().to_str()}<span class="syn-string"> (min </span>${rule.min.to_str()}<span class="syn-string">, </span>${strictness}<span class="syn-string">)&quot;</span>
+	depths = findings.map(|finding| finding.nest.depth.to_str())
+	by_depth = distinct(depths).sort_with(<span class="syn-type">Text</span>.byte_order).map(
+		|depth| <span class="syn-string">&quot;depth </span>${depth}<span class="syn-string"> </span>${depths.count_if(|d| d == depth).to_str()}<span class="syn-string">&quot;</span>,
+	)
+	counts = <span class="syn-keyword">if</span> by_depth.is_empty() {
+		<span class="syn-string">&quot;&quot;</span>
+	} <span class="syn-keyword">else</span> {
+		<span class="syn-string">&quot;; </span>${<span class="syn-type">Str</span>.join_with(by_depth, <span class="syn-string">&quot;, &quot;</span>)}<span class="syn-string">&quot;</span>
+	}
+	house_note = <span class="syn-keyword">match</span> settings.house {
+		<span class="syn-type">Kept</span> =&gt; <span class="syn-string">&quot;&quot;</span>
+		<span class="syn-type">LeftOut</span> =&gt; <span class="syn-string">&quot;; left out as house style: nested&quot;</span>
+	}
+	<span class="syn-string">&quot;find_calls_nested_three_deep (Roc): </span>${file_count.to_str()}<span class="syn-string"> files; </span>${counted}${counts}${house_note}<span class="syn-string">&quot;</span>
+}
+
+<span class="syn-name">distinct</span> : <span class="syn-type">List</span>(<span class="syn-type">Str</span>) -&gt; <span class="syn-type">List</span>(<span class="syn-type">Str</span>)
+<span class="syn-name">distinct</span> = |texts|
+	texts.fold(
+		[],
+		|seen, text|
+			<span class="syn-keyword">if</span> seen.contains(text) {
+				seen
+			} <span class="syn-keyword">else</span> {
+				seen.append(text)
+			},
+	)
+
+<span class="syn-comment">## The summary, each finding, then the summary again (cookbook/findings.shale):</span>
+<span class="syn-comment">## the first copy survives a cut output, and a gate reads the last line.</span>
+<span class="syn-name">print_findings!</span> : <span class="syn-type">Str</span>, <span class="syn-type">List</span>(<span class="syn-type">Str</span>) =&gt; {}
+<span class="syn-name">print_findings!</span> = |summary_line, finding_lines| {
+	<span class="syn-type">Shale</span>.print!(summary_line)
+	<span class="syn-keyword">if</span> !(finding_lines.is_empty()) {
+		<span class="syn-keyword">for</span> line <span class="syn-keyword">in</span> finding_lines {
+			<span class="syn-type">Shale</span>.print!(line)
+		}
+		<span class="syn-type">Shale</span>.print!(summary_line)
+	}
+}
+</code></pre>
+<p class="file"><a href="https://github.com/showell/shale/blob/e3c753adf065dc7856e5d49422daf99f9969f91a/cookbook/roc/find_calls_nested_three_deep/NestFinding.roc"><code>cookbook/roc/find_calls_nested_three_deep/NestFinding.roc</code></a>, 27 lines</p>
+<pre><code><span class="syn-comment">## A finding: one nest of calls in a file, and the source line its outermost</span>
+<span class="syn-comment">## call starts on, printed as</span>
+<span class="syn-comment">## `path:line:column: nested: depth N, &lt;outermost&gt; to &lt;deepest&gt;: &lt;line&gt;`.</span>
+<span class="syn-keyword">import</span> <span class="syn-type">Nest</span>
+<span class="syn-keyword">import</span> lib.<span class="syn-type">Text</span>
+
+<span class="syn-type">NestFinding</span> := {
+	path : <span class="syn-type">Str</span>,
+	nest : <span class="syn-type">Nest</span>,
+	source_line : <span class="syn-type">Str</span>,
+}.{
+
+	<span class="syn-comment">## The finding up to its source line: where it is, how deep, and which</span>
+	<span class="syn-comment">## calls it runs between. The self-test reads this part.</span>
+	<span class="syn-name">head</span> : <span class="syn-type">NestFinding</span> -&gt; <span class="syn-type">Str</span>
+	<span class="syn-name">head</span> = |finding| {
+		nest = finding.nest
+		place = <span class="syn-string">&quot;</span>${finding.path}<span class="syn-string">:</span>${nest.line.to_str()}<span class="syn-string">:</span>${nest.column.to_str()}<span class="syn-string">&quot;</span>
+		span = <span class="syn-string">&quot;</span>${nest.outermost}<span class="syn-string"> to </span>${nest.deepest}<span class="syn-string">&quot;</span>
+		<span class="syn-string">&quot;</span>${place}<span class="syn-string">: nested: depth </span>${nest.depth.to_str()}<span class="syn-string">, </span>${span}<span class="syn-string">&quot;</span>
+	}
+
+	<span class="syn-comment">## The finding&#39;s whole line, its source line trimmed.</span>
+	<span class="syn-name">finding_line</span> : <span class="syn-type">NestFinding</span> -&gt; <span class="syn-type">Str</span>
+	<span class="syn-name">finding_line</span> = |finding|
+		<span class="syn-string">&quot;</span>${<span class="syn-type">NestFinding</span>.head(finding)}<span class="syn-string">: </span>${<span class="syn-type">Text</span>.trim(finding.source_line)}<span class="syn-string">&quot;</span>
+}
+</code></pre>
+<p class="file"><a href="https://github.com/showell/shale/blob/e3c753adf065dc7856e5d49422daf99f9969f91a/cookbook/roc/find_calls_nested_three_deep/Nest.roc"><code>cookbook/roc/find_calls_nested_three_deep/Nest.roc</code></a>, 253 lines</p>
+<pre><code><span class="syn-comment">## A nest of calls: the outermost call of calls nested in each other&#39;s</span>
+<span class="syn-comment">## arguments, like `f(g(h(x)))`, with its depth and the names of its</span>
+<span class="syn-comment">## outermost and deepest calls. `Nest.nests_in` finds a file&#39;s nests from</span>
+<span class="syn-comment">## Roc&#39;s tree of it; the launcher&#39;s header says the rule.</span>
+<span class="syn-keyword">import</span> lib.<span class="syn-type">Tree</span>
+
+<span class="syn-type">Nest</span> := {
+	line : <span class="syn-type">U64</span>,
+	column : <span class="syn-type">U64</span>,
+	depth : <span class="syn-type">U64</span>,
+	outermost : <span class="syn-type">Str</span>,
+	deepest : <span class="syn-type">Str</span>,
+}.{
+
+	<span class="syn-comment">## Whether a record, a list or a tuple argument starts the depth again</span>
+	<span class="syn-comment">## (`Strict`, the default) or passes its parts&#39; depth through (`Loose`).</span>
+	<span class="syn-type">Strictness</span> : [<span class="syn-type">Strict</span>, <span class="syn-type">Loose</span>]
+
+	<span class="syn-comment">## What to report: nests at least `min` deep, judged as `strictness` says.</span>
+	<span class="syn-type">Rule</span> : { min : <span class="syn-type">I64</span>, strictness : <span class="syn-type">Nest.Strictness</span> }
+
+	<span class="syn-comment">## The file&#39;s nests at least the rule&#39;s `min` deep, in source order, each</span>
+	<span class="syn-comment">## named by its outermost call.</span>
+	<span class="syn-name">nests_in</span> : <span class="syn-type">List</span>(<span class="syn-type">Tree.Node</span>), <span class="syn-type">Nest.Rule</span> -&gt; <span class="syn-type">List</span>(<span class="syn-type">Nest</span>)
+	<span class="syn-name">nests_in</span> = |syntax_nodes, rule| {
+		reading = {
+			syntax_nodes,
+			depths: call_depths(syntax_nodes, rule.strictness),
+			strictness: rule.strictness,
+		}
+		<span class="syn-keyword">var</span> $nests = []
+		<span class="syn-keyword">var</span> $place = <span class="syn-number">1</span>
+		<span class="syn-keyword">while</span> $place &lt;= syntax_nodes.len() {
+			is_deep_enough = depth_at(reading, $place).to_i64_wrap() &gt;= rule.min
+			is_nest = is_call(<span class="syn-type">Tree</span>.node_at(syntax_nodes, $place)) <span class="syn-keyword">and</span> is_outermost(reading, $place)
+			<span class="syn-keyword">if</span> is_deep_enough <span class="syn-keyword">and</span> is_nest {
+				$nests = $nests.append(nest_at(reading, $place))
+			}
+			$place = $place + <span class="syn-number">1</span>
+		}
+		$nests
+	}
+}
+
+<span class="syn-comment">## A tree read for nests: each node&#39;s call depth beside it, by place.</span>
+<span class="syn-type">Reading</span> : {
+	syntax_nodes : <span class="syn-type">List</span>(<span class="syn-type">Tree.Node</span>),
+	depths : <span class="syn-type">List</span>(<span class="syn-type">U64</span>),
+	strictness : <span class="syn-type">Nest.Strictness</span>,
+}
+
+<span class="syn-name">nest_at</span> : <span class="syn-type">Reading</span>, <span class="syn-type">U64</span> -&gt; <span class="syn-type">Nest</span>
+<span class="syn-name">nest_at</span> = |reading, place| {
+	node = <span class="syn-type">Tree</span>.node_at(reading.syntax_nodes, place)
+	{
+		line: node.line,
+		column: node.column,
+		depth: depth_at(reading, place),
+		outermost: call_name(reading.syntax_nodes, place),
+		deepest: call_name(reading.syntax_nodes, deepest_call(reading, place)),
+	}
+}
+
+<span class="syn-comment"># ── Depth</span>
+
+<span class="syn-comment">## The node kinds that pass their parts&#39; depth through: what reads left to</span>
+<span class="syn-comment">## right, a wrapper, an operator, an access, a string&#39;s interpolation. `unary`</span>
+<span class="syn-comment">## is `!x` or `-x`, `receiver` holds the value whose method is called, and</span>
+<span class="syn-comment">## `mapper` is the right side of `x |&gt; f`.</span>
+<span class="syn-name">pass_through_kinds</span> : <span class="syn-type">List</span>(<span class="syn-type">Str</span>)
+<span class="syn-name">pass_through_kinds</span> = [
+	<span class="syn-string">&quot;e-arrow-call&quot;</span>,
+	<span class="syn-string">&quot;e-question-suffix&quot;</span>,
+	<span class="syn-string">&quot;e-nominal-apply&quot;</span>,
+	<span class="syn-string">&quot;mapper&quot;</span>,
+	<span class="syn-string">&quot;e-binop&quot;</span>,
+	<span class="syn-string">&quot;unary&quot;</span>,
+	<span class="syn-string">&quot;e-field-access&quot;</span>,
+	<span class="syn-string">&quot;e-tuple-access&quot;</span>,
+	<span class="syn-string">&quot;receiver&quot;</span>,
+	<span class="syn-string">&quot;e-string&quot;</span>,
+]
+
+<span class="syn-comment">## The kinds that pass their parts&#39; depth through only when the rule is</span>
+<span class="syn-comment">## `Loose`.</span>
+<span class="syn-name">loose_pass_through_kinds</span> : <span class="syn-type">List</span>(<span class="syn-type">Str</span>)
+<span class="syn-name">loose_pass_through_kinds</span> = [<span class="syn-string">&quot;e-record&quot;</span>, <span class="syn-string">&quot;e-list&quot;</span>, <span class="syn-string">&quot;e-tuple&quot;</span>, <span class="syn-string">&quot;field&quot;</span>]
+
+<span class="syn-name">passes_depth_through</span> : <span class="syn-type">Str</span>, <span class="syn-type">Nest.Strictness</span> -&gt; <span class="syn-type">Bool</span>
+<span class="syn-name">passes_depth_through</span> = |kind, strictness|
+	<span class="syn-keyword">match</span> strictness {
+		<span class="syn-type">Strict</span> =&gt; pass_through_kinds.contains(kind)
+		<span class="syn-type">Loose</span> =&gt; pass_through_kinds.contains(kind) <span class="syn-keyword">or</span> loose_pass_through_kinds.contains(kind)
+	}
+
+<span class="syn-name">is_call</span> : <span class="syn-type">Tree.Node</span> -&gt; <span class="syn-type">Bool</span>
+<span class="syn-name">is_call</span> = |node| node.kind == <span class="syn-string">&quot;e-apply&quot;</span> <span class="syn-keyword">or</span> node.kind == <span class="syn-string">&quot;e-method-call&quot;</span>
+
+<span class="syn-comment">## Every node&#39;s call depth, by place. A node&#39;s depth is its kids&#39;, so the</span>
+<span class="syn-comment">## places are taken from the last, whose kids come after them all.</span>
+<span class="syn-name">call_depths</span> : <span class="syn-type">List</span>(<span class="syn-type">Tree.Node</span>), <span class="syn-type">Nest.Strictness</span> -&gt; <span class="syn-type">List</span>(<span class="syn-type">U64</span>)
+<span class="syn-name">call_depths</span> = |syntax_nodes, strictness| {
+	<span class="syn-keyword">var</span> $depths = <span class="syn-type">List</span>.repeat(<span class="syn-number">0</span>, syntax_nodes.len())
+	<span class="syn-keyword">var</span> $place = syntax_nodes.len()
+	<span class="syn-keyword">while</span> $place &gt; <span class="syn-number">0</span> {
+		depth = depth_from_kids({ syntax_nodes, depths: $depths, strictness }, $place)
+		$depths = $depths.set(
+			$place - <span class="syn-number">1</span>,
+			depth,
+		) ?? <span class="syn-keyword">crash</span> <span class="syn-string">&quot;find_calls_nested_three_deep: a place past the last node&quot;</span>
+		$place = $place - <span class="syn-number">1</span>
+	}
+	$depths
+}
+
+<span class="syn-comment">## A node&#39;s call depth from its kids&#39; depths, which `reading` already has.</span>
+<span class="syn-comment">## A call is one more than its deepest argument; a method call is at least</span>
+<span class="syn-comment">## as deep as its receiver, which reads left to right; a tag&#39;s payload, as</span>
+<span class="syn-comment">## in `Ok(...)`, adds no level; what passes depth through, and a one-item</span>
+<span class="syn-comment">## tuple, which is a pair of parentheses, is as deep as its deepest part;</span>
+<span class="syn-comment">## anything else (a lambda, a record) starts again at zero.</span>
+<span class="syn-name">depth_from_kids</span> : <span class="syn-type">Reading</span>, <span class="syn-type">U64</span> -&gt; <span class="syn-type">U64</span>
+<span class="syn-name">depth_from_kids</span> = |reading, place| {
+	node = <span class="syn-type">Tree</span>.node_at(reading.syntax_nodes, place)
+	<span class="syn-keyword">if</span> node.kind == <span class="syn-string">&quot;e-apply&quot;</span> {
+		deepest_argument = deepest_of(reading, node.kids.drop_first(<span class="syn-number">1</span>))
+		function = <span class="syn-type">Tree</span>.node_at(reading.syntax_nodes, <span class="syn-type">Tree</span>.first_kid(node))
+		<span class="syn-keyword">if</span> function.kind == <span class="syn-string">&quot;e-tag&quot;</span> {
+			deepest_argument
+		} <span class="syn-keyword">else</span> {
+			<span class="syn-number">1</span> + deepest_argument
+		}
+	} <span class="syn-keyword">else</span> <span class="syn-keyword">if</span> node.kind == <span class="syn-string">&quot;e-method-call&quot;</span> {
+		method_call_depth(reading, node)
+	} <span class="syn-keyword">else</span> <span class="syn-keyword">if</span> passes_depth_through(node.kind, reading.strictness) <span class="syn-keyword">or</span> is_parenthesized(node) {
+		deepest_of(reading, node.kids)
+	} <span class="syn-keyword">else</span> {
+		<span class="syn-number">0</span>
+	}
+}
+
+<span class="syn-name">method_call_depth</span> : <span class="syn-type">Reading</span>, <span class="syn-type">Tree.Node</span> -&gt; <span class="syn-type">U64</span>
+<span class="syn-name">method_call_depth</span> = |reading, node| {
+	<span class="syn-keyword">var</span> $receiver_depth = <span class="syn-number">0</span>
+	<span class="syn-keyword">var</span> $deepest_argument = <span class="syn-number">0</span>
+	<span class="syn-keyword">for</span> kid <span class="syn-keyword">in</span> node.kids {
+		part = <span class="syn-type">Tree</span>.node_at(reading.syntax_nodes, kid)
+		<span class="syn-keyword">if</span> part.kind == <span class="syn-string">&quot;receiver&quot;</span> {
+			$receiver_depth = depth_at(reading, <span class="syn-type">Tree</span>.first_kid(part))
+		}
+		<span class="syn-keyword">if</span> part.kind == <span class="syn-string">&quot;args&quot;</span> {
+			$deepest_argument = <span class="syn-type">U64</span>.max($deepest_argument, deepest_of(reading, part.kids))
+		}
+	}
+	<span class="syn-type">U64</span>.max(<span class="syn-number">1</span> + $deepest_argument, $receiver_depth)
+}
+
+<span class="syn-comment">## A tuple of one item, which is a pair of parentheses.</span>
+<span class="syn-name">is_parenthesized</span> : <span class="syn-type">Tree.Node</span> -&gt; <span class="syn-type">Bool</span>
+<span class="syn-name">is_parenthesized</span> = |node| node.kind == <span class="syn-string">&quot;e-tuple&quot;</span> <span class="syn-keyword">and</span> node.kids.len() == <span class="syn-number">1</span>
+
+<span class="syn-name">deepest_of</span> : <span class="syn-type">Reading</span>, <span class="syn-type">List</span>(<span class="syn-type">U64</span>) -&gt; <span class="syn-type">U64</span>
+<span class="syn-name">deepest_of</span> = |reading, places|
+	places.fold(<span class="syn-number">0</span>, |deepest, place| <span class="syn-type">U64</span>.max(deepest, depth_at(reading, place)))
+
+<span class="syn-name">depth_at</span> : <span class="syn-type">Reading</span>, <span class="syn-type">U64</span> -&gt; <span class="syn-type">U64</span>
+<span class="syn-name">depth_at</span> = |reading, place|
+	<span class="syn-keyword">match</span> reading.depths.get(place - <span class="syn-number">1</span>) {
+		<span class="syn-type">Ok</span>(depth) =&gt; depth
+		<span class="syn-type">Err</span>(_) =&gt; <span class="syn-keyword">crash</span> <span class="syn-string">&quot;find_calls_nested_three_deep: no depth for node </span>${place.to_str()}<span class="syn-string">&quot;</span>
+	}
+
+<span class="syn-comment"># ── The nest around a call</span>
+
+<span class="syn-comment">## Whether a call nested under this node still belongs to the nest of the</span>
+<span class="syn-comment">## call above it.</span>
+<span class="syn-name">continues_nest</span> : <span class="syn-type">Tree.Node</span>, <span class="syn-type">Nest.Strictness</span> -&gt; <span class="syn-type">Bool</span>
+<span class="syn-name">continues_nest</span> = |node, strictness| {
+	is_part = node.kind == <span class="syn-string">&quot;args&quot;</span> <span class="syn-keyword">or</span> node.kind == <span class="syn-string">&quot;e-tuple&quot;</span>
+	is_call(node) <span class="syn-keyword">or</span> is_part <span class="syn-keyword">or</span> passes_depth_through(node.kind, strictness)
+}
+
+<span class="syn-comment">## Whether the call at `place` is the outermost of its nest: the first call</span>
+<span class="syn-comment">## above it, through nodes that continue the nest, is not as deep.</span>
+<span class="syn-name">is_outermost</span> : <span class="syn-type">Reading</span>, <span class="syn-type">U64</span> -&gt; <span class="syn-type">Bool</span>
+<span class="syn-name">is_outermost</span> = |reading, place| {
+	depth = depth_at(reading, place)
+	<span class="syn-keyword">var</span> $above = <span class="syn-type">Tree</span>.node_at(reading.syntax_nodes, place).parent
+	<span class="syn-keyword">while</span> $above &gt; <span class="syn-number">0</span> {
+		node = <span class="syn-type">Tree</span>.node_at(reading.syntax_nodes, $above)
+		<span class="syn-keyword">if</span> is_call(node) {
+			<span class="syn-keyword">return</span> depth_at(reading, $above) &lt; depth
+		}
+		<span class="syn-keyword">if</span> !(continues_nest(node, reading.strictness)) {
+			<span class="syn-keyword">return</span> <span class="syn-type">Bool.True</span>
+		}
+		$above = node.parent
+	}
+	<span class="syn-type">Bool.True</span>
+}
+
+<span class="syn-comment">## Whether the call at `place` is inside the nest of the call at `top`:</span>
+<span class="syn-comment">## every node between them continues the nest.</span>
+<span class="syn-name">is_in_nest</span> : <span class="syn-type">Reading</span>, { top : <span class="syn-type">U64</span>, place : <span class="syn-type">U64</span> } -&gt; <span class="syn-type">Bool</span>
+<span class="syn-name">is_in_nest</span> = |reading, { top, place }| {
+	<span class="syn-keyword">var</span> $above = <span class="syn-type">Tree</span>.node_at(reading.syntax_nodes, place).parent
+	<span class="syn-keyword">while</span> $above &gt; <span class="syn-number">0</span> <span class="syn-keyword">and</span> $above != top {
+		node = <span class="syn-type">Tree</span>.node_at(reading.syntax_nodes, $above)
+		<span class="syn-keyword">if</span> !(continues_nest(node, reading.strictness)) {
+			<span class="syn-keyword">return</span> <span class="syn-type">Bool.False</span>
+		}
+		$above = node.parent
+	}
+	$above == top
+}
+
+<span class="syn-comment">## The deepest call of the nest under the call at `top`: the first call of</span>
+<span class="syn-comment">## depth 1 inside it, in source order, or `top` itself when it has none.</span>
+<span class="syn-comment">## The nodes inside it are those after it that are deeper in the tree.</span>
+<span class="syn-name">deepest_call</span> : <span class="syn-type">Reading</span>, <span class="syn-type">U64</span> -&gt; <span class="syn-type">U64</span>
+<span class="syn-name">deepest_call</span> = |reading, top| {
+	top_depth = <span class="syn-type">Tree</span>.node_at(reading.syntax_nodes, top).depth
+	is_inside = |place| <span class="syn-type">Tree</span>.node_at(reading.syntax_nodes, place).depth &gt; top_depth
+	<span class="syn-keyword">var</span> $place = top + <span class="syn-number">1</span>
+	<span class="syn-keyword">while</span> $place &lt;= reading.syntax_nodes.len() <span class="syn-keyword">and</span> is_inside($place) {
+		node = <span class="syn-type">Tree</span>.node_at(reading.syntax_nodes, $place)
+		is_deepest = is_call(node) <span class="syn-keyword">and</span> depth_at(reading, $place) == <span class="syn-number">1</span>
+		<span class="syn-keyword">if</span> is_deepest <span class="syn-keyword">and</span> is_in_nest(reading, { top, place: $place }) {
+			<span class="syn-keyword">return</span> $place
+		}
+		$place = $place + <span class="syn-number">1</span>
+	}
+	top
+}
+
+<span class="syn-comment">## A call&#39;s name: an apply&#39;s function as written (`List.concat`, else its</span>
+<span class="syn-comment">## name, else its kind), or a method call&#39;s method (`.concat`).</span>
+<span class="syn-name">call_name</span> : <span class="syn-type">List</span>(<span class="syn-type">Tree.Node</span>), <span class="syn-type">U64</span> -&gt; <span class="syn-type">Str</span>
+<span class="syn-name">call_name</span> = |syntax_nodes, place| {
+	node = <span class="syn-type">Tree</span>.node_at(syntax_nodes, place)
+	<span class="syn-keyword">if</span> node.kind == <span class="syn-string">&quot;e-method-call&quot;</span> {
+		<span class="syn-keyword">match</span> <span class="syn-type">Tree</span>.find_attribute(node, <span class="syn-string">&quot;method&quot;</span>) {
+			<span class="syn-type">Ok</span>(method) =&gt; method
+			<span class="syn-type">Err</span>(_) =&gt; <span class="syn-keyword">crash</span> <span class="syn-string">&quot;find_calls_nested_three_deep: a method call with no method&quot;</span>
+		}
+	} <span class="syn-keyword">else</span> {
+		function = <span class="syn-type">Tree</span>.node_at(syntax_nodes, <span class="syn-type">Tree</span>.first_kid(node))
+		<span class="syn-keyword">match</span> <span class="syn-type">Tree</span>.find_attribute(function, <span class="syn-string">&quot;raw&quot;</span>) {
+			<span class="syn-type">Ok</span>(raw) =&gt; raw
+			<span class="syn-type">Err</span>(_) =&gt; <span class="syn-type">Tree</span>.find_attribute(function, <span class="syn-string">&quot;name&quot;</span>) ?? function.kind
+		}
+	}
+}
+</code></pre>
+<p class="file"><a href="https://github.com/showell/shale/blob/e3c753adf065dc7856e5d49422daf99f9969f91a/cookbook/roc/find_calls_nested_three_deep/SelfTest.roc"><code>cookbook/roc/find_calls_nested_three_deep/SelfTest.roc</code></a>, 154 lines</p>
+<pre><code><span class="syn-comment">## The recipe&#39;s self-test: the plants in cookbook/roc/plants/find_calls_nested_three_deep/,</span>
+<span class="syn-comment">## checked at `min=3` against the marks they carry. A line ending</span>
+<span class="syn-comment">## `# depth N` must give one finding of depth N, and one ending</span>
+<span class="syn-comment">## `# depth N, M` a finding for each, left to right; an added `from A to B`</span>
+<span class="syn-comment">## means the line&#39;s first finding must say `A to B`. No unmarked line may</span>
+<span class="syn-comment">## give a finding, no two findings may print the same line, and a</span>
+<span class="syn-comment">## `quiet_*.roc` plant may hold no mark.</span>
+<span class="syn-keyword">import</span> pf.<span class="syn-type">Shale</span>
+<span class="syn-keyword">import</span> <span class="syn-type">NestFinding</span>
+
+<span class="syn-type">SelfTest</span> := [].{
+
+	<span class="syn-comment">## Where the plants are.</span>
+	<span class="syn-name">plants</span> : <span class="syn-type">Str</span>
+	<span class="syn-name">plants</span> = <span class="syn-string">&quot;cookbook:roc/plants/find_calls_nested_three_deep/&quot;</span>
+
+	<span class="syn-comment">## Each plant&#39;s marks held to the findings the run printed: every fault</span>
+	<span class="syn-comment">## said, then a stop, or the PASS line.</span>
+	<span class="syn-name">run!</span> : { paths : <span class="syn-type">List</span>(<span class="syn-type">Str</span>), findings : <span class="syn-type">List</span>(<span class="syn-type">NestFinding</span>) } =&gt; {}
+	<span class="syn-name">run!</span> = |{ paths, findings }| {
+		<span class="syn-keyword">var</span> $faults = []
+		<span class="syn-keyword">var</span> $mark_count = <span class="syn-number">0</span>
+		<span class="syn-keyword">for</span> path <span class="syn-keyword">in</span> paths {
+			text = <span class="syn-keyword">match</span> <span class="syn-type">Shale</span>.read!(path) {
+				<span class="syn-type">Found</span>(found) =&gt; found
+				<span class="syn-type">Missing</span> =&gt; {
+					<span class="syn-type">Shale</span>.fail!(<span class="syn-string">&quot;find_calls_nested_three_deep self_test: </span>${path}<span class="syn-string"> went missing&quot;</span>)
+					<span class="syn-string">&quot;&quot;</span>
+				}
+			}
+			<span class="syn-keyword">var</span> $number = <span class="syn-number">1</span>
+			<span class="syn-keyword">for</span> line <span class="syn-keyword">in</span> text.split_on(<span class="syn-string">&quot;\n&quot;</span>) {
+				mark = read_mark!(line)
+				<span class="syn-keyword">if</span> mark != <span class="syn-type">Unmarked</span> {
+					$mark_count = $mark_count + <span class="syn-number">1</span>
+				}
+				judged = {
+					place: <span class="syn-string">&quot;</span>${path}<span class="syn-string">:</span>${$number.to_str()}<span class="syn-string">&quot;</span>,
+					path,
+					mark,
+					line_findings: findings_at_line(findings, { path, line: $number }),
+				}
+				$faults = $faults.concat(line_faults(judged))
+				$number = $number + <span class="syn-number">1</span>
+			}
+		}
+		$faults = $faults.concat(duplicate_line_faults(findings))
+		<span class="syn-keyword">if</span> $mark_count == <span class="syn-number">0</span> {
+			$faults = $faults.append(<span class="syn-string">&quot;no plant holds a `# depth` mark&quot;</span>)
+		}
+		<span class="syn-keyword">for</span> fault <span class="syn-keyword">in</span> $faults {
+			<span class="syn-type">Shale</span>.print!(<span class="syn-string">&quot;FAIL </span>${fault}<span class="syn-string">&quot;</span>)
+		}
+		<span class="syn-keyword">if</span> !($faults.is_empty()) {
+			<span class="syn-type">Shale</span>.fail!(<span class="syn-string">&quot;find_calls_nested_three_deep self_test: </span>${$faults.len().to_str()}<span class="syn-string"> plants wrong&quot;</span>)
+		}
+		marks = <span class="syn-string">&quot;each marked line gives its depths left to right, the outermost only&quot;</span>
+		others = <span class="syn-string">&quot;no other line a finding, and no two findings print alike&quot;</span>
+		<span class="syn-type">Shale</span>.print!(<span class="syn-string">&quot;find_calls_nested_three_deep (Roc) self_test: PASS (</span>${marks}<span class="syn-string">, </span>${others}<span class="syn-string">)&quot;</span>)
+	}
+}
+
+<span class="syn-comment">## A line&#39;s mark: the depths it wants, as written (`3, 4`), and the</span>
+<span class="syn-comment">## outermost and deepest calls its first finding must name, if it says.</span>
+<span class="syn-type">Mark</span> : [<span class="syn-type">Marked</span>({ depths : <span class="syn-type">Str</span>, span : [<span class="syn-type">Says</span>(<span class="syn-type">Str</span>), <span class="syn-type">Silent</span>] }), <span class="syn-type">Unmarked</span>]
+
+<span class="syn-name">read_mark!</span> : <span class="syn-type">Str</span> =&gt; <span class="syn-type">Mark</span>
+<span class="syn-name">read_mark!</span> = |line| {
+	depths = <span class="syn-string">&quot;([0-9]+(?:, [0-9]+)*)&quot;</span>
+	span = <span class="syn-string">&quot;(?: from ([A-Za-z0-9_.]+) to ([A-Za-z0-9_.]+))?&quot;</span>
+	<span class="syn-keyword">match</span> <span class="syn-type">Shale</span>.re_find!(line, <span class="syn-string">&quot;# depth </span>${depths}${span}<span class="syn-string">$&quot;</span>) {
+		<span class="syn-type">Found</span>(found) =&gt;
+			<span class="syn-keyword">match</span> found.groups {
+				[wanted, outermost, deepest] <span class="syn-keyword">if</span> outermost != <span class="syn-string">&quot;&quot;</span> =&gt;
+					<span class="syn-type">Marked</span>({ depths: wanted, span: <span class="syn-type">Says</span>(<span class="syn-string">&quot;</span>${outermost}<span class="syn-string"> to </span>${deepest}<span class="syn-string">&quot;</span>) })
+				[wanted, ..] =&gt; <span class="syn-type">Marked</span>({ depths: wanted, span: <span class="syn-type">Silent</span> })
+				[] =&gt; <span class="syn-keyword">crash</span> <span class="syn-string">&quot;find_calls_nested_three_deep: a mark matched with no groups&quot;</span>
+			}
+		<span class="syn-type">NoMatch</span> =&gt; <span class="syn-type">Unmarked</span>
+	}
+}
+
+<span class="syn-comment">## The findings on one line of a plant, left to right.</span>
+<span class="syn-name">findings_at_line</span> : <span class="syn-type">List</span>(<span class="syn-type">NestFinding</span>), { path : <span class="syn-type">Str</span>, line : <span class="syn-type">U64</span> } -&gt; <span class="syn-type">List</span>(<span class="syn-type">NestFinding</span>)
+<span class="syn-name">findings_at_line</span> = |findings, { path, line }|
+	findings
+		.keep_if(|finding| finding.path == path <span class="syn-keyword">and</span> finding.nest.line == line)
+		.sort_by(|finding| finding.nest.column)
+
+<span class="syn-comment">## A plant&#39;s line to judge: where it is, its mark and its findings.</span>
+<span class="syn-type">JudgedLine</span> : {
+	place : <span class="syn-type">Str</span>,
+	path : <span class="syn-type">Str</span>,
+	mark : <span class="syn-type">Mark</span>,
+	line_findings : <span class="syn-type">List</span>(<span class="syn-type">NestFinding</span>),
+}
+
+<span class="syn-comment">## What is wrong with one line: its findings against its mark.</span>
+<span class="syn-name">line_faults</span> : <span class="syn-type">JudgedLine</span> -&gt; <span class="syn-type">List</span>(<span class="syn-type">Str</span>)
+<span class="syn-name">line_faults</span> = |{ place, path, mark, line_findings }| {
+	got = <span class="syn-type">Str</span>.join_with(line_findings.map(|finding| finding.nest.depth.to_str()), <span class="syn-string">&quot;, &quot;</span>)
+	<span class="syn-keyword">match</span> mark {
+		<span class="syn-type">Marked</span>({ depths, span }) =&gt; {
+			quiet_fault =
+				<span class="syn-keyword">if</span> path.drop_prefix(<span class="syn-type">SelfTest</span>.plants).starts_with(<span class="syn-string">&quot;quiet_&quot;</span>) {
+					[<span class="syn-string">&quot;</span>${place}<span class="syn-string">: a quiet plant holds a `# depth` mark&quot;</span>]
+				} <span class="syn-keyword">else</span> {
+					[]
+				}
+			span_fault =
+				<span class="syn-keyword">match</span> span {
+					<span class="syn-type">Says</span>(says) =&gt;
+						<span class="syn-keyword">match</span> line_findings.first() {
+							<span class="syn-type">Ok</span>(first) <span class="syn-keyword">if</span> <span class="syn-type">NestFinding</span>.head(first).contains(says) =&gt; []
+							_ =&gt; [<span class="syn-string">&quot;</span>${place}<span class="syn-string">: the finding does not say `</span>${says}<span class="syn-string">`&quot;</span>]
+						}
+					<span class="syn-type">Silent</span> =&gt; []
+				}
+			depth_fault =
+				<span class="syn-keyword">if</span> line_findings.is_empty() {
+					[<span class="syn-string">&quot;</span>${place}<span class="syn-string">: no finding, want depth </span>${depths}<span class="syn-string">&quot;</span>]
+				} <span class="syn-keyword">else</span> <span class="syn-keyword">if</span> got != depths {
+					[<span class="syn-string">&quot;</span>${place}<span class="syn-string">: depth </span>${got}<span class="syn-string">, want </span>${depths}<span class="syn-string">&quot;</span>]
+				} <span class="syn-keyword">else</span> {
+					[]
+				}
+			quiet_fault.concat(span_fault).concat(depth_fault)
+		}
+		<span class="syn-type">Unmarked</span> =&gt;
+			<span class="syn-keyword">if</span> line_findings.is_empty() {
+				[]
+			} <span class="syn-keyword">else</span> {
+				[<span class="syn-string">&quot;</span>${place}<span class="syn-string">: a finding (depth </span>${got}<span class="syn-string">) on a line not marked for one&quot;</span>]
+			}
+	}
+}
+
+<span class="syn-comment">## A fault for each line that two findings print alike.</span>
+<span class="syn-name">duplicate_line_faults</span> : <span class="syn-type">List</span>(<span class="syn-type">NestFinding</span>) -&gt; <span class="syn-type">List</span>(<span class="syn-type">Str</span>)
+<span class="syn-name">duplicate_line_faults</span> = |findings| {
+	finding_lines = findings.map(<span class="syn-type">NestFinding</span>.finding_line)
+	is_printed_twice = |line| finding_lines.count_if(|other| other == line) &gt; <span class="syn-number">1</span>
+	once_each = |seen, line| {
+		<span class="syn-keyword">if</span> seen.contains(line) {
+			seen
+		} <span class="syn-keyword">else</span> {
+			seen.append(line)
+		}
+	}
+	finding_lines
+		.keep_if(is_printed_twice)
+		.fold([], once_each)
+		.map(|line| <span class="syn-string">&quot;two findings print the same line, </span>${line}<span class="syn-string">&quot;</span>)
+}
+</code></pre>
+<h2 class="code">Shale original</h2>
+<p class="file"><a href="https://github.com/showell/shale/blob/30f6d655eadf30d114e6c064b31ed42968c78c5e/cookbook/roc/find_deep_calls.shale"><code>cookbook/roc/find_deep_calls.shale</code></a>, 232 lines, at <code>30f6d655</code></p>
+<p class="file">The libraries it loads: <a href="https://github.com/showell/shale/blob/30f6d655eadf30d114e6c064b31ed42968c78c5e/cookbook/findings.shale"><code>cookbook/findings.shale</code></a> (21 lines), <a href="https://github.com/showell/shale/blob/30f6d655eadf30d114e6c064b31ed42968c78c5e/cookbook/roc/house.shale"><code>cookbook/roc/house.shale</code></a> (46 lines), <a href="https://github.com/showell/shale/blob/30f6d655eadf30d114e6c064b31ed42968c78c5e/cookbook/roc/parsed.shale"><code>cookbook/roc/parsed.shale</code></a> (34 lines).</p>
+<pre><code><span class="syn-comment">-- This recipe finds calls nested three or more deep, like `f(g(h(x)))`, in</span>
+<span class="syn-comment">-- every .roc file of a tree. Such a call has to be read from the inside</span>
+<span class="syn-comment">-- out. The Roc style guide (roc-apps docs/roc-style.md) asks for code that</span>
+<span class="syn-comment">-- reads left to right instead: a method chain, a pipe, or a named middle</span>
+<span class="syn-comment">-- step. The recipe reads each file&#39;s syntax tree from Roc&#39;s own parser</span>
+<span class="syn-comment">-- (cookbook/roc/parsed.shale).</span>
+<span class="syn-comment">--</span>
+<span class="syn-comment">--   cd &lt;repo&gt; &amp;&amp; shale &lt;shale&gt;/cookbook/roc/find_deep_calls.shale glob=chat/**/*.roc min=4</span>
+<span class="syn-comment">--   shale cookbook:roc/find_deep_calls.shale self_test=1</span>
+<span class="syn-comment">--</span>
+<span class="syn-comment">-- The arguments:</span>
+<span class="syn-comment">--   glob   the files to check, `**/*.roc` by default;</span>
+<span class="syn-comment">--   min    the least depth to report, 3 by default;</span>
+<span class="syn-comment">--   house  with `house=0`, leave out what is only our house style</span>
+<span class="syn-comment">--          (cookbook/roc/house.shale), for another project&#39;s code;</span>
+<span class="syn-comment">--   loose  with `loose=1`, a record, list or tuple argument does not reset</span>
+<span class="syn-comment">--          the depth.</span>
+<span class="syn-comment">--</span>
+<span class="syn-comment">-- A call&#39;s depth is one more than the deepest call among its arguments.</span>
+<span class="syn-comment">-- Some things pass their parts&#39; depth through without adding a level:</span>
+<span class="syn-comment">-- whatever reads left to right (a method&#39;s receiver in `a.f().g()`, the</span>
+<span class="syn-comment">-- left side of `x |&gt; f` and `x-&gt;f()`), a tag or nominal wrapper</span>
+<span class="syn-comment">-- (`Ok(...)`, `ChatPath.(...)`), `?`, parentheses, operators, field or</span>
+<span class="syn-comment">-- tuple access, and a string&#39;s interpolation. So `f(g(h(x) + 1))`,</span>
+<span class="syn-comment">-- `f(!g(h(x)))`, `f(g(h(x).a))` and `f(&quot;${g(h(x))}&quot;)` are each three deep. A lambda argument starts again at zero, since its body</span>
+<span class="syn-comment">-- is read on its own, and so does a record, list or tuple argument, whose</span>
+<span class="syn-comment">-- parts have names or places, unless `loose=1`.</span>
+<span class="syn-comment">--</span>
+<span class="syn-comment">-- Each finding is the outermost call of one nest:</span>
+<span class="syn-comment">--   path:line:column: nested: depth N, &lt;outermost&gt; to &lt;deepest&gt;: &lt;source line&gt;</span>
+<span class="syn-comment">-- The column tells apart two nests on one line. The outermost and deepest</span>
+<span class="syn-comment">-- calls are named (`List.concat to Str.to_utf8`, or `.concat` for a method)</span>
+<span class="syn-comment">-- so that a nest spread over several lines says more than its first line.</span>
+<span class="syn-comment">-- The output is the count by depth, the findings, and the count again</span>
+<span class="syn-comment">-- (cookbook/findings.shale). Files that don&#39;t parse are listed after</span>
+<span class="syn-comment">-- the findings, and then the run fails.</span>
+<span class="syn-comment">--</span>
+<span class="syn-comment">-- `self_test=1` checks the plants in `cookbook/roc/plants/find_deep_calls/` at</span>
+<span class="syn-comment">-- `min=3`. A plant line ending `# depth N` must give one finding of depth</span>
+<span class="syn-comment">-- N, and one ending `# depth N, M` a finding for each, left to right; an</span>
+<span class="syn-comment">-- added `from A to B` means the finding must say `A to B`. No unmarked line</span>
+<span class="syn-comment">-- may give a finding, no two findings may print the same line, and a</span>
+<span class="syn-comment">-- `quiet_*.roc` plant may hold no mark.</span>
+<span class="syn-comment">-- budget: steps=100000000 arena_bytes=3000000000 output_bytes=4000000</span>
+
+<span class="syn-keyword">const</span> SELF_TEST = arg(<span class="syn-string">&quot;self_test&quot;</span>, <span class="syn-string">&quot;&quot;</span>) == <span class="syn-string">&quot;1&quot;</span>
+<span class="syn-keyword">const</span> PLANTS = <span class="syn-string">&quot;cookbook:roc/plants/find_deep_calls/&quot;</span>
+<span class="syn-keyword">const</span> GLOB = SELF_TEST <span class="syn-keyword">and</span> (PLANTS .. <span class="syn-string">&quot;*.roc&quot;</span>) <span class="syn-keyword">or</span> arg(<span class="syn-string">&quot;glob&quot;</span>, <span class="syn-string">&quot;**/*.roc&quot;</span>)
+<span class="syn-keyword">const</span> LOOSE = arg(<span class="syn-string">&quot;loose&quot;</span>, <span class="syn-string">&quot;&quot;</span>) == <span class="syn-string">&quot;1&quot;</span>
+<span class="syn-keyword">const</span> MIN = SELF_TEST <span class="syn-keyword">and</span> <span class="syn-number">3</span> <span class="syn-keyword">or</span> arg(<span class="syn-string">&quot;min&quot;</span>, <span class="syn-number">3</span>)
+use(<span class="syn-string">&quot;cookbook:findings.shale&quot;</span>)
+use(<span class="syn-string">&quot;./house.shale&quot;</span>)
+use(<span class="syn-string">&quot;./parsed.shale&quot;</span>)
+
+<span class="syn-comment">-- The node kinds that pass their parts&#39; depth through. `unary` is `!x` or</span>
+<span class="syn-comment">-- `-x`, `receiver` holds the value whose method is called, and an `e-string`</span>
+<span class="syn-comment">-- holds its interpolations&#39; code.</span>
+<span class="syn-keyword">const</span> PASS_THROUGH = {[<span class="syn-string">&quot;e-arrow-call&quot;</span>] = <span class="syn-keyword">true</span>, [<span class="syn-string">&quot;e-question-suffix&quot;</span>] = <span class="syn-keyword">true</span>, [<span class="syn-string">&quot;e-nominal-apply&quot;</span>] = <span class="syn-keyword">true</span>, mapper = <span class="syn-keyword">true</span>, [<span class="syn-string">&quot;e-binop&quot;</span>] = <span class="syn-keyword">true</span>, unary = <span class="syn-keyword">true</span>, [<span class="syn-string">&quot;e-field-access&quot;</span>] = <span class="syn-keyword">true</span>, [<span class="syn-string">&quot;e-tuple-access&quot;</span>] = <span class="syn-keyword">true</span>, receiver = <span class="syn-keyword">true</span>, [<span class="syn-string">&quot;e-string&quot;</span>] = <span class="syn-keyword">true</span>}
+<span class="syn-keyword">const</span> LOOSE_PASS_THROUGH = {[<span class="syn-string">&quot;e-record&quot;</span>] = <span class="syn-keyword">true</span>, [<span class="syn-string">&quot;e-list&quot;</span>] = <span class="syn-keyword">true</span>, [<span class="syn-string">&quot;e-tuple&quot;</span>] = <span class="syn-keyword">true</span>, field = <span class="syn-keyword">true</span>}
+
+<span class="syn-keyword">function</span> <span class="syn-name">passes_depth_through</span>(kind, loose)
+  <span class="syn-keyword">return</span> has_key(PASS_THROUGH, kind) <span class="syn-keyword">or</span> (loose <span class="syn-keyword">and</span> has_key(LOOSE_PASS_THROUGH, kind))
+<span class="syn-keyword">end</span>
+
+<span class="syn-keyword">function</span> <span class="syn-name">is_call</span>(node)
+  <span class="syn-keyword">return</span> node.kind == <span class="syn-string">&quot;e-apply&quot;</span> <span class="syn-keyword">or</span> node.kind == <span class="syn-string">&quot;e-method-call&quot;</span>
+<span class="syn-keyword">end</span>
+
+<span class="syn-comment">-- Whether a call nested under a node of this kind still belongs to the</span>
+<span class="syn-comment">-- same nest as the call above it.</span>
+<span class="syn-keyword">function</span> <span class="syn-name">continues_nest</span>(node, loose)
+  <span class="syn-keyword">local</span> kind = node.kind
+  <span class="syn-keyword">return</span> is_call(node) <span class="syn-keyword">or</span> kind == <span class="syn-string">&quot;args&quot;</span> <span class="syn-keyword">or</span> kind == <span class="syn-string">&quot;receiver&quot;</span> <span class="syn-keyword">or</span> kind == <span class="syn-string">&quot;e-tuple&quot;</span> <span class="syn-keyword">or</span> passes_depth_through(kind, loose)
+<span class="syn-keyword">end</span>
+
+<span class="syn-comment">-- The call depth of node `i`, cached in `memo`, where -1 means not yet</span>
+<span class="syn-comment">-- computed.</span>
+<span class="syn-keyword">function</span> <span class="syn-name">call_depth</span>(nodes, memo, i, loose)
+  <span class="syn-keyword">if</span> memo[i] &gt;= <span class="syn-number">0</span> <span class="syn-keyword">then</span> <span class="syn-keyword">return</span> memo[i] <span class="syn-keyword">end</span>
+  <span class="syn-keyword">local</span> node = nodes[i]
+  <span class="syn-keyword">local</span> kind = node.kind
+  <span class="syn-keyword">local</span> depth = <span class="syn-number">0</span>
+  <span class="syn-keyword">if</span> kind == <span class="syn-string">&quot;e-apply&quot;</span> <span class="syn-keyword">then</span>
+    <span class="syn-comment">-- The first kid is the function called, the rest its arguments.</span>
+    <span class="syn-keyword">local</span> deepest_argument = <span class="syn-number">0</span>
+    <span class="syn-keyword">for</span> argument <span class="syn-keyword">in</span> drop(node.kids, <span class="syn-number">1</span>) <span class="syn-keyword">do</span>
+      deepest_argument = max(deepest_argument, call_depth(nodes, memo, argument, loose))
+    <span class="syn-keyword">end</span>
+    <span class="syn-comment">-- A tag&#39;s payload, as in `Ok(...)`, is no call.</span>
+    <span class="syn-keyword">if</span> nodes[node.kids[<span class="syn-number">1</span>]].kind == <span class="syn-string">&quot;e-tag&quot;</span> <span class="syn-keyword">then</span> depth = deepest_argument <span class="syn-keyword">else</span> depth = <span class="syn-number">1</span> + deepest_argument <span class="syn-keyword">end</span>
+  <span class="syn-keyword">elseif</span> kind == <span class="syn-string">&quot;e-method-call&quot;</span> <span class="syn-keyword">then</span>
+    <span class="syn-keyword">local</span> receiver_depth = <span class="syn-number">0</span>
+    <span class="syn-keyword">local</span> deepest_argument = <span class="syn-number">0</span>
+    <span class="syn-keyword">for</span> kid <span class="syn-keyword">in</span> node.kids <span class="syn-keyword">do</span>
+      <span class="syn-keyword">if</span> nodes[kid].kind == <span class="syn-string">&quot;receiver&quot;</span> <span class="syn-keyword">then</span> receiver_depth = call_depth(nodes, memo, nodes[kid].kids[<span class="syn-number">1</span>], loose) <span class="syn-keyword">end</span>
+      <span class="syn-keyword">if</span> nodes[kid].kind == <span class="syn-string">&quot;args&quot;</span> <span class="syn-keyword">then</span>
+        <span class="syn-keyword">for</span> argument <span class="syn-keyword">in</span> nodes[kid].kids <span class="syn-keyword">do</span>
+          deepest_argument = max(deepest_argument, call_depth(nodes, memo, argument, loose))
+        <span class="syn-keyword">end</span>
+      <span class="syn-keyword">end</span>
+    <span class="syn-keyword">end</span>
+    depth = max(<span class="syn-number">1</span> + deepest_argument, receiver_depth)
+  <span class="syn-keyword">elseif</span> passes_depth_through(kind, loose) <span class="syn-keyword">or</span> (kind == <span class="syn-string">&quot;e-tuple&quot;</span> <span class="syn-keyword">and</span> #node.kids == <span class="syn-number">1</span>) <span class="syn-keyword">then</span>
+    <span class="syn-comment">-- A one-item tuple is a pair of parentheses.</span>
+    <span class="syn-keyword">for</span> kid <span class="syn-keyword">in</span> node.kids <span class="syn-keyword">do</span>
+      depth = max(depth, call_depth(nodes, memo, kid, loose))
+    <span class="syn-keyword">end</span>
+  <span class="syn-keyword">end</span>
+  memo[i] = depth
+  <span class="syn-keyword">return</span> depth
+<span class="syn-keyword">end</span>
+
+<span class="syn-comment">-- Whether the call at `i` is the outermost of its nest: the first call</span>
+<span class="syn-comment">-- above it, through nodes that continue the nest, is not as deep.</span>
+<span class="syn-keyword">function</span> <span class="syn-name">is_outermost</span>(nodes, memo, i, loose)
+  <span class="syn-keyword">local</span> p = nodes[i].parent
+  <span class="syn-keyword">while</span> p &gt; <span class="syn-number">0</span> <span class="syn-keyword">do</span>
+    <span class="syn-keyword">if</span> is_call(nodes[p]) <span class="syn-keyword">then</span> <span class="syn-keyword">return</span> call_depth(nodes, memo, p, loose) &lt; call_depth(nodes, memo, i, loose) <span class="syn-keyword">end</span>
+    <span class="syn-keyword">if</span> <span class="syn-keyword">not</span> continues_nest(nodes[p], loose) <span class="syn-keyword">then</span> <span class="syn-keyword">return</span> <span class="syn-keyword">true</span> <span class="syn-keyword">end</span>
+    p = nodes[p].parent
+  <span class="syn-keyword">end</span>
+  <span class="syn-keyword">return</span> <span class="syn-keyword">true</span>
+<span class="syn-keyword">end</span>
+
+<span class="syn-comment">-- A call&#39;s name: an apply&#39;s function (`List.concat`), or a method call&#39;s</span>
+<span class="syn-comment">-- method (`.concat`).</span>
+<span class="syn-keyword">function</span> <span class="syn-name">call_name</span>(nodes, i)
+  <span class="syn-keyword">local</span> node = nodes[i]
+  <span class="syn-keyword">if</span> node.kind == <span class="syn-string">&quot;e-method-call&quot;</span> <span class="syn-keyword">then</span> <span class="syn-keyword">return</span> get(node, <span class="syn-string">&quot;method&quot;</span>, <span class="syn-string">&quot;?&quot;</span>) <span class="syn-keyword">end</span>
+  <span class="syn-keyword">local</span> head = nodes[node.kids[<span class="syn-number">1</span>]]
+  <span class="syn-keyword">return</span> get(head, <span class="syn-string">&quot;raw&quot;</span>, get(head, <span class="syn-string">&quot;name&quot;</span>, head.kind))
+<span class="syn-keyword">end</span>
+
+<span class="syn-comment">-- Whether the call at `j` is inside the nest of the call at `top`: every</span>
+<span class="syn-comment">-- node between them continues the nest.</span>
+<span class="syn-keyword">function</span> <span class="syn-name">is_in_nest</span>(nodes, top, j, loose)
+  <span class="syn-keyword">local</span> p = nodes[j].parent
+  <span class="syn-keyword">while</span> p &gt; <span class="syn-number">0</span> <span class="syn-keyword">and</span> p ~= top <span class="syn-keyword">do</span>
+    <span class="syn-keyword">if</span> <span class="syn-keyword">not</span> continues_nest(nodes[p], loose) <span class="syn-keyword">then</span> <span class="syn-keyword">return</span> <span class="syn-keyword">false</span> <span class="syn-keyword">end</span>
+    p = nodes[p].parent
+  <span class="syn-keyword">end</span>
+  <span class="syn-keyword">return</span> p == top
+<span class="syn-keyword">end</span>
+
+<span class="syn-comment">-- The deepest call of the nest under the call at `top`: the first call of</span>
+<span class="syn-comment">-- depth 1 inside it, in source order.</span>
+<span class="syn-keyword">function</span> <span class="syn-name">deepest_call</span>(nodes, memo, top, loose)
+  <span class="syn-keyword">local</span> j = top + <span class="syn-number">1</span>
+  <span class="syn-keyword">while</span> j &lt;= #nodes <span class="syn-keyword">and</span> nodes[j].depth &gt; nodes[top].depth <span class="syn-keyword">do</span>
+    <span class="syn-keyword">if</span> is_call(nodes[j]) <span class="syn-keyword">and</span> call_depth(nodes, memo, j, loose) == <span class="syn-number">1</span> <span class="syn-keyword">and</span> is_in_nest(nodes, top, j, loose) <span class="syn-keyword">then</span> <span class="syn-keyword">return</span> j <span class="syn-keyword">end</span>
+    j = j + <span class="syn-number">1</span>
+  <span class="syn-keyword">end</span>
+  <span class="syn-keyword">return</span> top
+<span class="syn-keyword">end</span>
+
+<span class="syn-keyword">const</span> paths = glob(GLOB)
+<span class="syn-keyword">local</span> finding_count = <span class="syn-number">0</span>
+<span class="syn-keyword">local</span> count_by_depth = {}
+<span class="syn-keyword">local</span> finding_lines = {}
+<span class="syn-comment">-- For the self-test: each line&#39;s findings, `path:line` to a list of</span>
+<span class="syn-comment">-- `{col, depth, text}`, and how many times each finding line printed.</span>
+<span class="syn-keyword">const</span> findings_at_line = {}
+<span class="syn-keyword">const</span> times_printed = {}
+<span class="syn-keyword">local</span> parsed = parse_roc_files(paths)
+<span class="syn-keyword">for</span> f <span class="syn-keyword">in</span> parsed.files <span class="syn-keyword">do</span>
+  <span class="syn-keyword">local</span> nodes = f.nodes
+  <span class="syn-keyword">local</span> memo = {}
+  <span class="syn-keyword">for</span> n <span class="syn-keyword">in</span> nodes <span class="syn-keyword">do</span> push(memo, -<span class="syn-number">1</span>) <span class="syn-keyword">end</span>
+  <span class="syn-keyword">local</span> source_lines = {}
+  <span class="syn-keyword">for</span> i = <span class="syn-number">1</span>, #nodes <span class="syn-keyword">do</span>
+    <span class="syn-keyword">if</span> is_call(nodes[i]) <span class="syn-keyword">and</span> call_depth(nodes, memo, i, LOOSE) &gt;= MIN <span class="syn-keyword">and</span> is_outermost(nodes, memo, i, LOOSE) <span class="syn-keyword">then</span>
+      <span class="syn-keyword">if</span> #source_lines == <span class="syn-number">0</span> <span class="syn-keyword">then</span> source_lines = split(read(f.path), <span class="syn-string">&quot;\n&quot;</span>) <span class="syn-keyword">end</span>
+      <span class="syn-keyword">local</span> line = nodes[i].line
+      <span class="syn-keyword">local</span> depth = call_depth(nodes, memo, i, LOOSE)
+      <span class="syn-keyword">local</span> span = call_name(nodes, i) .. <span class="syn-string">&quot; to &quot;</span> .. call_name(nodes, deepest_call(nodes, memo, i, LOOSE))
+      <span class="syn-keyword">local</span> head = f.path .. <span class="syn-string">&quot;:&quot;</span> .. line .. <span class="syn-string">&quot;:&quot;</span> .. nodes[i].col .. <span class="syn-string">&quot;: nested: depth &quot;</span> .. depth .. <span class="syn-string">&quot;, &quot;</span> .. span
+      <span class="syn-keyword">local</span> finding = head .. <span class="syn-string">&quot;: &quot;</span> .. trim(source_lines[line])
+      <span class="syn-keyword">if</span> <span class="syn-keyword">not</span> house_leaves_out(<span class="syn-string">&quot;find_deep_calls&quot;</span>, <span class="syn-string">&quot;nested&quot;</span>) <span class="syn-keyword">then</span>
+        push(finding_lines, finding)
+        incr(times_printed, finding)
+        count_by_depth[tostring(depth)] = get(count_by_depth, tostring(depth), <span class="syn-number">0</span>) + <span class="syn-number">1</span>
+        push_at(findings_at_line, f.path .. <span class="syn-string">&quot;:&quot;</span> .. line, {col = nodes[i].col, depth = depth, text = head})
+        finding_count = finding_count + <span class="syn-number">1</span>
+      <span class="syn-keyword">end</span>
+    <span class="syn-keyword">end</span>
+  <span class="syn-keyword">end</span>
+<span class="syn-keyword">end</span>
+<span class="syn-keyword">local</span> counts = {}
+<span class="syn-keyword">for</span> depth <span class="syn-keyword">in</span> sort(keys(count_by_depth)) <span class="syn-keyword">do</span> push(counts, <span class="syn-string">&quot;depth &quot;</span> .. depth .. <span class="syn-string">&quot; &quot;</span> .. count_by_depth[depth]) <span class="syn-keyword">end</span>
+print_findings(<span class="syn-string">&quot;find_deep_calls (Roc): &quot;</span> .. #paths .. <span class="syn-string">&quot; files; nested &quot;</span> .. finding_count .. <span class="syn-string">&quot; (min &quot;</span> .. MIN .. <span class="syn-string">&quot;, &quot;</span> .. (LOOSE <span class="syn-keyword">and</span> <span class="syn-string">&quot;loose&quot;</span> <span class="syn-keyword">or</span> <span class="syn-string">&quot;strict&quot;</span>) .. <span class="syn-string">&quot;)&quot;</span> .. (#counts &gt; <span class="syn-number">0</span> <span class="syn-keyword">and</span> (<span class="syn-string">&quot;; &quot;</span> .. join(counts, <span class="syn-string">&quot;, &quot;</span>)) <span class="syn-keyword">or</span> <span class="syn-string">&quot;&quot;</span>) .. house_note(<span class="syn-string">&quot;find_deep_calls&quot;</span>), finding_lines)
+fail_if_refused(<span class="syn-string">&quot;find_deep_calls&quot;</span>, parsed.refused)
+<span class="syn-keyword">if</span> SELF_TEST <span class="syn-keyword">then</span>
+  <span class="syn-keyword">local</span> wrong = {}
+  <span class="syn-keyword">local</span> marks = <span class="syn-number">0</span>
+  <span class="syn-keyword">for</span> p <span class="syn-keyword">in</span> paths <span class="syn-keyword">do</span>
+    <span class="syn-keyword">local</span> n = <span class="syn-number">0</span>
+    <span class="syn-keyword">for</span> l <span class="syn-keyword">in</span> lines(read(p)) <span class="syn-keyword">do</span>
+      n = n + <span class="syn-number">1</span>
+      <span class="syn-keyword">local</span> mark = re_find(l, <span class="syn-string">&quot;# depth ([0-9]+(?:, [0-9]+)*)(?: from ([A-Za-z0-9_.]+) to ([A-Za-z0-9_.]+))?$&quot;</span>)
+      <span class="syn-keyword">local</span> key = p .. <span class="syn-string">&quot;:&quot;</span> .. n
+      <span class="syn-keyword">local</span> got = {}
+      <span class="syn-keyword">local</span> texts = {}
+      <span class="syn-keyword">if</span> has_key(findings_at_line, key) <span class="syn-keyword">then</span>
+        <span class="syn-keyword">for</span> g <span class="syn-keyword">in</span> sort(findings_at_line[key], <span class="syn-string">&quot;col&quot;</span>) <span class="syn-keyword">do</span>
+          push(got, tostring(g.depth))
+          push(texts, g.text)
+        <span class="syn-keyword">end</span>
+      <span class="syn-keyword">end</span>
+      <span class="syn-keyword">if</span> mark ~= <span class="syn-keyword">nil</span> <span class="syn-keyword">then</span>
+        marks = marks + <span class="syn-number">1</span>
+        <span class="syn-keyword">if</span> starts_with(sub(p, #PLANTS + <span class="syn-number">1</span>), <span class="syn-string">&quot;quiet_&quot;</span>) <span class="syn-keyword">then</span> push(wrong, key .. <span class="syn-string">&quot;: a quiet plant holds a `# depth` mark&quot;</span>) <span class="syn-keyword">end</span>
+        <span class="syn-keyword">local</span> want = mark.groups[<span class="syn-number">1</span>]
+        <span class="syn-keyword">local</span> outermost_name = get(mark.groups, <span class="syn-number">2</span>, <span class="syn-string">&quot;&quot;</span>)
+        <span class="syn-keyword">if</span> outermost_name ~= <span class="syn-keyword">nil</span> <span class="syn-keyword">and</span> outermost_name ~= <span class="syn-string">&quot;&quot;</span> <span class="syn-keyword">then</span>
+          <span class="syn-keyword">local</span> says = outermost_name .. <span class="syn-string">&quot; to &quot;</span> .. mark.groups[<span class="syn-number">3</span>]
+          <span class="syn-keyword">if</span> #texts == <span class="syn-number">0</span> <span class="syn-keyword">or</span> <span class="syn-keyword">not</span> contains(texts[<span class="syn-number">1</span>], says) <span class="syn-keyword">then</span> push(wrong, key .. <span class="syn-string">&quot;: the finding does not say `&quot;</span> .. says .. <span class="syn-string">&quot;`&quot;</span>) <span class="syn-keyword">end</span>
+        <span class="syn-keyword">end</span>
+        <span class="syn-keyword">if</span> #got == <span class="syn-number">0</span> <span class="syn-keyword">then</span> push(wrong, key .. <span class="syn-string">&quot;: no finding, want depth &quot;</span> .. want)
+        <span class="syn-keyword">elseif</span> join(got, <span class="syn-string">&quot;, &quot;</span>) ~= want <span class="syn-keyword">then</span> push(wrong, key .. <span class="syn-string">&quot;: depth &quot;</span> .. join(got, <span class="syn-string">&quot;, &quot;</span>) .. <span class="syn-string">&quot;, want &quot;</span> .. want) <span class="syn-keyword">end</span>
+      <span class="syn-keyword">elseif</span> #got &gt; <span class="syn-number">0</span> <span class="syn-keyword">then</span>
+        push(wrong, key .. <span class="syn-string">&quot;: a finding (depth &quot;</span> .. join(got, <span class="syn-string">&quot;, &quot;</span>) .. <span class="syn-string">&quot;) on a line not marked for one&quot;</span>)
+      <span class="syn-keyword">end</span>
+    <span class="syn-keyword">end</span>
+  <span class="syn-keyword">end</span>
+  <span class="syn-keyword">for</span> l <span class="syn-keyword">in</span> keys(times_printed) <span class="syn-keyword">do</span>
+    <span class="syn-keyword">if</span> times_printed[l] &gt; <span class="syn-number">1</span> <span class="syn-keyword">then</span> push(wrong, <span class="syn-string">&quot;two findings print the same line, &quot;</span> .. l) <span class="syn-keyword">end</span>
+  <span class="syn-keyword">end</span>
+  <span class="syn-keyword">if</span> marks == <span class="syn-number">0</span> <span class="syn-keyword">then</span> push(wrong, <span class="syn-string">&quot;no plant holds a `# depth` mark&quot;</span>) <span class="syn-keyword">end</span>
+  <span class="syn-keyword">for</span> w <span class="syn-keyword">in</span> wrong <span class="syn-keyword">do</span> print(<span class="syn-string">&quot;FAIL &quot;</span> .. w) <span class="syn-keyword">end</span>
+  <span class="syn-keyword">if</span> #wrong &gt; <span class="syn-number">0</span> <span class="syn-keyword">then</span> fail(<span class="syn-string">&quot;find_deep_calls self_test: &quot;</span> .. #wrong .. <span class="syn-string">&quot; plants wrong&quot;</span>) <span class="syn-keyword">end</span>
+  print(<span class="syn-string">&quot;find_deep_calls (Roc) self_test: PASS (each marked line gives its depths left to right, the outermost only, no other line a finding, and no two findings print alike)&quot;</span>)
+<span class="syn-keyword">end</span>
+</code></pre>
+<nav class="steps"><a href="../find_names_that_differ_across_lookalike_modules/">← previous</a> · <a href="../#find_calls_nested_three_deep">Roc on Shale</a> · <a href="../find_retired_words/">next →</a></nav></main>
+</body>
+</html>

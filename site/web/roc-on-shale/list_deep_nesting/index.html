@@ -1,0 +1,550 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="description" content="Shale's C functions ranked by how deeply their braces nest, each body line read through the splitter's masker so a brace in a string or a comment is none.">
+<title>list_deep_nesting · Roc on Shale</title>
+<script src="../../shared/home.js"></script>
+<!-- site/build_roc_on_shale.shale writes this page from the shale repository's
+     history; run it again rather than editing here. The code is colored by
+     roc-syntax-color (SyntaxColor.html). -->
+<style>
+  :root { color-scheme: light dark; --bg: #f7f5f0; --fg: #1d1d1b; --muted: #6b6860; --edge: #d9d4c8; --pane: #ffffff; --link: #1f5fa8; --accent: #5b3ea8; }
+  @media (prefers-color-scheme: dark) {
+    :root { --bg: #1b1b1a; --fg: #e8e6e0; --muted: #9a968c; --edge: #3a3934; --pane: #242422; --link: #8ab4f0; --accent: #a68cf0; }
+  }
+  body { margin: 0; background: var(--bg); color: var(--fg); font: 15px/1.55 system-ui, sans-serif; }
+  main { max-width: 960px; margin: 0 auto; padding: 36px 16px 48px; }
+  @media (max-width: 640px) { main { padding: 24px 12px 36px; } }
+  .top { display: flex; flex-wrap: wrap; gap: 4px 14px; font-size: 14px; margin: 0 0 14px; }
+  h1 { font-size: 28px; margin: 0 0 6px; overflow-wrap: anywhere; }
+  .lede { margin: 0 0 10px; max-width: 70ch; }
+  ul.lede { padding-left: 22px; }
+  ul.lede li { margin: 0 0 4px; }
+  h2.intro { font-size: 20px; margin: 30px 0 6px; }
+  h3.intro { font-size: 16px; margin: 18px 0 4px; }
+  /* The drawing is Graphviz's SVG, inline, so its lines and words take the
+     page's colors in either theme. */
+  .diagram { margin: 14px 0 18px; }
+  .diagram svg { max-width: 100%; height: auto; }
+  .diagram text { fill: var(--fg); }
+  .diagram path, .diagram polygon { stroke: var(--fg); }
+  .diagram .edge polygon { fill: var(--fg); }
+  h2.part { font-size: 25px; margin: 64px 0 4px; padding-top: 20px; border-top: 3px solid var(--accent); }
+  .part-intro { margin: 0 0 8px; }
+  h3 { font-size: 19px; margin: 10px 0 4px; overflow-wrap: anywhere; }
+  h2.part a { color: inherit; text-decoration: none; }
+  h2.code { font-size: 16px; margin: 36px 0 4px; color: var(--accent); }
+  p { max-width: 70ch; }
+  a { color: var(--link); }
+  code { font: 13px ui-monospace, Menlo, Consolas, monospace; }
+  .contents { padding-left: 20px; }
+  .contents ul { padding-left: 20px; margin: 2px 0 8px; }
+  .contents a { overflow-wrap: anywhere; }
+  .facts { font-size: 14px; color: var(--muted); }
+  .file { font-size: 13px; color: var(--muted); margin: 20px 0 0; overflow-wrap: anywhere; }
+  .entry { margin-top: 28px; padding-top: 14px; border-top: 1px solid var(--edge); }
+  .steps { font-size: 13px; margin: 0 0 8px; }
+  main > .steps:last-child { margin: 28px 0 0; }
+  /* Every block shows its file whole; a line wider than the block scrolls
+     sideways inside it, so the code keeps its indentation. */
+  pre { margin: 6px 0 12px; padding: 12px 14px; border-radius: 5px; background: #2b2733; color: #e8e6e0;
+        font: 12px/1.45 ui-monospace, Menlo, Consolas, monospace; overflow-x: auto; tab-size: 4; }
+  pre code { font: inherit; }
+  .syn-keyword { color: #c792ea; }
+  .syn-type { color: #82aaff; }
+  .syn-string { color: #c3e88d; }
+  .syn-number { color: #f78c6c; }
+  .syn-comment { color: #8a8494; font-style: italic; }
+  .syn-name { color: #ffcb6b; }
+  footer { margin-top: 36px; color: var(--muted); font-size: 13px; }
+</style>
+</head>
+<body>
+<main>
+<nav class="steps"><a href="../list_long_functions/">← previous</a> · <a href="../#list_deep_nesting">Roc on Shale</a> · <a href="../find_clones/">next →</a></nav>
+<h1>list_deep_nesting</h1>
+<h2 class="code">Roc</h2>
+<p class="file">It also imports <code>Item</code>, <code>Mask</code>, <code>Paths</code>, <code>Split</code>, <code>Words</code> from <a href="../c-splitter/">the C splitter</a>.</p>
+<p class="file"><a href="https://github.com/showell/shale/blob/a3bfc843a75e287128a10a8845679dcfb51a4608/cookbook/c/list_deep_nesting/list_deep_nesting.roc"><code>cookbook/c/list_deep_nesting/list_deep_nesting.roc</code></a>, 127 lines</p>
+<pre><code><span class="syn-comment">## list_deep_nesting, in Roc on Shale&#39;s platform (roc_platform/README.md):</span>
+<span class="syn-comment">## Shale&#39;s C functions by how deeply their blocks nest, deepest first, from</span>
+<span class="syn-comment">## the splitter the C recipes share (cookbook/c/items/, a package). The</span>
+<span class="syn-comment">## kernel&#39;s style guide calls more than 3 levels of indentation a smell, so</span>
+<span class="syn-comment">## the line is depth 4 unless `min=` moves it. Its launcher,</span>
+<span class="syn-comment">## cookbook/c/list_deep_nesting.shale, is how it is run, and its header says</span>
+<span class="syn-comment">## the arguments and how depth is counted. check_goldens.shale, beside this,</span>
+<span class="syn-comment">## holds its output on the plants to its goldens, line for line.</span>
+<span class="syn-comment">##</span>
+<span class="syn-comment">##   shale cookbook:c/list_deep_nesting.shale min=5</span>
+<span class="syn-comment">##   shale cookbook:c/list_deep_nesting.shale self_test=1</span>
+<span class="syn-comment">##</span>
+<span class="syn-comment">## The effects: `Shale.arg!` for the arguments, `Shale.glob!` for the files,</span>
+<span class="syn-comment">## `Shale.read!` for each one&#39;s text, and `Shale.print!` and `Shale.fail!`</span>
+<span class="syn-comment">## for the verdict. Depth, beside this, measures and lists; SelfTest holds</span>
+<span class="syn-comment">## it to the plants.</span>
+<span class="syn-comment">## budget: steps=200000000 arena_bytes=1000000000 roc_cpu_ms=600000</span>
+<span class="syn-keyword">app</span> [main!] {
+	items: <span class="syn-string">&quot;../items/main.roc&quot;</span>,
+	pf: <span class="syn-keyword">platform</span> <span class="syn-string">&quot;../../../roc_platform/platform/main.roc&quot;</span>,
+}
+
+<span class="syn-keyword">import</span> pf.<span class="syn-type">Shale</span>
+<span class="syn-keyword">import</span> items.<span class="syn-type">Item</span>
+<span class="syn-keyword">import</span> items.<span class="syn-type">Paths</span>
+<span class="syn-keyword">import</span> items.<span class="syn-type">Split</span>
+<span class="syn-keyword">import</span> items.<span class="syn-type">Words</span>
+<span class="syn-keyword">import</span> <span class="syn-type">Depth</span>
+<span class="syn-keyword">import</span> <span class="syn-type">SelfTest</span>
+
+<span class="syn-name">main!</span> : {} =&gt; {}
+<span class="syn-name">main!</span> = |{}| {
+	<span class="syn-keyword">if</span> integer_or_stop!(<span class="syn-string">&quot;self_test&quot;</span>, <span class="syn-type">Shale</span>.arg!(<span class="syn-string">&quot;self_test&quot;</span>, <span class="syn-string">&quot;0&quot;</span>)) == <span class="syn-number">1</span> {
+		<span class="syn-type">SelfTest</span>.run!(measure!)
+	} <span class="syn-keyword">else</span> {
+		folder = <span class="syn-type">Shale</span>.arg!(<span class="syn-string">&quot;dir&quot;</span>, <span class="syn-string">&quot;c&quot;</span>)
+		tests = integer_or_stop!(<span class="syn-string">&quot;tests&quot;</span>, <span class="syn-type">Shale</span>.arg!(<span class="syn-string">&quot;tests&quot;</span>, <span class="syn-string">&quot;0&quot;</span>)) == <span class="syn-number">1</span>
+		min = integer_or_stop!(<span class="syn-string">&quot;min&quot;</span>, <span class="syn-type">Shale</span>.arg!(<span class="syn-string">&quot;min&quot;</span>, <span class="syn-string">&quot;4&quot;</span>))
+		listing = <span class="syn-keyword">match</span> <span class="syn-type">Depth</span>.listing(measure!(folder, tests), min) {
+			<span class="syn-type">Ok</span>(listed) =&gt; listed
+			<span class="syn-type">Err</span>(why) =&gt; {
+				<span class="syn-type">Shale</span>.fail!(why)
+				{ summary: <span class="syn-string">&quot;&quot;</span>, lines: [] }
+			}
+		}
+		<span class="syn-keyword">for</span> line <span class="syn-keyword">in</span> listing.lines {
+			<span class="syn-type">Shale</span>.print!(line)
+		}
+		which = <span class="syn-keyword">if</span> tests {
+			<span class="syn-string">&quot;tests included&quot;</span>
+		} <span class="syn-keyword">else</span> {
+			<span class="syn-string">&quot;tests left out&quot;</span>
+		}
+		<span class="syn-type">Shale</span>.print!(<span class="syn-string">&quot;list_deep_nesting: </span>${folder}<span class="syn-string">, </span>${which}<span class="syn-string">: </span>${listing.summary}<span class="syn-string">&quot;</span>)
+	}
+}
+
+<span class="syn-comment">## A value given as `name=`, which must be an integer, as Shale&#39;s `arg` reads</span>
+<span class="syn-comment">## one whose default is.</span>
+<span class="syn-name">integer_or_stop!</span> : <span class="syn-type">Str</span>, <span class="syn-type">Str</span> =&gt; <span class="syn-type">I64</span>
+<span class="syn-name">integer_or_stop!</span> = |name, given|
+	<span class="syn-keyword">match</span> <span class="syn-type">I64</span>.from_str(given) {
+		<span class="syn-type">Ok</span>(value) =&gt; value
+		<span class="syn-type">Err</span>(_) =&gt; {
+			<span class="syn-type">Shale</span>.fail!(<span class="syn-string">&quot;list_deep_nesting: </span>${name}<span class="syn-string">=</span>${given}<span class="syn-string"> is not an integer&quot;</span>)
+			<span class="syn-number">0</span>
+		}
+	}
+
+<span class="syn-comment">## Each function&#39;s body under the folder (and each test&#39;s, `tests`),</span>
+<span class="syn-comment">## measured. A body whose braces don&#39;t balance stops the run, naming it.</span>
+<span class="syn-name">measure!</span> : <span class="syn-type">Str</span>, <span class="syn-type">Bool</span> =&gt; <span class="syn-type">List</span>(<span class="syn-type">Depth.Measured</span>)
+<span class="syn-name">measure!</span> = |folder, tests| {
+	<span class="syn-keyword">var</span> $measured = []
+	<span class="syn-keyword">for</span> path <span class="syn-keyword">in</span> c_files_under!(folder) {
+		text = read_text!(path)
+		lines = <span class="syn-type">Split</span>.lines(text)
+		<span class="syn-keyword">for</span> item <span class="syn-keyword">in</span> split_or_stop!(path, text) {
+			is_measured = item.kind == <span class="syn-type">Function</span> <span class="syn-keyword">or</span> (tests <span class="syn-keyword">and</span> item.kind == <span class="syn-type">Test</span>)
+			<span class="syn-keyword">if</span> is_measured <span class="syn-keyword">and</span> item.body_first != <span class="syn-number">0</span> {
+				<span class="syn-keyword">match</span> <span class="syn-type">Depth</span>.of_body(path, lines, item) {
+					<span class="syn-type">Ok</span>(measured) =&gt; {
+						$measured = $measured.append(measured)
+					}
+					<span class="syn-type">Err</span>(why) =&gt; <span class="syn-type">Shale</span>.fail!(why)
+				}
+			}
+		}
+	}
+	$measured
+}
+
+<span class="syn-comment">## The file&#39;s text. A file the glob named and the read finds gone stops the</span>
+<span class="syn-comment">## run.</span>
+<span class="syn-name">read_text!</span> : <span class="syn-type">Str</span> =&gt; <span class="syn-type">Str</span>
+<span class="syn-name">read_text!</span> = |path|
+	<span class="syn-keyword">match</span> <span class="syn-type">Shale</span>.read!(path) {
+		<span class="syn-type">Found</span>(text) =&gt; text
+		<span class="syn-type">Missing</span> =&gt; {
+			<span class="syn-type">Shale</span>.fail!(<span class="syn-string">&quot;list_deep_nesting: </span>${path}<span class="syn-string"> went missing during the walk&quot;</span>)
+			<span class="syn-string">&quot;&quot;</span>
+		}
+	}
+
+<span class="syn-comment">## The file&#39;s items, or the run stopped with the line the dialect does not</span>
+<span class="syn-comment">## account for.</span>
+<span class="syn-name">split_or_stop!</span> : <span class="syn-type">Str</span>, <span class="syn-type">Str</span> =&gt; <span class="syn-type">List</span>(<span class="syn-type">Item</span>)
+<span class="syn-name">split_or_stop!</span> = |path, text|
+	<span class="syn-keyword">match</span> <span class="syn-type">Split</span>.items({ path, text, uses: <span class="syn-type">Bool.False</span> }) {
+		<span class="syn-type">Ok</span>(items) =&gt; items
+		<span class="syn-type">Err</span>(why) =&gt; {
+			<span class="syn-type">Shale</span>.fail!(why)
+			[]
+		}
+	}
+
+<span class="syn-comment">## The C files under the folder, sorted, any folder named `out` (c/out, the</span>
+<span class="syn-comment">## build&#39;s output) left out. A folder that is not there stops the run, in</span>
+<span class="syn-comment">## the words of the Shale original&#39;s walk: a check that can&#39;t run fails.</span>
+<span class="syn-name">c_files_under!</span> : <span class="syn-type">Str</span> =&gt; <span class="syn-type">List</span>(<span class="syn-type">Str</span>)
+<span class="syn-name">c_files_under!</span> = |folder| {
+	<span class="syn-keyword">if</span> <span class="syn-type">Shale</span>.list!(folder) == <span class="syn-type">Missing</span> {
+		<span class="syn-type">Shale</span>.fail!(<span class="syn-string">&quot;`walk(\&quot;</span>${folder}<span class="syn-string">\&quot;)`: not found (FileNotFound)&quot;</span>)
+	}
+	paths = <span class="syn-type">Shale</span>.glob!(<span class="syn-string">&quot;</span>${folder}<span class="syn-string">/**/*.c&quot;</span>).concat(<span class="syn-type">Shale</span>.glob!(<span class="syn-string">&quot;</span>${folder}<span class="syn-string">/**/*.h&quot;</span>))
+	paths.keep_if(|path| !(<span class="syn-type">Paths</span>.is_in_out_folder(folder, path))).sort_with(<span class="syn-type">Words</span>.byte_order)
+}
+</code></pre>
+<p class="file"><a href="https://github.com/showell/shale/blob/a3bfc843a75e287128a10a8845679dcfb51a4608/cookbook/c/list_deep_nesting/Depth.roc"><code>cookbook/c/list_deep_nesting/Depth.roc</code></a>, 117 lines</p>
+<pre><code><span class="syn-comment">## How deeply a function&#39;s blocks nest, and the listing of the deep ones. A</span>
+<span class="syn-comment">## function&#39;s own body is depth 1, and each block a `{` opens inside it is</span>
+<span class="syn-comment">## one deeper. Each body line is read through the splitter&#39;s masker, so a</span>
+<span class="syn-comment">## brace in a string, a character literal or a comment is no brace, and a</span>
+<span class="syn-comment">## line&#39;s braces are counted net (`} else {` stays at its depth). A body</span>
+<span class="syn-comment">## that shares its head&#39;s line is depth 1.</span>
+<span class="syn-keyword">import</span> items.<span class="syn-type">Item</span>
+<span class="syn-keyword">import</span> items.<span class="syn-type">Mask</span>
+<span class="syn-keyword">import</span> items.<span class="syn-type">Words</span>
+
+<span class="syn-type">Depth</span> := [].{
+
+	<span class="syn-comment">## A function&#39;s body measured: where it starts and its name, its deepest</span>
+	<span class="syn-comment">## nesting, and the first line that reaches it.</span>
+	<span class="syn-type">Measured</span> : {
+		path : <span class="syn-type">Str</span>,
+		line : <span class="syn-type">U64</span>,
+		name : <span class="syn-type">Str</span>,
+		depth : <span class="syn-type">U64</span>,
+		at : <span class="syn-type">U64</span>,
+	}
+
+	<span class="syn-comment">## The body of the item, a function or a test of the file at `path` whose</span>
+	<span class="syn-comment">## lines are `lines`, measured, or the stop&#39;s words when its braces close</span>
+	<span class="syn-comment">## past its body or don&#39;t come back to its own depth.</span>
+	<span class="syn-name">of_body</span> : <span class="syn-type">Str</span>, <span class="syn-type">List</span>(<span class="syn-type">List</span>(<span class="syn-type">U8</span>)), <span class="syn-type">Item</span> -&gt; <span class="syn-type">Try</span>(<span class="syn-type">Depth.Measured</span>, <span class="syn-type">Str</span>)
+	<span class="syn-name">of_body</span> = |path, lines, item| {
+		start = { path, line: item.first, name: item.name, depth: <span class="syn-number">1</span>, at: item.body_first }
+		<span class="syn-keyword">if</span> item.body_first == item.sig_last {
+			<span class="syn-keyword">return</span> <span class="syn-type">Ok</span>(start)
+		}
+		$depth : <span class="syn-type">I64</span>
+		<span class="syn-keyword">var</span> $depth = <span class="syn-number">1</span>
+		$most : <span class="syn-type">I64</span>
+		<span class="syn-keyword">var</span> $most = <span class="syn-number">1</span>
+		<span class="syn-keyword">var</span> $at = item.body_first
+		<span class="syn-keyword">var</span> $number = item.body_first
+		<span class="syn-keyword">while</span> $number &lt;= item.body_last {
+			code = <span class="syn-type">Mask</span>.masked(lines.get($number - <span class="syn-number">1</span>) ?? [])
+			opens = code.count_if(|byte| byte == <span class="syn-string">&#39;{&#39;</span>).to_i64_wrap()
+			closes = code.count_if(|byte| byte == <span class="syn-string">&#39;}&#39;</span>).to_i64_wrap()
+			$depth = $depth + opens - closes
+			<span class="syn-keyword">if</span> $depth &gt; $most {
+				$most = $depth
+				$at = $number
+			}
+			<span class="syn-keyword">if</span> $depth &lt; <span class="syn-number">1</span> {
+				<span class="syn-keyword">return</span> <span class="syn-type">Err</span>(<span class="syn-string">&quot;</span>${path}<span class="syn-string">:</span>${$number.to_str()}<span class="syn-string">: `</span>${item.name}<span class="syn-string">`&#39;s braces close past its body&quot;</span>)
+			}
+			$number = $number + <span class="syn-number">1</span>
+		}
+		<span class="syn-keyword">if</span> $depth != <span class="syn-number">1</span> {
+			open = ($depth - <span class="syn-number">1</span>).to_str()
+			<span class="syn-keyword">return</span> <span class="syn-type">Err</span>(<span class="syn-string">&quot;</span>${path}<span class="syn-string">:</span>${item.first.to_str()}<span class="syn-string">: `</span>${item.name}<span class="syn-string">`&#39;s braces don&#39;t balance: </span>${open}<span class="syn-string"> left open at its end&quot;</span>)
+		}
+		<span class="syn-type">Ok</span>({ ..start, depth: $most.to_u64_wrap(), at: $at })
+	}
+
+	<span class="syn-comment">## The listing of the measured functions at depth `min` or past, deepest</span>
+	<span class="syn-comment">## first, and the summary: the functions read, how many are at `min` or</span>
+	<span class="syn-comment">## past, and how many at each depth; or the stop&#39;s words when there is</span>
+	<span class="syn-comment">## no function.</span>
+	<span class="syn-name">listing</span> : <span class="syn-type">List</span>(<span class="syn-type">Depth.Measured</span>), <span class="syn-type">I64</span> -&gt; <span class="syn-type">Try</span>({ summary : <span class="syn-type">Str</span>, lines : <span class="syn-type">List</span>(<span class="syn-type">Str</span>) }, <span class="syn-type">Str</span>)
+	<span class="syn-name">listing</span> = |functions, min| {
+		<span class="syn-keyword">if</span> functions.is_empty() {
+			<span class="syn-keyword">return</span> <span class="syn-type">Err</span>(<span class="syn-string">&quot;list_deep_nesting: no function to measure&quot;</span>)
+		}
+		depths = functions.map(|each| each.depth)
+		counts = distinct(depths)
+			.sort_with(up)
+			.map(|depth| <span class="syn-string">&quot;</span>${depth.to_str()}<span class="syn-string">: </span>${depths.count_if(|each| each == depth).to_str()}<span class="syn-string">&quot;</span>)
+		deep = functions
+			.keep_if(|each| each.depth.to_i64_wrap() &gt;= min)
+			.sort_with(deepest_first)
+		deep_lines = deep.map(
+			|each| <span class="syn-string">&quot;</span>${each.path}<span class="syn-string">:</span>${each.line.to_str()}<span class="syn-string">: </span>${each.name}<span class="syn-string">: depth </span>${each.depth.to_str()}<span class="syn-string"> (at line </span>${each.at.to_str()}<span class="syn-string">)&quot;</span>,
+		)
+		read = <span class="syn-string">&quot;</span>${functions.len().to_str()}<span class="syn-string"> functions read, </span>${deep.len().to_str()}<span class="syn-string"> at depth </span>${min.to_str()}<span class="syn-string"> or past&quot;</span>
+		<span class="syn-type">Ok</span>({ summary: <span class="syn-string">&quot;</span>${read}<span class="syn-string">; by depth, </span>${<span class="syn-type">Str</span>.join_with(counts, <span class="syn-string">&quot;, &quot;</span>)}<span class="syn-string">&quot;</span>, lines: deep_lines })
+	}
+}
+
+<span class="syn-comment">## Each depth once, in the order first seen.</span>
+<span class="syn-name">distinct</span> : <span class="syn-type">List</span>(<span class="syn-type">U64</span>) -&gt; <span class="syn-type">List</span>(<span class="syn-type">U64</span>)
+<span class="syn-name">distinct</span> = |depths|
+	depths.fold(
+		[],
+		|seen, depth|
+			<span class="syn-keyword">if</span> seen.contains(depth) {
+				seen
+			} <span class="syn-keyword">else</span> {
+				seen.append(depth)
+			},
+	)
+
+<span class="syn-comment">## Two depths, the shallower first.</span>
+<span class="syn-name">up</span> : <span class="syn-type">U64</span>, <span class="syn-type">U64</span> -&gt; [<span class="syn-type">Before</span>, <span class="syn-type">Same</span>, <span class="syn-type">After</span>]
+<span class="syn-name">up</span> = |a, b|
+	<span class="syn-keyword">if</span> a &lt; b {
+		<span class="syn-type">Before</span>
+	} <span class="syn-keyword">else</span> <span class="syn-keyword">if</span> a &gt; b {
+		<span class="syn-type">After</span>
+	} <span class="syn-keyword">else</span> {
+		<span class="syn-type">Same</span>
+	}
+
+<span class="syn-comment">## Deepest first, then by path and line.</span>
+<span class="syn-name">deepest_first</span> : <span class="syn-type">Depth.Measured</span>, <span class="syn-type">Depth.Measured</span> -&gt; [<span class="syn-type">Before</span>, <span class="syn-type">Same</span>, <span class="syn-type">After</span>]
+<span class="syn-name">deepest_first</span> = |a, b|
+	<span class="syn-keyword">match</span> up(b.depth, a.depth) {
+		<span class="syn-type">Same</span> =&gt;
+			<span class="syn-keyword">match</span> <span class="syn-type">Words</span>.byte_order(a.path, b.path) {
+				<span class="syn-type">Same</span> =&gt; up(a.line, b.line)
+				order =&gt; order
+			}
+		order =&gt; order
+	}
+</code></pre>
+<p class="file"><a href="https://github.com/showell/shale/blob/a3bfc843a75e287128a10a8845679dcfb51a4608/cookbook/c/list_deep_nesting/SelfTest.roc"><code>cookbook/c/list_deep_nesting/SelfTest.roc</code></a>, 68 lines</p>
+<pre><code><span class="syn-comment">## list_deep_nesting&#39;s self-test: the recipe run over</span>
+<span class="syn-comment">## cookbook/c/plants/list_deep_nesting/ and held to every plant&#39;s known depth</span>
+<span class="syn-comment">## and line, exactly: depths 3, 4 and 5, braces in a string, a character</span>
+<span class="syn-comment">## literal and a comment, a braceless `if`, an initializer&#39;s braces, the</span>
+<span class="syn-comment">## default `min`, and `tests=1`.</span>
+<span class="syn-keyword">import</span> pf.<span class="syn-type">Shale</span>
+<span class="syn-keyword">import</span> <span class="syn-type">Depth</span>
+
+<span class="syn-type">SelfTest</span> := [].{
+
+	<span class="syn-comment">## Every check, each a stop when it fails, then the PASS line. `measure!`</span>
+	<span class="syn-comment">## is the recipe&#39;s own, a folder&#39;s functions (and tests, when asked)</span>
+	<span class="syn-comment">## measured.</span>
+	<span class="syn-name">run!</span> : (<span class="syn-type">Str</span>, <span class="syn-type">Bool</span> =&gt; <span class="syn-type">List</span>(<span class="syn-type">Depth.Measured</span>)) =&gt; {}
+	<span class="syn-name">run!</span> = |measure!| {
+		file = <span class="syn-string">&quot;</span>${plants}<span class="syn-string">/depths.c&quot;</span>
+		functions = measure!(plants, <span class="syn-type">Bool.False</span>)
+		every_depth = [
+			<span class="syn-string">&quot;</span>${file}<span class="syn-string">:52: depth_five: depth 5 (at line 57)&quot;</span>,
+			<span class="syn-string">&quot;</span>${file}<span class="syn-string">:40: depth_four: depth 4 (at line 44)&quot;</span>,
+			<span class="syn-string">&quot;</span>${file}<span class="syn-string">:28: depth_three: depth 3 (at line 31)&quot;</span>,
+			<span class="syn-comment"># The braces in its comment, string and character literal are none.</span>
+			<span class="syn-string">&quot;</span>${file}<span class="syn-string">:19: braces_in_text: depth 2 (at line 21)&quot;</span>,
+			<span class="syn-string">&quot;</span>${file}<span class="syn-string">:6: depth_one: depth 1 (at line 6)&quot;</span>,
+			<span class="syn-comment"># Its braceless `if`s and its initializer&#39;s braces are no level.</span>
+			<span class="syn-string">&quot;</span>${file}<span class="syn-string">:10: braceless: depth 1 (at line 11)&quot;</span>,
+		]
+		same!(<span class="syn-string">&quot;every function&#39;s depth&quot;</span>, joined(listed!(functions, <span class="syn-number">1</span>).lines), joined(every_depth))
+		default = listed!(functions, <span class="syn-number">4</span>)
+		at_four = [
+			<span class="syn-string">&quot;</span>${file}<span class="syn-string">:52: depth_five: depth 5 (at line 57)&quot;</span>,
+			<span class="syn-string">&quot;</span>${file}<span class="syn-string">:40: depth_four: depth 4 (at line 44)&quot;</span>,
+		]
+		same!(<span class="syn-string">&quot;the list at the default min&quot;</span>, joined(default.lines), joined(at_four))
+		same!(<span class="syn-string">&quot;the summary&quot;</span>, default.summary, <span class="syn-string">&quot;6 functions read, 2 at depth 4 or past; by depth, 1: 2, 2: 1, 3: 1, 4: 1, 5: 1&quot;</span>)
+		with_tests = listed!(measure!(plants, <span class="syn-type">Bool.True</span>), <span class="syn-number">2</span>)
+		same!(<span class="syn-string">&quot;the summary with the tests&quot;</span>, with_tests.summary, <span class="syn-string">&quot;7 functions read, 5 at depth 2 or past; by depth, 1: 2, 2: 2, 3: 1, 4: 1, 5: 1&quot;</span>)
+		fifth = with_tests.lines.get(<span class="syn-number">4</span>) ?? <span class="syn-string">&quot;&lt;none&gt;&quot;</span>
+		same!(<span class="syn-string">&quot;the test&#39;s depth&quot;</span>, fifth, <span class="syn-string">&quot;</span>${file}<span class="syn-string">:69: a_nested_test: depth 2 (at line 70)&quot;</span>)
+		checks = <span class="syn-string">&quot;5 checks, every plant&#39;s depth, the default min, the summaries and a test over the plants&quot;</span>
+		<span class="syn-type">Shale</span>.print!(<span class="syn-string">&quot;PASS list_deep_nesting self-test: </span>${checks}<span class="syn-string">&quot;</span>)
+	}
+}
+
+<span class="syn-comment">## Where the plants are.</span>
+<span class="syn-name">plants</span> : <span class="syn-type">Str</span>
+<span class="syn-name">plants</span> = <span class="syn-string">&quot;cookbook/c/plants/list_deep_nesting&quot;</span>
+
+<span class="syn-comment">## The listing, or the self-test stopped.</span>
+<span class="syn-name">listed!</span> : <span class="syn-type">List</span>(<span class="syn-type">Depth.Measured</span>), <span class="syn-type">I64</span> =&gt; { summary : <span class="syn-type">Str</span>, lines : <span class="syn-type">List</span>(<span class="syn-type">Str</span>) }
+<span class="syn-name">listed!</span> = |measured, min|
+	<span class="syn-keyword">match</span> <span class="syn-type">Depth</span>.listing(measured, min) {
+		<span class="syn-type">Ok</span>(listing) =&gt; listing
+		<span class="syn-type">Err</span>(why) =&gt; {
+			<span class="syn-type">Shale</span>.fail!(why)
+			{ summary: <span class="syn-string">&quot;&quot;</span>, lines: [] }
+		}
+	}
+
+<span class="syn-comment">## `got` equal to `want`, or the self-test stops, naming `what`.</span>
+<span class="syn-name">same!</span> : <span class="syn-type">Str</span>, <span class="syn-type">Str</span>, <span class="syn-type">Str</span> =&gt; {}
+<span class="syn-name">same!</span> = |what, got, want|
+	<span class="syn-keyword">if</span> got != want {
+		<span class="syn-type">Shale</span>.fail!(<span class="syn-string">&quot;list_deep_nesting self-test: </span>${what}<span class="syn-string"> is\n</span>${got}<span class="syn-string">\nit should be\n</span>${want}<span class="syn-string">&quot;</span>)
+	}
+
+<span class="syn-name">joined</span> : <span class="syn-type">List</span>(<span class="syn-type">Str</span>) -&gt; <span class="syn-type">Str</span>
+<span class="syn-name">joined</span> = |lines| <span class="syn-type">Str</span>.join_with(lines, <span class="syn-string">&quot;\n&quot;</span>)
+</code></pre>
+<h2 class="code">Shale original</h2>
+<p class="file"><a href="https://github.com/showell/shale/blob/dfe2eaaa415bf7813c3c50c157a01603da73ef7b/cookbook/c/list_deep_nesting.shale"><code>cookbook/c/list_deep_nesting.shale</code></a>, 156 lines, at <code>dfe2eaaa</code></p>
+<p class="file">The libraries it loads: <a href="https://github.com/showell/shale/blob/dfe2eaaa415bf7813c3c50c157a01603da73ef7b/cookbook/c/items.shale"><code>cookbook/c/items.shale</code></a> (499 lines).</p>
+<pre><code><span class="syn-comment">-- Lists Shale&#39;s C functions by how deeply their blocks nest, deepest first,</span>
+<span class="syn-comment">-- from cookbook/c/items.shale&#39;s splitter. The kernel&#39;s style guide calls more</span>
+<span class="syn-comment">-- than 3 levels of indentation a smell, so the line is depth 4 unless `min=`</span>
+<span class="syn-comment">-- moves it.</span>
+<span class="syn-comment">--</span>
+<span class="syn-comment">--   shale cookbook:c/list_deep_nesting.shale             over c/, depth 4 or past</span>
+<span class="syn-comment">--   shale cookbook:c/list_deep_nesting.shale min=5</span>
+<span class="syn-comment">--   shale cookbook:c/list_deep_nesting.shale dir=c/host tests=1</span>
+<span class="syn-comment">--   shale cookbook:c/list_deep_nesting.shale self_test=1</span>
+<span class="syn-comment">--</span>
+<span class="syn-comment">-- It ranks functions to look at, never a rule or a gate: it fails on no</span>
+<span class="syn-comment">-- finding and exits 0 with them. Be aware of the opposite smell too:</span>
+<span class="syn-comment">-- one workhorse function that does a lot is sometimes better than complexity</span>
+<span class="syn-comment">-- scattered around the codebase.</span>
+<span class="syn-comment">--</span>
+<span class="syn-comment">-- How depth is counted: a function&#39;s own body is depth 1, and each block a</span>
+<span class="syn-comment">-- `{` opens inside it is one deeper, so `if (x) {` in the body makes depth 2.</span>
+<span class="syn-comment">-- Each body line is read through items.shale&#39;s masker, `c_mask` (the one</span>
+<span class="syn-comment">-- c/check_discipline.shale judges with), so a brace in a string, a character</span>
+<span class="syn-comment">-- literal or a comment is no brace. The dialect ends an opening brace&#39;s line</span>
+<span class="syn-comment">-- with it, so a line&#39;s braces are counted net: `} else {` stays at its depth,</span>
+<span class="syn-comment">-- and an initializer&#39;s `{1, 2}` on one line is no level. A braceless `if (x)</span>
+<span class="syn-comment">-- return y;`, on one line or two, is no level either: depth is braces, not</span>
+<span class="syn-comment">-- indentation. A body that shares its head&#39;s line (`{ return x; }`) is depth</span>
+<span class="syn-comment">-- 1. A body whose braces don&#39;t come back to its own depth stops the run,</span>
+<span class="syn-comment">-- naming it.</span>
+<span class="syn-comment">--</span>
+<span class="syn-comment">-- One line a function at `min` or past, deepest first:</span>
+<span class="syn-comment">--</span>
+<span class="syn-comment">--   path:line: name: depth N (at line L)</span>
+<span class="syn-comment">--</span>
+<span class="syn-comment">-- L the first line that reaches it. Then the summary: the functions read, how</span>
+<span class="syn-comment">-- many are at `min` or past, and how many there are at each depth. `tests=1`</span>
+<span class="syn-comment">-- measures each `TEST(` body too; by default tests are left out of both.</span>
+<span class="syn-comment">--</span>
+<span class="syn-comment">-- `self_test=1` runs it over cookbook/c/plants/list_deep_nesting/ and holds</span>
+<span class="syn-comment">-- every plant to its known depth and line, exactly: depths 3, 4 and 5,</span>
+<span class="syn-comment">-- braces in a string, a character literal and a comment, a braceless `if`,</span>
+<span class="syn-comment">-- an initializer&#39;s braces, the default `min`, and `tests=1`.</span>
+<span class="syn-comment">--</span>
+<span class="syn-comment">-- budget: steps=200000000 arena_bytes=1000000000 kept_bytes=268435456</span>
+
+use(<span class="syn-string">&quot;./items.shale&quot;</span>)
+
+<span class="syn-keyword">const</span> PLANTS = <span class="syn-string">&quot;cookbook/c/plants/list_deep_nesting&quot;</span>
+
+<span class="syn-comment">-- The C files under `dir`, sorted, c/out (the build&#39;s output) left out.</span>
+<span class="syn-keyword">function</span> <span class="syn-name">c_files_under</span>(dir)
+  <span class="syn-keyword">local</span> files = {}
+  <span class="syn-keyword">for</span> e <span class="syn-keyword">in</span> walk_all(dir, {kind = <span class="syn-string">&quot;file&quot;</span>, skip = <span class="syn-string">&quot;out&quot;</span>}) <span class="syn-keyword">do</span>
+    <span class="syn-keyword">if</span> ends_with(e.path, <span class="syn-string">&quot;.c&quot;</span>) <span class="syn-keyword">or</span> ends_with(e.path, <span class="syn-string">&quot;.h&quot;</span>) <span class="syn-keyword">then</span> push(files, e.path) <span class="syn-keyword">end</span>
+  <span class="syn-keyword">end</span>
+  sort(files)
+  <span class="syn-keyword">return</span> files
+<span class="syn-keyword">end</span>
+
+<span class="syn-comment">-- The deepest nesting of the body of `it`, an item of `p` whose lines are</span>
+<span class="syn-comment">-- `all`: `{depth, at}`, `at` the first line that reaches it.</span>
+<span class="syn-keyword">function</span> <span class="syn-name">body_depth</span>(p, all, it)
+  <span class="syn-keyword">if</span> it.body_first == it.sig_last <span class="syn-keyword">then</span> <span class="syn-keyword">return</span> {depth = <span class="syn-number">1</span>, at = it.body_first} <span class="syn-keyword">end</span>
+  <span class="syn-keyword">local</span> depth = <span class="syn-number">1</span>
+  <span class="syn-keyword">local</span> most = <span class="syn-number">1</span>
+  <span class="syn-keyword">local</span> at = it.body_first
+  <span class="syn-keyword">local</span> k = it.body_first
+  <span class="syn-keyword">while</span> k &lt;= it.body_last <span class="syn-keyword">do</span>
+    <span class="syn-keyword">local</span> code = c_mask(all[k])
+    depth = depth + #find_all(code, <span class="syn-string">&quot;{&quot;</span>) - #find_all(code, <span class="syn-string">&quot;}&quot;</span>)
+    <span class="syn-keyword">if</span> depth &gt; most <span class="syn-keyword">then</span>
+      most = depth
+      at = k
+    <span class="syn-keyword">end</span>
+    <span class="syn-keyword">if</span> depth &lt; <span class="syn-number">1</span> <span class="syn-keyword">then</span> fail(p .. <span class="syn-string">&quot;:&quot;</span> .. k .. <span class="syn-string">&quot;: `&quot;</span> .. it.name .. <span class="syn-string">&quot;`&#39;s braces close past its body&quot;</span>) <span class="syn-keyword">end</span>
+    k = k + <span class="syn-number">1</span>
+  <span class="syn-keyword">end</span>
+  <span class="syn-keyword">if</span> depth ~= <span class="syn-number">1</span> <span class="syn-keyword">then</span> fail(p .. <span class="syn-string">&quot;:&quot;</span> .. it.first .. <span class="syn-string">&quot;: `&quot;</span> .. it.name .. <span class="syn-string">&quot;`&#39;s braces don&#39;t balance: &quot;</span> .. (depth - <span class="syn-number">1</span>) .. <span class="syn-string">&quot; left open at its end&quot;</span>) <span class="syn-keyword">end</span>
+  <span class="syn-keyword">return</span> {depth = most, at = at}
+<span class="syn-keyword">end</span>
+
+<span class="syn-comment">-- Each function&#39;s body under `dir` (and each test&#39;s, `tests`), measured:</span>
+<span class="syn-comment">-- `{path, line, name, depth, at}`.</span>
+<span class="syn-keyword">function</span> <span class="syn-name">measure</span>(dir, tests)
+  <span class="syn-keyword">local</span> got = {}
+  <span class="syn-keyword">for</span> p <span class="syn-keyword">in</span> c_files_under(dir) <span class="syn-keyword">do</span>
+    <span class="syn-keyword">local</span> all = lines(read(p))
+    <span class="syn-keyword">for</span> it <span class="syn-keyword">in</span> c_items(p) <span class="syn-keyword">do</span>
+      <span class="syn-keyword">if</span> (it.kind == <span class="syn-string">&quot;function&quot;</span> <span class="syn-keyword">or</span> (tests <span class="syn-keyword">and</span> it.kind == <span class="syn-string">&quot;test&quot;</span>)) <span class="syn-keyword">and</span> it.body_first ~= <span class="syn-number">0</span> <span class="syn-keyword">then</span>
+        <span class="syn-keyword">local</span> d = body_depth(p, all, it)
+        push(got, {path = p, line = it.first, name = it.name, depth = d.depth, at = d.at})
+      <span class="syn-keyword">end</span>
+    <span class="syn-keyword">end</span>
+    yield()
+  <span class="syn-keyword">end</span>
+  <span class="syn-keyword">return</span> got
+<span class="syn-keyword">end</span>
+
+<span class="syn-comment">-- The listing of `measured` at `min` or past, as `{summary, lines}`.</span>
+<span class="syn-keyword">function</span> <span class="syn-name">list_deep</span>(measured, min)
+  <span class="syn-keyword">if</span> #measured == <span class="syn-number">0</span> <span class="syn-keyword">then</span> fail(<span class="syn-string">&quot;list_deep_nesting: no function to measure&quot;</span>) <span class="syn-keyword">end</span>
+  <span class="syn-keyword">local</span> by = {}
+  <span class="syn-keyword">local</span> deep = {}
+  <span class="syn-keyword">for</span> m <span class="syn-keyword">in</span> measured <span class="syn-keyword">do</span>
+    incr(by, <span class="syn-string">&quot;&quot;</span> .. m.depth)
+    <span class="syn-keyword">if</span> m.depth &gt;= min <span class="syn-keyword">then</span> push(deep, m) <span class="syn-keyword">end</span>
+  <span class="syn-keyword">end</span>
+  <span class="syn-keyword">local</span> depths = {}
+  <span class="syn-keyword">for</span> k <span class="syn-keyword">in</span> keys(by) <span class="syn-keyword">do</span> push(depths, parse_int(k)) <span class="syn-keyword">end</span>
+  sort(depths)
+  <span class="syn-keyword">local</span> parts = {}
+  <span class="syn-keyword">for</span> d <span class="syn-keyword">in</span> depths <span class="syn-keyword">do</span> push(parts, d .. <span class="syn-string">&quot;: &quot;</span> .. by[<span class="syn-string">&quot;&quot;</span> .. d]) <span class="syn-keyword">end</span>
+  sort(deep, {{key = <span class="syn-string">&quot;depth&quot;</span>, desc = <span class="syn-keyword">true</span>}, <span class="syn-string">&quot;path&quot;</span>, <span class="syn-string">&quot;line&quot;</span>})
+  <span class="syn-keyword">local</span> out = {}
+  <span class="syn-keyword">for</span> m <span class="syn-keyword">in</span> deep <span class="syn-keyword">do</span> push(out, m.path .. <span class="syn-string">&quot;:&quot;</span> .. m.line .. <span class="syn-string">&quot;: &quot;</span> .. m.name .. <span class="syn-string">&quot;: depth &quot;</span> .. m.depth .. <span class="syn-string">&quot; (at line &quot;</span> .. m.at .. <span class="syn-string">&quot;)&quot;</span>) <span class="syn-keyword">end</span>
+  <span class="syn-keyword">local</span> summary = #measured .. <span class="syn-string">&quot; functions read, &quot;</span> .. #deep .. <span class="syn-string">&quot; at depth &quot;</span> .. min .. <span class="syn-string">&quot; or past; by depth, &quot;</span> .. join(parts, <span class="syn-string">&quot;, &quot;</span>)
+  <span class="syn-keyword">return</span> {summary = summary, lines = out}
+<span class="syn-keyword">end</span>
+
+<span class="syn-comment">-- `got` equal to `want`, or the self-test fails, naming `what`.</span>
+<span class="syn-keyword">function</span> <span class="syn-name">same_or_fail</span>(what, got, want)
+  <span class="syn-keyword">if</span> got ~= want <span class="syn-keyword">then</span> fail(<span class="syn-string">&quot;list_deep_nesting self-test: &quot;</span> .. what .. <span class="syn-string">&quot; is\n&quot;</span> .. got .. <span class="syn-string">&quot;\nit should be\n&quot;</span> .. want) <span class="syn-keyword">end</span>
+  <span class="syn-keyword">return</span> <span class="syn-keyword">nil</span>
+<span class="syn-keyword">end</span>
+
+<span class="syn-keyword">function</span> <span class="syn-name">self_test</span>()
+  <span class="syn-keyword">local</span> P = PLANTS .. <span class="syn-string">&quot;/depths.c&quot;</span>
+  <span class="syn-keyword">local</span> fns = measure(PLANTS, <span class="syn-keyword">false</span>)
+  same_or_fail(<span class="syn-string">&quot;every function&#39;s depth&quot;</span>, join(list_deep(fns, <span class="syn-number">1</span>).lines, <span class="syn-string">&quot;\n&quot;</span>), join({
+    P .. <span class="syn-string">&quot;:52: depth_five: depth 5 (at line 57)&quot;</span>,
+    P .. <span class="syn-string">&quot;:40: depth_four: depth 4 (at line 44)&quot;</span>,
+    P .. <span class="syn-string">&quot;:28: depth_three: depth 3 (at line 31)&quot;</span>,
+    <span class="syn-comment">-- The braces in its comment, string and character literal are none.</span>
+    P .. <span class="syn-string">&quot;:19: braces_in_text: depth 2 (at line 21)&quot;</span>,
+    P .. <span class="syn-string">&quot;:6: depth_one: depth 1 (at line 6)&quot;</span>,
+    <span class="syn-comment">-- Its braceless `if`s and its initializer&#39;s braces are no level.</span>
+    P .. <span class="syn-string">&quot;:10: braceless: depth 1 (at line 11)&quot;</span>}, <span class="syn-string">&quot;\n&quot;</span>))
+  <span class="syn-keyword">local</span> d = list_deep(fns, <span class="syn-number">4</span>)
+  same_or_fail(<span class="syn-string">&quot;the list at the default min&quot;</span>, join(d.lines, <span class="syn-string">&quot;\n&quot;</span>), join({
+    P .. <span class="syn-string">&quot;:52: depth_five: depth 5 (at line 57)&quot;</span>,
+    P .. <span class="syn-string">&quot;:40: depth_four: depth 4 (at line 44)&quot;</span>}, <span class="syn-string">&quot;\n&quot;</span>))
+  same_or_fail(<span class="syn-string">&quot;the summary&quot;</span>, d.summary, <span class="syn-string">&quot;6 functions read, 2 at depth 4 or past; by depth, 1: 2, 2: 1, 3: 1, 4: 1, 5: 1&quot;</span>)
+  <span class="syn-keyword">local</span> t = list_deep(measure(PLANTS, <span class="syn-keyword">true</span>), <span class="syn-number">2</span>)
+  same_or_fail(<span class="syn-string">&quot;the summary with the tests&quot;</span>, t.summary, <span class="syn-string">&quot;7 functions read, 5 at depth 2 or past; by depth, 1: 2, 2: 2, 3: 1, 4: 1, 5: 1&quot;</span>)
+  same_or_fail(<span class="syn-string">&quot;the test&#39;s depth&quot;</span>, t.lines[<span class="syn-number">5</span>], P .. <span class="syn-string">&quot;:69: a_nested_test: depth 2 (at line 70)&quot;</span>)
+  print(<span class="syn-string">&quot;PASS list_deep_nesting self-test: 5 checks, every plant&#39;s depth, the default min, the summaries and a test over the plants&quot;</span>)
+  <span class="syn-keyword">return</span> <span class="syn-keyword">nil</span>
+<span class="syn-keyword">end</span>
+
+<span class="syn-keyword">if</span> arg(<span class="syn-string">&quot;self_test&quot;</span>, <span class="syn-number">0</span>) == <span class="syn-number">1</span> <span class="syn-keyword">then</span>
+  self_test()
+<span class="syn-keyword">else</span>
+  <span class="syn-keyword">local</span> dir = arg(<span class="syn-string">&quot;dir&quot;</span>, <span class="syn-string">&quot;c&quot;</span>)
+  <span class="syn-keyword">local</span> tests = arg(<span class="syn-string">&quot;tests&quot;</span>, <span class="syn-number">0</span>) == <span class="syn-number">1</span>
+  <span class="syn-keyword">local</span> min = arg(<span class="syn-string">&quot;min&quot;</span>, <span class="syn-number">4</span>)
+  <span class="syn-keyword">local</span> r = list_deep(measure(dir, tests), min)
+  <span class="syn-keyword">for</span> l <span class="syn-keyword">in</span> r.lines <span class="syn-keyword">do</span> print(l) <span class="syn-keyword">end</span>
+  print(<span class="syn-string">&quot;list_deep_nesting: &quot;</span> .. dir .. (tests <span class="syn-keyword">and</span> <span class="syn-string">&quot;, tests included&quot;</span> <span class="syn-keyword">or</span> <span class="syn-string">&quot;, tests left out&quot;</span>) .. <span class="syn-string">&quot;: &quot;</span> .. r.summary)
+<span class="syn-keyword">end</span>
+</code></pre>
+<nav class="steps"><a href="../list_long_functions/">← previous</a> · <a href="../#list_deep_nesting">Roc on Shale</a> · <a href="../find_clones/">next →</a></nav></main>
+</body>
+</html>

@@ -1,0 +1,371 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="description" content="A test-density report for a tree of Roc projects: each folder's modules and lines, its test modules and lines, and its expects, where `roc loc` gives one app's size.">
+<title>count_roc_modules_lines_and_tests · Roc on Shale</title>
+<script src="../../shared/home.js"></script>
+<!-- site/build_roc_on_shale.shale writes this page from the shale repository's
+     history; run it again rather than editing here. The code is colored by
+     roc-syntax-color (SyntaxColor.html). -->
+<style>
+  :root { color-scheme: light dark; --bg: #f7f5f0; --fg: #1d1d1b; --muted: #6b6860; --edge: #d9d4c8; --pane: #ffffff; --link: #1f5fa8; --accent: #5b3ea8; }
+  @media (prefers-color-scheme: dark) {
+    :root { --bg: #1b1b1a; --fg: #e8e6e0; --muted: #9a968c; --edge: #3a3934; --pane: #242422; --link: #8ab4f0; --accent: #a68cf0; }
+  }
+  body { margin: 0; background: var(--bg); color: var(--fg); font: 15px/1.55 system-ui, sans-serif; }
+  main { max-width: 960px; margin: 0 auto; padding: 36px 16px 48px; }
+  @media (max-width: 640px) { main { padding: 24px 12px 36px; } }
+  .top { display: flex; flex-wrap: wrap; gap: 4px 14px; font-size: 14px; margin: 0 0 14px; }
+  h1 { font-size: 28px; margin: 0 0 6px; overflow-wrap: anywhere; }
+  .lede { margin: 0 0 10px; max-width: 70ch; }
+  ul.lede { padding-left: 22px; }
+  ul.lede li { margin: 0 0 4px; }
+  h2.intro { font-size: 20px; margin: 30px 0 6px; }
+  h3.intro { font-size: 16px; margin: 18px 0 4px; }
+  /* The drawing is Graphviz's SVG, inline, so its lines and words take the
+     page's colors in either theme. */
+  .diagram { margin: 14px 0 18px; }
+  .diagram svg { max-width: 100%; height: auto; }
+  .diagram text { fill: var(--fg); }
+  .diagram path, .diagram polygon { stroke: var(--fg); }
+  .diagram .edge polygon { fill: var(--fg); }
+  h2.part { font-size: 25px; margin: 64px 0 4px; padding-top: 20px; border-top: 3px solid var(--accent); }
+  .part-intro { margin: 0 0 8px; }
+  h3 { font-size: 19px; margin: 10px 0 4px; overflow-wrap: anywhere; }
+  h2.part a { color: inherit; text-decoration: none; }
+  h2.code { font-size: 16px; margin: 36px 0 4px; color: var(--accent); }
+  p { max-width: 70ch; }
+  a { color: var(--link); }
+  code { font: 13px ui-monospace, Menlo, Consolas, monospace; }
+  .contents { padding-left: 20px; }
+  .contents ul { padding-left: 20px; margin: 2px 0 8px; }
+  .contents a { overflow-wrap: anywhere; }
+  .facts { font-size: 14px; color: var(--muted); }
+  .file { font-size: 13px; color: var(--muted); margin: 20px 0 0; overflow-wrap: anywhere; }
+  .entry { margin-top: 28px; padding-top: 14px; border-top: 1px solid var(--edge); }
+  .steps { font-size: 13px; margin: 0 0 8px; }
+  main > .steps:last-child { margin: 28px 0 0; }
+  /* Every block shows its file whole; a line wider than the block scrolls
+     sideways inside it, so the code keeps its indentation. */
+  pre { margin: 6px 0 12px; padding: 12px 14px; border-radius: 5px; background: #2b2733; color: #e8e6e0;
+        font: 12px/1.45 ui-monospace, Menlo, Consolas, monospace; overflow-x: auto; tab-size: 4; }
+  pre code { font: inherit; }
+  .syn-keyword { color: #c792ea; }
+  .syn-type { color: #82aaff; }
+  .syn-string { color: #c3e88d; }
+  .syn-number { color: #f78c6c; }
+  .syn-comment { color: #8a8494; font-style: italic; }
+  .syn-name { color: #ffcb6b; }
+  footer { margin-top: 36px; color: var(--muted); font-size: 13px; }
+</style>
+</head>
+<body>
+<main>
+<nav class="steps"><a href="../hunt_names_c/">← previous</a> · <a href="../#count_roc_modules_lines_and_tests">Roc on Shale</a> · <a href="../list_long_files/">next →</a></nav>
+<h1>count_roc_modules_lines_and_tests</h1>
+<h2 class="code">Roc</h2>
+<p class="file"><a href="https://github.com/showell/shale/blob/e3c753adf065dc7856e5d49422daf99f9969f91a/cookbook/roc/count_roc_modules_lines_and_tests/count_roc_modules_lines_and_tests.roc"><code>cookbook/roc/count_roc_modules_lines_and_tests/count_roc_modules_lines_and_tests.roc</code></a>, 240 lines</p>
+<pre><code><span class="syn-comment">## count_roc_modules_lines_and_tests is a test-density report for a tree of Roc projects: folder by</span>
+<span class="syn-comment">## folder, its modules and their lines, the same for its test modules, and</span>
+<span class="syn-comment">## its `expect`s. For one app&#39;s size, `roc loc main.roc` counts what its</span>
+<span class="syn-comment">## imports reach; count_roc_modules_lines_and_tests counts every `.roc` file under each folder,</span>
+<span class="syn-comment">## with a row a folder, so it sees a whole tree of apps, the tests `roc loc`</span>
+<span class="syn-comment">## doesn&#39;t count, and the modules no import reaches (specs a test root</span>
+<span class="syn-comment">## alone imports). Its launcher,</span>
+<span class="syn-comment">## cookbook/roc/count_roc_modules_lines_and_tests.shale, is how it is run, and says the arguments.</span>
+<span class="syn-comment">##</span>
+<span class="syn-comment">##   cd ~/showell_repos &amp;&amp; shale cookbook:roc/count_roc_modules_lines_and_tests.shale in=roc-chat,roc-markdown/package</span>
+<span class="syn-comment">##</span>
+<span class="syn-comment">## The work is plain Roc over two of Shale&#39;s effects: `Shale.glob!` names a</span>
+<span class="syn-comment">## folder&#39;s `.roc` files and `Shale.read!` gives each one&#39;s text. A folder</span>
+<span class="syn-comment">## that isn&#39;t there stops the run (`Shale.exists!`, `Shale.fail!`).</span>
+<span class="syn-comment">## budget: steps=400000000 reads=50000 arena_bytes=1000000000</span>
+<span class="syn-keyword">app</span> [main!] { pf: <span class="syn-keyword">platform</span> <span class="syn-string">&quot;../../../roc_platform/platform/main.roc&quot;</span> }
+
+<span class="syn-keyword">import</span> pf.<span class="syn-type">Shale</span>
+
+<span class="syn-comment">## What one folder holds.</span>
+<span class="syn-type">Count</span> : {
+	place : <span class="syn-type">Str</span>,
+	modules : <span class="syn-type">U64</span>,
+	lines : <span class="syn-type">U64</span>,
+	test_modules : <span class="syn-type">U64</span>,
+	test_lines : <span class="syn-type">U64</span>,
+	expects : <span class="syn-type">U64</span>,
+}
+
+<span class="syn-comment">## The literals that pick out the modules to treat apart: a path holding one</span>
+<span class="syn-comment">## of `tests` is a test module&#39;s, and one holding one of `skips` is left out.</span>
+<span class="syn-type">Markers</span> : { tests : <span class="syn-type">List</span>(<span class="syn-type">Str</span>), skips : <span class="syn-type">List</span>(<span class="syn-type">Str</span>) }
+
+<span class="syn-name">main!</span> : {} =&gt; {}
+<span class="syn-name">main!</span> = |{}| {
+	markers = {
+		tests: literals(<span class="syn-type">Shale</span>.arg!(<span class="syn-string">&quot;tests&quot;</span>, default_tests)),
+		skips: literals(<span class="syn-type">Shale</span>.arg!(<span class="syn-string">&quot;skip&quot;</span>, <span class="syn-string">&quot;&quot;</span>)),
+	}
+	<span class="syn-keyword">var</span> $counts = []
+	<span class="syn-keyword">for</span> place <span class="syn-keyword">in</span> literals(<span class="syn-type">Shale</span>.arg!(<span class="syn-string">&quot;folders&quot;</span>, <span class="syn-string">&quot;.&quot;</span>)) {
+		$counts = $counts.append(count_folder!(place, markers))
+	}
+	<span class="syn-type">Shale</span>.print!(count_table($counts))
+}
+
+<span class="syn-comment">## The literals of a test module&#39;s path unless `tests=` is given: the</span>
+<span class="syn-comment">## folders and file endings our Roc repos give their tests, specs and gates.</span>
+<span class="syn-name">default_tests</span> : <span class="syn-type">Str</span>
+<span class="syn-name">default_tests</span> = <span class="syn-string">&quot;/gates/,/tests/,Tests.roc,Expects.roc,_test.roc,Spec.roc,Specs.roc,/specs&quot;</span>
+
+<span class="syn-comment">## A comma-separated list&#39;s items, each trimmed, the empty ones dropped.</span>
+<span class="syn-name">literals</span> : <span class="syn-type">Str</span> -&gt; <span class="syn-type">List</span>(<span class="syn-type">Str</span>)
+<span class="syn-name">literals</span> = |text|
+	text.split_on(<span class="syn-string">&quot;,&quot;</span>).map(<span class="syn-type">Str</span>.trim).drop_if(<span class="syn-type">Str</span>.is_empty)
+
+<span class="syn-comment"># ── Counting a folder</span>
+
+<span class="syn-name">count_folder!</span> : <span class="syn-type">Str</span>, <span class="syn-type">Markers</span> =&gt; <span class="syn-type">Count</span>
+<span class="syn-name">count_folder!</span> = |place, markers| {
+	<span class="syn-keyword">if</span> !(<span class="syn-type">Shale</span>.exists!(place)) {
+		<span class="syn-type">Shale</span>.fail!(<span class="syn-string">&quot;count_roc_modules_lines_and_tests: no folder `</span>${place}<span class="syn-string">`&quot;</span>)
+	}
+	<span class="syn-keyword">var</span> $count = {
+		place,
+		modules: <span class="syn-number">0</span>,
+		lines: <span class="syn-number">0</span>,
+		test_modules: <span class="syn-number">0</span>,
+		test_lines: <span class="syn-number">0</span>,
+		expects: <span class="syn-number">0</span>,
+	}
+	<span class="syn-keyword">for</span> path <span class="syn-keyword">in</span> <span class="syn-type">Shale</span>.glob!(roc_files_pattern(place)) {
+		<span class="syn-keyword">if</span> !(is_build_output(path) <span class="syn-keyword">or</span> has_any_marker(path, markers.skips)) {
+			<span class="syn-keyword">match</span> <span class="syn-type">Shale</span>.read!(path) {
+				<span class="syn-type">Found</span>(text) =&gt; {
+					is_test = has_any_marker(path, markers.tests)
+					$count = with_file($count, { text, is_test })
+				}
+				<span class="syn-type">Missing</span> =&gt; <span class="syn-type">Shale</span>.fail!(<span class="syn-string">&quot;count_roc_modules_lines_and_tests: </span>${path}<span class="syn-string"> went missing during the count&quot;</span>)
+			}
+		}
+	}
+	$count
+}
+
+<span class="syn-comment">## The glob of every `.roc` file below the folder. Shale&#39;s glob leaves out</span>
+<span class="syn-comment">## hidden names, so `.git` and `.zig-cache` are never walked.</span>
+<span class="syn-name">roc_files_pattern</span> : <span class="syn-type">Str</span> -&gt; <span class="syn-type">Str</span>
+<span class="syn-name">roc_files_pattern</span> = |place|
+	<span class="syn-keyword">if</span> place == <span class="syn-string">&quot;.&quot;</span> {
+		<span class="syn-string">&quot;**/*.roc&quot;</span>
+	} <span class="syn-keyword">else</span> {
+		<span class="syn-string">&quot;</span>${place}<span class="syn-string">/**/*.roc&quot;</span>
+	}
+
+<span class="syn-comment">## Whether the path is under a build&#39;s `zig-out` folder.</span>
+<span class="syn-name">is_build_output</span> : <span class="syn-type">Str</span> -&gt; <span class="syn-type">Bool</span>
+<span class="syn-name">is_build_output</span> = |path|
+	path.contains(<span class="syn-string">&quot;/zig-out/&quot;</span>)
+
+<span class="syn-name">has_any_marker</span> : <span class="syn-type">Str</span>, <span class="syn-type">List</span>(<span class="syn-type">Str</span>) -&gt; <span class="syn-type">Bool</span>
+<span class="syn-name">has_any_marker</span> = |path, markers|
+	markers.any(|marker| path.contains(marker))
+
+<span class="syn-comment">## The count with one more file added, a module or a test module.</span>
+<span class="syn-name">with_file</span> : <span class="syn-type">Count</span>, { text : <span class="syn-type">Str</span>, is_test : <span class="syn-type">Bool</span> } -&gt; <span class="syn-type">Count</span>
+<span class="syn-name">with_file</span> = |count, file| {
+	lines = line_count(file.text)
+	expects = count.expects + expect_count(file.text)
+	<span class="syn-keyword">if</span> file.is_test {
+		{
+			..count,
+			test_modules: count.test_modules + <span class="syn-number">1</span>,
+			test_lines: count.test_lines + lines,
+			expects,
+		}
+	} <span class="syn-keyword">else</span> {
+		{
+			..count,
+			modules: count.modules + <span class="syn-number">1</span>,
+			lines: count.lines + lines,
+			expects,
+		}
+	}
+}
+
+<span class="syn-comment"># ── Reading a module&#39;s text</span>
+
+<span class="syn-comment">## The newlines, and a last line that has none, as Shale&#39;s `count_lines`</span>
+<span class="syn-comment">## counts them.</span>
+<span class="syn-name">line_count</span> : <span class="syn-type">Str</span> -&gt; <span class="syn-type">U64</span>
+<span class="syn-name">line_count</span> = |text| {
+	bytes = text.to_utf8()
+	newlines = bytes.count_if(|byte| byte == <span class="syn-string">&#39;\n&#39;</span>)
+	<span class="syn-keyword">match</span> bytes.last() {
+		<span class="syn-type">Ok</span>(<span class="syn-string">&#39;\n&#39;</span>) =&gt; newlines
+		<span class="syn-type">Ok</span>(_) =&gt; newlines + <span class="syn-number">1</span>
+		<span class="syn-type">Err</span>(_) =&gt; <span class="syn-number">0</span>
+	}
+}
+
+<span class="syn-comment">## The lines that start an `expect`: the word itself after any indent, not</span>
+<span class="syn-comment">## a longer name such as `expected`.</span>
+<span class="syn-name">expect_count</span> : <span class="syn-type">Str</span> -&gt; <span class="syn-type">U64</span>
+<span class="syn-name">expect_count</span> = |text|
+	text.split_on(<span class="syn-string">&quot;\n&quot;</span>).count_if(is_expect_line)
+
+<span class="syn-name">is_expect_line</span> : <span class="syn-type">Str</span> -&gt; <span class="syn-type">Bool</span>
+<span class="syn-name">is_expect_line</span> = |line| {
+	rest = bytes_after_indent(line.to_utf8())
+	<span class="syn-keyword">if</span> rest.starts_with(<span class="syn-type">Str</span>.to_utf8(<span class="syn-string">&quot;expect&quot;</span>)) {
+		<span class="syn-keyword">match</span> rest.get(<span class="syn-number">6</span>) {
+			<span class="syn-type">Ok</span>(byte) =&gt; !(is_word_byte(byte))
+			<span class="syn-type">Err</span>(_) =&gt; <span class="syn-type">Bool.True</span>
+		}
+	} <span class="syn-keyword">else</span> {
+		<span class="syn-type">Bool.False</span>
+	}
+}
+
+<span class="syn-comment">## The bytes after a line&#39;s indent: spaces, tabs and the other bytes a</span>
+<span class="syn-comment">## regular expression&#39;s `\s` matches.</span>
+<span class="syn-name">bytes_after_indent</span> : <span class="syn-type">List</span>(<span class="syn-type">U8</span>) -&gt; <span class="syn-type">List</span>(<span class="syn-type">U8</span>)
+<span class="syn-name">bytes_after_indent</span> = |bytes|
+	<span class="syn-keyword">match</span> bytes.find_first_index(|byte| !(is_space_byte(byte))) {
+		<span class="syn-type">Ok</span>(start) =&gt; bytes.drop_first(start)
+		<span class="syn-type">Err</span>(_) =&gt; []
+	}
+
+<span class="syn-name">is_space_byte</span> : <span class="syn-type">U8</span> -&gt; <span class="syn-type">Bool</span>
+<span class="syn-name">is_space_byte</span> = |byte|
+	byte == <span class="syn-string">&#39; &#39;</span> <span class="syn-keyword">or</span> byte == <span class="syn-string">&#39;\t&#39;</span> <span class="syn-keyword">or</span> byte == <span class="syn-string">&#39;\r&#39;</span> <span class="syn-keyword">or</span> byte == <span class="syn-number">0x0b</span> <span class="syn-keyword">or</span> byte == <span class="syn-number">0x0c</span>
+
+<span class="syn-comment">## A letter, a digit or `_`: what a regular expression&#39;s `\w` matches.</span>
+<span class="syn-name">is_word_byte</span> : <span class="syn-type">U8</span> -&gt; <span class="syn-type">Bool</span>
+<span class="syn-name">is_word_byte</span> = |byte|
+	is_ascii_letter(byte) <span class="syn-keyword">or</span> (byte &gt;= <span class="syn-string">&#39;0&#39;</span> <span class="syn-keyword">and</span> byte &lt;= <span class="syn-string">&#39;9&#39;</span>) <span class="syn-keyword">or</span> byte == <span class="syn-string">&#39;_&#39;</span>
+
+<span class="syn-name">is_ascii_letter</span> : <span class="syn-type">U8</span> -&gt; <span class="syn-type">Bool</span>
+<span class="syn-name">is_ascii_letter</span> = |byte|
+	(byte &gt;= <span class="syn-string">&#39;a&#39;</span> <span class="syn-keyword">and</span> byte &lt;= <span class="syn-string">&#39;z&#39;</span>) <span class="syn-keyword">or</span> (byte &gt;= <span class="syn-string">&#39;A&#39;</span> <span class="syn-keyword">and</span> byte &lt;= <span class="syn-string">&#39;Z&#39;</span>)
+
+<span class="syn-comment"># ── The table</span>
+
+<span class="syn-comment">## A column&#39;s heading and which side its cells line up on.</span>
+<span class="syn-type">Column</span> : { heading : <span class="syn-type">Str</span>, alignment : [<span class="syn-type">Left</span>, <span class="syn-type">Right</span>] }
+
+<span class="syn-name">columns</span> : <span class="syn-type">List</span>(<span class="syn-type">Column</span>)
+<span class="syn-name">columns</span> = [
+	{ heading: <span class="syn-string">&quot;place&quot;</span>, alignment: <span class="syn-type">Left</span> },
+	{ heading: <span class="syn-string">&quot;modules&quot;</span>, alignment: <span class="syn-type">Right</span> },
+	{ heading: <span class="syn-string">&quot;lines&quot;</span>, alignment: <span class="syn-type">Right</span> },
+	{ heading: <span class="syn-string">&quot;test_modules&quot;</span>, alignment: <span class="syn-type">Right</span> },
+	{ heading: <span class="syn-string">&quot;test_lines&quot;</span>, alignment: <span class="syn-type">Right</span> },
+	{ heading: <span class="syn-string">&quot;expects&quot;</span>, alignment: <span class="syn-type">Right</span> },
+]
+
+<span class="syn-name">count_cells</span> : <span class="syn-type">Count</span> -&gt; <span class="syn-type">List</span>(<span class="syn-type">Str</span>)
+<span class="syn-name">count_cells</span> = |count| [
+	count.place,
+	count.modules.to_str(),
+	count.lines.to_str(),
+	count.test_modules.to_str(),
+	count.test_lines.to_str(),
+	count.expects.to_str(),
+]
+
+<span class="syn-comment">## The counts as Shale&#39;s `table` prints rows: a line of headings, then a line</span>
+<span class="syn-comment">## a folder, each column as wide as its widest cell, columns two spaces</span>
+<span class="syn-comment">## apart, the numbers right-aligned.</span>
+<span class="syn-name">count_table</span> : <span class="syn-type">List</span>(<span class="syn-type">Count</span>) -&gt; <span class="syn-type">Str</span>
+<span class="syn-name">count_table</span> = |counts| {
+	rows = counts.map(count_cells).prepend(columns.map(|column| column.heading))
+	widths = rows.fold(columns.map(|_| <span class="syn-number">0</span>), with_row)
+	layouts = <span class="syn-type">List</span>.map2(
+		columns,
+		widths,
+		|column, width| { alignment: column.alignment, width },
+	)
+	table_lines = rows.map(|row| <span class="syn-type">Str</span>.join_with(<span class="syn-type">List</span>.map2(layouts, row, padded_cell), <span class="syn-string">&quot;  &quot;</span>))
+	<span class="syn-type">Str</span>.join_with(table_lines, <span class="syn-string">&quot;\n&quot;</span>)
+}
+
+<span class="syn-comment">## Each column&#39;s width so far, widened to fit the row&#39;s cell.</span>
+<span class="syn-name">with_row</span> : <span class="syn-type">List</span>(<span class="syn-type">U64</span>), <span class="syn-type">List</span>(<span class="syn-type">Str</span>) -&gt; <span class="syn-type">List</span>(<span class="syn-type">U64</span>)
+<span class="syn-name">with_row</span> = |widths, cells|
+	<span class="syn-type">List</span>.map2(
+		widths,
+		cells,
+		|width, cell| <span class="syn-type">U64</span>.max(width, cell.count_utf8_bytes()),
+	)
+
+<span class="syn-name">padded_cell</span> : { alignment : [<span class="syn-type">Left</span>, <span class="syn-type">Right</span>], width : <span class="syn-type">U64</span> }, <span class="syn-type">Str</span> -&gt; <span class="syn-type">Str</span>
+<span class="syn-name">padded_cell</span> = |layout, cell| {
+	gap = <span class="syn-string">&quot; &quot;</span>.repeat(layout.width - cell.count_utf8_bytes())
+	<span class="syn-keyword">match</span> layout.alignment {
+		<span class="syn-type">Left</span> =&gt; <span class="syn-string">&quot;</span>${cell}${gap}<span class="syn-string">&quot;</span>
+		<span class="syn-type">Right</span> =&gt; <span class="syn-string">&quot;</span>${gap}${cell}<span class="syn-string">&quot;</span>
+	}
+}
+</code></pre>
+<h2 class="code">Shale original</h2>
+<p class="file"><a href="https://github.com/showell/shale/blob/f8b34ec16957a242142ae9be37e4075e4df46003/cookbook/roc/count_roc.shale"><code>cookbook/roc/count_roc.shale</code></a>, 55 lines, at <code>f8b34ec1</code></p>
+<pre><code><span class="syn-comment">-- This recipe counts a Roc project: for each folder of `in`, its modules and</span>
+<span class="syn-comment">-- lines of Roc, the same for its tests, and its `expect`s, the numbers a</span>
+<span class="syn-comment">-- landing page or a review quotes. A module is a test&#39;s when its path holds</span>
+<span class="syn-comment">-- one of `tests`&#39; literals (by default `/gates/`, `/tests/`, `Tests.roc`,</span>
+<span class="syn-comment">-- `Expects.roc` and `_test.roc`); `skip` names more literals whose modules</span>
+<span class="syn-comment">-- are left out (a book&#39;s builder inside an app&#39;s folder, say). Build output</span>
+<span class="syn-comment">-- (zig-out, .zig-cache and every hidden folder) is never counted.</span>
+<span class="syn-comment">--</span>
+<span class="syn-comment">--   cd ~/showell_repos &amp;&amp; shale shale/cookbook/roc/count_roc.shale in=roc-apps/basic,roc-markdown/package</span>
+<span class="syn-comment">--   cd ~/showell_repos &amp;&amp; shale shale/cookbook/roc/count_roc.shale in=roc-apps/canvas_apps/safari skip=/tutorial/</span>
+<span class="syn-comment">--</span>
+<span class="syn-comment">-- budget: steps=400000000 reads=50000 arena_bytes=1000000000</span>
+
+<span class="syn-keyword">const</span> IN = arg(<span class="syn-string">&quot;in&quot;</span>, <span class="syn-string">&quot;.&quot;</span>)
+<span class="syn-keyword">const</span> TESTS = arg(<span class="syn-string">&quot;tests&quot;</span>, <span class="syn-string">&quot;/gates/,/tests/,Tests.roc,Expects.roc,_test.roc&quot;</span>)
+<span class="syn-keyword">const</span> SKIP = arg(<span class="syn-string">&quot;skip&quot;</span>, <span class="syn-string">&quot;&quot;</span>)
+
+<span class="syn-keyword">function</span> <span class="syn-name">literals</span>(s)
+  <span class="syn-keyword">local</span> out = {}
+  <span class="syn-keyword">for</span> x <span class="syn-keyword">in</span> split(s, <span class="syn-string">&quot;,&quot;</span>) <span class="syn-keyword">do</span>
+    <span class="syn-keyword">if</span> trim(x) ~= <span class="syn-string">&quot;&quot;</span> <span class="syn-keyword">then</span> push(out, trim(x)) <span class="syn-keyword">end</span>
+  <span class="syn-keyword">end</span>
+  <span class="syn-keyword">return</span> out
+<span class="syn-keyword">end</span>
+
+<span class="syn-keyword">function</span> <span class="syn-name">holds_any</span>(path, lits)
+  <span class="syn-keyword">for</span> l <span class="syn-keyword">in</span> lits <span class="syn-keyword">do</span>
+    <span class="syn-keyword">if</span> contains(path, l) <span class="syn-keyword">then</span> <span class="syn-keyword">return</span> <span class="syn-keyword">true</span> <span class="syn-keyword">end</span>
+  <span class="syn-keyword">end</span>
+  <span class="syn-keyword">return</span> <span class="syn-keyword">false</span>
+<span class="syn-keyword">end</span>
+
+<span class="syn-keyword">const</span> TEST_LITS = literals(TESTS)
+<span class="syn-keyword">const</span> SKIP_LITS = literals(SKIP)
+
+<span class="syn-keyword">local</span> rows = {}
+<span class="syn-keyword">for</span> place <span class="syn-keyword">in</span> literals(IN) <span class="syn-keyword">do</span>
+  <span class="syn-keyword">local</span> row = {place = place, modules = <span class="syn-number">0</span>, lines = <span class="syn-number">0</span>, test_modules = <span class="syn-number">0</span>, test_lines = <span class="syn-number">0</span>, expects = <span class="syn-number">0</span>}
+  <span class="syn-keyword">for</span> e <span class="syn-keyword">in</span> walk_all(place, {kind = <span class="syn-string">&quot;file&quot;</span>, skip = <span class="syn-string">&quot;.*&quot;</span>, like = <span class="syn-string">&quot;*.roc&quot;</span>}) <span class="syn-keyword">do</span>
+    <span class="syn-keyword">if</span> <span class="syn-keyword">not</span> contains(e.path, <span class="syn-string">&quot;/zig-out/&quot;</span>) <span class="syn-keyword">and</span> <span class="syn-keyword">not</span> holds_any(e.path, SKIP_LITS) <span class="syn-keyword">then</span>
+      <span class="syn-keyword">local</span> text = read(e.path)
+      <span class="syn-keyword">local</span> n = count_lines(e.path)
+      row.expects = row.expects + #re_lines(text, <span class="syn-string">&quot;^\\s*expect\\b&quot;</span>)
+      <span class="syn-keyword">if</span> holds_any(e.path, TEST_LITS) <span class="syn-keyword">then</span>
+        row.test_modules = row.test_modules + <span class="syn-number">1</span>
+        row.test_lines = row.test_lines + n
+      <span class="syn-keyword">else</span>
+        row.modules = row.modules + <span class="syn-number">1</span>
+        row.lines = row.lines + n
+      <span class="syn-keyword">end</span>
+    <span class="syn-keyword">end</span>
+  <span class="syn-keyword">end</span>
+  push(rows, row)
+<span class="syn-keyword">end</span>
+print(table(rows, {<span class="syn-string">&quot;place&quot;</span>, <span class="syn-string">&quot;modules&quot;</span>, <span class="syn-string">&quot;lines&quot;</span>, <span class="syn-string">&quot;test_modules&quot;</span>, <span class="syn-string">&quot;test_lines&quot;</span>, <span class="syn-string">&quot;expects&quot;</span>}))
+</code></pre>
+<nav class="steps"><a href="../hunt_names_c/">← previous</a> · <a href="../#count_roc_modules_lines_and_tests">Roc on Shale</a> · <a href="../list_long_files/">next →</a></nav></main>
+</body>
+</html>

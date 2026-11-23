@@ -1,0 +1,537 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="description" content="Each Roc module held to a size, the whole file counted, written line for line beside its Shale original, which is still the recipe (the commit is the one that added the Roc).">
+<title>check_modules_stay_under_500_lines · Roc on Shale</title>
+<script src="../../shared/home.js"></script>
+<!-- site/build_roc_on_shale.shale writes this page from the shale repository's
+     history; run it again rather than editing here. The code is colored by
+     roc-syntax-color (SyntaxColor.html). -->
+<style>
+  :root { color-scheme: light dark; --bg: #f7f5f0; --fg: #1d1d1b; --muted: #6b6860; --edge: #d9d4c8; --pane: #ffffff; --link: #1f5fa8; --accent: #5b3ea8; }
+  @media (prefers-color-scheme: dark) {
+    :root { --bg: #1b1b1a; --fg: #e8e6e0; --muted: #9a968c; --edge: #3a3934; --pane: #242422; --link: #8ab4f0; --accent: #a68cf0; }
+  }
+  body { margin: 0; background: var(--bg); color: var(--fg); font: 15px/1.55 system-ui, sans-serif; }
+  main { max-width: 960px; margin: 0 auto; padding: 36px 16px 48px; }
+  @media (max-width: 640px) { main { padding: 24px 12px 36px; } }
+  .top { display: flex; flex-wrap: wrap; gap: 4px 14px; font-size: 14px; margin: 0 0 14px; }
+  h1 { font-size: 28px; margin: 0 0 6px; overflow-wrap: anywhere; }
+  .lede { margin: 0 0 10px; max-width: 70ch; }
+  ul.lede { padding-left: 22px; }
+  ul.lede li { margin: 0 0 4px; }
+  h2.intro { font-size: 20px; margin: 30px 0 6px; }
+  h3.intro { font-size: 16px; margin: 18px 0 4px; }
+  /* The drawing is Graphviz's SVG, inline, so its lines and words take the
+     page's colors in either theme. */
+  .diagram { margin: 14px 0 18px; }
+  .diagram svg { max-width: 100%; height: auto; }
+  .diagram text { fill: var(--fg); }
+  .diagram path, .diagram polygon { stroke: var(--fg); }
+  .diagram .edge polygon { fill: var(--fg); }
+  h2.part { font-size: 25px; margin: 64px 0 4px; padding-top: 20px; border-top: 3px solid var(--accent); }
+  .part-intro { margin: 0 0 8px; }
+  h3 { font-size: 19px; margin: 10px 0 4px; overflow-wrap: anywhere; }
+  h2.part a { color: inherit; text-decoration: none; }
+  h2.code { font-size: 16px; margin: 36px 0 4px; color: var(--accent); }
+  p { max-width: 70ch; }
+  a { color: var(--link); }
+  code { font: 13px ui-monospace, Menlo, Consolas, monospace; }
+  .contents { padding-left: 20px; }
+  .contents ul { padding-left: 20px; margin: 2px 0 8px; }
+  .contents a { overflow-wrap: anywhere; }
+  .facts { font-size: 14px; color: var(--muted); }
+  .file { font-size: 13px; color: var(--muted); margin: 20px 0 0; overflow-wrap: anywhere; }
+  .entry { margin-top: 28px; padding-top: 14px; border-top: 1px solid var(--edge); }
+  .steps { font-size: 13px; margin: 0 0 8px; }
+  main > .steps:last-child { margin: 28px 0 0; }
+  /* Every block shows its file whole; a line wider than the block scrolls
+     sideways inside it, so the code keeps its indentation. */
+  pre { margin: 6px 0 12px; padding: 12px 14px; border-radius: 5px; background: #2b2733; color: #e8e6e0;
+        font: 12px/1.45 ui-monospace, Menlo, Consolas, monospace; overflow-x: auto; tab-size: 4; }
+  pre code { font: inherit; }
+  .syn-keyword { color: #c792ea; }
+  .syn-type { color: #82aaff; }
+  .syn-string { color: #c3e88d; }
+  .syn-number { color: #f78c6c; }
+  .syn-comment { color: #8a8494; font-style: italic; }
+  .syn-name { color: #ffcb6b; }
+  footer { margin-top: 36px; color: var(--muted); font-size: 13px; }
+</style>
+</head>
+<body>
+<main>
+<nav class="steps"><a href="../find_unused_imports/">← previous</a> · <a href="../#check_modules_stay_under_500_lines">Roc on Shale</a> · <a href="../find_names_that_differ_across_lookalike_modules/">next →</a></nav>
+<h1>check_modules_stay_under_500_lines</h1>
+<h2 class="code">Roc</h2>
+<p class="file"><a href="https://github.com/showell/shale/blob/e3c753adf065dc7856e5d49422daf99f9969f91a/roc_platform/examples/check_modules_stay_under_500_lines.roc"><code>roc_platform/examples/check_modules_stay_under_500_lines.roc</code></a>, 254 lines</p>
+<pre><code><span class="syn-comment">## cookbook/roc/check_modules_stay_under_500_lines.shale, ported to Roc on Shale&#39;s platform:</span>
+<span class="syn-comment">## each Roc module held to a size, 500 lines at most, the whole file</span>
+<span class="syn-comment">## counted. Its header says the rules; this port keeps its arguments, its</span>
+<span class="syn-comment">## output and its stops, and leaves out `self_test` (the original&#39;s plants</span>
+<span class="syn-comment">## stay its own).</span>
+<span class="syn-comment">##</span>
+<span class="syn-comment">##   shale roc_platform/run.shale script=roc_platform/examples/check_modules_stay_under_500_lines.roc glob=app/**/*.roc</span>
+<span class="syn-comment">##</span>
+<span class="syn-comment">## The arguments: `glob` (commas between several, `**/*.roc` by default),</span>
+<span class="syn-comment">## `tests` (`*Spec.roc,test/`), `exempt` (an exemptions file, `path --</span>
+<span class="syn-comment">## reason` a line), `limit` (500) and `all` (`all=1` lists every module).</span>
+<span class="syn-comment">## budget: steps=50000000 reads=100000</span>
+<span class="syn-keyword">app</span> [main!] { pf: <span class="syn-keyword">platform</span> <span class="syn-string">&quot;../platform/main.roc&quot;</span> }
+
+<span class="syn-keyword">import</span> pf.<span class="syn-type">Shale</span>
+
+<span class="syn-name">main!</span> : {} =&gt; {}
+<span class="syn-name">main!</span> = |{}| {
+	limit_text = <span class="syn-type">Shale</span>.arg!(<span class="syn-string">&quot;limit&quot;</span>, <span class="syn-string">&quot;500&quot;</span>)
+	limit = <span class="syn-keyword">match</span> <span class="syn-type">U64</span>.from_str(limit_text) {
+		<span class="syn-type">Ok</span>(n) =&gt; n
+		<span class="syn-type">Err</span>(_) =&gt; {
+			<span class="syn-type">Shale</span>.fail!(<span class="syn-string">&quot;check_modules_stay_under_500_lines: limit=</span>${limit_text}<span class="syn-string"> is no number&quot;</span>)
+			<span class="syn-number">0</span>
+		}
+	}
+	opts = {
+		glob: <span class="syn-type">Shale</span>.arg!(<span class="syn-string">&quot;glob&quot;</span>, <span class="syn-string">&quot;**/*.roc&quot;</span>),
+		tests: <span class="syn-type">Shale</span>.arg!(<span class="syn-string">&quot;tests&quot;</span>, <span class="syn-string">&quot;*Spec.roc,test/&quot;</span>),
+		exempt: <span class="syn-type">Shale</span>.arg!(<span class="syn-string">&quot;exempt&quot;</span>, <span class="syn-string">&quot;&quot;</span>),
+		limit,
+	}
+	all = <span class="syn-type">Shale</span>.arg!(<span class="syn-string">&quot;all&quot;</span>, <span class="syn-string">&quot;&quot;</span>) == <span class="syn-string">&quot;1&quot;</span>
+	r = module_sizes!(opts)
+	<span class="syn-keyword">if</span> all {
+		<span class="syn-keyword">for</span> l <span class="syn-keyword">in</span> r.listing {
+			<span class="syn-type">Shale</span>.print!(l)
+		}
+	}
+	print_findings!(r.summary, r.found)
+	<span class="syn-keyword">if</span> !(<span class="syn-type">List</span>.is_empty(r.found)) {
+		<span class="syn-type">Shale</span>.fail!(r.summary)
+	}
+}
+
+<span class="syn-comment">## The summary, each finding, then the summary again (cookbook/findings.shale).</span>
+<span class="syn-name">print_findings!</span> : <span class="syn-type">Str</span>, <span class="syn-type">List</span>(<span class="syn-type">Str</span>) =&gt; {}
+<span class="syn-name">print_findings!</span> = |summary, found| {
+	<span class="syn-type">Shale</span>.print!(summary)
+	<span class="syn-keyword">if</span> !(<span class="syn-type">List</span>.is_empty(found)) {
+		<span class="syn-keyword">for</span> l <span class="syn-keyword">in</span> found {
+			<span class="syn-type">Shale</span>.print!(l)
+		}
+		<span class="syn-type">Shale</span>.print!(summary)
+	}
+}
+
+<span class="syn-name">comma_items</span> : <span class="syn-type">Str</span> -&gt; <span class="syn-type">List</span>(<span class="syn-type">Str</span>)
+<span class="syn-name">comma_items</span> = |s|
+	<span class="syn-type">Str</span>.split_on(s, <span class="syn-string">&quot;,&quot;</span>)
+		.map(<span class="syn-type">Str</span>.trim)
+		.keep_if(|x| !(<span class="syn-type">Str</span>.is_empty(x)))
+
+<span class="syn-comment">## Whether `path` is in one of the test roots: a folder anywhere in it (`x/`),</span>
+<span class="syn-comment">## a file name&#39;s ending (`*X`), or a whole file name.</span>
+<span class="syn-name">in_test_root</span> : <span class="syn-type">Str</span>, <span class="syn-type">List</span>(<span class="syn-type">Str</span>) -&gt; <span class="syn-type">Bool</span>
+<span class="syn-name">in_test_root</span> = |path, roots| {
+	base = basename(path)
+	<span class="syn-type">List</span>.any(
+		roots,
+		|r|
+			<span class="syn-keyword">if</span> <span class="syn-type">Str</span>.ends_with(r, <span class="syn-string">&quot;/&quot;</span>) {
+				<span class="syn-type">Str</span>.starts_with(path, r) <span class="syn-keyword">or</span> <span class="syn-type">Str</span>.contains(path, <span class="syn-string">&quot;/</span>${r}<span class="syn-string">&quot;</span>) <span class="syn-keyword">or</span> <span class="syn-type">Str</span>.contains(path, <span class="syn-string">&quot;:</span>${r}<span class="syn-string">&quot;</span>)
+			} <span class="syn-keyword">else</span> <span class="syn-keyword">if</span> <span class="syn-type">Str</span>.starts_with(r, <span class="syn-string">&quot;*&quot;</span>) {
+				<span class="syn-type">Str</span>.ends_with(base, <span class="syn-type">Str</span>.drop_prefix(r, <span class="syn-string">&quot;*&quot;</span>))
+			} <span class="syn-keyword">else</span> {
+				base == r
+			},
+	)
+}
+
+<span class="syn-name">basename</span> : <span class="syn-type">Str</span> -&gt; <span class="syn-type">Str</span>
+<span class="syn-name">basename</span> = |path|
+	<span class="syn-keyword">match</span> <span class="syn-type">List</span>.last(<span class="syn-type">Str</span>.split_on(path, <span class="syn-string">&quot;/&quot;</span>)) {
+		<span class="syn-type">Ok</span>(b) =&gt; b
+		<span class="syn-type">Err</span>(_) =&gt; path
+	}
+
+<span class="syn-type">Exemption</span> : { path : <span class="syn-type">Str</span>, reason : <span class="syn-type">Str</span> }
+
+<span class="syn-comment">## The exemptions, each `path -- reason`; a malformed line, a missing path or</span>
+<span class="syn-comment">## one given twice stops the run.</span>
+<span class="syn-name">exemptions_of!</span> : <span class="syn-type">Str</span> =&gt; <span class="syn-type">List</span>(<span class="syn-type">Exemption</span>)
+<span class="syn-name">exemptions_of!</span> = |file| {
+	<span class="syn-keyword">if</span> file == <span class="syn-string">&quot;&quot;</span> {
+		<span class="syn-keyword">return</span> []
+	}
+	text = <span class="syn-keyword">match</span> <span class="syn-type">Shale</span>.read!(file) {
+		<span class="syn-type">Found</span>(t) =&gt; t
+		<span class="syn-type">Missing</span> =&gt; {
+			<span class="syn-type">Shale</span>.fail!(<span class="syn-string">&quot;check_modules_stay_under_500_lines: no exemptions file </span>${file}<span class="syn-string">&quot;</span>)
+			<span class="syn-string">&quot;&quot;</span>
+		}
+	}
+	<span class="syn-keyword">var</span> $out = []
+	<span class="syn-keyword">var</span> $number = <span class="syn-number">0</span>
+	<span class="syn-keyword">for</span> raw <span class="syn-keyword">in</span> lines(text) {
+		$number = $number + <span class="syn-number">1</span>
+		l = <span class="syn-type">Str</span>.trim(raw)
+		<span class="syn-keyword">if</span> l != <span class="syn-string">&quot;&quot;</span> <span class="syn-keyword">and</span> !(<span class="syn-type">Str</span>.starts_with(l, <span class="syn-string">&quot;#&quot;</span>)) {
+			place = <span class="syn-string">&quot;</span>${file}<span class="syn-string">:</span>${<span class="syn-type">U64</span>.to_str($number)}<span class="syn-string">: &quot;</span>
+			<span class="syn-keyword">match</span> <span class="syn-type">Str</span>.split_first(l, <span class="syn-string">&quot; -- &quot;</span>) {
+				<span class="syn-type">Ok</span>({ before, after }) =&gt; {
+					reason = <span class="syn-type">Str</span>.trim(after)
+					path = <span class="syn-type">Str</span>.trim(before)
+					<span class="syn-keyword">if</span> reason == <span class="syn-string">&quot;&quot;</span> {
+						<span class="syn-type">Shale</span>.fail!(<span class="syn-string">&quot;check_modules_stay_under_500_lines: </span>${place}<span class="syn-string">expected `path -- reason`, got `</span>${l}<span class="syn-string">`&quot;</span>)
+					}
+					<span class="syn-keyword">if</span> !(<span class="syn-type">Shale</span>.exists!(path)) {
+						<span class="syn-type">Shale</span>.fail!(<span class="syn-string">&quot;check_modules_stay_under_500_lines: </span>${place}<span class="syn-string">`</span>${path}<span class="syn-string">` is no file&quot;</span>)
+					}
+					<span class="syn-keyword">if</span> <span class="syn-type">List</span>.any($out, |e| e.path == path) {
+						<span class="syn-type">Shale</span>.fail!(<span class="syn-string">&quot;check_modules_stay_under_500_lines: </span>${place}<span class="syn-string">`</span>${path}<span class="syn-string">` is exempted twice&quot;</span>)
+					}
+					$out = $out.append({ path, reason })
+				}
+				<span class="syn-type">Err</span>(_) =&gt; <span class="syn-type">Shale</span>.fail!(<span class="syn-string">&quot;check_modules_stay_under_500_lines: </span>${place}<span class="syn-string">expected `path -- reason`, got `</span>${l}<span class="syn-string">`&quot;</span>)
+			}
+		}
+	}
+	$out
+}
+
+<span class="syn-comment">## A text&#39;s lines, as Shale&#39;s `lines` splits it: a last newline ends a line,</span>
+<span class="syn-comment">## it does not begin one.</span>
+<span class="syn-name">lines</span> : <span class="syn-type">Str</span> -&gt; <span class="syn-type">List</span>(<span class="syn-type">Str</span>)
+<span class="syn-name">lines</span> = |text| {
+	parts = <span class="syn-type">Str</span>.split_on(text, <span class="syn-string">&quot;\n&quot;</span>)
+	<span class="syn-keyword">if</span> <span class="syn-type">Str</span>.ends_with(text, <span class="syn-string">&quot;\n&quot;</span>) {
+		<span class="syn-type">List</span>.sublist(parts, { start: <span class="syn-number">0</span>, len: <span class="syn-type">List</span>.len(parts) - <span class="syn-number">1</span> })
+	} <span class="syn-keyword">else</span> {
+		parts
+	}
+}
+
+<span class="syn-comment">## A file&#39;s lines as Shale&#39;s `count_lines` counts them: the newlines, and a</span>
+<span class="syn-comment">## last line that has none.</span>
+<span class="syn-name">count_lines</span> : <span class="syn-type">Str</span> -&gt; <span class="syn-type">U64</span>
+<span class="syn-name">count_lines</span> = |text| {
+	bytes = <span class="syn-type">Str</span>.to_utf8(text)
+	newlines = <span class="syn-type">List</span>.count_if(bytes, |b| b == <span class="syn-number">10</span>)
+	<span class="syn-keyword">match</span> <span class="syn-type">List</span>.last(bytes) {
+		<span class="syn-type">Ok</span>(<span class="syn-number">10</span>) =&gt; newlines
+		<span class="syn-type">Ok</span>(_) =&gt; newlines + <span class="syn-number">1</span>
+		<span class="syn-type">Err</span>(_) =&gt; <span class="syn-number">0</span>
+	}
+}
+
+<span class="syn-comment">## Bytewise order, as Shale&#39;s `sort` puts strings.</span>
+<span class="syn-name">byte_order</span> : <span class="syn-type">Str</span>, <span class="syn-type">Str</span> -&gt; [<span class="syn-type">Before</span>, <span class="syn-type">Same</span>, <span class="syn-type">After</span>]
+<span class="syn-name">byte_order</span> = |a, b| {
+	x = <span class="syn-type">Str</span>.to_utf8(a)
+	y = <span class="syn-type">Str</span>.to_utf8(b)
+	<span class="syn-keyword">var</span> $k = <span class="syn-number">0</span>
+	<span class="syn-keyword">var</span> $answer = <span class="syn-type">Same</span>
+	<span class="syn-keyword">var</span> $going = <span class="syn-type">Bool.True</span>
+	<span class="syn-keyword">while</span> $going {
+		<span class="syn-keyword">match</span> (<span class="syn-type">List</span>.get(x, $k), <span class="syn-type">List</span>.get(y, $k)) {
+			(<span class="syn-type">Ok</span>(p), <span class="syn-type">Ok</span>(q)) =&gt;
+				<span class="syn-keyword">if</span> p &lt; q {
+					$answer = <span class="syn-type">Before</span>
+					$going = <span class="syn-type">Bool.False</span>
+				} <span class="syn-keyword">else</span> <span class="syn-keyword">if</span> p &gt; q {
+					$answer = <span class="syn-type">After</span>
+					$going = <span class="syn-type">Bool.False</span>
+				} <span class="syn-keyword">else</span> {
+					$k = $k + <span class="syn-number">1</span>
+				}
+			(<span class="syn-type">Err</span>(_), <span class="syn-type">Ok</span>(_)) =&gt; {
+				$answer = <span class="syn-type">Before</span>
+				$going = <span class="syn-type">Bool.False</span>
+			}
+			(<span class="syn-type">Ok</span>(_), <span class="syn-type">Err</span>(_)) =&gt; {
+				$answer = <span class="syn-type">After</span>
+				$going = <span class="syn-type">Bool.False</span>
+			}
+			(<span class="syn-type">Err</span>(_), <span class="syn-type">Err</span>(_)) =&gt; {
+				$going = <span class="syn-type">Bool.False</span>
+			}
+		}
+	}
+	$answer
+}
+
+<span class="syn-comment">## The paths the globs name, each once, sorted, build output left out.</span>
+<span class="syn-name">module_paths!</span> : <span class="syn-type">Str</span> =&gt; <span class="syn-type">List</span>(<span class="syn-type">Str</span>)
+<span class="syn-name">module_paths!</span> = |globs| {
+	<span class="syn-keyword">var</span> $seen = []
+	<span class="syn-keyword">for</span> g <span class="syn-keyword">in</span> comma_items(globs) {
+		<span class="syn-keyword">for</span> p <span class="syn-keyword">in</span> <span class="syn-type">Shale</span>.glob!(g) {
+			<span class="syn-keyword">if</span> !(<span class="syn-type">Str</span>.contains(p, <span class="syn-string">&quot;zig-out/&quot;</span>)) <span class="syn-keyword">and</span> !(<span class="syn-type">Str</span>.contains(p, <span class="syn-string">&quot;node_modules/&quot;</span>)) <span class="syn-keyword">and</span> !(<span class="syn-type">List</span>.contains($seen, p)) {
+				$seen = $seen.append(p)
+			}
+		}
+	}
+	<span class="syn-type">List</span>.sort_with($seen, byte_order)
+}
+
+<span class="syn-name">module_sizes!</span> : { glob : <span class="syn-type">Str</span>, tests : <span class="syn-type">Str</span>, exempt : <span class="syn-type">Str</span>, limit : <span class="syn-type">U64</span> } =&gt; { summary : <span class="syn-type">Str</span>, found : <span class="syn-type">List</span>(<span class="syn-type">Str</span>), listing : <span class="syn-type">List</span>(<span class="syn-type">Str</span>) }
+<span class="syn-name">module_sizes!</span> = |opts| {
+	exemptions = exemptions_of!(opts.exempt)
+	roots = comma_items(opts.tests)
+	limit = opts.limit
+	limit_s = <span class="syn-type">U64</span>.to_str(limit)
+	<span class="syn-keyword">var</span> $found = []
+	<span class="syn-keyword">var</span> $listing = []
+	<span class="syn-keyword">var</span> $modules = <span class="syn-number">0</span>
+	<span class="syn-keyword">var</span> $tests = <span class="syn-number">0</span>
+	<span class="syn-keyword">var</span> $over = <span class="syn-number">0</span>
+	<span class="syn-keyword">var</span> $exempt = <span class="syn-number">0</span>
+	<span class="syn-keyword">var</span> $unneeded = <span class="syn-number">0</span>
+	<span class="syn-keyword">for</span> path <span class="syn-keyword">in</span> module_paths!(opts.glob) {
+		n = <span class="syn-keyword">match</span> <span class="syn-type">Shale</span>.read!(path) {
+			<span class="syn-type">Found</span>(text) =&gt; count_lines(text)
+			<span class="syn-type">Missing</span> =&gt; <span class="syn-number">0</span>
+		}
+		n_s = <span class="syn-type">U64</span>.to_str(n)
+		<span class="syn-keyword">if</span> in_test_root(path, roots) {
+			$tests = $tests + <span class="syn-number">1</span>
+			$listing = $listing.append(<span class="syn-string">&quot;</span>${path}<span class="syn-string">: </span>${n_s}<span class="syn-string"> lines, a test root&#39;s, no limit&quot;</span>)
+		} <span class="syn-keyword">else</span> {
+			$modules = $modules + <span class="syn-number">1</span>
+			<span class="syn-keyword">var</span> $note = <span class="syn-string">&quot;&quot;</span>
+			<span class="syn-keyword">match</span> <span class="syn-type">List</span>.find_first(exemptions, |e| e.path == path) {
+				<span class="syn-type">Ok</span>(e) =&gt; {
+					$exempt = $exempt + <span class="syn-number">1</span>
+					$note = <span class="syn-string">&quot; (exempt: </span>${e.reason}<span class="syn-string">)&quot;</span>
+					<span class="syn-keyword">if</span> n &lt;= limit {
+						$unneeded = $unneeded + <span class="syn-number">1</span>
+						$found = $found.append(<span class="syn-string">&quot;</span>${path}<span class="syn-string">: unneeded_exemption: </span>${n_s}<span class="syn-string"> lines (limit </span>${limit_s}<span class="syn-string">) needs no exemption&quot;</span>)
+					}
+				}
+				<span class="syn-type">Err</span>(_) =&gt;
+					<span class="syn-keyword">if</span> n &gt; limit {
+						$over = $over + <span class="syn-number">1</span>
+						$found = $found.append(<span class="syn-string">&quot;</span>${path}<span class="syn-string">: module_size: </span>${n_s}<span class="syn-string"> lines (limit </span>${limit_s}<span class="syn-string">)&quot;</span>)
+					}
+			}
+			$listing = $listing.append(<span class="syn-string">&quot;</span>${path}<span class="syn-string">: </span>${n_s}<span class="syn-string"> lines</span>${$note}<span class="syn-string">&quot;</span>)
+		}
+	}
+	summary = <span class="syn-string">&quot;check_modules_stay_under_500_lines (Roc): </span>${<span class="syn-type">U64</span>.to_str($modules)}<span class="syn-string"> modules, </span>${<span class="syn-type">U64</span>.to_str($tests)}<span class="syn-string"> test files left out; module_size </span>${<span class="syn-type">U64</span>.to_str($over)}<span class="syn-string"> over </span>${limit_s}<span class="syn-string"> lines, </span>${<span class="syn-type">U64</span>.to_str($exempt)}<span class="syn-string"> exempt, unneeded_exemption </span>${<span class="syn-type">U64</span>.to_str($unneeded)}<span class="syn-string">&quot;</span>
+	{ summary, found: $found, listing: $listing }
+}
+</code></pre>
+<h2 class="code">Shale original</h2>
+<p class="file"><a href="https://github.com/showell/shale/blob/9349d37bb64d5928d2c2ca6cac1d9b9c82f82d2a/cookbook/roc/check_module_size.shale"><code>cookbook/roc/check_module_size.shale</code></a>, 206 lines, at <code>9349d37b</code></p>
+<p class="file">The libraries it loads: <a href="https://github.com/showell/shale/blob/9349d37bb64d5928d2c2ca6cac1d9b9c82f82d2a/cookbook/findings.shale"><code>cookbook/findings.shale</code></a> (21 lines).</p>
+<pre><code><span class="syn-comment">-- This recipe holds each Roc module to a size: 500 lines is our most, the</span>
+<span class="syn-comment">-- whole file counted, its expects, blank lines and comments included.</span>
+<span class="syn-comment">-- Someone composing a program from ours should be able to take a module</span>
+<span class="syn-comment">-- whole, and a module big enough that they would take half of it is the</span>
+<span class="syn-comment">-- smell. A small module may keep its expects inside it, one-stop shopping;</span>
+<span class="syn-comment">-- a module with extensive tests moves them to a `*Spec.roc` beside it.</span>
+<span class="syn-comment">--</span>
+<span class="syn-comment">--   cd &lt;repo&gt; &amp;&amp; shale &lt;shale&gt;/cookbook/roc/check_module_size.shale glob=&#39;app/**/*.roc&#39;</span>
+<span class="syn-comment">--   cd &lt;repo&gt; &amp;&amp; shale &lt;shale&gt;/cookbook/roc/check_module_size.shale tests=&#39;*Spec.roc,gates/&#39;</span>
+<span class="syn-comment">--   cd &lt;repo&gt; &amp;&amp; shale &lt;shale&gt;/cookbook/roc/check_module_size.shale exempt=tools/module_size.txt all=1</span>
+<span class="syn-comment">--   cd &lt;shale&gt; &amp;&amp; shale cookbook:roc/check_module_size.shale self_test=1</span>
+<span class="syn-comment">--</span>
+<span class="syn-comment">-- The arguments:</span>
+<span class="syn-comment">--   glob       the files to read, several separated by commas, `**/*.roc` by</span>
+<span class="syn-comment">--              default; a path holding `zig-out/` or `node_modules/` is left out;</span>
+<span class="syn-comment">--   tests      the project&#39;s test roots, separated by commas, `*Spec.roc,test/`</span>
+<span class="syn-comment">--              by default: an entry ending in `/` is a folder anywhere in a</span>
+<span class="syn-comment">--              path, `*X` a file name ending in `X`, anything else a whole</span>
+<span class="syn-comment">--              file name;</span>
+<span class="syn-comment">--   exempt     the project&#39;s exemptions file, below;</span>
+<span class="syn-comment">--   limit      the most lines a module may have, 500 by default;</span>
+<span class="syn-comment">--   all        with `all=1`, each module&#39;s count too;</span>
+<span class="syn-comment">--   self_test  with `self_test=1`, check the plants in</span>
+<span class="syn-comment">--              `cookbook/roc/plants/check_module_size/` (run from the shale</span>
+<span class="syn-comment">--              checkout&#39;s root).</span>
+<span class="syn-comment">--</span>
+<span class="syn-comment">-- Tests have no limit (Steve, 2026-11-19), so a file of a test root is</span>
+<span class="syn-comment">-- left out of the check by rule, not by an exemption line: a Spec is where a</span>
+<span class="syn-comment">-- module&#39;s extensive tests go once they would crowd it, and what someone</span>
+<span class="syn-comment">-- takes whole is the module, not its tests. A module&#39;s own expects count,</span>
+<span class="syn-comment">-- since they are part of what is taken.</span>
+<span class="syn-comment">--</span>
+<span class="syn-comment">-- The exemptions file names the modules that may be bigger, one `path --</span>
+<span class="syn-comment">-- reason` a line, the path as this recipe prints it (from the root the run</span>
+<span class="syn-comment">-- starts at). A blank line or one starting with `#` is skipped. A line with</span>
+<span class="syn-comment">-- no reason, a path that isn&#39;t there, or a path given twice stops the run,</span>
+<span class="syn-comment">-- and an exempt module now within the limit is a finding. Exemptions are</span>
+<span class="syn-comment">-- rare: a module that properly shows the workhorse pattern.</span>
+<span class="syn-comment">--</span>
+<span class="syn-comment">-- The findings, between two copies of the summary (cookbook/findings.shale):</span>
+<span class="syn-comment">--   path: module_size: N lines (limit L)</span>
+<span class="syn-comment">--   path: unneeded_exemption: N lines (limit L) needs no exemption</span>
+<span class="syn-comment">-- The run fails on any finding.</span>
+<span class="syn-comment">-- budget: steps=50000000 reads=100000</span>
+
+<span class="syn-keyword">const</span> SELF_TEST = arg(<span class="syn-string">&quot;self_test&quot;</span>, <span class="syn-string">&quot;&quot;</span>) == <span class="syn-string">&quot;1&quot;</span>
+<span class="syn-keyword">const</span> GLOB = arg(<span class="syn-string">&quot;glob&quot;</span>, <span class="syn-string">&quot;**/*.roc&quot;</span>)
+<span class="syn-keyword">const</span> TESTS = arg(<span class="syn-string">&quot;tests&quot;</span>, <span class="syn-string">&quot;*Spec.roc,test/&quot;</span>)
+<span class="syn-keyword">const</span> EXEMPT_FILE = arg(<span class="syn-string">&quot;exempt&quot;</span>, <span class="syn-string">&quot;&quot;</span>)
+<span class="syn-keyword">const</span> LIMIT = arg(<span class="syn-string">&quot;limit&quot;</span>, <span class="syn-number">500</span>)
+<span class="syn-keyword">const</span> ALL = arg(<span class="syn-string">&quot;all&quot;</span>, <span class="syn-string">&quot;&quot;</span>) == <span class="syn-string">&quot;1&quot;</span>
+<span class="syn-keyword">const</span> PLANTS = <span class="syn-string">&quot;cookbook/roc/plants/check_module_size/&quot;</span>
+use(<span class="syn-string">&quot;cookbook:findings.shale&quot;</span>)
+
+<span class="syn-keyword">function</span> <span class="syn-name">comma_items</span>(s)
+  <span class="syn-keyword">local</span> out = {}
+  <span class="syn-keyword">for</span> x <span class="syn-keyword">in</span> split(s, <span class="syn-string">&quot;,&quot;</span>) <span class="syn-keyword">do</span>
+    <span class="syn-keyword">if</span> trim(x) ~= <span class="syn-string">&quot;&quot;</span> <span class="syn-keyword">then</span> push(out, trim(x)) <span class="syn-keyword">end</span>
+  <span class="syn-keyword">end</span>
+  <span class="syn-keyword">return</span> out
+<span class="syn-keyword">end</span>
+
+<span class="syn-comment">-- Whether `path` is in one of the test roots `roots`, as the header says.</span>
+<span class="syn-keyword">function</span> <span class="syn-name">in_test_root</span>(path, roots)
+  <span class="syn-keyword">local</span> base = basename(path)
+  <span class="syn-keyword">for</span> r <span class="syn-keyword">in</span> roots <span class="syn-keyword">do</span>
+    <span class="syn-keyword">if</span> ends_with(r, <span class="syn-string">&quot;/&quot;</span>) <span class="syn-keyword">then</span>
+      <span class="syn-keyword">if</span> starts_with(path, r) <span class="syn-keyword">or</span> contains(path, <span class="syn-string">&quot;/&quot;</span> .. r) <span class="syn-keyword">or</span> contains(path, <span class="syn-string">&quot;:&quot;</span> .. r) <span class="syn-keyword">then</span> <span class="syn-keyword">return</span> <span class="syn-keyword">true</span> <span class="syn-keyword">end</span>
+    <span class="syn-keyword">elseif</span> starts_with(r, <span class="syn-string">&quot;*&quot;</span>) <span class="syn-keyword">then</span>
+      <span class="syn-keyword">if</span> ends_with(base, sub(r, <span class="syn-number">2</span>)) <span class="syn-keyword">then</span> <span class="syn-keyword">return</span> <span class="syn-keyword">true</span> <span class="syn-keyword">end</span>
+    <span class="syn-keyword">elseif</span> base == r <span class="syn-keyword">then</span>
+      <span class="syn-keyword">return</span> <span class="syn-keyword">true</span>
+    <span class="syn-keyword">end</span>
+  <span class="syn-keyword">end</span>
+  <span class="syn-keyword">return</span> <span class="syn-keyword">false</span>
+<span class="syn-keyword">end</span>
+
+<span class="syn-comment">-- The exemptions by path, each `{path, reason, line}`.</span>
+<span class="syn-keyword">function</span> <span class="syn-name">exemptions_of</span>(file)
+  <span class="syn-keyword">local</span> by_path = {}
+  <span class="syn-keyword">if</span> file == <span class="syn-string">&quot;&quot;</span> <span class="syn-keyword">then</span> <span class="syn-keyword">return</span> by_path <span class="syn-keyword">end</span>
+  <span class="syn-keyword">if</span> <span class="syn-keyword">not</span> exists(file) <span class="syn-keyword">then</span> fail(<span class="syn-string">&quot;check_module_size: no exemptions file &quot;</span> .. file) <span class="syn-keyword">end</span>
+  <span class="syn-keyword">local</span> number = <span class="syn-number">0</span>
+  <span class="syn-keyword">for</span> raw <span class="syn-keyword">in</span> lines(read(file)) <span class="syn-keyword">do</span>
+    number = number + <span class="syn-number">1</span>
+    <span class="syn-keyword">local</span> l = trim(raw)
+    <span class="syn-keyword">if</span> l ~= <span class="syn-string">&quot;&quot;</span> <span class="syn-keyword">and</span> <span class="syn-keyword">not</span> starts_with(l, <span class="syn-string">&quot;#&quot;</span>) <span class="syn-keyword">then</span>
+      <span class="syn-keyword">local</span> at = find(l, <span class="syn-string">&quot; -- &quot;</span>)
+      <span class="syn-keyword">local</span> where = file .. <span class="syn-string">&quot;:&quot;</span> .. number .. <span class="syn-string">&quot;: &quot;</span>
+      <span class="syn-keyword">if</span> at == <span class="syn-keyword">nil</span> <span class="syn-keyword">or</span> trim(sub(l, at + <span class="syn-number">4</span>)) == <span class="syn-string">&quot;&quot;</span> <span class="syn-keyword">then</span> fail(<span class="syn-string">&quot;check_module_size: &quot;</span> .. where .. <span class="syn-string">&quot;expected `path -- reason`, got `&quot;</span> .. l .. <span class="syn-string">&quot;`&quot;</span>) <span class="syn-keyword">end</span>
+      <span class="syn-keyword">local</span> path = trim(sub(l, <span class="syn-number">1</span>, at - <span class="syn-number">1</span>))
+      <span class="syn-keyword">if</span> <span class="syn-keyword">not</span> exists(path) <span class="syn-keyword">then</span> fail(<span class="syn-string">&quot;check_module_size: &quot;</span> .. where .. <span class="syn-string">&quot;`&quot;</span> .. path .. <span class="syn-string">&quot;` is no file&quot;</span>) <span class="syn-keyword">end</span>
+      <span class="syn-keyword">if</span> has_key(by_path, path) <span class="syn-keyword">then</span> fail(<span class="syn-string">&quot;check_module_size: &quot;</span> .. where .. <span class="syn-string">&quot;`&quot;</span> .. path .. <span class="syn-string">&quot;` is exempted twice&quot;</span>) <span class="syn-keyword">end</span>
+      by_path[path] = {path = path, reason = trim(sub(l, at + <span class="syn-number">4</span>)), line = number}
+    <span class="syn-keyword">end</span>
+  <span class="syn-keyword">end</span>
+  <span class="syn-keyword">return</span> by_path
+<span class="syn-keyword">end</span>
+
+<span class="syn-comment">-- The paths `globs` names, each once, sorted, build output left out.</span>
+<span class="syn-keyword">function</span> <span class="syn-name">module_paths</span>(globs)
+  <span class="syn-keyword">local</span> seen = {}
+  <span class="syn-keyword">for</span> g <span class="syn-keyword">in</span> comma_items(globs) <span class="syn-keyword">do</span>
+    <span class="syn-keyword">for</span> p <span class="syn-keyword">in</span> glob(g) <span class="syn-keyword">do</span>
+      <span class="syn-keyword">if</span> <span class="syn-keyword">not</span> contains(p, <span class="syn-string">&quot;zig-out/&quot;</span>) <span class="syn-keyword">and</span> <span class="syn-keyword">not</span> contains(p, <span class="syn-string">&quot;node_modules/&quot;</span>) <span class="syn-keyword">then</span> seen[p] = <span class="syn-keyword">true</span> <span class="syn-keyword">end</span>
+    <span class="syn-keyword">end</span>
+  <span class="syn-keyword">end</span>
+  <span class="syn-keyword">local</span> out = keys(seen)
+  sort(out)
+  <span class="syn-keyword">return</span> out
+<span class="syn-keyword">end</span>
+
+<span class="syn-comment">-- The whole check, as `{summary, found, listing}`.</span>
+<span class="syn-keyword">function</span> <span class="syn-name">module_sizes</span>(opts)
+  <span class="syn-keyword">local</span> exemptions = exemptions_of(opts.exempt)
+  <span class="syn-keyword">local</span> roots = comma_items(opts.tests)
+  <span class="syn-keyword">local</span> limit = opts.limit
+  <span class="syn-keyword">local</span> found = {}
+  <span class="syn-keyword">local</span> listing = {}
+  <span class="syn-keyword">local</span> counts = {modules = <span class="syn-number">0</span>, tests = <span class="syn-number">0</span>, over = <span class="syn-number">0</span>, exempt = <span class="syn-number">0</span>, unneeded = <span class="syn-number">0</span>}
+  <span class="syn-keyword">for</span> path <span class="syn-keyword">in</span> module_paths(opts.glob) <span class="syn-keyword">do</span>
+    <span class="syn-keyword">local</span> n = count_lines(path)
+    <span class="syn-keyword">if</span> in_test_root(path, roots) <span class="syn-keyword">then</span>
+      counts.tests = counts.tests + <span class="syn-number">1</span>
+      push(listing, path .. <span class="syn-string">&quot;: &quot;</span> .. n .. <span class="syn-string">&quot; lines, a test root&#39;s, no limit&quot;</span>)
+    <span class="syn-keyword">else</span>
+      counts.modules = counts.modules + <span class="syn-number">1</span>
+      <span class="syn-keyword">local</span> exemption = get(exemptions, path)
+      <span class="syn-keyword">local</span> note = <span class="syn-string">&quot;&quot;</span>
+      <span class="syn-keyword">if</span> exemption ~= <span class="syn-keyword">nil</span> <span class="syn-keyword">then</span>
+        counts.exempt = counts.exempt + <span class="syn-number">1</span>
+        note = <span class="syn-string">&quot; (exempt: &quot;</span> .. exemption.reason .. <span class="syn-string">&quot;)&quot;</span>
+        <span class="syn-keyword">if</span> n &lt;= limit <span class="syn-keyword">then</span>
+          counts.unneeded = counts.unneeded + <span class="syn-number">1</span>
+          push(found, path .. <span class="syn-string">&quot;: unneeded_exemption: &quot;</span> .. n .. <span class="syn-string">&quot; lines (limit &quot;</span> .. limit .. <span class="syn-string">&quot;) needs no exemption&quot;</span>)
+        <span class="syn-keyword">end</span>
+      <span class="syn-keyword">elseif</span> n &gt; limit <span class="syn-keyword">then</span>
+        counts.over = counts.over + <span class="syn-number">1</span>
+        push(found, path .. <span class="syn-string">&quot;: module_size: &quot;</span> .. n .. <span class="syn-string">&quot; lines (limit &quot;</span> .. limit .. <span class="syn-string">&quot;)&quot;</span>)
+      <span class="syn-keyword">end</span>
+      push(listing, path .. <span class="syn-string">&quot;: &quot;</span> .. n .. <span class="syn-string">&quot; lines&quot;</span> .. note)
+    <span class="syn-keyword">end</span>
+  <span class="syn-keyword">end</span>
+  <span class="syn-keyword">local</span> summary = <span class="syn-string">&quot;check_module_size (Roc): &quot;</span> .. counts.modules .. <span class="syn-string">&quot; modules, &quot;</span> .. counts.tests .. <span class="syn-string">&quot; test files left out; module_size &quot;</span> .. counts.over .. <span class="syn-string">&quot; over &quot;</span> .. limit .. <span class="syn-string">&quot; lines, &quot;</span> .. counts.exempt .. <span class="syn-string">&quot; exempt, unneeded_exemption &quot;</span> .. counts.unneeded
+  <span class="syn-keyword">return</span> {summary = summary, found = found, listing = listing}
+<span class="syn-keyword">end</span>
+
+<span class="syn-comment">-- One self-test row: `{name, opts, found, says, stops}`. `found` is how many</span>
+<span class="syn-comment">-- findings it must give; `says` literals its output must hold, or its stop</span>
+<span class="syn-comment">-- with `stops`.</span>
+<span class="syn-keyword">function</span> <span class="syn-name">self_test_row</span>(row)
+  <span class="syn-keyword">local</span> opts = {glob = PLANTS .. <span class="syn-string">&quot;*.roc&quot;</span>, tests = <span class="syn-string">&quot;*Spec.roc,test/&quot;</span>, exempt = <span class="syn-string">&quot;&quot;</span>, limit = <span class="syn-number">20</span>}
+  <span class="syn-keyword">for</span> k <span class="syn-keyword">in</span> keys(get(row, <span class="syn-string">&quot;opts&quot;</span>, {})) <span class="syn-keyword">do</span> opts[k] = row.opts[k] <span class="syn-keyword">end</span>
+  <span class="syn-keyword">local</span> r = attempt(module_sizes, opts)
+  <span class="syn-keyword">local</span> faults = {}
+  <span class="syn-keyword">local</span> said = <span class="syn-string">&quot;&quot;</span>
+  <span class="syn-keyword">if</span> get(row, <span class="syn-string">&quot;stops&quot;</span>, <span class="syn-keyword">false</span>) <span class="syn-keyword">then</span>
+    <span class="syn-keyword">if</span> r.ok <span class="syn-keyword">then</span> push(faults, <span class="syn-string">&quot;it didn&#39;t stop&quot;</span>) <span class="syn-keyword">else</span> said = r.error <span class="syn-keyword">end</span>
+  <span class="syn-keyword">elseif</span> <span class="syn-keyword">not</span> r.ok <span class="syn-keyword">then</span>
+    push(faults, <span class="syn-string">&quot;it stopped: &quot;</span> .. r.error)
+  <span class="syn-keyword">else</span>
+    said = r.value.summary .. <span class="syn-string">&quot;\n&quot;</span> .. join(r.value.found, <span class="syn-string">&quot;\n&quot;</span>) .. <span class="syn-string">&quot;\n&quot;</span> .. join(r.value.listing, <span class="syn-string">&quot;\n&quot;</span>)
+    <span class="syn-keyword">if</span> #r.value.found ~= get(row, <span class="syn-string">&quot;found&quot;</span>, <span class="syn-number">0</span>) <span class="syn-keyword">then</span> push(faults, #r.value.found .. <span class="syn-string">&quot; findings, not &quot;</span> .. get(row, <span class="syn-string">&quot;found&quot;</span>, <span class="syn-number">0</span>)) <span class="syn-keyword">end</span>
+  <span class="syn-keyword">end</span>
+  <span class="syn-keyword">for</span> literal <span class="syn-keyword">in</span> get(row, <span class="syn-string">&quot;says&quot;</span>, {}) <span class="syn-keyword">do</span>
+    <span class="syn-keyword">if</span> <span class="syn-keyword">not</span> contains(said, literal) <span class="syn-keyword">then</span> push(faults, <span class="syn-string">&quot;it lacks `&quot;</span> .. literal .. <span class="syn-string">&quot;`&quot;</span>) <span class="syn-keyword">end</span>
+  <span class="syn-keyword">end</span>
+  print((#faults == <span class="syn-number">0</span> <span class="syn-keyword">and</span> <span class="syn-string">&quot;ok   &quot;</span> <span class="syn-keyword">or</span> <span class="syn-string">&quot;FAIL &quot;</span>) .. row.name .. (#faults == <span class="syn-number">0</span> <span class="syn-keyword">and</span> <span class="syn-string">&quot;&quot;</span> <span class="syn-keyword">or</span> <span class="syn-string">&quot;: &quot;</span> .. join(faults, <span class="syn-string">&quot;; &quot;</span>)))
+  <span class="syn-keyword">if</span> #faults &gt; <span class="syn-number">0</span> <span class="syn-keyword">then</span> print(said) <span class="syn-keyword">end</span>
+  <span class="syn-keyword">return</span> #faults
+<span class="syn-keyword">end</span>
+
+<span class="syn-keyword">function</span> <span class="syn-name">self_test</span>()
+  <span class="syn-keyword">local</span> at = PLANTS
+  <span class="syn-keyword">local</span> rows = {
+    {name = <span class="syn-string">&quot;a module one line over the limit is caught, one at it left alone&quot;</span>, found = <span class="syn-number">1</span>, says = {at .. <span class="syn-string">&quot;Over.roc: module_size: 21 lines (limit 20)&quot;</span>, at .. <span class="syn-string">&quot;Under.roc: 20 lines&quot;</span>}},
+    {name = <span class="syn-string">&quot;a Spec over the limit is a test root&#39;s, with no limit&quot;</span>, found = <span class="syn-number">1</span>, says = {at .. <span class="syn-string">&quot;OverSpec.roc: 22 lines, a test root&#39;s, no limit&quot;</span>, <span class="syn-string">&quot;1 test files left out&quot;</span>}},
+    {name = <span class="syn-string">&quot;an exempt module is left alone&quot;</span>, opts = {exempt = at .. <span class="syn-string">&quot;exempt.txt&quot;</span>}, found = <span class="syn-number">0</span>, says = {at .. <span class="syn-string">&quot;Over.roc: 21 lines (exempt: a plant past the limit on purpose)&quot;</span>}},
+    {name = <span class="syn-string">&quot;an exemption of a module within the limit is a finding&quot;</span>, opts = {exempt = at .. <span class="syn-string">&quot;exempt_unneeded.txt&quot;</span>}, found = <span class="syn-number">1</span>, says = {at .. <span class="syn-string">&quot;Under.roc: unneeded_exemption: 20 lines (limit 20) needs no exemption&quot;</span>}},
+    {name = <span class="syn-string">&quot;an exemption with no reason stops the run&quot;</span>, opts = {exempt = at .. <span class="syn-string">&quot;exempt_no_reason.txt&quot;</span>}, stops = <span class="syn-keyword">true</span>, says = {<span class="syn-string">&quot;exempt_no_reason.txt:1: expected `path -- reason`&quot;</span>}},
+    {name = <span class="syn-string">&quot;an exemption of a file that isn&#39;t there stops the run&quot;</span>, opts = {exempt = at .. <span class="syn-string">&quot;exempt_missing.txt&quot;</span>}, stops = <span class="syn-keyword">true</span>, says = {<span class="syn-string">&quot;Gone.roc` is no file&quot;</span>}},
+  }
+  <span class="syn-keyword">local</span> wrong = <span class="syn-number">0</span>
+  <span class="syn-keyword">for</span> row <span class="syn-keyword">in</span> rows <span class="syn-keyword">do</span> wrong = wrong + self_test_row(row) <span class="syn-keyword">end</span>
+  <span class="syn-keyword">if</span> wrong &gt; <span class="syn-number">0</span> <span class="syn-keyword">then</span> fail(<span class="syn-string">&quot;check_module_size self_test: &quot;</span> .. wrong .. <span class="syn-string">&quot; wrong&quot;</span>) <span class="syn-keyword">end</span>
+  print(<span class="syn-string">&quot;check_module_size self_test: PASS (&quot;</span> .. #rows .. <span class="syn-string">&quot; rows)&quot;</span>)
+  <span class="syn-keyword">return</span> <span class="syn-keyword">nil</span>
+<span class="syn-keyword">end</span>
+
+<span class="syn-keyword">function</span> <span class="syn-name">run_check</span>()
+  <span class="syn-keyword">local</span> r = module_sizes({glob = GLOB, tests = TESTS, exempt = EXEMPT_FILE, limit = LIMIT})
+  <span class="syn-keyword">if</span> ALL <span class="syn-keyword">then</span>
+    <span class="syn-keyword">for</span> l <span class="syn-keyword">in</span> r.listing <span class="syn-keyword">do</span> print(l) <span class="syn-keyword">end</span>
+  <span class="syn-keyword">end</span>
+  print_findings(r.summary, r.found)
+  <span class="syn-keyword">return</span> r
+<span class="syn-keyword">end</span>
+
+<span class="syn-comment">-- This `fail` stands at the top level so the summary is the last line a</span>
+<span class="syn-comment">-- caller reads: a stop inside a function prints the calls after it.</span>
+<span class="syn-keyword">if</span> SELF_TEST <span class="syn-keyword">then</span>
+  self_test()
+<span class="syn-keyword">else</span>
+  <span class="syn-keyword">local</span> r = run_check()
+  <span class="syn-keyword">if</span> #r.found &gt; <span class="syn-number">0</span> <span class="syn-keyword">then</span> fail(r.summary) <span class="syn-keyword">end</span>
+<span class="syn-keyword">end</span>
+</code></pre>
+<nav class="steps"><a href="../find_unused_imports/">← previous</a> · <a href="../#check_modules_stay_under_500_lines">Roc on Shale</a> · <a href="../find_names_that_differ_across_lookalike_modules/">next →</a></nav></main>
+</body>
+</html>
