@@ -38,6 +38,12 @@
 -- which needs a shale with `run`'s `secret_args` and asks 1.1.1.1 for
 -- roc.lynrummy.com.
 --
+-- `shale check.shale basic=1` is the BASIC tier instead, kept out of the
+-- default run for its time (about four minutes, most of it compiling and
+-- the dev build's counting): basic/controls.shale holds the release build's
+-- allocations to basic/controls/expected.txt and the dev build's to
+-- expected-dev.txt.
+--
 -- A few places are left out, each for the reason beside it in EXCEPTIONS.
 -- Each is a debt, named here and nowhere else.
 --
@@ -196,5 +202,18 @@ function all()
   print("check: " .. #apps .. " apps without errors or warnings, " .. #files .. " files formatted")
 end
 
+-- The BASIC tier: the controls in the release build, then in the dev build.
+function basic_tier()
+  local failed = {}
+  for opt in {"speed", "dev"} do
+    local r = run({"shale", "--root", ".", "basic/controls.shale", "opt=" .. opt}, {timeout_ms = 1800000, tail = 60})
+    print(trim(r.out))
+    if r.code ~= 0 then push(failed, "the BASIC controls, --opt=" .. opt) end
+  end
+  if #failed > 0 then fail("check: " .. join(failed, ", ") .. " failed") end
+  print("check basic=1: the BASIC controls hold in both builds")
+end
+
 const PART = arg("part", "")
-if PART == "" then all() else part(tonumber(PART)) end
+const BASIC = arg("basic", false)
+if BASIC then basic_tier() elseif PART == "" then all() else part(tonumber(PART)) end
