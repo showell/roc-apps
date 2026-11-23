@@ -728,6 +728,7 @@ const TYPES_KEEP = 400000000
 -- reason. check.shale leaves them out of `roc check` too.
 const TYPED_EXCEPTIONS = {
   {prefix = "canvas_apps/safari/tutorial/fails/", why = "programs that fail to type on purpose: the tutorial's builder checks that they do"},
+  {prefix = "site/rc1_repros/", why = "the RC1 article's reduced programs, each a compiler bug's reproduction, some failing to type on purpose"},
 }
 
 function typed_excepted(path)

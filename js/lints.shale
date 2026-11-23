@@ -10,14 +10,17 @@
 -- recipes over every project and so must judge js's files with js's terms.
 -- This table stays their one home.
 
-const HERE = "js"
+-- The folder the settings judge is js/roc, the interpreter's Roc, not js
+-- itself: tools/quality.shale runs a folder with settings on its own and
+-- leaves it out of its project's run, which it can only do for a folder
+-- inside the project.
+const HERE = "js/roc"
 const SETTINGS = {
-  {recipe = "find_names_and_docs_that_say_too_little", arg = "accepted=accepted_terms.txt"},
+  {recipe = "find_names_and_docs_that_say_too_little", arg = "accepted=js/accepted_terms.txt"},
 }
 
 const READS = arg("reads", "")
 if READS ~= "settings" then fail("js lints: reads=settings is the one reading") end
 for s in SETTINGS do
-  local m = re_find(s.arg, "^([a-z]+)=(.+)$")
-  print("SETTING\t" .. s.recipe .. "\t" .. HERE .. "\t" .. m.groups[1] .. "=" .. HERE .. "/" .. m.groups[2])
+  print("SETTING\t" .. s.recipe .. "\t" .. HERE .. "\t" .. s.arg)
 end

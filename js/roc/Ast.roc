@@ -44,8 +44,8 @@ Ast :: [].{
 		Function(Box(Ast.FunctionDefinition)),
 	]
 
-	## An array literal's item or a call's argument: one value, or each item
-	## of an iterable spread in its place (`...items`).
+	## An array literal's element or a call's: one value, or each item of an
+	## iterable spread in its place (`...items`).
 	Element : [Single(Ast.Expression), Spread(Ast.Expression, Ast.Where)]
 
 	# What an assignment or an update writes.
