@@ -16,12 +16,11 @@
 -- dev backend (as BASIC's controls are), so they are rough: each line says
 -- which other heavy programs were running.
 --
--- It builds js-count from js/roc/JsCount.roc with the pinned Roc into
--- build:roc-apps/gen/js/<checkout>/.
+-- It builds js-count from js/roc/JsCount.roc with the pinned Roc
+-- (js/js_builds.shale).
 --
 -- budget: steps=50000000
 
-const WANT_ROC = "roc-pin: roc-apps' pinned nightly, and js-count, which it builds"
 const WANT_RUN = "js-count: the interpreter under test, built here"
 -- The sizes a probe runs at: what sits beside a fixed probe's writes, and
 -- how many writes a growing probe makes. A growing probe's copies are short
@@ -40,23 +39,7 @@ const FLAT_BELOW_TENTHS = 16
 const BUILD = arg("build", true)
 const ONLY = arg("only", "")
 
-function out_dir()
-  return "build:roc-apps/gen/js/" .. basename(real("."))
-end
-
-function build_js_count()
-  local roc = pinned_roc("js/probes.shale")
-  local dir = out_dir()
-  mkdir(dir)
-  local exe = dir .. "/js-count"
-  if exists(exe) then remove(exe) end
-  local r = run({roc, "build", "JsCount.roc", "--opt=dev", "--output=" .. real(dir) .. "/js-count"},
-    {cwd = "js/roc", timeout_ms = 600000, tail = 40, nice = 19, want = WANT_ROC})
-  if contains(r.out, "✗") or contains(r.out, "●") or not exists(exe) then
-    print(trim(r.out))
-    fail("js/probes.shale: the build of js-count failed")
-  end
-end
+use("./js_builds.shale")
 
 -- The heavy programs running beside the probes, which slow their times.
 function busy()
@@ -82,8 +65,8 @@ function cpu_ms(exe, src, n, w)
 end
 
 function main()
-  if BUILD then build_js_count() end
-  local exe = real(out_dir() .. "/js-count")
+  if BUILD then build_js("js/probes.shale", "js-count", "JsCount.roc", "dev") end
+  local exe = built_js("js/probes.shale", "js-count", "dev")
   print(busy())
   print(pad("probe", 22) .. "  µs a write at three sizes N        shape")
   for f in glob("js/probes/*.js") do

@@ -9,16 +9,14 @@
 --   cd <roc-apps checkout> && shale js/oracle.shale build=0    grade the js-run already built
 --   cd <roc-apps checkout> && shale js/oracle.shale only=11    the programs whose names start so
 --
--- It builds js-run from js/roc/JsRun.roc with the pinned Roc (`pinned_roc`,
--- in .shale/prelude.shale) on the dev backend, into
--- build:roc-apps/gen/js/<checkout>/, each checkout its own. A build with
--- an error (✗) or a warning (●) fails the run, whatever Roc's exit code.
+-- It builds js-run from js/roc/JsRun.roc with the pinned Roc on the dev
+-- backend (js/js_builds.shale, whose build fails on an error or a warning,
+-- whatever Roc's exit code).
 -- Every program found is graded; none is skipped, and the run fails unless
 -- all of them pass.
 --
 -- budget: steps=50000000
 
-const WANT_ROC = "roc-pin: roc-apps' pinned nightly, and js-run, which it builds"
 const WANT_RUN = "js-run: the interpreter under test, built here"
 const WANT_NODE = "js-oracle: node is the subset's oracle"
 const RUN_MS = 20000
@@ -26,24 +24,7 @@ const RUN_MS = 20000
 const BUILD = arg("build", true)
 const ONLY = arg("only", "")
 
-function out_dir()
-  return "build:roc-apps/gen/js/" .. basename(real("."))
-end
-
-function build_js_run()
-  local roc = pinned_roc("js/oracle.shale")
-  local dir = out_dir()
-  mkdir(dir)
-  local exe = dir .. "/js-run"
-  if exists(exe) then remove(exe) end
-  local r = run({roc, "build", "JsRun.roc", "--opt=dev", "--output=" .. real(dir) .. "/js-run"},
-    {cwd = "js/roc", timeout_ms = 600000, tail = 40, nice = 19, want = WANT_ROC})
-  if contains(r.out, "✗") or contains(r.out, "●") or not exists(exe) then
-    print(trim(r.out))
-    fail("js/oracle.shale: the build of js-run failed")
-  end
-  print("built js-run --opt=dev: " .. r.ms .. " ms")
-end
+use("./js_builds.shale")
 
 -- What a program printed and how it ended, as one text to compare.
 function transcript(r)
@@ -115,11 +96,10 @@ function grade_refused(exe)
 end
 
 function main()
-  if BUILD then build_js_run() end
-  local exe = out_dir() .. "/js-run"
-  if not exists(exe) then fail("js/oracle.shale: no js-run built: run without build=0") end
-  local o = grade_oracle(real(exe))
-  local r = grade_refused(real(exe))
+  if BUILD then build_js("js/oracle.shale", "js-run", "JsRun.roc", "dev") end
+  local exe = built_js("js/oracle.shale", "js-run", "dev")
+  local o = grade_oracle(exe)
+  local r = grade_refused(exe)
   if o.n + r.n == 0 then fail("js/oracle.shale: no program is named " .. ONLY) end
   print("js oracle: " .. (o.n - o.bad) .. " of " .. o.n .. " match node; " .. (r.n - r.bad) .. " of " .. r.n .. " refused as they must be")
   if o.bad + r.bad > 0 then fail("js/oracle.shale: " .. (o.bad + r.bad) .. " programs failed") end

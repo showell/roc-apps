@@ -1,0 +1,6 @@
+# Allocations and reallocations a pass each control is held to in the
+# release build (--opt=speed), and why when either is not 0:
+# `<control> <allocs> <reallocs> <why>`. A control not listed here is held to
+# 0 and 0. Measured on Roc 0.1.0-RC1 by js/controls.shale.
+05-array-push 1 0 the call's list of argument values (Interp.eval_all), one value long; the array grows in place, a few reallocations in all
+06-push-pop 1 0 the push's list of argument values, as 05-array-push; the pop's list is empty and allocates nothing

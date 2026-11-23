@@ -1,0 +1,42 @@
+-- The JavaScript subset's commands built with the pinned Roc, for
+-- js/oracle.shale, js/probes.shale and js/controls.shale:
+-- `use("./js_builds.shale")`.
+--
+-- Each command (`js-run` from js/roc/JsRun.roc, `js-count` from
+-- js/roc/JsCount.roc) is built into
+-- build:roc-apps/gen/js/<checkout>/<opt>/, each checkout its own, `opt`
+-- being `dev` (the dev backend) or `speed` (the release build, through LLVM).
+
+const WANT_JS_ROC = "roc-pin: roc-apps' pinned nightly, and the JavaScript subset's commands, which it builds"
+
+-- This checkout's folder of built things for `opt`.
+function js_out_dir(opt)
+  return "build:roc-apps/gen/js/" .. basename(real(".")) .. "/" .. opt
+end
+
+-- The command `name` (`js-run` or `js-count`) built from `source` with
+-- `--opt=<opt>`. **THE ROC COMPILER EXITS NON-ZERO FOR A WARNING**, so its
+-- exit code is not the verdict: an error is marked ✗ and a warning ●, and
+-- either fails the build, as does a build that leaves no executable.
+function build_js(who, name, source, opt)
+  if opt ~= "speed" and opt ~= "dev" then fail(who .. ": opt is speed or dev, not " .. opt) end
+  local roc = pinned_roc(who)
+  local dir = js_out_dir(opt)
+  mkdir(dir)
+  local exe = dir .. "/" .. name
+  if exists(exe) then remove(exe) end
+  local r = run({roc, "build", source, "--opt=" .. opt, "--output=" .. real(dir) .. "/" .. name},
+    {cwd = "js/roc", timeout_ms = 1800000, tail = 40, nice = 19, want = WANT_JS_ROC})
+  if contains(r.out, "✗") or contains(r.out, "●") or not exists(exe) then
+    print(trim(r.out))
+    fail(who .. ": the " .. opt .. " build of " .. name .. " failed")
+  end
+  print("built " .. name .. " --opt=" .. opt .. ": " .. r.ms .. " ms")
+end
+
+-- The built command `name` of `opt`, by its real path.
+function built_js(who, name, opt)
+  local exe = js_out_dir(opt) .. "/" .. name
+  if not exists(exe) then fail(who .. ": no " .. name .. " built for --opt=" .. opt .. ": run without build=0") end
+  return real(exe)
+end
