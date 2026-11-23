@@ -67,7 +67,9 @@ console.log(new Point(1, 2));
 ` },
 ];
 
-export const SAMPLES = [...CANVAS_SAMPLES, ...CONSOLE_SAMPLES];
+// A console sample draws nothing, so the page hides the canvas for it and its
+// output sits at the top of the column.
+export const SAMPLES = [...CANVAS_SAMPLES, ...CONSOLE_SAMPLES.map((s) => ({ ...s, console: true }))];
 
 const SPEEDS = [
   { label: "Full speed", marks: 0 },
@@ -118,6 +120,7 @@ const CSS = `
   canvas { display: block; width: 100%; max-width: ${SIZE}px; aspect-ratio: 1; border: 1px solid var(--line);
            border-radius: 4px; touch-action: none; }
   canvas:focus { outline: 2px solid var(--dim); outline-offset: 2px; }
+  canvas[hidden] { display: none; }
   .status { color: var(--dim); font-size: 13px; }
   .status.bad { color: var(--bad); }
   dl { display: grid; grid-template-columns: minmax(0, max-content) minmax(0, 1fr); gap: 4px 16px; margin: 0; font-size: 14px; }
@@ -146,13 +149,14 @@ export function buildPage(runner, env = window) {
   const editor = element("textarea", { spellcheck: false, value: SAMPLES[0].source });
   const canvas = element("canvas", { width: SIZE, height: SIZE, tabIndex: 0 });
   const output = element("pre", { textContent: "" });
+  const canvasLabel = element("label", { textContent: "Canvas, 400 by 400" });
   const wrap = element("div", { className: "wrap" }, [
     element("h1", { textContent: "JavaScript, in Roc" }),
     element("p", { className: "sub", textContent: "A subset of JavaScript run by a tree-walking interpreter written in Roc. Its console.log prints what node prints; the canvas builtins below are this page's own, named after p5.js's but not p5.js." }),
     element("div", { className: "bar" }, [picker, runButton, stopButton, pauseButton, stepButton, speed, status]),
     element("div", { className: "cols" }, [
       element("div", { className: "col" }, [element("label", { textContent: "Program" }), editor]),
-      element("div", { className: "col" }, [element("label", { textContent: "Canvas, 400 by 400" }), canvas, output]),
+      element("div", { className: "col" }, [canvasLabel, canvas, output]),
     ]),
     element("h2", { textContent: "The canvas builtins" }),
     element("dl", {}, BUILTINS.flatMap(([call, what]) => [element("dt", { textContent: call }), element("dd", { textContent: what })])),
@@ -163,6 +167,13 @@ export function buildPage(runner, env = window) {
   const ctx = canvas.getContext("2d");
   const painter = makePainter(ctx);
   painter.reset();
+
+  // A console sample shows its output where the canvas would be.
+  function showKindOf(sample) {
+    canvas.hidden = Boolean(sample.console);
+    canvasLabel.textContent = sample.console ? "Console" : "Canvas, 400 by 400";
+  }
+  showKindOf(SAMPLES[0]);
 
   // The input the program reads: the pointer over the canvas, in its own
   // 400-by-400 units, and the keys held while the canvas has the focus.
@@ -297,6 +308,7 @@ export function buildPage(runner, env = window) {
   picker.addEventListener("change", () => {
     stop();
     editor.value = SAMPLES[Number(picker.value)].source;
+    showKindOf(SAMPLES[Number(picker.value)]);
     output.textContent = "";
     painter.reset();
     say("", false);
