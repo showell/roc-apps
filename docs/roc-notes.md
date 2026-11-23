@@ -92,35 +92,81 @@ anyone writing or emitting Roc in this repository. How the Roc is *written*
 - Building a list by concatenating onto a recursion is quadratic. An
   accumulator loop with `List.append` is linear; `List.concat(acc, [x])` is
   about 50 times slower than `List.append`.
-- **A write is in place only when nothing else refers to the list**, and
-  nothing reports a copy. The shapes that copy:
-  1. `List.set(l, i, v) ?? l`: the fallback names `l`, so every store copies.
-     Write `?? crash("...")`; reads before the store are free.
-  2. `List.update(xs, i, f)`: the element handed to `f` is not unique, so a
-     nested list is copied per write. Take it out with `List.replace`, write
-     it, put it back.
-  3. A value threaded down a recursion and handed back makes the caller's next
-     store copy. A recursive function that
-     only reads the value does not.
-  4. A field taken out in one statement and written back in another. Take it
-     out, write it and put it back inside the record update:
-     `{ ..m, devices: Devices.poke_into(m.devices, a, v) }`.
+- **A write is in place only when nothing else refers to the value**, and
+  nothing reports a copy. RC1 infers which uses only borrow, and in the
+  release build (`--opt=speed`) proves some values unique and drops the
+  run-time check; none of that leaves the compiler. A copy allocates the
+  whole list (or dict) again on every write, so its time grows with the
+  size of what is copied.
+- **Every copy on RC1 is a use after a consume:** a write (`List.set`,
+  `append`, `Dict.insert`, ...) takes the value, and something still reads
+  the old one after it. Each shape below is a loop in
+  `tools/copy_shapes/CopyShapes.roc`, named here in brackets, and `shale
+  check.shale copy_shapes=1` holds what one more write allocates in the
+  release, dev and boxy (`--opt=speed --specialize=no`) builds
+  (`tools/copy_shapes/expected*.txt`).
 
-  On RC1 three shapes the old nightlies copied no longer do, each measured on
+  **Copies in every build:**
+  1. The old list read after its write: `ys = xs.set(j, v) ?? xs`, then
+     `xs.get(j)` (`get-after-set`). Read first (`set-restored`).
+  2. A closure over the list called after the write (`closure-called-after`).
+     Called inside the write's own arguments, it is free
+     (`closure-called-before`).
+  3. An inner list got, written and set back while the outer list still holds
+     it (`nested-get-then-set`). `List.update` hands the element over unshared
+     and is free (`nested-update`).
+  4. The old dict read after an insert, even its `len` (`dict-len-after-insert`).
+  5. A value got from a dict, written and inserted back while the dict still
+     holds it (`dict-get-then-insert`). Take it out first, `get` then
+     `remove` (`dict-take-then-insert`): free in the release and dev builds,
+     three allocations a write in the boxy build.
+
+  **Copies in the dev and boxy builds only,** where a helper stays a call that
+  owns its arguments (the release build specializes it first):
+  6. A helper that reads its list after writing it,
+     `(xs.set(j, v) ?? xs, xs.len())` (`helper-len-after-set`). Read first
+     (`helper-len-before-set`).
+  7. A helper that reads the whole record inside the write of its field,
+     `{ ..d, scr: d.scr.set(kept(d, j), v) ?? crash ... }`
+     (`helper-reads-record`, BASIC's `Devices.poked`). Bind the index on the
+     line before (`index-bound-before`).
+  8. `?? xs` on a list whose entries hold a reference count, a list of
+     strings (`str-list-restored`, and `host-args-list` on the command line's
+     list). `?? crash` is free in every build (`str-list-or-crash`).
+
+  **No longer copies on RC1** (the old nightlies copied each):
+  - `List.set(l, i, v) ?? l` on a list of numbers (`set-restored`; also
+    `?? []`, `set-or-empty`, and `?? crash`, `set-or-crash`): the compiler
+    hands `l` back on the error path. Write `?? crash "..."` all the same:
+    the fallback is a placeholder (roc-style.md, "Errors and failure"), and
+    shape 8 copies.
+  - `List.update` on a nested list (`nested-update`).
+  - A field taken out in one statement and written back in another
+    (`field-taken-out-first`).
+  - A helper that hands the list back (`helper-returns-list`), and a list
+    threaded down a recursion and back, which every shape here is.
+  - The list's length read after its write within one function, in a record
+    built again or not (`record-len-after-set`, `append-len-after`). A `get`
+    after the write copies (shape 1); the compiler doesn't say why `len`
+    differs.
+
+  Three more shapes the old nightlies copied don't on RC1, each measured on
   BASIC's controls in both builds: a helper given a record with a value read
   from it (BASIC's `enter_for`), a run loop that hands its `var` record to the
   step itself, and a statement's body written in a `match` arm rather than a
   function of its own.
 - **To tell copying from writing,** hold the number of writes fixed and vary the
   size of what is written into: flat is in place, linear is a copy. One number
-  says nothing. `tools/alloc_ladder.shale` holds an interpreter's controls to
-  what one more iteration allocates, run at two sizes, by counting `roc_alloc`
+  says nothing. `tools/alloc_ladder.shale` holds a program's controls to what
+  one more iteration allocates, run at two sizes, by counting `roc_alloc`
   calls with breakpoints; on RC1's default platform `strace` no longer sees an
-  allocation.
+  allocation. A new copying shape gets a loop in CopyShapes.roc and a line in
+  its expected files.
 - Updating one field copies the record around it, inline sub-records included.
   A large part behind a list of one costs nothing to carry. A `Box` carried
   untouched costs the same, but every write re-boxes, one allocation per write,
   so it suits parts never written after they are made.
 - The dev backend's code is mostly stack moves (86% of the instructions in one
-  hot function). LLVM (`--opt=speed`) ran BASIC's slowest program 2.7 times
-  faster, building in 1,420 s where the dev backend takes 6 s.
+  hot function). LLVM (`--opt=speed`) runs BASIC's programs about ten times
+  faster (8 to 18 times on `basic/pathological/`, 2026-11-23), and BASIC's
+  release build compiles in 60 to 90 s where the dev build takes a few.

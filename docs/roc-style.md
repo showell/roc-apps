@@ -751,8 +751,9 @@ is the base; these rules sharpen it.
   means; it flows on and shows up far away as a wrong answer. A number
   kept to mean "none" (`no_frames = 1e9`) is the same thing. Where the
   index can't be wrong, crash with a reason; where it can, tag the absence
-  (no optionals, above). On a list being written the placeholder also
-  copies the list (`List.set(l, i, v) ?? l`, CLAUDE.md §10).
+  (no optionals, above). On a list of strings being written, the
+  placeholder `List.set(l, i, v) ?? l` also copies the list in the dev
+  build (CLAUDE.md §10).
 
   ```roc
   # Not this: seat 4 is no seat.

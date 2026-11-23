@@ -481,8 +481,8 @@ rule as a change of its own.
 **The problem.** `roc build` defaults to `--opt=speed`, which runs the code
 through LLVM. That is the right choice for a release and the wrong one for
 everything else. The chat app took 5 min 21 s to build that way and 0.9 s on
-the dev backend. BASIC's LLVM build took 1,420 s where the dev backend
-took 6 s. An agent that keeps the default waits minutes per iteration and
+the dev backend. BASIC's LLVM build takes 60 to 90 s where the dev
+backend takes a few. An agent that keeps the default waits minutes per iteration and
 usually blames the program, or Roc, rather than the flag.
 
 **Our answer.** Use the dev backend in every inner loop and LLVM only for a
@@ -502,7 +502,7 @@ check the defaults first.
   app is suspicious. Check which backend ran before anything else;
   `roc check --timings` shows how long each compiler phase took.
 - **Measure speed on the release build, never in the fix loop.** LLVM's
-  code is much faster (2.7 times on BASIC's slowest program), and the dev
+  code is much faster (about ten times on BASIC's programs), and the dev
   backend's code is mostly stack moves, so a dev-build timing says little
   about the program (`docs/roc-notes.md`, "Speed and copying").
 - **Roc's cache grows with every distinct compile.** `~/.cache/roc` is
@@ -524,13 +524,20 @@ shape of the cost, not one number. The list of shapes and the measurements
 behind them live in roc-apps `docs/roc-notes.md`, "Speed and copying".
 Read it before writing a loop that stores into a list or a record.
 
-- **Some shapes copy; learn them from the notes.** The commonest is
-  `List.set(l, i, v) ?? l`: the fallback names `l`, so every store copies.
-  Write `?? crash "..."` instead (`crash` is a keyword; `roc fmt` turns
-  `crash("...")` into `crash ("...")`). The `?? l` is a placeholder as well as
-  a copy, an answer nobody meant (`docs/roc-style.md`, "Errors and
-  failure"). The others (`List.update` on a nested list, a value threaded down a recursion, a field taken out and written
-  back in separate statements) are in the notes.
+- **Every copy is a use after a consume; learn the shapes from the
+  notes.** A write (`List.set`, `append`, `Dict.insert`) takes its value,
+  and anything that reads the old one after it forces a copy of the whole
+  list: a `get` of the old list, a closure over it called later, the dict
+  a value was got from, a helper that reads the record whose field is being
+  written. Read before the write, or take the value out first. Some copies
+  happen only in the dev and boxy builds, at a helper's boundary, so a
+  dev-build test can see a copy the release build doesn't make.
+- **`?? l` is no longer the copy it was, but write `?? crash "..."`.** On
+  RC1 `List.set(l, i, v) ?? l` writes in place on a list of numbers, yet
+  still copies a list of strings on every write in the dev build, and the
+  `?? l` is a placeholder, an answer nobody meant (`docs/roc-style.md`,
+  "Errors and failure"). `crash` is a keyword; `roc fmt` turns
+  `crash("...")` into `crash ("...")`.
 - **Append into an accumulator.** Build a list with `List.append` in an
   accumulator loop, not by concatenating onto a recursion or with
   `List.concat(acc, [x])`, which the notes measure at about 50 times
@@ -541,15 +548,18 @@ Read it before writing a loop that stores into a list or a record.
   `tools/alloc_ladder.shale` runs each of an interpreter's controls at two
   sizes and holds what one more iteration allocates to an expected count
   (BASIC's controls are `basic/controls.shale`, and `shale check.shale
-  basic=1` runs them).
+  basic=1` runs them). Each shape the notes name is a loop in
+  `tools/copy_shapes/`, held the same way by `shale check.shale
+  copy_shapes=1`.
 - **An experiment or a benchmark calls the code it measures.** A copy of
   production's expressions measures the copy: it drifts from the real code
   the day either changes, and its numbers stop meaning anything. Where the
   experiment needs a piece the module keeps private, expose that piece and
   call it.
-- **When you find a new copying shape, add a control.** Put a small
-  program that shows it beside the interpreter's controls, held to its
-  count, and add the shape to the notes.
+- **When you find a new copying shape, add a control.** Put a loop that
+  shows it in `tools/copy_shapes/CopyShapes.roc` (or a program beside an
+  interpreter's controls), held to its count, and add the shape to the
+  notes.
 - **A record update copies the record around the field.** Keep a large,
   rarely written part behind a list of one or a `Box`, not inline (the
   notes, same section, say which suits what).
