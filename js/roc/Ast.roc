@@ -292,6 +292,7 @@ Ast :: [].{
 		Return(Ast.Expression),
 		Throw(Ast.Expression, Ast.Where),
 		Try(Ast.TryStatement),
+		Switch(Ast.SwitchStatement),
 		Break,
 		Continue,
 		Empty,
@@ -312,6 +313,17 @@ Ast :: [].{
 		capture : Ast.Capture,
 		at : Ast.Where,
 	}
+
+	## A `switch`: the value it compares, its cases in order, and the one
+	## scope all their statements share.
+	SwitchStatement : {
+		discriminant : Ast.Expression,
+		cases : List(Ast.Case),
+		scoping : Ast.Scoping,
+		capture : Ast.Capture,
+	}
+
+	Case : { test : [Matches(Ast.Expression), Otherwise], statements : List(Ast.Statement) }
 
 	Program : Ast.Block
 }
