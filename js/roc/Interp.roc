@@ -1187,6 +1187,7 @@ Interp :: [].{
 				Interp.normal(Interp.with_thrown(after, value, site))
 			}
 			Try(tried) => Interp.execute_try!(host, machine, tried)
+			Switch(switch) => Interp.execute_switch!(host, machine, switch)
 			Break => { machine: machine, flow: Broke }
 			Continue => { machine: machine, flow: Continued }
 			Empty => Interp.normal(machine)
@@ -1225,6 +1226,73 @@ Interp :: [].{
 				}
 			}
 		}
+	}
+
+	# A `switch`: the value compared, by `===`, with each case's in order in
+	# the switch's own scope, and the statements run from the first case that
+	# matches (or the `default`, where none does) to the end, falling through
+	# the cases after it, until a `break` leaves.
+	execute_switch! : Canvas.Host, Interp.Machine, Ast.SwitchStatement => Interp.Done
+	execute_switch! = |host, machine, switch| {
+		{ machine: compared, value: subject } = Interp.evaluate!(host, machine, switch.discriminant)
+		outer = compared.scope
+		entered = match switch.scoping {
+			Scoped(names) => Interp.with_functions_hoisted(
+				Interp.with_scope_entered(compared, Within(outer), names.len()),
+				switch.cases.join_map(|each| each.statements),
+			)
+			Unscoped => compared
+		}
+		id = entered.scope
+		var $s = entered
+		var $start = NoCase
+		var $default = NoCase
+		var $i = 0
+		for each in switch.cases {
+			if $start == NoCase and Interp.is_running($s) {
+				match each.test {
+					Matches(expression) => {
+						{ machine: tested, value } = Interp.evaluate!(host, $s, expression)
+						$s = tested
+						if Interp.is_strictly_equal(subject, value) {
+							$start = At($i)
+						}
+					}
+					Otherwise => {
+						$default = At($i)
+					}
+				}
+			}
+			$i = $i + 1
+		}
+		first = match $start {
+			At(index) => At(index)
+			NoCase => $default
+		}
+		var $flow = Normal
+		match first {
+			At(from) => {
+				var $k = 0
+				for each in switch.cases {
+					if $k >= from and $flow == Normal and Interp.is_running($s) {
+						{ machine: after, flow } = Interp.execute_list!(host, $s, each.statements)
+						$s = after
+						$flow = flow
+					}
+					$k = $k + 1
+				}
+			}
+			NoCase => {}
+		}
+		left = match $flow {
+			Broke => Normal
+			other => other
+		}
+		done = match switch.scoping {
+			Scoped(_) => Interp.out_of_scope($s, id, outer, switch.capture)
+			Unscoped => $s
+		}
+		{ machine: done, flow: left }
 	}
 
 	execute_catch! : Canvas.Host, Interp.Machine, Ast.CatchClause, Heap.Value => Interp.Done

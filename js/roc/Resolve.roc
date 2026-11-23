@@ -173,6 +173,25 @@ Resolve :: [].{
 			BlockStatement(tree_block) => BlockStatement(Resolve.block(scopes, tree_block))
 			Return(tree) => Return(Resolve.expression(scopes, tree))
 			Throw(tree, site) => Throw(Resolve.expression(scopes, tree), site)
+			Switch(switch) => {
+				inner = match switch.scoping {
+					Scoped(names) => scopes.append(names)
+					Unscoped => scopes
+				}
+				Switch({
+					..switch,
+					discriminant: Resolve.expression(scopes, switch.discriminant),
+					cases: switch.cases.map(
+						|each| {
+							test: match each.test {
+								Matches(tree) => Matches(Resolve.expression(inner, tree))
+								Otherwise => Otherwise
+							},
+							statements: each.statements.map(|listed| Resolve.statement(inner, listed)),
+						},
+					),
+				})
+			}
 			Try({ block: tried, handler, finalizer }) => Try({
 				block: Resolve.block(scopes, tried),
 				handler: match handler {

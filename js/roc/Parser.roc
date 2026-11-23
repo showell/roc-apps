@@ -277,7 +277,6 @@ Parser :: [].{
 		"this" => Ok("unsupported: `this`")
 		"class" => Ok("unsupported: classes")
 		"var" => Ok("unsupported: `var` (use `let` or `const`)")
-		"switch" => Ok("unsupported: `switch`")
 		"do" => Ok("unsupported: `do ... while`")
 		"delete" => Ok("unsupported: `delete`")
 		"void" => Ok("unsupported: `void`")
@@ -362,6 +361,7 @@ Parser :: [].{
 				}
 			}
 			Name("try") => Parser.try_statement(parser)
+			Name("switch") => Parser.switch_statement(parser)
 			Name("throw") => {
 				onward = Parser.advance(parser)
 				if Parser.token(onward).before == NewLine {
@@ -403,6 +403,61 @@ Parser :: [].{
 		} else {
 			Parser.statement(parser)
 		}
+
+	switch_statement : Parser.State -> Try(Parser.Parsed(Ast.Statement), Lexer.Fault)
+	switch_statement = |parser| {
+		before = parser.functions
+		onward = Parser.expect_punct(Parser.advance(parser), "(")?
+		discriminant = Parser.expression(onward)?
+		closed = Parser.expect_punct(discriminant.parser, ")")?
+		var $at = Parser.expect_punct(closed, "{")?
+		var $cases = []
+		var $statements = []
+		var $defaults = 0
+		while !Parser.is_punct($at, "}") {
+			test = if Parser.is_word($at, "case") {
+				parsed = Parser.expression(Parser.advance($at))?
+				{ parser: Parser.expect_punct(parsed.parser, ":")?, value: Matches(parsed.value) }
+			} else if Parser.is_word($at, "default") {
+				if $defaults > 0 {
+					return Err(
+						Parser.fault_here($at, "SyntaxError: More than one default clause in switch statement"),
+					)
+				}
+				$defaults = $defaults + 1
+				{ parser: Parser.expect_punct(Parser.advance($at), ":")?, value: Otherwise }
+			} else {
+				return Err(
+					Parser.fault_here(
+						$at,
+						"expected `case`, `default` or `}` in a `switch`, found ${Parser.token_text(Parser.token($at).kind)}",
+					),
+				)
+			}
+			var $body = []
+			var $p = test.parser
+			while !Parser.is_punct($p, "}") and !Parser.is_word($p, "case") and !Parser.is_word($p, "default") {
+				if Parser.is_end($p) {
+					return Err(Parser.fault_here($p, "a `switch` that never ends (expected `}`)"))
+				}
+				parsed = Parser.statement($p)?
+				$body = $body.append(parsed.value)
+				$p = parsed.parser
+			}
+			$cases = $cases.append({ test: test.value, statements: $body })
+			$statements = List.concat($statements, $body)
+			$at = $p
+		}
+		Ok({
+			parser: Parser.advance($at),
+			value: Switch({
+				discriminant: discriminant.value,
+				cases: $cases,
+				scoping: Parser.scoping_of($statements)?,
+				capture: Parser.capture_since($at, before),
+			}),
+		})
+	}
 
 	try_statement : Parser.State -> Try(Parser.Parsed(Ast.Statement), Lexer.Fault)
 	try_statement = |parser| {
