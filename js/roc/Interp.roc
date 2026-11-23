@@ -1800,6 +1800,7 @@ Interp :: [].{
 					machine,
 					"unsupported: a function's properties (`${key}`)${Interp.line_note(site)}",
 				)
+				Taken => crash "Interp.property: no cell is out being written while a property is read"
 			}
 			Text(text) => {
 				if key == "length" {
@@ -1902,6 +1903,7 @@ Interp :: [].{
 			Fun(_) => FunctionKind
 			Builtin(_, _) => BuiltinKind
 			Namespace(_, _) => BuiltinKind
+			Taken => crash "Interp.kind_of: no cell is out being written while another is asked about"
 		}
 
 	# A property or an item written: an object's property, an array's item
