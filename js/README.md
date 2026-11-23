@@ -1,15 +1,17 @@
 # JavaScript, in Roc
 
 A subset of JavaScript run by a tree-walking interpreter written in Roc, a
-web page that runs it, and a corpus that holds it to node.
+web playground where a program draws on a canvas as it runs, and a corpus
+that holds the language to node.
 
 The code here was written by AI coding agents (Claude), with human
 supervision.
 
 **Status (2026-11-23): a first version.** 35 of 35 corpus programs print
 what node 22 prints, byte for byte, and 32 of 32 programs outside the subset
-are refused with the message they must give. The page builds into the dev
-channel; it is not published.
+are refused with the message they must give. Six canvas samples are held to
+their logs of effects. The page builds into the dev channel; it is not
+published.
 
 ## The subset
 
@@ -58,6 +60,62 @@ number (a coercion) (line 2)`). A position-counting string method on
 non-ASCII text is one of these: JavaScript counts UTF-16 units, and the
 interpreter's strings are UTF-8.
 
+## The canvas playground
+
+The page's programs have a few builtins of our own beside JavaScript's: the
+canvas library (`Ast.Library`'s `Canvas`). They take p5.js's names, but they
+are a small set of our own with no promise of p5.js's behaviour, and the
+page lists them:
+
+- **Shapes:** `background(color)`, `fill(color)`, `noFill()`,
+  `stroke(color, width)`, `noStroke()`, `line(x1, y1, x2, y2)`,
+  `rect(x, y, w, h)`, `circle(x, y, r)`, `ellipse(x, y, rx, ry)`,
+  `polygon([[x, y], ...])` and `text(words, x, y, size)`, on a 400 by 400
+  canvas with its origin at the top left. Colors are CSS color strings.
+- **A turtle:** `forward(n)`, `back(n)`, `turn(degrees)` (clockwise),
+  `penUp()`, `penDown()` and `goto(x, y)`. It starts in the middle, facing
+  up; each move with the pen down is one `line`.
+- **Input:** `mouseX()`, `mouseY()` and `keyIsDown(key)`.
+- **A frame loop:** a program that declares `function frame(t)` has it
+  called 30 times a second, `t` being the frame's number over 30.
+
+**Drawing is an effect, made when the program calls for it.** The
+interpreter hands each effect to its host (`Canvas.Host`, a record of three
+effectful functions: `emit!`, `pointer!` and `key!`) at the moment the
+program makes it, in program order, `console.log` included. So a draw, a
+log and another draw reach the host in that order, and a program that
+stops halfway has drawn what it drew before the stop. A read is asked of
+the host when the program asks for it.
+
+Each effect has one written form, a line (`Canvas.line_of`), and there are
+three hosts:
+
+- **The page's** (js/wasm, `JsApp.roc`): the platform's hosted functions
+  (`js/wasm/platform/Host.roc`) call into the page's JavaScript while the
+  Roc call runs. At full speed `js_page.js` paints each line as it arrives;
+  in slow motion it holds a call's lines in order and shows them one or ten
+  marks at a time, since a wasm call can't give the browser a turn halfway.
+  The next frame is called only once they are all shown.
+- **The recording host,** `js-canvas` (`JsCanvas.roc`): every effect and
+  every read a line, with a line `frame <n> <t>` before each frame. The
+  pointer rests at the middle, and an argument says which keys are down in
+  each frame.
+- **js-run's and js-count's,** on the core library: a log is printed as it
+  is made, and nothing else can happen.
+
+**A canvas builtin isn't node's, so the samples have an oracle of their
+own:** `js/canvas.shale` holds each sample in `js/canvas/` to its golden log
+(`<name>.log`) for the frames `js/canvas/goldens.txt` names, and
+`page_check.mjs` holds the wasm to the same logs. A log moves only by
+`freeze=<name>`, with every moved line explained in the commit.
+
+**The rails.** The program before its first frame may run 3,000,000
+statements and make 20,000 effects, and each frame 300,000 and 20,000
+(`Canvas.run_limits`, `Canvas.frame_limits`); past either, the run stops with
+a message that names the budget. The program's own scope outlives its last
+statement (`Interp.start!`), as a page keeps a script's, so each frame sees
+the variables it declared.
+
 ## Laying it out
 
 The interpreter is `js/roc/`: `Lexer.roc` makes tokens with their lines and
@@ -66,9 +124,11 @@ laying out each scope's names, `Resolve.roc` places every name read or
 written in those layouts before the run, `Interp.roc` walks it, `Heap.roc` holds what JavaScript shares by
 reference, `Inspect.roc` is console.log's formatting (node's `util.inspect`,
 function for function), and `NumberText.roc` writes a number as `String(n)`
-does. `JsRun.roc` is `js-run`, the command; `JsCount.roc` is `js-count`, the
-same run followed by its counts. `JsApp.roc` is the page's wasm module, on
-the platform and host in `js/wasm/`; `js/web/` is the page.
+does. `Canvas.roc` is the canvas library: its effects, their written form,
+the turtle and the host's type. `JsRun.roc` is `js-run`, the command;
+`JsCount.roc` is `js-count`, the same run followed by its counts;
+`JsCanvas.roc` is `js-canvas`, the recording host. `JsApp.roc` is the page's
+wasm module, on the platform and host in `js/wasm/`; `js/web/` is the page.
 
 ## Why the heap is one value
 
@@ -113,6 +173,12 @@ shapes that keep it unique, each with a comment where it is used:
   string where the variable holds it** (`Interp.appended_name`), so a
   string built one piece at a time is not copied per piece.
 - **No closure captures the machine;** a loop over it is a `var $st` loop.
+- **The host is an argument of its own, never a field of the machine.**
+  Following BASIC's workhorse pattern, the walk's functions take several
+  arguments (`host`, then the machine, then the rest) where one record
+  would do: a record holding the machine is a second reference to the heap
+  for as long as it lives. The host refers to nothing of the machine, so
+  carrying it costs nothing.
 
 **A variable is read by its place, never by its name.** Each scope (a
 block that declares, a C-form `for`, a `for ... of` pass, a call) is made
@@ -181,7 +247,12 @@ linear: 59, 88 and 184 µs a store; 28, 35 and 86 µs a call; 22, 35 and
     shale check.shale js=1     # the controls in both builds, held to their expected counts
     shale js/bench.shale       # build both, then time js/bench/'s programs
     shale js/heaps.shale       # build js-count --opt=speed, then each program's cells, scopes and peak memory
+    shale js/canvas.shale      # build js-canvas, then hold every canvas sample to its log
     shale js/build.shale       # build the page into the dev channel, :9210/js/
+
+and, with the page built, to see it draw in headless Chromium:
+
+    node js/page_shots.mjs http://localhost:9210/js/ <dir> "turtle spiral" 1
 
 `js/oracle.shale` is a tier of `check.shale`. It builds `js-run` on the dev
 backend and runs each program in `js/tests/` through node and through
@@ -190,14 +261,18 @@ program in `js/tests/refused/` names in its first line (`// refused:
 <text>`) what `js-run`'s last line must say. Nothing is skipped: the run
 fails unless every program passes.
 
+`js/canvas.shale` is a tier of `check.shale` too.
+
 `js/build.shale` builds `JsApp.roc` into a wasm32 archive, links it with
-Zig 0.16 and `js/wasm/host.zig` into `js.wasm`, and replaces the page only
-after `js/page_check.mjs` passes. The check drives the page's own
-`js_runner.js` and `js_page.js` under node, and holds the wasm to node on
-every corpus program and refusal and on the page's samples. Unlike BASIC's
-host, this one needs no checkout of the Roc compiler's source: the Roc
-hands it its buffers and drops its transcripts, so the host never lays out
-a Roc list itself.
+Zig 0.16 and `js/wasm/host.zig` into `js.wasm`, writes `js_samples.js` from
+`js/canvas/`, and replaces the page only after `js/page_check.mjs` passes.
+The check drives the page's own `js_runner.js` and `js_page.js` under node:
+it holds the wasm to node on every corpus program and refusal, to the
+golden logs on every canvas sample, and runs every sample on the page, the
+turtle in slow motion too. Unlike BASIC's host, this one needs no checkout
+of the Roc compiler's source: the Roc hands it its buffers, takes back each
+line it emitted (`drop_bytes`) and keeps the run in one box, so the host
+never lays out a Roc list itself.
 
 `js/probes.shale` is a first look at what a write copies: each probe in
 `js/probes/` is timed at three sizes, and a write's cost that stays flat
@@ -207,9 +282,15 @@ across them is a write in place.
 
 - **`js-run` takes the program as an argument,** so a program is held to
   the kernel's limit on one argument (128 KiB).
-- **The page runs a program on the browser's main thread,** held to a
-  budget of 3,000,000 steps so a loop that never ends stops with a message
-  rather than freezing the tab.
+- **The page runs a program on the browser's main thread,** held to the
+  rails above so a loop that never ends stops with a message rather than
+  freezing the tab. js-canvas on the dev backend takes about 0.6 s of CPU
+  to run a frame out of its 300,000 steps, and 3.7 s for a program out of
+  its 3,000,000 (2026-11-23), so a frame near its budget slows the loop
+  well below 30 a second before it stops it.
+- **A turtle's trigonometry is exact only on the square headings,** so a
+  turtle that walks a square ends where it began; at any other heading its
+  positions carry a float's rounding, and the logs show it.
 - **A JavaScript call is several Roc calls deep,** so the interpreter
   reports a stack overflow at 400 nested calls, as node would much deeper,
   rather than overflow Roc's own stack.

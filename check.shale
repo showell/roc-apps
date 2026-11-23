@@ -37,7 +37,9 @@
 -- site/deploy_test.shale, the prod deploy's refusals before it reaches prod,
 -- which needs a shale with `run`'s `secret_args` and asks 1.1.1.1 for
 -- roc.lynrummy.com. And it runs js/oracle.shale, which grades the JavaScript
--- subset's interpreter against node on every program in js/tests/.
+-- subset's interpreter against node on every program in js/tests/, and
+-- js/canvas.shale, which holds each canvas sample in js/canvas/ to its
+-- golden log of effects.
 --
 -- `shale check.shale basic=1` is the BASIC tier instead, kept out of the
 -- default run for its time (about two and a half minutes, most of it the
@@ -195,6 +197,9 @@ function all()
   local js = run({"shale", "--root", ".", "js/oracle.shale"}, {timeout_ms = 600000, tail = 80, not_re = "^PASS "})
   print(trim(js.out))
   if js.code ~= 0 then push(failed, "the JavaScript subset against node") end
+  local canvas = run({"shale", "--root", ".", "js/canvas.shale"}, {timeout_ms = 600000, tail = 20, not_re = "^PASS "})
+  print(trim(canvas.out))
+  if canvas.code ~= 0 then push(failed, "the canvas samples against their logs") end
   local roc = pinned_roc("check")
   local files = roc_files(false)
   local fmt = {roc, "fmt", "--check"}
