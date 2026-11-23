@@ -38,13 +38,16 @@ Resolve :: [].{
 			}
 		}
 		match $found {
-			Undeclared => match (scopes.first() ?? crash "Resolve.slot: the builtins' names are the first scope").find_first_index(|number| number == name) {
+			Undeclared => match Resolve.builtin_names(scopes).find_first_index(|number| number == name) {
 				Ok(index) => Global(index)
 				Err(NotFound) => Undeclared
 			}
 			placed => placed
 		}
 	}
+
+	builtin_names : Resolve.Scopes -> List(Str)
+	builtin_names = |scopes| scopes.first() ?? crash "Resolve.builtin_names: Resolve.program puts the builtins' names first"
 
 	block : Resolve.Scopes, Ast.Block -> Ast.Block
 	block = |scopes, tree_block| {
