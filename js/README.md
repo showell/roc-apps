@@ -213,8 +213,8 @@ across them is a write in place.
 - **A JavaScript call is several Roc calls deep,** so the interpreter
   reports a stack overflow at 400 nested calls, as node would much deeper,
   rather than overflow Roc's own stack.
-- **Built on the dev backend,** `fib(22)` takes about 0.44 s of CPU, and
-  about 0.07 s in the release build, which takes a minute to compile
-  (`js/bench.shale`, 2026-11-23, a quiet box). The dev backend shows the
+- **Built on the dev backend,** `fib(22)` takes about 0.4 s of CPU, and
+  about 0.06 s in the release build, which takes a minute to compile
+  (`js/bench.shale`, 2026-11-23). The dev backend shows the
   code's shape, which is what the probes look at; a release build is for
   measuring speed.
