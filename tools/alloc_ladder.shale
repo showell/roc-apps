@@ -3,7 +3,7 @@
 -- iteration allocates, held to an expected file. It knows nothing of the
 -- interpreter: the caller builds it and hands this script a plan, a JSON
 -- file naming each control's two command lines. basic/controls.shale is
--- one caller.
+-- one caller, tools/copy_shapes/copy_shapes.shale another.
 --
 --   cd <roc-apps checkout> && shale tools/alloc_ladder.shale plan=<plan.json>
 --

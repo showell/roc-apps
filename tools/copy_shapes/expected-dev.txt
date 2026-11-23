@@ -1,0 +1,18 @@
+# The copy shapes in the dev build (--opt=dev).
+# Allocations and reallocations a write each shape is held to, and why
+# when either is not 0: `<shape> <allocs> <reallocs> <why>`. A
+# shape not listed here writes in place and is held to 0 and 0. Each copy
+# is one allocation of the whole list (1,000 entries) a write, and its time
+# grows with the list's size. Measured on Roc 0.1.0-RC1 by
+# tools/copy_shapes/copy_shapes.shale opt=dev; the shapes are
+# tools/copy_shapes/CopyShapes.roc's, and docs/roc-notes.md, "Speed and
+# copying", says what each shows.
+get-after-set 1 0 the old list read after its write: the write can't take it, so it copies
+closure-called-after 1 0 a closure holding the old list called after the write
+nested-get-then-set 1 0 the inner list got and written while the outer list still holds it
+dict-len-after-insert 1 0 the old dict's length read after the insert
+dict-get-then-insert 1 0 the list got from the dict and written while the dict still holds it
+helper-len-after-set 1 0 a helper reads its list after writing it: the dev and boxy builds keep the helper a call with an owned argument, where the release build specializes it
+helper-reads-record 1 0 a helper reads the whole record inside the write of its field (BASIC's Devices.poked), as helper-len-after-set
+str-list-restored 1 0 `?? xs` on a list of strings: the fallback is free only where the entries hold no reference count (str-list-or-crash, with `?? crash`, is free)
+host-args-list 1 0 str-list-restored on the command line's list

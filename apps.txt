@@ -50,3 +50,4 @@ fasttrack/web.roc
 glue/JsGlue.roc
 js/roc/JsApp.roc
 tools/color_code/main.roc
+tools/copy_shapes/CopyShapes.roc

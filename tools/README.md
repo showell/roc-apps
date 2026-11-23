@@ -23,6 +23,18 @@ The repository's own scripts, beside `check.shale` at its root.
   tools/quality.shale tier=full baseline=write` writes it, and a change that
   moves a count writes it again in the same commit. A stale key makes the
   next full run measure its apps again.
+- `copy_shapes/` holds each way of writing into a list, a record or a dict
+  that `docs/roc-notes.md`, "Speed and copying", names: `CopyShapes.roc`,
+  one small loop a shape, and `copy_shapes.shale`, which runs them on
+  `alloc_ladder.shale` and holds what one more write allocates to
+  `expected.txt` (the release build), `expected-dev.txt` and
+  `expected-boxy.txt` (`--specialize=no`). A shape that writes in place is
+  held to 0, one that copies to its count. `shale check.shale
+  copy_shapes=1` runs all three.
+- `alloc_ladder.shale` runs an interpreter's or a program's controls at two
+  sizes and holds what one more iteration allocates to an expected file,
+  counting `roc_alloc` calls with `count_allocs.c`'s breakpoints. Its
+  callers are `basic/controls.shale` and `copy_shapes/copy_shapes.shale`.
 - `measure_roc_builds.shale` times one repository's `roc check`, `roc
   build` and `roc test` on its old pin and on Roc 0.1.0_RC1, cold, warm and
   after a change to the root or to the most imported module, and appends

@@ -51,6 +51,13 @@
 -- build's allocations a pass to js/controls/expected.txt and the dev
 -- build's to expected-dev.txt.
 --
+-- `shale check.shale copy_shapes=1` is the copy shapes' tier, also kept out
+-- of the default run (about half a minute): tools/copy_shapes/copy_shapes.shale
+-- holds what one more write allocates in each way of writing into a list, a
+-- record or a dict to its expected file, in the release, dev and boxy
+-- (`--specialize=no`) builds, so docs/roc-notes.md, "Speed and copying",
+-- says only what they show.
+--
 -- A few places are left out, each for the reason beside it in EXCEPTIONS.
 -- Each is a debt, named here and nowhere else.
 --
@@ -237,7 +244,31 @@ function js_tier()
   print("check js=1: the JavaScript controls hold in both builds")
 end
 
+-- The copy shapes' tier: the release, dev and boxy builds, each held to its
+-- expected file.
+function copy_shapes_tier()
+  local failed = {}
+  for opt in {"speed", "dev", "boxy"} do
+    local r = run({"shale", "--root", ".", "tools/copy_shapes/copy_shapes.shale", "opt=" .. opt}, {timeout_ms = 1800000, tail = 60})
+    print(trim(r.out))
+    if r.code ~= 0 then push(failed, "the copy shapes, opt=" .. opt) end
+  end
+  if #failed > 0 then fail("check: " .. join(failed, ", ") .. " failed") end
+  print("check copy_shapes=1: the copy shapes hold in all three builds")
+end
+
 const PART = arg("part", "")
 const BASIC = arg("basic", false)
 const JS = arg("js", false)
-if BASIC then basic_tier() elseif JS then js_tier() elseif PART == "" then all() else part(tonumber(PART)) end
+const COPY_SHAPES = arg("copy_shapes", false)
+if BASIC then
+  basic_tier()
+elseif JS then
+  js_tier()
+elseif COPY_SHAPES then
+  copy_shapes_tier()
+elseif PART == "" then
+  all()
+else
+  part(tonumber(PART))
+end
