@@ -261,8 +261,13 @@ Resolve :: [].{
 			Undefined => Undefined
 			Name(name, _, site) => Name(name, Resolve.slot(scopes, name), site)
 			ArrayLit(items) => ArrayLit(items.map(|item| Resolve.element(scopes, item)))
-			ObjectLit(properties) => ObjectLit(
-				properties.map(|p| { ..p, value: Resolve.expression(scopes, p.value) }),
+			ObjectLit(parts) => ObjectLit(
+				parts.map(
+					|part| match part {
+						Field(p) => Field({ ..p, value: Resolve.expression(scopes, p.value) })
+						Spread(spread, site) => Spread(Resolve.expression(scopes, spread), site)
+					},
+				),
 			)
 			Unary(operator, left, site) => Unary(operator, Resolve.expression(scopes, left), site)
 			Binary(operator, left, right, site) => Binary(
@@ -305,6 +310,18 @@ Resolve :: [].{
 				site,
 			)
 			Function(definition) => Function(Box.box(Resolve.fun(scopes, definition.unbox())))
+			OptionalMember(object, key, site) => OptionalMember(Resolve.expression(scopes, object), key, site)
+			OptionalIndex(object, key, site) => OptionalIndex(
+				Resolve.expression(scopes, object),
+				Resolve.expression(scopes, key),
+				site,
+			)
+			OptionalCall(callee, arguments, site) => OptionalCall(
+				Resolve.expression(scopes, callee),
+				arguments.map(|argument| Resolve.element(scopes, argument)),
+				site,
+			)
+			Chain(chain) => Chain(Resolve.expression(scopes, chain))
 			New(callee, arguments, site) => New(
 				Resolve.expression(scopes, callee),
 				arguments.map(|argument| Resolve.element(scopes, argument)),

@@ -898,6 +898,10 @@ Interp :: [].{
 		Member(object, key, _) => "${Interp.source_text(object)}.${key}"
 		Index(object, key, _) => "${Interp.source_text(object)}[${Interp.source_text(key)}]"
 		Call(callee, _, _) => "${Interp.source_text(callee)}(...)"
+		OptionalMember(object, key, _) => "${Interp.source_text(object)}?.${key}"
+		OptionalIndex(object, key, _) => "${Interp.source_text(object)}?.[${Interp.source_text(key)}]"
+		OptionalCall(callee, _, _) => "${Interp.source_text(callee)}?.(...)"
+		Chain(chain) => Interp.source_text(chain)
 		Number(number) => NumberText.text_for(number)
 		Text(text) => "\"${text}\""
 		Boolean(truth) => if truth {
@@ -1724,13 +1728,31 @@ Interp :: [].{
 				{ machine: after, values } = Interp.evaluate_elements!(host, machine, items)
 				Interp.alloc(after, Array(values))
 			}
-			ObjectLit(properties) => {
+			ObjectLit(parts) => {
 				var $s = machine
 				var $made = []
-				for written in properties {
-					{ machine: after, value } = Interp.evaluate!(host, $s, written.value)
-					$s = after
-					$made = Heap.properties_with($made, written.key, value)
+				for part in parts {
+					match part {
+						Field(written) => {
+							{ machine: after, value } = Interp.evaluate!(host, $s, written.value)
+							$s = after
+							$made = Heap.properties_with($made, written.key, value)
+						}
+						Spread(expression, site) => {
+							{ machine: after, value } = Interp.evaluate!(host, $s, expression)
+							match Interp.spread_properties(after.cells, value) {
+								Ok(spread) => {
+									$s = after
+									for p in spread {
+										$made = Heap.properties_with($made, p.key, p.value)
+									}
+								}
+								Err(Unsupported(why)) => {
+									$s = Interp.with_fault(after, "${why}${Interp.line_note(site)}")
+								}
+							}
+						}
+					}
 				}
 				Interp.alloc($s, Object($made))
 			}
@@ -1745,12 +1767,7 @@ Interp :: [].{
 			}
 			Logical(operator, left, right) => {
 				{ machine: first, value: left_value } = Interp.evaluate!(host, machine, left)
-				decided = match operator {
-					And => !Interp.is_truthy(left_value)
-					Or => Interp.is_truthy(left_value)
-					Nullish => left_value != Null and left_value != Undefined
-				}
-				if decided {
+				if Interp.is_decided(operator, left_value) {
 					{ machine: first, value: left_value }
 				} else {
 					Interp.evaluate!(host, first, right)
@@ -1802,6 +1819,14 @@ Interp :: [].{
 				machine,
 				Fun({ fun: definition, scope: machine.scope }),
 			)
+			Chain(chain) => {
+				{ machine: after, link } = Interp.link!(host, machine, chain)
+				match link {
+					Reached(value) => { machine: after, value: value }
+					Short => { machine: after, value: Undefined }
+				}
+			}
+			OptionalMember(_, _, _) | OptionalIndex(_, _, _) | OptionalCall(_, _, _) => crash "Interp.evaluate!: Parser.call_or_member puts an optional link inside a Chain"
 			New(callee, arguments, site) => {
 				{ machine: first, value: maker } = Interp.evaluate!(host, machine, callee)
 				{ machine: second, values } = Interp.evaluate_elements!(host, first, arguments)
@@ -1821,6 +1846,161 @@ Interp :: [].{
 					},
 				)
 				{ machine: bound, value: value }
+			}
+		}
+
+	# Whether a logical operator settles on its left side, so the right side
+	# isn't evaluated.
+	is_decided : Ast.LogicalOperator, Heap.Value -> Bool
+	is_decided = |operator, left|
+		match operator {
+			And => !Interp.is_truthy(left)
+			Or => Interp.is_truthy(left)
+			Nullish => left != Null and left != Undefined
+		}
+
+	is_nullish : Heap.Value -> Bool
+	is_nullish = |subject| subject == Null or subject == Undefined
+
+	# The own properties `{...value}` spreads: an object's, in key order, an
+	# array's items by their indices, an ASCII string's characters; a value
+	# with none (`null`, a number, a function) spreads nothing.
+	spread_properties : List(Heap.Cell), Heap.Value -> Try(List(Heap.Property), [Unsupported(Str)])
+	spread_properties = |cells, subject|
+		match subject {
+			Reference(id) => match Heap.cell_at(cells, id) {
+				Object(properties) => Ok(Inspect.properties_in_key_order(properties))
+				Array(items) => Ok(Interp.indexed_properties(items))
+				_ => Ok([])
+			}
+			Text(text) => {
+				if Interp.is_ascii(text) {
+					Ok(Interp.indexed_properties(Interp.characters(text).map(|character| Text(character))))
+				} else {
+					Err(Unsupported("unsupported: spreading a string with non-ASCII text into an object"))
+				}
+			}
+			_ => Ok([])
+		}
+
+	indexed_properties : List(Heap.Value) -> List(Heap.Property)
+	indexed_properties = |items| items.map_with_index(|item, position| { key: position.to_str(), value: item })
+
+	# ---- optional chains -------------------------------------------------------
+
+	## A link of a chain reached and its value, or a link that found `null` or
+	## `undefined` where an optional link reads or calls, which ends the chain.
+	Linked : { machine : Interp.Machine, link : [Reached(Heap.Value), Short] }
+
+	reached : Interp.Got -> Interp.Linked
+	reached = |{ machine, value }| { machine: machine, link: Reached(value) }
+
+	# One link of a chain: its object's link first, then what it reads or
+	# calls, the chain ending where an optional link finds nothing.
+	link! : Canvas.Host, Interp.Machine, Ast.Expression => Interp.Linked
+	link! = |host, machine, tree|
+		match tree {
+			Member(object, key, site) | OptionalMember(object, key, site) => {
+				{ machine: after, link } = Interp.link!(host, machine, object)
+				match link {
+					Reached(holder) if Interp.is_optional_link(tree) and Interp.is_nullish(holder) => {
+						machine: after,
+						link: Short,
+					}
+					Reached(holder) => Interp.reached(Interp.property(after, holder, key, site))
+					Short => { machine: after, link: Short }
+				}
+			}
+			Index(object, key, site) | OptionalIndex(object, key, site) => {
+				{ machine: after, link } = Interp.link!(host, machine, object)
+				match link {
+					Reached(holder) if Interp.is_optional_link(tree) and Interp.is_nullish(holder) => {
+						machine: after,
+						link: Short,
+					}
+					Reached(holder) => {
+						{ machine: keyed, value: key_value } = Interp.evaluate!(host, after, key)
+						Interp.reached(Interp.indexed_value(keyed, holder, key_value, site))
+					}
+					Short => { machine: after, link: Short }
+				}
+			}
+			Call(callee, arguments, site) | OptionalCall(callee, arguments, site) => Interp.call_link!(
+				host,
+				machine,
+				{
+					callee: callee,
+					arguments: arguments,
+					optional: Interp.is_optional_link(tree),
+					at: site,
+				},
+			)
+			_ => Interp.reached(Interp.evaluate!(host, machine, tree))
+		}
+
+	is_optional_link : Ast.Expression -> Bool
+	is_optional_link = |tree|
+		match tree {
+			OptionalMember(_, _, _) | OptionalIndex(_, _, _) | OptionalCall(_, _, _) => True
+			_ => False
+		}
+
+	## A call in a chain: what it calls, its arguments, whether it is an
+	## optional call (`f?.()`), and where.
+	ChainCall : {
+		callee : Ast.Expression,
+		arguments : List(Ast.Element),
+		optional : Bool,
+		at : Ast.Where,
+	}
+
+	# A call in a chain. A method's object is the link before it, so `o?.f()`
+	# ends where `o` is nothing; an optional call ends where the function is.
+	call_link! : Canvas.Host, Interp.Machine, Interp.ChainCall => Interp.Linked
+	call_link! = |host, machine, { callee, arguments, optional, at: site }|
+		match callee {
+			Member(object, name, _) | OptionalMember(object, name, _) => {
+				{ machine: after, link } = Interp.link!(host, machine, object)
+				match link {
+					Reached(holder) if Interp.is_optional_link(callee) and Interp.is_nullish(holder) => {
+						machine: after,
+						link: Short,
+					}
+					Reached(holder) if optional => {
+						{ machine: read, value: function } = Interp.property(after, holder, name, site)
+						if Interp.is_nullish(function) {
+							{ machine: read, link: Short }
+						} else {
+							{ machine: called, values } = Interp.evaluate_elements!(host, read, arguments)
+							Interp.reached(Interp.call_written!(host, called, function, values, callee, site))
+						}
+					}
+					Reached(holder) => Interp.reached(
+						Interp.method_call!(
+							host,
+							after,
+							holder,
+							{
+								name: name,
+								arguments: arguments,
+								callee: callee,
+								at: site,
+							},
+						),
+					)
+					Short => { machine: after, link: Short }
+				}
+			}
+			_ => {
+				{ machine: after, link } = Interp.link!(host, machine, callee)
+				match link {
+					Reached(function) if optional and Interp.is_nullish(function) => { machine: after, link: Short }
+					Reached(function) => {
+						{ machine: called, values } = Interp.evaluate_elements!(host, after, arguments)
+						Interp.reached(Interp.call_written!(host, called, function, values, callee, site))
+					}
+					Short => { machine: after, link: Short }
+				}
 			}
 		}
 
@@ -2094,6 +2274,7 @@ Interp :: [].{
 		match operator {
 			Set => { machine: machine, value: new }
 			Combine(binary_operator) => Interp.binary(machine, binary_operator, old, new, site)
+			Logically(_) => { machine: machine, value: new }
 		}
 	}
 
@@ -2107,7 +2288,60 @@ Interp :: [].{
 	}
 
 	evaluate_assign! : Canvas.Host, Interp.Machine, Interp.Assignment => Interp.Got
-	evaluate_assign! = |host, machine, assignment| {
+	evaluate_assign! = |host, machine, assignment|
+		match assignment.operator {
+			Logically(logical) => Interp.evaluate_logical_assign!(host, machine, assignment, logical)
+			_ => Interp.evaluate_written_assign!(host, machine, assignment)
+		}
+
+	# `a ??= b`, `a ||= b` and `a &&= b`: the target read, then written with
+	# `b`'s value only when the operator doesn't settle on what it read; `b`
+	# isn't evaluated otherwise.
+	evaluate_logical_assign! : Canvas.Host, Interp.Machine, Interp.Assignment, Ast.LogicalOperator => Interp.Got
+	evaluate_logical_assign! = |host, machine, assignment, logical| {
+		{
+			target,
+			operator: _,
+			value: expression,
+			at: site,
+		} = assignment
+		match target {
+			ToName(name, slot, at) => {
+				{ machine: read, value: old } = Interp.evaluate_name(machine, name, slot, at)
+				if !Interp.is_running(read) or Interp.is_decided(logical, old) {
+					{ machine: read, value: old }
+				} else {
+					{ machine: after, value } = Interp.evaluate!(host, read, expression)
+					Interp.assigned_name(after, value, name, slot, at)
+				}
+			}
+			ToMember(object, key) => {
+				{ machine: first, value: holder } = Interp.evaluate!(host, machine, object)
+				{ machine: read, value: old } = Interp.property(first, holder, key, site)
+				if !Interp.is_running(read) or Interp.is_decided(logical, old) {
+					{ machine: read, value: old }
+				} else {
+					{ machine: after, value } = Interp.evaluate!(host, read, expression)
+					Interp.with_stored(after, holder, Text(key), value, site)
+				}
+			}
+			ToIndex(object, key) => {
+				{ machine: first, value: holder } = Interp.evaluate!(host, machine, object)
+				{ machine: second, value: key_value } = Interp.evaluate!(host, first, key)
+				{ machine: read, value: old } = Interp.indexed_value(second, holder, key_value, site)
+				if !Interp.is_running(read) or Interp.is_decided(logical, old) {
+					{ machine: read, value: old }
+				} else {
+					{ machine: after, value } = Interp.evaluate!(host, read, expression)
+					Interp.with_stored(after, holder, key_value, value, site)
+				}
+			}
+		}
+	}
+
+	# `=` and the compound assignments.
+	evaluate_written_assign! : Canvas.Host, Interp.Machine, Interp.Assignment => Interp.Got
+	evaluate_written_assign! = |host, machine, assignment| {
 		{
 			target,
 			operator,
@@ -2151,7 +2385,7 @@ Interp :: [].{
 				{ machine: first, value: holder } = Interp.evaluate!(host, machine, object)
 				{ machine: second, value: old } = match operator {
 					Set => { machine: first, value: Undefined }
-					Combine(_) => Interp.property(first, holder, key, site)
+					_ => Interp.property(first, holder, key, site)
 				}
 				{ machine: third, value } = Interp.evaluate!(host, second, expression)
 				{ machine: made, value: result } = Interp.combination(
@@ -2173,7 +2407,7 @@ Interp :: [].{
 				{ machine: second, value: key_value } = Interp.evaluate!(host, first, key)
 				{ machine: third, value: old } = match operator {
 					Set => { machine: second, value: Undefined }
-					Combine(_) => Interp.indexed_value(second, holder, key_value, site)
+					_ => Interp.indexed_value(second, holder, key_value, site)
 				}
 				{ machine: fourth, value } = Interp.evaluate!(host, third, expression)
 				{ machine: made, value: result } = Interp.combination(
@@ -2251,7 +2485,12 @@ Interp :: [].{
 		Name(_, _, _) => True
 		Template(_, parts) => parts.all(Interp.is_pure)
 		ArrayLit(items) => items.all(Interp.is_pure_element)
-		ObjectLit(properties) => properties.all(|parent| Interp.is_pure(parent.value))
+		ObjectLit(parts) => parts.all(
+			|part| match part {
+				Field(p) => Interp.is_pure(p.value)
+				Spread(spread, _) => Interp.is_pure(spread)
+			},
+		)
 		Unary(_, left, _) => Interp.is_pure(left)
 		Binary(_, left, right, _) => Interp.is_pure(left) and Interp.is_pure(right)
 		Logical(_, left, right) => Interp.is_pure(left) and Interp.is_pure(right)
@@ -2268,6 +2507,10 @@ Interp :: [].{
 		Function(_) => False
 		Destructure(_, _, _) => False
 		New(_, _, _) => False
+		OptionalMember(left, _, _) => Interp.is_pure(left)
+		OptionalIndex(left, right, _) => Interp.is_pure(left) and Interp.is_pure(right)
+		OptionalCall(_, _, _) => False
+		Chain(chain) => Interp.is_pure(chain)
 	}
 
 	is_pure_element : Ast.Element -> Bool
@@ -3083,48 +3326,17 @@ Interp :: [].{
 		match callee {
 			Member(object, name, _) => {
 				{ machine: first, value: holder } = Interp.evaluate!(host, machine, object)
-				method = match holder {
-					Reference(id) => match Interp.kind_of(first.cells, id) {
-						ArrayKind(_) => ArrayMethod(id)
-						_ => Plain
-					}
-					Text(text) => TextMethod(text)
-					_ => Plain
-				}
-				match method {
-					ArrayMethod(id) => {
-						{
-							machine: second,
-							values,
-						} = Interp.evaluate_elements!(host, first, arguments)
-						Interp.array_method!(
-							host,
-							second,
-							id,
-							name,
-							values,
-							site,
-						)
-					}
-					TextMethod(text) => {
-						{
-							machine: second,
-							values,
-						} = Interp.evaluate_elements!(host, first, arguments)
-						Interp.text_method(second, text, name, values, site)
-					}
-					Plain => {
-						{
-							machine: second,
-							value: function,
-						} = Interp.property(first, holder, name, site)
-						{
-							machine: third,
-							values,
-						} = Interp.evaluate_elements!(host, second, arguments)
-						Interp.call_written!(host, third, function, values, callee, site)
-					}
-				}
+				Interp.method_call!(
+					host,
+					first,
+					holder,
+					{
+						name: name,
+						arguments: arguments,
+						callee: callee,
+						at: site,
+					},
+				)
 			}
 			_ => {
 				{ machine: first, value: function } = Interp.evaluate!(host, machine, callee)
@@ -3132,6 +3344,51 @@ Interp :: [].{
 				Interp.call_written!(host, second, function, values, callee, site)
 			}
 		}
+
+	## A method call as the program wrote it: the method's name, its
+	## arguments, the callee written (`o.f`) and where it is.
+	MethodCall : {
+		name : Str,
+		arguments : List(Ast.Element),
+		callee : Ast.Expression,
+		at : Ast.Where,
+	}
+
+	# A method of `holder` called, its arguments evaluated first: an array's
+	# and a string's by name, anything else's the function its property holds.
+	method_call! : Canvas.Host, Interp.Machine, Heap.Value, Interp.MethodCall => Interp.Got
+	method_call! = |host, machine, holder, { name, arguments, callee, at: site }| {
+		method = match holder {
+			Reference(id) => match Interp.kind_of(machine.cells, id) {
+				ArrayKind(_) => ArrayMethod(id)
+				_ => Plain
+			}
+			Text(text) => TextMethod(text)
+			_ => Plain
+		}
+		match method {
+			ArrayMethod(id) => {
+				{ machine: second, values } = Interp.evaluate_elements!(host, machine, arguments)
+				Interp.array_method!(
+					host,
+					second,
+					id,
+					name,
+					values,
+					site,
+				)
+			}
+			TextMethod(text) => {
+				{ machine: second, values } = Interp.evaluate_elements!(host, machine, arguments)
+				Interp.text_method(second, text, name, values, site)
+			}
+			Plain => {
+				{ machine: second, value: function } = Interp.property(machine, holder, name, site)
+				{ machine: third, values } = Interp.evaluate_elements!(host, second, arguments)
+				Interp.call_written!(host, third, function, values, callee, site)
+			}
+		}
+	}
 
 	# A call the program wrote: `call!`, but a callee that isn't a function
 	# is named as the program wrote it, as node names it (`o.f is not a
