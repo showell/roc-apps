@@ -65,6 +65,11 @@ const STEPS = {
     {step = "build-speed", target = "canvas_apps/safari/web.roc", cwd = "canvas_apps/safari", args = {"build", "web.roc", "--target=wasm32", "--opt=speed"}, output = "safari.wasm", root = "canvas_apps/safari/web.roc", imports_in = "canvas_apps/safari"},
     {step = "test", target = "canvas_apps/safari/web.roc", cwd = "canvas_apps/safari", args = {"test", "web.roc"}, root = "canvas_apps/safari/web.roc", imports_in = "canvas_apps/safari"},
   },
+  ["roc-chat"] = {
+    {step = "check", target = "app/main.roc", cwd = "", args = {"check", "app/main.roc"}, root = "app/main.roc", imports_in = "app"},
+    {step = "build-dev", target = "app/main.roc", cwd = "", args = {"build", "app/main.roc", "--target=x64musl", "--opt=dev"}, output = "app-x64musl.a", root = "app/main.roc", imports_in = "app"},
+    {step = "test", target = "app/Specs.roc", cwd = "", args = {"test", "app/Specs.roc"}, root = "app/Specs.roc", imports_in = "app"},
+  },
   ["roc-markdown"] = {
     {step = "check", target = "judge/answers.roc", cwd = "", args = {"check", "judge/answers.roc"}, root = "judge/answers.roc", imports_in = "package"},
     {step = "build-dev", target = "judge/answers.roc", cwd = "", args = {"build", "judge/answers.roc", "--target=x64musl", "--opt=dev"}, output = "answers-x64musl.a", root = "judge/answers.roc", imports_in = "package"},
