@@ -376,8 +376,14 @@ var walkView = (function () {
 	// wait after the first frame to the browser's GPU process compiling
 	// them. A module's group comes from its label (sokol labels the engine's
 	// own shaders, and Rocco's fork labels a game shader by its asset's
-	// name), a pipeline's from its vertex module's.
-	var programs = { groups: new WeakMap(), made: [] };
+	// name), a pipeline's from its fragment module's, else its vertex
+	// module's: Rocco makes one module for each distinct source, so a vertex
+	// stage such as the full screen triangle carries the label of the first
+	// shader that made it.
+	// `sources` counts the modules by their WGSL text, which is all WebGPU
+	// keys a module on (a pipeline names the entry point), so the line says
+	// how many of the modules made were a source made before.
+	var programs = { groups: new WeakMap(), made: [], sources: new Map() };
 	var PROGRAM_GROUPS = [
 		[/Water/, "water (pond)"], [/Lattice/, "lattice (towers)"], [/Grass/, "grass"], [/Ground/, "ground"], [/Antialias/, "anti-alias"],
 		[/shadow/, "shadows"], [/coverage/, "depth coverage"], [/^skinned/, "skinned (zebras)"], [/^instanced/, "instanced"],
@@ -392,7 +398,8 @@ var walkView = (function () {
 	// The programs line: the pipelines and modules made by the first frame,
 	// in all and by group (most pipelines first), then those made after it.
 	window.walkProgramsLine = function () {
-		var by = {}, order = [], early = { pipeline: 0, module: 0 }, late = { pipeline: 0, module: 0 };
+		var by = {}, order = [], early = { pipeline: 0, module: 0 }, late = { pipeline: 0, module: 0 }, repeats = [];
+		programs.sources.forEach(function (s) { if (s.count > 1) repeats.push(s.label + " x" + s.count); });
 		programs.made.forEach(function (m) {
 			if (m.after) { late[m.kind] += 1; return; }
 			early[m.kind] += 1;
@@ -402,7 +409,8 @@ var walkView = (function () {
 		order.sort(function (a, b) { return by[b].pipeline - by[a].pipeline || by[b].module - by[a].module || (a < b ? -1 : 1); });
 		return "programs by the first frame: " + early.pipeline + " pipelines, " + early.module + " shader modules; by group (pipelines/modules): " +
 			order.map(function (g) { return g + " " + by[g].pipeline + "/" + by[g].module; }).join(", ") +
-			"; after the first frame: " + late.pipeline + " pipelines, " + late.module + " modules";
+			"; after the first frame: " + late.pipeline + " pipelines, " + late.module + " modules" +
+			"; distinct module sources in all: " + programs.sources.size + (repeats.length ? ", made more than once: " + repeats.join(", ") : "");
 	};
 	function timerRead(read) {
 		read.buffer.mapAsync(GPUMapMode.READ).then(function () {
@@ -444,13 +452,16 @@ var walkView = (function () {
 			var group = programGroup((args[0] || {}).label);
 			programs.groups.set(r, group);
 			programs.made.push({ kind: "module", group: group, after: walkLoad.first_frame !== null });
+			var code = (args[0] || {}).code || "";
+			var source = programs.sources.get(code);
+			if (source) source.count += 1; else programs.sources.set(code, { label: (args[0] || {}).label || "unlabelled", count: 1 });
 			return r;
 		});
 		["createRenderPipeline", "createRenderPipelineAsync"].forEach(function (name) {
 			wrap(GPUDevice.prototype, name, function (original, args) {
 				madeAfter(name, args);
 				var d = args[0] || {};
-				var module = d.vertex && d.vertex.module;
+				var module = (d.fragment && d.fragment.module) || (d.vertex && d.vertex.module);
 				programs.made.push({ kind: "pipeline", group: (module && programs.groups.get(module)) || programGroup(d.label), after: walkLoad.first_frame !== null });
 				return original.apply(this, args);
 			});
