@@ -44,6 +44,8 @@ Ast :: [].{
 		Function(Box(Ast.FunctionDefinition)),
 		# An assignment whose left side is a pattern: `[a, b] = [b, a]`.
 		Destructure(Ast.Pattern, Ast.Expression, Ast.Where),
+		# `new` and what it calls: a builtin constructor and its arguments.
+		New(Ast.Expression, List(Ast.Element), Ast.Where),
 	]
 
 	## What a destructuring binds: a name or another target (`Leaf`), or the
@@ -179,6 +181,11 @@ Ast :: [].{
 			"setInterval",
 			"clearTimeout",
 			"clearInterval",
+			"Error",
+			"TypeError",
+			"RangeError",
+			"ReferenceError",
+			"SyntaxError",
 		]
 		match library {
 			Core => core
@@ -283,10 +290,28 @@ Ast :: [].{
 		ForOf(Ast.ForOfLoop),
 		BlockStatement(Ast.Block),
 		Return(Ast.Expression),
+		Throw(Ast.Expression, Ast.Where),
+		Try(Ast.TryStatement),
 		Break,
 		Continue,
 		Empty,
 	]
+
+	TryStatement : {
+		block : Ast.Block,
+		handler : [Caught(Ast.CatchClause), Uncaught],
+		finalizer : [Finally(Ast.Block), NoFinally],
+	}
+
+	## A `catch` and what it binds the value thrown to: a name or a pattern,
+	## in a scope of its own around the block (`names`), or nothing.
+	CatchClause : {
+		parameter : [Bound(Ast.Pattern), Unbound],
+		names : List(Str),
+		body : Ast.Block,
+		capture : Ast.Capture,
+		at : Ast.Where,
+	}
 
 	Program : Ast.Block
 }

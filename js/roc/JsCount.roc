@@ -46,6 +46,10 @@ count_program! = |src| {
 					echo!("js: ${why}\n")
 					Err(Exit(1))
 				}
+				Uncaught(line) => {
+					echo!("${line}\n")
+					Err(Exit(1))
+				}
 			}
 		}
 		Err(fault) => {

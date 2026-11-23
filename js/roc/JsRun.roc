@@ -6,7 +6,9 @@
 # The command line is all the input a program has. What it logs leaves by
 # `echo!` as it logs it. It runs on JavaScript's own builtins alone, the
 # library node has, so node is its oracle. A program the parser refuses, or
-# one that stops with a fault, ends with a line `js: <why>` and exits 1.
+# one that stops with a fault, ends with a line `js: <why>` and exits 1; one
+# that throws what nothing catches ends with a line `Uncaught <what node
+# prints first> (line <n>)` and exits 1, as node does.
 # js-count (JsCount.roc) is the same run with its counts after it.
 import Canvas
 import Interp
@@ -51,6 +53,10 @@ run_program! = |src| {
 				Running => Ok({})
 				Faulted(why) => {
 					echo!("js: ${why}\n")
+					Err(Exit(1))
+				}
+				Uncaught(line) => {
+					echo!("${line}\n")
 					Err(Exit(1))
 				}
 			}

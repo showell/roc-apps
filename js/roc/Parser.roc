@@ -275,14 +275,10 @@ Parser :: [].{
 	unsupported_word : Str -> Try(Str, [Supported])
 	unsupported_word = |text| match text {
 		"this" => Ok("unsupported: `this`")
-		"new" => Ok("unsupported: `new` (constructors and prototypes)")
 		"class" => Ok("unsupported: classes")
 		"var" => Ok("unsupported: `var` (use `let` or `const`)")
 		"switch" => Ok("unsupported: `switch`")
 		"do" => Ok("unsupported: `do ... while`")
-		"try" => Ok("unsupported: exceptions (`try`)")
-		"throw" => Ok("unsupported: exceptions (`throw`)")
-		"catch" => Ok("unsupported: exceptions (`catch`)")
 		"delete" => Ok("unsupported: `delete`")
 		"void" => Ok("unsupported: `void`")
 		"import" => Ok("unsupported: modules (`import`)")
@@ -365,6 +361,17 @@ Parser :: [].{
 					Ok({ parser: q2, value: Return(parsed_expression.value) })
 				}
 			}
+			Name("try") => Parser.try_statement(parser)
+			Name("throw") => {
+				onward = Parser.advance(parser)
+				if Parser.token(onward).before == NewLine {
+					Err(Parser.fault_here(onward, "SyntaxError: Illegal newline after throw"))
+				} else {
+					parsed_expression = Parser.expression(onward)?
+					q2 = Parser.end_of_statement(parsed_expression.parser)?
+					Ok({ parser: q2, value: Throw(parsed_expression.value, Parser.where_of(current)) })
+				}
+			}
 			Name("break") => Parser.jump(parser, Break)
 			Name("continue") => Parser.jump(parser, Continue)
 			_ => {
@@ -396,6 +403,86 @@ Parser :: [].{
 		} else {
 			Parser.statement(parser)
 		}
+
+	try_statement : Parser.State -> Try(Parser.Parsed(Ast.Statement), Lexer.Fault)
+	try_statement = |parser| {
+		tried = Parser.block(Parser.advance(parser))?
+		handler = if Parser.is_word(tried.parser, "catch") {
+			Parser.catch_clause(tried.parser)?
+		} else {
+			{ parser: tried.parser, value: Uncaught }
+		}
+		finalizer = if Parser.is_word(handler.parser, "finally") {
+			final_block = Parser.block(Parser.advance(handler.parser))?
+			{ parser: final_block.parser, value: Finally(final_block.value) }
+		} else {
+			{ parser: handler.parser, value: NoFinally }
+		}
+		match (handler.value, finalizer.value) {
+			(Uncaught, NoFinally) => Err(
+				Parser.fault_here(finalizer.parser, "SyntaxError: Missing catch or finally after try"),
+			)
+			_ => Ok({
+				parser: finalizer.parser,
+				value: Try({
+					block: tried.value,
+					handler: handler.value,
+					finalizer: finalizer.value,
+				}),
+			})
+		}
+	}
+
+	# A `catch` and its block, the name or pattern it binds in parentheses, or
+	# none.
+	catch_clause : Parser.State -> Try(Parser.Parsed([Caught(Ast.CatchClause), Uncaught]), Lexer.Fault)
+	catch_clause = |parser| {
+		site = Parser.here(parser)
+		before = parser.functions
+		onward = Parser.advance(parser)
+		if Parser.is_punct(onward, "(") {
+			bound = Parser.pattern(Parser.advance(onward), Declaring)?
+			closed = Parser.expect_punct(bound.parser, ")")?
+			names = Ast.pattern_names(bound.value)
+			match Parser.repeated_name(names) {
+				Ok(name) => return Err(Parser.fault_at(site, Parser.redeclared_message(name)))
+				Err(NoneRepeated) => {}
+			}
+			body = Parser.block(closed)?
+			match body.value.scoping {
+				Scoped(declared) => {
+					for name in names {
+						if declared.contains(name) {
+							return Err(Parser.fault_at(site, Parser.redeclared_message(name)))
+						}
+					}
+				}
+				Unscoped => {}
+			}
+			Ok({
+				parser: body.parser,
+				value: Caught({
+					parameter: Bound(bound.value),
+					names: names,
+					body: body.value,
+					capture: Parser.capture_since(body.parser, before),
+					at: site,
+				}),
+			})
+		} else {
+			body = Parser.block(onward)?
+			Ok({
+				parser: body.parser,
+				value: Caught({
+					parameter: Unbound,
+					names: [],
+					body: body.value,
+					capture: body.value.capture,
+					at: site,
+				}),
+			})
+		}
+	}
 
 	jump : Parser.State, Ast.Statement -> Try(Parser.Parsed(Ast.Statement), Lexer.Fault)
 	jump = |parser, jumped| {
@@ -1443,6 +1530,22 @@ Parser :: [].{
 			Name("false") => Ok({ parser: after, value: Boolean(False) })
 			Name("null") => Ok({ parser: after, value: Null })
 			Name("undefined") => Ok({ parser: after, value: Undefined })
+			Name("new") => {
+				if Parser.is_punct(after, ".") {
+					Err(Parser.fault_here(after, "unsupported: `new.target`"))
+				} else {
+					callee = Parser.new_callee(after)?
+					if Parser.is_punct(callee.parser, "(") {
+						call_arguments = Parser.arguments(callee.parser)?
+						Ok({
+							parser: call_arguments.parser,
+							value: New(callee.value, call_arguments.value, site),
+						})
+					} else {
+						Ok({ parser: callee.parser, value: New(callee.value, [], site) })
+					}
+				}
+			}
 			Name("function") => {
 				definition = Parser.function_rest(after, site, Expressed)?
 				Ok({ parser: definition.parser, value: Function(Box.box(definition.value)) })
@@ -1475,6 +1578,51 @@ Parser :: [].{
 			)
 		}
 	}
+
+	# What `new` calls: a name and the properties after it, up to the
+	# arguments.
+	new_callee : Parser.State -> Try(Parser.Parsed(Ast.Expression), Lexer.Fault)
+	new_callee = |parser| {
+		first = Parser.primary(parser)?
+		var $onward = first.parser
+		var $built = first.value
+		var $more = True
+		while $more {
+			current = Parser.token($onward)
+			site = Parser.where_of(current)
+			match current.kind {
+				Punct(".") => {
+					name_found = Parser.name_after_dot(Parser.advance($onward))?
+					$built = Member($built, name_found.value, site)
+					$onward = name_found.parser
+				}
+				Punct("[") => {
+					index_key = Parser.expression(Parser.advance($onward))?
+					onward = Parser.expect_punct(index_key.parser, "]")?
+					$built = Index($built, index_key.value, site)
+					$onward = onward
+				}
+				_ => {
+					$more = False
+				}
+			}
+		}
+		Ok({ parser: $onward, value: $built })
+	}
+
+	# A property's name after a `.`.
+	name_after_dot : Parser.State -> Try(Parser.Parsed(Str), Lexer.Fault)
+	name_after_dot = |parser|
+		match Parser.token(parser).kind {
+			Name(text) => Ok({ parser: Parser.advance(parser), value: text })
+			Punct("#") => Err(Parser.fault_here(parser, "unsupported: private names"))
+			other => Err(
+				Parser.fault_here(
+					parser,
+					"expected a property's name after `.`, found ${Parser.token_text(other)}",
+				),
+			)
+		}
 
 	template_rest : Parser.State, Str -> Try(Parser.Parsed(Ast.Expression), Lexer.Fault)
 	template_rest = |parser, head| {

@@ -167,6 +167,10 @@ record_program! = |src, { frames, keys: key_frames, clicks }| {
 					echo!("js: ${why}\n")
 					Err(Exit(1))
 				}
+				Uncaught(line) => {
+					echo!("${line}\n")
+					Err(Exit(1))
+				}
 			}
 		}
 		Err(fault) => {

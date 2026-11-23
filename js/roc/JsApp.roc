@@ -14,6 +14,8 @@
 #   handler);
 # - `end done`: the program ran to its end and waits for nothing;
 # - `end faulted <why>`: the program stopped with a fault;
+# - `end thrown <line>`: the program stopped with a throw nothing caught,
+#   `<line>` what js-run prints for it (`Uncaught TypeError: ...`);
 # - `end refused <why>`: the parser refused the program.
 #
 # The `<why>` is what js-run's last line says after its `js: `.
@@ -76,6 +78,7 @@ report_ending! : Interp.Session => {}
 report_ending! = |session| {
 	line = match Interp.outcome_of(session.machine).status {
 		Faulted(why) => "end faulted ${why}"
+		Uncaught(said) => "end thrown ${said}"
 		Running => if Interp.waits(session) {
 			"end frame"
 		} else {
