@@ -1,19 +1,19 @@
-# This module holds the JavaScript heap as one Roc value: a list of cells,
-# each an object, an array, a function or a builtin, named by its index.
-# A JavaScript value that is shared by reference (an array, an object, a
-# function) is a `Ref` to its cell, so two variables that hold one array hold
-# one index, and a write through either is seen by both.
-#
-# **EVERY WRITE TAKES THE CELL OUT, WRITES IT AND PUTS IT BACK.** Roc writes
-# a list in place only while nothing else refers to it. `List.replace` hands
-# the cell over and leaves `Taken` in its place, so the props or items inside
-# it are written while the cell is the only thing that refers to them, and a
-# property write costs the property, never the object or the heap. Each
-# writer takes the cell list itself and gives it back, and its callers pass
-# it straight from the record they update (`{ ..st, cells:
-# Heap.with_prop(st.cells, ...) }`), so the list is never referred to twice.
-#
-# Cells are never freed: a run's heap holds every object it made.
+## This module holds the JavaScript heap as one Roc value: a list of cells,
+## each an object, an array, a function or a builtin, named by its index.
+## A JavaScript value that is shared by reference (an array, an object, a
+## function) is a `Ref` to its cell, so two variables that hold one array hold
+## one index, and a write through either is seen by both.
+##
+## **EVERY WRITE TAKES THE CELL OUT, WRITES IT AND PUTS IT BACK.** Roc writes
+## a list in place only while nothing else refers to it. `List.replace` hands
+## the cell over and leaves `Taken` in its place, so the props or items inside
+## it are written while the cell is the only thing that refers to them, and a
+## property write costs the property, never the object or the heap. Each
+## writer takes the cell list itself and gives it back, and its callers pass
+## it straight from the record they update (`{ ..st, cells:
+## Heap.with_prop(st.cells, ...) }`), so the list is never referred to twice.
+##
+## Cells are never freed: a run's heap holds every object it made.
 import Ast
 
 Heap :: [].{

@@ -11,7 +11,17 @@ import Interp
 import Parser
 
 main! = |args| {
-	src = args.get(0) ?? ""
+	match args.get(0) {
+		Ok(src) => run_program!(src)
+		Err(OutOfBounds) => {
+			echo!("usage: js-run \"<program>\"\n")
+			Err(Exit(2))
+		}
+	}
+}
+
+run_program! : Str => Try({}, [Exit(I8)])
+run_program! = |src| {
 	match Parser.program_of(src) {
 		Ok(program) => {
 			outcome = Interp.run(program, 200000000)

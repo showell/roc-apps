@@ -1,16 +1,16 @@
-# This module writes values the way node's `console.log` does, for the values
-# the subset has: node's `util.inspect` with its defaults (a line breaks past
-# 80 columns, three levels of nesting fit on one line, depth 2 is the last
-# printed, 100 items of an array are shown). The functions follow the ones of
-# node's lib/internal/util/inspect.js that they are named for
-# (`formatValue`, `reduceToSingleString`, `groupArrayElements`), so a
-# difference from node can be found by reading the two side by side.
-#
-# node's `ctx.currentDepth` is a variable every nested object sets as it
-# starts; here it is threaded through as `depth_now`, given to each call and
-# answered back by it.
-#
-# Lengths are UTF-16 code units, as node measures them with `.length`.
+## This module writes values the way node's `console.log` does, for the values
+## the subset has: node's `util.inspect` with its defaults (a line breaks past
+## 80 columns, three levels of nesting fit on one line, depth 2 is the last
+## printed, 100 items of an array are shown). The functions follow the ones of
+## node's lib/internal/util/inspect.js that they are named for
+## (`formatValue`, `reduceToSingleString`, `groupArrayElements`), so a
+## difference from node can be found by reading the two side by side.
+##
+## node's `ctx.currentDepth` is a variable every nested object sets as it
+## starts; here it is threaded through as `depth_now`, given to each call and
+## answered back by it.
+##
+## Lengths are UTF-16 code units, as node measures them with `.length`.
 import Heap
 import NumberText
 
@@ -54,7 +54,7 @@ Inspect :: [].{
 		var $i = 0
 		var $found = False
 		while $i + 1 < b.len() {
-			if (b.get($i) ?? 0) == '%' and [
+			if (b.get($i) ?? crash "Inspect.has_format_directive: inside the text") == '%' and [
 				's',
 				'd',
 				'i',
@@ -64,7 +64,7 @@ Inspect :: [].{
 				'O',
 				'c',
 				'%',
-			].contains(b.get($i + 1) ?? 0) {
+			].contains(b.get($i + 1) ?? crash "Inspect.has_format_directive: inside the text") {
 				$found = True
 			}
 			$i = $i + 1
@@ -250,7 +250,7 @@ Inspect :: [].{
 	index_of_key : Str -> Try(U64, [NotIndex])
 	index_of_key = |key| {
 		b = key.to_utf8()
-		if b.is_empty() or b.len() > 10 or (b.len() > 1 and (b.get(0) ?? 0) == '0') {
+		if b.is_empty() or b.len() > 10 or (b.len() > 1 and (b.get(0) ?? crash "Inspect.index_of_key: a key of two bytes or more") == '0') {
 			Err(NotIndex)
 		} else if b.all(|c| c >= '0' and c <= '9') {
 			n = b.fold(0, |acc, c| acc * 10 + (c - '0').to_u64())
@@ -267,8 +267,11 @@ Inspect :: [].{
 	key_text : Str -> Str
 	key_text = |key| {
 		b = key.to_utf8()
-		first = b.get(0) ?? 0
-		is_bare = Inspect.is_key_start(first) and b.all(|c| Inspect.is_key_start(c) or (c >= '0' and c <= '9'))
+		starts_well = match b.first() {
+			Ok(c) => Inspect.is_key_start(c)
+			Err(ListWasEmpty) => False
+		}
+		is_bare = starts_well and b.all(|c| Inspect.is_key_start(c) or (c >= '0' and c <= '9'))
 		if is_bare {
 			key
 		} else {
@@ -365,8 +368,8 @@ Inspect :: [].{
 		[
 			'\\',
 			'x',
-			digits.get(c.div_trunc_by(16).to_u64()) ?? '0',
-			digits.get(c.rem_by(16).to_u64()) ?? '0',
+			digits.get(c.div_trunc_by(16).to_u64()) ?? crash "Inspect.hex_escape: a digit below 16",
+			digits.get(c.rem_by(16).to_u64()) ?? crash "Inspect.hex_escape: a digit below 16",
 		]
 	}
 
@@ -468,7 +471,7 @@ Inspect :: [].{
 			var $longest = 0
 			var $j = $col
 			while $j < output_length {
-				$longest = U64.max($longest, data_lengths.get($j) ?? 0)
+				$longest = U64.max($longest, data_lengths.get($j) ?? crash "Inspect.grouped: inside the entries")
 				$j = $j + columns
 			}
 			$max_line_lengths = $max_line_lengths.append($longest + 2)
@@ -487,16 +490,16 @@ Inspect :: [].{
 			var $line = ""
 			var $j = $i
 			while $j < last - 1 {
-				cell = "${output.get($j) ?? ""}, "
-				pad = $max_line_lengths.get($j - $i) ?? 0
+				cell = "${output.get($j) ?? crash "Inspect.grouped: inside the entries"}, "
+				pad = $max_line_lengths.get($j - $i) ?? crash "Inspect.grouped: a column the line has"
 				$line = Str.concat($line, Inspect.padded(cell, pad, numbers_only))
 				$j = $j + 1
 			}
-			final = output.get($j) ?? ""
+			final = output.get($j) ?? crash "Inspect.grouped: inside the entries"
 			$line = if numbers_only {
 				Str.concat(
 					$line,
-					Inspect.padded(final, ($max_line_lengths.get($j - $i) ?? 2) - 2, True),
+					Inspect.padded(final, ($max_line_lengths.get($j - $i) ?? crash "Inspect.grouped: a column the line has") - 2, True),
 				)
 			} else {
 				Str.concat($line, final)
@@ -505,7 +508,7 @@ Inspect :: [].{
 			$i = $i + columns
 		}
 		if has_more {
-			$lines.append(output.last() ?? "")
+			$lines.append(output.last() ?? crash "Inspect.grouped: the more-items entry is last")
 		} else {
 			$lines
 		}

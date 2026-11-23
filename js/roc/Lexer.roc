@@ -1,14 +1,14 @@
-# This module turns a JavaScript program's text into tokens, each with the
-# line and column it starts at, so the parser can say where a mistake is.
-#
-# A template literal is split into pieces at its substitutions: `a${x}b`
-# becomes a head (`a`), the tokens of `x`, and a tail (`b`). The lexer keeps a
-# stack of the brace depths at which each open substitution started, so the
-# `}` that closes a substitution is told from one that closes a block inside
-# it.
-#
-# A NUL byte is refused before lexing starts, so `byte_at` can answer 0 past
-# the end of the text and mean only that.
+## This module turns a JavaScript program's text into tokens, each with the
+## line and column it starts at, so the parser can say where a mistake is.
+##
+## A template literal is split into pieces at its substitutions: `a${x}b`
+## becomes a head (`a`), the tokens of `x`, and a tail (`b`). The lexer keeps a
+## stack of the brace depths at which each open substitution started, so the
+## `}` that closes a substitution is told from one that closes a block inside
+## it.
+##
+## A NUL byte is refused before lexing starts, so `byte_at` can answer 0 past
+## the end of the text and mean only that.
 Lexer :: [].{
 	Tok : [
 		Number(F64),

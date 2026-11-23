@@ -7,7 +7,17 @@ import Interp
 import Parser
 
 main! = |args| {
-	src = args.get(0) ?? ""
+	match args.get(0) {
+		Ok(src) => count_program!(src)
+		Err(OutOfBounds) => {
+			echo!("usage: js-count \"<program>\"\n")
+			Err(Exit(2))
+		}
+	}
+}
+
+count_program! : Str => Try({}, [Exit(I8)])
+count_program! = |src| {
 	match Parser.program_of(src) {
 		Ok(program) => {
 			outcome = Interp.run(program, 2000000000)

@@ -1,13 +1,13 @@
-# This module holds the shape of a parsed JavaScript program: its
-# expressions, its statements and its functions. The parser builds it once
-# and nothing writes it after, so the interpreter's heap may hold a function's
-# body without copying it.
-#
-# Each block and function says whether a function literal is written
-# anywhere inside it (`Capture`). Where none is, nothing made while it runs
-# can hold on to its scope, so the interpreter drops the scope when the block
-# ends. Each block also says whether it declares anything (`Scoping`), and
-# runs in the enclosing scope when it doesn't.
+## This module holds the shape of a parsed JavaScript program: its
+## expressions, its statements and its functions. The parser builds it once
+## and nothing writes it after, so the interpreter's heap may hold a function's
+## body without copying it.
+##
+## Each block and function says whether a function literal is written
+## anywhere inside it (`Capture`). Where none is, nothing made while it runs
+## can hold on to its scope, so the interpreter drops the scope when the block
+## ends. Each block also says whether it declares anything (`Scoping`), and
+## runs in the enclosing scope when it doesn't.
 Ast :: [].{
 	# Where a piece of the program starts, for the messages that point at it.
 	Where : { line : U64, col : U64 }

@@ -1,42 +1,42 @@
-# This module runs a parsed JavaScript program by walking its tree.
-#
-# **THE WHOLE MACHINE IS ONE VALUE, `St`, THREADED THROUGH THE WALK.** Every
-# evaluation takes the machine and answers it back beside its value (`Got`),
-# and every statement answers it back beside how control leaves the
-# statement (`Done`). JavaScript shares arrays, objects and closures by
-# reference, so they live in the heap (`Heap`), a list of cells named by
-# index; scopes live in a second list, because a closure holds on to the
-# scope it was made in and sees later writes to it.
-#
-# **NOTHING HOLDS THE MACHINE BUT THE WALK.** Roc writes a list in place only
-# while nothing else refers to it, so a single stray reference to the heap
-# makes every property write copy the whole heap. The rules that keep it
-# unique:
-# - No closure in this module captures the machine or a part of it; loops
-#   over the machine are `var $st` loops, never a `walk` with a lambda.
-# - A write passes the list straight from the record it updates,
-#   `{ ..st, cells: Heap.with_prop(st.cells, ...) }`, so the old machine is
-#   never read after the write that consumes it.
-# - Every `Got` and `Done` is taken apart where it is answered,
-#   `{ st: after, val } = Interp.eval(st, e)`, never kept whole while its
-#   machine goes on to be written: a record kept for its `val` keeps its
-#   `st` too, a second reference to the heap and the scopes, and each
-#   write made while it lives copies them. Kept whole, a store into an
-#   array copied the array and a closure's `++c` copied every scope.
-# - A writer asks `Interp.kind_of` what a cell is, never matches the cell
-#   out of the heap: the matched cell refers to its props or items for as
-#   long as the arm runs.
-#
-# **A SCOPE THAT NOTHING CAN CAPTURE IS DROPPED WHEN ITS BLOCK ENDS.** The
-# parser marks each block and function whose text holds no function literal
-# (`CapturesNothing`), and such a scope, the last in the list when its block
-# ends, is dropped, so a loop or a recursion without closures leaves the
-# scope list as it found it. Scopes that may be captured, and every cell,
-# live until the run ends.
-#
-# A fault (a TypeError, a feature outside the subset, the step budget) stops
-# the run: `fault` is set, every statement after it is skipped, and the
-# message is the run's last line.
+## This module runs a parsed JavaScript program by walking its tree.
+##
+## **THE WHOLE MACHINE IS ONE VALUE, `St`, THREADED THROUGH THE WALK.** Every
+## evaluation takes the machine and answers it back beside its value (`Got`),
+## and every statement answers it back beside how control leaves the
+## statement (`Done`). JavaScript shares arrays, objects and closures by
+## reference, so they live in the heap (`Heap`), a list of cells named by
+## index; scopes live in a second list, because a closure holds on to the
+## scope it was made in and sees later writes to it.
+##
+## **NOTHING HOLDS THE MACHINE BUT THE WALK.** Roc writes a list in place only
+## while nothing else refers to it, so a single stray reference to the heap
+## makes every property write copy the whole heap. The rules that keep it
+## unique:
+## - No closure in this module captures the machine or a part of it; loops
+##   over the machine are `var $st` loops, never a `walk` with a lambda.
+## - A write passes the list straight from the record it updates,
+##   `{ ..st, cells: Heap.with_prop(st.cells, ...) }`, so the old machine is
+##   never read after the write that consumes it.
+## - Every `Got` and `Done` is taken apart where it is answered,
+##   `{ st: after, val } = Interp.eval(st, e)`, never kept whole while its
+##   machine goes on to be written: a record kept for its `val` keeps its
+##   `st` too, a second reference to the heap and the scopes, and each
+##   write made while it lives copies them. Kept whole, a store into an
+##   array copied the array and a closure's `++c` copied every scope.
+## - A writer asks `Interp.kind_of` what a cell is, never matches the cell
+##   out of the heap: the matched cell refers to its props or items for as
+##   long as the arm runs.
+##
+## **A SCOPE THAT NOTHING CAN CAPTURE IS DROPPED WHEN ITS BLOCK ENDS.** The
+## parser marks each block and function whose text holds no function literal
+## (`CapturesNothing`), and such a scope, the last in the list when its block
+## ends, is dropped, so a loop or a recursion without closures leaves the
+## scope list as it found it. Scopes that may be captured, and every cell,
+## live until the run ends.
+##
+## A fault (a TypeError, a feature outside the subset, the step budget) stops
+## the run: `fault` is set, every statement after it is skipped, and the
+## message is the run's last line.
 import Ast
 import Heap
 import Inspect
@@ -915,13 +915,13 @@ Interp :: [].{
 	eval_template : Interp.St, List(Str), List(Ast.Expr) -> Interp.Got
 	eval_template = |st, texts, parts| {
 		var $s = st
-		var $text = texts.first() ?? ""
+		var $text = texts.first() ?? crash "Interp.eval_template: a template has a text piece before its first substitution"
 		var $i = 1
 		for part in parts {
 			{ st: after, val } = Interp.eval($s, part)
 			$s = match Interp.text_of(after.cells, val) {
 				Ok(t) => {
-					$text = Str.concat(Str.concat($text, t), texts.get($i) ?? "")
+					$text = Str.concat(Str.concat($text, t), texts.get($i) ?? crash "Interp.eval_template: a template has a text piece after each substitution")
 					after
 				}
 				Err(Unsupported(why)) => Interp.faulted(after, why)
@@ -2466,11 +2466,11 @@ Interp :: [].{
 		b = s.to_utf8()
 		is_space = |c| c == ' ' or c == '\t' or c == '\n' or c == '\r' or c == 11 or c == 12
 		var $from = 0
-		while $from < b.len() and is_space(b.get($from) ?? 0) {
+		while $from < b.len() and is_space(b.get($from) ?? crash "Interp.ascii_trimmed: inside the text") {
 			$from = $from + 1
 		}
 		var $to = b.len()
-		while $to > $from and is_space(b.get($to - 1) ?? 0) {
+		while $to > $from and is_space(b.get($to - 1) ?? crash "Interp.ascii_trimmed: inside the text") {
 			$to = $to - 1
 		}
 		Str.from_utf8(

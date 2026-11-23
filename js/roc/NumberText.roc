@@ -1,9 +1,9 @@
-# This module writes a number the way JavaScript's `String(n)` does
-# (ECMAScript's Number::toString): the shortest digits that read back as the
-# same number, with an exponent only below 1e-6 or from 1e21 up.
-#
-# Roc's own `F64.to_str` already finds the shortest digits; this module only
-# moves the decimal point and the exponent to where JavaScript puts them.
+## This module writes a number the way JavaScript's `String(n)` does
+## (ECMAScript's Number::toString): the shortest digits that read back as the
+## same number, with an exponent only below 1e-6 or from 1e21 up.
+##
+## Roc's own `F64.to_str` already finds the shortest digits; this module only
+## moves the decimal point and the exponent to where JavaScript puts them.
 NumberText :: [].{
 	# The text of a number, as `String(n)` gives it: -0 is "0".
 	of : F64 -> Str

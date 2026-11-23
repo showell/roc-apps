@@ -1,13 +1,13 @@
-# This module reads the JavaScript subset's tokens into a program (Ast), by
-# recursive descent, one function a level of precedence.
-#
-# Every form outside the subset that the parser can recognize is refused
-# with a message that names it ("unsupported: `this`"), at the line and
-# column at it starts. A program that parses runs only constructs whose
-# meaning the interpreter has.
-#
-# Semicolons may be left out at JavaScript inserts them: before a `}`, at
-# the end, and at a line break the next token can't continue.
+## This module reads the JavaScript subset's tokens into a program (Ast), by
+## recursive descent, one function a level of precedence.
+##
+## Every form outside the subset that the parser can recognize is refused
+## with a message that names it ("unsupported: `this`"), at the line and
+## column at it starts. A program that parses runs only constructs whose
+## meaning the interpreter has.
+##
+## Semicolons may be left out at JavaScript inserts them: before a `}`, at
+## the end, and at a line break the next token can't continue.
 import Ast
 import Lexer
 import NumberText
