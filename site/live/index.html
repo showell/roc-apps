@@ -3,7 +3,7 @@
 <head>
 <!-- Every link opens in a new tab (Steve's preference). -->
 <base target="_blank">
-<meta name="description" content="Programs written in Roc: roc-chat, a live chat for humans and their agents, the Fast Track board game against computer players, the Dog Park herding game, the Seattle Delivery route planner, the Safari Ride screensaver and the little Roc book about it, the roc-markdown library, the roc-syntax-color package, a BASIC interpreter, two chess toys (the Knight's Tour and Eight Queens), six roc-ray examples, roc-screensaver, a Roc platform in Zig for screensavers that also run as web pages, and three animated shorts.">
+<meta name="description" content="Programs written in Roc: roc-chat, a live chat for humans and their agents, Roc on Shale, checks and reports written in Roc as scripts for Shale, the Fast Track board game against computer players, the Dog Park herding game, the Seattle Delivery route planner, the Safari Ride screensaver and the little Roc book about it, the roc-markdown library, the roc-syntax-color package, a BASIC interpreter, two chess toys (the Knight's Tour and Eight Queens), six roc-ray examples, roc-screensaver, a Roc platform in Zig for screensavers that also run as web pages, and three animated shorts.">
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Steve's Roc Work</title>
@@ -117,6 +117,22 @@ browser, compiled to WebAssembly.</p>
   </div>
 </section>
 
+<section class="feature">
+  <div>
+    <a href="roc-on-shale/" aria-hidden="true" tabindex="-1"><img class="shot drawing" src="roc-on-shale/platform.svg" alt="" loading="lazy"></a>
+    <h3><a href="roc-on-shale/">Roc on Shale</a></h3>
+    <p>Twenty-five programs written in Roc as scripts for <a href="https://github.com/showell/shale">Shale</a>, Steve's scripting language for agents. Most are checks and reports that Steve's projects run on their own code. Fifteen of them check Roc code, for unused imports, calls nested three deep or names that disagree with their types, and most read it through Roc's own parser; four rewrite what they find. Each began as a Shale script, and its page shows the Roc followed by the Shale script it was ported from. Each port was checked against its original's output.</p>
+    <p class="opening"><span class="tag">Roc at work</span>The platform has 19 hosted functions. Most are effects, such as <code>read!</code>, <code>run!</code> and <code>roc_tree!</code>, which hands a program Roc's own parse of a file. The rest are regular expressions, which Roc's standard library lacks. Everything else, from splitting lines to sorting, is plain Roc. An outcome is a value with a type: <code>read!</code> answers <code>[Found(Str), Missing]</code>, and <code>run!</code> takes its timeout and how much output to keep as required fields.</p>
+    <p class="opening"><span class="tag nice">Roc plays nice with others</span>In Roc only a platform performs effects, so the host sets the rules for every effect, and the Roc code needs no checks of its own. Here the host is Shale's runtime, in C, and each hosted function is a thin shim over one of its builtins, so Shale's rules hold for the Roc with no extra code. A Roc script reads and writes only under the folder it runs in and the folders Shale is set up to share with it. Shale won't run some programs, such as a shell, unless the script gives a reason, and the reason is logged. A script stops, with a one-line message, when it passes its limits on files read, output, memory or CPU time.</p>
+    <div class="links"><a href="roc-on-shale/">The programs</a><a href="roc-on-shale/find_unused_imports/">One of them: find_unused_imports</a><a href="https://lynrummy.com/shale/tutorial.html">The Shale tutorial</a><a href="https://github.com/showell/shale/tree/master/roc_platform">The platform</a></div>
+  </div>
+  <div class="stats">
+    <div class="stat"><b>25</b><span>programs in Roc</span></div>
+    <div class="stat"><b>about 25,700</b><span>lines of Roc, 4,500 of them in two shared packages</span></div>
+    <div class="stat"><b>19</b><span>hosted functions, the platform's whole surface</span></div>
+  </div>
+</section>
+
 <section class="feature" data-app="safari">
   <div>
     <a href="safari/" aria-hidden="true" tabindex="-1"><img class="shot" src="safari/shot.png" alt="" loading="lazy"></a>
@@ -186,7 +202,7 @@ browser, compiled to WebAssembly.</p>
     <p class="caption">From the package's README: a page's code block, colored.</p>
     <p class="opening"><span class="tag">Roc at work</span>The package is pure functions from <code>Str</code> to <code>Str</code>, with no platform of its own, so any Roc app on any platform can import it. Each language is a lexer of its own, and each lexer covers every byte of its text exactly once, in order, so the HTML with its tags removed is exactly the escaped input.</p>
     <p class="opening"><span class="tag nice">Roc plays nice with others</span>Its checks hold it to real files in all seven languages, from git's first commit to CPython's standard library, each colored byte for byte as recorded. Its Odin lexer follows Odin's own tokenizer, and its Python lexer the language reference's chapter on lexical analysis.</p>
-    <div class="links"><a href="syntax-color/">Code in each language, colored</a><a href="roc-on-shale/">Roc on Shale: recipes in Roc beside their Shale originals</a><a href="https://github.com/showell/roc-syntax-color">The package</a></div>
+    <div class="links"><a href="syntax-color/">Code in each language, colored</a><a href="https://github.com/showell/roc-syntax-color">The package</a></div>
   </div>
   <div class="stats">
     <div class="stat"><b>5,242</b><span>lines of Roc in 15 modules</span></div>
