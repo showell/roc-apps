@@ -1,35 +1,49 @@
 -- This script writes the security idioms page, site/web/security-idioms/index.html:
 -- the Roc idioms that guard roc-chat against the classes of bug a black-box
 -- test of the live chat found. The prose is site/security_idioms.html, and
--- each `<!-- snippet NAME -->` line in it becomes that snippet: lines of a
--- roc-chat file as the commit REV holds them (or the snippet's own `rev`,
--- for code shown as it was before a change), each range quoted exactly,
--- the ranges joined by a `...` line and their common leading tabs taken
--- off, with a link to those lines on GitHub. Roc and Shale are colored by
--- tools/color_code (roc-syntax-color), built here with the pinned Roc; a
--- table of plain text is shown as it is. Each `<!-- diagram NAME -->` line
--- becomes Graphviz's SVG of that diagram's .dot file, inline, so the page's
--- CSS colors it in either theme.
+-- each `<!-- snippet NAME -->` line in it becomes that snippet: roc-chat's
+-- code quoted by name through tools/quote_code.shale, as its `main` branch
+-- holds it (or as the snippet's own `rev` does, for code shown as it was
+-- before a change), with a link to its lines on GitHub. A snippet is one or
+-- more parts, each a Roc definition (or a file) cut to the pieces it keeps;
+-- the pieces are shown in order, with the blank lines between two of them
+-- when only blank lines stand between them in the file, and else a `...`
+-- line, and the leading tabs every shown line shares taken off. The prose's
+-- `<!-- roc-chat commit -->` becomes the short commit quoted. Roc and Shale
+-- are colored by tools/color_code (roc-syntax-color), built here with the
+-- pinned Roc; a table of plain text is shown as it is. Each
+-- `<!-- diagram NAME -->` line becomes Graphviz's SVG of that diagram's .dot
+-- file, inline, so the page's CSS colors it in either theme.
 --
---   cd <roc-apps checkout> && shale site/build_security_idioms.shale            # writes the page
+--   cd <roc-apps checkout> && shale site/build_security_idioms.shale            # writes the page and the lock
 --   cd <roc-apps checkout> && shale site/build_security_idioms.shale check=1    # fails if the page is stale
 --
+-- A build quotes at roc-chat's `main` and writes the lock,
+-- site/security_idioms.quotes: each quote's commit and its text's hash. The
+-- check quotes again at `main` and fails, naming each quote whose code has
+-- moved since; the page is then stale until it is built again and the prose
+-- around each moved quote is read again. When none moved, the check builds
+-- the page from the lock's commits and holds it to the page written.
+--
 -- `roc_chat=` names the roc-chat checkout (`repos:roc-chat` unset), through
--- a mount; it must hold REV and every snippet's `rev`. A snippet or a
+-- a mount; it must hold `main` and every snippet's `rev`. A snippet or a
 -- diagram the prose doesn't name, or a name the prose holds and SNIPPETS or
--- DIAGRAMS lacks, stops the run. Then site/build.sh
--- copies the page into the dev channel.
+-- DIAGRAMS lacks, stops the run. Then site/build.sh copies the page into the
+-- dev channel.
 --
 -- budget: steps=50000000 arena_bytes=500000000 output_bytes=100000
 
 const PROSE = "site/security_idioms.html"
 const PAGE_DIR = "site/web/security-idioms"
 const PAGE = "site/web/security-idioms/index.html"
-const REV = "d275ae7e1cad016f1a978f6ae6500f48d8d5874a"
+const LOCK = "site/security_idioms.quotes"
+const QUOTE_CODE = "tools/quote_code.shale"
+const MAIN = "main"
 -- HumanClaim.judge before the allow-list sweep (2362e67) named its one
 -- unclaimed shape.
 const BEFORE_ALLOW_LIST = "53fe270531163f14b2d82aeee8b9d8e0043321ed"
 const GITHUB = "https://github.com/showell/roc-chat/blob/"
+const COMMIT_MARK = "<!-- roc-chat commit -->"
 const MARK = "<!-- color_code answer -->\n"
 const WANT_ROC = "roc-pin: roc-apps' pinned nightly"
 const WANT_TOOL = "color-code: tools/color_code, roc-apps' own coloring app, built by this run"
@@ -37,28 +51,65 @@ const WANT_TOOL = "color-code: tools/color_code, roc-apps' own coloring app, bui
 const ROC_CHAT = arg("roc_chat", "repos:roc-chat")
 const CHECK = arg("check", "0") == "1"
 
--- Each snippet: its name in the prose, its file, its language (`roc`,
--- `shale` or `plain`) and its line ranges, first to last, inclusive; and,
--- for code shown as it was, the commit `rev` it is quoted at, else REV.
+-- Each snippet: its name in the prose, its roc-chat file, its language
+-- (`roc`, `shale` or `plain`) and its parts, in order, each a quote of
+-- tools/quote_code.shale less its file (a definition `name`, or `kind =
+-- "file"`, with the `pieces` or `members` it keeps); and, for code shown as
+-- it was, the commit `rev` it is quoted at, else MAIN.
 const SNIPPETS = {
-  {name = "user-streams", path = "app/UserStreams.roc", language = "roc", ranges = {{22, 57}}},
-  {name = "stream-holder", path = "app/StreamHolder.roc", language = "roc", ranges = {{13, 26}}},
-  {name = "http-stream", path = "app/HttpAnswer.roc", language = "roc", ranges = {{193, 209}}},
-  {name = "sign-out-others", path = "app/DeviceSessionsRoute.roc", language = "roc", ranges = {{119, 129}}},
-  {name = "stream-table", path = "tools/stream_endings.txt", language = "plain", ranges = {{22, 22}, {25, 27}, {29, 29}, {31, 31}, {54, 54}}},
-  {name = "stream-findings", path = "tools/check_stream_endings.shale", language = "shale", ranges = {{25, 55}}},
-  {name = "human-claim", path = "app/HumanClaim.roc", language = "roc", ranges = {{11, 30}, {42, 42}}},
-  {name = "create-invite", path = "app/InviteFiles.roc", language = "roc", ranges = {{105, 112}}},
-  {name = "account-proof", path = "app/AccountProof.roc", language = "roc", ranges = {{12, 21}}},
-  {name = "password-writer", path = "app/AccountFiles.roc", language = "roc", ranges = {{179, 195}}},
-  {name = "join", path = "app/HumanInvitesRoute.roc", language = "roc", ranges = {{460, 460}, {464, 464}, {479, 480}, {491, 499}}},
-  {name = "damaged-invite", path = "app/InviteFiles.roc", language = "roc", ranges = {{66, 72}, {78, 87}}},
-  {name = "credential-table", path = "tools/credential_writers.txt", language = "plain", ranges = {{30, 30}, {37, 37}, {59, 59}}},
-  {name = "login-code-route", path = "app/Route.roc", language = "roc", ranges = {{431, 433}}},
-  {name = "route-cost", path = "app/RouteCost.roc", language = "roc", ranges = {{17, 21}, {24, 41}, {49, 53}, {79, 81}, {86, 89}}},
-  {name = "cost-probes", path = "app/route_cost_probes.txt", language = "plain", ranges = {{10, 10}, {14, 14}, {24, 24}, {29, 29}, {31, 31}}},
-  {name = "judge-before", path = "app/HumanClaim.roc", language = "roc", ranges = {{30, 38}}, rev = BEFORE_ALLOW_LIST},
-  {name = "judge-after", path = "app/HumanClaim.roc", language = "roc", ranges = {{32, 41}, {44, 51}}},
+  {name = "user-streams", path = "app/UserStreams.roc", language = "roc", parts = {{name = "UserStreams"}, {name = "end_every_stream!"}}},
+  {name = "stream-holder", path = "app/StreamHolder.roc", language = "roc", parts = {{name = "StreamHolder"}}},
+  {name = "http-stream", path = "app/HttpAnswer.roc", language = "roc", parts = {{name = "stream"}}},
+  {name = "sign-out-others", path = "app/DeviceSessionsRoute.roc", language = "roc", parts = {{name = "sign_out_others!", pieces = {{from = "sign_out_others! :"}}}}},
+  {name = "stream-table", path = "tools/stream_endings.txt", language = "plain", parts = {{kind = "file", pieces = {
+    {from = "ends     AccountFiles.replace_password_hash!", to = "ends     AccountFiles.replace_password_hash!"},
+    {from = "ends     AccountFiles.replace_session_generation!", to = "ends     DeviceKeyFiles.revoke_device_key!"},
+    {from = "may_end  DirectoryFiles.replace_channel_members!", to = "may_end  DirectoryFiles.replace_channel_members!"},
+    {from = "keeps    AccountFiles.create_account!", to = "keeps    AccountFiles.create_account!"},
+    {from = "exempt   ChannelMembersRoute.add!", to = "exempt   ChannelMembersRoute.add!"},
+  }}}},
+  {name = "stream-findings", path = "tools/check_stream_endings.shale", language = "shale", parts = {{kind = "file", pieces = {
+    {from = "--   unjudged_writer   a function", to = "-- (only FileFacts touches files) keeps out."},
+  }}}},
+  {name = "human-claim", path = "app/HumanClaim.roc", language = "roc", parts = {{name = "HumanClaim", members = {"Facts", "Unclaimed"}}}},
+  {name = "create-invite", path = "app/InviteFiles.roc", language = "roc", parts = {{name = "create_human_invite!", pieces = {{to = "create_human_invite! ="}}}}},
+  {name = "account-proof", path = "app/AccountProof.roc", language = "roc", parts = {{name = "AccountProof"}}},
+  {name = "password-writer", path = "app/AccountFiles.roc", language = "roc", parts = {{name = "replace_password_hash!"}}},
+  {name = "join", path = "app/HumanInvitesRoute.roc", language = "roc", parts = {{name = "join_by_invite!", pieces = {
+    {line = "join_by_invite! = |request| {"},
+    {from = "{ human: invited, unclaimed } =", to = "{ human: invited, unclaimed } ="},
+    {from = "joined = HumanInvites.join(", to = "human = joined.admission.human()"},
+    {from = "hash = PasswordHash.of_bcrypt_answer(", to = "Ok({ admission: joined.admission"},
+  }}}},
+  {name = "damaged-invite", path = "app/InviteFiles.roc", language = "roc", parts = {{name = "read_human_invites!", pieces = {
+    {to = "read_human_invites! :"},
+    {from = "match read_human_invite_facts!", to = "Err(Missing(fact)) =>"},
+  }}}},
+  {name = "credential-table", path = "tools/credential_writers.txt", language = "plain", parts = {{kind = "file", pieces = {
+    {from = "calls AccountFiles.replace_password_hash! ", to = "calls AccountFiles.replace_password_hash! "},
+    {from = "calls DeviceSessionsRoute.sign_out_others! ", to = "calls DeviceSessionsRoute.sign_out_others! "},
+    {from = "calls InviteFiles.create_human_invite! ", to = "calls InviteFiles.create_human_invite! "},
+  }}}},
+  {name = "login-code-route", path = "app/Route.roc", language = "roc", parts = {{name = "sign_in_choice", pieces = {{from = "(LoginCode, Get)", to = "(LoginCode, Other)"}}}}},
+  {name = "route-cost", path = "app/RouteCost.roc", language = "roc", parts = {
+    {kind = "file", pieces = {{from = "## Every route is written out", to = "## line names."}}},
+    {name = "RouteCost", pieces = {{to = "Growth : ["}}},
+    {name = "growth_of", pieces = {
+      {to = "Open(FinishGitHubSignIn) =>"},
+      {from = "Open(RedeemDeviceCode) =>", to = "SignedInOnly(ShowRecent) =>"},
+      {from = "SignedInOnly(ShowInvites) =>", to = "SignedInOnly(InviteHumanAgain(_)) =>"},
+      {from = "SignedInOnly(SignOutOtherDevices) =>"},
+    }},
+  }},
+  {name = "cost-probes", path = "app/route_cost_probes.txt", language = "plain", parts = {{kind = "file", pieces = {
+    {line = "Constant anyone GET /favicon.ico"},
+    {from = "Constant anyone POST /login ", to = "Constant anyone POST /login "},
+    {line = "PerReaderPlaces human GET /chat"},
+    {line = "PerHuman human GET /invites"},
+    {from = "PerHuman anyone POST /login/code", to = "PerHuman anyone POST /login/code"},
+  }}}},
+  {name = "judge-before", path = "app/HumanClaim.roc", language = "roc", rev = BEFORE_ALLOW_LIST, parts = {{name = "judge"}}},
+  {name = "judge-after", path = "app/HumanClaim.roc", language = "roc", parts = {{name = "judge"}, {name = "is_live"}}},
 }
 
 -- Each diagram: its name in the prose and its Graphviz source.
@@ -76,12 +127,9 @@ function escaped(s)
 end
 
 -- Nothing, or a stop naming the sibling checkout this page needs and lacks.
+-- A commit the roc-chat checkout lacks, tools/quote_code.shale names.
 function require_siblings()
   if not exists(ROC_CHAT) then fail("build_security_idioms: no roc-chat checkout at " .. ROC_CHAT .. ": clone github.com/showell/roc-chat beside roc-apps (or name one with roc_chat=)") end
-  for rev in {REV, BEFORE_ALLOW_LIST} do
-    local has = run({"git", "cat-file", "-e", rev .. "^{commit}"}, {cwd = ROC_CHAT, timeout_ms = 30000, tail = 3})
-    if has.code ~= 0 then fail("build_security_idioms: the roc-chat checkout at " .. ROC_CHAT .. " has no commit " .. rev .. ": fetch it") end
-  end
   local colorer = dirname(real(".")) .. "/roc-syntax-color"
   local r = run({"git", "-C", colorer, "rev-parse", "--show-toplevel"}, {timeout_ms = 30000, tail = 3})
   if r.code ~= 0 then fail("build_security_idioms: no roc-syntax-color checkout beside roc-apps: clone github.com/showell/roc-syntax-color there; tools/color_code imports it") end
@@ -106,28 +154,96 @@ function string_rep(s, n)
   return out
 end
 
--- The commit a snippet is quoted at.
-function snippet_rev(s)
-  return get(s, "rev", REV)
+-- Every snippet's quotes for tools/quote_code.shale, in order, each part's
+-- id `<snippet>/<part number>`.
+function quotes_of()
+  local quotes = {}
+  for s in SNIPPETS do
+    for n = 1, #s.parts do
+      local q = {}
+      for k in keys(s.parts[n]) do q[k] = s.parts[n][k] end
+      q.id = s.name .. "/" .. n
+      q.repo = ROC_CHAT
+      q.path = s.path
+      q.rev = get(s, "rev", MAIN)
+      push(quotes, q)
+    end
+  end
+  return quotes
 end
 
--- A snippet's text: each range's lines, a `...` line between ranges at the
--- next range's indent, and the tabs every quoted line shares taken off.
-function snippet_text(s)
-  local all = lines(git_show(ROC_CHAT, snippet_rev(s) .. ":" .. s.path))
-  local quoted = {}
-  for i = 1, #s.ranges do
-    local r = s.ranges[i]
-    if r[1] < 1 or r[2] > #all or r[1] > r[2] then fail("build_security_idioms: " .. s.name .. ": lines " .. r[1] .. "-" .. r[2] .. " of " .. s.path .. ", which has " .. #all) end
-    if i > 1 then push(quoted, {gap = true, indent = tabs_of(all[r[1]])}) end
-    for n = r[1], r[2] do push(quoted, {text = all[n]}) end
+-- Every quote's answer, from one run of tools/quote_code.shale: a build
+-- quotes at `main` and writes the lock; a check holds the quotes to it.
+function quoted(quotes)
+  local work = fresh_dir("build:roc-apps", "security-idioms-quotes")
+  replace(work .. "/quotes.json", json_write(quotes))
+  local mode = "write"
+  if CHECK then mode = "check" end
+  local r = run({"shale", "--root", ".", QUOTE_CODE, "quotes=" .. work .. "/quotes.json", "answers=" .. work .. "/answers.json", "lock=" .. LOCK, "mode=" .. mode}, {timeout_ms = 300000, tail = 20})
+  if r.ended ~= "exit" or r.code ~= 0 then
+    remove_tree(work)
+    fail("build_security_idioms: " .. QUOTE_CODE .. " mode=" .. mode .. " failed: " .. trim(r.out))
+  end
+  local answers = json_read(read(work .. "/answers.json"))
+  remove_tree(work)
+  return answers
+end
+
+-- A snippet's pieces, in the file's order, each its lines `{at, text}`,
+-- from its parts' answers; and the commit they were quoted at.
+function snippet_pieces(s, answers)
+  local pieces = {}
+  local rev = ""
+  for a in answers do
+    if rev ~= "" and a.rev ~= rev then fail("build_security_idioms: " .. s.name .. "'s parts were quoted at two commits") end
+    rev = a.rev
+    if not has_key(a, "lines") then fail("build_security_idioms: " .. a.id .. " quotes a whole file; a snippet keeps pieces of it") end
+    for p in a.pieces do
+      local kept = {}
+      for i = p.first, p.last do push(kept, a.lines[i]) end
+      if #pieces > 0 then
+        local before = pieces[#pieces]
+        if kept[1].at <= before[#before].at then fail("build_security_idioms: " .. a.id .. " keeps line " .. kept[1].at .. ", which is not below the piece before it, line " .. before[#before].at) end
+      end
+      push(pieces, kept)
+    end
+  end
+  return {rev = rev, pieces = pieces}
+end
+
+-- A snippet's text: its pieces in order, joined by the blank lines between
+-- them in the file when only blank lines stand there, else by a `...` line at
+-- the next piece's indent, and the tabs every shown line shares taken off.
+-- `cut` says whether any `...` was put in.
+function snippet_text(s, quote)
+  local source = lines(git_show(ROC_CHAT, quote.rev .. ":" .. s.path))
+  local shown = {}
+  local cut = false
+  for i = 1, #quote.pieces do
+    local piece = quote.pieces[i]
+    if i > 1 then
+      local gap = {}
+      local blank = true
+      local previous = quote.pieces[i - 1]
+      for n = previous[#previous].at + 1, piece[1].at - 1 do
+        if trim(source[n]) ~= "" then blank = false end
+        push(gap, {text = ""})
+      end
+      if blank then
+        for g in gap do push(shown, g) end
+      else
+        push(shown, {gap = true, indent = tabs_of(piece[1].text)})
+        cut = true
+      end
+    end
+    for l in piece do push(shown, {text = l.text}) end
   end
   local shared = 1000
-  for q in quoted do
+  for q in shown do
     if not has_key(q, "gap") and trim(q.text) ~= "" and tabs_of(q.text) < shared then shared = tabs_of(q.text) end
   end
   local out = {}
-  for q in quoted do
+  for q in shown do
     if has_key(q, "gap") then
       push(out, string_rep("\t", q.indent - shared) .. "...")
     elseif trim(q.text) == "" then
@@ -136,7 +252,7 @@ function snippet_text(s)
       push(out, sub(q.text, shared + 1))
     end
   end
-  return join(out, "\n")
+  return {text = join(out, "\n"), cut = cut}
 end
 
 -- The colored HTML of each {language, text}, in order, from one run of
@@ -160,11 +276,14 @@ function colored(requests)
   return drop(pieces, 1)
 end
 
--- A snippet's link: its file and lines on GitHub, at its commit; one
--- quoted at an older commit says which.
-function snippet_link(s)
-  local first = s.ranges[1][1]
-  local last = s.ranges[#s.ranges][2]
+-- A snippet's link: its file and lines on GitHub, at the commit quoted; one
+-- quoted at an older commit says which, and one with a `...` says it is
+-- trimmed.
+function snippet_link(s, quote, cut)
+  local pieces = quote.pieces
+  local first = pieces[1][1].at
+  local tail = pieces[#pieces]
+  local last = tail[#tail].at
   local where = "#L" .. first .. "-L" .. last
   local what = "lines " .. first .. "-" .. last
   if first == last then
@@ -172,10 +291,10 @@ function snippet_link(s)
     what = "line " .. first
   end
   local trimmed = ""
-  if #s.ranges > 1 then trimmed = ", trimmed" end
+  if cut then trimmed = ", trimmed" end
   local at = ""
-  if snippet_rev(s) ~= REV then at = ", at " .. sub(snippet_rev(s), 1, 7) end
-  return "<p class=\"file\"><a href=\"" .. GITHUB .. snippet_rev(s) .. "/" .. s.path .. where .. "\"><code>" .. escaped(s.path) .. "</code></a>, " .. what .. trimmed .. at .. "</p>"
+  if has_key(s, "rev") then at = ", at " .. sub(quote.rev, 1, 7) end
+  return "<p class=\"file\"><a href=\"" .. GITHUB .. quote.rev .. "/" .. s.path .. where .. "\"><code>" .. escaped(s.path) .. "</code></a>, " .. what .. trimmed .. at .. "</p>"
 end
 
 -- A diagram as the page shows it: Graphviz's SVG of its source, from its
@@ -187,22 +306,40 @@ function diagram_html(d)
   return "<div class=\"diagram\">\n" .. trim(sub(svg, start, #svg)) .. "\n</div>"
 end
 
-function page()
+-- The prose with its one commit marker filled with `rev`, short.
+function prose_at(rev)
   local prose = read(PROSE)
+  local parts = split(prose, COMMIT_MARK)
+  if #parts ~= 2 then fail("build_security_idioms: " .. PROSE .. " holds " .. (#parts - 1) .. " `" .. COMMIT_MARK .. "` markers, not one") end
+  return join(parts, sub(rev, 1, 7))
+end
+
+function page()
+  local answers = quoted(quotes_of())
+  local by_snippet = {}
+  for a in answers do push_at(by_snippet, split(a.id, "/")[1], a) end
   local texts = {}
+  local links = {}
   local requests = {}
+  local main_rev = ""
   for s in SNIPPETS do
-    local text = snippet_text(s)
-    texts[s.name] = text
-    if s.language ~= "plain" then push(requests, {language = s.language, text = text, name = s.name}) end
+    local quote = snippet_pieces(s, by_snippet[s.name])
+    if not has_key(s, "rev") then
+      if main_rev ~= "" and quote.rev ~= main_rev then fail("build_security_idioms: the snippets were quoted at two commits of " .. MAIN) end
+      main_rev = quote.rev
+    end
+    local shown = snippet_text(s, quote)
+    texts[s.name] = shown.text
+    links[s.name] = snippet_link(s, quote, shown.cut)
+    if s.language ~= "plain" then push(requests, {language = s.language, text = shown.text, name = s.name}) end
   end
-  local answers = colored(requests)
+  local colored_html = colored(requests)
   local html = {}
-  for i = 1, #requests do html[requests[i].name] = answers[i] end
+  for i = 1, #requests do html[requests[i].name] = colored_html[i] end
   local used = {}
   local out = {}
   local drawn = {}
-  for l in lines(prose) do
+  for l in lines(prose_at(main_rev)) do
     local m = re_find(l, "^<!-- snippet ([a-z0-9-]+) -->$")
     local d = re_find(l, "^<!-- diagram ([a-z0-9-]+) -->$")
     if d ~= nil then
@@ -217,18 +354,14 @@ function page()
     elseif m == nil then
       push(out, l)
     else
-      local found = nil
-      for s in SNIPPETS do
-        if s.name == m.group then found = s end
-      end
-      if found == nil then fail("build_security_idioms: " .. PROSE .. " names the snippet " .. m.group .. ", which SNIPPETS lacks") end
-      if has_key(used, found.name) then fail("build_security_idioms: " .. PROSE .. " names the snippet " .. found.name .. " twice") end
-      used[found.name] = true
-      push(out, snippet_link(found))
-      if found.language == "plain" then
-        push(out, "<pre class=\"plain\"><code>" .. escaped(texts[found.name]) .. "</code></pre>")
+      if not has_key(texts, m.group) then fail("build_security_idioms: " .. PROSE .. " names the snippet " .. m.group .. ", which SNIPPETS lacks") end
+      if has_key(used, m.group) then fail("build_security_idioms: " .. PROSE .. " names the snippet " .. m.group .. " twice") end
+      used[m.group] = true
+      push(out, links[m.group])
+      if has_key(html, m.group) then
+        push(out, "<pre class=\"roc\"><code>" .. html[m.group] .. "</code></pre>")
       else
-        push(out, "<pre class=\"roc\"><code>" .. html[found.name] .. "</code></pre>")
+        push(out, "<pre class=\"plain\"><code>" .. escaped(texts[m.group]) .. "</code></pre>")
       end
     end
   end
@@ -245,9 +378,9 @@ require_siblings()
 local text = page()
 if CHECK then
   if not exists(PAGE) or read(PAGE) ~= text then fail("build_security_idioms: " .. PAGE .. " is stale: run shale site/build_security_idioms.shale") end
-  print("build_security_idioms: " .. PAGE .. " is up to date")
+  print("build_security_idioms: " .. PAGE .. " is up to date, its quotes unmoved since " .. LOCK)
 else
   if not exists(PAGE_DIR) then mkdir(PAGE_DIR) end
   if exists(PAGE) then replace(PAGE, text) else create(PAGE, text) end
-  print("build_security_idioms: wrote " .. PAGE .. ", " .. #text .. " bytes")
+  print("build_security_idioms: wrote " .. PAGE .. ", " .. #text .. " bytes, and " .. LOCK)
 end
