@@ -13,11 +13,8 @@
 // widgets is held to the same checks, and its widget count is zero.
 //
 // The browser is the binary BOOK_CHECK_CHROMIUM names, when it's set, and
-// otherwise the newest Chromium Playwright installed where
-// PLAYWRIGHT_BROWSERS_PATH says (Shale sets it, build:cache/ms-playwright,
-// for every program it runs), else under ~/.cache/ms-playwright (`npx
-// playwright install chromium` puts one there).
-// When neither is there, the check stops before it starts, saying both.
+// otherwise tools/chromium.mjs's, which also starts it; when neither is
+// there, the check stops before it starts, saying where it looked.
 //
 // The checks are the same either way. The second argument says whether to
 // take shots, which no check reads. They're for a person or an agent to look
@@ -34,33 +31,19 @@
 // its own checks, by its DevTools session. The last lines say how long each
 // phase took, summed over the pages, so a slow run says where its time went.
 //
-// There is no Playwright package on the box, so this speaks the browser's
-// DevTools protocol over the WebSocket that Node has built in.
-import { spawn } from "node:child_process";
-import { existsSync, mkdirSync, mkdtempSync, readdirSync, rmSync, writeFileSync } from "node:fs";
-import { tmpdir } from "node:os";
+// The DevTools connection below is this check's own, so pages open at once
+// never hear each other's events.
+import { existsSync, mkdirSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
+import { chromiumPath, sleep, startBrowser } from "../../tools/chromium.mjs";
 
-const PLAYWRIGHT_CACHE = process.env.PLAYWRIGHT_BROWSERS_PATH || `${process.env.HOME}/.cache/ms-playwright`;
-function chromiumPath() {
+function bookChromium() {
   const named = process.env.BOOK_CHECK_CHROMIUM;
-  if (named) {
-    if (!existsSync(named)) { console.error(`book_check: BOOK_CHECK_CHROMIUM names ${named}, and nothing is there`); process.exit(2); }
-    return named;
-  }
-  const installed = existsSync(PLAYWRIGHT_CACHE)
-    ? readdirSync(PLAYWRIGHT_CACHE)
-      .map((name) => ({ name, build: Number((name.match(/^chromium-(\d+)$/) ?? [])[1]) }))
-      .filter((entry) => entry.build > 0 && existsSync(`${PLAYWRIGHT_CACHE}/${entry.name}/chrome-linux/chrome`))
-      .sort((a, b) => b.build - a.build)
-    : [];
-  if (installed.length === 0) {
-    console.error(`book_check: no Chromium: set BOOK_CHECK_CHROMIUM to its binary, or run \`npx playwright install chromium\`, which puts one in ${PLAYWRIGHT_CACHE}`);
-    process.exit(2);
-  }
-  return `${PLAYWRIGHT_CACHE}/${installed[0].name}/chrome-linux/chrome`;
+  if (!named) return chromiumPath();
+  if (!existsSync(named)) { console.error(`book_check: BOOK_CHECK_CHROMIUM names ${named}, and nothing is there`); process.exit(2); }
+  return named;
 }
-const CHROME = chromiumPath();
+const CHROME = bookChromium();
 const WIDTH = 1400;
 const HEIGHT = 900;
 // The ways a reader sees a page besides the desktop window it's driven in.
@@ -77,7 +60,6 @@ if (!base || !shotsArgument || (mode && mode !== "looks")) { console.error("usag
 const shots = shotsArgument === "none" ? null : shotsArgument;
 if (shots) for (const folder of [shots, ...VIEWS.map((view) => join(shots, view.name))]) mkdirSync(folder, { recursive: true });
 
-const sleep = (ms) => new Promise((done) => setTimeout(done, ms));
 const failures = [];
 const fail = (page, why) => failures.push(`${page}: ${why}`);
 
@@ -88,24 +70,6 @@ async function timed(phase, work) {
   const answer = await work();
   phases.set(phase, (phases.get(phase) ?? 0) + Date.now() - started);
   return answer;
-}
-
-function startBrowser(profile) {
-  const browser = spawn(CHROME, [
-    "--headless=new", "--no-sandbox", "--disable-gpu", "--hide-scrollbars", "--mute-audio",
-    "--remote-debugging-port=0", `--user-data-dir=${profile}`, `--window-size=${WIDTH},${HEIGHT}`, "about:blank",
-  ], { stdio: ["ignore", "ignore", "pipe"] });
-  const address = new Promise((found, refused) => {
-    let said = "";
-    browser.stderr.on("data", (chunk) => {
-      said += chunk;
-      const seen = said.match(/DevTools listening on (ws:\S+)/);
-      if (seen) found(seen[1]);
-    });
-    browser.on("error", refused);
-    browser.on("exit", (code) => refused(new Error(`chromium exited ${code}: ${said}`)));
-  });
-  return { browser, address };
 }
 
 // One DevTools connection: `send` answers a command, and `on` hears an event
@@ -471,11 +435,10 @@ function checkLinks(seen) {
   return reached;
 }
 
-const profile = mkdtempSync(join(tmpdir(), "book-check-"));
-const { browser, address } = startBrowser(profile);
+const browser = startBrowser({ chrome: CHROME, args: [`--window-size=${WIDTH},${HEIGHT}`] });
 let exitCode = 1;
 try {
-  const link = await connect(await address);
+  const link = await connect(await browser.address);
   const started = Date.now();
   const pages = await checkBook(link);
   const seen = new Map();
@@ -492,9 +455,6 @@ try {
   exitCode = failures.length ? 1 : 0;
   link.socket.close();
 } finally {
-  browser.removeAllListeners("exit");
-  browser.kill("SIGKILL");
-  await sleep(300);
-  rmSync(profile, { recursive: true, force: true });
+  await browser.close();
 }
 process.exit(exitCode);

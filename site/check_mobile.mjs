@@ -17,20 +17,12 @@
 //
 //   node site/check_mobile.mjs <page url> <shots folder> [desktop]
 //
-// site/check_mobile.shale runs it on the dev or staging landing page. There is
-// no Playwright package on the box, so this speaks the browser's DevTools
-// protocol over the WebSocket that Node has built in, as roc-screensaver's
-// tools/web_shots.mjs does.
-import { spawn } from "node:child_process";
-import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
-import { tmpdir } from "node:os";
+// site/check_mobile.shale runs it on the dev or staging landing page. The
+// browser and its DevTools connection are tools/chromium.mjs's.
+import { mkdirSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
+import { connect, sleep, startBrowser } from "../tools/chromium.mjs";
 
-// Playwright's browsers are where PLAYWRIGHT_BROWSERS_PATH says (Shale sets
-// it, build:cache/ms-playwright, for every program it runs), else under
-// ~/.cache/ms-playwright, where `npx playwright install chromium` puts them.
-const BROWSERS = process.env.PLAYWRIGHT_BROWSERS_PATH || `${process.env.HOME}/.cache/ms-playwright`;
-const CHROME = `${BROWSERS}/chromium-1140/chrome-linux/chrome`;
 const WIDTHS = [320, 360, 390, 414];
 const [url, shots, extra] = process.argv.slice(2);
 if (!url || !shots || (extra !== undefined && extra !== "desktop")) {
@@ -38,52 +30,6 @@ if (!url || !shots || (extra !== undefined && extra !== "desktop")) {
   process.exit(2);
 }
 mkdirSync(shots, { recursive: true });
-const sleep = (ms) => new Promise((done) => setTimeout(done, ms));
-
-function startBrowser(profile) {
-  const browser = spawn(CHROME, [
-    "--headless=new", "--no-sandbox", "--disable-gpu", "--hide-scrollbars", "--mute-audio",
-    "--remote-debugging-port=0", `--user-data-dir=${profile}`, "about:blank",
-  ], { stdio: ["ignore", "ignore", "pipe"] });
-  const address = new Promise((found, refused) => {
-    let said = "";
-    browser.stderr.on("data", (chunk) => {
-      said += chunk;
-      const seen = said.match(/DevTools listening on (ws:\S+)/);
-      if (seen) found(seen[1]);
-    });
-    browser.on("error", refused);
-    browser.on("exit", (code) => refused(new Error(`chromium exited ${code}: ${said}`)));
-  });
-  return { browser, address };
-}
-
-async function connect(address) {
-  const socket = new WebSocket(address);
-  await new Promise((open, refused) => { socket.onopen = open; socket.onerror = () => refused(new Error("no DevTools socket")); });
-  let lastId = 0;
-  const waiting = new Map();
-  const hearers = new Map();
-  socket.onmessage = ({ data }) => {
-    const message = JSON.parse(data);
-    if (message.id) {
-      const { answer, refuse } = waiting.get(message.id);
-      waiting.delete(message.id);
-      message.error ? refuse(new Error(JSON.stringify(message.error))) : answer(message.result);
-    } else {
-      hearers.get(message.method)?.(message.params);
-    }
-  };
-  return {
-    socket,
-    on: (method, hear) => hearers.set(method, hear),
-    send: (method, params = {}, sessionId) => new Promise((answer, refuse) => {
-      const id = ++lastId;
-      waiting.set(id, { answer, refuse });
-      socket.send(JSON.stringify({ id, method, params, sessionId }));
-    }),
-  };
-}
 
 // Every element and every run of text whose visible part passes the screen's
 // edge. An ancestor that scrolls or clips sideways bounds what is visible of
@@ -178,11 +124,10 @@ async function measure(link, page, width, mobile, shot) {
   return seen;
 }
 
-const profile = mkdtempSync(join(tmpdir(), "check-mobile-"));
-const { browser, address } = startBrowser(profile);
+const browser = startBrowser();
 let exitCode = 1;
 try {
-  const link = await connect(await address);
+  const link = await connect(await browser.address);
   const { targetId } = await link.send("Target.createTarget", { url: "about:blank" });
   const { sessionId } = await link.send("Target.attachToTarget", { targetId, flatten: true });
   const page = { send: link.send, session: sessionId };
@@ -205,9 +150,6 @@ try {
   exitCode = failures ? 1 : 0;
   link.socket.close();
 } finally {
-  browser.removeAllListeners("exit");
-  browser.kill("SIGKILL");
-  await sleep(300);
-  rmSync(profile, { recursive: true, force: true });
+  await browser.close();
 }
 process.exit(exitCode);

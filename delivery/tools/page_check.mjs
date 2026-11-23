@@ -14,7 +14,7 @@
 import { createHash } from "node:crypto";
 import { mkdirSync, readFileSync } from "node:fs";
 import { join } from "node:path";
-import { withBrowser, tab, evaluate, load, press, shot, sleep } from "./chromium.mjs";
+import { withBrowser, tab, evaluate, load, press, shot, sleep } from "../../tools/chromium.mjs";
 
 const [url, wasm, shots] = process.argv.slice(2);
 if (!url || !wasm || !shots) {

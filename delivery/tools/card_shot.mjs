@@ -7,7 +7,7 @@
 //
 // site/squeeze_png.mjs then makes it small; delivery/build.shale runs both
 // on the page it stages.
-import { withBrowser, tab, load, press, shot, sleep, evaluate } from "./chromium.mjs";
+import { withBrowser, tab, load, press, shot, sleep, evaluate } from "../../tools/chromium.mjs";
 
 const [url, out] = process.argv.slice(2);
 if (!url || !out) {

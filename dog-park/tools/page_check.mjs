@@ -9,7 +9,7 @@
 //   node dog-park/tools/page_check.mjs <page url> <shots folder>
 //
 // dog-park/build.shale runs it on the page it stages in the dev channel,
-// before the page is swapped in. The browser is tools/lib/chromium.mjs's.
+// before the page is swapped in. The browser is the repository's tools/chromium.mjs.
 import { mkdirSync } from "node:fs";
 import { join } from "node:path";
 import { withBrowser, tab, evaluate, load, nearestDog, drag, line, shot, sleep } from "./lib/chromium.mjs";

@@ -2,6 +2,12 @@
 
 The repository's own scripts, beside `check.shale` at its root.
 
+- `chromium.mjs` starts headless Chromium for every page tool here (the
+  mobile check, the books' check, the games' page checks and pictures) and
+  speaks its DevTools protocol. It is the one home for the browser's flags
+  and environment, which keep everything it writes in the run's TMPDIR, as
+  Shale's confinement asks; roc-screensaver's `tools/web_shots.mjs` keeps a
+  copy on purpose.
 - `quality.shale` runs Shale's Roc code-quality recipes (from its
   `cookbook/roc/`, the `cookbook:` mount) over every app, in report mode. It
   fails when a recipe stops on the code (a file Roc's parser refuses, an app
