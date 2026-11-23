@@ -1119,7 +1119,7 @@ Parser :: [].{
 		Ok({ parser: $onward, value: $built })
 	}
 
-	arguments : Parser.State -> Try(Parser.Parsed(List(Ast.Expression)), Lexer.Fault)
+	arguments : Parser.State -> Try(Parser.Parsed(List(Ast.Element)), Lexer.Fault)
 	arguments = |parser| Parser.expression_list(
 		Parser.advance(parser),
 		{ close: ")", what: "an argument" },
@@ -1129,10 +1129,11 @@ Parser :: [].{
 	# message.
 	Closing : { close : Str, what : Str }
 
-	# Expressions separated by commas up to `close`, a trailing comma allowed.
+	# Elements separated by commas up to `close`, a trailing comma allowed:
+	# each an expression, or `...` and the expression it spreads.
 	expression_list : Parser.State,
 	Parser.Closing -> Try(
-		Parser.Parsed(List(Ast.Expression)),
+		Parser.Parsed(List(Ast.Element)),
 		Lexer.Fault,
 	)
 	expression_list = |parser, closing| {
@@ -1140,9 +1141,6 @@ Parser :: [].{
 		var $onward = parser
 		var $items = []
 		while !Parser.is_punct($onward, close) {
-			if Parser.is_punct($onward, "...") {
-				return Err(Parser.fault_here($onward, "unsupported: spread (`...`)"))
-			}
 			if Parser.is_punct($onward, ",") {
 				return Err(
 					Parser.fault_here(
@@ -1151,8 +1149,19 @@ Parser :: [].{
 					),
 				)
 			}
-			parsed_expression = Parser.assignment($onward)?
-			$items = $items.append(parsed_expression.value)
+			spreads = Parser.is_punct($onward, "...")
+			start = if spreads {
+				Parser.advance($onward)
+			} else {
+				$onward
+			}
+			parsed_expression = Parser.assignment(start)?
+			element = if spreads {
+				Spread(parsed_expression.value, Parser.here($onward))
+			} else {
+				Single(parsed_expression.value)
+			}
+			$items = $items.append(element)
 			if Parser.is_punct(parsed_expression.parser, ",") {
 				$onward = Parser.advance(parsed_expression.parser)
 			} else if Parser.is_punct(parsed_expression.parser, close) {

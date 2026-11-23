@@ -1,2 +1,2 @@
 // refused: unsupported: spread
-console.log(Math.max(...[1, 2]));
+console.log({ ...{ x: 1 } });

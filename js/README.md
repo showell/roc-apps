@@ -6,8 +6,8 @@ web page that runs it, and a corpus that holds it to node.
 The code here was written by AI coding agents (Claude), with human
 supervision.
 
-**Status (2026-11-23): a first version.** 34 of 34 corpus programs print
-what node 22 prints, byte for byte, and 31 of 31 programs outside the subset
+**Status (2026-11-23): a first version.** 35 of 35 corpus programs print
+what node 22 prints, byte for byte, and 32 of 32 programs outside the subset
 are refused with the message they must give. The page builds into the dev
 channel; it is not published.
 
@@ -27,8 +27,9 @@ what node prints for it is what the interpreter must print.
   assignment, the compound assignments and `++` and `--`; property and
   index access; calls; arrow functions and function expressions, closures
   included; array and object literals (with shorthand properties and
-  methods); and template strings. `+` joins when either side is a string,
-  an array or an object, as in JavaScript.
+  methods); template strings; and spread (`...`) of an array or a string
+  into an array literal or a call's arguments. `+` joins when either side
+  is a string, an array or an object, as in JavaScript.
 - **Builtins:** `console.log`, formatted as node formats the subset's
   values (line breaks past 80 columns, grouped columns for long arrays,
   depth 2, the quoting rules); `Math`'s `floor`, `ceil`, `round`, `trunc`,
@@ -43,9 +44,9 @@ what node prints for it is what the interpreter must print.
   `String.fromCharCode`; `Array.isArray`; `Number.isInteger`.
 - **Out of it:** `this`, `new`, prototypes and classes, getters and setters,
   `==` and the other coercions (`"3" * 2`, `true + 1`), `var`, exceptions,
-  `eval`, regular expressions, destructuring, spread, async and modules;
-  two parameters of one name, and a function declared as the lone body of
-  an `if`, a `while` or a `for`. A name declared twice in one scope, and a
+  `eval`, regular expressions, destructuring, object spread and rest
+  parameters, async and modules; two parameters of one name, and a
+  function declared as the lone body of an `if`, a `while` or a `for`. A name declared twice in one scope, and a
   `let` or `const` as such a lone body, are refused as node refuses them,
   with its SyntaxError.
 

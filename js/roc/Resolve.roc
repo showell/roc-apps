@@ -126,6 +126,13 @@ Resolve :: [].{
 		slot: Resolve.slot(scopes, given.name),
 	}
 
+	element : Resolve.Scopes, Ast.Element -> Ast.Element
+	element = |scopes, given|
+		match given {
+			Single(tree) => Single(Resolve.expression(scopes, tree))
+			Spread(tree, site) => Spread(Resolve.expression(scopes, tree), site)
+		}
+
 	target : Resolve.Scopes, Ast.Target -> Ast.Target
 	target = |scopes, assigned|
 		match assigned {
@@ -148,7 +155,7 @@ Resolve :: [].{
 			Null => Null
 			Undefined => Undefined
 			Name(name, _, site) => Name(name, Resolve.slot(scopes, name), site)
-			ArrayLit(items) => ArrayLit(each(items))
+			ArrayLit(items) => ArrayLit(items.map(|item| Resolve.element(scopes, item)))
 			ObjectLit(properties) => ObjectLit(
 				properties.map(|p| { ..p, value: Resolve.expression(scopes, p.value) }),
 			)
@@ -189,7 +196,7 @@ Resolve :: [].{
 			)
 			Call(callee, arguments, site) => Call(
 				Resolve.expression(scopes, callee),
-				each(arguments),
+				arguments.map(|argument| Resolve.element(scopes, argument)),
 				site,
 			)
 			Function(definition) => Function(Box.box(Resolve.fun(scopes, definition.unbox())))

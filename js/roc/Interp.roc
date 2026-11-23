@@ -876,7 +876,7 @@ Interp :: [].{
 			Template(texts, parts) => Interp.evaluate_template(machine, texts, parts)
 			Name(name, slot, site) => Interp.evaluate_name(machine, name, slot, site)
 			ArrayLit(items) => {
-				{ machine: after, values } = Interp.evaluate_all(machine, items)
+				{ machine: after, values } = Interp.evaluate_elements(machine, items)
 				Interp.alloc(after, Array(values))
 			}
 			ObjectLit(properties) => {
@@ -960,17 +960,48 @@ Interp :: [].{
 
 	Evaluations : { machine : Interp.Machine, values : List(Heap.Value) }
 
-	evaluate_all : Interp.Machine, List(Ast.Expression) -> Interp.Evaluations
-	evaluate_all = |machine, expressions| {
+	# The values of an array literal's items or a call's arguments, each
+	# spread one put in as its items.
+	evaluate_elements : Interp.Machine, List(Ast.Element) -> Interp.Evaluations
+	evaluate_elements = |machine, elements| {
 		var $s = machine
 		var $values = []
-		for expression in expressions {
-			{ machine: after, value } = Interp.evaluate($s, expression)
-			$s = after
-			$values = $values.append(value)
+		for element in elements {
+			match element {
+				Single(expression) => {
+					{ machine: after, value } = Interp.evaluate($s, expression)
+					$s = after
+					$values = $values.append(value)
+				}
+				Spread(expression, site) => {
+					{ machine: after, value } = Interp.evaluate($s, expression)
+					match Interp.spread_items(after, value) {
+						Ok(items) => {
+							$s = after
+							$values = List.concat($values, items)
+						}
+						Err(NotIterable) => {
+							$s = Interp.with_fault(after, "TypeError: the value is not iterable${Interp.line_note(site)}")
+						}
+					}
+				}
+			}
 		}
 		{ machine: $s, values: $values }
 	}
+
+	# The items a spread puts in its place: an array's, or a string's
+	# characters, as `for ... of` takes them.
+	spread_items : Interp.Machine, Heap.Value -> Try(List(Heap.Value), [NotIterable])
+	spread_items = |machine, subject|
+		match subject {
+			Reference(id) => match Interp.kind_of(machine.cells, id) {
+				ArrayKind(_) => Ok(Interp.items_of(machine, id))
+				_ => Err(NotIterable)
+			}
+			Text(text) => Ok(Interp.characters(text).map(|character| Text(character)))
+			_ => Err(NotIterable)
+		}
 
 	evaluate_template : Interp.Machine, List(Str), List(Ast.Expression) -> Interp.Got
 	evaluate_template = |machine, texts, parts| {
@@ -1333,7 +1364,7 @@ Interp :: [].{
 		Undefined => True
 		Name(_, _, _) => True
 		Template(_, parts) => parts.all(Interp.is_pure)
-		ArrayLit(items) => items.all(Interp.is_pure)
+		ArrayLit(items) => items.all(Interp.is_pure_element)
 		ObjectLit(properties) => properties.all(|parent| Interp.is_pure(parent.value))
 		Unary(_, left, _) => Interp.is_pure(left)
 		Binary(_, left, right, _) => Interp.is_pure(left) and Interp.is_pure(right)
@@ -1350,6 +1381,13 @@ Interp :: [].{
 		Call(_, _, _) => False
 		Function(_) => False
 	}
+
+	is_pure_element : Ast.Element -> Bool
+	is_pure_element = |element|
+		match element {
+			Single(expression) => Interp.is_pure(expression)
+			Spread(expression, _) => Interp.is_pure(expression)
+		}
 
 	# `s += e` where `s` holds a string and `e` can't change it: `e` first,
 	# then its text appended to the string where the variable holds it.
@@ -1744,7 +1782,7 @@ Interp :: [].{
 
 	# ---- calls -----------------------------------------------------------------
 
-	evaluate_call : Interp.Machine, Ast.Expression, List(Ast.Expression), Ast.Where -> Interp.Got
+	evaluate_call : Interp.Machine, Ast.Expression, List(Ast.Element), Ast.Where -> Interp.Got
 	evaluate_call = |machine, callee, arguments, site|
 		match callee {
 			Member(object, name, _) => {
@@ -1759,11 +1797,11 @@ Interp :: [].{
 				}
 				match method {
 					ArrayMethod(id) => {
-						{ machine: second, values } = Interp.evaluate_all(first, arguments)
+						{ machine: second, values } = Interp.evaluate_elements(first, arguments)
 						Interp.array_method(second, id, name, values, site)
 					}
 					TextMethod(text) => {
-						{ machine: second, values } = Interp.evaluate_all(first, arguments)
+						{ machine: second, values } = Interp.evaluate_elements(first, arguments)
 						Interp.text_method(second, text, name, values, site)
 					}
 					Plain => {
@@ -1771,14 +1809,14 @@ Interp :: [].{
 							machine: second,
 							value: function,
 						} = Interp.property(first, holder, name, site)
-						{ machine: third, values } = Interp.evaluate_all(second, arguments)
+						{ machine: third, values } = Interp.evaluate_elements(second, arguments)
 						Interp.call(third, function, values, site)
 					}
 				}
 			}
 			_ => {
 				{ machine: first, value: function } = Interp.evaluate(machine, callee)
-				{ machine: second, values } = Interp.evaluate_all(first, arguments)
+				{ machine: second, values } = Interp.evaluate_elements(first, arguments)
 				Interp.call(second, function, values, site)
 			}
 		}

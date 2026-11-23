@@ -28,7 +28,7 @@ Ast :: [].{
 		Null,
 		Undefined,
 		Name(Str, Ast.Slot, Ast.Where),
-		ArrayLit(List(Ast.Expression)),
+		ArrayLit(List(Ast.Element)),
 		ObjectLit(List(Ast.Property)),
 		Unary(Ast.UnaryOperator, Ast.Expression, Ast.Where),
 		Binary(Ast.BinaryOperator, Ast.Expression, Ast.Expression, Ast.Where),
@@ -38,11 +38,15 @@ Ast :: [].{
 		Update(Ast.Target, Ast.Step, Ast.Fixity, Ast.Where),
 		Member(Ast.Expression, Str, Ast.Where),
 		Index(Ast.Expression, Ast.Expression, Ast.Where),
-		Call(Ast.Expression, List(Ast.Expression), Ast.Where),
+		Call(Ast.Expression, List(Ast.Element), Ast.Where),
 		# Boxed, so a heap cell holding a closure is no bigger than one holding
 		# an object.
 		Function(Box(Ast.FunctionDefinition)),
 	]
+
+	## An array literal's item or a call's argument: one value, or each item
+	## of an iterable spread in its place (`...items`).
+	Element : [Single(Ast.Expression), Spread(Ast.Expression, Ast.Where)]
 
 	# What an assignment or an update writes.
 	Target := [
