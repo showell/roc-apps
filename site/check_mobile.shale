@@ -22,7 +22,7 @@ const WANT = "script: check_mobile.mjs drives the page in headless Chromium"
 local channel = arg("channel", "staging")
 local page = arg("page", "")
 if not has_key(URLS, channel) then fail("check_mobile: channel is dev or staging, not " .. channel) end
-if re_find(page, "^([a-z0-9-]+/)*$") == nil then fail("check_mobile: page is a folder's path under the site, like roc-on-shale/, not " .. page) end
+if re_find(page, "^([a-z0-9_-]+/)*$") == nil then fail("check_mobile: page is a folder's path under the site, like roc-on-shale/ or roc-on-shale/find_dead_code/, not " .. page) end
 local what = "landing page"
 if page ~= "" then what = "page " .. page end
 local shots = fresh_dir("build:roc-apps", "mobile-shots")
