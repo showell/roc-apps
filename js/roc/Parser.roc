@@ -73,7 +73,10 @@ Parser :: [].{
 					definition = boxed.unbox()
 					if $lexical.contains(definition.name) {
 						return Err(
-							Parser.fault_at(definition.at, Parser.redeclared_message(definition.name)),
+							Parser.fault_at(
+								definition.at,
+								Parser.redeclared_message(definition.name),
+							),
 						)
 					}
 					if !$names.contains(definition.name) {
@@ -453,7 +456,9 @@ Parser :: [].{
 				$out = $out.append({
 					name: name_found.value,
 					slot: Unresolved,
-					init: Initialized(Parser.with_name_given(parsed_expression.value, name_found.value)),
+					init: Initialized(
+						Parser.with_name_given(parsed_expression.value, name_found.value),
+					),
 					at: site,
 				})
 				$onward = parsed_expression.parser
@@ -907,7 +912,12 @@ Parser :: [].{
 			match level.find_first(|matched| current.kind == Punct(matched.punct)) {
 				Ok(matched) => {
 					parsed = next(Parser.advance($onward))?
-					$built = Binary(matched.operator, $built, parsed.value, Parser.where_of(current))
+					$built = Binary(
+						matched.operator,
+						$built,
+						parsed.value,
+						Parser.where_of(current),
+					)
 					$onward = parsed.parser
 				}
 				Err(NotFound) => {
@@ -1199,7 +1209,10 @@ Parser :: [].{
 			Punct("#") => Err(Parser.fault_here(parser, "unsupported: private names"))
 			Punct("@") => Err(Parser.fault_here(parser, "unsupported: decorators"))
 			other => Err(
-				Parser.fault_here(parser, "expected an expression, found ${Parser.token_text(other)}"),
+				Parser.fault_here(
+					parser,
+					"expected an expression, found ${Parser.token_text(other)}",
+				),
 			)
 		}
 	}

@@ -1444,7 +1444,10 @@ Interp :: [].{
 		}
 		match target {
 			ToName(name, slot, at) => {
-				{ machine: read_machine, value: current } = Interp.evaluate_name(machine, name, slot, at)
+				{
+					machine: read_machine,
+					value: current,
+				} = Interp.evaluate_name(machine, name, slot, at)
 				match current {
 					Number(number) => {
 						{ machine: written, value: _ } = Interp.assigned_name(
@@ -1464,7 +1467,10 @@ Interp :: [].{
 			}
 			ToMember(object, key) => {
 				{ machine: first, value: holder } = Interp.evaluate(machine, object)
-				{ machine: read_machine, value: current } = Interp.property(first, holder, key, site)
+				{
+					machine: read_machine,
+					value: current,
+				} = Interp.property(first, holder, key, site)
 				match current {
 					Number(number) => {
 						{ machine: written, value: _ } = Interp.with_stored(
@@ -1879,7 +1885,10 @@ Interp :: [].{
 					machine: { ..machine, out: Str.concat(Str.concat(machine.out, line), "\n") },
 					value: Undefined,
 				}
-				Err(Unsupported(why)) => Interp.fault_got(machine, "${why}${Interp.line_note(site)}")
+				Err(Unsupported(why)) => Interp.fault_got(
+					machine,
+					"${why}${Interp.line_note(site)}",
+				)
 			}
 			Floor => Interp.math(machine, "floor", arguments, Interp.floor, site)
 			Ceil => Interp.math(

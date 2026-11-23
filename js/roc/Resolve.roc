@@ -61,7 +61,10 @@ Resolve :: [].{
 	fun : Resolve.Scopes, Ast.FunctionDefinition -> Ast.FunctionDefinition
 	fun = |scopes, definition| {
 		inner = scopes.append(definition.names)
-		{ ..definition, statements: definition.statements.map(|source| Resolve.statement(inner, source)) }
+		{
+			..definition,
+			statements: definition.statements.map(|source| Resolve.statement(inner, source)),
+		}
 	}
 
 	statement : Resolve.Scopes, Ast.Statement -> Ast.Statement
