@@ -23,9 +23,11 @@ main! = |arguments| {
 }
 
 # The core library logs and does nothing else: it has no canvas builtin to
-# draw with and none that reads input.
-command_host : Canvas.Host
-command_host = {
+# draw with and none that reads input. A function, not a constant: roc-types
+# at the pin panics ("a hosted procedure has no host binding") on a
+# top-level constant that holds an effectful lambda, which `roc` builds.
+command_host : {} -> Canvas.Host
+command_host = |{}| {
 	emit!: |effect|
 		match effect {
 			Log(line) => echo!("${line}\n")
@@ -39,7 +41,7 @@ run_program! : Str => Try({}, [Exit(I8)])
 run_program! = |src| {
 	match Parser.program_of(src, Core) {
 		Ok(program) => {
-			outcome = Interp.run!(command_host, program, Core, { steps: 200000000, effects: 1000000000000 })
+			outcome = Interp.run!(command_host({}), program, Core, { steps: 200000000, effects: 1000000000000 })
 			match outcome.status {
 				Running => Ok({})
 				Faulted(why) => {
