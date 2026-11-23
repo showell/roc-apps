@@ -65,7 +65,7 @@
 <main>
 <nav class="steps"><a href="../#c-splitter">Roc on Shale</a></nav>
 <h1>The C splitter</h1>
-<p class="file"><a href="https://github.com/showell/shale/blob/0c451bc67134e8c71182fa1d4e6c379a57b907bc/cookbook/c/items/Guard.roc"><code>cookbook/c/items/Guard.roc</code></a>, 81 lines</p>
+<p class="file"><a href="https://github.com/showell/shale/blob/012cf3403d692db2bc2dbf498ebb727f32495667/cookbook/c/items/Guard.roc"><code>cookbook/c/items/Guard.roc</code></a>, 81 lines</p>
 <pre><code><span class="syn-comment">## A header&#39;s guard, framed: Split.items gives a header&#39;s items to</span>
 <span class="syn-comment">## Guard.framed, which makes its `#ifndef` and `#define` one item and its</span>
 <span class="syn-comment">## `#endif` another.</span>
@@ -148,7 +148,7 @@
 <span class="syn-name">unaccounted</span> = |path, number, why, shown|
 	<span class="syn-string">&quot;</span>${path}<span class="syn-string">:</span>${number.to_str()}<span class="syn-string">: </span>${why}<span class="syn-string">: </span>${shown}<span class="syn-string">&quot;</span>
 </code></pre>
-<p class="file"><a href="https://github.com/showell/shale/blob/0c451bc67134e8c71182fa1d4e6c379a57b907bc/cookbook/c/items/Head.roc"><code>cookbook/c/items/Head.roc</code></a>, 365 lines</p>
+<p class="file"><a href="https://github.com/showell/shale/blob/012cf3403d692db2bc2dbf498ebb727f32495667/cookbook/c/items/Head.roc"><code>cookbook/c/items/Head.roc</code></a>, 365 lines</p>
 <pre><code><span class="syn-comment">## The readers of an item&#39;s opening line or head, each over masked bytes</span>
 <span class="syn-comment">## (Mask.masked), each the regular expression of the Shale original</span>
 <span class="syn-comment">## (c/build/c_items.shale, the fast tier&#39;s copy of this splitter), done by</span>
@@ -515,7 +515,7 @@
 	<span class="syn-type">Err</span>(<span class="syn-type">NoName</span>)
 }
 </code></pre>
-<p class="file"><a href="https://github.com/showell/shale/blob/0c451bc67134e8c71182fa1d4e6c379a57b907bc/cookbook/c/items/Item.roc"><code>cookbook/c/items/Item.roc</code></a>, 112 lines</p>
+<p class="file"><a href="https://github.com/showell/shale/blob/012cf3403d692db2bc2dbf498ebb727f32495667/cookbook/c/items/Item.roc"><code>cookbook/c/items/Item.roc</code></a>, 112 lines</p>
 <pre><code><span class="syn-comment">## A top-level item of a file of Shale&#39;s C, as Split.items gives it: its</span>
 <span class="syn-comment">## kind, the name it declares, and its lines. Every field is set, so none is</span>
 <span class="syn-comment">## missing: a line field is 0 and a text field &quot;&quot; where the item has none.</span>
@@ -629,7 +629,7 @@
 		}
 }
 </code></pre>
-<p class="file"><a href="https://github.com/showell/shale/blob/0c451bc67134e8c71182fa1d4e6c379a57b907bc/cookbook/c/items/Mask.roc"><code>cookbook/c/items/Mask.roc</code></a>, 229 lines</p>
+<p class="file"><a href="https://github.com/showell/shale/blob/012cf3403d692db2bc2dbf498ebb727f32495667/cookbook/c/items/Mask.roc"><code>cookbook/c/items/Mask.roc</code></a>, 229 lines</p>
 <pre><code><span class="syn-comment">## The masker the splitter reads Shale&#39;s C with, and the byte classes it</span>
 <span class="syn-comment">## reads by. A line is its bytes, as Shale&#39;s strings are, so a column is a</span>
 <span class="syn-comment">## byte&#39;s place. The classes are the regular expressions&#39; and the builtins&#39;</span>
@@ -860,7 +860,7 @@
 <span class="syn-name">blanked</span> = |bytes, { start, end }|
 	bytes.take_first(start).concat(<span class="syn-type">List</span>.repeat(<span class="syn-string">&#39; &#39;</span>, end - start)).concat(bytes.drop_first(end))
 </code></pre>
-<p class="file"><a href="https://github.com/showell/shale/blob/0c451bc67134e8c71182fa1d4e6c379a57b907bc/cookbook/c/items/Paths.roc"><code>cookbook/c/items/Paths.roc</code></a>, 23 lines</p>
+<p class="file"><a href="https://github.com/showell/shale/blob/012cf3403d692db2bc2dbf498ebb727f32495667/cookbook/c/items/Paths.roc"><code>cookbook/c/items/Paths.roc</code></a>, 23 lines</p>
 <pre><code><span class="syn-comment">## How the C recipes read a file&#39;s path below the folder they walk: whether</span>
 <span class="syn-comment">## it is the tests&#39;, and whether it is under a folder named `out`, the</span>
 <span class="syn-comment">## build&#39;s output, which no recipe reads.</span>
@@ -885,7 +885,7 @@
 		path.drop_prefix(<span class="syn-string">&quot;</span>${folder}<span class="syn-string">/&quot;</span>).split_on(<span class="syn-string">&quot;/&quot;</span>).drop_last(<span class="syn-number">1</span>).contains(<span class="syn-string">&quot;out&quot;</span>)
 }
 </code></pre>
-<p class="file"><a href="https://github.com/showell/shale/blob/0c451bc67134e8c71182fa1d4e6c379a57b907bc/cookbook/c/items/Split.roc"><code>cookbook/c/items/Split.roc</code></a>, 441 lines</p>
+<p class="file"><a href="https://github.com/showell/shale/blob/012cf3403d692db2bc2dbf498ebb727f32495667/cookbook/c/items/Split.roc"><code>cookbook/c/items/Split.roc</code></a>, 441 lines</p>
 <pre><code><span class="syn-comment">## The splitter: a file of Shale&#39;s C split into its top-level items, in</span>
 <span class="syn-comment">## order. There is no C parser on the box, and none is wanted:</span>
 <span class="syn-comment">## c/check_discipline.shale holds the C to a shape a line reader can trust,</span>
@@ -1328,7 +1328,7 @@
 	}
 }
 </code></pre>
-<p class="file"><a href="https://github.com/showell/shale/blob/0c451bc67134e8c71182fa1d4e6c379a57b907bc/cookbook/c/items/Words.roc"><code>cookbook/c/items/Words.roc</code></a>, 294 lines</p>
+<p class="file"><a href="https://github.com/showell/shale/blob/012cf3403d692db2bc2dbf498ebb727f32495667/cookbook/c/items/Words.roc"><code>cookbook/c/items/Words.roc</code></a>, 299 lines</p>
 <pre><code><span class="syn-comment">## The words of an item&#39;s masked text: its names, the names its body uses,</span>
 <span class="syn-comment">## an enum&#39;s constants and a generator macro&#39;s own functions, each the</span>
 <span class="syn-comment">## regular expression of the Shale original, done by hand: for the names,</span>
@@ -1426,7 +1426,12 @@
 	}
 
 	<span class="syn-comment">## Two texts in the order of their bytes, a text before every longer one</span>
-	<span class="syn-comment">## it starts, as Shale&#39;s `sort` puts strings.</span>
+	<span class="syn-comment">## it starts, as Shale&#39;s `sort` puts strings. A copy of the cookbook lib&#39;s</span>
+	<span class="syn-comment">## `Text.byte_order`, the home of the rule, kept because `uses` (so</span>
+	<span class="syn-comment">## Split.items) sorts with it and this package may not import lib: a</span>
+	<span class="syn-comment">## script&#39;s package imports no package of its own (roc_platform/run.shale</span>
+	<span class="syn-comment">## refuses one). The C recipes sort with this copy, so items stays their</span>
+	<span class="syn-comment">## only package.</span>
 	<span class="syn-name">byte_order</span> : <span class="syn-type">Str</span>, <span class="syn-type">Str</span> -&gt; [<span class="syn-type">Before</span>, <span class="syn-type">Same</span>, <span class="syn-type">After</span>]
 	<span class="syn-name">byte_order</span> = |first, second| {
 		pairs = <span class="syn-type">List</span>.map2(first.to_utf8(), second.to_utf8(), |x, y| (x, y))
@@ -1624,7 +1629,7 @@
 	<span class="syn-type">Err</span>(<span class="syn-type">Missing</span>)
 }
 </code></pre>
-<p class="file"><a href="https://github.com/showell/shale/blob/0c451bc67134e8c71182fa1d4e6c379a57b907bc/cookbook/c/items/main.roc"><code>cookbook/c/items/main.roc</code></a>, 14 lines</p>
+<p class="file"><a href="https://github.com/showell/shale/blob/012cf3403d692db2bc2dbf498ebb727f32495667/cookbook/c/items/main.roc"><code>cookbook/c/items/main.roc</code></a>, 14 lines</p>
 <pre><code><span class="syn-comment">## The splitter the recipes that read Shale&#39;s C share: a file of Shale&#39;s C</span>
 <span class="syn-comment">## split into its top-level items, from the dialect c/check_discipline.shale</span>
 <span class="syn-comment">## holds. A recipe names it by a relative path in its app&#39;s header (`items:</span>
