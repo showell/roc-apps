@@ -43,16 +43,21 @@ each corpus program is its own process.
 
 ## Measuring it
 
-**Built with the dev backend**, the page too. The LLVM backend is far
-slower to build this interpreter, and the dev backend shows the code's
-shape, which is what costs here, just as well.
-
-**A heap allocation is an `mmap` call** on the default platform, so
-`strace -c` counts allocations without timing anything. `controls.sh` runs
-each control at 1,000 and at 10,000 iterations; the difference is what one
+**The controls count allocations, not time.** `controls.shale` runs each
+control at 1,000 and at 10,000 iterations on `tools/alloc_ladder.shale`,
+which counts `roc_alloc` calls with breakpoints; the difference is what one
 iteration allocates, and each control is held to 0 or to a number written
-beside its reason. A change that makes a control start allocating names the
-feature it broke, which a slow program alone does not.
+beside its reason in `controls/expected.txt` (the release build) and
+`controls/expected-dev.txt` (the dev build). A change that makes a control
+start allocating names the feature it broke, which a slow program alone does
+not. `shale check.shale basic=1`, from the repository's root, runs both.
+
+**Time is measured on the release build** (`--opt=speed`), which runs the
+NBS suite's slowest program about ten times faster than the dev build
+does. The dev build is what `build-run.sh` and the page use, since it
+compiles in seconds where the release build takes about a minute and a
+half. `pathological.shale` times the pathological programs and counts
+their allocations.
 
 **The fast path is held to the full evaluator.** A LET, an IF or an array
 store whose expression can only produce a value takes a fast path that
@@ -100,8 +105,6 @@ line, is where the transcript starts.
   a subscript out of range does stop the program.
 - **An empty transcript is a CRASH.** The runtime's stack overflow message
   carries no ✗, and an empty transcript prints no TEST FAILED.
-- **The copy in `store`** (READ or INPUT into an array element) is load-bearing:
-  handing `set_arr` the machine straight from `ensure_arr` overflows the stack.
 - **The string path is decided before the numeric grammar**, or a string read
   down the numeric path becomes zero.
 - **The text screen (1,000 bytes at 1024) and the framebuffer (64,000 at

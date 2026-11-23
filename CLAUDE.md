@@ -537,17 +537,19 @@ Read it before writing a loop that stores into a list or a record.
   slower.
 - **To tell a copy from a write, hold the writes fixed and vary the
   size.** Flat time means in place; time linear in the size means a copy.
-  One number says nothing. `tests/copycheck.sh` does exactly this: each
-  probe runs a fixed number of writes into lists of growing size and
-  prints `FLAT` or `LINEAR`.
+  One number says nothing. Allocations are measured the same way:
+  `tools/alloc_ladder.shale` runs each of an interpreter's controls at two
+  sizes and holds what one more iteration allocates to an expected count
+  (BASIC's controls are `basic/controls.shale`, and `shale check.shale
+  basic=1` runs them).
 - **An experiment or a benchmark calls the code it measures.** A copy of
   production's expressions measures the copy: it drifts from the real code
   the day either changes, and its numbers stop meaning anything. Where the
   experiment needs a piece the module keeps private, expose that piece and
   call it.
-- **When you find a new copying shape, add a probe.** Put it in
-  `tests/copycheck.sh` beside the known ones, with its fix as a second
-  probe that reads `FLAT`, and add the shape to the notes.
+- **When you find a new copying shape, add a control.** Put a small
+  program that shows it beside the interpreter's controls, held to its
+  count, and add the shape to the notes.
 - **A record update copies the record around the field.** Keep a large,
   rarely written part behind a list of one or a `Box`, not inline (the
   notes, same section, say which suits what).

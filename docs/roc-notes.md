@@ -111,8 +111,11 @@ anyone writing or emitting Roc in this repository. How the Roc is *written*
      out, write it and put it back inside the record update:
      `{ ..m, devices: Devices.poke_into(m.devices, a, v) }`.
 - **To tell copying from writing,** hold the number of writes fixed and vary the
-  size of what is written into: flat is in place, linear is a copy
-  (`tests/copycheck.sh`). One number says nothing.
+  size of what is written into: flat is in place, linear is a copy. One number
+  says nothing. `tools/alloc_ladder.shale` holds an interpreter's controls to
+  what one more iteration allocates, run at two sizes, by counting `roc_alloc`
+  calls with breakpoints; on RC1's default platform `strace` no longer sees an
+  allocation.
 - Updating one field copies the record around it, inline sub-records included.
   A large part behind a list of one costs nothing to carry. A `Box` carried
   untouched costs the same, but every write re-boxes, one allocation per write,
