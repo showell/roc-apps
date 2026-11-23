@@ -141,6 +141,7 @@ Inspect :: [].{
 				_,
 			) => Err(Unsupported("unsupported: printing the builtin object ${name}"))
 			TimerHandle(_) => Err(Unsupported("unsupported: printing a timer, what setTimeout and setInterval answer"))
+			Failure(_, _) => Err(Unsupported("unsupported: printing an error (node prints its stack)"))
 			Array(items) => {
 				if context.seen.contains(id) {
 					Err(Unsupported("unsupported: printing a circular structure"))

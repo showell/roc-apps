@@ -69,6 +69,8 @@ Heap :: [].{
 		Sense(Heap.Sense),
 		Timing(Heap.Timing),
 		OnClick,
+		# `Error`, `TypeError` and their kin, which `new` calls.
+		MakeError(Heap.ErrorName),
 	]
 
 	## The canvas builtins that draw a shape or set how shapes are drawn.
@@ -121,6 +123,10 @@ Heap :: [].{
 		# `clearTimeout` and `clearInterval` take. Node's is an object it can
 		# print; ours can't be printed or read, so no program shows it.
 		TimerHandle(U64),
+		# An error, thrown by JavaScript's own operations or made by `new
+		# Error(message)`: its name and its message. Node prints an error with
+		# its stack, so the subset never prints one.
+		Failure(Heap.ErrorName, Str),
 	]
 
 	native_name : Heap.Native -> Str
@@ -180,6 +186,7 @@ Heap :: [].{
 			ClearInterval => "clearInterval"
 		}
 		OnClick => "onClick"
+		MakeError(name) => Heap.error_name_text(name)
 	}
 
 	cell_at : List(Heap.Cell), U64 -> Heap.Cell

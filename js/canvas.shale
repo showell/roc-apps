@@ -130,7 +130,7 @@ function main()
   if FREEZE ~= "" and not frozen then fail("js/canvas.shale: no sample is named " .. FREEZE) end
   local rails = grade_rails(exe)
   local core = run({js_build("js/canvas.shale", "js-run", "JsRun.roc", "dev"), "forward(10);"}, {timeout_ms = RUN_MS, whole = 4000, want = WANT_CANVAS})
-  local core_ok = core.code == 1 and contains(core.out, "js: ReferenceError: forward is not defined")
+  local core_ok = core.code == 1 and contains(core.out, "Uncaught ReferenceError: forward is not defined")
   if core_ok then print("PASS js-run knows no canvas builtin") else print("FAIL js-run on `forward(10);` said `" .. trim(core.out) .. "`") end
   print("js canvas: " .. (#all - bad) .. " of " .. #all .. " samples match their logs; " .. (rails.n - rails.bad) .. " of " .. rails.n .. " rails stop as they must; js-run's core library has no canvas: " .. tostring(core_ok))
   if bad + rails.bad > 0 or not core_ok then fail("js/canvas.shale: " .. (bad + rails.bad) .. " samples or rails failed, core " .. tostring(core_ok)) end

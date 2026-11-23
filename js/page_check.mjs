@@ -10,9 +10,9 @@
 // js_runner.js and:
 //
 // - runs every program in <tests-dir> through it, each held to what node
-//   itself prints for it (the program run in a fresh context whose
-//   console.log writes util.format's line, as console.log does, and whose
-//   timers are node's own, waited for until none is left);
+//   itself prints for it (the program run by node, its timers waited for
+//   until none is left), node's report of a throw nothing caught written as
+//   the one line js-run writes, as js/oracle.shale writes it;
 // - holds each program in <tests-dir>/refused to the message its first line
 //   names, but for one js-run stops on its budget of timer callbacks: the
 //   page has no such budget (an interval may animate for good), so that one
@@ -30,11 +30,10 @@
 // - holds the page's column to its flow: on load, on a pick and after an
 //   edit, only the line saying the program hasn't run; on Run, the canvas
 //   (or a console sample's console); after Stop, the drawing still in view.
+import { spawnSync } from "node:child_process";
 import { readFileSync, readdirSync } from "node:fs";
-import { join } from "node:path";
+import { join, resolve } from "node:path";
 import { pathToFileURL } from "node:url";
-import util from "node:util";
-import vm from "node:vm";
 
 const [dir, tests, canvasDir] = process.argv.slice(2);
 if (!dir || !tests || !canvasDir) {
@@ -73,26 +72,19 @@ if (failures > 0 || !runnerFile || !wasmFile) { console.error("page_check: the p
 const { loadRunner, transcriptOf } = await import(pathToFileURL(join(dir, runnerFile)).href);
 const runner = await loadRunner(readFileSync(join(dir, wasmFile)));
 
-// What node prints for a program, its timers run on node's own clock until
-// none is left.
-async function nodeOutput(src) {
-  let out = "";
-  const console = { log: (...args) => { out += util.format(...args) + "\n"; } };
-  const live = new Set();
-  const context = {
-    console,
-    setTimeout: (f, ms, ...rest) => {
-      const t = setTimeout(() => { live.delete(t); f(...rest); }, ms);
-      live.add(t);
-      return t;
-    },
-    setInterval: (f, ms, ...rest) => { const t = setInterval(f, ms, ...rest); live.add(t); return t; },
-    clearTimeout: (t) => { live.delete(t); clearTimeout(t); },
-    clearInterval: (t) => { live.delete(t); clearInterval(t); },
-  };
-  vm.runInNewContext(src, context);
-  while (live.size > 0) await new Promise((done) => setTimeout(done, 5));
-  return out;
+// What node prints for a program, run as node runs a file, its timers on
+// node's own clock until none is left. Its report of a throw nothing caught,
+// on stderr (`<path>:<n>`, the line, a caret, then what was thrown past a
+// blank line when it is an error, and the stack), is the one line js-run
+// writes: `Uncaught <the first line of what was thrown> (line <n>)`.
+function nodeOutput(file) {
+  const path = resolve(file);
+  const r = spawnSync(process.execPath, [path], { encoding: "utf8" });
+  const report = r.stderr.split("\n");
+  const start = report.findIndex((l) => l.startsWith(`${path}:`) && /^\d+$/.test(l.slice(path.length + 1)));
+  if (start < 0) return r.stdout;
+  const thrown = report.slice(start + 3).find((l) => l !== "") ?? "";
+  return `${r.stdout}Uncaught ${thrown} (line ${report[start].slice(path.length + 1)})\n`;
 }
 
 // Ten seconds of the page's frames: the longest a corpus program's timers run.
@@ -109,9 +101,9 @@ function runWhole(src) {
 const programs = readdirSync(tests).filter((f) => f.endsWith(".js")).sort();
 for (const f of programs) {
   const src = readFileSync(join(tests, f), "utf8");
-  const want = await nodeOutput(src);
+  const want = nodeOutput(join(tests, f));
   const got = runWhole(src);
-  if (got.result.ending !== "done") fail(`${f}: the page's run ended ${got.result.ending}: ${got.result.why}`);
+  if (!["done", "thrown"].includes(got.result.ending)) fail(`${f}: the page's run ended ${got.result.ending}: ${got.result.why}`);
   else if (got.text !== want) fail(`${f}: the page printed what node does not`);
 }
 

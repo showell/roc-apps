@@ -286,13 +286,14 @@ export function buildPage(runner, env = window) {
   async function settle(run, result) {
     await drain(run);
     if (run !== current) return;
-    const SAID = { done: "ran to its end", faulted: "stopped", refused: "refused", crashed: "the interpreter crashed" };
+    const SAID = { done: "ran to its end", faulted: "stopped", thrown: "stopped by an uncaught throw", refused: "refused", crashed: "the interpreter crashed" };
     if (result.ending === "frame") {
       say(`frame ${run.frame}${run.paused ? ", paused" : ""}`, false);
       if (!run.paused) schedule(run);
       return;
     }
-    if (result.ending !== "done") log(`js: ${result.why}\n`);
+    if (result.ending === "thrown") log(`${result.why}\n`);
+    else if (result.ending !== "done") log(`js: ${result.why}\n`);
     say(SAID[result.ending] ?? result.ending, result.ending !== "done");
     run.over = true;
   }

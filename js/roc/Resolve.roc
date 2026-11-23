@@ -172,6 +172,31 @@ Resolve :: [].{
 			}
 			BlockStatement(tree_block) => BlockStatement(Resolve.block(scopes, tree_block))
 			Return(tree) => Return(Resolve.expression(scopes, tree))
+			Throw(tree, site) => Throw(Resolve.expression(scopes, tree), site)
+			Try({ block: tried, handler, finalizer }) => Try({
+				block: Resolve.block(scopes, tried),
+				handler: match handler {
+					Caught(clause) => {
+						inner = match clause.parameter {
+							Bound(_) => scopes.append(clause.names)
+							Unbound => scopes
+						}
+						Caught({
+							..clause,
+							parameter: match clause.parameter {
+								Bound(bound) => Bound(Resolve.pattern(inner, bound))
+								Unbound => Unbound
+							},
+							body: Resolve.block(inner, clause.body),
+						})
+					}
+					Uncaught => Uncaught
+				},
+				finalizer: match finalizer {
+					Finally(final_block) => Finally(Resolve.block(scopes, final_block))
+					NoFinally => NoFinally
+				},
+			})
 			Break => Break
 			Continue => Continue
 			Empty => Empty
@@ -261,6 +286,11 @@ Resolve :: [].{
 				site,
 			)
 			Function(definition) => Function(Box.box(Resolve.fun(scopes, definition.unbox())))
+			New(callee, arguments, site) => New(
+				Resolve.expression(scopes, callee),
+				arguments.map(|argument| Resolve.element(scopes, argument)),
+				site,
+			)
 			Destructure(assigned, value, site) => Destructure(
 				Resolve.pattern(scopes, assigned),
 				Resolve.expression(scopes, value),

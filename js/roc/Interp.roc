@@ -65,9 +65,14 @@
 ## reference to the heap. The queue's `tick!`, `drain!` and `run_event!`
 ## follow the same exception, and so do `timer_set` and `call!` they reach.
 ##
-## A fault (a TypeError, a feature outside the subset, a budget) stops the
-## run: `status` is set, every statement after it is skipped, and the message
-## is the run's last line.
+## **A THROW UNWINDS THE WALK AS A FAULT STOPS IT.** A fault (a feature
+## outside the subset, a budget) stops the run for good: `status` is set,
+## every statement after it is skipped, and the message is the run's last
+## line. A throw (`throw`, or one of JavaScript's own errors, `with_error`)
+## sets `status` to the value thrown, and every statement after it is skipped
+## the same way, back to the nearest `try`, which runs the machine on
+## (`execute_try!`). One nothing catches ends the run as node ends it, and
+## its host prints it (`Interp.Ending`).
 import Ast
 import Canvas
 import Heap
@@ -84,7 +89,14 @@ Interp :: [].{
 
 	Scope : { variables : List(Interp.Variable), parent : Interp.Parent }
 
-	Status : [Running, Faulted(Str)]
+	## Whether the machine runs on: a fault stops the run for good; a value
+	## thrown, and not yet caught, unwinds it to the nearest `try`, which runs
+	## it on.
+	Status : [Running, Faulted(Str), Thrown(Heap.Value, Ast.Where)]
+
+	## How a run stands, as its host is told: running, stopped by a fault, or
+	## stopped by a throw nothing caught, written as the line that says so.
+	Ending : [Running, Faulted(Str), Uncaught(Str)]
 
 	Machine : {
 		cells : List(Heap.Cell),
@@ -172,7 +184,7 @@ Interp :: [].{
 		steps : U64,
 		cells : U64,
 		scopes : U64,
-		status : Interp.Status,
+		status : Interp.Ending,
 	}
 
 	## A program run to its end, then every timer it left, in the order of
@@ -193,7 +205,32 @@ Interp :: [].{
 		steps: machine.steps,
 		cells: machine.cells.len(),
 		scopes: machine.live_scopes,
-		status: machine.status,
+		status: match machine.status {
+			Running => Running
+			Faulted(why) => Faulted(why)
+			Thrown(value, site) => Interp.uncaught_ending(machine.cells, value, site)
+		},
+	}
+
+	# What a throw nothing caught says: `Uncaught `, the first line node
+	# prints for the value (an error's name and message, or the value as
+	# console.log shows it), and the line of the throw.
+	uncaught_ending : List(Heap.Cell), Heap.Value, Ast.Where -> Interp.Ending
+	uncaught_ending = |cells, value, site| {
+		shown = match value {
+			Reference(id) => match Heap.cell_at(cells, id) {
+				Failure(_, _) => Interp.text_of(cells, value)
+				_ => Inspect.line_of(cells, [value])
+			}
+			_ => Inspect.line_of(cells, [value])
+		}
+		match shown {
+			Ok(text) => {
+				first = text.split_on("\n").first() ?? crash "Interp.uncaught_ending: a split has a first piece"
+				Uncaught("Uncaught ${first}${Interp.line_note(site)}")
+			}
+			Err(Unsupported(why)) => Faulted("${why}, thrown and not caught${Interp.line_note(site)}")
+		}
 	}
 
 	fresh : Ast.Library, Interp.Limits -> Interp.Machine
@@ -743,6 +780,11 @@ Interp :: [].{
 			$s = timer_builtin.machine
 			$made = $made.append({ name: Heap.native_name(native), value: timer_builtin.value })
 		}
+		for name in [Error, TypeError, RangeError, ReferenceError, SyntaxError] {
+			maker = Interp.alloc($s, Builtin(MakeError(name), []))
+			$s = maker.machine
+			$made = $made.append({ name: Heap.error_name_text(name), value: maker.value })
+		}
 		match library {
 			Core => {}
 			Canvas => {
@@ -800,14 +842,27 @@ Interp :: [].{
 	}
 
 	is_running : Interp.Machine -> Bool
-	is_running = |machine| machine.status == Running
+	is_running = |machine|
+		match machine.status {
+			Running => True
+			_ => False
+		}
 
 	# The machine stopped with `why`, unless it had already stopped.
 	with_fault : Interp.Machine, Str -> Interp.Machine
 	with_fault = |machine, why|
 		match machine.status {
 			Running => { ..machine, status: Faulted(why) }
-			Faulted(_) => machine
+			_ => machine
+		}
+
+	# The machine unwinding with `value` thrown at `site`, unless it had
+	# already stopped.
+	with_thrown : Interp.Machine, Heap.Value, Ast.Where -> Interp.Machine
+	with_thrown = |machine, value, site|
+		match machine.status {
+			Running => { ..machine, status: Thrown(value, site) }
+			_ => machine
 		}
 
 	fault_got : Interp.Machine, Str -> Interp.Got
@@ -816,11 +871,17 @@ Interp :: [].{
 	line_note : Ast.Where -> Str
 	line_note = |site| " (line ${site.line.to_str()})"
 
-	# The machine stopped by one of JavaScript's own errors, `name`, saying
-	# `message`, as node words it, at `site`.
+	# The machine unwinding with one of JavaScript's own errors, `name`,
+	# saying `message` as node words it, thrown at `site`: a program may
+	# catch it as it catches its own.
 	with_error : Interp.Machine, Heap.ErrorName, Str, Ast.Where -> Interp.Machine
 	with_error = |machine, name, message, site|
-		Interp.with_fault(machine, "${Heap.error_name_text(name)}: ${message}${Interp.line_note(site)}")
+		if !Interp.is_running(machine) {
+			machine
+		} else {
+			{ machine: made, value: error } = Interp.alloc(machine, Failure(name, message))
+			Interp.with_thrown(made, error, site)
+		}
 
 	error_got : Interp.Machine, Heap.ErrorName, Str, Ast.Where -> Interp.Got
 	error_got = |machine, name, message, site| {
@@ -1121,9 +1182,77 @@ Interp :: [].{
 				{ machine: after, value } = Interp.evaluate!(host, machine, expression)
 				{ machine: after, flow: Returned(value) }
 			}
+			Throw(expression, site) => {
+				{ machine: after, value } = Interp.evaluate!(host, machine, expression)
+				Interp.normal(Interp.with_thrown(after, value, site))
+			}
+			Try(tried) => Interp.execute_try!(host, machine, tried)
 			Break => { machine: machine, flow: Broke }
 			Continue => { machine: machine, flow: Continued }
 			Empty => Interp.normal(machine)
+		}
+
+	# A `try`: its block; then, when the block threw, the `catch` with the
+	# value thrown, the machine running on; then the `finally`, whatever came
+	# before. A `finally` that ends normally leaves the try's own ending, a
+	# throw still unwinding or a `return` still returning; one that throws,
+	# returns or breaks puts its own in its place. A fault is never caught.
+	execute_try! : Canvas.Host, Interp.Machine, Ast.TryStatement => Interp.Done
+	execute_try! = |host, machine, { block, handler, finalizer }| {
+		{ machine: tried, flow } = Interp.execute_block!(host, machine, block)
+		{ machine: handled, flow: handled_flow } = match (tried.status, handler) {
+			(Thrown(thrown, _), Caught(clause)) => Interp.execute_catch!(
+				host,
+				{ ..tried, status: Running },
+				clause,
+				thrown,
+			)
+			_ => { machine: tried, flow: flow }
+		}
+		match (finalizer, handled.status) {
+			(NoFinally, _) => { machine: handled, flow: handled_flow }
+			(Finally(_), Faulted(_)) => { machine: handled, flow: handled_flow }
+			(Finally(final_block), pending) => {
+				{ machine: after, flow: final_flow } = Interp.execute_block!(
+					host,
+					{ ..handled, status: Running },
+					final_block,
+				)
+				if !Interp.is_running(after) or final_flow != Normal {
+					{ machine: after, flow: final_flow }
+				} else {
+					{ machine: { ..after, status: pending }, flow: handled_flow }
+				}
+			}
+		}
+	}
+
+	execute_catch! : Canvas.Host, Interp.Machine, Ast.CatchClause, Heap.Value => Interp.Done
+	execute_catch! = |host, machine, clause, thrown|
+		match clause.parameter {
+			Unbound => Interp.execute_block!(host, machine, clause.body)
+			Bound(pattern) => {
+				outer = machine.scope
+				entered = Interp.with_scope_entered(machine, Within(outer), clause.names.len())
+				id = entered.scope
+				bound = Interp.with_pattern_bound!(
+					host,
+					entered,
+					pattern,
+					{
+						value: thrown,
+						how: Declaring(Mutable),
+						origin: Nested,
+						at: clause.at,
+					},
+				)
+				{ machine: after, flow } = if Interp.is_running(bound) {
+					Interp.execute_block!(host, bound, clause.body)
+				} else {
+					Interp.normal(bound)
+				}
+				{ machine: Interp.out_of_scope(after, id, outer, clause.capture), flow: flow }
+			}
 		}
 
 	# How a loop goes on after its body: on, or out with the flow the loop
@@ -1432,6 +1561,8 @@ Interp :: [].{
 				}
 			}
 			Object(_) => Ok("[object Object]")
+			Failure(name, "") => Ok(Heap.error_name_text(name))
+			Failure(name, message) => Ok("${Heap.error_name_text(name)}: ${message}")
 			_ => Err(Unsupported("unsupported: turning a function or a builtin object into text"))
 		}
 	}
@@ -1603,6 +1734,11 @@ Interp :: [].{
 				machine,
 				Fun({ fun: definition, scope: machine.scope }),
 			)
+			New(callee, arguments, site) => {
+				{ machine: first, value: maker } = Interp.evaluate!(host, machine, callee)
+				{ machine: second, values } = Interp.evaluate_elements!(host, first, arguments)
+				Interp.constructed(second, maker, callee, values, site)
+			}
 			Destructure(pattern, expression, site) => {
 				{ machine: after, value } = Interp.evaluate!(host, machine, expression)
 				bound = Interp.with_pattern_bound!(
@@ -1700,18 +1836,25 @@ Interp :: [].{
 			At({ scope, index }) => {
 				binding = Interp.variable_at(machine.scopes, scope, index)
 				match binding.state {
-					Unready => Interp.fault_got(
+					Unready => Interp.error_got(
 						machine,
-						"ReferenceError: Cannot access '${name}' before initialization${Interp.line_note(site)}",
+						ReferenceError,
+						Interp.unready_message(name),
+						site,
 					)
 					_ => { machine: machine, value: binding.value }
 				}
 			}
-			Nowhere => Interp.fault_got(machine, Interp.missing_name_message(name, site))
+			Nowhere => Interp.missing_name_got(machine, name, site)
 		}
 
-	missing_name_message : Str, Ast.Where -> Str
-	missing_name_message = |name, site|
+	unready_message : Str -> Str
+	unready_message = |name| "Cannot access '${name}' before initialization"
+
+	# A name declared nowhere: a builtin JavaScript has and the subset
+	# doesn't, refused, or else node's ReferenceError.
+	missing_name_got : Interp.Machine, Str, Ast.Where -> Interp.Got
+	missing_name_got = |machine, name, site|
 		if [
 			"globalThis",
 			"window",
@@ -1726,15 +1869,13 @@ Interp :: [].{
 			"RegExp",
 			"parseInt",
 			"parseFloat",
-			"setTimeout",
-			"Error",
 			"BigInt",
 			"Reflect",
 			"Proxy",
 		].contains(name) {
-			"unsupported: the builtin `${name}`${Interp.line_note(site)}"
+			Interp.fault_got(machine, "unsupported: the builtin `${name}`${Interp.line_note(site)}")
 		} else {
-			"ReferenceError: ${name} is not defined${Interp.line_note(site)}"
+			Interp.error_got(machine, ReferenceError, "${name} is not defined", site)
 		}
 
 	unary : Interp.Machine, Ast.UnaryOperator, Heap.Value, Ast.Where -> Interp.Got
@@ -1997,19 +2138,20 @@ Interp :: [].{
 						index,
 						{ value: value, state: Mutable },
 					)
-					Fixed => Interp.fault_got(
+					Fixed => Interp.error_got(
 						machine,
-						"TypeError: Assignment to constant variable.${Interp.line_note(site)}",
+						TypeError,
+						"Assignment to constant variable.",
+						site,
 					)
-					Unready => Interp.fault_got(
+					Unready => Interp.error_got(
 						machine,
-						"ReferenceError: Cannot access '${name}' before initialization${Interp.line_note(site)}",
+						ReferenceError,
+						Interp.unready_message(name),
+						site,
 					)
 				}
-				Nowhere => Interp.fault_got(
-					machine,
-					"ReferenceError: ${name} is not defined${Interp.line_note(site)}",
-				)
+				Nowhere => Interp.error_got(machine, ReferenceError, "${name} is not defined", site)
 			}
 		}
 
@@ -2057,6 +2199,7 @@ Interp :: [].{
 		Call(_, _, _) => False
 		Function(_) => False
 		Destructure(_, _, _) => False
+		New(_, _, _) => False
 	}
 
 	is_pure_element : Ast.Element -> Bool
@@ -2622,6 +2765,20 @@ Interp :: [].{
 					machine,
 					"unsupported: a timer's properties (`${key}`)${Interp.line_note(site)}",
 				)
+				Failure(name, message) => match key {
+					"name" => { machine: machine, value: Text(Heap.error_name_text(name)) }
+					"message" => { machine: machine, value: Text(message) }
+					_ => {
+						if key == "stack" or Interp.is_prototype_name(key) {
+							Interp.fault_got(
+								machine,
+								"unsupported: an error's `${key}`${Interp.line_note(site)}",
+							)
+						} else {
+							{ machine: machine, value: Undefined }
+						}
+					}
+				}
 			}
 			Text(text) => {
 				if key == "length" {
@@ -2643,13 +2800,17 @@ Interp :: [].{
 					}
 				}
 			}
-			Null => Interp.fault_got(
+			Null => Interp.error_got(
 				machine,
-				"TypeError: Cannot read properties of null (reading '${key}')${Interp.line_note(site)}",
+				TypeError,
+				"Cannot read properties of null (reading '${key}')",
+				site,
 			)
-			Undefined => Interp.fault_got(
+			Undefined => Interp.error_got(
 				machine,
-				"TypeError: Cannot read properties of undefined (reading '${key}')${Interp.line_note(site)}",
+				TypeError,
+				"Cannot read properties of undefined (reading '${key}')",
+				site,
 			)
 			_ => Interp.fault_got(
 				machine,
@@ -2714,7 +2875,7 @@ Interp :: [].{
 	# match's arm runs, so a write made inside that arm copies them: every
 	# store into an array of N items copied the N items. These answers hold
 	# nothing of the heap.
-	Kind : [ObjectKind, ArrayKind(U64), FunctionKind, BuiltinKind]
+	Kind : [ObjectKind, ArrayKind(U64), FunctionKind, BuiltinKind, ErrorKind]
 
 	kind_of : List(Heap.Cell), U64 -> Interp.Kind
 	kind_of = |cells, id|
@@ -2725,6 +2886,7 @@ Interp :: [].{
 			Builtin(_, _) => BuiltinKind
 			Namespace(_, _) => BuiltinKind
 			TimerHandle(_) => BuiltinKind
+			Failure(_, _) => ErrorKind
 		}
 
 	# A property or an item written: an object's property, an array's item
@@ -2768,19 +2930,32 @@ Interp :: [].{
 							)
 						}
 					}
+					ErrorKind => Interp.fault_got(
+						machine,
+						"unsupported: writing a property of an error${Interp.line_note(site)}",
+					)
 					_ => Interp.fault_got(
 						machine,
 						"unsupported: writing a property of a function or a builtin${Interp.line_note(site)}",
 					)
 				}
-				Null => Interp.fault_got(
-					machine,
-					"TypeError: Cannot set properties of null${Interp.line_note(site)}",
-				)
-				Undefined => Interp.fault_got(
-					machine,
-					"TypeError: Cannot set properties of undefined${Interp.line_note(site)}",
-				)
+				Null | Undefined => {
+					nothing = if object == Null {
+						"null"
+					} else {
+						"undefined"
+					}
+					setting = match Interp.key_of(key) {
+						Ok(text) => " (setting '${text}')"
+						Err(_) => ""
+					}
+					Interp.error_got(
+						machine,
+						TypeError,
+						"Cannot set properties of ${nothing}${setting}",
+						site,
+					)
+				}
 				_ => Interp.fault_got(
 					machine,
 					"unsupported: writing a property of a ${Interp.type_of(machine.cells, object)}${Interp.line_note(site)}",
@@ -2789,6 +2964,51 @@ Interp :: [].{
 		}
 
 	# ---- calls -----------------------------------------------------------------
+
+	# What `new` makes: an error, from `Error` and its kin, the subset's
+	# constructors. `new` on a function of the program would need its
+	# prototype, which the subset leaves out.
+	constructed : Interp.Machine, Heap.Value, Ast.Expression, List(Heap.Value), Ast.Where -> Interp.Got
+	constructed = |machine, maker, callee, arguments, site|
+		if !Interp.is_running(machine) {
+			{ machine: machine, value: Undefined }
+		} else {
+			made = match maker {
+				Reference(id) => match Heap.cell_at(machine.cells, id) {
+					Builtin(MakeError(name), _) => Errors(name)
+					Fun(_) => Program
+					_ => Nothing
+				}
+				_ => Nothing
+			}
+			match made {
+				Errors(name) => Interp.error_made(machine, name, arguments, site)
+				Program => Interp.fault_got(
+					machine,
+					"unsupported: `new` on a function of the program (constructors and prototypes)${Interp.line_note(site)}",
+				)
+				Nothing => Interp.error_got(
+					machine,
+					TypeError,
+					"${Interp.source_text(callee)} is not a constructor",
+					site,
+				)
+			}
+		}
+
+	# `new Error(message)` and its kin: the message the text of what is given,
+	# or none.
+	error_made : Interp.Machine, Heap.ErrorName, List(Heap.Value), Ast.Where -> Interp.Got
+	error_made = |machine, name, arguments, site| {
+		message = match arguments.first() {
+			Ok(Undefined) | Err(ListWasEmpty) => Ok("")
+			Ok(given) => Interp.text_of(machine.cells, given)
+		}
+		match message {
+			Ok(text) => Interp.alloc(machine, Failure(name, text))
+			Err(Unsupported(why)) => Interp.fault_got(machine, "${why}${Interp.line_note(site)}")
+		}
+	}
 
 	evaluate_call! : Canvas.Host, Interp.Machine, Ast.Expression, List(Ast.Element), Ast.Where => Interp.Got
 	evaluate_call! = |host, machine, callee, arguments, site|
@@ -2834,15 +3054,31 @@ Interp :: [].{
 							machine: third,
 							values,
 						} = Interp.evaluate_elements!(host, second, arguments)
-						Interp.call!(host, third, function, values, site)
+						Interp.call_written!(host, third, function, values, callee, site)
 					}
 				}
 			}
 			_ => {
 				{ machine: first, value: function } = Interp.evaluate!(host, machine, callee)
 				{ machine: second, values } = Interp.evaluate_elements!(host, first, arguments)
-				Interp.call!(host, second, function, values, site)
+				Interp.call_written!(host, second, function, values, callee, site)
 			}
+		}
+
+	# A call the program wrote: `call!`, but a callee that isn't a function
+	# is named as the program wrote it, as node names it (`o.f is not a
+	# function`).
+	call_written! : Canvas.Host, Interp.Machine, Heap.Value, List(Heap.Value), Ast.Expression, Ast.Where => Interp.Got
+	call_written! = |host, machine, function, arguments, written, site|
+		if Interp.is_running(machine) and !Interp.is_callable(machine.cells, function) {
+			Interp.error_got(
+				machine,
+				TypeError,
+				"${Interp.source_text(written)} is not a function",
+				site,
+			)
+		} else {
+			Interp.call!(host, machine, function, arguments, site)
 		}
 
 	call! : Canvas.Host, Interp.Machine, Heap.Value, List(Heap.Value), Ast.Where => Interp.Got
@@ -2860,14 +3096,18 @@ Interp :: [].{
 						arguments,
 						site,
 					)
-					_ => Interp.fault_got(
+					_ => Interp.error_got(
 						machine,
-						"TypeError: ${Interp.shown_value(machine.cells, callee)} is not a function${Interp.line_note(site)}",
+						TypeError,
+						"${Interp.shown_value(machine.cells, callee)} is not a function",
+						site,
 					)
 				}
-				_ => Interp.fault_got(
+				_ => Interp.error_got(
 					machine,
-					"TypeError: ${Interp.shown_value(machine.cells, callee)} is not a function${Interp.line_note(site)}",
+					TypeError,
+					"${Interp.shown_value(machine.cells, callee)} is not a function",
+					site,
 				)
 			}
 		}
@@ -2875,10 +3115,7 @@ Interp :: [].{
 	call_closure! : Canvas.Host, Interp.Machine, Heap.Closure, List(Heap.Value), Ast.Where => Interp.Got
 	call_closure! = |host, machine, closure, arguments, site|
 		if machine.depth >= Interp.max_depth {
-			Interp.fault_got(
-				machine,
-				"RangeError: Maximum call stack size exceeded${Interp.line_note(site)}",
-			)
+			Interp.error_got(machine, RangeError, "Maximum call stack size exceeded", site)
 		} else {
 			outer = machine.scope
 			definition = closure.fun.unbox()
@@ -3176,6 +3413,10 @@ Interp :: [].{
 			Timing(SetTimeout) => Interp.timer_set(machine, Once, arguments, site)
 			Timing(SetInterval) => Interp.timer_set(machine, Repeating, arguments, site)
 			Timing(ClearTimeout) | Timing(ClearInterval) => Interp.timer_cleared(machine, arguments)
+			MakeError(name) => Interp.fault_got(
+				machine,
+				"unsupported: calling `${Heap.error_name_text(name)}` without `new`${Interp.line_note(site)}",
+			)
 			OnClick => match arguments.first() {
 				Ok(handler) if Interp.is_callable(machine.cells, handler) => {
 					machine: {
@@ -3715,9 +3956,11 @@ Interp :: [].{
 			}
 		}
 		match start {
-			Err(Empty) => Interp.fault_got(
+			Err(Empty) => Interp.error_got(
 				machine,
-				"TypeError: Reduce of empty array with no initial value${Interp.line_note(site)}",
+				TypeError,
+				"Reduce of empty array with no initial value",
+				site,
 			)
 			Ok({ accumulated, from }) => {
 				var $s = machine

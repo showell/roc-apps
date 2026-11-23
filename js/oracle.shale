@@ -1,7 +1,9 @@
 -- This script grades the JavaScript subset against node, its oracle. Every
 -- program in js/tests/ is real JavaScript, so node runs it too: each runs
 -- through node and through js-run, and the two outputs (stdout and the exit
--- code) must match byte for byte. Each program in js/tests/refused/ is one
+-- code) must match byte for byte, but for node's report of a throw nothing
+-- caught, which js-run writes as one line (`uncaught_as_one_line`, below).
+-- Each program in js/tests/refused/ is one
 -- the subset must refuse: its first line, `// refused: <text>`, is what
 -- js-run's last line (`js: <why>`) must hold, and js-run must exit 1.
 --
@@ -31,6 +33,41 @@ function transcript(r)
   return r.out .. "\n[exit " .. r.code .. "]"
 end
 
+-- node's output with its report of a throw nothing caught as js-run writes
+-- it. node writes the report on stderr, after all the program printed: a
+-- line `<path>:<n>`, the line of the throw, a caret under it, then what was
+-- thrown (past a blank line when it is an error: `TypeError: ...`) and the
+-- stack, and a blank line before it all when what was thrown is no error.
+-- js-run writes one line, `Uncaught <the first line of what was thrown>
+-- (line <n>)`, so this keeps that much of node's and drops the rest. A
+-- program that prints a blank line just before it throws what is no error
+-- loses that line here, and so fails; none does.
+function uncaught_as_one_line(out, path)
+  local all = lines(out)
+  local start = 0
+  local at = ""
+  for i = 1, #all do
+    local m = re_find(all[i], ":([0-9]+)$")
+    if m ~= nil and all[i] == path .. ":" .. m.group then
+      start = i
+      at = m.group
+    end
+  end
+  if start == 0 then return out end
+  local thrown = ""
+  local j = start + 3
+  while j <= #all and thrown == "" do
+    thrown = all[j]
+    j = j + 1
+  end
+  local kept = {}
+  local last = start - 1
+  if last >= 1 and all[last] == "" then last = last - 1 end
+  for i = 1, last do push(kept, all[i]) end
+  push(kept, "Uncaught " .. thrown .. " (line " .. at .. ")")
+  return join(kept, "\n") .. "\n"
+end
+
 -- The first line where two transcripts differ, both sides shown.
 function first_difference(want, got)
   local a = lines(want)
@@ -57,6 +94,7 @@ function grade_oracle(exe)
       n = n + 1
       local node = run({"node", real(f)}, {timeout_ms = RUN_MS, whole = 4000000, want = WANT_NODE})
       local mine = js_run(exe, read(f))
+      node.out = uncaught_as_one_line(node.out, real(f))
       local want = transcript(node)
       local got = transcript(mine)
       if want == got then
