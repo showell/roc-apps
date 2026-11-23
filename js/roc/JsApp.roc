@@ -16,7 +16,7 @@ page_step_limit : U64
 page_step_limit = 3000000
 
 source_buffer : U32 -> List(U8)
-source_buffer = |n| List.repeat(0, n.to_u64())
+source_buffer = |length| List.repeat(0, length.to_u64())
 
 run_program : List(U8) -> List(U8)
 run_program = |bytes| {
@@ -29,9 +29,9 @@ run_program = |bytes| {
 				Faulted(why) => List.concat([1], "${outcome.out}js: ${why}\n".to_utf8())
 			}
 		}
-		Err(f) => List.concat(
+		Err(fault) => List.concat(
 			[2],
-			"js: ${f.why} (line ${f.line.to_str()}, column ${f.column.to_str()})\n".to_utf8(),
+			"js: ${fault.why} (line ${fault.line.to_str()}, column ${fault.column.to_str()})\n".to_utf8(),
 		)
 	}
 }

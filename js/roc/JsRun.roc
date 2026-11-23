@@ -34,8 +34,8 @@ run_program! = |src| {
 				}
 			}
 		}
-		Err(f) => {
-			echo!("js: ${f.why} (line ${f.line.to_str()}, column ${f.column.to_str()})\n")
+		Err(fault) => {
+			echo!("js: ${fault.why} (line ${fault.line.to_str()}, column ${fault.column.to_str()})\n")
 			Err(Exit(1))
 		}
 	}

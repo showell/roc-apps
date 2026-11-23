@@ -7,21 +7,21 @@
 NumberText :: [].{
 	# The text of a number, as `String(n)` gives it: -0 is "0".
 	of : F64 -> Str
-	of = |n|
-		if n.is_nan() {
+	of = |number|
+		if number.is_nan() {
 			"NaN"
-		} else if n.is_infinite() {
-			if n > 0.0 {
+		} else if number.is_infinite() {
+			if number > 0.0 {
 				"Infinity"
 			} else {
 				"-Infinity"
 			}
-		} else if n == 0.0 {
+		} else if number == 0.0 {
 			"0"
-		} else if n < 0.0 {
-			"-${NumberText.of_positive(-n)}"
+		} else if number < 0.0 {
+			"-${NumberText.of_positive(-number)}"
 		} else {
-			NumberText.of_positive(n)
+			NumberText.of_positive(number)
 		}
 
 	# The shortest digits of a positive finite number, and its exponent `n` as
@@ -29,8 +29,8 @@ NumberText :: [].{
 	Digits : { digits : List(U8), point : I64 }
 
 	digits_of : F64 -> NumberText.Digits
-	digits_of = |n| {
-		text = n.to_str()
+	digits_of = |number| {
+		text = number.to_str()
 		{ mantissa, exponent } = match text.split_first("e") {
 			Ok({ before, after }) => {
 				mantissa: before,
@@ -49,8 +49,8 @@ NumberText :: [].{
 	}
 
 	is_zero_at : List(U8), U64 -> Bool
-	is_zero_at = |bytes, i| match bytes.get(i) {
-		Ok(b) => b == '0'
+	is_zero_at = |bytes, position| match bytes.get(position) {
+		Ok(byte) => byte == '0'
 		Err(OutOfBounds) => False
 	}
 
@@ -75,9 +75,9 @@ NumberText :: [].{
 	of_positive : F64 -> Str
 	of_positive = |x| {
 		{ digits, point } = NumberText.digits_of(x)
-		k = digits.len().to_i64_wrap()
-		text = if k <= point and point <= 21 {
-			List.concat(digits, List.repeat('0', (point - k).to_u64_wrap()))
+		digit_count = digits.len().to_i64_wrap()
+		text = if digit_count <= point and point <= 21 {
+			List.concat(digits, List.repeat('0', (point - digit_count).to_u64_wrap()))
 		} else if 0 < point and point <= 21 {
 			at = point.to_u64_wrap()
 			List.concat(digits.sublist({ start: 0, len: at }).append('.'), digits.drop_first(at))

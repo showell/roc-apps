@@ -69,7 +69,7 @@ Heap :: [].{
 	]
 
 	native_name : Heap.Native -> Str
-	native_name = |n| match n {
+	native_name = |native| match native {
 		Log => "log"
 		Floor => "floor"
 		Ceil => "ceil"
@@ -100,20 +100,20 @@ Heap :: [].{
 	# The value of a property an object has, or Undefined.
 	property_value : List(Heap.Property), Str -> Heap.Value
 	property_value = |properties, key|
-		match properties.find_first(|p| p.key == key) {
-			Ok(p) => p.value
+		match properties.find_first(|found| found.key == key) {
+			Ok(found) => found.value
 			Err(NotFound) => Undefined
 		}
 
 	has_property : List(Heap.Property), Str -> Bool
-	has_property = |properties, key| properties.any(|p| p.key == key)
+	has_property = |properties, key| properties.any(|found| found.key == key)
 
 	# Props with `key` set: in its place when it is there, else at the end.
 	properties_with : List(Heap.Property), Str, Heap.Value -> List(Heap.Property)
 	properties_with = |properties, key, value|
-		match properties.find_first_index(|p| p.key == key) {
-			Ok(i) => properties.set(
-				i,
+		match properties.find_first_index(|found| found.key == key) {
+			Ok(position) => properties.set(
+				position,
 				{ key: key, value: value },
 			) ?? crash "Heap.props_with: the index was just found"
 			Err(NotFound) => properties.append({ key: key, value: value })
@@ -148,13 +148,13 @@ Heap :: [].{
 
 	# The heap with an array's item `i` set, or appended when `i` is its length.
 	with_item : List(Heap.Cell), U64, U64, Heap.Value -> List(Heap.Cell)
-	with_item = |cells, id, i, value| {
+	with_item = |cells, id, position, value| {
 		taken = Heap.taken_out(cells, id)
 		match taken.prev {
 			Array(items) => Heap.put_back(
 				taken.list,
 				id,
-				Array(Heap.items_with(items, i, value)),
+				Array(Heap.items_with(items, position, value)),
 			)
 			_ => crash "Heap.with_item: the interpreter writes items only to arrays"
 		}
@@ -164,12 +164,12 @@ Heap :: [].{
 	# arm, beside a binding of its own, it copied the items: every store into
 	# an array of N items cost N.
 	items_with : List(Heap.Value), U64, Heap.Value -> List(Heap.Value)
-	items_with = |items, i, value|
-		if i == items.len() {
+	items_with = |items, position, value|
+		if position == items.len() {
 			items.append(value)
 		} else {
 			items.set(
-				i,
+				position,
 				value,
 			) ?? crash "Heap.items_with: the interpreter writes inside an array or at its end"
 		}

@@ -84,53 +84,53 @@ Lexer :: [].{
 	}
 
 	byte_at : List(U8), U64 -> U8
-	byte_at = |src, i| src.get(i) ?? 0
+	byte_at = |src, position| src.get(position) ?? 0
 
 	fault_at : Lexer.Scan, Str -> Lexer.Fault
-	fault_at = |s, why| {
+	fault_at = |scanner, why| {
 		why: why,
-		line: s.line,
-		column: s.at - s.line_start + 1,
+		line: scanner.line,
+		column: scanner.at - scanner.line_start + 1,
 	}
 
 	# The scan past one token, a run of space or one comment.
 	scan_one : List(U8), Lexer.Scan -> Try(Lexer.Scan, Lexer.Fault)
-	scan_one = |src, s| {
-		c = Lexer.byte_at(src, s.at)
-		next = Lexer.byte_at(src, s.at + 1)
-		if c == '\n' {
+	scan_one = |src, scanner| {
+		byte = Lexer.byte_at(src, scanner.at)
+		next = Lexer.byte_at(src, scanner.at + 1)
+		if byte == '\n' {
 			Ok({
-				..s,
-				at: s.at + 1,
-				line: s.line + 1,
-				line_start: s.at + 1,
+				..scanner,
+				at: scanner.at + 1,
+				line: scanner.line + 1,
+				line_start: scanner.at + 1,
 				before: NewLine,
 			})
-		} else if c == ' ' or c == '\t' or c == '\r' {
-			Ok({ ..s, at: s.at + 1 })
-		} else if c == '/' and next == '/' {
-			Ok({ ..s, at: Lexer.line_end(src, s.at) })
-		} else if c == '/' and next == '*' {
-			Lexer.past_block_comment(src, s)
-		} else if Lexer.is_digit(c) or (c == '.' and Lexer.is_digit(next)) {
-			Lexer.scan_number(src, s)
-		} else if Lexer.is_name_start(c) {
-			Ok(Lexer.scan_name(src, s))
-		} else if c == '"' or c == '\'' {
-			Lexer.scan_string(src, s, c)
-		} else if c == '`' {
+		} else if byte == ' ' or byte == '\t' or byte == '\r' {
+			Ok({ ..scanner, at: scanner.at + 1 })
+		} else if byte == '/' and next == '/' {
+			Ok({ ..scanner, at: Lexer.line_end(src, scanner.at) })
+		} else if byte == '/' and next == '*' {
+			Lexer.past_block_comment(src, scanner)
+		} else if Lexer.is_digit(byte) or (byte == '.' and Lexer.is_digit(next)) {
+			Lexer.scan_number(src, scanner)
+		} else if Lexer.is_name_start(byte) {
+			Ok(Lexer.scan_name(src, scanner))
+		} else if byte == '"' or byte == '\'' {
+			Lexer.scan_string(src, scanner, byte)
+		} else if byte == '`' {
 			Lexer.scan_template(
 				src,
-				{ ..s, at: s.at + 1 },
-				s,
+				{ ..scanner, at: scanner.at + 1 },
+				scanner,
 				Head,
 			)
-		} else if c == '}' {
-			Lexer.scan_close_brace(src, s)
-		} else if c >= 128 {
-			Err(Lexer.fault_at(s, "unsupported: a non-ASCII character outside a string"))
+		} else if byte == '}' {
+			Lexer.scan_close_brace(src, scanner)
+		} else if byte >= 128 {
+			Err(Lexer.fault_at(scanner, "unsupported: a non-ASCII character outside a string"))
 		} else {
-			Lexer.scan_punct(src, s)
+			Lexer.scan_punct(src, scanner)
 		}
 	}
 
@@ -144,11 +144,11 @@ Lexer :: [].{
 	}
 
 	past_block_comment : List(U8), Lexer.Scan -> Try(Lexer.Scan, Lexer.Fault)
-	past_block_comment = |src, s| {
-		var $i = s.at + 2
-		var $line = s.line
-		var $line_start = s.line_start
-		var $before = s.before
+	past_block_comment = |src, scanner| {
+		var $i = scanner.at + 2
+		var $line = scanner.line
+		var $line_start = scanner.line_start
+		var $before = scanner.before
 		while $i < src.len() and !(
 			Lexer.byte_at(src, $i) == '*' and Lexer.byte_at(
 				src,
@@ -163,10 +163,10 @@ Lexer :: [].{
 			$i = $i + 1
 		}
 		if $i >= src.len() {
-			Err(Lexer.fault_at(s, "a comment that never ends"))
+			Err(Lexer.fault_at(scanner, "a comment that never ends"))
 		} else {
 			Ok({
-				..s,
+				..scanner,
 				at: $i + 2,
 				line: $line,
 				line_start: $line_start,
@@ -176,26 +176,26 @@ Lexer :: [].{
 	}
 
 	is_digit : U8 -> Bool
-	is_digit = |c| c >= '0' and c <= '9'
+	is_digit = |byte| byte >= '0' and byte <= '9'
 
 	is_name_start : U8 -> Bool
-	is_name_start = |c| (c >= 'a' and c <= 'z') or (c >= 'A' and c <= 'Z') or c == '_' or c == '$'
+	is_name_start = |byte| (byte >= 'a' and byte <= 'z') or (byte >= 'A' and byte <= 'Z') or byte == '_' or byte == '$'
 
 	is_name_part : U8 -> Bool
-	is_name_part = |c| Lexer.is_name_start(c) or Lexer.is_digit(c)
+	is_name_part = |byte| Lexer.is_name_start(byte) or Lexer.is_digit(byte)
 
 	# The scan with one more token, which started at `from`.
 	with_token : Lexer.Scan, Lexer.TokenKind, U64 -> Lexer.Scan
-	with_token = |s, kind, from| {
+	with_token = |scanner, kind, from| {
 		token = {
 			kind: kind,
-			line: s.line,
-			column: from - s.line_start + 1,
-			before: s.before,
+			line: scanner.line,
+			column: from - scanner.line_start + 1,
+			before: scanner.before,
 		}
 		{
-			..s,
-			tokens: s.tokens.append(token),
+			..scanner,
+			tokens: scanner.tokens.append(token),
 			before: SameLine,
 		}
 	}
@@ -206,28 +206,28 @@ Lexer :: [].{
 	) ?? crash "Lexer.text_between: a cut inside a character"
 
 	scan_name : List(U8), Lexer.Scan -> Lexer.Scan
-	scan_name = |src, s| {
-		var $i = s.at
+	scan_name = |src, scanner| {
+		var $i = scanner.at
 		while Lexer.is_name_part(Lexer.byte_at(src, $i)) {
 			$i = $i + 1
 		}
 		{ ..Lexer.with_token(
-			s,
-			Name(Lexer.text_between(src, s.at, $i)),
-			s.at,
+			scanner,
+			Name(Lexer.text_between(src, scanner.at, $i)),
+			scanner.at,
 		), at: $i }
 	}
 
 	scan_number : List(U8), Lexer.Scan -> Try(Lexer.Scan, Lexer.Fault)
-	scan_number = |src, s| {
-		c = Lexer.byte_at(src, s.at)
-		next = Lexer.byte_at(src, s.at + 1)
-		if c == '0' and (next == 'x' or next == 'X') {
-			Lexer.scan_hex(src, s)
-		} else if c == '0' and (Lexer.is_digit(next) or next == 'b' or next == 'B' or next == 'o' or next == 'O') {
-			Err(Lexer.fault_at(s, "unsupported: an octal or binary number"))
+	scan_number = |src, scanner| {
+		byte = Lexer.byte_at(src, scanner.at)
+		next = Lexer.byte_at(src, scanner.at + 1)
+		if byte == '0' and (next == 'x' or next == 'X') {
+			Lexer.scan_hex(src, scanner)
+		} else if byte == '0' and (Lexer.is_digit(next) or next == 'b' or next == 'B' or next == 'o' or next == 'O') {
+			Err(Lexer.fault_at(scanner, "unsupported: an octal or binary number"))
 		} else {
-			var $i = s.at
+			var $i = scanner.at
 			while Lexer.is_digit(Lexer.byte_at(src, $i)) {
 				$i = $i + 1
 			}
@@ -237,15 +237,15 @@ Lexer :: [].{
 					$i = $i + 1
 				}
 			}
-			e = Lexer.byte_at(src, $i)
-			if e == 'e' or e == 'E' {
+			exponent_mark = Lexer.byte_at(src, $i)
+			if exponent_mark == 'e' or exponent_mark == 'E' {
 				$i = $i + 1
 				sign = Lexer.byte_at(src, $i)
 				if sign == '+' or sign == '-' {
 					$i = $i + 1
 				}
 				if !Lexer.is_digit(Lexer.byte_at(src, $i)) {
-					return Err(Lexer.fault_at(s, "a number whose exponent has no digits"))
+					return Err(Lexer.fault_at(scanner, "a number whose exponent has no digits"))
 				}
 				while Lexer.is_digit(Lexer.byte_at(src, $i)) {
 					$i = $i + 1
@@ -253,49 +253,49 @@ Lexer :: [].{
 			}
 			after = Lexer.byte_at(src, $i)
 			if after == '_' or after == 'n' {
-				Err(Lexer.fault_at(s, "unsupported: a numeric separator or a BigInt"))
+				Err(Lexer.fault_at(scanner, "unsupported: a numeric separator or a BigInt"))
 			} else if Lexer.is_name_start(after) {
-				Err(Lexer.fault_at(s, "a name straight after a number"))
+				Err(Lexer.fault_at(scanner, "a name straight after a number"))
 			} else {
-				digits = Lexer.text_between(src, s.at, $i)
+				digits = Lexer.text_between(src, scanner.at, $i)
 				# A literal that starts with `.` is read with a 0 before it.
-				spelled = if c == '.' {
+				spelled = if byte == '.' {
 					"0${digits}"
 				} else {
 					digits
 				}
 				match F64.from_str(spelled) {
-					Ok(n) => Ok({ ..Lexer.with_token(s, Number(n), s.at), at: $i })
-					Err(_) => Err(Lexer.fault_at(s, "a number that does not read: ${digits}"))
+					Ok(number) => Ok({ ..Lexer.with_token(scanner, Number(number), scanner.at), at: $i })
+					Err(_) => Err(Lexer.fault_at(scanner, "a number that does not read: ${digits}"))
 				}
 			}
 		}
 	}
 
 	scan_hex : List(U8), Lexer.Scan -> Try(Lexer.Scan, Lexer.Fault)
-	scan_hex = |src, s| {
-		var $i = s.at + 2
+	scan_hex = |src, scanner| {
+		var $i = scanner.at + 2
 		var $n = 0.0
 		while Lexer.hex_value(Lexer.byte_at(src, $i)) < 16 {
 			$n = $n * 16.0 + Lexer.hex_value(Lexer.byte_at(src, $i)).to_f64()
 			$i = $i + 1
 		}
-		if $i == s.at + 2 {
-			Err(Lexer.fault_at(s, "a hexadecimal number with no digits"))
+		if $i == scanner.at + 2 {
+			Err(Lexer.fault_at(scanner, "a hexadecimal number with no digits"))
 		} else {
-			Ok({ ..Lexer.with_token(s, Number($n), s.at), at: $i })
+			Ok({ ..Lexer.with_token(scanner, Number($n), scanner.at), at: $i })
 		}
 	}
 
 	# A hexadecimal digit's value, or 16 for a byte that is none.
 	hex_value : U8 -> U8
-	hex_value = |c|
-		if Lexer.is_digit(c) {
-			c - '0'
-		} else if c >= 'a' and c <= 'f' {
-			c - 'a' + 10
-		} else if c >= 'A' and c <= 'F' {
-			c - 'A' + 10
+	hex_value = |byte|
+		if Lexer.is_digit(byte) {
+			byte - '0'
+		} else if byte >= 'a' and byte <= 'f' {
+			byte - 'a' + 10
+		} else if byte >= 'A' and byte <= 'F' {
+			byte - 'A' + 10
 		} else {
 			16
 		}
@@ -305,10 +305,10 @@ Lexer :: [].{
 	Escape : { bytes : List(U8), next : U64 }
 
 	escape_at : List(U8), Lexer.Scan, U64 -> Try(Lexer.Escape, Lexer.Fault)
-	escape_at = |src, s, at| {
-		c = Lexer.byte_at(src, at + 1)
-		simple = |b| Ok({ bytes: [b], next: at + 2 })
-		match c {
+	escape_at = |src, scanner, at| {
+		byte = Lexer.byte_at(src, at + 1)
+		simple = |single| Ok({ bytes: [single], next: at + 2 })
+		match byte {
 			'n' => simple('\n')
 			't' => simple('\t')
 			'r' => simple('\r')
@@ -316,7 +316,7 @@ Lexer :: [].{
 			'f' => simple(12)
 			'v' => simple(11)
 			'0' => if Lexer.is_digit(Lexer.byte_at(src, at + 2)) {
-				Err(Lexer.fault_at(s, "unsupported: an octal escape"))
+				Err(Lexer.fault_at(scanner, "unsupported: an octal escape"))
 			} else {
 				simple(0)
 			}
@@ -324,37 +324,37 @@ Lexer :: [].{
 				high = Lexer.hex_value(Lexer.byte_at(src, at + 2))
 				low = Lexer.hex_value(Lexer.byte_at(src, at + 3))
 				if high > 15 or low > 15 {
-					Err(Lexer.fault_at(s, "a \\x escape without two hexadecimal digits"))
+					Err(Lexer.fault_at(scanner, "a \\x escape without two hexadecimal digits"))
 				} else {
 					Ok({ bytes: Lexer.utf8_of(high.to_u32() * 16 + low.to_u32()), next: at + 4 })
 				}
 			}
-			'u' => Lexer.unicode_escape(src, s, at)
+			'u' => Lexer.unicode_escape(src, scanner, at)
 			'\n' => Ok({ bytes: [], next: at + 2 })
-			_ => if c == 0 {
-				Err(Lexer.fault_at(s, "a string that never ends"))
+			_ => if byte == 0 {
+				Err(Lexer.fault_at(scanner, "a string that never ends"))
 			} else {
-				simple(c)
+				simple(byte)
 			}
 		}
 	}
 
 	unicode_escape : List(U8), Lexer.Scan, U64 -> Try(Lexer.Escape, Lexer.Fault)
-	unicode_escape = |src, s, at| {
+	unicode_escape = |src, scanner, at| {
 		var $code = 0
 		var $ok = True
 		for k in [2, 3, 4, 5] {
-			d = Lexer.hex_value(Lexer.byte_at(src, at + k))
-			if d > 15 {
+			digit = Lexer.hex_value(Lexer.byte_at(src, at + k))
+			if digit > 15 {
 				$ok = False
 			} else {
-				$code = $code * 16 + d.to_u32()
+				$code = $code * 16 + digit.to_u32()
 			}
 		}
 		if !$ok {
-			Err(Lexer.fault_at(s, "unsupported: a \\u escape other than four hexadecimal digits"))
+			Err(Lexer.fault_at(scanner, "unsupported: a \\u escape other than four hexadecimal digits"))
 		} else if $code >= 0xD800 and $code <= 0xDFFF {
-			Err(Lexer.fault_at(s, "unsupported: a \\u escape of half a surrogate pair"))
+			Err(Lexer.fault_at(scanner, "unsupported: a \\u escape of half a surrogate pair"))
 		} else {
 			Ok({ bytes: Lexer.utf8_of($code), next: at + 6 })
 		}
@@ -376,24 +376,24 @@ Lexer :: [].{
 		}
 
 	scan_string : List(U8), Lexer.Scan, U8 -> Try(Lexer.Scan, Lexer.Fault)
-	scan_string = |src, s, quote| {
-		var $i = s.at + 1
+	scan_string = |src, scanner, quote| {
+		var $i = scanner.at + 1
 		var $out = []
 		while Lexer.byte_at(src, $i) != quote {
-			c = Lexer.byte_at(src, $i)
-			if c == 0 or c == '\n' {
-				return Err(Lexer.fault_at(s, "a string that never ends"))
-			} else if c == '\\' {
-				e = Lexer.escape_at(src, s, $i)?
-				$out = List.concat($out, e.bytes)
-				$i = e.next
+			byte = Lexer.byte_at(src, $i)
+			if byte == 0 or byte == '\n' {
+				return Err(Lexer.fault_at(scanner, "a string that never ends"))
+			} else if byte == '\\' {
+				escaped = Lexer.escape_at(src, scanner, $i)?
+				$out = List.concat($out, escaped.bytes)
+				$i = escaped.next
 			} else {
-				$out = $out.append(c)
+				$out = $out.append(byte)
 				$i = $i + 1
 			}
 		}
 		text = Str.from_utf8($out) ?? crash "Lexer.scan_string: escapes write whole characters"
-		Ok({ ..Lexer.with_token(s, Text(text), s.at), at: $i + 1 })
+		Ok({ ..Lexer.with_token(scanner, Text(text), scanner.at), at: $i + 1 })
 	}
 
 	# Where a template's text piece starts; the piece's kind follows from it
@@ -403,30 +403,30 @@ Lexer :: [].{
 	# A template's text from `s.at` to the next `${` or closing backtick.
 	# `start` is the scan where the piece's token is said to start.
 	scan_template : List(U8), Lexer.Scan, Lexer.Scan, Lexer.Piece -> Try(Lexer.Scan, Lexer.Fault)
-	scan_template = |src, s, start, piece| {
-		var $i = s.at
+	scan_template = |src, scanner, start, piece| {
+		var $i = scanner.at
 		var $out = []
-		var $line = s.line
-		var $line_start = s.line_start
+		var $line = scanner.line
+		var $line_start = scanner.line_start
 		while Lexer.byte_at(src, $i) != '`' and !(
 			Lexer.byte_at(src, $i) == '$' and Lexer.byte_at(
 				src,
 				$i + 1,
 			) == '{'
 		) {
-			c = Lexer.byte_at(src, $i)
-			if c == 0 {
+			byte = Lexer.byte_at(src, $i)
+			if byte == 0 {
 				return Err(Lexer.fault_at(start, "a template literal that never ends"))
-			} else if c == '\\' {
-				e = Lexer.escape_at(src, s, $i)?
-				$out = List.concat($out, e.bytes)
-				$i = e.next
+			} else if byte == '\\' {
+				escaped = Lexer.escape_at(src, scanner, $i)?
+				$out = List.concat($out, escaped.bytes)
+				$i = escaped.next
 			} else {
-				if c == '\n' {
+				if byte == '\n' {
 					$line = $line + 1
 					$line_start = $i + 1
 				}
-				$out = $out.append(c)
+				$out = $out.append(byte)
 				$i = $i + 1
 			}
 		}
@@ -526,26 +526,26 @@ Lexer :: [].{
 	]
 
 	scan_punct : List(U8), Lexer.Scan -> Try(Lexer.Scan, Lexer.Fault)
-	scan_punct = |src, s| {
-		rest = src.sublist({ start: s.at, len: 3 })
-		match Lexer.punctuators.find_first(|p| rest.starts_with(p.to_utf8())) {
-			Ok(p) => {
-				made = Lexer.with_token(s, Punct(p), s.at)
-				opened = if p == "{" {
+	scan_punct = |src, scanner| {
+		rest = src.sublist({ start: scanner.at, len: 3 })
+		match Lexer.punctuators.find_first(|punctuator| rest.starts_with(punctuator.to_utf8())) {
+			Ok(punctuator) => {
+				made = Lexer.with_token(scanner, Punct(punctuator), scanner.at)
+				opened = if punctuator == "{" {
 					made.depth + 1
 				} else {
 					made.depth
 				}
 				Ok({
 					..made,
-					at: s.at + p.count_utf8_bytes(),
+					at: scanner.at + punctuator.count_utf8_bytes(),
 					depth: opened,
 				})
 			}
 			Err(NotFound) => Err(
 				Lexer.fault_at(
-					s,
-					"a character the language has no use for: ${Lexer.text_between(src, s.at, s.at + 1)}",
+					scanner,
+					"a character the language has no use for: ${Lexer.text_between(src, scanner.at, scanner.at + 1)}",
 				),
 			)
 		}
@@ -553,24 +553,24 @@ Lexer :: [].{
 	# A `}` closes a template's substitution when the brace depth is back where
 	# the substitution opened; otherwise it closes a brace of the code.
 	scan_close_brace : List(U8), Lexer.Scan -> Try(Lexer.Scan, Lexer.Fault)
-	scan_close_brace = |src, s| {
-		closes_substitution = match s.open_templates.last() {
-			Ok(d) => d == s.depth
+	scan_close_brace = |src, scanner| {
+		closes_substitution = match scanner.open_templates.last() {
+			Ok(open_depth) => open_depth == scanner.depth
 			Err(ListWasEmpty) => False
 		}
 		if closes_substitution {
-			popped = { ..s, open_templates: s.open_templates.drop_last(1) }
+			popped = { ..scanner, open_templates: scanner.open_templates.drop_last(1) }
 			Lexer.scan_template(
 				src,
-				{ ..popped, at: s.at + 1 },
+				{ ..popped, at: scanner.at + 1 },
 				popped,
 				Middle,
 			)
 		} else {
-			made = Lexer.with_token(s, Punct("}"), s.at)
+			made = Lexer.with_token(scanner, Punct("}"), scanner.at)
 			Ok({
 				..made,
-				at: s.at + 1,
+				at: scanner.at + 1,
 				depth: made.depth.minus_saturated(1),
 			})
 		}

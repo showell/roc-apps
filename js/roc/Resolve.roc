@@ -26,7 +26,7 @@ Resolve :: [].{
 		var $found = Undeclared
 		while $frame > 0 {
 			names = scopes.get($frame - 1) ?? crash "Resolve.slot: inside the scopes"
-			match names.find_first_index(|n| n == name) {
+			match names.find_first_index(|number| number == name) {
 				Ok(index) => {
 					$found = Local({ hops: $hops, index: index })
 					$frame = 0
@@ -38,7 +38,7 @@ Resolve :: [].{
 			}
 		}
 		match $found {
-			Undeclared => match Ast.global_names.find_first_index(|n| n == name) {
+			Undeclared => match Ast.global_names.find_first_index(|number| number == name) {
 				Ok(index) => Global(index)
 				Err(NotFound) => Undeclared
 			}
@@ -47,25 +47,25 @@ Resolve :: [].{
 	}
 
 	block : Resolve.Scopes, Ast.Block -> Ast.Block
-	block = |scopes, b| {
-		inner = match b.scoping {
+	block = |scopes, tree_block| {
+		inner = match tree_block.scoping {
 			Scoped(names) => scopes.append(names)
 			Unscoped => scopes
 		}
-		{ ..b, statements: b.statements.map(|s| Resolve.statement(inner, s)) }
+		{ ..tree_block, statements: tree_block.statements.map(|source| Resolve.statement(inner, source)) }
 	}
 
 	fun : Resolve.Scopes, Ast.FunctionDefinition -> Ast.FunctionDefinition
 	fun = |scopes, definition| {
 		inner = scopes.append(definition.names)
-		{ ..definition, body: definition.body.map(|s| Resolve.statement(inner, s)) }
+		{ ..definition, body: definition.body.map(|source| Resolve.statement(inner, source)) }
 	}
 
 	statement : Resolve.Scopes, Ast.Statement -> Ast.Statement
-	statement = |scopes, s|
-		match s {
-			Expression(e) => Expression(Resolve.expression(scopes, e))
-			Declare(binding, declarations) => Declare(binding, declarations.map(|d| Resolve.declarator(scopes, d)))
+	statement = |scopes, source|
+		match source {
+			Expression(tree) => Expression(Resolve.expression(scopes, tree))
+			Declare(binding, declarations) => Declare(binding, declarations.map(|given| Resolve.declarator(scopes, given)))
 			FunctionDeclaration(definition, _) => FunctionDeclaration(
 				Box.box(Resolve.fun(scopes, definition.unbox())),
 				Resolve.slot(scopes, definition.unbox().name),
@@ -82,11 +82,11 @@ Resolve :: [].{
 					..loop,
 					init: Resolve.statement(inner, loop.init),
 					test: match loop.test {
-						Tested(e) => Tested(Resolve.expression(inner, e))
+						Tested(tree) => Tested(Resolve.expression(inner, tree))
 						Always => Always
 					},
 					update: match loop.update {
-						Updated(e) => Updated(Resolve.expression(inner, e))
+						Updated(tree) => Updated(Resolve.expression(inner, tree))
 						NoUpdate => NoUpdate
 					},
 					body: Resolve.statement(inner, loop.body),
@@ -97,83 +97,83 @@ Resolve :: [].{
 				iterable: Resolve.expression(scopes, loop.iterable),
 				body: Resolve.statement(scopes.append([loop.name]), loop.body),
 			})
-			BlockStatement(b) => BlockStatement(Resolve.block(scopes, b))
-			Return(e) => Return(Resolve.expression(scopes, e))
+			BlockStatement(tree_block) => BlockStatement(Resolve.block(scopes, tree_block))
+			Return(tree) => Return(Resolve.expression(scopes, tree))
 			Break => Break
 			Continue => Continue
 			Empty => Empty
 		}
 
 	declarator : Resolve.Scopes, Ast.Declarator -> Ast.Declarator
-	declarator = |scopes, d| {
-		..d,
-		init: match d.init {
-			Initialized(e) => Initialized(Resolve.expression(scopes, e))
+	declarator = |scopes, given| {
+		..given,
+		init: match given.init {
+			Initialized(tree) => Initialized(Resolve.expression(scopes, tree))
 			Uninitialized => Uninitialized
 		},
-		slot: Resolve.slot(scopes, d.name),
+		slot: Resolve.slot(scopes, given.name),
 	}
 
 	target : Resolve.Scopes, Ast.Target -> Ast.Target
-	target = |scopes, t|
-		match t {
-			ToName(name, _, w) => ToName(name, Resolve.slot(scopes, name), w)
+	target = |scopes, assigned|
+		match assigned {
+			ToName(name, _, site) => ToName(name, Resolve.slot(scopes, name), site)
 			ToMember(object, key) => ToMember(Resolve.expression(scopes, object), key)
 			ToIndex(object, key) => ToIndex(Resolve.expression(scopes, object), Resolve.expression(scopes, key))
 		}
 
 	expression : Resolve.Scopes, Ast.Expression -> Ast.Expression
-	expression = |scopes, e| {
+	expression = |scopes, tree| {
 		each = |expressions| expressions.map(|x| Resolve.expression(scopes, x))
-		match e {
-			Number(n) => Number(n)
-			Text(s) => Text(s)
+		match tree {
+			Number(number) => Number(number)
+			Text(text) => Text(text)
 			Template(texts, parts) => Template(texts, each(parts))
-			Boolean(b) => Boolean(b)
+			Boolean(truth) => Boolean(truth)
 			Null => Null
 			Undefined => Undefined
-			Name(name, _, w) => Name(name, Resolve.slot(scopes, name), w)
+			Name(name, _, site) => Name(name, Resolve.slot(scopes, name), site)
 			ArrayLit(items) => ArrayLit(each(items))
 			ObjectLit(properties) => ObjectLit(properties.map(|p| { ..p, value: Resolve.expression(scopes, p.value) }))
-			Unary(operator, a, w) => Unary(operator, Resolve.expression(scopes, a), w)
-			Binary(operator, a, b, w) => Binary(
+			Unary(operator, left, site) => Unary(operator, Resolve.expression(scopes, left), site)
+			Binary(operator, left, right, site) => Binary(
 				operator,
-				Resolve.expression(scopes, a),
-				Resolve.expression(scopes, b),
-				w,
+				Resolve.expression(scopes, left),
+				Resolve.expression(scopes, right),
+				site,
 			)
-			Logical(operator, a, b) => Logical(
+			Logical(operator, left, right) => Logical(
 				operator,
-				Resolve.expression(scopes, a),
-				Resolve.expression(scopes, b),
+				Resolve.expression(scopes, left),
+				Resolve.expression(scopes, right),
 			)
-			Conditional(a, b, c) => Conditional(
-				Resolve.expression(scopes, a),
-				Resolve.expression(scopes, b),
-				Resolve.expression(scopes, c),
+			Conditional(test, yes, no) => Conditional(
+				Resolve.expression(scopes, test),
+				Resolve.expression(scopes, yes),
+				Resolve.expression(scopes, no),
 			)
-			Assign(t, operator, value, w) => Assign(
-				Resolve.target(scopes, t),
+			Assign(assigned, operator, value, site) => Assign(
+				Resolve.target(scopes, assigned),
 				operator,
 				Resolve.expression(scopes, value),
-				w,
+				site,
 			)
-			Update(t, step, fixity, w) => Update(
-				Resolve.target(scopes, t),
+			Update(assigned, step, fixity, site) => Update(
+				Resolve.target(scopes, assigned),
 				step,
 				fixity,
-				w,
+				site,
 			)
-			Member(object, key, w) => Member(Resolve.expression(scopes, object), key, w)
-			Index(object, key, w) => Index(
+			Member(object, key, site) => Member(Resolve.expression(scopes, object), key, site)
+			Index(object, key, site) => Index(
 				Resolve.expression(scopes, object),
 				Resolve.expression(scopes, key),
-				w,
+				site,
 			)
-			Call(callee, arguments, w) => Call(
+			Call(callee, arguments, site) => Call(
 				Resolve.expression(scopes, callee),
 				each(arguments),
-				w,
+				site,
 			)
 			Function(definition) => Function(Box.box(Resolve.fun(scopes, definition.unbox())))
 		}

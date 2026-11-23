@@ -15,7 +15,7 @@ import Heap
 import NumberText
 
 Inspect :: [].{
-	Ctx : {
+	Context : {
 		cells : List(Heap.Cell),
 		indent : U64,
 		depth_now : U64,
@@ -32,29 +32,29 @@ Inspect :: [].{
 	line_of : List(Heap.Cell), List(Heap.Value) -> Try(Str, [Unsupported(Str)])
 	line_of = |cells, values| {
 		match values.first() {
-			Ok(Text(s)) if values.len() > 1 and Inspect.has_format_directive(s) => {
+			Ok(Text(text)) if values.len() > 1 and Inspect.has_format_directive(text) => {
 				return Err(Unsupported("unsupported: console.log format directives (`%`)"))
 			}
 			_ => {}
 		}
 		var $parts = []
-		for v in values {
-			text = match v {
-				Text(s) => s
-				_ => Inspect.inspect(cells, v)?
+		for subject in values {
+			shown = match subject {
+				Text(text) => text
+				_ => Inspect.inspect(cells, subject)?
 			}
-			$parts = $parts.append(text)
+			$parts = $parts.append(shown)
 		}
 		Ok(Str.join_with($parts, " "))
 	}
 
 	has_format_directive : Str -> Bool
-	has_format_directive = |s| {
-		b = s.to_utf8()
+	has_format_directive = |text| {
+		bytes = text.to_utf8()
 		var $i = 0
 		var $found = False
-		while $i + 1 < b.len() {
-			if (b.get($i) ?? crash "Inspect.has_format_directive: inside the text") == '%' and [
+		while $i + 1 < bytes.len() {
+			if (bytes.get($i) ?? crash "Inspect.has_format_directive: inside the text") == '%' and [
 				's',
 				'd',
 				'i',
@@ -64,7 +64,7 @@ Inspect :: [].{
 				'O',
 				'c',
 				'%',
-			].contains(b.get($i + 1) ?? crash "Inspect.has_format_directive: inside the text") {
+			].contains(bytes.get($i + 1) ?? crash "Inspect.has_format_directive: inside the text") {
 				$found = True
 			}
 			$i = $i + 1
@@ -74,32 +74,32 @@ Inspect :: [].{
 
 	# One value as `util.inspect` writes it.
 	inspect : List(Heap.Cell), Heap.Value -> Try(Str, [Unsupported(Str)])
-	inspect = |cells, v| {
-		f = Inspect.format_value(
+	inspect = |cells, subject| {
+		formatted = Inspect.format_value(
 			{
 				cells: cells,
 				indent: 0,
 				depth_now: 0,
 				seen: [],
 			},
-			v,
+			subject,
 			0,
 		)?
-		Ok(f.text)
+		Ok(formatted.text)
 	}
 
-	plain : Inspect.Ctx, Str -> Inspect.Formatted
+	plain : Inspect.Context, Str -> Inspect.Formatted
 	plain = |context, text| { text: text, depth_now: context.depth_now }
 
-	format_value : Inspect.Ctx, Heap.Value, U64 -> Try(Inspect.Formatted, [Unsupported(Str)])
-	format_value = |context, v, recurse|
-		match v {
-			Number(n) => Ok(Inspect.plain(context, Inspect.number_text(n)))
-			Text(s) => Ok(Inspect.plain(context, Inspect.string_literal(s, context.indent)))
-			Boolean(b) => Ok(
+	format_value : Inspect.Context, Heap.Value, U64 -> Try(Inspect.Formatted, [Unsupported(Str)])
+	format_value = |context, subject, recurse|
+		match subject {
+			Number(number) => Ok(Inspect.plain(context, Inspect.number_text(number)))
+			Text(text) => Ok(Inspect.plain(context, Inspect.string_literal(text, context.indent)))
+			Boolean(truth) => Ok(
 				Inspect.plain(
 					context,
-					if b {
+					if truth {
 						"true"
 					} else {
 						"false"
@@ -112,25 +112,25 @@ Inspect :: [].{
 		}
 
 	number_text : F64 -> Str
-	number_text = |n|
-		if n == 0.0 and 1.0 / n < 0.0 {
+	number_text = |number|
+		if number == 0.0 and 1.0 / number < 0.0 {
 			"-0"
 		} else {
-			NumberText.of(n)
+			NumberText.of(number)
 		}
 
-	format_cell : Inspect.Ctx, U64, U64 -> Try(Inspect.Formatted, [Unsupported(Str)])
+	format_cell : Inspect.Context, U64, U64 -> Try(Inspect.Formatted, [Unsupported(Str)])
 	format_cell = |context, id, recurse|
 		match Heap.cell_at(context.cells, id) {
-			Fun(c) => {
-				name = c.fun.unbox().name
+			Fun(closure) => {
+				name = closure.fun.unbox().name
 				if name == "" {
 					Ok(Inspect.plain(context, "[Function (anonymous)]"))
 				} else {
 					Ok(Inspect.plain(context, "[Function: ${name}]"))
 				}
 			}
-			Builtin(n, _) => Ok(Inspect.plain(context, "[Function: ${Heap.native_name(n)}]"))
+			Builtin(native, _) => Ok(Inspect.plain(context, "[Function: ${Heap.native_name(native)}]"))
 			Namespace(
 				name,
 				_,
@@ -176,13 +176,13 @@ Inspect :: [].{
 			}
 		}
 
-	format_array : Inspect.Ctx, List(Heap.Value), U64 -> Try(Inspect.Formatted, [Unsupported(Str)])
+	format_array : Inspect.Context, List(Heap.Value), U64 -> Try(Inspect.Formatted, [Unsupported(Str)])
 	format_array = |context, items, recurse| {
 		shown = items.sublist({ start: 0, len: 100 })
 		var $depth_now = context.depth_now
 		var $out = []
 		for item in shown {
-			f = Inspect.format_value(
+			formatted = Inspect.format_value(
 				{
 					..context,
 					indent: context.indent + 2,
@@ -191,8 +191,8 @@ Inspect :: [].{
 				item,
 				recurse,
 			)?
-			$depth_now = f.depth_now
-			$out = $out.append(f.text)
+			$depth_now = formatted.depth_now
+			$out = $out.append(formatted.text)
 		}
 		more = items.len() - shown.len()
 		output = if more > 0 {
@@ -220,12 +220,12 @@ Inspect :: [].{
 		})
 	}
 
-	format_object : Inspect.Ctx, List(Heap.Property), U64 -> Try(Inspect.Formatted, [Unsupported(Str)])
+	format_object : Inspect.Context, List(Heap.Property), U64 -> Try(Inspect.Formatted, [Unsupported(Str)])
 	format_object = |context, properties, recurse| {
 		var $depth_now = context.depth_now
 		var $out = []
 		for p in Inspect.properties_in_key_order(properties) {
-			f = Inspect.format_value(
+			formatted = Inspect.format_value(
 				{
 					..context,
 					indent: context.indent + 2,
@@ -234,8 +234,8 @@ Inspect :: [].{
 				p.value,
 				recurse,
 			)?
-			$depth_now = f.depth_now
-			$out = $out.append("${Inspect.key_text(p.key)}: ${f.text}")
+			$depth_now = formatted.depth_now
+			$out = $out.append("${Inspect.key_text(p.key)}: ${formatted.text}")
 		}
 		Ok({
 			text: Inspect.reduce_to_single_string(
@@ -260,8 +260,8 @@ Inspect :: [].{
 		var $named = []
 		for p in properties {
 			match Inspect.index_of_key(p.key) {
-				Ok(i) => {
-					$indexed = $indexed.append({ index: i, prop: p })
+				Ok(position) => {
+					$indexed = $indexed.append({ index: position, prop: p })
 				}
 				Err(NotIndex) => {
 					$named = $named.append(p)
@@ -269,9 +269,9 @@ Inspect :: [].{
 			}
 		}
 		sorted = $indexed.sort_with(
-			|a, b| if a.index < b.index {
+			|left, right| if left.index < right.index {
 				Before
-			} else if a.index > b.index {
+			} else if left.index > right.index {
 				After
 			} else {
 				Same
@@ -284,13 +284,13 @@ Inspect :: [].{
 	# 2^32 - 1.
 	index_of_key : Str -> Try(U64, [NotIndex])
 	index_of_key = |key| {
-		b = key.to_utf8()
-		if b.is_empty() or b.len() > 10 or (b.len() > 1 and (b.get(0) ?? crash "Inspect.index_of_key: a key of two bytes or more") == '0') {
+		bytes = key.to_utf8()
+		if bytes.is_empty() or bytes.len() > 10 or (bytes.len() > 1 and (bytes.get(0) ?? crash "Inspect.index_of_key: a key of two bytes or more") == '0') {
 			Err(NotIndex)
-		} else if b.all(|c| c >= '0' and c <= '9') {
-			n = b.fold(0, |accumulated, c| accumulated * 10 + (c - '0').to_u64())
-			if n < 4294967295 {
-				Ok(n)
+		} else if bytes.all(|byte| byte >= '0' and byte <= '9') {
+			parsed = bytes.fold(0, |accumulated, byte| accumulated * 10 + (byte - '0').to_u64())
+			if parsed < 4294967295 {
+				Ok(parsed)
 			} else {
 				Err(NotIndex)
 			}
@@ -301,12 +301,12 @@ Inspect :: [].{
 
 	key_text : Str -> Str
 	key_text = |key| {
-		b = key.to_utf8()
-		starts_well = match b.first() {
-			Ok(c) => Inspect.is_key_start(c)
+		bytes = key.to_utf8()
+		starts_well = match bytes.first() {
+			Ok(byte) => Inspect.is_key_start(byte)
 			Err(ListWasEmpty) => False
 		}
-		is_bare = starts_well and b.all(|c| Inspect.is_key_start(c) or (c >= '0' and c <= '9'))
+		is_bare = starts_well and bytes.all(|byte| Inspect.is_key_start(byte) or (byte >= '0' and byte <= '9'))
 		if is_bare {
 			key
 		} else {
@@ -315,25 +315,25 @@ Inspect :: [].{
 	}
 
 	is_key_start : U8 -> Bool
-	is_key_start = |c| (c >= 'a' and c <= 'z') or (c >= 'A' and c <= 'Z') or c == '_'
+	is_key_start = |byte| (byte >= 'a' and byte <= 'z') or (byte >= 'A' and byte <= 'Z') or byte == '_'
 
 	# node's `formatPrimitive` for a string: quoted and escaped, and split into
 	# lines joined by ` +` when it is long enough to wrap.
 	string_literal : Str, U64 -> Str
-	string_literal = |s, indent| {
-		length = Inspect.width(s)
+	string_literal = |text, indent| {
+		length = Inspect.width(text)
 		if length > 16 and length + indent + 4 > Inspect.break_length {
-			pieces = Inspect.pieces_after_newlines(s)
+			pieces = Inspect.pieces_after_newlines(text)
 			Str.join_with(pieces.map(Inspect.escaped), " +\n${" ".repeat(indent + 2)}")
 		} else {
-			Inspect.escaped(s)
+			Inspect.escaped(text)
 		}
 	}
 
 	# The string split after each newline, each piece keeping its newline.
 	pieces_after_newlines : Str -> List(Str)
-	pieces_after_newlines = |s| {
-		parts = s.split_on("\n")
+	pieces_after_newlines = |text| {
+		parts = text.split_on("\n")
 		last = parts.len() - 1
 		var $out = []
 		var $i = 0
@@ -352,44 +352,44 @@ Inspect :: [].{
 	# double quotes unless it holds one, then backticks unless it holds one
 	# or `${`; only the single quote is ever escaped.
 	escaped : Str -> Str
-	escaped = |s| {
-		quote = if !s.contains("'") {
+	escaped = |text| {
+		quote = if !text.contains("'") {
 			'\''
-		} else if !s.contains("\"") {
+		} else if !text.contains("\"") {
 			'"'
-		} else if !s.contains("`") and !s.contains("\${") {
+		} else if !text.contains("`") and !text.contains("\${") {
 			'`'
 		} else {
 			'\''
 		}
-		b = s.to_utf8()
+		bytes = text.to_utf8()
 		var $out = [quote]
 		var $i = 0
-		while $i < b.len() {
-			c = b.get($i) ?? crash "Inspect.escaped: inside the text"
-			next = b.get($i + 1) ?? 0
-			if c == 0xC2 and next >= 0x80 and next <= 0x9F {
+		while $i < bytes.len() {
+			byte = bytes.get($i) ?? crash "Inspect.escaped: inside the text"
+			next = bytes.get($i + 1) ?? 0
+			if byte == 0xC2 and next >= 0x80 and next <= 0x9F {
 				$out = List.concat($out, Inspect.hex_escape(next))
 				$i = $i + 2
 			} else {
-				$out = if c == quote and c == '\'' {
+				$out = if byte == quote and byte == '\'' {
 					List.concat($out, ['\\', '\''])
-				} else if c == '\\' {
+				} else if byte == '\\' {
 					List.concat($out, ['\\', '\\'])
-				} else if c == 8 {
+				} else if byte == 8 {
 					List.concat($out, ['\\', 'b'])
-				} else if c == '\t' {
+				} else if byte == '\t' {
 					List.concat($out, ['\\', 't'])
-				} else if c == '\n' {
+				} else if byte == '\n' {
 					List.concat($out, ['\\', 'n'])
-				} else if c == 12 {
+				} else if byte == 12 {
 					List.concat($out, ['\\', 'f'])
-				} else if c == '\r' {
+				} else if byte == '\r' {
 					List.concat($out, ['\\', 'r'])
-				} else if c < 32 or c == 127 {
-					List.concat($out, Inspect.hex_escape(c))
+				} else if byte < 32 or byte == 127 {
+					List.concat($out, Inspect.hex_escape(byte))
 				} else {
-					$out.append(c)
+					$out.append(byte)
 				}
 				$i = $i + 1
 			}
@@ -398,29 +398,29 @@ Inspect :: [].{
 	}
 
 	hex_escape : U8 -> List(U8)
-	hex_escape = |c| {
+	hex_escape = |byte| {
 		digits = "0123456789ABCDEF".to_utf8()
 		[
 			'\\',
 			'x',
-			digits.get(c.div_trunc_by(16).to_u64()) ?? crash "Inspect.hex_escape: a digit below 16",
-			digits.get(c.rem_by(16).to_u64()) ?? crash "Inspect.hex_escape: a digit below 16",
+			digits.get(byte.div_trunc_by(16).to_u64()) ?? crash "Inspect.hex_escape: a digit below 16",
+			digits.get(byte.rem_by(16).to_u64()) ?? crash "Inspect.hex_escape: a digit below 16",
 		]
 	}
 
 	# A string's length in UTF-16 code units: one a character, two for one
 	# outside the Basic Multilingual Plane.
 	width : Str -> U64
-	width = |s|
-		s.to_utf8().fold(
+	width = |text|
+		text.to_utf8().fold(
 			0,
-			|n, c|
-				if c >= 0xF0 {
-					n + 2
-				} else if c >= 0x80 and c < 0xC0 {
-					n
+			|counted, byte|
+				if byte >= 0xF0 {
+					counted + 2
+				} else if byte >= 0x80 and byte < 0xC0 {
+					counted
 				} else {
-					n + 1
+					counted + 1
 				},
 		)
 
@@ -434,21 +434,21 @@ Inspect :: [].{
 	}
 
 	# node's `reduceToSingleString`, with `ctx.compact` 3.
-	reduce_to_single_string : Inspect.Ctx, Inspect.Entries, U64 -> Str
-	reduce_to_single_string = |context, e, recurse| {
-		entries = e.output.len()
-		output = match e.kind {
-			ArrayKind(items) if entries > 6 => Inspect.group_array_elements(context, e.output, items)
-			_ => e.output
+	reduce_to_single_string : Inspect.Context, Inspect.Entries, U64 -> Str
+	reduce_to_single_string = |context, formatted_entries, recurse| {
+		entries = formatted_entries.output.len()
+		output = match formatted_entries.kind {
+			ArrayKind(items) if entries > 6 => Inspect.group_array_elements(context, formatted_entries.output, items)
+			_ => formatted_entries.output
 		}
 		joined = Str.join_with(output, ", ")
-		start = output.len() + context.indent + e.open.count_utf8_bytes() + 10
+		start = output.len() + context.indent + formatted_entries.open.count_utf8_bytes() + 10
 		fits = context.depth_now - recurse < 3 and entries == output.len() and Inspect.is_below_break_length(output, start) and !joined.contains("\n")
 		if fits {
-			"${e.open} ${joined} ${e.close}"
+			"${formatted_entries.open} ${joined} ${formatted_entries.close}"
 		} else {
 			indentation = "\n${" ".repeat(context.indent)}"
-			"${e.open}${indentation}  ${Str.join_with(output, ",${indentation}  ")}${indentation}${e.close}"
+			"${formatted_entries.open}${indentation}  ${Str.join_with(output, ",${indentation}  ")}${indentation}${formatted_entries.close}"
 		}
 	}
 
@@ -470,7 +470,7 @@ Inspect :: [].{
 
 	# node's `groupArrayElements`: an array of more than six short items set
 	# out in aligned columns.
-	group_array_elements : Inspect.Ctx, List(Str), List(Heap.Value) -> List(Str)
+	group_array_elements : Inspect.Context, List(Str), List(Heap.Value) -> List(Str)
 	group_array_elements = |context, output, items| {
 		has_more = items.len() > 100
 		output_length = if has_more {
@@ -479,15 +479,15 @@ Inspect :: [].{
 			output.len()
 		}
 		data_lengths = output.sublist({ start: 0, len: output_length }).map(Inspect.width)
-		total_length = data_lengths.fold(0, |t, l| t + l + 2)
-		max_length = data_lengths.fold(0, |m, l| U64.max(m, l))
+		total_length = data_lengths.fold(0, |total, length| total + length + 2)
+		max_length = data_lengths.fold(0, |most, length| U64.max(most, length))
 		actual_max = max_length + 2
 		if actual_max * 3 + context.indent < Inspect.break_length and (total_length.to_f64() / actual_max.to_f64() > 5.0 or max_length <= 6) {
 			average_bias = (actual_max.to_f64() - total_length.to_f64() / output.len().to_f64()).sqrt()
 			biased_max = F64.max(actual_max.to_f64() - 3.0 - average_bias, 1.0)
 			by_area = Inspect.js_round((2.5 * biased_max * output_length.to_f64()).sqrt() / biased_max)
 			by_width = (Inspect.break_length - context.indent).div_trunc_by(actual_max)
-			columns = [by_area, by_width, 12, 15].fold(15, |m, c| U64.min(m, c))
+			columns = [by_area, by_width, 12, 15].fold(15, |least, candidate| U64.min(least, candidate))
 			if columns <= 1 {
 				output
 			} else {
@@ -521,7 +521,7 @@ Inspect :: [].{
 			$column = $column + 1
 		}
 		numbers_only = items.sublist({ start: 0, len: output.len() }).all(
-			|v| match v {
+			|subject| match subject {
 				Number(_) => True
 				_ => False
 			},
@@ -563,14 +563,14 @@ Inspect :: [].{
 
 	# Text padded with spaces to `width`: before it when `at_start`.
 	padded : Str, U64, Bool -> Str
-	padded = |text, w, at_start| {
-		n = Inspect.width(text)
-		if n >= w {
+	padded = |text, wanted_width, at_start| {
+		shown_width = Inspect.width(text)
+		if shown_width >= wanted_width {
 			text
 		} else if at_start {
-			Str.concat(" ".repeat(w - n), text)
+			Str.concat(" ".repeat(wanted_width - shown_width), text)
 		} else {
-			Str.concat(text, " ".repeat(w - n))
+			Str.concat(text, " ".repeat(wanted_width - shown_width))
 		}
 	}
 }
