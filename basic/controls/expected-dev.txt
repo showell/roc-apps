@@ -4,45 +4,45 @@
 # 0 and 0. Measured on Roc 0.1.0-RC1 by basic/controls.shale opt=dev. The dev
 # build lowers closures and the like to boxes, as --specialize=no does, so
 # it allocates where the release build (expected.txt) doesn't.
-02-for 1 0 one a NEXT that loops, which the release build doesn't make
-03-let-constant 1 0 one a NEXT that loops, which the release build doesn't make
-04-let-variable 1 0 one a NEXT that loops, which the release build doesn't make
-05-add 1 0 one a NEXT that loops, which the release build doesn't make
-06-if-false 1 0 one a NEXT that loops, which the release build doesn't make
-07-if-true 1 0 one a NEXT that loops, which the release build doesn't make
-08-goto 1 0 one a NEXT that loops, which the release build doesn't make
-09-gosub 1 0 one a NEXT that loops, which the release build doesn't make
-10-string-let 1 0 one a NEXT that loops, which the release build doesn't make
-11-rnd 1 0 one a NEXT that loops, which the release build doesn't make
+02-for 1 0 one a NEXT that loops, a copy of a Vec node's list in Vec.set_in (about 115 bytes, tools/copy_oracle.shale), which the release build doesn't make
+03-let-constant 1 0 one a NEXT that loops, a copy of a Vec node's list in Vec.set_in (about 115 bytes, tools/copy_oracle.shale), which the release build doesn't make
+04-let-variable 1 0 one a NEXT that loops, a copy of a Vec node's list in Vec.set_in (about 115 bytes, tools/copy_oracle.shale), which the release build doesn't make
+05-add 1 0 one a NEXT that loops, a copy of a Vec node's list in Vec.set_in (about 115 bytes, tools/copy_oracle.shale), which the release build doesn't make
+06-if-false 1 0 one a NEXT that loops, a copy of a Vec node's list in Vec.set_in (about 115 bytes, tools/copy_oracle.shale), which the release build doesn't make
+07-if-true 1 0 one a NEXT that loops, a copy of a Vec node's list in Vec.set_in (about 115 bytes, tools/copy_oracle.shale), which the release build doesn't make
+08-goto 1 0 one a NEXT that loops, a copy of a Vec node's list in Vec.set_in (about 115 bytes, tools/copy_oracle.shale), which the release build doesn't make
+09-gosub 1 0 one a NEXT that loops, a copy of a Vec node's list in Vec.set_in (about 115 bytes, tools/copy_oracle.shale), which the release build doesn't make
+10-string-let 1 0 one a NEXT that loops, a copy of a Vec node's list in Vec.set_in (about 115 bytes, tools/copy_oracle.shale), which the release build doesn't make
+11-rnd 1 0 one a NEXT that loops, a copy of a Vec node's list in Vec.set_in (about 115 bytes, tools/copy_oracle.shale), which the release build doesn't make
 12-def-fn 4 0 the release build's one (the call's binding), a looping NEXT's one, and two more for the call in the dev build
-13-array-read 1 0 one a NEXT that loops, which the release build doesn't make
-14-array-store 1 0 one a NEXT that loops, which the release build doesn't make
-15-peek 1 0 one a NEXT that loops, which the release build doesn't make
-16-poke 1 0 one a NEXT that loops, which the release build doesn't make
-17-read 1 0 one a NEXT that loops, which the release build doesn't make
-18-read-array 1 0 one a NEXT that loops, which the release build doesn't make
+13-array-read 1 0 one a NEXT that loops, a copy of a Vec node's list in Vec.set_in (about 115 bytes, tools/copy_oracle.shale), which the release build doesn't make
+14-array-store 1 0 one a NEXT that loops, a copy of a Vec node's list in Vec.set_in (about 115 bytes, tools/copy_oracle.shale), which the release build doesn't make
+15-peek 1 0 one a NEXT that loops, a copy of a Vec node's list in Vec.set_in (about 115 bytes, tools/copy_oracle.shale), which the release build doesn't make
+16-poke 1 0 one a NEXT that loops, a copy of a Vec node's list in Vec.set_in (about 115 bytes, tools/copy_oracle.shale), which the release build doesn't make
+17-read 1 0 one a NEXT that loops, a copy of a Vec node's list in Vec.set_in (about 115 bytes, tools/copy_oracle.shale), which the release build doesn't make
+18-read-array 1 0 one a NEXT that loops, a copy of a Vec node's list in Vec.set_in (about 115 bytes, tools/copy_oracle.shale), which the release build doesn't make
 19-for-inner 3 0 the outer NEXT's one, and two for the inner FOR and NEXT, none of them in the release build
 20-print-loop 6 0 the release build's Str.to_utf8, a looping NEXT's one, and four more for the PRINT in the dev build
 21-string-grow 2 0 the release build's one for the grown string, and a looping NEXT's one
 22-poke-screen 2 0 a looping NEXT's one, and a copy of the screen: Devices.poked's screen arm hands Devices.kept the whole record while it writes scr
 23-print-semicolon 5 0 the release build's Str.to_utf8, a looping NEXT's one, and three more for the PRINT in the dev build
-24-on-goto 1 0 one a NEXT that loops, which the release build doesn't make
-25-on-gosub 1 0 one a NEXT that loops, which the release build doesn't make
-26-string-compare 1 0 one a NEXT that loops, which the release build doesn't make
-27-left 1 0 one a NEXT that loops, which the release build doesn't make
-28-mid 1 0 one a NEXT that loops, which the release build doesn't make
-29-chr 1 0 one a NEXT that loops, which the release build doesn't make
-30-len 1 0 one a NEXT that loops, which the release build doesn't make
-31-int 1 0 one a NEXT that loops, which the release build doesn't make
-32-power 1 0 one a NEXT that loops, which the release build doesn't make
-33-divide 1 0 one a NEXT that loops, which the release build doesn't make
+24-on-goto 1 0 one a NEXT that loops, a copy of a Vec node's list in Vec.set_in (about 115 bytes, tools/copy_oracle.shale), which the release build doesn't make
+25-on-gosub 1 0 one a NEXT that loops, a copy of a Vec node's list in Vec.set_in (about 115 bytes, tools/copy_oracle.shale), which the release build doesn't make
+26-string-compare 1 0 one a NEXT that loops, a copy of a Vec node's list in Vec.set_in (about 115 bytes, tools/copy_oracle.shale), which the release build doesn't make
+27-left 1 0 one a NEXT that loops, a copy of a Vec node's list in Vec.set_in (about 115 bytes, tools/copy_oracle.shale), which the release build doesn't make
+28-mid 1 0 one a NEXT that loops, a copy of a Vec node's list in Vec.set_in (about 115 bytes, tools/copy_oracle.shale), which the release build doesn't make
+29-chr 1 0 one a NEXT that loops, a copy of a Vec node's list in Vec.set_in (about 115 bytes, tools/copy_oracle.shale), which the release build doesn't make
+30-len 1 0 one a NEXT that loops, a copy of a Vec node's list in Vec.set_in (about 115 bytes, tools/copy_oracle.shale), which the release build doesn't make
+31-int 1 0 one a NEXT that loops, a copy of a Vec node's list in Vec.set_in (about 115 bytes, tools/copy_oracle.shale), which the release build doesn't make
+32-power 1 0 one a NEXT that loops, a copy of a Vec node's list in Vec.set_in (about 115 bytes, tools/copy_oracle.shale), which the release build doesn't make
+33-divide 1 0 one a NEXT that loops, a copy of a Vec node's list in Vec.set_in (about 115 bytes, tools/copy_oracle.shale), which the release build doesn't make
 34-print-tab 5 0 as 23-print-semicolon; the TAB adds nothing
-35-gosub-nested 1 0 one a NEXT that loops, which the release build doesn't make
-36-dim-again 1 0 one a NEXT that loops, which the release build doesn't make
-37-val 1 0 one a NEXT that loops, which the release build doesn't make
+35-gosub-nested 1 0 one a NEXT that loops, a copy of a Vec node's list in Vec.set_in (about 115 bytes, tools/copy_oracle.shale), which the release build doesn't make
+36-dim-again 1 0 one a NEXT that loops, a copy of a Vec node's list in Vec.set_in (about 115 bytes, tools/copy_oracle.shale), which the release build doesn't make
+37-val 1 0 one a NEXT that loops, a copy of a Vec node's list in Vec.set_in (about 115 bytes, tools/copy_oracle.shale), which the release build doesn't make
 38-input 10 0 the release build's three, a looping NEXT's one, and six more for the INPUT in the dev build
-39-if-array-read 1 0 one a NEXT that loops, which the release build doesn't make
-40-if-two-array-reads 1 0 one a NEXT that loops, which the release build doesn't make
-41-let-int-product 1 0 one a NEXT that loops, which the release build doesn't make
-42-store-array-from-array 1 0 one a NEXT that loops, which the release build doesn't make
-43-if-arith 1 0 one a NEXT that loops, which the release build doesn't make
+39-if-array-read 1 0 one a NEXT that loops, a copy of a Vec node's list in Vec.set_in (about 115 bytes, tools/copy_oracle.shale), which the release build doesn't make
+40-if-two-array-reads 1 0 one a NEXT that loops, a copy of a Vec node's list in Vec.set_in (about 115 bytes, tools/copy_oracle.shale), which the release build doesn't make
+41-let-int-product 1 0 one a NEXT that loops, a copy of a Vec node's list in Vec.set_in (about 115 bytes, tools/copy_oracle.shale), which the release build doesn't make
+42-store-array-from-array 1 0 one a NEXT that loops, a copy of a Vec node's list in Vec.set_in (about 115 bytes, tools/copy_oracle.shale), which the release build doesn't make
+43-if-arith 1 0 one a NEXT that loops, a copy of a Vec node's list in Vec.set_in (about 115 bytes, tools/copy_oracle.shale), which the release build doesn't make
