@@ -135,18 +135,18 @@ Interp :: [].{
 			{ key: "PI", value: Number(3.141592653589793) },
 			{ key: "E", value: Number(2.718281828459045) },
 		]
-		for n in [Floor, Ceil, Round, Trunc, Abs, Sign, Sqrt, Pow, Min, Max, Sin, Cos, Tan, Atan] {
-			f = Interp.alloc($s, Builtin(n, []))
-			$s = f.machine
-			$math_properties = $math_properties.append({ key: Heap.native_name(n), value: f.value })
+		for native in [Floor, Ceil, Round, Trunc, Abs, Sign, Sqrt, Pow, Min, Max, Sin, Cos, Tan, Atan] {
+			made = Interp.alloc($s, Builtin(native, []))
+			$s = made.machine
+			$math_properties = $math_properties.append({ key: Heap.native_name(native), value: made.value })
 		}
 		math_object = Interp.alloc($s, Namespace("Math", $math_properties))
 		$s = math_object.machine
 		var $object_properties = []
-		for n in [Keys, Values, Entries] {
-			f = Interp.alloc($s, Builtin(n, []))
-			$s = f.machine
-			$object_properties = $object_properties.append({ key: Heap.native_name(n), value: f.value })
+		for native in [Keys, Values, Entries] {
+			made = Interp.alloc($s, Builtin(native, []))
+			$s = made.machine
+			$object_properties = $object_properties.append({ key: Heap.native_name(native), value: made.value })
 		}
 		object = Interp.alloc($s, Namespace("Object", $object_properties))
 		$s = object.machine
@@ -215,7 +215,7 @@ Interp :: [].{
 	fault_got = |machine, why| { machine: Interp.faulted(machine, why), value: Undefined }
 
 	at_line : Ast.Where -> Str
-	at_line = |w| " (line ${w.line.to_str()})"
+	at_line = |site| " (line ${site.line.to_str()})"
 
 	# ---- scopes ----------------------------------------------------------------
 
@@ -249,7 +249,7 @@ Interp :: [].{
 	parent_of : List(Interp.Scope), U64 -> U64
 	parent_of = |scopes, scope_id|
 		match scopes.get(scope_id) {
-			Ok({ parent: Within(p), variables: _ }) => p
+			Ok({ parent: Within(parent), variables: _ }) => parent
 			_ => crash "Interp.parent_of: Resolve counts no more scopes out than there are"
 		}
 
@@ -347,8 +347,8 @@ Interp :: [].{
 
 	# The machine back in scope `outer`, the scope `inner` dropped when nothing
 	# can have captured it and it is the last one alive.
-	left : Interp.Machine, U64, U64, Ast.Capture -> Interp.Machine
-	left = |machine, inner, outer, capture| {
+	out_of_scope : Interp.Machine, U64, U64, Ast.Capture -> Interp.Machine
+	out_of_scope = |machine, inner, outer, capture| {
 		drops = capture == CapturesNothing and inner + 1 == machine.live_scopes
 		if drops {
 			{ ..machine, live_scopes: inner, scope: outer }
@@ -365,8 +365,8 @@ Interp :: [].{
 		for stmt in statements {
 			match stmt {
 				FunctionDeclaration(definition, slot) => {
-					{ machine: made, value: f } = Interp.alloc($s, Fun({ fun: definition, scope: $s.scope }))
-					$s = Interp.declare(made, slot, f, Mutable)
+					{ machine: made, value: function } = Interp.alloc($s, Fun({ fun: definition, scope: $s.scope }))
+					$s = Interp.declare(made, slot, function, Mutable)
 				}
 				_ => {}
 			}
@@ -388,7 +388,7 @@ Interp :: [].{
 				inner = Interp.hoisted(Interp.entered(machine, Within(outer), names.len()), block.statements)
 				id = inner.scope
 				{ machine: after, flow } = Interp.execute_list(inner, block.statements)
-				{ machine: Interp.left(after, id, outer, block.capture), flow: flow }
+				{ machine: Interp.out_of_scope(after, id, outer, block.capture), flow: flow }
 			}
 		}
 
@@ -418,23 +418,23 @@ Interp :: [].{
 	execute : Interp.Machine, Ast.Statement -> Interp.Done
 	execute = |machine, stmt|
 		match stmt {
-			Expression(e) => {
-				{ machine: after, value: _ } = Interp.evaluate(machine, e)
+			Expression(expression) => {
+				{ machine: after, value: _ } = Interp.evaluate(machine, expression)
 				Interp.normal(after)
 			}
 			Declare(binding, declarations) => {
 				var $s = machine
-				for d in declarations {
+				for right_byte in declarations {
 					if Interp.is_running($s) {
-						{ machine: made, value } = match d.init {
-							Initialized(e) => Interp.evaluate($s, e)
+						{ machine: made, value } = match right_byte.init {
+							Initialized(expression) => Interp.evaluate($s, expression)
 							Uninitialized => { machine: $s, value: Undefined }
 						}
 						state = match binding {
 							Let => Mutable
 							Const => Fixed
 						}
-						$s = Interp.declare(made, d.slot, value, state)
+						$s = Interp.declare(made, right_byte.slot, value, state)
 					}
 				}
 				Interp.normal($s)
@@ -454,8 +454,8 @@ Interp :: [].{
 			For(loop) => Interp.execute_for(machine, loop)
 			ForOf(loop) => Interp.execute_for_of(machine, loop)
 			BlockStatement(block) => Interp.execute_block(machine, block)
-			Return(e) => {
-				{ machine: after, value } = Interp.evaluate(machine, e)
+			Return(expression) => {
+				{ machine: after, value } = Interp.evaluate(machine, expression)
 				{ machine: after, flow: Returned(value) }
 			}
 			Break => { machine: machine, flow: Broke }
@@ -470,7 +470,7 @@ Interp :: [].{
 		Normal => GoOn
 		Continued => GoOn
 		Broke => Leave(Normal)
-		Returned(v) => Leave(Returned(v))
+		Returned(subject) => Leave(Returned(subject))
 	}
 
 	execute_while : Interp.Machine, Ast.Expression, Ast.Statement -> Interp.Done
@@ -490,8 +490,8 @@ Interp :: [].{
 					GoOn => {
 						$going = Interp.is_running($s)
 					}
-					Leave(f) => {
-						$flow = f
+					Leave(leaving) => {
+						$flow = leaving
 						$going = False
 					}
 				}
@@ -510,7 +510,7 @@ Interp :: [].{
 		var $going = Interp.is_running($s)
 		while $going {
 			{ machine: tested, value } = match loop.test {
-				Tested(e) => Interp.evaluate(Interp.ticked($s), e)
+				Tested(expression) => Interp.evaluate(Interp.ticked($s), expression)
 				Always => { machine: Interp.ticked($s), value: Boolean(True) }
 			}
 			if !Interp.is_running(tested) or !Interp.is_truthy(value) {
@@ -528,20 +528,20 @@ Interp :: [].{
 							CapturesNothing => after
 						}
 						$s = match loop.update {
-							Updated(e) => Interp.machine_after(next_pass, e)
+							Updated(expression) => Interp.machine_after(next_pass, expression)
 							NoUpdate => next_pass
 						}
 						$going = Interp.is_running($s)
 					}
-					Leave(f) => {
+					Leave(leaving) => {
 						$s = after
-						$flow = f
+						$flow = leaving
 						$going = False
 					}
 				}
 			}
 		}
-		{ machine: Interp.left($s, $s.scope, outer, loop.capture), flow: $flow }
+		{ machine: Interp.out_of_scope($s, $s.scope, outer, loop.capture), flow: $flow }
 	}
 
 	# The machine in a copy of its current scope, beside the old one.
@@ -568,7 +568,7 @@ Interp :: [].{
 					),
 				)
 			}
-			Text(s) => Interp.execute_for_of_text(got, loop, s, state)
+			Text(text) => Interp.execute_for_of_text(got, loop, text, state)
 			_ => Interp.normal(
 				Interp.faulted(
 					got,
@@ -588,16 +588,16 @@ Interp :: [].{
 			if $i >= Interp.item_count($s, id) {
 				$going = False
 			} else {
-				v = Interp.item_at($s, id, $i)
-				{ machine: after, flow } = Interp.execute_for_of_pass(Interp.ticked($s), loop, v, state)
+				subject = Interp.item_at($s, id, $i)
+				{ machine: after, flow } = Interp.execute_for_of_pass(Interp.ticked($s), loop, subject, state)
 				$s = after
 				$i = $i + 1
 				match Interp.after_body(flow) {
 					GoOn => {
 						$going = Interp.is_running($s)
 					}
-					Leave(f) => {
-						$flow = f
+					Leave(leaving) => {
+						$flow = leaving
 						$going = False
 					}
 				}
@@ -611,12 +611,12 @@ Interp :: [].{
 		var $s = machine
 		var $flow = Normal
 		var $going = Interp.is_running(machine)
-		for c in Interp.characters(text) {
+		for character in Interp.characters(text) {
 			if $going {
 				{ machine: after, flow } = Interp.execute_for_of_pass(
 					Interp.ticked($s),
 					loop,
-					Text(c),
+					Text(character),
 					state,
 				)
 				$s = after
@@ -624,8 +624,8 @@ Interp :: [].{
 					GoOn => {
 						$going = Interp.is_running($s)
 					}
-					Leave(f) => {
-						$flow = f
+					Leave(leaving) => {
+						$flow = leaving
 						$going = False
 					}
 				}
@@ -637,56 +637,56 @@ Interp :: [].{
 	# A string's characters, each its UTF-8 bytes, as `for ... of` takes them.
 	characters : Str -> List(Str)
 	characters = |text| {
-		b = text.to_utf8()
+		bytes = text.to_utf8()
 		var $out = []
 		var $i = 0
-		while $i < b.len() {
-			c = b.get($i) ?? crash "Interp.characters: inside the text"
-			n = if c >= 0xF0 {
+		while $i < bytes.len() {
+			lead = bytes.get($i) ?? crash "Interp.characters: inside the text"
+			width = if lead >= 0xF0 {
 				4
-			} else if c >= 0xE0 {
+			} else if lead >= 0xE0 {
 				3
-			} else if c >= 0xC0 {
+			} else if lead >= 0xC0 {
 				2
 			} else {
 				1
 			}
 			$out = $out.append(
 				Str.from_utf8(
-					b.sublist({ start: $i, len: n }),
+					bytes.sublist({ start: $i, len: width }),
 				) ?? crash "Interp.characters: a whole character",
 			)
-			$i = $i + n
+			$i = $i + width
 		}
 		$out
 	}
 
 	execute_for_of_pass : Interp.Machine, Ast.ForOfLoop, Heap.Value, Interp.VariableState -> Interp.Done
-	execute_for_of_pass = |machine, loop, v, state| {
+	execute_for_of_pass = |machine, loop, subject, state| {
 		outer = machine.scope
 		inner = Interp.with_scope_added(
 			machine,
-			{ variables: [{ value: v, state: state }], parent: Within(outer) },
+			{ variables: [{ value: subject, state: state }], parent: Within(outer) },
 		)
 		id = inner.scope
 		{ machine: after, flow } = Interp.execute(inner, loop.body)
-		{ machine: Interp.left(after, id, outer, loop.capture), flow: flow }
+		{ machine: Interp.out_of_scope(after, id, outer, loop.capture), flow: flow }
 	}
 
 	# ---- values ----------------------------------------------------------------
 
 	is_truthy : Heap.Value -> Bool
-	is_truthy = |v| match v {
-		Number(n) => !(n == 0.0 or n.is_nan())
-		Text(s) => !s.is_empty()
-		Boolean(b) => b
+	is_truthy = |subject| match subject {
+		Number(number) => !(number == 0.0 or number.is_nan())
+		Text(text) => !text.is_empty()
+		Boolean(truth) => truth
 		Null => False
 		Undefined => False
 		Reference(_) => True
 	}
 
 	type_of : List(Heap.Cell), Heap.Value -> Str
-	type_of = |cells, v| match v {
+	type_of = |cells, subject| match subject {
 		Number(_) => "number"
 		Text(_) => "string"
 		Boolean(_) => "boolean"
@@ -700,7 +700,7 @@ Interp :: [].{
 	}
 
 	is_strictly_equal : Heap.Value, Heap.Value -> Bool
-	is_strictly_equal = |a, b| match (a, b) {
+	is_strictly_equal = |left, right| match (left, right) {
 		(Number(x), Number(y)) => x == y
 		(Text(x), Text(y)) => x == y
 		(Boolean(x), Boolean(y)) => x == y
@@ -712,21 +712,21 @@ Interp :: [].{
 
 	# SameValueZero, as `includes` compares: NaN finds NaN.
 	is_same_value_zero : Heap.Value, Heap.Value -> Bool
-	is_same_value_zero = |a, b| match (a, b) {
+	is_same_value_zero = |left, right| match (left, right) {
 		(Number(x), Number(y)) => x == y or (x.is_nan() and y.is_nan())
-		_ => Interp.is_strictly_equal(a, b)
+		_ => Interp.is_strictly_equal(left, right)
 	}
 
 	# What `String(v)` gives, for the values whose text the subset has.
 	text_of : List(Heap.Cell), Heap.Value -> Try(Str, [Unsupported(Str)])
-	text_of = |cells, v| Interp.text_of_seen(cells, v, [])
+	text_of = |cells, subject| Interp.text_of_seen(cells, subject, [])
 
 	text_of_seen : List(Heap.Cell), Heap.Value, List(U64) -> Try(Str, [Unsupported(Str)])
-	text_of_seen = |cells, v, seen| match v {
-		Number(n) => Ok(NumberText.of(n))
-		Text(s) => Ok(s)
-		Boolean(b) => Ok(
-			if b {
+	text_of_seen = |cells, subject, seen| match subject {
+		Number(number) => Ok(NumberText.of(number))
+		Text(text) => Ok(text)
+		Boolean(truth) => Ok(
+			if truth {
 				"true"
 			} else {
 				"false"
@@ -758,11 +758,11 @@ Interp :: [].{
 
 	# The property key a value names, as `o[k]` reads it.
 	key_of : Heap.Value -> Try(Str, [Unsupported(Str)])
-	key_of = |v| match v {
-		Number(n) => Ok(NumberText.of(n))
-		Text(s) => Ok(s)
-		Boolean(b) => Ok(
-			if b {
+	key_of = |subject| match subject {
+		Number(number) => Ok(NumberText.of(number))
+		Text(text) => Ok(text)
+		Boolean(truth) => Ok(
+			if truth {
 				"true"
 			} else {
 				"false"
@@ -775,32 +775,32 @@ Interp :: [].{
 
 	# The array index a value names, if it names one.
 	index_of : Heap.Value -> Try(U64, [NotIndex])
-	index_of = |v| match v {
-		Number(n) => {
-			if n >= 0.0 and n < 4294967295.0 and n.div_trunc_by(1.0) == n {
-				n.to_u64_try().map_err(|_| NotIndex)
+	index_of = |subject| match subject {
+		Number(number) => {
+			if number >= 0.0 and number < 4294967295.0 and number.div_trunc_by(1.0) == number {
+				number.to_u64_try().map_err(|_| NotIndex)
 			} else {
 				Err(NotIndex)
 			}
 		}
-		Text(s) => Inspect.index_of_key(s)
+		Text(text) => Inspect.index_of_key(text)
 		_ => Err(NotIndex)
 	}
 
 	ordering_of_text : Str, Str -> [Before, Same, After]
-	ordering_of_text = |a, b| {
-		x = a.to_utf8()
-		y = b.to_utf8()
+	ordering_of_text = |left, right| {
+		x = left.to_utf8()
+		y = right.to_utf8()
 		var $i = 0
 		var $answer = Same
 		var $deciding = True
 		while $deciding {
 			match (x.get($i), y.get($i)) {
-				(Ok(c), Ok(d)) => {
-					if c < d {
+				(Ok(left_byte), Ok(right_byte)) => {
+					if left_byte < right_byte {
 						$answer = Before
 						$deciding = False
-					} else if c > d {
+					} else if left_byte > right_byte {
 						$answer = After
 						$deciding = False
 					} else {
@@ -824,9 +824,9 @@ Interp :: [].{
 	}
 
 	shown_value : List(Heap.Cell), Heap.Value -> Str
-	shown_value = |cells, v| match v {
-		Text(s) => Inspect.escaped(s)
-		_ => Inspect.inspect(cells, v) ?? Interp.type_of(cells, v)
+	shown_value = |cells, subject| match subject {
+		Text(text) => Inspect.escaped(text)
+		_ => Inspect.inspect(cells, subject) ?? Interp.type_of(cells, subject)
 	}
 
 	# ---- expressions -----------------------------------------------------------
@@ -834,13 +834,13 @@ Interp :: [].{
 	evaluate : Interp.Machine, Ast.Expression -> Interp.Got
 	evaluate = |machine, expr|
 		match expr {
-			Number(n) => { machine: machine, value: Number(n) }
-			Text(s) => { machine: machine, value: Text(s) }
-			Boolean(b) => { machine: machine, value: Boolean(b) }
+			Number(number) => { machine: machine, value: Number(number) }
+			Text(text) => { machine: machine, value: Text(text) }
+			Boolean(truth) => { machine: machine, value: Boolean(truth) }
 			Null => { machine: machine, value: Null }
 			Undefined => { machine: machine, value: Undefined }
 			Template(texts, parts) => Interp.evaluate_template(machine, texts, parts)
-			Name(name, slot, w) => Interp.evaluate_name(machine, name, slot, w)
+			Name(name, slot, site) => Interp.evaluate_name(machine, name, slot, site)
 			ArrayLit(items) => {
 				{ machine: after, values } = Interp.evaluate_all(machine, items)
 				Interp.alloc(after, Array(values))
@@ -848,24 +848,24 @@ Interp :: [].{
 			ObjectLit(properties) => {
 				var $s = machine
 				var $made = []
-				for p in properties {
-					{ machine: after, value } = Interp.evaluate($s, p.value)
+				for parent in properties {
+					{ machine: after, value } = Interp.evaluate($s, parent.value)
 					$s = after
-					$made = Heap.properties_with($made, p.key, value)
+					$made = Heap.properties_with($made, parent.key, value)
 				}
 				Interp.alloc($s, Object($made))
 			}
-			Unary(operator, e, w) => {
-				{ machine: after, value } = Interp.evaluate(machine, e)
-				Interp.unary(after, operator, value, w)
+			Unary(operator, expression, site) => {
+				{ machine: after, value } = Interp.evaluate(machine, expression)
+				Interp.unary(after, operator, value, site)
 			}
-			Binary(operator, a, b, w) => {
-				{ machine: first, value: left_val } = Interp.evaluate(machine, a)
-				{ machine: second, value: right_val } = Interp.evaluate(first, b)
-				Interp.binary(second, operator, left_val, right_val, w)
+			Binary(operator, left, right, site) => {
+				{ machine: first, value: left_val } = Interp.evaluate(machine, left)
+				{ machine: second, value: right_val } = Interp.evaluate(first, right)
+				Interp.binary(second, operator, left_val, right_val, site)
 			}
-			Logical(operator, a, b) => {
-				{ machine: first, value: left_val } = Interp.evaluate(machine, a)
+			Logical(operator, left, right) => {
+				{ machine: first, value: left_val } = Interp.evaluate(machine, left)
 				decided = match operator {
 					And => !Interp.is_truthy(left_val)
 					Or => Interp.is_truthy(left_val)
@@ -874,7 +874,7 @@ Interp :: [].{
 				if decided {
 					{ machine: first, value: left_val }
 				} else {
-					Interp.evaluate(first, b)
+					Interp.evaluate(first, right)
 				}
 			}
 			Conditional(test, yes, no) => {
@@ -885,25 +885,25 @@ Interp :: [].{
 					Interp.evaluate(tested, no)
 				}
 			}
-			Assign(target, operator, e, w) => Interp.evaluate_assign(machine, target, operator, e, w)
-			Update(target, step, fixity, w) => Interp.evaluate_update(machine, target, step, fixity, w)
-			Member(object, key, w) => {
-				{ machine: after, value: o } = Interp.evaluate(machine, object)
-				Interp.property(after, o, key, w)
+			Assign(target, operator, expression, site) => Interp.evaluate_assign(machine, target, operator, expression, site)
+			Update(target, step, fixity, site) => Interp.evaluate_update(machine, target, step, fixity, site)
+			Member(object, key, site) => {
+				{ machine: after, value: holder } = Interp.evaluate(machine, object)
+				Interp.property(after, holder, key, site)
 			}
-			Index(object, key, w) => {
-				{ machine: first, value: o } = Interp.evaluate(machine, object)
-				{ machine: second, value: k } = Interp.evaluate(first, key)
-				Interp.indexed(second, o, k, w)
+			Index(object, key, site) => {
+				{ machine: first, value: holder } = Interp.evaluate(machine, object)
+				{ machine: second, value: key_value } = Interp.evaluate(first, key)
+				Interp.indexed(second, holder, key_value, site)
 			}
-			Call(callee, arguments, w) => Interp.evaluate_call(machine, callee, arguments, w)
+			Call(callee, arguments, site) => Interp.evaluate_call(machine, callee, arguments, site)
 			Function(definition) => Interp.alloc(machine, Fun({ fun: definition, scope: machine.scope }))
 		}
 
 	# The machine after an expression whose value is not wanted.
 	machine_after : Interp.Machine, Ast.Expression -> Interp.Machine
-	machine_after = |machine, e| {
-		{ machine: after, value: _ } = Interp.evaluate(machine, e)
+	machine_after = |machine, expression| {
+		{ machine: after, value: _ } = Interp.evaluate(machine, expression)
 		after
 	}
 
@@ -913,8 +913,8 @@ Interp :: [].{
 	evaluate_all = |machine, expressions| {
 		var $s = machine
 		var $vals = []
-		for e in expressions {
-			{ machine: after, value } = Interp.evaluate($s, e)
+		for expression in expressions {
+			{ machine: after, value } = Interp.evaluate($s, expression)
 			$s = after
 			$vals = $vals.append(value)
 		}
@@ -929,9 +929,9 @@ Interp :: [].{
 		for part in parts {
 			{ machine: after, value } = Interp.evaluate($s, part)
 			$s = match Interp.text_of(after.cells, value) {
-				Ok(t) => {
+				Ok(phrase) => {
 					$text = Str.concat(
-						Str.concat($text, t),
+						Str.concat($text, phrase),
 						texts.get($i) ?? crash "Interp.eval_template: a template has a text piece after each substitution",
 					)
 					after
@@ -944,23 +944,23 @@ Interp :: [].{
 	}
 
 	evaluate_name : Interp.Machine, Str, Ast.Slot, Ast.Where -> Interp.Got
-	evaluate_name = |machine, name, slot, w|
+	evaluate_name = |machine, name, slot, site|
 		match Interp.place_of(machine, slot) {
 			At({ scope, index }) => {
 				binding = Interp.variable_at(machine.scopes, scope, index)
 				match binding.state {
 					Unready => Interp.fault_got(
 						machine,
-						"ReferenceError: Cannot access '${name}' before initialization${Interp.at_line(w)}",
+						"ReferenceError: Cannot access '${name}' before initialization${Interp.at_line(site)}",
 					)
 					_ => { machine: machine, value: binding.value }
 				}
 			}
-			Nowhere => Interp.fault_got(machine, Interp.missing_name_message(name, w))
+			Nowhere => Interp.fault_got(machine, Interp.missing_name_message(name, site))
 		}
 
 	missing_name_message : Str, Ast.Where -> Str
-	missing_name_message = |name, w|
+	missing_name_message = |name, site|
 		if [
 			"globalThis",
 			"window",
@@ -981,39 +981,39 @@ Interp :: [].{
 			"Reflect",
 			"Proxy",
 		].contains(name) {
-			"unsupported: the builtin `${name}`${Interp.at_line(w)}"
+			"unsupported: the builtin `${name}`${Interp.at_line(site)}"
 		} else {
-			"ReferenceError: ${name} is not defined${Interp.at_line(w)}"
+			"ReferenceError: ${name} is not defined${Interp.at_line(site)}"
 		}
 
 	unary : Interp.Machine, Ast.UnaryOperator, Heap.Value, Ast.Where -> Interp.Got
-	unary = |machine, operator, v, w|
+	unary = |machine, operator, subject, site|
 		match operator {
-			Not => { machine: machine, value: Boolean(!Interp.is_truthy(v)) }
-			TypeOf => { machine: machine, value: Text(Interp.type_of(machine.cells, v)) }
-			Negate => match v {
-				Number(n) => { machine: machine, value: Number(-n) }
+			Not => { machine: machine, value: Boolean(!Interp.is_truthy(subject)) }
+			TypeOf => { machine: machine, value: Text(Interp.type_of(machine.cells, subject)) }
+			Negate => match subject {
+				Number(number) => { machine: machine, value: Number(-number) }
 				_ => Interp.fault_got(
 					machine,
-					"unsupported: `-` on a ${Interp.type_of(machine.cells, v)} (a coercion)${Interp.at_line(w)}",
+					"unsupported: `-` on a ${Interp.type_of(machine.cells, subject)} (a coercion)${Interp.at_line(site)}",
 				)
 			}
-			Plus => match v {
-				Number(n) => { machine: machine, value: Number(n) }
+			Plus => match subject {
+				Number(number) => { machine: machine, value: Number(number) }
 				_ => Interp.fault_got(
 					machine,
-					"unsupported: `+` on a ${Interp.type_of(machine.cells, v)} (a coercion)${Interp.at_line(w)}",
+					"unsupported: `+` on a ${Interp.type_of(machine.cells, subject)} (a coercion)${Interp.at_line(site)}",
 				)
 			}
 		}
 
 	binary : Interp.Machine, Ast.BinaryOperator, Heap.Value, Heap.Value, Ast.Where -> Interp.Got
-	binary = |machine, operator, a, b, w|
+	binary = |machine, operator, left, right, site|
 		match operator {
-			StrictEqual => { machine: machine, value: Boolean(Interp.is_strictly_equal(a, b)) }
-			StrictNotEqual => { machine: machine, value: Boolean(!Interp.is_strictly_equal(a, b)) }
-			Add => Interp.add(machine, a, b, w)
-			_ => match (a, b) {
+			StrictEqual => { machine: machine, value: Boolean(Interp.is_strictly_equal(left, right)) }
+			StrictNotEqual => { machine: machine, value: Boolean(!Interp.is_strictly_equal(left, right)) }
+			Add => Interp.add(machine, left, right, site)
+			_ => match (left, right) {
 				(Number(x), Number(y)) => { machine: machine, value: Interp.arithmetic(operator, x, y) }
 				(Text(x), Text(y)) => match operator {
 					Less => { machine: machine, value: Boolean(Interp.ordering_of_text(x, y) == Before) }
@@ -1025,12 +1025,12 @@ Interp :: [].{
 					}
 					_ => Interp.fault_got(
 						machine,
-						"unsupported: arithmetic on strings (a coercion)${Interp.at_line(w)}",
+						"unsupported: arithmetic on strings (a coercion)${Interp.at_line(site)}",
 					)
 				}
 				_ => Interp.fault_got(
 					machine,
-					"unsupported: an operator on a ${Interp.type_of(machine.cells, a)} and a ${Interp.type_of(machine.cells, b)} (a coercion)${Interp.at_line(w)}",
+					"unsupported: an operator on a ${Interp.type_of(machine.cells, left)} and a ${Interp.type_of(machine.cells, right)} (a coercion)${Interp.at_line(site)}",
 				)
 			}
 		}
@@ -1074,45 +1074,45 @@ Interp :: [].{
 	# `+`: numbers add; a string, an array or an object on either side makes
 	# both sides text, which join.
 	add : Interp.Machine, Heap.Value, Heap.Value, Ast.Where -> Interp.Got
-	add = |machine, a, b, w|
-		match (a, b) {
+	add = |machine, left, right, site|
+		match (left, right) {
 			(Number(x), Number(y)) => { machine: machine, value: Number(x + y) }
 			_ => {
-				is_texty = |v| match v {
+				is_texty = |subject| match subject {
 					Text(_) => True
 					Reference(_) => True
 					_ => False
 				}
-				if is_texty(a) or is_texty(b) {
-					match (Interp.text_of(machine.cells, a), Interp.text_of(machine.cells, b)) {
+				if is_texty(left) or is_texty(right) {
+					match (Interp.text_of(machine.cells, left), Interp.text_of(machine.cells, right)) {
 						(Ok(x), Ok(y)) => { machine: machine, value: Text(Str.concat(x, y)) }
 						(Err(Unsupported(why)), _) => Interp.fault_got(
 							machine,
-							"${why}${Interp.at_line(w)}",
+							"${why}${Interp.at_line(site)}",
 						)
 						(_, Err(Unsupported(why))) => Interp.fault_got(
 							machine,
-							"${why}${Interp.at_line(w)}",
+							"${why}${Interp.at_line(site)}",
 						)
 					}
 				} else {
 					Interp.fault_got(
 						machine,
-						"unsupported: `+` on a ${Interp.type_of(machine.cells, a)} and a ${Interp.type_of(machine.cells, b)} (a coercion)${Interp.at_line(w)}",
+						"unsupported: `+` on a ${Interp.type_of(machine.cells, left)} and a ${Interp.type_of(machine.cells, right)} (a coercion)${Interp.at_line(site)}",
 					)
 				}
 			}
 		}
 
 	combined : Interp.Machine, Ast.AssignmentOperator, Heap.Value, Heap.Value, Ast.Where -> Interp.Got
-	combined = |machine, operator, old, new, w|
+	combined = |machine, operator, old, new, site|
 		match operator {
 			Set => { machine: machine, value: new }
-			Combine(b) => Interp.binary(machine, b, old, new, w)
+			Combine(binary_operator) => Interp.binary(machine, binary_operator, old, new, site)
 		}
 
 	evaluate_assign : Interp.Machine, Ast.Target, Ast.AssignmentOperator, Ast.Expression, Ast.Where -> Interp.Got
-	evaluate_assign = |machine, target, operator, e, w|
+	evaluate_assign = |machine, target, operator, expression, site|
 		match target {
 			ToName(name, slot, at) => {
 				match Interp.place_of(machine, slot) {
@@ -1122,51 +1122,51 @@ Interp :: [].{
 					)
 					At({ scope, index }) => {
 						facts = Interp.variable_facts(machine.scopes, scope, index)
-						appends = operator == Combine(Add) and facts.state == Mutable and facts.holds_text and Interp.is_pure(e)
+						appends = operator == Combine(Add) and facts.state == Mutable and facts.holds_text and Interp.is_pure(expression)
 						if appends {
-							Interp.appended_name(machine, scope, index, e, w)
+							Interp.appended_name(machine, scope, index, expression, site)
 						} else {
 							old = Interp.variable_value(machine.scopes, scope, index)
-							{ machine: after, value } = Interp.evaluate(machine, e)
-							{ machine: made, value: result } = Interp.combined(after, operator, old, value, w)
+							{ machine: after, value } = Interp.evaluate(machine, expression)
+							{ machine: made, value: result } = Interp.combined(after, operator, old, value, site)
 							Interp.assigned_name(made, result, name, slot, at)
 						}
 					}
 				}
 			}
 			ToMember(object, key) => {
-				{ machine: first, value: o } = Interp.evaluate(machine, object)
+				{ machine: first, value: holder } = Interp.evaluate(machine, object)
 				{ machine: second, value: old } = match operator {
 					Set => { machine: first, value: Undefined }
-					Combine(_) => Interp.property(first, o, key, w)
+					Combine(_) => Interp.property(first, holder, key, site)
 				}
-				{ machine: third, value } = Interp.evaluate(second, e)
-				{ machine: made, value: result } = Interp.combined(third, operator, old, value, w)
+				{ machine: third, value } = Interp.evaluate(second, expression)
+				{ machine: made, value: result } = Interp.combined(third, operator, old, value, site)
 				Interp.stored(
 					made,
-					o,
+					holder,
 					Text(key),
 					result,
-					w,
+					site,
 				)
 			}
 			ToIndex(object, key) => {
-				{ machine: first, value: o } = Interp.evaluate(machine, object)
-				{ machine: second, value: k } = Interp.evaluate(first, key)
+				{ machine: first, value: holder } = Interp.evaluate(machine, object)
+				{ machine: second, value: key_value } = Interp.evaluate(first, key)
 				{ machine: third, value: old } = match operator {
 					Set => { machine: second, value: Undefined }
-					Combine(_) => Interp.indexed(second, o, k, w)
+					Combine(_) => Interp.indexed(second, holder, key_value, site)
 				}
-				{ machine: fourth, value } = Interp.evaluate(third, e)
-				{ machine: made, value: result } = Interp.combined(fourth, operator, old, value, w)
-				Interp.stored(made, o, k, result, w)
+				{ machine: fourth, value } = Interp.evaluate(third, expression)
+				{ machine: made, value: result } = Interp.combined(fourth, operator, old, value, site)
+				Interp.stored(made, holder, key_value, result, site)
 			}
 		}
 
 	# A variable written, its place found again after the value was made:
 	# making it may have run code that added scopes.
 	assigned_name : Interp.Machine, Heap.Value, Str, Ast.Slot, Ast.Where -> Interp.Got
-	assigned_name = |machine, value, name, slot, w|
+	assigned_name = |machine, value, name, slot, site|
 		if !Interp.is_running(machine) {
 			{ machine: machine, value: value }
 		} else {
@@ -1180,16 +1180,16 @@ Interp :: [].{
 					)
 					Fixed => Interp.fault_got(
 						machine,
-						"TypeError: Assignment to constant variable.${Interp.at_line(w)}",
+						"TypeError: Assignment to constant variable.${Interp.at_line(site)}",
 					)
 					Unready => Interp.fault_got(
 						machine,
-						"ReferenceError: Cannot access '${name}' before initialization${Interp.at_line(w)}",
+						"ReferenceError: Cannot access '${name}' before initialization${Interp.at_line(site)}",
 					)
 				}
 				Nowhere => Interp.fault_got(
 					machine,
-					"ReferenceError: ${name} is not defined${Interp.at_line(w)}",
+					"ReferenceError: ${name} is not defined${Interp.at_line(site)}",
 				)
 			}
 		}
@@ -1203,7 +1203,7 @@ Interp :: [].{
 	}
 
 	is_text : Heap.Value -> Bool
-	is_text = |v| match v {
+	is_text = |subject| match subject {
 		Text(_) => True
 		_ => False
 	}
@@ -1211,7 +1211,7 @@ Interp :: [].{
 	# Whether evaluating an expression can't change a variable: it calls
 	# nothing, assigns nothing and makes no function.
 	is_pure : Ast.Expression -> Bool
-	is_pure = |e| match e {
+	is_pure = |expression| match expression {
 		Number(_) => True
 		Text(_) => True
 		Boolean(_) => True
@@ -1220,13 +1220,13 @@ Interp :: [].{
 		Name(_, _, _) => True
 		Template(_, parts) => parts.all(Interp.is_pure)
 		ArrayLit(items) => items.all(Interp.is_pure)
-		ObjectLit(properties) => properties.all(|p| Interp.is_pure(p.value))
-		Unary(_, a, _) => Interp.is_pure(a)
-		Binary(_, a, b, _) => Interp.is_pure(a) and Interp.is_pure(b)
-		Logical(_, a, b) => Interp.is_pure(a) and Interp.is_pure(b)
-		Conditional(a, b, c) => Interp.is_pure(a) and Interp.is_pure(b) and Interp.is_pure(c)
-		Member(a, _, _) => Interp.is_pure(a)
-		Index(a, b, _) => Interp.is_pure(a) and Interp.is_pure(b)
+		ObjectLit(properties) => properties.all(|parent| Interp.is_pure(parent.value))
+		Unary(_, left, _) => Interp.is_pure(left)
+		Binary(_, left, right, _) => Interp.is_pure(left) and Interp.is_pure(right)
+		Logical(_, left, right) => Interp.is_pure(left) and Interp.is_pure(right)
+		Conditional(test, yes, no) => Interp.is_pure(test) and Interp.is_pure(yes) and Interp.is_pure(no)
+		Member(left, _, _) => Interp.is_pure(left)
+		Index(left, right, _) => Interp.is_pure(left) and Interp.is_pure(right)
 		Assign(_, _, _, _) => False
 		Update(_, _, _, _) => False
 		Call(_, _, _) => False
@@ -1243,13 +1243,13 @@ Interp :: [].{
 	# so it may run first, and the string then grows while only the variable
 	# holds it.
 	appended_name : Interp.Machine, U64, U64, Ast.Expression, Ast.Where -> Interp.Got
-	appended_name = |machine, scope_id, index, e, w| {
-		{ machine: after, value: piece } = Interp.evaluate(machine, e)
+	appended_name = |machine, scope_id, index, expression, site| {
+		{ machine: after, value: piece } = Interp.evaluate(machine, expression)
 		if !Interp.is_running(after) {
 			{ machine: after, value: Undefined }
 		} else {
 			match Interp.text_of(after.cells, piece) {
-				Err(Unsupported(why)) => Interp.fault_got(after, "${why}${Interp.at_line(w)}")
+				Err(Unsupported(why)) => Interp.fault_got(after, "${why}${Interp.at_line(site)}")
 				Ok(tail) => Interp.text_appended(after, scope_id, index, tail)
 			}
 		}
@@ -1311,7 +1311,7 @@ Interp :: [].{
 	}
 
 	evaluate_update : Interp.Machine, Ast.Target, Ast.Step, Ast.Fixity, Ast.Where -> Interp.Got
-	evaluate_update = |machine, target, step, fixity, w| {
+	evaluate_update = |machine, target, step, fixity, site| {
 		delta = match step {
 			Increment => 1.0
 			Decrement => -1.0
@@ -1324,60 +1324,60 @@ Interp :: [].{
 			ToName(name, slot, at) => {
 				{ machine: read_st, value: current } = Interp.evaluate_name(machine, name, slot, at)
 				match current {
-					Number(n) => {
+					Number(number) => {
 						{ machine: written, value: _ } = Interp.assigned_name(
 							read_st,
-							Number(n + delta),
+							Number(number + delta),
 							name,
 							slot,
 							at,
 						)
-						{ machine: written, value: answer(n, n + delta) }
+						{ machine: written, value: answer(number, number + delta) }
 					}
 					_ => Interp.fault_got(
 						read_st,
-						"unsupported: `++` or `--` on a ${Interp.type_of(read_st.cells, current)}${Interp.at_line(w)}",
+						"unsupported: `++` or `--` on a ${Interp.type_of(read_st.cells, current)}${Interp.at_line(site)}",
 					)
 				}
 			}
 			ToMember(object, key) => {
-				{ machine: first, value: o } = Interp.evaluate(machine, object)
-				{ machine: read_st, value: current } = Interp.property(first, o, key, w)
+				{ machine: first, value: holder } = Interp.evaluate(machine, object)
+				{ machine: read_st, value: current } = Interp.property(first, holder, key, site)
 				match current {
-					Number(n) => {
+					Number(number) => {
 						{ machine: written, value: _ } = Interp.stored(
 							read_st,
-							o,
+							holder,
 							Text(key),
-							Number(n + delta),
-							w,
+							Number(number + delta),
+							site,
 						)
-						{ machine: written, value: answer(n, n + delta) }
+						{ machine: written, value: answer(number, number + delta) }
 					}
 					_ => Interp.fault_got(
 						read_st,
-						"unsupported: `++` or `--` on a ${Interp.type_of(read_st.cells, current)}${Interp.at_line(w)}",
+						"unsupported: `++` or `--` on a ${Interp.type_of(read_st.cells, current)}${Interp.at_line(site)}",
 					)
 				}
 			}
 			ToIndex(object, key) => {
-				{ machine: first, value: o } = Interp.evaluate(machine, object)
-				{ machine: second, value: k } = Interp.evaluate(first, key)
-				{ machine: read_st, value: current } = Interp.indexed(second, o, k, w)
+				{ machine: first, value: holder } = Interp.evaluate(machine, object)
+				{ machine: second, value: key_value } = Interp.evaluate(first, key)
+				{ machine: read_st, value: current } = Interp.indexed(second, holder, key_value, site)
 				match current {
-					Number(n) => {
+					Number(number) => {
 						{ machine: written, value: _ } = Interp.stored(
 							read_st,
-							o,
-							k,
-							Number(n + delta),
-							w,
+							holder,
+							key_value,
+							Number(number + delta),
+							site,
 						)
-						{ machine: written, value: answer(n, n + delta) }
+						{ machine: written, value: answer(number, number + delta) }
 					}
 					_ => Interp.fault_got(
 						read_st,
-						"unsupported: `++` or `--` on a ${Interp.type_of(read_st.cells, current)}${Interp.at_line(w)}",
+						"unsupported: `++` or `--` on a ${Interp.type_of(read_st.cells, current)}${Interp.at_line(site)}",
 					)
 				}
 			}
@@ -1387,7 +1387,7 @@ Interp :: [].{
 	# ---- properties ------------------------------------------------------------
 
 	property : Interp.Machine, Heap.Value, Str, Ast.Where -> Interp.Got
-	property = |machine, object, key, w|
+	property = |machine, object, key, site|
 		match object {
 			Reference(id) => match Heap.cell_at(machine.cells, id) {
 				Object(properties) => {
@@ -1396,7 +1396,7 @@ Interp :: [].{
 					} else if Interp.is_prototype_name(key) {
 						Interp.fault_got(
 							machine,
-							"unsupported: Object.prototype's `${key}`${Interp.at_line(w)}",
+							"unsupported: Object.prototype's `${key}`${Interp.at_line(site)}",
 						)
 					} else {
 						{ machine: machine, value: Undefined }
@@ -1407,10 +1407,10 @@ Interp :: [].{
 						{ machine: machine, value: Number(items.len().to_f64()) }
 					} else {
 						match Inspect.index_of_key(key) {
-							Ok(i) => { machine: machine, value: items.get(i) ?? Undefined }
+							Ok(position) => { machine: machine, value: items.get(position) ?? Undefined }
 							Err(NotIndex) => Interp.fault_got(
 								machine,
-								"unsupported: the array property `${key}` outside a call${Interp.at_line(w)}",
+								"unsupported: the array property `${key}` outside a call${Interp.at_line(site)}",
 							)
 						}
 					}
@@ -1419,56 +1419,56 @@ Interp :: [].{
 					if Heap.has_property(properties, key) {
 						{ machine: machine, value: Heap.property_value(properties, key) }
 					} else {
-						Interp.fault_got(machine, "unsupported: `${name}.${key}`${Interp.at_line(w)}")
+						Interp.fault_got(machine, "unsupported: `${name}.${key}`${Interp.at_line(site)}")
 					}
 				}
-				Builtin(n, properties) => {
+				Builtin(number, properties) => {
 					if Heap.has_property(properties, key) {
 						{ machine: machine, value: Heap.property_value(properties, key) }
 					} else {
 						Interp.fault_got(
 							machine,
-							"unsupported: `${Heap.native_name(n)}.${key}`${Interp.at_line(w)}",
+							"unsupported: `${Heap.native_name(number)}.${key}`${Interp.at_line(site)}",
 						)
 					}
 				}
 				Fun(_) => Interp.fault_got(
 					machine,
-					"unsupported: a function's properties (`${key}`)${Interp.at_line(w)}",
+					"unsupported: a function's properties (`${key}`)${Interp.at_line(site)}",
 				)
 				Taken => crash "Interp.property: no cell is out being written while a property is read"
 			}
-			Text(s) => {
+			Text(text) => {
 				if key == "length" {
-					if Interp.is_ascii(s) {
-						{ machine: machine, value: Number(s.count_utf8_bytes().to_f64()) }
+					if Interp.is_ascii(text) {
+						{ machine: machine, value: Number(text.count_utf8_bytes().to_f64()) }
 					} else {
 						Interp.fault_got(
 							machine,
-							"unsupported: the length of a string with non-ASCII text${Interp.at_line(w)}",
+							"unsupported: the length of a string with non-ASCII text${Interp.at_line(site)}",
 						)
 					}
 				} else {
 					match Inspect.index_of_key(key) {
-						Ok(i) => Interp.char_at(machine, s, i, w)
+						Ok(position) => Interp.char_at(machine, text, position, site)
 						Err(NotIndex) => Interp.fault_got(
 							machine,
-							"unsupported: the string property `${key}` outside a call${Interp.at_line(w)}",
+							"unsupported: the string property `${key}` outside a call${Interp.at_line(site)}",
 						)
 					}
 				}
 			}
 			Null => Interp.fault_got(
 				machine,
-				"TypeError: Cannot read properties of null (reading '${key}')${Interp.at_line(w)}",
+				"TypeError: Cannot read properties of null (reading '${key}')${Interp.at_line(site)}",
 			)
 			Undefined => Interp.fault_got(
 				machine,
-				"TypeError: Cannot read properties of undefined (reading '${key}')${Interp.at_line(w)}",
+				"TypeError: Cannot read properties of undefined (reading '${key}')${Interp.at_line(site)}",
 			)
 			_ => Interp.fault_got(
 				machine,
-				"unsupported: the property `${key}` of a ${Interp.type_of(machine.cells, object)}${Interp.at_line(w)}",
+				"unsupported: the property `${key}` of a ${Interp.type_of(machine.cells, object)}${Interp.at_line(site)}",
 			)
 		}
 
@@ -1485,41 +1485,41 @@ Interp :: [].{
 	].contains(key)
 
 	is_ascii : Str -> Bool
-	is_ascii = |s| s.to_utf8().all(|c| c < 128)
+	is_ascii = |text| text.to_utf8().all(|byte| byte < 128)
 
 	char_at : Interp.Machine, Str, U64, Ast.Where -> Interp.Got
-	char_at = |machine, s, i, w|
-		if !Interp.is_ascii(s) {
+	char_at = |machine, text, position, site|
+		if !Interp.is_ascii(text) {
 			Interp.fault_got(
 				machine,
-				"unsupported: indexing a string with non-ASCII text${Interp.at_line(w)}",
+				"unsupported: indexing a string with non-ASCII text${Interp.at_line(site)}",
 			)
 		} else {
-			match s.to_utf8().get(i) {
-				Ok(c) => {
+			match text.to_utf8().get(position) {
+				Ok(byte) => {
 					machine: machine,
-					value: Text(Str.from_utf8([c]) ?? crash "Interp.char_at: an ASCII byte"),
+					value: Text(Str.from_utf8([byte]) ?? crash "Interp.char_at: an ASCII byte"),
 				}
 				Err(OutOfBounds) => { machine: machine, value: Undefined }
 			}
 		}
 
 	indexed : Interp.Machine, Heap.Value, Heap.Value, Ast.Where -> Interp.Got
-	indexed = |machine, object, key, w|
+	indexed = |machine, object, key, site|
 		match (object, Interp.index_of(key)) {
-			(Reference(id), Ok(i)) => match Heap.cell_at(machine.cells, id) {
-				Array(items) => { machine: machine, value: items.get(i) ?? Undefined }
-				_ => Interp.property_by_value(machine, object, key, w)
+			(Reference(id), Ok(position)) => match Heap.cell_at(machine.cells, id) {
+				Array(items) => { machine: machine, value: items.get(position) ?? Undefined }
+				_ => Interp.property_by_value(machine, object, key, site)
 			}
-			(Text(s), Ok(i)) => Interp.char_at(machine, s, i, w)
-			_ => Interp.property_by_value(machine, object, key, w)
+			(Text(text), Ok(position)) => Interp.char_at(machine, text, position, site)
+			_ => Interp.property_by_value(machine, object, key, site)
 		}
 
 	property_by_value : Interp.Machine, Heap.Value, Heap.Value, Ast.Where -> Interp.Got
-	property_by_value = |machine, object, key, w|
+	property_by_value = |machine, object, key, site|
 		match Interp.key_of(key) {
-			Ok(k) => Interp.property(machine, object, k, w)
-			Err(Unsupported(why)) => Interp.fault_got(machine, "${why}${Interp.at_line(w)}")
+			Ok(key_value) => Interp.property(machine, object, key_value, site)
+			Err(Unsupported(why)) => Interp.fault_got(machine, "${why}${Interp.at_line(site)}")
 		}
 
 	# What a cell is, and an array's length, with nothing of the cell kept.
@@ -1545,51 +1545,51 @@ Interp :: [].{
 	# A property or an item written: an object's property, an array's item
 	# inside it or at its end.
 	stored : Interp.Machine, Heap.Value, Heap.Value, Heap.Value, Ast.Where -> Interp.Got
-	stored = |machine, object, key, value, w|
+	stored = |machine, object, key, value, site|
 		if !Interp.is_running(machine) {
 			{ machine: machine, value: value }
 		} else {
 			match object {
 				Reference(id) => match Interp.kind_of(machine.cells, id) {
 					ObjectKind => match Interp.key_of(key) {
-						Ok(k) => {
-							machine: { ..machine, cells: Heap.with_property(machine.cells, id, k, value) },
+						Ok(key_value) => {
+							machine: { ..machine, cells: Heap.with_property(machine.cells, id, key_value, value) },
 							value: value,
 						}
-						Err(Unsupported(why)) => Interp.fault_got(machine, "${why}${Interp.at_line(w)}")
+						Err(Unsupported(why)) => Interp.fault_got(machine, "${why}${Interp.at_line(site)}")
 					}
-					ArrayKind(n) => {
+					ArrayKind(length) => {
 						match Interp.index_of(key) {
-							Ok(i) if i <= n => {
-								machine: { ..machine, cells: Heap.with_item(machine.cells, id, i, value) },
+							Ok(position) if position <= length => {
+								machine: { ..machine, cells: Heap.with_item(machine.cells, id, position, value) },
 								value: value,
 							}
 							Ok(_) => Interp.fault_got(
 								machine,
-								"unsupported: an array with holes (a write past its end)${Interp.at_line(w)}",
+								"unsupported: an array with holes (a write past its end)${Interp.at_line(site)}",
 							)
 							Err(NotIndex) => Interp.fault_got(
 								machine,
-								"unsupported: writing an array's `length` or a named property${Interp.at_line(w)}",
+								"unsupported: writing an array's `length` or a named property${Interp.at_line(site)}",
 							)
 						}
 					}
 					_ => Interp.fault_got(
 						machine,
-						"unsupported: writing a property of a function or a builtin${Interp.at_line(w)}",
+						"unsupported: writing a property of a function or a builtin${Interp.at_line(site)}",
 					)
 				}
 				Null => Interp.fault_got(
 					machine,
-					"TypeError: Cannot set properties of null${Interp.at_line(w)}",
+					"TypeError: Cannot set properties of null${Interp.at_line(site)}",
 				)
 				Undefined => Interp.fault_got(
 					machine,
-					"TypeError: Cannot set properties of undefined${Interp.at_line(w)}",
+					"TypeError: Cannot set properties of undefined${Interp.at_line(site)}",
 				)
 				_ => Interp.fault_got(
 					machine,
-					"unsupported: writing a property of a ${Interp.type_of(machine.cells, object)}${Interp.at_line(w)}",
+					"unsupported: writing a property of a ${Interp.type_of(machine.cells, object)}${Interp.at_line(site)}",
 				)
 			}
 		}
@@ -1597,80 +1597,80 @@ Interp :: [].{
 	# ---- calls -----------------------------------------------------------------
 
 	evaluate_call : Interp.Machine, Ast.Expression, List(Ast.Expression), Ast.Where -> Interp.Got
-	evaluate_call = |machine, callee, arguments, w|
+	evaluate_call = |machine, callee, arguments, site|
 		match callee {
 			Member(object, name, _) => {
-				{ machine: first, value: o } = Interp.evaluate(machine, object)
-				method = match o {
+				{ machine: first, value: holder } = Interp.evaluate(machine, object)
+				method = match holder {
 					Reference(id) => match Interp.kind_of(first.cells, id) {
 						ArrayKind(_) => ArrayMethod(id)
 						_ => Plain
 					}
-					Text(s) => TextMethod(s)
+					Text(text) => TextMethod(text)
 					_ => Plain
 				}
 				match method {
 					ArrayMethod(id) => {
 						{ machine: second, values } = Interp.evaluate_all(first, arguments)
-						Interp.array_method(second, id, name, values, w)
+						Interp.array_method(second, id, name, values, site)
 					}
-					TextMethod(s) => {
+					TextMethod(text) => {
 						{ machine: second, values } = Interp.evaluate_all(first, arguments)
-						Interp.text_method(second, s, name, values, w)
+						Interp.text_method(second, text, name, values, site)
 					}
 					Plain => {
-						{ machine: second, value: f } = Interp.property(first, o, name, w)
+						{ machine: second, value: function } = Interp.property(first, holder, name, site)
 						{ machine: third, values } = Interp.evaluate_all(second, arguments)
-						Interp.call(third, f, values, w)
+						Interp.call(third, function, values, site)
 					}
 				}
 			}
 			_ => {
-				{ machine: first, value: f } = Interp.evaluate(machine, callee)
+				{ machine: first, value: function } = Interp.evaluate(machine, callee)
 				{ machine: second, values } = Interp.evaluate_all(first, arguments)
-				Interp.call(second, f, values, w)
+				Interp.call(second, function, values, site)
 			}
 		}
 
 	call : Interp.Machine, Heap.Value, List(Heap.Value), Ast.Where -> Interp.Got
-	call = |machine, callee, arguments, w|
+	call = |machine, callee, arguments, site|
 		if !Interp.is_running(machine) {
 			{ machine: machine, value: Undefined }
 		} else {
 			match callee {
 				Reference(id) => match Heap.cell_at(machine.cells, id) {
-					Fun(c) => Interp.call_closure(machine, c, arguments, w)
-					Builtin(n, _) => Interp.call_native(machine, n, arguments, w)
+					Fun(closure) => Interp.call_closure(machine, closure, arguments, site)
+					Builtin(native, _) => Interp.call_native(machine, native, arguments, site)
 					_ => Interp.fault_got(
 						machine,
-						"TypeError: ${Interp.shown_value(machine.cells, callee)} is not a function${Interp.at_line(w)}",
+						"TypeError: ${Interp.shown_value(machine.cells, callee)} is not a function${Interp.at_line(site)}",
 					)
 				}
 				_ => Interp.fault_got(
 					machine,
-					"TypeError: ${Interp.shown_value(machine.cells, callee)} is not a function${Interp.at_line(w)}",
+					"TypeError: ${Interp.shown_value(machine.cells, callee)} is not a function${Interp.at_line(site)}",
 				)
 			}
 		}
 
 	call_closure : Interp.Machine, Heap.Closure, List(Heap.Value), Ast.Where -> Interp.Got
-	call_closure = |machine, c, arguments, w|
+	call_closure = |machine, closure, arguments, site|
 		if machine.depth >= Interp.max_depth {
-			Interp.fault_got(machine, "RangeError: Maximum call stack size exceeded${Interp.at_line(w)}")
+			Interp.fault_got(machine, "RangeError: Maximum call stack size exceeded${Interp.at_line(site)}")
 		} else {
 			outer = machine.scope
-			definition = c.fun.unbox()
+			definition = closure.fun.unbox()
 			inside = Interp.with_scope_added(
 				{ ..machine, depth: machine.depth + 1 },
-				{ variables: Interp.call_vars(definition, arguments), parent: Within(c.scope) },
+				{ variables: Interp.call_vars(definition, arguments), parent: Within(closure.scope) },
 			)
 			id = inside.scope
 			{ machine: after, flow } = Interp.execute_list(Interp.hoisted(inside, definition.body), definition.body)
 			value = match flow {
-				Returned(v) => v
+				Returned(subject) => subject
 				_ => Undefined
 			}
-			back = Interp.left(after, id, outer, definition.capture)
+			back = Interp.out_of_scope(after, id, outer, definition.capture)
 			{ machine: { ..back, depth: back.depth - 1 }, value: value }
 		}
 
@@ -1695,66 +1695,66 @@ Interp :: [].{
 	}
 
 	number_argument : List(Heap.Value), U64 -> Try(F64, [NotNumber])
-	number_argument = |arguments, i|
-		match arguments.get(i) {
-			Ok(Number(n)) => Ok(n)
+	number_argument = |arguments, position|
+		match arguments.get(position) {
+			Ok(Number(number)) => Ok(number)
 			_ => Err(NotNumber)
 		}
 
 	math : Interp.Machine, Str, List(Heap.Value), (F64 -> F64), Ast.Where -> Interp.Got
-	math = |machine, name, arguments, f, w|
+	math = |machine, name, arguments, function, site|
 		match Interp.number_argument(arguments, 0) {
-			Ok(n) => { machine: machine, value: Number(f(n)) }
+			Ok(number) => { machine: machine, value: Number(function(number)) }
 			Err(NotNumber) => Interp.fault_got(
 				machine,
-				"unsupported: Math.${name} of anything but a number${Interp.at_line(w)}",
+				"unsupported: Math.${name} of anything but a number${Interp.at_line(site)}",
 			)
 		}
 
 	floor : F64 -> F64
-	floor = |n|
-		if n.is_nan() or n.is_infinite() or n == 0.0 {
-			n
+	floor = |number|
+		if number.is_nan() or number.is_infinite() or number == 0.0 {
+			number
 		} else {
-			n.div_floor_by(1.0)
+			number.div_floor_by(1.0)
 		}
 
 	call_native : Interp.Machine, Heap.Native, List(Heap.Value), Ast.Where -> Interp.Got
-	call_native = |machine, n, arguments, w|
-		match n {
+	call_native = |machine, native, arguments, site|
+		match native {
 			Log => match Inspect.line_of(machine.cells, arguments) {
 				Ok(line) => {
 					machine: { ..machine, out: Str.concat(Str.concat(machine.out, line), "\n") },
 					value: Undefined,
 				}
-				Err(Unsupported(why)) => Interp.fault_got(machine, "${why}${Interp.at_line(w)}")
+				Err(Unsupported(why)) => Interp.fault_got(machine, "${why}${Interp.at_line(site)}")
 			}
-			Floor => Interp.math(machine, "floor", arguments, Interp.floor, w)
+			Floor => Interp.math(machine, "floor", arguments, Interp.floor, site)
 			Ceil => Interp.math(
 				machine,
 				"ceil",
 				arguments,
 				|x| -Interp.floor(-x),
-				w,
+				site,
 			)
 			Round => Interp.math(
 				machine,
 				"round",
 				arguments,
 				|x| {
-					f = Interp.floor(x)
-					if x - f >= 0.5 {
+					floored = Interp.floor(x)
+					if x - floored >= 0.5 {
 						# Rounding up from (-0.5, 0) gives -0, as JavaScript's does.
-						if x < 0.0 and f == -1.0 {
+						if x < 0.0 and floored == -1.0 {
 							-0.0
 						} else {
-							f + 1.0
+							floored + 1.0
 						}
 					} else {
-						f
+						floored
 					}
 				},
-				w,
+				site,
 			)
 			Trunc => Interp.math(
 				machine,
@@ -1766,14 +1766,14 @@ Interp :: [].{
 					} else {
 						x.div_trunc_by(1.0)
 					},
-				w,
+				site,
 			)
 			Abs => Interp.math(
 				machine,
 				"abs",
 				arguments,
 				|x| x.abs(),
-				w,
+				site,
 			)
 			Sign => Interp.math(
 				machine,
@@ -1787,69 +1787,69 @@ Interp :: [].{
 					} else {
 						x
 					},
-				w,
+				site,
 			)
 			Sqrt => Interp.math(
 				machine,
 				"sqrt",
 				arguments,
 				|x| x.sqrt(),
-				w,
+				site,
 			)
 			Sin => Interp.math(
 				machine,
 				"sin",
 				arguments,
 				|x| x.sin(),
-				w,
+				site,
 			)
 			Cos => Interp.math(
 				machine,
 				"cos",
 				arguments,
 				|x| x.cos(),
-				w,
+				site,
 			)
 			Tan => Interp.math(
 				machine,
 				"tan",
 				arguments,
 				|x| x.tan(),
-				w,
+				site,
 			)
 			Atan => Interp.math(
 				machine,
 				"atan",
 				arguments,
 				|x| x.atan(),
-				w,
+				site,
 			)
 			Pow => match (Interp.number_argument(arguments, 0), Interp.number_argument(arguments, 1)) {
 				(Ok(x), Ok(y)) => { machine: machine, value: Number(Interp.power(x, y)) }
 				_ => Interp.fault_got(
 					machine,
-					"unsupported: Math.pow of anything but two numbers${Interp.at_line(w)}",
+					"unsupported: Math.pow of anything but two numbers${Interp.at_line(site)}",
 				)
 			}
-			Min => Interp.min_max(machine, arguments, Min, w)
-			Max => Interp.min_max(machine, arguments, Max, w)
-			Keys => Interp.object_listing(machine, arguments, Keys, w)
-			Values => Interp.object_listing(machine, arguments, Values, w)
-			Entries => Interp.object_listing(machine, arguments, Entries, w)
+			Min => Interp.min_max(machine, arguments, Min, site)
+			Max => Interp.min_max(machine, arguments, Max, site)
+			Keys => Interp.object_listing(machine, arguments, Keys, site)
+			Values => Interp.object_listing(machine, arguments, Values, site)
+			Entries => Interp.object_listing(machine, arguments, Entries, site)
 			StringOf => match arguments.first() {
-				Ok(v) => match Interp.text_of(machine.cells, v) {
-					Ok(t) => { machine: machine, value: Text(t) }
-					Err(Unsupported(why)) => Interp.fault_got(machine, "${why}${Interp.at_line(w)}")
+				Ok(subject) => match Interp.text_of(machine.cells, subject) {
+					Ok(phrase) => { machine: machine, value: Text(phrase) }
+					Err(Unsupported(why)) => Interp.fault_got(machine, "${why}${Interp.at_line(site)}")
 				}
 				Err(ListWasEmpty) => { machine: machine, value: Text("") }
 			}
 			FromCharCode => {
 				var $bytes = []
 				var $ok = True
-				for a in arguments {
-					match a {
-						Number(c) if c >= 0.0 and c < 128.0 and c.div_trunc_by(1.0) == c => {
-							$bytes = $bytes.append(c.to_u8_try() ?? 0)
+				for argument in arguments {
+					match argument {
+						Number(code) if code >= 0.0 and code < 128.0 and code.div_trunc_by(1.0) == code => {
+							$bytes = $bytes.append(code.to_u8_try() ?? 0)
 						}
 						_ => {
 							$ok = False
@@ -1864,7 +1864,7 @@ Interp :: [].{
 				} else {
 					Interp.fault_got(
 						machine,
-						"unsupported: String.fromCharCode of anything but ASCII codes${Interp.at_line(w)}",
+						"unsupported: String.fromCharCode of anything but ASCII codes${Interp.at_line(site)}",
 					)
 				}
 			}
@@ -1885,14 +1885,14 @@ Interp :: [].{
 		}
 
 	min_max : Interp.Machine, List(Heap.Value), [Min, Max], Ast.Where -> Interp.Got
-	min_max = |machine, arguments, which, w| {
+	min_max = |machine, arguments, which, site| {
 		var $best = match which {
 			Min => 1.0 / 0.0
 			Max => -1.0 / 0.0
 		}
 		var $ok = True
-		for a in arguments {
-			match a {
+		for argument in arguments {
+			match argument {
 				Number(x) => {
 					$best = if x.is_nan() or $best.is_nan() {
 						0.0 / 0.0
@@ -1921,14 +1921,14 @@ Interp :: [].{
 		} else {
 			Interp.fault_got(
 				machine,
-				"unsupported: Math.min or Math.max of anything but numbers${Interp.at_line(w)}",
+				"unsupported: Math.min or Math.max of anything but numbers${Interp.at_line(site)}",
 			)
 		}
 	}
 
 	# Object.keys, Object.values or Object.entries, of an object or an array.
 	object_listing : Interp.Machine, List(Heap.Value), [Keys, Values, Entries], Ast.Where -> Interp.Got
-	object_listing = |machine, arguments, which, w| {
+	object_listing = |machine, arguments, which, site| {
 		properties = match arguments.first() {
 			Ok(Reference(id)) => match Heap.cell_at(machine.cells, id) {
 				Object(listed) => Ok(Inspect.properties_in_key_order(listed))
@@ -1949,23 +1949,23 @@ Interp :: [].{
 			Ok(listed) => {
 				var $s = machine
 				var $vals = []
-				for p in listed {
-					v = match which {
-						Keys => Text(p.key)
-						Values => p.value
+				for parent in listed {
+					subject = match which {
+						Keys => Text(parent.key)
+						Values => parent.value
 						Entries => {
-							{ machine: made, value: pair } = Interp.alloc($s, Array([Text(p.key), p.value]))
+							{ machine: made, value: pair } = Interp.alloc($s, Array([Text(parent.key), parent.value]))
 							$s = made
 							pair
 						}
 					}
-					$vals = $vals.append(v)
+					$vals = $vals.append(subject)
 				}
 				Interp.alloc($s, Array($vals))
 			}
 			Err(NotListed) => Interp.fault_got(
 				machine,
-				"unsupported: Object.keys, values or entries of anything but an object or an array${Interp.at_line(w)}",
+				"unsupported: Object.keys, values or entries of anything but an object or an array${Interp.at_line(site)}",
 			)
 		}
 	}
@@ -1987,63 +1987,63 @@ Interp :: [].{
 		}
 
 	item_at : Interp.Machine, U64, U64 -> Heap.Value
-	item_at = |machine, id, i|
+	item_at = |machine, id, position|
 		match Heap.cell_at(machine.cells, id) {
-			Array(items) => items.get(i) ?? Undefined
+			Array(items) => items.get(position) ?? Undefined
 			_ => crash "Interp.item_at: the interpreter asks only an array for an item"
 		}
 
 	# A relative index (`slice`'s, negative from the end) as an index in 0..n.
 	relative_index : Heap.Value, U64, U64 -> U64
-	relative_index = |v, n, otherwise|
-		match v {
+	relative_index = |subject, length, otherwise|
+		match subject {
 			Number(x) => {
-				t = if x.is_nan() {
+				truncated = if x.is_nan() {
 					0.0
 				} else {
 					x.div_trunc_by(1.0)
 				}
-				if t < 0.0 {
-					f = n.to_f64() + t
-					if f < 0.0 {
+				if truncated < 0.0 {
+					from_end = length.to_f64() + truncated
+					if from_end < 0.0 {
 						0
 					} else {
-						f.to_u64_try() ?? 0
+						from_end.to_u64_try() ?? 0
 					}
-				} else if t >= n.to_f64() {
-					n
+				} else if truncated >= length.to_f64() {
+					length
 				} else {
-					t.to_u64_try() ?? 0
+					truncated.to_u64_try() ?? 0
 				}
 			}
 			_ => otherwise
 		}
 
 	array_method : Interp.Machine, U64, Str, List(Heap.Value), Ast.Where -> Interp.Got
-	array_method = |machine, id, name, arguments, w|
+	array_method = |machine, id, name, arguments, site|
 		match name {
 			"push" => {
 				pushed = { ..machine, cells: Heap.with_items_pushed(machine.cells, id, arguments) }
 				{ machine: pushed, value: Number(Interp.item_count(pushed, id).to_f64()) }
 			}
 			"pop" => {
-				n = Interp.item_count(machine, id)
-				if n == 0 {
+				count = Interp.item_count(machine, id)
+				if count == 0 {
 					{ machine: machine, value: Undefined }
 				} else {
-					last = Interp.item_at(machine, id, n - 1)
+					last = Interp.item_at(machine, id, count - 1)
 					{ machine: { ..machine, cells: Heap.with_last_dropped(machine.cells, id) }, value: last }
 				}
 			}
 			"join" => {
 				separator = match arguments.first() {
-					Ok(Text(s)) => Ok(s)
+					Ok(Text(text)) => Ok(text)
 					Ok(Undefined) => Ok(",")
 					Err(ListWasEmpty) => Ok(",")
 					_ => Err(NotText)
 				}
 				match separator {
-					Ok(s) => {
+					Ok(text) => {
 						var $parts = []
 						var $why = ""
 						for item in Interp.items_of(machine, id) {
@@ -2053,8 +2053,8 @@ Interp :: [].{
 								_ => Interp.text_of(machine.cells, item)
 							}
 							match part {
-								Ok(t) => {
-									$parts = $parts.append(t)
+								Ok(phrase) => {
+									$parts = $parts.append(phrase)
 								}
 								Err(Unsupported(why)) => {
 									$why = why
@@ -2062,14 +2062,14 @@ Interp :: [].{
 							}
 						}
 						if $why == "" {
-							{ machine: machine, value: Text(Str.join_with($parts, s)) }
+							{ machine: machine, value: Text(Str.join_with($parts, text)) }
 						} else {
-							Interp.fault_got(machine, "${$why}${Interp.at_line(w)}")
+							Interp.fault_got(machine, "${$why}${Interp.at_line(site)}")
 						}
 					}
 					Err(NotText) => Interp.fault_got(
 						machine,
-						"unsupported: `join` with a separator that is not a string${Interp.at_line(w)}",
+						"unsupported: `join` with a separator that is not a string${Interp.at_line(site)}",
 					)
 				}
 			}
@@ -2092,9 +2092,9 @@ Interp :: [].{
 			}
 			"slice" => {
 				items = Interp.items_of(machine, id)
-				n = items.len()
-				from = Interp.relative_index(arguments.get(0) ?? Undefined, n, 0)
-				to = Interp.relative_index(arguments.get(1) ?? Undefined, n, n)
+				count = items.len()
+				from = Interp.relative_index(arguments.get(0) ?? Undefined, count, 0)
+				to = Interp.relative_index(arguments.get(1) ?? Undefined, count, count)
 				cut = if to > from {
 					items.sublist({ start: from, len: to - from })
 				} else {
@@ -2104,13 +2104,13 @@ Interp :: [].{
 			}
 			"concat" => {
 				var $out = Interp.items_of(machine, id)
-				for a in arguments {
-					$out = match a {
+				for argument in arguments {
+					$out = match argument {
 						Reference(other) => match Heap.cell_at(machine.cells, other) {
 							Array(more) => List.concat($out, more)
-							_ => $out.append(a)
+							_ => $out.append(argument)
 						}
-						_ => $out.append(a)
+						_ => $out.append(argument)
 					}
 				}
 				Interp.alloc(machine, Array($out))
@@ -2126,16 +2126,16 @@ Interp :: [].{
 				reversed = $reversed
 				{ machine: { ..machine, cells: Heap.with_items(machine.cells, id, reversed) }, value: Reference(id) }
 			}
-			"forEach" => Interp.array_walk(machine, id, arguments, ForEach, w)
-			"map" => Interp.array_walk(machine, id, arguments, Map, w)
-			"filter" => Interp.array_walk(machine, id, arguments, Filter, w)
-			"some" => Interp.array_walk(machine, id, arguments, Some, w)
-			"every" => Interp.array_walk(machine, id, arguments, Every, w)
-			"find" => Interp.array_walk(machine, id, arguments, Find, w)
-			"findIndex" => Interp.array_walk(machine, id, arguments, FindIndex, w)
-			"reduce" => Interp.array_reduce(machine, id, arguments, w)
-			"sort" => Interp.array_sort(machine, id, arguments, w)
-			_ => Interp.fault_got(machine, "unsupported: the array method `${name}`${Interp.at_line(w)}")
+			"forEach" => Interp.array_walk(machine, id, arguments, ForEach, site)
+			"map" => Interp.array_walk(machine, id, arguments, Map, site)
+			"filter" => Interp.array_walk(machine, id, arguments, Filter, site)
+			"some" => Interp.array_walk(machine, id, arguments, Some, site)
+			"every" => Interp.array_walk(machine, id, arguments, Every, site)
+			"find" => Interp.array_walk(machine, id, arguments, Find, site)
+			"findIndex" => Interp.array_walk(machine, id, arguments, FindIndex, site)
+			"reduce" => Interp.array_reduce(machine, id, arguments, site)
+			"sort" => Interp.array_sort(machine, id, arguments, site)
+			_ => Interp.fault_got(machine, "unsupported: the array method `${name}`${Interp.at_line(site)}")
 		}
 
 	Walk : [ForEach, Map, Filter, Some, Every, Find, FindIndex]
@@ -2143,9 +2143,9 @@ Interp :: [].{
 	# An array method that calls a function on each item in turn, the items
 	# read from the heap as it goes, since the function may change the array.
 	array_walk : Interp.Machine, U64, List(Heap.Value), Interp.Walk, Ast.Where -> Interp.Got
-	array_walk = |machine, id, arguments, walk, w| {
-		f = arguments.first() ?? Undefined
-		n = Interp.item_count(machine, id)
+	array_walk = |machine, id, arguments, walk, site| {
+		callback = arguments.first() ?? Undefined
+		count = Interp.item_count(machine, id)
 		var $s = machine
 		var $out = []
 		var $answer = match walk {
@@ -2157,13 +2157,13 @@ Interp :: [].{
 		}
 		var $i = 0
 		var $going = True
-		while $going and $i < n and $i < Interp.item_count($s, id) {
+		while $going and $i < count and $i < Interp.item_count($s, id) {
 			item = Interp.item_at($s, id, $i)
 			{ machine: after, value } = Interp.call(
 				$s,
-				f,
+				callback,
 				[item, Number($i.to_f64()), Reference(id)],
-				w,
+				site,
 			)
 			$s = after
 			match walk {
@@ -2212,13 +2212,13 @@ Interp :: [].{
 	}
 
 	array_reduce : Interp.Machine, U64, List(Heap.Value), Ast.Where -> Interp.Got
-	array_reduce = |machine, id, arguments, w| {
-		f = arguments.first() ?? Undefined
-		n = Interp.item_count(machine, id)
+	array_reduce = |machine, id, arguments, site| {
+		callback = arguments.first() ?? Undefined
+		count = Interp.item_count(machine, id)
 		start = match arguments.get(1) {
-			Ok(v) => Ok({ accumulated: v, from: 0 })
+			Ok(subject) => Ok({ accumulated: subject, from: 0 })
 			Err(OutOfBounds) => {
-				if n == 0 {
+				if count == 0 {
 					Err(Empty)
 				} else {
 					Ok({ accumulated: Interp.item_at(machine, id, 0), from: 1 })
@@ -2228,24 +2228,24 @@ Interp :: [].{
 		match start {
 			Err(Empty) => Interp.fault_got(
 				machine,
-				"TypeError: Reduce of empty array with no initial value${Interp.at_line(w)}",
+				"TypeError: Reduce of empty array with no initial value${Interp.at_line(site)}",
 			)
 			Ok({ accumulated, from }) => {
 				var $s = machine
 				var $accumulated = accumulated
 				var $i = from
-				while $i < n and $i < Interp.item_count($s, id) and Interp.is_running($s) {
+				while $i < count and $i < Interp.item_count($s, id) and Interp.is_running($s) {
 					item = Interp.item_at($s, id, $i)
 					{ machine: after, value } = Interp.call(
 						$s,
-						f,
+						callback,
 						[
 							$accumulated,
 							item,
 							Number($i.to_f64()),
 							Reference(id),
 						],
-						w,
+						site,
 					)
 					$s = after
 					$accumulated = value
@@ -2259,10 +2259,10 @@ Interp :: [].{
 	# `sort`, stable as JavaScript's is: a merge sort, the comparison a
 	# function's answer or, with none, the items' text.
 	array_sort : Interp.Machine, U64, List(Heap.Value), Ast.Where -> Interp.Got
-	array_sort = |machine, id, arguments, w| {
+	array_sort = |machine, id, arguments, site| {
 		items = Interp.items_of(machine, id)
 		compare = arguments.first() ?? Undefined
-		{ machine: after, values } = Interp.merge_sorted(machine, items, compare, w)
+		{ machine: after, values } = Interp.merge_sorted(machine, items, compare, site)
 		if Interp.is_running(after) {
 			{ machine: { ..after, cells: Heap.with_items(after.cells, id, values) }, value: Reference(id) }
 		} else {
@@ -2271,23 +2271,23 @@ Interp :: [].{
 	}
 
 	merge_sorted : Interp.Machine, List(Heap.Value), Heap.Value, Ast.Where -> Interp.Evaluations
-	merge_sorted = |machine, items, compare, w| {
-		n = items.len()
-		if n <= 1 {
+	merge_sorted = |machine, items, compare, site| {
+		count = items.len()
+		if count <= 1 {
 			{ machine: machine, values: items }
 		} else {
-			half = n // 2
+			half = count // 2
 			{ machine: first, values: lower } = Interp.merge_sorted(
 				machine,
 				items.sublist({ start: 0, len: half }),
 				compare,
-				w,
+				site,
 			)
 			{ machine: second, values: upper } = Interp.merge_sorted(
 				first,
 				items.drop_first(half),
 				compare,
-				w,
+				site,
 			)
 			var $s = second
 			var $out = []
@@ -2299,15 +2299,15 @@ Interp :: [].{
 				} else if $j >= upper.len() {
 					True
 				} else {
-					a = lower.get($i) ?? crash "Interp.merge_sorted: inside the lower half"
-					b = upper.get($j) ?? crash "Interp.merge_sorted: inside the upper half"
+					left = lower.get($i) ?? crash "Interp.merge_sorted: inside the lower half"
+					right = upper.get($j) ?? crash "Interp.merge_sorted: inside the upper half"
 					{ machine: after, order } = Interp.compared(
 						$s,
 						{
 							compare: compare,
-							left: a,
-							right: b,
-							at: w,
+							left: left,
+							right: right,
+							at: site,
 						},
 					)
 					$s = after
@@ -2340,17 +2340,17 @@ Interp :: [].{
 	compared = |machine, comparison| {
 		{
 			compare,
-			left: a,
-			right: b,
-			at: w,
+			left: left,
+			right: right,
+			at: site,
 		} = comparison
 		match compare {
 			Undefined => {
-				order = match (a, b) {
+				order = match (left, right) {
 					(Undefined, Undefined) => Same
 					(Undefined, _) => After
 					(_, Undefined) => Before
-					_ => match (Interp.text_of(machine.cells, a), Interp.text_of(machine.cells, b)) {
+					_ => match (Interp.text_of(machine.cells, left), Interp.text_of(machine.cells, right)) {
 						(Ok(x), Ok(y)) => Interp.ordering_of_text(x, y)
 						_ => Same
 					}
@@ -2358,7 +2358,7 @@ Interp :: [].{
 				{ machine: machine, order: order }
 			}
 			_ => {
-				{ machine: after, value } = Interp.call(machine, compare, [a, b], w)
+				{ machine: after, value } = Interp.call(machine, compare, [left, right], site)
 				order = match value {
 					Number(x) => if x > 0.0 {
 						After
@@ -2392,29 +2392,29 @@ Interp :: [].{
 	]
 
 	text_method : Interp.Machine, Str, Str, List(Heap.Value), Ast.Where -> Interp.Got
-	text_method = |machine, s, name, arguments, w|
-		if Interp.positional_methods.contains(name) and !Interp.is_ascii(s) {
+	text_method = |machine, text, name, arguments, site|
+		if Interp.positional_methods.contains(name) and !Interp.is_ascii(text) {
 			Interp.fault_got(
 				machine,
-				"unsupported: `${name}` on a string with non-ASCII text${Interp.at_line(w)}",
+				"unsupported: `${name}` on a string with non-ASCII text${Interp.at_line(site)}",
 			)
-		} else if name == "split" and arguments.first() == Ok(Text("")) and !Interp.is_ascii(s) {
+		} else if name == "split" and arguments.first() == Ok(Text("")) and !Interp.is_ascii(text) {
 			Interp.fault_got(
 				machine,
-				"unsupported: `split` into characters of a string with non-ASCII text${Interp.at_line(w)}",
+				"unsupported: `split` into characters of a string with non-ASCII text${Interp.at_line(site)}",
 			)
 		} else {
-			Interp.text_method_of(machine, s, name, arguments, w)
+			Interp.text_method_of(machine, text, name, arguments, site)
 		}
 
 	text_method_of : Interp.Machine, Str, Str, List(Heap.Value), Ast.Where -> Interp.Got
-	text_method_of = |machine, s, name, arguments, w| {
-		text_argument = |i| match arguments.get(i) {
-			Ok(Text(t)) => Ok(t)
+	text_method_of = |machine, text, name, arguments, site| {
+		text_argument = |position| match arguments.get(position) {
+			Ok(Text(phrase)) => Ok(phrase)
 			_ => Err(NotText)
 		}
-		bytes = s.to_utf8()
-		n = bytes.len()
+		bytes = text.to_utf8()
+		count = bytes.len()
 		sliced = |from, to|
 			if to > from {
 				Text(
@@ -2428,8 +2428,8 @@ Interp :: [].{
 		match name {
 			"charAt" => (
 				match Interp.index_of(arguments.first() ?? Number(0.0)) {
-					Ok(i) => {
-						got = Interp.char_at(machine, s, i, w)
+					Ok(position) => {
+						got = Interp.char_at(machine, text, position, site)
 						match got.value {
 							Undefined => { machine: machine, value: Text("") }
 							_ => got
@@ -2440,8 +2440,8 @@ Interp :: [].{
 			)
 			"charCodeAt" => (
 				match Interp.index_of(arguments.first() ?? Number(0.0)) {
-					Ok(i) => match bytes.get(i) {
-						Ok(c) => { machine: machine, value: Number(c.to_f64()) }
+					Ok(position) => match bytes.get(position) {
+						Ok(byte) => { machine: machine, value: Number(byte.to_f64()) }
 						Err(OutOfBounds) => { machine: machine, value: Number(0.0 / 0.0) }
 					}
 					Err(NotIndex) => { machine: machine, value: Number(0.0 / 0.0) }
@@ -2449,85 +2449,85 @@ Interp :: [].{
 			)
 			"slice" => (
 				{
-					from = Interp.relative_index(arguments.get(0) ?? Undefined, n, 0)
-					to = Interp.relative_index(arguments.get(1) ?? Undefined, n, n)
+					from = Interp.relative_index(arguments.get(0) ?? Undefined, count, 0)
+					to = Interp.relative_index(arguments.get(1) ?? Undefined, count, count)
 					{ machine: machine, value: sliced(from, to) }
 				},
 			)
 			"substring" => (
 				{
-					clamp = |v, otherwise| match v {
+					clamp = |subject, otherwise| match subject {
 						Number(x) => if x.is_nan() or x < 0.0 {
 							0
-						} else if x >= n.to_f64() {
-							n
+						} else if x >= count.to_f64() {
+							count
 						} else {
 							x.div_trunc_by(1.0).to_u64_try() ?? 0
 						}
 						_ => otherwise
 					}
-					a = clamp(arguments.get(0) ?? Undefined, 0)
-					b = clamp(arguments.get(1) ?? Undefined, n)
-					{ machine: machine, value: sliced(U64.min(a, b), U64.max(a, b)) }
+					one_end = clamp(arguments.get(0) ?? Undefined, 0)
+					other_end = clamp(arguments.get(1) ?? Undefined, count)
+					{ machine: machine, value: sliced(U64.min(one_end, other_end), U64.max(one_end, other_end)) }
 				},
 			)
 			"indexOf" => match text_argument(0) {
-				Ok(t) => { machine: machine, value: Number(Interp.text_index(s, t)) }
+				Ok(phrase) => { machine: machine, value: Number(Interp.text_index(text, phrase)) }
 				Err(NotText) => Interp.fault_got(
 					machine,
-					"unsupported: `indexOf` of anything but a string${Interp.at_line(w)}",
+					"unsupported: `indexOf` of anything but a string${Interp.at_line(site)}",
 				)
 			}
 			"includes" => match text_argument(0) {
-				Ok(t) => { machine: machine, value: Boolean(s.contains(t)) }
+				Ok(phrase) => { machine: machine, value: Boolean(text.contains(phrase)) }
 				Err(NotText) => Interp.fault_got(
 					machine,
-					"unsupported: `includes` of anything but a string${Interp.at_line(w)}",
+					"unsupported: `includes` of anything but a string${Interp.at_line(site)}",
 				)
 			}
 			"startsWith" => match text_argument(0) {
-				Ok(t) => { machine: machine, value: Boolean(s.starts_with(t)) }
+				Ok(phrase) => { machine: machine, value: Boolean(text.starts_with(phrase)) }
 				Err(NotText) => Interp.fault_got(
 					machine,
-					"unsupported: `startsWith` of anything but a string${Interp.at_line(w)}",
+					"unsupported: `startsWith` of anything but a string${Interp.at_line(site)}",
 				)
 			}
 			"endsWith" => match text_argument(0) {
-				Ok(t) => { machine: machine, value: Boolean(s.ends_with(t)) }
+				Ok(phrase) => { machine: machine, value: Boolean(text.ends_with(phrase)) }
 				Err(NotText) => Interp.fault_got(
 					machine,
-					"unsupported: `endsWith` of anything but a string${Interp.at_line(w)}",
+					"unsupported: `endsWith` of anything but a string${Interp.at_line(site)}",
 				)
 			}
-			"toUpperCase" => { machine: machine, value: Text(s.with_ascii_uppercased()) }
-			"toLowerCase" => { machine: machine, value: Text(s.with_ascii_lowercased()) }
-			"trim" => { machine: machine, value: Text(Interp.ascii_trimmed(s)) }
+			"toUpperCase" => { machine: machine, value: Text(text.with_ascii_uppercased()) }
+			"toLowerCase" => { machine: machine, value: Text(text.with_ascii_lowercased()) }
+			"trim" => { machine: machine, value: Text(Interp.ascii_trimmed(text)) }
 			"repeat" => match arguments.first() {
-				Ok(Number(k)) if k >= 0.0 and k.div_trunc_by(1.0) == k and k < 100000000.0 => {
-					{ machine: machine, value: Text(s.repeat(k.to_u64_try() ?? 0)) }
+				Ok(Number(times)) if times >= 0.0 and times.div_trunc_by(1.0) == times and times < 100000000.0 => {
+					{ machine: machine, value: Text(text.repeat(times.to_u64_try() ?? 0)) }
 				}
 				_ => Interp.fault_got(
 					machine,
-					"unsupported: `repeat` of anything but a whole number of times${Interp.at_line(w)}",
+					"unsupported: `repeat` of anything but a whole number of times${Interp.at_line(site)}",
 				)
 			}
 			"split" => match text_argument(0) {
-				Ok("") => Interp.alloc(machine, Array(Interp.characters(s).map(|c| Text(c))))
-				Ok(t) => Interp.alloc(machine, Array(s.split_on(t).map(|piece| Text(piece))))
+				Ok("") => Interp.alloc(machine, Array(Interp.characters(text).map(|character| Text(character))))
+				Ok(phrase) => Interp.alloc(machine, Array(text.split_on(phrase).map(|piece| Text(piece))))
 				Err(NotText) => Interp.fault_got(
 					machine,
-					"unsupported: `split` by anything but a string${Interp.at_line(w)}",
+					"unsupported: `split` by anything but a string${Interp.at_line(site)}",
 				)
 			}
-			"padStart" => Interp.text_padded(machine, s, arguments, PadStart, w)
-			"padEnd" => Interp.text_padded(machine, s, arguments, PadEnd, w)
+			"padStart" => Interp.text_padded(machine, text, arguments, PadStart, site)
+			"padEnd" => Interp.text_padded(machine, text, arguments, PadEnd, site)
 			"concat" => {
-				var $out = s
+				var $out = text
 				var $why = ""
-				for a in arguments {
-					match Interp.text_of(machine.cells, a) {
-						Ok(t) => {
-							$out = Str.concat($out, t)
+				for argument in arguments {
+					match Interp.text_of(machine.cells, argument) {
+						Ok(phrase) => {
+							$out = Str.concat($out, phrase)
 						}
 						Err(Unsupported(why)) => {
 							$why = why
@@ -2537,28 +2537,28 @@ Interp :: [].{
 				if $why == "" {
 					{ machine: machine, value: Text($out) }
 				} else {
-					Interp.fault_got(machine, "${$why}${Interp.at_line(w)}")
+					Interp.fault_got(machine, "${$why}${Interp.at_line(site)}")
 				}
 			}
 			_ => Interp.fault_got(
 				machine,
-				"unsupported: the string method `${name}`${Interp.at_line(w)}",
+				"unsupported: the string method `${name}`${Interp.at_line(site)}",
 			)
 		}
 	}
 
 	# Where `t` first starts in `s`, in bytes, or -1.
 	text_index : Str, Str -> F64
-	text_index = |s, t| {
-		a = s.to_utf8()
-		b = t.to_utf8()
-		if b.len() > a.len() {
+	text_index = |text, phrase| {
+		text_bytes = text.to_utf8()
+		phrase_bytes = phrase.to_utf8()
+		if phrase_bytes.len() > text_bytes.len() {
 			-1.0
 		} else {
 			var $i = 0
 			var $found = -1.0
-			while $found < 0.0 and $i + b.len() <= a.len() {
-				if a.sublist({ start: $i, len: b.len() }) == b {
+			while $found < 0.0 and $i + phrase_bytes.len() <= text_bytes.len() {
+				if text_bytes.sublist({ start: $i, len: phrase_bytes.len() }) == phrase_bytes {
 					$found = $i.to_f64()
 				}
 				$i = $i + 1
@@ -2568,55 +2568,55 @@ Interp :: [].{
 	}
 
 	ascii_trimmed : Str -> Str
-	ascii_trimmed = |s| {
-		b = s.to_utf8()
-		is_space = |c| c == ' ' or c == '\t' or c == '\n' or c == '\r' or c == 11 or c == 12
+	ascii_trimmed = |text| {
+		bytes = text.to_utf8()
+		is_space = |byte| byte == ' ' or byte == '\t' or byte == '\n' or byte == '\r' or byte == 11 or byte == 12
 		var $from = 0
-		while $from < b.len() and is_space(b.get($from) ?? crash "Interp.ascii_trimmed: inside the text") {
+		while $from < bytes.len() and is_space(bytes.get($from) ?? crash "Interp.ascii_trimmed: inside the text") {
 			$from = $from + 1
 		}
-		var $to = b.len()
-		while $to > $from and is_space(b.get($to - 1) ?? crash "Interp.ascii_trimmed: inside the text") {
+		var $to = bytes.len()
+		while $to > $from and is_space(bytes.get($to - 1) ?? crash "Interp.ascii_trimmed: inside the text") {
 			$to = $to - 1
 		}
 		Str.from_utf8(
-			b.sublist({ start: $from, len: $to - $from }),
+			bytes.sublist({ start: $from, len: $to - $from }),
 		) ?? crash "Interp.ascii_trimmed: an ASCII cut"
 	}
 
 	text_padded : Interp.Machine, Str, List(Heap.Value), [PadStart, PadEnd], Ast.Where -> Interp.Got
-	text_padded = |machine, s, arguments, side, w| {
-		fill = match arguments.get(1) {
-			Ok(Text(f)) => Ok(f)
+	text_padded = |machine, text, arguments, side, site| {
+		fill_given = match arguments.get(1) {
+			Ok(Text(given)) => Ok(given)
 			Err(OutOfBounds) => Ok(" ")
 			_ => Err(NotText)
 		}
-		match (arguments.first(), fill) {
-			(Ok(Number(k)), Ok(f)) if Interp.is_ascii(s) and Interp.is_ascii(f) and k.div_trunc_by(1.0) == k and k < 100000000.0 => {
-				n = s.count_utf8_bytes()
-				target = if k < 0.0 {
+		match (arguments.first(), fill_given) {
+			(Ok(Number(wanted)), Ok(pad_text)) if Interp.is_ascii(text) and Interp.is_ascii(pad_text) and wanted.div_trunc_by(1.0) == wanted and wanted < 100000000.0 => {
+				count = text.count_utf8_bytes()
+				target = if wanted < 0.0 {
 					0
 				} else {
-					k.to_u64_try() ?? 0
+					wanted.to_u64_try() ?? 0
 				}
-				if target <= n or f.is_empty() {
-					{ machine: machine, value: Text(s) }
+				if target <= count or pad_text.is_empty() {
+					{ machine: machine, value: Text(text) }
 				} else {
-					need = target - n
-					fill_bytes = f.to_utf8()
+					need = target - count
+					fill_bytes = pad_text.to_utf8()
 					copies = need // fill_bytes.len() + 1
 					pad = Str.from_utf8(
-						f.repeat(copies).to_utf8().sublist({ start: 0, len: need }),
+						pad_text.repeat(copies).to_utf8().sublist({ start: 0, len: need }),
 					) ?? crash "Interp.text_padded: an ASCII cut"
 					match side {
-						PadStart => { machine: machine, value: Text(Str.concat(pad, s)) }
-						PadEnd => { machine: machine, value: Text(Str.concat(s, pad)) }
+						PadStart => { machine: machine, value: Text(Str.concat(pad, text)) }
+						PadEnd => { machine: machine, value: Text(Str.concat(text, pad)) }
 					}
 				}
 			}
 			_ => Interp.fault_got(
 				machine,
-				"unsupported: `padStart` or `padEnd` other than to a whole length with ASCII text${Interp.at_line(w)}",
+				"unsupported: `padStart` or `padEnd` other than to a whole length with ASCII text${Interp.at_line(site)}",
 			)
 		}
 	}
