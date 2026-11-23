@@ -11,7 +11,8 @@ supervision.
 corpus programs print what node 22 prints, byte for byte, timers included,
 and 35 of 35 programs outside the subset are refused with the message they
 must give. Eight canvas samples are held to their logs of effects, one of
-them driven by scripted clicks and one by timers alone. The page builds into the dev channel; it is not
+them driven by scripted clicks alone and one by timers, restarted by a
+scripted click. The page builds into the dev channel; it is not
 published.
 
 ## The subset
