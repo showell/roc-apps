@@ -86,6 +86,8 @@ end
 -- A key's name for a folder outside the checkout, the same from every
 -- checkout on the box: `repos:` and a sibling repo's real path (a lane's
 -- worktree reaches one through a link), or `roc-cache:` and its path there.
+-- Roc's cache is `~/.cache/roc/`, or `build:cache/roc/` for a Roc that Shale
+-- runs, which hands every program `XDG_CACHE_HOME` as `build:cache`.
 function outside_name(st, dir)
   if has_key(st.outside_names, dir) then return st.outside_names[dir] end
   local canon = trim(must(run({"readlink", "-f", dir}, {timeout_ms = 5000, whole = 4000})).out)
@@ -95,8 +97,15 @@ function outside_name(st, dir)
     name = "repos:" .. sub(canon, #repos + 1)
   else
     local at = find(canon, "/.cache/roc/")
-    if at == nil then fail("quality: an app reaches " .. canon .. ", which is outside the checkout, the repos: mount and Roc's cache, so no key can name it") end
-    name = "roc-cache:" .. sub(canon, at + #"/.cache/roc/")
+    local build_cache = ""
+    if exists("build:cache/roc") then build_cache = real("build:cache/roc") .. "/" end
+    if at ~= nil then
+      name = "roc-cache:" .. sub(canon, at + #"/.cache/roc/")
+    elseif build_cache ~= "" and starts_with(canon, build_cache) then
+      name = "roc-cache:" .. sub(canon, #build_cache + 1)
+    else
+      fail("quality: an app reaches " .. canon .. ", which is outside the checkout, the repos: mount and Roc's cache, so no key can name it")
+    end
   end
   st.outside_names[dir] = name
   return name
