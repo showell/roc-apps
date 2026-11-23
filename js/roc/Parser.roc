@@ -749,7 +749,9 @@ Parser :: [].{
 		}
 	}
 
-	assignment_operator : Lexer.TokenKind -> Try(Ast.AssignmentOperator, [NotAssignment, Unsupported(Str)])
+	Assigning : Try(Ast.AssignmentOperator, [NotAssignment, Unsupported(Str)])
+
+	assignment_operator : Lexer.TokenKind -> Parser.Assigning
 	assignment_operator = |kind| match kind {
 		Punct("=") => Ok(Set)
 		Punct("+=") => Ok(Combine(Add))
@@ -850,7 +852,10 @@ Parser :: [].{
 
 	# One left-associative level: operands from `next`, joined by the level's
 	# operators.
-	binary_level : Parser.State, Parser.Level, (Parser.State -> Parser.ParsedExpression) -> Parser.ParsedExpression
+	# A level's parser, which reads its operands.
+	Operand : Parser.State -> Parser.ParsedExpression
+
+	binary_level : Parser.State, Parser.Level, Parser.Operand -> Parser.ParsedExpression
 	binary_level = |parser, level, next| {
 		first = next(parser)?
 		var $onward = first.parser
@@ -1053,11 +1058,16 @@ Parser :: [].{
 	}
 
 	arguments : Parser.State -> Try(Parser.Parsed(List(Ast.Expression)), Lexer.Fault)
-	arguments = |parser| Parser.expression_list(Parser.advance(parser), ")", "an argument")
+	arguments = |parser| Parser.expression_list(Parser.advance(parser), { close: ")", what: "an argument" })
+
+	# Where a list of expressions ends, and what one of them is called in a
+	# message.
+	Closing : { close : Str, what : Str }
 
 	# Expressions separated by commas up to `close`, a trailing comma allowed.
-	expression_list : Parser.State, Str, Str -> Try(Parser.Parsed(List(Ast.Expression)), Lexer.Fault)
-	expression_list = |parser, close, what| {
+	expression_list : Parser.State, Parser.Closing -> Try(Parser.Parsed(List(Ast.Expression)), Lexer.Fault)
+	expression_list = |parser, closing| {
+		{ close, what } = closing
 		var $onward = parser
 		var $items = []
 		while !Parser.is_punct($onward, close) {
@@ -1122,7 +1132,7 @@ Parser :: [].{
 				Ok({ parser: onward, value: parsed_expression.value })
 			}
 			Punct("[") => {
-				items = Parser.expression_list(after, "]", "item")?
+				items = Parser.expression_list(after, { close: "]", what: "item" })?
 				Ok({ parser: items.parser, value: ArrayLit(items.value) })
 			}
 			Punct("{") => Parser.object_rest(after)

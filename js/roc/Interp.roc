@@ -589,7 +589,7 @@ Interp :: [].{
 				$going = False
 			} else {
 				subject = Interp.item_at($s, id, $i)
-				{ machine: after, flow } = Interp.execute_for_of_pass(Interp.ticked($s), loop, subject, state)
+				{ machine: after, flow } = Interp.execute_for_of_pass(Interp.ticked($s), loop, { value: subject, state: state })
 				$s = after
 				$i = $i + 1
 				match Interp.after_body(flow) {
@@ -616,8 +616,7 @@ Interp :: [].{
 				{ machine: after, flow } = Interp.execute_for_of_pass(
 					Interp.ticked($s),
 					loop,
-					Text(character),
-					state,
+					{ value: Text(character), state: state },
 				)
 				$s = after
 				match Interp.after_body(flow) {
@@ -661,13 +660,11 @@ Interp :: [].{
 		$out
 	}
 
-	execute_for_of_pass : Interp.Machine, Ast.ForOfLoop, Heap.Value, Interp.VariableState -> Interp.Done
-	execute_for_of_pass = |machine, loop, subject, state| {
+	# One pass of a `for ... of`, its variable `binding`.
+	execute_for_of_pass : Interp.Machine, Ast.ForOfLoop, Interp.Variable -> Interp.Done
+	execute_for_of_pass = |machine, loop, binding| {
 		outer = machine.scope
-		inner = Interp.with_scope_added(
-			machine,
-			{ variables: [{ value: subject, state: state }], parent: Within(outer) },
-		)
+		inner = Interp.with_scope_added(machine, { variables: [binding], parent: Within(outer) })
 		id = inner.scope
 		{ machine: after, flow } = Interp.execute(inner, loop.body)
 		{ machine: Interp.out_of_scope(after, id, outer, loop.capture), flow: flow }
@@ -885,7 +882,7 @@ Interp :: [].{
 					Interp.evaluate(tested, no)
 				}
 			}
-			Assign(target, operator, expression, site) => Interp.evaluate_assign(machine, target, operator, expression, site)
+			Assign(target, operator, expression, site) => Interp.evaluate_assign(machine, { target: target, operator: operator, value: expression, at: site })
 			Update(target, step, fixity, site) => Interp.evaluate_update(machine, target, step, fixity, site)
 			Member(object, key, site) => {
 				{ machine: after, value: holder } = Interp.evaluate(machine, object)
@@ -1104,15 +1101,24 @@ Interp :: [].{
 			}
 		}
 
-	combined : Interp.Machine, Ast.AssignmentOperator, Heap.Value, Heap.Value, Ast.Where -> Interp.Got
-	combined = |machine, operator, old, new, site|
+	# What a variable or a property held, and the value an assignment gives it.
+	Change : { old : Heap.Value, new : Heap.Value }
+
+	combined : Interp.Machine, Ast.AssignmentOperator, Interp.Change, Ast.Where -> Interp.Got
+	combined = |machine, operator, change, site| {
+		{ old, new } = change
 		match operator {
 			Set => { machine: machine, value: new }
 			Combine(binary_operator) => Interp.binary(machine, binary_operator, old, new, site)
 		}
+	}
 
-	evaluate_assign : Interp.Machine, Ast.Target, Ast.AssignmentOperator, Ast.Expression, Ast.Where -> Interp.Got
-	evaluate_assign = |machine, target, operator, expression, site|
+	# An assignment's parts, as `Ast.Assign` holds them.
+	Assignment : { target : Ast.Target, operator : Ast.AssignmentOperator, value : Ast.Expression, at : Ast.Where }
+
+	evaluate_assign : Interp.Machine, Interp.Assignment -> Interp.Got
+	evaluate_assign = |machine, assignment| {
+		{ target, operator, value: expression, at: site } = assignment
 		match target {
 			ToName(name, slot, at) => {
 				match Interp.place_of(machine, slot) {
@@ -1128,7 +1134,7 @@ Interp :: [].{
 						} else {
 							old = Interp.variable_value(machine.scopes, scope, index)
 							{ machine: after, value } = Interp.evaluate(machine, expression)
-							{ machine: made, value: result } = Interp.combined(after, operator, old, value, site)
+							{ machine: made, value: result } = Interp.combined(after, operator, { old: old, new: value }, site)
 							Interp.assigned_name(made, result, name, slot, at)
 						}
 					}
@@ -1141,7 +1147,7 @@ Interp :: [].{
 					Combine(_) => Interp.property(first, holder, key, site)
 				}
 				{ machine: third, value } = Interp.evaluate(second, expression)
-				{ machine: made, value: result } = Interp.combined(third, operator, old, value, site)
+				{ machine: made, value: result } = Interp.combined(third, operator, { old: old, new: value }, site)
 				Interp.stored(
 					made,
 					holder,
@@ -1158,10 +1164,11 @@ Interp :: [].{
 					Combine(_) => Interp.indexed(second, holder, key_value, site)
 				}
 				{ machine: fourth, value } = Interp.evaluate(third, expression)
-				{ machine: made, value: result } = Interp.combined(fourth, operator, old, value, site)
+				{ machine: made, value: result } = Interp.combined(fourth, operator, { old: old, new: value }, site)
 				Interp.stored(made, holder, key_value, result, site)
 			}
 		}
+	}
 
 	# A variable written, its place found again after the value was made:
 	# making it may have run code that added scopes.
@@ -1196,7 +1203,9 @@ Interp :: [].{
 
 	# What a variable is, with nothing of its value kept: a kept copy of a
 	# string is a second reference to it.
-	variable_facts : List(Interp.Scope), U64, U64 -> { state : Interp.VariableState, holds_text : Bool }
+	Facts : { state : Interp.VariableState, holds_text : Bool }
+
+	variable_facts : List(Interp.Scope), U64, U64 -> Interp.Facts
 	variable_facts = |scopes, scope_id, index| {
 		binding = Interp.variable_at(scopes, scope_id, index)
 		{ state: binding.state, holds_text: Interp.is_text(binding.value) }
@@ -1927,7 +1936,9 @@ Interp :: [].{
 	}
 
 	# Object.keys, Object.values or Object.entries, of an object or an array.
-	object_listing : Interp.Machine, List(Heap.Value), [Keys, Values, Entries], Ast.Where -> Interp.Got
+	Listing : [Keys, Values, Entries]
+
+	object_listing : Interp.Machine, List(Heap.Value), Interp.Listing, Ast.Where -> Interp.Got
 	object_listing = |machine, arguments, which, site| {
 		properties = match arguments.first() {
 			Ok(Reference(id)) => match Heap.cell_at(machine.cells, id) {
@@ -2584,7 +2595,9 @@ Interp :: [].{
 		) ?? crash "Interp.ascii_trimmed: an ASCII cut"
 	}
 
-	text_padded : Interp.Machine, Str, List(Heap.Value), [PadStart, PadEnd], Ast.Where -> Interp.Got
+	Side : [PadStart, PadEnd]
+
+	text_padded : Interp.Machine, Str, List(Heap.Value), Interp.Side, Ast.Where -> Interp.Got
 	text_padded = |machine, text, arguments, side, site| {
 		fill_given = match arguments.get(1) {
 			Ok(Text(given)) => Ok(given)

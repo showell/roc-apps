@@ -24,6 +24,9 @@ Inspect :: [].{
 
 	Formatted : { text : Str, depth_now : U64 }
 
+	# A value formatted, or the reason the subset can't show it.
+	Shown : Try(Inspect.Formatted, [Unsupported(Str)])
+
 	break_length : U64
 	break_length = 80
 
@@ -91,7 +94,7 @@ Inspect :: [].{
 	plain : Inspect.Context, Str -> Inspect.Formatted
 	plain = |context, text| { text: text, depth_now: context.depth_now }
 
-	format_value : Inspect.Context, Heap.Value, U64 -> Try(Inspect.Formatted, [Unsupported(Str)])
+	format_value : Inspect.Context, Heap.Value, U64 -> Inspect.Shown
 	format_value = |context, subject, recurse|
 		match subject {
 			Number(number) => Ok(Inspect.plain(context, Inspect.number_text(number)))
@@ -119,7 +122,7 @@ Inspect :: [].{
 			NumberText.of(number)
 		}
 
-	format_cell : Inspect.Context, U64, U64 -> Try(Inspect.Formatted, [Unsupported(Str)])
+	format_cell : Inspect.Context, U64, U64 -> Inspect.Shown
 	format_cell = |context, id, recurse|
 		match Heap.cell_at(context.cells, id) {
 			Fun(closure) => {
@@ -176,7 +179,7 @@ Inspect :: [].{
 			}
 		}
 
-	format_array : Inspect.Context, List(Heap.Value), U64 -> Try(Inspect.Formatted, [Unsupported(Str)])
+	format_array : Inspect.Context, List(Heap.Value), U64 -> Inspect.Shown
 	format_array = |context, items, recurse| {
 		shown = items.sublist({ start: 0, len: 100 })
 		var $depth_now = context.depth_now
@@ -220,7 +223,7 @@ Inspect :: [].{
 		})
 	}
 
-	format_object : Inspect.Context, List(Heap.Property), U64 -> Try(Inspect.Formatted, [Unsupported(Str)])
+	format_object : Inspect.Context, List(Heap.Property), U64 -> Inspect.Shown
 	format_object = |context, properties, recurse| {
 		var $depth_now = context.depth_now
 		var $out = []
