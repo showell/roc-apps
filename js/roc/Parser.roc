@@ -1197,9 +1197,9 @@ Parser :: [].{
 		Punct("&=") => Err(Unsupported("unsupported: bitwise operators (`&=`)"))
 		Punct("|=") => Err(Unsupported("unsupported: bitwise operators (`|=`)"))
 		Punct("^=") => Err(Unsupported("unsupported: bitwise operators (`^=`)"))
-		Punct("&&=") => Err(Unsupported("unsupported: logical assignment (`&&=`)"))
-		Punct("||=") => Err(Unsupported("unsupported: logical assignment (`||=`)"))
-		Punct("??=") => Err(Unsupported("unsupported: logical assignment (`??=`)"))
+		Punct("&&=") => Ok(Logically(And))
+		Punct("||=") => Ok(Logically(Or))
+		Punct("??=") => Ok(Logically(Nullish))
 		_ => Err(NotAssignment)
 	}
 
@@ -1210,6 +1210,7 @@ Parser :: [].{
 		Index(object, key, _) => Ok(ToIndex(object, key))
 		ArrayLit(_) => Err(Parser.fault_at(site, "unsupported: destructuring"))
 		ObjectLit(_) => Err(Parser.fault_at(site, "unsupported: destructuring"))
+		Chain(_) => Err(Parser.fault_at(site, "SyntaxError: Invalid left-hand side in assignment"))
 		_ => Err(Parser.fault_at(site, "this can't be assigned to"))
 	}
 
@@ -1460,25 +1461,40 @@ Parser :: [].{
 		first = Parser.primary(parser)?
 		var $onward = first.parser
 		var $built = first.value
+		var $optional = False
 		var $more = True
 		while $more {
 			current = Parser.token($onward)
 			site = Parser.where_of(current)
 			match current.kind {
 				Punct(".") => {
+					name_found = Parser.name_after_dot(Parser.advance($onward))?
+					$built = Member($built, name_found.value, site)
+					$onward = name_found.parser
+				}
+				Punct("?.") => {
 					onward = Parser.advance($onward)
+					$optional = True
 					match Parser.token(onward).kind {
 						Name(text) => {
-							$built = Member($built, text, site)
+							$built = OptionalMember($built, text, site)
 							$onward = Parser.advance(onward)
 						}
-						Punct("#") => return Err(
-							Parser.fault_here(onward, "unsupported: private names"),
-						)
+						Punct("[") => {
+							index_key = Parser.expression(Parser.advance(onward))?
+							closed = Parser.expect_punct(index_key.parser, "]")?
+							$built = OptionalIndex($built, index_key.value, site)
+							$onward = closed
+						}
+						Punct("(") => {
+							call_arguments = Parser.arguments(onward)?
+							$built = OptionalCall($built, call_arguments.value, site)
+							$onward = call_arguments.parser
+						}
 						other => return Err(
 							Parser.fault_here(
 								onward,
-								"expected a property's name after `.`, found ${Parser.token_text(other)}",
+								"expected a property's name, `[` or `(` after `?.`, found ${Parser.token_text(other)}",
 							),
 						)
 					}
@@ -1494,9 +1510,6 @@ Parser :: [].{
 					$built = Call($built, call_arguments.value, site)
 					$onward = call_arguments.parser
 				}
-				Punct("?.") => return Err(
-					Parser.fault_here($onward, "unsupported: optional chaining (`?.`)"),
-				)
 				TemplateWhole(_) => return Err(
 					Parser.fault_here($onward, "unsupported: tagged templates"),
 				)
@@ -1508,7 +1521,12 @@ Parser :: [].{
 				}
 			}
 		}
-		Ok({ parser: $onward, value: $built })
+		chained = if $optional {
+			Chain($built)
+		} else {
+			$built
+		}
+		Ok({ parser: $onward, value: chained })
 	}
 
 	arguments : Parser.State -> Try(Parser.Parsed(List(Ast.Element)), Lexer.Fault)
@@ -1713,10 +1731,16 @@ Parser :: [].{
 	object_rest : Parser.State -> Try(Parser.Parsed(Ast.Expression), Lexer.Fault)
 	object_rest = |parser| {
 		var $onward = parser
-		var $properties = []
+		var $parts = []
 		while !Parser.is_punct($onward, "}") {
-			parsed = Parser.property($onward)?
-			$properties = $properties.append(parsed.value)
+			parsed = if Parser.is_punct($onward, "...") {
+				spread = Parser.assignment(Parser.advance($onward))?
+				{ parser: spread.parser, value: Spread(spread.value, Parser.here($onward)) }
+			} else {
+				field = Parser.property($onward)?
+				{ parser: field.parser, value: Field(field.value) }
+			}
+			$parts = $parts.append(parsed.value)
 			if Parser.is_punct(parsed.parser, ",") {
 				$onward = Parser.advance(parsed.parser)
 			} else if Parser.is_punct(parsed.parser, "}") {
@@ -1730,7 +1754,7 @@ Parser :: [].{
 				)
 			}
 		}
-		Ok({ parser: Parser.advance($onward), value: ObjectLit($properties) })
+		Ok({ parser: Parser.advance($onward), value: ObjectLit($parts) })
 	}
 
 	property : Parser.State -> Try(Parser.Parsed(Ast.Property), Lexer.Fault)
@@ -1754,7 +1778,6 @@ Parser :: [].{
 			Text(text) => Ok(text)
 			Number(number) => Ok(NumberText.text_for(number))
 			Punct("[") => Err(Parser.fault_here(parser, "unsupported: computed property names"))
-			Punct("...") => Err(Parser.fault_here(parser, "unsupported: spread (`...`)"))
 			Punct("*") => Err(Parser.fault_here(parser, "unsupported: generators"))
 			other => Err(
 				Parser.fault_here(

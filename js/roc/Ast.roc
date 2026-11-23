@@ -29,7 +29,7 @@ Ast :: [].{
 		Undefined,
 		Name(Str, Ast.Slot, Ast.Where),
 		ArrayLit(List(Ast.Element)),
-		ObjectLit(List(Ast.Property)),
+		ObjectLit(List(Ast.ObjectPart)),
 		Unary(Ast.UnaryOperator, Ast.Expression, Ast.Where),
 		Binary(Ast.BinaryOperator, Ast.Expression, Ast.Expression, Ast.Where),
 		Logical(Ast.LogicalOperator, Ast.Expression, Ast.Expression),
@@ -39,6 +39,14 @@ Ast :: [].{
 		Member(Ast.Expression, Str, Ast.Where),
 		Index(Ast.Expression, Ast.Expression, Ast.Where),
 		Call(Ast.Expression, List(Ast.Element), Ast.Where),
+		# The links of an optional chain (`a?.b`, `a?.[k]`, `f?.()`), each
+		# `undefined` when what it reads or calls is `null` or `undefined`.
+		OptionalMember(Ast.Expression, Str, Ast.Where),
+		OptionalIndex(Ast.Expression, Ast.Expression, Ast.Where),
+		OptionalCall(Ast.Expression, List(Ast.Element), Ast.Where),
+		# A chain of properties, indices and calls with an optional link in
+		# it: the whole chain is `undefined` once one of those finds nothing.
+		Chain(Ast.Expression),
 		# Boxed, so a heap cell holding a closure is no bigger than one holding
 		# an object.
 		Function(Box(Ast.FunctionDefinition)),
@@ -116,6 +124,10 @@ Ast :: [].{
 	## the property's value.
 	Property : { key : Str, value : Ast.Expression }
 
+	## An object literal's part: a property, or the own properties of a value
+	## spread in its place (`...other`).
+	ObjectPart : [Field(Ast.Property), Spread(Ast.Expression, Ast.Where)]
+
 	UnaryOperator : [Not, Negate, Plus, TypeOf]
 
 	BinaryOperator : [
@@ -135,8 +147,10 @@ Ast :: [].{
 
 	LogicalOperator : [And, Or, Nullish]
 
-	# `=` writes the value; the others combine it with what is there first.
-	AssignmentOperator : [Set, Combine(Ast.BinaryOperator)]
+	# `=` writes the value; `+=` and its kin combine it with what is there
+	# first; `??=` and its kin write it only when what is there doesn't settle
+	# the operator.
+	AssignmentOperator : [Set, Combine(Ast.BinaryOperator), Logically(Ast.LogicalOperator)]
 
 	Step : [Increment, Decrement]
 
