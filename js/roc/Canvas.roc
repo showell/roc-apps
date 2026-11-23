@@ -73,33 +73,36 @@ Canvas :: [].{
 
 	## The effect a drawing builtin's call makes, or why its arguments can't
 	## make one.
-	effect_of : List(Heap.Cell), Heap.Paint, List(Heap.Value) -> Try(Canvas.Effect, [Unsupported(Str)])
-	effect_of = |cells, paint, arguments|
+	## A builtin's arguments, and the heap they may refer to.
+	Given : { arguments : List(Heap.Value), cells : List(Heap.Cell) }
+
+	effect_of : Heap.Paint, Canvas.Given -> Try(Canvas.Effect, [Unsupported(Str)])
+	effect_of = |paint, { arguments, cells }|
 		match paint {
-			Background => Ok(Background(Canvas.color_at(arguments, 0, "background")?))
-			Fill => Ok(Fill(Canvas.color_at(arguments, 0, "fill")?))
+			Background => Ok(Background(Canvas.color_at(arguments, { position: 0, name: "background" })?))
+			Fill => Ok(Fill(Canvas.color_at(arguments, { position: 0, name: "fill" })?))
 			NoFill => Ok(NoFill)
 			Stroke => Ok(
 				Stroke({
-					color: Canvas.color_at(arguments, 0, "stroke")?,
-					width: Canvas.optional_number(arguments, 1, 1.0, "stroke")?,
+					color: Canvas.color_at(arguments, { position: 0, name: "stroke" })?,
+					width: Canvas.optional_number(arguments, { position: 1, default: 1.0, name: "stroke" })?,
 				}),
 			)
 			NoStroke => Ok(NoStroke)
 			Line => {
-				n = Canvas.numbers_given(arguments, 4, "line(x1, y1, x2, y2)")?
+				n = Canvas.numbers_given(arguments, { count: 4, call: "line(x1, y1, x2, y2)" })?
 				Ok(Line({ x1: Canvas.at(n, 0), y1: Canvas.at(n, 1), x2: Canvas.at(n, 2), y2: Canvas.at(n, 3) }))
 			}
 			Rect => {
-				n = Canvas.numbers_given(arguments, 4, "rect(x, y, w, h)")?
+				n = Canvas.numbers_given(arguments, { count: 4, call: "rect(x, y, w, h)" })?
 				Ok(Rect({ x: Canvas.at(n, 0), y: Canvas.at(n, 1), w: Canvas.at(n, 2), h: Canvas.at(n, 3) }))
 			}
 			Circle => {
-				n = Canvas.numbers_given(arguments, 3, "circle(x, y, r)")?
+				n = Canvas.numbers_given(arguments, { count: 3, call: "circle(x, y, r)" })?
 				Ok(Circle({ x: Canvas.at(n, 0), y: Canvas.at(n, 1), r: Canvas.at(n, 2) }))
 			}
 			Ellipse => {
-				n = Canvas.numbers_given(arguments, 4, "ellipse(x, y, rx, ry)")?
+				n = Canvas.numbers_given(arguments, { count: 4, call: "ellipse(x, y, rx, ry)" })?
 				Ok(Ellipse({ x: Canvas.at(n, 0), y: Canvas.at(n, 1), rx: Canvas.at(n, 2), ry: Canvas.at(n, 3) }))
 			}
 			Polygon => Ok(Polygon(Canvas.corners(cells, arguments)?))
@@ -109,21 +112,21 @@ Canvas :: [].{
 					Ok(Number(number)) => NumberText.text_for(number)
 					_ => return Err(Unsupported("unsupported: text(words, x, y, size) of words that are not a string or a number"))
 				}
-				n = Canvas.numbers_given(arguments.drop_first(1), 2, "text(words, x, y, size)")?
+				n = Canvas.numbers_given(arguments.drop_first(1), { count: 2, call: "text(words, x, y, size)" })?
 				Ok(
 					Words({
 						text: words,
 						x: Canvas.at(n, 0),
 						y: Canvas.at(n, 1),
-						size: Canvas.optional_number(arguments, 3, 16.0, "text")?,
+						size: Canvas.optional_number(arguments, { position: 3, default: 16.0, name: "text" })?,
 					}),
 				)
 			}
 		}
 
 	# The first `count` arguments, each a number, or why not.
-	numbers_given : List(Heap.Value), U64, Str -> Try(List(F64), [Unsupported(Str)])
-	numbers_given = |arguments, count, call| {
+	numbers_given : List(Heap.Value), { count : U64, call : Str } -> Try(List(F64), [Unsupported(Str)])
+	numbers_given = |arguments, { count, call }| {
 		var $got = []
 		var $i = 0
 		var $ok = True
@@ -150,8 +153,8 @@ Canvas :: [].{
 
 	# The argument at `position`, a number, or `default` when the call leaves
 	# it out.
-	optional_number : List(Heap.Value), U64, F64, Str -> Try(F64, [Unsupported(Str)])
-	optional_number = |arguments, position, default, name|
+	optional_number : List(Heap.Value), { position : U64, default : F64, name : Str } -> Try(F64, [Unsupported(Str)])
+	optional_number = |arguments, { position, default, name }|
 		match arguments.get(position) {
 			Ok(Number(number)) => Ok(number)
 			Ok(Undefined) | Err(OutOfBounds) => Ok(default)
@@ -162,8 +165,8 @@ Canvas :: [].{
 	## (`"tomato"`, `"#3a7"`, `"rgb(20, 120, 200)"`). It is checked for its
 	## characters, not its sense: the page's canvas leaves its color as it was
 	## for a string it doesn't know, as a browser's does.
-	color_at : List(Heap.Value), U64, Str -> Try(Str, [Unsupported(Str)])
-	color_at = |arguments, position, name|
+	color_at : List(Heap.Value), { position : U64, name : Str } -> Try(Str, [Unsupported(Str)])
+	color_at = |arguments, { position, name }|
 		match arguments.get(position) {
 			Ok(Text(color)) if Canvas.is_color_text(color) => Ok(color)
 			_ => Err(Unsupported("unsupported: ${name} of anything but a CSS color string"))
@@ -222,25 +225,26 @@ Canvas :: [].{
 	## The turtle after a move, and the line it drew, if it drew one.
 	Moved : { turtle : Canvas.Turtle, drawn : [Drew(Canvas.Effect), Nothing] }
 
-	moved : Canvas.Turtle, Heap.Move, List(Heap.Value) -> Try(Canvas.Moved, [Unsupported(Str)])
-	moved = |turtle, move, arguments|
+	moved : Canvas.Turtle, { move : Heap.Move, arguments : List(Heap.Value) } -> Try(Canvas.Moved, [Unsupported(Str)])
+	moved = |turtle, { move, arguments }|
 		match move {
 			Forward => {
-				n = Canvas.numbers_given(arguments, 1, "forward(distance)")?
+				n = Canvas.numbers_given(arguments, { count: 1, call: "forward(distance)" })?
 				Ok(Canvas.walked(turtle, Canvas.at(n, 0)))
 			}
 			Back => {
-				n = Canvas.numbers_given(arguments, 1, "back(distance)")?
+				n = Canvas.numbers_given(arguments, { count: 1, call: "back(distance)" })?
 				Ok(Canvas.walked(turtle, -Canvas.at(n, 0)))
 			}
 			Turn => {
-				n = Canvas.numbers_given(arguments, 1, "turn(degrees)")?
-				Ok({ turtle: { ..turtle, heading: Canvas.normal_heading(turtle.heading + Canvas.at(n, 0)) }, drawn: Nothing })
+				n = Canvas.numbers_given(arguments, { count: 1, call: "turn(degrees)" })?
+				heading = Canvas.normal_heading(turtle.heading + Canvas.at(n, 0))
+				Ok({ turtle: { ..turtle, heading: heading }, drawn: Nothing })
 			}
 			PenUp => Ok({ turtle: { ..turtle, pen: Up }, drawn: Nothing })
 			PenDown => Ok({ turtle: { ..turtle, pen: Down }, drawn: Nothing })
 			Goto => {
-				n = Canvas.numbers_given(arguments, 2, "goto(x, y)")?
+				n = Canvas.numbers_given(arguments, { count: 2, call: "goto(x, y)" })?
 				Ok(Canvas.went(turtle, { x: Canvas.at(n, 0), y: Canvas.at(n, 1) }))
 			}
 		}
@@ -301,7 +305,10 @@ Canvas :: [].{
 			Circle({ x, y, r }) => "circle ${Canvas.number_words([x, y, r])}"
 			Ellipse({ x, y, rx, ry }) => "ellipse ${Canvas.number_words([x, y, rx, ry])}"
 			Polygon(coordinates) => "polygon ${Canvas.number_words(coordinates)}"
-			Words({ text, x, y, size }) => "text ${Canvas.number_words([x, y, size])} ${Canvas.escaped(text)}"
+			Words({ text, x, y, size }) => {
+				place = Canvas.number_words([x, y, size])
+				"text ${place} ${Canvas.escaped(text)}"
+			}
 		}
 
 	number_words : List(F64) -> Str

@@ -2073,11 +2073,11 @@ Interp :: [].{
 					"${why}${Interp.line_note(site)}",
 				)
 			}
-			Paint(paint) => match Canvas.effect_of(machine.cells, paint, arguments) {
+			Paint(paint) => match Canvas.effect_of(paint, { arguments: arguments, cells: machine.cells }) {
 				Ok(effect) => Interp.emit!(host, machine, effect)
 				Err(Unsupported(why)) => Interp.fault_got(machine, "${why}${Interp.line_note(site)}")
 			}
-			Move(move) => match Canvas.moved(machine.turtle, move, arguments) {
+			Move(move) => match Canvas.moved(machine.turtle, { move: move, arguments: arguments }) {
 				Ok({ turtle, drawn }) => match drawn {
 					Drew(effect) => Interp.emit!(host, { ..machine, turtle: turtle }, effect)
 					Nothing => { machine: { ..machine, turtle: turtle }, value: Undefined }

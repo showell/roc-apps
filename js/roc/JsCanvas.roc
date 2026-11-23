@@ -28,7 +28,7 @@ import Parser
 main! = |arguments| {
 	match (arguments.get(0), arguments.get(1)) {
 		(Ok(count_text), Ok(src)) => match U64.from_str(count_text) {
-			Ok(count) => record_program!(src, count, (arguments.get(2) ?? "").split_on(","))
+			Ok(count) => record_program!(src, { frames: count, keys: (arguments.get(2) ?? "").split_on(",") })
 			Err(_) => usage!({})
 		}
 		_ => usage!({})
@@ -69,13 +69,13 @@ recording_host = |keys_down| {
 	},
 }
 
-record_program! : Str, U64, List(Str) => Try({}, [Exit(I8)])
-record_program! = |src, count, key_frames| {
+record_program! : Str, { frames : U64, keys : List(Str) } => Try({}, [Exit(I8)])
+record_program! = |src, { frames, keys: key_frames }| {
 	match Parser.program_of(src, Canvas) {
 		Ok(program) => {
 			var $session = Interp.start!(recording_host([]), program, Canvas, Canvas.run_limits)
 			var $n = 0
-			while $n < count and Interp.outcome_of($session.machine).status == Running {
+			while $n < frames and Interp.outcome_of($session.machine).status == Running {
 				t = $n.to_f64() / Canvas.frames_per_second.to_f64()
 				match $session.frame {
 					Frame(_) => {
