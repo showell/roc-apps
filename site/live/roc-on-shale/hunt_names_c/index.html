@@ -1,0 +1,1313 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="description" content="Names in Shale's C that say too little or the wrong thing, from the splitter's items: each case rule, Zig's bound words, vague words alone, and an abbreviation the tree also spells out, its two regular expressions done by hand in their matcher's order.">
+<title>hunt_names_c · Roc on Shale</title>
+<script src="../../shared/home.js"></script>
+<!-- site/build_roc_on_shale.shale writes this page from the shale repository's
+     history; run it again rather than editing here. The code is colored by
+     roc-syntax-color (SyntaxColor.html). -->
+<style>
+  :root { color-scheme: light dark; --bg: #f7f5f0; --fg: #1d1d1b; --muted: #6b6860; --edge: #d9d4c8; --pane: #ffffff; --link: #1f5fa8; --accent: #5b3ea8; }
+  @media (prefers-color-scheme: dark) {
+    :root { --bg: #1b1b1a; --fg: #e8e6e0; --muted: #9a968c; --edge: #3a3934; --pane: #242422; --link: #8ab4f0; --accent: #a68cf0; }
+  }
+  body { margin: 0; background: var(--bg); color: var(--fg); font: 15px/1.55 system-ui, sans-serif; }
+  main { max-width: 960px; margin: 0 auto; padding: 36px 16px 48px; }
+  @media (max-width: 640px) { main { padding: 24px 12px 36px; } }
+  .top { display: flex; flex-wrap: wrap; gap: 4px 14px; font-size: 14px; margin: 0 0 14px; }
+  h1 { font-size: 28px; margin: 0 0 6px; overflow-wrap: anywhere; }
+  .lede { margin: 0 0 10px; max-width: 70ch; }
+  ul.lede { padding-left: 22px; }
+  ul.lede li { margin: 0 0 4px; }
+  h2.intro { font-size: 20px; margin: 30px 0 6px; }
+  h3.intro { font-size: 16px; margin: 18px 0 4px; }
+  /* The drawing is Graphviz's SVG, inline, so its lines and words take the
+     page's colors in either theme. */
+  .diagram { margin: 14px 0 18px; }
+  .diagram svg { max-width: 100%; height: auto; }
+  .diagram text { fill: var(--fg); }
+  .diagram path, .diagram polygon { stroke: var(--fg); }
+  .diagram .edge polygon { fill: var(--fg); }
+  h2.part { font-size: 25px; margin: 64px 0 4px; padding-top: 20px; border-top: 3px solid var(--accent); }
+  .part-intro { margin: 0 0 8px; }
+  h3 { font-size: 19px; margin: 10px 0 4px; overflow-wrap: anywhere; }
+  h2.part a { color: inherit; text-decoration: none; }
+  h2.code { font-size: 16px; margin: 36px 0 4px; color: var(--accent); }
+  p { max-width: 70ch; }
+  a { color: var(--link); }
+  code { font: 13px ui-monospace, Menlo, Consolas, monospace; }
+  .contents { padding-left: 20px; }
+  .contents ul { padding-left: 20px; margin: 2px 0 8px; }
+  .contents a { overflow-wrap: anywhere; }
+  .facts { font-size: 14px; color: var(--muted); }
+  .file { font-size: 13px; color: var(--muted); margin: 20px 0 0; overflow-wrap: anywhere; }
+  .entry { margin-top: 28px; padding-top: 14px; border-top: 1px solid var(--edge); }
+  .steps { font-size: 13px; margin: 0 0 8px; }
+  main > .steps:last-child { margin: 28px 0 0; }
+  /* Every block shows its file whole; a line wider than the block scrolls
+     sideways inside it, so the code keeps its indentation. */
+  pre { margin: 6px 0 12px; padding: 12px 14px; border-radius: 5px; background: #2b2733; color: #e8e6e0;
+        font: 12px/1.45 ui-monospace, Menlo, Consolas, monospace; overflow-x: auto; tab-size: 4; }
+  pre code { font: inherit; }
+  .syn-keyword { color: #c792ea; }
+  .syn-type { color: #82aaff; }
+  .syn-string { color: #c3e88d; }
+  .syn-number { color: #f78c6c; }
+  .syn-comment { color: #8a8494; font-style: italic; }
+  .syn-name { color: #ffcb6b; }
+  footer { margin-top: 36px; color: var(--muted); font-size: 13px; }
+</style>
+</head>
+<body>
+<main>
+<nav class="steps"><a href="../find_dead_code/">← previous</a> · <a href="../#hunt_names_c">Roc on Shale</a> · <a href="../count_roc_modules_lines_and_tests/">next →</a></nav>
+<h1>hunt_names_c</h1>
+<h2 class="code">Roc</h2>
+<p class="file">It also imports <code>Item</code>, <code>Mask</code>, <code>Paths</code>, <code>Split</code>, <code>Words</code> from <a href="../c-splitter/">the C splitter</a>.</p>
+<p class="file"><a href="https://github.com/showell/shale/blob/1759a0dc6532635473bb0b5b9c0ed1b701f1b7f1/cookbook/c/hunt_names/hunt_names.roc"><code>cookbook/c/hunt_names/hunt_names.roc</code></a>, 257 lines</p>
+<pre><code><span class="syn-comment">## hunt_names, in Roc on Shale&#39;s platform (roc_platform/README.md): Shale&#39;s C</span>
+<span class="syn-comment">## hunted for names that break c/docs/style.md&#39;s &quot;Names&quot; or say too little,</span>
+<span class="syn-comment">## from the splitter the C recipes share (cookbook/c/items/, a package). A</span>
+<span class="syn-comment">## finding is a question for a reader, never a verdict. Its launcher,</span>
+<span class="syn-comment">## cookbook/c/hunt_names.shale, is how it is run, and its header says the</span>
+<span class="syn-comment">## arguments and the checks. check_goldens.shale, beside this, holds its</span>
+<span class="syn-comment">## output on the plants to its goldens, line for line.</span>
+<span class="syn-comment">##</span>
+<span class="syn-comment">##   shale cookbook:c/hunt_names.shale dir=c/host</span>
+<span class="syn-comment">##   shale cookbook:c/hunt_names.shale self_test=1</span>
+<span class="syn-comment">##</span>
+<span class="syn-comment">## The effects: `Shale.arg!` for the arguments, `Shale.read!` for the word</span>
+<span class="syn-comment">## tables (cookbook/words/) and each file&#39;s text, `Shale.list!` and</span>
+<span class="syn-comment">## `Shale.glob!` for the files, and `Shale.print!` and `Shale.fail!` for the</span>
+<span class="syn-comment">## verdict. Checks, beside this, checks a file; Abbreviation, the tree&#39;s</span>
+<span class="syn-comment">## names; SelfTest holds it to the plants.</span>
+<span class="syn-comment">## budget: steps=200000000 arena_bytes=1000000000 roc_cpu_ms=600000</span>
+<span class="syn-keyword">app</span> [main!] {
+	items: <span class="syn-string">&quot;../items/main.roc&quot;</span>,
+	pf: <span class="syn-keyword">platform</span> <span class="syn-string">&quot;../../../roc_platform/platform/main.roc&quot;</span>,
+}
+
+<span class="syn-keyword">import</span> pf.<span class="syn-type">Shale</span>
+<span class="syn-keyword">import</span> items.<span class="syn-type">Item</span>
+<span class="syn-keyword">import</span> items.<span class="syn-type">Mask</span>
+<span class="syn-keyword">import</span> items.<span class="syn-type">Paths</span>
+<span class="syn-keyword">import</span> items.<span class="syn-type">Split</span>
+<span class="syn-keyword">import</span> items.<span class="syn-type">Words</span>
+<span class="syn-keyword">import</span> <span class="syn-type">Abbreviation</span>
+<span class="syn-keyword">import</span> <span class="syn-type">Checks</span>
+<span class="syn-keyword">import</span> <span class="syn-type">SelfTest</span>
+
+<span class="syn-name">main!</span> : {} =&gt; {}
+<span class="syn-name">main!</span> = |{}| {
+	<span class="syn-keyword">if</span> integer_or_stop!(<span class="syn-string">&quot;self_test&quot;</span>, <span class="syn-type">Shale</span>.arg!(<span class="syn-string">&quot;self_test&quot;</span>, <span class="syn-string">&quot;0&quot;</span>)) == <span class="syn-number">1</span> {
+		<span class="syn-type">SelfTest</span>.run!(hunt!)
+	} <span class="syn-keyword">else</span> {
+		folder = <span class="syn-type">Shale</span>.arg!(<span class="syn-string">&quot;dir&quot;</span>, <span class="syn-string">&quot;c&quot;</span>)
+		hunted = hunt!(folder)
+		<span class="syn-keyword">for</span> finding <span class="syn-keyword">in</span> hunted.found {
+			<span class="syn-type">Shale</span>.print!(<span class="syn-type">Checks</span>.finding_line(finding))
+		}
+		<span class="syn-type">Shale</span>.print!(summary(folder, hunted))
+		<span class="syn-keyword">for</span> line <span class="syn-keyword">in</span> by_folder(hunted.found) {
+			<span class="syn-type">Shale</span>.print!(line)
+		}
+	}
+}
+
+<span class="syn-comment">## A value given as `name=`, which must be an integer, as Shale&#39;s `arg` reads</span>
+<span class="syn-comment">## one whose default is.</span>
+<span class="syn-name">integer_or_stop!</span> : <span class="syn-type">Str</span>, <span class="syn-type">Str</span> =&gt; <span class="syn-type">I64</span>
+<span class="syn-name">integer_or_stop!</span> = |name, given|
+	<span class="syn-keyword">match</span> <span class="syn-type">I64</span>.from_str(given) {
+		<span class="syn-type">Ok</span>(value) =&gt; value
+		<span class="syn-type">Err</span>(_) =&gt; {
+			<span class="syn-type">Shale</span>.fail!(<span class="syn-string">&quot;hunt_names: </span>${name}<span class="syn-string">=</span>${given}<span class="syn-string"> is not an integer&quot;</span>)
+			<span class="syn-number">0</span>
+		}
+	}
+
+<span class="syn-comment">## The findings over the folder, sorted by place, and how many files it</span>
+<span class="syn-comment">## read.</span>
+<span class="syn-name">hunt!</span> : <span class="syn-type">Str</span> =&gt; { found : <span class="syn-type">List</span>(<span class="syn-type">Checks.Finding</span>), files : <span class="syn-type">U64</span> }
+<span class="syn-name">hunt!</span> = |folder| {
+	tables = tables!({})
+	files = c_files_under!(folder)
+	<span class="syn-keyword">var</span> $found = []
+	<span class="syn-keyword">var</span> $named = []
+	<span class="syn-keyword">for</span> path <span class="syn-keyword">in</span> files {
+		text = read_text!(path)
+		checked = <span class="syn-type">Checks</span>.of_file(path, <span class="syn-type">Split</span>.lines(text), split_or_stop!(path, text), tables)
+		$found = $found.concat(checked.found)
+		$named = $named.concat(checked.named)
+	}
+	all = $found.concat(<span class="syn-type">Abbreviation</span>.findings($named, tables.abbreviations))
+	{ found: all.sort_with(place_order), files: files.len() }
+}
+
+<span class="syn-comment">## Findings in the order of their path, line, check and why.</span>
+<span class="syn-name">place_order</span> : <span class="syn-type">Checks.Finding</span>, <span class="syn-type">Checks.Finding</span> -&gt; [<span class="syn-type">Before</span>, <span class="syn-type">Same</span>, <span class="syn-type">After</span>]
+<span class="syn-name">place_order</span> = |a, b| {
+	by_path = <span class="syn-type">Words</span>.byte_order(a.path, b.path)
+	<span class="syn-keyword">if</span> by_path != <span class="syn-type">Same</span> {
+		by_path
+	} <span class="syn-keyword">else</span> <span class="syn-keyword">if</span> a.line &lt; b.line {
+		<span class="syn-type">Before</span>
+	} <span class="syn-keyword">else</span> <span class="syn-keyword">if</span> a.line &gt; b.line {
+		<span class="syn-type">After</span>
+	} <span class="syn-keyword">else</span> {
+		by_check = <span class="syn-type">Words</span>.byte_order(a.check, b.check)
+		<span class="syn-keyword">if</span> by_check != <span class="syn-type">Same</span> {
+			by_check
+		} <span class="syn-keyword">else</span> {
+			<span class="syn-type">Words</span>.byte_order(a.why, b.why)
+		}
+	}
+}
+
+<span class="syn-comment">## The line of counts: the files, the findings and each check&#39;s.</span>
+<span class="syn-name">summary</span> : <span class="syn-type">Str</span>, { found : <span class="syn-type">List</span>(<span class="syn-type">Checks.Finding</span>), files : <span class="syn-type">U64</span> } -&gt; <span class="syn-type">Str</span>
+<span class="syn-name">summary</span> = |folder, hunted| {
+	parts = <span class="syn-type">Checks</span>.check_names.map(|check| <span class="syn-string">&quot;</span>${check}<span class="syn-string"> </span>${hunted.found.count_if(|finding| finding.check == check).to_str()}<span class="syn-string">&quot;</span>)
+	<span class="syn-string">&quot;hunt_names: </span>${hunted.files.to_str()}<span class="syn-string"> files under </span>${folder}<span class="syn-string">; </span>${hunted.found.len().to_str()}<span class="syn-string"> findings: </span>${<span class="syn-type">Str</span>.join_with(parts, <span class="syn-string">&quot;, &quot;</span>)}<span class="syn-string">&quot;</span>
+}
+
+<span class="syn-comment">## The findings counted by each file&#39;s folder and check, a line each, in the</span>
+<span class="syn-comment">## order of `&lt;folder&gt; &lt;check&gt;`.</span>
+<span class="syn-name">by_folder</span> : <span class="syn-type">List</span>(<span class="syn-type">Checks.Finding</span>) -&gt; <span class="syn-type">List</span>(<span class="syn-type">Str</span>)
+<span class="syn-name">by_folder</span> = |found| {
+	<span class="syn-name">no_counts</span> : <span class="syn-type">Dict</span>(<span class="syn-type">Str</span>, <span class="syn-type">U64</span>)
+	no_counts = <span class="syn-type">Dict</span>.empty()
+	counts = found.fold(
+		no_counts,
+		|so_far, finding| {
+			key = <span class="syn-string">&quot;</span>${folder_of(finding.path)}<span class="syn-string"> </span>${finding.check}<span class="syn-string">&quot;</span>
+			so_far.insert(key, (so_far.get(key) ?? <span class="syn-number">0</span>) + <span class="syn-number">1</span>)
+		},
+	)
+	counts
+		.to_list()
+		.sort_with(|(a, _), (b, _)| <span class="syn-type">Words</span>.byte_order(a, b))
+		.map(|(key, count)| <span class="syn-string">&quot;  </span>${key}<span class="syn-string">: </span>${count.to_str()}<span class="syn-string">&quot;</span>)
+}
+
+<span class="syn-comment">## The path&#39;s folder, as Shale&#39;s `dirname` gives it: up to its last `/`.</span>
+<span class="syn-name">folder_of</span> : <span class="syn-type">Str</span> -&gt; <span class="syn-type">Str</span>
+<span class="syn-name">folder_of</span> = |path| {
+	bytes = path.to_utf8()
+	<span class="syn-keyword">match</span> bytes.find_last_index(|byte| byte == <span class="syn-string">&#39;/&#39;</span>) {
+		<span class="syn-type">Ok</span>(slash) =&gt; <span class="syn-type">Mask</span>.text(bytes.take_first(slash))
+		<span class="syn-type">Err</span>(_) =&gt; <span class="syn-string">&quot;&quot;</span>
+	}
+}
+
+<span class="syn-comment">## The word tables of cookbook/words/: vague.txt&#39;s, containers.txt&#39;s with</span>
+<span class="syn-comment">## `data` and `info`, and c_abbreviations.txt&#39;s.</span>
+<span class="syn-name">tables!</span> : {} =&gt; <span class="syn-type">Checks.Tables</span>
+<span class="syn-name">tables!</span> = |{}| {
+	containers = word_table!(<span class="syn-string">&quot;containers.txt&quot;</span>).insert(<span class="syn-string">&quot;data&quot;</span>).insert(<span class="syn-string">&quot;info&quot;</span>)
+	{ vague: word_table!(<span class="syn-string">&quot;vague.txt&quot;</span>), containers, abbreviations: abbreviation_table!({}) }
+}
+
+<span class="syn-comment">## A table&#39;s text. A table that is not there stops the run.</span>
+<span class="syn-name">table_text!</span> : <span class="syn-type">Str</span> =&gt; <span class="syn-type">Str</span>
+<span class="syn-name">table_text!</span> = |file|
+	<span class="syn-keyword">match</span> <span class="syn-type">Shale</span>.read!(<span class="syn-string">&quot;cookbook:words/</span>${file}<span class="syn-string">&quot;</span>) {
+		<span class="syn-type">Found</span>(text) =&gt; text
+		<span class="syn-type">Missing</span> =&gt; {
+			<span class="syn-type">Shale</span>.fail!(<span class="syn-string">&quot;hunt_names: cookbook/words/</span>${file}<span class="syn-string"> is not there&quot;</span>)
+			<span class="syn-string">&quot;&quot;</span>
+		}
+	}
+
+<span class="syn-comment">## A line&#39;s text before its note, the `--` that starts one, trimmed.</span>
+<span class="syn-name">before_note</span> : <span class="syn-type">List</span>(<span class="syn-type">U8</span>) -&gt; <span class="syn-type">List</span>(<span class="syn-type">U8</span>)
+<span class="syn-name">before_note</span> = |line| {
+	kept = <span class="syn-keyword">match</span> <span class="syn-type">Mask</span>.pair_from(line, (<span class="syn-string">&#39;-&#39;</span>, <span class="syn-string">&#39;-&#39;</span>), <span class="syn-number">0</span>) {
+		<span class="syn-type">Ok</span>(note) =&gt; line.take_first(note)
+		<span class="syn-type">Err</span>(_) =&gt; line
+	}
+	<span class="syn-type">Mask</span>.trimmed(kept)
+}
+
+<span class="syn-comment">## A word table of cookbook/words/, a word a line. A word twice, or a line of</span>
+<span class="syn-comment">## two, is a mistake in the table: it stops the run.</span>
+<span class="syn-name">word_table!</span> : <span class="syn-type">Str</span> =&gt; <span class="syn-type">Set</span>(<span class="syn-type">Str</span>)
+<span class="syn-name">word_table!</span> = |file| {
+	<span class="syn-keyword">var</span> $words = <span class="syn-type">Set</span>.empty()
+	<span class="syn-keyword">for</span> line <span class="syn-keyword">in</span> <span class="syn-type">Split</span>.lines(table_text!(file)) {
+		word = <span class="syn-type">Mask</span>.text(before_note(line))
+		<span class="syn-keyword">if</span> word.contains(<span class="syn-string">&quot; &quot;</span>) <span class="syn-keyword">or</span> $words.contains(word) {
+			<span class="syn-type">Shale</span>.fail!(<span class="syn-string">&quot;hunt_names: cookbook/words/</span>${file}<span class="syn-string">: `</span>${word}<span class="syn-string">` is no single new word&quot;</span>)
+		}
+		<span class="syn-keyword">if</span> word != <span class="syn-string">&quot;&quot;</span> {
+			$words = $words.insert(word)
+		}
+	}
+	$words
+}
+
+<span class="syn-comment">## cookbook/words/c_abbreviations.txt: an abbreviation to its word, a pair a</span>
+<span class="syn-comment">## line. An abbreviation twice, or a line of one word or three, stops the</span>
+<span class="syn-comment">## run.</span>
+<span class="syn-name">abbreviation_table!</span> : {} =&gt; <span class="syn-type">Dict</span>(<span class="syn-type">Str</span>, <span class="syn-type">Str</span>)
+<span class="syn-name">abbreviation_table!</span> = |{}| {
+	file = <span class="syn-string">&quot;cookbook/words/c_abbreviations.txt&quot;</span>
+	<span class="syn-keyword">var</span> $table = <span class="syn-type">Dict</span>.empty()
+	<span class="syn-keyword">for</span> line <span class="syn-keyword">in</span> <span class="syn-type">Split</span>.lines(table_text!(<span class="syn-string">&quot;c_abbreviations.txt&quot;</span>)) {
+		words = words_in(before_note(line))
+		<span class="syn-keyword">match</span> (words.get(<span class="syn-number">0</span>), words.get(<span class="syn-number">1</span>)) {
+			(<span class="syn-type">Ok</span>(short), <span class="syn-type">Ok</span>(full)) <span class="syn-keyword">if</span> words.len() == <span class="syn-number">2</span> =&gt; {
+				<span class="syn-keyword">if</span> $table.get(short) != <span class="syn-type">Err</span>(<span class="syn-type">KeyNotFound</span>) {
+					<span class="syn-type">Shale</span>.fail!(<span class="syn-string">&quot;hunt_names: </span>${file}<span class="syn-string">: `</span>${short}<span class="syn-string">` twice&quot;</span>)
+				}
+				$table = $table.insert(short, full)
+			}
+			_ =&gt;
+				<span class="syn-keyword">if</span> !(words.is_empty()) {
+					<span class="syn-type">Shale</span>.fail!(<span class="syn-string">&quot;hunt_names: </span>${file}<span class="syn-string">: `</span>${<span class="syn-type">Mask</span>.text(line)}<span class="syn-string">` is no pair of an abbreviation and its word&quot;</span>)
+				}
+		}
+	}
+	$table
+}
+
+<span class="syn-comment">## The words of a line, as Shale&#39;s `words` cuts them: at each run of `\s`.</span>
+<span class="syn-name">words_in</span> : <span class="syn-type">List</span>(<span class="syn-type">U8</span>) -&gt; <span class="syn-type">List</span>(<span class="syn-type">Str</span>)
+<span class="syn-name">words_in</span> = |line| {
+	<span class="syn-keyword">var</span> $words = []
+	<span class="syn-keyword">var</span> $at = <span class="syn-type">Mask</span>.spaces_end(line, <span class="syn-number">0</span>)
+	<span class="syn-keyword">while</span> $at &lt; line.len() {
+		end = <span class="syn-keyword">match</span> line.drop_first($at).find_first_index(<span class="syn-type">Mask</span>.is_space) {
+			<span class="syn-type">Ok</span>(offset) =&gt; $at + offset
+			<span class="syn-type">Err</span>(_) =&gt; line.len()
+		}
+		$words = $words.append(<span class="syn-type">Mask</span>.text(line.sublist({ start: $at, len: end - $at })))
+		$at = <span class="syn-type">Mask</span>.spaces_end(line, end)
+	}
+	$words
+}
+
+<span class="syn-comment">## The file&#39;s text. A file the walk named and the read finds gone stops the</span>
+<span class="syn-comment">## run.</span>
+<span class="syn-name">read_text!</span> : <span class="syn-type">Str</span> =&gt; <span class="syn-type">Str</span>
+<span class="syn-name">read_text!</span> = |path|
+	<span class="syn-keyword">match</span> <span class="syn-type">Shale</span>.read!(path) {
+		<span class="syn-type">Found</span>(text) =&gt; text
+		<span class="syn-type">Missing</span> =&gt; {
+			<span class="syn-type">Shale</span>.fail!(<span class="syn-string">&quot;hunt_names: </span>${path}<span class="syn-string"> went missing during the walk&quot;</span>)
+			<span class="syn-string">&quot;&quot;</span>
+		}
+	}
+
+<span class="syn-comment">## The file&#39;s items, or the run stopped with the line the dialect does not</span>
+<span class="syn-comment">## account for.</span>
+<span class="syn-name">split_or_stop!</span> : <span class="syn-type">Str</span>, <span class="syn-type">Str</span> =&gt; <span class="syn-type">List</span>(<span class="syn-type">Item</span>)
+<span class="syn-name">split_or_stop!</span> = |path, text|
+	<span class="syn-keyword">match</span> <span class="syn-type">Split</span>.items({ path, text, uses: <span class="syn-type">Bool.False</span> }) {
+		<span class="syn-type">Ok</span>(items) =&gt; items
+		<span class="syn-type">Err</span>(why) =&gt; {
+			<span class="syn-type">Shale</span>.fail!(why)
+			[]
+		}
+	}
+
+<span class="syn-comment">## The C files under the folder, sorted, any folder named `out` (c/out, the</span>
+<span class="syn-comment">## build&#39;s output) left out. A folder that is not there stops the run, in</span>
+<span class="syn-comment">## the words of the Shale original&#39;s walk: a check that can&#39;t run fails.</span>
+<span class="syn-name">c_files_under!</span> : <span class="syn-type">Str</span> =&gt; <span class="syn-type">List</span>(<span class="syn-type">Str</span>)
+<span class="syn-name">c_files_under!</span> = |folder| {
+	<span class="syn-keyword">if</span> <span class="syn-type">Shale</span>.list!(folder) == <span class="syn-type">Missing</span> {
+		<span class="syn-type">Shale</span>.fail!(<span class="syn-string">&quot;`walk(\&quot;</span>${folder}<span class="syn-string">\&quot;)`: not found (FileNotFound)&quot;</span>)
+	}
+	paths = <span class="syn-type">Shale</span>.glob!(<span class="syn-string">&quot;</span>${folder}<span class="syn-string">/**/*.c&quot;</span>).concat(<span class="syn-type">Shale</span>.glob!(<span class="syn-string">&quot;</span>${folder}<span class="syn-string">/**/*.h&quot;</span>))
+	paths.keep_if(|path| !(<span class="syn-type">Paths</span>.is_in_out_folder(folder, path))).sort_with(<span class="syn-type">Words</span>.byte_order)
+}
+</code></pre>
+<p class="file"><a href="https://github.com/showell/shale/blob/1759a0dc6532635473bb0b5b9c0ed1b701f1b7f1/cookbook/c/hunt_names/Abbreviation.roc"><code>cookbook/c/hunt_names/Abbreviation.roc</code></a>, 68 lines</p>
+<pre><code><span class="syn-comment">## hunt_names&#39; `abbreviation` check, over the whole tree&#39;s top-level names: a</span>
+<span class="syn-comment">## name with a word of cookbook/words/c_abbreviations.txt whose spelled-out</span>
+<span class="syn-comment">## word another top-level name of the tree uses is one thing with two</span>
+<span class="syn-comment">## spellings (`bi_split` beside `builtin_scan`). One finding a file and</span>
+<span class="syn-comment">## abbreviation, at its first name&#39;s line, naming its names, as</span>
+<span class="syn-comment">## cookbook/c/hunt_names.shale, the Shale original, words it.</span>
+<span class="syn-keyword">import</span> <span class="syn-type">Checks</span>
+
+<span class="syn-type">Abbreviation</span> := [].{
+
+	<span class="syn-comment">## The tree&#39;s findings, from its names in the order the files and their</span>
+	<span class="syn-comment">## items gave them, and the table of each abbreviation&#39;s word.</span>
+	<span class="syn-name">findings</span> : <span class="syn-type">List</span>(<span class="syn-type">Checks.Named</span>), <span class="syn-type">Dict</span>(<span class="syn-type">Str</span>, <span class="syn-type">Str</span>) -&gt; <span class="syn-type">List</span>(<span class="syn-type">Checks.Finding</span>)
+	<span class="syn-name">findings</span> = |named, table| {
+		spelled = named.fold(<span class="syn-type">Set</span>.empty(), |words, each| each.words.fold(words, |all, word| all.insert(word)))
+		<span class="syn-keyword">var</span> $short = <span class="syn-type">Dict</span>.empty()
+		<span class="syn-keyword">for</span> each <span class="syn-keyword">in</span> named {
+			<span class="syn-keyword">for</span> word <span class="syn-keyword">in</span> distinct(each.words) {
+				<span class="syn-keyword">match</span> table.get(word) {
+					<span class="syn-type">Ok</span>(full) <span class="syn-keyword">if</span> spelled.contains(full) =&gt; {
+						key = <span class="syn-string">&quot;</span>${each.path}<span class="syn-string">|</span>${word}<span class="syn-string">&quot;</span>
+						entry = $short.get(key) ?? { path: each.path, line: each.line, word, full, names: [] }
+						$short = $short.insert(key, { ..entry, names: entry.names.append(each.name) })
+					}
+					_ =&gt; {}
+				}
+			}
+		}
+		$short.to_list().map(|(_, entry)| finding(entry))
+	}
+}
+
+<span class="syn-comment">## One file&#39;s abbreviation: where it is first, the word and its spelled-out</span>
+<span class="syn-comment">## word, and the names that hold it.</span>
+<span class="syn-type">Short</span> : { path : <span class="syn-type">Str</span>, line : <span class="syn-type">U64</span>, word : <span class="syn-type">Str</span>, full : <span class="syn-type">Str</span>, names : <span class="syn-type">List</span>(<span class="syn-type">Str</span>) }
+
+<span class="syn-comment">## The finding of a file&#39;s abbreviation: its first four names, and how many</span>
+<span class="syn-comment">## more.</span>
+<span class="syn-name">finding</span> : <span class="syn-type">Short</span> -&gt; <span class="syn-type">Checks.Finding</span>
+<span class="syn-name">finding</span> = |entry| {
+	names = distinct(entry.names)
+	listed = <span class="syn-string">&quot;`</span>${<span class="syn-type">Str</span>.join_with(names.take_first(<span class="syn-number">4</span>), <span class="syn-string">&quot;`, `&quot;</span>)}<span class="syn-string">`&quot;</span>
+	shown = <span class="syn-keyword">if</span> names.len() &gt; <span class="syn-number">4</span> {
+		<span class="syn-string">&quot;</span>${listed}<span class="syn-string"> and </span>${(names.len() - <span class="syn-number">4</span>).to_str()}<span class="syn-string"> more&quot;</span>
+	} <span class="syn-keyword">else</span> {
+		listed
+	}
+	count = <span class="syn-keyword">if</span> names.len() == <span class="syn-number">1</span> {
+		<span class="syn-string">&quot;1 name&quot;</span>
+	} <span class="syn-keyword">else</span> {
+		<span class="syn-string">&quot;</span>${names.len().to_str()}<span class="syn-string"> names&quot;</span>
+	}
+	why = <span class="syn-string">&quot;`</span>${entry.word}<span class="syn-string">` for `</span>${entry.full}<span class="syn-string">`, which other names spell out, in </span>${count}<span class="syn-string"> here: </span>${shown}<span class="syn-string">&quot;</span>
+	{ path: entry.path, line: entry.line, check: <span class="syn-string">&quot;abbreviation&quot;</span>, why }
+}
+
+<span class="syn-comment">## Each text once, in the order first seen, as Shale&#39;s `unique` gives them.</span>
+<span class="syn-name">distinct</span> : <span class="syn-type">List</span>(<span class="syn-type">Str</span>) -&gt; <span class="syn-type">List</span>(<span class="syn-type">Str</span>)
+<span class="syn-name">distinct</span> = |texts|
+	texts.fold(
+		[],
+		|seen, text|
+			<span class="syn-keyword">if</span> seen.contains(text) {
+				seen
+			} <span class="syn-keyword">else</span> {
+				seen.append(text)
+			},
+	)
+</code></pre>
+<p class="file"><a href="https://github.com/showell/shale/blob/1759a0dc6532635473bb0b5b9c0ed1b701f1b7f1/cookbook/c/hunt_names/Checks.roc"><code>cookbook/c/hunt_names/Checks.roc</code></a>, 243 lines</p>
+<pre><code><span class="syn-comment">## hunt_names&#39; checks of one file, every one but `abbreviation`, which needs</span>
+<span class="syn-comment">## the whole tree&#39;s names: a type&#39;s, a function&#39;s and a constant&#39;s case, a</span>
+<span class="syn-comment">## bound&#39;s words and their order, a vague function or type, `do`, and a</span>
+<span class="syn-comment">## vague local or parameter. The file comes split by the C recipes&#39;</span>
+<span class="syn-comment">## splitter (cookbook/c/items/); each check is cookbook/c/hunt_names.shale&#39;s,</span>
+<span class="syn-comment">## the Shale original&#39;s, and its words are the original&#39;s.</span>
+<span class="syn-keyword">import</span> items.<span class="syn-type">Item</span>
+<span class="syn-keyword">import</span> items.<span class="syn-type">Mask</span>
+<span class="syn-keyword">import</span> items.<span class="syn-type">Split</span>
+<span class="syn-keyword">import</span> <span class="syn-type">Declared</span>
+<span class="syn-keyword">import</span> <span class="syn-type">Names</span>
+
+<span class="syn-type">Checks</span> := [].{
+
+	<span class="syn-comment">## A finding: its file and line, its check and why it is one.</span>
+	<span class="syn-type">Finding</span> : { path : <span class="syn-type">Str</span>, line : <span class="syn-type">U64</span>, check : <span class="syn-type">Str</span>, why : <span class="syn-type">Str</span> }
+
+	<span class="syn-comment">## A top-level name the file declares, at its item&#39;s first line, with its</span>
+	<span class="syn-comment">## words, for `abbreviation`.</span>
+	<span class="syn-type">Named</span> : { path : <span class="syn-type">Str</span>, line : <span class="syn-type">U64</span>, name : <span class="syn-type">Str</span>, words : <span class="syn-type">List</span>(<span class="syn-type">Str</span>) }
+
+	<span class="syn-comment">## The word tables the checks read: cookbook/words/vague.txt&#39;s,</span>
+	<span class="syn-comment">## containers.txt&#39;s (and `data`, `info`), and c_abbreviations.txt&#39;s, an</span>
+	<span class="syn-comment">## abbreviation to its word.</span>
+	<span class="syn-type">Tables</span> : { vague : <span class="syn-type">Set</span>(<span class="syn-type">Str</span>), containers : <span class="syn-type">Set</span>(<span class="syn-type">Str</span>), abbreviations : <span class="syn-type">Dict</span>(<span class="syn-type">Str</span>, <span class="syn-type">Str</span>) }
+
+	<span class="syn-comment">## The checks, in the order the counts give them.</span>
+	<span class="syn-name">check_names</span> : <span class="syn-type">List</span>(<span class="syn-type">Str</span>)
+	<span class="syn-name">check_names</span> = [<span class="syn-string">&quot;type_case&quot;</span>, <span class="syn-string">&quot;function_case&quot;</span>, <span class="syn-string">&quot;constant_case&quot;</span>, <span class="syn-string">&quot;zig_bound&quot;</span>, <span class="syn-string">&quot;bound_order&quot;</span>, <span class="syn-string">&quot;vague&quot;</span>, <span class="syn-string">&quot;do_word&quot;</span>, <span class="syn-string">&quot;vague_local&quot;</span>, <span class="syn-string">&quot;container_type&quot;</span>, <span class="syn-string">&quot;abbreviation&quot;</span>]
+
+	<span class="syn-comment">## A finding&#39;s line: `path:line: check: why`.</span>
+	<span class="syn-name">finding_line</span> : <span class="syn-type">Checks.Finding</span> -&gt; <span class="syn-type">Str</span>
+	<span class="syn-name">finding_line</span> = |finding| <span class="syn-string">&quot;</span>${finding.path}<span class="syn-string">:</span>${finding.line.to_str()}<span class="syn-string">: </span>${finding.check}<span class="syn-string">: </span>${finding.why}<span class="syn-string">&quot;</span>
+
+	<span class="syn-comment">## The file&#39;s findings by every check but `abbreviation`, and its</span>
+	<span class="syn-comment">## top-level names, in the order of its items.</span>
+	<span class="syn-name">of_file</span> : <span class="syn-type">Str</span>, <span class="syn-type">List</span>(<span class="syn-type">List</span>(<span class="syn-type">U8</span>)), <span class="syn-type">List</span>(<span class="syn-type">Item</span>), <span class="syn-type">Checks.Tables</span> -&gt; { found : <span class="syn-type">List</span>(<span class="syn-type">Checks.Finding</span>), named : <span class="syn-type">List</span>(<span class="syn-type">Checks.Named</span>) }
+	<span class="syn-name">of_file</span> = |path, lines, items, tables| {
+		<span class="syn-keyword">var</span> $found = []
+		<span class="syn-keyword">var</span> $names = []
+		<span class="syn-keyword">for</span> item <span class="syn-keyword">in</span> items {
+			opening = lines.get(item.first - <span class="syn-number">1</span>) ?? []
+			type = type_checks(item, opening, tables)
+			constants = constant_checks(item)
+			function = function_checks(lines, item, tables)
+			$found = $found.concat(type.found).concat(constants.found).concat(function.found)
+			named_here = type.names.concat(constants.names).concat(other_names(item)).concat(function.names)
+			$names = $names.concat(named_here.map(|name| { name, line: item.first }))
+		}
+		finding = |each| { path, line: each.line, check: each.check, why: each.why }
+		named = |each| { path, line: each.line, name: each.name, words: <span class="syn-type">Names</span>.words_of(each.name) }
+		{ found: $found.map(finding), named: $names.map(named) }
+	}
+}
+
+<span class="syn-comment">## A finding before its file is known: its line, its check and why.</span>
+<span class="syn-type">Found</span> : { line : <span class="syn-type">U64</span>, check : <span class="syn-type">Str</span>, why : <span class="syn-type">Str</span> }
+
+<span class="syn-comment">## What a check makes of an item: its findings, and the names it declares.</span>
+<span class="syn-type">Checked</span> : { found : <span class="syn-type">List</span>(<span class="syn-type">Found</span>), names : <span class="syn-type">List</span>(<span class="syn-type">Str</span>) }
+
+<span class="syn-comment">## The names a local or a parameter says nothing with.</span>
+<span class="syn-name">vague_locals</span> : <span class="syn-type">List</span>(<span class="syn-type">Str</span>)
+<span class="syn-name">vague_locals</span> = [<span class="syn-string">&quot;data&quot;</span>, <span class="syn-string">&quot;info&quot;</span>, <span class="syn-string">&quot;tmp&quot;</span>, <span class="syn-string">&quot;temp&quot;</span>, <span class="syn-string">&quot;stuff&quot;</span>, <span class="syn-string">&quot;thing&quot;</span>, <span class="syn-string">&quot;things&quot;</span>, <span class="syn-string">&quot;misc&quot;</span>, <span class="syn-string">&quot;util&quot;</span>, <span class="syn-string">&quot;helper&quot;</span>, <span class="syn-string">&quot;obj&quot;</span>, <span class="syn-string">&quot;handle&quot;</span>]
+
+<span class="syn-comment">## A function&#39;s lone word that is an entry point&#39;s, never vague alone.</span>
+<span class="syn-name">entry_words</span> : <span class="syn-type">List</span>(<span class="syn-type">Str</span>)
+<span class="syn-name">entry_words</span> = [<span class="syn-string">&quot;run&quot;</span>, <span class="syn-string">&quot;handle&quot;</span>]
+
+<span class="syn-comment">## A unit a bound&#39;s name may end with, after its `MAX` or `MIN`.</span>
+<span class="syn-name">units</span> : <span class="syn-type">List</span>(<span class="syn-type">Str</span>)
+<span class="syn-name">units</span> = [<span class="syn-string">&quot;MS&quot;</span>, <span class="syn-string">&quot;NS&quot;</span>, <span class="syn-string">&quot;US&quot;</span>, <span class="syn-string">&quot;S&quot;</span>, <span class="syn-string">&quot;BYTES&quot;</span>]
+
+<span class="syn-comment">## Whether there are words and every one of them is in the table.</span>
+<span class="syn-name">is_only</span> : <span class="syn-type">List</span>(<span class="syn-type">Str</span>), <span class="syn-type">Set</span>(<span class="syn-type">Str</span>) -&gt; <span class="syn-type">Bool</span>
+<span class="syn-name">is_only</span> = |words, table| !(words.is_empty()) <span class="syn-keyword">and</span> words.all(|word| table.contains(word))
+
+<span class="syn-comment">## A type&#39;s checks: a struct, union, typedef or enum, but no anonymous enum</span>
+<span class="syn-comment">## (its first constant its name, and no `typedef` opening it), which is</span>
+<span class="syn-comment">## constants, not a type.</span>
+<span class="syn-name">type_checks</span> : <span class="syn-type">Item</span>, <span class="syn-type">List</span>(<span class="syn-type">U8</span>), <span class="syn-type">Checks.Tables</span> -&gt; <span class="syn-type">Checked</span>
+<span class="syn-name">type_checks</span> = |item, opening, tables| {
+	is_type = item.kind == <span class="syn-type">Struct</span> <span class="syn-keyword">or</span> item.kind == <span class="syn-type">Union</span> <span class="syn-keyword">or</span> item.kind == <span class="syn-type">Typedef</span> <span class="syn-keyword">or</span> item.kind == <span class="syn-type">Enum</span>
+	is_anonymous = item.kind == <span class="syn-type">Enum</span> <span class="syn-keyword">and</span> item.enumerators.first() == <span class="syn-type">Ok</span>(item.name) <span class="syn-keyword">and</span> !(opening.starts_with(<span class="syn-string">&quot;typedef&quot;</span>.to_utf8()))
+	<span class="syn-keyword">if</span> is_type <span class="syn-keyword">and</span> !(is_anonymous) {
+		name = item.name
+		case = <span class="syn-keyword">if</span> <span class="syn-type">Names</span>.is_pascal_case(name) {
+			[]
+		} <span class="syn-keyword">else</span> {
+			[{ line: item.first, check: <span class="syn-string">&quot;type_case&quot;</span>, why: <span class="syn-string">&quot;the type `</span>${name}<span class="syn-string">` is not PascalCase&quot;</span> }]
+		}
+		container = <span class="syn-keyword">if</span> is_only(<span class="syn-type">Names</span>.words_of(name), tables.containers) {
+			[{ line: item.first, check: <span class="syn-string">&quot;container_type&quot;</span>, why: <span class="syn-string">&quot;the type `</span>${name}<span class="syn-string">` is only container words: name it for what it holds&quot;</span> }]
+		} <span class="syn-keyword">else</span> {
+			[]
+		}
+		{ found: case.concat(container), names: [name] }
+	} <span class="syn-keyword">else</span> {
+		{ found: [], names: [] }
+	}
+}
+
+<span class="syn-comment">## A constant&#39;s checks: each of an enum&#39;s constants, and a macro named in</span>
+<span class="syn-comment">## UPPER_SNAKE: its case, Zig&#39;s bound words, and a bound not last.</span>
+<span class="syn-name">constant_checks</span> : <span class="syn-type">Item</span> -&gt; <span class="syn-type">Checked</span>
+<span class="syn-name">constant_checks</span> = |item| {
+	macro = <span class="syn-keyword">if</span> item.kind == <span class="syn-type">Macro</span> <span class="syn-keyword">and</span> <span class="syn-type">Names</span>.is_upper_snake(item.name) {
+		[item.name]
+	} <span class="syn-keyword">else</span> {
+		[]
+	}
+	constants = item.enumerators.concat(macro)
+	cased =
+		item.enumerators
+			.keep_if(|constant| !(<span class="syn-type">Names</span>.is_upper_snake(constant)))
+			.map(|constant| { line: item.first, check: <span class="syn-string">&quot;constant_case&quot;</span>, why: <span class="syn-string">&quot;the constant `</span>${constant}<span class="syn-string">` is not UPPER_SNAKE&quot;</span> })
+	bounds = constants.fold([], |found, constant| found.concat(bound_checks(item.first, constant)))
+	{ found: cased.concat(bounds), names: constants }
+}
+
+<span class="syn-comment">## A constant&#39;s bound checks: `MOST` or `LEAST` among its words, and its</span>
+<span class="syn-comment">## first `MAX` or `MIN` before its last word, unless a unit alone follows it.</span>
+<span class="syn-name">bound_checks</span> : <span class="syn-type">U64</span>, <span class="syn-type">Str</span> -&gt; <span class="syn-type">List</span>(<span class="syn-type">Found</span>)
+<span class="syn-name">bound_checks</span> = |line, constant| {
+	words = constant.split_on(<span class="syn-string">&quot;_&quot;</span>)
+	zig = <span class="syn-keyword">if</span> words.contains(<span class="syn-string">&quot;MOST&quot;</span>) <span class="syn-keyword">or</span> words.contains(<span class="syn-string">&quot;LEAST&quot;</span>) {
+		[{ line, check: <span class="syn-string">&quot;zig_bound&quot;</span>, why: <span class="syn-string">&quot;`</span>${constant}<span class="syn-string">` is a bound in Zig&#39;s words: C&#39;s are `_MAX` and `_MIN`&quot;</span> }]
+	} <span class="syn-keyword">else</span> {
+		[]
+	}
+	count = words.len()
+	last_word = words.last() ?? <span class="syn-string">&quot;&quot;</span>
+	is_misplaced = |(at, word)|
+		(word == <span class="syn-string">&quot;MAX&quot;</span> <span class="syn-keyword">or</span> word == <span class="syn-string">&quot;MIN&quot;</span>) <span class="syn-keyword">and</span> at + <span class="syn-number">1</span> &lt; count <span class="syn-keyword">and</span> !(at + <span class="syn-number">2</span> == count <span class="syn-keyword">and</span> units.contains(last_word))
+	order =
+		<span class="syn-keyword">match</span> words.map_with_index(|word, at| (at, word)).find_first(is_misplaced) {
+			<span class="syn-type">Ok</span>((at, word)) =&gt; {
+				moved = words.drop_at(at).append(word)
+				why = <span class="syn-string">&quot;`</span>${constant}<span class="syn-string">` has `</span>${word}<span class="syn-string">` before its last word: a bound ends with it, as `</span>${<span class="syn-type">Str</span>.join_with(moved, <span class="syn-string">&quot;_&quot;</span>)}<span class="syn-string">` would&quot;</span>
+				[{ line, check: <span class="syn-string">&quot;bound_order&quot;</span>, why }]
+			}
+			<span class="syn-type">Err</span>(_) =&gt; []
+		}
+	zig.concat(order)
+}
+
+<span class="syn-comment">## The names of a macro not in UPPER_SNAKE and of named data, which no</span>
+<span class="syn-comment">## check reads but `abbreviation`.</span>
+<span class="syn-name">other_names</span> : <span class="syn-type">Item</span> -&gt; <span class="syn-type">List</span>(<span class="syn-type">Str</span>)
+<span class="syn-name">other_names</span> = |item|
+	<span class="syn-keyword">if</span> item.kind == <span class="syn-type">Macro</span> <span class="syn-keyword">and</span> !(<span class="syn-type">Names</span>.is_upper_snake(item.name)) {
+		[item.name]
+	} <span class="syn-keyword">else</span> <span class="syn-keyword">if</span> item.kind == <span class="syn-type">Data</span> <span class="syn-keyword">and</span> item.name != <span class="syn-string">&quot;&quot;</span> {
+		[item.name]
+	} <span class="syn-keyword">else</span> {
+		[]
+	}
+
+<span class="syn-comment">## A function&#39;s checks: its case (`main` aside), vague words alone, `do`,</span>
+<span class="syn-comment">## and its vague parameters and locals.</span>
+<span class="syn-name">function_checks</span> : <span class="syn-type">List</span>(<span class="syn-type">List</span>(<span class="syn-type">U8</span>)), <span class="syn-type">Item</span>, <span class="syn-type">Checks.Tables</span> -&gt; <span class="syn-type">Checked</span>
+<span class="syn-name">function_checks</span> = |lines, item, tables| {
+	<span class="syn-keyword">if</span> item.kind != <span class="syn-type">Function</span> {
+		<span class="syn-keyword">return</span> { found: [], names: [] }
+	}
+	name = item.name
+	at = item.first
+	case = <span class="syn-keyword">if</span> name == <span class="syn-string">&quot;main&quot;</span> <span class="syn-keyword">or</span> <span class="syn-type">Names</span>.is_snake_case(name) {
+		[]
+	} <span class="syn-keyword">else</span> {
+		[{ line: at, check: <span class="syn-string">&quot;function_case&quot;</span>, why: <span class="syn-string">&quot;the function `</span>${name}<span class="syn-string">` is not snake_case&quot;</span> }]
+	}
+	words = <span class="syn-type">Names</span>.words_of(name)
+	is_entry = words.len() == <span class="syn-number">1</span> <span class="syn-keyword">and</span> words.all(|word| entry_words.contains(word))
+	vague = <span class="syn-keyword">if</span> is_only(words, tables.vague) <span class="syn-keyword">and</span> !(is_entry) {
+		[{ line: at, check: <span class="syn-string">&quot;vague&quot;</span>, why: <span class="syn-string">&quot;`</span>${name}<span class="syn-string">` is only vague words: what does it act on, and how?&quot;</span> }]
+	} <span class="syn-keyword">else</span> {
+		[]
+	}
+	do_word = <span class="syn-keyword">if</span> name.split_on(<span class="syn-string">&quot;_&quot;</span>).contains(<span class="syn-string">&quot;do&quot;</span>) {
+		[{ line: at, check: <span class="syn-string">&quot;do_word&quot;</span>, why: <span class="syn-string">&quot;`</span>${name}<span class="syn-string">` has `do` in it, which says only that it acts: name the act&quot;</span> }]
+	} <span class="syn-keyword">else</span> {
+		[]
+	}
+	parameters =
+		<span class="syn-type">Declared</span>.parameters(head_of(lines, item))
+			.keep_if(|parameter| vague_locals.contains(parameter))
+			.map(|parameter| { line: at, check: <span class="syn-string">&quot;vague_local&quot;</span>, why: <span class="syn-string">&quot;`</span>${name}<span class="syn-string">`&#39;s parameter `</span>${parameter}<span class="syn-string">` says nothing of what it holds&quot;</span> })
+	{ found: case.concat(vague).concat(do_word).concat(parameters).concat(vague_body_locals(lines, item)), names: [name] }
+}
+
+<span class="syn-comment">## A function&#39;s head, masked, each run of `\s` one space; a head that shares</span>
+<span class="syn-comment">## its line with the body ends before the body&#39;s `{`.</span>
+<span class="syn-name">head_of</span> : <span class="syn-type">List</span>(<span class="syn-type">List</span>(<span class="syn-type">U8</span>)), <span class="syn-type">Item</span> -&gt; <span class="syn-type">List</span>(<span class="syn-type">U8</span>)
+<span class="syn-name">head_of</span> = |lines, item| {
+	head = spaces_made_one(<span class="syn-type">Split</span>.masked_text(lines, { first: item.sig_first, last: item.sig_last }))
+	<span class="syn-keyword">if</span> item.body_first == item.sig_last {
+		<span class="syn-keyword">match</span> <span class="syn-type">Mask</span>.byte_from(head, <span class="syn-string">&#39;{&#39;</span>, <span class="syn-number">0</span>) {
+			<span class="syn-type">Ok</span>(brace) =&gt; head.take_first(brace)
+			<span class="syn-type">Err</span>(_) =&gt; head
+		}
+	} <span class="syn-keyword">else</span> {
+		head
+	}
+}
+
+<span class="syn-comment">## The vague locals a function&#39;s body declares, a finding at each one&#39;s</span>
+<span class="syn-comment">## line: a body below its head, each line masked.</span>
+<span class="syn-name">vague_body_locals</span> : <span class="syn-type">List</span>(<span class="syn-type">List</span>(<span class="syn-type">U8</span>)), <span class="syn-type">Item</span> -&gt; <span class="syn-type">List</span>(<span class="syn-type">Found</span>)
+<span class="syn-name">vague_body_locals</span> = |lines, item| {
+	<span class="syn-keyword">if</span> item.body_first == <span class="syn-number">0</span> <span class="syn-keyword">or</span> item.body_first == item.sig_last {
+		<span class="syn-keyword">return</span> []
+	}
+	<span class="syn-keyword">var</span> $found = []
+	<span class="syn-keyword">var</span> $at = item.body_first
+	<span class="syn-keyword">while</span> $at &lt;= item.body_last {
+		<span class="syn-keyword">match</span> <span class="syn-type">Declared</span>.local(<span class="syn-type">Mask</span>.masked(lines.get($at - <span class="syn-number">1</span>) ?? [])) {
+			<span class="syn-type">Ok</span>(local) <span class="syn-keyword">if</span> vague_locals.contains(local) =&gt; {
+				why = <span class="syn-string">&quot;`</span>${item.name}<span class="syn-string">`&#39;s local `</span>${local}<span class="syn-string">` says nothing of what it holds&quot;</span>
+				$found = $found.append({ line: $at, check: <span class="syn-string">&quot;vague_local&quot;</span>, why })
+			}
+			_ =&gt; {}
+		}
+		$at = $at + <span class="syn-number">1</span>
+	}
+	$found
+}
+
+<span class="syn-comment">## The text with each run of `\s` made one space.</span>
+<span class="syn-name">spaces_made_one</span> : <span class="syn-type">List</span>(<span class="syn-type">U8</span>) -&gt; <span class="syn-type">List</span>(<span class="syn-type">U8</span>)
+<span class="syn-name">spaces_made_one</span> = |text|
+	text.fold(
+		[],
+		|out, byte|
+			<span class="syn-keyword">if</span> !(<span class="syn-type">Mask</span>.is_space(byte)) {
+				out.append(byte)
+			} <span class="syn-keyword">else</span> <span class="syn-keyword">if</span> out.last() == <span class="syn-type">Ok</span>(<span class="syn-string">&#39; &#39;</span>) {
+				<span class="syn-comment"># A space is `\s`, so one that ends `out` is a run&#39;s already.</span>
+				out
+			} <span class="syn-keyword">else</span> {
+				out.append(<span class="syn-string">&#39; &#39;</span>)
+			},
+	)
+</code></pre>
+<p class="file"><a href="https://github.com/showell/shale/blob/1759a0dc6532635473bb0b5b9c0ed1b701f1b7f1/cookbook/c/hunt_names/SelfTest.roc"><code>cookbook/c/hunt_names/SelfTest.roc</code></a>, 71 lines</p>
+<pre><code><span class="syn-comment">## hunt_names&#39; self-test: the hunt run over cookbook/c/plants/hunt_names/,</span>
+<span class="syn-comment">## each plant named for the check it holds (`do_word.c`), each near miss in</span>
+<span class="syn-comment">## `quiet_&lt;check&gt;.c`, and the findings held to the plants&#39; list exactly:</span>
+<span class="syn-comment">## every check fires on its own plant and on no other, and a quiet plant on</span>
+<span class="syn-comment">## none.</span>
+<span class="syn-keyword">import</span> pf.<span class="syn-type">Shale</span>
+<span class="syn-keyword">import</span> <span class="syn-type">Checks</span>
+
+<span class="syn-type">SelfTest</span> := [].{
+
+	<span class="syn-comment">## Every check, a FAIL line for each that fails and then a stop, else the</span>
+	<span class="syn-comment">## PASS line. `hunt!` is the recipe&#39;s own, a folder&#39;s findings, sorted.</span>
+	<span class="syn-name">run!</span> : (<span class="syn-type">Str</span> =&gt; { found : <span class="syn-type">List</span>(<span class="syn-type">Checks.Finding</span>), files : <span class="syn-type">U64</span> }) =&gt; {}
+	<span class="syn-name">run!</span> = |hunt!| {
+		found = hunt!(plants).found
+		fired = found.map(|finding| (finding.path, finding.check))
+		silent =
+			<span class="syn-type">Checks</span>.check_names
+				.keep_if(|check| !(fired.contains((plant_of(check), check))))
+				.map(|check| <span class="syn-string">&quot;`</span>${check}<span class="syn-string">` does not fire on its plant </span>${plant_of(check)}<span class="syn-string">&quot;</span>)
+		elsewhere =
+			found
+				.keep_if(|finding| finding.path != plant_of(finding.check))
+				.map(|finding| <span class="syn-string">&quot;`</span>${finding.check}<span class="syn-string">` fires on </span>${finding.path}<span class="syn-string">:</span>${finding.line.to_str()}<span class="syn-string">, not its plant&quot;</span>)
+		got = <span class="syn-type">Str</span>.join_with(found.map(<span class="syn-type">Checks</span>.finding_line), <span class="syn-string">&quot;\n&quot;</span>)
+		want = <span class="syn-type">Str</span>.join_with(wanted, <span class="syn-string">&quot;\n&quot;</span>)
+		listed = <span class="syn-keyword">if</span> got == want {
+			[]
+		} <span class="syn-keyword">else</span> {
+			[<span class="syn-string">&quot;the plants&#39; findings are\n</span>${got}<span class="syn-string">\nthey should be\n</span>${want}<span class="syn-string">&quot;</span>]
+		}
+		wrong = silent.concat(elsewhere).concat(listed)
+		<span class="syn-keyword">for</span> why <span class="syn-keyword">in</span> wrong {
+			<span class="syn-type">Shale</span>.print!(<span class="syn-string">&quot;FAIL </span>${why}<span class="syn-string">&quot;</span>)
+		}
+		<span class="syn-keyword">if</span> !(wrong.is_empty()) {
+			<span class="syn-type">Shale</span>.fail!(<span class="syn-string">&quot;hunt_names self-test: </span>${wrong.len().to_str()}<span class="syn-string"> wrong&quot;</span>)
+		}
+		checks = <span class="syn-string">&quot;</span>${<span class="syn-type">Checks</span>.check_names.len().to_str()}<span class="syn-string"> checks, each firing on its own plant alone&quot;</span>
+		<span class="syn-type">Shale</span>.print!(<span class="syn-string">&quot;PASS hunt_names self-test: </span>${checks}<span class="syn-string">, </span>${wanted.len().to_str()}<span class="syn-string"> findings exactly, the quiet plants on none&quot;</span>)
+	}
+}
+
+<span class="syn-comment">## Where the plants are.</span>
+<span class="syn-name">plants</span> : <span class="syn-type">Str</span>
+<span class="syn-name">plants</span> = <span class="syn-string">&quot;cookbook/c/plants/hunt_names&quot;</span>
+
+<span class="syn-comment">## The plant a check fires on.</span>
+<span class="syn-name">plant_of</span> : <span class="syn-type">Str</span> -&gt; <span class="syn-type">Str</span>
+<span class="syn-name">plant_of</span> = |check| <span class="syn-string">&quot;</span>${plants}<span class="syn-string">/</span>${check}<span class="syn-string">.c&quot;</span>
+
+<span class="syn-comment">## The plants&#39; findings, every one, in order.</span>
+<span class="syn-name">wanted</span> : <span class="syn-type">List</span>(<span class="syn-type">Str</span>)
+<span class="syn-name">wanted</span> = {
+	p = <span class="syn-string">&quot;</span>${plants}<span class="syn-string">/&quot;</span>
+	[
+		<span class="syn-string">&quot;</span>${p}<span class="syn-string">abbreviation.c:4: abbreviation: `bi` for `builtin`, which other names spell out, in 1 name here: `bi_length`&quot;</span>,
+		<span class="syn-string">&quot;</span>${p}<span class="syn-string">bound_order.c:4: bound_order: `BOUND_MAX_NAME` has `MAX` before its last word: a bound ends with it, as `BOUND_NAME_MAX` would&quot;</span>,
+		<span class="syn-string">&quot;</span>${p}<span class="syn-string">constant_case.c:4: constant_case: the constant `constant_wrong` is not UPPER_SNAKE&quot;</span>,
+		<span class="syn-string">&quot;</span>${p}<span class="syn-string">container_type.c:4: container_type: the type `Entry` is only container words: name it for what it holds&quot;</span>,
+		<span class="syn-string">&quot;</span>${p}<span class="syn-string">container_type.c:8: container_type: the type `NodeInfo` is only container words: name it for what it holds&quot;</span>,
+		<span class="syn-string">&quot;</span>${p}<span class="syn-string">do_word.c:4: do_word: `store_do_write` has `do` in it, which says only that it acts: name the act&quot;</span>,
+		<span class="syn-string">&quot;</span>${p}<span class="syn-string">function_case.c:4: function_case: the function `readThing` is not snake_case&quot;</span>,
+		<span class="syn-string">&quot;</span>${p}<span class="syn-string">type_case.c:4: type_case: the type `bad_type` is not PascalCase&quot;</span>,
+		<span class="syn-string">&quot;</span>${p}<span class="syn-string">vague.c:4: vague: `handle_data` is only vague words: what does it act on, and how?&quot;</span>,
+		<span class="syn-string">&quot;</span>${p}<span class="syn-string">vague_local.c:4: vague_local: `vague_local_sum`&#39;s parameter `data` says nothing of what it holds&quot;</span>,
+		<span class="syn-string">&quot;</span>${p}<span class="syn-string">vague_local.c:5: vague_local: `vague_local_sum`&#39;s local `tmp` says nothing of what it holds&quot;</span>,
+		<span class="syn-string">&quot;</span>${p}<span class="syn-string">zig_bound.c:4: zig_bound: `ZIG_BOUND_MOST` is a bound in Zig&#39;s words: C&#39;s are `_MAX` and `_MIN`&quot;</span>,
+		<span class="syn-string">&quot;</span>${p}<span class="syn-string">zig_bound.c:8: zig_bound: `ZIG_BOUND_LEAST` is a bound in Zig&#39;s words: C&#39;s are `_MAX` and `_MIN`&quot;</span>,
+	]
+}
+</code></pre>
+<p class="file"><a href="https://github.com/showell/shale/blob/1759a0dc6532635473bb0b5b9c0ed1b701f1b7f1/cookbook/c/hunt_names/Declared.roc"><code>cookbook/c/hunt_names/Declared.roc</code></a>, 195 lines</p>
+<pre><code><span class="syn-comment">## The names a function declares, as hunt_names reads them from its masked</span>
+<span class="syn-comment">## lines: its parameters, from its head, and a body line&#39;s local. Each is a</span>
+<span class="syn-comment">## regular expression of cookbook/c/hunt_names.shale, the Shale original,</span>
+<span class="syn-comment">## done by hand, its alternatives tried in the order the expression&#39;s own</span>
+<span class="syn-comment">## matcher tries them, so the first match is the original&#39;s.</span>
+<span class="syn-keyword">import</span> items.<span class="syn-type">Mask</span>
+
+<span class="syn-type">Declared</span> := [].{
+
+	<span class="syn-comment">## The names a function&#39;s head declares as its parameters: each part&#39;s last</span>
+	<span class="syn-comment">## word, between the head&#39;s first `(` and its last `)`, `void` none. A</span>
+	<span class="syn-comment">## part&#39;s name is `(\w+)\s*(\[[^\]]*\])?\s*$`: a word, then at most one</span>
+	<span class="syn-comment">## `[...]`, at the part&#39;s end, so a function pointer&#39;s part has none.</span>
+	<span class="syn-name">parameters</span> : <span class="syn-type">List</span>(<span class="syn-type">U8</span>) -&gt; <span class="syn-type">List</span>(<span class="syn-type">Str</span>)
+	<span class="syn-name">parameters</span> = |head| {
+		open = head.find_first_index(|byte| byte == <span class="syn-string">&#39;(&#39;</span>)
+		close = head.find_last_index(|byte| byte == <span class="syn-string">&#39;)&#39;</span>)
+		<span class="syn-keyword">match</span> (open, close) {
+			(<span class="syn-type">Ok</span>(start), <span class="syn-type">Ok</span>(end)) <span class="syn-keyword">if</span> end &gt; start =&gt; {
+				inside = head.sublist({ start: start + <span class="syn-number">1</span>, len: end - start - <span class="syn-number">1</span> })
+				inside
+					.split_on(<span class="syn-string">&#39;,&#39;</span>)
+					.keep_oks(parameter_name)
+					.keep_if(|name| name != <span class="syn-string">&quot;void&quot;</span>)
+			}
+			_ =&gt; []
+		}
+	}
+
+	<span class="syn-comment">## A body line&#39;s declared local, from its masked code: `Type name =`,</span>
+	<span class="syn-comment">## `Type *name;`, `const Type name[`, as the original&#39;s</span>
+	<span class="syn-comment">## `^\s*(?:const\s+|static\s+|struct\s+|unsigned\s+)*([A-Za-z_]\w*)(?:\s*\*+\s*|\s+)(?:const\s+)?\*?([a-z_]\w*)\s*(?:=|;|\[)`</span>
+	<span class="syn-comment">## matches it. A first word that is no type (`return x;`) declares</span>
+	<span class="syn-comment">## nothing.</span>
+	<span class="syn-name">local</span> : <span class="syn-type">List</span>(<span class="syn-type">U8</span>) -&gt; <span class="syn-type">Try</span>(<span class="syn-type">Str</span>, [<span class="syn-type">NoLocal</span>])
+	<span class="syn-name">local</span> = |code| {
+		starts = keyword_starts(code, [<span class="syn-type">Mask</span>.spaces_end(code, <span class="syn-number">0</span>)])
+		<span class="syn-comment"># The `*` takes the most keywords first, then gives them back one by one.</span>
+		<span class="syn-keyword">var</span> $left = starts.len()
+		<span class="syn-keyword">while</span> $left &gt; <span class="syn-number">0</span> {
+			$left = $left - <span class="syn-number">1</span>
+			<span class="syn-keyword">match</span> declared_from(code, starts.get($left) ?? <span class="syn-number">0</span>) {
+				<span class="syn-type">Ok</span>({ type_word, name }) =&gt; {
+					<span class="syn-keyword">if</span> not_types.contains(type_word) {
+						<span class="syn-keyword">return</span> <span class="syn-type">Err</span>(<span class="syn-type">NoLocal</span>)
+					}
+					<span class="syn-keyword">return</span> <span class="syn-type">Ok</span>(name)
+				}
+				<span class="syn-type">Err</span>(_) =&gt; {}
+			}
+		}
+		<span class="syn-type">Err</span>(<span class="syn-type">NoLocal</span>)
+	}
+}
+
+<span class="syn-comment">## A declaration&#39;s first word that is no type: `return x;` declares nothing.</span>
+<span class="syn-name">not_types</span> : <span class="syn-type">List</span>(<span class="syn-type">Str</span>)
+<span class="syn-name">not_types</span> = [<span class="syn-string">&quot;return&quot;</span>, <span class="syn-string">&quot;else&quot;</span>, <span class="syn-string">&quot;case&quot;</span>, <span class="syn-string">&quot;goto&quot;</span>, <span class="syn-string">&quot;do&quot;</span>, <span class="syn-string">&quot;sizeof&quot;</span>, <span class="syn-string">&quot;typedef&quot;</span>, <span class="syn-string">&quot;break&quot;</span>, <span class="syn-string">&quot;continue&quot;</span>]
+
+<span class="syn-comment">## The words a declaration may start with before its type, each with the</span>
+<span class="syn-comment">## spaces after it.</span>
+<span class="syn-name">type_keywords</span> : <span class="syn-type">List</span>(<span class="syn-type">Str</span>)
+<span class="syn-name">type_keywords</span> = [<span class="syn-string">&quot;const&quot;</span>, <span class="syn-string">&quot;static&quot;</span>, <span class="syn-string">&quot;struct&quot;</span>, <span class="syn-string">&quot;unsigned&quot;</span>]
+
+<span class="syn-comment">## The bytes from `start` to `end` as text.</span>
+<span class="syn-name">text_of</span> : <span class="syn-type">List</span>(<span class="syn-type">U8</span>), <span class="syn-type">U64</span>, <span class="syn-type">U64</span> -&gt; <span class="syn-type">Str</span>
+<span class="syn-name">text_of</span> = |bytes, start, end| <span class="syn-type">Mask</span>.text(bytes.sublist({ start, len: end - start }))
+
+<span class="syn-comment">## A part of the parameters&#39; name: the first run of `\w` whose rest is</span>
+<span class="syn-comment">## `\s*(\[[^\]]*\])?\s*$`. Every start inside one run leaves the same rest,</span>
+<span class="syn-comment">## so the leftmost match is a whole run.</span>
+<span class="syn-name">parameter_name</span> : <span class="syn-type">List</span>(<span class="syn-type">U8</span>) -&gt; <span class="syn-type">Try</span>(<span class="syn-type">Str</span>, [<span class="syn-type">NoName</span>])
+<span class="syn-name">parameter_name</span> = |part| {
+	$at : <span class="syn-type">U64</span>
+	<span class="syn-keyword">var</span> $at = <span class="syn-number">0</span>
+	<span class="syn-keyword">while</span> $at &lt; part.len() {
+		end = <span class="syn-type">Mask</span>.word_end(part, $at)
+		<span class="syn-keyword">if</span> end == $at {
+			$at = $at + <span class="syn-number">1</span>
+		} <span class="syn-keyword">else</span> <span class="syn-keyword">if</span> ends_part(part, end) {
+			<span class="syn-keyword">return</span> <span class="syn-type">Ok</span>(text_of(part, $at, end))
+		} <span class="syn-keyword">else</span> {
+			$at = end
+		}
+	}
+	<span class="syn-type">Err</span>(<span class="syn-type">NoName</span>)
+}
+
+<span class="syn-comment">## Whether what follows `at` is `\s*(\[[^\]]*\])?\s*$`: spaces, at most one</span>
+<span class="syn-comment">## `[...]`, spaces, and the part&#39;s end.</span>
+<span class="syn-name">ends_part</span> : <span class="syn-type">List</span>(<span class="syn-type">U8</span>), <span class="syn-type">U64</span> -&gt; <span class="syn-type">Bool</span>
+<span class="syn-name">ends_part</span> = |part, at| {
+	after = <span class="syn-type">Mask</span>.spaces_end(part, at)
+	<span class="syn-keyword">if</span> after == part.len() {
+		<span class="syn-type">Bool.True</span>
+	} <span class="syn-keyword">else</span> <span class="syn-keyword">if</span> part.get(after) == <span class="syn-type">Ok</span>(<span class="syn-string">&#39;[&#39;</span>) {
+		<span class="syn-keyword">match</span> <span class="syn-type">Mask</span>.byte_from(part, <span class="syn-string">&#39;]&#39;</span>, after + <span class="syn-number">1</span>) {
+			<span class="syn-type">Ok</span>(close) =&gt; <span class="syn-type">Mask</span>.spaces_end(part, close + <span class="syn-number">1</span>) == part.len()
+			<span class="syn-type">Err</span>(_) =&gt; <span class="syn-type">Bool.False</span>
+		}
+	} <span class="syn-keyword">else</span> {
+		<span class="syn-type">Bool.False</span>
+	}
+}
+
+<span class="syn-comment">## Where the type word may start: `starts`, the first after the leading</span>
+<span class="syn-comment">## spaces, then after each keyword of `type_keywords` and its spaces, as</span>
+<span class="syn-comment">## many as follow one another.</span>
+<span class="syn-name">keyword_starts</span> : <span class="syn-type">List</span>(<span class="syn-type">U8</span>), <span class="syn-type">List</span>(<span class="syn-type">U64</span>) -&gt; <span class="syn-type">List</span>(<span class="syn-type">U64</span>)
+<span class="syn-name">keyword_starts</span> = |code, starts| {
+	at = starts.last() ?? <span class="syn-number">0</span>
+	<span class="syn-keyword">match</span> type_keywords.find_first(|keyword| <span class="syn-type">Mask</span>.holds_at(code, at, keyword) <span class="syn-keyword">and</span> <span class="syn-type">Mask</span>.is_space_at(code, at + keyword.count_utf8_bytes())) {
+		<span class="syn-type">Ok</span>(keyword) =&gt; keyword_starts(code, starts.append(<span class="syn-type">Mask</span>.spaces_end(code, at + keyword.count_utf8_bytes())))
+		<span class="syn-type">Err</span>(_) =&gt; starts
+	}
+}
+
+<span class="syn-comment">## The type word at `start` and the name after it: `([A-Za-z_]\w*)`, then</span>
+<span class="syn-comment">## `\s*\*+\s*` (tried first) or `\s+`, then the name.</span>
+<span class="syn-name">declared_from</span> : <span class="syn-type">List</span>(<span class="syn-type">U8</span>), <span class="syn-type">U64</span> -&gt; <span class="syn-type">Try</span>({ type_word : <span class="syn-type">Str</span>, name : <span class="syn-type">Str</span> }, [<span class="syn-type">NoLocal</span>])
+<span class="syn-name">declared_from</span> = |code, start| {
+	<span class="syn-keyword">if</span> !(<span class="syn-type">Mask</span>.is_name_start(code.get(start) ?? <span class="syn-number">0</span>)) {
+		<span class="syn-keyword">return</span> <span class="syn-type">Err</span>(<span class="syn-type">NoLocal</span>)
+	}
+	type_end = <span class="syn-type">Mask</span>.word_end(code, start)
+	before_stars = <span class="syn-type">Mask</span>.spaces_end(code, type_end)
+	with_stars =
+		<span class="syn-keyword">if</span> code.get(before_stars) == <span class="syn-type">Ok</span>(<span class="syn-string">&#39;*&#39;</span>) {
+			[<span class="syn-type">Mask</span>.spaces_end(code, stars_end(code, before_stars))]
+		} <span class="syn-keyword">else</span> {
+			[]
+		}
+	with_spaces =
+		<span class="syn-keyword">if</span> <span class="syn-type">Mask</span>.is_space_at(code, type_end) {
+			[<span class="syn-type">Mask</span>.spaces_end(code, type_end)]
+		} <span class="syn-keyword">else</span> {
+			[]
+		}
+	<span class="syn-keyword">match</span> with_stars.concat(with_spaces).keep_oks(|at| name_after(code, at)).first() {
+		<span class="syn-type">Ok</span>(name) =&gt; <span class="syn-type">Ok</span>({ type_word: text_of(code, start, type_end), name })
+		<span class="syn-type">Err</span>(_) =&gt; <span class="syn-type">Err</span>(<span class="syn-type">NoLocal</span>)
+	}
+}
+
+<span class="syn-comment">## The first place at `at` or after it that is no `*`.</span>
+<span class="syn-name">stars_end</span> : <span class="syn-type">List</span>(<span class="syn-type">U8</span>), <span class="syn-type">U64</span> -&gt; <span class="syn-type">U64</span>
+<span class="syn-name">stars_end</span> = |code, at| {
+	<span class="syn-keyword">var</span> $end = at
+	<span class="syn-keyword">while</span> code.get($end) == <span class="syn-type">Ok</span>(<span class="syn-string">&#39;*&#39;</span>) {
+		$end = $end + <span class="syn-number">1</span>
+	}
+	$end
+}
+
+<span class="syn-comment">## The name after a declaration&#39;s type and its stars:</span>
+<span class="syn-comment">## `(?:const\s+)?\*?([a-z_]\w*)\s*(?:=|;|\[)`, each optional part taken</span>
+<span class="syn-comment">## first, then left.</span>
+<span class="syn-name">name_after</span> : <span class="syn-type">List</span>(<span class="syn-type">U8</span>), <span class="syn-type">U64</span> -&gt; <span class="syn-type">Try</span>(<span class="syn-type">Str</span>, [<span class="syn-type">NoLocal</span>])
+<span class="syn-name">name_after</span> = |code, at| {
+	keyword_end = at + <span class="syn-number">5</span>
+	after_const =
+		<span class="syn-keyword">if</span> <span class="syn-type">Mask</span>.holds_at(code, at, <span class="syn-string">&quot;const&quot;</span>) <span class="syn-keyword">and</span> <span class="syn-type">Mask</span>.is_space_at(code, keyword_end) {
+			[<span class="syn-type">Mask</span>.spaces_end(code, keyword_end)]
+		} <span class="syn-keyword">else</span> {
+			[]
+		}
+	starts = after_const.concat([at]).fold(
+		[],
+		|tried, place|
+			<span class="syn-keyword">if</span> code.get(place) == <span class="syn-type">Ok</span>(<span class="syn-string">&#39;*&#39;</span>) {
+				tried.concat([place + <span class="syn-number">1</span>, place])
+			} <span class="syn-keyword">else</span> {
+				tried.append(place)
+			},
+	)
+	<span class="syn-keyword">match</span> starts.keep_oks(|start| name_at(code, start)).first() {
+		<span class="syn-type">Ok</span>(name) =&gt; <span class="syn-type">Ok</span>(name)
+		<span class="syn-type">Err</span>(_) =&gt; <span class="syn-type">Err</span>(<span class="syn-type">NoLocal</span>)
+	}
+}
+
+<span class="syn-comment">## The name at `start`, `[a-z_]\w*`, when `\s*` then `=`, `;` or `[`</span>
+<span class="syn-comment">## follows it.</span>
+<span class="syn-name">name_at</span> : <span class="syn-type">List</span>(<span class="syn-type">U8</span>), <span class="syn-type">U64</span> -&gt; <span class="syn-type">Try</span>(<span class="syn-type">Str</span>, [<span class="syn-type">NoLocal</span>])
+<span class="syn-name">name_at</span> = |code, start| {
+	first = code.get(start) ?? <span class="syn-number">0</span>
+	<span class="syn-keyword">if</span> !((first &gt;= <span class="syn-string">&#39;a&#39;</span> <span class="syn-keyword">and</span> first &lt;= <span class="syn-string">&#39;z&#39;</span>) <span class="syn-keyword">or</span> first == <span class="syn-string">&#39;_&#39;</span>) {
+		<span class="syn-keyword">return</span> <span class="syn-type">Err</span>(<span class="syn-type">NoLocal</span>)
+	}
+	end = <span class="syn-type">Mask</span>.word_end(code, start)
+	<span class="syn-keyword">match</span> code.get(<span class="syn-type">Mask</span>.spaces_end(code, end)) {
+		<span class="syn-type">Ok</span>(byte) <span class="syn-keyword">if</span> byte == <span class="syn-string">&#39;=&#39;</span> <span class="syn-keyword">or</span> byte == <span class="syn-string">&#39;;&#39;</span> <span class="syn-keyword">or</span> byte == <span class="syn-string">&#39;[&#39;</span> =&gt; <span class="syn-type">Ok</span>(text_of(code, start, end))
+		_ =&gt; <span class="syn-type">Err</span>(<span class="syn-type">NoLocal</span>)
+	}
+}
+</code></pre>
+<p class="file"><a href="https://github.com/showell/shale/blob/1759a0dc6532635473bb0b5b9c0ed1b701f1b7f1/cookbook/c/hunt_names/Names.roc"><code>cookbook/c/hunt_names/Names.roc</code></a>, 72 lines</p>
+<pre><code><span class="syn-comment">## The words and the cases of a C name, as hunt_names reads them: the</span>
+<span class="syn-comment">## regular expressions of cookbook/c/hunt_names.shale, the Shale original,</span>
+<span class="syn-comment">## done by hand over the name&#39;s bytes. A name of Shale&#39;s C is ASCII, and a</span>
+<span class="syn-comment">## byte past it is in no class here.</span>
+<span class="syn-type">Names</span> := [].{
+
+	<span class="syn-comment">## A C name&#39;s words, lower case: `NodeInfo`, `node_info` and `NODE_INFO`</span>
+	<span class="syn-comment">## all `[node, info]`. A `_` goes between a lower-case letter or a digit</span>
+	<span class="syn-comment">## and the capital after it (`([a-z0-9])([A-Z])`), then the name is cut at</span>
+	<span class="syn-comment">## each `_`, an empty word left out.</span>
+	<span class="syn-name">words_of</span> : <span class="syn-type">Str</span> -&gt; <span class="syn-type">List</span>(<span class="syn-type">Str</span>)
+	<span class="syn-name">words_of</span> = |name| {
+		bytes = name.to_utf8()
+		<span class="syn-keyword">var</span> $spelled = []
+		$at : <span class="syn-type">U64</span>
+		<span class="syn-keyword">var</span> $at = <span class="syn-number">0</span>
+		<span class="syn-keyword">while</span> $at &lt; bytes.len() {
+			byte = bytes.get($at) ?? <span class="syn-number">0</span>
+			$spelled = $spelled.append(lowered(byte))
+			next = bytes.get($at + <span class="syn-number">1</span>) ?? <span class="syn-number">0</span>
+			<span class="syn-keyword">if</span> (is_lower(byte) <span class="syn-keyword">or</span> is_digit(byte)) <span class="syn-keyword">and</span> is_upper(next) {
+				$spelled = $spelled.append(<span class="syn-string">&#39;_&#39;</span>)
+			}
+			$at = $at + <span class="syn-number">1</span>
+		}
+		$spelled.split_on(<span class="syn-string">&#39;_&#39;</span>).keep_if(|word| !(word.is_empty())).map(|word| <span class="syn-type">Str</span>.from_utf8_lossy(word))
+	}
+
+	<span class="syn-comment">## Whether the name is `^[A-Z][A-Za-z0-9]*$`: a type&#39;s PascalCase.</span>
+	<span class="syn-name">is_pascal_case</span> : <span class="syn-type">Str</span> -&gt; <span class="syn-type">Bool</span>
+	<span class="syn-name">is_pascal_case</span> = |name|
+		is_shaped(name, is_upper, |byte| is_upper(byte) <span class="syn-keyword">or</span> is_lower(byte) <span class="syn-keyword">or</span> is_digit(byte))
+
+	<span class="syn-comment">## Whether the name is `^[a-z][a-z0-9_]*$`: a function&#39;s snake_case.</span>
+	<span class="syn-name">is_snake_case</span> : <span class="syn-type">Str</span> -&gt; <span class="syn-type">Bool</span>
+	<span class="syn-name">is_snake_case</span> = |name|
+		is_shaped(name, is_lower, |byte| is_lower(byte) <span class="syn-keyword">or</span> is_digit(byte) <span class="syn-keyword">or</span> byte == <span class="syn-string">&#39;_&#39;</span>)
+
+	<span class="syn-comment">## Whether the name is `^[A-Z][A-Z0-9_]*$`: a constant&#39;s UPPER_SNAKE.</span>
+	<span class="syn-name">is_upper_snake</span> : <span class="syn-type">Str</span> -&gt; <span class="syn-type">Bool</span>
+	<span class="syn-name">is_upper_snake</span> = |name|
+		is_shaped(name, is_upper, |byte| is_upper(byte) <span class="syn-keyword">or</span> is_digit(byte) <span class="syn-keyword">or</span> byte == <span class="syn-string">&#39;_&#39;</span>)
+}
+
+<span class="syn-comment">## Whether the name&#39;s first byte is `first`&#39;s and every byte after it is</span>
+<span class="syn-comment">## `rest`&#39;s, an empty name being neither.</span>
+<span class="syn-name">is_shaped</span> : <span class="syn-type">Str</span>, (<span class="syn-type">U8</span> -&gt; <span class="syn-type">Bool</span>), (<span class="syn-type">U8</span> -&gt; <span class="syn-type">Bool</span>) -&gt; <span class="syn-type">Bool</span>
+<span class="syn-name">is_shaped</span> = |name, first, rest| {
+	bytes = name.to_utf8()
+	<span class="syn-keyword">match</span> bytes.first() {
+		<span class="syn-type">Ok</span>(byte) =&gt; first(byte) <span class="syn-keyword">and</span> bytes.drop_first(<span class="syn-number">1</span>).all(rest)
+		<span class="syn-type">Err</span>(_) =&gt; <span class="syn-type">Bool.False</span>
+	}
+}
+
+<span class="syn-name">is_upper</span> : <span class="syn-type">U8</span> -&gt; <span class="syn-type">Bool</span>
+<span class="syn-name">is_upper</span> = |byte| byte &gt;= <span class="syn-string">&#39;A&#39;</span> <span class="syn-keyword">and</span> byte &lt;= <span class="syn-string">&#39;Z&#39;</span>
+
+<span class="syn-name">is_lower</span> : <span class="syn-type">U8</span> -&gt; <span class="syn-type">Bool</span>
+<span class="syn-name">is_lower</span> = |byte| byte &gt;= <span class="syn-string">&#39;a&#39;</span> <span class="syn-keyword">and</span> byte &lt;= <span class="syn-string">&#39;z&#39;</span>
+
+<span class="syn-name">is_digit</span> : <span class="syn-type">U8</span> -&gt; <span class="syn-type">Bool</span>
+<span class="syn-name">is_digit</span> = |byte| byte &gt;= <span class="syn-string">&#39;0&#39;</span> <span class="syn-keyword">and</span> byte &lt;= <span class="syn-string">&#39;9&#39;</span>
+
+<span class="syn-comment">## The byte lower case, as Shale&#39;s `lower` makes it: ASCII alone.</span>
+<span class="syn-name">lowered</span> : <span class="syn-type">U8</span> -&gt; <span class="syn-type">U8</span>
+<span class="syn-name">lowered</span> = |byte|
+	<span class="syn-keyword">if</span> is_upper(byte) {
+		byte + <span class="syn-number">32</span>
+	} <span class="syn-keyword">else</span> {
+		byte
+	}
+</code></pre>
+<h2 class="code">Shale original</h2>
+<p class="file"><a href="https://github.com/showell/shale/blob/241fe1f7ce2d10d3101d90ee9866c7b736e98849/cookbook/c/hunt_names.shale"><code>cookbook/c/hunt_names.shale</code></a>, 319 lines, at <code>241fe1f7</code></p>
+<p class="file">The libraries it loads: <a href="https://github.com/showell/shale/blob/241fe1f7ce2d10d3101d90ee9866c7b736e98849/cookbook/c/items.shale"><code>cookbook/c/items.shale</code></a> (503 lines).</p>
+<pre><code><span class="syn-comment">-- Hunts Shale&#39;s C for names that break c/docs/style.md&#39;s &quot;Names&quot; or say</span>
+<span class="syn-comment">-- too little, from cookbook/c/items.shale&#39;s splitter. A finding is a</span>
+<span class="syn-comment">-- question for a reader, never a verdict. The first version is small, each</span>
+<span class="syn-comment">-- check narrow enough that its findings are worth reading:</span>
+<span class="syn-comment">--</span>
+<span class="syn-comment">--   type_case       a type (a struct, union, typedef or tagged enum) not</span>
+<span class="syn-comment">--                   `PascalCase`; an anonymous enum is constants, no type</span>
+<span class="syn-comment">--   function_case   a function not `snake_case`</span>
+<span class="syn-comment">--   constant_case   an enum&#39;s constant not `UPPER_SNAKE`</span>
+<span class="syn-comment">--   zig_bound       a constant or macro with Zig&#39;s bound words, `MOST` or</span>
+<span class="syn-comment">--                   `LEAST`: C&#39;s are `_MAX` and `_MIN`</span>
+<span class="syn-comment">--   bound_order     a constant or macro whose `MAX` or `MIN` is not its last</span>
+<span class="syn-comment">--                   word (`STORE_MAX_NAME`, not `STORE_NAME_MAX`), a unit</span>
+<span class="syn-comment">--                   after it (`_MS`, `_BYTES`) left alone</span>
+<span class="syn-comment">--   vague           a function named of nothing but cookbook/words/vague.txt&#39;s</span>
+<span class="syn-comment">--                   words (`handle_data`); a lone `run` or `handle` is an</span>
+<span class="syn-comment">--                   entry point&#39;s, and a piece&#39;s noun before a vague word</span>
+<span class="syn-comment">--                   (`json_value`, `vm_run`) is no finding</span>
+<span class="syn-comment">--   do_word         a function with the word `do` in its name, which says</span>
+<span class="syn-comment">--                   only that it acts</span>
+<span class="syn-comment">--   vague_local     a local or parameter named only `data`, `info`, `tmp`,</span>
+<span class="syn-comment">--                   `temp`, `stuff`, `thing`, `things`, `misc`, `util`,</span>
+<span class="syn-comment">--                   `helper`, `obj` or `handle`</span>
+<span class="syn-comment">--   container_type  a type named of nothing but container words</span>
+<span class="syn-comment">--                   (cookbook/words/containers.txt, and `data`, `info`):</span>
+<span class="syn-comment">--                   `Entry`, `NodeInfo`; a type is named for what it holds</span>
+<span class="syn-comment">--   abbreviation    a top-level name with a word of</span>
+<span class="syn-comment">--                   cookbook/words/c_abbreviations.txt whose spelled-out</span>
+<span class="syn-comment">--                   word another top-level name of the tree uses: one thing,</span>
+<span class="syn-comment">--                   two spellings (`bi_split` beside `builtin_scan`); one</span>
+<span class="syn-comment">--                   finding a file and abbreviation, naming its names</span>
+<span class="syn-comment">--</span>
+<span class="syn-comment">-- One line a finding, `path:line: check: why`, then the counts by check and</span>
+<span class="syn-comment">-- by folder.</span>
+<span class="syn-comment">--</span>
+<span class="syn-comment">--   shale cookbook:c/hunt_names.shale             over c/</span>
+<span class="syn-comment">--   shale cookbook:c/hunt_names.shale dir=c/host</span>
+<span class="syn-comment">--   shale cookbook:c/hunt_names.shale self_test=1</span>
+<span class="syn-comment">--</span>
+<span class="syn-comment">-- `self_test=1` runs it over cookbook/c/plants/hunt_names/, each plant named</span>
+<span class="syn-comment">-- for the check it holds (`do_word.c`), each near miss in `quiet_&lt;check&gt;.c`,</span>
+<span class="syn-comment">-- and holds the findings to the plants&#39; list exactly: every check fires on</span>
+<span class="syn-comment">-- its own plant and on no other, and a quiet plant on none.</span>
+<span class="syn-comment">--</span>
+<span class="syn-comment">-- budget: steps=400000000 arena_bytes=1000000000 kept_bytes=268435456</span>
+
+use(<span class="syn-string">&quot;./items.shale&quot;</span>)
+
+<span class="syn-keyword">const</span> PLANTS = <span class="syn-string">&quot;cookbook/c/plants/hunt_names&quot;</span>
+<span class="syn-keyword">const</span> CHECKS = {<span class="syn-string">&quot;type_case&quot;</span>, <span class="syn-string">&quot;function_case&quot;</span>, <span class="syn-string">&quot;constant_case&quot;</span>, <span class="syn-string">&quot;zig_bound&quot;</span>, <span class="syn-string">&quot;bound_order&quot;</span>, <span class="syn-string">&quot;vague&quot;</span>, <span class="syn-string">&quot;do_word&quot;</span>, <span class="syn-string">&quot;vague_local&quot;</span>, <span class="syn-string">&quot;container_type&quot;</span>, <span class="syn-string">&quot;abbreviation&quot;</span>}
+<span class="syn-keyword">const</span> VAGUE_LOCALS = {<span class="syn-string">&quot;data&quot;</span>, <span class="syn-string">&quot;info&quot;</span>, <span class="syn-string">&quot;tmp&quot;</span>, <span class="syn-string">&quot;temp&quot;</span>, <span class="syn-string">&quot;stuff&quot;</span>, <span class="syn-string">&quot;thing&quot;</span>, <span class="syn-string">&quot;things&quot;</span>, <span class="syn-string">&quot;misc&quot;</span>, <span class="syn-string">&quot;util&quot;</span>, <span class="syn-string">&quot;helper&quot;</span>, <span class="syn-string">&quot;obj&quot;</span>, <span class="syn-string">&quot;handle&quot;</span>}
+<span class="syn-keyword">const</span> ENTRY = {<span class="syn-string">&quot;run&quot;</span>, <span class="syn-string">&quot;handle&quot;</span>}
+<span class="syn-comment">-- A unit a bound&#39;s name may end with, after its `MAX` or `MIN`.</span>
+<span class="syn-keyword">const</span> UNITS = {<span class="syn-string">&quot;MS&quot;</span>, <span class="syn-string">&quot;NS&quot;</span>, <span class="syn-string">&quot;US&quot;</span>, <span class="syn-string">&quot;S&quot;</span>, <span class="syn-string">&quot;BYTES&quot;</span>}
+<span class="syn-comment">-- A declaration&#39;s first word that is no type: `return x;` declares nothing.</span>
+<span class="syn-keyword">const</span> NOT_TYPES = {<span class="syn-string">&quot;return&quot;</span>, <span class="syn-string">&quot;else&quot;</span>, <span class="syn-string">&quot;case&quot;</span>, <span class="syn-string">&quot;goto&quot;</span>, <span class="syn-string">&quot;do&quot;</span>, <span class="syn-string">&quot;sizeof&quot;</span>, <span class="syn-string">&quot;typedef&quot;</span>, <span class="syn-string">&quot;break&quot;</span>, <span class="syn-string">&quot;continue&quot;</span>}
+
+<span class="syn-comment">-- A word table of cookbook/words/, a word a line, `--` starting a note. A</span>
+<span class="syn-comment">-- word twice, or a line of two, is a mistake in the table: it fails.</span>
+<span class="syn-keyword">function</span> <span class="syn-name">word_table</span>(file)
+  <span class="syn-keyword">local</span> t = {}
+  <span class="syn-keyword">for</span> l <span class="syn-keyword">in</span> lines(read(<span class="syn-string">&quot;cookbook:words/&quot;</span> .. file)) <span class="syn-keyword">do</span>
+    <span class="syn-keyword">local</span> w = trim(split(l, <span class="syn-string">&quot;--&quot;</span>)[<span class="syn-number">1</span>])
+    <span class="syn-keyword">if</span> contains(w, <span class="syn-string">&quot; &quot;</span>) <span class="syn-keyword">or</span> has_key(t, w) <span class="syn-keyword">then</span> fail(<span class="syn-string">&quot;hunt_names: cookbook/words/&quot;</span> .. file .. <span class="syn-string">&quot;: `&quot;</span> .. w .. <span class="syn-string">&quot;` is no single new word&quot;</span>) <span class="syn-keyword">end</span>
+    <span class="syn-keyword">if</span> w ~= <span class="syn-string">&quot;&quot;</span> <span class="syn-keyword">then</span> t[w] = <span class="syn-keyword">true</span> <span class="syn-keyword">end</span>
+  <span class="syn-keyword">end</span>
+  <span class="syn-keyword">return</span> t
+<span class="syn-keyword">end</span>
+
+<span class="syn-comment">-- cookbook/words/c_abbreviations.txt: an abbreviation to its word.</span>
+<span class="syn-keyword">function</span> <span class="syn-name">abbreviation_table</span>()
+  <span class="syn-keyword">local</span> t = {}
+  <span class="syn-keyword">for</span> l <span class="syn-keyword">in</span> lines(read(<span class="syn-string">&quot;cookbook:words/c_abbreviations.txt&quot;</span>)) <span class="syn-keyword">do</span>
+    <span class="syn-keyword">local</span> ws = words(trim(split(l, <span class="syn-string">&quot;--&quot;</span>)[<span class="syn-number">1</span>]))
+    <span class="syn-keyword">if</span> #ws == <span class="syn-number">2</span> <span class="syn-keyword">then</span>
+      <span class="syn-keyword">if</span> has_key(t, ws[<span class="syn-number">1</span>]) <span class="syn-keyword">then</span> fail(<span class="syn-string">&quot;hunt_names: cookbook/words/c_abbreviations.txt: `&quot;</span> .. ws[<span class="syn-number">1</span>] .. <span class="syn-string">&quot;` twice&quot;</span>) <span class="syn-keyword">end</span>
+      t[ws[<span class="syn-number">1</span>]] = ws[<span class="syn-number">2</span>]
+    <span class="syn-keyword">elseif</span> #ws ~= <span class="syn-number">0</span> <span class="syn-keyword">then</span>
+      fail(<span class="syn-string">&quot;hunt_names: cookbook/words/c_abbreviations.txt: `&quot;</span> .. l .. <span class="syn-string">&quot;` is no pair of an abbreviation and its word&quot;</span>)
+    <span class="syn-keyword">end</span>
+  <span class="syn-keyword">end</span>
+  <span class="syn-keyword">return</span> t
+<span class="syn-keyword">end</span>
+
+<span class="syn-comment">-- The C files under `dir`, sorted, c/out (the build&#39;s output) left out.</span>
+<span class="syn-keyword">function</span> <span class="syn-name">c_files_under</span>(dir)
+  <span class="syn-keyword">local</span> files = {}
+  <span class="syn-keyword">for</span> e <span class="syn-keyword">in</span> walk_all(dir, {kind = <span class="syn-string">&quot;file&quot;</span>, skip = <span class="syn-string">&quot;out&quot;</span>}) <span class="syn-keyword">do</span>
+    <span class="syn-keyword">if</span> ends_with(e.path, <span class="syn-string">&quot;.c&quot;</span>) <span class="syn-keyword">or</span> ends_with(e.path, <span class="syn-string">&quot;.h&quot;</span>) <span class="syn-keyword">then</span> push(files, e.path) <span class="syn-keyword">end</span>
+  <span class="syn-keyword">end</span>
+  sort(files)
+  <span class="syn-keyword">return</span> files
+<span class="syn-keyword">end</span>
+
+<span class="syn-comment">-- A C name&#39;s words, lower case: `NodeInfo`, `node_info` and `NODE_INFO` all</span>
+<span class="syn-comment">-- `{node, info}`.</span>
+<span class="syn-keyword">function</span> <span class="syn-name">words_of</span>(name)
+  <span class="syn-keyword">local</span> s = re_replace(name, <span class="syn-string">&quot;([a-z0-9])([A-Z])&quot;</span>, <span class="syn-string">&quot;\\1_\\2&quot;</span>)
+  <span class="syn-keyword">local</span> got = {}
+  <span class="syn-keyword">for</span> w <span class="syn-keyword">in</span> split(lower(s), <span class="syn-string">&quot;_&quot;</span>) <span class="syn-keyword">do</span>
+    <span class="syn-keyword">if</span> w ~= <span class="syn-string">&quot;&quot;</span> <span class="syn-keyword">then</span> push(got, w) <span class="syn-keyword">end</span>
+  <span class="syn-keyword">end</span>
+  <span class="syn-keyword">return</span> got
+<span class="syn-keyword">end</span>
+
+<span class="syn-comment">-- Every word of every table in `t`.</span>
+<span class="syn-keyword">function</span> <span class="syn-name">all_in</span>(ws, t)
+  <span class="syn-keyword">if</span> #ws == <span class="syn-number">0</span> <span class="syn-keyword">then</span> <span class="syn-keyword">return</span> <span class="syn-keyword">false</span> <span class="syn-keyword">end</span>
+  <span class="syn-keyword">for</span> w <span class="syn-keyword">in</span> ws <span class="syn-keyword">do</span>
+    <span class="syn-keyword">if</span> <span class="syn-keyword">not</span> has_key(t, w) <span class="syn-keyword">then</span> <span class="syn-keyword">return</span> <span class="syn-keyword">false</span> <span class="syn-keyword">end</span>
+  <span class="syn-keyword">end</span>
+  <span class="syn-keyword">return</span> <span class="syn-keyword">true</span>
+<span class="syn-keyword">end</span>
+
+<span class="syn-comment">-- The names a function&#39;s head declares as its parameters: each part&#39;s last</span>
+<span class="syn-comment">-- word, between the head&#39;s first `(` and its last `)`.</span>
+<span class="syn-keyword">function</span> <span class="syn-name">param_names</span>(head)
+  <span class="syn-keyword">local</span> open = find(head, <span class="syn-string">&quot;(&quot;</span>)
+  <span class="syn-keyword">local</span> close = <span class="syn-keyword">nil</span>
+  <span class="syn-keyword">local</span> k = #head
+  <span class="syn-keyword">while</span> k &gt; <span class="syn-number">0</span> <span class="syn-keyword">and</span> close == <span class="syn-keyword">nil</span> <span class="syn-keyword">do</span>
+    <span class="syn-keyword">if</span> sub(head, k, k) == <span class="syn-string">&quot;)&quot;</span> <span class="syn-keyword">then</span> close = k <span class="syn-keyword">end</span>
+    k = k - <span class="syn-number">1</span>
+  <span class="syn-keyword">end</span>
+  <span class="syn-keyword">if</span> open == <span class="syn-keyword">nil</span> <span class="syn-keyword">or</span> close == <span class="syn-keyword">nil</span> <span class="syn-keyword">or</span> close &lt;= open <span class="syn-keyword">then</span> <span class="syn-keyword">return</span> {} <span class="syn-keyword">end</span>
+  <span class="syn-keyword">local</span> names = {}
+  <span class="syn-keyword">for</span> part <span class="syn-keyword">in</span> split(sub(head, open + <span class="syn-number">1</span>, close - <span class="syn-number">1</span>), <span class="syn-string">&quot;,&quot;</span>) <span class="syn-keyword">do</span>
+    <span class="syn-keyword">local</span> m = re_find(part, <span class="syn-string">[=[(\w+)\s*(\[[^\]]*\])?\s*$]=]</span>)
+    <span class="syn-keyword">if</span> m ~= <span class="syn-keyword">nil</span> <span class="syn-keyword">and</span> m.groups[<span class="syn-number">1</span>] ~= <span class="syn-string">&quot;void&quot;</span> <span class="syn-keyword">then</span> push(names, m.groups[<span class="syn-number">1</span>]) <span class="syn-keyword">end</span>
+  <span class="syn-keyword">end</span>
+  <span class="syn-keyword">return</span> names
+<span class="syn-keyword">end</span>
+
+<span class="syn-comment">-- A body line&#39;s declared local, or nil: `Type name =`, `Type *name;`,</span>
+<span class="syn-comment">-- `const Type name[`.</span>
+<span class="syn-keyword">const</span> DECL = <span class="syn-string">[=[^\s*(?:const\s+|static\s+|struct\s+|unsigned\s+)*([A-Za-z_]\w*)(?:\s*\*+\s*|\s+)(?:const\s+)?\*?([a-z_]\w*)\s*(?:=|;|\[)]=]</span>
+
+<span class="syn-keyword">function</span> <span class="syn-name">local_of</span>(code)
+  <span class="syn-keyword">local</span> m = re_find(code, DECL)
+  <span class="syn-keyword">if</span> m == <span class="syn-keyword">nil</span> <span class="syn-keyword">or</span> has_item(NOT_TYPES, m.groups[<span class="syn-number">1</span>]) <span class="syn-keyword">then</span> <span class="syn-keyword">return</span> <span class="syn-keyword">nil</span> <span class="syn-keyword">end</span>
+  <span class="syn-keyword">return</span> m.groups[<span class="syn-number">2</span>]
+<span class="syn-keyword">end</span>
+
+<span class="syn-comment">-- What the hunt reads of one file: its findings by every check but</span>
+<span class="syn-comment">-- `abbreviation`, and its top-level names `{name, line, words}` for that</span>
+<span class="syn-comment">-- check, which needs the whole tree&#39;s.</span>
+<span class="syn-keyword">function</span> <span class="syn-name">hunt_file</span>(p, tables)
+  <span class="syn-keyword">local</span> all = lines(read(p))
+  <span class="syn-keyword">local</span> found = {}
+  <span class="syn-keyword">local</span> named = {}
+  <span class="syn-keyword">for</span> it <span class="syn-keyword">in</span> c_items(p) <span class="syn-keyword">do</span>
+    <span class="syn-keyword">local</span> k = it.kind
+    <span class="syn-keyword">local</span> anonymous = k == <span class="syn-string">&quot;enum&quot;</span> <span class="syn-keyword">and</span> #it.enumerators &gt; <span class="syn-number">0</span> <span class="syn-keyword">and</span> it.enumerators[<span class="syn-number">1</span>] == it.name <span class="syn-keyword">and</span> <span class="syn-keyword">not</span> starts_with(all[it.first], <span class="syn-string">&quot;typedef&quot;</span>)
+    <span class="syn-keyword">if</span> (k == <span class="syn-string">&quot;struct&quot;</span> <span class="syn-keyword">or</span> k == <span class="syn-string">&quot;union&quot;</span> <span class="syn-keyword">or</span> k == <span class="syn-string">&quot;typedef&quot;</span> <span class="syn-keyword">or</span> k == <span class="syn-string">&quot;enum&quot;</span>) <span class="syn-keyword">and</span> <span class="syn-keyword">not</span> anonymous <span class="syn-keyword">then</span>
+      <span class="syn-keyword">if</span> <span class="syn-keyword">not</span> re_match(it.name, <span class="syn-string">&quot;^[A-Z][A-Za-z0-9]*$&quot;</span>) <span class="syn-keyword">then</span> push(found, {line = it.first, check = <span class="syn-string">&quot;type_case&quot;</span>, why = <span class="syn-string">&quot;the type `&quot;</span> .. it.name .. <span class="syn-string">&quot;` is not PascalCase&quot;</span>}) <span class="syn-keyword">end</span>
+      <span class="syn-keyword">if</span> all_in(words_of(it.name), tables.containers) <span class="syn-keyword">then</span> push(found, {line = it.first, check = <span class="syn-string">&quot;container_type&quot;</span>, why = <span class="syn-string">&quot;the type `&quot;</span> .. it.name .. <span class="syn-string">&quot;` is only container words: name it for what it holds&quot;</span>}) <span class="syn-keyword">end</span>
+      push(named, {name = it.name, line = it.first})
+    <span class="syn-keyword">end</span>
+    <span class="syn-keyword">local</span> constants = {}
+    <span class="syn-keyword">for</span> en <span class="syn-keyword">in</span> it.enumerators <span class="syn-keyword">do</span> push(constants, en) <span class="syn-keyword">end</span>
+    <span class="syn-keyword">if</span> k == <span class="syn-string">&quot;macro&quot;</span> <span class="syn-keyword">and</span> re_match(it.name, <span class="syn-string">&quot;^[A-Z][A-Z0-9_]*$&quot;</span>) <span class="syn-keyword">then</span> push(constants, it.name) <span class="syn-keyword">end</span>
+    <span class="syn-keyword">for</span> en <span class="syn-keyword">in</span> it.enumerators <span class="syn-keyword">do</span>
+      <span class="syn-keyword">if</span> <span class="syn-keyword">not</span> re_match(en, <span class="syn-string">&quot;^[A-Z][A-Z0-9_]*$&quot;</span>) <span class="syn-keyword">then</span> push(found, {line = it.first, check = <span class="syn-string">&quot;constant_case&quot;</span>, why = <span class="syn-string">&quot;the constant `&quot;</span> .. en .. <span class="syn-string">&quot;` is not UPPER_SNAKE&quot;</span>}) <span class="syn-keyword">end</span>
+    <span class="syn-keyword">end</span>
+    <span class="syn-keyword">for</span> c <span class="syn-keyword">in</span> constants <span class="syn-keyword">do</span>
+      <span class="syn-keyword">local</span> ws = split(c, <span class="syn-string">&quot;_&quot;</span>)
+      <span class="syn-keyword">if</span> has_item(ws, <span class="syn-string">&quot;MOST&quot;</span>) <span class="syn-keyword">or</span> has_item(ws, <span class="syn-string">&quot;LEAST&quot;</span>) <span class="syn-keyword">then</span> push(found, {line = it.first, check = <span class="syn-string">&quot;zig_bound&quot;</span>, why = <span class="syn-string">&quot;`&quot;</span> .. c .. <span class="syn-string">&quot;` is a bound in Zig&#39;s words: C&#39;s are `_MAX` and `_MIN`&quot;</span>}) <span class="syn-keyword">end</span>
+      <span class="syn-keyword">local</span> j = <span class="syn-number">1</span>
+      <span class="syn-keyword">while</span> j &lt; #ws <span class="syn-keyword">do</span>
+        <span class="syn-keyword">if</span> (ws[j] == <span class="syn-string">&quot;MAX&quot;</span> <span class="syn-keyword">or</span> ws[j] == <span class="syn-string">&quot;MIN&quot;</span>) <span class="syn-keyword">and</span> <span class="syn-keyword">not</span> (j == #ws - <span class="syn-number">1</span> <span class="syn-keyword">and</span> has_item(UNITS, ws[#ws])) <span class="syn-keyword">then</span>
+          <span class="syn-keyword">local</span> moved = {}
+          <span class="syn-keyword">local</span> x = <span class="syn-number">1</span>
+          <span class="syn-keyword">while</span> x &lt;= #ws <span class="syn-keyword">do</span>
+            <span class="syn-keyword">if</span> x ~= j <span class="syn-keyword">then</span> push(moved, ws[x]) <span class="syn-keyword">end</span>
+            x = x + <span class="syn-number">1</span>
+          <span class="syn-keyword">end</span>
+          push(moved, ws[j])
+          push(found, {line = it.first, check = <span class="syn-string">&quot;bound_order&quot;</span>, why = <span class="syn-string">&quot;`&quot;</span> .. c .. <span class="syn-string">&quot;` has `&quot;</span> .. ws[j] .. <span class="syn-string">&quot;` before its last word: a bound ends with it, as `&quot;</span> .. join(moved, <span class="syn-string">&quot;_&quot;</span>) .. <span class="syn-string">&quot;` would&quot;</span>})
+          j = #ws
+        <span class="syn-keyword">end</span>
+        j = j + <span class="syn-number">1</span>
+      <span class="syn-keyword">end</span>
+      push(named, {name = c, line = it.first})
+    <span class="syn-keyword">end</span>
+    <span class="syn-keyword">if</span> k == <span class="syn-string">&quot;macro&quot;</span> <span class="syn-keyword">and</span> <span class="syn-keyword">not</span> re_match(it.name, <span class="syn-string">&quot;^[A-Z][A-Z0-9_]*$&quot;</span>) <span class="syn-keyword">then</span> push(named, {name = it.name, line = it.first}) <span class="syn-keyword">end</span>
+    <span class="syn-keyword">if</span> k == <span class="syn-string">&quot;data&quot;</span> <span class="syn-keyword">and</span> it.name ~= <span class="syn-string">&quot;&quot;</span> <span class="syn-keyword">then</span> push(named, {name = it.name, line = it.first}) <span class="syn-keyword">end</span>
+    <span class="syn-keyword">if</span> k == <span class="syn-string">&quot;function&quot;</span> <span class="syn-keyword">then</span>
+      <span class="syn-keyword">local</span> n = it.name
+      push(named, {name = n, line = it.first})
+      <span class="syn-keyword">if</span> n ~= <span class="syn-string">&quot;main&quot;</span> <span class="syn-keyword">and</span> <span class="syn-keyword">not</span> re_match(n, <span class="syn-string">&quot;^[a-z][a-z0-9_]*$&quot;</span>) <span class="syn-keyword">then</span> push(found, {line = it.first, check = <span class="syn-string">&quot;function_case&quot;</span>, why = <span class="syn-string">&quot;the function `&quot;</span> .. n .. <span class="syn-string">&quot;` is not snake_case&quot;</span>}) <span class="syn-keyword">end</span>
+      <span class="syn-keyword">local</span> ws = words_of(n)
+      <span class="syn-keyword">if</span> all_in(ws, tables.vague) <span class="syn-keyword">and</span> <span class="syn-keyword">not</span> (#ws == <span class="syn-number">1</span> <span class="syn-keyword">and</span> has_item(ENTRY, ws[<span class="syn-number">1</span>])) <span class="syn-keyword">then</span> push(found, {line = it.first, check = <span class="syn-string">&quot;vague&quot;</span>, why = <span class="syn-string">&quot;`&quot;</span> .. n .. <span class="syn-string">&quot;` is only vague words: what does it act on, and how?&quot;</span>}) <span class="syn-keyword">end</span>
+      <span class="syn-keyword">if</span> has_item(split(n, <span class="syn-string">&quot;_&quot;</span>), <span class="syn-string">&quot;do&quot;</span>) <span class="syn-keyword">then</span> push(found, {line = it.first, check = <span class="syn-string">&quot;do_word&quot;</span>, why = <span class="syn-string">&quot;`&quot;</span> .. n .. <span class="syn-string">&quot;` has `do` in it, which says only that it acts: name the act&quot;</span>}) <span class="syn-keyword">end</span>
+      <span class="syn-keyword">local</span> head = re_replace(c_masked_text(all, it.sig_first, it.sig_last), <span class="syn-string">[=[\s+]=]</span>, <span class="syn-string">&quot; &quot;</span>)
+      <span class="syn-keyword">if</span> it.body_first == it.sig_last <span class="syn-keyword">then</span> head = sub(head, <span class="syn-number">1</span>, find(head, <span class="syn-string">&quot;{&quot;</span>) - <span class="syn-number">1</span>) <span class="syn-keyword">end</span>
+      <span class="syn-keyword">for</span> q <span class="syn-keyword">in</span> param_names(head) <span class="syn-keyword">do</span>
+        <span class="syn-keyword">if</span> has_item(VAGUE_LOCALS, q) <span class="syn-keyword">then</span> push(found, {line = it.first, check = <span class="syn-string">&quot;vague_local&quot;</span>, why = <span class="syn-string">&quot;`&quot;</span> .. n .. <span class="syn-string">&quot;`&#39;s parameter `&quot;</span> .. q .. <span class="syn-string">&quot;` says nothing of what it holds&quot;</span>}) <span class="syn-keyword">end</span>
+      <span class="syn-keyword">end</span>
+      <span class="syn-keyword">if</span> it.body_first ~= <span class="syn-number">0</span> <span class="syn-keyword">and</span> it.body_first ~= it.sig_last <span class="syn-keyword">then</span>
+        <span class="syn-keyword">local</span> b = it.body_first
+        <span class="syn-keyword">while</span> b &lt;= it.body_last <span class="syn-keyword">do</span>
+          <span class="syn-keyword">local</span> l = local_of(c_mask(all[b]))
+          <span class="syn-keyword">if</span> l ~= <span class="syn-keyword">nil</span> <span class="syn-keyword">and</span> has_item(VAGUE_LOCALS, l) <span class="syn-keyword">then</span> push(found, {line = b, check = <span class="syn-string">&quot;vague_local&quot;</span>, why = <span class="syn-string">&quot;`&quot;</span> .. n .. <span class="syn-string">&quot;`&#39;s local `&quot;</span> .. l .. <span class="syn-string">&quot;` says nothing of what it holds&quot;</span>}) <span class="syn-keyword">end</span>
+          b = b + <span class="syn-number">1</span>
+        <span class="syn-keyword">end</span>
+      <span class="syn-keyword">end</span>
+    <span class="syn-keyword">end</span>
+  <span class="syn-keyword">end</span>
+  <span class="syn-keyword">return</span> {found = found, named = named}
+<span class="syn-keyword">end</span>
+
+<span class="syn-comment">-- The findings over `dir`, sorted by place: `{path, line, check, why}`.</span>
+<span class="syn-keyword">function</span> <span class="syn-name">hunt</span>(dir)
+  <span class="syn-keyword">local</span> tables = {vague = word_table(<span class="syn-string">&quot;vague.txt&quot;</span>), containers = word_table(<span class="syn-string">&quot;containers.txt&quot;</span>), abbreviations = abbreviation_table()}
+  tables.containers[<span class="syn-string">&quot;data&quot;</span>] = <span class="syn-keyword">true</span>
+  tables.containers[<span class="syn-string">&quot;info&quot;</span>] = <span class="syn-keyword">true</span>
+  <span class="syn-keyword">local</span> found = {}
+  <span class="syn-keyword">local</span> named = {}
+  <span class="syn-keyword">local</span> files = c_files_under(dir)
+  <span class="syn-keyword">for</span> p <span class="syn-keyword">in</span> files <span class="syn-keyword">do</span>
+    <span class="syn-keyword">local</span> r = hunt_file(p, tables)
+    <span class="syn-keyword">for</span> f <span class="syn-keyword">in</span> r.found <span class="syn-keyword">do</span> push(found, {path = p, line = f.line, check = f.check, why = f.why}) <span class="syn-keyword">end</span>
+    <span class="syn-keyword">for</span> x <span class="syn-keyword">in</span> r.named <span class="syn-keyword">do</span> push(named, {path = p, line = x.line, name = x.name, words = words_of(x.name)}) <span class="syn-keyword">end</span>
+    yield()
+  <span class="syn-keyword">end</span>
+  <span class="syn-comment">-- The words the tree&#39;s top-level names spell, for `abbreviation`.</span>
+  <span class="syn-keyword">local</span> spelled = {}
+  <span class="syn-keyword">for</span> x <span class="syn-keyword">in</span> named <span class="syn-keyword">do</span>
+    <span class="syn-keyword">for</span> w <span class="syn-keyword">in</span> x.words <span class="syn-keyword">do</span> spelled[w] = <span class="syn-keyword">true</span> <span class="syn-keyword">end</span>
+  <span class="syn-keyword">end</span>
+  <span class="syn-comment">-- One finding a file and abbreviation, at its first name, naming them.</span>
+  <span class="syn-keyword">local</span> short = {}
+  <span class="syn-keyword">local</span> order = {}
+  <span class="syn-keyword">for</span> x <span class="syn-keyword">in</span> named <span class="syn-keyword">do</span>
+    <span class="syn-keyword">for</span> w <span class="syn-keyword">in</span> unique(x.words) <span class="syn-keyword">do</span>
+      <span class="syn-keyword">if</span> has_key(tables.abbreviations, w) <span class="syn-keyword">and</span> has_key(spelled, tables.abbreviations[w]) <span class="syn-keyword">then</span>
+        <span class="syn-keyword">local</span> key = x.path .. <span class="syn-string">&quot;|&quot;</span> .. w
+        <span class="syn-keyword">if</span> <span class="syn-keyword">not</span> has_key(short, key) <span class="syn-keyword">then</span>
+          short[key] = {path = x.path, line = x.line, word = w, names = {}}
+          push(order, key)
+        <span class="syn-keyword">end</span>
+        push(short[key].names, x.name)
+      <span class="syn-keyword">end</span>
+    <span class="syn-keyword">end</span>
+  <span class="syn-keyword">end</span>
+  <span class="syn-keyword">for</span> key <span class="syn-keyword">in</span> order <span class="syn-keyword">do</span>
+    <span class="syn-keyword">local</span> s = short[key]
+    <span class="syn-keyword">local</span> names = unique(s.names)
+    <span class="syn-keyword">local</span> shown = <span class="syn-string">&quot;`&quot;</span> .. join(take(names, <span class="syn-number">4</span>), <span class="syn-string">&quot;`, `&quot;</span>) .. <span class="syn-string">&quot;`&quot;</span>
+    <span class="syn-keyword">if</span> #names &gt; <span class="syn-number">4</span> <span class="syn-keyword">then</span> shown = shown .. <span class="syn-string">&quot; and &quot;</span> .. (#names - <span class="syn-number">4</span>) .. <span class="syn-string">&quot; more&quot;</span> <span class="syn-keyword">end</span>
+    <span class="syn-keyword">local</span> count = #names .. <span class="syn-string">&quot; names&quot;</span>
+    <span class="syn-keyword">if</span> #names == <span class="syn-number">1</span> <span class="syn-keyword">then</span> count = <span class="syn-string">&quot;1 name&quot;</span> <span class="syn-keyword">end</span>
+    push(found, {path = s.path, line = s.line, check = <span class="syn-string">&quot;abbreviation&quot;</span>, why = <span class="syn-string">&quot;`&quot;</span> .. s.word .. <span class="syn-string">&quot;` for `&quot;</span> .. tables.abbreviations[s.word] .. <span class="syn-string">&quot;`, which other names spell out, in &quot;</span> .. count .. <span class="syn-string">&quot; here: &quot;</span> .. shown})
+  <span class="syn-keyword">end</span>
+  sort(found, {<span class="syn-string">&quot;path&quot;</span>, <span class="syn-string">&quot;line&quot;</span>, <span class="syn-string">&quot;check&quot;</span>, <span class="syn-string">&quot;why&quot;</span>})
+  <span class="syn-keyword">return</span> {found = found, files = #files}
+<span class="syn-keyword">end</span>
+
+<span class="syn-comment">-- The findings&#39; lines.</span>
+<span class="syn-keyword">function</span> <span class="syn-name">finding_lines</span>(found)
+  <span class="syn-keyword">local</span> out = {}
+  <span class="syn-keyword">for</span> f <span class="syn-keyword">in</span> found <span class="syn-keyword">do</span> push(out, f.path .. <span class="syn-string">&quot;:&quot;</span> .. f.line .. <span class="syn-string">&quot;: &quot;</span> .. f.check .. <span class="syn-string">&quot;: &quot;</span> .. f.why) <span class="syn-keyword">end</span>
+  <span class="syn-keyword">return</span> out
+<span class="syn-keyword">end</span>
+
+<span class="syn-keyword">function</span> <span class="syn-name">self_test</span>()
+  <span class="syn-keyword">local</span> r = hunt(PLANTS)
+  <span class="syn-keyword">local</span> wrong = {}
+  <span class="syn-comment">-- Every check fires on its own plant and no other; a quiet plant on none.</span>
+  <span class="syn-keyword">local</span> fired = {}
+  <span class="syn-keyword">for</span> f <span class="syn-keyword">in</span> r.found <span class="syn-keyword">do</span> fired[f.path .. <span class="syn-string">&quot;|&quot;</span> .. f.check] = <span class="syn-keyword">true</span> <span class="syn-keyword">end</span>
+  <span class="syn-keyword">for</span> c <span class="syn-keyword">in</span> CHECKS <span class="syn-keyword">do</span>
+    <span class="syn-keyword">local</span> mine = PLANTS .. <span class="syn-string">&quot;/&quot;</span> .. c .. <span class="syn-string">&quot;.c&quot;</span>
+    <span class="syn-keyword">if</span> <span class="syn-keyword">not</span> has_key(fired, mine .. <span class="syn-string">&quot;|&quot;</span> .. c) <span class="syn-keyword">then</span> push(wrong, <span class="syn-string">&quot;`&quot;</span> .. c .. <span class="syn-string">&quot;` does not fire on its plant &quot;</span> .. mine) <span class="syn-keyword">end</span>
+  <span class="syn-keyword">end</span>
+  <span class="syn-keyword">for</span> f <span class="syn-keyword">in</span> r.found <span class="syn-keyword">do</span>
+    <span class="syn-keyword">if</span> f.path ~= PLANTS .. <span class="syn-string">&quot;/&quot;</span> .. f.check .. <span class="syn-string">&quot;.c&quot;</span> <span class="syn-keyword">then</span> push(wrong, <span class="syn-string">&quot;`&quot;</span> .. f.check .. <span class="syn-string">&quot;` fires on &quot;</span> .. f.path .. <span class="syn-string">&quot;:&quot;</span> .. f.line .. <span class="syn-string">&quot;, not its plant&quot;</span>) <span class="syn-keyword">end</span>
+  <span class="syn-keyword">end</span>
+  <span class="syn-keyword">local</span> P = PLANTS .. <span class="syn-string">&quot;/&quot;</span>
+  <span class="syn-keyword">local</span> want = {
+    P .. <span class="syn-string">&quot;abbreviation.c:4: abbreviation: `bi` for `builtin`, which other names spell out, in 1 name here: `bi_length`&quot;</span>,
+    P .. <span class="syn-string">&quot;bound_order.c:4: bound_order: `BOUND_MAX_NAME` has `MAX` before its last word: a bound ends with it, as `BOUND_NAME_MAX` would&quot;</span>,
+    P .. <span class="syn-string">&quot;constant_case.c:4: constant_case: the constant `constant_wrong` is not UPPER_SNAKE&quot;</span>,
+    P .. <span class="syn-string">&quot;container_type.c:4: container_type: the type `Entry` is only container words: name it for what it holds&quot;</span>,
+    P .. <span class="syn-string">&quot;container_type.c:8: container_type: the type `NodeInfo` is only container words: name it for what it holds&quot;</span>,
+    P .. <span class="syn-string">&quot;do_word.c:4: do_word: `store_do_write` has `do` in it, which says only that it acts: name the act&quot;</span>,
+    P .. <span class="syn-string">&quot;function_case.c:4: function_case: the function `readThing` is not snake_case&quot;</span>,
+    P .. <span class="syn-string">&quot;type_case.c:4: type_case: the type `bad_type` is not PascalCase&quot;</span>,
+    P .. <span class="syn-string">&quot;vague.c:4: vague: `handle_data` is only vague words: what does it act on, and how?&quot;</span>,
+    P .. <span class="syn-string">&quot;vague_local.c:4: vague_local: `vague_local_sum`&#39;s parameter `data` says nothing of what it holds&quot;</span>,
+    P .. <span class="syn-string">&quot;vague_local.c:5: vague_local: `vague_local_sum`&#39;s local `tmp` says nothing of what it holds&quot;</span>,
+    P .. <span class="syn-string">&quot;zig_bound.c:4: zig_bound: `ZIG_BOUND_MOST` is a bound in Zig&#39;s words: C&#39;s are `_MAX` and `_MIN`&quot;</span>,
+    P .. <span class="syn-string">&quot;zig_bound.c:8: zig_bound: `ZIG_BOUND_LEAST` is a bound in Zig&#39;s words: C&#39;s are `_MAX` and `_MIN`&quot;</span>,
+  }
+  <span class="syn-keyword">local</span> got = join(finding_lines(r.found), <span class="syn-string">&quot;\n&quot;</span>)
+  <span class="syn-keyword">if</span> got ~= join(want, <span class="syn-string">&quot;\n&quot;</span>) <span class="syn-keyword">then</span> push(wrong, <span class="syn-string">&quot;the plants&#39; findings are\n&quot;</span> .. got .. <span class="syn-string">&quot;\nthey should be\n&quot;</span> .. join(want, <span class="syn-string">&quot;\n&quot;</span>)) <span class="syn-keyword">end</span>
+  <span class="syn-keyword">for</span> w <span class="syn-keyword">in</span> wrong <span class="syn-keyword">do</span> print(<span class="syn-string">&quot;FAIL &quot;</span> .. w) <span class="syn-keyword">end</span>
+  <span class="syn-keyword">if</span> #wrong &gt; <span class="syn-number">0</span> <span class="syn-keyword">then</span> fail(<span class="syn-string">&quot;hunt_names self-test: &quot;</span> .. #wrong .. <span class="syn-string">&quot; wrong&quot;</span>) <span class="syn-keyword">end</span>
+  print(<span class="syn-string">&quot;PASS hunt_names self-test: &quot;</span> .. #CHECKS .. <span class="syn-string">&quot; checks, each firing on its own plant alone, &quot;</span> .. #want .. <span class="syn-string">&quot; findings exactly, the quiet plants on none&quot;</span>)
+  <span class="syn-keyword">return</span> <span class="syn-keyword">nil</span>
+<span class="syn-keyword">end</span>
+
+<span class="syn-keyword">if</span> arg(<span class="syn-string">&quot;self_test&quot;</span>, <span class="syn-number">0</span>) == <span class="syn-number">1</span> <span class="syn-keyword">then</span>
+  self_test()
+<span class="syn-keyword">else</span>
+  <span class="syn-keyword">local</span> dir = arg(<span class="syn-string">&quot;dir&quot;</span>, <span class="syn-string">&quot;c&quot;</span>)
+  <span class="syn-keyword">local</span> r = hunt(dir)
+  <span class="syn-keyword">for</span> l <span class="syn-keyword">in</span> finding_lines(r.found) <span class="syn-keyword">do</span> print(l) <span class="syn-keyword">end</span>
+  <span class="syn-keyword">local</span> by = {}
+  <span class="syn-keyword">local</span> folders = {}
+  <span class="syn-keyword">for</span> f <span class="syn-keyword">in</span> r.found <span class="syn-keyword">do</span>
+    incr(by, f.check)
+    incr(folders, dirname(f.path) .. <span class="syn-string">&quot; &quot;</span> .. f.check)
+  <span class="syn-keyword">end</span>
+  <span class="syn-keyword">local</span> parts = {}
+  <span class="syn-keyword">for</span> c <span class="syn-keyword">in</span> CHECKS <span class="syn-keyword">do</span> push(parts, c .. <span class="syn-string">&quot; &quot;</span> .. get(by, c, <span class="syn-number">0</span>)) <span class="syn-keyword">end</span>
+  print(<span class="syn-string">&quot;hunt_names: &quot;</span> .. r.files .. <span class="syn-string">&quot; files under &quot;</span> .. dir .. <span class="syn-string">&quot;; &quot;</span> .. #r.found .. <span class="syn-string">&quot; findings: &quot;</span> .. join(parts, <span class="syn-string">&quot;, &quot;</span>))
+  <span class="syn-keyword">for</span> k <span class="syn-keyword">in</span> sort(keys(folders)) <span class="syn-keyword">do</span> print(<span class="syn-string">&quot;  &quot;</span> .. k .. <span class="syn-string">&quot;: &quot;</span> .. folders[k]) <span class="syn-keyword">end</span>
+<span class="syn-keyword">end</span>
+</code></pre>
+<nav class="steps"><a href="../find_dead_code/">← previous</a> · <a href="../#hunt_names_c">Roc on Shale</a> · <a href="../count_roc_modules_lines_and_tests/">next →</a></nav></main>
+</body>
+</html>

@@ -1,0 +1,996 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="description" content="Modules that look alike but are spelled unlike, one type name declared in two shapes, and a conversion into a type not named `from_`, read from Roc's own parse trees across a whole tree, a gate with its plants' self-test in Roc too.">
+<title>find_names_that_differ_across_lookalike_modules · Roc on Shale</title>
+<script src="../../shared/home.js"></script>
+<!-- site/build_roc_on_shale.shale writes this page from the shale repository's
+     history; run it again rather than editing here. The code is colored by
+     roc-syntax-color (SyntaxColor.html). -->
+<style>
+  :root { color-scheme: light dark; --bg: #f7f5f0; --fg: #1d1d1b; --muted: #6b6860; --edge: #d9d4c8; --pane: #ffffff; --link: #1f5fa8; --accent: #5b3ea8; }
+  @media (prefers-color-scheme: dark) {
+    :root { --bg: #1b1b1a; --fg: #e8e6e0; --muted: #9a968c; --edge: #3a3934; --pane: #242422; --link: #8ab4f0; --accent: #a68cf0; }
+  }
+  body { margin: 0; background: var(--bg); color: var(--fg); font: 15px/1.55 system-ui, sans-serif; }
+  main { max-width: 960px; margin: 0 auto; padding: 36px 16px 48px; }
+  @media (max-width: 640px) { main { padding: 24px 12px 36px; } }
+  .top { display: flex; flex-wrap: wrap; gap: 4px 14px; font-size: 14px; margin: 0 0 14px; }
+  h1 { font-size: 28px; margin: 0 0 6px; overflow-wrap: anywhere; }
+  .lede { margin: 0 0 10px; max-width: 70ch; }
+  ul.lede { padding-left: 22px; }
+  ul.lede li { margin: 0 0 4px; }
+  h2.intro { font-size: 20px; margin: 30px 0 6px; }
+  h3.intro { font-size: 16px; margin: 18px 0 4px; }
+  /* The drawing is Graphviz's SVG, inline, so its lines and words take the
+     page's colors in either theme. */
+  .diagram { margin: 14px 0 18px; }
+  .diagram svg { max-width: 100%; height: auto; }
+  .diagram text { fill: var(--fg); }
+  .diagram path, .diagram polygon { stroke: var(--fg); }
+  .diagram .edge polygon { fill: var(--fg); }
+  h2.part { font-size: 25px; margin: 64px 0 4px; padding-top: 20px; border-top: 3px solid var(--accent); }
+  .part-intro { margin: 0 0 8px; }
+  h3 { font-size: 19px; margin: 10px 0 4px; overflow-wrap: anywhere; }
+  h2.part a { color: inherit; text-decoration: none; }
+  h2.code { font-size: 16px; margin: 36px 0 4px; color: var(--accent); }
+  p { max-width: 70ch; }
+  a { color: var(--link); }
+  code { font: 13px ui-monospace, Menlo, Consolas, monospace; }
+  .contents { padding-left: 20px; }
+  .contents ul { padding-left: 20px; margin: 2px 0 8px; }
+  .contents a { overflow-wrap: anywhere; }
+  .facts { font-size: 14px; color: var(--muted); }
+  .file { font-size: 13px; color: var(--muted); margin: 20px 0 0; overflow-wrap: anywhere; }
+  .entry { margin-top: 28px; padding-top: 14px; border-top: 1px solid var(--edge); }
+  .steps { font-size: 13px; margin: 0 0 8px; }
+  main > .steps:last-child { margin: 28px 0 0; }
+  /* Every block shows its file whole; a line wider than the block scrolls
+     sideways inside it, so the code keeps its indentation. */
+  pre { margin: 6px 0 12px; padding: 12px 14px; border-radius: 5px; background: #2b2733; color: #e8e6e0;
+        font: 12px/1.45 ui-monospace, Menlo, Consolas, monospace; overflow-x: auto; tab-size: 4; }
+  pre code { font: inherit; }
+  .syn-keyword { color: #c792ea; }
+  .syn-type { color: #82aaff; }
+  .syn-string { color: #c3e88d; }
+  .syn-number { color: #f78c6c; }
+  .syn-comment { color: #8a8494; font-style: italic; }
+  .syn-name { color: #ffcb6b; }
+  footer { margin-top: 36px; color: var(--muted); font-size: 13px; }
+</style>
+</head>
+<body>
+<main>
+<nav class="steps"><a href="../check_modules_stay_under_500_lines/">← previous</a> · <a href="../#find_names_that_differ_across_lookalike_modules">Roc on Shale</a> · <a href="../find_calls_nested_three_deep/">next →</a></nav>
+<h1>find_names_that_differ_across_lookalike_modules</h1>
+<h2 class="code">Roc</h2>
+<p class="file">It also imports <code>Declarations</code>, <code>Finding</code>, <code>Headers</code>, <code>Text</code>, <code>Tree</code> from <a href="../shared-library/">the shared Roc library</a>.</p>
+<p class="file"><a href="https://github.com/showell/shale/blob/e3c753adf065dc7856e5d49422daf99f9969f91a/cookbook/roc/find_names_that_differ_across_lookalike_modules/find_names_that_differ_across_lookalike_modules.roc"><code>cookbook/roc/find_names_that_differ_across_lookalike_modules/find_names_that_differ_across_lookalike_modules.roc</code></a>, 180 lines</p>
+<pre><code><span class="syn-comment">## find_names_that_differ_across_lookalike_modules, in Roc on Shale&#39;s platform (roc_platform/README.md):</span>
+<span class="syn-comment">## modules that look alike but are spelled unlike, and one type name with two</span>
+<span class="syn-comment">## meanings. A reader who knows `TreeSighting.trees_in_view` looks for</span>
+<span class="syn-comment">## `RailSighting.rails_in_view`, and one who knows `Cat.Pose` reads</span>
+<span class="syn-comment">## `Geom.Pose` as the same thing, so a family spelled unlike or a twin of</span>
+<span class="syn-comment">## another shape costs every reader a wrong guess. Its launcher,</span>
+<span class="syn-comment">## cookbook/roc/find_names_that_differ_across_lookalike_modules.shale, is how it is run, and its header says</span>
+<span class="syn-comment">## the rules, `family`, `twin_name` and `unpaired_conversion`. check_goldens.shale, beside this,</span>
+<span class="syn-comment">## holds its output on the plants to its goldens, line for line.</span>
+<span class="syn-comment">##</span>
+<span class="syn-comment">##   cd &lt;repo&gt; &amp;&amp; shale cookbook:roc/find_names_that_differ_across_lookalike_modules.shale roles=tools/type_roles.txt</span>
+<span class="syn-comment">##   shale cookbook:roc/find_names_that_differ_across_lookalike_modules.shale self_test=1</span>
+<span class="syn-comment">##</span>
+<span class="syn-comment">## The arguments: `glob` (`**/*.roc`), `roles` (a file of type names each</span>
+<span class="syn-comment">## module may declare for itself) and `self_test` (`self_test=1` runs the</span>
+<span class="syn-comment">## plants, each through the launcher).</span>
+<span class="syn-comment">##</span>
+<span class="syn-comment">## This root globs the files (`Shale.glob!`), has Roc&#39;s parser read them</span>
+<span class="syn-comment">## (`Shale.roc_tree!`) and each one&#39;s text (`Shale.read!`), reads the roles</span>
+<span class="syn-comment">## file, and prints the verdict (`Shale.print!`, `Shale.fail!`). Its modules</span>
+<span class="syn-comment">## are beside it, a module a check (Family, Twin, Conversion) and SelfTest; what they read</span>
+<span class="syn-comment">## (Tree, Declarations, Text) and Finding are the cookbook&#39;s Roc library,</span>
+<span class="syn-comment">## cookbook/roc/lib/.</span>
+<span class="syn-comment">## budget: steps=800000000 arena_bytes=2000000000 output_bytes=4000000 programs=100</span>
+<span class="syn-keyword">app</span> [main!] { lib: <span class="syn-string">&quot;../lib/main.roc&quot;</span>, pf: <span class="syn-keyword">platform</span> <span class="syn-string">&quot;../../../roc_platform/platform/main.roc&quot;</span> }
+
+<span class="syn-keyword">import</span> pf.<span class="syn-type">Shale</span>
+<span class="syn-keyword">import</span> lib.<span class="syn-type">Declarations</span>
+<span class="syn-keyword">import</span> lib.<span class="syn-type">Finding</span>
+<span class="syn-keyword">import</span> lib.<span class="syn-type">Text</span>
+<span class="syn-keyword">import</span> lib.<span class="syn-type">Tree</span>
+<span class="syn-keyword">import</span> <span class="syn-type">Conversion</span>
+<span class="syn-keyword">import</span> <span class="syn-type">Family</span>
+<span class="syn-keyword">import</span> <span class="syn-type">SelfTest</span>
+<span class="syn-keyword">import</span> <span class="syn-type">Twin</span>
+
+<span class="syn-name">main!</span> : {} =&gt; {}
+<span class="syn-name">main!</span> = |{}| {
+	<span class="syn-keyword">if</span> <span class="syn-type">Shale</span>.arg!(<span class="syn-string">&quot;self_test&quot;</span>, <span class="syn-string">&quot;&quot;</span>) == <span class="syn-string">&quot;1&quot;</span> {
+		<span class="syn-type">SelfTest</span>.run!(checks)
+	} <span class="syn-keyword">else</span> {
+		run_check!({})
+	}
+}
+
+<span class="syn-comment">## What one parsed file gives the checks.</span>
+<span class="syn-type">ParsedFile</span> : { is_app : <span class="syn-type">Bool</span>, read : <span class="syn-type">Family.FileRead</span> }
+
+<span class="syn-comment">## The check over the glob&#39;s files: the verdict printed, then a stop when a</span>
+<span class="syn-comment">## file didn&#39;t parse, or when there are findings, the summary the last line</span>
+<span class="syn-comment">## a caller reads.</span>
+<span class="syn-name">run_check!</span> : {} =&gt; {}
+<span class="syn-name">run_check!</span> = |{}| {
+	paths = <span class="syn-type">Shale</span>.glob!(<span class="syn-type">Shale</span>.arg!(<span class="syn-string">&quot;glob&quot;</span>, <span class="syn-string">&quot;**/*.roc&quot;</span>))
+	<span class="syn-keyword">var</span> $files = []
+	<span class="syn-keyword">var</span> $refused = []
+	<span class="syn-keyword">for</span> file <span class="syn-keyword">in</span> <span class="syn-type">Shale</span>.roc_tree!(paths) {
+		<span class="syn-keyword">if</span> file.err == <span class="syn-string">&quot;&quot;</span> {
+			source_lines = read_text!(file.path).split_on(<span class="syn-string">&quot;\n&quot;</span>)
+			read = {
+				path: file.path,
+				declared: <span class="syn-type">Declarations</span>.from_file({ path: file.path, nodes: file.nodes, source_lines }),
+				source_lines,
+			}
+			$files = $files.append({ is_app: <span class="syn-type">Tree</span>.is_app(file.nodes), read })
+		} <span class="syn-keyword">else</span> <span class="syn-keyword">if</span> file.err.starts_with(file.path) {
+			$refused = $refused.append(file.err)
+		} <span class="syn-keyword">else</span> {
+			$refused = $refused.append(<span class="syn-string">&quot;</span>${file.path}<span class="syn-string">: </span>${file.err}<span class="syn-string">&quot;</span>)
+		}
+	}
+	findings = run_checks!($files)
+	found = findings.sort_with(<span class="syn-type">Finding</span>.order).map(<span class="syn-type">Finding</span>.line_of)
+	summary = summary_of(findings, paths.len())
+	print_findings!(summary, found)
+	<span class="syn-keyword">if</span> !($refused.is_empty()) {
+		<span class="syn-keyword">for</span> refusal <span class="syn-keyword">in</span> $refused {
+			<span class="syn-type">Shale</span>.print!(<span class="syn-string">&quot;refused: </span>${refusal}<span class="syn-string">&quot;</span>)
+		}
+		refusals = <span class="syn-string">&quot;roc-ast refused </span>${$refused.len().to_str()}<span class="syn-string"> files (named above)&quot;</span>
+		why = <span class="syn-string">&quot;which have no tree to judge; every other file was judged&quot;</span>
+		<span class="syn-type">Shale</span>.fail!(<span class="syn-string">&quot;find_names_that_differ_across_lookalike_modules: </span>${refusals}<span class="syn-string">, </span>${why}<span class="syn-string">&quot;</span>)
+	}
+	<span class="syn-keyword">if</span> !(found.is_empty()) {
+		<span class="syn-type">Shale</span>.fail!(summary)
+	}
+}
+
+<span class="syn-comment">## The checks over the files that parsed, the roles file read for</span>
+<span class="syn-comment">## `twin_name`.</span>
+<span class="syn-name">run_checks!</span> : <span class="syn-type">List</span>(<span class="syn-type">ParsedFile</span>) =&gt; <span class="syn-type">List</span>(<span class="syn-type">Finding</span>)
+<span class="syn-name">run_checks!</span> = |files| {
+	family_findings = <span class="syn-type">Family</span>.findings(modules_of(files))
+	roles_file = <span class="syn-type">Shale</span>.arg!(<span class="syn-string">&quot;roles&quot;</span>, <span class="syn-string">&quot;&quot;</span>)
+	roles = <span class="syn-keyword">if</span> roles_file == <span class="syn-string">&quot;&quot;</span> {
+		<span class="syn-type">Set</span>.empty()
+	} <span class="syn-keyword">else</span> {
+		read_word_set!(roles_file)
+	}
+	twin_files = files
+		.keep_if(|file| !(file.is_app))
+		.map(|file| { path: file.read.path, types: file.read.declared.types })
+	conversion_findings = <span class="syn-type">Conversion</span>.findings(files.map(|file| file.read.declared.values).join())
+	family_findings.concat(<span class="syn-type">Twin</span>.findings(twin_files, roles)).concat(conversion_findings)
+}
+
+<span class="syn-comment">## The modules among the files read, in their order.</span>
+<span class="syn-name">modules_of</span> : <span class="syn-type">List</span>(<span class="syn-type">ParsedFile</span>) -&gt; <span class="syn-type">List</span>(<span class="syn-type">Family.Module</span>)
+<span class="syn-name">modules_of</span> = |files| {
+	<span class="syn-keyword">var</span> $modules = []
+	<span class="syn-keyword">for</span> file <span class="syn-keyword">in</span> files {
+		<span class="syn-keyword">match</span> <span class="syn-type">Family</span>.module_of(file.read) {
+			<span class="syn-type">IsModule</span>(found) =&gt; {
+				$modules = $modules.append(found)
+			}
+			<span class="syn-type">NoModule</span> =&gt; {}
+		}
+	}
+	$modules
+}
+
+<span class="syn-comment">## The file&#39;s text. A file the parser read and the read finds gone stops the</span>
+<span class="syn-comment">## run.</span>
+<span class="syn-name">read_text!</span> : <span class="syn-type">Str</span> =&gt; <span class="syn-type">Str</span>
+<span class="syn-name">read_text!</span> = |path|
+	<span class="syn-keyword">match</span> <span class="syn-type">Shale</span>.read!(path) {
+		<span class="syn-type">Found</span>(text) =&gt; text
+		<span class="syn-type">Missing</span> =&gt; {
+			<span class="syn-type">Shale</span>.fail!(<span class="syn-string">&quot;find_names_that_differ_across_lookalike_modules: </span>${path}<span class="syn-string"> went missing during the check&quot;</span>)
+			<span class="syn-string">&quot;&quot;</span>
+		}
+	}
+
+<span class="syn-comment">## A list of one word a line, any note after `--` cut off, as a set. A</span>
+<span class="syn-comment">## missing file, a word listed twice, or a line of two words stops the run.</span>
+<span class="syn-name">read_word_set!</span> : <span class="syn-type">Str</span> =&gt; <span class="syn-type">Set</span>(<span class="syn-type">Str</span>)
+<span class="syn-name">read_word_set!</span> = |path| {
+	text = <span class="syn-keyword">match</span> <span class="syn-type">Shale</span>.read!(path) {
+		<span class="syn-type">Found</span>(found) =&gt; found
+		<span class="syn-type">Missing</span> =&gt; {
+			<span class="syn-type">Shale</span>.fail!(<span class="syn-string">&quot;no word list </span>${path}<span class="syn-string">&quot;</span>)
+			<span class="syn-string">&quot;&quot;</span>
+		}
+	}
+	<span class="syn-keyword">var</span> $words = <span class="syn-type">Set</span>.empty()
+	<span class="syn-keyword">for</span> line <span class="syn-keyword">in</span> <span class="syn-type">Text</span>.lines(text) {
+		word = <span class="syn-type">Text</span>.trim(<span class="syn-type">Text</span>.before_first(line, <span class="syn-string">&quot;--&quot;</span>))
+		<span class="syn-keyword">if</span> word.contains(<span class="syn-string">&quot; &quot;</span>) <span class="syn-keyword">or</span> $words.contains(word) {
+			<span class="syn-type">Shale</span>.fail!(<span class="syn-string">&quot;</span>${path}<span class="syn-string">: `</span>${word}<span class="syn-string">` is no single new word&quot;</span>)
+		}
+		<span class="syn-keyword">if</span> word != <span class="syn-string">&quot;&quot;</span> {
+			$words = $words.insert(word)
+		}
+	}
+	$words
+}
+
+<span class="syn-comment">## The checks, in the order the summary counts them.</span>
+<span class="syn-name">checks</span> : <span class="syn-type">List</span>(<span class="syn-type">Str</span>)
+<span class="syn-name">checks</span> = [<span class="syn-string">&quot;family&quot;</span>, <span class="syn-string">&quot;twin_name&quot;</span>, <span class="syn-string">&quot;unpaired_conversion&quot;</span>]
+
+<span class="syn-comment">## The counts, `find_names_that_differ_across_lookalike_modules (Roc): N files; family N, twin_name N,</span>
+<span class="syn-comment">## unpaired_conversion N`.</span>
+<span class="syn-name">summary_of</span> : <span class="syn-type">List</span>(<span class="syn-type">Finding</span>), <span class="syn-type">U64</span> -&gt; <span class="syn-type">Str</span>
+<span class="syn-name">summary_of</span> = |findings, file_count| {
+	<span class="syn-string">&quot;find_names_that_differ_across_lookalike_modules (Roc): </span>${file_count.to_str()}<span class="syn-string"> files; </span>${<span class="syn-type">Finding</span>.counts_of(findings, checks)}<span class="syn-string">&quot;</span>
+}
+
+<span class="syn-comment">## The summary, each finding, then the summary again (cookbook/findings.shale):</span>
+<span class="syn-comment">## the first copy survives a cut output, and a gate reads the last line.</span>
+<span class="syn-name">print_findings!</span> : <span class="syn-type">Str</span>, <span class="syn-type">List</span>(<span class="syn-type">Str</span>) =&gt; {}
+<span class="syn-name">print_findings!</span> = |summary, finding_lines| {
+	<span class="syn-type">Shale</span>.print!(summary)
+	<span class="syn-keyword">if</span> !(finding_lines.is_empty()) {
+		<span class="syn-keyword">for</span> line <span class="syn-keyword">in</span> finding_lines {
+			<span class="syn-type">Shale</span>.print!(line)
+		}
+		<span class="syn-type">Shale</span>.print!(summary)
+	}
+}
+</code></pre>
+<p class="file"><a href="https://github.com/showell/shale/blob/e3c753adf065dc7856e5d49422daf99f9969f91a/cookbook/roc/find_names_that_differ_across_lookalike_modules/Conversion.roc"><code>cookbook/roc/find_names_that_differ_across_lookalike_modules/Conversion.roc</code></a>, 42 lines</p>
+<pre><code><span class="syn-comment">## The `unpaired_conversion` check: inside a type&#39;s braces, a function named</span>
+<span class="syn-comment">## for a noun that gives the type, such as `Distance.metres : F64 -&gt;</span>
+<span class="syn-comment">## Distance`, when the same type has `to_&lt;noun&gt;`. `Distance.to_metres` turns</span>
+<span class="syn-comment">## a distance into metres, so the way back reads `Distance.from_metres`, and</span>
+<span class="syn-comment">## a bare `metres` beside it leaves the reader to guess which way it goes. A</span>
+<span class="syn-comment">## constructor with no `to_` partner, such as `Clock.at_step`, is no finding.</span>
+<span class="syn-keyword">import</span> lib.<span class="syn-type">Declarations</span>
+<span class="syn-keyword">import</span> lib.<span class="syn-type">Finding</span>
+
+<span class="syn-type">Conversion</span> := [].{
+
+	<span class="syn-comment">## Each function that gives its own type and has a `to_` partner of its</span>
+	<span class="syn-comment">## name in the same type, a finding, in the order of `values`.</span>
+	<span class="syn-name">findings</span> : <span class="syn-type">List</span>(<span class="syn-type">Declarations.ValueDeclared</span>) -&gt; <span class="syn-type">List</span>(<span class="syn-type">Finding</span>)
+	<span class="syn-name">findings</span> = |values| {
+		names = <span class="syn-type">Set</span>.from_list(values.map(member_key))
+		is_unpaired = |value| {
+			gives_its_type = value.is_function <span class="syn-keyword">and</span> value.result_type == value.owner
+			partner = member_key({ ..value, name: <span class="syn-string">&quot;to_</span>${value.name}<span class="syn-string">&quot;</span> })
+			value.owner != <span class="syn-string">&quot;&quot;</span> <span class="syn-keyword">and</span> gives_its_type <span class="syn-keyword">and</span> names.contains(partner)
+		}
+		values.keep_if(is_unpaired).map(unpaired_finding)
+	}
+}
+
+<span class="syn-comment">## A type&#39;s member, by its file, its type and its name.</span>
+<span class="syn-name">member_key</span> : <span class="syn-type">Declarations.ValueDeclared</span> -&gt; <span class="syn-type">Str</span>
+<span class="syn-name">member_key</span> = |value| <span class="syn-string">&quot;</span>${value.path}<span class="syn-string"> </span>${value.owner}<span class="syn-string">.</span>${value.name}<span class="syn-string">&quot;</span>
+
+<span class="syn-comment">## The finding of a conversion into the type that isn&#39;t named `from_`.</span>
+<span class="syn-name">unpaired_finding</span> : <span class="syn-type">Declarations.ValueDeclared</span> -&gt; <span class="syn-type">Finding</span>
+<span class="syn-name">unpaired_finding</span> = |value| {
+	owner = value.owner
+	name = value.name
+	beside = <span class="syn-string">&quot;`</span>${owner}<span class="syn-string">.</span>${name}<span class="syn-string">` gives its own type beside `</span>${owner}<span class="syn-string">.to_</span>${name}<span class="syn-string">`&quot;</span>
+	{
+		path: value.path,
+		line: value.line,
+		check: <span class="syn-string">&quot;unpaired_conversion&quot;</span>,
+		what: <span class="syn-string">&quot;</span>${beside}<span class="syn-string">: name it `from_</span>${name}<span class="syn-string">`, the way back&quot;</span>,
+	}
+}
+</code></pre>
+<p class="file"><a href="https://github.com/showell/shale/blob/e3c753adf065dc7856e5d49422daf99f9969f91a/cookbook/roc/find_names_that_differ_across_lookalike_modules/Family.roc"><code>cookbook/roc/find_names_that_differ_across_lookalike_modules/Family.roc</code></a>, 198 lines</p>
+<pre><code><span class="syn-comment">## The `family` check. Modules whose names end in the same word form a family</span>
+<span class="syn-comment">## when there are three or more of them (`CatSighting`, `TreeSighting`,</span>
+<span class="syn-comment">## `RailSighting`). A public name that more than half of a family&#39;s members</span>
+<span class="syn-comment">## have is the family&#39;s, and each member without it is a finding, unless the</span>
+<span class="syn-comment">## member names the missing name in its file&#39;s opening comment or the doc</span>
+<span class="syn-comment">## above its type, to say why it differs. A reader who knows one member then</span>
+<span class="syn-comment">## finds the others&#39; names without looking.</span>
+<span class="syn-keyword">import</span> lib.<span class="syn-type">Declarations</span>
+<span class="syn-keyword">import</span> lib.<span class="syn-type">Finding</span>
+<span class="syn-keyword">import</span> lib.<span class="syn-type">Headers</span>
+<span class="syn-keyword">import</span> lib.<span class="syn-type">Text</span>
+<span class="syn-keyword">import</span> lib.<span class="syn-type">Tree</span>
+
+<span class="syn-type">Family</span> := [].{
+
+	<span class="syn-comment">## A module: a file that declares a type named for itself at the top</span>
+	<span class="syn-comment">## level, with the names of that type&#39;s members, and the text its doc</span>
+	<span class="syn-comment">## gives (the file&#39;s opening comment and the comment above its type).</span>
+	<span class="syn-type">Module</span> : {
+		name : <span class="syn-type">Str</span>,
+		path : <span class="syn-type">Str</span>,
+		line : <span class="syn-type">U64</span>,
+		members : <span class="syn-type">Set</span>(<span class="syn-type">Str</span>),
+		doc : <span class="syn-type">Str</span>,
+	}
+
+	<span class="syn-comment">## A file as the check reads it: its path, what it declares, and its lines.</span>
+	<span class="syn-type">FileRead</span> : {
+		path : <span class="syn-type">Str</span>,
+		declared : <span class="syn-type">Declarations</span>,
+		source_lines : <span class="syn-type">List</span>(<span class="syn-type">Str</span>),
+	}
+
+	<span class="syn-comment">## The file&#39;s module, when it declares one with any member that isn&#39;t a</span>
+	<span class="syn-comment">## method Roc calls by name.</span>
+	<span class="syn-name">module_of</span> : <span class="syn-type">Family.FileRead</span> -&gt; [<span class="syn-type">IsModule</span>(<span class="syn-type">Family.Module</span>), <span class="syn-type">NoModule</span>]
+	<span class="syn-name">module_of</span> = |file| {
+		name = <span class="syn-type">Tree</span>.module_name(file.path)
+		line = module_line(file.declared.types, name)
+		is_member = |value| value.owner == name <span class="syn-keyword">and</span> !(<span class="syn-type">Headers</span>.language_fixed_names.contains(value.name))
+		members = <span class="syn-type">Set</span>.from_list(file.declared.values.keep_if(is_member).map(|value| value.name))
+		<span class="syn-keyword">if</span> line == <span class="syn-number">0</span> <span class="syn-keyword">or</span> members.is_empty() {
+			<span class="syn-type">NoModule</span>
+		} <span class="syn-keyword">else</span> {
+			opening = <span class="syn-type">Str</span>.join_with(opening_comment(file.source_lines), <span class="syn-string">&quot; &quot;</span>)
+			doc = <span class="syn-string">&quot;</span>${opening}<span class="syn-string"> </span>${doc_above(file.source_lines, line)}<span class="syn-string">&quot;</span>
+			<span class="syn-type">IsModule</span>({
+				name,
+				path: file.path,
+				line,
+				members,
+				doc,
+			})
+		}
+	}
+
+	<span class="syn-comment">## Each member that lacks a name most of its family has, a finding.</span>
+	<span class="syn-name">findings</span> : <span class="syn-type">List</span>(<span class="syn-type">Family.Module</span>) -&gt; <span class="syn-type">List</span>(<span class="syn-type">Finding</span>)
+	<span class="syn-name">findings</span> = |modules| {
+		<span class="syn-keyword">var</span> $families = <span class="syn-type">Dict</span>.empty()
+		<span class="syn-keyword">for</span> member <span class="syn-keyword">in</span> modules {
+			<span class="syn-keyword">match</span> last_word(member.name) {
+				<span class="syn-type">Ok</span>(word) =&gt; {
+					$families = $families.insert(word, ($families.get(word) ?? []).append(member))
+				}
+				<span class="syn-type">Err</span>(<span class="syn-type">OneWord</span>) =&gt; {}
+			}
+		}
+		$families
+			.to_list()
+			.sort_with(|(a, _), (b, _)| <span class="syn-type">Text</span>.byte_order(a, b))
+			.map(|(word, members)| family_findings(word, members))
+			.join()
+	}
+}
+
+<span class="syn-comment">## The smallest family.</span>
+<span class="syn-name">smallest_family</span> : <span class="syn-type">U64</span>
+<span class="syn-name">smallest_family</span> = <span class="syn-number">3</span>
+
+<span class="syn-comment">## The line of the last top-level type named `name`, the module&#39;s own, or 0.</span>
+<span class="syn-name">module_line</span> : <span class="syn-type">List</span>(<span class="syn-type">Declarations.TypeDeclared</span>), <span class="syn-type">Str</span> -&gt; <span class="syn-type">U64</span>
+<span class="syn-name">module_line</span> = |types, name| {
+	<span class="syn-keyword">var</span> $line = <span class="syn-number">0</span>
+	<span class="syn-keyword">for</span> declared <span class="syn-keyword">in</span> types {
+		<span class="syn-keyword">if</span> declared.name == name <span class="syn-keyword">and</span> declared.owner == <span class="syn-string">&quot;&quot;</span> {
+			$line = declared.line
+		}
+	}
+	$line
+}
+
+<span class="syn-comment">## How many of `members` have each name, by name.</span>
+<span class="syn-name">holder_counts</span> : <span class="syn-type">List</span>(<span class="syn-type">Family.Module</span>) -&gt; <span class="syn-type">Dict</span>(<span class="syn-type">Str</span>, <span class="syn-type">U64</span>)
+<span class="syn-name">holder_counts</span> = |members| {
+	<span class="syn-keyword">var</span> $counts = <span class="syn-type">Dict</span>.empty()
+	<span class="syn-keyword">for</span> member <span class="syn-keyword">in</span> members {
+		<span class="syn-keyword">for</span> name <span class="syn-keyword">in</span> member.members.to_list() {
+			counted = <span class="syn-keyword">match</span> $counts.get(name) {
+				<span class="syn-type">Ok</span>(count) =&gt; count + <span class="syn-number">1</span>
+				<span class="syn-type">Err</span>(_) =&gt; <span class="syn-number">1</span>
+			}
+			$counts = $counts.insert(name, counted)
+		}
+	}
+	$counts
+}
+
+<span class="syn-comment">## The findings of the family whose names end in `word`.</span>
+<span class="syn-name">family_findings</span> : <span class="syn-type">Str</span>, <span class="syn-type">List</span>(<span class="syn-type">Family.Module</span>) -&gt; <span class="syn-type">List</span>(<span class="syn-type">Finding</span>)
+<span class="syn-name">family_findings</span> = |word, members| {
+	<span class="syn-keyword">if</span> members.len() &lt; smallest_family {
+		<span class="syn-keyword">return</span> []
+	}
+	<span class="syn-keyword">var</span> $found = []
+	counts = holder_counts(members).to_list().sort_with(|(a, _), (b, _)| <span class="syn-type">Text</span>.byte_order(a, b))
+	<span class="syn-keyword">for</span> (name, holder_count) <span class="syn-keyword">in</span> counts {
+		<span class="syn-keyword">if</span> holder_count * <span class="syn-number">2</span> &gt; members.len() {
+			<span class="syn-keyword">for</span> member <span class="syn-keyword">in</span> members {
+				<span class="syn-keyword">if</span> !(member.members.contains(name)) <span class="syn-keyword">and</span> !(member.doc.contains(<span class="syn-string">&quot;`</span>${name}<span class="syn-string">`&quot;</span>)) {
+					gap = {
+						member,
+						name,
+						holder_count,
+						member_count: members.len(),
+						word,
+					}
+					$found = $found.append(missing_name(gap))
+				}
+			}
+		}
+	}
+	$found
+}
+
+<span class="syn-comment">## A member without a name its family has: the name, how many of the</span>
+<span class="syn-comment">## family&#39;s members have it, and the family&#39;s last word.</span>
+<span class="syn-type">Gap</span> : {
+	member : <span class="syn-type">Family.Module</span>,
+	name : <span class="syn-type">Str</span>,
+	holder_count : <span class="syn-type">U64</span>,
+	member_count : <span class="syn-type">U64</span>,
+	word : <span class="syn-type">Str</span>,
+}
+
+<span class="syn-comment">## The finding of a member without its family&#39;s `name`.</span>
+<span class="syn-name">missing_name</span> : <span class="syn-type">Gap</span> -&gt; <span class="syn-type">Finding</span>
+<span class="syn-name">missing_name</span> = |gap| {
+	who = <span class="syn-string">&quot;`</span>${gap.member.name}<span class="syn-string">` has no `</span>${gap.name}<span class="syn-string">`&quot;</span>
+	counted = <span class="syn-string">&quot;</span>${gap.holder_count.to_str()}<span class="syn-string"> of the </span>${gap.member_count.to_str()}<span class="syn-string">&quot;</span>
+	which = <span class="syn-string">&quot;which </span>${counted}<span class="syn-string"> `*</span>${gap.word}<span class="syn-string">` modules have&quot;</span>
+	advice = <span class="syn-string">&quot;spell it alike, or name it in the module&#39;s doc to say why not&quot;</span>
+	{
+		path: gap.member.path,
+		line: gap.member.line,
+		check: <span class="syn-string">&quot;family&quot;</span>,
+		what: <span class="syn-string">&quot;</span>${who}<span class="syn-string">, </span>${which}<span class="syn-string">: </span>${advice}<span class="syn-string">&quot;</span>,
+	}
+}
+
+<span class="syn-comment">## The last word of a name of two or more words.</span>
+<span class="syn-name">last_word</span> : <span class="syn-type">Str</span> -&gt; <span class="syn-type">Try</span>(<span class="syn-type">Str</span>, [<span class="syn-type">OneWord</span>])
+<span class="syn-name">last_word</span> = |name|
+	<span class="syn-keyword">match</span> <span class="syn-type">Text</span>.name_words(name) {
+		[_, .., last] =&gt; <span class="syn-type">Ok</span>(last)
+		_ =&gt; <span class="syn-type">Err</span>(<span class="syn-type">OneWord</span>)
+	}
+
+<span class="syn-comment">## The comment lines that open a file, trimmed.</span>
+<span class="syn-name">opening_comment</span> : <span class="syn-type">List</span>(<span class="syn-type">Str</span>) -&gt; <span class="syn-type">List</span>(<span class="syn-type">Str</span>)
+<span class="syn-name">opening_comment</span> = |source_lines| {
+	<span class="syn-keyword">var</span> $out = []
+	<span class="syn-keyword">for</span> line <span class="syn-keyword">in</span> source_lines {
+		trimmed = <span class="syn-type">Text</span>.trim(line)
+		<span class="syn-keyword">if</span> !(trimmed.starts_with(<span class="syn-string">&quot;#&quot;</span>)) {
+			<span class="syn-keyword">return</span> $out
+		}
+		$out = $out.append(trimmed)
+	}
+	$out
+}
+
+<span class="syn-comment">## The comment lines directly above line `line`, nearest first, lowercased</span>
+<span class="syn-comment">## and joined: a declaration&#39;s doc.</span>
+<span class="syn-name">doc_above</span> : <span class="syn-type">List</span>(<span class="syn-type">Str</span>), <span class="syn-type">U64</span> -&gt; <span class="syn-type">Str</span>
+<span class="syn-name">doc_above</span> = |source_lines, line| {
+	<span class="syn-keyword">var</span> $parts = []
+	<span class="syn-keyword">var</span> $above = line - <span class="syn-number">1</span>
+	<span class="syn-keyword">while</span> $above &gt;= <span class="syn-number">1</span> {
+		trimmed = <span class="syn-type">Text</span>.trim(<span class="syn-type">Text</span>.line_at(source_lines, $above))
+		<span class="syn-keyword">if</span> !(trimmed.starts_with(<span class="syn-string">&quot;#&quot;</span>)) {
+			<span class="syn-keyword">return</span> <span class="syn-type">Str</span>.join_with($parts, <span class="syn-string">&quot; &quot;</span>)
+		}
+		$parts = $parts.append(<span class="syn-type">Text</span>.lower(trimmed))
+		$above = $above - <span class="syn-number">1</span>
+	}
+	<span class="syn-type">Str</span>.join_with($parts, <span class="syn-string">&quot; &quot;</span>)
+}
+</code></pre>
+<p class="file"><a href="https://github.com/showell/shale/blob/e3c753adf065dc7856e5d49422daf99f9969f91a/cookbook/roc/find_names_that_differ_across_lookalike_modules/SelfTest.roc"><code>cookbook/roc/find_names_that_differ_across_lookalike_modules/SelfTest.roc</code></a>, 215 lines</p>
+<pre><code><span class="syn-comment">## The recipe&#39;s self-test: each plant under</span>
+<span class="syn-comment">## cookbook/roc/plants/find_names_that_differ_across_lookalike_modules/ run through the launcher, held to its</span>
+<span class="syn-comment">## findings, its exit and what it says.</span>
+<span class="syn-keyword">import</span> pf.<span class="syn-type">Shale</span>
+
+<span class="syn-type">SelfTest</span> := [].{
+
+	<span class="syn-comment">## Each row run as a child of its own, through `launcher`; a check of</span>
+	<span class="syn-comment">## `checks` no row fires fails too, since it could be blind.</span>
+	<span class="syn-name">run!</span> : <span class="syn-type">List</span>(<span class="syn-type">Str</span>) =&gt; {}
+	<span class="syn-name">run!</span> = |checks| {
+		<span class="syn-keyword">var</span> $wrong = <span class="syn-number">0</span>.<span class="syn-type">U64</span>
+		<span class="syn-keyword">var</span> $fired = <span class="syn-type">Set</span>.empty()
+		<span class="syn-keyword">for</span> row <span class="syn-keyword">in</span> rows {
+			command = [<span class="syn-string">&quot;shale&quot;</span>, launcher, <span class="syn-string">&quot;glob=</span>${row.plant}<span class="syn-string">&quot;</span>].concat(row.arguments)
+			result = <span class="syn-type">Shale</span>.run!({
+				argv: command,
+				keep: <span class="syn-type">Whole</span>(<span class="syn-number">4000000</span>),
+				timeout_ms: <span class="syn-number">120000</span>,
+				want: <span class="syn-string">&quot;&quot;</span>,
+			})
+			faults = find_faults!(row, result, checks)
+			<span class="syn-keyword">for</span> (check, _) <span class="syn-keyword">in</span> row.counts {
+				$fired = $fired.insert(check)
+			}
+			<span class="syn-keyword">if</span> faults.is_empty() {
+				<span class="syn-type">Shale</span>.print!(<span class="syn-string">&quot;ok   </span>${row.plant}<span class="syn-string">&quot;</span>)
+			} <span class="syn-keyword">else</span> {
+				<span class="syn-type">Shale</span>.print!(<span class="syn-string">&quot;FAIL </span>${row.plant}<span class="syn-string">: </span>${<span class="syn-type">Str</span>.join_with(faults, <span class="syn-string">&quot;; &quot;</span>)}<span class="syn-string">&quot;</span>)
+				$wrong = $wrong + <span class="syn-number">1</span>
+				<span class="syn-type">Shale</span>.print!(result.out)
+			}
+		}
+		<span class="syn-keyword">for</span> check <span class="syn-keyword">in</span> checks {
+			<span class="syn-keyword">if</span> !($fired.contains(check)) {
+				<span class="syn-type">Shale</span>.print!(<span class="syn-string">&quot;FAIL `</span>${check}<span class="syn-string">` has no plant&quot;</span>)
+				$wrong = $wrong + <span class="syn-number">1</span>
+			}
+		}
+		<span class="syn-keyword">if</span> $wrong &gt; <span class="syn-number">0</span> {
+			<span class="syn-type">Shale</span>.fail!(<span class="syn-string">&quot;find_names_that_differ_across_lookalike_modules self_test: </span>${$wrong.to_str()}<span class="syn-string"> wrong&quot;</span>)
+		}
+		row_count = rows.len().to_str()
+		proof = <span class="syn-string">&quot;each plant gives its findings and a nonzero exit, each clean case none and exit 0&quot;</span>
+		<span class="syn-type">Shale</span>.print!(<span class="syn-string">&quot;find_names_that_differ_across_lookalike_modules self_test: PASS (</span>${row_count}<span class="syn-string"> rows: </span>${proof}<span class="syn-string">)&quot;</span>)
+	}
+}
+
+<span class="syn-comment">## The launcher, which the self-test runs each plant through.</span>
+<span class="syn-name">launcher</span> : <span class="syn-type">Str</span>
+<span class="syn-name">launcher</span> = <span class="syn-string">&quot;cookbook:roc/find_names_that_differ_across_lookalike_modules.shale&quot;</span>
+
+<span class="syn-name">plants</span> : <span class="syn-type">Str</span>
+<span class="syn-name">plants</span> = <span class="syn-string">&quot;cookbook:roc/plants/find_names_that_differ_across_lookalike_modules/&quot;</span>
+
+<span class="syn-comment">## A plant&#39;s run: its files (a glob below `plants`) and its other arguments,</span>
+<span class="syn-comment">## the findings each check must print, the literals its output must hold,</span>
+<span class="syn-comment">## and whether it must stop without a finding.</span>
+<span class="syn-type">Row</span> : {
+	plant : <span class="syn-type">Str</span>,
+	arguments : <span class="syn-type">List</span>(<span class="syn-type">Str</span>),
+	counts : <span class="syn-type">List</span>((<span class="syn-type">Str</span>, <span class="syn-type">U64</span>)),
+	says : <span class="syn-type">List</span>(<span class="syn-type">Str</span>),
+	stops : <span class="syn-type">Bool</span>,
+}
+
+<span class="syn-comment">## A plant, given as a glob below `plants`, with no finding to give.</span>
+<span class="syn-name">quiet</span> : <span class="syn-type">Str</span>, <span class="syn-type">List</span>(<span class="syn-type">Str</span>) -&gt; <span class="syn-type">Row</span>
+<span class="syn-name">quiet</span> = |plant, arguments| {
+	plant: <span class="syn-string">&quot;</span>${plants}${plant}<span class="syn-string">&quot;</span>,
+	arguments,
+	counts: [],
+	says: [],
+	stops: <span class="syn-type">Bool.False</span>,
+}
+
+<span class="syn-comment">## What a plant that fires is run with and must give.</span>
+<span class="syn-type">Firing</span> : {
+	plant : <span class="syn-type">Str</span>,
+	arguments : <span class="syn-type">List</span>(<span class="syn-type">Str</span>),
+	counts : <span class="syn-type">List</span>((<span class="syn-type">Str</span>, <span class="syn-type">U64</span>)),
+	says : <span class="syn-type">List</span>(<span class="syn-type">Str</span>),
+}
+
+<span class="syn-comment">## What a plant that stops is run with and must say.</span>
+<span class="syn-type">Stopping</span> : {
+	plant : <span class="syn-type">Str</span>,
+	arguments : <span class="syn-type">List</span>(<span class="syn-type">Str</span>),
+	says : <span class="syn-type">List</span>(<span class="syn-type">Str</span>),
+}
+
+<span class="syn-comment">## A plant with findings, and what they say.</span>
+<span class="syn-name">fires</span> : <span class="syn-type">Firing</span> -&gt; <span class="syn-type">Row</span>
+<span class="syn-name">fires</span> = |wanted| {
+	plant: <span class="syn-string">&quot;</span>${plants}${wanted.plant}<span class="syn-string">&quot;</span>,
+	arguments: wanted.arguments,
+	counts: wanted.counts,
+	says: wanted.says,
+	stops: <span class="syn-type">Bool.False</span>,
+}
+
+<span class="syn-comment">## A plant that must stop before any finding, saying what it says.</span>
+<span class="syn-name">stops</span> : <span class="syn-type">Stopping</span> -&gt; <span class="syn-type">Row</span>
+<span class="syn-name">stops</span> = |wanted| {
+	plant: <span class="syn-string">&quot;</span>${plants}${wanted.plant}<span class="syn-string">&quot;</span>,
+	arguments: wanted.arguments,
+	counts: [],
+	says: wanted.says,
+	stops: <span class="syn-type">Bool.True</span>,
+}
+
+<span class="syn-name">rows</span> : <span class="syn-type">List</span>(<span class="syn-type">Row</span>)
+<span class="syn-name">rows</span> = [
+	fires({
+		plant: <span class="syn-string">&quot;family/*.roc&quot;</span>,
+		arguments: [],
+		counts: [(<span class="syn-string">&quot;family&quot;</span>, <span class="syn-number">1</span>)],
+		says: [
+			<span class="syn-string">&quot;RailSighting.roc:4: family: `RailSighting` has no `in_view`, &quot;</span>
+				.concat(<span class="syn-string">&quot;which 3 of the 4 `*sighting` modules have&quot;</span>),
+		],
+	}),
+	quiet(<span class="syn-string">&quot;family_answered/*.roc&quot;</span>, []),
+	quiet(<span class="syn-string">&quot;family_small/*.roc&quot;</span>, []),
+	quiet(<span class="syn-string">&quot;family_half/*.roc&quot;</span>, []),
+	fires({
+		plant: <span class="syn-string">&quot;twin_name/*.roc&quot;</span>,
+		arguments: [],
+		counts: [(<span class="syn-string">&quot;twin_name&quot;</span>, <span class="syn-number">1</span>)],
+		says: [<span class="syn-string">&quot;Bird.roc:4: twin_name: `Pose` is also declared at&quot;</span>, <span class="syn-string">&quot;Cat.roc:4&quot;</span>],
+	}),
+	quiet(<span class="syn-string">&quot;twin_name/*.roc&quot;</span>, [<span class="syn-string">&quot;roles=</span>${plants}<span class="syn-string">roles.txt&quot;</span>]),
+	fires({
+		plant: <span class="syn-string">&quot;twin_name/*.roc&quot;</span>,
+		arguments: [<span class="syn-string">&quot;roles=</span>${plants}<span class="syn-string">other_roles.txt&quot;</span>],
+		counts: [(<span class="syn-string">&quot;twin_name&quot;</span>, <span class="syn-number">1</span>)],
+		says: [<span class="syn-string">&quot;`Pose` is also declared at&quot;</span>],
+	}),
+	stops({
+		plant: <span class="syn-string">&quot;twin_name/*.roc&quot;</span>,
+		arguments: [<span class="syn-string">&quot;roles=</span>${plants}<span class="syn-string">no_such.txt&quot;</span>],
+		says: [<span class="syn-string">&quot;no word list&quot;</span>],
+	}),
+	quiet(<span class="syn-string">&quot;twin_app/*.roc&quot;</span>, []),
+	quiet(<span class="syn-string">&quot;twin_copy/*.roc&quot;</span>, []),
+	quiet(<span class="syn-string">&quot;twin_namespace/*.roc&quot;</span>, []),
+	fires({
+		plant: <span class="syn-string">&quot;twin_namespace_clash/*.roc&quot;</span>,
+		arguments: [],
+		counts: [(<span class="syn-string">&quot;twin_name&quot;</span>, <span class="syn-number">1</span>)],
+		says: [<span class="syn-string">&quot;`Lamp` is also declared at&quot;</span>],
+	}),
+	fires({
+		plant: <span class="syn-string">&quot;conversion/*.roc&quot;</span>,
+		arguments: [],
+		counts: [(<span class="syn-string">&quot;unpaired_conversion&quot;</span>, <span class="syn-number">1</span>)],
+		says: [<span class="syn-string">&quot;Span.roc:4: unpaired_conversion: `Span.metres` gives its own type beside `Span.to_metres`&quot;</span>],
+	}),
+	quiet(<span class="syn-string">&quot;conversion_paired/*.roc&quot;</span>, []),
+	stops({ plant: <span class="syn-string">&quot;broken/*.roc&quot;</span>, arguments: [], says: [<span class="syn-string">&quot;refused: &quot;</span>] }),
+]
+
+<span class="syn-comment">## The last line of `out` that isn&#39;t one of Shale&#39;s `──` lines.</span>
+<span class="syn-name">last_said</span> : <span class="syn-type">Str</span> -&gt; <span class="syn-type">Str</span>
+<span class="syn-name">last_said</span> = |out|
+	out.trim().split_on(<span class="syn-string">&quot;\n&quot;</span>).fold(
+		<span class="syn-string">&quot;&quot;</span>,
+		|last, line|
+			<span class="syn-keyword">if</span> line.starts_with(<span class="syn-string">&quot;──&quot;</span>) <span class="syn-keyword">or</span> line.trim() == <span class="syn-string">&quot;&quot;</span> {
+				last
+			} <span class="syn-keyword">else</span> {
+				line
+			},
+	)
+
+<span class="syn-comment">## The findings `row` wants of `check`.</span>
+<span class="syn-name">wanted_count</span> : <span class="syn-type">Row</span>, <span class="syn-type">Str</span> -&gt; <span class="syn-type">U64</span>
+<span class="syn-name">wanted_count</span> = |row, check| {
+	<span class="syn-keyword">var</span> $wanted = <span class="syn-number">0</span>
+	<span class="syn-keyword">for</span> (counted, count) <span class="syn-keyword">in</span> row.counts {
+		<span class="syn-keyword">if</span> counted == check {
+			$wanted = count
+		}
+	}
+	$wanted
+}
+
+<span class="syn-comment">## What is wrong with one row&#39;s run.</span>
+<span class="syn-name">find_faults!</span> : <span class="syn-type">Row</span>, { code : <span class="syn-type">I64</span>, out : <span class="syn-type">Str</span> }, <span class="syn-type">List</span>(<span class="syn-type">Str</span>) =&gt; <span class="syn-type">List</span>(<span class="syn-type">Str</span>)
+<span class="syn-name">find_faults!</span> = |row, result, checks| {
+	must_fail = row.stops <span class="syn-keyword">or</span> !(row.counts.is_empty())
+	<span class="syn-keyword">var</span> $faults = []
+	<span class="syn-keyword">if</span> must_fail <span class="syn-keyword">and</span> result.code == <span class="syn-number">0</span> {
+		$faults = $faults.append(<span class="syn-string">&quot;it exited 0&quot;</span>)
+	}
+	<span class="syn-keyword">if</span> !(must_fail) <span class="syn-keyword">and</span> result.code != <span class="syn-number">0</span> {
+		$faults = $faults.append(<span class="syn-string">&quot;it exited </span>${result.code.to_str()}<span class="syn-string">&quot;</span>)
+	}
+	<span class="syn-keyword">for</span> check <span class="syn-keyword">in</span> checks {
+		found = <span class="syn-type">Shale</span>.re_lines!(result.out, <span class="syn-string">&quot;^[^ ]+:[0-9]+: </span>${check}<span class="syn-string">: &quot;</span>).len()
+		wanted = wanted_count(row, check)
+		<span class="syn-keyword">if</span> found != wanted {
+			$faults = $faults.append(<span class="syn-string">&quot;</span>${check}<span class="syn-string"> printed </span>${found.to_str()}<span class="syn-string">, not </span>${wanted.to_str()}<span class="syn-string">&quot;</span>)
+		}
+	}
+	<span class="syn-keyword">if</span> !(row.stops) <span class="syn-keyword">and</span> !(last_said(result.out).contains(<span class="syn-string">&quot; files; &quot;</span>)) {
+		$faults = $faults.append(<span class="syn-string">&quot;its last line is no summary: </span>${last_said(result.out)}<span class="syn-string">&quot;</span>)
+	}
+	<span class="syn-keyword">for</span> literal <span class="syn-keyword">in</span> row.says {
+		<span class="syn-keyword">if</span> !(result.out.contains(literal)) {
+			$faults = $faults.append(<span class="syn-string">&quot;its output lacks `</span>${literal}<span class="syn-string">`&quot;</span>)
+		}
+	}
+	$faults
+}
+</code></pre>
+<p class="file"><a href="https://github.com/showell/shale/blob/e3c753adf065dc7856e5d49422daf99f9969f91a/cookbook/roc/find_names_that_differ_across_lookalike_modules/Twin.roc"><code>cookbook/roc/find_names_that_differ_across_lookalike_modules/Twin.roc</code></a>, 92 lines</p>
+<pre><code><span class="syn-comment">## The `twin_name` check: one type name declared in two modules with two</span>
+<span class="syn-comment">## different shapes, such as `Cat.Pose` and `Geom.Pose`, one word with two</span>
+<span class="syn-comment">## meanings, so a reader who knows one guesses the other wrong. It is</span>
+<span class="syn-comment">## reported once, at its first declaration, with the others listed. Twins of</span>
+<span class="syn-comment">## one shape are copies, as when a package can&#39;t import its platform&#39;s type,</span>
+<span class="syn-comment">## so they are no finding. A namespace module (`Collider := [].{ ... }`)</span>
+<span class="syn-comment">## builds a type and declares none, and so does an alias of the twin</span>
+<span class="syn-comment">## (`Pose : Geom.Pose`). App files are left out by the caller, because every</span>
+<span class="syn-comment">## app declares what its platform asks for.</span>
+<span class="syn-keyword">import</span> lib.<span class="syn-type">Declarations</span>
+<span class="syn-keyword">import</span> lib.<span class="syn-type">Finding</span>
+<span class="syn-keyword">import</span> lib.<span class="syn-type">Text</span>
+
+<span class="syn-type">Twin</span> := [].{
+
+	<span class="syn-comment">## Where a type is declared, and its shape.</span>
+	<span class="syn-type">Place</span> : {
+		path : <span class="syn-type">Str</span>,
+		line : <span class="syn-type">U64</span>,
+		shape : <span class="syn-type">Str</span>,
+	}
+
+	<span class="syn-comment">## A file&#39;s path and the types it declares.</span>
+	<span class="syn-type">FileTypes</span> : { path : <span class="syn-type">Str</span>, types : <span class="syn-type">List</span>(<span class="syn-type">Declarations.TypeDeclared</span>) }
+
+	<span class="syn-comment">## The twins among the files&#39; types, in the order the files were read.</span>
+	<span class="syn-comment">## A name in `roles` is each module&#39;s own to declare, so it has no twin.</span>
+	<span class="syn-name">findings</span> : <span class="syn-type">List</span>(<span class="syn-type">Twin.FileTypes</span>), <span class="syn-type">Set</span>(<span class="syn-type">Str</span>) -&gt; <span class="syn-type">List</span>(<span class="syn-type">Finding</span>)
+	<span class="syn-name">findings</span> = |files, roles| {
+		is_role = |name| roles.contains(name)
+		is_twin = |(name, places)| places.len() &gt; <span class="syn-number">1</span> <span class="syn-keyword">and</span> !(is_role(name)) <span class="syn-keyword">and</span> has_two_shapes(places)
+		files
+			.fold(<span class="syn-type">Dict</span>.empty(), with_places)
+			.to_list()
+			.sort_with(|(a, _), (b, _)| <span class="syn-type">Text</span>.byte_order(a, b))
+			.keep_if(is_twin)
+			.map(|(name, places)| twin_finding(name, places))
+	}
+}
+
+<span class="syn-comment">## `places_by_name` with the file&#39;s types added, each name once a file, at</span>
+<span class="syn-comment">## its first declaration, and only where the type declares a shape of its</span>
+<span class="syn-comment">## own.</span>
+<span class="syn-name">with_places</span> : <span class="syn-type">Dict</span>(<span class="syn-type">Str</span>, <span class="syn-type">List</span>(<span class="syn-type">Twin.Place</span>)), <span class="syn-type">Twin.FileTypes</span> -&gt; <span class="syn-type">Dict</span>(<span class="syn-type">Str</span>, <span class="syn-type">List</span>(<span class="syn-type">Twin.Place</span>))
+<span class="syn-name">with_places</span> = |places_by_name, file| {
+	<span class="syn-keyword">var</span> $places = places_by_name
+	<span class="syn-keyword">var</span> $seen = <span class="syn-type">Set</span>.empty()
+	<span class="syn-keyword">for</span> declared <span class="syn-keyword">in</span> file.types {
+		<span class="syn-keyword">if</span> !($seen.contains(declared.name)) <span class="syn-keyword">and</span> !(is_type_elsewhere(declared)) {
+			$seen = $seen.insert(declared.name)
+			place = {
+				path: file.path,
+				line: declared.line,
+				shape: declared.shape,
+			}
+			named_so_far = $places.get(declared.name) ?? []
+			$places = $places.insert(declared.name, named_so_far.append(place))
+		}
+	}
+	$places
+}
+
+<span class="syn-comment">## Whether the type declares nothing of its own: a namespace module, or an</span>
+<span class="syn-comment">## alias of a type of its own name.</span>
+<span class="syn-name">is_type_elsewhere</span> : <span class="syn-type">Declarations.TypeDeclared</span> -&gt; <span class="syn-type">Bool</span>
+<span class="syn-name">is_type_elsewhere</span> = |declared| {
+	shape = declared.shape
+	shape == <span class="syn-string">&quot;&quot;</span> <span class="syn-keyword">or</span> shape == <span class="syn-string">&quot;[]&quot;</span> <span class="syn-keyword">or</span> shape == declared.name
+}
+
+<span class="syn-name">has_two_shapes</span> : <span class="syn-type">List</span>(<span class="syn-type">Twin.Place</span>) -&gt; <span class="syn-type">Bool</span>
+<span class="syn-name">has_two_shapes</span> = |places|
+	<span class="syn-keyword">match</span> places {
+		[first, .. <span class="syn-keyword">as</span> rest] =&gt; rest.any(|place| place.shape != first.shape)
+		[] =&gt; <span class="syn-type">Bool.False</span>
+	}
+
+<span class="syn-comment">## The finding at the name&#39;s first place, naming the others.</span>
+<span class="syn-name">twin_finding</span> : <span class="syn-type">Str</span>, <span class="syn-type">List</span>(<span class="syn-type">Twin.Place</span>) -&gt; <span class="syn-type">Finding</span>
+<span class="syn-name">twin_finding</span> = |name, places|
+	<span class="syn-keyword">match</span> places {
+		[first, .. <span class="syn-keyword">as</span> rest] =&gt; {
+			others = <span class="syn-type">Str</span>.join_with(rest.map(|place| <span class="syn-string">&quot;</span>${place.path}<span class="syn-string">:</span>${place.line.to_str()}<span class="syn-string">&quot;</span>), <span class="syn-string">&quot;, &quot;</span>)
+			{
+				path: first.path,
+				line: first.line,
+				check: <span class="syn-string">&quot;twin_name&quot;</span>,
+				what: <span class="syn-string">&quot;`</span>${name}<span class="syn-string">` is also declared at </span>${others}<span class="syn-string">, in another shape&quot;</span>,
+			}
+		}
+		[] =&gt; <span class="syn-keyword">crash</span> <span class="syn-string">&quot;find_names_that_differ_across_lookalike_modules: a twin with no place&quot;</span>
+	}
+</code></pre>
+<h2 class="code">Shale original</h2>
+<p class="file"><a href="https://github.com/showell/shale/blob/93d75347223a3f58a07b23439b6b934694d9d153/cookbook/roc/check_families.shale"><code>cookbook/roc/check_families.shale</code></a>, 183 lines, at <code>93d75347</code></p>
+<p class="file">The libraries it loads: <a href="https://github.com/showell/shale/blob/93d75347223a3f58a07b23439b6b934694d9d153/cookbook/roc/declared.shale"><code>cookbook/roc/declared.shale</code></a> (1,075 lines), <a href="https://github.com/showell/shale/blob/93d75347223a3f58a07b23439b6b934694d9d153/cookbook/findings.shale"><code>cookbook/findings.shale</code></a> (21 lines), <a href="https://github.com/showell/shale/blob/93d75347223a3f58a07b23439b6b934694d9d153/cookbook/roc/parsed.shale"><code>cookbook/roc/parsed.shale</code></a> (34 lines), <a href="https://github.com/showell/shale/blob/93d75347223a3f58a07b23439b6b934694d9d153/cookbook/roc/gate_recipe.shale"><code>cookbook/roc/gate_recipe.shale</code></a> (102 lines), <a href="https://github.com/showell/shale/blob/93d75347223a3f58a07b23439b6b934694d9d153/cookbook/roc/headers.shale"><code>cookbook/roc/headers.shale</code></a> (96 lines).</p>
+<pre><code><span class="syn-comment">-- This recipe checks that modules which look alike are spelled alike, and</span>
+<span class="syn-comment">-- that one type name means one thing.</span>
+<span class="syn-comment">--</span>
+<span class="syn-comment">--   cd &lt;repo&gt; &amp;&amp; shale &lt;shale&gt;/cookbook/roc/check_families.shale</span>
+<span class="syn-comment">--   shale cookbook:roc/check_families.shale self_test=1</span>
+<span class="syn-comment">--</span>
+<span class="syn-comment">-- The arguments:</span>
+<span class="syn-comment">--   glob       the files to check, `**/*.roc` by default;</span>
+<span class="syn-comment">--   roles      a project&#39;s file of type names, one a line, that each module</span>
+<span class="syn-comment">--              may declare for itself, as `Id` in `Message.Id`: read with its</span>
+<span class="syn-comment">--              module it is a two-part name, so `twin_name` leaves it alone;</span>
+<span class="syn-comment">--   self_test  with `self_test=1`, check the plants in</span>
+<span class="syn-comment">--              `cookbook/roc/plants/check_families/`.</span>
+<span class="syn-comment">--</span>
+<span class="syn-comment">-- The checks:</span>
+<span class="syn-comment">--</span>
+<span class="syn-comment">--   family     Modules whose names end in the same word form a family when</span>
+<span class="syn-comment">--              there are three or more (`CatSighting`, `TreeSighting`,</span>
+<span class="syn-comment">--              `RailSighting`). A public name that more than half of a</span>
+<span class="syn-comment">--              family&#39;s members have is the family&#39;s, and each member</span>
+<span class="syn-comment">--              without it is a finding. A member that differs for a good</span>
+<span class="syn-comment">--              reason says so by naming the missing name in the `##` doc</span>
+<span class="syn-comment">--              above its type, or in the file&#39;s opening comment.</span>
+<span class="syn-comment">--   twin_name  One public type name declared in two modules with different</span>
+<span class="syn-comment">--              shapes, such as `Cat.Pose` and `Geom.Pose`: one word, two</span>
+<span class="syn-comment">--              meanings. It is reported once, at its first declaration, with</span>
+<span class="syn-comment">--              the others listed. Twins of one shape are copies, as when a</span>
+<span class="syn-comment">--              package can&#39;t import its platform&#39;s type, so they are no</span>
+<span class="syn-comment">--              finding. A shape ignores what a name is qualified by, and the</span>
+<span class="syn-comment">--              order of fields and tags. A namespace module</span>
+<span class="syn-comment">--              (`Collider := [].{ ... }`) builds a type and declares none, and</span>
+<span class="syn-comment">--              so does an alias of the twin (`Pose : Geom.Pose`). App files are</span>
+<span class="syn-comment">--              left out, because every app declares what its platform asks for.</span>
+<span class="syn-comment">--</span>
+<span class="syn-comment">-- `twin_name` sees only the files read, so give it the whole tree: run by</span>
+<span class="syn-comment">-- folder, it misses twins in two folders.</span>
+<span class="syn-comment">--</span>
+<span class="syn-comment">-- A module is a file that declares a type named for itself, and its public</span>
+<span class="syn-comment">-- names are that type&#39;s members. The output is the counts, one line per</span>
+<span class="syn-comment">-- finding, and the counts again (cookbook/findings.shale).</span>
+<span class="syn-comment">-- The run fails if there are findings, or if any file doesn&#39;t parse, and the</span>
+<span class="syn-comment">-- files that do parse are judged either way.</span>
+<span class="syn-comment">-- budget: steps=800000000 arena_bytes=2000000000 output_bytes=4000000</span>
+
+<span class="syn-keyword">const</span> SELF_TEST = arg(<span class="syn-string">&quot;self_test&quot;</span>, <span class="syn-string">&quot;&quot;</span>) == <span class="syn-string">&quot;1&quot;</span>
+<span class="syn-keyword">const</span> GLOB = arg(<span class="syn-string">&quot;glob&quot;</span>, <span class="syn-string">&quot;**/*.roc&quot;</span>)
+<span class="syn-keyword">const</span> ROLES_FILE = arg(<span class="syn-string">&quot;roles&quot;</span>, <span class="syn-string">&quot;&quot;</span>)
+use(<span class="syn-string">&quot;./declared.shale&quot;</span>)
+use(<span class="syn-string">&quot;cookbook:findings.shale&quot;</span>)
+use(<span class="syn-string">&quot;./parsed.shale&quot;</span>)
+use(<span class="syn-string">&quot;./gate_recipe.shale&quot;</span>)
+use(<span class="syn-string">&quot;./headers.shale&quot;</span>)
+<span class="syn-keyword">const</span> CHECKS = {<span class="syn-string">&quot;family&quot;</span>, <span class="syn-string">&quot;twin_name&quot;</span>}
+<span class="syn-keyword">const</span> SMALLEST_FAMILY = <span class="syn-number">3</span>
+
+<span class="syn-comment">-- The file&#39;s opening comment and the doc above line `line`, as one text.</span>
+<span class="syn-keyword">function</span> <span class="syn-name">module_doc_text</span>(path, line)
+  <span class="syn-keyword">local</span> src = split(read(path), <span class="syn-string">&quot;\n&quot;</span>)
+  <span class="syn-keyword">return</span> join(opening_comment(src), <span class="syn-string">&quot; &quot;</span>) .. <span class="syn-string">&quot; &quot;</span> .. doc_above(src, line)
+<span class="syn-keyword">end</span>
+
+<span class="syn-comment">-- Each module in the files read, as `{name, path, line, members}`, where</span>
+<span class="syn-comment">-- `members` is the set of its type&#39;s member names.</span>
+<span class="syn-keyword">function</span> <span class="syn-name">modules_of</span>(declared_by_file)
+  <span class="syn-keyword">local</span> out = {}
+  <span class="syn-keyword">for</span> one <span class="syn-keyword">in</span> declared_by_file <span class="syn-keyword">do</span>
+    <span class="syn-keyword">local</span> name = module_name(one.path)
+    <span class="syn-keyword">local</span> module = {name = name, path = one.path, line = <span class="syn-number">0</span>, members = {}}
+    <span class="syn-keyword">for</span> d <span class="syn-keyword">in</span> one.declared <span class="syn-keyword">do</span>
+      <span class="syn-keyword">if</span> d.kind == <span class="syn-string">&quot;type&quot;</span> <span class="syn-keyword">and</span> d.name == name <span class="syn-keyword">and</span> d.owner == <span class="syn-string">&quot;&quot;</span> <span class="syn-keyword">then</span> module.line = d.line <span class="syn-keyword">end</span>
+      <span class="syn-keyword">if</span> d.kind == <span class="syn-string">&quot;value&quot;</span> <span class="syn-keyword">and</span> d.owner == name <span class="syn-keyword">and</span> <span class="syn-keyword">not</span> has_key(LANGUAGE_FIXED_NAMES, d.name) <span class="syn-keyword">then</span> module.members[d.name] = <span class="syn-keyword">true</span> <span class="syn-keyword">end</span>
+    <span class="syn-keyword">end</span>
+    <span class="syn-keyword">if</span> module.line ~= <span class="syn-number">0</span> <span class="syn-keyword">and</span> #keys(module.members) &gt; <span class="syn-number">0</span> <span class="syn-keyword">then</span> push(out, module) <span class="syn-keyword">end</span>
+  <span class="syn-keyword">end</span>
+  <span class="syn-keyword">return</span> out
+<span class="syn-keyword">end</span>
+
+<span class="syn-keyword">function</span> <span class="syn-name">judge_families</span>(modules, report)
+  <span class="syn-keyword">local</span> family_of = {}
+  <span class="syn-keyword">for</span> m <span class="syn-keyword">in</span> modules <span class="syn-keyword">do</span>
+    <span class="syn-keyword">local</span> ws = name_words(m.name)
+    <span class="syn-keyword">if</span> #ws &gt; <span class="syn-number">1</span> <span class="syn-keyword">then</span> push_at(family_of, ws[#ws], m) <span class="syn-keyword">end</span>
+  <span class="syn-keyword">end</span>
+  <span class="syn-keyword">for</span> word <span class="syn-keyword">in</span> sort(keys(family_of)) <span class="syn-keyword">do</span>
+    <span class="syn-keyword">local</span> members = family_of[word]
+    <span class="syn-keyword">if</span> #members &gt;= SMALLEST_FAMILY <span class="syn-keyword">then</span>
+      <span class="syn-keyword">local</span> holders = {}
+      <span class="syn-keyword">for</span> m <span class="syn-keyword">in</span> members <span class="syn-keyword">do</span>
+        <span class="syn-keyword">for</span> name <span class="syn-keyword">in</span> keys(m.members) <span class="syn-keyword">do</span> incr(holders, name) <span class="syn-keyword">end</span>
+      <span class="syn-keyword">end</span>
+      <span class="syn-keyword">for</span> name <span class="syn-keyword">in</span> sort(keys(holders)) <span class="syn-keyword">do</span>
+        <span class="syn-keyword">if</span> holders[name] * <span class="syn-number">2</span> &gt; #members <span class="syn-keyword">then</span>
+          <span class="syn-keyword">for</span> m <span class="syn-keyword">in</span> members <span class="syn-keyword">do</span>
+            <span class="syn-keyword">if</span> <span class="syn-keyword">not</span> has_key(m.members, name) <span class="syn-keyword">and</span> <span class="syn-keyword">not</span> contains(module_doc_text(m.path, m.line), <span class="syn-string">&quot;`&quot;</span> .. name .. <span class="syn-string">&quot;`&quot;</span>) <span class="syn-keyword">then</span>
+              push(report, {path = m.path, line = m.line, check = <span class="syn-string">&quot;family&quot;</span>, what = <span class="syn-string">&quot;`&quot;</span> .. m.name .. <span class="syn-string">&quot;` has no `&quot;</span> .. name .. <span class="syn-string">&quot;`, which &quot;</span> .. holders[name] .. <span class="syn-string">&quot; of the &quot;</span> .. #members .. <span class="syn-string">&quot; `*&quot;</span> .. word .. <span class="syn-string">&quot;` modules have: spell it alike, or name it in the module&#39;s doc to say why not&quot;</span>})
+            <span class="syn-keyword">end</span>
+          <span class="syn-keyword">end</span>
+        <span class="syn-keyword">end</span>
+      <span class="syn-keyword">end</span>
+    <span class="syn-keyword">end</span>
+  <span class="syn-keyword">end</span>
+  <span class="syn-keyword">return</span> <span class="syn-keyword">nil</span>
+<span class="syn-keyword">end</span>
+
+<span class="syn-comment">-- Whether the type `d` declares nothing of its own: a namespace module, or an</span>
+<span class="syn-comment">-- alias of a type of its own name.</span>
+<span class="syn-keyword">function</span> <span class="syn-name">is_type_elsewhere</span>(d)
+  <span class="syn-keyword">return</span> d.shape == <span class="syn-string">&quot;&quot;</span> <span class="syn-keyword">or</span> d.shape == <span class="syn-string">&quot;[]&quot;</span> <span class="syn-keyword">or</span> d.shape == d.name
+<span class="syn-keyword">end</span>
+
+<span class="syn-keyword">function</span> <span class="syn-name">has_two_shapes</span>(places)
+  <span class="syn-keyword">for</span> p <span class="syn-keyword">in</span> drop(places, <span class="syn-number">1</span>) <span class="syn-keyword">do</span>
+    <span class="syn-keyword">if</span> p.shape ~= places[<span class="syn-number">1</span>].shape <span class="syn-keyword">then</span> <span class="syn-keyword">return</span> <span class="syn-keyword">true</span> <span class="syn-keyword">end</span>
+  <span class="syn-keyword">end</span>
+  <span class="syn-keyword">return</span> <span class="syn-keyword">false</span>
+<span class="syn-keyword">end</span>
+
+<span class="syn-keyword">function</span> <span class="syn-name">judge_twins</span>(declared_by_file, roles, report)
+  <span class="syn-keyword">local</span> places_of = {}
+  <span class="syn-keyword">for</span> one <span class="syn-keyword">in</span> declared_by_file <span class="syn-keyword">do</span>
+    <span class="syn-keyword">if</span> <span class="syn-keyword">not</span> one.is_app <span class="syn-keyword">then</span>
+      <span class="syn-keyword">local</span> seen = {}
+      <span class="syn-keyword">for</span> d <span class="syn-keyword">in</span> one.declared <span class="syn-keyword">do</span>
+        <span class="syn-keyword">if</span> d.kind == <span class="syn-string">&quot;type&quot;</span> <span class="syn-keyword">and</span> <span class="syn-keyword">not</span> has_key(seen, d.name) <span class="syn-keyword">and</span> <span class="syn-keyword">not</span> is_type_elsewhere(d) <span class="syn-keyword">then</span>
+          seen[d.name] = <span class="syn-keyword">true</span>
+          push_at(places_of, d.name, d)
+        <span class="syn-keyword">end</span>
+      <span class="syn-keyword">end</span>
+    <span class="syn-keyword">end</span>
+  <span class="syn-keyword">end</span>
+  <span class="syn-keyword">for</span> name <span class="syn-keyword">in</span> sort(keys(places_of)) <span class="syn-keyword">do</span>
+    <span class="syn-keyword">local</span> places = places_of[name]
+    <span class="syn-keyword">if</span> #places &gt; <span class="syn-number">1</span> <span class="syn-keyword">and</span> <span class="syn-keyword">not</span> has_key(roles, name) <span class="syn-keyword">and</span> has_two_shapes(places) <span class="syn-keyword">then</span>
+      <span class="syn-keyword">local</span> others = {}
+      <span class="syn-keyword">for</span> p <span class="syn-keyword">in</span> drop(places, <span class="syn-number">1</span>) <span class="syn-keyword">do</span> push(others, p.path .. <span class="syn-string">&quot;:&quot;</span> .. p.line) <span class="syn-keyword">end</span>
+      push(report, {path = places[<span class="syn-number">1</span>].path, line = places[<span class="syn-number">1</span>].line, check = <span class="syn-string">&quot;twin_name&quot;</span>, what = <span class="syn-string">&quot;`&quot;</span> .. name .. <span class="syn-string">&quot;` is also declared at &quot;</span> .. join(others, <span class="syn-string">&quot;, &quot;</span>) .. <span class="syn-string">&quot;, in another shape&quot;</span>})
+    <span class="syn-keyword">end</span>
+  <span class="syn-keyword">end</span>
+  <span class="syn-keyword">return</span> <span class="syn-keyword">nil</span>
+<span class="syn-keyword">end</span>
+
+<span class="syn-keyword">function</span> <span class="syn-name">self_test</span>()
+  <span class="syn-keyword">local</span> at = <span class="syn-string">&quot;cookbook:roc/plants/check_families/&quot;</span>
+  check_plants(<span class="syn-string">&quot;check_families&quot;</span>, <span class="syn-string">&quot;cookbook:roc/check_families.shale&quot;</span>, CHECKS, {
+    {glob = at .. <span class="syn-string">&quot;family/*.roc&quot;</span>, counts = {family = <span class="syn-number">1</span>}, says = {<span class="syn-string">&quot;RailSighting.roc:4: family: `RailSighting` has no `in_view`, which 3 of the 4 `*sighting` modules have&quot;</span>}},
+    {glob = at .. <span class="syn-string">&quot;family_answered/*.roc&quot;</span>},
+    {glob = at .. <span class="syn-string">&quot;family_small/*.roc&quot;</span>},
+    {glob = at .. <span class="syn-string">&quot;family_half/*.roc&quot;</span>},
+    {glob = at .. <span class="syn-string">&quot;twin_name/*.roc&quot;</span>, counts = {twin_name = <span class="syn-number">1</span>}, says = {<span class="syn-string">&quot;Bird.roc:4: twin_name: `Pose` is also declared at&quot;</span>, <span class="syn-string">&quot;Cat.roc:4&quot;</span>}},
+    {glob = at .. <span class="syn-string">&quot;twin_name/*.roc&quot;</span>, args = {<span class="syn-string">&quot;roles=&quot;</span> .. at .. <span class="syn-string">&quot;roles.txt&quot;</span>}},
+    {glob = at .. <span class="syn-string">&quot;twin_name/*.roc&quot;</span>, args = {<span class="syn-string">&quot;roles=&quot;</span> .. at .. <span class="syn-string">&quot;other_roles.txt&quot;</span>}, counts = {twin_name = <span class="syn-number">1</span>}, says = {<span class="syn-string">&quot;`Pose` is also declared at&quot;</span>}},
+    {glob = at .. <span class="syn-string">&quot;twin_name/*.roc&quot;</span>, args = {<span class="syn-string">&quot;roles=&quot;</span> .. at .. <span class="syn-string">&quot;no_such.txt&quot;</span>}, stops = <span class="syn-keyword">true</span>, says = {<span class="syn-string">&quot;no word list&quot;</span>}},
+    {glob = at .. <span class="syn-string">&quot;twin_app/*.roc&quot;</span>},
+    {glob = at .. <span class="syn-string">&quot;twin_copy/*.roc&quot;</span>},
+    {glob = at .. <span class="syn-string">&quot;twin_namespace/*.roc&quot;</span>},
+    {glob = at .. <span class="syn-string">&quot;twin_namespace_clash/*.roc&quot;</span>, counts = {twin_name = <span class="syn-number">1</span>}, says = {<span class="syn-string">&quot;`Lamp` is also declared at&quot;</span>}},
+    {glob = at .. <span class="syn-string">&quot;broken/*.roc&quot;</span>, stops = <span class="syn-keyword">true</span>, says = {<span class="syn-string">&quot;refused: &quot;</span>}},
+  })
+  <span class="syn-keyword">return</span> <span class="syn-keyword">nil</span>
+<span class="syn-keyword">end</span>
+
+<span class="syn-keyword">function</span> <span class="syn-name">run_check</span>()
+  <span class="syn-keyword">local</span> paths = glob(GLOB)
+  <span class="syn-keyword">local</span> parsed = parse_roc_files(paths)
+  <span class="syn-keyword">local</span> declared_by_file = {}
+  <span class="syn-keyword">for</span> f <span class="syn-keyword">in</span> parsed.files <span class="syn-keyword">do</span> push(declared_by_file, {path = f.path, is_app = is_app(f), declared = declarations_of(f)}) <span class="syn-keyword">end</span>
+  <span class="syn-keyword">local</span> report = {}
+  judge_families(modules_of(declared_by_file), report)
+  judge_twins(declared_by_file, ROLES_FILE == <span class="syn-string">&quot;&quot;</span> <span class="syn-keyword">and</span> {} <span class="syn-keyword">or</span> word_set(ROLES_FILE), report)
+  <span class="syn-keyword">local</span> verdict = verdict_of(<span class="syn-string">&quot;check_families&quot;</span>, CHECKS, report, #paths)
+  print_findings(verdict.summary, verdict.found)
+  fail_if_refused(<span class="syn-string">&quot;check_families&quot;</span>, parsed.refused)
+  <span class="syn-keyword">return</span> verdict
+<span class="syn-keyword">end</span>
+
+<span class="syn-comment">-- This `fail` stands at the top level so the summary is the last line a</span>
+<span class="syn-comment">-- caller reads: a stop inside a function prints the calls after it.</span>
+<span class="syn-keyword">if</span> SELF_TEST <span class="syn-keyword">then</span>
+  self_test()
+<span class="syn-keyword">else</span>
+  <span class="syn-keyword">local</span> verdict = run_check()
+  <span class="syn-keyword">if</span> #verdict.found &gt; <span class="syn-number">0</span> <span class="syn-keyword">then</span> fail(verdict.summary) <span class="syn-keyword">end</span>
+<span class="syn-keyword">end</span>
+</code></pre>
+<nav class="steps"><a href="../check_modules_stay_under_500_lines/">← previous</a> · <a href="../#find_names_that_differ_across_lookalike_modules">Roc on Shale</a> · <a href="../find_calls_nested_three_deep/">next →</a></nav></main>
+</body>
+</html>

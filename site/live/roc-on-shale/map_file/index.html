@@ -1,0 +1,649 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="description" content="A file of Shale's C mapped, one line an item, by the splitter in Roc that reads the C's dialect with no parser: a masker, a line reader and its regular expressions done by hand.">
+<title>map_file · Roc on Shale</title>
+<script src="../../shared/home.js"></script>
+<!-- site/build_roc_on_shale.shale writes this page from the shale repository's
+     history; run it again rather than editing here. The code is colored by
+     roc-syntax-color (SyntaxColor.html). -->
+<style>
+  :root { color-scheme: light dark; --bg: #f7f5f0; --fg: #1d1d1b; --muted: #6b6860; --edge: #d9d4c8; --pane: #ffffff; --link: #1f5fa8; --accent: #5b3ea8; }
+  @media (prefers-color-scheme: dark) {
+    :root { --bg: #1b1b1a; --fg: #e8e6e0; --muted: #9a968c; --edge: #3a3934; --pane: #242422; --link: #8ab4f0; --accent: #a68cf0; }
+  }
+  body { margin: 0; background: var(--bg); color: var(--fg); font: 15px/1.55 system-ui, sans-serif; }
+  main { max-width: 960px; margin: 0 auto; padding: 36px 16px 48px; }
+  @media (max-width: 640px) { main { padding: 24px 12px 36px; } }
+  .top { display: flex; flex-wrap: wrap; gap: 4px 14px; font-size: 14px; margin: 0 0 14px; }
+  h1 { font-size: 28px; margin: 0 0 6px; overflow-wrap: anywhere; }
+  .lede { margin: 0 0 10px; max-width: 70ch; }
+  ul.lede { padding-left: 22px; }
+  ul.lede li { margin: 0 0 4px; }
+  h2.intro { font-size: 20px; margin: 30px 0 6px; }
+  h3.intro { font-size: 16px; margin: 18px 0 4px; }
+  /* The drawing is Graphviz's SVG, inline, so its lines and words take the
+     page's colors in either theme. */
+  .diagram { margin: 14px 0 18px; }
+  .diagram svg { max-width: 100%; height: auto; }
+  .diagram text { fill: var(--fg); }
+  .diagram path, .diagram polygon { stroke: var(--fg); }
+  .diagram .edge polygon { fill: var(--fg); }
+  h2.part { font-size: 25px; margin: 64px 0 4px; padding-top: 20px; border-top: 3px solid var(--accent); }
+  .part-intro { margin: 0 0 8px; }
+  h3 { font-size: 19px; margin: 10px 0 4px; overflow-wrap: anywhere; }
+  h2.part a { color: inherit; text-decoration: none; }
+  h2.code { font-size: 16px; margin: 36px 0 4px; color: var(--accent); }
+  p { max-width: 70ch; }
+  a { color: var(--link); }
+  code { font: 13px ui-monospace, Menlo, Consolas, monospace; }
+  .contents { padding-left: 20px; }
+  .contents ul { padding-left: 20px; margin: 2px 0 8px; }
+  .contents a { overflow-wrap: anywhere; }
+  .facts { font-size: 14px; color: var(--muted); }
+  .file { font-size: 13px; color: var(--muted); margin: 20px 0 0; overflow-wrap: anywhere; }
+  .entry { margin-top: 28px; padding-top: 14px; border-top: 1px solid var(--edge); }
+  .steps { font-size: 13px; margin: 0 0 8px; }
+  main > .steps:last-child { margin: 28px 0 0; }
+  /* Every block shows its file whole; a line wider than the block scrolls
+     sideways inside it, so the code keeps its indentation. */
+  pre { margin: 6px 0 12px; padding: 12px 14px; border-radius: 5px; background: #2b2733; color: #e8e6e0;
+        font: 12px/1.45 ui-monospace, Menlo, Consolas, monospace; overflow-x: auto; tab-size: 4; }
+  pre code { font: inherit; }
+  .syn-keyword { color: #c792ea; }
+  .syn-type { color: #82aaff; }
+  .syn-string { color: #c3e88d; }
+  .syn-number { color: #f78c6c; }
+  .syn-comment { color: #8a8494; font-style: italic; }
+  .syn-name { color: #ffcb6b; }
+  footer { margin-top: 36px; color: var(--muted); font-size: 13px; }
+</style>
+</head>
+<body>
+<main>
+<nav class="steps"><a href="../count_shale_stops/">← previous</a> · <a href="../#map_file">Roc on Shale</a> · <a href="../list_long_functions/">next →</a></nav>
+<h1>map_file</h1>
+<h2 class="code">Roc</h2>
+<p class="file">It also imports <code>Item</code>, <code>Mask</code>, <code>Paths</code>, <code>Split</code>, <code>Words</code> from <a href="../c-splitter/">the C splitter</a>.</p>
+<p class="file"><a href="https://github.com/showell/shale/blob/a3bfc843a75e287128a10a8845679dcfb51a4608/cookbook/c/map_file/map_file.roc"><code>cookbook/c/map_file/map_file.roc</code></a>, 175 lines</p>
+<pre><code><span class="syn-comment">## map_file, in Roc on Shale&#39;s platform (roc_platform/README.md): a file of</span>
+<span class="syn-comment">## Shale&#39;s C mapped, each top-level item one line, `first-last kind name`,</span>
+<span class="syn-comment">## from the splitter the C recipes share (cookbook/c/items/, a package),</span>
+<span class="syn-comment">## which reads the dialect c/check_discipline.shale holds. Its launcher,</span>
+<span class="syn-comment">## cookbook/c/map_file.shale, is how it is run, and its header says the</span>
+<span class="syn-comment">## arguments. check_goldens.shale, beside this, holds its output on the</span>
+<span class="syn-comment">## plants to its goldens, line for line.</span>
+<span class="syn-comment">##</span>
+<span class="syn-comment">##   shale cookbook:c/map_file.shale file=c/script/vm.c</span>
+<span class="syn-comment">##   shale cookbook:c/map_file.shale tree=c</span>
+<span class="syn-comment">##   shale cookbook:c/map_file.shale self_test=1</span>
+<span class="syn-comment">##</span>
+<span class="syn-comment">## The effects: `Shale.arg!` for the arguments, `Shale.glob!` for a tree&#39;s</span>
+<span class="syn-comment">## files, `Shale.read!` for each one&#39;s text, and `Shale.print!` and</span>
+<span class="syn-comment">## `Shale.fail!` for the verdict. The splitting is the package&#39;s, plain</span>
+<span class="syn-comment">## Roc; SelfTest, beside this, holds it to the plants.</span>
+<span class="syn-comment">## budget: steps=50000000 arena_bytes=1000000000 roc_cpu_ms=600000</span>
+<span class="syn-keyword">app</span> [main!] {
+	items: <span class="syn-string">&quot;../items/main.roc&quot;</span>,
+	pf: <span class="syn-keyword">platform</span> <span class="syn-string">&quot;../../../roc_platform/platform/main.roc&quot;</span>,
+}
+
+<span class="syn-keyword">import</span> pf.<span class="syn-type">Shale</span>
+<span class="syn-keyword">import</span> items.<span class="syn-type">Item</span>
+<span class="syn-keyword">import</span> items.<span class="syn-type">Paths</span>
+<span class="syn-keyword">import</span> items.<span class="syn-type">Split</span>
+<span class="syn-keyword">import</span> items.<span class="syn-type">Words</span>
+<span class="syn-keyword">import</span> <span class="syn-type">SelfTest</span>
+
+<span class="syn-name">main!</span> : {} =&gt; {}
+<span class="syn-name">main!</span> = |{}| {
+	<span class="syn-keyword">if</span> integer_or_stop!(<span class="syn-string">&quot;self_test&quot;</span>, <span class="syn-type">Shale</span>.arg!(<span class="syn-string">&quot;self_test&quot;</span>, <span class="syn-string">&quot;0&quot;</span>)) == <span class="syn-number">1</span> {
+		<span class="syn-type">SelfTest</span>.run!({})
+	} <span class="syn-keyword">else</span> {
+		file = <span class="syn-type">Shale</span>.arg!(<span class="syn-string">&quot;file&quot;</span>, <span class="syn-string">&quot;&quot;</span>)
+		tree = <span class="syn-type">Shale</span>.arg!(<span class="syn-string">&quot;tree&quot;</span>, <span class="syn-string">&quot;&quot;</span>)
+		<span class="syn-keyword">if</span> (file == <span class="syn-string">&quot;&quot;</span>) == (tree == <span class="syn-string">&quot;&quot;</span>) {
+			<span class="syn-type">Shale</span>.fail!(<span class="syn-string">&quot;map_file: give `file=&lt;a .c or .h&gt;` or `tree=&lt;a folder&gt;`, one of them&quot;</span>)
+		} <span class="syn-keyword">else</span> <span class="syn-keyword">if</span> file != <span class="syn-string">&quot;&quot;</span> {
+			<span class="syn-keyword">for</span> line <span class="syn-keyword">in</span> map_lines(split_or_stop!(file, read_text!(file))) {
+				<span class="syn-type">Shale</span>.print!(line)
+			}
+		} <span class="syn-keyword">else</span> {
+			map_tree!(tree)
+		}
+	}
+}
+
+<span class="syn-comment">## A value given as `name=`, which must be an integer, as Shale&#39;s `arg` reads</span>
+<span class="syn-comment">## one whose default is.</span>
+<span class="syn-name">integer_or_stop!</span> : <span class="syn-type">Str</span>, <span class="syn-type">Str</span> =&gt; <span class="syn-type">I64</span>
+<span class="syn-name">integer_or_stop!</span> = |name, given| {
+	<span class="syn-keyword">match</span> <span class="syn-type">I64</span>.from_str(given) {
+		<span class="syn-type">Ok</span>(value) =&gt; value
+		<span class="syn-type">Err</span>(_) =&gt; {
+			<span class="syn-type">Shale</span>.fail!(<span class="syn-string">&quot;map_file: </span>${name}<span class="syn-string">=</span>${given}<span class="syn-string"> is not an integer&quot;</span>)
+			<span class="syn-number">0</span>
+		}
+	}
+}
+
+<span class="syn-comment">## The map of the items, one `first-last kind name` a line.</span>
+<span class="syn-name">map_lines</span> : <span class="syn-type">List</span>(<span class="syn-type">Item</span>) -&gt; <span class="syn-type">List</span>(<span class="syn-type">Str</span>)
+<span class="syn-name">map_lines</span> = |items|
+	items.map(|item| <span class="syn-string">&quot;</span>${item.first.to_str()}<span class="syn-string">-</span>${item.last.to_str()}<span class="syn-string"> </span>${<span class="syn-type">Item</span>.kind_name(item.kind)}<span class="syn-string"> </span>${item.name}<span class="syn-string">&quot;</span>)
+
+<span class="syn-comment">## The file&#39;s text. A file that is not there stops the run.</span>
+<span class="syn-name">read_text!</span> : <span class="syn-type">Str</span> =&gt; <span class="syn-type">Str</span>
+<span class="syn-name">read_text!</span> = |path|
+	<span class="syn-keyword">match</span> <span class="syn-type">Shale</span>.read!(path) {
+		<span class="syn-type">Found</span>(text) =&gt; text
+		<span class="syn-type">Missing</span> =&gt; {
+			<span class="syn-type">Shale</span>.fail!(<span class="syn-string">&quot;map_file: </span>${path}<span class="syn-string"> is not there&quot;</span>)
+			<span class="syn-string">&quot;&quot;</span>
+		}
+	}
+
+<span class="syn-comment">## The file&#39;s items, or the run stopped with the line the dialect does not</span>
+<span class="syn-comment">## account for.</span>
+<span class="syn-name">split_or_stop!</span> : <span class="syn-type">Str</span>, <span class="syn-type">Str</span> =&gt; <span class="syn-type">List</span>(<span class="syn-type">Item</span>)
+<span class="syn-name">split_or_stop!</span> = |path, text|
+	<span class="syn-keyword">match</span> <span class="syn-type">Split</span>.items({ path, text, uses: <span class="syn-type">Bool.False</span> }) {
+		<span class="syn-type">Ok</span>(items) =&gt; items
+		<span class="syn-type">Err</span>(why) =&gt; {
+			<span class="syn-type">Shale</span>.fail!(why)
+			[]
+		}
+	}
+
+<span class="syn-comment">## The C files under the folder, sorted, any folder named `out` (c/out, the</span>
+<span class="syn-comment">## build&#39;s output) left out. A folder that is not there stops the run, in</span>
+<span class="syn-comment">## the words of the Shale original&#39;s walk: a check that can&#39;t run fails.</span>
+<span class="syn-name">c_files_under!</span> : <span class="syn-type">Str</span> =&gt; <span class="syn-type">List</span>(<span class="syn-type">Str</span>)
+<span class="syn-name">c_files_under!</span> = |folder| {
+	<span class="syn-keyword">if</span> <span class="syn-type">Shale</span>.list!(folder) == <span class="syn-type">Missing</span> {
+		<span class="syn-type">Shale</span>.fail!(<span class="syn-string">&quot;`walk(\&quot;</span>${folder}<span class="syn-string">\&quot;)`: not found (FileNotFound)&quot;</span>)
+	}
+	paths = <span class="syn-type">Shale</span>.glob!(<span class="syn-string">&quot;</span>${folder}<span class="syn-string">/**/*.c&quot;</span>).concat(<span class="syn-type">Shale</span>.glob!(<span class="syn-string">&quot;</span>${folder}<span class="syn-string">/**/*.h&quot;</span>))
+	paths.keep_if(|path| !(<span class="syn-type">Paths</span>.is_in_out_folder(folder, path))).sort_with(<span class="syn-type">Words</span>.byte_order)
+}
+
+<span class="syn-comment">## Every C file under the folder split and accounted for, in one line: the</span>
+<span class="syn-comment">## files, their lines and their items by kind.</span>
+<span class="syn-name">map_tree!</span> : <span class="syn-type">Str</span> =&gt; {}
+<span class="syn-name">map_tree!</span> = |folder| {
+	files = c_files_under!(folder)
+	<span class="syn-keyword">var</span> $kinds = []
+	$line_count : <span class="syn-type">U64</span>
+	<span class="syn-keyword">var</span> $line_count = <span class="syn-number">0</span>
+	$item_count : <span class="syn-type">U64</span>
+	<span class="syn-keyword">var</span> $item_count = <span class="syn-number">0</span>
+	<span class="syn-keyword">for</span> path <span class="syn-keyword">in</span> files {
+		text = read_text!(path)
+		items = split_or_stop!(path, text)
+		<span class="syn-keyword">match</span> accounted(path, <span class="syn-type">Split</span>.lines(text), items) {
+			<span class="syn-type">Ok</span>(count) =&gt; {
+				$line_count = $line_count + count
+			}
+			<span class="syn-type">Err</span>(why) =&gt; <span class="syn-type">Shale</span>.fail!(why)
+		}
+		$kinds = $kinds.concat(items.map(|item| <span class="syn-type">Item</span>.kind_name(item.kind)))
+		$item_count = $item_count + items.len()
+	}
+	names = distinct($kinds).sort_with(<span class="syn-type">Words</span>.byte_order)
+	parts = names.map(|name| <span class="syn-string">&quot;</span>${$kinds.count_if(|kind| kind == name).to_str()}<span class="syn-string"> </span>${name}<span class="syn-string">&quot;</span>)
+	lines = <span class="syn-string">&quot;</span>${$line_count.to_str()}<span class="syn-string"> lines, each in one item or between them&quot;</span>
+	counts = <span class="syn-string">&quot;</span>${$item_count.to_str()}<span class="syn-string"> items: </span>${<span class="syn-type">Str</span>.join_with(parts, <span class="syn-string">&quot;, &quot;</span>)}<span class="syn-string">&quot;</span>
+	<span class="syn-type">Shale</span>.print!(<span class="syn-string">&quot;PASS c items: </span>${files.len().to_str()}<span class="syn-string"> files under </span>${folder}<span class="syn-string">, </span>${lines}<span class="syn-string">; </span>${counts}<span class="syn-string">&quot;</span>)
+}
+
+<span class="syn-comment">## Each line of the file in exactly one of the items, or blank, or a `//`</span>
+<span class="syn-comment">## comment line between them: the count of its lines, or the error naming</span>
+<span class="syn-comment">## the line that is not.</span>
+<span class="syn-name">accounted</span> : <span class="syn-type">Str</span>, <span class="syn-type">List</span>(<span class="syn-type">List</span>(<span class="syn-type">U8</span>)), <span class="syn-type">List</span>(<span class="syn-type">Item</span>) -&gt; <span class="syn-type">Try</span>(<span class="syn-type">U64</span>, <span class="syn-type">Str</span>)
+<span class="syn-name">accounted</span> = |path, lines, items| {
+	<span class="syn-comment"># Each line&#39;s owner, by its number (place 0 is no line&#39;s).</span>
+	<span class="syn-keyword">var</span> $owners = <span class="syn-type">List</span>.repeat(<span class="syn-type">Unowned</span>, lines.len() + <span class="syn-number">1</span>)
+	<span class="syn-keyword">for</span> item <span class="syn-keyword">in</span> items {
+		<span class="syn-keyword">var</span> $at = item.first
+		<span class="syn-keyword">while</span> $at &lt;= item.last {
+			<span class="syn-keyword">match</span> $owners.get($at) {
+				<span class="syn-type">Ok</span>(<span class="syn-type">Owned</span>(owner)) =&gt; <span class="syn-keyword">return</span> <span class="syn-type">Err</span>(<span class="syn-string">&quot;</span>${path}<span class="syn-string">:</span>${$at.to_str()}<span class="syn-string">: in two items, `</span>${owner}<span class="syn-string">` and `</span>${item.name}<span class="syn-string">`&quot;</span>)
+				_ =&gt; {}
+			}
+			$owners = <span class="syn-keyword">match</span> $owners.set($at, <span class="syn-type">Owned</span>(item.name)) {
+				<span class="syn-type">Ok</span>(owners) =&gt; owners
+				<span class="syn-type">Err</span>(_) =&gt; <span class="syn-keyword">crash</span> <span class="syn-string">&quot;map_file: an item past its file&#39;s last line&quot;</span>
+			}
+			$at = $at + <span class="syn-number">1</span>
+		}
+	}
+	$number : <span class="syn-type">U64</span>
+	<span class="syn-keyword">var</span> $number = <span class="syn-number">0</span>
+	<span class="syn-keyword">for</span> raw <span class="syn-keyword">in</span> lines {
+		$number = $number + <span class="syn-number">1</span>
+		is_owned = $owners.get($number) != <span class="syn-type">Ok</span>(<span class="syn-type">Unowned</span>)
+		<span class="syn-keyword">if</span> !(is_owned) <span class="syn-keyword">and</span> !(raw.is_empty()) <span class="syn-keyword">and</span> !(raw.starts_with([<span class="syn-string">&#39;/&#39;</span>, <span class="syn-string">&#39;/&#39;</span>])) {
+			<span class="syn-keyword">return</span> <span class="syn-type">Err</span>(<span class="syn-string">&quot;</span>${path}<span class="syn-string">:</span>${$number.to_str()}<span class="syn-string">: in no item: </span>${<span class="syn-type">Str</span>.from_utf8_lossy(raw)}<span class="syn-string">&quot;</span>)
+		}
+	}
+	<span class="syn-type">Ok</span>($number)
+}
+
+<span class="syn-comment">## Each text once, in the order first seen.</span>
+<span class="syn-name">distinct</span> : <span class="syn-type">List</span>(<span class="syn-type">Str</span>) -&gt; <span class="syn-type">List</span>(<span class="syn-type">Str</span>)
+<span class="syn-name">distinct</span> = |texts|
+	texts.fold(
+		[],
+		|seen, text|
+			<span class="syn-keyword">if</span> seen.contains(text) {
+				seen
+			} <span class="syn-keyword">else</span> {
+				seen.append(text)
+			},
+	)
+</code></pre>
+<p class="file"><a href="https://github.com/showell/shale/blob/a3bfc843a75e287128a10a8845679dcfb51a4608/cookbook/c/map_file/SelfTest.roc"><code>cookbook/c/map_file/SelfTest.roc</code></a>, 202 lines</p>
+<pre><code><span class="syn-comment">## map_file&#39;s self-test: the splitter held to the plants in</span>
+<span class="syn-comment">## cookbook/c/plants/map_file/, a header and a .c file holding an item of</span>
+<span class="syn-comment">## each kind, each mapped and held to its map, its comments, heads, bodies</span>
+<span class="syn-comment">## and uses; then each plant in breaks/ split, which must stop naming its</span>
+<span class="syn-comment">## file and the line it breaks. The masker is held first, to two lines.</span>
+<span class="syn-keyword">import</span> pf.<span class="syn-type">Shale</span>
+<span class="syn-keyword">import</span> items.<span class="syn-type">Item</span>
+<span class="syn-keyword">import</span> items.<span class="syn-type">Mask</span>
+<span class="syn-keyword">import</span> items.<span class="syn-type">Split</span>
+
+<span class="syn-type">SelfTest</span> := [].{
+
+	<span class="syn-comment">## Every check, each a stop when it fails, then the PASS line.</span>
+	<span class="syn-name">run!</span> : {} =&gt; {}
+	<span class="syn-name">run!</span> = |{}| {
+		masker_checks = check_masker!({})
+		header_checks = check_header!({})
+		source_checks = check_source!({})
+		break_checks = check_breaks!({})
+		checks = masker_checks + header_checks + source_checks + break_checks
+		kinds = <span class="syn-string">&quot;each item kind mapped and </span>${break_checks.to_str()}<span class="syn-string"> shape breaks stopped at their lines&quot;</span>
+		<span class="syn-type">Shale</span>.print!(<span class="syn-string">&quot;PASS map_file self-test: </span>${checks.to_str()}<span class="syn-string"> checks, </span>${kinds}<span class="syn-string">&quot;</span>)
+	}
+}
+
+<span class="syn-comment">## Where the plants are.</span>
+<span class="syn-name">plants</span> : <span class="syn-type">Str</span>
+<span class="syn-name">plants</span> = <span class="syn-string">&quot;cookbook/c/plants/map_file&quot;</span>
+
+<span class="syn-comment">## `got` equal to `want`, or the self-test stops, naming `what`.</span>
+<span class="syn-name">same!</span> : <span class="syn-type">Str</span>, <span class="syn-type">Str</span>, <span class="syn-type">Str</span> =&gt; {}
+<span class="syn-name">same!</span> = |what, got, want|
+	<span class="syn-keyword">if</span> got != want {
+		<span class="syn-type">Shale</span>.fail!(<span class="syn-string">&quot;map_file self-test: </span>${what}<span class="syn-string"> is\n</span>${got}<span class="syn-string">\nit should be\n</span>${want}<span class="syn-string">&quot;</span>)
+	}
+
+<span class="syn-comment">## The masker: every column kept, a `&quot;` in a character literal the</span>
+<span class="syn-comment">## literal&#39;s, a `//` in a string the string&#39;s, a macro&#39;s `/* */` blanked.</span>
+<span class="syn-name">check_masker!</span> : {} =&gt; <span class="syn-type">U64</span>
+<span class="syn-name">check_masker!</span> = |{}| {
+	raw = <span class="syn-string">&quot;    if (c == &#39;\&quot;&#39;) { x(\&quot;a // b\&quot;); } // c&quot;</span>
+	same!(<span class="syn-string">&quot;the mask of `</span>${raw}<span class="syn-string">`&quot;</span>, mask(raw), <span class="syn-string">&quot;    if (c == &#39; &#39;) { x(\&quot;      \&quot;); }     &quot;</span>)
+	macro_line = <span class="syn-string">&quot;#define M(x) /* it&#39;s */ \\&quot;</span>
+	same!(<span class="syn-string">&quot;the mask of `</span>${macro_line}<span class="syn-string">`&quot;</span>, mask(macro_line), <span class="syn-string">&quot;#define M(x) </span>${<span class="syn-string">&quot; &quot;</span>.repeat(<span class="syn-number">10</span>)}<span class="syn-string"> \\&quot;</span>)
+	<span class="syn-number">2</span>
+}
+
+<span class="syn-name">mask</span> : <span class="syn-type">Str</span> -&gt; <span class="syn-type">Str</span>
+<span class="syn-name">mask</span> = |line| <span class="syn-type">Mask</span>.text(<span class="syn-type">Mask</span>.masked(line.to_utf8()))
+
+<span class="syn-comment">## The plant&#39;s items, with their uses, or the self-test stopped.</span>
+<span class="syn-name">split_plant!</span> : <span class="syn-type">Str</span> =&gt; <span class="syn-type">List</span>(<span class="syn-type">Item</span>)
+<span class="syn-name">split_plant!</span> = |path| {
+	text = <span class="syn-keyword">match</span> <span class="syn-type">Shale</span>.read!(path) {
+		<span class="syn-type">Found</span>(found) =&gt; found
+		<span class="syn-type">Missing</span> =&gt; {
+			<span class="syn-type">Shale</span>.fail!(<span class="syn-string">&quot;map_file self-test: </span>${path}<span class="syn-string"> is not there&quot;</span>)
+			<span class="syn-string">&quot;&quot;</span>
+		}
+	}
+	<span class="syn-keyword">match</span> <span class="syn-type">Split</span>.items({ path, text, uses: <span class="syn-type">Bool.True</span> }) {
+		<span class="syn-type">Ok</span>(items) =&gt; items
+		<span class="syn-type">Err</span>(why) =&gt; {
+			<span class="syn-type">Shale</span>.fail!(why)
+			[]
+		}
+	}
+}
+
+<span class="syn-comment">## The map of the items, one `first-last kind name` a line.</span>
+<span class="syn-name">map_text</span> : <span class="syn-type">List</span>(<span class="syn-type">Item</span>) -&gt; <span class="syn-type">Str</span>
+<span class="syn-name">map_text</span> = |items| {
+	map_lines = items.map(|item| <span class="syn-string">&quot;</span>${item.first.to_str()}<span class="syn-string">-</span>${item.last.to_str()}<span class="syn-string"> </span>${<span class="syn-type">Item</span>.kind_name(item.kind)}<span class="syn-string"> </span>${item.name}<span class="syn-string">&quot;</span>)
+	<span class="syn-type">Str</span>.join_with(map_lines, <span class="syn-string">&quot;\n&quot;</span>)
+}
+
+<span class="syn-comment">## The item of the kind and name, or the self-test stopped.</span>
+<span class="syn-name">item_named!</span> : <span class="syn-type">List</span>(<span class="syn-type">Item</span>), <span class="syn-type">Item.Kind</span>, <span class="syn-type">Str</span> =&gt; <span class="syn-type">Item</span>
+<span class="syn-name">item_named!</span> = |items, kind, name|
+	<span class="syn-keyword">match</span> items.find_first(|item| item.kind == kind <span class="syn-keyword">and</span> item.name == name) {
+		<span class="syn-type">Ok</span>(item) =&gt; item
+		<span class="syn-type">Err</span>(_) =&gt; {
+			<span class="syn-type">Shale</span>.fail!(<span class="syn-string">&quot;map_file self-test: no </span>${<span class="syn-type">Item</span>.kind_name(kind)}<span class="syn-string"> `</span>${name}<span class="syn-string">`&quot;</span>)
+			<span class="syn-type">Item</span>.new(kind, name, { first: <span class="syn-number">0</span>, last: <span class="syn-number">0</span> })
+		}
+	}
+
+<span class="syn-comment">## An item&#39;s lines as `comment a-b, sig c-d, body e-f`.</span>
+<span class="syn-name">spans</span> : <span class="syn-type">Item</span> -&gt; <span class="syn-type">Str</span>
+<span class="syn-name">spans</span> = |item| {
+	comment = <span class="syn-string">&quot;comment </span>${item.comment_first.to_str()}<span class="syn-string">-</span>${item.comment_last.to_str()}<span class="syn-string">&quot;</span>
+	sig = <span class="syn-string">&quot;sig </span>${item.sig_first.to_str()}<span class="syn-string">-</span>${item.sig_last.to_str()}<span class="syn-string">&quot;</span>
+	<span class="syn-string">&quot;</span>${comment}<span class="syn-string">, </span>${sig}<span class="syn-string">, body </span>${item.body_first.to_str()}<span class="syn-string">-</span>${item.body_last.to_str()}<span class="syn-string">&quot;</span>
+}
+
+<span class="syn-name">joined</span> : <span class="syn-type">List</span>(<span class="syn-type">Str</span>) -&gt; <span class="syn-type">Str</span>
+<span class="syn-name">joined</span> = |names| <span class="syn-type">Str</span>.join_with(names, <span class="syn-string">&quot;,&quot;</span>)
+
+<span class="syn-comment">## kinds.h: its map, then its items&#39; spans, macros, enumerators and uses.</span>
+<span class="syn-name">check_header!</span> : {} =&gt; <span class="syn-type">U64</span>
+<span class="syn-name">check_header!</span> = |{}| {
+	path = <span class="syn-string">&quot;</span>${plants}<span class="syn-string">/kinds.h&quot;</span>
+	items = split_plant!(path)
+	map = [
+		<span class="syn-string">&quot;2-3 guard SHALE_KINDS_H&quot;</span>,
+		<span class="syn-string">&quot;5-5 include stdint.h&quot;</span>,
+		<span class="syn-string">&quot;6-6 include slice.h&quot;</span>,
+		<span class="syn-string">&quot;9-9 macro KINDS_MAX&quot;</span>,
+		<span class="syn-string">&quot;10-17 macro KINDS_DEFINE&quot;</span>,
+		<span class="syn-string">&quot;19-19 directive if defined&quot;</span>,
+		<span class="syn-string">&quot;20-20 macro KINDS_LINUX&quot;</span>,
+		<span class="syn-string">&quot;21-21 directive endif&quot;</span>,
+		<span class="syn-string">&quot;23-26 struct KindsPair&quot;</span>,
+		<span class="syn-string">&quot;28-28 enum KindsKind&quot;</span>,
+		<span class="syn-string">&quot;30-33 union KindsWord&quot;</span>,
+		<span class="syn-string">&quot;35-35 typedef KindsHook&quot;</span>,
+		<span class="syn-string">&quot;37-40 enum KINDS_FIRST&quot;</span>,
+		<span class="syn-string">&quot;42-42 generator KindsPairs&quot;</span>,
+		<span class="syn-string">&quot;43-43 generator KindsVec&quot;</span>,
+		<span class="syn-string">&quot;45-45 static_assert KindsPair&quot;</span>,
+		<span class="syn-string">&quot;47-47 function kinds_sum&quot;</span>,
+		<span class="syn-string">&quot;51-58 function kinds_name&quot;</span>,
+		<span class="syn-string">&quot;60-61 prototype kinds_check&quot;</span>,
+		<span class="syn-string">&quot;63-66 data KINDS_NAMES&quot;</span>,
+		<span class="syn-string">&quot;67-67 data KINDS_ONE&quot;</span>,
+		<span class="syn-string">&quot;69-69 guard SHALE_KINDS_H&quot;</span>,
+	]
+	same!(<span class="syn-string">&quot;</span>${path}<span class="syn-string">&#39;s map&quot;</span>, map_text(items), <span class="syn-type">Str</span>.join_with(map, <span class="syn-string">&quot;\n&quot;</span>))
+	defined = item_named!(items, <span class="syn-type">Macro</span>, <span class="syn-string">&quot;KINDS_DEFINE&quot;</span>)
+	same!(<span class="syn-string">&quot;KINDS_DEFINE&#39;s makes&quot;</span>, joined(defined.makes), <span class="syn-string">&quot;make,first&quot;</span>)
+	same!(<span class="syn-string">&quot;KINDS_DEFINE&#39;s spans&quot;</span>, spans(defined), <span class="syn-string">&quot;comment 0-0, sig 10-10, body 11-17&quot;</span>)
+	same!(<span class="syn-string">&quot;KINDS_MAX&#39;s spans&quot;</span>, spans(item_named!(items, <span class="syn-type">Macro</span>, <span class="syn-string">&quot;KINDS_MAX&quot;</span>)), <span class="syn-string">&quot;comment 8-8, sig 9-9, body 0-0&quot;</span>)
+	same!(<span class="syn-string">&quot;KindsKind&#39;s enumerators&quot;</span>, joined(item_named!(items, <span class="syn-type">Enum</span>, <span class="syn-string">&quot;KindsKind&quot;</span>).enumerators), <span class="syn-string">&quot;KINDS_A,KINDS_B&quot;</span>)
+	anonymous = item_named!(items, <span class="syn-type">Enum</span>, <span class="syn-string">&quot;KINDS_FIRST&quot;</span>)
+	same!(<span class="syn-string">&quot;the anonymous enum&#39;s enumerators&quot;</span>, joined(anonymous.enumerators), <span class="syn-string">&quot;KINDS_FIRST,KINDS_SECOND&quot;</span>)
+	vec = item_named!(items, <span class="syn-type">Generator</span>, <span class="syn-string">&quot;KindsVec&quot;</span>)
+	same!(<span class="syn-string">&quot;KindsVec&#39;s macro and type&quot;</span>, <span class="syn-string">&quot;</span>${vec.macro}<span class="syn-string"> </span>${vec.held_type}<span class="syn-string">&quot;</span>, <span class="syn-string">&quot;VEC_DEFINE KindsPair&quot;</span>)
+	sum = item_named!(items, <span class="syn-type">Function</span>, <span class="syn-string">&quot;kinds_sum&quot;</span>)
+	sum_said = <span class="syn-string">&quot;</span>${sum.storage}<span class="syn-string"> | </span>${sum.return_type}<span class="syn-string"> | </span>${spans(sum)}<span class="syn-string"> | </span>${joined(sum.uses)}<span class="syn-string">&quot;</span>
+	same!(<span class="syn-string">&quot;kinds_sum&quot;</span>, sum_said, <span class="syn-string">&quot;static inline | uint32_t | comment 0-0, sig 47-47, body 47-47 | p&quot;</span>)
+	named = item_named!(items, <span class="syn-type">Function</span>, <span class="syn-string">&quot;kinds_name&quot;</span>)
+	named_said = <span class="syn-string">&quot;</span>${named.return_type}<span class="syn-string"> | </span>${spans(named)}<span class="syn-string"> | </span>${joined(named.uses)}<span class="syn-string">&quot;</span>
+	same!(<span class="syn-string">&quot;kinds_name&quot;</span>, named_said, <span class="syn-string">&quot;Str | comment 49-50, sig 51-51, body 52-57 | KINDS_A,KINDS_LINUX,S,k,kinds_label&quot;</span>)
+	check = item_named!(items, <span class="syn-type">Prototype</span>, <span class="syn-string">&quot;kinds_check&quot;</span>)
+	same!(<span class="syn-string">&quot;kinds_check&quot;</span>, <span class="syn-string">&quot;</span>${check.return_type}<span class="syn-string"> | </span>${spans(check)}<span class="syn-string">&quot;</span>, <span class="syn-string">&quot;Status | comment 0-0, sig 60-61, body 0-0&quot;</span>)
+	same!(<span class="syn-string">&quot;KINDS_NAMES&#39;s spans&quot;</span>, spans(item_named!(items, <span class="syn-type">Data</span>, <span class="syn-string">&quot;KINDS_NAMES&quot;</span>)), <span class="syn-string">&quot;comment 0-0, sig 63-63, body 64-65&quot;</span>)
+	<span class="syn-number">12</span>
+}
+
+<span class="syn-comment">## kinds.c: its map, then its function&#39;s, test&#39;s and test list&#39;s uses.</span>
+<span class="syn-name">check_source!</span> : {} =&gt; <span class="syn-type">U64</span>
+<span class="syn-name">check_source!</span> = |{}| {
+	path = <span class="syn-string">&quot;</span>${plants}<span class="syn-string">/kinds.c&quot;</span>
+	items = split_plant!(path)
+	map = [
+		<span class="syn-string">&quot;2-2 include test.h&quot;</span>,
+		<span class="syn-string">&quot;4-4 data kinds_hook&quot;</span>,
+		<span class="syn-string">&quot;6-11 function kinds_wrapped&quot;</span>,
+		<span class="syn-string">&quot;13-15 test kinds_test&quot;</span>,
+		<span class="syn-string">&quot;17-19 test_list TEST_MAIN&quot;</span>,
+		<span class="syn-string">&quot;21-23 function main&quot;</span>,
+	]
+	same!(<span class="syn-string">&quot;</span>${path}<span class="syn-string">&#39;s map&quot;</span>, map_text(items), <span class="syn-type">Str</span>.join_with(map, <span class="syn-string">&quot;\n&quot;</span>))
+	wrapped = item_named!(items, <span class="syn-type">Function</span>, <span class="syn-string">&quot;kinds_wrapped&quot;</span>)
+	same!(<span class="syn-string">&quot;kinds_wrapped&quot;</span>, <span class="syn-string">&quot;</span>${spans(wrapped)}<span class="syn-string"> | </span>${joined(wrapped.uses)}<span class="syn-string">&quot;</span>, <span class="syn-string">&quot;comment 0-0, sig 6-7, body 8-10 | a,b,kinds_add,other,p,sum&quot;</span>)
+	same!(<span class="syn-string">&quot;kinds_test&#39;s uses&quot;</span>, joined(item_named!(items, <span class="syn-type">Test</span>, <span class="syn-string">&quot;kinds_test&quot;</span>).uses), <span class="syn-string">&quot;EXPECT,kinds_wrapped&quot;</span>)
+	same!(<span class="syn-string">&quot;TEST_MAIN&#39;s uses&quot;</span>, joined(item_named!(items, <span class="syn-type">TestList</span>, <span class="syn-string">&quot;TEST_MAIN&quot;</span>).uses), <span class="syn-string">&quot;TEST_MAIN,kinds_test&quot;</span>)
+	same!(<span class="syn-string">&quot;main&#39;s spans&quot;</span>, spans(item_named!(items, <span class="syn-type">Function</span>, <span class="syn-string">&quot;main&quot;</span>)), <span class="syn-string">&quot;comment 0-0, sig 21-21, body 22-22&quot;</span>)
+	<span class="syn-number">5</span>
+}
+
+<span class="syn-comment">## Each break stops, naming its file, its line and why.</span>
+<span class="syn-name">check_breaks!</span> : {} =&gt; <span class="syn-type">U64</span>
+<span class="syn-name">check_breaks!</span> = |{}| {
+	breaks = [
+		(<span class="syn-string">&quot;indented.c&quot;</span>, <span class="syn-string">&quot;indented.c:3: an indented line outside every item&quot;</span>),
+		(<span class="syn-string">&quot;column0.c&quot;</span>, <span class="syn-string">&quot;column0.c:2: a line at column 0 that opens no item the dialect knows&quot;</span>),
+		(<span class="syn-string">&quot;in_body.c&quot;</span>, <span class="syn-string">&quot;in_body.c:3: a line at column 0 inside the function `f` opened at line 2, which only a `}` may close&quot;</span>),
+		(<span class="syn-string">&quot;unclosed.c&quot;</span>, <span class="syn-string">&quot;unclosed.c:2: the function `f` that no `}` at column 0 closes&quot;</span>),
+		(<span class="syn-string">&quot;no_guard.h&quot;</span>, <span class="syn-string">&quot;no_guard.h:1: a header with no `#ifndef SHALE_NO_GUARD_H`&quot;</span>),
+		(<span class="syn-string">&quot;no_endif.h&quot;</span>, <span class="syn-string">&quot;no_endif.h:5: a header whose last item is not its guard&#39;s `#endif`&quot;</span>),
+		(<span class="syn-string">&quot;bad_test.c&quot;</span>, <span class="syn-string">&quot;bad_test.c:2: a `TEST(` line that is not `TEST(name) {`&quot;</span>),
+		(<span class="syn-string">&quot;wrapped_head.c&quot;</span>, <span class="syn-string">&quot;wrapped_head.c:3: a line at column 0 inside the head opened at line 2&quot;</span>),
+		(<span class="syn-string">&quot;bad_generator.c&quot;</span>, <span class="syn-string">&quot;bad_generator.c:2: a generator line whose name and type this reader can&#39;t find&quot;</span>),
+	]
+	<span class="syn-keyword">for</span> (file, said) <span class="syn-keyword">in</span> breaks {
+		path = <span class="syn-string">&quot;</span>${plants}<span class="syn-string">/breaks/</span>${file}<span class="syn-string">&quot;</span>
+		wanted = <span class="syn-string">&quot;</span>${plants}<span class="syn-string">/breaks/</span>${said}<span class="syn-string">: &quot;</span>
+		text = <span class="syn-keyword">match</span> <span class="syn-type">Shale</span>.read!(path) {
+			<span class="syn-type">Found</span>(found) =&gt; found
+			<span class="syn-type">Missing</span> =&gt; <span class="syn-string">&quot;&quot;</span>
+		}
+		<span class="syn-keyword">match</span> <span class="syn-type">Split</span>.items({ path, text, uses: <span class="syn-type">Bool.False</span> }) {
+			<span class="syn-type">Ok</span>(items) =&gt; <span class="syn-type">Shale</span>.fail!(<span class="syn-string">&quot;map_file self-test: </span>${path}<span class="syn-string"> split, with </span>${items.len().to_str()}<span class="syn-string"> items; it should stop with </span>${said}<span class="syn-string">&quot;</span>)
+			<span class="syn-type">Err</span>(why) =&gt;
+				<span class="syn-keyword">if</span> !(why.starts_with(wanted)) {
+					<span class="syn-type">Shale</span>.fail!(<span class="syn-string">&quot;map_file self-test: </span>${path}<span class="syn-string"> stopped with `</span>${why}<span class="syn-string">`; it should stop with `</span>${wanted}<span class="syn-string">&lt;the line&gt;`&quot;</span>)
+				}
+		}
+	}
+	breaks.len()
+}
+</code></pre>
+<h2 class="code">Shale original</h2>
+<p class="file"><a href="https://github.com/showell/shale/blob/9c8048813ec27b428ce492f6eb69c724c7bf34ff/cookbook/c/map_file.shale"><code>cookbook/c/map_file.shale</code></a>, 192 lines, at <code>9c804881</code></p>
+<p class="file">The libraries it loads: <a href="https://github.com/showell/shale/blob/9c8048813ec27b428ce492f6eb69c724c7bf34ff/cookbook/c/items.shale"><code>cookbook/c/items.shale</code></a> (499 lines).</p>
+<pre><code><span class="syn-comment">-- Maps a file of Shale&#39;s C: each top-level item, one a line, as</span>
+<span class="syn-comment">-- `first-last kind name`, from cookbook/c/items.shale&#39;s splitter, which</span>
+<span class="syn-comment">-- reads the dialect c/check_discipline.shale holds (that library&#39;s header</span>
+<span class="syn-comment">-- has the kinds and what each item carries).</span>
+<span class="syn-comment">--</span>
+<span class="syn-comment">--   shale cookbook:c/map_file.shale file=c/script/vm.c</span>
+<span class="syn-comment">--   shale cookbook:c/map_file.shale tree=c         every .c and .h under c/</span>
+<span class="syn-comment">--                                                  (c/out left out) split,</span>
+<span class="syn-comment">--                                                  each line accounted for</span>
+<span class="syn-comment">--   shale cookbook:c/map_file.shale self_test=1    the plants</span>
+<span class="syn-comment">--</span>
+<span class="syn-comment">-- `tree=` splits every file and proves the split: each line is in exactly</span>
+<span class="syn-comment">-- one item, or blank, or a `//` comment line between items, and it prints</span>
+<span class="syn-comment">-- one line, the files, lines and items by kind. A line the dialect does not</span>
+<span class="syn-comment">-- account for stops the run naming its file and line, in either mode.</span>
+<span class="syn-comment">--</span>
+<span class="syn-comment">-- `tree=c` takes about 17 million steps and a seventh of a second.</span>
+<span class="syn-comment">--</span>
+<span class="syn-comment">-- `self_test=1` maps the plants in cookbook/c/plants/map_file/ (a header and</span>
+<span class="syn-comment">-- a .c file holding an item of each kind) and holds each to its map, its</span>
+<span class="syn-comment">-- comments, heads, bodies and uses, then splits each plant in breaks/,</span>
+<span class="syn-comment">-- which must stop naming its file and the line it breaks.</span>
+<span class="syn-comment">--</span>
+<span class="syn-comment">-- budget: steps=50000000</span>
+
+use(<span class="syn-string">&quot;./items.shale&quot;</span>)
+
+<span class="syn-keyword">const</span> PLANTS = <span class="syn-string">&quot;cookbook/c/plants/map_file&quot;</span>
+
+<span class="syn-comment">-- The map of the items in `items`, one `first-last kind name` a line.</span>
+<span class="syn-keyword">function</span> <span class="syn-name">map_lines</span>(items)
+  <span class="syn-keyword">local</span> out = {}
+  <span class="syn-keyword">for</span> it <span class="syn-keyword">in</span> items <span class="syn-keyword">do</span> push(out, it.first .. <span class="syn-string">&quot;-&quot;</span> .. it.last .. <span class="syn-string">&quot; &quot;</span> .. it.kind .. <span class="syn-string">&quot; &quot;</span> .. it.name) <span class="syn-keyword">end</span>
+  <span class="syn-keyword">return</span> out
+<span class="syn-keyword">end</span>
+
+<span class="syn-comment">-- The C files under `dir`, sorted, c/out (the build&#39;s output) left out.</span>
+<span class="syn-keyword">function</span> <span class="syn-name">c_files_under</span>(dir)
+  <span class="syn-keyword">local</span> files = {}
+  <span class="syn-keyword">for</span> e <span class="syn-keyword">in</span> walk_all(dir, {kind = <span class="syn-string">&quot;file&quot;</span>, skip = <span class="syn-string">&quot;out&quot;</span>}) <span class="syn-keyword">do</span>
+    <span class="syn-keyword">if</span> ends_with(e.path, <span class="syn-string">&quot;.c&quot;</span>) <span class="syn-keyword">or</span> ends_with(e.path, <span class="syn-string">&quot;.h&quot;</span>) <span class="syn-keyword">then</span> push(files, e.path) <span class="syn-keyword">end</span>
+  <span class="syn-keyword">end</span>
+  sort(files)
+  <span class="syn-keyword">return</span> files
+<span class="syn-keyword">end</span>
+
+<span class="syn-comment">-- Each line of `p` in exactly one of `items`, or blank, or a `//` comment</span>
+<span class="syn-comment">-- line between them, or the run stops naming the line. Gives the count of</span>
+<span class="syn-comment">-- lines.</span>
+<span class="syn-keyword">function</span> <span class="syn-name">accounted</span>(p, items)
+  <span class="syn-keyword">local</span> all = lines(read(p))
+  <span class="syn-keyword">local</span> owner = {}
+  <span class="syn-keyword">for</span> it <span class="syn-keyword">in</span> items <span class="syn-keyword">do</span>
+    <span class="syn-keyword">local</span> k = it.first
+    <span class="syn-keyword">while</span> k &lt;= it.last <span class="syn-keyword">do</span>
+      <span class="syn-keyword">if</span> has_key(owner, <span class="syn-string">&quot;&quot;</span> .. k) <span class="syn-keyword">then</span> fail(p .. <span class="syn-string">&quot;:&quot;</span> .. k .. <span class="syn-string">&quot;: in two items, `&quot;</span> .. owner[<span class="syn-string">&quot;&quot;</span> .. k] .. <span class="syn-string">&quot;` and `&quot;</span> .. it.name .. <span class="syn-string">&quot;`&quot;</span>) <span class="syn-keyword">end</span>
+      owner[<span class="syn-string">&quot;&quot;</span> .. k] = it.name
+      k = k + <span class="syn-number">1</span>
+    <span class="syn-keyword">end</span>
+  <span class="syn-keyword">end</span>
+  <span class="syn-keyword">local</span> n = <span class="syn-number">0</span>
+  <span class="syn-keyword">for</span> raw <span class="syn-keyword">in</span> all <span class="syn-keyword">do</span>
+    n = n + <span class="syn-number">1</span>
+    <span class="syn-keyword">if</span> <span class="syn-keyword">not</span> has_key(owner, <span class="syn-string">&quot;&quot;</span> .. n) <span class="syn-keyword">and</span> raw ~= <span class="syn-string">&quot;&quot;</span> <span class="syn-keyword">and</span> <span class="syn-keyword">not</span> starts_with(raw, <span class="syn-string">&quot;//&quot;</span>) <span class="syn-keyword">then</span> fail(p .. <span class="syn-string">&quot;:&quot;</span> .. n .. <span class="syn-string">&quot;: in no item: &quot;</span> .. raw) <span class="syn-keyword">end</span>
+  <span class="syn-keyword">end</span>
+  <span class="syn-keyword">return</span> n
+<span class="syn-keyword">end</span>
+
+<span class="syn-comment">-- Every C file under `dir` split and accounted for, in one line.</span>
+<span class="syn-keyword">function</span> <span class="syn-name">map_tree</span>(dir)
+  <span class="syn-keyword">local</span> files = c_files_under(dir)
+  <span class="syn-keyword">local</span> kinds = {}
+  <span class="syn-keyword">local</span> total = <span class="syn-number">0</span>
+  <span class="syn-keyword">local</span> count = <span class="syn-number">0</span>
+  <span class="syn-keyword">for</span> p <span class="syn-keyword">in</span> files <span class="syn-keyword">do</span>
+    <span class="syn-keyword">local</span> items = c_items(p)
+    total = total + accounted(p, items)
+    <span class="syn-keyword">for</span> it <span class="syn-keyword">in</span> items <span class="syn-keyword">do</span> incr(kinds, it.kind) <span class="syn-keyword">end</span>
+    count = count + #items
+    yield()
+  <span class="syn-keyword">end</span>
+  <span class="syn-keyword">local</span> parts = {}
+  <span class="syn-keyword">local</span> names = keys(kinds)
+  sort(names)
+  <span class="syn-keyword">for</span> k <span class="syn-keyword">in</span> names <span class="syn-keyword">do</span> push(parts, kinds[k] .. <span class="syn-string">&quot; &quot;</span> .. k) <span class="syn-keyword">end</span>
+  print(<span class="syn-string">&quot;PASS c items: &quot;</span> .. #files .. <span class="syn-string">&quot; files under &quot;</span> .. dir .. <span class="syn-string">&quot;, &quot;</span> .. total .. <span class="syn-string">&quot; lines, each in one item or between them; &quot;</span> .. count .. <span class="syn-string">&quot; items: &quot;</span> .. join(parts, <span class="syn-string">&quot;, &quot;</span>))
+  <span class="syn-keyword">return</span> <span class="syn-keyword">nil</span>
+<span class="syn-keyword">end</span>
+
+<span class="syn-comment">-- `got` equal to `want`, or the self-test fails, naming `what`.</span>
+<span class="syn-keyword">function</span> <span class="syn-name">same_or_fail</span>(what, got, want)
+  <span class="syn-keyword">if</span> got ~= want <span class="syn-keyword">then</span> fail(<span class="syn-string">&quot;map_file self-test: &quot;</span> .. what .. <span class="syn-string">&quot; is\n&quot;</span> .. got .. <span class="syn-string">&quot;\nit should be\n&quot;</span> .. want) <span class="syn-keyword">end</span>
+  <span class="syn-keyword">return</span> <span class="syn-keyword">nil</span>
+<span class="syn-keyword">end</span>
+
+<span class="syn-comment">-- The item named `name` of kind `kind` in `items`.</span>
+<span class="syn-keyword">function</span> <span class="syn-name">item_named</span>(items, kind, name)
+  <span class="syn-keyword">for</span> it <span class="syn-keyword">in</span> items <span class="syn-keyword">do</span>
+    <span class="syn-keyword">if</span> it.kind == kind <span class="syn-keyword">and</span> it.name == name <span class="syn-keyword">then</span> <span class="syn-keyword">return</span> it <span class="syn-keyword">end</span>
+  <span class="syn-keyword">end</span>
+  fail(<span class="syn-string">&quot;map_file self-test: no &quot;</span> .. kind .. <span class="syn-string">&quot; `&quot;</span> .. name .. <span class="syn-string">&quot;`&quot;</span>)
+<span class="syn-keyword">end</span>
+
+<span class="syn-comment">-- An item&#39;s lines as `comment a-b, sig c-d, body e-f`.</span>
+<span class="syn-keyword">function</span> <span class="syn-name">spans</span>(it)
+  <span class="syn-keyword">return</span> <span class="syn-string">&quot;comment &quot;</span> .. it.comment_first .. <span class="syn-string">&quot;-&quot;</span> .. it.comment_last .. <span class="syn-string">&quot;, sig &quot;</span> .. it.sig_first .. <span class="syn-string">&quot;-&quot;</span> .. it.sig_last .. <span class="syn-string">&quot;, body &quot;</span> .. it.body_first .. <span class="syn-string">&quot;-&quot;</span> .. it.body_last
+<span class="syn-keyword">end</span>
+
+<span class="syn-keyword">function</span> <span class="syn-name">self_test</span>()
+  <span class="syn-keyword">local</span> checks = <span class="syn-number">0</span>
+  <span class="syn-comment">-- The masker: every column kept, a `&quot;` in a character literal the</span>
+  <span class="syn-comment">-- literal&#39;s, a `//` in a string the string&#39;s, a macro&#39;s `/* */` blanked.</span>
+  <span class="syn-keyword">local</span> raw = <span class="syn-string">[=[    if (c == &#39;&quot;&#39;) { x(&quot;a // b&quot;); } // c]=]</span>
+  same_or_fail(<span class="syn-string">&quot;the mask of `&quot;</span> .. raw .. <span class="syn-string">&quot;`&quot;</span>, c_mask(raw), <span class="syn-string">[=[    if (c == &#39; &#39;) { x(&quot;      &quot;); }     ]=]</span>)
+  <span class="syn-keyword">local</span> macro_line = <span class="syn-string">[=[#define M(x) /* it&#39;s */ \]=]</span>
+  same_or_fail(<span class="syn-string">&quot;the mask of `&quot;</span> .. macro_line .. <span class="syn-string">&quot;`&quot;</span>, c_mask(macro_line), <span class="syn-string">&quot;#define M(x) &quot;</span> .. rep(<span class="syn-string">&quot; &quot;</span>, <span class="syn-number">10</span>) .. <span class="syn-string">&quot; \\&quot;</span>)
+  checks = checks + <span class="syn-number">2</span>
+  <span class="syn-keyword">local</span> h = PLANTS .. <span class="syn-string">&quot;/kinds.h&quot;</span>
+  <span class="syn-keyword">local</span> hi = c_items(h, {uses = <span class="syn-keyword">true</span>})
+  accounted(h, hi)
+  same_or_fail(h .. <span class="syn-string">&quot;&#39;s map&quot;</span>, join(map_lines(hi), <span class="syn-string">&quot;\n&quot;</span>), join({
+    <span class="syn-string">&quot;2-3 guard SHALE_KINDS_H&quot;</span>, <span class="syn-string">&quot;5-5 include stdint.h&quot;</span>, <span class="syn-string">&quot;6-6 include slice.h&quot;</span>, <span class="syn-string">&quot;9-9 macro KINDS_MAX&quot;</span>,
+    <span class="syn-string">&quot;10-17 macro KINDS_DEFINE&quot;</span>, <span class="syn-string">&quot;19-19 directive if defined&quot;</span>, <span class="syn-string">&quot;20-20 macro KINDS_LINUX&quot;</span>, <span class="syn-string">&quot;21-21 directive endif&quot;</span>,
+    <span class="syn-string">&quot;23-26 struct KindsPair&quot;</span>, <span class="syn-string">&quot;28-28 enum KindsKind&quot;</span>, <span class="syn-string">&quot;30-33 union KindsWord&quot;</span>, <span class="syn-string">&quot;35-35 typedef KindsHook&quot;</span>,
+    <span class="syn-string">&quot;37-40 enum KINDS_FIRST&quot;</span>, <span class="syn-string">&quot;42-42 generator KindsPairs&quot;</span>, <span class="syn-string">&quot;43-43 generator KindsVec&quot;</span>, <span class="syn-string">&quot;45-45 static_assert KindsPair&quot;</span>,
+    <span class="syn-string">&quot;47-47 function kinds_sum&quot;</span>, <span class="syn-string">&quot;51-58 function kinds_name&quot;</span>, <span class="syn-string">&quot;60-61 prototype kinds_check&quot;</span>, <span class="syn-string">&quot;63-66 data KINDS_NAMES&quot;</span>,
+    <span class="syn-string">&quot;67-67 data KINDS_ONE&quot;</span>, <span class="syn-string">&quot;69-69 guard SHALE_KINDS_H&quot;</span>}, <span class="syn-string">&quot;\n&quot;</span>))
+  checks = checks + <span class="syn-number">1</span>
+  <span class="syn-keyword">local</span> macro = item_named(hi, <span class="syn-string">&quot;macro&quot;</span>, <span class="syn-string">&quot;KINDS_DEFINE&quot;</span>)
+  same_or_fail(<span class="syn-string">&quot;KINDS_DEFINE&#39;s makes&quot;</span>, join(macro.makes, <span class="syn-string">&quot;,&quot;</span>), <span class="syn-string">&quot;make,first&quot;</span>)
+  same_or_fail(<span class="syn-string">&quot;KINDS_DEFINE&#39;s spans&quot;</span>, spans(macro), <span class="syn-string">&quot;comment 0-0, sig 10-10, body 11-17&quot;</span>)
+  same_or_fail(<span class="syn-string">&quot;KINDS_MAX&#39;s spans&quot;</span>, spans(item_named(hi, <span class="syn-string">&quot;macro&quot;</span>, <span class="syn-string">&quot;KINDS_MAX&quot;</span>)), <span class="syn-string">&quot;comment 8-8, sig 9-9, body 0-0&quot;</span>)
+  same_or_fail(<span class="syn-string">&quot;KindsKind&#39;s enumerators&quot;</span>, join(item_named(hi, <span class="syn-string">&quot;enum&quot;</span>, <span class="syn-string">&quot;KindsKind&quot;</span>).enumerators, <span class="syn-string">&quot;,&quot;</span>), <span class="syn-string">&quot;KINDS_A,KINDS_B&quot;</span>)
+  same_or_fail(<span class="syn-string">&quot;the anonymous enum&#39;s enumerators&quot;</span>, join(item_named(hi, <span class="syn-string">&quot;enum&quot;</span>, <span class="syn-string">&quot;KINDS_FIRST&quot;</span>).enumerators, <span class="syn-string">&quot;,&quot;</span>), <span class="syn-string">&quot;KINDS_FIRST,KINDS_SECOND&quot;</span>)
+  <span class="syn-keyword">local</span> vec = item_named(hi, <span class="syn-string">&quot;generator&quot;</span>, <span class="syn-string">&quot;KindsVec&quot;</span>)
+  same_or_fail(<span class="syn-string">&quot;KindsVec&#39;s macro and type&quot;</span>, vec.macro .. <span class="syn-string">&quot; &quot;</span> .. vec.of, <span class="syn-string">&quot;VEC_DEFINE KindsPair&quot;</span>)
+  <span class="syn-keyword">local</span> sum = item_named(hi, <span class="syn-string">&quot;function&quot;</span>, <span class="syn-string">&quot;kinds_sum&quot;</span>)
+  same_or_fail(<span class="syn-string">&quot;kinds_sum&quot;</span>, sum.storage .. <span class="syn-string">&quot; | &quot;</span> .. sum.type .. <span class="syn-string">&quot; | &quot;</span> .. spans(sum) .. <span class="syn-string">&quot; | &quot;</span> .. join(sum.uses, <span class="syn-string">&quot;,&quot;</span>), <span class="syn-string">&quot;static inline | uint32_t | comment 0-0, sig 47-47, body 47-47 | p&quot;</span>)
+  <span class="syn-keyword">local</span> name = item_named(hi, <span class="syn-string">&quot;function&quot;</span>, <span class="syn-string">&quot;kinds_name&quot;</span>)
+  same_or_fail(<span class="syn-string">&quot;kinds_name&quot;</span>, name.type .. <span class="syn-string">&quot; | &quot;</span> .. spans(name) .. <span class="syn-string">&quot; | &quot;</span> .. join(name.uses, <span class="syn-string">&quot;,&quot;</span>), <span class="syn-string">&quot;Str | comment 49-50, sig 51-51, body 52-57 | KINDS_A,KINDS_LINUX,S,k,kinds_label&quot;</span>)
+  <span class="syn-keyword">local</span> check = item_named(hi, <span class="syn-string">&quot;prototype&quot;</span>, <span class="syn-string">&quot;kinds_check&quot;</span>)
+  same_or_fail(<span class="syn-string">&quot;kinds_check&quot;</span>, check.type .. <span class="syn-string">&quot; | &quot;</span> .. spans(check), <span class="syn-string">&quot;Status | comment 0-0, sig 60-61, body 0-0&quot;</span>)
+  same_or_fail(<span class="syn-string">&quot;KINDS_NAMES&#39;s spans&quot;</span>, spans(item_named(hi, <span class="syn-string">&quot;data&quot;</span>, <span class="syn-string">&quot;KINDS_NAMES&quot;</span>)), <span class="syn-string">&quot;comment 0-0, sig 63-63, body 64-65&quot;</span>)
+  checks = checks + <span class="syn-number">11</span>
+  <span class="syn-keyword">local</span> c = PLANTS .. <span class="syn-string">&quot;/kinds.c&quot;</span>
+  <span class="syn-keyword">local</span> ci = c_items(c, {uses = <span class="syn-keyword">true</span>})
+  accounted(c, ci)
+  same_or_fail(c .. <span class="syn-string">&quot;&#39;s map&quot;</span>, join(map_lines(ci), <span class="syn-string">&quot;\n&quot;</span>), join({
+    <span class="syn-string">&quot;2-2 include test.h&quot;</span>, <span class="syn-string">&quot;4-4 data kinds_hook&quot;</span>, <span class="syn-string">&quot;6-11 function kinds_wrapped&quot;</span>, <span class="syn-string">&quot;13-15 test kinds_test&quot;</span>,
+    <span class="syn-string">&quot;17-19 test_list TEST_MAIN&quot;</span>, <span class="syn-string">&quot;21-23 function main&quot;</span>}, <span class="syn-string">&quot;\n&quot;</span>))
+  checks = checks + <span class="syn-number">1</span>
+  <span class="syn-keyword">local</span> wrapped = item_named(ci, <span class="syn-string">&quot;function&quot;</span>, <span class="syn-string">&quot;kinds_wrapped&quot;</span>)
+  same_or_fail(<span class="syn-string">&quot;kinds_wrapped&quot;</span>, spans(wrapped) .. <span class="syn-string">&quot; | &quot;</span> .. join(wrapped.uses, <span class="syn-string">&quot;,&quot;</span>), <span class="syn-string">&quot;comment 0-0, sig 6-7, body 8-10 | a,b,kinds_add,other,p,sum&quot;</span>)
+  same_or_fail(<span class="syn-string">&quot;kinds_test&#39;s uses&quot;</span>, join(item_named(ci, <span class="syn-string">&quot;test&quot;</span>, <span class="syn-string">&quot;kinds_test&quot;</span>).uses, <span class="syn-string">&quot;,&quot;</span>), <span class="syn-string">&quot;EXPECT,kinds_wrapped&quot;</span>)
+  same_or_fail(<span class="syn-string">&quot;TEST_MAIN&#39;s uses&quot;</span>, join(item_named(ci, <span class="syn-string">&quot;test_list&quot;</span>, <span class="syn-string">&quot;TEST_MAIN&quot;</span>).uses, <span class="syn-string">&quot;,&quot;</span>), <span class="syn-string">&quot;TEST_MAIN,kinds_test&quot;</span>)
+  same_or_fail(<span class="syn-string">&quot;main&#39;s spans&quot;</span>, spans(item_named(ci, <span class="syn-string">&quot;function&quot;</span>, <span class="syn-string">&quot;main&quot;</span>)), <span class="syn-string">&quot;comment 0-0, sig 21-21, body 22-22&quot;</span>)
+  checks = checks + <span class="syn-number">4</span>
+  <span class="syn-comment">-- Each break stops, naming its file, its line and why.</span>
+  <span class="syn-keyword">local</span> breaks = {
+    {f = <span class="syn-string">&quot;indented.c&quot;</span>, said = <span class="syn-string">&quot;indented.c:3: an indented line outside every item&quot;</span>},
+    {f = <span class="syn-string">&quot;column0.c&quot;</span>, said = <span class="syn-string">&quot;column0.c:2: a line at column 0 that opens no item the dialect knows&quot;</span>},
+    {f = <span class="syn-string">&quot;in_body.c&quot;</span>, said = <span class="syn-string">&quot;in_body.c:3: a line at column 0 inside the function `f` opened at line 2, which only a `}` may close&quot;</span>},
+    {f = <span class="syn-string">&quot;unclosed.c&quot;</span>, said = <span class="syn-string">&quot;unclosed.c:2: the function `f` that no `}` at column 0 closes&quot;</span>},
+    {f = <span class="syn-string">&quot;no_guard.h&quot;</span>, said = <span class="syn-string">&quot;no_guard.h:1: a header with no `#ifndef SHALE_NO_GUARD_H`&quot;</span>},
+    {f = <span class="syn-string">&quot;no_endif.h&quot;</span>, said = <span class="syn-string">&quot;no_endif.h:5: a header whose last item is not its guard&#39;s `#endif`&quot;</span>},
+    {f = <span class="syn-string">&quot;bad_test.c&quot;</span>, said = <span class="syn-string">&quot;bad_test.c:2: a `TEST(` line that is not `TEST(name) {`&quot;</span>},
+    {f = <span class="syn-string">&quot;wrapped_head.c&quot;</span>, said = <span class="syn-string">&quot;wrapped_head.c:3: a line at column 0 inside the head opened at line 2&quot;</span>},
+    {f = <span class="syn-string">&quot;bad_generator.c&quot;</span>, said = <span class="syn-string">&quot;bad_generator.c:2: a generator line whose name and type this reader can&#39;t find&quot;</span>},
+  }
+  <span class="syn-keyword">for</span> b <span class="syn-keyword">in</span> breaks <span class="syn-keyword">do</span>
+    <span class="syn-keyword">local</span> p = PLANTS .. <span class="syn-string">&quot;/breaks/&quot;</span> .. b.f
+    <span class="syn-keyword">local</span> r = attempt(c_items, p)
+    <span class="syn-keyword">if</span> r.ok <span class="syn-keyword">then</span> fail(<span class="syn-string">&quot;map_file self-test: &quot;</span> .. p .. <span class="syn-string">&quot; split, with &quot;</span> .. #r.value .. <span class="syn-string">&quot; items; it should stop with &quot;</span> .. b.said) <span class="syn-keyword">end</span>
+    <span class="syn-keyword">if</span> <span class="syn-keyword">not</span> starts_with(r.error, PLANTS .. <span class="syn-string">&quot;/breaks/&quot;</span> .. b.said .. <span class="syn-string">&quot;: &quot;</span>) <span class="syn-keyword">then</span> fail(<span class="syn-string">&quot;map_file self-test: &quot;</span> .. p .. <span class="syn-string">&quot; stopped with `&quot;</span> .. r.error .. <span class="syn-string">&quot;`; it should stop with `&quot;</span> .. PLANTS .. <span class="syn-string">&quot;/breaks/&quot;</span> .. b.said .. <span class="syn-string">&quot;: &lt;the line&gt;`&quot;</span>) <span class="syn-keyword">end</span>
+    checks = checks + <span class="syn-number">1</span>
+  <span class="syn-keyword">end</span>
+  print(<span class="syn-string">&quot;PASS map_file self-test: &quot;</span> .. checks .. <span class="syn-string">&quot; checks, each item kind mapped and &quot;</span> .. #breaks .. <span class="syn-string">&quot; shape breaks stopped at their lines&quot;</span>)
+  <span class="syn-keyword">return</span> <span class="syn-keyword">nil</span>
+<span class="syn-keyword">end</span>
+
+<span class="syn-keyword">if</span> arg(<span class="syn-string">&quot;self_test&quot;</span>, <span class="syn-number">0</span>) == <span class="syn-number">1</span> <span class="syn-keyword">then</span>
+  self_test()
+<span class="syn-keyword">else</span>
+  <span class="syn-keyword">local</span> file = arg(<span class="syn-string">&quot;file&quot;</span>, <span class="syn-string">&quot;&quot;</span>)
+  <span class="syn-keyword">local</span> tree = arg(<span class="syn-string">&quot;tree&quot;</span>, <span class="syn-string">&quot;&quot;</span>)
+  <span class="syn-keyword">if</span> (file == <span class="syn-string">&quot;&quot;</span>) == (tree == <span class="syn-string">&quot;&quot;</span>) <span class="syn-keyword">then</span> fail(<span class="syn-string">&quot;map_file: give `file=&lt;a .c or .h&gt;` or `tree=&lt;a folder&gt;`, one of them&quot;</span>) <span class="syn-keyword">end</span>
+  <span class="syn-keyword">if</span> file ~= <span class="syn-string">&quot;&quot;</span> <span class="syn-keyword">then</span>
+    <span class="syn-keyword">for</span> l <span class="syn-keyword">in</span> map_lines(c_items(file)) <span class="syn-keyword">do</span> print(l) <span class="syn-keyword">end</span>
+  <span class="syn-keyword">else</span>
+    map_tree(tree)
+  <span class="syn-keyword">end</span>
+<span class="syn-keyword">end</span>
+</code></pre>
+<nav class="steps"><a href="../count_shale_stops/">← previous</a> · <a href="../#map_file">Roc on Shale</a> · <a href="../list_long_functions/">next →</a></nav></main>
+</body>
+</html>

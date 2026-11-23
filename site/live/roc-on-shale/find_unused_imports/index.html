@@ -1,0 +1,449 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="description" content="The import lines a Roc file never uses, read from Roc's own parse tree, a gate with its plants' self-test in Roc too.">
+<title>find_unused_imports · Roc on Shale</title>
+<script src="../../shared/home.js"></script>
+<!-- site/build_roc_on_shale.shale writes this page from the shale repository's
+     history; run it again rather than editing here. The code is colored by
+     roc-syntax-color (SyntaxColor.html). -->
+<style>
+  :root { color-scheme: light dark; --bg: #f7f5f0; --fg: #1d1d1b; --muted: #6b6860; --edge: #d9d4c8; --pane: #ffffff; --link: #1f5fa8; --accent: #5b3ea8; }
+  @media (prefers-color-scheme: dark) {
+    :root { --bg: #1b1b1a; --fg: #e8e6e0; --muted: #9a968c; --edge: #3a3934; --pane: #242422; --link: #8ab4f0; --accent: #a68cf0; }
+  }
+  body { margin: 0; background: var(--bg); color: var(--fg); font: 15px/1.55 system-ui, sans-serif; }
+  main { max-width: 960px; margin: 0 auto; padding: 36px 16px 48px; }
+  @media (max-width: 640px) { main { padding: 24px 12px 36px; } }
+  .top { display: flex; flex-wrap: wrap; gap: 4px 14px; font-size: 14px; margin: 0 0 14px; }
+  h1 { font-size: 28px; margin: 0 0 6px; overflow-wrap: anywhere; }
+  .lede { margin: 0 0 10px; max-width: 70ch; }
+  ul.lede { padding-left: 22px; }
+  ul.lede li { margin: 0 0 4px; }
+  h2.intro { font-size: 20px; margin: 30px 0 6px; }
+  h3.intro { font-size: 16px; margin: 18px 0 4px; }
+  /* The drawing is Graphviz's SVG, inline, so its lines and words take the
+     page's colors in either theme. */
+  .diagram { margin: 14px 0 18px; }
+  .diagram svg { max-width: 100%; height: auto; }
+  .diagram text { fill: var(--fg); }
+  .diagram path, .diagram polygon { stroke: var(--fg); }
+  .diagram .edge polygon { fill: var(--fg); }
+  h2.part { font-size: 25px; margin: 64px 0 4px; padding-top: 20px; border-top: 3px solid var(--accent); }
+  .part-intro { margin: 0 0 8px; }
+  h3 { font-size: 19px; margin: 10px 0 4px; overflow-wrap: anywhere; }
+  h2.part a { color: inherit; text-decoration: none; }
+  h2.code { font-size: 16px; margin: 36px 0 4px; color: var(--accent); }
+  p { max-width: 70ch; }
+  a { color: var(--link); }
+  code { font: 13px ui-monospace, Menlo, Consolas, monospace; }
+  .contents { padding-left: 20px; }
+  .contents ul { padding-left: 20px; margin: 2px 0 8px; }
+  .contents a { overflow-wrap: anywhere; }
+  .facts { font-size: 14px; color: var(--muted); }
+  .file { font-size: 13px; color: var(--muted); margin: 20px 0 0; overflow-wrap: anywhere; }
+  .entry { margin-top: 28px; padding-top: 14px; border-top: 1px solid var(--edge); }
+  .steps { font-size: 13px; margin: 0 0 8px; }
+  main > .steps:last-child { margin: 28px 0 0; }
+  /* Every block shows its file whole; a line wider than the block scrolls
+     sideways inside it, so the code keeps its indentation. */
+  pre { margin: 6px 0 12px; padding: 12px 14px; border-radius: 5px; background: #2b2733; color: #e8e6e0;
+        font: 12px/1.45 ui-monospace, Menlo, Consolas, monospace; overflow-x: auto; tab-size: 4; }
+  pre code { font: inherit; }
+  .syn-keyword { color: #c792ea; }
+  .syn-type { color: #82aaff; }
+  .syn-string { color: #c3e88d; }
+  .syn-number { color: #f78c6c; }
+  .syn-comment { color: #8a8494; font-style: italic; }
+  .syn-name { color: #ffcb6b; }
+  footer { margin-top: 36px; color: var(--muted); font-size: 13px; }
+</style>
+</head>
+<body>
+<main>
+<nav class="steps"><a href="../find_names_and_docs_that_say_too_little/">← previous</a> · <a href="../#find_unused_imports">Roc on Shale</a> · <a href="../check_modules_stay_under_500_lines/">next →</a></nav>
+<h1>find_unused_imports</h1>
+<h2 class="code">Roc</h2>
+<p class="file">It also imports <code>Finding</code>, <code>Imports</code>, <code>Text</code> from <a href="../shared-library/">the shared Roc library</a>.</p>
+<p class="file"><a href="https://github.com/showell/shale/blob/e319d9497afb46e30c6b3116e43f72208cada380/cookbook/roc/find_unused_imports/find_unused_imports.roc"><code>cookbook/roc/find_unused_imports/find_unused_imports.roc</code></a>, 112 lines</p>
+<pre><code><span class="syn-comment">## find_unused_imports, in Roc on Shale&#39;s platform (roc_platform/README.md):</span>
+<span class="syn-comment">## the import lines a Roc file never uses, since Roc doesn&#39;t warn of one. Its</span>
+<span class="syn-comment">## launcher, cookbook/roc/find_unused_imports.shale, is how it is run, and</span>
+<span class="syn-comment">## its header says the rule, `unused_import`. check_goldens.shale, beside</span>
+<span class="syn-comment">## this, holds its output on the plants to its goldens, line for line.</span>
+<span class="syn-comment">##</span>
+<span class="syn-comment">##   cd &lt;repo&gt; &amp;&amp; shale cookbook:roc/find_unused_imports.shale glob=app/**/*.roc</span>
+<span class="syn-comment">##   shale cookbook:roc/find_unused_imports.shale self_test=1</span>
+<span class="syn-comment">##</span>
+<span class="syn-comment">## The arguments: `glob` (`**/*.roc`; several, separated by commas) and</span>
+<span class="syn-comment">## `self_test` (`self_test=1` runs the plants, each through the launcher).</span>
+<span class="syn-comment">##</span>
+<span class="syn-comment">## This root globs the files, has Roc&#39;s parser read them (`Shale.roc_tree!`)</span>
+<span class="syn-comment">## and each one&#39;s text (`Shale.read!`), and prints the verdict</span>
+<span class="syn-comment">## (`Shale.print!`, `Shale.fail!`). SelfTest, beside it, is the plants&#39; run.</span>
+<span class="syn-comment">## The rule is the cookbook&#39;s Roc library&#39;s Imports (cookbook/roc/lib/), its</span>
+<span class="syn-comment">## one home, with Tree, Text and Finding.</span>
+<span class="syn-comment">## budget: steps=800000000 arena_bytes=2000000000 output_bytes=4000000 programs=100</span>
+<span class="syn-keyword">app</span> [main!] { lib: <span class="syn-string">&quot;../lib/main.roc&quot;</span>, pf: <span class="syn-keyword">platform</span> <span class="syn-string">&quot;../../../roc_platform/platform/main.roc&quot;</span> }
+
+<span class="syn-keyword">import</span> pf.<span class="syn-type">Shale</span>
+<span class="syn-keyword">import</span> lib.<span class="syn-type">Finding</span>
+<span class="syn-keyword">import</span> lib.<span class="syn-type">Imports</span>
+<span class="syn-keyword">import</span> lib.<span class="syn-type">Text</span>
+<span class="syn-keyword">import</span> <span class="syn-type">SelfTest</span>
+
+<span class="syn-name">main!</span> : {} =&gt; {}
+<span class="syn-name">main!</span> = |{}| {
+	<span class="syn-keyword">if</span> <span class="syn-type">Shale</span>.arg!(<span class="syn-string">&quot;self_test&quot;</span>, <span class="syn-string">&quot;&quot;</span>) == <span class="syn-string">&quot;1&quot;</span> {
+		<span class="syn-type">SelfTest</span>.run!({})
+	} <span class="syn-keyword">else</span> {
+		run_check!({})
+	}
+}
+
+<span class="syn-comment">## The check over the glob&#39;s files: the verdict printed, then a stop when a</span>
+<span class="syn-comment">## file didn&#39;t parse, or when there are findings, the summary the last line</span>
+<span class="syn-comment">## a caller reads.</span>
+<span class="syn-name">run_check!</span> : {} =&gt; {}
+<span class="syn-name">run_check!</span> = |{}| {
+	paths = list_files!(<span class="syn-type">Shale</span>.arg!(<span class="syn-string">&quot;glob&quot;</span>, <span class="syn-string">&quot;**/*.roc&quot;</span>))
+	<span class="syn-keyword">var</span> $report = []
+	<span class="syn-keyword">var</span> $refused = []
+	<span class="syn-keyword">for</span> file <span class="syn-keyword">in</span> <span class="syn-type">Shale</span>.roc_tree!(paths) {
+		<span class="syn-keyword">if</span> file.err == <span class="syn-string">&quot;&quot;</span> {
+			source_lines = read_text!(file.path).split_on(<span class="syn-string">&quot;\n&quot;</span>)
+			<span class="syn-keyword">for</span> unused <span class="syn-keyword">in</span> <span class="syn-type">Imports</span>.unused_imports(file.nodes, source_lines) {
+				what = <span class="syn-string">&quot;</span>${unused.label}<span class="syn-string"> is imported and never used: delete the line&quot;</span>
+				$report = $report.append({ path: file.path, line: unused.line, check: <span class="syn-string">&quot;unused_import&quot;</span>, what })
+			}
+		} <span class="syn-keyword">else</span> <span class="syn-keyword">if</span> file.err.starts_with(file.path) {
+			$refused = $refused.append(file.err)
+		} <span class="syn-keyword">else</span> {
+			$refused = $refused.append(<span class="syn-string">&quot;</span>${file.path}<span class="syn-string">: </span>${file.err}<span class="syn-string">&quot;</span>)
+		}
+	}
+	found = $report.sort_with(<span class="syn-type">Finding</span>.order).map(<span class="syn-type">Finding</span>.line_of)
+	counts = <span class="syn-string">&quot;</span>${paths.len().to_str()}<span class="syn-string"> files; unused_import </span>${found.len().to_str()}<span class="syn-string">&quot;</span>
+	summary = <span class="syn-string">&quot;find_unused_imports (Roc): </span>${counts}<span class="syn-string">&quot;</span>
+	print_findings!(summary, found)
+	<span class="syn-keyword">if</span> !($refused.is_empty()) {
+		<span class="syn-keyword">for</span> refusal <span class="syn-keyword">in</span> $refused {
+			<span class="syn-type">Shale</span>.print!(<span class="syn-string">&quot;refused: </span>${refusal}<span class="syn-string">&quot;</span>)
+		}
+		refused_count = $refused.len().to_str()
+		refusals = <span class="syn-string">&quot;roc-ast refused </span>${refused_count}<span class="syn-string"> files (named above)&quot;</span>
+		why = <span class="syn-string">&quot;which have no tree to judge; every other file was judged&quot;</span>
+		<span class="syn-type">Shale</span>.fail!(<span class="syn-string">&quot;find_unused_imports: </span>${refusals}<span class="syn-string">, </span>${why}<span class="syn-string">&quot;</span>)
+	}
+	<span class="syn-keyword">if</span> !(found.is_empty()) {
+		<span class="syn-type">Shale</span>.fail!(summary)
+	}
+}
+
+<span class="syn-comment">## The files of each comma-separated glob, in the order given, a file twice</span>
+<span class="syn-comment">## when two globs name it.</span>
+<span class="syn-name">list_files!</span> : <span class="syn-type">Str</span> =&gt; <span class="syn-type">List</span>(<span class="syn-type">Str</span>)
+<span class="syn-name">list_files!</span> = |patterns| {
+	<span class="syn-keyword">var</span> $paths = []
+	<span class="syn-keyword">for</span> pattern <span class="syn-keyword">in</span> patterns.split_on(<span class="syn-string">&quot;,&quot;</span>) {
+		matching = <span class="syn-type">Shale</span>.glob!(<span class="syn-type">Text</span>.trim(pattern))
+		$paths = $paths.concat(matching)
+	}
+	$paths
+}
+
+<span class="syn-comment">## The file&#39;s text. A file the parser read and the read finds gone stops the</span>
+<span class="syn-comment">## run.</span>
+<span class="syn-name">read_text!</span> : <span class="syn-type">Str</span> =&gt; <span class="syn-type">Str</span>
+<span class="syn-name">read_text!</span> = |path|
+	<span class="syn-keyword">match</span> <span class="syn-type">Shale</span>.read!(path) {
+		<span class="syn-type">Found</span>(text) =&gt; text
+		<span class="syn-type">Missing</span> =&gt; {
+			<span class="syn-type">Shale</span>.fail!(<span class="syn-string">&quot;find_unused_imports: </span>${path}<span class="syn-string"> went missing during the check&quot;</span>)
+			<span class="syn-string">&quot;&quot;</span>
+		}
+	}
+
+<span class="syn-comment"># ── The verdict</span>
+
+<span class="syn-comment">## The summary, each finding, then the summary again (cookbook/findings.shale):</span>
+<span class="syn-comment">## the first copy survives a cut output, and a gate reads the last line.</span>
+<span class="syn-name">print_findings!</span> : <span class="syn-type">Str</span>, <span class="syn-type">List</span>(<span class="syn-type">Str</span>) =&gt; {}
+<span class="syn-name">print_findings!</span> = |summary, finding_lines| {
+	<span class="syn-type">Shale</span>.print!(summary)
+	<span class="syn-keyword">if</span> !(finding_lines.is_empty()) {
+		<span class="syn-keyword">for</span> line <span class="syn-keyword">in</span> finding_lines {
+			<span class="syn-type">Shale</span>.print!(line)
+		}
+		<span class="syn-type">Shale</span>.print!(summary)
+	}
+}
+</code></pre>
+<p class="file"><a href="https://github.com/showell/shale/blob/e319d9497afb46e30c6b3116e43f72208cada380/cookbook/roc/find_unused_imports/SelfTest.roc"><code>cookbook/roc/find_unused_imports/SelfTest.roc</code></a>, 151 lines</p>
+<pre><code><span class="syn-comment">## The recipe&#39;s self-test: each plant under</span>
+<span class="syn-comment">## cookbook/roc/plants/find_unused_imports/ run through the launcher, held to</span>
+<span class="syn-comment">## its findings, its exit and what it says.</span>
+<span class="syn-keyword">import</span> pf.<span class="syn-type">Shale</span>
+
+<span class="syn-type">SelfTest</span> := [].{
+
+	<span class="syn-comment">## Each row run as a child of its own, through the launcher; a run that</span>
+	<span class="syn-comment">## fires no `unused_import` anywhere fails too, since the check could be</span>
+	<span class="syn-comment">## blind.</span>
+	<span class="syn-name">run!</span> : {} =&gt; {}
+	<span class="syn-name">run!</span> = |{}| {
+		<span class="syn-keyword">var</span> $wrong = <span class="syn-number">0</span>.<span class="syn-type">U64</span>
+		<span class="syn-keyword">for</span> row <span class="syn-keyword">in</span> rows {
+			pattern = <span class="syn-string">&quot;</span>${plants}${row.plant}<span class="syn-string">&quot;</span>
+			command = [<span class="syn-string">&quot;shale&quot;</span>, launcher, <span class="syn-string">&quot;glob=</span>${pattern}<span class="syn-string">&quot;</span>]
+			result = <span class="syn-type">Shale</span>.run!({
+				argv: command,
+				keep: <span class="syn-type">Whole</span>(<span class="syn-number">4000000</span>),
+				timeout_ms: <span class="syn-number">120000</span>,
+				want: <span class="syn-string">&quot;&quot;</span>,
+			})
+			faults = find_faults!(row, result)
+			<span class="syn-keyword">if</span> faults.is_empty() {
+				<span class="syn-type">Shale</span>.print!(<span class="syn-string">&quot;ok   </span>${pattern}<span class="syn-string">&quot;</span>)
+			} <span class="syn-keyword">else</span> {
+				<span class="syn-type">Shale</span>.print!(<span class="syn-string">&quot;FAIL </span>${pattern}<span class="syn-string">: </span>${<span class="syn-type">Str</span>.join_with(faults, <span class="syn-string">&quot;; &quot;</span>)}<span class="syn-string">&quot;</span>)
+				$wrong = $wrong + <span class="syn-number">1</span>
+				<span class="syn-type">Shale</span>.print!(result.out)
+			}
+		}
+		<span class="syn-keyword">if</span> !(rows.any(|row| row.findings &gt; <span class="syn-number">0</span>)) {
+			<span class="syn-type">Shale</span>.print!(<span class="syn-string">&quot;FAIL `unused_import` has no plant&quot;</span>)
+			$wrong = $wrong + <span class="syn-number">1</span>
+		}
+		<span class="syn-keyword">if</span> $wrong &gt; <span class="syn-number">0</span> {
+			<span class="syn-type">Shale</span>.fail!(<span class="syn-string">&quot;find_unused_imports self_test: </span>${$wrong.to_str()}<span class="syn-string"> wrong&quot;</span>)
+		}
+		row_count = rows.len().to_str()
+		proof = <span class="syn-string">&quot;each plant gives its findings and a nonzero exit, each clean case none and exit 0&quot;</span>
+		<span class="syn-type">Shale</span>.print!(<span class="syn-string">&quot;find_unused_imports self_test: PASS (</span>${row_count}<span class="syn-string"> rows: </span>${proof}<span class="syn-string">)&quot;</span>)
+	}
+}
+
+<span class="syn-comment">## The launcher, which the self-test runs each plant through.</span>
+<span class="syn-name">launcher</span> : <span class="syn-type">Str</span>
+<span class="syn-name">launcher</span> = <span class="syn-string">&quot;cookbook:roc/find_unused_imports.shale&quot;</span>
+
+<span class="syn-name">plants</span> : <span class="syn-type">Str</span>
+<span class="syn-name">plants</span> = <span class="syn-string">&quot;cookbook:roc/plants/find_unused_imports/&quot;</span>
+
+<span class="syn-comment">## A plant&#39;s run: its files below `plants`, the findings it must print, the</span>
+<span class="syn-comment">## literals its output must hold, and whether it must stop without a finding.</span>
+<span class="syn-type">Row</span> : {
+	plant : <span class="syn-type">Str</span>,
+	findings : <span class="syn-type">U64</span>,
+	says : <span class="syn-type">List</span>(<span class="syn-type">Str</span>),
+	stops : <span class="syn-type">Bool</span>,
+}
+
+<span class="syn-comment">## A plant with no finding to give.</span>
+<span class="syn-name">quiet</span> : <span class="syn-type">Str</span> -&gt; <span class="syn-type">Row</span>
+<span class="syn-name">quiet</span> = |plant| {
+	plant,
+	findings: <span class="syn-number">0</span>,
+	says: [],
+	stops: <span class="syn-type">Bool.False</span>,
+}
+
+<span class="syn-comment">## A plant with one finding, and what it says.</span>
+<span class="syn-name">fires_once</span> : <span class="syn-type">Str</span>, <span class="syn-type">Str</span> -&gt; <span class="syn-type">Row</span>
+<span class="syn-name">fires_once</span> = |plant, saying| {
+	plant,
+	findings: <span class="syn-number">1</span>,
+	says: [saying],
+	stops: <span class="syn-type">Bool.False</span>,
+}
+
+<span class="syn-name">rows</span> : <span class="syn-type">List</span>(<span class="syn-type">Row</span>)
+<span class="syn-name">rows</span> = [
+	fires_once(<span class="syn-string">&quot;unused.roc&quot;</span>, <span class="syn-string">&quot;unused.roc:3: unused_import: `game.Polygon` is imported&quot;</span>),
+	fires_once(<span class="syn-string">&quot;unused_alias.roc&quot;</span>, <span class="syn-string">&quot;`game.Distance` as `D` is imported and never used&quot;</span>),
+	fires_once(<span class="syn-string">&quot;unused_exposing.roc&quot;</span>, <span class="syn-string">&quot;`pf.Stdout` is imported&quot;</span>),
+	fires_once(<span class="syn-string">&quot;unused_file_import.roc&quot;</span>, <span class="syn-string">&quot;the file import `page` is imported&quot;</span>),
+	fires_once(<span class="syn-string">&quot;unused_in_prose.roc&quot;</span>, <span class="syn-string">&quot;`game.Polygon` is imported&quot;</span>),
+	fires_once(<span class="syn-string">&quot;unused_method_only.roc&quot;</span>, <span class="syn-string">&quot;`game.Distance` is imported&quot;</span>),
+	fires_once(<span class="syn-string">&quot;unused_tag_namesake.roc&quot;</span>, <span class="syn-string">&quot;`game.Other` is imported&quot;</span>),
+	fires_once(<span class="syn-string">&quot;unused_beside_hosted.roc&quot;</span>, <span class="syn-string">&quot;unused_beside_hosted.roc:24: unused_import: `Http`&quot;</span>),
+	{
+		plant: <span class="syn-string">&quot;unused.roc,</span>${plants}<span class="syn-string">unused_alias.roc&quot;</span>,
+		findings: <span class="syn-number">2</span>,
+		says: [],
+		stops: <span class="syn-type">Bool.False</span>,
+	},
+	quiet(<span class="syn-string">&quot;quiet_qualified.roc&quot;</span>),
+	quiet(<span class="syn-string">&quot;quiet_annotation.roc&quot;</span>),
+	quiet(<span class="syn-string">&quot;quiet_expect.roc&quot;</span>),
+	quiet(<span class="syn-string">&quot;quiet_pattern_tag.roc&quot;</span>),
+	quiet(<span class="syn-string">&quot;quiet_tag.roc&quot;</span>),
+	quiet(<span class="syn-string">&quot;quiet_exposing.roc&quot;</span>),
+	quiet(<span class="syn-string">&quot;quiet_alias.roc&quot;</span>),
+	quiet(<span class="syn-string">&quot;quiet_interpolation.roc&quot;</span>),
+	quiet(<span class="syn-string">&quot;quiet_file_import.roc&quot;</span>),
+	quiet(<span class="syn-string">&quot;quiet_hosted.roc&quot;</span>),
+	{
+		plant: <span class="syn-string">&quot;broken/*.roc&quot;</span>,
+		findings: <span class="syn-number">0</span>,
+		says: [<span class="syn-string">&quot;refused: &quot;</span>],
+		stops: <span class="syn-type">Bool.True</span>,
+	},
+]
+
+<span class="syn-comment">## The last line of `out` that isn&#39;t one of Shale&#39;s `──` lines.</span>
+<span class="syn-name">last_said</span> : <span class="syn-type">Str</span> -&gt; <span class="syn-type">Str</span>
+<span class="syn-name">last_said</span> = |out|
+	out.trim().split_on(<span class="syn-string">&quot;\n&quot;</span>).fold(
+		<span class="syn-string">&quot;&quot;</span>,
+		|last, line|
+			<span class="syn-keyword">if</span> line.starts_with(<span class="syn-string">&quot;──&quot;</span>) <span class="syn-keyword">or</span> line.trim() == <span class="syn-string">&quot;&quot;</span> {
+				last
+			} <span class="syn-keyword">else</span> {
+				line
+			},
+	)
+
+<span class="syn-comment">## What is wrong with one row&#39;s run.</span>
+<span class="syn-name">find_faults!</span> : <span class="syn-type">Row</span>, { code : <span class="syn-type">I64</span>, out : <span class="syn-type">Str</span> } =&gt; <span class="syn-type">List</span>(<span class="syn-type">Str</span>)
+<span class="syn-name">find_faults!</span> = |row, result| {
+	must_fail = row.stops <span class="syn-keyword">or</span> row.findings &gt; <span class="syn-number">0</span>
+	<span class="syn-keyword">var</span> $faults = []
+	<span class="syn-keyword">if</span> must_fail <span class="syn-keyword">and</span> result.code == <span class="syn-number">0</span> {
+		$faults = $faults.append(<span class="syn-string">&quot;it exited 0&quot;</span>)
+	}
+	<span class="syn-keyword">if</span> !(must_fail) <span class="syn-keyword">and</span> result.code != <span class="syn-number">0</span> {
+		$faults = $faults.append(<span class="syn-string">&quot;it exited </span>${result.code.to_str()}<span class="syn-string">&quot;</span>)
+	}
+	found = <span class="syn-type">Shale</span>.re_lines!(result.out, <span class="syn-string">&quot;^[^ ]+:[0-9]+: unused_import: &quot;</span>).len()
+	<span class="syn-keyword">if</span> found != row.findings {
+		printed = <span class="syn-string">&quot;unused_import printed </span>${found.to_str()}<span class="syn-string">&quot;</span>
+		$faults = $faults.append(<span class="syn-string">&quot;</span>${printed}<span class="syn-string">, not </span>${row.findings.to_str()}<span class="syn-string">&quot;</span>)
+	}
+	<span class="syn-keyword">if</span> !(row.stops) <span class="syn-keyword">and</span> !(last_said(result.out).contains(<span class="syn-string">&quot; files; &quot;</span>)) {
+		$faults = $faults.append(<span class="syn-string">&quot;its last line is no summary: </span>${last_said(result.out)}<span class="syn-string">&quot;</span>)
+	}
+	<span class="syn-keyword">for</span> literal <span class="syn-keyword">in</span> row.says {
+		<span class="syn-keyword">if</span> !(result.out.contains(literal)) {
+			$faults = $faults.append(<span class="syn-string">&quot;its output lacks `</span>${literal}<span class="syn-string">`&quot;</span>)
+		}
+	}
+	$faults
+}
+</code></pre>
+<h2 class="code">Shale original</h2>
+<p class="file"><a href="https://github.com/showell/shale/blob/8023162fbe9af80e895356486f9db272c170e23d/cookbook/roc/find_unused_imports.shale"><code>cookbook/roc/find_unused_imports.shale</code></a>, 106 lines, at <code>8023162f</code></p>
+<p class="file">The libraries it loads: <a href="https://github.com/showell/shale/blob/8023162fbe9af80e895356486f9db272c170e23d/cookbook/findings.shale"><code>cookbook/findings.shale</code></a> (21 lines), <a href="https://github.com/showell/shale/blob/8023162fbe9af80e895356486f9db272c170e23d/cookbook/roc/parsed.shale"><code>cookbook/roc/parsed.shale</code></a> (34 lines), <a href="https://github.com/showell/shale/blob/8023162fbe9af80e895356486f9db272c170e23d/cookbook/roc/gate_recipe.shale"><code>cookbook/roc/gate_recipe.shale</code></a> (102 lines), <a href="https://github.com/showell/shale/blob/8023162fbe9af80e895356486f9db272c170e23d/cookbook/roc/imports.shale"><code>cookbook/roc/imports.shale</code></a> (104 lines).</p>
+<pre><code><span class="syn-comment">-- This recipe finds import lines that the file never uses, since Roc doesn&#39;t</span>
+<span class="syn-comment">-- warn of one.</span>
+<span class="syn-comment">--</span>
+<span class="syn-comment">--   cd &lt;repo&gt; &amp;&amp; shale &lt;shale&gt;/cookbook/roc/find_unused_imports.shale</span>
+<span class="syn-comment">--   shale cookbook:roc/find_unused_imports.shale self_test=1</span>
+<span class="syn-comment">--</span>
+<span class="syn-comment">-- The arguments:</span>
+<span class="syn-comment">--   glob       the files to check, `**/*.roc` by default; several globs may</span>
+<span class="syn-comment">--              be given, separated by commas;</span>
+<span class="syn-comment">--   self_test  with `self_test=1`, check the plants in</span>
+<span class="syn-comment">--              `cookbook/roc/plants/find_unused_imports/`.</span>
+<span class="syn-comment">--</span>
+<span class="syn-comment">-- The check:</span>
+<span class="syn-comment">--</span>
+<span class="syn-comment">--   unused_import  An `import` line whose name the file never refers to. The</span>
+<span class="syn-comment">--              name is the alias of `import pkg.Mod as M`, else the last part</span>
+<span class="syn-comment">--              of the module&#39;s path: `Mod` of `import pkg.Mod` and of</span>
+<span class="syn-comment">--              `import Mod`. A use is a value, tag or type whose first part</span>
+<span class="syn-comment">--              is that name: `Mod.name`, `Mod.Type`, `Mod.Tag(x)`, the</span>
+<span class="syn-comment">--              module&#39;s own type `Mod`, in an annotation, a pattern, an</span>
+<span class="syn-comment">--              expect or an interpolation alike. A name the line exposes</span>
+<span class="syn-comment">--              (`exposing [line!]`) and the file uses is a use of the line.</span>
+<span class="syn-comment">--              A file import, `import &quot;page.html&quot; as page : Str`, is used</span>
+<span class="syn-comment">--              when the file refers to `page`. An entry of a platform</span>
+<span class="syn-comment">--              header&#39;s `hosted { ... }` block uses the module it names</span>
+<span class="syn-comment">--              (`&quot;sym&quot;: Host.f!` uses `Host`). A name in a comment or a</span>
+<span class="syn-comment">--              string is no use.</span>
+<span class="syn-comment">--</span>
+<span class="syn-comment">-- A method call never names its module, so a module whose only use is a</span>
+<span class="syn-comment">-- method on a value of its type is unused here, and Roc agrees: the method</span>
+<span class="syn-comment">-- resolves through the value&#39;s type without the import. A bare tag that</span>
+<span class="syn-comment">-- shares a module&#39;s name (`Other`, in an expression, a pattern or a tag union</span>
+<span class="syn-comment">-- type) is no use of the module, but a nominal type&#39;s name before its record</span>
+<span class="syn-comment">-- (`Point.{ x: 0 }`) is.</span>
+<span class="syn-comment">--</span>
+<span class="syn-comment">-- roc-ast drops the qualifier of a tag in a pattern (`Color.Red =&gt;` comes as</span>
+<span class="syn-comment">-- `.Red`), so that name is read from the source at the pattern&#39;s column.</span>
+<span class="syn-comment">--</span>
+<span class="syn-comment">-- The output is the counts, one line per finding, and the counts again</span>
+<span class="syn-comment">-- (cookbook/findings.shale). The run fails if there are findings, or if</span>
+<span class="syn-comment">-- any file doesn&#39;t parse, and the files that do parse are judged either way.</span>
+<span class="syn-comment">-- budget: steps=800000000 arena_bytes=2000000000 output_bytes=4000000</span>
+
+<span class="syn-keyword">const</span> SELF_TEST = arg(<span class="syn-string">&quot;self_test&quot;</span>, <span class="syn-string">&quot;&quot;</span>) == <span class="syn-string">&quot;1&quot;</span>
+<span class="syn-keyword">const</span> GLOB = arg(<span class="syn-string">&quot;glob&quot;</span>, <span class="syn-string">&quot;**/*.roc&quot;</span>)
+use(<span class="syn-string">&quot;cookbook:findings.shale&quot;</span>)
+use(<span class="syn-string">&quot;./parsed.shale&quot;</span>)
+use(<span class="syn-string">&quot;./gate_recipe.shale&quot;</span>)
+use(<span class="syn-string">&quot;./imports.shale&quot;</span>)
+<span class="syn-keyword">const</span> CHECKS = {<span class="syn-string">&quot;unused_import&quot;</span>}
+
+<span class="syn-keyword">function</span> <span class="syn-name">judge_file</span>(f, report)
+  <span class="syn-keyword">for</span> imp <span class="syn-keyword">in</span> unused_imports(f.nodes, split(read(f.path), <span class="syn-string">&quot;\n&quot;</span>)) <span class="syn-keyword">do</span>
+    push(report, {path = f.path, line = imp.line, check = <span class="syn-string">&quot;unused_import&quot;</span>, what = imp.label .. <span class="syn-string">&quot; is imported and never used: delete the line&quot;</span>})
+  <span class="syn-keyword">end</span>
+  <span class="syn-keyword">return</span> <span class="syn-keyword">nil</span>
+<span class="syn-keyword">end</span>
+<span class="syn-keyword">function</span> <span class="syn-name">self_test</span>()
+  <span class="syn-keyword">local</span> at = <span class="syn-string">&quot;cookbook:roc/plants/find_unused_imports/&quot;</span>
+  check_plants(<span class="syn-string">&quot;find_unused_imports&quot;</span>, <span class="syn-string">&quot;cookbook:roc/find_unused_imports.shale&quot;</span>, CHECKS, {
+    {glob = at .. <span class="syn-string">&quot;unused.roc&quot;</span>, counts = {unused_import = <span class="syn-number">1</span>}, says = {<span class="syn-string">&quot;unused.roc:3: unused_import: `game.Polygon` is imported and never used&quot;</span>}},
+    {glob = at .. <span class="syn-string">&quot;unused_alias.roc&quot;</span>, counts = {unused_import = <span class="syn-number">1</span>}, says = {<span class="syn-string">&quot;`game.Distance` as `D` is imported and never used&quot;</span>}},
+    {glob = at .. <span class="syn-string">&quot;unused_exposing.roc&quot;</span>, counts = {unused_import = <span class="syn-number">1</span>}, says = {<span class="syn-string">&quot;`pf.Stdout` is imported&quot;</span>}},
+    {glob = at .. <span class="syn-string">&quot;unused_file_import.roc&quot;</span>, counts = {unused_import = <span class="syn-number">1</span>}, says = {<span class="syn-string">&quot;the file import `page` is imported&quot;</span>}},
+    {glob = at .. <span class="syn-string">&quot;unused_in_prose.roc&quot;</span>, counts = {unused_import = <span class="syn-number">1</span>}, says = {<span class="syn-string">&quot;`game.Polygon` is imported&quot;</span>}},
+    {glob = at .. <span class="syn-string">&quot;unused_method_only.roc&quot;</span>, counts = {unused_import = <span class="syn-number">1</span>}, says = {<span class="syn-string">&quot;`game.Distance` is imported&quot;</span>}},
+    {glob = at .. <span class="syn-string">&quot;unused_tag_namesake.roc&quot;</span>, counts = {unused_import = <span class="syn-number">1</span>}, says = {<span class="syn-string">&quot;`game.Other` is imported&quot;</span>}},
+    {glob = at .. <span class="syn-string">&quot;unused_beside_hosted.roc&quot;</span>, counts = {unused_import = <span class="syn-number">1</span>}, says = {<span class="syn-string">&quot;unused_beside_hosted.roc:24: unused_import: `Http` is imported&quot;</span>}},
+    {glob = at .. <span class="syn-string">&quot;unused.roc,&quot;</span> .. at .. <span class="syn-string">&quot;unused_alias.roc&quot;</span>, counts = {unused_import = <span class="syn-number">2</span>}},
+    {glob = at .. <span class="syn-string">&quot;quiet_qualified.roc&quot;</span>},
+    {glob = at .. <span class="syn-string">&quot;quiet_annotation.roc&quot;</span>},
+    {glob = at .. <span class="syn-string">&quot;quiet_expect.roc&quot;</span>},
+    {glob = at .. <span class="syn-string">&quot;quiet_pattern_tag.roc&quot;</span>},
+    {glob = at .. <span class="syn-string">&quot;quiet_tag.roc&quot;</span>},
+    {glob = at .. <span class="syn-string">&quot;quiet_exposing.roc&quot;</span>},
+    {glob = at .. <span class="syn-string">&quot;quiet_alias.roc&quot;</span>},
+    {glob = at .. <span class="syn-string">&quot;quiet_interpolation.roc&quot;</span>},
+    {glob = at .. <span class="syn-string">&quot;quiet_file_import.roc&quot;</span>},
+    {glob = at .. <span class="syn-string">&quot;quiet_hosted.roc&quot;</span>},
+    {glob = at .. <span class="syn-string">&quot;broken/*.roc&quot;</span>, stops = <span class="syn-keyword">true</span>, says = {<span class="syn-string">&quot;refused: &quot;</span>}},
+  })
+  <span class="syn-keyword">return</span> <span class="syn-keyword">nil</span>
+<span class="syn-keyword">end</span>
+
+<span class="syn-keyword">function</span> <span class="syn-name">run_check</span>()
+  <span class="syn-keyword">local</span> paths = {}
+  <span class="syn-keyword">for</span> g <span class="syn-keyword">in</span> split(GLOB, <span class="syn-string">&quot;,&quot;</span>) <span class="syn-keyword">do</span>
+    <span class="syn-keyword">for</span> p <span class="syn-keyword">in</span> glob(trim(g)) <span class="syn-keyword">do</span> push(paths, p) <span class="syn-keyword">end</span>
+  <span class="syn-keyword">end</span>
+  <span class="syn-keyword">local</span> parsed = parse_roc_files(paths)
+  <span class="syn-keyword">local</span> report = {}
+  <span class="syn-keyword">for</span> f <span class="syn-keyword">in</span> parsed.files <span class="syn-keyword">do</span> judge_file(f, report) <span class="syn-keyword">end</span>
+  <span class="syn-keyword">local</span> verdict = verdict_of(<span class="syn-string">&quot;find_unused_imports&quot;</span>, CHECKS, report, #paths)
+  print_findings(verdict.summary, verdict.found)
+  fail_if_refused(<span class="syn-string">&quot;find_unused_imports&quot;</span>, parsed.refused)
+  <span class="syn-keyword">return</span> verdict
+<span class="syn-keyword">end</span>
+
+<span class="syn-comment">-- This `fail` stands at the top level so the summary is the last line a</span>
+<span class="syn-comment">-- caller reads: a stop inside a function prints the calls after it.</span>
+<span class="syn-keyword">if</span> SELF_TEST <span class="syn-keyword">then</span>
+  self_test()
+<span class="syn-keyword">else</span>
+  <span class="syn-keyword">local</span> verdict = run_check()
+  <span class="syn-keyword">if</span> #verdict.found &gt; <span class="syn-number">0</span> <span class="syn-keyword">then</span> fail(verdict.summary) <span class="syn-keyword">end</span>
+<span class="syn-keyword">end</span>
+</code></pre>
+<nav class="steps"><a href="../find_names_and_docs_that_say_too_little/">← previous</a> · <a href="../#find_unused_imports">Roc on Shale</a> · <a href="../check_modules_stay_under_500_lines/">next →</a></nav></main>
+</body>
+</html>

@@ -60,7 +60,7 @@ the whole class. Each section says what its type or check can't see. Some of the
 instead, among them a Markdown spec, an audit of what each request costs, and a sweep for decisions that let a new
 case through; the page says which.</p>
 <p class="lede">Claude, an AI coding agent, wrote the fixes, the checks and this page under Steve's supervision. Every
-snippet is quoted from roc-chat at commit d275ae7, its main branch when this page was last updated, with a link to its
+snippet is quoted from roc-chat at commit 02a5a1f, its main branch when this page was last updated, with a link to its
 lines; the one older snippet says so.</p>
 
 <h2>What the types already said</h2>
@@ -154,7 +154,7 @@ private to the module: the bracket below is its one caller. <code>StreamHolder</
 of those names, and <code>HttpAnswer.stream</code> takes one and sets the answer's <code>stream_holder</code> from
 it. The platform's answer is a plain record, though, so Roc's types would let any module set
 <code>stream_holder</code> itself. The check below holds that instead.</p>
-<p class="file"><a href="https://github.com/showell/roc-chat/blob/d275ae7e1cad016f1a978f6ae6500f48d8d5874a/app/StreamHolder.roc#L13-L26"><code>app/StreamHolder.roc</code></a>, lines 13-26</p>
+<p class="file"><a href="https://github.com/showell/roc-chat/blob/02a5a1f8098f7da57a7493d76e539bba98a2ea5c/app/StreamHolder.roc#L13-L26"><code>app/StreamHolder.roc</code></a>, lines 13-26</p>
 <pre class="roc"><code><span class="syn-type">StreamHolder</span> :: <span class="syn-type">List</span>(<span class="syn-type">U8</span>).{
 
 	<span class="syn-comment">## Who holds the streams of the pages `user` opens: the user, by id.</span>
@@ -169,7 +169,7 @@ it. The platform's answer is a plain record, though, so Roc's types would let an
 	<span class="syn-name">to_bytes</span> : <span class="syn-type">StreamHolder</span> -&gt; <span class="syn-type">List</span>(<span class="syn-type">U8</span>)
 	<span class="syn-name">to_bytes</span> = |<span class="syn-type">StreamHolder</span>.(bytes)| bytes
 }</code></pre>
-<p class="file"><a href="https://github.com/showell/roc-chat/blob/d275ae7e1cad016f1a978f6ae6500f48d8d5874a/app/HttpAnswer.roc#L193-L209"><code>app/HttpAnswer.roc</code></a>, lines 193-209</p>
+<p class="file"><a href="https://github.com/showell/roc-chat/blob/02a5a1f8098f7da57a7493d76e539bba98a2ea5c/app/HttpAnswer.roc#L193-L209"><code>app/HttpAnswer.roc</code></a>, lines 193-209</p>
 <pre class="roc"><code><span class="syn-comment">## An event stream the host holds open on the bus keys `keys`, 1 to 4,</span>
 <span class="syn-comment">## for `holder`: `backlog` first, then every frame published to any of</span>
 <span class="syn-comment">## `keys`. The host writes the stream&#39;s type; it is not sniffed.</span>
@@ -271,7 +271,7 @@ compile. Each stream then reconnects and is judged again.</p>
 </g>
 </svg>
 </div>
-<p class="file"><a href="https://github.com/showell/roc-chat/blob/d275ae7e1cad016f1a978f6ae6500f48d8d5874a/app/UserStreams.roc#L22-L57"><code>app/UserStreams.roc</code></a>, lines 22-57</p>
+<p class="file"><a href="https://github.com/showell/roc-chat/blob/02a5a1f8098f7da57a7493d76e539bba98a2ea5c/app/UserStreams.roc#L22-L57"><code>app/UserStreams.roc</code></a>, lines 22-57</p>
 <pre class="roc"><code><span class="syn-type">UserStreams</span> :: [].{
 
 	<span class="syn-comment">## The right to make the revoking writes of one user, whose streams</span>
@@ -326,7 +326,7 @@ agent key's revoke, and the end-to-end step that checks the agent's open stream 
 </ul>
 <p>Here is the sign-out, converted. The <code>?</code> stops at the first failed write, and the streams are ended
 either way:</p>
-<p class="file"><a href="https://github.com/showell/roc-chat/blob/d275ae7e1cad016f1a978f6ae6500f48d8d5874a/app/DeviceSessionsRoute.roc#L119-L129"><code>app/DeviceSessionsRoute.roc</code></a>, lines 119-129</p>
+<p class="file"><a href="https://github.com/showell/roc-chat/blob/02a5a1f8098f7da57a7493d76e539bba98a2ea5c/app/DeviceSessionsRoute.roc#L119-L129"><code>app/DeviceSessionsRoute.roc</code></a>, lines 119-129</p>
 <pre class="roc"><code><span class="syn-name">sign_out_others!</span> : <span class="syn-type">UserId</span> =&gt; <span class="syn-type">Try</span>({}, [<span class="syn-type">FileSystem</span>(<span class="syn-type">FileFacts.Fault</span>)])
 <span class="syn-name">sign_out_others!</span> = |id| {
 	<span class="syn-type">DeviceCodeFiles</span>.revoke_or_log!(id)
@@ -398,15 +398,15 @@ credential check below reads too) is judged once in <code>tools/stream_endings.t
 write ends a session, a credential or someone's access, <code>keeps</code> if not, and <code>may_end</code> for the
 one writer whose value decides, a channel's members written whole. An <code>exempt</code> line names a function and a
 <code>may_end</code> writer it calls without removing anyone, with the reason.</p>
-<p class="file"><a href="https://github.com/showell/roc-chat/blob/d275ae7e1cad016f1a978f6ae6500f48d8d5874a/tools/stream_endings.txt#L22-L54"><code>tools/stream_endings.txt</code></a>, lines 22-54, trimmed</p>
+<p class="file"><a href="https://github.com/showell/roc-chat/blob/02a5a1f8098f7da57a7493d76e539bba98a2ea5c/tools/stream_endings.txt#L22-L54"><code>tools/stream_endings.txt</code></a>, lines 22-54, trimmed</p>
 <pre class="plain"><code>ends     AccountFiles.replace_password_hash!        a new password ends every session signed over the old one
 ...
 ends     AccountFiles.replace_session_generation!   "Sign out other devices": every session signed before admits no one
 ends     AgentFiles.replace_agent_key_state!        an agent's key revoked
 ends     DeviceKeyFiles.revoke_device_key!          a device's key revoked, and the session bound to it
-...
+
 may_end  DirectoryFiles.replace_channel_members!    a channel's members written whole: a member left out loses its conversations
-...
+
 keeps    AccountFiles.create_account!               a new account, which no stream holds yet
 ...
 exempt   ChannelMembersRoute.add!  DirectoryFiles.replace_channel_members!  adding a member removes no one's access</code></pre>
@@ -417,7 +417,7 @@ through <code>DirectoryFiles.replace_channel_members_without!</code>, which take
 if its user is still in the channel. The check also holds the holders to their one home: <code>stray_holder</code>
 names any module but <code>HttpAnswer</code> that sets a <code>stream_holder</code> field. These are its
 findings:</p>
-<p class="file"><a href="https://github.com/showell/roc-chat/blob/d275ae7e1cad016f1a978f6ae6500f48d8d5874a/tools/check_stream_endings.shale#L25-L55"><code>tools/check_stream_endings.shale</code></a>, lines 25-55</p>
+<p class="file"><a href="https://github.com/showell/roc-chat/blob/02a5a1f8098f7da57a7493d76e539bba98a2ea5c/tools/check_stream_endings.shale#L25-L55"><code>tools/check_stream_endings.shale</code></a>, lines 25-55</p>
 <pre class="roc"><code><span class="syn-comment">--   unjudged_writer   a function that writes a file and has no `ends`,</span>
 <span class="syn-comment">--                     `may_end` or `keeps` line, so a new writer is judged</span>
 <span class="syn-comment">--                     when it comes;</span>
@@ -489,7 +489,7 @@ type said whose proof stood behind the call.</p>
 <p><code>HumanClaim</code> judges a human <code>Unclaimed</code> (no password, no GitHub link, every invite live) or
 <code>Claimed</code>. <code>Unclaimed</code> is opaque, and only <code>judge</code> makes one; <code>judge</code>
 itself is the example in <a href="#allow-lists">the allow-lists section</a>, below.</p>
-<p class="file"><a href="https://github.com/showell/roc-chat/blob/d275ae7e1cad016f1a978f6ae6500f48d8d5874a/app/HumanClaim.roc#L11-L42"><code>app/HumanClaim.roc</code></a>, lines 11-42, trimmed</p>
+<p class="file"><a href="https://github.com/showell/roc-chat/blob/02a5a1f8098f7da57a7493d76e539bba98a2ea5c/app/HumanClaim.roc#L11-L42"><code>app/HumanClaim.roc</code></a>, lines 11-42, trimmed</p>
 <pre class="roc"><code><span class="syn-type">HumanClaim</span> :: [].{
 
 	<span class="syn-comment">## What decides it, as the human&#39;s files hold them: each invite&#39;s state</span>
@@ -517,7 +517,7 @@ Inviting one again is a 403 saying a new link would change nothing. A join judge
 (<code>InviteRights.load_unclaimed_invitee!</code>), and redeeming takes the <code>Unclaimed</code> that gives, so a
 link made before the human joined redeems nothing after. For the same reason, a joined human's live invites don't
 count toward their inviter's cap of 10 open invites.</p>
-<p class="file"><a href="https://github.com/showell/roc-chat/blob/d275ae7e1cad016f1a978f6ae6500f48d8d5874a/app/InviteFiles.roc#L105-L112"><code>app/InviteFiles.roc</code></a>, lines 105-112</p>
+<p class="file"><a href="https://github.com/showell/roc-chat/blob/02a5a1f8098f7da57a7493d76e539bba98a2ea5c/app/InviteFiles.roc#L105-L112"><code>app/InviteFiles.roc</code></a>, lines 105-112</p>
 <pre class="roc"><code><span class="syn-comment">## A new invite in the account folder of `unclaimed`, a human who has</span>
 <span class="syn-comment">## claimed nothing (`HumanClaim`), made once, its hash last.</span>
 <span class="syn-name">create_human_invite!</span> : <span class="syn-type">HumanClaim.Unclaimed</span>,
@@ -629,7 +629,7 @@ together:</p>
 </g>
 </svg>
 </div>
-<p class="file"><a href="https://github.com/showell/roc-chat/blob/d275ae7e1cad016f1a978f6ae6500f48d8d5874a/app/AccountProof.roc#L12-L21"><code>app/AccountProof.roc</code></a>, lines 12-21</p>
+<p class="file"><a href="https://github.com/showell/roc-chat/blob/02a5a1f8098f7da57a7493d76e539bba98a2ea5c/app/AccountProof.roc#L12-L21"><code>app/AccountProof.roc</code></a>, lines 12-21</p>
 <pre class="roc"><code><span class="syn-type">AccountProof</span> :: <span class="syn-type">UserId</span>.{
 
 	<span class="syn-comment">## The proof of a first join: the human an invite&#39;s redemption admitted.</span>
@@ -640,7 +640,7 @@ together:</p>
 	<span class="syn-name">human</span> : <span class="syn-type">AccountProof</span> -&gt; <span class="syn-type">UserId</span>
 	<span class="syn-name">human</span> = |<span class="syn-type">AccountProof</span>.(id)| id
 }</code></pre>
-<p class="file"><a href="https://github.com/showell/roc-chat/blob/d275ae7e1cad016f1a978f6ae6500f48d8d5874a/app/AccountFiles.roc#L179-L195"><code>app/AccountFiles.roc</code></a>, lines 179-195</p>
+<p class="file"><a href="https://github.com/showell/roc-chat/blob/02a5a1f8098f7da57a7493d76e539bba98a2ea5c/app/AccountFiles.roc#L179-L195"><code>app/AccountFiles.roc</code></a>, lines 179-195</p>
 <pre class="roc"><code><span class="syn-comment">## The password&#39;s bcrypt hash of the human whose account `proof` proves,</span>
 <span class="syn-comment">## written whole over the one before, atomically: a redeemed invite&#39;s</span>
 <span class="syn-comment">## choice, at their first join (`AccountProof`), so nothing writes one</span>
@@ -660,7 +660,7 @@ together:</p>
 	}</code></pre>
 <p>The join is the one caller. It loads the invitee as <code>Unclaimed</code>, redeems, and passes the proof to the
 writer, inside the streams' bracket:</p>
-<p class="file"><a href="https://github.com/showell/roc-chat/blob/d275ae7e1cad016f1a978f6ae6500f48d8d5874a/app/HumanInvitesRoute.roc#L460-L499"><code>app/HumanInvitesRoute.roc</code></a>, lines 460-499, trimmed</p>
+<p class="file"><a href="https://github.com/showell/roc-chat/blob/02a5a1f8098f7da57a7493d76e539bba98a2ea5c/app/HumanInvitesRoute.roc#L460-L499"><code>app/HumanInvitesRoute.roc</code></a>, lines 460-499, trimmed</p>
 <pre class="roc"><code><span class="syn-name">join_by_invite!</span> = |request| {
 	...
 	{ human: invited, unclaimed } = <span class="syn-type">InviteRights</span>.load_unclaimed_invitee!(request.directory, code)?
@@ -695,7 +695,7 @@ file missing, or any file garbled so it holds no fact, fails the read as <code>D
 server's log. Every request that reads that human's invites then answers a 500 and grants nothing, until the files
 are mended. That includes every new invite in the chat, by anyone, since the cap on open invites reads every human's
 invites:</p>
-<p class="file"><a href="https://github.com/showell/roc-chat/blob/d275ae7e1cad016f1a978f6ae6500f48d8d5874a/app/InviteFiles.roc#L66-L87"><code>app/InviteFiles.roc</code></a>, lines 66-87, trimmed</p>
+<p class="file"><a href="https://github.com/showell/roc-chat/blob/02a5a1f8098f7da57a7493d76e539bba98a2ea5c/app/InviteFiles.roc#L66-L87"><code>app/InviteFiles.roc</code></a>, lines 66-87, trimmed</p>
 <pre class="roc"><code><span class="syn-comment">## The invites in the human `human`&#39;s account folder, each whole. One cut</span>
 <span class="syn-comment">## short, with no `hash`, the file written last, was never redeemable and</span>
 <span class="syn-comment">## is left out. One damaged, with its `hash` but another file missing or</span>
@@ -721,7 +721,7 @@ secrets and the session generation, device keys, device codes, agent keys and in
 them all to one table, <code>tools/credential_writers.txt</code>. Every function that calls one of
 <code>FileFacts</code>' writers is a <code>writes</code> line, marked <code>credential</code> or <code>other</code>. Every call of a credential writer is a
 <code>calls</code> line naming the caller and the proof that guards it:</p>
-<p class="file"><a href="https://github.com/showell/roc-chat/blob/d275ae7e1cad016f1a978f6ae6500f48d8d5874a/tools/credential_writers.txt#L30-L59"><code>tools/credential_writers.txt</code></a>, lines 30-59, trimmed</p>
+<p class="file"><a href="https://github.com/showell/roc-chat/blob/02a5a1f8098f7da57a7493d76e539bba98a2ea5c/tools/credential_writers.txt#L30-L59"><code>tools/credential_writers.txt</code></a>, lines 30-59, trimmed</p>
 <pre class="plain"><code>calls AccountFiles.replace_password_hash! HumanInvitesRoute.join_by_invite! unclaimed an AccountProof of a first join: the account's live invite code, redeemed only for a human who has claimed nothing (InviteRights.load_unclaimed_invitee!)
 ...
 calls DeviceSessionsRoute.sign_out_others! DeviceSessionsRoute.sign_out_other_devices! own-session acting.human_in_session(): the acting human's own devices, by a full session (FullSessionRoutes)
@@ -840,7 +840,7 @@ bar showed "POST only", and a reload of any refused sign-in posted again. Now a 
 303 to <code>/login</code>, and the sign-in script puts its form's own GET page in the POST's place in the history
 (<code>history.replaceState</code>). The sign-in routes are one <code>match</code> over each path and method
 (<code>sign_in_choice</code>), and these are its lines for <code>/login/code</code>:</p>
-<p class="file"><a href="https://github.com/showell/roc-chat/blob/d275ae7e1cad016f1a978f6ae6500f48d8d5874a/app/Route.roc#L431-L433"><code>app/Route.roc</code></a>, lines 431-433</p>
+<p class="file"><a href="https://github.com/showell/roc-chat/blob/02a5a1f8098f7da57a7493d76e539bba98a2ea5c/app/Route.roc#L431-L433"><code>app/Route.roc</code></a>, lines 431-433</p>
 <pre class="roc"><code>(<span class="syn-type">LoginCode</span>, <span class="syn-type">Get</span>) =&gt; <span class="syn-type">Open</span>(<span class="syn-type">ReturnToLogin</span>)
 (<span class="syn-type">LoginCode</span>, <span class="syn-type">Post</span>) =&gt; <span class="syn-type">Open</span>(<span class="syn-type">RedeemDeviceCode</span>)
 (<span class="syn-type">LoginCode</span>, <span class="syn-type">Other</span>) =&gt; <span class="syn-type">MethodNotAllowed</span>(<span class="syn-type">GetAndPost</span>)</code></pre>
@@ -871,7 +871,7 @@ many humans the chat has), <code>PerReaderPlaces</code> (a listing for each plac
 <code>PerHuman</code> (a read of every human's files). It is one <code>match</code> with no catch-all arm, so a new
 route fails to compile there until someone decides its class. (A new kind inside an existing route's payload, such
 as a new script, takes that route's class.)</p>
-<p class="file"><a href="https://github.com/showell/roc-chat/blob/d275ae7e1cad016f1a978f6ae6500f48d8d5874a/app/RouteCost.roc#L17-L89"><code>app/RouteCost.roc</code></a>, lines 17-89, trimmed</p>
+<p class="file"><a href="https://github.com/showell/roc-chat/blob/02a5a1f8098f7da57a7493d76e539bba98a2ea5c/app/RouteCost.roc#L17-L89"><code>app/RouteCost.roc</code></a>, lines 17-89, trimmed</p>
 <pre class="roc"><code><span class="syn-comment">## Every route is written out, so a new route must declare its cost before</span>
 <span class="syn-comment">## it compiles. `zig build cost-check` (host/cost_check.zig) measures each</span>
 <span class="syn-comment">## probe of app/route_cost_probes.txt at 10 and 300 humans and holds it to</span>
@@ -917,7 +917,7 @@ the same at both sizes, and any other must cost more at 300. So a route declared
 declared growing that doesn't, fails; the measure can't tell <code>PerReaderPlaces</code> from
 <code>PerHuman</code>. It counts
 file calls, not time, so a busy machine can't make it flaky.</p>
-<p class="file"><a href="https://github.com/showell/roc-chat/blob/d275ae7e1cad016f1a978f6ae6500f48d8d5874a/app/route_cost_probes.txt#L10-L31"><code>app/route_cost_probes.txt</code></a>, lines 10-31, trimmed</p>
+<p class="file"><a href="https://github.com/showell/roc-chat/blob/02a5a1f8098f7da57a7493d76e539bba98a2ea5c/app/route_cost_probes.txt#L10-L31"><code>app/route_cost_probes.txt</code></a>, lines 10-31, trimmed</p>
 <pre class="plain"><code>Constant anyone GET /favicon.ico
 ...
 Constant anyone POST /login name=Tam&amp;password=wrong
@@ -960,7 +960,7 @@ then set their password.</p>
 live, and calls every other shape <code>Claimed</code>. <code>is_live</code> matches each invite state with no
 wildcard, so a new state stops <code>roc check</code> there until someone decides what it means. Planting
 <code>Expired</code> in the facts' invite states gave "Missing patterns: Expired".</p>
-<p class="file"><a href="https://github.com/showell/roc-chat/blob/d275ae7e1cad016f1a978f6ae6500f48d8d5874a/app/HumanClaim.roc#L32-L51"><code>app/HumanClaim.roc</code></a>, lines 32-51, trimmed</p>
+<p class="file"><a href="https://github.com/showell/roc-chat/blob/02a5a1f8098f7da57a7493d76e539bba98a2ea5c/app/HumanClaim.roc#L32-L51"><code>app/HumanClaim.roc</code></a>, lines 32-51, trimmed</p>
 <pre class="roc"><code>	<span class="syn-comment">## Whether `human`, whose files say `facts`, is `Unclaimed`, or has</span>
 	<span class="syn-comment">## `Claimed` their account. Unclaimed is one shape, named once: no</span>
 	<span class="syn-comment">## password, no GitHub link, and every invite live. Any other is claimed.</span>

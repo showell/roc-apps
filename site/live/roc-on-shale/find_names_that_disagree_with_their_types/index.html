@@ -1,0 +1,1043 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="description" content="Names that disagree with their types, read from Roc's own parse trees across a whole tree: a name ending in a word the project's table types otherwise, a bare number beside a unit of the same field name, a constant that means none but holds an ordinary value.">
+<title>find_names_that_disagree_with_their_types · Roc on Shale</title>
+<script src="../../shared/home.js"></script>
+<!-- site/build_roc_on_shale.shale writes this page from the shale repository's
+     history; run it again rather than editing here. The code is colored by
+     roc-syntax-color (SyntaxColor.html). -->
+<style>
+  :root { color-scheme: light dark; --bg: #f7f5f0; --fg: #1d1d1b; --muted: #6b6860; --edge: #d9d4c8; --pane: #ffffff; --link: #1f5fa8; --accent: #5b3ea8; }
+  @media (prefers-color-scheme: dark) {
+    :root { --bg: #1b1b1a; --fg: #e8e6e0; --muted: #9a968c; --edge: #3a3934; --pane: #242422; --link: #8ab4f0; --accent: #a68cf0; }
+  }
+  body { margin: 0; background: var(--bg); color: var(--fg); font: 15px/1.55 system-ui, sans-serif; }
+  main { max-width: 960px; margin: 0 auto; padding: 36px 16px 48px; }
+  @media (max-width: 640px) { main { padding: 24px 12px 36px; } }
+  .top { display: flex; flex-wrap: wrap; gap: 4px 14px; font-size: 14px; margin: 0 0 14px; }
+  h1 { font-size: 28px; margin: 0 0 6px; overflow-wrap: anywhere; }
+  .lede { margin: 0 0 10px; max-width: 70ch; }
+  ul.lede { padding-left: 22px; }
+  ul.lede li { margin: 0 0 4px; }
+  h2.intro { font-size: 20px; margin: 30px 0 6px; }
+  h3.intro { font-size: 16px; margin: 18px 0 4px; }
+  /* The drawing is Graphviz's SVG, inline, so its lines and words take the
+     page's colors in either theme. */
+  .diagram { margin: 14px 0 18px; }
+  .diagram svg { max-width: 100%; height: auto; }
+  .diagram text { fill: var(--fg); }
+  .diagram path, .diagram polygon { stroke: var(--fg); }
+  .diagram .edge polygon { fill: var(--fg); }
+  h2.part { font-size: 25px; margin: 64px 0 4px; padding-top: 20px; border-top: 3px solid var(--accent); }
+  .part-intro { margin: 0 0 8px; }
+  h3 { font-size: 19px; margin: 10px 0 4px; overflow-wrap: anywhere; }
+  h2.part a { color: inherit; text-decoration: none; }
+  h2.code { font-size: 16px; margin: 36px 0 4px; color: var(--accent); }
+  p { max-width: 70ch; }
+  a { color: var(--link); }
+  code { font: 13px ui-monospace, Menlo, Consolas, monospace; }
+  .contents { padding-left: 20px; }
+  .contents ul { padding-left: 20px; margin: 2px 0 8px; }
+  .contents a { overflow-wrap: anywhere; }
+  .facts { font-size: 14px; color: var(--muted); }
+  .file { font-size: 13px; color: var(--muted); margin: 20px 0 0; overflow-wrap: anywhere; }
+  .entry { margin-top: 28px; padding-top: 14px; border-top: 1px solid var(--edge); }
+  .steps { font-size: 13px; margin: 0 0 8px; }
+  main > .steps:last-child { margin: 28px 0 0; }
+  /* Every block shows its file whole; a line wider than the block scrolls
+     sideways inside it, so the code keeps its indentation. */
+  pre { margin: 6px 0 12px; padding: 12px 14px; border-radius: 5px; background: #2b2733; color: #e8e6e0;
+        font: 12px/1.45 ui-monospace, Menlo, Consolas, monospace; overflow-x: auto; tab-size: 4; }
+  pre code { font: inherit; }
+  .syn-keyword { color: #c792ea; }
+  .syn-type { color: #82aaff; }
+  .syn-string { color: #c3e88d; }
+  .syn-number { color: #f78c6c; }
+  .syn-comment { color: #8a8494; font-style: italic; }
+  .syn-name { color: #ffcb6b; }
+  footer { margin-top: 36px; color: var(--muted); font-size: 13px; }
+</style>
+</head>
+<body>
+<main>
+<nav class="steps"><a href="../find_retired_words/">← previous</a> · <a href="../#find_names_that_disagree_with_their_types">Roc on Shale</a> · <a href="../find_floats_outside_unit_types/">next →</a></nav>
+<h1>find_names_that_disagree_with_their_types</h1>
+<h2 class="code">Roc</h2>
+<p class="file">It also imports <code>Declarations</code>, <code>Finding</code>, <code>Text</code>, <code>Tree</code> from <a href="../shared-library/">the shared Roc library</a>.</p>
+<p class="file"><a href="https://github.com/showell/shale/blob/e3c753adf065dc7856e5d49422daf99f9969f91a/cookbook/roc/find_names_that_disagree_with_their_types/find_names_that_disagree_with_their_types.roc"><code>cookbook/roc/find_names_that_disagree_with_their_types/find_names_that_disagree_with_their_types.roc</code></a>, 121 lines</p>
+<pre><code><span class="syn-comment">## find_names_that_disagree_with_their_types, in Roc on Shale&#39;s platform (roc_platform/README.md):</span>
+<span class="syn-comment">## names that disagree with their types. A reader who sees `bull_dist` takes</span>
+<span class="syn-comment">## it for a `Distance`, one who sees `forward : F64` beside `forward :</span>
+<span class="syn-comment">## Distance` can&#39;t tell which is meant, and one who sees `no_frames : Steps`</span>
+<span class="syn-comment">## can&#39;t tell the case from a count, so each costs a wrong guess. Its</span>
+<span class="syn-comment">## launcher, cookbook/roc/find_names_that_disagree_with_their_types.shale, is how it is run, and its</span>
+<span class="syn-comment">## header says the rules, `name_type`, `bare_beside_unit` and `no_value`.</span>
+<span class="syn-comment">## check_goldens.shale, beside this, holds its output on the plants to its</span>
+<span class="syn-comment">## goldens, line for line.</span>
+<span class="syn-comment">##</span>
+<span class="syn-comment">##   cd &lt;repo&gt; &amp;&amp; shale cookbook:roc/find_names_that_disagree_with_their_types.shale table=name_types.txt</span>
+<span class="syn-comment">##   shale cookbook:roc/find_names_that_disagree_with_their_types.shale self_test=1</span>
+<span class="syn-comment">##</span>
+<span class="syn-comment">## The arguments: `glob` (`**/*.roc`), `table` (the project&#39;s table of words</span>
+<span class="syn-comment">## and types) and `self_test` (`self_test=1` runs the plants, each through the</span>
+<span class="syn-comment">## launcher).</span>
+<span class="syn-comment">##</span>
+<span class="syn-comment">## This root reads the prepositions and the table, globs the files</span>
+<span class="syn-comment">## (`Shale.glob!`), has Roc&#39;s parser read them (`Shale.roc_tree!`) and each</span>
+<span class="syn-comment">## one&#39;s text (`Shale.read!`), and prints the verdict (`Shale.print!`,</span>
+<span class="syn-comment">## `Shale.fail!`). Its modules are beside it: a module a check (NameType,</span>
+<span class="syn-comment">## BareBesideUnit, NoValue), Words and SelfTest; what they read besides</span>
+<span class="syn-comment">## (Declarations, Tree, Text) and Finding are the cookbook&#39;s Roc library,</span>
+<span class="syn-comment">## cookbook/roc/lib/.</span>
+<span class="syn-comment">## budget: steps=800000000 arena_bytes=2000000000 output_bytes=4000000 programs=100</span>
+<span class="syn-keyword">app</span> [main!] { lib: <span class="syn-string">&quot;../lib/main.roc&quot;</span>, pf: <span class="syn-keyword">platform</span> <span class="syn-string">&quot;../../../roc_platform/platform/main.roc&quot;</span> }
+
+<span class="syn-keyword">import</span> pf.<span class="syn-type">Shale</span>
+<span class="syn-keyword">import</span> <span class="syn-type">BareBesideUnit</span>
+<span class="syn-keyword">import</span> lib.<span class="syn-type">Declarations</span>
+<span class="syn-keyword">import</span> lib.<span class="syn-type">Finding</span>
+<span class="syn-keyword">import</span> <span class="syn-type">NameType</span>
+<span class="syn-keyword">import</span> <span class="syn-type">NoValue</span>
+<span class="syn-keyword">import</span> <span class="syn-type">SelfTest</span>
+<span class="syn-keyword">import</span> <span class="syn-type">Words</span>
+
+<span class="syn-name">main!</span> : {} =&gt; {}
+<span class="syn-name">main!</span> = |{}| {
+	<span class="syn-keyword">if</span> <span class="syn-type">Shale</span>.arg!(<span class="syn-string">&quot;self_test&quot;</span>, <span class="syn-string">&quot;&quot;</span>) == <span class="syn-string">&quot;1&quot;</span> {
+		<span class="syn-type">SelfTest</span>.run!(checks)
+	} <span class="syn-keyword">else</span> {
+		run_check!({})
+	}
+}
+
+<span class="syn-comment">## The check over the glob&#39;s files: the verdict printed, then a stop when a</span>
+<span class="syn-comment">## file didn&#39;t parse, or when there are findings, the summary the last line</span>
+<span class="syn-comment">## a caller reads.</span>
+<span class="syn-name">run_check!</span> : {} =&gt; {}
+<span class="syn-name">run_check!</span> = |{}| {
+	words = <span class="syn-type">Words</span>.read!(<span class="syn-type">Shale</span>.arg!(<span class="syn-string">&quot;table&quot;</span>, <span class="syn-string">&quot;&quot;</span>))
+	paths = <span class="syn-type">Shale</span>.glob!(<span class="syn-type">Shale</span>.arg!(<span class="syn-string">&quot;glob&quot;</span>, <span class="syn-string">&quot;**/*.roc&quot;</span>))
+	<span class="syn-keyword">var</span> $declared = <span class="syn-type">Declarations</span>.none_yet
+	<span class="syn-keyword">var</span> $refused = []
+	<span class="syn-keyword">for</span> file <span class="syn-keyword">in</span> <span class="syn-type">Shale</span>.roc_tree!(paths) {
+		<span class="syn-keyword">if</span> file.err == <span class="syn-string">&quot;&quot;</span> {
+			read = {
+				path: file.path,
+				nodes: file.nodes,
+				source_lines: read_text!(file.path).split_on(<span class="syn-string">&quot;\n&quot;</span>),
+			}
+			$declared = <span class="syn-type">Declarations</span>.concat($declared, <span class="syn-type">Declarations</span>.from_file(read))
+		} <span class="syn-keyword">else</span> <span class="syn-keyword">if</span> file.err.starts_with(file.path) {
+			$refused = $refused.append(file.err)
+		} <span class="syn-keyword">else</span> {
+			$refused = $refused.append(<span class="syn-string">&quot;</span>${file.path}<span class="syn-string">: </span>${file.err}<span class="syn-string">&quot;</span>)
+		}
+	}
+	findings = <span class="syn-type">NameType</span>.findings($declared, words)
+		.concat(<span class="syn-type">BareBesideUnit</span>.findings($declared, words))
+		.concat(<span class="syn-type">NoValue</span>.findings($declared))
+	found = findings.sort_with(<span class="syn-type">Finding</span>.order).map(<span class="syn-type">Finding</span>.line_of)
+	summary = summary_of(findings, paths.len())
+	print_findings!(summary, found)
+	<span class="syn-keyword">if</span> !($refused.is_empty()) {
+		<span class="syn-keyword">for</span> refusal <span class="syn-keyword">in</span> $refused {
+			<span class="syn-type">Shale</span>.print!(<span class="syn-string">&quot;refused: </span>${refusal}<span class="syn-string">&quot;</span>)
+		}
+		refusals = <span class="syn-string">&quot;roc-ast refused </span>${$refused.len().to_str()}<span class="syn-string"> files (named above)&quot;</span>
+		why = <span class="syn-string">&quot;which have no tree to judge; every other file was judged&quot;</span>
+		<span class="syn-type">Shale</span>.fail!(<span class="syn-string">&quot;find_names_that_disagree_with_their_types: </span>${refusals}<span class="syn-string">, </span>${why}<span class="syn-string">&quot;</span>)
+	}
+	<span class="syn-keyword">if</span> !(found.is_empty()) {
+		<span class="syn-type">Shale</span>.fail!(summary)
+	}
+}
+
+<span class="syn-comment">## The file&#39;s text. A file the parser read and the read finds gone stops the</span>
+<span class="syn-comment">## run.</span>
+<span class="syn-name">read_text!</span> : <span class="syn-type">Str</span> =&gt; <span class="syn-type">Str</span>
+<span class="syn-name">read_text!</span> = |path|
+	<span class="syn-keyword">match</span> <span class="syn-type">Shale</span>.read!(path) {
+		<span class="syn-type">Found</span>(text) =&gt; text
+		<span class="syn-type">Missing</span> =&gt; {
+			<span class="syn-type">Shale</span>.fail!(<span class="syn-string">&quot;find_names_that_disagree_with_their_types: </span>${path}<span class="syn-string"> went missing during the check&quot;</span>)
+			<span class="syn-string">&quot;&quot;</span>
+		}
+	}
+
+<span class="syn-comment">## The checks, in the order the summary counts them.</span>
+<span class="syn-name">checks</span> : <span class="syn-type">List</span>(<span class="syn-type">Str</span>)
+<span class="syn-name">checks</span> = [<span class="syn-string">&quot;name_type&quot;</span>, <span class="syn-string">&quot;bare_beside_unit&quot;</span>, <span class="syn-string">&quot;no_value&quot;</span>]
+
+<span class="syn-comment">## The counts, `find_names_that_disagree_with_their_types (Roc): N files; name_type N, ...`.</span>
+<span class="syn-name">summary_of</span> : <span class="syn-type">List</span>(<span class="syn-type">Finding</span>), <span class="syn-type">U64</span> -&gt; <span class="syn-type">Str</span>
+<span class="syn-name">summary_of</span> = |findings, file_count| {
+	<span class="syn-string">&quot;find_names_that_disagree_with_their_types (Roc): </span>${file_count.to_str()}<span class="syn-string"> files; </span>${<span class="syn-type">Finding</span>.counts_of(findings, checks)}<span class="syn-string">&quot;</span>
+}
+
+<span class="syn-comment">## The summary, each finding, then the summary again (cookbook/findings.shale):</span>
+<span class="syn-comment">## the first copy survives a cut output, and a gate reads the last line.</span>
+<span class="syn-name">print_findings!</span> : <span class="syn-type">Str</span>, <span class="syn-type">List</span>(<span class="syn-type">Str</span>) =&gt; {}
+<span class="syn-name">print_findings!</span> = |summary, finding_lines| {
+	<span class="syn-type">Shale</span>.print!(summary)
+	<span class="syn-keyword">if</span> !(finding_lines.is_empty()) {
+		<span class="syn-keyword">for</span> line <span class="syn-keyword">in</span> finding_lines {
+			<span class="syn-type">Shale</span>.print!(line)
+		}
+		<span class="syn-type">Shale</span>.print!(summary)
+	}
+}
+</code></pre>
+<p class="file"><a href="https://github.com/showell/shale/blob/e3c753adf065dc7856e5d49422daf99f9969f91a/cookbook/roc/find_names_that_disagree_with_their_types/BareBesideUnit.roc"><code>cookbook/roc/find_names_that_disagree_with_their_types/BareBesideUnit.roc</code></a>, 78 lines</p>
+<pre><code><span class="syn-comment">## The `bare_beside_unit` check: a field that is a bare number in one record</span>
+<span class="syn-comment">## and a unit in another, a unit being a nominal type built on a number and</span>
+<span class="syn-comment">## declared in the files read. It means a retyping stopped halfway. Each bare</span>
+<span class="syn-comment">## field is a finding. A field named by a preposition (`from`, `to`, `at`) or</span>
+<span class="syn-comment">## by a word the table gives `any` (`id`, where a host&#39;s number and a user&#39;s</span>
+<span class="syn-comment">## id are two things) is not judged, because that word fits any two things.</span>
+<span class="syn-keyword">import</span> lib.<span class="syn-type">Declarations</span>
+<span class="syn-keyword">import</span> lib.<span class="syn-type">Finding</span>
+<span class="syn-keyword">import</span> lib.<span class="syn-type">Tree</span>
+<span class="syn-keyword">import</span> <span class="syn-type">Words</span>
+
+<span class="syn-type">BareBesideUnit</span> := [].{
+
+	<span class="syn-comment">## Each bare field beside a unit field of its name, in the order declared.</span>
+	<span class="syn-name">findings</span> : <span class="syn-type">Declarations</span>, <span class="syn-type">Words</span> -&gt; <span class="syn-type">List</span>(<span class="syn-type">Finding</span>)
+	<span class="syn-name">findings</span> = |declared, words| {
+		units = unit_names(declared.types)
+		<span class="syn-keyword">var</span> $unit_fields = <span class="syn-type">Dict</span>.empty()
+		<span class="syn-keyword">for</span> field <span class="syn-keyword">in</span> declared.fields {
+			<span class="syn-keyword">if</span> units.contains(<span class="syn-type">Tree</span>.last_part(field.written_type)) {
+				$unit_fields = $unit_fields.insert(field.name, field)
+			}
+		}
+		is_judged = |field|
+			bare_numbers.contains(field.written_type)
+				<span class="syn-keyword">and</span> !(words.prepositions.contains(field.name))
+				<span class="syn-keyword">and</span> !(<span class="syn-type">Words</span>.promises_nothing(words, field.name))
+		<span class="syn-keyword">var</span> $found = []
+		<span class="syn-keyword">for</span> field <span class="syn-keyword">in</span> declared.fields {
+			<span class="syn-keyword">match</span> $unit_fields.get(field.name) {
+				<span class="syn-type">Ok</span>(typed) =&gt;
+					<span class="syn-keyword">if</span> is_judged(field) {
+						$found = $found.append(bare_field(field, typed))
+					}
+				<span class="syn-type">Err</span>(_) =&gt; {}
+			}
+		}
+		$found
+	}
+}
+
+<span class="syn-comment">## The numbers Roc builds in, which a unit is built on.</span>
+<span class="syn-name">bare_numbers</span> : <span class="syn-type">Set</span>(<span class="syn-type">Str</span>)
+<span class="syn-name">bare_numbers</span> = <span class="syn-type">Set</span>.from_list([
+	<span class="syn-string">&quot;U8&quot;</span>,
+	<span class="syn-string">&quot;U16&quot;</span>,
+	<span class="syn-string">&quot;U32&quot;</span>,
+	<span class="syn-string">&quot;U64&quot;</span>,
+	<span class="syn-string">&quot;U128&quot;</span>,
+	<span class="syn-string">&quot;I8&quot;</span>,
+	<span class="syn-string">&quot;I16&quot;</span>,
+	<span class="syn-string">&quot;I32&quot;</span>,
+	<span class="syn-string">&quot;I64&quot;</span>,
+	<span class="syn-string">&quot;I128&quot;</span>,
+	<span class="syn-string">&quot;F32&quot;</span>,
+	<span class="syn-string">&quot;F64&quot;</span>,
+	<span class="syn-string">&quot;Dec&quot;</span>,
+])
+
+<span class="syn-comment">## The nominal types built on a number, by name.</span>
+<span class="syn-name">unit_names</span> : <span class="syn-type">List</span>(<span class="syn-type">Declarations.TypeDeclared</span>) -&gt; <span class="syn-type">Set</span>(<span class="syn-type">Str</span>)
+<span class="syn-name">unit_names</span> = |types| {
+	is_unit = |declared| declared.is_nominal <span class="syn-keyword">and</span> bare_numbers.contains(declared.underlying)
+	<span class="syn-type">Set</span>.from_list(types.keep_if(is_unit).map(|declared| declared.name))
+}
+
+<span class="syn-comment">## The finding of a bare field, naming the unit field of its name.</span>
+<span class="syn-name">bare_field</span> : <span class="syn-type">Declarations.FieldDeclared</span>, <span class="syn-type">Declarations.FieldDeclared</span> -&gt; <span class="syn-type">Finding</span>
+<span class="syn-name">bare_field</span> = |field, typed| {
+	bare = <span class="syn-string">&quot;the field `</span>${field.name}<span class="syn-string">` is a bare `</span>${field.written_type}<span class="syn-string">` here&quot;</span>
+	unit_place = <span class="syn-string">&quot;</span>${typed.path}<span class="syn-string">:</span>${typed.line.to_str()}<span class="syn-string">&quot;</span>
+	{
+		path: field.path,
+		line: field.line,
+		check: <span class="syn-string">&quot;bare_beside_unit&quot;</span>,
+		what: <span class="syn-string">&quot;</span>${bare}<span class="syn-string"> and a `</span>${typed.written_type}<span class="syn-string">` at </span>${unit_place}<span class="syn-string">&quot;</span>,
+	}
+}
+</code></pre>
+<p class="file"><a href="https://github.com/showell/shale/blob/e3c753adf065dc7856e5d49422daf99f9969f91a/cookbook/roc/find_names_that_disagree_with_their_types/NameType.roc"><code>cookbook/roc/find_names_that_disagree_with_their_types/NameType.roc</code></a>, 113 lines</p>
+<pre><code><span class="syn-comment">## The `name_type` check: a name whose last word is in the project&#39;s table has</span>
+<span class="syn-comment">## a type the table doesn&#39;t allow. A function is judged by what it returns,</span>
+<span class="syn-comment">## and a type by its last part, so `Geom.Distance` is `Distance`. In a name</span>
+<span class="syn-comment">## that starts with a preposition or a question, the last word isn&#39;t the</span>
+<span class="syn-comment">## thing named (a function from a fraction, a state after two steps, a</span>
+<span class="syn-comment">## question whether it is a fraction), so it is not judged. `none` means no</span>
+<span class="syn-comment">## name may end in the word, whatever its type or start, and `any` means the</span>
+<span class="syn-comment">## word holds no promise at all.</span>
+<span class="syn-keyword">import</span> lib.<span class="syn-type">Declarations</span>
+<span class="syn-keyword">import</span> lib.<span class="syn-type">Finding</span>
+<span class="syn-keyword">import</span> lib.<span class="syn-type">Text</span>
+<span class="syn-keyword">import</span> lib.<span class="syn-type">Tree</span>
+<span class="syn-keyword">import</span> <span class="syn-type">Words</span>
+
+<span class="syn-type">NameType</span> := [].{
+
+	<span class="syn-comment">## Each value and field whose name disagrees with the table: a field</span>
+	<span class="syn-comment">## judged by its own type, a value by what it gives.</span>
+	<span class="syn-name">findings</span> : <span class="syn-type">Declarations</span>, <span class="syn-type">Words</span> -&gt; <span class="syn-type">List</span>(<span class="syn-type">Finding</span>)
+	<span class="syn-name">findings</span> = |declared, words| {
+		named_fields = declared.fields.map(
+			|field| {
+				path: field.path,
+				line: field.line,
+				name: field.name,
+				type_judged: field.written_type,
+			},
+		)
+		named_values = declared.values.map(
+			|value| {
+				path: value.path,
+				line: value.line,
+				name: value.name,
+				type_judged: value.result_type,
+			},
+		)
+		named_fields.concat(named_values).map(|named| name_findings(named, words)).join()
+	}
+
+}
+
+<span class="syn-comment">## A name judged: a value&#39;s or a field&#39;s, where it is, and the type that</span>
+<span class="syn-comment">## stands for it (what a function returns, a field&#39;s own type).</span>
+<span class="syn-type">Named</span> : {
+	path : <span class="syn-type">Str</span>,
+	line : <span class="syn-type">U64</span>,
+	name : <span class="syn-type">Str</span>,
+	type_judged : <span class="syn-type">Str</span>,
+}
+
+<span class="syn-comment">## The finding of `named`, when its type disagrees with the table.</span>
+<span class="syn-name">name_findings</span> : <span class="syn-type">Named</span>, <span class="syn-type">Words</span> -&gt; <span class="syn-type">List</span>(<span class="syn-type">Finding</span>)
+<span class="syn-name">name_findings</span> = |named, words| {
+	name_words = <span class="syn-type">Text</span>.name_words(named.name.drop_suffix(<span class="syn-string">&quot;!&quot;</span>))
+	type_judged = named.type_judged
+	<span class="syn-keyword">if</span> type_judged == <span class="syn-string">&quot;&quot;</span> <span class="syn-keyword">or</span> type_judged == <span class="syn-string">&quot;_&quot;</span> {
+		<span class="syn-keyword">return</span> []
+	}
+	<span class="syn-keyword">match</span> (name_words.first(), name_words.last()) {
+		(<span class="syn-type">Ok</span>(first_word), <span class="syn-type">Ok</span>(last_word)) =&gt; {
+			is_question = question_words.contains(first_word)
+			names_something_else = words.prepositions.contains(first_word) <span class="syn-keyword">or</span> is_question
+			said = { named, last_word }
+			<span class="syn-keyword">match</span> words.promises.get(last_word) {
+				<span class="syn-type">Ok</span>(<span class="syn-type">NoNameMay</span>) =&gt; [no_name_may(said)]
+				<span class="syn-type">Ok</span>(<span class="syn-type">OneOf</span>(allowed)) =&gt;
+					<span class="syn-keyword">if</span> names_something_else <span class="syn-keyword">or</span> allowed.contains(<span class="syn-type">Tree</span>.last_part(type_judged)) {
+						[]
+					} <span class="syn-keyword">else</span> {
+						[not_allowed(said, allowed)]
+					}
+				<span class="syn-type">Ok</span>(<span class="syn-type">AnyType</span>) =&gt; []
+				<span class="syn-type">Err</span>(_) =&gt; []
+			}
+		}
+		_ =&gt; []
+	}
+}
+
+<span class="syn-comment">## The first words that ask a question, so the name&#39;s last word is not the</span>
+<span class="syn-comment">## thing named.</span>
+<span class="syn-name">question_words</span> : <span class="syn-type">Set</span>(<span class="syn-type">Str</span>)
+<span class="syn-name">question_words</span> = <span class="syn-type">Set</span>.from_list([<span class="syn-string">&quot;is&quot;</span>, <span class="syn-string">&quot;has&quot;</span>, <span class="syn-string">&quot;can&quot;</span>, <span class="syn-string">&quot;should&quot;</span>])
+
+<span class="syn-comment">## A name judged, and its last word.</span>
+<span class="syn-type">Said</span> : { named : <span class="syn-type">Named</span>, last_word : <span class="syn-type">Str</span> }
+
+<span class="syn-comment">## The finding of a name ending in a word no name may end in.</span>
+<span class="syn-name">no_name_may</span> : <span class="syn-type">Said</span> -&gt; <span class="syn-type">Finding</span>
+<span class="syn-name">no_name_may</span> = |said| {
+	named = said.named
+	ending = <span class="syn-string">&quot;`</span>${named.name}<span class="syn-string">` ends in `</span>${said.last_word}<span class="syn-string">`&quot;</span>
+	{
+		path: named.path,
+		line: named.line,
+		check: <span class="syn-string">&quot;name_type&quot;</span>,
+		what: <span class="syn-string">&quot;</span>${ending}<span class="syn-string">, which no name here may: its type is `</span>${named.type_judged}<span class="syn-string">`&quot;</span>,
+	}
+}
+
+<span class="syn-comment">## The finding of a name whose type is none of those the table allows.</span>
+<span class="syn-name">not_allowed</span> : <span class="syn-type">Said</span>, <span class="syn-type">List</span>(<span class="syn-type">Str</span>) -&gt; <span class="syn-type">Finding</span>
+<span class="syn-name">not_allowed</span> = |said, allowed| {
+	named = said.named
+	allowed_said = <span class="syn-type">Str</span>.join_with(allowed, <span class="syn-string">&quot;` or `&quot;</span>)
+	ending = <span class="syn-string">&quot;a name ending `</span>${said.last_word}<span class="syn-string">` is `</span>${allowed_said}<span class="syn-string">` here&quot;</span>
+	{
+		path: named.path,
+		line: named.line,
+		check: <span class="syn-string">&quot;name_type&quot;</span>,
+		what: <span class="syn-string">&quot;`</span>${named.name}<span class="syn-string">` is `</span>${named.type_judged}<span class="syn-string">`, and </span>${ending}<span class="syn-string">&quot;</span>,
+	}
+}
+</code></pre>
+<p class="file"><a href="https://github.com/showell/shale/blob/e3c753adf065dc7856e5d49422daf99f9969f91a/cookbook/roc/find_names_that_disagree_with_their_types/NoValue.roc"><code>cookbook/roc/find_names_that_disagree_with_their_types/NoValue.roc</code></a>, 70 lines</p>
+<pre><code><span class="syn-comment">## The `no_value` check: a constant whose first word is `no`, `none` or</span>
+<span class="syn-comment">## `unset` and whose type is not a `Bool` or a tag union. An ordinary value</span>
+<span class="syn-comment">## kept to mean &quot;none&quot; should be a tag. A `List` has its own empty case, and a</span>
+<span class="syn-comment">## type&#39;s own member of that type (`Attention.none : Attention`) is its</span>
+<span class="syn-comment">## scale&#39;s bottom, so neither is judged, and neither is a constant with no</span>
+<span class="syn-comment">## annotation. An alias of a function type is a function&#39;s type (`no_draw :</span>
+<span class="syn-comment">## Draw`, `Draw : U64 -&gt; List(U64)`), so it is not judged either. A string</span>
+<span class="syn-comment">## with something in it is words about the case, not a stand-in for it (a</span>
+<span class="syn-comment">## name of words for no match, say), so only `&quot;&quot;` is judged.</span>
+<span class="syn-keyword">import</span> lib.<span class="syn-type">Declarations</span>
+<span class="syn-keyword">import</span> lib.<span class="syn-type">Finding</span>
+<span class="syn-keyword">import</span> lib.<span class="syn-type">Tree</span>
+
+<span class="syn-type">NoValue</span> := [].{
+
+	<span class="syn-comment">## Each annotated constant that means none and holds an ordinary value.</span>
+	<span class="syn-name">findings</span> : <span class="syn-type">Declarations</span> -&gt; <span class="syn-type">List</span>(<span class="syn-type">Finding</span>)
+	<span class="syn-name">findings</span> = |declared| {
+		types = declared.types
+		names = |kept| <span class="syn-type">Set</span>.from_list(kept.map(|type_declared| type_declared.name))
+		tag_unions = names(types.keep_if(|type_declared| type_declared.is_tag_union))
+		<span class="syn-comment"># An alias of a function type (`Draw : U64 -&gt; List(U64)`) makes a value</span>
+		<span class="syn-comment"># of it a function, which `is_function` sees only when written out.</span>
+		is_function_alias = |type_declared|
+			type_declared.is_function_type <span class="syn-keyword">and</span> !(type_declared.is_nominal)
+		function_aliases = names(types.keep_if(is_function_alias))
+		kinds = { tag_unions, function_aliases }
+		declared.values
+			.keep_if(|value| value.annotated <span class="syn-keyword">and</span> !(value.is_function))
+			.keep_if(|value| means_none(value.name) <span class="syn-keyword">and</span> is_plain(value, kinds))
+			.map(no_value)
+	}
+}
+
+<span class="syn-comment">## The first words that mean none.</span>
+<span class="syn-name">words_for_none</span> : <span class="syn-type">Set</span>(<span class="syn-type">Str</span>)
+<span class="syn-name">words_for_none</span> = <span class="syn-type">Set</span>.from_list([<span class="syn-string">&quot;no&quot;</span>, <span class="syn-string">&quot;none&quot;</span>, <span class="syn-string">&quot;unset&quot;</span>])
+
+<span class="syn-comment">## Whether the name&#39;s first word, up to its first `_`, means none.</span>
+<span class="syn-name">means_none</span> : <span class="syn-type">Str</span> -&gt; <span class="syn-type">Bool</span>
+<span class="syn-name">means_none</span> = |name| {
+	first_word = <span class="syn-keyword">match</span> name.split_first(<span class="syn-string">&quot;_&quot;</span>) {
+		<span class="syn-type">Ok</span>(parts) =&gt; parts.before
+		<span class="syn-type">Err</span>(_) =&gt; name
+	}
+	words_for_none.contains(first_word)
+}
+
+<span class="syn-comment">## The names of the tag unions and of the aliases of function types.</span>
+<span class="syn-type">TypeKinds</span> : { tag_unions : <span class="syn-type">Set</span>(<span class="syn-type">Str</span>), function_aliases : <span class="syn-type">Set</span>(<span class="syn-type">Str</span>) }
+
+<span class="syn-comment">## Whether the value&#39;s type is an ordinary one, which a tag should stand for.</span>
+<span class="syn-name">is_plain</span> : <span class="syn-type">Declarations.ValueDeclared</span>, <span class="syn-type">TypeKinds</span> -&gt; <span class="syn-type">Bool</span>
+<span class="syn-name">is_plain</span> = |value, kinds| {
+	written = value.written_type
+	named = <span class="syn-type">Tree</span>.last_part(written)
+	is_own_bottom = value.owner == named
+	is_kept_kind = kinds.tag_unions.contains(named) <span class="syn-keyword">or</span> kinds.function_aliases.contains(named)
+	is_shaped = written == <span class="syn-string">&quot;Bool&quot;</span> <span class="syn-keyword">or</span> written.starts_with(<span class="syn-string">&quot;[&quot;</span>) <span class="syn-keyword">or</span> written.starts_with(<span class="syn-string">&quot;List(&quot;</span>)
+	!(is_shaped <span class="syn-keyword">or</span> value.has_text <span class="syn-keyword">or</span> is_own_bottom <span class="syn-keyword">or</span> is_kept_kind)
+}
+
+<span class="syn-comment">## The finding of a value that means none.</span>
+<span class="syn-name">no_value</span> : <span class="syn-type">Declarations.ValueDeclared</span> -&gt; <span class="syn-type">Finding</span>
+<span class="syn-name">no_value</span> = |value| {
+	path: value.path,
+	line: value.line,
+	check: <span class="syn-string">&quot;no_value&quot;</span>,
+	what: <span class="syn-string">&quot;`</span>${value.name}<span class="syn-string">` means none and is a `</span>${value.written_type}<span class="syn-string">`: keep the case as a tag&quot;</span>,
+}
+</code></pre>
+<p class="file"><a href="https://github.com/showell/shale/blob/e3c753adf065dc7856e5d49422daf99f9969f91a/cookbook/roc/find_names_that_disagree_with_their_types/SelfTest.roc"><code>cookbook/roc/find_names_that_disagree_with_their_types/SelfTest.roc</code></a>, 226 lines</p>
+<pre><code><span class="syn-comment">## The recipe&#39;s self-test: each plant under</span>
+<span class="syn-comment">## cookbook/roc/plants/find_names_that_disagree_with_their_types/ run through the launcher, held to its</span>
+<span class="syn-comment">## findings, its exit and what it says. It copies</span>
+<span class="syn-comment">## cookbook/roc/find_names_that_differ_across_lookalike_modules/SelfTest.roc but for its rows.</span>
+<span class="syn-keyword">import</span> pf.<span class="syn-type">Shale</span>
+
+<span class="syn-type">SelfTest</span> := [].{
+
+	<span class="syn-comment">## Each row run as a child of its own, through `launcher`; a check of</span>
+	<span class="syn-comment">## `checks` no row fires fails too, since it could be blind.</span>
+	<span class="syn-name">run!</span> : <span class="syn-type">List</span>(<span class="syn-type">Str</span>) =&gt; {}
+	<span class="syn-name">run!</span> = |checks| {
+		<span class="syn-keyword">var</span> $wrong = <span class="syn-number">0</span>.<span class="syn-type">U64</span>
+		<span class="syn-keyword">var</span> $fired = <span class="syn-type">Set</span>.empty()
+		<span class="syn-keyword">for</span> row <span class="syn-keyword">in</span> rows {
+			command = [<span class="syn-string">&quot;shale&quot;</span>, launcher, <span class="syn-string">&quot;glob=</span>${row.plant}<span class="syn-string">&quot;</span>].concat(row.arguments)
+			result = <span class="syn-type">Shale</span>.run!({
+				argv: command,
+				keep: <span class="syn-type">Whole</span>(<span class="syn-number">4000000</span>),
+				timeout_ms: <span class="syn-number">120000</span>,
+				want: <span class="syn-string">&quot;&quot;</span>,
+			})
+			faults = find_faults!(row, result, checks)
+			<span class="syn-keyword">for</span> (check, _) <span class="syn-keyword">in</span> row.counts {
+				$fired = $fired.insert(check)
+			}
+			<span class="syn-keyword">if</span> faults.is_empty() {
+				<span class="syn-type">Shale</span>.print!(<span class="syn-string">&quot;ok   </span>${row.plant}<span class="syn-string">&quot;</span>)
+			} <span class="syn-keyword">else</span> {
+				<span class="syn-type">Shale</span>.print!(<span class="syn-string">&quot;FAIL </span>${row.plant}<span class="syn-string">: </span>${<span class="syn-type">Str</span>.join_with(faults, <span class="syn-string">&quot;; &quot;</span>)}<span class="syn-string">&quot;</span>)
+				$wrong = $wrong + <span class="syn-number">1</span>
+				<span class="syn-type">Shale</span>.print!(result.out)
+			}
+		}
+		<span class="syn-keyword">for</span> check <span class="syn-keyword">in</span> checks {
+			<span class="syn-keyword">if</span> !($fired.contains(check)) {
+				<span class="syn-type">Shale</span>.print!(<span class="syn-string">&quot;FAIL `</span>${check}<span class="syn-string">` has no plant&quot;</span>)
+				$wrong = $wrong + <span class="syn-number">1</span>
+			}
+		}
+		<span class="syn-keyword">if</span> $wrong &gt; <span class="syn-number">0</span> {
+			<span class="syn-type">Shale</span>.fail!(<span class="syn-string">&quot;find_names_that_disagree_with_their_types self_test: </span>${$wrong.to_str()}<span class="syn-string"> wrong&quot;</span>)
+		}
+		row_count = rows.len().to_str()
+		proof = <span class="syn-string">&quot;each plant gives its findings and a nonzero exit, each clean case none and exit 0&quot;</span>
+		<span class="syn-type">Shale</span>.print!(<span class="syn-string">&quot;find_names_that_disagree_with_their_types self_test: PASS (</span>${row_count}<span class="syn-string"> rows: </span>${proof}<span class="syn-string">)&quot;</span>)
+	}
+}
+
+<span class="syn-comment">## The launcher, which the self-test runs each plant through.</span>
+<span class="syn-name">launcher</span> : <span class="syn-type">Str</span>
+<span class="syn-name">launcher</span> = <span class="syn-string">&quot;cookbook:roc/find_names_that_disagree_with_their_types.shale&quot;</span>
+
+<span class="syn-name">plants</span> : <span class="syn-type">Str</span>
+<span class="syn-name">plants</span> = <span class="syn-string">&quot;cookbook:roc/plants/find_names_that_disagree_with_their_types/&quot;</span>
+
+<span class="syn-comment">## A plant&#39;s run: its files (a glob below `plants`) and its other arguments,</span>
+<span class="syn-comment">## the findings each check must print, the literals its output must hold,</span>
+<span class="syn-comment">## and whether it must stop without a finding.</span>
+<span class="syn-type">Row</span> : {
+	plant : <span class="syn-type">Str</span>,
+	arguments : <span class="syn-type">List</span>(<span class="syn-type">Str</span>),
+	counts : <span class="syn-type">List</span>((<span class="syn-type">Str</span>, <span class="syn-type">U64</span>)),
+	says : <span class="syn-type">List</span>(<span class="syn-type">Str</span>),
+	stops : <span class="syn-type">Bool</span>,
+}
+
+<span class="syn-comment">## A plant, given as a glob below `plants`, with no finding to give.</span>
+<span class="syn-name">quiet</span> : <span class="syn-type">Str</span>, <span class="syn-type">List</span>(<span class="syn-type">Str</span>) -&gt; <span class="syn-type">Row</span>
+<span class="syn-name">quiet</span> = |plant, arguments| {
+	plant: <span class="syn-string">&quot;</span>${plants}${plant}<span class="syn-string">&quot;</span>,
+	arguments,
+	counts: [],
+	says: [],
+	stops: <span class="syn-type">Bool.False</span>,
+}
+
+<span class="syn-comment">## What a plant that fires is run with and must give.</span>
+<span class="syn-type">Firing</span> : {
+	plant : <span class="syn-type">Str</span>,
+	arguments : <span class="syn-type">List</span>(<span class="syn-type">Str</span>),
+	counts : <span class="syn-type">List</span>((<span class="syn-type">Str</span>, <span class="syn-type">U64</span>)),
+	says : <span class="syn-type">List</span>(<span class="syn-type">Str</span>),
+}
+
+<span class="syn-comment">## What a plant that stops is run with and must say.</span>
+<span class="syn-type">Stopping</span> : {
+	plant : <span class="syn-type">Str</span>,
+	arguments : <span class="syn-type">List</span>(<span class="syn-type">Str</span>),
+	says : <span class="syn-type">List</span>(<span class="syn-type">Str</span>),
+}
+
+<span class="syn-comment">## A plant with findings, and what they say.</span>
+<span class="syn-name">fires</span> : <span class="syn-type">Firing</span> -&gt; <span class="syn-type">Row</span>
+<span class="syn-name">fires</span> = |wanted| {
+	plant: <span class="syn-string">&quot;</span>${plants}${wanted.plant}<span class="syn-string">&quot;</span>,
+	arguments: wanted.arguments,
+	counts: wanted.counts,
+	says: wanted.says,
+	stops: <span class="syn-type">Bool.False</span>,
+}
+
+<span class="syn-comment">## A plant that must stop before any finding, saying what it says.</span>
+<span class="syn-name">stops</span> : <span class="syn-type">Stopping</span> -&gt; <span class="syn-type">Row</span>
+<span class="syn-name">stops</span> = |wanted| {
+	plant: <span class="syn-string">&quot;</span>${plants}${wanted.plant}<span class="syn-string">&quot;</span>,
+	arguments: wanted.arguments,
+	counts: [],
+	says: wanted.says,
+	stops: <span class="syn-type">Bool.True</span>,
+}
+
+<span class="syn-comment">## The argument that names one of the plants&#39; tables.</span>
+<span class="syn-name">table</span> : <span class="syn-type">Str</span> -&gt; <span class="syn-type">Str</span>
+<span class="syn-name">table</span> = |file| <span class="syn-string">&quot;table=</span>${plants}${file}<span class="syn-string">&quot;</span>
+
+<span class="syn-name">rows</span> : <span class="syn-type">List</span>(<span class="syn-type">Row</span>)
+<span class="syn-name">rows</span> = [
+	fires({
+		plant: <span class="syn-string">&quot;name_type.roc&quot;</span>,
+		arguments: [table(<span class="syn-string">&quot;table.txt&quot;</span>)],
+		counts: [(<span class="syn-string">&quot;name_type&quot;</span>, <span class="syn-number">6</span>)],
+		says: [
+			<span class="syn-string">&quot;name_type.roc:3: name_type: `bull_dist` is `Geom.Along`, &quot;</span>
+				.concat(<span class="syn-string">&quot;and a name ending `dist` is `Distance` here&quot;</span>),
+			<span class="syn-string">&quot;`in_2_frames` ends in `frames`&quot;</span>,
+		],
+	}),
+	quiet(<span class="syn-string">&quot;name_type.roc&quot;</span>, []),
+	quiet(<span class="syn-string">&quot;quiet_name_type.roc&quot;</span>, [table(<span class="syn-string">&quot;table.txt&quot;</span>)]),
+	fires({
+		plant: <span class="syn-string">&quot;bare_beside_unit/*.roc&quot;</span>,
+		arguments: [],
+		counts: [(<span class="syn-string">&quot;bare_beside_unit&quot;</span>, <span class="syn-number">2</span>)],
+		says: [
+			<span class="syn-string">&quot;Rider.roc:4: bare_beside_unit: the field `forward` is a bare `F64` here &quot;</span>
+				.concat(<span class="syn-string">&quot;and a `Distance` at&quot;</span>),
+		],
+	}),
+	quiet(<span class="syn-string">&quot;quiet_bare/*.roc&quot;</span>, []),
+	fires({
+		plant: <span class="syn-string">&quot;bare_any/*.roc&quot;</span>,
+		arguments: [],
+		counts: [(<span class="syn-string">&quot;bare_beside_unit&quot;</span>, <span class="syn-number">1</span>)],
+		says: [<span class="syn-string">&quot;the field `id` is a bare `U64` here&quot;</span>],
+	}),
+	quiet(<span class="syn-string">&quot;bare_any/*.roc&quot;</span>, [table(<span class="syn-string">&quot;table_any.txt&quot;</span>)]),
+	quiet(<span class="syn-string">&quot;name_type.roc&quot;</span>, [table(<span class="syn-string">&quot;table_any.txt&quot;</span>)]),
+	fires({
+		plant: <span class="syn-string">&quot;no_value.roc&quot;</span>,
+		arguments: [],
+		counts: [(<span class="syn-string">&quot;no_value&quot;</span>, <span class="syn-number">4</span>)],
+		says: [<span class="syn-string">&quot;no_value.roc:9: no_value: `no_frames` means none and is a `Steps`&quot;</span>],
+	}),
+	quiet(<span class="syn-string">&quot;quiet_no_value.roc&quot;</span>, []),
+	stops({ plant: <span class="syn-string">&quot;broken/*.roc&quot;</span>, arguments: [], says: [<span class="syn-string">&quot;refused: &quot;</span>] }),
+	stops({
+		plant: <span class="syn-string">&quot;quiet_name_type.roc&quot;</span>,
+		arguments: [table(<span class="syn-string">&quot;no_such.txt&quot;</span>)],
+		says: [<span class="syn-string">&quot;no table&quot;</span>],
+	}),
+	stops({
+		plant: <span class="syn-string">&quot;quiet_name_type.roc&quot;</span>,
+		arguments: [table(<span class="syn-string">&quot;table_malformed.txt&quot;</span>)],
+		says: [<span class="syn-string">&quot;table_malformed.txt:2: expected&quot;</span>],
+	}),
+	stops({
+		plant: <span class="syn-string">&quot;quiet_name_type.roc&quot;</span>,
+		arguments: [table(<span class="syn-string">&quot;table_twice.txt&quot;</span>)],
+		says: [<span class="syn-string">&quot;`dist` is listed twice&quot;</span>],
+	}),
+]
+
+<span class="syn-comment">## The last line of `out` that isn&#39;t one of Shale&#39;s `──` lines.</span>
+<span class="syn-name">last_said</span> : <span class="syn-type">Str</span> -&gt; <span class="syn-type">Str</span>
+<span class="syn-name">last_said</span> = |out|
+	out.trim().split_on(<span class="syn-string">&quot;\n&quot;</span>).fold(
+		<span class="syn-string">&quot;&quot;</span>,
+		|last, line|
+			<span class="syn-keyword">if</span> line.starts_with(<span class="syn-string">&quot;──&quot;</span>) <span class="syn-keyword">or</span> line.trim() == <span class="syn-string">&quot;&quot;</span> {
+				last
+			} <span class="syn-keyword">else</span> {
+				line
+			},
+	)
+
+<span class="syn-comment">## The findings `row` wants of `check`.</span>
+<span class="syn-name">wanted_count</span> : <span class="syn-type">Row</span>, <span class="syn-type">Str</span> -&gt; <span class="syn-type">U64</span>
+<span class="syn-name">wanted_count</span> = |row, check| {
+	<span class="syn-keyword">var</span> $wanted = <span class="syn-number">0</span>
+	<span class="syn-keyword">for</span> (counted, count) <span class="syn-keyword">in</span> row.counts {
+		<span class="syn-keyword">if</span> counted == check {
+			$wanted = count
+		}
+	}
+	$wanted
+}
+
+<span class="syn-comment">## What is wrong with one row&#39;s run.</span>
+<span class="syn-name">find_faults!</span> : <span class="syn-type">Row</span>, { code : <span class="syn-type">I64</span>, out : <span class="syn-type">Str</span> }, <span class="syn-type">List</span>(<span class="syn-type">Str</span>) =&gt; <span class="syn-type">List</span>(<span class="syn-type">Str</span>)
+<span class="syn-name">find_faults!</span> = |row, result, checks| {
+	must_fail = row.stops <span class="syn-keyword">or</span> !(row.counts.is_empty())
+	<span class="syn-keyword">var</span> $faults = []
+	<span class="syn-keyword">if</span> must_fail <span class="syn-keyword">and</span> result.code == <span class="syn-number">0</span> {
+		$faults = $faults.append(<span class="syn-string">&quot;it exited 0&quot;</span>)
+	}
+	<span class="syn-keyword">if</span> !(must_fail) <span class="syn-keyword">and</span> result.code != <span class="syn-number">0</span> {
+		$faults = $faults.append(<span class="syn-string">&quot;it exited </span>${result.code.to_str()}<span class="syn-string">&quot;</span>)
+	}
+	<span class="syn-keyword">for</span> check <span class="syn-keyword">in</span> checks {
+		found = <span class="syn-type">Shale</span>.re_lines!(result.out, <span class="syn-string">&quot;^[^ ]+:[0-9]+: </span>${check}<span class="syn-string">: &quot;</span>).len()
+		wanted = wanted_count(row, check)
+		<span class="syn-keyword">if</span> found != wanted {
+			$faults = $faults.append(<span class="syn-string">&quot;</span>${check}<span class="syn-string"> printed </span>${found.to_str()}<span class="syn-string">, not </span>${wanted.to_str()}<span class="syn-string">&quot;</span>)
+		}
+	}
+	<span class="syn-keyword">if</span> !(row.stops) <span class="syn-keyword">and</span> !(last_said(result.out).contains(<span class="syn-string">&quot; files; &quot;</span>)) {
+		$faults = $faults.append(<span class="syn-string">&quot;its last line is no summary: </span>${last_said(result.out)}<span class="syn-string">&quot;</span>)
+	}
+	<span class="syn-keyword">for</span> literal <span class="syn-keyword">in</span> row.says {
+		<span class="syn-keyword">if</span> !(result.out.contains(literal)) {
+			$faults = $faults.append(<span class="syn-string">&quot;its output lacks `</span>${literal}<span class="syn-string">`&quot;</span>)
+		}
+	}
+	$faults
+}
+</code></pre>
+<p class="file"><a href="https://github.com/showell/shale/blob/e3c753adf065dc7856e5d49422daf99f9969f91a/cookbook/roc/find_names_that_disagree_with_their_types/Words.roc"><code>cookbook/roc/find_names_that_disagree_with_their_types/Words.roc</code></a>, 140 lines</p>
+<pre><code><span class="syn-comment">## The words the checks read beside the code: the prepositions</span>
+<span class="syn-comment">## (cookbook/words/prepositions.txt) and a project&#39;s table of words and the</span>
+<span class="syn-comment">## types its names must hold, as the `table=` file gives it. Each line of the</span>
+<span class="syn-comment">## table is `word: Type, Type`, `word: none` or `word: any`, such as `dist:</span>
+<span class="syn-comment">## Distance`. A blank line or one starting with `#` is skipped, and a</span>
+<span class="syn-comment">## malformed line or a word listed twice stops the run. The table belongs to</span>
+<span class="syn-comment">## the project, because what `dist` must be depends on the project&#39;s types.</span>
+<span class="syn-keyword">import</span> pf.<span class="syn-type">Shale</span>
+<span class="syn-keyword">import</span> lib.<span class="syn-type">Text</span>
+
+<span class="syn-type">Words</span> := {
+	<span class="syn-comment">## What the table promises of each word in it.</span>
+	promises : <span class="syn-type">Dict</span>(<span class="syn-type">Str</span>, <span class="syn-type">Words.Promise</span>),
+
+	<span class="syn-comment">## The prepositions, which a name or a field may start with or be.</span>
+	prepositions : <span class="syn-type">Set</span>(<span class="syn-type">Str</span>),
+}.{
+
+	<span class="syn-comment">## What the table says of a word: no name may end in it, it holds no</span>
+	<span class="syn-comment">## promise at all, or a name ending in it holds one of the types.</span>
+	<span class="syn-type">Promise</span> : [<span class="syn-type">NoNameMay</span>, <span class="syn-type">AnyType</span>, <span class="syn-type">OneOf</span>(<span class="syn-type">List</span>(<span class="syn-type">Str</span>))]
+
+	<span class="syn-comment">## The prepositions, then the table in the file at `table_path` (none when</span>
+	<span class="syn-comment">## it is `&quot;&quot;`).</span>
+	<span class="syn-name">read!</span> : <span class="syn-type">Str</span> =&gt; <span class="syn-type">Words</span>
+	<span class="syn-name">read!</span> = |table_path| {
+		prepositions = read_word_set!(<span class="syn-string">&quot;cookbook:words/prepositions.txt&quot;</span>)
+		{ promises: read_table!(table_path), prepositions }
+	}
+
+	<span class="syn-comment">## Whether the table gives `word` as `any`.</span>
+	<span class="syn-name">promises_nothing</span> : <span class="syn-type">Words</span>, <span class="syn-type">Str</span> -&gt; <span class="syn-type">Bool</span>
+	<span class="syn-name">promises_nothing</span> = |words, word|
+		<span class="syn-keyword">match</span> words.promises.get(word) {
+			<span class="syn-type">Ok</span>(<span class="syn-type">AnyType</span>) =&gt; <span class="syn-type">Bool.True</span>
+			_ =&gt; <span class="syn-type">Bool.False</span>
+		}
+}
+
+<span class="syn-comment">## The table in the file at `path`, none when `path` is `&quot;&quot;`.</span>
+<span class="syn-name">read_table!</span> : <span class="syn-type">Str</span> =&gt; <span class="syn-type">Dict</span>(<span class="syn-type">Str</span>, <span class="syn-type">Words.Promise</span>)
+<span class="syn-name">read_table!</span> = |path| {
+	<span class="syn-keyword">if</span> path == <span class="syn-string">&quot;&quot;</span> {
+		<span class="syn-keyword">return</span> <span class="syn-type">Dict</span>.empty()
+	}
+	<span class="syn-keyword">if</span> !(<span class="syn-type">Shale</span>.exists!(path)) {
+		<span class="syn-type">Shale</span>.fail!(<span class="syn-string">&quot;find_names_that_disagree_with_their_types: no table </span>${path}<span class="syn-string">&quot;</span>)
+	}
+	text = <span class="syn-keyword">match</span> <span class="syn-type">Shale</span>.read!(path) {
+		<span class="syn-type">Found</span>(found) =&gt; found
+		<span class="syn-type">Missing</span> =&gt; {
+			<span class="syn-type">Shale</span>.fail!(<span class="syn-string">&quot;find_names_that_disagree_with_their_types: no table </span>${path}<span class="syn-string">&quot;</span>)
+			<span class="syn-string">&quot;&quot;</span>
+		}
+	}
+	<span class="syn-keyword">var</span> $promises = <span class="syn-type">Dict</span>.empty()
+	<span class="syn-keyword">var</span> $number = <span class="syn-number">0</span>
+	<span class="syn-keyword">for</span> raw <span class="syn-keyword">in</span> <span class="syn-type">Text</span>.lines(text) {
+		$number = $number + <span class="syn-number">1</span>
+		line = <span class="syn-type">Text</span>.trim(raw)
+		<span class="syn-keyword">if</span> line != <span class="syn-string">&quot;&quot;</span> <span class="syn-keyword">and</span> !(line.starts_with(<span class="syn-string">&quot;#&quot;</span>)) {
+			table_line = { path, number: $number, line }
+			entry = read_entry!(table_line)
+			<span class="syn-keyword">if</span> $promises.contains(entry.word) {
+				fail_at!(table_line, <span class="syn-string">&quot;`</span>${entry.word}<span class="syn-string">` is listed twice&quot;</span>)
+			}
+			$promises = $promises.insert(entry.word, entry.promise)
+		}
+	}
+	$promises
+}
+
+<span class="syn-comment">## The line pattern: a word, then `none`, `any` or a list of types.</span>
+<span class="syn-name">line_pattern</span> : <span class="syn-type">Str</span>
+<span class="syn-name">line_pattern</span> = <span class="syn-string">&quot;^([a-z0-9]+): *(none|any|[A-Z][A-Za-z0-9]*(?:, *[A-Z][A-Za-z0-9]*)*)$&quot;</span>
+
+<span class="syn-comment">## One line of the table, with the file and its number to say where it is.</span>
+<span class="syn-type">TableLine</span> : {
+	path : <span class="syn-type">Str</span>,
+	number : <span class="syn-type">U64</span>,
+	line : <span class="syn-type">Str</span>,
+}
+
+<span class="syn-comment">## Stops the run, saying where in the table and what is wrong there.</span>
+<span class="syn-name">fail_at!</span> : <span class="syn-type">TableLine</span>, <span class="syn-type">Str</span> =&gt; {}
+<span class="syn-name">fail_at!</span> = |table_line, why| {
+	place = <span class="syn-string">&quot;</span>${table_line.path}<span class="syn-string">:</span>${table_line.number.to_str()}<span class="syn-string">&quot;</span>
+	<span class="syn-type">Shale</span>.fail!(<span class="syn-string">&quot;find_names_that_disagree_with_their_types: </span>${place}<span class="syn-string">: </span>${why}<span class="syn-string">&quot;</span>)
+}
+
+<span class="syn-comment">## The word and its promise on one line. A line that is neither stops the run.</span>
+<span class="syn-name">read_entry!</span> : <span class="syn-type">TableLine</span> =&gt; { word : <span class="syn-type">Str</span>, promise : <span class="syn-type">Words.Promise</span> }
+<span class="syn-name">read_entry!</span> = |table_line| {
+	groups = <span class="syn-keyword">match</span> <span class="syn-type">Shale</span>.re_find!(table_line.line, line_pattern) {
+		<span class="syn-type">Found</span>(found) =&gt; found.groups
+		<span class="syn-type">NoMatch</span> =&gt; {
+			fail_at!(table_line, <span class="syn-string">&quot;expected `word: Type, Type`, `word: none` or `word: any`&quot;</span>)
+			[]
+		}
+	}
+	<span class="syn-keyword">match</span> groups {
+		[word, said] =&gt; { word, promise: promise_of(said) }
+		_ =&gt; <span class="syn-keyword">crash</span> <span class="syn-string">&quot;find_names_that_disagree_with_their_types: a table line&#39;s pattern gave no two groups&quot;</span>
+	}
+}
+
+<span class="syn-comment">## What `none`, `any` or a list of types promises.</span>
+<span class="syn-name">promise_of</span> : <span class="syn-type">Str</span> -&gt; <span class="syn-type">Words.Promise</span>
+<span class="syn-name">promise_of</span> = |said|
+	<span class="syn-keyword">if</span> said == <span class="syn-string">&quot;none&quot;</span> {
+		<span class="syn-type">NoNameMay</span>
+	} <span class="syn-keyword">else</span> <span class="syn-keyword">if</span> said == <span class="syn-string">&quot;any&quot;</span> {
+		<span class="syn-type">AnyType</span>
+	} <span class="syn-keyword">else</span> {
+		<span class="syn-type">OneOf</span>(said.split_on(<span class="syn-string">&quot;,&quot;</span>).map(<span class="syn-type">Text</span>.trim))
+	}
+
+<span class="syn-comment">## A list of one word a line, any note after `--` cut off, as a set. A</span>
+<span class="syn-comment">## missing file, a word listed twice, or a line of two words stops the run.</span>
+<span class="syn-name">read_word_set!</span> : <span class="syn-type">Str</span> =&gt; <span class="syn-type">Set</span>(<span class="syn-type">Str</span>)
+<span class="syn-name">read_word_set!</span> = |path| {
+	text = <span class="syn-keyword">match</span> <span class="syn-type">Shale</span>.read!(path) {
+		<span class="syn-type">Found</span>(found) =&gt; found
+		<span class="syn-type">Missing</span> =&gt; {
+			<span class="syn-type">Shale</span>.fail!(<span class="syn-string">&quot;no word list </span>${path}<span class="syn-string">&quot;</span>)
+			<span class="syn-string">&quot;&quot;</span>
+		}
+	}
+	<span class="syn-keyword">var</span> $words = <span class="syn-type">Set</span>.empty()
+	<span class="syn-keyword">for</span> line <span class="syn-keyword">in</span> <span class="syn-type">Text</span>.lines(text) {
+		word = <span class="syn-type">Text</span>.trim(<span class="syn-type">Text</span>.before_first(line, <span class="syn-string">&quot;--&quot;</span>))
+		<span class="syn-keyword">if</span> word.contains(<span class="syn-string">&quot; &quot;</span>) <span class="syn-keyword">or</span> $words.contains(word) {
+			<span class="syn-type">Shale</span>.fail!(<span class="syn-string">&quot;</span>${path}<span class="syn-string">: `</span>${word}<span class="syn-string">` is no single new word&quot;</span>)
+		}
+		<span class="syn-keyword">if</span> word != <span class="syn-string">&quot;&quot;</span> {
+			$words = $words.insert(word)
+		}
+	}
+	$words
+}
+</code></pre>
+<h2 class="code">Shale original</h2>
+<p class="file"><a href="https://github.com/showell/shale/blob/e5cb7ec098cbe676605ab7513dd7fc6b592aa398/cookbook/roc/check_name_types.shale"><code>cookbook/roc/check_name_types.shale</code></a>, 207 lines, at <code>e5cb7ec0</code></p>
+<p class="file">The libraries it loads: <a href="https://github.com/showell/shale/blob/e5cb7ec098cbe676605ab7513dd7fc6b592aa398/cookbook/roc/declared.shale"><code>cookbook/roc/declared.shale</code></a> (1,075 lines), <a href="https://github.com/showell/shale/blob/e5cb7ec098cbe676605ab7513dd7fc6b592aa398/cookbook/findings.shale"><code>cookbook/findings.shale</code></a> (21 lines), <a href="https://github.com/showell/shale/blob/e5cb7ec098cbe676605ab7513dd7fc6b592aa398/cookbook/roc/parsed.shale"><code>cookbook/roc/parsed.shale</code></a> (34 lines), <a href="https://github.com/showell/shale/blob/e5cb7ec098cbe676605ab7513dd7fc6b592aa398/cookbook/roc/gate_recipe.shale"><code>cookbook/roc/gate_recipe.shale</code></a> (102 lines).</p>
+<pre><code><span class="syn-comment">-- This recipe finds names that disagree with their types: a number left bare</span>
+<span class="syn-comment">-- beside a typed one, a constant that means &quot;none&quot; but has an ordinary type,</span>
+<span class="syn-comment">-- and, given a project&#39;s table, a word whose names must hold one type.</span>
+<span class="syn-comment">--</span>
+<span class="syn-comment">--   cd &lt;repo&gt; &amp;&amp; shale &lt;shale&gt;/cookbook/roc/check_name_types.shale table=name_types.txt</span>
+<span class="syn-comment">--   shale cookbook:roc/check_name_types.shale self_test=1</span>
+<span class="syn-comment">--</span>
+<span class="syn-comment">-- The arguments:</span>
+<span class="syn-comment">--   glob       the files to check, `**/*.roc` by default;</span>
+<span class="syn-comment">--   table      the project&#39;s table of words and types, without which</span>
+<span class="syn-comment">--              `name_type` has nothing to judge;</span>
+<span class="syn-comment">--   self_test  with `self_test=1`, check the plants in</span>
+<span class="syn-comment">--              `cookbook/roc/plants/check_name_types/`.</span>
+<span class="syn-comment">--</span>
+<span class="syn-comment">-- Each line of the table is `word: Type, Type`, `word: none` or `word: any`,</span>
+<span class="syn-comment">-- such as `dist: Distance`. A blank line or one starting with `#` is skipped,</span>
+<span class="syn-comment">-- and a malformed line or a word listed twice stops the run. The table belongs</span>
+<span class="syn-comment">-- to the project, because what `dist` must be depends on the project&#39;s types.</span>
+<span class="syn-comment">--</span>
+<span class="syn-comment">-- The checks read top-level names, module members and the record fields of</span>
+<span class="syn-comment">-- types and annotations, never locals:</span>
+<span class="syn-comment">--</span>
+<span class="syn-comment">--   name_type         A name whose last word is in the table has a type the</span>
+<span class="syn-comment">--                     table doesn&#39;t allow. A function is judged by what it</span>
+<span class="syn-comment">--                     returns, and a type by its last part, so</span>
+<span class="syn-comment">--                     `Geom.Distance` is `Distance`. In a name that starts</span>
+<span class="syn-comment">--                     with a preposition or a question, the last word isn&#39;t</span>
+<span class="syn-comment">--                     the thing named (`from_fraction`, `after_two_steps`,</span>
+<span class="syn-comment">--                     `is_fraction`), so it is not judged. `none` means no</span>
+<span class="syn-comment">--                     name may end in the word, whatever its type or start,</span>
+<span class="syn-comment">--                     and `any` means the word holds no promise at all.</span>
+<span class="syn-comment">--   bare_beside_unit  A field that is a bare number in one record and a unit</span>
+<span class="syn-comment">--                     in another, a unit being a nominal type built on a</span>
+<span class="syn-comment">--                     number and declared in the files read. It means a</span>
+<span class="syn-comment">--                     retyping stopped halfway. Each bare field is a finding.</span>
+<span class="syn-comment">--                     A field named by a preposition (`from`, `to`, `at`) or</span>
+<span class="syn-comment">--                     by a word the table gives `any` (`id`, where a host&#39;s</span>
+<span class="syn-comment">--                     number and a user&#39;s id are two things) is not judged,</span>
+<span class="syn-comment">--                     because that word fits any two things.</span>
+<span class="syn-comment">--   no_value          A constant whose first word is `no`, `none` or `unset`</span>
+<span class="syn-comment">--                     and whose type is not a `Bool` or a tag union. An</span>
+<span class="syn-comment">--                     ordinary value kept to mean &quot;none&quot; should be a tag.</span>
+<span class="syn-comment">--                     A `List` has its own empty case, and a type&#39;s own member</span>
+<span class="syn-comment">--                     of that type (`Attention.none : Attention`) is its</span>
+<span class="syn-comment">--                     scale&#39;s bottom, so neither is judged, and neither is a</span>
+<span class="syn-comment">--                     constant with no annotation. An alias of a function</span>
+<span class="syn-comment">--                     type is a function&#39;s type (`no_draw : Draw`, `Draw : U64</span>
+<span class="syn-comment">--                     -&gt; List(U64)`), so it is not judged either. A string with something in</span>
+<span class="syn-comment">--                     it is words about the case, not a stand-in for it</span>
+<span class="syn-comment">--                     (`no_match_words`), so only `&quot;&quot;` is judged.</span>
+<span class="syn-comment">--</span>
+<span class="syn-comment">-- The output is the counts, one line per finding, and the counts again</span>
+<span class="syn-comment">-- (cookbook/findings.shale). The run fails if there are findings, or if</span>
+<span class="syn-comment">-- any file doesn&#39;t parse, and the files that do parse are judged either way.</span>
+<span class="syn-comment">-- budget: steps=800000000 arena_bytes=2000000000 output_bytes=4000000</span>
+
+<span class="syn-keyword">const</span> SELF_TEST = arg(<span class="syn-string">&quot;self_test&quot;</span>, <span class="syn-string">&quot;&quot;</span>) == <span class="syn-string">&quot;1&quot;</span>
+<span class="syn-keyword">const</span> GLOB = arg(<span class="syn-string">&quot;glob&quot;</span>, <span class="syn-string">&quot;**/*.roc&quot;</span>)
+<span class="syn-keyword">const</span> TABLE_FILE = arg(<span class="syn-string">&quot;table&quot;</span>, <span class="syn-string">&quot;&quot;</span>)
+use(<span class="syn-string">&quot;./declared.shale&quot;</span>)
+use(<span class="syn-string">&quot;cookbook:findings.shale&quot;</span>)
+use(<span class="syn-string">&quot;./parsed.shale&quot;</span>)
+use(<span class="syn-string">&quot;./gate_recipe.shale&quot;</span>)
+<span class="syn-keyword">const</span> CHECKS = {<span class="syn-string">&quot;name_type&quot;</span>, <span class="syn-string">&quot;bare_beside_unit&quot;</span>, <span class="syn-string">&quot;no_value&quot;</span>}
+<span class="syn-keyword">const</span> BARE_NUMBERS = {U8 = <span class="syn-keyword">true</span>, U16 = <span class="syn-keyword">true</span>, U32 = <span class="syn-keyword">true</span>, U64 = <span class="syn-keyword">true</span>, U128 = <span class="syn-keyword">true</span>, I8 = <span class="syn-keyword">true</span>, I16 = <span class="syn-keyword">true</span>, I32 = <span class="syn-keyword">true</span>, I64 = <span class="syn-keyword">true</span>, I128 = <span class="syn-keyword">true</span>, F32 = <span class="syn-keyword">true</span>, F64 = <span class="syn-keyword">true</span>, Dec = <span class="syn-keyword">true</span>}
+<span class="syn-keyword">const</span> NONE_WORDS = {no = <span class="syn-keyword">true</span>, none = <span class="syn-keyword">true</span>, unset = <span class="syn-keyword">true</span>}
+<span class="syn-keyword">const</span> QUESTION_WORDS = {is = <span class="syn-keyword">true</span>, has = <span class="syn-keyword">true</span>, can = <span class="syn-keyword">true</span>, should = <span class="syn-keyword">true</span>}
+<span class="syn-keyword">const</span> PREPOSITIONS = word_set(<span class="syn-string">&quot;cookbook:words/prepositions.txt&quot;</span>)
+
+<span class="syn-comment">-- The table as a map from each word to the list of types allowed for it,</span>
+<span class="syn-comment">-- which is empty for `none` and `{&quot;any&quot;}` for `any`.</span>
+<span class="syn-keyword">function</span> <span class="syn-name">name_type_table</span>(path)
+  <span class="syn-keyword">local</span> table_of_words = {}
+  <span class="syn-keyword">if</span> path == <span class="syn-string">&quot;&quot;</span> <span class="syn-keyword">then</span> <span class="syn-keyword">return</span> table_of_words <span class="syn-keyword">end</span>
+  <span class="syn-keyword">if</span> <span class="syn-keyword">not</span> exists(path) <span class="syn-keyword">then</span> fail(<span class="syn-string">&quot;check_name_types: no table &quot;</span> .. path) <span class="syn-keyword">end</span>
+  <span class="syn-keyword">local</span> number = <span class="syn-number">0</span>
+  <span class="syn-keyword">for</span> raw <span class="syn-keyword">in</span> lines(read(path)) <span class="syn-keyword">do</span>
+    number = number + <span class="syn-number">1</span>
+    <span class="syn-keyword">local</span> l = trim(raw)
+    <span class="syn-keyword">if</span> l ~= <span class="syn-string">&quot;&quot;</span> <span class="syn-keyword">and</span> <span class="syn-keyword">not</span> starts_with(l, <span class="syn-string">&quot;#&quot;</span>) <span class="syn-keyword">then</span>
+      <span class="syn-keyword">local</span> m = re_find(l, <span class="syn-string">&quot;^([a-z0-9]+): *(none|any|[A-Z][A-Za-z0-9]*(?:, *[A-Z][A-Za-z0-9]*)*)$&quot;</span>)
+      <span class="syn-keyword">if</span> m == <span class="syn-keyword">nil</span> <span class="syn-keyword">then</span> fail(<span class="syn-string">&quot;check_name_types: &quot;</span> .. path .. <span class="syn-string">&quot;:&quot;</span> .. number .. <span class="syn-string">&quot;: expected `word: Type, Type`, `word: none` or `word: any`&quot;</span>) <span class="syn-keyword">end</span>
+      <span class="syn-keyword">if</span> has_key(table_of_words, m.groups[<span class="syn-number">1</span>]) <span class="syn-keyword">then</span> fail(<span class="syn-string">&quot;check_name_types: &quot;</span> .. path .. <span class="syn-string">&quot;:&quot;</span> .. number .. <span class="syn-string">&quot;: `&quot;</span> .. m.groups[<span class="syn-number">1</span>] .. <span class="syn-string">&quot;` is listed twice&quot;</span>) <span class="syn-keyword">end</span>
+      <span class="syn-keyword">local</span> allowed = {}
+      <span class="syn-keyword">if</span> m.groups[<span class="syn-number">2</span>] ~= <span class="syn-string">&quot;none&quot;</span> <span class="syn-keyword">then</span>
+        <span class="syn-keyword">for</span> t <span class="syn-keyword">in</span> split(m.groups[<span class="syn-number">2</span>], <span class="syn-string">&quot;,&quot;</span>) <span class="syn-keyword">do</span> push(allowed, trim(t)) <span class="syn-keyword">end</span>
+      <span class="syn-keyword">end</span>
+      table_of_words[m.groups[<span class="syn-number">1</span>]] = allowed
+    <span class="syn-keyword">end</span>
+  <span class="syn-keyword">end</span>
+  <span class="syn-keyword">return</span> table_of_words
+<span class="syn-keyword">end</span>
+
+<span class="syn-keyword">function</span> <span class="syn-name">promises_nothing</span>(table_of_words, word)
+  <span class="syn-keyword">return</span> has_key(table_of_words, word) <span class="syn-keyword">and</span> has_item(table_of_words[word], <span class="syn-string">&quot;any&quot;</span>)
+<span class="syn-keyword">end</span>
+
+<span class="syn-keyword">function</span> <span class="syn-name">judge_name_type</span>(d, table_of_words, report)
+  <span class="syn-keyword">local</span> ws = name_words(sub(d.name, <span class="syn-number">1</span>, ends_with(d.name, <span class="syn-string">&quot;!&quot;</span>) <span class="syn-keyword">and</span> #d.name - <span class="syn-number">1</span> <span class="syn-keyword">or</span> #d.name))
+  <span class="syn-keyword">if</span> #ws == <span class="syn-number">0</span> <span class="syn-keyword">or</span> <span class="syn-keyword">not</span> has_key(table_of_words, ws[#ws]) <span class="syn-keyword">then</span> <span class="syn-keyword">return</span> <span class="syn-keyword">nil</span> <span class="syn-keyword">end</span>
+  <span class="syn-keyword">local</span> allowed = table_of_words[ws[#ws]]
+  <span class="syn-keyword">if</span> promises_nothing(table_of_words, ws[#ws]) <span class="syn-keyword">then</span> <span class="syn-keyword">return</span> <span class="syn-keyword">nil</span> <span class="syn-keyword">end</span>
+  <span class="syn-keyword">local</span> type_name = d.kind == <span class="syn-string">&quot;field&quot;</span> <span class="syn-keyword">and</span> d.type <span class="syn-keyword">or</span> d.result
+  <span class="syn-keyword">if</span> type_name == <span class="syn-string">&quot;&quot;</span> <span class="syn-keyword">or</span> type_name == <span class="syn-string">&quot;_&quot;</span> <span class="syn-keyword">then</span> <span class="syn-keyword">return</span> <span class="syn-keyword">nil</span> <span class="syn-keyword">end</span>
+  <span class="syn-keyword">local</span> names_something_else = has_key(PREPOSITIONS, ws[<span class="syn-number">1</span>]) <span class="syn-keyword">or</span> has_key(QUESTION_WORDS, ws[<span class="syn-number">1</span>])
+  <span class="syn-keyword">if</span> #allowed == <span class="syn-number">0</span> <span class="syn-keyword">then</span>
+    push(report, {path = d.path, line = d.line, check = <span class="syn-string">&quot;name_type&quot;</span>, what = <span class="syn-string">&quot;`&quot;</span> .. d.name .. <span class="syn-string">&quot;` ends in `&quot;</span> .. ws[#ws] .. <span class="syn-string">&quot;`, which no name here may: its type is `&quot;</span> .. type_name .. <span class="syn-string">&quot;`&quot;</span>})
+  <span class="syn-keyword">elseif</span> <span class="syn-keyword">not</span> names_something_else <span class="syn-keyword">and</span> <span class="syn-keyword">not</span> has_item(allowed, last_part(type_name)) <span class="syn-keyword">then</span>
+    push(report, {path = d.path, line = d.line, check = <span class="syn-string">&quot;name_type&quot;</span>, what = <span class="syn-string">&quot;`&quot;</span> .. d.name .. <span class="syn-string">&quot;` is `&quot;</span> .. type_name .. <span class="syn-string">&quot;`, and a name ending `&quot;</span> .. ws[#ws] .. <span class="syn-string">&quot;` is `&quot;</span> .. join(allowed, <span class="syn-string">&quot;` or `&quot;</span>) .. <span class="syn-string">&quot;` here&quot;</span>})
+  <span class="syn-keyword">end</span>
+  <span class="syn-keyword">return</span> <span class="syn-keyword">nil</span>
+<span class="syn-keyword">end</span>
+
+<span class="syn-comment">-- The nominal types built on a number, by name.</span>
+<span class="syn-keyword">function</span> <span class="syn-name">unit_types</span>(all)
+  <span class="syn-keyword">local</span> units = {}
+  <span class="syn-keyword">for</span> d <span class="syn-keyword">in</span> all <span class="syn-keyword">do</span>
+    <span class="syn-keyword">if</span> d.kind == <span class="syn-string">&quot;type&quot;</span> <span class="syn-keyword">and</span> d.is_nominal <span class="syn-keyword">and</span> has_key(BARE_NUMBERS, d.underlying) <span class="syn-keyword">then</span> units[d.name] = <span class="syn-keyword">true</span> <span class="syn-keyword">end</span>
+  <span class="syn-keyword">end</span>
+  <span class="syn-keyword">return</span> units
+<span class="syn-keyword">end</span>
+
+<span class="syn-keyword">function</span> <span class="syn-name">judge_bare_fields</span>(all, table_of_words, report)
+  <span class="syn-keyword">local</span> units = unit_types(all)
+  <span class="syn-keyword">local</span> unit_of_field = {}
+  <span class="syn-keyword">for</span> d <span class="syn-keyword">in</span> all <span class="syn-keyword">do</span>
+    <span class="syn-keyword">if</span> d.kind == <span class="syn-string">&quot;field&quot;</span> <span class="syn-keyword">and</span> has_key(units, last_part(d.type)) <span class="syn-keyword">then</span> unit_of_field[d.name] = d <span class="syn-keyword">end</span>
+  <span class="syn-keyword">end</span>
+  <span class="syn-keyword">for</span> d <span class="syn-keyword">in</span> all <span class="syn-keyword">do</span>
+    <span class="syn-keyword">if</span> d.kind == <span class="syn-string">&quot;field&quot;</span> <span class="syn-keyword">and</span> has_key(BARE_NUMBERS, d.type) <span class="syn-keyword">and</span> has_key(unit_of_field, d.name) <span class="syn-keyword">and</span> <span class="syn-keyword">not</span> has_key(PREPOSITIONS, d.name) <span class="syn-keyword">and</span> <span class="syn-keyword">not</span> promises_nothing(table_of_words, d.name) <span class="syn-keyword">then</span>
+      <span class="syn-keyword">local</span> typed = unit_of_field[d.name]
+      push(report, {path = d.path, line = d.line, check = <span class="syn-string">&quot;bare_beside_unit&quot;</span>, what = <span class="syn-string">&quot;the field `&quot;</span> .. d.name .. <span class="syn-string">&quot;` is a bare `&quot;</span> .. d.type .. <span class="syn-string">&quot;` here and a `&quot;</span> .. typed.type .. <span class="syn-string">&quot;` at &quot;</span> .. typed.path .. <span class="syn-string">&quot;:&quot;</span> .. typed.line})
+    <span class="syn-keyword">end</span>
+  <span class="syn-keyword">end</span>
+  <span class="syn-keyword">return</span> <span class="syn-keyword">nil</span>
+<span class="syn-keyword">end</span>
+
+<span class="syn-keyword">function</span> <span class="syn-name">judge_no_values</span>(all, report)
+  <span class="syn-keyword">local</span> tag_types = {}
+  <span class="syn-comment">-- An alias of a function type (`Draw : U64 -&gt; List(U64)`) makes a value</span>
+  <span class="syn-comment">-- of it a function, which `fn` sees only when written out.</span>
+  <span class="syn-keyword">local</span> function_aliases = {}
+  <span class="syn-keyword">for</span> d <span class="syn-keyword">in</span> all <span class="syn-keyword">do</span>
+    <span class="syn-keyword">if</span> d.kind == <span class="syn-string">&quot;type&quot;</span> <span class="syn-keyword">and</span> d.is_tags <span class="syn-keyword">then</span> tag_types[d.name] = <span class="syn-keyword">true</span> <span class="syn-keyword">end</span>
+    <span class="syn-keyword">if</span> d.kind == <span class="syn-string">&quot;type&quot;</span> <span class="syn-keyword">and</span> d.is_fn <span class="syn-keyword">and</span> <span class="syn-keyword">not</span> d.is_nominal <span class="syn-keyword">then</span> function_aliases[d.name] = <span class="syn-keyword">true</span> <span class="syn-keyword">end</span>
+  <span class="syn-keyword">end</span>
+  <span class="syn-keyword">for</span> d <span class="syn-keyword">in</span> all <span class="syn-keyword">do</span>
+    <span class="syn-keyword">if</span> d.kind == <span class="syn-string">&quot;value&quot;</span> <span class="syn-keyword">and</span> d.annotated <span class="syn-keyword">and</span> <span class="syn-keyword">not</span> d.fn <span class="syn-keyword">then</span>
+      <span class="syn-keyword">local</span> ws = split(d.name, <span class="syn-string">&quot;_&quot;</span>)
+      <span class="syn-keyword">local</span> is_none_word = has_key(NONE_WORDS, ws[<span class="syn-number">1</span>])
+      <span class="syn-keyword">local</span> is_plain = d.type ~= <span class="syn-string">&quot;Bool&quot;</span> <span class="syn-keyword">and</span> <span class="syn-keyword">not</span> d.has_text <span class="syn-keyword">and</span> <span class="syn-keyword">not</span> starts_with(d.type, <span class="syn-string">&quot;[&quot;</span>) <span class="syn-keyword">and</span> <span class="syn-keyword">not</span> starts_with(d.type, <span class="syn-string">&quot;List(&quot;</span>) <span class="syn-keyword">and</span> d.owner ~= last_part(d.type) <span class="syn-keyword">and</span> <span class="syn-keyword">not</span> has_key(tag_types, last_part(d.type)) <span class="syn-keyword">and</span> <span class="syn-keyword">not</span> has_key(function_aliases, last_part(d.type))
+      <span class="syn-keyword">if</span> is_none_word <span class="syn-keyword">and</span> is_plain <span class="syn-keyword">then</span> push(report, {path = d.path, line = d.line, check = <span class="syn-string">&quot;no_value&quot;</span>, what = <span class="syn-string">&quot;`&quot;</span> .. d.name .. <span class="syn-string">&quot;` means none and is a `&quot;</span> .. d.type .. <span class="syn-string">&quot;`: keep the case as a tag&quot;</span>}) <span class="syn-keyword">end</span>
+    <span class="syn-keyword">end</span>
+  <span class="syn-keyword">end</span>
+  <span class="syn-keyword">return</span> <span class="syn-keyword">nil</span>
+<span class="syn-keyword">end</span>
+
+<span class="syn-keyword">function</span> <span class="syn-name">self_test</span>()
+  <span class="syn-keyword">local</span> at = <span class="syn-string">&quot;cookbook:roc/plants/check_name_types/&quot;</span>
+  <span class="syn-keyword">local</span> table_arg = <span class="syn-string">&quot;table=&quot;</span> .. at .. <span class="syn-string">&quot;table.txt&quot;</span>
+  check_plants(<span class="syn-string">&quot;check_name_types&quot;</span>, <span class="syn-string">&quot;cookbook:roc/check_name_types.shale&quot;</span>, CHECKS, {
+    {glob = at .. <span class="syn-string">&quot;name_type.roc&quot;</span>, args = {table_arg}, counts = {name_type = <span class="syn-number">6</span>}, says = {<span class="syn-string">&quot;name_type.roc:3: name_type: `bull_dist` is `Geom.Along`, and a name ending `dist` is `Distance` here&quot;</span>, <span class="syn-string">&quot;`in_2_frames` ends in `frames`&quot;</span>}},
+    {glob = at .. <span class="syn-string">&quot;name_type.roc&quot;</span>},
+    {glob = at .. <span class="syn-string">&quot;quiet_name_type.roc&quot;</span>, args = {table_arg}},
+    {glob = at .. <span class="syn-string">&quot;bare_beside_unit/*.roc&quot;</span>, counts = {bare_beside_unit = <span class="syn-number">2</span>}, says = {<span class="syn-string">&quot;Rider.roc:4: bare_beside_unit: the field `forward` is a bare `F64` here and a `Distance` at&quot;</span>}},
+    {glob = at .. <span class="syn-string">&quot;quiet_bare/*.roc&quot;</span>},
+    {glob = at .. <span class="syn-string">&quot;bare_any/*.roc&quot;</span>, counts = {bare_beside_unit = <span class="syn-number">1</span>}, says = {<span class="syn-string">&quot;the field `id` is a bare `U64` here&quot;</span>}},
+    {glob = at .. <span class="syn-string">&quot;bare_any/*.roc&quot;</span>, args = {<span class="syn-string">&quot;table=&quot;</span> .. at .. <span class="syn-string">&quot;table_any.txt&quot;</span>}},
+    {glob = at .. <span class="syn-string">&quot;name_type.roc&quot;</span>, args = {<span class="syn-string">&quot;table=&quot;</span> .. at .. <span class="syn-string">&quot;table_any.txt&quot;</span>}},
+    {glob = at .. <span class="syn-string">&quot;no_value.roc&quot;</span>, counts = {no_value = <span class="syn-number">4</span>}, says = {<span class="syn-string">&quot;no_value.roc:9: no_value: `no_frames` means none and is a `Steps`&quot;</span>}},
+    {glob = at .. <span class="syn-string">&quot;quiet_no_value.roc&quot;</span>},
+    {glob = at .. <span class="syn-string">&quot;broken/*.roc&quot;</span>, stops = <span class="syn-keyword">true</span>, says = {<span class="syn-string">&quot;refused: &quot;</span>}},
+    {glob = at .. <span class="syn-string">&quot;quiet_name_type.roc&quot;</span>, args = {<span class="syn-string">&quot;table=&quot;</span> .. at .. <span class="syn-string">&quot;no_such.txt&quot;</span>}, stops = <span class="syn-keyword">true</span>, says = {<span class="syn-string">&quot;no table&quot;</span>}},
+    {glob = at .. <span class="syn-string">&quot;quiet_name_type.roc&quot;</span>, args = {<span class="syn-string">&quot;table=&quot;</span> .. at .. <span class="syn-string">&quot;table_malformed.txt&quot;</span>}, stops = <span class="syn-keyword">true</span>, says = {<span class="syn-string">&quot;table_malformed.txt:2: expected&quot;</span>}},
+    {glob = at .. <span class="syn-string">&quot;quiet_name_type.roc&quot;</span>, args = {<span class="syn-string">&quot;table=&quot;</span> .. at .. <span class="syn-string">&quot;table_twice.txt&quot;</span>}, stops = <span class="syn-keyword">true</span>, says = {<span class="syn-string">&quot;`dist` is listed twice&quot;</span>}},
+  })
+  <span class="syn-keyword">return</span> <span class="syn-keyword">nil</span>
+<span class="syn-keyword">end</span>
+
+<span class="syn-keyword">function</span> <span class="syn-name">run_check</span>()
+  <span class="syn-keyword">local</span> table_of_words = name_type_table(TABLE_FILE)
+  <span class="syn-keyword">local</span> paths = glob(GLOB)
+  <span class="syn-keyword">local</span> parsed = parse_roc_files(paths)
+  <span class="syn-keyword">local</span> all = {}
+  <span class="syn-keyword">for</span> f <span class="syn-keyword">in</span> parsed.files <span class="syn-keyword">do</span>
+    <span class="syn-keyword">for</span> d <span class="syn-keyword">in</span> declarations_of(f) <span class="syn-keyword">do</span> push(all, d) <span class="syn-keyword">end</span>
+  <span class="syn-keyword">end</span>
+  <span class="syn-keyword">local</span> report = {}
+  <span class="syn-keyword">for</span> d <span class="syn-keyword">in</span> all <span class="syn-keyword">do</span>
+    <span class="syn-keyword">if</span> d.kind == <span class="syn-string">&quot;field&quot;</span> <span class="syn-keyword">or</span> d.kind == <span class="syn-string">&quot;value&quot;</span> <span class="syn-keyword">then</span> judge_name_type(d, table_of_words, report) <span class="syn-keyword">end</span>
+  <span class="syn-keyword">end</span>
+  judge_bare_fields(all, table_of_words, report)
+  judge_no_values(all, report)
+  <span class="syn-keyword">local</span> verdict = verdict_of(<span class="syn-string">&quot;check_name_types&quot;</span>, CHECKS, report, #paths)
+  print_findings(verdict.summary, verdict.found)
+  fail_if_refused(<span class="syn-string">&quot;check_name_types&quot;</span>, parsed.refused)
+  <span class="syn-keyword">return</span> verdict
+<span class="syn-keyword">end</span>
+
+<span class="syn-comment">-- This `fail` stands at the top level so the summary is the last line a</span>
+<span class="syn-comment">-- caller reads: a stop inside a function prints the calls after it.</span>
+<span class="syn-keyword">if</span> SELF_TEST <span class="syn-keyword">then</span>
+  self_test()
+<span class="syn-keyword">else</span>
+  <span class="syn-keyword">local</span> verdict = run_check()
+  <span class="syn-keyword">if</span> #verdict.found &gt; <span class="syn-number">0</span> <span class="syn-keyword">then</span> fail(verdict.summary) <span class="syn-keyword">end</span>
+<span class="syn-keyword">end</span>
+</code></pre>
+<nav class="steps"><a href="../find_retired_words/">← previous</a> · <a href="../#find_names_that_disagree_with_their_types">Roc on Shale</a> · <a href="../find_floats_outside_unit_types/">next →</a></nav></main>
+</body>
+</html>

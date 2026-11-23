@@ -1,0 +1,1904 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="description" content="Groups laid out against the stacking rule, both ways, and lines past the width, read a byte at a time by the Roc library's Groups and Stacking, with `write=1` adding and taking trailing commas for `roc fmt` until a pass changes nothing.">
+<title>check_and_fix_group_stacking · Roc on Shale</title>
+<script src="../../shared/home.js"></script>
+<!-- site/build_roc_on_shale.shale writes this page from the shale repository's
+     history; run it again rather than editing here. The code is colored by
+     roc-syntax-color (SyntaxColor.html). -->
+<style>
+  :root { color-scheme: light dark; --bg: #f7f5f0; --fg: #1d1d1b; --muted: #6b6860; --edge: #d9d4c8; --pane: #ffffff; --link: #1f5fa8; --accent: #5b3ea8; }
+  @media (prefers-color-scheme: dark) {
+    :root { --bg: #1b1b1a; --fg: #e8e6e0; --muted: #9a968c; --edge: #3a3934; --pane: #242422; --link: #8ab4f0; --accent: #a68cf0; }
+  }
+  body { margin: 0; background: var(--bg); color: var(--fg); font: 15px/1.55 system-ui, sans-serif; }
+  main { max-width: 960px; margin: 0 auto; padding: 36px 16px 48px; }
+  @media (max-width: 640px) { main { padding: 24px 12px 36px; } }
+  .top { display: flex; flex-wrap: wrap; gap: 4px 14px; font-size: 14px; margin: 0 0 14px; }
+  h1 { font-size: 28px; margin: 0 0 6px; overflow-wrap: anywhere; }
+  .lede { margin: 0 0 10px; max-width: 70ch; }
+  ul.lede { padding-left: 22px; }
+  ul.lede li { margin: 0 0 4px; }
+  h2.intro { font-size: 20px; margin: 30px 0 6px; }
+  h3.intro { font-size: 16px; margin: 18px 0 4px; }
+  /* The drawing is Graphviz's SVG, inline, so its lines and words take the
+     page's colors in either theme. */
+  .diagram { margin: 14px 0 18px; }
+  .diagram svg { max-width: 100%; height: auto; }
+  .diagram text { fill: var(--fg); }
+  .diagram path, .diagram polygon { stroke: var(--fg); }
+  .diagram .edge polygon { fill: var(--fg); }
+  h2.part { font-size: 25px; margin: 64px 0 4px; padding-top: 20px; border-top: 3px solid var(--accent); }
+  .part-intro { margin: 0 0 8px; }
+  h3 { font-size: 19px; margin: 10px 0 4px; overflow-wrap: anywhere; }
+  h2.part a { color: inherit; text-decoration: none; }
+  h2.code { font-size: 16px; margin: 36px 0 4px; color: var(--accent); }
+  p { max-width: 70ch; }
+  a { color: var(--link); }
+  code { font: 13px ui-monospace, Menlo, Consolas, monospace; }
+  .contents { padding-left: 20px; }
+  .contents ul { padding-left: 20px; margin: 2px 0 8px; }
+  .contents a { overflow-wrap: anywhere; }
+  .facts { font-size: 14px; color: var(--muted); }
+  .file { font-size: 13px; color: var(--muted); margin: 20px 0 0; overflow-wrap: anywhere; }
+  .entry { margin-top: 28px; padding-top: 14px; border-top: 1px solid var(--edge); }
+  .steps { font-size: 13px; margin: 0 0 8px; }
+  main > .steps:last-child { margin: 28px 0 0; }
+  /* Every block shows its file whole; a line wider than the block scrolls
+     sideways inside it, so the code keeps its indentation. */
+  pre { margin: 6px 0 12px; padding: 12px 14px; border-radius: 5px; background: #2b2733; color: #e8e6e0;
+        font: 12px/1.45 ui-monospace, Menlo, Consolas, monospace; overflow-x: auto; tab-size: 4; }
+  pre code { font: inherit; }
+  .syn-keyword { color: #c792ea; }
+  .syn-type { color: #82aaff; }
+  .syn-string { color: #c3e88d; }
+  .syn-number { color: #f78c6c; }
+  .syn-comment { color: #8a8494; font-style: italic; }
+  .syn-name { color: #ffcb6b; }
+  footer { margin-top: 36px; color: var(--muted); font-size: 13px; }
+</style>
+</head>
+<body>
+<main>
+<nav class="steps"><a href="../check_how_failure_is_reported/">← previous</a> · <a href="../#check_and_fix_group_stacking">Roc on Shale</a> · <a href="../find_awkward_names/">next →</a></nav>
+<h1>check_and_fix_group_stacking</h1>
+<h2 class="code">Roc</h2>
+<p class="file">It also imports <code>Bytes</code>, <code>Finding</code>, <code>Groups</code>, <code>Headers</code>, <code>Stacking</code>, <code>Text</code>, <code>Tree</code> from <a href="../shared-library/">the shared Roc library</a>.</p>
+<p class="file"><a href="https://github.com/showell/shale/blob/e3c753adf065dc7856e5d49422daf99f9969f91a/cookbook/roc/check_and_fix_group_stacking/check_and_fix_group_stacking.roc"><code>cookbook/roc/check_and_fix_group_stacking/check_and_fix_group_stacking.roc</code></a>, 157 lines</p>
+<pre><code><span class="syn-comment">## check_and_fix_group_stacking, in Roc on Shale&#39;s platform (roc_platform/README.md): the</span>
+<span class="syn-comment">## groups in .roc files laid out against the stacking rule and the lines</span>
+<span class="syn-comment">## past the width, found and, with `write=1`, laid out by the rule. Its</span>
+<span class="syn-comment">## launcher, cookbook/roc/check_and_fix_group_stacking.shale, is how it is run, and its</span>
+<span class="syn-comment">## header says the rule, the findings and the rewrite. check_goldens.shale,</span>
+<span class="syn-comment">## beside this, holds its output on the plants to its goldens, line for line.</span>
+<span class="syn-comment">##</span>
+<span class="syn-comment">##   cd &lt;repo&gt; &amp;&amp; shale cookbook:roc/check_and_fix_group_stacking.shale glob=chat/**/*.roc</span>
+<span class="syn-comment">##   cd &lt;repo&gt; &amp;&amp; shale cookbook:roc/check_and_fix_group_stacking.shale glob=chat/**/*.roc write=1</span>
+<span class="syn-comment">##   shale cookbook:roc/check_and_fix_group_stacking.shale self_test=1</span>
+<span class="syn-comment">##</span>
+<span class="syn-comment">## The arguments: `glob` (`**/*.roc`), `skip` (files the glob finds to leave</span>
+<span class="syn-comment">## out, comma-separated), `width` (100), `tokens` (6), `dictated` (a table of</span>
+<span class="syn-comment">## functions whose arguments something outside the file dictates), `house`</span>
+<span class="syn-comment">## (`house=0` leaves out every finding, all of them house style), `write`</span>
+<span class="syn-comment">## (`write=1` rewrites the files) and `self_test` (`self_test=1` checks the</span>
+<span class="syn-comment">## plants and rewrites copies of them).</span>
+<span class="syn-comment">##</span>
+<span class="syn-comment">## This root reads the arguments, globs the files, rewrites them when asked</span>
+<span class="syn-comment">## (Rewrite) and prints the findings (Report, by Annotations) and the</span>
+<span class="syn-comment">## verdict; SelfTest is the self-test. Groups, Stacking, Headers, Finding</span>
+<span class="syn-comment">## and Text are the cookbook&#39;s Roc library, cookbook/roc/lib/.</span>
+<span class="syn-comment">## budget: steps=900000000 read_bytes=1000000000 arena_bytes=2000000000 output_bytes=4000000 programs=100 roc_cpu_ms=120000</span>
+<span class="syn-keyword">app</span> [main!] { lib: <span class="syn-string">&quot;../lib/main.roc&quot;</span>, pf: <span class="syn-keyword">platform</span> <span class="syn-string">&quot;../../../roc_platform/platform/main.roc&quot;</span> }
+
+<span class="syn-keyword">import</span> pf.<span class="syn-type">Shale</span>
+<span class="syn-keyword">import</span> lib.<span class="syn-type">Finding</span>
+<span class="syn-keyword">import</span> lib.<span class="syn-type">Stacking</span>
+<span class="syn-keyword">import</span> <span class="syn-type">Report</span>
+<span class="syn-keyword">import</span> <span class="syn-type">Rewrite</span>
+<span class="syn-keyword">import</span> <span class="syn-type">SelfTest</span>
+
+<span class="syn-name">main!</span> : {} =&gt; {}
+<span class="syn-name">main!</span> = |{}| {
+	self_test = <span class="syn-type">Shale</span>.arg!(<span class="syn-string">&quot;self_test&quot;</span>, <span class="syn-string">&quot;&quot;</span>) == <span class="syn-string">&quot;1&quot;</span>
+	pattern = <span class="syn-keyword">if</span> self_test {
+		<span class="syn-string">&quot;</span>${<span class="syn-type">SelfTest</span>.plants}<span class="syn-string">/*.roc&quot;</span>
+	} <span class="syn-keyword">else</span> {
+		<span class="syn-type">Shale</span>.arg!(<span class="syn-string">&quot;glob&quot;</span>, <span class="syn-string">&quot;**/*.roc&quot;</span>)
+	}
+	skip = <span class="syn-type">Shale</span>.arg!(<span class="syn-string">&quot;skip&quot;</span>, <span class="syn-string">&quot;&quot;</span>)
+	dictated = <span class="syn-keyword">if</span> self_test {
+		<span class="syn-string">&quot;</span>${<span class="syn-type">SelfTest</span>.plants}<span class="syn-string">/dictated.txt&quot;</span>
+	} <span class="syn-keyword">else</span> {
+		<span class="syn-type">Shale</span>.arg!(<span class="syn-string">&quot;dictated&quot;</span>, <span class="syn-string">&quot;&quot;</span>)
+	}
+	width = integer_of!(<span class="syn-string">&quot;width&quot;</span>, <span class="syn-type">Shale</span>.arg!(<span class="syn-string">&quot;width&quot;</span>, <span class="syn-string">&quot;100&quot;</span>))
+	write = <span class="syn-type">Shale</span>.arg!(<span class="syn-string">&quot;write&quot;</span>, <span class="syn-string">&quot;&quot;</span>) == <span class="syn-string">&quot;1&quot;</span>
+	tokens = integer_of!(<span class="syn-string">&quot;tokens&quot;</span>, <span class="syn-type">Shale</span>.arg!(<span class="syn-string">&quot;tokens&quot;</span>, <span class="syn-type">Stacking</span>.stack_tokens.to_str()))
+	settings = { rule: { tokens, width }, dictated }
+	<span class="syn-keyword">if</span> self_test {
+		<span class="syn-type">SelfTest</span>.run!(chosen_files!(pattern, skip), settings)
+	} <span class="syn-keyword">else</span> <span class="syn-keyword">if</span> write {
+		refuse_house_rewrite!({})
+		<span class="syn-comment"># Stop before any change if the tree&#39;s Roc is missing.</span>
+		roc = <span class="syn-type">Rewrite</span>.roc_bin!(<span class="syn-type">Bool.False</span>)
+		paths = chosen_files!(pattern, skip)
+		_first = <span class="syn-type">Rewrite</span>.trailing_commas!(paths, { rule: settings.rule, roc })
+		judged = <span class="syn-type">Report</span>.findings_in!(paths, settings)
+		left = judged.found.map(<span class="syn-type">Finding</span>.line_of)
+		print_findings!(<span class="syn-string">&quot;</span>${left.len().to_str()}<span class="syn-string"> left, each a line the rewrite can&#39;t reach&quot;</span>, left)
+		<span class="syn-type">SelfTest</span>.fail_if_refused!(judged.refused)
+	} <span class="syn-keyword">else</span> {
+		paths = chosen_files!(pattern, skip)
+		judged = <span class="syn-type">Report</span>.findings_in!(paths, settings)
+		house_is_off = read_house_is_off!({})
+		kept = <span class="syn-keyword">if</span> house_is_off {
+			[]
+		} <span class="syn-keyword">else</span> {
+			judged.found
+		}
+		count_of = |check| kept.count_if(|finding| finding.check == check).to_str()
+		counts = <span class="syn-string">&quot;</span>${count_of(<span class="syn-string">&quot;stack&quot;</span>)}<span class="syn-string"> to stack, </span>${count_of(<span class="syn-string">&quot;unstack&quot;</span>)}<span class="syn-string"> to unstack, </span>${count_of(<span class="syn-string">&quot;long&quot;</span>)}<span class="syn-string"> long, </span>${count_of(<span class="syn-string">&quot;wide string&quot;</span>)}<span class="syn-string"> wide string&quot;</span>
+		note = <span class="syn-keyword">if</span> house_is_off {
+			<span class="syn-string">&quot;; left out as house style: stack, unstack, long, wide string&quot;</span>
+		} <span class="syn-keyword">else</span> {
+			<span class="syn-string">&quot;&quot;</span>
+		}
+		summary = <span class="syn-string">&quot;</span>${kept.len().to_str()}<span class="syn-string"> findings in </span>${paths.len().to_str()}<span class="syn-string"> files: </span>${counts}${note}<span class="syn-string">&quot;</span>
+		print_findings!(summary, kept.map(<span class="syn-type">Finding</span>.line_of))
+		<span class="syn-type">SelfTest</span>.fail_if_refused!(judged.refused)
+	}
+}
+
+<span class="syn-comment">## The whole number an argument gives; another value stops the run, as</span>
+<span class="syn-comment">## Shale&#39;s `arg` does for an integer default. (Each `Shale.arg!` names its</span>
+<span class="syn-comment">## argument as a literal, so the launcher&#39;s check of the values finds it.)</span>
+<span class="syn-name">integer_of!</span> : <span class="syn-type">Str</span>, <span class="syn-type">Str</span> =&gt; <span class="syn-type">U64</span>
+<span class="syn-name">integer_of!</span> = |name, given|
+	<span class="syn-keyword">match</span> <span class="syn-type">I64</span>.from_str(given) {
+		<span class="syn-type">Ok</span>(value) <span class="syn-keyword">if</span> value &gt;= <span class="syn-number">0</span> =&gt; value.to_u64_wrap()
+		<span class="syn-type">Ok</span>(_) =&gt; {
+			<span class="syn-type">Shale</span>.fail!(<span class="syn-string">&quot;check_and_fix_group_stacking: </span>${name}<span class="syn-string">=</span>${given}<span class="syn-string"> is below 0&quot;</span>)
+			<span class="syn-number">0</span>
+		}
+		<span class="syn-type">Err</span>(_) =&gt; {
+			<span class="syn-type">Shale</span>.fail!(<span class="syn-string">&quot;`arg`: </span>${name}<span class="syn-string">=</span>${given}<span class="syn-string"> is not an integer, and its default is one&quot;</span>)
+			<span class="syn-number">0</span>
+		}
+	}
+
+<span class="syn-comment">## The files the glob finds, less the ones `skip` names. A name in `skip`</span>
+<span class="syn-comment">## that the glob doesn&#39;t find stops the run, so a renamed file can&#39;t go</span>
+<span class="syn-comment">## unchecked.</span>
+<span class="syn-name">chosen_files!</span> : <span class="syn-type">Str</span>, <span class="syn-type">Str</span> =&gt; <span class="syn-type">List</span>(<span class="syn-type">Str</span>)
+<span class="syn-name">chosen_files!</span> = |pattern, skip| {
+	found = <span class="syn-type">Shale</span>.glob!(pattern)
+	<span class="syn-keyword">if</span> skip == <span class="syn-string">&quot;&quot;</span> {
+		<span class="syn-keyword">return</span> found
+	}
+	skipped = skip.split_on(<span class="syn-string">&quot;,&quot;</span>)
+	<span class="syn-keyword">for</span> name <span class="syn-keyword">in</span> skipped {
+		<span class="syn-keyword">if</span> !(found.contains(name)) {
+			<span class="syn-type">Shale</span>.fail!(<span class="syn-string">&quot;check_and_fix_group_stacking: skip names </span>${name}<span class="syn-string">, which the glob doesn&#39;t find&quot;</span>)
+		}
+	}
+	found.drop_if(|path| skipped.contains(path))
+}
+
+<span class="syn-comment">## Whether `house=0` leaves the house style out (cookbook/roc/house.shale):</span>
+<span class="syn-comment">## here that is every finding.</span>
+<span class="syn-name">read_house_is_off!</span> : {} =&gt; <span class="syn-type">Bool</span>
+<span class="syn-name">read_house_is_off!</span> = |{}| {
+	house = <span class="syn-type">Shale</span>.arg!(<span class="syn-string">&quot;house&quot;</span>, <span class="syn-string">&quot;1&quot;</span>)
+	number = <span class="syn-keyword">match</span> <span class="syn-type">I64</span>.from_str(house) {
+		<span class="syn-type">Ok</span>(value) =&gt; value
+		<span class="syn-type">Err</span>(_) =&gt; {
+			<span class="syn-type">Shale</span>.fail!(<span class="syn-string">&quot;`arg`: house=</span>${house}<span class="syn-string"> is not an integer, and its default is one&quot;</span>)
+			<span class="syn-number">1</span>
+		}
+	}
+	<span class="syn-keyword">if</span> number != <span class="syn-number">0</span> <span class="syn-keyword">and</span> number != <span class="syn-number">1</span> {
+		<span class="syn-type">Shale</span>.fail!(<span class="syn-string">&quot;house must be 1 (the default) or 0, not </span>${number.to_str()}<span class="syn-string">&quot;</span>)
+	}
+	number == <span class="syn-number">0</span>
+}
+
+<span class="syn-comment">## A rewrite applies our house style, so `house=0` refuses one.</span>
+<span class="syn-name">refuse_house_rewrite!</span> : {} =&gt; {}
+<span class="syn-name">refuse_house_rewrite!</span> = |{}| {
+	<span class="syn-keyword">if</span> read_house_is_off!({}) {
+		<span class="syn-type">Shale</span>.fail!(<span class="syn-string">&quot;check_and_fix_group_stacking: write=1 applies our house style, so it refuses house=0&quot;</span>)
+	}
+}
+
+<span class="syn-comment">## The summary, each finding, then the summary again (cookbook/findings.shale):</span>
+<span class="syn-comment">## the first copy survives a cut output, and a gate reads the last line.</span>
+<span class="syn-name">print_findings!</span> : <span class="syn-type">Str</span>, <span class="syn-type">List</span>(<span class="syn-type">Str</span>) =&gt; {}
+<span class="syn-name">print_findings!</span> = |summary, finding_lines| {
+	<span class="syn-type">Shale</span>.print!(summary)
+	<span class="syn-keyword">if</span> !(finding_lines.is_empty()) {
+		<span class="syn-keyword">for</span> line <span class="syn-keyword">in</span> finding_lines {
+			<span class="syn-type">Shale</span>.print!(line)
+		}
+		<span class="syn-type">Shale</span>.print!(summary)
+	}
+}
+</code></pre>
+<p class="file"><a href="https://github.com/showell/shale/blob/e3c753adf065dc7856e5d49422daf99f9969f91a/cookbook/roc/check_and_fix_group_stacking/Report.roc"><code>cookbook/roc/check_and_fix_group_stacking/Report.roc</code></a>, 392 lines</p>
+<pre><code><span class="syn-comment">## Every finding in a run&#39;s files, in the files&#39; order and each file&#39;s line</span>
+<span class="syn-comment">## order, as the Shale original found them: a group on one line that should</span>
+<span class="syn-comment">## stack, a function type&#39;s bare arguments, a stacked group that should sit</span>
+<span class="syn-comment">## on one line, and a line wider than the width with nothing to stack, which</span>
+<span class="syn-comment">## is `wide string` when its strings&#39; text is what makes it wide (by Roc&#39;s</span>
+<span class="syn-comment">## parser) and `long` otherwise. The names a file&#39;s header dictates, and</span>
+<span class="syn-comment">## those the `dictated` table names, are no finding for their arguments.</span>
+<span class="syn-keyword">import</span> pf.<span class="syn-type">Shale</span>
+<span class="syn-keyword">import</span> lib.<span class="syn-type">Bytes</span>
+<span class="syn-keyword">import</span> <span class="syn-type">Annotations</span>
+<span class="syn-keyword">import</span> lib.<span class="syn-type">Finding</span>
+<span class="syn-keyword">import</span> lib.<span class="syn-type">Groups</span>
+<span class="syn-keyword">import</span> lib.<span class="syn-type">Headers</span>
+<span class="syn-keyword">import</span> lib.<span class="syn-type">Stacking</span>
+<span class="syn-keyword">import</span> lib.<span class="syn-type">Text</span>
+<span class="syn-keyword">import</span> lib.<span class="syn-type">Tree</span>
+
+<span class="syn-type">Report</span> := [].{
+
+	<span class="syn-comment">## What a run judges by: the stacking rule, and the path of the</span>
+	<span class="syn-comment">## `dictated` table (`&quot;&quot;` for none).</span>
+	<span class="syn-type">Settings</span> : { rule : <span class="syn-type">Stacking.Rule</span>, dictated : <span class="syn-type">Str</span> }
+
+	<span class="syn-comment">## A run&#39;s findings, and why each file roc-ast refused was refused.</span>
+	<span class="syn-type">Judged</span> : { found : <span class="syn-type">List</span>(<span class="syn-type">Finding</span>), refused : <span class="syn-type">List</span>(<span class="syn-type">Str</span>) }
+
+	<span class="syn-comment">## Every finding in the files.</span>
+	<span class="syn-name">findings_in!</span> : <span class="syn-type">List</span>(<span class="syn-type">Str</span>), <span class="syn-type">Report.Settings</span> =&gt; <span class="syn-type">Report.Judged</span>
+	<span class="syn-name">findings_in!</span> = |paths, settings| {
+		<span class="syn-keyword">var</span> $texts = <span class="syn-type">Dict</span>.empty()
+		<span class="syn-keyword">for</span> path <span class="syn-keyword">in</span> paths {
+			$texts = $texts.insert(path, <span class="syn-type">Report</span>.read_text!(path))
+		}
+		texts = $texts
+		strings = string_columns_in!(paths, { texts, width: settings.rule.width })
+		headed = dictated_names_in!(paths, texts)
+		dictated = with_dictated_table!(headed.names, { paths, table: settings.dictated })
+		<span class="syn-keyword">var</span> $found = []
+		<span class="syn-keyword">for</span> path <span class="syn-keyword">in</span> paths {
+			source_lines = (texts.get(path) ?? <span class="syn-string">&quot;&quot;</span>).split_on(<span class="syn-string">&quot;\n&quot;</span>)
+			file = {
+				path,
+				source_lines,
+				string_columns: strings.columns.get(path) ?? <span class="syn-type">Dict</span>.empty(),
+				dictated: dictated.get(path) ?? [],
+				rule: settings.rule,
+			}
+			<span class="syn-keyword">match</span> file_findings(file) {
+				<span class="syn-type">Ok</span>(found) =&gt; {
+					$found = $found.concat(found)
+				}
+				<span class="syn-type">Err</span>(<span class="syn-type">NoComma</span>(line)) =&gt; <span class="syn-type">Shale</span>.fail!(<span class="syn-string">&quot;groups: line </span>${line.to_str()}<span class="syn-string"> does not end in its group&#39;s trailing comma&quot;</span>)
+			}
+		}
+		<span class="syn-keyword">var</span> $refused = []
+		<span class="syn-keyword">for</span> refusal <span class="syn-keyword">in</span> strings.refused.concat(headed.refused) {
+			<span class="syn-keyword">if</span> !($refused.contains(refusal)) {
+				$refused = $refused.append(refusal)
+			}
+		}
+		{ found: $found, refused: $refused }
+	}
+
+	<span class="syn-comment">## Why roc-ast refused a file, beginning with its path</span>
+	<span class="syn-comment">## (cookbook/roc/parsed.shale&#39;s `parse_roc_files`).</span>
+	<span class="syn-name">refusal_of</span> : <span class="syn-type">Str</span>, <span class="syn-type">Str</span> -&gt; <span class="syn-type">Str</span>
+	<span class="syn-name">refusal_of</span> = |path, err|
+		<span class="syn-keyword">if</span> err.starts_with(path) {
+			err
+		} <span class="syn-keyword">else</span> {
+			<span class="syn-string">&quot;</span>${path}<span class="syn-string">: </span>${err}<span class="syn-string">&quot;</span>
+		}
+
+	<span class="syn-comment">## A file&#39;s text; a file gone since the glob stops the run.</span>
+	<span class="syn-name">read_text!</span> : <span class="syn-type">Str</span> =&gt; <span class="syn-type">Str</span>
+	<span class="syn-name">read_text!</span> = |path|
+		<span class="syn-keyword">match</span> <span class="syn-type">Shale</span>.read!(path) {
+			<span class="syn-type">Found</span>(text) =&gt; text
+			<span class="syn-type">Missing</span> =&gt; {
+				<span class="syn-type">Shale</span>.fail!(<span class="syn-string">&quot;check_and_fix_group_stacking: no file </span>${path}<span class="syn-string">&quot;</span>)
+				<span class="syn-string">&quot;&quot;</span>
+			}
+		}
+}
+
+<span class="syn-comment">## A file to judge: its path, its lines, the columns its strings&#39; text takes</span>
+<span class="syn-comment">## up by line number, the names whose arguments something else dictates, and</span>
+<span class="syn-comment">## the rule.</span>
+<span class="syn-type">FileToJudge</span> : {
+	path : <span class="syn-type">Str</span>,
+	source_lines : <span class="syn-type">List</span>(<span class="syn-type">Str</span>),
+	string_columns : <span class="syn-type">Dict</span>(<span class="syn-type">U64</span>, <span class="syn-type">U64</span>),
+	dictated : <span class="syn-type">List</span>(<span class="syn-type">Str</span>),
+	rule : <span class="syn-type">Stacking.Rule</span>,
+}
+
+<span class="syn-comment">## What a file&#39;s scan knows so far: the function whose annotation ended on</span>
+<span class="syn-comment">## the line before and was a finding for its arguments (`&quot;&quot;` for none),</span>
+<span class="syn-comment">## whose lambda&#39;s arguments are not reported again, and the last line of the</span>
+<span class="syn-comment">## annotation read last.</span>
+<span class="syn-type">Annotated</span> : { name : <span class="syn-type">Str</span>, end : <span class="syn-type">U64</span> }
+
+<span class="syn-comment">## The findings in one file, line by line, then the groups to unstack.</span>
+<span class="syn-name">file_findings</span> : <span class="syn-type">FileToJudge</span> -&gt; <span class="syn-type">Try</span>(<span class="syn-type">List</span>(<span class="syn-type">Finding</span>), [<span class="syn-type">NoComma</span>(<span class="syn-type">U64</span>)])
+<span class="syn-name">file_findings</span> = |file| {
+	rule = file.rule
+	reachable = <span class="syn-type">Stacking</span>.without_targets_section(file.source_lines)
+	<span class="syn-keyword">var</span> $found = []
+	<span class="syn-keyword">var</span> $annotated = { name: <span class="syn-string">&quot;&quot;</span>, end: <span class="syn-number">0</span> }
+	$number : <span class="syn-type">U64</span>
+	<span class="syn-keyword">var</span> $number = <span class="syn-number">0</span>
+	<span class="syn-keyword">for</span> text <span class="syn-keyword">in</span> file.source_lines {
+		$number = $number + <span class="syn-number">1</span>
+		number = $number
+		on_line = line_findings(
+			file,
+			{
+				number,
+				text,
+				reachable: reachable.get(number - <span class="syn-number">1</span>) ?? <span class="syn-string">&quot;&quot;</span>,
+				annotated: $annotated,
+			},
+		)
+		$annotated = on_line.annotated
+		$found = $found.concat(on_line.found)
+	}
+	<span class="syn-keyword">for</span> unstacked <span class="syn-keyword">in</span> <span class="syn-type">Stacking</span>.groups_to_unstack(file.source_lines, rule)? {
+		joined = <span class="syn-type">Stacking</span>.group_on_one_line(file.source_lines, unstacked.group) ?? <span class="syn-string">&quot;&quot;</span>
+		$found = $found.append({
+			path: file.path,
+			line: unstacked.group.line,
+			check: <span class="syn-string">&quot;unstack&quot;</span>,
+			what: <span class="syn-string">&quot;</span>${unstacked.group.tokens.to_str()}<span class="syn-string"> tokens in </span>${<span class="syn-type">Annotations</span>.shortened(<span class="syn-type">Text</span>.trim(joined))}<span class="syn-string">&quot;</span>,
+		})
+	}
+	<span class="syn-type">Ok</span>($found)
+}
+
+<span class="syn-comment">## A line to judge: its number, its text, its text with a `targets:` section</span>
+<span class="syn-comment">## blanked, and what the scan knew of the annotation before it.</span>
+<span class="syn-type">LineToJudge</span> : {
+	number : <span class="syn-type">U64</span>,
+	text : <span class="syn-type">Str</span>,
+	reachable : <span class="syn-type">Str</span>,
+	annotated : <span class="syn-type">Annotated</span>,
+}
+
+<span class="syn-comment">## The findings on one line, and what the scan knows after it.</span>
+<span class="syn-name">line_findings</span> : <span class="syn-type">FileToJudge</span>, <span class="syn-type">LineToJudge</span> -&gt; { found : <span class="syn-type">List</span>(<span class="syn-type">Finding</span>), annotated : <span class="syn-type">Annotated</span> }
+<span class="syn-name">line_findings</span> = |file, at| {
+	rule = file.rule
+	bytes = at.text.to_utf8()
+	place = { path: file.path, line: at.number }
+	before = at.annotated
+	follows_annotation = before.name != <span class="syn-string">&quot;&quot;</span> <span class="syn-keyword">and</span> at.number == before.end + <span class="syn-number">1</span>
+	<span class="syn-keyword">var</span> $skip_lambda = follows_annotation <span class="syn-keyword">and</span> <span class="syn-type">Text</span>.trim(at.text).starts_with(<span class="syn-string">&quot;</span>${before.name}<span class="syn-string"> = |&quot;</span>)
+	<span class="syn-keyword">var</span> $annotated = <span class="syn-keyword">if</span> at.number &gt; before.end {
+		{ ..before, name: <span class="syn-string">&quot;&quot;</span> }
+	} <span class="syn-keyword">else</span> {
+		before
+	}
+	data_line = <span class="syn-type">Stacking</span>.is_data_line(at.reachable, rule.width)
+	<span class="syn-keyword">var</span> $found = []
+	<span class="syn-keyword">for</span> group <span class="syn-keyword">in</span> <span class="syn-type">Groups</span>.groups_on_line(at.reachable).sort_with(by_opening) {
+		inner = <span class="syn-type">Str</span>.from_utf8_lossy(<span class="syn-type">Bytes</span>.span(bytes, group.open + <span class="syn-number">1</span>, group.close - <span class="syn-number">1</span>))
+		whole = <span class="syn-type">Str</span>.from_utf8_lossy(<span class="syn-type">Bytes</span>.span(bytes, group.open, group.close))
+		opening = <span class="syn-type">Bytes</span>.byte_at(bytes, group.open)
+		<span class="syn-keyword">if</span> opening == <span class="syn-string">&#39;{&#39;</span> {
+			<span class="syn-keyword">for</span> field <span class="syn-keyword">in</span> <span class="syn-type">Annotations</span>.record_field_functions(inner) {
+				<span class="syn-keyword">if</span> field.items &gt;= <span class="syn-number">3</span> <span class="syn-keyword">and</span> !(file.dictated.contains(field.name)) {
+					arguments = {
+						items: field.items,
+						shown: <span class="syn-type">Annotations</span>.shortened(field.text),
+						text: field.text,
+					}
+					$found = $found.append(<span class="syn-type">Annotations</span>.function_type_finding(place, arguments))
+				}
+			}
+		}
+		<span class="syn-keyword">if</span> group.items &gt;= <span class="syn-number">3</span> <span class="syn-keyword">and</span> group.fn_type {
+			text = <span class="syn-type">Text</span>.before_first(<span class="syn-type">Text</span>.before_first(inner, <span class="syn-string">&quot;-&gt;&quot;</span>), <span class="syn-string">&quot;=&gt;&quot;</span>)
+			arguments = {
+				items: group.items,
+				shown: <span class="syn-type">Annotations</span>.shortened(whole),
+				text,
+			}
+			$found = $found.append(<span class="syn-type">Annotations</span>.function_type_finding(place, arguments))
+		} <span class="syn-keyword">else</span> <span class="syn-keyword">if</span> $skip_lambda <span class="syn-keyword">and</span> opening == <span class="syn-string">&#39;|&#39;</span> {
+			$skip_lambda = <span class="syn-type">Bool.False</span>
+		} <span class="syn-keyword">else</span> <span class="syn-keyword">if</span> !(data_line) {
+			are_flags = group.items &gt;= <span class="syn-number">3</span> <span class="syn-keyword">and</span> !(group.trailing) <span class="syn-keyword">and</span> <span class="syn-type">Annotations</span>.are_all_flags(inner)
+			<span class="syn-keyword">if</span> are_flags <span class="syn-keyword">or</span> <span class="syn-type">Stacking</span>.should_stack({ line: at.text, group }, rule) {
+				advice = <span class="syn-keyword">if</span> are_flags {
+					<span class="syn-type">Annotations</span>.flag_advice
+				} <span class="syn-keyword">else</span> {
+					<span class="syn-string">&quot;&quot;</span>
+				}
+				what = <span class="syn-string">&quot;</span>${group.tokens.to_str()}<span class="syn-string"> tokens in </span>${<span class="syn-type">Annotations</span>.shortened(whole)}${advice}<span class="syn-string">&quot;</span>
+				$found = $found.append({
+					path: file.path,
+					line: at.number,
+					check: <span class="syn-string">&quot;stack&quot;</span>,
+					what,
+				})
+			}
+		}
+	}
+	<span class="syn-comment"># A line inside a wrapped annotation starts none.</span>
+	<span class="syn-keyword">if</span> at.number &gt; $annotated.end {
+		<span class="syn-keyword">match</span> <span class="syn-type">Annotations</span>.annotation_arguments(file.source_lines, at.number) {
+			<span class="syn-type">Ok</span>(annotation) =&gt; {
+				$annotated = { ..$annotated, end: annotation.last }
+				<span class="syn-keyword">if</span> annotation.items &gt;= <span class="syn-number">3</span> {
+					$annotated = { ..$annotated, name: annotation.name }
+					<span class="syn-keyword">if</span> !(file.dictated.contains(annotation.name)) {
+						arguments = {
+							items: annotation.items,
+							shown: annotation.shown,
+							text: annotation.text,
+						}
+						$found = $found.append(<span class="syn-type">Annotations</span>.function_type_finding(place, arguments))
+					}
+				}
+			}
+			<span class="syn-type">Err</span>(_) =&gt; {}
+		}
+	}
+	<span class="syn-keyword">if</span> $found.is_empty() <span class="syn-keyword">and</span> <span class="syn-type">Bytes</span>.width_of(bytes) &gt; rule.width {
+		$found = $found.append(wide_line_finding(file, at))
+	}
+	{ found: $found, annotated: $annotated }
+}
+
+<span class="syn-comment">## The finding for a line wider than the width with nothing else found on it.</span>
+<span class="syn-name">wide_line_finding</span> : <span class="syn-type">FileToJudge</span>, <span class="syn-type">LineToJudge</span> -&gt; <span class="syn-type">Finding</span>
+<span class="syn-name">wide_line_finding</span> = |file, at| {
+	rule = file.rule
+	width = <span class="syn-type">Bytes</span>.line_width(at.text)
+	strings = file.string_columns.get(at.number) ?? <span class="syn-number">0</span>
+	without_strings = width.to_i64_wrap() - strings.to_i64_wrap()
+	<span class="syn-keyword">if</span> without_strings &lt;= rule.width.to_i64_wrap() {
+		what = <span class="syn-string">&quot;</span>${width.to_str()}<span class="syn-string"> columns, </span>${without_strings.to_str()}<span class="syn-string"> without its strings&quot;</span>
+		{
+			path: file.path,
+			line: at.number,
+			check: <span class="syn-string">&quot;wide string&quot;</span>,
+			what,
+		}
+	} <span class="syn-keyword">else</span> {
+		why = <span class="syn-keyword">if</span> <span class="syn-type">Text</span>.trim(at.text).starts_with(<span class="syn-string">&quot;#&quot;</span>) {
+			<span class="syn-string">&quot;a comment&quot;</span>
+		} <span class="syn-keyword">else</span> <span class="syn-keyword">if</span> <span class="syn-type">Stacking</span>.group_to_stack(at.reachable, rule).is_ok() {
+			<span class="syn-string">&quot;a group to stack&quot;</span>
+		} <span class="syn-keyword">else</span> {
+			<span class="syn-string">&quot;nothing to stack&quot;</span>
+		}
+		{
+			path: file.path,
+			line: at.number,
+			check: <span class="syn-string">&quot;long&quot;</span>,
+			what: <span class="syn-string">&quot;</span>${width.to_str()}<span class="syn-string"> columns, </span>${why}<span class="syn-string">&quot;</span>,
+		}
+	}
+}
+
+<span class="syn-comment">## The columns that strings&#39; text takes up in the files, by Roc&#39;s parser,</span>
+<span class="syn-comment">## by path and line number, and why each file roc-ast refused was refused.</span>
+<span class="syn-comment">## Only a file with a line wider than the width is parsed, so a tree of short</span>
+<span class="syn-comment">## lines never needs roc-ast.</span>
+<span class="syn-name">string_columns_in!</span> : <span class="syn-type">List</span>(<span class="syn-type">Str</span>),
+{ texts : <span class="syn-type">Dict</span>(<span class="syn-type">Str</span>, <span class="syn-type">Str</span>), width : <span class="syn-type">U64</span> } =&gt; {
+	<span class="syn-name">columns</span> : <span class="syn-type">Dict</span>(<span class="syn-type">Str</span>, <span class="syn-type">Dict</span>(<span class="syn-type">U64</span>, <span class="syn-type">U64</span>)),
+	<span class="syn-name">refused</span> : <span class="syn-type">List</span>(<span class="syn-type">Str</span>),
+}
+<span class="syn-name">string_columns_in!</span> = |paths, given| {
+	wide_paths = paths.keep_if(
+		|path| {
+			text = given.texts.get(path) ?? <span class="syn-string">&quot;&quot;</span>
+			<span class="syn-type">Text</span>.lines(text).any(|line| <span class="syn-type">Bytes</span>.line_width(line) &gt; given.width)
+		},
+	)
+	<span class="syn-keyword">var</span> $columns = <span class="syn-type">Dict</span>.empty()
+	<span class="syn-keyword">var</span> $refused = []
+	<span class="syn-keyword">if</span> !(wide_paths.is_empty()) {
+		<span class="syn-keyword">for</span> file <span class="syn-keyword">in</span> <span class="syn-type">Shale</span>.roc_tree!(wide_paths) {
+			<span class="syn-keyword">if</span> file.err == <span class="syn-string">&quot;&quot;</span> {
+				source_lines = (given.texts.get(file.path) ?? <span class="syn-string">&quot;&quot;</span>).split_on(<span class="syn-string">&quot;\n&quot;</span>)
+				<span class="syn-keyword">match</span> <span class="syn-type">Stacking</span>.string_columns_on_lines(file.nodes, source_lines) {
+					<span class="syn-type">Ok</span>(by_line) =&gt; {
+						$columns = $columns.insert(file.path, by_line)
+					}
+					<span class="syn-type">Err</span>(<span class="syn-type">CrossesLine</span>(line)) =&gt; <span class="syn-type">Shale</span>.fail!(<span class="syn-string">&quot;check_and_fix_group_stacking: </span>${file.path}<span class="syn-string">: line </span>${line.to_str()}<span class="syn-string">: a run of string text crosses a line&quot;</span>)
+				}
+			} <span class="syn-keyword">else</span> {
+				$refused = $refused.append(<span class="syn-type">Report</span>.refusal_of(file.path, file.err))
+			}
+		}
+	}
+	{ columns: $columns, refused: $refused }
+}
+
+<span class="syn-comment">## The names the headers of the files dictate, by path, and why each file</span>
+<span class="syn-comment">## roc-ast refused was refused. Only an app&#39;s or a platform&#39;s file is parsed,</span>
+<span class="syn-comment">## so a tree of modules needs no roc-ast for this.</span>
+<span class="syn-name">dictated_names_in!</span> : <span class="syn-type">List</span>(<span class="syn-type">Str</span>),
+<span class="syn-type">Dict</span>(<span class="syn-type">Str</span>, <span class="syn-type">Str</span>) =&gt; {
+	<span class="syn-name">names</span> : <span class="syn-type">Dict</span>(<span class="syn-type">Str</span>, <span class="syn-type">List</span>(<span class="syn-type">Str</span>)),
+	<span class="syn-name">refused</span> : <span class="syn-type">List</span>(<span class="syn-type">Str</span>),
+}
+<span class="syn-name">dictated_names_in!</span> = |paths, texts| {
+	headed = paths.keep_if(
+		|path| {
+			word = <span class="syn-type">Headers</span>.header_word(texts.get(path) ?? <span class="syn-string">&quot;&quot;</span>)
+			word == <span class="syn-string">&quot;app&quot;</span> <span class="syn-keyword">or</span> word == <span class="syn-string">&quot;platform&quot;</span>
+		},
+	)
+	<span class="syn-keyword">var</span> $names = <span class="syn-type">Dict</span>.empty()
+	<span class="syn-keyword">var</span> $refused = []
+	<span class="syn-keyword">if</span> !(headed.is_empty()) {
+		<span class="syn-keyword">for</span> file <span class="syn-keyword">in</span> <span class="syn-type">Shale</span>.roc_tree!(headed) {
+			<span class="syn-keyword">if</span> file.err == <span class="syn-string">&quot;&quot;</span> {
+				<span class="syn-name">nodes</span> : <span class="syn-type">List</span>(<span class="syn-type">Tree.Node</span>)
+				nodes = file.nodes
+				$names = $names.insert(file.path, <span class="syn-type">Headers</span>.header_names(nodes).dictated)
+			} <span class="syn-keyword">else</span> {
+				$refused = $refused.append(<span class="syn-type">Report</span>.refusal_of(file.path, file.err))
+			}
+		}
+	}
+	{ names: $names, refused: $refused }
+}
+
+<span class="syn-comment">## The names the `dictated` table adds. Each line of the table is a file&#39;s</span>
+<span class="syn-comment">## path, a function&#39;s name, and after ` -- ` who dictates its arguments. The</span>
+<span class="syn-comment">## path names the file the glob finds with that path or ending `/` and that</span>
+<span class="syn-comment">## path, so the self-test&#39;s copies in scratch are found too. A line whose</span>
+<span class="syn-comment">## file the glob doesn&#39;t find, whose function has no annotation there, or</span>
+<span class="syn-comment">## that gives no reason stops the run, so the table can&#39;t go stale.</span>
+<span class="syn-name">with_dictated_table!</span> : <span class="syn-type">Dict</span>(<span class="syn-type">Str</span>, <span class="syn-type">List</span>(<span class="syn-type">Str</span>)),
+{
+	paths : <span class="syn-type">List</span>(<span class="syn-type">Str</span>),
+	table : <span class="syn-type">Str</span>,
+} =&gt; <span class="syn-type">Dict</span>(<span class="syn-type">Str</span>, <span class="syn-type">List</span>(<span class="syn-type">Str</span>))
+<span class="syn-name">with_dictated_table!</span> = |names, given| {
+	<span class="syn-keyword">if</span> given.table == <span class="syn-string">&quot;&quot;</span> {
+		<span class="syn-keyword">return</span> names
+	}
+	<span class="syn-keyword">var</span> $names = names
+	<span class="syn-keyword">for</span> line <span class="syn-keyword">in</span> <span class="syn-type">Text</span>.lines(<span class="syn-type">Report</span>.read_text!(given.table)) {
+		trimmed = <span class="syn-type">Text</span>.trim(line)
+		<span class="syn-keyword">if</span> trimmed != <span class="syn-string">&quot;&quot;</span> <span class="syn-keyword">and</span> !(trimmed.starts_with(<span class="syn-string">&quot;#&quot;</span>)) {
+			groups = <span class="syn-keyword">match</span> <span class="syn-type">Shale</span>.re_find!(line, <span class="syn-string">&quot;^(\\S+) ([a-z_][A-Za-z0-9_]*!?) -- \\S&quot;</span>) {
+				<span class="syn-type">Found</span>(found) =&gt; found.groups
+				<span class="syn-type">NoMatch</span> =&gt; []
+			}
+			(wanted_path, name) = <span class="syn-keyword">match</span> groups {
+				[path_given, name_given, ..] =&gt; (path_given, name_given)
+				_ =&gt; {
+					<span class="syn-type">Shale</span>.fail!(<span class="syn-string">&quot;check_and_fix_group_stacking: </span>${given.table}<span class="syn-string"> has a line that is not `path name -- reason`: </span>${line}<span class="syn-string">&quot;</span>)
+					(<span class="syn-string">&quot;&quot;</span>, <span class="syn-string">&quot;&quot;</span>)
+				}
+			}
+			is_named = |path| path == wanted_path <span class="syn-keyword">or</span> path.ends_with(<span class="syn-string">&quot;/</span>${wanted_path}<span class="syn-string">&quot;</span>)
+			found = given.paths.keep_if(is_named).last()
+			<span class="syn-keyword">match</span> found {
+				<span class="syn-type">Err</span>(_) =&gt; <span class="syn-type">Shale</span>.fail!(<span class="syn-string">&quot;check_and_fix_group_stacking: </span>${given.table}<span class="syn-string"> names </span>${wanted_path}<span class="syn-string">, which the glob doesn&#39;t find&quot;</span>)
+				<span class="syn-type">Ok</span>(path) =&gt; {
+					opening = <span class="syn-string">&quot;</span>${name}<span class="syn-string"> :&quot;</span>
+					path_lines = <span class="syn-type">Text</span>.lines(<span class="syn-type">Report</span>.read_text!(path))
+					annotated = path_lines.any(|text| <span class="syn-type">Text</span>.trim(text).starts_with(opening))
+					<span class="syn-keyword">if</span> !(annotated) {
+						<span class="syn-type">Shale</span>.fail!(<span class="syn-string">&quot;check_and_fix_group_stacking: </span>${given.table}<span class="syn-string"> names </span>${name}<span class="syn-string">, which has no annotation in </span>${path}<span class="syn-string">&quot;</span>)
+					}
+					here = $names.get(path) ?? []
+					$names = $names.insert(path, here.append(name))
+				}
+			}
+		}
+	}
+	$names
+}
+
+<span class="syn-comment">## Two groups of a line in the order of their opening brackets.</span>
+<span class="syn-name">by_opening</span> : <span class="syn-type">Groups.Group</span>, <span class="syn-type">Groups.Group</span> -&gt; [<span class="syn-type">Before</span>, <span class="syn-type">Same</span>, <span class="syn-type">After</span>]
+<span class="syn-name">by_opening</span> = |first, second|
+	<span class="syn-keyword">if</span> first.open &lt; second.open {
+		<span class="syn-type">Before</span>
+	} <span class="syn-keyword">else</span> <span class="syn-keyword">if</span> first.open &gt; second.open {
+		<span class="syn-type">After</span>
+	} <span class="syn-keyword">else</span> {
+		<span class="syn-type">Same</span>
+	}
+</code></pre>
+<p class="file"><a href="https://github.com/showell/shale/blob/e3c753adf065dc7856e5d49422daf99f9969f91a/cookbook/roc/check_and_fix_group_stacking/Rewrite.roc"><code>cookbook/roc/check_and_fix_group_stacking/Rewrite.roc</code></a>, 162 lines</p>
+<pre><code><span class="syn-comment">## `write=1`: the files rewritten pass after pass until a pass changes</span>
+<span class="syn-comment">## nothing. A pass takes the trailing comma from each group that should</span>
+<span class="syn-comment">## unstack and gives one to each line&#39;s group that should stack, and `roc</span>
+<span class="syn-comment">## fmt` lays out the result: it stacks a group with a trailing comma and</span>
+<span class="syn-comment">## joins a group without one. The Roc is the tree&#39;s own</span>
+<span class="syn-comment">## (cookbook/roc/pinned.shale), run by its OS path.</span>
+<span class="syn-keyword">import</span> pf.<span class="syn-type">Shale</span>
+<span class="syn-keyword">import</span> <span class="syn-type">Report</span>
+<span class="syn-keyword">import</span> lib.<span class="syn-type">Stacking</span>
+<span class="syn-keyword">import</span> lib.<span class="syn-type">Text</span>
+
+<span class="syn-type">Rewrite</span> := [].{
+
+	<span class="syn-comment">## Rewrites the files until a pass changes nothing, printing each pass,</span>
+	<span class="syn-comment">## and answers how many groups the first pass changed. Twelve passes</span>
+	<span class="syn-comment">## that still change something stop the run.</span>
+	<span class="syn-name">trailing_commas!</span> : <span class="syn-type">List</span>(<span class="syn-type">Str</span>), { rule : <span class="syn-type">Stacking.Rule</span>, roc : <span class="syn-type">Str</span> } =&gt; <span class="syn-type">U64</span>
+	<span class="syn-name">trailing_commas!</span> = |paths, given| {
+		$first_pass_count : <span class="syn-type">U64</span>
+		<span class="syn-keyword">var</span> $first_pass_count = <span class="syn-number">0</span>
+		$pass : <span class="syn-type">U64</span>
+		<span class="syn-keyword">var</span> $pass = <span class="syn-number">1</span>
+		$changed : <span class="syn-type">U64</span>
+		<span class="syn-keyword">var</span> $changed = <span class="syn-number">1</span>
+		<span class="syn-keyword">var</span> $touched = []
+		<span class="syn-keyword">while</span> $changed &gt; <span class="syn-number">0</span> <span class="syn-keyword">and</span> $pass &lt;= max_passes {
+			$changed = <span class="syn-number">0</span>
+			$touched = []
+			<span class="syn-keyword">for</span> path <span class="syn-keyword">in</span> paths {
+				n = rewrite_file!(path, given.rule)
+				<span class="syn-keyword">if</span> n &gt; <span class="syn-number">0</span> {
+					$touched = $touched.append(path)
+					$changed = $changed + n
+				}
+			}
+			<span class="syn-type">Shale</span>.print!(<span class="syn-string">&quot;pass </span>${$pass.to_str()}<span class="syn-string">: </span>${$changed.to_str()}<span class="syn-string"> groups rewritten, in </span>${$touched.len().to_str()}<span class="syn-string"> files&quot;</span>)
+			<span class="syn-keyword">if</span> $pass == <span class="syn-number">1</span> {
+				$first_pass_count = $changed
+			}
+			<span class="syn-keyword">if</span> !($touched.is_empty()) {
+				result = <span class="syn-type">Rewrite</span>.format!($touched, given.roc)
+				<span class="syn-keyword">if</span> result.code != <span class="syn-number">0</span> {
+					<span class="syn-type">Shale</span>.print!(result.out)
+					<span class="syn-type">Shale</span>.fail!(<span class="syn-string">&quot;roc fmt failed&quot;</span>)
+				}
+			}
+			$pass = $pass + <span class="syn-number">1</span>
+		}
+		<span class="syn-keyword">if</span> $changed &gt; <span class="syn-number">0</span> {
+			<span class="syn-type">Shale</span>.fail!(
+				<span class="syn-string">&quot;check_and_fix_group_stacking: still changing after </span>${max_passes.to_str()}<span class="syn-string"> passes: </span>${<span class="syn-type">Str</span>.join_with($touched, <span class="syn-string">&quot;, &quot;</span>)}<span class="syn-string">&quot;</span>,
+			)
+		}
+		$first_pass_count
+	}
+
+	<span class="syn-comment">## `roc fmt` run on the files; its code is not 0 when a file does not</span>
+	<span class="syn-comment">## parse.</span>
+	<span class="syn-name">format!</span> : <span class="syn-type">List</span>(<span class="syn-type">Str</span>), <span class="syn-type">Str</span> =&gt; { code : <span class="syn-type">I64</span>, out : <span class="syn-type">Str</span> }
+	<span class="syn-name">format!</span> = |paths, roc| {
+		<span class="syn-keyword">var</span> $argv = [roc, <span class="syn-string">&quot;fmt&quot;</span>]
+		<span class="syn-keyword">for</span> path <span class="syn-keyword">in</span> paths {
+			$argv = $argv.append(<span class="syn-type">Shale</span>.real!(path))
+		}
+		<span class="syn-type">Shale</span>.run!({
+			argv: $argv,
+			keep: <span class="syn-type">Tail</span>(<span class="syn-number">20</span>),
+			timeout_ms: <span class="syn-number">120000</span>,
+			want: <span class="syn-string">&quot;&quot;</span>,
+		})
+	}
+
+	<span class="syn-comment">## The OS path of the Roc to rewrite with: in a self-test the pin every</span>
+	<span class="syn-comment">## recipe&#39;s self-test runs (pinned.shale&#39;s `SELF_TEST_PIN`, read there),</span>
+	<span class="syn-comment">## else the one the `roc-version` where the run starts names.</span>
+	<span class="syn-name">roc_bin!</span> : <span class="syn-type">Bool</span> =&gt; <span class="syn-type">Str</span>
+	<span class="syn-name">roc_bin!</span> = |self_test| {
+		pin = <span class="syn-keyword">if</span> self_test {
+			self_test_pin!({})
+		} <span class="syn-keyword">else</span> {
+			<span class="syn-keyword">if</span> !(<span class="syn-type">Shale</span>.exists!(<span class="syn-string">&quot;roc-version&quot;</span>)) {
+				<span class="syn-type">Shale</span>.fail!(<span class="syn-string">&quot;check_and_fix_group_stacking: no roc-version where the run starts: run it from the repository&#39;s root, whose roc-version pins its Roc&quot;</span>)
+			}
+			<span class="syn-type">Text</span>.trim(<span class="syn-type">Report</span>.read_text!(<span class="syn-string">&quot;roc-version&quot;</span>))
+		}
+		roc = <span class="syn-string">&quot;tools:roc-</span>${pin}<span class="syn-string">/roc&quot;</span>
+		<span class="syn-keyword">if</span> !(<span class="syn-type">Shale</span>.exists!(roc)) {
+			<span class="syn-type">Shale</span>.fail!(<span class="syn-string">&quot;check_and_fix_group_stacking: no </span>${roc}<span class="syn-string">: install Roc </span>${pin}<span class="syn-string"> into ~/tools/roc-</span>${pin}<span class="syn-string">/ (roc-apps&#39;s toolchain release carries it)&quot;</span>)
+		}
+		real = <span class="syn-type">Shale</span>.real!(roc)
+		said = <span class="syn-type">Shale</span>.run!({ argv: [real, <span class="syn-string">&quot;version&quot;</span>], keep: <span class="syn-type">Whole</span>(<span class="syn-number">4000</span>), timeout_ms: <span class="syn-number">30000</span>, want: <span class="syn-string">&quot;&quot;</span> })
+		<span class="syn-keyword">if</span> <span class="syn-type">Text</span>.trim(said.out) != <span class="syn-string">&quot;Roc compiler version </span>${pin}<span class="syn-string">&quot;</span> {
+			<span class="syn-type">Shale</span>.fail!(<span class="syn-string">&quot;check_and_fix_group_stacking: </span>${roc}<span class="syn-string"> says </span>${<span class="syn-type">Text</span>.trim(said.out)}<span class="syn-string">, not Roc compiler version </span>${pin}<span class="syn-string">&quot;</span>)
+		}
+		real
+	}
+}
+
+<span class="syn-comment">## The most passes a rewrite makes.</span>
+<span class="syn-name">max_passes</span> : <span class="syn-type">U64</span>
+<span class="syn-name">max_passes</span> = <span class="syn-number">12</span>
+
+<span class="syn-comment">## One pass over one file: the groups that should unstack lose their trailing</span>
+<span class="syn-comment">## commas, then each line&#39;s group that should stack gets one; the file is</span>
+<span class="syn-comment">## written when any changed, and the answer is how many did.</span>
+<span class="syn-name">rewrite_file!</span> : <span class="syn-type">Str</span>, <span class="syn-type">Stacking.Rule</span> =&gt; <span class="syn-type">U64</span>
+<span class="syn-name">rewrite_file!</span> = |path, rule| {
+	source_lines = <span class="syn-type">Report</span>.read_text!(path).split_on(<span class="syn-string">&quot;\n&quot;</span>)
+	unstacked = <span class="syn-keyword">match</span> <span class="syn-type">Stacking</span>.groups_to_unstack(source_lines, rule) {
+		<span class="syn-type">Ok</span>(found) =&gt; found
+		<span class="syn-type">Err</span>(<span class="syn-type">NoComma</span>(line)) =&gt; {
+			<span class="syn-type">Shale</span>.fail!(<span class="syn-string">&quot;groups: line </span>${line.to_str()}<span class="syn-string"> does not end in its group&#39;s trailing comma&quot;</span>)
+			[]
+		}
+	}
+	unstacked_lines = <span class="syn-type">Stacking</span>.without_trailing_commas(source_lines, unstacked)
+	reachable = <span class="syn-type">Stacking</span>.without_targets_section(unstacked_lines)
+	<span class="syn-keyword">var</span> $lines = unstacked_lines
+	$n : <span class="syn-type">U64</span>
+	<span class="syn-keyword">var</span> $n = unstacked.len()
+	$index : <span class="syn-type">U64</span>
+	<span class="syn-keyword">var</span> $index = <span class="syn-number">0</span>
+	<span class="syn-keyword">for</span> text <span class="syn-keyword">in</span> unstacked_lines {
+		<span class="syn-keyword">if</span> !(<span class="syn-type">Text</span>.trim(text).starts_with(<span class="syn-string">&quot;#&quot;</span>)) {
+			<span class="syn-keyword">match</span> <span class="syn-type">Stacking</span>.group_to_stack(reachable.get($index) ?? <span class="syn-string">&quot;&quot;</span>, rule) {
+				<span class="syn-type">Ok</span>(group) =&gt; {
+					$lines = $lines.set(
+						$index,
+						<span class="syn-type">Stacking</span>.with_trailing_comma({ line: text, group }),
+					) ?? <span class="syn-keyword">crash</span> <span class="syn-string">&quot;check_and_fix_group_stacking: a line past the file&#39;s end&quot;</span>
+					$n = $n + <span class="syn-number">1</span>
+				}
+				<span class="syn-type">Err</span>(_) =&gt; {}
+			}
+		}
+		$index = $index + <span class="syn-number">1</span>
+	}
+	<span class="syn-keyword">if</span> $n &gt; <span class="syn-number">0</span> {
+		<span class="syn-type">Shale</span>.write!(path, <span class="syn-type">Str</span>.join_with($lines, <span class="syn-string">&quot;\n&quot;</span>))
+	}
+	$n
+}
+
+<span class="syn-comment">## pinned.shale&#39;s `SELF_TEST_PIN`, the one home of the self-tests&#39; Roc.</span>
+<span class="syn-name">self_test_pin!</span> : {} =&gt; <span class="syn-type">Str</span>
+<span class="syn-name">self_test_pin!</span> = |{}| {
+	pinned = <span class="syn-string">&quot;cookbook:roc/pinned.shale&quot;</span>
+	groups = <span class="syn-keyword">match</span> <span class="syn-type">Shale</span>.re_find!(
+		<span class="syn-type">Report</span>.read_text!(pinned),
+		<span class="syn-string">&quot;\nconst SELF_TEST_PIN = \&quot;([^\&quot;]+)\&quot;&quot;</span>,
+	) {
+		<span class="syn-type">Found</span>(found) =&gt; found.groups
+		<span class="syn-type">NoMatch</span> =&gt; []
+	}
+	<span class="syn-keyword">match</span> groups {
+		[pin, ..] =&gt; pin
+		[] =&gt; {
+			<span class="syn-type">Shale</span>.fail!(<span class="syn-string">&quot;check_and_fix_group_stacking: no SELF_TEST_PIN in </span>${pinned}<span class="syn-string">&quot;</span>)
+			<span class="syn-string">&quot;&quot;</span>
+		}
+	}
+}
+</code></pre>
+<p class="file"><a href="https://github.com/showell/shale/blob/e3c753adf065dc7856e5d49422daf99f9969f91a/cookbook/roc/check_and_fix_group_stacking/SelfTest.roc"><code>cookbook/roc/check_and_fix_group_stacking/SelfTest.roc</code></a>, 193 lines</p>
+<pre><code><span class="syn-comment">## The recipe&#39;s self-test, the Shale original&#39;s: each plant in</span>
+<span class="syn-comment">## cookbook/roc/plants/check_and_fix_group_stacking/ must give a finding of the kind its</span>
+<span class="syn-comment">## name starts with (`long`, `wide`, `unstack`, or else `stack`), a `long`</span>
+<span class="syn-comment">## plant no `wide string` and a `wide` plant no `long`, and a `clean*.roc`</span>
+<span class="syn-comment">## plant none. A plant line ending `# findings N` must give exactly N</span>
+<span class="syn-comment">## findings, and with `advice W` after it each of them must contain the word</span>
+<span class="syn-comment">## W. Then the plants are copied to `scratch:stack/` and rewritten there with</span>
+<span class="syn-comment">## the self-tests&#39; Roc: the rewrite must end, a second rewrite must change</span>
+<span class="syn-comment">## nothing, every file must still parse, and a plant with a `.want` file must</span>
+<span class="syn-comment">## come out as it.</span>
+<span class="syn-keyword">import</span> pf.<span class="syn-type">Shale</span>
+<span class="syn-keyword">import</span> <span class="syn-type">Report</span>
+<span class="syn-keyword">import</span> <span class="syn-type">Rewrite</span>
+<span class="syn-keyword">import</span> lib.<span class="syn-type">Text</span>
+
+<span class="syn-type">SelfTest</span> := [].{
+
+	<span class="syn-comment">## The plants, whose `*.roc` a self-test checks.</span>
+	<span class="syn-name">plants</span> : <span class="syn-type">Str</span>
+	<span class="syn-name">plants</span> = <span class="syn-string">&quot;cookbook:roc/plants/check_and_fix_group_stacking&quot;</span>
+
+	<span class="syn-comment">## The self-test of the plants, judged by `settings`.</span>
+	<span class="syn-name">run!</span> : <span class="syn-type">List</span>(<span class="syn-type">Str</span>), <span class="syn-type">Report.Settings</span> =&gt; {}
+	<span class="syn-name">run!</span> = |paths, settings| {
+		judged = <span class="syn-type">Report</span>.findings_in!(paths, settings)
+		fail_if_refused!(judged.refused)
+		marks_wrong = check_marks!(paths, judged)
+		kinds_wrong = check_kinds!(paths, judged)
+		wrong = marks_wrong + kinds_wrong
+		<span class="syn-keyword">if</span> wrong &gt; <span class="syn-number">0</span> {
+			<span class="syn-type">Shale</span>.fail!(<span class="syn-string">&quot;</span>${wrong.to_str()}<span class="syn-string"> plants wrong&quot;</span>)
+		}
+		<span class="syn-keyword">if</span> <span class="syn-type">Shale</span>.exists!(scratch) {
+			<span class="syn-type">Shale</span>.remove_tree!(scratch)
+		}
+		<span class="syn-type">Shale</span>.mkdir!(scratch)
+		copies = paths.map(copy_of)
+		<span class="syn-keyword">for</span> path <span class="syn-keyword">in</span> paths {
+			<span class="syn-type">Shale</span>.write!(copy_of(path), <span class="syn-type">Report</span>.read_text!(path))
+		}
+		roc = <span class="syn-type">Rewrite</span>.roc_bin!(<span class="syn-type">Bool.True</span>)
+		given = { rule: settings.rule, roc }
+		_first = <span class="syn-type">Rewrite</span>.trailing_commas!(copies, given)
+		again = <span class="syn-type">Rewrite</span>.trailing_commas!(copies, given)
+		<span class="syn-keyword">if</span> again &gt; <span class="syn-number">0</span> {
+			<span class="syn-type">Shale</span>.fail!(<span class="syn-string">&quot;check_and_fix_group_stacking: a second rewrite changed </span>${again.to_str()}<span class="syn-string"> more groups&quot;</span>)
+		}
+		formatted = <span class="syn-type">Rewrite</span>.format!(copies, roc)
+		<span class="syn-keyword">if</span> formatted.code != <span class="syn-number">0</span> {
+			<span class="syn-type">Shale</span>.print!(formatted.out)
+			<span class="syn-type">Shale</span>.fail!(<span class="syn-string">&quot;check_and_fix_group_stacking: a rewritten plant no longer parses&quot;</span>)
+		}
+		$came_out_wrong : <span class="syn-type">U64</span>
+		<span class="syn-keyword">var</span> $came_out_wrong = <span class="syn-number">0</span>.<span class="syn-type">U64</span>
+		<span class="syn-keyword">for</span> want <span class="syn-keyword">in</span> <span class="syn-type">Shale</span>.glob!(<span class="syn-string">&quot;</span>${plants}<span class="syn-string">/*.want&quot;</span>) {
+			name = <span class="syn-type">Text</span>.basename(want).drop_suffix(<span class="syn-string">&quot;.want&quot;</span>)
+			ok = <span class="syn-type">Report</span>.read_text!(<span class="syn-string">&quot;</span>${scratch}<span class="syn-string">/</span>${name}<span class="syn-string">.roc&quot;</span>) == <span class="syn-type">Report</span>.read_text!(want)
+			<span class="syn-type">Shale</span>.print!(<span class="syn-string">&quot;</span>${verdict(ok)}${name}<span class="syn-string">.roc: comes out as its .want&quot;</span>)
+			<span class="syn-keyword">if</span> !(ok) {
+				$came_out_wrong = $came_out_wrong + <span class="syn-number">1</span>
+			}
+		}
+		<span class="syn-keyword">if</span> $came_out_wrong &gt; <span class="syn-number">0</span> {
+			<span class="syn-type">Shale</span>.fail!(<span class="syn-string">&quot;</span>${$came_out_wrong.to_str()}<span class="syn-string"> plants came out wrong&quot;</span>)
+		}
+		<span class="syn-type">Shale</span>.print!(<span class="syn-string">&quot;PASS: every plant gives its finding, the clean ones none; the rewrite ends, a second changes nothing, every plant parses and comes out as its .want&quot;</span>)
+	}
+
+	<span class="syn-comment">## The files Roc&#39;s parser refused, named, then a stop</span>
+	<span class="syn-comment">## (cookbook/roc/parsed.shale&#39;s `fail_if_refused`); nothing when it</span>
+	<span class="syn-comment">## refused none.</span>
+	<span class="syn-name">fail_if_refused!</span> : <span class="syn-type">List</span>(<span class="syn-type">Str</span>) =&gt; {}
+	<span class="syn-name">fail_if_refused!</span> = |refused| {
+		<span class="syn-keyword">if</span> !(refused.is_empty()) {
+			<span class="syn-keyword">for</span> refusal <span class="syn-keyword">in</span> refused {
+				<span class="syn-type">Shale</span>.print!(<span class="syn-string">&quot;refused: </span>${refusal}<span class="syn-string">&quot;</span>)
+			}
+			refusals = <span class="syn-string">&quot;roc-ast refused </span>${refused.len().to_str()}<span class="syn-string"> files (named above)&quot;</span>
+			why = <span class="syn-string">&quot;which have no tree to judge; every other file was judged&quot;</span>
+			<span class="syn-type">Shale</span>.fail!(<span class="syn-string">&quot;check_and_fix_group_stacking: </span>${refusals}<span class="syn-string">, </span>${why}<span class="syn-string">&quot;</span>)
+		}
+	}
+}
+
+<span class="syn-comment">## Where the self-test rewrites its copies of the plants.</span>
+<span class="syn-name">scratch</span> : <span class="syn-type">Str</span>
+<span class="syn-name">scratch</span> = <span class="syn-string">&quot;scratch:stack&quot;</span>
+
+<span class="syn-comment">## A plant&#39;s name, its path after the plants&#39; folder.</span>
+<span class="syn-name">name_of</span> : <span class="syn-type">Str</span> -&gt; <span class="syn-type">Str</span>
+<span class="syn-name">name_of</span> = |path| path.drop_prefix(<span class="syn-string">&quot;</span>${<span class="syn-type">SelfTest</span>.plants}<span class="syn-string">/&quot;</span>)
+
+<span class="syn-comment">## A plant&#39;s copy in `scratch`.</span>
+<span class="syn-name">copy_of</span> : <span class="syn-type">Str</span> -&gt; <span class="syn-type">Str</span>
+<span class="syn-name">copy_of</span> = |path| <span class="syn-string">&quot;</span>${scratch}<span class="syn-string">/</span>${name_of(path)}<span class="syn-string">&quot;</span>
+
+<span class="syn-comment">## The start of a verdict&#39;s line.</span>
+<span class="syn-name">verdict</span> : <span class="syn-type">Bool</span> -&gt; <span class="syn-type">Str</span>
+<span class="syn-name">verdict</span> = |ok|
+	<span class="syn-keyword">if</span> ok {
+		<span class="syn-string">&quot;ok   &quot;</span>
+	} <span class="syn-keyword">else</span> {
+		<span class="syn-string">&quot;FAIL &quot;</span>
+	}
+
+<span class="syn-comment">## Each line marked `# findings N` (with `advice W`) held to the findings on</span>
+<span class="syn-comment">## it, a line printed for each: the answer is how many were wrong.</span>
+<span class="syn-name">check_marks!</span> : <span class="syn-type">List</span>(<span class="syn-type">Str</span>), <span class="syn-type">Report.Judged</span> =&gt; <span class="syn-type">U64</span>
+<span class="syn-name">check_marks!</span> = |paths, judged| {
+	$bad : <span class="syn-type">U64</span>
+	<span class="syn-keyword">var</span> $bad = <span class="syn-number">0</span>
+	<span class="syn-keyword">for</span> path <span class="syn-keyword">in</span> paths {
+		$number : <span class="syn-type">U64</span>
+		<span class="syn-keyword">var</span> $number = <span class="syn-number">0</span>
+		<span class="syn-keyword">for</span> line <span class="syn-keyword">in</span> <span class="syn-type">Text</span>.lines(<span class="syn-type">Report</span>.read_text!(path)) {
+			$number = $number + <span class="syn-number">1</span>
+			number = $number
+			<span class="syn-keyword">match</span> <span class="syn-type">Shale</span>.re_find!(line, <span class="syn-string">&quot;# findings ([0-9]+)(?: advice ([a-z]+))?$&quot;</span>) {
+				<span class="syn-type">Found</span>(mark) =&gt; {
+					(count_text, word) = <span class="syn-keyword">match</span> mark.groups {
+						[count_given, word_given, ..] =&gt; (count_given, word_given)
+						[count_given] =&gt; (count_given, <span class="syn-string">&quot;&quot;</span>)
+						[] =&gt; (<span class="syn-string">&quot;&quot;</span>, <span class="syn-string">&quot;&quot;</span>)
+					}
+					is_here = |finding| finding.path == path <span class="syn-keyword">and</span> finding.line == number
+					here = judged.found.keep_if(is_here)
+					got = here.len()
+					<span class="syn-keyword">var</span> $ok = <span class="syn-type">Ok</span>(got.to_i64_wrap()) == <span class="syn-type">I64</span>.from_str(count_text)
+					<span class="syn-keyword">if</span> word != <span class="syn-string">&quot;&quot;</span> {
+						<span class="syn-keyword">for</span> finding <span class="syn-keyword">in</span> here {
+							<span class="syn-keyword">if</span> !(finding.what.contains(word)) {
+								$ok = <span class="syn-type">Bool.False</span>
+							}
+						}
+					}
+					place = <span class="syn-string">&quot;</span>${name_of(path)}<span class="syn-string">:</span>${number.to_str()}<span class="syn-string">&quot;</span>
+					<span class="syn-type">Shale</span>.print!(<span class="syn-string">&quot;</span>${verdict($ok)}${place}<span class="syn-string">: </span>${got.to_str()}<span class="syn-string"> findings, want </span>${count_text}<span class="syn-string">&quot;</span>)
+					<span class="syn-keyword">if</span> !($ok) {
+						$bad = $bad + <span class="syn-number">1</span>
+					}
+				}
+				<span class="syn-type">NoMatch</span> =&gt; {}
+			}
+		}
+	}
+	$bad
+}
+
+<span class="syn-comment">## Each plant held to the kinds of its findings by its name, a line printed</span>
+<span class="syn-comment">## for each: the answer is how many were wrong.</span>
+<span class="syn-name">check_kinds!</span> : <span class="syn-type">List</span>(<span class="syn-type">Str</span>), <span class="syn-type">Report.Judged</span> =&gt; <span class="syn-type">U64</span>
+<span class="syn-name">check_kinds!</span> = |paths, judged| {
+	$bad : <span class="syn-type">U64</span>
+	<span class="syn-keyword">var</span> $bad = <span class="syn-number">0</span>
+	<span class="syn-keyword">for</span> path <span class="syn-keyword">in</span> paths {
+		name = name_of(path)
+		kinds = judged.found.keep_if(|finding| finding.path == path).map(|finding| finding.check)
+		got = <span class="syn-keyword">if</span> kinds.is_empty() {
+			<span class="syn-string">&quot;&quot;</span>
+		} <span class="syn-keyword">else</span> {
+			<span class="syn-string">&quot; </span>${<span class="syn-type">Str</span>.join_with(kinds, <span class="syn-string">&quot; &quot;</span>)}<span class="syn-string"> &quot;</span>
+		}
+		is_long = name.starts_with(<span class="syn-string">&quot;long&quot;</span>)
+		is_wide = name.starts_with(<span class="syn-string">&quot;wide&quot;</span>)
+		want = <span class="syn-keyword">if</span> is_long {
+			<span class="syn-string">&quot;long&quot;</span>
+		} <span class="syn-keyword">else</span> <span class="syn-keyword">if</span> is_wide {
+			<span class="syn-string">&quot;wide string&quot;</span>
+		} <span class="syn-keyword">else</span> <span class="syn-keyword">if</span> name.starts_with(<span class="syn-string">&quot;unstack&quot;</span>) {
+			<span class="syn-string">&quot;unstack&quot;</span>
+		} <span class="syn-keyword">else</span> {
+			<span class="syn-string">&quot;stack&quot;</span>
+		}
+		clean = name.starts_with(<span class="syn-string">&quot;clean&quot;</span>)
+		<span class="syn-keyword">var</span> $ok = (clean <span class="syn-keyword">and</span> got == <span class="syn-string">&quot;&quot;</span>) <span class="syn-keyword">or</span> (!(clean) <span class="syn-keyword">and</span> got.contains(<span class="syn-string">&quot; </span>${want}<span class="syn-string"> &quot;</span>))
+		<span class="syn-keyword">if</span> is_long <span class="syn-keyword">and</span> got.contains(<span class="syn-string">&quot;wide string&quot;</span>) {
+			$ok = <span class="syn-type">Bool.False</span>
+		}
+		<span class="syn-keyword">if</span> is_wide <span class="syn-keyword">and</span> got.contains(<span class="syn-string">&quot;long&quot;</span>) {
+			$ok = <span class="syn-type">Bool.False</span>
+		}
+		shown = <span class="syn-keyword">if</span> got == <span class="syn-string">&quot;&quot;</span> {
+			<span class="syn-string">&quot;no finding&quot;</span>
+		} <span class="syn-keyword">else</span> {
+			got
+		}
+		<span class="syn-type">Shale</span>.print!(<span class="syn-string">&quot;</span>${verdict($ok)}${name}<span class="syn-string">: </span>${shown}<span class="syn-string">&quot;</span>)
+		<span class="syn-keyword">if</span> !($ok) {
+			$bad = $bad + <span class="syn-number">1</span>
+		}
+	}
+	$bad
+}
+</code></pre>
+<p class="file"><a href="https://github.com/showell/shale/blob/e3c753adf065dc7856e5d49422daf99f9969f91a/cookbook/roc/check_and_fix_group_stacking/Annotations.roc"><code>cookbook/roc/check_and_fix_group_stacking/Annotations.roc</code></a>, 304 lines</p>
+<pre><code><span class="syn-comment">## A function type&#39;s bare arguments, which no trailing comma can stack, read</span>
+<span class="syn-comment">## as the Shale original read them: an annotation (`name : A, B, C -&gt; R`) or a</span>
+<span class="syn-comment">## type alias of a function (`Pick(a) : a, a, a -&gt; a`) to its first arrow,</span>
+<span class="syn-comment">## over the lines `roc fmt` wraps it onto, and a record type&#39;s field whose</span>
+<span class="syn-comment">## type is a function (`{ on_pick : U8, U8, U8 -&gt; U8 }`). The finding says</span>
+<span class="syn-comment">## what to do instead: a record for values that travel together, or a tag</span>
+<span class="syn-comment">## for a run of flags.</span>
+<span class="syn-keyword">import</span> lib.<span class="syn-type">Bytes</span>
+<span class="syn-keyword">import</span> lib.<span class="syn-type">Finding</span>
+<span class="syn-keyword">import</span> lib.<span class="syn-type">Groups</span>
+<span class="syn-keyword">import</span> lib.<span class="syn-type">Text</span>
+
+<span class="syn-type">Annotations</span> := [].{
+
+	<span class="syn-comment">## An annotation&#39;s arguments: how many, its type&#39;s text up to the arrow</span>
+	<span class="syn-comment">## and that text shortened, the annotated name, and the annotation&#39;s last</span>
+	<span class="syn-comment">## line read.</span>
+	<span class="syn-type">Annotation</span> : {
+		items : <span class="syn-type">U64</span>,
+		shown : <span class="syn-type">Str</span>,
+		text : <span class="syn-type">Str</span>,
+		name : <span class="syn-type">Str</span>,
+		last : <span class="syn-type">U64</span>,
+	}
+
+	<span class="syn-comment">## A record type&#39;s field whose type is a function: its name, how many</span>
+	<span class="syn-comment">## arguments, and the type&#39;s text up to the arrow.</span>
+	<span class="syn-type">FieldFunction</span> : {
+		name : <span class="syn-type">Str</span>,
+		items : <span class="syn-type">U64</span>,
+		text : <span class="syn-type">Str</span>,
+	}
+
+	<span class="syn-comment">## Text cut to 60 bytes for a finding line, its end `...`.</span>
+	<span class="syn-name">shortened</span> : <span class="syn-type">Str</span> -&gt; <span class="syn-type">Str</span>
+	<span class="syn-name">shortened</span> = |text| {
+		bytes = text.to_utf8()
+		<span class="syn-keyword">if</span> bytes.len() &gt; <span class="syn-number">60</span> {
+			<span class="syn-type">Str</span>.from_utf8_lossy(bytes.take_first(<span class="syn-number">57</span>).concat([<span class="syn-string">&#39;.&#39;</span>, <span class="syn-string">&#39;.&#39;</span>, <span class="syn-string">&#39;.&#39;</span>]))
+		} <span class="syn-keyword">else</span> {
+			text
+		}
+	}
+
+	<span class="syn-comment">## The annotation line `number` of the lines starts, when it annotates a</span>
+	<span class="syn-comment">## function: its arguments before the first arrow outside any bracket,</span>
+	<span class="syn-comment">## counted by the commas outside any bracket. It goes on to the next line</span>
+	<span class="syn-comment">## while its text so far is empty, a bracket is open or its text ends in a</span>
+	<span class="syn-comment">## comma, passing over a comment on a line of its own; a blank line, or a</span>
+	<span class="syn-comment">## next line that starts another annotation, ends it.</span>
+	<span class="syn-name">annotation_arguments</span> : <span class="syn-type">List</span>(<span class="syn-type">Str</span>), <span class="syn-type">U64</span> -&gt; <span class="syn-type">Try</span>(<span class="syn-type">Annotations.Annotation</span>, [<span class="syn-type">NoFunction</span>])
+	<span class="syn-name">annotation_arguments</span> = |source_lines, number| {
+		first_line = <span class="syn-type">Bytes</span>.line_of(source_lines, number)
+		<span class="syn-keyword">var</span> $piece = <span class="syn-keyword">match</span> start_text(type_line(first_line)) {
+			<span class="syn-type">Ok</span>(piece) =&gt; piece
+			<span class="syn-type">Err</span>(<span class="syn-type">NoStart</span>) =&gt; <span class="syn-keyword">return</span> <span class="syn-type">Err</span>(<span class="syn-type">NoFunction</span>)
+		}
+		name = <span class="syn-type">Bytes</span>.trimmed(before_colon(<span class="syn-type">Bytes</span>.trimmed(first_line)))
+		<span class="syn-keyword">var</span> $type_text = []
+		$depth : <span class="syn-type">I64</span>
+		<span class="syn-keyword">var</span> $depth = <span class="syn-number">0</span>
+		$commas : <span class="syn-type">U64</span>
+		<span class="syn-keyword">var</span> $commas = <span class="syn-number">0</span>
+		<span class="syn-keyword">var</span> $n = number
+		<span class="syn-keyword">while</span> $n &lt;= source_lines.len() {
+			start = $type_text.len()
+			$type_text = <span class="syn-keyword">if</span> start == <span class="syn-number">0</span> <span class="syn-keyword">or</span> $piece.is_empty() {
+				$type_text.concat($piece)
+			} <span class="syn-keyword">else</span> {
+				$type_text.append(<span class="syn-string">&#39; &#39;</span>).concat($piece)
+			}
+			<span class="syn-keyword">var</span> $at = start + <span class="syn-number">1</span>
+			<span class="syn-keyword">while</span> $at &lt;= $type_text.len() {
+				c = <span class="syn-type">Bytes</span>.byte_at($type_text, $at)
+				<span class="syn-keyword">if</span> <span class="syn-type">Groups</span>.closer_of(c) != <span class="syn-number">0</span> {
+					$depth = $depth + <span class="syn-number">1</span>
+				}
+				<span class="syn-keyword">if</span> <span class="syn-type">Groups</span>.is_closer(c) {
+					$depth = $depth - <span class="syn-number">1</span>
+				}
+				<span class="syn-keyword">if</span> $depth &lt; <span class="syn-number">0</span> {
+					<span class="syn-keyword">return</span> <span class="syn-type">Err</span>(<span class="syn-type">NoFunction</span>)
+				}
+				<span class="syn-keyword">if</span> $depth == <span class="syn-number">0</span> <span class="syn-keyword">and</span> c == <span class="syn-string">&#39;,&#39;</span> {
+					$commas = $commas + <span class="syn-number">1</span>
+				}
+				<span class="syn-keyword">if</span> $depth == <span class="syn-number">0</span> <span class="syn-keyword">and</span> is_arrow_at($type_text, $at) {
+					text = <span class="syn-type">Str</span>.from_utf8_lossy(<span class="syn-type">Bytes</span>.trimmed(<span class="syn-type">Bytes</span>.span($type_text, <span class="syn-number">1</span>, $at - <span class="syn-number">1</span>)))
+					<span class="syn-keyword">return</span> <span class="syn-type">Ok</span>({
+						items: $commas + <span class="syn-number">1</span>,
+						shown: <span class="syn-type">Annotations</span>.shortened(text),
+						text,
+						name: <span class="syn-type">Str</span>.from_utf8_lossy(name),
+						last: $n,
+					})
+				}
+				$at = $at + <span class="syn-number">1</span>
+			}
+			goes_on = $type_text.is_empty() <span class="syn-keyword">or</span> $depth &gt; <span class="syn-number">0</span> <span class="syn-keyword">or</span> $type_text.last() == <span class="syn-type">Ok</span>(<span class="syn-string">&#39;,&#39;</span>)
+			<span class="syn-keyword">if</span> !(goes_on) {
+				<span class="syn-keyword">return</span> <span class="syn-type">Err</span>(<span class="syn-type">NoFunction</span>)
+			}
+			<span class="syn-comment"># The next line of code, past any comment on a line of its own.</span>
+			$n = $n + <span class="syn-number">1</span>
+			<span class="syn-keyword">while</span> $n &lt;= source_lines.len() <span class="syn-keyword">and</span> !(
+				<span class="syn-type">Bytes</span>.trimmed(
+					<span class="syn-type">Bytes</span>.line_of(source_lines, $n),
+				).is_empty()
+			) <span class="syn-keyword">and</span> type_line(<span class="syn-type">Bytes</span>.line_of(source_lines, $n)).is_empty() {
+				$n = $n + <span class="syn-number">1</span>
+			}
+			<span class="syn-keyword">if</span> $n &gt; source_lines.len() <span class="syn-keyword">or</span> <span class="syn-type">Bytes</span>.trimmed(
+				<span class="syn-type">Bytes</span>.line_of(source_lines, $n),
+			).is_empty() {
+				<span class="syn-keyword">return</span> <span class="syn-type">Err</span>(<span class="syn-type">NoFunction</span>)
+			}
+			next_line = type_line(<span class="syn-type">Bytes</span>.line_of(source_lines, $n))
+			<span class="syn-keyword">if</span> $depth == <span class="syn-number">0</span> <span class="syn-keyword">and</span> start_text(next_line) != <span class="syn-type">Err</span>(<span class="syn-type">NoStart</span>) {
+				<span class="syn-keyword">return</span> <span class="syn-type">Err</span>(<span class="syn-type">NoFunction</span>)
+			}
+			$piece = next_line
+		}
+		<span class="syn-type">Err</span>(<span class="syn-type">NoFunction</span>)
+	}
+
+	<span class="syn-comment">## The function types among the fields of a record type whose inside,</span>
+	<span class="syn-comment">## between its braces, is `inner`: a field whose type has an arrow outside</span>
+	<span class="syn-comment">## any bracket, its arguments counted by the commas before it. A comma</span>
+	<span class="syn-comment">## starts the next field only when `name : ` follows it, so the commas of a</span>
+	<span class="syn-comment">## field&#39;s function type stay its own.</span>
+	<span class="syn-name">record_field_functions</span> : <span class="syn-type">Str</span> -&gt; <span class="syn-type">List</span>(<span class="syn-type">Annotations.FieldFunction</span>)
+	<span class="syn-name">record_field_functions</span> = |text| {
+		inner = text.to_utf8()
+		<span class="syn-keyword">if</span> !(starts_field(inner)) {
+			<span class="syn-keyword">return</span> []
+		}
+		<span class="syn-keyword">var</span> $out = []
+		$depth : <span class="syn-type">I64</span>
+		<span class="syn-keyword">var</span> $depth = <span class="syn-number">0</span>
+		$commas : <span class="syn-type">U64</span>
+		<span class="syn-keyword">var</span> $commas = <span class="syn-number">0</span>
+		<span class="syn-keyword">var</span> $type_start = <span class="syn-number">0</span>
+		<span class="syn-keyword">var</span> $field_start = <span class="syn-number">1</span>
+		<span class="syn-keyword">var</span> $name = []
+		<span class="syn-keyword">var</span> $done = <span class="syn-type">Bool.False</span>
+		<span class="syn-keyword">var</span> $at = <span class="syn-number">1</span>
+		<span class="syn-keyword">while</span> $at &lt;= inner.len() {
+			c = <span class="syn-type">Bytes</span>.byte_at(inner, $at)
+			<span class="syn-keyword">if</span> <span class="syn-type">Groups</span>.closer_of(c) != <span class="syn-number">0</span> {
+				$depth = $depth + <span class="syn-number">1</span>
+			}
+			<span class="syn-keyword">if</span> <span class="syn-type">Groups</span>.is_closer(c) {
+				$depth = $depth - <span class="syn-number">1</span>
+			}
+			<span class="syn-keyword">if</span> $depth == <span class="syn-number">0</span> {
+				<span class="syn-keyword">if</span> $type_start == <span class="syn-number">0</span> <span class="syn-keyword">and</span> <span class="syn-type">Bytes</span>.span(inner, $at, $at + <span class="syn-number">2</span>) == [<span class="syn-string">&#39; &#39;</span>, <span class="syn-string">&#39;:&#39;</span>, <span class="syn-string">&#39; &#39;</span>] {
+					$type_start = $at + <span class="syn-number">3</span>
+					$name = <span class="syn-type">Bytes</span>.trimmed(<span class="syn-type">Bytes</span>.span(inner, $field_start, $at - <span class="syn-number">1</span>))
+					$at = $at + <span class="syn-number">2</span>
+				} <span class="syn-keyword">else</span> <span class="syn-keyword">if</span> c == <span class="syn-string">&#39;,&#39;</span> <span class="syn-keyword">and</span> starts_field(<span class="syn-type">Bytes</span>.rest_from(inner, $at + <span class="syn-number">1</span>)) {
+					$commas = <span class="syn-number">0</span>
+					$type_start = <span class="syn-number">0</span>
+					$field_start = $at + <span class="syn-number">1</span>
+					$done = <span class="syn-type">Bool.False</span>
+				} <span class="syn-keyword">else</span> <span class="syn-keyword">if</span> c == <span class="syn-string">&#39;,&#39;</span> {
+					$commas = $commas + <span class="syn-number">1</span>
+				} <span class="syn-keyword">else</span> <span class="syn-keyword">if</span> !($done) <span class="syn-keyword">and</span> $type_start &gt; <span class="syn-number">0</span> <span class="syn-keyword">and</span> <span class="syn-type">Bytes</span>.byte_at(
+					inner,
+					$at - <span class="syn-number">1</span>,
+				) == <span class="syn-string">&#39; &#39;</span> <span class="syn-keyword">and</span> is_arrow_at(inner, $at) {
+					type_text = <span class="syn-type">Bytes</span>.trimmed(<span class="syn-type">Bytes</span>.span(inner, $type_start, $at - <span class="syn-number">1</span>))
+					$out = $out.append({
+						name: <span class="syn-type">Str</span>.from_utf8_lossy($name),
+						items: $commas + <span class="syn-number">1</span>,
+						text: <span class="syn-type">Str</span>.from_utf8_lossy(type_text),
+					})
+					$done = <span class="syn-type">Bool.True</span>
+				}
+			}
+			$at = $at + <span class="syn-number">1</span>
+		}
+		$out
+	}
+
+	<span class="syn-comment">## Whether every comma-separated item of a text is `Bool` or a Bool</span>
+	<span class="syn-comment">## literal, like `Bool, Bool, Bool` or `Bool.true, Bool.false, Bool.true`.</span>
+	<span class="syn-name">are_all_flags</span> : <span class="syn-type">Str</span> -&gt; <span class="syn-type">Bool</span>
+	<span class="syn-name">are_all_flags</span> = |text|
+		text.split_on(<span class="syn-string">&quot;,&quot;</span>).all(
+			|item| {
+				flag = <span class="syn-type">Text</span>.trim(item)
+				flag == <span class="syn-string">&quot;Bool&quot;</span> <span class="syn-keyword">or</span> flag == <span class="syn-string">&quot;Bool.true&quot;</span> <span class="syn-keyword">or</span> flag == <span class="syn-string">&quot;Bool.false&quot;</span> <span class="syn-keyword">or</span> flag == <span class="syn-string">&quot;Bool.True&quot;</span> <span class="syn-keyword">or</span> flag == <span class="syn-string">&quot;Bool.False&quot;</span>
+			},
+		)
+
+	<span class="syn-comment">## What a flag&#39;s finding adds.</span>
+	<span class="syn-name">flag_advice</span> : <span class="syn-type">Str</span>
+	<span class="syn-name">flag_advice</span> = <span class="syn-string">&quot;: a flag a caller passes is a tag, not a Bool (roc-apps docs/roc-style.md)&quot;</span>
+
+	<span class="syn-comment">## The finding for a function type&#39;s bare arguments at a file&#39;s line.</span>
+	<span class="syn-name">function_type_finding</span> : { path : <span class="syn-type">Str</span>, line : <span class="syn-type">U64</span> },
+	{
+		items : <span class="syn-type">U64</span>,
+		shown : <span class="syn-type">Str</span>,
+		text : <span class="syn-type">Str</span>,
+	} -&gt; <span class="syn-type">Finding</span>
+	<span class="syn-name">function_type_finding</span> = |place, arguments| {
+		advice = <span class="syn-keyword">if</span> <span class="syn-type">Annotations</span>.are_all_flags(arguments.text) {
+			<span class="syn-type">Annotations</span>.flag_advice
+		} <span class="syn-keyword">else</span> {
+			<span class="syn-string">&quot;: take a record (roc-apps docs/roc-style.md, Name what travels together)&quot;</span>
+		}
+		{
+			path: place.path,
+			line: place.line,
+			check: <span class="syn-string">&quot;stack&quot;</span>,
+			what: <span class="syn-string">&quot;</span>${arguments.items.to_str()}<span class="syn-string"> bare arguments in </span>${arguments.shown}<span class="syn-string">, which no comma stacks</span>${advice}<span class="syn-string">&quot;</span>,
+		}
+	}
+}
+
+<span class="syn-comment">## A line without a `#` comment, trimmed. A type has no string, so the first</span>
+<span class="syn-comment">## `#` starts the comment.</span>
+<span class="syn-name">type_line</span> : <span class="syn-type">List</span>(<span class="syn-type">U8</span>) -&gt; <span class="syn-type">List</span>(<span class="syn-type">U8</span>)
+<span class="syn-name">type_line</span> = |bytes|
+	<span class="syn-keyword">match</span> bytes.find_first_index(|byte| byte == <span class="syn-string">&#39;#&#39;</span>) {
+		<span class="syn-type">Ok</span>(at) =&gt; <span class="syn-type">Bytes</span>.trimmed(bytes.take_first(at))
+		<span class="syn-type">Err</span>(_) =&gt; <span class="syn-type">Bytes</span>.trimmed(bytes)
+	}
+
+<span class="syn-comment">## The text of a trimmed line before its first ` :`, or all of it.</span>
+<span class="syn-name">before_colon</span> : <span class="syn-type">List</span>(<span class="syn-type">U8</span>) -&gt; <span class="syn-type">List</span>(<span class="syn-type">U8</span>)
+<span class="syn-name">before_colon</span> = |bytes| {
+	<span class="syn-keyword">var</span> $at = <span class="syn-number">1</span>
+	<span class="syn-keyword">while</span> $at &lt; bytes.len() {
+		<span class="syn-keyword">if</span> <span class="syn-type">Bytes</span>.byte_at(bytes, $at) == <span class="syn-string">&#39; &#39;</span> <span class="syn-keyword">and</span> <span class="syn-type">Bytes</span>.byte_at(bytes, $at + <span class="syn-number">1</span>) == <span class="syn-string">&#39;:&#39;</span> {
+			<span class="syn-keyword">return</span> <span class="syn-type">Bytes</span>.span(bytes, <span class="syn-number">1</span>, $at - <span class="syn-number">1</span>)
+		}
+		$at = $at + <span class="syn-number">1</span>
+	}
+	bytes
+}
+
+<span class="syn-comment">## Whether `-&gt;` or `=&gt;` stands at `place`.</span>
+<span class="syn-name">is_arrow_at</span> : <span class="syn-type">List</span>(<span class="syn-type">U8</span>), <span class="syn-type">U64</span> -&gt; <span class="syn-type">Bool</span>
+<span class="syn-name">is_arrow_at</span> = |bytes, place| {
+	byte = <span class="syn-type">Bytes</span>.byte_at(bytes, place)
+	(byte == <span class="syn-string">&#39;-&#39;</span> <span class="syn-keyword">or</span> byte == <span class="syn-string">&#39;=&#39;</span>) <span class="syn-keyword">and</span> <span class="syn-type">Bytes</span>.byte_at(bytes, place + <span class="syn-number">1</span>) == <span class="syn-string">&#39;&gt;&#39;</span>
+}
+
+<span class="syn-comment">## The type text after the start of a function&#39;s annotation (`name :`) or of</span>
+<span class="syn-comment">## a type alias (`Handler :`, `Pick(a) :`) on a comment-free line, which is</span>
+<span class="syn-comment">## empty when the type starts on the next line:</span>
+<span class="syn-comment">## `^[a-z_][A-Za-z0-9_]*!? :(?: (.*))?$` or</span>
+<span class="syn-comment">## `^[A-Z][A-Za-z0-9_]*(?:\([^()]*\))? :(?: (.*))?$`.</span>
+<span class="syn-name">start_text</span> : <span class="syn-type">List</span>(<span class="syn-type">U8</span>) -&gt; <span class="syn-type">Try</span>(<span class="syn-type">List</span>(<span class="syn-type">U8</span>), [<span class="syn-type">NoStart</span>])
+<span class="syn-name">start_text</span> = |bytes| {
+	first = <span class="syn-type">Bytes</span>.byte_at(bytes, <span class="syn-number">1</span>)
+	name_end =
+		<span class="syn-keyword">if</span> (first &gt;= <span class="syn-string">&#39;a&#39;</span> <span class="syn-keyword">and</span> first &lt;= <span class="syn-string">&#39;z&#39;</span>) <span class="syn-keyword">or</span> first == <span class="syn-string">&#39;_&#39;</span> {
+			end = <span class="syn-type">Bytes</span>.word_end(bytes, <span class="syn-number">2</span>)
+			<span class="syn-keyword">if</span> <span class="syn-type">Bytes</span>.byte_at(bytes, end) == <span class="syn-string">&#39;!&#39;</span> {
+				end + <span class="syn-number">1</span>
+			} <span class="syn-keyword">else</span> {
+				end
+			}
+		} <span class="syn-keyword">else</span> <span class="syn-keyword">if</span> first &gt;= <span class="syn-string">&#39;A&#39;</span> <span class="syn-keyword">and</span> first &lt;= <span class="syn-string">&#39;Z&#39;</span> {
+			end = <span class="syn-type">Bytes</span>.word_end(bytes, <span class="syn-number">2</span>)
+			<span class="syn-keyword">if</span> <span class="syn-type">Bytes</span>.byte_at(bytes, end) == <span class="syn-string">&#39;(&#39;</span> {
+				<span class="syn-keyword">match</span> bytes.drop_first(end).find_first_index(|byte| byte == <span class="syn-string">&#39;(&#39;</span> <span class="syn-keyword">or</span> byte == <span class="syn-string">&#39;)&#39;</span>) {
+					<span class="syn-type">Ok</span>(offset) <span class="syn-keyword">if</span> <span class="syn-type">Bytes</span>.byte_at(bytes, end + offset + <span class="syn-number">1</span>) == <span class="syn-string">&#39;)&#39;</span> =&gt; end + offset + <span class="syn-number">2</span>
+					_ =&gt; end
+				}
+			} <span class="syn-keyword">else</span> {
+				end
+			}
+		} <span class="syn-keyword">else</span> {
+			<span class="syn-keyword">return</span> <span class="syn-type">Err</span>(<span class="syn-type">NoStart</span>)
+		}
+	rest = <span class="syn-type">Bytes</span>.rest_from(bytes, name_end)
+	<span class="syn-keyword">if</span> rest == [<span class="syn-string">&#39; &#39;</span>, <span class="syn-string">&#39;:&#39;</span>] {
+		<span class="syn-type">Ok</span>([])
+	} <span class="syn-keyword">else</span> <span class="syn-keyword">if</span> rest.starts_with([<span class="syn-string">&#39; &#39;</span>, <span class="syn-string">&#39;:&#39;</span>, <span class="syn-string">&#39; &#39;</span>]) {
+		<span class="syn-type">Ok</span>(rest.drop_first(<span class="syn-number">3</span>))
+	} <span class="syn-keyword">else</span> {
+		<span class="syn-type">Err</span>(<span class="syn-type">NoStart</span>)
+	}
+}
+
+<span class="syn-comment">## Whether the bytes start a record type&#39;s field: `^ *[a-z_][A-Za-z0-9_]* : `.</span>
+<span class="syn-name">starts_field</span> : <span class="syn-type">List</span>(<span class="syn-type">U8</span>) -&gt; <span class="syn-type">Bool</span>
+<span class="syn-name">starts_field</span> = |bytes| {
+	<span class="syn-keyword">var</span> $at = <span class="syn-number">1</span>
+	<span class="syn-keyword">while</span> <span class="syn-type">Bytes</span>.byte_at(bytes, $at) == <span class="syn-string">&#39; &#39;</span> {
+		$at = $at + <span class="syn-number">1</span>
+	}
+	first = <span class="syn-type">Bytes</span>.byte_at(bytes, $at)
+	<span class="syn-keyword">if</span> (first &gt;= <span class="syn-string">&#39;a&#39;</span> <span class="syn-keyword">and</span> first &lt;= <span class="syn-string">&#39;z&#39;</span>) <span class="syn-keyword">or</span> first == <span class="syn-string">&#39;_&#39;</span> {
+		end = <span class="syn-type">Bytes</span>.word_end(bytes, $at + <span class="syn-number">1</span>)
+		<span class="syn-type">Bytes</span>.span(bytes, end, end + <span class="syn-number">2</span>) == [<span class="syn-string">&#39; &#39;</span>, <span class="syn-string">&#39;:&#39;</span>, <span class="syn-string">&#39; &#39;</span>]
+	} <span class="syn-keyword">else</span> {
+		<span class="syn-type">Bool.False</span>
+	}
+}
+</code></pre>
+<h2 class="code">Shale original</h2>
+<p class="file"><a href="https://github.com/showell/shale/blob/9901eae21e6e8dce017642fa0c25431e90ac1124/cookbook/roc/check_stacking.shale"><code>cookbook/roc/check_stacking.shale</code></a>, 610 lines, at <code>9901eae2</code></p>
+<p class="file">The libraries it loads: <a href="https://github.com/showell/shale/blob/9901eae21e6e8dce017642fa0c25431e90ac1124/cookbook/roc/pinned.shale"><code>cookbook/roc/pinned.shale</code></a> (20 lines), <a href="https://github.com/showell/shale/blob/9901eae21e6e8dce017642fa0c25431e90ac1124/cookbook/findings.shale"><code>cookbook/findings.shale</code></a> (21 lines), <a href="https://github.com/showell/shale/blob/9901eae21e6e8dce017642fa0c25431e90ac1124/cookbook/roc/groups.shale"><code>cookbook/roc/groups.shale</code></a> (464 lines), <a href="https://github.com/showell/shale/blob/9901eae21e6e8dce017642fa0c25431e90ac1124/cookbook/roc/parsed.shale"><code>cookbook/roc/parsed.shale</code></a> (34 lines), <a href="https://github.com/showell/shale/blob/9901eae21e6e8dce017642fa0c25431e90ac1124/cookbook/roc/headers.shale"><code>cookbook/roc/headers.shale</code></a> (96 lines), <a href="https://github.com/showell/shale/blob/9901eae21e6e8dce017642fa0c25431e90ac1124/cookbook/roc/house.shale"><code>cookbook/roc/house.shale</code></a> (46 lines).</p>
+<pre><code><span class="syn-comment">-- This recipe finds groups in .roc files laid out against the stacking rule,</span>
+<span class="syn-comment">-- and with `write=1` lays them out by it. A group is a list, record, tuple,</span>
+<span class="syn-comment">-- call&#39;s arguments, tag payload or lambda&#39;s arguments. A group of three or</span>
+<span class="syn-comment">-- more items and six or more tokens stacks, one item a line. Any other group</span>
+<span class="syn-comment">-- sits on one line while that line fits `width`. The rule and what counts as</span>
+<span class="syn-comment">-- a token are in cookbook/roc/groups.shale.</span>
+<span class="syn-comment">--</span>
+<span class="syn-comment">--   cd &lt;repo&gt; &amp;&amp; shale &lt;shale&gt;/cookbook/roc/check_stacking.shale glob=chat/**/*.roc</span>
+<span class="syn-comment">--   cd &lt;repo&gt; &amp;&amp; shale &lt;shale&gt;/cookbook/roc/check_stacking.shale glob=chat/**/*.roc write=1</span>
+<span class="syn-comment">--   shale cookbook:roc/check_stacking.shale self_test=1</span>
+<span class="syn-comment">--</span>
+<span class="syn-comment">-- The arguments:</span>
+<span class="syn-comment">--   glob   the files to check, `**/*.roc` by default;</span>
+<span class="syn-comment">--   skip   files the glob finds to leave out, by path, comma-separated, for</span>
+<span class="syn-comment">--          tables of data that read better side by side;</span>
+<span class="syn-comment">--   width  the widest a line may be, 100 by default, a tab counting four;</span>
+<span class="syn-comment">--   tokens the tokens from which a group stacks, 6 by default;</span>
+<span class="syn-comment">--   dictated a table of functions whose arguments something outside the file</span>
+<span class="syn-comment">--          dictates, one `path name -- reason` a line, judged as a header&#39;s</span>
+<span class="syn-comment">--          names are (below);</span>
+<span class="syn-comment">--   house  with `house=0`, leave out every finding here, as the stacking rule</span>
+<span class="syn-comment">--          is our house style (cookbook/roc/house.shale);</span>
+<span class="syn-comment">--   write  with `write=1`, rewrite the files (see below).</span>
+<span class="syn-comment">--</span>
+<span class="syn-comment">-- A group on one line that should stack is a finding, `path:line: stack: ...`,</span>
+<span class="syn-comment">-- left to right. A stacked group that should sit on one line is a finding,</span>
+<span class="syn-comment">-- `path:line: unstack: ...`, at the line it opens on. A line wider than `width`</span>
+<span class="syn-comment">-- with nothing to stack by the rule is a finding too, of one of two kinds. It</span>
+<span class="syn-comment">-- is `wide string` when</span>
+<span class="syn-comment">-- it would fit `width` if the text of each string literal on it counted as</span>
+<span class="syn-comment">-- empty, because Roc has no short way to split a string. Otherwise it is</span>
+<span class="syn-comment">-- `long`. Roc&#39;s own parser says which columns are a string&#39;s text, so the</span>
+<span class="syn-comment">-- code in an interpolation (`&quot;${...}&quot;`) counts, a comment counts, and so does</span>
+<span class="syn-comment">-- a string in an `import` or the file&#39;s header, which has no such node. The</span>
+<span class="syn-comment">-- output is the counts, the findings, and the counts again</span>
+<span class="syn-comment">-- (cookbook/findings.shale). A file with a line wider than `width` that</span>
+<span class="syn-comment">-- roc-ast refuses keeps that line as `long`, and the run fails, naming it, as</span>
+<span class="syn-comment">-- it does for an app&#39;s or platform&#39;s file that roc-ast refuses.</span>
+<span class="syn-comment">--</span>
+<span class="syn-comment">-- A stacked group stays stacked, with no finding, when its joined line would</span>
+<span class="syn-comment">-- be wider than `width`, or when it holds a comment, a `\\` string, a blank</span>
+<span class="syn-comment">-- line, a block&#39;s statements, or a group that stays stacked.</span>
+<span class="syn-comment">--</span>
+<span class="syn-comment">-- Some groups are not findings, or get special advice:</span>
+<span class="syn-comment">--   - A list or tuple whose items are all literals (numbers, plain strings,</span>
+<span class="syn-comment">--     characters, bare tags) is a table&#39;s row, like `[0, 0, 0]` or</span>
+<span class="syn-comment">--     `(0.0, 0.0, 1.5)`, and is read at a glance. It is no finding while</span>
+<span class="syn-comment">--     its line fits `width`. A call&#39;s arguments are never a row.</span>
+<span class="syn-comment">--   - A group of three or more `Bool`s or Bool literals is told that a flag</span>
+<span class="syn-comment">--     a caller passes should be a tag, as roc-style.md says, whatever its</span>
+<span class="syn-comment">--     tokens.</span>
+<span class="syn-comment">--   - A function&#39;s annotation (`name : A, B, C -&gt; R`), or a type alias of a</span>
+<span class="syn-comment">--     function (`Pick(a) : a, a, a -&gt; a`), is read to its first arrow, over</span>
+<span class="syn-comment">--     the lines `roc fmt` wraps it onto, from a type that starts on the line</span>
+<span class="syn-comment">--     after the colon, past a comment on a line of its own, to a blank line.</span>
+<span class="syn-comment">--     When it is a finding for its arguments, at its first line, the</span>
+<span class="syn-comment">--     function&#39;s lambda arguments on the line after it are not reported</span>
+<span class="syn-comment">--     again.</span>
+<span class="syn-comment">--   - A field of a record type on one line whose type is a function</span>
+<span class="syn-comment">--     (`{ on_pick : U8, U8, U8 -&gt; U8 }`) is read the same way, its arguments</span>
+<span class="syn-comment">--     counted up to its arrow, unless its file&#39;s header dictates it (a</span>
+<span class="syn-comment">--     platform&#39;s `requires { step : U8, U8, U8 -&gt; U8 }`).</span>
+<span class="syn-comment">--   - The annotation of a name its file&#39;s header dictates is no finding for</span>
+<span class="syn-comment">--     its arguments, as the platform chose them: what an app&#39;s header</span>
+<span class="syn-comment">--     provides, and what a platform&#39;s header requires and provides</span>
+<span class="syn-comment">--     (cookbook/roc/headers.shale). Nor are that name&#39;s lambda arguments.</span>
+<span class="syn-comment">--   - The items of a `where` clause are its method constraints, so</span>
+<span class="syn-comment">--     `k.is_eq : k, k -&gt; Bool` is one item, and a record or list pattern&#39;s</span>
+<span class="syn-comment">--     rest (`..`) is no item.</span>
+<span class="syn-comment">--   - The groups of a platform header&#39;s `targets:` section are no findings, and</span>
+<span class="syn-comment">--     the rewrite leaves them alone, as `roc fmt` lays that section out by</span>
+<span class="syn-comment">--     itself. A line there wider than `width` is still `long`.</span>
+<span class="syn-comment">-- Strings, characters, `\\` multiline strings and `#` comments are skipped,</span>
+<span class="syn-comment">-- so a comma or bracket inside one is no item.</span>
+<span class="syn-comment">--</span>
+<span class="syn-comment">-- With `write=1`, the recipe gives each group that should stack a trailing</span>
+<span class="syn-comment">-- comma after its last item, outermost first, takes the trailing comma from</span>
+<span class="syn-comment">-- each group that should unstack, and runs `roc fmt` on the files it changed,</span>
+<span class="syn-comment">-- which stacks a group with a trailing comma and joins a group without one. On</span>
+<span class="syn-comment">-- a long line with no group to stack by the rule, the widest group of two or</span>
+<span class="syn-comment">-- more items gets the comma, as wrap_long_lines.shale does. This repeats until a</span>
+<span class="syn-comment">-- pass changes nothing, so a second run changes nothing either. The recipe then</span>
+<span class="syn-comment">-- prints the findings left, which the rewrite can&#39;t reach: long lines, and</span>
+<span class="syn-comment">-- the arguments of a function type, bare (`three : U8, U8, U8 -&gt; U8`) or in</span>
+<span class="syn-comment">-- parentheses (`(U8, U8, U8 -&gt; U8)`), because Roc refuses a trailing comma</span>
+<span class="syn-comment">-- there.</span>
+<span class="syn-comment">--</span>
+<span class="syn-comment">-- `roc fmt`&#39;s layout changes between Roc nightlies, so `write=1` runs the</span>
+<span class="syn-comment">-- Roc the tree is built with: `tools:roc-&lt;pin&gt;/roc`, the pin read from the</span>
+<span class="syn-comment">-- `roc-version` file in the directory the run starts in, normally the</span>
+<span class="syn-comment">-- repository&#39;s root. Without that file it stops before changing anything</span>
+<span class="syn-comment">-- (cookbook/roc/pinned.shale).</span>
+<span class="syn-comment">--</span>
+<span class="syn-comment">-- `self_test=1` checks the plants in `cookbook/roc/plants/check_stacking/`. Each</span>
+<span class="syn-comment">-- plant must give a finding of the kind its name starts with (`long`,</span>
+<span class="syn-comment">-- `wide`, `unstack`, or else `stack`), a `long` plant no `wide string` and a</span>
+<span class="syn-comment">-- `wide` plant no `long`, and a `clean*.roc` plant none. A plant line ending</span>
+<span class="syn-comment">-- `# findings N` must give exactly N findings, and with `advice W` after</span>
+<span class="syn-comment">-- it each of them must contain the word W. Then the test copies the plants</span>
+<span class="syn-comment">-- to `scratch:stack/` and rewrites them there with the self-test&#39;s Roc:</span>
+<span class="syn-comment">-- the rewrite must end, a second rewrite must change nothing, every file must</span>
+<span class="syn-comment">-- still parse, and a plant with a `.want` file must come out as it.</span>
+<span class="syn-comment">--</span>
+<span class="syn-comment">-- budget: steps=900000000 arena_bytes=2000000000 output_bytes=4000000</span>
+
+<span class="syn-keyword">const</span> SELF_TEST = arg(<span class="syn-string">&quot;self_test&quot;</span>, <span class="syn-string">&quot;&quot;</span>) == <span class="syn-string">&quot;1&quot;</span>
+<span class="syn-keyword">const</span> PLANTS = <span class="syn-string">&quot;cookbook:roc/plants/check_stacking&quot;</span>
+<span class="syn-keyword">const</span> SCRATCH = <span class="syn-string">&quot;scratch:stack&quot;</span>
+<span class="syn-keyword">const</span> GLOB = SELF_TEST <span class="syn-keyword">and</span> (PLANTS .. <span class="syn-string">&quot;/*.roc&quot;</span>) <span class="syn-keyword">or</span> arg(<span class="syn-string">&quot;glob&quot;</span>, <span class="syn-string">&quot;**/*.roc&quot;</span>)
+<span class="syn-keyword">const</span> SKIP = arg(<span class="syn-string">&quot;skip&quot;</span>, <span class="syn-string">&quot;&quot;</span>)
+<span class="syn-keyword">const</span> DICTATED = SELF_TEST <span class="syn-keyword">and</span> (PLANTS .. <span class="syn-string">&quot;/dictated.txt&quot;</span>) <span class="syn-keyword">or</span> arg(<span class="syn-string">&quot;dictated&quot;</span>, <span class="syn-string">&quot;&quot;</span>)
+<span class="syn-keyword">const</span> WIDTH = arg(<span class="syn-string">&quot;width&quot;</span>, <span class="syn-number">100</span>)
+<span class="syn-keyword">const</span> WRITE = arg(<span class="syn-string">&quot;write&quot;</span>, <span class="syn-string">&quot;&quot;</span>) == <span class="syn-string">&quot;1&quot;</span>
+
+<span class="syn-comment">-- The files the glob finds, less the ones `skip` names. A name in `skip` that</span>
+<span class="syn-comment">-- the glob doesn&#39;t find stops the run, so a renamed file can&#39;t go unchecked.</span>
+<span class="syn-keyword">function</span> <span class="syn-name">chosen_files</span>()
+  <span class="syn-keyword">local</span> found = glob(GLOB)
+  <span class="syn-keyword">if</span> SKIP == <span class="syn-string">&quot;&quot;</span> <span class="syn-keyword">then</span> <span class="syn-keyword">return</span> found <span class="syn-keyword">end</span>
+  <span class="syn-keyword">local</span> skipped = {}
+  <span class="syn-keyword">for</span> name <span class="syn-keyword">in</span> split(SKIP, <span class="syn-string">&quot;,&quot;</span>) <span class="syn-keyword">do</span> skipped[name] = <span class="syn-keyword">false</span> <span class="syn-keyword">end</span>
+  <span class="syn-keyword">local</span> kept = {}
+  <span class="syn-keyword">for</span> f <span class="syn-keyword">in</span> found <span class="syn-keyword">do</span>
+    <span class="syn-keyword">if</span> has_key(skipped, f) <span class="syn-keyword">then</span> skipped[f] = <span class="syn-keyword">true</span> <span class="syn-keyword">else</span> push(kept, f) <span class="syn-keyword">end</span>
+  <span class="syn-keyword">end</span>
+  <span class="syn-keyword">for</span> name <span class="syn-keyword">in</span> keys(skipped) <span class="syn-keyword">do</span>
+    <span class="syn-keyword">if</span> <span class="syn-keyword">not</span> skipped[name] <span class="syn-keyword">then</span> fail(<span class="syn-string">&quot;check_stacking: skip names &quot;</span> .. name .. <span class="syn-string">&quot;, which the glob doesn&#39;t find&quot;</span>) <span class="syn-keyword">end</span>
+  <span class="syn-keyword">end</span>
+  <span class="syn-keyword">return</span> kept
+<span class="syn-keyword">end</span>
+use(<span class="syn-string">&quot;./pinned.shale&quot;</span>)
+use(<span class="syn-string">&quot;cookbook:findings.shale&quot;</span>)
+use(<span class="syn-string">&quot;./groups.shale&quot;</span>)
+use(<span class="syn-string">&quot;./parsed.shale&quot;</span>)
+use(<span class="syn-string">&quot;./headers.shale&quot;</span>)
+use(<span class="syn-string">&quot;./house.shale&quot;</span>)
+<span class="syn-keyword">const</span> TOKENS = arg(<span class="syn-string">&quot;tokens&quot;</span>, STACK_TOKENS)
+<span class="syn-keyword">const</span> MAX_PASSES = <span class="syn-number">12</span>
+
+<span class="syn-comment">-- Text cut to 60 characters for a finding line.</span>
+<span class="syn-keyword">function</span> <span class="syn-name">shortened</span>(s)
+  <span class="syn-keyword">if</span> #s &gt; <span class="syn-number">60</span> <span class="syn-keyword">then</span> <span class="syn-keyword">return</span> sub(s, <span class="syn-number">1</span>, <span class="syn-number">57</span>) .. <span class="syn-string">&quot;...&quot;</span> <span class="syn-keyword">end</span>
+  <span class="syn-keyword">return</span> s
+<span class="syn-keyword">end</span>
+
+<span class="syn-comment">-- The start of a function&#39;s annotation (`name :`) or of a type alias</span>
+<span class="syn-comment">-- (`Handler :`, `Pick(a) :`), the type&#39;s text after it, which may be empty</span>
+<span class="syn-comment">-- when the type starts on the next line.</span>
+<span class="syn-keyword">const</span> ANNOTATION_START = <span class="syn-string">&quot;^[a-z_][A-Za-z0-9_]*!? :(?: (.*))?$&quot;</span>
+<span class="syn-keyword">const</span> ALIAS_START = <span class="syn-string">&quot;^[A-Z][A-Za-z0-9_]*(?:\\([^()]*\\))? :(?: (.*))?$&quot;</span>
+
+<span class="syn-comment">-- The start of an annotation or alias on the line `l`, read with type_line,</span>
+<span class="syn-comment">-- or nil.</span>
+<span class="syn-keyword">function</span> <span class="syn-name">annotation_start</span>(l)
+  <span class="syn-keyword">local</span> m = re_find(l, ANNOTATION_START)
+  <span class="syn-keyword">if</span> m ~= <span class="syn-keyword">nil</span> <span class="syn-keyword">then</span> <span class="syn-keyword">return</span> m <span class="syn-keyword">end</span>
+  <span class="syn-keyword">return</span> re_find(l, ALIAS_START)
+<span class="syn-keyword">end</span>
+
+<span class="syn-comment">-- The type text an annotation&#39;s start gives on its own line.</span>
+<span class="syn-keyword">function</span> <span class="syn-name">start_text</span>(m)
+  <span class="syn-keyword">local</span> text = get(m.groups, <span class="syn-number">1</span>, <span class="syn-string">&quot;&quot;</span>)
+  <span class="syn-keyword">if</span> text == <span class="syn-keyword">nil</span> <span class="syn-keyword">then</span> <span class="syn-keyword">return</span> <span class="syn-string">&quot;&quot;</span> <span class="syn-keyword">end</span>
+  <span class="syn-keyword">return</span> text
+<span class="syn-keyword">end</span>
+
+<span class="syn-comment">-- Line `l` without a `#` comment, trimmed. A type has no string, so the</span>
+<span class="syn-comment">-- first `#` starts the comment.</span>
+<span class="syn-keyword">function</span> <span class="syn-name">type_line</span>(l)
+  <span class="syn-keyword">local</span> at = find(l, <span class="syn-string">&quot;#&quot;</span>)
+  <span class="syn-keyword">if</span> at == <span class="syn-keyword">nil</span> <span class="syn-keyword">then</span> <span class="syn-keyword">return</span> trim(l) <span class="syn-keyword">end</span>
+  <span class="syn-keyword">return</span> trim(sub(l, <span class="syn-number">1</span>, at - <span class="syn-number">1</span>))
+<span class="syn-keyword">end</span>
+
+<span class="syn-comment">-- If line `i` of `ls` starts a function&#39;s annotation (`name : A, B, C -&gt; R`),</span>
+<span class="syn-comment">-- its arguments before the first arrow, counted by the commas outside any</span>
+<span class="syn-comment">-- brackets: `{items, shown, text, name, last}`, where `shown` is `text`</span>
+<span class="syn-comment">-- shortened and `last` the annotation&#39;s last line read. A type alias of a</span>
+<span class="syn-comment">-- function (`Handler : U8, U8, U8 -&gt; U8`) counts the same way. `roc fmt` wraps</span>
+<span class="syn-comment">-- a long signature, so the annotation goes on to the next line while its text</span>
+<span class="syn-comment">-- so far is empty (the type starts after the colon&#39;s line), a bracket is open</span>
+<span class="syn-comment">-- or its text ends in a comma outside any bracket, until the first arrow</span>
+<span class="syn-comment">-- outside any bracket. A comment on a line of its own is passed over; a blank</span>
+<span class="syn-comment">-- line, or a next line that starts another annotation or field, ends it. nil</span>
+<span class="syn-comment">-- when line `i` annotates no function.</span>
+<span class="syn-keyword">function</span> <span class="syn-name">annotation_arguments</span>(ls, i)
+  <span class="syn-keyword">local</span> m = annotation_start(type_line(ls[i]))
+  <span class="syn-keyword">if</span> m == <span class="syn-keyword">nil</span> <span class="syn-keyword">then</span> <span class="syn-keyword">return</span> <span class="syn-keyword">nil</span> <span class="syn-keyword">end</span>
+  <span class="syn-keyword">local</span> name = trim(split(trim(ls[i]), <span class="syn-string">&quot; :&quot;</span>)[<span class="syn-number">1</span>])
+  <span class="syn-keyword">local</span> type_text = <span class="syn-string">&quot;&quot;</span>
+  <span class="syn-keyword">local</span> depth = <span class="syn-number">0</span>
+  <span class="syn-keyword">local</span> commas = <span class="syn-number">0</span>
+  <span class="syn-keyword">local</span> n = i
+  <span class="syn-keyword">local</span> piece = start_text(m)
+  <span class="syn-keyword">while</span> <span class="syn-keyword">true</span> <span class="syn-keyword">do</span>
+    <span class="syn-keyword">local</span> start = #type_text
+    type_text = type_text .. ((start == <span class="syn-number">0</span> <span class="syn-keyword">or</span> piece == <span class="syn-string">&quot;&quot;</span>) <span class="syn-keyword">and</span> <span class="syn-string">&quot;&quot;</span> <span class="syn-keyword">or</span> <span class="syn-string">&quot; &quot;</span>) .. piece
+    <span class="syn-keyword">for</span> at = start + <span class="syn-number">1</span>, #type_text <span class="syn-keyword">do</span>
+      <span class="syn-keyword">local</span> c = sub(type_text, at, at)
+      <span class="syn-keyword">if</span> has_key(OPENERS, c) <span class="syn-keyword">then</span> depth = depth + <span class="syn-number">1</span> <span class="syn-keyword">end</span>
+      <span class="syn-keyword">if</span> has_key(CLOSERS, c) <span class="syn-keyword">then</span> depth = depth - <span class="syn-number">1</span> <span class="syn-keyword">end</span>
+      <span class="syn-keyword">if</span> depth &lt; <span class="syn-number">0</span> <span class="syn-keyword">then</span> <span class="syn-keyword">return</span> <span class="syn-keyword">nil</span> <span class="syn-keyword">end</span>
+      <span class="syn-keyword">if</span> depth == <span class="syn-number">0</span> <span class="syn-keyword">and</span> c == <span class="syn-string">&quot;,&quot;</span> <span class="syn-keyword">then</span> commas = commas + <span class="syn-number">1</span> <span class="syn-keyword">end</span>
+      <span class="syn-keyword">if</span> depth == <span class="syn-number">0</span> <span class="syn-keyword">and</span> (sub(type_text, at, at + <span class="syn-number">1</span>) == <span class="syn-string">&quot;-&gt;&quot;</span> <span class="syn-keyword">or</span> sub(type_text, at, at + <span class="syn-number">1</span>) == <span class="syn-string">&quot;=&gt;&quot;</span>) <span class="syn-keyword">then</span>
+        <span class="syn-keyword">local</span> text = trim(sub(type_text, <span class="syn-number">1</span>, at - <span class="syn-number">1</span>))
+        <span class="syn-keyword">return</span> {items = commas + <span class="syn-number">1</span>, shown = shortened(text), text = text, name = name, last = n}
+      <span class="syn-keyword">end</span>
+    <span class="syn-keyword">end</span>
+    <span class="syn-keyword">local</span> goes_on = type_text == <span class="syn-string">&quot;&quot;</span> <span class="syn-keyword">or</span> depth &gt; <span class="syn-number">0</span> <span class="syn-keyword">or</span> ends_with(type_text, <span class="syn-string">&quot;,&quot;</span>)
+    <span class="syn-keyword">if</span> <span class="syn-keyword">not</span> goes_on <span class="syn-keyword">then</span> <span class="syn-keyword">return</span> <span class="syn-keyword">nil</span> <span class="syn-keyword">end</span>
+    <span class="syn-comment">-- The next line of code, past any comment on a line of its own.</span>
+    n = n + <span class="syn-number">1</span>
+    <span class="syn-keyword">while</span> n &lt;= #ls <span class="syn-keyword">and</span> trim(ls[n]) ~= <span class="syn-string">&quot;&quot;</span> <span class="syn-keyword">and</span> type_line(ls[n]) == <span class="syn-string">&quot;&quot;</span> <span class="syn-keyword">do</span> n = n + <span class="syn-number">1</span> <span class="syn-keyword">end</span>
+    <span class="syn-keyword">if</span> n &gt; #ls <span class="syn-keyword">or</span> trim(ls[n]) == <span class="syn-string">&quot;&quot;</span> <span class="syn-keyword">then</span> <span class="syn-keyword">return</span> <span class="syn-keyword">nil</span> <span class="syn-keyword">end</span>
+    <span class="syn-keyword">local</span> next_line = type_line(ls[n])
+    <span class="syn-keyword">if</span> depth == <span class="syn-number">0</span> <span class="syn-keyword">and</span> annotation_start(next_line) ~= <span class="syn-keyword">nil</span> <span class="syn-keyword">then</span> <span class="syn-keyword">return</span> <span class="syn-keyword">nil</span> <span class="syn-keyword">end</span>
+    piece = next_line
+  <span class="syn-keyword">end</span>
+<span class="syn-keyword">end</span>
+
+<span class="syn-comment">-- Whether every comma-separated item of `text` is `Bool` or a Bool</span>
+<span class="syn-comment">-- literal, like `Bool, Bool, Bool` or `Bool.true, Bool.false, Bool.true`.</span>
+<span class="syn-keyword">const</span> FLAGS = {Bool = <span class="syn-keyword">true</span>, [<span class="syn-string">&quot;Bool.true&quot;</span>] = <span class="syn-keyword">true</span>, [<span class="syn-string">&quot;Bool.false&quot;</span>] = <span class="syn-keyword">true</span>, [<span class="syn-string">&quot;Bool.True&quot;</span>] = <span class="syn-keyword">true</span>, [<span class="syn-string">&quot;Bool.False&quot;</span>] = <span class="syn-keyword">true</span>}
+<span class="syn-keyword">function</span> <span class="syn-name">are_all_flags</span>(text)
+  <span class="syn-keyword">for</span> item <span class="syn-keyword">in</span> split(text, <span class="syn-string">&quot;,&quot;</span>) <span class="syn-keyword">do</span>
+    <span class="syn-keyword">if</span> <span class="syn-keyword">not</span> has_key(FLAGS, trim(item)) <span class="syn-keyword">then</span> <span class="syn-keyword">return</span> <span class="syn-keyword">false</span> <span class="syn-keyword">end</span>
+  <span class="syn-keyword">end</span>
+  <span class="syn-keyword">return</span> <span class="syn-keyword">true</span>
+<span class="syn-keyword">end</span>
+
+<span class="syn-keyword">const</span> FLAG_ADVICE = <span class="syn-string">&quot;: a flag a caller passes is a tag, not a Bool (roc-apps docs/roc-style.md)&quot;</span>
+
+<span class="syn-comment">-- The finding for a function type&#39;s arguments, which can&#39;t take a</span>
+<span class="syn-comment">-- trailing comma. The advice is a record for values that travel together,</span>
+<span class="syn-comment">-- or a tag for a run of flags.</span>
+<span class="syn-keyword">function</span> <span class="syn-name">function_type_finding</span>(path, line, items, shown, text)
+  <span class="syn-keyword">local</span> advice = are_all_flags(text) <span class="syn-keyword">and</span> FLAG_ADVICE <span class="syn-keyword">or</span> <span class="syn-string">&quot;: take a record (roc-apps docs/roc-style.md, Name what travels together)&quot;</span>
+  <span class="syn-keyword">return</span> {path = path, line = line, kind = <span class="syn-string">&quot;stack&quot;</span>, what = items .. <span class="syn-string">&quot; bare arguments in &quot;</span> .. shown .. <span class="syn-string">&quot;, which no comma stacks&quot;</span> .. advice}
+<span class="syn-keyword">end</span>
+
+<span class="syn-comment">-- The start of a record type&#39;s field, `name : `.</span>
+<span class="syn-keyword">const</span> FIELD_START = <span class="syn-string">&quot;^ *[a-z_][A-Za-z0-9_]* : &quot;</span>
+
+<span class="syn-comment">-- The function types among the fields of a record type whose inside, between</span>
+<span class="syn-comment">-- its braces, is `inner`, each `{name, items, text}`: a field whose type has an</span>
+<span class="syn-comment">-- arrow outside any bracket, its arguments counted by the commas before it. A</span>
+<span class="syn-comment">-- comma starts the next field only when `name : ` follows it, so the commas</span>
+<span class="syn-comment">-- of a field&#39;s function type stay its own.</span>
+<span class="syn-keyword">function</span> <span class="syn-name">record_field_functions</span>(inner)
+  <span class="syn-keyword">local</span> out = {}
+  <span class="syn-keyword">if</span> re_find(inner, FIELD_START) == <span class="syn-keyword">nil</span> <span class="syn-keyword">then</span> <span class="syn-keyword">return</span> out <span class="syn-keyword">end</span>
+  <span class="syn-keyword">local</span> depth = <span class="syn-number">0</span>
+  <span class="syn-keyword">local</span> commas = <span class="syn-number">0</span>
+  <span class="syn-keyword">local</span> type_start = <span class="syn-number">0</span>
+  <span class="syn-keyword">local</span> field_start = <span class="syn-number">1</span>
+  <span class="syn-keyword">local</span> name = <span class="syn-string">&quot;&quot;</span>
+  <span class="syn-keyword">local</span> done = <span class="syn-keyword">false</span>
+  <span class="syn-keyword">local</span> at = <span class="syn-number">1</span>
+  <span class="syn-keyword">while</span> at &lt;= #inner <span class="syn-keyword">do</span>
+    <span class="syn-keyword">local</span> c = sub(inner, at, at)
+    <span class="syn-keyword">if</span> has_key(OPENERS, c) <span class="syn-keyword">then</span> depth = depth + <span class="syn-number">1</span> <span class="syn-keyword">end</span>
+    <span class="syn-keyword">if</span> has_key(CLOSERS, c) <span class="syn-keyword">then</span> depth = depth - <span class="syn-number">1</span> <span class="syn-keyword">end</span>
+    <span class="syn-keyword">if</span> depth == <span class="syn-number">0</span> <span class="syn-keyword">then</span>
+      <span class="syn-keyword">if</span> type_start == <span class="syn-number">0</span> <span class="syn-keyword">and</span> sub(inner, at, at + <span class="syn-number">2</span>) == <span class="syn-string">&quot; : &quot;</span> <span class="syn-keyword">then</span>
+        type_start = at + <span class="syn-number">3</span>
+        name = trim(sub(inner, field_start, at - <span class="syn-number">1</span>))
+        at = at + <span class="syn-number">2</span>
+      <span class="syn-keyword">elseif</span> c == <span class="syn-string">&quot;,&quot;</span> <span class="syn-keyword">and</span> re_find(sub(inner, at + <span class="syn-number">1</span>), FIELD_START) ~= <span class="syn-keyword">nil</span> <span class="syn-keyword">then</span>
+        commas = <span class="syn-number">0</span>
+        type_start = <span class="syn-number">0</span>
+        field_start = at + <span class="syn-number">1</span>
+        done = <span class="syn-keyword">false</span>
+      <span class="syn-keyword">elseif</span> c == <span class="syn-string">&quot;,&quot;</span> <span class="syn-keyword">then</span>
+        commas = commas + <span class="syn-number">1</span>
+      <span class="syn-keyword">elseif</span> <span class="syn-keyword">not</span> done <span class="syn-keyword">and</span> type_start &gt; <span class="syn-number">0</span> <span class="syn-keyword">and</span> sub(inner, at - <span class="syn-number">1</span>, at - <span class="syn-number">1</span>) == <span class="syn-string">&quot; &quot;</span> <span class="syn-keyword">and</span> (sub(inner, at, at + <span class="syn-number">1</span>) == <span class="syn-string">&quot;-&gt;&quot;</span> <span class="syn-keyword">or</span> sub(inner, at, at + <span class="syn-number">1</span>) == <span class="syn-string">&quot;=&gt;&quot;</span>) <span class="syn-keyword">then</span>
+        push(out, {name = name, items = commas + <span class="syn-number">1</span>, text = trim(sub(inner, type_start, at - <span class="syn-number">1</span>))})
+        done = <span class="syn-keyword">true</span>
+      <span class="syn-keyword">end</span>
+    <span class="syn-keyword">end</span>
+    at = at + <span class="syn-number">1</span>
+  <span class="syn-keyword">end</span>
+  <span class="syn-keyword">return</span> out
+<span class="syn-keyword">end</span>
+
+<span class="syn-comment">-- Whether any line of the file at `p` is wider than WIDTH.</span>
+<span class="syn-keyword">function</span> <span class="syn-name">has_wide_line</span>(p)
+  <span class="syn-keyword">for</span> l <span class="syn-keyword">in</span> lines(read(p)) <span class="syn-keyword">do</span>
+    <span class="syn-keyword">if</span> line_width(l) &gt; WIDTH <span class="syn-keyword">then</span> <span class="syn-keyword">return</span> <span class="syn-keyword">true</span> <span class="syn-keyword">end</span>
+  <span class="syn-keyword">end</span>
+  <span class="syn-keyword">return</span> <span class="syn-keyword">false</span>
+<span class="syn-keyword">end</span>
+
+<span class="syn-comment">-- The columns that strings&#39; text takes up in `files`, by Roc&#39;s parser, as</span>
+<span class="syn-comment">-- `{columns, refused}`. `columns[path]` maps a line&#39;s number, as text, to</span>
+<span class="syn-comment">-- those columns. Only a file with a wide line is parsed, so a tree of short</span>
+<span class="syn-comment">-- lines never needs roc-ast. `refused` is parse_roc_files&#39; list.</span>
+<span class="syn-keyword">function</span> <span class="syn-name">string_columns_in</span>(files)
+  <span class="syn-keyword">local</span> wide_files = {}
+  <span class="syn-keyword">for</span> p <span class="syn-keyword">in</span> files <span class="syn-keyword">do</span>
+    <span class="syn-keyword">if</span> has_wide_line(p) <span class="syn-keyword">then</span> push(wide_files, p) <span class="syn-keyword">end</span>
+  <span class="syn-keyword">end</span>
+  <span class="syn-keyword">local</span> columns = {}
+  <span class="syn-keyword">if</span> #wide_files == <span class="syn-number">0</span> <span class="syn-keyword">then</span> <span class="syn-keyword">return</span> {columns = columns, refused = {}} <span class="syn-keyword">end</span>
+  <span class="syn-keyword">local</span> parsed = parse_roc_files(wide_files)
+  <span class="syn-keyword">for</span> f <span class="syn-keyword">in</span> parsed.files <span class="syn-keyword">do</span>
+    columns[f.path] = string_columns_on_lines(f.nodes, split(read(f.path), <span class="syn-string">&quot;\n&quot;</span>), <span class="syn-string">&quot;check_stacking: &quot;</span> .. f.path)
+  <span class="syn-keyword">end</span>
+  <span class="syn-keyword">return</span> {columns = columns, refused = parsed.refused}
+<span class="syn-keyword">end</span>
+
+<span class="syn-comment">-- The finding for line `i` of `p`, wider than WIDTH with nothing else found</span>
+<span class="syn-comment">-- on it. `string_columns` is the columns of strings&#39; text on that file&#39;s</span>
+<span class="syn-comment">-- lines, by line number.</span>
+<span class="syn-keyword">function</span> <span class="syn-name">wide_line_finding</span>(p, i, l, reachable_line, string_columns)
+  <span class="syn-keyword">local</span> width = line_width(l)
+  <span class="syn-keyword">local</span> without_strings = width - get(string_columns, <span class="syn-string">&quot;&quot;</span> .. i, <span class="syn-number">0</span>)
+  <span class="syn-keyword">if</span> without_strings &lt;= WIDTH <span class="syn-keyword">then</span>
+    <span class="syn-keyword">return</span> {path = p, line = i, kind = <span class="syn-string">&quot;wide string&quot;</span>, what = width .. <span class="syn-string">&quot; columns, &quot;</span> .. without_strings .. <span class="syn-string">&quot; without its strings&quot;</span>}
+  <span class="syn-keyword">end</span>
+  <span class="syn-keyword">local</span> why = starts_with(trim(l), <span class="syn-string">&quot;#&quot;</span>) <span class="syn-keyword">and</span> <span class="syn-string">&quot;a comment&quot;</span> <span class="syn-keyword">or</span> (group_to_stack(reachable_line, TOKENS, WIDTH) ~= <span class="syn-keyword">nil</span> <span class="syn-keyword">and</span> <span class="syn-string">&quot;a group to stack&quot;</span> <span class="syn-keyword">or</span> <span class="syn-string">&quot;nothing to stack&quot;</span>)
+  <span class="syn-keyword">return</span> {path = p, line = i, kind = <span class="syn-string">&quot;long&quot;</span>, what = width .. <span class="syn-string">&quot; columns, &quot;</span> .. why}
+<span class="syn-keyword">end</span>
+
+<span class="syn-keyword">function</span> <span class="syn-name">concat_lists</span>(a, b)
+  <span class="syn-keyword">local</span> out = {}
+  <span class="syn-keyword">for</span> x <span class="syn-keyword">in</span> a <span class="syn-keyword">do</span> push(out, x) <span class="syn-keyword">end</span>
+  <span class="syn-keyword">for</span> x <span class="syn-keyword">in</span> b <span class="syn-keyword">do</span> push(out, x) <span class="syn-keyword">end</span>
+  <span class="syn-keyword">return</span> out
+<span class="syn-keyword">end</span>
+
+<span class="syn-comment">-- The names the headers of `files` dictate, by path, as `{names, refused}`.</span>
+<span class="syn-comment">-- Only an app&#39;s or a platform&#39;s file is parsed, so a tree of modules needs no</span>
+<span class="syn-comment">-- roc-ast for this.</span>
+<span class="syn-keyword">function</span> <span class="syn-name">dictated_names_in</span>(files)
+  <span class="syn-keyword">local</span> headed = {}
+  <span class="syn-keyword">for</span> p <span class="syn-keyword">in</span> files <span class="syn-keyword">do</span>
+    <span class="syn-keyword">local</span> word = header_word(read(p))
+    <span class="syn-keyword">if</span> word == <span class="syn-string">&quot;app&quot;</span> <span class="syn-keyword">or</span> word == <span class="syn-string">&quot;platform&quot;</span> <span class="syn-keyword">then</span> push(headed, p) <span class="syn-keyword">end</span>
+  <span class="syn-keyword">end</span>
+  <span class="syn-keyword">local</span> names = {}
+  <span class="syn-keyword">if</span> #headed == <span class="syn-number">0</span> <span class="syn-keyword">then</span> <span class="syn-keyword">return</span> {names = names, refused = {}} <span class="syn-keyword">end</span>
+  <span class="syn-keyword">local</span> parsed = parse_roc_files(headed)
+  <span class="syn-keyword">for</span> f <span class="syn-keyword">in</span> parsed.files <span class="syn-keyword">do</span> names[f.path] = header_names(f.nodes).dictated <span class="syn-keyword">end</span>
+  <span class="syn-keyword">return</span> {names = names, refused = parsed.refused}
+<span class="syn-keyword">end</span>
+
+<span class="syn-comment">-- The names the `dictated` table adds to `names`, the result of</span>
+<span class="syn-comment">-- dictated_names_in. Each line of the table is a file&#39;s path, a function&#39;s</span>
+<span class="syn-comment">-- name, and after ` -- ` who dictates its arguments, such as an API the file</span>
+<span class="syn-comment">-- copies or an edge with no records. The path names the file the glob finds</span>
+<span class="syn-comment">-- with that path or ending `/` and that path, so the self-test&#39;s copies in</span>
+<span class="syn-comment">-- scratch are found too. A line whose file the glob doesn&#39;t find, whose</span>
+<span class="syn-comment">-- function has no annotation there, or that gives no reason stops the run, so</span>
+<span class="syn-comment">-- the table can&#39;t go stale.</span>
+<span class="syn-keyword">function</span> <span class="syn-name">with_dictated_table</span>(names, files)
+  <span class="syn-keyword">if</span> DICTATED == <span class="syn-string">&quot;&quot;</span> <span class="syn-keyword">then</span> <span class="syn-keyword">return</span> names <span class="syn-keyword">end</span>
+  <span class="syn-keyword">for</span> l <span class="syn-keyword">in</span> lines(read(DICTATED)) <span class="syn-keyword">do</span>
+    <span class="syn-keyword">if</span> trim(l) ~= <span class="syn-string">&quot;&quot;</span> <span class="syn-keyword">and</span> <span class="syn-keyword">not</span> starts_with(trim(l), <span class="syn-string">&quot;#&quot;</span>) <span class="syn-keyword">then</span>
+      <span class="syn-keyword">local</span> m = re_find(l, <span class="syn-string">&quot;^(\\S+) ([a-z_][A-Za-z0-9_]*!?) -- \\S&quot;</span>)
+      <span class="syn-keyword">if</span> m == <span class="syn-keyword">nil</span> <span class="syn-keyword">then</span> fail(<span class="syn-string">&quot;check_stacking: &quot;</span> .. DICTATED .. <span class="syn-string">&quot; has a line that is not `path name -- reason`: &quot;</span> .. l) <span class="syn-keyword">end</span>
+      <span class="syn-keyword">local</span> name = m.groups[<span class="syn-number">2</span>]
+      <span class="syn-keyword">local</span> path = <span class="syn-keyword">nil</span>
+      <span class="syn-keyword">for</span> p <span class="syn-keyword">in</span> files <span class="syn-keyword">do</span>
+        <span class="syn-keyword">if</span> p == m.groups[<span class="syn-number">1</span>] <span class="syn-keyword">or</span> ends_with(p, <span class="syn-string">&quot;/&quot;</span> .. m.groups[<span class="syn-number">1</span>]) <span class="syn-keyword">then</span> path = p <span class="syn-keyword">end</span>
+      <span class="syn-keyword">end</span>
+      <span class="syn-keyword">if</span> path == <span class="syn-keyword">nil</span> <span class="syn-keyword">then</span> fail(<span class="syn-string">&quot;check_stacking: &quot;</span> .. DICTATED .. <span class="syn-string">&quot; names &quot;</span> .. m.groups[<span class="syn-number">1</span>] .. <span class="syn-string">&quot;, which the glob doesn&#39;t find&quot;</span>) <span class="syn-keyword">end</span>
+      <span class="syn-keyword">local</span> annotated = <span class="syn-keyword">false</span>
+      <span class="syn-keyword">for</span> line <span class="syn-keyword">in</span> lines(read(path)) <span class="syn-keyword">do</span>
+        <span class="syn-keyword">if</span> starts_with(trim(line), name .. <span class="syn-string">&quot; :&quot;</span>) <span class="syn-keyword">then</span> annotated = <span class="syn-keyword">true</span> <span class="syn-keyword">end</span>
+      <span class="syn-keyword">end</span>
+      <span class="syn-keyword">if</span> <span class="syn-keyword">not</span> annotated <span class="syn-keyword">then</span>
+        fail(<span class="syn-string">&quot;check_stacking: &quot;</span> .. DICTATED .. <span class="syn-string">&quot; names &quot;</span> .. name .. <span class="syn-string">&quot;, which has no annotation in &quot;</span> .. path)
+      <span class="syn-keyword">end</span>
+      <span class="syn-keyword">local</span> here = get(names, path, {})
+      here[name] = <span class="syn-keyword">true</span>
+      names[path] = here
+    <span class="syn-keyword">end</span>
+  <span class="syn-keyword">end</span>
+  <span class="syn-keyword">return</span> names
+<span class="syn-keyword">end</span>
+
+<span class="syn-comment">-- Every finding in `files`, as `{found, refused}`: `found` holds each as</span>
+<span class="syn-comment">-- `{path, line, kind, what}`, and `refused` the files roc-ast refused.</span>
+<span class="syn-keyword">function</span> <span class="syn-name">findings_in</span>(files)
+  <span class="syn-keyword">local</span> out = {}
+  <span class="syn-keyword">local</span> strings = string_columns_in(files)
+  <span class="syn-keyword">local</span> dictated = dictated_names_in(files)
+  dictated.names = with_dictated_table(dictated.names, files)
+  <span class="syn-keyword">for</span> p <span class="syn-keyword">in</span> files <span class="syn-keyword">do</span>
+    <span class="syn-keyword">local</span> ls = split(read(p), <span class="syn-string">&quot;\n&quot;</span>)
+    <span class="syn-keyword">local</span> reachable = without_targets_section(ls)
+    <span class="syn-keyword">local</span> string_columns = get(strings.columns, p, {})
+    <span class="syn-keyword">local</span> dictated_here = get(dictated.names, p, {})
+    <span class="syn-comment">-- The function whose annotation ended on the line before and was a</span>
+    <span class="syn-comment">-- finding for its arguments, or &quot;&quot;. Its lambda&#39;s arguments are not</span>
+    <span class="syn-comment">-- reported again.</span>
+    <span class="syn-keyword">local</span> annotated_fn = <span class="syn-string">&quot;&quot;</span>
+    <span class="syn-keyword">local</span> annotation_end = <span class="syn-number">0</span>
+    <span class="syn-keyword">for</span> i = <span class="syn-number">1</span>, #ls <span class="syn-keyword">do</span>
+      <span class="syn-keyword">local</span> found_on_line = <span class="syn-number">0</span>
+      <span class="syn-keyword">local</span> skip_lambda = annotated_fn ~= <span class="syn-string">&quot;&quot;</span> <span class="syn-keyword">and</span> i == annotation_end + <span class="syn-number">1</span> <span class="syn-keyword">and</span> starts_with(trim(ls[i]), annotated_fn .. <span class="syn-string">&quot; = |&quot;</span>)
+      <span class="syn-keyword">if</span> i &gt; annotation_end <span class="syn-keyword">then</span> annotated_fn = <span class="syn-string">&quot;&quot;</span> <span class="syn-keyword">end</span>
+      <span class="syn-keyword">local</span> data_line = is_data_line(reachable[i], WIDTH)
+      <span class="syn-keyword">for</span> g <span class="syn-keyword">in</span> sort(groups_on_line(reachable[i]), <span class="syn-string">&quot;open&quot;</span>) <span class="syn-keyword">do</span>
+        <span class="syn-keyword">local</span> inner = sub(ls[i], g.open + <span class="syn-number">1</span>, g.close - <span class="syn-number">1</span>)
+        <span class="syn-keyword">if</span> sub(ls[i], g.open, g.open) == <span class="syn-string">&quot;{&quot;</span> <span class="syn-keyword">then</span>
+          <span class="syn-keyword">for</span> field <span class="syn-keyword">in</span> record_field_functions(inner) <span class="syn-keyword">do</span>
+            <span class="syn-keyword">if</span> field.items &gt;= <span class="syn-number">3</span> <span class="syn-keyword">and</span> <span class="syn-keyword">not</span> has_key(dictated_here, field.name) <span class="syn-keyword">then</span>
+              push(out, function_type_finding(p, i, field.items, shortened(field.text), field.text))
+              found_on_line = found_on_line + <span class="syn-number">1</span>
+            <span class="syn-keyword">end</span>
+          <span class="syn-keyword">end</span>
+        <span class="syn-keyword">end</span>
+        <span class="syn-keyword">if</span> g.items &gt;= <span class="syn-number">3</span> <span class="syn-keyword">and</span> g.fn_type <span class="syn-keyword">then</span>
+          <span class="syn-keyword">local</span> arguments = split(split(inner, <span class="syn-string">&quot;-&gt;&quot;</span>)[<span class="syn-number">1</span>], <span class="syn-string">&quot;=&gt;&quot;</span>)[<span class="syn-number">1</span>]
+          push(out, function_type_finding(p, i, g.items, shortened(sub(ls[i], g.open, g.close)), arguments))
+          found_on_line = found_on_line + <span class="syn-number">1</span>
+        <span class="syn-keyword">elseif</span> skip_lambda <span class="syn-keyword">and</span> sub(ls[i], g.open, g.open) == <span class="syn-string">&quot;|&quot;</span> <span class="syn-keyword">then</span>
+          skip_lambda = <span class="syn-keyword">false</span>
+        <span class="syn-keyword">elseif</span> <span class="syn-keyword">not</span> data_line <span class="syn-keyword">then</span>
+          <span class="syn-keyword">local</span> are_flags = g.items &gt;= <span class="syn-number">3</span> <span class="syn-keyword">and</span> <span class="syn-keyword">not</span> g.trailing <span class="syn-keyword">and</span> are_all_flags(inner)
+          <span class="syn-keyword">if</span> are_flags <span class="syn-keyword">or</span> should_stack(ls[i], g, TOKENS, WIDTH) <span class="syn-keyword">then</span>
+            <span class="syn-keyword">local</span> advice = are_flags <span class="syn-keyword">and</span> FLAG_ADVICE <span class="syn-keyword">or</span> <span class="syn-string">&quot;&quot;</span>
+            push(out, {path = p, line = i, kind = <span class="syn-string">&quot;stack&quot;</span>, what = g.tokens .. <span class="syn-string">&quot; tokens in &quot;</span> .. shortened(sub(ls[i], g.open, g.close)) .. advice})
+            found_on_line = found_on_line + <span class="syn-number">1</span>
+          <span class="syn-keyword">end</span>
+        <span class="syn-keyword">end</span>
+      <span class="syn-keyword">end</span>
+      <span class="syn-comment">-- A line inside a wrapped annotation starts none.</span>
+      <span class="syn-keyword">local</span> annotation = i &gt; annotation_end <span class="syn-keyword">and</span> annotation_arguments(ls, i) <span class="syn-keyword">or</span> <span class="syn-keyword">nil</span>
+      <span class="syn-keyword">if</span> annotation ~= <span class="syn-keyword">nil</span> <span class="syn-keyword">then</span> annotation_end = annotation.last <span class="syn-keyword">end</span>
+      <span class="syn-keyword">if</span> annotation ~= <span class="syn-keyword">nil</span> <span class="syn-keyword">and</span> annotation.items &gt;= <span class="syn-number">3</span> <span class="syn-keyword">then</span>
+        annotated_fn = annotation.name
+        <span class="syn-keyword">if</span> <span class="syn-keyword">not</span> has_key(dictated_here, annotation.name) <span class="syn-keyword">then</span>
+          push(out, function_type_finding(p, i, annotation.items, annotation.shown, annotation.text))
+          found_on_line = found_on_line + <span class="syn-number">1</span>
+        <span class="syn-keyword">end</span>
+      <span class="syn-keyword">end</span>
+      <span class="syn-keyword">if</span> found_on_line == <span class="syn-number">0</span> <span class="syn-keyword">and</span> line_width(ls[i]) &gt; WIDTH <span class="syn-keyword">then</span>
+        push(out, wide_line_finding(p, i, ls[i], reachable[i], string_columns))
+      <span class="syn-keyword">end</span>
+    <span class="syn-keyword">end</span>
+    <span class="syn-keyword">for</span> g <span class="syn-keyword">in</span> groups_to_unstack(ls, TOKENS, WIDTH) <span class="syn-keyword">do</span>
+      push(out, {path = p, line = g.line, kind = <span class="syn-string">&quot;unstack&quot;</span>, what = g.tokens .. <span class="syn-string">&quot; tokens in &quot;</span> .. shortened(trim(group_on_one_line(ls, g)))})
+    <span class="syn-keyword">end</span>
+  <span class="syn-keyword">end</span>
+  <span class="syn-keyword">return</span> {found = out, refused = unique(concat_lists(strings.refused, dictated.refused))}
+<span class="syn-keyword">end</span>
+
+<span class="syn-comment">-- Runs `roc fmt` on `files`. The result&#39;s code is not 0 when a file does</span>
+<span class="syn-comment">-- not parse.</span>
+<span class="syn-keyword">function</span> <span class="syn-name">roc_fmt</span>(files)
+  <span class="syn-keyword">local</span> argv = {roc_bin(<span class="syn-string">&quot;check_stacking&quot;</span>, SELF_TEST), <span class="syn-string">&quot;fmt&quot;</span>}
+  <span class="syn-keyword">for</span> p <span class="syn-keyword">in</span> files <span class="syn-keyword">do</span> push(argv, real(p)) <span class="syn-keyword">end</span>
+  <span class="syn-keyword">return</span> run(argv, {timeout_ms = <span class="syn-number">120000</span>, tail = <span class="syn-number">20</span>})
+<span class="syn-keyword">end</span>
+
+<span class="syn-comment">-- Rewrites `files` pass after pass until a pass changes nothing, and</span>
+<span class="syn-comment">-- returns how many groups the first pass changed. A pass takes the trailing</span>
+<span class="syn-comment">-- comma from each group that should unstack and gives one to each line&#39;s group</span>
+<span class="syn-comment">-- that should stack, and `roc fmt` lays out the result.</span>
+<span class="syn-keyword">function</span> <span class="syn-name">rewrite_trailing_commas</span>(files)
+  <span class="syn-keyword">local</span> first_pass_count = <span class="syn-number">0</span>
+  <span class="syn-keyword">local</span> pass = <span class="syn-number">1</span>
+  <span class="syn-keyword">local</span> changed = <span class="syn-number">1</span>
+  <span class="syn-keyword">local</span> touched = {}
+  <span class="syn-keyword">while</span> changed &gt; <span class="syn-number">0</span> <span class="syn-keyword">and</span> pass &lt;= MAX_PASSES <span class="syn-keyword">do</span>
+    changed = <span class="syn-number">0</span>
+    touched = {}
+    <span class="syn-keyword">for</span> p <span class="syn-keyword">in</span> files <span class="syn-keyword">do</span>
+      <span class="syn-keyword">local</span> ls = split(read(p), <span class="syn-string">&quot;\n&quot;</span>)
+      <span class="syn-keyword">local</span> unstacked = groups_to_unstack(ls, TOKENS, WIDTH)
+      ls = without_trailing_commas(ls, unstacked)
+      <span class="syn-keyword">local</span> reachable = without_targets_section(ls)
+      <span class="syn-keyword">local</span> n = #unstacked
+      <span class="syn-keyword">for</span> i = <span class="syn-number">1</span>, #ls <span class="syn-keyword">do</span>
+        <span class="syn-keyword">if</span> <span class="syn-keyword">not</span> starts_with(trim(ls[i]), <span class="syn-string">&quot;#&quot;</span>) <span class="syn-keyword">then</span>
+          <span class="syn-keyword">local</span> g = group_to_stack(reachable[i], TOKENS, WIDTH)
+          <span class="syn-keyword">if</span> g ~= <span class="syn-keyword">nil</span> <span class="syn-keyword">then</span>
+            ls[i] = with_trailing_comma(ls[i], g)
+            n = n + <span class="syn-number">1</span>
+          <span class="syn-keyword">end</span>
+        <span class="syn-keyword">end</span>
+      <span class="syn-keyword">end</span>
+      <span class="syn-keyword">if</span> n &gt; <span class="syn-number">0</span> <span class="syn-keyword">then</span>
+        replace(p, join(ls, <span class="syn-string">&quot;\n&quot;</span>))
+        push(touched, p)
+        changed = changed + n
+      <span class="syn-keyword">end</span>
+    <span class="syn-keyword">end</span>
+    print(<span class="syn-string">&quot;pass &quot;</span> .. pass .. <span class="syn-string">&quot;: &quot;</span> .. changed .. <span class="syn-string">&quot; groups rewritten, in &quot;</span> .. #touched .. <span class="syn-string">&quot; files&quot;</span>)
+    <span class="syn-keyword">if</span> pass == <span class="syn-number">1</span> <span class="syn-keyword">then</span> first_pass_count = changed <span class="syn-keyword">end</span>
+    <span class="syn-keyword">if</span> #touched &gt; <span class="syn-number">0</span> <span class="syn-keyword">then</span>
+      <span class="syn-keyword">local</span> r = roc_fmt(touched)
+      <span class="syn-keyword">if</span> r.code ~= <span class="syn-number">0</span> <span class="syn-keyword">then</span>
+        print(r.out)
+        fail(<span class="syn-string">&quot;roc fmt failed&quot;</span>)
+      <span class="syn-keyword">end</span>
+    <span class="syn-keyword">end</span>
+    pass = pass + <span class="syn-number">1</span>
+  <span class="syn-keyword">end</span>
+  <span class="syn-keyword">if</span> changed &gt; <span class="syn-number">0</span> <span class="syn-keyword">then</span> fail(<span class="syn-string">&quot;check_stacking: still changing after &quot;</span> .. MAX_PASSES .. <span class="syn-string">&quot; passes: &quot;</span> .. join(touched, <span class="syn-string">&quot;, &quot;</span>)) <span class="syn-keyword">end</span>
+  <span class="syn-keyword">return</span> first_pass_count
+<span class="syn-keyword">end</span>
+
+<span class="syn-keyword">function</span> <span class="syn-name">self_test</span>()
+  <span class="syn-keyword">local</span> files = chosen_files()
+  <span class="syn-keyword">local</span> kinds_by_plant = {}
+  <span class="syn-keyword">local</span> count_by_line = {}
+  <span class="syn-keyword">local</span> whats_by_line = {}
+  <span class="syn-keyword">local</span> judged = findings_in(files)
+  fail_if_refused(<span class="syn-string">&quot;check_stacking&quot;</span>, judged.refused)
+  <span class="syn-keyword">for</span> f <span class="syn-keyword">in</span> judged.found <span class="syn-keyword">do</span>
+    <span class="syn-keyword">local</span> name = sub(f.path, #PLANTS + <span class="syn-number">2</span>)
+    kinds_by_plant[name] = get(kinds_by_plant, name, <span class="syn-string">&quot; &quot;</span>) .. f.kind .. <span class="syn-string">&quot; &quot;</span>
+    incr(count_by_line, f.path .. <span class="syn-string">&quot;:&quot;</span> .. f.line)
+    push_at(whats_by_line, f.path .. <span class="syn-string">&quot;:&quot;</span> .. f.line, f.what)
+  <span class="syn-keyword">end</span>
+  <span class="syn-keyword">local</span> bad = <span class="syn-number">0</span>
+  <span class="syn-keyword">for</span> p <span class="syn-keyword">in</span> files <span class="syn-keyword">do</span>
+    <span class="syn-keyword">local</span> n = <span class="syn-number">0</span>
+    <span class="syn-keyword">for</span> l <span class="syn-keyword">in</span> lines(read(p)) <span class="syn-keyword">do</span>
+      n = n + <span class="syn-number">1</span>
+      <span class="syn-keyword">local</span> mark = re_find(l, <span class="syn-string">&quot;# findings ([0-9]+)(?: advice ([a-z]+))?$&quot;</span>)
+      <span class="syn-keyword">if</span> mark ~= <span class="syn-keyword">nil</span> <span class="syn-keyword">then</span>
+        <span class="syn-keyword">local</span> got = get(count_by_line, p .. <span class="syn-string">&quot;:&quot;</span> .. n, <span class="syn-number">0</span>)
+        <span class="syn-keyword">local</span> ok = got == tonumber(mark.groups[<span class="syn-number">1</span>])
+        <span class="syn-keyword">local</span> word = get(mark.groups, <span class="syn-number">2</span>, <span class="syn-string">&quot;&quot;</span>)
+        <span class="syn-keyword">if</span> word ~= <span class="syn-keyword">nil</span> <span class="syn-keyword">and</span> word ~= <span class="syn-string">&quot;&quot;</span> <span class="syn-keyword">then</span>
+          <span class="syn-keyword">for</span> what <span class="syn-keyword">in</span> get(whats_by_line, p .. <span class="syn-string">&quot;:&quot;</span> .. n, {}) <span class="syn-keyword">do</span>
+            <span class="syn-keyword">if</span> <span class="syn-keyword">not</span> contains(what, word) <span class="syn-keyword">then</span> ok = <span class="syn-keyword">false</span> <span class="syn-keyword">end</span>
+          <span class="syn-keyword">end</span>
+        <span class="syn-keyword">end</span>
+        print((ok <span class="syn-keyword">and</span> <span class="syn-string">&quot;ok   &quot;</span> <span class="syn-keyword">or</span> <span class="syn-string">&quot;FAIL &quot;</span>) .. sub(p, #PLANTS + <span class="syn-number">2</span>) .. <span class="syn-string">&quot;:&quot;</span> .. n .. <span class="syn-string">&quot;: &quot;</span> .. got .. <span class="syn-string">&quot; findings, want &quot;</span> .. mark.groups[<span class="syn-number">1</span>])
+        <span class="syn-keyword">if</span> <span class="syn-keyword">not</span> ok <span class="syn-keyword">then</span> bad = bad + <span class="syn-number">1</span> <span class="syn-keyword">end</span>
+      <span class="syn-keyword">end</span>
+    <span class="syn-keyword">end</span>
+  <span class="syn-keyword">end</span>
+  <span class="syn-keyword">for</span> p <span class="syn-keyword">in</span> files <span class="syn-keyword">do</span>
+    <span class="syn-keyword">local</span> name = sub(p, #PLANTS + <span class="syn-number">2</span>)
+    <span class="syn-keyword">local</span> is_long = starts_with(name, <span class="syn-string">&quot;long&quot;</span>)
+    <span class="syn-keyword">local</span> is_wide = starts_with(name, <span class="syn-string">&quot;wide&quot;</span>)
+    <span class="syn-keyword">local</span> want = is_long <span class="syn-keyword">and</span> <span class="syn-string">&quot;long&quot;</span> <span class="syn-keyword">or</span> (is_wide <span class="syn-keyword">and</span> <span class="syn-string">&quot;wide string&quot;</span> <span class="syn-keyword">or</span> (starts_with(name, <span class="syn-string">&quot;unstack&quot;</span>) <span class="syn-keyword">and</span> <span class="syn-string">&quot;unstack&quot;</span> <span class="syn-keyword">or</span> <span class="syn-string">&quot;stack&quot;</span>))
+    <span class="syn-keyword">local</span> got = get(kinds_by_plant, name, <span class="syn-string">&quot;&quot;</span>)
+    <span class="syn-keyword">local</span> clean = starts_with(name, <span class="syn-string">&quot;clean&quot;</span>)
+    <span class="syn-keyword">local</span> ok = (clean <span class="syn-keyword">and</span> got == <span class="syn-string">&quot;&quot;</span>) <span class="syn-keyword">or</span> (<span class="syn-keyword">not</span> clean <span class="syn-keyword">and</span> contains(got, <span class="syn-string">&quot; &quot;</span> .. want .. <span class="syn-string">&quot; &quot;</span>))
+    <span class="syn-keyword">if</span> is_long <span class="syn-keyword">and</span> contains(got, <span class="syn-string">&quot;wide string&quot;</span>) <span class="syn-keyword">then</span> ok = <span class="syn-keyword">false</span> <span class="syn-keyword">end</span>
+    <span class="syn-keyword">if</span> is_wide <span class="syn-keyword">and</span> contains(got, <span class="syn-string">&quot;long&quot;</span>) <span class="syn-keyword">then</span> ok = <span class="syn-keyword">false</span> <span class="syn-keyword">end</span>
+    print((ok <span class="syn-keyword">and</span> <span class="syn-string">&quot;ok   &quot;</span> <span class="syn-keyword">or</span> <span class="syn-string">&quot;FAIL &quot;</span>) .. name .. <span class="syn-string">&quot;: &quot;</span> .. (got == <span class="syn-string">&quot;&quot;</span> <span class="syn-keyword">and</span> <span class="syn-string">&quot;no finding&quot;</span> <span class="syn-keyword">or</span> got))
+    <span class="syn-keyword">if</span> <span class="syn-keyword">not</span> ok <span class="syn-keyword">then</span> bad = bad + <span class="syn-number">1</span> <span class="syn-keyword">end</span>
+  <span class="syn-keyword">end</span>
+  <span class="syn-keyword">if</span> bad &gt; <span class="syn-number">0</span> <span class="syn-keyword">then</span> fail(bad .. <span class="syn-string">&quot; plants wrong&quot;</span>) <span class="syn-keyword">end</span>
+  <span class="syn-keyword">if</span> is_dir(SCRATCH) <span class="syn-keyword">then</span> remove_tree(SCRATCH) <span class="syn-keyword">end</span>
+  mkdir(SCRATCH)
+  <span class="syn-keyword">local</span> copies = {}
+  <span class="syn-keyword">for</span> p <span class="syn-keyword">in</span> files <span class="syn-keyword">do</span>
+    <span class="syn-keyword">local</span> to = SCRATCH .. <span class="syn-string">&quot;/&quot;</span> .. sub(p, #PLANTS + <span class="syn-number">2</span>)
+    replace(to, read(p))
+    push(copies, to)
+  <span class="syn-keyword">end</span>
+  rewrite_trailing_commas(copies)
+  <span class="syn-keyword">local</span> again = rewrite_trailing_commas(copies)
+  <span class="syn-keyword">if</span> again &gt; <span class="syn-number">0</span> <span class="syn-keyword">then</span> fail(<span class="syn-string">&quot;check_stacking: a second rewrite changed &quot;</span> .. again .. <span class="syn-string">&quot; more groups&quot;</span>) <span class="syn-keyword">end</span>
+  <span class="syn-keyword">local</span> r = roc_fmt(copies)
+  <span class="syn-keyword">if</span> r.code ~= <span class="syn-number">0</span> <span class="syn-keyword">then</span>
+    print(r.out)
+    fail(<span class="syn-string">&quot;check_stacking: a rewritten plant no longer parses&quot;</span>)
+  <span class="syn-keyword">end</span>
+  <span class="syn-keyword">for</span> want <span class="syn-keyword">in</span> glob(PLANTS .. <span class="syn-string">&quot;/*.want&quot;</span>) <span class="syn-keyword">do</span>
+    <span class="syn-keyword">local</span> name = sub(basename(want), <span class="syn-number">1</span>, #basename(want) - <span class="syn-number">5</span>)
+    <span class="syn-keyword">local</span> ok = read(SCRATCH .. <span class="syn-string">&quot;/&quot;</span> .. name .. <span class="syn-string">&quot;.roc&quot;</span>) == read(want)
+    print((ok <span class="syn-keyword">and</span> <span class="syn-string">&quot;ok   &quot;</span> <span class="syn-keyword">or</span> <span class="syn-string">&quot;FAIL &quot;</span>) .. name .. <span class="syn-string">&quot;.roc: comes out as its .want&quot;</span>)
+    <span class="syn-keyword">if</span> <span class="syn-keyword">not</span> ok <span class="syn-keyword">then</span> bad = bad + <span class="syn-number">1</span> <span class="syn-keyword">end</span>
+  <span class="syn-keyword">end</span>
+  <span class="syn-keyword">if</span> bad &gt; <span class="syn-number">0</span> <span class="syn-keyword">then</span> fail(bad .. <span class="syn-string">&quot; plants came out wrong&quot;</span>) <span class="syn-keyword">end</span>
+  print(<span class="syn-string">&quot;PASS: every plant gives its finding, the clean ones none; the rewrite ends, a second changes nothing, every plant parses and comes out as its .want&quot;</span>)
+<span class="syn-keyword">end</span>
+
+<span class="syn-keyword">function</span> <span class="syn-name">finding_line</span>(f)
+  <span class="syn-keyword">return</span> f.path .. <span class="syn-string">&quot;:&quot;</span> .. f.line .. <span class="syn-string">&quot;: &quot;</span> .. f.kind .. <span class="syn-string">&quot;: &quot;</span> .. f.what
+<span class="syn-keyword">end</span>
+
+<span class="syn-keyword">if</span> SELF_TEST <span class="syn-keyword">then</span>
+  self_test()
+<span class="syn-keyword">elseif</span> WRITE <span class="syn-keyword">then</span>
+  refuse_house_rewrite(<span class="syn-string">&quot;check_stacking&quot;</span>)
+  <span class="syn-comment">-- Stop before any change if the tree&#39;s Roc is missing.</span>
+  roc_bin(<span class="syn-string">&quot;check_stacking&quot;</span>, SELF_TEST)
+  <span class="syn-keyword">local</span> files = chosen_files()
+  rewrite_trailing_commas(files)
+  <span class="syn-keyword">local</span> left = {}
+  <span class="syn-keyword">local</span> judged = findings_in(files)
+  <span class="syn-keyword">for</span> f <span class="syn-keyword">in</span> judged.found <span class="syn-keyword">do</span> push(left, finding_line(f)) <span class="syn-keyword">end</span>
+  print_findings(#left .. <span class="syn-string">&quot; left, each a line the rewrite can&#39;t reach&quot;</span>, left)
+  fail_if_refused(<span class="syn-string">&quot;check_stacking&quot;</span>, judged.refused)
+<span class="syn-keyword">else</span>
+  <span class="syn-keyword">local</span> files = chosen_files()
+  <span class="syn-keyword">local</span> all = {}
+  <span class="syn-keyword">local</span> count_by_kind = {}
+  <span class="syn-keyword">local</span> judged = findings_in(files)
+  <span class="syn-keyword">for</span> f <span class="syn-keyword">in</span> judged.found <span class="syn-keyword">do</span>
+    <span class="syn-keyword">if</span> <span class="syn-keyword">not</span> house_leaves_out(<span class="syn-string">&quot;check_stacking&quot;</span>, f.kind) <span class="syn-keyword">then</span>
+      push(all, finding_line(f))
+      incr(count_by_kind, f.kind)
+    <span class="syn-keyword">end</span>
+  <span class="syn-keyword">end</span>
+  <span class="syn-keyword">local</span> counts = get(count_by_kind, <span class="syn-string">&quot;stack&quot;</span>, <span class="syn-number">0</span>) .. <span class="syn-string">&quot; to stack, &quot;</span> .. get(count_by_kind, <span class="syn-string">&quot;unstack&quot;</span>, <span class="syn-number">0</span>) .. <span class="syn-string">&quot; to unstack, &quot;</span> .. get(count_by_kind, <span class="syn-string">&quot;long&quot;</span>, <span class="syn-number">0</span>) .. <span class="syn-string">&quot; long, &quot;</span> .. get(count_by_kind, <span class="syn-string">&quot;wide string&quot;</span>, <span class="syn-number">0</span>) .. <span class="syn-string">&quot; wide string&quot;</span> .. house_note(<span class="syn-string">&quot;check_stacking&quot;</span>)
+  print_findings(#all .. <span class="syn-string">&quot; findings in &quot;</span> .. #files .. <span class="syn-string">&quot; files: &quot;</span> .. counts, all)
+  fail_if_refused(<span class="syn-string">&quot;check_stacking&quot;</span>, judged.refused)
+<span class="syn-keyword">end</span>
+</code></pre>
+<nav class="steps"><a href="../check_how_failure_is_reported/">← previous</a> · <a href="../#check_and_fix_group_stacking">Roc on Shale</a> · <a href="../find_awkward_names/">next →</a></nav></main>
+</body>
+</html>
