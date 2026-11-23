@@ -2230,7 +2230,6 @@ Interp :: [].{
 					machine,
 					"unsupported: a timer's properties (`${key}`)${Interp.line_note(site)}",
 				)
-				Taken => crash "Interp.property: no cell is out being written while a property is read"
 			}
 			Text(text) => {
 				if key == "length" {
@@ -2334,7 +2333,6 @@ Interp :: [].{
 			Builtin(_, _) => BuiltinKind
 			Namespace(_, _) => BuiltinKind
 			TimerHandle(_) => BuiltinKind
-			Taken => crash "Interp.kind_of: no cell is out being written while another is asked about"
 		}
 
 	# A property or an item written: an object's property, an array's item

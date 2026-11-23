@@ -5,6 +5,8 @@
 # build lowers closures and the like to boxes, as --specialize=no does, so
 # it allocates where the release build (expected.txt) doesn't.
 00-loop 1 0 the empty block `{}` the loop runs, which the release build doesn't make; the other controls' bodies are statements, not blocks
+01-array-store 1 0 the update lambda's capture (Heap.with_item's position and value), boxed in the dev build; not a copy
 02-closure-call 3 0 the call, none of them in the release build
-05-array-push 2 0 the release build's one (the argument list) and one more for the call
-06-push-pop 4 0 05-array-push's two for the push and two for the pop, none of the pop's in the release build
+04-property-write 1 0 the update lambda's capture (Heap.with_property's key and value), boxed in the dev build; not a copy
+05-array-push 3 0 the release build's one (the argument list), one more for the call, and the update lambda's capture (Heap.with_items_pushed's values), boxed in the dev build; not a copy
+06-push-pop 5 0 05-array-push's three for the push and two for the pop, none of the pop's in the release build; Heap.with_last_dropped's update lambda captures nothing and adds nothing

@@ -141,7 +141,6 @@ Inspect :: [].{
 				_,
 			) => Err(Unsupported("unsupported: printing the builtin object ${name}"))
 			TimerHandle(_) => Err(Unsupported("unsupported: printing a timer, what setTimeout and setInterval answer"))
-			Taken => crash "Inspect.format_cell: no cell is out being written while a line is printed"
 			Array(items) => {
 				if context.seen.contains(id) {
 					Err(Unsupported("unsupported: printing a circular structure"))

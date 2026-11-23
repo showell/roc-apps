@@ -4,15 +4,21 @@
 ## function) is a `Ref` to its cell, so two variables that hold one array hold
 ## one index, and a write through either is seen by both.
 ##
-## **EVERY WRITE TAKES THE CELL OUT, WRITES IT AND PUTS IT BACK.** Roc writes
-## a list in place only while nothing else refers to it. `List.replace` hands
-## the cell over and leaves `Taken` in its place, so the props or items inside
-## it are written while the cell is the only thing that refers to them, and a
-## property write costs the property, never the object or the heap. Each
-## writer takes the cell list itself and gives it back, and its callers pass
-## it straight from the record they update (`{ ..machine, cells:
-## Heap.with_property(machine.cells, ...) }`), so the list is never referred
-## to twice.
+## **EVERY WRITE IS A `List.update` OF ONE CELL.** Roc writes a list in place
+## only while nothing else refers to it, and `List.update` hands its function
+## the cell with nothing else referring to it, so the props or items inside
+## are written in place: a property write costs the property, never the
+## object or the heap. Each writer takes the cell list itself and gives it
+## back, and its callers pass it straight from the record they update
+## (`{ ..machine, cells: Heap.with_property(machine.cells, ...) }`), so the
+## list is never referred to twice.
+##
+## The dev build boxes an update's function when it captures a value that
+## holds a reference count (a key, a `Value`, a list), one small allocation a
+## write that the release build doesn't make; it is never a copy
+## (js/controls/expected-dev.txt names it per control). The writers took the
+## cell out and put it back by hand before, which the dev build didn't box,
+## and read worse.
 ##
 ## Cells are never freed: a run's heap holds every object it made
 ## (js/README.md, "Cells are never freed", says why).
@@ -103,8 +109,6 @@ Heap :: [].{
 		# `clearTimeout` and `clearInterval` take. Node's is an object it can
 		# print; ours can't be printed or read, so no program shows it.
 		TimerHandle(U64),
-		# What a cell's place holds while the cell is out being written.
-		Taken,
 	]
 
 	native_name : Heap.Native -> Str
@@ -191,46 +195,26 @@ Heap :: [].{
 			Err(NotFound) => properties.append({ key: key, value: value })
 		}
 
-	# The cell at `id` handed over, `Taken` left in its place.
-	taken_out : List(Heap.Cell), U64 -> { list : List(Heap.Cell), prev : Heap.Cell }
-	taken_out = |
-		cells,
-		id,
-	| cells.replace(id, Taken) ?? crash "Heap.taken_out: a Ref names a cell the heap has"
-
-	put_back : List(Heap.Cell), U64, Heap.Cell -> List(Heap.Cell)
-	put_back = |
-		cells,
-		id,
-		cell,
-	| cells.set(id, cell) ?? crash "Heap.put_back: the cell was just taken"
-
 	with_property : List(Heap.Cell), U64, Str, Heap.Value -> List(Heap.Cell)
-	with_property = |cells, id, key, value| {
-		taken = Heap.taken_out(cells, id)
-		match taken.prev {
-			Object(properties) => Heap.put_back(
-				taken.list,
-				id,
-				Object(Heap.properties_with(properties, key, value)),
-			)
-			_ => crash "Heap.with_property: the interpreter writes properties only to objects"
-		}
-	}
+	with_property = |cells, id, key, value|
+		cells.update(
+			id,
+			|cell| match cell {
+				Object(properties) => Object(Heap.properties_with(properties, key, value))
+				_ => crash "Heap.with_property: the interpreter writes properties only to objects"
+			},
+		) ?? crash "Heap.with_property: a Ref names a cell the heap has"
 
 	# The heap with an array's item `i` set, or appended when `i` is its length.
 	with_item : List(Heap.Cell), U64, U64, Heap.Value -> List(Heap.Cell)
-	with_item = |cells, id, position, value| {
-		taken = Heap.taken_out(cells, id)
-		match taken.prev {
-			Array(items) => Heap.put_back(
-				taken.list,
-				id,
-				Array(Heap.items_with(items, position, value)),
-			)
-			_ => crash "Heap.with_item: the interpreter writes items only to arrays"
-		}
-	}
+	with_item = |cells, id, position, value|
+		cells.update(
+			id,
+			|cell| match cell {
+				Array(items) => Array(Heap.items_with(items, position, value))
+				_ => crash "Heap.with_item: the interpreter writes items only to arrays"
+			},
+		) ?? crash "Heap.with_item: a Ref names a cell the heap has"
 
 	# **THE WRITE IS A FUNCTION OF ITS OWN.** Made inline in `with_item`'s match
 	# arm, beside a binding of its own, it copied the items: every store into
@@ -247,28 +231,27 @@ Heap :: [].{
 		}
 
 	with_items_pushed : List(Heap.Cell), U64, List(Heap.Value) -> List(Heap.Cell)
-	with_items_pushed = |cells, id, values| {
-		taken = Heap.taken_out(cells, id)
-		match taken.prev {
-			Array(items) => Heap.put_back(
-				taken.list,
-				id,
-				Array(List.concat(items, values)),
-			)
-			_ => crash "Heap.with_items_pushed: the interpreter pushes only onto arrays"
-		}
-	}
+	with_items_pushed = |cells, id, values|
+		cells.update(
+			id,
+			|cell| match cell {
+				Array(items) => Array(List.concat(items, values))
+				_ => crash "Heap.with_items_pushed: the interpreter pushes only onto arrays"
+			},
+		) ?? crash "Heap.with_items_pushed: a Ref names a cell the heap has"
 
 	with_last_dropped : List(Heap.Cell), U64 -> List(Heap.Cell)
-	with_last_dropped = |cells, id| {
-		taken = Heap.taken_out(cells, id)
-		match taken.prev {
-			Array(items) => Heap.put_back(taken.list, id, Array(items.drop_last(1)))
-			_ => crash "Heap.with_last_dropped: the interpreter pops only arrays"
-		}
-	}
+	with_last_dropped = |cells, id|
+		cells.update(
+			id,
+			|cell| match cell {
+				Array(items) => Array(items.drop_last(1))
+				_ => crash "Heap.with_last_dropped: the interpreter pops only arrays"
+			},
+		) ?? crash "Heap.with_last_dropped: a Ref names a cell the heap has"
 
 	# The heap with an array's items replaced whole.
 	with_items : List(Heap.Cell), U64, List(Heap.Value) -> List(Heap.Cell)
-	with_items = |cells, id, values| Heap.put_back(cells, id, Array(values))
+	with_items = |cells, id, values|
+		cells.set(id, Array(values)) ?? crash "Heap.with_items: a Ref names a cell the heap has"
 }

@@ -175,9 +175,11 @@ evaluation takes it and answers it back beside its value.
 stray reference to the heap makes every write copy the whole heap.** The
 shapes that keep it unique, each with a comment where it is used:
 
-- **A cell is taken out, written and put back** (`Heap.with_property` and its
-  siblings): `List.replace` leaves `Taken` in its place, so the props or
-  items are written while nothing else refers to them.
+- **A cell is written by `List.update`** (`Heap.with_property` and its
+  siblings), which hands its function the cell with nothing else referring
+  to it, so the props or items are written in place. The dev build boxes
+  the function's capture, one small allocation a write (not a copy), which
+  the dev controls name; the release build makes none.
 - **A writer is handed the list straight from the record it updates,**
   `{ ..machine, cells: Heap.with_property(machine.cells, ...) }`.
 - **Every result is taken apart where it is answered,** `{ machine: after,
