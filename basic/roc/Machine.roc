@@ -1652,6 +1652,7 @@ Machine :: [].{
 				limit,
 				step_size,
 				x,
+				m.pc + 1,
 			)
 		} else {
 			d = Machine.settle(m, s.fx)
@@ -1665,16 +1666,14 @@ Machine :: [].{
 					limit,
 					step_size,
 					x,
+					d.pc + 1,
 				)
 			}
 		}
 	}
 
 	# A loop whose body must not run lands past the NEXT that closes it.
-	# **A HELPER GIVEN THE MACHINE IS NOT GIVEN WHAT WAS READ FROM IT.** The
-	# statement after the FOR is read here, from the machine itself: passed
-	# in beside it, it made every store in here copy.
-	enter_for : Parse.Program, M, U64, F64, F64, F64 -> M
+	enter_for : Parse.Program, M, U64, F64, F64, F64, U64 -> M
 	enter_for = |
 		pg,
 		m,
@@ -1682,12 +1681,13 @@ Machine :: [].{
 		limit,
 		step_size,
 		x,
+		after,
 	| {
 		f = {
 			v: v,
 			limit: limit,
 			step: step_size,
-			after: m.pc + 1,
+			after: after,
 		}
 		keep = Machine.outside(m.loops, m.ldepth, f.after)
 		if (f.step >= 0.0 and x > f.limit) or (f.step < 0.0 and x < f.limit) {

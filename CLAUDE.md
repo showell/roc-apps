@@ -524,7 +524,7 @@ shape of the cost, not one number. The list of shapes and the measurements
 behind them live in roc-apps `docs/roc-notes.md`, "Speed and copying".
 Read it before writing a loop that stores into a list or a record.
 
-- **Six shapes copy; learn them from the notes.** The commonest is
+- **Some shapes copy; learn them from the notes.** The commonest is
   `List.set(l, i, v) ?? l`: the fallback names `l`, so every store copies.
   Write `?? crash "..."` instead (`crash` is a keyword; `roc fmt` turns
   `crash("...")` into `crash ("...")`). The `?? l` is a placeholder as well as

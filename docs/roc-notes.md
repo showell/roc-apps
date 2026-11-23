@@ -102,14 +102,15 @@ anyone writing or emitting Roc in this repository. How the Roc is *written*
   3. A value threaded down a recursion and handed back makes the caller's next
      store copy. A recursive function that
      only reads the value does not.
-  4. A helper given a record together with a value read from that record, when
-     the caller passes a freshly updated record and the store is in its own
-     function. Let the helper read the field.
-  5. A run loop that hands its `var` record to the step itself, rather than a
-     fresh update such as `{ ..$m, steps: $m.steps + 1 }`.
-  6. A field taken out in one statement and written back in another. Take it
+  4. A field taken out in one statement and written back in another. Take it
      out, write it and put it back inside the record update:
      `{ ..m, devices: Devices.poke_into(m.devices, a, v) }`.
+
+  On RC1 three shapes the old nightlies copied no longer do, each measured on
+  BASIC's controls in both builds: a helper given a record with a value read
+  from it (BASIC's `enter_for`), a run loop that hands its `var` record to the
+  step itself, and a statement's body written in a `match` arm rather than a
+  function of its own.
 - **To tell copying from writing,** hold the number of writes fixed and vary the
   size of what is written into: flat is in place, linear is a copy. One number
   says nothing. `tools/alloc_ladder.shale` holds an interpreter's controls to
