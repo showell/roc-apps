@@ -28,7 +28,7 @@
 -- the line table has one (the release build's does, the dev build's
 -- doesn't), and writes the same rows to <gen>/copies.tsv.
 --
--- budget: steps=400000000 output_bytes=1000000 arena_bytes=2000000000
+-- budget: steps=400000000 output_bytes=1000000 arena_bytes=2000000000 programs=20000
 
 const WANT_COUNT = "copy-oracle: count_copies, built here, counts a program's allocations by builtin and call site"
 const PLAN = arg("plan", "")
@@ -246,8 +246,10 @@ function main()
   for pr in f.procs do push(text, "roc " .. hex(pr.start) .. " " .. hex(pr.stop)) end
   create(plan_file, join(text, "\n") .. "\n")
   local rows = {}
+  -- Each call site's place, asked of addr2line once a run of this script.
+  local seen = {}
   for c in p.runs do
-    local where = {bin = bin, procs = f.procs, names = names, seen = {}, lines = {}}
+    local where = {bin = bin, procs = f.procs, names = names, seen = seen, lines = {}}
     local small = counted(who, p.gen, plan_file, c.name .. " at " .. p.small, c.small_argv, p.limit_ms, entry_names, where)
     local per = {}
     if #get(c, "big_argv", {}) > 0 then
