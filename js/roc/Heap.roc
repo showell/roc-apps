@@ -10,10 +10,12 @@
 ## it are written while the cell is the only thing that refers to them, and a
 ## property write costs the property, never the object or the heap. Each
 ## writer takes the cell list itself and gives it back, and its callers pass
-## it straight from the record they update (`{ ..st, cells:
-## Heap.with_prop(st.cells, ...) }`), so the list is never referred to twice.
+## it straight from the record they update (`{ ..machine, cells:
+## Heap.with_property(machine.cells, ...) }`), so the list is never referred
+## to twice.
 ##
-## Cells are never freed: a run's heap holds every object it made.
+## Cells are never freed: a run's heap holds every object it made
+## (js/README.md, "Cells are never freed", says why).
 import Ast
 
 Heap :: [].{

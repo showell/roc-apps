@@ -77,7 +77,7 @@ interpreter keeps everything JavaScript shares in one Roc value, the heap, a
 list of cells (an object, an array, a closure, a builtin) named by index,
 and a JavaScript reference is that index. Scopes are a second list, because
 a closure holds on to the scope it was made in and must see later writes to
-it. The machine (`Interp.St`: the heap, the scopes, the output, the step
+it. The machine (`Interp.Machine`: the heap, the scopes, the output, the step
 count) is threaded through the walk the way BASIC threads its machine: each
 evaluation takes it and answers it back beside its value.
 
@@ -85,13 +85,13 @@ evaluation takes it and answers it back beside its value.
 stray reference to the heap makes every write copy the whole heap.** The
 shapes that keep it unique, each with a comment where it is used:
 
-- **A cell is taken out, written and put back** (`Heap.with_prop` and its
+- **A cell is taken out, written and put back** (`Heap.with_property` and its
   siblings): `List.replace` leaves `Taken` in its place, so the props or
   items are written while nothing else refers to them.
 - **A writer is handed the list straight from the record it updates,**
-  `{ ..st, cells: Heap.with_prop(st.cells, ...) }`.
-- **Every result is taken apart where it is answered,** `{ st: after, val
-  } = Interp.eval(st, e)`. A result kept whole for its value keeps its
+  `{ ..machine, cells: Heap.with_property(machine.cells, ...) }`.
+- **Every result is taken apart where it is answered,** `{ machine: after,
+  value } = Interp.evaluate(machine, expression)`. A result kept whole for its value keeps its
   machine too, and each write made while it lives copies. Before this rule,
   a store into an array copied the array, and a closure's `++c` copied
   every scope.
@@ -99,7 +99,7 @@ shapes that keep it unique, each with a comment where it is used:
   cell out of the heap:** the matched cell is a second reference to its
   items for as long as the arm runs.
 - **The write inside a taken-out cell or scope is a function of its own**
-  (`Heap.items_with`, `Interp.scope_with_var`). Written inline in the match
+  (`Heap.items_with`, `Interp.scope_with_variable`). Written inline in the match
   arm, beside a binding, a store into an array of N items copied the N
   items.
 - **The scope list is a stack whose dropped slots are reused,** and it

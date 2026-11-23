@@ -13,14 +13,15 @@
 ## makes every property write copy the whole heap. The rules that keep it
 ## unique:
 ## - No closure in this module captures the machine or a part of it; loops
-##   over the machine are `var $st` loops, never a `walk` with a lambda.
+##   over the machine are `var $s` loops, never a `walk` with a lambda.
 ## - A write passes the list straight from the record it updates,
-##   `{ ..machine, cells: Heap.with_prop(st.cells, ...) }`, so the old machine is
-##   never read after the write that consumes it.
+##   `{ ..machine, cells: Heap.with_property(machine.cells, ...) }`, so the
+##   old machine is never read after the write that consumes it.
 ## - Every `Got` and `Done` is taken apart where it is answered,
-##   `{ st: after, val } = Interp.eval(st, e)`, never kept whole while its
-##   machine goes on to be written: a record kept for its `val` keeps its
-##   `st` too, a second reference to the heap and the scopes, and each
+##   `{ machine: after, value } = Interp.evaluate(machine, expression)`, never
+##   kept whole while its machine goes on to be written: a record kept for
+##   its `value` keeps its `machine` too, a second reference to the heap and
+##   the scopes, and each
 ##   write made while it lives copies them. Kept whole, a store into an
 ##   array copied the array and a closure's `++c` copied every scope.
 ## - A writer asks `Interp.kind_of` what a cell is, never matches the cell
@@ -881,10 +882,10 @@ Interp :: [].{
 			ObjectLit(properties) => {
 				var $s = machine
 				var $made = []
-				for parent in properties {
-					{ machine: after, value } = Interp.evaluate($s, parent.value)
+				for written in properties {
+					{ machine: after, value } = Interp.evaluate($s, written.value)
 					$s = after
-					$made = Heap.properties_with($made, parent.key, value)
+					$made = Heap.properties_with($made, written.key, value)
 				}
 				Interp.alloc($s, Object($made))
 			}
