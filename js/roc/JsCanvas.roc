@@ -28,7 +28,10 @@ import Parser
 main! = |arguments| {
 	match (arguments.get(0), arguments.get(1)) {
 		(Ok(count_text), Ok(src)) => match U64.from_str(count_text) {
-			Ok(count) => record_program!(src, { frames: count, keys: (arguments.get(2) ?? "").split_on(",") })
+			Ok(count) => record_program!(
+				src,
+				{ frames: count, keys: (arguments.get(2) ?? "").split_on(",") },
+			)
 			Err(_) => usage!({})
 		}
 		_ => usage!({})
@@ -81,7 +84,12 @@ record_program! = |src, { frames, keys: key_frames }| {
 					Frame(_) => {
 						echo!("frame ${$n.to_str()} ${NumberText.text_for(t)}\n")
 						keys = (key_frames.get($n) ?? "").split_on("+")
-						$session = Interp.frame!(recording_host(keys), $session, t, Canvas.frame_limits)
+						$session = Interp.frame!(
+							recording_host(keys),
+							$session,
+							t,
+							Canvas.frame_limits,
+						)
 					}
 					NoFrame => {}
 				}

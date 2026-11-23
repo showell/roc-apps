@@ -41,7 +41,12 @@ run_program! : Str => Try({}, [Exit(I8)])
 run_program! = |src| {
 	match Parser.program_of(src, Core) {
 		Ok(program) => {
-			outcome = Interp.run!(command_host({}), program, Core, { steps: 200000000, effects: 1000000000000 })
+			outcome = Interp.run!(
+				command_host({}),
+				program,
+				Core,
+				{ steps: 200000000, effects: 1000000000000 },
+			)
 			match outcome.status {
 				Running => Ok({})
 				Faulted(why) => {

@@ -64,7 +64,19 @@ Heap :: [].{
 	]
 
 	## The canvas builtins that draw a shape or set how shapes are drawn.
-	Paint : [Background, Fill, NoFill, Stroke, NoStroke, Line, Rect, Circle, Ellipse, Polygon, Words]
+	Paint : [
+		Background,
+		Fill,
+		NoFill,
+		Stroke,
+		NoStroke,
+		Line,
+		Rect,
+		Circle,
+		Ellipse,
+		Polygon,
+		Words,
+	]
 
 	## The turtle's builtins.
 	Move : [Forward, Back, Turn, PenUp, PenDown, Goto]

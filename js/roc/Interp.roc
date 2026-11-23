@@ -160,7 +160,11 @@ Interp :: [].{
 			Scoped(scope_names) => scope_names
 			Unscoped => crash "Interp.start!: Parser.program_of gives a program its own scope"
 		}
-		entered = Interp.with_scope_entered(Interp.fresh(library, limits), Within(0), names.len())
+		entered = Interp.with_scope_entered(
+			Interp.fresh(library, limits),
+			Within(0),
+			names.len(),
+		)
 		id = entered.scope
 		{ machine, flow: _ } = Interp.execute_list!(
 			host,
@@ -168,7 +172,11 @@ Interp :: [].{
 			program.statements,
 		)
 		frame = match names.find_first_index(|name| name == "frame") {
-			Ok(index) if Interp.is_running(machine) => match Interp.variable_at(machine.scopes, id, index).value {
+			Ok(index) if Interp.is_running(machine) => match Interp.variable_at(
+				machine.scopes,
+				id,
+				index,
+			).value {
 				Reference(cell) => match Heap.cell_at(machine.cells, cell) {
 					Fun(closure) => Frame(closure)
 					_ => NoFrame
@@ -316,7 +324,10 @@ Interp :: [].{
 				for native in Interp.canvas_natives {
 					canvas_builtin = Interp.alloc($s, Builtin(native, []))
 					$s = canvas_builtin.machine
-					$made = $made.append({ name: Heap.native_name(native), value: canvas_builtin.value })
+					$made = $made.append({
+						name: Heap.native_name(native),
+						value: canvas_builtin.value,
+					})
 				}
 			}
 		}
@@ -699,7 +710,11 @@ Interp :: [].{
 							CapturesNothing => after
 						}
 						$s = match loop.update {
-							Updated(expression) => Interp.machine_after!(host, next_pass, expression)
+							Updated(expression) => Interp.machine_after!(
+								host,
+								next_pass,
+								expression,
+							)
 							NoUpdate => next_pass
 						}
 						$going = Interp.is_running($s)
@@ -1086,7 +1101,13 @@ Interp :: [].{
 				{ machine: second, value: key_value } = Interp.evaluate!(host, first, key)
 				Interp.indexed_value(second, holder, key_value, site)
 			}
-			Call(callee, arguments, site) => Interp.evaluate_call!(host, machine, callee, arguments, site)
+			Call(callee, arguments, site) => Interp.evaluate_call!(
+				host,
+				machine,
+				callee,
+				arguments,
+				site,
+			)
 			Function(definition) => Interp.alloc(
 				machine,
 				Fun({ fun: definition, scope: machine.scope }),
@@ -1392,7 +1413,14 @@ Interp :: [].{
 						facts = Interp.variable_facts(machine.scopes, scope, index)
 						appends = operator == Combine(Add) and facts.state == Mutable and facts.holds_text and Interp.is_pure(expression)
 						if appends {
-							Interp.appended_name!(host, machine, scope, index, expression, site)
+							Interp.appended_name!(
+								host,
+								machine,
+								scope,
+								index,
+								expression,
+								site,
+							)
 						} else {
 							old = Interp.variable_value(machine.scopes, scope, index)
 							{ machine: after, value } = Interp.evaluate!(host, machine, expression)
@@ -1544,7 +1572,14 @@ Interp :: [].{
 	# so it may run first, and the string then grows while only the variable
 	# holds it.
 	appended_name! : Canvas.Host, Interp.Machine, U64, U64, Ast.Expression, Ast.Where => Interp.Got
-	appended_name! = |host, machine, scope_id, index, expression, site| {
+	appended_name! = |
+		host,
+		machine,
+		scope_id,
+		index,
+		expression,
+		site,
+	| {
 		{ machine: after, value: piece } = Interp.evaluate!(host, machine, expression)
 		if !Interp.is_running(after) {
 			{ machine: after, value: Undefined }
@@ -1618,7 +1653,14 @@ Interp :: [].{
 	}
 
 	evaluate_update! : Canvas.Host, Interp.Machine, Ast.Target, Ast.Step, Ast.Fixity, Ast.Where => Interp.Got
-	evaluate_update! = |host, machine, target, step, fixity, site| {
+	evaluate_update! = |
+		host,
+		machine,
+		target,
+		step,
+		fixity,
+		site,
+	| {
 		delta = match step {
 			Increment => 1.0
 			Decrement => -1.0
@@ -1942,11 +1984,24 @@ Interp :: [].{
 				}
 				match method {
 					ArrayMethod(id) => {
-						{ machine: second, values } = Interp.evaluate_elements!(host, first, arguments)
-						Interp.array_method!(host, second, id, name, values, site)
+						{
+							machine: second,
+							values,
+						} = Interp.evaluate_elements!(host, first, arguments)
+						Interp.array_method!(
+							host,
+							second,
+							id,
+							name,
+							values,
+							site,
+						)
 					}
 					TextMethod(text) => {
-						{ machine: second, values } = Interp.evaluate_elements!(host, first, arguments)
+						{
+							machine: second,
+							values,
+						} = Interp.evaluate_elements!(host, first, arguments)
 						Interp.text_method(second, text, name, values, site)
 					}
 					Plain => {
@@ -1954,7 +2009,10 @@ Interp :: [].{
 							machine: second,
 							value: function,
 						} = Interp.property(first, holder, name, site)
-						{ machine: third, values } = Interp.evaluate_elements!(host, second, arguments)
+						{
+							machine: third,
+							values,
+						} = Interp.evaluate_elements!(host, second, arguments)
 						Interp.call!(host, third, function, values, site)
 					}
 				}
@@ -1974,7 +2032,13 @@ Interp :: [].{
 			match callee {
 				Reference(id) => match Heap.cell_at(machine.cells, id) {
 					Fun(closure) => Interp.call_closure!(host, machine, closure, arguments, site)
-					Builtin(native, _) => Interp.call_native!(host, machine, native, arguments, site)
+					Builtin(native, _) => Interp.call_native!(
+						host,
+						machine,
+						native,
+						arguments,
+						site,
+					)
 					_ => Interp.fault_got(
 						machine,
 						"TypeError: ${Interp.shown_value(machine.cells, callee)} is not a function${Interp.line_note(site)}",
@@ -2073,16 +2137,25 @@ Interp :: [].{
 					"${why}${Interp.line_note(site)}",
 				)
 			}
-			Paint(paint) => match Canvas.effect_of(paint, { arguments: arguments, cells: machine.cells }) {
+			Paint(paint) => match Canvas.effect_of(
+				paint,
+				{ arguments: arguments, cells: machine.cells },
+			) {
 				Ok(effect) => Interp.emit!(host, machine, effect)
-				Err(Unsupported(why)) => Interp.fault_got(machine, "${why}${Interp.line_note(site)}")
+				Err(Unsupported(why)) => Interp.fault_got(
+					machine,
+					"${why}${Interp.line_note(site)}",
+				)
 			}
 			Move(move) => match Canvas.moved(machine.turtle, { move: move, arguments: arguments }) {
 				Ok({ turtle, drawn }) => match drawn {
 					Drew(effect) => Interp.emit!(host, { ..machine, turtle: turtle }, effect)
 					Nothing => { machine: { ..machine, turtle: turtle }, value: Undefined }
 				}
-				Err(Unsupported(why)) => Interp.fault_got(machine, "${why}${Interp.line_note(site)}")
+				Err(Unsupported(why)) => Interp.fault_got(
+					machine,
+					"${why}${Interp.line_note(site)}",
+				)
 			}
 			Sense(MouseX) => {
 				pointer! = host.pointer!
@@ -2408,7 +2481,14 @@ Interp :: [].{
 		}
 
 	array_method! : Canvas.Host, Interp.Machine, U64, Str, List(Heap.Value), Ast.Where => Interp.Got
-	array_method! = |host, machine, id, name, arguments, site|
+	array_method! = |
+		host,
+		machine,
+		id,
+		name,
+		arguments,
+		site,
+	|
 		match name {
 			"push" => {
 				pushed = { ..machine, cells: Heap.with_items_pushed(machine.cells, id, arguments) }
@@ -2522,13 +2602,62 @@ Interp :: [].{
 					value: Reference(id),
 				}
 			}
-			"forEach" => Interp.array_walk!(host, machine, id, arguments, ForEach, site)
-			"map" => Interp.array_walk!(host, machine, id, arguments, Map, site)
-			"filter" => Interp.array_walk!(host, machine, id, arguments, Filter, site)
-			"some" => Interp.array_walk!(host, machine, id, arguments, Some, site)
-			"every" => Interp.array_walk!(host, machine, id, arguments, Every, site)
-			"find" => Interp.array_walk!(host, machine, id, arguments, Find, site)
-			"findIndex" => Interp.array_walk!(host, machine, id, arguments, FindIndex, site)
+			"forEach" => Interp.array_walk!(
+				host,
+				machine,
+				id,
+				arguments,
+				ForEach,
+				site,
+			)
+			"map" => Interp.array_walk!(
+				host,
+				machine,
+				id,
+				arguments,
+				Map,
+				site,
+			)
+			"filter" => Interp.array_walk!(
+				host,
+				machine,
+				id,
+				arguments,
+				Filter,
+				site,
+			)
+			"some" => Interp.array_walk!(
+				host,
+				machine,
+				id,
+				arguments,
+				Some,
+				site,
+			)
+			"every" => Interp.array_walk!(
+				host,
+				machine,
+				id,
+				arguments,
+				Every,
+				site,
+			)
+			"find" => Interp.array_walk!(
+				host,
+				machine,
+				id,
+				arguments,
+				Find,
+				site,
+			)
+			"findIndex" => Interp.array_walk!(
+				host,
+				machine,
+				id,
+				arguments,
+				FindIndex,
+				site,
+			)
 			"reduce" => Interp.array_reduce!(host, machine, id, arguments, site)
 			"sort" => Interp.array_sort!(host, machine, id, arguments, site)
 			_ => Interp.fault_got(
@@ -2542,7 +2671,14 @@ Interp :: [].{
 	# An array method that calls a function on each item in turn, the items
 	# read from the heap as it goes, since the function may change the array.
 	array_walk! : Canvas.Host, Interp.Machine, U64, List(Heap.Value), Interp.Walk, Ast.Where => Interp.Got
-	array_walk! = |host, machine, id, arguments, walk, site| {
+	array_walk! = |
+		host,
+		machine,
+		id,
+		arguments,
+		walk,
+		site,
+	| {
 		callback = arguments.first() ?? Undefined
 		count = Interp.item_count(machine, id)
 		var $s = machine
@@ -2768,7 +2904,13 @@ Interp :: [].{
 				{ machine: machine, order: order }
 			}
 			_ => {
-				{ machine: after, value } = Interp.call!(host, machine, compare, [left, right], site)
+				{ machine: after, value } = Interp.call!(
+					host,
+					machine,
+					compare,
+					[left, right],
+					site,
+				)
 				order = match value {
 					Number(x) => if x > 0.0 {
 						After

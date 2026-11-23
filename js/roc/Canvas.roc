@@ -23,13 +23,47 @@ Canvas :: [].{
 		NoFill,
 		Stroke({ color : Str, width : F64 }),
 		NoStroke,
-		Line({ x1 : F64, y1 : F64, x2 : F64, y2 : F64 }),
-		Rect({ x : F64, y : F64, w : F64, h : F64 }),
-		Circle({ x : F64, y : F64, r : F64 }),
-		Ellipse({ x : F64, y : F64, rx : F64, ry : F64 }),
+		Line(
+			{
+				x1 : F64,
+				y1 : F64,
+				x2 : F64,
+				y2 : F64,
+			},
+		),
+		Rect(
+			{
+				x : F64,
+				y : F64,
+				w : F64,
+				h : F64,
+			},
+		),
+		Circle(
+			{
+				x : F64,
+				y : F64,
+				r : F64,
+			},
+		),
+		Ellipse(
+			{
+				x : F64,
+				y : F64,
+				rx : F64,
+				ry : F64,
+			},
+		),
 		# The corners' coordinates, x then y, corner by corner.
 		Polygon(List(F64)),
-		Words({ text : Str, x : F64, y : F64, size : F64 }),
+		Words(
+			{
+				text : Str,
+				x : F64,
+				y : F64,
+				size : F64,
+			},
+		),
 	]
 
 	Axis : [X, Y]
@@ -47,7 +81,12 @@ Canvas :: [].{
 
 	## Where the turtle stands, the way it faces in degrees clockwise from up,
 	## and whether its moves draw.
-	Turtle : { x : F64, y : F64, heading : F64, pen : [Down, Up] }
+	Turtle : {
+		x : F64,
+		y : F64,
+		heading : F64,
+		pen : [Down, Up],
+	}
 
 	## The page's rails, which the recording host holds a program to as well:
 	## the statements and effects of the run before the first frame, and of
@@ -67,7 +106,12 @@ Canvas :: [].{
 	## The turtle at the start of a run: the canvas's middle, facing up, its
 	## pen down.
 	turtle_start : Canvas.Turtle
-	turtle_start = { x: 200.0, y: 200.0, heading: 0.0, pen: Down }
+	turtle_start = {
+		x: 200.0,
+		y: 200.0,
+		heading: 0.0,
+		pen: Down,
+	}
 
 	# ---- the shapes ------------------------------------------------------------
 
@@ -79,31 +123,67 @@ Canvas :: [].{
 	effect_of : Heap.Paint, Canvas.Given -> Try(Canvas.Effect, [Unsupported(Str)])
 	effect_of = |paint, { arguments, cells }|
 		match paint {
-			Background => Ok(Background(Canvas.color_at(arguments, { position: 0, name: "background" })?))
+			Background => Ok(
+				Background(Canvas.color_at(arguments, { position: 0, name: "background" })?),
+			)
 			Fill => Ok(Fill(Canvas.color_at(arguments, { position: 0, name: "fill" })?))
 			NoFill => Ok(NoFill)
 			Stroke => Ok(
 				Stroke({
 					color: Canvas.color_at(arguments, { position: 0, name: "stroke" })?,
-					width: Canvas.optional_number(arguments, { position: 1, default: 1.0, name: "stroke" })?,
+					width: Canvas.optional_number(
+						arguments,
+						{
+							position: 1,
+							default: 1.0,
+							name: "stroke",
+						},
+					)?,
 				}),
 			)
 			NoStroke => Ok(NoStroke)
 			Line => {
 				n = Canvas.numbers_given(arguments, { count: 4, call: "line(x1, y1, x2, y2)" })?
-				Ok(Line({ x1: Canvas.at(n, 0), y1: Canvas.at(n, 1), x2: Canvas.at(n, 2), y2: Canvas.at(n, 3) }))
+				Ok(
+					Line({
+						x1: Canvas.at(n, 0),
+						y1: Canvas.at(n, 1),
+						x2: Canvas.at(n, 2),
+						y2: Canvas.at(n, 3),
+					}),
+				)
 			}
 			Rect => {
 				n = Canvas.numbers_given(arguments, { count: 4, call: "rect(x, y, w, h)" })?
-				Ok(Rect({ x: Canvas.at(n, 0), y: Canvas.at(n, 1), w: Canvas.at(n, 2), h: Canvas.at(n, 3) }))
+				Ok(
+					Rect({
+						x: Canvas.at(n, 0),
+						y: Canvas.at(n, 1),
+						w: Canvas.at(n, 2),
+						h: Canvas.at(n, 3),
+					}),
+				)
 			}
 			Circle => {
 				n = Canvas.numbers_given(arguments, { count: 3, call: "circle(x, y, r)" })?
-				Ok(Circle({ x: Canvas.at(n, 0), y: Canvas.at(n, 1), r: Canvas.at(n, 2) }))
+				Ok(
+					Circle({
+						x: Canvas.at(n, 0),
+						y: Canvas.at(n, 1),
+						r: Canvas.at(n, 2),
+					}),
+				)
 			}
 			Ellipse => {
 				n = Canvas.numbers_given(arguments, { count: 4, call: "ellipse(x, y, rx, ry)" })?
-				Ok(Ellipse({ x: Canvas.at(n, 0), y: Canvas.at(n, 1), rx: Canvas.at(n, 2), ry: Canvas.at(n, 3) }))
+				Ok(
+					Ellipse({
+						x: Canvas.at(n, 0),
+						y: Canvas.at(n, 1),
+						rx: Canvas.at(n, 2),
+						ry: Canvas.at(n, 3),
+					}),
+				)
 			}
 			Polygon => Ok(Polygon(Canvas.corners(cells, arguments)?))
 			Words => {
@@ -112,20 +192,34 @@ Canvas :: [].{
 					Ok(Number(number)) => NumberText.text_for(number)
 					_ => return Err(Unsupported("unsupported: text(words, x, y, size) of words that are not a string or a number"))
 				}
-				n = Canvas.numbers_given(arguments.drop_first(1), { count: 2, call: "text(words, x, y, size)" })?
+				n = Canvas.numbers_given(
+					arguments.drop_first(1),
+					{ count: 2, call: "text(words, x, y, size)" },
+				)?
 				Ok(
 					Words({
 						text: words,
 						x: Canvas.at(n, 0),
 						y: Canvas.at(n, 1),
-						size: Canvas.optional_number(arguments, { position: 3, default: 16.0, name: "text" })?,
+						size: Canvas.optional_number(
+							arguments,
+							{
+								position: 3,
+								default: 16.0,
+								name: "text",
+							},
+						)?,
 					}),
 				)
 			}
 		}
 
 	# The first `count` arguments, each a number, or why not.
-	numbers_given : List(Heap.Value), { count : U64, call : Str } -> Try(List(F64), [Unsupported(Str)])
+	numbers_given : List(Heap.Value),
+	{ count : U64, call : Str } -> Try(
+		List(F64),
+		[Unsupported(Str)],
+	)
 	numbers_given = |arguments, { count, call }| {
 		var $got = []
 		var $i = 0
@@ -153,7 +247,12 @@ Canvas :: [].{
 
 	# The argument at `position`, a number, or `default` when the call leaves
 	# it out.
-	optional_number : List(Heap.Value), { position : U64, default : F64, name : Str } -> Try(F64, [Unsupported(Str)])
+	optional_number : List(Heap.Value),
+	{
+		position : U64,
+		default : F64,
+		name : Str,
+	} -> Try(F64, [Unsupported(Str)])
 	optional_number = |arguments, { position, default, name }|
 		match arguments.get(position) {
 			Ok(Number(number)) => Ok(number)
@@ -225,7 +324,11 @@ Canvas :: [].{
 	## The turtle after a move, and the line it drew, if it drew one.
 	Moved : { turtle : Canvas.Turtle, drawn : [Drew(Canvas.Effect), Nothing] }
 
-	moved : Canvas.Turtle, { move : Heap.Move, arguments : List(Heap.Value) } -> Try(Canvas.Moved, [Unsupported(Str)])
+	moved : Canvas.Turtle,
+	{
+		move : Heap.Move,
+		arguments : List(Heap.Value),
+	} -> Try(Canvas.Moved, [Unsupported(Str)])
 	moved = |turtle, { move, arguments }|
 		match move {
 			Forward => {
@@ -258,7 +361,14 @@ Canvas :: [].{
 	went : Canvas.Turtle, { x : F64, y : F64 } -> Canvas.Moved
 	went = |turtle, to| {
 		drawn = match turtle.pen {
-			Down => Drew(Line({ x1: turtle.x, y1: turtle.y, x2: to.x, y2: to.y }))
+			Down => Drew(
+				Line({
+					x1: turtle.x,
+					y1: turtle.y,
+					x2: to.x,
+					y2: to.y,
+				}),
+			)
 			Up => Nothing
 		}
 		{ turtle: { ..turtle, x: to.x, y: to.y }, drawn: drawn }
@@ -329,10 +439,23 @@ Canvas :: [].{
 		Str.from_utf8($bytes) ?? crash "Canvas.escaped: a backslash and an n keep UTF-8 whole"
 	}
 
-	expect Canvas.line_of(Circle({ x: 200.0, y: 150.5, r: 30.0 })) == "circle 200 150.5 30"
+	expect Canvas.line_of(
+		Circle({
+			x: 200.0,
+			y: 150.5,
+			r: 30.0,
+		}),
+	) == "circle 200 150.5 30"
 	expect Canvas.line_of(Stroke({ color: "rgb(1, 2, 3)", width: 2.0 })) == "stroke 2 rgb(1, 2, 3)"
 	expect Canvas.line_of(Log("a\\b\nc")) == "log a\\\\b\\nc"
-	expect Canvas.line_of(Words({ text: "hi there", x: 10.0, y: 20.0, size: 16.0 })) == "text 10 20 16 hi there"
+	expect Canvas.line_of(
+		Words({
+			text: "hi there",
+			x: 10.0,
+			y: 20.0,
+			size: 16.0,
+		}),
+	) == "text 10 20 16 hi there"
 	expect Canvas.normal_heading(-90.0) == 270.0
 	expect Canvas.normal_heading(450.0) == 90.0
 	expect Canvas.is_color_text("#3a7") and Canvas.is_color_text("rgb(20, 120, 200)")
