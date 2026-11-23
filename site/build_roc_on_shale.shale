@@ -6,7 +6,8 @@
 -- then its Shale original, both colored by roc-syntax-color; each shared
 -- package the recipes import has one too, roc-on-shale/<package>/. Each
 -- recipe keeps its anchor on the index (`roc-on-shale/#<recipe>`), so a link
--- into the old single page lands on its entry there.
+-- into the old single page lands on its entry there. The index's drawing is
+-- also written alone, roc-on-shale/platform.svg, for the landing page's card.
 --
 -- The examples come from shale's cookbook/roc/EXAMPLES.txt (LIST, whose
 -- header says the format: sections, each a heading and a sentence, and
@@ -587,14 +588,20 @@ function contents_html(parts, packages)
   return "<ul class=\"contents\" id=\"contents\">\n" .. join(items, "\n") .. "\n</ul>"
 end
 
--- The opening with its drawing in place of DIAGRAM_MARK: Graphviz's SVG of
--- DIAGRAM_SOURCE, from its `<svg` on, so the page's CSS colors it.
+-- Graphviz's SVG of DIAGRAM_SOURCE, whole. The index inlines it, and the
+-- landing page's card shows it as DIAGRAM_FILE, an image of its own.
 const DIAGRAM_SOURCE = "site/roc_on_shale_platform.dot"
+const DIAGRAM_FILE = PAGE_DIR .. "/platform.svg"
+function diagram_svg()
+  return must(run({"dot", "-Tsvg", DIAGRAM_SOURCE}, {timeout_ms = 30000, whole = 1000000})).out
+end
+
+-- The opening with its drawing in place of DIAGRAM_MARK: the SVG from its
+-- `<svg` on, so the page's CSS colors it.
 const DIAGRAM_MARK = "<!-- the diagram -->"
-function with_diagram(head)
+function with_diagram(head, svg)
   local at = find(head, DIAGRAM_MARK)
   if not at then fail("build_roc_on_shale: the opening has no `" .. DIAGRAM_MARK .. "`") end
-  local svg = must(run({"dot", "-Tsvg", DIAGRAM_SOURCE}, {timeout_ms = 30000, whole = 1000000})).out
   local start = find(svg, "<svg")
   if not start then fail("build_roc_on_shale: dot gave no <svg> for " .. DIAGRAM_SOURCE) end
   return sub(head, 1, at - 1) .. "<div class=\"diagram\">\n" .. trim(sub(svg, start, #svg)) .. "\n</div>" ..
@@ -666,7 +673,8 @@ function pages()
     for f in shown.files do push(requests, {language = "roc", text = f.text}) end
   end
   local answers = colored(requests)
-  local index = {page_head("Roc on Shale", INDEX_DESCRIPTION, "../") .. with_diagram(INTRO), contents_html(parts, packages)}
+  local svg = diagram_svg()
+  local index = {page_head("Roc on Shale", INDEX_DESCRIPTION, "../") .. with_diagram(INTRO, svg), contents_html(parts, packages)}
   for s in parts do
     push(index, "<div class=\"group\">")
     push(index, part_head(s))
@@ -681,7 +689,7 @@ function pages()
     push(index, "<p class=\"file\"><a href=\"" .. pkg.id .. "/\">" .. escaped(pkg.heading) .. ": " .. plural(#shown.files, "file", "files") .. "</a></p>")
     push(index, "</div>")
   end
-  local out = {{path = PAGE_DIR .. "/index.html", text = join(index, "\n") .. INDEX_FOOT}}
+  local out = {{path = PAGE_DIR .. "/index.html", text = join(index, "\n") .. INDEX_FOOT}, {path = DIAGRAM_FILE, text = svg}}
   local at = 1
   for i = 1, #examples do
     local x = examples[i]
