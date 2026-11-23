@@ -16,93 +16,29 @@
 -- for a control with no loop. Each argv is the program and its arguments;
 -- every argv runs the same executable.
 --
--- **AN ALLOCATION IS A CALL OF roc_alloc**, counted by a breakpoint
--- (tools/count_allocs.c, built here with the system's C compiler), in the
--- very executable that is timed. Up to Roc 0.1.0-RC1 the default platform
--- gave each allocation its own mmap and `strace -c` counted them; RC1's
--- takes memory from the kernel a few large pieces at a time, so mmap no
--- longer says anything. roc_realloc's calls (a list or a string grown
+-- **AN ALLOCATION IS A CALL OF roc_alloc**, counted by roc-alloc-trace
+-- (tools/alloc_trace.shale builds it from its sibling checkout) with a
+-- breakpoint, in the very executable that is timed: RC1's default platform
+-- takes memory from the kernel a few large pieces at a time, so counting
+-- mmap calls says nothing. roc_realloc's calls (a list or a string grown
 -- where it is) are counted and held beside. Each counted call stops the
--- program, about 80 µs a call.
+-- program, about 80 µs a call. This script writes the plan and the
+-- expected file as roc-alloc-trace's check file, `<gen>/ladder.check`, and
+-- roc-alloc-trace runs every control and holds it there.
 --
 -- The expected file has a line a control that allocates:
 -- `<control> <allocs> <reallocs> <why>`, each count an iteration (`1`,
 -- `2.03`). A control not listed is held to 0 and 0, within 0.05 an
--- iteration either way.
+-- iteration either way. A run that prints `overflowed` (a Roc crash),
+-- `HALTED` or `UNSUPPORTED` fails, since its counts measure nothing.
 --
 -- budget: steps=50000000
 
-const WANT_COUNT = "alloc-ladder: count_allocs, built here, counts an interpreter's roc_alloc calls by breakpoints"
--- Within this much an iteration, in hundredths, a control is on its count.
-const SLACK = 5
+use("./alloc_trace.shale")
 
 const PLAN = arg("plan", "")
 
--- The counter, built into `gen`.
-function build_counter(gen)
-  mkdir(gen)
-  must(run({"cc", "-O2", "-Wall", "-Wextra", "-Werror", "-o", real(gen) .. "/count_allocs", "tools/count_allocs.c"},
-    {timeout_ms = 60000, tail = 20}))
-end
-
--- roc_alloc's, roc_realloc's and roc_dealloc's addresses in `bin`, as `nm`
--- gives them.
-function allocator_at(who, bin)
-  local at = {}
-  for l in lines(must(run({"nm", bin}, {timeout_ms = 30000, tail = 10, re = " T roc_(alloc|realloc|dealloc)$"})).out) do
-    local w = words(l)
-    if #w == 3 then at[w[3]] = w[1] end
-  end
-  for name in {"roc_alloc", "roc_realloc", "roc_dealloc"} do
-    if not has_key(at, name) then fail(who .. ": " .. bin .. " has no " .. name .. " (nm)") end
-  end
-  return at
-end
-
--- One run counted: `{alloc, realloc, tail}`, `tail` the last bytes it
--- printed. Any exit but 0 stops the run.
-function counted(who, gen, at, stage, argv, limit_ms)
-  local counts = gen .. "/counts.txt"
-  local full = {real(gen .. "/count_allocs"), real(gen) .. "/counts.txt", at.roc_alloc, at.roc_realloc, at.roc_dealloc}
-  for a in argv do push(full, a) end
-  local r = run(full, {timeout_ms = limit_ms, tail = 3, want = WANT_COUNT, cpu_budget_ms = limit_ms, stage = stage})
-  if r.ended ~= "exit" or r.code ~= 0 then fail(who .. ": " .. stage .. " ended " .. r.ended .. " " .. get(r, "code", "") .. ": " .. r.out) end
-  local w = words(read(counts))
-  remove(counts)
-  return {alloc = tonumber(w[2]), realloc = tonumber(w[4]), tail = sub(r.out, -30)}
-end
-
--- Hundredths written as a decimal.
-function hundredths(h)
-  local sign = ""
-  local a = h
-  if h < 0 then
-    sign = "-"
-    a = -h
-  end
-  local frac = tostring(a % 100)
-  if #frac == 1 then frac = "0" .. frac end
-  return sign .. tostring(a // 100) .. "." .. frac
-end
-
--- What a count grew by an iteration, in hundredths, truncated toward zero.
-function per_iteration(small, big, iterations)
-  local diff = (big - small) * 100
-  if diff < 0 then return -((-diff) // iterations) end
-  return diff // iterations
-end
-
--- A count an iteration as the expected file writes it, `2` or `2.03`, in
--- hundredths.
-function to_hundredths(who, s, file)
-  local m = re_find(s, "^([0-9]+)(?:\\.([0-9][0-9]))?$")
-  if m == nil then fail(who .. ": " .. file .. ": `" .. s .. "` is not a count like 2 or 2.03") end
-  local h = tonumber(m.groups[1]) * 100
-  if m.groups[2] ~= "" then h = h + tonumber(m.groups[2]) end
-  return h
-end
-
--- The expected file, each control's counts in hundredths; a line naming no
+-- The expected file, each control's counts as written; a line naming no
 -- control of the plan stops the run.
 function expected(who, file, names)
   local held = {}
@@ -113,14 +49,13 @@ function expected(who, file, names)
       local w = words(t)
       if #w < 4 then fail(who .. ": " .. file .. ": `" .. t .. "` is not `<control> <allocs> <reallocs> <why>`") end
       if not has_key(names, w[1]) then fail(who .. ": " .. file .. " names " .. w[1] .. ", which is no control") end
-      held[w[1]] = {alloc = to_hundredths(who, w[2], file), realloc = to_hundredths(who, w[3], file)}
+      for n in {w[2], w[3]} do
+        if not re_match(n, "^[0-9]+(?:\\.[0-9][0-9])?$") then fail(who .. ": " .. file .. ": `" .. n .. "` is not a count like 2 or 2.03") end
+      end
+      held[w[1]] = {alloc = w[2], realloc = w[3]}
     end
   end
   return held
-end
-
-function off(h, want)
-  return h > want + SLACK or h < want - SLACK
 end
 
 function main()
@@ -130,40 +65,23 @@ function main()
   local names = {}
   for c in p.controls do names[c.name] = true end
   local held = expected(who, p.expected, names)
-  build_counter(p.gen)
-  local at = allocator_at(who, p.controls[1].small_argv[1])
-  local bad = 0
-  print(pad("control", 30) .. "   allocs at " .. p.small .. ", " .. p.big .. ", an iteration   reallocs an iteration")
-  for c in p.controls do
-    local small = counted(who, p.gen, at, c.name .. " at " .. p.small, c.small_argv, p.limit_ms)
-    local big = "-"
-    local per = "-"
-    local per_re = "-"
-    local want = get(held, c.name, {alloc = 0, realloc = 0})
-    local mark = ""
-    if p.hold then mark = "ok" end
-    local tail = small.tail
-    if #get(c, "big_argv", {}) > 0 then
-      local b = counted(who, p.gen, at, c.name .. " at " .. p.big, c.big_argv, p.limit_ms)
-      tail = b.tail
-      big = tostring(b.alloc)
-      local h = per_iteration(small.alloc, b.alloc, p.big - p.small)
-      local hr = per_iteration(small.realloc, b.realloc, p.big - p.small)
-      per = hundredths(h)
-      per_re = hundredths(hr)
-      if p.hold and (off(h, want.alloc) or off(hr, want.realloc)) then
-        mark = "OFF (held to " .. hundredths(want.alloc) .. " and " .. hundredths(want.realloc) .. ")"
-        bad = bad + 1
-      end
-    end
-    print(pad(c.name, 30) .. " " .. pad(small.alloc, -9) .. " " .. pad(big, -9) .. " " .. pad(per, -9) .. "   " .. pad(per_re, -9) .. "   " .. mark)
-    for word in {"overflowed", "HALTED", "UNSUPPORTED"} do
-      if contains(tail, word) then print("    it printed: " .. substitute(tail, "\n", " ", {missing_ok = true})) end
+  if p.hold then
+    for c in p.controls do
+      if not has_key(held, c.name) then held[c.name] = {alloc = "0", realloc = "0"} end
     end
   end
-  if not p.hold then return nil end
-  print(bad .. " off, of " .. #p.controls .. " controls, held to " .. p.expected)
-  if bad > 0 then fail(who .. ": " .. bad .. " controls off their counts") end
+  local tool = build_alloc_trace(who, p.gen)
+  local check = p.gen .. "/ladder.check"
+  write_check_file(check, p, p.controls, held, {"overflowed", "HALTED", "UNSUPPORTED"})
+  local argv = {tool, "check"}
+  if not p.hold then push(argv, "--report") end
+  push(argv, real(check))
+  local r = run(argv, {timeout_ms = 1800000, tail = 200, want = ALLOC_TRACE_WANT})
+  print(trim(r.out))
+  if r.ended ~= "exit" or r.code ~= 0 then
+    if p.hold and r.code == 1 then fail(who .. ": controls off their counts, held to " .. p.expected) end
+    fail(who .. ": roc-alloc-trace ended " .. r.ended .. " " .. get(r, "code", ""))
+  end
 end
 
 main()

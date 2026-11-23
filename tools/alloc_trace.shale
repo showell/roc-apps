@@ -1,0 +1,69 @@
+-- The library tools/alloc_ladder.shale and tools/copy_oracle.shale share:
+-- roc-alloc-trace built from its sibling checkout, and a plan's controls
+-- written as its check file.
+--
+-- **roc-alloc-trace** (github.com/showell/roc-alloc-trace) counts a Roc
+-- program's roc_alloc and roc_realloc calls by breakpoints, in the very
+-- executable that is timed, and with `where` puts each copy down to the
+-- writing builtin it came through and the Roc procedure that entered it.
+-- Its checkout sits beside this one, as roc-chat's roc-markdown does:
+-- `<this checkout>/../roc-alloc-trace`. Each caller builds it with the
+-- system's C compiler into its own `gen` folder, so a change to the tool
+-- is measured by the next run.
+
+const ALLOC_TRACE_WANT = "alloc-trace: roc-alloc-trace, built here from its sibling checkout, counts a Roc program's allocations by breakpoints"
+
+-- roc-alloc-trace built into `gen`; its path.
+function build_alloc_trace(who, gen)
+  mkdir(gen)
+  local source = real(".") .. "/../roc-alloc-trace/roc-alloc-trace.c"
+  local exe = real(gen) .. "/roc-alloc-trace"
+  local r = run({"cc", "-O2", "-Wall", "-Wextra", "-Werror", "-o", exe, source}, {timeout_ms = 120000, tail = 20})
+  if r.ended ~= "exit" or r.code ~= 0 then
+    fail(who .. ": could not build roc-alloc-trace from " .. source .. " (clone github.com/showell/roc-alloc-trace beside this checkout): " .. trim(r.out))
+  end
+  return exe
+end
+
+-- An argument as the check file quotes it: in double quotes, with `\`,
+-- `"`, a tab, a carriage return and a newline escaped.
+function quoted(s)
+  local t = substitute(s, "\\", "\\\\", {missing_ok = true})
+  t = substitute(t, "\"", "\\\"", {missing_ok = true})
+  t = substitute(t, "\n", "\\n", {missing_ok = true})
+  t = substitute(t, "\t", "\\t", {missing_ok = true})
+  t = substitute(t, "\r", "\\x0d", {missing_ok = true})
+  return "\"" .. t .. "\""
+end
+
+function quoted_argv(argv)
+  local out = {}
+  for a in argv do push(out, quoted(a)) end
+  return join(out, " ")
+end
+
+-- The check file for a plan's `controls` ({name, small_argv, big_argv}),
+-- each with a loop held to `held[name]` (`{alloc, realloc}`, counts an
+-- iteration like `1` or `2.03`) and any other to nothing, written to
+-- `path`. A run that prints a word of `refused` fails.
+function write_check_file(path, plan, controls, held, refused)
+  local text = {"# Written by tools/alloc_trace.shale for " .. plan.who .. "; read by roc-alloc-trace.",
+    "small " .. plan.small, "big " .. plan.big, "slack 0.05",
+    "timeout " .. max(plan.limit_ms // 1000, 1)}
+  if #refused > 0 then push(text, "fail-if-printed " .. join(refused, " ")) end
+  for c in controls do
+    local loop = #get(c, "big_argv", {}) > 0
+    local counts = "- -"
+    if loop and has_key(held, c.name) then counts = held[c.name].alloc .. " " .. held[c.name].realloc end
+    push(text, "")
+    push(text, c.name .. " " .. counts)
+    if loop then
+      push(text, "  small " .. quoted_argv(c.small_argv))
+      push(text, "  big " .. quoted_argv(c.big_argv))
+    else
+      push(text, "  once " .. quoted_argv(c.small_argv))
+    end
+  end
+  if exists(path) then remove(path) end
+  create(path, join(text, "\n") .. "\n")
+end

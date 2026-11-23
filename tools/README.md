@@ -41,11 +41,12 @@ The repository's own scripts, beside `check.shale` at its root.
   their binaries from it. Its header says what the key holds.
 - `alloc_ladder.shale` runs an interpreter's or a program's controls at two
   sizes and holds what one more iteration allocates to an expected file,
-  counting `roc_alloc` calls with `count_allocs.c`'s breakpoints. Its
-  callers are `basic/controls.shale`, `js/controls.shale` and
+  as a check file of roc-alloc-trace's (github.com/showell/roc-alloc-trace,
+  a checkout beside this one, built by `alloc_trace.shale`), which counts
+  `roc_alloc` calls with breakpoints. Its callers are `basic/controls.shale`, `js/controls.shale` and
   `copy_shapes/copy_shapes.shale`.
 - `copy_oracle.shale` says where a Roc program copies, from the program
-  itself: `count_copies.c` breaks at roc_alloc and at each builtin's entry,
+  itself: roc-alloc-trace's `where` breaks at roc_alloc and at each builtin's entry,
   so each allocation made inside a writing builtin (list_set, the appends,
   the dev build's generic `roc_desc_list_op`) is put down to the Roc
   procedure that called it, named by `roc build --debug`'s debug
