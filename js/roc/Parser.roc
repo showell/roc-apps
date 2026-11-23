@@ -251,7 +251,10 @@ Parser :: [].{
 			Name("return") => {
 				q = Parser.advance(p)
 				n = Parser.token(q)
-				if Parser.is_punct(q, ";") or Parser.is_punct(q, "}") or n.tok == End or n.before == NewLine {
+				if Parser.is_punct(
+					q,
+					";",
+				) or Parser.is_punct(q, "}") or n.tok == End or n.before == NewLine {
 					q2 = Parser.end_of_statement(q)?
 					Ok({ p: q2, value: Return(Undefined) })
 				} else {
@@ -342,7 +345,11 @@ Parser :: [].{
 			n = Parser.name_here($q, "a name to declare")?
 			if Parser.is_punct(n.p, "=") {
 				e = Parser.assignment(Parser.advance(n.p))?
-				$out = $out.append({ name: n.value, init: Initialized(Parser.named(e.value, n.value)), at: w })
+				$out = $out.append({
+					name: n.value,
+					init: Initialized(Parser.named(e.value, n.value)),
+					at: w,
+				})
 				$q = e.p
 			} else if binding == Const {
 				return Err(Parser.fault_here(n.p, "a `const` without a value"))
@@ -397,7 +404,12 @@ Parser :: [].{
 				Parser.for_of_rest(Parser.advance(q), binding)
 			}
 			Bound(_) if Parser.is_word(Parser.advance(Parser.advance(q)), "in") => {
-				Err(Parser.fault_here(q, "unsupported: `for ... in` (use `for ... of` over Object.keys)"))
+				Err(
+					Parser.fault_here(
+						q,
+						"unsupported: `for ... in` (use `for ... of` over Object.keys)",
+					),
+				)
 			}
 			_ => {
 				init = match binding_word {
@@ -466,7 +478,12 @@ Parser :: [].{
 
 	# A function after its `function` keyword: an optional name, the
 	# parameters and the body.
-	function_rest : Parser.State, Ast.Where, Parser.Naming -> Try(Parser.Parsed(Ast.FunDef), Lexer.Fault)
+	function_rest : Parser.State,
+	Ast.Where,
+	Parser.Naming -> Try(
+		Parser.Parsed(Ast.FunDef),
+		Lexer.Fault,
+	)
 	function_rest = |p, w, naming| {
 		if Parser.is_punct(p, "*") {
 			return Err(Parser.fault_here(p, "unsupported: generators"))
@@ -513,7 +530,13 @@ Parser :: [].{
 		Ok({ p: Parser.advance($q), value: $names })
 	}
 
-	function_body : Parser.State, Str, List(Str), Ast.Where -> Try(Parser.Parsed(Ast.FunDef), Lexer.Fault)
+	function_body : Parser.State,
+	Str,
+	List(Str),
+	Ast.Where -> Try(
+		Parser.Parsed(Ast.FunDef),
+		Lexer.Fault,
+	)
 	function_body = |p, name, params, w| {
 		before = p.functions
 		b = Parser.block(p)?
@@ -711,7 +734,13 @@ Parser :: [].{
 
 	# One left-associative level: operands from `next`, joined by the level's
 	# operators.
-	binary_level : Parser.State, Parser.Level, (Parser.State -> Try(Parser.Parsed(Ast.Expr), Lexer.Fault)) -> Try(Parser.Parsed(Ast.Expr), Lexer.Fault)
+	binary_level : Parser.State,
+	Parser.Level,
+	(
+		Parser.State -> Try(
+			Parser.Parsed(Ast.Expr),
+			Lexer.Fault,
+		)) -> Try(Parser.Parsed(Ast.Expr), Lexer.Fault)
 	binary_level = |p, level, next| {
 		first = next(p)?
 		var $q = first.p
@@ -747,7 +776,11 @@ Parser :: [].{
 			[{ punct: "===", op: StrictEqual }, { punct: "!==", op: StrictNotEqual }],
 			Parser.relational,
 		)?
-		Parser.refuse_operator(r.p, ["==", "!="], "unsupported: loose equality, use `===` or `!==`")?
+		Parser.refuse_operator(
+			r.p,
+			["==", "!="],
+			"unsupported: loose equality, use `===` or `!==`",
+		)?
 		Parser.refuse_operator(r.p, ["&", "|", "^"], "unsupported: bitwise operators")?
 		Ok(r)
 	}
@@ -873,7 +906,12 @@ Parser :: [].{
 							$q = Parser.advance(q)
 						}
 						Punct("#") => return Err(Parser.fault_here(q, "unsupported: private names"))
-						other => return Err(Parser.fault_here(q, "expected a property's name after `.`, found ${Parser.shown(other)}"))
+						other => return Err(
+							Parser.fault_here(
+								q,
+								"expected a property's name after `.`, found ${Parser.shown(other)}",
+							),
+						)
 					}
 				}
 				Punct("[") => {
@@ -887,9 +925,24 @@ Parser :: [].{
 					$e = Call($e, args.value, w)
 					$q = args.p
 				}
-				Punct("?.") => return Err(Parser.fault_here($q, "unsupported: optional chaining (`?.`)"))
-				TemplateWhole(_) => return Err(Parser.fault_here($q, "unsupported: tagged templates"))
-				TemplateHead(_) => return Err(Parser.fault_here($q, "unsupported: tagged templates"))
+				Punct("?.") => return Err(
+					Parser.fault_here(
+						$q,
+						"unsupported: optional chaining (`?.`)",
+					),
+				)
+				TemplateWhole(_) => return Err(
+					Parser.fault_here(
+						$q,
+						"unsupported: tagged templates",
+					),
+				)
+				TemplateHead(_) => return Err(
+					Parser.fault_here(
+						$q,
+						"unsupported: tagged templates",
+					),
+				)
 				_ => {
 					$more = False
 				}
@@ -911,7 +964,12 @@ Parser :: [].{
 				return Err(Parser.fault_here($q, "unsupported: spread (`...`)"))
 			}
 			if Parser.is_punct($q, ",") {
-				return Err(Parser.fault_here($q, "unsupported: holes in an array (`,,`), or a missing ${what}"))
+				return Err(
+					Parser.fault_here(
+						$q,
+						"unsupported: holes in an array (`,,`), or a missing ${what}",
+					),
+				)
 			}
 			e = Parser.assignment($q)?
 			$items = $items.append(e.value)
@@ -920,7 +978,12 @@ Parser :: [].{
 			} else if Parser.is_punct(e.p, close) {
 				$q = e.p
 			} else {
-				return Err(Parser.fault_here(e.p, "expected `,` or `${close}`, found ${Parser.shown(Parser.token(e.p).tok)}"))
+				return Err(
+					Parser.fault_here(
+						e.p,
+						"expected `,` or `${close}`, found ${Parser.shown(Parser.token(e.p).tok)}",
+					),
+				)
 			}
 		}
 		Ok({ p: Parser.advance($q), value: $items })
@@ -965,7 +1028,12 @@ Parser :: [].{
 			Punct("/") => Err(Parser.fault_here(p, "unsupported: regular expressions"))
 			Punct("#") => Err(Parser.fault_here(p, "unsupported: private names"))
 			Punct("@") => Err(Parser.fault_here(p, "unsupported: decorators"))
-			other => Err(Parser.fault_here(p, "expected an expression, found ${Parser.shown(other)}"))
+			other => Err(
+				Parser.fault_here(
+					p,
+					"expected an expression, found ${Parser.shown(other)}",
+				),
+			)
 		}
 	}
 
@@ -988,7 +1056,12 @@ Parser :: [].{
 					$q = Parser.advance(e.p)
 					$open = False
 				}
-				other => return Err(Parser.fault_here(e.p, "expected `}` to close a template's `\${`, found ${Parser.shown(other)}"))
+				other => return Err(
+					Parser.fault_here(
+						e.p,
+						"expected `}` to close a template's `\${`, found ${Parser.shown(other)}",
+					),
+				)
 			}
 		}
 		Ok({ p: $q, value: Template($texts, $parts) })
@@ -1007,7 +1080,12 @@ Parser :: [].{
 			} else if Parser.is_punct(r.p, "}") {
 				$q = r.p
 			} else {
-				return Err(Parser.fault_here(r.p, "expected `,` or `}` in an object, found ${Parser.shown(Parser.token(r.p).tok)}"))
+				return Err(
+					Parser.fault_here(
+						r.p,
+						"expected `,` or `}` in an object, found ${Parser.shown(Parser.token(r.p).tok)}",
+					),
+				)
 			}
 		}
 		Ok({ p: Parser.advance($q), value: ObjectLit($props) })
@@ -1031,7 +1109,12 @@ Parser :: [].{
 			Punct("[") => Err(Parser.fault_here(p, "unsupported: computed property names"))
 			Punct("...") => Err(Parser.fault_here(p, "unsupported: spread (`...`)"))
 			Punct("*") => Err(Parser.fault_here(p, "unsupported: generators"))
-			other => Err(Parser.fault_here(p, "expected a property's name, found ${Parser.shown(other)}"))
+			other => Err(
+				Parser.fault_here(
+					p,
+					"expected a property's name, found ${Parser.shown(other)}",
+				),
+			)
 		}?
 		after = Parser.advance(p)
 		if Parser.is_punct(after, ":") {

@@ -126,7 +126,12 @@ Lexer :: [].{
 		var $line = s.line
 		var $line_start = s.line_start
 		var $before = s.before
-		while $i < src.len() and !(Lexer.byte_at(src, $i) == '*' and Lexer.byte_at(src, $i + 1) == '/') {
+		while $i < src.len() and !(
+			Lexer.byte_at(src, $i) == '*' and Lexer.byte_at(
+				src,
+				$i + 1,
+			) == '/'
+		) {
 			if Lexer.byte_at(src, $i) == '\n' {
 				$line = $line + 1
 				$line_start = $i + 1
@@ -163,7 +168,12 @@ Lexer :: [].{
 	}
 
 	text_between : List(U8), U64, U64 -> Str
-	text_between = |src, from, to| Str.from_utf8(src.sublist({ start: from, len: to - from })) ?? crash "Lexer.text_between: a cut inside a character"
+	text_between = |src, from, to| Str.from_utf8(
+		src.sublist({
+			start: from,
+			len: to - from,
+		}),
+	) ?? crash "Lexer.text_between: a cut inside a character"
 
 	scan_name : List(U8), Lexer.Scan -> Lexer.Scan
 	scan_name = |src, s| {
@@ -364,7 +374,12 @@ Lexer :: [].{
 		var $out = []
 		var $line = s.line
 		var $line_start = s.line_start
-		while Lexer.byte_at(src, $i) != '`' and !(Lexer.byte_at(src, $i) == '$' and Lexer.byte_at(src, $i + 1) == '{') {
+		while Lexer.byte_at(src, $i) != '`' and !(
+			Lexer.byte_at(src, $i) == '$' and Lexer.byte_at(
+				src,
+				$i + 1,
+			) == '{'
+		) {
 			c = Lexer.byte_at(src, $i)
 			if c == 0 {
 				return Err(Lexer.fault_at(start, "a template literal that never ends"))
@@ -483,7 +498,12 @@ Lexer :: [].{
 				}
 				Ok({ ..made, at: s.at + p.count_utf8_bytes(), depth: opened })
 			}
-			Err(NotFound) => Err(Lexer.fault_at(s, "a character the language has no use for: ${Lexer.text_between(src, s.at, s.at + 1)}"))
+			Err(NotFound) => Err(
+				Lexer.fault_at(
+					s,
+					"a character the language has no use for: ${Lexer.text_between(src, s.at, s.at + 1)}",
+				),
+			)
 		}
 	}
 	# A `}` closes a template's substitution when the brace depth is back where

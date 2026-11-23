@@ -109,7 +109,12 @@ Interp :: [].{
 	# The machine with the outermost scope holding the builtins.
 	with_globals : Interp.St -> Interp.St
 	with_globals = |st| {
-		var $s = { ..st, scopes: st.scopes.append({ vars: [], parent: Outermost }), live_scopes: 1, scope: 0 }
+		var $s = {
+			..st,
+			scopes: st.scopes.append({ vars: [], parent: Outermost }),
+			live_scopes: 1,
+			scope: 0,
+		}
 		log = Interp.alloc($s, Builtin(Log, []))
 		$s = log.st
 		console = Interp.alloc($s, Namespace("console", [{ key: "log", val: log.val }]))
@@ -135,7 +140,10 @@ Interp :: [].{
 		$s = object.st
 		from_char_code = Interp.alloc($s, Builtin(FromCharCode, []))
 		$s = from_char_code.st
-		string = Interp.alloc($s, Builtin(StringOf, [{ key: "fromCharCode", val: from_char_code.val }]))
+		string = Interp.alloc(
+			$s,
+			Builtin(StringOf, [{ key: "fromCharCode", val: from_char_code.val }]),
+		)
 		$s = string.st
 		is_array = Interp.alloc($s, Builtin(IsArray, []))
 		$s = is_array.st
@@ -227,8 +235,14 @@ Interp :: [].{
 	# written while nothing else refers to its vars, and put back.
 	with_var : List(Interp.Scope), U64, U64, Interp.Var -> List(Interp.Scope)
 	with_var = |scopes, sid, index, binding| {
-		taken = scopes.replace(sid, { vars: [], parent: Outermost }) ?? crash "Interp.with_var: a scope the machine has"
-		taken.list.set(sid, Interp.scope_with_var(taken.prev, index, binding)) ?? crash "Interp.with_var: the scope was just taken"
+		taken = scopes.replace(
+			sid,
+			{ vars: [], parent: Outermost },
+		) ?? crash "Interp.with_var: a scope the machine has"
+		taken.list.set(
+			sid,
+			Interp.scope_with_var(taken.prev, index, binding),
+		) ?? crash "Interp.with_var: the scope was just taken"
 	}
 
 	# **THE WRITE IS A FUNCTION OF ITS OWN**, handed the scope taken out. Made
@@ -237,15 +251,27 @@ Interp :: [].{
 	scope_with_var : Interp.Scope, U64, Interp.Var -> Interp.Scope
 	scope_with_var = |scope, index, binding| {
 		{ vars, parent } = scope
-		{ vars: vars.set(index, binding) ?? crash "Interp.scope_with_var: a variable the scope has", parent: parent }
+		{
+			vars: vars.set(
+				index,
+				binding,
+			) ?? crash "Interp.scope_with_var: a variable the scope has",
+			parent: parent,
+		}
 	}
 
 	# The scopes with a variable declared in scope `sid`: set where the name
 	# is already there (a hoisted declaration), else added.
 	with_declared : List(Interp.Scope), U64, Interp.Var -> List(Interp.Scope)
 	with_declared = |scopes, sid, binding| {
-		taken = scopes.replace(sid, { vars: [], parent: Outermost }) ?? crash "Interp.with_declared: a scope the machine has"
-		taken.list.set(sid, Interp.scope_with_declared(taken.prev, binding)) ?? crash "Interp.with_declared: the scope was just taken"
+		taken = scopes.replace(
+			sid,
+			{ vars: [], parent: Outermost },
+		) ?? crash "Interp.with_declared: a scope the machine has"
+		taken.list.set(
+			sid,
+			Interp.scope_with_declared(taken.prev, binding),
+		) ?? crash "Interp.with_declared: the scope was just taken"
 	}
 
 	scope_with_declared : Interp.Scope, Interp.Var -> Interp.Scope
@@ -275,7 +301,10 @@ Interp :: [].{
 	}
 
 	declare : Interp.St, Str, Heap.Val, Interp.VarState -> Interp.St
-	declare = |st, name, val, state| { ..st, scopes: Interp.with_declared(st.scopes, st.scope, { name: name, val: val, state: state }) }
+	declare = |st, name, val, state| {
+		..st,
+		scopes: Interp.with_declared(st.scopes, st.scope, { name: name, val: val, state: state }),
+	}
 
 	# The machine inside a new scope whose parent is `parent`.
 	entered : Interp.St, Interp.Parent -> Interp.St
@@ -523,10 +552,20 @@ Interp :: [].{
 		match iterable {
 			Ref(id) => match Interp.kind_of(got.cells, id) {
 				ArrayKind(_) => Interp.exec_for_of_array(got, loop, id, state)
-				_ => Interp.normal(Interp.faulted(got, "unsupported: `for ... of` over anything but an array or a string${Interp.at_line(loop.at)}"))
+				_ => Interp.normal(
+					Interp.faulted(
+						got,
+						"unsupported: `for ... of` over anything but an array or a string${Interp.at_line(loop.at)}",
+					),
+				)
 			}
 			Text(s) => Interp.exec_for_of_text(got, loop, s, state)
-			_ => Interp.normal(Interp.faulted(got, "TypeError: the value is not iterable${Interp.at_line(loop.at)}"))
+			_ => Interp.normal(
+				Interp.faulted(
+					got,
+					"TypeError: the value is not iterable${Interp.at_line(loop.at)}",
+				),
+			)
 		}
 	}
 
@@ -565,7 +604,12 @@ Interp :: [].{
 		var $going = Interp.is_running(st)
 		for c in Interp.characters(text) {
 			if $going {
-				{ st: after, flow } = Interp.exec_for_of_pass(Interp.ticked($s), loop, Text(c), state)
+				{ st: after, flow } = Interp.exec_for_of_pass(
+					Interp.ticked($s),
+					loop,
+					Text(c),
+					state,
+				)
 				$s = after
 				match Interp.after_body(flow) {
 					GoOn => {
@@ -598,7 +642,14 @@ Interp :: [].{
 			} else {
 				1
 			}
-			$out = $out.append(Str.from_utf8(b.sublist({ start: $i, len: n })) ?? crash "Interp.characters: a whole character")
+			$out = $out.append(
+				Str.from_utf8(
+					b.sublist({
+						start: $i,
+						len: n,
+					}),
+				) ?? crash "Interp.characters: a whole character",
+			)
 			$i = $i + n
 		}
 		$out
@@ -884,7 +935,10 @@ Interp :: [].{
 	eval_name = |st, name, w|
 		match Interp.lookup(st.scopes, st.scope, name) {
 			Found(f) => match f.binding.state {
-				Unready => Interp.fault_got(st, "ReferenceError: Cannot access '${name}' before initialization${Interp.at_line(w)}")
+				Unready => Interp.fault_got(
+					st,
+					"ReferenceError: Cannot access '${name}' before initialization${Interp.at_line(w)}",
+				)
 				_ => { st: st, val: f.binding.val }
 			}
 			Missing => Interp.fault_got(st, Interp.missing_name_message(name, w))
@@ -892,7 +946,26 @@ Interp :: [].{
 
 	missing_name_message : Str, Ast.Where -> Str
 	missing_name_message = |name, w|
-		if ["globalThis", "window", "require", "process", "JSON", "Map", "Set", "Symbol", "Promise", "Date", "RegExp", "parseInt", "parseFloat", "setTimeout", "Error", "BigInt", "Reflect", "Proxy"].contains(name) {
+		if [
+			"globalThis",
+			"window",
+			"require",
+			"process",
+			"JSON",
+			"Map",
+			"Set",
+			"Symbol",
+			"Promise",
+			"Date",
+			"RegExp",
+			"parseInt",
+			"parseFloat",
+			"setTimeout",
+			"Error",
+			"BigInt",
+			"Reflect",
+			"Proxy",
+		].contains(name) {
 			"unsupported: the builtin `${name}`${Interp.at_line(w)}"
 		} else {
 			"ReferenceError: ${name} is not defined${Interp.at_line(w)}"
@@ -905,11 +978,17 @@ Interp :: [].{
 			TypeOf => { st: st, val: Text(Interp.type_of(st.cells, v)) }
 			Negate => match v {
 				Number(n) => { st: st, val: Number(-n) }
-				_ => Interp.fault_got(st, "unsupported: `-` on a ${Interp.type_of(st.cells, v)} (a coercion)${Interp.at_line(w)}")
+				_ => Interp.fault_got(
+					st,
+					"unsupported: `-` on a ${Interp.type_of(st.cells, v)} (a coercion)${Interp.at_line(w)}",
+				)
 			}
 			Plus => match v {
 				Number(n) => { st: st, val: Number(n) }
-				_ => Interp.fault_got(st, "unsupported: `+` on a ${Interp.type_of(st.cells, v)} (a coercion)${Interp.at_line(w)}")
+				_ => Interp.fault_got(
+					st,
+					"unsupported: `+` on a ${Interp.type_of(st.cells, v)} (a coercion)${Interp.at_line(w)}",
+				)
 			}
 		}
 
@@ -925,10 +1004,19 @@ Interp :: [].{
 					Less => { st: st, val: Boolean(Interp.ordering_of_text(x, y) == Before) }
 					LessOrEqual => { st: st, val: Boolean(Interp.ordering_of_text(x, y) != After) }
 					Greater => { st: st, val: Boolean(Interp.ordering_of_text(x, y) == After) }
-					GreaterOrEqual => { st: st, val: Boolean(Interp.ordering_of_text(x, y) != Before) }
-					_ => Interp.fault_got(st, "unsupported: arithmetic on strings (a coercion)${Interp.at_line(w)}")
+					GreaterOrEqual => {
+						st: st,
+						val: Boolean(Interp.ordering_of_text(x, y) != Before),
+					}
+					_ => Interp.fault_got(
+						st,
+						"unsupported: arithmetic on strings (a coercion)${Interp.at_line(w)}",
+					)
 				}
-				_ => Interp.fault_got(st, "unsupported: an operator on a ${Interp.type_of(st.cells, a)} and a ${Interp.type_of(st.cells, b)} (a coercion)${Interp.at_line(w)}")
+				_ => Interp.fault_got(
+					st,
+					"unsupported: an operator on a ${Interp.type_of(st.cells, a)} and a ${Interp.type_of(st.cells, b)} (a coercion)${Interp.at_line(w)}",
+				)
 			}
 		}
 
@@ -983,11 +1071,20 @@ Interp :: [].{
 				if is_texty(a) or is_texty(b) {
 					match (Interp.text_of(st.cells, a), Interp.text_of(st.cells, b)) {
 						(Ok(x), Ok(y)) => { st: st, val: Text(Str.concat(x, y)) }
-						(Err(Unsupported(why)), _) => Interp.fault_got(st, "${why}${Interp.at_line(w)}")
-						(_, Err(Unsupported(why))) => Interp.fault_got(st, "${why}${Interp.at_line(w)}")
+						(Err(Unsupported(why)), _) => Interp.fault_got(
+							st,
+							"${why}${Interp.at_line(w)}",
+						)
+						(_, Err(Unsupported(why))) => Interp.fault_got(
+							st,
+							"${why}${Interp.at_line(w)}",
+						)
 					}
 				} else {
-					Interp.fault_got(st, "unsupported: `+` on a ${Interp.type_of(st.cells, a)} and a ${Interp.type_of(st.cells, b)} (a coercion)${Interp.at_line(w)}")
+					Interp.fault_got(
+						st,
+						"unsupported: `+` on a ${Interp.type_of(st.cells, a)} and a ${Interp.type_of(st.cells, b)} (a coercion)${Interp.at_line(w)}",
+					)
 				}
 			}
 		}
@@ -1004,7 +1101,10 @@ Interp :: [].{
 		match target {
 			ToName(name, at) => {
 				match Interp.place_of(st.scopes, st.scope, name) {
-					Unplaced => Interp.fault_got(st, "unsupported: assigning to `${name}`, which is not declared${Interp.at_line(at)}")
+					Unplaced => Interp.fault_got(
+						st,
+						"unsupported: assigning to `${name}`, which is not declared${Interp.at_line(at)}",
+					)
 					Placed(place) => {
 						appends = op == Combine(Add) and place.state == Mutable and place.holds_text and Interp.is_pure(e)
 						if appends {
@@ -1051,21 +1151,38 @@ Interp :: [].{
 			match Interp.lookup(st.scopes, st.scope, name) {
 				Found(f) => match f.binding.state {
 					Mutable => Interp.var_written(st, f.scope, f.index, { ..f.binding, val: val })
-					Fixed => Interp.fault_got(st, "TypeError: Assignment to constant variable.${Interp.at_line(w)}")
-					Unready => Interp.fault_got(st, "ReferenceError: Cannot access '${name}' before initialization${Interp.at_line(w)}")
+					Fixed => Interp.fault_got(
+						st,
+						"TypeError: Assignment to constant variable.${Interp.at_line(w)}",
+					)
+					Unready => Interp.fault_got(
+						st,
+						"ReferenceError: Cannot access '${name}' before initialization${Interp.at_line(w)}",
+					)
 				}
-				Missing => Interp.fault_got(st, "ReferenceError: ${name} is not defined${Interp.at_line(w)}")
+				Missing => Interp.fault_got(
+					st,
+					"ReferenceError: ${name} is not defined${Interp.at_line(w)}",
+				)
 			}
 		}
 
 	# Where a variable is, and what it holds, with nothing of its value kept:
 	# a kept copy of a string is a second reference to it.
-	Place : [Placed({ scope : U64, index : U64, state : Interp.VarState, holds_text : Bool }), Unplaced]
+	Place : [
+		Placed({ scope : U64, index : U64, state : Interp.VarState, holds_text : Bool }),
+		Unplaced,
+	]
 
 	place_of : List(Interp.Scope), U64, Str -> Interp.Place
 	place_of = |scopes, start, name|
 		match Interp.lookup(scopes, start, name) {
-			Found(f) => Placed({ scope: f.scope, index: f.index, state: f.binding.state, holds_text: Interp.is_text(f.binding.val) })
+			Found(f) => Placed({
+				scope: f.scope,
+				index: f.index,
+				state: f.binding.state,
+				holds_text: Interp.is_text(f.binding.val),
+			})
 			Missing => Unplaced
 		}
 
@@ -1137,15 +1254,30 @@ Interp :: [].{
 
 	scopes_with_appended : List(Interp.Scope), U64, U64, Str -> List(Interp.Scope)
 	scopes_with_appended = |scopes, sid, index, tail| {
-		taken = scopes.replace(sid, { vars: [], parent: Outermost }) ?? crash "Interp.scopes_with_appended: a scope the machine has"
-		taken.list.set(sid, Interp.scope_with_appended(taken.prev, index, tail)) ?? crash "Interp.scopes_with_appended: the scope was just taken"
+		taken = scopes.replace(
+			sid,
+			{ vars: [], parent: Outermost },
+		) ?? crash "Interp.scopes_with_appended: a scope the machine has"
+		taken.list.set(
+			sid,
+			Interp.scope_with_appended(taken.prev, index, tail),
+		) ?? crash "Interp.scopes_with_appended: the scope was just taken"
 	}
 
 	scope_with_appended : Interp.Scope, U64, Str -> Interp.Scope
 	scope_with_appended = |scope, index, tail| {
 		{ vars, parent } = scope
-		taken = vars.replace(index, { name: "", val: Undefined, state: Unready }) ?? crash "Interp.scope_with_appended: a variable the scope has"
-		{ vars: taken.list.set(index, Interp.var_with_appended(taken.prev, tail)) ?? crash "Interp.scope_with_appended: the variable was just taken", parent: parent }
+		taken = vars.replace(
+			index,
+			{ name: "", val: Undefined, state: Unready },
+		) ?? crash "Interp.scope_with_appended: a variable the scope has"
+		{
+			vars: taken.list.set(
+				index,
+				Interp.var_with_appended(taken.prev, tail),
+			) ?? crash "Interp.scope_with_appended: the variable was just taken",
+			parent: parent,
+		}
 	}
 
 	var_with_appended : Interp.Var, Str -> Interp.Var
@@ -1161,7 +1293,10 @@ Interp :: [].{
 	}
 
 	var_written : Interp.St, U64, U64, Interp.Var -> Interp.Got
-	var_written = |st, sid, index, binding| { st: { ..st, scopes: Interp.with_var(st.scopes, sid, index, binding) }, val: binding.val }
+	var_written = |st, sid, index, binding| {
+		st: { ..st, scopes: Interp.with_var(st.scopes, sid, index, binding) },
+		val: binding.val,
+	}
 
 	eval_update : Interp.St, Ast.Target, Ast.Step, Ast.Fixity, Ast.Where -> Interp.Got
 	eval_update = |st, target, step, fixity, w| {
@@ -1178,10 +1313,18 @@ Interp :: [].{
 				{ st: read_st, val: current } = Interp.eval_name(st, name, at)
 				match current {
 					Number(n) => {
-						{ st: written, val: _ } = Interp.assigned_name(read_st, Number(n + delta), name, at)
+						{ st: written, val: _ } = Interp.assigned_name(
+							read_st,
+							Number(n + delta),
+							name,
+							at,
+						)
 						{ st: written, val: answer(n, n + delta) }
 					}
-					_ => Interp.fault_got(read_st, "unsupported: `++` or `--` on a ${Interp.type_of(read_st.cells, current)}${Interp.at_line(w)}")
+					_ => Interp.fault_got(
+						read_st,
+						"unsupported: `++` or `--` on a ${Interp.type_of(read_st.cells, current)}${Interp.at_line(w)}",
+					)
 				}
 			}
 			ToMember(obj, key) => {
@@ -1189,10 +1332,19 @@ Interp :: [].{
 				{ st: read_st, val: current } = Interp.property(first, o, key, w)
 				match current {
 					Number(n) => {
-						{ st: written, val: _ } = Interp.stored(read_st, o, Text(key), Number(n + delta), w)
+						{ st: written, val: _ } = Interp.stored(
+							read_st,
+							o,
+							Text(key),
+							Number(n + delta),
+							w,
+						)
 						{ st: written, val: answer(n, n + delta) }
 					}
-					_ => Interp.fault_got(read_st, "unsupported: `++` or `--` on a ${Interp.type_of(read_st.cells, current)}${Interp.at_line(w)}")
+					_ => Interp.fault_got(
+						read_st,
+						"unsupported: `++` or `--` on a ${Interp.type_of(read_st.cells, current)}${Interp.at_line(w)}",
+					)
 				}
 			}
 			ToIndex(obj, key) => {
@@ -1204,7 +1356,10 @@ Interp :: [].{
 						{ st: written, val: _ } = Interp.stored(read_st, o, k, Number(n + delta), w)
 						{ st: written, val: answer(n, n + delta) }
 					}
-					_ => Interp.fault_got(read_st, "unsupported: `++` or `--` on a ${Interp.type_of(read_st.cells, current)}${Interp.at_line(w)}")
+					_ => Interp.fault_got(
+						read_st,
+						"unsupported: `++` or `--` on a ${Interp.type_of(read_st.cells, current)}${Interp.at_line(w)}",
+					)
 				}
 			}
 		}
@@ -1220,7 +1375,10 @@ Interp :: [].{
 					if Heap.has_prop(props, key) {
 						{ st: st, val: Heap.prop_value(props, key) }
 					} else if Interp.is_prototype_name(key) {
-						Interp.fault_got(st, "unsupported: Object.prototype's `${key}`${Interp.at_line(w)}")
+						Interp.fault_got(
+							st,
+							"unsupported: Object.prototype's `${key}`${Interp.at_line(w)}",
+						)
 					} else {
 						{ st: st, val: Undefined }
 					}
@@ -1231,7 +1389,10 @@ Interp :: [].{
 					} else {
 						match Inspect.index_of_key(key) {
 							Ok(i) => { st: st, val: items.get(i) ?? Undefined }
-							Err(NotIndex) => Interp.fault_got(st, "unsupported: the array property `${key}` outside a call${Interp.at_line(w)}")
+							Err(NotIndex) => Interp.fault_got(
+								st,
+								"unsupported: the array property `${key}` outside a call${Interp.at_line(w)}",
+							)
 						}
 					}
 				}
@@ -1246,10 +1407,16 @@ Interp :: [].{
 					if Heap.has_prop(props, key) {
 						{ st: st, val: Heap.prop_value(props, key) }
 					} else {
-						Interp.fault_got(st, "unsupported: `${Heap.native_name(n)}.${key}`${Interp.at_line(w)}")
+						Interp.fault_got(
+							st,
+							"unsupported: `${Heap.native_name(n)}.${key}`${Interp.at_line(w)}",
+						)
 					}
 				}
-				Fun(_) => Interp.fault_got(st, "unsupported: a function's properties (`${key}`)${Interp.at_line(w)}")
+				Fun(_) => Interp.fault_got(
+					st,
+					"unsupported: a function's properties (`${key}`)${Interp.at_line(w)}",
+				)
 				Taken => crash "Interp.property: no cell is out being written while a property is read"
 			}
 			Text(s) => {
@@ -1257,22 +1424,46 @@ Interp :: [].{
 					if Interp.is_ascii(s) {
 						{ st: st, val: Number(s.count_utf8_bytes().to_f64()) }
 					} else {
-						Interp.fault_got(st, "unsupported: the length of a string with non-ASCII text${Interp.at_line(w)}")
+						Interp.fault_got(
+							st,
+							"unsupported: the length of a string with non-ASCII text${Interp.at_line(w)}",
+						)
 					}
 				} else {
 					match Inspect.index_of_key(key) {
 						Ok(i) => Interp.char_at(st, s, i, w)
-						Err(NotIndex) => Interp.fault_got(st, "unsupported: the string property `${key}` outside a call${Interp.at_line(w)}")
+						Err(NotIndex) => Interp.fault_got(
+							st,
+							"unsupported: the string property `${key}` outside a call${Interp.at_line(w)}",
+						)
 					}
 				}
 			}
-			Null => Interp.fault_got(st, "TypeError: Cannot read properties of null (reading '${key}')${Interp.at_line(w)}")
-			Undefined => Interp.fault_got(st, "TypeError: Cannot read properties of undefined (reading '${key}')${Interp.at_line(w)}")
-			_ => Interp.fault_got(st, "unsupported: the property `${key}` of a ${Interp.type_of(st.cells, obj)}${Interp.at_line(w)}")
+			Null => Interp.fault_got(
+				st,
+				"TypeError: Cannot read properties of null (reading '${key}')${Interp.at_line(w)}",
+			)
+			Undefined => Interp.fault_got(
+				st,
+				"TypeError: Cannot read properties of undefined (reading '${key}')${Interp.at_line(w)}",
+			)
+			_ => Interp.fault_got(
+				st,
+				"unsupported: the property `${key}` of a ${Interp.type_of(st.cells, obj)}${Interp.at_line(w)}",
+			)
 		}
 
 	is_prototype_name : Str -> Bool
-	is_prototype_name = |key| ["toString", "hasOwnProperty", "valueOf", "constructor", "isPrototypeOf", "propertyIsEnumerable", "toLocaleString", "__proto__"].contains(key)
+	is_prototype_name = |key| [
+		"toString",
+		"hasOwnProperty",
+		"valueOf",
+		"constructor",
+		"isPrototypeOf",
+		"propertyIsEnumerable",
+		"toLocaleString",
+		"__proto__",
+	].contains(key)
 
 	is_ascii : Str -> Bool
 	is_ascii = |s| s.to_utf8().all(|c| c < 128)
@@ -1280,10 +1471,16 @@ Interp :: [].{
 	char_at : Interp.St, Str, U64, Ast.Where -> Interp.Got
 	char_at = |st, s, i, w|
 		if !Interp.is_ascii(s) {
-			Interp.fault_got(st, "unsupported: indexing a string with non-ASCII text${Interp.at_line(w)}")
+			Interp.fault_got(
+				st,
+				"unsupported: indexing a string with non-ASCII text${Interp.at_line(w)}",
+			)
 		} else {
 			match s.to_utf8().get(i) {
-				Ok(c) => { st: st, val: Text(Str.from_utf8([c]) ?? crash "Interp.char_at: an ASCII byte") }
+				Ok(c) => {
+					st: st,
+					val: Text(Str.from_utf8([c]) ?? crash "Interp.char_at: an ASCII byte"),
+				}
 				Err(OutOfBounds) => { st: st, val: Undefined }
 			}
 		}
@@ -1336,21 +1533,45 @@ Interp :: [].{
 			match obj {
 				Ref(id) => match Interp.kind_of(st.cells, id) {
 					ObjectKind => match Interp.key_of(key) {
-						Ok(k) => { st: { ..st, cells: Heap.with_prop(st.cells, id, k, val) }, val: val }
+						Ok(k) => {
+							st: { ..st, cells: Heap.with_prop(st.cells, id, k, val) },
+							val: val,
+						}
 						Err(Unsupported(why)) => Interp.fault_got(st, "${why}${Interp.at_line(w)}")
 					}
 					ArrayKind(n) => {
 						match Interp.index_of(key) {
-							Ok(i) if i <= n => { st: { ..st, cells: Heap.with_item(st.cells, id, i, val) }, val: val }
-							Ok(_) => Interp.fault_got(st, "unsupported: an array with holes (a write past its end)${Interp.at_line(w)}")
-							Err(NotIndex) => Interp.fault_got(st, "unsupported: writing an array's `length` or a named property${Interp.at_line(w)}")
+							Ok(i) if i <= n => {
+								st: { ..st, cells: Heap.with_item(st.cells, id, i, val) },
+								val: val,
+							}
+							Ok(_) => Interp.fault_got(
+								st,
+								"unsupported: an array with holes (a write past its end)${Interp.at_line(w)}",
+							)
+							Err(NotIndex) => Interp.fault_got(
+								st,
+								"unsupported: writing an array's `length` or a named property${Interp.at_line(w)}",
+							)
 						}
 					}
-					_ => Interp.fault_got(st, "unsupported: writing a property of a function or a builtin${Interp.at_line(w)}")
+					_ => Interp.fault_got(
+						st,
+						"unsupported: writing a property of a function or a builtin${Interp.at_line(w)}",
+					)
 				}
-				Null => Interp.fault_got(st, "TypeError: Cannot set properties of null${Interp.at_line(w)}")
-				Undefined => Interp.fault_got(st, "TypeError: Cannot set properties of undefined${Interp.at_line(w)}")
-				_ => Interp.fault_got(st, "unsupported: writing a property of a ${Interp.type_of(st.cells, obj)}${Interp.at_line(w)}")
+				Null => Interp.fault_got(
+					st,
+					"TypeError: Cannot set properties of null${Interp.at_line(w)}",
+				)
+				Undefined => Interp.fault_got(
+					st,
+					"TypeError: Cannot set properties of undefined${Interp.at_line(w)}",
+				)
+				_ => Interp.fault_got(
+					st,
+					"unsupported: writing a property of a ${Interp.type_of(st.cells, obj)}${Interp.at_line(w)}",
+				)
 			}
 		}
 
@@ -1401,9 +1622,15 @@ Interp :: [].{
 				Ref(id) => match Heap.cell_at(st.cells, id) {
 					Fun(c) => Interp.call_closure(st, c, args, w)
 					Builtin(n, _) => Interp.call_native(st, n, args, w)
-					_ => Interp.fault_got(st, "TypeError: ${Interp.shown_value(st.cells, callee)} is not a function${Interp.at_line(w)}")
+					_ => Interp.fault_got(
+						st,
+						"TypeError: ${Interp.shown_value(st.cells, callee)} is not a function${Interp.at_line(w)}",
+					)
 				}
-				_ => Interp.fault_got(st, "TypeError: ${Interp.shown_value(st.cells, callee)} is not a function${Interp.at_line(w)}")
+				_ => Interp.fault_got(
+					st,
+					"TypeError: ${Interp.shown_value(st.cells, callee)} is not a function${Interp.at_line(w)}",
+				)
 			}
 		}
 
@@ -1440,7 +1667,10 @@ Interp :: [].{
 	math = |st, name, args, f, w|
 		match Interp.number_arg(args, 0) {
 			Ok(n) => { st: st, val: Number(f(n)) }
-			Err(NotNumber) => Interp.fault_got(st, "unsupported: Math.${name} of anything but a number${Interp.at_line(w)}")
+			Err(NotNumber) => Interp.fault_got(
+				st,
+				"unsupported: Math.${name} of anything but a number${Interp.at_line(w)}",
+			)
 		}
 
 	floor : F64 -> F64
@@ -1455,7 +1685,10 @@ Interp :: [].{
 	call_native = |st, n, args, w|
 		match n {
 			Log => match Inspect.line_of(st.cells, args) {
-				Ok(line) => { st: { ..st, out: Str.concat(Str.concat(st.out, line), "\n") }, val: Undefined }
+				Ok(line) => {
+					st: { ..st, out: Str.concat(Str.concat(st.out, line), "\n") },
+					val: Undefined,
+				}
 				Err(Unsupported(why)) => Interp.fault_got(st, "${why}${Interp.at_line(w)}")
 			}
 			Floor => Interp.math(st, "floor", args, Interp.floor, w)
@@ -1513,7 +1746,10 @@ Interp :: [].{
 			Atan => Interp.math(st, "atan", args, |x| x.atan(), w)
 			Pow => match (Interp.number_arg(args, 0), Interp.number_arg(args, 1)) {
 				(Ok(x), Ok(y)) => { st: st, val: Number(Interp.power(x, y)) }
-				_ => Interp.fault_got(st, "unsupported: Math.pow of anything but two numbers${Interp.at_line(w)}")
+				_ => Interp.fault_got(
+					st,
+					"unsupported: Math.pow of anything but two numbers${Interp.at_line(w)}",
+				)
 			}
 			Min => Interp.min_max(st, args, Min, w)
 			Max => Interp.min_max(st, args, Max, w)
@@ -1541,9 +1777,15 @@ Interp :: [].{
 					}
 				}
 				if $ok {
-					{ st: st, val: Text(Str.from_utf8($bytes) ?? crash "Interp.call_native: ASCII bytes") }
+					{
+						st: st,
+						val: Text(Str.from_utf8($bytes) ?? crash "Interp.call_native: ASCII bytes"),
+					}
 				} else {
-					Interp.fault_got(st, "unsupported: String.fromCharCode of anything but ASCII codes${Interp.at_line(w)}")
+					Interp.fault_got(
+						st,
+						"unsupported: String.fromCharCode of anything but ASCII codes${Interp.at_line(w)}",
+					)
 				}
 			}
 			IsArray => match args.first() {
@@ -1554,7 +1796,10 @@ Interp :: [].{
 				_ => { st: st, val: Boolean(False) }
 			}
 			IsInteger => match args.first() {
-				Ok(Number(x)) => { st: st, val: Boolean(!x.is_nan() and !x.is_infinite() and x.div_trunc_by(1.0) == x) }
+				Ok(Number(x)) => {
+					st: st,
+					val: Boolean(!x.is_nan() and !x.is_infinite() and x.div_trunc_by(1.0) == x),
+				}
 				_ => { st: st, val: Boolean(False) }
 			}
 		}
@@ -1594,7 +1839,10 @@ Interp :: [].{
 		if $ok {
 			{ st: st, val: Number($best) }
 		} else {
-			Interp.fault_got(st, "unsupported: Math.min or Math.max of anything but numbers${Interp.at_line(w)}")
+			Interp.fault_got(
+				st,
+				"unsupported: Math.min or Math.max of anything but numbers${Interp.at_line(w)}",
+			)
 		}
 	}
 
@@ -1635,7 +1883,10 @@ Interp :: [].{
 				}
 				Interp.alloc($s, Arr($vals))
 			}
-			Err(NotListed) => Interp.fault_got(st, "unsupported: Object.keys, values or entries of anything but an object or an array${Interp.at_line(w)}")
+			Err(NotListed) => Interp.fault_got(
+				st,
+				"unsupported: Object.keys, values or entries of anything but an object or an array${Interp.at_line(w)}",
+			)
 		}
 	}
 
@@ -1736,7 +1987,10 @@ Interp :: [].{
 							Interp.fault_got(st, "${$why}${Interp.at_line(w)}")
 						}
 					}
-					Err(NotText) => Interp.fault_got(st, "unsupported: `join` with a separator that is not a string${Interp.at_line(w)}")
+					Err(NotText) => Interp.fault_got(
+						st,
+						"unsupported: `join` with a separator that is not a string${Interp.at_line(w)}",
+					)
 				}
 			}
 			"indexOf" => {
@@ -1887,14 +2141,22 @@ Interp :: [].{
 			}
 		}
 		match start {
-			Err(Empty) => Interp.fault_got(st, "TypeError: Reduce of empty array with no initial value${Interp.at_line(w)}")
+			Err(Empty) => Interp.fault_got(
+				st,
+				"TypeError: Reduce of empty array with no initial value${Interp.at_line(w)}",
+			)
 			Ok({ acc, from }) => {
 				var $s = st
 				var $acc = acc
 				var $i = from
 				while $i < n and $i < Interp.item_count($s, id) and Interp.is_running($s) {
 					item = Interp.item_at($s, id, $i)
-					{ st: after, val } = Interp.call($s, f, [$acc, item, Number($i.to_f64()), Ref(id)], w)
+					{ st: after, val } = Interp.call(
+						$s,
+						f,
+						[$acc, item, Number($i.to_f64()), Ref(id)],
+						w,
+					)
 					$s = after
 					$acc = val
 					$i = $i + 1
@@ -1925,8 +2187,18 @@ Interp :: [].{
 			{ st: st, vals: items }
 		} else {
 			half = n // 2
-			{ st: first, vals: lower } = Interp.merge_sorted(st, items.sublist({ start: 0, len: half }), compare, w)
-			{ st: second, vals: upper } = Interp.merge_sorted(first, items.drop_first(half), compare, w)
+			{ st: first, vals: lower } = Interp.merge_sorted(
+				st,
+				items.sublist({ start: 0, len: half }),
+				compare,
+				w,
+			)
+			{ st: second, vals: upper } = Interp.merge_sorted(
+				first,
+				items.drop_first(half),
+				compare,
+				w,
+			)
 			var $s = second
 			var $out = []
 			var $i = 0
@@ -1955,7 +2227,14 @@ Interp :: [].{
 		}
 	}
 
-	compared : Interp.St, Heap.Val, Heap.Val, Heap.Val, Ast.Where -> { st : Interp.St, order : [Before, Same, After] }
+	compared : Interp.St,
+	Heap.Val,
+	Heap.Val,
+	Heap.Val,
+	Ast.Where -> {
+		st : Interp.St,
+		order : [Before, Same, After],
+	}
 	compared = |st, compare, a, b, w|
 		match compare {
 			Undefined => {
@@ -1992,14 +2271,29 @@ Interp :: [].{
 	# for ASCII text alone: JavaScript counts UTF-16 units, where the
 	# interpreter's strings are UTF-8.
 	positional_methods : List(Str)
-	positional_methods = ["charAt", "charCodeAt", "slice", "substring", "indexOf", "toUpperCase", "toLowerCase", "trim"]
+	positional_methods = [
+		"charAt",
+		"charCodeAt",
+		"slice",
+		"substring",
+		"indexOf",
+		"toUpperCase",
+		"toLowerCase",
+		"trim",
+	]
 
 	text_method : Interp.St, Str, Str, List(Heap.Val), Ast.Where -> Interp.Got
 	text_method = |st, s, name, args, w|
 		if Interp.positional_methods.contains(name) and !Interp.is_ascii(s) {
-			Interp.fault_got(st, "unsupported: `${name}` on a string with non-ASCII text${Interp.at_line(w)}")
+			Interp.fault_got(
+				st,
+				"unsupported: `${name}` on a string with non-ASCII text${Interp.at_line(w)}",
+			)
 		} else if name == "split" and args.first() == Ok(Text("")) and !Interp.is_ascii(s) {
-			Interp.fault_got(st, "unsupported: `split` into characters of a string with non-ASCII text${Interp.at_line(w)}")
+			Interp.fault_got(
+				st,
+				"unsupported: `split` into characters of a string with non-ASCII text${Interp.at_line(w)}",
+			)
 		} else {
 			Interp.text_method_of(st, s, name, args, w)
 		}
@@ -2014,7 +2308,14 @@ Interp :: [].{
 		n = bytes.len()
 		sliced = |from, to|
 			if to > from {
-				Text(Str.from_utf8(bytes.sublist({ start: from, len: to - from })) ?? crash "Interp.text_method: an ASCII cut")
+				Text(
+					Str.from_utf8(
+						bytes.sublist({
+							start: from,
+							len: to - from,
+						}),
+					) ?? crash "Interp.text_method: an ASCII cut",
+				)
 			} else {
 				Text("")
 			}
@@ -2066,33 +2367,51 @@ Interp :: [].{
 			)
 			"indexOf" => match text_arg(0) {
 				Ok(t) => { st: st, val: Number(Interp.text_index(s, t)) }
-				Err(NotText) => Interp.fault_got(st, "unsupported: `indexOf` of anything but a string${Interp.at_line(w)}")
+				Err(NotText) => Interp.fault_got(
+					st,
+					"unsupported: `indexOf` of anything but a string${Interp.at_line(w)}",
+				)
 			}
 			"includes" => match text_arg(0) {
 				Ok(t) => { st: st, val: Boolean(s.contains(t)) }
-				Err(NotText) => Interp.fault_got(st, "unsupported: `includes` of anything but a string${Interp.at_line(w)}")
+				Err(NotText) => Interp.fault_got(
+					st,
+					"unsupported: `includes` of anything but a string${Interp.at_line(w)}",
+				)
 			}
 			"startsWith" => match text_arg(0) {
 				Ok(t) => { st: st, val: Boolean(s.starts_with(t)) }
-				Err(NotText) => Interp.fault_got(st, "unsupported: `startsWith` of anything but a string${Interp.at_line(w)}")
+				Err(NotText) => Interp.fault_got(
+					st,
+					"unsupported: `startsWith` of anything but a string${Interp.at_line(w)}",
+				)
 			}
 			"endsWith" => match text_arg(0) {
 				Ok(t) => { st: st, val: Boolean(s.ends_with(t)) }
-				Err(NotText) => Interp.fault_got(st, "unsupported: `endsWith` of anything but a string${Interp.at_line(w)}")
+				Err(NotText) => Interp.fault_got(
+					st,
+					"unsupported: `endsWith` of anything but a string${Interp.at_line(w)}",
+				)
 			}
 			"toUpperCase" => { st: st, val: Text(s.with_ascii_uppercased()) }
 			"toLowerCase" => { st: st, val: Text(s.with_ascii_lowercased()) }
 			"trim" => { st: st, val: Text(Interp.ascii_trimmed(s)) }
 			"repeat" => match args.first() {
 				Ok(Number(k)) if k >= 0.0 and k.div_trunc_by(1.0) == k and k < 100000000.0 => {
-					{ st: st, val: Text(Str.repeat(s, k.to_u64_try() ?? 0)) }
+					{ st: st, val: Text(s.repeat(k.to_u64_try() ?? 0)) }
 				}
-				_ => Interp.fault_got(st, "unsupported: `repeat` of anything but a whole number of times${Interp.at_line(w)}")
+				_ => Interp.fault_got(
+					st,
+					"unsupported: `repeat` of anything but a whole number of times${Interp.at_line(w)}",
+				)
 			}
 			"split" => match text_arg(0) {
 				Ok("") => Interp.alloc(st, Arr(Interp.characters(s).map(|c| Text(c))))
 				Ok(t) => Interp.alloc(st, Arr(s.split_on(t).map(|piece| Text(piece))))
-				Err(NotText) => Interp.fault_got(st, "unsupported: `split` by anything but a string${Interp.at_line(w)}")
+				Err(NotText) => Interp.fault_got(
+					st,
+					"unsupported: `split` by anything but a string${Interp.at_line(w)}",
+				)
 			}
 			"padStart" => Interp.text_padded(st, s, args, PadStart, w)
 			"padEnd" => Interp.text_padded(st, s, args, PadEnd, w)
@@ -2115,7 +2434,10 @@ Interp :: [].{
 					Interp.fault_got(st, "${$why}${Interp.at_line(w)}")
 				}
 			}
-			_ => Interp.fault_got(st, "unsupported: the string method `${name}`${Interp.at_line(w)}")
+			_ => Interp.fault_got(
+				st,
+				"unsupported: the string method `${name}`${Interp.at_line(w)}",
+			)
 		}
 	}
 
@@ -2151,7 +2473,12 @@ Interp :: [].{
 		while $to > $from and is_space(b.get($to - 1) ?? 0) {
 			$to = $to - 1
 		}
-		Str.from_utf8(b.sublist({ start: $from, len: $to - $from })) ?? crash "Interp.ascii_trimmed: an ASCII cut"
+		Str.from_utf8(
+			b.sublist({
+				start: $from,
+				len: $to - $from,
+			}),
+		) ?? crash "Interp.ascii_trimmed: an ASCII cut"
 	}
 
 	text_padded : Interp.St, Str, List(Heap.Val), [PadStart, PadEnd], Ast.Where -> Interp.Got
@@ -2175,14 +2502,22 @@ Interp :: [].{
 					need = target - n
 					fb = f.to_utf8()
 					copies = need // fb.len() + 1
-					pad = Str.from_utf8(Str.repeat(f, copies).to_utf8().sublist({ start: 0, len: need })) ?? crash "Interp.text_padded: an ASCII cut"
+					pad = Str.from_utf8(
+						f.repeat(copies).to_utf8().sublist({
+							start: 0,
+							len: need,
+						}),
+					) ?? crash "Interp.text_padded: an ASCII cut"
 					match side {
 						PadStart => { st: st, val: Text(Str.concat(pad, s)) }
 						PadEnd => { st: st, val: Text(Str.concat(s, pad)) }
 					}
 				}
 			}
-			_ => Interp.fault_got(st, "unsupported: `padStart` or `padEnd` other than to a whole length with ASCII text${Interp.at_line(w)}")
+			_ => Interp.fault_got(
+				st,
+				"unsupported: `padStart` or `padEnd` other than to a whole length with ASCII text${Interp.at_line(w)}",
+			)
 		}
 	}
 }

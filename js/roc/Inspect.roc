@@ -54,7 +54,17 @@ Inspect :: [].{
 		var $i = 0
 		var $found = False
 		while $i + 1 < b.len() {
-			if (b.get($i) ?? 0) == '%' and ['s', 'd', 'i', 'f', 'j', 'o', 'O', 'c', '%'].contains(b.get($i + 1) ?? 0) {
+			if (b.get($i) ?? 0) == '%' and [
+				's',
+				'd',
+				'i',
+				'f',
+				'j',
+				'o',
+				'O',
+				'c',
+				'%',
+			].contains(b.get($i + 1) ?? 0) {
 				$found = True
 			}
 			$i = $i + 1
@@ -112,7 +122,10 @@ Inspect :: [].{
 				}
 			}
 			Builtin(n, _) => Ok(Inspect.plain(ctx, "[Function: ${Heap.native_name(n)}]"))
-			Namespace(name, _) => Err(Unsupported("unsupported: printing the builtin object ${name}"))
+			Namespace(
+				name,
+				_,
+			) => Err(Unsupported("unsupported: printing the builtin object ${name}"))
 			Taken => crash "Inspect.format_cell: no cell is out being written while a line is printed"
 			Arr(items) => {
 				if ctx.seen.contains(id) {
@@ -122,7 +135,11 @@ Inspect :: [].{
 				} else if recurse > 2 {
 					Ok(Inspect.plain(ctx, "[Array]"))
 				} else {
-					Inspect.format_array({ ..ctx, depth_now: recurse + 1, seen: ctx.seen.append(id) }, items, recurse + 1)
+					Inspect.format_array(
+						{ ..ctx, depth_now: recurse + 1, seen: ctx.seen.append(id) },
+						items,
+						recurse + 1,
+					)
 				}
 			}
 			Obj(props) => {
@@ -133,7 +150,11 @@ Inspect :: [].{
 				} else if recurse > 2 {
 					Ok(Inspect.plain(ctx, "[Object]"))
 				} else {
-					Inspect.format_object({ ..ctx, depth_now: recurse + 1, seen: ctx.seen.append(id) }, props, recurse + 1)
+					Inspect.format_object(
+						{ ..ctx, depth_now: recurse + 1, seen: ctx.seen.append(id) },
+						props,
+						recurse + 1,
+					)
 				}
 			}
 		}
@@ -144,7 +165,11 @@ Inspect :: [].{
 		var $depth_now = ctx.depth_now
 		var $out = []
 		for item in shown {
-			f = Inspect.format_value({ ..ctx, indent: ctx.indent + 2, depth_now: $depth_now }, item, recurse)?
+			f = Inspect.format_value(
+				{ ..ctx, indent: ctx.indent + 2, depth_now: $depth_now },
+				item,
+				recurse,
+			)?
 			$depth_now = f.depth_now
 			$out = $out.append(f.text)
 		}
@@ -174,7 +199,11 @@ Inspect :: [].{
 		var $depth_now = ctx.depth_now
 		var $out = []
 		for p in Inspect.props_in_key_order(props) {
-			f = Inspect.format_value({ ..ctx, indent: ctx.indent + 2, depth_now: $depth_now }, p.val, recurse)?
+			f = Inspect.format_value(
+				{ ..ctx, indent: ctx.indent + 2, depth_now: $depth_now },
+				p.val,
+				recurse,
+			)?
 			$depth_now = f.depth_now
 			$out = $out.append("${Inspect.key_text(p.key)}: ${f.text}")
 		}
@@ -257,7 +286,7 @@ Inspect :: [].{
 		length = Inspect.width(s)
 		if length > 16 and length + indent + 4 > Inspect.break_length {
 			pieces = Inspect.pieces_after_newlines(s)
-			Str.join_with(pieces.map(Inspect.escaped), " +\n${Str.repeat(" ", indent + 2)}")
+			Str.join_with(pieces.map(Inspect.escaped), " +\n${" ".repeat(indent + 2)}")
 		} else {
 			Inspect.escaped(s)
 		}
@@ -333,7 +362,12 @@ Inspect :: [].{
 	hex_escape : U8 -> List(U8)
 	hex_escape = |c| {
 		digits = "0123456789ABCDEF".to_utf8()
-		['\\', 'x', digits.get(c.div_trunc_by(16).to_u64()) ?? '0', digits.get(c.rem_by(16).to_u64()) ?? '0']
+		[
+			'\\',
+			'x',
+			digits.get(c.div_trunc_by(16).to_u64()) ?? '0',
+			digits.get(c.rem_by(16).to_u64()) ?? '0',
+		]
 	}
 
 	# A string's length in UTF-16 code units: one a character, two for one
@@ -370,7 +404,7 @@ Inspect :: [].{
 		if fits {
 			"${e.open} ${joined} ${e.close}"
 		} else {
-			indentation = "\n${Str.repeat(" ", ctx.indent)}"
+			indentation = "\n${" ".repeat(ctx.indent)}"
 			"${e.open}${indentation}  ${Str.join_with(output, ",${indentation}  ")}${indentation}${e.close}"
 		}
 	}
@@ -460,7 +494,10 @@ Inspect :: [].{
 			}
 			final = output.get($j) ?? ""
 			$line = if numbers_only {
-				Str.concat($line, Inspect.padded(final, ($max_line_lengths.get($j - $i) ?? 2) - 2, True))
+				Str.concat(
+					$line,
+					Inspect.padded(final, ($max_line_lengths.get($j - $i) ?? 2) - 2, True),
+				)
 			} else {
 				Str.concat($line, final)
 			}
@@ -481,9 +518,9 @@ Inspect :: [].{
 		if n >= w {
 			text
 		} else if at_start {
-			Str.concat(Str.repeat(" ", w - n), text)
+			Str.concat(" ".repeat(w - n), text)
 		} else {
-			Str.concat(text, Str.repeat(" ", w - n))
+			Str.concat(text, " ".repeat(w - n))
 		}
 	}
 }
