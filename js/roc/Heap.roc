@@ -23,6 +23,7 @@
 ## Cells are never freed: a run's heap holds every object it made
 ## (js/README.md, "Cells are never freed", says why).
 import Ast
+import NumberText
 
 Heap :: [].{
 
@@ -71,6 +72,8 @@ Heap :: [].{
 		OnClick,
 		# `Error`, `TypeError` and their kin, which `new` calls.
 		MakeError(Heap.ErrorName),
+		MakeMap,
+		MakeSet,
 	]
 
 	## The canvas builtins that draw a shape or set how shapes are drawn.
@@ -127,7 +130,174 @@ Heap :: [].{
 		# Error(message)`: its name and its message. Node prints an error with
 		# its stack, so the subset never prints one.
 		Failure(Heap.ErrorName, Str),
+		# A Map and a Set, each its table in a list of one: the table is big,
+		# and kept out of line every cell stays the size of an object's, while
+		# `List.update` still writes it in place.
+		MapOf(List(Heap.Table)),
+		SetOf(List(Heap.Table)),
+		# What `keys()`, `values()` and `entries()` answer: the array, Map or
+		# Set it walks, what of each entry it gives, and the next entry's place.
+		Iteration({ source : U64, view : Heap.View, next : U64 }),
 	]
+
+	## A Map's or a Set's entries, in the order their keys were first set,
+	## each standing or `Gone` once deleted, so a walk that is under way when
+	## an entry goes or comes on still meets the rest in order; where each
+	## standing key's entry is, by the key's identity; and how many stand.
+	## A Set's entry holds its value as its key and its value both.
+	##
+	## A deleted entry's place is never reused or freed, so a table that
+	## many keys pass through holds a place for each.
+	Table : {
+		entries : List(Heap.Entry),
+		places : Dict(Str, U64),
+		size : U64,
+	}
+
+	Entry : [Standing({ key : Heap.Value, value : Heap.Value }), Gone]
+
+	## What an iterator gives of each entry: its key (an array's index), its
+	## value, or both as a pair.
+	View : [Keys, Values, Entries]
+
+	empty_table : Heap.Table
+	empty_table = { entries: [], places: Dict.empty(), size: 0 }
+
+	# A key's identity as a Map compares keys, SameValueZero: NaN is one key,
+	# and so are 0 and -0; a reference is its cell.
+	identity_of : Heap.Value -> Str
+	identity_of = |key| match key {
+		Number(number) => if number.is_nan() {
+			"nNaN"
+		} else if number == 0.0 {
+			"n0"
+		} else {
+			"n${NumberText.text_for(number)}"
+		}
+		Text(text) => "s${text}"
+		Boolean(truth) => if truth {
+			"t"
+		} else {
+			"f"
+		}
+		Null => "l"
+		Undefined => "u"
+		Reference(id) => "r${id.to_str()}"
+	}
+
+	# The table of a Map's or a Set's cell.
+	table_of : Heap.Cell -> Heap.Table
+	table_of = |cell| match cell {
+		MapOf(tables) => tables.first() ?? crash "Heap.table_of: a Map holds its table"
+		SetOf(tables) => tables.first() ?? crash "Heap.table_of: a Set holds its table"
+		_ => crash "Heap.table_of: the interpreter asks only a Map or a Set for its table"
+	}
+
+	# The entry standing for `key`, if one does.
+	entry_value : Heap.Table, Heap.Value -> Try(Heap.Value, [Missing])
+	entry_value = |table, key|
+		match table.places.get(Heap.identity_of(key)) {
+			Ok(place) => match table.entries.get(place) {
+				Ok(Standing(entry)) => Ok(entry.value)
+				_ => crash "Heap.entry_value: a place names a standing entry"
+			}
+			Err(KeyNotFound) => Err(Missing)
+		}
+
+	# The table with `key`'s entry set to `value`: in its place, keeping the
+	# key it was first set with, when it stands, else at the end, a key of -0
+	# made 0, as JavaScript makes it.
+	table_with : Heap.Table, Heap.Value, Heap.Value -> Heap.Table
+	table_with = |{ entries, places, size }, key, value| {
+		identity = Heap.identity_of(key)
+		match places.get(identity) {
+			Ok(place) => {
+				entries: entries.update(
+					place,
+					|entry| Heap.entry_with_value(entry, value),
+				) ?? crash "Heap.table_with: a place names an entry",
+				places: places,
+				size: size,
+			}
+			Err(KeyNotFound) => {
+				kept = match key {
+					Number(number) if number == 0.0 => Number(0.0)
+					_ => key
+				}
+				{
+					entries: entries.append(Standing({ key: kept, value: value })),
+					places: places.insert(identity, entries.len()),
+					size: size + 1,
+				}
+			}
+		}
+	}
+
+	entry_with_value : Heap.Entry, Heap.Value -> Heap.Entry
+	entry_with_value = |entry, value| match entry {
+		Standing({ key, value: _ }) => Standing({ key: key, value: value })
+		Gone => crash "Heap.entry_with_value: a place names a standing entry"
+	}
+
+	# The table with `key`'s entry gone, if it stood.
+	table_without : Heap.Table, Heap.Value -> Heap.Table
+	table_without = |{ entries, places, size }, key| {
+		identity = Heap.identity_of(key)
+		match places.get(identity) {
+			Ok(place) => {
+				entries: entries.set(place, Gone) ?? crash "Heap.table_without: a place names an entry",
+				places: places.remove(identity),
+				size: size - 1,
+			}
+			Err(KeyNotFound) => { entries: entries, places: places, size: size }
+		}
+	}
+
+	# The heap with an entry of a Map's or a Set's table set, deleted, or
+	# all of them gone, each written where the cell holds it.
+	with_entry : List(Heap.Cell), U64, Heap.Value, Heap.Value -> List(Heap.Cell)
+	with_entry = |cells, id, key, value|
+		cells.update(
+			id,
+			|cell| Heap.cell_with_table(cell, |table| Heap.table_with(table, key, value)),
+		) ?? crash "Heap.with_entry: a Ref names a cell the heap has"
+
+	without_entry : List(Heap.Cell), U64, Heap.Value -> List(Heap.Cell)
+	without_entry = |cells, id, key|
+		cells.update(
+			id,
+			|cell| Heap.cell_with_table(cell, |table| Heap.table_without(table, key)),
+		) ?? crash "Heap.without_entry: a Ref names a cell the heap has"
+
+	cleared : List(Heap.Cell), U64 -> List(Heap.Cell)
+	cleared = |cells, id|
+		cells.update(
+			id,
+			|cell| Heap.cell_with_table(cell, |_| Heap.empty_table),
+		) ?? crash "Heap.cleared: a Ref names a cell the heap has"
+
+	# **THE WRITE IS A FUNCTION OF ITS OWN**, handed the cell taken out, as
+	# `items_with` is: the table is written where its list of one holds it.
+	cell_with_table : Heap.Cell, (Heap.Table -> Heap.Table) -> Heap.Cell
+	cell_with_table = |cell, write| match cell {
+		MapOf(tables) => MapOf(Heap.tables_with(tables, write))
+		SetOf(tables) => SetOf(Heap.tables_with(tables, write))
+		_ => crash "Heap.cell_with_table: the interpreter writes entries only to a Map or a Set"
+	}
+
+	tables_with : List(Heap.Table), (Heap.Table -> Heap.Table) -> List(Heap.Table)
+	tables_with = |tables, write| tables.update(0, write) ?? crash "Heap.tables_with: a Map or a Set holds its table"
+
+	# The heap with an iterator moved on to `next`.
+	with_iterator_at : List(Heap.Cell), U64, U64 -> List(Heap.Cell)
+	with_iterator_at = |cells, id, next|
+		cells.update(
+			id,
+			|cell| match cell {
+				Iteration(walk) => Iteration({ ..walk, next: next })
+				_ => crash "Heap.with_iterator_at: the interpreter moves only an iterator on"
+			},
+		) ?? crash "Heap.with_iterator_at: a Ref names a cell the heap has"
 
 	native_name : Heap.Native -> Str
 	native_name = |native| match native {
@@ -187,6 +357,8 @@ Heap :: [].{
 		}
 		OnClick => "onClick"
 		MakeError(name) => Heap.error_name_text(name)
+		MakeMap => "Map"
+		MakeSet => "Set"
 	}
 
 	cell_at : List(Heap.Cell), U64 -> Heap.Cell

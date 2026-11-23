@@ -785,6 +785,11 @@ Interp :: [].{
 			$s = maker.machine
 			$made = $made.append({ name: Heap.error_name_text(name), value: maker.value })
 		}
+		for native in [MakeMap, MakeSet] {
+			maker = Interp.alloc($s, Builtin(native, []))
+			$s = maker.machine
+			$made = $made.append({ name: Heap.native_name(native), value: maker.value })
+		}
 		match library {
 			Core => {}
 			Canvas => {
@@ -1426,11 +1431,90 @@ Interp :: [].{
 		match iterable {
 			Reference(id) => match Interp.kind_of(got.cells, id) {
 				ArrayKind(_) => Interp.execute_for_of_array!(host, got, loop, id, state)
+				MapKind => {
+					{ machine: after, flow, next: _ } = Interp.execute_for_of_steps!(
+						host,
+						got,
+						loop,
+						{ source: id, view: Entries, next: 0 },
+						state,
+					)
+					{ machine: after, flow: flow }
+				}
+				SetKind => {
+					{ machine: after, flow, next: _ } = Interp.execute_for_of_steps!(
+						host,
+						got,
+						loop,
+						{ source: id, view: Values, next: 0 },
+						state,
+					)
+					{ machine: after, flow: flow }
+				}
+				IteratorKind => {
+					walk = Interp.iteration_of(got.cells, id)
+					{ machine: after, flow, next } = Interp.execute_for_of_steps!(host, got, loop, walk, state)
+					{ machine: { ..after, cells: Heap.with_iterator_at(after.cells, id, next) }, flow: flow }
+				}
 				_ => Interp.normal(Interp.with_not_iterable(got, iterable, Written(loop.iterable), loop.at))
 			}
 			Text(text) => Interp.execute_for_of_text!(host, got, loop, text, state)
 			_ => Interp.normal(Interp.with_not_iterable(got, iterable, Written(loop.iterable), loop.at))
 		}
+	}
+
+	## A walk's machine and flow, and the place of the entry after the last it
+	## gave, for an iterator to go on from.
+	Walking : { machine : Interp.Machine, flow : Interp.Flow, next : U64 }
+
+	# A `for ... of` over a Map's, a Set's or an iterator's entries, each read
+	# from the heap as the loop comes to it, so an entry the body deletes is
+	# skipped and one it adds is met.
+	execute_for_of_steps! : Canvas.Host, Interp.Machine, Ast.ForOfLoop, Interp.EntryWalk, Interp.VariableState => Interp.Walking
+	execute_for_of_steps! = |host, machine, loop, { source, view, next }, state| {
+		var $s = machine
+		var $flow = Normal
+		var $i = next
+		var $going = Interp.is_running(machine)
+		while $going {
+			step = Interp.step_at($s.cells, source, view, $i)
+			$i = $i + 1
+			passing = match step {
+				Yield(value) => Passing(value)
+				YieldPair(key, value) => {
+					{ machine: made, value: pair } = Interp.alloc($s, Array([key, value]))
+					$s = made
+					Passing(pair)
+				}
+				Skip => Passless
+				Ended => {
+					$going = False
+					Passless
+				}
+			}
+			match passing {
+				Passing(subject) => {
+					{ machine: after, flow } = Interp.execute_for_of_pass!(
+						host,
+						Interp.one_step_on($s),
+						loop,
+						{ value: subject, state: state },
+					)
+					$s = after
+					match Interp.body_outcome(flow) {
+						GoOn => {
+							$going = Interp.is_running($s)
+						}
+						Leave(leaving) => {
+							$flow = leaving
+							$going = False
+						}
+					}
+				}
+				Passless => {}
+			}
+		}
+		{ machine: $s, flow: $flow, next: $i }
 	}
 
 	state_of : Ast.Binding -> Interp.VariableState
@@ -1633,6 +1717,8 @@ Interp :: [].{
 				}
 			}
 			Object(_) => Ok("[object Object]")
+			MapOf(_) => Ok("[object Map]")
+			SetOf(_) => Ok("[object Set]")
 			Failure(name, "") => Ok(Heap.error_name_text(name))
 			Failure(name, message) => Ok("${Heap.error_name_text(name)}: ${message}")
 			_ => Err(Unsupported("unsupported: turning a function or a builtin object into text"))
@@ -2028,13 +2114,14 @@ Interp :: [].{
 				}
 				Spread(expression, site) => {
 					{ machine: after, value } = Interp.evaluate!(host, $s, expression)
-					match Interp.spread_items(after, value) {
-						Ok(items) => {
-							$s = after
-							$values = List.concat($values, items)
+					{ machine: walked, values: items } = Interp.iterated(after, value)
+					match items {
+						Ok(spread) => {
+							$s = walked
+							$values = List.concat($values, spread)
 						}
 						Err(NotIterable) => {
-							$s = Interp.with_not_iterable(after, value, Written(expression), site)
+							$s = Interp.with_not_iterable(walked, value, Written(expression), site)
 						}
 					}
 				}
@@ -2043,18 +2130,288 @@ Interp :: [].{
 		{ machine: $s, values: $values }
 	}
 
-	# The items a spread puts in its place: an array's, or a string's
-	# characters, as `for ... of` takes them.
-	spread_items : Interp.Machine, Heap.Value -> Try(List(Heap.Value), [NotIterable])
-	spread_items = |machine, subject|
+	# The values a spread, a pattern or a collection's constructor takes from
+	# what it is given, as `for ... of` takes them: an array's items, a
+	# string's characters, a Map's entries as pairs, a Set's values, or what
+	# an iterator has left, which then has nothing more.
+	#
+	# The machine comes back whether or not the value is iterable, so no
+	# caller keeps its own while this one writes.
+	iterated : Interp.Machine, Heap.Value -> Interp.Iterated
+	iterated = |machine, subject|
 		match subject {
 			Reference(id) => match Interp.kind_of(machine.cells, id) {
-				ArrayKind(_) => Ok(Interp.items_of(machine, id))
-				_ => Err(NotIterable)
+				ArrayKind(_) => {
+					items = Interp.items_of(machine, id)
+					{ machine: machine, values: Ok(items) }
+				}
+				MapKind => Interp.iterated_ok(Interp.stepped(machine, { source: id, view: Entries, next: 0 }))
+				SetKind => Interp.iterated_ok(Interp.stepped(machine, { source: id, view: Values, next: 0 }))
+				IteratorKind => {
+					walk = Interp.iteration_of(machine.cells, id)
+					{ machine: after, values } = Interp.stepped(machine, walk)
+					end = Interp.walk_length(after.cells, walk.source)
+					{
+						machine: { ..after, cells: Heap.with_iterator_at(after.cells, id, end) },
+						values: Ok(values),
+					}
+				}
+				_ => { machine: machine, values: Err(NotIterable) }
 			}
-			Text(text) => Ok(Interp.characters(text).map(|character| Text(character)))
-			_ => Err(NotIterable)
+			Text(text) => {
+				machine: machine,
+				values: Ok(Interp.characters(text).map(|character| Text(character))),
+			}
+			_ => { machine: machine, values: Err(NotIterable) }
 		}
+
+	Iterated : { machine : Interp.Machine, values : Try(List(Heap.Value), [NotIterable]) }
+
+	iterated_ok : Interp.Evaluations -> Interp.Iterated
+	iterated_ok = |{ machine, values }| { machine: machine, values: Ok(values) }
+
+	# ---- iteration over arrays, Maps and Sets ---------------------------------
+
+	## Where a walk of entries is: the array, Map or Set walked, what it gives
+	## of each entry, and the next entry's place.
+	EntryWalk : { source : U64, view : Heap.View, next : U64 }
+
+	## One entry of a walk: a value given, a pair given (an entry's key and
+	## value, made into an array where it is used), a deleted entry passed
+	## over, or the end.
+	Step : [Yield(Heap.Value), YieldPair(Heap.Value, Heap.Value), Skip, Ended]
+
+	step_at : List(Heap.Cell), U64, Heap.View, U64 -> Interp.Step
+	step_at = |cells, source, view, position| {
+		cell = Heap.cell_at(cells, source)
+		match cell {
+			Array(items) => match items.get(position) {
+				Ok(item) => match view {
+					Keys => Yield(Number(position.to_f64()))
+					Values => Yield(item)
+					Entries => YieldPair(Number(position.to_f64()), item)
+				}
+				Err(OutOfBounds) => Ended
+			}
+			MapOf(_) => match Heap.table_of(cell).entries.get(position) {
+				Ok(Standing({ key, value })) => match view {
+					Keys => Yield(key)
+					Values => Yield(value)
+					Entries => YieldPair(key, value)
+				}
+				Ok(Gone) => Skip
+				Err(OutOfBounds) => Ended
+			}
+			# A Set's value is its key, as it was first added.
+			SetOf(_) => match Heap.table_of(cell).entries.get(position) {
+				Ok(Standing({ key, value: _ })) => match view {
+					Entries => YieldPair(key, key)
+					_ => Yield(key)
+				}
+				Ok(Gone) => Skip
+				Err(OutOfBounds) => Ended
+			}
+			_ => crash "Interp.step_at: a walk's source is an array, a Map or a Set"
+		}
+	}
+
+	# How many places a walk's source has: an array's items, a table's
+	# entries, deleted ones included.
+	walk_length : List(Heap.Cell), U64 -> U64
+	walk_length = |cells, source| {
+		cell = Heap.cell_at(cells, source)
+		match cell {
+			Array(items) => items.len()
+			_ => Heap.table_of(cell).entries.len()
+		}
+	}
+
+	iteration_of : List(Heap.Cell), U64 -> Interp.EntryWalk
+	iteration_of = |cells, id|
+		match Heap.cell_at(cells, id) {
+			Iteration(walk) => walk
+			_ => crash "Interp.iteration_of: the interpreter asks only an iterator where it walks"
+		}
+
+	# The values a walk gives from its place to its source's end, each pair
+	# made into an array.
+	stepped : Interp.Machine, Interp.EntryWalk -> Interp.Evaluations
+	stepped = |machine, { source, view, next }| {
+		var $s = machine
+		var $values = []
+		var $i = next
+		var $going = True
+		while $going {
+			match Interp.step_at($s.cells, source, view, $i) {
+				Yield(value) => {
+					$values = $values.append(value)
+				}
+				YieldPair(key, value) => {
+					{ machine: made, value: pair } = Interp.alloc($s, Array([key, value]))
+					$s = made
+					$values = $values.append(pair)
+				}
+				Skip => {}
+				Ended => {
+					$going = False
+				}
+			}
+			$i = $i + 1
+		}
+		{ machine: $s, values: $values }
+	}
+
+	## A Map or a Set, for what their methods share.
+	Collection : [IsMap, IsSet]
+
+	collection_name : Interp.Collection -> Str
+	collection_name = |collection| match collection {
+		IsMap => "Map"
+		IsSet => "Set"
+	}
+
+	# `new Map(entries)` or `new Set(values)`: the collection, filled from
+	# what is given in its order, or empty for nothing, `null` or `undefined`.
+	collection_made : Interp.Machine, Interp.Collection, List(Heap.Value), Ast.Where -> Interp.Got
+	collection_made = |machine, collection, arguments, site| {
+		id = machine.cells.len()
+		made = Interp.alloc(
+			machine,
+			match collection {
+				IsMap => MapOf([Heap.empty_table])
+				IsSet => SetOf([Heap.empty_table])
+			},
+		).machine
+		given = arguments.first() ?? Undefined
+		if Interp.is_nullish(given) {
+			{ machine: made, value: Reference(id) }
+		} else {
+			{ machine: walked, values: given_values } = Interp.iterated(made, given)
+			match given_values {
+				Err(NotIterable) => {
+					machine: Interp.with_not_iterable(walked, given, Argument, site),
+					value: Undefined,
+				}
+				Ok(values) => {
+					var $s = walked
+					for each in values {
+						if Interp.is_running($s) {
+							$s = match collection {
+								IsSet => { ..$s, cells: Heap.with_entry($s.cells, id, each, each) }
+								IsMap => match Interp.entry_of($s.cells, each) {
+									Ok({ key, value }) => { ..$s, cells: Heap.with_entry($s.cells, id, key, value) }
+									Err(NotEntry) => {
+										shown = Interp.text_of($s.cells, each) ?? Interp.type_of($s.cells, each)
+										Interp.with_error(
+											$s,
+											TypeError,
+											"Iterator value ${shown} is not an entry object",
+											site,
+										)
+									}
+								}
+							}
+						}
+					}
+					{ machine: $s, value: Reference(id) }
+				}
+			}
+		}
+	}
+
+	# A Map's entry as `new Map` reads one: an array's first two items, or an
+	# object's properties "0" and "1".
+	entry_of : List(Heap.Cell), Heap.Value -> Try({ key : Heap.Value, value : Heap.Value }, [NotEntry])
+	entry_of = |cells, subject|
+		match subject {
+			Reference(id) => match Heap.cell_at(cells, id) {
+				Array(items) => Ok({ key: items.get(0) ?? Undefined, value: items.get(1) ?? Undefined })
+				Object(properties) => Ok({
+					key: Heap.property_value(properties, "0"),
+					value: Heap.property_value(properties, "1"),
+				})
+				_ => Ok({ key: Undefined, value: Undefined })
+			}
+			_ => Err(NotEntry)
+		}
+
+	# A Map's or a Set's method: a Map's `get` and `set`, a Set's `add`, and
+	# what both have, `has`, `delete`, `clear`, `forEach`, `keys`, `values`
+	# and `entries`.
+	collection_method! : Canvas.Host, Interp.Machine, { id : U64, collection : Interp.Collection }, Str, List(Heap.Value), Ast.Where => Interp.Got
+	collection_method! = |host, machine, { id, collection }, name, arguments, site| {
+		key = arguments.first() ?? Undefined
+		match (collection, name) {
+			(IsMap, "get") => {
+				table = Heap.table_of(Heap.cell_at(machine.cells, id))
+				found = match Heap.entry_value(table, key) {
+					Ok(value) => value
+					Err(Missing) => Undefined
+				}
+				{ machine: machine, value: found }
+			}
+			(IsMap, "set") => {
+				value = arguments.get(1) ?? Undefined
+				{
+					machine: { ..machine, cells: Heap.with_entry(machine.cells, id, key, value) },
+					value: Reference(id),
+				}
+			}
+			(IsSet, "add") => {
+				machine: { ..machine, cells: Heap.with_entry(machine.cells, id, key, key) },
+				value: Reference(id),
+			}
+			(_, "has") => {
+				table = Heap.table_of(Heap.cell_at(machine.cells, id))
+				{ machine: machine, value: Boolean(Heap.entry_value(table, key).is_ok()) }
+			}
+			(_, "delete") => {
+				table = Heap.table_of(Heap.cell_at(machine.cells, id))
+				stood = Heap.entry_value(table, key).is_ok()
+				if stood {
+					{
+						machine: { ..machine, cells: Heap.without_entry(machine.cells, id, key) },
+						value: Boolean(True),
+					}
+				} else {
+					{ machine: machine, value: Boolean(False) }
+				}
+			}
+			(_, "clear") => { machine: { ..machine, cells: Heap.cleared(machine.cells, id) }, value: Undefined }
+			(_, "forEach") => Interp.collection_walk!(host, machine, id, key, site)
+			(_, "keys") => Interp.alloc(machine, Iteration({ source: id, view: Keys, next: 0 }))
+			(_, "values") => Interp.alloc(machine, Iteration({ source: id, view: Values, next: 0 }))
+			(_, "entries") => Interp.alloc(machine, Iteration({ source: id, view: Entries, next: 0 }))
+			_ => Interp.fault_got(
+				machine,
+				"unsupported: the ${Interp.collection_name(collection)} method `${name}`${Interp.line_note(site)}",
+			)
+		}
+	}
+
+	# `forEach` on a Map or a Set: the callback given each entry's value, its
+	# key (a Set's value again) and the collection, each entry read from the
+	# heap as the walk comes to it.
+	collection_walk! : Canvas.Host, Interp.Machine, U64, Heap.Value, Ast.Where => Interp.Got
+	collection_walk! = |host, machine, id, callback, site| {
+		var $s = machine
+		var $i = 0
+		var $going = True
+		while $going and Interp.is_running($s) {
+			match Interp.step_at($s.cells, id, Entries, $i) {
+				YieldPair(key, value) => {
+					{ machine: after, value: _ } = Interp.call!(host, $s, callback, [value, key, Reference(id)], site)
+					$s = after
+				}
+				Skip => {}
+				_ => {
+					$going = False
+				}
+			}
+			$i = $i + 1
+		}
+		{ machine: $s, value: Undefined }
+	}
 
 	evaluate_template! : Canvas.Host, Interp.Machine, List(Str), List(Ast.Expression) => Interp.Got
 	evaluate_template! = |host, machine, texts, parts| {
@@ -2109,8 +2466,6 @@ Interp :: [].{
 			"require",
 			"process",
 			"JSON",
-			"Map",
-			"Set",
 			"Symbol",
 			"Promise",
 			"Date",
@@ -2775,15 +3130,23 @@ Interp :: [].{
 	# goes, since what it binds may change the array, or values made once.
 	Walked : [ItemsOf(U64), Values(List(Heap.Value))]
 
-	walked_of : Interp.Machine, Heap.Value -> Try(Interp.Walked, [NotIterable])
+	# The machine comes back whether or not the value is iterable, as from
+	# `iterated`.
+	walked_of : Interp.Machine, Heap.Value -> { machine : Interp.Machine, walked : Try(Interp.Walked, [NotIterable]) }
 	walked_of = |machine, subject|
 		match subject {
-			Reference(id) => match Interp.kind_of(machine.cells, id) {
-				ArrayKind(_) => Ok(ItemsOf(id))
-				_ => Err(NotIterable)
+			Reference(id) if Interp.is_array_cell(machine.cells, id) => { machine: machine, walked: Ok(ItemsOf(id)) }
+			_ => {
+				{ machine: after, values } = Interp.iterated(machine, subject)
+				{ machine: after, walked: values.map_ok(|listed| Values(listed)) }
 			}
-			Text(text) => Ok(Values(Interp.characters(text).map(|character| Text(character))))
-			_ => Err(NotIterable)
+		}
+
+	is_array_cell : List(Heap.Cell), U64 -> Bool
+	is_array_cell = |cells, id|
+		match Interp.kind_of(cells, id) {
+			ArrayKind(_) => True
+			_ => False
 		}
 
 	walked_at : Interp.Machine, Interp.Walked, U64 -> Heap.Value
@@ -2803,10 +3166,11 @@ Interp :: [].{
 	with_items_bound! : Canvas.Host, Interp.Machine, Interp.ItemPatterns, Interp.Binding => Interp.Machine
 	with_items_bound! = |host, machine, { items, rest }, binding| {
 		{ value, how, origin, at } = binding
-		match Interp.walked_of(machine, value) {
-			Err(NotIterable) => Interp.with_not_iterable(machine, value, origin, at)
+		{ machine: walking, walked: found } = Interp.walked_of(machine, value)
+		match found {
+			Err(NotIterable) => Interp.with_not_iterable(walking, value, origin, at)
 			Ok(walked) => {
-				var $s = machine
+				var $s = walking
 				var $i = 0
 				for item in items {
 					match item {
@@ -3076,6 +3440,12 @@ Interp :: [].{
 					machine,
 					"unsupported: a timer's properties (`${key}`)${Interp.line_note(site)}",
 				)
+				MapOf(_) => Interp.collection_property(machine, IsMap, Heap.table_of(Heap.cell_at(machine.cells, id)), key, site)
+				SetOf(_) => Interp.collection_property(machine, IsSet, Heap.table_of(Heap.cell_at(machine.cells, id)), key, site)
+				Iteration(_) => Interp.fault_got(
+					machine,
+					"unsupported: an iterator's properties and methods (`${key}`)${Interp.line_note(site)}",
+				)
 				Failure(name, message) => match key {
 					"name" => { machine: machine, value: Text(Heap.error_name_text(name)) }
 					"message" => { machine: machine, value: Text(message) }
@@ -3127,6 +3497,21 @@ Interp :: [].{
 				machine,
 				"unsupported: the property `${key}` of a ${Interp.type_of(machine.cells, object)}${Interp.line_note(site)}",
 			)
+		}
+
+	# A Map's or a Set's property: its `size`; a method's name outside a call
+	# is refused, since the subset calls a collection's methods by name.
+	collection_property : Interp.Machine, Interp.Collection, Heap.Table, Str, Ast.Where -> Interp.Got
+	collection_property = |machine, collection, table, key, site|
+		if key == "size" {
+			{ machine: machine, value: Number(table.size.to_f64()) }
+		} else if Interp.is_prototype_name(key) or ["get", "set", "add", "has", "delete", "clear", "forEach", "keys", "values", "entries"].contains(key) {
+			Interp.fault_got(
+				machine,
+				"unsupported: the ${Interp.collection_name(collection)} method `${key}` outside a call${Interp.line_note(site)}",
+			)
+		} else {
+			{ machine: machine, value: Undefined }
 		}
 
 	is_prototype_name : Str -> Bool
@@ -3186,7 +3571,7 @@ Interp :: [].{
 	# match's arm runs, so a write made inside that arm copies them: every
 	# store into an array of N items copied the N items. These answers hold
 	# nothing of the heap.
-	Kind : [ObjectKind, ArrayKind(U64), FunctionKind, BuiltinKind, ErrorKind]
+	Kind : [ObjectKind, ArrayKind(U64), FunctionKind, BuiltinKind, ErrorKind, MapKind, SetKind, IteratorKind]
 
 	kind_of : List(Heap.Cell), U64 -> Interp.Kind
 	kind_of = |cells, id|
@@ -3198,6 +3583,9 @@ Interp :: [].{
 			Namespace(_, _) => BuiltinKind
 			TimerHandle(_) => BuiltinKind
 			Failure(_, _) => ErrorKind
+			MapOf(_) => MapKind
+			SetOf(_) => SetKind
+			Iteration(_) => IteratorKind
 		}
 
 	# A property or an item written: an object's property, an array's item
@@ -3245,6 +3633,10 @@ Interp :: [].{
 						machine,
 						"unsupported: writing a property of an error${Interp.line_note(site)}",
 					)
+					MapKind | SetKind => Interp.fault_got(
+						machine,
+						"unsupported: writing a property of a Map or a Set (use its methods)${Interp.line_note(site)}",
+					)
 					_ => Interp.fault_got(
 						machine,
 						"unsupported: writing a property of a function or a builtin${Interp.line_note(site)}",
@@ -3276,8 +3668,8 @@ Interp :: [].{
 
 	# ---- calls -----------------------------------------------------------------
 
-	# What `new` makes: an error, from `Error` and its kin, the subset's
-	# constructors. `new` on a function of the program would need its
+	# What `new` makes: an error, from `Error` and its kin, or a Map or a
+	# Set, the subset's constructors. `new` on a function of the program would need its
 	# prototype, which the subset leaves out.
 	constructed : Interp.Machine, Heap.Value, Ast.Expression, List(Heap.Value), Ast.Where -> Interp.Got
 	constructed = |machine, maker, callee, arguments, site|
@@ -3287,6 +3679,8 @@ Interp :: [].{
 			made = match maker {
 				Reference(id) => match Heap.cell_at(machine.cells, id) {
 					Builtin(MakeError(name), _) => Errors(name)
+					Builtin(MakeMap, _) => Collected(IsMap)
+					Builtin(MakeSet, _) => Collected(IsSet)
 					Fun(_) => Program
 					_ => Nothing
 				}
@@ -3294,6 +3688,7 @@ Interp :: [].{
 			}
 			match made {
 				Errors(name) => Interp.error_made(machine, name, arguments, site)
+				Collected(collection) => Interp.collection_made(machine, collection, arguments, site)
 				Program => Interp.fault_got(
 					machine,
 					"unsupported: `new` on a function of the program (constructors and prototypes)${Interp.line_note(site)}",
@@ -3361,12 +3756,18 @@ Interp :: [].{
 		method = match holder {
 			Reference(id) => match Interp.kind_of(machine.cells, id) {
 				ArrayKind(_) => ArrayMethod(id)
+				MapKind => CollectionMethod({ id: id, collection: IsMap })
+				SetKind => CollectionMethod({ id: id, collection: IsSet })
 				_ => Plain
 			}
 			Text(text) => TextMethod(text)
 			_ => Plain
 		}
 		match method {
+			CollectionMethod(held) => {
+				{ machine: second, values } = Interp.evaluate_elements!(host, machine, arguments)
+				Interp.collection_method!(host, second, held, name, values, site)
+			}
 			ArrayMethod(id) => {
 				{ machine: second, values } = Interp.evaluate_elements!(host, machine, arguments)
 				Interp.array_method!(
@@ -3741,6 +4142,12 @@ Interp :: [].{
 			MakeError(name) => Interp.fault_got(
 				machine,
 				"unsupported: calling `${Heap.error_name_text(name)}` without `new`${Interp.line_note(site)}",
+			)
+			MakeMap | MakeSet => Interp.error_got(
+				machine,
+				TypeError,
+				"Constructor ${Heap.native_name(native)} requires 'new'",
+				site,
 			)
 			OnClick => match arguments.first() {
 				Ok(handler) if Interp.is_callable(machine.cells, handler) => {
@@ -4178,6 +4585,9 @@ Interp :: [].{
 				site,
 			)
 			"reduce" => Interp.array_reduce!(host, machine, id, arguments, site)
+			"keys" => Interp.alloc(machine, Iteration({ source: id, view: Keys, next: 0 }))
+			"values" => Interp.alloc(machine, Iteration({ source: id, view: Values, next: 0 }))
+			"entries" => Interp.alloc(machine, Iteration({ source: id, view: Entries, next: 0 }))
 			"sort" => Interp.array_sort!(host, machine, id, arguments, site)
 			_ => Interp.fault_got(
 				machine,

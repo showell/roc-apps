@@ -200,6 +200,8 @@ Ast :: [].{
 			"RangeError",
 			"ReferenceError",
 			"SyntaxError",
+			"Map",
+			"Set",
 		]
 		match library {
 			Core => core

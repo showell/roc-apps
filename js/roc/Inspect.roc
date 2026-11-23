@@ -142,6 +142,17 @@ Inspect :: [].{
 			) => Err(Unsupported("unsupported: printing the builtin object ${name}"))
 			TimerHandle(_) => Err(Unsupported("unsupported: printing a timer, what setTimeout and setInterval answer"))
 			Failure(_, _) => Err(Unsupported("unsupported: printing an error (node prints its stack)"))
+			Iteration(_) => Err(Unsupported("unsupported: printing an iterator"))
+			MapOf(tables) => Inspect.format_table(
+				context,
+				{ id: id, name: "Map", table: Inspect.first_table(tables), pairs: True },
+				recurse,
+			)
+			SetOf(tables) => Inspect.format_table(
+				context,
+				{ id: id, name: "Set", table: Inspect.first_table(tables), pairs: False },
+				recurse,
+			)
 			Array(items) => {
 				if context.seen.contains(id) {
 					Err(Unsupported("unsupported: printing a circular structure"))
@@ -257,6 +268,79 @@ Inspect :: [].{
 			depth_now: $depth_now,
 		})
 	}
+
+	first_table : List(Heap.Table) -> Heap.Table
+	first_table = |tables| tables.first() ?? crash "Inspect.first_table: a Map or a Set holds its table"
+
+	## A Map or a Set to write: its cell, the name node writes before its
+	## size, its table, and whether its entries are pairs (a Map's) or values.
+	Collection : {
+		id : U64,
+		name : Str,
+		table : Heap.Table,
+		pairs : Bool,
+	}
+
+	# node's `formatMap` and `formatSet`: `Map(2) { 'a' => 1, 'b' => 2 }`,
+	# `Set(1) { 1 }`, the entries in their order, 100 at most.
+	format_table : Inspect.Context, Inspect.Collection, U64 -> Inspect.Shown
+	format_table = |context, { id, name, table, pairs }, recurse|
+		if context.seen.contains(id) {
+			Err(Unsupported("unsupported: printing a circular structure"))
+		} else if table.size == 0 {
+			Ok(Inspect.plain(context, "${name}(0) {}"))
+		} else if recurse > 2 {
+			Ok(Inspect.plain(context, "[${name}]"))
+		} else {
+			inner = {
+				..context,
+				depth_now: recurse + 1,
+				seen: context.seen.append(id),
+				indent: context.indent + 2,
+			}
+			var $depth_now = inner.depth_now
+			var $out = []
+			for entry in table.entries {
+				match entry {
+					Standing({ key, value }) if $out.len() < 100 => {
+						shown_key = Inspect.format_value({ ..inner, depth_now: $depth_now }, key, recurse + 1)?
+						$depth_now = shown_key.depth_now
+						if pairs {
+							shown_value = Inspect.format_value({ ..inner, depth_now: $depth_now }, value, recurse + 1)?
+							$depth_now = shown_value.depth_now
+							$out = $out.append("${shown_key.text} => ${shown_value.text}")
+						} else {
+							$out = $out.append(shown_key.text)
+						}
+					}
+					_ => {}
+				}
+			}
+			more = table.size - $out.len()
+			pieces = if more > 0 {
+				plural = if more > 1 {
+					"s"
+				} else {
+					""
+				}
+				$out.append("... ${more.to_str()} more item${plural}")
+			} else {
+				$out
+			}
+			Ok({
+				text: Inspect.reduce_to_single_string(
+					{ ..context, depth_now: $depth_now },
+					{
+						pieces: pieces,
+						open: "${name}(${table.size.to_str()}) {",
+						close: "}",
+						kind: ObjectKind,
+					},
+					recurse + 1,
+				),
+				depth_now: $depth_now,
+			})
+		}
 
 	# An object's properties in JavaScript's order: the keys that are array
 	# indices first, by number, then the rest as they were made.
