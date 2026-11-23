@@ -14,11 +14,17 @@ with all other work paused. The raw runs are
   this cost, so the first real check does. Once Builtin's image is in the
   cache, RC1 checks these packages faster than the old nightly did.
 - **A 10-line app reproduces it:** 0.05 s on the old nightly, 1.00 s on RC1.
-- **First slow nightly: 2026-11-18-a520eed. Last fast nightly:
-  2026-11-15-f25da45.** The likely cause is #13086, the first merge to main
-  in that range, which made Boxy the default for checks and embedded a
-  Builtin unit. This has not been confirmed by building the commits.
-- **The 2026-11-22 nightly (3350b1c, 11 commits after RC1) is still slow.**
+- **First slow nightly: 2026-11-18
+  ([a520eed](https://github.com/roc-lang/roc/commit/a520eeda6c3745f2543fcdd0fb836d3d1336c5ac)).
+  Last fast nightly: 2026-11-15
+  ([f25da45](https://github.com/roc-lang/roc/commit/f25da45234ca5db7558f317cef45195e5f8cf429)).**
+  The likely cause is [#13086](https://github.com/roc-lang/roc/pull/13086),
+  the first merge to main in that range, which made Boxy the default for
+  checks and embedded a Builtin unit. This has not been confirmed by
+  building the commits.
+- **The 2026-11-22 nightly
+  ([3350b1c](https://github.com/roc-lang/roc/commit/3350b1cd41cbb4ae7df5aacd723729b1821ae370),
+  11 commits after RC1) is still slow.**
 - **Separately, roc-chat's root-changed check is about 2x slower on RC1**
   (0.37 → 0.80 s). About half of the growth arrives with a new phase, "Unit
   Keys", between the same two nightlies. The other half came earlier and is
@@ -43,12 +49,21 @@ with all other work paused. The raw runs are
   - **root_changed** appends a comment to the root module. Each change is
     new text, because RC1 caches by content: repeating the same edit is a
     cache hit, which an earlier run of ours mistook for a fast root change.
-- The compilers: the old pin is nightly-2026-11-03-34bd006, and RC1 is
-  0.1.0_RC1 (15177e9).
-- The trees: for roc-markdown (c3ced12 → cd07711) and roc-syntax-color
-  (29517971 → 5ba4459d), the `.roc` sources are byte-identical. The pin move
-  changed only `roc-version`, so the RC1 renames play no part in those
-  numbers. roc-chat's tree did change for RC1 (bab918d → c8c532c).
+- The compilers: the old pin is nightly-2026-11-03
+  ([34bd006](https://github.com/roc-lang/roc/commit/34bd0067266d4cd5ac941f044863e6a29671ddc0)),
+  and RC1 is 0.1.0_RC1
+  ([15177e9](https://github.com/roc-lang/roc/commit/15177e91f62cafddf5336c455e00e9f05427ac16)).
+- The trees: for roc-markdown
+  ([c3ced12](https://github.com/showell/roc-markdown/commit/c3ced12c13ab465976626969df5bb7d24115a98e)
+  → [cd07711](https://github.com/showell/roc-markdown/commit/cd07711f4b256b902ceba4ec89a90e39aa6b4cd2))
+  and roc-syntax-color
+  ([29517971](https://github.com/showell/roc-syntax-color/commit/2951797124e951fd24f620a93c04f04b5c014bcc)
+  → [5ba4459d](https://github.com/showell/roc-syntax-color/commit/5ba4459d1f9cf6fae51180192f727a5672c2eca8)),
+  the `.roc` sources are byte-identical. The pin move changed only
+  `roc-version`, so the RC1 renames play no part in those numbers.
+  roc-chat's tree did change for RC1
+  ([bab918d](https://github.com/showell/roc-chat/commit/bab918da7feda2af9ddaf81727599621dec606ab)
+  → [c8c532c](https://github.com/showell/roc-chat/commit/c8c532cbac6f08a128a0ba5b6e68d3586f051399)).
 
 ## Before and after (CPU seconds, median and range, n=7)
 
@@ -64,7 +79,7 @@ with all other work paused. The raw runs are
 | cold | 0.05 (0.04-0.06) | **1.00** (0.95-1.25) |
 | cold_primed | 0.03 (0.02-0.03) | 0.01 (0.01-0.01) |
 
-| condition | roc-chat, old (bab918d) | roc-chat, RC1 (c8c532c) |
+| condition | roc-chat, old ([bab918d](https://github.com/showell/roc-chat/commit/bab918da7feda2af9ddaf81727599621dec606ab)) | roc-chat, RC1 ([c8c532c](https://github.com/showell/roc-chat/commit/c8c532cbac6f08a128a0ba5b6e68d3586f051399)) |
 |---|---|---|
 | cold (n=5) | 9.05 (8.36-10.27) | 9.05 (8.70-10.36) |
 | warm (n=5) | 0.27 (0.26-0.31) | 0.21 (0.15-0.29) |
@@ -146,25 +161,37 @@ compile, and slow runs of 1.0-1.4 s with one.
 
 | nightly | CPU s | Builtin compiled |
 |---|---|---|
-| 2026-11-03-34bd006 (old pin) | 0.06-0.07 | no |
-| 2026-11-07-ad3a5d2 | 0.14-0.18 | no |
-| 2026-11-14-a87808d | 0.12-0.15 | no |
-| **2026-11-15-f25da45** (last fast) | 0.11-0.12 | no |
-| **2026-11-18-a520eed** (first slow) | 1.26-1.43 | yes |
-| 0.1.0_RC1 (15177e9) | 1.12-1.31 | yes |
-| 2026-11-22-3350b1c (after RC1) | 1.03-1.31 | yes |
+| 2026-11-03 ([34bd006](https://github.com/roc-lang/roc/commit/34bd0067266d4cd5ac941f044863e6a29671ddc0), old pin) | 0.06-0.07 | no |
+| 2026-11-07 ([ad3a5d2](https://github.com/roc-lang/roc/commit/ad3a5d2830b94fdac878ce1aaa73c64e7c57720f)) | 0.14-0.18 | no |
+| 2026-11-14 ([a87808d](https://github.com/roc-lang/roc/commit/a87808d2e79cc5e347871cb17e531ea528bf85df)) | 0.12-0.15 | no |
+| **2026-11-15** ([f25da45](https://github.com/roc-lang/roc/commit/f25da45234ca5db7558f317cef45195e5f8cf429), last fast) | 0.11-0.12 | no |
+| **2026-11-18** ([a520eed](https://github.com/roc-lang/roc/commit/a520eeda6c3745f2543fcdd0fb836d3d1336c5ac), first slow) | 1.26-1.43 | yes |
+| 0.1.0_RC1 ([15177e9](https://github.com/roc-lang/roc/commit/15177e91f62cafddf5336c455e00e9f05427ac16)) | 1.12-1.31 | yes |
+| 2026-11-22 ([3350b1c](https://github.com/roc-lang/roc/commit/3350b1cd41cbb4ae7df5aacd723729b1821ae370), after RC1) | 1.03-1.31 | yes |
 
 There were no nightlies on 11-16 or 11-17. The range
-f25da45...a520eed holds 902 commits, with 47 on main's first-parent line.
-The first merge in it,
-**#13086 "Combine 10 open pull requests"** (98bac3cc6, merged 2026-11-16),
-brings two candidates:
+[f25da45...a520eed](https://github.com/roc-lang/roc/compare/f25da45234ca5db7558f317cef45195e5f8cf429...a520eeda6c3745f2543fcdd0fb836d3d1336c5ac)
+holds 902 commits, with 47 on main's first-parent line. The first merge in
+it, **[#13086](https://github.com/roc-lang/roc/pull/13086) "Combine 10 open
+pull requests"**
+([98bac3cc6](https://github.com/roc-lang/roc/commit/98bac3cc6ac452352372f189c7fe9373853cae47),
+merged 2026-11-16), brings in two candidates. Neither was merged on its own;
+both landed through #13086:
 
-- **#12982:** "Boxy lowering by default for checks". It includes
-  af673ecd1, "Make boxy the default for checks and dev builds".
-- **#13058:** "an embedded Builtin unit". It includes f41c43aa7, "Embed the
-  Builtin module's Boxy unit in the compiler", and c2a507e36, "Embed the
-  Builtin module's Boxy digests in the compiler".
+- **[#12982](https://github.com/roc-lang/roc/pull/12982):** "Cheaper
+  type-checking for operators and literals, and boxy by default for
+  checks". It includes
+  [af673ecd1](https://github.com/roc-lang/roc/commit/af673ecd100c354998a60dd61ed6b13630e92b3c),
+  "Make boxy the default for checks and dev builds, resolve closed operators
+  directly, defer literal conversions".
+- **[#13058](https://github.com/roc-lang/roc/pull/13058):** "Cheaper
+  post-check work: redundant work removed, embedded Builtin unit, constants
+  stored directly and evaluated during checking, ordered parallel runs,
+  build-independent output, and itemized timings". It includes
+  [f41c43aa7](https://github.com/roc-lang/roc/commit/f41c43aa7982afd3f4bd09492e035895551750a1),
+  "Embed the Builtin module's Boxy unit in the compiler", and
+  [c2a507e36](https://github.com/roc-lang/roc/commit/c2a507e362595be28fbb39c574babe65f73c0718),
+  "Embed the Builtin module's Boxy digests in the compiler".
 
 The likely story: since #12982, checks evaluate compile-time constants
 through Boxy-compiled native code. The embedded Builtin unit (#13058) is
@@ -173,10 +200,15 @@ and compiled whole. This is inferred from the commit names and from
 `--timings`. We did not build the individual commits.
 
 Later merges in the range that also change this path:
-- #13099: "Evaluate constants during checking".
-- #13108: "Rebuild only what an edit affects, build unit images without an
-  object round trip".
-- #13117: "Make Boxy lowering cheaper".
+- [#13099](https://github.com/roc-lang/roc/pull/13099): "Evaluate constants
+  during checking, relate stored rows, publish closed row nodes, and fix
+  checker and SpecConstr crashes".
+- [#13108](https://github.com/roc-lang/roc/pull/13108): "Rebuild only what
+  an edit affects, build unit images without an object round trip, and keep
+  literal values in function bodies".
+- [#13117](https://github.com/roc-lang/roc/pull/13117): "Make Boxy lowering
+  cheaper: remember type conversions and row-node readings, and resolve
+  statement sources once per region".
 
 Any of these could change the size of the cost, though not, on this
 evidence, its cause.
