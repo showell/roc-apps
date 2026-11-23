@@ -1,0 +1,122 @@
+-- This script is a first look at what the JavaScript subset's interpreter
+-- copies. Each probe in js/probes/ is a loop of writes run at three sizes,
+-- and the time a write takes is compared across them: flat means a write is
+-- made in place, linear means each write copies something as big as the
+-- size. One number says nothing; the shape across sizes does.
+--
+--   cd <roc-apps checkout> && shale js/probes.shale            build js-count, then probe
+--   cd <roc-apps checkout> && shale js/probes.shale build=0    the js-count already built
+--   cd <roc-apps checkout> && shale js/probes.shale only=3     the probes whose names start so
+--
+-- A probe's first line says its kind. A `fixed` probe holds its writes at W
+-- and grows N, what sits beside them (a heap, an array, other scopes); its
+-- write's cost is (time at W - time at W = 0) / W. A `growing` probe makes N
+-- writes, each onto what the ones before made; its write's cost is (time at
+-- N - time at N = 0) / N. Times are the CPU time of js-count, built on the
+-- dev backend (as BASIC's controls are), so they are rough: each line says
+-- which other heavy programs were running.
+--
+-- It builds js-count from js/roc/JsCount.roc with the pinned Roc into
+-- build:roc-apps/gen/js/<checkout>/.
+--
+-- budget: steps=50000000
+
+const WANT_ROC = "roc-pin: roc-apps' pinned nightly, and js-count, which it builds"
+const WANT_RUN = "js-count: the interpreter under test, built here"
+-- The sizes a probe runs at: what sits beside a fixed probe's writes, and
+-- how many writes a growing probe makes. A growing probe's copies are short
+-- beside the interpreter's own cost a write until the copied thing is long,
+-- so it runs longer.
+const FIXED_SIZES = {2000, 4000, 8000}
+const GROWING_SIZES = {20000, 80000, 160000}
+const W = 20000
+-- A write's cost that grows by less than this many tenths, smallest size
+-- to largest, reads as flat. A copy's cost is linear in the size, but rides
+-- on the interpreter's own cost a write, so it shows as a cost that grows by
+-- half again or more: a string of 20,000 characters built one at a time
+-- cost 22 µs an append, and one of 160,000, 49.
+const FLAT_BELOW_TENTHS = 16
+
+const BUILD = arg("build", true)
+const ONLY = arg("only", "")
+
+function out_dir()
+  return "build:roc-apps/gen/js/" .. basename(real("."))
+end
+
+function build_js_count()
+  local roc = pinned_roc("js/probes.shale")
+  local dir = out_dir()
+  mkdir(dir)
+  local exe = dir .. "/js-count"
+  if exists(exe) then remove(exe) end
+  local r = run({roc, "build", "JsCount.roc", "--opt=dev", "--output=" .. real(dir) .. "/js-count"},
+    {cwd = "js/roc", timeout_ms = 600000, tail = 40, nice = 19, want = WANT_ROC})
+  if contains(r.out, "✗") or contains(r.out, "●") or not exists(exe) then
+    print(trim(r.out))
+    fail("js/probes.shale: the build of js-count failed")
+  end
+end
+
+-- The heavy programs running beside the probes, which slow their times.
+function busy()
+  local seen = {}
+  for p in procs() do
+    for name in {"basic-run", "basic-check", "strace", "count_allocs", "roc", "zig", "node", "chrome", "firefox"} do
+      if p.name == name then seen[name] = true end
+    end
+    if find(p.args, "controls") ~= nil and p.name ~= "shale" then seen["controls"] = true end
+  end
+  local names = keys(seen)
+  sort(names)
+  if #names == 0 then return "nothing else heavy running" end
+  return "running beside: " .. join(names, ", ")
+end
+
+-- js-count's CPU time, in ms, for the probe at `n` and `w`.
+function cpu_ms(exe, src, n, w)
+  local program = "const N = " .. n .. ";\nconst W = " .. w .. ";\n" .. src
+  local r = run({exe, program}, {timeout_ms = 300000, tail = 3, want = WANT_RUN})
+  if r.ended ~= "exit" or r.code ~= 0 then fail("js/probes.shale: js-count ended " .. r.ended .. " " .. get(r, "code", "") .. ": " .. r.out) end
+  return r.cpu_ms
+end
+
+function main()
+  if BUILD then build_js_count() end
+  local exe = real(out_dir() .. "/js-count")
+  print(busy())
+  print(pad("probe", 22) .. "  µs a write at three sizes N        shape")
+  for f in glob("js/probes/*.js") do
+    if ONLY == "" or starts_with(basename(f), ONLY) then
+    local src = read(f)
+    local kind = lines(src)[1]
+    local fixed = contains(kind, "probe: fixed")
+    if not fixed and not contains(kind, "probe: growing") then fail("js/probes.shale: " .. f .. " starts with no `// probe: fixed` or `// probe: growing`") end
+    local costs = {}
+    local sizes = GROWING_SIZES
+    if fixed then sizes = FIXED_SIZES end
+    for n in sizes do
+      local t = 0
+      local writes = n
+      if fixed then
+        t = cpu_ms(exe, src, n, W) - cpu_ms(exe, src, n, 0)
+        writes = W
+      else
+        t = cpu_ms(exe, src, n, W) - cpu_ms(exe, src, 0, W)
+      end
+      push(costs, t * 1000 // writes)
+    end
+    local first = costs[1]
+    local last = costs[#costs]
+    local shape = "flat"
+    if first <= 0 then first = 1 end
+    if last * 10 >= first * FLAT_BELOW_TENTHS then shape = "LINEAR" end
+    local shown = {}
+    for c in costs do push(shown, pad(tostring(c), -6)) end
+    print(pad(strip_suffix(basename(f), ".js"), 22) .. "  " .. join(shown, " ") .. "  (N = " .. join(sizes, ", ") .. ")  " .. shape)
+    end
+  end
+  print(busy())
+end
+
+main()

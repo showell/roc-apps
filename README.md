@@ -17,6 +17,7 @@ Thanks to Damian Tedrow, whose [Cobblestone](https://github.com/damiant3/Cobbles
 | `fasttrack/` | Fast Track, the board game, ported from Steve's elm-fasttrack: the rules and the whole page in Roc |
 | `glue/` | `JsGlue.roc`, the `roc glue` spec that generates a page's frame reader from the compiler's type table |
 | `basic/` | a BASIC interpreter written in Roc, a web page that runs it, and the corpora that grade it |
+| `js/` | a subset of JavaScript run by a tree-walking interpreter in Roc, graded against node, and a web page that runs it |
 | `book_builder/` | the book builder: a Roc platform and the package a book's app calls; it builds the Safari tutorial and the books book |
 | `building-books/` | the books book, *Building a Book with Claude*: how to build a book like the Safari tutorial, with Claude writing (`building-books/MISSION.md`) |
 | `site/`, `ops/` | the site that serves the apps (below) |

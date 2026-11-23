@@ -137,17 +137,21 @@ Heap :: [].{
 	with_item = |cells, id, i, val| {
 		taken = Heap.taken_out(cells, id)
 		match taken.prev {
-			Arr(items) => {
-				written = if i == items.len() {
-					items.append(val)
-				} else {
-					items.set(i, val) ?? crash "Heap.with_item: the interpreter writes inside an array or at its end"
-				}
-				Heap.put_back(taken.list, id, Arr(written))
-			}
+			Arr(items) => Heap.put_back(taken.list, id, Arr(Heap.items_with(items, i, val)))
 			_ => crash "Heap.with_item: the interpreter writes items only to arrays"
 		}
 	}
+
+	# **THE WRITE IS A FUNCTION OF ITS OWN.** Made inline in `with_item`'s match
+	# arm, beside a binding of its own, it copied the items: every store into
+	# an array of N items cost N.
+	items_with : List(Heap.Val), U64, Heap.Val -> List(Heap.Val)
+	items_with = |items, i, val|
+		if i == items.len() {
+			items.append(val)
+		} else {
+			items.set(i, val) ?? crash "Heap.items_with: the interpreter writes inside an array or at its end"
+		}
 
 	with_items_pushed : List(Heap.Cell), U64, List(Heap.Val) -> List(Heap.Cell)
 	with_items_pushed = |cells, id, vals| {
