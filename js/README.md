@@ -305,7 +305,8 @@ each, and a Map's write) at 1,000 and 10,000 passes on `tools/alloc_ladder.shale
 `roc_alloc`'s calls exactly, and holds what one pass allocates to
 `js/controls/expected.txt` (release) and `expected-dev.txt` (dev). In the
 release build every control allocates nothing a pass but a push, which
-makes its argument list. A copy is an allocation a pass, so a write that
+makes its argument list, and the Map's write, which makes its argument list
+and its key's identity text. A copy is an allocation a pass, so a write that
 stops being made in place turns a control red by name.
 
 **What the probes say (2026-11-23, the dev backend; the box was quiet when
