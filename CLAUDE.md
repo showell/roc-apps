@@ -328,6 +328,13 @@ claim: read how many ran.
   in the commit. Then let the test carry it: assert both sides of the
   condition, the bad case refused and a near-miss good case accepted, so a
   test that stopped seeing would fail on the good side or the bad.
+- **Prefer a plant that needs no rebuild.** To prove that a ladder or an
+  oracle can see, change what it is held to or what it reads: hold a
+  control that is flat to 1 in its expected file, or feed it an input file
+  with the fault in it, and watch it go red. That costs no compile. A plant
+  in the code costs two builds, one to put the fault in and one to take it
+  out, so it is kept for a new kind of check, made once, and never part of
+  a routine run.
 - **A test asserts every side, not one thing.** We don't follow the "one
   assertion per test" habit. As a principle, a test checks both sides of a
   boolean, every tag of a union, and the values at, just under and just
@@ -501,6 +508,21 @@ check the defaults first.
   hides which half was slow. More than about a second to compile a small
   app is suspicious. Check which backend ran before anything else;
   `roc check --timings` shows how long each compiler phase took.
+- **Screen a change on the dev ladder.** Allocation counts are
+  deterministic, so a change that moves one shows on the dev build's
+  ladder in seconds (`basic/controls.shale opt=dev`,
+  `tools/copy_shapes/copy_shapes.shale opt=dev`). Most trials end there, and
+  only the ones that survive get a release build.
+- **One release build per commit, shared.** Every tool that measures a Roc
+  executable takes it from `tools/roc_build.shale` (the prelude's
+  `built_roc`), which keys each build by the content of its inputs, the
+  pin, the mode and the flags, and keeps it for every checkout on the box.
+  A ladder, a timing and a heap probe of the same tree share one release
+  build, and so does the merge train when the inputs haven't moved. A new
+  measuring tool asks it, never `roc build` directly.
+- **Take a round's release measurements once, at the end, batched.** Once
+  the dev ladder has settled a change, build release once and take every
+  number the round reports from that one build.
 - **Measure speed on the release build, never in the fix loop.** LLVM's
   code is much faster (about ten times on BASIC's programs), and the dev
   backend's code is mostly stack moves, so a dev-build timing says little
@@ -779,3 +801,11 @@ tests, and a single targeted plant. When its task asks for the repo's
 verify, it runs that too (on the dev backend it takes minutes, not hours),
 and its report says what it ran and which shortcuts it took. Either way,
 the orchestrator runs the full verify again before anything merges.
+
+The build cycle of §9 holds from the orchestrator's side too. A lane's
+brief asks it to screen on the dev build and take its release measurements
+once, at the end. Its report counts what it compiled: the release builds
+with their times, and the dev builds. A lane that built the same tree
+twice in release says why. The cache keys on content, not commits, so the
+merge train's release tiers reuse the lane's builds whenever the merge
+leaves an app's inputs as the lane had them.
