@@ -278,15 +278,15 @@ Lexer :: [].{
 	scan_hex : List(U8), Lexer.Scan -> Try(Lexer.Scan, Lexer.Fault)
 	scan_hex = |src, scanner| {
 		var $i = scanner.at + 2
-		var $n = 0.0
+		var $value = 0.0
 		while Lexer.hex_value(Lexer.byte_at(src, $i)) < 16 {
-			$n = $n * 16.0 + Lexer.hex_value(Lexer.byte_at(src, $i)).to_f64()
+			$value = $value * 16.0 + Lexer.hex_value(Lexer.byte_at(src, $i)).to_f64()
 			$i = $i + 1
 		}
 		if $i == scanner.at + 2 {
 			Err(Lexer.fault_at(scanner, "a hexadecimal number with no digits"))
 		} else {
-			Ok({ ..Lexer.with_token(scanner, Number($n), scanner.at), at: $i })
+			Ok({ ..Lexer.with_token(scanner, Number($value), scanner.at), at: $i })
 		}
 	}
 

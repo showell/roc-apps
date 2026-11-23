@@ -17,6 +17,9 @@
 import Ast
 
 Heap :: [].{
+
+	## A JavaScript program's value: a number, a string, a boolean, `null`,
+	## `undefined`, or a reference to a cell of the heap.
 	Value : [
 		Number(F64),
 		Text(Str),
@@ -26,6 +29,7 @@ Heap :: [].{
 		Reference(U64),
 	]
 
+	## An object's property: its key and its value.
 	Property : { key : Str, value : Heap.Value }
 
 	# The builtin functions, each called by name from the interpreter.

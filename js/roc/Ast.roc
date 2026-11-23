@@ -51,6 +51,7 @@ Ast :: [].{
 		ToIndex(Ast.Expression, Ast.Expression),
 	]
 
+	## An object literal's property: its key, and its value's expression.
 	Property : { key : Str, value : Ast.Expression }
 
 	UnaryOperator : [Not, Negate, Plus, TypeOf]
@@ -106,7 +107,7 @@ Ast :: [].{
 		parameters : List(Str),
 		# The call's scope: the parameters, then what the body declares.
 		names : List(Str),
-		body : List(Ast.Statement),
+		statements : List(Ast.Statement),
 		capture : Ast.Capture,
 		at : Ast.Where,
 	}

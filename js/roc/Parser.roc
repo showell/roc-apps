@@ -28,6 +28,7 @@ Parser :: [].{
 		functions : U64,
 	}
 
+	## A parse's value, and the parser after it.
 	Parsed(a) : { parser : Parser.State, value : a }
 
 	program_of : Str -> Try(Ast.Program, Lexer.Fault)
@@ -47,7 +48,7 @@ Parser :: [].{
 		Ok(
 			Resolve.program({
 				statements: $statements,
-				scoping: Scoped(Parser.layout_of([], $statements)?),
+				scoping: Scoped(Parser.scope_names([], $statements)?),
 				capture: if $parser.functions > 0 {
 					Captures
 				} else {
@@ -58,13 +59,13 @@ Parser :: [].{
 	}
 
 	# The names a scope holds, in order: `first` (a call's parameters), then
-	# each function and each `let` and `const` that `stmts` declare. A
+	# each function and each `let` and `const` that `statements` declare. A
 	# function may share its name with a parameter or another function, the
 	# later made winning; a `let` or a `const` shares its name with nothing,
 	# as JavaScript refuses.
-	layout_of : List(Str), List(Ast.Statement) -> Try(List(Str), Lexer.Fault)
-	layout_of = |first, statements| {
-		var $names = first
+	scope_names : List(Str), List(Ast.Statement) -> Try(List(Str), Lexer.Fault)
+	scope_names = |leading_names, statements| {
+		var $names = leading_names
 		var $lexical = []
 		for listed in statements {
 			match listed {
@@ -72,7 +73,7 @@ Parser :: [].{
 					definition = boxed.unbox()
 					if $lexical.contains(definition.name) {
 						return Err(
-							Parser.fault_at(definition.at, Parser.redeclared(definition.name)),
+							Parser.fault_at(definition.at, Parser.redeclared_message(definition.name)),
 						)
 					}
 					if !$names.contains(definition.name) {
@@ -82,7 +83,7 @@ Parser :: [].{
 				Declare(_, declarations) => {
 					for d in declarations {
 						if $names.contains(d.name) {
-							return Err(Parser.fault_at(d.at, Parser.redeclared(d.name)))
+							return Err(Parser.fault_at(d.at, Parser.redeclared_message(d.name)))
 						}
 						$names = $names.append(d.name)
 						$lexical = $lexical.append(d.name)
@@ -94,8 +95,8 @@ Parser :: [].{
 		Ok($names)
 	}
 
-	redeclared : Str -> Str
-	redeclared = |name| "SyntaxError: Identifier '${name}' has already been declared"
+	redeclared_message : Str -> Str
+	redeclared_message = |name| "SyntaxError: Identifier '${name}' has already been declared"
 
 	# ---- tokens ----------------------------------------------------------------
 
@@ -145,9 +146,9 @@ Parser :: [].{
 		column: site.column,
 	}
 
-	shown : Lexer.TokenKind -> Str
-	shown = |kind| match kind {
-		Number(number) => NumberText.of(number)
+	token_text : Lexer.TokenKind -> Str
+	token_text = |kind| match kind {
+		Number(number) => NumberText.text_for(number)
 		Text(_) => "a string"
 		Name(text) => "`${text}`"
 		Punct(text) => "`${text}`"
@@ -166,7 +167,7 @@ Parser :: [].{
 			Err(
 				Parser.fault_here(
 					parser,
-					"expected `${text}`, found ${Parser.shown(Parser.token(parser).kind)}",
+					"expected `${text}`, found ${Parser.token_text(Parser.token(parser).kind)}",
 				),
 			)
 		}
@@ -183,7 +184,7 @@ Parser :: [].{
 			Err(
 				Parser.fault_here(
 					parser,
-					"expected `;` or a line break, found ${Parser.shown(current.kind)}",
+					"expected `;` or a line break, found ${Parser.token_text(current.kind)}",
 				),
 			)
 		}
@@ -200,7 +201,7 @@ Parser :: [].{
 				}
 			}
 			other => Err(
-				Parser.fault_here(parser, "expected ${what}, found ${Parser.shown(other)}"),
+				Parser.fault_here(parser, "expected ${what}, found ${Parser.token_text(other)}"),
 			)
 		}
 
@@ -376,7 +377,7 @@ Parser :: [].{
 		}
 
 	jump : Parser.State, Ast.Statement -> Try(Parser.Parsed(Ast.Statement), Lexer.Fault)
-	jump = |parser, stmt| {
+	jump = |parser, jumped| {
 		onward = Parser.advance(parser)
 		name_found = Parser.token(onward)
 		match name_found.kind {
@@ -385,7 +386,7 @@ Parser :: [].{
 			)
 			_ => {
 				q2 = Parser.end_of_statement(onward)?
-				Ok({ parser: q2, value: stmt })
+				Ok({ parser: q2, value: jumped })
 			}
 		}
 	}
@@ -423,7 +424,7 @@ Parser :: [].{
 			},
 		)
 		if declares {
-			Ok(Scoped(Parser.layout_of([], statements)?))
+			Ok(Scoped(Parser.scope_names([], statements)?))
 		} else {
 			Ok(Unscoped)
 		}
@@ -452,7 +453,7 @@ Parser :: [].{
 				$out = $out.append({
 					name: name_found.value,
 					slot: Unresolved,
-					init: Initialized(Parser.named(parsed_expression.value, name_found.value)),
+					init: Initialized(Parser.with_name_given(parsed_expression.value, name_found.value)),
 					at: site,
 				})
 				$onward = parsed_expression.parser
@@ -478,8 +479,8 @@ Parser :: [].{
 
 	# A function literal written with no name of its own takes the name it is
 	# bound to, as JavaScript names `const f = () => 1` "f".
-	named : Ast.Expression, Str -> Ast.Expression
-	named = |tree, name| match tree {
+	with_name_given : Ast.Expression, Str -> Ast.Expression
+	with_name_given = |tree, name| match tree {
 		Function(boxed) => {
 			definition = boxed.unbox()
 			if definition.name == "" {
@@ -561,7 +562,7 @@ Parser :: [].{
 				q4 = Parser.expect_punct(update.parser, ")")?
 				body = Parser.body_statement(q4)?
 				loop = {
-					names: Parser.layout_of([], [init.value])?,
+					names: Parser.scope_names([], [init.value])?,
 					init: init.value,
 					test: test.value,
 					update: update.value,
@@ -681,8 +682,8 @@ Parser :: [].{
 		definition = {
 			name: name,
 			parameters: parameters,
-			names: Parser.layout_of(parameters, parsed_block.value.statements)?,
-			body: parsed_block.value.statements,
+			names: Parser.scope_names(parameters, parsed_block.value.statements)?,
+			statements: parsed_block.value.statements,
 			capture: Parser.capture_since(parsed_block.parser, before),
 			at: site,
 		}
@@ -763,7 +764,7 @@ Parser :: [].{
 				name: "",
 				parameters: parameters.value,
 				names: parameters.value,
-				body: [Return(parsed_expression.value)],
+				statements: [Return(parsed_expression.value)],
 				capture: Parser.capture_since(parsed_expression.parser, before),
 				at: site,
 			}
@@ -833,7 +834,7 @@ Parser :: [].{
 					target = Parser.target_of(left.value, site)?
 					right = Parser.assignment(Parser.advance(left.parser))?
 					value = match target {
-						ToName(text, _, _) => Parser.named(right.value, text)
+						ToName(text, _, _) => Parser.with_name_given(right.value, text)
 						_ => right.value
 					}
 					Ok({ parser: right.parser, value: Assign(target, operator, value, site) })
@@ -888,7 +889,7 @@ Parser :: [].{
 	}
 
 	# The binary operators of one level of precedence, by their tokens.
-	Level : List({ punct : Str, op : Ast.BinaryOperator })
+	Level : List({ punct : Str, operator : Ast.BinaryOperator })
 
 	# One left-associative level: operands from `next`, joined by the level's
 	# operators.
@@ -906,7 +907,7 @@ Parser :: [].{
 			match level.find_first(|matched| current.kind == Punct(matched.punct)) {
 				Ok(matched) => {
 					parsed = next(Parser.advance($onward))?
-					$built = Binary(matched.op, $built, parsed.value, Parser.where_of(current))
+					$built = Binary(matched.operator, $built, parsed.value, Parser.where_of(current))
 					$onward = parsed.parser
 				}
 				Err(NotFound) => {
@@ -930,7 +931,7 @@ Parser :: [].{
 	equality = |parser| {
 		parsed = Parser.binary_level(
 			parser,
-			[{ punct: "===", op: StrictEqual }, { punct: "!==", op: StrictNotEqual }],
+			[{ punct: "===", operator: StrictEqual }, { punct: "!==", operator: StrictNotEqual }],
 			Parser.relational,
 		)?
 		Parser.refuse_operator(
@@ -947,10 +948,10 @@ Parser :: [].{
 		parsed = Parser.binary_level(
 			parser,
 			[
-				{ punct: "<", op: Less },
-				{ punct: "<=", op: LessOrEqual },
-				{ punct: ">", op: Greater },
-				{ punct: ">=", op: GreaterOrEqual },
+				{ punct: "<", operator: Less },
+				{ punct: "<=", operator: LessOrEqual },
+				{ punct: ">", operator: Greater },
+				{ punct: ">=", operator: GreaterOrEqual },
 			],
 			Parser.additive,
 		)?
@@ -970,7 +971,7 @@ Parser :: [].{
 	additive = |parser|
 		Parser.binary_level(
 			parser,
-			[{ punct: "+", op: Add }, { punct: "-", op: Subtract }],
+			[{ punct: "+", operator: Add }, { punct: "-", operator: Subtract }],
 			Parser.multiplicative,
 		)
 
@@ -979,9 +980,9 @@ Parser :: [].{
 		Parser.binary_level(
 			parser,
 			[
-				{ punct: "*", op: Multiply },
-				{ punct: "/", op: Divide },
-				{ punct: "%", op: Remainder },
+				{ punct: "*", operator: Multiply },
+				{ punct: "/", operator: Divide },
+				{ punct: "%", operator: Remainder },
 			],
 			Parser.exponent,
 		)
@@ -1075,7 +1076,7 @@ Parser :: [].{
 						other => return Err(
 							Parser.fault_here(
 								onward,
-								"expected a property's name after `.`, found ${Parser.shown(other)}",
+								"expected a property's name after `.`, found ${Parser.token_text(other)}",
 							),
 						)
 					}
@@ -1150,7 +1151,7 @@ Parser :: [].{
 				return Err(
 					Parser.fault_here(
 						parsed_expression.parser,
-						"expected `,` or `${close}`, found ${Parser.shown(Parser.token(parsed_expression.parser).kind)}",
+						"expected `,` or `${close}`, found ${Parser.token_text(Parser.token(parsed_expression.parser).kind)}",
 					),
 				)
 			}
@@ -1198,7 +1199,7 @@ Parser :: [].{
 			Punct("#") => Err(Parser.fault_here(parser, "unsupported: private names"))
 			Punct("@") => Err(Parser.fault_here(parser, "unsupported: decorators"))
 			other => Err(
-				Parser.fault_here(parser, "expected an expression, found ${Parser.shown(other)}"),
+				Parser.fault_here(parser, "expected an expression, found ${Parser.token_text(other)}"),
 			)
 		}
 	}
@@ -1225,7 +1226,7 @@ Parser :: [].{
 				other => return Err(
 					Parser.fault_here(
 						parsed_expression.parser,
-						"expected `}` to close a template's `\${`, found ${Parser.shown(other)}",
+						"expected `}` to close a template's `\${`, found ${Parser.token_text(other)}",
 					),
 				)
 			}
@@ -1249,7 +1250,7 @@ Parser :: [].{
 				return Err(
 					Parser.fault_here(
 						parsed.parser,
-						"expected `,` or `}` in an object, found ${Parser.shown(Parser.token(parsed.parser).kind)}",
+						"expected `,` or `}` in an object, found ${Parser.token_text(Parser.token(parsed.parser).kind)}",
 					),
 				)
 			}
@@ -1276,14 +1277,14 @@ Parser :: [].{
 				}
 			}
 			Text(text) => Ok(text)
-			Number(number) => Ok(NumberText.of(number))
+			Number(number) => Ok(NumberText.text_for(number))
 			Punct("[") => Err(Parser.fault_here(parser, "unsupported: computed property names"))
 			Punct("...") => Err(Parser.fault_here(parser, "unsupported: spread (`...`)"))
 			Punct("*") => Err(Parser.fault_here(parser, "unsupported: generators"))
 			other => Err(
 				Parser.fault_here(
 					parser,
-					"expected a property's name, found ${Parser.shown(other)}",
+					"expected a property's name, found ${Parser.token_text(other)}",
 				),
 			)
 		}?
@@ -1292,7 +1293,7 @@ Parser :: [].{
 			parsed_value = Parser.assignment(Parser.advance(after))?
 			Ok({
 				parser: parsed_value.parser,
-				value: { key: key, value: Parser.named(parsed_value.value, key) },
+				value: { key: key, value: Parser.with_name_given(parsed_value.value, key) },
 			})
 		} else if Parser.is_punct(after, "(") {
 			parameters = Parser.parameter_list(after)?

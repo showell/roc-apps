@@ -6,8 +6,8 @@
 ## moves the decimal point and the exponent to where JavaScript puts them.
 NumberText :: [].{
 	# The text of a number, as `String(n)` gives it: -0 is "0".
-	of : F64 -> Str
-	of = |number|
+	text_for : F64 -> Str
+	text_for = |number|
 		if number.is_nan() {
 			"NaN"
 		} else if number.is_infinite() {
@@ -19,9 +19,9 @@ NumberText :: [].{
 		} else if number == 0.0 {
 			"0"
 		} else if number < 0.0 {
-			"-${NumberText.of_positive(-number)}"
+			"-${NumberText.text_for_positive(-number)}"
 		} else {
-			NumberText.of_positive(number)
+			NumberText.text_for_positive(number)
 		}
 
 	# The shortest digits of a positive finite number, and its exponent `n` as
@@ -72,8 +72,8 @@ NumberText :: [].{
 		bytes.sublist({ start: 0, len: $n })
 	}
 
-	of_positive : F64 -> Str
-	of_positive = |x| {
+	text_for_positive : F64 -> Str
+	text_for_positive = |x| {
 		{ digits, point } = NumberText.digits_of(x)
 		digit_count = digits.len().to_i64_wrap()
 		text = if digit_count <= point and point <= 21 {
@@ -99,18 +99,18 @@ NumberText :: [].{
 			}
 			List.concat(mantissa, "e${sign}${exponent.abs().to_str()}".to_utf8())
 		}
-		Str.from_utf8(text) ?? crash "NumberText.of_positive: digits are ASCII"
+		Str.from_utf8(text) ?? crash "NumberText.text_for_positive: digits are ASCII"
 	}
 
-	expect NumberText.of(0.1 + 0.2) == "0.30000000000000004"
-	expect NumberText.of(3.0) == "3"
-	expect NumberText.of(-0.0) == "0"
-	expect NumberText.of(1.0e21) == "1e+21"
-	expect NumberText.of(123456789012345680000.0) == "123456789012345680000"
-	expect NumberText.of(0.000001) == "0.000001"
-	expect NumberText.of(0.0000001) == "1e-7"
-	expect NumberText.of(1.5e-10) == "1.5e-10"
-	expect NumberText.of(-2.5) == "-2.5"
-	expect NumberText.of(100.0) == "100"
-	expect NumberText.of(1234.5678) == "1234.5678"
+	expect NumberText.text_for(0.1 + 0.2) == "0.30000000000000004"
+	expect NumberText.text_for(3.0) == "3"
+	expect NumberText.text_for(-0.0) == "0"
+	expect NumberText.text_for(1.0e21) == "1e+21"
+	expect NumberText.text_for(123456789012345680000.0) == "123456789012345680000"
+	expect NumberText.text_for(0.000001) == "0.000001"
+	expect NumberText.text_for(0.0000001) == "1e-7"
+	expect NumberText.text_for(1.5e-10) == "1.5e-10"
+	expect NumberText.text_for(-2.5) == "-2.5"
+	expect NumberText.text_for(100.0) == "100"
+	expect NumberText.text_for(1234.5678) == "1234.5678"
 }

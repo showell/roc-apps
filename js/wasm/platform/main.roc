@@ -28,7 +28,7 @@ platform ""
 	}
 
 buffer_for_host : U32 -> List(U8)
-buffer_for_host = |n| source_buffer(n)
+buffer_for_host = |length| source_buffer(length)
 
 run_for_host : List(U8) -> List(U8)
 run_for_host = |src| run_program(src)

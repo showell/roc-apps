@@ -51,6 +51,7 @@ import NumberText
 Interp :: [].{
 	VariableState : [Mutable, Fixed, Unready]
 
+	## A variable's value, and whether it may be written or read yet.
 	Variable : { value : Heap.Value, state : Interp.VariableState }
 
 	Parent : [Outermost, Within(U64)]
@@ -73,6 +74,7 @@ Interp :: [].{
 		status : Interp.Status,
 	}
 
+	## An expression's value, and the machine after it.
 	Got : { machine : Interp.Machine, value : Heap.Value }
 
 	Flow : [Normal, Broke, Continued, Returned(Heap.Value)]
@@ -225,18 +227,18 @@ Interp :: [].{
 	is_running = |machine| machine.status == Running
 
 	# The machine stopped with `why`, unless it had already stopped.
-	faulted : Interp.Machine, Str -> Interp.Machine
-	faulted = |machine, why|
+	with_fault : Interp.Machine, Str -> Interp.Machine
+	with_fault = |machine, why|
 		match machine.status {
 			Running => { ..machine, status: Faulted(why) }
 			Faulted(_) => machine
 		}
 
 	fault_got : Interp.Machine, Str -> Interp.Got
-	fault_got = |machine, why| { machine: Interp.faulted(machine, why), value: Undefined }
+	fault_got = |machine, why| { machine: Interp.with_fault(machine, why), value: Undefined }
 
-	at_line : Ast.Where -> Str
-	at_line = |site| " (line ${site.line.to_str()})"
+	line_note : Ast.Where -> Str
+	line_note = |site| " (line ${site.line.to_str()})"
 
 	# ---- scopes ----------------------------------------------------------------
 
@@ -334,8 +336,8 @@ Interp :: [].{
 
 	# The machine inside a new scope whose parent is `parent`, holding `size`
 	# variables, none of them ready.
-	entered : Interp.Machine, Interp.Parent, U64 -> Interp.Machine
-	entered = |machine, parent, size| Interp.with_scope_added(
+	with_scope_entered : Interp.Machine, Interp.Parent, U64 -> Interp.Machine
+	with_scope_entered = |machine, parent, size| Interp.with_scope_added(
 		machine,
 		{ variables: List.repeat(Interp.unready, size), parent: parent },
 	)
@@ -380,11 +382,11 @@ Interp :: [].{
 
 	# The functions a block declares, made before its first statement. Its
 	# `let` and `const` names stay unready until their statement runs.
-	hoisted : Interp.Machine, List(Ast.Statement) -> Interp.Machine
-	hoisted = |machine, statements| {
+	with_functions_hoisted : Interp.Machine, List(Ast.Statement) -> Interp.Machine
+	with_functions_hoisted = |machine, statements| {
 		var $s = machine
-		for stmt in statements {
-			match stmt {
+		for statement in statements {
+			match statement {
 				FunctionDeclaration(definition, slot) => {
 					{ machine: made, value: function } = Interp.alloc(
 						$s,
@@ -409,8 +411,8 @@ Interp :: [].{
 			Unscoped => Interp.execute_list(machine, block.statements)
 			Scoped(names) => {
 				outer = machine.scope
-				inner = Interp.hoisted(
-					Interp.entered(machine, Within(outer), names.len()),
+				inner = Interp.with_functions_hoisted(
+					Interp.with_scope_entered(machine, Within(outer), names.len()),
 					block.statements,
 				)
 				id = inner.scope
@@ -423,9 +425,9 @@ Interp :: [].{
 	execute_list = |machine, statements| {
 		var $s = machine
 		var $flow = Normal
-		for stmt in statements {
+		for statement in statements {
 			if $flow == Normal and Interp.is_running($s) {
-				{ machine: after, flow } = Interp.execute(Interp.ticked($s), stmt)
+				{ machine: after, flow } = Interp.execute(Interp.one_step_on($s), statement)
 				$s = after
 				$flow = flow
 			}
@@ -434,10 +436,10 @@ Interp :: [].{
 	}
 
 	# The machine one step on, stopped when it passes its step budget.
-	ticked : Interp.Machine -> Interp.Machine
-	ticked = |machine|
+	one_step_on : Interp.Machine -> Interp.Machine
+	one_step_on = |machine|
 		if machine.steps >= machine.step_limit {
-			Interp.faulted(
+			Interp.with_fault(
 				machine,
 				"the program ran past its budget of ${machine.step_limit.to_str()} steps",
 			)
@@ -446,8 +448,8 @@ Interp :: [].{
 		}
 
 	execute : Interp.Machine, Ast.Statement -> Interp.Done
-	execute = |machine, stmt|
-		match stmt {
+	execute = |machine, statement|
+		match statement {
 			Expression(expression) => {
 				{ machine: after, value: _ } = Interp.evaluate(machine, expression)
 				Interp.normal(after)
@@ -482,7 +484,7 @@ Interp :: [].{
 			}
 			While(test, body) => Interp.execute_while(machine, test, body)
 			For(loop) => Interp.execute_for(machine, loop)
-			ForOf(loop) => Interp.execute_for_of(machine, loop)
+			ForOf(loop) => Interp.execute_iteration(machine, loop)
 			BlockStatement(block) => Interp.execute_block(machine, block)
 			Return(expression) => {
 				{ machine: after, value } = Interp.evaluate(machine, expression)
@@ -495,8 +497,8 @@ Interp :: [].{
 
 	# How a loop goes on after its body: on, or out with the flow the loop
 	# itself answers.
-	after_body : Interp.Flow -> [GoOn, Leave(Interp.Flow)]
-	after_body = |flow| match flow {
+	body_outcome : Interp.Flow -> [GoOn, Leave(Interp.Flow)]
+	body_outcome = |flow| match flow {
 		Normal => GoOn
 		Continued => GoOn
 		Broke => Leave(Normal)
@@ -509,14 +511,14 @@ Interp :: [].{
 		var $flow = Normal
 		var $going = True
 		while $going {
-			{ machine: tested, value } = Interp.evaluate(Interp.ticked($s), test)
+			{ machine: tested, value } = Interp.evaluate(Interp.one_step_on($s), test)
 			if !Interp.is_running(tested) or !Interp.is_truthy(value) {
 				$s = tested
 				$going = False
 			} else {
 				{ machine: after, flow } = Interp.execute(tested, body)
 				$s = after
-				match Interp.after_body(flow) {
+				match Interp.body_outcome(flow) {
 					GoOn => {
 						$going = Interp.is_running($s)
 					}
@@ -533,22 +535,22 @@ Interp :: [].{
 	execute_for : Interp.Machine, Ast.ForLoop -> Interp.Done
 	execute_for = |machine, loop| {
 		outer = machine.scope
-		start = Interp.entered(machine, Within(outer), loop.names.len())
+		start = Interp.with_scope_entered(machine, Within(outer), loop.names.len())
 		{ machine: begun, flow: _ } = Interp.execute(start, loop.init)
 		var $s = begun
 		var $flow = Normal
 		var $going = Interp.is_running($s)
 		while $going {
 			{ machine: tested, value } = match loop.test {
-				Tested(expression) => Interp.evaluate(Interp.ticked($s), expression)
-				Always => { machine: Interp.ticked($s), value: Boolean(True) }
+				Tested(expression) => Interp.evaluate(Interp.one_step_on($s), expression)
+				Always => { machine: Interp.one_step_on($s), value: Boolean(True) }
 			}
 			if !Interp.is_running(tested) or !Interp.is_truthy(value) {
 				$s = tested
 				$going = False
 			} else {
 				{ machine: after, flow } = Interp.execute(tested, loop.body)
-				match Interp.after_body(flow) {
+				match Interp.body_outcome(flow) {
 					GoOn => {
 						# **EACH PASS HAS ITS OWN `let`**, as JavaScript gives a
 						# closure made in the body the pass's own variable. The
@@ -581,8 +583,8 @@ Interp :: [].{
 		Interp.with_scope_added(machine, scope)
 	}
 
-	execute_for_of : Interp.Machine, Ast.ForOfLoop -> Interp.Done
-	execute_for_of = |machine, loop| {
+	execute_iteration : Interp.Machine, Ast.ForOfLoop -> Interp.Done
+	execute_iteration = |machine, loop| {
 		{ machine: got, value: iterable } = Interp.evaluate(machine, loop.iterable)
 		state = match loop.binding {
 			Let => Mutable
@@ -592,17 +594,17 @@ Interp :: [].{
 			Reference(id) => match Interp.kind_of(got.cells, id) {
 				ArrayKind(_) => Interp.execute_for_of_array(got, loop, id, state)
 				_ => Interp.normal(
-					Interp.faulted(
+					Interp.with_fault(
 						got,
-						"unsupported: `for ... of` over anything but an array or a string${Interp.at_line(loop.at)}",
+						"unsupported: `for ... of` over anything but an array or a string${Interp.line_note(loop.at)}",
 					),
 				)
 			}
 			Text(text) => Interp.execute_for_of_text(got, loop, text, state)
 			_ => Interp.normal(
-				Interp.faulted(
+				Interp.with_fault(
 					got,
-					"TypeError: the value is not iterable${Interp.at_line(loop.at)}",
+					"TypeError: the value is not iterable${Interp.line_note(loop.at)}",
 				),
 			)
 		}
@@ -620,13 +622,13 @@ Interp :: [].{
 			} else {
 				subject = Interp.item_at($s, id, $i)
 				{ machine: after, flow } = Interp.execute_for_of_pass(
-					Interp.ticked($s),
+					Interp.one_step_on($s),
 					loop,
 					{ value: subject, state: state },
 				)
 				$s = after
 				$i = $i + 1
-				match Interp.after_body(flow) {
+				match Interp.body_outcome(flow) {
 					GoOn => {
 						$going = Interp.is_running($s)
 					}
@@ -648,12 +650,12 @@ Interp :: [].{
 		for character in Interp.characters(text) {
 			if $going {
 				{ machine: after, flow } = Interp.execute_for_of_pass(
-					Interp.ticked($s),
+					Interp.one_step_on($s),
 					loop,
 					{ value: Text(character), state: state },
 				)
 				$s = after
-				match Interp.after_body(flow) {
+				match Interp.body_outcome(flow) {
 					GoOn => {
 						$going = Interp.is_running($s)
 					}
@@ -754,7 +756,7 @@ Interp :: [].{
 
 	text_of_seen : List(Heap.Cell), Heap.Value, List(U64) -> Try(Str, [Unsupported(Str)])
 	text_of_seen = |cells, subject, seen| match subject {
-		Number(number) => Ok(NumberText.of(number))
+		Number(number) => Ok(NumberText.text_for(number))
 		Text(text) => Ok(text)
 		Boolean(truth) => Ok(
 			if truth {
@@ -790,7 +792,7 @@ Interp :: [].{
 	# The property key a value names, as `o[k]` reads it.
 	key_of : Heap.Value -> Try(Str, [Unsupported(Str)])
 	key_of = |subject| match subject {
-		Number(number) => Ok(NumberText.of(number))
+		Number(number) => Ok(NumberText.text_for(number))
 		Text(text) => Ok(text)
 		Boolean(truth) => Ok(
 			if truth {
@@ -856,15 +858,15 @@ Interp :: [].{
 
 	shown_value : List(Heap.Cell), Heap.Value -> Str
 	shown_value = |cells, subject| match subject {
-		Text(text) => Inspect.escaped(text)
+		Text(text) => Inspect.escaped_text(text)
 		_ => Inspect.inspect(cells, subject) ?? Interp.type_of(cells, subject)
 	}
 
 	# ---- expressions -----------------------------------------------------------
 
 	evaluate : Interp.Machine, Ast.Expression -> Interp.Got
-	evaluate = |machine, expr|
-		match expr {
+	evaluate = |machine, tree|
+		match tree {
 			Number(number) => { machine: machine, value: Number(number) }
 			Text(text) => { machine: machine, value: Text(text) }
 			Boolean(truth) => { machine: machine, value: Boolean(truth) }
@@ -891,19 +893,19 @@ Interp :: [].{
 				Interp.unary(after, operator, value, site)
 			}
 			Binary(operator, left, right, site) => {
-				{ machine: first, value: left_val } = Interp.evaluate(machine, left)
-				{ machine: second, value: right_val } = Interp.evaluate(first, right)
-				Interp.binary(second, operator, left_val, right_val, site)
+				{ machine: first, value: left_value } = Interp.evaluate(machine, left)
+				{ machine: second, value: right_value } = Interp.evaluate(first, right)
+				Interp.binary(second, operator, left_value, right_value, site)
 			}
 			Logical(operator, left, right) => {
-				{ machine: first, value: left_val } = Interp.evaluate(machine, left)
+				{ machine: first, value: left_value } = Interp.evaluate(machine, left)
 				decided = match operator {
-					And => !Interp.is_truthy(left_val)
-					Or => Interp.is_truthy(left_val)
-					Nullish => left_val != Null and left_val != Undefined
+					And => !Interp.is_truthy(left_value)
+					Or => Interp.is_truthy(left_value)
+					Nullish => left_value != Null and left_value != Undefined
 				}
 				if decided {
-					{ machine: first, value: left_val }
+					{ machine: first, value: left_value }
 				} else {
 					Interp.evaluate(first, right)
 				}
@@ -939,7 +941,7 @@ Interp :: [].{
 			Index(object, key, site) => {
 				{ machine: first, value: holder } = Interp.evaluate(machine, object)
 				{ machine: second, value: key_value } = Interp.evaluate(first, key)
-				Interp.indexed(second, holder, key_value, site)
+				Interp.indexed_value(second, holder, key_value, site)
 			}
 			Call(callee, arguments, site) => Interp.evaluate_call(machine, callee, arguments, site)
 			Function(definition) => Interp.alloc(
@@ -960,13 +962,13 @@ Interp :: [].{
 	evaluate_all : Interp.Machine, List(Ast.Expression) -> Interp.Evaluations
 	evaluate_all = |machine, expressions| {
 		var $s = machine
-		var $vals = []
+		var $values = []
 		for expression in expressions {
 			{ machine: after, value } = Interp.evaluate($s, expression)
 			$s = after
-			$vals = $vals.append(value)
+			$values = $values.append(value)
 		}
-		{ machine: $s, values: $vals }
+		{ machine: $s, values: $values }
 	}
 
 	evaluate_template : Interp.Machine, List(Str), List(Ast.Expression) -> Interp.Got
@@ -984,7 +986,7 @@ Interp :: [].{
 					)
 					after
 				}
-				Err(Unsupported(why)) => Interp.faulted(after, why)
+				Err(Unsupported(why)) => Interp.with_fault(after, why)
 			}
 			$i = $i + 1
 		}
@@ -999,7 +1001,7 @@ Interp :: [].{
 				match binding.state {
 					Unready => Interp.fault_got(
 						machine,
-						"ReferenceError: Cannot access '${name}' before initialization${Interp.at_line(site)}",
+						"ReferenceError: Cannot access '${name}' before initialization${Interp.line_note(site)}",
 					)
 					_ => { machine: machine, value: binding.value }
 				}
@@ -1029,9 +1031,9 @@ Interp :: [].{
 			"Reflect",
 			"Proxy",
 		].contains(name) {
-			"unsupported: the builtin `${name}`${Interp.at_line(site)}"
+			"unsupported: the builtin `${name}`${Interp.line_note(site)}"
 		} else {
-			"ReferenceError: ${name} is not defined${Interp.at_line(site)}"
+			"ReferenceError: ${name} is not defined${Interp.line_note(site)}"
 		}
 
 	unary : Interp.Machine, Ast.UnaryOperator, Heap.Value, Ast.Where -> Interp.Got
@@ -1043,14 +1045,14 @@ Interp :: [].{
 				Number(number) => { machine: machine, value: Number(-number) }
 				_ => Interp.fault_got(
 					machine,
-					"unsupported: `-` on a ${Interp.type_of(machine.cells, subject)} (a coercion)${Interp.at_line(site)}",
+					"unsupported: `-` on a ${Interp.type_of(machine.cells, subject)} (a coercion)${Interp.line_note(site)}",
 				)
 			}
 			Plus => match subject {
 				Number(number) => { machine: machine, value: Number(number) }
 				_ => Interp.fault_got(
 					machine,
-					"unsupported: `+` on a ${Interp.type_of(machine.cells, subject)} (a coercion)${Interp.at_line(site)}",
+					"unsupported: `+` on a ${Interp.type_of(machine.cells, subject)} (a coercion)${Interp.line_note(site)}",
 				)
 			}
 		}
@@ -1091,12 +1093,12 @@ Interp :: [].{
 					}
 					_ => Interp.fault_got(
 						machine,
-						"unsupported: arithmetic on strings (a coercion)${Interp.at_line(site)}",
+						"unsupported: arithmetic on strings (a coercion)${Interp.line_note(site)}",
 					)
 				}
 				_ => Interp.fault_got(
 					machine,
-					"unsupported: an operator on a ${Interp.type_of(machine.cells, left)} and a ${Interp.type_of(machine.cells, right)} (a coercion)${Interp.at_line(site)}",
+					"unsupported: an operator on a ${Interp.type_of(machine.cells, left)} and a ${Interp.type_of(machine.cells, right)} (a coercion)${Interp.line_note(site)}",
 				)
 			}
 		}
@@ -1157,17 +1159,17 @@ Interp :: [].{
 						(Ok(x), Ok(y)) => { machine: machine, value: Text(Str.concat(x, y)) }
 						(Err(Unsupported(why)), _) => Interp.fault_got(
 							machine,
-							"${why}${Interp.at_line(site)}",
+							"${why}${Interp.line_note(site)}",
 						)
 						(_, Err(Unsupported(why))) => Interp.fault_got(
 							machine,
-							"${why}${Interp.at_line(site)}",
+							"${why}${Interp.line_note(site)}",
 						)
 					}
 				} else {
 					Interp.fault_got(
 						machine,
-						"unsupported: `+` on a ${Interp.type_of(machine.cells, left)} and a ${Interp.type_of(machine.cells, right)} (a coercion)${Interp.at_line(site)}",
+						"unsupported: `+` on a ${Interp.type_of(machine.cells, left)} and a ${Interp.type_of(machine.cells, right)} (a coercion)${Interp.line_note(site)}",
 					)
 				}
 			}
@@ -1176,8 +1178,8 @@ Interp :: [].{
 	# What a variable or a property held, and the value an assignment gives it.
 	Change : { old : Heap.Value, new : Heap.Value }
 
-	combined : Interp.Machine, Ast.AssignmentOperator, Interp.Change, Ast.Where -> Interp.Got
-	combined = |machine, operator, change, site| {
+	combination : Interp.Machine, Ast.AssignmentOperator, Interp.Change, Ast.Where -> Interp.Got
+	combination = |machine, operator, change, site| {
 		{ old, new } = change
 		match operator {
 			Set => { machine: machine, value: new }
@@ -1206,7 +1208,7 @@ Interp :: [].{
 				match Interp.place_of(machine, slot) {
 					Nowhere => Interp.fault_got(
 						machine,
-						"unsupported: assigning to `${name}`, which is not declared${Interp.at_line(at)}",
+						"unsupported: assigning to `${name}`, which is not declared${Interp.line_note(at)}",
 					)
 					At({ scope, index }) => {
 						facts = Interp.variable_facts(machine.scopes, scope, index)
@@ -1216,7 +1218,7 @@ Interp :: [].{
 						} else {
 							old = Interp.variable_value(machine.scopes, scope, index)
 							{ machine: after, value } = Interp.evaluate(machine, expression)
-							{ machine: made, value: result } = Interp.combined(
+							{ machine: made, value: result } = Interp.combination(
 								after,
 								operator,
 								{ old: old, new: value },
@@ -1234,13 +1236,13 @@ Interp :: [].{
 					Combine(_) => Interp.property(first, holder, key, site)
 				}
 				{ machine: third, value } = Interp.evaluate(second, expression)
-				{ machine: made, value: result } = Interp.combined(
+				{ machine: made, value: result } = Interp.combination(
 					third,
 					operator,
 					{ old: old, new: value },
 					site,
 				)
-				Interp.stored(
+				Interp.with_stored(
 					made,
 					holder,
 					Text(key),
@@ -1253,16 +1255,16 @@ Interp :: [].{
 				{ machine: second, value: key_value } = Interp.evaluate(first, key)
 				{ machine: third, value: old } = match operator {
 					Set => { machine: second, value: Undefined }
-					Combine(_) => Interp.indexed(second, holder, key_value, site)
+					Combine(_) => Interp.indexed_value(second, holder, key_value, site)
 				}
 				{ machine: fourth, value } = Interp.evaluate(third, expression)
-				{ machine: made, value: result } = Interp.combined(
+				{ machine: made, value: result } = Interp.combination(
 					fourth,
 					operator,
 					{ old: old, new: value },
 					site,
 				)
-				Interp.stored(made, holder, key_value, result, site)
+				Interp.with_stored(made, holder, key_value, result, site)
 			}
 		}
 	}
@@ -1288,16 +1290,16 @@ Interp :: [].{
 					)
 					Fixed => Interp.fault_got(
 						machine,
-						"TypeError: Assignment to constant variable.${Interp.at_line(site)}",
+						"TypeError: Assignment to constant variable.${Interp.line_note(site)}",
 					)
 					Unready => Interp.fault_got(
 						machine,
-						"ReferenceError: Cannot access '${name}' before initialization${Interp.at_line(site)}",
+						"ReferenceError: Cannot access '${name}' before initialization${Interp.line_note(site)}",
 					)
 				}
 				Nowhere => Interp.fault_got(
 					machine,
-					"ReferenceError: ${name} is not defined${Interp.at_line(site)}",
+					"ReferenceError: ${name} is not defined${Interp.line_note(site)}",
 				)
 			}
 		}
@@ -1363,7 +1365,7 @@ Interp :: [].{
 			{ machine: after, value: Undefined }
 		} else {
 			match Interp.text_of(after.cells, piece) {
-				Err(Unsupported(why)) => Interp.fault_got(after, "${why}${Interp.at_line(site)}")
+				Err(Unsupported(why)) => Interp.fault_got(after, "${why}${Interp.line_note(site)}")
 				Ok(tail) => Interp.text_appended(after, scope_id, index, tail)
 			}
 		}
@@ -1412,13 +1414,13 @@ Interp :: [].{
 	variable_with_appended : Interp.Variable, Str -> Interp.Variable
 	variable_with_appended = |binding, tail| {
 		{ value, state } = binding
-		{ value: Interp.val_with_appended(value, tail), state: state }
+		{ value: Interp.value_with_appended(value, tail), state: state }
 	}
 
-	val_with_appended : Heap.Value, Str -> Heap.Value
-	val_with_appended = |value, tail| match value {
+	value_with_appended : Heap.Value, Str -> Heap.Value
+	value_with_appended = |value, tail| match value {
 		Text(old) => Text(Str.concat(old, tail))
-		_ => crash "Interp.val_with_appended: the interpreter appends only to a variable that holds a string"
+		_ => crash "Interp.value_with_appended: the interpreter appends only to a variable that holds a string"
 	}
 
 	variable_written : Interp.Machine, U64, U64, Interp.Variable -> Interp.Got
@@ -1442,11 +1444,11 @@ Interp :: [].{
 		}
 		match target {
 			ToName(name, slot, at) => {
-				{ machine: read_st, value: current } = Interp.evaluate_name(machine, name, slot, at)
+				{ machine: read_machine, value: current } = Interp.evaluate_name(machine, name, slot, at)
 				match current {
 					Number(number) => {
 						{ machine: written, value: _ } = Interp.assigned_name(
-							read_st,
+							read_machine,
 							Number(number + delta),
 							name,
 							slot,
@@ -1455,18 +1457,18 @@ Interp :: [].{
 						{ machine: written, value: answer(number, number + delta) }
 					}
 					_ => Interp.fault_got(
-						read_st,
-						"unsupported: `++` or `--` on a ${Interp.type_of(read_st.cells, current)}${Interp.at_line(site)}",
+						read_machine,
+						"unsupported: `++` or `--` on a ${Interp.type_of(read_machine.cells, current)}${Interp.line_note(site)}",
 					)
 				}
 			}
 			ToMember(object, key) => {
 				{ machine: first, value: holder } = Interp.evaluate(machine, object)
-				{ machine: read_st, value: current } = Interp.property(first, holder, key, site)
+				{ machine: read_machine, value: current } = Interp.property(first, holder, key, site)
 				match current {
 					Number(number) => {
-						{ machine: written, value: _ } = Interp.stored(
-							read_st,
+						{ machine: written, value: _ } = Interp.with_stored(
+							read_machine,
 							holder,
 							Text(key),
 							Number(number + delta),
@@ -1475,8 +1477,8 @@ Interp :: [].{
 						{ machine: written, value: answer(number, number + delta) }
 					}
 					_ => Interp.fault_got(
-						read_st,
-						"unsupported: `++` or `--` on a ${Interp.type_of(read_st.cells, current)}${Interp.at_line(site)}",
+						read_machine,
+						"unsupported: `++` or `--` on a ${Interp.type_of(read_machine.cells, current)}${Interp.line_note(site)}",
 					)
 				}
 			}
@@ -1484,13 +1486,13 @@ Interp :: [].{
 				{ machine: first, value: holder } = Interp.evaluate(machine, object)
 				{ machine: second, value: key_value } = Interp.evaluate(first, key)
 				{
-					machine: read_st,
+					machine: read_machine,
 					value: current,
-				} = Interp.indexed(second, holder, key_value, site)
+				} = Interp.indexed_value(second, holder, key_value, site)
 				match current {
 					Number(number) => {
-						{ machine: written, value: _ } = Interp.stored(
-							read_st,
+						{ machine: written, value: _ } = Interp.with_stored(
+							read_machine,
 							holder,
 							key_value,
 							Number(number + delta),
@@ -1499,8 +1501,8 @@ Interp :: [].{
 						{ machine: written, value: answer(number, number + delta) }
 					}
 					_ => Interp.fault_got(
-						read_st,
-						"unsupported: `++` or `--` on a ${Interp.type_of(read_st.cells, current)}${Interp.at_line(site)}",
+						read_machine,
+						"unsupported: `++` or `--` on a ${Interp.type_of(read_machine.cells, current)}${Interp.line_note(site)}",
 					)
 				}
 			}
@@ -1519,7 +1521,7 @@ Interp :: [].{
 					} else if Interp.is_prototype_name(key) {
 						Interp.fault_got(
 							machine,
-							"unsupported: Object.prototype's `${key}`${Interp.at_line(site)}",
+							"unsupported: Object.prototype's `${key}`${Interp.line_note(site)}",
 						)
 					} else {
 						{ machine: machine, value: Undefined }
@@ -1536,7 +1538,7 @@ Interp :: [].{
 							}
 							Err(NotIndex) => Interp.fault_got(
 								machine,
-								"unsupported: the array property `${key}` outside a call${Interp.at_line(site)}",
+								"unsupported: the array property `${key}` outside a call${Interp.line_note(site)}",
 							)
 						}
 					}
@@ -1547,7 +1549,7 @@ Interp :: [].{
 					} else {
 						Interp.fault_got(
 							machine,
-							"unsupported: `${name}.${key}`${Interp.at_line(site)}",
+							"unsupported: `${name}.${key}`${Interp.line_note(site)}",
 						)
 					}
 				}
@@ -1557,13 +1559,13 @@ Interp :: [].{
 					} else {
 						Interp.fault_got(
 							machine,
-							"unsupported: `${Heap.native_name(number)}.${key}`${Interp.at_line(site)}",
+							"unsupported: `${Heap.native_name(number)}.${key}`${Interp.line_note(site)}",
 						)
 					}
 				}
 				Fun(_) => Interp.fault_got(
 					machine,
-					"unsupported: a function's properties (`${key}`)${Interp.at_line(site)}",
+					"unsupported: a function's properties (`${key}`)${Interp.line_note(site)}",
 				)
 				Taken => crash "Interp.property: no cell is out being written while a property is read"
 			}
@@ -1574,7 +1576,7 @@ Interp :: [].{
 					} else {
 						Interp.fault_got(
 							machine,
-							"unsupported: the length of a string with non-ASCII text${Interp.at_line(site)}",
+							"unsupported: the length of a string with non-ASCII text${Interp.line_note(site)}",
 						)
 					}
 				} else {
@@ -1582,22 +1584,22 @@ Interp :: [].{
 						Ok(position) => Interp.char_at(machine, text, position, site)
 						Err(NotIndex) => Interp.fault_got(
 							machine,
-							"unsupported: the string property `${key}` outside a call${Interp.at_line(site)}",
+							"unsupported: the string property `${key}` outside a call${Interp.line_note(site)}",
 						)
 					}
 				}
 			}
 			Null => Interp.fault_got(
 				machine,
-				"TypeError: Cannot read properties of null (reading '${key}')${Interp.at_line(site)}",
+				"TypeError: Cannot read properties of null (reading '${key}')${Interp.line_note(site)}",
 			)
 			Undefined => Interp.fault_got(
 				machine,
-				"TypeError: Cannot read properties of undefined (reading '${key}')${Interp.at_line(site)}",
+				"TypeError: Cannot read properties of undefined (reading '${key}')${Interp.line_note(site)}",
 			)
 			_ => Interp.fault_got(
 				machine,
-				"unsupported: the property `${key}` of a ${Interp.type_of(machine.cells, object)}${Interp.at_line(site)}",
+				"unsupported: the property `${key}` of a ${Interp.type_of(machine.cells, object)}${Interp.line_note(site)}",
 			)
 		}
 
@@ -1621,7 +1623,7 @@ Interp :: [].{
 		if !Interp.is_ascii(text) {
 			Interp.fault_got(
 				machine,
-				"unsupported: indexing a string with non-ASCII text${Interp.at_line(site)}",
+				"unsupported: indexing a string with non-ASCII text${Interp.line_note(site)}",
 			)
 		} else {
 			match text.to_utf8().get(position) {
@@ -1633,8 +1635,8 @@ Interp :: [].{
 			}
 		}
 
-	indexed : Interp.Machine, Heap.Value, Heap.Value, Ast.Where -> Interp.Got
-	indexed = |machine, object, key, site|
+	indexed_value : Interp.Machine, Heap.Value, Heap.Value, Ast.Where -> Interp.Got
+	indexed_value = |machine, object, key, site|
 		match (object, Interp.index_of(key)) {
 			(Reference(id), Ok(position)) => match Heap.cell_at(machine.cells, id) {
 				Array(items) => { machine: machine, value: items.get(position) ?? Undefined }
@@ -1648,7 +1650,7 @@ Interp :: [].{
 	property_by_value = |machine, object, key, site|
 		match Interp.key_of(key) {
 			Ok(key_value) => Interp.property(machine, object, key_value, site)
-			Err(Unsupported(why)) => Interp.fault_got(machine, "${why}${Interp.at_line(site)}")
+			Err(Unsupported(why)) => Interp.fault_got(machine, "${why}${Interp.line_note(site)}")
 		}
 
 	# What a cell is, and an array's length, with nothing of the cell kept.
@@ -1673,8 +1675,8 @@ Interp :: [].{
 
 	# A property or an item written: an object's property, an array's item
 	# inside it or at its end.
-	stored : Interp.Machine, Heap.Value, Heap.Value, Heap.Value, Ast.Where -> Interp.Got
-	stored = |machine, object, key, value, site|
+	with_stored : Interp.Machine, Heap.Value, Heap.Value, Heap.Value, Ast.Where -> Interp.Got
+	with_stored = |machine, object, key, value, site|
 		if !Interp.is_running(machine) {
 			{ machine: machine, value: value }
 		} else {
@@ -1690,7 +1692,7 @@ Interp :: [].{
 						}
 						Err(Unsupported(why)) => Interp.fault_got(
 							machine,
-							"${why}${Interp.at_line(site)}",
+							"${why}${Interp.line_note(site)}",
 						)
 					}
 					ArrayKind(length) => {
@@ -1704,30 +1706,30 @@ Interp :: [].{
 							}
 							Ok(_) => Interp.fault_got(
 								machine,
-								"unsupported: an array with holes (a write past its end)${Interp.at_line(site)}",
+								"unsupported: an array with holes (a write past its end)${Interp.line_note(site)}",
 							)
 							Err(NotIndex) => Interp.fault_got(
 								machine,
-								"unsupported: writing an array's `length` or a named property${Interp.at_line(site)}",
+								"unsupported: writing an array's `length` or a named property${Interp.line_note(site)}",
 							)
 						}
 					}
 					_ => Interp.fault_got(
 						machine,
-						"unsupported: writing a property of a function or a builtin${Interp.at_line(site)}",
+						"unsupported: writing a property of a function or a builtin${Interp.line_note(site)}",
 					)
 				}
 				Null => Interp.fault_got(
 					machine,
-					"TypeError: Cannot set properties of null${Interp.at_line(site)}",
+					"TypeError: Cannot set properties of null${Interp.line_note(site)}",
 				)
 				Undefined => Interp.fault_got(
 					machine,
-					"TypeError: Cannot set properties of undefined${Interp.at_line(site)}",
+					"TypeError: Cannot set properties of undefined${Interp.line_note(site)}",
 				)
 				_ => Interp.fault_got(
 					machine,
-					"unsupported: writing a property of a ${Interp.type_of(machine.cells, object)}${Interp.at_line(site)}",
+					"unsupported: writing a property of a ${Interp.type_of(machine.cells, object)}${Interp.line_note(site)}",
 				)
 			}
 		}
@@ -1784,12 +1786,12 @@ Interp :: [].{
 					Builtin(native, _) => Interp.call_native(machine, native, arguments, site)
 					_ => Interp.fault_got(
 						machine,
-						"TypeError: ${Interp.shown_value(machine.cells, callee)} is not a function${Interp.at_line(site)}",
+						"TypeError: ${Interp.shown_value(machine.cells, callee)} is not a function${Interp.line_note(site)}",
 					)
 				}
 				_ => Interp.fault_got(
 					machine,
-					"TypeError: ${Interp.shown_value(machine.cells, callee)} is not a function${Interp.at_line(site)}",
+					"TypeError: ${Interp.shown_value(machine.cells, callee)} is not a function${Interp.line_note(site)}",
 				)
 			}
 		}
@@ -1799,7 +1801,7 @@ Interp :: [].{
 		if machine.depth >= Interp.max_depth {
 			Interp.fault_got(
 				machine,
-				"RangeError: Maximum call stack size exceeded${Interp.at_line(site)}",
+				"RangeError: Maximum call stack size exceeded${Interp.line_note(site)}",
 			)
 		} else {
 			outer = machine.scope
@@ -1807,14 +1809,14 @@ Interp :: [].{
 			inside = Interp.with_scope_added(
 				{ ..machine, depth: machine.depth + 1 },
 				{
-					variables: Interp.call_vars(definition, arguments),
+					variables: Interp.call_variables(definition, arguments),
 					parent: Within(closure.scope),
 				},
 			)
 			id = inside.scope
 			{ machine: after, flow } = Interp.execute_list(
-				Interp.hoisted(inside, definition.body),
-				definition.body,
+				Interp.with_functions_hoisted(inside, definition.statements),
+				definition.statements,
 			)
 			value = match flow {
 				Returned(subject) => subject
@@ -1826,13 +1828,13 @@ Interp :: [].{
 
 	# A call's variables: each parameter holding its argument, then the rest
 	# of the function's layout, unready.
-	call_vars : Ast.FunctionDefinition, List(Heap.Value) -> List(Interp.Variable)
-	call_vars = |definition, arguments| {
+	call_variables : Ast.FunctionDefinition, List(Heap.Value) -> List(Interp.Variable)
+	call_variables = |definition, arguments| {
 		parameters = definition.parameters.len()
-		var $vars = List.with_capacity(definition.names.len())
+		var $variables = List.with_capacity(definition.names.len())
 		var $i = 0
 		while $i < definition.names.len() {
-			$vars = $vars.append(
+			$variables = $variables.append(
 				if $i < parameters {
 					{ value: arguments.get($i) ?? Undefined, state: Mutable }
 				} else {
@@ -1841,7 +1843,7 @@ Interp :: [].{
 			)
 			$i = $i + 1
 		}
-		$vars
+		$variables
 	}
 
 	number_argument : List(Heap.Value), U64 -> Try(F64, [NotNumber])
@@ -1857,7 +1859,7 @@ Interp :: [].{
 			Ok(number) => { machine: machine, value: Number(function(number)) }
 			Err(NotNumber) => Interp.fault_got(
 				machine,
-				"unsupported: Math.${name} of anything but a number${Interp.at_line(site)}",
+				"unsupported: Math.${name} of anything but a number${Interp.line_note(site)}",
 			)
 		}
 
@@ -1877,7 +1879,7 @@ Interp :: [].{
 					machine: { ..machine, out: Str.concat(Str.concat(machine.out, line), "\n") },
 					value: Undefined,
 				}
-				Err(Unsupported(why)) => Interp.fault_got(machine, "${why}${Interp.at_line(site)}")
+				Err(Unsupported(why)) => Interp.fault_got(machine, "${why}${Interp.line_note(site)}")
 			}
 			Floor => Interp.math(machine, "floor", arguments, Interp.floor, site)
 			Ceil => Interp.math(
@@ -1981,7 +1983,7 @@ Interp :: [].{
 				(Ok(x), Ok(y)) => { machine: machine, value: Number(Interp.power(x, y)) }
 				_ => Interp.fault_got(
 					machine,
-					"unsupported: Math.pow of anything but two numbers${Interp.at_line(site)}",
+					"unsupported: Math.pow of anything but two numbers${Interp.line_note(site)}",
 				)
 			}
 			Min => Interp.min_max(machine, arguments, Min, site)
@@ -1994,7 +1996,7 @@ Interp :: [].{
 					Ok(phrase) => { machine: machine, value: Text(phrase) }
 					Err(Unsupported(why)) => Interp.fault_got(
 						machine,
-						"${why}${Interp.at_line(site)}",
+						"${why}${Interp.line_note(site)}",
 					)
 				}
 				Err(ListWasEmpty) => { machine: machine, value: Text("") }
@@ -2020,7 +2022,7 @@ Interp :: [].{
 				} else {
 					Interp.fault_got(
 						machine,
-						"unsupported: String.fromCharCode of anything but ASCII codes${Interp.at_line(site)}",
+						"unsupported: String.fromCharCode of anything but ASCII codes${Interp.line_note(site)}",
 					)
 				}
 			}
@@ -2077,7 +2079,7 @@ Interp :: [].{
 		} else {
 			Interp.fault_got(
 				machine,
-				"unsupported: Math.min or Math.max of anything but numbers${Interp.at_line(site)}",
+				"unsupported: Math.min or Math.max of anything but numbers${Interp.line_note(site)}",
 			)
 		}
 	}
@@ -2106,7 +2108,7 @@ Interp :: [].{
 		match properties {
 			Ok(listed) => {
 				var $s = machine
-				var $vals = []
+				var $values = []
 				for parent in listed {
 					subject = match which {
 						Keys => Text(parent.key)
@@ -2120,13 +2122,13 @@ Interp :: [].{
 							pair
 						}
 					}
-					$vals = $vals.append(subject)
+					$values = $values.append(subject)
 				}
-				Interp.alloc($s, Array($vals))
+				Interp.alloc($s, Array($values))
 			}
 			Err(NotListed) => Interp.fault_got(
 				machine,
-				"unsupported: Object.keys, values or entries of anything but an object or an array${Interp.at_line(site)}",
+				"unsupported: Object.keys, values or entries of anything but an object or an array${Interp.line_note(site)}",
 			)
 		}
 	}
@@ -2228,12 +2230,12 @@ Interp :: [].{
 						if $why == "" {
 							{ machine: machine, value: Text(Str.join_with($parts, text)) }
 						} else {
-							Interp.fault_got(machine, "${$why}${Interp.at_line(site)}")
+							Interp.fault_got(machine, "${$why}${Interp.line_note(site)}")
 						}
 					}
 					Err(NotText) => Interp.fault_got(
 						machine,
-						"unsupported: `join` with a separator that is not a string${Interp.at_line(site)}",
+						"unsupported: `join` with a separator that is not a string${Interp.line_note(site)}",
 					)
 				}
 			}
@@ -2306,7 +2308,7 @@ Interp :: [].{
 			"sort" => Interp.array_sort(machine, id, arguments, site)
 			_ => Interp.fault_got(
 				machine,
-				"unsupported: the array method `${name}`${Interp.at_line(site)}",
+				"unsupported: the array method `${name}`${Interp.line_note(site)}",
 			)
 		}
 
@@ -2400,7 +2402,7 @@ Interp :: [].{
 		match start {
 			Err(Empty) => Interp.fault_got(
 				machine,
-				"TypeError: Reduce of empty array with no initial value${Interp.at_line(site)}",
+				"TypeError: Reduce of empty array with no initial value${Interp.line_note(site)}",
 			)
 			Ok({ accumulated, from }) => {
 				var $s = machine
@@ -2476,7 +2478,7 @@ Interp :: [].{
 				} else {
 					left = lower.get($i) ?? crash "Interp.merge_sorted: inside the lower half"
 					right = upper.get($j) ?? crash "Interp.merge_sorted: inside the upper half"
-					{ machine: after, order } = Interp.compared(
+					{ machine: after, order } = Interp.ordering_of(
 						$s,
 						{
 							compare: compare,
@@ -2511,8 +2513,8 @@ Interp :: [].{
 
 	Ordered : { machine : Interp.Machine, order : [Before, Same, After] }
 
-	compared : Interp.Machine, Interp.Comparison -> Interp.Ordered
-	compared = |machine, comparison| {
+	ordering_of : Interp.Machine, Interp.Comparison -> Interp.Ordered
+	ordering_of = |machine, comparison| {
 		{
 			compare,
 			left: left,
@@ -2574,12 +2576,12 @@ Interp :: [].{
 		if Interp.positional_methods.contains(name) and !Interp.is_ascii(text) {
 			Interp.fault_got(
 				machine,
-				"unsupported: `${name}` on a string with non-ASCII text${Interp.at_line(site)}",
+				"unsupported: `${name}` on a string with non-ASCII text${Interp.line_note(site)}",
 			)
 		} else if name == "split" and arguments.first() == Ok(Text("")) and !Interp.is_ascii(text) {
 			Interp.fault_got(
 				machine,
-				"unsupported: `split` into characters of a string with non-ASCII text${Interp.at_line(site)}",
+				"unsupported: `split` into characters of a string with non-ASCII text${Interp.line_note(site)}",
 			)
 		} else {
 			Interp.text_method_of(machine, text, name, arguments, site)
@@ -2604,80 +2606,72 @@ Interp :: [].{
 				Text("")
 			}
 		match name {
-			"charAt" => (
-				match Interp.index_of(arguments.first() ?? Number(0.0)) {
-					Ok(position) => {
-						got = Interp.char_at(machine, text, position, site)
-						match got.value {
-							Undefined => { machine: machine, value: Text("") }
-							_ => got
-						}
+			"charAt" => match Interp.index_of(arguments.first() ?? Number(0.0)) {
+				Ok(position) => {
+					got = Interp.char_at(machine, text, position, site)
+					match got.value {
+						Undefined => { machine: machine, value: Text("") }
+						_ => got
 					}
-					Err(NotIndex) => { machine: machine, value: Text("") }
-				},
-			)
-			"charCodeAt" => (
-				match Interp.index_of(arguments.first() ?? Number(0.0)) {
-					Ok(position) => match bytes.get(position) {
-						Ok(byte) => { machine: machine, value: Number(byte.to_f64()) }
-						Err(OutOfBounds) => { machine: machine, value: Number(0.0 / 0.0) }
+				}
+				Err(NotIndex) => { machine: machine, value: Text("") }
+			}
+			"charCodeAt" => match Interp.index_of(arguments.first() ?? Number(0.0)) {
+				Ok(position) => match bytes.get(position) {
+					Ok(byte) => { machine: machine, value: Number(byte.to_f64()) }
+					Err(OutOfBounds) => { machine: machine, value: Number(0.0 / 0.0) }
+				}
+				Err(NotIndex) => { machine: machine, value: Number(0.0 / 0.0) }
+			}
+			"slice" => {
+				from = Interp.relative_index(arguments.get(0) ?? Undefined, count, 0)
+				to = Interp.relative_index(arguments.get(1) ?? Undefined, count, count)
+				{ machine: machine, value: sliced(from, to) }
+			}
+			"substring" => {
+				clamp = |subject, otherwise| match subject {
+					Number(x) => if x.is_nan() or x < 0.0 {
+						0
+					} else if x >= count.to_f64() {
+						count
+					} else {
+						x.div_trunc_by(1.0).to_u64_try() ?? 0
 					}
-					Err(NotIndex) => { machine: machine, value: Number(0.0 / 0.0) }
-				},
-			)
-			"slice" => (
+					_ => otherwise
+				}
+				one_end = clamp(arguments.get(0) ?? Undefined, 0)
+				other_end = clamp(arguments.get(1) ?? Undefined, count)
 				{
-					from = Interp.relative_index(arguments.get(0) ?? Undefined, count, 0)
-					to = Interp.relative_index(arguments.get(1) ?? Undefined, count, count)
-					{ machine: machine, value: sliced(from, to) }
-				},
-			)
-			"substring" => (
-				{
-					clamp = |subject, otherwise| match subject {
-						Number(x) => if x.is_nan() or x < 0.0 {
-							0
-						} else if x >= count.to_f64() {
-							count
-						} else {
-							x.div_trunc_by(1.0).to_u64_try() ?? 0
-						}
-						_ => otherwise
-					}
-					one_end = clamp(arguments.get(0) ?? Undefined, 0)
-					other_end = clamp(arguments.get(1) ?? Undefined, count)
-					{
-						machine: machine,
-						value: sliced(U64.min(one_end, other_end), U64.max(one_end, other_end)),
-					}
-				},
-			)
+					machine: machine,
+					value: sliced(U64.min(one_end, other_end), U64.max(one_end, other_end)),
+				}
+			}
 			"indexOf" => match text_argument(0) {
 				Ok(phrase) => { machine: machine, value: Number(Interp.text_index(text, phrase)) }
 				Err(NotText) => Interp.fault_got(
 					machine,
-					"unsupported: `indexOf` of anything but a string${Interp.at_line(site)}",
+					"unsupported: `indexOf` of anything but a string${Interp.line_note(site)}",
 				)
 			}
 			"includes" => match text_argument(0) {
 				Ok(phrase) => { machine: machine, value: Boolean(text.contains(phrase)) }
 				Err(NotText) => Interp.fault_got(
 					machine,
-					"unsupported: `includes` of anything but a string${Interp.at_line(site)}",
+					"unsupported: `includes` of anything but a string${Interp.line_note(site)}",
 				)
 			}
 			"startsWith" => match text_argument(0) {
 				Ok(phrase) => { machine: machine, value: Boolean(text.starts_with(phrase)) }
 				Err(NotText) => Interp.fault_got(
 					machine,
-					"unsupported: `startsWith` of anything but a string${Interp.at_line(site)}",
+					"unsupported: `startsWith` of anything but a string${Interp.line_note(site)}",
 				)
 			}
 			"endsWith" => match text_argument(0) {
 				Ok(phrase) => { machine: machine, value: Boolean(text.ends_with(phrase)) }
 				Err(NotText) => Interp.fault_got(
 					machine,
-					"unsupported: `endsWith` of anything but a string${Interp.at_line(site)}",
+					"unsupported: `endsWith` of anything but a string${Interp.line_note(site)}",
 				)
 			}
 			"toUpperCase" => { machine: machine, value: Text(text.with_ascii_uppercased()) }
@@ -2689,7 +2683,7 @@ Interp :: [].{
 				}
 				_ => Interp.fault_got(
 					machine,
-					"unsupported: `repeat` of anything but a whole number of times${Interp.at_line(site)}",
+					"unsupported: `repeat` of anything but a whole number of times${Interp.line_note(site)}",
 				)
 			}
 			"split" => match text_argument(0) {
@@ -2703,7 +2697,7 @@ Interp :: [].{
 				)
 				Err(NotText) => Interp.fault_got(
 					machine,
-					"unsupported: `split` by anything but a string${Interp.at_line(site)}",
+					"unsupported: `split` by anything but a string${Interp.line_note(site)}",
 				)
 			}
 			"padStart" => Interp.text_padded(machine, text, arguments, PadStart, site)
@@ -2724,12 +2718,12 @@ Interp :: [].{
 				if $why == "" {
 					{ machine: machine, value: Text($out) }
 				} else {
-					Interp.fault_got(machine, "${$why}${Interp.at_line(site)}")
+					Interp.fault_got(machine, "${$why}${Interp.line_note(site)}")
 				}
 			}
 			_ => Interp.fault_got(
 				machine,
-				"unsupported: the string method `${name}`${Interp.at_line(site)}",
+				"unsupported: the string method `${name}`${Interp.line_note(site)}",
 			)
 		}
 	}
@@ -2805,7 +2799,7 @@ Interp :: [].{
 			}
 			_ => Interp.fault_got(
 				machine,
-				"unsupported: `padStart` or `padEnd` other than to a whole length with ASCII text${Interp.at_line(site)}",
+				"unsupported: `padStart` or `padEnd` other than to a whole length with ASCII text${Interp.line_note(site)}",
 			)
 		}
 	}

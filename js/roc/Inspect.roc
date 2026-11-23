@@ -119,7 +119,7 @@ Inspect :: [].{
 		if number == 0.0 and 1.0 / number < 0.0 {
 			"-0"
 		} else {
-			NumberText.of(number)
+			NumberText.text_for(number)
 		}
 
 	format_cell : Inspect.Context, U64, U64 -> Inspect.Shown
@@ -200,7 +200,7 @@ Inspect :: [].{
 			$out = $out.append(formatted.text)
 		}
 		more = items.len() - shown.len()
-		output = if more > 0 {
+		pieces = if more > 0 {
 			plural = if more > 1 {
 				"s"
 			} else {
@@ -214,7 +214,7 @@ Inspect :: [].{
 			text: Inspect.reduce_to_single_string(
 				{ ..context, depth_now: $depth_now },
 				{
-					output: output,
+					pieces: pieces,
 					open: "[",
 					close: "]",
 					kind: ArrayKind(items),
@@ -246,7 +246,7 @@ Inspect :: [].{
 			text: Inspect.reduce_to_single_string(
 				{ ..context, depth_now: $depth_now },
 				{
-					output: $out,
+					pieces: $out,
 					open: "{",
 					close: "}",
 					kind: ObjectKind,
@@ -315,7 +315,7 @@ Inspect :: [].{
 		if is_bare {
 			key
 		} else {
-			Inspect.escaped(key)
+			Inspect.escaped_text(key)
 		}
 	}
 
@@ -329,9 +329,9 @@ Inspect :: [].{
 		length = Inspect.width(text)
 		if length > 16 and length + indent + 4 > Inspect.break_length {
 			pieces = Inspect.pieces_after_newlines(text)
-			Str.join_with(pieces.map(Inspect.escaped), " +\n${" ".repeat(indent + 2)}")
+			Str.join_with(pieces.map(Inspect.escaped_text), " +\n${" ".repeat(indent + 2)}")
 		} else {
-			Inspect.escaped(text)
+			Inspect.escaped_text(text)
 		}
 	}
 
@@ -356,8 +356,8 @@ Inspect :: [].{
 	# node's `strEscape`: single quotes unless the text holds one, then
 	# double quotes unless it holds one, then backticks unless it holds one
 	# or `${`; only the single quote is ever escaped.
-	escaped : Str -> Str
-	escaped = |text| {
+	escaped_text : Str -> Str
+	escaped_text = |text| {
 		quote = if !text.contains("'") {
 			'\''
 		} else if !text.contains("\"") {
@@ -371,7 +371,7 @@ Inspect :: [].{
 		var $out = [quote]
 		var $i = 0
 		while $i < bytes.len() {
-			byte = bytes.get($i) ?? crash "Inspect.escaped: inside the text"
+			byte = bytes.get($i) ?? crash "Inspect.escaped_text: inside the text"
 			next = bytes.get($i + 1) ?? 0
 			if byte == 0xC2 and next >= 0x80 and next <= 0x9F {
 				$out = List.concat($out, Inspect.hex_escape(next))
@@ -399,7 +399,7 @@ Inspect :: [].{
 				$i = $i + 1
 			}
 		}
-		Str.from_utf8($out.append(quote)) ?? crash "Inspect.escaped: whole characters are copied"
+		Str.from_utf8($out.append(quote)) ?? crash "Inspect.escaped_text: whole characters are copied"
 	}
 
 	hex_escape : U8 -> List(U8)
@@ -431,8 +431,10 @@ Inspect :: [].{
 
 	Kind : [ArrayKind(List(Heap.Value)), ObjectKind]
 
+	## An array's or an object's entries, each formatted, and the brackets
+	## around them.
 	Entries : {
-		output : List(Str),
+		pieces : List(Str),
 		open : Str,
 		close : Str,
 		kind : Inspect.Kind,
@@ -441,34 +443,34 @@ Inspect :: [].{
 	# node's `reduceToSingleString`, with `ctx.compact` 3.
 	reduce_to_single_string : Inspect.Context, Inspect.Entries, U64 -> Str
 	reduce_to_single_string = |context, formatted_entries, recurse| {
-		entries = formatted_entries.output.len()
-		output = match formatted_entries.kind {
+		entries = formatted_entries.pieces.len()
+		pieces = match formatted_entries.kind {
 			ArrayKind(items) if entries > 6 => Inspect.group_array_elements(
 				context,
-				formatted_entries.output,
+				formatted_entries.pieces,
 				items,
 			)
-			_ => formatted_entries.output
+			_ => formatted_entries.pieces
 		}
-		joined = Str.join_with(output, ", ")
-		start = output.len() + context.indent + formatted_entries.open.count_utf8_bytes() + 10
-		fits = context.depth_now - recurse < 3 and entries == output.len() and Inspect.is_below_break_length(output, start) and !joined.contains("\n")
+		joined = Str.join_with(pieces, ", ")
+		start = pieces.len() + context.indent + formatted_entries.open.count_utf8_bytes() + 10
+		fits = context.depth_now - recurse < 3 and entries == pieces.len() and Inspect.is_below_break_length(pieces, start) and !joined.contains("\n")
 		if fits {
 			"${formatted_entries.open} ${joined} ${formatted_entries.close}"
 		} else {
 			indentation = "\n${" ".repeat(context.indent)}"
-			"${formatted_entries.open}${indentation}  ${Str.join_with(output, ",${indentation}  ")}${indentation}${formatted_entries.close}"
+			"${formatted_entries.open}${indentation}  ${Str.join_with(pieces, ",${indentation}  ")}${indentation}${formatted_entries.close}"
 		}
 	}
 
 	is_below_break_length : List(Str), U64 -> Bool
-	is_below_break_length = |output, start| {
-		var $total = output.len() + start
-		if $total + output.len() > Inspect.break_length {
+	is_below_break_length = |pieces, start| {
+		var $total = pieces.len() + start
+		if $total + pieces.len() > Inspect.break_length {
 			return False
 		}
 		var $fits = True
-		for o in output {
+		for o in pieces {
 			$total = $total + Inspect.width(o)
 			if $total > Inspect.break_length {
 				$fits = False
@@ -480,19 +482,19 @@ Inspect :: [].{
 	# node's `groupArrayElements`: an array of more than six short items set
 	# out in aligned columns.
 	group_array_elements : Inspect.Context, List(Str), List(Heap.Value) -> List(Str)
-	group_array_elements = |context, output, items| {
+	group_array_elements = |context, pieces, items| {
 		has_more = items.len() > 100
 		output_length = if has_more {
-			output.len() - 1
+			pieces.len() - 1
 		} else {
-			output.len()
+			pieces.len()
 		}
-		data_lengths = output.sublist({ start: 0, len: output_length }).map(Inspect.width)
+		data_lengths = pieces.sublist({ start: 0, len: output_length }).map(Inspect.width)
 		total_length = data_lengths.fold(0, |total, length| total + length + 2)
 		max_length = data_lengths.fold(0, |most, length| U64.max(most, length))
 		actual_max = max_length + 2
 		if actual_max * 3 + context.indent < Inspect.break_length and (total_length.to_f64() / actual_max.to_f64() > 5.0 or max_length <= 6) {
-			average_bias = (actual_max.to_f64() - total_length.to_f64() / output.len().to_f64()).sqrt()
+			average_bias = (actual_max.to_f64() - total_length.to_f64() / pieces.len().to_f64()).sqrt()
 			biased_max = F64.max(actual_max.to_f64() - 3.0 - average_bias, 1.0)
 			by_area = Inspect.js_round((2.5 * biased_max * output_length.to_f64()).sqrt() / biased_max)
 			by_width = (Inspect.break_length - context.indent).div_trunc_by(actual_max)
@@ -501,12 +503,12 @@ Inspect :: [].{
 				|least, candidate| U64.min(least, candidate),
 			)
 			if columns <= 1 {
-				output
+				pieces
 			} else {
-				Inspect.grouped(output, data_lengths, items, columns, has_more)
+				Inspect.grouped_columns(pieces, data_lengths, items, columns, has_more)
 			}
 		} else {
-			output
+			pieces
 		}
 	}
 
@@ -514,8 +516,8 @@ Inspect :: [].{
 	js_round : F64 -> U64
 	js_round = |x| (x + 0.5).floor_to_u64_try() ?? 0
 
-	grouped : List(Str), List(U64), List(Heap.Value), U64, Bool -> List(Str)
-	grouped = |output, data_lengths, items, columns, has_more| {
+	grouped_columns : List(Str), List(U64), List(Heap.Value), U64, Bool -> List(Str)
+	grouped_columns = |pieces, data_lengths, items, columns, has_more| {
 		output_length = data_lengths.len()
 		var $max_line_lengths = []
 		var $column = 0
@@ -525,14 +527,14 @@ Inspect :: [].{
 			while $j < output_length {
 				$longest = U64.max(
 					$longest,
-					data_lengths.get($j) ?? crash "Inspect.grouped: inside the entries",
+					data_lengths.get($j) ?? crash "Inspect.grouped_columns: inside the entries",
 				)
 				$j = $j + columns
 			}
 			$max_line_lengths = $max_line_lengths.append($longest + 2)
 			$column = $column + 1
 		}
-		numbers_only = items.sublist({ start: 0, len: output.len() }).all(
+		numbers_only = items.sublist({ start: 0, len: pieces.len() }).all(
 			|subject| match subject {
 				Number(_) => True
 				_ => False
@@ -545,18 +547,18 @@ Inspect :: [].{
 			var $line = ""
 			var $j = $i
 			while $j < last - 1 {
-				cell = "${output.get($j) ?? crash "Inspect.grouped: inside the entries"}, "
-				pad = $max_line_lengths.get($j - $i) ?? crash "Inspect.grouped: a column the line has"
-				$line = Str.concat($line, Inspect.padded(cell, pad, numbers_only))
+				cell = "${pieces.get($j) ?? crash "Inspect.grouped_columns: inside the entries"}, "
+				pad = $max_line_lengths.get($j - $i) ?? crash "Inspect.grouped_columns: a column the line has"
+				$line = Str.concat($line, Inspect.padded_text(cell, pad, numbers_only))
 				$j = $j + 1
 			}
-			final = output.get($j) ?? crash "Inspect.grouped: inside the entries"
+			final = pieces.get($j) ?? crash "Inspect.grouped_columns: inside the entries"
 			$line = if numbers_only {
 				Str.concat(
 					$line,
-					Inspect.padded(
+					Inspect.padded_text(
 						final,
-						($max_line_lengths.get($j - $i) ?? crash "Inspect.grouped: a column the line has") - 2,
+						($max_line_lengths.get($j - $i) ?? crash "Inspect.grouped_columns: a column the line has") - 2,
 						True,
 					),
 				)
@@ -567,15 +569,15 @@ Inspect :: [].{
 			$i = $i + columns
 		}
 		if has_more {
-			$lines.append(output.last() ?? crash "Inspect.grouped: the more-items entry is last")
+			$lines.append(pieces.last() ?? crash "Inspect.grouped_columns: the more-items entry is last")
 		} else {
 			$lines
 		}
 	}
 
 	# Text padded with spaces to `width`: before it when `at_start`.
-	padded : Str, U64, Bool -> Str
-	padded = |text, wanted_width, at_start| {
+	padded_text : Str, U64, Bool -> Str
+	padded_text = |text, wanted_width, at_start| {
 		shown_width = Inspect.width(text)
 		if shown_width >= wanted_width {
 			text
