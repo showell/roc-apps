@@ -12,3 +12,4 @@ closure-called-after 1 0 a closure holding the old list called after the write
 nested-get-then-set 1 0 the inner list got and written while the outer list still holds it
 dict-length-after-insert 1 0 the old dict's length read after the insert
 dict-get-then-insert 1 0 the list got from the dict and written while the dict still holds it
+unique-get-after-set 1 0 get-after-set through the Unique marker: the marker prevents nothing by itself

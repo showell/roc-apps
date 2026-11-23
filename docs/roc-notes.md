@@ -162,6 +162,27 @@ anyone writing or emitting Roc in this repository. How the Roc is *written*
   calls with breakpoints; on RC1's default platform `strace` no longer sees an
   allocation. A new copying shape gets a loop in CopyShapes.roc and a line in
   its expected files.
+- **The Unique marker, opt in** (`tools/copy_shapes/Unique.roc`). An
+  opaque `Unique(a) :: a` whose closed API (`wrap`, `unwrap`, `len`, `get`,
+  `set`, `append`, `update`, `take_from`) is the only way to reach the
+  value, so a checker knows every write by name. The rule it asks for: a
+  read (`len`, `get`) is free anywhere before the binding's next write; a
+  write ends the binding, and the old one is never used again; a closure
+  never captures one; a dict's value comes out through `take_from` (got,
+  then removed), never `get`. It costs nothing in allocations: the
+  `unique-*` copy shapes allocate as their bare twins do in every build
+  (`unique-set` 0 a write, `unique-update` 0, `unique-take-from` 0 in the
+  release and dev builds and 2 in the boxy build, as `dict-take-then-insert`
+  costs 3 there). Its time is the bare list's in a program of its own (the
+  copy-cliffs study, 405 to 508 ms against 417 to 428 ms for 50 million
+  writes); inside the copy-shapes executable `unique-set` took about twice
+  `set-or-crash`'s time (876 against 423 ms, load about 1, 2026-11-23),
+  which the allocations don't explain. **It prevents nothing by itself:**
+  `unique-get-after-set` copies on every write, as `get-after-set` does.
+  The guarantee is Shale's `cookbook/roc/find_uses_after_a_consume.shale`'s,
+  only where a gate runs it, and that recipe holds a Unique to the same
+  rules as a bare list, no stricter: it knows the module's writes by name,
+  and nothing more. BASIC's Vec and the JS heap stay as they are.
 - Updating one field copies the record around it, inline sub-records included.
   A large part behind a list of one costs nothing to carry. A `Box` carried
   untouched costs the same, but every write re-boxes, one allocation per write,

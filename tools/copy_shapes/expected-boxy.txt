@@ -17,3 +17,5 @@ helper-reads-record 1 0 a helper reads the whole record inside the write of its 
 str-list-restored 1 0 `?? xs` on a list of strings: the fallback is free only where the entries hold no reference count (str-list-or-crash, with `?? crash`, is free)
 host-args-list 1 0 str-list-restored on the command line's list
 dict-take-then-insert 3 0 the list taken out of the dict (got, then removed) and put back: free in the release and dev builds, three allocations a write here
+unique-get-after-set 1 0 get-after-set through the Unique marker: the marker prevents nothing by itself
+unique-take-from 2 0 dict-take-then-insert through Unique.take_from: free in the release and dev builds, two allocations a write here

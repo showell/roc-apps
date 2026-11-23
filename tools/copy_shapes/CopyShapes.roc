@@ -1,5 +1,7 @@
 app [main!] {}
 
+import Unique
+
 # The copy shapes: one small loop for each way of writing into a list, a
 # record or a dict, run by tools/copy_shapes/copy_shapes.shale on the
 # allocation ladder (tools/alloc_ladder.shale).
@@ -231,6 +233,10 @@ run_shape = |shape, args, { size, steps }| {
 			0,
 		)
 		"host-args-list" => str_list_restored(0, steps, args.len(), args, 0)
+		"unique-set" => unique_set(0, steps, size, Unique.wrap(List.repeat(0, size)), 0)
+		"unique-get-after-set" => unique_get_after_set(0, steps, size, Unique.wrap(List.repeat(0, size)), 0)
+		"unique-update" => unique_update(0, steps, size, Unique.wrap([List.repeat(0, size), [1]]), 0)
+		"unique-take-from" => unique_take_from(0, steps, size, Dict.empty().insert(0, Unique.wrap(List.repeat(0, size))), 0)
 		_ => crash "copy-shapes: no such shape"
 	}
 }
@@ -798,5 +804,56 @@ str_list_or_crash = |i, steps, size, xs, sum| {
 			ys,
 			sum + j,
 		)
+	}
+}
+
+# ── The Unique marker (Unique.roc) ──
+
+## `set-or-crash` through the marker: the same allocations, none.
+unique_set : U64, U64, U64, Unique(List(U64)), U64 -> U64
+unique_set = |i, steps, size, u, sum| {
+	if i >= steps {
+		sum + u.len()
+	} else {
+		j = i % size
+		unique_set(i + 1, steps, size, u.set(j, i), sum + j)
+	}
+}
+
+## **COPIES:** `get-after-set` through the marker. The marker prevents
+## nothing by itself: the old value read after the write copies as on a
+## bare list.
+unique_get_after_set : U64, U64, U64, Unique(List(U64)), U64 -> U64
+unique_get_after_set = |i, steps, size, u, sum| {
+	if i >= steps {
+		sum + u.len()
+	} else {
+		j = i % size
+		u2 = u.set(j, i)
+		unique_get_after_set(i + 1, steps, size, u2, sum + u.get(j))
+	}
+}
+
+## `nested-update` through the marker.
+unique_update : U64, U64, U64, Unique(List(List(U64))), U64 -> U64
+unique_update = |i, steps, size, u, sum| {
+	if i >= steps {
+		sum + u.len()
+	} else {
+		j = i % size
+		written = u.update(0, |inner| inner.set(j, i) ?? crash "unique_update: inner in range")
+		unique_update(i + 1, steps, size, written, sum + j)
+	}
+}
+
+## `dict-take-then-insert` through the marker's `take_from`.
+unique_take_from : U64, U64, U64, Dict(U64, Unique(List(U64))), U64 -> U64
+unique_take_from = |i, steps, size, d, sum| {
+	if i >= steps {
+		sum + d.len()
+	} else {
+		j = i % size
+		taken = Unique.take_from(d, 0) ?? crash "unique_take_from: key 0 is there"
+		unique_take_from(i + 1, steps, size, taken.dict.insert(0, taken.value.set(j, i)), sum + j)
 	}
 }

@@ -16,3 +16,4 @@ helper-length-after-set 1 0 a helper reads its list after writing it: the dev an
 helper-reads-record 1 0 a helper reads the whole record inside the write of its field (BASIC's Devices.poked), as helper-length-after-set
 str-list-restored 1 0 `?? xs` on a list of strings: the fallback is free only where the entries hold no reference count (str-list-or-crash, with `?? crash`, is free)
 host-args-list 1 0 str-list-restored on the command line's list
+unique-get-after-set 1 0 get-after-set through the Unique marker: the marker prevents nothing by itself
