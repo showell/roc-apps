@@ -62,7 +62,7 @@
 ## BASIC's workhorse does, the evaluator stays one big module and its
 ## functions take the host, then the machine, then the rest, where the style
 ## guide would take one record: a record holding the machine is a second
-## reference to the heap. The queue's `tick!`, `drain!` and `event_run!`
+## reference to the heap. The queue's `tick!`, `drain!` and `run_event!`
 ## follow the same exception, and so do `timer_set` and `call!` they reach.
 ##
 ## A fault (a TypeError, a feature outside the subset, a budget) stops the
@@ -141,7 +141,7 @@ Interp :: [].{
 	Events : {
 		# Milliseconds since the program started, on the virtual clock.
 		clock : F64,
-		pending : List(Interp.Event),
+		pending_events : List(Interp.Event),
 		# The events and timers numbered so far: the next event's `order`, and
 		# the next timer's number.
 		made : U64,
@@ -213,7 +213,7 @@ Interp :: [].{
 			status: Running,
 			events: {
 				clock: 0.0,
-				pending: [],
+				pending_events: [],
 				made: 0,
 				firing: Idle,
 				on_click: NoHandler,
@@ -291,14 +291,14 @@ Interp :: [].{
 	## `Canvas.frames_per_second`, computed as `Interp.frame_time` computes it,
 	## so a frame's event is due exactly at its tick.
 	tick! : Canvas.Host, Interp.Session, F64, Interp.Limits => Interp.Session
-	tick! = |host, session, t, limits| {
-		{ machine } = session
-		if !Interp.is_running(machine) {
-			{ machine: machine }
+	tick! = |host, session, seconds, limits| {
+		{ machine: before } = session
+		if !Interp.is_running(before) {
+			{ machine: before }
 		} else {
-			until = t * 1000.0
-			var $m = {
-				..machine,
+			until = seconds * 1000.0
+			var $machine = {
+				..before,
 				steps: 0,
 				step_limit: limits.steps,
 				effects: 0,
@@ -306,17 +306,17 @@ Interp :: [].{
 			}
 			var $going = True
 			while $going {
-				match Interp.earliest($m.events.pending, until) {
-					At(index) if Interp.is_running($m) => {
-						{ machine: off, event } = Interp.event_taken($m, index)
-						$m = Interp.event_run!(host, off, event)
+				match Interp.earliest($machine.events.pending_events, until) {
+					At(index) if Interp.is_running($machine) => {
+						{ machine: off, event } = Interp.event_taken($machine, index)
+						$machine = Interp.run_event!(host, off, event)
 					}
 					_ => {
 						$going = False
 					}
 				}
 			}
-			{ machine: { ..$m, events: Interp.events_at($m.events, until) } }
+			{ machine: { ..$machine, events: Interp.events_at($machine.events, until) } }
 		}
 	}
 
@@ -326,22 +326,21 @@ Interp :: [].{
 	## command line's run, after the program.
 	drain! : Canvas.Host, Interp.Session, U64 => Interp.Session
 	drain! = |host, session, most| {
-		{ machine } = session
-		var $m = machine
+		var $machine = session.machine
 		var $ran = 0
 		var $going = True
 		while $going {
-			match Interp.earliest($m.events.pending, 1.0 / 0.0) {
-				At(index) if Interp.is_running($m) => {
+			match Interp.earliest($machine.events.pending_events, 1.0 / 0.0) {
+				At(index) if Interp.is_running($machine) => {
 					if $ran >= most {
-						$m = Interp.with_fault(
-							$m,
+						$machine = Interp.with_fault(
+							$machine,
 							"the program ran past its budget of ${most.to_str()} timer callbacks",
 						)
 						$going = False
 					} else {
-						{ machine: off, event } = Interp.event_taken($m, index)
-						$m = Interp.event_run!(host, off, event)
+						{ machine: off, event } = Interp.event_taken($machine, index)
+						$machine = Interp.run_event!(host, off, event)
 						$ran = $ran + 1
 					}
 				}
@@ -350,14 +349,14 @@ Interp :: [].{
 				}
 			}
 		}
-		{ machine: $m }
+		{ machine: $machine }
 	}
 
 	## The session with a click queued for its `onClick` handler, due now, so
 	## the next `tick!` runs it. A session with no handler, or stopped, is
 	## answered as it is.
-	clicked : Interp.Session, F64, F64 -> Interp.Session
-	clicked = |session, x, y| {
+	with_click : Interp.Session, F64, F64 -> Interp.Session
+	with_click = |session, x, y| {
 		{ machine } = session
 		match machine.events.on_click {
 			Handler({ handler: _, site }) if Interp.is_running(machine) => {
@@ -385,17 +384,17 @@ Interp :: [].{
 	waits : Interp.Session -> Bool
 	waits = |session|
 		Interp.is_running(session.machine)
-			and (!session.machine.events.pending.is_empty()
+			and (!session.machine.events.pending_events.is_empty()
 				or session.machine.events.on_click != NoHandler)
 
 	## The time of frame `n`, in seconds, as the page and the recording host
 	## compute it.
 	frame_time : U64 -> F64
-	frame_time = |n| n.to_f64() / Canvas.frames_per_second.to_f64()
+	frame_time = |number| number.to_f64() / Canvas.frames_per_second.to_f64()
 
 	# The clock's time, in ms, of frame `n`'s tick.
 	frame_due : U64 -> F64
-	frame_due = |n| Interp.frame_time(n) * 1000.0
+	frame_due = |number| Interp.frame_time(number) * 1000.0
 
 	# ---- the queue -------------------------------------------------------------
 
@@ -407,10 +406,10 @@ Interp :: [].{
 		happening : Interp.Happening,
 	} -> Interp.Events
 	with_event = |events, { due, site, happening }| {
-		{ clock, pending, made, firing, on_click } = events
+		{ clock, pending_events, made, firing, on_click } = events
 		{
 			clock: clock,
-			pending: pending.append({
+			pending_events: pending_events.append({
 				due: due,
 				order: made,
 				site: site,
@@ -425,29 +424,29 @@ Interp :: [].{
 	# The events with the clock at `time`, unless it is past it.
 	events_at : Interp.Events, F64 -> Interp.Events
 	events_at = |events, time| {
-		{ clock, pending, made, firing, on_click } = events
+		{ clock, pending_events, made, firing, on_click } = events
 		{
 			clock: if time > clock {
 				time
 			} else {
 				clock
 			},
-			pending: pending,
+			pending_events: pending_events,
 			made: made,
 			firing: firing,
 			on_click: on_click,
 		}
 	}
 
-	# The place in `pending` of the earliest event due by `until`: the least
+	# The place in `pending_events` of the earliest event due by `until`: the least
 	# time, and of two at one time the one queued first.
 	earliest : List(Interp.Event), F64 -> [At(U64), NoneDue]
-	earliest = |pending, until| {
+	earliest = |pending_events, until| {
 		var $best = NoneDue
 		var $best_due = 0.0
 		var $best_order = 0
 		var $i = 0
-		for event in pending {
+		for event in pending_events {
 			if event.due <= until {
 				better = match $best {
 					NoneDue => True
@@ -472,7 +471,7 @@ Interp :: [].{
 	# The event at `index` taken off the queue, the clock moved to its time.
 	event_taken : Interp.Machine, U64 -> { machine : Interp.Machine, event : Interp.Event }
 	event_taken = |machine, index| {
-		event = machine.events.pending.get(index) ?? crash "Interp.event_taken: Interp.earliest names an event the queue has"
+		event = machine.events.pending_events.get(index) ?? crash "Interp.event_taken: Interp.earliest names an event the queue has"
 		{
 			machine: { ..machine, events: Interp.events_past(machine.events, index, event.due) },
 			event: event,
@@ -481,14 +480,14 @@ Interp :: [].{
 
 	events_past : Interp.Events, U64, F64 -> Interp.Events
 	events_past = |events, index, due| {
-		{ clock, pending, made, firing, on_click } = events
+		{ clock, pending_events, made, firing, on_click } = events
 		{
 			clock: if due > clock {
 				due
 			} else {
 				clock
 			},
-			pending: pending.drop_at(index),
+			pending_events: pending_events.drop_at(index),
 			made: made,
 			firing: firing,
 			on_click: on_click,
@@ -500,14 +499,14 @@ Interp :: [].{
 	events_firing = |events, now_firing| {
 		{
 			clock,
-			pending,
+			pending_events,
 			made,
 			firing: _,
 			on_click,
 		} = events
 		{
 			clock: clock,
-			pending: pending,
+			pending_events: pending_events,
 			made: made,
 			firing: now_firing,
 			on_click: on_click,
@@ -518,10 +517,10 @@ Interp :: [].{
 	# interval clearing itself from its own callback not queued again.
 	events_cleared : Interp.Events, U64 -> Interp.Events
 	events_cleared = |events, timer| {
-		{ clock, pending, made, firing, on_click } = events
+		{ clock, pending_events, made, firing, on_click } = events
 		{
 			clock: clock,
-			pending: pending.keep_if(
+			pending_events: pending_events.keep_if(
 				|event| match event.happening {
 					Timed(
 						{
@@ -547,14 +546,14 @@ Interp :: [].{
 	events_clicking = |events, handling| {
 		{
 			clock,
-			pending,
+			pending_events,
 			made,
 			firing,
 			on_click: _,
 		} = events
 		{
 			clock: clock,
-			pending: pending,
+			pending_events: pending_events,
 			made: made,
 			firing: firing,
 			on_click: Handler(handling),
@@ -564,8 +563,8 @@ Interp :: [].{
 	# The machine after one event's callback: a timer's, again later when it
 	# is an interval that wasn't cleared; a frame's, the next frame queued; a
 	# click's, handed to the handler.
-	event_run! : Canvas.Host, Interp.Machine, Interp.Event => Interp.Machine
-	event_run! = |host, machine, event|
+	run_event! : Canvas.Host, Interp.Machine, Interp.Event => Interp.Machine
+	run_event! = |host, machine, event|
 		match event.happening {
 			Timed({ timer, callback, every }) => {
 				firing = {
@@ -595,13 +594,13 @@ Interp :: [].{
 					_ => idle
 				}
 			}
-			Framed(closure, n) => {
+			Framed(closure, number) => {
 				framing = { ..machine, budgeted: "frame(t)" }
 				{ machine: after, value: _ } = Interp.call_closure!(
 					host,
 					framing,
 					closure,
-					[Number(Interp.frame_time(n))],
+					[Number(Interp.frame_time(number))],
 					event.site,
 				)
 				{
@@ -609,9 +608,9 @@ Interp :: [].{
 					events: Interp.with_event(
 						after.events,
 						{
-							due: Interp.frame_due(n + 1),
+							due: Interp.frame_due(number + 1),
 							site: event.site,
-							happening: Framed(closure, n + 1),
+							happening: Framed(closure, number + 1),
 						},
 					),
 				}

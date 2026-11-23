@@ -16,8 +16,8 @@ platform ""
 		[Model : model] for program : {
 			source_buffer : U32 -> List(U8),
 			start! : List(U8) => Box(model),
-			frame! : Box(model), F64 => Box(model),
-			click! : Box(model), F64, F64 => Box(model),
+			run_frame! : Box(model), F64 => Box(model),
+			add_click! : Box(model), F64, F64 => Box(model),
 			drop_model : Box(model) -> {},
 			drop_bytes : List(U8) -> {},
 		}
@@ -50,9 +50,9 @@ buffer_for_host = program.source_buffer
 
 start_for_host! = program.start!
 
-frame_for_host! = program.frame!
+frame_for_host! = program.run_frame!
 
-click_for_host! = program.click!
+click_for_host! = program.add_click!
 
 drop_model_for_host = program.drop_model
 

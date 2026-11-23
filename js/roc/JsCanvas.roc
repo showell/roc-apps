@@ -34,24 +34,33 @@ main! = |arguments| {
 	match (arguments.get(0), arguments.get(1)) {
 		(Ok(count_text), Ok(src)) => match (
 			U64.from_str(count_text),
-			clicks_of(arguments.get(3) ?? ""),
+			clicks_of(text_or_none(arguments, 3)),
 		) {
 			(Ok(count), Ok(clicks)) => record_program!(
 				src,
 				{
 					frames: count,
-					keys: (arguments.get(2) ?? "").split_on(","),
+					keys: text_or_none(arguments, 2).split_on(","),
 					clicks: clicks,
 				},
 			)
-			_ => usage!({})
+			_ => print_usage!({})
 		}
-		_ => usage!({})
+		_ => print_usage!({})
 	}
 }
 
-usage! : {} => Try({}, [Exit(I8)])
-usage! = |{}| {
+# The text at `position`, or "" where the list stops short of it: an
+# argument left out, or a frame past the keys given, is none.
+text_or_none : List(Str), U64 -> Str
+text_or_none = |texts, position|
+	match texts.get(position) {
+		Ok(text) => text
+		Err(OutOfBounds) => ""
+	}
+
+print_usage! : {} => Try({}, [Exit(I8)])
+print_usage! = |{}| {
 	echo!("usage: js-canvas <frames> \"<program>\" [<keys>] [<clicks>]\n")
 	Err(Exit(2))
 }
@@ -138,13 +147,18 @@ record_program! = |src, { frames, keys: key_frames, clicks }| {
 				for click in clicks {
 					if click.frame == $n {
 						echo!("click ${NumberText.text_for(click.x)} ${NumberText.text_for(click.y)}\n")
-						$session = Interp.clicked($session, click.x, click.y)
+						$session = Interp.with_click($session, click.x, click.y)
 					}
 				}
-				t = Interp.frame_time($n)
-				echo!("frame ${$n.to_str()} ${NumberText.text_for(t)}\n")
-				keys = (key_frames.get($n) ?? "").split_on("+")
-				$session = Interp.tick!(recording_host(keys), $session, t, Canvas.frame_limits)
+				seconds = Interp.frame_time($n)
+				echo!("frame ${$n.to_str()} ${NumberText.text_for(seconds)}\n")
+				keys = text_or_none(key_frames, $n).split_on("+")
+				$session = Interp.tick!(
+					recording_host(keys),
+					$session,
+					seconds,
+					Canvas.frame_limits,
+				)
 				$n = $n + 1
 			}
 			match Interp.outcome_of($session.machine).status {

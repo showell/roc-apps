@@ -5,8 +5,8 @@
 # A program runs on the canvas library, held to the page's rails
 # (`Canvas.run_limits`, then `Canvas.frame_limits` for each frame). Each frame
 # is a tick of the program's clock (`Interp.tick!`): the clicks the page
-# queued since the last (`click!`), the timers due, and the program's
-# `frame(t)`. Every call but `click!` ends with one line through `Host.emit!`
+# queued since the last (`add_click!`), the timers due, and the program's
+# `frame(t)`. Every call but `add_click!` ends with one line through `Host.emit!`
 # that says how it ended:
 #
 # - `end frame`: the call ran to its end, and the program waits for the page
@@ -42,7 +42,7 @@ start! = |bytes| {
 	match Parser.program_of(src, Canvas) {
 		Ok(program) => {
 			session = Interp.start!(page_host, program, Canvas, Canvas.run_limits)
-			said!(session)
+			report_ending!(session)
 			Box.box(Live(session))
 		}
 		Err(fault) => {
@@ -52,28 +52,28 @@ start! = |bytes| {
 	}
 }
 
-frame! : Box(Model), F64 => Box(Model)
-frame! = |boxed, t|
+run_frame! : Box(Model), F64 => Box(Model)
+run_frame! = |boxed, seconds|
 	match boxed.unbox() {
 		Live(session) => {
-			next = Interp.tick!(page_host, session, t, Canvas.frame_limits)
-			said!(next)
+			next = Interp.tick!(page_host, session, seconds, Canvas.frame_limits)
+			report_ending!(next)
 			Box.box(Live(next))
 		}
-		Refused => crash "JsApp.frame!: the page calls frame! only after `end frame`"
+		Refused => crash "JsApp.run_frame!: the page calls run_frame! only after `end frame`"
 	}
 
 # A click at x and y on the canvas, queued for the next frame.
-click! : Box(Model), F64, F64 => Box(Model)
-click! = |boxed, x, y|
+add_click! : Box(Model), F64, F64 => Box(Model)
+add_click! = |boxed, x, y|
 	match boxed.unbox() {
-		Live(session) => Box.box(Live(Interp.clicked(session, x, y)))
+		Live(session) => Box.box(Live(Interp.with_click(session, x, y)))
 		Refused => Box.box(Refused)
 	}
 
 # The line that ends a call: how the session stands after it.
-said! : Interp.Session => {}
-said! = |session| {
+report_ending! : Interp.Session => {}
+report_ending! = |session| {
 	line = match Interp.outcome_of(session.machine).status {
 		Faulted(why) => "end faulted ${why}"
 		Running => if Interp.waits(session) {
@@ -94,8 +94,8 @@ drop_bytes = |_bytes| {}
 program = {
 	source_buffer,
 	start!,
-	frame!,
-	click!,
+	run_frame!,
+	add_click!,
 	drop_model,
 	drop_bytes,
 }
