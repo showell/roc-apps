@@ -5,7 +5,6 @@
 -- object a pass holds every one of them at its end.
 --
 --   cd <roc-apps checkout> && shale js/heaps.shale             build js-count --opt=speed, then measure
---   cd <roc-apps checkout> && shale js/heaps.shale build=0     the js-count already built
 --
 -- The peak is GNU time's maximum resident set size, in KiB.
 --
@@ -16,7 +15,6 @@ use("./js_builds.shale")
 const WHO = "js/heaps.shale"
 const WANT_TIME = "js-heaps: GNU time reads js-count's peak memory, which Shale's run doesn't report"
 
-const BUILD = arg("build", true)
 
 function measured(exe, label, src)
   local r = run({"/usr/bin/time", "-f", "peak %M", exe, src}, {timeout_ms = 300000, tail = 4, want = WANT_TIME})
@@ -28,8 +26,7 @@ function measured(exe, label, src)
 end
 
 function main()
-  if BUILD then build_js(WHO, "js-count", "JsCount.roc", "speed") end
-  local exe = built_js(WHO, "js-count", "speed")
+  local exe = js_build(WHO, "js-count", "JsCount.roc", "speed")
   print(pad("program", 36) .. pad("steps", -10) .. pad("cells", -10) .. pad("scopes", -10) .. pad("peak KiB", -10) .. "   CPU ms")
   for f in glob("js/tests/*.js") do measured(exe, basename(f), read(f)) end
   for f in glob("js/heaps/*.js") do measured(exe, "heaps/" .. basename(f), read(f)) end

@@ -4,7 +4,6 @@
 -- js/canvas/<name>.log byte for byte, its exit code included.
 --
 --   cd <roc-apps checkout> && shale js/canvas.shale            build js-canvas, then grade
---   cd <roc-apps checkout> && shale js/canvas.shale build=0    grade the js-canvas already built
 --   cd <roc-apps checkout> && shale js/canvas.shale freeze=4-starfield
 --                                  write that sample's log anew from what it does now
 --
@@ -29,7 +28,6 @@
 const WANT_CANVAS = "js-canvas: the recording host under test, built here"
 const RUN_MS = 60000
 
-const BUILD = arg("build", true)
 const FREEZE = arg("freeze", "")
 
 use("./js_builds.shale")
@@ -107,8 +105,7 @@ function grade_rails(exe)
 end
 
 function main()
-  if BUILD then build_js("js/canvas.shale", "js-canvas", "JsCanvas.roc", "dev") end
-  local exe = built_js("js/canvas.shale", "js-canvas", "dev")
+  local exe = js_build("js/canvas.shale", "js-canvas", "JsCanvas.roc", "dev")
   local all = entries()
   local bad = 0
   local frozen = false
@@ -132,8 +129,7 @@ function main()
   end
   if FREEZE ~= "" and not frozen then fail("js/canvas.shale: no sample is named " .. FREEZE) end
   local rails = grade_rails(exe)
-  if BUILD then build_js("js/canvas.shale", "js-run", "JsRun.roc", "dev") end
-  local core = run({built_js("js/canvas.shale", "js-run", "dev"), "forward(10);"}, {timeout_ms = RUN_MS, whole = 4000, want = WANT_CANVAS})
+  local core = run({js_build("js/canvas.shale", "js-run", "JsRun.roc", "dev"), "forward(10);"}, {timeout_ms = RUN_MS, whole = 4000, want = WANT_CANVAS})
   local core_ok = core.code == 1 and contains(core.out, "js: ReferenceError: forward is not defined")
   if core_ok then print("PASS js-run knows no canvas builtin") else print("FAIL js-run on `forward(10);` said `" .. trim(core.out) .. "`") end
   print("js canvas: " .. (#all - bad) .. " of " .. #all .. " samples match their logs; " .. (rails.n - rails.bad) .. " of " .. rails.n .. " rails stop as they must; js-run's core library has no canvas: " .. tostring(core_ok))

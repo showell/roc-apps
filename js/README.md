@@ -270,14 +270,20 @@ linear: 59, 88 and 184 µs a store; 28, 35 and 86 µs a call; 22, 35 and
 
 ## Running it and the tests
 
-    shale js/oracle.shale      # build js-run, then every program through node and js-run
-    shale js/probes.shale      # build js-count, then the copying probes at three sizes
-    shale js/controls.shale    # build js-run --opt=speed, then count each control's allocations
+    shale js/oracle.shale      # js-run, then every program through node and js-run
+    shale js/probes.shale      # js-count, then the copying probes at three sizes
+    shale js/controls.shale    # js-run --opt=speed, then count each control's allocations
     shale check.shale js=1     # the controls in both builds, held to their expected counts
-    shale js/bench.shale       # build both, then time js/bench/'s programs
-    shale js/heaps.shale       # build js-count --opt=speed, then each program's cells, scopes and peak memory
-    shale js/canvas.shale      # build js-canvas, then hold every canvas sample to its log
+    shale js/bench.shale       # both builds, then time js/bench/'s programs
+    shale js/heaps.shale       # js-count --opt=speed, then each program's cells, scopes and peak memory
+    shale js/canvas.shale      # js-canvas, then hold every canvas sample to its log
     shale js/build.shale       # build the page into the dev channel, :9210/js/
+
+Each script but the last takes its commands from tools/roc_build.shale
+(`js/js_builds.shale`'s `js_build`), which builds one only when its cache
+holds no build of the same inputs: a second run of unchanged code compiles
+nothing, and its line says `reused`. js/build.shale builds the page's wasm
+itself.
 
 and, with the page built, to see it draw in headless Chromium:
 

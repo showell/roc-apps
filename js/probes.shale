@@ -5,7 +5,6 @@
 -- size. One number says nothing; the shape across sizes does.
 --
 --   cd <roc-apps checkout> && shale js/probes.shale            build js-count, then probe
---   cd <roc-apps checkout> && shale js/probes.shale build=0    the js-count already built
 --   cd <roc-apps checkout> && shale js/probes.shale only=3     the probes whose names start so
 --
 -- A probe's first line says its kind. A `fixed` probe holds its writes at W
@@ -36,7 +35,6 @@ const W = 20000
 -- cost 22 µs an append, and one of 160,000, 49.
 const FLAT_BELOW_TENTHS = 16
 
-const BUILD = arg("build", true)
 const ONLY = arg("only", "")
 
 use("./js_builds.shale")
@@ -65,8 +63,7 @@ function cpu_ms(exe, src, n, w)
 end
 
 function main()
-  if BUILD then build_js("js/probes.shale", "js-count", "JsCount.roc", "dev") end
-  local exe = built_js("js/probes.shale", "js-count", "dev")
+  local exe = js_build("js/probes.shale", "js-count", "JsCount.roc", "dev")
   print(busy())
   print(pad("probe", 22) .. "  µs a write at three sizes N        shape")
   for f in glob("js/probes/*.js") do

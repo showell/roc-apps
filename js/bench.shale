@@ -5,7 +5,6 @@
 -- other heavy programs were running beside it.
 --
 --   cd <roc-apps checkout> && shale js/bench.shale             build both, then time
---   cd <roc-apps checkout> && shale js/bench.shale build=0     the js-runs already built
 --   cd <roc-apps checkout> && shale js/bench.shale opt=dev     the dev build alone
 --
 -- budget: steps=20000000
@@ -16,7 +15,6 @@ const WANT_RUN = "js-run: the interpreter timed, built here"
 const WHO = "js/bench.shale"
 const TRIES = 3
 
-const BUILD = arg("build", true)
 const OPT = arg("opt", "both")
 
 -- The heavy programs running beside the bench, which slow its times.
@@ -49,14 +47,13 @@ end
 function main()
   local opts = {"dev", "speed"}
   if OPT ~= "both" then opts = {OPT} end
-  if BUILD then
-    for opt in opts do build_js(WHO, "js-run", "JsRun.roc", opt) end
-  end
+  local exes = {}
+  for opt in opts do exes[opt] = js_build(WHO, "js-run", "JsRun.roc", opt) end
   print(busy())
   for f in glob("js/bench/*.js") do
     local src = read(f)
     local cells = {}
-    for opt in opts do push(cells, opt .. " " .. fastest_ms(built_js(WHO, "js-run", opt), src) .. " ms") end
+    for opt in opts do push(cells, opt .. " " .. fastest_ms(exes[opt], src) .. " ms") end
     print(pad(strip_suffix(basename(f), ".js"), 10) .. "  " .. join(cells, "   "))
   end
   print(busy())

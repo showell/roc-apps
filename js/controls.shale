@@ -7,7 +7,6 @@
 --
 --   cd <roc-apps checkout> && shale js/controls.shale              the release build (--opt=speed)
 --   cd <roc-apps checkout> && shale js/controls.shale opt=dev      the dev build
---   cd <roc-apps checkout> && shale js/controls.shale build=0      js-run already built
 --   cd <roc-apps checkout> && shale js/controls.shale only=02      the controls whose names start so
 --
 -- **A CONTROL THAT STARTS ALLOCATING NAMES THE WRITE THAT COPIES**: 00-loop
@@ -30,7 +29,6 @@ const RUN_MS = 120000
 const WHO = "js/controls.shale"
 
 const OPT = arg("opt", "speed")
-const BUILD = arg("build", true)
 const ONLY = arg("only", "")
 
 function argv_for(bin, src, passes)
@@ -38,8 +36,7 @@ function argv_for(bin, src, passes)
 end
 
 function main()
-  if BUILD then build_js(WHO, "js-run", "JsRun.roc", OPT) end
-  local bin = built_js(WHO, "js-run", OPT)
+  local bin = js_build(WHO, "js-run", "JsRun.roc", OPT)
   local controls = {}
   for f in glob("js/controls/*.js") do
     local n = strip_suffix(basename(f), ".js")
