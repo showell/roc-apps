@@ -1,0 +1,109 @@
+-- basic-run built and counted, for basic/controls.shale and
+-- basic/pathological.shale: `use("./basic_runs.shale")`.
+--
+-- basic-run is built with the pinned Roc (`pinned_roc`, in
+-- .shale/prelude.shale) into build:roc-apps/gen/basic-controls/<checkout>/<opt>/,
+-- each checkout its own, `opt` being `speed` (the release build) or `dev`.
+--
+-- **AN ALLOCATION IS A CALL OF roc_alloc**, counted by a breakpoint
+-- (basic/tools/count_allocs.c, built with the system's C compiler), in the
+-- very executable the timings run. Up to Roc 0.1.0-RC1 the default platform
+-- gave each allocation its own mmap and `strace -c` counted them; RC1's
+-- takes memory from the kernel a few large pieces at a time, so mmap no
+-- longer says anything. roc_realloc's calls (a list or a string grown where
+-- it is) are counted beside. Each counted call stops the program, about
+-- 80 µs a call.
+
+const WANT_ROC = "roc-pin: roc-apps' pinned nightly, and basic-run, which it builds"
+const WANT_COUNT = "basic-allocs: count_allocs, built here, counts basic-run's roc_alloc calls by breakpoints"
+const WANT_TIME = "basic-time: basic-run, built here with the pinned Roc"
+-- **THE ONE WARNING A RELEASE BUILD IS ALLOWED.** basic-run reports the
+-- statements it ran on stderr with `dbg`, the default platform's only way
+-- there, and `--opt=speed` warns of a `dbg`. Any other warning fails.
+const DBG_WARNING = "`dbg` in optimized build"
+const DBG_LINE = "BasicRun.roc:24:2"
+
+-- This checkout's folder of built things.
+function gen_dir()
+  return "build:roc-apps/gen/basic-controls/" .. basename(real("."))
+end
+
+-- Where this checkout's basic-run of `opt` is built.
+function out_dir(opt)
+  return gen_dir() .. "/" .. opt
+end
+
+-- Whether a build's output holds an error, or a warning but the release
+-- build's `dbg`.
+function build_went_wrong(out, opt)
+  if contains(out, "✗") then return true end
+  local warnings = 0
+  for l in lines(out) do
+    if contains(l, "●") then
+      if not (opt == "speed" and contains(l, DBG_WARNING) and contains(l, DBG_LINE)) then warnings = warnings + 1 end
+    end
+  end
+  return warnings > 0
+end
+
+-- basic-run built from basic/roc/BasicRun.roc with `--opt=<opt>`, and the
+-- counter beside it. **THE ROC COMPILER EXITS NON-ZERO FOR A WARNING**, so
+-- its exit code is not the verdict: an error is marked ✗ and a warning ●,
+-- and a failed build leaves no executable.
+function build_basic_run(who, opt)
+  if opt ~= "speed" and opt ~= "dev" then fail(who .. ": opt is speed or dev, not " .. opt) end
+  local roc = pinned_roc(who)
+  local dir = out_dir(opt)
+  mkdir(dir)
+  local exe = dir .. "/basic-run"
+  if exists(exe) then remove(exe) end
+  local r = run({roc, "build", "BasicRun.roc", "--opt=" .. opt, "--output=" .. real(dir) .. "/basic-run"},
+    {cwd = "basic/roc", timeout_ms = 1800000, tail = 40, nice = 19, want = WANT_ROC})
+  if build_went_wrong(r.out, opt) or not exists(exe) then
+    print(trim(r.out))
+    fail(who .. ": the " .. opt .. " build of basic-run failed")
+  end
+  print("built basic-run --opt=" .. opt .. ": " .. (r.ms // 1000) .. " s")
+  must(run({"cc", "-O2", "-Wall", "-Wextra", "-Werror", "-o", real(gen_dir()) .. "/count_allocs", "basic/tools/count_allocs.c"},
+    {timeout_ms = 60000, tail = 20}))
+end
+
+-- The built basic-run of `opt`, with roc_alloc's, roc_realloc's and
+-- roc_dealloc's addresses in it, as `nm` gives them: `{bin, at}`.
+function built_basic_run(who, opt)
+  local exe = out_dir(opt) .. "/basic-run"
+  if not exists(exe) or not exists(gen_dir() .. "/count_allocs") then fail(who .. ": nothing built for " .. opt .. ": run without build=0") end
+  local bin = real(exe)
+  local at = {}
+  for l in lines(must(run({"nm", bin}, {timeout_ms = 30000, tail = 10, re = " T roc_(alloc|realloc|dealloc)$"})).out) do
+    local w = words(l)
+    if #w == 3 then at[w[3]] = w[1] end
+  end
+  for name in {"roc_alloc", "roc_realloc", "roc_dealloc"} do
+    if not has_key(at, name) then fail(who .. ": " .. bin .. " has no " .. name .. " (nm)") end
+  end
+  return {bin = bin, at = at}
+end
+
+-- One run of basic-run `b` (built_basic_run's), counted: `{alloc, realloc,
+-- out}`, `out` its last lines. `args` are basic-run's, and `stage` names the
+-- run. It stops the run past `limit_ms`, or on any exit but 0.
+function counted_run(who, b, stage, args, limit_ms)
+  local counts = gen_dir() .. "/counts.txt"
+  local argv = {real(gen_dir() .. "/count_allocs"), real(gen_dir()) .. "/counts.txt", b.at.roc_alloc, b.at.roc_realloc, b.at.roc_dealloc, b.bin}
+  for a in args do push(argv, a) end
+  local r = run(argv, {timeout_ms = limit_ms, tail = 3, want = WANT_COUNT, cpu_budget_ms = limit_ms, stage = stage})
+  if r.ended ~= "exit" or r.code ~= 0 then fail(who .. ": " .. stage .. ": basic-run ended " .. r.ended .. " " .. get(r, "code", "") .. ": " .. r.out) end
+  local w = words(read(counts))
+  remove(counts)
+  return {alloc = tonumber(w[2]), realloc = tonumber(w[4]), out = r.out}
+end
+
+-- One run of basic-run `b`, timed: `{ms, out}`.
+function timed_basic_run(who, b, stage, args, limit_ms)
+  local argv = {b.bin}
+  for a in args do push(argv, a) end
+  local r = run(argv, {timeout_ms = limit_ms, tail = 3, want = WANT_TIME, cpu_budget_ms = limit_ms, stage = stage})
+  if r.ended ~= "exit" or r.code ~= 0 then fail(who .. ": " .. stage .. ": basic-run ended " .. r.ended .. " " .. get(r, "code", "") .. ": " .. r.out) end
+  return {ms = r.ms, out = r.out}
+end

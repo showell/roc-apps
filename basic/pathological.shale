@@ -1,0 +1,56 @@
+-- The pathological programs (basic/pathological/*.bas) through basic-run:
+-- for each, the process's time (the best of three) and its allocations and
+-- reallocations (basic/basic_runs.shale says how they are counted). A
+-- statement that allocates per execution shows as a count in the tens or
+-- hundreds of thousands. Nothing is held: it is a report. Run it with
+-- nothing else on the box.
+--
+--   cd <roc-apps checkout> && shale basic/pathological.shale            the release build (--opt=speed)
+--   cd <roc-apps checkout> && shale basic/pathological.shale opt=dev
+--   cd <roc-apps checkout> && shale basic/pathological.shale build=0    the executables already built
+--
+-- budget: steps=50000000
+
+use("./basic_runs.shale")
+
+const WHO = "basic/pathological.shale"
+-- A program's one run may take this long.
+const RUN_MS = 20000
+const TRIES = 3
+
+const OPT = arg("opt", "speed")
+const BUILD = arg("build", true)
+
+-- The last 40 bytes of what a run printed, `dbg`'s line on stderr left out.
+function transcript_end(out)
+  local kept = {}
+  for l in lines(out) do
+    if not starts_with(l, "[dbg]") then push(kept, trim(l)) end
+  end
+  return sub(join(kept, " "), -40)
+end
+
+function main()
+  if BUILD then build_basic_run(WHO, OPT) end
+  local b = built_basic_run(WHO, OPT)
+  local rows = {}
+  for f in glob("basic/pathological/*.bas") do
+    local n = strip_suffix(basename(f), ".bas")
+    local args = {"micro", read(f), ""}
+    local best = nil
+    local out = ""
+    local k = 0
+    while k < TRIES do
+      local t = timed_basic_run(WHO, b, n, args, RUN_MS)
+      if best == nil or t.ms < best then best = t.ms end
+      out = t.out
+      k = k + 1
+    end
+    local c = counted_run(WHO, b, n .. ", counted", args, RUN_MS * 10)
+    push(rows, {program = n, ms = best, allocs = c.alloc, reallocs = c.realloc, prints = transcript_end(out)})
+  end
+  print(table(rows, {"program", "ms", "allocs", "reallocs", "prints"}))
+  print("--opt=" .. OPT .. ", the best of " .. TRIES .. " runs")
+end
+
+main()

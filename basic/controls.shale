@@ -13,111 +13,31 @@
 -- **A CONTROL THAT STARTS ALLOCATING NAMES THE FEATURE THAT DID IT**, which
 -- is the point: read them in order, and the first one off is the change's.
 --
--- **AN ALLOCATION IS A CALL OF roc_alloc**, counted by a breakpoint
--- (basic/tools/count_allocs.c, built here with the system's C compiler), in
--- the very executable the timings run. Up to Roc 0.1.0-RC1 the default
--- platform gave each allocation its own mmap and `strace -c` counted them;
--- RC1's takes memory from the kernel a few large pieces at a time, so mmap
--- no longer says anything. roc_realloc's calls (a list or a string grown
--- where it is) are counted and shown beside, and held the same way.
+-- An allocation is a call of roc_alloc, counted by a breakpoint, and
+-- roc_realloc's calls are counted and held beside (basic/basic_runs.shale
+-- says why and how). The release build is the one held:
+-- basic/controls/expected.txt. The dev build (--opt=dev, which lowers
+-- closures and the like to boxes, as `--specialize=no`) allocates where the
+-- release build doesn't, and is held to basic/controls/expected-dev.txt.
 --
--- The release build is the one held: basic/controls/expected.txt. The dev
--- build (--opt=dev, which lowers closures and the like to boxes, as
--- `--specialize=no`) allocates where the release build doesn't, and is held
--- to basic/controls/expected-dev.txt.
---
--- It builds basic-run with the pinned Roc (`pinned_roc`, in
--- .shale/prelude.shale) into build:roc-apps/gen/basic-controls/<checkout>/<opt>/,
--- each checkout its own. The release build takes about 90 s of compiling;
--- the counting, about a minute, since each counted call stops the program
--- (about 80 µs a call).
+-- The release build takes about 90 s of compiling and its counting about
+-- 20 s; the dev build about 5 s and 110 s.
 --
 -- budget: steps=50000000
 
-const WANT_ROC = "roc-pin: roc-apps' pinned nightly, and basic-run, which it builds"
-const WANT_COUNT = "basic-allocs: count_allocs, built here, counts basic-run's roc_alloc calls by breakpoints"
+use("./basic_runs.shale")
+
 const SMALL = 1000
 const BIG = 10000
 -- Within this much an iteration, in hundredths, a control is on its count.
 const SLACK = 5
 -- A control's one run may take this long.
 const RUN_MS = 120000
--- **THE ONE WARNING A RELEASE BUILD IS ALLOWED.** basic-run reports the
--- statements it ran on stderr with `dbg`, the default platform's only way
--- there, and `--opt=speed` warns of a `dbg`. Any other warning fails.
-const DBG_WARNING = "`dbg` in optimized build"
-const DBG_LINE = "BasicRun.roc:24:2"
+const WHO = "basic/controls.shale"
 
 const OPT = arg("opt", "speed")
 const BUILD = arg("build", true)
 const ONLY = arg("only", "")
-
--- This checkout's folder of built things.
-function gen_dir()
-  return "build:roc-apps/gen/basic-controls/" .. basename(real("."))
-end
-
--- Where this checkout's basic-run of `opt` is built.
-function out_dir(opt)
-  return gen_dir() .. "/" .. opt
-end
-
--- Whether a build's output holds an error, or a warning but the release
--- build's `dbg`.
-function build_went_wrong(out, opt)
-  if contains(out, "✗") then return true end
-  local warnings = 0
-  for l in lines(out) do
-    if contains(l, "●") then
-      if opt == "speed" and contains(l, DBG_WARNING) and contains(l, DBG_LINE) then
-        warnings = warnings
-      else
-        warnings = warnings + 1
-      end
-    end
-  end
-  return warnings > 0
-end
-
--- basic-run built from basic/roc/BasicRun.roc with `--opt=<opt>`.
--- **THE ROC COMPILER EXITS NON-ZERO FOR A WARNING**, so its exit code is not
--- the verdict: an error is marked ✗ and a warning ●, and a failed build
--- leaves no executable.
-function build_run(opt)
-  local roc = pinned_roc("basic/controls.shale")
-  local dir = out_dir(opt)
-  mkdir(dir)
-  local exe = dir .. "/basic-run"
-  if exists(exe) then remove(exe) end
-  local r = run({roc, "build", "BasicRun.roc", "--opt=" .. opt, "--output=" .. real(dir) .. "/basic-run"},
-    {cwd = "basic/roc", timeout_ms = 1800000, tail = 40, nice = 19, want = WANT_ROC})
-  if build_went_wrong(r.out, opt) or not exists(exe) then
-    print(trim(r.out))
-    fail("basic/controls.shale: the " .. opt .. " build of basic-run failed")
-  end
-  print("built basic-run --opt=" .. opt .. ": " .. (r.ms // 1000) .. " s")
-end
-
--- The counter, built from basic/tools/count_allocs.c.
-function build_counter()
-  mkdir(gen_dir())
-  must(run({"cc", "-O2", "-Wall", "-Wextra", "-Werror", "-o", real(gen_dir()) .. "/count_allocs", "basic/tools/count_allocs.c"},
-    {timeout_ms = 60000, tail = 20}))
-end
-
--- roc_alloc's, roc_realloc's and roc_dealloc's addresses in `bin`, as `nm`
--- gives them.
-function allocator_at(bin)
-  local at = {}
-  for l in lines(must(run({"nm", bin}, {timeout_ms = 30000, tail = 10, re = " T roc_(alloc|realloc|dealloc)$"})).out) do
-    local w = words(l)
-    if #w == 3 then at[w[3]] = w[1] end
-  end
-  for name in {"roc_alloc", "roc_realloc", "roc_dealloc"} do
-    if not has_key(at, name) then fail("basic/controls.shale: " .. bin .. " has no " .. name .. " (nm)") end
-  end
-  return at
-end
 
 function rep_list(x, n)
   local out = {}
@@ -130,19 +50,14 @@ function rep_list(x, n)
 end
 
 -- One control's run at `iterations`: its calls of roc_alloc and
--- roc_realloc, and the last 30 bytes it printed. A control with an INPUT
--- gets one reply line, 7, an iteration.
-function counted(bin, at, name, src, iterations)
+-- roc_realloc, and the last bytes it printed. A control with an INPUT gets
+-- one reply line, 7, an iteration.
+function counted(b, name, src, iterations)
   local replies = ""
   if contains(src, "INPUT") then replies = join(rep_list("7", iterations), "\n") end
   local listing = substitute(src, "@N@", tostring(iterations), {missing_ok = true})
-  local counts = gen_dir() .. "/counts.txt"
-  local r = run({real(gen_dir() .. "/count_allocs"), real(gen_dir()) .. "/counts.txt", at.roc_alloc, at.roc_realloc, at.roc_dealloc, bin, "micro", listing, replies},
-    {timeout_ms = RUN_MS, tail = 3, want = WANT_COUNT, cpu_budget_ms = RUN_MS, stage = name .. " at " .. iterations})
-  if r.ended ~= "exit" or r.code ~= 0 then fail("basic/controls.shale: basic-run ended " .. r.ended .. " " .. get(r, "code", "") .. ": " .. r.out) end
-  local w = words(read(counts))
-  remove(counts)
-  return {alloc = tonumber(w[2]), realloc = tonumber(w[4]), tail = sub(r.out, -30)}
+  local r = counted_run(WHO, b, name .. " at " .. iterations, {"micro", listing, replies}, RUN_MS)
+  return {alloc = r.alloc, realloc = r.realloc, tail = sub(r.out, -30)}
 end
 
 -- Hundredths written as a decimal.
@@ -169,9 +84,9 @@ end
 -- hundredths.
 function to_hundredths(s, file)
   local m = re_find(s, "^([0-9]+)(?:\\.([0-9][0-9]))?$")
-  if m == nil then fail("basic/controls.shale: " .. file .. ": `" .. s .. "` is not a count like 2 or 2.03") end
+  if m == nil then fail(WHO .. ": " .. file .. ": `" .. s .. "` is not a count like 2 or 2.03") end
   local h = tonumber(m.groups[1]) * 100
-  if #m.groups > 1 and m.groups[2] ~= nil and m.groups[2] ~= "" then h = h + tonumber(m.groups[2]) end
+  if m.groups[2] ~= "" then h = h + tonumber(m.groups[2]) end
   return h
 end
 
@@ -183,8 +98,8 @@ function expected(file)
     local t = trim(l)
     if t ~= "" and not starts_with(t, "#") then
       local w = words(t)
-      if #w < 4 then fail("basic/controls.shale: " .. file .. ": `" .. t .. "` is not `<control> <allocs> <reallocs> <why>`") end
-      if not exists("basic/controls/" .. w[1] .. ".bas") then fail("basic/controls.shale: " .. file .. " names " .. w[1] .. ", which is no control") end
+      if #w < 4 then fail(WHO .. ": " .. file .. ": `" .. t .. "` is not `<control> <allocs> <reallocs> <why>`") end
+      if not exists("basic/controls/" .. w[1] .. ".bas") then fail(WHO .. ": " .. file .. " names " .. w[1] .. ", which is no control") end
       held[w[1]] = {alloc = to_hundredths(w[2], file), realloc = to_hundredths(w[3], file)}
     end
   end
@@ -196,18 +111,11 @@ function off(h, want)
 end
 
 function main()
-  if OPT ~= "speed" and OPT ~= "dev" then fail("basic/controls.shale: opt is speed or dev, not " .. OPT) end
   local file = "basic/controls/expected.txt"
   if OPT == "dev" then file = "basic/controls/expected-dev.txt" end
   local held = expected(file)
-  if BUILD then
-    build_run(OPT)
-    build_counter()
-  end
-  local exe = out_dir(OPT) .. "/basic-run"
-  if not exists(exe) or not exists(gen_dir() .. "/count_allocs") then fail("basic/controls.shale: nothing built for " .. OPT .. ": run without build=0") end
-  local bin = real(exe)
-  local at = allocator_at(bin)
+  if BUILD then build_basic_run(WHO, OPT) end
+  local b = built_basic_run(WHO, OPT)
   local bad = 0
   local n_run = 0
   print(pad("control", 30) .. "   allocs at 1,000, 10,000, an iteration   reallocs an iteration")
@@ -216,7 +124,7 @@ function main()
     if ONLY == "" or starts_with(n, ONLY) then
       n_run = n_run + 1
       local src = read(f)
-      local small = counted(bin, at, n, src, SMALL)
+      local small = counted(b, n, src, SMALL)
       local big = "-"
       local per = "-"
       local per_re = "-"
@@ -224,11 +132,11 @@ function main()
       local mark = "ok"
       local tail = small.tail
       if contains(src, "@N@") then
-        local b = counted(bin, at, n, src, BIG)
-        tail = b.tail
-        big = tostring(b.alloc)
-        local h = per_iteration(small.alloc, b.alloc)
-        local hr = per_iteration(small.realloc, b.realloc)
+        local c = counted(b, n, src, BIG)
+        tail = c.tail
+        big = tostring(c.alloc)
+        local h = per_iteration(small.alloc, c.alloc)
+        local hr = per_iteration(small.realloc, c.realloc)
         per = hundredths(h)
         per_re = hundredths(hr)
         if off(h, want.alloc) or off(hr, want.realloc) then
@@ -242,9 +150,9 @@ function main()
       end
     end
   end
-  if n_run == 0 then fail("basic/controls.shale: no control is named " .. ONLY) end
+  if n_run == 0 then fail(WHO .. ": no control is named " .. ONLY) end
   print(bad .. " off, of " .. n_run .. " controls, --opt=" .. OPT .. ", held to " .. file)
-  if bad > 0 then fail("basic/controls.shale: " .. bad .. " controls off their counts") end
+  if bad > 0 then fail(WHO .. ": " .. bad .. " controls off their counts") end
 end
 
 main()
