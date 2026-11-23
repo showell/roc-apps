@@ -6,8 +6,8 @@ web page that runs it, and a corpus that holds it to node.
 The code here was written by AI coding agents (Claude), with human
 supervision.
 
-**Status (2026-11-23): a first version.** 33 of 33 corpus programs print
-what node 22 prints, byte for byte, and 25 of 25 programs outside the subset
+**Status (2026-11-23): a first version.** 34 of 34 corpus programs print
+what node 22 prints, byte for byte, and 31 of 31 programs outside the subset
 are refused with the message they must give. The page builds into the dev
 channel; it is not published.
 
@@ -43,7 +43,11 @@ what node prints for it is what the interpreter must print.
   `String.fromCharCode`; `Array.isArray`; `Number.isInteger`.
 - **Out of it:** `this`, `new`, prototypes and classes, getters and setters,
   `==` and the other coercions (`"3" * 2`, `true + 1`), `var`, exceptions,
-  `eval`, regular expressions, destructuring, spread, async and modules.
+  `eval`, regular expressions, destructuring, spread, async and modules;
+  two parameters of one name, and a function declared as the lone body of
+  an `if`, a `while` or a `for`. A name declared twice in one scope, and a
+  `let` or `const` as such a lone body, are refused as node refuses them,
+  with its SyntaxError.
 
 **A program outside the subset gets an error that names what it used,
 never a wrong answer.** The parser refuses the forms it can see (`js:
@@ -57,7 +61,8 @@ interpreter's strings are UTF-8.
 
 The interpreter is `js/roc/`: `Lexer.roc` makes tokens with their lines and
 columns, `Parser.roc` reads them into `Ast.roc`'s tree by recursive descent,
-`Interp.roc` walks it, `Heap.roc` holds what JavaScript shares by
+laying out each scope's names, `Resolve.roc` places every name read or
+written in those layouts before the run, `Interp.roc` walks it, `Heap.roc` holds what JavaScript shares by
 reference, `Inspect.roc` is console.log's formatting (node's `util.inspect`,
 function for function), and `NumberText.roc` writes a number as `String(n)`
 does. `JsRun.roc` is `js-run`, the command; `JsCount.roc` is `js-count`, the
@@ -98,18 +103,36 @@ shapes that keep it unique, each with a comment where it is used:
   arm, beside a binding, a store into an array of N items copied the N
   items.
 - **The scope list is a stack whose dropped slots are reused,** and it
-  never shrinks: `List.drop_last` answers a sublist, and the next append
-  to it copied the whole list, so a closure's call, beside N scopes other
-  closures keep alive, cost N.
+  never shrinks: in the dev build, `List.drop_last` answers a sublist and
+  the next append to it copies the whole list, so a closure's call, beside
+  N scopes other closures keep alive, cost N. The release build appends in
+  place there; the dev build's controls catch the copy (02-closure-call
+  goes from 3 allocations a pass to 4).
 - **`s += e` on a string, with an `e` that can't change `s`, grows the
   string where the variable holds it** (`Interp.appended_name`), so a
   string built one piece at a time is not copied per piece.
 - **No closure captures the machine;** a loop over it is a `var $st` loop.
 
+**A variable is read by its place, never by its name.** Each scope (a
+block that declares, a C-form `for`, a `for ... of` pass, a call) is made
+with the variables its layout names, unready until their declarations run,
+and `Resolve` gives every name a slot: how many scopes out, and where
+there. Reading `fib` inside `fib` is two hops and a list index, where it was
+a comparison with every name in every scope on the way.
+
 A block or function whose text holds no function literal can't have its
 scope captured, so its scope is dropped when it ends: a loop or a recursion
 without closures leaves the scope list as it found it. Cells are never
 freed: a run's heap holds every object it made.
+
+**What the controls count (2026-11-23).** `js/controls.shale` runs each
+control in `js/controls/` (an empty loop, then the probes' six writes, one
+each) at 1,000 and 10,000 passes on `tools/alloc_ladder.shale`, which counts
+`roc_alloc`'s calls exactly, and holds what one pass allocates to
+`js/controls/expected.txt` (release) and `expected-dev.txt` (dev). In the
+release build every control allocates nothing a pass but a push, which
+makes its argument list. A copy is an allocation a pass, so a write that
+stops being made in place turns a control red by name.
 
 **What the probes say (2026-11-23, the dev backend; the box was quiet when
 the run began, and the BASIC lane's controls had started by its end).**
@@ -132,6 +155,9 @@ linear: 59, 88 and 184 µs a store; 28, 35 and 86 µs a call; 22, 35 and
 
     shale js/oracle.shale      # build js-run, then every program through node and js-run
     shale js/probes.shale      # build js-count, then the copying probes at three sizes
+    shale js/controls.shale    # build js-run --opt=speed, then count each control's allocations
+    shale check.shale js=1     # the controls in both builds, held to their expected counts
+    shale js/bench.shale       # build both, then time js/bench/'s programs
     shale js/build.shale       # build the page into the dev channel, :9210/js/
 
 `js/oracle.shale` is a tier of `check.shale`. It builds `js-run` on the dev
@@ -164,6 +190,8 @@ across them is a write in place.
 - **A JavaScript call is several Roc calls deep,** so the interpreter
   reports a stack overflow at 400 nested calls, as node would much deeper,
   rather than overflow Roc's own stack.
-- **Built on the dev backend,** a statement costs about 10 µs: `fib(22)`
-  takes 1.8 s. The dev backend shows the code's shape, which is what the
-  probes look at; a release build is for measuring speed.
+- **Built on the dev backend,** `fib(22)` takes about 0.44 s of CPU, and
+  about 0.07 s in the release build, which takes a minute to compile
+  (`js/bench.shale`, 2026-11-23, a quiet box). The dev backend shows the
+  code's shape, which is what the probes look at; a release build is for
+  measuring speed.

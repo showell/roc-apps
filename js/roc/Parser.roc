@@ -8,9 +8,16 @@
 ##
 ## Semicolons may be left out at JavaScript inserts them: before a `}`, at
 ## the end, and at a line break the next token can't continue.
+##
+## The parser lays out each scope (`Ast.Scoping`, a function's and a `for`'s
+## `names`) and refuses what would make a layout ambiguous: a name declared
+## twice where JavaScript refuses it, two parameters of one name, and a
+## declaration as the lone body of an `if`, a `while` or a `for`. Then
+## `Resolve` places every name in those layouts.
 import Ast
 import Lexer
 import NumberText
+import Resolve
 
 Parser :: [].{
 	# Where the parser is in the tokens, and how many function literals it has
@@ -33,16 +40,55 @@ Parser :: [].{
 			$p = r.p
 			$stmts = $stmts.append(r.value)
 		}
-		Ok({
-			stmts: $stmts,
-			scoping: Scoped,
-			capture: if $p.functions > 0 {
-				Captures
-			} else {
-				CapturesNothing
-			},
-		})
+		Ok(
+			Resolve.program({
+				stmts: $stmts,
+				scoping: Scoped(Parser.layout_of([], $stmts)?),
+				capture: if $p.functions > 0 {
+					Captures
+				} else {
+					CapturesNothing
+				},
+			}),
+		)
 	}
+
+	# The names a scope holds, in order: `first` (a call's parameters), then
+	# each function and each `let` and `const` that `stmts` declare. A
+	# function may share its name with a parameter or another function, the
+	# later made winning; a `let` or a `const` shares its name with nothing,
+	# as JavaScript refuses.
+	layout_of : List(Str), List(Ast.Stmt) -> Try(List(Str), Lexer.Fault)
+	layout_of = |first, stmts| {
+		var $names = first
+		var $lexical = []
+		for s in stmts {
+			match s {
+				FunctionDecl(def, _) => {
+					if $lexical.contains(def.name) {
+						return Err(Parser.fault_at(def.at, Parser.redeclared(def.name)))
+					}
+					if !$names.contains(def.name) {
+						$names = $names.append(def.name)
+					}
+				}
+				Declare(_, decls) => {
+					for d in decls {
+						if $names.contains(d.name) {
+							return Err(Parser.fault_at(d.at, Parser.redeclared(d.name)))
+						}
+						$names = $names.append(d.name)
+						$lexical = $lexical.append(d.name)
+					}
+				}
+				_ => {}
+			}
+		}
+		Ok($names)
+	}
+
+	redeclared : Str -> Str
+	redeclared = |name| "SyntaxError: Identifier '${name}' has already been declared"
 
 	# ---- tokens ----------------------------------------------------------------
 
@@ -237,14 +283,14 @@ Parser :: [].{
 			Name("const") => Parser.declaration(p, Const)
 			Name("function") => {
 				r = Parser.function_rest(Parser.advance(p), Parser.where_of(t), Declared)?
-				Ok({ p: r.p, value: FunctionDecl(r.value) })
+				Ok({ p: r.p, value: FunctionDecl(r.value, Unresolved) })
 			}
 			Name("if") => Parser.if_statement(p)
 			Name("while") => {
 				q = Parser.expect_punct(Parser.advance(p), "(")?
 				test = Parser.expression(q)?
 				q2 = Parser.expect_punct(test.p, ")")?
-				body = Parser.statement(q2)?
+				body = Parser.body_statement(q2)?
 				Ok({ p: body.p, value: While(test.value, body.value) })
 			}
 			Name("for") => Parser.for_statement(p)
@@ -272,6 +318,28 @@ Parser :: [].{
 			}
 		}
 	}
+
+	# The lone statement an `if`, a `while` or a `for` runs, which may not be a
+	# declaration: its scope would be the statement alone.
+	body_statement : Parser.State -> Try(Parser.Parsed(Ast.Stmt), Lexer.Fault)
+	body_statement = |p|
+		if Parser.is_word(p, "let") or Parser.is_word(p, "const") {
+			Err(
+				Parser.fault_here(
+					p,
+					"SyntaxError: Lexical declaration cannot appear in a single-statement context",
+				),
+			)
+		} else if Parser.is_word(p, "function") {
+			Err(
+				Parser.fault_here(
+					p,
+					"unsupported: a function declared as the lone body of `if`, `while` or `for` (put it in a block)",
+				),
+			)
+		} else {
+			Parser.statement(p)
+		}
 
 	jump : Parser.State, Ast.Stmt -> Try(Parser.Parsed(Ast.Stmt), Lexer.Fault)
 	jump = |p, stmt| {
@@ -303,25 +371,25 @@ Parser :: [].{
 			p: Parser.advance($q),
 			value: {
 				stmts: $stmts,
-				scoping: Parser.scoping_of($stmts),
+				scoping: Parser.scoping_of($stmts)?,
 				capture: Parser.capture_since($q, before),
 			},
 		})
 	}
 
-	scoping_of : List(Ast.Stmt) -> Ast.Scoping
+	scoping_of : List(Ast.Stmt) -> Try(Ast.Scoping, Lexer.Fault)
 	scoping_of = |stmts| {
 		declares = stmts.any(
 			|s| match s {
 				Declare(_, _) => True
-				FunctionDecl(_) => True
+				FunctionDecl(_, _) => True
 				_ => False
 			},
 		)
 		if declares {
-			Scoped
+			Ok(Scoped(Parser.layout_of([], stmts)?))
 		} else {
-			Unscoped
+			Ok(Unscoped)
 		}
 	}
 
@@ -347,6 +415,7 @@ Parser :: [].{
 				e = Parser.assignment(Parser.advance(n.p))?
 				$out = $out.append({
 					name: n.value,
+					slot: Unresolved,
 					init: Initialized(Parser.named(e.value, n.value)),
 					at: w,
 				})
@@ -354,7 +423,7 @@ Parser :: [].{
 			} else if binding == Const {
 				return Err(Parser.fault_here(n.p, "a `const` without a value"))
 			} else {
-				$out = $out.append({ name: n.value, init: Uninitialized, at: w })
+				$out = $out.append({ name: n.value, slot: Unresolved, init: Uninitialized, at: w })
 				$q = n.p
 			}
 			if Parser.is_punct($q, ",") {
@@ -379,9 +448,9 @@ Parser :: [].{
 		q = Parser.expect_punct(Parser.advance(p), "(")?
 		test = Parser.expression(q)?
 		q2 = Parser.expect_punct(test.p, ")")?
-		yes = Parser.statement(q2)?
+		yes = Parser.body_statement(q2)?
 		if Parser.is_word(yes.p, "else") {
-			no = Parser.statement(Parser.advance(yes.p))?
+			no = Parser.body_statement(Parser.advance(yes.p))?
 			Ok({ p: no.p, value: If(test.value, yes.value, no.value) })
 		} else {
 			Ok({ p: yes.p, value: If(test.value, yes.value, Empty) })
@@ -439,8 +508,9 @@ Parser :: [].{
 					{ p: e.p, value: Updated(e.value) }
 				}
 				q4 = Parser.expect_punct(update.p, ")")?
-				body = Parser.statement(q4)?
+				body = Parser.body_statement(q4)?
 				loop = {
+					names: Parser.layout_of([], [init.value])?,
 					init: init.value,
 					test: test.value,
 					update: update.value,
@@ -459,7 +529,7 @@ Parser :: [].{
 		e = Parser.assignment(Parser.advance(n.p))?
 		q = Parser.expect_punct(e.p, ")")?
 		before = q.functions
-		body = Parser.statement(q)?
+		body = Parser.body_statement(q)?
 		loop = {
 			binding: binding,
 			name: n.value,
@@ -517,6 +587,9 @@ Parser :: [].{
 			if Parser.is_punct(n.p, "=") {
 				return Err(Parser.fault_here(n.p, "unsupported: default parameters"))
 			}
+			if $names.contains(n.value) {
+				return Err(Parser.fault_here($q, "unsupported: two parameters named `${n.value}`"))
+			}
 			$names = $names.append(n.value)
 			$q = if Parser.is_punct(n.p, ",") {
 				Parser.advance(n.p)
@@ -543,6 +616,7 @@ Parser :: [].{
 		def = {
 			name: name,
 			params: params,
+			names: Parser.layout_of(params, b.value.stmts)?,
 			body: b.value.stmts,
 			capture: Parser.capture_since(b.p, before),
 			at: w,
@@ -613,6 +687,7 @@ Parser :: [].{
 			def = {
 				name: "",
 				params: params.value,
+				names: params.value,
 				body: [Return(e.value)],
 				capture: Parser.capture_since(e.p, before),
 				at: w,
@@ -655,7 +730,7 @@ Parser :: [].{
 
 	target_of : Ast.Expr, Ast.Where -> Try(Ast.Target, Lexer.Fault)
 	target_of = |e, w| match e {
-		Name(s, at) => Ok(ToName(s, at))
+		Name(s, slot, at) => Ok(ToName(s, slot, at))
 		Member(obj, key, _) => Ok(ToMember(obj, key))
 		Index(obj, key, _) => Ok(ToIndex(obj, key))
 		ArrayLit(_) => Err(Parser.fault_at(w, "unsupported: destructuring"))
@@ -675,7 +750,7 @@ Parser :: [].{
 					target = Parser.target_of(left.value, w)?
 					right = Parser.assignment(Parser.advance(left.p))?
 					value = match target {
-						ToName(s, _) => Parser.named(right.value, s)
+						ToName(s, _, _) => Parser.named(right.value, s)
 						_ => right.value
 					}
 					Ok({ p: right.p, value: Assign(target, op, value, w) })
@@ -1012,7 +1087,7 @@ Parser :: [].{
 				if Parser.is_reserved(s) {
 					Err(Parser.fault_here(p, "`${s}` can't start an expression"))
 				} else {
-					Ok({ p: after, value: Name(s, w) })
+					Ok({ p: after, value: Name(s, Unresolved, w) })
 				}
 			}
 			Punct("(") => {
@@ -1130,7 +1205,7 @@ Parser :: [].{
 					if Parser.is_reserved(s) {
 						Err(Parser.fault_here(p, "`${s}` is a reserved word, not a name"))
 					} else {
-						Ok({ p: after, value: { key: s, value: Name(s, w) } })
+						Ok({ p: after, value: { key: s, value: Name(s, Unresolved, w) } })
 					}
 				}
 				_ => Err(Parser.fault_here(after, "expected `:` after a property's name"))

@@ -27,6 +27,12 @@
 ##   out of the heap: the matched cell refers to its props or items for as
 ##   long as the arm runs.
 ##
+## **A VARIABLE IS READ BY ITS PLACE, NEVER BY ITS NAME.** `Resolve` gives
+## every name its slot before the run: how many scopes out its variable is,
+## and where among that scope's variables. Each scope is made with every
+## variable its layout names, unready until its declaration runs, so a slot
+## always names a variable the scope has.
+##
 ## **A SCOPE THAT NOTHING CAN CAPTURE IS DROPPED WHEN ITS BLOCK ENDS.** The
 ## parser marks each block and function whose text holds no function literal
 ## (`CapturesNothing`), and such a scope, the last in the list when its block
@@ -45,7 +51,7 @@ import NumberText
 Interp :: [].{
 	VarState : [Mutable, Fixed, Unready]
 
-	Var : { name : Str, val : Heap.Val, state : Interp.VarState }
+	Var : { val : Heap.Val, state : Interp.VarState }
 
 	Parent : [Outermost, Within(U64)]
 
@@ -162,16 +168,23 @@ Interp :: [].{
 			),
 		)
 		$s = number.st
-		globals = [
-			{ name: "console", val: console.val, state: Fixed },
-			{ name: "Math", val: math_object.val, state: Fixed },
-			{ name: "Object", val: object.val, state: Fixed },
-			{ name: "String", val: string.val, state: Fixed },
-			{ name: "Array", val: array.val, state: Fixed },
-			{ name: "Number", val: number.val, state: Fixed },
-			{ name: "NaN", val: Number(0.0 / 0.0), state: Fixed },
-			{ name: "Infinity", val: Number(1.0 / 0.0), state: Fixed },
+		made = [
+			{ name: "console", val: console.val },
+			{ name: "Math", val: math_object.val },
+			{ name: "Object", val: object.val },
+			{ name: "String", val: string.val },
+			{ name: "Array", val: array.val },
+			{ name: "Number", val: number.val },
+			{ name: "NaN", val: Number(0.0 / 0.0) },
+			{ name: "Infinity", val: Number(1.0 / 0.0) },
 		]
+		# The builtins in the order `Resolve` places them.
+		globals = Ast.global_names.map(
+			|name| {
+				val: (made.find_first(|g| g.name == name) ?? crash "Interp.with_globals: a builtin Ast.global_names names").val,
+				state: Fixed,
+			},
+		)
 		{ ..$s, scopes: [{ vars: globals, parent: Outermost }] }
 	}
 
@@ -200,36 +213,53 @@ Interp :: [].{
 
 	# ---- scopes ----------------------------------------------------------------
 
-	Found : [Found({ scope : U64, index : U64, binding : Interp.Var }), Missing]
+	# Where a slot's variable is: its scope and its place there.
+	Place : [At({ scope : U64, index : U64 }), Nowhere]
 
-	lookup : List(Interp.Scope), U64, Str -> Interp.Found
-	lookup = |scopes, start, name| {
-		var $sid = start
-		var $searching = True
-		var $found = Missing
-		while $searching {
-			scope = scopes.get($sid) ?? crash "Interp.lookup: a scope's parent is a scope"
-			var $i = 0
-			for v in scope.vars {
-				if $searching and v.name == name {
-					$found = Found({ scope: $sid, index: $i, binding: v })
-					$searching = False
-				}
-				$i = $i + 1
-			}
-			if $searching {
-				match scope.parent {
-					Within(p) => {
-						$sid = p
-					}
-					Outermost => {
-						$searching = False
-					}
-				}
-			}
+	place_of : Interp.St, Ast.Slot -> Interp.Place
+	place_of = |st, slot|
+		match slot {
+			Local({ hops, index }) => At({ scope: Interp.scope_out(st.scopes, st.scope, hops), index: index })
+			Global(index) => At({ scope: 0, index: index })
+			Undeclared => Nowhere
+			Unresolved => crash "Interp.place_of: Parser.program_of resolves every name"
 		}
-		$found
+
+	# The scope `hops` parents out from `start`.
+	scope_out : List(Interp.Scope), U64, U64 -> U64
+	scope_out = |scopes, start, hops| {
+		var $sid = start
+		var $left = hops
+		while $left > 0 {
+			$sid = Interp.parent_of(scopes, $sid)
+			$left = $left - 1
+		}
+		$sid
 	}
+
+	parent_of : List(Interp.Scope), U64 -> U64
+	parent_of = |scopes, sid|
+		match scopes.get(sid) {
+			Ok({ parent: Within(p), vars: _ }) => p
+			_ => crash "Interp.parent_of: Resolve counts no more scopes out than there are"
+		}
+
+	var_at : List(Interp.Scope), U64, U64 -> Interp.Var
+	var_at = |scopes, sid, index| {
+		scope = scopes.get(sid) ?? crash "Interp.var_at: a scope the machine has"
+		scope.vars.get(index) ?? crash "Interp.var_at: a variable its scope's layout names"
+	}
+
+	# A declaration's place in the scope it runs in.
+	own_index : Ast.Slot -> U64
+	own_index = |slot|
+		match slot {
+			Local({ hops: 0, index }) => index
+			_ => crash "Interp.own_index: Resolve places a declaration in its own scope"
+		}
+
+	unready : Interp.Var
+	unready = { val: Undefined, state: Unready }
 
 	# The scopes with one variable written in place: the scope is taken out,
 	# written while nothing else refers to its vars, and put back.
@@ -260,55 +290,17 @@ Interp :: [].{
 		}
 	}
 
-	# The scopes with a variable declared in scope `sid`: set where the name
-	# is already there (a hoisted declaration), else added.
-	with_declared : List(Interp.Scope), U64, Interp.Var -> List(Interp.Scope)
-	with_declared = |scopes, sid, binding| {
-		taken = scopes.replace(
-			sid,
-			{ vars: [], parent: Outermost },
-		) ?? crash "Interp.with_declared: a scope the machine has"
-		taken.list.set(
-			sid,
-			Interp.scope_with_declared(taken.prev, binding),
-		) ?? crash "Interp.with_declared: the scope was just taken"
-	}
-
-	scope_with_declared : Interp.Scope, Interp.Var -> Interp.Scope
-	scope_with_declared = |scope, binding| {
-		{ vars, parent } = scope
-		index = Interp.index_of_name(vars, binding.name)
-		written = if index == vars.len() {
-			vars.append(binding)
-		} else {
-			vars.set(index, binding) ?? crash "Interp.scope_with_declared: the index was just found"
-		}
-		{ vars: written, parent: parent }
-	}
-
-	# Where `name` is among `vars`, or their count when it is not.
-	index_of_name : List(Interp.Var), Str -> U64
-	index_of_name = |vars, name| {
-		var $index = vars.len()
-		var $i = 0
-		for v in vars {
-			if v.name == name and $index == vars.len() {
-				$index = $i
-			}
-			$i = $i + 1
-		}
-		$index
-	}
-
-	declare : Interp.St, Str, Heap.Val, Interp.VarState -> Interp.St
-	declare = |st, name, val, state| {
+	# The machine with a variable of its current scope declared.
+	declare : Interp.St, Ast.Slot, Heap.Val, Interp.VarState -> Interp.St
+	declare = |st, slot, val, state| {
 		..st,
-		scopes: Interp.with_declared(st.scopes, st.scope, { name: name, val: val, state: state }),
+		scopes: Interp.with_var(st.scopes, st.scope, Interp.own_index(slot), { val: val, state: state }),
 	}
 
-	# The machine inside a new scope whose parent is `parent`.
-	entered : Interp.St, Interp.Parent -> Interp.St
-	entered = |st, parent| Interp.with_scope_added(st, { vars: [], parent: parent })
+	# The machine inside a new scope whose parent is `parent`, holding `size`
+	# variables, none of them ready.
+	entered : Interp.St, Interp.Parent, U64 -> Interp.St
+	entered = |st, parent, size| Interp.with_scope_added(st, { vars: List.repeat(Interp.unready, size), parent: parent })
 
 	# The machine inside `scope`, a new one, in the first dead slot or past the
 	# end.
@@ -343,21 +335,16 @@ Interp :: [].{
 		}
 	}
 
-	# The functions a block declares, made before its first statement, and its
-	# `let` and `const` names, which can't be read until their statement runs.
+	# The functions a block declares, made before its first statement. Its
+	# `let` and `const` names stay unready until their statement runs.
 	hoisted : Interp.St, List(Ast.Stmt) -> Interp.St
 	hoisted = |st, stmts| {
 		var $s = st
 		for stmt in stmts {
 			match stmt {
-				FunctionDecl(def) => {
+				FunctionDecl(def, slot) => {
 					{ st: made, val: f } = Interp.alloc($s, Fun({ fun: def, scope: $s.scope }))
-					$s = Interp.declare(made, def.name, f, Mutable)
-				}
-				Declare(_, decls) => {
-					for d in decls {
-						$s = Interp.declare($s, d.name, Undefined, Unready)
-					}
+					$s = Interp.declare(made, slot, f, Mutable)
 				}
 				_ => {}
 			}
@@ -374,9 +361,9 @@ Interp :: [].{
 	exec_block = |st, block|
 		match block.scoping {
 			Unscoped => Interp.exec_list(st, block.stmts)
-			Scoped => {
+			Scoped(names) => {
 				outer = st.scope
-				inner = Interp.hoisted(Interp.entered(st, Within(outer)), block.stmts)
+				inner = Interp.hoisted(Interp.entered(st, Within(outer), names.len()), block.stmts)
 				id = inner.scope
 				{ st: after, flow } = Interp.exec_list(inner, block.stmts)
 				{ st: Interp.left(after, id, outer, block.capture), flow: flow }
@@ -425,12 +412,12 @@ Interp :: [].{
 							Let => Mutable
 							Const => Fixed
 						}
-						$s = Interp.declare(made, d.name, val, state)
+						$s = Interp.declare(made, d.slot, val, state)
 					}
 				}
 				Interp.normal($s)
 			}
-			FunctionDecl(_) => Interp.normal(st)
+			FunctionDecl(_, _) => Interp.normal(st)
 			If(test, yes, no) => {
 				{ st: tested, val } = Interp.eval(st, test)
 				if !Interp.is_running(tested) {
@@ -494,7 +481,7 @@ Interp :: [].{
 	exec_for : Interp.St, Ast.ForLoop -> Interp.Done
 	exec_for = |st, loop| {
 		outer = st.scope
-		start = Interp.entered(st, Within(outer))
+		start = Interp.entered(st, Within(outer), loop.names.len())
 		{ st: begun, flow: _ } = Interp.exec(start, loop.init)
 		var $s = begun
 		var $flow = Normal
@@ -658,7 +645,7 @@ Interp :: [].{
 	exec_for_of_pass : Interp.St, Ast.ForOfLoop, Heap.Val, Interp.VarState -> Interp.Done
 	exec_for_of_pass = |st, loop, v, state| {
 		outer = st.scope
-		inner = Interp.declare(Interp.entered(st, Within(outer)), loop.name, v, state)
+		inner = Interp.with_scope_added(st, { vars: [{ val: v, state: state }], parent: Within(outer) })
 		id = inner.scope
 		{ st: after, flow } = Interp.exec(inner, loop.body)
 		{ st: Interp.left(after, id, outer, loop.capture), flow: flow }
@@ -831,7 +818,7 @@ Interp :: [].{
 			Null => { st: st, val: Null }
 			Undefined => { st: st, val: Undefined }
 			Template(texts, parts) => Interp.eval_template(st, texts, parts)
-			Name(name, w) => Interp.eval_name(st, name, w)
+			Name(name, slot, w) => Interp.eval_name(st, name, slot, w)
 			ArrayLit(items) => {
 				{ st: after, vals } = Interp.eval_all(st, items)
 				Interp.alloc(after, Arr(vals))
@@ -931,17 +918,20 @@ Interp :: [].{
 		{ st: $s, val: Text($text) }
 	}
 
-	eval_name : Interp.St, Str, Ast.Where -> Interp.Got
-	eval_name = |st, name, w|
-		match Interp.lookup(st.scopes, st.scope, name) {
-			Found(f) => match f.binding.state {
-				Unready => Interp.fault_got(
-					st,
-					"ReferenceError: Cannot access '${name}' before initialization${Interp.at_line(w)}",
-				)
-				_ => { st: st, val: f.binding.val }
+	eval_name : Interp.St, Str, Ast.Slot, Ast.Where -> Interp.Got
+	eval_name = |st, name, slot, w|
+		match Interp.place_of(st, slot) {
+			At({ scope, index }) => {
+				binding = Interp.var_at(st.scopes, scope, index)
+				match binding.state {
+					Unready => Interp.fault_got(
+						st,
+						"ReferenceError: Cannot access '${name}' before initialization${Interp.at_line(w)}",
+					)
+					_ => { st: st, val: binding.val }
+				}
 			}
-			Missing => Interp.fault_got(st, Interp.missing_name_message(name, w))
+			Nowhere => Interp.fault_got(st, Interp.missing_name_message(name, w))
 		}
 
 	missing_name_message : Str, Ast.Where -> Str
@@ -1099,21 +1089,22 @@ Interp :: [].{
 	eval_assign : Interp.St, Ast.Target, Ast.AssignOp, Ast.Expr, Ast.Where -> Interp.Got
 	eval_assign = |st, target, op, e, w|
 		match target {
-			ToName(name, at) => {
-				match Interp.place_of(st.scopes, st.scope, name) {
-					Unplaced => Interp.fault_got(
+			ToName(name, slot, at) => {
+				match Interp.place_of(st, slot) {
+					Nowhere => Interp.fault_got(
 						st,
 						"unsupported: assigning to `${name}`, which is not declared${Interp.at_line(at)}",
 					)
-					Placed(place) => {
-						appends = op == Combine(Add) and place.state == Mutable and place.holds_text and Interp.is_pure(e)
+					At({ scope, index }) => {
+						facts = Interp.var_facts(st.scopes, scope, index)
+						appends = op == Combine(Add) and facts.state == Mutable and facts.holds_text and Interp.is_pure(e)
 						if appends {
-							Interp.appended_name(st, place.scope, place.index, e, w)
+							Interp.appended_name(st, scope, index, e, w)
 						} else {
-							old = Interp.var_value(st.scopes, place.scope, place.index)
+							old = Interp.var_value(st.scopes, scope, index)
 							{ st: after, val } = Interp.eval(st, e)
 							{ st: made, val: value } = Interp.combined(after, op, old, val, w)
-							Interp.assigned_name(made, value, name, at)
+							Interp.assigned_name(made, value, name, slot, at)
 						}
 					}
 				}
@@ -1141,16 +1132,16 @@ Interp :: [].{
 			}
 		}
 
-	# A variable written, found again after the value was made: making it may
-	# have run code that added scopes.
-	assigned_name : Interp.St, Heap.Val, Str, Ast.Where -> Interp.Got
-	assigned_name = |st, val, name, w|
+	# A variable written, its place found again after the value was made:
+	# making it may have run code that added scopes.
+	assigned_name : Interp.St, Heap.Val, Str, Ast.Slot, Ast.Where -> Interp.Got
+	assigned_name = |st, val, name, slot, w|
 		if !Interp.is_running(st) {
 			{ st: st, val: val }
 		} else {
-			match Interp.lookup(st.scopes, st.scope, name) {
-				Found(f) => match f.binding.state {
-					Mutable => Interp.var_written(st, f.scope, f.index, { ..f.binding, val: val })
+			match Interp.place_of(st, slot) {
+				At({ scope, index }) => match Interp.var_facts(st.scopes, scope, index).state {
+					Mutable => Interp.var_written(st, scope, index, { val: val, state: Mutable })
 					Fixed => Interp.fault_got(
 						st,
 						"TypeError: Assignment to constant variable.${Interp.at_line(w)}",
@@ -1160,31 +1151,20 @@ Interp :: [].{
 						"ReferenceError: Cannot access '${name}' before initialization${Interp.at_line(w)}",
 					)
 				}
-				Missing => Interp.fault_got(
+				Nowhere => Interp.fault_got(
 					st,
 					"ReferenceError: ${name} is not defined${Interp.at_line(w)}",
 				)
 			}
 		}
 
-	# Where a variable is, and what it holds, with nothing of its value kept:
-	# a kept copy of a string is a second reference to it.
-	Place : [
-		Placed({ scope : U64, index : U64, state : Interp.VarState, holds_text : Bool }),
-		Unplaced,
-	]
-
-	place_of : List(Interp.Scope), U64, Str -> Interp.Place
-	place_of = |scopes, start, name|
-		match Interp.lookup(scopes, start, name) {
-			Found(f) => Placed({
-				scope: f.scope,
-				index: f.index,
-				state: f.binding.state,
-				holds_text: Interp.is_text(f.binding.val),
-			})
-			Missing => Unplaced
-		}
+	# What a variable is, with nothing of its value kept: a kept copy of a
+	# string is a second reference to it.
+	var_facts : List(Interp.Scope), U64, U64 -> { state : Interp.VarState, holds_text : Bool }
+	var_facts = |scopes, sid, index| {
+		binding = Interp.var_at(scopes, sid, index)
+		{ state: binding.state, holds_text: Interp.is_text(binding.val) }
+	}
 
 	is_text : Heap.Val -> Bool
 	is_text = |v| match v {
@@ -1201,7 +1181,7 @@ Interp :: [].{
 		Boolean(_) => True
 		Null => True
 		Undefined => True
-		Name(_, _) => True
+		Name(_, _, _) => True
 		Template(_, parts) => parts.all(Interp.is_pure)
 		ArrayLit(items) => items.all(Interp.is_pure)
 		ObjectLit(props) => props.all(|p| Interp.is_pure(p.value))
@@ -1246,11 +1226,7 @@ Interp :: [].{
 	}
 
 	var_value : List(Interp.Scope), U64, U64 -> Heap.Val
-	var_value = |scopes, sid, index| {
-		scope = scopes.get(sid) ?? crash "Interp.var_value: a scope the machine has"
-		binding = scope.vars.get(index) ?? crash "Interp.var_value: a variable the scope has"
-		binding.val
-	}
+	var_value = |scopes, sid, index| Interp.var_at(scopes, sid, index).val
 
 	scopes_with_appended : List(Interp.Scope), U64, U64, Str -> List(Interp.Scope)
 	scopes_with_appended = |scopes, sid, index, tail| {
@@ -1269,7 +1245,7 @@ Interp :: [].{
 		{ vars, parent } = scope
 		taken = vars.replace(
 			index,
-			{ name: "", val: Undefined, state: Unready },
+			Interp.unready,
 		) ?? crash "Interp.scope_with_appended: a variable the scope has"
 		{
 			vars: taken.list.set(
@@ -1282,8 +1258,8 @@ Interp :: [].{
 
 	var_with_appended : Interp.Var, Str -> Interp.Var
 	var_with_appended = |binding, tail| {
-		{ name, val, state } = binding
-		{ name: name, val: Interp.val_with_appended(val, tail), state: state }
+		{ val, state } = binding
+		{ val: Interp.val_with_appended(val, tail), state: state }
 	}
 
 	val_with_appended : Heap.Val, Str -> Heap.Val
@@ -1309,14 +1285,15 @@ Interp :: [].{
 			Postfix => Number(old)
 		}
 		match target {
-			ToName(name, at) => {
-				{ st: read_st, val: current } = Interp.eval_name(st, name, at)
+			ToName(name, slot, at) => {
+				{ st: read_st, val: current } = Interp.eval_name(st, name, slot, at)
 				match current {
 					Number(n) => {
 						{ st: written, val: _ } = Interp.assigned_name(
 							read_st,
 							Number(n + delta),
 							name,
+							slot,
 							at,
 						)
 						{ st: written, val: answer(n, n + delta) }
@@ -1640,14 +1617,12 @@ Interp :: [].{
 			Interp.fault_got(st, "RangeError: Maximum call stack size exceeded${Interp.at_line(w)}")
 		} else {
 			outer = st.scope
-			var $s = Interp.entered({ ..st, depth: st.depth + 1 }, Within(c.scope))
-			id = $s.scope
-			var $i = 0
-			for name in c.fun.params {
-				$s = Interp.declare($s, name, args.get($i) ?? Undefined, Mutable)
-				$i = $i + 1
-			}
-			{ st: after, flow } = Interp.exec_list(Interp.hoisted($s, c.fun.body), c.fun.body)
+			inside = Interp.with_scope_added(
+				{ ..st, depth: st.depth + 1 },
+				{ vars: Interp.call_vars(c.fun, args), parent: Within(c.scope) },
+			)
+			id = inside.scope
+			{ st: after, flow } = Interp.exec_list(Interp.hoisted(inside, c.fun.body), c.fun.body)
 			val = match flow {
 				Returned(v) => v
 				_ => Undefined
@@ -1655,6 +1630,26 @@ Interp :: [].{
 			back = Interp.left(after, id, outer, c.fun.capture)
 			{ st: { ..back, depth: back.depth - 1 }, val: val }
 		}
+
+	# A call's variables: each parameter holding its argument, then the rest
+	# of the function's layout, unready.
+	call_vars : Ast.FunDef, List(Heap.Val) -> List(Interp.Var)
+	call_vars = |def, args| {
+		params = def.params.len()
+		var $vars = List.with_capacity(def.names.len())
+		var $i = 0
+		while $i < def.names.len() {
+			$vars = $vars.append(
+				if $i < params {
+					{ val: args.get($i) ?? Undefined, state: Mutable }
+				} else {
+					Interp.unready
+				},
+			)
+			$i = $i + 1
+		}
+		$vars
+	}
 
 	number_arg : List(Heap.Val), U64 -> Try(F64, [NotNumber])
 	number_arg = |args, i|

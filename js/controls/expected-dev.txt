@@ -4,10 +4,7 @@
 # 0 and 0. Measured on Roc 0.1.0-RC1 by js/controls.shale opt=dev. The dev
 # build lowers closures and the like to boxes, as --specialize=no does, so
 # it allocates where the release build (expected.txt) doesn't.
-00-loop 6 0 a pass of the empty loop (its test, its update and the pass's step), none of them in the release build
-01-array-store 9 0 00-loop's six and three for the store, none of them in the release build
-02-closure-call 15 0 00-loop's six and nine for the call, none of them in the release build
-03-string-building 7 0 00-loop's six and one for the append, none of them in the release build; the string grows in place
-04-property-write 8 0 00-loop's six and two for the write, none of them in the release build
-05-array-push 10 0 00-loop's six, the release build's one (the argument list) and three more for the call
-06-push-pop 14 0 00-loop's six, the release build's one for the push's arguments and seven more for the push and the pop
+00-loop 1 0 the empty block `{}` the loop runs, which the release build doesn't make; the other controls' bodies are statements, not blocks
+02-closure-call 3 0 the call, none of them in the release build
+05-array-push 2 0 the release build's one (the argument list) and one more for the call
+06-push-pop 4 0 05-array-push's two for the push and two for the pop, none of the pop's in the release build

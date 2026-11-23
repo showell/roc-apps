@@ -8,6 +8,13 @@
 ## can hold on to its scope, so the interpreter drops the scope when the block
 ## ends. Each block also says whether it declares anything (`Scoping`), and
 ## runs in the enclosing scope when it doesn't.
+##
+## **EVERY SCOPE IS LAID OUT BEFORE THE PROGRAM RUNS.** A block that declares
+## (`Scoped`), a function, and a C-form `for` each carry the names their
+## scope holds, in order, and every name read, written or declared carries
+## its `Slot`, where its variable sits. The parser lays the scopes out and
+## leaves each slot `Unresolved`; `Parser.program_of` answers the tree only
+## after `Resolve.program` has placed them all.
 Ast :: [].{
 	# Where a piece of the program starts, for the messages that point at it.
 	Where : { line : U64, col : U64 }
@@ -20,7 +27,7 @@ Ast :: [].{
 		Boolean(Bool),
 		Null,
 		Undefined,
-		Name(Str, Ast.Where),
+		Name(Str, Ast.Slot, Ast.Where),
 		ArrayLit(List(Ast.Expr)),
 		ObjectLit(List(Ast.Prop)),
 		Unary(Ast.UnaryOp, Ast.Expr, Ast.Where),
@@ -37,7 +44,7 @@ Ast :: [].{
 
 	# What an assignment or an update writes.
 	Target := [
-		ToName(Str, Ast.Where),
+		ToName(Str, Ast.Slot, Ast.Where),
 		ToMember(Ast.Expr, Str),
 		ToIndex(Ast.Expr, Ast.Expr),
 	]
@@ -73,11 +80,30 @@ Ast :: [].{
 
 	Capture : [Captures, CapturesNothing]
 
-	Scoping : [Scoped, Unscoped]
+	# A scope's names, in the order its variables sit.
+	Scoping : [Scoped(List(Str)), Unscoped]
+
+	# Where a name's variable sits.
+	Slot : [
+		# Not yet placed: the parser's, which `Resolve` replaces before a run.
+		Unresolved,
+		# In the scope `hops` scopes out from the one the name is written in.
+		Local({ hops : U64, index : U64 }),
+		# A builtin, at its place in `global_names`.
+		Global(U64),
+		# Declared nowhere: a ReferenceError if the program reaches it.
+		Undeclared,
+	]
+
+	# The builtins the outermost scope holds, in their order.
+	global_names : List(Str)
+	global_names = ["console", "Math", "Object", "String", "Array", "Number", "NaN", "Infinity"]
 
 	FunDef : {
 		name : Str,
 		params : List(Str),
+		# The call's scope: the parameters, then what the body declares.
+		names : List(Str),
 		body : List(Ast.Stmt),
 		capture : Ast.Capture,
 		at : Ast.Where,
@@ -85,7 +111,7 @@ Ast :: [].{
 
 	Binding : [Let, Const]
 
-	Declarator : { name : Str, init : Ast.Init, at : Ast.Where }
+	Declarator : { name : Str, slot : Ast.Slot, init : Ast.Init, at : Ast.Where }
 
 	Init : [Initialized(Ast.Expr), Uninitialized]
 
@@ -98,6 +124,8 @@ Ast :: [].{
 	# A C-form `for`. Its `init` is a declaration, an expression or empty,
 	# and its own scope holds what the declaration declares.
 	ForLoop : {
+		# What `init` declares, the loop's scope.
+		names : List(Str),
 		init : Ast.Stmt,
 		test : Ast.Test,
 		update : Ast.Updater,
@@ -121,7 +149,7 @@ Ast :: [].{
 	Stmt := [
 		Expression(Ast.Expr),
 		Declare(Ast.Binding, List(Ast.Declarator)),
-		FunctionDecl(Ast.FunDef),
+		FunctionDecl(Ast.FunDef, Ast.Slot),
 		If(Ast.Expr, Ast.Stmt, Ast.Stmt),
 		While(Ast.Expr, Ast.Stmt),
 		For(Ast.ForLoop),
