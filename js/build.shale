@@ -1,0 +1,57 @@
+-- This script builds the JavaScript subset's page into the dev channel:
+-- js/roc/JsApp.roc into a wasm32 archive with the pinned Roc on the dev
+-- backend, linked by Zig with the host js/wasm/host.zig into js.wasm, beside
+-- the page's files from js/web/. The page is replaced only by a build that
+-- js/page_check.mjs passed.
+--
+--   cd <roc-apps checkout> && shale js/build.shale
+--
+-- It lands at build:roc-apps/next/js/, served on :9210 by roc-site. It is
+-- built into a staging folder beside it, which takes its place at the end,
+-- so a failed build leaves the page as it was: the page is replaced only
+-- after the check, by a copy. Nothing is published.
+--
+-- budget: steps=20000000
+
+const WANT_ROC = "roc-pin: roc-apps' pinned nightly"
+const WANT_ZIG = "zig: the wasm host's linker"
+const WANT_NODE = "js-page: page_check.mjs drives the built page under node"
+
+function main()
+  local roc = pinned_roc("js/build.shale")
+  local dest = "build:roc-apps/next/js"
+  local staging = "build:roc-apps/next/js.staging"
+  if exists(staging) then remove_tree(staging) end
+  mkdir(staging)
+  local out = real(staging)
+  local r = run({roc, "build", "JsApp.roc", "--target=wasm32", "--opt=dev", "--output=" .. out .. "/js.a"},
+    {cwd = "js/roc", timeout_ms = 600000, tail = 40, nice = 19, want = WANT_ROC})
+  if contains(r.out, "✗") or contains(r.out, "●") or not exists(staging .. "/js.a") then
+    print(trim(r.out))
+    fail("js/build.shale: the Roc build of JsApp.roc failed")
+  end
+  print("roc build JsApp.roc --target=wasm32 --opt=dev: " .. r.ms .. " ms")
+  mkdir("build:roc-apps/zig-cache")
+  mkdir("build:zig-global")
+  local z = run({real("zig016:zig"), "build-exe", "js/wasm/host.zig", out .. "/js.a",
+    "-target", "wasm32-freestanding", "-fno-entry", "-rdynamic", "-O", "ReleaseSmall",
+    "--stack", "16777216", "--name", "js", "-femit-bin=" .. out .. "/js.wasm",
+    "--cache-dir", real("build:roc-apps/zig-cache"), "--global-cache-dir", real("build:zig-global")},
+    {timeout_ms = 600000, tail = 40, nice = 19, want = WANT_ZIG})
+  if z.code ~= 0 or not exists(staging .. "/js.wasm") then
+    print(trim(z.out))
+    fail("js/build.shale: linking js.wasm failed")
+  end
+  print("zig build-exe js.wasm: " .. z.ms .. " ms")
+  remove(staging .. "/js.a")
+  for f in {"index.html", "js_page.js", "js_runner.js"} do copy("js/web/" .. f, staging .. "/" .. f) end
+  local c = run({"node", "js/page_check.mjs", out, "js/tests"}, {timeout_ms = 300000, tail = 40, want = WANT_NODE})
+  print(trim(c.out))
+  if c.code ~= 0 then fail("js/build.shale: the page check failed") end
+  if exists(dest) then remove_tree(dest) end
+  copy(staging, dest)
+  remove_tree(staging)
+  print("dev: http://localhost:9210/js/")
+end
+
+main()
