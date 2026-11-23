@@ -1736,40 +1736,6 @@ Machine :: [].{
 		$keep
 	}
 
-	# NEXT closes the innermost loop on its variable, or the innermost loop
-	# when it names none; the loops above that one were left by a jump.
-	do_next : M, U64, Bool -> M
-	do_next = |m, v, named| {
-		found = Machine.loop_on(m.loops, m.ldepth, v, named)
-		if found < 0 {
-			Machine.fail(m, "NEXT without FOR")
-		} else {
-			k = found.to_u64_wrap()
-			f = m.loops.get(k) ?? {
-				v: 0,
-				limit: 0.0,
-				step: 1.0,
-				after: 0,
-			}
-			x = Vec.get(m.nums, f.v, 0.0) + f.step
-			if (f.step >= 0.0 and x > f.limit) or (f.step < 0.0 and x < f.limit) {
-				{
-					..m,
-					nums: Vec.set(m.nums, f.v, x),
-					ldepth: k,
-					pc: m.pc + 1,
-				}
-			} else {
-				{
-					..m,
-					nums: Vec.set(m.nums, f.v, x),
-					ldepth: k + 1,
-					pc: f.after,
-				}
-			}
-		}
-	}
-
 	# The innermost open loop on `v`, or the innermost of all when NEXT names
 	# none; -1 when there is none.
 	loop_on : List(Frame), U64, U64, Bool -> I64
@@ -1795,10 +1761,9 @@ Machine :: [].{
 		Err(_) => { ..m, done: True }
 	}
 
-	# **EXEC IS A TABLE OF CALLS.** With the statements' bodies written in its
-	# arms, every store after it copied a path of the vector it wrote (two
-	# allocations a NEXT); with each body its own function, none does. Measured
-	# by mmap count on a FOR/NEXT loop; the mechanism is Roc's, not known.
+	# Each statement is a function of its own, but NEXT, the commonest, is
+	# written in its arm. A body in an arm copies nothing (the controls hold in
+	# both builds), and NEXT there ran the slowest NBS programs faster.
 	exec : Parse.Program, M, Parse.Stmt -> M
 	exec = |pg, m, s| match s {
 		Nop => Machine.next(m)
@@ -1853,7 +1818,38 @@ Machine :: [].{
 			lim,
 			st,
 		)
-		Next(v, named) => Machine.do_next(m, v, named)
+		# NEXT closes the innermost loop on its variable, or the innermost loop
+		# when it names none; the loops above that one were left by a jump.
+		Next(v, named) => {
+			found = Machine.loop_on(m.loops, m.ldepth, v, named)
+			if found < 0 {
+				Machine.fail(m, "NEXT without FOR")
+			} else {
+				k = found.to_u64_wrap()
+				f = m.loops.get(k) ?? {
+					v: 0,
+					limit: 0.0,
+					step: 1.0,
+					after: 0,
+				}
+				x = Vec.get(m.nums, f.v, 0.0) + f.step
+				if (f.step >= 0.0 and x > f.limit) or (f.step < 0.0 and x < f.limit) {
+					{
+						..m,
+						nums: Vec.set(m.nums, f.v, x),
+						ldepth: k,
+						pc: m.pc + 1,
+					}
+				} else {
+					{
+						..m,
+						nums: Vec.set(m.nums, f.v, x),
+						ldepth: k + 1,
+						pc: f.after,
+					}
+				}
+			}
+		}
 		Dim(items) => Machine.parted(
 			Machine.dim_one(pg, m, items.get(m.part) ?? Machine.no_item),
 			items.len(),
