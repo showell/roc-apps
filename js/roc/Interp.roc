@@ -18,7 +18,7 @@
 ##   `{ ..machine, cells: Heap.with_property(machine.cells, ...) }`, so the
 ##   old machine is never read after the write that consumes it.
 ## - Every `Got` and `Done` is taken apart where it is answered,
-##   `{ machine: after, value } = Interp.evaluate(machine, expression)`, never
+##   `{ machine: after, value } = Interp.evaluate!(host, machine, expression)`, never
 ##   kept whole while its machine goes on to be written: a record kept for
 ##   its `value` keeps its `machine` too, a second reference to the heap and
 ##   the scopes, and each
@@ -41,10 +41,18 @@
 ## scope list as it found it. Scopes that may be captured, and every cell,
 ## live until the run ends.
 ##
-## A fault (a TypeError, a feature outside the subset, the step budget) stops
-## the run: `fault` is set, every statement after it is skipped, and the
-## message is the run's last line.
+## **THE HOST RIDES BESIDE THE MACHINE, NEVER IN IT.** Every function on the
+## way from a statement to a builtin takes the host's effects (`Canvas.Host`)
+## as its first argument and is effectful, so `console.log` and a canvas
+## builtin reach the host at the moment the program calls them, in program
+## order. The host is a record of functions and refers to no part of the
+## machine, so carrying it costs the walk nothing.
+##
+## A fault (a TypeError, a feature outside the subset, a budget) stops the
+## run: `status` is set, every statement after it is skipped, and the message
+## is the run's last line.
 import Ast
+import Canvas
 import Heap
 import Inspect
 import NumberText
@@ -68,9 +76,14 @@ Interp :: [].{
 		# the next scope entered reuses.
 		live_scopes : U64,
 		scope : U64,
-		out : Str,
 		steps : U64,
 		step_limit : U64,
+		effects : U64,
+		effect_limit : U64,
+		# What the budgets are counted for, for the message that says one ran
+		# out: "the program", or "frame(t)".
+		budgeted : Str,
+		turtle : Canvas.Turtle,
 		depth : U64,
 		status : Interp.Status,
 	}
@@ -89,41 +102,130 @@ Interp :: [].{
 
 	# ---- the run ---------------------------------------------------------------
 
+	## How far a run (or one frame of it) may go: the statements it runs and
+	## the effects it makes.
+	Limits : { steps : U64, effects : U64 }
+
 	Outcome : {
-		out : Str,
 		steps : U64,
 		cells : U64,
 		scopes : U64,
 		status : Interp.Status,
 	}
 
-	run : Ast.Program, U64 -> Interp.Outcome
-	run = |program, step_limit| {
-		fresh = Interp.with_globals({
+	## A program run to its end, its effects handed to `host` as it runs.
+	run! : Canvas.Host, Ast.Program, Ast.Library, Interp.Limits => Interp.Outcome
+	run! = |host, program, library, limits| {
+		{ machine, flow: _ } = Interp.execute_block!(host, Interp.fresh(library, limits), program)
+		Interp.outcome_of(machine)
+	}
+
+	outcome_of : Interp.Machine -> Interp.Outcome
+	outcome_of = |machine| {
+		steps: machine.steps,
+		cells: machine.cells.len(),
+		scopes: machine.live_scopes,
+		status: machine.status,
+	}
+
+	fresh : Ast.Library, Interp.Limits -> Interp.Machine
+	fresh = |library, limits| Interp.with_globals(
+		{
 			cells: [],
 			scopes: [],
 			live_scopes: 0,
 			scope: 0,
-			out: "",
 			steps: 0,
-			step_limit: step_limit,
+			step_limit: limits.steps,
+			effects: 0,
+			effect_limit: limits.effects,
+			budgeted: "the program",
+			turtle: Canvas.turtle_start,
 			depth: 0,
 			status: Running,
-		})
-		done = Interp.execute_block(fresh, program)
-		machine = done.machine
-		{
-			out: machine.out,
-			steps: machine.steps,
-			cells: machine.cells.len(),
-			scopes: machine.live_scopes,
-			status: machine.status,
+		},
+		library,
+	)
+
+	## A program that may go on after its end: the machine, and the function
+	## the page calls each frame, when the program declares `frame`.
+	Session : { machine : Interp.Machine, frame : [Frame(Heap.Closure), NoFrame] }
+
+	## A program run to its end as `run!` runs it, but with its own scope kept
+	## alive after, as a page keeps a script's: a later frame's call sees the
+	## variables the program declared, and the writes the last frame made.
+	start! : Canvas.Host, Ast.Program, Ast.Library, Interp.Limits => Interp.Session
+	start! = |host, program, library, limits| {
+		names = match program.scoping {
+			Scoped(scope_names) => scope_names
+			Unscoped => crash "Interp.start!: Parser.program_of gives a program its own scope"
+		}
+		entered = Interp.with_scope_entered(Interp.fresh(library, limits), Within(0), names.len())
+		id = entered.scope
+		{ machine, flow: _ } = Interp.execute_list!(
+			host,
+			Interp.with_functions_hoisted(entered, program.statements),
+			program.statements,
+		)
+		frame = match names.find_first_index(|name| name == "frame") {
+			Ok(index) if Interp.is_running(machine) => match Interp.variable_at(machine.scopes, id, index).value {
+				Reference(cell) => match Heap.cell_at(machine.cells, cell) {
+					Fun(closure) => Frame(closure)
+					_ => NoFrame
+				}
+				_ => NoFrame
+			}
+			_ => NoFrame
+		}
+		{ machine: machine, frame: frame }
+	}
+
+	## The session after one call of its `frame(t)`, held to `limits` afresh.
+	## A session that has stopped, or has no `frame`, is answered as it is.
+	frame! : Canvas.Host, Interp.Session, F64, Interp.Limits => Interp.Session
+	frame! = |host, session, t, limits| {
+		{ machine, frame } = session
+		match frame {
+			Frame(closure) if Interp.is_running(machine) => {
+				budgeted = {
+					..machine,
+					steps: 0,
+					step_limit: limits.steps,
+					effects: 0,
+					effect_limit: limits.effects,
+					budgeted: "frame(t)",
+				}
+				{ machine: after, value: _ } = Interp.call_closure!(
+					host,
+					budgeted,
+					closure,
+					[Number(t)],
+					closure.fun.unbox().at,
+				)
+				{ machine: after, frame: Frame(closure) }
+			}
+			_ => { machine: machine, frame: frame }
 		}
 	}
 
+	# The machine after one effect handed to the host, or stopped when the
+	# effect would pass its budget.
+	emit! : Canvas.Host, Interp.Machine, Canvas.Effect => Interp.Got
+	emit! = |host, machine, effect|
+		if machine.effects >= machine.effect_limit {
+			Interp.fault_got(
+				machine,
+				"${machine.budgeted} ran past its budget of ${machine.effect_limit.to_str()} effects",
+			)
+		} else {
+			emit_now! = host.emit!
+			emit_now!(effect)
+			{ machine: { ..machine, effects: machine.effects + 1 }, value: Undefined }
+		}
+
 	# The machine with the outermost scope holding the builtins.
-	with_globals : Interp.Machine -> Interp.Machine
-	with_globals = |machine| {
+	with_globals : Interp.Machine, Ast.Library -> Interp.Machine
+	with_globals = |machine, library| {
 		var $s = {
 			..machine,
 			scopes: machine.scopes.append({ variables: [], parent: Outermost }),
@@ -198,7 +300,7 @@ Interp :: [].{
 			),
 		)
 		$s = number.machine
-		made = [
+		var $made = [
 			{ name: "console", value: console.value },
 			{ name: "Math", value: math_object.value },
 			{ name: "Object", value: object.value },
@@ -208,15 +310,51 @@ Interp :: [].{
 			{ name: "NaN", value: Number(0.0 / 0.0) },
 			{ name: "Infinity", value: Number(1.0 / 0.0) },
 		]
+		match library {
+			Core => {}
+			Canvas => {
+				for native in Interp.canvas_natives {
+					canvas_builtin = Interp.alloc($s, Builtin(native, []))
+					$s = canvas_builtin.machine
+					$made = $made.append({ name: Heap.native_name(native), value: canvas_builtin.value })
+				}
+			}
+		}
+		made = $made
 		# The builtins in the order `Resolve` places them.
-		globals = Ast.global_names.map(
+		globals = Ast.global_names_of(library).map(
 			|name| {
-				value: (made.find_first(|g| g.name == name) ?? crash "Interp.with_globals: a builtin Ast.global_names names").value,
+				value: (made.find_first(|g| g.name == name) ?? crash "Interp.with_globals: a builtin Ast.global_names_of names").value,
 				state: Fixed,
 			},
 		)
 		{ ..$s, scopes: [{ variables: globals, parent: Outermost }] }
 	}
+
+	# The canvas library's builtins.
+	canvas_natives : List(Heap.Native)
+	canvas_natives = [
+		Paint(Background),
+		Paint(Fill),
+		Paint(NoFill),
+		Paint(Stroke),
+		Paint(NoStroke),
+		Paint(Line),
+		Paint(Rect),
+		Paint(Circle),
+		Paint(Ellipse),
+		Paint(Polygon),
+		Paint(Words),
+		Move(Forward),
+		Move(Back),
+		Move(Turn),
+		Move(PenUp),
+		Move(PenDown),
+		Move(Goto),
+		Sense(MouseX),
+		Sense(MouseY),
+		Sense(KeyIsDown),
+	]
 
 	alloc : Interp.Machine, Heap.Cell -> Interp.Got
 	alloc = |machine, cell| {
@@ -406,10 +544,10 @@ Interp :: [].{
 	normal : Interp.Machine -> Interp.Done
 	normal = |machine| { machine: machine, flow: Normal }
 
-	execute_block : Interp.Machine, Ast.Block -> Interp.Done
-	execute_block = |machine, block|
+	execute_block! : Canvas.Host, Interp.Machine, Ast.Block => Interp.Done
+	execute_block! = |host, machine, block|
 		match block.scoping {
-			Unscoped => Interp.execute_list(machine, block.statements)
+			Unscoped => Interp.execute_list!(host, machine, block.statements)
 			Scoped(names) => {
 				outer = machine.scope
 				inner = Interp.with_functions_hoisted(
@@ -417,18 +555,18 @@ Interp :: [].{
 					block.statements,
 				)
 				id = inner.scope
-				{ machine: after, flow } = Interp.execute_list(inner, block.statements)
+				{ machine: after, flow } = Interp.execute_list!(host, inner, block.statements)
 				{ machine: Interp.out_of_scope(after, id, outer, block.capture), flow: flow }
 			}
 		}
 
-	execute_list : Interp.Machine, List(Ast.Statement) -> Interp.Done
-	execute_list = |machine, statements| {
+	execute_list! : Canvas.Host, Interp.Machine, List(Ast.Statement) => Interp.Done
+	execute_list! = |host, machine, statements| {
 		var $s = machine
 		var $flow = Normal
 		for statement in statements {
 			if $flow == Normal and Interp.is_running($s) {
-				{ machine: after, flow } = Interp.execute(Interp.one_step_on($s), statement)
+				{ machine: after, flow } = Interp.execute!(host, Interp.one_step_on($s), statement)
 				$s = after
 				$flow = flow
 			}
@@ -442,17 +580,17 @@ Interp :: [].{
 		if machine.steps >= machine.step_limit {
 			Interp.with_fault(
 				machine,
-				"the program ran past its budget of ${machine.step_limit.to_str()} steps",
+				"${machine.budgeted} ran past its budget of ${machine.step_limit.to_str()} steps",
 			)
 		} else {
 			{ ..machine, steps: machine.steps + 1 }
 		}
 
-	execute : Interp.Machine, Ast.Statement -> Interp.Done
-	execute = |machine, statement|
+	execute! : Canvas.Host, Interp.Machine, Ast.Statement => Interp.Done
+	execute! = |host, machine, statement|
 		match statement {
 			Expression(expression) => {
-				{ machine: after, value: _ } = Interp.evaluate(machine, expression)
+				{ machine: after, value: _ } = Interp.evaluate!(host, machine, expression)
 				Interp.normal(after)
 			}
 			Declare(binding, declarations) => {
@@ -460,7 +598,7 @@ Interp :: [].{
 				for right_byte in declarations {
 					if Interp.is_running($s) {
 						{ machine: made, value } = match right_byte.init {
-							Initialized(expression) => Interp.evaluate($s, expression)
+							Initialized(expression) => Interp.evaluate!(host, $s, expression)
 							Uninitialized => { machine: $s, value: Undefined }
 						}
 						state = match binding {
@@ -474,21 +612,21 @@ Interp :: [].{
 			}
 			FunctionDeclaration(_, _) => Interp.normal(machine)
 			If(test, yes, no) => {
-				{ machine: tested, value } = Interp.evaluate(machine, test)
+				{ machine: tested, value } = Interp.evaluate!(host, machine, test)
 				if !Interp.is_running(tested) {
 					Interp.normal(tested)
 				} else if Interp.is_truthy(value) {
-					Interp.execute(tested, yes)
+					Interp.execute!(host, tested, yes)
 				} else {
-					Interp.execute(tested, no)
+					Interp.execute!(host, tested, no)
 				}
 			}
-			While(test, body) => Interp.execute_while(machine, test, body)
-			For(loop) => Interp.execute_for(machine, loop)
-			ForOf(loop) => Interp.execute_iteration(machine, loop)
-			BlockStatement(block) => Interp.execute_block(machine, block)
+			While(test, body) => Interp.execute_while!(host, machine, test, body)
+			For(loop) => Interp.execute_for!(host, machine, loop)
+			ForOf(loop) => Interp.execute_iteration!(host, machine, loop)
+			BlockStatement(block) => Interp.execute_block!(host, machine, block)
 			Return(expression) => {
-				{ machine: after, value } = Interp.evaluate(machine, expression)
+				{ machine: after, value } = Interp.evaluate!(host, machine, expression)
 				{ machine: after, flow: Returned(value) }
 			}
 			Break => { machine: machine, flow: Broke }
@@ -506,18 +644,18 @@ Interp :: [].{
 		Returned(subject) => Leave(Returned(subject))
 	}
 
-	execute_while : Interp.Machine, Ast.Expression, Ast.Statement -> Interp.Done
-	execute_while = |machine, test, body| {
+	execute_while! : Canvas.Host, Interp.Machine, Ast.Expression, Ast.Statement => Interp.Done
+	execute_while! = |host, machine, test, body| {
 		var $s = machine
 		var $flow = Normal
 		var $going = True
 		while $going {
-			{ machine: tested, value } = Interp.evaluate(Interp.one_step_on($s), test)
+			{ machine: tested, value } = Interp.evaluate!(host, Interp.one_step_on($s), test)
 			if !Interp.is_running(tested) or !Interp.is_truthy(value) {
 				$s = tested
 				$going = False
 			} else {
-				{ machine: after, flow } = Interp.execute(tested, body)
+				{ machine: after, flow } = Interp.execute!(host, tested, body)
 				$s = after
 				match Interp.body_outcome(flow) {
 					GoOn => {
@@ -533,24 +671,24 @@ Interp :: [].{
 		{ machine: $s, flow: $flow }
 	}
 
-	execute_for : Interp.Machine, Ast.ForLoop -> Interp.Done
-	execute_for = |machine, loop| {
+	execute_for! : Canvas.Host, Interp.Machine, Ast.ForLoop => Interp.Done
+	execute_for! = |host, machine, loop| {
 		outer = machine.scope
 		start = Interp.with_scope_entered(machine, Within(outer), loop.names.len())
-		{ machine: begun, flow: _ } = Interp.execute(start, loop.init)
+		{ machine: begun, flow: _ } = Interp.execute!(host, start, loop.init)
 		var $s = begun
 		var $flow = Normal
 		var $going = Interp.is_running($s)
 		while $going {
 			{ machine: tested, value } = match loop.test {
-				Tested(expression) => Interp.evaluate(Interp.one_step_on($s), expression)
+				Tested(expression) => Interp.evaluate!(host, Interp.one_step_on($s), expression)
 				Always => { machine: Interp.one_step_on($s), value: Boolean(True) }
 			}
 			if !Interp.is_running(tested) or !Interp.is_truthy(value) {
 				$s = tested
 				$going = False
 			} else {
-				{ machine: after, flow } = Interp.execute(tested, loop.body)
+				{ machine: after, flow } = Interp.execute!(host, tested, loop.body)
 				match Interp.body_outcome(flow) {
 					GoOn => {
 						# **EACH PASS HAS ITS OWN `let`**, as JavaScript gives a
@@ -561,7 +699,7 @@ Interp :: [].{
 							CapturesNothing => after
 						}
 						$s = match loop.update {
-							Updated(expression) => Interp.machine_after(next_pass, expression)
+							Updated(expression) => Interp.machine_after!(host, next_pass, expression)
 							NoUpdate => next_pass
 						}
 						$going = Interp.is_running($s)
@@ -584,16 +722,16 @@ Interp :: [].{
 		Interp.with_scope_added(machine, scope)
 	}
 
-	execute_iteration : Interp.Machine, Ast.ForOfLoop -> Interp.Done
-	execute_iteration = |machine, loop| {
-		{ machine: got, value: iterable } = Interp.evaluate(machine, loop.iterable)
+	execute_iteration! : Canvas.Host, Interp.Machine, Ast.ForOfLoop => Interp.Done
+	execute_iteration! = |host, machine, loop| {
+		{ machine: got, value: iterable } = Interp.evaluate!(host, machine, loop.iterable)
 		state = match loop.binding {
 			Let => Mutable
 			Const => Fixed
 		}
 		match iterable {
 			Reference(id) => match Interp.kind_of(got.cells, id) {
-				ArrayKind(_) => Interp.execute_for_of_array(got, loop, id, state)
+				ArrayKind(_) => Interp.execute_for_of_array!(host, got, loop, id, state)
 				_ => Interp.normal(
 					Interp.with_fault(
 						got,
@@ -601,7 +739,7 @@ Interp :: [].{
 					),
 				)
 			}
-			Text(text) => Interp.execute_for_of_text(got, loop, text, state)
+			Text(text) => Interp.execute_for_of_text!(host, got, loop, text, state)
 			_ => Interp.normal(
 				Interp.with_fault(
 					got,
@@ -611,8 +749,8 @@ Interp :: [].{
 		}
 	}
 
-	execute_for_of_array : Interp.Machine, Ast.ForOfLoop, U64, Interp.VariableState -> Interp.Done
-	execute_for_of_array = |machine, loop, id, state| {
+	execute_for_of_array! : Canvas.Host, Interp.Machine, Ast.ForOfLoop, U64, Interp.VariableState => Interp.Done
+	execute_for_of_array! = |host, machine, loop, id, state| {
 		var $s = machine
 		var $flow = Normal
 		var $i = 0
@@ -622,7 +760,8 @@ Interp :: [].{
 				$going = False
 			} else {
 				subject = Interp.item_at($s, id, $i)
-				{ machine: after, flow } = Interp.execute_for_of_pass(
+				{ machine: after, flow } = Interp.execute_for_of_pass!(
+					host,
 					Interp.one_step_on($s),
 					loop,
 					{ value: subject, state: state },
@@ -643,14 +782,15 @@ Interp :: [].{
 		{ machine: $s, flow: $flow }
 	}
 
-	execute_for_of_text : Interp.Machine, Ast.ForOfLoop, Str, Interp.VariableState -> Interp.Done
-	execute_for_of_text = |machine, loop, text, state| {
+	execute_for_of_text! : Canvas.Host, Interp.Machine, Ast.ForOfLoop, Str, Interp.VariableState => Interp.Done
+	execute_for_of_text! = |host, machine, loop, text, state| {
 		var $s = machine
 		var $flow = Normal
 		var $going = Interp.is_running(machine)
 		for character in Interp.characters(text) {
 			if $going {
-				{ machine: after, flow } = Interp.execute_for_of_pass(
+				{ machine: after, flow } = Interp.execute_for_of_pass!(
+					host,
 					Interp.one_step_on($s),
 					loop,
 					{ value: Text(character), state: state },
@@ -698,12 +838,12 @@ Interp :: [].{
 	}
 
 	# One pass of a `for ... of`, its variable `binding`.
-	execute_for_of_pass : Interp.Machine, Ast.ForOfLoop, Interp.Variable -> Interp.Done
-	execute_for_of_pass = |machine, loop, binding| {
+	execute_for_of_pass! : Canvas.Host, Interp.Machine, Ast.ForOfLoop, Interp.Variable => Interp.Done
+	execute_for_of_pass! = |host, machine, loop, binding| {
 		outer = machine.scope
 		inner = Interp.with_scope_added(machine, { variables: [binding], parent: Within(outer) })
 		id = inner.scope
-		{ machine: after, flow } = Interp.execute(inner, loop.body)
+		{ machine: after, flow } = Interp.execute!(host, inner, loop.body)
 		{ machine: Interp.out_of_scope(after, id, outer, loop.capture), flow: flow }
 	}
 
@@ -865,41 +1005,41 @@ Interp :: [].{
 
 	# ---- expressions -----------------------------------------------------------
 
-	evaluate : Interp.Machine, Ast.Expression -> Interp.Got
-	evaluate = |machine, tree|
+	evaluate! : Canvas.Host, Interp.Machine, Ast.Expression => Interp.Got
+	evaluate! = |host, machine, tree|
 		match tree {
 			Number(number) => { machine: machine, value: Number(number) }
 			Text(text) => { machine: machine, value: Text(text) }
 			Boolean(truth) => { machine: machine, value: Boolean(truth) }
 			Null => { machine: machine, value: Null }
 			Undefined => { machine: machine, value: Undefined }
-			Template(texts, parts) => Interp.evaluate_template(machine, texts, parts)
+			Template(texts, parts) => Interp.evaluate_template!(host, machine, texts, parts)
 			Name(name, slot, site) => Interp.evaluate_name(machine, name, slot, site)
 			ArrayLit(items) => {
-				{ machine: after, values } = Interp.evaluate_elements(machine, items)
+				{ machine: after, values } = Interp.evaluate_elements!(host, machine, items)
 				Interp.alloc(after, Array(values))
 			}
 			ObjectLit(properties) => {
 				var $s = machine
 				var $made = []
 				for written in properties {
-					{ machine: after, value } = Interp.evaluate($s, written.value)
+					{ machine: after, value } = Interp.evaluate!(host, $s, written.value)
 					$s = after
 					$made = Heap.properties_with($made, written.key, value)
 				}
 				Interp.alloc($s, Object($made))
 			}
 			Unary(operator, expression, site) => {
-				{ machine: after, value } = Interp.evaluate(machine, expression)
+				{ machine: after, value } = Interp.evaluate!(host, machine, expression)
 				Interp.unary(after, operator, value, site)
 			}
 			Binary(operator, left, right, site) => {
-				{ machine: first, value: left_value } = Interp.evaluate(machine, left)
-				{ machine: second, value: right_value } = Interp.evaluate(first, right)
+				{ machine: first, value: left_value } = Interp.evaluate!(host, machine, left)
+				{ machine: second, value: right_value } = Interp.evaluate!(host, first, right)
 				Interp.binary(second, operator, left_value, right_value, site)
 			}
 			Logical(operator, left, right) => {
-				{ machine: first, value: left_value } = Interp.evaluate(machine, left)
+				{ machine: first, value: left_value } = Interp.evaluate!(host, machine, left)
 				decided = match operator {
 					And => !Interp.is_truthy(left_value)
 					Or => Interp.is_truthy(left_value)
@@ -908,18 +1048,19 @@ Interp :: [].{
 				if decided {
 					{ machine: first, value: left_value }
 				} else {
-					Interp.evaluate(first, right)
+					Interp.evaluate!(host, first, right)
 				}
 			}
 			Conditional(test, yes, no) => {
-				{ machine: tested, value } = Interp.evaluate(machine, test)
+				{ machine: tested, value } = Interp.evaluate!(host, machine, test)
 				if Interp.is_truthy(value) {
-					Interp.evaluate(tested, yes)
+					Interp.evaluate!(host, tested, yes)
 				} else {
-					Interp.evaluate(tested, no)
+					Interp.evaluate!(host, tested, no)
 				}
 			}
-			Assign(target, operator, expression, site) => Interp.evaluate_assign(
+			Assign(target, operator, expression, site) => Interp.evaluate_assign!(
+				host,
 				machine,
 				{
 					target: target,
@@ -928,7 +1069,8 @@ Interp :: [].{
 					at: site,
 				},
 			)
-			Update(target, step, fixity, site) => Interp.evaluate_update(
+			Update(target, step, fixity, site) => Interp.evaluate_update!(
+				host,
 				machine,
 				target,
 				step,
@@ -936,15 +1078,15 @@ Interp :: [].{
 				site,
 			)
 			Member(object, key, site) => {
-				{ machine: after, value: holder } = Interp.evaluate(machine, object)
+				{ machine: after, value: holder } = Interp.evaluate!(host, machine, object)
 				Interp.property(after, holder, key, site)
 			}
 			Index(object, key, site) => {
-				{ machine: first, value: holder } = Interp.evaluate(machine, object)
-				{ machine: second, value: key_value } = Interp.evaluate(first, key)
+				{ machine: first, value: holder } = Interp.evaluate!(host, machine, object)
+				{ machine: second, value: key_value } = Interp.evaluate!(host, first, key)
 				Interp.indexed_value(second, holder, key_value, site)
 			}
-			Call(callee, arguments, site) => Interp.evaluate_call(machine, callee, arguments, site)
+			Call(callee, arguments, site) => Interp.evaluate_call!(host, machine, callee, arguments, site)
 			Function(definition) => Interp.alloc(
 				machine,
 				Fun({ fun: definition, scope: machine.scope }),
@@ -952,9 +1094,9 @@ Interp :: [].{
 		}
 
 	# The machine after an expression whose value is not wanted.
-	machine_after : Interp.Machine, Ast.Expression -> Interp.Machine
-	machine_after = |machine, expression| {
-		{ machine: after, value: _ } = Interp.evaluate(machine, expression)
+	machine_after! : Canvas.Host, Interp.Machine, Ast.Expression => Interp.Machine
+	machine_after! = |host, machine, expression| {
+		{ machine: after, value: _ } = Interp.evaluate!(host, machine, expression)
 		after
 	}
 
@@ -962,19 +1104,19 @@ Interp :: [].{
 
 	# The values of an array literal's items or a call's arguments, each
 	# spread one put in as its items.
-	evaluate_elements : Interp.Machine, List(Ast.Element) -> Interp.Evaluations
-	evaluate_elements = |machine, elements| {
+	evaluate_elements! : Canvas.Host, Interp.Machine, List(Ast.Element) => Interp.Evaluations
+	evaluate_elements! = |host, machine, elements| {
 		var $s = machine
 		var $values = []
 		for element in elements {
 			match element {
 				Single(expression) => {
-					{ machine: after, value } = Interp.evaluate($s, expression)
+					{ machine: after, value } = Interp.evaluate!(host, $s, expression)
 					$s = after
 					$values = $values.append(value)
 				}
 				Spread(expression, site) => {
-					{ machine: after, value } = Interp.evaluate($s, expression)
+					{ machine: after, value } = Interp.evaluate!(host, $s, expression)
 					match Interp.spread_items(after, value) {
 						Ok(items) => {
 							$s = after
@@ -1006,13 +1148,13 @@ Interp :: [].{
 			_ => Err(NotIterable)
 		}
 
-	evaluate_template : Interp.Machine, List(Str), List(Ast.Expression) -> Interp.Got
-	evaluate_template = |machine, texts, parts| {
+	evaluate_template! : Canvas.Host, Interp.Machine, List(Str), List(Ast.Expression) => Interp.Got
+	evaluate_template! = |host, machine, texts, parts| {
 		var $s = machine
 		var $text = texts.first() ?? crash "Interp.evaluate_template: a template has a text piece before its first substitution"
 		var $i = 1
 		for part in parts {
-			{ machine: after, value } = Interp.evaluate($s, part)
+			{ machine: after, value } = Interp.evaluate!(host, $s, part)
 			$s = match Interp.text_of(after.cells, value) {
 				Ok(phrase) => {
 					$text = Str.concat(
@@ -1231,8 +1373,8 @@ Interp :: [].{
 		at : Ast.Where,
 	}
 
-	evaluate_assign : Interp.Machine, Interp.Assignment -> Interp.Got
-	evaluate_assign = |machine, assignment| {
+	evaluate_assign! : Canvas.Host, Interp.Machine, Interp.Assignment => Interp.Got
+	evaluate_assign! = |host, machine, assignment| {
 		{
 			target,
 			operator,
@@ -1250,10 +1392,10 @@ Interp :: [].{
 						facts = Interp.variable_facts(machine.scopes, scope, index)
 						appends = operator == Combine(Add) and facts.state == Mutable and facts.holds_text and Interp.is_pure(expression)
 						if appends {
-							Interp.appended_name(machine, scope, index, expression, site)
+							Interp.appended_name!(host, machine, scope, index, expression, site)
 						} else {
 							old = Interp.variable_value(machine.scopes, scope, index)
-							{ machine: after, value } = Interp.evaluate(machine, expression)
+							{ machine: after, value } = Interp.evaluate!(host, machine, expression)
 							{ machine: made, value: result } = Interp.combination(
 								after,
 								operator,
@@ -1266,12 +1408,12 @@ Interp :: [].{
 				}
 			}
 			ToMember(object, key) => {
-				{ machine: first, value: holder } = Interp.evaluate(machine, object)
+				{ machine: first, value: holder } = Interp.evaluate!(host, machine, object)
 				{ machine: second, value: old } = match operator {
 					Set => { machine: first, value: Undefined }
 					Combine(_) => Interp.property(first, holder, key, site)
 				}
-				{ machine: third, value } = Interp.evaluate(second, expression)
+				{ machine: third, value } = Interp.evaluate!(host, second, expression)
 				{ machine: made, value: result } = Interp.combination(
 					third,
 					operator,
@@ -1287,13 +1429,13 @@ Interp :: [].{
 				)
 			}
 			ToIndex(object, key) => {
-				{ machine: first, value: holder } = Interp.evaluate(machine, object)
-				{ machine: second, value: key_value } = Interp.evaluate(first, key)
+				{ machine: first, value: holder } = Interp.evaluate!(host, machine, object)
+				{ machine: second, value: key_value } = Interp.evaluate!(host, first, key)
 				{ machine: third, value: old } = match operator {
 					Set => { machine: second, value: Undefined }
 					Combine(_) => Interp.indexed_value(second, holder, key_value, site)
 				}
-				{ machine: fourth, value } = Interp.evaluate(third, expression)
+				{ machine: fourth, value } = Interp.evaluate!(host, third, expression)
 				{ machine: made, value: result } = Interp.combination(
 					fourth,
 					operator,
@@ -1401,9 +1543,9 @@ Interp :: [].{
 	# characters one at a time cost N squared. `e` can't change the variable,
 	# so it may run first, and the string then grows while only the variable
 	# holds it.
-	appended_name : Interp.Machine, U64, U64, Ast.Expression, Ast.Where -> Interp.Got
-	appended_name = |machine, scope_id, index, expression, site| {
-		{ machine: after, value: piece } = Interp.evaluate(machine, expression)
+	appended_name! : Canvas.Host, Interp.Machine, U64, U64, Ast.Expression, Ast.Where => Interp.Got
+	appended_name! = |host, machine, scope_id, index, expression, site| {
+		{ machine: after, value: piece } = Interp.evaluate!(host, machine, expression)
 		if !Interp.is_running(after) {
 			{ machine: after, value: Undefined }
 		} else {
@@ -1475,8 +1617,8 @@ Interp :: [].{
 		value: binding.value,
 	}
 
-	evaluate_update : Interp.Machine, Ast.Target, Ast.Step, Ast.Fixity, Ast.Where -> Interp.Got
-	evaluate_update = |machine, target, step, fixity, site| {
+	evaluate_update! : Canvas.Host, Interp.Machine, Ast.Target, Ast.Step, Ast.Fixity, Ast.Where => Interp.Got
+	evaluate_update! = |host, machine, target, step, fixity, site| {
 		delta = match step {
 			Increment => 1.0
 			Decrement => -1.0
@@ -1509,7 +1651,7 @@ Interp :: [].{
 				}
 			}
 			ToMember(object, key) => {
-				{ machine: first, value: holder } = Interp.evaluate(machine, object)
+				{ machine: first, value: holder } = Interp.evaluate!(host, machine, object)
 				{
 					machine: read_machine,
 					value: current,
@@ -1532,8 +1674,8 @@ Interp :: [].{
 				}
 			}
 			ToIndex(object, key) => {
-				{ machine: first, value: holder } = Interp.evaluate(machine, object)
-				{ machine: second, value: key_value } = Interp.evaluate(first, key)
+				{ machine: first, value: holder } = Interp.evaluate!(host, machine, object)
+				{ machine: second, value: key_value } = Interp.evaluate!(host, first, key)
 				{
 					machine: read_machine,
 					value: current,
@@ -1785,11 +1927,11 @@ Interp :: [].{
 
 	# ---- calls -----------------------------------------------------------------
 
-	evaluate_call : Interp.Machine, Ast.Expression, List(Ast.Element), Ast.Where -> Interp.Got
-	evaluate_call = |machine, callee, arguments, site|
+	evaluate_call! : Canvas.Host, Interp.Machine, Ast.Expression, List(Ast.Element), Ast.Where => Interp.Got
+	evaluate_call! = |host, machine, callee, arguments, site|
 		match callee {
 			Member(object, name, _) => {
-				{ machine: first, value: holder } = Interp.evaluate(machine, object)
+				{ machine: first, value: holder } = Interp.evaluate!(host, machine, object)
 				method = match holder {
 					Reference(id) => match Interp.kind_of(first.cells, id) {
 						ArrayKind(_) => ArrayMethod(id)
@@ -1800,11 +1942,11 @@ Interp :: [].{
 				}
 				match method {
 					ArrayMethod(id) => {
-						{ machine: second, values } = Interp.evaluate_elements(first, arguments)
-						Interp.array_method(second, id, name, values, site)
+						{ machine: second, values } = Interp.evaluate_elements!(host, first, arguments)
+						Interp.array_method!(host, second, id, name, values, site)
 					}
 					TextMethod(text) => {
-						{ machine: second, values } = Interp.evaluate_elements(first, arguments)
+						{ machine: second, values } = Interp.evaluate_elements!(host, first, arguments)
 						Interp.text_method(second, text, name, values, site)
 					}
 					Plain => {
@@ -1812,27 +1954,27 @@ Interp :: [].{
 							machine: second,
 							value: function,
 						} = Interp.property(first, holder, name, site)
-						{ machine: third, values } = Interp.evaluate_elements(second, arguments)
-						Interp.call(third, function, values, site)
+						{ machine: third, values } = Interp.evaluate_elements!(host, second, arguments)
+						Interp.call!(host, third, function, values, site)
 					}
 				}
 			}
 			_ => {
-				{ machine: first, value: function } = Interp.evaluate(machine, callee)
-				{ machine: second, values } = Interp.evaluate_elements(first, arguments)
-				Interp.call(second, function, values, site)
+				{ machine: first, value: function } = Interp.evaluate!(host, machine, callee)
+				{ machine: second, values } = Interp.evaluate_elements!(host, first, arguments)
+				Interp.call!(host, second, function, values, site)
 			}
 		}
 
-	call : Interp.Machine, Heap.Value, List(Heap.Value), Ast.Where -> Interp.Got
-	call = |machine, callee, arguments, site|
+	call! : Canvas.Host, Interp.Machine, Heap.Value, List(Heap.Value), Ast.Where => Interp.Got
+	call! = |host, machine, callee, arguments, site|
 		if !Interp.is_running(machine) {
 			{ machine: machine, value: Undefined }
 		} else {
 			match callee {
 				Reference(id) => match Heap.cell_at(machine.cells, id) {
-					Fun(closure) => Interp.call_closure(machine, closure, arguments, site)
-					Builtin(native, _) => Interp.call_native(machine, native, arguments, site)
+					Fun(closure) => Interp.call_closure!(host, machine, closure, arguments, site)
+					Builtin(native, _) => Interp.call_native!(host, machine, native, arguments, site)
 					_ => Interp.fault_got(
 						machine,
 						"TypeError: ${Interp.shown_value(machine.cells, callee)} is not a function${Interp.line_note(site)}",
@@ -1845,8 +1987,8 @@ Interp :: [].{
 			}
 		}
 
-	call_closure : Interp.Machine, Heap.Closure, List(Heap.Value), Ast.Where -> Interp.Got
-	call_closure = |machine, closure, arguments, site|
+	call_closure! : Canvas.Host, Interp.Machine, Heap.Closure, List(Heap.Value), Ast.Where => Interp.Got
+	call_closure! = |host, machine, closure, arguments, site|
 		if machine.depth >= Interp.max_depth {
 			Interp.fault_got(
 				machine,
@@ -1863,7 +2005,8 @@ Interp :: [].{
 				},
 			)
 			id = inside.scope
-			{ machine: after, flow } = Interp.execute_list(
+			{ machine: after, flow } = Interp.execute_list!(
+				host,
 				Interp.with_functions_hoisted(inside, definition.statements),
 				definition.statements,
 			)
@@ -1920,17 +2063,47 @@ Interp :: [].{
 			number.div_floor_by(1.0)
 		}
 
-	call_native : Interp.Machine, Heap.Native, List(Heap.Value), Ast.Where -> Interp.Got
-	call_native = |machine, native, arguments, site|
+	call_native! : Canvas.Host, Interp.Machine, Heap.Native, List(Heap.Value), Ast.Where => Interp.Got
+	call_native! = |host, machine, native, arguments, site|
 		match native {
 			Log => match Inspect.line_of(machine.cells, arguments) {
-				Ok(line) => {
-					machine: { ..machine, out: Str.concat(Str.concat(machine.out, line), "\n") },
-					value: Undefined,
-				}
+				Ok(line) => Interp.emit!(host, machine, Log(line))
 				Err(Unsupported(why)) => Interp.fault_got(
 					machine,
 					"${why}${Interp.line_note(site)}",
+				)
+			}
+			Paint(paint) => match Canvas.effect_of(machine.cells, paint, arguments) {
+				Ok(effect) => Interp.emit!(host, machine, effect)
+				Err(Unsupported(why)) => Interp.fault_got(machine, "${why}${Interp.line_note(site)}")
+			}
+			Move(move) => match Canvas.moved(machine.turtle, move, arguments) {
+				Ok({ turtle, drawn }) => match drawn {
+					Drew(effect) => Interp.emit!(host, { ..machine, turtle: turtle }, effect)
+					Nothing => { machine: { ..machine, turtle: turtle }, value: Undefined }
+				}
+				Err(Unsupported(why)) => Interp.fault_got(machine, "${why}${Interp.line_note(site)}")
+			}
+			Sense(MouseX) => {
+				pointer! = host.pointer!
+				{ machine: machine, value: Number(pointer!(X)) }
+			}
+			Sense(MouseY) => {
+				pointer! = host.pointer!
+				{ machine: machine, value: Number(pointer!(Y)) }
+			}
+			Sense(KeyIsDown) => match arguments.first() {
+				Ok(Text(key)) => {
+					key! = host.key!
+					down = match key!(key) {
+						Down => True
+						Up => False
+					}
+					{ machine: machine, value: Boolean(down) }
+				}
+				_ => Interp.fault_got(
+					machine,
+					"unsupported: keyIsDown of anything but a key's name${Interp.line_note(site)}",
 				)
 			}
 			Floor => Interp.math(machine, "floor", arguments, Interp.floor, site)
@@ -2234,8 +2407,8 @@ Interp :: [].{
 			_ => otherwise
 		}
 
-	array_method : Interp.Machine, U64, Str, List(Heap.Value), Ast.Where -> Interp.Got
-	array_method = |machine, id, name, arguments, site|
+	array_method! : Canvas.Host, Interp.Machine, U64, Str, List(Heap.Value), Ast.Where => Interp.Got
+	array_method! = |host, machine, id, name, arguments, site|
 		match name {
 			"push" => {
 				pushed = { ..machine, cells: Heap.with_items_pushed(machine.cells, id, arguments) }
@@ -2349,15 +2522,15 @@ Interp :: [].{
 					value: Reference(id),
 				}
 			}
-			"forEach" => Interp.array_walk(machine, id, arguments, ForEach, site)
-			"map" => Interp.array_walk(machine, id, arguments, Map, site)
-			"filter" => Interp.array_walk(machine, id, arguments, Filter, site)
-			"some" => Interp.array_walk(machine, id, arguments, Some, site)
-			"every" => Interp.array_walk(machine, id, arguments, Every, site)
-			"find" => Interp.array_walk(machine, id, arguments, Find, site)
-			"findIndex" => Interp.array_walk(machine, id, arguments, FindIndex, site)
-			"reduce" => Interp.array_reduce(machine, id, arguments, site)
-			"sort" => Interp.array_sort(machine, id, arguments, site)
+			"forEach" => Interp.array_walk!(host, machine, id, arguments, ForEach, site)
+			"map" => Interp.array_walk!(host, machine, id, arguments, Map, site)
+			"filter" => Interp.array_walk!(host, machine, id, arguments, Filter, site)
+			"some" => Interp.array_walk!(host, machine, id, arguments, Some, site)
+			"every" => Interp.array_walk!(host, machine, id, arguments, Every, site)
+			"find" => Interp.array_walk!(host, machine, id, arguments, Find, site)
+			"findIndex" => Interp.array_walk!(host, machine, id, arguments, FindIndex, site)
+			"reduce" => Interp.array_reduce!(host, machine, id, arguments, site)
+			"sort" => Interp.array_sort!(host, machine, id, arguments, site)
 			_ => Interp.fault_got(
 				machine,
 				"unsupported: the array method `${name}`${Interp.line_note(site)}",
@@ -2368,8 +2541,8 @@ Interp :: [].{
 
 	# An array method that calls a function on each item in turn, the items
 	# read from the heap as it goes, since the function may change the array.
-	array_walk : Interp.Machine, U64, List(Heap.Value), Interp.Walk, Ast.Where -> Interp.Got
-	array_walk = |machine, id, arguments, walk, site| {
+	array_walk! : Canvas.Host, Interp.Machine, U64, List(Heap.Value), Interp.Walk, Ast.Where => Interp.Got
+	array_walk! = |host, machine, id, arguments, walk, site| {
 		callback = arguments.first() ?? Undefined
 		count = Interp.item_count(machine, id)
 		var $s = machine
@@ -2385,7 +2558,8 @@ Interp :: [].{
 		var $going = True
 		while $going and $i < count and $i < Interp.item_count($s, id) {
 			item = Interp.item_at($s, id, $i)
-			{ machine: after, value } = Interp.call(
+			{ machine: after, value } = Interp.call!(
+				host,
 				$s,
 				callback,
 				[item, Number($i.to_f64()), Reference(id)],
@@ -2437,8 +2611,8 @@ Interp :: [].{
 		}
 	}
 
-	array_reduce : Interp.Machine, U64, List(Heap.Value), Ast.Where -> Interp.Got
-	array_reduce = |machine, id, arguments, site| {
+	array_reduce! : Canvas.Host, Interp.Machine, U64, List(Heap.Value), Ast.Where => Interp.Got
+	array_reduce! = |host, machine, id, arguments, site| {
 		callback = arguments.first() ?? Undefined
 		count = Interp.item_count(machine, id)
 		start = match arguments.get(1) {
@@ -2462,7 +2636,8 @@ Interp :: [].{
 				var $i = from
 				while $i < count and $i < Interp.item_count($s, id) and Interp.is_running($s) {
 					item = Interp.item_at($s, id, $i)
-					{ machine: after, value } = Interp.call(
+					{ machine: after, value } = Interp.call!(
+						host,
 						$s,
 						callback,
 						[
@@ -2484,11 +2659,11 @@ Interp :: [].{
 
 	# `sort`, stable as JavaScript's is: a merge sort, the comparison a
 	# function's answer or, with none, the items' text.
-	array_sort : Interp.Machine, U64, List(Heap.Value), Ast.Where -> Interp.Got
-	array_sort = |machine, id, arguments, site| {
+	array_sort! : Canvas.Host, Interp.Machine, U64, List(Heap.Value), Ast.Where => Interp.Got
+	array_sort! = |host, machine, id, arguments, site| {
 		items = Interp.items_of(machine, id)
 		compare = arguments.first() ?? Undefined
-		{ machine: after, values } = Interp.merge_sorted(machine, items, compare, site)
+		{ machine: after, values } = Interp.merge_sorted!(host, machine, items, compare, site)
 		if Interp.is_running(after) {
 			{
 				machine: { ..after, cells: Heap.with_items(after.cells, id, values) },
@@ -2499,20 +2674,22 @@ Interp :: [].{
 		}
 	}
 
-	merge_sorted : Interp.Machine, List(Heap.Value), Heap.Value, Ast.Where -> Interp.Evaluations
-	merge_sorted = |machine, items, compare, site| {
+	merge_sorted! : Canvas.Host, Interp.Machine, List(Heap.Value), Heap.Value, Ast.Where => Interp.Evaluations
+	merge_sorted! = |host, machine, items, compare, site| {
 		count = items.len()
 		if count <= 1 {
 			{ machine: machine, values: items }
 		} else {
 			half = count // 2
-			{ machine: first, values: lower } = Interp.merge_sorted(
+			{ machine: first, values: lower } = Interp.merge_sorted!(
+				host,
 				machine,
 				items.sublist({ start: 0, len: half }),
 				compare,
 				site,
 			)
-			{ machine: second, values: upper } = Interp.merge_sorted(
+			{ machine: second, values: upper } = Interp.merge_sorted!(
+				host,
 				first,
 				items.drop_first(half),
 				compare,
@@ -2530,7 +2707,8 @@ Interp :: [].{
 				} else {
 					left = lower.get($i) ?? crash "Interp.merge_sorted: inside the lower half"
 					right = upper.get($j) ?? crash "Interp.merge_sorted: inside the upper half"
-					{ machine: after, order } = Interp.ordering_of(
+					{ machine: after, order } = Interp.ordering_of!(
+						host,
 						$s,
 						{
 							compare: compare,
@@ -2565,8 +2743,8 @@ Interp :: [].{
 
 	Ordered : { machine : Interp.Machine, order : [Before, Same, After] }
 
-	ordering_of : Interp.Machine, Interp.Comparison -> Interp.Ordered
-	ordering_of = |machine, comparison| {
+	ordering_of! : Canvas.Host, Interp.Machine, Interp.Comparison => Interp.Ordered
+	ordering_of! = |host, machine, comparison| {
 		{
 			compare,
 			left: left,
@@ -2590,7 +2768,7 @@ Interp :: [].{
 				{ machine: machine, order: order }
 			}
 			_ => {
-				{ machine: after, value } = Interp.call(machine, compare, [left, right], site)
+				{ machine: after, value } = Interp.call!(host, machine, compare, [left, right], site)
 				order = match value {
 					Number(x) => if x > 0.0 {
 						After

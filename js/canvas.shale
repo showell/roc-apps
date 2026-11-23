@@ -1,0 +1,100 @@
+-- This script holds each canvas sample in js/canvas/ to its golden log: the
+-- sample run by js-canvas, the recording host (js/roc/JsCanvas.roc), whose
+-- every effect and read, in the order the program made them, must be
+-- js/canvas/<name>.log byte for byte, its exit code included.
+--
+--   cd <roc-apps checkout> && shale js/canvas.shale            build js-canvas, then grade
+--   cd <roc-apps checkout> && shale js/canvas.shale build=0    grade the js-canvas already built
+--   cd <roc-apps checkout> && shale js/canvas.shale freeze=4-starfield
+--                                  write that sample's log anew from what it does now
+--
+-- js/canvas/goldens.txt names each sample, one a line: its name, the frames
+-- to record, and the keys down in each (js-canvas's header says how they
+-- are written). Every sample there is graded and every sample file must be
+-- named there: none is skipped, and the run fails unless all of them pass.
+-- A canvas builtin is ours, not node's, so these logs are the canvas's
+-- oracle, as node is the language's (js/oracle.shale). A log moves only by
+-- `freeze=`, for a change whose every moved line the commit explains.
+--
+-- budget: steps=50000000
+
+const WANT_CANVAS = "js-canvas: the recording host under test, built here"
+const RUN_MS = 60000
+
+const BUILD = arg("build", true)
+const FREEZE = arg("freeze", "")
+
+use("./js_builds.shale")
+
+-- What a sample printed and how it ended, as one text.
+function recorded(exe, entry)
+  local argv = {exe, entry.frames, read("js/canvas/" .. entry.name .. ".js")}
+  if entry.keys ~= "" then push(argv, entry.keys) end
+  local r = run(argv, {timeout_ms = RUN_MS, whole = 8000000, want = WANT_CANVAS})
+  if r.ended ~= "exit" then return r.out .. "[ended: " .. r.ended .. "]\n" end
+  return r.out .. "[exit " .. r.code .. "]\n"
+end
+
+function entries()
+  local out = {}
+  for l in lines(trim(read("js/canvas/goldens.txt"))) do
+    local w = words(l)
+    if #w < 2 or #w > 3 then fail("js/canvas.shale: goldens.txt: `" .. l .. "` is not `<name> <frames> [<keys>]`") end
+    push(out, {name = w[1], frames = w[2], keys = get(w, 3, "")})
+  end
+  local named = {}
+  for e in out do
+    if not exists("js/canvas/" .. e.name .. ".js") then fail("js/canvas.shale: goldens.txt names " .. e.name .. ", which has no js/canvas/" .. e.name .. ".js") end
+    named[e.name] = true
+  end
+  for f in glob("js/canvas/*.js") do
+    local name = sub(basename(f), 1, #basename(f) - 3)
+    if not has_key(named, name) then fail("js/canvas.shale: " .. f .. " is named in no line of goldens.txt") end
+  end
+  return out
+end
+
+-- The first line where two logs differ, both sides shown.
+function first_difference(want, got)
+  local a = lines(want)
+  local b = lines(got)
+  local i = 1
+  while i <= #a or i <= #b do
+    local x = get(a, i, "<none>")
+    local y = get(b, i, "<none>")
+    if x ~= y then return "line " .. i .. ": the log `" .. x .. "`, js-canvas `" .. y .. "`" end
+    i = i + 1
+  end
+  return "the same lines"
+end
+
+function main()
+  if BUILD then build_js("js/canvas.shale", "js-canvas", "JsCanvas.roc", "dev") end
+  local exe = built_js("js/canvas.shale", "js-canvas", "dev")
+  local all = entries()
+  local bad = 0
+  local frozen = false
+  for e in all do
+    local got = recorded(exe, e)
+    local log = "js/canvas/" .. e.name .. ".log"
+    if e.name == FREEZE then
+      if exists(log) then remove(log) end
+      create(log, got)
+      print("FROZE " .. e.name .. ": " .. #lines(got) .. " lines")
+      frozen = true
+    elseif not exists(log) then
+      bad = bad + 1
+      print("FAIL " .. e.name .. ": no " .. log .. " (freeze=" .. e.name .. " writes it)")
+    elseif read(log) == got then
+      print("PASS " .. e.name .. ": " .. #lines(got) .. " lines")
+    else
+      bad = bad + 1
+      print("FAIL " .. e.name .. ": " .. first_difference(read(log), got))
+    end
+  end
+  if FREEZE ~= "" and not frozen then fail("js/canvas.shale: no sample is named " .. FREEZE) end
+  print("js canvas: " .. (#all - bad) .. " of " .. #all .. " samples match their logs")
+  if bad > 0 then fail("js/canvas.shale: " .. bad .. " samples failed") end
+end
+
+main()

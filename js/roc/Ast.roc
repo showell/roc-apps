@@ -97,15 +97,50 @@ Ast :: [].{
 		Unresolved,
 		# In the scope `hops` scopes out from the one the name is written in.
 		Local({ hops : U64, index : U64 }),
-		# A builtin, at its place in `global_names`.
+		# A builtin, at its place in `global_names_of`'s list.
 		Global(U64),
 		# Declared nowhere: a ReferenceError if the program reaches it.
 		Undeclared,
 	]
 
-	# The builtins the outermost scope holds, in their order.
-	global_names : List(Str)
-	global_names = ["console", "Math", "Object", "String", "Array", "Number", "NaN", "Infinity"]
+	## The builtins a program has: JavaScript's own (`Core`), held to node, or
+	## those and the canvas playground's drawing, turtle and input (`Canvas`).
+	Library : [Core, Canvas]
+
+	# The builtins the outermost scope holds, in their order: the canvas's
+	# after the core's, so a core builtin has one place in both.
+	global_names_of : Ast.Library -> List(Str)
+	global_names_of = |library| {
+		core = ["console", "Math", "Object", "String", "Array", "Number", "NaN", "Infinity"]
+		match library {
+			Core => core
+			Canvas => List.concat(
+				core,
+				[
+					"background",
+					"fill",
+					"noFill",
+					"stroke",
+					"noStroke",
+					"line",
+					"rect",
+					"circle",
+					"ellipse",
+					"polygon",
+					"text",
+					"forward",
+					"back",
+					"turn",
+					"penUp",
+					"penDown",
+					"goto",
+					"mouseX",
+					"mouseY",
+					"keyIsDown",
+				],
+			)
+		}
+	}
 
 	FunctionDefinition : {
 		name : Str,

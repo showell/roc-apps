@@ -1,0 +1,16 @@
+frame 0 0
+background #f4efe6
+noStroke
+fill tomato
+circle 60 80 20
+frame 1 0.03333333333333333
+background #f4efe6
+noStroke
+fill tomato
+circle 64 83 20
+frame 2 0.06666666666666667
+background #f4efe6
+noStroke
+fill tomato
+circle 68 86 20
+[exit 0]

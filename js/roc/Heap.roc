@@ -58,7 +58,19 @@ Heap :: [].{
 		FromCharCode,
 		IsArray,
 		IsInteger,
+		Paint(Heap.Paint),
+		Move(Heap.Move),
+		Sense(Heap.Sense),
 	]
+
+	## The canvas builtins that draw a shape or set how shapes are drawn.
+	Paint : [Background, Fill, NoFill, Stroke, NoStroke, Line, Rect, Circle, Ellipse, Polygon, Words]
+
+	## The turtle's builtins.
+	Move : [Forward, Back, Turn, PenUp, PenDown, Goto]
+
+	## The builtins that read the host's input.
+	Sense : [MouseX, MouseY, KeyIsDown]
 
 	Closure : { fun : Box(Ast.FunctionDefinition), scope : U64 }
 
@@ -98,6 +110,32 @@ Heap :: [].{
 		FromCharCode => "fromCharCode"
 		IsArray => "isArray"
 		IsInteger => "isInteger"
+		Paint(paint) => match paint {
+			Background => "background"
+			Fill => "fill"
+			NoFill => "noFill"
+			Stroke => "stroke"
+			NoStroke => "noStroke"
+			Line => "line"
+			Rect => "rect"
+			Circle => "circle"
+			Ellipse => "ellipse"
+			Polygon => "polygon"
+			Words => "text"
+		}
+		Move(move) => match move {
+			Forward => "forward"
+			Back => "back"
+			Turn => "turn"
+			PenUp => "penUp"
+			PenDown => "penDown"
+			Goto => "goto"
+		}
+		Sense(sense) => match sense {
+			MouseX => "mouseX"
+			MouseY => "mouseY"
+			KeyIsDown => "keyIsDown"
+		}
 	}
 
 	cell_at : List(Heap.Cell), U64 -> Heap.Cell

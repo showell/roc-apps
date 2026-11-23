@@ -31,8 +31,8 @@ Parser :: [].{
 	## A parse's value, and the parser after it.
 	Parsed(a) : { parser : Parser.State, value : a }
 
-	program_of : Str -> Try(Ast.Program, Lexer.Fault)
-	program_of = |text| {
+	program_of : Str, Ast.Library -> Try(Ast.Program, Lexer.Fault)
+	program_of = |text, library| {
 		tokens = Lexer.tokens_of(text)?
 		var $parser = {
 			tokens: tokens,
@@ -46,15 +46,18 @@ Parser :: [].{
 			$statements = $statements.append(parsed.value)
 		}
 		Ok(
-			Resolve.program({
-				statements: $statements,
-				scoping: Scoped(Parser.scope_names([], $statements)?),
-				capture: if $parser.functions > 0 {
-					Captures
-				} else {
-					CapturesNothing
+			Resolve.program(
+				{
+					statements: $statements,
+					scoping: Scoped(Parser.scope_names([], $statements)?),
+					capture: if $parser.functions > 0 {
+						Captures
+					} else {
+						CapturesNothing
+					},
 				},
-			}),
+				library,
+			),
 		)
 	}
 

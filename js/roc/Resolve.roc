@@ -13,18 +13,18 @@ import Ast
 
 Resolve :: [].{
 	# The scopes around the code being placed, the innermost last, each the
-	# names it declares in its order.
+	# names it declares in its order. The first is the builtins'.
 	Scopes : List(List(Str))
 
-	program : Ast.Program -> Ast.Program
-	program = |tree| Resolve.block([], tree)
+	program : Ast.Program, Ast.Library -> Ast.Program
+	program = |tree, library| Resolve.block([Ast.global_names_of(library)], tree)
 
 	slot : Resolve.Scopes, Str -> Ast.Slot
 	slot = |scopes, name| {
 		var $frame = scopes.len()
 		var $hops = 0
 		var $found = Undeclared
-		while $frame > 0 {
+		while $frame > 1 {
 			names = scopes.get($frame - 1) ?? crash "Resolve.slot: inside the scopes"
 			match names.find_first_index(|number| number == name) {
 				Ok(index) => {
@@ -38,7 +38,7 @@ Resolve :: [].{
 			}
 		}
 		match $found {
-			Undeclared => match Ast.global_names.find_first_index(|number| number == name) {
+			Undeclared => match (scopes.first() ?? crash "Resolve.slot: the builtins' names are the first scope").find_first_index(|number| number == name) {
 				Ok(index) => Global(index)
 				Err(NotFound) => Undeclared
 			}

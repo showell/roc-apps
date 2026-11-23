@@ -1,10 +1,17 @@
 //! The JavaScript subset's wasm host: the page's door onto the Roc
-//! interpreter (../roc/JsApp.roc on platform/main.roc), and the memory and
-//! crash functions the Roc calls.
+//! interpreter (../roc/JsApp.roc on platform/main.roc), the page's effects
+//! the Roc calls (platform/Host.roc), and the memory and crash functions.
 //!
-//! The page writes a program's bytes where `sourcePtr(n)` says, calls
-//! `run()`, and reads the transcript `run()` answers the length of at
-//! `transcriptPtr()`. The transcript lasts until the next `sourcePtr`.
+//! The page writes a program's bytes where `sourcePtr(n)` says and calls
+//! `start()`, then `frame(t)` for each frame while the last line said
+//! `end frame`. While either call runs, each line the Roc emits reaches the
+//! page at once, through the page's import `js_emit`, and each read the Roc
+//! makes is answered by `js_pointer` or `js_key`: so the page sees a draw, a
+//! log and another draw in the order the program made them.
+//!
+//! The run is one boxed Roc value, kept here between calls: each call
+//! consumes it and answers the next, and `sourcePtr` drops it before a new
+//! run.
 //!
 //! Memory is the wasm allocator's, freed as the Roc frees it: each
 //! allocation carries its size in the sixteen bytes before what Roc is
@@ -15,39 +22,68 @@ const std = @import("std");
 /// Roc's `List(U8)`: its bytes, how many, and its capacity.
 const RocBytes = extern struct { bytes: ?[*]u8, length: usize, capacity_or_alloc_ptr: usize };
 
+/// A boxed run: one pointer, which only the Roc reads.
+const Model = ?*anyopaque;
+
 extern fn roc_buffer(n: u32) callconv(.c) RocBytes;
-extern fn roc_run(src: RocBytes) callconv(.c) RocBytes;
-extern fn roc_drop(transcript: RocBytes) callconv(.c) void;
+extern fn roc_start(src: RocBytes) callconv(.c) Model;
+extern fn roc_frame(model: Model, t: f64) callconv(.c) Model;
+extern fn roc_drop_model(model: Model) callconv(.c) void;
+extern fn roc_drop_bytes(bytes: RocBytes) callconv(.c) void;
+
+extern "env" fn js_emit(ptr: u32, len: u32) void;
+extern "env" fn js_pointer(axis: u32) f64;
+extern "env" fn js_key(ptr: u32, len: u32) u32;
 
 const empty: RocBytes = .{ .bytes = null, .length = 0, .capacity_or_alloc_ptr = 0 };
 
 var source: RocBytes = empty;
-var transcript: RocBytes = empty;
-var holds_transcript = false;
+var model: Model = null;
 
-/// Where the page writes a program of `n` bytes. The last run's transcript
-/// is dropped first.
+fn address(b: RocBytes) u32 {
+    const p = b.bytes orelse return 0;
+    return @intCast(@intFromPtr(p));
+}
+
+/// Where the page writes a program of `n` bytes. The last run is dropped
+/// first.
 pub export fn sourcePtr(n: u32) u32 {
-    if (holds_transcript) roc_drop(transcript);
-    holds_transcript = false;
+    if (model != null) roc_drop_model(model);
+    model = null;
     source = roc_buffer(n);
-    const p = source.bytes orelse return 0;
-    return @intCast(@intFromPtr(p));
+    return address(source);
 }
 
-/// Runs the program written at `sourcePtr`, and answers its transcript's
-/// length: a byte that says how the run ended, then the text.
-pub export fn run() u32 {
-    transcript = roc_run(source);
+/// Runs the program written at `sourcePtr` to its end.
+pub export fn start() void {
+    model = roc_start(source);
     source = empty;
-    holds_transcript = true;
-    return @intCast(transcript.length);
 }
 
-pub export fn transcriptPtr() u32 {
-    const p = transcript.bytes orelse return 0;
-    return @intCast(@intFromPtr(p));
+/// Calls the program's `frame(t)` once.
+pub export fn frame(t: f64) void {
+    if (model == null) @trap();
+    model = roc_frame(model, t);
 }
+
+// ---- the effects the Roc calls (platform/Host.roc) ------------------------
+
+fn host_emit(line: RocBytes) callconv(.c) void {
+    js_emit(address(line), @intCast(line.length));
+    roc_drop_bytes(line);
+}
+
+fn host_pointer(axis: u8) callconv(.c) f64 {
+    return js_pointer(axis);
+}
+
+fn host_key(name: RocBytes) callconv(.c) u8 {
+    const state = js_key(address(name), @intCast(name.length));
+    roc_drop_bytes(name);
+    return if (state == 0) 0 else 1;
+}
+
+// ---- memory and crashes -----------------------------------------------------
 
 const header = 16;
 const wasm_allocator = std.heap.wasm_allocator;
@@ -90,13 +126,14 @@ fn roc_dealloc(ptr: *anyopaque, alignment: usize) callconv(.c) void {
 
 /// A Roc crash is the interpreter's bug. Its message is kept where
 /// `crashPtr` and `crashLen` say, and the call traps, so the page can say
-/// what the Roc said.
+/// what the Roc said. The run is lost with it: the page starts afresh.
 var crash_message: [512]u8 = undefined;
 var crash_length: usize = 0;
 
 fn roc_crashed(bytes: [*]const u8, len: usize) callconv(.c) void {
     crash_length = @min(len, crash_message.len);
     @memcpy(crash_message[0..crash_length], bytes[0..crash_length]);
+    model = null;
     @trap();
 }
 
@@ -117,6 +154,9 @@ fn roc_expect_failed(bytes: [*]const u8, len: usize) callconv(.c) void {
 }
 
 comptime {
+    @export(&host_emit, .{ .name = "host_emit" });
+    @export(&host_pointer, .{ .name = "host_pointer" });
+    @export(&host_key, .{ .name = "host_key" });
     @export(&roc_alloc, .{ .name = "roc_alloc" });
     @export(&roc_realloc, .{ .name = "roc_realloc" });
     @export(&roc_dealloc, .{ .name = "roc_dealloc" });

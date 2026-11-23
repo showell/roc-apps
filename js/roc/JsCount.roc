@@ -3,6 +3,7 @@
 # machine held at its end. The allocation probes (js/probes.shale) read it.
 #
 #   js-count "<program>"
+import Canvas
 import Interp
 import Parser
 
@@ -16,12 +17,23 @@ main! = |arguments| {
 	}
 }
 
+# js-run's host: the core library only logs.
+command_host : Canvas.Host
+command_host = {
+	emit!: |effect|
+		match effect {
+			Log(line) => echo!("${line}\n")
+			_ => crash "js-count: the core library has no canvas builtin"
+		},
+	pointer!: |_axis| crash "js-count: the core library has no mouseX or mouseY",
+	key!: |_key| crash "js-count: the core library has no keyIsDown",
+}
+
 count_program! : Str => Try({}, [Exit(I8)])
 count_program! = |src| {
-	match Parser.program_of(src) {
+	match Parser.program_of(src, Core) {
 		Ok(program) => {
-			outcome = Interp.run(program, 2000000000)
-			echo!(outcome.out)
+			outcome = Interp.run!(command_host, program, Core, { steps: 2000000000, effects: 1000000000000 })
 			echo!("js-count: steps ${outcome.steps.to_str()} cells ${outcome.cells.to_str()} scopes ${outcome.scopes.to_str()}\n")
 			match outcome.status {
 				Running => Ok({})
