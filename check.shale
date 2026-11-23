@@ -39,8 +39,8 @@
 -- roc.lynrummy.com.
 --
 -- `shale check.shale basic=1` is the BASIC tier instead, kept out of the
--- default run for its time (about four minutes, most of it compiling and
--- the dev build's counting): basic/controls.shale holds the release build's
+-- default run for its time (about two and a half minutes, most of it the
+-- release build's compiling and the dev build's counting): basic/controls.shale holds the release build's
 -- allocations to basic/controls/expected.txt and the dev build's to
 -- expected-dev.txt.
 --

@@ -46,9 +46,3 @@
 41-let-int-product 1 0 one a NEXT that loops, which the release build doesn't make
 42-store-array-from-array 1 0 one a NEXT that loops, which the release build doesn't make
 43-if-arith 1 0 one a NEXT that loops, which the release build doesn't make
-44-plot 1 0 one a NEXT that loops, which the release build doesn't make
-45-poke-framebuffer 1 0 one a NEXT that loops, which the release build doesn't make
-46-poke-colour 2 0 a looping NEXT's one, and a copy of colour RAM: Devices.poked's colour arm hands Devices.kept the whole record while it writes col_ram
-47-array-2d-store 1 0 one a NEXT that loops, which the release build doesn't make
-48-array-store-rnd 2.03 0 a looping NEXT's one, one more for the store of RND's value in the dev build, and a vector leaf's first write each 32 entries (0.03, as in the release build)
-49-print-trim 102 0 twenty PRINTs an iteration at the dev build's five each (23-print-semicolon), and two for the loops

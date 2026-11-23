@@ -17,7 +17,7 @@
 //
 // The program must be single-threaded (BASIC's is): a thread it started
 // would not be traced, and would stop on the first breakpoint it hit.
-// Built by basic/controls.shale with the system's C compiler.
+// Built by tools/alloc_ladder.shale with the system's C compiler.
 
 #define _GNU_SOURCE
 #include <errno.h>

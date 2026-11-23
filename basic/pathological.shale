@@ -1,13 +1,13 @@
 -- The pathological programs (basic/pathological/*.bas) through basic-run:
--- for each, the process's time (the best of three) and its allocations and
--- reallocations (basic/basic_runs.shale says how they are counted). A
--- statement that allocates per execution shows as a count in the tens or
--- hundreds of thousands. Nothing is held: it is a report. Run it with
--- nothing else on the box.
+-- for each, the process's time (the best of three), then each one's
+-- allocations and reallocations, counted by tools/alloc_ladder.shale as a
+-- report. A statement that allocates per execution shows as a count in the
+-- tens or hundreds of thousands. Nothing is held. Run it with nothing else
+-- on the box.
 --
 --   cd <roc-apps checkout> && shale basic/pathological.shale            the release build (--opt=speed)
 --   cd <roc-apps checkout> && shale basic/pathological.shale opt=dev
---   cd <roc-apps checkout> && shale basic/pathological.shale build=0    the executables already built
+--   cd <roc-apps checkout> && shale basic/pathological.shale build=0    basic-run already built
 --
 -- budget: steps=50000000
 
@@ -32,8 +32,9 @@ end
 
 function main()
   if BUILD then build_basic_run(WHO, OPT) end
-  local b = built_basic_run(WHO, OPT)
+  local bin = built_basic_run(WHO, OPT)
   local rows = {}
+  local controls = {}
   for f in glob("basic/pathological/*.bas") do
     local n = strip_suffix(basename(f), ".bas")
     local args = {"micro", read(f), ""}
@@ -41,16 +42,20 @@ function main()
     local out = ""
     local k = 0
     while k < TRIES do
-      local t = timed_basic_run(WHO, b, n, args, RUN_MS)
+      local t = timed_basic_run(WHO, bin, n, args, RUN_MS)
       if best == nil or t.ms < best then best = t.ms end
       out = t.out
       k = k + 1
     end
-    local c = counted_run(WHO, b, n .. ", counted", args, RUN_MS * 10)
-    push(rows, {program = n, ms = best, allocs = c.alloc, reallocs = c.realloc, prints = transcript_end(out)})
+    push(rows, {program = n, ms = best, prints = transcript_end(out)})
+    push(controls, {name = n, small_argv = {bin, "micro", read(f), ""}, big_argv = {}})
   end
-  print(table(rows, {"program", "ms", "allocs", "reallocs", "prints"}))
+  print(table(rows, {"program", "ms", "prints"}))
   print("--opt=" .. OPT .. ", the best of " .. TRIES .. " runs")
+  local plan_path = gen_dir() .. "/plan-pathological-" .. OPT .. ".json"
+  if exists(plan_path) then remove(plan_path) end
+  create(plan_path, json_write({who = WHO, gen = gen_dir(), expected = "", small = 1, big = 1, limit_ms = RUN_MS * 10, hold = false, controls = controls}))
+  print(trim(must(run({"shale", "--root", ".", "tools/alloc_ladder.shale", "plan=" .. plan_path}, {timeout_ms = 1800000, tail = 40})).out))
 end
 
 main()

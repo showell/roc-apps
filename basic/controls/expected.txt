@@ -8,4 +8,3 @@
 23-print-semicolon 1 0 PRINT turns its text into bytes to draw it (Str.to_utf8), as 20-print-loop does
 34-print-tab 1 0 PRINT turns its text into bytes to draw it (Str.to_utf8); the TAB adds nothing
 38-input 3 0 two Str.to_utf8 and one list growing an iteration (strace -k on the old nightly); the list_replace and the copy the old nightly added since the devices moved behind one reference are gone on RC1
-49-print-trim 20 0 twenty PRINTs an iteration, each a Str.to_utf8; trimming the transcript adds one allocation each 8,000 pieces, under 0.01 an iteration

@@ -1,5 +1,0 @@
-5 DIM A(@N@)
-10 FOR I=1 TO @N@
-20 A(I)=RND(1)
-30 NEXT I
-40 END
