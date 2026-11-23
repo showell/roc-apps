@@ -33,10 +33,11 @@
 -- site/web/release-candidate-compiles/index.html, isn't what
 -- site/build_rc1_article.shale would write from its prose, the stats TSV,
 -- its reduced programs and the commits it quotes, which needs the
--- roc-screensaver checkout beside this one. And it runs
+-- roc-screensaver checkout beside this one. It runs
 -- site/deploy_test.shale, the prod deploy's refusals before it reaches prod,
 -- which needs a shale with `run`'s `secret_args` and asks 1.1.1.1 for
--- roc.lynrummy.com.
+-- roc.lynrummy.com. And it runs js/oracle.shale, which grades the JavaScript
+-- subset's interpreter against node on every program in js/tests/.
 --
 -- `shale check.shale basic=1` is the BASIC tier instead, kept out of the
 -- default run for its time (about two and a half minutes, most of it the
@@ -178,6 +179,9 @@ function all()
   local deploy = run({"shale", "--root", ".", "site/deploy_test.shale"}, {timeout_ms = 300000, tail = 40})
   print(trim(deploy.out))
   if deploy.code ~= 0 then push(failed, "the deploy's refusals") end
+  local js = run({"shale", "--root", ".", "js/oracle.shale"}, {timeout_ms = 600000, tail = 80, not_re = "^PASS "})
+  print(trim(js.out))
+  if js.code ~= 0 then push(failed, "the JavaScript subset against node") end
   local roc = pinned_roc("check")
   local files = roc_files(false)
   local fmt = {roc, "fmt", "--check"}

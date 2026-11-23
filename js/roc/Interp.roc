@@ -1291,7 +1291,12 @@ Interp :: [].{
 				|x| {
 					f = Interp.floor(x)
 					if x - f >= 0.5 {
-						f + 1.0
+						# Rounding up from (-0.5, 0) gives -0, as JavaScript's does.
+						if x < 0.0 and f == -1.0 {
+							-0.0
+						} else {
+							f + 1.0
+						}
 					} else {
 						f
 					}

@@ -1,0 +1,128 @@
+-- This script grades the JavaScript subset against node, its oracle. Every
+-- program in js/tests/ is real JavaScript, so node runs it too: each runs
+-- through node and through js-run, and the two outputs (stdout and the exit
+-- code) must match byte for byte. Each program in js/tests/refused/ is one
+-- the subset must refuse: its first line, `// refused: <text>`, is what
+-- js-run's last line (`js: <why>`) must hold, and js-run must exit 1.
+--
+--   cd <roc-apps checkout> && shale js/oracle.shale            build js-run, then grade
+--   cd <roc-apps checkout> && shale js/oracle.shale build=0    grade the js-run already built
+--   cd <roc-apps checkout> && shale js/oracle.shale only=11    the programs whose names start so
+--
+-- It builds js-run from js/roc/JsRun.roc with the pinned Roc (`pinned_roc`,
+-- in .shale/prelude.shale) on the dev backend, into
+-- build:roc-apps/gen/js/<checkout>/, each checkout its own. A build with
+-- an error (✗) or a warning (●) fails the run, whatever Roc's exit code.
+-- Every program found is graded; none is skipped, and the run fails unless
+-- all of them pass.
+--
+-- budget: steps=50000000
+
+const WANT_ROC = "roc-pin: roc-apps' pinned nightly, and js-run, which it builds"
+const WANT_RUN = "js-run: the interpreter under test, built here"
+const WANT_NODE = "js-oracle: node is the subset's oracle"
+const RUN_MS = 20000
+
+const BUILD = arg("build", true)
+const ONLY = arg("only", "")
+
+function out_dir()
+  return "build:roc-apps/gen/js/" .. basename(real("."))
+end
+
+function build_js_run()
+  local roc = pinned_roc("js/oracle.shale")
+  local dir = out_dir()
+  mkdir(dir)
+  local exe = dir .. "/js-run"
+  if exists(exe) then remove(exe) end
+  local r = run({roc, "build", "JsRun.roc", "--opt=dev", "--output=" .. real(dir) .. "/js-run"},
+    {cwd = "js/roc", timeout_ms = 600000, tail = 40, nice = 19, want = WANT_ROC})
+  if contains(r.out, "✗") or contains(r.out, "●") or not exists(exe) then
+    print(trim(r.out))
+    fail("js/oracle.shale: the build of js-run failed")
+  end
+  print("built js-run --opt=dev: " .. r.ms .. " ms")
+end
+
+-- What a program printed and how it ended, as one text to compare.
+function transcript(r)
+  if r.ended ~= "exit" then return r.out .. "\n[ended: " .. r.ended .. "]" end
+  return r.out .. "\n[exit " .. r.code .. "]"
+end
+
+-- The first line where two transcripts differ, both sides shown.
+function first_difference(want, got)
+  local a = lines(want)
+  local b = lines(got)
+  local i = 1
+  while i <= #a or i <= #b do
+    local x = get(a, i, "<none>")
+    local y = get(b, i, "<none>")
+    if x ~= y then return "line " .. i .. ": node `" .. x .. "`, js-run `" .. y .. "`" end
+    i = i + 1
+  end
+  return "the same lines"
+end
+
+function js_run(exe, src)
+  return run({exe, src}, {timeout_ms = RUN_MS, whole = 4000000, want = WANT_RUN})
+end
+
+function grade_oracle(exe)
+  local n = 0
+  local bad = 0
+  for f in glob("js/tests/*.js") do
+    if ONLY == "" or starts_with(basename(f), ONLY) then
+      n = n + 1
+      local node = run({"node", real(f)}, {timeout_ms = RUN_MS, whole = 4000000, want = WANT_NODE})
+      local mine = js_run(exe, read(f))
+      local want = transcript(node)
+      local got = transcript(mine)
+      if want == got then
+        print("PASS " .. basename(f))
+      else
+        bad = bad + 1
+        print("FAIL " .. basename(f) .. ": " .. first_difference(want, got))
+      end
+    end
+  end
+  return {n = n, bad = bad}
+end
+
+function grade_refused(exe)
+  local n = 0
+  local bad = 0
+  for f in glob("js/tests/refused/*.js") do
+    if ONLY == "" or starts_with(basename(f), ONLY) then
+      n = n + 1
+      local src = read(f)
+      local first = lines(src)[1]
+      local m = re_find(first, "^// refused: (.+)$")
+      if m == nil then fail("js/oracle.shale: " .. f .. " has no first line `// refused: <text>`") end
+      local mine = js_run(exe, src)
+      local said = lines(trim(mine.out))
+      local last = get(said, #said, "")
+      if mine.ended == "exit" and mine.code == 1 and starts_with(last, "js: ") and contains(last, m.group) then
+        print("PASS refused/" .. basename(f))
+      else
+        bad = bad + 1
+        print("FAIL refused/" .. basename(f) .. ": wanted `" .. m.group .. "`, js-run said `" .. last .. "` (" .. mine.ended .. " " .. get(mine, "code", "") .. ")")
+      end
+    end
+  end
+  return {n = n, bad = bad}
+end
+
+function main()
+  if BUILD then build_js_run() end
+  local exe = out_dir() .. "/js-run"
+  if not exists(exe) then fail("js/oracle.shale: no js-run built: run without build=0") end
+  local o = grade_oracle(real(exe))
+  local r = grade_refused(real(exe))
+  if o.n + r.n == 0 then fail("js/oracle.shale: no program is named " .. ONLY) end
+  print("js oracle: " .. (o.n - o.bad) .. " of " .. o.n .. " match node; " .. (r.n - r.bad) .. " of " .. r.n .. " refused as they must be")
+  if o.bad + r.bad > 0 then fail("js/oracle.shale: " .. (o.bad + r.bad) .. " programs failed") end
+end
+
+main()

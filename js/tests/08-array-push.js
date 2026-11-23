@@ -1,0 +1,11 @@
+const xs = [];
+for (let i = 0; i < 10; i++) xs.push(i * 3);
+console.log(xs, xs.length);
+console.log(xs.pop(), xs.length, xs[0], xs[8], xs[99]);
+const ys = [1, 2];
+console.log(ys.push(3, 4, 5), ys);
+ys[5] = 6;
+ys[0] = "first";
+console.log(ys);
+const empty = [];
+console.log(empty.pop(), empty);
