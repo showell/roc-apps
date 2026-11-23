@@ -1617,17 +1617,18 @@ Interp :: [].{
 			Interp.fault_got(st, "RangeError: Maximum call stack size exceeded${Interp.at_line(w)}")
 		} else {
 			outer = st.scope
+			def = c.fun.unbox()
 			inside = Interp.with_scope_added(
 				{ ..st, depth: st.depth + 1 },
-				{ vars: Interp.call_vars(c.fun, args), parent: Within(c.scope) },
+				{ vars: Interp.call_vars(def, args), parent: Within(c.scope) },
 			)
 			id = inside.scope
-			{ st: after, flow } = Interp.exec_list(Interp.hoisted(inside, c.fun.body), c.fun.body)
+			{ st: after, flow } = Interp.exec_list(Interp.hoisted(inside, def.body), def.body)
 			val = match flow {
 				Returned(v) => v
 				_ => Undefined
 			}
-			back = Interp.left(after, id, outer, c.fun.capture)
+			back = Interp.left(after, id, outer, def.capture)
 			{ st: { ..back, depth: back.depth - 1 }, val: val }
 		}
 

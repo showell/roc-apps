@@ -64,7 +64,8 @@ Parser :: [].{
 		var $lexical = []
 		for s in stmts {
 			match s {
-				FunctionDecl(def, _) => {
+				FunctionDecl(boxed, _) => {
+					def = boxed.unbox()
 					if $lexical.contains(def.name) {
 						return Err(Parser.fault_at(def.at, Parser.redeclared(def.name)))
 					}
@@ -283,7 +284,7 @@ Parser :: [].{
 			Name("const") => Parser.declaration(p, Const)
 			Name("function") => {
 				r = Parser.function_rest(Parser.advance(p), Parser.where_of(t), Declared)?
-				Ok({ p: r.p, value: FunctionDecl(r.value, Unresolved) })
+				Ok({ p: r.p, value: FunctionDecl(Box.box(r.value), Unresolved) })
 			}
 			Name("if") => Parser.if_statement(p)
 			Name("while") => {
@@ -439,7 +440,14 @@ Parser :: [].{
 	# bound to, as JavaScript names `const f = () => 1` "f".
 	named : Ast.Expr, Str -> Ast.Expr
 	named = |e, name| match e {
-		Function(def) if def.name == "" => Function({ ..def, name: name })
+		Function(boxed) => {
+			def = boxed.unbox()
+			if def.name == "" {
+				Function(Box.box({ ..def, name: name }))
+			} else {
+				e
+			}
+		}
 		_ => e
 	}
 
@@ -680,7 +688,7 @@ Parser :: [].{
 		q = Parser.expect_punct(params.p, "=>")?
 		if Parser.is_punct(q, "{") {
 			def = Parser.function_body(q, "", params.value, w)?
-			Ok({ p: def.p, value: Function(def.value) })
+			Ok({ p: def.p, value: Function(Box.box(def.value)) })
 		} else {
 			before = q.functions
 			e = Parser.assignment(q)?
@@ -692,7 +700,7 @@ Parser :: [].{
 				capture: Parser.capture_since(e.p, before),
 				at: w,
 			}
-			Ok({ p: { ..e.p, functions: e.p.functions + 1 }, value: Function(def) })
+			Ok({ p: { ..e.p, functions: e.p.functions + 1 }, value: Function(Box.box(def)) })
 		}
 	}
 
@@ -1081,7 +1089,7 @@ Parser :: [].{
 			Name("undefined") => Ok({ p: after, value: Undefined })
 			Name("function") => {
 				def = Parser.function_rest(after, w, Expressed)?
-				Ok({ p: def.p, value: Function(def.value) })
+				Ok({ p: def.p, value: Function(Box.box(def.value)) })
 			}
 			Name(s) => {
 				if Parser.is_reserved(s) {
@@ -1198,7 +1206,7 @@ Parser :: [].{
 		} else if Parser.is_punct(after, "(") {
 			params = Parser.parameters(after)?
 			def = Parser.function_body(params.p, key, params.value, w)?
-			Ok({ p: def.p, value: { key: key, value: Function(def.value) } })
+			Ok({ p: def.p, value: { key: key, value: Function(Box.box(def.value)) } })
 		} else {
 			match t.tok {
 				Name(s) => {

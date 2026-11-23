@@ -66,7 +66,7 @@ Resolve :: [].{
 		match s {
 			Expression(e) => Expression(Resolve.expr(env, e))
 			Declare(binding, decls) => Declare(binding, decls.map(|d| Resolve.declarator(env, d)))
-			FunctionDecl(def, _) => FunctionDecl(Resolve.fun(env, def), Resolve.slot(env, def.name))
+			FunctionDecl(def, _) => FunctionDecl(Box.box(Resolve.fun(env, def.unbox())), Resolve.slot(env, def.unbox().name))
 			If(test, yes, no) => If(Resolve.expr(env, test), Resolve.stmt(env, yes), Resolve.stmt(env, no))
 			While(test, body) => While(Resolve.expr(env, test), Resolve.stmt(env, body))
 			For(loop) => {
@@ -137,7 +137,7 @@ Resolve :: [].{
 			Member(obj, key, w) => Member(Resolve.expr(env, obj), key, w)
 			Index(obj, key, w) => Index(Resolve.expr(env, obj), Resolve.expr(env, key), w)
 			Call(callee, args, w) => Call(Resolve.expr(env, callee), each(args), w)
-			Function(def) => Function(Resolve.fun(env, def))
+			Function(def) => Function(Box.box(Resolve.fun(env, def.unbox())))
 		}
 	}
 }

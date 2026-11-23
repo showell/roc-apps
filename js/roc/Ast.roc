@@ -39,7 +39,9 @@ Ast :: [].{
 		Member(Ast.Expr, Str, Ast.Where),
 		Index(Ast.Expr, Ast.Expr, Ast.Where),
 		Call(Ast.Expr, List(Ast.Expr), Ast.Where),
-		Function(Ast.FunDef),
+		# Boxed, so a heap cell holding a closure is no bigger than one holding
+		# an object.
+		Function(Box(Ast.FunDef)),
 	]
 
 	# What an assignment or an update writes.
@@ -149,7 +151,7 @@ Ast :: [].{
 	Stmt := [
 		Expression(Ast.Expr),
 		Declare(Ast.Binding, List(Ast.Declarator)),
-		FunctionDecl(Ast.FunDef, Ast.Slot),
+		FunctionDecl(Box(Ast.FunDef), Ast.Slot),
 		If(Ast.Expr, Ast.Stmt, Ast.Stmt),
 		While(Ast.Expr, Ast.Stmt),
 		For(Ast.ForLoop),

@@ -114,7 +114,7 @@ Inspect :: [].{
 	format_cell = |ctx, id, recurse|
 		match Heap.cell_at(ctx.cells, id) {
 			Fun(c) => {
-				name = c.fun.name
+				name = c.fun.unbox().name
 				if name == "" {
 					Ok(Inspect.plain(ctx, "[Function (anonymous)]"))
 				} else {

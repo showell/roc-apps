@@ -122,8 +122,29 @@ a comparison with every name in every scope on the way.
 
 A block or function whose text holds no function literal can't have its
 scope captured, so its scope is dropped when it ends: a loop or a recursion
-without closures leaves the scope list as it found it. Cells are never
-freed: a run's heap holds every object it made.
+without closures leaves the scope list as it found it.
+
+**Cells are never freed, and a collector isn't worth it yet**
+(`js/heaps.shale`, 2026-11-23, the release build). No corpus program holds
+more than 226 cells or peaks past 9 MB. A program that makes an object a
+pass holds them all: 400,000 objects peak at 146 MB, about 370 bytes each,
+the cell list and its growth about half of it and the objects' properties
+the rest. A closure's definition is boxed in the tree, so a closure's cell
+is no bigger than an object's; unboxed, every cell was the size of the
+biggest, and the same program peaked at 239 MB.
+
+The simple collector, a mark from the live scopes and a sweep onto a free
+list, is safe only where no JavaScript value lives on Roc's own stack: at a
+statement outside every call, with any `for ... of` array pinned. Inside a
+call, the caller's half-made values (the left side of a `+`, the arguments
+made so far, the object a method is called on) live only on Roc's stack,
+and a collection there would free them. So it would free what a top-level
+loop drops (`heaps/1-object-a-pass.js`) and nothing a call drops
+(`heaps/2-object-a-pass-in-a-call.js`, the same garbage inside `main()`,
+146 MB too), which is where most programs make theirs. Freeing inside calls
+takes a root stack that each of those places pushes to, a full collector's
+cost and risk. The page's budget of 3,000,000 steps caps a run near a
+million objects, about 370 MB.
 
 **What the controls count (2026-11-23).** `js/controls.shale` runs each
 control in `js/controls/` (an empty loop, then the probes' six writes, one
@@ -158,6 +179,7 @@ linear: 59, 88 and 184 µs a store; 28, 35 and 86 µs a call; 22, 35 and
     shale js/controls.shale    # build js-run --opt=speed, then count each control's allocations
     shale check.shale js=1     # the controls in both builds, held to their expected counts
     shale js/bench.shale       # build both, then time js/bench/'s programs
+    shale js/heaps.shale       # build js-count --opt=speed, then each program's cells, scopes and peak memory
     shale js/build.shale       # build the page into the dev channel, :9210/js/
 
 `js/oracle.shale` is a tier of `check.shale`. It builds `js-run` on the dev

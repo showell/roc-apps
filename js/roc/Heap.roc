@@ -54,7 +54,7 @@ Heap :: [].{
 		IsInteger,
 	]
 
-	Closure : { fun : Ast.FunDef, scope : U64 }
+	Closure : { fun : Box(Ast.FunDef), scope : U64 }
 
 	Cell : [
 		Obj(List(Heap.Prop)),
