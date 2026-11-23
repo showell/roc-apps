@@ -51,7 +51,8 @@ Ast :: [].{
 		ToIndex(Ast.Expression, Ast.Expression),
 	]
 
-	## An object literal's property: its key, and its value's expression.
+	## An object literal's property: the property's key, and the expression of
+	## the property's value.
 	Property : { key : Str, value : Ast.Expression }
 
 	UnaryOperator : [Not, Negate, Plus, TypeOf]

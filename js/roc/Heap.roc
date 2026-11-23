@@ -29,7 +29,7 @@ Heap :: [].{
 		Reference(U64),
 	]
 
-	## An object's property: its key and its value.
+	## An object's property: the property's key and the property's value.
 	Property : { key : Str, value : Heap.Value }
 
 	# The builtin functions, each called by name from the interpreter.

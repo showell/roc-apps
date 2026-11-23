@@ -1187,7 +1187,8 @@ Interp :: [].{
 		}
 	}
 
-	# An assignment's parts, as `Ast.Assign` holds them.
+	## An assignment's parts, as `Ast.Assign` holds them: the target, the
+	## operator and the expression of the assignment's value.
 	Assignment : {
 		target : Ast.Target,
 		operator : Ast.AssignmentOperator,
