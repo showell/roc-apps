@@ -24,8 +24,8 @@
 -- imports followed in turn, as Shale's roc_platform/run.shale reads a
 -- script), every file under a folder its header names by a relative path (a
 -- package or a platform; a URL is in the root's text already), the pinned
--- compiler's version (roc-version), the mode and the flags, and this
--- script's own code. The files are hashed by `git hash-object`, one program
+-- compiler's version (roc-version), the mode and the flags, and BUILD_FORM,
+-- how this script runs the compiler. The files are hashed by `git hash-object`, one program
 -- for all of them.
 --
 -- The executable lives at build:cache/roc-apps-builds/<name>/<key>/<name>,
@@ -45,6 +45,11 @@ const KEEP = 3
 const WANT_ROC = "roc-pin: roc-apps' pinned nightly, and the app it builds"
 -- A half-made build older than this (seconds) is a stopped run's, and goes.
 const STALE_PART_S = 3600
+-- How this script runs `roc build` (its folder, its arguments' order): in
+-- the key, and moved by hand when that changes, since a change to the rest
+-- of this script (how it finds the inputs, how it prunes) makes the same
+-- executable and should rebuild nothing.
+const BUILD_FORM = 1
 
 const APP = arg("app", "")
 const NAME = arg("name", "")
@@ -94,11 +99,18 @@ end
 function app_inputs(root)
   local text = read(root)
   local dir = dirname(root)
+  -- An app on the default platform may have no header at all; one that
+  -- starts a header the pattern can't read stops the run.
+  local header_text = ""
   local header = re_find(text, "\\bapp[ \t\n]*\\[[^\\]]*\\][ \t\n]*\\{([^}]*)\\}")
-  if header == nil then fail(WHO .. ": " .. root .. " has no app header (`app [main!] {...}`)") end
+  if header ~= nil then
+    header_text = header.group
+  elseif #re_lines(text, "^app\\b") > 0 then
+    fail(WHO .. ": " .. root .. " starts an app header this script can't read (`app [main!] {...}`)")
+  end
   local shorthands = {}
   local folders = {}
-  for p in re_find_all(header.group, "([a-z_][a-z_0-9]*)[ \t\n]*:[ \t\n]*(?:platform[ \t\n]+)?\"([^\"]*)\"") do
+  for p in re_find_all(header_text, "([a-z_][a-z_0-9]*)[ \t\n]*:[ \t\n]*(?:platform[ \t\n]+)?\"([^\"]*)\"") do
     shorthands[p.groups[1]] = true
     local where = p.groups[2]
     if not starts_with(where, "http://") and not starts_with(where, "https://") then
@@ -122,16 +134,6 @@ function app_inputs(root)
   return paths
 end
 
--- This script's code alone, its comments and blank lines left out, so a
--- change to its prose keeps every key.
-function own_code()
-  local kept = {}
-  for l in lines(read(SELF)) do
-    if trim(l) ~= "" and not starts_with(trim(l), "--") then push(kept, l) end
-  end
-  return join(kept, "\n")
-end
-
 -- The key: git's hash of a text naming every input and its content's hash.
 function key_of(paths, flags)
   local reals = {}
@@ -140,7 +142,7 @@ function key_of(paths, flags)
   if r.ended ~= "exit" or r.code ~= 0 then fail(WHO .. ": git could not hash the inputs: " .. trim(r.out)) end
   local hs = lines(trim(r.out))
   if #hs ~= #paths then fail(WHO .. ": git gave " .. #hs .. " hashes for " .. #paths .. " inputs") end
-  local text = {"roc " .. trim(read("roc-version")), "mode " .. MODE, "flags " .. join(flags, " "), "builder " .. own_code()}
+  local text = {"roc " .. trim(read("roc-version")), "mode " .. MODE, "flags " .. join(flags, " "), "form " .. BUILD_FORM}
   for i = 1, #paths do push(text, "file " .. paths[i] .. " " .. hs[i]) end
   local k = must(run({"git", "hash-object", "--stdin"}, {timeout_ms = 30000, whole = 1000, stdin = join(text, "\n") .. "\n"}))
   return sub(trim(k.out), 1, 16)

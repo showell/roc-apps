@@ -31,6 +31,14 @@ The repository's own scripts, beside `check.shale` at its root.
   `expected-boxy.txt` (`--specialize=no`). A shape that writes in place is
   held to 0, one that copies to its count. `shale check.shale
   copy_shapes=1` runs all three.
+- `roc_build.shale` is the one place roc-apps builds a Roc executable for
+  measurement, in the dev, release (`speed`) or boxy (`--specialize=no`)
+  mode. It keys each build by the content of the app's inputs, the pinned
+  compiler, the mode and the flags, and keeps the executable under
+  `build:cache/roc-apps-builds/`, shared by every checkout, so a second
+  caller asking for the same build reuses it. The prelude's `built_roc`
+  asks it; BASIC's controls and pathological runs and the copy shapes take
+  their binaries from it. Its header says what the key holds.
 - `alloc_ladder.shale` runs an interpreter's or a program's controls at two
   sizes and holds what one more iteration allocates to an expected file,
   counting `roc_alloc` calls with `count_allocs.c`'s breakpoints. Its

@@ -42,8 +42,9 @@
 -- golden log of effects.
 --
 -- `shale check.shale basic=1` is the BASIC tier instead, kept out of the
--- default run for its time (about two and a half minutes, most of it the
--- release build's compiling and the dev build's counting): basic/controls.shale holds the release build's
+-- default run for its time (about a minute and a half, half of it the
+-- release build's compiling, the rest the counting; under a minute when
+-- tools/roc_build.shale already holds both builds of these inputs): basic/controls.shale holds the release build's
 -- allocations to basic/controls/expected.txt and the dev build's to
 -- expected-dev.txt.
 --
@@ -54,7 +55,7 @@
 -- build's to expected-dev.txt.
 --
 -- `shale check.shale copy_shapes=1` is the copy shapes' tier, also kept out
--- of the default run (about half a minute): tools/copy_shapes/copy_shapes.shale
+-- of the default run (about half a minute, 18 s with its builds reused): tools/copy_shapes/copy_shapes.shale
 -- holds what one more write allocates in each way of writing into a list, a
 -- record or a dict to its expected file, in the release, dev and boxy
 -- (`--specialize=no`) builds, so docs/roc-notes.md, "Speed and copying",
@@ -224,12 +225,25 @@ function all()
   print("check: " .. #apps .. " apps without errors or warnings, " .. #files .. " files formatted")
 end
 
+-- One run of a tier's script, its output's last 60 lines printed, and above
+-- them each line tools/roc_build.shale wrote (`built ...` or `reused ...`),
+-- so the tier says what it compiled however long the ladder's output.
+function tier_run(script, opt)
+  local r = run({"shale", "--root", ".", script, "opt=" .. opt}, {timeout_ms = 1800000, whole = 4000000})
+  local all = lines(trim(r.out))
+  local cut = #all - 60
+  for i = 1, cut do
+    if re_match(all[i], "^(built|reused) ") then print(all[i]) end
+  end
+  print(join(last(all, 60), "\n"))
+  return r
+end
+
 -- The BASIC tier: the controls in the release build, then in the dev build.
 function basic_tier()
   local failed = {}
   for opt in {"speed", "dev"} do
-    local r = run({"shale", "--root", ".", "basic/controls.shale", "opt=" .. opt}, {timeout_ms = 1800000, tail = 60})
-    print(trim(r.out))
+    local r = tier_run("basic/controls.shale", opt)
     if r.code ~= 0 then push(failed, "the BASIC controls, --opt=" .. opt) end
   end
   if #failed > 0 then fail("check: " .. join(failed, ", ") .. " failed") end
@@ -254,8 +268,7 @@ end
 function copy_shapes_tier()
   local failed = {}
   for opt in {"speed", "dev", "boxy"} do
-    local r = run({"shale", "--root", ".", "tools/copy_shapes/copy_shapes.shale", "opt=" .. opt}, {timeout_ms = 1800000, tail = 60})
-    print(trim(r.out))
+    local r = tier_run("tools/copy_shapes/copy_shapes.shale", opt)
     if r.code ~= 0 then push(failed, "the copy shapes, opt=" .. opt) end
   end
   if #failed > 0 then fail("check: " .. join(failed, ", ") .. " failed") end
