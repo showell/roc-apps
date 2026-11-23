@@ -255,8 +255,8 @@ Interp :: [].{
 
 	variable_at : List(Interp.Scope), U64, U64 -> Interp.Variable
 	variable_at = |scopes, scope_id, index| {
-		scope = scopes.get(scope_id) ?? crash "Interp.var_at: a scope the machine has"
-		scope.variables.get(index) ?? crash "Interp.var_at: a variable its scope's layout names"
+		scope = scopes.get(scope_id) ?? crash "Interp.variable_at: a scope the machine has"
+		scope.variables.get(index) ?? crash "Interp.variable_at: a variable its scope's layout names"
 	}
 
 	# A declaration's place in the scope it runs in.
@@ -277,11 +277,11 @@ Interp :: [].{
 		taken = scopes.replace(
 			scope_id,
 			{ variables: [], parent: Outermost },
-		) ?? crash "Interp.with_var: a scope the machine has"
+		) ?? crash "Interp.with_variable: a scope the machine has"
 		taken.list.set(
 			scope_id,
 			Interp.scope_with_variable(taken.prev, index, binding),
-		) ?? crash "Interp.with_var: the scope was just taken"
+		) ?? crash "Interp.with_variable: the scope was just taken"
 	}
 
 	# **THE WRITE IS A FUNCTION OF ITS OWN**, handed the scope taken out. Made
@@ -294,7 +294,7 @@ Interp :: [].{
 			variables: variables.set(
 				index,
 				binding,
-			) ?? crash "Interp.scope_with_var: a variable the scope has",
+			) ?? crash "Interp.scope_with_variable: a variable the scope has",
 			parent: parent,
 		}
 	}
@@ -924,7 +924,7 @@ Interp :: [].{
 	evaluate_template : Interp.Machine, List(Str), List(Ast.Expression) -> Interp.Got
 	evaluate_template = |machine, texts, parts| {
 		var $s = machine
-		var $text = texts.first() ?? crash "Interp.eval_template: a template has a text piece before its first substitution"
+		var $text = texts.first() ?? crash "Interp.evaluate_template: a template has a text piece before its first substitution"
 		var $i = 1
 		for part in parts {
 			{ machine: after, value } = Interp.evaluate($s, part)
@@ -932,7 +932,7 @@ Interp :: [].{
 				Ok(phrase) => {
 					$text = Str.concat(
 						Str.concat($text, phrase),
-						texts.get($i) ?? crash "Interp.eval_template: a template has a text piece after each substitution",
+						texts.get($i) ?? crash "Interp.evaluate_template: a template has a text piece after each substitution",
 					)
 					after
 				}

@@ -115,7 +115,7 @@ Heap :: [].{
 			Ok(position) => properties.set(
 				position,
 				{ key: key, value: value },
-			) ?? crash "Heap.props_with: the index was just found"
+			) ?? crash "Heap.properties_with: the index was just found"
 			Err(NotFound) => properties.append({ key: key, value: value })
 		}
 
@@ -142,7 +142,7 @@ Heap :: [].{
 				id,
 				Object(Heap.properties_with(properties, key, value)),
 			)
-			_ => crash "Heap.with_prop: the interpreter writes properties only to objects"
+			_ => crash "Heap.with_property: the interpreter writes properties only to objects"
 		}
 	}
 

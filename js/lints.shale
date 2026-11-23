@@ -1,0 +1,23 @@
+-- This script holds the JavaScript subset's own settings for Shale's Roc
+-- lints: the terms in js/accepted_terms.txt, JavaScript's own words (`null`,
+-- `Math.ceil`) that find_names_and_docs_that_say_too_little would read as
+-- abbreviations.
+--
+--   cd <roc-apps checkout> && shale js/lints.shale reads=settings
+--
+-- It prints one line `SETTING<tab>recipe<tab>folder<tab>arg` an argument,
+-- paths from the checkout's root, for tools/quality.shale, which runs the
+-- recipes over every project and so must judge js's files with js's terms.
+-- This table stays their one home.
+
+const HERE = "js"
+const SETTINGS = {
+  {recipe = "find_names_and_docs_that_say_too_little", arg = "accepted=accepted_terms.txt"},
+}
+
+const READS = arg("reads", "")
+if READS ~= "settings" then fail("js lints: reads=settings is the one reading") end
+for s in SETTINGS do
+  local m = re_find(s.arg, "^([a-z]+)=(.+)$")
+  print("SETTING\t" .. s.recipe .. "\t" .. HERE .. "\t" .. m.groups[1] .. "=" .. HERE .. "/" .. m.groups[2])
+end
