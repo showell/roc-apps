@@ -17,16 +17,16 @@
 import Ast
 
 Heap :: [].{
-	Val : [
+	Value : [
 		Number(F64),
 		Text(Str),
 		Boolean(Bool),
 		Null,
 		Undefined,
-		Ref(U64),
+		Reference(U64),
 	]
 
-	Prop : { key : Str, val : Heap.Val }
+	Property : { key : Str, value : Heap.Value }
 
 	# The builtin functions, each called by name from the interpreter.
 	Native : [
@@ -54,16 +54,16 @@ Heap :: [].{
 		IsInteger,
 	]
 
-	Closure : { fun : Box(Ast.FunDef), scope : U64 }
+	Closure : { fun : Box(Ast.FunctionDefinition), scope : U64 }
 
 	Cell : [
-		Obj(List(Heap.Prop)),
-		Arr(List(Heap.Val)),
+		Object(List(Heap.Property)),
+		Array(List(Heap.Value)),
 		Fun(Heap.Closure),
 		# A builtin function, and the properties it carries (`String.fromCharCode`).
-		Builtin(Heap.Native, List(Heap.Prop)),
+		Builtin(Heap.Native, List(Heap.Property)),
 		# A builtin object such as `Math`, by its name.
-		Namespace(Str, List(Heap.Prop)),
+		Namespace(Str, List(Heap.Property)),
 		# What a cell's place holds while the cell is out being written.
 		Taken,
 	]
@@ -98,25 +98,25 @@ Heap :: [].{
 	cell_at = |cells, id| cells.get(id) ?? crash "Heap.cell_at: a Ref names a cell the heap has"
 
 	# The value of a property an object has, or Undefined.
-	prop_value : List(Heap.Prop), Str -> Heap.Val
-	prop_value = |props, key|
-		match props.find_first(|p| p.key == key) {
-			Ok(p) => p.val
+	property_value : List(Heap.Property), Str -> Heap.Value
+	property_value = |properties, key|
+		match properties.find_first(|p| p.key == key) {
+			Ok(p) => p.value
 			Err(NotFound) => Undefined
 		}
 
-	has_prop : List(Heap.Prop), Str -> Bool
-	has_prop = |props, key| props.any(|p| p.key == key)
+	has_property : List(Heap.Property), Str -> Bool
+	has_property = |properties, key| properties.any(|p| p.key == key)
 
 	# Props with `key` set: in its place when it is there, else at the end.
-	props_with : List(Heap.Prop), Str, Heap.Val -> List(Heap.Prop)
-	props_with = |props, key, val|
-		match props.find_first_index(|p| p.key == key) {
-			Ok(i) => props.set(
+	properties_with : List(Heap.Property), Str, Heap.Value -> List(Heap.Property)
+	properties_with = |properties, key, value|
+		match properties.find_first_index(|p| p.key == key) {
+			Ok(i) => properties.set(
 				i,
-				{ key: key, val: val },
+				{ key: key, value: value },
 			) ?? crash "Heap.props_with: the index was just found"
-			Err(NotFound) => props.append({ key: key, val: val })
+			Err(NotFound) => properties.append({ key: key, value: value })
 		}
 
 	# The cell at `id` handed over, `Taken` left in its place.
@@ -133,28 +133,28 @@ Heap :: [].{
 		cell,
 	| cells.set(id, cell) ?? crash "Heap.put_back: the cell was just taken"
 
-	with_prop : List(Heap.Cell), U64, Str, Heap.Val -> List(Heap.Cell)
-	with_prop = |cells, id, key, val| {
+	with_property : List(Heap.Cell), U64, Str, Heap.Value -> List(Heap.Cell)
+	with_property = |cells, id, key, value| {
 		taken = Heap.taken_out(cells, id)
 		match taken.prev {
-			Obj(props) => Heap.put_back(
+			Object(properties) => Heap.put_back(
 				taken.list,
 				id,
-				Obj(Heap.props_with(props, key, val)),
+				Object(Heap.properties_with(properties, key, value)),
 			)
 			_ => crash "Heap.with_prop: the interpreter writes properties only to objects"
 		}
 	}
 
 	# The heap with an array's item `i` set, or appended when `i` is its length.
-	with_item : List(Heap.Cell), U64, U64, Heap.Val -> List(Heap.Cell)
-	with_item = |cells, id, i, val| {
+	with_item : List(Heap.Cell), U64, U64, Heap.Value -> List(Heap.Cell)
+	with_item = |cells, id, i, value| {
 		taken = Heap.taken_out(cells, id)
 		match taken.prev {
-			Arr(items) => Heap.put_back(
+			Array(items) => Heap.put_back(
 				taken.list,
 				id,
-				Arr(Heap.items_with(items, i, val)),
+				Array(Heap.items_with(items, i, value)),
 			)
 			_ => crash "Heap.with_item: the interpreter writes items only to arrays"
 		}
@@ -163,25 +163,25 @@ Heap :: [].{
 	# **THE WRITE IS A FUNCTION OF ITS OWN.** Made inline in `with_item`'s match
 	# arm, beside a binding of its own, it copied the items: every store into
 	# an array of N items cost N.
-	items_with : List(Heap.Val), U64, Heap.Val -> List(Heap.Val)
-	items_with = |items, i, val|
+	items_with : List(Heap.Value), U64, Heap.Value -> List(Heap.Value)
+	items_with = |items, i, value|
 		if i == items.len() {
-			items.append(val)
+			items.append(value)
 		} else {
 			items.set(
 				i,
-				val,
+				value,
 			) ?? crash "Heap.items_with: the interpreter writes inside an array or at its end"
 		}
 
-	with_items_pushed : List(Heap.Cell), U64, List(Heap.Val) -> List(Heap.Cell)
-	with_items_pushed = |cells, id, vals| {
+	with_items_pushed : List(Heap.Cell), U64, List(Heap.Value) -> List(Heap.Cell)
+	with_items_pushed = |cells, id, values| {
 		taken = Heap.taken_out(cells, id)
 		match taken.prev {
-			Arr(items) => Heap.put_back(
+			Array(items) => Heap.put_back(
 				taken.list,
 				id,
-				Arr(List.concat(items, vals)),
+				Array(List.concat(items, values)),
 			)
 			_ => crash "Heap.with_items_pushed: the interpreter pushes only onto arrays"
 		}
@@ -191,12 +191,12 @@ Heap :: [].{
 	with_last_dropped = |cells, id| {
 		taken = Heap.taken_out(cells, id)
 		match taken.prev {
-			Arr(items) => Heap.put_back(taken.list, id, Arr(items.drop_last(1)))
+			Array(items) => Heap.put_back(taken.list, id, Array(items.drop_last(1)))
 			_ => crash "Heap.with_last_dropped: the interpreter pops only arrays"
 		}
 	}
 
 	# The heap with an array's items replaced whole.
-	with_items : List(Heap.Cell), U64, List(Heap.Val) -> List(Heap.Cell)
-	with_items = |cells, id, vals| Heap.put_back(cells, id, Arr(vals))
+	with_items : List(Heap.Cell), U64, List(Heap.Value) -> List(Heap.Cell)
+	with_items = |cells, id, values| Heap.put_back(cells, id, Array(values))
 }

@@ -17,45 +17,45 @@
 ## after `Resolve.program` has placed them all.
 Ast :: [].{
 	# Where a piece of the program starts, for the messages that point at it.
-	Where : { line : U64, col : U64 }
+	Where : { line : U64, column : U64 }
 
-	Expr := [
+	Expression := [
 		Number(F64),
 		Text(Str),
 		# A template's text pieces, one more than its substitutions.
-		Template(List(Str), List(Ast.Expr)),
+		Template(List(Str), List(Ast.Expression)),
 		Boolean(Bool),
 		Null,
 		Undefined,
 		Name(Str, Ast.Slot, Ast.Where),
-		ArrayLit(List(Ast.Expr)),
-		ObjectLit(List(Ast.Prop)),
-		Unary(Ast.UnaryOp, Ast.Expr, Ast.Where),
-		Binary(Ast.BinaryOp, Ast.Expr, Ast.Expr, Ast.Where),
-		Logical(Ast.LogicalOp, Ast.Expr, Ast.Expr),
-		Conditional(Ast.Expr, Ast.Expr, Ast.Expr),
-		Assign(Ast.Target, Ast.AssignOp, Ast.Expr, Ast.Where),
+		ArrayLit(List(Ast.Expression)),
+		ObjectLit(List(Ast.Property)),
+		Unary(Ast.UnaryOperator, Ast.Expression, Ast.Where),
+		Binary(Ast.BinaryOperator, Ast.Expression, Ast.Expression, Ast.Where),
+		Logical(Ast.LogicalOperator, Ast.Expression, Ast.Expression),
+		Conditional(Ast.Expression, Ast.Expression, Ast.Expression),
+		Assign(Ast.Target, Ast.AssignmentOperator, Ast.Expression, Ast.Where),
 		Update(Ast.Target, Ast.Step, Ast.Fixity, Ast.Where),
-		Member(Ast.Expr, Str, Ast.Where),
-		Index(Ast.Expr, Ast.Expr, Ast.Where),
-		Call(Ast.Expr, List(Ast.Expr), Ast.Where),
+		Member(Ast.Expression, Str, Ast.Where),
+		Index(Ast.Expression, Ast.Expression, Ast.Where),
+		Call(Ast.Expression, List(Ast.Expression), Ast.Where),
 		# Boxed, so a heap cell holding a closure is no bigger than one holding
 		# an object.
-		Function(Box(Ast.FunDef)),
+		Function(Box(Ast.FunctionDefinition)),
 	]
 
 	# What an assignment or an update writes.
 	Target := [
 		ToName(Str, Ast.Slot, Ast.Where),
-		ToMember(Ast.Expr, Str),
-		ToIndex(Ast.Expr, Ast.Expr),
+		ToMember(Ast.Expression, Str),
+		ToIndex(Ast.Expression, Ast.Expression),
 	]
 
-	Prop : { key : Str, value : Ast.Expr }
+	Property : { key : Str, value : Ast.Expression }
 
-	UnaryOp : [Not, Negate, Plus, TypeOf]
+	UnaryOperator : [Not, Negate, Plus, TypeOf]
 
-	BinaryOp : [
+	BinaryOperator : [
 		Add,
 		Subtract,
 		Multiply,
@@ -70,10 +70,10 @@ Ast :: [].{
 		GreaterOrEqual,
 	]
 
-	LogicalOp : [And, Or, Nullish]
+	LogicalOperator : [And, Or, Nullish]
 
 	# `=` writes the value; the others combine it with what is there first.
-	AssignOp : [Set, Combine(Ast.BinaryOp)]
+	AssignmentOperator : [Set, Combine(Ast.BinaryOperator)]
 
 	Step : [Increment, Decrement]
 
@@ -101,12 +101,12 @@ Ast :: [].{
 	global_names : List(Str)
 	global_names = ["console", "Math", "Object", "String", "Array", "Number", "NaN", "Infinity"]
 
-	FunDef : {
+	FunctionDefinition : {
 		name : Str,
-		params : List(Str),
+		parameters : List(Str),
 		# The call's scope: the parameters, then what the body declares.
 		names : List(Str),
-		body : List(Ast.Stmt),
+		body : List(Ast.Statement),
 		capture : Ast.Capture,
 		at : Ast.Where,
 	}
@@ -120,10 +120,10 @@ Ast :: [].{
 		at : Ast.Where,
 	}
 
-	Init : [Initialized(Ast.Expr), Uninitialized]
+	Init : [Initialized(Ast.Expression), Uninitialized]
 
 	Block : {
-		stmts : List(Ast.Stmt),
+		statements : List(Ast.Statement),
 		scoping : Ast.Scoping,
 		capture : Ast.Capture,
 	}
@@ -133,36 +133,36 @@ Ast :: [].{
 	ForLoop : {
 		# What `init` declares, the loop's scope.
 		names : List(Str),
-		init : Ast.Stmt,
+		init : Ast.Statement,
 		test : Ast.Test,
 		update : Ast.Updater,
-		body : Ast.Stmt,
+		body : Ast.Statement,
 		capture : Ast.Capture,
 	}
 
-	Test : [Tested(Ast.Expr), Always]
+	Test : [Tested(Ast.Expression), Always]
 
-	Updater : [Updated(Ast.Expr), NoUpdate]
+	Updater : [Updated(Ast.Expression), NoUpdate]
 
 	ForOfLoop : {
 		binding : Ast.Binding,
 		name : Str,
-		iterable : Ast.Expr,
-		body : Ast.Stmt,
+		iterable : Ast.Expression,
+		body : Ast.Statement,
 		capture : Ast.Capture,
 		at : Ast.Where,
 	}
 
-	Stmt := [
-		Expression(Ast.Expr),
+	Statement := [
+		Expression(Ast.Expression),
 		Declare(Ast.Binding, List(Ast.Declarator)),
-		FunctionDecl(Box(Ast.FunDef), Ast.Slot),
-		If(Ast.Expr, Ast.Stmt, Ast.Stmt),
-		While(Ast.Expr, Ast.Stmt),
+		FunctionDeclaration(Box(Ast.FunctionDefinition), Ast.Slot),
+		If(Ast.Expression, Ast.Statement, Ast.Statement),
+		While(Ast.Expression, Ast.Statement),
 		For(Ast.ForLoop),
 		ForOf(Ast.ForOfLoop),
-		BlockStmt(Ast.Block),
-		Return(Ast.Expr),
+		BlockStatement(Ast.Block),
+		Return(Ast.Expression),
 		Break,
 		Continue,
 		Empty,

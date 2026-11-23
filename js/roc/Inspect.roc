@@ -29,16 +29,16 @@ Inspect :: [].{
 
 	# The arguments of one `console.log`, as the line it prints (without its
 	# newline). A string argument is written as it is; the rest are inspected.
-	line_of : List(Heap.Cell), List(Heap.Val) -> Try(Str, [Unsupported(Str)])
-	line_of = |cells, vals| {
-		match vals.first() {
-			Ok(Text(s)) if vals.len() > 1 and Inspect.has_format_directive(s) => {
+	line_of : List(Heap.Cell), List(Heap.Value) -> Try(Str, [Unsupported(Str)])
+	line_of = |cells, values| {
+		match values.first() {
+			Ok(Text(s)) if values.len() > 1 and Inspect.has_format_directive(s) => {
 				return Err(Unsupported("unsupported: console.log format directives (`%`)"))
 			}
 			_ => {}
 		}
 		var $parts = []
-		for v in vals {
+		for v in values {
 			text = match v {
 				Text(s) => s
 				_ => Inspect.inspect(cells, v)?
@@ -73,7 +73,7 @@ Inspect :: [].{
 	}
 
 	# One value as `util.inspect` writes it.
-	inspect : List(Heap.Cell), Heap.Val -> Try(Str, [Unsupported(Str)])
+	inspect : List(Heap.Cell), Heap.Value -> Try(Str, [Unsupported(Str)])
 	inspect = |cells, v| {
 		f = Inspect.format_value(
 			{
@@ -89,16 +89,16 @@ Inspect :: [].{
 	}
 
 	plain : Inspect.Ctx, Str -> Inspect.Formatted
-	plain = |ctx, text| { text: text, depth_now: ctx.depth_now }
+	plain = |context, text| { text: text, depth_now: context.depth_now }
 
-	format_value : Inspect.Ctx, Heap.Val, U64 -> Try(Inspect.Formatted, [Unsupported(Str)])
-	format_value = |ctx, v, recurse|
+	format_value : Inspect.Ctx, Heap.Value, U64 -> Try(Inspect.Formatted, [Unsupported(Str)])
+	format_value = |context, v, recurse|
 		match v {
-			Number(n) => Ok(Inspect.plain(ctx, Inspect.number_text(n)))
-			Text(s) => Ok(Inspect.plain(ctx, Inspect.string_literal(s, ctx.indent)))
+			Number(n) => Ok(Inspect.plain(context, Inspect.number_text(n)))
+			Text(s) => Ok(Inspect.plain(context, Inspect.string_literal(s, context.indent)))
 			Boolean(b) => Ok(
 				Inspect.plain(
-					ctx,
+					context,
 					if b {
 						"true"
 					} else {
@@ -106,9 +106,9 @@ Inspect :: [].{
 					},
 				),
 			)
-			Null => Ok(Inspect.plain(ctx, "null"))
-			Undefined => Ok(Inspect.plain(ctx, "undefined"))
-			Ref(id) => Inspect.format_cell(ctx, id, recurse)
+			Null => Ok(Inspect.plain(context, "null"))
+			Undefined => Ok(Inspect.plain(context, "undefined"))
+			Reference(id) => Inspect.format_cell(context, id, recurse)
 		}
 
 	number_text : F64 -> Str
@@ -120,72 +120,72 @@ Inspect :: [].{
 		}
 
 	format_cell : Inspect.Ctx, U64, U64 -> Try(Inspect.Formatted, [Unsupported(Str)])
-	format_cell = |ctx, id, recurse|
-		match Heap.cell_at(ctx.cells, id) {
+	format_cell = |context, id, recurse|
+		match Heap.cell_at(context.cells, id) {
 			Fun(c) => {
 				name = c.fun.unbox().name
 				if name == "" {
-					Ok(Inspect.plain(ctx, "[Function (anonymous)]"))
+					Ok(Inspect.plain(context, "[Function (anonymous)]"))
 				} else {
-					Ok(Inspect.plain(ctx, "[Function: ${name}]"))
+					Ok(Inspect.plain(context, "[Function: ${name}]"))
 				}
 			}
-			Builtin(n, _) => Ok(Inspect.plain(ctx, "[Function: ${Heap.native_name(n)}]"))
+			Builtin(n, _) => Ok(Inspect.plain(context, "[Function: ${Heap.native_name(n)}]"))
 			Namespace(
 				name,
 				_,
 			) => Err(Unsupported("unsupported: printing the builtin object ${name}"))
 			Taken => crash "Inspect.format_cell: no cell is out being written while a line is printed"
-			Arr(items) => {
-				if ctx.seen.contains(id) {
+			Array(items) => {
+				if context.seen.contains(id) {
 					Err(Unsupported("unsupported: printing a circular structure"))
 				} else if items.is_empty() {
-					Ok(Inspect.plain(ctx, "[]"))
+					Ok(Inspect.plain(context, "[]"))
 				} else if recurse > 2 {
-					Ok(Inspect.plain(ctx, "[Array]"))
+					Ok(Inspect.plain(context, "[Array]"))
 				} else {
 					Inspect.format_array(
 						{
-							..ctx,
+							..context,
 							depth_now: recurse + 1,
-							seen: ctx.seen.append(id),
+							seen: context.seen.append(id),
 						},
 						items,
 						recurse + 1,
 					)
 				}
 			}
-			Obj(props) => {
-				if ctx.seen.contains(id) {
+			Object(properties) => {
+				if context.seen.contains(id) {
 					Err(Unsupported("unsupported: printing a circular structure"))
-				} else if props.is_empty() {
-					Ok(Inspect.plain(ctx, "{}"))
+				} else if properties.is_empty() {
+					Ok(Inspect.plain(context, "{}"))
 				} else if recurse > 2 {
-					Ok(Inspect.plain(ctx, "[Object]"))
+					Ok(Inspect.plain(context, "[Object]"))
 				} else {
 					Inspect.format_object(
 						{
-							..ctx,
+							..context,
 							depth_now: recurse + 1,
-							seen: ctx.seen.append(id),
+							seen: context.seen.append(id),
 						},
-						props,
+						properties,
 						recurse + 1,
 					)
 				}
 			}
 		}
 
-	format_array : Inspect.Ctx, List(Heap.Val), U64 -> Try(Inspect.Formatted, [Unsupported(Str)])
-	format_array = |ctx, items, recurse| {
+	format_array : Inspect.Ctx, List(Heap.Value), U64 -> Try(Inspect.Formatted, [Unsupported(Str)])
+	format_array = |context, items, recurse| {
 		shown = items.sublist({ start: 0, len: 100 })
-		var $depth_now = ctx.depth_now
+		var $depth_now = context.depth_now
 		var $out = []
 		for item in shown {
 			f = Inspect.format_value(
 				{
-					..ctx,
-					indent: ctx.indent + 2,
+					..context,
+					indent: context.indent + 2,
 					depth_now: $depth_now,
 				},
 				item,
@@ -207,7 +207,7 @@ Inspect :: [].{
 		}
 		Ok({
 			text: Inspect.reduce_to_single_string(
-				{ ..ctx, depth_now: $depth_now },
+				{ ..context, depth_now: $depth_now },
 				{
 					output: output,
 					open: "[",
@@ -220,18 +220,18 @@ Inspect :: [].{
 		})
 	}
 
-	format_object : Inspect.Ctx, List(Heap.Prop), U64 -> Try(Inspect.Formatted, [Unsupported(Str)])
-	format_object = |ctx, props, recurse| {
-		var $depth_now = ctx.depth_now
+	format_object : Inspect.Ctx, List(Heap.Property), U64 -> Try(Inspect.Formatted, [Unsupported(Str)])
+	format_object = |context, properties, recurse| {
+		var $depth_now = context.depth_now
 		var $out = []
-		for p in Inspect.props_in_key_order(props) {
+		for p in Inspect.properties_in_key_order(properties) {
 			f = Inspect.format_value(
 				{
-					..ctx,
-					indent: ctx.indent + 2,
+					..context,
+					indent: context.indent + 2,
 					depth_now: $depth_now,
 				},
-				p.val,
+				p.value,
 				recurse,
 			)?
 			$depth_now = f.depth_now
@@ -239,7 +239,7 @@ Inspect :: [].{
 		}
 		Ok({
 			text: Inspect.reduce_to_single_string(
-				{ ..ctx, depth_now: $depth_now },
+				{ ..context, depth_now: $depth_now },
 				{
 					output: $out,
 					open: "{",
@@ -254,11 +254,11 @@ Inspect :: [].{
 
 	# An object's properties in JavaScript's order: the keys that are array
 	# indices first, by number, then the rest as they were made.
-	props_in_key_order : List(Heap.Prop) -> List(Heap.Prop)
-	props_in_key_order = |props| {
+	properties_in_key_order : List(Heap.Property) -> List(Heap.Property)
+	properties_in_key_order = |properties| {
 		var $indexed = []
 		var $named = []
-		for p in props {
+		for p in properties {
 			match Inspect.index_of_key(p.key) {
 				Ok(i) => {
 					$indexed = $indexed.append({ index: i, prop: p })
@@ -288,7 +288,7 @@ Inspect :: [].{
 		if b.is_empty() or b.len() > 10 or (b.len() > 1 and (b.get(0) ?? crash "Inspect.index_of_key: a key of two bytes or more") == '0') {
 			Err(NotIndex)
 		} else if b.all(|c| c >= '0' and c <= '9') {
-			n = b.fold(0, |acc, c| acc * 10 + (c - '0').to_u64())
+			n = b.fold(0, |accumulated, c| accumulated * 10 + (c - '0').to_u64())
 			if n < 4294967295 {
 				Ok(n)
 			} else {
@@ -424,7 +424,7 @@ Inspect :: [].{
 				},
 		)
 
-	Kind : [ArrayKind(List(Heap.Val)), ObjectKind]
+	Kind : [ArrayKind(List(Heap.Value)), ObjectKind]
 
 	Entries : {
 		output : List(Str),
@@ -435,19 +435,19 @@ Inspect :: [].{
 
 	# node's `reduceToSingleString`, with `ctx.compact` 3.
 	reduce_to_single_string : Inspect.Ctx, Inspect.Entries, U64 -> Str
-	reduce_to_single_string = |ctx, e, recurse| {
+	reduce_to_single_string = |context, e, recurse| {
 		entries = e.output.len()
 		output = match e.kind {
-			ArrayKind(items) if entries > 6 => Inspect.group_array_elements(ctx, e.output, items)
+			ArrayKind(items) if entries > 6 => Inspect.group_array_elements(context, e.output, items)
 			_ => e.output
 		}
 		joined = Str.join_with(output, ", ")
-		start = output.len() + ctx.indent + e.open.count_utf8_bytes() + 10
-		fits = ctx.depth_now - recurse < 3 and entries == output.len() and Inspect.is_below_break_length(output, start) and !joined.contains("\n")
+		start = output.len() + context.indent + e.open.count_utf8_bytes() + 10
+		fits = context.depth_now - recurse < 3 and entries == output.len() and Inspect.is_below_break_length(output, start) and !joined.contains("\n")
 		if fits {
 			"${e.open} ${joined} ${e.close}"
 		} else {
-			indentation = "\n${" ".repeat(ctx.indent)}"
+			indentation = "\n${" ".repeat(context.indent)}"
 			"${e.open}${indentation}  ${Str.join_with(output, ",${indentation}  ")}${indentation}${e.close}"
 		}
 	}
@@ -470,8 +470,8 @@ Inspect :: [].{
 
 	# node's `groupArrayElements`: an array of more than six short items set
 	# out in aligned columns.
-	group_array_elements : Inspect.Ctx, List(Str), List(Heap.Val) -> List(Str)
-	group_array_elements = |ctx, output, items| {
+	group_array_elements : Inspect.Ctx, List(Str), List(Heap.Value) -> List(Str)
+	group_array_elements = |context, output, items| {
 		has_more = items.len() > 100
 		output_length = if has_more {
 			output.len() - 1
@@ -482,11 +482,11 @@ Inspect :: [].{
 		total_length = data_lengths.fold(0, |t, l| t + l + 2)
 		max_length = data_lengths.fold(0, |m, l| U64.max(m, l))
 		actual_max = max_length + 2
-		if actual_max * 3 + ctx.indent < Inspect.break_length and (total_length.to_f64() / actual_max.to_f64() > 5.0 or max_length <= 6) {
+		if actual_max * 3 + context.indent < Inspect.break_length and (total_length.to_f64() / actual_max.to_f64() > 5.0 or max_length <= 6) {
 			average_bias = (actual_max.to_f64() - total_length.to_f64() / output.len().to_f64()).sqrt()
 			biased_max = F64.max(actual_max.to_f64() - 3.0 - average_bias, 1.0)
 			by_area = Inspect.js_round((2.5 * biased_max * output_length.to_f64()).sqrt() / biased_max)
-			by_width = (Inspect.break_length - ctx.indent).div_trunc_by(actual_max)
+			by_width = (Inspect.break_length - context.indent).div_trunc_by(actual_max)
 			columns = [by_area, by_width, 12, 15].fold(15, |m, c| U64.min(m, c))
 			if columns <= 1 {
 				output
@@ -502,14 +502,14 @@ Inspect :: [].{
 	js_round : F64 -> U64
 	js_round = |x| (x + 0.5).floor_to_u64_try() ?? 0
 
-	grouped : List(Str), List(U64), List(Heap.Val), U64, Bool -> List(Str)
+	grouped : List(Str), List(U64), List(Heap.Value), U64, Bool -> List(Str)
 	grouped = |output, data_lengths, items, columns, has_more| {
 		output_length = data_lengths.len()
 		var $max_line_lengths = []
-		var $col = 0
-		while $col < columns {
+		var $column = 0
+		while $column < columns {
 			var $longest = 0
-			var $j = $col
+			var $j = $column
 			while $j < output_length {
 				$longest = U64.max(
 					$longest,
@@ -518,7 +518,7 @@ Inspect :: [].{
 				$j = $j + columns
 			}
 			$max_line_lengths = $max_line_lengths.append($longest + 2)
-			$col = $col + 1
+			$column = $column + 1
 		}
 		numbers_only = items.sublist({ start: 0, len: output.len() }).all(
 			|v| match v {

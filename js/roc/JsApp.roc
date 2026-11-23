@@ -31,7 +31,7 @@ run_program = |bytes| {
 		}
 		Err(f) => List.concat(
 			[2],
-			"js: ${f.why} (line ${f.line.to_str()}, column ${f.col.to_str()})\n".to_utf8(),
+			"js: ${f.why} (line ${f.line.to_str()}, column ${f.column.to_str()})\n".to_utf8(),
 		)
 	}
 }

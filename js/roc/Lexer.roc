@@ -10,7 +10,7 @@
 ## A NUL byte is refused before lexing starts, so `byte_at` can answer 0 past
 ## the end of the text and mean only that.
 Lexer :: [].{
-	Tok : [
+	TokenKind : [
 		Number(F64),
 		Text(Str),
 		Name(Str),
@@ -28,16 +28,16 @@ Lexer :: [].{
 	Break : [SameLine, NewLine]
 
 	Token : {
-		tok : Lexer.Tok,
+		kind : Lexer.TokenKind,
 		line : U64,
-		col : U64,
+		column : U64,
 		before : Lexer.Break,
 	}
 
 	Fault : {
 		why : Str,
 		line : U64,
-		col : U64,
+		column : U64,
 	}
 
 	# The state of the scan: where it is, the tokens so far, and the brace
@@ -59,7 +59,7 @@ Lexer :: [].{
 			return Err({
 				why: "a NUL byte in the source",
 				line: 1,
-				col: 1,
+				column: 1,
 			})
 		}
 		var $s = {
@@ -75,9 +75,9 @@ Lexer :: [].{
 			$s = Lexer.scan_one(src, $s)?
 		}
 		end = {
-			tok: End,
+			kind: End,
 			line: $s.line,
-			col: $s.at - $s.line_start + 1,
+			column: $s.at - $s.line_start + 1,
 			before: NewLine,
 		}
 		Ok($s.tokens.append(end))
@@ -90,7 +90,7 @@ Lexer :: [].{
 	fault_at = |s, why| {
 		why: why,
 		line: s.line,
-		col: s.at - s.line_start + 1,
+		column: s.at - s.line_start + 1,
 	}
 
 	# The scan past one token, a run of space or one comment.
@@ -185,12 +185,12 @@ Lexer :: [].{
 	is_name_part = |c| Lexer.is_name_start(c) or Lexer.is_digit(c)
 
 	# The scan with one more token, which started at `from`.
-	with_token : Lexer.Scan, Lexer.Tok, U64 -> Lexer.Scan
-	with_token = |s, tok, from| {
+	with_token : Lexer.Scan, Lexer.TokenKind, U64 -> Lexer.Scan
+	with_token = |s, kind, from| {
 		token = {
-			tok: tok,
+			kind: kind,
 			line: s.line,
-			col: from - s.line_start + 1,
+			column: from - s.line_start + 1,
 			before: s.before,
 		}
 		{
@@ -321,12 +321,12 @@ Lexer :: [].{
 				simple(0)
 			}
 			'x' => {
-				hi = Lexer.hex_value(Lexer.byte_at(src, at + 2))
-				lo = Lexer.hex_value(Lexer.byte_at(src, at + 3))
-				if hi > 15 or lo > 15 {
+				high = Lexer.hex_value(Lexer.byte_at(src, at + 2))
+				low = Lexer.hex_value(Lexer.byte_at(src, at + 3))
+				if high > 15 or low > 15 {
 					Err(Lexer.fault_at(s, "a \\x escape without two hexadecimal digits"))
 				} else {
-					Ok({ bytes: Lexer.utf8_of(hi.to_u32() * 16 + lo.to_u32()), next: at + 4 })
+					Ok({ bytes: Lexer.utf8_of(high.to_u32() * 16 + low.to_u32()), next: at + 4 })
 				}
 			}
 			'u' => Lexer.unicode_escape(src, s, at)
@@ -432,7 +432,7 @@ Lexer :: [].{
 		}
 		text = Str.from_utf8($out) ?? crash "Lexer.scan_template: escapes write whole characters"
 		closes = Lexer.byte_at(src, $i) == '`'
-		tok = match piece {
+		kind = match piece {
 			Head => if closes {
 				TemplateWhole(text)
 			} else {
@@ -444,7 +444,7 @@ Lexer :: [].{
 				TemplateMiddle(text)
 			}
 		}
-		made = Lexer.with_token(start, tok, start.at)
+		made = Lexer.with_token(start, kind, start.at)
 		opened = if closes {
 			made.open_templates
 		} else {

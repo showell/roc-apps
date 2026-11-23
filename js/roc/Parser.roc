@@ -38,16 +38,16 @@ Parser :: [].{
 			at: 0,
 			functions: 0,
 		}
-		var $stmts = []
+		var $statements = []
 		while !Parser.is_end($p) {
 			r = Parser.statement($p)?
 			$p = r.p
-			$stmts = $stmts.append(r.value)
+			$statements = $statements.append(r.value)
 		}
 		Ok(
 			Resolve.program({
-				stmts: $stmts,
-				scoping: Scoped(Parser.layout_of([], $stmts)?),
+				statements: $statements,
+				scoping: Scoped(Parser.layout_of([], $statements)?),
 				capture: if $p.functions > 0 {
 					Captures
 				} else {
@@ -62,23 +62,23 @@ Parser :: [].{
 	# function may share its name with a parameter or another function, the
 	# later made winning; a `let` or a `const` shares its name with nothing,
 	# as JavaScript refuses.
-	layout_of : List(Str), List(Ast.Stmt) -> Try(List(Str), Lexer.Fault)
-	layout_of = |first, stmts| {
+	layout_of : List(Str), List(Ast.Statement) -> Try(List(Str), Lexer.Fault)
+	layout_of = |first, statements| {
 		var $names = first
 		var $lexical = []
-		for s in stmts {
+		for s in statements {
 			match s {
-				FunctionDecl(boxed, _) => {
-					def = boxed.unbox()
-					if $lexical.contains(def.name) {
-						return Err(Parser.fault_at(def.at, Parser.redeclared(def.name)))
+				FunctionDeclaration(boxed, _) => {
+					definition = boxed.unbox()
+					if $lexical.contains(definition.name) {
+						return Err(Parser.fault_at(definition.at, Parser.redeclared(definition.name)))
 					}
-					if !$names.contains(def.name) {
-						$names = $names.append(def.name)
+					if !$names.contains(definition.name) {
+						$names = $names.append(definition.name)
 					}
 				}
-				Declare(_, decls) => {
-					for d in decls {
+				Declare(_, declarations) => {
+					for d in declarations {
 						if $names.contains(d.name) {
 							return Err(Parser.fault_at(d.at, Parser.redeclared(d.name)))
 						}
@@ -112,16 +112,16 @@ Parser :: [].{
 		}
 
 	is_end : Parser.State -> Bool
-	is_end = |p| Parser.token(p).tok == End
+	is_end = |p| Parser.token(p).kind == End
 
 	is_punct : Parser.State, Str -> Bool
-	is_punct = |p, s| Parser.token(p).tok == Punct(s)
+	is_punct = |p, s| Parser.token(p).kind == Punct(s)
 
 	is_word : Parser.State, Str -> Bool
-	is_word = |p, s| Parser.token(p).tok == Name(s)
+	is_word = |p, s| Parser.token(p).kind == Name(s)
 
 	where_of : Lexer.Token -> Ast.Where
-	where_of = |t| { line: t.line, col: t.col }
+	where_of = |t| { line: t.line, column: t.column }
 
 	here : Parser.State -> Ast.Where
 	here = |p| Parser.where_of(Parser.token(p))
@@ -132,7 +132,7 @@ Parser :: [].{
 		{
 			why: why,
 			line: t.line,
-			col: t.col,
+			column: t.column,
 		}
 	}
 
@@ -140,11 +140,11 @@ Parser :: [].{
 	fault_at = |w, why| {
 		why: why,
 		line: w.line,
-		col: w.col,
+		column: w.column,
 	}
 
-	shown : Lexer.Tok -> Str
-	shown = |tok| match tok {
+	shown : Lexer.TokenKind -> Str
+	shown = |kind| match kind {
 		Number(n) => NumberText.of(n)
 		Text(_) => "a string"
 		Name(s) => "`${s}`"
@@ -161,7 +161,7 @@ Parser :: [].{
 		if Parser.is_punct(p, s) {
 			Ok(Parser.advance(p))
 		} else {
-			Err(Parser.fault_here(p, "expected `${s}`, found ${Parser.shown(Parser.token(p).tok)}"))
+			Err(Parser.fault_here(p, "expected `${s}`, found ${Parser.shown(Parser.token(p).kind)}"))
 		}
 
 	# A statement's end: a `;`, or at JavaScript would insert one.
@@ -170,16 +170,16 @@ Parser :: [].{
 		t = Parser.token(p)
 		if Parser.is_punct(p, ";") {
 			Ok(Parser.advance(p))
-		} else if Parser.is_punct(p, "}") or t.tok == End or t.before == NewLine {
+		} else if Parser.is_punct(p, "}") or t.kind == End or t.before == NewLine {
 			Ok(p)
 		} else {
-			Err(Parser.fault_here(p, "expected `;` or a line break, found ${Parser.shown(t.tok)}"))
+			Err(Parser.fault_here(p, "expected `;` or a line break, found ${Parser.shown(t.kind)}"))
 		}
 	}
 
 	name_here : Parser.State, Str -> Try(Parser.Parsed(Str), Lexer.Fault)
 	name_here = |p, what|
-		match Parser.token(p).tok {
+		match Parser.token(p).kind {
 			Name(s) => {
 				if Parser.is_reserved(s) {
 					Err(Parser.fault_here(p, "`${s}` is a reserved word, not ${what}"))
@@ -264,7 +264,7 @@ Parser :: [].{
 
 	refuse_unsupported_word : Parser.State -> Try({}, Lexer.Fault)
 	refuse_unsupported_word = |p|
-		match Parser.token(p).tok {
+		match Parser.token(p).kind {
 			Name(s) => match Parser.unsupported_word(s) {
 				Ok(why) => Err(Parser.fault_here(p, why))
 				Err(Supported) => Ok({})
@@ -282,21 +282,21 @@ Parser :: [].{
 
 	# ---- statements ------------------------------------------------------------
 
-	statement : Parser.State -> Try(Parser.Parsed(Ast.Stmt), Lexer.Fault)
+	statement : Parser.State -> Try(Parser.Parsed(Ast.Statement), Lexer.Fault)
 	statement = |p| {
 		Parser.refuse_unsupported_word(p)?
 		t = Parser.token(p)
-		match t.tok {
+		match t.kind {
 			Punct("{") => {
 				r = Parser.block(p)?
-				Ok({ p: r.p, value: BlockStmt(r.value) })
+				Ok({ p: r.p, value: BlockStatement(r.value) })
 			}
 			Punct(";") => Ok({ p: Parser.advance(p), value: Empty })
 			Name("let") => Parser.declaration(p, Let)
 			Name("const") => Parser.declaration(p, Const)
 			Name("function") => {
 				r = Parser.function_rest(Parser.advance(p), Parser.where_of(t), Declared)?
-				Ok({ p: r.p, value: FunctionDecl(Box.box(r.value), Unresolved) })
+				Ok({ p: r.p, value: FunctionDeclaration(Box.box(r.value), Unresolved) })
 			}
 			Name("if") => Parser.if_statement(p)
 			Name("while") => {
@@ -313,7 +313,7 @@ Parser :: [].{
 				if Parser.is_punct(
 					q,
 					";",
-				) or Parser.is_punct(q, "}") or n.tok == End or n.before == NewLine {
+				) or Parser.is_punct(q, "}") or n.kind == End or n.before == NewLine {
 					q2 = Parser.end_of_statement(q)?
 					Ok({ p: q2, value: Return(Undefined) })
 				} else {
@@ -334,7 +334,7 @@ Parser :: [].{
 
 	# The lone statement an `if`, a `while` or a `for` runs, which may not be a
 	# declaration: its scope would be the statement alone.
-	body_statement : Parser.State -> Try(Parser.Parsed(Ast.Stmt), Lexer.Fault)
+	body_statement : Parser.State -> Try(Parser.Parsed(Ast.Statement), Lexer.Fault)
 	body_statement = |p|
 		if Parser.is_word(p, "let") or Parser.is_word(p, "const") {
 			Err(
@@ -354,11 +354,11 @@ Parser :: [].{
 			Parser.statement(p)
 		}
 
-	jump : Parser.State, Ast.Stmt -> Try(Parser.Parsed(Ast.Stmt), Lexer.Fault)
+	jump : Parser.State, Ast.Statement -> Try(Parser.Parsed(Ast.Statement), Lexer.Fault)
 	jump = |p, stmt| {
 		q = Parser.advance(p)
 		n = Parser.token(q)
-		match n.tok {
+		match n.kind {
 			Name(_) if n.before == SameLine => Err(Parser.fault_here(q, "unsupported: labels"))
 			_ => {
 				q2 = Parser.end_of_statement(q)?
@@ -371,42 +371,42 @@ Parser :: [].{
 	block = |p| {
 		before = p.functions
 		var $q = Parser.expect_punct(p, "{")?
-		var $stmts = []
+		var $statements = []
 		while !Parser.is_punct($q, "}") {
 			if Parser.is_end($q) {
 				return Err(Parser.fault_here($q, "a block that never ends (expected `}`)"))
 			}
 			r = Parser.statement($q)?
 			$q = r.p
-			$stmts = $stmts.append(r.value)
+			$statements = $statements.append(r.value)
 		}
 		Ok({
 			p: Parser.advance($q),
 			value: {
-				stmts: $stmts,
-				scoping: Parser.scoping_of($stmts)?,
+				statements: $statements,
+				scoping: Parser.scoping_of($statements)?,
 				capture: Parser.capture_since($q, before),
 			},
 		})
 	}
 
-	scoping_of : List(Ast.Stmt) -> Try(Ast.Scoping, Lexer.Fault)
-	scoping_of = |stmts| {
-		declares = stmts.any(
+	scoping_of : List(Ast.Statement) -> Try(Ast.Scoping, Lexer.Fault)
+	scoping_of = |statements| {
+		declares = statements.any(
 			|s| match s {
 				Declare(_, _) => True
-				FunctionDecl(_, _) => True
+				FunctionDeclaration(_, _) => True
 				_ => False
 			},
 		)
 		if declares {
-			Ok(Scoped(Parser.layout_of([], stmts)?))
+			Ok(Scoped(Parser.layout_of([], statements)?))
 		} else {
 			Ok(Unscoped)
 		}
 	}
 
-	declaration : Parser.State, Ast.Binding -> Try(Parser.Parsed(Ast.Stmt), Lexer.Fault)
+	declaration : Parser.State, Ast.Binding -> Try(Parser.Parsed(Ast.Statement), Lexer.Fault)
 	declaration = |p, binding| {
 		r = Parser.declarators(Parser.advance(p), binding)?
 		q = Parser.end_of_statement(r.p)?
@@ -455,12 +455,12 @@ Parser :: [].{
 
 	# A function literal written with no name of its own takes the name it is
 	# bound to, as JavaScript names `const f = () => 1` "f".
-	named : Ast.Expr, Str -> Ast.Expr
+	named : Ast.Expression, Str -> Ast.Expression
 	named = |e, name| match e {
 		Function(boxed) => {
-			def = boxed.unbox()
-			if def.name == "" {
-				Function(Box.box({ ..def, name: name }))
+			definition = boxed.unbox()
+			if definition.name == "" {
+				Function(Box.box({ ..definition, name: name }))
 			} else {
 				e
 			}
@@ -468,7 +468,7 @@ Parser :: [].{
 		_ => e
 	}
 
-	if_statement : Parser.State -> Try(Parser.Parsed(Ast.Stmt), Lexer.Fault)
+	if_statement : Parser.State -> Try(Parser.Parsed(Ast.Statement), Lexer.Fault)
 	if_statement = |p| {
 		q = Parser.expect_punct(Parser.advance(p), "(")?
 		test = Parser.expression(q)?
@@ -482,7 +482,7 @@ Parser :: [].{
 		}
 	}
 
-	for_statement : Parser.State -> Try(Parser.Parsed(Ast.Stmt), Lexer.Fault)
+	for_statement : Parser.State -> Try(Parser.Parsed(Ast.Statement), Lexer.Fault)
 	for_statement = |p| {
 		before = p.functions
 		q = Parser.expect_punct(Parser.advance(p), "(")?
@@ -547,7 +547,7 @@ Parser :: [].{
 		}
 	}
 
-	for_of_rest : Parser.State, Ast.Binding -> Try(Parser.Parsed(Ast.Stmt), Lexer.Fault)
+	for_of_rest : Parser.State, Ast.Binding -> Try(Parser.Parsed(Ast.Statement), Lexer.Fault)
 	for_of_rest = |p, binding| {
 		w = Parser.here(p)
 		n = Parser.name_here(p, "a name to declare")?
@@ -573,15 +573,15 @@ Parser :: [].{
 
 	# A function after its `function` keyword: an optional name, the
 	# parameters and the body.
-	ParsedFunction : Try(Parser.Parsed(Ast.FunDef), Lexer.Fault)
+	ParsedFunction : Try(Parser.Parsed(Ast.FunctionDefinition), Lexer.Fault)
 
-	ParsedExpression : Try(Parser.Parsed(Ast.Expr), Lexer.Fault)
+	ParsedExpression : Try(Parser.Parsed(Ast.Expression), Lexer.Fault)
 
 	# What a function's body is parsed with: the function's name, its
 	# parameters and where it starts.
 	Signature : {
 		name : Str,
-		params : List(Str),
+		parameters : List(Str),
 		at : Ast.Where,
 	}
 
@@ -590,7 +590,7 @@ Parser :: [].{
 		if Parser.is_punct(p, "*") {
 			return Err(Parser.fault_here(p, "unsupported: generators"))
 		}
-		named_p = match Parser.token(p).tok {
+		named_p = match Parser.token(p).kind {
 			Name(_) => {
 				n = Parser.name_here(p, "a function's name")?
 				Ok(n)
@@ -600,19 +600,19 @@ Parser :: [].{
 				Expressed => Ok({ p: p, value: "" })
 			}
 		}?
-		params = Parser.parameters(named_p.p)?
+		parameters = Parser.parameter_list(named_p.p)?
 		Parser.function_body(
-			params.p,
+			parameters.p,
 			{
 				name: named_p.value,
-				params: params.value,
+				parameters: parameters.value,
 				at: w,
 			},
 		)
 	}
 
-	parameters : Parser.State -> Try(Parser.Parsed(List(Str)), Lexer.Fault)
-	parameters = |p| {
+	parameter_list : Parser.State -> Try(Parser.Parsed(List(Str)), Lexer.Fault)
+	parameter_list = |p| {
 		var $q = Parser.expect_punct(p, "(")?
 		var $names = []
 		while !Parser.is_punct($q, ")") {
@@ -644,30 +644,30 @@ Parser :: [].{
 
 	function_body : Parser.State, Parser.Signature -> Parser.ParsedFunction
 	function_body = |p, signature| {
-		{ name, params, at: w } = signature
+		{ name, parameters, at: w } = signature
 		before = p.functions
 		b = Parser.block(p)?
-		def = {
+		definition = {
 			name: name,
-			params: params,
-			names: Parser.layout_of(params, b.value.stmts)?,
-			body: b.value.stmts,
+			parameters: parameters,
+			names: Parser.layout_of(parameters, b.value.statements)?,
+			body: b.value.statements,
 			capture: Parser.capture_since(b.p, before),
 			at: w,
 		}
-		Ok({ p: { ..b.p, functions: b.p.functions + 1 }, value: def })
+		Ok({ p: { ..b.p, functions: b.p.functions + 1 }, value: definition })
 	}
 
 	# Whether an arrow function starts here: a name and `=>`, or a
 	# parenthesized list whose `)` is followed by `=>`.
 	is_arrow_start : Parser.State -> Bool
 	is_arrow_start = |p|
-		match Parser.token(p).tok {
-			Name(_) => Parser.token_after(p).tok == Punct("=>")
+		match Parser.token(p).kind {
+			Name(_) => Parser.token_after(p).kind == Punct("=>")
 			Punct("(") => {
 				close = Parser.matching_close(p)
 				match p.tokens.get(close + 1) {
-					Ok(t) => t.tok == Punct("=>")
+					Ok(t) => t.kind == Punct("=>")
 					Err(OutOfBounds) => False
 				}
 			}
@@ -682,17 +682,17 @@ Parser :: [].{
 		var $found = False
 		while !$found and $i < p.tokens.len() {
 			t = p.tokens.get($i) ?? crash "Parser.matching_close: inside the tokens"
-			if t.tok == Punct("(") or t.tok == Punct("[") or t.tok == Punct("{") {
+			if t.kind == Punct("(") or t.kind == Punct("[") or t.kind == Punct("{") {
 				$depth = $depth + 1
 				$i = $i + 1
-			} else if t.tok == Punct(")") or t.tok == Punct("]") or t.tok == Punct("}") {
+			} else if t.kind == Punct(")") or t.kind == Punct("]") or t.kind == Punct("}") {
 				$depth = $depth - 1
 				if $depth == 0 {
 					$found = True
 				} else {
 					$i = $i + 1
 				}
-			} else if t.tok == End {
+			} else if t.kind == End {
 				$found = True
 			} else {
 				$i = $i + 1
@@ -701,45 +701,45 @@ Parser :: [].{
 		$i
 	}
 
-	arrow : Parser.State -> Try(Parser.Parsed(Ast.Expr), Lexer.Fault)
+	arrow : Parser.State -> Try(Parser.Parsed(Ast.Expression), Lexer.Fault)
 	arrow = |p| {
 		w = Parser.here(p)
-		params = match Parser.token(p).tok {
+		parameters = match Parser.token(p).kind {
 			Name(_) => {
 				n = Parser.name_here(p, "a parameter's name")?
 				Ok({ p: n.p, value: [n.value] })
 			}
-			_ => Parser.parameters(p)
+			_ => Parser.parameter_list(p)
 		}?
-		q = Parser.expect_punct(params.p, "=>")?
+		q = Parser.expect_punct(parameters.p, "=>")?
 		if Parser.is_punct(q, "{") {
-			def = Parser.function_body(
+			definition = Parser.function_body(
 				q,
 				{
 					name: "",
-					params: params.value,
+					parameters: parameters.value,
 					at: w,
 				},
 			)?
-			Ok({ p: def.p, value: Function(Box.box(def.value)) })
+			Ok({ p: definition.p, value: Function(Box.box(definition.value)) })
 		} else {
 			before = q.functions
 			e = Parser.assignment(q)?
-			def = {
+			definition = {
 				name: "",
-				params: params.value,
-				names: params.value,
+				parameters: parameters.value,
+				names: parameters.value,
 				body: [Return(e.value)],
 				capture: Parser.capture_since(e.p, before),
 				at: w,
 			}
-			Ok({ p: { ..e.p, functions: e.p.functions + 1 }, value: Function(Box.box(def)) })
+			Ok({ p: { ..e.p, functions: e.p.functions + 1 }, value: Function(Box.box(definition)) })
 		}
 	}
 
 	# ---- expressions -----------------------------------------------------------
 
-	expression : Parser.State -> Try(Parser.Parsed(Ast.Expr), Lexer.Fault)
+	expression : Parser.State -> Try(Parser.Parsed(Ast.Expression), Lexer.Fault)
 	expression = |p| {
 		e = Parser.assignment(p)?
 		if Parser.is_punct(e.p, ",") {
@@ -749,8 +749,8 @@ Parser :: [].{
 		}
 	}
 
-	assign_op : Lexer.Tok -> Try(Ast.AssignOp, [NotAssignment, Unsupported(Str)])
-	assign_op = |tok| match tok {
+	assignment_operator : Lexer.TokenKind -> Try(Ast.AssignmentOperator, [NotAssignment, Unsupported(Str)])
+	assignment_operator = |kind| match kind {
 		Punct("=") => Ok(Set)
 		Punct("+=") => Ok(Combine(Add))
 		Punct("-=") => Ok(Combine(Subtract))
@@ -769,39 +769,39 @@ Parser :: [].{
 		_ => Err(NotAssignment)
 	}
 
-	target_of : Ast.Expr, Ast.Where -> Try(Ast.Target, Lexer.Fault)
+	target_of : Ast.Expression, Ast.Where -> Try(Ast.Target, Lexer.Fault)
 	target_of = |e, w| match e {
 		Name(s, slot, at) => Ok(ToName(s, slot, at))
-		Member(obj, key, _) => Ok(ToMember(obj, key))
-		Index(obj, key, _) => Ok(ToIndex(obj, key))
+		Member(object, key, _) => Ok(ToMember(object, key))
+		Index(object, key, _) => Ok(ToIndex(object, key))
 		ArrayLit(_) => Err(Parser.fault_at(w, "unsupported: destructuring"))
 		ObjectLit(_) => Err(Parser.fault_at(w, "unsupported: destructuring"))
 		_ => Err(Parser.fault_at(w, "this can't be assigned to"))
 	}
 
-	assignment : Parser.State -> Try(Parser.Parsed(Ast.Expr), Lexer.Fault)
+	assignment : Parser.State -> Try(Parser.Parsed(Ast.Expression), Lexer.Fault)
 	assignment = |p|
 		if Parser.is_arrow_start(p) {
 			Parser.arrow(p)
 		} else {
 			w = Parser.here(p)
 			left = Parser.conditional(p)?
-			match Parser.assign_op(Parser.token(left.p).tok) {
-				Ok(op) => {
+			match Parser.assignment_operator(Parser.token(left.p).kind) {
+				Ok(operator) => {
 					target = Parser.target_of(left.value, w)?
 					right = Parser.assignment(Parser.advance(left.p))?
 					value = match target {
 						ToName(s, _, _) => Parser.named(right.value, s)
 						_ => right.value
 					}
-					Ok({ p: right.p, value: Assign(target, op, value, w) })
+					Ok({ p: right.p, value: Assign(target, operator, value, w) })
 				}
 				Err(Unsupported(why)) => Err(Parser.fault_here(left.p, why))
 				Err(NotAssignment) => Ok(left)
 			}
 		}
 
-	conditional : Parser.State -> Try(Parser.Parsed(Ast.Expr), Lexer.Fault)
+	conditional : Parser.State -> Try(Parser.Parsed(Ast.Expression), Lexer.Fault)
 	conditional = |p| {
 		test = Parser.logical_or(p)?
 		if Parser.is_punct(test.p, "?") {
@@ -814,25 +814,25 @@ Parser :: [].{
 		}
 	}
 
-	logical_or : Parser.State -> Try(Parser.Parsed(Ast.Expr), Lexer.Fault)
+	logical_or : Parser.State -> Try(Parser.Parsed(Ast.Expression), Lexer.Fault)
 	logical_or = |p| {
 		first = Parser.logical_and(p)?
 		var $q = first.p
 		var $e = first.value
 		while Parser.is_punct($q, "||") or Parser.is_punct($q, "??") {
-			op = if Parser.is_punct($q, "||") {
+			operator = if Parser.is_punct($q, "||") {
 				Or
 			} else {
 				Nullish
 			}
 			r = Parser.logical_and(Parser.advance($q))?
-			$e = Logical(op, $e, r.value)
+			$e = Logical(operator, $e, r.value)
 			$q = r.p
 		}
 		Ok({ p: $q, value: $e })
 	}
 
-	logical_and : Parser.State -> Try(Parser.Parsed(Ast.Expr), Lexer.Fault)
+	logical_and : Parser.State -> Try(Parser.Parsed(Ast.Expression), Lexer.Fault)
 	logical_and = |p| {
 		first = Parser.equality(p)?
 		var $q = first.p
@@ -846,7 +846,7 @@ Parser :: [].{
 	}
 
 	# The binary operators of one level of precedence, by their tokens.
-	Level : List({ punct : Str, op : Ast.BinaryOp })
+	Level : List({ punct : Str, op : Ast.BinaryOperator })
 
 	# One left-associative level: operands from `next`, joined by the level's
 	# operators.
@@ -858,7 +858,7 @@ Parser :: [].{
 		var $more = True
 		while $more {
 			t = Parser.token($q)
-			match level.find_first(|l| t.tok == Punct(l.punct)) {
+			match level.find_first(|l| t.kind == Punct(l.punct)) {
 				Ok(l) => {
 					r = next(Parser.advance($q))?
 					$e = Binary(l.op, $e, r.value, Parser.where_of(t))
@@ -874,12 +874,12 @@ Parser :: [].{
 
 	refuse_operator : Parser.State, List(Str), Str -> Try({}, Lexer.Fault)
 	refuse_operator = |p, puncts, why|
-		match Parser.token(p).tok {
+		match Parser.token(p).kind {
 			Punct(s) if puncts.contains(s) => Err(Parser.fault_here(p, "${why} (`${s}`)"))
 			_ => Ok({})
 		}
 
-	equality : Parser.State -> Try(Parser.Parsed(Ast.Expr), Lexer.Fault)
+	equality : Parser.State -> Try(Parser.Parsed(Ast.Expression), Lexer.Fault)
 	equality = |p| {
 		r = Parser.binary_level(
 			p,
@@ -895,7 +895,7 @@ Parser :: [].{
 		Ok(r)
 	}
 
-	relational : Parser.State -> Try(Parser.Parsed(Ast.Expr), Lexer.Fault)
+	relational : Parser.State -> Try(Parser.Parsed(Ast.Expression), Lexer.Fault)
 	relational = |p| {
 		r = Parser.binary_level(
 			p,
@@ -915,7 +915,7 @@ Parser :: [].{
 		}
 	}
 
-	additive : Parser.State -> Try(Parser.Parsed(Ast.Expr), Lexer.Fault)
+	additive : Parser.State -> Try(Parser.Parsed(Ast.Expression), Lexer.Fault)
 	additive = |p|
 		Parser.binary_level(
 			p,
@@ -923,7 +923,7 @@ Parser :: [].{
 			Parser.multiplicative,
 		)
 
-	multiplicative : Parser.State -> Try(Parser.Parsed(Ast.Expr), Lexer.Fault)
+	multiplicative : Parser.State -> Try(Parser.Parsed(Ast.Expression), Lexer.Fault)
 	multiplicative = |p|
 		Parser.binary_level(
 			p,
@@ -936,7 +936,7 @@ Parser :: [].{
 		)
 
 	# `**` binds to the right: `2 ** 3 ** 2` is `2 ** 9`.
-	exponent : Parser.State -> Try(Parser.Parsed(Ast.Expr), Lexer.Fault)
+	exponent : Parser.State -> Try(Parser.Parsed(Ast.Expression), Lexer.Fault)
 	exponent = |p| {
 		base = Parser.unary(p)?
 		if Parser.is_punct(base.p, "**") {
@@ -948,21 +948,21 @@ Parser :: [].{
 		}
 	}
 
-	unary : Parser.State -> Try(Parser.Parsed(Ast.Expr), Lexer.Fault)
+	unary : Parser.State -> Try(Parser.Parsed(Ast.Expression), Lexer.Fault)
 	unary = |p| {
 		w = Parser.here(p)
-		op = match Parser.token(p).tok {
-			Punct("!") => Ok(Op(Not))
-			Punct("-") => Ok(Op(Negate))
-			Punct("+") => Ok(Op(Plus))
-			Name("typeof") => Ok(Op(TypeOf))
+		operator = match Parser.token(p).kind {
+			Punct("!") => Ok(Operator(Not))
+			Punct("-") => Ok(Operator(Negate))
+			Punct("+") => Ok(Operator(Plus))
+			Name("typeof") => Ok(Operator(TypeOf))
 			Punct("++") => Ok(Prefixed(Increment))
 			Punct("--") => Ok(Prefixed(Decrement))
 			Punct("~") => Err(Parser.fault_here(p, "unsupported: bitwise operators (`~`)"))
-			_ => Ok(NoOp)
+			_ => Ok(NoOperator)
 		}?
-		match op {
-			Op(o) => {
+		match operator {
+			Operator(o) => {
 				r = Parser.unary(Parser.advance(p))?
 				Ok({ p: r.p, value: Unary(o, r.value, w) })
 			}
@@ -971,20 +971,20 @@ Parser :: [].{
 				target = Parser.target_of(r.value, w)?
 				Ok({ p: r.p, value: Update(target, step, Prefix, w) })
 			}
-			NoOp => Parser.postfix(p)
+			NoOperator => Parser.postfix(p)
 		}
 	}
 
-	postfix : Parser.State -> Try(Parser.Parsed(Ast.Expr), Lexer.Fault)
+	postfix : Parser.State -> Try(Parser.Parsed(Ast.Expression), Lexer.Fault)
 	postfix = |p| {
 		w = Parser.here(p)
 		r = Parser.call_or_member(p)?
 		t = Parser.token(r.p)
 		step = if t.before == NewLine {
 			NoStep
-		} else if t.tok == Punct("++") {
+		} else if t.kind == Punct("++") {
 			Stepped(Increment)
-		} else if t.tok == Punct("--") {
+		} else if t.kind == Punct("--") {
 			Stepped(Decrement)
 		} else {
 			NoStep
@@ -998,7 +998,7 @@ Parser :: [].{
 		}
 	}
 
-	call_or_member : Parser.State -> Try(Parser.Parsed(Ast.Expr), Lexer.Fault)
+	call_or_member : Parser.State -> Try(Parser.Parsed(Ast.Expression), Lexer.Fault)
 	call_or_member = |p| {
 		first = Parser.primary(p)?
 		var $q = first.p
@@ -1007,10 +1007,10 @@ Parser :: [].{
 		while $more {
 			t = Parser.token($q)
 			w = Parser.where_of(t)
-			match t.tok {
+			match t.kind {
 				Punct(".") => {
 					q = Parser.advance($q)
-					match Parser.token(q).tok {
+					match Parser.token(q).kind {
 						Name(s) => {
 							$e = Member($e, s, w)
 							$q = Parser.advance(q)
@@ -1031,9 +1031,9 @@ Parser :: [].{
 					$q = q
 				}
 				Punct("(") => {
-					args = Parser.arguments($q)?
-					$e = Call($e, args.value, w)
-					$q = args.p
+					call_arguments = Parser.arguments($q)?
+					$e = Call($e, call_arguments.value, w)
+					$q = call_arguments.p
 				}
 				Punct("?.") => return Err(
 					Parser.fault_here($q, "unsupported: optional chaining (`?.`)"),
@@ -1052,11 +1052,11 @@ Parser :: [].{
 		Ok({ p: $q, value: $e })
 	}
 
-	arguments : Parser.State -> Try(Parser.Parsed(List(Ast.Expr)), Lexer.Fault)
+	arguments : Parser.State -> Try(Parser.Parsed(List(Ast.Expression)), Lexer.Fault)
 	arguments = |p| Parser.expression_list(Parser.advance(p), ")", "an argument")
 
 	# Expressions separated by commas up to `close`, a trailing comma allowed.
-	expression_list : Parser.State, Str, Str -> Try(Parser.Parsed(List(Ast.Expr)), Lexer.Fault)
+	expression_list : Parser.State, Str, Str -> Try(Parser.Parsed(List(Ast.Expression)), Lexer.Fault)
 	expression_list = |p, close, what| {
 		var $q = p
 		var $items = []
@@ -1082,7 +1082,7 @@ Parser :: [].{
 				return Err(
 					Parser.fault_here(
 						e.p,
-						"expected `,` or `${close}`, found ${Parser.shown(Parser.token(e.p).tok)}",
+						"expected `,` or `${close}`, found ${Parser.shown(Parser.token(e.p).kind)}",
 					),
 				)
 			}
@@ -1090,13 +1090,13 @@ Parser :: [].{
 		Ok({ p: Parser.advance($q), value: $items })
 	}
 
-	primary : Parser.State -> Try(Parser.Parsed(Ast.Expr), Lexer.Fault)
+	primary : Parser.State -> Try(Parser.Parsed(Ast.Expression), Lexer.Fault)
 	primary = |p| {
 		Parser.refuse_unsupported_word(p)?
 		t = Parser.token(p)
 		w = Parser.where_of(t)
 		after = Parser.advance(p)
-		match t.tok {
+		match t.kind {
 			Number(n) => Ok({ p: after, value: Number(n) })
 			Text(s) => Ok({ p: after, value: Text(s) })
 			TemplateWhole(s) => Ok({ p: after, value: Template([s], []) })
@@ -1106,8 +1106,8 @@ Parser :: [].{
 			Name("null") => Ok({ p: after, value: Null })
 			Name("undefined") => Ok({ p: after, value: Undefined })
 			Name("function") => {
-				def = Parser.function_rest(after, w, Expressed)?
-				Ok({ p: def.p, value: Function(Box.box(def.value)) })
+				definition = Parser.function_rest(after, w, Expressed)?
+				Ok({ p: definition.p, value: Function(Box.box(definition.value)) })
 			}
 			Name(s) => {
 				if Parser.is_reserved(s) {
@@ -1135,7 +1135,7 @@ Parser :: [].{
 		}
 	}
 
-	template_rest : Parser.State, Str -> Try(Parser.Parsed(Ast.Expr), Lexer.Fault)
+	template_rest : Parser.State, Str -> Try(Parser.Parsed(Ast.Expression), Lexer.Fault)
 	template_rest = |p, head| {
 		var $q = p
 		var $texts = [head]
@@ -1144,7 +1144,7 @@ Parser :: [].{
 		while $open {
 			e = Parser.expression($q)?
 			$parts = $parts.append(e.value)
-			match Parser.token(e.p).tok {
+			match Parser.token(e.p).kind {
 				TemplateMiddle(s) => {
 					$texts = $texts.append(s)
 					$q = Parser.advance(e.p)
@@ -1166,13 +1166,13 @@ Parser :: [].{
 	}
 
 	# An object literal after its `{`.
-	object_rest : Parser.State -> Try(Parser.Parsed(Ast.Expr), Lexer.Fault)
+	object_rest : Parser.State -> Try(Parser.Parsed(Ast.Expression), Lexer.Fault)
 	object_rest = |p| {
 		var $q = p
-		var $props = []
+		var $properties = []
 		while !Parser.is_punct($q, "}") {
 			r = Parser.property($q)?
-			$props = $props.append(r.value)
+			$properties = $properties.append(r.value)
 			if Parser.is_punct(r.p, ",") {
 				$q = Parser.advance(r.p)
 			} else if Parser.is_punct(r.p, "}") {
@@ -1181,21 +1181,21 @@ Parser :: [].{
 				return Err(
 					Parser.fault_here(
 						r.p,
-						"expected `,` or `}` in an object, found ${Parser.shown(Parser.token(r.p).tok)}",
+						"expected `,` or `}` in an object, found ${Parser.shown(Parser.token(r.p).kind)}",
 					),
 				)
 			}
 		}
-		Ok({ p: Parser.advance($q), value: ObjectLit($props) })
+		Ok({ p: Parser.advance($q), value: ObjectLit($properties) })
 	}
 
-	property : Parser.State -> Try(Parser.Parsed(Ast.Prop), Lexer.Fault)
+	property : Parser.State -> Try(Parser.Parsed(Ast.Property), Lexer.Fault)
 	property = |p| {
 		t = Parser.token(p)
 		w = Parser.where_of(t)
-		key = match t.tok {
+		key = match t.kind {
 			Name(s) => {
-				next = Parser.token_after(p).tok
+				next = Parser.token_after(p).kind
 				if (s == "get" or s == "set" or s == "async") and next != Punct(":") and next != Punct("(") and next != Punct(",") and next != Punct("}") {
 					Err(Parser.fault_here(p, "unsupported: getters, setters and async methods"))
 				} else {
@@ -1216,18 +1216,18 @@ Parser :: [].{
 			v = Parser.assignment(Parser.advance(after))?
 			Ok({ p: v.p, value: { key: key, value: Parser.named(v.value, key) } })
 		} else if Parser.is_punct(after, "(") {
-			params = Parser.parameters(after)?
-			def = Parser.function_body(
-				params.p,
+			parameters = Parser.parameter_list(after)?
+			definition = Parser.function_body(
+				parameters.p,
 				{
 					name: key,
-					params: params.value,
+					parameters: parameters.value,
 					at: w,
 				},
 			)?
-			Ok({ p: def.p, value: { key: key, value: Function(Box.box(def.value)) } })
+			Ok({ p: definition.p, value: { key: key, value: Function(Box.box(definition.value)) } })
 		} else {
-			match t.tok {
+			match t.kind {
 				Name(s) => {
 					if Parser.is_reserved(s) {
 						Err(Parser.fault_here(p, "`${s}` is a reserved word, not a name"))

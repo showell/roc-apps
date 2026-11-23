@@ -14,18 +14,18 @@ import Ast
 Resolve :: [].{
 	# The scopes around the code being placed, the innermost last, each the
 	# names it declares in its order.
-	Env : List(List(Str))
+	Scopes : List(List(Str))
 
 	program : Ast.Program -> Ast.Program
 	program = |tree| Resolve.block([], tree)
 
-	slot : Resolve.Env, Str -> Ast.Slot
-	slot = |env, name| {
-		var $frame = env.len()
+	slot : Resolve.Scopes, Str -> Ast.Slot
+	slot = |scopes, name| {
+		var $frame = scopes.len()
 		var $hops = 0
 		var $found = Undeclared
 		while $frame > 0 {
-			names = env.get($frame - 1) ?? crash "Resolve.slot: inside the scopes"
+			names = scopes.get($frame - 1) ?? crash "Resolve.slot: inside the scopes"
 			match names.find_first_index(|n| n == name) {
 				Ok(index) => {
 					$found = Local({ hops: $hops, index: index })
@@ -46,85 +46,85 @@ Resolve :: [].{
 		}
 	}
 
-	block : Resolve.Env, Ast.Block -> Ast.Block
-	block = |env, b| {
+	block : Resolve.Scopes, Ast.Block -> Ast.Block
+	block = |scopes, b| {
 		inner = match b.scoping {
-			Scoped(names) => env.append(names)
-			Unscoped => env
+			Scoped(names) => scopes.append(names)
+			Unscoped => scopes
 		}
-		{ ..b, stmts: b.stmts.map(|s| Resolve.stmt(inner, s)) }
+		{ ..b, statements: b.statements.map(|s| Resolve.statement(inner, s)) }
 	}
 
-	fun : Resolve.Env, Ast.FunDef -> Ast.FunDef
-	fun = |env, def| {
-		inner = env.append(def.names)
-		{ ..def, body: def.body.map(|s| Resolve.stmt(inner, s)) }
+	fun : Resolve.Scopes, Ast.FunctionDefinition -> Ast.FunctionDefinition
+	fun = |scopes, definition| {
+		inner = scopes.append(definition.names)
+		{ ..definition, body: definition.body.map(|s| Resolve.statement(inner, s)) }
 	}
 
-	stmt : Resolve.Env, Ast.Stmt -> Ast.Stmt
-	stmt = |env, s|
+	statement : Resolve.Scopes, Ast.Statement -> Ast.Statement
+	statement = |scopes, s|
 		match s {
-			Expression(e) => Expression(Resolve.expr(env, e))
-			Declare(binding, decls) => Declare(binding, decls.map(|d| Resolve.declarator(env, d)))
-			FunctionDecl(def, _) => FunctionDecl(
-				Box.box(Resolve.fun(env, def.unbox())),
-				Resolve.slot(env, def.unbox().name),
+			Expression(e) => Expression(Resolve.expression(scopes, e))
+			Declare(binding, declarations) => Declare(binding, declarations.map(|d| Resolve.declarator(scopes, d)))
+			FunctionDeclaration(definition, _) => FunctionDeclaration(
+				Box.box(Resolve.fun(scopes, definition.unbox())),
+				Resolve.slot(scopes, definition.unbox().name),
 			)
 			If(test, yes, no) => If(
-				Resolve.expr(env, test),
-				Resolve.stmt(env, yes),
-				Resolve.stmt(env, no),
+				Resolve.expression(scopes, test),
+				Resolve.statement(scopes, yes),
+				Resolve.statement(scopes, no),
 			)
-			While(test, body) => While(Resolve.expr(env, test), Resolve.stmt(env, body))
+			While(test, body) => While(Resolve.expression(scopes, test), Resolve.statement(scopes, body))
 			For(loop) => {
-				inner = env.append(loop.names)
+				inner = scopes.append(loop.names)
 				For({
 					..loop,
-					init: Resolve.stmt(inner, loop.init),
+					init: Resolve.statement(inner, loop.init),
 					test: match loop.test {
-						Tested(e) => Tested(Resolve.expr(inner, e))
+						Tested(e) => Tested(Resolve.expression(inner, e))
 						Always => Always
 					},
 					update: match loop.update {
-						Updated(e) => Updated(Resolve.expr(inner, e))
+						Updated(e) => Updated(Resolve.expression(inner, e))
 						NoUpdate => NoUpdate
 					},
-					body: Resolve.stmt(inner, loop.body),
+					body: Resolve.statement(inner, loop.body),
 				})
 			}
 			ForOf(loop) => ForOf({
 				..loop,
-				iterable: Resolve.expr(env, loop.iterable),
-				body: Resolve.stmt(env.append([loop.name]), loop.body),
+				iterable: Resolve.expression(scopes, loop.iterable),
+				body: Resolve.statement(scopes.append([loop.name]), loop.body),
 			})
-			BlockStmt(b) => BlockStmt(Resolve.block(env, b))
-			Return(e) => Return(Resolve.expr(env, e))
+			BlockStatement(b) => BlockStatement(Resolve.block(scopes, b))
+			Return(e) => Return(Resolve.expression(scopes, e))
 			Break => Break
 			Continue => Continue
 			Empty => Empty
 		}
 
-	declarator : Resolve.Env, Ast.Declarator -> Ast.Declarator
-	declarator = |env, d| {
+	declarator : Resolve.Scopes, Ast.Declarator -> Ast.Declarator
+	declarator = |scopes, d| {
 		..d,
 		init: match d.init {
-			Initialized(e) => Initialized(Resolve.expr(env, e))
+			Initialized(e) => Initialized(Resolve.expression(scopes, e))
 			Uninitialized => Uninitialized
 		},
-		slot: Resolve.slot(env, d.name),
+		slot: Resolve.slot(scopes, d.name),
 	}
 
-	target : Resolve.Env, Ast.Target -> Ast.Target
-	target = |env, t|
+	target : Resolve.Scopes, Ast.Target -> Ast.Target
+	target = |scopes, t|
 		match t {
-			ToName(name, _, w) => ToName(name, Resolve.slot(env, name), w)
-			ToMember(obj, key) => ToMember(Resolve.expr(env, obj), key)
-			ToIndex(obj, key) => ToIndex(Resolve.expr(env, obj), Resolve.expr(env, key))
+			ToName(name, _, w) => ToName(name, Resolve.slot(scopes, name), w)
+			ToMember(object, key) => ToMember(Resolve.expression(scopes, object), key)
+			ToIndex(object, key) => ToIndex(Resolve.expression(scopes, object), Resolve.expression(scopes, key))
 		}
 
-	expr : Resolve.Env, Ast.Expr -> Ast.Expr
-	expr = |env, e| {
-		each = |es| es.map(|x| Resolve.expr(env, x))
+	expression : Resolve.Scopes, Ast.Expression -> Ast.Expression
+	expression = |scopes, e| {
+		each = |expressions| expressions.map(|x| Resolve.expression(scopes, x))
 		match e {
 			Number(n) => Number(n)
 			Text(s) => Text(s)
@@ -132,50 +132,50 @@ Resolve :: [].{
 			Boolean(b) => Boolean(b)
 			Null => Null
 			Undefined => Undefined
-			Name(name, _, w) => Name(name, Resolve.slot(env, name), w)
+			Name(name, _, w) => Name(name, Resolve.slot(scopes, name), w)
 			ArrayLit(items) => ArrayLit(each(items))
-			ObjectLit(props) => ObjectLit(props.map(|p| { ..p, value: Resolve.expr(env, p.value) }))
-			Unary(op, a, w) => Unary(op, Resolve.expr(env, a), w)
-			Binary(op, a, b, w) => Binary(
-				op,
-				Resolve.expr(env, a),
-				Resolve.expr(env, b),
+			ObjectLit(properties) => ObjectLit(properties.map(|p| { ..p, value: Resolve.expression(scopes, p.value) }))
+			Unary(operator, a, w) => Unary(operator, Resolve.expression(scopes, a), w)
+			Binary(operator, a, b, w) => Binary(
+				operator,
+				Resolve.expression(scopes, a),
+				Resolve.expression(scopes, b),
 				w,
 			)
-			Logical(op, a, b) => Logical(
-				op,
-				Resolve.expr(env, a),
-				Resolve.expr(env, b),
+			Logical(operator, a, b) => Logical(
+				operator,
+				Resolve.expression(scopes, a),
+				Resolve.expression(scopes, b),
 			)
 			Conditional(a, b, c) => Conditional(
-				Resolve.expr(env, a),
-				Resolve.expr(env, b),
-				Resolve.expr(env, c),
+				Resolve.expression(scopes, a),
+				Resolve.expression(scopes, b),
+				Resolve.expression(scopes, c),
 			)
-			Assign(t, op, value, w) => Assign(
-				Resolve.target(env, t),
-				op,
-				Resolve.expr(env, value),
+			Assign(t, operator, value, w) => Assign(
+				Resolve.target(scopes, t),
+				operator,
+				Resolve.expression(scopes, value),
 				w,
 			)
 			Update(t, step, fixity, w) => Update(
-				Resolve.target(env, t),
+				Resolve.target(scopes, t),
 				step,
 				fixity,
 				w,
 			)
-			Member(obj, key, w) => Member(Resolve.expr(env, obj), key, w)
-			Index(obj, key, w) => Index(
-				Resolve.expr(env, obj),
-				Resolve.expr(env, key),
+			Member(object, key, w) => Member(Resolve.expression(scopes, object), key, w)
+			Index(object, key, w) => Index(
+				Resolve.expression(scopes, object),
+				Resolve.expression(scopes, key),
 				w,
 			)
-			Call(callee, args, w) => Call(
-				Resolve.expr(env, callee),
-				each(args),
+			Call(callee, arguments, w) => Call(
+				Resolve.expression(scopes, callee),
+				each(arguments),
 				w,
 			)
-			Function(def) => Function(Box.box(Resolve.fun(env, def.unbox())))
+			Function(definition) => Function(Box.box(Resolve.fun(scopes, definition.unbox())))
 		}
 	}
 }

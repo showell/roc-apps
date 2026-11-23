@@ -10,8 +10,8 @@
 import Interp
 import Parser
 
-main! = |args| {
-	match args.get(0) {
+main! = |arguments| {
+	match arguments.get(0) {
 		Ok(src) => run_program!(src)
 		Err(OutOfBounds) => {
 			echo!("usage: js-run \"<program>\"\n")
@@ -35,7 +35,7 @@ run_program! = |src| {
 			}
 		}
 		Err(f) => {
-			echo!("js: ${f.why} (line ${f.line.to_str()}, column ${f.col.to_str()})\n")
+			echo!("js: ${f.why} (line ${f.line.to_str()}, column ${f.column.to_str()})\n")
 			Err(Exit(1))
 		}
 	}
