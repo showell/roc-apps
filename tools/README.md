@@ -35,6 +35,13 @@ The repository's own scripts, beside `check.shale` at its root.
   sizes and holds what one more iteration allocates to an expected file,
   counting `roc_alloc` calls with `count_allocs.c`'s breakpoints. Its
   callers are `basic/controls.shale` and `copy_shapes/copy_shapes.shale`.
+- `copy_oracle.shale` says where a Roc program copies, from the program
+  itself: `count_copies.c` breaks at roc_alloc and at each builtin's entry,
+  so each allocation made inside a writing builtin (list_set, the appends,
+  the dev build's generic `roc_desc_list_op`) is put down to the Roc
+  procedure that called it, named by `roc build --debug`'s debug
+  information (by the frame pointers where the build keeps them).
+  `copy_shapes/copy_shapes.shale oracle=1` is its first caller.
 - `measure_roc_builds.shale` times one repository's `roc check`, `roc
   build` and `roc test` on its old pin and on Roc 0.1.0_RC1, cold, warm and
   after a change to the root or to the most imported module, and appends

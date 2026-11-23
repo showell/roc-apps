@@ -11,11 +11,15 @@
 --   cd <roc-apps checkout> && shale tools/copy_shapes/copy_shapes.shale opt=boxy     --opt=speed --specialize=no
 --   cd <roc-apps checkout> && shale tools/copy_shapes/copy_shapes.shale build=0      copy-shapes already built
 --   cd <roc-apps checkout> && shale tools/copy_shapes/copy_shapes.shale only=dict    the shapes whose names start so
+--   cd <roc-apps checkout> && shale tools/copy_shapes/copy_shapes.shale oracle=1     where each shape copies (tools/copy_oracle.shale)
 --
 -- The shapes are the names CopyShapes.roc's `run_shape` matches, read from
 -- it, so a shape added there is a control here. Each build is held to its
 -- own file: expected.txt (speed), expected-dev.txt and expected-boxy.txt.
--- `only=` holds nothing: a part of the ladder is a report.
+-- `only=` holds nothing: a part of the ladder is a report. `oracle=1`
+-- builds copy-shapes with `--debug` as well and hands the same shapes to
+-- tools/copy_oracle.shale, which says through which builtin and from which
+-- Roc procedure each copy is made: a report, held to nothing.
 --
 -- Each build takes a few seconds to compile, and its counting about 10 s.
 --
@@ -33,6 +37,7 @@ const SOURCE = "tools/copy_shapes/CopyShapes.roc"
 const OPT = arg("opt", "speed")
 const BUILD = arg("build", true)
 const ONLY = arg("only", "")
+const ORACLE = arg("oracle", false)
 
 -- Each build's flags and the file it is held to.
 const MODES = {
@@ -49,19 +54,20 @@ end
 -- copy-shapes built with the mode's flags. **THE ROC COMPILER EXITS
 -- NON-ZERO FOR A WARNING**, so its exit code is not the verdict: an error
 -- is marked ✗ and a warning ●, and both fail.
-function build(mode)
+function build(mode, folder, debug)
   local roc = pinned_roc(WHO)
-  local dir = gen_dir() .. "/" .. OPT
+  local dir = gen_dir() .. "/" .. folder
   mkdir(dir)
   local exe = dir .. "/copy-shapes"
   if exists(exe) then remove(exe) end
   local argv = {roc, "build", "CopyShapes.roc"}
   for f in mode.flags do push(argv, f) end
+  if debug then push(argv, "--debug") end
   push(argv, "--output=" .. real(dir) .. "/copy-shapes")
   local r = run(argv, {cwd = "tools/copy_shapes", timeout_ms = 600000, tail = 40, nice = 19, want = WANT_ROC})
   if contains(r.out, "✗") or contains(r.out, "●") or not exists(exe) then
     print(trim(r.out))
-    fail(WHO .. ": the " .. OPT .. " build of copy-shapes failed")
+    fail(WHO .. ": the " .. folder .. " build of copy-shapes failed")
   end
   print("built copy-shapes " .. join(mode.flags, " ") .. ": " .. (r.ms // 1000) .. " s")
 end
@@ -89,8 +95,10 @@ end
 function main()
   if not has_key(MODES, OPT) then fail(WHO .. ": opt is speed, dev or boxy, not " .. OPT) end
   local mode = MODES[OPT]
-  if BUILD then build(mode) end
-  local exe = gen_dir() .. "/" .. OPT .. "/copy-shapes"
+  local folder = OPT
+  if ORACLE then folder = OPT .. "-debug" end
+  if BUILD then build(mode, folder, ORACLE) end
+  local exe = gen_dir() .. "/" .. folder .. "/copy-shapes"
   if not exists(exe) then fail(WHO .. ": no copy-shapes built for " .. OPT .. ": run without build=0") end
   local bin = real(exe)
   local controls = {}
@@ -100,6 +108,16 @@ function main()
     end
   end
   if #controls == 0 then fail(WHO .. ": no shape is named " .. ONLY) end
+  if ORACLE then
+    local oracle_plan = gen_dir() .. "/oracle-" .. OPT .. ".json"
+    if exists(oracle_plan) then remove(oracle_plan) end
+    create(oracle_plan, json_write({who = WHO .. " oracle opt=" .. OPT, gen = gen_dir() .. "/oracle-" .. OPT, small = SMALL, big = BIG,
+      limit_ms = RUN_MS * 4, runs = controls}))
+    local o = run({"shale", "--root", ".", "tools/copy_oracle.shale", "plan=" .. oracle_plan}, {timeout_ms = 1800000, tail = 120})
+    print(trim(o.out))
+    if o.code ~= 0 then fail(WHO .. ": the oracle failed, " .. OPT) end
+    return nil
+  end
   local plan = {who = WHO .. " opt=" .. OPT, gen = gen_dir(), expected = mode.expected, small = SMALL, big = BIG,
     limit_ms = RUN_MS, hold = ONLY == "", controls = controls}
   if ONLY ~= "" then plan.expected = "" end

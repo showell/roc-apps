@@ -1,0 +1,284 @@
+-- The copy oracle: where a Roc program copies, read from the program
+-- itself, with no compiler fork. Each run's allocations are counted by
+-- tools/count_copies.c's breakpoints and put down to the builtin they came
+-- through (list_set, list_replace, the appends, ...) and the Roc call site
+-- that entered it, named by the executable's debug information (`roc build
+-- --debug`). It knows nothing of the program: the caller builds it and
+-- hands this script a plan, as tools/alloc_ladder.shale's callers do.
+--
+--   cd <roc-apps checkout> && shale tools/copy_oracle.shale plan=<plan.json>
+--
+-- The plan is `{who, gen, small, big, limit_ms, runs}`: `gen` a writable
+-- folder, `small` and `big` two iteration counts, `limit_ms` one run's
+-- limit, and `runs` a list of `{name, small_argv, big_argv}`, `big_argv`
+-- empty for a run with no loop. Every argv runs the same executable, built
+-- with `--debug`.
+--
+-- **A COPY IS AN ALLOCATION MADE INSIDE A WRITING BUILTIN.** RC1 writes in
+-- place when the refcount is 1 and copies otherwise, and the copy is a
+-- roc_alloc made inside the builtin; growing a unique list in place is a
+-- roc_realloc, counted apart. For a run with a loop, a site is said for
+-- what one more iteration allocates through it (at least 0.5), so the
+-- setup's allocations drop out; for a run without one, every site that
+-- allocated through a writing builtin is said with its count.
+--
+-- It prints, for each run, a line a site: `<run>: <builtin> <count> from
+-- <procedure> (<module>:<line>)`, the procedure the debug information's
+-- name for the Roc code (`Devices.poked`), the line its call site's when
+-- the line table has one (the release build's does, the dev build's
+-- doesn't), and writes the same rows to <gen>/copies.tsv.
+--
+-- budget: steps=400000000 output_bytes=1000000 arena_bytes=2000000000
+
+const WANT_COUNT = "copy-oracle: count_copies, built here, counts a program's allocations by builtin and call site"
+const PLAN = arg("plan", "")
+
+-- The builtins whose allocation is a copy of what they write into: RC1's
+-- uniqueness-checked ops, by the names the builtins keep in both builds,
+-- and the dev build's `roc_desc_list_op`, the generic list op it runs for
+-- a list whose entries hold a reference count (a `List(Str)`).
+const WRITERS = {"list_set", "list_replace", "list_swap", "list_concat", "list_prepend", "list_reserve",
+  "list_reserve_for_append", "list_drop_at", "list_reverse", "list_append_unsafe", "list_append_sublist",
+  "list_append_range_within", "list_append_le_bytes", "list_copy_range_within", "list_clear", "list_map_can_reuse",
+  "list_owned_unique", "str_concat", "str_trim", "str_trim_start", "str_trim_end", "str_with_ascii_lowercased",
+  "str_with_ascii_uppercased", "str_reserve", "roc_desc_list_op"}
+
+function build_counter(gen)
+  mkdir(gen)
+  must(run({"cc", "-O2", "-Wall", "-Wextra", "-Werror", "-o", real(gen) .. "/count_copies", "tools/count_copies.c"},
+    {timeout_ms = 60000, tail = 20}))
+end
+
+-- A hexadecimal number's value.
+function from_hex(s)
+  local v = 0
+  for k = 1, #s do
+    v = v * 16 + find("0123456789abcdef", sub(s, k, k)) - 1
+  end
+  return v
+end
+
+-- A builtin's short name: `list_set` for `dev_wrappers.roc_builtins_list_set`.
+function short_name(name)
+  local m = re_find(name, "roc_builtins_([a-z0-9_]+)$")
+  if m ~= nil then return m.group end
+  return name
+end
+
+-- Whether a function is builtin code to break at the entry of: a named
+-- builtin, its wrappers and shims, or a list helper, but none of the
+-- refcounting ones, which run everywhere.
+function is_entry(name)
+  if find(name, "incref") ~= nil or find(name, "decref") ~= nil or find(name, "free") ~= nil or find(name, "drop") ~= nil and find(name, "drop_at") == nil then return false end
+  if name == "roc_desc_list_op" then return true end
+  return starts_with(name, "roc_builtins_") or starts_with(name, "dev_wrappers.roc_builtins_") or starts_with(name, "roc_cold_shim.roc_builtins_") or starts_with(name, "list.") or starts_with(name, "str.")
+end
+
+-- The executable's functions from `nm -S`: `{alloc, realloc, entries,
+-- procs}`, each entry `{at, name}`, each Roc procedure `{start, stop,
+-- name}`.
+function functions_of(who, bin)
+  local found = {alloc = "", realloc = "", entries = {}, procs = {}}
+  local r = must(run({"nm", "-S", "--defined-only", bin}, {timeout_ms = 60000, whole = 64000000}))
+  for l in lines(r.out) do
+    local w = words(l)
+    if #w == 4 then
+      local name = w[4]
+      if name == "roc_alloc" then found.alloc = w[1]
+      elseif name == "roc_realloc" then found.realloc = w[1]
+      elseif starts_with(name, "roc__p") then
+        local start = from_hex(w[1])
+        push(found.procs, {start = start, stop = start + from_hex(w[2]), name = name})
+      elseif is_entry(name) then
+        push(found.entries, {at = w[1], name = name})
+      end
+    end
+  end
+  if found.alloc == "" or found.realloc == "" then fail(who .. ": " .. bin .. " has no roc_alloc or roc_realloc (nm)") end
+  if #found.procs == 0 then fail(who .. ": " .. bin .. " names no Roc procedure (nm)") end
+  return found
+end
+
+-- Each Roc procedure's name in the debug information, by its symbol: the
+-- `DW_AT_name` read before each `DW_AT_linkage_name`.
+function source_names(bin)
+  local names = {}
+  local r = must(run({"readelf", "--debug-dump=info", bin}, {timeout_ms = 120000, tail = 400000, re = "DW_AT_(name|linkage_name)"}))
+  local last = ""
+  for l in lines(r.out) do
+    local m = re_find(l, "DW_AT_(name|linkage_name) *: *(.*)$")
+    if m ~= nil then
+      if m.groups[1] == "name" then last = trim(m.groups[2])
+      elseif starts_with(trim(m.groups[2]), "roc__p") then names[trim(m.groups[2])] = last end
+    end
+  end
+  return names
+end
+
+-- The procedure whose code holds an offset, by binary search.
+function proc_at(procs, offset)
+  local lo = 1
+  local hi = #procs
+  while lo <= hi do
+    local mid = (lo + hi) // 2
+    local p = procs[mid]
+    if offset < p.start then hi = mid - 1
+    elseif offset >= p.stop then lo = mid + 1
+    else return p end
+  end
+  return nil
+end
+
+-- A number written in hexadecimal.
+function hex(n)
+  local digits = "0123456789abcdef"
+  local s = ""
+  local v = n
+  if v == 0 then return "0" end
+  while v > 0 do
+    s = sub(digits, v % 16 + 1, v % 16 + 1) .. s
+    v = v // 16
+  end
+  return s
+end
+
+-- A symbol without the suffix LLVM gives a copy of it (`.fast`).
+function before_dot(name)
+  local at = find(name, ".")
+  if at == nil then return name end
+  return sub(name, 1, at - 1)
+end
+
+-- A procedure's symbol, `?` for none.
+function symbol_of(pr)
+  if pr == nil then return "?" end
+  return before_dot(pr.name)
+end
+
+-- The procedure a call site is in, by its debug name, and the site's line
+-- when the line table has one, cached in `seen`.
+function place_of(bin, procs, names, seen, site_hex)
+  if has_key(seen, site_hex) then return seen[site_hex] end
+  local pr = proc_at(procs, from_hex(site_hex))
+  local proc = "?"
+  if pr ~= nil then
+    local symbol = before_dot(pr.name)
+    proc = get(names, symbol, symbol)
+  end
+  local said = lines(trim(must(run({"addr2line", "-f", "-e", bin, "0x" .. site_hex}, {timeout_ms = 30000, tail = 2})).out))
+  local line = get(said, 2, "??")
+  if starts_with(line, "??") then line = "" else line = re_replace(substitute(line, "./", "", {missing_ok = true}), " \\(discriminator [0-9]+\\)", "") end
+  local named = get(said, 1, "??")
+  if proc == symbol_of(pr) and named ~= "??" and not starts_with(named, "roc__") then proc = named end
+  local place = {proc = proc, line = line}
+  seen[site_hex] = place
+  return place
+end
+
+-- Whether a place is the Builtin module's own Roc code: its debug name
+-- (`Builtin.List.set@U64`) or its line's module says so.
+function is_builtin_code(place)
+  return starts_with(place.proc, "Builtin.") or starts_with(place.line, "Builtin:")
+end
+
+-- The place in the program a chain of call sites (`a,b,c`, the builtin's
+-- caller first) comes down to: the first that isn't the Builtin module's
+-- own Roc code, or the first site when every one is, or when the frame
+-- pointers lead nowhere (the release build keeps none).
+function program_place(where, chain)
+  local first = nil
+  for site in split(chain, ",") do
+    local place = place_of(where.bin, where.procs, where.names, where.seen, site)
+    if first == nil then first = place end
+    if not is_builtin_code(place) and place.proc ~= "?" then return place end
+  end
+  return first
+end
+
+-- One counted run: `{key = count}` of the allocations through a writing
+-- builtin, each key `<builtin> <procedure>`, and the lines they were made
+-- at, `{key = {line = true}}`. A procedure, not a site: the release build
+-- calls one write from several sites, the loop's copies, and which one
+-- runs depends on the input.
+function counted(who, gen, plan_file, stage, argv, limit_ms, entry_names, where)
+  local out = gen .. "/copies.txt"
+  local full = {real(gen .. "/count_copies"), real(out), real(plan_file)}
+  for a in argv do push(full, a) end
+  local r = run(full, {timeout_ms = limit_ms, tail = 3, want = WANT_COUNT, cpu_budget_ms = limit_ms, stage = stage})
+  if r.ended ~= "exit" or r.code ~= 0 then fail(who .. ": " .. stage .. " ended " .. r.ended .. " " .. get(r, "code", "") .. ": " .. r.out) end
+  local got = {}
+  for l in lines(read(out)) do
+    local w = words(l)
+    if w[1] == "via" and w[2] == "alloc" and w[3] ~= "-1" then
+      local builtin = short_name(entry_names[tonumber(w[3]) + 1])
+      if has_item(WRITERS, builtin) then
+        local place = program_place(where, w[4])
+        local key = builtin .. " " .. place.proc
+        incr(got, key, tonumber(w[5]))
+        if place.line ~= "" then
+          if not has_key(where.lines, key) then where.lines[key] = {} end
+          where.lines[key][place.line] = true
+        end
+      end
+    end
+  end
+  remove(out)
+  return got
+end
+
+function main()
+  if PLAN == "" then fail("tools/copy_oracle.shale: no plan= given") end
+  local p = json_read(read(PLAN))
+  local who = p.who
+  build_counter(p.gen)
+  local bin = p.runs[1].small_argv[1]
+  local f = functions_of(who, bin)
+  sort(f.procs, "start")
+  local names = source_names(bin)
+  local plan_file = p.gen .. "/copies-plan.txt"
+  if exists(plan_file) then remove(plan_file) end
+  local text = {"alloc " .. f.alloc, "realloc " .. f.realloc}
+  local entry_names = {}
+  for e in f.entries do
+    push(text, "entry " .. e.at .. " " .. #entry_names)
+    push(entry_names, e.name)
+  end
+  for pr in f.procs do push(text, "roc " .. hex(pr.start) .. " " .. hex(pr.stop)) end
+  create(plan_file, join(text, "\n") .. "\n")
+  local rows = {}
+  for c in p.runs do
+    local where = {bin = bin, procs = f.procs, names = names, seen = {}, lines = {}}
+    local small = counted(who, p.gen, plan_file, c.name .. " at " .. p.small, c.small_argv, p.limit_ms, entry_names, where)
+    local per = {}
+    if #get(c, "big_argv", {}) > 0 then
+      local big = counted(who, p.gen, plan_file, c.name .. " at " .. p.big, c.big_argv, p.limit_ms, entry_names, where)
+      for k in keys(big) do
+        local h = ((big[k] - get(small, k, 0)) * 100) // (p.big - p.small)
+        if h >= 50 then per[k] = h end
+      end
+    else
+      for k in keys(small) do per[k] = small[k] * 100 end
+    end
+    local ks = keys(per)
+    sort(ks)
+    for k in ks do
+      local w = words(k)
+      local proc = w[2]
+      local at_lines = keys(get(where.lines, k, {}))
+      sort(at_lines)
+      local line = "no line"
+      if #at_lines > 0 then line = join(at_lines, ", ") end
+      local n = per[k] // 100 .. "." .. (per[k] % 100 < 10 and "0" or "") .. per[k] % 100
+      push(rows, {run = c.name, builtin = w[1], count = n, proc = proc, line = line})
+      print(c.name .. ": " .. w[1] .. " " .. n .. " from " .. proc .. " (" .. line .. ")")
+    end
+  end
+  local tsv = {"run\tbuiltin\tcount\tprocedure\tline"}
+  for r in rows do push(tsv, r.run .. "\t" .. r.builtin .. "\t" .. r.count .. "\t" .. r.proc .. "\t" .. r.line) end
+  local file = p.gen .. "/copies.tsv"
+  if exists(file) then remove(file) end
+  create(file, join(tsv, "\n") .. "\n")
+  print(#rows .. " copying sites over " .. #p.runs .. " runs; " .. #f.entries .. " builtins watched; the rows in " .. file)
+end
+
+main()
