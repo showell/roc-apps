@@ -371,6 +371,39 @@ var walkView = (function () {
 		var d = args[0] || {};
 		walkLoad.made_after.push({ at: (performance.now() - walkLoad.first_frame) / 1000, what: what, label: d.label || "" });
 	}
+	// Every shader module and render pipeline the engine makes, by the group
+	// that owns it, for the report's programs line: round 7 tied the 10 s
+	// wait after the first frame to the browser's GPU process compiling
+	// them. A module's group comes from its label (sokol labels the engine's
+	// own shaders, and Rocco's fork labels a game shader by its asset's
+	// name), a pipeline's from its vertex module's.
+	var programs = { groups: new WeakMap(), made: [] };
+	var PROGRAM_GROUPS = [
+		[/Water/, "water (pond)"], [/Lattice/, "lattice (towers)"], [/Grass/, "grass"], [/Ground/, "ground"], [/Antialias/, "anti-alias"],
+		[/shadow/, "shadows"], [/coverage/, "depth coverage"], [/^skinned/, "skinned (zebras)"], [/^instanced/, "instanced"],
+		[/^(basic|mask|blend)_shader/, "PBR meshes"], [/^sky_shader/, "sky"], [/cube_blend/, "sky blend"],
+		[/^(tone_map|blit)_shader/, "post chain"], [/^bloom/, "bloom"], [/^ui_shader/, "ui"], [/^particle/, "particles"],
+	];
+	function programGroup(label) {
+		label = label || "";
+		for (var i = 0; i < PROGRAM_GROUPS.length; i++) if (PROGRAM_GROUPS[i][0].test(label)) return PROGRAM_GROUPS[i][1];
+		return label ? "other: " + label : "unlabelled";
+	}
+	// The programs line: the pipelines and modules made by the first frame,
+	// in all and by group (most pipelines first), then those made after it.
+	window.walkProgramsLine = function () {
+		var by = {}, order = [], early = { pipeline: 0, module: 0 }, late = { pipeline: 0, module: 0 };
+		programs.made.forEach(function (m) {
+			if (m.after) { late[m.kind] += 1; return; }
+			early[m.kind] += 1;
+			if (!by[m.group]) { by[m.group] = { pipeline: 0, module: 0 }; order.push(m.group); }
+			by[m.group][m.kind] += 1;
+		});
+		order.sort(function (a, b) { return by[b].pipeline - by[a].pipeline || by[b].module - by[a].module || (a < b ? -1 : 1); });
+		return "programs by the first frame: " + early.pipeline + " pipelines, " + early.module + " shader modules; by group (pipelines/modules): " +
+			order.map(function (g) { return g + " " + by[g].pipeline + "/" + by[g].module; }).join(", ") +
+			"; after the first frame: " + late.pipeline + " pipelines, " + late.module + " modules";
+	};
 	function timerRead(read) {
 		read.buffer.mapAsync(GPUMapMode.READ).then(function () {
 			var t = new BigInt64Array(read.buffer.getMappedRange(0, read.count * 16));
@@ -408,9 +441,21 @@ var walkView = (function () {
 			madeAfter("createShaderModule", args);
 			var r = original.apply(this, args);
 			if (walkLoad.first_frame === null) walkLoad.shaders_last = performance.now();
+			var group = programGroup((args[0] || {}).label);
+			programs.groups.set(r, group);
+			programs.made.push({ kind: "module", group: group, after: walkLoad.first_frame !== null });
 			return r;
 		});
-		["createRenderPipeline", "createRenderPipelineAsync", "createComputePipeline", "createBindGroupLayout", "createPipelineLayout", "createBuffer", "createSampler"].forEach(function (name) {
+		["createRenderPipeline", "createRenderPipelineAsync"].forEach(function (name) {
+			wrap(GPUDevice.prototype, name, function (original, args) {
+				madeAfter(name, args);
+				var d = args[0] || {};
+				var module = d.vertex && d.vertex.module;
+				programs.made.push({ kind: "pipeline", group: (module && programs.groups.get(module)) || programGroup(d.label), after: walkLoad.first_frame !== null });
+				return original.apply(this, args);
+			});
+		});
+		["createComputePipeline", "createBindGroupLayout", "createPipelineLayout", "createBuffer", "createSampler"].forEach(function (name) {
 			wrap(GPUDevice.prototype, name, function (original, args) {
 				madeAfter(name, args);
 				return original.apply(this, args);
@@ -617,6 +662,7 @@ var walkView = (function () {
 		lines.push("page: " + location.href);
 		lines.push("switches: " + (walkView.switches.length ? walkView.switches.join(" ") : "none") + "; drawing scale " + walkView.scale);
 		lines.push(loadLine());
+		lines.push(window.walkProgramsLine());
 		lines.push(madeLine());
 		lines.push("frames: " + gaps.length + " in " + (span / 1000).toFixed(1) + " s of walking = " + (gaps.length * 1000 / span).toFixed(1) + " fps (paused time, the first frame after each resume and the loading frames left out)");
 		lines.push("frame ms: p50 " + ms(percentile(sorted, 0.5)) + ", p90 " + ms(percentile(sorted, 0.9)) + ", p99 " + ms(percentile(sorted, 0.99)) + ", max " + ms(sorted[sorted.length - 1]));
