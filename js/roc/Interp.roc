@@ -981,7 +981,10 @@ Interp :: [].{
 							$values = List.concat($values, items)
 						}
 						Err(NotIterable) => {
-							$s = Interp.with_fault(after, "TypeError: the value is not iterable${Interp.line_note(site)}")
+							$s = Interp.with_fault(
+								after,
+								"TypeError: the value is not iterable${Interp.line_note(site)}",
+							)
 						}
 					}
 				}
