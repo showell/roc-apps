@@ -289,6 +289,12 @@ and, with the page built, to see it draw in headless Chromium:
 
     node js/page_shots.mjs http://localhost:9210/js/ <dir> "turtle spiral" 1
     node js/page_shots.mjs http://localhost:9210/js/ <dir> "Click to place" 0 click:100:120,300:90
+    node js/page_shots.mjs http://localhost:9210/js/ <dir> "Click to place" 0 click:100:120 width:390
+
+Each run shoots the sample first as picked, before Run (`before.png`),
+where the page shows only a line saying the program hasn't run: no canvas
+and no console until Run, and again after a pick or an edit. Stop leaves
+what was drawn in view.
 
 `js/oracle.shale` is a tier of `check.shale`. It builds `js-run` on the dev
 backend and runs each program in `js/tests/` through node and through

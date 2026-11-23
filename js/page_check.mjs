@@ -21,7 +21,10 @@
 // - builds the page itself, js_page.js, on a stand-in document and canvas,
 //   runs every sample, calls three frames of each that has a frame loop,
 //   and runs a turtle sample in slow motion, which must paint what full
-//   speed paints.
+//   speed paints;
+// - holds the page's column to its flow: on load, on a pick and after an
+//   edit, only the line saying the program hasn't run; on Run, the canvas
+//   (or a console sample's console); after Stop, the drawing still in view.
 import { readFileSync, readdirSync } from "node:fs";
 import { join } from "node:path";
 import { pathToFileURL } from "node:url";
@@ -144,7 +147,7 @@ for (const entry of goldens) {
 class Element {
   constructor(tag) {
     this.tag = tag; this.children = []; this.listeners = {}; this.textContent = ""; this.value = ""; this.className = "";
-    this.scrollTop = 0; this.scrollHeight = 0;
+    this.scrollTop = 0; this.scrollHeight = 0; this.hidden = false;
   }
   appendChild(c) { this.children.push(c); return c; }
   addEventListener(kind, fn) { (this.listeners[kind] ??= []).push(fn); }
@@ -171,13 +174,26 @@ const { buildPage, SAMPLES } = await import(pathToFileURL(join(dir, "js_page.js"
 const page = buildPage(runner, env);
 if (SAMPLES.length < goldens.length + 2) fail(`the page offers ${SAMPLES.length} samples`);
 
+// What the column shows: the not-yet-run line alone, or the canvas (a
+// canvas sample's, with its console under it) or the console.
+function shown() {
+  if (!page.waiting.hidden) return page.canvasLabel.hidden && page.canvas.hidden && page.output.hidden ? "not run" : "the line beside the run";
+  if (page.canvasLabel.hidden || page.output.hidden) return "neither";
+  return page.canvas.hidden ? "console" : "canvas";
+}
+if (shown() !== "not run") fail(`on load the page shows ${shown()}, where it must say the program hasn't run`);
+
 async function runSample(index, speed) {
   page.picker.value = String(index);
   page.picker.fire("change");
+  if (shown() !== "not run") fail(`sample ${SAMPLES[index].title}: once picked the page shows ${shown()}`);
   page.speed.value = String(speed);
   frames.length = 0;
   page.canvas.calls.length = 0;
-  await page.runNow();
+  const running = page.runNow();
+  const want = SAMPLES[index].console ? "console" : "canvas";
+  if (shown() !== want) fail(`sample ${SAMPLES[index].title}: on Run the page shows ${shown()}, not the ${want}`);
+  await running;
   for (let k = 0; k < 3 && frames.length > 0; k++) {
     frames.shift()(1e12 + k * 1000);
     await settled();
@@ -211,6 +227,16 @@ else {
   if (page.output.textContent !== fast.printed) fail(`slow motion printed \`${page.output.textContent}\`, full speed \`${fast.printed}\``);
 }
 
-const total = programs.length + refused.length + goldens.length + SAMPLES.length + 1;
+// Stop leaves the drawing in view; an edit goes back to the line.
+{
+  const r = await runSample(0, 0);
+  page.stopButton.fire("click");
+  if (shown() !== "canvas" || page.canvas.calls.length !== r.calls.length) fail(`after Stop the page shows ${shown()}, ${page.canvas.calls.length} calls of ${r.calls.length}`);
+  page.editor.value += "\n";
+  page.editor.fire("input");
+  if (shown() !== "not run" || page.status.textContent !== "") fail(`after an edit the page shows ${shown()}, status \`${page.status.textContent}\``);
+}
+
+const total = programs.length + refused.length + goldens.length + SAMPLES.length + 2;
 if (failures > 0) { console.error(`page_check: ${failures} of ${total} failed`); process.exit(1); }
-console.log(`page_check: ${programs.length} programs print what node prints, ${refused.length} refused, ${goldens.length} canvas samples match their logs, ${SAMPLES.length} samples run on the page (${looped} three frames on), slow motion paints and prints what full speed does`);
+console.log(`page_check: ${programs.length} programs print what node prints, ${refused.length} refused, ${goldens.length} canvas samples match their logs, ${SAMPLES.length} samples run on the page (${looped} three frames on), slow motion paints and prints what full speed does, nothing shows before Run and Stop keeps the drawing`);
