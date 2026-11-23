@@ -66,8 +66,15 @@ Resolve :: [].{
 		match s {
 			Expression(e) => Expression(Resolve.expr(env, e))
 			Declare(binding, decls) => Declare(binding, decls.map(|d| Resolve.declarator(env, d)))
-			FunctionDecl(def, _) => FunctionDecl(Box.box(Resolve.fun(env, def.unbox())), Resolve.slot(env, def.unbox().name))
-			If(test, yes, no) => If(Resolve.expr(env, test), Resolve.stmt(env, yes), Resolve.stmt(env, no))
+			FunctionDecl(def, _) => FunctionDecl(
+				Box.box(Resolve.fun(env, def.unbox())),
+				Resolve.slot(env, def.unbox().name),
+			)
+			If(test, yes, no) => If(
+				Resolve.expr(env, test),
+				Resolve.stmt(env, yes),
+				Resolve.stmt(env, no),
+			)
 			While(test, body) => While(Resolve.expr(env, test), Resolve.stmt(env, body))
 			For(loop) => {
 				inner = env.append(loop.names)
@@ -129,14 +136,45 @@ Resolve :: [].{
 			ArrayLit(items) => ArrayLit(each(items))
 			ObjectLit(props) => ObjectLit(props.map(|p| { ..p, value: Resolve.expr(env, p.value) }))
 			Unary(op, a, w) => Unary(op, Resolve.expr(env, a), w)
-			Binary(op, a, b, w) => Binary(op, Resolve.expr(env, a), Resolve.expr(env, b), w)
-			Logical(op, a, b) => Logical(op, Resolve.expr(env, a), Resolve.expr(env, b))
-			Conditional(a, b, c) => Conditional(Resolve.expr(env, a), Resolve.expr(env, b), Resolve.expr(env, c))
-			Assign(t, op, value, w) => Assign(Resolve.target(env, t), op, Resolve.expr(env, value), w)
-			Update(t, step, fixity, w) => Update(Resolve.target(env, t), step, fixity, w)
+			Binary(op, a, b, w) => Binary(
+				op,
+				Resolve.expr(env, a),
+				Resolve.expr(env, b),
+				w,
+			)
+			Logical(op, a, b) => Logical(
+				op,
+				Resolve.expr(env, a),
+				Resolve.expr(env, b),
+			)
+			Conditional(a, b, c) => Conditional(
+				Resolve.expr(env, a),
+				Resolve.expr(env, b),
+				Resolve.expr(env, c),
+			)
+			Assign(t, op, value, w) => Assign(
+				Resolve.target(env, t),
+				op,
+				Resolve.expr(env, value),
+				w,
+			)
+			Update(t, step, fixity, w) => Update(
+				Resolve.target(env, t),
+				step,
+				fixity,
+				w,
+			)
 			Member(obj, key, w) => Member(Resolve.expr(env, obj), key, w)
-			Index(obj, key, w) => Index(Resolve.expr(env, obj), Resolve.expr(env, key), w)
-			Call(callee, args, w) => Call(Resolve.expr(env, callee), each(args), w)
+			Index(obj, key, w) => Index(
+				Resolve.expr(env, obj),
+				Resolve.expr(env, key),
+				w,
+			)
+			Call(callee, args, w) => Call(
+				Resolve.expr(env, callee),
+				each(args),
+				w,
+			)
 			Function(def) => Function(Box.box(Resolve.fun(env, def.unbox())))
 		}
 	}

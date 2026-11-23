@@ -75,7 +75,16 @@ Inspect :: [].{
 	# One value as `util.inspect` writes it.
 	inspect : List(Heap.Cell), Heap.Val -> Try(Str, [Unsupported(Str)])
 	inspect = |cells, v| {
-		f = Inspect.format_value({ cells: cells, indent: 0, depth_now: 0, seen: [] }, v, 0)?
+		f = Inspect.format_value(
+			{
+				cells: cells,
+				indent: 0,
+				depth_now: 0,
+				seen: [],
+			},
+			v,
+			0,
+		)?
 		Ok(f.text)
 	}
 
@@ -136,7 +145,11 @@ Inspect :: [].{
 					Ok(Inspect.plain(ctx, "[Array]"))
 				} else {
 					Inspect.format_array(
-						{ ..ctx, depth_now: recurse + 1, seen: ctx.seen.append(id) },
+						{
+							..ctx,
+							depth_now: recurse + 1,
+							seen: ctx.seen.append(id),
+						},
 						items,
 						recurse + 1,
 					)
@@ -151,7 +164,11 @@ Inspect :: [].{
 					Ok(Inspect.plain(ctx, "[Object]"))
 				} else {
 					Inspect.format_object(
-						{ ..ctx, depth_now: recurse + 1, seen: ctx.seen.append(id) },
+						{
+							..ctx,
+							depth_now: recurse + 1,
+							seen: ctx.seen.append(id),
+						},
 						props,
 						recurse + 1,
 					)
@@ -166,7 +183,11 @@ Inspect :: [].{
 		var $out = []
 		for item in shown {
 			f = Inspect.format_value(
-				{ ..ctx, indent: ctx.indent + 2, depth_now: $depth_now },
+				{
+					..ctx,
+					indent: ctx.indent + 2,
+					depth_now: $depth_now,
+				},
 				item,
 				recurse,
 			)?
@@ -187,7 +208,12 @@ Inspect :: [].{
 		Ok({
 			text: Inspect.reduce_to_single_string(
 				{ ..ctx, depth_now: $depth_now },
-				{ output: output, open: "[", close: "]", kind: ArrayKind(items) },
+				{
+					output: output,
+					open: "[",
+					close: "]",
+					kind: ArrayKind(items),
+				},
 				recurse,
 			),
 			depth_now: $depth_now,
@@ -200,7 +226,11 @@ Inspect :: [].{
 		var $out = []
 		for p in Inspect.props_in_key_order(props) {
 			f = Inspect.format_value(
-				{ ..ctx, indent: ctx.indent + 2, depth_now: $depth_now },
+				{
+					..ctx,
+					indent: ctx.indent + 2,
+					depth_now: $depth_now,
+				},
 				p.val,
 				recurse,
 			)?
@@ -210,7 +240,12 @@ Inspect :: [].{
 		Ok({
 			text: Inspect.reduce_to_single_string(
 				{ ..ctx, depth_now: $depth_now },
-				{ output: $out, open: "{", close: "}", kind: ObjectKind },
+				{
+					output: $out,
+					open: "{",
+					close: "}",
+					kind: ObjectKind,
+				},
 				recurse,
 			),
 			depth_now: $depth_now,
@@ -391,7 +426,12 @@ Inspect :: [].{
 
 	Kind : [ArrayKind(List(Heap.Val)), ObjectKind]
 
-	Entries : { output : List(Str), open : Str, close : Str, kind : Inspect.Kind }
+	Entries : {
+		output : List(Str),
+		open : Str,
+		close : Str,
+		kind : Inspect.Kind,
+	}
 
 	# node's `reduceToSingleString`, with `ctx.compact` 3.
 	reduce_to_single_string : Inspect.Ctx, Inspect.Entries, U64 -> Str
@@ -471,7 +511,10 @@ Inspect :: [].{
 			var $longest = 0
 			var $j = $col
 			while $j < output_length {
-				$longest = U64.max($longest, data_lengths.get($j) ?? crash "Inspect.grouped: inside the entries")
+				$longest = U64.max(
+					$longest,
+					data_lengths.get($j) ?? crash "Inspect.grouped: inside the entries",
+				)
 				$j = $j + columns
 			}
 			$max_line_lengths = $max_line_lengths.append($longest + 2)
@@ -499,7 +542,11 @@ Inspect :: [].{
 			$line = if numbers_only {
 				Str.concat(
 					$line,
-					Inspect.padded(final, ($max_line_lengths.get($j - $i) ?? crash "Inspect.grouped: a column the line has") - 2, True),
+					Inspect.padded(
+						final,
+						($max_line_lengths.get($j - $i) ?? crash "Inspect.grouped: a column the line has") - 2,
+						True,
+					),
 				)
 			} else {
 				Str.concat($line, final)

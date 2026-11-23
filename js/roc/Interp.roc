@@ -86,7 +86,13 @@ Interp :: [].{
 
 	# ---- the run ---------------------------------------------------------------
 
-	Outcome : { out : Str, steps : U64, cells : U64, scopes : U64, status : Interp.Status }
+	Outcome : {
+		out : Str,
+		steps : U64,
+		cells : U64,
+		scopes : U64,
+		status : Interp.Status,
+	}
 
 	run : Ast.Program, U64 -> Interp.Outcome
 	run = |program, step_limit| {
@@ -219,7 +225,10 @@ Interp :: [].{
 	place_of : Interp.St, Ast.Slot -> Interp.Place
 	place_of = |st, slot|
 		match slot {
-			Local({ hops, index }) => At({ scope: Interp.scope_out(st.scopes, st.scope, hops), index: index })
+			Local({ hops, index }) => At({
+				scope: Interp.scope_out(st.scopes, st.scope, hops),
+				index: index,
+			})
 			Global(index) => At({ scope: 0, index: index })
 			Undeclared => Nowhere
 			Unresolved => crash "Interp.place_of: Parser.program_of resolves every name"
@@ -294,13 +303,21 @@ Interp :: [].{
 	declare : Interp.St, Ast.Slot, Heap.Val, Interp.VarState -> Interp.St
 	declare = |st, slot, val, state| {
 		..st,
-		scopes: Interp.with_var(st.scopes, st.scope, Interp.own_index(slot), { val: val, state: state }),
+		scopes: Interp.with_var(
+			st.scopes,
+			st.scope,
+			Interp.own_index(slot),
+			{ val: val, state: state },
+		),
 	}
 
 	# The machine inside a new scope whose parent is `parent`, holding `size`
 	# variables, none of them ready.
 	entered : Interp.St, Interp.Parent, U64 -> Interp.St
-	entered = |st, parent, size| Interp.with_scope_added(st, { vars: List.repeat(Interp.unready, size), parent: parent })
+	entered = |st, parent, size| Interp.with_scope_added(
+		st,
+		{ vars: List.repeat(Interp.unready, size), parent: parent },
+	)
 
 	# The machine inside `scope`, a new one, in the first dead slot or past the
 	# end.
@@ -312,7 +329,12 @@ Interp :: [].{
 	with_scope_added : Interp.St, Interp.Scope -> Interp.St
 	with_scope_added = |st, scope| {
 		id = st.live_scopes
-		{ ..st, scopes: Interp.scopes_with(st.scopes, id, scope), live_scopes: id + 1, scope: id }
+		{
+			..st,
+			scopes: Interp.scopes_with(st.scopes, id, scope),
+			live_scopes: id + 1,
+			scope: id,
+		}
 	}
 
 	scopes_with : List(Interp.Scope), U64, Interp.Scope -> List(Interp.Scope)
@@ -631,10 +653,7 @@ Interp :: [].{
 			}
 			$out = $out.append(
 				Str.from_utf8(
-					b.sublist({
-						start: $i,
-						len: n,
-					}),
+					b.sublist({ start: $i, len: n }),
 				) ?? crash "Interp.characters: a whole character",
 			)
 			$i = $i + n
@@ -645,7 +664,10 @@ Interp :: [].{
 	exec_for_of_pass : Interp.St, Ast.ForOfLoop, Heap.Val, Interp.VarState -> Interp.Done
 	exec_for_of_pass = |st, loop, v, state| {
 		outer = st.scope
-		inner = Interp.with_scope_added(st, { vars: [{ val: v, state: state }], parent: Within(outer) })
+		inner = Interp.with_scope_added(
+			st,
+			{ vars: [{ val: v, state: state }], parent: Within(outer) },
+		)
 		id = inner.scope
 		{ st: after, flow } = Interp.exec(inner, loop.body)
 		{ st: Interp.left(after, id, outer, loop.capture), flow: flow }
@@ -908,7 +930,10 @@ Interp :: [].{
 			{ st: after, val } = Interp.eval($s, part)
 			$s = match Interp.text_of(after.cells, val) {
 				Ok(t) => {
-					$text = Str.concat(Str.concat($text, t), texts.get($i) ?? crash "Interp.eval_template: a template has a text piece after each substitution")
+					$text = Str.concat(
+						Str.concat($text, t),
+						texts.get($i) ?? crash "Interp.eval_template: a template has a text piece after each substitution",
+					)
 					after
 				}
 				Err(Unsupported(why)) => Interp.faulted(after, why)
@@ -1117,7 +1142,13 @@ Interp :: [].{
 				}
 				{ st: third, val } = Interp.eval(second, e)
 				{ st: made, val: value } = Interp.combined(third, op, old, val, w)
-				Interp.stored(made, o, Text(key), value, w)
+				Interp.stored(
+					made,
+					o,
+					Text(key),
+					value,
+					w,
+				)
 			}
 			ToIndex(obj, key) => {
 				{ st: first, val: o } = Interp.eval(st, obj)
@@ -1141,7 +1172,12 @@ Interp :: [].{
 		} else {
 			match Interp.place_of(st, slot) {
 				At({ scope, index }) => match Interp.var_facts(st.scopes, scope, index).state {
-					Mutable => Interp.var_written(st, scope, index, { val: val, state: Mutable })
+					Mutable => Interp.var_written(
+						st,
+						scope,
+						index,
+						{ val: val, state: Mutable },
+					)
 					Fixed => Interp.fault_got(
 						st,
 						"TypeError: Assignment to constant variable.${Interp.at_line(w)}",
@@ -1330,7 +1366,13 @@ Interp :: [].{
 				{ st: read_st, val: current } = Interp.indexed(second, o, k, w)
 				match current {
 					Number(n) => {
-						{ st: written, val: _ } = Interp.stored(read_st, o, k, Number(n + delta), w)
+						{ st: written, val: _ } = Interp.stored(
+							read_st,
+							o,
+							k,
+							Number(n + delta),
+							w,
+						)
 						{ st: written, val: answer(n, n + delta) }
 					}
 					_ => Interp.fault_got(
@@ -1688,7 +1730,13 @@ Interp :: [].{
 				Err(Unsupported(why)) => Interp.fault_got(st, "${why}${Interp.at_line(w)}")
 			}
 			Floor => Interp.math(st, "floor", args, Interp.floor, w)
-			Ceil => Interp.math(st, "ceil", args, |x| -Interp.floor(-x), w)
+			Ceil => Interp.math(
+				st,
+				"ceil",
+				args,
+				|x| -Interp.floor(-x),
+				w,
+			)
 			Round => Interp.math(
 				st,
 				"round",
@@ -1720,7 +1768,13 @@ Interp :: [].{
 					},
 				w,
 			)
-			Abs => Interp.math(st, "abs", args, |x| x.abs(), w)
+			Abs => Interp.math(
+				st,
+				"abs",
+				args,
+				|x| x.abs(),
+				w,
+			)
 			Sign => Interp.math(
 				st,
 				"sign",
@@ -1735,11 +1789,41 @@ Interp :: [].{
 					},
 				w,
 			)
-			Sqrt => Interp.math(st, "sqrt", args, |x| x.sqrt(), w)
-			Sin => Interp.math(st, "sin", args, |x| x.sin(), w)
-			Cos => Interp.math(st, "cos", args, |x| x.cos(), w)
-			Tan => Interp.math(st, "tan", args, |x| x.tan(), w)
-			Atan => Interp.math(st, "atan", args, |x| x.atan(), w)
+			Sqrt => Interp.math(
+				st,
+				"sqrt",
+				args,
+				|x| x.sqrt(),
+				w,
+			)
+			Sin => Interp.math(
+				st,
+				"sin",
+				args,
+				|x| x.sin(),
+				w,
+			)
+			Cos => Interp.math(
+				st,
+				"cos",
+				args,
+				|x| x.cos(),
+				w,
+			)
+			Tan => Interp.math(
+				st,
+				"tan",
+				args,
+				|x| x.tan(),
+				w,
+			)
+			Atan => Interp.math(
+				st,
+				"atan",
+				args,
+				|x| x.atan(),
+				w,
+			)
 			Pow => match (Interp.number_arg(args, 0), Interp.number_arg(args, 1)) {
 				(Ok(x), Ok(y)) => { st: st, val: Number(Interp.power(x, y)) }
 				_ => Interp.fault_got(
@@ -2075,7 +2159,12 @@ Interp :: [].{
 		var $going = True
 		while $going and $i < n and $i < Interp.item_count($s, id) {
 			item = Interp.item_at($s, id, $i)
-			{ st: after, val } = Interp.call($s, f, [item, Number($i.to_f64()), Ref(id)], w)
+			{ st: after, val } = Interp.call(
+				$s,
+				f,
+				[item, Number($i.to_f64()), Ref(id)],
+				w,
+			)
 			$s = after
 			match walk {
 				ForEach => {}
@@ -2150,7 +2239,12 @@ Interp :: [].{
 					{ st: after, val } = Interp.call(
 						$s,
 						f,
-						[$acc, item, Number($i.to_f64()), Ref(id)],
+						[
+							$acc,
+							item,
+							Number($i.to_f64()),
+							Ref(id),
+						],
 						w,
 					)
 					$s = after
@@ -2207,7 +2301,15 @@ Interp :: [].{
 				} else {
 					a = lower.get($i) ?? crash "Interp.merge_sorted: inside the lower half"
 					b = upper.get($j) ?? crash "Interp.merge_sorted: inside the upper half"
-					{ st: after, order } = Interp.compared($s, { compare: compare, left: a, right: b, at: w })
+					{ st: after, order } = Interp.compared(
+						$s,
+						{
+							compare: compare,
+							left: a,
+							right: b,
+							at: w,
+						},
+					)
 					$s = after
 					order != After
 				}
@@ -2225,13 +2327,23 @@ Interp :: [].{
 
 	# Two items of a sort, `left` and `right`, and the function that compares
 	# them, or Undefined for none.
-	Comparison : { compare : Heap.Val, left : Heap.Val, right : Heap.Val, at : Ast.Where }
+	Comparison : {
+		compare : Heap.Val,
+		left : Heap.Val,
+		right : Heap.Val,
+		at : Ast.Where,
+	}
 
 	Ordered : { st : Interp.St, order : [Before, Same, After] }
 
 	compared : Interp.St, Interp.Comparison -> Interp.Ordered
 	compared = |st, comparison| {
-		{ compare, left: a, right: b, at: w } = comparison
+		{
+			compare,
+			left: a,
+			right: b,
+			at: w,
+		} = comparison
 		match compare {
 			Undefined => {
 				order = match (a, b) {
@@ -2307,10 +2419,7 @@ Interp :: [].{
 			if to > from {
 				Text(
 					Str.from_utf8(
-						bytes.sublist({
-							start: from,
-							len: to - from,
-						}),
+						bytes.sublist({ start: from, len: to - from }),
 					) ?? crash "Interp.text_method: an ASCII cut",
 				)
 			} else {
@@ -2471,10 +2580,7 @@ Interp :: [].{
 			$to = $to - 1
 		}
 		Str.from_utf8(
-			b.sublist({
-				start: $from,
-				len: $to - $from,
-			}),
+			b.sublist({ start: $from, len: $to - $from }),
 		) ?? crash "Interp.ascii_trimmed: an ASCII cut"
 	}
 
@@ -2500,10 +2606,7 @@ Interp :: [].{
 					fb = f.to_utf8()
 					copies = need // fb.len() + 1
 					pad = Str.from_utf8(
-						f.repeat(copies).to_utf8().sublist({
-							start: 0,
-							len: need,
-						}),
+						f.repeat(copies).to_utf8().sublist({ start: 0, len: need }),
 					) ?? crash "Interp.text_padded: an ASCII cut"
 					match side {
 						PadStart => { st: st, val: Text(Str.concat(pad, s)) }

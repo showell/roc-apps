@@ -34,7 +34,11 @@ Lexer :: [].{
 		before : Lexer.Break,
 	}
 
-	Fault : { why : Str, line : U64, col : U64 }
+	Fault : {
+		why : Str,
+		line : U64,
+		col : U64,
+	}
 
 	# The state of the scan: where it is, the tokens so far, and the brace
 	# depths of the open template substitutions.
@@ -52,7 +56,11 @@ Lexer :: [].{
 	tokens_of = |text| {
 		src = text.to_utf8()
 		if src.contains(0) {
-			return Err({ why: "a NUL byte in the source", line: 1, col: 1 })
+			return Err({
+				why: "a NUL byte in the source",
+				line: 1,
+				col: 1,
+			})
 		}
 		var $s = {
 			at: 0,
@@ -79,7 +87,11 @@ Lexer :: [].{
 	byte_at = |src, i| src.get(i) ?? 0
 
 	fault_at : Lexer.Scan, Str -> Lexer.Fault
-	fault_at = |s, why| { why: why, line: s.line, col: s.at - s.line_start + 1 }
+	fault_at = |s, why| {
+		why: why,
+		line: s.line,
+		col: s.at - s.line_start + 1,
+	}
 
 	# The scan past one token, a run of space or one comment.
 	scan_one : List(U8), Lexer.Scan -> Try(Lexer.Scan, Lexer.Fault)
@@ -87,7 +99,13 @@ Lexer :: [].{
 		c = Lexer.byte_at(src, s.at)
 		next = Lexer.byte_at(src, s.at + 1)
 		if c == '\n' {
-			Ok({ ..s, at: s.at + 1, line: s.line + 1, line_start: s.at + 1, before: NewLine })
+			Ok({
+				..s,
+				at: s.at + 1,
+				line: s.line + 1,
+				line_start: s.at + 1,
+				before: NewLine,
+			})
 		} else if c == ' ' or c == '\t' or c == '\r' {
 			Ok({ ..s, at: s.at + 1 })
 		} else if c == '/' and next == '/' {
@@ -101,7 +119,12 @@ Lexer :: [].{
 		} else if c == '"' or c == '\'' {
 			Lexer.scan_string(src, s, c)
 		} else if c == '`' {
-			Lexer.scan_template(src, { ..s, at: s.at + 1 }, s, Head)
+			Lexer.scan_template(
+				src,
+				{ ..s, at: s.at + 1 },
+				s,
+				Head,
+			)
 		} else if c == '}' {
 			Lexer.scan_close_brace(src, s)
 		} else if c >= 128 {
@@ -142,7 +165,13 @@ Lexer :: [].{
 		if $i >= src.len() {
 			Err(Lexer.fault_at(s, "a comment that never ends"))
 		} else {
-			Ok({ ..s, at: $i + 2, line: $line, line_start: $line_start, before: $before })
+			Ok({
+				..s,
+				at: $i + 2,
+				line: $line,
+				line_start: $line_start,
+				before: $before,
+			})
 		}
 	}
 
@@ -164,15 +193,16 @@ Lexer :: [].{
 			col: from - s.line_start + 1,
 			before: s.before,
 		}
-		{ ..s, tokens: s.tokens.append(token), before: SameLine }
+		{
+			..s,
+			tokens: s.tokens.append(token),
+			before: SameLine,
+		}
 	}
 
 	text_between : List(U8), U64, U64 -> Str
 	text_between = |src, from, to| Str.from_utf8(
-		src.sublist({
-			start: from,
-			len: to - from,
-		}),
+		src.sublist({ start: from, len: to - from }),
 	) ?? crash "Lexer.text_between: a cut inside a character"
 
 	scan_name : List(U8), Lexer.Scan -> Lexer.Scan
@@ -181,7 +211,11 @@ Lexer :: [].{
 		while Lexer.is_name_part(Lexer.byte_at(src, $i)) {
 			$i = $i + 1
 		}
-		{ ..Lexer.with_token(s, Name(Lexer.text_between(src, s.at, $i)), s.at), at: $i }
+		{ ..Lexer.with_token(
+			s,
+			Name(Lexer.text_between(src, s.at, $i)),
+			s.at,
+		), at: $i }
 	}
 
 	scan_number : List(U8), Lexer.Scan -> Try(Lexer.Scan, Lexer.Fault)
@@ -421,7 +455,13 @@ Lexer :: [].{
 		} else {
 			$i + 2
 		}
-		Ok({ ..made, at: after, line: $line, line_start: $line_start, open_templates: opened })
+		Ok({
+			..made,
+			at: after,
+			line: $line,
+			line_start: $line_start,
+			open_templates: opened,
+		})
 	}
 
 	punctuators : List(Str)
@@ -496,7 +536,11 @@ Lexer :: [].{
 				} else {
 					made.depth
 				}
-				Ok({ ..made, at: s.at + p.count_utf8_bytes(), depth: opened })
+				Ok({
+					..made,
+					at: s.at + p.count_utf8_bytes(),
+					depth: opened,
+				})
 			}
 			Err(NotFound) => Err(
 				Lexer.fault_at(
@@ -516,10 +560,19 @@ Lexer :: [].{
 		}
 		if closes_substitution {
 			popped = { ..s, open_templates: s.open_templates.drop_last(1) }
-			Lexer.scan_template(src, { ..popped, at: s.at + 1 }, popped, Middle)
+			Lexer.scan_template(
+				src,
+				{ ..popped, at: s.at + 1 },
+				popped,
+				Middle,
+			)
 		} else {
 			made = Lexer.with_token(s, Punct("}"), s.at)
-			Ok({ ..made, at: s.at + 1, depth: made.depth.minus_saturated(1) })
+			Ok({
+				..made,
+				at: s.at + 1,
+				depth: made.depth.minus_saturated(1),
+			})
 		}
 	}
 }

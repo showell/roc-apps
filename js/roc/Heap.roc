@@ -137,7 +137,11 @@ Heap :: [].{
 	with_prop = |cells, id, key, val| {
 		taken = Heap.taken_out(cells, id)
 		match taken.prev {
-			Obj(props) => Heap.put_back(taken.list, id, Obj(Heap.props_with(props, key, val)))
+			Obj(props) => Heap.put_back(
+				taken.list,
+				id,
+				Obj(Heap.props_with(props, key, val)),
+			)
 			_ => crash "Heap.with_prop: the interpreter writes properties only to objects"
 		}
 	}
@@ -147,7 +151,11 @@ Heap :: [].{
 	with_item = |cells, id, i, val| {
 		taken = Heap.taken_out(cells, id)
 		match taken.prev {
-			Arr(items) => Heap.put_back(taken.list, id, Arr(Heap.items_with(items, i, val)))
+			Arr(items) => Heap.put_back(
+				taken.list,
+				id,
+				Arr(Heap.items_with(items, i, val)),
+			)
 			_ => crash "Heap.with_item: the interpreter writes items only to arrays"
 		}
 	}
@@ -170,7 +178,11 @@ Heap :: [].{
 	with_items_pushed = |cells, id, vals| {
 		taken = Heap.taken_out(cells, id)
 		match taken.prev {
-			Arr(items) => Heap.put_back(taken.list, id, Arr(List.concat(items, vals)))
+			Arr(items) => Heap.put_back(
+				taken.list,
+				id,
+				Arr(List.concat(items, vals)),
+			)
 			_ => crash "Heap.with_items_pushed: the interpreter pushes only onto arrays"
 		}
 	}

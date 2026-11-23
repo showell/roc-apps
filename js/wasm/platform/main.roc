@@ -15,7 +15,11 @@ platform ""
 	}
 	exposes []
 	packages {}
-	provides { "roc_buffer": buffer_for_host, "roc_drop": drop_for_host, "roc_run": run_for_host }
+	provides {
+		"roc_buffer": buffer_for_host,
+		"roc_drop": drop_for_host,
+		"roc_run": run_for_host,
+	}
 	targets: {
 		wasm32: {
 			inputs: [app],

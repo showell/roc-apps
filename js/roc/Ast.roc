@@ -113,7 +113,12 @@ Ast :: [].{
 
 	Binding : [Let, Const]
 
-	Declarator : { name : Str, slot : Ast.Slot, init : Ast.Init, at : Ast.Where }
+	Declarator : {
+		name : Str,
+		slot : Ast.Slot,
+		init : Ast.Init,
+		at : Ast.Where,
+	}
 
 	Init : [Initialized(Ast.Expr), Uninitialized]
 

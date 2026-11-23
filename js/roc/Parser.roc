@@ -33,7 +33,11 @@ Parser :: [].{
 	program_of : Str -> Try(Ast.Program, Lexer.Fault)
 	program_of = |text| {
 		tokens = Lexer.tokens_of(text)?
-		var $p = { tokens: tokens, at: 0, functions: 0 }
+		var $p = {
+			tokens: tokens,
+			at: 0,
+			functions: 0,
+		}
 		var $stmts = []
 		while !Parser.is_end($p) {
 			r = Parser.statement($p)?
@@ -125,11 +129,19 @@ Parser :: [].{
 	fault_here : Parser.State, Str -> Lexer.Fault
 	fault_here = |p, why| {
 		t = Parser.token(p)
-		{ why: why, line: t.line, col: t.col }
+		{
+			why: why,
+			line: t.line,
+			col: t.col,
+		}
 	}
 
 	fault_at : Ast.Where, Str -> Lexer.Fault
-	fault_at = |w, why| { why: why, line: w.line, col: w.col }
+	fault_at = |w, why| {
+		why: why,
+		line: w.line,
+		col: w.col,
+	}
 
 	shown : Lexer.Tok -> Str
 	shown = |tok| match tok {
@@ -424,7 +436,12 @@ Parser :: [].{
 			} else if binding == Const {
 				return Err(Parser.fault_here(n.p, "a `const` without a value"))
 			} else {
-				$out = $out.append({ name: n.value, slot: Unresolved, init: Uninitialized, at: w })
+				$out = $out.append({
+					name: n.value,
+					slot: Unresolved,
+					init: Uninitialized,
+					at: w,
+				})
 				$q = n.p
 			}
 			if Parser.is_punct($q, ",") {
@@ -562,7 +579,11 @@ Parser :: [].{
 
 	# What a function's body is parsed with: the function's name, its
 	# parameters and where it starts.
-	Signature : { name : Str, params : List(Str), at : Ast.Where }
+	Signature : {
+		name : Str,
+		params : List(Str),
+		at : Ast.Where,
+	}
 
 	function_rest : Parser.State, Ast.Where, Parser.Naming -> Parser.ParsedFunction
 	function_rest = |p, w, naming| {
@@ -580,7 +601,14 @@ Parser :: [].{
 			}
 		}?
 		params = Parser.parameters(named_p.p)?
-		Parser.function_body(params.p, { name: named_p.value, params: params.value, at: w })
+		Parser.function_body(
+			params.p,
+			{
+				name: named_p.value,
+				params: params.value,
+				at: w,
+			},
+		)
 	}
 
 	parameters : Parser.State -> Try(Parser.Parsed(List(Str)), Lexer.Fault)
@@ -685,7 +713,14 @@ Parser :: [].{
 		}?
 		q = Parser.expect_punct(params.p, "=>")?
 		if Parser.is_punct(q, "{") {
-			def = Parser.function_body(q, { name: "", params: params.value, at: w })?
+			def = Parser.function_body(
+				q,
+				{
+					name: "",
+					params: params.value,
+					at: w,
+				},
+			)?
 			Ok({ p: def.p, value: Function(Box.box(def.value)) })
 		} else {
 			before = q.functions
@@ -1001,22 +1036,13 @@ Parser :: [].{
 					$q = args.p
 				}
 				Punct("?.") => return Err(
-					Parser.fault_here(
-						$q,
-						"unsupported: optional chaining (`?.`)",
-					),
+					Parser.fault_here($q, "unsupported: optional chaining (`?.`)"),
 				)
 				TemplateWhole(_) => return Err(
-					Parser.fault_here(
-						$q,
-						"unsupported: tagged templates",
-					),
+					Parser.fault_here($q, "unsupported: tagged templates"),
 				)
 				TemplateHead(_) => return Err(
-					Parser.fault_here(
-						$q,
-						"unsupported: tagged templates",
-					),
+					Parser.fault_here($q, "unsupported: tagged templates"),
 				)
 				_ => {
 					$more = False
@@ -1104,10 +1130,7 @@ Parser :: [].{
 			Punct("#") => Err(Parser.fault_here(p, "unsupported: private names"))
 			Punct("@") => Err(Parser.fault_here(p, "unsupported: decorators"))
 			other => Err(
-				Parser.fault_here(
-					p,
-					"expected an expression, found ${Parser.shown(other)}",
-				),
+				Parser.fault_here(p, "expected an expression, found ${Parser.shown(other)}"),
 			)
 		}
 	}
@@ -1185,10 +1208,7 @@ Parser :: [].{
 			Punct("...") => Err(Parser.fault_here(p, "unsupported: spread (`...`)"))
 			Punct("*") => Err(Parser.fault_here(p, "unsupported: generators"))
 			other => Err(
-				Parser.fault_here(
-					p,
-					"expected a property's name, found ${Parser.shown(other)}",
-				),
+				Parser.fault_here(p, "expected a property's name, found ${Parser.shown(other)}"),
 			)
 		}?
 		after = Parser.advance(p)
@@ -1197,7 +1217,14 @@ Parser :: [].{
 			Ok({ p: v.p, value: { key: key, value: Parser.named(v.value, key) } })
 		} else if Parser.is_punct(after, "(") {
 			params = Parser.parameters(after)?
-			def = Parser.function_body(params.p, { name: key, params: params.value, at: w })?
+			def = Parser.function_body(
+				params.p,
+				{
+					name: key,
+					params: params.value,
+					at: w,
+				},
+			)?
 			Ok({ p: def.p, value: { key: key, value: Function(Box.box(def.value)) } })
 		} else {
 			match t.tok {

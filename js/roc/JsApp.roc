@@ -29,7 +29,10 @@ run_program = |bytes| {
 				Faulted(why) => List.concat([1], "${outcome.out}js: ${why}\n".to_utf8())
 			}
 		}
-		Err(f) => List.concat([2], "js: ${f.why} (line ${f.line.to_str()}, column ${f.col.to_str()})\n".to_utf8())
+		Err(f) => List.concat(
+			[2],
+			"js: ${f.why} (line ${f.line.to_str()}, column ${f.col.to_str()})\n".to_utf8(),
+		)
 	}
 }
 

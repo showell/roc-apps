@@ -45,10 +45,7 @@ NumberText :: [].{
 		all = List.concat(whole, fraction)
 		leading = NumberText.leading_zero_count(all)
 		trimmed = NumberText.without_trailing_zeros(all.drop_first(leading))
-		{
-			digits: trimmed,
-			point: whole.len().to_i64_wrap() - leading.to_i64_wrap() + exponent,
-		}
+		{ digits: trimmed, point: whole.len().to_i64_wrap() - leading.to_i64_wrap() + exponent }
 	}
 
 	is_zero_at : List(U8), U64 -> Bool
