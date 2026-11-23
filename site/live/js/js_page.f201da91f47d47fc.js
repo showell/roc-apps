@@ -18,9 +18,9 @@
 // canvas is queued at once and runs in the next frame. Pause and Step work
 // between frames.
 
-import { loadRunner, unescaped } from "./js_runner.js";
-import { isMark, makePainter, SIZE } from "./js_painter.js";
-import { CANVAS_SAMPLES } from "./js_samples.js";
+import { loadRunner, unescaped } from "./js_runner.1d99bb0bad526ba3.js";
+import { isMark, makePainter, SIZE } from "./js_painter.0bd9d998c665b954.js";
+import { CANVAS_SAMPLES } from "./js_samples.fd2458853ded02f8.js";
 
 const FRAMES_PER_SECOND = 30;
 const SLOW_PAUSE_MS = 60;
@@ -109,9 +109,9 @@ const BUILTINS = [
 ];
 
 const CSS = `
-  :root { color-scheme: light dark; --ink: #1b1b1b; --dim: #6a6a6a; --line: #d8d4cc; --paper: #faf8f4; --bad: #a33a1f; }
+  :root { color-scheme: light dark; --ink: #1b1b1b; --dim: #6a6a6a; --line: #d8d4cc; --paper: #faf8f4; --bad: #a33a1f; --go: #2f6f4f; }
   @media (prefers-color-scheme: dark) {
-    :root { --ink: #e8e6e1; --dim: #9a968e; --line: #3a3833; --paper: #1a1917; --bad: #e08a6c; }
+    :root { --ink: #e8e6e1; --dim: #9a968e; --line: #3a3833; --paper: #1a1917; --bad: #e08a6c; --go: #2f7d56; }
   }
   body { margin: 0; background: var(--paper); color: var(--ink);
          font: 15px/1.5 -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif; }
@@ -124,6 +124,8 @@ const CSS = `
                    border: 1px solid var(--ink); border-radius: 4px; padding: 5px 14px; }
   select { max-width: 100%; }
   button:hover { background: var(--ink); color: var(--paper); }
+  button.primary { background: var(--go); border-color: var(--go); color: #fff; font-weight: 600; padding: 5px 22px; }
+  button.primary:hover { background: var(--ink); border-color: var(--ink); color: var(--paper); }
   .cols { display: flex; gap: 18px; flex-wrap: wrap; }
   .col { flex: 1 1 380px; min-width: 0; }
   label { display: block; font-size: 12px; text-transform: uppercase; letter-spacing: .06em;
@@ -137,8 +139,10 @@ const CSS = `
            border-radius: 4px; touch-action: none; }
   canvas:focus { outline: 2px solid var(--dim); outline-offset: 2px; }
   canvas[hidden] { display: none; }
-  .status { color: var(--dim); font-size: 13px; }
+  .status { color: var(--dim); font-size: 13px; flex-basis: 100%; min-height: 1.5em; }
   .status.bad { color: var(--bad); }
+  .waiting { margin: 0; padding: 18px 16px; border: 1px dashed var(--line); border-radius: 4px; color: var(--dim); }
+  .waiting[hidden], label[hidden], pre[hidden] { display: none; }
   dl { display: grid; grid-template-columns: minmax(0, max-content) minmax(0, 1fr); gap: 4px 16px; margin: 0; font-size: 14px; }
   dt { font: 13px/1.5 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; overflow-wrap: anywhere; }
   dd { margin: 0; color: var(--dim); }
@@ -156,7 +160,7 @@ function element(tag, props = {}, children = []) {
 export function buildPage(runner, env = window) {
   document.head.appendChild(element("style", { textContent: CSS }));
   const picker = element("select", {}, SAMPLES.map((s, i) => element("option", { value: String(i), textContent: s.title })));
-  const runButton = element("button", { textContent: "Run" });
+  const runButton = element("button", { textContent: "Run", className: "primary" });
   const stopButton = element("button", { textContent: "Stop" });
   const pauseButton = element("button", { textContent: "Pause" });
   const stepButton = element("button", { textContent: "Step" });
@@ -166,13 +170,14 @@ export function buildPage(runner, env = window) {
   const canvas = element("canvas", { width: SIZE, height: SIZE, tabIndex: 0 });
   const output = element("pre", { textContent: "" });
   const canvasLabel = element("label", { textContent: "Canvas, 400 by 400" });
+  const waiting = element("p", { className: "waiting", textContent: "This program hasn't run yet. Press Run to start it." });
   const wrap = element("div", { className: "wrap" }, [
     element("h1", { textContent: "JavaScript, in Roc" }),
     element("p", { className: "sub", textContent: "A subset of JavaScript run by a tree-walking interpreter written in Roc. Its console.log prints what node prints; the canvas builtins below are this page's own, named after p5.js's but not p5.js." }),
     element("div", { className: "bar" }, [picker, runButton, stopButton, pauseButton, stepButton, speed, status]),
     element("div", { className: "cols" }, [
       element("div", { className: "col" }, [element("label", { textContent: "Program" }), editor]),
-      element("div", { className: "col" }, [canvasLabel, canvas, output]),
+      element("div", { className: "col" }, [waiting, canvasLabel, canvas, output]),
     ]),
     element("h2", { textContent: "The canvas builtins" }),
     element("dl", {}, BUILTINS.flatMap(([call, what]) => [element("dt", { textContent: call }), element("dd", { textContent: what })])),
@@ -184,12 +189,31 @@ export function buildPage(runner, env = window) {
   const painter = makePainter(ctx);
   painter.reset();
 
-  // A console sample shows its output where the canvas would be.
+  // **NOTHING SHOWS UNTIL RUN.** Until the program in the editor has been
+  // run, the column holds one line saying so, and no canvas or console: a
+  // canvas that is there but blank looked like a program that had started
+  // and ignored its clicks. Picking a sample or editing the program goes
+  // back to that line; Run shows the canvas, or for a console sample the
+  // console, and Stop leaves what was drawn in view.
   function showKindOf(sample) {
+    waiting.hidden = true;
+    canvasLabel.hidden = false;
+    output.hidden = false;
     canvas.hidden = Boolean(sample.console);
     canvasLabel.textContent = sample.console ? "Console" : "Canvas, 400 by 400";
   }
-  showKindOf(SAMPLES[0]);
+
+  // The program in the editor as not yet run: the line, and nothing drawn.
+  function notRun() {
+    waiting.hidden = false;
+    canvasLabel.hidden = true;
+    canvas.hidden = true;
+    output.hidden = true;
+    output.textContent = "";
+    painter.reset();
+    say("", false);
+  }
+  notRun();
 
   // The input the program reads: the pointer over the canvas, in its own
   // 400-by-400 units, and the keys held while the canvas has the focus.
@@ -296,6 +320,7 @@ export function buildPage(runner, env = window) {
   }
 
   function runNow() {
+    showKindOf(SAMPLES[Number(picker.value)]);
     queue = [];
     output.textContent = "";
     painter.reset();
@@ -331,16 +356,17 @@ export function buildPage(runner, env = window) {
   picker.addEventListener("change", () => {
     stop();
     editor.value = SAMPLES[Number(picker.value)].source;
-    showKindOf(SAMPLES[Number(picker.value)]);
-    output.textContent = "";
-    painter.reset();
-    say("", false);
+    notRun();
   });
-  return { picker, runButton, stopButton, pauseButton, stepButton, speed, status, editor, canvas, output, runNow };
+  // An edited program hasn't run either, so the run on show stops with it.
+  editor.addEventListener("input", () => {
+    stop();
+    notRun();
+  });
+  return { picker, runButton, stopButton, pauseButton, stepButton, speed, status, editor, canvas, output, waiting, canvasLabel, runNow };
 }
 
 if (typeof window !== "undefined" && !window.JS_PAGE_CHECK) {
-  const bytes = await (await fetch("js.wasm")).arrayBuffer();
-  const page = buildPage(await loadRunner(bytes));
-  page.runNow();
+  const bytes = await (await fetch("js.f612db3c8aa717dc.wasm")).arrayBuffer();
+  buildPage(await loadRunner(bytes));
 }
