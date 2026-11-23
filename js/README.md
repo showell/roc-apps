@@ -7,13 +7,13 @@ that holds the language to node.
 The code here was written by AI coding agents (Claude), with human
 supervision.
 
-**Status (2026-11-23): a first version, with timers and clicks.** 38 of 38
-corpus programs print what node 22 prints, byte for byte, timers included,
-and 35 of 35 programs outside the subset are refused with the message they
-must give. Eight canvas samples are held to their logs of effects, one of
-them driven by scripted clicks alone and one by timers, restarted by a
-scripted click. The page builds into the dev channel; it is not
-published.
+**Status (2026-11-24): the language gaps closed, on a branch.** 50 of 50
+corpus programs print what node 22 prints, byte for byte, timers and
+uncaught throws included, and 44 of 44 programs outside the subset are
+refused with the message they must give. Eight canvas samples are held to
+their logs of effects, one of them driven by scripted clicks alone and one
+by timers, restarted by a scripted click. The page builds into the dev
+channel; it is not published.
 
 ## The subset
 
@@ -21,33 +21,63 @@ Every program in the subset is real JavaScript, so `node` is a free oracle:
 what node prints for it is what the interpreter must print.
 
 - **Values:** numbers (F64), strings, booleans, `null`, `undefined`, arrays,
-  plain objects and functions.
+  plain objects, functions, errors, and Maps and Sets.
 - **Statements:** `let` and `const` with block scope (a `for` loop's `let`
-  is a new variable each pass, as closures see it), `if`, `while`, the
-  C-form `for`, `for ... of` over arrays and strings, `return`, `break`,
-  `continue`, and function declarations, hoisted.
+  is a new variable each pass, as closures see it), `if`, `while`,
+  `do ... while`, the C-form `for`, `for ... of` over arrays, strings, Maps,
+  Sets and their iterators, `switch` (cases compared by `===`, falling
+  through, `default` anywhere), `return`, `break` and `continue`, labelled
+  too (`break outer`), `throw` of any value, `try` with `catch (e)`, a
+  `catch` pattern or a `catch` with no binding, and `finally`, and function
+  declarations, hoisted.
+- **Destructuring,** in declarations, assignments, parameters, `catch` and
+  `for ... of`: array patterns with holes and rest (`[a, , ...rest]`),
+  object patterns with renames, defaults and rest (`{ x, y: why = 2,
+  ...others }`), nested; and default and rest parameters (`function f(a,
+  b = a + 1, ...more)`).
 - **Expressions:** arithmetic and `**`; `<`, `>`, `<=`, `>=` on numbers or on
   strings; `===` and `!==`; `&&`, `||`, `??`, `!`, `?:` and `typeof`;
-  assignment, the compound assignments and `++` and `--`; property and
-  index access; calls; arrow functions and function expressions, closures
-  included; array and object literals (with shorthand properties and
-  methods); template strings; and spread (`...`) of an array or a string
-  into an array literal or a call's arguments. `+` joins when either side
-  is a string, an array or an object, as in JavaScript.
+  assignment, the compound assignments, the logical ones (`??=`, `||=`,
+  `&&=`) and `++` and `--`; property and index access, and optional
+  chains (`a?.b`, `a?.[k]`, `f?.()`); calls; `new` of the builtin
+  constructors below; arrow functions and function expressions, closures
+  included; array and object literals (with shorthand properties, methods
+  and spread, `{ ...o }`); template strings; and spread (`...`) of anything
+  iterable into an array literal or a call's arguments. `+` joins when
+  either side is a string, an array or an object, as in JavaScript.
+- **Errors:** the interpreter's own errors are JavaScript's, caught by
+  `catch` with node's `name` and `message` (`TypeError: Cannot read
+  properties of null (reading 'x')`, `o.f is not a function`,
+  `ReferenceError: x is not defined`, `RangeError: Maximum call stack size
+  exceeded`). `new Error(message)`, and `TypeError`, `RangeError`,
+  `ReferenceError` and `SyntaxError` the same way, make one. A throw nothing
+  catches ends the run as node ends it, a timer's and a click's included:
+  js-run prints `Uncaught <the first line node prints of what was thrown>
+  (line <n>)` and exits 1 (js/oracle.shale writes node's own report, its
+  stack and all, as that line).
 - **Builtins:** `console.log`, formatted as node formats the subset's
   values (line breaks past 80 columns, grouped columns for long arrays,
-  depth 2, the quoting rules); `Math`'s `floor`, `ceil`, `round`, `trunc`,
-  `abs`, `sign`, `sqrt`, `pow`, `min`, `max`, `sin`, `cos`, `tan`, `atan`,
-  `PI` and `E`; arrays' `length`, `push`, `pop`, `join`, `indexOf`,
-  `includes`, `slice`, `concat`, `reverse`, `sort`, `forEach`, `map`,
-  `filter`, `some`, `every`, `find`, `findIndex` and `reduce`; strings'
-  `length`, indexing, `charAt`, `charCodeAt`, `indexOf`, `includes`,
-  `startsWith`, `endsWith`, `slice`, `substring`, `toUpperCase`,
-  `toLowerCase`, `trim`, `split`, `repeat`, `padStart`, `padEnd` and
-  `concat`; `Object.keys`, `values` and `entries`; `String(x)` and
-  `String.fromCharCode`; `Array.isArray`; `Number.isInteger`; and the
-  timers, `setTimeout(f, ms)`, `setInterval(f, ms)`, `clearTimeout(timer)`
-  and `clearInterval(timer)`, on a virtual clock (below).
+  depth 2, the quoting rules, `Map(2) { 'a' => 1 }` and `Set(1) { 1 }`);
+  `Math`'s `floor`, `ceil`, `round`, `trunc`, `abs`, `sign`, `sqrt`, `pow`,
+  `min`, `max`, `sin`, `cos`, `tan`, `atan`, `PI` and `E`; arrays'
+  `length`, `push`, `pop`, `shift`, `unshift`, `splice`, `join`, `indexOf`,
+  `lastIndexOf`, `includes`, `at`, `slice`, `concat`, `reverse`, `sort`,
+  `fill`, `flat`, `flatMap`, `forEach`, `map`, `filter`, `some`, `every`,
+  `find`, `findIndex`, `findLast`, `findLastIndex`, `reduce`,
+  `reduceRight`, `keys`, `values` and `entries`; strings' `length`,
+  indexing, `charAt`, `charCodeAt`, `at`, `indexOf`, `lastIndexOf`,
+  `includes`, `startsWith`, `endsWith`, `slice`, `substring`,
+  `toUpperCase`, `toLowerCase`, `trim`, `trimStart`, `trimEnd`, `split`
+  (with a limit), `replace` and `replaceAll` (a string by a string),
+  `repeat`, `padStart`, `padEnd` and `concat`; `new Map(entries)` and `new
+  Set(values)`, with `get`, `set`, `add`, `has`, `delete`, `clear`,
+  `size`, `forEach`, `keys`, `values` and `entries`, keys compared as
+  SameValueZero and kept in the order first set; `Object.keys`, `values`
+  and `entries`; `String(x)` and `String.fromCharCode`; `Array.isArray`,
+  `Array.from` (an iterable, or an object with a `length`, with a mapper)
+  and `Array.of`; `Number.isInteger`; and the timers, `setTimeout(f, ms)`,
+  `setInterval(f, ms)`, `clearTimeout(timer)` and `clearInterval(timer)`,
+  on a virtual clock (below).
 - **Timers run after the program, in the order node runs them.** Each is
   due `ms` after the moment it was set (a delay below 1, or left out, is
   1 ms, as node makes it), and they run earliest first, two at one time in
@@ -57,15 +87,31 @@ what node prints for it is what the interpreter must print.
   (`js/tests/36-timeouts.js` to `38-nested-timeouts.js`). js-run runs
   callbacks until none is left; an interval never cleared, which node runs
   for good, stops at 100,000 callbacks with a message saying so.
-- **Out of it:** `this`, `new`, prototypes and classes, getters and setters,
-  `==` and the other coercions (`"3" * 2`, `true + 1`), `var`, exceptions,
-  `eval`, regular expressions, destructuring, object spread and rest
-  parameters, async and modules; a timer's arguments after its delay, and
-  printing or reading a timer (node's is an object it prints; ours is a
-  handle `clearTimeout` takes, and nothing else); two parameters of one name, and a
-  function declared as the lone body of an `if`, a `while` or a `for`. A name declared twice in one scope, and a
-  `let` or `const` as such a lone body, are refused as node refuses them,
-  with its SyntaxError.
+- **Out of it:** `this`, `new` on a function of the program, prototypes and
+  classes (below), getters and setters, `==` and the other coercions (`"3"
+  * 2`, `true + 1`), `var`, `eval`, regular expressions, `in` and
+  `instanceof`, computed property names, async and modules; printing an
+  error (node prints its stack) or an iterator, an iterator's `next`, a
+  Map's or a Set's method read outside a call; `startsWith` and `endsWith`
+  from a position, a replacement with `$` patterns or a function,
+  `localeCompare`, and the number methods (`toFixed`); a timer's arguments
+  after its delay, and printing or reading a timer (node's is an object it
+  prints; ours is a handle `clearTimeout` takes, and nothing else); two
+  parameters of one name, and a function declared as the lone body of an
+  `if`, a `while` or a `for`. A name declared twice in one scope, a `let` or
+  `const` as such a lone body, a `break` or a `continue` with nothing to
+  leave, and a destructuring with no value are refused as node refuses
+  them, with its SyntaxError.
+- **Why `this`, `new` and classes stay out:** `this` is bound by how a
+  function is called (a method call, a plain call, which in node's sloppy
+  mode binds the global object the subset has no value for, a callback a
+  builtin makes, a timer's), and taken from around it by an arrow, so every
+  call path would carry a receiver; `new` with `prototype` methods needs an
+  object to link to its prototype, every property read to walk that link
+  and every listing (`Object.keys`, spread, console.log's `Point { x: 1 }`)
+  to tell its own properties from inherited ones, and functions to carry
+  properties; and classes are mostly used with `extends` and `super`, on
+  top of all that. None of it is a small step.
 
 **A program outside the subset gets an error that names what it used,
 never a wrong answer.** The parser refuses the forms it can see (`js:
@@ -165,7 +211,8 @@ wasm module, on the platform and host in `js/wasm/`; `js/web/` is the page.
 JavaScript shares arrays, objects and closures by reference: two variables
 that hold one array see each other's writes. Roc has only values. So the
 interpreter keeps everything JavaScript shares in one Roc value, the heap, a
-list of cells (an object, an array, a closure, a builtin) named by index,
+list of cells (an object, an array, a closure, a builtin, an error, a Map, a
+Set, an iterator) named by index,
 and a JavaScript reference is that index. Scopes are a second list, because
 a closure holds on to the scope it was made in and must see later writes to
 it. The machine (`Interp.Machine`: the heap, the scopes, the output, the step
@@ -204,6 +251,13 @@ shapes that keep it unique, each with a comment where it is used:
 - **`s += e` on a string, with an `e` that can't change `s`, grows the
   string where the variable holds it** (`Interp.appended_name`), so a
   string built one piece at a time is not copied per piece.
+- **A Map's or a Set's table sits in a list of one in its cell,** so every
+  cell stays an object's size while `List.update` still writes the table
+  in place (`Heap.with_entry`).
+- **A helper that may write hands the machine back whatever it finds**
+  (`Interp.iterated`, `walked_of`): a caller that kept its own machine for
+  the case of a value that isn't iterable held a second reference while the
+  helper wrote, and the write copied the heap.
 - **No closure captures the machine;** a loop over it is a `var $st` loop.
 - **The host is an argument of its own, never a field of the machine.**
   Following BASIC's workhorse pattern, the walk's functions take several
@@ -247,7 +301,7 @@ million objects, about 370 MB.
 
 **What the controls count (2026-11-23).** `js/controls.shale` runs each
 control in `js/controls/` (an empty loop, then the probes' six writes, one
-each) at 1,000 and 10,000 passes on `tools/alloc_ladder.shale`, which counts
+each, and a Map's write) at 1,000 and 10,000 passes on `tools/alloc_ladder.shale`, which counts
 `roc_alloc`'s calls exactly, and holds what one pass allocates to
 `js/controls/expected.txt` (release) and `expected-dev.txt` (dev). In the
 release build every control allocates nothing a pass but a push, which
@@ -350,6 +404,9 @@ across them is a write in place.
   (`js/bench.shale`, 2026-11-23). The dev backend shows the
   code's shape, which is what the probes look at; a release build is for
   measuring speed.
+- **A Map or a Set keeps a place for every key it ever held.** A deleted
+  entry stays, `Gone`, so a walk under way still meets the rest in order,
+  and is never reused: a table many keys pass through grows with them.
 - **The host costs the dev build about a sixth.** With the walk carrying the
   host and effectful, `fib(22)` on the dev backend took 471 ms of CPU
   against 400 ms before (best of five each, 2026-11-23, with another lane

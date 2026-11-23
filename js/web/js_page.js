@@ -73,6 +73,26 @@ const every = setInterval(() => {
 }, 300);
 console.log("the program's end comes first");
 ` },
+  { title: "Maps, patterns and errors", source: `const scores = new Map([["ann", 3], ["bob", 5]]);
+scores.set("cy", 4);
+for (const [name, score] of scores) console.log(name, score);
+
+const { ann = 0, dee = 0, ...others } = { ann: scores.get("ann"), bob: 5, cy: 4 };
+console.log(ann, dee, others);
+
+function best([first, ...rest], key = (x) => x) {
+  return rest.reduce((top, x) => (key(x) > key(top) ? x : top), first);
+}
+console.log(best([...scores], ([, score]) => score));
+
+try {
+  const nobody = null;
+  console.log(nobody.name);
+} catch (e) {
+  console.log(\`caught \${e.name}: \${e.message}\`);
+}
+console.log(new Set("mississippi"), scores.get("dee")?.length ?? "no dee");
+` },
   { title: "Outside the subset", source: `class Point {
   constructor(x, y) { this.x = x; this.y = y; }
 }
@@ -106,6 +126,18 @@ const BUILTINS = [
   ["setTimeout(f, ms), setInterval(f, ms)", "JavaScript's own: f called once after ms, or every ms; each answers a timer"],
   ["clearTimeout(timer), clearInterval(timer)", "the timer stops"],
   ["function frame(t) { ... }", "if the program declares it, called 30 times a second, t in seconds"],
+];
+
+// What of JavaScript the interpreter runs; js/README.md, "The subset", has
+// it whole.
+const LANGUAGE = [
+  ["let, const, if, while, do ... while, for, for ... of, switch", "for ... of over arrays, strings, Maps, Sets and their iterators; labelled break and continue"],
+  ["throw, try, catch, finally", "any value thrown; the interpreter's own TypeErrors and ReferenceErrors are caught the same way"],
+  ["[a, , ...rest] = xs, { x, y: why = 2, ...others } = o", "destructuring in declarations, assignments, parameters and for ... of; default and rest parameters"],
+  ["{ ...o }, a?.b, a?.[k], f?.(), ??=, ||=, &&=", "object spread, optional chaining and the logical assignments"],
+  ["new Map(), new Set(), new Error(message)", "with get, set, add, has, delete, size, forEach, keys, values and entries"],
+  ["Math, Object.keys, Array.from, and the methods of arrays and strings", "map, filter, reduce, splice, flat, at, split, replace and the rest"],
+  ["not this, new on your own functions, classes, ==, var or regular expressions", "each refused by name, never run wrong"],
 ];
 
 const CSS = `
@@ -178,6 +210,8 @@ export function buildPage(runner, env = window) {
       element("div", { className: "col" }, [element("label", { textContent: "Program" }), editor]),
       element("div", { className: "col" }, [waiting, canvasLabel, canvas, output]),
     ]),
+    element("h2", { textContent: "The JavaScript it runs" }),
+    element("dl", {}, LANGUAGE.flatMap(([what, more]) => [element("dt", { textContent: what }), element("dd", { textContent: more })])),
     element("h2", { textContent: "The canvas builtins" }),
     element("dl", {}, BUILTINS.flatMap(([call, what]) => [element("dt", { textContent: call }), element("dd", { textContent: what })])),
     element("p", { className: "note", textContent: "Colors are CSS color strings (\"tomato\", \"#3a7\", \"hsl(200, 70%, 45%)\"). The origin is the top left corner. A run may take 3,000,000 steps and 20,000 effects before its first frame, and each frame, with the clicks and timers it runs, 300,000 steps and 20,000 effects." }),

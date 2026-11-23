@@ -63,7 +63,10 @@
 ## functions take the host, then the machine, then the rest, where the style
 ## guide would take one record: a record holding the machine is a second
 ## reference to the heap. The queue's `tick!`, `drain!` and `run_event!`
-## follow the same exception, and so do `timer_set` and `call!` they reach.
+## follow the same exception, and so do `timer_set` and `call!` they reach,
+## the patterns' binders (`with_pattern_bound!` and its kin), an optional
+## chain's links (`link!`, `call_link!`), and the methods of arrays and of
+## Maps and Sets (`array_method!`, `collection_method!`).
 ##
 ## **A THROW UNWINDS THE WALK AS A FAULT STOPS IT.** A fault (a feature
 ## outside the subset, a budget) stops the run for good: `status` is set,
