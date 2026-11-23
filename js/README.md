@@ -299,3 +299,7 @@ across them is a write in place.
   (`js/bench.shale`, 2026-11-23). The dev backend shows the
   code's shape, which is what the probes look at; a release build is for
   measuring speed.
+- **The host costs the dev build about a sixth.** With the walk carrying the
+  host and effectful, `fib(22)` on the dev backend took 471 ms of CPU
+  against 400 ms before (best of five each, 2026-11-23, with another lane
+  running); the release build wasn't measured.
