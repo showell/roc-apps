@@ -67,7 +67,7 @@
 <h1>check_how_failure_is_reported</h1>
 <h2 class="code">Roc</h2>
 <p class="file">It also imports <code>Finding</code>, <code>Forest</code>, <code>RocTypes</code>, <code>Text</code>, <code>Tree</code> from <a href="../shared-library/">the shared Roc library</a>.</p>
-<p class="file"><a href="https://github.com/showell/shale/blob/e3c753adf065dc7856e5d49422daf99f9969f91a/cookbook/roc/check_how_failure_is_reported/check_how_failure_is_reported.roc"><code>cookbook/roc/check_how_failure_is_reported/check_how_failure_is_reported.roc</code></a>, 185 lines</p>
+<p class="file"><a href="https://github.com/showell/shale/blob/806ddeca4120fc62fe6466d3c14c309948282727/cookbook/roc/check_how_failure_is_reported/check_how_failure_is_reported.roc"><code>cookbook/roc/check_how_failure_is_reported/check_how_failure_is_reported.roc</code></a>, 185 lines</p>
 <pre><code><span class="syn-comment">## check_how_failure_is_reported, in Roc on Shale&#39;s platform (roc_platform/README.md): how Roc</span>
 <span class="syn-comment">## code reports failure, against the rules in roc-apps docs/roc-style.md</span>
 <span class="syn-comment">## (&quot;Errors and failure&quot;). Its launcher, cookbook/roc/check_how_failure_is_reported.shale, is</span>
@@ -254,7 +254,7 @@
 	}
 }
 </code></pre>
-<p class="file"><a href="https://github.com/showell/shale/blob/e3c753adf065dc7856e5d49422daf99f9969f91a/cookbook/roc/check_how_failure_is_reported/ErrorAlias.roc"><code>cookbook/roc/check_how_failure_is_reported/ErrorAlias.roc</code></a>, 214 lines</p>
+<p class="file"><a href="https://github.com/showell/shale/blob/806ddeca4120fc62fe6466d3c14c309948282727/cookbook/roc/check_how_failure_is_reported/ErrorAlias.roc"><code>cookbook/roc/check_how_failure_is_reported/ErrorAlias.roc</code></a>, 214 lines</p>
 <pre><code><span class="syn-comment">## The `error_alias` check: a function&#39;s result is a `Try` whose error is an</span>
 <span class="syn-comment">## alias of tags (`ReadError : [Missing, Failed]`, or a module&#39;s</span>
 <span class="syn-comment">## `Accounts.Unreadable`) instead of the tags written in place. The alias is</span>
@@ -470,11 +470,12 @@
 	}
 }
 </code></pre>
-<p class="file"><a href="https://github.com/showell/shale/blob/e3c753adf065dc7856e5d49422daf99f9969f91a/cookbook/roc/check_how_failure_is_reported/Fallbacks.roc"><code>cookbook/roc/check_how_failure_is_reported/Fallbacks.roc</code></a>, 173 lines</p>
+<p class="file"><a href="https://github.com/showell/shale/blob/806ddeca4120fc62fe6466d3c14c309948282727/cookbook/roc/check_how_failure_is_reported/Fallbacks.roc"><code>cookbook/roc/check_how_failure_is_reported/Fallbacks.roc</code></a>, 174 lines</p>
 <pre><code><span class="syn-comment">## The checks of what a `??` falls back to:</span>
 <span class="syn-comment">##</span>
 <span class="syn-comment">## - `set_fallback`: `List.set(l, i, v) ?? l`, or `l.set(i, v) ?? l`, where</span>
-<span class="syn-comment">##   the fallback is the list being stored into, so every store copies.</span>
+<span class="syn-comment">##   the fallback is the list being stored into: a placeholder, and on a</span>
+<span class="syn-comment">##   list of strings a copy on every store in the dev build.</span>
 <span class="syn-comment">## - `placeholder`: a fallback that is a string literal with nothing</span>
 <span class="syn-comment">##   interpolated (`?? &quot;bogus&quot;`, `?? &quot;&quot;`).</span>
 <span class="syn-comment">## - `number_fallback`: a fallback that is a number after a lookup by index</span>
@@ -536,8 +537,8 @@
 	<span class="syn-keyword">var</span> $findings = []
 	target = list_stored_into(forest, pair.lookup)
 	<span class="syn-keyword">if</span> target &gt; <span class="syn-number">0</span> <span class="syn-keyword">and</span> is_same(forest, target, pair.fallback) {
-		why = <span class="syn-string">&quot;the fallback names `l`, so every store copies; write `?? crash \&quot;...\&quot;` instead&quot;</span>
-		cited = <span class="syn-string">&quot;(roc-apps CLAUDE.md, \&quot;Six shapes copy\&quot;)&quot;</span>
+		why = <span class="syn-string">&quot;the fallback names `l`, an answer no store means (and on a list of strings a copy on every store in the dev build); write `?? crash \&quot;...\&quot;` instead&quot;</span>
+		cited = <span class="syn-string">&quot;(roc-apps CLAUDE.md, \&quot;Performance: know what copies\&quot;)&quot;</span>
 		$findings = $findings.append(at_fallback(<span class="syn-string">&quot;set_fallback&quot;</span>, <span class="syn-string">&quot;`List.set(l, i, v) ?? l`: </span>${why}<span class="syn-string"> </span>${cited}<span class="syn-string">&quot;</span>))
 	}
 	style = <span class="syn-string">&quot;(roc-apps docs/roc-style.md, \&quot;Errors and failure\&quot;)&quot;</span>
@@ -645,7 +646,7 @@
 	kind == <span class="syn-string">&quot;e-int&quot;</span> <span class="syn-keyword">or</span> kind == <span class="syn-string">&quot;e-frac&quot;</span>
 }
 </code></pre>
-<p class="file"><a href="https://github.com/showell/shale/blob/e3c753adf065dc7856e5d49422daf99f9969f91a/cookbook/roc/check_how_failure_is_reported/OptionalTag.roc"><code>cookbook/roc/check_how_failure_is_reported/OptionalTag.roc</code></a>, 87 lines</p>
+<p class="file"><a href="https://github.com/showell/shale/blob/806ddeca4120fc62fe6466d3c14c309948282727/cookbook/roc/check_how_failure_is_reported/OptionalTag.roc"><code>cookbook/roc/check_how_failure_is_reported/OptionalTag.roc</code></a>, 87 lines</p>
 <pre><code><span class="syn-comment">## The `optional_tag` check: a tag named like an optional (`Some`, `None`,</span>
 <span class="syn-comment">## `Nothing`; cookbook/words/optionals.txt lists them), matched by its whole</span>
 <span class="syn-comment">## name. A type that names one beside a tag with a payload is a finding at</span>
@@ -734,7 +735,7 @@
 	tag: place.tag,
 }
 </code></pre>
-<p class="file"><a href="https://github.com/showell/shale/blob/e3c753adf065dc7856e5d49422daf99f9969f91a/cookbook/roc/check_how_failure_is_reported/SelfTest.roc"><code>cookbook/roc/check_how_failure_is_reported/SelfTest.roc</code></a>, 130 lines</p>
+<p class="file"><a href="https://github.com/showell/shale/blob/806ddeca4120fc62fe6466d3c14c309948282727/cookbook/roc/check_how_failure_is_reported/SelfTest.roc"><code>cookbook/roc/check_how_failure_is_reported/SelfTest.roc</code></a>, 130 lines</p>
 <pre><code><span class="syn-comment">## The recipe&#39;s self-test, run after the checks over the plants in</span>
 <span class="syn-comment">## cookbook/roc/plants/check_how_failure_is_reported/ and its typed/ folder: each plant is</span>
 <span class="syn-comment">## named for the check it holds, and that check must fire on it and on no</span>
@@ -866,12 +867,13 @@
 <span class="syn-name">is_plant_for</span> : <span class="syn-type">Str</span>, <span class="syn-type">Str</span> -&gt; <span class="syn-type">Bool</span>
 <span class="syn-name">is_plant_for</span> = |name, check| name == <span class="syn-string">&quot;</span>${check}<span class="syn-string">.roc&quot;</span> <span class="syn-keyword">or</span> name.starts_with(<span class="syn-string">&quot;</span>${check}<span class="syn-string">_&quot;</span>)
 </code></pre>
-<p class="file"><a href="https://github.com/showell/shale/blob/e3c753adf065dc7856e5d49422daf99f9969f91a/cookbook/roc/check_how_failure_is_reported/Types.roc"><code>cookbook/roc/check_how_failure_is_reported/Types.roc</code></a>, 104 lines</p>
+<p class="file"><a href="https://github.com/showell/shale/blob/806ddeca4120fc62fe6466d3c14c309948282727/cookbook/roc/check_how_failure_is_reported/Types.roc"><code>cookbook/roc/check_how_failure_is_reported/Types.roc</code></a>, 105 lines</p>
 <pre><code><span class="syn-comment">## The effects of a recipe&#39;s `types=1`: the tree&#39;s Roc found, and roc-types</span>
 <span class="syn-comment">## (Roc&#39;s own checker, https://github.com/showell/roc-types) run on each app</span>
 <span class="syn-comment">## of `root=`, its pin held to the tree&#39;s Roc. Reading and joining its output</span>
 <span class="syn-comment">## is cookbook/roc/lib/&#39;s RocTypes; this file is the same in check_how_failure_is_reported,</span>
-<span class="syn-comment">## find_awkward_names and find_functions_and_parameters_that_dont_earn_their_keep, since a package reaches no effect.</span>
+<span class="syn-comment">## find_awkward_names, find_functions_and_parameters_that_dont_earn_their_keep and</span>
+<span class="syn-comment">## find_uses_after_a_consume, since a package reaches no effect.</span>
 <span class="syn-keyword">import</span> pf.<span class="syn-type">Shale</span>
 <span class="syn-keyword">import</span> lib.<span class="syn-type">RocTypes</span>
 <span class="syn-keyword">import</span> lib.<span class="syn-type">Text</span>

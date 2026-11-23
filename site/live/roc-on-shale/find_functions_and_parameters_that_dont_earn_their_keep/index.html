@@ -67,7 +67,7 @@
 <h1>find_functions_and_parameters_that_dont_earn_their_keep</h1>
 <h2 class="code">Roc</h2>
 <p class="file">It also imports <code>Bytes</code>, <code>Finding</code>, <code>Forest</code>, <code>Headers</code>, <code>RocTypes</code>, <code>Text</code>, <code>Tree</code> from <a href="../shared-library/">the shared Roc library</a>.</p>
-<p class="file"><a href="https://github.com/showell/shale/blob/e3c753adf065dc7856e5d49422daf99f9969f91a/cookbook/roc/find_functions_and_parameters_that_dont_earn_their_keep/find_functions_and_parameters_that_dont_earn_their_keep.roc"><code>cookbook/roc/find_functions_and_parameters_that_dont_earn_their_keep/find_functions_and_parameters_that_dont_earn_their_keep.roc</code></a>, 283 lines</p>
+<p class="file"><a href="https://github.com/showell/shale/blob/797d9f6941fe913bec1b723f7b3389debbe17651/cookbook/roc/find_functions_and_parameters_that_dont_earn_their_keep/find_functions_and_parameters_that_dont_earn_their_keep.roc"><code>cookbook/roc/find_functions_and_parameters_that_dont_earn_their_keep/find_functions_and_parameters_that_dont_earn_their_keep.roc</code></a>, 283 lines</p>
 <pre><code><span class="syn-comment">## find_functions_and_parameters_that_dont_earn_their_keep, in Roc on Shale&#39;s platform (roc_platform/README.md):</span>
 <span class="syn-comment">## whether each function&#39;s boundary earns its keep, and whether each of its</span>
 <span class="syn-comment">## parameters is really a parameter. Its launcher,</span>
@@ -352,7 +352,7 @@
 	}
 }
 </code></pre>
-<p class="file"><a href="https://github.com/showell/shale/blob/e3c753adf065dc7856e5d49422daf99f9969f91a/cookbook/roc/find_functions_and_parameters_that_dont_earn_their_keep/Checks.roc"><code>cookbook/roc/find_functions_and_parameters_that_dont_earn_their_keep/Checks.roc</code></a>, 264 lines</p>
+<p class="file"><a href="https://github.com/showell/shale/blob/797d9f6941fe913bec1b723f7b3389debbe17651/cookbook/roc/find_functions_and_parameters_that_dont_earn_their_keep/Checks.roc"><code>cookbook/roc/find_functions_and_parameters_that_dont_earn_their_keep/Checks.roc</code></a>, 264 lines</p>
 <pre><code><span class="syn-comment">## The checks of find_functions_and_parameters_that_dont_earn_their_keep, each function judged in the order of its</span>
 <span class="syn-comment">## key, then each `if`: `dead` or `unused_api`, `single`, `fixed` or</span>
 <span class="syn-comment">## `entry`, `constant`, `bool_param` and `same_branches`. The launcher&#39;s</span>
@@ -618,7 +618,7 @@
 	}
 }
 </code></pre>
-<p class="file"><a href="https://github.com/showell/shale/blob/e3c753adf065dc7856e5d49422daf99f9969f91a/cookbook/roc/find_functions_and_parameters_that_dont_earn_their_keep/Functions.roc"><code>cookbook/roc/find_functions_and_parameters_that_dont_earn_their_keep/Functions.roc</code></a>, 325 lines</p>
+<p class="file"><a href="https://github.com/showell/shale/blob/797d9f6941fe913bec1b723f7b3389debbe17651/cookbook/roc/find_functions_and_parameters_that_dont_earn_their_keep/Functions.roc"><code>cookbook/roc/find_functions_and_parameters_that_dont_earn_their_keep/Functions.roc</code></a>, 325 lines</p>
 <pre><code><span class="syn-comment">## The first pass of find_functions_and_parameters_that_dont_earn_their_keep: what each node&#39;s ancestors say, and</span>
 <span class="syn-comment">## each function defined at a file&#39;s top level or as a module type&#39;s member,</span>
 <span class="syn-comment">## with what the checks read of its body, its `##` doc and its parameters.</span>
@@ -945,7 +945,7 @@
 		<span class="syn-type">Err</span>(_) =&gt; []
 	}
 </code></pre>
-<p class="file"><a href="https://github.com/showell/shale/blob/e3c753adf065dc7856e5d49422daf99f9969f91a/cookbook/roc/find_functions_and_parameters_that_dont_earn_their_keep/References.roc"><code>cookbook/roc/find_functions_and_parameters_that_dont_earn_their_keep/References.roc</code></a>, 358 lines</p>
+<p class="file"><a href="https://github.com/showell/shale/blob/797d9f6941fe913bec1b723f7b3389debbe17651/cookbook/roc/find_functions_and_parameters_that_dont_earn_their_keep/References.roc"><code>cookbook/roc/find_functions_and_parameters_that_dont_earn_their_keep/References.roc</code></a>, 358 lines</p>
 <pre><code><span class="syn-comment">## The second pass of find_functions_and_parameters_that_dont_earn_their_keep: every reference to a function the</span>
 <span class="syn-comment">## checked files declare, with the call it heads, tallied by function. A</span>
 <span class="syn-comment">## reference is a function&#39;s bare name in the file that defines it,</span>
@@ -1305,7 +1305,7 @@
 	$calls
 }
 </code></pre>
-<p class="file"><a href="https://github.com/showell/shale/blob/e3c753adf065dc7856e5d49422daf99f9969f91a/cookbook/roc/find_functions_and_parameters_that_dont_earn_their_keep/SelfTest.roc"><code>cookbook/roc/find_functions_and_parameters_that_dont_earn_their_keep/SelfTest.roc</code></a>, 107 lines</p>
+<p class="file"><a href="https://github.com/showell/shale/blob/797d9f6941fe913bec1b723f7b3389debbe17651/cookbook/roc/find_functions_and_parameters_that_dont_earn_their_keep/SelfTest.roc"><code>cookbook/roc/find_functions_and_parameters_that_dont_earn_their_keep/SelfTest.roc</code></a>, 107 lines</p>
 <pre><code><span class="syn-comment">## The recipe&#39;s self-test, run after the checks over the plants in</span>
 <span class="syn-comment">## cookbook/roc/plants/find_functions_and_parameters_that_dont_earn_their_keep/: each plant is named for the check it</span>
 <span class="syn-comment">## holds (`fixed_string.roc` holds `fixed`), and each check must fire on its</span>
@@ -1414,12 +1414,13 @@
 	<span class="syn-type">Str</span>.from_utf8_lossy($out)
 }
 </code></pre>
-<p class="file"><a href="https://github.com/showell/shale/blob/e3c753adf065dc7856e5d49422daf99f9969f91a/cookbook/roc/find_functions_and_parameters_that_dont_earn_their_keep/Types.roc"><code>cookbook/roc/find_functions_and_parameters_that_dont_earn_their_keep/Types.roc</code></a>, 104 lines</p>
+<p class="file"><a href="https://github.com/showell/shale/blob/797d9f6941fe913bec1b723f7b3389debbe17651/cookbook/roc/find_functions_and_parameters_that_dont_earn_their_keep/Types.roc"><code>cookbook/roc/find_functions_and_parameters_that_dont_earn_their_keep/Types.roc</code></a>, 105 lines</p>
 <pre><code><span class="syn-comment">## The effects of a recipe&#39;s `types=1`: the tree&#39;s Roc found, and roc-types</span>
 <span class="syn-comment">## (Roc&#39;s own checker, https://github.com/showell/roc-types) run on each app</span>
 <span class="syn-comment">## of `root=`, its pin held to the tree&#39;s Roc. Reading and joining its output</span>
 <span class="syn-comment">## is cookbook/roc/lib/&#39;s RocTypes; this file is the same in check_how_failure_is_reported,</span>
-<span class="syn-comment">## find_awkward_names and find_functions_and_parameters_that_dont_earn_their_keep, since a package reaches no effect.</span>
+<span class="syn-comment">## find_awkward_names, find_functions_and_parameters_that_dont_earn_their_keep and</span>
+<span class="syn-comment">## find_uses_after_a_consume, since a package reaches no effect.</span>
 <span class="syn-keyword">import</span> pf.<span class="syn-type">Shale</span>
 <span class="syn-keyword">import</span> lib.<span class="syn-type">RocTypes</span>
 <span class="syn-keyword">import</span> lib.<span class="syn-type">Text</span>
@@ -1520,7 +1521,7 @@
 		}
 	}
 </code></pre>
-<p class="file"><a href="https://github.com/showell/shale/blob/e3c753adf065dc7856e5d49422daf99f9969f91a/cookbook/roc/find_functions_and_parameters_that_dont_earn_their_keep/Source.roc"><code>cookbook/roc/find_functions_and_parameters_that_dont_earn_their_keep/Source.roc</code></a>, 150 lines</p>
+<p class="file"><a href="https://github.com/showell/shale/blob/797d9f6941fe913bec1b723f7b3389debbe17651/cookbook/roc/find_functions_and_parameters_that_dont_earn_their_keep/Source.roc"><code>cookbook/roc/find_functions_and_parameters_that_dont_earn_their_keep/Source.roc</code></a>, 150 lines</p>
 <pre><code><span class="syn-comment">## The source text the checks compare: a node&#39;s text squeezed onto one line,</span>
 <span class="syn-comment">## a call&#39;s argument texts slot by slot and the texts its calls agree on, a</span>
 <span class="syn-comment">## branch&#39;s text without its braces, and whether a text is a literal.</span>
