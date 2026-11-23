@@ -1,0 +1,66 @@
+# /etc/sudoers.d/deploy: what the deploy user may run as root, and nothing
+# else: exactly the `sudo` commands roc-apps' site/deploy.shale and roc-chat's
+# tools/deploy.shale run on prod (ops/prod/deploy-gate.sh holds every command
+# a connection sends to those deploys' own, so these are a second fence, not
+# the first). DEPLOY_USER is the deploy user's name, filled in at install
+# (ops/prod/README.md). Check with `sudo visudo -cf` before it goes live.
+#
+# A `*` in a sudoers argument matches any characters, spaces too, so it is
+# used only where the deploy names roc-chat's staging folder (mktemp's
+# roc-chat-deploy.XXXXXXXX under the deploy user's home), and always with a
+# fixed name after it.
+
+Cmnd_Alias CADDY_SITES = \
+    /usr/bin/install -d -m 755 /etc/caddy/sites, \
+    /usr/bin/caddy validate --adapter caddyfile --config /etc/caddy/Caddyfile, \
+    /usr/bin/systemctl reload caddy
+
+# roc-apps: site/deploy.shale
+Cmnd_Alias ROC_SITE = \
+    /usr/bin/install -d -o DEPLOY_USER -g DEPLOY_USER -m 755 /srv/roc-site, \
+    /usr/bin/install -o caddy -g caddy -m 640 /dev/null /var/log/caddy/roc-access.log, \
+    /usr/bin/cp /etc/caddy/sites/roc.lynrummy.com.caddy /tmp/roc.lynrummy.com.caddy.old, \
+    /usr/bin/rm -f /tmp/roc.lynrummy.com.caddy.old, \
+    /usr/bin/install -m 644 /tmp/roc.lynrummy.com.caddy /etc/caddy/sites/roc.lynrummy.com.caddy, \
+    /usr/bin/install -m 644 /tmp/roc.lynrummy.com.caddy.old /etc/caddy/sites/roc.lynrummy.com.caddy, \
+    /usr/bin/rm -f /etc/caddy/sites/roc.lynrummy.com.caddy
+
+# roc-chat: tools/deploy.shale
+Cmnd_Alias ROC_CHAT = \
+    /usr/sbin/useradd --system --home-dir /var/lib/roc-chat --no-create-home --shell /usr/sbin/nologin rocchat, \
+    /usr/bin/install -d -o root -g root -m 755 /opt/roc-chat, \
+    /usr/bin/install -d -o root -g root -m 755 /opt/roc-chat/admin, \
+    /usr/bin/install -d -o rocchat -g rocchat -m 700 /var/lib/roc-chat /var/lib/roc-chat/data, \
+    /usr/bin/test -s /var/lib/roc-chat/data/.github-client-id, \
+    /usr/bin/test -s /var/lib/roc-chat/data/.github-client-secret, \
+    /usr/bin/test -s /var/lib/roc-chat/data/auth/1/name, \
+    /usr/bin/test -s /var/lib/roc-chat/data/auth/next-id.txt, \
+    /usr/bin/test -s /var/lib/roc-chat/data/chat/channel/general.channel, \
+    /usr/bin/test -s /var/lib/roc-chat/data/.session-secret, \
+    /usr/bin/test -s /var/lib/roc-chat/data/auth/1/github-id, \
+    /usr/bin/install -o root -g root -m 755 /home/DEPLOY_USER/roc-chat-deploy.*/roc-chat.new /opt/roc-chat/roc-chat.new, \
+    /usr/bin/install -o root -g root -m 755 /home/DEPLOY_USER/roc-chat-deploy.*/shale.new /opt/roc-chat/shale.new, \
+    /usr/bin/install -o root -g root -m 644 /home/DEPLOY_USER/roc-chat-deploy.*/chat_data.shale.new /opt/roc-chat/admin/chat_data.shale.new, \
+    /usr/bin/install -o root -g root -m 644 /home/DEPLOY_USER/roc-chat-deploy.*/user_footprint.shale.new /opt/roc-chat/admin/user_footprint.shale.new, \
+    /usr/bin/install -o root -g root -m 644 /home/DEPLOY_USER/roc-chat-deploy.*/remove_user.shale.new /opt/roc-chat/admin/remove_user.shale.new, \
+    /usr/bin/install -o root -g root -m 644 /home/DEPLOY_USER/roc-chat-deploy.*/read.mounts.new /opt/roc-chat/admin/read.mounts.new, \
+    /usr/bin/install -o root -g root -m 644 /home/DEPLOY_USER/roc-chat-deploy.*/write.mounts.new /opt/roc-chat/admin/write.mounts.new, \
+    /usr/bin/mv -f /opt/roc-chat/roc-chat.new /opt/roc-chat/roc-chat, \
+    /usr/bin/mv -f /opt/roc-chat/shale.new /opt/roc-chat/shale, \
+    /usr/bin/mv -f /opt/roc-chat/admin/chat_data.shale.new /opt/roc-chat/admin/chat_data.shale, \
+    /usr/bin/mv -f /opt/roc-chat/admin/user_footprint.shale.new /opt/roc-chat/admin/user_footprint.shale, \
+    /usr/bin/mv -f /opt/roc-chat/admin/remove_user.shale.new /opt/roc-chat/admin/remove_user.shale, \
+    /usr/bin/mv -f /opt/roc-chat/admin/read.mounts.new /opt/roc-chat/admin/read.mounts, \
+    /usr/bin/mv -f /opt/roc-chat/admin/write.mounts.new /opt/roc-chat/admin/write.mounts, \
+    /usr/bin/install -o root -g root -m 644 /home/DEPLOY_USER/roc-chat-deploy.*/roc-chat.service /etc/systemd/system/roc-chat.service, \
+    /usr/bin/systemctl daemon-reload, \
+    /usr/bin/systemctl enable roc-chat, \
+    /usr/bin/systemctl restart roc-chat, \
+    /usr/bin/install -o caddy -g caddy -m 640 /dev/null /var/log/caddy/chat-access.log, \
+    /usr/bin/cp /etc/caddy/sites/chat.lynrummy.com.caddy /home/DEPLOY_USER/roc-chat-deploy.*/chat.lynrummy.com.caddy.old, \
+    /usr/bin/install -m 644 /home/DEPLOY_USER/roc-chat-deploy.*/chat.lynrummy.com.caddy /etc/caddy/sites/chat.lynrummy.com.caddy, \
+    /usr/bin/install -m 644 /home/DEPLOY_USER/roc-chat-deploy.*/chat.lynrummy.com.caddy.old /etc/caddy/sites/chat.lynrummy.com.caddy, \
+    /usr/bin/rm -f /etc/caddy/sites/chat.lynrummy.com.caddy
+
+Defaults:DEPLOY_USER !requiretty, use_pty, logfile=/var/log/sudo-deploy.log
+DEPLOY_USER ALL=(root) NOPASSWD: CADDY_SITES, ROC_SITE, ROC_CHAT
