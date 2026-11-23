@@ -34,7 +34,8 @@ The repository's own scripts, beside `check.shale` at its root.
 - `alloc_ladder.shale` runs an interpreter's or a program's controls at two
   sizes and holds what one more iteration allocates to an expected file,
   counting `roc_alloc` calls with `count_allocs.c`'s breakpoints. Its
-  callers are `basic/controls.shale` and `copy_shapes/copy_shapes.shale`.
+  callers are `basic/controls.shale`, `js/controls.shale` and
+  `copy_shapes/copy_shapes.shale`.
 - `copy_oracle.shale` says where a Roc program copies, from the program
   itself: `count_copies.c` breaks at roc_alloc and at each builtin's entry,
   so each allocation made inside a writing builtin (list_set, the appends,
