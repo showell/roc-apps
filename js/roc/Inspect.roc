@@ -133,7 +133,9 @@ Inspect :: [].{
 					Ok(Inspect.plain(context, "[Function: ${name}]"))
 				}
 			}
-			Builtin(native, _) => Ok(Inspect.plain(context, "[Function: ${Heap.native_name(native)}]"))
+			Builtin(native, _) => Ok(
+				Inspect.plain(context, "[Function: ${Heap.native_name(native)}]"),
+			)
 			Namespace(
 				name,
 				_,
@@ -441,7 +443,11 @@ Inspect :: [].{
 	reduce_to_single_string = |context, formatted_entries, recurse| {
 		entries = formatted_entries.output.len()
 		output = match formatted_entries.kind {
-			ArrayKind(items) if entries > 6 => Inspect.group_array_elements(context, formatted_entries.output, items)
+			ArrayKind(items) if entries > 6 => Inspect.group_array_elements(
+				context,
+				formatted_entries.output,
+				items,
+			)
 			_ => formatted_entries.output
 		}
 		joined = Str.join_with(output, ", ")
@@ -490,7 +496,10 @@ Inspect :: [].{
 			biased_max = F64.max(actual_max.to_f64() - 3.0 - average_bias, 1.0)
 			by_area = Inspect.js_round((2.5 * biased_max * output_length.to_f64()).sqrt() / biased_max)
 			by_width = (Inspect.break_length - context.indent).div_trunc_by(actual_max)
-			columns = [by_area, by_width, 12, 15].fold(15, |least, candidate| U64.min(least, candidate))
+			columns = [by_area, by_width, 12, 15].fold(
+				15,
+				|least, candidate| U64.min(least, candidate),
+			)
 			if columns <= 1 {
 				output
 			} else {

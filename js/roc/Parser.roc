@@ -71,7 +71,9 @@ Parser :: [].{
 				FunctionDeclaration(boxed, _) => {
 					definition = boxed.unbox()
 					if $lexical.contains(definition.name) {
-						return Err(Parser.fault_at(definition.at, Parser.redeclared(definition.name)))
+						return Err(
+							Parser.fault_at(definition.at, Parser.redeclared(definition.name)),
+						)
 					}
 					if !$names.contains(definition.name) {
 						$names = $names.append(definition.name)
@@ -161,7 +163,12 @@ Parser :: [].{
 		if Parser.is_punct(parser, text) {
 			Ok(Parser.advance(parser))
 		} else {
-			Err(Parser.fault_here(parser, "expected `${text}`, found ${Parser.shown(Parser.token(parser).kind)}"))
+			Err(
+				Parser.fault_here(
+					parser,
+					"expected `${text}`, found ${Parser.shown(Parser.token(parser).kind)}",
+				),
+			)
 		}
 
 	# A statement's end: a `;`, or at JavaScript would insert one.
@@ -173,7 +180,12 @@ Parser :: [].{
 		} else if Parser.is_punct(parser, "}") or current.kind == End or current.before == NewLine {
 			Ok(parser)
 		} else {
-			Err(Parser.fault_here(parser, "expected `;` or a line break, found ${Parser.shown(current.kind)}"))
+			Err(
+				Parser.fault_here(
+					parser,
+					"expected `;` or a line break, found ${Parser.shown(current.kind)}",
+				),
+			)
 		}
 	}
 
@@ -187,7 +199,9 @@ Parser :: [].{
 					Ok({ parser: Parser.advance(parser), value: text })
 				}
 			}
-			other => Err(Parser.fault_here(parser, "expected ${what}, found ${Parser.shown(other)}"))
+			other => Err(
+				Parser.fault_here(parser, "expected ${what}, found ${Parser.shown(other)}"),
+			)
 		}
 
 	reserved_words : List(Str)
@@ -295,8 +309,15 @@ Parser :: [].{
 			Name("let") => Parser.declaration(parser, Let)
 			Name("const") => Parser.declaration(parser, Const)
 			Name("function") => {
-				parsed = Parser.function_rest(Parser.advance(parser), Parser.where_of(current), Declared)?
-				Ok({ parser: parsed.parser, value: FunctionDeclaration(Box.box(parsed.value), Unresolved) })
+				parsed = Parser.function_rest(
+					Parser.advance(parser),
+					Parser.where_of(current),
+					Declared,
+				)?
+				Ok({
+					parser: parsed.parser,
+					value: FunctionDeclaration(Box.box(parsed.value), Unresolved),
+				})
 			}
 			Name("if") => Parser.if_statement(parser)
 			Name("while") => {
@@ -310,10 +331,10 @@ Parser :: [].{
 			Name("return") => {
 				onward = Parser.advance(parser)
 				next_token = Parser.token(onward)
-				if Parser.is_punct(
+				if Parser.is_punct(onward, ";") or Parser.is_punct(
 					onward,
-					";",
-				) or Parser.is_punct(onward, "}") or next_token.kind == End or next_token.before == NewLine {
+					"}",
+				) or next_token.kind == End or next_token.before == NewLine {
 					q2 = Parser.end_of_statement(onward)?
 					Ok({ parser: q2, value: Return(Undefined) })
 				} else {
@@ -359,7 +380,9 @@ Parser :: [].{
 		onward = Parser.advance(parser)
 		name_found = Parser.token(onward)
 		match name_found.kind {
-			Name(_) if name_found.before == SameLine => Err(Parser.fault_here(onward, "unsupported: labels"))
+			Name(_) if name_found.before == SameLine => Err(
+				Parser.fault_here(onward, "unsupported: labels"),
+			)
 			_ => {
 				q2 = Parser.end_of_statement(onward)?
 				Ok({ parser: q2, value: stmt })
@@ -515,7 +538,10 @@ Parser :: [].{
 						Ok({ parser: onward, value: Empty })
 					} else {
 						parsed_expression = Parser.expression(onward)?
-						Ok({ parser: parsed_expression.parser, value: Expression(parsed_expression.value) })
+						Ok({
+							parser: parsed_expression.parser,
+							value: Expression(parsed_expression.value),
+						})
 					}
 				}?
 				q2 = Parser.expect_punct(init.parser, ";")?
@@ -627,7 +653,12 @@ Parser :: [].{
 				return Err(Parser.fault_here(name_found.parser, "unsupported: default parameters"))
 			}
 			if $names.contains(name_found.value) {
-				return Err(Parser.fault_here($onward, "unsupported: two parameters named `${name_found.value}`"))
+				return Err(
+					Parser.fault_here(
+						$onward,
+						"unsupported: two parameters named `${name_found.value}`",
+					),
+				)
 			}
 			$names = $names.append(name_found.value)
 			$onward = if Parser.is_punct(name_found.parser, ",") {
@@ -655,7 +686,10 @@ Parser :: [].{
 			capture: Parser.capture_since(parsed_block.parser, before),
 			at: site,
 		}
-		Ok({ parser: { ..parsed_block.parser, functions: parsed_block.parser.functions + 1 }, value: definition })
+		Ok({
+			parser: { ..parsed_block.parser, functions: parsed_block.parser.functions + 1 },
+			value: definition,
+		})
 	}
 
 	# Whether an arrow function starts here: a name and `=>`, or a
@@ -733,7 +767,13 @@ Parser :: [].{
 				capture: Parser.capture_since(parsed_expression.parser, before),
 				at: site,
 			}
-			Ok({ parser: { ..parsed_expression.parser, functions: parsed_expression.parser.functions + 1 }, value: Function(Box.box(definition)) })
+			Ok({
+				parser: {
+					..parsed_expression.parser,
+					functions: parsed_expression.parser.functions + 1,
+				},
+				value: Function(Box.box(definition)),
+			})
 		}
 	}
 
@@ -880,7 +920,9 @@ Parser :: [].{
 	refuse_operator : Parser.State, List(Str), Str -> Try({}, Lexer.Fault)
 	refuse_operator = |parser, puncts, why|
 		match Parser.token(parser).kind {
-			Punct(text) if puncts.contains(text) => Err(Parser.fault_here(parser, "${why} (`${text}`)"))
+			Punct(text) if puncts.contains(text) => Err(
+				Parser.fault_here(parser, "${why} (`${text}`)"),
+			)
 			_ => Ok({})
 		}
 
@@ -915,7 +957,11 @@ Parser :: [].{
 		if Parser.is_word(parsed.parser, "in") or Parser.is_word(parsed.parser, "instanceof") {
 			Err(Parser.fault_here(parsed.parser, "unsupported: `in` and `instanceof`"))
 		} else {
-			Parser.refuse_operator(parsed.parser, ["<<", ">>", ">>>"], "unsupported: bitwise operators")?
+			Parser.refuse_operator(
+				parsed.parser,
+				["<<", ">>", ">>>"],
+				"unsupported: bitwise operators",
+			)?
 			Ok(parsed)
 		}
 	}
@@ -997,7 +1043,10 @@ Parser :: [].{
 		match step {
 			Stepped(direction) => {
 				target = Parser.target_of(parsed.value, site)?
-				Ok({ parser: Parser.advance(parsed.parser), value: Update(target, direction, Postfix, site) })
+				Ok({
+					parser: Parser.advance(parsed.parser),
+					value: Update(target, direction, Postfix, site),
+				})
 			}
 			NoStep => Ok(parsed)
 		}
@@ -1020,7 +1069,9 @@ Parser :: [].{
 							$built = Member($built, text, site)
 							$onward = Parser.advance(onward)
 						}
-						Punct("#") => return Err(Parser.fault_here(onward, "unsupported: private names"))
+						Punct("#") => return Err(
+							Parser.fault_here(onward, "unsupported: private names"),
+						)
 						other => return Err(
 							Parser.fault_here(
 								onward,
@@ -1058,14 +1109,21 @@ Parser :: [].{
 	}
 
 	arguments : Parser.State -> Try(Parser.Parsed(List(Ast.Expression)), Lexer.Fault)
-	arguments = |parser| Parser.expression_list(Parser.advance(parser), { close: ")", what: "an argument" })
+	arguments = |parser| Parser.expression_list(
+		Parser.advance(parser),
+		{ close: ")", what: "an argument" },
+	)
 
 	# Where a list of expressions ends, and what one of them is called in a
 	# message.
 	Closing : { close : Str, what : Str }
 
 	# Expressions separated by commas up to `close`, a trailing comma allowed.
-	expression_list : Parser.State, Parser.Closing -> Try(Parser.Parsed(List(Ast.Expression)), Lexer.Fault)
+	expression_list : Parser.State,
+	Parser.Closing -> Try(
+		Parser.Parsed(List(Ast.Expression)),
+		Lexer.Fault,
+	)
 	expression_list = |parser, closing| {
 		{ close, what } = closing
 		var $onward = parser
@@ -1207,7 +1265,12 @@ Parser :: [].{
 			Name(text) => {
 				next = Parser.token_after(parser).kind
 				if (text == "get" or text == "set" or text == "async") and next != Punct(":") and next != Punct("(") and next != Punct(",") and next != Punct("}") {
-					Err(Parser.fault_here(parser, "unsupported: getters, setters and async methods"))
+					Err(
+						Parser.fault_here(
+							parser,
+							"unsupported: getters, setters and async methods",
+						),
+					)
 				} else {
 					Ok(text)
 				}
@@ -1218,13 +1281,19 @@ Parser :: [].{
 			Punct("...") => Err(Parser.fault_here(parser, "unsupported: spread (`...`)"))
 			Punct("*") => Err(Parser.fault_here(parser, "unsupported: generators"))
 			other => Err(
-				Parser.fault_here(parser, "expected a property's name, found ${Parser.shown(other)}"),
+				Parser.fault_here(
+					parser,
+					"expected a property's name, found ${Parser.shown(other)}",
+				),
 			)
 		}?
 		after = Parser.advance(parser)
 		if Parser.is_punct(after, ":") {
 			parsed_value = Parser.assignment(Parser.advance(after))?
-			Ok({ parser: parsed_value.parser, value: { key: key, value: Parser.named(parsed_value.value, key) } })
+			Ok({
+				parser: parsed_value.parser,
+				value: { key: key, value: Parser.named(parsed_value.value, key) },
+			})
 		} else if Parser.is_punct(after, "(") {
 			parameters = Parser.parameter_list(after)?
 			definition = Parser.function_body(
@@ -1235,14 +1304,20 @@ Parser :: [].{
 					at: site,
 				},
 			)?
-			Ok({ parser: definition.parser, value: { key: key, value: Function(Box.box(definition.value)) } })
+			Ok({
+				parser: definition.parser,
+				value: { key: key, value: Function(Box.box(definition.value)) },
+			})
 		} else {
 			match current.kind {
 				Name(text) => {
 					if Parser.is_reserved(text) {
 						Err(Parser.fault_here(parser, "`${text}` is a reserved word, not a name"))
 					} else {
-						Ok({ parser: after, value: { key: text, value: Name(text, Unresolved, site) } })
+						Ok({
+							parser: after,
+							value: { key: text, value: Name(text, Unresolved, site) },
+						})
 					}
 				}
 				_ => Err(Parser.fault_here(after, "expected `:` after a property's name"))

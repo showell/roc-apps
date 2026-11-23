@@ -52,7 +52,10 @@ Resolve :: [].{
 			Scoped(names) => scopes.append(names)
 			Unscoped => scopes
 		}
-		{ ..tree_block, statements: tree_block.statements.map(|source| Resolve.statement(inner, source)) }
+		{
+			..tree_block,
+			statements: tree_block.statements.map(|source| Resolve.statement(inner, source)),
+		}
 	}
 
 	fun : Resolve.Scopes, Ast.FunctionDefinition -> Ast.FunctionDefinition
@@ -65,7 +68,10 @@ Resolve :: [].{
 	statement = |scopes, source|
 		match source {
 			Expression(tree) => Expression(Resolve.expression(scopes, tree))
-			Declare(binding, declarations) => Declare(binding, declarations.map(|given| Resolve.declarator(scopes, given)))
+			Declare(binding, declarations) => Declare(
+				binding,
+				declarations.map(|given| Resolve.declarator(scopes, given)),
+			)
 			FunctionDeclaration(definition, _) => FunctionDeclaration(
 				Box.box(Resolve.fun(scopes, definition.unbox())),
 				Resolve.slot(scopes, definition.unbox().name),
@@ -75,7 +81,10 @@ Resolve :: [].{
 				Resolve.statement(scopes, yes),
 				Resolve.statement(scopes, no),
 			)
-			While(test, body) => While(Resolve.expression(scopes, test), Resolve.statement(scopes, body))
+			While(test, body) => While(
+				Resolve.expression(scopes, test),
+				Resolve.statement(scopes, body),
+			)
 			For(loop) => {
 				inner = scopes.append(loop.names)
 				For({
@@ -119,7 +128,10 @@ Resolve :: [].{
 		match assigned {
 			ToName(name, _, site) => ToName(name, Resolve.slot(scopes, name), site)
 			ToMember(object, key) => ToMember(Resolve.expression(scopes, object), key)
-			ToIndex(object, key) => ToIndex(Resolve.expression(scopes, object), Resolve.expression(scopes, key))
+			ToIndex(object, key) => ToIndex(
+				Resolve.expression(scopes, object),
+				Resolve.expression(scopes, key),
+			)
 		}
 
 	expression : Resolve.Scopes, Ast.Expression -> Ast.Expression
@@ -134,7 +146,9 @@ Resolve :: [].{
 			Undefined => Undefined
 			Name(name, _, site) => Name(name, Resolve.slot(scopes, name), site)
 			ArrayLit(items) => ArrayLit(each(items))
-			ObjectLit(properties) => ObjectLit(properties.map(|p| { ..p, value: Resolve.expression(scopes, p.value) }))
+			ObjectLit(properties) => ObjectLit(
+				properties.map(|p| { ..p, value: Resolve.expression(scopes, p.value) }),
+			)
 			Unary(operator, left, site) => Unary(operator, Resolve.expression(scopes, left), site)
 			Binary(operator, left, right, site) => Binary(
 				operator,

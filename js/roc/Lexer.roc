@@ -265,7 +265,10 @@ Lexer :: [].{
 					digits
 				}
 				match F64.from_str(spelled) {
-					Ok(number) => Ok({ ..Lexer.with_token(scanner, Number(number), scanner.at), at: $i })
+					Ok(number) => Ok({
+						..Lexer.with_token(scanner, Number(number), scanner.at),
+						at: $i,
+					})
 					Err(_) => Err(Lexer.fault_at(scanner, "a number that does not read: ${digits}"))
 				}
 			}
@@ -352,7 +355,12 @@ Lexer :: [].{
 			}
 		}
 		if !$ok {
-			Err(Lexer.fault_at(scanner, "unsupported: a \\u escape other than four hexadecimal digits"))
+			Err(
+				Lexer.fault_at(
+					scanner,
+					"unsupported: a \\u escape other than four hexadecimal digits",
+				),
+			)
 		} else if $code >= 0xD800 and $code <= 0xDFFF {
 			Err(Lexer.fault_at(scanner, "unsupported: a \\u escape of half a surrogate pair"))
 		} else {
