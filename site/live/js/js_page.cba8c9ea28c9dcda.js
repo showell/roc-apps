@@ -15,8 +15,8 @@
 // frame's number over 30, so a frame's `t` is the same at every speed and in
 // the recording host's logs (js/canvas/*.log). Each call is a tick of the
 // program's clock, on which its timers run, and its clicks: a click on the
-// canvas is queued at once and runs in the next frame. Pause and Step work
-// between frames.
+// canvas is queued at once and runs in the next frame. Pause works between
+// frames.
 
 import { loadRunner, unescaped } from "./js_runner.1d99bb0bad526ba3.js";
 import { isMark, makePainter, SIZE } from "./js_painter.0bd9d998c665b954.js";
@@ -163,7 +163,6 @@ export function buildPage(runner, env = window) {
   const runButton = element("button", { textContent: "Run", className: "primary" });
   const stopButton = element("button", { textContent: "Stop" });
   const pauseButton = element("button", { textContent: "Pause" });
-  const stepButton = element("button", { textContent: "Step" });
   const speed = element("select", {}, SPEEDS.map((s, i) => element("option", { value: String(i), textContent: s.label })));
   const status = element("span", { className: "status", textContent: "" });
   const editor = element("textarea", { spellcheck: false, value: SAMPLES[0].source });
@@ -174,7 +173,7 @@ export function buildPage(runner, env = window) {
   const wrap = element("div", { className: "wrap" }, [
     element("h1", { textContent: "JavaScript, in Roc" }),
     element("p", { className: "sub", textContent: "A subset of JavaScript run by a tree-walking interpreter written in Roc. Its console.log prints what node prints; the canvas builtins below are this page's own, named after p5.js's but not p5.js." }),
-    element("div", { className: "bar" }, [picker, runButton, stopButton, pauseButton, stepButton, speed, status]),
+    element("div", { className: "bar" }, [picker, runButton, stopButton, pauseButton, speed, status]),
     element("div", { className: "cols" }, [
       element("div", { className: "col" }, [element("label", { textContent: "Program" }), editor]),
       element("div", { className: "col" }, [waiting, canvasLabel, canvas, output]),
@@ -239,7 +238,7 @@ export function buildPage(runner, env = window) {
   canvas.addEventListener("blur", () => keys.clear());
 
   // The run on show: its number (a stopped run's calls are let go), the
-  // next frame's number, and whether the loop waits for Step.
+  // next frame's number, and whether it is paused.
   let current = null;
   let queue = [];
 
@@ -347,12 +346,6 @@ export function buildPage(runner, env = window) {
     say(`frame ${run.frame}${run.paused ? ", paused" : ""}`, false);
     if (!run.paused && queue.length === 0) schedule(run);
   });
-  stepButton.addEventListener("click", () => {
-    const run = current;
-    if (!run || run.over || queue.length > 0) return;
-    if (!run.paused) { run.paused = true; pauseButton.textContent = "Go on"; }
-    callFrame(run);
-  });
   picker.addEventListener("change", () => {
     stop();
     editor.value = SAMPLES[Number(picker.value)].source;
@@ -363,7 +356,7 @@ export function buildPage(runner, env = window) {
     stop();
     notRun();
   });
-  return { picker, runButton, stopButton, pauseButton, stepButton, speed, status, editor, canvas, output, waiting, canvasLabel, runNow };
+  return { picker, runButton, stopButton, pauseButton, speed, status, editor, canvas, output, waiting, canvasLabel, runNow };
 }
 
 if (typeof window !== "undefined" && !window.JS_PAGE_CHECK) {
