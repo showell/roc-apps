@@ -19,6 +19,27 @@ function pinned_roc(who, pin_file?)
   return real(roc)
 end
 
+-- The executable `name` built from the Roc app at `app` in `mode` (`dev`,
+-- `speed` or `boxy`), by its real path: tools/roc_build.shale's, built only
+-- when its cache holds no build of these inputs (that script says what the
+-- key holds). `opts.flags` (a list) are more of `roc build`'s; `opts.allow`
+-- (a list of literals) is the one warning the build may make. Its line,
+-- built or reused, is printed.
+function built_roc(who, app, name, mode, opts?)
+  local o = {}
+  if opts ~= nil then o = opts end
+  local stdin = "app=" .. app .. "\nname=" .. name .. "\nmode=" .. mode .. "\n"
+  if has_key(o, "flags") then stdin = stdin .. "flags=" .. join(o.flags, ",") .. "\n" end
+  if has_key(o, "allow") then stdin = stdin .. "allow=" .. join(o.allow, "|") .. "\n" end
+  local r = run({"shale", "--root", ".", "tools/roc_build.shale", "--args-stdin"}, {timeout_ms = 1800000, tail = 60, stdin = stdin})
+  local exe = nil
+  for l in lines(r.out) do
+    if starts_with(l, "exe\t") then exe = sub(l, 5) else print(l) end
+  end
+  if r.code ~= 0 or exe == nil then fail(who .. ": tools/roc_build.shale could not build " .. name .. " " .. mode) end
+  return exe
+end
+
 -- The text of a piece of HTML: its tags dropped and the entities it uses
 -- decoded, `&amp;` last so a decoded `&` never starts another. The tutorial's
 -- scripts read the official Roc tutorial with it.

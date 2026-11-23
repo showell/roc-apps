@@ -1,0 +1,247 @@
+-- tools/roc_build.shale: the one place roc-apps builds a Roc executable for
+-- measurement (a ladder, a timing, a probe). It builds an app with the
+-- pinned Roc and keeps the executable in a cache keyed by the hash of what
+-- went into it, so a second caller asking for the same build pays a hash,
+-- not a compile. From roc-apps' root:
+--
+--   shale tools/roc_build.shale app=basic/roc/BasicRun.roc name=basic-run mode=speed
+--   shale tools/roc_build.shale app=tools/copy_shapes/CopyShapes.roc name=copy-shapes mode=boxy flags=--debug
+--
+-- `mode` is `dev` (`--opt=dev`), `speed` (`--opt=speed`, the release
+-- build) or `boxy` (`--opt=speed --specialize=no`); `flags` are more of
+-- `roc build`'s, comma-separated. `allow` (on stdin, `--args-stdin`, since
+-- it holds spaces) is the one warning a build may make: literals split by
+-- `|`, all of which one warning's line holds (BASIC's release build warns
+-- of its `dbg`). Any other warning, and any error, fails the build.
+--
+-- It prints one line, `built <name> <mode> in N s` or `reused <name> <mode>
+-- (<key>)`, then `exe<tab><the executable's real path>`, the line a caller
+-- reads.
+--
+-- **The key is the content of every input**, never a commit, so an edit
+-- not yet committed is a new key: the app's root and each module it imports
+-- bare (`import Machine`: Machine.roc beside the file importing it, its own
+-- imports followed in turn, as Shale's roc_platform/run.shale reads a
+-- script), every file under a folder its header names by a relative path (a
+-- package or a platform; a URL is in the root's text already), the pinned
+-- compiler's version (roc-version), the mode and the flags, and this
+-- script's own code. The files are hashed by `git hash-object`, one program
+-- for all of them.
+--
+-- The executable lives at build:cache/roc-apps-builds/<name>/<key>/<name>,
+-- shared by every checkout on the box, so a lane's build is the merge
+-- train's too. A build is made in a folder of its own and renamed into
+-- place, so a caller never runs a half-written one; two callers building one
+-- key at once each build, and the second rename finds the first's in place.
+-- After a build, each name and mode keeps its KEEP newest (by when each was
+-- last asked for); the rest are removed.
+--
+-- budget: steps=20000000
+
+const WHO = "tools/roc_build.shale"
+const SELF = "tools/roc_build.shale"
+const CACHE = "build:cache/roc-apps-builds"
+const KEEP = 3
+const WANT_ROC = "roc-pin: roc-apps' pinned nightly, and the app it builds"
+-- A half-made build older than this (seconds) is a stopped run's, and goes.
+const STALE_PART_S = 3600
+
+const APP = arg("app", "")
+const NAME = arg("name", "")
+const MODE = arg("mode", "")
+const FLAGS = arg("flags", "")
+const ALLOW = arg("allow", "")
+
+const MODE_FLAGS = {
+  dev = {"--opt=dev"},
+  speed = {"--opt=speed"},
+  boxy = {"--opt=speed", "--specialize=no"},
+}
+
+-- The modules a file imports bare: `import Machine`, `import Machine as M`,
+-- `import Machine exposing [...]`. A dotted import names a package of the
+-- header by its first part, and any other stops the run: its file could not
+-- be placed, so no key could hold it.
+function bare_imports(path, text, shorthands)
+  local out = {}
+  for l in lines(text) do
+    local m = re_find(l, "^import[ \t]+([A-Za-z_][A-Za-z0-9_.]*)")
+    if m ~= nil then
+      local dot = find(m.group, ".")
+      if dot == nil then
+        push(out, m.group)
+      elseif not has_key(shorthands, sub(m.group, 1, dot - 1)) then
+        fail(WHO .. ": " .. path .. " imports " .. m.group .. ", which is neither a module beside it nor one of its header's packages")
+      end
+    end
+  end
+  return out
+end
+
+-- Module `name` of folder `dir`, and each module it imports in turn, put in
+-- `paths` once.
+function add_module(paths, seen, dir, name, who, shorthands)
+  local path = dir .. "/" .. name .. ".roc"
+  if has_key(seen, path) then return nil end
+  seen[path] = true
+  if not exists(path) then fail(WHO .. ": " .. who .. " imports " .. name .. ", and there is no " .. path) end
+  push(paths, path)
+  for n in bare_imports(path, read(path), shorthands) do add_module(paths, seen, dir, n, path, shorthands) end
+  return nil
+end
+
+-- The files the app is built from, the root first, by their paths here.
+function app_inputs(root)
+  local text = read(root)
+  local dir = dirname(root)
+  local header = re_find(text, "\\bapp[ \t\n]*\\[[^\\]]*\\][ \t\n]*\\{([^}]*)\\}")
+  if header == nil then fail(WHO .. ": " .. root .. " has no app header (`app [main!] {...}`)") end
+  local shorthands = {}
+  local folders = {}
+  for p in re_find_all(header.group, "([a-z_][a-z_0-9]*)[ \t\n]*:[ \t\n]*(?:platform[ \t\n]+)?\"([^\"]*)\"") do
+    shorthands[p.groups[1]] = true
+    local where = p.groups[2]
+    if not starts_with(where, "http://") and not starts_with(where, "https://") then
+      local folder = path_normal(dir .. "/" .. dirname(where))
+      if folder == nil then fail(WHO .. ": " .. root .. "'s `" .. p.groups[1] .. "` is \"" .. where .. "\", which climbs out of the root") end
+      push(folders, folder)
+    end
+  end
+  local paths = {root}
+  local seen = {}
+  seen[root] = true
+  for n in bare_imports(root, text, shorthands) do add_module(paths, seen, dir, n, root, shorthands) end
+  for folder in folders do
+    for e in walk_all(folder, {kind = "file"}) do
+      if not has_key(seen, e.path) then
+        seen[e.path] = true
+        push(paths, e.path)
+      end
+    end
+  end
+  return paths
+end
+
+-- This script's code alone, its comments and blank lines left out, so a
+-- change to its prose keeps every key.
+function own_code()
+  local kept = {}
+  for l in lines(read(SELF)) do
+    if trim(l) ~= "" and not starts_with(trim(l), "--") then push(kept, l) end
+  end
+  return join(kept, "\n")
+end
+
+-- The key: git's hash of a text naming every input and its content's hash.
+function key_of(paths, flags)
+  local reals = {}
+  for p in paths do push(reals, real(p)) end
+  local r = run({"git", "hash-object", "--no-filters", "--stdin-paths"}, {timeout_ms = 60000, whole = 4000000, stdin = join(reals, "\n") .. "\n"})
+  if r.ended ~= "exit" or r.code ~= 0 then fail(WHO .. ": git could not hash the inputs: " .. trim(r.out)) end
+  local hs = lines(trim(r.out))
+  if #hs ~= #paths then fail(WHO .. ": git gave " .. #hs .. " hashes for " .. #paths .. " inputs") end
+  local text = {"roc " .. trim(read("roc-version")), "mode " .. MODE, "flags " .. join(flags, " "), "builder " .. own_code()}
+  for i = 1, #paths do push(text, "file " .. paths[i] .. " " .. hs[i]) end
+  local k = must(run({"git", "hash-object", "--stdin"}, {timeout_ms = 30000, whole = 1000, stdin = join(text, "\n") .. "\n"}))
+  return sub(trim(k.out), 1, 16)
+end
+
+-- Whether a build's output holds an error, or a warning that isn't the
+-- allowed one. **THE ROC COMPILER EXITS NON-ZERO FOR A WARNING**, so its
+-- exit code is not the verdict: an error is marked ✗ and a warning ●.
+function went_wrong(out, allow)
+  if contains(out, "✗") then return true end
+  for l in lines(out) do
+    if contains(l, "●") then
+      local allowed = #allow > 0
+      for a in allow do
+        if not contains(l, a) then allowed = false end
+      end
+      if not allowed then return true end
+    end
+  end
+  return false
+end
+
+-- What a build is for: the lines pruning groups by.
+function built_for(flags)
+  return "app " .. APP .. "\nmode " .. MODE .. "\nflags " .. join(flags, " ") .. "\n"
+end
+
+-- Each finished build of `name` beyond the KEEP newest for its mode and
+-- flags removed, and each half-made one a stopped run left.
+function prune(app_dir)
+  local groups = {}
+  for n in ls(app_dir) do
+    local d = app_dir .. "/" .. n
+    if find(n, ".part.") ~= nil then
+      if stat(d).modified < now() - STALE_PART_S then remove_tree(d) end
+    elseif exists(d .. "/built_for") and exists(d .. "/used") then
+      push_at(groups, read(d .. "/built_for"), {dir = d, used = stat(d .. "/used").modified})
+    elseif stat(d).modified < now() - STALE_PART_S then
+      remove_tree(d)
+    end
+  end
+  local gone = 0
+  for g in keys(groups) do
+    local builds = groups[g]
+    sort(builds, "used", "desc")
+    for i = KEEP + 1, #builds do
+      remove_tree(builds[i].dir)
+      gone = gone + 1
+    end
+  end
+  return gone
+end
+
+function main()
+  if APP == "" or NAME == "" or MODE == "" then fail(WHO .. ": give app=<root .roc>, name=<the executable's name> and mode=dev|speed|boxy") end
+  if not has_key(MODE_FLAGS, MODE) then fail(WHO .. ": mode is dev, speed or boxy, not " .. MODE) end
+  if not exists(APP) then fail(WHO .. ": no app " .. APP .. " (run from the roc-apps root)") end
+  if not re_match(NAME, "^[a-z0-9][a-z0-9-]*$") then fail(WHO .. ": name is lower-case letters, digits and dashes, not " .. NAME) end
+  local flags = {}
+  for f in MODE_FLAGS[MODE] do push(flags, f) end
+  if FLAGS ~= "" then
+    for f in split(FLAGS, ",") do push(flags, trim(f)) end
+  end
+  local allow = {}
+  if ALLOW ~= "" then allow = split(ALLOW, "|") end
+  local roc = pinned_roc(WHO)
+  local key = key_of(app_inputs(APP), flags)
+  local app_dir = CACHE .. "/" .. NAME
+  local dir = app_dir .. "/" .. key
+  local exe = dir .. "/" .. NAME
+  if exists(dir .. "/used") and exists(exe) then
+    replace(dir .. "/used", tostring(now()) .. "\n")
+    print("reused " .. NAME .. " " .. MODE .. " (" .. key .. ")")
+    print("exe\t" .. real(exe))
+    return nil
+  end
+  mkdir(app_dir)
+  local part = fresh_dir(app_dir, key .. ".part")
+  local argv = {roc, "build", basename(APP)}
+  for f in flags do push(argv, f) end
+  push(argv, "--output=" .. real(part) .. "/" .. NAME)
+  local r = run(argv, {cwd = dirname(APP), timeout_ms = 1800000, tail = 40, nice = 19, want = WANT_ROC})
+  if went_wrong(r.out, allow) or not exists(part .. "/" .. NAME) then
+    print(trim(r.out))
+    remove_tree(part)
+    fail(WHO .. ": the " .. MODE .. " build of " .. NAME .. " (" .. APP .. ") failed")
+  end
+  replace(part .. "/built_for", built_for(flags))
+  replace(part .. "/used", tostring(now()) .. "\n")
+  local moved = run({"mv", "-T", real(part), real(app_dir) .. "/" .. key}, {timeout_ms = 10000, tail = 5})
+  -- Another run renamed the same key in first: its build is as good.
+  if moved.code ~= 0 then
+    if not exists(exe) then fail(WHO .. ": could not move the build into " .. dir .. ": " .. trim(moved.out)) end
+    remove_tree(part)
+  end
+  local gone = prune(app_dir)
+  local tenths = r.ms // 100
+  local pruned = ""
+  if gone > 0 then pruned = "; pruned " .. gone .. " older" end
+  print("built " .. NAME .. " " .. MODE .. " in " .. (tenths // 10) .. "." .. (tenths % 10) .. " s (" .. key .. pruned .. ")")
+  print("exe\t" .. real(exe))
+end
+
+main()

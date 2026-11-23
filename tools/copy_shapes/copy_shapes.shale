@@ -9,7 +9,6 @@
 --   cd <roc-apps checkout> && shale tools/copy_shapes/copy_shapes.shale              the release build (--opt=speed)
 --   cd <roc-apps checkout> && shale tools/copy_shapes/copy_shapes.shale opt=dev      the dev build
 --   cd <roc-apps checkout> && shale tools/copy_shapes/copy_shapes.shale opt=boxy     --opt=speed --specialize=no
---   cd <roc-apps checkout> && shale tools/copy_shapes/copy_shapes.shale build=0      copy-shapes already built
 --   cd <roc-apps checkout> && shale tools/copy_shapes/copy_shapes.shale only=dict    the shapes whose names start so
 --   cd <roc-apps checkout> && shale tools/copy_shapes/copy_shapes.shale oracle=1     where each shape copies (tools/copy_oracle.shale)
 --
@@ -22,6 +21,8 @@
 -- Roc procedure each copy is made: a report, held to nothing.
 --
 -- Each build takes a few seconds to compile, and its counting about 10 s.
+-- tools/roc_build.shale builds copy-shapes, and a build of inputs already
+-- built is reused, so a second run compiles nothing.
 --
 -- budget: steps=50000000
 
@@ -31,45 +32,24 @@ const BIG = 10000
 const SIZE = 1000
 const RUN_MS = 60000
 const WHO = "tools/copy_shapes/copy_shapes.shale"
-const WANT_ROC = "roc-pin: roc-apps' pinned nightly, and copy-shapes, which it builds"
 const SOURCE = "tools/copy_shapes/CopyShapes.roc"
 
 const OPT = arg("opt", "speed")
-const BUILD = arg("build", true)
 const ONLY = arg("only", "")
 const ORACLE = arg("oracle", false)
 
--- Each build's flags and the file it is held to.
-const MODES = {
-  speed = {flags = {"--opt=speed"}, expected = "tools/copy_shapes/expected.txt"},
-  dev = {flags = {"--opt=dev"}, expected = "tools/copy_shapes/expected-dev.txt"},
-  boxy = {flags = {"--opt=speed", "--specialize=no"}, expected = "tools/copy_shapes/expected-boxy.txt"},
+-- The file each build (tools/roc_build.shale's modes) is held to.
+const EXPECTED = {
+  speed = "tools/copy_shapes/expected.txt",
+  dev = "tools/copy_shapes/expected-dev.txt",
+  boxy = "tools/copy_shapes/expected-boxy.txt",
 }
 
--- This checkout's folder of built things.
+-- This checkout's folder of plans, made when missing.
 function gen_dir()
-  return "build:roc-apps/gen/copy-shapes/" .. basename(real("."))
-end
-
--- copy-shapes built with the mode's flags. **THE ROC COMPILER EXITS
--- NON-ZERO FOR A WARNING**, so its exit code is not the verdict: an error
--- is marked ✗ and a warning ●, and both fail.
-function build(mode, folder, debug)
-  local roc = pinned_roc(WHO)
-  local dir = gen_dir() .. "/" .. folder
+  local dir = "build:roc-apps/gen/copy-shapes/" .. basename(real("."))
   mkdir(dir)
-  local exe = dir .. "/copy-shapes"
-  if exists(exe) then remove(exe) end
-  local argv = {roc, "build", "CopyShapes.roc"}
-  for f in mode.flags do push(argv, f) end
-  if debug then push(argv, "--debug") end
-  push(argv, "--output=" .. real(dir) .. "/copy-shapes")
-  local r = run(argv, {cwd = "tools/copy_shapes", timeout_ms = 600000, tail = 40, nice = 19, want = WANT_ROC})
-  if contains(r.out, "✗") or contains(r.out, "●") or not exists(exe) then
-    print(trim(r.out))
-    fail(WHO .. ": the " .. folder .. " build of copy-shapes failed")
-  end
-  print("built copy-shapes " .. join(mode.flags, " ") .. ": " .. (r.ms // 1000) .. " s")
+  return dir
 end
 
 -- The shapes `run_shape` matches, in its order.
@@ -93,14 +73,10 @@ function argv_for(bin, shape, steps)
 end
 
 function main()
-  if not has_key(MODES, OPT) then fail(WHO .. ": opt is speed, dev or boxy, not " .. OPT) end
-  local mode = MODES[OPT]
-  local folder = OPT
-  if ORACLE then folder = OPT .. "-debug" end
-  if BUILD then build(mode, folder, ORACLE) end
-  local exe = gen_dir() .. "/" .. folder .. "/copy-shapes"
-  if not exists(exe) then fail(WHO .. ": no copy-shapes built for " .. OPT .. ": run without build=0") end
-  local bin = real(exe)
+  if not has_key(EXPECTED, OPT) then fail(WHO .. ": opt is speed, dev or boxy, not " .. OPT) end
+  local opts = {}
+  if ORACLE then opts = {flags = {"--debug"}} end
+  local bin = built_roc(WHO, SOURCE, "copy-shapes", OPT, opts)
   local controls = {}
   for s in shapes() do
     if ONLY == "" or starts_with(s, ONLY) then
@@ -118,7 +94,7 @@ function main()
     if o.code ~= 0 then fail(WHO .. ": the oracle failed, " .. OPT) end
     return nil
   end
-  local plan = {who = WHO .. " opt=" .. OPT, gen = gen_dir(), expected = mode.expected, small = SMALL, big = BIG,
+  local plan = {who = WHO .. " opt=" .. OPT, gen = gen_dir(), expected = EXPECTED[OPT], small = SMALL, big = BIG,
     limit_ms = RUN_MS, hold = ONLY == "", controls = controls}
   if ONLY ~= "" then plan.expected = "" end
   local plan_path = gen_dir() .. "/plan-" .. OPT .. ".json"

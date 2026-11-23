@@ -7,7 +7,6 @@
 --
 --   cd <roc-apps checkout> && shale basic/pathological.shale            the release build (--opt=speed)
 --   cd <roc-apps checkout> && shale basic/pathological.shale opt=dev
---   cd <roc-apps checkout> && shale basic/pathological.shale build=0    basic-run already built
 --
 -- budget: steps=50000000
 
@@ -19,7 +18,6 @@ const RUN_MS = 20000
 const TRIES = 3
 
 const OPT = arg("opt", "speed")
-const BUILD = arg("build", true)
 
 -- The last 40 bytes of what a run printed, `dbg`'s line on stderr left out.
 function transcript_end(out)
@@ -31,8 +29,7 @@ function transcript_end(out)
 end
 
 function main()
-  if BUILD then build_basic_run(WHO, OPT) end
-  local bin = built_basic_run(WHO, OPT)
+  local bin = basic_run(WHO, OPT)
   local rows = {}
   local controls = {}
   for f in glob("basic/pathological/*.bas") do
