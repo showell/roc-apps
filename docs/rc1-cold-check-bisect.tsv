@@ -1,0 +1,16 @@
+test	tree	compiler	cpu_ms_each	builtin_compiled	load1_before_batch
+reduction, empty cache	reduction (docs/rc1-cold-check.md)	nightly-2026-11-03-34bd006	69,62,71	no	0.50
+reduction, empty cache	reduction (docs/rc1-cold-check.md)	nightly-2026-11-07-ad3a5d2	183,137,149	no	0.50
+reduction, empty cache	reduction (docs/rc1-cold-check.md)	nightly-2026-11-14-a87808d	151,128,133;118,123,115	no	0.50;0.12
+reduction, empty cache	reduction (docs/rc1-cold-check.md)	nightly-2026-11-15-f25da45	112,119,107	no	0.12
+reduction, empty cache	reduction (docs/rc1-cold-check.md)	nightly-2026-11-18-a520eed	1270,1261,1425	yes	0.24
+reduction, empty cache	reduction (docs/rc1-cold-check.md)	0.1.0_RC1	1116,1309,1300	yes	0.50
+reduction, empty cache	reduction (docs/rc1-cold-check.md)	nightly-2026-11-22-3350b1c	1249,1026,1307	yes	0.50
+roc-chat root changed after one cold check	roc-chat bab918d	nightly-2026-11-03-34bd006	296,279,337	no Unit Keys phase	0.15
+roc-chat root changed after one cold check	roc-chat c8c532c	nightly-2026-11-15-f25da45	691,607,607	no Unit Keys phase	0.91
+roc-chat root changed after one cold check	roc-chat c8c532c	nightly-2026-11-18-a520eed	765,731,780	Unit Keys 485 ms	0.15
+roc-chat root changed after one cold check	roc-chat c8c532c	0.1.0_RC1	950,935,730	Unit Keys 417 ms	0.15
+roc-chat root changed after one cold check	roc-chat c8c532c	nightly-2026-11-22-3350b1c	768,773,848	Unit Keys 504 ms	0.15
+roc-chat root changed after one cold check	roc-chat bab918d	nightly-2026-11-07-ad3a5d2	1997,1988,2012	no Unit Keys phase	0.21
+roc-chat root changed after one cold check	roc-chat bab918d	nightly-2026-11-15-f25da45	615,577,585	no Unit Keys phase	0.21
+roc-chat root changed after one cold check	roc-chat bab918d	nightly-2026-11-18-a520eed	843,863,1002	Unit Keys 646 ms	0.21
