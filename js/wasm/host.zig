@@ -4,7 +4,8 @@
 //!
 //! The page writes a program's bytes where `sourcePtr(n)` says and calls
 //! `start()`, then `frame(t)` for each frame while the last line said
-//! `end frame`. While either call runs, each line the Roc emits reaches the
+//! `end frame`, and `click(x, y)` for each click between frames, which
+//! queues it for the next. While either call runs, each line the Roc emits reaches the
 //! page at once, through the page's import `js_emit`, and each read the Roc
 //! makes is answered by `js_pointer` or `js_key`: so the page sees a draw, a
 //! log and another draw in the order the program made them.
@@ -28,6 +29,7 @@ const Model = ?*anyopaque;
 extern fn roc_buffer(n: u32) callconv(.c) RocBytes;
 extern fn roc_start(src: RocBytes) callconv(.c) Model;
 extern fn roc_frame(model: Model, t: f64) callconv(.c) Model;
+extern fn roc_click(model: Model, x: f64, y: f64) callconv(.c) Model;
 extern fn roc_drop_model(model: Model) callconv(.c) void;
 extern fn roc_drop_bytes(bytes: RocBytes) callconv(.c) void;
 
@@ -64,6 +66,13 @@ pub export fn start() void {
 pub export fn frame(t: f64) void {
     if (model == null) @trap();
     model = roc_frame(model, t);
+}
+
+/// Queues a click at x and y for the next frame. With no run kept (none
+/// started, or one a crash lost), there is nothing to click.
+pub export fn click(x: f64, y: f64) void {
+    if (model == null) return;
+    model = roc_click(model, x, y);
 }
 
 // ---- the effects the Roc calls (platform/Host.roc) ------------------------

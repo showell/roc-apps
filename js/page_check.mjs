@@ -6,12 +6,18 @@
 //
 // - runs every program in <tests-dir> through it, each held to what node
 //   itself prints for it (the program run in a fresh context whose
-//   console.log writes util.format's line, as console.log does);
+//   console.log writes util.format's line, as console.log does, and whose
+//   timers are node's own, waited for until none is left);
 // - holds each program in <tests-dir>/refused to the message its first line
-//   names;
+//   names, but for one js-run stops on its budget of timer callbacks: the
+//   page has no such budget (an interval may animate for good), so that one
+//   must still be running after its ticks, as it would be in node;
+// - ticks each program's clock a frame at a time, as the page does, until
+//   it ends or `MOST_TICKS` have run, so its timers run;
 // - runs each canvas sample <canvas-dir>/goldens.txt names, as js-canvas
-//   does (its reads answered and logged as js-canvas answers and logs them),
-//   and holds the wasm's lines to the sample's golden log, byte for byte;
+//   does (its reads answered and logged as js-canvas answers and logs them,
+//   its clicks queued before their frames), and holds the wasm's lines to the
+//   sample's golden log, byte for byte;
 // - builds the page itself, js_page.js, on a stand-in document and canvas,
 //   runs every sample, calls three frames of each that has a frame loop,
 //   and runs a turtle sample in slow motion, which must paint what full
@@ -34,23 +40,43 @@ function fail(why) { failures++; console.error(`page_check: FAIL ${why}`); }
 const { loadRunner, transcriptOf } = await import(pathToFileURL(join(dir, "js_runner.js")).href);
 const runner = await loadRunner(readFileSync(join(dir, "js.wasm")));
 
-function nodeOutput(src) {
+// What node prints for a program, its timers run on node's own clock until
+// none is left.
+async function nodeOutput(src) {
   let out = "";
   const console = { log: (...args) => { out += util.format(...args) + "\n"; } };
-  vm.runInNewContext(src, { console });
+  const live = new Set();
+  const context = {
+    console,
+    setTimeout: (f, ms, ...rest) => {
+      const t = setTimeout(() => { live.delete(t); f(...rest); }, ms);
+      live.add(t);
+      return t;
+    },
+    setInterval: (f, ms, ...rest) => { const t = setInterval(f, ms, ...rest); live.add(t); return t; },
+    clearTimeout: (t) => { live.delete(t); clearTimeout(t); },
+    clearInterval: (t) => { live.delete(t); clearInterval(t); },
+  };
+  vm.runInNewContext(src, context);
+  while (live.size > 0) await new Promise((done) => setTimeout(done, 5));
   return out;
 }
 
+// Ten seconds of the page's frames: the longest a corpus program's timers run.
+const MOST_TICKS = 300;
+
 function runWhole(src) {
   const lines = [];
-  const result = runner.start(src, (line) => lines.push(line));
+  const sink = (line) => lines.push(line);
+  let result = runner.start(src, sink);
+  for (let n = 0; n < MOST_TICKS && result.ending === "frame"; n++) result = runner.frame(n / 30, sink);
   return { result, text: transcriptOf(lines, result) };
 }
 
 const programs = readdirSync(tests).filter((f) => f.endsWith(".js")).sort();
 for (const f of programs) {
   const src = readFileSync(join(tests, f), "utf8");
-  const want = nodeOutput(src);
+  const want = await nodeOutput(src);
   const got = runWhole(src);
   if (got.result.ending !== "done") fail(`${f}: the page's run ended ${got.result.ending}: ${got.result.why}`);
   else if (got.text !== want) fail(`${f}: the page printed what node does not`);
@@ -62,14 +88,16 @@ for (const f of refused) {
   const must = src.split("\n")[0].replace(/^\/\/ refused: /, "");
   const got = runWhole(src);
   const last = got.text.trim().split("\n").pop();
-  if (!["faulted", "refused"].includes(got.result.ending) || !last.startsWith("js: ") || !last.includes(must)) {
+  if (must.includes("timer callbacks")) {
+    if (got.result.ending !== "frame") fail(`refused/${f}: the page's run ended ${got.result.ending}, where it must run on`);
+  } else if (!["faulted", "refused"].includes(got.result.ending) || !last.startsWith("js: ") || !last.includes(must)) {
     fail(`refused/${f}: wanted \`${must}\`, the page said \`${last}\` (${got.result.ending})`);
   }
 }
 
 // ── the canvas samples, held to their golden logs ─────────────────────────
 
-function recorded(src, frames, keyFrames) {
+function recorded(src, frames, keyFrames, clicks) {
   const log = [];
   let keys = [];
   runner.input.pointer = (axis) => { log.push(`read ${axis === 0 ? "mouseX" : "mouseY"} 200`); return 200; };
@@ -81,6 +109,11 @@ function recorded(src, frames, keyFrames) {
   const sink = (line) => log.push(line);
   let result = runner.start(src, sink);
   for (let n = 0; n < frames && result.ending === "frame"; n++) {
+    for (const [at, x, y] of clicks) {
+      if (at !== n) continue;
+      log.push(`click ${x} ${y}`);
+      runner.click(x, y);
+    }
     const t = n / 30;
     log.push(`frame ${n} ${String(t)}`);
     keys = (keyFrames[n] ?? "").split("+");
@@ -93,9 +126,10 @@ function recorded(src, frames, keyFrames) {
 
 const goldens = readFileSync(join(canvasDir, "goldens.txt"), "utf8").trim().split("\n");
 for (const entry of goldens) {
-  const [name, frames, keys = ""] = entry.split(" ");
+  const [name, frames, keys = "", clickText = ""] = entry.split(" ");
+  const clicks = clickText === "" ? [] : clickText.split(",").map((c) => c.split(":").map(Number));
   const want = readFileSync(join(canvasDir, `${name}.log`), "utf8");
-  const got = recorded(readFileSync(join(canvasDir, `${name}.js`), "utf8"), Number(frames), keys.split(","));
+  const got = recorded(readFileSync(join(canvasDir, `${name}.js`), "utf8"), Number(frames), (keys === "-" ? "" : keys).split(","), clicks);
   if (got !== want) {
     const a = want.split("\n");
     const b = got.split("\n");
@@ -156,7 +190,8 @@ for (let i = 0; i < SAMPLES.length; i++) {
   const s = SAMPLES[i];
   const r = await runSample(i, 0);
   const wantRefused = s.title === "Outside the subset";
-  const loops = /function frame\(/.test(s.source);
+  // A sample that waits for frames: a frame loop, a click handler or a timer.
+  const loops = /function frame\(|onClick\(|setTimeout\(|setInterval\(/.test(s.source);
   if (wantRefused !== r.said.startsWith("refused")) fail(`sample ${s.title}: the status says \`${r.said}\``);
   else if (!wantRefused && loops && r.said !== "frame 3") fail(`sample ${s.title}: after three frames the status says \`${r.said}\``);
   else if (!wantRefused && !loops && r.said !== "ran to its end") fail(`sample ${s.title}: the status says \`${r.said}\``);

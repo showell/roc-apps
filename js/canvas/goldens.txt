@@ -4,3 +4,5 @@
 4-starfield 2
 5-fractal-tree 0
 6-arrow-keys 25 ArrowRight+ArrowUp,ArrowRight+ArrowUp,ArrowRight+ArrowUp,ArrowRight+ArrowUp,ArrowRight+ArrowUp,ArrowRight+ArrowUp,ArrowRight+ArrowUp,ArrowUp,ArrowUp,ArrowUp,ArrowUp,ArrowUp,ArrowUp,ArrowUp,ArrowUp,ArrowUp,ArrowUp,ArrowUp,ArrowUp,ArrowUp,ArrowUp,ArrowUp,ArrowUp,ArrowUp
+7-click-dots 12 - 1:100:120,4:300:90,7:250:300,7:252:302,10:80:330
+8-countdown 90

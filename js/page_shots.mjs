@@ -3,11 +3,13 @@
 // and once it is done, and the canvas's pixels counted, so a check can say
 // the canvas shows drawing without a person looking.
 //
-//   node js/page_shots.mjs <page-url> <shots-dir> <title-words> <speed> [<key>]
+//   node js/page_shots.mjs <page-url> <shots-dir> <title-words> <speed> [<key> | click:<x>:<y>,...]
 //
 // <speed> is the speed menu's place: 0 full speed, 1 a mark at a time, 2 ten
 // at a time. With <key>, the canvas is focused and the key held down for two
-// seconds, as a player would (the arrow-key sample). It prints one line a
+// seconds, as a player would (the arrow-key sample). With `click:` and points
+// in canvas units, each point is clicked with the mouse, a quarter second
+// apart (the click sample). It prints one line a
 // shot: the file, the status, and how many of the canvas's pixels are not
 // its most common color; it exits 1 when the page threw or the canvas stayed
 // one color.
@@ -16,7 +18,7 @@ import { evaluate, load, shot, sleep, tab, withBrowser } from "../tools/chromium
 
 const [url, dir, words, speed = "0", key] = process.argv.slice(2);
 if (!url || !dir || !words) {
-  console.error("usage: node js/page_shots.mjs <page-url> <shots-dir> <title-words> <speed> [<key>]");
+  console.error("usage: node js/page_shots.mjs <page-url> <shots-dir> <title-words> <speed> [<key> | click:<x>:<y>,...]");
   process.exit(2);
 }
 
@@ -51,7 +53,18 @@ await withBrowser(async (link) => {
   console.log(`sample: ${picked}, speed ${speed}`);
   const moments = [["early", 1200], ["later", 2500], ["end", 6000]];
   for (const [name, wait] of moments) {
-    if (key && name === "early") {
+    if (key && key.startsWith("click:") && name === "early") {
+      const box = await evaluate(page, `(() => { const b = document.querySelector("canvas").getBoundingClientRect(); return { left: b.left, top: b.top, width: b.width }; })()`);
+      for (const point of key.slice(6).split(",")) {
+        const [cx, cy] = point.split(":").map(Number);
+        const x = box.left + (cx * box.width) / 400;
+        const y = box.top + (cy * box.width) / 400;
+        for (const type of ["mousePressed", "mouseReleased"]) {
+          await page.send("Input.dispatchMouseEvent", { type, x, y, button: "left", clickCount: 1 });
+        }
+        await sleep(250);
+      }
+    } else if (key && name === "early") {
       await page.send("Input.dispatchKeyEvent", { type: "keyDown", key, code: key });
       await sleep(2000);
       await page.send("Input.dispatchKeyEvent", { type: "keyUp", key, code: key });

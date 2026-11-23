@@ -1,0 +1,93 @@
+background #f4efe6
+stroke 2 #8a8178
+noStroke
+fill #333
+text 12 28 16 click the canvas
+frame 0 0
+click 100 120
+frame 1 0.03333333333333333
+log dot 1 at 100 120
+background #f4efe6
+stroke 2 #8a8178
+noStroke
+fill tomato
+circle 100 120 12
+fill #333
+text 12 28 16 1 dot
+frame 2 0.06666666666666667
+frame 3 0.1
+click 300 90
+frame 4 0.13333333333333333
+log dot 2 at 300 90
+background #f4efe6
+stroke 2 #8a8178
+line 100 120 300 90
+noStroke
+fill tomato
+circle 100 120 12
+fill gold
+circle 300 90 12
+fill #333
+text 12 28 16 2 dots
+frame 5 0.16666666666666666
+frame 6 0.2
+click 250 300
+click 252 302
+frame 7 0.23333333333333334
+log dot 3 at 250 300
+background #f4efe6
+stroke 2 #8a8178
+line 100 120 300 90
+line 300 90 250 300
+noStroke
+fill tomato
+circle 100 120 12
+fill gold
+circle 300 90 12
+fill #2a9d8f
+circle 250 300 12
+fill #333
+text 12 28 16 3 dots
+log dot 4 at 252 302
+background #f4efe6
+stroke 2 #8a8178
+line 100 120 300 90
+line 300 90 250 300
+line 250 300 252 302
+noStroke
+fill tomato
+circle 100 120 12
+fill gold
+circle 300 90 12
+fill #2a9d8f
+circle 250 300 12
+fill orchid
+circle 252 302 12
+fill #333
+text 12 28 16 4 dots
+frame 8 0.26666666666666666
+frame 9 0.3
+click 80 330
+frame 10 0.3333333333333333
+log dot 5 at 80 330
+background #f4efe6
+stroke 2 #8a8178
+line 100 120 300 90
+line 300 90 250 300
+line 250 300 252 302
+line 252 302 80 330
+noStroke
+fill tomato
+circle 100 120 12
+fill gold
+circle 300 90 12
+fill #2a9d8f
+circle 250 300 12
+fill orchid
+circle 252 302 12
+fill #4a90d9
+circle 80 330 12
+fill #333
+text 12 28 16 5 dots
+frame 11 0.36666666666666664
+[exit 0]

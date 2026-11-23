@@ -7,10 +7,11 @@ that holds the language to node.
 The code here was written by AI coding agents (Claude), with human
 supervision.
 
-**Status (2026-11-23): a first version.** 35 of 35 corpus programs print
-what node 22 prints, byte for byte, and 32 of 32 programs outside the subset
-are refused with the message they must give. Six canvas samples are held to
-their logs of effects. The page builds into the dev channel; it is not
+**Status (2026-11-23): a first version, with timers and clicks.** 38 of 38
+corpus programs print what node 22 prints, byte for byte, timers included,
+and 35 of 35 programs outside the subset are refused with the message they
+must give. Eight canvas samples are held to their logs of effects, one of
+them driven by scripted clicks and one by timers alone. The page builds into the dev channel; it is not
 published.
 
 ## The subset
@@ -43,11 +44,24 @@ what node prints for it is what the interpreter must print.
   `startsWith`, `endsWith`, `slice`, `substring`, `toUpperCase`,
   `toLowerCase`, `trim`, `split`, `repeat`, `padStart`, `padEnd` and
   `concat`; `Object.keys`, `values` and `entries`; `String(x)` and
-  `String.fromCharCode`; `Array.isArray`; `Number.isInteger`.
+  `String.fromCharCode`; `Array.isArray`; `Number.isInteger`; and the
+  timers, `setTimeout(f, ms)`, `setInterval(f, ms)`, `clearTimeout(timer)`
+  and `clearInterval(timer)`, on a virtual clock (below).
+- **Timers run after the program, in the order node runs them.** Each is
+  due `ms` after the moment it was set (a delay below 1, or left out, is
+  1 ms, as node makes it), and they run earliest first, two at one time in
+  the order they were set. The clock is virtual: it reads 0 while the
+  program runs and moves to each callback's time as it runs, so a
+  program's output is the same on every run, and the same as node's
+  (`js/tests/36-timeouts.js` to `38-nested-timeouts.js`). js-run runs
+  callbacks until none is left; an interval never cleared, which node runs
+  for good, stops at 100,000 callbacks with a message saying so.
 - **Out of it:** `this`, `new`, prototypes and classes, getters and setters,
   `==` and the other coercions (`"3" * 2`, `true + 1`), `var`, exceptions,
   `eval`, regular expressions, destructuring, object spread and rest
-  parameters, async and modules; two parameters of one name, and a
+  parameters, async and modules; a timer's arguments after its delay, and
+  printing or reading a timer (node's is an object it prints; ours is a
+  handle `clearTimeout` takes, and nothing else); two parameters of one name, and a
   function declared as the lone body of an `if`, a `while` or a `for`. A name declared twice in one scope, and a
   `let` or `const` as such a lone body, are refused as node refuses them,
   with its SyntaxError.
@@ -75,9 +89,22 @@ page lists them:
 - **A turtle:** `forward(n)`, `back(n)`, `turn(degrees)` (clockwise),
   `penUp()`, `penDown()` and `goto(x, y)`. It starts in the middle, facing
   up; each move with the pen down is one `line`.
-- **Input:** `mouseX()`, `mouseY()` and `keyIsDown(key)`.
+- **Input:** `mouseX()`, `mouseY()` and `keyIsDown(key)`, read when called,
+  and `onClick((x, y) => { ... })`, a handler called with each click on the
+  canvas, in canvas units, in the next frame. A second `onClick` replaces
+  the first.
 - **A frame loop:** a program that declares `function frame(t)` has it
   called 30 times a second, `t` being the frame's number over 30.
+
+**One queue, one clock.** A timer's callback, a click and the next
+`frame(t)` are each an event on the interpreter's queue (`Interp.Events`),
+due at a time on its virtual clock. The page ticks the clock a frame at a
+time (`Interp.tick!`), to the frame's own time, and each tick runs what is
+due by then: the clicks queued since the last tick, then the timers and the
+frame in the order of their times. So `frame(t)` is a convenience on the
+same queue, and on the page a timer runs in the frame of its time, 30 to a
+second. A program runs on for as long as something waits (an event queued,
+or a click handler), and the page stops calling it when nothing does.
 
 **Drawing is an effect, made when the program calls for it.** The
 interpreter hands each effect to its host (`Canvas.Host`, a record of three
@@ -97,22 +124,24 @@ three hosts:
   marks at a time, since a wasm call can't give the browser a turn halfway.
   The next frame is called only once they are all shown.
 - **The recording host,** `js-canvas` (`JsCanvas.roc`): every effect and
-  every read a line, with a line `frame <n> <t>` before each frame. The
-  pointer rests at the middle, and an argument says which keys are down in
-  each frame.
+  every read a line, with a line `frame <n> <t>` before each tick. The
+  pointer rests at the middle; an argument says which keys are down in
+  each frame, and another where the canvas is clicked before which frame,
+  each click a line `click <x> <y>`.
 - **js-run's and js-count's,** on the core library: a log is printed as it
   is made, and nothing else can happen.
 
 **A canvas builtin isn't node's, so the samples have an oracle of their
 own:** `js/canvas.shale` holds each sample in `js/canvas/` to its golden log
-(`<name>.log`) for the frames `js/canvas/goldens.txt` names, and
-`page_check.mjs` holds the wasm to the same logs. A log moves only by
+(`<name>.log`) for the frames, keys and clicks `js/canvas/goldens.txt`
+names, and `page_check.mjs` holds the wasm to the same logs. A log moves only by
 `freeze=<name>`, with every moved line explained in the commit.
 
 **The rails.** The program before its first frame may run 3,000,000
 statements and make 20,000 effects, and each frame 300,000 and 20,000
 (`Canvas.run_limits`, `Canvas.frame_limits`); past either, the run stops with
-a message that names the budget. The program's own scope outlives its last
+a message that names the budget. A frame's budget covers all its tick runs:
+its clicks, its timers and its `frame(t)`. The program's own scope outlives its last
 statement (`Interp.start!`), as a page keeps a script's, so each frame sees
 the variables it declared.
 
@@ -253,6 +282,7 @@ linear: 59, 88 and 184 µs a store; 28, 35 and 86 µs a call; 22, 35 and
 and, with the page built, to see it draw in headless Chromium:
 
     node js/page_shots.mjs http://localhost:9210/js/ <dir> "turtle spiral" 1
+    node js/page_shots.mjs http://localhost:9210/js/ <dir> "Click to place" 0 click:100:120,300:90
 
 `js/oracle.shale` is a tier of `check.shale`. It builds `js-run` on the dev
 backend and runs each program in `js/tests/` through node and through
@@ -267,8 +297,9 @@ fails unless every program passes.
 Zig 0.16 and `js/wasm/host.zig` into `js.wasm`, writes `js_samples.js` from
 `js/canvas/`, and replaces the page only after `js/page_check.mjs` passes.
 The check drives the page's own `js_runner.js` and `js_page.js` under node:
-it holds the wasm to node on every corpus program and refusal, to the
-golden logs on every canvas sample, and runs every sample on the page, the
+it holds the wasm to node on every corpus program and refusal (ticking each
+program's clock as the page does, so its timers run, and node's timers
+waited for), to the golden logs on every canvas sample, and runs every sample on the page, the
 turtle in slow motion too. Unlike BASIC's host, this one needs no checkout
 of the Roc compiler's source: the Roc hands it its buffers, takes back each
 line it emitted (`drop_bytes`) and keeps the run in one box, so the host

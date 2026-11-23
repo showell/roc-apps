@@ -111,7 +111,20 @@ Ast :: [].{
 	# after the core's, so a core builtin has one place in both.
 	global_names_of : Ast.Library -> List(Str)
 	global_names_of = |library| {
-		core = ["console", "Math", "Object", "String", "Array", "Number", "NaN", "Infinity"]
+		core = [
+			"console",
+			"Math",
+			"Object",
+			"String",
+			"Array",
+			"Number",
+			"NaN",
+			"Infinity",
+			"setTimeout",
+			"setInterval",
+			"clearTimeout",
+			"clearInterval",
+		]
 		match library {
 			Core => core
 			Canvas => List.concat(
@@ -137,6 +150,7 @@ Ast :: [].{
 					"mouseX",
 					"mouseY",
 					"keyIsDown",
+					"onClick",
 				],
 			)
 		}

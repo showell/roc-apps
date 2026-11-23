@@ -2,21 +2,26 @@
 # its effects printed one a line, in the order the program made them, rather
 # than painted.
 #
-#   js-canvas <frames> "<program>" [<keys>]
+#   js-canvas <frames> "<program>" [<keys>] [<clicks>]
 #
 # It runs the program on the canvas library, held to the page's rails
-# (`Canvas.run_limits`, then `Canvas.frame_limits` for each frame), then calls
-# its `frame(t)` for the frames asked, t being the frame's number over
-# `Canvas.frames_per_second`, as on the page. Each effect is its line
+# (`Canvas.run_limits`, then `Canvas.frame_limits` for each frame), then ticks
+# its clock for the frames asked (`Interp.tick!`), as the page does: each
+# tick runs what is due by the frame's time, t being the frame's number over
+# `Canvas.frames_per_second`, the clicks first, then the timers and the
+# program's `frame(t)` in the order of their times. Each effect is its line
 # (`Canvas.line_of`); each read is a line too, `read mouseX 200` or
 # `read keyIsDown ArrowLeft up`, so a log holds every call the program made
-# of its host. A line `frame <n> <t>` starts each frame.
+# of its host. A line `frame <n> <t>` starts each tick; the ticks end when
+# the program has nothing waiting (`Interp.waits`).
 #
 # The pointer rests at the canvas's middle. `<keys>` says which keys are down
 # in each frame: the frames' sets parted by commas, the keys in a set by `+`
 # (`,ArrowRight,ArrowRight+ArrowUp`: none in frame 0, then ArrowRight, then
 # both). A frame past the list, and the run before the first frame, have no
-# key down.
+# key down. `<clicks>` says where the canvas is clicked and before which
+# frame: `<frame>:<x>:<y>`, parted by commas (`3:120:80,9:300:200`). Each is
+# a line `click <x> <y>`, before its frame's line.
 #
 # A program the parser refuses, or one that stops with a fault, ends with a
 # line `js: <why>` and exits 1, as js-run's does.
@@ -27,12 +32,16 @@ import Parser
 
 main! = |arguments| {
 	match (arguments.get(0), arguments.get(1)) {
-		(Ok(count_text), Ok(src)) => match U64.from_str(count_text) {
-			Ok(count) => record_program!(
+		(Ok(count_text), Ok(src)) => match (U64.from_str(count_text), clicks_of(arguments.get(3) ?? "")) {
+			(Ok(count), Ok(clicks)) => record_program!(
 				src,
-				{ frames: count, keys: (arguments.get(2) ?? "").split_on(",") },
+				{
+					frames: count,
+					keys: (arguments.get(2) ?? "").split_on(","),
+					clicks: clicks,
+				},
 			)
-			Err(_) => usage!({})
+			_ => usage!({})
 		}
 		_ => usage!({})
 	}
@@ -40,7 +49,7 @@ main! = |arguments| {
 
 usage! : {} => Try({}, [Exit(I8)])
 usage! = |{}| {
-	echo!("usage: js-canvas <frames> \"<program>\" [<keys>]\n")
+	echo!("usage: js-canvas <frames> \"<program>\" [<keys>] [<clicks>]\n")
 	Err(Exit(2))
 }
 
@@ -72,27 +81,51 @@ recording_host = |keys_down| {
 	},
 }
 
-record_program! : Str, { frames : U64, keys : List(Str) } => Try({}, [Exit(I8)])
-record_program! = |src, { frames, keys: key_frames }| {
+Click : { frame : U64, x : F64, y : F64 }
+
+# The clicks `<frame>:<x>:<y>,...` names, or why not.
+clicks_of : Str -> Try(List(Click), [BadClicks])
+clicks_of = |text|
+	if text == "" {
+		Ok([])
+	} else {
+		var $clicks = []
+		for each in text.split_on(",") {
+			match each.split_on(":") {
+				[frame_text, x_text, y_text] => match (U64.from_str(frame_text), F64.from_str(x_text), F64.from_str(y_text)) {
+					(Ok(frame), Ok(x), Ok(y)) => {
+						$clicks = $clicks.append({ frame: frame, x: x, y: y })
+					}
+					_ => return Err(BadClicks)
+				}
+				_ => return Err(BadClicks)
+			}
+		}
+		Ok($clicks)
+	}
+
+record_program! : Str, { frames : U64, keys : List(Str), clicks : List(Click) } => Try({}, [Exit(I8)])
+record_program! = |src, { frames, keys: key_frames, clicks }| {
 	match Parser.program_of(src, Canvas) {
 		Ok(program) => {
 			var $session = Interp.start!(recording_host([]), program, Canvas, Canvas.run_limits)
 			var $n = 0
-			while $n < frames and Interp.outcome_of($session.machine).status == Running {
-				t = $n.to_f64() / Canvas.frames_per_second.to_f64()
-				match $session.frame {
-					Frame(_) => {
-						echo!("frame ${$n.to_str()} ${NumberText.text_for(t)}\n")
-						keys = (key_frames.get($n) ?? "").split_on("+")
-						$session = Interp.frame!(
-							recording_host(keys),
-							$session,
-							t,
-							Canvas.frame_limits,
-						)
+			while $n < frames and Interp.waits($session) {
+				for click in clicks {
+					if click.frame == $n {
+						echo!("click ${NumberText.text_for(click.x)} ${NumberText.text_for(click.y)}\n")
+						$session = Interp.clicked($session, click.x, click.y)
 					}
-					NoFrame => {}
 				}
+				t = Interp.frame_time($n)
+				echo!("frame ${$n.to_str()} ${NumberText.text_for(t)}\n")
+				keys = (key_frames.get($n) ?? "").split_on("+")
+				$session = Interp.tick!(
+					recording_host(keys),
+					$session,
+					t,
+					Canvas.frame_limits,
+				)
 				$n = $n + 1
 			}
 			match Interp.outcome_of($session.machine).status {

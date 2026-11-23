@@ -61,6 +61,8 @@ Heap :: [].{
 		Paint(Heap.Paint),
 		Move(Heap.Move),
 		Sense(Heap.Sense),
+		Timing(Heap.Timing),
+		OnClick,
 	]
 
 	## The canvas builtins that draw a shape or set how shapes are drawn.
@@ -84,6 +86,9 @@ Heap :: [].{
 	## The builtins that read the host's input.
 	Sense : [MouseX, MouseY, KeyIsDown]
 
+	## The timers, JavaScript's own, in both libraries.
+	Timing : [SetTimeout, SetInterval, ClearTimeout, ClearInterval]
+
 	Closure : { fun : Box(Ast.FunctionDefinition), scope : U64 }
 
 	Cell : [
@@ -94,6 +99,10 @@ Heap :: [].{
 		Builtin(Heap.Native, List(Heap.Property)),
 		# A builtin object such as `Math`, by its name.
 		Namespace(Str, List(Heap.Property)),
+		# What `setTimeout` and `setInterval` answer: the timer's number, which
+		# `clearTimeout` and `clearInterval` take. Node's is an object it can
+		# print; ours can't be printed or read, so no program shows it.
+		TimerHandle(U64),
 		# What a cell's place holds while the cell is out being written.
 		Taken,
 	]
@@ -148,6 +157,13 @@ Heap :: [].{
 			MouseY => "mouseY"
 			KeyIsDown => "keyIsDown"
 		}
+		Timing(timing) => match timing {
+			SetTimeout => "setTimeout"
+			SetInterval => "setInterval"
+			ClearTimeout => "clearTimeout"
+			ClearInterval => "clearInterval"
+		}
+		OnClick => "onClick"
 	}
 
 	cell_at : List(Heap.Cell), U64 -> Heap.Cell

@@ -9,8 +9,9 @@
 --                                  write that sample's log anew from what it does now
 --
 -- js/canvas/goldens.txt names each sample, one a line: its name, the frames
--- to record, and the keys down in each (js-canvas's header says how they
--- are written). Every sample there is graded and every sample file must be
+-- to record, the keys down in each (`-` for none) and the clicks before
+-- them (js-canvas's header says how both are written), the last two left
+-- out when there are none. Every sample there is graded and every sample file must be
 -- named there: none is skipped, and the run fails unless all of them pass.
 -- Each program in js/canvas/rails/ must stop: its first line, `// stops:
 -- <text>`, is what js-canvas's last line (`js: <why>`) must hold, after three
@@ -36,7 +37,8 @@ use("./js_builds.shale")
 -- What a sample printed and how it ended, as one text.
 function recorded(exe, entry)
   local argv = {exe, entry.frames, read("js/canvas/" .. entry.name .. ".js")}
-  if entry.keys ~= "" then push(argv, entry.keys) end
+  if entry.keys ~= "" or entry.clicks ~= "" then push(argv, entry.keys) end
+  if entry.clicks ~= "" then push(argv, entry.clicks) end
   local r = run(argv, {timeout_ms = RUN_MS, whole = 8000000, want = WANT_CANVAS})
   if r.ended ~= "exit" then return r.out .. "[ended: " .. r.ended .. "]\n" end
   return r.out .. "[exit " .. r.code .. "]\n"
@@ -46,8 +48,10 @@ function entries()
   local out = {}
   for l in lines(trim(read("js/canvas/goldens.txt"))) do
     local w = words(l)
-    if #w < 2 or #w > 3 then fail("js/canvas.shale: goldens.txt: `" .. l .. "` is not `<name> <frames> [<keys>]`") end
-    push(out, {name = w[1], frames = w[2], keys = get(w, 3, "")})
+    if #w < 2 or #w > 4 then fail("js/canvas.shale: goldens.txt: `" .. l .. "` is not `<name> <frames> [<keys>|-] [<clicks>]`") end
+    local keys = get(w, 3, "")
+    if keys == "-" then keys = "" end
+    push(out, {name = w[1], frames = w[2], keys = keys, clicks = get(w, 4, "")})
   end
   local named = {}
   for e in out do
