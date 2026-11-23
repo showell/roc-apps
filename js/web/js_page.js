@@ -1,11 +1,31 @@
-// js_page -- the page for the JavaScript subset: an editor, a Run button and
-// the output, with a few sample programs to start from. Everything the page
-// shows, its styles included, is made here, so the HTML is only a door.
+// js_page -- the JavaScript playground: an editor, a canvas the program draws
+// on, and what it logs. Everything the page shows, its styles included, is
+// made here, so the HTML is only a door.
+//
+// **THE PROGRAM DRAWS AS IT RUNS.** Each effect reaches `show` while the
+// program is still running (js_runner.js). At full speed it is painted at
+// once, and the browser shows the canvas when the frame's call returns. In
+// slow motion it waits in `queue`, and the page shows the marks one or ten
+// at a time with a pause after each, so a turtle is seen walking. A wasm
+// call can't give the browser a turn halfway through, so slow motion holds
+// what the call made, in its order, and shows it at its own pace; the next
+// frame is called only once it has all been shown.
+//
+// The frame loop calls `frame(t)` about 30 times a second, `t` being the
+// frame's number over 30, so a frame's `t` is the same at every speed and in
+// the recording host's logs (js/canvas/*.log). Pause and Step work between
+// frames.
 
-import { loadRunner } from "./js_runner.js";
+import { loadRunner, unescaped } from "./js_runner.js";
+import { isMark, makePainter, SIZE } from "./js_painter.js";
+import { CANVAS_SAMPLES } from "./js_samples.js";
 
-const SAMPLES = {
-  "Closures": `function counter() {
+const FRAMES_PER_SECOND = 30;
+const SLOW_PAUSE_MS = 60;
+const OUTPUT_KEPT = 20000;
+
+const CONSOLE_SAMPLES = [
+  { title: "Closures", source: `function counter() {
   let count = 0;
   return { up: () => ++count, get: () => count };
 }
@@ -16,22 +36,22 @@ console.log("count:", c.get());
 const fs = [];
 for (let i = 0; i < 4; i++) fs.push(() => i * i);
 console.log(fs.map((f) => f()));
-`,
-  "Fibonacci": `function fib(n) {
+` },
+  { title: "Fibonacci", source: `function fib(n) {
   return n < 2 ? n : fib(n - 1) + fib(n - 2);
 }
 const out = [];
 for (let i = 0; i <= 15; i++) out.push(fib(i));
 console.log(out);
-`,
-  "Word count": `const text = "the quick brown fox jumps over the lazy dog the fox";
+` },
+  { title: "Word count", source: `const text = "the quick brown fox jumps over the lazy dog the fox";
 const counts = {};
 for (const w of text.split(" ")) counts[w] = (counts[w] ?? 0) + 1;
 console.log(counts);
 const top = Object.entries(counts).sort((a, b) => b[1] - a[1]);
 console.log(top.slice(0, 3));
-`,
-  "Quicksort": `function quicksort(xs) {
+` },
+  { title: "Quicksort", source: `function quicksort(xs) {
   if (xs.length <= 1) return xs;
   const pivot = xs[0];
   const rest = xs.slice(1);
@@ -39,13 +59,36 @@ console.log(top.slice(0, 3));
     .concat([pivot], quicksort(rest.filter((x) => x >= pivot)));
 }
 console.log(quicksort([5, 3, 9, 1, 7, 2, 8, 6, 4, 0]));
-`,
-  "Outside the subset": `class Point {
+` },
+  { title: "Outside the subset", source: `class Point {
   constructor(x, y) { this.x = x; this.y = y; }
 }
 console.log(new Point(1, 2));
-`,
-};
+` },
+];
+
+export const SAMPLES = [...CANVAS_SAMPLES, ...CONSOLE_SAMPLES];
+
+const SPEEDS = [
+  { label: "Full speed", marks: 0 },
+  { label: "Slow: a mark at a time", marks: 1 },
+  { label: "Slow: ten marks at a time", marks: 10 },
+];
+
+const BUILTINS = [
+  ["background(color)", "fills the whole canvas with a color"],
+  ["fill(color), noFill()", "what shapes and text are filled with, or no filling"],
+  ["stroke(color, width), noStroke()", "what shapes are outlined with (width 1 unless given), or no outline"],
+  ["line(x1, y1, x2, y2)", "a line, in the stroke"],
+  ["rect(x, y, w, h)", "a rectangle from its top left corner"],
+  ["circle(x, y, r), ellipse(x, y, rx, ry)", "from the center, by radius"],
+  ["polygon([[x, y], ...])", "three or more corners, closed"],
+  ["text(words, x, y, size)", "words in the fill, size 16 unless given"],
+  ["forward(n), back(n), turn(degrees)", "the turtle walks, drawing a line in the stroke; turn is clockwise"],
+  ["penUp(), penDown(), goto(x, y)", "the turtle starts in the middle, facing up, its pen down"],
+  ["mouseX(), mouseY(), keyIsDown(key)", "read when called; a key by its name, such as \"ArrowLeft\""],
+  ["function frame(t) { ... }", "if the program declares it, called 30 times a second, t in seconds"],
+];
 
 const CSS = `
   :root { color-scheme: light dark; --ink: #1b1b1b; --dim: #6a6a6a; --line: #d8d4cc; --paper: #faf8f4; --bad: #a33a1f; }
@@ -56,10 +99,12 @@ const CSS = `
          font: 15px/1.5 -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif; }
   .wrap { max-width: 1000px; margin: 0 auto; padding: 28px 16px; }
   h1 { font-size: 20px; margin: 0 0 4px; font-weight: 600; }
+  h2 { font-size: 15px; margin: 24px 0 6px; font-weight: 600; }
   .sub { color: var(--dim); font-size: 13px; margin: 0 0 20px; }
   .bar { display: flex; gap: 10px; align-items: center; margin: 0 0 10px; flex-wrap: wrap; }
   button, select { font: inherit; font-size: 14px; color: inherit; background: transparent;
                    border: 1px solid var(--ink); border-radius: 4px; padding: 5px 14px; }
+  select { max-width: 100%; }
   button:hover { background: var(--ink); color: var(--paper); }
   .cols { display: flex; gap: 18px; flex-wrap: wrap; }
   .col { flex: 1 1 380px; min-width: 0; }
@@ -68,10 +113,18 @@ const CSS = `
   textarea, pre { width: 100%; box-sizing: border-box; background: transparent; color: inherit;
                   border: 1px solid var(--line); border-radius: 4px; padding: 10px; margin: 0;
                   font: 13px/1.45 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
-  textarea { height: 380px; resize: vertical; }
-  pre { height: 380px; overflow: auto; white-space: pre; }
+  textarea { height: 560px; resize: vertical; }
+  pre { height: 130px; overflow: auto; white-space: pre; margin-top: 10px; }
+  canvas { display: block; width: 100%; max-width: ${SIZE}px; aspect-ratio: 1; border: 1px solid var(--line);
+           border-radius: 4px; touch-action: none; }
+  canvas:focus { outline: 2px solid var(--dim); outline-offset: 2px; }
   .status { color: var(--dim); font-size: 13px; }
   .status.bad { color: var(--bad); }
+  dl { display: grid; grid-template-columns: minmax(0, max-content) minmax(0, 1fr); gap: 4px 16px; margin: 0; font-size: 14px; }
+  dt { font: 13px/1.5 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; overflow-wrap: anywhere; }
+  dd { margin: 0; color: var(--dim); }
+  .note { color: var(--dim); font-size: 13px; margin: 10px 0 0; }
+  @media (max-width: 560px) { dl { grid-template-columns: 1fr; } dd { margin-bottom: 6px; } }
 `;
 
 function element(tag, props = {}, children = []) {
@@ -81,39 +134,178 @@ function element(tag, props = {}, children = []) {
   return e;
 }
 
-export function buildPage(runner) {
+export function buildPage(runner, env = window) {
   document.head.appendChild(element("style", { textContent: CSS }));
-  const picker = element("select", {}, Object.keys(SAMPLES).map((name) => element("option", { value: name, textContent: name })));
+  const picker = element("select", {}, SAMPLES.map((s, i) => element("option", { value: String(i), textContent: s.title })));
   const runButton = element("button", { textContent: "Run" });
+  const stopButton = element("button", { textContent: "Stop" });
+  const pauseButton = element("button", { textContent: "Pause" });
+  const stepButton = element("button", { textContent: "Step" });
+  const speed = element("select", {}, SPEEDS.map((s, i) => element("option", { value: String(i), textContent: s.label })));
   const status = element("span", { className: "status", textContent: "" });
-  const editor = element("textarea", { spellcheck: false, value: SAMPLES["Closures"] });
+  const editor = element("textarea", { spellcheck: false, value: SAMPLES[0].source });
+  const canvas = element("canvas", { width: SIZE, height: SIZE, tabIndex: 0 });
   const output = element("pre", { textContent: "" });
   const wrap = element("div", { className: "wrap" }, [
     element("h1", { textContent: "JavaScript, in Roc" }),
-    element("p", { className: "sub", textContent: "A subset of JavaScript run by a tree-walking interpreter written in Roc. Its console.log prints what node prints." }),
-    element("div", { className: "bar" }, [picker, runButton, status]),
+    element("p", { className: "sub", textContent: "A subset of JavaScript run by a tree-walking interpreter written in Roc. Its console.log prints what node prints; the canvas builtins below are this page's own, named after p5.js's but not p5.js." }),
+    element("div", { className: "bar" }, [picker, runButton, stopButton, pauseButton, stepButton, speed, status]),
     element("div", { className: "cols" }, [
       element("div", { className: "col" }, [element("label", { textContent: "Program" }), editor]),
-      element("div", { className: "col" }, [element("label", { textContent: "Output" }), output]),
+      element("div", { className: "col" }, [element("label", { textContent: "Canvas, 400 by 400" }), canvas, output]),
     ]),
+    element("h2", { textContent: "The canvas builtins" }),
+    element("dl", {}, BUILTINS.flatMap(([call, what]) => [element("dt", { textContent: call }), element("dd", { textContent: what })])),
+    element("p", { className: "note", textContent: "Colors are CSS color strings (\"tomato\", \"#3a7\", \"hsl(200, 70%, 45%)\"). The origin is the top left corner. A run may take 3,000,000 steps and 20,000 effects before its first frame, and each frame 300,000 steps and 20,000 effects." }),
   ]);
   document.body.appendChild(wrap);
 
-  const SAID = { ran: "ran to its end", faulted: "stopped", refused: "refused", crashed: "the interpreter crashed" };
-  function runNow() {
-    const started = performance.now();
-    const r = runner.run(editor.value);
-    const ms = Math.round(performance.now() - started);
-    output.textContent = r.text;
-    status.textContent = `${SAID[r.ending] ?? r.ending} in ${ms} ms`;
-    status.className = r.ending === "ran" ? "status" : "status bad";
+  const ctx = canvas.getContext("2d");
+  const painter = makePainter(ctx);
+  painter.reset();
+
+  // The input the program reads: the pointer over the canvas, in its own
+  // 400-by-400 units, and the keys held while the canvas has the focus.
+  const keys = new Set();
+  let pointerX = SIZE / 2;
+  let pointerY = SIZE / 2;
+  runner.input.pointer = (axis) => (axis === 0 ? pointerX : pointerY);
+  runner.input.key = (name) => keys.has(name);
+  canvas.addEventListener("pointermove", (e) => {
+    const box = canvas.getBoundingClientRect();
+    pointerX = ((e.clientX - box.left) * SIZE) / box.width;
+    pointerY = ((e.clientY - box.top) * SIZE) / box.height;
+  });
+  canvas.addEventListener("keydown", (e) => { keys.add(e.key); if (e.key.startsWith("Arrow") || e.key === " ") e.preventDefault(); });
+  canvas.addEventListener("keyup", (e) => keys.delete(e.key));
+  canvas.addEventListener("blur", () => keys.clear());
+
+  // The run on show: its number (a stopped run's calls are let go), the
+  // next frame's number, and whether the loop waits for Step.
+  let current = null;
+  let queue = [];
+
+  function say(text, bad) {
+    status.textContent = text;
+    status.className = bad ? "status bad" : "status";
   }
-  runButton.addEventListener("click", runNow);
-  picker.addEventListener("change", () => { editor.value = SAMPLES[picker.value]; output.textContent = ""; status.textContent = ""; });
-  return { picker, runButton, status, editor, output, runNow };
+
+  function log(text) {
+    const all = output.textContent + text;
+    output.textContent = all.length > OUTPUT_KEPT ? all.slice(all.length - OUTPUT_KEPT) : all;
+    output.scrollTop = output.scrollHeight;
+  }
+
+  function show(line) {
+    if (line.startsWith("log ")) log(unescaped(line.slice(4)) + "\n");
+    else painter.paint(line);
+  }
+
+  function marksAtATime() { return SPEEDS[Number(speed.value)].marks; }
+
+  function sinkFor(run) {
+    return (line) => {
+      if (run !== current) return;
+      if (marksAtATime() === 0) show(line);
+      else queue.push(line);
+    };
+  }
+
+  const sleep = (ms) => new Promise((done) => env.setTimeout(done, ms));
+
+  async function drain(run) {
+    while (queue.length > 0 && run === current) {
+      const each = Math.max(1, marksAtATime());
+      let marks = 0;
+      while (queue.length > 0 && marks < each) {
+        const line = queue.shift();
+        show(line);
+        if (isMark(line)) marks++;
+      }
+      if (marks > 0 && marksAtATime() > 0) await sleep(SLOW_PAUSE_MS);
+    }
+  }
+
+  async function settle(run, result) {
+    await drain(run);
+    if (run !== current) return;
+    const SAID = { done: "ran to its end", faulted: "stopped", refused: "refused", crashed: "the interpreter crashed" };
+    if (result.ending === "frame") {
+      say(`frame ${run.frame}${run.paused ? ", paused" : ""}`, false);
+      if (!run.paused) schedule(run);
+      return;
+    }
+    if (result.ending !== "done") log(`js: ${result.why}\n`);
+    say(SAID[result.ending] ?? result.ending, result.ending !== "done");
+    run.over = true;
+  }
+
+  // The next frame, at its time. Each schedule is a new loop, and an older
+  // one still waiting for the browser lets itself go.
+  function schedule(run) {
+    run.loop += 1;
+    const loop = run.loop;
+    env.requestAnimationFrame((now) => tick(run, loop, now));
+  }
+
+  function tick(run, loop, now) {
+    if (run !== current || run.paused || loop !== run.loop) return;
+    if (now < run.due) { env.requestAnimationFrame((later) => tick(run, loop, later)); return; }
+    run.due = Math.max(run.due + 1000 / FRAMES_PER_SECOND, now - 100);
+    callFrame(run);
+  }
+
+  function callFrame(run) {
+    const t = run.frame / FRAMES_PER_SECOND;
+    run.frame += 1;
+    settle(run, runner.frame(t, sinkFor(run)));
+  }
+
+  function runNow() {
+    queue = [];
+    output.textContent = "";
+    painter.reset();
+    const run = { frame: 0, paused: false, over: false, due: 0, loop: 0 };
+    current = run;
+    pauseButton.textContent = "Pause";
+    say("running", false);
+    return settle(run, runner.start(editor.value, sinkFor(run)));
+  }
+
+  function stop() {
+    if (current && !current.over) say("stopped by you", false);
+    current = null;
+    queue = [];
+  }
+
+  runButton.addEventListener("click", () => { runNow(); canvas.focus(); });
+  stopButton.addEventListener("click", stop);
+  pauseButton.addEventListener("click", () => {
+    const run = current;
+    if (!run || run.over) return;
+    run.paused = !run.paused;
+    pauseButton.textContent = run.paused ? "Go on" : "Pause";
+    say(`frame ${run.frame}${run.paused ? ", paused" : ""}`, false);
+    if (!run.paused && queue.length === 0) schedule(run);
+  });
+  stepButton.addEventListener("click", () => {
+    const run = current;
+    if (!run || run.over || queue.length > 0) return;
+    if (!run.paused) { run.paused = true; pauseButton.textContent = "Go on"; }
+    callFrame(run);
+  });
+  picker.addEventListener("change", () => {
+    stop();
+    editor.value = SAMPLES[Number(picker.value)].source;
+    output.textContent = "";
+    painter.reset();
+    say("", false);
+  });
+  return { picker, runButton, stopButton, pauseButton, stepButton, speed, status, editor, canvas, output, runNow };
 }
 
 if (typeof window !== "undefined" && !window.JS_PAGE_CHECK) {
   const bytes = await (await fetch("js.wasm")).arrayBuffer();
-  buildPage(await loadRunner(bytes));
+  const page = buildPage(await loadRunner(bytes));
+  page.runNow();
 }

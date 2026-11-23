@@ -1,7 +1,9 @@
--- This script builds the JavaScript subset's page into the dev channel:
+-- This script builds the JavaScript playground's page into the dev channel:
 -- js/roc/JsApp.roc into a wasm32 archive with the pinned Roc on the dev
 -- backend, linked by Zig with the host js/wasm/host.zig into js.wasm, beside
--- the page's files from js/web/. The page is replaced only by a build that
+-- the page's files from js/web/ and js_samples.js, which it writes from the
+-- canvas samples in js/canvas/ (each sample's first line, a `// ` comment,
+-- is its title). The page is replaced only by a build that
 -- js/page_check.mjs passed.
 --
 --   cd <roc-apps checkout> && shale js/build.shale
@@ -16,6 +18,18 @@
 const WANT_ROC = "roc-pin: roc-apps' pinned nightly"
 const WANT_ZIG = "zig: the wasm host's linker"
 const WANT_NODE = "js-page: page_check.mjs drives the built page under node"
+
+-- The canvas samples as a module the page imports, in their files' order.
+function samples_module()
+  local items = {}
+  for f in glob("js/canvas/*.js") do
+    local source = read(f)
+    local first = lines(source)[1]
+    if not starts_with(first, "// ") then fail("js/build.shale: " .. f .. " has no first line `// <title>`") end
+    push(items, "  { title: " .. json_write(sub(first, 4, #first)) .. ", source: " .. json_write(source) .. " },")
+  end
+  return "// Written by js/build.shale from js/canvas/*.js; not checked in.\nexport const CANVAS_SAMPLES = [\n" .. join(items, "\n") .. "\n];\n"
+end
 
 function main()
   local roc = pinned_roc("js/build.shale")
@@ -44,8 +58,9 @@ function main()
   end
   print("zig build-exe js.wasm: " .. z.ms .. " ms")
   remove(staging .. "/js.a")
-  for f in {"index.html", "js_page.js", "js_runner.js"} do copy("js/web/" .. f, staging .. "/" .. f) end
-  local c = run({"node", "js/page_check.mjs", out, "js/tests"}, {timeout_ms = 300000, tail = 40, want = WANT_NODE})
+  for f in {"index.html", "js_page.js", "js_runner.js", "js_painter.js"} do copy("js/web/" .. f, staging .. "/" .. f) end
+  create(staging .. "/js_samples.js", samples_module())
+  local c = run({"node", "js/page_check.mjs", out, "js/tests", "js/canvas"}, {timeout_ms = 300000, tail = 40, want = WANT_NODE})
   print(trim(c.out))
   if c.code ~= 0 then fail("js/build.shale: the page check failed") end
   if exists(dest) then remove_tree(dest) end
