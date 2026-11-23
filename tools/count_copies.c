@@ -25,9 +25,11 @@
 // OUT gets one line a key, aggregated:
 //
 //   entry <id> <sites> <count>       a builtin entered from a call site
-//   via <kind> <id> <sites> <count>  allocations (`alloc` or `realloc`)
-//                                    made inside a builtin entered there
-//   direct <kind> <sites> <count>    allocations made by Roc code itself
+//   via <kind> <id> <sites> <count> <bytes>  allocations (`alloc` or
+//                          `realloc`) made inside a builtin entered there,
+//                          and the bytes they asked for
+//   direct <kind> <sites> <count> <bytes>    allocations made by Roc code
+//                                            itself
 //
 // <sites> is the call site and the return addresses above it, up to six,
 // by the frame pointers (`rbp`) as far as they lead, comma-separated: the
@@ -77,6 +79,7 @@ typedef struct {
     int id;
     Sites sites;
     uint64_t count;
+    uint64_t bytes;
 } Slot;
 
 static Point points[MAX_POINTS];
@@ -153,17 +156,18 @@ static int in_roc(uintptr_t offset) {
     return 0;
 }
 
-static void count(int what, int kind, int id, const Sites *sites) {
+static void count(int what, int kind, int id, const Sites *sites, uint64_t bytes) {
     uint64_t h = ((uint64_t)(id + 7) << 40) ^ ((uint64_t)what << 56) ^ ((uint64_t)kind << 60);
     for (int i = 0; i < CHAIN; i++) h = (h ^ sites->at[i]) * 0x9e3779b97f4a7c15ULL;
     for (uint64_t probe = 0; probe < TABLE; probe++) {
         Slot *s = &table[(h + probe) & (TABLE - 1)];
         if (!s->used) {
-            *s = (Slot){1, what, kind, id, *sites, 1};
+            *s = (Slot){1, what, kind, id, *sites, 1, bytes};
             return;
         }
         if (s->what == what && s->kind == kind && s->id == id && memcmp(&s->sites, sites, sizeof *sites) == 0) {
             s->count++;
+            s->bytes += bytes;
             return;
         }
     }
@@ -273,15 +277,17 @@ int main(int argc, char **argv) {
             if (in_roc(back)) {
                 last_id = id;
                 last_sites = sites_at(pid, &regs, base);
-                count(0, 0, id, &last_sites);
+                count(0, 0, id, &last_sites, 0);
             }
         } else {
             int kind = id == -1 ? KIND_ALLOC : KIND_REALLOC;
+            // roc_alloc(size, alignment); roc_realloc(ptr, new, old, alignment).
+            uint64_t bytes = kind == KIND_ALLOC ? regs.rdi : regs.rsi;
             if (in_roc(back)) {
                 Sites here = sites_at(pid, &regs, base);
-                count(2, kind, -1, &here);
+                count(2, kind, -1, &here, bytes);
             } else {
-                count(1, kind, last_id, &last_sites);
+                count(1, kind, last_id, &last_sites, bytes);
             }
         }
         // The call's first instruction put back and run alone, then the
@@ -308,9 +314,9 @@ int main(int argc, char **argv) {
         if (s->what == 0) {
             fprintf(out, "entry %d %s %" PRIu64 "\n", s->id, chain, s->count);
         } else if (s->what == 1) {
-            fprintf(out, "via %s %d %s %" PRIu64 "\n", kinds[s->kind], s->id, chain, s->count);
+            fprintf(out, "via %s %d %s %" PRIu64 " %" PRIu64 "\n", kinds[s->kind], s->id, chain, s->count, s->bytes);
         } else {
-            fprintf(out, "direct %s %s %" PRIu64 "\n", kinds[s->kind], chain, s->count);
+            fprintf(out, "direct %s %s %" PRIu64 " %" PRIu64 "\n", kinds[s->kind], chain, s->count, s->bytes);
         }
     }
     if (fclose(out) != 0) die("write OUT");

@@ -145,6 +145,11 @@ anyone writing or emitting Roc in this repository. How the Roc is *written*
     (`field-taken-out-first`).
   - A helper that hands the list back (`helper-returns-list`), and a list
     threaded down a recursion and back, which every shape here is.
+  - An inner list taken out with `replace` and written inside the outer
+    set's arguments (`nested-replace-then-set`, BASIC's `Vec.set_in`), a
+    field handed to a helper inside its record's update
+    (`field-through-helper`, the JS interpreter's `with_var` call), and a
+    list of list-holding records set with `?? crash` (`record-list-or-crash`).
   - The list's length read after its write within one function, in a record
     built again or not (`record-length-after-set`, `append-length-after`). A `get`
     after the write copies (shape 1); the compiler doesn't say why `len`

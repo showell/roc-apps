@@ -33,7 +33,11 @@ Unique(a) :: a.{
 
 	## The list with the entry at an index replaced. A write.
 	set : Unique(List(a)), U64, a -> Unique(List(a))
-	set = |Unique.(items), at, entry| Unique.(items.set(at, entry) ?? crash "Unique.set: the index is past the end")
+	set = |
+		Unique.(items),
+		at,
+		entry,
+	| Unique.(items.set(at, entry) ?? crash "Unique.set: the index is past the end")
 
 	## The list with an entry added at its end. A write.
 	append : Unique(List(a)), a -> Unique(List(a))
@@ -42,12 +46,20 @@ Unique(a) :: a.{
 	## The list with the entry at an index given to `change`, unshared, and
 	## replaced by what it gives. A write.
 	update : Unique(List(a)), U64, (a -> a) -> Unique(List(a))
-	update = |Unique.(items), at, change| Unique.(items.update(at, change) ?? crash "Unique.update: the index is past the end")
+	update = |
+		Unique.(items),
+		at,
+		change,
+	| Unique.(items.update(at, change) ?? crash "Unique.update: the index is past the end")
 
 	## The value under a key taken out of a dict, and the dict without it: the
 	## value got, then the key removed, so the dict no longer holds it when
 	## it is written. A write of the dict.
-	take_from : Dict(k, Unique(v)), k -> Try({ dict : Dict(k, Unique(v)), value : Unique(v) }, [KeyNotFound])
+	take_from : Dict(k, Unique(v)),
+	k -> Try(
+		{ dict : Dict(k, Unique(v)), value : Unique(v) },
+		[KeyNotFound],
+	)
 		where [k.is_eq : k, k -> Bool, k.to_hash : k, Hasher -> Hasher]
 	take_from = |dict, key|
 		match dict.get(key) {

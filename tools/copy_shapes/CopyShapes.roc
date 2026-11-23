@@ -144,6 +144,12 @@ run_shape = |shape, args, { size, steps }| {
 			size,
 			{ items: List.repeat(0, size), total: 0 },
 		)
+		"field-through-helper" => field_through_helper(
+			0,
+			steps,
+			size,
+			{ items: List.repeat(0, size), total: 0 },
+		)
 		"index-computed-first" => index_computed_first(
 			0,
 			steps,
@@ -176,6 +182,7 @@ run_shape = |shape, args, { size, steps }| {
 			List.repeat(0, size),
 			0,
 		)
+		"record-list-or-crash" => record_list_or_crash(0, steps, size, List.repeat({ vars: [1, 2], depth: 0 }, size), 0)
 		"nested-update" => nested_update(
 			0,
 			steps,
@@ -184,6 +191,13 @@ run_shape = |shape, args, { size, steps }| {
 			0,
 		)
 		"nested-get-then-set" => nested_get_then_set(
+			0,
+			steps,
+			size,
+			[List.repeat(0, size), [1]],
+			0,
+		)
+		"nested-replace-then-set" => nested_replace_then_set(
 			0,
 			steps,
 			size,
@@ -233,10 +247,34 @@ run_shape = |shape, args, { size, steps }| {
 			0,
 		)
 		"host-args-list" => str_list_restored(0, steps, args.len(), args, 0)
-		"unique-set" => unique_set(0, steps, size, Unique.wrap(List.repeat(0, size)), 0)
-		"unique-get-after-set" => unique_get_after_set(0, steps, size, Unique.wrap(List.repeat(0, size)), 0)
-		"unique-update" => unique_update(0, steps, size, Unique.wrap([List.repeat(0, size), [1]]), 0)
-		"unique-take-from" => unique_take_from(0, steps, size, Dict.empty().insert(0, Unique.wrap(List.repeat(0, size))), 0)
+		"unique-set" => unique_set(
+			0,
+			steps,
+			size,
+			Unique.wrap(List.repeat(0, size)),
+			0,
+		)
+		"unique-get-after-set" => unique_get_after_set(
+			0,
+			steps,
+			size,
+			Unique.wrap(List.repeat(0, size)),
+			0,
+		)
+		"unique-update" => unique_update(
+			0,
+			steps,
+			size,
+			Unique.wrap([List.repeat(0, size), [1]]),
+			0,
+		)
+		"unique-take-from" => unique_take_from(
+			0,
+			steps,
+			size,
+			Dict.empty().insert(0, Unique.wrap(List.repeat(0, size))),
+			0,
+		)
 		_ => crash "copy-shapes: no such shape"
 	}
 }
@@ -539,6 +577,27 @@ field_taken_out_first = |i, steps, size, totals| {
 	}
 }
 
+## The list a field holds written by a helper.
+item_written : List(U64), U64, U64 -> List(U64)
+item_written = |items, j, i| items.set(j, i) ?? crash "item_written: in range"
+
+## A field handed to a helper inside its record's update, as the JS
+## interpreter's `{ ..st, scopes: Interp.with_var(st.scopes, ...) }`.
+field_through_helper : U64, U64, U64, Totals -> U64
+field_through_helper = |i, steps, size, totals| {
+	if i >= steps {
+		totals.total + totals.items.len()
+	} else {
+		j = i % size
+		field_through_helper(
+			i + 1,
+			steps,
+			size,
+			{ ..totals, items: item_written(totals.items, j, i) },
+		)
+	}
+}
+
 ## A screen and where it starts, as BASIC's devices hold one.
 Screen : { cells : List(U64), base : U64 }
 
@@ -634,6 +693,25 @@ append_length_after = |i, steps, size, xs, sum| {
 	}
 }
 
+## A list of records that hold lists, each write `?? crash`, as the JS
+## interpreter's scopes and heap cells are.
+record_list_or_crash : U64, U64, U64, List({ vars : List(U64), depth : U64 }), U64 -> U64
+record_list_or_crash = |i, steps, size, xs, sum| {
+	if i >= steps {
+		sum + xs.len()
+	} else {
+		j = i % size
+		ys = xs.set(j, { vars: [], depth: i }) ?? crash "record_list_or_crash: in range"
+		record_list_or_crash(
+			i + 1,
+			steps,
+			size,
+			ys,
+			sum + j,
+		)
+	}
+}
+
 # ── A list of lists ──
 
 ## `List.update` on the inner list: it hands the element over unshared.
@@ -680,6 +758,30 @@ nested_get_then_set = |i, steps, size, rows, sum| {
 	}
 }
 
+## The inner list taken out with `replace`, written, and set back, its
+## write inside the outer set's own arguments: BASIC's Vec.set_in and the JS
+## interpreter's Interp.with_var write this way.
+nested_replace_then_set : U64, U64, U64, List(List(U64)), U64 -> U64
+nested_replace_then_set = |i, steps, size, rows, sum| {
+	if i >= steps {
+		sum + rows.len()
+	} else {
+		j = i % size
+		taken = rows.replace(0, []) ?? crash "nested_replace_then_set: outer in range"
+		written = taken.list.set(
+			0,
+			taken.prev.set(j, i) ?? crash "nested_replace_then_set: inner in range",
+		) ?? crash "nested_replace_then_set: outer in range"
+		nested_replace_then_set(
+			i + 1,
+			steps,
+			size,
+			written,
+			sum + j,
+		)
+	}
+}
+
 # ── A dict ──
 
 filled : U64, U64, Dict(U64, U64) -> Dict(U64, U64)
@@ -687,7 +789,11 @@ filled = |k, size, d| {
 	if k >= size {
 		d
 	} else {
-		filled(k + 1, size, d.insert(k, 0))
+		filled(
+			k + 1,
+			size,
+			d.insert(k, 0),
+		)
 	}
 }
 
@@ -816,7 +922,13 @@ unique_set = |i, steps, size, u, sum| {
 		sum + u.len()
 	} else {
 		j = i % size
-		unique_set(i + 1, steps, size, u.set(j, i), sum + j)
+		unique_set(
+			i + 1,
+			steps,
+			size,
+			u.set(j, i),
+			sum + j,
+		)
 	}
 }
 
@@ -830,7 +942,13 @@ unique_get_after_set = |i, steps, size, u, sum| {
 	} else {
 		j = i % size
 		u2 = u.set(j, i)
-		unique_get_after_set(i + 1, steps, size, u2, sum + u.get(j))
+		unique_get_after_set(
+			i + 1,
+			steps,
+			size,
+			u2,
+			sum + u.get(j),
+		)
 	}
 }
 
@@ -842,7 +960,13 @@ unique_update = |i, steps, size, u, sum| {
 	} else {
 		j = i % size
 		written = u.update(0, |inner| inner.set(j, i) ?? crash "unique_update: inner in range")
-		unique_update(i + 1, steps, size, written, sum + j)
+		unique_update(
+			i + 1,
+			steps,
+			size,
+			written,
+			sum + j,
+		)
 	}
 }
 
@@ -854,6 +978,12 @@ unique_take_from = |i, steps, size, d, sum| {
 	} else {
 		j = i % size
 		taken = Unique.take_from(d, 0) ?? crash "unique_take_from: key 0 is there"
-		unique_take_from(i + 1, steps, size, taken.dict.insert(0, taken.value.set(j, i)), sum + j)
+		unique_take_from(
+			i + 1,
+			steps,
+			size,
+			taken.dict.insert(0, taken.value.set(j, i)),
+			sum + j,
+		)
 	}
 }
