@@ -141,10 +141,11 @@ Resolve :: [].{
 				Resolve.statement(scopes, yes),
 				Resolve.statement(scopes, no),
 			)
-			While(test, body) => While(
-				Resolve.expression(scopes, test),
-				Resolve.statement(scopes, body),
-			)
+			While(loop) => While({
+				..loop,
+				test: Resolve.expression(scopes, loop.test),
+				body: Resolve.statement(scopes, loop.body),
+			})
 			For(loop) => {
 				inner = scopes.append(loop.names)
 				For({
@@ -216,8 +217,9 @@ Resolve :: [].{
 					NoFinally => NoFinally
 				},
 			})
-			Break => Break
-			Continue => Continue
+			Break(label) => Break(label)
+			Continue(label) => Continue(label)
+			Labelled(label, body) => Labelled(label, Resolve.statement(scopes, body))
 			Empty => Empty
 		}
 

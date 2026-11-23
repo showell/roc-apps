@@ -64,6 +64,8 @@ Heap :: [].{
 		StringOf,
 		FromCharCode,
 		IsArray,
+		ArrayFrom,
+		ArrayOf,
 		IsInteger,
 		Paint(Heap.Paint),
 		Move(Heap.Move),
@@ -322,6 +324,8 @@ Heap :: [].{
 		StringOf => "String"
 		FromCharCode => "fromCharCode"
 		IsArray => "isArray"
+		ArrayFrom => "from"
+		ArrayOf => "of"
 		IsInteger => "isInteger"
 		Paint(paint) => match paint {
 			Background => "background"

@@ -269,9 +269,24 @@ Ast :: [].{
 		capture : Ast.Capture,
 	}
 
+	## A `while` or a `do ... while`, its test before each pass or after.
+	WhileLoop : {
+		test : Ast.Expression,
+		body : Ast.Statement,
+		order : [TestFirst, TestAfter],
+		labels : List(Str),
+	}
+
+	## Which statement a `break` or a `continue` leaves: the innermost loop
+	## (or, for a `break`, `switch`), or the one with that label.
+	Label : [Unlabelled, Named(Str)]
+
 	# A C-form `for`. Its `init` is a declaration, an expression or empty,
-	# and its own scope holds what the declaration declares.
+	# and its own scope holds what the declaration declares. Like each loop,
+	# it holds the labels written before it (`outer: for`), which a labelled
+	# `break` or `continue` names.
 	ForLoop : {
+		labels : List(Str),
 		# What `init` declares, the loop's scope.
 		names : List(Str),
 		init : Ast.Statement,
@@ -286,6 +301,7 @@ Ast :: [].{
 	Updater : [Updated(Ast.Expression), NoUpdate]
 
 	ForOfLoop : {
+		labels : List(Str),
 		binding : Ast.Binding,
 		pattern : Ast.Pattern,
 		# What `pattern` declares, the scope of each pass.
@@ -301,7 +317,7 @@ Ast :: [].{
 		Declare(Ast.Binding, List(Ast.Declarator)),
 		FunctionDeclaration(Box(Ast.FunctionDefinition), Ast.Slot),
 		If(Ast.Expression, Ast.Statement, Ast.Statement),
-		While(Ast.Expression, Ast.Statement),
+		While(Ast.WhileLoop),
 		For(Ast.ForLoop),
 		ForOf(Ast.ForOfLoop),
 		BlockStatement(Ast.Block),
@@ -309,8 +325,11 @@ Ast :: [].{
 		Throw(Ast.Expression, Ast.Where),
 		Try(Ast.TryStatement),
 		Switch(Ast.SwitchStatement),
-		Break,
-		Continue,
+		Break(Ast.Label),
+		Continue(Ast.Label),
+		# A statement other than a loop with a label, which a labelled `break`
+		# inside it leaves.
+		Labelled(Str, Ast.Statement),
 		Empty,
 	]
 

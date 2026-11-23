@@ -26,7 +26,20 @@ Parser :: [].{
 		tokens : List(Lexer.Token),
 		at : U64,
 		functions : U64,
+		# The statements around the parser's place, innermost last, up to the
+		# function it is in, which a `break` or a `continue` may leave.
+		enclosing : List(Parser.Enclosure),
 	}
+
+	Enclosure : [Looping, Switching, LoopLabel(Str), BlockLabel(Str)]
+
+	# The parser inside one more statement a `break` or a `continue` may
+	# leave, and back out of it after, to where it was before.
+	inside : Parser.State, Parser.Enclosure -> Parser.State
+	inside = |parser, enclosure| { ..parser, enclosing: parser.enclosing.append(enclosure) }
+
+	outside : Parser.State, Parser.State -> Parser.State
+	outside = |after, before| { ..after, enclosing: before.enclosing }
 
 	## A parse's value, and the parser after it.
 	Parsed(a) : { parser : Parser.State, value : a }
@@ -38,6 +51,7 @@ Parser :: [].{
 			tokens: tokens,
 			at: 0,
 			functions: 0,
+			enclosing: [],
 		}
 		var $statements = []
 		while !Parser.is_end($parser) {
@@ -277,7 +291,6 @@ Parser :: [].{
 		"this" => Ok("unsupported: `this`")
 		"class" => Ok("unsupported: classes")
 		"var" => Ok("unsupported: `var` (use `let` or `const`)")
-		"do" => Ok("unsupported: `do ... while`")
 		"delete" => Ok("unsupported: `delete`")
 		"void" => Ok("unsupported: `void`")
 		"import" => Ok("unsupported: modules (`import`)")
@@ -341,8 +354,43 @@ Parser :: [].{
 				onward = Parser.expect_punct(Parser.advance(parser), "(")?
 				test = Parser.expression(onward)?
 				q2 = Parser.expect_punct(test.parser, ")")?
-				body = Parser.body_statement(q2)?
-				Ok({ parser: body.parser, value: While(test.value, body.value) })
+				body = Parser.body_statement(Parser.inside(q2, Looping))?
+				Ok({
+					parser: Parser.outside(body.parser, parser),
+					value: While({
+						test: test.value,
+						body: body.value,
+						order: TestFirst,
+						labels: [],
+					}),
+				})
+			}
+			Name("do") => {
+				body = Parser.body_statement(Parser.inside(Parser.advance(parser), Looping))?
+				if !Parser.is_word(body.parser, "while") {
+					return Err(Parser.fault_here(body.parser, "expected `while` after a `do` loop's body"))
+				}
+				onward = Parser.expect_punct(Parser.advance(Parser.outside(body.parser, parser)), "(")?
+				test = Parser.expression(onward)?
+				closed = Parser.expect_punct(test.parser, ")")?
+				# JavaScript ends a `do ... while` at its `)`, with or without a `;`.
+				ended = if Parser.is_punct(closed, ";") {
+					Parser.advance(closed)
+				} else {
+					closed
+				}
+				Ok({
+					parser: ended,
+					value: While({
+						test: test.value,
+						body: body.value,
+						order: TestAfter,
+						labels: [],
+					}),
+				})
+			}
+			Name(text) if Parser.token_after(parser).kind == Punct(":") and !Parser.is_reserved(text) => {
+				Parser.labelled_statement(parser, text)
 			}
 			Name("for") => Parser.for_statement(parser)
 			Name("return") => {
@@ -372,8 +420,8 @@ Parser :: [].{
 					Ok({ parser: q2, value: Throw(parsed_expression.value, Parser.where_of(current)) })
 				}
 			}
-			Name("break") => Parser.jump(parser, Break)
-			Name("continue") => Parser.jump(parser, Continue)
+			Name("break") => Parser.jump(parser, Breaking)
+			Name("continue") => Parser.jump(parser, Continuing)
 			_ => {
 				parsed_expression = Parser.expression(parser)?
 				onward = Parser.end_of_statement(parsed_expression.parser)?
@@ -410,7 +458,7 @@ Parser :: [].{
 		onward = Parser.expect_punct(Parser.advance(parser), "(")?
 		discriminant = Parser.expression(onward)?
 		closed = Parser.expect_punct(discriminant.parser, ")")?
-		var $at = Parser.expect_punct(closed, "{")?
+		var $at = Parser.inside(Parser.expect_punct(closed, "{")?, Switching)
 		var $cases = []
 		var $statements = []
 		var $defaults = 0
@@ -449,7 +497,7 @@ Parser :: [].{
 			$at = $p
 		}
 		Ok({
-			parser: Parser.advance($at),
+			parser: Parser.outside(Parser.advance($at), parser),
 			value: Switch({
 				discriminant: discriminant.value,
 				cases: $cases,
@@ -539,16 +587,71 @@ Parser :: [].{
 		}
 	}
 
-	jump : Parser.State, Ast.Statement -> Try(Parser.Parsed(Ast.Statement), Lexer.Fault)
-	jump = |parser, jumped| {
+	# A statement with a label: a loop holds the label itself, and any other
+	# statement is `Labelled`.
+	labelled_statement : Parser.State, Str -> Try(Parser.Parsed(Ast.Statement), Lexer.Fault)
+	labelled_statement = |parser, name| {
+		if parser.enclosing.contains(LoopLabel(name)) or parser.enclosing.contains(BlockLabel(name)) {
+			return Err(Parser.fault_here(parser, "SyntaxError: Label '${name}' has already been declared"))
+		}
+		after_colon = Parser.advance(Parser.advance(parser))
+		enclosure = if Parser.is_loop_start(after_colon) {
+			LoopLabel(name)
+		} else {
+			BlockLabel(name)
+		}
+		body = Parser.body_statement(Parser.inside(after_colon, enclosure))?
+		labelled = match body.value {
+			While(loop) => While({ ..loop, labels: loop.labels.append(name) })
+			For(loop) => For({ ..loop, labels: loop.labels.append(name) })
+			ForOf(loop) => ForOf({ ..loop, labels: loop.labels.append(name) })
+			other => Labelled(name, other)
+		}
+		Ok({ parser: Parser.outside(body.parser, parser), value: labelled })
+	}
+
+	# Whether a loop starts here, after any labels of its own.
+	is_loop_start : Parser.State -> Bool
+	is_loop_start = |parser|
+		match Parser.token(parser).kind {
+			Name("for") | Name("while") | Name("do") => True
+			Name(text) if Parser.token_after(parser).kind == Punct(":") and !Parser.is_reserved(text) => {
+				Parser.is_loop_start(Parser.advance(Parser.advance(parser)))
+			}
+			_ => False
+		}
+
+	Jump : [Breaking, Continuing]
+
+	# A `break` or a `continue`, and the label it names, held to what
+	# encloses it as JavaScript holds it.
+	jump : Parser.State, Parser.Jump -> Try(Parser.Parsed(Ast.Statement), Lexer.Fault)
+	jump = |parser, jumping| {
 		onward = Parser.advance(parser)
 		name_found = Parser.token(onward)
-		match name_found.kind {
-			Name(_) if name_found.before == SameLine => Err(
-				Parser.fault_here(onward, "unsupported: labels"),
-			)
-			_ => {
-				q2 = Parser.end_of_statement(onward)?
+		{ label, after } = match name_found.kind {
+			Name(text) if name_found.before == SameLine and !Parser.is_reserved(text) => {
+				label: Named(text),
+				after: Parser.advance(onward),
+			}
+			_ => { label: Unlabelled, after: onward }
+		}
+		enclosing = parser.enclosing
+		refusal = match (jumping, label) {
+			(Breaking, Unlabelled) if !enclosing.contains(Looping) and !enclosing.contains(Switching) => Refused("SyntaxError: Illegal break statement")
+			(Continuing, Unlabelled) if !enclosing.contains(Looping) => Refused("SyntaxError: Illegal continue statement: no surrounding iteration statement")
+			(Continuing, Named(name)) if enclosing.contains(BlockLabel(name)) => Refused("SyntaxError: Illegal continue statement: '${name}' does not denote an iteration statement")
+			(_, Named(name)) if !enclosing.contains(LoopLabel(name)) and !enclosing.contains(BlockLabel(name)) => Refused("SyntaxError: Undefined label '${name}'")
+			_ => Allowed
+		}
+		match refusal {
+			Refused(why) => Err(Parser.fault_here(parser, why))
+			Allowed => {
+				q2 = Parser.end_of_statement(after)?
+				jumped = match jumping {
+					Breaking => Break(label)
+					Continuing => Continue(label)
+				}
 				Ok({ parser: q2, value: jumped })
 			}
 		}
@@ -907,8 +1010,10 @@ Parser :: [].{
 					{ parser: parsed_expression.parser, value: Updated(parsed_expression.value) }
 				}
 				q4 = Parser.expect_punct(update.parser, ")")?
-				body = Parser.body_statement(q4)?
+				looped = Parser.body_statement(Parser.inside(q4, Looping))?
+				body = { ..looped, parser: Parser.outside(looped.parser, q4) }
 				loop = {
+					labels: [],
 					names: Parser.scope_names([], [init.value])?,
 					init: init.value,
 					test: test.value,
@@ -933,8 +1038,10 @@ Parser :: [].{
 		parsed_expression = Parser.assignment(Parser.advance(bound.parser))?
 		onward = Parser.expect_punct(parsed_expression.parser, ")")?
 		before = onward.functions
-		body = Parser.body_statement(onward)?
+		looped = Parser.body_statement(Parser.inside(onward, Looping))?
+		body = { ..looped, parser: Parser.outside(looped.parser, onward) }
 		loop = {
+			labels: [],
 			binding: binding,
 			pattern: bound.value,
 			names: names,
@@ -1063,7 +1170,8 @@ Parser :: [].{
 	function_body : Parser.State, Parser.Signature -> Parser.ParsedFunction
 	function_body = |parser, signature| {
 		{ name, parameters, at: site, before } = signature
-		parsed_block = Parser.block(parser)?
+		# A `break` or a `continue` never leaves a function.
+		parsed_block = Parser.block({ ..parser, enclosing: [] })?
 		definition = {
 			name: name,
 			parameters: parameters.names,
@@ -1074,7 +1182,11 @@ Parser :: [].{
 			at: site,
 		}
 		Ok({
-			parser: { ..parsed_block.parser, functions: parsed_block.parser.functions + 1 },
+			parser: {
+				..parsed_block.parser,
+				functions: parsed_block.parser.functions + 1,
+				enclosing: parser.enclosing,
+			},
 			value: definition,
 		})
 	}

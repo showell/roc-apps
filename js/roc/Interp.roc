@@ -165,7 +165,7 @@ Interp :: [].{
 	## An expression's value, and the machine after it.
 	Got : { machine : Interp.Machine, value : Heap.Value }
 
-	Flow : [Normal, Broke, Continued, Returned(Heap.Value)]
+	Flow : [Normal, Broke(Ast.Label), Continued(Ast.Label), Returned(Heap.Value)]
 
 	Done : { machine : Interp.Machine, flow : Interp.Flow }
 
@@ -743,9 +743,16 @@ Interp :: [].{
 			Builtin(StringOf, [{ key: "fromCharCode", value: from_char_code.value }]),
 		)
 		$s = string.machine
-		is_array = Interp.alloc($s, Builtin(IsArray, []))
-		$s = is_array.machine
-		array = Interp.alloc($s, Namespace("Array", [{ key: "isArray", value: is_array.value }]))
+		var $array_properties = []
+		for native in [IsArray, ArrayFrom, ArrayOf] {
+			made = Interp.alloc($s, Builtin(native, []))
+			$s = made.machine
+			$array_properties = $array_properties.append({
+				key: Heap.native_name(native),
+				value: made.value,
+			})
+		}
+		array = Interp.alloc($s, Namespace("Array", $array_properties))
 		$s = array.machine
 		is_integer = Interp.alloc($s, Builtin(IsInteger, []))
 		$s = is_integer.machine
@@ -1183,7 +1190,7 @@ Interp :: [].{
 					Interp.execute!(host, tested, no)
 				}
 			}
-			While(test, body) => Interp.execute_while!(host, machine, test, body)
+			While(loop) => Interp.execute_while!(host, machine, loop)
 			For(loop) => Interp.execute_for!(host, machine, loop)
 			ForOf(loop) => Interp.execute_iteration!(host, machine, loop)
 			BlockStatement(block) => Interp.execute_block!(host, machine, block)
@@ -1197,8 +1204,17 @@ Interp :: [].{
 			}
 			Try(tried) => Interp.execute_try!(host, machine, tried)
 			Switch(switch) => Interp.execute_switch!(host, machine, switch)
-			Break => { machine: machine, flow: Broke }
-			Continue => { machine: machine, flow: Continued }
+			Break(label) => { machine: machine, flow: Broke(label) }
+			Continue(label) => { machine: machine, flow: Continued(label) }
+			Labelled(label, body) => {
+				{ machine: after, flow } = Interp.execute!(host, machine, body)
+				left = if flow == Broke(Named(label)) {
+					Normal
+				} else {
+					flow
+				}
+				{ machine: after, flow: left }
+			}
 			Empty => Interp.normal(machine)
 		}
 
@@ -1294,7 +1310,7 @@ Interp :: [].{
 			NoCase => {}
 		}
 		left = match $flow {
-			Broke => Normal
+			Broke(Unlabelled) => Normal
 			other => other
 		}
 		done = match switch.scoping {
@@ -1333,29 +1349,39 @@ Interp :: [].{
 		}
 
 	# How a loop goes on after its body: on, or out with the flow the loop
-	# itself answers.
-	body_outcome : Interp.Flow -> [GoOn, Leave(Interp.Flow)]
-	body_outcome = |flow| match flow {
+	# itself answers. A labelled `break` or `continue` is the loop's own when
+	# it names one of the loop's labels, and passes out of it otherwise.
+	body_outcome : Interp.Flow, List(Str) -> [GoOn, Leave(Interp.Flow)]
+	body_outcome = |flow, labels| match flow {
 		Normal => GoOn
-		Continued => GoOn
-		Broke => Leave(Normal)
-		Returned(subject) => Leave(Returned(subject))
+		Continued(Unlabelled) => GoOn
+		Broke(Unlabelled) => Leave(Normal)
+		Continued(Named(label)) if labels.contains(label) => GoOn
+		Broke(Named(label)) if labels.contains(label) => Leave(Normal)
+		other => Leave(other)
 	}
 
-	execute_while! : Canvas.Host, Interp.Machine, Ast.Expression, Ast.Statement => Interp.Done
-	execute_while! = |host, machine, test, body| {
+	# A `while`, or a `do ... while`, whose first pass runs before its test.
+	execute_while! : Canvas.Host, Interp.Machine, Ast.WhileLoop => Interp.Done
+	execute_while! = |host, machine, { test, body, order, labels }| {
 		var $s = machine
 		var $flow = Normal
 		var $going = True
+		var $untested = order == TestAfter
 		while $going {
-			{ machine: tested, value } = Interp.evaluate!(host, Interp.one_step_on($s), test)
+			{ machine: tested, value } = if $untested {
+				{ machine: Interp.one_step_on($s), value: Boolean(True) }
+			} else {
+				Interp.evaluate!(host, Interp.one_step_on($s), test)
+			}
+			$untested = False
 			if !Interp.is_running(tested) or !Interp.is_truthy(value) {
 				$s = tested
 				$going = False
 			} else {
 				{ machine: after, flow } = Interp.execute!(host, tested, body)
 				$s = after
-				match Interp.body_outcome(flow) {
+				match Interp.body_outcome(flow, labels) {
 					GoOn => {
 						$going = Interp.is_running($s)
 					}
@@ -1387,7 +1413,7 @@ Interp :: [].{
 				$going = False
 			} else {
 				{ machine: after, flow } = Interp.execute!(host, tested, loop.body)
-				match Interp.body_outcome(flow) {
+				match Interp.body_outcome(flow, loop.labels) {
 					GoOn => {
 						# **EACH PASS HAS ITS OWN `let`**, as JavaScript gives a
 						# closure made in the body the pass's own variable. The
@@ -1501,7 +1527,7 @@ Interp :: [].{
 						{ value: subject, state: state },
 					)
 					$s = after
-					match Interp.body_outcome(flow) {
+					match Interp.body_outcome(flow, loop.labels) {
 						GoOn => {
 							$going = Interp.is_running($s)
 						}
@@ -1542,7 +1568,7 @@ Interp :: [].{
 				)
 				$s = after
 				$i = $i + 1
-				match Interp.body_outcome(flow) {
+				match Interp.body_outcome(flow, loop.labels) {
 					GoOn => {
 						$going = Interp.is_running($s)
 					}
@@ -1570,7 +1596,7 @@ Interp :: [].{
 					{ value: Text(character), state: state },
 				)
 				$s = after
-				match Interp.body_outcome(flow) {
+				match Interp.body_outcome(flow, loop.labels) {
 					GoOn => {
 						$going = Interp.is_running($s)
 					}
@@ -4143,6 +4169,8 @@ Interp :: [].{
 				machine,
 				"unsupported: calling `${Heap.error_name_text(name)}` without `new`${Interp.line_note(site)}",
 			)
+			ArrayFrom => Interp.array_from!(host, machine, arguments, site)
+			ArrayOf => Interp.alloc(machine, Array(arguments))
 			MakeMap | MakeSet => Interp.error_got(
 				machine,
 				TypeError,
@@ -4165,6 +4193,64 @@ Interp :: [].{
 					"unsupported: onClick of anything but a function${Interp.line_note(site)}",
 				)
 			}
+		}
+
+	# `Array.from(source, mapper)`: the values of an iterable, or of an object
+	# with a `length` (`{ length: 3 }`, its properties "0" to "2"), each
+	# given to `mapper` with its index when there is one.
+	array_from! : Canvas.Host, Interp.Machine, List(Heap.Value), Ast.Where => Interp.Got
+	array_from! = |host, machine, arguments, site| {
+		source = arguments.first() ?? Undefined
+		mapper = arguments.get(1) ?? Undefined
+		{ machine: walked, values: found } = Interp.iterated(machine, source)
+		listed = match found {
+			Ok(values) => Ok(values)
+			Err(NotIterable) => Interp.array_like(walked.cells, source)
+		}
+		match listed {
+			Err(Unsupported(why)) => Interp.fault_got(walked, "${why}${Interp.line_note(site)}")
+			Ok(values) if mapper == Undefined => Interp.alloc(walked, Array(values))
+			Ok(values) => {
+				var $s = walked
+				var $out = []
+				var $i = 0
+				for value in values {
+					if Interp.is_running($s) {
+						{ machine: after, value: mapped } = Interp.call!(host, $s, mapper, [value, Number($i.to_f64())], site)
+						$s = after
+						$out = $out.append(mapped)
+					}
+					$i = $i + 1
+				}
+				Interp.alloc($s, Array($out))
+			}
+		}
+	}
+
+	# The values of an object with a whole `length`, as `Array.from` reads
+	# them; a number or a boolean has none.
+	array_like : List(Heap.Cell), Heap.Value -> Try(List(Heap.Value), [Unsupported(Str)])
+	array_like = |cells, source|
+		match source {
+			Reference(id) => match Heap.cell_at(cells, id) {
+				Object(properties) => match Heap.property_value(properties, "length") {
+					Number(length) if length >= 0.0 and length.div_trunc_by(1.0) == length and length <= 10000000.0 => {
+						count = length.to_u64_try() ?? 0
+						var $values = List.with_capacity(count)
+						var $i = 0
+						while $i < count {
+							$values = $values.append(Heap.property_value(properties, $i.to_str()))
+							$i = $i + 1
+						}
+						Ok($values)
+					}
+					Undefined => Ok([])
+					_ => Err(Unsupported("unsupported: `Array.from` of an object whose `length` is not a whole number up to 10,000,000"))
+				}
+				_ => Ok([])
+			}
+			Number(_) | Boolean(_) => Ok([])
+			_ => Err(Unsupported("unsupported: `Array.from` of null or undefined"))
 		}
 
 	is_callable : List(Heap.Cell), Heap.Value -> Bool
@@ -4472,23 +4558,134 @@ Interp :: [].{
 			}
 			"indexOf" => {
 				target = arguments.first() ?? Undefined
-				var $found = -1.0
-				var $i = 0.0
-				for item in Interp.items_of(machine, id) {
-					if $found < 0.0 and Interp.is_strictly_equal(item, target) {
-						$found = $i
-					}
-					$i = $i + 1.0
-				}
-				{ machine: machine, value: Number($found) }
+				items = Interp.items_of(machine, id)
+				from = Interp.relative_index(arguments.get(1) ?? Undefined, items.len(), 0)
+				found = Interp.first_place(items, from, |item| Interp.is_strictly_equal(item, target))
+				{ machine: machine, value: Number(Interp.place_number(found)) }
 			}
 			"includes" => {
 				target = arguments.first() ?? Undefined
-				found = Interp.items_of(machine, id).any(
-					|item| Interp.is_same_value_zero(item, target),
-				)
-				{ machine: machine, value: Boolean(found) }
+				items = Interp.items_of(machine, id)
+				from = Interp.relative_index(arguments.get(1) ?? Undefined, items.len(), 0)
+				found = Interp.first_place(items, from, |item| Interp.is_same_value_zero(item, target))
+				{ machine: machine, value: Boolean(found != NoPlace) }
 			}
+			"lastIndexOf" => {
+				if arguments.len() > 1 {
+					Interp.fault_got(
+						machine,
+						"unsupported: `lastIndexOf` from a position${Interp.line_note(site)}",
+					)
+				} else {
+					target = arguments.first() ?? Undefined
+					items = Interp.items_of(machine, id)
+					var $found = -1.0
+					var $i = 0
+					for item in items {
+						if Interp.is_strictly_equal(item, target) {
+							$found = $i.to_f64()
+						}
+						$i = $i + 1
+					}
+					{ machine: machine, value: Number($found) }
+				}
+			}
+			"at" => {
+				items = Interp.items_of(machine, id)
+				found = match Interp.at_index(arguments.first() ?? Undefined, items.len()) {
+					Ok(position) => items.get(position) ?? Undefined
+					Err(OutOfRange) => Undefined
+				}
+				{ machine: machine, value: found }
+			}
+			"shift" => {
+				items = Interp.items_of(machine, id)
+				match items.first() {
+					Ok(head) => {
+						machine: { ..machine, cells: Heap.with_items(machine.cells, id, items.drop_first(1)) },
+						value: head,
+					}
+					Err(ListWasEmpty) => { machine: machine, value: Undefined }
+				}
+			}
+			"unshift" => {
+				grown = List.concat(arguments, Interp.items_of(machine, id))
+				count = grown.len()
+				{
+					machine: { ..machine, cells: Heap.with_items(machine.cells, id, grown) },
+					value: Number(count.to_f64()),
+				}
+			}
+			"splice" => {
+				items = Interp.items_of(machine, id)
+				count = items.len()
+				start = Interp.relative_index(arguments.get(0) ?? Undefined, count, 0)
+				removing = match arguments.get(1) {
+					Err(OutOfBounds) => if arguments.is_empty() {
+						0
+					} else {
+						count - start
+					}
+					Ok(Number(wanted)) => {
+						if wanted.is_nan() or wanted <= 0.0 {
+							0
+						} else if wanted >= (count - start).to_f64() {
+							count - start
+						} else {
+							wanted.div_trunc_by(1.0).to_u64_try() ?? 0
+						}
+					}
+					Ok(_) => 0
+				}
+				removed = items.sublist({ start: start, len: removing })
+				kept = List.concat(
+					List.concat(items.sublist({ start: 0, len: start }), arguments.drop_first(2)),
+					items.drop_first(start + removing),
+				)
+				Interp.alloc({ ..machine, cells: Heap.with_items(machine.cells, id, kept) }, Array(removed))
+			}
+			"fill" => {
+				items = Interp.items_of(machine, id)
+				count = items.len()
+				value = arguments.first() ?? Undefined
+				from = Interp.relative_index(arguments.get(1) ?? Undefined, count, 0)
+				to = Interp.relative_index(arguments.get(2) ?? Undefined, count, count)
+				filled = items.map_with_index(
+					|item, position|
+						if position >= from and position < to {
+							value
+						} else {
+							item
+						},
+				)
+				{
+					machine: { ..machine, cells: Heap.with_items(machine.cells, id, filled) },
+					value: Reference(id),
+				}
+			}
+			"flat" => {
+				depth = match arguments.first() {
+					Ok(Number(levels)) if levels >= 1.0 => if levels.is_infinite() or levels > 1000.0 {
+						1000
+					} else {
+						levels.div_trunc_by(1.0).to_u64_try() ?? 0
+					}
+					Ok(Number(_)) => 0
+					_ => 1
+				}
+				Interp.alloc(machine, Array(Interp.flattened(machine.cells, Interp.items_of(machine, id), depth)))
+			}
+			"flatMap" => Interp.array_walk!(
+				host,
+				machine,
+				id,
+				arguments,
+				FlatMap,
+				site,
+			)
+			"findLast" => Interp.array_walk_back!(host, machine, id, arguments, FindLast, site)
+			"findLastIndex" => Interp.array_walk_back!(host, machine, id, arguments, FindLastIndex, site)
+			"reduceRight" => Interp.array_reduce_right!(host, machine, id, arguments, site)
 			"slice" => {
 				items = Interp.items_of(machine, id)
 				count = items.len()
@@ -4595,7 +4792,145 @@ Interp :: [].{
 			)
 		}
 
-	Walk : [ForEach, Map, Filter, Some, Every, Find, FindIndex]
+	Walk : [ForEach, Map, Filter, Some, Every, Find, FindIndex, FlatMap]
+
+	# Where in `items` from `from` on an item first passes `test`, or none.
+	first_place : List(Heap.Value), U64, (Heap.Value -> Bool) -> [Place(U64), NoPlace]
+	first_place = |items, from, test| {
+		var $found = NoPlace
+		var $i = 0
+		for item in items {
+			if $found == NoPlace and $i >= from and test(item) {
+				$found = Place($i)
+			}
+			$i = $i + 1
+		}
+		$found
+	}
+
+	place_number : [Place(U64), NoPlace] -> F64
+	place_number = |found| match found {
+		Place(position) => position.to_f64()
+		NoPlace => -1.0
+	}
+
+	# `at`'s index: from the end when negative, or none past either end.
+	at_index : Heap.Value, U64 -> Try(U64, [OutOfRange])
+	at_index = |subject, length| {
+		wanted = match subject {
+			Number(number) if !number.is_nan() => number.div_trunc_by(1.0)
+			_ => 0.0
+		}
+		place = if wanted < 0.0 {
+			length.to_f64() + wanted
+		} else {
+			wanted
+		}
+		if place >= 0.0 and place < length.to_f64() {
+			place.to_u64_try().map_err(|_| OutOfRange)
+		} else {
+			Err(OutOfRange)
+		}
+	}
+
+	# An array's items with the arrays among them put in their place, to
+	# `depth` levels, as `flat` puts them.
+	flattened : List(Heap.Cell), List(Heap.Value), U64 -> List(Heap.Value)
+	flattened = |cells, items, depth| {
+		var $out = []
+		for item in items {
+			inner = match item {
+				Reference(id) if depth > 0 => match Heap.cell_at(cells, id) {
+					Array(nested) => Nested(nested)
+					_ => Lone
+				}
+				_ => Lone
+			}
+			$out = match inner {
+				Nested(nested) => List.concat($out, Interp.flattened(cells, nested, depth - 1))
+				Lone => $out.append(item)
+			}
+		}
+		$out
+	}
+
+	# `findLast` and `findLastIndex`: the callback on each item from the last
+	# back, until one passes.
+	array_walk_back! : Canvas.Host, Interp.Machine, U64, List(Heap.Value), [FindLast, FindLastIndex], Ast.Where => Interp.Got
+	array_walk_back! = |host, machine, id, arguments, walk, site| {
+		callback = arguments.first() ?? Undefined
+		var $s = machine
+		var $k = Interp.item_count(machine, id)
+		var $answer = match walk {
+			FindLast => Undefined
+			FindLastIndex => Number(-1.0)
+		}
+		var $going = True
+		while $going and $k > 0 {
+			$k = $k - 1
+			item = Interp.item_at($s, id, $k)
+			{ machine: after, value } = Interp.call!(host, $s, callback, [item, Number($k.to_f64()), Reference(id)], site)
+			$s = after
+			if Interp.is_truthy(value) {
+				$answer = match walk {
+					FindLast => item
+					FindLastIndex => Number($k.to_f64())
+				}
+				$going = False
+			}
+			$going = $going and Interp.is_running($s)
+		}
+		{ machine: $s, value: $answer }
+	}
+
+	# `reduceRight`: `reduce` from the last item back.
+	array_reduce_right! : Canvas.Host, Interp.Machine, U64, List(Heap.Value), Ast.Where => Interp.Got
+	array_reduce_right! = |host, machine, id, arguments, site| {
+		callback = arguments.first() ?? Undefined
+		count = Interp.item_count(machine, id)
+		start = match arguments.get(1) {
+			Ok(subject) => Ok({ accumulated: subject, before: count })
+			Err(OutOfBounds) => {
+				if count == 0 {
+					Err(Empty)
+				} else {
+					Ok({ accumulated: Interp.item_at(machine, id, count - 1), before: count - 1 })
+				}
+			}
+		}
+		match start {
+			Err(Empty) => Interp.error_got(
+				machine,
+				TypeError,
+				"Reduce of empty array with no initial value",
+				site,
+			)
+			Ok({ accumulated, before }) => {
+				var $s = machine
+				var $accumulated = accumulated
+				var $k = before
+				while $k > 0 and Interp.is_running($s) {
+					$k = $k - 1
+					item = Interp.item_at($s, id, $k)
+					{ machine: after, value } = Interp.call!(
+						host,
+						$s,
+						callback,
+						[
+							$accumulated,
+							item,
+							Number($k.to_f64()),
+							Reference(id),
+						],
+						site,
+					)
+					$s = after
+					$accumulated = value
+				}
+				{ machine: $s, value: $accumulated }
+			}
+		}
+	}
 
 	# An array method that calls a function on each item in turn, the items
 	# read from the heap as it goes, since the function may change the array.
@@ -4665,6 +5000,12 @@ Interp :: [].{
 						$going = False
 					}
 				}
+				FlatMap => {
+					$out = match value {
+						Reference(made) if Interp.is_array_cell($s.cells, made) => List.concat($out, Interp.items_of($s, made))
+						_ => $out.append(value)
+					}
+				}
 			}
 			$going = $going and Interp.is_running($s)
 			$i = $i + 1
@@ -4672,6 +5013,7 @@ Interp :: [].{
 		match walk {
 			Map => Interp.alloc($s, Array($out))
 			Filter => Interp.alloc($s, Array($out))
+			FlatMap => Interp.alloc($s, Array($out))
 			_ => { machine: $s, value: $answer }
 		}
 	}
@@ -4869,9 +5211,13 @@ Interp :: [].{
 		"slice",
 		"substring",
 		"indexOf",
+		"lastIndexOf",
+		"at",
 		"toUpperCase",
 		"toLowerCase",
 		"trim",
+		"trimStart",
+		"trimEnd",
 	]
 
 	text_method : Interp.Machine, Str, Str, List(Heap.Value), Ast.Where -> Interp.Got
@@ -4950,31 +5296,64 @@ Interp :: [].{
 				}
 			}
 			"indexOf" => match text_argument(0) {
-				Ok(phrase) => { machine: machine, value: Number(Interp.text_index(text, phrase)) }
+				Ok(phrase) => {
+					from = Interp.clamped_index(arguments.get(1) ?? Undefined, count)
+					{ machine: machine, value: Number(Interp.text_index_from(text, phrase, from)) }
+				}
 				Err(NotText) => Interp.fault_got(
 					machine,
 					"unsupported: `indexOf` of anything but a string${Interp.line_note(site)}",
 				)
 			}
+			"lastIndexOf" => match (text_argument(0), arguments.len()) {
+				(Ok(phrase), 1) => { machine: machine, value: Number(Interp.text_last_index(text, phrase)) }
+				_ => Interp.fault_got(
+					machine,
+					"unsupported: `lastIndexOf` of anything but a string, or from a position${Interp.line_note(site)}",
+				)
+			}
 			"includes" => match text_argument(0) {
-				Ok(phrase) => { machine: machine, value: Boolean(text.contains(phrase)) }
+				Ok(phrase) => {
+					from = Interp.clamped_index(arguments.get(1) ?? Undefined, count)
+					{ machine: machine, value: Boolean(Interp.text_index_from(text, phrase, from) >= 0.0) }
+				}
 				Err(NotText) => Interp.fault_got(
 					machine,
 					"unsupported: `includes` of anything but a string${Interp.line_note(site)}",
 				)
 			}
-			"startsWith" => match text_argument(0) {
-				Ok(phrase) => { machine: machine, value: Boolean(text.starts_with(phrase)) }
-				Err(NotText) => Interp.fault_got(
+			"startsWith" => match (text_argument(0), arguments.len()) {
+				(Ok(phrase), 1) => { machine: machine, value: Boolean(text.starts_with(phrase)) }
+				_ => Interp.fault_got(
 					machine,
-					"unsupported: `startsWith` of anything but a string${Interp.line_note(site)}",
+					"unsupported: `startsWith` of anything but a string, or from a position${Interp.line_note(site)}",
 				)
 			}
-			"endsWith" => match text_argument(0) {
-				Ok(phrase) => { machine: machine, value: Boolean(text.ends_with(phrase)) }
-				Err(NotText) => Interp.fault_got(
+			"endsWith" => match (text_argument(0), arguments.len()) {
+				(Ok(phrase), 1) => { machine: machine, value: Boolean(text.ends_with(phrase)) }
+				_ => Interp.fault_got(
 					machine,
-					"unsupported: `endsWith` of anything but a string${Interp.line_note(site)}",
+					"unsupported: `endsWith` of anything but a string, or to a position${Interp.line_note(site)}",
+				)
+			}
+			"at" => match Interp.at_index(arguments.first() ?? Undefined, count) {
+				Ok(position) => { machine: machine, value: sliced(position, position + 1) }
+				Err(OutOfRange) => { machine: machine, value: Undefined }
+			}
+			"trimStart" => { machine: machine, value: Text(Interp.ascii_trimmed_at(text, Start)) }
+			"trimEnd" => { machine: machine, value: Text(Interp.ascii_trimmed_at(text, End)) }
+			"replace" | "replaceAll" => match (text_argument(0), text_argument(1)) {
+				(Ok(phrase), Ok(replacement)) if !replacement.contains("$") and (name == "replace" or !phrase.is_empty()) => {
+					replaced = if name == "replaceAll" {
+						Str.join_with(text.split_on(phrase), replacement)
+					} else {
+						Interp.text_replaced_once(text, phrase, replacement)
+					}
+					{ machine: machine, value: Text(replaced) }
+				}
+				_ => Interp.fault_got(
+					machine,
+					"unsupported: `${name}` but of a string by a string without `$`, or `replaceAll` of the empty string${Interp.line_note(site)}",
 				)
 			}
 			"toUpperCase" => { machine: machine, value: Text(text.with_ascii_uppercased()) }
@@ -4989,19 +5368,28 @@ Interp :: [].{
 					"unsupported: `repeat` of anything but a whole number of times${Interp.line_note(site)}",
 				)
 			}
-			"split" => match text_argument(0) {
-				Ok("") => Interp.alloc(
-					machine,
-					Array(Interp.characters(text).map(|character| Text(character))),
-				)
-				Ok(phrase) => Interp.alloc(
-					machine,
-					Array(text.split_on(phrase).map(|piece| Text(piece))),
-				)
-				Err(NotText) => Interp.fault_got(
-					machine,
-					"unsupported: `split` by anything but a string${Interp.line_note(site)}",
-				)
+			"split" => {
+				limit = match arguments.get(1) {
+					Ok(Number(most)) if most >= 0.0 and most.div_trunc_by(1.0) == most => Ok(Limited(most.to_u64_try() ?? 0))
+					Ok(Undefined) | Err(OutOfBounds) => Ok(Unlimited)
+					_ => Err(NotLimit)
+				}
+				pieces = match text_argument(0) {
+					Ok("") => Ok(Interp.characters(text))
+					Ok(phrase) => Ok(text.split_on(phrase))
+					Err(NotText) => Err(NotText)
+				}
+				match (pieces, limit) {
+					(Ok(all), Ok(Unlimited)) => Interp.alloc(machine, Array(all.map(|piece| Text(piece))))
+					(Ok(all), Ok(Limited(most))) => Interp.alloc(
+						machine,
+						Array(all.take_first(most).map(|piece| Text(piece))),
+					)
+					_ => Interp.fault_got(
+						machine,
+						"unsupported: `split` by anything but a string, or to a limit that is not a whole number${Interp.line_note(site)}",
+					)
+				}
 			}
 			"padStart" => Interp.text_padded(machine, text, arguments, PadStart, site)
 			"padEnd" => Interp.text_padded(machine, text, arguments, PadEnd, site)
@@ -5031,15 +5419,16 @@ Interp :: [].{
 		}
 	}
 
-	# Where `t` first starts in `s`, in bytes, or -1.
-	text_index : Str, Str -> F64
-	text_index = |text, phrase| {
+	# Where `phrase` first starts in `text` at `from` or after, in bytes, or
+	# -1.
+	text_index_from : Str, Str, U64 -> F64
+	text_index_from = |text, phrase, from| {
 		text_bytes = text.to_utf8()
 		phrase_bytes = phrase.to_utf8()
 		if phrase_bytes.len() > text_bytes.len() {
 			-1.0
 		} else {
-			var $i = 0
+			var $i = from
 			var $found = -1.0
 			while $found < 0.0 and $i + phrase_bytes.len() <= text_bytes.len() {
 				if text_bytes.sublist({ start: $i, len: phrase_bytes.len() }) == phrase_bytes {
@@ -5051,16 +5440,70 @@ Interp :: [].{
 		}
 	}
 
+	# Where `phrase` last starts in `text`, in bytes, or -1.
+	text_last_index : Str, Str -> F64
+	text_last_index = |text, phrase| {
+		text_bytes = text.to_utf8()
+		phrase_bytes = phrase.to_utf8()
+		if phrase_bytes.len() > text_bytes.len() {
+			-1.0
+		} else {
+			var $i = text_bytes.len() - phrase_bytes.len() + 1
+			var $found = -1.0
+			while $found < 0.0 and $i > 0 {
+				$i = $i - 1
+				if text_bytes.sublist({ start: $i, len: phrase_bytes.len() }) == phrase_bytes {
+					$found = $i.to_f64()
+				}
+			}
+			$found
+		}
+	}
+
+	# A position argument as a string method clamps it, within 0 and `count`.
+	clamped_index : Heap.Value, U64 -> U64
+	clamped_index = |subject, count|
+		match subject {
+			Number(x) => if x.is_nan() or x <= 0.0 {
+				0
+			} else if x >= count.to_f64() {
+				count
+			} else {
+				x.div_trunc_by(1.0).to_u64_try() ?? 0
+			}
+			_ => 0
+		}
+
+	# `text` with the first `phrase` in it replaced, as `replace` does.
+	text_replaced_once : Str, Str, Str -> Str
+	text_replaced_once = |text, phrase, replacement| {
+		found = Interp.text_index_from(text, phrase, 0)
+		if found < 0.0 {
+			text
+		} else {
+			bytes = text.to_utf8()
+			at = found.to_u64_try() ?? 0
+			before = bytes.sublist({ start: 0, len: at })
+			after = bytes.drop_first(at + phrase.count_utf8_bytes())
+			Str.from_utf8(
+				List.concat(List.concat(before, replacement.to_utf8()), after),
+			) ?? crash "Interp.text_replaced_once: whole characters around a whole phrase"
+		}
+	}
+
 	ascii_trimmed : Str -> Str
-	ascii_trimmed = |text| {
+	ascii_trimmed = |text| Interp.ascii_trimmed_at(text, Both)
+
+	ascii_trimmed_at : Str, [Start, End, Both] -> Str
+	ascii_trimmed_at = |text, ends| {
 		bytes = text.to_utf8()
 		is_space = |byte| byte == ' ' or byte == '\t' or byte == '\n' or byte == '\r' or byte == 11 or byte == 12
 		var $from = 0
-		while $from < bytes.len() and is_space(bytes.get($from) ?? crash "Interp.ascii_trimmed: inside the text") {
+		while ends != End and $from < bytes.len() and is_space(bytes.get($from) ?? crash "Interp.ascii_trimmed: inside the text") {
 			$from = $from + 1
 		}
 		var $to = bytes.len()
-		while $to > $from and is_space(bytes.get($to - 1) ?? crash "Interp.ascii_trimmed: inside the text") {
+		while ends != Start and $to > $from and is_space(bytes.get($to - 1) ?? crash "Interp.ascii_trimmed: inside the text") {
 			$to = $to - 1
 		}
 		Str.from_utf8(
