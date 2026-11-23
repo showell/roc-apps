@@ -61,9 +61,30 @@ canvas { display: block; background: #06080f; width: min(960px, 100%, calc(88vh 
 // stages: the download, then the engine preparing the trees and the sky's
 // light, then the browser readying the GPU's shaders for the first frames.
 // walkLoad keeps when each ended, for the console report.
-var walkLoad = { files: null, shaders_first: null, shaders_last: null, first_frame: null, shown: null, settle: null, made_after: [], resized: [] };
+var walkLoad = { files: null, shaders_first: null, shaders_last: null, first_frame: null, shown: null, settle: null, made_after: [], resized: [], window_resized: [], fits: [] };
+// When something happened, as the report says it: seconds after the first
+// frame, or before it.
+function walkWhen(now) {
+	return walkLoad.first_frame === null ? "before the first frame" : ((now - walkLoad.first_frame) / 1000).toFixed(1) + " s after the first frame";
+}
+// Each window resize event, with the window's inner size before and after and
+// the pixel ratio the page then answers. sokol reads the ratio only at its
+// start and at a resize, and the engine rebuilds its render targets when the
+// ratio changes even if the canvas keeps its 960 by 600 pixels, which the
+// canvas-size line below cannot see.
+(function () {
+	var inner = window.innerWidth + " x " + window.innerHeight;
+	window.addEventListener("resize", function () {
+		var now = window.innerWidth + " x " + window.innerHeight;
+		var box = document.getElementById("canvas").getBoundingClientRect();
+		walkLoad.window_resized.push({ at: performance.now(), text: "the window resized at " + walkWhen(performance.now()) + " from " + inner + " to " + now + " (canvas CSS " + box.width.toFixed(1) + " x " + box.height.toFixed(1) + ")" });
+		inner = now;
+	});
+})();
 // Each change of the canvas's drawing size after the first frame, with when
-// and the CSS size and pixel ratio then (the engine rebuilds its targets).
+// and the CSS size and pixel ratio then (the engine rebuilds its targets). A
+// resize that keeps the drawing size but changes the pixel ratio shows only
+// in the window resizes and the render targets' line.
 (function () {
 	var canvas = document.getElementById("canvas");
 	var last = null;
@@ -197,6 +218,10 @@ var walkView = (function () {
 	if (!(scale >= 0.1 && scale <= 4)) scale = 1;
 	var realRatio = window.devicePixelRatio || 1;
 	var canvas = document.getElementById("canvas");
+	var switches = [];
+	query.forEach(function (value, name) { switches.push(value === "" ? name : name + "=" + value); });
+	// ratio is the last ratio answered: sokol's, since only sokol asks.
+	var view = { scale: scale, realRatio: realRatio, switches: switches, ratio: null };
 	// The ratio follows the canvas's whole CSS width, so a fraction of a
 	// pixel's change in layout never changes it (and never makes the engine
 	// rebuild its targets).
@@ -204,12 +229,11 @@ var walkView = (function () {
 		configurable: true,
 		get: function () {
 			var width = Math.round(canvas.getBoundingClientRect().width);
-			return width > 0 ? 960 * scale / width : scale;
+			view.ratio = width > 0 ? 960 * scale / width : scale;
+			return view.ratio;
 		},
 	});
-	var switches = [];
-	query.forEach(function (value, name) { switches.push(value === "" ? name : name + "=" + value); });
-	return { scale: scale, realRatio: realRatio, switches: switches };
+	return view;
 })();
 // Frame measurement, for the F readout and the console report. It counts
 // by wrapping WebGPU's calls and the animation frame callbacks before the
@@ -239,7 +263,8 @@ var walkView = (function () {
 	var REPORT_MS = 20000;
 	var QUERY_PASSES = 64;
 
-	function blank() { return { passes: 0, draws: 0, instances: 0, triangles: 0, cpu: null, gpu: null, kinds: null, gap: null }; }
+	// slowest is the WebGPU call that took longest in the frame, with its ms.
+	function blank() { return { passes: 0, draws: 0, instances: 0, triangles: 0, cpu: null, gpu: null, kinds: null, gap: null, slowest: null, slowest_ms: 0 }; }
 	var sending = blank();
 	var recent = [];
 	// Every frame over STALL_MS from the first frame on, loading included,
@@ -291,10 +316,36 @@ var walkView = (function () {
 		return notes.length ? notes.join("; ") : "nothing new: trees and grass move to the next lap as they fall behind";
 	}
 
+	// Each wrapped call is timed, so a stall's report names the call it
+	// waited in, if it waited in one. The submit times itself, since it
+	// starts the next frame's counts.
 	function wrap(proto, name, around) {
 		if (!proto || !proto[name]) return;
 		var original = proto[name];
-		proto[name] = function () { return around.call(this, original, arguments); };
+		proto[name] = function () {
+			var began = performance.now();
+			try { return around.call(this, original, arguments); } finally {
+				var took = performance.now() - began;
+				if (took > sending.slowest_ms && name !== "submit") { sending.slowest_ms = took; sending.slowest = name; }
+			}
+		};
+	}
+	function passThrough(original, args) { return original.apply(this, args); }
+
+	// Each time the engine makes its render targets (the target-* and
+	// post-* textures of one frame), with the drawing size and the pixel
+	// ratio sokol read, so the report can say what made it rebuild them.
+	var submits = 0;
+	function noteTarget(label) {
+		var fits = walkLoad.fits;
+		var fit = fits[fits.length - 1];
+		if (!fit || fit.frame !== submits) {
+			var canvas = document.getElementById("canvas");
+			fit = { at: performance.now(), when: walkWhen(performance.now()), frame: submits, size: canvas.width + " x " + canvas.height, ratio: walkView.ratio, made: {} };
+			fits.push(fit);
+		}
+		var kind = label.replace(/^target-/, "");
+		fit.made[kind] = (fit.made[kind] || 0) + 1;
 	}
 
 	// The GPU's time for each render pass, through timestamp queries: the
@@ -369,9 +420,15 @@ var walkView = (function () {
 			madeAfter("createTexture", args);
 			var d = args[0] || {};
 			if (d.sampleCount > samples) samples = d.sampleCount;
+			if (/^(target-|post-)/.test(d.label || "")) noteTarget(d.label);
 			return original.apply(this, args);
 		});
+		["createBindGroup", "createCommandEncoder"].forEach(function (name) { wrap(GPUDevice.prototype, name, passThrough); });
 	}
+	// The other calls a frame makes that could wait on the GPU process.
+	if (window.GPUQueue) ["writeBuffer", "writeTexture"].forEach(function (name) { wrap(GPUQueue.prototype, name, passThrough); });
+	if (window.GPUCanvasContext) wrap(GPUCanvasContext.prototype, "getCurrentTexture", passThrough);
+	if (window.GPUTexture) wrap(GPUTexture.prototype, "createView", passThrough);
 	if (window.GPUCommandEncoder) {
 		wrap(GPUCommandEncoder.prototype, "beginRenderPass", function (original, args) {
 			var d = args[0] || {};
@@ -411,7 +468,11 @@ var walkView = (function () {
 	var submitted = null;
 	if (window.GPUQueue) {
 		wrap(GPUQueue.prototype, "submit", function (original, args) {
+			var called = performance.now();
 			var r = original.apply(this, args);
+			var submitMs = performance.now() - called;
+			if (submitMs > sending.slowest_ms) { sending.slowest_ms = submitMs; sending.slowest = "submit"; }
+			submits += 1;
 			if (sending.passes > 0) {
 				var reads = timer.reads;
 				timer.reads = [];
@@ -419,12 +480,18 @@ var walkView = (function () {
 				var frame = sending;
 				sending = blank();
 				frame.at = performance.now();
+				var previous = lastSubmit;
 				if (lastSubmit > 0) frame.gap = frame.at - lastSubmit;
 				lastSubmit = frame.at;
 				if (frame.gap !== null && !walk.paused && !walk.held) walk.walked = (walk.walked + WALK_PACE * Math.min(frame.gap, 250) / 1000) % 320;
 				frame.walked = walk.walked;
 				if (frame.gap !== null && frame.gap > STALL_MS && walkLoad.first_frame !== null) {
-					stalls.push({ gap: frame.gap, after: (frame.at - walkLoad.first_frame) / 1000, walked: walk.walked, when: !walk.shown ? "loading" : walk.paused ? "paused" : "walking" });
+					// The gap splits at the start of the animation frame
+					// callback this submit ran in: the wait for the browser
+					// to call it, then the engine's frame.
+					var began = callbackBegan > previous ? callbackBegan : null;
+					stalls.push({ gap: frame.gap, after: (frame.at - walkLoad.first_frame) / 1000, walked: walk.walked, when: !walk.shown ? "loading" : walk.paused ? "paused" : "walking",
+						waited: began === null ? null : began - previous, work: began === null ? null : frame.at - began, slowest: frame.slowest, slowest_ms: frame.slowest_ms });
 				}
 				var counts = walk.shown && !walk.paused && !walk.skipNext && frame.gap !== null;
 				if (!walk.paused && walk.shown) walk.skipNext = false;
@@ -437,9 +504,11 @@ var walkView = (function () {
 	// The engine's frame runs in an animation frame callback; its length is
 	// the engine's CPU time for the frame.
 	var request = window.requestAnimationFrame.bind(window);
+	var callbackBegan = 0;
 	window.requestAnimationFrame = function (callback) {
 		return request(function (stamp) {
 			var start = performance.now();
+			callbackBegan = start;
 			submitted = null;
 			try { return callback(stamp); } finally {
 				if (submitted) submitted.cpu = performance.now() - start;
@@ -491,16 +560,49 @@ var walkView = (function () {
 		return "load (s from the page's start): files in " + s(walkLoad.files) + ", first shader " + s(walkLoad.shaders_first) + ", last shader " + s(walkLoad.shaders_last) + ", first frame " + s(walkLoad.first_frame) + ", walk shown " + s(walkLoad.shown) + settled;
 	}
 
-	// What the engine made after the first frame, by kind, and the first
-	// few with their times.
+	// What the engine made after the first frame, by kind, then by kind and
+	// label in the order first made, each with its count and when.
 	function madeLine() {
 		var made = walkLoad.made_after;
 		var resized = walkLoad.resized.length ? "; the canvas changed size: " + walkLoad.resized.join("; ") : "";
 		if (made.length === 0) return "GPU objects made after the first frame: none" + resized;
-		var kinds = {};
-		made.forEach(function (m) { kinds[m.what] = (kinds[m.what] || 0) + 1; });
-		return "GPU objects made after the first frame: " + Object.keys(kinds).map(function (k) { return kinds[k] + " " + k; }).join(", ") + "; the first: " +
-			made.slice(0, 12).map(function (m) { return m.what + (m.label ? " " + m.label : "") + " at " + m.at.toFixed(1) + " s"; }).join("; ") + resized;
+		var kinds = {}, groups = [], byName = {};
+		made.forEach(function (m) {
+			kinds[m.what] = (kinds[m.what] || 0) + 1;
+			var name = m.what + " " + (m.label || "(no label)");
+			if (!byName[name]) { byName[name] = { name: name, count: 0, first: m.at, last: m.at }; groups.push(byName[name]); }
+			var g = byName[name];
+			g.count += 1;
+			g.last = m.at;
+		});
+		return "GPU objects made after the first frame: " + Object.keys(kinds).map(function (k) { return kinds[k] + " " + k; }).join(", ") + "; by label: " +
+			groups.slice(0, 20).map(function (g) { return (g.count > 1 ? g.count + " " : "") + g.name + " at " + g.first.toFixed(1) + (g.last > g.first + 0.05 ? " to " + g.last.toFixed(1) : "") + " s"; }).join("; ") +
+			(groups.length > 20 ? "; and " + (groups.length - 20) + " more labels" : "") + resized;
+	}
+
+	// Each time the engine made its render targets, and why: the first time,
+	// a change of the drawing size, or a change of the pixel ratio sokol read
+	// at a window resize (the canvas keeps its pixels, but the engine sizes
+	// the bloom by it), with the window resizes since the time before.
+	function fitsLine() {
+		var fits = walkLoad.fits;
+		function ratio(r) { return r === null ? "unread" : r.toFixed(4); }
+		var parts = fits.map(function (fit, i) {
+			var made = Object.keys(fit.made).map(function (k) { return (fit.made[k] > 1 ? fit.made[k] + " " : "") + k; }).join(", ");
+			var why;
+			if (i === 0) why = "the first, " + fit.size + " at pixel ratio " + ratio(fit.ratio);
+			else {
+				var before = fits[i - 1], changes = [];
+				if (fit.size !== before.size) changes.push("the drawing size changed from " + before.size + " to " + fit.size);
+				if (fit.ratio !== before.ratio) changes.push("the pixel ratio sokol read changed from " + ratio(before.ratio) + " to " + ratio(fit.ratio) + (fit.size === before.size ? ", the drawing size unchanged" : ""));
+				if (changes.length === 0) changes.push("no change of size or pixel ratio the page can see");
+				var resizes = walkLoad.window_resized.filter(function (w) { return w.at > before.at && w.at <= fit.at; }).map(function (w) { return w.text; });
+				why = changes.join(" and ") + (resizes.length ? ", after " + resizes.join("; ") : ", with no window resize since");
+			}
+			return fit.when + ": " + why + " (made " + made + ")";
+		});
+		var resized = walkLoad.window_resized.length ? walkLoad.window_resized.map(function (w) { return w.text; }).join("; ") : "none";
+		return "render targets made " + fits.length + (fits.length === 1 ? " time: " : " times: ") + parts.join("; ") + ". Window resizes: " + resized;
 	}
 
 	function report(frames, span) {
@@ -520,8 +622,10 @@ var walkView = (function () {
 		lines.push("frame ms: p50 " + ms(percentile(sorted, 0.5)) + ", p90 " + ms(percentile(sorted, 0.9)) + ", p99 " + ms(percentile(sorted, 0.99)) + ", max " + ms(sorted[sorted.length - 1]));
 		lines.push("frames by length: up to 16.7 ms " + bins[0] + ", to 33 ms " + bins[1] + ", to 50 ms " + bins[2] + ", to 100 ms " + bins[3] + ", over 100 ms " + bins[4]);
 		lines.push("stalls (every frame over " + STALL_MS + " ms since the first frame, loading and paused included): " + (stalls.length === 0 ? "none" : stalls.map(function (s) {
-			return Math.round(s.gap) + " ms at " + s.after.toFixed(1) + " s after the first frame (" + s.when + ", " + Math.round(s.walked) + " m)";
+			var split = s.waited === null ? "" : ": " + Math.round(s.waited) + " ms waiting for the browser to start the engine's frame, " + Math.round(s.work) + " ms in it" + (s.slowest ? ", its slowest WebGPU call " + s.slowest + " " + Math.round(s.slowest_ms) + " ms" : "");
+			return Math.round(s.gap) + " ms at " + s.after.toFixed(1) + " s after the first frame (" + s.when + ", " + Math.round(s.walked) + " m)" + split;
 		}).join("; ")));
+		lines.push(fitsLine());
 		lines.push("the 5 longest frames:");
 		longest.forEach(function (f) {
 			lines.push("  " + ms(f.gap) + " ms at " + Math.round(f.walked) + " m (" + (f.walked / WALK_PACE).toFixed(1) + " s into the walk, " + ((f.at - walkLoad.first_frame) / 1000).toFixed(1) + " s after the first frame; engine CPU " + ms(f.cpu) + ", GPU " + ms(f.gpu) + "): " + happening(f.walked));
