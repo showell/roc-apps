@@ -3,7 +3,7 @@
 <head>
 <!-- Every link opens in a new tab (Steve's preference). -->
 <base target="_blank">
-<meta name="description" content="Programs written in Roc: roc-chat, a live chat for humans and their agents, Roc on Shale, checks and reports written in Roc as scripts for Shale, the Fast Track board game against computer players, the Dog Park herding game, the Seattle Delivery route planner, the Safari Ride screensaver and the little Roc book about it, the roc-markdown library, the roc-syntax-color package, a BASIC interpreter, two chess toys (the Knight's Tour and Eight Queens), six roc-ray examples, roc-screensaver, a Roc platform in Zig for screensavers that also run as web pages, and three animated shorts.">
+<meta name="description" content="Programs written in Roc: roc-chat, a live chat for humans and their agents, Roc on Shale, checks and reports written in Roc as scripts for Shale, Safari Walk, a 3D ride on Braeden Foster's Rocco engine, the Fast Track board game against computer players, the Dog Park herding game, the Seattle Delivery route planner, the Safari Ride screensaver and the little Roc book about it, the roc-markdown library, the roc-syntax-color package, a BASIC interpreter, two chess toys (the Knight's Tour and Eight Queens), six roc-ray examples, roc-screensaver, a Roc platform in Zig for screensavers that also run as web pages, and three animated shorts.">
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Steve's Roc Work</title>
@@ -35,6 +35,7 @@
   /* A program's Roc strength, tagged so it stands out. */
   .tag { display: inline-block; margin-right: 6px; padding: 1px 7px; border-radius: 4px; background: var(--accent); color: #fff; font-size: 12px; font-weight: 600; letter-spacing: .02em; vertical-align: 1px; }
   .tag.nice { background: #2f7d5b; }
+  .tag.engine { background: #b0582a; }
   .license { margin: 0 0 22px; padding: 8px 12px; border: 1px solid var(--edge); border-radius: 6px; background: var(--pane); font-size: 13.5px; color: var(--muted); max-width: 66ch; }
   .feature p { margin: 0 0 6px; color: var(--muted); font-size: 14px; }
   /* A picture: a canvas app's last frame, taken by the build, or a drawing. */
@@ -81,8 +82,9 @@
 <main>
 <h1>Steve's Roc Work</h1>
 <p class="lede">Steve Howell wrote or refined these <a href="https://www.roc-lang.org/">Roc</a> apps, this book and
-these packages through agentic development, with Claude, an AI agent, writing the code. The apps run here in your
-browser, compiled to WebAssembly.</p>
+these packages through agentic development, with Claude, an AI agent, writing the code. The finished versions on
+this page are all his. A few build on other people's work, credited where they appear: Luke Boswell's roc-ray examples and Braeden
+Foster's Rocco engine. The apps run here in your browser, compiled to WebAssembly.</p>
 <p class="license">Everything on this page is open source under the
 <a href="https://opensource.org/license/upl-1.0">Universal Permissive License (UPL) 1.0</a>, the license Roc itself uses.</p>
 
@@ -130,6 +132,33 @@ browser, compiled to WebAssembly.</p>
     <div class="stat"><b>25</b><span>programs in Roc</span></div>
     <div class="stat"><b>about 25,700</b><span>lines of Roc, 4,500 of them in two shared packages</span></div>
     <div class="stat"><b>19</b><span>hosted functions, the platform's whole surface</span></div>
+  </div>
+</section>
+
+<section class="feature" data-app="safari-walk">
+  <div>
+    <a href="safari-walk/" aria-hidden="true" tabindex="-1"><img class="shot" src="shared/safari-walk.png" alt="" loading="lazy"></a>
+    <h3><a href="safari-walk/">Safari Walk</a></h3>
+    <p>A 3D ride down a dirt road across a dry savanna, from late afternoon to dusk. The sun sets ahead, the trees' shadows stretch across the road, the grass bends in the wind, zebras cross, and red and white radio towers blink their aviation lamps, with a few other things to meet along the way. The view moves at 6.4 meters a second, with a vehicle's slight roll and bumps, so the 320-meter road takes about 50 seconds. Then the picture fades to black and the ride starts again. Space pauses it. It tries out the look a 3D Safari Ride (below) could have.</p>
+    <p>It runs on <a href="https://github.com/Pixelsprout/rocco-engine">Rocco</a>, Braeden Foster's experimental 3D engine for games written in Roc (Copyright (c) 2026 Braeden Foster, under the UPL 1.0). Steve uses a fork, <a href="https://github.com/showell/rocco-engine/tree/firefox-fixes">github.com/showell/rocco-engine</a>, with patches written for Safari Walk: two let Rocco's blend between the afternoon and dusk skies run in Firefox, four shorten the wait before the first frame, and the rest let switches in the URL turn parts off to measure them, stop a window resize from rebuilding every render target, or keep the page from opening audio it never plays.</p>
+    <p>It needs WebGPU, and it has been tested only in Firefox on Windows. There the scene takes about 20 to 25 seconds to start, and the page shows a loading screen until the frame rate settles.</p>
+    <p class="opening"><span class="tag engine">Rocco</span>Rocco is a Roc platform with an engine written in Odin, and a game is a Roc app: a model and five pure functions. Each step, Rocco hands the game the input and the time passed, as plain values, and the game updates its model. From the model, the game's view function builds a Scene, a plain value that lists the camera, the lights and every mesh to draw, each with its position. The game never calls a draw function.</p>
+    <p class="opening">Rocco does the rendering: glTF models with physically based materials, the sun's shadows, point lights, fog, a sky, bloom and tone mapping, and skinned, animated models such as the zebras. Steps run at a fixed rate, and Rocco blends each drawn frame between the last two Scenes, so motion stays even when frames come at a different rate from the steps. A game can bring its own GLSL shaders, for a mesh's surface or for the finished picture, and Rocco's tools generate a typed Roc module for each, so the game sets their values from Roc. This walk has five, among them the ground's surface and one that keeps the towers' thin steel from flickering. A Rocco game can build for macOS, Linux, Windows and the web. For the web, the game and the engine compile to one WebAssembly module, which draws with WebGPU.</p>
+    <p class="opening"><span class="tag">Roc at work</span>What happens in this walk is decided in Roc: where the road and everything beside it stand, the sun's height and the light's color along the road, and where each animal goes, and when. Where the ride stands comes from two numbers in the model: how far down the road the view has come, and the walk's own clock. Space stops both, so the grass, the animals and the lamps stand still at once. A Roc program builds the radio towers too: it makes each one from a few numbers, such as its height, taper and bracing, and writes it as a binary glTF (GLB) file.</p>
+    <pre class="roc"><span class="t">walked_after</span> : <span class="t">F32</span>, <span class="t">F32</span> -> <span class="t">F32</span>
+<span class="t">walked_after</span> = |walked, seconds| {
+    next = walked + pace * seconds
+    <span class="k">if</span> (next >= road_length) next - road_length <span class="k">else</span> next
+}</pre>
+    <p class="caption">From <code>game/Walk.roc</code>: how far down the road the view is after a step, back to the start past the end.</p>
+    <p class="opening"><span class="tag nice">Roc plays nice with others</span>The walk's shaders are GLSL: the wind in the grass is adapted from Rocco's village example, the anti-aliasing is FXAA 3.11, Timothy Lottes's algorithm, and the towers' shader follows Humus's phone-wire anti-aliasing. Its trees, grass and zebras are Quaternius's CC0 models, and a Python script prepared those models and painted the two skies once, ahead of the build. The page around the picture is JavaScript: it shows the loading screen and holds the walk at its start until the frame rate settles.</p>
+    <div class="links"><a href="safari-walk/">The walk</a><a href="https://github.com/Pixelsprout/rocco-engine">Rocco</a><a href="https://github.com/showell/rocco-engine/tree/firefox-fixes">Steve's fork of Rocco</a></div>
+  </div>
+  <div class="stats">
+    <div class="stat"><b>1,666</b><span>lines of Roc in 11 modules, the walk itself, not counting five generated shader modules</span></div>
+    <div class="stat"><b>44</b><span>expects</span></div>
+    <div class="stat"><b>509</b><span>lines of Roc that build the radio towers' models</span></div>
+    <div class="stat"><b>344</b><span>lines of GLSL in the walk's five shaders</span></div>
   </div>
 </section>
 
