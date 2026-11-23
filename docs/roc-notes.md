@@ -115,7 +115,7 @@ anyone writing or emitting Roc in this repository. How the Roc is *written*
   3. An inner list got, written and set back while the outer list still holds
      it (`nested-get-then-set`). `List.update` hands the element over unshared
      and is free (`nested-update`).
-  4. The old dict read after an insert, even its `len` (`dict-len-after-insert`).
+  4. The old dict read after an insert, even its `len` (`dict-length-after-insert`).
   5. A value got from a dict, written and inserted back while the dict still
      holds it (`dict-get-then-insert`). Take it out first, `get` then
      `remove` (`dict-take-then-insert`): free in the release and dev builds,
@@ -124,10 +124,10 @@ anyone writing or emitting Roc in this repository. How the Roc is *written*
   **Copies in the dev and boxy builds only,** where a helper stays a call that
   owns its arguments (the release build specializes it first):
   6. A helper that reads its list after writing it,
-     `(xs.set(j, v) ?? xs, xs.len())` (`helper-len-after-set`). Read first
-     (`helper-len-before-set`).
+     `(xs.set(j, v) ?? xs, xs.len())` (`helper-length-after-set`). Read first
+     (`helper-length-before-set`).
   7. A helper that reads the whole record inside the write of its field,
-     `{ ..d, scr: d.scr.set(kept(d, j), v) ?? crash ... }`
+     `{ ..d, cells: d.cells.set(kept(d, j), v) ?? crash ... }`
      (`helper-reads-record`, BASIC's `Devices.poked`). Bind the index on the
      line before (`index-bound-before`).
   8. `?? xs` on a list whose entries hold a reference count, a list of
@@ -146,7 +146,7 @@ anyone writing or emitting Roc in this repository. How the Roc is *written*
   - A helper that hands the list back (`helper-returns-list`), and a list
     threaded down a recursion and back, which every shape here is.
   - The list's length read after its write within one function, in a record
-    built again or not (`record-len-after-set`, `append-len-after`). A `get`
+    built again or not (`record-length-after-set`, `append-length-after`). A `get`
     after the write copies (shape 1); the compiler doesn't say why `len`
     differs.
 

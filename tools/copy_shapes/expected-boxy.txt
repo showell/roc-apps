@@ -10,10 +10,10 @@
 get-after-set 1 0 the old list read after its write: the write can't take it, so it copies
 closure-called-after 1 0 a closure holding the old list called after the write
 nested-get-then-set 1 0 the inner list got and written while the outer list still holds it
-dict-len-after-insert 1 0 the old dict's length read after the insert
+dict-length-after-insert 1 0 the old dict's length read after the insert
 dict-get-then-insert 1 0 the list got from the dict and written while the dict still holds it
-helper-len-after-set 1 0 a helper reads its list after writing it: the dev and boxy builds keep the helper a call with an owned argument, where the release build specializes it
-helper-reads-record 1 0 a helper reads the whole record inside the write of its field (BASIC's Devices.poked), as helper-len-after-set
+helper-length-after-set 1 0 a helper reads its list after writing it: the dev and boxy builds keep the helper a call with an owned argument, where the release build specializes it
+helper-reads-record 1 0 a helper reads the whole record inside the write of its field (BASIC's Devices.poked), as helper-length-after-set
 str-list-restored 1 0 `?? xs` on a list of strings: the fallback is free only where the entries hold no reference count (str-list-or-crash, with `?? crash`, is free)
 host-args-list 1 0 str-list-restored on the command line's list
 dict-take-then-insert 3 0 the list taken out of the dict (got, then removed) and put back: free in the release and dev builds, three allocations a write here

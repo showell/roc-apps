@@ -43,34 +43,193 @@ count_at = |args, k| {
 run_shape : Str, List(Str), Sizes -> U64
 run_shape = |shape, args, { size, steps }| {
 	match shape {
-		"set-restored" => set_restored(0, steps, size, List.repeat(0, size), 0)
-		"set-or-empty" => set_or_empty(0, steps, size, List.repeat(0, size), 0)
-		"set-or-crash" => set_or_crash(0, steps, size, List.repeat(0, size), 0)
-		"get-after-set" => get_after_set(0, steps, size, List.repeat(0, size), 0)
-		"closure-called-before" => closure_called_before(0, steps, size, List.repeat(0, size), 0)
-		"closure-called-after" => closure_called_after(0, steps, size, List.repeat(0, size), 0)
-		"helper-returns-list" => helper_returns_list(0, steps, size, List.repeat(0, size), 0)
-		"helper-len-before-set" => helper_len_before_set(0, steps, size, List.repeat(0, size), 0)
-		"helper-len-after-set" => helper_len_after_set(0, steps, size, List.repeat(0, size), 0)
-		"record-rebuilt" => record_rebuilt(0, steps, size, { items: List.repeat(0, size), total: 0 })
-		"record-len-before-set" => record_len_before_set(0, steps, size, { items: List.repeat(0, size), total: 0 })
-		"record-len-after-set" => record_len_after_set(0, steps, size, { items: List.repeat(0, size), total: 0 })
-		"record-update" => record_update(0, steps, size, { items: List.repeat(0, size), total: 0 })
-		"field-inside-update" => field_inside_update(0, steps, size, { items: List.repeat(0, size), total: 0 })
-		"field-taken-out-first" => field_taken_out_first(0, steps, size, { items: List.repeat(0, size), total: 0 })
-		"index-computed-first" => index_computed_first(0, steps, size, { scr: List.repeat(0, size), base: 0 })
-		"index-bound-before" => index_bound_before(0, steps, size, { scr: List.repeat(0, size), base: 0 })
-		"helper-reads-record" => helper_reads_record(0, steps, size, { scr: List.repeat(0, size), base: 0 })
-		"append-after-drop" => append_after_drop(0, steps, size, List.repeat(0, size), 0)
-		"append-len-after" => append_len_after(0, steps, size, List.repeat(0, size), 0)
-		"nested-update" => nested_update(0, steps, size, [List.repeat(0, size), [1]], 0)
-		"nested-get-then-set" => nested_get_then_set(0, steps, size, [List.repeat(0, size), [1]], 0)
-		"dict-insert" => dict_insert(0, steps, size, filled(0, size, Dict.empty()), 0)
-		"dict-len-after-insert" => dict_len_after_insert(0, steps, size, filled(0, size, Dict.empty()), 0)
-		"dict-take-then-insert" => dict_take_then_insert(0, steps, size, Dict.empty().insert(0, List.repeat(0, size)), 0)
-		"dict-get-then-insert" => dict_get_then_insert(0, steps, size, Dict.empty().insert(0, List.repeat(0, size)), 0)
-		"str-list-restored" => str_list_restored(0, steps, size, List.repeat("a", size), 0)
-		"str-list-or-crash" => str_list_or_crash(0, steps, size, List.repeat("a", size), 0)
+		"set-restored" => set_restored(
+			0,
+			steps,
+			size,
+			List.repeat(0, size),
+			0,
+		)
+		"set-or-empty" => set_or_empty(
+			0,
+			steps,
+			size,
+			List.repeat(0, size),
+			0,
+		)
+		"set-or-crash" => set_or_crash(
+			0,
+			steps,
+			size,
+			List.repeat(0, size),
+			0,
+		)
+		"get-after-set" => get_after_set(
+			0,
+			steps,
+			size,
+			List.repeat(0, size),
+			0,
+		)
+		"closure-called-before" => closure_called_before(
+			0,
+			steps,
+			size,
+			List.repeat(0, size),
+			0,
+		)
+		"closure-called-after" => closure_called_after(
+			0,
+			steps,
+			size,
+			List.repeat(0, size),
+			0,
+		)
+		"helper-returns-list" => helper_returns_list(
+			0,
+			steps,
+			size,
+			List.repeat(0, size),
+			0,
+		)
+		"helper-length-before-set" => helper_length_before_set(
+			0,
+			steps,
+			size,
+			List.repeat(0, size),
+			0,
+		)
+		"helper-length-after-set" => helper_length_after_set(
+			0,
+			steps,
+			size,
+			List.repeat(0, size),
+			0,
+		)
+		"record-rebuilt" => record_rebuilt(
+			0,
+			steps,
+			size,
+			{ items: List.repeat(0, size), total: 0 },
+		)
+		"record-length-before-set" => record_length_before_set(
+			0,
+			steps,
+			size,
+			{ items: List.repeat(0, size), total: 0 },
+		)
+		"record-length-after-set" => record_length_after_set(
+			0,
+			steps,
+			size,
+			{ items: List.repeat(0, size), total: 0 },
+		)
+		"record-update" => record_update(
+			0,
+			steps,
+			size,
+			{ items: List.repeat(0, size), total: 0 },
+		)
+		"field-inside-update" => field_inside_update(
+			0,
+			steps,
+			size,
+			{ items: List.repeat(0, size), total: 0 },
+		)
+		"field-taken-out-first" => field_taken_out_first(
+			0,
+			steps,
+			size,
+			{ items: List.repeat(0, size), total: 0 },
+		)
+		"index-computed-first" => index_computed_first(
+			0,
+			steps,
+			size,
+			{ cells: List.repeat(0, size), base: 0 },
+		)
+		"index-bound-before" => index_bound_before(
+			0,
+			steps,
+			size,
+			{ cells: List.repeat(0, size), base: 0 },
+		)
+		"helper-reads-record" => helper_reads_record(
+			0,
+			steps,
+			size,
+			{ cells: List.repeat(0, size), base: 0 },
+		)
+		"append-after-drop" => append_after_drop(
+			0,
+			steps,
+			size,
+			List.repeat(0, size),
+			0,
+		)
+		"append-length-after" => append_length_after(
+			0,
+			steps,
+			size,
+			List.repeat(0, size),
+			0,
+		)
+		"nested-update" => nested_update(
+			0,
+			steps,
+			size,
+			[List.repeat(0, size), [1]],
+			0,
+		)
+		"nested-get-then-set" => nested_get_then_set(
+			0,
+			steps,
+			size,
+			[List.repeat(0, size), [1]],
+			0,
+		)
+		"dict-insert" => dict_insert(
+			0,
+			steps,
+			size,
+			filled(0, size, Dict.empty()),
+			0,
+		)
+		"dict-length-after-insert" => dict_length_after_insert(
+			0,
+			steps,
+			size,
+			filled(0, size, Dict.empty()),
+			0,
+		)
+		"dict-take-then-insert" => dict_take_then_insert(
+			0,
+			steps,
+			size,
+			Dict.empty().insert(0, List.repeat(0, size)),
+			0,
+		)
+		"dict-get-then-insert" => dict_get_then_insert(
+			0,
+			steps,
+			size,
+			Dict.empty().insert(0, List.repeat(0, size)),
+			0,
+		)
+		"str-list-restored" => str_list_restored(
+			0,
+			steps,
+			size,
+			List.repeat("a", size),
+			0,
+		)
+		"str-list-or-crash" => str_list_or_crash(
+			0,
+			steps,
+			size,
+			List.repeat("a", size),
+			0,
+		)
 		"host-args-list" => str_list_restored(0, steps, args.len(), args, 0)
 		_ => crash "copy-shapes: no such shape"
 	}
@@ -82,79 +241,115 @@ run_shape = |shape, args, { size, steps }| {
 ## its error path, which RC1 sees through, so on a list of numbers it costs
 ## nothing in every build (a list of strings is `str-list-restored`).
 set_restored : U64, U64, U64, List(U64), U64 -> U64
-set_restored = |i, steps, size, xs, acc| {
+set_restored = |i, steps, size, xs, sum| {
 	if i >= steps {
-		acc + xs.len()
+		sum + xs.len()
 	} else {
 		j = i % size
-		v = xs.get(j) ?? 0
+		v = xs.get(j) ?? crash "set_restored: in range"
 		ys = xs.set(j, v + 1) ?? xs
-		set_restored(i + 1, steps, size, ys, acc + v)
+		set_restored(
+			i + 1,
+			steps,
+			size,
+			ys,
+			sum + v,
+		)
 	}
 }
 
 ## `set-restored` with `?? []`.
 set_or_empty : U64, U64, U64, List(U64), U64 -> U64
-set_or_empty = |i, steps, size, xs, acc| {
+set_or_empty = |i, steps, size, xs, sum| {
 	if i >= steps {
-		acc + xs.len()
+		sum + xs.len()
 	} else {
 		j = i % size
-		v = xs.get(j) ?? 0
+		v = xs.get(j) ?? crash "set_or_empty: in range"
 		ys = xs.set(j, v + 1) ?? []
-		set_or_empty(i + 1, steps, size, ys, acc + v)
+		set_or_empty(
+			i + 1,
+			steps,
+			size,
+			ys,
+			sum + v,
+		)
 	}
 }
 
 ## `set-restored` with `?? crash`, the style guide's form.
 set_or_crash : U64, U64, U64, List(U64), U64 -> U64
-set_or_crash = |i, steps, size, xs, acc| {
+set_or_crash = |i, steps, size, xs, sum| {
 	if i >= steps {
-		acc + xs.len()
+		sum + xs.len()
 	} else {
 		j = i % size
 		ys = xs.set(j, i) ?? crash "set_or_crash: in range"
-		set_or_crash(i + 1, steps, size, ys, acc + j)
+		set_or_crash(
+			i + 1,
+			steps,
+			size,
+			ys,
+			sum + j,
+		)
 	}
 }
 
 ## **COPIES:** the old list read after the write, so the write can't take it.
 get_after_set : U64, U64, U64, List(U64), U64 -> U64
-get_after_set = |i, steps, size, xs, acc| {
+get_after_set = |i, steps, size, xs, sum| {
 	if i >= steps {
-		acc + xs.len()
+		sum + xs.len()
 	} else {
 		j = i % size
 		ys = xs.set(j, i) ?? xs
-		v = xs.get(j) ?? 0
-		get_after_set(i + 1, steps, size, ys, acc + v)
+		v = xs.get(j) ?? crash "get_after_set: in range"
+		get_after_set(
+			i + 1,
+			steps,
+			size,
+			ys,
+			sum + v,
+		)
 	}
 }
 
 ## A closure over the list, called inside the write's own arguments.
 closure_called_before : U64, U64, U64, List(U64), U64 -> U64
-closure_called_before = |i, steps, size, xs, acc| {
+closure_called_before = |i, steps, size, xs, sum| {
 	if i >= steps {
-		acc + xs.len()
+		sum + xs.len()
 	} else {
 		j = i % size
-		at = |k| xs.get(k) ?? 0
+		at = |k| xs.get(k) ?? crash "closure_called_before: in range"
 		ys = xs.set(j, at(j) + 1) ?? xs
-		closure_called_before(i + 1, steps, size, ys, acc + j)
+		closure_called_before(
+			i + 1,
+			steps,
+			size,
+			ys,
+			sum + j,
+		)
 	}
 }
 
 ## **COPIES:** the same closure called after the write: it still holds the
 ## old list.
 closure_called_after : U64, U64, U64, List(U64), U64 -> U64
-closure_called_after = |i, steps, size, xs, acc| {
+closure_called_after = |i, steps, size, xs, sum| {
 	if i >= steps {
-		acc + xs.len()
+		sum + xs.len()
 	} else {
 		j = i % size
-		at = |k| xs.get(k) ?? 0
+		at = |k| xs.get(k) ?? crash "closure_called_after: in range"
 		ys = xs.set(j, i) ?? xs
-		closure_called_after(i + 1, steps, size, ys, acc + at(j))
+		closure_called_after(
+			i + 1,
+			steps,
+			size,
+			ys,
+			sum + at(j),
+		)
 	}
 }
 
@@ -165,48 +360,66 @@ peek = |xs| (xs, xs.len())
 
 ## A helper that hands the list back with its length.
 helper_returns_list : U64, U64, U64, List(U64), U64 -> U64
-helper_returns_list = |i, steps, size, xs, acc| {
+helper_returns_list = |i, steps, size, xs, sum| {
 	if i >= steps {
-		acc + xs.len()
+		sum + xs.len()
 	} else {
 		j = i % size
-		(xs2, len) = peek(xs)
-		ys = xs2.set(j, len) ?? xs2
-		helper_returns_list(i + 1, steps, size, ys, acc + len)
+		(xs2, length) = peek(xs)
+		ys = xs2.set(j, length) ?? xs2
+		helper_returns_list(
+			i + 1,
+			steps,
+			size,
+			ys,
+			sum + length,
+		)
 	}
 }
 
-bump_len_first : List(U64), U64, U64 -> (List(U64), U64)
-bump_len_first = |xs, j, v| {
-	len = xs.len()
-	(xs.set(j, v) ?? xs, len)
+bump_length_first : List(U64), U64, U64 -> (List(U64), U64)
+bump_length_first = |xs, j, v| {
+	length = xs.len()
+	(xs.set(j, v) ?? xs, length)
 }
 
 ## A helper that reads the length, then writes.
-helper_len_before_set : U64, U64, U64, List(U64), U64 -> U64
-helper_len_before_set = |i, steps, size, xs, acc| {
+helper_length_before_set : U64, U64, U64, List(U64), U64 -> U64
+helper_length_before_set = |i, steps, size, xs, sum| {
 	if i >= steps {
-		acc + xs.len()
+		sum + xs.len()
 	} else {
 		j = i % size
-		(ys, len) = bump_len_first(xs, j, i)
-		helper_len_before_set(i + 1, steps, size, ys, acc + len)
+		(ys, length) = bump_length_first(xs, j, i)
+		helper_length_before_set(
+			i + 1,
+			steps,
+			size,
+			ys,
+			sum + length,
+		)
 	}
 }
 
-bump_len_after : List(U64), U64, U64 -> (List(U64), U64)
-bump_len_after = |xs, j, v| (xs.set(j, v) ?? xs, xs.len())
+bump_length_after : List(U64), U64, U64 -> (List(U64), U64)
+bump_length_after = |xs, j, v| (xs.set(j, v) ?? xs, xs.len())
 
 ## **COPIES IN THE DEV BUILD ONLY:** a helper that reads the length after
 ## its write. The release build specializes the helper and writes in place.
-helper_len_after_set : U64, U64, U64, List(U64), U64 -> U64
-helper_len_after_set = |i, steps, size, xs, acc| {
+helper_length_after_set : U64, U64, U64, List(U64), U64 -> U64
+helper_length_after_set = |i, steps, size, xs, sum| {
 	if i >= steps {
-		acc + xs.len()
+		sum + xs.len()
 	} else {
 		j = i % size
-		(ys, len) = bump_len_after(xs, j, i)
-		helper_len_after_set(i + 1, steps, size, ys, acc + len)
+		(ys, length) = bump_length_after(xs, j, i)
+		helper_length_after_set(
+			i + 1,
+			steps,
+			size,
+			ys,
+			sum + length,
+		)
 	}
 }
 
@@ -215,90 +428,131 @@ helper_len_after_set = |i, steps, size, xs, acc| {
 ## A record with a list in it.
 Totals : { items : List(U64), total : U64 }
 
-## The record built again, `?? st.items` as the fallback.
+## The record built again, `?? totals.items` as the fallback.
 record_rebuilt : U64, U64, U64, Totals -> U64
-record_rebuilt = |i, steps, size, st| {
+record_rebuilt = |i, steps, size, totals| {
 	if i >= steps {
-		st.total + st.items.len()
+		totals.total + totals.items.len()
 	} else {
 		j = i % size
-		record_rebuilt(i + 1, steps, size, { items: st.items.set(j, i) ?? st.items, total: st.total + 1 })
+		record_rebuilt(
+			i + 1,
+			steps,
+			size,
+			{ items: totals.items.set(j, i) ?? totals.items, total: totals.total + 1 },
+		)
 	}
 }
 
 ## The list's length read in the field before the write.
-record_len_before_set : U64, U64, U64, Totals -> U64
-record_len_before_set = |i, steps, size, st| {
+record_length_before_set : U64, U64, U64, Totals -> U64
+record_length_before_set = |i, steps, size, totals| {
 	if i >= steps {
-		st.total + st.items.len()
+		totals.total + totals.items.len()
 	} else {
 		j = i % size
-		record_len_before_set(i + 1, steps, size, { total: st.total + st.items.len(), items: st.items.set(j, i) ?? st.items })
+		record_length_before_set(
+			i + 1,
+			steps,
+			size,
+			{
+				total: totals.total + totals.items.len(),
+				items: totals.items.set(j, i) ?? totals.items,
+			},
+		)
 	}
 }
 
 ## The list's length read in the field after the write: in one function
 ## body a length read after the write costs nothing.
-record_len_after_set : U64, U64, U64, Totals -> U64
-record_len_after_set = |i, steps, size, st| {
+record_length_after_set : U64, U64, U64, Totals -> U64
+record_length_after_set = |i, steps, size, totals| {
 	if i >= steps {
-		st.total + st.items.len()
+		totals.total + totals.items.len()
 	} else {
 		j = i % size
-		record_len_after_set(i + 1, steps, size, { items: st.items.set(j, i) ?? st.items, total: st.total + st.items.len() })
+		record_length_after_set(
+			i + 1,
+			steps,
+			size,
+			{
+				items: totals.items.set(j, i) ?? totals.items,
+				total: totals.total + totals.items.len(),
+			},
+		)
 	}
 }
 
 ## A record update.
 record_update : U64, U64, U64, Totals -> U64
-record_update = |i, steps, size, st| {
+record_update = |i, steps, size, totals| {
 	if i >= steps {
-		st.total + st.items.len()
+		totals.total + totals.items.len()
 	} else {
 		j = i % size
-		record_update(i + 1, steps, size, { ..st, items: st.items.set(j, i) ?? st.items })
+		record_update(
+			i + 1,
+			steps,
+			size,
+			{ ..totals, items: totals.items.set(j, i) ?? totals.items },
+		)
 	}
 }
 
 ## A record update, `?? crash` as the fallback.
 field_inside_update : U64, U64, U64, Totals -> U64
-field_inside_update = |i, steps, size, st| {
+field_inside_update = |i, steps, size, totals| {
 	if i >= steps {
-		st.total + st.items.len()
+		totals.total + totals.items.len()
 	} else {
 		j = i % size
-		field_inside_update(i + 1, steps, size, { ..st, items: st.items.set(j, i) ?? crash "field_inside_update: in range" })
+		field_inside_update(
+			i + 1,
+			steps,
+			size,
+			{ ..totals, items: totals.items.set(j, i) ?? crash "field_inside_update: in range" },
+		)
 	}
 }
 
 ## The field taken out in a statement of its own, then written back: the
 ## old nightlies copied this, RC1 doesn't.
 field_taken_out_first : U64, U64, U64, Totals -> U64
-field_taken_out_first = |i, steps, size, st| {
+field_taken_out_first = |i, steps, size, totals| {
 	if i >= steps {
-		st.total + st.items.len()
+		totals.total + totals.items.len()
 	} else {
 		j = i % size
-		items = st.items
-		field_taken_out_first(i + 1, steps, size, { ..st, items: items.set(j, i) ?? crash "field_taken_out_first: in range" })
+		items = totals.items
+		field_taken_out_first(
+			i + 1,
+			steps,
+			size,
+			{ ..totals, items: items.set(j, i) ?? crash "field_taken_out_first: in range" },
+		)
 	}
 }
 
 ## A screen and where it starts, as BASIC's devices hold one.
-Screen : { scr : List(U64), base : U64 }
+Screen : { cells : List(U64), base : U64 }
 
 ## Where a cell is kept, read from the whole record.
 kept : Screen, U64 -> U64
-kept = |d, a| (a + d.base) % d.scr.len()
+kept = |d, a| (a + d.base) % d.cells.len()
 
 ## The index computed without the record.
 index_computed_first : U64, U64, U64, Screen -> U64
 index_computed_first = |i, steps, size, d| {
 	if i >= steps {
-		d.base + d.scr.len()
+		d.base + d.cells.len()
 	} else {
 		j = i % size
-		index_computed_first(i + 1, steps, size, { ..d, scr: d.scr.set(j, i) ?? crash "index_computed_first: in range" })
+		index_computed_first(
+			i + 1,
+			steps,
+			size,
+			{ ..d, cells: d.cells.set(j, i) ?? crash "index_computed_first: in range" },
+		)
 	}
 }
 
@@ -306,11 +560,16 @@ index_computed_first = |i, steps, size, d| {
 index_bound_before : U64, U64, U64, Screen -> U64
 index_bound_before = |i, steps, size, d| {
 	if i >= steps {
-		d.base + d.scr.len()
+		d.base + d.cells.len()
 	} else {
 		j = i % size
 		k = kept(d, j)
-		index_bound_before(i + 1, steps, size, { ..d, scr: d.scr.set(k, i) ?? crash "index_bound_before: in range" })
+		index_bound_before(
+			i + 1,
+			steps,
+			size,
+			{ ..d, cells: d.cells.set(k, i) ?? crash "index_bound_before: in range" },
+		)
 	}
 }
 
@@ -319,10 +578,15 @@ index_bound_before = |i, steps, size, d| {
 helper_reads_record : U64, U64, U64, Screen -> U64
 helper_reads_record = |i, steps, size, d| {
 	if i >= steps {
-		d.base + d.scr.len()
+		d.base + d.cells.len()
 	} else {
 		j = i % size
-		helper_reads_record(i + 1, steps, size, { ..d, scr: d.scr.set(kept(d, j), i) ?? crash "helper_reads_record: in range" })
+		helper_reads_record(
+			i + 1,
+			steps,
+			size,
+			{ ..d, cells: d.cells.set(kept(d, j), i) ?? crash "helper_reads_record: in range" },
+		)
 	}
 }
 
@@ -330,25 +594,37 @@ helper_reads_record = |i, steps, size, d| {
 
 ## The last entry dropped and one appended.
 append_after_drop : U64, U64, U64, List(U64), U64 -> U64
-append_after_drop = |i, steps, size, xs, acc| {
+append_after_drop = |i, steps, size, xs, sum| {
 	if i >= steps {
-		acc + xs.len()
+		sum + xs.len()
 	} else {
 		j = i % size
 		ys = xs.drop_last(1).append(i)
-		append_after_drop(i + 1, steps, size, ys, acc + j)
+		append_after_drop(
+			i + 1,
+			steps,
+			size,
+			ys,
+			sum + j,
+		)
 	}
 }
 
 ## The same, and the old list's length read after it.
-append_len_after : U64, U64, U64, List(U64), U64 -> U64
-append_len_after = |i, steps, size, xs, acc| {
+append_length_after : U64, U64, U64, List(U64), U64 -> U64
+append_length_after = |i, steps, size, xs, sum| {
 	if i >= steps {
-		acc + xs.len()
+		sum + xs.len()
 	} else {
 		j = i % size
 		ys = xs.drop_last(1).append(i)
-		append_len_after(i + 1, steps, size, ys, acc + j + xs.len())
+		append_length_after(
+			i + 1,
+			steps,
+			size,
+			ys,
+			sum + j + xs.len(),
+		)
 	}
 }
 
@@ -356,83 +632,131 @@ append_len_after = |i, steps, size, xs, acc| {
 
 ## `List.update` on the inner list: it hands the element over unshared.
 nested_update : U64, U64, U64, List(List(U64)), U64 -> U64
-nested_update = |i, steps, size, xss, acc| {
+nested_update = |i, steps, size, rows, sum| {
 	if i >= steps {
-		acc + xss.len()
+		sum + rows.len()
 	} else {
 		j = i % size
-		yss = xss.update(0, |inner| inner.set(j, i) ?? crash "nested_update: inner in range") ?? crash "nested_update: outer in range"
-		nested_update(i + 1, steps, size, yss, acc + j)
+		written = rows.update(
+			0,
+			|inner| inner.set(j, i) ?? crash "nested_update: inner in range",
+		) ?? crash "nested_update: outer in range"
+		nested_update(
+			i + 1,
+			steps,
+			size,
+			written,
+			sum + j,
+		)
 	}
 }
 
 ## **COPIES:** the inner list got, written, and set back: the outer list
 ## still holds it while it is written.
 nested_get_then_set : U64, U64, U64, List(List(U64)), U64 -> U64
-nested_get_then_set = |i, steps, size, xss, acc| {
+nested_get_then_set = |i, steps, size, rows, sum| {
 	if i >= steps {
-		acc + xss.len()
+		sum + rows.len()
 	} else {
 		j = i % size
-		inner = xss.get(0) ?? crash "nested_get_then_set: outer in range"
-		yss = xss.set(0, inner.set(j, i) ?? crash "nested_get_then_set: inner in range") ?? crash "nested_get_then_set: outer in range"
-		nested_get_then_set(i + 1, steps, size, yss, acc + j)
+		inner = rows.get(0) ?? crash "nested_get_then_set: outer in range"
+		written = rows.set(
+			0,
+			inner.set(j, i) ?? crash "nested_get_then_set: inner in range",
+		) ?? crash "nested_get_then_set: outer in range"
+		nested_get_then_set(
+			i + 1,
+			steps,
+			size,
+			written,
+			sum + j,
+		)
 	}
 }
 
 # ── A dict ──
 
 filled : U64, U64, Dict(U64, U64) -> Dict(U64, U64)
-filled = |k, size, d| if (k >= size) d else filled(k + 1, size, d.insert(k, 0))
+filled = |k, size, d| {
+	if k >= size {
+		d
+	} else {
+		filled(k + 1, size, d.insert(k, 0))
+	}
+}
 
 ## An insert over a key already there.
 dict_insert : U64, U64, U64, Dict(U64, U64), U64 -> U64
-dict_insert = |i, steps, size, d, acc| {
+dict_insert = |i, steps, size, d, sum| {
 	if i >= steps {
-		acc + d.len()
+		sum + d.len()
 	} else {
 		j = i % size
 		d2 = d.insert(j, i)
-		dict_insert(i + 1, steps, size, d2, acc + j)
+		dict_insert(
+			i + 1,
+			steps,
+			size,
+			d2,
+			sum + j,
+		)
 	}
 }
 
 ## **COPIES:** the old dict's length read after the insert.
-dict_len_after_insert : U64, U64, U64, Dict(U64, U64), U64 -> U64
-dict_len_after_insert = |i, steps, size, d, acc| {
+dict_length_after_insert : U64, U64, U64, Dict(U64, U64), U64 -> U64
+dict_length_after_insert = |i, steps, size, d, sum| {
 	if i >= steps {
-		acc + d.len()
+		sum + d.len()
 	} else {
 		j = i % size
 		d2 = d.insert(j, i)
-		dict_len_after_insert(i + 1, steps, size, d2, acc + d.len())
+		dict_length_after_insert(
+			i + 1,
+			steps,
+			size,
+			d2,
+			sum + d.len(),
+		)
 	}
 }
 
 ## A list kept in a dict, taken out (got, then removed), written and put
 ## back.
 dict_take_then_insert : U64, U64, U64, Dict(U64, List(U64)), U64 -> U64
-dict_take_then_insert = |i, steps, size, d, acc| {
+dict_take_then_insert = |i, steps, size, d, sum| {
 	if i >= steps {
-		acc + d.len()
+		sum + d.len()
 	} else {
 		j = i % size
 		l = d.get(0) ?? crash "dict_take_then_insert: key 0 is there"
 		d0 = d.remove(0)
-		dict_take_then_insert(i + 1, steps, size, d0.insert(0, l.set(j, i) ?? l), acc + j)
+		dict_take_then_insert(
+			i + 1,
+			steps,
+			size,
+			d0.insert(0, l.set(j, i) ?? l),
+			sum + j,
+		)
 	}
 }
 
 ## **COPIES:** the list got from the dict and written while the dict still
 ## holds it.
 dict_get_then_insert : U64, U64, U64, Dict(U64, List(U64)), U64 -> U64
-dict_get_then_insert = |i, steps, size, d, acc| {
+dict_get_then_insert = |i, steps, size, d, sum| {
 	if i >= steps {
-		acc + d.len()
+		sum + d.len()
 	} else {
 		j = i % size
 		l = d.get(0) ?? crash "dict_get_then_insert: key 0 is there"
-		dict_get_then_insert(i + 1, steps, size, d.insert(0, l.set(j, i) ?? l), acc + j)
+		dict_get_then_insert(
+			i + 1,
+			steps,
+			size,
+			d.insert(0, l.set(j, i) ?? l),
+			sum + j,
+		)
 	}
 }
 
@@ -443,24 +767,36 @@ dict_get_then_insert = |i, steps, size, d, acc| {
 ## no reference count. It writes past the first three entries, so
 ## `host-args-list` keeps its own shape, size and step count.
 str_list_restored : U64, U64, U64, List(Str), U64 -> U64
-str_list_restored = |i, steps, size, xs, acc| {
+str_list_restored = |i, steps, size, xs, sum| {
 	if i >= steps {
-		acc + xs.len()
+		sum + xs.len()
 	} else {
 		j = 3 + i % (size - 3)
 		ys = xs.set(j, "x") ?? xs
-		str_list_restored(i + 1, steps, size, ys, acc + j)
+		str_list_restored(
+			i + 1,
+			steps,
+			size,
+			ys,
+			sum + j,
+		)
 	}
 }
 
 ## `str-list-restored` with `?? crash`, which every build writes in place.
 str_list_or_crash : U64, U64, U64, List(Str), U64 -> U64
-str_list_or_crash = |i, steps, size, xs, acc| {
+str_list_or_crash = |i, steps, size, xs, sum| {
 	if i >= steps {
-		acc + xs.len()
+		sum + xs.len()
 	} else {
 		j = 3 + i % (size - 3)
 		ys = xs.set(j, "x") ?? crash "str_list_or_crash: in range"
-		str_list_or_crash(i + 1, steps, size, ys, acc + j)
+		str_list_or_crash(
+			i + 1,
+			steps,
+			size,
+			ys,
+			sum + j,
+		)
 	}
 }
