@@ -42,7 +42,8 @@ next unchanged. The design is
   `site/web/syntax-color/`, roc-syntax-color's showcase.
 - **staging**: `site/live/`, tracked, so a clone has the published site.
   `site/publish.sh <app>` copies an app over from dev, with a `PROVENANCE`
-  file, and commits it. `site/publish_screensavers.shale` publishes
+  file, and commits it; under Shale, `shale site/publish.shale app=<app>`
+  runs it and pushes with git_push, since a confined git cannot read ssh's key. `site/publish_screensavers.shale` publishes
   roc-screensaver's screensavers.
 - **prod**: [roc.lynrummy.com](https://roc.lynrummy.com/), staging's files
   verbatim, copied by `site/deploy.shale`, which takes the droplet from
@@ -52,8 +53,8 @@ next unchanged. The design is
 site/build.sh                         # the landing page into dev
 canvas_apps/build.sh safari release   # an app's release build into dev
 shale site/check_mobile.shale channel=dev   # the landing page fits a phone
-site/publish.sh safari                # dev to staging
-site/publish.sh tutorial              # the book, once each widget it frames is published
+shale site/publish.shale app=safari   # dev to staging, pushed by git_push
+shale site/publish.shale app=tutorial # the book, once each widget it frames is published
 shale site/publish_screensavers.shale # roc-screensaver's screensavers to staging
 shale site/deploy.shale               # staging to prod (the droplet is the secret keys:prod-ssh)
 ```

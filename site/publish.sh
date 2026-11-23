@@ -29,6 +29,13 @@
 #
 # PUBLISH_DRY_RUN=1 writes the PROVENANCE and stops before git; with NEXT and
 # LIVE pointed at scratch copies it touches nothing tracked.
+#
+# Under Shale, publish with `shale site/publish.shale app=<app>`: it runs this
+# script with PUBLISH_NO_PUSH=1, which commits and leaves the push out (a
+# confined git cannot read ssh's key: "Load key ... Permission denied"), and
+# then pushes with Shale's git_push, unconfined to a remote of the box's
+# remotes file. Run by hand outside Shale, this script pushes itself, as
+# before.
 set -eu
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO="$(cd "$HERE/.." && pwd)"
@@ -140,5 +147,9 @@ fi
 git -C "$REPO" commit -q -m "site: publish $what to staging
 
 $([ "$app" = home ] || cat "$LIVE/$app/PROVENANCE")" -- "${paths[@]}"
-git -C "$REPO" push -q
+if [ "${PUBLISH_NO_PUSH:-}" = 1 ]; then
+    echo "committed $what; the push is the caller's (site/publish.shale's git_push)"
+else
+    git -C "$REPO" push -q
+fi
 echo "published $what to staging: http://localhost:9200/"

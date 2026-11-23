@@ -9,8 +9,9 @@
 #
 # roc-site is Caddy (ops/Caddyfile), from the release binary at
 # ~/build/caddy/caddy. It reads a file per request with no-store, so a publish
-# or a build is live at once; `systemctl --user reload roc-site` after editing
-# the Caddyfile.
+# or a build is live at once; `systemctl --user restart roc-site` after editing
+# the Caddyfile (it has no admin endpoint, so no reload). ops/install_hardened.sh
+# replaces this user service with a hardened system one.
 set -euo pipefail
 cd "$(dirname "$0")"
 mkdir -p ~/.config/systemd/user

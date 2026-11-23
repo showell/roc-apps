@@ -1,0 +1,38 @@
+-- THE SIGN-OFF UNDER SHALE: site/publish.sh, then its push by Shale's
+-- git_push. Run it from roc-apps' root:
+--
+--   shale site/publish.shale app=safari     an app, as `site/publish.sh safari`
+--   shale site/publish.shale app=home       the landing page and the site's folders
+--   shale site/publish.shale app=safari dry=1   PUBLISH_DRY_RUN=1: the
+--                                           PROVENANCE, then nothing committed
+--
+-- site/publish.sh does the whole sign-off (its header says what each app
+-- publishes), with PUBLISH_NO_PUSH=1, so it commits and leaves the push out:
+-- under Shale's confinement git cannot read ssh's key ("Load key ...
+-- Permission denied"), so its own `git push` failed after the commit had
+-- landed. The push is then git_push's, unconfined over ssh to a remote of the
+-- box's remotes file, and only when the script made a commit (staging that
+-- already holds what dev shows, and a dry run, push nothing). The book's
+-- frames that publish.sh publishes first are commits of their own, and the
+-- one push takes them all.
+-- budget: programs=200
+
+const APP = arg("app", "")
+const DRY = arg("dry", 0) == 1
+
+if APP == "" then fail("publish: name the app, `shale site/publish.shale app=<app>` (or app=home)") end
+if not exists("site/publish.sh") then fail("publish: run it from roc-apps' root") end
+not_option("publish", "app", APP)
+
+local before = git_head(".")
+local env = {PUBLISH_NO_PUSH = "1"}
+if DRY then env.PUBLISH_DRY_RUN = "1" end
+local r = run({"site/publish.sh", APP}, {timeout_ms = 600000, tail = 80, env = env})
+print(trim(r.out))
+if get(r, "code", -1) ~= 0 then fail("publish: site/publish.sh " .. APP .. " exited " .. get(r, "code", -1) .. "; nothing pushed") end
+if git_head(".") == before then
+  print("no new commit, so nothing to push")
+else
+  git_push(".")
+  print("pushed " .. git_head(".") .. " (git_push)")
+end

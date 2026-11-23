@@ -1,0 +1,66 @@
+# Steve's Roc Apps, hardened: dev on 9210, staging on 9200, the redirects on
+# 9201 and 9203 (ops/Caddyfile), as a system service run as the box's user.
+# ops/install_hardened.sh installs it as /etc/systemd/system/roc-site.service,
+# @USER@ and @HOME@ filled in, in place of the user service ops/install.sh
+# installs (ops/roc-site.service), which it disables.
+#
+# What it holds back, beside the user service:
+# - The binary is /usr/local/bin/caddy, root's, outside every Shale mount
+#   (the user service ran ~/build/caddy/caddy, under the `build` mount, which
+#   any script may write), and the config is /etc/roc-site/Caddyfile, root's,
+#   a copy of ops/Caddyfile made at install, so a change in the checkout
+#   reaches the service only through the installer.
+# - The home is an empty, read-only tmpfs (ProtectHome=tmpfs) but the two
+#   folders Caddy serves, bound read-only: staging's site/live/ and dev's
+#   ~/build/roc-apps/next/. Caddy can read nothing else of the user's, and
+#   write nothing of it.
+# - The rest of the system is read-only (ProtectSystem=strict); Caddy's own
+#   data and config folders are /var/lib/roc-site (StateDirectory), its own.
+# - No new privileges, no capabilities, no devices, no namespaces, IP and
+#   Unix sockets alone.
+# The ports stay on every interface: the box's owner opens dev and staging
+# from another machine (`http://<box>:9210/`, and staging over plain http on
+# :9200, where a page gets no WebGPU, which a localhost origin would).
+[Unit]
+Description=Steve's Roc Apps: dev on 9210, staging on 9200 (Caddy, /etc/roc-site/Caddyfile), hardened
+After=network.target
+
+[Service]
+User=@USER@
+Group=@USER@
+Environment=HOME=@HOME@
+Environment=XDG_DATA_HOME=/var/lib/roc-site/data
+Environment=XDG_CONFIG_HOME=/var/lib/roc-site/config
+ExecStart=/usr/local/bin/caddy run --config /etc/roc-site/Caddyfile --adapter caddyfile
+Restart=always
+RestartSec=3
+
+StateDirectory=roc-site
+ProtectHome=tmpfs
+BindReadOnlyPaths=@HOME@/showell_repos/roc-apps/site/live
+BindReadOnlyPaths=@HOME@/build/roc-apps/next
+ProtectSystem=strict
+PrivateTmp=yes
+PrivateDevices=yes
+NoNewPrivileges=yes
+CapabilityBoundingSet=
+AmbientCapabilities=
+ProtectKernelTunables=yes
+ProtectKernelModules=yes
+ProtectKernelLogs=yes
+ProtectControlGroups=yes
+ProtectClock=yes
+ProtectHostname=yes
+ProtectProc=invisible
+ProcSubset=pid
+RestrictAddressFamilies=AF_INET AF_INET6 AF_UNIX
+RestrictNamespaces=yes
+RestrictSUIDSGID=yes
+RestrictRealtime=yes
+LockPersonality=yes
+MemoryDenyWriteExecute=yes
+SystemCallArchitectures=native
+UMask=0077
+
+[Install]
+WantedBy=multi-user.target

@@ -10,10 +10,17 @@
 # (Safari) to prod's safari/; :9203 (the old preview) to prod for basic/ and to
 # dev at the same path for the rest.
 #
+# No admin endpoint (`admin off`): Caddy's API on localhost:2019 would let
+# any local program swap the config, files served and ports included. A
+# change to this file takes a restart, `systemctl --user restart roc-site`
+# (or, with ops/roc-site.hardened.service, `sudo ops/install_hardened.sh`,
+# which copies this file to /etc/roc-site/ first).
+#
 # Every response is no-store, because a cached module looks exactly like a
 # build that changed nothing, and asks for cross-origin isolation, as prod's
 # site block does, so a page behaves the same on every channel.
 {
+	admin off
 	persist_config off
 }
 

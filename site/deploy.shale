@@ -25,7 +25,9 @@
 --    (through 1.1.1.1) to its address: `expr` matches the secret against
 --    the address dig gives, so only "the same or not" reaches the script.
 -- 2. site/live/ and ops/roc.lynrummy.com.caddy must have no uncommitted
---    changes.
+--    changes, and site/live/ must hold files and folders alone: a symbolic
+--    link (or anything else) there is refused, since rsync would ship it as
+--    a link that prod's Caddy follows wherever it points.
 -- 3. prod's Caddyfile must import /etc/caddy/sites/*.caddy and define the
 --    `access_log` snippet the site block imports. That Caddyfile is
 --    angry-gopher's deploy/Caddyfile; this script never edits it.
@@ -33,8 +35,9 @@
 --    upstream's branch of the same name, and refused when it has none.
 -- 5. It makes /srv/roc-site/ on the droplet (the ssh user's), copies
 --    site/live/ there with rsync --delete, and proves the copy verbatim:
---    every file's sha256 on prod must equal staging's, and no file may be
---    missing or extra.
+--    every file's sha256 on prod must equal staging's, no file may be
+--    missing or extra, and prod's copy must hold no link (nor anything but
+--    files and folders) either.
 -- 6. It installs ops/roc.lynrummy.com.caddy in /etc/caddy/sites/ only when it
 --    differs from prod's copy, its access log
 --    (/var/log/caddy/roc-access.log) made Caddy's first. Caddy validates the
@@ -158,6 +161,13 @@ for s in git_status(".") do
   if starts_with(s.path, LIVE .. "/") or s.path == "ops/" .. BLOCK then push(dirty, s.code .. " " .. s.path) end
 end
 if #dirty > 0 then refuse(LIVE .. "/ or ops/" .. BLOCK .. " has uncommitted changes:\n" .. join(dirty, "\n")) end
+-- Files and folders alone: walk names a symbolic link (and a socket or a
+-- FIFO) `other`.
+local odd = {}
+for e in walk_all(LIVE, {}) do
+  if e.kind ~= "file" and e.kind ~= "directory" then push(odd, e.path) end
+end
+if #odd > 0 then refuse(LIVE .. "/ holds " .. #odd .. " entries that are neither a file nor a folder (a symbolic link is one), which prod would serve wherever they point:\n" .. join(take(odd, 20), "\n")) end
 
 -- 3. prod's Caddyfile.
 if not asks_prod("grep -qxF 'import /etc/caddy/sites/*.caddy' /etc/caddy/Caddyfile", "prod's Caddyfile") then
@@ -197,7 +207,10 @@ if #only_here + #only_there > 0 then
   for l in take(only_there, 20) do print("prod, not staging: " .. l) end
   refuse("prod's files are not staging's: " .. #only_here .. " lines of staging's manifest are not prod's, " .. #only_there .. " of prod's are not staging's")
 end
-print(#files .. " files on prod, each staging's")
+local links = on_prod("cd " .. DIR .. " && find . ! -type f ! -type d -print", {timeout_ms = 120000, tail = 20})
+if get(links, "code", -1) ~= 0 then refuse(ssh_said(links, "prod's links")) end
+if trim(links.out) ~= "" then refuse("prod's " .. DIR .. "/ holds entries that are neither a file nor a folder (a link is one):\n" .. trim(links.out)) end
+print(#files .. " files on prod, each staging's, and no link")
 
 -- 6. The site block, installed only when it changed. cmp exits 2 on a file
 -- that is not there, so a first deploy's block counts as changed.
