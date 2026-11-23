@@ -88,11 +88,13 @@ Parser :: [].{
 				}
 				Declare(_, declarations) => {
 					for d in declarations {
-						if $names.contains(d.name) {
-							return Err(Parser.fault_at(d.at, Parser.redeclared_message(d.name)))
+						for name in Ast.pattern_names(d.pattern) {
+							if $names.contains(name) {
+								return Err(Parser.fault_at(d.at, Parser.redeclared_message(name)))
+							}
+							$names = $names.append(name)
+							$lexical = $lexical.append(name)
 						}
-						$names = $names.append(d.name)
-						$lexical = $lexical.append(d.name)
 					}
 				}
 				_ => {}
@@ -103,6 +105,19 @@ Parser :: [].{
 
 	redeclared_message : Str -> Str
 	redeclared_message = |name| "SyntaxError: Identifier '${name}' has already been declared"
+
+	# The first name `names` holds twice, if one is.
+	repeated_name : List(Str) -> Try(Str, [NoneRepeated])
+	repeated_name = |names| {
+		var $seen = []
+		for name in names {
+			if $seen.contains(name) {
+				return Ok(name)
+			}
+			$seen = $seen.append(name)
+		}
+		Err(NoneRepeated)
+	}
 
 	# ---- tokens ----------------------------------------------------------------
 
@@ -449,32 +464,32 @@ Parser :: [].{
 		var $out = []
 		var $more = True
 		while $more {
-			if Parser.is_punct($onward, "[") or Parser.is_punct($onward, "{") {
-				return Err(Parser.fault_here($onward, "unsupported: destructuring"))
-			}
 			site = Parser.here($onward)
-			name_found = Parser.name_here($onward, "a name to declare")?
-			if Parser.is_punct(name_found.parser, "=") {
-				parsed_expression = Parser.assignment(Parser.advance(name_found.parser))?
+			bound = Parser.pattern($onward, Declaring)?
+			if Parser.is_punct(bound.parser, "=") {
+				parsed_expression = Parser.assignment(Parser.advance(bound.parser))?
 				$out = $out.append({
-					name: name_found.value,
-					slot: Unresolved,
-					init: Initialized(
-						Parser.with_name_given(parsed_expression.value, name_found.value),
-					),
+					pattern: bound.value,
+					init: Initialized(Parser.named_for(parsed_expression.value, bound.value)),
 					at: site,
 				})
 				$onward = parsed_expression.parser
+			} else if !Parser.is_leaf(bound.value) {
+				return Err(
+					Parser.fault_here(
+						bound.parser,
+						"SyntaxError: Missing initializer in destructuring declaration",
+					),
+				)
 			} else if binding == Const {
-				return Err(Parser.fault_here(name_found.parser, "a `const` without a value"))
+				return Err(Parser.fault_here(bound.parser, "a `const` without a value"))
 			} else {
 				$out = $out.append({
-					name: name_found.value,
-					slot: Unresolved,
+					pattern: bound.value,
 					init: Uninitialized,
 					at: site,
 				})
-				$onward = name_found.parser
+				$onward = bound.parser
 			}
 			if Parser.is_punct($onward, ",") {
 				$onward = Parser.advance($onward)
@@ -499,6 +514,187 @@ Parser :: [].{
 		}
 		_ => tree
 	}
+
+	# A function literal bound by a pattern that is a plain name takes the
+	# name, as `with_name_given` gives it.
+	named_for : Ast.Expression, Ast.Pattern -> Ast.Expression
+	named_for = |tree, bound| match bound {
+		Leaf(ToName(name, _, _)) => Parser.with_name_given(tree, name)
+		_ => tree
+	}
+
+	is_leaf : Ast.Pattern -> Bool
+	is_leaf = |bound| match bound {
+		Leaf(_) => True
+		_ => False
+	}
+
+	# ---- patterns --------------------------------------------------------------
+
+	# How a pattern's leaves are written: a declaration's and a parameter's
+	# are names; an assignment's may be any target.
+	PatternMode : [Declaring, Assigning]
+
+	pattern : Parser.State, Parser.PatternMode -> Try(Parser.Parsed(Ast.Pattern), Lexer.Fault)
+	pattern = |parser, mode|
+		if Parser.is_punct(parser, "[") {
+			Parser.array_pattern(Parser.advance(parser), mode)
+		} else if Parser.is_punct(parser, "{") {
+			Parser.object_pattern(Parser.advance(parser), mode)
+		} else {
+			site = Parser.here(parser)
+			match mode {
+				Declaring => {
+					name_found = Parser.name_here(parser, "a name to declare")?
+					Ok({
+						parser: name_found.parser,
+						value: Leaf(ToName(name_found.value, Unresolved, site)),
+					})
+				}
+				Assigning => {
+					parsed = Parser.call_or_member(parser)?
+					target = Parser.target_of(parsed.value, site)?
+					Ok({ parser: parsed.parser, value: Leaf(target) })
+				}
+			}
+		}
+
+	# An array pattern after its `[`.
+	array_pattern : Parser.State, Parser.PatternMode -> Try(Parser.Parsed(Ast.Pattern), Lexer.Fault)
+	array_pattern = |parser, mode| {
+		var $onward = parser
+		var $items = []
+		var $rest = NoRest
+		while !Parser.is_punct($onward, "]") {
+			if Parser.is_punct($onward, ",") {
+				$items = $items.append(Hole)
+				$onward = Parser.advance($onward)
+			} else if Parser.is_punct($onward, "...") {
+				parsed = Parser.pattern(Parser.advance($onward), mode)?
+				if !Parser.is_punct(parsed.parser, "]") {
+					return Err(Parser.fault_here(parsed.parser, "SyntaxError: Rest element must be last element"))
+				}
+				$rest = RestOf(parsed.value)
+				$onward = parsed.parser
+			} else {
+				parsed = Parser.pattern($onward, mode)?
+				defaulted = Parser.default_after(parsed.parser, parsed.value)?
+				$items = $items.append(Item(parsed.value, defaulted.value))
+				$onward = Parser.after_part(defaulted.parser, "]", "an array pattern")?
+			}
+		}
+		Ok({ parser: Parser.advance($onward), value: ArrayPattern($items, $rest) })
+	}
+
+	# An object pattern after its `{`.
+	object_pattern : Parser.State, Parser.PatternMode -> Try(Parser.Parsed(Ast.Pattern), Lexer.Fault)
+	object_pattern = |parser, mode| {
+		var $onward = parser
+		var $properties = []
+		var $rest = NoRest
+		while !Parser.is_punct($onward, "}") {
+			if Parser.is_punct($onward, "...") {
+				parsed = Parser.pattern(Parser.advance($onward), mode)?
+				if !Parser.is_leaf(parsed.value) {
+					return Err(
+						Parser.fault_here(
+							Parser.advance($onward),
+							"SyntaxError: `...` must be followed by an assignable reference in assignment contexts",
+						),
+					)
+				}
+				if !Parser.is_punct(parsed.parser, "}") {
+					return Err(Parser.fault_here(parsed.parser, "SyntaxError: Rest element must be last element"))
+				}
+				$rest = RestOf(parsed.value)
+				$onward = parsed.parser
+			} else {
+				current = Parser.token($onward)
+				site = Parser.where_of(current)
+				key = match current.kind {
+					Name(text) => Ok(text)
+					Text(text) => Ok(text)
+					Number(number) => Ok(NumberText.text_for(number))
+					Punct("[") => Err(Parser.fault_here($onward, "unsupported: computed property names"))
+					other => Err(
+						Parser.fault_here(
+							$onward,
+							"expected a property's name, found ${Parser.token_text(other)}",
+						),
+					)
+				}?
+				after = Parser.advance($onward)
+				bound = if Parser.is_punct(after, ":") {
+					Parser.pattern(Parser.advance(after), mode)?
+				} else {
+					match current.kind {
+						Name(text) if !Parser.is_reserved(text) => {
+							parser: after,
+							value: Leaf(ToName(text, Unresolved, site)),
+						}
+						_ => return Err(Parser.fault_here(after, "expected `:` after a property's name"))
+					}
+				}
+				defaulted = Parser.default_after(bound.parser, bound.value)?
+				$properties = $properties.append({
+					key: key,
+					pattern: bound.value,
+					default: defaulted.value,
+				})
+				$onward = Parser.after_part(defaulted.parser, "}", "an object pattern")?
+			}
+		}
+		Ok({ parser: Parser.advance($onward), value: ObjectPattern($properties, $rest) })
+	}
+
+	# Past the `,` after a part of a list, or at its `close`.
+	after_part : Parser.State, Str, Str -> Try(Parser.State, Lexer.Fault)
+	after_part = |parser, close, what|
+		if Parser.is_punct(parser, ",") {
+			Ok(Parser.advance(parser))
+		} else if Parser.is_punct(parser, close) {
+			Ok(parser)
+		} else {
+			Err(
+				Parser.fault_here(
+					parser,
+					"expected `,` or `${close}` in ${what}, found ${Parser.token_text(Parser.token(parser).kind)}",
+				),
+			)
+		}
+
+	# A pattern's default, `= value`, if one follows it.
+	default_after : Parser.State, Ast.Pattern -> Try(Parser.Parsed(Ast.Default), Lexer.Fault)
+	default_after = |parser, bound|
+		if Parser.is_punct(parser, "=") {
+			parsed = Parser.assignment(Parser.advance(parser))?
+			Ok({ parser: parsed.parser, value: Defaulted(Parser.named_for(parsed.value, bound)) })
+		} else {
+			Ok({ parser: parser, value: NoDefault })
+		}
+
+	# Whether an assignment to a pattern starts here: a `[` or a `{` whose
+	# closing bracket is followed by `=`.
+	is_pattern_assignment : Parser.State -> Bool
+	is_pattern_assignment = |parser|
+		if Parser.is_punct(parser, "[") or Parser.is_punct(parser, "{") {
+			match parser.tokens.get(Parser.matching_close(parser) + 1) {
+				Ok(current) => current.kind == Punct("=")
+				Err(OutOfBounds) => False
+			}
+		} else {
+			False
+		}
+
+	# The parser past the binding at its place: a name, or a pattern to its
+	# closing bracket.
+	after_binding : Parser.State -> Parser.State
+	after_binding = |parser|
+		if Parser.is_punct(parser, "[") or Parser.is_punct(parser, "{") {
+			{ ..parser, at: U64.min(Parser.matching_close(parser) + 1, parser.tokens.len() - 1) }
+		} else {
+			Parser.advance(parser)
+		}
 
 	if_statement : Parser.State -> Try(Parser.Parsed(Ast.Statement), Lexer.Fault)
 	if_statement = |parser| {
@@ -525,11 +721,12 @@ Parser :: [].{
 		} else {
 			Unbound
 		}
+		past_binding = Parser.after_binding(Parser.advance(onward))
 		match binding_word {
-			Bound(binding) if Parser.is_word(Parser.advance(Parser.advance(onward)), "of") => {
+			Bound(binding) if Parser.is_word(past_binding, "of") => {
 				Parser.for_of_rest(Parser.advance(onward), binding)
 			}
-			Bound(_) if Parser.is_word(Parser.advance(Parser.advance(onward)), "in") => {
+			Bound(_) if Parser.is_word(past_binding, "in") => {
 				Err(
 					Parser.fault_here(
 						onward,
@@ -585,17 +782,29 @@ Parser :: [].{
 	for_of_rest : Parser.State, Ast.Binding -> Try(Parser.Parsed(Ast.Statement), Lexer.Fault)
 	for_of_rest = |parser, binding| {
 		site = Parser.here(parser)
-		name_found = Parser.name_here(parser, "a name to declare")?
-		parsed_expression = Parser.assignment(Parser.advance(name_found.parser))?
+		bound = Parser.pattern(parser, Declaring)?
+		names = Ast.pattern_names(bound.value)
+		match Parser.repeated_name(names) {
+			Ok(name) => return Err(Parser.fault_at(site, Parser.redeclared_message(name)))
+			Err(NoneRepeated) => {}
+		}
+		parsed_expression = Parser.assignment(Parser.advance(bound.parser))?
 		onward = Parser.expect_punct(parsed_expression.parser, ")")?
 		before = onward.functions
 		body = Parser.body_statement(onward)?
 		loop = {
 			binding: binding,
-			name: name_found.value,
+			pattern: bound.value,
+			names: names,
 			iterable: parsed_expression.value,
 			body: body.value,
-			capture: Parser.capture_since(body.parser, before),
+			# A closure in the pattern's defaults can capture the pass's scope
+			# too; one in the iterable can't.
+			capture: if bound.parser.functions > parser.functions {
+				Captures
+			} else {
+				Parser.capture_since(body.parser, before)
+			},
 			at: site,
 		}
 		Ok({ parser: body.parser, value: ForOf(loop) })
@@ -613,12 +822,19 @@ Parser :: [].{
 	ParsedExpression : Try(Parser.Parsed(Ast.Expression), Lexer.Fault)
 
 	# What a function's body is parsed with: the function's name, its
-	# parameters and where it starts.
+	# parameters, where it starts, and how many function literals the parser
+	# had passed before its parameters, since a closure in a parameter's
+	# default captures the call's scope as one in the body does.
 	Signature : {
 		name : Str,
-		parameters : List(Str),
+		parameters : Parser.Parameters,
 		at : Ast.Where,
+		before : U64,
 	}
+
+	## A function's parameters: the names they bind, in order, and how the
+	## arguments reach them.
+	Parameters : { names : List(Str), binding : Ast.ParameterBinding }
 
 	function_rest : Parser.State, Ast.Where, Parser.Naming -> Parser.ParsedFunction
 	function_rest = |parser, site, naming| {
@@ -642,55 +858,75 @@ Parser :: [].{
 				name: named_p.value,
 				parameters: parameters.value,
 				at: site,
+				before: named_p.parser.functions,
 			},
 		)
 	}
 
-	parameter_list : Parser.State -> Try(Parser.Parsed(List(Str)), Lexer.Fault)
+	# The parameters in their parentheses: each a name or a pattern, with a
+	# default or none, and a rest parameter last.
+	parameter_list : Parser.State -> Try(Parser.Parsed(Parser.Parameters), Lexer.Fault)
 	parameter_list = |parser| {
 		var $onward = Parser.expect_punct(parser, "(")?
+		var $items = []
 		var $names = []
+		var $rest = NoRest
+		var $plain = True
 		while !Parser.is_punct($onward, ")") {
-			if Parser.is_punct($onward, "...") {
-				return Err(Parser.fault_here($onward, "unsupported: rest parameters"))
-			}
-			if Parser.is_punct($onward, "[") or Parser.is_punct($onward, "{") {
-				return Err(Parser.fault_here($onward, "unsupported: destructuring"))
-			}
-			name_found = Parser.name_here($onward, "a parameter's name")?
-			if Parser.is_punct(name_found.parser, "=") {
-				return Err(Parser.fault_here(name_found.parser, "unsupported: default parameters"))
-			}
-			if $names.contains(name_found.value) {
-				return Err(
-					Parser.fault_here(
-						$onward,
-						"unsupported: two parameters named `${name_found.value}`",
-					),
-				)
-			}
-			$names = $names.append(name_found.value)
-			$onward = if Parser.is_punct(name_found.parser, ",") {
-				Parser.advance(name_found.parser)
+			start = $onward
+			rests = Parser.is_punct($onward, "...")
+			bound = if rests {
+				Parser.pattern(Parser.advance($onward), Declaring)?
 			} else {
-				name_found.parser
+				Parser.pattern($onward, Declaring)?
 			}
-			if !Parser.is_punct($onward, ")") and !Parser.is_punct(name_found.parser, ",") {
-				return Err(Parser.fault_here($onward, "expected `,` or `)` in the parameters"))
+			for name in Ast.pattern_names(bound.value) {
+				if $names.contains(name) {
+					return Err(Parser.fault_here(start, "unsupported: two parameters named `${name}`"))
+				}
+				$names = $names.append(name)
+			}
+			if rests {
+				if !Parser.is_punct(bound.parser, ")") {
+					return Err(
+						Parser.fault_here(
+							bound.parser,
+							"SyntaxError: Rest parameter must be last formal parameter",
+						),
+					)
+				}
+				$rest = RestOf(bound.value)
+				$plain = False
+				$onward = bound.parser
+			} else {
+				defaulted = Parser.default_after(bound.parser, bound.value)?
+				match (bound.value, defaulted.value) {
+					(Leaf(_), NoDefault) => {}
+					_ => {
+						$plain = False
+					}
+				}
+				$items = $items.append({ pattern: bound.value, default: defaulted.value })
+				$onward = Parser.after_part(defaulted.parser, ")", "the parameters")?
 			}
 		}
-		Ok({ parser: Parser.advance($onward), value: $names })
+		binding = if $plain {
+			Plain
+		} else {
+			Patterned({ items: $items, rest: $rest })
+		}
+		Ok({ parser: Parser.advance($onward), value: { names: $names, binding: binding } })
 	}
 
 	function_body : Parser.State, Parser.Signature -> Parser.ParsedFunction
 	function_body = |parser, signature| {
-		{ name, parameters, at: site } = signature
-		before = parser.functions
+		{ name, parameters, at: site, before } = signature
 		parsed_block = Parser.block(parser)?
 		definition = {
 			name: name,
-			parameters: parameters,
-			names: Parser.scope_names(parameters, parsed_block.value.statements)?,
+			parameters: parameters.names,
+			binding: parameters.binding,
+			names: Parser.scope_names(parameters.names, parsed_block.value.statements)?,
 			statements: parsed_block.value.statements,
 			capture: Parser.capture_since(parsed_block.parser, before),
 			at: site,
@@ -747,10 +983,14 @@ Parser :: [].{
 	arrow : Parser.State -> Try(Parser.Parsed(Ast.Expression), Lexer.Fault)
 	arrow = |parser| {
 		site = Parser.here(parser)
+		before = parser.functions
 		parameters = match Parser.token(parser).kind {
 			Name(_) => {
 				name_found = Parser.name_here(parser, "a parameter's name")?
-				Ok({ parser: name_found.parser, value: [name_found.value] })
+				Ok({
+					parser: name_found.parser,
+					value: { names: [name_found.value], binding: Plain },
+				})
 			}
 			_ => Parser.parameter_list(parser)
 		}?
@@ -762,16 +1002,17 @@ Parser :: [].{
 					name: "",
 					parameters: parameters.value,
 					at: site,
+					before: before,
 				},
 			)?
 			Ok({ parser: definition.parser, value: Function(Box.box(definition.value)) })
 		} else {
-			before = onward.functions
 			parsed_expression = Parser.assignment(onward)?
 			definition = {
 				name: "",
-				parameters: parameters.value,
-				names: parameters.value,
+				parameters: parameters.value.names,
+				binding: parameters.value.binding,
+				names: parameters.value.names,
 				statements: [Return(parsed_expression.value)],
 				capture: Parser.capture_since(parsed_expression.parser, before),
 				at: site,
@@ -834,6 +1075,12 @@ Parser :: [].{
 	assignment = |parser|
 		if Parser.is_arrow_start(parser) {
 			Parser.arrow(parser)
+		} else if Parser.is_pattern_assignment(parser) {
+			site = Parser.here(parser)
+			bound = Parser.pattern(parser, Assigning)?
+			onward = Parser.expect_punct(bound.parser, "=")?
+			right = Parser.assignment(onward)?
+			Ok({ parser: right.parser, value: Destructure(bound.value, right.value, site) })
 		} else {
 			site = Parser.here(parser)
 			left = Parser.conditional(parser)?
@@ -1328,6 +1575,7 @@ Parser :: [].{
 					name: key,
 					parameters: parameters.value,
 					at: site,
+					before: after.functions,
 				},
 			)?
 			Ok({

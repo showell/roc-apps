@@ -816,6 +816,50 @@ Interp :: [].{
 	line_note : Ast.Where -> Str
 	line_note = |site| " (line ${site.line.to_str()})"
 
+	# The machine stopped by one of JavaScript's own errors, `name`, saying
+	# `message`, as node words it, at `site`.
+	with_error : Interp.Machine, Heap.ErrorName, Str, Ast.Where -> Interp.Machine
+	with_error = |machine, name, message, site|
+		Interp.with_fault(machine, "${Heap.error_name_text(name)}: ${message}${Interp.line_note(site)}")
+
+	error_got : Interp.Machine, Heap.ErrorName, Str, Ast.Where -> Interp.Got
+	error_got = |machine, name, message, site| {
+		machine: Interp.with_error(machine, name, message, site),
+		value: Undefined,
+	}
+
+	# An expression as V8 writes it in a message (`o.f is not a function`):
+	# names, properties, indices, calls and literals, and `(intermediate
+	# value)` for the rest.
+	source_text : Ast.Expression -> Str
+	source_text = |expression| match expression {
+		Name(name, _, _) => name
+		Member(object, key, _) => "${Interp.source_text(object)}.${key}"
+		Index(object, key, _) => "${Interp.source_text(object)}[${Interp.source_text(key)}]"
+		Call(callee, _, _) => "${Interp.source_text(callee)}(...)"
+		Number(number) => NumberText.text_for(number)
+		Text(text) => "\"${text}\""
+		Boolean(truth) => if truth {
+			"true"
+		} else {
+			"false"
+		}
+		Null => "null"
+		Undefined => "undefined"
+		ObjectLit([]) => "{}"
+		ObjectLit(_) => "{(intermediate value)}"
+		ArrayLit(items) => {
+			shown = items.map(
+				|item| match item {
+					Single(single) => Interp.source_text(single)
+					Spread(_, _) => "(intermediate value)"
+				},
+			)
+			"[${Str.join_with(shown, ",")}]"
+		}
+		_ => "(intermediate value)"
+	}
+
 	# ---- scopes ----------------------------------------------------------------
 
 	# Where a slot's variable is: its scope and its place there.
@@ -1031,18 +1075,29 @@ Interp :: [].{
 				Interp.normal(after)
 			}
 			Declare(binding, declarations) => {
+				state = Interp.state_of(binding)
 				var $s = machine
-				for right_byte in declarations {
+				for declarator in declarations {
 					if Interp.is_running($s) {
-						{ machine: made, value } = match right_byte.init {
+						{ machine: made, value } = match declarator.init {
 							Initialized(expression) => Interp.evaluate!(host, $s, expression)
 							Uninitialized => { machine: $s, value: Undefined }
 						}
-						state = match binding {
-							Let => Mutable
-							Const => Fixed
+						$s = match (declarator.pattern, declarator.init) {
+							(Leaf(ToName(_, slot, _)), _) => Interp.declare(made, slot, value, state)
+							(pattern, Initialized(expression)) => Interp.with_pattern_bound!(
+								host,
+								made,
+								pattern,
+								{
+									value: value,
+									how: Declaring(state),
+									origin: Written(expression),
+									at: declarator.at,
+								},
+							)
+							(_, Uninitialized) => crash "Interp.execute!: Parser.declarators gives every pattern a value"
 						}
-						$s = Interp.declare(made, right_byte.slot, value, state)
 					}
 				}
 				Interp.normal($s)
@@ -1166,28 +1221,21 @@ Interp :: [].{
 	execute_iteration! : Canvas.Host, Interp.Machine, Ast.ForOfLoop => Interp.Done
 	execute_iteration! = |host, machine, loop| {
 		{ machine: got, value: iterable } = Interp.evaluate!(host, machine, loop.iterable)
-		state = match loop.binding {
-			Let => Mutable
-			Const => Fixed
-		}
+		state = Interp.state_of(loop.binding)
 		match iterable {
 			Reference(id) => match Interp.kind_of(got.cells, id) {
 				ArrayKind(_) => Interp.execute_for_of_array!(host, got, loop, id, state)
-				_ => Interp.normal(
-					Interp.with_fault(
-						got,
-						"unsupported: `for ... of` over anything but an array or a string${Interp.line_note(loop.at)}",
-					),
-				)
+				_ => Interp.normal(Interp.with_not_iterable(got, iterable, Written(loop.iterable), loop.at))
 			}
 			Text(text) => Interp.execute_for_of_text!(host, got, loop, text, state)
-			_ => Interp.normal(
-				Interp.with_fault(
-					got,
-					"TypeError: the value is not iterable${Interp.line_note(loop.at)}",
-				),
-			)
+			_ => Interp.normal(Interp.with_not_iterable(got, iterable, Written(loop.iterable), loop.at))
 		}
+	}
+
+	state_of : Ast.Binding -> Interp.VariableState
+	state_of = |binding| match binding {
+		Let => Mutable
+		Const => Fixed
 	}
 
 	execute_for_of_array! : Canvas.Host, Interp.Machine, Ast.ForOfLoop, U64, Interp.VariableState => Interp.Done
@@ -1282,9 +1330,26 @@ Interp :: [].{
 	execute_for_of_pass! : Canvas.Host, Interp.Machine, Ast.ForOfLoop, Interp.Variable => Interp.Done
 	execute_for_of_pass! = |host, machine, loop, binding| {
 		outer = machine.scope
-		inner = Interp.with_scope_added(machine, { variables: [binding], parent: Within(outer) })
+		inner = match loop.pattern {
+			Leaf(_) => Interp.with_scope_added(machine, { variables: [binding], parent: Within(outer) })
+			pattern => Interp.with_pattern_bound!(
+				host,
+				Interp.with_scope_entered(machine, Within(outer), loop.names.len()),
+				pattern,
+				{
+					value: binding.value,
+					how: Declaring(binding.state),
+					origin: Nested,
+					at: loop.at,
+				},
+			)
+		}
 		id = inner.scope
-		{ machine: after, flow } = Interp.execute!(host, inner, loop.body)
+		{ machine: after, flow } = if Interp.is_running(inner) {
+			Interp.execute!(host, inner, loop.body)
+		} else {
+			Interp.normal(inner)
+		}
 		{ machine: Interp.out_of_scope(after, id, outer, loop.capture), flow: flow }
 	}
 
@@ -1538,6 +1603,21 @@ Interp :: [].{
 				machine,
 				Fun({ fun: definition, scope: machine.scope }),
 			)
+			Destructure(pattern, expression, site) => {
+				{ machine: after, value } = Interp.evaluate!(host, machine, expression)
+				bound = Interp.with_pattern_bound!(
+					host,
+					after,
+					pattern,
+					{
+						value: value,
+						how: Assigning,
+						origin: Written(expression),
+						at: site,
+					},
+				)
+				{ machine: bound, value: value }
+			}
 		}
 
 	# The machine after an expression whose value is not wanted.
@@ -1570,10 +1650,7 @@ Interp :: [].{
 							$values = List.concat($values, items)
 						}
 						Err(NotIterable) => {
-							$s = Interp.with_fault(
-								after,
-								"TypeError: the value is not iterable${Interp.line_note(site)}",
-							)
+							$s = Interp.with_not_iterable(after, value, Written(expression), site)
 						}
 					}
 				}
@@ -1979,6 +2056,7 @@ Interp :: [].{
 		Update(_, _, _, _) => False
 		Call(_, _, _) => False
 		Function(_) => False
+		Destructure(_, _, _) => False
 	}
 
 	is_pure_element : Ast.Element -> Bool
@@ -2166,6 +2244,320 @@ Interp :: [].{
 				}
 			}
 		}
+	}
+
+	# ---- patterns --------------------------------------------------------------
+
+	## How a pattern's leaves take their values: declared in the scope being
+	## made, in the state given, or assigned as `=` assigns.
+	How : [Declaring(Interp.VariableState), Assigning]
+
+	## Where a value being taken apart came from, which node's messages name
+	## when it can't be: the expression written beside the pattern, a call's
+	## argument, or a part of a bigger value.
+	Origin : [Written(Ast.Expression), Argument, Nested]
+
+	## A value for a pattern to take apart, and how its leaves take theirs.
+	Binding : {
+		value : Heap.Value,
+		how : Interp.How,
+		origin : Interp.Origin,
+		at : Ast.Where,
+	}
+
+	ItemPatterns : { items : List(Ast.ArrayItem), rest : Ast.Rest }
+
+	PropertyPatterns : { properties : List(Ast.PropertyPattern), rest : Ast.Rest }
+
+	ParameterPatterns : { items : List(Ast.Parameter), rest : Ast.Rest }
+
+	with_pattern_bound! : Canvas.Host, Interp.Machine, Ast.Pattern, Interp.Binding => Interp.Machine
+	with_pattern_bound! = |host, machine, pattern, binding|
+		if !Interp.is_running(machine) {
+			machine
+		} else {
+			match pattern {
+				Leaf(target) => Interp.with_leaf_bound!(host, machine, target, binding)
+				ArrayPattern(items, rest) => Interp.with_items_bound!(
+					host,
+					machine,
+					{ items: items, rest: rest },
+					binding,
+				)
+				ObjectPattern(properties, rest) => Interp.with_properties_bound!(
+					host,
+					machine,
+					{ properties: properties, rest: rest },
+					binding,
+				)
+			}
+		}
+
+	with_leaf_bound! : Canvas.Host, Interp.Machine, Ast.Target, Interp.Binding => Interp.Machine
+	with_leaf_bound! = |host, machine, target, binding| {
+		{ value, how, origin: _, at } = binding
+		match (how, target) {
+			(Declaring(state), ToName(_, slot, _)) => Interp.declare(machine, slot, value, state)
+			(Declaring(_), _) => crash "Interp.with_leaf_bound!: Parser.pattern declares names alone"
+			(Assigning, ToName(name, slot, site)) => {
+				{ machine: after, value: _ } = Interp.assigned_name(machine, value, name, slot, site)
+				after
+			}
+			(Assigning, ToMember(object, key)) => {
+				{ machine: first, value: holder } = Interp.evaluate!(host, machine, object)
+				{ machine: after, value: _ } = Interp.with_stored(first, holder, Text(key), value, at)
+				after
+			}
+			(Assigning, ToIndex(object, key)) => {
+				{ machine: first, value: holder } = Interp.evaluate!(host, machine, object)
+				{ machine: second, value: key_value } = Interp.evaluate!(host, first, key)
+				{ machine: after, value: _ } = Interp.with_stored(second, holder, key_value, value, at)
+				after
+			}
+		}
+	}
+
+	# What a pattern walks: an array's items, read from the heap as the walk
+	# goes, since what it binds may change the array, or values made once.
+	Walked : [ItemsOf(U64), Values(List(Heap.Value))]
+
+	walked_of : Interp.Machine, Heap.Value -> Try(Interp.Walked, [NotIterable])
+	walked_of = |machine, subject|
+		match subject {
+			Reference(id) => match Interp.kind_of(machine.cells, id) {
+				ArrayKind(_) => Ok(ItemsOf(id))
+				_ => Err(NotIterable)
+			}
+			Text(text) => Ok(Values(Interp.characters(text).map(|character| Text(character))))
+			_ => Err(NotIterable)
+		}
+
+	walked_at : Interp.Machine, Interp.Walked, U64 -> Heap.Value
+	walked_at = |machine, walked, position|
+		match walked {
+			ItemsOf(id) => Interp.item_at(machine, id, position)
+			Values(values) => values.get(position) ?? Undefined
+		}
+
+	walked_from : Interp.Machine, Interp.Walked, U64 -> List(Heap.Value)
+	walked_from = |machine, walked, position|
+		match walked {
+			ItemsOf(id) => Interp.items_of(machine, id).drop_first(position)
+			Values(values) => values.drop_first(position)
+		}
+
+	with_items_bound! : Canvas.Host, Interp.Machine, Interp.ItemPatterns, Interp.Binding => Interp.Machine
+	with_items_bound! = |host, machine, { items, rest }, binding| {
+		{ value, how, origin, at } = binding
+		match Interp.walked_of(machine, value) {
+			Err(NotIterable) => Interp.with_not_iterable(machine, value, origin, at)
+			Ok(walked) => {
+				var $s = machine
+				var $i = 0
+				for item in items {
+					match item {
+						Hole => {}
+						Item(inner, default) => {
+							given = Interp.walked_at($s, walked, $i)
+							{ machine: after, value: chosen } = Interp.defaulted!(host, $s, given, default)
+							$s = Interp.with_pattern_bound!(
+								host,
+								after,
+								inner,
+								{
+									value: chosen,
+									how: how,
+									origin: Nested,
+									at: at,
+								},
+							)
+						}
+					}
+					$i = $i + 1
+				}
+				match rest {
+					NoRest => $s
+					RestOf(inner) => {
+						left = Interp.walked_from($s, walked, $i)
+						{ machine: made, value: array } = Interp.alloc($s, Array(left))
+						Interp.with_pattern_bound!(
+							host,
+							made,
+							inner,
+							{
+								value: array,
+								how: how,
+								origin: Nested,
+								at: at,
+							},
+						)
+					}
+				}
+			}
+		}
+	}
+
+	with_properties_bound! : Canvas.Host, Interp.Machine, Interp.PropertyPatterns, Interp.Binding => Interp.Machine
+	with_properties_bound! = |host, machine, { properties, rest }, binding| {
+		{ value, how, origin, at } = binding
+		match value {
+			Null | Undefined => Interp.with_error(
+				machine,
+				TypeError,
+				Interp.destructure_message(value, properties, origin),
+				at,
+			)
+			_ => {
+				var $s = machine
+				for part in properties {
+					{ machine: read, value: given } = Interp.property($s, value, part.key, at)
+					{ machine: after, value: chosen } = Interp.defaulted!(host, read, given, part.default)
+					$s = Interp.with_pattern_bound!(
+						host,
+						after,
+						part.pattern,
+						{
+							value: chosen,
+							how: how,
+							origin: Nested,
+							at: at,
+						},
+					)
+				}
+				match rest {
+					NoRest => $s
+					RestOf(inner) => match Interp.properties_left($s.cells, value, properties.map(|p| p.key)) {
+						Ok(left) => {
+							{ machine: made, value: object } = Interp.alloc($s, Object(left))
+							Interp.with_pattern_bound!(
+								host,
+								made,
+								inner,
+								{
+									value: object,
+									how: how,
+									origin: Nested,
+									at: at,
+								},
+							)
+						}
+						Err(Unsupported(why)) => Interp.with_fault($s, "${why}${Interp.line_note(at)}")
+					}
+				}
+			}
+		}
+	}
+
+	# The call's parameters bound from its arguments: each pattern given its
+	# argument, or its default where the argument is `undefined`, then the rest
+	# parameter the items the others left.
+	with_parameters_bound! : Canvas.Host, Interp.Machine, Interp.ParameterPatterns, List(Heap.Value), Ast.Where => Interp.Machine
+	with_parameters_bound! = |host, machine, { items, rest }, arguments, site| {
+		var $s = machine
+		var $i = 0
+		for item in items {
+			given = arguments.get($i) ?? Undefined
+			{ machine: after, value: chosen } = Interp.defaulted!(host, $s, given, item.default)
+			$s = Interp.with_pattern_bound!(
+				host,
+				after,
+				item.pattern,
+				{
+					value: chosen,
+					how: Declaring(Mutable),
+					origin: Argument,
+					at: site,
+				},
+			)
+			$i = $i + 1
+		}
+		match rest {
+			NoRest => $s
+			RestOf(inner) => {
+				{ machine: made, value: array } = Interp.alloc($s, Array(arguments.drop_first(items.len())))
+				Interp.with_pattern_bound!(
+					host,
+					made,
+					inner,
+					{
+						value: array,
+						how: Declaring(Mutable),
+						origin: Nested,
+						at: site,
+					},
+				)
+			}
+		}
+	}
+
+	# `given`, or the default's value where `given` is `undefined`.
+	defaulted! : Canvas.Host, Interp.Machine, Heap.Value, Ast.Default => Interp.Got
+	defaulted! = |host, machine, given, default|
+		match (given, default) {
+			(Undefined, Defaulted(expression)) => Interp.evaluate!(host, machine, expression)
+			_ => { machine: machine, value: given }
+		}
+
+	# An object's own properties but those `taken`, in key order, as `...rest`
+	# takes them.
+	properties_left : List(Heap.Cell), Heap.Value, List(Str) -> Try(List(Heap.Property), [Unsupported(Str)])
+	properties_left = |cells, subject, taken| {
+		refused = Err(Unsupported("unsupported: `...rest` of anything but a plain object"))
+		match subject {
+			Reference(id) => match Heap.cell_at(cells, id) {
+				Object(properties) => Ok(
+					Inspect.properties_in_key_order(properties).keep_if(|p| !taken.contains(p.key)),
+				)
+				_ => refused
+			}
+			_ => refused
+		}
+	}
+
+	# node's words for a pattern of properties given `null` or `undefined`.
+	destructure_message : Heap.Value, List(Ast.PropertyPattern), Interp.Origin -> Str
+	destructure_message = |subject, properties, origin| {
+		nothing = match subject {
+			Null => "null"
+			_ => "undefined"
+		}
+		source = match origin {
+			Written(expression) => Interp.source_text(expression)
+			Argument => match subject {
+				Null => "object null"
+				_ => "undefined"
+			}
+			Nested => nothing
+		}
+		match (origin, properties.first()) {
+			(Nested, Ok(first)) => "Cannot read properties of ${nothing} (reading '${first.key}')"
+			(_, Ok(first)) => "Cannot destructure property '${first.key}' of '${source}' as it is ${nothing}."
+			(_, Err(ListWasEmpty)) => "Cannot destructure '${source}' as it is ${nothing}."
+		}
+	}
+
+	# The machine stopped by the TypeError node gives for taking apart, or
+	# walking, what isn't iterable: the expression written, where there is one,
+	# else the value's type and value.
+	with_not_iterable : Interp.Machine, Heap.Value, Interp.Origin, Ast.Where -> Interp.Machine
+	with_not_iterable = |machine, subject, origin, site| {
+		message = match origin {
+			Written(expression) => "${Interp.source_text(expression)} is not iterable"
+			_ => {
+				shown = match subject {
+					Number(number) => "number ${NumberText.text_for(number)}"
+					Boolean(truth) => if truth {
+						"boolean true"
+					} else {
+						"boolean false"
+					}
+					Null => "object null"
+					_ => Interp.type_of(machine.cells, subject)
+				}
+				"${shown} is not iterable (cannot read property Symbol(Symbol.iterator))"
+			}
+		}
+		Interp.with_error(machine, TypeError, message, site)
 	}
 
 	# ---- properties ------------------------------------------------------------
@@ -2498,9 +2890,19 @@ Interp :: [].{
 				},
 			)
 			id = inside.scope
+			bound = match definition.binding {
+				Plain => inside
+				Patterned(parameters) => Interp.with_parameters_bound!(
+					host,
+					inside,
+					parameters,
+					arguments,
+					definition.at,
+				)
+			}
 			{ machine: after, flow } = Interp.execute_list!(
 				host,
-				Interp.with_functions_hoisted(inside, definition.statements),
+				Interp.with_functions_hoisted(bound, definition.statements),
 				definition.statements,
 			)
 			value = match flow {
@@ -2512,10 +2914,14 @@ Interp :: [].{
 		}
 
 	# A call's variables: each parameter holding its argument, then the rest
-	# of the function's layout, unready.
+	# of the function's layout, unready. Parameters bound through patterns
+	# start unready too, and `with_parameters_bound!` makes them.
 	call_variables : Ast.FunctionDefinition, List(Heap.Value) -> List(Interp.Variable)
 	call_variables = |definition, arguments| {
-		parameters = definition.parameters.len()
+		parameters = match definition.binding {
+			Plain => definition.parameters.len()
+			Patterned(_) => 0
+		}
 		var $variables = List.with_capacity(definition.names.len())
 		var $i = 0
 		while $i < definition.names.len() {

@@ -66,9 +66,63 @@ Resolve :: [].{
 		inner = scopes.append(definition.names)
 		{
 			..definition,
+			binding: match definition.binding {
+				Plain => Plain
+				Patterned({ items, rest }) => Patterned({
+					items: items.map(
+						|given| {
+							pattern: Resolve.pattern(inner, given.pattern),
+							default: Resolve.pattern_default(inner, given.default),
+						},
+					),
+					rest: Resolve.pattern_rest(inner, rest),
+				})
+			},
 			statements: definition.statements.map(|source| Resolve.statement(inner, source)),
 		}
 	}
+
+	pattern : Resolve.Scopes, Ast.Pattern -> Ast.Pattern
+	pattern = |scopes, given|
+		match given {
+			Leaf(assigned) => Leaf(Resolve.target(scopes, assigned))
+			ArrayPattern(items, rest) => ArrayPattern(
+				items.map(
+					|item| match item {
+						Hole => Hole
+						Item(inner, default) => Item(
+							Resolve.pattern(scopes, inner),
+							Resolve.pattern_default(scopes, default),
+						)
+					},
+				),
+				Resolve.pattern_rest(scopes, rest),
+			)
+			ObjectPattern(properties, rest) => ObjectPattern(
+				properties.map(
+					|property| {
+						key: property.key,
+						pattern: Resolve.pattern(scopes, property.pattern),
+						default: Resolve.pattern_default(scopes, property.default),
+					},
+				),
+				Resolve.pattern_rest(scopes, rest),
+			)
+		}
+
+	pattern_default : Resolve.Scopes, Ast.Default -> Ast.Default
+	pattern_default = |scopes, given|
+		match given {
+			Defaulted(tree) => Defaulted(Resolve.expression(scopes, tree))
+			NoDefault => NoDefault
+		}
+
+	pattern_rest : Resolve.Scopes, Ast.Rest -> Ast.Rest
+	pattern_rest = |scopes, given|
+		match given {
+			RestOf(inner) => RestOf(Resolve.pattern(scopes, inner))
+			NoRest => NoRest
+		}
 
 	statement : Resolve.Scopes, Ast.Statement -> Ast.Statement
 	statement = |scopes, source|
@@ -107,11 +161,15 @@ Resolve :: [].{
 					body: Resolve.statement(inner, loop.body),
 				})
 			}
-			ForOf(loop) => ForOf({
-				..loop,
-				iterable: Resolve.expression(scopes, loop.iterable),
-				body: Resolve.statement(scopes.append([loop.name]), loop.body),
-			})
+			ForOf(loop) => {
+				inner = scopes.append(loop.names)
+				ForOf({
+					..loop,
+					pattern: Resolve.pattern(inner, loop.pattern),
+					iterable: Resolve.expression(scopes, loop.iterable),
+					body: Resolve.statement(inner, loop.body),
+				})
+			}
 			BlockStatement(tree_block) => BlockStatement(Resolve.block(scopes, tree_block))
 			Return(tree) => Return(Resolve.expression(scopes, tree))
 			Break => Break
@@ -126,7 +184,7 @@ Resolve :: [].{
 			Initialized(tree) => Initialized(Resolve.expression(scopes, tree))
 			Uninitialized => Uninitialized
 		},
-		slot: Resolve.slot(scopes, given.name),
+		pattern: Resolve.pattern(scopes, given.pattern),
 	}
 
 	element : Resolve.Scopes, Ast.Element -> Ast.Element
@@ -203,6 +261,11 @@ Resolve :: [].{
 				site,
 			)
 			Function(definition) => Function(Box.box(Resolve.fun(scopes, definition.unbox())))
+			Destructure(assigned, value, site) => Destructure(
+				Resolve.pattern(scopes, assigned),
+				Resolve.expression(scopes, value),
+				site,
+			)
 		}
 	}
 }

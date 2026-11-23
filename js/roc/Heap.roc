@@ -95,6 +95,18 @@ Heap :: [].{
 	## The timers, JavaScript's own, in both libraries.
 	Timing : [SetTimeout, SetInterval, ClearTimeout, ClearInterval]
 
+	## The errors JavaScript's own operations throw, by their names.
+	ErrorName : [Error, TypeError, RangeError, ReferenceError, SyntaxError]
+
+	error_name_text : Heap.ErrorName -> Str
+	error_name_text = |name| match name {
+		Error => "Error"
+		TypeError => "TypeError"
+		RangeError => "RangeError"
+		ReferenceError => "ReferenceError"
+		SyntaxError => "SyntaxError"
+	}
+
 	Closure : { fun : Box(Ast.FunctionDefinition), scope : U64 }
 
 	Cell : [

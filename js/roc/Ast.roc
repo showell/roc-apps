@@ -42,7 +42,62 @@ Ast :: [].{
 		# Boxed, so a heap cell holding a closure is no bigger than one holding
 		# an object.
 		Function(Box(Ast.FunctionDefinition)),
+		# An assignment whose left side is a pattern: `[a, b] = [b, a]`.
+		Destructure(Ast.Pattern, Ast.Expression, Ast.Where),
 	]
+
+	## What a destructuring binds: a name or another target (`Leaf`), or the
+	## items of an iterable, or the properties of an object, each bound to a
+	## pattern in turn. A declaration's and a parameter's leaves are names; an
+	## assignment's may be any target.
+	Pattern := [
+		Leaf(Ast.Target),
+		ArrayPattern(List(Ast.ArrayItem), Ast.Rest),
+		ObjectPattern(List(Ast.PropertyPattern), Ast.Rest),
+	]
+
+	# An array pattern's place: skipped (`[a, , b]`), or bound.
+	ArrayItem : [Hole, Item(Ast.Pattern, Ast.Default)]
+
+	PropertyPattern : { key : Str, pattern : Ast.Pattern, default : Ast.Default }
+
+	# The value a pattern takes when what it is given is `undefined`.
+	Default : [Defaulted(Ast.Expression), NoDefault]
+
+	# What `...rest` binds: the items, or the properties, left over.
+	Rest : [RestOf(Ast.Pattern), NoRest]
+
+	# The names a declaring pattern binds, in the order they are written.
+	pattern_names : Ast.Pattern -> List(Str)
+	pattern_names = |pattern| {
+		rest_names = |rest| match rest {
+			RestOf(inner) => Ast.pattern_names(inner)
+			NoRest => []
+		}
+		match pattern {
+			Leaf(ToName(name, _, _)) => [name]
+			Leaf(_) => []
+			ArrayPattern(items, rest) => {
+				var $names = []
+				for item in items {
+					match item {
+						Item(inner, _) => {
+							$names = List.concat($names, Ast.pattern_names(inner))
+						}
+						Hole => {}
+					}
+				}
+				List.concat($names, rest_names(rest))
+			}
+			ObjectPattern(properties, rest) => {
+				var $names = []
+				for property in properties {
+					$names = List.concat($names, Ast.pattern_names(property.pattern))
+				}
+				List.concat($names, rest_names(rest))
+			}
+		}
+	}
 
 	## An array literal's element or a call's: one value, or each item of an
 	## iterable spread in its place (`...items`).
@@ -158,7 +213,9 @@ Ast :: [].{
 
 	FunctionDefinition : {
 		name : Str,
+		# The names the parameters bind, in order.
 		parameters : List(Str),
+		binding : Ast.ParameterBinding,
 		# The call's scope: the parameters, then what the body declares.
 		names : List(Str),
 		statements : List(Ast.Statement),
@@ -166,11 +223,17 @@ Ast :: [].{
 		at : Ast.Where,
 	}
 
+	## How a call's arguments reach its parameters: each to the parameter in
+	## its place, when every parameter is a plain name (`Plain`), or through
+	## the patterns, the defaults and the rest parameter (`Patterned`).
+	ParameterBinding : [Plain, Patterned({ items : List(Ast.Parameter), rest : Ast.Rest })]
+
+	Parameter : { pattern : Ast.Pattern, default : Ast.Default }
+
 	Binding : [Let, Const]
 
 	Declarator : {
-		name : Str,
-		slot : Ast.Slot,
+		pattern : Ast.Pattern,
 		init : Ast.Init,
 		at : Ast.Where,
 	}
@@ -201,7 +264,9 @@ Ast :: [].{
 
 	ForOfLoop : {
 		binding : Ast.Binding,
-		name : Str,
+		pattern : Ast.Pattern,
+		# What `pattern` declares, the scope of each pass.
+		names : List(Str),
 		iterable : Ast.Expression,
 		body : Ast.Statement,
 		capture : Ast.Capture,
