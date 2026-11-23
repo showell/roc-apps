@@ -41,6 +41,38 @@ Parser :: [].{
 	outside : Parser.State, Parser.State -> Parser.State
 	outside = |after, before| { ..after, enclosing: before.enclosing }
 
+	# The labels around the parser's place, outermost first.
+	label_names : List(Parser.Enclosure) -> List(Str)
+	label_names = |enclosing| {
+		var $names = []
+		for each in enclosing {
+			match each {
+				LoopLabel(name) => {
+					$names = $names.append(name)
+				}
+				BlockLabel(name) => {
+					$names = $names.append(name)
+				}
+				_ => {}
+			}
+		}
+		$names
+	}
+
+	# An enclosing label's number (`Ast.Label`): how many labels enclose it.
+	label_number : List(Parser.Enclosure), Str -> U64
+	label_number = |enclosing, name| {
+		var $at = 0
+		var $found = 0
+		for each in Parser.label_names(enclosing) {
+			if each == name {
+				$found = $at
+			}
+			$at = $at + 1
+		}
+		$found
+	}
+
 	## A parse's value, and the parser after it.
 	Parsed(a) : { parser : Parser.State, value : a }
 
@@ -600,12 +632,13 @@ Parser :: [].{
 		} else {
 			BlockLabel(name)
 		}
+		number = Parser.label_names(parser.enclosing).len()
 		body = Parser.body_statement(Parser.inside(after_colon, enclosure))?
 		labelled = match body.value {
-			While(loop) => While({ ..loop, labels: loop.labels.append(name) })
-			For(loop) => For({ ..loop, labels: loop.labels.append(name) })
-			ForOf(loop) => ForOf({ ..loop, labels: loop.labels.append(name) })
-			other => Labelled(name, other)
+			While(loop) => While({ ..loop, labels: loop.labels.append(number) })
+			For(loop) => For({ ..loop, labels: loop.labels.append(number) })
+			ForOf(loop) => ForOf({ ..loop, labels: loop.labels.append(number) })
+			other => Labelled(number, other)
 		}
 		Ok({ parser: Parser.outside(body.parser, parser), value: labelled })
 	}
@@ -648,9 +681,13 @@ Parser :: [].{
 			Refused(why) => Err(Parser.fault_here(parser, why))
 			Allowed => {
 				q2 = Parser.end_of_statement(after)?
+				numbered = match label {
+					Unlabelled => Unlabelled
+					Named(name) => Named(Parser.label_number(enclosing, name))
+				}
 				jumped = match jumping {
-					Breaking => Break(label)
-					Continuing => Continue(label)
+					Breaking => Break(numbered)
+					Continuing => Continue(numbered)
 				}
 				Ok({ parser: q2, value: jumped })
 			}

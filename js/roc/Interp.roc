@@ -94,8 +94,12 @@ Interp :: [].{
 
 	## Whether the machine runs on: a fault stops the run for good; a value
 	## thrown, and not yet caught, unwinds it to the nearest `try`, which runs
-	## it on.
-	Status : [Running, Faulted(Str), Thrown(Heap.Value, Ast.Where)]
+	## it on. The value thrown and where it was thrown wait in a box, so a
+	## status is no bigger than a fault's message: the machine holding it is
+	## handed back from every evaluation.
+	Status : [Running, Faulted(Str), Thrown(Box(Interp.Throw))]
+
+	Throw : { value : Heap.Value, site : Ast.Where }
 
 	## How a run stands, as its host is told: running, stopped by a fault, or
 	## stopped by a throw nothing caught, written as the line that says so.
@@ -211,7 +215,10 @@ Interp :: [].{
 		status: match machine.status {
 			Running => Running
 			Faulted(why) => Faulted(why)
-			Thrown(value, site) => Interp.uncaught_ending(machine.cells, value, site)
+			Thrown(boxed) => {
+				{ value, site } = Box.unbox(boxed)
+				Interp.uncaught_ending(machine.cells, value, site)
+			}
 		},
 	}
 
@@ -876,7 +883,7 @@ Interp :: [].{
 	with_thrown : Interp.Machine, Heap.Value, Ast.Where -> Interp.Machine
 	with_thrown = |machine, value, site|
 		match machine.status {
-			Running => { ..machine, status: Thrown(value, site) }
+			Running => { ..machine, status: Thrown(Box.box({ value, site })) }
 			_ => machine
 		}
 
@@ -1230,11 +1237,11 @@ Interp :: [].{
 	execute_try! = |host, machine, { block, handler, finalizer }| {
 		{ machine: tried, flow } = Interp.execute_block!(host, machine, block)
 		{ machine: handled, flow: handled_flow } = match (tried.status, handler) {
-			(Thrown(thrown, _), Caught(clause)) => Interp.execute_catch!(
+			(Thrown(boxed), Caught(clause)) => Interp.execute_catch!(
 				host,
 				{ ..tried, status: Running },
 				clause,
-				thrown,
+				Box.unbox(boxed).value,
 			)
 			_ => { machine: tried, flow: flow }
 		}
@@ -1354,7 +1361,7 @@ Interp :: [].{
 	# How a loop goes on after its body: on, or out with the flow the loop
 	# itself answers. A labelled `break` or `continue` is the loop's own when
 	# it names one of the loop's labels, and passes out of it otherwise.
-	body_outcome : Interp.Flow, List(Str) -> [GoOn, Leave(Interp.Flow)]
+	body_outcome : Interp.Flow, List(U64) -> [GoOn, Leave(Interp.Flow)]
 	body_outcome = |flow, labels| match flow {
 		Normal => GoOn
 		Continued(Unlabelled) => GoOn

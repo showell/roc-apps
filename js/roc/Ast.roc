@@ -274,19 +274,22 @@ Ast :: [].{
 		test : Ast.Expression,
 		body : Ast.Statement,
 		order : [TestFirst, TestAfter],
-		labels : List(Str),
+		labels : List(U64),
 	}
 
 	## Which statement a `break` or a `continue` leaves: the innermost loop
-	## (or, for a `break`, `switch`), or the one with that label.
-	Label : [Unlabelled, Named(Str)]
+	## (or, for a `break`, `switch`), or the one with that label. A label is
+	## named by its number, how many labels enclose it in its function, never
+	## by its text: a `Flow` holding no string is small to hand back from every
+	## statement, and JavaScript refuses a label inside another of its name.
+	Label : [Unlabelled, Named(U64)]
 
 	# A C-form `for`. Its `init` is a declaration, an expression or empty,
 	# and its own scope holds what the declaration declares. Like each loop,
 	# it holds the labels written before it (`outer: for`), which a labelled
 	# `break` or `continue` names.
 	ForLoop : {
-		labels : List(Str),
+		labels : List(U64),
 		# What `init` declares, the loop's scope.
 		names : List(Str),
 		init : Ast.Statement,
@@ -301,7 +304,7 @@ Ast :: [].{
 	Updater : [Updated(Ast.Expression), NoUpdate]
 
 	ForOfLoop : {
-		labels : List(Str),
+		labels : List(U64),
 		binding : Ast.Binding,
 		pattern : Ast.Pattern,
 		# What `pattern` declares, the scope of each pass.
@@ -329,7 +332,7 @@ Ast :: [].{
 		Continue(Ast.Label),
 		# A statement other than a loop with a label, which a labelled `break`
 		# inside it leaves.
-		Labelled(Str, Ast.Statement),
+		Labelled(U64, Ast.Statement),
 		Empty,
 	]
 
