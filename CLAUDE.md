@@ -368,12 +368,12 @@ planted cases, and let the compiler judge any rewrite.
 - **Read Roc with Roc's own parser, never a regex.** The recipes read the
   tree from `roc-ast`, so a comment or a string never counts and a broken
   annotation reads as Roc reads it (`cookbook/roc/README.md`,
-  `hunt_names.shale`). roc-apps's toolchain release carries `roc-ast`.
+  `find_awkward_names.shale`). roc-apps's toolchain release carries `roc-ast`.
 - **Each check proves itself on plants.** A plant is a case the check must
   find, or must leave alone. `self_test=1` runs a recipe on its own
   (`cookbook/roc/plants/<recipe>/`), so the hunt itself is tested.
 - **The compiler judges a rewrite.** A syntax tree can't know a type, so
-  `rewrite_method_calls.shale`, which turns `List.map(xs, f)` into `xs.map(f)`, keeps a
+  `rewrite_module_calls_as_method_calls.shale`, which turns `List.map(xs, f)` into `xs.map(f)`, keeps a
   file's rewrite only if `roc check` passes and `roc test`'s summary is
   unchanged. Any other error puts the file back. It runs the repo's own
   pin, read from `roc-version`, because method lookup has changed between
@@ -384,8 +384,8 @@ planted cases, and let the compiler judge any rewrite.
   first): both are Roc programs that write the files themselves, which
   Shale's `--undo-on-stop` doesn't reach, so git is how a stopped run is
   put back. First
-  `rewrite_method_calls.shale apply=1` (an old-style `Module.fn(x, ...)` call becomes
-  `x.fn(...)`), then `wrap_long_lines.shale tokens=6` (groups stacked or joined
+  `rewrite_module_calls_as_method_calls.shale apply=1` (an old-style `Module.fn(x, ...)` call becomes
+  `x.fn(...)`), then `wrap_long_lines_with_trailing_commas.shale tokens=6` (groups stacked or joined
   by the rule, long lines stacked), then `roc fmt`. Then run the hunts over
   the same files
   and fix what they find, so a file you touched leaves clean. A repo-wide
@@ -394,23 +394,23 @@ planted cases, and let the compiler judge any rewrite.
   reformat is (§5). The message names each recipe and what it changed.
   After it, `roc check` is clean (zero ✗, zero ●) and the gate passes; for
   a rewrite that shouldn't change the program, `compare_machine_code.shale` shows the
-  same machine code. `rewrite_method_calls.shale` needs roc-types built at the repo's
+  same machine code. `rewrite_module_calls_as_method_calls.shale` needs roc-types built at the repo's
   pin: with `types=0` it can change behaviour while `roc check` stays clean
   (a `U64.to_str(n)` became a call that printed `0.0`), so never run it that
   way. What a recipe can't rewrite (a function type's
-  arguments, which `wrap_long_lines` can't stack) is fixed by hand, here with a
+  arguments, which `wrap_long_lines_with_trailing_commas` can't stack) is fixed by hand, here with a
   record.
-- **The recipes.** `hunt_names` (awkward names, tense, container words),
-  `check_errors` (an error alias, an optional tag), `check_boundaries` (a
-  one-caller wrapper, a fixed parameter), `find_deep_calls`, `find_extra_parens`
-  (an emitter's braceless `if`s and wrapped bodies), `check_stacking` (a group that should stack or unstack,
-  or a line past 100 columns), `wrap_long_lines` (trailing commas so `roc fmt`
-  stacks or joins groups), `rewrite_method_calls`, `compare_machine_code` (two builds the same machine
+- **The recipes.** `find_awkward_names` (awkward names, tense, container words),
+  `check_how_failure_is_reported` (an error alias, an optional tag), `find_functions_and_parameters_that_dont_earn_their_keep` (a
+  one-caller wrapper, a fixed parameter), `find_calls_nested_three_deep`, `find_and_remove_extra_parentheses`
+  (an emitter's braceless `if`s and wrapped bodies), `check_and_fix_group_stacking` (a group that should stack or unstack,
+  or a line past 100 columns), `wrap_long_lines_with_trailing_commas` (trailing commas so `roc fmt`
+  stacks or joins groups), `rewrite_module_calls_as_method_calls`, `compare_machine_code` (two builds the same machine
   code, the judge of a pure reformat) and `write_tree_patch`. Each is a recipe,
   not a builtin: copy one and change it for the job.
 - **A finding is a question for a reader.** Each prints
   `path:line: check: why`. Fix it, or answer it in the code the hunt
-  reads: `check_boundaries`' `single`, for instance, accepts a one-caller
+  reads: `find_functions_and_parameters_that_dont_earn_their_keep`' `single`, for instance, accepts a one-caller
   wrapper that a `##` doc or an `expect` keeps. A gate holds each hunt it
   runs at zero, never at a count.
 - **A rule a script can check gets a check, and a gate runs it.**

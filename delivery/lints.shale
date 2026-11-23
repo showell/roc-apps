@@ -13,7 +13,7 @@
 const HERE = "delivery"
 const GLOB = "roc/*.roc"
 const LINTS = {
-  {recipe = "hunt_names", args = {"terms=terms.txt"}, counts = {
+  {recipe = "find_awkward_names", args = {"terms=terms.txt"}, counts = {
     {"state_effect", 0}, {"question", 0}, {"vague", 0}, {"name_type", 0}, {"negative", 0},
     {"noun_effect", 0}, {"command_tense", 0}, {"mixed_tense", 0}, {"container", 0},
     {"preposition_split", 0}, {"short_name", 14}, {"worker_name", 0}, {"stacked_preposition", 0},

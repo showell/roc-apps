@@ -26,7 +26,7 @@ Shale is a small Lua-like language:
 - **Shale gaps agents keep hitting:**
   - There's no `write` or `write_file`: `replace(path, text)` writes a file.
   - `substitute(text, old, new)` replaces every occurrence in a string, stops on a miss unless given `{missing_ok = true}`, and is **not word-bounded**. `find(text, pattern)` is a plain substring search, not a pattern. There's no `string.*` or `gsub`.
-  - **To rename a Roc identifier, use `cookbook:roc/rename.shale`** (word-bounded; `module=` for a qualified name; `skip=`, `fields=1`, `book=`, `dry=1`; it fails when nothing matched), never a hand-rolled `substitute`, which hits `proportion` when you meant `portion`.
+  - **To rename a Roc identifier, use `cookbook:roc/rename_identifier_by_whole_word.shale`** (word-bounded; `module=` for a qualified name; `skip=`, `fields=1`, `book=`, `dry=1`; it fails when nothing matched), never a hand-rolled `substitute`, which hits `proportion` when you meant `portion`.
   - A long string holding `]]` needs `[=[ ... ]=]`.
   - A function sees only `const`s, not the script's locals.
   - `read` and `replace` paths are relative to the folder you `cd` to, or a mount such as `repos:` or `scratch:`, never absolute.
@@ -249,7 +249,7 @@ End every report with a short list of whatever cost you time that wasn't the tas
 - a Shale script refused, and what you meant (a missing builtin, a confusing error, a rule this brief didn't mention);
 - the hook refusing a command you needed;
 - a check that was slow, flaky, or failed for a reason unrelated to your change;
-- a recipe that gave a wrong or confusing answer (print_module_types, wrap_long_lines, the lints);
+- a recipe that gave a wrong or confusing answer (print_module_types, wrap_long_lines_with_trailing_commas, the lints);
 - anything in this brief that was wrong, missing or unclear;
 - another agent's files getting in your way.
 

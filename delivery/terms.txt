@@ -1,4 +1,4 @@
--- Seattle Delivery's own terms, for Shale's hunt_names (`terms=`, which
+-- Seattle Delivery's own terms, for Shale's find_awkward_names (`terms=`, which
 -- lints.shale passes, and tools/quality.shale asks lints.shale for): a word
 -- a line, then after a `:` the element type of the list it names. `--`
 -- starts a note.

@@ -103,7 +103,7 @@ Roc's own rules are in the langref's
   gives back what it was handed, and never starts with `get`.** `append_digits`
   takes a `List(U8)` and gives one. Anything else makes a new value, so it is
   named for that value, and a plain name already says what it gets: `speed`, not
-  `get_speed`. Shale's `find_unclear_names` holds this as `pure_mutator`.
+  `get_speed`. Shale's `find_names_and_docs_that_say_too_little` holds this as `pure_mutator`.
 - **A name holding a list is plural or explicit.** `triangle : List(Shape)`
   would have to be `triangles` or `triangle_list`. The word that counts is the
   noun: the one before a preposition or a word like `ahead`, else the last, so
@@ -133,7 +133,7 @@ Roc's own rules are in the langref's
   user_by_name : Users, Name -> Try(User, [NoSuchUser])
   ```
 - **Prefer a plain word to an abbreviation.** `position`, not `pos`;
-  `acceleration`, not `accel`. Shale's `find_unclear_names` holds this as
+  `acceleration`, not `accel`. Shale's `find_names_and_docs_that_say_too_little` holds this as
   `abbreviation`, from its list of them.
 - **A method a `where` clause names has at least two words.** A `where`
   clause matches a method by name alone, so any type with that method fits,
@@ -166,7 +166,7 @@ Roc's own rules are in the langref's
   write_message : Message -> Str  # beside read_message : Str -> Try(Message, _)
   ```
 
-  Shale's `hunt_names` checks part of this as `taken_word`: a top-level
+  Shale's `find_awkward_names` checks part of this as `taken_word`: a top-level
   or member function named only by Roc's word (`record`, `tag`), unless it gives that
   very thing (`record : Key -> ApiKey.Record`), and a value named only by a
   number (`three`).
@@ -407,7 +407,7 @@ Roc's own rules are in the langref's
   says so.
 - **A float lives inside a unit type or the trigonometry.** Anywhere else, a
   bare `F64` in a signature or a type is named with its reason in a table,
-  safari's `bare_floats.txt`, which `cookbook:roc/find_bare_floats.shale` holds at
+  safari's `bare_floats.txt`, which `cookbook:roc/find_floats_outside_unit_types.shale` holds at
   zero: a real ratio has no unit, so it goes there.
 - **A dense formula unwraps once, does its math in plain floats, and wraps
   once.** A unit's methods name one step well, but a chain of them buries a
@@ -515,7 +515,7 @@ Roc's own rules are in the langref's
     defaults to `Dec` and prints `10.0`;
   - no argument is the subject (the next rule).
 
-  Shale's `cookbook/roc/rewrite_method_calls.shale` (`glob=app/*.roc root=app/main.roc`)
+  Shale's `cookbook/roc/rewrite_module_calls_as_method_calls.shale` (`glob=app/*.roc root=app/main.roc`)
   finds the rest and rewrites them where `roc check` and `roc test` agree: a
   dry run by default, and `apply=1` writes. Only a nominal or opaque type can carry methods, not an
   alias ([static dispatch](https://roc-lang.org/docs/main/langref/static-dispatch/)).
@@ -542,7 +542,7 @@ Roc's own rules are in the langref's
   right, and stays a method call: `start.plus(gap)`. So does a function
   whose first argument is its subject though both arguments share a type:
   `line.starts_with("#")`, `clock.steps_since(start)`.
-  `rewrite_method_calls.shale` never turns a symmetric function's call into
+  `rewrite_module_calls_as_method_calls.shale` never turns a symmetric function's call into
   a method call, lists each such method call as `peer_receiver`, and with
   `peers=undo apply=1` turns them back, the compiler judging each.
 - **Structured output goes through one opaque builder, never a string spliced
@@ -869,7 +869,7 @@ is the base; these rules sharpen it.
 
 - **A module opens with a `##` doc that says what it does.** A reader starts
   there, so it is present tense, with no history: `Pipeline.roc`'s doc says
-  what the module carries and how. Shale's `find_unclear_names` holds this as
+  what the module carries and how. Shale's `find_names_and_docs_that_say_too_little` holds this as
   `module_doc`.
 - **Private helpers live outside the `X :: [].{ }` block**. Only what sits
   inside the block is exposed
@@ -1229,7 +1229,7 @@ is the base; these rules sharpen it.
   it must find and cases it must not, so the hunt itself is tested
   (`self_test=1`). The recipes are in Shale's `cookbook/roc/`, and the ones we
   run are:
-  - `hunt_names.shale`, for what [naming](#naming) says: `question`, `negative`,
+  - `find_awkward_names.shale`, for what [naming](#naming) says: `question`, `negative`,
     `vague`, `name_type`, `short_name`, `bare_participle`, `taken_word`,
     `phrase_name`, `singular_list`, `world_verb`, `where_name`, `container`,
     `preposition_split`, `worker_name` and `stacked_preposition`, and for
@@ -1239,13 +1239,13 @@ is the base; these rules sharpen it.
     `List(T)` argument is judged as `T`). The words are shared files in Shale's
     `cookbook/words/`, and `words=1` lists every first word an effect starts
     with, for a reader to scan;
-  - `find_unclear_names.shale`: `pure_mutator`, `abbreviation` and `module_doc`;
-  - `check_vocabulary.shale`, `check_name_types.shale` and `check_families.shale`, which take a
+  - `find_names_and_docs_that_say_too_little.shale`: `pure_mutator`, `abbreviation` and `module_doc`;
+  - `find_retired_words.shale`, `find_names_that_disagree_with_their_types.shale` and `find_names_that_differ_across_lookalike_modules.shale`, which take a
     project's own words. `name_types` also holds `no_value` (a constant that
     means "none", `no_frames`) and `bare_beside_unit` (a field that is a bare
     number in one record and a unit in another);
-  - `find_bare_floats.shale`, over the project's table of reasons;
-  - `check_boundaries.shale`: `fixed`, a parameter every production call fills with
+  - `find_floats_outside_unit_types.shale`, over the project's table of reasons;
+  - `find_functions_and_parameters_that_dont_earn_their_keep.shale`: `fixed`, a parameter every production call fills with
     the same literal (context passed down, `me` or `accounts`, is no
     constant); `entry`, the same for a recursion's start; `constant`, a pure
     function of `{}`; `bool_param`, a flag passed as a Bool, which only
@@ -1253,21 +1253,21 @@ is the base; these rules sharpen it.
     one-caller wrapper of a line or two that no `expect`, twin or `##` doc
     keeps. Safari's gate holds all six, and `unused_api` and `same_branches`
     print as questions;
-  - `check_errors.shale`: `error_alias` (a result's `Try` whose error is a shared
+  - `check_how_failure_is_reported.shale`: `error_alias` (a result's `Try` whose error is a shared
     alias, not its tags in place), `optional_tag` (a tag named as an optional,
     `None` or `Some`), `set_fallback` (`l.set(i, v) ?? l`), `placeholder`
     (`?? "bogus"`) and `number_fallback` (`l.get(i) ?? 0.0`, which no gate
     holds yet);
-  - `find_deep_calls.shale`: a call nested four deep or more, read inside out
+  - `find_calls_nested_three_deep.shale`: a call nested four deep or more, read inside out
     ([layout](#layout-and-formatting)), run with `min=4`;
-  - `find_extra_parens.shale`: `paren_if` (`if (x) a else b`), `wrapped_body`
+  - `find_and_remove_extra_parentheses.shale`: `paren_if` (`if (x) a else b`), `wrapped_body`
     (`|x| (...)`), `else_block` (`else { if ... }`) and `lambda_if`
     (`|x| if x > 1 {`), each rewritten by `write=1`
     ([layout](#layout-and-formatting));
-  - `check_stacking.shale`: a group on one line that should stack, a stacked group that should sit on one line (`unstack`),
+  - `check_and_fix_group_stacking.shale`: a group on one line that should stack, a stacked group that should sit on one line (`unstack`),
     or a line over 100 columns (`long`; one that only a string literal
     makes long is reported apart as `wide string`, and no gate holds it);
-  - `rewrite_method_calls.shale`: an old-style `Module.fn(x, ...)` call the compiler accepts as `x.fn(...)`, rewritten by `apply=1`,
+  - `rewrite_module_calls_as_method_calls.shale`: an old-style `Module.fn(x, ...)` call the compiler accepts as `x.fn(...)`, rewritten by `apply=1`,
     and `peer_receiver`, a symmetric function's method call (`a.max(b)`), turned back by `peers=undo apply=1`
     ([methods](#make-wrong-values-impossible-to-build)).
 

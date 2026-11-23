@@ -21,7 +21,7 @@
 --
 -- The full tier runs every parse recipe over every project, roc-types on
 -- every app (TYPED_EXCEPTIONS names the tree it leaves out), and
--- `rewrite_method_calls trials=0` over each app's own files that its roots
+-- `rewrite_module_calls_as_method_calls trials=0` over each app's own files that its roots
 -- reach, which counts the old-style calls the types prove could be method
 -- calls (`rewritable`) and the method calls of a symmetric function on
 -- peers (`peer_receiver`, `a.max(b)`), with no trial compile: a proven call the compiler
@@ -56,9 +56,9 @@
 --
 -- An app's own tables and exemptions are its lints', asked of the lint
 -- scripts in SETTINGS_SOURCES (Safari's first: its name_types.txt, its
--- drawing data that check_stacking skips, lib's stack_dictated.txt, its
--- accepted_terms.txt for find_unclear_names; then
--- Seattle Delivery's terms.txt, for hunt_names). A
+-- drawing data that check_and_fix_group_stacking skips, lib's stack_dictated.txt, its
+-- accepted_terms.txt for find_names_and_docs_that_say_too_little; then
+-- Seattle Delivery's terms.txt, for find_awkward_names). A
 -- recipe with settings for a folder runs over that folder on its own, with
 -- them, and its run over the folder's project leaves that folder's
 -- findings out, so the folder's counts are those its own lints hold. The
@@ -100,18 +100,18 @@ const FRESH = arg("fresh", 0) == 1
 -- `summary_once` one that prints its summary once, after its findings,
 -- where the others print it before them and again after. `quiet` names
 -- checks the fast tier counts and doesn't print line by line:
--- check_stacking's `wide string` is a line Roc has no short way to split.
+-- check_and_fix_group_stacking's `wide string` is a line Roc has no short way to split.
 -- `cpu_budget_ms` is about three times what the recipe's runs over every
 -- project took on 2026-11-16 (`cpu_measured_ms`): each run on one project is
 -- held to it, and the parse stage to their sum, so a slowdown of that size
 -- stops the run. `cpu_measured_ms` also weighs a run when the stage is split
 -- in two.
 --
--- check_vocabulary is left out: it needs a project's own file of decided
+-- find_retired_words is left out: it needs a project's own file of decided
 -- words, and only safari has one, which safari's gates/lints.shale holds at
 -- zero.
 const PARSE_RECIPES = {
-  {recipe = "hunt_names", short = "names", fails_on_findings = false, cpu_measured_ms = 2144, cpu_budget_ms = 8000, checks = {
+  {recipe = "find_awkward_names", short = "names", fails_on_findings = false, cpu_measured_ms = 2144, cpu_budget_ms = 8000, checks = {
     {"state_effect", "state_effect"}, {"question", "question"}, {"vague", "vague"}, {"name_type", "name_type"},
     {"negative", "negative"}, {"noun_effect", "noun_effect"}, {"command_tense", "command_tense"},
     {"mixed_tense", "mixed_tense"}, {"container", "container"}, {"preposition_split", "preposition_split"},
@@ -120,32 +120,32 @@ const PARSE_RECIPES = {
     {"singular_list", "singular_list"}, {"world_verb", "world_verb"}, {"where_name", "where_name"},
     {"stale_doc_name", "stale_doc_name"},
   }, cross = {"command_tense", "mixed_tense", "stale_doc_name"}},
-  {recipe = "check_stacking", short = "stack", fails_on_findings = false, cpu_measured_ms = 4969, cpu_budget_ms = 16000, checks = {
+  {recipe = "check_and_fix_group_stacking", short = "stack", fails_on_findings = false, cpu_measured_ms = 4969, cpu_budget_ms = 16000, checks = {
     {"to stack", "stack"}, {"to unstack", "unstack"}, {"long", "long"}, {"wide string", "wide string"},
   }, cross = {}, quiet = {"wide string"}},
-  {recipe = "find_extra_parens", short = "parens", fails_on_findings = false, cpu_measured_ms = 1987, cpu_budget_ms = 8000, checks = {
+  {recipe = "find_and_remove_extra_parentheses", short = "parens", fails_on_findings = false, cpu_measured_ms = 1987, cpu_budget_ms = 8000, checks = {
     {"paren_if", "paren_if"}, {"wrapped_body", "wrapped_body"}, {"else_block", "else_block"}, {"lambda_if", "lambda_if"},
   }, cross = {}},
-  {recipe = "check_errors", short = "errors", fails_on_findings = false, cpu_measured_ms = 2719, cpu_budget_ms = 9000, checks = {
+  {recipe = "check_how_failure_is_reported", short = "errors", fails_on_findings = false, cpu_measured_ms = 2719, cpu_budget_ms = 9000, checks = {
     {"error_alias", "error_alias"}, {"optional_tag", "optional_tag"}, {"set_fallback", "set_fallback"},
     {"placeholder", "placeholder"}, {"number_fallback", "number_fallback"},
   }, cross = {"error_alias", "optional_tag"}},
-  {recipe = "find_deep_calls", short = "deep", args = {"min=4"}, fails_on_findings = false, cpu_measured_ms = 1669, cpu_budget_ms = 7000, checks = {
+  {recipe = "find_calls_nested_three_deep", short = "deep", args = {"min=4"}, fails_on_findings = false, cpu_measured_ms = 1669, cpu_budget_ms = 7000, checks = {
     {"nested", "nested"},
   }, cross = {}},
   {recipe = "find_unused_imports", short = "imports", fails_on_findings = true, cpu_measured_ms = 1938, cpu_budget_ms = 7000, checks = {
     {"unused_import", "unused_import"},
   }, cross = {}},
-  {recipe = "check_name_types", short = "types", fails_on_findings = true, cpu_measured_ms = 1906, cpu_budget_ms = 7000, checks = {
+  {recipe = "find_names_that_disagree_with_their_types", short = "types", fails_on_findings = true, cpu_measured_ms = 1906, cpu_budget_ms = 7000, checks = {
     {"name_type", "name_type"}, {"bare_beside_unit", "bare_beside_unit"}, {"no_value", "no_value"},
   }, cross = {"bare_beside_unit"}},
-  {recipe = "check_families", short = "family", fails_on_findings = true, cpu_measured_ms = 1832, cpu_budget_ms = 7000, checks = {
+  {recipe = "find_names_that_differ_across_lookalike_modules", short = "family", fails_on_findings = true, cpu_measured_ms = 1832, cpu_budget_ms = 7000, checks = {
     {"family", "family"}, {"twin_name", "twin_name"}, {"unpaired_conversion", "unpaired_conversion"},
   }, cross = {"family", "twin_name"}},
-  {recipe = "find_unclear_names", short = "unclear", fails_on_findings = true, cpu_measured_ms = 1778, cpu_budget_ms = 7000, checks = {
+  {recipe = "find_names_and_docs_that_say_too_little", short = "unclear", fails_on_findings = true, cpu_measured_ms = 1778, cpu_budget_ms = 7000, checks = {
     {"pure_mutator", "pure_mutator"}, {"abbreviation", "abbreviation"}, {"module_doc", "module_doc"},
   }, cross = {}},
-  {recipe = "check_boundaries", short = "bounds", fails_on_findings = false, summary_once = true, cpu_measured_ms = 3081, cpu_budget_ms = 10000, checks = {
+  {recipe = "find_functions_and_parameters_that_dont_earn_their_keep", short = "bounds", fails_on_findings = false, summary_once = true, cpu_measured_ms = 3081, cpu_budget_ms = 10000, checks = {
     {"single", "single"}, {"fixed", "fixed"}, {"entry", "entry"}, {"constant", "constant"}, {"bool_param", "bool_param"},
     {"dead", "dead"}, {"unused_api", "unused_api"}, {"same_branches", "same_branches"},
   }, cross = {"single", "fixed", "entry", "constant", "dead", "unused_api"}},
@@ -213,7 +213,7 @@ function stop_line(out)
 end
 
 -- The number a summary gives for a check: "check N", or "N check" for
--- check_stacking's "N to stack". Nil when the summary doesn't name it.
+-- check_and_fix_group_stacking's "N to stack". Nil when the summary doesn't name it.
 function count_in_summary(summary, label)
   local after = re_find(summary, "(?:^|[;:,] )" .. label .. " ([0-9]+)")
   if after ~= nil then return tonumber(after.group) end
@@ -459,7 +459,7 @@ function tools_identity(roc)
   local seen = {}
   local libs = {}
   for rc in PARSE_RECIPES do recipe_closure("cookbook:roc/" .. rc.recipe .. ".shale", seen, libs) end
-  recipe_closure("cookbook:roc/rewrite_method_calls.shale", seen, libs)
+  recipe_closure("cookbook:roc/rewrite_module_calls_as_method_calls.shale", seen, libs)
   recipe_closure("cookbook:roc/types.shale", seen, libs)
   recipe_closure("cookbook:roc/symmetric_functions.txt", seen, libs)
   for p in libs do push(named, p) end
@@ -871,7 +871,7 @@ end
 function count_one(item)
   local f = split(item, "\t")
   local files = split(f[3], ",")
-  local r = run({"shale", "--budget", RECIPE_STEPS, real("cookbook:roc/rewrite_method_calls.shale"), "glob=" .. f[3], "root=" .. f[2], "trials=0", "types_from=" .. f[4]},
+  local r = run({"shale", "--budget", RECIPE_STEPS, real("cookbook:roc/rewrite_module_calls_as_method_calls.shale"), "glob=" .. f[3], "root=" .. f[2], "trials=0", "types_from=" .. f[4]},
     {timeout_ms = 600000, whole = 4000000, cpu_budget_ms = COUNT_JOB_CPU_MS, stage = "count " .. f[1] .. " on " .. f[2]})
   local own = own_lines(r.out)
   local summary = #own > 0 and own[#own] or ""
@@ -885,7 +885,7 @@ function count_one(item)
     why = "read " .. m.groups[1] .. " of its " .. #files .. " files"
   end
   if why ~= "" then
-    print("CANT\t" .. f[1] .. " on " .. f[2] .. ": rewrite_method_calls " .. why)
+    print("CANT\t" .. f[1] .. " on " .. f[2] .. ": rewrite_module_calls_as_method_calls " .. why)
   else
     print("RW\t" .. f[1] .. "\t" .. f[2] .. "\t" .. join(m.groups, "\t"))
     -- Each call the run leaves or leaves unsettled, `path:line: Module.fn:
@@ -897,7 +897,7 @@ function count_one(item)
   return r.cpu_ms
 end
 
--- A child run: `rewrite_method_calls trials=0` on each
+-- A child run: `rewrite_module_calls_as_method_calls trials=0` on each
 -- `unit<tab>root<tab>files<tab>types file` of the work file, the root's
 -- types read from the file the types stage kept. It prints
 -- `RW<tab>unit<tab>root<tab>files<tab>proven<tab>unsettled<tab>left<tab>peers`,
@@ -990,7 +990,7 @@ function judges_untyped(st, base)
 end
 
 -- The typed counts: each app typed this run, from its own roots over its
--- own files (`unreached`, and the calls `rewrite_method_calls trials=0`
+-- own files (`unreached`, and the calls `rewrite_module_calls_as_method_calls trials=0`
 -- proves), and each shared folder from its files' rows (`shared_files`),
 -- the count of those whose judge was typed measured a file at a time.
 function typed_counts(st, base, scratch, whole)
@@ -1020,9 +1020,9 @@ function typed_counts(st, base, scratch, whole)
   if #items > 0 then
     res = run_items(scratch, "count", items, {})
     for c in res.cant do push(st.cant, c) end
-    print("rewrite_method_calls count: " .. #items .. " runs (" .. #sh.measure .. " a shared file each), " .. WORKERS .. " at once in " .. times_seconds(res.ms))
+    print("rewrite_module_calls_as_method_calls count: " .. #items .. " runs (" .. #sh.measure .. " a shared file each), " .. WORKERS .. " at once in " .. times_seconds(res.ms))
   end
-  note_stage(st, "rewrite_method_calls count", get(res.cpu, "count", 0), res.ms, #items, whole, COUNT_CPU_BUDGET_MS)
+  note_stage(st, "rewrite_module_calls_as_method_calls count", get(res.cpu, "count", 0), res.ms, #items, whole, COUNT_CPU_BUDGET_MS)
   local proven = 0
   for l in lines(res.out) do
     if starts_with(l, "RW\t") then
@@ -1032,8 +1032,8 @@ function typed_counts(st, base, scratch, whole)
         sh.rows[sub(f[2], at + 1)].n = tonumber(f[5])
         sh.rows[sub(f[2], at + 1)].peers = tonumber(f[8])
       else
-        count_finding(st, f[2], "rewrite_method_calls", "rewritable", tonumber(f[5]))
-        count_finding(st, f[2], "rewrite_method_calls", "peer_receiver", tonumber(f[8]))
+        count_finding(st, f[2], "rewrite_module_calls_as_method_calls", "rewritable", tonumber(f[5]))
+        count_finding(st, f[2], "rewrite_module_calls_as_method_calls", "peer_receiver", tonumber(f[8]))
         push(st.log, "rewrite " .. f[2] .. " on " .. f[3] .. ": " .. f[4] .. " files, " .. f[5] .. " calls the types prove, " .. f[6] .. " unsettled, " .. f[7] .. " left, " .. f[8] .. " peer_receiver")
       end
       proven = proven + tonumber(f[5])
@@ -1049,11 +1049,11 @@ function typed_counts(st, base, scratch, whole)
         push(st.log, f .. ":1: unreached: no app's types reach it, so no typed check reads it")
       end
     else
-      count_finding(st, row.unit, "rewrite_method_calls", "rewritable", row.n)
-      count_finding(st, row.unit, "rewrite_method_calls", "peer_receiver", row.peers)
+      count_finding(st, row.unit, "rewrite_module_calls_as_method_calls", "rewritable", row.n)
+      count_finding(st, row.unit, "rewrite_module_calls_as_method_calls", "peer_receiver", row.peers)
     end
   end
-  print("rewrite_method_calls: " .. proven .. " calls the types prove could be method calls, in the " .. #items .. " runs")
+  print("rewrite_module_calls_as_method_calls: " .. proven .. " calls the types prove could be method calls, in the " .. #items .. " runs")
   return sh.rows
 end
 
@@ -1182,7 +1182,7 @@ function full()
     local f = split(k, "\t")
     local app = f[1]
     if has_key(units, app) then
-      local typed = f[2] == "roc-types" or f[2] == "rewrite_method_calls"
+      local typed = f[2] == "roc-types" or f[2] == "rewrite_module_calls_as_method_calls"
       if typed then
         if has_key(roots_of, app) and not has_key(st.typed_units, app) then counts[k] = base.counts[k] end
       elseif not has_key(parse, unit_project(app)) then
@@ -1210,7 +1210,7 @@ function full()
   local cols = {"app"}
   local short_of = {}
   short_of["roc-types"] = "untyped"
-  short_of["rewrite_method_calls"] = "methods"
+  short_of["rewrite_module_calls_as_method_calls"] = "methods"
   for rc in PARSE_RECIPES do
     push(cols, rc.short)
     short_of[rc.recipe] = rc.short
