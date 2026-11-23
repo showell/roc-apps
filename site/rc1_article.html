@@ -10,8 +10,7 @@
      stats in docs/rc1-build-stats.tsv, the reduced programs in
      site/rc1_repros/ and the commits it quotes; edit site/rc1_article.html
      and run it again rather than editing the page. The code is colored by
-     roc-syntax-color. Each place still waiting on roc-chat's move holds the
-     word "pending" in a span of class "pending". -->
+     roc-syntax-color. -->
 <style>
   :root { color-scheme: light dark; --bg: #f7f5f0; --fg: #1d1d1b; --muted: #6b6860; --edge: #d9d4c8; --pane: #ffffff; --link: #1f5fa8; --accent: #5b3ea8; --wait: #9a5b00; }
   @media (prefers-color-scheme: dark) {
@@ -50,7 +49,6 @@
   th { font-weight: 600; color: var(--muted); }
   .num { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
   tr.group td { border-top: 2px solid var(--edge); }
-  .pending { color: var(--wait); font-weight: 600; }
   .slower { color: var(--wait); }
   .summary li { margin-bottom: 10px; }
   footer { margin-top: 36px; color: var(--muted); font-size: 13px; }
@@ -59,8 +57,7 @@
 <body>
 <main>
 <h1>Moving to Roc 0.1.0 RC1</h1>
-<p class="lede"><strong>Six projects, about 99,000 lines of Roc, all checks green at RC1.</strong> roc-chat is still
-moving: <span class="pending">pending</span>.</p>
+<p class="lede"><strong>Seven projects, about 144,000 lines of Roc, all checks green at RC1.</strong></p>
 <p>Each project's previous pin, nightly-2026-11-03-34bd006, against RC1:</p>
 <!-- overview -->
 <p class="meta">Median CPU seconds of three runs, old nightly → RC1.</p>
@@ -76,9 +73,9 @@ nightly; 15.8 s with <code>--specialize=yes</code>, which our chess gate now pas
 below.</a></li>
 <li><strong>A "duplicate definition" warning we're unsure is intended</strong>, for a nested type's member named like
 the outer type's (<code>Crate.width</code>, <code>Crate.Lid.width</code>). The program runs correctly. roc-chat's five
-such renames: <span class="pending">pending</span>. <a href="#nested">Read more below.</a></li>
+such renames: <a href="https://github.com/showell/roc-chat/commit/e8e8a84348985a2bebe8e02075ed1cb5332a1d4a">e8e8a84</a>. <a href="#nested">Read more below.</a></li>
 <li><strong>Cold checks took about 2.4 times the CPU</strong> in roc-syntax-color and roc-markdown (under 1.5 s
-each); the same in roc-screensaver, less in roc-apps. <a href="#stats">Read more below.</a></li>
+each); the same in roc-screensaver and roc-chat, less in roc-apps. <a href="#stats">Read more below.</a></li>
 <li><strong>Release outputs are 8 to 13% bigger.</strong> <a href="#sizes">Read more below.</a></li>
 </ul>
 <p class="meta">"Green" in roc-apps: <code>roc check</code> of 51 apps, Safari's gate (974 expects, 20 widgets and 1089
@@ -103,9 +100,10 @@ checkout). <a href="#nominal">Read more below.</a></li>
 <ul>
 <li>83 renames (31 roc-apps, 48 roc-chat, 4 roc-screensaver): <a href="#shadowing">shadowing</a>. Our gates fail on
 any warning.</li>
+<li>5 nested-member renames in roc-chat, 51 call sites: <a href="#nested">duplicate definition</a>.</li>
 <li>14 typed literals (5 roc-apps, 9 roc-screensaver): <a href="#literals">literals</a>.</li>
 <li>Safari's Cat and Bird built as nominal values: <a href="#nominal">nominal check</a>.</li>
-<li>Glue regenerated in book_builder and roc-screensaver; roc-types passes <code>BuildEnv.init</code>'s new
+<li>Glue regenerated in book_builder, roc-chat and roc-screensaver; roc-types passes <code>BuildEnv.init</code>'s new
 specialization-strategy argument: <a href="#glue">glue</a>.</li>
 <li><code>--specialize=yes</code> in the chess gate: <a href="#boxy">boxy default</a>.</li>
 <li>Native roc-ray builds retired. Steve: "we have had successful roc-ray builds in the past but stopped verifying
@@ -129,9 +127,12 @@ typed literals, the chess gate's flag, the glue, and the native builds retired. 
 <a href="https://github.com/showell/roc-apps/commit/a44c405f885fa87328f165aa3a689358876f4c7d">a44c405</a>,
 <a href="https://github.com/showell/roc-apps/commit/5dca699cffa8b30df4deff9d2c1ebaa55c369d4c">5dca699</a>,
 <a href="https://github.com/showell/roc-apps/commit/74fc1f9c561c57a212142c08a4868a036410c811">74fc1f9</a></td></tr>
-<tr><td><a href="https://github.com/showell/roc-chat">roc-chat</a></td><td>48 renames, made at the old pin and checked at RC1 too (no errors; only the five warnings below). The five
-nested-member sites, the pin move and its gates: <span class="pending">pending</span>.</td><td><a href="https://github.com/showell/roc-chat/commit/d56daed96a7d00614d6498f4078545e0f1356fbb">d56daed</a>;
-the move: <span class="pending">pending</span></td></tr>
+<tr><td><a href="https://github.com/showell/roc-chat">roc-chat</a></td><td>48 renames, made at the old pin and checked at RC1 too (no errors; only the five warnings below). Then the
+five nested-member renames, exact pin checks in the build, verify and glue, the pin and the glue; its 29 checks are
+green.</td><td><a href="https://github.com/showell/roc-chat/commit/d56daed96a7d00614d6498f4078545e0f1356fbb">d56daed</a>,
+<a href="https://github.com/showell/roc-chat/commit/e8e8a84348985a2bebe8e02075ed1cb5332a1d4a">e8e8a84</a>,
+<a href="https://github.com/showell/roc-chat/commit/ef7b89e263c6ce611c0cf17a329e88e788f55486">ef7b89e</a>,
+<a href="https://github.com/showell/roc-chat/commit/c8c532cbac6f08a128a0ba5b6e68d3586f051399">c8c532c</a></td></tr>
 <tr><td><a href="https://github.com/showell/roc-screensaver">roc-screensaver</a></td><td>4 renames, 9 typed literals
 and the glue. Its rendered frames are pixel-identical: the PNG harness's checksums didn't change.</td><td><a href="https://github.com/showell/roc-screensaver/commit/29774b1a6e26ac06c23dd836c6863415bfbbd3c7">29774b1</a>,
 <a href="https://github.com/showell/roc-screensaver/commit/a14102b87c01dacb3f3f4c9b4cb0cbbb37b8ef8d">a14102b</a>,
@@ -164,8 +165,9 @@ only reached qualified, and if it is intended, a message other than "duplicate d
 <!-- repro nested -->
 <p>RC1 runs it correctly (<code>3 4</code>); the old nightly checks it clean. roc-chat's five sites
 (<code>AgentKey.Admitted.scope</code>; <code>signed_bytes</code> in <code>GitHubSignUp.Claim</code>,
-<code>GitHubState.Claim</code> and <code>Session.Claim</code>; <code>Users.Human.user</code>) are being renamed:
-<span class="pending">pending</span>.</p>
+<code>GitHubState.Claim</code> and <code>Session.Claim</code>; <code>Users.Human.user</code>) became
+<code>granted_scope</code>, <code>bytes_to_verify</code> and <code>as_user</code>, 51 call sites in one commit,
+<a href="https://github.com/showell/roc-chat/commit/e8e8a84348985a2bebe8e02075ed1cb5332a1d4a">e8e8a84</a>.</p>
 
 <h2 id="nominal">The stricter nominal-type check</h2>
 <p>The old nightly let a plain record unify with a nominal type through an alias's parameter, and printed
@@ -199,38 +201,40 @@ typed it:</p>
 <!-- snippet erased-payload -->
 <p>Two new list types:</p>
 <!-- snippet opaque-lists -->
-<p>No hand-written host code of ours uses them; regenerating was enough, and book_builder's and roc-screensaver's
-seam checks pass. roc-types passes <code>.boxy</code> to <code>BuildEnv.init</code>'s new seventh parameter; it lowers
+<p>No hand-written host code of ours uses them; regenerating was enough, and book_builder's, roc-chat's and
+roc-screensaver's seam checks pass. roc-types passes <code>.boxy</code> to <code>BuildEnv.init</code>'s new seventh parameter; it lowers
 nothing.</p>
 
 <h2 id="stats">Build times</h2>
-<p>Four repositories, both compilers, under the announcement's four conditions: <strong>cold</strong> (cache emptied,
+<p>Five repositories, both compilers, under the announcement's four conditions: <strong>cold</strong> (cache emptied,
 then a hello-world built), <strong>warm</strong> (again at once), <strong>root changed</strong> and <strong>import
 changed</strong> (a comment appended to the root, or to the most-imported module). Median of three, seconds; the
 compilers alternated, each run niced with its own cache.
-<a href="https://github.com/showell/roc-apps/blob/49ccee1d99b6ce625af68ba71d542fba8a7c98c1/tools/measure_roc_builds.shale">The
-script</a>; <a href="https://github.com/showell/roc-apps/blob/49ccee1d99b6ce625af68ba71d542fba8a7c98c1/docs/rc1-build-stats.tsv">the
+<a href="https://github.com/showell/roc-apps/blob/ef1f35761b4cacdc29aab50c4de7065f6d3b44cc/tools/measure_roc_builds.shale">The
+script</a>; <a href="https://github.com/showell/roc-apps/blob/ef1f35761b4cacdc29aab50c4de7065f6d3b44cc/docs/rc1-build-stats.tsv">the
 TSV</a>, with every run and the box's load.</p>
 <p><strong>Noisy</strong> (<a href="#box">the box</a>): roc-syntax-color's cold checks took 0.58, 7.44 and 9.47 s
 (old) and 10.64, 21.30 and 22.32 s (RC1) of wall time for about 0.5 and 1.3 s of CPU, and we don't know where the
 rest goes. roc-screensaver's release builds had outliers of 115.5 s (RC1) and 63 to 86 s (old). Trust a difference
 under 2 times only when the CPU agrees.</p>
 <ul>
-<li>Cold checks: about 2.4 times the CPU in roc-syntax-color and roc-markdown, the same in roc-screensaver, less in
-roc-apps.</li>
-<li>Warm: 10 to 64 times faster; roc-markdown's check 3 times (under 0.1 s), roc-screensaver's test over 100.</li>
-<li>Root changed: mostly 4 to 32 times faster (roc-screensaver's test 75). roc-markdown's check 0.07 → 0.04 s;
-roc-syntax-color's 0.12 → 0.20 s wall but 0.05 → 0.02 s CPU. Import changed: 1.3 to 11 times faster.</li>
-<li>Cold dev builds: the same, faster in roc-apps. Cold tests: mixed. Release builds: the same in roc-markdown, faster
-in roc-screensaver and roc-apps.</li>
-<li>Release outputs 8 to 13% bigger. Dev outputs bigger in three (roc-syntax-color's 2.3 times, cause unknown), half
-in roc-apps, the one wasm dev build.</li>
+<li>Cold checks: about 2.4 times the CPU in roc-syntax-color and roc-markdown, the same in roc-screensaver and
+roc-chat, less in roc-apps.</li>
+<li>Warm: 10 to 64 times faster; roc-markdown's check 3 times (under 0.1 s), roc-chat's 1.8 and its dev build 6.2,
+roc-screensaver's test over 100.</li>
+<li>Root changed: mostly 4 to 32 times faster (roc-screensaver's test 75, roc-chat's 107). roc-markdown's check
+0.07 → 0.04 s; roc-syntax-color's 0.12 → 0.20 s wall but 0.05 → 0.02 s CPU; roc-chat's 0.38 → 0.69 s CPU, slower.
+Import changed: the same to 11 times faster.</li>
+<li>Cold dev builds: the same, faster in roc-apps and roc-chat. Cold tests: mixed. Release builds: the same in
+roc-markdown, faster in roc-screensaver and roc-apps.</li>
+<li>Release outputs 8 to 13% bigger. Dev outputs bigger in three (roc-syntax-color's 2.3 times, cause unknown),
+smaller in roc-chat (0.7 times) and roc-apps (half, the one wasm dev build).</li>
 </ul>
 
 <h3>roc-apps (Safari)</h3>
 <!-- stats roc-apps -->
 <h3>roc-chat</h3>
-<p><span class="pending">pending</span></p>
+<!-- stats roc-chat -->
 <h3>roc-screensaver</h3>
 <!-- stats roc-screensaver -->
 <h3>roc-markdown</h3>
@@ -238,7 +242,7 @@ in roc-apps, the one wasm dev build.</li>
 <h3>roc-syntax-color</h3>
 <!-- stats roc-syntax-color -->
 <h3 id="sizes">Output sizes</h3>
-<p>Bytes. roc-syntax-color's is an executable; roc-markdown's and roc-screensaver's dev build are x64 musl archives;
+<p>Bytes. roc-syntax-color's is an executable; roc-chat's, roc-markdown's and roc-screensaver's dev builds are x64 musl archives;
 the rest wasm.</p>
 <!-- sizes -->
 

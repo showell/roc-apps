@@ -69,11 +69,10 @@ const REPROS = {
 -- times come from the stats TSV; for the rest, `lines` is its tracked .roc
 -- files' lines on its main branch at `at` (counted as
 -- tools/measure_roc_builds.shale counts them), and `why` says why it has no
--- times. `pending` marks a project whose times and checks wait for its
--- move. `checks` says what passed at RC1, from the move's commits.
+-- times. `checks` says what passed at RC1, from the move's commits.
 const OVERVIEW = {
   {repo = "roc-apps", measured = true, checks = "green: 51 apps, Safari's and four other gates"},
-  {repo = "roc-chat", lines = "45272", at = "bab918d", why = "pending", pending = true},
+  {repo = "roc-chat", measured = true, checks = "green: 29 checks, the end to end and cost check among them"},
   {repo = "roc-screensaver", measured = true, checks = "green: 34 checks, frames pixel-identical"},
   {repo = "roc-markdown", measured = true, checks = "green: its gates"},
   {repo = "roc-syntax-color", measured = true, checks = "green: its gates"},
@@ -420,8 +419,6 @@ function overview_html(rows)
       local r = stats_row(rows, o.repo, NEW_PIN, "check", "cold")
       if r == nil then fail("build_rc1_article: " .. STATS .. " has no RC1 cold check for " .. o.repo) end
       push(out, "<tr><td>" .. name .. "</td><td class=\"num\">" .. commas(r.roc_lines) .. "</td>" .. pair_cell(rows, o.repo, "build-dev", "root_changed") .. pair_cell(rows, o.repo, "check", "cold") .. "<td>" .. escaped(o.checks) .. "</td></tr>")
-    elseif has_key(o, "pending") then
-      push(out, "<tr><td>" .. name .. "</td><td class=\"num\">" .. commas(o.lines) .. "</td><td colspan=\"3\"><span class=\"pending\">pending</span></td></tr>")
     else
       push(out, "<tr><td>" .. name .. "</td><td class=\"num\">" .. commas(o.lines) .. "</td><td colspan=\"2\">" .. escaped(o.why) .. "</td><td>" .. escaped(o.checks) .. "</td></tr>")
     end
