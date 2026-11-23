@@ -556,12 +556,15 @@ Parser :: [].{
 
 	# A function after its `function` keyword: an optional name, the
 	# parameters and the body.
-	function_rest : Parser.State,
-	Ast.Where,
-	Parser.Naming -> Try(
-		Parser.Parsed(Ast.FunDef),
-		Lexer.Fault,
-	)
+	ParsedFunction : Try(Parser.Parsed(Ast.FunDef), Lexer.Fault)
+
+	ParsedExpression : Try(Parser.Parsed(Ast.Expr), Lexer.Fault)
+
+	# What a function's body is parsed with: the function's name, its
+	# parameters and where it starts.
+	Signature : { name : Str, params : List(Str), at : Ast.Where }
+
+	function_rest : Parser.State, Ast.Where, Parser.Naming -> Parser.ParsedFunction
 	function_rest = |p, w, naming| {
 		if Parser.is_punct(p, "*") {
 			return Err(Parser.fault_here(p, "unsupported: generators"))
@@ -577,7 +580,7 @@ Parser :: [].{
 			}
 		}?
 		params = Parser.parameters(named_p.p)?
-		Parser.function_body(params.p, named_p.value, params.value, w)
+		Parser.function_body(params.p, { name: named_p.value, params: params.value, at: w })
 	}
 
 	parameters : Parser.State -> Try(Parser.Parsed(List(Str)), Lexer.Fault)
@@ -611,14 +614,9 @@ Parser :: [].{
 		Ok({ p: Parser.advance($q), value: $names })
 	}
 
-	function_body : Parser.State,
-	Str,
-	List(Str),
-	Ast.Where -> Try(
-		Parser.Parsed(Ast.FunDef),
-		Lexer.Fault,
-	)
-	function_body = |p, name, params, w| {
+	function_body : Parser.State, Parser.Signature -> Parser.ParsedFunction
+	function_body = |p, signature| {
+		{ name, params, at: w } = signature
 		before = p.functions
 		b = Parser.block(p)?
 		def = {
@@ -687,7 +685,7 @@ Parser :: [].{
 		}?
 		q = Parser.expect_punct(params.p, "=>")?
 		if Parser.is_punct(q, "{") {
-			def = Parser.function_body(q, "", params.value, w)?
+			def = Parser.function_body(q, { name: "", params: params.value, at: w })?
 			Ok({ p: def.p, value: Function(Box.box(def.value)) })
 		} else {
 			before = q.functions
@@ -817,13 +815,7 @@ Parser :: [].{
 
 	# One left-associative level: operands from `next`, joined by the level's
 	# operators.
-	binary_level : Parser.State,
-	Parser.Level,
-	(
-		Parser.State -> Try(
-			Parser.Parsed(Ast.Expr),
-			Lexer.Fault,
-		)) -> Try(Parser.Parsed(Ast.Expr), Lexer.Fault)
+	binary_level : Parser.State, Parser.Level, (Parser.State -> Parser.ParsedExpression) -> Parser.ParsedExpression
 	binary_level = |p, level, next| {
 		first = next(p)?
 		var $q = first.p
@@ -1205,7 +1197,7 @@ Parser :: [].{
 			Ok({ p: v.p, value: { key: key, value: Parser.named(v.value, key) } })
 		} else if Parser.is_punct(after, "(") {
 			params = Parser.parameters(after)?
-			def = Parser.function_body(params.p, key, params.value, w)?
+			def = Parser.function_body(params.p, { name: key, params: params.value, at: w })?
 			Ok({ p: def.p, value: { key: key, value: Function(Box.box(def.value)) } })
 		} else {
 			match t.tok {

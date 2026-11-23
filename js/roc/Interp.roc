@@ -2207,7 +2207,7 @@ Interp :: [].{
 				} else {
 					a = lower.get($i) ?? crash "Interp.merge_sorted: inside the lower half"
 					b = upper.get($j) ?? crash "Interp.merge_sorted: inside the upper half"
-					{ st: after, order } = Interp.compared($s, compare, a, b, w)
+					{ st: after, order } = Interp.compared($s, { compare: compare, left: a, right: b, at: w })
 					$s = after
 					order != After
 				}
@@ -2223,15 +2223,15 @@ Interp :: [].{
 		}
 	}
 
-	compared : Interp.St,
-	Heap.Val,
-	Heap.Val,
-	Heap.Val,
-	Ast.Where -> {
-		st : Interp.St,
-		order : [Before, Same, After],
-	}
-	compared = |st, compare, a, b, w|
+	# Two items of a sort, `left` and `right`, and the function that compares
+	# them, or Undefined for none.
+	Comparison : { compare : Heap.Val, left : Heap.Val, right : Heap.Val, at : Ast.Where }
+
+	Ordered : { st : Interp.St, order : [Before, Same, After] }
+
+	compared : Interp.St, Interp.Comparison -> Interp.Ordered
+	compared = |st, comparison| {
+		{ compare, left: a, right: b, at: w } = comparison
 		match compare {
 			Undefined => {
 				order = match (a, b) {
@@ -2260,6 +2260,7 @@ Interp :: [].{
 				{ st: after, order: order }
 			}
 		}
+	}
 
 	# ---- string methods --------------------------------------------------------
 
