@@ -1,7 +1,9 @@
 // js_runner -- the page's door onto the JavaScript subset's interpreter,
 // js.wasm (the Roc in js/roc on the host in js/wasm). A program runs once,
 // `start(src, onLine)`, then a frame at a time, `frame(t, onLine)`, while the
-// last call ended `frame`.
+// last call ended `frame`. Each frame is a tick of the program's clock: the
+// timers due and its `frame(t)` run then. `click(x, y)` queues a click for
+// the program's `onClick` handler, which runs in the next frame.
 //
 // **EACH EFFECT ARRIVES WHILE THE PROGRAM RUNS.** The wasm calls the import
 // `js_emit` with each effect's line (Canvas.line_of in js/roc/Canvas.roc) at
@@ -61,6 +63,9 @@ export async function loadRunner(wasmBytes) {
     },
     frame(t, sink) {
       return call(sink, () => x.frame(t));
+    },
+    click(px, py) {
+      x.click(px, py);
     },
   };
 }

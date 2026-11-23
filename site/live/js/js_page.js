@@ -13,8 +13,10 @@
 //
 // The frame loop calls `frame(t)` about 30 times a second, `t` being the
 // frame's number over 30, so a frame's `t` is the same at every speed and in
-// the recording host's logs (js/canvas/*.log). Pause and Step work between
-// frames.
+// the recording host's logs (js/canvas/*.log). Each call is a tick of the
+// program's clock, on which its timers run, and its clicks: a click on the
+// canvas is queued at once and runs in the next frame. Pause and Step work
+// between frames.
 
 import { loadRunner, unescaped } from "./js_runner.js";
 import { isMark, makePainter, SIZE } from "./js_painter.js";
@@ -60,6 +62,17 @@ console.log(top.slice(0, 3));
 }
 console.log(quicksort([5, 3, 9, 1, 7, 2, 8, 6, 4, 0]));
 ` },
+  { title: "Timers", source: `// Each callback runs when its time comes, on the page's frames.
+setTimeout(() => console.log("half a second"), 500);
+setTimeout(() => console.log("a tenth of a second"), 100);
+let n = 0;
+const every = setInterval(() => {
+  n++;
+  console.log("tick", n);
+  if (n === 3) clearInterval(every);
+}, 300);
+console.log("the program's end comes first");
+` },
   { title: "Outside the subset", source: `class Point {
   constructor(x, y) { this.x = x; this.y = y; }
 }
@@ -89,6 +102,9 @@ const BUILTINS = [
   ["forward(n), back(n), turn(degrees)", "the turtle walks, drawing a line in the stroke; turn is clockwise"],
   ["penUp(), penDown(), goto(x, y)", "the turtle starts in the middle, facing up, its pen down"],
   ["mouseX(), mouseY(), keyIsDown(key)", "read when called; a key by its name, such as \"ArrowLeft\""],
+  ["onClick((x, y) => { ... })", "called with each click on the canvas, at the next frame, in canvas units"],
+  ["setTimeout(f, ms), setInterval(f, ms)", "JavaScript's own: f called once after ms, or every ms; each answers a timer"],
+  ["clearTimeout(timer), clearInterval(timer)", "the timer stops"],
   ["function frame(t) { ... }", "if the program declares it, called 30 times a second, t in seconds"],
 ];
 
@@ -160,7 +176,7 @@ export function buildPage(runner, env = window) {
     ]),
     element("h2", { textContent: "The canvas builtins" }),
     element("dl", {}, BUILTINS.flatMap(([call, what]) => [element("dt", { textContent: call }), element("dd", { textContent: what })])),
-    element("p", { className: "note", textContent: "Colors are CSS color strings (\"tomato\", \"#3a7\", \"hsl(200, 70%, 45%)\"). The origin is the top left corner. A run may take 3,000,000 steps and 20,000 effects before its first frame, and each frame 300,000 steps and 20,000 effects." }),
+    element("p", { className: "note", textContent: "Colors are CSS color strings (\"tomato\", \"#3a7\", \"hsl(200, 70%, 45%)\"). The origin is the top left corner. A run may take 3,000,000 steps and 20,000 effects before its first frame, and each frame, with the clicks and timers it runs, 300,000 steps and 20,000 effects." }),
   ]);
   document.body.appendChild(wrap);
 
@@ -186,6 +202,13 @@ export function buildPage(runner, env = window) {
     const box = canvas.getBoundingClientRect();
     pointerX = ((e.clientX - box.left) * SIZE) / box.width;
     pointerY = ((e.clientY - box.top) * SIZE) / box.height;
+  });
+  // A click goes to the run on show while it waits for frames; its handler
+  // runs in the next frame.
+  canvas.addEventListener("pointerdown", (e) => {
+    if (!current || current.over) return;
+    const box = canvas.getBoundingClientRect();
+    runner.click(((e.clientX - box.left) * SIZE) / box.width, ((e.clientY - box.top) * SIZE) / box.height);
   });
   canvas.addEventListener("keydown", (e) => { keys.add(e.key); if (e.key.startsWith("Arrow") || e.key === " ") e.preventDefault(); });
   canvas.addEventListener("keyup", (e) => keys.delete(e.key));
