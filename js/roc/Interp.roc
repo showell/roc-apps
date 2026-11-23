@@ -118,7 +118,13 @@ Interp :: [].{
 
 	Happening : [
 		# A timer's callback; an interval's is queued again `every` ms on.
-		Timed({ timer : U64, callback : Heap.Value, every : [Once, Every(F64)] }),
+		Timed(
+			{
+				timer : U64,
+				callback : Heap.Value,
+				every : [Once, Every(F64)],
+			},
+		),
 		# The program's `frame(t)`, for the frame of that number.
 		Framed(Heap.Closure, U64),
 		# A click at x and y, for the program's `onClick` handler.
@@ -361,7 +367,11 @@ Interp :: [].{
 						..machine,
 						events: Interp.with_event(
 							machine.events,
-							{ due: due, site: site, happening: Clicked(x, y) },
+							{
+								due: due,
+								site: site,
+								happening: Clicked(x, y),
+							},
 						),
 					},
 				}
@@ -400,7 +410,12 @@ Interp :: [].{
 		{ clock, pending, made, firing, on_click } = events
 		{
 			clock: clock,
-			pending: pending.append({ due: due, order: made, site: site, happening: happening }),
+			pending: pending.append({
+				due: due,
+				order: made,
+				site: site,
+				happening: happening,
+			}),
 			made: made + 1,
 			firing: firing,
 			on_click: on_click,
@@ -436,7 +451,7 @@ Interp :: [].{
 			if event.due <= until {
 				better = match $best {
 					NoneDue => True
-					At(_) => event.due < $best_due or (event.due == $best_due and event.order < $best_order)
+					At(_) => Interp.is_sooner(event, { due: $best_due, order: $best_order })
 				}
 				if better {
 					$best = At($i)
@@ -449,11 +464,19 @@ Interp :: [].{
 		$best
 	}
 
+	# Whether `event` runs before one due at `due` and queued `order`th.
+	is_sooner : Interp.Event, { due : F64, order : U64 } -> Bool
+	is_sooner = |event, { due, order }|
+		event.due < due or (event.due == due and event.order < order)
+
 	# The event at `index` taken off the queue, the clock moved to its time.
 	event_taken : Interp.Machine, U64 -> { machine : Interp.Machine, event : Interp.Event }
 	event_taken = |machine, index| {
 		event = machine.events.pending.get(index) ?? crash "Interp.event_taken: Interp.earliest names an event the queue has"
-		{ machine: { ..machine, events: Interp.events_past(machine.events, index, event.due) }, event: event }
+		{
+			machine: { ..machine, events: Interp.events_past(machine.events, index, event.due) },
+			event: event,
+		}
 	}
 
 	events_past : Interp.Events, U64, F64 -> Interp.Events
@@ -475,7 +498,13 @@ Interp :: [].{
 	# The events with `firing` set.
 	events_firing : Interp.Events, [Firing(U64), Cleared, Idle] -> Interp.Events
 	events_firing = |events, now_firing| {
-		{ clock, pending, made, firing: _, on_click } = events
+		{
+			clock,
+			pending,
+			made,
+			firing: _,
+			on_click,
+		} = events
 		{
 			clock: clock,
 			pending: pending,
@@ -494,7 +523,13 @@ Interp :: [].{
 			clock: clock,
 			pending: pending.keep_if(
 				|event| match event.happening {
-					Timed({ timer: queued, callback: _, every: _ }) => queued != timer
+					Timed(
+						{
+							timer: queued,
+							callback: _,
+							every: _,
+						},
+					) => queued != timer
 					_ => True
 				},
 			),
@@ -510,7 +545,13 @@ Interp :: [].{
 
 	events_clicking : Interp.Events, { handler : Heap.Value, site : Ast.Where } -> Interp.Events
 	events_clicking = |events, handling| {
-		{ clock, pending, made, firing, on_click: _ } = events
+		{
+			clock,
+			pending,
+			made,
+			firing,
+			on_click: _,
+		} = events
 		{
 			clock: clock,
 			pending: pending,
@@ -543,7 +584,11 @@ Interp :: [].{
 							{
 								due: event.due + period,
 								site: event.site,
-								happening: Timed({ timer: timer, callback: callback, every: every }),
+								happening: Timed({
+									timer: timer,
+									callback: callback,
+									every: every,
+								}),
 							},
 						),
 					}
@@ -697,10 +742,7 @@ Interp :: [].{
 		] {
 			timer_builtin = Interp.alloc($s, Builtin(native, []))
 			$s = timer_builtin.machine
-			$made = $made.append({
-				name: Heap.native_name(native),
-				value: timer_builtin.value,
-			})
+			$made = $made.append({ name: Heap.native_name(native), value: timer_builtin.value })
 		}
 		match library {
 			Core => {}
@@ -2808,7 +2850,11 @@ Interp :: [].{
 								{
 									due: due,
 									site: site,
-									happening: Timed({ timer: timer, callback: callback, every: every }),
+									happening: Timed({
+										timer: timer,
+										callback: callback,
+										every: every,
+									}),
 								},
 							),
 						},

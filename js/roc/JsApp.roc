@@ -91,4 +91,11 @@ drop_model = |_model| {}
 drop_bytes : List(U8) -> {}
 drop_bytes = |_bytes| {}
 
-program = { source_buffer, start!, frame!, click!, drop_model, drop_bytes }
+program = {
+	source_buffer,
+	start!,
+	frame!,
+	click!,
+	drop_model,
+	drop_bytes,
+}

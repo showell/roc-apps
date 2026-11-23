@@ -32,7 +32,10 @@ import Parser
 
 main! = |arguments| {
 	match (arguments.get(0), arguments.get(1)) {
-		(Ok(count_text), Ok(src)) => match (U64.from_str(count_text), clicks_of(arguments.get(3) ?? "")) {
+		(Ok(count_text), Ok(src)) => match (
+			U64.from_str(count_text),
+			clicks_of(arguments.get(3) ?? ""),
+		) {
 			(Ok(count), Ok(clicks)) => record_program!(
 				src,
 				{
@@ -81,7 +84,11 @@ recording_host = |keys_down| {
 	},
 }
 
-Click : { frame : U64, x : F64, y : F64 }
+Click : {
+	frame : U64,
+	x : F64,
+	y : F64,
+}
 
 # The clicks `<frame>:<x>:<y>,...` names, or why not.
 clicks_of : Str -> Try(List(Click), [BadClicks])
@@ -92,9 +99,21 @@ clicks_of = |text|
 		var $clicks = []
 		for each in text.split_on(",") {
 			match each.split_on(":") {
-				[frame_text, x_text, y_text] => match (U64.from_str(frame_text), F64.from_str(x_text), F64.from_str(y_text)) {
-					(Ok(frame), Ok(x), Ok(y)) => {
-						$clicks = $clicks.append({ frame: frame, x: x, y: y })
+				[frame_text, x_text, y_text] => match (
+					U64.from_str(frame_text),
+					F64.from_str(x_text),
+					F64.from_str(y_text),
+				) {
+					(
+						Ok(frame),
+						Ok(x),
+						Ok(y),
+					) => {
+						$clicks = $clicks.append({
+							frame: frame,
+							x: x,
+							y: y,
+						})
 					}
 					_ => return Err(BadClicks)
 				}
@@ -104,7 +123,12 @@ clicks_of = |text|
 		Ok($clicks)
 	}
 
-record_program! : Str, { frames : U64, keys : List(Str), clicks : List(Click) } => Try({}, [Exit(I8)])
+record_program! : Str,
+{
+	frames : U64,
+	keys : List(Str),
+	clicks : List(Click),
+} => Try({}, [Exit(I8)])
 record_program! = |src, { frames, keys: key_frames, clicks }| {
 	match Parser.program_of(src, Canvas) {
 		Ok(program) => {
@@ -120,12 +144,7 @@ record_program! = |src, { frames, keys: key_frames, clicks }| {
 				t = Interp.frame_time($n)
 				echo!("frame ${$n.to_str()} ${NumberText.text_for(t)}\n")
 				keys = (key_frames.get($n) ?? "").split_on("+")
-				$session = Interp.tick!(
-					recording_host(keys),
-					$session,
-					t,
-					Canvas.frame_limits,
-				)
+				$session = Interp.tick!(recording_host(keys), $session, t, Canvas.frame_limits)
 				$n = $n + 1
 			}
 			match Interp.outcome_of($session.machine).status {
