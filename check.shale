@@ -49,8 +49,8 @@
 -- expected-dev.txt.
 --
 -- `shale check.shale js=1` is the JavaScript subset's allocation tier, kept
--- out of the default run for its time (11 to 17 minutes when the release
--- build compiles, most of that RC1's SpecConstr pass, tag
+-- out of the default run for its time (about 8 minutes when js-run's
+-- release build compiles, most of that RC1's SpecConstr pass, tag
 -- rc1-slow-release-build; seconds when tools/roc_build.shale
 -- already holds both builds of these inputs): js/controls.shale holds the release
 -- build's allocations a pass to js/controls/expected.txt and the dev
