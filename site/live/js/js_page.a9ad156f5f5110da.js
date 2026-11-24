@@ -13,10 +13,10 @@
 // canvas is queued at once and runs in the next frame. Pause works between
 // frames.
 
-import { loadRunner, unescaped } from "./js_runner.b95190355c7741b9.js";
-import { makePainter, SIZE } from "./js_painter.94b8ad5db1f98a95.js";
+import { loadRunner, unescaped } from "./js_runner.3cb6ca5e735cb7cd.js";
+import { makePainter, SIZE } from "./js_painter.199dc8d08b3a2d42.js";
 import { CANVAS_SAMPLES, FEATURED_SAMPLE } from "./js_samples.3c133edf45254026.js";
-import { memoryView, MEMORY_CSS, STRATEGY } from "./js_memory.2eb586c974c11a6a.js";
+import { memoryView, MEMORY_CSS, STRATEGY } from "./js_memory.751aa2b79bd604b7.js";
 
 const FRAMES_PER_SECOND = 30;
 const OUTPUT_KEPT = 20000;
@@ -268,7 +268,7 @@ export function buildPage(runner, env = window) {
     memorySaid,
     element("label", { textContent: "The heap, in cells" }),
     cellsChart,
-    element("p", { className: "key" }, [swatch("cells", "the heap's length"), swatch("live", "live after a collection"), swatch("gc", "a collection")]),
+    element("p", { className: "key" }, [swatch("cells", "cells in use"), swatch("length", "the heap's length"), swatch("live", "live after a collection"), swatch("gc", "a collection")]),
     element("label", { textContent: "The wasm memory, in bytes" }),
     bytesChart,
     element("h2", { textContent: "How the VM keeps its memory" }),
@@ -474,6 +474,6 @@ export function buildPage(runner, env = window) {
 }
 
 if (typeof window !== "undefined" && !window.JS_PAGE_CHECK) {
-  const bytes = await (await fetch("js.758356b203b3f461.wasm")).arrayBuffer();
+  const bytes = await (await fetch("js.8832a24bd3888a4d.wasm")).arrayBuffer();
   buildPage(await loadRunner(bytes));
 }
