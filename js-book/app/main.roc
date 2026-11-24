@@ -3,7 +3,9 @@
 ## checkout's root, so an include quotes the interpreter's code in js/ by its
 ## path in the repository. Its pre-step, book.shale, draws the diagrams with
 ## Graphviz into `js-book/build/prepared/`, and this app reads the drawings
-## through the platform, and a missing one stops the build, named.
+## through the platform, and a missing one stops the build, named. The
+## pre-step also writes the appendix's listings there, which this app puts in
+## the manuscript before the builder reads it.
 app [main!] {
 	bb: "../../book_builder/builder/main.roc",
 	pf: platform "../../book_builder/platform/main.roc",
@@ -31,11 +33,12 @@ main! = |_folder| {
 		},
 		read_text!,
 	)?
+	manuscript = insert_listings!(found.manuscript)?
 	Builder.build!(
 		{ ..settings, fence_hooks: [Diagrams.hook(drawn)] },
 		|path|
 			if path == manuscript_path {
-				Ok(found.manuscript)
+				Ok(manuscript)
 			} else {
 				Book.read_file!(path)
 			},
@@ -81,6 +84,41 @@ syntax_of = |language| match language {
 	_ => Err(Uncolored)
 }
 
+## The manuscript with each line `{{listing NAME}}` made the lines of
+## `listing-NAME.md` in the prepared folder. The pre-step writes each listing
+## from a folder of js/, as includes the builder expands, so the appendix
+## quotes every file there. The listings stand after the manuscript's last
+## diagram, so each diagram keeps its line.
+insert_listings! : Str => Try(Str, Str)
+insert_listings! = |text| {
+	var $out = []
+	for line in text.split_on("\n") {
+		match listing_of(line) {
+			Ok(name) => {
+				listing = read_text!("${prepared_folder}/listing-${name}.md")?
+				$out = $out.append(listing.drop_suffix("\n"))
+			}
+			Err(NotAListing) => {
+				$out = $out.append(line)
+			}
+		}
+	}
+	Ok(Str.join_with($out, "\n"))
+}
+
+## The listing a line names, when the whole line is `{{listing NAME}}` and
+## NAME is one word.
+listing_of : Str -> Try(Str, [NotAListing])
+listing_of = |line| {
+	name = line.drop_prefix("{{listing ").drop_suffix("}}")
+	is_whole_line = Str.count_utf8_bytes(name) + 12 == Str.count_utf8_bytes(line)
+	if is_whole_line and !name.is_empty() and !name.contains(" ") {
+		Ok(name)
+	} else {
+		Err(NotAListing)
+	}
+}
+
 ## A file of the book's folder, or the build's stop naming it.
 read_text! : Str => Try(Str, Str)
 read_text! = |path| Book.read_file!(path).map_err(|problem| "${path} ${Includes.read_problem_text(problem)}\n")
@@ -101,3 +139,14 @@ expect {
 	answers.all(|answer| answers.count_if(|other| other == answer) == 1)
 }
 expect ["text", "markdown", "dot", "js", ""].all(|language| colored_code({ language, code: "a < b" }) == Plain)
+expect listing_of("{{listing corpus}}") == Ok("corpus")
+expect
+	[
+		"{{listing }}",
+		"{{listing a b}}",
+		" {{listing a}}",
+		"{{listing a}} ",
+		"{{listing a",
+		"{{file a}}",
+		"listing a",
+	].all(|line| listing_of(line) == Err(NotAListing))

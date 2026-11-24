@@ -8,7 +8,9 @@
 -- checkout from its root and prints every page. Its pre-step draws each
 -- ```dot fence of the manuscript with Graphviz
 -- (book_builder/tools/draw_diagrams.shale) into build/prepared/, as
--- diagram-N.dot and diagram-N.svg, where the app reads them.
+-- diagram-N.dot and diagram-N.svg, where the app reads them. It also writes
+-- the appendix's listings there from js/'s folders (write_listings, below),
+-- so a new sample or test is in the book at its next build.
 --
 -- Then the book builder's tools/build_book.shale runs the app's expects, held
 -- to exactly APP_TESTS, builds the app into book_builder/zig-out/js-book, on
@@ -33,13 +35,63 @@ const DRAW = "book_builder/tools/draw_diagrams.shale"
 const MOVE = "book_builder/tools/move_stage.shale"
 const CHECKER = "book_builder/tools/book_check.mjs"
 const BUILD = "book_builder/tools/build_book.shale"
-const APP_TESTS = 3
+const APP_TESTS = 5
 const DOT_WANT = "graphviz: a book's diagrams, drawn at build time"
 const CHECK_WANT = "script: book_check.mjs drives the staged pages in headless Chromium"
+
+-- The playground's order of its samples, as js/web/js_page.js lists them:
+-- the first canvas sample, the featured console samples, the other canvas
+-- samples, then the console samples written in the page itself.
+const PAGE_ORDER = "  CANVAS_SAMPLES[0],\n  ...FEATURED_SAMPLES.map(asConsole),\n  ...CANVAS_SAMPLES.slice(1),\n  ...CONSOLE_SAMPLES.map(asConsole),\n];"
+
+-- The featured console samples, as js/build.shale's FEATURED names them.
+function featured_samples()
+  local found = {}
+  for g in grep("js/build.shale", "{title = \"") do
+    local m = re_find(g.text, [=[^  \{title = "([^"]+)", file = "([^"]+)"\},$]=])
+    if m == nil then fail("book: js/build.shale:" .. g.line .. " is a featured sample this script can't read: " .. g.text) end
+    push(found, {title = m.groups[1], file = m.groups[2]})
+  end
+  if #found == 0 then fail("book: js/build.shale names no featured samples") end
+  return found
+end
+
+-- The section of one sample: its title as the page shows it, and its file.
+function sample_section(title, file)
+  return "### " .. title .. "\n\n{{file " .. file .. "}}\n"
+end
+
+-- Writes listing-samples.md, listing-corpus.md and listing-refused.md, the
+-- lines the app puts in place of the manuscript's `{{listing NAME}}` lines:
+-- every sample the playground offers from a file, in the page's order, each
+-- titled by its first line as js/build.shale titles it; then every program of
+-- js/tests/ and of js/tests/refused/. Each file is quoted by the builder's
+-- own include, so the book quotes it as it stands.
+function write_listings()
+  if not contains(read("js/web/js_page.js"), PAGE_ORDER) then fail("book: js/web/js_page.js no longer lists its samples in the order write_listings follows") end
+  local canvas = {}
+  for f in glob("js/canvas/*.js") do
+    local first = lines(read(f))[1]
+    if not starts_with(first, "// ") then fail("book: " .. f .. " has no first line `// <title>`") end
+    push(canvas, sample_section(sub(first, 4, #first), f))
+  end
+  local samples = {canvas[1]}
+  for s in featured_samples() do push(samples, sample_section(s.title, s.file)) end
+  for s in drop(canvas, 1) do push(samples, s) end
+  create(PREPARED .. "/listing-samples.md", join(samples, "\n"))
+  local corpus = {}
+  for f in glob("js/tests/*.js") do push(corpus, "{{file " .. f .. "}}\n") end
+  create(PREPARED .. "/listing-corpus.md", join(corpus, "\n"))
+  local refused = {}
+  for f in glob("js/tests/refused/*.js") do push(refused, "{{file " .. f .. "}}\n") end
+  create(PREPARED .. "/listing-refused.md", join(refused, "\n"))
+  print("book: the appendix lists " .. #samples .. " samples from files, " .. #corpus .. " programs and " .. #refused .. " refused")
+end
 
 function main()
   if exists(PREPARED) then remove_tree(PREPARED) end
   mkdir(PREPARED)
+  write_listings()
   local drawn = must(run({"shale", "--root", ".", DRAW, "source=" .. SOURCE, "prepared=" .. PREPARED}, {timeout_ms = 120000, tail = 20, want = DOT_WANT}))
   for l in lines(drawn.out) do
     if starts_with(l, "draw_diagrams: ") then print("book: " .. sub(l, 16) .. " in " .. drawn.ms .. " ms") end

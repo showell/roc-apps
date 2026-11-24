@@ -302,3 +302,29 @@ These come from `js/README.md` and the record:
 - `js-vm` takes the program as one command-line argument, limited to 128 KiB.
 - `onCollect` and the other canvas builtins are this project's own, so logs of effects judge them in place of node.
 - `this`, `new` on a program's function and classes remain outside the subset, for the reasons in {{chapter Introduction}}.
+
+## Appendix A: The playground's samples
+
+Each of these runs in [the playground](https://roc.lynrummy.com/js/), where it can be changed and run again.
+
+{{listing samples}}
+
+### The page's own console samples
+
+These are written in `js/web/js_page.js` itself, and the page offers them last.
+
+{{lines js/web/js_page.js from "const CONSOLE_SAMPLES = [" to "const asConsole = "}}
+
+## Appendix B: The tested programs
+
+### The corpus
+
+Each program prints what node prints, and `js/oracle.shale` holds the VM to it.
+
+{{listing corpus}}
+
+### The refused programs
+
+The VM refuses each program with the message its first line gives.
+
+{{listing refused}}
