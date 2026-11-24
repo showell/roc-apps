@@ -1,6 +1,6 @@
 -- The JavaScript subset's controls (js/controls/*.js): the smallest
 -- programs, each a loop around one thing the interpreter does, run through
--- js-run at 1,000 and at 10,000 passes on tools/alloc_ladder.shale, which
+-- js-vm, the bytecode VM, at 1,000 and at 10,000 passes on tools/alloc_ladder.shale, which
 -- counts what one more pass allocates and holds each control to its
 -- expected file. A control reads its passes as `N`, which this script
 -- declares in a first line, `const N = <passes>;`.
@@ -8,7 +8,6 @@
 --   cd <roc-apps checkout> && shale js/controls.shale              the release build (--opt=speed)
 --   cd <roc-apps checkout> && shale js/controls.shale opt=dev      the dev build
 --   cd <roc-apps checkout> && shale js/controls.shale only=02      the controls whose names start so
---   cd <roc-apps checkout> && shale js/controls.shale engine=vm    js-vm, the bytecode VM
 --
 -- **A CONTROL THAT STARTS ALLOCATING NAMES THE WRITE THAT COPIES**: 00-loop
 -- is the pass alone, and each control after it adds one write to it. A copy
@@ -16,9 +15,8 @@
 -- write that stops being made in place shows here as a count, exactly,
 -- where js/probes.shale shows it as a slope in time.
 --
--- The walker's release build is held to js/controls/expected.txt and its
--- dev build to js/controls/expected-dev.txt; the VM's to expected-vm.txt
--- and expected-vm-dev.txt. `only=` holds nothing: a part of the ladder is a
+-- The release build is held to js/controls/expected.txt and the dev build
+-- to js/controls/expected-dev.txt. `only=` holds nothing: a part of the ladder is a
 -- report. A build whose expected file isn't written yet is measured as a
 -- report and then fails, naming the file to write from the counts it
 -- printed, so a missing file is never a pass.
@@ -34,15 +32,10 @@ const WHO = "js/controls.shale"
 
 const OPT = arg("opt", "speed")
 const ONLY = arg("only", "")
-const ENGINE = arg("engine", "walker")
-
--- The file this engine's controls are held to in this build.
+-- The file the controls are held to in this build.
 function expected_file()
-  local engine = ""
-  if ENGINE == "vm" then engine = "-vm" end
-  local build = ""
-  if OPT == "dev" then build = "-dev" end
-  return "js/controls/expected" .. engine .. build .. ".txt"
+  if OPT == "dev" then return "js/controls/expected-dev.txt" end
+  return "js/controls/expected.txt"
 end
 
 function argv_for(bin, src, passes)
@@ -50,14 +43,7 @@ function argv_for(bin, src, passes)
 end
 
 function main()
-  local bin = nil
-  if ENGINE == "walker" then
-    bin = js_build(WHO, "js-run", "JsRun.roc", OPT)
-  elseif ENGINE == "vm" then
-    bin = js_build(WHO, "js-vm", "JsVm.roc", OPT)
-  else
-    fail(WHO .. ": engine= is walker or vm, not " .. ENGINE)
-  end
+  local bin = js_build(WHO, "js-vm", "JsVm.roc", OPT)
   local controls = {}
   for f in glob("js/controls/*.js") do
     local n = strip_suffix(basename(f), ".js")
@@ -70,7 +56,7 @@ function main()
   local file = expected_file()
   local written = exists(file)
   local gen = js_out_dir(OPT)
-  local plan = {who = WHO .. " opt=" .. OPT .. " engine=" .. ENGINE, gen = gen, expected = file, small = SMALL, big = BIG,
+  local plan = {who = WHO .. " opt=" .. OPT, gen = gen, expected = file, small = SMALL, big = BIG,
     limit_ms = RUN_MS, hold = ONLY == "" and written, controls = controls}
   if not plan.hold then plan.expected = "" end
   local plan_path = gen .. "/plan.json"

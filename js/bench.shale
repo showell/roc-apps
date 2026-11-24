@@ -1,6 +1,6 @@
 -- This script times the JavaScript subset's interpreter on the programs in
 -- js/bench/, in the dev build and the release build, each run three times,
--- the fastest kept. Times are js-run's CPU time, so a busy box slows them
+-- the fastest kept. Times are js-vm's CPU time, so a busy box slows them
 -- less than wall time, but they are still rough: each run prints which
 -- other heavy programs were running beside it.
 --
@@ -11,7 +11,7 @@
 
 use("./js_builds.shale")
 
-const WANT_RUN = "js-run: the interpreter timed, built here"
+const WANT_RUN = "js-vm: the interpreter timed, built here"
 const WHO = "js/bench.shale"
 const TRIES = 3
 
@@ -21,7 +21,7 @@ const OPT = arg("opt", "both")
 function busy()
   local seen = {}
   for p in procs() do
-    for name in {"basic-run", "js-run", "roc-alloc-trace", "roc", "zig", "node", "cc", "gcc", "chrome", "firefox", "tcc"} do
+    for name in {"basic-run", "js-vm", "roc-alloc-trace", "roc", "zig", "node", "cc", "gcc", "chrome", "firefox", "tcc"} do
       if p.name == name then seen[name] = true end
     end
   end
@@ -37,7 +37,7 @@ function fastest_ms(exe, src)
   local i = 0
   while i < TRIES do
     local r = run({exe, src}, {timeout_ms = 120000, tail = 3, want = WANT_RUN})
-    if r.ended ~= "exit" or r.code ~= 0 then fail(WHO .. ": js-run ended " .. r.ended .. " " .. get(r, "code", "") .. ": " .. r.out) end
+    if r.ended ~= "exit" or r.code ~= 0 then fail(WHO .. ": js-vm ended " .. r.ended .. " " .. get(r, "code", "") .. ": " .. r.out) end
     if best < 0 or r.cpu_ms < best then best = r.cpu_ms end
     i = i + 1
   end
@@ -48,7 +48,7 @@ function main()
   local opts = {"dev", "speed"}
   if OPT ~= "both" then opts = {OPT} end
   local exes = {}
-  for opt in opts do exes[opt] = js_build(WHO, "js-run", "JsRun.roc", opt) end
+  for opt in opts do exes[opt] = js_build(WHO, "js-vm", "JsVm.roc", opt) end
   print(busy())
   for f in glob("js/bench/*.js") do
     local src = read(f)

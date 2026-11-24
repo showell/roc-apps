@@ -1,14 +1,13 @@
-# Allocations and reallocations a pass each control is held to in the dev
-# build (--opt=dev), and why when either is not 0:
-# `<control> <allocs> <reallocs> <why>`. A control not listed here is held to
-# 0 and 0. Measured on Roc 0.1.0-RC1 by js/controls.shale opt=dev. The dev
-# build lowers closures and the like to boxes, as --specialize=no does, so
-# it allocates where the release build (expected.txt) doesn't.
-00-loop 1 0 the empty block `{}` the loop runs, which the release build doesn't make; the other controls' bodies are statements, not blocks
+# Allocations and reallocations a pass each control is held to on js-vm,
+# the bytecode VM, in the dev build (--opt=dev), and why when either is not
+# 0: `<control> <allocs> <reallocs> <why>`. A control not listed here is held
+# to 0 and 0. Measured on Roc 0.1.0-RC1 by js/controls.shale opt=dev. The
+# dev build lowers closures and the like to boxes, as --specialize=no does,
+# so it allocates where the release build (expected.txt) doesn't.
 01-array-store 1 0 the update lambda's capture (Heap.with_item's position and value), boxed in the dev build; not a copy
-02-closure-call 3 0 the call, none of them in the release build
+02-closure-call 1 0 the call: one list of 112 bytes, the same at every size, which roc-alloc-trace's where puts down to a write in Vm.pushed (round one's where named Vm.frames_with); none in the release build
 04-property-write 1 0 the update lambda's capture (Heap.with_property's key and value), boxed in the dev build; not a copy
-05-array-push 3 0 the release build's one (the argument list), one more for the call, and the update lambda's capture (Heap.with_items_pushed's values), boxed in the dev build; not a copy
-06-push-pop 5 0 05-array-push's three for the push and two for the pop, none of the pop's in the release build; Heap.with_last_dropped's update lambda captures nothing and adds nothing
-07-map-set 5.08 0 the call's list of argument values, the update lambdas' captures (Heap.with_entry's key and value, and the table's write), boxed in the dev build, and the key's identity (Heap.identity_of's text, its digits from NumberText.text_for, which some numbers take more of); not a copy: a write costs the same beside 10 keys as beside 1,000
-08-garbage-in-a-call 8 0 the walker's call, the object's property list and the update lambda's capture, boxed in the dev build; the walker frees no cell, so its heap grows a cell a pass, in place
+05-array-push 2 0 the call's list of argument values (Vm.arguments_of), one value long, and the update lambda's capture (Heap.with_items_pushed's values), boxed in the dev build; not a copy
+06-push-pop 2 0 05-array-push's two for the push; the pop allocates nothing
+07-map-set 4.08 0 the call's list of argument values, the update lambdas' captures (Heap.with_entry's key and value, and the table's write), boxed in the dev build, and the key's identity (Heap.identity_of's text, its digits from NumberText.text_for, which some numbers take more of); not a copy
+08-garbage-in-a-call 3.04 0 02-closure-call's one for the call, the object's property list, and the update lambda's capture (Heap.with_property's key and value), boxed in the dev build; the 0.04 is the collector's own lists (its marks, roots and waiting cells), made once a collection, about every thousand passes; the cells are reused, never copied

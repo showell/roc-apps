@@ -1,26 +1,25 @@
--- This script is a first look at what the JavaScript subset's interpreter
--- copies. Each probe in js/probes/ is a loop of writes run at three sizes,
+-- This script is a first look at what the JavaScript subset's VM copies. Each probe in js/probes/ is a loop of writes run at three sizes,
 -- and the time a write takes is compared across them: flat means a write is
 -- made in place, linear means each write copies something as big as the
 -- size. One number says nothing; the shape across sizes does.
 --
---   cd <roc-apps checkout> && shale js/probes.shale            build js-count, then probe
+--   cd <roc-apps checkout> && shale js/probes.shale            build js-vm, then probe
 --   cd <roc-apps checkout> && shale js/probes.shale only=3     the probes whose names start so
 --
 -- A probe's first line says its kind. A `fixed` probe holds its writes at W
 -- and grows N, what sits beside them (a heap, an array, other scopes); its
 -- write's cost is (time at W - time at W = 0) / W. A `growing` probe makes N
 -- writes, each onto what the ones before made; its write's cost is (time at
--- N - time at N = 0) / N. Times are the CPU time of js-count, built on the
+-- N - time at N = 0) / N. Times are the CPU time of js-vm, built on the
 -- dev backend (as BASIC's controls are), so they are rough: each line says
 -- which other heavy programs were running.
 --
--- It builds js-count from js/roc/JsCount.roc with the pinned Roc
+-- It builds js-vm from js/roc/JsVm.roc with the pinned Roc
 -- (js/js_builds.shale).
 --
 -- budget: steps=50000000
 
-const WANT_RUN = "js-count: the interpreter under test, built here"
+const WANT_RUN = "js-vm: the interpreter under test, built here"
 -- The sizes a probe runs at: what sits beside a fixed probe's writes, and
 -- how many writes a growing probe makes. A growing probe's copies are short
 -- beside the interpreter's own cost a write until the copied thing is long,
@@ -54,16 +53,16 @@ function busy()
   return "running beside: " .. join(names, ", ")
 end
 
--- js-count's CPU time, in ms, for the probe at `n` and `w`.
+-- js-vm's CPU time, in ms, for the probe at `n` and `w`.
 function cpu_ms(exe, src, n, w)
   local program = "const N = " .. n .. ";\nconst W = " .. w .. ";\n" .. src
   local r = run({exe, program}, {timeout_ms = 300000, tail = 3, want = WANT_RUN})
-  if r.ended ~= "exit" or r.code ~= 0 then fail("js/probes.shale: js-count ended " .. r.ended .. " " .. get(r, "code", "") .. ": " .. r.out) end
+  if r.ended ~= "exit" or r.code ~= 0 then fail("js/probes.shale: js-vm ended " .. r.ended .. " " .. get(r, "code", "") .. ": " .. r.out) end
   return r.cpu_ms
 end
 
 function main()
-  local exe = js_build("js/probes.shale", "js-count", "JsCount.roc", "dev")
+  local exe = js_build("js/probes.shale", "js-vm", "JsVm.roc", "dev")
   print(busy())
   print(pad("probe", 22) .. "  µs a write at three sizes N        shape")
   for f in glob("js/probes/*.js") do

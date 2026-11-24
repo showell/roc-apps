@@ -17,7 +17,7 @@
 -- <text>`, is what js-canvas's last line (`js: <why>`) must hold, after three
 -- frames at most, and js-canvas must exit 1; each line `// before: <line>`
 -- must be a line it printed first, so what a program drew before its stop
--- stays drawn. And js-run and js-vm, on the core library, must not know a
+-- stays drawn. And js-vm, on the core library, must not know a
 -- canvas builtin: `forward(10)` is a ReferenceError there, as in node.
 --
 -- A canvas builtin is ours, not node's, so these logs are the canvas's
@@ -131,16 +131,14 @@ function main()
   if FREEZE ~= "" and not frozen then fail("js/canvas.shale: no sample is named " .. FREEZE) end
   local rails = grade_rails(exe)
   local core_ok = true
-  for c in {{name = "js-run", source = "JsRun.roc"}, {name = "js-vm", source = "JsVm.roc"}} do
-    local core = run({js_build("js/canvas.shale", c.name, c.source, "dev"), "forward(10);"}, {timeout_ms = RUN_MS, whole = 4000, want = WANT_CANVAS})
-    if core.code == 1 and contains(core.out, "Uncaught ReferenceError: forward is not defined") then
-      print("PASS " .. c.name .. " knows no canvas builtin")
-    else
-      core_ok = false
-      print("FAIL " .. c.name .. " on `forward(10);` said `" .. trim(core.out) .. "`")
-    end
+  local core = run({js_build("js/canvas.shale", "js-vm", "JsVm.roc", "dev"), "forward(10);"}, {timeout_ms = RUN_MS, whole = 4000, want = WANT_CANVAS})
+  if core.code == 1 and contains(core.out, "Uncaught ReferenceError: forward is not defined") then
+    print("PASS js-vm knows no canvas builtin")
+  else
+    core_ok = false
+    print("FAIL js-vm on `forward(10);` said `" .. trim(core.out) .. "`")
   end
-  print("js canvas: " .. (#all - bad) .. " of " .. #all .. " samples match their logs; " .. (rails.n - rails.bad) .. " of " .. rails.n .. " rails stop as they must; js-run's and js-vm's core library has no canvas: " .. tostring(core_ok))
+  print("js canvas: " .. (#all - bad) .. " of " .. #all .. " samples match their logs; " .. (rails.n - rails.bad) .. " of " .. rails.n .. " rails stop as they must; js-vm's core library has no canvas: " .. tostring(core_ok))
   if bad + rails.bad > 0 or not core_ok then fail("js/canvas.shale: " .. (bad + rails.bad) .. " samples or rails failed, core " .. tostring(core_ok)) end
 end
 

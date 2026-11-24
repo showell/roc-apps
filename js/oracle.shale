@@ -1,16 +1,15 @@
 -- This script grades the JavaScript subset against node, its oracle. Every
 -- program in js/tests/ is real JavaScript, so node runs it too: each runs
--- through node and through js-run, and the two outputs (stdout and the exit
--- code) must match byte for byte, but for node's report of a throw nothing
--- caught, which js-run writes as one line (`uncaught_as_one_line`, below).
--- Each program in js/tests/refused/ is one
+-- through node and through js-vm, the bytecode VM, and the two outputs
+-- (stdout and the exit code) must match byte for byte, but for node's
+-- report of a throw nothing caught, which js-vm writes as one line
+-- (`uncaught_as_one_line`, below). Each program in js/tests/refused/ is one
 -- the subset must refuse: its first line, `// refused: <text>`, is what
--- js-run's last line (`js: <why>`) must hold, and js-run must exit 1.
+-- js-vm's last line (`js: <why>`) must hold, and js-vm must exit 1.
 --
---   cd <roc-apps checkout> && shale js/oracle.shale            build js-run, then grade
+--   cd <roc-apps checkout> && shale js/oracle.shale            build js-vm, then grade
 --   cd <roc-apps checkout> && shale js/oracle.shale only=11    the programs whose names start so
---   cd <roc-apps checkout> && shale js/oracle.shale engine=vm  build js-vm, the bytecode VM, then grade it
---   cd <roc-apps checkout> && shale js/oracle.shale engine=vm collect=every
+--   cd <roc-apps checkout> && shale js/oracle.shale collect=every
 --                                                              the same, collecting at every allocation
 --
 -- `collect=every` runs js-vm with `--collect-at-every-allocation`, so its
@@ -19,8 +18,7 @@
 -- collector's own check (a live value naming a freed cell) shows it at
 -- once, where the doubling schedule would collect too seldom to see it.
 --
--- It takes js-run from js/roc/JsRun.roc (js-vm from js/roc/JsVm.roc) on
--- the dev backend from tools/roc_build.shale (js/js_builds.shale), which
+-- It takes js-vm from js/roc/JsVm.roc on the dev backend from tools/roc_build.shale (js/js_builds.shale), which
 -- builds it with the pinned Roc when its cache holds no build of these
 -- inputs, and fails on an error or a warning, whatever Roc's exit code.
 -- Every program found is graded; none is skipped, and the run fails unless
@@ -29,28 +27,18 @@
 --
 -- budget: steps=50000000
 
-const WANT_RUN = "js-run: the interpreter under test, built here"
+const WANT_RUN = "js-vm: the interpreter under test, built here"
 const WANT_NODE = "js-oracle: node is the subset's oracle"
 const RUN_MS = 20000
 
 const ONLY = arg("only", "")
-const ENGINE = arg("engine", "walker")
 const COLLECT = arg("collect", "doubling")
-
--- The command under test and its name in the lines below.
-function engine_command()
-  if ENGINE == "walker" then return {name = "js-run", source = "JsRun.roc"} end
-  if ENGINE == "vm" then return {name = "js-vm", source = "JsVm.roc"} end
-  fail("js/oracle.shale: engine= is walker or vm, not " .. ENGINE)
-end
-
-const COMMAND = engine_command()
 
 -- What follows the program on the command line under test.
 function collect_arguments()
   if COLLECT == "doubling" then return {} end
-  if COLLECT == "every" and ENGINE == "vm" then return {"--collect-at-every-allocation"} end
-  fail("js/oracle.shale: collect= is doubling, or every with engine=vm, not " .. COLLECT)
+  if COLLECT == "every" then return {"--collect-at-every-allocation"} end
+  fail("js/oracle.shale: collect= is doubling or every, not " .. COLLECT)
 end
 
 const COLLECT_ARGUMENTS = collect_arguments()
@@ -69,12 +57,12 @@ function transcript(r)
   return r.out .. "\n[exit " .. r.code .. "]"
 end
 
--- node's output with its report of a throw nothing caught as js-run writes
+-- node's output with its report of a throw nothing caught as js-vm writes
 -- it. node writes the report on stderr, after all the program printed: a
 -- line `<path>:<n>`, the line of the throw, a caret under it, then what was
 -- thrown (past a blank line when it is an error: `TypeError: ...`) and the
 -- stack, and a blank line before it all when what was thrown is no error.
--- js-run writes one line, `Uncaught <the first line of what was thrown>
+-- js-vm writes one line, `Uncaught <the first line of what was thrown>
 -- (line <n>)`, so this keeps that much of node's and drops the rest. A
 -- program that prints a blank line just before it throws what is no error
 -- loses that line here, and so fails; none does.
@@ -112,13 +100,13 @@ function first_difference(want, got)
   while i <= #a or i <= #b do
     local x = get(a, i, "<none>")
     local y = get(b, i, "<none>")
-    if x ~= y then return "line " .. i .. ": node `" .. x .. "`, " .. COMMAND.name .. " `" .. y .. "`" end
+    if x ~= y then return "line " .. i .. ": node `" .. x .. "`, js-vm `" .. y .. "`" end
     i = i + 1
   end
   return "the same lines"
 end
 
--- The command under test, js-run or js-vm, on one program's text.
+-- js-vm on one program's text.
 function js_run(exe, src)
   local argv = {exe, src}
   for a in COLLECT_ARGUMENTS do push(argv, a) end
@@ -168,7 +156,7 @@ function grade_refused(exe)
       else
         bad = bad + 1
         if is_vm_refusal(mine.out) then refused = refused + 1 end
-        print("FAIL refused/" .. basename(f) .. ": wanted `" .. m.group .. "`, " .. COMMAND.name .. " said `" .. last .. "` (" .. mine.ended .. " " .. get(mine, "code", "") .. ")")
+        print("FAIL refused/" .. basename(f) .. ": wanted `" .. m.group .. "`, js-vm said `" .. last .. "` (" .. mine.ended .. " " .. get(mine, "code", "") .. ")")
       end
     end
   end
@@ -176,18 +164,14 @@ function grade_refused(exe)
 end
 
 function main()
-  local exe = js_build("js/oracle.shale", COMMAND.name, COMMAND.source, "dev")
+  local exe = js_build("js/oracle.shale", "js-vm", "JsVm.roc", "dev")
   local o = grade_oracle(exe)
   local r = grade_refused(exe)
   if o.n + r.n == 0 then fail("js/oracle.shale: no program is named " .. ONLY) end
-  if ENGINE == "walker" then
-    print("js oracle: " .. (o.n - o.bad) .. " of " .. o.n .. " match node; " .. (r.n - r.bad) .. " of " .. r.n .. " refused as they must be")
-  else
-    local mode = ENGINE
-    if COLLECT ~= "doubling" then mode = mode .. ", collect=" .. COLLECT end
-    print("js oracle (" .. mode .. "): " .. (o.n - o.bad) .. " of " .. o.n .. " match node (" .. o.refused .. " refused by the VM, " .. (o.bad - o.refused) .. " wrong); "
-      .. (r.n - r.bad) .. " of " .. r.n .. " refused as they must be (" .. r.refused .. " refused by the VM for another reason, " .. (r.bad - r.refused) .. " wrong)")
-  end
+  local mode = ""
+  if COLLECT ~= "doubling" then mode = " (collect=" .. COLLECT .. ")" end
+  print("js oracle" .. mode .. ": " .. (o.n - o.bad) .. " of " .. o.n .. " match node (" .. o.refused .. " refused by the VM, " .. (o.bad - o.refused) .. " wrong); "
+    .. (r.n - r.bad) .. " of " .. r.n .. " refused as they must be (" .. r.refused .. " refused by the VM for another reason, " .. (r.bad - r.refused) .. " wrong)")
   if o.bad + r.bad > 0 then fail("js/oracle.shale: " .. (o.bad + r.bad) .. " programs failed") end
 end
 

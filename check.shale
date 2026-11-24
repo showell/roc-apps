@@ -37,7 +37,7 @@
 -- site/deploy_test.shale, the prod deploy's refusals before it reaches prod,
 -- which needs a shale with `run`'s `secret_args` and asks 1.1.1.1 for
 -- roc.lynrummy.com. And it runs js/oracle.shale, which grades the JavaScript
--- subset's interpreter against node on every program in js/tests/, and
+-- subset's bytecode VM against node on every program in js/tests/, and
 -- js/canvas.shale, which holds each canvas sample in js/canvas/ to its
 -- golden log of effects.
 --
@@ -49,11 +49,10 @@
 -- expected-dev.txt.
 --
 -- `shale check.shale js=1` is the JavaScript subset's allocation tier, kept
--- out of the default run for its time (about 8 minutes when js-run's
--- release build compiles, most of that RC1's SpecConstr pass, tag
--- rc1-slow-release-build; seconds when tools/roc_build.shale
--- already holds both builds of these inputs): js/controls.shale holds the release
--- build's allocations a pass to js/controls/expected.txt and the dev
+-- out of the default run for its time (about two minutes when js-vm's
+-- release build compiles; seconds when tools/roc_build.shale already holds
+-- both builds of these inputs): js/controls.shale holds the VM's release
+-- build's allocations a pass to js/controls/expected.txt and its dev
 -- build's to expected-dev.txt.
 --
 -- `shale check.shale copy_shapes=1` is the copy shapes' tier, also kept out

@@ -2,9 +2,8 @@
 -- js/probes.shale, js/controls.shale, js/bench.shale and js/heaps.shale:
 -- `use("./js_builds.shale")`.
 --
--- Each command (`js-run` from js/roc/JsRun.roc, `js-count` from
--- js/roc/JsCount.roc, `js-canvas` from js/roc/JsCanvas.roc, `js-vm` from
--- js/roc/JsVm.roc) comes from
+-- Each command (`js-vm` from js/roc/JsVm.roc, `js-canvas` from
+-- js/roc/JsCanvas.roc) comes from
 -- tools/roc_build.shale through the prelude's built_roc, `opt` being `dev`
 -- (the dev backend) or `speed` (the release build, through LLVM): built only
 -- when its cache holds no build of these inputs, so a second run of

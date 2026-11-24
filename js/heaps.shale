@@ -1,13 +1,12 @@
--- This script measures what the JavaScript subset's interpreter holds at
--- the end of a run: the heap's cells, the scopes alive and the process's
--- peak memory, for every corpus program in js/tests/ and the garbage-making
--- programs in js/heaps/. The walker frees no cell, so a program that makes
--- an object a pass holds every one of them at its end; js-vm's collector
--- frees them, so its heap stays the size of what the program keeps.
+-- This script measures what the JavaScript subset's VM holds at the end of
+-- a run, for every corpus program in js/tests/ and the garbage-making
+-- programs in js/heaps/: the steps it ran, the heap's cells, the cells still
+-- live and the collections run (js-vm's `--counts` line), and the process's
+-- peak memory. The collector frees the cells a program no longer reaches,
+-- so the heap stays the size of what the program keeps.
 --
---   cd <roc-apps checkout> && shale js/heaps.shale             build js-count --opt=speed, then measure
---   cd <roc-apps checkout> && shale js/heaps.shale engine=vm   js-vm --counts: steps, cells, live, collections
---   cd <roc-apps checkout> && shale js/heaps.shale opt=dev     the dev build of either
+--   cd <roc-apps checkout> && shale js/heaps.shale             build js-vm --opt=speed, then measure
+--   cd <roc-apps checkout> && shale js/heaps.shale opt=dev     the dev build
 --
 -- The peak is GNU time's maximum resident set size, in KiB.
 --
@@ -16,35 +15,19 @@
 use("./js_builds.shale")
 
 const WHO = "js/heaps.shale"
-const WANT_TIME = "js-heaps: GNU time reads js-count's peak memory, which Shale's run doesn't report"
-const ENGINE = arg("engine", "walker")
+const WANT_TIME = "js-heaps: GNU time reads js-vm's peak memory, which Shale's run doesn't report"
 const OPT = arg("opt", "speed")
-
--- The command measured, how it is asked for its counts, and the counts
--- line it prints, its four numbers in order, with their column names.
-function engine_of()
-  if ENGINE == "walker" then
-    return {name = "js-count", source = "JsCount.roc", extra = {}, pattern = "js-count: steps ([0-9]+) cells ([0-9]+) scopes ([0-9]+)()",
-      columns = {"steps", "cells", "scopes", ""}}
-  end
-  if ENGINE == "vm" then
-    return {name = "js-vm", source = "JsVm.roc", extra = {"--counts"}, pattern = "js-vm: steps ([0-9]+) cells ([0-9]+) live ([0-9]+) collections ([0-9]+)",
-      columns = {"steps", "cells", "live", "collections"}}
-  end
-  fail(WHO .. ": engine= is walker or vm, not " .. ENGINE)
-end
-
-const ENGINE_OF = engine_of()
-
+-- js-vm's counts line, its four numbers in order, and their column names.
+const COUNTS = "js-vm: steps ([0-9]+) cells ([0-9]+) live ([0-9]+) collections ([0-9]+)"
+const COLUMNS = {"steps", "cells", "live", "collections"}
 
 function measured(exe, label, src)
-  local argv = {"/usr/bin/time", "-f", "peak %M", exe, src}
-  for a in ENGINE_OF.extra do push(argv, a) end
+  local argv = {"/usr/bin/time", "-f", "peak %M", exe, src, "--counts"}
   local r = run(argv, {timeout_ms = 300000, tail = 4, want = WANT_TIME})
   -- A program that ends in a throw nothing catches exits 1, as node does,
   -- and still prints its counts first.
   if r.ended ~= "exit" or r.code > 1 then fail(WHO .. ": " .. label .. " ended " .. r.ended .. " " .. get(r, "code", "") .. ": " .. r.out) end
-  local m = re_find(r.out, ENGINE_OF.pattern)
+  local m = re_find(r.out, COUNTS)
   local k = re_find(r.out, "peak ([0-9]+)")
   if m == nil or k == nil then fail(WHO .. ": " .. label .. ": no counts or no peak in " .. r.out) end
   local row = pad(label, 36)
@@ -53,9 +36,9 @@ function measured(exe, label, src)
 end
 
 function main()
-  local exe = js_build(WHO, ENGINE_OF.name, ENGINE_OF.source, OPT)
+  local exe = js_build(WHO, "js-vm", "JsVm.roc", OPT)
   local head = pad("program", 36)
-  for c in ENGINE_OF.columns do head = head .. pad(c, -12) end
+  for c in COLUMNS do head = head .. pad(c, -12) end
   print(head .. pad("peak KiB", -10) .. "   CPU ms")
   for f in glob("js/tests/*.js") do measured(exe, basename(f), read(f)) end
   for f in glob("js/heaps/*.js") do measured(exe, "heaps/" .. basename(f), read(f)) end
