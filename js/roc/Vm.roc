@@ -306,6 +306,10 @@ Vm :: [].{
 	## How many cells the session's heap holds, the freed ones among them.
 	cell_count : Vm.Session -> U64
 	cell_count = |session| session.machine.cells.len()
+
+	## How many of the session's cells are in use, not on the free list.
+	in_use_count : Vm.Session -> U64
+	in_use_count = |session| Heap.in_use_count(session.machine.cells, session.machine.free)
 }
 
 standing_of : Vm.Machine -> Vm.Standing
@@ -368,9 +372,10 @@ loop! = |host, program, machine, floor| {
 	var $ops = code_of(program, $code).ops
 	while is_running($machine) and $machine.depth >= floor {
 		if is_collection_due($machine) {
+			before = Heap.in_use_count($machine.cells, $machine.free)
 			{ machine: swept, live } = collected($machine)
 			told! = host.collected!
-			told!({ cells: swept.cells.len(), live: live })
+			told!({ cells: swept.cells.len(), before: before, live: live })
 			$machine = swept
 		}
 		if $machine.code != $code {

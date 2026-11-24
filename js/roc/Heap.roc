@@ -184,6 +184,27 @@ Heap :: [].{
 			}
 		}
 
+	## How many cells the heap holds in use: its length less the cells on
+	## its free list. The list is linked through the freed cells, so this
+	## walks it, a step a free cell: a host asks it at a sample, never an
+	## instruction.
+	in_use_count : List(Heap.Cell), Heap.Free -> U64
+	in_use_count = |cells, free| {
+		var $free_cells = 0
+		var $at = free
+		while $at != NoneFree {
+			$at = match $at {
+				FreeAt(id) => match Heap.cell_at(cells, id) {
+					Freed(after) => after
+					_ => crash "Heap.in_use_count: the free list names only freed cells"
+				}
+				NoneFree => NoneFree
+			}
+			$free_cells = $free_cells + 1
+		}
+		cells.len() - $free_cells
+	}
+
 	## A Map's or a Set's entries, in the order their keys were first set,
 	## each standing or `Gone` once deleted, so a walk that is under way when
 	## an entry goes or comes on still meets the rest in order; where each

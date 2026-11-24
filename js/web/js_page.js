@@ -268,7 +268,7 @@ export function buildPage(runner, env = window) {
     memorySaid,
     element("label", { textContent: "The heap, in cells" }),
     cellsChart,
-    element("p", { className: "key" }, [swatch("cells", "the heap's length"), swatch("live", "live after a collection"), swatch("gc", "a collection")]),
+    element("p", { className: "key" }, [swatch("cells", "cells in use"), swatch("length", "the heap's length"), swatch("live", "live after a collection"), swatch("gc", "a collection")]),
     element("label", { textContent: "The wasm memory, in bytes" }),
     bytesChart,
     element("h2", { textContent: "How the VM keeps its memory" }),

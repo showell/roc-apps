@@ -8,9 +8,10 @@
 # program's clock (`Vm.tick!`): the clicks the page
 # queued since the last (`add_click!`), the timers due, and the program's
 # `frame(t)`. Beside each effect's line, `Host.emit!` hands the page a line
-# `memory collected <cells> <live>` after each collection, and every call but
-# `add_click!` that runs the program ends with `memory cells <cells>`, the
-# heap's length, then one line that says how it ended:
+# `memory collected <cells> <in use before> <live>` after each collection,
+# and every call but `add_click!` that runs the program ends with `memory
+# cells <cells> <in use>`, the heap's length and the cells not on its free
+# list, then one line that says how it ended:
 #
 # - `end frame`: the call ran to its end, and the program waits for the page
 #   to call the next frame (`Vm.waits`: an event queued, or a click
@@ -38,7 +39,7 @@ page_host = {
 	emit!: |effect| Host.emit!(Canvas.line_of(effect).to_utf8()),
 	pointer!: |axis| Host.pointer!(axis),
 	key!: |key| Host.key!(key.to_utf8()),
-	collected!: |{ cells, live }| Host.emit!("memory collected ${cells.to_str()} ${live.to_str()}".to_utf8()),
+	collected!: |{ cells, before, live }| Host.emit!("memory collected ${cells.to_str()} ${before.to_str()} ${live.to_str()}".to_utf8()),
 }
 
 source_buffer : U32 -> List(U8)
@@ -95,7 +96,7 @@ add_click! = |boxed, x, y|
 # session stands after it.
 report_ending! : Vm.Session => {}
 report_ending! = |session| {
-	Host.emit!("memory cells ${Vm.cell_count(session).to_str()}".to_utf8())
+	Host.emit!("memory cells ${Vm.cell_count(session).to_str()} ${Vm.in_use_count(session).to_str()}".to_utf8())
 	line = match Vm.standing(session) {
 		Faulted(why) => "end faulted ${why}"
 		Uncaught(said) => "end thrown ${said}"

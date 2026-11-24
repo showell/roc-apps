@@ -16,13 +16,15 @@
 // prints for it), "refused" or "crashed".
 //
 // **IT KEEPS A TIMELINE OF THE LAST RUN'S MEMORY** (`memory`). The wasm
-// hands it a line `memory collected <cells> <live>` after each collection and
-// `memory cells <cells>` at the end of each call that runs the program
-// (JsApp.roc); neither reaches `onLine`. Each becomes a point: its time since
-// `start`, the heap's cells (its list's length, the freed cells included),
-// the cells a collection found live, and the wasm memory's real size in
-// bytes. Past `MOST_POINTS` the points are thinned, every two made one, so a
-// run that goes on for good keeps a bounded timeline of all of itself.
+// hands it a line `memory collected <cells> <in use before> <live>` after
+// each collection and `memory cells <cells> <in use>` at the end of each call
+// that runs the program (JsApp.roc); neither reaches `onLine`. Each becomes a
+// point: its time since `start`, the heap's cells (its list's length, the
+// freed cells included), the cells in use (not on the free list), and for a
+// collection the cells in use just before it (`peak`) and the cells it found
+// live; and the wasm memory's real size in bytes. Past `MOST_POINTS` the
+// points are thinned, every two made one, so a run that goes on for good
+// keeps a bounded timeline of all of itself.
 //
 // The page and page_check.mjs both use it, so the check drives the very
 // code the page runs.
@@ -30,9 +32,11 @@
 const MOST_POINTS = 1200;
 
 // A point and the one after it as one: the later's place, the collections
-// of both, and the live count of the last collection between them.
+// of both, the live count of the last collection between them, and the
+// highest a collection between them found in use.
 function merged(a, b) {
-  return { ...b, collections: a.collections + b.collections, live: b.live ?? a.live };
+  const peaks = [a.peak, b.peak].filter((p) => p !== null);
+  return { ...b, collections: a.collections + b.collections, live: b.live ?? a.live, peak: peaks.length === 0 ? null : Math.max(...peaks) };
 }
 
 function thinned(points) {
@@ -50,8 +54,8 @@ export async function loadRunner(wasmBytes) {
   let ended = null;
   const memory = { points: [], started: 0 };
   const now = () => globalThis.performance.now();
-  function sampled(cells, live) {
-    const point = { ms: now() - memory.started, cells, live, collections: live === null ? 0 : 1, bytes: x.memory.buffer.byteLength };
+  function sampled({ cells, inUse, peak, live }) {
+    const point = { ms: now() - memory.started, cells, inUse, peak, live, collections: live === null ? 0 : 1, bytes: x.memory.buffer.byteLength };
     memory.points.push(point);
     if (memory.points.length > MOST_POINTS) memory.points = thinned(memory.points);
   }
@@ -61,8 +65,10 @@ export async function loadRunner(wasmBytes) {
       const line = text(p, n);
       if (line.startsWith("end ")) ended = line;
       else if (line.startsWith("memory ")) {
-        const [, kind, cells, live] = line.split(" ");
-        sampled(Number(cells), kind === "collected" ? Number(live) : null);
+        const [kind, ...counts] = line.split(" ").slice(1);
+        const [cells, a, b] = counts.map(Number);
+        if (kind === "collected") sampled({ cells, inUse: b, peak: a, live: b });
+        else sampled({ cells, inUse: a, peak: null, live: null });
       } else onLine(line);
     },
     js_pointer: (axis) => input.pointer(axis),
@@ -93,7 +99,7 @@ export async function loadRunner(wasmBytes) {
     start(src, sink) {
       memory.points = [];
       memory.started = now();
-      memory.points.push({ ms: 0, cells: null, live: null, collections: 0, bytes: x.memory.buffer.byteLength });
+      memory.points.push({ ms: 0, cells: null, inUse: null, peak: null, live: null, collections: 0, bytes: x.memory.buffer.byteLength });
       const bytes = encoder.encode(src);
       const at = x.sourcePtr(bytes.length);
       new Uint8Array(x.memory.buffer, at, bytes.length).set(bytes);

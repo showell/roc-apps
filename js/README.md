@@ -174,11 +174,15 @@ stops halfway has drawn what it drew before the stop. A read is asked of
 the host when the program asks for it.
 
 **The page's memory view.** A "memory" link beside the run controls opens a
-popup with the last run's heap over time and the memory strategy in a few
+popup with the last run's heap over time, its cells in use climbing between
+collections and dropping at each, and the memory strategy in a few
 sentences (`js/web/js_memory.js`). The VM tells its host of each collection
-once it has swept (`collected!`: the heap's cells and the live ones), which
-the page's host hands on as a line `memory collected <cells> <live>`, and
-each call into the program ends with `memory cells <cells>` (`JsApp.roc`).
+once it has swept (`collected!`: the heap's cells, those in use just before
+and the live ones), which the page's host hands on as a line `memory
+collected <cells> <before> <live>`, and each call into the program ends with
+`memory cells <cells> <in use>` (`JsApp.roc`). The free list is linked
+through the freed cells, so in use is counted by walking it
+(`Heap.in_use_count`), at a sample alone, never an instruction.
 js_runner.js keeps those as a timeline, each point with the wasm memory's
 size, thinned past 1,200 points; the other hosts ignore `collected!`.
 

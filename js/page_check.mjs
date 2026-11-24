@@ -33,7 +33,8 @@
 //   before any run that none has run; Escape, its Close button and a click
 //   outside it close it, a click inside doesn't; every sample's run records
 //   points the view draws, and a program that collects shows each collection
-//   as a mark.
+//   as a mark where its cells in use drop, from what was in use before it to
+//   what it found live.
 import { spawnSync } from "node:child_process";
 import { readFileSync, readdirSync } from "node:fs";
 import { join, resolve } from "node:path";
@@ -305,6 +306,16 @@ for (let i = 0; i < SAMPLES.length; i++) {
   const dots = (page.cellsChart.innerHTML.match(/class="live"/g) ?? []).length;
   const counted = runner.memory.points.reduce((n, p) => n + p.collections, 0);
   if (counted === 0 || marks === 0 || dots !== marks) fail(`${collecting}: ${counted} collections recorded, ${marks} marked and ${dots} live dots drawn`);
+  // Each collection's point drops: in use just before it above what it kept,
+  // and the in-use line drawn through both, beside the heap's length.
+  const teeth = runner.memory.points.filter((p) => p.collections > 0);
+  const dropped = teeth.filter((p) => p.peak > p.inUse && p.inUse === p.live).length;
+  const drawn = /<polyline class="cells( dense)?" points="([^"]*)"/.exec(page.cellsChart.innerHTML);
+  const vertices = drawn ? drawn[2].split(" ").length : 0;
+  const sampledCount = runner.memory.points.filter((p) => p.cells !== null).length;
+  if (dropped !== teeth.length || vertices !== sampledCount + teeth.length || !page.cellsChart.innerHTML.includes('class="length"')) {
+    fail(`${collecting}: ${dropped} of ${teeth.length} collections drop their cells in use, and the in-use line has ${vertices} vertices for ${sampledCount} points`);
+  }
   if (!page.memorySaid.textContent.startsWith("The last run, your program: ")) fail(`${collecting}: the memory view says \`${page.memorySaid.textContent}\``);
   page.closeButton.fire("click");
   memoryChecks++;
