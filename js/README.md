@@ -22,6 +22,13 @@ the subset get the message they must, and the other 5 meet a refusal of
 the VM's first ("The bytecode VM", below). In the release build it runs
 fib(22) in 71 ms, the walker's 153.
 
+**Its second round (2026-11-24):** js-vm runs all 50 corpus programs as
+node does and gives all 44 refusals their messages, on the dev backend;
+only the canvas is left out. The value rules and the queue of callbacks
+are modules both engines share (`ValueRules.roc`, `Events.roc`), so the VM
+no longer links the walker, and its dev controls are held to a file of
+their own. Its release numbers wait for the round's one release build.
+
 ## The subset
 
 Every program in the subset is real JavaScript, so `node` is a free oracle:
