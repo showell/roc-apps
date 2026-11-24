@@ -1,0 +1,12 @@
+# Allocations and reallocations a pass each control is held to on js-vm,
+# the bytecode VM, in the dev build (--opt=dev), and why when either is not
+# 0: `<control> <allocs> <reallocs> <why>`. A control not listed here is held
+# to 0 and 0. Measured on Roc 0.1.0-RC1 by js/controls.shale opt=dev
+# engine=vm. Where a control writes through a Heap function as the walker
+# does, its reason is the walker's (expected-dev.txt).
+01-array-store 1 0 the update lambda's capture (Heap.with_item's position and value), boxed in the dev build; not a copy
+02-closure-call 1 0 the call: one list of 112 bytes, the same at every size, which roc-alloc-trace's where puts down to a write in Vm.pushed (round one's where named Vm.frames_with); none in the release build
+04-property-write 1 0 the update lambda's capture (Heap.with_property's key and value), boxed in the dev build; not a copy
+05-array-push 2 0 the call's list of argument values (Vm.arguments_of), one value long, and the update lambda's capture (Heap.with_items_pushed's values), boxed in the dev build; not a copy
+06-push-pop 2 0 05-array-push's two for the push; the pop allocates nothing
+07-map-set 4.08 0 the call's list of argument values, the update lambdas' captures (Heap.with_entry's key and value, and the table's write), boxed in the dev build, and the key's identity (Heap.identity_of's text, its digits from NumberText.text_for, which some numbers take more of); not a copy

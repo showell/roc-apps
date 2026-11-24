@@ -8,7 +8,7 @@
 --   cd <roc-apps checkout> && shale js/controls.shale              the release build (--opt=speed)
 --   cd <roc-apps checkout> && shale js/controls.shale opt=dev      the dev build
 --   cd <roc-apps checkout> && shale js/controls.shale only=02      the controls whose names start so
---   cd <roc-apps checkout> && shale js/controls.shale engine=vm    js-vm, the bytecode VM, as a report
+--   cd <roc-apps checkout> && shale js/controls.shale engine=vm    js-vm, the bytecode VM
 --
 -- **A CONTROL THAT STARTS ALLOCATING NAMES THE WRITE THAT COPIES**: 00-loop
 -- is the pass alone, and each control after it adds one write to it. A copy
@@ -16,9 +16,12 @@
 -- write that stops being made in place shows here as a count, exactly,
 -- where js/probes.shale shows it as a slope in time.
 --
--- The release build is held to js/controls/expected.txt and the dev build
--- to js/controls/expected-dev.txt. `only=` holds nothing: a part of the
--- ladder is a report, and so is the VM's, which has no expected file yet.
+-- The walker's release build is held to js/controls/expected.txt and its
+-- dev build to js/controls/expected-dev.txt; the VM's to expected-vm.txt
+-- and expected-vm-dev.txt. `only=` holds nothing: a part of the ladder is a
+-- report. A build whose expected file isn't written yet is measured as a
+-- report and then fails, naming the file to write from the counts it
+-- printed, so a missing file is never a pass.
 --
 -- budget: steps=50000000
 
@@ -32,6 +35,15 @@ const WHO = "js/controls.shale"
 const OPT = arg("opt", "speed")
 const ONLY = arg("only", "")
 const ENGINE = arg("engine", "walker")
+
+-- The file this engine's controls are held to in this build.
+function expected_file()
+  local engine = ""
+  if ENGINE == "vm" then engine = "-vm" end
+  local build = ""
+  if OPT == "dev" then build = "-dev" end
+  return "js/controls/expected" .. engine .. build .. ".txt"
+end
 
 function argv_for(bin, src, passes)
   return {bin, "const N = " .. passes .. ";\n" .. src}
@@ -55,11 +67,11 @@ function main()
     end
   end
   if #controls == 0 then fail(WHO .. ": no control is named " .. ONLY) end
-  local file = "js/controls/expected.txt"
-  if OPT == "dev" then file = "js/controls/expected-dev.txt" end
+  local file = expected_file()
+  local written = exists(file)
   local gen = js_out_dir(OPT)
   local plan = {who = WHO .. " opt=" .. OPT .. " engine=" .. ENGINE, gen = gen, expected = file, small = SMALL, big = BIG,
-    limit_ms = RUN_MS, hold = ONLY == "" and ENGINE == "walker", controls = controls}
+    limit_ms = RUN_MS, hold = ONLY == "" and written, controls = controls}
   if not plan.hold then plan.expected = "" end
   local plan_path = gen .. "/plan.json"
   if exists(plan_path) then remove(plan_path) end
@@ -67,6 +79,9 @@ function main()
   local r = run({"shale", "--root", ".", "tools/alloc_ladder.shale", "plan=" .. plan_path}, {timeout_ms = 1800000, tail = 80})
   print(trim(r.out))
   if r.code ~= 0 then fail(WHO .. ": the ladder failed, --opt=" .. OPT) end
+  if ONLY == "" and not written then
+    fail(WHO .. ": " .. file .. " isn't written yet, so nothing was held: write it from the counts above")
+  end
 end
 
 main()

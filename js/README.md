@@ -275,12 +275,15 @@ back on the walker.
   js-run's, 200,000,000.
 
 **What the dev controls show (2026-11-24, `js/controls.shale opt=dev
-engine=vm`, a report):** every control flat, and none above the walker's
-dev count: 0, 1, 1, 0, 1, 2, 2 and 4.08 allocations a pass for 00 to 07
-(the walker's 1, 1, 3, 0, 1, 3, 5 and 5.08). The one a call
-makes is a list the dev build copies when a frame is entered, by
-roc-alloc-trace's `where`, which names `frames_with` (the lines it gives
-aren't Vm.roc's); rewriting the write three ways didn't move it. On the dev backend fib(22)
+engine=vm`, held to `js/controls/expected-vm-dev.txt`):** every control
+flat, and none above the walker's dev count: 0, 1, 1, 0, 1, 2, 2 and 4.08
+allocations a pass for 00 to 07 (the walker's 1, 1, 3, 0, 1, 3, 5 and
+5.08). The one a call makes is a list of 112 bytes, the same at every
+size, which roc-alloc-trace's `where` puts down to `Vm.pushed` (round
+one's run named `frames_with`; the lines it gives aren't Vm.roc's);
+rewriting the write three ways didn't move it. The VM's release controls
+have no expected file yet (`expected-vm.txt`): that run fails, after
+printing its counts, until the round's release build writes it. On the dev backend fib(22)
 takes about 660 ms of CPU against the walker's 600, and the loops 2.4 s
 against 2.8 s.
 
@@ -419,7 +422,7 @@ linear: 59, 88 and 184 µs a store; 28, 35 and 86 µs a call; 22, 35 and
     shale js/oracle.shale engine=vm   # the same with js-vm, the bytecode VM
     shale js/probes.shale      # js-count, then the copying probes at three sizes
     shale js/controls.shale    # js-run --opt=speed, then count each control's allocations
-    shale js/controls.shale opt=dev engine=vm   # js-vm's, as a report
+    shale js/controls.shale opt=dev engine=vm   # js-vm's, held to expected-vm-dev.txt
     shale check.shale js=1     # the controls in both builds, held to their expected counts
     shale js/bench.shale       # both builds, then time js/bench/'s programs
     shale js/heaps.shale       # js-count --opt=speed, then each program's cells, scopes and peak memory
