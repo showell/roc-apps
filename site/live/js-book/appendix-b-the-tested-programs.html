@@ -20,7 +20,7 @@
 <li><a href="dev-and-release-builds-disagree.html"><span class="number">7</span>Dev and release builds disagree</a></li>
 <li><a href="build-times.html"><span class="number">8</span>Build times</a></li>
 <li><a href="how-it-is-tested.html"><span class="number">9</span>How it is tested</a></li>
-<li><a href="what-is-left.html"><span class="number">10</span>What is left</a></li>
+<li><a href="limitations.html"><span class="number">10</span>Limitations</a></li>
 <li><a href="appendix-a-the-playgrounds-samples.html">Appendix A: The playground&#39;s samples</a></li>
 <li class="here"><a href="appendix-b-the-tested-programs.html">Appendix B: The tested programs</a><ol class="sections"><li><a href="appendix-b-the-tested-programs.html#the-corpus">The corpus</a></li><li><a href="appendix-b-the-tested-programs.html#the-refused-programs">The refused programs</a></li></ol></li>
 </ol>
@@ -2105,6 +2105,423 @@ console.log(seen, cleared);
 }
 all.set(<span class="syn-string">&quot;again&quot;</span>, <span class="syn-number">1</span>);
 console.log(total, all.size, [...all.entries()]);
+</code></pre></figure><figure class="listing"><figcaption>js/tests/58-classes.js, the whole file</figcaption><pre><code class="language-javascript"><span class="syn-comment">// Classes: a constructor, methods, static methods, `this` in arrows, and</span>
+<span class="syn-comment">// instanceof. No instance is printed whole: node prints `Point { x: 1 }`.</span>
+<span class="syn-keyword">class</span> <span class="syn-name">Point</span> {
+  constructor(x, y) {
+    <span class="syn-keyword">this</span>.x = x;
+    <span class="syn-keyword">this</span>.y = y;
+  }
+  plus(other) {
+    <span class="syn-keyword">return</span> <span class="syn-keyword">new</span> Point(<span class="syn-keyword">this</span>.x + other.x, <span class="syn-keyword">this</span>.y + other.y);
+  }
+  scaled(k) {
+    <span class="syn-keyword">return</span> <span class="syn-keyword">new</span> Point(<span class="syn-keyword">this</span>.x * k, <span class="syn-keyword">this</span>.y * k);
+  }
+  length() {
+    <span class="syn-keyword">return</span> Math.sqrt(<span class="syn-keyword">this</span>.x * <span class="syn-keyword">this</span>.x + <span class="syn-keyword">this</span>.y * <span class="syn-keyword">this</span>.y);
+  }
+  toText() {
+    <span class="syn-keyword">return</span> <span class="syn-string">`(</span>${<span class="syn-keyword">this</span>.x}<span class="syn-string">, </span>${<span class="syn-keyword">this</span>.y}<span class="syn-string">)`</span>;
+  }
+  static origin() {
+    <span class="syn-keyword">return</span> <span class="syn-keyword">new</span> Point(<span class="syn-number">0</span>, <span class="syn-number">0</span>);
+  }
+  static between(a, b) {
+    <span class="syn-keyword">return</span> a.plus(b).scaled(<span class="syn-number">0.5</span>);
+  }
+}
+
+<span class="syn-keyword">const</span> p = <span class="syn-keyword">new</span> Point(<span class="syn-number">3</span>, <span class="syn-number">4</span>);
+console.log(p.x, p.y, p.length());
+console.log(p.plus(<span class="syn-keyword">new</span> Point(<span class="syn-number">1</span>, <span class="syn-number">1</span>)).toText());
+console.log(Point.origin().toText(), Point.between(p, Point.origin()).toText());
+console.log(<span class="syn-keyword">typeof</span> Point, <span class="syn-keyword">typeof</span> p, p <span class="syn-keyword">instanceof</span> Point, {} <span class="syn-keyword">instanceof</span> Point, <span class="syn-number">3</span> <span class="syn-keyword">instanceof</span> Point);
+
+<span class="syn-comment">// A method calls another through `this`, and an arrow inside a method sees</span>
+<span class="syn-comment">// the same `this`.</span>
+<span class="syn-keyword">class</span> <span class="syn-name">Counter</span> {
+  constructor(name, start = <span class="syn-number">0</span>) {
+    <span class="syn-keyword">this</span>.name = name;
+    <span class="syn-keyword">this</span>.count = start;
+    <span class="syn-keyword">this</span>.log = [];
+  }
+  bump(by) {
+    <span class="syn-keyword">this</span>.count += by;
+    <span class="syn-keyword">this</span>.log.push(by);
+    <span class="syn-keyword">return</span> <span class="syn-keyword">this</span>;
+  }
+  bumpAll(list) {
+    list.forEach((n) =&gt; <span class="syn-keyword">this</span>.bump(n));
+    <span class="syn-keyword">return</span> <span class="syn-keyword">this</span>.count;
+  }
+  report() {
+    <span class="syn-keyword">const</span> parts = <span class="syn-keyword">this</span>.log.map((n) =&gt; <span class="syn-string">`</span>${<span class="syn-keyword">this</span>.name}<span class="syn-string">+</span>${n}<span class="syn-string">`</span>);
+    <span class="syn-keyword">return</span> parts.join(<span class="syn-string">&quot; &quot;</span>);
+  }
+  later() {
+    <span class="syn-keyword">return</span> () =&gt; <span class="syn-keyword">this</span>.count * <span class="syn-number">10</span>;
+  }
+}
+
+<span class="syn-keyword">const</span> c = <span class="syn-keyword">new</span> Counter(<span class="syn-string">&quot;c&quot;</span>);
+console.log(c.bump(<span class="syn-number">1</span>).bump(<span class="syn-number">2</span>).count, c.bumpAll([<span class="syn-number">3</span>, <span class="syn-number">4</span>]), c.report());
+<span class="syn-keyword">const</span> later = c.later();
+c.bump(<span class="syn-number">5</span>);
+console.log(later());
+<span class="syn-keyword">const</span> d = <span class="syn-keyword">new</span> Counter(<span class="syn-string">&quot;d&quot;</span>, <span class="syn-number">100</span>);
+console.log(d.count, c.count, d.bump(<span class="syn-number">1</span>).count, c.count);
+
+<span class="syn-comment">// A constructor&#39;s defaults, destructuring and rest parameters.</span>
+<span class="syn-keyword">class</span> <span class="syn-name">Shape</span> {
+  constructor({ kind, sides = <span class="syn-number">0</span> }, ...tags) {
+    <span class="syn-keyword">this</span>.kind = kind;
+    <span class="syn-keyword">this</span>.sides = sides;
+    <span class="syn-keyword">this</span>.tags = tags;
+  }
+  describe() {
+    <span class="syn-keyword">return</span> <span class="syn-string">`</span>${<span class="syn-keyword">this</span>.kind}<span class="syn-string"> with </span>${<span class="syn-keyword">this</span>.sides}<span class="syn-string"> sides [</span>${<span class="syn-keyword">this</span>.tags.join(<span class="syn-string">&quot;,&quot;</span>)}<span class="syn-string">]`</span>;
+  }
+}
+console.log(<span class="syn-keyword">new</span> Shape({ kind: <span class="syn-string">&quot;square&quot;</span>, sides: <span class="syn-number">4</span> }, <span class="syn-string">&quot;flat&quot;</span>, <span class="syn-string">&quot;even&quot;</span>).describe());
+console.log(<span class="syn-keyword">new</span> Shape({ kind: <span class="syn-string">&quot;blob&quot;</span> }).describe());
+
+<span class="syn-comment">// No constructor at all, and `new` without parentheses.</span>
+<span class="syn-keyword">class</span> <span class="syn-name">Empty</span> {
+  hello() {
+    <span class="syn-keyword">return</span> <span class="syn-string">&quot;hello from an empty class&quot;</span>;
+  }
+}
+<span class="syn-keyword">const</span> e = <span class="syn-keyword">new</span> Empty;
+console.log(e.hello(), e <span class="syn-keyword">instanceof</span> Empty, e <span class="syn-keyword">instanceof</span> Point);
+
+<span class="syn-comment">// An instance&#39;s fields read and written like an object&#39;s.</span>
+<span class="syn-keyword">const</span> q = <span class="syn-keyword">new</span> Point(<span class="syn-number">1</span>, <span class="syn-number">2</span>);
+q.x = <span class="syn-number">10</span>;
+q[<span class="syn-string">&quot;y&quot;</span>] = <span class="syn-number">20</span>;
+q.extra = <span class="syn-string">&quot;yes&quot;</span>;
+console.log(q.x, q.y, q.extra, q.missing, q.toText());
+console.log(<span class="syn-string">`</span>${q}<span class="syn-string">`</span>, String(q), q === q, q === <span class="syn-keyword">new</span> Point(<span class="syn-number">10</span>, <span class="syn-number">20</span>));
+
+<span class="syn-comment">// A method that throws, caught.</span>
+<span class="syn-keyword">class</span> <span class="syn-name">Account</span> {
+  constructor(balance) {
+    <span class="syn-keyword">this</span>.balance = balance;
+  }
+  withdraw(amount) {
+    <span class="syn-keyword">if</span> (amount &gt; <span class="syn-keyword">this</span>.balance) {
+      <span class="syn-keyword">throw</span> <span class="syn-keyword">new</span> RangeError(<span class="syn-string">`only </span>${<span class="syn-keyword">this</span>.balance}<span class="syn-string"> left`</span>);
+    }
+    <span class="syn-keyword">this</span>.balance -= amount;
+    <span class="syn-keyword">return</span> <span class="syn-keyword">this</span>.balance;
+  }
+}
+<span class="syn-keyword">const</span> account = <span class="syn-keyword">new</span> Account(<span class="syn-number">50</span>);
+<span class="syn-keyword">try</span> {
+  account.withdraw(<span class="syn-number">20</span>);
+  account.withdraw(<span class="syn-number">40</span>);
+} <span class="syn-keyword">catch</span> (err) {
+  console.log(err.name, err.message, account.balance);
+}
+
+<span class="syn-comment">// A class declared in a function, and an instance in an array, a Map and</span>
+<span class="syn-comment">// as a property.</span>
+<span class="syn-keyword">function</span> <span class="syn-name">makeStack</span>() {
+  <span class="syn-keyword">class</span> <span class="syn-name">Stack</span> {
+    constructor() {
+      <span class="syn-keyword">this</span>.items = [];
+    }
+    push(v) {
+      <span class="syn-keyword">this</span>.items.push(v);
+      <span class="syn-keyword">return</span> <span class="syn-keyword">this</span>.items.length;
+    }
+    pop() {
+      <span class="syn-keyword">return</span> <span class="syn-keyword">this</span>.items.pop();
+    }
+  }
+  <span class="syn-keyword">return</span> <span class="syn-keyword">new</span> Stack();
+}
+<span class="syn-keyword">const</span> s = makeStack();
+s.push(<span class="syn-number">1</span>);
+s.push(<span class="syn-number">2</span>);
+console.log(s.pop(), s.push(<span class="syn-number">3</span>), s.items);
+<span class="syn-keyword">const</span> shelf = [<span class="syn-keyword">new</span> Point(<span class="syn-number">1</span>, <span class="syn-number">1</span>), <span class="syn-keyword">new</span> Point(<span class="syn-number">2</span>, <span class="syn-number">2</span>)];
+<span class="syn-keyword">const</span> named = <span class="syn-keyword">new</span> Map([[<span class="syn-string">&quot;a&quot;</span>, <span class="syn-keyword">new</span> Point(<span class="syn-number">5</span>, <span class="syn-number">5</span>)]]);
+console.log(shelf.map((pt) =&gt; pt.toText()).join(<span class="syn-string">&quot; &quot;</span>), named.get(<span class="syn-string">&quot;a&quot;</span>).length() &gt; <span class="syn-number">7</span>);
+<span class="syn-keyword">const</span> holder = { pt: <span class="syn-keyword">new</span> Point(<span class="syn-number">7</span>, <span class="syn-number">8</span>) };
+console.log(holder.pt.toText(), shelf.every((pt) =&gt; pt <span class="syn-keyword">instanceof</span> Point));
+</code></pre></figure><figure class="listing"><figcaption>js/tests/59-class-extends.js, the whole file</figcaption><pre><code class="language-javascript"><span class="syn-comment">// Classes that extend classes: `super(...)`, `super.m()`, overriding,</span>
+<span class="syn-comment">// inherited static methods, and instanceof up the chain.</span>
+<span class="syn-keyword">class</span> <span class="syn-name">Animal</span> {
+  constructor(name, legs) {
+    <span class="syn-keyword">this</span>.name = name;
+    <span class="syn-keyword">this</span>.legs = legs;
+    <span class="syn-keyword">this</span>.sound = <span class="syn-keyword">this</span>.voice();
+  }
+  voice() {
+    <span class="syn-keyword">return</span> <span class="syn-string">&quot;...&quot;</span>;
+  }
+  speak() {
+    <span class="syn-keyword">return</span> <span class="syn-string">`</span>${<span class="syn-keyword">this</span>.name}<span class="syn-string"> says </span>${<span class="syn-keyword">this</span>.voice()}<span class="syn-string">`</span>;
+  }
+  describe() {
+    <span class="syn-keyword">return</span> <span class="syn-string">`</span>${<span class="syn-keyword">this</span>.name}<span class="syn-string"> has </span>${<span class="syn-keyword">this</span>.legs}<span class="syn-string"> legs`</span>;
+  }
+  static kingdom() {
+    <span class="syn-keyword">return</span> <span class="syn-string">&quot;animalia&quot;</span>;
+  }
+  static make(name) {
+    <span class="syn-keyword">return</span> <span class="syn-keyword">new</span> Animal(name, <span class="syn-number">4</span>);
+  }
+}
+
+<span class="syn-keyword">class</span> <span class="syn-name">Dog</span> <span class="syn-keyword">extends</span> Animal {
+  constructor(name, tricks) {
+    <span class="syn-keyword">super</span>(name, <span class="syn-number">4</span>);
+    <span class="syn-keyword">this</span>.tricks = tricks;
+  }
+  voice() {
+    <span class="syn-keyword">return</span> <span class="syn-string">&quot;woof&quot;</span>;
+  }
+  describe() {
+    <span class="syn-keyword">return</span> <span class="syn-string">`</span>${<span class="syn-keyword">super</span>.describe()}<span class="syn-string"> and knows </span>${<span class="syn-keyword">this</span>.tricks.length}<span class="syn-string"> tricks`</span>;
+  }
+  static make(name) {
+    <span class="syn-keyword">return</span> <span class="syn-keyword">new</span> Dog(name, [<span class="syn-string">&quot;sit&quot;</span>]);
+  }
+}
+
+<span class="syn-keyword">class</span> <span class="syn-name">Puppy</span> <span class="syn-keyword">extends</span> Dog {
+  voice() {
+    <span class="syn-keyword">return</span> <span class="syn-string">`</span>${<span class="syn-keyword">super</span>.voice()}<span class="syn-string"> (squeaky)`</span>;
+  }
+  speak() {
+    <span class="syn-keyword">return</span> <span class="syn-keyword">super</span>.speak().toUpperCase();
+  }
+}
+
+<span class="syn-keyword">class</span> <span class="syn-name">Bird</span> <span class="syn-keyword">extends</span> Animal {
+  constructor(name) {
+    <span class="syn-keyword">const</span> wings = <span class="syn-number">2</span>;
+    <span class="syn-keyword">super</span>(name, wings);
+    <span class="syn-keyword">this</span>.flies = <span class="syn-keyword">true</span>;
+  }
+}
+
+<span class="syn-keyword">const</span> a = <span class="syn-keyword">new</span> Animal(<span class="syn-string">&quot;generic&quot;</span>, <span class="syn-number">6</span>);
+<span class="syn-keyword">const</span> d = <span class="syn-keyword">new</span> Dog(<span class="syn-string">&quot;rex&quot;</span>, [<span class="syn-string">&quot;sit&quot;</span>, <span class="syn-string">&quot;roll&quot;</span>]);
+<span class="syn-keyword">const</span> p = <span class="syn-keyword">new</span> Puppy(<span class="syn-string">&quot;bit&quot;</span>, [<span class="syn-string">&quot;beg&quot;</span>]);
+<span class="syn-keyword">const</span> b = <span class="syn-keyword">new</span> Bird(<span class="syn-string">&quot;tweety&quot;</span>);
+
+<span class="syn-comment">// The parent&#39;s constructor calls `voice`, and sees the subclass&#39;s.</span>
+console.log(a.sound, d.sound, p.sound, b.sound);
+console.log(a.speak());
+console.log(d.speak());
+console.log(p.speak());
+console.log(d.describe());
+console.log(p.describe());
+console.log(b.describe(), b.flies);
+
+console.log(Animal.kingdom(), Dog.kingdom(), Puppy.kingdom());
+console.log(Animal.make(<span class="syn-string">&quot;cow&quot;</span>).describe(), Dog.make(<span class="syn-string">&quot;fido&quot;</span>).describe(), Puppy.make(<span class="syn-string">&quot;tiny&quot;</span>).describe());
+
+<span class="syn-keyword">for</span> (<span class="syn-keyword">const</span> [label, x] <span class="syn-keyword">of</span> [[<span class="syn-string">&quot;a&quot;</span>, a], [<span class="syn-string">&quot;d&quot;</span>, d], [<span class="syn-string">&quot;p&quot;</span>, p], [<span class="syn-string">&quot;b&quot;</span>, b], [<span class="syn-string">&quot;o&quot;</span>, {}]]) {
+  console.log(label, x <span class="syn-keyword">instanceof</span> Animal, x <span class="syn-keyword">instanceof</span> Dog, x <span class="syn-keyword">instanceof</span> Puppy, x <span class="syn-keyword">instanceof</span> Bird);
+}
+
+<span class="syn-comment">// A subclass with no constructor passes every argument to its parent&#39;s.</span>
+<span class="syn-keyword">class</span> <span class="syn-name">Named</span> {
+  constructor(first, last = <span class="syn-string">&quot;Smith&quot;</span>, ...titles) {
+    <span class="syn-keyword">this</span>.full = <span class="syn-string">`</span>${titles.join(<span class="syn-string">&quot; &quot;</span>)}<span class="syn-string"> </span>${first}<span class="syn-string"> </span>${last}<span class="syn-string">`</span>.trim();
+  }
+}
+<span class="syn-keyword">class</span> <span class="syn-name">Person</span> <span class="syn-keyword">extends</span> Named {
+  greet() {
+    <span class="syn-keyword">return</span> <span class="syn-string">`hello, </span>${<span class="syn-keyword">this</span>.full}<span class="syn-string">`</span>;
+  }
+}
+console.log(<span class="syn-keyword">new</span> Person(<span class="syn-string">&quot;Ada&quot;</span>).greet(), <span class="syn-keyword">new</span> Person(<span class="syn-string">&quot;Alan&quot;</span>, <span class="syn-string">&quot;Turing&quot;</span>, <span class="syn-string">&quot;Dr&quot;</span>, <span class="syn-string">&quot;Prof&quot;</span>).greet());
+
+<span class="syn-comment">// A chain of three, each adding to an accumulator in its constructor.</span>
+<span class="syn-keyword">class</span> <span class="syn-name">Base</span> {
+  constructor(log) {
+    <span class="syn-keyword">this</span>.log = log;
+    log.push(<span class="syn-string">&quot;base&quot;</span>);
+  }
+  total() {
+    <span class="syn-keyword">return</span> <span class="syn-keyword">this</span>.log.length;
+  }
+}
+<span class="syn-keyword">class</span> <span class="syn-name">Middle</span> <span class="syn-keyword">extends</span> Base {
+  constructor(log) {
+    log.push(<span class="syn-string">&quot;before middle&quot;</span>);
+    <span class="syn-keyword">super</span>(log);
+    log.push(<span class="syn-string">&quot;middle&quot;</span>);
+  }
+}
+<span class="syn-keyword">class</span> <span class="syn-name">Top</span> <span class="syn-keyword">extends</span> Middle {
+  constructor(log) {
+    <span class="syn-keyword">super</span>(log);
+    <span class="syn-keyword">this</span>.log.push(<span class="syn-string">&quot;top&quot;</span>);
+  }
+  total() {
+    <span class="syn-keyword">return</span> <span class="syn-keyword">super</span>.total() * <span class="syn-number">100</span>;
+  }
+}
+<span class="syn-keyword">const</span> log = [];
+<span class="syn-keyword">const</span> t = <span class="syn-keyword">new</span> Top(log);
+console.log(log, t.total(), <span class="syn-keyword">new</span> Base([]).total());
+
+<span class="syn-comment">// A super method called from a callback and a timer.</span>
+<span class="syn-keyword">class</span> <span class="syn-name">Tally</span> {
+  constructor() {
+    <span class="syn-keyword">this</span>.sum = <span class="syn-number">0</span>;
+  }
+  add(n) {
+    <span class="syn-keyword">this</span>.sum += n;
+  }
+}
+<span class="syn-keyword">class</span> <span class="syn-name">LoudTally</span> <span class="syn-keyword">extends</span> Tally {
+  add(n) {
+    <span class="syn-keyword">super</span>.add(n * <span class="syn-number">2</span>);
+  }
+}
+<span class="syn-keyword">const</span> tally = <span class="syn-keyword">new</span> LoudTally();
+[<span class="syn-number">1</span>, <span class="syn-number">2</span>, <span class="syn-number">3</span>].forEach((n) =&gt; tally.add(n));
+setTimeout(() =&gt; console.log(<span class="syn-string">&quot;tally&quot;</span>, tally.sum), <span class="syn-number">5</span>);
+</code></pre></figure><figure class="listing"><figcaption>js/tests/60-many-instances.js, the whole file</figcaption><pre><code class="language-javascript"><span class="syn-comment">// Many instances, most short-lived, so the collector runs while methods&#39;</span>
+<span class="syn-comment">// closures and their instances are live and dead.</span>
+<span class="syn-keyword">class</span> <span class="syn-name">Vec</span> {
+  constructor(x, y) {
+    <span class="syn-keyword">this</span>.x = x;
+    <span class="syn-keyword">this</span>.y = y;
+  }
+  add(o) {
+    <span class="syn-keyword">return</span> <span class="syn-keyword">new</span> Vec(<span class="syn-keyword">this</span>.x + o.x, <span class="syn-keyword">this</span>.y + o.y);
+  }
+  dot(o) {
+    <span class="syn-keyword">return</span> <span class="syn-keyword">this</span>.x * o.x + <span class="syn-keyword">this</span>.y * o.y;
+  }
+}
+
+<span class="syn-keyword">class</span> <span class="syn-name">Particle</span> <span class="syn-keyword">extends</span> Vec {
+  constructor(x, y, id) {
+    <span class="syn-keyword">super</span>(x, y);
+    <span class="syn-keyword">this</span>.id = id;
+    <span class="syn-keyword">this</span>.trail = [];
+  }
+  step(v) {
+    <span class="syn-keyword">const</span> next = <span class="syn-keyword">this</span>.add(v);
+    <span class="syn-keyword">this</span>.trail.push(<span class="syn-keyword">this</span>.x);
+    <span class="syn-keyword">if</span> (<span class="syn-keyword">this</span>.trail.length &gt; <span class="syn-number">4</span>) <span class="syn-keyword">this</span>.trail.shift();
+    <span class="syn-keyword">this</span>.x = next.x;
+    <span class="syn-keyword">this</span>.y = next.y;
+    <span class="syn-keyword">return</span> <span class="syn-keyword">this</span>;
+  }
+}
+
+<span class="syn-keyword">let</span> total = <span class="syn-keyword">new</span> Vec(<span class="syn-number">0</span>, <span class="syn-number">0</span>);
+<span class="syn-keyword">for</span> (<span class="syn-keyword">let</span> i = <span class="syn-number">0</span>; i &lt; <span class="syn-number">3000</span>; i++) {
+  total = total.add(<span class="syn-keyword">new</span> Vec(i % <span class="syn-number">7</span>, i % <span class="syn-number">3</span>));
+}
+console.log(total.x, total.y, total.dot(<span class="syn-keyword">new</span> Vec(<span class="syn-number">1</span>, <span class="syn-number">1</span>)));
+
+<span class="syn-keyword">const</span> swarm = [];
+<span class="syn-keyword">for</span> (<span class="syn-keyword">let</span> i = <span class="syn-number">0</span>; i &lt; <span class="syn-number">60</span>; i++) {
+  swarm.push(<span class="syn-keyword">new</span> Particle(i, -i, i));
+}
+<span class="syn-keyword">for</span> (<span class="syn-keyword">let</span> round = <span class="syn-number">0</span>; round &lt; <span class="syn-number">20</span>; round++) {
+  <span class="syn-keyword">const</span> wind = <span class="syn-keyword">new</span> Vec(round % <span class="syn-number">5</span>, <span class="syn-number">1</span>);
+  <span class="syn-keyword">for</span> (<span class="syn-keyword">const</span> p <span class="syn-keyword">of</span> swarm) p.step(wind);
+  <span class="syn-keyword">if</span> (round % <span class="syn-number">5</span> === <span class="syn-number">0</span>) swarm.splice(<span class="syn-number">0</span>, <span class="syn-number">5</span>);
+}
+<span class="syn-keyword">let</span> checksum = <span class="syn-number">0</span>;
+<span class="syn-keyword">for</span> (<span class="syn-keyword">const</span> p <span class="syn-keyword">of</span> swarm) checksum += p.x + p.y * <span class="syn-number">2</span> + p.trail.length + p.id;
+console.log(swarm.length, checksum, swarm.every((p) =&gt; p <span class="syn-keyword">instanceof</span> Vec &amp;&amp; p <span class="syn-keyword">instanceof</span> Particle));
+</code></pre></figure><figure class="listing"><figcaption>js/tests/61-classes-tour.js, the whole file</figcaption><pre><code class="language-javascript"><span class="syn-comment">// A morning at a small bank, told with classes. Each `SUPPORTS` comment</span>
+<span class="syn-comment">// marks the first use of a class&#39;s feature. No account is printed whole:</span>
+<span class="syn-comment">// node prints `Account { owner: &#39;ada&#39;, ... }`, which the subset refuses</span>
+<span class="syn-comment">// rather than print differently.</span>
+
+<span class="syn-keyword">const</span> opened = [];
+
+<span class="syn-comment">// SUPPORTS class, with a constructor and methods</span>
+<span class="syn-keyword">class</span> <span class="syn-name">Account</span> {
+  constructor(owner, balance = <span class="syn-number">0</span>) {
+    <span class="syn-comment">// SUPPORTS this, in a constructor</span>
+    <span class="syn-keyword">this</span>.owner = owner;
+    <span class="syn-keyword">this</span>.balance = balance;
+    <span class="syn-keyword">this</span>.history = [];
+    opened.push(owner);
+  }
+  deposit(amount) {
+    <span class="syn-keyword">this</span>.balance += amount;
+    <span class="syn-keyword">this</span>.history.push(<span class="syn-string">`+</span>${amount}<span class="syn-string">`</span>);
+    <span class="syn-comment">// SUPPORTS a method answering this, so calls chain</span>
+    <span class="syn-keyword">return</span> <span class="syn-keyword">this</span>;
+  }
+  withdraw(amount) {
+    <span class="syn-keyword">if</span> (amount &gt; <span class="syn-keyword">this</span>.balance) {
+      <span class="syn-keyword">throw</span> <span class="syn-keyword">new</span> RangeError(<span class="syn-string">`</span>${<span class="syn-keyword">this</span>.owner}<span class="syn-string"> has only </span>${<span class="syn-keyword">this</span>.balance}<span class="syn-string">`</span>);
+    }
+    <span class="syn-keyword">this</span>.balance -= amount;
+    <span class="syn-keyword">this</span>.history.push(<span class="syn-string">`-</span>${amount}<span class="syn-string">`</span>);
+    <span class="syn-keyword">return</span> <span class="syn-keyword">this</span>;
+  }
+  statement() {
+    <span class="syn-comment">// SUPPORTS this inside an arrow, taken from the method around it</span>
+    <span class="syn-keyword">const</span> lines = <span class="syn-keyword">this</span>.history.map((entry) =&gt; <span class="syn-string">`</span>${<span class="syn-keyword">this</span>.owner}<span class="syn-string">: </span>${entry}<span class="syn-string">`</span>);
+    <span class="syn-keyword">return</span> lines.join(<span class="syn-string">&quot;, &quot;</span>);
+  }
+  <span class="syn-comment">// SUPPORTS static methods</span>
+  static between(from, to, amount) {
+    from.withdraw(amount);
+    to.deposit(amount);
+  }
+}
+
+<span class="syn-comment">// SUPPORTS extends, super(...) and super.method()</span>
+<span class="syn-keyword">class</span> <span class="syn-name">Savings</span> <span class="syn-keyword">extends</span> Account {
+  constructor(owner, balance, rate) {
+    <span class="syn-keyword">super</span>(owner, balance);
+    <span class="syn-keyword">this</span>.rate = rate;
+  }
+  addInterest() {
+    <span class="syn-keyword">return</span> <span class="syn-keyword">this</span>.deposit(Math.round(<span class="syn-keyword">this</span>.balance * <span class="syn-keyword">this</span>.rate));
+  }
+  statement() {
+    <span class="syn-keyword">return</span> <span class="syn-string">`</span>${<span class="syn-keyword">super</span>.statement()}<span class="syn-string"> (savings at </span>${<span class="syn-keyword">this</span>.rate * <span class="syn-number">100</span>}<span class="syn-string">%)`</span>;
+  }
+}
+
+<span class="syn-comment">// SUPPORTS new</span>
+<span class="syn-keyword">const</span> ada = <span class="syn-keyword">new</span> Account(<span class="syn-string">&quot;ada&quot;</span>, <span class="syn-number">100</span>);
+<span class="syn-keyword">const</span> bob = <span class="syn-keyword">new</span> Savings(<span class="syn-string">&quot;bob&quot;</span>, <span class="syn-number">1000</span>, <span class="syn-number">0.05</span>);
+
+ada.deposit(<span class="syn-number">50</span>).withdraw(<span class="syn-number">30</span>);
+bob.addInterest();
+<span class="syn-comment">// SUPPORTS a static method inherited from the parent class</span>
+Savings.between(bob, ada, <span class="syn-number">200</span>);
+
+<span class="syn-keyword">try</span> {
+  ada.withdraw(<span class="syn-number">10000</span>);
+} <span class="syn-keyword">catch</span> (err) {
+  console.log(err.name, err.message);
+}
+
+console.log(ada.statement());
+console.log(bob.statement());
+console.log(<span class="syn-string">&quot;balances:&quot;</span>, ada.balance, bob.balance);
+
+<span class="syn-comment">// SUPPORTS instanceof, up the chain</span>
+<span class="syn-keyword">for</span> (<span class="syn-keyword">const</span> who <span class="syn-keyword">of</span> [ada, bob]) {
+  console.log(who.owner, who <span class="syn-keyword">instanceof</span> Account, who <span class="syn-keyword">instanceof</span> Savings);
+}
+
+<span class="syn-comment">// Many accounts, each with its own closures over its own `this`.</span>
+<span class="syn-keyword">const</span> town = Array.from({ length: <span class="syn-number">5</span> }, (_, i) =&gt; <span class="syn-keyword">new</span> Savings(<span class="syn-string">`saver</span>${i}<span class="syn-string">`</span>, <span class="syn-number">100</span> * (i + <span class="syn-number">1</span>), <span class="syn-number">0.1</span>));
+town.forEach((s) =&gt; s.addInterest());
+console.log(town.map((s) =&gt; s.balance).join(<span class="syn-string">&quot; &quot;</span>), opened.length);
 </code></pre></figure><h2 id="the-refused-programs">The refused programs <a class="section-link" href="#the-refused-programs" aria-label="Link to this section">§</a></h2>
 <p>The VM refuses each program with the message its first line gives.</p>
 <figure class="listing"><figcaption>js/tests/refused/bitwise.js, the whole file</figcaption><pre><code class="language-javascript"><span class="syn-comment">// refused: unsupported: bitwise operators</span>
@@ -2119,8 +2536,181 @@ console.log(<span class="syn-keyword">true</span> + <span class="syn-number">1</
 <span class="syn-keyword">const</span> a = [];
 a.push(a);
 console.log(a);
-</code></pre></figure><figure class="listing"><figcaption>js/tests/refused/class.js, the whole file</figcaption><pre><code class="language-javascript"><span class="syn-comment">// refused: unsupported: classes</span>
+</code></pre></figure><figure class="listing"><figcaption>js/tests/refused/class-computed-method.js, the whole file</figcaption><pre><code class="language-javascript"><span class="syn-comment">// refused: unsupported: computed method names</span>
+<span class="syn-keyword">const</span> k = <span class="syn-string">&#39;m&#39;</span>;
+<span class="syn-keyword">class</span> <span class="syn-name">A</span> {
+  [k]() {
+    <span class="syn-keyword">return</span> <span class="syn-number">1</span>;
+  }
+}
+</code></pre></figure><figure class="listing"><figcaption>js/tests/refused/class-entries.js, the whole file</figcaption><pre><code class="language-javascript"><span class="syn-comment">// refused: unsupported: printing or listing a class instance</span>
+<span class="syn-keyword">class</span> <span class="syn-name">P</span> {}
+Object.entries(<span class="syn-keyword">new</span> P());
+</code></pre></figure><figure class="listing"><figcaption>js/tests/refused/class-expression.js, the whole file</figcaption><pre><code class="language-javascript"><span class="syn-comment">// refused: unsupported: class expressions</span>
+<span class="syn-keyword">const</span> A = <span class="syn-keyword">class</span> {};
+</code></pre></figure><figure class="listing"><figcaption>js/tests/refused/class-extends-later.js, the whole file</figcaption><pre><code class="language-javascript"><span class="syn-comment">// refused: unsupported: `extends` of anything but a class declared above</span>
+<span class="syn-keyword">function</span> <span class="syn-name">f</span>() {
+  <span class="syn-keyword">return</span> <span class="syn-number">1</span>;
+}
+<span class="syn-keyword">class</span> <span class="syn-name">B</span> <span class="syn-keyword">extends</span> f {}
+</code></pre></figure><figure class="listing"><figcaption>js/tests/refused/class-field.js, the whole file</figcaption><pre><code class="language-javascript"><span class="syn-comment">// refused: unsupported: class fields (set them on `this` in the constructor)</span>
+<span class="syn-keyword">class</span> <span class="syn-name">A</span> {
+  x = <span class="syn-number">1</span>;
+}
+</code></pre></figure><figure class="listing"><figcaption>js/tests/refused/class-for-in.js, the whole file</figcaption><pre><code class="language-javascript"><span class="syn-comment">// refused: unsupported: `for ... in`</span>
+<span class="syn-keyword">class</span> <span class="syn-name">P</span> {}
+<span class="syn-keyword">for</span> (<span class="syn-keyword">const</span> k <span class="syn-keyword">in</span> <span class="syn-keyword">new</span> P()) {
+  console.log(k);
+}
+</code></pre></figure><figure class="listing"><figcaption>js/tests/refused/class-getter.js, the whole file</figcaption><pre><code class="language-javascript"><span class="syn-comment">// refused: unsupported: getters, setters and async methods</span>
+<span class="syn-keyword">class</span> <span class="syn-name">A</span> {
+  get x() {
+    <span class="syn-keyword">return</span> <span class="syn-number">1</span>;
+  }
+}
+</code></pre></figure><figure class="listing"><figcaption>js/tests/refused/class-keys.js, the whole file</figcaption><pre><code class="language-javascript"><span class="syn-comment">// refused: unsupported: printing or listing a class instance</span>
+<span class="syn-keyword">class</span> <span class="syn-name">P</span> {
+  constructor() {
+    <span class="syn-keyword">this</span>.x = <span class="syn-number">1</span>;
+  }
+}
+console.log(Object.keys(<span class="syn-keyword">new</span> P()));
+</code></pre></figure><figure class="listing"><figcaption>js/tests/refused/class-lone-body.js, the whole file</figcaption><pre><code class="language-javascript"><span class="syn-comment">// refused: SyntaxError: Lexical declaration cannot appear in a single-statement context</span>
+<span class="syn-keyword">if</span> (<span class="syn-keyword">true</span>) <span class="syn-keyword">class</span> <span class="syn-name">A</span> {}
+</code></pre></figure><figure class="listing"><figcaption>js/tests/refused/class-name-assigned.js, the whole file</figcaption><pre><code class="language-javascript"><span class="syn-comment">// refused: unsupported: assigning to `A`, a class&#39;s name</span>
 <span class="syn-keyword">class</span> <span class="syn-name">A</span> {}
+A = <span class="syn-number">1</span>;
+</code></pre></figure><figure class="listing"><figcaption>js/tests/refused/class-name-declared-again.js, the whole file</figcaption><pre><code class="language-javascript"><span class="syn-comment">// refused: unsupported: `A` declared again, a class&#39;s name</span>
+<span class="syn-keyword">class</span> <span class="syn-name">A</span> {}
+<span class="syn-keyword">function</span> <span class="syn-name">f</span>(A) {
+  <span class="syn-keyword">return</span> A;
+}
+</code></pre></figure><figure class="listing"><figcaption>js/tests/refused/class-nested-super.js, the whole file</figcaption><pre><code class="language-javascript"><span class="syn-comment">// refused: unsupported: `super(...)` inside a block or an expression</span>
+<span class="syn-keyword">class</span> <span class="syn-name">A</span> {}
+<span class="syn-keyword">class</span> <span class="syn-name">B</span> <span class="syn-keyword">extends</span> A {
+  constructor(flag) {
+    <span class="syn-keyword">if</span> (flag) {
+      <span class="syn-keyword">super</span>();
+    }
+  }
+}
+</code></pre></figure><figure class="listing"><figcaption>js/tests/refused/class-no-super.js, the whole file</figcaption><pre><code class="language-javascript"><span class="syn-comment">// refused: unsupported: a derived class&#39;s constructor without `super(...)`</span>
+<span class="syn-keyword">class</span> <span class="syn-name">A</span> {}
+<span class="syn-keyword">class</span> <span class="syn-name">B</span> <span class="syn-keyword">extends</span> A {
+  constructor() {
+    console.log(<span class="syn-string">&#39;no super&#39;</span>);
+  }
+}
+<span class="syn-keyword">new</span> B();
+</code></pre></figure><figure class="listing"><figcaption>js/tests/refused/class-object-rest.js, the whole file</figcaption><pre><code class="language-javascript"><span class="syn-comment">// refused: unsupported: printing or listing a class instance</span>
+<span class="syn-keyword">class</span> <span class="syn-name">P</span> {
+  constructor() {
+    <span class="syn-keyword">this</span>.x = <span class="syn-number">1</span>;
+  }
+}
+<span class="syn-keyword">const</span> { x, ...others } = <span class="syn-keyword">new</span> P();
+</code></pre></figure><figure class="listing"><figcaption>js/tests/refused/class-print-class.js, the whole file</figcaption><pre><code class="language-javascript"><span class="syn-comment">// refused: unsupported: printing a class</span>
+<span class="syn-keyword">class</span> <span class="syn-name">P</span> {}
+console.log(P);
+</code></pre></figure><figure class="listing"><figcaption>js/tests/refused/class-print-instance.js, the whole file</figcaption><pre><code class="language-javascript"><span class="syn-comment">// refused: unsupported: printing or listing a class instance</span>
+<span class="syn-keyword">class</span> <span class="syn-name">P</span> {
+  constructor() {
+    <span class="syn-keyword">this</span>.x = <span class="syn-number">1</span>;
+  }
+}
+console.log(<span class="syn-string">&#39;before&#39;</span>);
+console.log(<span class="syn-keyword">new</span> P());
+</code></pre></figure><figure class="listing"><figcaption>js/tests/refused/class-print-nested.js, the whole file</figcaption><pre><code class="language-javascript"><span class="syn-comment">// refused: unsupported: printing or listing a class instance</span>
+<span class="syn-keyword">class</span> <span class="syn-name">P</span> {}
+console.log([<span class="syn-number">1</span>, { p: <span class="syn-keyword">new</span> P() }]);
+</code></pre></figure><figure class="listing"><figcaption>js/tests/refused/class-private-method.js, the whole file</figcaption><pre><code class="language-javascript"><span class="syn-comment">// refused: unsupported: private fields and methods (`#`)</span>
+<span class="syn-keyword">class</span> <span class="syn-name">A</span> {
+  #hidden() {
+    <span class="syn-keyword">return</span> <span class="syn-number">1</span>;
+  }
+}
+</code></pre></figure><figure class="listing"><figcaption>js/tests/refused/class-private.js, the whole file</figcaption><pre><code class="language-javascript"><span class="syn-comment">// refused: unsupported: private fields and methods (`#`)</span>
+<span class="syn-keyword">class</span> <span class="syn-name">A</span> {
+  #secret = <span class="syn-number">1</span>;
+}
+</code></pre></figure><figure class="listing"><figcaption>js/tests/refused/class-returns-value.js, the whole file</figcaption><pre><code class="language-javascript"><span class="syn-comment">// refused: unsupported: a constructor that returns a value</span>
+<span class="syn-keyword">class</span> <span class="syn-name">A</span> {
+  constructor() {
+    <span class="syn-keyword">return</span> { x: <span class="syn-number">1</span> };
+  }
+}
+</code></pre></figure><figure class="listing"><figcaption>js/tests/refused/class-setter.js, the whole file</figcaption><pre><code class="language-javascript"><span class="syn-comment">// refused: unsupported: getters, setters and async methods</span>
+<span class="syn-keyword">class</span> <span class="syn-name">A</span> {
+  set x(v) {}
+}
+</code></pre></figure><figure class="listing"><figcaption>js/tests/refused/class-spread.js, the whole file</figcaption><pre><code class="language-javascript"><span class="syn-comment">// refused: unsupported: printing or listing a class instance</span>
+<span class="syn-keyword">class</span> <span class="syn-name">P</span> {}
+<span class="syn-keyword">const</span> copy = { ...<span class="syn-keyword">new</span> P() };
+</code></pre></figure><figure class="listing"><figcaption>js/tests/refused/class-static-block.js, the whole file</figcaption><pre><code class="language-javascript"><span class="syn-comment">// refused: unsupported: static blocks</span>
+<span class="syn-keyword">class</span> <span class="syn-name">A</span> {
+  static {
+    console.log(<span class="syn-number">1</span>);
+  }
+}
+</code></pre></figure><figure class="listing"><figcaption>js/tests/refused/class-static-property.js, the whole file</figcaption><pre><code class="language-javascript"><span class="syn-comment">// refused: unsupported: a function&#39;s properties (`name`)</span>
+<span class="syn-keyword">class</span> <span class="syn-name">A</span> {}
+console.log(A.name);
+</code></pre></figure><figure class="listing"><figcaption>js/tests/refused/class-super-outside.js, the whole file</figcaption><pre><code class="language-javascript"><span class="syn-comment">// refused: SyntaxError: &#39;super&#39; keyword unexpected here</span>
+<span class="syn-keyword">class</span> <span class="syn-name">A</span> {
+  m() {
+    <span class="syn-keyword">return</span> <span class="syn-keyword">super</span>.m();
+  }
+}
+</code></pre></figure><figure class="listing"><figcaption>js/tests/refused/class-super-twice.js, the whole file</figcaption><pre><code class="language-javascript"><span class="syn-comment">// refused: unsupported: `super(...)` called twice</span>
+<span class="syn-keyword">class</span> <span class="syn-name">A</span> {}
+<span class="syn-keyword">class</span> <span class="syn-name">B</span> <span class="syn-keyword">extends</span> A {
+  constructor() {
+    <span class="syn-keyword">super</span>();
+    <span class="syn-keyword">super</span>();
+  }
+}
+</code></pre></figure><figure class="listing"><figcaption>js/tests/refused/class-super-unknown.js, the whole file</figcaption><pre><code class="language-javascript"><span class="syn-comment">// refused: unsupported: `super.fly`, which no parent class has</span>
+<span class="syn-keyword">class</span> <span class="syn-name">A</span> {}
+<span class="syn-keyword">class</span> <span class="syn-name">B</span> <span class="syn-keyword">extends</span> A {
+  m() {
+    <span class="syn-keyword">return</span> <span class="syn-keyword">super</span>.fly();
+  }
+}
+</code></pre></figure><figure class="listing"><figcaption>js/tests/refused/class-this-before-super.js, the whole file</figcaption><pre><code class="language-javascript"><span class="syn-comment">// refused: unsupported: `this` before `super(...)`</span>
+<span class="syn-keyword">class</span> <span class="syn-name">A</span> {}
+<span class="syn-keyword">class</span> <span class="syn-name">B</span> <span class="syn-keyword">extends</span> A {
+  constructor() {
+    <span class="syn-keyword">this</span>.x = <span class="syn-number">1</span>;
+    <span class="syn-keyword">super</span>();
+  }
+}
+</code></pre></figure><figure class="listing"><figcaption>js/tests/refused/class-this-in-function.js, the whole file</figcaption><pre><code class="language-javascript"><span class="syn-comment">// refused: unsupported: `this` outside a class&#39;s constructor and methods</span>
+<span class="syn-keyword">class</span> <span class="syn-name">A</span> {
+  m() {
+    <span class="syn-keyword">return</span> <span class="syn-keyword">function</span> () {
+      <span class="syn-keyword">return</span> <span class="syn-keyword">this</span>;
+    };
+  }
+}
+</code></pre></figure><figure class="listing"><figcaption>js/tests/refused/class-this-in-static.js, the whole file</figcaption><pre><code class="language-javascript"><span class="syn-comment">// refused: unsupported: `this` in a static method</span>
+<span class="syn-keyword">class</span> <span class="syn-name">A</span> {
+  static make() {
+    <span class="syn-keyword">return</span> <span class="syn-keyword">this</span>;
+  }
+}
+</code></pre></figure><figure class="listing"><figcaption>js/tests/refused/class-two-constructors.js, the whole file</figcaption><pre><code class="language-javascript"><span class="syn-comment">// refused: SyntaxError: A class may only have one constructor</span>
+<span class="syn-keyword">class</span> <span class="syn-name">A</span> {
+  constructor() {}
+  constructor() {}
+}
+</code></pre></figure><figure class="listing"><figcaption>js/tests/refused/class-two-of-a-name.js, the whole file</figcaption><pre><code class="language-javascript"><span class="syn-comment">// refused: unsupported: two classes named `A`</span>
+<span class="syn-keyword">function</span> <span class="syn-name">f</span>() {
+  <span class="syn-keyword">class</span> <span class="syn-name">A</span> {}
+}
+<span class="syn-keyword">class</span> <span class="syn-name">A</span> {}
+</code></pre></figure><figure class="listing"><figcaption>js/tests/refused/class-values.js, the whole file</figcaption><pre><code class="language-javascript"><span class="syn-comment">// refused: unsupported: printing or listing a class instance</span>
+<span class="syn-keyword">class</span> <span class="syn-name">P</span> {}
+Object.values(<span class="syn-keyword">new</span> P());
 </code></pre></figure><figure class="listing"><figcaption>js/tests/refused/coercion.js, the whole file</figcaption><pre><code class="language-javascript"><span class="syn-comment">// refused: unsupported: an operator on a string and a number (a coercion)</span>
 console.log(<span class="syn-string">&#39;3&#39;</span> * <span class="syn-number">2</span>);
 </code></pre></figure><figure class="listing"><figcaption>js/tests/refused/continue-block-label.js, the whole file</figcaption><pre><code class="language-javascript"><span class="syn-comment">// refused: SyntaxError: Illegal continue statement: &#39;block&#39; does not denote an iteration statement</span>
@@ -2148,7 +2738,7 @@ console.log(<span class="syn-string">&#39;%s!&#39;</span>, <span class="syn-stri
 </code></pre></figure><figure class="listing"><figcaption>js/tests/refused/holes.js, the whole file</figcaption><pre><code class="language-javascript"><span class="syn-comment">// refused: unsupported: an array with holes</span>
 <span class="syn-keyword">const</span> a = [];
 a[<span class="syn-number">3</span>] = <span class="syn-number">1</span>;
-</code></pre></figure><figure class="listing"><figcaption>js/tests/refused/instanceof.js, the whole file</figcaption><pre><code class="language-javascript"><span class="syn-comment">// refused: unsupported: `in` and `instanceof`</span>
+</code></pre></figure><figure class="listing"><figcaption>js/tests/refused/instanceof.js, the whole file</figcaption><pre><code class="language-javascript"><span class="syn-comment">// refused: unsupported: `instanceof` of anything but a class&#39;s name</span>
 <span class="syn-keyword">try</span> {
 } <span class="syn-keyword">catch</span> (e) {
   console.log(e <span class="syn-keyword">instanceof</span> Error);
@@ -2217,7 +2807,7 @@ console.log(<span class="syn-string">&quot;abc&quot;</span>.startsWith(<span cla
     <span class="syn-keyword">break</span>;
   <span class="syn-keyword">default</span>:
 }
-</code></pre></figure><figure class="listing"><figcaption>js/tests/refused/this.js, the whole file</figcaption><pre><code class="language-javascript"><span class="syn-comment">// refused: unsupported: `this`</span>
+</code></pre></figure><figure class="listing"><figcaption>js/tests/refused/this.js, the whole file</figcaption><pre><code class="language-javascript"><span class="syn-comment">// refused: unsupported: `this` outside a class&#39;s constructor and methods</span>
 <span class="syn-keyword">const</span> o = { f() { <span class="syn-keyword">return</span> <span class="syn-keyword">this</span>; } };
 </code></pre></figure><figure class="listing"><figcaption>js/tests/refused/timer-arguments.js, the whole file</figcaption><pre><code class="language-javascript"><span class="syn-comment">// refused: unsupported: setTimeout&#39;s arguments after the delay</span>
 setTimeout((word) =&gt; console.log(word), <span class="syn-number">10</span>, <span class="syn-string">&quot;hello&quot;</span>);

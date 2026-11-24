@@ -20,7 +20,7 @@
 <li><a href="dev-and-release-builds-disagree.html"><span class="number">7</span>Dev and release builds disagree</a></li>
 <li><a href="build-times.html"><span class="number">8</span>Build times</a></li>
 <li class="here"><a href="how-it-is-tested.html"><span class="number">9</span>How it is tested</a><ol class="sections"><li><a href="how-it-is-tested.html#the-oracle-against-node">The oracle against node</a></li><li><a href="how-it-is-tested.html#controls-held-exactly">Controls held exactly</a></li><li><a href="how-it-is-tested.html#golden-logs-for-the-canvas">Golden logs for the canvas</a></li><li><a href="how-it-is-tested.html#page-check">page_check</a></li><li><a href="how-it-is-tested.html#planted-faults">Planted faults</a></li></ol></li>
-<li><a href="what-is-left.html"><span class="number">10</span>What is left</a></li>
+<li><a href="limitations.html"><span class="number">10</span>Limitations</a></li>
 <li><a href="appendix-a-the-playgrounds-samples.html">Appendix A: The playground&#39;s samples</a></li>
 <li><a href="appendix-b-the-tested-programs.html">Appendix B: The tested programs</a></li>
 </ol>
@@ -32,7 +32,7 @@
 <h1 id="how-it-is-tested">How it is tested</h1>
 <p>A check is trusted once it has been seen to fail. Each check below holds the code to a fixed answer, and each count is exact.</p>
 <h2 id="the-oracle-against-node">The oracle against node <a class="section-link" href="#the-oracle-against-node" aria-label="Link to this section">§</a></h2>
-<p><code>js/oracle.shale</code>, a tier of the default <code>check.shale</code>, holds every corpus program&#39;s transcript and exit code to node&#39;s, 57 of them, and every refusal to its message. Every program runs, and the run fails if any one fails. It also runs with <code>collect=every</code>, which collects after every instruction that allocates, and programs 51 to 53 hold values through each kind of root while collections run.</p>
+<p><code>js/oracle.shale</code>, a tier of the default <code>check.shale</code>, holds every corpus program&#39;s transcript and exit code to node&#39;s, 61 of them, and every refusal to its message. Every program runs, and the run fails if any one fails. It also runs with <code>collect=every</code>, which collects after every instruction that allocates, and programs 51 to 53 hold values through each kind of root while collections run.</p>
 <h2 id="controls-held-exactly">Controls held exactly <a class="section-link" href="#controls-held-exactly" aria-label="Link to this section">§</a></h2>
 <p><code>check.shale js=1</code> runs the nine allocation controls of <a class="chapter-link" href="dev-and-release-builds-disagree.html">“Dev and release builds disagree”</a>, in both builds. A missing expected file fails the run (<code>6b13e927</code>).</p>
 <h2 id="golden-logs-for-the-canvas">Golden logs for the canvas <a class="section-link" href="#golden-logs-for-the-canvas" aria-label="Link to this section">§</a></h2>
@@ -51,7 +51,7 @@
 </article>
 <nav class="turn-page" aria-label="Previous and next chapter">
 <a rel="prev" href="build-times.html"><small>Previous</small>Build times</a>
-<a rel="next" href="what-is-left.html"><small>Next</small>What is left</a>
+<a rel="next" href="limitations.html"><small>Next</small>Limitations</a>
 </nav>
 </main>
 </body>

@@ -20,7 +20,7 @@
 <li><a href="dev-and-release-builds-disagree.html"><span class="number">7</span>Dev and release builds disagree</a></li>
 <li><a href="build-times.html"><span class="number">8</span>Build times</a></li>
 <li><a href="how-it-is-tested.html"><span class="number">9</span>How it is tested</a></li>
-<li><a href="what-is-left.html"><span class="number">10</span>What is left</a></li>
+<li><a href="limitations.html"><span class="number">10</span>Limitations</a></li>
 <li><a href="appendix-a-the-playgrounds-samples.html">Appendix A: The playground&#39;s samples</a></li>
 <li><a href="appendix-b-the-tested-programs.html">Appendix B: The tested programs</a></li>
 </ol>
@@ -124,7 +124,7 @@
 </g>
 </svg><figcaption>From the text to the run</figcaption></figure><ul>
 <li><strong><code>Lexer.roc</code></strong> makes tokens, each with its line and column.</li>
-<li><strong><code>Parser.roc</code></strong> reads them into <code>Ast.roc</code>&#39;s tree by recursive descent, and lays out each scope&#39;s names as it goes.</li>
+<li><strong><code>Parser.roc</code></strong> reads them into <code>Ast.roc</code>&#39;s tree by recursive descent, and lays out each scope&#39;s names as it goes. It also writes each class as plain functions, so the stages after it see only functions.</li>
 <li><strong><code>Resolve.roc</code></strong> places every name before the run: each read, write and declaration learns how many scopes out its variable lives and where it sits there. The interpreter then reads a variable by its place, and compares names only here.</li>
 <li><strong><code>Compile.roc</code></strong> lays out each function&#39;s frame and makes each function, and the program itself, a flat list of <code>Bytecode.roc</code>&#39;s instructions. Every jump is relative to the instruction after it, so a piece of compiled code means the same wherever it lands.</li>
 <li><strong><code>Vm.roc</code></strong> runs them on a stack machine.</li>
@@ -151,6 +151,11 @@
 <p>JavaScript shares arrays, objects and closures by reference: two variables that hold one array see each other&#39;s writes. Roc has only values. So the interpreter keeps everything JavaScript shares in one list of cells, the heap, and a JavaScript reference is an index into it. A cell is one of these:</p>
 <figure class="listing"><figcaption>js/roc/Heap.roc, an excerpt</figcaption><pre><code class="language-roc">	<span class="syn-type">Cell</span> : [
 		<span class="syn-type">Object</span>(<span class="syn-type">List</span>(<span class="syn-type">Heap.Property</span>)),
+		<span class="syn-comment"># A class&#39;s instance: an object marked with the names of its class and</span>
+		<span class="syn-comment"># of each class that class extends, nearest first, which `instanceof`</span>
+		<span class="syn-comment"># reads. Its properties are its fields and its methods&#39; closures</span>
+		<span class="syn-comment"># (`Parser`&#39;s &quot;classes&quot;), so it is never printed or listed.</span>
+		<span class="syn-type">Instance</span>(<span class="syn-type">List</span>(<span class="syn-type">Str</span>), <span class="syn-type">List</span>(<span class="syn-type">Heap.Property</span>)),
 		<span class="syn-type">Array</span>(<span class="syn-type">List</span>(<span class="syn-type">Heap.Value</span>)),
 		<span class="syn-type">Fun</span>(<span class="syn-type">Heap.Closure</span>),
 		<span class="syn-comment"># A builtin function, and the properties it carries (`String.fromCharCode`).</span>
@@ -186,7 +191,8 @@
 		<span class="syn-comment"># A cell the collector freed, and the free cell after it, which the</span>
 		<span class="syn-comment"># next allocation after this cell&#39;s takes.</span>
 		<span class="syn-type">Freed</span>(<span class="syn-type">Heap.Free</span>),
-</code></pre></figure><p>Roc writes a list in place only while it is the list&#39;s sole owner, so a single stray reference to the heap makes every write copy the whole heap. <code>js/README.md</code>, &quot;Why the heap is one value&quot;, lists the shapes that keep the heap unique, each with a comment where it is used:</p>
+</code></pre></figure><p>An <code>Instance</code> is a class&#39;s instance: an object marked with the names of its class and of each class it extends, which <code>x instanceof C</code> reads (<code>NewInstance</code>, <code>InstanceOf</code>). It is the VM&#39;s one part in classes.</p>
+<p>Roc writes a list in place only while it is the list&#39;s sole owner, so a single stray reference to the heap makes every write copy the whole heap. <code>js/README.md</code>, &quot;Why the heap is one value&quot;, lists the shapes that keep the heap unique, each with a comment where it is used:</p>
 <ul>
 <li>a cell is written by <code>List.update</code>, which hands its function the cell as the sole owner;</li>
 <li>a writer gets the list straight from the record it updates, <code>{ ..machine, cells: Heap.with_property(machine.cells, ...) }</code>;</li>

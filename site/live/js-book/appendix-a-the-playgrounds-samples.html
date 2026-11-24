@@ -20,8 +20,8 @@
 <li><a href="dev-and-release-builds-disagree.html"><span class="number">7</span>Dev and release builds disagree</a></li>
 <li><a href="build-times.html"><span class="number">8</span>Build times</a></li>
 <li><a href="how-it-is-tested.html"><span class="number">9</span>How it is tested</a></li>
-<li><a href="what-is-left.html"><span class="number">10</span>What is left</a></li>
-<li class="here"><a href="appendix-a-the-playgrounds-samples.html">Appendix A: The playground&#39;s samples</a><ol class="sections"><li><a href="appendix-a-the-playgrounds-samples.html#a-bouncing-ball">A bouncing ball</a></li><li><a href="appendix-a-the-playgrounds-samples.html#all-features">all features</a></li><li><a href="appendix-a-the-playgrounds-samples.html#garbage-collection">garbage collection</a></li><li><a href="appendix-a-the-playgrounds-samples.html#a-turtle-spiral">A turtle spiral</a></li><li><a href="appendix-a-the-playgrounds-samples.html#a-clock-that-ticks-once-a-second-on-a-chain-of-timeouts">A clock that ticks once a second, on a chain of timeouts</a></li><li><a href="appendix-a-the-playgrounds-samples.html#a-starfield-flown-through">A starfield, flown through</a></li><li><a href="appendix-a-the-playgrounds-samples.html#a-fractal-tree-each-branch-two-smaller-ones">A fractal tree, each branch two smaller ones</a></li><li><a href="appendix-a-the-playgrounds-samples.html#a-tiny-game-click-the-canvas-then-steer-with-the-arrow-keys">A tiny game: click the canvas, then steer with the arrow keys</a></li><li><a href="appendix-a-the-playgrounds-samples.html#click-to-place-dots">Click to place dots</a></li><li><a href="appendix-a-the-playgrounds-samples.html#a-countdown-on-timers">A countdown on timers</a></li><li><a href="appendix-a-the-playgrounds-samples.html#garbage-heard-by-oncollect">garbage, heard by onCollect</a></li><li><a href="appendix-a-the-playgrounds-samples.html#closures">Closures</a></li><li><a href="appendix-a-the-playgrounds-samples.html#fibonacci">Fibonacci</a></li><li><a href="appendix-a-the-playgrounds-samples.html#word-count">Word count</a></li><li><a href="appendix-a-the-playgrounds-samples.html#quicksort">Quicksort</a></li><li><a href="appendix-a-the-playgrounds-samples.html#timers">Timers</a></li><li><a href="appendix-a-the-playgrounds-samples.html#maps-patterns-and-errors">Maps, patterns and errors</a></li><li><a href="appendix-a-the-playgrounds-samples.html#outside-the-subset">Outside the subset</a></li></ol></li>
+<li><a href="limitations.html"><span class="number">10</span>Limitations</a></li>
+<li class="here"><a href="appendix-a-the-playgrounds-samples.html">Appendix A: The playground&#39;s samples</a><ol class="sections"><li><a href="appendix-a-the-playgrounds-samples.html#a-bouncing-ball">A bouncing ball</a></li><li><a href="appendix-a-the-playgrounds-samples.html#all-features">all features</a></li><li><a href="appendix-a-the-playgrounds-samples.html#garbage-collection">garbage collection</a></li><li><a href="appendix-a-the-playgrounds-samples.html#classes">classes</a></li><li><a href="appendix-a-the-playgrounds-samples.html#a-turtle-spiral">A turtle spiral</a></li><li><a href="appendix-a-the-playgrounds-samples.html#a-clock-that-ticks-once-a-second-on-a-chain-of-timeouts">A clock that ticks once a second, on a chain of timeouts</a></li><li><a href="appendix-a-the-playgrounds-samples.html#a-starfield-flown-through">A starfield, flown through</a></li><li><a href="appendix-a-the-playgrounds-samples.html#a-fractal-tree-each-branch-two-smaller-ones">A fractal tree, each branch two smaller ones</a></li><li><a href="appendix-a-the-playgrounds-samples.html#a-tiny-game-click-the-canvas-then-steer-with-the-arrow-keys">A tiny game: click the canvas, then steer with the arrow keys</a></li><li><a href="appendix-a-the-playgrounds-samples.html#click-to-place-dots">Click to place dots</a></li><li><a href="appendix-a-the-playgrounds-samples.html#a-countdown-on-timers">A countdown on timers</a></li><li><a href="appendix-a-the-playgrounds-samples.html#garbage-heard-by-oncollect">garbage, heard by onCollect</a></li><li><a href="appendix-a-the-playgrounds-samples.html#closures">Closures</a></li><li><a href="appendix-a-the-playgrounds-samples.html#fibonacci">Fibonacci</a></li><li><a href="appendix-a-the-playgrounds-samples.html#word-count">Word count</a></li><li><a href="appendix-a-the-playgrounds-samples.html#quicksort">Quicksort</a></li><li><a href="appendix-a-the-playgrounds-samples.html#timers">Timers</a></li><li><a href="appendix-a-the-playgrounds-samples.html#maps-patterns-and-errors">Maps, patterns and errors</a></li><li><a href="appendix-a-the-playgrounds-samples.html#outside-the-subset">Outside the subset</a></li></ol></li>
 <li><a href="appendix-b-the-tested-programs.html">Appendix B: The tested programs</a></li>
 </ol>
 </nav>
@@ -511,6 +511,91 @@ console.log(<span class="syn-string">&quot;the city waits for evening&quot;</spa
 console.log(<span class="syn-string">`</span>${made}<span class="syn-string"> pieces made in </span>${ROUNDS}<span class="syn-string"> rounds, </span>${mostKept}<span class="syn-string"> kept alive at most`</span>);
 console.log(<span class="syn-string">`</span>${kept.length}<span class="syn-string"> alive at the end, weighing </span>${stillAlive}<span class="syn-string">; checksum </span>${sum}<span class="syn-string">`</span>);
 console.log(<span class="syn-string">&quot;Now look at the memory link above.&quot;</span>);
+</code></pre></figure><h2 id="classes">classes <a class="section-link" href="#classes" aria-label="Link to this section">§</a></h2>
+<figure class="listing"><figcaption>js/tests/61-classes-tour.js, the whole file</figcaption><pre><code class="language-javascript"><span class="syn-comment">// A morning at a small bank, told with classes. Each `SUPPORTS` comment</span>
+<span class="syn-comment">// marks the first use of a class&#39;s feature. No account is printed whole:</span>
+<span class="syn-comment">// node prints `Account { owner: &#39;ada&#39;, ... }`, which the subset refuses</span>
+<span class="syn-comment">// rather than print differently.</span>
+
+<span class="syn-keyword">const</span> opened = [];
+
+<span class="syn-comment">// SUPPORTS class, with a constructor and methods</span>
+<span class="syn-keyword">class</span> <span class="syn-name">Account</span> {
+  constructor(owner, balance = <span class="syn-number">0</span>) {
+    <span class="syn-comment">// SUPPORTS this, in a constructor</span>
+    <span class="syn-keyword">this</span>.owner = owner;
+    <span class="syn-keyword">this</span>.balance = balance;
+    <span class="syn-keyword">this</span>.history = [];
+    opened.push(owner);
+  }
+  deposit(amount) {
+    <span class="syn-keyword">this</span>.balance += amount;
+    <span class="syn-keyword">this</span>.history.push(<span class="syn-string">`+</span>${amount}<span class="syn-string">`</span>);
+    <span class="syn-comment">// SUPPORTS a method answering this, so calls chain</span>
+    <span class="syn-keyword">return</span> <span class="syn-keyword">this</span>;
+  }
+  withdraw(amount) {
+    <span class="syn-keyword">if</span> (amount &gt; <span class="syn-keyword">this</span>.balance) {
+      <span class="syn-keyword">throw</span> <span class="syn-keyword">new</span> RangeError(<span class="syn-string">`</span>${<span class="syn-keyword">this</span>.owner}<span class="syn-string"> has only </span>${<span class="syn-keyword">this</span>.balance}<span class="syn-string">`</span>);
+    }
+    <span class="syn-keyword">this</span>.balance -= amount;
+    <span class="syn-keyword">this</span>.history.push(<span class="syn-string">`-</span>${amount}<span class="syn-string">`</span>);
+    <span class="syn-keyword">return</span> <span class="syn-keyword">this</span>;
+  }
+  statement() {
+    <span class="syn-comment">// SUPPORTS this inside an arrow, taken from the method around it</span>
+    <span class="syn-keyword">const</span> lines = <span class="syn-keyword">this</span>.history.map((entry) =&gt; <span class="syn-string">`</span>${<span class="syn-keyword">this</span>.owner}<span class="syn-string">: </span>${entry}<span class="syn-string">`</span>);
+    <span class="syn-keyword">return</span> lines.join(<span class="syn-string">&quot;, &quot;</span>);
+  }
+  <span class="syn-comment">// SUPPORTS static methods</span>
+  static between(from, to, amount) {
+    from.withdraw(amount);
+    to.deposit(amount);
+  }
+}
+
+<span class="syn-comment">// SUPPORTS extends, super(...) and super.method()</span>
+<span class="syn-keyword">class</span> <span class="syn-name">Savings</span> <span class="syn-keyword">extends</span> Account {
+  constructor(owner, balance, rate) {
+    <span class="syn-keyword">super</span>(owner, balance);
+    <span class="syn-keyword">this</span>.rate = rate;
+  }
+  addInterest() {
+    <span class="syn-keyword">return</span> <span class="syn-keyword">this</span>.deposit(Math.round(<span class="syn-keyword">this</span>.balance * <span class="syn-keyword">this</span>.rate));
+  }
+  statement() {
+    <span class="syn-keyword">return</span> <span class="syn-string">`</span>${<span class="syn-keyword">super</span>.statement()}<span class="syn-string"> (savings at </span>${<span class="syn-keyword">this</span>.rate * <span class="syn-number">100</span>}<span class="syn-string">%)`</span>;
+  }
+}
+
+<span class="syn-comment">// SUPPORTS new</span>
+<span class="syn-keyword">const</span> ada = <span class="syn-keyword">new</span> Account(<span class="syn-string">&quot;ada&quot;</span>, <span class="syn-number">100</span>);
+<span class="syn-keyword">const</span> bob = <span class="syn-keyword">new</span> Savings(<span class="syn-string">&quot;bob&quot;</span>, <span class="syn-number">1000</span>, <span class="syn-number">0.05</span>);
+
+ada.deposit(<span class="syn-number">50</span>).withdraw(<span class="syn-number">30</span>);
+bob.addInterest();
+<span class="syn-comment">// SUPPORTS a static method inherited from the parent class</span>
+Savings.between(bob, ada, <span class="syn-number">200</span>);
+
+<span class="syn-keyword">try</span> {
+  ada.withdraw(<span class="syn-number">10000</span>);
+} <span class="syn-keyword">catch</span> (err) {
+  console.log(err.name, err.message);
+}
+
+console.log(ada.statement());
+console.log(bob.statement());
+console.log(<span class="syn-string">&quot;balances:&quot;</span>, ada.balance, bob.balance);
+
+<span class="syn-comment">// SUPPORTS instanceof, up the chain</span>
+<span class="syn-keyword">for</span> (<span class="syn-keyword">const</span> who <span class="syn-keyword">of</span> [ada, bob]) {
+  console.log(who.owner, who <span class="syn-keyword">instanceof</span> Account, who <span class="syn-keyword">instanceof</span> Savings);
+}
+
+<span class="syn-comment">// Many accounts, each with its own closures over its own `this`.</span>
+<span class="syn-keyword">const</span> town = Array.from({ length: <span class="syn-number">5</span> }, (_, i) =&gt; <span class="syn-keyword">new</span> Savings(<span class="syn-string">`saver</span>${i}<span class="syn-string">`</span>, <span class="syn-number">100</span> * (i + <span class="syn-number">1</span>), <span class="syn-number">0.1</span>));
+town.forEach((s) =&gt; s.addInterest());
+console.log(town.map((s) =&gt; s.balance).join(<span class="syn-string">&quot; &quot;</span>), opened.length);
 </code></pre></figure><h2 id="a-turtle-spiral">A turtle spiral <a class="section-link" href="#a-turtle-spiral" aria-label="Link to this section">§</a></h2>
 <figure class="listing"><figcaption>js/canvas/2-turtle-spiral.js, the whole file</figcaption><pre><code class="language-javascript"><span class="syn-comment">// A turtle spiral</span>
 <span class="syn-keyword">const</span> STEPS = <span class="syn-number">90</span>; <span class="syn-comment">// how many lines the turtle draws</span>
@@ -890,12 +975,13 @@ console.log(<span class="syn-keyword">new</span> Set(<span class="syn-string">&q
 <figure class="listing"><figcaption>js/console/7-outside-the-subset.js, the whole file</figcaption><pre><code class="language-javascript"><span class="syn-comment">// Outside the subset</span>
 <span class="syn-keyword">class</span> <span class="syn-name">Point</span> {
   constructor(x, y) { <span class="syn-keyword">this</span>.x = x; <span class="syn-keyword">this</span>.y = y; }
+  get norm() { <span class="syn-keyword">return</span> Math.sqrt(<span class="syn-keyword">this</span>.x * <span class="syn-keyword">this</span>.x + <span class="syn-keyword">this</span>.y * <span class="syn-keyword">this</span>.y); }
 }
-console.log(<span class="syn-keyword">new</span> Point(<span class="syn-number">1</span>, <span class="syn-number">2</span>));
+console.log(<span class="syn-keyword">new</span> Point(<span class="syn-number">3</span>, <span class="syn-number">4</span>).norm);
 </code></pre></figure>
 </article>
 <nav class="turn-page" aria-label="Previous and next chapter">
-<a rel="prev" href="what-is-left.html"><small>Previous</small>What is left</a>
+<a rel="prev" href="limitations.html"><small>Previous</small>Limitations</a>
 <a rel="next" href="appendix-b-the-tested-programs.html"><small>Next</small>Appendix B: The tested programs</a>
 </nav>
 </main>
