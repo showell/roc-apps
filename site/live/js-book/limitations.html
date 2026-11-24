@@ -43,7 +43,6 @@
 <li><code>js-vm</code> takes the program as one command-line argument, limited to 128 KiB (<code>js/README.md</code>, &quot;Pitfalls&quot;).</li>
 <li>On the page, a program is held to step budgets, 3,000,000 before the first frame and 300,000 a frame (<a class="chapter-link" href="dev-and-release-builds-disagree.html">“Dev and release builds disagree”</a>).</li>
 <li><code>onCollect</code> and the other canvas builtins are this project&#39;s own, so logs of effects judge them in place of node.</li>
-<li>02-closure-call&#39;s 112-byte dev allocation per call is still unexplained.</li>
 </ul>
 <p>The parser refuses these forms, each with a message that names it: getters and setters, <code>#private</code> names, class fields, static blocks, computed method names, class expressions, <code>this</code> outside a class&#39;s code or in a static method, <code>super</code> misused, a constructor that returns a value, <code>extends</code> of anything but a class declared above, a class&#39;s name declared again or assigned, <code>new</code> on a program&#39;s own function, <code>var</code>, <code>in</code>, <code>eval</code>, regular expressions, async and modules. A run refuses <code>==</code> and the other coercions, and the rest of <code>js/README.md</code>&#39;s list, &quot;The subset&quot;, where only the run can see them.</p>
 
