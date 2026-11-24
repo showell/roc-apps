@@ -15,7 +15,8 @@
 -- program's report (each page's words of prose, the lint's counts) goes to
 -- `report`. Roc's cache is build:roc-apps/book-cache, which every book shares.
 --
--- The Safari tutorial's book.shale and the books book's run it.
+-- The Safari tutorial's book.shale, the books book's and the JavaScript
+-- book's run it.
 const BOOK = arg("book", "")
 const TESTS = arg("tests", -1)
 const NAME = arg("name", "")

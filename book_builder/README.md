@@ -19,8 +19,8 @@ tag:
 `NotUtf8` is decided in Roc (`platform/Book.roc`), where the bytes become
 text. `ReadFailed` covers the rest: an unreadable file, or one past the host's size cap.
 
-It builds the Safari tutorial (`canvas_apps/safari/tutorial/`) and the books
-book (`building-books/`). Each has a `book.shale` whose pre-step does what
+It builds the Safari tutorial (`canvas_apps/safari/tutorial/`), the books
+book (`building-books/`) and the JavaScript book (`js-book/`). Each has a `book.shale` whose pre-step does what
 needs a program, such as quoting code through Roc's parser and drawing
 diagrams, then builds and publishes the book. Code is colored by
 [roc-syntax-color](https://github.com/showell/roc-syntax-color), checked out

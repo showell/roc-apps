@@ -1,0 +1,86 @@
+-- budget: steps=20000000 arena_bytes=400000000 read_bytes=100000000 output_bytes=200000
+-- This builds the JavaScript book, A JavaScript Interpreter in Roc, with the
+-- book builder (book_builder/), into the dev channel's /js-book/:
+--
+--   cd <roc-apps checkout> && shale js-book/book.shale
+--
+-- The book is the app app/main.roc on the book platform, which reads the
+-- checkout from its root and prints every page. Its pre-step draws each
+-- ```dot fence of the manuscript with Graphviz
+-- (book_builder/tools/draw_diagrams.shale) into build/prepared/, as
+-- diagram-N.dot and diagram-N.svg, where the app reads them.
+--
+-- Then the book builder's tools/build_book.shale runs the app's expects, held
+-- to exactly APP_TESTS, builds the app into book_builder/zig-out/js-book, on
+-- Roc's dev backend, and runs the program on the checkout's root, which
+-- writes the pages, or stops on a gate. The pages go to build/book/ with the
+-- builder's stylesheet, and are staged in the channel's /js-book.staging/.
+-- The builder's tools/book_check.mjs drives them there in a real browser and
+-- leaves a shot of each page in build/shots/. Then the book builder's
+-- tools/move_stage.shale puts the stage in the place of /js-book/. A failure
+-- at any step stops the run before the move, so the channel's book is left
+-- as it was.
+const BOOK = "js-book"
+const SOURCE = "js-book/book.md"
+const PREPARED = "js-book/build/prepared"
+const OUT = "js-book/build/book"
+const REPORT = "js-book/build/report.txt"
+const SHOTS = "js-book/build/shots"
+const NEXT = "build:roc-apps/next"
+const DEST_NAME = "js-book"
+const STAGED_NAME = "js-book.staging"
+const DRAW = "book_builder/tools/draw_diagrams.shale"
+const MOVE = "book_builder/tools/move_stage.shale"
+const CHECKER = "book_builder/tools/book_check.mjs"
+const BUILD = "book_builder/tools/build_book.shale"
+const APP_TESTS = 3
+const DOT_WANT = "graphviz: a book's diagrams, drawn at build time"
+const CHECK_WANT = "script: book_check.mjs drives the staged pages in headless Chromium"
+
+function main()
+  if exists(PREPARED) then remove_tree(PREPARED) end
+  mkdir(PREPARED)
+  local drawn = must(run({"shale", "--root", ".", DRAW, "source=" .. SOURCE, "prepared=" .. PREPARED}, {timeout_ms = 120000, tail = 20, want = DOT_WANT}))
+  for l in lines(drawn.out) do
+    if starts_with(l, "draw_diagrams: ") then print("book: " .. sub(l, 16) .. " in " .. drawn.ms .. " ms") end
+  end
+
+  local argv = {"shale", "--root", ".", BUILD, "book=" .. BOOK, "tests=" .. APP_TESTS, "name=js-book", "folder=.", "out=" .. OUT, "report=" .. REPORT}
+  local built = run(argv, {timeout_ms = 900000, tail = 60})
+  local pages = 0
+  for l in lines(built.out) do
+    if starts_with(l, "build_book: ") then print("book: " .. sub(l, 13)) end
+    local m = re_find(l, "^build_book: ([0-9]+) pages in ")
+    if m ~= nil then pages = tonumber(m.groups[1]) end
+  end
+  if built.code ~= 0 then
+    print(trim(built.out))
+    fail("book: build_book.shale stopped, so /" .. DEST_NAME .. "/ is left as it was")
+  end
+  local staging = NEXT .. "/" .. STAGED_NAME
+  if exists(staging) then remove_tree(staging) end
+  copy(OUT, staging)
+
+  if exists(SHOTS) then remove_tree(SHOTS) end
+  mkdir(SHOTS)
+  local check_argv = {"nice", "-n", "19", "node", CHECKER, "http://127.0.0.1:9210/" .. STAGED_NAME .. "/", real(SHOTS)}
+  local checked = run(check_argv, {timeout_ms = 600000, tail = 60, want = CHECK_WANT})
+  if checked.ended ~= "exit" or checked.code ~= 0 then
+    print(trim(checked.out))
+    fail("book: book_check failed on " .. staging .. ", so /" .. DEST_NAME .. "/ is left as it was")
+  end
+  for l in lines(checked.out) do
+    if starts_with(l, "book_check: ") then print(l) end
+  end
+  print("book: book_check, shots in " .. SHOTS .. ", took " .. checked.ms .. " ms")
+  local moved = must(run({"shale", "--root", ".", MOVE, "stage=" .. STAGED_NAME, "place=" .. DEST_NAME}, {timeout_ms = 60000, tail = 20}))
+  print("book: the move into place took " .. moved.ms .. " ms")
+
+  for l in lines(read(REPORT)) do
+    if trim(l) ~= "" then print("book: " .. l) end
+  end
+  print("book: " .. pages .. " pages at http://localhost:9210/" .. DEST_NAME .. "/")
+  return nil
+end
+
+main()

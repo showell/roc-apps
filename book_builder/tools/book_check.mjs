@@ -9,8 +9,8 @@
 //   node book_builder/tools/book_check.mjs http://127.0.0.1:9210/tutorial.staging/ none
 //   node book_builder/tools/book_check.mjs http://127.0.0.1:9210/tutorial.staging/ <shots folder>
 //
-// The Safari tutorial's book.shale and the books book's run it. A book with no
-// widgets is held to the same checks, and its widget count is zero.
+// The Safari tutorial's book.shale, the books book's and the JavaScript
+// book's run it. A book with no widgets is held to the same checks, and its widget count is zero.
 //
 // The browser is the binary BOOK_CHECK_CHROMIUM names, when it's set, and
 // otherwise tools/chromium.mjs's, which also starts it; when neither is

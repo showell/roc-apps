@@ -20,15 +20,16 @@ Thanks to Damian Tedrow, whose [Cobblestone](https://github.com/damiant3/Cobbles
 | `js/` | a subset of JavaScript run by a bytecode VM in Roc, graded against node, and a web page that runs it |
 | `book_builder/` | the book builder: a Roc platform and the package a book's app calls; it builds the Safari tutorial and the books book |
 | `building-books/` | the books book, *Building a Book with Claude*: how to build a book like the Safari tutorial, with Claude writing (`building-books/MISSION.md`) |
+| `js-book/` | *A JavaScript Interpreter in Roc*, a small book on `js/`: its design, what copies, and its dev and release builds |
 | `site/`, `ops/` | the site that serves the apps (below) |
 | `docs/` | `roc-style.md`, how Steve writes Roc; `roc-notes.md`, how the Roc nightly behaves |
 
 ## The books
 
 The book builder (`book_builder/`) builds the Safari tutorial
-(`canvas_apps/safari/tutorial/`) and the books book (`building-books/`),
-which says how to build a book this way. A new book starts from the books
-book.
+(`canvas_apps/safari/tutorial/`), the books book (`building-books/`),
+which says how to build a book this way, and the JavaScript book
+(`js-book/`). A new book starts from the books book.
 
 ## The site: Steve's Roc Apps
 

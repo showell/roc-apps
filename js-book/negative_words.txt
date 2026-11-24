@@ -1,0 +1,37 @@
+# The words the negatives lint looks for, one a line: the same list as the
+# Shale cookbook's prose/find_negatives.shale.
+not
+no
+none
+nothing
+nobody
+nowhere
+never
+neither
+nor
+without
+isn't
+aren't
+wasn't
+weren't
+don't
+doesn't
+didn't
+can't
+cannot
+won't
+wouldn't
+shouldn't
+couldn't
+hasn't
+haven't
+hadn't
+mustn't
+needn't
+ain't
+unless
+rather than
+lacks
+lack
+hardly
+barely
