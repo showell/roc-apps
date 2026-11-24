@@ -37,6 +37,12 @@ near 4 MB on the dev build, where they peaked at 164 MB. js-vm runs the 54
 corpus programs and the 44 refusals as node does both on its usual
 schedule and collecting at every allocation; the dev build only, so far.
 
+**Its fourth round (2026-11-24): the canvas runs on the VM.** js-canvas and
+the page's wasm are built on the VM, and the eight samples match the logs
+the walker made, line for line, the six rails stop as they must, and
+page_check passes, on the dev backend. The walker is unchanged, and no
+longer behind the page.
+
 ## The subset
 
 Every program in the subset is real JavaScript, so `node` is a free oracle:
@@ -177,7 +183,7 @@ and the walker runs about 24,000 statements.
 **One queue, one clock.** A timer's callback, a click and the next
 `frame(t)` are each an event on the interpreter's queue (`Events.Queue`),
 due at a time on its virtual clock. The page ticks the clock a frame at a
-time (`Interp.tick!`), to the frame's own time, and each tick runs what is
+time (`Vm.tick!`), to the frame's own time, and each tick runs what is
 due by then: the clicks queued since the last tick, then the timers and the
 frame in the order of their times. So `frame(t)` is a convenience on the
 same queue, and on the page a timer runs in the frame of its time, 30 to a
@@ -195,11 +201,11 @@ the host when the program asks for it.
 Each effect has one written form, a line (`Canvas.line_of`), and there are
 three hosts:
 
-- **The page's** (js/wasm, `JsApp.roc`): the platform's hosted functions
+- **The page's** (js/wasm, `JsApp.roc`, on the VM): the platform's hosted functions
   (`js/wasm/platform/Host.roc`) call into the page's JavaScript while the
   Roc call runs, and `js_page.js` paints each line as it arrives; the
   browser shows the canvas when the call returns.
-- **The recording host,** `js-canvas` (`JsCanvas.roc`): every effect and
+- **The recording host,** `js-canvas` (`JsCanvas.roc`, on the VM): every effect and
   every read a line, with a line `frame <n> <t>` before each tick. The
   pointer rests at the middle; an argument says which keys are down in
   each frame, and another where the canvas is clicked before which frame,
@@ -218,7 +224,7 @@ statements and make 20,000 effects, and each frame 300,000 and 20,000
 (`Canvas.run_limits`, `Canvas.frame_limits`); past either, the run stops with
 a message that names the budget. A frame's budget covers all its tick runs:
 its clicks, its timers and its `frame(t)`. The program's own scope outlives its last
-statement (`Interp.start!`), as a page keeps a script's, so each frame sees
+statement (`Vm.start!`), as a page keeps a script's, so each frame sees
 the variables it declared.
 
 ## Laying it out
@@ -305,13 +311,17 @@ back on the walker.
   the innermost one, the frames and the stack above it given up. A
   `break`, a `continue` or a `return` that leaves a `try` runs its
   `finally` on the way, compiled where it stands.
-- **The timers share the walker's queue** (`Events.roc`): the VM queues a
-  callback by its rules and, once the program finishes, runs each in turn
-  on the same virtual clock, as js-run does.
-- **The VM leaves out** the canvas, which stops the run with `js:
-  unsupported (vm): <what>`.
+- **The callbacks share the walker's queue** (`Events.roc`): the VM queues
+  a timer, a click and the canvas's `frame(t)` by its rules and, once the
+  program finishes, its own frame kept at the bottom of the stack
+  (`Vm.start!`), runs each in turn on the same virtual clock: all of them,
+  as js-run does, or those due by a frame's time (`Vm.tick!`), as the page
+  does.
+- **The canvas runs on the VM:** js-canvas and the page's wasm are built on
+  it, and hold the samples to the same logs the walker made.
 - **Steps** count calls and loop passes, not statements; js-vm's budget is
-  js-run's, 200,000,000.
+  js-run's, 200,000,000, and the canvas's rails are the walker's numbers,
+  so a run near a rail goes further on the VM.
 
 **What the dev controls show (2026-11-24, `js/controls.shale opt=dev
 engine=vm`, held to `js/controls/expected-vm-dev.txt`):** every control
@@ -524,10 +534,13 @@ across them is a write in place.
   the kernel's limit on one argument (128 KiB).
 - **The page runs a program on the browser's main thread,** held to the
   rails above so a loop that never ends stops with a message rather than
-  freezing the tab. js-canvas on the dev backend takes about 0.6 s of CPU
-  to run a frame out of its 300,000 steps, and 3.7 s for a program out of
-  its 3,000,000 (2026-11-23), so a frame near its budget slows the loop
-  well below 30 a second before it stops it.
+  freezing the tab. js-canvas on the dev backend takes about 2.0 s of CPU
+  to run a frame out of its 300,000 steps, and 8.8 s for a program out of
+  its 3,000,000 (`js/canvas/rails/`, 2026-11-24), so a frame near its
+  budget slows the loop well below 30 a second before it stops it. The
+  walker took 1.1 s and 5.2 s on the same box that day: the VM counts a
+  loop's passes where the walker counted statements, so its budget runs
+  about twice as many passes, each one faster.
 - **A turtle's trigonometry is exact only on the square headings,** so a
   turtle that walks a square ends where it began; at any other heading its
   positions carry a float's rounding, and the logs show it.
