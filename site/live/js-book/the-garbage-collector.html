@@ -18,12 +18,13 @@
 <li><a href="the-pipeline-and-the-machine.html"><span class="number">4</span>The pipeline and the machine</a></li>
 <li><a href="memory-strategy.html"><span class="number">5</span>Memory strategy</a></li>
 <li class="here"><a href="the-garbage-collector.html"><span class="number">6</span>The garbage collector</a><ol class="sections"><li><a href="the-garbage-collector.html#what-it-does">What it does</a></li><li><a href="the-garbage-collector.html#around-the-copy-cliff">Around the copy cliff</a></li><li><a href="the-garbage-collector.html#its-roots-and-when-it-runs">Its roots, and when it runs</a></li></ol></li>
-<li><a href="the-rules-and-the-host.html"><span class="number">7</span>The rules and the host</a></li>
-<li><a href="what-copies.html"><span class="number">8</span>What copies</a></li>
-<li><a href="dev-and-release-builds-disagree.html"><span class="number">9</span>Dev and release builds disagree</a></li>
-<li><a href="build-times.html"><span class="number">10</span>Build times</a></li>
-<li><a href="how-it-is-tested.html"><span class="number">11</span>How it is tested</a></li>
-<li><a href="limitations.html"><span class="number">12</span>Limitations</a></li>
+<li><a href="the-shared-rules.html"><span class="number">7</span>The shared rules</a></li>
+<li><a href="a-canvas-in-the-browser.html"><span class="number">8</span>A canvas in the browser</a></li>
+<li><a href="what-copies.html"><span class="number">9</span>What copies</a></li>
+<li><a href="dev-and-release-builds-disagree.html"><span class="number">10</span>Dev and release builds disagree</a></li>
+<li><a href="build-times.html"><span class="number">11</span>Build times</a></li>
+<li><a href="how-it-is-tested.html"><span class="number">12</span>How it is tested</a></li>
+<li><a href="limitations.html"><span class="number">13</span>Limitations</a></li>
 <li><a href="appendix-a-the-playgrounds-samples.html">Appendix A: The playground&#39;s samples</a></li>
 <li><a href="appendix-b-the-tested-programs.html">Appendix B: The tested programs</a></li>
 </ol>
@@ -59,7 +60,7 @@
 		{ cells: $cells, free: $free, live: $live }
 </code></pre></figure><p>Writing <code>Freed</code> over a garbage cell drops the cell that was there, and Roc&#39;s reference counting returns what it held (an object&#39;s properties, an array&#39;s items, a closure&#39;s boxes) to the allocator at that write. The heap&#39;s list keeps its length, and <a class="chapter-link" href="memory-strategy.html">“Memory strategy”</a> shows an allocation taking a freed place. That is how the programs in <code>js/heaps/</code> went from peaks of 40 to 164 MB to about 4 MB each (<code>62110109</code>).</p>
 <h2 id="around-the-copy-cliff">Around the copy cliff <a class="section-link" href="#around-the-copy-cliff" aria-label="Link to this section">§</a></h2>
-<p>The collector is shaped around Roc&#39;s copy cliff, where a write to a list that something else still refers to copies the whole list first (<code>docs/roc-notes.md</code> in roc-apps, &quot;Speed and copying&quot;):</p>
+<p>The collector is shaped around Roc&#39;s copy cliff, where a write to a list that something else still refers to copies the whole list first (&quot;What copies&quot; lists the shapes):</p>
 <ul>
 <li><strong>The marks are a list of their own.</strong> <code>marked</code> reads the cells and writes only its marks and its stack of cells waiting to be visited, each in place, so every list it writes is its own. A mark bit inside each cell would make the first mark copy the heap.</li>
 <li><strong>The sweep owns the cells.</strong> <code>collected</code> takes the cells out of the machine with <code>lent</code> before it calls <code>swept</code>, so each <code>set</code> in the sweep is the list&#39;s only reference and writes in place:</li>
@@ -145,7 +146,7 @@
 </article>
 <nav class="turn-page" aria-label="Previous and next chapter">
 <a rel="prev" href="memory-strategy.html"><small>Previous</small>Memory strategy</a>
-<a rel="next" href="the-rules-and-the-host.html"><small>Next</small>The rules and the host</a>
+<a rel="next" href="the-shared-rules.html"><small>Next</small>The shared rules</a>
 </nav>
 </main>
 </body>
