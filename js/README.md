@@ -19,7 +19,8 @@ channel; the unlisted copy at roc.lynrummy.com/js/ predates the gaps.
 corpus programs as node does and refuses the other 13, each for something
 the round leaves out, with no wrong answer; 39 of the 44 programs outside
 the subset get the message they must, and the other 5 meet a refusal of
-the VM's first ("The bytecode VM", below).
+the VM's first ("The bytecode VM", below). In the release build it runs
+fib(22) in 71 ms, the walker's 153.
 
 ## The subset
 
@@ -268,7 +269,16 @@ makes is a list the dev build copies when a frame is entered, by
 roc-alloc-trace's `where`, which names `frames_with` (the lines it gives
 aren't Vm.roc's); rewriting the write three ways didn't move it. On the dev backend fib(22)
 takes about 660 ms of CPU against the walker's 600, and the loops 2.4 s
-against 2.8 s; the release build isn't measured yet.
+against 2.8 s.
+
+**What the release build shows (2026-11-24, `js/bench`'s programs, the
+fastest of three):** fib(22) takes 71 ms on the VM against the walker's
+153, and the loops 297 ms against 714. The release controls (`opt=speed
+engine=vm`) have the walker's shape, nothing a pass but a push's argument
+list, and 07-map-set is refused. The release build takes 670 s, the
+walker's 665: the VM still reaches the walker's rules through `Vm.shell`,
+so it links Interp.roc, and its own build time shows only once those rules
+have a module of their own.
 
 ## Why the heap is one value
 
