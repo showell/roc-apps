@@ -255,6 +255,11 @@ async function runSample(index) {
   return { said: page.status.textContent, calls: [...page.canvas.calls], printed: page.output.textContent };
 }
 
+// The sample made to collect, and how many collections its run must show.
+const GARBAGE_SAMPLE = "garbage collection";
+const GARBAGE_COLLECTIONS = [5, 60];
+let garbageSaid = null;
+
 let looped = 0;
 for (let i = 0; i < SAMPLES.length; i++) {
   const s = SAMPLES[i];
@@ -275,10 +280,21 @@ for (let i = 0; i < SAMPLES.length; i++) {
       fail(`sample ${s.title}: its run kept ${cellsKept} points of the heap, and the memory view drew ${page.cellsChart.innerHTML.length} bytes of chart`);
     }
     if (!page.memorySaid.textContent.startsWith(`The last run, “${s.title}”: `)) fail(`sample ${s.title}: the memory view says \`${page.memorySaid.textContent}\``);
+    // The garbage sample is there to make the view's teeth: it must collect
+    // often enough to show them, each collection marked.
+    if (s.title === GARBAGE_SAMPLE) {
+      const counted = runner.memory.points.reduce((n, p) => n + p.collections, 0);
+      const marks = (page.cellsChart.innerHTML.match(/class="gc"/g) ?? []).length;
+      if (counted < GARBAGE_COLLECTIONS[0] || counted > GARBAGE_COLLECTIONS[1] || marks !== counted) fail(`sample ${s.title}: ${counted} collections recorded and ${marks} marked, where ${GARBAGE_COLLECTIONS.join(" to ")} must be`);
+      garbageSaid = page.memorySaid.textContent;
+    }
     page.closeButton.fire("click");
     memoryChecks++;
   }
 }
+
+if (garbageSaid === null) fail(`the page offers no sample “${GARBAGE_SAMPLE}”`);
+else console.log(`page_check: “${GARBAGE_SAMPLE}” on the page: ${garbageSaid}`);
 
 // Stop leaves the drawing in view; an edit goes back to the line.
 {

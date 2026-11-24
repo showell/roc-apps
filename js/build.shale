@@ -3,9 +3,10 @@
 -- backend, linked by Zig with the host js/wasm/host.zig into js.wasm, beside
 -- the page's files from js/web/ and js_samples.js, which it writes from the
 -- canvas samples in js/canvas/ (each sample's first line, a `// ` comment,
--- is its title) and the console sample "all features", which is the corpus
--- program js/tests/54-big-daddy.js, so node holds it. The page is replaced
--- only by a build that js/page_check.mjs passed.
+-- is its title) and the featured console samples, "all features" and
+-- "garbage collection", which are the corpus programs js/tests/54-big-daddy.js
+-- and js/tests/55-garbage.js, so node holds them. The page is replaced only by
+-- a build that js/page_check.mjs passed.
 --
 -- **EVERY FILE BUT index.html IS NAMED BY ITS BYTES**, as roc-chat names its
 -- scripts: `js_page.<hash>.js`, `js.<hash>.wasm`, the hash the first 16 hex
@@ -31,10 +32,14 @@ const WANT_ROC = "roc-pin: roc-apps' pinned nightly"
 const WANT_ZIG = "zig: the wasm host's linker"
 const WANT_NODE = "js-page: page_check.mjs drives the built page under node"
 
-const FEATURED = "js/tests/54-big-daddy.js"
+-- The console samples taken from the corpus, in the page's order.
+const FEATURED = {
+  {title = "all features", file = "js/tests/54-big-daddy.js"},
+  {title = "garbage collection", file = "js/tests/55-garbage.js"},
+}
 
 -- The canvas samples as a module the page imports, in their files' order,
--- and the featured console sample beside them.
+-- and the featured console samples beside them.
 function samples_module()
   local items = {}
   for f in glob("js/canvas/*.js") do
@@ -43,8 +48,13 @@ function samples_module()
     if not starts_with(first, "// ") then fail("js/build.shale: " .. f .. " has no first line `// <title>`") end
     push(items, "  { title: " .. json_write(sub(first, 4, #first)) .. ", source: " .. json_write(source) .. " },")
   end
-  local featured = "export const FEATURED_SAMPLE = { title: \"all features\", source: " .. json_write(read(FEATURED)) .. " };\n"
-  return "// Written by js/build.shale from js/canvas/*.js and " .. FEATURED .. "; not checked in.\nexport const CANVAS_SAMPLES = [\n" .. join(items, "\n") .. "\n];\n" .. featured
+  local featured = {}
+  local files = {}
+  for s in FEATURED do
+    push(featured, "  { title: " .. json_write(s.title) .. ", source: " .. json_write(read(s.file)) .. " },")
+    push(files, s.file)
+  end
+  return "// Written by js/build.shale from js/canvas/*.js, " .. join(files, " and ") .. "; not checked in.\nexport const CANVAS_SAMPLES = [\n" .. join(items, "\n") .. "\n];\nexport const FEATURED_SAMPLES = [\n" .. join(featured, "\n") .. "\n];\n"
 end
 
 -- The first 16 hex digits of the file's sha256.

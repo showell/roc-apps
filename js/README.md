@@ -7,7 +7,7 @@ holds the language to node.
 The code here was written by AI coding agents (Claude), with human
 supervision.
 
-**Status (2026-11-24):** 54 of 54 corpus programs print what node 22
+**Status (2026-11-24):** 55 of 55 corpus programs print what node 22
 prints, byte for byte, timers and uncaught throws included, and 44 of 44
 programs outside the subset are refused with the message they must give,
 on the VM's usual collection schedule and collecting at every allocation.
@@ -154,6 +154,13 @@ subset, in stages (a census parsed from text, a clerk's lookups that fail, a
 merge sort, Dijkstra's shortest walks, a prime sieve, a word count and an
 evening on the timers), each printing a checksum. Its `SIZE` scales the work;
 at its default, 5, node takes about 55 ms of CPU, 40 of them node's own start.
+
+**The third, "garbage collection,"** is the corpus program
+`js/tests/55-garbage.js`, written into the list the same way: rounds of short-lived
+objects, arrays and closures, with a live set that rises and falls, so the
+collector runs about 25 times in a fifth of a second on the page. It ends by
+pointing at the memory link, whose chart shows each collection as a tooth;
+`page_check.mjs` holds its run to at least 5 collections, each marked.
 
 **One queue, one clock.** A timer's callback, a click and the next
 `frame(t)` are each an event on the interpreter's queue (`Events.Queue`),

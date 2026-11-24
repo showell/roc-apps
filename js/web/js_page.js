@@ -15,7 +15,7 @@
 
 import { loadRunner, unescaped } from "./js_runner.js";
 import { makePainter, SIZE } from "./js_painter.js";
-import { CANVAS_SAMPLES, FEATURED_SAMPLE } from "./js_samples.js";
+import { CANVAS_SAMPLES, FEATURED_SAMPLES } from "./js_samples.js";
 import { memoryView, MEMORY_CSS, STRATEGY } from "./js_memory.js";
 
 const FRAMES_PER_SECOND = 30;
@@ -116,13 +116,14 @@ console.log(new Point(1, 2));
 ];
 
 // A console sample draws nothing, so the page hides the canvas for it and its
-// output sits at the top of the column. "all features" (js/tests/54-big-daddy.js,
-// written into js_samples.js by js/build.shale) comes second, after the first
+// output sits at the top of the column. "all features" and "garbage
+// collection" (js/tests/54-big-daddy.js and 55-garbage.js, written into
+// js_samples.js by js/build.shale) come second and third, after the first
 // canvas sample, which the page opens with.
 const asConsole = (s) => ({ ...s, console: true });
 export const SAMPLES = [
   CANVAS_SAMPLES[0],
-  asConsole(FEATURED_SAMPLE),
+  ...FEATURED_SAMPLES.map(asConsole),
   ...CANVAS_SAMPLES.slice(1),
   ...CONSOLE_SAMPLES.map(asConsole),
 ];
