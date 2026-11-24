@@ -1333,8 +1333,13 @@ ValueRules :: [].{
 	array_like : List(Heap.Cell), Heap.Value -> Try(List(Heap.Value), [Unsupported(Str)])
 	array_like = |cells, source|
 		match source {
-			Reference(id) => match Heap.cell_at(cells, id) {
-				Object(properties) | Instance(_, properties) => match Heap.property_value(properties, "length") {
+			Reference(id) => {
+				# Any other cell has no `length` to read, so it gives none.
+				properties = match Heap.cell_at(cells, id) {
+					Object(held) | Instance(_, held) => held
+					_ => []
+				}
+				match Heap.property_value(properties, "length") {
 					Number(length) if length >= 0.0 and length.div_trunc_by(1.0) == length and length <= 10000000.0 => {
 						count = length.to_u64_try() ?? 0
 						var $values = List.with_capacity(count)
@@ -1348,7 +1353,6 @@ ValueRules :: [].{
 					Undefined => Ok([])
 					_ => Err(Unsupported("unsupported: `Array.from` of an object whose `length` is not a whole number up to 10,000,000"))
 				}
-				_ => Ok([])
 			}
 			Number(_) | Boolean(_) => Ok([])
 			_ => Err(Unsupported("unsupported: `Array.from` of null or undefined"))
@@ -1450,7 +1454,10 @@ ValueRules :: [].{
 				}
 				ValueRules.alloc($s, Array($values))
 			}
-			Err(Unsupported(why)) => ValueRules.fault_got(machine, "${why}${ValueRules.line_note(site)}")
+			Err(Unsupported(why)) => {
+				note = ValueRules.line_note(site)
+				ValueRules.fault_got(machine, "${why}${note}")
+			}
 			Err(NotListed) => ValueRules.fault_got(
 				machine,
 				"unsupported: Object.keys, values or entries of anything but an object or an array${ValueRules.line_note(site)}",

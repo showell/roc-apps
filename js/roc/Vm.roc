@@ -493,7 +493,7 @@ dispatch! = |host, program, machine, op|
 		AppendSpread({ source, at }) => spread_appended(machine, source, at)
 		NewObject => allocated(machine, Object([]))
 		NewInstance(classes) => allocated(machine, Instance(classes, []))
-		InstanceOf(name) => replaced(machine, 2, Boolean(is_instance_of(machine, value_at(machine, 2), name)))
+		InstanceOf(name) => instance_tested(machine, name)
 		SetField(key) => field_set(machine, key)
 		SpreadFields(at) => fields_spread(machine, at)
 		GetProperty(key, at) => property_read(machine, key, at)
@@ -522,17 +522,20 @@ dispatch! = |host, program, machine, op|
 		Finish => { ..machine, status: Finished }
 	}
 
-# Whether a value is an instance of the class named, or of a class that
-# extends it: every instance is marked with them all.
-is_instance_of : Vm.Machine, Heap.Value, Str -> Bool
-is_instance_of = |machine, value, name|
-	match value {
+# The value and the class under the top of the stack replaced by whether
+# the value is an instance of the class named, or of a class that extends
+# it: every instance is marked with them all.
+instance_tested : Vm.Machine, Str -> Vm.Machine
+instance_tested = |machine, name| {
+	is_instance = match value_at(machine, 2) {
 		Reference(id) => match Heap.cell_at(machine.cells, id) {
 			Instance(classes, _) => classes.contains(name)
 			_ => False
 		}
 		_ => False
 	}
+	replaced(machine, 2, Boolean(is_instance))
+}
 
 code_of : Bytecode.Program, U64 -> Bytecode.Code
 code_of = |program, code| program.codes.get(code) ?? crash "Vm.code_of: a closure names code the program has"
@@ -1251,10 +1254,8 @@ property_read = |machine, key, at| {
 	holder = value_at(machine, 1)
 	found = match holder {
 		Reference(id) => match Heap.cell_at(machine.cells, id) {
-			Object(properties) | Instance(_, properties) | Namespace(_, properties) => match properties.find_first(|property| property.key == key) {
-				Ok(property) => Found(property.value)
-				Err(NotFound) => Elsewhere
-			}
+			Object(properties) | Namespace(_, properties) => own_property(properties, key)
+			Instance(_, properties) => own_property(properties, key)
 			Array(items) if key == "length" => Found(Number(items.len().to_f64()))
 			_ => Elsewhere
 		}
@@ -1268,6 +1269,14 @@ property_read = |machine, key, at| {
 		}
 	}
 }
+
+# An object's own property `key`, or where to look for it instead.
+own_property : List(Heap.Property), Str -> [Found(Heap.Value), Elsewhere]
+own_property = |properties, key|
+	match properties.find_first(|property| property.key == key) {
+		Ok(property) => Found(property.value)
+		Err(NotFound) => Elsewhere
+	}
 
 index_read : Vm.Machine, Ast.Where -> Vm.Machine
 index_read = |machine, at| {

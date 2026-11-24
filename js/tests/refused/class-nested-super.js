@@ -1,4 +1,4 @@
-// refused: unsupported: `super(...)` anywhere but a statement of its own
+// refused: unsupported: `super(...)` inside a block or an expression
 class A {}
 class B extends A {
   constructor(flag) {

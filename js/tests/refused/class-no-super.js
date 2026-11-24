@@ -1,4 +1,4 @@
-// refused: unsupported: a derived class's constructor that never calls `super(...)`
+// refused: unsupported: a derived class's constructor without `super(...)`
 class A {}
 class B extends A {
   constructor() {

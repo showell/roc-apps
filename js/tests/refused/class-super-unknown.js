@@ -1,4 +1,4 @@
-// refused: unsupported: `super.fly`, a method no class this one extends has
+// refused: unsupported: `super.fly`, which no parent class has
 class A {}
 class B extends A {
   m() {
