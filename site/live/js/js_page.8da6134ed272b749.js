@@ -13,8 +13,8 @@
 // canvas is queued at once and runs in the next frame. Pause works between
 // frames.
 
-import { loadRunner, unescaped } from "./js_runner.616b25312acc657c.js";
-import { makePainter, SIZE } from "./js_painter.32ee6e957e05f6e9.js";
+import { loadRunner, unescaped } from "./js_runner.d5813985d76a4ba3.js";
+import { makePainter, SIZE } from "./js_painter.9c0b5af6e5a28cc9.js";
 import { CANVAS_SAMPLES, FEATURED_SAMPLE } from "./js_samples.3c133edf45254026.js";
 
 const FRAMES_PER_SECOND = 30;
@@ -236,7 +236,7 @@ export function buildPage(runner, env = window) {
   const wrap = element("div", { className: "wrap" }, [
     element("div", { className: "top" }, [
       element("h1", { textContent: "JavaScript, in Roc" }),
-      element("p", { className: "sub", textContent: "A subset of JavaScript run by a tree-walking interpreter written in Roc. Its console.log prints what node prints; the canvas builtins below are this page's own, named after p5.js's but not p5.js." }),
+      element("p", { className: "sub", textContent: "A subset of JavaScript run by a bytecode VM written in Roc. Its console.log prints what node prints; the canvas builtins below are this page's own, named after p5.js's but not p5.js." }),
       element("div", { className: "bar" }, [picker, runButton, stopButton, pauseButton, status]),
       element("div", { className: "cols" }, [
         element("div", { className: "col" }, [element("label", { textContent: "Program" }), editor]),
@@ -414,6 +414,6 @@ export function buildPage(runner, env = window) {
 }
 
 if (typeof window !== "undefined" && !window.JS_PAGE_CHECK) {
-  const bytes = await (await fetch("js.22553365f83d74bb.wasm")).arrayBuffer();
+  const bytes = await (await fetch("js.511af9678532e050.wasm")).arrayBuffer();
   buildPage(await loadRunner(bytes));
 }
