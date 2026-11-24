@@ -9,13 +9,15 @@
 --
 --   cd <roc-apps checkout> && shale js/oracle.shale            build js-run, then grade
 --   cd <roc-apps checkout> && shale js/oracle.shale only=11    the programs whose names start so
+--   cd <roc-apps checkout> && shale js/oracle.shale engine=vm  build js-vm, the bytecode VM, then grade it
 --
--- It takes js-run from js/roc/JsRun.roc on the dev backend from
--- tools/roc_build.shale (js/js_builds.shale), which builds it with the pinned
--- Roc when its cache holds no build of these inputs, and fails on an error
--- or a warning, whatever Roc's exit code.
+-- It takes js-run from js/roc/JsRun.roc (js-vm from js/roc/JsVm.roc) on
+-- the dev backend from tools/roc_build.shale (js/js_builds.shale), which
+-- builds it with the pinned Roc when its cache holds no build of these
+-- inputs, and fails on an error or a warning, whatever Roc's exit code.
 -- Every program found is graded; none is skipped, and the run fails unless
--- all of them pass.
+-- all of them pass. A program the VM refuses (`js: unsupported (vm): ...`)
+-- fails as a wrong answer does, and the last line counts the two apart.
 --
 -- budget: steps=50000000
 
@@ -24,6 +26,22 @@ const WANT_NODE = "js-oracle: node is the subset's oracle"
 const RUN_MS = 20000
 
 const ONLY = arg("only", "")
+const ENGINE = arg("engine", "walker")
+
+-- The command under test and its name in the lines below.
+function engine_command()
+  if ENGINE == "walker" then return {name = "js-run", source = "JsRun.roc"} end
+  if ENGINE == "vm" then return {name = "js-vm", source = "JsVm.roc"} end
+  fail("js/oracle.shale: engine= is walker or vm, not " .. ENGINE)
+end
+
+const COMMAND = engine_command()
+
+-- Whether a transcript ends in the VM's refusal of what it doesn't run yet.
+function is_vm_refusal(out)
+  local said = lines(trim(out))
+  return starts_with(get(said, #said, ""), "js: unsupported (vm): ")
+end
 
 use("./js_builds.shale")
 
@@ -76,12 +94,13 @@ function first_difference(want, got)
   while i <= #a or i <= #b do
     local x = get(a, i, "<none>")
     local y = get(b, i, "<none>")
-    if x ~= y then return "line " .. i .. ": node `" .. x .. "`, js-run `" .. y .. "`" end
+    if x ~= y then return "line " .. i .. ": node `" .. x .. "`, " .. COMMAND.name .. " `" .. y .. "`" end
     i = i + 1
   end
   return "the same lines"
 end
 
+-- The command under test, js-run or js-vm, on one program's text.
 function js_run(exe, src)
   return run({exe, src}, {timeout_ms = RUN_MS, whole = 4000000, want = WANT_RUN})
 end
@@ -89,6 +108,7 @@ end
 function grade_oracle(exe)
   local n = 0
   local bad = 0
+  local refused = 0
   for f in glob("js/tests/*.js") do
     if ONLY == "" or starts_with(basename(f), ONLY) then
       n = n + 1
@@ -101,16 +121,18 @@ function grade_oracle(exe)
         print("PASS " .. basename(f))
       else
         bad = bad + 1
+        if is_vm_refusal(mine.out) then refused = refused + 1 end
         print("FAIL " .. basename(f) .. ": " .. first_difference(want, got))
       end
     end
   end
-  return {n = n, bad = bad}
+  return {n = n, bad = bad, refused = refused}
 end
 
 function grade_refused(exe)
   local n = 0
   local bad = 0
+  local refused = 0
   for f in glob("js/tests/refused/*.js") do
     if ONLY == "" or starts_with(basename(f), ONLY) then
       n = n + 1
@@ -125,19 +147,25 @@ function grade_refused(exe)
         print("PASS refused/" .. basename(f))
       else
         bad = bad + 1
-        print("FAIL refused/" .. basename(f) .. ": wanted `" .. m.group .. "`, js-run said `" .. last .. "` (" .. mine.ended .. " " .. get(mine, "code", "") .. ")")
+        if is_vm_refusal(mine.out) then refused = refused + 1 end
+        print("FAIL refused/" .. basename(f) .. ": wanted `" .. m.group .. "`, " .. COMMAND.name .. " said `" .. last .. "` (" .. mine.ended .. " " .. get(mine, "code", "") .. ")")
       end
     end
   end
-  return {n = n, bad = bad}
+  return {n = n, bad = bad, refused = refused}
 end
 
 function main()
-  local exe = js_build("js/oracle.shale", "js-run", "JsRun.roc", "dev")
+  local exe = js_build("js/oracle.shale", COMMAND.name, COMMAND.source, "dev")
   local o = grade_oracle(exe)
   local r = grade_refused(exe)
   if o.n + r.n == 0 then fail("js/oracle.shale: no program is named " .. ONLY) end
-  print("js oracle: " .. (o.n - o.bad) .. " of " .. o.n .. " match node; " .. (r.n - r.bad) .. " of " .. r.n .. " refused as they must be")
+  if ENGINE == "walker" then
+    print("js oracle: " .. (o.n - o.bad) .. " of " .. o.n .. " match node; " .. (r.n - r.bad) .. " of " .. r.n .. " refused as they must be")
+  else
+    print("js oracle (" .. ENGINE .. "): " .. (o.n - o.bad) .. " of " .. o.n .. " match node (" .. o.refused .. " refused by the VM, " .. (o.bad - o.refused) .. " wrong); "
+      .. (r.n - r.bad) .. " of " .. r.n .. " refused as they must be (" .. r.refused .. " refused by the VM for another reason, " .. (r.bad - r.refused) .. " wrong)")
+  end
   if o.bad + r.bad > 0 then fail("js/oracle.shale: " .. (o.bad + r.bad) .. " programs failed") end
 end
 

@@ -8,6 +8,7 @@
 --   cd <roc-apps checkout> && shale js/controls.shale              the release build (--opt=speed)
 --   cd <roc-apps checkout> && shale js/controls.shale opt=dev      the dev build
 --   cd <roc-apps checkout> && shale js/controls.shale only=02      the controls whose names start so
+--   cd <roc-apps checkout> && shale js/controls.shale engine=vm    js-vm, the bytecode VM, as a report
 --
 -- **A CONTROL THAT STARTS ALLOCATING NAMES THE WRITE THAT COPIES**: 00-loop
 -- is the pass alone, and each control after it adds one write to it. A copy
@@ -17,7 +18,7 @@
 --
 -- The release build is held to js/controls/expected.txt and the dev build
 -- to js/controls/expected-dev.txt. `only=` holds nothing: a part of the
--- ladder is a report.
+-- ladder is a report, and so is the VM's, which has no expected file yet.
 --
 -- budget: steps=50000000
 
@@ -30,13 +31,21 @@ const WHO = "js/controls.shale"
 
 const OPT = arg("opt", "speed")
 const ONLY = arg("only", "")
+const ENGINE = arg("engine", "walker")
 
 function argv_for(bin, src, passes)
   return {bin, "const N = " .. passes .. ";\n" .. src}
 end
 
 function main()
-  local bin = js_build(WHO, "js-run", "JsRun.roc", OPT)
+  local bin = nil
+  if ENGINE == "walker" then
+    bin = js_build(WHO, "js-run", "JsRun.roc", OPT)
+  elseif ENGINE == "vm" then
+    bin = js_build(WHO, "js-vm", "JsVm.roc", OPT)
+  else
+    fail(WHO .. ": engine= is walker or vm, not " .. ENGINE)
+  end
   local controls = {}
   for f in glob("js/controls/*.js") do
     local n = strip_suffix(basename(f), ".js")
@@ -49,9 +58,9 @@ function main()
   local file = "js/controls/expected.txt"
   if OPT == "dev" then file = "js/controls/expected-dev.txt" end
   local gen = js_out_dir(OPT)
-  local plan = {who = WHO .. " opt=" .. OPT, gen = gen, expected = file, small = SMALL, big = BIG,
-    limit_ms = RUN_MS, hold = ONLY == "", controls = controls}
-  if ONLY ~= "" then plan.expected = "" end
+  local plan = {who = WHO .. " opt=" .. OPT .. " engine=" .. ENGINE, gen = gen, expected = file, small = SMALL, big = BIG,
+    limit_ms = RUN_MS, hold = ONLY == "" and ENGINE == "walker", controls = controls}
+  if not plan.hold then plan.expected = "" end
   local plan_path = gen .. "/plan.json"
   if exists(plan_path) then remove(plan_path) end
   create(plan_path, json_write(plan))

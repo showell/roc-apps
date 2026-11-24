@@ -1,8 +1,8 @@
 # JavaScript, in Roc
 
 A subset of JavaScript run by a tree-walking interpreter written in Roc, a
-web playground where a program draws on a canvas as it runs, and a corpus
-that holds the language to node.
+bytecode VM growing beside it, a web playground where a program draws on a
+canvas as it runs, and a corpus that holds the language to node.
 
 The code here was written by AI coding agents (Claude), with human
 supervision.
@@ -14,6 +14,12 @@ refused with the message they must give. Eight canvas samples are held to
 their logs of effects, one of them driven by scripted clicks alone and one
 by timers, restarted by a scripted click. The page builds into the dev
 channel; the unlisted copy at roc.lynrummy.com/js/ predates the gaps.
+
+**The bytecode VM's first round (2026-11-24):** `js-vm` runs 37 of the 50
+corpus programs as node does and refuses the other 13, each for something
+the round leaves out, with no wrong answer; 39 of the 44 programs outside
+the subset get the message they must, and the other 5 meet a refusal of
+the VM's first ("The bytecode VM", below).
 
 ## The subset
 
@@ -200,11 +206,69 @@ laying out each scope's names, `Resolve.roc` places every name read or
 written in those layouts before the run, `Interp.roc` walks it, `Heap.roc` holds what JavaScript shares by
 reference, `Inspect.roc` is console.log's formatting (node's `util.inspect`,
 function for function), and `NumberText.roc` writes a number as `String(n)`
-does. `Canvas.roc` is the canvas library: its effects, their written form,
+does. The VM takes the same resolved tree: `Compile.roc` makes each
+function a list of `Bytecode.roc`'s instructions, `Vm.roc` runs them, and
+`JsVm.roc` is `js-vm`, js-run's command on the VM. `Canvas.roc` is the canvas library: its effects, their written form,
 the turtle and the host's type. `JsRun.roc` is `js-run`, the command;
 `JsCount.roc` is `js-count`, the same run followed by its counts;
 `JsCanvas.roc` is `js-canvas`, the recording host. `JsApp.roc` is the page's
 wasm module, on the platform and host in `js/wasm/`; `js/web/` is the page.
+
+## The bytecode VM
+
+The tree walker keeps half-made values on Roc's own stack and grows with
+the language in a few huge functions, so it can't be collected and builds
+slowly. The VM puts every value a program holds into its machine, and each
+instruction's handler is a small function of its own. It runs beside the
+walker, held by the same oracle, until it runs everything; it never falls
+back on the walker.
+
+- **The pipeline:** the lexer, the parser and `Resolve` as they are, then
+  `Compile`, which lays out each function's frame and makes its code, then
+  `Vm`, a stack machine whose loop only fetches and dispatches.
+- **Frames are slots on the operand stack,** a call's parameters, its
+  blocks' and loops' variables, and the boxes it captures, each named by its
+  place from the frame's base; callers wait in `frames`. A variable of a
+  scope with a function literal inside (`Ast.Capture`) lives in a box, a
+  heap cell (`Heap.Cell`'s `Variable`) its frame and its closures share; a
+  closure's `Fun` cell names an `Environment` cell, its code and the boxes
+  it captures. A `for` loop whose body makes closures gives each pass a
+  fresh box. So the roots a collector needs are the live stack, the frames
+  and the cells, all data.
+- **Control flow is jumps,** relative to the instruction after them; a loop
+  makes its own `break`s and `continue`s jumps once it knows its end.
+- **A read before a declaration is decided when compiling** wherever it can
+  be: in the declaring function, a read written before the declaration
+  always runs before it (a block's scope starts afresh each time), so it
+  compiles to its ReferenceError, and only a read through a box checks at
+  run time.
+- **The value rules are the walker's.** A property read, an operator on
+  mixed values, a string method, a builtin that calls nothing back, and the
+  messages they make live once, in `Interp`; the VM's fast paths settle the
+  common cases (numbers, an object's own property, an array's item) and hand
+  the rest to `Interp`'s rule inside a walker machine holding only the
+  cells (`Vm.shell`). None of those rules walks the tree.
+- **A builtin that calls back runs the loop again** (`forEach`, `map`,
+  `sort` and their kin, `Array.from` with a mapper): it pushes the function
+  and its arguments, runs until that frame returns, and takes the answer off
+  the stack, the receiver and the array being built waiting on the stack.
+- **The round leaves out** `try` and `catch` (a throw ends the run, as an
+  uncaught one), `switch`, labels, destructuring and patterned parameters,
+  optional chains, Map and Set methods, `for ... of` over anything but an
+  array or a string, timers and the canvas. Each stops the run with `js:
+  unsupported (vm): <what>`, when compiling where the tree shows it.
+- **Steps** count calls and loop passes, not statements; js-vm's budget is
+  js-run's, 200,000,000.
+
+**What the dev controls show (2026-11-24, `js/controls.shale opt=dev
+engine=vm`, a report):** every control flat, and none above the walker's
+dev count: 0, 1, 1, 0, 1, 2 and 2 allocations a pass for 00 to 06 (the
+walker's 1, 1, 3, 0, 1, 3 and 5); 07-map-set is refused. The one a call
+makes is a list the dev build copies when a frame is entered, by
+roc-alloc-trace's `where`, which names `frames_with` (the lines it gives
+aren't Vm.roc's); rewriting the write three ways didn't move it. On the dev backend fib(22)
+takes about 660 ms of CPU against the walker's 600, and the loops 2.4 s
+against 2.8 s; the release build isn't measured yet.
 
 ## Why the heap is one value
 
@@ -329,8 +393,10 @@ linear: 59, 88 and 184 µs a store; 28, 35 and 86 µs a call; 22, 35 and
 ## Running it and the tests
 
     shale js/oracle.shale      # js-run, then every program through node and js-run
+    shale js/oracle.shale engine=vm   # the same with js-vm, the bytecode VM
     shale js/probes.shale      # js-count, then the copying probes at three sizes
     shale js/controls.shale    # js-run --opt=speed, then count each control's allocations
+    shale js/controls.shale opt=dev engine=vm   # js-vm's, as a report
     shale check.shale js=1     # the controls in both builds, held to their expected counts
     shale js/bench.shale       # both builds, then time js/bench/'s programs
     shale js/heaps.shale       # js-count --opt=speed, then each program's cells, scopes and peak memory
