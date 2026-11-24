@@ -3,27 +3,21 @@
 // made here, so the HTML is only a door.
 //
 // **THE PROGRAM DRAWS AS IT RUNS.** Each effect reaches `show` while the
-// program is still running (js_runner.js). At full speed it is painted at
-// once, and the browser shows the canvas when the frame's call returns. In
-// slow motion it waits in `queue`, and the page shows the marks one or ten
-// at a time with a pause after each, so a turtle is seen walking. A wasm
-// call can't give the browser a turn halfway through, so slow motion holds
-// what the call made, in its order, and shows it at its own pace; the next
-// frame is called only once it has all been shown.
+// program is still running (js_runner.js) and is painted at once; the
+// browser shows the canvas when the frame's call returns.
 //
 // The frame loop calls `frame(t)` about 30 times a second, `t` being the
-// frame's number over 30, so a frame's `t` is the same at every speed and in
+// frame's number over 30, so a frame's `t` is the same on the page and in
 // the recording host's logs (js/canvas/*.log). Each call is a tick of the
 // program's clock, on which its timers run, and its clicks: a click on the
 // canvas is queued at once and runs in the next frame. Pause works between
 // frames.
 
 import { loadRunner, unescaped } from "./js_runner.616b25312acc657c.js";
-import { isMark, makePainter, SIZE } from "./js_painter.c0990248c5833567.js";
-import { CANVAS_SAMPLES, FEATURED_SAMPLE } from "./js_samples.26d742d93f264e2a.js";
+import { makePainter, SIZE } from "./js_painter.32ee6e957e05f6e9.js";
+import { CANVAS_SAMPLES, FEATURED_SAMPLE } from "./js_samples.3c133edf45254026.js";
 
 const FRAMES_PER_SECOND = 30;
-const SLOW_PAUSE_MS = 60;
 const OUTPUT_KEPT = 20000;
 
 const CONSOLE_SAMPLES = [
@@ -119,12 +113,6 @@ export const SAMPLES = [
   asConsole(FEATURED_SAMPLE),
   ...CANVAS_SAMPLES.slice(1),
   ...CONSOLE_SAMPLES.map(asConsole),
-];
-
-const SPEEDS = [
-  { label: "Full speed", marks: 0 },
-  { label: "Slow: a mark at a time", marks: 1 },
-  { label: "Slow: ten marks at a time", marks: 10 },
 ];
 
 const BUILTINS = [
@@ -228,7 +216,6 @@ export function buildPage(runner, env = window) {
   const runButton = element("button", { textContent: "Run", className: "primary" });
   const stopButton = element("button", { textContent: "Stop" });
   const pauseButton = element("button", { textContent: "Pause" });
-  const speed = element("select", {}, SPEEDS.map((s, i) => element("option", { value: String(i), textContent: s.label })));
   const status = element("span", { className: "status", textContent: "" });
   const editor = element("textarea", { spellcheck: false, value: SAMPLES[0].source });
   const canvas = element("canvas", { width: SIZE, height: SIZE, tabIndex: 0 });
@@ -239,7 +226,7 @@ export function buildPage(runner, env = window) {
     element("div", { className: "top" }, [
       element("h1", { textContent: "JavaScript, in Roc" }),
       element("p", { className: "sub", textContent: "A subset of JavaScript run by a tree-walking interpreter written in Roc. Its console.log prints what node prints; the canvas builtins below are this page's own, named after p5.js's but not p5.js." }),
-      element("div", { className: "bar" }, [picker, runButton, stopButton, pauseButton, speed, status]),
+      element("div", { className: "bar" }, [picker, runButton, stopButton, pauseButton, status]),
       element("div", { className: "cols" }, [
         element("div", { className: "col" }, [element("label", { textContent: "Program" }), editor]),
         element("div", { className: "col" }, [waiting, canvasLabel, canvas, output]),
@@ -310,7 +297,6 @@ export function buildPage(runner, env = window) {
   // The run on show: its number (a stopped run's calls are let go), the
   // next frame's number, and whether it is paused.
   let current = null;
-  let queue = [];
 
   function say(text, bad) {
     status.textContent = text;
@@ -328,33 +314,13 @@ export function buildPage(runner, env = window) {
     else painter.paint(line);
   }
 
-  function marksAtATime() { return SPEEDS[Number(speed.value)].marks; }
-
   function sinkFor(run) {
     return (line) => {
-      if (run !== current) return;
-      if (marksAtATime() === 0) show(line);
-      else queue.push(line);
+      if (run === current) show(line);
     };
   }
 
-  const sleep = (ms) => new Promise((done) => env.setTimeout(done, ms));
-
-  async function drain(run) {
-    while (queue.length > 0 && run === current) {
-      const each = Math.max(1, marksAtATime());
-      let marks = 0;
-      while (queue.length > 0 && marks < each) {
-        const line = queue.shift();
-        show(line);
-        if (isMark(line)) marks++;
-      }
-      if (marks > 0 && marksAtATime() > 0) await sleep(SLOW_PAUSE_MS);
-    }
-  }
-
   async function settle(run, result) {
-    await drain(run);
     if (run !== current) return;
     const SAID = { done: "ran to its end", faulted: "stopped", thrown: "stopped by an uncaught throw", refused: "refused", crashed: "the interpreter crashed" };
     if (result.ending === "frame") {
@@ -391,7 +357,6 @@ export function buildPage(runner, env = window) {
 
   function runNow() {
     showKindOf(SAMPLES[Number(picker.value)]);
-    queue = [];
     output.textContent = "";
     painter.reset();
     const run = { frame: 0, paused: false, over: false, due: 0, loop: 0 };
@@ -404,7 +369,6 @@ export function buildPage(runner, env = window) {
   function stop() {
     if (current && !current.over) say("stopped by you", false);
     current = null;
-    queue = [];
   }
 
   runButton.addEventListener("click", () => { runNow(); canvas.focus(); });
@@ -415,19 +379,27 @@ export function buildPage(runner, env = window) {
     run.paused = !run.paused;
     pauseButton.textContent = run.paused ? "Go on" : "Pause";
     say(`frame ${run.frame}${run.paused ? ", paused" : ""}`, false);
-    if (!run.paused && queue.length === 0) schedule(run);
+    if (!run.paused) schedule(run);
   });
+  // A program is read from its top: setting a textarea's value leaves the
+  // cursor at the end, and a browser scrolls the box to its cursor.
+  function fromTheTop() {
+    editor.setSelectionRange(0, 0);
+    editor.scrollTop = 0;
+  }
   picker.addEventListener("change", () => {
     stop();
     editor.value = SAMPLES[Number(picker.value)].source;
+    fromTheTop();
     notRun();
   });
+  fromTheTop();
   // An edited program hasn't run either, so the run on show stops with it.
   editor.addEventListener("input", () => {
     stop();
     notRun();
   });
-  return { picker, runButton, stopButton, pauseButton, speed, status, editor, canvas, output, waiting, canvasLabel, runNow };
+  return { picker, runButton, stopButton, pauseButton, status, editor, canvas, output, waiting, canvasLabel, runNow };
 }
 
 if (typeof window !== "undefined" && !window.JS_PAGE_CHECK) {
