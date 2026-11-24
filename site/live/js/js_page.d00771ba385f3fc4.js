@@ -15,7 +15,7 @@
 
 import { loadRunner, unescaped } from "./js_runner.3cb6ca5e735cb7cd.js";
 import { makePainter, SIZE } from "./js_painter.199dc8d08b3a2d42.js";
-import { CANVAS_SAMPLES, FEATURED_SAMPLE } from "./js_samples.3c133edf45254026.js";
+import { CANVAS_SAMPLES, FEATURED_SAMPLES } from "./js_samples.eebf08d4cbfdd2c1.js";
 import { memoryView, MEMORY_CSS, STRATEGY } from "./js_memory.751aa2b79bd604b7.js";
 
 const FRAMES_PER_SECOND = 30;
@@ -116,13 +116,14 @@ console.log(new Point(1, 2));
 ];
 
 // A console sample draws nothing, so the page hides the canvas for it and its
-// output sits at the top of the column. "all features" (js/tests/54-big-daddy.js,
-// written into js_samples.js by js/build.shale) comes second, after the first
+// output sits at the top of the column. "all features" and "garbage
+// collection" (js/tests/54-big-daddy.js and 55-garbage.js, written into
+// js_samples.js by js/build.shale) come second and third, after the first
 // canvas sample, which the page opens with.
 const asConsole = (s) => ({ ...s, console: true });
 export const SAMPLES = [
   CANVAS_SAMPLES[0],
-  asConsole(FEATURED_SAMPLE),
+  ...FEATURED_SAMPLES.map(asConsole),
   ...CANVAS_SAMPLES.slice(1),
   ...CONSOLE_SAMPLES.map(asConsole),
 ];
@@ -140,6 +141,7 @@ const BUILTINS = [
   ["penUp(), penDown(), goto(x, y)", "the turtle starts in the middle, facing up, its pen down"],
   ["mouseX(), mouseY(), keyIsDown(key)", "read when called; a key by its name, such as \"ArrowLeft\""],
   ["onClick((x, y) => { ... })", "called with each click on the canvas, at the next frame, in canvas units"],
+  ["onCollect(({ cells, live, before }) => { ... })", "called after each garbage collection, between instructions, with the heap's cells, those found live and those in use before"],
   ["setTimeout(f, ms), setInterval(f, ms)", "JavaScript's own: f called once after ms, or every ms; each answers a timer"],
   ["clearTimeout(timer), clearInterval(timer)", "the timer stops"],
   ["function frame(t) { ... }", "if the program declares it, called 30 times a second, t in seconds"],
@@ -474,6 +476,6 @@ export function buildPage(runner, env = window) {
 }
 
 if (typeof window !== "undefined" && !window.JS_PAGE_CHECK) {
-  const bytes = await (await fetch("js.92330e76f8ec38a8.wasm")).arrayBuffer();
+  const bytes = await (await fetch("js.e326735648ba87b2.wasm")).arrayBuffer();
   buildPage(await loadRunner(bytes));
 }
