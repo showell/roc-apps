@@ -5,3 +5,4 @@
 05-array-push 1 0 the call's list of argument values (Interp.eval_all), one value long; the array grows in place, a few reallocations in all
 06-push-pop 1 0 the push's list of argument values, as 05-array-push; the pop's list is empty and allocates nothing
 07-map-set 2.08 0 the call's list of argument values, as 05-array-push, and the key's identity (Heap.identity_of's text, its digits from NumberText.text_for, which some numbers take more of); not a copy: a write costs the same beside 10 keys as beside 1,000
+08-garbage-in-a-call 3 0 the call's and the object's lists (roc-alloc-trace's where puts two a pass at one append site, the object's property list the third); the same at every size, so not a copy; the walker frees no cell, so its heap grows a cell a pass, in place

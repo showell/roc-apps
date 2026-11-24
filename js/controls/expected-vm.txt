@@ -6,3 +6,4 @@
 05-array-push 1 0 the call's list of argument values (Vm.arguments_of), one value long; the array grows in place, a few reallocations in all
 06-push-pop 1 0 the push's list of argument values, as 05-array-push; the pop's list is empty and allocates nothing
 07-map-set 2.08 0 the call's list of argument values, as 05-array-push, and the key's identity (Heap.identity_of's text, its digits from NumberText.text_for, which some numbers take more of); not a copy: a write costs the same beside 10 keys as beside 1,000
+08-garbage-in-a-call 1 0 the object's property list; the collector's own lists, made once a collection, round to nothing a pass; the cells are reused, never copied
