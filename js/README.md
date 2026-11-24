@@ -19,15 +19,16 @@ channel; the unlisted copy at roc.lynrummy.com/js/ predates the gaps.
 corpus programs as node does and refuses the other 13, each for something
 the round leaves out, with no wrong answer; 39 of the 44 programs outside
 the subset get the message they must, and the other 5 meet a refusal of
-the VM's first ("The bytecode VM", below). In the release build it runs
-fib(22) in 71 ms, the walker's 153.
+the VM's first ("The bytecode VM", below).
 
 **Its second round (2026-11-24):** js-vm runs all 50 corpus programs as
 node does and gives all 44 refusals their messages, on the dev backend;
 only the canvas is left out. The value rules and the queue of callbacks
 are modules both engines share (`ValueRules.roc`, `Events.roc`), so the VM
-no longer links the walker, and its dev controls are held to a file of
-their own. Its release numbers wait for the round's one release build.
+no longer links the walker, and its controls are held to files of their
+own in both builds. In the release build it runs fib(22) in 82 ms against
+the walker's 151, and its release build takes 84 s against the walker's
+481.
 
 ## The subset
 
@@ -288,20 +289,21 @@ allocations a pass for 00 to 07 (the walker's 1, 1, 3, 0, 1, 3, 5 and
 5.08). The one a call makes is a list of 112 bytes, the same at every
 size, which roc-alloc-trace's `where` puts down to `Vm.pushed` (round
 one's run named `frames_with`; the lines it gives aren't Vm.roc's);
-rewriting the write three ways didn't move it. The VM's release controls
-have no expected file yet (`expected-vm.txt`): that run fails, after
-printing its counts, until the round's release build writes it. On the dev backend fib(22)
+rewriting the write three ways didn't move it. On the dev backend fib(22)
 takes about 660 ms of CPU against the walker's 600, and the loops 2.4 s
 against 2.8 s.
 
 **What the release build shows (2026-11-24, `js/bench`'s programs, the
-fastest of three):** fib(22) takes 71 ms on the VM against the walker's
-153, and the loops 297 ms against 714. The release controls (`opt=speed
-engine=vm`) have the walker's shape, nothing a pass but a push's argument
-list, and 07-map-set is refused. The release build takes 670 s, the
-walker's 665: in that round the VM reached the walker's rules, so it
-linked Interp.roc. The rules have a module of their own now
-(`ValueRules.roc`), so the next release build shows the VM's own time.
+fastest of three):** fib(22) takes 82 ms on the VM against the walker's
+151, and the loops 350 ms against 672. The release controls (`opt=speed
+engine=vm`, held to `expected-vm.txt`) have the walker's shape, nothing a
+pass but a call's argument list and a Map key's identity. js-vm's release
+build takes 84 s, and js-run's 481 s.
+
+**The machine keeps its event queue in a box.** Every instruction hands
+the machine back, so whatever the machine holds inline is copied on each
+one; only a timer's or a click's instruction touches the queue. Inline, the
+queue made fib(22) take 123 ms, a sixth of it in `memcpy`.
 
 ## Why the heap is one value
 
@@ -499,12 +501,15 @@ across them is a write in place.
 - **A JavaScript call is several Roc calls deep,** so the interpreter
   reports a stack overflow at 400 nested calls, as node would much deeper,
   rather than overflow Roc's own stack.
-- **Built on the dev backend,** `fib(22)` takes about 0.4 s of CPU, and
-  about 0.15 s in the release build (`js/bench.shale`, 2026-11-24).
-- **The release build takes 11 to 17 minutes** on a 2-core box
-  (2026-11-24), about 70% of it RC1's SpecConstr pass and the rest LLVM
-  (`roc build --timings`; the tag `rc1-slow-release-build` reproduces it).
-  So a round takes its release numbers once, never per step. The dev backend shows the
+- **Built on the dev backend,** the walker runs `fib(22)` in about 0.4 s
+  of CPU, and in about 0.15 s in the release build (`js/bench.shale`,
+  2026-11-24).
+- **The walker's release build takes about 8 minutes** on a 2-core box,
+  and took up to 17 before its value rules moved out (2026-11-24), most of
+  it RC1's SpecConstr pass and the rest LLVM (`roc build --timings`; the
+  tag `rc1-slow-release-build` reproduces it). js-vm's takes under a
+  minute and a half. A round takes its release numbers once, never per
+  step. The dev backend shows the
   code's shape, which is what the probes look at; a release build is for
   measuring speed.
 - **A Map or a Set keeps a place for every key it ever held.** A deleted
