@@ -207,27 +207,37 @@ Heap :: [].{
 	}
 
 	## A Map's or a Set's entries, in the order their keys were first set,
-	## each standing or `Gone` once deleted, so a walk that is under way when
-	## an entry goes or comes on still meets the rest in order; where each
-	## standing key's entry is, by the key's identity; and how many stand.
-	## A Set's entry holds its value as its key and its value both.
+	## each standing or `Gone` once deleted; where each standing key's entry
+	## is in `entries`, by the key's identity; how many stand; and the next
+	## entry's ordinal. A Set's entry holds its value as its key and its value
+	## both.
 	##
-	## A deleted entry's place is never reused or freed, so a table that
-	## many keys pass through holds a place for each.
+	## **A WALK KEEPS ITS PLACE BY ORDINAL, NOT BY INDEX.** Each entry gets the
+	## next ordinal when it is first set, so the ordinals rise along
+	## `entries`, and a walk under way (an iterator, a `for ... of`, a
+	## `forEach`) holds the ordinal after the entry it last met. So when the
+	## gone entries outnumber the standing ones, a delete drops them all
+	## (`compacted`), and every walk still meets the rest in order, and each
+	## entry set after it began. A table holds at most twice its size in
+	## entries, however many keys pass through it. `clear` keeps the next ordinal
+	## too, so a walk under way meets what is set after it, as in JavaScript.
 	Table : {
 		entries : List(Heap.Entry),
 		places : Dict(Str, U64),
 		size : U64,
+		next_ordinal : U64,
 	}
 
-	Entry : [Standing({ key : Heap.Value, value : Heap.Value }), Gone]
+	Entry : { ordinal : U64, held : Heap.Held }
+
+	Held : [Standing({ key : Heap.Value, value : Heap.Value }), Gone]
 
 	## What an iterator gives of each entry: its key (an array's index), its
 	## value, or both as a pair.
 	View : [Keys, Values, Entries]
 
 	empty_table : Heap.Table
-	empty_table = { entries: [], places: Dict.empty(), size: 0 }
+	empty_table = { entries: [], places: Dict.empty(), size: 0, next_ordinal: 0 }
 
 	# A key's identity as a Map compares keys, SameValueZero: NaN is one key,
 	# and so are 0 and -0; a reference is its cell.
@@ -264,7 +274,7 @@ Heap :: [].{
 	entry_value = |table, key|
 		match table.places.get(Heap.identity_of(key)) {
 			Ok(place) => match table.entries.get(place) {
-				Ok(Standing(entry)) => Ok(entry.value)
+				Ok({ ordinal: _, held: Standing(entry) }) => Ok(entry.value)
 				_ => crash "Heap.entry_value: a place names a standing entry"
 			}
 			Err(KeyNotFound) => Err(Missing)
@@ -274,7 +284,7 @@ Heap :: [].{
 	# key it was first set with, when it stands, else at the end, a key of -0
 	# made 0, as JavaScript makes it.
 	table_with : Heap.Table, Heap.Value, Heap.Value -> Heap.Table
-	table_with = |{ entries, places, size }, key, value| {
+	table_with = |{ entries, places, size, next_ordinal }, key, value| {
 		identity = Heap.identity_of(key)
 		match places.get(identity) {
 			Ok(place) => {
@@ -284,6 +294,7 @@ Heap :: [].{
 				) ?? crash "Heap.table_with: a place names an entry",
 				places: places,
 				size: size,
+				next_ordinal: next_ordinal,
 			}
 			Err(KeyNotFound) => {
 				kept = match key {
@@ -291,31 +302,94 @@ Heap :: [].{
 					_ => key
 				}
 				{
-					entries: entries.append(Standing({ key: kept, value: value })),
+					entries: entries.append({ ordinal: next_ordinal, held: Standing({ key: kept, value: value }) }),
 					places: places.insert(identity, entries.len()),
 					size: size + 1,
+					next_ordinal: next_ordinal + 1,
 				}
 			}
 		}
 	}
 
 	entry_with_value : Heap.Entry, Heap.Value -> Heap.Entry
-	entry_with_value = |entry, value| match entry {
-		Standing({ key, value: _ }) => Standing({ key: key, value: value })
+	entry_with_value = |{ ordinal, held }, value| match held {
+		Standing({ key, value: _ }) => { ordinal: ordinal, held: Standing({ key: key, value: value }) }
 		Gone => crash "Heap.entry_with_value: a place names a standing entry"
 	}
 
-	# The table with `key`'s entry gone, if it stood.
+	# The table with `key`'s entry gone, if it stood, and every gone entry
+	# dropped once they outnumber the standing ones.
 	table_without : Heap.Table, Heap.Value -> Heap.Table
-	table_without = |{ entries, places, size }, key| {
+	table_without = |{ entries, places, size, next_ordinal }, key| {
 		identity = Heap.identity_of(key)
 		match places.get(identity) {
 			Ok(place) => {
-				entries: entries.set(place, Gone) ?? crash "Heap.table_without: a place names an entry",
-				places: places.remove(identity),
-				size: size - 1,
+				marked = entries.update(place, |{ ordinal, held: _ }| { ordinal: ordinal, held: Gone }) ?? crash "Heap.table_without: a place names an entry"
+				left = size - 1
+				remaining = places.remove(identity)
+				if marked.len() - left > left {
+					Heap.compacted({ entries: marked, places: remaining, size: left, next_ordinal: next_ordinal })
+				} else {
+					{ entries: marked, places: remaining, size: left, next_ordinal: next_ordinal }
+				}
 			}
-			Err(KeyNotFound) => { entries: entries, places: places, size: size }
+			Err(KeyNotFound) => { entries: entries, places: places, size: size, next_ordinal: next_ordinal }
+		}
+	}
+
+	# The table with its standing entries alone, in their order, each keeping
+	# its ordinal, and each key's place moved to where its entry went.
+	compacted : Heap.Table -> Heap.Table
+	compacted = |{ entries, places, size, next_ordinal }| {
+		var $kept = []
+		var $moved = []
+		for entry in entries {
+			$moved = $moved.append($kept.len())
+			match entry.held {
+				Standing(_) => {
+					$kept = $kept.append(entry)
+				}
+				Gone => {}
+			}
+		}
+		moved = $moved
+		{
+			entries: $kept,
+			places: places.map(|_, place| moved.get(place) ?? crash "Heap.compacted: a place names an entry"),
+			size: size,
+			next_ordinal: next_ordinal,
+		}
+	}
+
+	# The first entry a walk meets at `ordinal` or after, with its index in
+	# `entries`, or none. An entry's ordinal is never below its index, so
+	# the search looks no further than `ordinal`'s index, and where nothing
+	# was dropped the entry is there.
+	entry_from : Heap.Table, U64 -> [Met(Heap.Entry), NoneLeft]
+	entry_from = |table, ordinal| {
+		entries = table.entries
+		match entries.get(ordinal) {
+			Ok(entry) if entry.ordinal == ordinal => Met(entry)
+			_ => {
+				var $low = 0
+				var $high = U64.min(entries.len(), ordinal + 1)
+				while $low < $high {
+					middle = ($low + $high) // 2
+					below = match entries.get(middle) {
+						Ok(entry) => entry.ordinal < ordinal
+						Err(OutOfBounds) => crash "Heap.entry_from: the search stays inside the entries"
+					}
+					if below {
+						$low = middle + 1
+					} else {
+						$high = middle
+					}
+				}
+				match entries.get($low) {
+					Ok(entry) => Met(entry)
+					Err(OutOfBounds) => NoneLeft
+				}
+			}
 		}
 	}
 
@@ -339,7 +413,7 @@ Heap :: [].{
 	cleared = |cells, id|
 		cells.update(
 			id,
-			|cell| Heap.cell_with_table(cell, |_| Heap.empty_table),
+			|cell| Heap.cell_with_table(cell, |table| { ..Heap.empty_table, next_ordinal: table.next_ordinal }),
 		) ?? crash "Heap.cleared: a Ref names a cell the heap has"
 
 	# **THE WRITE IS A FUNCTION OF ITS OWN**, handed the cell taken out, as

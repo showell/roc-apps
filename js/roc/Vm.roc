@@ -2214,7 +2214,9 @@ collection_walk! = |host, program, machine, { id, count, result_at, at }| {
 	var $i = 0
 	var $going = True
 	while $going and is_running($machine) {
-		match ValueRules.step_at($machine.cells, id, Entries, $i) {
+		{ step, after: place } = ValueRules.step_at($machine.cells, id, Entries, $i)
+		$i = place
+		match step {
 			YieldPair(key, value) => {
 				{ machine: after, value: _ } = answered(call_function!(host, program, $machine, { callee: callback, arguments: [value, key, Reference(id)], at: at }))
 				$machine = after
@@ -2224,7 +2226,6 @@ collection_walk! = |host, program, machine, { id, count, result_at, at }| {
 				$going = False
 			}
 		}
-		$i = $i + 1
 	}
 	if is_running($machine) {
 		with_result($machine, result_at, Undefined)
@@ -2287,8 +2288,9 @@ walk_stepped = |machine, id, exit| {
 	var $i = next
 	var $step = Skip
 	while $step == Skip {
-		$step = ValueRules.step_at(machine.cells, source, view, $i)
-		$i = $i + 1
+		{ step, after } = ValueRules.step_at(machine.cells, source, view, $i)
+		$step = step
+		$i = after
 	}
 	moved = { ..machine, cells: Heap.with_iterator_at(machine.cells, id, $i) }
 	match $step {

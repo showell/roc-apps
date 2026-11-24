@@ -7,7 +7,7 @@ holds the language to node.
 The code here was written by AI coding agents (Claude), with human
 supervision.
 
-**Status (2026-11-24):** 56 of 56 corpus programs print what node 22
+**Status (2026-11-24):** 57 of 57 corpus programs print what node 22
 prints, byte for byte, timers and uncaught throws included, and 44 of 44
 programs outside the subset are refused with the message they must give,
 on the VM's usual collection schedule and collecting at every allocation.
@@ -390,6 +390,12 @@ shapes that keep it unique, each with a comment where it is used:
 - **A Map's or a Set's table sits in a list of one in its cell,** so every
   cell stays an object's size while `List.update` still writes the table
   in place (`Heap.with_entry`).
+- **A Map's or a Set's walk keeps its place by an entry's ordinal, not its
+  index** (`Heap.Table`). A deleted entry stays, `Gone`, until the gone
+  outnumber the standing, when the delete drops them all
+  (`Heap.compacted`): a table holds at most twice its size, and a walk
+  under way, an iterator kept aside included, still meets the rest in
+  order (`js/tests/57-map-set-churn.js`).
 - **A helper that may write hands the machine back whatever it finds**
   (`ValueRules.iterated`): a caller that kept its own machine for the case
   of a value that isn't iterable held a second reference while the helper
@@ -408,9 +414,10 @@ turns each into a slot of the frame or a box the frame holds. Reading a
 local is an index into the stack from the frame's base.
 
 **The VM collects** (`js/heaps.shale`): on its dev build (`js/heaps.shale
-opt=dev`, 2026-11-24) each js/heaps/ program,
-`heaps/2-object-a-pass-in-a-call.js` included, holds 1,024 cells and peaks
-at about 4 MB. A caller's half-made values (the left side of a `+`, the
+opt=dev`, 2026-11-24) each js/heaps/ program that makes garbage,
+`heaps/2-object-a-pass-in-a-call.js` included, holds 1,024 cells, and each
+peaks at about 4 MB, `heaps/5-map-churn.js` too, whose 50,000 keys pass
+through a Map and a Set of ten (19.8 MB with the gone entries kept). A caller's half-made values (the left side of a `+`, the
 arguments made so far, the object a method is called on) wait on the
 operand stack, where the collector sees them, so it collects anywhere
 between two instructions ("The bytecode VM", above).
@@ -523,6 +530,3 @@ across them is a write in place.
   release numbers once, never per step. The dev backend shows the code's
   shape, which is what the probes look at; a release build is for
   measuring speed.
-- **A Map or a Set keeps a place for every key it ever held.** A deleted
-  entry stays, `Gone`, so a walk under way still meets the rest in order,
-  and is never reused: a table many keys pass through grows with them.

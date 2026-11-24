@@ -141,7 +141,7 @@ with_entries : Waiting, List(Heap.Entry) -> Waiting
 with_entries = |waiting, entries| {
 	var $waiting = waiting
 	for entry in entries {
-		$waiting = match entry {
+		$waiting = match entry.held {
 			Standing({ key, value }) => with_value(with_value($waiting, key), value)
 			Gone => $waiting
 		}

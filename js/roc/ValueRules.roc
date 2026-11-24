@@ -438,48 +438,64 @@ ValueRules :: [].{
 	## over, or the end.
 	Step : [Yield(Heap.Value), YieldPair(Heap.Value, Heap.Value), Skip, Ended]
 
-	step_at : List(Heap.Cell), U64, Heap.View, U64 -> ValueRules.Step
+	## A walk's step and the place after it, where the walk goes on: an
+	## array's next index, or the ordinal after the table's entry met
+	## (`Heap.Table`).
+	Stepped : { step : ValueRules.Step, after : U64 }
+
+	step_at : List(Heap.Cell), U64, Heap.View, U64 -> ValueRules.Stepped
 	step_at = |cells, source, view, position| {
 		cell = Heap.cell_at(cells, source)
 		match cell {
-			Array(items) => match items.get(position) {
-				Ok(item) => match view {
-					Keys => Yield(Number(position.to_f64()))
-					Values => Yield(item)
-					Entries => YieldPair(Number(position.to_f64()), item)
+			Array(items) => {
+				step = match items.get(position) {
+					Ok(item) => match view {
+						Keys => Yield(Number(position.to_f64()))
+						Values => Yield(item)
+						Entries => YieldPair(Number(position.to_f64()), item)
+					}
+					Err(OutOfBounds) => Ended
 				}
-				Err(OutOfBounds) => Ended
+				{ step: step, after: position + 1 }
 			}
-			MapOf(_) => match Heap.table_of(cell).entries.get(position) {
-				Ok(Standing({ key, value })) => match view {
-					Keys => Yield(key)
-					Values => Yield(value)
-					Entries => YieldPair(key, value)
+			MapOf(_) | SetOf(_) => match Heap.entry_from(Heap.table_of(cell), position) {
+				Met({ ordinal, held }) => {
+					step = match held {
+						Standing({ key, value }) => ValueRules.entry_step(cell, view, key, value)
+						Gone => Skip
+					}
+					{ step: step, after: ordinal + 1 }
 				}
-				Ok(Gone) => Skip
-				Err(OutOfBounds) => Ended
-			}
-			# A Set's value is its key, as it was first added.
-			SetOf(_) => match Heap.table_of(cell).entries.get(position) {
-				Ok(Standing({ key, value: _ })) => match view {
-					Entries => YieldPair(key, key)
-					_ => Yield(key)
-				}
-				Ok(Gone) => Skip
-				Err(OutOfBounds) => Ended
+				NoneLeft => { step: Ended, after: position }
 			}
 			_ => crash "ValueRules.step_at: a walk's source is an array, a Map or a Set"
 		}
 	}
 
-	# How many places a walk's source has: an array's items, a table's
-	# entries, deleted ones included.
+	# What a walk gives of a standing entry. A Set's value is its key, as it
+	# was first added.
+	entry_step : Heap.Cell, Heap.View, Heap.Value, Heap.Value -> ValueRules.Step
+	entry_step = |cell, view, key, value|
+		match cell {
+			SetOf(_) => match view {
+				Entries => YieldPair(key, key)
+				_ => Yield(key)
+			}
+			_ => match view {
+				Keys => Yield(key)
+				Values => Yield(value)
+				Entries => YieldPair(key, value)
+			}
+		}
+
+	# The place a walk of its source ends at: an array's length, or the
+	# ordinal its table's next entry will take.
 	walk_length : List(Heap.Cell), U64 -> U64
 	walk_length = |cells, source| {
 		cell = Heap.cell_at(cells, source)
 		match cell {
 			Array(items) => items.len()
-			_ => Heap.table_of(cell).entries.len()
+			_ => Heap.table_of(cell).next_ordinal
 		}
 	}
 
@@ -499,7 +515,9 @@ ValueRules :: [].{
 		var $i = next
 		var $going = True
 		while $going {
-			match ValueRules.step_at($s.cells, source, view, $i) {
+			{ step, after } = ValueRules.step_at($s.cells, source, view, $i)
+			$i = after
+			match step {
 				Yield(value) => {
 					$values = $values.append(value)
 				}
@@ -513,7 +531,6 @@ ValueRules :: [].{
 					$going = False
 				}
 			}
-			$i = $i + 1
 		}
 		{ machine: $s, values: $values }
 	}

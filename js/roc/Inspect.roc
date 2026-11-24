@@ -302,7 +302,7 @@ Inspect :: [].{
 			var $depth_now = inner.depth_now
 			var $out = []
 			for entry in table.entries {
-				match entry {
+				match entry.held {
 					Standing({ key, value }) if $out.len() < 100 => {
 						shown_key = Inspect.format_value({ ..inner, depth_now: $depth_now }, key, recurse + 1)?
 						$depth_now = shown_key.depth_now
