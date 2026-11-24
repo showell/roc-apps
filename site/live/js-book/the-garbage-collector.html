@@ -16,13 +16,14 @@
 <li><a href="motivation.html"><span class="number">2</span>Motivation</a></li>
 <li><a href="how-it-got-here.html"><span class="number">3</span>How it got here</a></li>
 <li><a href="the-pipeline-and-the-machine.html"><span class="number">4</span>The pipeline and the machine</a></li>
-<li class="here"><a href="the-garbage-collector.html"><span class="number">5</span>The garbage collector</a><ol class="sections"><li><a href="the-garbage-collector.html#what-it-does">What it does</a></li><li><a href="the-garbage-collector.html#around-the-copy-cliff">Around the copy cliff</a></li><li><a href="the-garbage-collector.html#its-roots-and-when-it-runs">Its roots, and when it runs</a></li></ol></li>
-<li><a href="the-rules-and-the-host.html"><span class="number">6</span>The rules and the host</a></li>
-<li><a href="what-copies.html"><span class="number">7</span>What copies</a></li>
-<li><a href="dev-and-release-builds-disagree.html"><span class="number">8</span>Dev and release builds disagree</a></li>
-<li><a href="build-times.html"><span class="number">9</span>Build times</a></li>
-<li><a href="how-it-is-tested.html"><span class="number">10</span>How it is tested</a></li>
-<li><a href="limitations.html"><span class="number">11</span>Limitations</a></li>
+<li><a href="memory-strategy.html"><span class="number">5</span>Memory strategy</a></li>
+<li class="here"><a href="the-garbage-collector.html"><span class="number">6</span>The garbage collector</a><ol class="sections"><li><a href="the-garbage-collector.html#what-it-does">What it does</a></li><li><a href="the-garbage-collector.html#around-the-copy-cliff">Around the copy cliff</a></li><li><a href="the-garbage-collector.html#its-roots-and-when-it-runs">Its roots, and when it runs</a></li></ol></li>
+<li><a href="the-rules-and-the-host.html"><span class="number">7</span>The rules and the host</a></li>
+<li><a href="what-copies.html"><span class="number">8</span>What copies</a></li>
+<li><a href="dev-and-release-builds-disagree.html"><span class="number">9</span>Dev and release builds disagree</a></li>
+<li><a href="build-times.html"><span class="number">10</span>Build times</a></li>
+<li><a href="how-it-is-tested.html"><span class="number">11</span>How it is tested</a></li>
+<li><a href="limitations.html"><span class="number">12</span>Limitations</a></li>
 <li><a href="appendix-a-the-playgrounds-samples.html">Appendix A: The playground&#39;s samples</a></li>
 <li><a href="appendix-b-the-tested-programs.html">Appendix B: The tested programs</a></li>
 </ol>
@@ -30,10 +31,10 @@
 <main>
 <p class="book-bar"><a href="index.html">A JavaScript Interpreter in Roc</a> <a href="#chapters">Chapters</a></p>
 <article>
-<p class="chapter-number">Chapter 5</p>
+<p class="chapter-number">Chapter 6</p>
 <h1 id="the-garbage-collector">The garbage collector</h1>
 <h2 id="what-it-does">What it does <a class="section-link" href="#what-it-does" aria-label="Link to this section">§</a></h2>
-<p><code>Collector.roc</code> is the VM&#39;s garbage collector, a precise mark and sweep. The VM names its roots, <code>marked</code> follows every reference from them through the cells, and <code>swept</code> turns each unmarked cell into a <code>Freed</code> cell linked into the free list, which <code>Heap.allocated</code> takes from before it grows the heap. The collector leaves every live cell where it is: a JavaScript reference is a cell&#39;s index, and a live cell keeps its index, so every reference stays valid across a collection.</p>
+<p><code>Collector.roc</code> is the VM&#39;s garbage collector, a precise mark and sweep. The VM names its roots, <code>marked</code> follows every reference from them through the cells, and <code>swept</code> turns each unmarked cell into a <code>Freed</code> cell on the free list. A live cell keeps its index, so every reference stays valid across a collection.</p>
 <p>The sweep is where memory comes back:</p>
 <figure class="listing"><figcaption>js/roc/Collector.roc, an excerpt</figcaption><pre><code class="language-roc">	<span class="syn-name">swept</span> : <span class="syn-type">List</span>(<span class="syn-type">Heap.Cell</span>), <span class="syn-type">List</span>(<span class="syn-type">Collector.Mark</span>) -&gt; <span class="syn-type">Collector.Swept</span>
 	<span class="syn-name">swept</span> = |cells, marks| {
@@ -56,7 +57,7 @@
 			}
 		}
 		{ cells: $cells, free: $free, live: $live }
-</code></pre></figure><p>Writing <code>Freed</code> over a garbage cell drops the cell that was there, and Roc&#39;s reference counting returns what it held (an object&#39;s properties, an array&#39;s items, a closure&#39;s boxes) to the allocator at that write. The heap&#39;s list keeps its length; its freed places are taken again before it grows. That is how the programs in <code>js/heaps/</code> went from peaks of 40 to 164 MB to about 4 MB each (<code>62110109</code>).</p>
+</code></pre></figure><p>Writing <code>Freed</code> over a garbage cell drops the cell that was there, and Roc&#39;s reference counting returns what it held (an object&#39;s properties, an array&#39;s items, a closure&#39;s boxes) to the allocator at that write. The heap&#39;s list keeps its length, and <a class="chapter-link" href="memory-strategy.html">“Memory strategy”</a> shows an allocation taking a freed place. That is how the programs in <code>js/heaps/</code> went from peaks of 40 to 164 MB to about 4 MB each (<code>62110109</code>).</p>
 <h2 id="around-the-copy-cliff">Around the copy cliff <a class="section-link" href="#around-the-copy-cliff" aria-label="Link to this section">§</a></h2>
 <p>The collector is shaped around Roc&#39;s copy cliff, where a write to a list that something else still refers to copies the whole list first (<code>docs/roc-notes.md</code> in roc-apps, &quot;Speed and copying&quot;):</p>
 <ul>
@@ -84,6 +85,7 @@
 </code></pre></figure><ul>
 <li><strong>The waiting stack reuses its places.</strong> A visited cell&#39;s place is written over by the next one pushed, so the stack grows only to the mark&#39;s deepest point.</li>
 </ul>
+<p>A count holds these three only loosely. On the dev build, 08-garbage-in-a-call&#39;s collections allocate 0.04 a pass, about one collection every thousand passes (<code>js/controls/expected-dev.txt</code>); one copy of the heap at each collection would add about a thousandth a pass, inside the ladder&#39;s tolerance of 0.05 a pass (<code>tools/alloc_ladder.shale</code>). So the guards are unchecked as copies; the heap programs&#39; peaks of about 4 MB (<code>62110109</code>) are the nearest measure.</p>
 <h2 id="its-roots-and-when-it-runs">Its roots, and when it runs <a class="section-link" href="#its-roots-and-when-it-runs" aria-label="Link to this section">§</a></h2>
 <p>The roots are the machine&#39;s data:</p>
 <figure class="listing"><figcaption>js/roc/Vm.roc, the function roots</figcaption><pre><code class="language-roc"><span class="syn-comment"># Every cell the machine names: the live stack&#39;s (each frame&#39;s slots, its</span>
@@ -131,7 +133,7 @@
 	}
 	$ids
 }
-</code></pre></figure><p>A collection is due when the free list is empty and the heap has reached its threshold. After each one, the threshold is twice what the collection kept, and at least 1,024 cells:</p>
+</code></pre></figure><p>A collection is due when the free list is empty and the heap has reached its threshold. After each one, the threshold is twice what the collection kept, and at least 1,024 cells, so a collection&#39;s cost, O(heap), comes to amortized O(1) a cell allocated (unchecked by a timing):</p>
 <figure class="listing"><figcaption>js/roc/Vm.roc, the function is_collection_due</figcaption><pre><code class="language-roc"><span class="syn-name">is_collection_due</span> : <span class="syn-type">Vm.Machine</span> -&gt; <span class="syn-type">Bool</span>
 <span class="syn-name">is_collection_due</span> = |machine|
 	<span class="syn-keyword">match</span> <span class="syn-type">Box</span>.unbox(machine.collecting).schedule {
@@ -142,7 +144,7 @@
 
 </article>
 <nav class="turn-page" aria-label="Previous and next chapter">
-<a rel="prev" href="the-pipeline-and-the-machine.html"><small>Previous</small>The pipeline and the machine</a>
+<a rel="prev" href="memory-strategy.html"><small>Previous</small>Memory strategy</a>
 <a rel="next" href="the-rules-and-the-host.html"><small>Next</small>The rules and the host</a>
 </nav>
 </main>

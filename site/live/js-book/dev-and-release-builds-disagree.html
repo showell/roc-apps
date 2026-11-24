@@ -16,13 +16,14 @@
 <li><a href="motivation.html"><span class="number">2</span>Motivation</a></li>
 <li><a href="how-it-got-here.html"><span class="number">3</span>How it got here</a></li>
 <li><a href="the-pipeline-and-the-machine.html"><span class="number">4</span>The pipeline and the machine</a></li>
-<li><a href="the-garbage-collector.html"><span class="number">5</span>The garbage collector</a></li>
-<li><a href="the-rules-and-the-host.html"><span class="number">6</span>The rules and the host</a></li>
-<li><a href="what-copies.html"><span class="number">7</span>What copies</a></li>
-<li class="here"><a href="dev-and-release-builds-disagree.html"><span class="number">8</span>Dev and release builds disagree</a><ol class="sections"><li><a href="dev-and-release-builds-disagree.html#allocation-counts">Allocation counts</a></li><li><a href="dev-and-release-builds-disagree.html#copies-that-happen-only-in-dev">Copies that happen only in dev</a></li><li><a href="dev-and-release-builds-disagree.html#timings">Timings</a></li><li><a href="dev-and-release-builds-disagree.html#step-budgets">Step budgets</a></li><li><a href="dev-and-release-builds-disagree.html#what-each-build-is-for">What each build is for</a></li></ol></li>
-<li><a href="build-times.html"><span class="number">9</span>Build times</a></li>
-<li><a href="how-it-is-tested.html"><span class="number">10</span>How it is tested</a></li>
-<li><a href="limitations.html"><span class="number">11</span>Limitations</a></li>
+<li><a href="memory-strategy.html"><span class="number">5</span>Memory strategy</a></li>
+<li><a href="the-garbage-collector.html"><span class="number">6</span>The garbage collector</a></li>
+<li><a href="the-rules-and-the-host.html"><span class="number">7</span>The rules and the host</a></li>
+<li><a href="what-copies.html"><span class="number">8</span>What copies</a></li>
+<li class="here"><a href="dev-and-release-builds-disagree.html"><span class="number">9</span>Dev and release builds disagree</a><ol class="sections"><li><a href="dev-and-release-builds-disagree.html#allocation-counts">Allocation counts</a></li><li><a href="dev-and-release-builds-disagree.html#copies-that-happen-only-in-dev">Copies that happen only in dev</a></li><li><a href="dev-and-release-builds-disagree.html#timings">Timings</a></li><li><a href="dev-and-release-builds-disagree.html#step-budgets">Step budgets</a></li><li><a href="dev-and-release-builds-disagree.html#what-each-build-is-for">What each build is for</a></li></ol></li>
+<li><a href="build-times.html"><span class="number">10</span>Build times</a></li>
+<li><a href="how-it-is-tested.html"><span class="number">11</span>How it is tested</a></li>
+<li><a href="limitations.html"><span class="number">12</span>Limitations</a></li>
 <li><a href="appendix-a-the-playgrounds-samples.html">Appendix A: The playground&#39;s samples</a></li>
 <li><a href="appendix-b-the-tested-programs.html">Appendix B: The tested programs</a></li>
 </ol>
@@ -30,7 +31,7 @@
 <main>
 <p class="book-bar"><a href="index.html">A JavaScript Interpreter in Roc</a> <a href="#chapters">Chapters</a></p>
 <article>
-<p class="chapter-number">Chapter 8</p>
+<p class="chapter-number">Chapter 9</p>
 <h1 id="dev-and-release-builds-disagree">Dev and release builds disagree</h1>
 <p>Roc has two backends. The dev backend (<code>--opt=dev</code>) compiles in about a second and emits code that is mostly stack moves. The release build (<code>--opt=speed</code>) goes through LLVM, runs fib(22) about nine times faster, and compiles slowly. The two builds disagree about allocations, about time and about copies, and this project met each disagreement.</p>
 <h2 id="allocation-counts">Allocation counts <a class="section-link" href="#allocation-counts" aria-label="Link to this section">§</a></h2>
