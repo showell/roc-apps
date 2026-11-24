@@ -12,8 +12,8 @@ import Unique
 # `steps` times. **A WRITE IN PLACE ALLOCATES NOTHING; A COPY ALLOCATES THE
 # WHOLE LIST AGAIN**, so the ladder's count for one more step says which a
 # shape is: 0 is in place, 1 or more a copy of `size` entries each step.
-# The expected files beside this one hold each shape's count in the release
-# and the dev build, and docs/roc-notes.md, "Speed and copying", says what
+# The expected files beside this one hold each shape's count in the release,
+# dev and boxy builds, and docs/roc-notes.md, "Speed and copying", says what
 # each one shows.
 #
 # **EVERY SHAPE IS WRITTEN AS IT IS MEASURED**, so some of them break the
