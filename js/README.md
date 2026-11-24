@@ -26,8 +26,8 @@ node does and gives all 44 refusals their messages, on the dev backend;
 only the canvas is left out. The value rules and the queue of callbacks
 are modules both engines share (`ValueRules.roc`, `Events.roc`), so the VM
 doesn't link the walker, and its controls are held to files of their own
-in both builds. In the release build it runs fib(22) in 82 ms against the
-walker's 151, and its release build takes 84 s against the walker's 481.
+in both builds. In the release build it runs fib(22) in 106 ms against the
+walker's 142, and its release build takes 110 s against the walker's 555.
 
 **Its third round (2026-11-24): the VM collects its garbage.** A precise
 mark and sweep (`Collector.roc`) frees every cell its roots don't reach,
@@ -328,11 +328,14 @@ takes about 860 ms of CPU against the walker's 700 (best of three, with the
 collector's check before every instruction).
 
 **What the release build shows (2026-11-24, `js/bench`'s programs, the
-fastest of three):** fib(22) takes 82 ms on the VM against the walker's
-151, and the loops 350 ms against 672. The release controls (`opt=speed
-engine=vm`, held to `expected-vm.txt`) have the walker's shape, nothing a
-pass but a call's argument list and a Map key's identity. js-vm's release
-build takes 84 s, and js-run's 481 s.
+fastest of five, a quiet box):** fib(22) takes 106 ms on the VM against
+the walker's 142, and the loops 497 ms against 716. The release controls
+(`opt=speed engine=vm`, held to `expected-vm.txt`) have the walker's
+shape, nothing a pass but a call's argument list, a Map key's identity
+and a new object's property list. js-vm's release build takes 110 s, and
+js-run's 555 s. The VM's machine grew with the collector, and `memcpy` is
+11% of fib's time again; the next inline field to box is still to find
+(the collector's schedule, boxed, changed nothing).
 
 **The machine keeps its event queue in a box.** Every instruction hands
 the machine back, so whatever the machine holds inline is copied on each
