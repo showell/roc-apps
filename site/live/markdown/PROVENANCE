@@ -1,5 +1,5 @@
-published 2026-11-18
-Roc compiler version nightly-2026-11-07-ad3a5d2
-roc-markdown 9810e27 (its zig build playground)
-sha256 70ed7ffc3f87e0d4  550073 bytes  md.wasm
-user_uploads/sample.png at the site root: the playground's uploads rule shows media from /user_uploads/ only
+published 2026-11-24T16:57:06Z
+roc 0.1.0_RC1
+roc-markdown eac867a https://github.com/showell/roc-markdown/commit/eac867a8fb24aabc723a3c4289b6535b39c8b3e5 (its zig build playground)
+sha256 94118f25b2eadc24  453423 bytes  md.wasm
+sha256 b5f016e617a67345  13196 bytes  ../user_uploads/sample.png, at the site root: the playground's uploads rule shows media from /user_uploads/ only
