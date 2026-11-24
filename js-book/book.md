@@ -18,7 +18,7 @@ Here is one of the playground's samples, a turtle drawing a spiral:
 
 ### Who judges it
 
-Every program in the subset is real JavaScript, so node is a free oracle. `js/oracle.shale` runs each program in `js/tests/` through node 22 and through `js-vm`, and the two transcripts, exit codes included, must match byte for byte. A program outside the subset gets an error that names what it used: each program in `js/tests/refused/` names, on its first line, the message `js-vm` must end with. The corpus grew from 32 programs and 25 refusals on the first day (`cfe7c5fc`) to 54 and 44 (`js/README.md`, its status of 2026-11-24). The last corpus program, `54-big-daddy.js`, is a day in a small city that uses every feature of the subset, and it is also the playground's "all features" sample (`06ab1f8b`, `17977264`).
+Every program in the subset is real JavaScript, so node is a free oracle. `js/oracle.shale` runs each program in `js/tests/` through node 22 and through `js-vm`, and the two transcripts, exit codes included, must match byte for byte. A program outside the subset gets an error that names what it used: each program in `js/tests/refused/` names, on its first line, the message `js-vm` must end with. The corpus grew from 32 programs and 25 refusals on the first day (`cfe7c5fc`) to 55 and 44 (`js/README.md`, its status of 2026-11-24). Program 54, `54-big-daddy.js`, is a day in a small city that uses every feature of the subset, and it is also the playground's "all features" sample (`06ab1f8b`, `17977264`).
 
 ### Where the numbers come from
 
@@ -42,7 +42,11 @@ The bytecode VM was built beside the walker in three rounds on 2026-11-24. The f
 
 The playground moved onto the VM next: the canvas samples (`0b1efafa`), then the page (`a9a06e74`). Then the walker was deleted (`1c1c9e7e`): `Interp.roc`, `js-run` and `js-count` went, and the VM's expected-count files took the walker's names, so the check tier stayed the same.
 
-The page gained a memory view (`4d891f1f`, `4e5dd15b`): a popup with the last run's heap over time. The last change of the day was a speed fix (`c1050677`), the subject of {{chapter What copies}}.
+The page gained a memory view (`4d891f1f`, `4e5dd15b`): a popup with the last run's heap over time. Then came a speed fix (`c1050677`), the subject of {{chapter What copies}}.
+
+### Garbage you can watch
+
+Two samples followed for the memory view. `js/tests/55-garbage.js` makes 1,800 short-lived pieces, an object, an array and a closure each, in 12 rounds, so the memory view's sawtooth shows its teeth; node holds it like every corpus program, and the page lists it third (`3ce0f676`). `onCollect(fn)` is a playground extra, like `onClick` and outside JavaScript: its handler hears each collection after the sweep, as an event that runs between instructions, as a timer does. Node keeps its own collector hidden from a program, so the canvas log `9-garbage-heard` holds that sample, in `js-canvas` and on the page (`ad87080c`). The handler sits in the boxed event queue, so a program that ignores `onCollect` pays one match inside each collection and runs every instruction as before.
 
 ## The pipeline and the machine
 
@@ -137,7 +141,7 @@ Two modules serve everything that runs a program.
 
 **`ValueRules`** holds JavaScript's rules for values: property reads and writes, operators on mixed values, the methods of strings, arrays, Maps and Sets, and the errors they throw, each message in one place. The VM's fast paths settle the common cases (numbers, an object's own property, an array's item) and hand the rest to a rule. A rule takes a small machine of the cells and the run's status, `ValueRules.Machine`: the VM lends it the cells and takes back what the rule gives, so the cells have one owner while the rule writes them. The module was split out of the walker when the VM borrowed it (`f9dd79d0`), and for a while both engines used it.
 
-**`Events`** holds the queue of callbacks and its virtual clock (`a43c8f46`). A timer's callback, a click and the canvas's next `frame(t)` are each an event, due at a time in milliseconds, run earliest first, and two at one time in the order they were queued. The clock reads 0 while the program runs and moves to each callback's time as it runs, so a program's output is the same on every run and the same as node's.
+**`Events`** holds the queue of callbacks and its virtual clock (`a43c8f46`). A timer's callback, a click, the canvas's next `frame(t)` and a collection `onCollect` hears are each an event, due at a time in milliseconds, run earliest first, and two at one time in the order they were queued. The clock reads 0 while the program runs and moves to each callback's time as it runs, so a program's output is the same on every run and the same as node's.
 
 ### The host and its effects
 
@@ -265,7 +269,7 @@ A check is trusted once it has been seen to fail. Each check below holds the cod
 
 ### The oracle against node
 
-`js/oracle.shale`, a tier of the default `check.shale`, holds every corpus program's transcript and exit code to node's, and every refusal to its message. Every program runs, and the run fails if any one fails. It also runs with `collect=every`, which collects after every instruction that allocates, and programs 51 to 53 hold values through each kind of root while collections run.
+`js/oracle.shale`, a tier of the default `check.shale`, holds every corpus program's transcript and exit code to node's, 55 of them, and every refusal to its message. Every program runs, and the run fails if any one fails. It also runs with `collect=every`, which collects after every instruction that allocates, and programs 51 to 53 hold values through each kind of root while collections run.
 
 ### Controls held exactly
 
@@ -273,7 +277,7 @@ A check is trusted once it has been seen to fail. Each check below holds the cod
 
 ### Golden logs for the canvas
 
-`js/canvas.shale` holds each sample to its log of effects for scripted frames, keys and clicks, and a log moves only by an explicit freeze.
+`js/canvas.shale` holds each of the 9 canvas samples to its log of effects for scripted frames, keys and clicks, and a log moves only by an explicit freeze.
 
 ### page_check
 
@@ -296,4 +300,5 @@ These come from `js/README.md` and the record:
 - The VM throws a RangeError at 400 nested calls, where node goes much deeper.
 - A Map or a Set keeps a place for every key it ever held, so a table that many keys pass through grows with them.
 - `js-vm` takes the program as one command-line argument, limited to 128 KiB.
+- `onCollect` and the other canvas builtins are this project's own, so logs of effects judge them in place of node.
 - `this`, `new` on a program's function and classes remain outside the subset, for the reasons in {{chapter Introduction}}.
