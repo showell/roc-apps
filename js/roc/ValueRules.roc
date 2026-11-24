@@ -530,17 +530,20 @@ ValueRules :: [].{
 	# what is given in its order, or empty for nothing, `null` or `undefined`.
 	collection_made : ValueRules.Machine, ValueRules.Collection, List(Heap.Value), Ast.Where -> ValueRules.Got
 	collection_made = |machine, collection, arguments, site| {
-		id = machine.cells.len()
-		made = ValueRules.alloc(
+		{ machine: made, value: collection_value } = ValueRules.alloc(
 			machine,
 			match collection {
 				IsMap => MapOf([Heap.empty_table])
 				IsSet => SetOf([Heap.empty_table])
 			},
-		).machine
+		)
+		id = match collection_value {
+			Reference(placed) => placed
+			_ => crash "ValueRules.collection_made: an allocation answers a reference"
+		}
 		given = arguments.first() ?? Undefined
 		if ValueRules.is_nullish(given) {
-			{ machine: made, value: Reference(id) }
+			{ machine: made, value: collection_value }
 		} else {
 			{ machine: walked, values: given_values } = ValueRules.iterated(made, given)
 			match given_values {
