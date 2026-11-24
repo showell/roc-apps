@@ -1,26 +1,36 @@
 // all features: a day in a little simulated city, in stages. Each stage
 // prints a checksum, so any engine that runs it can be held to node's answer.
 // SIZE scales the work: the residents, the street map, the sieve and the
-// newsletter all grow with it.
+// newsletter all grow with it. Each `SUPPORTS` comment marks the first use
+// of a feature of the subset (js/README.md, "The subset").
+// SUPPORTS let and const, with block scope
 const SIZE = 5;
 
 // ── Two tools every stage uses: a seeded random source and a checksum ──
 
 // The same seed gives the same city on every run, in every engine.
+// SUPPORTS function declarations
 function makeRandom(seed) {
   let state = seed;
+  // SUPPORTS arrow functions and closures: the arrow keeps `state`
   return (n) => {
+    // SUPPORTS arithmetic and assignment
     state = (state * 75 + 74) % 65537;
     return state % n;
   };
 }
 
 // A running hash of everything a stage adds to it, kept in a closure.
+// SUPPORTS default parameters
 function makeChecksum(seed = 7) {
   let sum = seed;
+  // SUPPORTS object literals, with methods
   return {
+    // SUPPORTS rest parameters
     add(...values) {
+      // SUPPORTS for ... of, over an array
       for (const value of values) {
+        // SUPPORTS String(x), and for ... of over a string
         for (const ch of String(value)) sum = (sum * 31 + ch.charCodeAt(0)) % 1000003;
       }
     },
@@ -33,19 +43,24 @@ const checksum = makeChecksum();
 
 // ── Stage 1: the census, written as text and read back ──
 
+// SUPPORTS array literals
 const FIRST = ["ada", "bo", "cy", "dee", "eli", "fay", "gus", "hal", "ivy", "jo"];
 const LAST = ["stone", "brook", "hill", "marsh", "wood"];
 const DISTRICTS = ["harbor", "market", "old town", "uplands"];
 const JOBS = ["baker", "nurse", "doctor", "teacher", "smith", "clerk", "none"];
 
 let censusText = "";
+// SUPPORTS the C-form for, and ++
 for (let i = 0; i < SIZE * 20; i++) {
+  // SUPPORTS template strings
   const name = `${FIRST[random(FIRST.length)]} ${LAST[random(LAST.length)]}`;
   const district = DISTRICTS[random(DISTRICTS.length)];
   const job = JOBS[random(JOBS.length)];
   // A resident with no job leaves the last field out.
   const fields = [name, district, 18 + random(70), 1 + random(SIZE * 300)];
+  // SUPPORTS if, and ===/!==
   if (job !== "none") fields.push(job);
+  // SUPPORTS compound assignment, here joining strings
   censusText += `  ${fields.join(" ; ")}\n`;
 }
 
@@ -58,19 +73,26 @@ function parseNumber(text) {
 
 const residents = [];
 for (const line of censusText.split("\n")) {
+  // SUPPORTS continue
   if (line.trim() === "") continue;
+  // SUPPORTS destructuring: an array pattern, with a default
   const [name, district, ageText, houseText, job = "retired"] = line.split(";").map((field) => field.trim());
+  // SUPPORTS shorthand properties
   residents.push({ id: residents.length, name, district, age: parseNumber(ageText), house: parseNumber(houseText), job });
 }
 
-// Called here, declared below: function declarations are hoisted.
+// SUPPORTS hoisting: sectorOf is called here and declared below.
+// SUPPORTS Map
 const sectors = new Map();
+// SUPPORTS destructuring in for ... of: an object pattern
 for (const { job } of residents) {
   const sector = sectorOf(job);
+  // SUPPORTS ??
   sectors.set(sector, (sectors.get(sector) ?? 0) + 1);
 }
 
 function sectorOf(job) {
+  // SUPPORTS switch, with cases sharing a body and default anywhere
   switch (job) {
     case "nurse":
     case "doctor":
@@ -85,7 +107,8 @@ function sectorOf(job) {
   }
 }
 
-// Health workers get both perks, teachers the second: a fall-through.
+// Health workers get both perks, teachers the second.
+// SUPPORTS switch with fall-through
 function perksOf(sector) {
   let perks = 0;
   switch (sector) {
@@ -101,14 +124,17 @@ function perksOf(sector) {
 }
 
 const byDistrict = new Map();
+// SUPPORTS null and booleans
 const stats = { oldest: null, anyDoctor: false, allAdults: true, perks: 0 };
 for (const person of residents) {
+  // SUPPORTS rest in an object pattern
   const { district, age, ...rest } = person;
   const entry = byDistrict.get(district) ?? { people: 0, totalAge: 0 };
   entry.people++;
   entry.totalAge += age;
   byDistrict.set(district, entry);
 
+  // SUPPORTS the logical assignments, ??=, ||= and &&=
   stats.oldest ??= person;
   if (age > stats.oldest.age) stats.oldest = person;
   stats.anyDoctor ||= rest.job === "doctor";
@@ -116,10 +142,14 @@ for (const person of residents) {
   stats.perks += perksOf(sectorOf(rest.job));
 }
 
+// SUPPORTS nested patterns, and for ... of over a Map
 for (const [district, { people, totalAge }] of byDistrict) checksum.add(district, people, totalAge);
+// SUPPORTS iterators: a Map's entries()
 for (const [sector, count] of sectors.entries()) checksum.add(sector, count);
 console.log(`census: ${residents.length} residents in ${byDistrict.size} districts, checksum ${checksum.value()}`);
+// SUPPORTS console.log as node prints it, a Map included
 console.log({
+  // SUPPORTS object spread
   oldest: { ...stats.oldest, sector: sectorOf(stats.oldest.job) },
   sectors,
   flags: [stats.anyDoctor, stats.allAdults, stats.perks],
@@ -127,14 +157,17 @@ console.log({
 
 // ── Stage 2: the clerk's office, where lookups can fail ──
 
+// SUPPORTS a Map from entries, and the array methods (map here)
 const registry = new Map(residents.map((r) => [r.id, r]));
 
 function lookUp(id) {
   const person = registry.get(id) ?? null;
+  // SUPPORTS node's own errors: a TypeError, reading a property of null
   return person.name;
 }
 
 function checkAge(age) {
+  // SUPPORTS ||, throw, and new RangeError(message)
   if (age < 0 || age > 130) throw new RangeError(`no one is ${age}`);
   return age;
 }
@@ -143,9 +176,11 @@ let lookups = 0;
 let missing = 0;
 let lastMessage = "";
 for (const id of [3, -1, residents.length, 7]) {
+  // SUPPORTS try, catch and finally
   try {
     checksum.add(lookUp(id));
   } catch (e) {
+    // SUPPORTS throwing again what was caught
     if (e.name !== "TypeError") throw e;
     missing++;
     lastMessage = e.message;
@@ -154,6 +189,7 @@ for (const id of [3, -1, residents.length, 7]) {
   }
 }
 let refused = "";
+// SUPPORTS a catch pattern, below
 try {
   checkAge(stats.oldest.age + 100);
 } catch ({ name, message }) {
@@ -165,6 +201,7 @@ console.log(`clerk: ${lookups} lookups, ${missing} missing ("${lastMessage}"), $
 // ── Stage 3: the residents in order, by merge sort, checked by sort ──
 
 function byDistrictThenAge(a, b) {
+  // SUPPORTS ?:, and < on strings
   if (a.district !== b.district) return a.district < b.district ? -1 : 1;
   if (a.age !== b.age) return b.age - a.age;
   return a.id - b.id;
@@ -172,23 +209,28 @@ function byDistrictThenAge(a, b) {
 
 function mergeSort(items, compare) {
   if (items.length <= 1) return items;
+  // SUPPORTS Math
   const middle = Math.floor(items.length / 2);
   const left = mergeSort(items.slice(0, middle), compare);
   const right = mergeSort(items.slice(middle), compare);
   const merged = [];
   let i = 0;
   let j = 0;
+  // SUPPORTS while, and &&
   while (i < left.length && j < right.length) {
     if (compare(left[i], right[j]) <= 0) merged.push(left[i++]);
     else merged.push(right[j++]);
   }
+  // SUPPORTS spread into an array literal
   return [...merged, ...left.slice(i), ...right.slice(j)];
 }
 
 const ordered = mergeSort(residents, byDistrictThenAge);
+// SUPPORTS sort with a comparator
 const expected = [...residents].sort(byDistrictThenAge);
 const agrees = ordered.every((r, k) => r === expected[k]);
 for (const [k, r] of ordered.entries()) if (k % 25 === 0) checksum.add(r.id);
+// SUPPORTS optional chaining
 const eldest = DISTRICTS.map((d) => ordered.find((r) => r.district === d)?.name ?? "nobody");
 console.log(`sort: ${ordered.length} sorted, agrees with sort: ${agrees}, checksum ${checksum.value()}`);
 console.log("eldest by district:", eldest);
@@ -198,6 +240,7 @@ console.log("eldest by district:", eldest);
 const WIDTH = 4 + Math.floor(SIZE / 2);
 const corner = (x, y) => `${x},${y}`;
 const streets = new Map();
+// SUPPORTS Set
 const closed = new Set();
 for (let y = 0; y < WIDTH; y++) {
   for (let x = 0; x < WIDTH; x++) {
@@ -226,6 +269,7 @@ function shortestWalks(start) {
   const distance = new Map([[start, 0]]);
   const previous = new Map();
   const done = new Set();
+  // SUPPORTS break, out of a loop that never ends by itself
   while (true) {
     let nearest = null;
     for (const [place, d] of distance) {
@@ -248,6 +292,7 @@ const { distance, previous } = shortestWalks(corner(0, 0));
 
 // The first closed corner, in reading order.
 let firstClosed = "none";
+// SUPPORTS labelled break
 search: for (let y = 0; y < WIDTH; y++) {
   for (let x = 0; x < WIDTH; x++) {
     if (closed.has(corner(x, y))) {
@@ -259,7 +304,9 @@ search: for (let y = 0; y < WIDTH; y++) {
 
 const far = corner(WIDTH - 1, WIDTH - 1);
 const walk = [];
+// SUPPORTS undefined
 let at = distance.has(far) ? far : undefined;
+// SUPPORTS do ... while
 do {
   if (at === undefined) break;
   walk.unshift(at);
@@ -268,6 +315,7 @@ do {
 
 let totalDistance = 0;
 for (const d of distance.values()) totalDistance += d;
+// SUPPORTS **
 const straight = Math.sqrt((WIDTH - 1) ** 2 * 2);
 checksum.add(distance.size, totalDistance, walk.length, firstClosed);
 console.log(`streets: ${WIDTH}x${WIDTH} corners, ${closed.size} closed (first ${firstClosed}), ${distance.size} reachable`);
@@ -277,13 +325,16 @@ console.log(`  checksum ${checksum.value()}`);
 // ── Stage 5: which house numbers are prime, by the sieve of Eratosthenes ──
 
 const LIMIT = SIZE * 300;
+// SUPPORTS Array.from, of an object with a length, with a mapper
 const isPrime = Array.from({ length: LIMIT + 1 }, (_, n) => n >= 2);
 for (let p = 2; p * p <= LIMIT; p++) {
+  // SUPPORTS !
   if (!isPrime[p]) continue;
   for (let multiple = p * p; multiple <= LIMIT; multiple += p) isPrime[multiple] = false;
 }
 let primeCount = 0;
 for (let n = 0; n <= LIMIT; n++) if (isPrime[n]) primeCount++;
+// SUPPORTS destructuring in parameters
 const lucky = residents.filter(({ house }) => isPrime[house]);
 const largest = isPrime.lastIndexOf(true);
 checksum.add(primeCount, lucky.length, largest);
@@ -305,11 +356,14 @@ for (let issue = 1; issue <= SIZE * 4; issue++) {
 const counts = new Map();
 for (const raw of newsletter.split(" ")) {
   let word = raw.toLowerCase();
+  // SUPPORTS the string methods (replaceAll here)
   for (const mark of [",", ".", ";", "!"]) word = word.replaceAll(mark, "");
   if (word === "") continue;
   counts.set(word, (counts.get(word) ?? 0) + 1);
 }
+// SUPPORTS spread of a Map
 const ranked = [...counts].sort(([a, m], [b, n]) => n - m || (a < b ? -1 : 1));
+// SUPPORTS a Set from an iterator
 const longest = [...new Set(counts.keys())].reduce((best, w) => (w.length > best.length ? w : best), "");
 for (const [word, n] of ranked.slice(0, 10)) checksum.add(word, n);
 console.log(`words: ${counts.size} distinct, the longest "${longest}", checksum ${checksum.value()}`);
@@ -320,10 +374,12 @@ console.log(`${"headline:".padEnd(12)}${newsletter.slice(0, newsletter.indexOf("
 
 // Each home turns its lights on at an hour of its own, from 18:00 to 23:00.
 const lit = (hour) => residents.filter((r) => 18 + (r.house % 6) <= hour).length;
+// SUPPORTS setTimeout and clearTimeout
 const forgotten = setTimeout(() => console.log("never: this timer is cleared"), 50);
 clearTimeout(forgotten);
 
 let hour = 18;
+// SUPPORTS setInterval and clearInterval
 const clock = setInterval(() => {
   hour++;
   checksum.add(hour, lit(hour));
@@ -331,6 +387,7 @@ const clock = setInterval(() => {
   if (hour === 22) clearInterval(clock);
 }, 250);
 setTimeout(() => {
+  // SUPPORTS typeof
   const report = { hour, done: typeof checksum.value === "function", final: checksum.value() };
   console.log("midnight:", report);
 }, 1500);
