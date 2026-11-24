@@ -7,13 +7,13 @@ that holds the language to node.
 The code here was written by AI coding agents (Claude), with human
 supervision.
 
-**Status (2026-11-24): the language gaps closed, on a branch.** 50 of 50
+**Status (2026-11-24): the language gaps closed.** 50 of 50
 corpus programs print what node 22 prints, byte for byte, timers and
 uncaught throws included, and 44 of 44 programs outside the subset are
 refused with the message they must give. Eight canvas samples are held to
 their logs of effects, one of them driven by scripted clicks alone and one
 by timers, restarted by a scripted click. The page builds into the dev
-channel; it is not published.
+channel; the unlisted copy at roc.lynrummy.com/js/ predates the gaps.
 
 ## The subset
 
@@ -401,8 +401,11 @@ across them is a write in place.
   reports a stack overflow at 400 nested calls, as node would much deeper,
   rather than overflow Roc's own stack.
 - **Built on the dev backend,** `fib(22)` takes about 0.4 s of CPU, and
-  about 0.06 s in the release build, which takes a minute to compile
-  (`js/bench.shale`, 2026-11-23). The dev backend shows the
+  about 0.15 s in the release build (`js/bench.shale`, 2026-11-24).
+- **The release build takes 11 to 17 minutes** on a 2-core box
+  (2026-11-24), about 70% of it RC1's SpecConstr pass and the rest LLVM
+  (`roc build --timings`; the tag `rc1-slow-release-build` reproduces it).
+  So a round takes its release numbers once, never per step. The dev backend shows the
   code's shape, which is what the probes look at; a release build is for
   measuring speed.
 - **A Map or a Set keeps a place for every key it ever held.** A deleted
