@@ -13,9 +13,10 @@
 // canvas is queued at once and runs in the next frame. Pause works between
 // frames.
 
-import { loadRunner, unescaped } from "./js_runner.d5813985d76a4ba3.js";
-import { makePainter, SIZE } from "./js_painter.9c0b5af6e5a28cc9.js";
+import { loadRunner, unescaped } from "./js_runner.b95190355c7741b9.js";
+import { makePainter, SIZE } from "./js_painter.94b8ad5db1f98a95.js";
 import { CANVAS_SAMPLES, FEATURED_SAMPLE } from "./js_samples.3c133edf45254026.js";
+import { memoryView, MEMORY_CSS, STRATEGY } from "./js_memory.2eb586c974c11a6a.js";
 
 const FRAMES_PER_SECOND = 30;
 const OUTPUT_KEPT = 20000;
@@ -222,11 +223,12 @@ function element(tag, props = {}, children = []) {
 }
 
 export function buildPage(runner, env = window) {
-  document.head.appendChild(element("style", { textContent: CSS }));
+  document.head.appendChild(element("style", { textContent: CSS + MEMORY_CSS }));
   const picker = element("select", {}, SAMPLES.map((s, i) => element("option", { value: String(i), textContent: s.title })));
   const runButton = element("button", { textContent: "Run", className: "primary" });
   const stopButton = element("button", { textContent: "Stop" });
   const pauseButton = element("button", { textContent: "Pause" });
+  const memoryLink = element("button", { className: "link", textContent: "memory", title: "what the last run's heap held, and how the VM collects it" });
   const status = element("span", { className: "status", textContent: "" });
   const editor = element("textarea", { spellcheck: false, value: SAMPLES[0].source });
   const canvas = element("canvas", { width: SIZE, height: SIZE, tabIndex: 0 });
@@ -237,7 +239,7 @@ export function buildPage(runner, env = window) {
     element("div", { className: "top" }, [
       element("h1", { textContent: "JavaScript, in Roc" }),
       element("p", { className: "sub", textContent: "A subset of JavaScript run by a bytecode VM written in Roc. Its console.log prints what node prints; the canvas builtins below are this page's own, named after p5.js's but not p5.js." }),
-      element("div", { className: "bar" }, [picker, runButton, stopButton, pauseButton, status]),
+      element("div", { className: "bar" }, [picker, runButton, stopButton, pauseButton, memoryLink, status]),
       element("div", { className: "cols" }, [
         element("div", { className: "col" }, [element("label", { textContent: "Program" }), editor]),
         element("div", { className: "col" }, [waiting, canvasLabel, canvas, output]),
@@ -250,6 +252,61 @@ export function buildPage(runner, env = window) {
     element("p", { className: "note", textContent: "Colors are CSS color strings (\"tomato\", \"#3a7\", \"hsl(200, 70%, 45%)\"). The origin is the top left corner. A run may take 3,000,000 steps and 20,000 effects before its first frame, and each frame, with the clicks and timers it runs, 300,000 steps and 20,000 effects." }),
   ]);
   document.body.appendChild(wrap);
+
+  // **THE MEMORY VIEW** is a popup over the page, opened by the "memory"
+  // link: the last run's timeline (js_runner.js's `memory`), drawn again at
+  // the end of each call while it is open, and the strategy in a few
+  // sentences. Escape, its Close button or a click outside it closes it.
+  const memorySaid = element("p", { className: "said" });
+  const cellsChart = element("div", { className: "chart" });
+  const bytesChart = element("div", { className: "chart" });
+  const closeButton = element("button", { textContent: "Close", className: "close" });
+  const swatch = (kind, words) => element("span", {}, [element("i", { className: `swatch ${kind}` }), element("span", { textContent: words })]);
+  const memoryPanel = element("div", { className: "memory" }, [
+    closeButton,
+    element("h2", { textContent: "Memory" }),
+    memorySaid,
+    element("label", { textContent: "The heap, in cells" }),
+    cellsChart,
+    element("p", { className: "key" }, [swatch("cells", "the heap's length"), swatch("live", "live after a collection"), swatch("gc", "a collection")]),
+    element("label", { textContent: "The wasm memory, in bytes" }),
+    bytesChart,
+    element("h2", { textContent: "How the VM keeps its memory" }),
+    element("div", { className: "how" }, STRATEGY.map((s) => element("p", { textContent: s }))),
+  ]);
+  const veil = element("div", { className: "veil", hidden: true }, [memoryPanel]);
+  document.body.appendChild(veil);
+  // What the view calls the run it shows, or null before the page's first,
+  // and when it was last drawn: a run on show is drawn at most four times a
+  // second.
+  let shownRun = null;
+  let drawnAt = -Infinity;
+
+  function drawMemory() {
+    drawnAt = globalThis.performance.now();
+    if (shownRun === null) {
+      memorySaid.textContent = "No program has run yet. Run one, and this shows what its heap holds as it goes.";
+      cellsChart.innerHTML = "";
+      bytesChart.innerHTML = "";
+      return;
+    }
+    const view = memoryView(runner.memory.points);
+    memorySaid.textContent = `${shownRun}: ${view.summary}`;
+    cellsChart.innerHTML = view.cells;
+    bytesChart.innerHTML = view.bytes;
+  }
+  function openMemory() {
+    drawMemory();
+    veil.hidden = false;
+    closeButton.focus();
+  }
+  function closeMemory() {
+    veil.hidden = true;
+  }
+  memoryLink.addEventListener("click", openMemory);
+  closeButton.addEventListener("click", closeMemory);
+  veil.addEventListener("click", (e) => { if (e.target === veil) closeMemory(); });
+  document.addEventListener("keydown", (e) => { if (e.key === "Escape" && !veil.hidden) closeMemory(); });
 
   const ctx = canvas.getContext("2d");
   const painter = makePainter(ctx);
@@ -333,6 +390,7 @@ export function buildPage(runner, env = window) {
 
   async function settle(run, result) {
     if (run !== current) return;
+    if (!veil.hidden && (result.ending !== "frame" || globalThis.performance.now() - drawnAt > 250)) drawMemory();
     const SAID = { done: "ran to its end", faulted: "stopped", thrown: "stopped by an uncaught throw", refused: "refused", crashed: "the interpreter crashed" };
     if (result.ending === "frame") {
       say(`frame ${run.frame}${run.paused ? ", paused" : ""}`, false);
@@ -372,6 +430,8 @@ export function buildPage(runner, env = window) {
     painter.reset();
     const run = { frame: 0, paused: false, over: false, due: 0, loop: 0 };
     current = run;
+    const sample = SAMPLES[Number(picker.value)];
+    shownRun = editor.value === sample.source ? `The last run, “${sample.title}”` : "The last run, your program";
     pauseButton.textContent = "Pause";
     say("running", false);
     return settle(run, runner.start(editor.value, sinkFor(run)));
@@ -410,10 +470,10 @@ export function buildPage(runner, env = window) {
     stop();
     notRun();
   });
-  return { picker, runButton, stopButton, pauseButton, status, editor, canvas, output, waiting, canvasLabel, runNow };
+  return { picker, runButton, stopButton, pauseButton, status, editor, canvas, output, waiting, canvasLabel, runNow, memoryLink, veil, closeButton, memorySaid, cellsChart, bytesChart };
 }
 
 if (typeof window !== "undefined" && !window.JS_PAGE_CHECK) {
-  const bytes = await (await fetch("js.511af9678532e050.wasm")).arrayBuffer();
+  const bytes = await (await fetch("js.758356b203b3f461.wasm")).arrayBuffer();
   buildPage(await loadRunner(bytes));
 }
