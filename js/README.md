@@ -204,7 +204,9 @@ the variables it declared.
 The interpreter is `js/roc/`: `Lexer.roc` makes tokens with their lines and
 columns, `Parser.roc` reads them into `Ast.roc`'s tree by recursive descent,
 laying out each scope's names, `Resolve.roc` places every name read or
-written in those layouts before the run, `Interp.roc` walks it, `Heap.roc` holds what JavaScript shares by
+written in those layouts before the run, `Interp.roc` walks it, `ValueRules.roc` holds the
+rules JavaScript's values follow, which the walker and the VM share,
+`Heap.roc` holds what JavaScript shares by
 reference, `Inspect.roc` is console.log's formatting (node's `util.inspect`,
 function for function), and `NumberText.roc` writes a number as `String(n)`
 does. The VM takes the same resolved tree: `Compile.roc` makes each
@@ -243,12 +245,17 @@ back on the walker.
   always runs before it (a block's scope starts afresh each time), so it
   compiles to its ReferenceError, and only a read through a box checks at
   run time.
-- **The value rules are the walker's.** A property read, an operator on
-  mixed values, a string method, a builtin that calls nothing back, and the
-  messages they make live once, in `Interp`; the VM's fast paths settle the
-  common cases (numbers, an object's own property, an array's item) and hand
-  the rest to `Interp`'s rule inside a walker machine holding only the
-  cells (`Vm.shell`). None of those rules walks the tree.
+- **The value rules are shared.** A property read, an operator on mixed
+  values, a string method, a builtin that calls nothing back, and the
+  messages they make live once, in `ValueRules`, which both engines call;
+  the VM's fast paths settle the common cases (numbers, an object's own
+  property, an array's item) and hand the rest to the rule. A rule takes a
+  machine of the cells and a status (`ValueRules.Machine`), and each engine
+  lends it its cells and puts back what it gives (`Vm.shell`,
+  `Interp.lent`). None of those rules walks the tree, and the VM doesn't
+  import the walker. A rule generic over an engine's whole machine (an
+  open record) would need no lending, but the dev build copies the cells a
+  rule writes through one, so the controls would see a copy a write.
 - **A builtin that calls back runs the loop again** (`forEach`, `map`,
   `sort` and their kin, `Array.from` with a mapper): it pushes the function
   and its arguments, runs until that frame returns, and takes the answer off
@@ -276,9 +283,9 @@ fastest of three):** fib(22) takes 71 ms on the VM against the walker's
 153, and the loops 297 ms against 714. The release controls (`opt=speed
 engine=vm`) have the walker's shape, nothing a pass but a push's argument
 list, and 07-map-set is refused. The release build takes 670 s, the
-walker's 665: the VM still reaches the walker's rules through `Vm.shell`,
-so it links Interp.roc, and its own build time shows only once those rules
-have a module of their own.
+walker's 665: in that round the VM reached the walker's rules, so it
+linked Interp.roc. The rules have a module of their own now
+(`ValueRules.roc`), so the next release build shows the VM's own time.
 
 ## Why the heap is one value
 
@@ -309,7 +316,7 @@ shapes that keep it unique, each with a comment where it is used:
   machine too, and each write made while it lives copies. Before this rule,
   a store into an array copied the array, and a closure's `++c` copied
   every scope.
-- **A writer asks what a cell is (`Interp.kind_of`), and never matches the
+- **A writer asks what a cell is (`ValueRules.kind_of`), and never matches the
   cell out of the heap:** the matched cell is a second reference to its
   items for as long as the arm runs.
 - **The write inside a taken-out cell or scope is a function of its own**
@@ -329,7 +336,7 @@ shapes that keep it unique, each with a comment where it is used:
   cell stays an object's size while `List.update` still writes the table
   in place (`Heap.with_entry`).
 - **A helper that may write hands the machine back whatever it finds**
-  (`Interp.iterated`, `walked_of`): a caller that kept its own machine for
+  (`ValueRules.iterated`, `walked_of`): a caller that kept its own machine for
   the case of a value that isn't iterable held a second reference while the
   helper wrote, and the write copied the heap.
 - **No closure captures the machine;** a loop over it is a `var $st` loop.

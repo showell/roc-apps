@@ -30,7 +30,7 @@
 ## it (`unsupported (vm): ...`), and by the VM when only a run does.
 import Ast
 import Bytecode
-import Interp
+import ValueRules
 
 Compile :: [].{
 
@@ -492,7 +492,7 @@ declarations = |state, declarators| {
 				$ops = List.concat(List.concat($ops, value.ops), declared.ops)
 			}
 			_ => {
-				return refusal("destructuring${Interp.line_note(declarator.at)}")
+				return refusal("destructuring${ValueRules.line_note(declarator.at)}")
 			}
 		}
 	}
@@ -610,7 +610,7 @@ for_of_loop = |state, loop| {
 	refused_labels(loop.labels)?
 	slot = match loop.pattern {
 		Leaf(ToName(_, leaf, _)) => leaf
-		_ => return refusal("destructuring${Interp.line_note(loop.at)}")
+		_ => return refusal("destructuring${ValueRules.line_note(loop.at)}")
 	}
 	walked = expression_compiled(state, loop.iterable)?
 	{ state: placed, slot: hidden } = with_hidden_slots(walked.state, 2)
@@ -654,7 +654,7 @@ function_made = |state, boxed| {
 	definition = boxed.unbox()
 	parameters = match definition.binding {
 		Plain => definition.parameters.len()
-		Patterned(_) => return refusal("parameter patterns, defaults and rest parameters${Interp.line_note(definition.at)}")
+		Patterned(_) => return refusal("parameter patterns, defaults and rest parameters${ValueRules.line_note(definition.at)}")
 	}
 	inner = { ..state, functions: state.functions.append(no_function_yet) }
 	entered = entered_scope(
@@ -790,7 +790,7 @@ expression_compiled = |state, tree|
 		}
 		New(callee, arguments, site) => {
 			if arguments.any(|argument| is_spread(argument)) {
-				refusal("spread in `new`'s arguments${Interp.line_note(site)}")
+				refusal("spread in `new`'s arguments${ValueRules.line_note(site)}")
 			} else {
 				made = expression_compiled(state, callee)?
 				given = singles(made.state, arguments)?
@@ -802,7 +802,7 @@ expression_compiled = |state, tree|
 		}
 		Chain(_) => refusal("optional chains (`?.`)")
 		OptionalMember(_, _, _) | OptionalIndex(_, _, _) | OptionalCall(_, _, _) => crash "Compile.expression_compiled: Parser.call_or_member puts an optional link inside a Chain"
-		Destructure(_, _, site) => refusal("destructuring${Interp.line_note(site)}")
+		Destructure(_, _, site) => refusal("destructuring${ValueRules.line_note(site)}")
 	}
 
 skip_for : Ast.LogicalOperator, U64 -> Bytecode.Op
@@ -898,7 +898,7 @@ name_write = |reached, { name, at }| match reached {
 }
 
 undeclared_refusal : Str, Ast.Where -> Bytecode.Op
-undeclared_refusal = |name, at| Refuse("unsupported: assigning to `${name}`, which is not declared${Interp.line_note(at)}")
+undeclared_refusal = |name, at| Refuse("unsupported: assigning to `${name}`, which is not declared${ValueRules.line_note(at)}")
 
 Assignment : {
 	target : Ast.Target,
@@ -919,7 +919,7 @@ assignment = |state, { target, operator, value, at: site }|
 				write = name_write(reached, { name: name, at: at })
 				ops = match operator {
 					Set => made.ops.append(Do(write))
-					Combine(Add) if Interp.is_pure(value) and is_plain_local(reached) => made.ops.append(Do(AppendLocal({ slot: plain_slot(reached), at: site })))
+					Combine(Add) if ValueRules.is_pure(value) and is_plain_local(reached) => made.ops.append(Do(AppendLocal({ slot: plain_slot(reached), at: site })))
 					Combine(binary) => List.concat([Do(name_peek(reached))], made.ops).append(Do(Binary(binary, site))).append(Do(write))
 					Logically(logical) => {
 						read = name_read(placed, { name: name, slot: slot, at: at })?
@@ -1015,7 +1015,7 @@ update_compiled = |state, { target, update }|
 
 call_compiled : Compile.State, { callee : Ast.Expression, arguments : List(Ast.Element), at : Ast.Where } -> Try(Compile.Compiled, [Unsupported(Str)])
 call_compiled = |state, { callee, arguments, at }| {
-	written = Interp.source_text(callee)
+	written = ValueRules.source_text(callee)
 	spreads = arguments.any(|argument| is_spread(argument))
 	match callee {
 		Member(object, name, _) => {

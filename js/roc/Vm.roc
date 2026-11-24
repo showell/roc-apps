@@ -27,15 +27,15 @@
 ## stack beneath it, and the array `map` or `filter` builds is a cell the
 ## stack refers to.
 ##
-## **THE VM BORROWS THE WALKER'S PURE RULES.** What JavaScript gives for a
-## property read, an operator on mixed values, a string method, a builtin
+## **THE VALUE RULES ARE SHARED WITH THE WALKER.** What JavaScript gives for
+## a property read, an operator on mixed values, a string method, a builtin
 ## that calls nothing back, and every message those make, lives once, in
-## `Interp`. Where the VM's own fast path doesn't settle an instruction (two
-## numbers added, an object's own property read), it hands the cells to that
-## rule inside a walker machine that holds nothing else (`shell`), and takes
-## the cells, the value and any fault or throw back (`with_got`). None of
-## those rules walks the tree or calls a function: the VM never falls back
-## on the walker to run the program.
+## `ValueRules`, which the walker calls too. Where the VM's own fast path
+## doesn't settle an instruction (two numbers added, an object's own
+## property read), it lends the cells to that rule (`lent`, `shell`) and
+## takes the cells, the value and any fault or throw back (`with_got`). None
+## of those rules walks the tree or calls a function, and the VM doesn't
+## import the walker at all.
 ##
 ## **THE HANDLERS TAKE SEVERAL ARGUMENTS, A NAMED EXCEPTION.** As the
 ## walker's evaluator does, a handler takes the host, then the program, then
@@ -51,7 +51,7 @@ import Bytecode
 import Canvas
 import Heap
 import Inspect
-import Interp
+import ValueRules
 
 Vm :: [].{
 	Machine : {
@@ -78,19 +78,21 @@ Vm :: [].{
 	## receiver, for a method).
 	Frame : { code : U64, pc : U64, base : U64, result_at : U64 }
 
-	Status : [Running, Finished, Faulted(Str), Thrown(Box(Interp.Throw))]
+	Status : [Running, Finished, Faulted(Str), Thrown(Box(ValueRules.Throw))]
 
 	## How a run ended: at its end, stopped by a fault, or by a throw nothing
 	## caught, written as the line node prints first.
 	Ending : [Finished, Faulted(Str), Uncaught(Str)]
 
+	## How far a run may go: the steps it takes and the effects it makes.
+	Limits : { steps : U64, effects : U64 }
+
 	## A program run to its end, its effects handed to `host` as it runs.
-	run! : Canvas.Host, Bytecode.Program, Interp.Limits => Vm.Ending
+	run! : Canvas.Host, Bytecode.Program, Vm.Limits => Vm.Ending
 	run! = |host, program, limits| {
-		walker = Interp.fresh(Core, limits)
-		globals = walker.scopes.first() ?? crash "Vm.run!: Interp.fresh makes the builtins' scope"
+		{ cells, values: builtins } = ValueRules.globals([], Core)
 		begun = {
-			cells: walker.cells,
+			cells: cells,
 			stack: [],
 			top: 0,
 			frames: [],
@@ -98,7 +100,7 @@ Vm :: [].{
 			code: program.main,
 			pc: 0,
 			base: 0,
-			builtins: globals.variables.map(|variable| variable.value),
+			builtins: builtins,
 			status: Running,
 			steps: 0,
 			step_limit: limits.steps,
@@ -113,11 +115,7 @@ Vm :: [].{
 			Faulted(why) => Faulted(why)
 			Thrown(boxed) => {
 				{ value, site } = Box.unbox(boxed)
-				match Interp.uncaught_ending(ended.cells, value, site) {
-					Uncaught(line) => Uncaught(line)
-					Faulted(why) => Faulted(why)
-					Running => crash "Vm.run!: Interp.uncaught_ending answers how a throw ends the run"
-				}
+				ValueRules.uncaught_ending(ended.cells, value, site)
 			}
 		}
 	}
@@ -166,7 +164,7 @@ dispatch! = |host, program, machine, op|
 		CopyBox(slot) => box_copied(machine, slot)
 		LoadBuiltin(index) => pushed(machine, machine.builtins.get(index) ?? crash "Vm.dispatch!: Resolve places a builtin the library has")
 		MissingName({ name, at }) => missing_name(machine, name, at)
-		ThrowUnready({ name, at }) => with_error(machine, ReferenceError, Interp.unready_message(name), at)
+		ThrowUnready({ name, at }) => with_error(machine, ReferenceError, ValueRules.unready_message(name), at)
 		ThrowConstant(at) => with_error(machine, TypeError, "Assignment to constant variable.", at)
 		Refuse(why) => with_fault(machine, why)
 		AppendLocal({ slot, at }) => local_appended(machine, slot, at)
@@ -225,7 +223,7 @@ with_fault = |machine, why| match machine.status {
 }
 
 unsupported : Vm.Machine, Str, Ast.Where -> Vm.Machine
-unsupported = |machine, what, at| with_fault(machine, "unsupported (vm): ${what}${Interp.line_note(at)}")
+unsupported = |machine, what, at| with_fault(machine, "unsupported (vm): ${what}${ValueRules.line_note(at)}")
 
 # The machine unwinding with one of JavaScript's own errors, which nothing
 # catches yet.
@@ -359,7 +357,7 @@ boxed_loaded : Vm.Machine, Bytecode.Named -> Vm.Machine
 boxed_loaded = |machine, { slot, name, at }|
 	match box_content(machine, box_of(machine, slot)) {
 		Holding(value) => pushed(machine, value)
-		Unready => with_error(machine, ReferenceError, Interp.unready_message(name), at)
+		Unready => with_error(machine, ReferenceError, ValueRules.unready_message(name), at)
 	}
 
 boxed_peeked : Vm.Machine, U64 -> Vm.Machine
@@ -373,7 +371,7 @@ boxed_stored : Vm.Machine, Bytecode.Assigned -> Vm.Machine
 boxed_stored = |machine, { slot, name, kind, at }| {
 	box = box_of(machine, slot)
 	match (box_content(machine, box), kind) {
-		(Unready, _) => with_error(machine, ReferenceError, Interp.unready_message(name), at)
+		(Unready, _) => with_error(machine, ReferenceError, ValueRules.unready_message(name), at)
 		(Holding(_), Fixed) => with_error(machine, TypeError, "Assignment to constant variable.", at)
 		(Holding(_), Mutable) => with_box(machine, box, value_at(machine, 1))
 	}
@@ -400,30 +398,10 @@ box_copied = |machine, slot| {
 
 # ---- the walker's rules, borrowed ------------------------------------------
 
-# A walker machine holding `cells` and nothing else, for one of `Interp`'s
-# rules that reads or writes the heap and may fault or throw.
-shell : List(Heap.Cell) -> Interp.Machine
-shell = |cells| {
-	cells: cells,
-	scopes: [],
-	live_scopes: 0,
-	scope: 0,
-	steps: 0,
-	step_limit: 0,
-	effects: 0,
-	effect_limit: 0,
-	budgeted: "",
-	turtle: Canvas.turtle_start,
-	depth: 0,
-	status: Running,
-	events: {
-		clock: 0.0,
-		pending_events: [],
-		made: 0,
-		firing: Idle,
-		on_click: NoHandler,
-	},
-}
+# What a value rule reads and writes of the machine: the cells, and a status
+# the rule may set to a fault or a throw.
+shell : List(Heap.Cell) -> ValueRules.Machine
+shell = |cells| { cells: cells, status: Running }
 
 # The machine without its cells, which a borrowed rule takes: kept apart,
 # the cells have one owner while the rule writes them.
@@ -437,7 +415,7 @@ lent = |machine| {
 
 # The machine after a borrowed rule: its cells back, and its value in
 # `place` on the stack, or its fault or throw taken on.
-with_got : Vm.Machine, Interp.Got, U64 -> Vm.Machine
+with_got : Vm.Machine, ValueRules.Got, U64 -> Vm.Machine
 with_got = |machine, got, place| {
 	{ machine: walker, value } = got
 	match walker.status {
@@ -450,7 +428,7 @@ with_got = |machine, got, place| {
 missing_name : Vm.Machine, Str, Ast.Where -> Vm.Machine
 missing_name = |machine, name, at| {
 	{ cells, machine: rest } = lent(machine)
-	with_got(rest, Interp.missing_name_got(shell(cells), name, at), rest.top)
+	with_got(rest, ValueRules.missing_name_got(shell(cells), name, at), rest.top)
 }
 
 # ---- operators -------------------------------------------------------------
@@ -459,13 +437,13 @@ unary : Vm.Machine, Ast.UnaryOperator, Ast.Where -> Vm.Machine
 unary = |machine, operator, at| {
 	operand = value_at(machine, 1)
 	match (operator, operand) {
-		(Not, _) => replaced(machine, 1, Boolean(!Interp.is_truthy(operand)))
-		(TypeOf, _) => replaced(machine, 1, Text(Interp.type_of(machine.cells, operand)))
+		(Not, _) => replaced(machine, 1, Boolean(!ValueRules.is_truthy(operand)))
+		(TypeOf, _) => replaced(machine, 1, Text(ValueRules.type_of(machine.cells, operand)))
 		(Negate, Number(number)) => replaced(machine, 1, Number(-number))
 		(Plus, Number(number)) => replaced(machine, 1, Number(number))
 		_ => {
 			{ cells, machine: rest } = lent(machine)
-			with_got(rest, Interp.unary(shell(cells), operator, operand, at), rest.top - 1)
+			with_got(rest, ValueRules.unary(shell(cells), operator, operand, at), rest.top - 1)
 		}
 	}
 }
@@ -475,7 +453,7 @@ binary = |machine, operator, at| {
 	right = value_at(machine, 1)
 	left = value_at(machine, 2)
 	match (left, right) {
-		(Number(x), Number(y)) => replaced(machine, 2, Interp.arithmetic(operator, x, y))
+		(Number(x), Number(y)) => replaced(machine, 2, ValueRules.arithmetic(operator, x, y))
 		_ => combined(machine, { operator: operator, left: left, right: right, at: at })
 	}
 }
@@ -485,18 +463,18 @@ binary = |machine, operator, at| {
 combined : Vm.Machine, { operator : Ast.BinaryOperator, left : Heap.Value, right : Heap.Value, at : Ast.Where } -> Vm.Machine
 combined = |machine, { operator, left, right, at }|
 	match operator {
-		StrictEqual => replaced(machine, 2, Boolean(Interp.is_strictly_equal(left, right)))
-		StrictNotEqual => replaced(machine, 2, Boolean(!Interp.is_strictly_equal(left, right)))
+		StrictEqual => replaced(machine, 2, Boolean(ValueRules.is_strictly_equal(left, right)))
+		StrictNotEqual => replaced(machine, 2, Boolean(!ValueRules.is_strictly_equal(left, right)))
 		_ => {
 			{ cells, machine: rest } = lent(machine)
-			with_got(rest, Interp.binary(shell(cells), operator, left, right, at), rest.top - 2)
+			with_got(rest, ValueRules.binary(shell(cells), operator, left, right, at), rest.top - 2)
 		}
 	}
 
 template_joined : Vm.Machine, Str -> Vm.Machine
 template_joined = |machine, piece| {
 	part = value_at(machine, 1)
-	match Interp.text_of(machine.cells, part) {
+	match ValueRules.text_of(machine.cells, part) {
 		Ok(phrase) => {
 			taken = machine.stack.replace(machine.top - 2, Null) ?? crash "Vm.template_joined: a template's text so far is on the stack"
 			so_far = match taken.prev {
@@ -515,7 +493,7 @@ jumped_if_false : Vm.Machine, U64 -> Vm.Machine
 jumped_if_false = |machine, count| {
 	test = value_at(machine, 1)
 	popped = dropped(machine, 1)
-	if Interp.is_truthy(test) {
+	if ValueRules.is_truthy(test) {
 		popped
 	} else {
 		{ ..popped, pc: popped.pc + count }
@@ -526,9 +504,9 @@ skipped_if : Vm.Machine, U64, [Falsy, Truthy, Defined] -> Vm.Machine
 skipped_if = |machine, count, settles| {
 	subject = value_at(machine, 1)
 	settled = match settles {
-		Falsy => !Interp.is_truthy(subject)
-		Truthy => Interp.is_truthy(subject)
-		Defined => !Interp.is_nullish(subject)
+		Falsy => !ValueRules.is_truthy(subject)
+		Truthy => ValueRules.is_truthy(subject)
+		Defined => !ValueRules.is_nullish(subject)
 	}
 	if settled {
 		{ ..machine, pc: machine.pc + count }
@@ -545,7 +523,7 @@ local_appended : Vm.Machine, U64, Ast.Where -> Vm.Machine
 local_appended = |machine, slot, at| {
 	piece = value_at(machine, 1)
 	match slot_value(machine, slot) {
-		Text(_) => match Interp.text_of(machine.cells, piece) {
+		Text(_) => match ValueRules.text_of(machine.cells, piece) {
 			Ok(tail) => {
 				taken = machine.stack.replace(machine.base + slot, Null) ?? crash "Vm.local_appended: a slot of the frame"
 				grown = match taken.prev {
@@ -555,7 +533,7 @@ local_appended = |machine, slot, at| {
 				written = { ..machine, stack: taken.list.set(machine.base + slot, Text(grown)) ?? crash "Vm.local_appended: a slot of the frame" }
 				replaced(written, 1, slot_value(written, slot))
 			}
-			Err(Unsupported(why)) => with_fault(machine, "${why}${Interp.line_note(at)}")
+			Err(Unsupported(why)) => with_fault(machine, "${why}${ValueRules.line_note(at)}")
 		}
 		old => {
 			added = binary(pushed(replaced(machine, 1, old), piece), Add, at)
@@ -576,7 +554,7 @@ update_answer = |{ delta, fixity, at: _ }, old| match fixity {
 }
 
 not_a_number_update : Vm.Machine, Heap.Value, Ast.Where -> Vm.Machine
-not_a_number_update = |machine, current, at| with_fault(machine, "unsupported: `++` or `--` on a ${Interp.type_of(machine.cells, current)}${Interp.line_note(at)}")
+not_a_number_update = |machine, current, at| with_fault(machine, "unsupported: `++` or `--` on a ${ValueRules.type_of(machine.cells, current)}${ValueRules.line_note(at)}")
 
 local_updated : Vm.Machine, U64, Bytecode.Update -> Vm.Machine
 local_updated = |machine, slot, step|
@@ -589,7 +567,7 @@ boxed_updated : Vm.Machine, { slot : U64, name : Str, kind : Bytecode.Kind, step
 boxed_updated = |machine, { slot, name, kind, step }| {
 	box = box_of(machine, slot)
 	match box_content(machine, box) {
-		Unready => with_error(machine, ReferenceError, Interp.unready_message(name), step.at)
+		Unready => with_error(machine, ReferenceError, ValueRules.unready_message(name), step.at)
 		Holding(Number(old)) => match kind {
 			Fixed => with_error(machine, TypeError, "Assignment to constant variable.", step.at)
 			Mutable => pushed(with_box(machine, box, Number(old + step.delta)), update_answer(step, old))
@@ -676,11 +654,11 @@ spread_appended = |machine, source, at| {
 	id = reference_id(value_at(machine, 2))
 	given = value_at(machine, 1)
 	{ cells, machine: rest } = lent(machine)
-	{ machine: walker, values } = Interp.iterated(shell(cells), given)
+	{ machine: walker, values } = ValueRules.iterated(shell(cells), given)
 	match values {
 		Ok(items) => dropped({ ..rest, cells: Heap.with_items_pushed(walker.cells, id, items) }, 1)
 		Err(NotIterable) => {
-			failed = Interp.with_not_iterable(walker, given, Written(source), at)
+			failed = ValueRules.with_not_iterable(walker, given, Written(source), at)
 			with_got(rest, { machine: failed, value: Undefined }, rest.top - 1)
 		}
 	}
@@ -697,7 +675,7 @@ fields_spread : Vm.Machine, Ast.Where -> Vm.Machine
 fields_spread = |machine, at| {
 	id = reference_id(value_at(machine, 2))
 	given = value_at(machine, 1)
-	match Interp.spread_properties(machine.cells, given) {
+	match ValueRules.spread_properties(machine.cells, given) {
 		Ok(properties) => {
 			var $cells = machine.cells
 			for property in properties {
@@ -705,7 +683,7 @@ fields_spread = |machine, at| {
 			}
 			dropped({ ..machine, cells: $cells }, 1)
 		}
-		Err(Unsupported(why)) => with_fault(machine, "${why}${Interp.line_note(at)}")
+		Err(Unsupported(why)) => with_fault(machine, "${why}${ValueRules.line_note(at)}")
 	}
 }
 
@@ -729,7 +707,7 @@ property_read = |machine, key, at| {
 		Found(value) => replaced(machine, 1, value)
 		Elsewhere => {
 			{ cells, machine: rest } = lent(machine)
-			with_got(rest, Interp.property(shell(cells), holder, key, at), rest.top - 1)
+			with_got(rest, ValueRules.property(shell(cells), holder, key, at), rest.top - 1)
 		}
 	}
 }
@@ -738,7 +716,7 @@ index_read : Vm.Machine, Ast.Where -> Vm.Machine
 index_read = |machine, at| {
 	holder = value_at(machine, 2)
 	key = value_at(machine, 1)
-	found = match (holder, Interp.index_of(key)) {
+	found = match (holder, ValueRules.index_of(key)) {
 		(Reference(id), Ok(position)) => match Heap.cell_at(machine.cells, id) {
 			Array(items) => Found(items.get(position) ?? Undefined)
 			_ => Elsewhere
@@ -749,7 +727,7 @@ index_read = |machine, at| {
 		Found(value) => replaced(machine, 2, value)
 		Elsewhere => {
 			{ cells, machine: rest } = lent(machine)
-			with_got(rest, Interp.indexed_value(shell(cells), holder, key, at), rest.top - 2)
+			with_got(rest, ValueRules.indexed_value(shell(cells), holder, key, at), rest.top - 2)
 		}
 	}
 }
@@ -762,12 +740,12 @@ stored = |machine, { key, at }| {
 	holder = value_at(machine, 2)
 	value = value_at(machine, 1)
 	place = match holder {
-		Reference(id) => match Interp.kind_of(machine.cells, id) {
+		Reference(id) => match ValueRules.kind_of(machine.cells, id) {
 			ObjectKind => match key {
 				Text(text) => Property(id, text)
 				_ => Elsewhere
 			}
-			ArrayKind(length) => match Interp.index_of(key) {
+			ArrayKind(length) => match ValueRules.index_of(key) {
 				Ok(position) if position <= length => Item(id, position)
 				_ => Elsewhere
 			}
@@ -780,7 +758,7 @@ stored = |machine, { key, at }| {
 		Item(id, position) => replaced({ ..machine, cells: Heap.with_item(machine.cells, id, position, value) }, 2, value)
 		Elsewhere => {
 			{ cells, machine: rest } = lent(machine)
-			with_got(rest, Interp.with_stored(shell(cells), holder, key, value, at), rest.top - 2)
+			with_got(rest, ValueRules.with_stored(shell(cells), holder, key, value, at), rest.top - 2)
 		}
 	}
 }
@@ -815,7 +793,7 @@ Calling : { count : U64, result_at : U64, naming : Naming, at : Ast.Where }
 
 # The deepest call the VM makes before it throws a RangeError, the walker's.
 max_depth : U64
-max_depth = Interp.max_depth
+max_depth = ValueRules.max_depth
 
 # A call of the value beneath the top `count`: a closure's frame entered, a
 # builtin's answer made, or a TypeError.
@@ -836,7 +814,7 @@ called! = |host, program, machine, calling| {
 		NoFunction => {
 			shown = match calling.naming {
 				Written(written) => written
-				Shown => Interp.shown_value(machine.cells, callee)
+				Shown => ValueRules.shown_value(machine.cells, callee)
 			}
 			with_error(machine, TypeError, "${shown} is not a function", calling.at)
 		}
@@ -969,7 +947,7 @@ method_looked_up : Vm.Machine, Str, Ast.Where -> Vm.Machine
 method_looked_up = |machine, name, at| {
 	receiver = value_at(machine, 1)
 	by_name = match receiver {
-		Reference(id) => match Interp.kind_of(machine.cells, id) {
+		Reference(id) => match ValueRules.kind_of(machine.cells, id) {
 			ArrayKind(_) | MapKind | SetKind => True
 			_ => False
 		}
@@ -989,7 +967,7 @@ method_called! = |host, program, machine, { name, site }| {
 	result_at = machine.top - count - 2
 	receiver = value_at(machine, count + 2)
 	method = match receiver {
-		Reference(id) => match Interp.kind_of(machine.cells, id) {
+		Reference(id) => match ValueRules.kind_of(machine.cells, id) {
 			ArrayKind(_) => ArrayMethod(id)
 			MapKind | SetKind => CollectionMethod
 			_ => Held
@@ -1002,7 +980,7 @@ method_called! = |host, program, machine, { name, site }| {
 		TextMethod(text) => {
 			arguments = arguments_of(machine, count)
 			{ cells, machine: rest } = lent(machine)
-			with_got(rest, Interp.text_method(shell(cells), text, name, arguments, site.at), result_at)
+			with_got(rest, ValueRules.text_method(shell(cells), text, name, arguments, site.at), result_at)
 		}
 		CollectionMethod => unsupported(machine, "Map and Set methods", site.at)
 		Held => called!(host, program, machine, { count: count, result_at: result_at, naming: Written(site.written), at: site.at })
@@ -1014,7 +992,7 @@ constructed = |machine, { count, callee, at }| {
 	maker = value_at(machine, count + 1)
 	arguments = arguments_of(machine, count)
 	{ cells, machine: rest } = lent(machine)
-	with_got(rest, Interp.constructed(shell(cells), maker, callee, arguments, at), rest.top - count - 1)
+	with_got(rest, ValueRules.constructed(shell(cells), maker, callee, arguments, at), rest.top - count - 1)
 }
 
 # ---- builtins --------------------------------------------------------------
@@ -1034,14 +1012,14 @@ native_called! = |host, program, machine, { native, calling }| {
 					with_result({ ..machine, effects: machine.effects + 1 }, calling.result_at, Undefined)
 				}
 			}
-			Err(Unsupported(why)) => with_fault(machine, "${why}${Interp.line_note(at)}")
+			Err(Unsupported(why)) => with_fault(machine, "${why}${ValueRules.line_note(at)}")
 		}
 		ArrayFrom if is_mapped(arguments) => array_from!(host, program, machine, { arguments: arguments, calling: calling })
 		Timing(_) => unsupported(machine, "timers", at)
 		OnClick | Paint(_) | Move(_) | Sense(_) => unsupported(machine, "the canvas", at)
 		_ => {
 			{ cells, machine: rest } = lent(machine)
-			with_got(rest, Interp.call_native!(host, shell(cells), native, arguments, at), calling.result_at)
+			with_got(rest, ValueRules.native_called(shell(cells), native, arguments, at), calling.result_at)
 		}
 	}
 }
@@ -1085,14 +1063,14 @@ array_from! = |host, program, machine, { arguments, calling }| {
 	source = arguments.first() ?? Undefined
 	mapper = arguments.get(1) ?? Undefined
 	{ cells, machine: rest } = lent(machine)
-	{ machine: walker, values: found } = Interp.iterated(shell(cells), source)
+	{ machine: walker, values: found } = ValueRules.iterated(shell(cells), source)
 	back = { ..rest, cells: walker.cells }
 	listed = match found {
 		Ok(values) => Ok(values)
-		Err(NotIterable) => Interp.array_like(back.cells, source)
+		Err(NotIterable) => ValueRules.array_like(back.cells, source)
 	}
 	match listed {
-		Err(Unsupported(why)) => with_fault(back, "${why}${Interp.line_note(calling.at)}")
+		Err(Unsupported(why)) => with_fault(back, "${why}${ValueRules.line_note(calling.at)}")
 		Ok(values) => {
 			out = back.cells.len()
 			var $machine = pushed({ ..back, cells: back.cells.append(Array([])) }, Reference(out))
@@ -1122,7 +1100,7 @@ array_from! = |host, program, machine, { arguments, calling }| {
 ArrayCall : { id : U64, name : Str, count : U64, result_at : U64, at : Ast.Where }
 
 item_count : Vm.Machine, U64 -> U64
-item_count = |machine, id| match Interp.kind_of(machine.cells, id) {
+item_count = |machine, id| match ValueRules.kind_of(machine.cells, id) {
 	ArrayKind(length) => length
 	_ => crash "Vm.item_count: asked only of an array"
 }
@@ -1154,7 +1132,7 @@ array_method! = |host, program, machine, call|
 		_ => {
 			arguments = arguments_of(machine, call.count)
 			{ cells, machine: rest } = lent(machine)
-			with_got(rest, Interp.array_method!(host, shell(cells), call.id, call.name, arguments, call.at), call.result_at)
+			with_got(rest, ValueRules.array_method(shell(cells), call.id, call.name, arguments, call.at), call.result_at)
 		}
 	}
 
@@ -1203,30 +1181,30 @@ array_walk! = |host, program, machine, call, walk| {
 					$machine = { ..$machine, cells: Heap.with_items_pushed($machine.cells, out, [value]) }
 				}
 				Filter => {
-					if Interp.is_truthy(value) {
+					if ValueRules.is_truthy(value) {
 						$machine = { ..$machine, cells: Heap.with_items_pushed($machine.cells, out, [item]) }
 					}
 				}
 				Some => {
-					if Interp.is_truthy(value) {
+					if ValueRules.is_truthy(value) {
 						$answer = Boolean(True)
 						$going = False
 					}
 				}
 				Every => {
-					if !Interp.is_truthy(value) {
+					if !ValueRules.is_truthy(value) {
 						$answer = Boolean(False)
 						$going = False
 					}
 				}
 				Find => {
-					if Interp.is_truthy(value) {
+					if ValueRules.is_truthy(value) {
 						$answer = item
 						$going = False
 					}
 				}
 				FindIndex => {
-					if Interp.is_truthy(value) {
+					if ValueRules.is_truthy(value) {
 						$answer = Number($i.to_f64())
 						$going = False
 					}
@@ -1274,7 +1252,7 @@ array_walk_back! = |host, program, machine, call, walk| {
 		item = item_at($machine, call.id, $k)
 		{ machine: after, value } = answered(call_function!(host, program, $machine, { callee: callback, arguments: [item, Number($k.to_f64()), Reference(call.id)], at: call.at }))
 		$machine = after
-		if is_running($machine) and Interp.is_truthy(value) {
+		if is_running($machine) and ValueRules.is_truthy(value) {
 			$answer = match walk {
 				FindLast => item
 				FindLastIndex => Number($k.to_f64())
@@ -1396,8 +1374,8 @@ ordering_of! = |host, program, machine, { compare, left, right, at }|
 				(Undefined, Undefined) => Same
 				(Undefined, _) => After
 				(_, Undefined) => Before
-				_ => match (Interp.text_of(machine.cells, left), Interp.text_of(machine.cells, right)) {
-					(Ok(x), Ok(y)) => Interp.ordering_of_text(x, y)
+				_ => match (ValueRules.text_of(machine.cells, left), ValueRules.text_of(machine.cells, right)) {
+					(Ok(x), Ok(y)) => ValueRules.ordering_of_text(x, y)
 					_ => Same
 				}
 			}
@@ -1429,14 +1407,14 @@ iteration_started : Vm.Machine, Ast.Expression, Ast.Where -> Vm.Machine
 iteration_started = |machine, source, at| {
 	given = value_at(machine, 1)
 	match given {
-		Reference(id) => match Interp.kind_of(machine.cells, id) {
+		Reference(id) => match ValueRules.kind_of(machine.cells, id) {
 			ArrayKind(_) => machine
 			MapKind | SetKind | IteratorKind => unsupported(machine, "`for ... of` over a Map, a Set or an iterator", at)
 			_ => not_iterable(machine, source, at)
 		}
 		Text(text) => {
 			id = machine.cells.len()
-			characters = Interp.characters(text).map(|character| Text(character))
+			characters = ValueRules.characters(text).map(|character| Text(character))
 			replaced({ ..machine, cells: machine.cells.append(Array(characters)) }, 1, Reference(id))
 		}
 		_ => not_iterable(machine, source, at)
@@ -1444,7 +1422,7 @@ iteration_started = |machine, source, at| {
 }
 
 not_iterable : Vm.Machine, Ast.Expression, Ast.Where -> Vm.Machine
-not_iterable = |machine, source, at| with_error(machine, TypeError, "${Interp.source_text(source)} is not iterable", at)
+not_iterable = |machine, source, at| with_error(machine, TypeError, "${ValueRules.source_text(source)} is not iterable", at)
 
 iterated : Vm.Machine, U64, U64 -> Vm.Machine
 iterated = |machine, slot, exit| {
