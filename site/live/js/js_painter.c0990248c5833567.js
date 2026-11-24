@@ -9,7 +9,7 @@
 // A color the canvas doesn't know leaves its color as it was, as a browser's
 // canvas does.
 
-import { unescaped } from "./js_runner.1d99bb0bad526ba3.js";
+import { unescaped } from "./js_runner.616b25312acc657c.js";
 
 export const SIZE = 400;
 

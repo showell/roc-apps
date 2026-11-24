@@ -18,9 +18,9 @@
 // canvas is queued at once and runs in the next frame. Pause works between
 // frames.
 
-import { loadRunner, unescaped } from "./js_runner.1d99bb0bad526ba3.js";
-import { isMark, makePainter, SIZE } from "./js_painter.0bd9d998c665b954.js";
-import { CANVAS_SAMPLES } from "./js_samples.fd2458853ded02f8.js";
+import { loadRunner, unescaped } from "./js_runner.616b25312acc657c.js";
+import { isMark, makePainter, SIZE } from "./js_painter.c0990248c5833567.js";
+import { CANVAS_SAMPLES, FEATURED_SAMPLE } from "./js_samples.b5d5829d72b495be.js";
 
 const FRAMES_PER_SECOND = 30;
 const SLOW_PAUSE_MS = 60;
@@ -73,6 +73,26 @@ const every = setInterval(() => {
 }, 300);
 console.log("the program's end comes first");
 ` },
+  { title: "Maps, patterns and errors", source: `const scores = new Map([["ann", 3], ["bob", 5]]);
+scores.set("cy", 4);
+for (const [name, score] of scores) console.log(name, score);
+
+const { ann = 0, dee = 0, ...others } = { ann: scores.get("ann"), bob: 5, cy: 4 };
+console.log(ann, dee, others);
+
+function best([first, ...rest], key = (x) => x) {
+  return rest.reduce((top, x) => (key(x) > key(top) ? x : top), first);
+}
+console.log(best([...scores], ([, score]) => score));
+
+try {
+  const nobody = null;
+  console.log(nobody.name);
+} catch (e) {
+  console.log(\`caught \${e.name}: \${e.message}\`);
+}
+console.log(new Set("mississippi"), scores.get("dee")?.length ?? "no dee");
+` },
   { title: "Outside the subset", source: `class Point {
   constructor(x, y) { this.x = x; this.y = y; }
 }
@@ -81,8 +101,16 @@ console.log(new Point(1, 2));
 ];
 
 // A console sample draws nothing, so the page hides the canvas for it and its
-// output sits at the top of the column.
-export const SAMPLES = [...CANVAS_SAMPLES, ...CONSOLE_SAMPLES.map((s) => ({ ...s, console: true }))];
+// output sits at the top of the column. "all features" (js/tests/54-big-daddy.js,
+// written into js_samples.js by js/build.shale) comes second, after the first
+// canvas sample, which the page opens with.
+const asConsole = (s) => ({ ...s, console: true });
+export const SAMPLES = [
+  CANVAS_SAMPLES[0],
+  asConsole(FEATURED_SAMPLE),
+  ...CANVAS_SAMPLES.slice(1),
+  ...CONSOLE_SAMPLES.map(asConsole),
+];
 
 const SPEEDS = [
   { label: "Full speed", marks: 0 },
@@ -106,6 +134,18 @@ const BUILTINS = [
   ["setTimeout(f, ms), setInterval(f, ms)", "JavaScript's own: f called once after ms, or every ms; each answers a timer"],
   ["clearTimeout(timer), clearInterval(timer)", "the timer stops"],
   ["function frame(t) { ... }", "if the program declares it, called 30 times a second, t in seconds"],
+];
+
+// What of JavaScript the interpreter runs; js/README.md, "The subset", has
+// it whole.
+const LANGUAGE = [
+  ["let, const, if, while, do ... while, for, for ... of, switch", "for ... of over arrays, strings, Maps, Sets and their iterators; labelled break and continue"],
+  ["throw, try, catch, finally", "any value thrown; the interpreter's own TypeErrors and ReferenceErrors are caught the same way"],
+  ["[a, , ...rest] = xs, { x, y: why = 2, ...others } = o", "destructuring in declarations, assignments, parameters and for ... of; default and rest parameters"],
+  ["{ ...o }, a?.b, a?.[k], f?.(), ??=, ||=, &&=", "object spread, optional chaining and the logical assignments"],
+  ["new Map(), new Set(), new Error(message)", "with get, set, add, has, delete, size, forEach, keys, values and entries"],
+  ["Math, Object.keys, Array.from, and the methods of arrays and strings", "map, filter, reduce, splice, flat, at, split, replace and the rest"],
+  ["not this, new on your own functions, classes, ==, var or regular expressions", "each refused by name, never run wrong"],
 ];
 
 const CSS = `
@@ -178,6 +218,8 @@ export function buildPage(runner, env = window) {
       element("div", { className: "col" }, [element("label", { textContent: "Program" }), editor]),
       element("div", { className: "col" }, [waiting, canvasLabel, canvas, output]),
     ]),
+    element("h2", { textContent: "The JavaScript it runs" }),
+    element("dl", {}, LANGUAGE.flatMap(([what, more]) => [element("dt", { textContent: what }), element("dd", { textContent: more })])),
     element("h2", { textContent: "The canvas builtins" }),
     element("dl", {}, BUILTINS.flatMap(([call, what]) => [element("dt", { textContent: call }), element("dd", { textContent: what })])),
     element("p", { className: "note", textContent: "Colors are CSS color strings (\"tomato\", \"#3a7\", \"hsl(200, 70%, 45%)\"). The origin is the top left corner. A run may take 3,000,000 steps and 20,000 effects before its first frame, and each frame, with the clicks and timers it runs, 300,000 steps and 20,000 effects." }),
@@ -286,13 +328,14 @@ export function buildPage(runner, env = window) {
   async function settle(run, result) {
     await drain(run);
     if (run !== current) return;
-    const SAID = { done: "ran to its end", faulted: "stopped", refused: "refused", crashed: "the interpreter crashed" };
+    const SAID = { done: "ran to its end", faulted: "stopped", thrown: "stopped by an uncaught throw", refused: "refused", crashed: "the interpreter crashed" };
     if (result.ending === "frame") {
       say(`frame ${run.frame}${run.paused ? ", paused" : ""}`, false);
       if (!run.paused) schedule(run);
       return;
     }
-    if (result.ending !== "done") log(`js: ${result.why}\n`);
+    if (result.ending === "thrown") log(`${result.why}\n`);
+    else if (result.ending !== "done") log(`js: ${result.why}\n`);
     say(SAID[result.ending] ?? result.ending, result.ending !== "done");
     run.over = true;
   }
@@ -360,6 +403,6 @@ export function buildPage(runner, env = window) {
 }
 
 if (typeof window !== "undefined" && !window.JS_PAGE_CHECK) {
-  const bytes = await (await fetch("js.f612db3c8aa717dc.wasm")).arrayBuffer();
+  const bytes = await (await fetch("js.8eff4100ca3d992d.wasm")).arrayBuffer();
   buildPage(await loadRunner(bytes));
 }
