@@ -21,7 +21,7 @@
 <li><a href="build-times.html"><span class="number">8</span>Build times</a></li>
 <li><a href="how-it-is-tested.html"><span class="number">9</span>How it is tested</a></li>
 <li><a href="what-is-left.html"><span class="number">10</span>What is left</a></li>
-<li class="here"><a href="appendix-a-the-playgrounds-samples.html">Appendix A: The playground&#39;s samples</a><ol class="sections"><li><a href="appendix-a-the-playgrounds-samples.html#a-bouncing-ball">A bouncing ball</a></li><li><a href="appendix-a-the-playgrounds-samples.html#all-features">all features</a></li><li><a href="appendix-a-the-playgrounds-samples.html#garbage-collection">garbage collection</a></li><li><a href="appendix-a-the-playgrounds-samples.html#a-turtle-spiral">A turtle spiral</a></li><li><a href="appendix-a-the-playgrounds-samples.html#a-clock-that-ticks-once-a-second-on-a-chain-of-timeouts">A clock that ticks once a second, on a chain of timeouts</a></li><li><a href="appendix-a-the-playgrounds-samples.html#a-starfield-flown-through">A starfield, flown through</a></li><li><a href="appendix-a-the-playgrounds-samples.html#a-fractal-tree-each-branch-two-smaller-ones">A fractal tree, each branch two smaller ones</a></li><li><a href="appendix-a-the-playgrounds-samples.html#a-tiny-game-click-the-canvas-then-steer-with-the-arrow-keys">A tiny game: click the canvas, then steer with the arrow keys</a></li><li><a href="appendix-a-the-playgrounds-samples.html#click-to-place-dots">Click to place dots</a></li><li><a href="appendix-a-the-playgrounds-samples.html#a-countdown-on-timers">A countdown on timers</a></li><li><a href="appendix-a-the-playgrounds-samples.html#garbage-heard-by-oncollect">garbage, heard by onCollect</a></li><li><a href="appendix-a-the-playgrounds-samples.html#the-pages-own-console-samples">The page&#39;s own console samples</a></li></ol></li>
+<li class="here"><a href="appendix-a-the-playgrounds-samples.html">Appendix A: The playground&#39;s samples</a><ol class="sections"><li><a href="appendix-a-the-playgrounds-samples.html#a-bouncing-ball">A bouncing ball</a></li><li><a href="appendix-a-the-playgrounds-samples.html#all-features">all features</a></li><li><a href="appendix-a-the-playgrounds-samples.html#garbage-collection">garbage collection</a></li><li><a href="appendix-a-the-playgrounds-samples.html#a-turtle-spiral">A turtle spiral</a></li><li><a href="appendix-a-the-playgrounds-samples.html#a-clock-that-ticks-once-a-second-on-a-chain-of-timeouts">A clock that ticks once a second, on a chain of timeouts</a></li><li><a href="appendix-a-the-playgrounds-samples.html#a-starfield-flown-through">A starfield, flown through</a></li><li><a href="appendix-a-the-playgrounds-samples.html#a-fractal-tree-each-branch-two-smaller-ones">A fractal tree, each branch two smaller ones</a></li><li><a href="appendix-a-the-playgrounds-samples.html#a-tiny-game-click-the-canvas-then-steer-with-the-arrow-keys">A tiny game: click the canvas, then steer with the arrow keys</a></li><li><a href="appendix-a-the-playgrounds-samples.html#click-to-place-dots">Click to place dots</a></li><li><a href="appendix-a-the-playgrounds-samples.html#a-countdown-on-timers">A countdown on timers</a></li><li><a href="appendix-a-the-playgrounds-samples.html#garbage-heard-by-oncollect">garbage, heard by onCollect</a></li><li><a href="appendix-a-the-playgrounds-samples.html#closures">Closures</a></li><li><a href="appendix-a-the-playgrounds-samples.html#fibonacci">Fibonacci</a></li><li><a href="appendix-a-the-playgrounds-samples.html#word-count">Word count</a></li><li><a href="appendix-a-the-playgrounds-samples.html#quicksort">Quicksort</a></li><li><a href="appendix-a-the-playgrounds-samples.html#timers">Timers</a></li><li><a href="appendix-a-the-playgrounds-samples.html#maps-patterns-and-errors">Maps, patterns and errors</a></li><li><a href="appendix-a-the-playgrounds-samples.html#outside-the-subset">Outside the subset</a></li></ol></li>
 <li><a href="appendix-b-the-tested-programs.html">Appendix B: The tested programs</a></li>
 </ol>
 </nav>
@@ -794,108 +794,104 @@ onCollect(({ cells, live }) =&gt; {
   }
 }
 console.log(<span class="syn-string">`checksum </span>${sum}<span class="syn-string">; the collections are heard once the program ends`</span>);
-</code></pre></figure><h2 id="the-pages-own-console-samples">The page&#39;s own console samples <a class="section-link" href="#the-pages-own-console-samples" aria-label="Link to this section">§</a></h2>
-<p>These are written in <code>js/web/js_page.js</code> itself, and the page offers them last.</p>
-<figure class="listing"><figcaption>js/web/js_page.js, an excerpt</figcaption><pre><code class="language-javascript"><span class="syn-keyword">const</span> CONSOLE_SAMPLES = [
-  { title: <span class="syn-string">&quot;Closures&quot;</span>, source: <span class="syn-string">`function counter() {
-  let count = 0;
-  return { up: () =&gt; ++count, get: () =&gt; count };
+</code></pre></figure><h2 id="closures">Closures <a class="section-link" href="#closures" aria-label="Link to this section">§</a></h2>
+<figure class="listing"><figcaption>js/console/1-closures.js, the whole file</figcaption><pre><code class="language-javascript"><span class="syn-comment">// Closures</span>
+<span class="syn-keyword">function</span> <span class="syn-name">counter</span>() {
+  <span class="syn-keyword">let</span> count = <span class="syn-number">0</span>;
+  <span class="syn-keyword">return</span> { up: () =&gt; ++count, get: () =&gt; count };
 }
-const c = counter();
+<span class="syn-keyword">const</span> c = counter();
 c.up(); c.up(); c.up();
-console.log(&quot;count:&quot;, c.get());
+console.log(<span class="syn-string">&quot;count:&quot;</span>, c.get());
 
-const fs = [];
-for (let i = 0; i &lt; 4; i++) fs.push(() =&gt; i * i);
+<span class="syn-keyword">const</span> fs = [];
+<span class="syn-keyword">for</span> (<span class="syn-keyword">let</span> i = <span class="syn-number">0</span>; i &lt; <span class="syn-number">4</span>; i++) fs.push(() =&gt; i * i);
 console.log(fs.map((f) =&gt; f()));
-`</span> },
-  { title: <span class="syn-string">&quot;Fibonacci&quot;</span>, source: <span class="syn-string">`const UP_TO = 15; // the last Fibonacci number printed
+</code></pre></figure><h2 id="fibonacci">Fibonacci <a class="section-link" href="#fibonacci" aria-label="Link to this section">§</a></h2>
+<figure class="listing"><figcaption>js/console/2-fibonacci.js, the whole file</figcaption><pre><code class="language-javascript"><span class="syn-comment">// Fibonacci</span>
+<span class="syn-keyword">const</span> UP_TO = <span class="syn-number">15</span>; <span class="syn-comment">// the last Fibonacci number printed</span>
 
-// Recursive: the definition itself, short and slow for a big n.
-function fib(n) {
-  return n &lt; 2 ? n : fib(n - 1) + fib(n - 2);
+<span class="syn-comment">// Recursive: the definition itself, short and slow for a big n.</span>
+<span class="syn-keyword">function</span> <span class="syn-name">fib</span>(n) {
+  <span class="syn-keyword">return</span> n &lt; <span class="syn-number">2</span> ? n : fib(n - <span class="syn-number">1</span>) + fib(n - <span class="syn-number">2</span>);
 }
-const out = [];
-for (let i = 0; i &lt;= UP_TO; i++) out.push(fib(i));
-console.log(&quot;recursive:&quot;, out);
+<span class="syn-keyword">const</span> out = [];
+<span class="syn-keyword">for</span> (<span class="syn-keyword">let</span> i = <span class="syn-number">0</span>; i &lt;= UP_TO; i++) out.push(fib(i));
+console.log(<span class="syn-string">&quot;recursive:&quot;</span>, out);
 
-// Iterative, two numbers a step: from a = F(n) and b = F(n + 1), the
-// next pair is F(n + 2) = a + b and F(n + 3) = a + 2 * b.
-const pairs = [];
-let [a, b] = [0, 1];
-while (pairs.length &lt;= UP_TO) {
+<span class="syn-comment">// Iterative, two numbers a step: from a = F(n) and b = F(n + 1), the</span>
+<span class="syn-comment">// next pair is F(n + 2) = a + b and F(n + 3) = a + 2 * b.</span>
+<span class="syn-keyword">const</span> pairs = [];
+<span class="syn-keyword">let</span> [a, b] = [<span class="syn-number">0</span>, <span class="syn-number">1</span>];
+<span class="syn-keyword">while</span> (pairs.length &lt;= UP_TO) {
   pairs.push(a, b);
-  [a, b] = [a + b, a + 2 * b];
+  [a, b] = [a + b, a + <span class="syn-number">2</span> * b];
 }
-console.log(&quot;iterative:&quot;, pairs.slice(0, UP_TO + 1));
-`</span> },
-  { title: <span class="syn-string">&quot;Word count&quot;</span>, source: <span class="syn-string">`const TEXT = &quot;the quick brown fox jumps over the lazy dog the fox&quot;; // the words counted
-const TOP = 3; // how many of the most used words are printed
+console.log(<span class="syn-string">&quot;iterative:&quot;</span>, pairs.slice(<span class="syn-number">0</span>, UP_TO + <span class="syn-number">1</span>));
+</code></pre></figure><h2 id="word-count">Word count <a class="section-link" href="#word-count" aria-label="Link to this section">§</a></h2>
+<figure class="listing"><figcaption>js/console/3-word-count.js, the whole file</figcaption><pre><code class="language-javascript"><span class="syn-comment">// Word count</span>
+<span class="syn-keyword">const</span> TEXT = <span class="syn-string">&quot;the quick brown fox jumps over the lazy dog the fox&quot;</span>; <span class="syn-comment">// the words counted</span>
+<span class="syn-keyword">const</span> TOP = <span class="syn-number">3</span>; <span class="syn-comment">// how many of the most used words are printed</span>
 
-const counts = {};
-for (const w of TEXT.split(&quot; &quot;)) counts[w] = (counts[w] ?? 0) + 1;
+<span class="syn-keyword">const</span> counts = {};
+<span class="syn-keyword">for</span> (<span class="syn-keyword">const</span> w <span class="syn-keyword">of</span> TEXT.split(<span class="syn-string">&quot; &quot;</span>)) counts[w] = (counts[w] ?? <span class="syn-number">0</span>) + <span class="syn-number">1</span>;
 console.log(counts);
-const top = Object.entries(counts).sort((a, b) =&gt; b[1] - a[1]);
-console.log(top.slice(0, TOP));
-`</span> },
-  { title: <span class="syn-string">&quot;Quicksort&quot;</span>, source: <span class="syn-string">`const NUMBERS = [5, 3, 9, 1, 7, 2, 8, 6, 4, 0]; // the numbers sorted
+<span class="syn-keyword">const</span> top = Object.entries(counts).sort((a, b) =&gt; b[<span class="syn-number">1</span>] - a[<span class="syn-number">1</span>]);
+console.log(top.slice(<span class="syn-number">0</span>, TOP));
+</code></pre></figure><h2 id="quicksort">Quicksort <a class="section-link" href="#quicksort" aria-label="Link to this section">§</a></h2>
+<figure class="listing"><figcaption>js/console/4-quicksort.js, the whole file</figcaption><pre><code class="language-javascript"><span class="syn-comment">// Quicksort</span>
+<span class="syn-keyword">const</span> NUMBERS = [<span class="syn-number">5</span>, <span class="syn-number">3</span>, <span class="syn-number">9</span>, <span class="syn-number">1</span>, <span class="syn-number">7</span>, <span class="syn-number">2</span>, <span class="syn-number">8</span>, <span class="syn-number">6</span>, <span class="syn-number">4</span>, <span class="syn-number">0</span>]; <span class="syn-comment">// the numbers sorted</span>
 
-function quicksort(xs) {
-  if (xs.length &lt;= 1) return xs;
-  const pivot = xs[0];
-  const rest = xs.slice(1);
-  return quicksort(rest.filter((x) =&gt; x &lt; pivot))
+<span class="syn-keyword">function</span> <span class="syn-name">quicksort</span>(xs) {
+  <span class="syn-keyword">if</span> (xs.length &lt;= <span class="syn-number">1</span>) <span class="syn-keyword">return</span> xs;
+  <span class="syn-keyword">const</span> pivot = xs[<span class="syn-number">0</span>];
+  <span class="syn-keyword">const</span> rest = xs.slice(<span class="syn-number">1</span>);
+  <span class="syn-keyword">return</span> quicksort(rest.filter((x) =&gt; x &lt; pivot))
     .concat([pivot], quicksort(rest.filter((x) =&gt; x &gt;= pivot)));
 }
 console.log(quicksort(NUMBERS));
-`</span> },
-  { title: <span class="syn-string">&quot;Timers&quot;</span>, source: <span class="syn-string">`// Each callback runs when its time comes, on the page&#39;s frames.
-const TICKS = 3; // how many times the interval ticks before it&#39;s cleared
-const TICK_MS = 300; // milliseconds between ticks
+</code></pre></figure><h2 id="timers">Timers <a class="section-link" href="#timers" aria-label="Link to this section">§</a></h2>
+<figure class="listing"><figcaption>js/console/5-timers.js, the whole file</figcaption><pre><code class="language-javascript"><span class="syn-comment">// Timers</span>
+<span class="syn-comment">// Each callback runs when its time comes, on the page&#39;s frames.</span>
+<span class="syn-keyword">const</span> TICKS = <span class="syn-number">3</span>; <span class="syn-comment">// how many times the interval ticks before it&#39;s cleared</span>
+<span class="syn-keyword">const</span> TICK_MS = <span class="syn-number">300</span>; <span class="syn-comment">// milliseconds between ticks</span>
 
-setTimeout(() =&gt; console.log(&quot;half a second&quot;), 500);
-setTimeout(() =&gt; console.log(&quot;a tenth of a second&quot;), 100);
-let n = 0;
-const every = setInterval(() =&gt; {
+setTimeout(() =&gt; console.log(<span class="syn-string">&quot;half a second&quot;</span>), <span class="syn-number">500</span>);
+setTimeout(() =&gt; console.log(<span class="syn-string">&quot;a tenth of a second&quot;</span>), <span class="syn-number">100</span>);
+<span class="syn-keyword">let</span> n = <span class="syn-number">0</span>;
+<span class="syn-keyword">const</span> every = setInterval(() =&gt; {
   n++;
-  console.log(&quot;tick&quot;, n);
-  if (n === TICKS) clearInterval(every);
+  console.log(<span class="syn-string">&quot;tick&quot;</span>, n);
+  <span class="syn-keyword">if</span> (n === TICKS) clearInterval(every);
 }, TICK_MS);
-console.log(&quot;the program&#39;s end comes first&quot;);
-`</span> },
-  { title: <span class="syn-string">&quot;Maps, patterns and errors&quot;</span>, source: <span class="syn-string">`const scores = new Map([[&quot;ann&quot;, 3], [&quot;bob&quot;, 5]]);
-scores.set(&quot;cy&quot;, 4);
-for (const [name, score] of scores) console.log(name, score);
+console.log(<span class="syn-string">&quot;the program&#39;s end comes first&quot;</span>);
+</code></pre></figure><h2 id="maps-patterns-and-errors">Maps, patterns and errors <a class="section-link" href="#maps-patterns-and-errors" aria-label="Link to this section">§</a></h2>
+<figure class="listing"><figcaption>js/console/6-maps-patterns-and-errors.js, the whole file</figcaption><pre><code class="language-javascript"><span class="syn-comment">// Maps, patterns and errors</span>
+<span class="syn-keyword">const</span> scores = <span class="syn-keyword">new</span> Map([[<span class="syn-string">&quot;ann&quot;</span>, <span class="syn-number">3</span>], [<span class="syn-string">&quot;bob&quot;</span>, <span class="syn-number">5</span>]]);
+scores.set(<span class="syn-string">&quot;cy&quot;</span>, <span class="syn-number">4</span>);
+<span class="syn-keyword">for</span> (<span class="syn-keyword">const</span> [name, score] <span class="syn-keyword">of</span> scores) console.log(name, score);
 
-const { ann = 0, dee = 0, ...others } = { ann: scores.get(&quot;ann&quot;), bob: 5, cy: 4 };
+<span class="syn-keyword">const</span> { ann = <span class="syn-number">0</span>, dee = <span class="syn-number">0</span>, ...others } = { ann: scores.get(<span class="syn-string">&quot;ann&quot;</span>), bob: <span class="syn-number">5</span>, cy: <span class="syn-number">4</span> };
 console.log(ann, dee, others);
 
-function best([first, ...rest], key = (x) =&gt; x) {
-  return rest.reduce((top, x) =&gt; (key(x) &gt; key(top) ? x : top), first);
+<span class="syn-keyword">function</span> <span class="syn-name">best</span>([first, ...rest], key = (x) =&gt; x) {
+  <span class="syn-keyword">return</span> rest.reduce((top, x) =&gt; (key(x) &gt; key(top) ? x : top), first);
 }
 console.log(best([...scores], ([, score]) =&gt; score));
 
-try {
-  const nobody = null;
+<span class="syn-keyword">try</span> {
+  <span class="syn-keyword">const</span> nobody = <span class="syn-keyword">null</span>;
   console.log(nobody.name);
-} catch (e) {
-  console.log(\`caught \${e.name}: \${e.message}\`);
+} <span class="syn-keyword">catch</span> (e) {
+  console.log(<span class="syn-string">`caught </span>${e.name}<span class="syn-string">: </span>${e.message}<span class="syn-string">`</span>);
 }
-console.log(new Set(&quot;mississippi&quot;), scores.get(&quot;dee&quot;)?.length ?? &quot;no dee&quot;);
-`</span> },
-  { title: <span class="syn-string">&quot;Outside the subset&quot;</span>, source: <span class="syn-string">`class Point {
-  constructor(x, y) { this.x = x; this.y = y; }
+console.log(<span class="syn-keyword">new</span> Set(<span class="syn-string">&quot;mississippi&quot;</span>), scores.get(<span class="syn-string">&quot;dee&quot;</span>)?.length ?? <span class="syn-string">&quot;no dee&quot;</span>);
+</code></pre></figure><h2 id="outside-the-subset">Outside the subset <a class="section-link" href="#outside-the-subset" aria-label="Link to this section">§</a></h2>
+<figure class="listing"><figcaption>js/console/7-outside-the-subset.js, the whole file</figcaption><pre><code class="language-javascript"><span class="syn-comment">// Outside the subset</span>
+<span class="syn-keyword">class</span> <span class="syn-name">Point</span> {
+  constructor(x, y) { <span class="syn-keyword">this</span>.x = x; <span class="syn-keyword">this</span>.y = y; }
 }
-console.log(new Point(1, 2));
-`</span> },
-];
-
-<span class="syn-comment">// A console sample draws nothing, so the page hides the canvas for it and its</span>
-<span class="syn-comment">// output sits at the top of the column. &quot;all features&quot; and &quot;garbage</span>
-<span class="syn-comment">// collection&quot; (js/tests/54-big-daddy.js and 55-garbage.js, written into</span>
-<span class="syn-comment">// js_samples.js by js/build.shale) come second and third, after the first</span>
-<span class="syn-comment">// canvas sample, which the page opens with.</span>
-<span class="syn-keyword">const</span> asConsole = (s) =&gt; ({ ...s, console: <span class="syn-keyword">true</span> });
+console.log(<span class="syn-keyword">new</span> Point(<span class="syn-number">1</span>, <span class="syn-number">2</span>));
 </code></pre></figure>
 </article>
 <nav class="turn-page" aria-label="Previous and next chapter">
