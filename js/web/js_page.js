@@ -155,7 +155,8 @@ const CSS = `
   }
   body { margin: 0; background: var(--paper); color: var(--ink);
          font: 15px/1.5 -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif; }
-  .wrap { max-width: 1000px; margin: 0 auto; padding: 28px 16px; }
+  .wrap { max-width: 1000px; margin: 0 auto; padding: 0 16px 28px; }
+  .top { padding: 28px 0 16px; box-sizing: border-box; }
   h1 { font-size: 20px; margin: 0 0 4px; font-weight: 600; }
   h2 { font-size: 15px; margin: 24px 0 6px; font-weight: 600; }
   .sub { color: var(--dim); font-size: 13px; margin: 0 0 20px; }
@@ -173,8 +174,23 @@ const CSS = `
   textarea, pre { width: 100%; box-sizing: border-box; background: transparent; color: inherit;
                   border: 1px solid var(--line); border-radius: 4px; padding: 10px; margin: 0;
                   font: 13px/1.45 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
-  textarea { height: 560px; resize: vertical; }
+  textarea { height: 560px; height: min(560px, 60vh); height: min(560px, 60dvh); resize: vertical; }
   pre { height: 130px; overflow: auto; white-space: pre; margin-top: 10px; }
+  pre.console { height: 70vh; height: 70dvh; min-height: 260px; }
+  .waiting, label, canvas { flex: none; }
+  /* Side by side, the columns fill the screen below the bar: the editor all
+     of its column, the console whatever the canvas leaves (all of it for a
+     console sample), so output scrolls in its box only once it outgrows the
+     screen. Stacked, on a phone, each is sized by the screen's height. The
+     header above never changes height, so the canvas stays where clicks aim. */
+  @media (min-width: 820px) {
+    .top { display: flex; flex-direction: column; min-height: 100vh; min-height: 100dvh; }
+    .cols { flex: 1 1 0; flex-wrap: nowrap; }
+    .col { display: flex; flex-direction: column; min-height: 0; }
+    textarea { flex: 1 1 0; height: 0; min-height: 240px; }
+    pre, pre.console { flex: 1 1 0; height: 0; min-height: 130px; }
+    pre.console { margin-top: 0; }
+  }
   canvas { display: block; width: 100%; max-width: ${SIZE}px; aspect-ratio: 1; border: 1px solid var(--line);
            border-radius: 4px; touch-action: none; }
   canvas:focus { outline: 2px solid var(--dim); outline-offset: 2px; }
@@ -211,12 +227,14 @@ export function buildPage(runner, env = window) {
   const canvasLabel = element("label", { textContent: "Canvas, 400 by 400" });
   const waiting = element("p", { className: "waiting", textContent: "This program hasn't run yet. Press Run to start it." });
   const wrap = element("div", { className: "wrap" }, [
-    element("h1", { textContent: "JavaScript, in Roc" }),
-    element("p", { className: "sub", textContent: "A subset of JavaScript run by a tree-walking interpreter written in Roc. Its console.log prints what node prints; the canvas builtins below are this page's own, named after p5.js's but not p5.js." }),
-    element("div", { className: "bar" }, [picker, runButton, stopButton, pauseButton, speed, status]),
-    element("div", { className: "cols" }, [
-      element("div", { className: "col" }, [element("label", { textContent: "Program" }), editor]),
-      element("div", { className: "col" }, [waiting, canvasLabel, canvas, output]),
+    element("div", { className: "top" }, [
+      element("h1", { textContent: "JavaScript, in Roc" }),
+      element("p", { className: "sub", textContent: "A subset of JavaScript run by a tree-walking interpreter written in Roc. Its console.log prints what node prints; the canvas builtins below are this page's own, named after p5.js's but not p5.js." }),
+      element("div", { className: "bar" }, [picker, runButton, stopButton, pauseButton, speed, status]),
+      element("div", { className: "cols" }, [
+        element("div", { className: "col" }, [element("label", { textContent: "Program" }), editor]),
+        element("div", { className: "col" }, [waiting, canvasLabel, canvas, output]),
+      ]),
     ]),
     element("h2", { textContent: "The JavaScript it runs" }),
     element("dl", {}, LANGUAGE.flatMap(([what, more]) => [element("dt", { textContent: what }), element("dd", { textContent: more })])),
@@ -241,6 +259,7 @@ export function buildPage(runner, env = window) {
     canvasLabel.hidden = false;
     output.hidden = false;
     canvas.hidden = Boolean(sample.console);
+    output.className = sample.console ? "console" : "";
     canvasLabel.textContent = sample.console ? "Console" : "Canvas, 400 by 400";
   }
 
