@@ -220,7 +220,7 @@ if get(same, "code", -1) == 0 then
   print("the site block is unchanged")
 else
   print("installing the site block")
-  local cp = run({"scp", "-q", "-o", "BatchMode=yes", "-o", "LogLevel=QUIET", "ops/" .. BLOCK, "<secret PROD>:/tmp/" .. BLOCK},
+  local cp = run({"scp", "-q", "-O", "-o", "BatchMode=yes", "-o", "LogLevel=QUIET", "ops/" .. BLOCK, "<secret PROD>:/tmp/" .. BLOCK},
     to_prod({timeout_ms = 120000, tail = 20}))
   if get(cp, "code", -1) ~= 0 then refuse("scp of ops/" .. BLOCK .. " to prod's /tmp exited " .. get(cp, "code", -1) .. ": " .. trim(cp.out)) end
   -- A remote shell script of constants alone: BLOCK, and the paths.
