@@ -1,6 +1,6 @@
 1-bouncing-ball 3
 2-turtle-spiral 0
-3-clock 2
+3-clock 65
 4-starfield 2
 5-fractal-tree 0
 6-arrow-keys 25 ArrowRight+ArrowUp,ArrowRight+ArrowUp,ArrowRight+ArrowUp,ArrowRight+ArrowUp,ArrowRight+ArrowUp,ArrowRight+ArrowUp,ArrowRight+ArrowUp,ArrowUp,ArrowUp,ArrowUp,ArrowUp,ArrowUp,ArrowUp,ArrowUp,ArrowUp,ArrowUp,ArrowUp,ArrowUp,ArrowUp,ArrowUp,ArrowUp,ArrowUp,ArrowUp,ArrowUp
