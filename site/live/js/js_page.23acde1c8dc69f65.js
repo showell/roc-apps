@@ -15,17 +15,17 @@
 
 import { loadRunner, unescaped } from "./js_runner.3cb6ca5e735cb7cd.js";
 import { makePainter, SIZE } from "./js_painter.199dc8d08b3a2d42.js";
-import { CANVAS_SAMPLES, CONSOLE_SAMPLES, FEATURED_SAMPLES } from "./js_samples.b486d472088c77a5.js";
+import { CANVAS_SAMPLES, CONSOLE_SAMPLES, FEATURED_SAMPLES } from "./js_samples.4ca337d6b2e67406.js";
 import { memoryView, MEMORY_CSS, STRATEGY } from "./js_memory.751aa2b79bd604b7.js";
 
 const FRAMES_PER_SECOND = 30;
 const OUTPUT_KEPT = 20000;
 
 // A console sample draws nothing, so the page hides the canvas for it and its
-// output sits at the top of the column. "all features" and "garbage
-// collection" (js/tests/54-big-daddy.js and 55-garbage.js, written into
-// js_samples.js by js/build.shale) come second and third, after the first
-// canvas sample, which the page opens with.
+// output sits at the top of the column. "all features", "garbage
+// collection" and "classes" (js/tests/54-big-daddy.js, 55-garbage.js and
+// 61-classes-tour.js, written into js_samples.js by js/build.shale) come
+// second to fourth, after the first canvas sample, which the page opens with.
 const asConsole = (s) => ({ ...s, console: true });
 export const SAMPLES = [
   CANVAS_SAMPLES[0],
@@ -382,6 +382,6 @@ export function buildPage(runner, env = window) {
 }
 
 if (typeof window !== "undefined" && !window.JS_PAGE_CHECK) {
-  const bytes = await (await fetch("js.dff9b9af07efdd87.wasm")).arrayBuffer();
+  const bytes = await (await fetch("js.692cfe16252304c7.wasm")).arrayBuffer();
   buildPage(await loadRunner(bytes));
 }
