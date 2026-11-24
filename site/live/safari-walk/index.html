@@ -44,6 +44,13 @@ canvas { display: block; background: #06080f; width: min(960px, 100%, calc(88vh 
 #chapters .letter { display: inline-block; width: 1.2em; font: 600 11px monospace; }
 #chapters .now { color: #f2d999; }
 #chapters .now .mark { visibility: visible; }
+/* The paused notice, over the picture's middle (the script places it there)
+   whenever the game says the walk is paused, and gone when it walks on. It
+   takes no clicks or keys, so they reach the canvas, and it never animates:
+   a layer forever animating over the canvas was once suspected of making
+   Firefox throttle it. */
+#paused { display: none; position: absolute; transform: translate(-50%, -50%); margin: 0; padding: 12px 22px; background: rgba(0, 0, 0, 0.6); border-radius: 6px; color: #f2ead6; font: 600 20px/1.4 system-ui, sans-serif; text-shadow: 0 1px 2px #000; white-space: nowrap; pointer-events: none; user-select: none; }
+#paused kbd { font: 600 16px monospace; border: 1px solid #8a8678; border-radius: 3px; padding: 0 5px; }
 #rate { display: none; position: absolute; top: 8px; left: 8px; max-width: calc(100% - 32px); white-space: pre-wrap; padding: 4px 8px; background: rgba(0, 0, 0, 0.55); color: #eee; font: 13px monospace; pointer-events: none; }
 </style>
 </head>
@@ -64,8 +71,26 @@ canvas { display: block; background: #06080f; width: min(960px, 100%, calc(88vh 
 <div id="message"></div>
 <div id="rate"></div>
 <ul id="chapters" aria-label="Chapters"></ul>
+<p id="paused" role="status">Paused. Press <kbd>Space</kbd> to continue.</p>
 <script src="rocco.js"></script>
 <script>
+// The game says when Space stops or starts the walk (main.roc's walk_said),
+// as a line the engine writes to the console's errors: `game: walk paused`
+// or `game: walk walking`. The page takes those two lines out of the console
+// and sends them on as the events walk:paused and walk:walking, which the
+// frame counts and the paused notice follow. So the page knows the paused
+// state from the game itself, never by guessing from the keys.
+(function () {
+	var SAID = { "game: walk paused": "walk:paused", "game: walk walking": "walk:walking" };
+	var original = console.error;
+	console.error = function (text) {
+		if (arguments.length === 1 && typeof text === "string" && Object.prototype.hasOwnProperty.call(SAID, text)) {
+			window.dispatchEvent(new Event(SAID[text]));
+			return;
+		}
+		return original.apply(console, arguments);
+	};
+})();
 // The loading screen says which stage the page is in, and stays up until
 // the frames come steadily, so the walk is moving when it shows. The
 // stages: the download, then the engine preparing the trees and the sky's
@@ -238,8 +263,10 @@ var CHAPTERS = [
 		box.textContent = text;
 		box.style.display = "block";
 		document.getElementById("canvas").style.display = "none";
-		// The chapter key goes with the walk (it is defined below).
+		// The chapter key and the paused notice go with the walk (they are
+		// defined below).
 		window.walkChapterHide();
+		window.walkPausedHide();
 		return box;
 	};
 })();
@@ -314,7 +341,7 @@ var walkView = (function () {
 	var adapterInfo = null;
 
 	// The walk as the page follows it: whether the loading line is gone,
-	// whether Space has paused it, and how far down the road it is (the
+	// whether the game says it is paused, and how far down the road it is (the
 	// engine's clock, which takes at most a quarter second a frame, at the
 	// walk's pace; the jump keys move it as the game does). The report's
 	// notes on the longest frames and the chapter key read the distance.
@@ -326,15 +353,13 @@ var walkView = (function () {
 	// Where the page reckons the walk is, for a probe that names its frames by it.
 	window.walkWalked = function () { return walk.walked; };
 	window.addEventListener("rocco:ready", function () { walk.started = true; });
+	window.addEventListener("walk:paused", function () { walk.paused = true; });
+	window.addEventListener("walk:walking", function () { walk.paused = false; walk.skipNext = true; });
 	// 5, 6 and 7 still jump as Z, K and R do.
 	var JUMPS = { Digit1: 44, Digit2: 170, Digit3: 215, Digit4: 95, Digit5: CHAPTERS[1].at, Digit6: CHAPTERS[2].at, Digit7: CHAPTERS[3].at };
 	CHAPTERS.forEach(function (chapter) { JUMPS[chapter.code] = chapter.at; });
 	window.addEventListener("keydown", function (event) {
 		if (event.repeat) return;
-		if (event.code === "Space") {
-			walk.paused = !walk.paused;
-			if (!walk.paused) walk.skipNext = true;
-		}
 		if (event.code === "Digit0") walk.held = !walk.held;
 		if (event.code in JUMPS) walk.walked = JUMPS[event.code];
 	}, true);
@@ -852,6 +877,27 @@ var walkView = (function () {
 		update();
 	}, true);
 	window.walkChapterHide = function () { shown = false; update(); };
+})();
+// The paused notice, over the picture's middle: up whenever the game says the
+// walk is paused (walk:paused, above), however it got there, once the walk
+// shows, and down when the game says it walks on. A chapter key pressed while
+// paused shows that chapter's first frame and leaves the notice up.
+(function () {
+	var notice = document.getElementById("paused");
+	var canvas = document.getElementById("canvas");
+	var shown = false, paused = false, gone = false;
+	function place() {
+		var box = canvas.getBoundingClientRect();
+		notice.style.left = Math.round(box.left + box.width / 2) + "px";
+		notice.style.top = Math.round(box.top + box.height / 2) + "px";
+	}
+	function update() { notice.style.display = shown && paused && !gone ? "block" : "none"; }
+	window.walkPaused = function () { return { paused: paused, notice: notice.style.display === "block" }; };
+	window.addEventListener("walk:paused", function () { paused = true; update(); });
+	window.addEventListener("walk:walking", function () { paused = false; update(); });
+	window.addEventListener("walk:shown", function () { shown = true; place(); update(); });
+	window.addEventListener("resize", place);
+	window.walkPausedHide = function () { gone = true; update(); };
 })();
 window.addEventListener("rocco:unsupported", function (event) { rocco_message(event.detail.message); });
 window.addEventListener("rocco:stopped", function (event) { rocco_message(event.detail.message); });
