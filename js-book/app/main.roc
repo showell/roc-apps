@@ -59,10 +59,7 @@ settings : Builder.Settings
 settings = {
 	..Builder.default_settings,
 	manuscript: manuscript_path,
-	negatives: Lint({
-		words: "js-book/negative_words.txt",
-		table: "js-book/negatives.txt",
-	}),
+	negatives: Lint({ words: "js-book/negative_words.txt", table: "js-book/negatives.txt" }),
 	colorer: colored_code,
 }
 
@@ -121,7 +118,10 @@ listing_of = |line| {
 
 ## A file of the book's folder, or the build's stop naming it.
 read_text! : Str => Try(Str, Str)
-read_text! = |path| Book.read_file!(path).map_err(|problem| "${path} ${Includes.read_problem_text(problem)}\n")
+read_text! = |path| {
+	problem_line = |problem| "${path} ${Includes.read_problem_text(problem)}\n"
+	Book.read_file!(path).map_err(problem_line)
+}
 
 ## A sample that each of the three languages reads its own way: `#` opens a
 ## comment in Roc, `--` in Shale, and `//` in JavaScript.
@@ -133,12 +133,27 @@ expect
 		("roc", SyntaxColor.roc),
 		("javascript", SyntaxColor.js),
 		("shale", SyntaxColor.shale),
-	].all(|(language, syntax)| colored_code({ language, code: sample }) == Colored(SyntaxColor.html(syntax, sample)))
+	].all(
+		|(language, syntax)| colored_code({
+			language,
+			code: sample,
+		}) == Colored(SyntaxColor.html(syntax, sample)),
+	)
 expect {
-	answers = [SyntaxColor.roc, SyntaxColor.js, SyntaxColor.shale].map(|syntax| SyntaxColor.html(syntax, sample))
+	answers = [
+		SyntaxColor.roc,
+		SyntaxColor.js,
+		SyntaxColor.shale,
+	].map(|syntax| SyntaxColor.html(syntax, sample))
 	answers.all(|answer| answers.count_if(|other| other == answer) == 1)
 }
-expect ["text", "markdown", "dot", "js", ""].all(|language| colored_code({ language, code: "a < b" }) == Plain)
+expect [
+	"text",
+	"markdown",
+	"dot",
+	"js",
+	"",
+].all(|language| colored_code({ language, code: "a < b" }) == Plain)
 expect listing_of("{{listing corpus}}") == Ok("corpus")
 expect
 	[
