@@ -26,12 +26,12 @@
 --
 -- Staging on :9200 serves the site/live/ of ~/showell_repos/roc-apps per
 -- request with no-store, so a publish there is live at once (a publish from
--- another worktree is not on staging until it is merged there). Two other
+-- another worktree is not on staging until it is merged there). Three other
 -- scripts write site/live/: site/publish_screensavers.shale writes
--- roc-screensaver's folders (welcome-to-roc/, bubbles/, tides/), and
--- site/publish_safari_walk.shale writes safari-walk/. markdown/ and
--- user_uploads/ are roc-markdown's playground build, copied in and committed
--- by hand (roc-markdown's TESTING.md says which files).
+-- roc-screensaver's folders (welcome-to-roc/, bubbles/, tides/),
+-- site/publish_safari_walk.shale writes safari-walk/, and
+-- site/publish_markdown.shale writes roc-markdown's playground (markdown/ and
+-- user_uploads/).
 --
 -- PROVENANCE records what the build read: the Roc compiler, the roc-apps
 -- commit (marked when the app's own tree has uncommitted changes), and a hash

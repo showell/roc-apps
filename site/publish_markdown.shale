@@ -1,0 +1,184 @@
+-- budget: programs=100 read_bytes=200000000
+-- This script publishes roc-markdown's playground to staging, as
+-- site/publish_screensavers.shale does for roc-screensaver's pages. The
+-- landing page's Markdown card links it.
+--
+--   cd <roc-apps checkout> && shale site/publish_markdown.shale
+--   cd <roc-apps checkout> && shale site/publish_markdown.shale dry=1 live=<Shale path>
+--
+-- The playground's sources stay in roc-markdown (repos:roc-markdown). The
+-- script refuses that checkout when it has changes of any kind (an untracked
+-- file included) or its HEAD is on no branch of GitHub's, so what is
+-- published is always a commit anyone can fetch. It builds there with
+-- roc-markdown's own `zig build playground`, at roc-markdown's pinned Roc
+-- (its roc-version), installed into a fresh folder under build:roc-apps/
+-- rather than the checkout's zig-out/, and refuses a build that leaves the
+-- checkout changed. What the build installs is published in two places
+-- (roc-markdown's TESTING.md, "What the box publishes"):
+--
+--   playground/*              at site/live/markdown/, the page
+--   user_uploads/sample.png   at site/live/user_uploads/, the site root's
+--                             uploads, since the playground shows media from
+--                             /user_uploads/ alone (its `safety` example's image)
+--
+-- Each folder is replaced whole, and markdown/ gets a PROVENANCE: the Roc
+-- compiler, the roc-markdown commit, and a hash of md.wasm and of the sample.
+--
+-- Then it checks what it copied before committing it. Each folder must hold
+-- exactly the build's files (MARKDOWN_FILES, UPLOAD_FILES), and the page's
+-- resources must be relative: no `src`, `href` or `fetch` URL in index.html,
+-- app.js or md_wasm.js may start with `/`, and none but an `<a>`'s href may
+-- name a scheme, so the page's own link out to GitHub stays. A failed check
+-- stops before git, leaving site/live/ changed and uncommitted. The two
+-- folders are committed alone, as one commit with the PROVENANCE in its
+-- message, and pushed with git_push. site/deploy.shale takes them to prod
+-- with the rest.
+--
+-- Options, for a proof against a scratch copy:
+--
+--   dry=1                 build, copy, write the PROVENANCE and check, then
+--                         stop before git
+--   live=<Shale path>     staging to write (site/live unset); any other place
+--                         needs dry=1, since only site/live/ is committed
+
+const MD = "repos:roc-markdown"
+const DRY = arg("dry", 0) == 1
+const LIVE = arg("live", "site/live")
+const MARKDOWN_FILES = {"PROVENANCE", "app.js", "examples.jsonl", "index.html", "md.wasm", "md_wasm.js", "style.css"}
+const UPLOAD_FILES = {"sample.png"}
+const STAGING = "http://localhost:9200/"
+
+-- Stops the publish when roc-markdown has a change of any kind.
+function refuse_changes(when)
+  if not git_is_clean(MD) then
+    for s in git_status(MD) do print(s.code .. " " .. s.path) end
+    fail("publish_markdown: roc-markdown has changes " .. when .. "; commit and push them first")
+  end
+  return nil
+end
+
+-- The roc-markdown commit to publish, its full hash: clean, and on a branch
+-- of origin.
+function markdown_commit()
+  if not exists(MD .. "/build.zig") then fail("publish_markdown: no roc-markdown checkout at " .. MD) end
+  refuse_changes("before the build")
+  git_fetch(MD)
+  local head = trim(must(run({"git", "rev-parse", "HEAD"}, {cwd = MD, timeout_ms = 10000, tail = 2})).out)
+  local on = must(run({"git", "branch", "-r", "--contains", head}, {cwd = MD, timeout_ms = 10000, tail = 20}))
+  if trim(on.out) == "" then fail("publish_markdown: roc-markdown's HEAD " .. sub(head, 1, 7) .. " is on no branch of origin; push it first") end
+  return head
+end
+
+-- roc-markdown's pinned Roc, by its real path, and what `roc version` says.
+function markdown_roc()
+  local pin = trim(read(MD .. "/roc-version"))
+  local roc = "tools:roc-" .. pin .. "/roc"
+  if not exists(roc) then fail("publish_markdown: no " .. roc .. ": install roc-markdown's pin " .. pin .. " at ~/tools/roc-" .. pin .. "/") end
+  local said = trim(must(run({real(roc), "version"}, {timeout_ms = 30000, tail = 2, want = "roc-pin: roc-markdown's pinned compiler"})).out)
+  if said ~= "Roc compiler version " .. pin then fail("publish_markdown: " .. roc .. " is " .. said .. ", not " .. pin) end
+  return {path = real(roc), version = pin}
+end
+
+-- Every file below `dir`, by its name under it, sorted.
+function files_under(dir)
+  local names = {}
+  for e in walk_all(dir, {kind = "file"}) do push(names, sub(e.path, #dir + 2, #e.path)) end
+  sort(names)
+  return names
+end
+
+-- The first 16 hex digits of a file's sha256.
+function sha256_16(p)
+  return sub(trim(must(run({"sha256sum", real(p)}, {timeout_ms = 10000, tail = 2})).out), 1, 16)
+end
+
+function provenance(head, roc, page, uploads)
+  local stamp = trim(must(run({"date", "-u", "+%Y-%m-%dT%H:%M:%SZ"}, {timeout_ms = 5000, tail = 2})).out)
+  local text = "published " .. stamp .. "\n"
+  text = text .. "roc " .. roc.version .. "\n"
+  text = text .. "roc-markdown " .. sub(head, 1, 7) .. " https://github.com/showell/roc-markdown/commit/" .. head .. " (its zig build playground)\n"
+  text = text .. "sha256 " .. sha256_16(page .. "/md.wasm") .. "  " .. stat(page .. "/md.wasm").size .. " bytes  md.wasm\n"
+  text = text .. "sha256 " .. sha256_16(uploads .. "/sample.png") .. "  " .. stat(uploads .. "/sample.png").size .. " bytes  ../user_uploads/sample.png, at the site root: the playground's uploads rule shows media from /user_uploads/ only\n"
+  return text
+end
+
+-- One check's line; a failed one stops the publish.
+function check_line(name, ok, detail)
+  local verdict = "PASS"
+  if not ok then verdict = "FAIL" end
+  print(verdict .. "  " .. name .. ": " .. detail)
+  if not ok then fail("publish_markdown: the check of " .. name .. " failed; " .. LIVE .. "/ is changed and not committed") end
+  return nil
+end
+
+function check_published(page, uploads)
+  for pair in {{page, MARKDOWN_FILES}, {uploads, UPLOAD_FILES}} do
+    local want = {}
+    for f in pair[2] do push(want, f) end
+    sort(want)
+    local found = files_under(pair[1])
+    check_line("files", join(found, " ") == join(want, " "), pair[1] .. " holds " .. join(found, " ") .. "; expected " .. join(want, " "))
+  end
+  local rooted = 0
+  local schemed = 0
+  for f in {"index.html", "app.js", "md_wasm.js"} do
+    local text = read(page .. "/" .. f)
+    rooted = rooted + #re_find_all(text, [=[(?:src|href)\s*=\s*["']?/|fetch(?:ed)?\(\s*["'`]/]=])
+    schemed = schemed + #re_find_all(text, [=[src\s*=\s*["']?[a-z]+:|<link[^>]*href\s*=\s*["']?[a-z]+:|fetch(?:ed)?\(\s*["'`][a-z]+:]=])
+  end
+  check_line("relative URLs", rooted + schemed == 0, rooted .. " src, href or fetch URLs in index.html, app.js and md_wasm.js start with /, and " .. schemed .. " resources name a scheme")
+  return nil
+end
+
+function main()
+  if LIVE ~= "site/live" and not DRY then fail("publish_markdown: live=" .. LIVE .. " is not site/live, which alone is committed; add dry=1") end
+  local head = markdown_commit()
+  local roc = markdown_roc()
+  print("roc-markdown " .. sub(head, 1, 7) .. ", clean and on origin; roc " .. roc.version)
+  if not DRY then
+    local staged = run({"git", "diff", "--cached", "--quiet"}, {timeout_ms = 10000, tail = 5})
+    if staged.code ~= 0 then fail("publish_markdown: roc-apps' index already holds staged changes; commit or unstage them first") end
+  end
+
+  if not is_dir("build:roc-apps") then mkdir("build:roc-apps") end
+  local out = fresh_dir("build:roc-apps", "markdown-playground")
+  local b = run({"zig", "build", "playground", "-p", real(out), "-Droc=" .. roc.path}, {cwd = MD, timeout_ms = 600000, tail = 30, nice = 19})
+  print(trim(b.out))
+  if b.code ~= 0 then
+    remove_tree(out)
+    fail("publish_markdown: roc-markdown's zig build playground failed")
+  end
+  refuse_changes("after the build (it rewrote a tracked file or left an untracked one)")
+
+  if not is_dir(LIVE) then mkdir(LIVE) end
+  local page = LIVE .. "/markdown"
+  local uploads = LIVE .. "/user_uploads"
+  if exists(page) then remove_tree(page) end
+  if exists(uploads) then remove_tree(uploads) end
+  copy(out .. "/playground", page)
+  copy(out .. "/user_uploads", uploads)
+  remove_tree(out)
+  local text = provenance(head, roc, page, uploads)
+  create(page .. "/PROVENANCE", text)
+  print(trim(text))
+
+  check_published(page, uploads)
+  if DRY then
+    print("dry run: nothing committed")
+    return nil
+  end
+
+  must(run({"git", "add", "-A", "--", page, uploads}, {timeout_ms = 30000, tail = 5}))
+  local same = run({"git", "diff", "--cached", "--quiet", "--", page, uploads}, {timeout_ms = 10000, tail = 5})
+  if same.code == 0 then
+    print("staging already has this playground; nothing to publish")
+    return nil
+  end
+  local msg = "site: publish markdown (roc-markdown's playground) to staging\n\n" .. text
+  must(run({"git", "commit", "-q", "-F", "-", "--", page, uploads}, {timeout_ms = 60000, tail = 10, stdin = msg}))
+  git_push(".")
+  print("published markdown to staging: " .. STAGING .. "markdown/")
+  return nil
+end
+
+main()

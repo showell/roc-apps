@@ -45,7 +45,8 @@ next unchanged. The design is
   `site/published_apps.txt` over from dev, with a `PROVENANCE` file, commits
   it and pushes with git_push, since a confined git cannot read ssh's key.
   `site/publish_screensavers.shale` publishes roc-screensaver's screensavers,
-  and `site/publish_safari_walk.shale` safari-walk's page; each builds from
+  `site/publish_safari_walk.shale` safari-walk's page, and
+  `site/publish_markdown.shale` roc-markdown's playground; each builds from
   its own repo's checkout.
 - **prod**: [roc.lynrummy.com](https://roc.lynrummy.com/), staging's files
   verbatim, copied by `site/deploy.shale`, which takes the droplet from
@@ -60,6 +61,7 @@ shale site/publish.shale app=tutorial # the book, once each widget it frames is 
 shale site/publish.shale app=home     # the landing page and site/web/'s folders
 shale site/publish_screensavers.shale # roc-screensaver's screensavers to staging
 shale site/publish_safari_walk.shale  # safari-walk's page to staging (no push; deploy pushes)
+shale site/publish_markdown.shale     # roc-markdown's playground to staging
 shale site/deploy.shale               # staging to prod (the droplet is the secret keys:prod-ssh)
 ```
 
