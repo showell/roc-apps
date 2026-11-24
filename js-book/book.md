@@ -187,7 +187,7 @@ digraph {
 
 ### The page
 
-The page is `js/web/`. `js_page.js` makes everything the page shows, its styles included, so the HTML is only a door: an editor, the canvas and the console. `js_runner.js` is the door onto `js.wasm`: it starts a program, then calls it a frame at a time, about 30 times a second, each frame a tick of the program's clock (`Vm.tick!`) that runs the clicks queued since the last tick, the timers due and `frame(t)`. `js_painter.js` paints each effect's line on a 2D canvas as it arrives, and the browser shows the canvas when the frame's call returns.
+The page is `js/web/`. `js_page.js` makes everything the page shows, its styles included, so the HTML is only a door: an editor, the canvas and the console. `js_runner.js` loads `js.wasm`, starts a program, then calls it a frame at a time, about 30 times a second, each frame a tick of the program's clock (`Vm.tick!`) that runs the clicks queued since the last tick, the timers due and `frame(t)`. `js_painter.js` paints each effect's line on a 2D canvas as it arrives, and the browser shows the canvas when the frame's call returns.
 
 The memory view, `js_memory.js`, is a popup with two small charts of the last run. The top one is the heap's cells in use, which climb as the program allocates and drop at each collection, a sawtooth; the bottom one is the wasm memory's size. The VM reports each collection through `collected!`, so the count lives in the host, outside the machine.
 
@@ -203,7 +203,7 @@ Every VM instruction takes the machine and hands it back, and a handler copies t
 
 ### Box what is rarely written
 
-A part of the machine that most instructions leave alone costs a copy on every instruction if it sits inline. The event queue was the first example: only timers and clicks touch it, yet inline it made the release build's fib(22) take 123 ms; boxed, 82 ms (`3ad69676`). The inline queue cost about 50% more time. `docs/roc-notes.md` adds the qualification: a `Box` carried untouched is free, but every write re-boxes, one allocation per write, so a box suits a part that is rarely written after it is made.
+A part of the machine that most instructions leave alone costs a copy on every instruction if it sits inline. The event queue was the first example: only timers and clicks touch it, yet inline it made the release build's fib(22) take 123 ms; boxed, 82 ms (`3ad69676`). `docs/roc-notes.md` adds the qualification: a `Box` carried untouched is free, but every write re-boxes, one allocation per write, so a box suits a part that is rarely written after it is made.
 
 ### Stay under 256 bytes
 
@@ -219,7 +219,7 @@ The lesson in `js/README.md` is that a field added inline counts against the 256
 
 ## Dev and release builds disagree
 
-Roc has two backends. The dev backend (`--opt=dev`) compiles in about a second and emits code that is mostly stack moves. The release build (`--opt=speed`) goes through LLVM, runs much faster, and compiles slowly. The two builds disagree about allocations, about time and about copies, and this project met each disagreement.
+Roc has two backends. The dev backend (`--opt=dev`) compiles in about a second and emits code that is mostly stack moves. The release build (`--opt=speed`) goes through LLVM, runs fib(22) about nine times faster, and compiles slowly. The two builds disagree about allocations, about time and about copies, and this project met each disagreement.
 
 ### Allocation counts
 
@@ -263,7 +263,7 @@ Dev timings fail to predict release timings, even in direction.
 
 The first two rows show a change that halved the dev time of the loops while moving the release time by 11 ms. The third shows a branch that was faster than master on dev and 40% slower in release. Today the release build runs fib(22) about nine times faster than the dev build (860 against 99 ms).
 
-### Rails
+### Step budgets
 
 The page runs a program on the browser's main thread, so it holds the program to step budgets: 3,000,000 steps before the first frame and 300,000 a frame. The walker counted statements; the VM counts calls and loop passes, so the same budget covers about twice the work. On the dev backend the walker took 1.1 s of CPU to run out a frame's budget and 5.2 s for a program's; the VM takes 2.0 s and 8.8 s (`a9a06e74`, `js/README.md`, "Pitfalls").
 
@@ -275,7 +275,7 @@ roc-apps' `CLAUDE.md` (section 9) and `js/README.md` give each build its job. Sc
 
 RC1's release builds were the project's slowest loop. The walker's release build grew with the language: 65 s when the controls first landed (`64a42c08`), 686 s after the language gaps (`a3af13f4`), and 1,052 s for `js-run` at the commit tagged `rc1-slow-release-build`, for about 10,000 lines of Roc, against under a second on dev (the tag's message). Commit `762c7d3a` gives the JavaScript tier's release build as 11 to 17 minutes and puts most of the time in RC1's SpecConstr pass.
 
-The VM's release build was 670 s in its first round (`f4237b8a`), when it still imported the walker's module for the value rules. After the value rules moved into a module of their own and the VM dropped its import of the walker (`f9dd79d0`), it was 84 s (`3ad69676`, `2edd155a`), while `js-run` still took 481 s. The record shows the drop following the split; reading the split as its cause is an inference from that order. Later figures are 110 s after the collector (`de56943f`) and 91 s in `js/README.md`'s status line.
+The VM's release build was 670 s in its first round (`f4237b8a`), when it still imported the walker's module for the value rules. After the value rules moved into a module of their own and the VM dropped its import of the walker (`f9dd79d0`), it was 84 s (`3ad69676`, `2edd155a`), while `js-run` still took 481 s. The drop came after the split, and the commits leave the cause unstated. Later figures are 110 s after the collector (`de56943f`) and 91 s in `js/README.md`'s status line.
 
 ## How it is tested
 
@@ -299,7 +299,7 @@ A check is trusted once it has been seen to fail. Each check below holds the cod
 
 ### Planted faults
 
-The record has many plants, each reverted:
+The record lists five plants, each reverted:
 
 - a line width of 72 instead of 80 turned one program red (`cfe7c5fc`);
 - the event queue left out of the roots turned 52 red, and `filter`'s item left off the stack turned 53 red (`2094d365`);
