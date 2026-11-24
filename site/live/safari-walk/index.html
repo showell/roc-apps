@@ -145,17 +145,18 @@ var WALK_PACE = 6.4;
 var WALK_ROOST = (function () {
 	var query = new URLSearchParams(location.search);
 	var on = query.get("interior") !== "0" && query.get("tavern") !== "0" && query.get("pipelines") !== "min";
-	return { on: on, road: 320, stopped: 388, doors: 452, inside: 482, end: on ? 784.8 : 320, lights: 8 };
+	return { on: on, road: 320, stopped: 388, doors: 452, inside: 482, end: on ? 848.8 : 320, lights: 22 };
 })();
 // Where each chapter starts, in metres on the walk's line: a copy of
 // game/Chapters.roc's, by the same names, which scripts/build_web.shale
 // checks. The keys B, Z, K and R jump there (main.roc), and the chapter key
 // marks the last start the walk has passed.
-var CHAPTER_STARTS = { begin: 0, zebra_and_ducks: 36, kangaroo: 83, roost_doors: 452, roost_sign: 150 };
+var CHAPTER_STARTS = { begin: 0, zebra_and_ducks: 36, kangaroo: 83, approach_tavern: 423, roost_doors: 452, roost_sign: 150 };
 var CHAPTERS = [
 	{ code: "KeyB", letter: "B", name: "Begin", at: CHAPTER_STARTS.begin },
 	{ code: "KeyZ", letter: "Z", name: "Zebra and ducks", at: CHAPTER_STARTS.zebra_and_ducks },
 	{ code: "KeyK", letter: "K", name: "Kangaroo", at: CHAPTER_STARTS.kangaroo },
+	{ code: "KeyA", letter: "A", name: "Approach tavern", at: WALK_ROOST.on ? CHAPTER_STARTS.approach_tavern : CHAPTER_STARTS.roost_sign },
 	{ code: "KeyR", letter: "R", name: "Roo's Roost", at: WALK_ROOST.on ? CHAPTER_STARTS.roost_doors : CHAPTER_STARTS.roost_sign },
 ];
 (function () {
@@ -356,7 +357,7 @@ var walkView = (function () {
 	window.addEventListener("walk:paused", function () { walk.paused = true; });
 	window.addEventListener("walk:walking", function () { walk.paused = false; walk.skipNext = true; });
 	// 5, 6 and 7 still jump as Z, K and R do.
-	var JUMPS = { Digit1: 44, Digit2: 170, Digit3: 215, Digit4: 95, Digit5: CHAPTERS[1].at, Digit6: CHAPTERS[2].at, Digit7: CHAPTERS[3].at };
+	var JUMPS = { Digit1: 44, Digit2: 170, Digit3: 215, Digit4: 95, Digit5: CHAPTERS[1].at, Digit6: CHAPTERS[2].at, Digit7: CHAPTERS[4].at };
 	CHAPTERS.forEach(function (chapter) { JUMPS[chapter.code] = chapter.at; });
 	window.addEventListener("keydown", function (event) {
 		if (event.repeat) return;
@@ -822,7 +823,7 @@ var walkView = (function () {
 		if (shown) { rate.textContent = "counting frames"; request(tick); }
 	}, true);
 })();
-// The chapter key, at the picture's top-right corner: B, Z, K and R with
+// The chapter key, at the picture's top-right corner: B, Z, K, A and R with
 // their chapters, the one the walk is in marked, and C, which hides or
 // shows it. The walk's place is the page's own reckoning (walkWalked,
 // above: the engine's clock, kept from the frames and the keys), read four
