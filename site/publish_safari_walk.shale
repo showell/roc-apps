@@ -11,8 +11,9 @@
 -- The page's sources stay in safari-walk, and the script refuses that
 -- checkout when it has changes of any kind, so what is published is always a
 -- commit. safari-walk has no remote yet, so its PROVENANCE says so; the
--- rocco-engine submodule's commit is checked against the fork's
--- firefox-fixes branch on GitHub, and PROVENANCE says whether it is there.
+-- rocco-engine submodule's commit is checked against the fork's branch
+-- that the walk builds on (FORK_BRANCH, walk/firefox-and-spots: our
+-- Firefox fixes plus Spot lights), and PROVENANCE says whether it is there.
 --
 -- It builds the page there with safari-walk's own scripts/build_web.shale
 -- (Rocco's rocco_web.py, against the release web host in
@@ -43,7 +44,7 @@
 const WALK = "repos:safari-walk"
 const ENGINE = "repos:safari-walk/rocco-engine"
 const FORK = "https://github.com/showell/rocco-engine.git"
-const FORK_BRANCH = "firefox-fixes"
+const FORK_BRANCH = "walk/firefox-and-spots"
 const LIVE = "site/live/safari-walk"
 const PAGE_FILES = {"PROVENANCE", "index.data", "index.data.gz", "index.data.js", "index.data.zst", "index.html", "index.js", "index.wasm", "rocco.js"}
 
@@ -75,7 +76,7 @@ function sha256_16(p)
   return sub(trim(r.out), 1, 16)
 end
 
--- Whether the fork's firefox-fixes branch on GitHub is at `engine`.
+-- Whether the fork's FORK_BRANCH on GitHub is at `engine`.
 function fork_line(engine)
   local r = run({"git", "ls-remote", FORK, FORK_BRANCH}, {timeout_ms = 60000, tail = 3})
   local at = ""
