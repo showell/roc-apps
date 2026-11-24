@@ -19,7 +19,7 @@
 <li><a href="memory-strategy.html"><span class="number">5</span>Memory strategy</a></li>
 <li><a href="the-garbage-collector.html"><span class="number">6</span>The garbage collector</a></li>
 <li><a href="the-shared-rules.html"><span class="number">7</span>The shared rules</a></li>
-<li class="here"><a href="a-canvas-in-the-browser.html"><span class="number">8</span>A canvas in the browser</a><ol class="sections"><li><a href="a-canvas-in-the-browser.html#what-a-program-sees">What a program sees</a></li><li><a href="a-canvas-in-the-browser.html#how-an-effect-travels">How an effect travels</a></li><li><a href="a-canvas-in-the-browser.html#the-page">The page</a></li></ol></li>
+<li class="here"><a href="a-canvas-in-the-browser.html"><span class="number">8</span>A canvas in the browser</a><ol class="sections"><li><a href="a-canvas-in-the-browser.html#what-a-program-sees">What a program sees</a></li><li><a href="a-canvas-in-the-browser.html#the-page">The page</a></li><li><a href="a-canvas-in-the-browser.html#how-an-effect-travels">How an effect travels</a></li></ol></li>
 <li><a href="what-copies.html"><span class="number">9</span>What copies</a></li>
 <li><a href="dev-and-release-builds-disagree.html"><span class="number">10</span>Dev and release builds disagree</a></li>
 <li><a href="build-times.html"><span class="number">11</span>Build times</a></li>
@@ -75,7 +75,48 @@ onClick((x, y) =&gt; {
   draw();
 });
 draw();
-</code></pre></figure><h2 id="how-an-effect-travels">How an effect travels <a class="section-link" href="#how-an-effect-travels" aria-label="Link to this section">§</a></h2>
+</code></pre></figure><h2 id="the-page">The page <a class="section-link" href="#the-page" aria-label="Link to this section">§</a></h2>
+<p>The page is <code>js/web/</code>. <code>js_page.js</code> makes everything the page shows, its styles included, so the HTML is only a door: an editor, the canvas and the console. <code>js_runner.js</code> loads <code>js.wasm</code>, the interpreter compiled from Roc, starts a program, then calls it a frame at a time, about 30 times a second. Each frame is a tick of the program&#39;s clock (<code>Vm.tick!</code>) that runs the clicks queued since the last tick, the timers due and <code>frame(t)</code>. <code>js_painter.js</code> paints each effect&#39;s line on a 2D canvas as it arrives, and the browser shows the canvas when the frame&#39;s call returns. The page&#39;s JavaScript only loads, ticks and paints; the program itself runs in the wasm.</p>
+<figure class="diagram"><svg class="diagram" role="img" aria-label="One frame on the page" width="164pt" height="260pt"
+ viewBox="0.00 0.00 164.00 260.00" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+<g id="graph0" class="graph" transform="scale(1 1) rotate(0) translate(4 256)">
+<polygon fill="white" stroke="transparent" points="-4,4 -4,-256 160,-256 160,4 -4,4"/>
+<g id="node1" class="node">
+<path fill="none" stroke="black" d="M111.5,-252C111.5,-252 44.5,-252 44.5,-252 38.5,-252 32.5,-246 32.5,-240 32.5,-240 32.5,-228 32.5,-228 32.5,-222 38.5,-216 44.5,-216 44.5,-216 111.5,-216 111.5,-216 117.5,-216 123.5,-222 123.5,-228 123.5,-228 123.5,-240 123.5,-240 123.5,-246 117.5,-252 111.5,-252"/>
+<text text-anchor="middle" x="78" y="-237.4" font-family="Times,serif" font-size="12.00">js_runner.js</text>
+<text text-anchor="middle" x="78" y="-224.4" font-family="Times,serif" font-size="12.00">every 1/30 s</text>
+</g>
+<g id="node2" class="node">
+<path fill="none" stroke="black" d="M144,-180C144,-180 12,-180 12,-180 6,-180 0,-174 0,-168 0,-168 0,-156 0,-156 0,-150 6,-144 12,-144 12,-144 144,-144 144,-144 150,-144 156,-150 156,-156 156,-156 156,-168 156,-168 156,-174 150,-180 144,-180"/>
+<text text-anchor="middle" x="78" y="-165.4" font-family="Times,serif" font-size="12.00">Vm.tick!</text>
+<text text-anchor="middle" x="78" y="-152.4" font-family="Times,serif" font-size="12.00">clicks, timers, frame(t)</text>
+</g>
+<g id="edge1" class="edge">
+<path fill="none" stroke="black" d="M78,-215.7C78,-207.98 78,-198.71 78,-190.11"/>
+<polygon fill="black" stroke="black" points="81.5,-190.1 78,-180.1 74.5,-190.1 81.5,-190.1"/>
+</g>
+<g id="node3" class="node">
+<path fill="none" stroke="black" d="M122,-108C122,-108 34,-108 34,-108 28,-108 22,-102 22,-96 22,-96 22,-84 22,-84 22,-78 28,-72 34,-72 34,-72 122,-72 122,-72 128,-72 134,-78 134,-84 134,-84 134,-96 134,-96 134,-102 128,-108 122,-108"/>
+<text text-anchor="middle" x="78" y="-93.4" font-family="Times,serif" font-size="12.00">emit!</text>
+<text text-anchor="middle" x="78" y="-80.4" font-family="Times,serif" font-size="12.00">a line per effect</text>
+</g>
+<g id="edge2" class="edge">
+<path fill="none" stroke="black" d="M78,-143.7C78,-135.98 78,-126.71 78,-118.11"/>
+<polygon fill="black" stroke="black" points="81.5,-118.1 78,-108.1 74.5,-118.1 81.5,-118.1"/>
+</g>
+<g id="node4" class="node">
+<path fill="none" stroke="black" d="M111,-36C111,-36 45,-36 45,-36 39,-36 33,-30 33,-24 33,-24 33,-12 33,-12 33,-6 39,0 45,0 45,0 111,0 111,0 117,0 123,-6 123,-12 123,-12 123,-24 123,-24 123,-30 117,-36 111,-36"/>
+<text text-anchor="middle" x="78" y="-21.4" font-family="Times,serif" font-size="12.00">js_painter.js</text>
+<text text-anchor="middle" x="78" y="-8.4" font-family="Times,serif" font-size="12.00">2D canvas</text>
+</g>
+<g id="edge3" class="edge">
+<path fill="none" stroke="black" d="M78,-71.7C78,-63.98 78,-54.71 78,-46.11"/>
+<polygon fill="black" stroke="black" points="81.5,-46.1 78,-36.1 74.5,-46.1 81.5,-46.1"/>
+</g>
+</g>
+</svg><figcaption>One frame on the page</figcaption></figure><p>The memory view, <code>js_memory.js</code>, is a popup with two small charts of the last run. The top one is the heap&#39;s cells in use, which climb as the program allocates and drop at each collection, a sawtooth; the bottom one is the wasm memory&#39;s size.</p>
+<p><code>js/build.shale</code> names every file but <code>index.html</code> by its bytes, so a browser always loads the scripts that match its page, and it replaces the page only after <code>js/page_check.mjs</code> passes.</p>
+<h2 id="how-an-effect-travels">How an effect travels <a class="section-link" href="#how-an-effect-travels" aria-label="Link to this section">§</a></h2>
 <p>The interpreter reaches the world through a host, <code>Canvas.Host</code>, a record of four effectful functions:</p>
 <figure class="listing"><figcaption>js/roc/Canvas.roc, an excerpt</figcaption><pre><code class="language-roc">	<span class="syn-type">Host</span> : {
 		emit! : <span class="syn-type">Canvas.Effect</span> =&gt; {},
@@ -130,48 +171,6 @@ draw();
 <li><strong>The recording host,</strong> <code>js-canvas</code> (<code>JsCanvas.roc</code>), writes every effect and every read as a line, for the golden logs.</li>
 <li><strong><code>js-vm</code>&#39;s</strong> host prints each log as it is made.</li>
 </ul>
-<p>A frame on the page runs from the browser&#39;s timer to the paint:</p>
-<figure class="diagram"><svg class="diagram" role="img" aria-label="One frame on the page" width="164pt" height="260pt"
- viewBox="0.00 0.00 164.00 260.00" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
-<g id="graph0" class="graph" transform="scale(1 1) rotate(0) translate(4 256)">
-<polygon fill="white" stroke="transparent" points="-4,4 -4,-256 160,-256 160,4 -4,4"/>
-<g id="node1" class="node">
-<path fill="none" stroke="black" d="M111.5,-252C111.5,-252 44.5,-252 44.5,-252 38.5,-252 32.5,-246 32.5,-240 32.5,-240 32.5,-228 32.5,-228 32.5,-222 38.5,-216 44.5,-216 44.5,-216 111.5,-216 111.5,-216 117.5,-216 123.5,-222 123.5,-228 123.5,-228 123.5,-240 123.5,-240 123.5,-246 117.5,-252 111.5,-252"/>
-<text text-anchor="middle" x="78" y="-237.4" font-family="Times,serif" font-size="12.00">js_runner.js</text>
-<text text-anchor="middle" x="78" y="-224.4" font-family="Times,serif" font-size="12.00">every 1/30 s</text>
-</g>
-<g id="node2" class="node">
-<path fill="none" stroke="black" d="M144,-180C144,-180 12,-180 12,-180 6,-180 0,-174 0,-168 0,-168 0,-156 0,-156 0,-150 6,-144 12,-144 12,-144 144,-144 144,-144 150,-144 156,-150 156,-156 156,-156 156,-168 156,-168 156,-174 150,-180 144,-180"/>
-<text text-anchor="middle" x="78" y="-165.4" font-family="Times,serif" font-size="12.00">Vm.tick!</text>
-<text text-anchor="middle" x="78" y="-152.4" font-family="Times,serif" font-size="12.00">clicks, timers, frame(t)</text>
-</g>
-<g id="edge1" class="edge">
-<path fill="none" stroke="black" d="M78,-215.7C78,-207.98 78,-198.71 78,-190.11"/>
-<polygon fill="black" stroke="black" points="81.5,-190.1 78,-180.1 74.5,-190.1 81.5,-190.1"/>
-</g>
-<g id="node3" class="node">
-<path fill="none" stroke="black" d="M122,-108C122,-108 34,-108 34,-108 28,-108 22,-102 22,-96 22,-96 22,-84 22,-84 22,-78 28,-72 34,-72 34,-72 122,-72 122,-72 128,-72 134,-78 134,-84 134,-84 134,-96 134,-96 134,-102 128,-108 122,-108"/>
-<text text-anchor="middle" x="78" y="-93.4" font-family="Times,serif" font-size="12.00">emit!</text>
-<text text-anchor="middle" x="78" y="-80.4" font-family="Times,serif" font-size="12.00">a line per effect</text>
-</g>
-<g id="edge2" class="edge">
-<path fill="none" stroke="black" d="M78,-143.7C78,-135.98 78,-126.71 78,-118.11"/>
-<polygon fill="black" stroke="black" points="81.5,-118.1 78,-108.1 74.5,-118.1 81.5,-118.1"/>
-</g>
-<g id="node4" class="node">
-<path fill="none" stroke="black" d="M111,-36C111,-36 45,-36 45,-36 39,-36 33,-30 33,-24 33,-24 33,-12 33,-12 33,-6 39,0 45,0 45,0 111,0 111,0 117,0 123,-6 123,-12 123,-12 123,-24 123,-24 123,-30 117,-36 111,-36"/>
-<text text-anchor="middle" x="78" y="-21.4" font-family="Times,serif" font-size="12.00">js_painter.js</text>
-<text text-anchor="middle" x="78" y="-8.4" font-family="Times,serif" font-size="12.00">2D canvas</text>
-</g>
-<g id="edge3" class="edge">
-<path fill="none" stroke="black" d="M78,-71.7C78,-63.98 78,-54.71 78,-46.11"/>
-<polygon fill="black" stroke="black" points="81.5,-46.1 78,-36.1 74.5,-46.1 81.5,-46.1"/>
-</g>
-</g>
-</svg><figcaption>One frame on the page</figcaption></figure><h2 id="the-page">The page <a class="section-link" href="#the-page" aria-label="Link to this section">§</a></h2>
-<p>The page is <code>js/web/</code>. <code>js_page.js</code> makes everything the page shows, its styles included, so the HTML is only a door: an editor, the canvas and the console. <code>js_runner.js</code> loads <code>js.wasm</code>, starts a program, then calls it a frame at a time, about 30 times a second, each frame a tick of the program&#39;s clock (<code>Vm.tick!</code>) that runs the clicks queued since the last tick, the timers due and <code>frame(t)</code>. <code>js_painter.js</code> paints each effect&#39;s line on a 2D canvas as it arrives, and the browser shows the canvas when the frame&#39;s call returns.</p>
-<p>The memory view, <code>js_memory.js</code>, is a popup with two small charts of the last run. The top one is the heap&#39;s cells in use, which climb as the program allocates and drop at each collection, a sawtooth; the bottom one is the wasm memory&#39;s size. The VM reports each collection through <code>collected!</code>, so the count lives in the host, outside the machine.</p>
-<p><code>js/build.shale</code> names every file but <code>index.html</code> by its bytes, so a browser always loads the scripts that match its page, and it replaces the page only after <code>js/page_check.mjs</code> passes.</p>
 
 </article>
 <nav class="turn-page" aria-label="Previous and next chapter">
