@@ -236,7 +236,7 @@ export function buildPage(runner, env = window) {
   const wrap = element("div", { className: "wrap" }, [
     element("div", { className: "top" }, [
       element("h1", { textContent: "JavaScript, in Roc" }),
-      element("p", { className: "sub", textContent: "A subset of JavaScript run by a tree-walking interpreter written in Roc. Its console.log prints what node prints; the canvas builtins below are this page's own, named after p5.js's but not p5.js." }),
+      element("p", { className: "sub", textContent: "A subset of JavaScript run by a bytecode VM written in Roc. Its console.log prints what node prints; the canvas builtins below are this page's own, named after p5.js's but not p5.js." }),
       element("div", { className: "bar" }, [picker, runButton, stopButton, pauseButton, status]),
       element("div", { className: "cols" }, [
         element("div", { className: "col" }, [element("label", { textContent: "Program" }), editor]),

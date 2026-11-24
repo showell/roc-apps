@@ -1,47 +1,23 @@
 # JavaScript, in Roc
 
-A subset of JavaScript run by a tree-walking interpreter written in Roc, a
-bytecode VM growing beside it, a web playground where a program draws on a
-canvas as it runs, and a corpus that holds the language to node.
+A subset of JavaScript run by a bytecode VM written in Roc, a web
+playground where a program draws on a canvas as it runs, and a corpus that
+holds the language to node.
 
 The code here was written by AI coding agents (Claude), with human
 supervision.
 
-**Status (2026-11-24): the language gaps closed.** 54 of 54
-corpus programs print what node 22 prints, byte for byte, timers and
-uncaught throws included, and 44 of 44 programs outside the subset are
-refused with the message they must give. Eight canvas samples are held to
-their logs of effects, one of them driven by scripted clicks alone and one
-by timers, restarted by a scripted click. The page builds into the dev
-channel; the unlisted copy at roc.lynrummy.com/js/ predates the gaps.
-
-**The bytecode VM's first round (2026-11-24):** `js-vm` runs 37 of the 50
-corpus programs as node does and refuses the other 13, each for something
-the round leaves out, with no wrong answer; 39 of the 44 programs outside
-the subset get the message they must, and the other 5 meet a refusal of
-the VM's first ("The bytecode VM", below).
-
-**Its second round (2026-11-24):** js-vm runs all 50 corpus programs as
-node does and gives all 44 refusals their messages, on the dev backend;
-only the canvas is left out. The value rules and the queue of callbacks
-are modules both engines share (`ValueRules.roc`, `Events.roc`), so the VM
-doesn't link the walker, and its controls are held to files of their own
-in both builds. In the release build it runs fib(22) in 106 ms against the
-walker's 142, and its release build takes 110 s against the walker's 555.
-
-**Its third round (2026-11-24): the VM collects its garbage.** A precise
-mark and sweep (`Collector.roc`) frees every cell its roots don't reach,
-and allocation reuses them, so js/heaps/'s programs, which make an object a
-pass at the top level and inside a call, hold about 1,024 cells and peak
-near 4 MB on the dev build, where they peaked at 164 MB. js-vm runs the 54
-corpus programs and the 44 refusals as node does both on its usual
-schedule and collecting at every allocation; the dev build only, so far.
-
-**Its fourth round (2026-11-24): the canvas runs on the VM.** js-canvas and
-the page's wasm are built on the VM, and the eight samples match the logs
-the walker made, line for line, the six rails stop as they must, and
-page_check passes, on the dev backend. The walker is unchanged, and no
-longer behind the page.
+**Status (2026-11-24):** 54 of 54 corpus programs print what node 22
+prints, byte for byte, timers and uncaught throws included, and 44 of 44
+programs outside the subset are refused with the message they must give,
+on the VM's usual collection schedule and collecting at every allocation.
+Eight canvas samples are held to their logs of effects, one of them driven
+by scripted clicks alone and one by timers, restarted by a scripted click.
+The VM collects its garbage, so js/heaps/'s programs, which make an object
+a pass, hold about 1,024 cells and peak near 4 MB on the dev build. In the
+release build it runs fib(22) in 106 ms, and its release build takes
+110 s. The page builds into the dev channel; the unlisted copy at
+roc.lynrummy.com/js/ predates the gaps.
 
 ## The subset
 
@@ -80,7 +56,7 @@ what node prints for it is what the interpreter must print.
   exceeded`). `new Error(message)`, and `TypeError`, `RangeError`,
   `ReferenceError` and `SyntaxError` the same way, make one. A throw nothing
   catches ends the run as node ends it, a timer's and a click's included:
-  js-run prints `Uncaught <the first line node prints of what was thrown>
+  js-vm prints `Uncaught <the first line node prints of what was thrown>
   (line <n>)` and exits 1 (js/oracle.shale writes node's own report, its
   stack and all, as that line).
 - **Builtins:** `console.log`, formatted as node formats the subset's
@@ -112,7 +88,7 @@ what node prints for it is what the interpreter must print.
   the order they were set. The clock is virtual: it reads 0 while the
   program runs and moves to each callback's time as it runs, so a
   program's output is the same on every run, and the same as node's
-  (`js/tests/36-timeouts.js` to `38-nested-timeouts.js`). js-run runs
+  (`js/tests/36-timeouts.js` to `38-nested-timeouts.js`). js-vm runs
   callbacks until none is left; an interval never cleared, which node runs
   for good, stops at 100,000 callbacks with a message saying so.
 - **Out of it:** `this`, `new` on a function of the program, prototypes and
@@ -177,8 +153,7 @@ so node holds it: a day in a little city that uses every feature of the
 subset, in stages (a census parsed from text, a clerk's lookups that fail, a
 merge sort, Dijkstra's shortest walks, a prime sieve, a word count and an
 evening on the timers), each printing a checksum. Its `SIZE` scales the work;
-at its default, 5, node takes about 55 ms of CPU, 40 of them node's own start,
-and the walker runs about 24,000 statements.
+at its default, 5, node takes about 55 ms of CPU, 40 of them node's own start.
 
 **One queue, one clock.** A timer's callback, a click and the next
 `frame(t)` are each an event on the interpreter's queue (`Events.Queue`),
@@ -201,17 +176,17 @@ the host when the program asks for it.
 Each effect has one written form, a line (`Canvas.line_of`), and there are
 three hosts:
 
-- **The page's** (js/wasm, `JsApp.roc`, on the VM): the platform's hosted functions
+- **The page's** (js/wasm, `JsApp.roc`): the platform's hosted functions
   (`js/wasm/platform/Host.roc`) call into the page's JavaScript while the
   Roc call runs, and `js_page.js` paints each line as it arrives; the
   browser shows the canvas when the call returns.
-- **The recording host,** `js-canvas` (`JsCanvas.roc`, on the VM): every effect and
+- **The recording host,** `js-canvas` (`JsCanvas.roc`): every effect and
   every read a line, with a line `frame <n> <t>` before each tick. The
   pointer rests at the middle; an argument says which keys are down in
   each frame, and another where the canvas is clicked before which frame,
   each click a line `click <x> <y>`.
-- **js-run's and js-count's,** on the core library: a log is printed as it
-  is made, and nothing else can happen.
+- **js-vm's,** on the core library: a log is printed as it is made, and
+  nothing else can happen.
 
 **A canvas builtin isn't node's, so the samples have an oracle of their
 own:** `js/canvas.shale` holds each sample in `js/canvas/` to its golden log
@@ -220,7 +195,7 @@ names, and `page_check.mjs` holds the wasm to the same logs. A log moves only by
 `freeze=<name>`, with every moved line explained in the commit.
 
 **The rails.** The program before its first frame may run 3,000,000
-statements and make 20,000 effects, and each frame 300,000 and 20,000
+steps and make 20,000 effects, and each frame 300,000 and 20,000
 (`Canvas.run_limits`, `Canvas.frame_limits`); past either, the run stops with
 a message that names the budget. A frame's budget covers all its tick runs:
 its clicks, its timers and its `frame(t)`. The program's own scope outlives its last
@@ -231,34 +206,28 @@ the variables it declared.
 
 The interpreter is `js/roc/`: `Lexer.roc` makes tokens with their lines and
 columns, `Parser.roc` reads them into `Ast.roc`'s tree by recursive descent,
-laying out each scope's names, `Resolve.roc` places every name read or
-written in those layouts before the run, `Interp.roc` walks it, `ValueRules.roc` holds the
-rules JavaScript's values follow, which the walker and the VM share,
-`Events.roc` holds the queue of callbacks and its virtual clock, shared too,
-`Heap.roc` holds what JavaScript shares by
-reference, `Inspect.roc` is console.log's formatting (node's `util.inspect`,
+laying out each scope's names, and `Resolve.roc` places every name read or
+written in those layouts before the run. `Compile.roc` makes each function
+a list of `Bytecode.roc`'s instructions, `Vm.roc` runs them, and
+`Collector.roc` frees the cells its roots don't reach. `ValueRules.roc`
+holds the rules JavaScript's values follow, `Events.roc` the queue of
+callbacks and its virtual clock, `Heap.roc` what JavaScript shares by
+reference, `Inspect.roc` console.log's formatting (node's `util.inspect`,
 function for function), and `NumberText.roc` writes a number as `String(n)`
-does. The VM takes the same resolved tree: `Compile.roc` makes each
-function a list of `Bytecode.roc`'s instructions, `Vm.roc` runs them,
-`Collector.roc` frees the cells its roots don't reach, and
-`JsVm.roc` is `js-vm`, js-run's command on the VM. `Canvas.roc` is the canvas library: its effects, their written form,
-the turtle and the host's type. `JsRun.roc` is `js-run`, the command;
-`JsCount.roc` is `js-count`, the same run followed by its counts;
+does. `Canvas.roc` is the canvas library: its effects, their written form,
+the turtle and the host's type. `JsVm.roc` is `js-vm`, the command;
 `JsCanvas.roc` is `js-canvas`, the recording host. `JsApp.roc` is the page's
 wasm module, on the platform and host in `js/wasm/`; `js/web/` is the page.
 
 ## The bytecode VM
 
-The tree walker keeps half-made values on Roc's own stack and grows with
-the language in a few huge functions, so it can't be collected and builds
-slowly. The VM puts every value a program holds into its machine, and each
-instruction's handler is a small function of its own. It runs beside the
-walker, held by the same oracle, until it runs everything; it never falls
-back on the walker.
+The VM puts every value a program holds into its machine, so a collector
+can find them all, and each instruction's handler is a small function of
+its own, so no one function grows with the language.
 
-- **The pipeline:** the lexer, the parser and `Resolve` as they are, then
-  `Compile`, which lays out each function's frame and makes its code, then
-  `Vm`, a stack machine whose loop only fetches and dispatches.
+- **The pipeline:** the lexer, the parser and `Resolve`, then `Compile`,
+  which lays out each function's frame and makes its code, then `Vm`, a
+  stack machine whose loop only fetches and dispatches.
 - **Frames are slots on the operand stack,** a call's parameters, its
   blocks' and loops' variables, and the boxes it captures, each named by its
   place from the frame's base; callers wait in `frames`. A variable of a
@@ -291,17 +260,17 @@ back on the walker.
   always runs before it (a block's scope starts afresh each time), so it
   compiles to its ReferenceError, and only a read through a box checks at
   run time.
-- **The value rules are shared.** A property read, an operator on mixed
-  values, a string method, a builtin that calls nothing back, and the
-  messages they make live once, in `ValueRules`, which both engines call;
-  the VM's fast paths settle the common cases (numbers, an object's own
-  property, an array's item) and hand the rest to the rule. A rule takes a
-  machine of the cells and a status (`ValueRules.Machine`), and each engine
-  lends it its cells and puts back what it gives (`Vm.shell`,
-  `Interp.lent`). None of those rules walks the tree, and the VM doesn't
-  import the walker. A rule generic over an engine's whole machine (an
-  open record) would need no lending, but the dev build copies the cells a
-  rule writes through one, so the controls would see a copy a write.
+- **The value rules live in a module of their own.** A property read, an
+  operator on mixed values, a string method, a builtin that calls nothing
+  back, and the messages they make live once, in `ValueRules`; the VM's
+  fast paths settle the common cases (numbers, an object's own property,
+  an array's item) and hand the rest to the rule. A rule takes a machine of
+  the cells and a status (`ValueRules.Machine`), and the VM lends it its
+  cells and puts back what it gives (`Vm.lent`, `Vm.shell`), so the cells
+  have one owner while the rule writes them. A rule generic over the VM's
+  whole machine (an open record) would need no lending, but the dev build
+  copies the cells a rule writes through one, so the controls would see a
+  copy a write.
 - **A builtin that calls back runs the loop again** (`forEach`, `map`,
   `sort` and their kin, `Array.from` with a mapper): it pushes the function
   and its arguments, runs until that frame returns, and takes the answer off
@@ -311,39 +280,33 @@ back on the walker.
   the innermost one, the frames and the stack above it given up. A
   `break`, a `continue` or a `return` that leaves a `try` runs its
   `finally` on the way, compiled where it stands.
-- **The callbacks share the walker's queue** (`Events.roc`): the VM queues
-  a timer, a click and the canvas's `frame(t)` by its rules and, once the
+- **The callbacks go through one queue** (`Events.roc`): the VM queues a
+  timer, a click and the canvas's `frame(t)` by its rules and, once the
   program finishes, its own frame kept at the bottom of the stack
   (`Vm.start!`), runs each in turn on the same virtual clock: all of them,
-  as js-run does, or those due by a frame's time (`Vm.tick!`), as the page
+  as js-vm does, or those due by a frame's time (`Vm.tick!`), as the page
   does.
-- **The canvas runs on the VM:** js-canvas and the page's wasm are built on
-  it, and hold the samples to the same logs the walker made.
 - **Steps** count calls and loop passes, not statements; js-vm's budget is
-  js-run's, 200,000,000, and the canvas's rails are the walker's numbers,
-  so a run near a rail goes further on the VM.
+  200,000,000.
 
-**What the dev controls show (2026-11-24, `js/controls.shale opt=dev
-engine=vm`, held to `js/controls/expected-vm-dev.txt`):** every control
-flat, and none above the walker's dev count: 0, 1, 1, 0, 1, 2, 2, 4.08 and
-3.04 allocations a pass for 00 to 08 (the walker's 1, 1, 3, 0, 1, 3, 5, 5.08
-and 8). 08-garbage-in-a-call makes an object a pass inside a call; its
-0.04 is the collector's own lists, made once a collection. The one a call makes is a list of 112 bytes, the same at every
-size, which roc-alloc-trace's `where` puts down to `Vm.pushed` (round
-one's run named `frames_with`; the lines it gives aren't Vm.roc's);
-rewriting the write three ways didn't move it. On the dev backend fib(22)
-takes about 860 ms of CPU against the walker's 700 (best of three, with the
+**What the dev controls show (2026-11-24, `js/controls.shale opt=dev`,
+held to `js/controls/expected-dev.txt`):** every control flat: 0, 1, 1, 0,
+1, 2, 2, 4.08 and 3.04 allocations a pass for 00 to 08. 08-garbage-in-a-call
+makes an object a pass inside a call; its 0.04 is the collector's own
+lists, made once a collection. The one a call makes is a list of 112 bytes,
+the same at every size, which roc-alloc-trace's `where` puts down to
+`Vm.pushed`; rewriting the write three ways didn't move it. On the dev
+backend fib(22) takes about 860 ms of CPU (best of three, with the
 collector's check before every instruction).
 
 **What the release build shows (2026-11-24, `js/bench`'s programs, the
-fastest of five, a quiet box):** fib(22) takes 106 ms on the VM against
-the walker's 142, and the loops 497 ms against 716. The release controls
-(`opt=speed engine=vm`, held to `expected-vm.txt`) have the walker's
-shape, nothing a pass but a call's argument list, a Map key's identity
-and a new object's property list. js-vm's release build takes 110 s, and
-js-run's 555 s. The VM's machine grew with the collector, and `memcpy` is
-11% of fib's time again; the next inline field to box is still to find
-(the collector's schedule, boxed, changed nothing).
+fastest of five, a quiet box):** fib(22) takes 106 ms, and the loops
+497 ms. The release controls (`js/controls.shale`, held to
+`expected.txt`) allocate nothing a pass but a call's argument list, a Map
+key's identity and a new object's property list. js-vm's release build
+takes 110 s. `memcpy` is 11% of fib's time; the next inline field of the
+machine to box is still to find (the collector's schedule, boxed, changed
+nothing).
 
 **The machine keeps its event queue in a box.** Every instruction hands
 the machine back, so whatever the machine holds inline is copied on each
@@ -356,12 +319,10 @@ JavaScript shares arrays, objects and closures by reference: two variables
 that hold one array see each other's writes. Roc has only values. So the
 interpreter keeps everything JavaScript shares in one Roc value, the heap, a
 list of cells (an object, an array, a closure, a builtin, an error, a Map, a
-Set, an iterator) named by index,
-and a JavaScript reference is that index. Scopes are a second list, because
-a closure holds on to the scope it was made in and must see later writes to
-it. The machine (`Interp.Machine`: the heap, the scopes, the output, the step
-count) is threaded through the walk the way BASIC threads its machine: each
-evaluation takes it and answers it back beside its value.
+Set, an iterator, a captured variable's box, a closure's environment) named
+by index, and a JavaScript reference is that index. The machine
+(`Vm.Machine`: the heap, the operand stack, the frames, the handlers, the
+step count) is handed to each instruction's handler, which answers it back.
 
 **Roc writes a list in place only while nothing else refers to it, so one
 stray reference to the heap makes every write copy the whole heap.** The
@@ -374,110 +335,79 @@ shapes that keep it unique, each with a comment where it is used:
   the dev controls name; the release build makes none.
 - **A writer is handed the list straight from the record it updates,**
   `{ ..machine, cells: Heap.with_property(machine.cells, ...) }`.
-- **Every result is taken apart where it is answered,** `{ machine: after,
-  value } = Interp.evaluate(machine, expression)`. A result kept whole for its value keeps its
-  machine too, and each write made while it lives copies. Before this rule,
-  a store into an array copied the array, and a closure's `++c` copied
-  every scope.
+- **Every result is taken apart where it is answered,** `{ machine: ruled,
+  value } = got`. A result kept whole for its value keeps its machine too,
+  and each write made while it lives copies.
 - **A writer asks what a cell is (`ValueRules.kind_of`), and never matches the
   cell out of the heap:** the matched cell is a second reference to its
   items for as long as the arm runs.
-- **The write inside a taken-out cell or scope is a function of its own**
-  (`Heap.items_with`, `Interp.scope_with_variable`). Written inline in the match
-  arm, beside a binding, a store into an array of N items copied the N
-  items.
-- **The scope list is a stack whose dropped slots are reused,** and it
-  never shrinks: in the dev build, `List.drop_last` answers a sublist and
-  the next append to it copies the whole list, so a closure's call, beside
-  N scopes other closures keep alive, cost N. The release build appends in
-  place there; the dev build's controls catch the copy (02-closure-call
-  goes from 3 allocations a pass to 4).
-- **`s += e` on a string, with an `e` that can't change `s`, grows the
-  string where the variable holds it** (`Interp.appended_name`), so a
-  string built one piece at a time is not copied per piece.
+- **The write inside a taken-out cell is a function of its own**
+  (`Heap.items_with`). Written inline in the match arm, beside a binding, a
+  store into an array of N items copies the N items.
+- **A place the stack gives up is cleared.** The stack never shrinks: a
+  pop lowers `top` and writes `Null` where the value was, so no value left
+  above `top` is a second reference to a string or a list.
+- **`s += e` on a string grows the string where the slot holds it**
+  (`Vm.local_appended`), so a string built one piece at a time is not
+  copied per piece.
 - **A Map's or a Set's table sits in a list of one in its cell,** so every
   cell stays an object's size while `List.update` still writes the table
   in place (`Heap.with_entry`).
 - **A helper that may write hands the machine back whatever it finds**
-  (`ValueRules.iterated`, `walked_of`): a caller that kept its own machine for
-  the case of a value that isn't iterable held a second reference while the
-  helper wrote, and the write copied the heap.
+  (`ValueRules.iterated`): a caller that kept its own machine for the case
+  of a value that isn't iterable held a second reference while the helper
+  wrote, and the write copied the heap.
 - **No closure captures the machine;** a loop over it is a `var $st` loop.
 - **The host is an argument of its own, never a field of the machine.**
-  Following BASIC's workhorse pattern, the walk's functions take several
-  arguments (`host`, then the machine, then the rest) where one record
-  would do: a record holding the machine is a second reference to the heap
-  for as long as it lives. The host refers to nothing of the machine, so
-  carrying it costs nothing.
+  Following BASIC's workhorse pattern, the handlers take several arguments
+  (`host`, then the program, then the machine, then the rest) where one
+  record would do: a record holding the machine is a second reference to
+  the heap for as long as it lives. The host refers to nothing of the
+  machine, so carrying it costs nothing.
 
-**A variable is read by its place, never by its name.** Each scope (a
-block that declares, a C-form `for`, a `for ... of` pass, a call) is made
-with the variables its layout names, unready until their declarations run,
-and `Resolve` gives every name a slot: how many scopes out, and where
-there. Reading `fib` inside `fib` is two hops and a list index, where it was
-a comparison with every name in every scope on the way.
+**A variable is read by its place, never by its name.** `Resolve` gives
+every name a slot (how many scopes out, and where there), and `Compile`
+turns each into a slot of the frame or a box the frame holds. Reading a
+local is an index into the stack from the frame's base.
 
-A block or function whose text holds no function literal can't have its
-scope captured, so its scope is dropped when it ends: a loop or a recursion
-without closures leaves the scope list as it found it.
-
-**The walker frees no cell; the VM collects** (`js/heaps.shale`). On the
-walker (2026-11-23, the release build) no corpus program holds more than
-226 cells or peaks past 9 MB, and a program that makes an object a pass
-holds them all: 400,000 objects peak at 146 MB, about 370 bytes each, the
-cell list and its growth about half of it and the objects' properties the
-rest. A closure's definition is boxed in the tree, so a closure's cell is
-no bigger than an object's. The page's budget of 3,000,000 steps caps a
-walker's run near a million objects, about 370 MB.
-
-The walker can't collect: inside a call, the caller's half-made values
-(the left side of a `+`, the arguments made so far, the object a method is
-called on) live only on Roc's stack, where no collector sees them. The VM
-keeps them on its operand stack, so it collects anywhere between two
-instructions ("The bytecode VM", above): on its dev build
-(`js/heaps.shale engine=vm opt=dev`, 2026-11-24) each js/heaps/ program,
+**The VM collects** (`js/heaps.shale`): on its dev build (`js/heaps.shale
+opt=dev`, 2026-11-24) each js/heaps/ program,
 `heaps/2-object-a-pass-in-a-call.js` included, holds 1,024 cells and peaks
-at about 4 MB.
+at about 4 MB. A caller's half-made values (the left side of a `+`, the
+arguments made so far, the object a method is called on) wait on the
+operand stack, where the collector sees them, so it collects anywhere
+between two instructions ("The bytecode VM", above).
 
-**What the controls count (2026-11-23).** `js/controls.shale` runs each
-control in `js/controls/` (an empty loop, then the probes' six writes, one
-each, and a Map's write) at 1,000 and 10,000 passes on `tools/alloc_ladder.shale`, which counts
-`roc_alloc`'s calls exactly, and holds what one pass allocates to
-`js/controls/expected.txt` (release) and `expected-dev.txt` (dev). In the
-release build every control allocates nothing a pass but a push, which
-makes its argument list, and the Map's write, which makes its argument list
-and its key's identity text. A copy is an allocation a pass, so a write that
+**What the controls count.** `js/controls.shale` runs each control in
+`js/controls/` (an empty loop, then the probes' six writes, one each, a
+Map's write and garbage made in a call) at 1,000 and 10,000 passes on
+`tools/alloc_ladder.shale`, which counts `roc_alloc`'s calls exactly, and
+holds what one pass allocates to `js/controls/expected.txt` (release) and
+`expected-dev.txt` (dev). A copy is an allocation a pass, so a write that
 stops being made in place turns a control red by name.
 
-**What the probes say (2026-11-23, the dev backend; the box was quiet when
-the run began, and the BASIC lane's controls had started by its end).**
-Each write's cost, at three sizes, in CPU time, so rough:
+**What the probes say (2026-11-24, the dev backend, nothing else heavy
+running).** Each write's cost, at three sizes, in CPU time, so rough:
 
 | probe | µs a write | at N = | shape |
 |---|---|---|---|
-| a property write beside N objects | 14, 14, 12 | 2,000, 4,000, 8,000 | flat |
-| N pushes onto one array | 12, 13, 14 | 20,000, 80,000, 160,000 | flat |
-| a store into an array of N items | 17, 15, 17 | 2,000, 4,000, 8,000 | flat |
-| a string built by N appends | 11, 11, 11 | 20,000, 80,000, 160,000 | flat |
-| a closure's variable, N closures beside it | 18, 17, 18 | 2,000, 4,000, 8,000 | flat |
-| a push and a pop on an array of N items | 20, 20, 19 | 2,000, 4,000, 8,000 | flat |
-
-Before the shapes above, the array store, the closure and the string were
-linear: 59, 88 and 184 µs a store; 28, 35 and 86 µs a call; 22, 35 and
-49 µs an append.
+| a property write beside N objects | 14, 12, 12 | 2,000, 4,000, 8,000 | flat |
+| N pushes onto one array | 16, 16, 14 | 20,000, 80,000, 160,000 | flat |
+| a store into an array of N items | 18, 16, 16 | 2,000, 4,000, 8,000 | flat |
+| a string built by N appends | 11, 11, 12 | 20,000, 80,000, 160,000 | flat |
+| a closure's variable, N closures beside it | 18, 25, 17 | 2,000, 4,000, 8,000 | flat |
+| a push and a pop on an array of N items | 22, 28, 19 | 2,000, 4,000, 8,000 | flat |
 
 ## Running it and the tests
 
-    shale js/oracle.shale      # js-run, then every program through node and js-run
-    shale js/oracle.shale engine=vm   # the same with js-vm, the bytecode VM
-    shale js/oracle.shale engine=vm collect=every   # js-vm collecting at every allocation
-    shale js/probes.shale      # js-count, then the copying probes at three sizes
-    shale js/controls.shale    # js-run --opt=speed, then count each control's allocations
-    shale js/controls.shale opt=dev engine=vm   # js-vm's, held to expected-vm-dev.txt
+    shale js/oracle.shale      # js-vm, then every program through node and js-vm
+    shale js/oracle.shale collect=every   # js-vm collecting at every allocation
+    shale js/probes.shale      # js-vm, then the copying probes at three sizes
+    shale js/controls.shale    # js-vm --opt=speed, then count each control's allocations
+    shale js/controls.shale opt=dev   # the same on the dev build, held to expected-dev.txt
     shale check.shale js=1     # the controls in both builds, held to their expected counts
     shale js/bench.shale       # both builds, then time js/bench/'s programs
-    shale js/heaps.shale       # js-count --opt=speed, then each program's cells, scopes and peak memory
-    shale js/heaps.shale engine=vm opt=dev   # js-vm's cells, live cells, collections and peak memory
+    shale js/heaps.shale       # js-vm --opt=speed, then each program's cells, live cells, collections and peak memory
     shale js/canvas.shale      # js-canvas, then hold every canvas sample to its log
     shale js/build.shale       # build the page into the dev channel, :9210/js/
 
@@ -498,11 +428,11 @@ where the page shows only a line saying the program hasn't run: no canvas
 and no console until Run, and again after a pick or an edit. Stop leaves
 what was drawn in view.
 
-`js/oracle.shale` is a tier of `check.shale`. It builds `js-run` on the dev
+`js/oracle.shale` is a tier of `check.shale`. It builds `js-vm` on the dev
 backend and runs each program in `js/tests/` through node and through
-`js-run`; the two transcripts, exit codes included, must match. Each
+`js-vm`; the two transcripts, exit codes included, must match. Each
 program in `js/tests/refused/` names in its first line (`// refused:
-<text>`) what `js-run`'s last line must say. Nothing is skipped: the run
+<text>`) what `js-vm`'s last line must say. Nothing is skipped: the run
 fails unless every program passes.
 
 `js/canvas.shale` is a tier of `check.shale` too.
@@ -530,37 +460,25 @@ across them is a write in place.
 
 ## Pitfalls
 
-- **`js-run` takes the program as an argument,** so a program is held to
+- **`js-vm` takes the program as an argument,** so a program is held to
   the kernel's limit on one argument (128 KiB).
 - **The page runs a program on the browser's main thread,** held to the
   rails above so a loop that never ends stops with a message rather than
   freezing the tab. js-canvas on the dev backend takes about 2.0 s of CPU
   to run a frame out of its 300,000 steps, and 8.8 s for a program out of
   its 3,000,000 (`js/canvas/rails/`, 2026-11-24), so a frame near its
-  budget slows the loop well below 30 a second before it stops it. The
-  walker took 1.1 s and 5.2 s on the same box that day: the VM counts a
-  loop's passes where the walker counted statements, so its budget runs
-  about twice as many passes, each one faster.
+  budget slows the loop well below 30 a second before it stops it.
 - **A turtle's trigonometry is exact only on the square headings,** so a
   turtle that walks a square ends where it began; at any other heading its
   positions carry a float's rounding, and the logs show it.
-- **A JavaScript call is several Roc calls deep,** so the interpreter
-  reports a stack overflow at 400 nested calls, as node would much deeper,
-  rather than overflow Roc's own stack.
-- **Built on the dev backend,** the walker runs `fib(22)` in about 0.7 s
-  of CPU, and in about 0.15 s in the release build (`js/bench.shale`,
-  2026-11-24).
-- **The walker's release build takes about 8 minutes** on a 2-core box
-  (2026-11-24), most of it RC1's SpecConstr pass and the rest LLVM (`roc build --timings`; the
-  tag `rc1-slow-release-build` reproduces it). js-vm's takes under a
-  minute and a half. A round takes its release numbers once, never per
-  step. The dev backend shows the
-  code's shape, which is what the probes look at; a release build is for
+- **The VM throws a RangeError at 400 nested calls**
+  (`ValueRules.max_depth`), where node goes much deeper.
+- **Built on the dev backend,** js-vm runs `fib(22)` in about 0.86 s of
+  CPU, and in about 0.11 s in the release build (2026-11-24). Its release
+  build takes about two minutes on a 2-core box, so a round takes its
+  release numbers once, never per step. The dev backend shows the code's
+  shape, which is what the probes look at; a release build is for
   measuring speed.
 - **A Map or a Set keeps a place for every key it ever held.** A deleted
   entry stays, `Gone`, so a walk under way still meets the rest in order,
   and is never reused: a table many keys pass through grows with them.
-- **The host costs the walker's dev build about a sixth.** The walk
-  carries the host and is effectful, which makes `fib(22)` on the dev
-  backend about a sixth slower than the same walk without it (2026-11-23);
-  the release build wasn't measured.
