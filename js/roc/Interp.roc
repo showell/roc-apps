@@ -3482,6 +3482,7 @@ Interp :: [].{
 					machine,
 					"unsupported: an iterator's properties and methods (`${key}`)${Interp.line_note(site)}",
 				)
+				UnreadyVariable | Variable(_) | Environment(_) => crash "Interp.property: no JavaScript value refers to a VM box or environment"
 				Failure(name, message) => match key {
 					"name" => { machine: machine, value: Text(Heap.error_name_text(name)) }
 					"message" => { machine: machine, value: Text(message) }
@@ -3622,6 +3623,7 @@ Interp :: [].{
 			MapOf(_) => MapKind
 			SetOf(_) => SetKind
 			Iteration(_) => IteratorKind
+			UnreadyVariable | Variable(_) | Environment(_) => crash "Interp.kind_of: no JavaScript value refers to a VM box or environment"
 		}
 
 	# A property or an item written: an object's property, an array's item

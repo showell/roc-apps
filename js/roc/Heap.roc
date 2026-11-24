@@ -140,6 +140,16 @@ Heap :: [].{
 		# What `keys()`, `values()` and `entries()` answer: the array, Map or
 		# Set it walks, what of each entry it gives, and the next entry's place.
 		Iteration({ source : U64, view : Heap.View, next : U64 }),
+		# The bytecode VM's box for a variable a closure may capture, which the
+		# frame that declares it and every closure that captures it share:
+		# unready until its declaration runs, then its value. No JavaScript
+		# value refers to a box; only the VM's frames and environments do.
+		UnreadyVariable,
+		Variable(Heap.Value),
+		# What one of the VM's closures carries: the number of its compiled
+		# code, and the boxes of the variables it captures, in the order the
+		# code reads them. The closure's `Fun` cell names it by its `scope`.
+		Environment({ code : U64, boxes : List(U64) }),
 	]
 
 	## A Map's or a Set's entries, in the order their keys were first set,
