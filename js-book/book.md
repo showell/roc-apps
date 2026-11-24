@@ -10,7 +10,7 @@ This book is for a reader who knows programming and is new to this codebase, and
 
 ### What it runs
 
-The subset is real JavaScript: numbers, strings, arrays, objects, closures, `let` and `const`, `try` and `finally`, `switch`, destructuring, optional chains, spread, Maps and Sets, and the timers. `this`, `new` on a program's own function, prototypes and classes stay outside it, and `js/README.md` says why: each would make every call carry a receiver or every property read walk a prototype chain, and each is a large step.
+The subset is real JavaScript: numbers, strings, arrays, objects, closures, `let` and `const`, `try` and `finally`, `switch`, destructuring, optional chains, spread, Maps and Sets, and the timers. Classes run too, as syntax sugar the parser writes as plain functions (`bb9b82a0`). `this` outside a class's code, `new` on a program's own function and prototypes stay outside it, and `js/README.md` says why: each would make every call carry a receiver or every property read walk a prototype chain.
 
 Here is one of the playground's samples, a turtle drawing a spiral:
 
@@ -18,7 +18,7 @@ Here is one of the playground's samples, a turtle drawing a spiral:
 
 ### Who judges it
 
-Every program in the subset is real JavaScript, so node is a free oracle. `js/oracle.shale` runs each program in `js/tests/` through node 22 and through `js-vm`, and the two transcripts, exit codes included, must match byte for byte. A program outside the subset gets an error that names what it used: each program in `js/tests/refused/` names, on its first line, the message `js-vm` must end with. The corpus grew from 32 programs and 25 refusals on the first day (`cfe7c5fc`) to 57 and 44 (`js/README.md`, its status of 2026-11-24). Program 54, `54-big-daddy.js`, is a day in a small city that uses every feature of the subset, and it is also the playground's "all features" sample (`06ab1f8b`, `17977264`).
+Every program in the subset is real JavaScript, so node is a free oracle. `js/oracle.shale` runs each program in `js/tests/` through node 22 and through `js-vm`, and the two transcripts, exit codes included, must match byte for byte. A program outside the subset gets an error that names what it used: each program in `js/tests/refused/` names, on its first line, the message `js-vm` must end with. The corpus grew from 32 programs and 25 refusals on the first day (`cfe7c5fc`) to 61 and 76 (`js/README.md`, its status of 2026-11-24). Program 54, `54-big-daddy.js`, is a day in a small city that uses every feature of the subset, and it is also the playground's "all features" sample (`06ab1f8b`, `17977264`).
 
 ### Where the numbers come from
 
@@ -36,7 +36,7 @@ It teaches what copies. The three rules of {{chapter What copies}} are meant for
 
 A pure functional language hosting a mutable, effectful one is a consequence of the project, not its goal. An underlying goal is to see how far AI coding agents, with human supervision, can take a Roc project. And it is fun to build things in Roc.
 
-It is not a production JavaScript engine, and it is not for running untrusted code. It is not a race either: node is the oracle for correctness, not the yardstick for speed. Classes, `this` and `new` are not there yet; they are wanted and planned.
+It is not a production JavaScript engine, and it is not for running untrusted code. It is not a race either: node is the oracle for correctness, not the yardstick for speed.
 
 The book is written for the Roc community first.
 
@@ -56,7 +56,9 @@ The bytecode VM was built beside the walker in three rounds on 2026-11-24. The f
 
 The playground moved onto the VM next: the canvas samples (`0b1efafa`), then the page (`a9a06e74`). Then the walker was deleted (`1c1c9e7e`): `Interp.roc`, `js-run` and `js-count` went, and the VM's expected-count files took the walker's names, so the check tier stayed the same.
 
-The page gained a memory view (`4d891f1f`, `4e5dd15b`): a popup with the last run's heap over time. Then came a speed fix (`c1050677`), the subject of {{chapter What copies}}. Two gaps closed last: calls nest 10,000 deep (`083dd943`), and a Map or a Set drops its deleted entries once they outnumber the rest (`2ac69504`).
+The page gained a memory view (`4d891f1f`, `4e5dd15b`): a popup with the last run's heap over time. Then came a speed fix (`c1050677`), the subject of {{chapter What copies}}. Two gaps closed next: calls nest 10,000 deep (`083dd943`), and a Map or a Set drops its deleted entries once they outnumber the rest (`2ac69504`).
+
+Classes came last, as syntax sugar (`bb9b82a0`, `47348bbd`, `43a519a4`). The parser writes each class as plain functions, one that sets the methods on an instance, one that runs the constructor's body and one that makes the instance and calls both, so `Resolve`, `Compile` and the VM see only functions.
 
 ### Garbage you can watch
 
@@ -86,7 +88,7 @@ digraph {
 ```
 
 - **`Lexer.roc`** makes tokens, each with its line and column.
-- **`Parser.roc`** reads them into `Ast.roc`'s tree by recursive descent, and lays out each scope's names as it goes.
+- **`Parser.roc`** reads them into `Ast.roc`'s tree by recursive descent, and lays out each scope's names as it goes. It also writes each class as plain functions, so the stages after it see only functions.
 - **`Resolve.roc`** places every name before the run: each read, write and declaration learns how many scopes out its variable lives and where it sits there. The interpreter then reads a variable by its place, and compares names only here.
 - **`Compile.roc`** lays out each function's frame and makes each function, and the program itself, a flat list of `Bytecode.roc`'s instructions. Every jump is relative to the instruction after it, so a piece of compiled code means the same wherever it lands.
 - **`Vm.roc`** runs them on a stack machine.
@@ -104,6 +106,8 @@ The VM's loop fetches the next instruction and hands the machine to `dispatch!`,
 JavaScript shares arrays, objects and closures by reference: two variables that hold one array see each other's writes. Roc has only values. So the interpreter keeps everything JavaScript shares in one list of cells, the heap, and a JavaScript reference is an index into it. A cell is one of these:
 
 {{lines js/roc/Heap.roc from "Cell : [" to "Freed(Heap.Free),"}}
+
+An `Instance` is a class's instance: an object marked with the names of its class and of each class it extends, which `x instanceof C` reads (`NewInstance`, `InstanceOf`). It is the VM's one part in classes.
 
 Roc writes a list in place only while it is the list's sole owner, so a single stray reference to the heap makes every write copy the whole heap. `js/README.md`, "Why the heap is one value", lists the shapes that keep the heap unique, each with a comment where it is used:
 
@@ -283,7 +287,7 @@ A check is trusted once it has been seen to fail. Each check below holds the cod
 
 ### The oracle against node
 
-`js/oracle.shale`, a tier of the default `check.shale`, holds every corpus program's transcript and exit code to node's, 57 of them, and every refusal to its message. Every program runs, and the run fails if any one fails. It also runs with `collect=every`, which collects after every instruction that allocates, and programs 51 to 53 hold values through each kind of root while collections run.
+`js/oracle.shale`, a tier of the default `check.shale`, holds every corpus program's transcript and exit code to node's, 61 of them, and every refusal to its message. Every program runs, and the run fails if any one fails. It also runs with `collect=every`, which collects after every instruction that allocates, and programs 51 to 53 hold values through each kind of root while collections run.
 
 ### Controls held exactly
 
@@ -306,16 +310,25 @@ The record lists five plants, each reverted:
 - a wrong expected count turned 00-loop red by name (`6b13e927`);
 - a memory view with its collection marks taken out turned page_check red (`4d891f1f`).
 
-## What is left
+## Limitations
 
-These come from `js/README.md` and the record:
+The subset covers a part of JavaScript on purpose, and it will never cover every corner of the language. A program that steps outside it is refused with a message naming what it used; it never gets a wrong answer.
 
-- 02-closure-call's 112-byte dev allocation per call is still unexplained.
+These are the known differences from node, and the limits, from `js/README.md` and the record:
+
+- Each class instance holds its own method closures, so `a.m === b.m` is false where node's is true (`js/README.md`, "Classes are syntax sugar").
+- A method read off an instance and called alone keeps its instance, where node loses `this` and throws (the same section).
+- Printing or listing a class instance, or printing a class, is refused: node prints an instance by its class's name, and an instance here holds its methods beside its fields (the same section).
+- An exhausted Map iterator still sees entries added after it finished, where node's stays done. No corpus program holds this yet.
 - A builtin's callback (`map`, `sort`, a Map's `forEach`) throws a RangeError once 400 calls wait under it, where a plain call goes 10,000 deep, near node's own limit (`083dd943`).
-- An exhausted Map iterator still sees entries added after it finished; node's stays done.
-- `js-vm` takes the program as one command-line argument, limited to 128 KiB.
+- An interval never cleared stops after 100,000 callbacks with a message, where node runs it for good (`js/README.md`, "The subset").
+- A string method that counts positions is refused on non-ASCII text: JavaScript counts UTF-16 units, and these strings are UTF-8 (the same section).
+- `js-vm` takes the program as one command-line argument, limited to 128 KiB (`js/README.md`, "Pitfalls").
+- On the page, a program is held to step budgets, 3,000,000 before the first frame and 300,000 a frame ({{chapter Dev and release builds disagree}}).
 - `onCollect` and the other canvas builtins are this project's own, so logs of effects judge them in place of node.
-- `this`, `new` on a program's function and classes remain outside the subset, for the reasons in {{chapter Introduction}}.
+- 02-closure-call's 112-byte dev allocation per call is still unexplained.
+
+The parser refuses these forms, each with a message that names it: getters and setters, `#private` names, class fields, static blocks, computed method names, class expressions, `this` outside a class's code or in a static method, `super` misused, a constructor that returns a value, `extends` of anything but a class declared above, a class's name declared again or assigned, `new` on a program's own function, `var`, `in`, `eval`, regular expressions, async and modules. A run refuses `==` and the other coercions, and the rest of `js/README.md`'s list, "The subset", where only the run can see them.
 
 ## Appendix A: The playground's samples
 
