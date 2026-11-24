@@ -81,8 +81,8 @@ write it. When your memory and the pin disagree, the pin is right.
   `errors.md` and the rest), next to `docs/langref-style-guide.md`. Read
   the checkout at the pin's commit, not an older one you happen to have.
 - **Read the pin's `Builtin.roc` before writing a helper.** It is
-  `src/build/roc/Builtin.roc` in roc-lang/roc at the pin's commit (the hash
-  at the end of the repo's `roc-version`). The toolchain release carries
+  `src/build/roc/Builtin.roc` in roc-lang/roc at the pin's commit (RC1's
+  is 15177e9, `docs/roc-notes.md`, "The compiler"). The toolchain release carries
   no source, so fetch just that commit: `git init roc-src && cd roc-src &&
   git fetch --depth 1 https://github.com/roc-lang/roc <hash> && git
   checkout FETCH_HEAD`. `docs/roc-style.md`, "`Str` and the builtins at
@@ -119,8 +119,8 @@ refuse to build with anything else. Stay fairly current with Roc, but move
 each pin lazily, as its own commit, and check each new nightly before
 trusting it.
 
-- **A repo names its compiler in one file, `roc-version`.** It holds a
-  nightly's tag (roc-chat `roc-version`, roc-markdown `roc-version`), and
+- **A repo names its compiler in one file, `roc-version`.** It holds the
+  compiler's release name, `0.1.0_RC1` (roc-chat `roc-version`, roc-markdown `roc-version`), and
   every tool reads that file rather than keeping its own copy of the pin.
 - **Pins live side by side at `~/tools/roc-<pin>/roc`; the PATH is never
   touched.** roc-chat's README, "Working on it", says where its pin goes,
