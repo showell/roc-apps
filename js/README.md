@@ -7,8 +7,8 @@ holds the language to node.
 The code here was written by AI coding agents (Claude), with human
 supervision.
 
-**Status (2026-11-24):** 57 of 57 corpus programs print what node 22
-prints, byte for byte, timers and uncaught throws included, and 44 of 44
+**Status (2026-11-24):** 61 of 61 corpus programs print what node 22
+prints, byte for byte, timers and uncaught throws included, and 76 of 76
 programs outside the subset are refused with the message they must give,
 on the VM's usual collection schedule and collecting at every allocation.
 Nine canvas samples are held to their logs of effects, one of them driven
@@ -25,7 +25,12 @@ Every program in the subset is real JavaScript, so `node` is a free oracle:
 what node prints for it is what the interpreter must print.
 
 - **Values:** numbers (F64), strings, booleans, `null`, `undefined`, arrays,
-  plain objects, functions, errors, and Maps and Sets.
+  plain objects, functions, errors, Maps and Sets, and the instances of
+  classes.
+- **Classes,** as syntax sugar (below): a constructor, methods and static
+  methods, `extends` with `super(...)` and `super.m()`, `new C(...)`,
+  `this` in a class's constructor and methods and the arrows inside them,
+  and `x instanceof C` for a class `C`.
 - **Statements:** `let` and `const` with block scope (a `for` loop's `let`
   is a new variable each pass, as closures see it), `if`, `while`,
   `do ... while`, the C-form `for`, `for ... of` over arrays, strings, Maps,
@@ -91,10 +96,12 @@ what node prints for it is what the interpreter must print.
   (`js/tests/36-timeouts.js` to `38-nested-timeouts.js`). js-vm runs
   callbacks until none is left; an interval never cleared, which node runs
   for good, stops at 100,000 callbacks with a message saying so.
-- **Out of it:** `this`, `new` on a function of the program, prototypes and
-  classes (below), getters and setters, `==` and the other coercions (`"3"
-  * 2`, `true + 1`), `var`, `eval`, regular expressions, `in` and
-  `instanceof`, computed property names, async and modules; printing an
+- **Out of it:** `this` outside a class's code, `new` on a function of the
+  program, prototypes, getters and setters, `#private` names, class fields
+  and static blocks, class expressions, printing or listing a class's
+  instance (below), `==` and the other coercions (`"3" * 2`, `true + 1`),
+  `var`, `eval`, regular expressions, `in`, `instanceof` of anything but a
+  class's name, computed property names, async and modules; printing an
   error (node prints its stack) or an iterator, an iterator's `next`, a
   Map's or a Set's method read outside a call; `startsWith` and `endsWith`
   from a position, a replacement with `$` patterns or a function,
@@ -106,20 +113,92 @@ what node prints for it is what the interpreter must print.
   `const` as such a lone body, a `break` or a `continue` with nothing to
   leave, and a destructuring with no value are refused as node refuses
   them, with its SyntaxError.
-- **Why `this`, `new` and classes stay out:** `this` is bound by how a
-  function is called (a method call, a plain call, which in node's sloppy
-  mode binds the global object the subset has no value for, a callback a
-  builtin makes, a timer's), and taken from around it by an arrow, so every
-  call path would carry a receiver; `new` with `prototype` methods needs an
-  object to link to its prototype, every property read to walk that link
-  and every listing (`Object.keys`, spread, console.log's `Point { x: 1 }`)
-  to tell its own properties from inherited ones, and functions to carry
-  properties; and classes are mostly used with `extends` and `super`, on
-  top of all that. None of it is a small step.
+- **Why `this` stays out of plain functions, and `new` of them:** `this` is
+  bound by how a function is called (a method call, a plain call, which in
+  node's sloppy mode binds the global object the subset has no value for, a
+  callback a builtin makes, a timer's), so every call path would carry a
+  receiver; `new` with `prototype` methods needs every property read to walk
+  a prototype link. A class needs neither, below.
+
+### Classes are syntax sugar
+
+The parser writes each class declaration as plain functions before
+`Resolve` runs (`Parser.roc`, "classes"), so `Resolve`, `Compile` and the
+VM never meet a class, a `new` of one, `this` or `super`. There are no
+prototypes: each instance holds its methods as closures over it. This
+class and its subclass
+
+```js
+class Point {
+  constructor(x) { this.x = x; }
+  get() { return this.x; }
+  static origin() { return new Point(0); }
+}
+class Pixel extends Point {
+  constructor(x, color) { super(x); this.color = color; }
+  get() { return super.get() * 2; }
+}
+```
+
+are written as one `let` each, of names no program can write (`this` is a
+reserved word, and the others hold a space or a `.`):
+
+```js
+let #install Point = function (this) { this.get = function get() { return this.x; }; },
+    #construct Point = function (this, x) { this.x = x; },
+    Point = function Point(x) {
+      const this = <a new instance, marked ["Point"]>;
+      #install Point(this);
+      #construct Point(this, x);
+      return this;
+    },
+    Point.origin = function origin() { return Point(0); };
+let #extends Pixel = Point,
+    #install Pixel = function (this) {
+      #install Point(this);
+      const super.get = this.get;
+      this.get = function get() { return super.get() * 2; };
+    },
+    #construct Pixel = function (this, x, color) { #construct Point(this, x); this.color = color; },
+    Pixel = function Pixel(x, color) { /* as Point, marked ["Pixel", "Point"] */ },
+    Pixel.origin = Point.origin;
+```
+
+`new C(...)` is the call `C(...)`, `C.s` written after the class is the
+variable `C.s`, and an arrow inside a method sees `this` by ordinary
+capture. Every class's methods are set before any constructor runs, so a
+parent's constructor calls a subclass's override, as in node.
+
+**The VM's one part in it is the mark.** A class's instance is a heap cell
+of its own (`Heap.Cell`'s `Instance`), an object marked with the names of
+its class and of each class it extends; `x instanceof C` reads the mark, so
+it holds up the chain. node prints an instance as `Pixel { x: 1, color:
+'red' }`, and ours holds its methods' closures beside its fields, so
+console.log of an instance (or one inside an array or an object),
+`Object.keys`, `values` and `entries`, `{ ...x }` and an object pattern's
+rest end the run, `js: unsupported: printing or listing a class instance`.
+console.log of a class is refused too (node prints `[class Point]`).
+`JSON.stringify` and `for ... in` are outside the subset already.
+
+**What the parser refuses, and why:** a class's name declared again or
+assigned (so `C`, `C.s` and `#install C` always name the one class, and two
+classes of one name); `extends` of anything but a class declared above it;
+a derived class's constructor that doesn't call `super(...)` once, as a
+statement of its own, before any `this`; a constructor that returns a value;
+`super.m` in a constructor, or of a method no parent has; `this` and `super`
+in a static method or in a `function` inside a method; and getters,
+setters, `#private` names, class fields, static blocks, computed method
+names and class expressions. A class's property other than a static method
+(`C.name`) is a function's property, which the VM refuses as it refuses any.
+
+**Where it differs from node, knowingly:** each instance has methods of its
+own, so `a.m === b.m` is false where node's is true, and a method read off
+an instance and called alone keeps its instance, where node's loses `this`
+and throws.
 
 **A program outside the subset gets an error that names what it used,
 never a wrong answer.** The parser refuses the forms it can see (`js:
-unsupported: classes (line 1, column 1)`), and the interpreter stops at the
+unsupported: getters, setters and async methods (line 3, column 3)`), and the interpreter stops at the
 ones only a run shows (`js: unsupported: an operator on a string and a
 number (a coercion) (line 2)`). A position-counting string method on
 non-ASCII text is one of these: JavaScript counts UTF-16 units, and the

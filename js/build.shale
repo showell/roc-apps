@@ -4,9 +4,9 @@
 -- the page's files from js/web/ and js_samples.js, which it writes from the
 -- canvas samples in js/canvas/ and the console samples in js/console/ (each
 -- sample's first line, a `// ` comment, is its title) and the featured
--- console samples, "all features" and
--- "garbage collection", which are the corpus programs js/tests/54-big-daddy.js
--- and js/tests/55-garbage.js, so node holds them. The page is replaced only by
+-- console samples, "all features", "garbage collection" and "classes",
+-- which are the corpus programs js/tests/54-big-daddy.js, 55-garbage.js and
+-- 61-classes-tour.js, so node holds them. The page is replaced only by
 -- a build that js/page_check.mjs passed.
 --
 -- **EVERY FILE BUT index.html IS NAMED BY ITS BYTES**, as roc-chat names its
@@ -37,6 +37,7 @@ const WANT_NODE = "js-page: page_check.mjs drives the built page under node"
 const FEATURED = {
   {title = "all features", file = "js/tests/54-big-daddy.js"},
   {title = "garbage collection", file = "js/tests/55-garbage.js"},
+  {title = "classes", file = "js/tests/61-classes-tour.js"},
 }
 
 -- The samples of one folder as the items of a list, in their files' order,

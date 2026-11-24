@@ -22,10 +22,10 @@ const FRAMES_PER_SECOND = 30;
 const OUTPUT_KEPT = 20000;
 
 // A console sample draws nothing, so the page hides the canvas for it and its
-// output sits at the top of the column. "all features" and "garbage
-// collection" (js/tests/54-big-daddy.js and 55-garbage.js, written into
-// js_samples.js by js/build.shale) come second and third, after the first
-// canvas sample, which the page opens with.
+// output sits at the top of the column. "all features", "garbage
+// collection" and "classes" (js/tests/54-big-daddy.js, 55-garbage.js and
+// 61-classes-tour.js, written into js_samples.js by js/build.shale) come
+// second to fourth, after the first canvas sample, which the page opens with.
 const asConsole = (s) => ({ ...s, console: true });
 export const SAMPLES = [
   CANVAS_SAMPLES[0],
