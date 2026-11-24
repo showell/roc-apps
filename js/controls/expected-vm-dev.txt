@@ -10,3 +10,4 @@
 05-array-push 2 0 the call's list of argument values (Vm.arguments_of), one value long, and the update lambda's capture (Heap.with_items_pushed's values), boxed in the dev build; not a copy
 06-push-pop 2 0 05-array-push's two for the push; the pop allocates nothing
 07-map-set 4.08 0 the call's list of argument values, the update lambdas' captures (Heap.with_entry's key and value, and the table's write), boxed in the dev build, and the key's identity (Heap.identity_of's text, its digits from NumberText.text_for, which some numbers take more of); not a copy
+08-garbage-in-a-call 3.04 0 02-closure-call's one for the call, the object's property list, and the update lambda's capture (Heap.with_property's key and value), boxed in the dev build; the 0.04 is the collector's own lists (its marks, roots and waiting cells), made once a collection, about every thousand passes; the cells are reused, never copied
