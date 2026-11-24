@@ -18,7 +18,7 @@ Here is one of the playground's samples, a turtle drawing a spiral:
 
 ### Who judges it
 
-Every program in the subset is real JavaScript, so node is a free oracle. `js/oracle.shale` runs each program in `js/tests/` through node 22 and through `js-vm`, and the two transcripts, exit codes included, must match byte for byte. A program outside the subset gets an error that names what it used: each program in `js/tests/refused/` names, on its first line, the message `js-vm` must end with. The corpus grew from 32 programs and 25 refusals on the first day (`cfe7c5fc`) to 55 and 44 (`js/README.md`, its status of 2026-11-24). Program 54, `54-big-daddy.js`, is a day in a small city that uses every feature of the subset, and it is also the playground's "all features" sample (`06ab1f8b`, `17977264`).
+Every program in the subset is real JavaScript, so node is a free oracle. `js/oracle.shale` runs each program in `js/tests/` through node 22 and through `js-vm`, and the two transcripts, exit codes included, must match byte for byte. A program outside the subset gets an error that names what it used: each program in `js/tests/refused/` names, on its first line, the message `js-vm` must end with. The corpus grew from 32 programs and 25 refusals on the first day (`cfe7c5fc`) to 57 and 44 (`js/README.md`, its status of 2026-11-24). Program 54, `54-big-daddy.js`, is a day in a small city that uses every feature of the subset, and it is also the playground's "all features" sample (`06ab1f8b`, `17977264`).
 
 ### Where the numbers come from
 
@@ -56,7 +56,7 @@ The bytecode VM was built beside the walker in three rounds on 2026-11-24. The f
 
 The playground moved onto the VM next: the canvas samples (`0b1efafa`), then the page (`a9a06e74`). Then the walker was deleted (`1c1c9e7e`): `Interp.roc`, `js-run` and `js-count` went, and the VM's expected-count files took the walker's names, so the check tier stayed the same.
 
-The page gained a memory view (`4d891f1f`, `4e5dd15b`): a popup with the last run's heap over time. Then came a speed fix (`c1050677`), the subject of {{chapter What copies}}.
+The page gained a memory view (`4d891f1f`, `4e5dd15b`): a popup with the last run's heap over time. Then came a speed fix (`c1050677`), the subject of {{chapter What copies}}. Two gaps closed last: calls nest 10,000 deep (`083dd943`), and a Map or a Set drops its deleted entries once they outnumber the rest (`2ac69504`).
 
 ### Garbage you can watch
 
@@ -283,7 +283,7 @@ A check is trusted once it has been seen to fail. Each check below holds the cod
 
 ### The oracle against node
 
-`js/oracle.shale`, a tier of the default `check.shale`, holds every corpus program's transcript and exit code to node's, 55 of them, and every refusal to its message. Every program runs, and the run fails if any one fails. It also runs with `collect=every`, which collects after every instruction that allocates, and programs 51 to 53 hold values through each kind of root while collections run.
+`js/oracle.shale`, a tier of the default `check.shale`, holds every corpus program's transcript and exit code to node's, 57 of them, and every refusal to its message. Every program runs, and the run fails if any one fails. It also runs with `collect=every`, which collects after every instruction that allocates, and programs 51 to 53 hold values through each kind of root while collections run.
 
 ### Controls held exactly
 
@@ -311,8 +311,8 @@ The record lists five plants, each reverted:
 These come from `js/README.md` and the record:
 
 - 02-closure-call's 112-byte dev allocation per call is still unexplained.
-- The VM throws a RangeError at 400 nested calls, where node goes much deeper.
-- A Map or a Set keeps a place for every key it ever held, so a table that many keys pass through grows with them.
+- A builtin's callback (`map`, `sort`, a Map's `forEach`) throws a RangeError once 400 calls wait under it, where a plain call goes 10,000 deep, near node's own limit (`083dd943`).
+- An exhausted Map iterator still sees entries added after it finished; node's stays done.
 - `js-vm` takes the program as one command-line argument, limited to 128 KiB.
 - `onCollect` and the other canvas builtins are this project's own, so logs of effects judge them in place of node.
 - `this`, `new` on a program's function and classes remain outside the subset, for the reasons in {{chapter Introduction}}.
