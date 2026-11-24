@@ -13,14 +13,6 @@ import { unescaped } from "./js_runner.js";
 
 export const SIZE = 400;
 
-// The effects that leave a mark: slow motion pauses after these, and runs
-// the rest (a color set, a log) on through.
-const MARKS = new Set(["background", "line", "rect", "circle", "ellipse", "polygon", "text"]);
-
-export function isMark(line) {
-  return MARKS.has(line.slice(0, line.indexOf(" ") >>> 0));
-}
-
 export function makePainter(ctx) {
   let filling = true;
   let stroking = true;

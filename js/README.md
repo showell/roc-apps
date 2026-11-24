@@ -197,10 +197,8 @@ three hosts:
 
 - **The page's** (js/wasm, `JsApp.roc`): the platform's hosted functions
   (`js/wasm/platform/Host.roc`) call into the page's JavaScript while the
-  Roc call runs. At full speed `js_page.js` paints each line as it arrives;
-  in slow motion it holds a call's lines in order and shows them one or ten
-  marks at a time, since a wasm call can't give the browser a turn halfway.
-  The next frame is called only once they are all shown.
+  Roc call runs, and `js_page.js` paints each line as it arrives; the
+  browser shows the canvas when the call returns.
 - **The recording host,** `js-canvas` (`JsCanvas.roc`): every effect and
   every read a line, with a line `frame <n> <t>` before each tick. The
   pointer rests at the middle; an argument says which keys are down in
@@ -510,8 +508,8 @@ running a stale script beside a new page; the check finds the files from
 file nothing names. The check drives the page's own `js_runner.js` and `js_page.js` under node:
 it holds the wasm to node on every corpus program and refusal (ticking each
 program's clock as the page does, so its timers run, and node's timers
-waited for), to the golden logs on every canvas sample, and runs every sample on the page, the
-turtle in slow motion too. Unlike BASIC's host, this one needs no checkout
+waited for), to the golden logs on every canvas sample, and runs every sample on the page, each
+shown from its top. Unlike BASIC's host, this one needs no checkout
 of the Roc compiler's source: the Roc hands it its buffers, takes back each
 line it emitted (`drop_bytes`) and keeps the run in one box, so the host
 never lays out a Roc list itself.

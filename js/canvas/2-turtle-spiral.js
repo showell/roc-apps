@@ -1,6 +1,4 @@
-// A turtle spiral: try it in slow motion
-// To watch the turtle walk, change the speed menu beside Pause from
-// "Full speed" to "Slow: a mark at a time", then press Run.
+// A turtle spiral
 const STEPS = 90; // how many lines the turtle draws
 const GROWTH = 2; // how much longer each line is than the one before
 const TURN = 89; // degrees the turtle turns after each line
