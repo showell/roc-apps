@@ -80,6 +80,14 @@ import Inspect
 import ValueRules
 
 Vm :: [].{
+
+	## **THE MACHINE STAYS AT MOST 256 BYTES INLINE.** Every instruction hands
+	## it back, and a handler copies it on the way in. LLVM copies a record of
+	## up to 256 bytes with eight vector moves, and calls `memcpy` for a bigger
+	## one, which took a sixth of fib's time at 312 bytes. So a part an
+	## instruction doesn't write sits in a box (the event queue, the turtle,
+	## the builtins, the collector's schedule and count, the budget), and the
+	## machine is 248 bytes.
 	Machine : {
 		cells : List(Heap.Cell),
 		stack : List(Heap.Value),
@@ -97,22 +105,28 @@ Vm :: [].{
 		code : U64,
 		pc : U64,
 		base : U64,
-		builtins : List(Heap.Value),
+		# Boxed, as the queue is: made once, at the start.
+		builtins : Box(List(Heap.Value)),
 		# The first free cell, which the next allocation takes.
 		free : Heap.Free,
-		schedule : Vm.Schedule,
-		collections : U64,
+		# Boxed: only a collection writes it.
+		collecting : Box(Vm.Collecting),
 		status : Vm.Status,
 		steps : U64,
-		step_limit : U64,
 		effects : U64,
-		effect_limit : U64,
-		# What the budgets are counted for, for the message that says one ran
-		# out: the program, or the callback the queue runs.
-		budgeted : Vm.Budgeted,
+		# Boxed: only the start of a run or a callback writes it.
+		budget : Box(Vm.Budget),
 		# Boxed, as the queue is: only a turtle's move touches it.
 		turtle : Box(Canvas.Turtle),
 	}
+
+	## When the next collection is due, and how many have run.
+	Collecting : { schedule : Vm.Schedule, collections : U64 }
+
+	## The steps and the effects what is running may take, and what that is,
+	## for the message that says one ran out: the program, or the callback the
+	## queue runs.
+	Budget : { step_limit : U64, effect_limit : U64, budgeted : Vm.Budgeted }
 
 	Budgeted : [TheProgram, FrameCall, TimerCallback, ClickHandler]
 
@@ -189,7 +203,8 @@ Vm :: [].{
 			Uncaught(line) => Uncaught(line)
 		}
 		live = Collector.reached_count(Collector.marked(ended.cells, roots(ended)))
-		{ ending: ending, steps: ended.steps, cells: ended.cells.len(), live: live, collections: ended.collections }
+		collections = Box.unbox(ended.collecting).collections
+		{ ending: ending, steps: ended.steps, cells: ended.cells.len(), live: live, collections: collections }
 	}
 
 	## A program run to its end, its own frame kept for the callbacks it
@@ -211,19 +226,19 @@ Vm :: [].{
 			code: program.main,
 			pc: 0,
 			base: 0,
-			builtins: builtins,
+			builtins: Box.box(builtins),
 			free: NoneFree,
-			schedule: match settings.collecting {
-				Doubling => Doubling(Collector.least_threshold)
-				EveryAllocation => EveryAllocation({ length: cells.len(), free: NoneFree })
-			},
-			collections: 0,
+			collecting: Box.box({
+				schedule: match settings.collecting {
+					Doubling => Doubling(Collector.least_threshold)
+					EveryAllocation => EveryAllocation({ length: cells.len(), free: NoneFree })
+				},
+				collections: 0,
+			}),
 			status: Running,
 			steps: 0,
-			step_limit: settings.steps,
 			effects: 0,
-			effect_limit: settings.effects,
-			budgeted: TheProgram,
+			budget: Box.box({ step_limit: settings.steps, effect_limit: settings.effects, budgeted: TheProgram }),
 			turtle: Box.box(Canvas.turtle_start),
 		}
 		main = code_of(program, program.main)
@@ -256,9 +271,8 @@ Vm :: [].{
 			var $machine = {
 				..before,
 				steps: 0,
-				step_limit: limits.steps,
 				effects: 0,
-				effect_limit: limits.effects,
+				budget: Box.box({ ..Box.unbox(before.budget), step_limit: limits.steps, effect_limit: limits.effects }),
 			}
 			var $going = True
 			while $going {
@@ -448,7 +462,7 @@ dispatch! = |host, program, machine, op|
 		SetBoxed(slot) => boxed_set(machine, slot)
 		NewBox(slot) => box_made(machine, slot)
 		CopyBox(slot) => box_copied(machine, slot)
-		LoadBuiltin(index) => pushed(machine, machine.builtins.get(index) ?? crash "Vm.dispatch!: Resolve places a builtin the library has")
+		LoadBuiltin(index) => pushed(machine, Box.unbox(machine.builtins).get(index) ?? crash "Vm.dispatch!: Resolve places a builtin the library has")
 		MissingName({ name, at }) => missing_name(machine, name, at)
 		ThrowUnready({ name, at }) => with_error(machine, ReferenceError, ValueRules.unready_message(name), at)
 		ThrowConstant(at) => with_error(machine, TypeError, "Assignment to constant variable.", at)
@@ -528,12 +542,14 @@ with_error = |machine, name, message, at| {
 
 # One more step counted, a call or a loop's pass, stopped past the budget.
 stepped : Vm.Machine -> Vm.Machine
-stepped = |machine|
-	if machine.steps >= machine.step_limit {
-		with_fault(machine, "${budgeted_text(machine.budgeted)} ran past its budget of ${machine.step_limit.to_str()} steps")
+stepped = |machine| {
+	budget = Box.unbox(machine.budget)
+	if machine.steps >= budget.step_limit {
+		with_fault(machine, "${budgeted_text(budget.budgeted)} ran past its budget of ${budget.step_limit.to_str()} steps")
 	} else {
 		{ ..machine, steps: machine.steps + 1 }
 	}
+}
 
 # ---- the stack -------------------------------------------------------------
 
@@ -651,7 +667,7 @@ placed = |machine, cell| {
 
 is_collection_due : Vm.Machine -> Bool
 is_collection_due = |machine|
-	match machine.schedule {
+	match Box.unbox(machine.collecting).schedule {
 		Doubling(at) => machine.free == NoneFree and machine.cells.len() >= at
 		EveryAllocation({ length, free }) => machine.cells.len() != length or machine.free != free
 	}
@@ -663,12 +679,14 @@ collected = |machine| {
 	marks = Collector.marked(machine.cells, roots(machine))
 	{ cells, machine: rest } = lent(machine)
 	{ cells: swept, free, live } = Collector.swept(cells, marks)
-	schedule = match rest.schedule {
+	before = Box.unbox(rest.collecting)
+	schedule = match before.schedule {
 		Doubling(_) => Doubling(Collector.least_threshold.max(2 * live))
 		EveryAllocation(_) => EveryAllocation({ length: swept.len(), free: free })
 	}
+	collecting = Box.box({ schedule: schedule, collections: before.collections + 1 })
 	{
-		machine: { ..rest, cells: swept, free: free, schedule: schedule, collections: rest.collections + 1 },
+		machine: { ..rest, cells: swept, free: free, collecting: collecting },
 		live: live,
 	}
 }
@@ -680,13 +698,14 @@ collected = |machine| {
 # A handler or a waiting frame names only places on the stack.
 roots : Vm.Machine -> List(U64)
 roots = |machine| {
-	var $ids = List.with_capacity(machine.top + machine.builtins.len())
+	builtins = Box.unbox(machine.builtins)
+	var $ids = List.with_capacity(machine.top + builtins.len())
 	var $at = 0
 	while $at < machine.top {
 		$ids = Collector.with_value_root($ids, machine.stack.get($at) ?? crash "Vm.roots: below the stack's top")
 		$at = $at + 1
 	}
-	for builtin in machine.builtins {
+	for builtin in builtins {
 		$ids = Collector.with_value_root($ids, builtin)
 	}
 	match machine.status {
@@ -1587,14 +1606,16 @@ native_called! = |host, program, machine, { native, calling }| {
 # The machine after one effect handed to the host, the call's answer
 # `undefined`, or stopped when the effect would pass its budget.
 emitted! : Canvas.Host, Vm.Machine, { effect : Canvas.Effect, result_at : U64 } => Vm.Machine
-emitted! = |host, machine, { effect, result_at }|
-	if machine.effects >= machine.effect_limit {
-		with_fault(machine, "${budgeted_text(machine.budgeted)} ran past its budget of ${machine.effect_limit.to_str()} effects")
+emitted! = |host, machine, { effect, result_at }| {
+	budget = Box.unbox(machine.budget)
+	if machine.effects >= budget.effect_limit {
+		with_fault(machine, "${budgeted_text(budget.budgeted)} ran past its budget of ${budget.effect_limit.to_str()} effects")
 	} else {
 		emit! = host.emit!
 		emit!(effect)
 		with_result({ ..machine, effects: machine.effects + 1 }, result_at, Undefined)
 	}
+}
 
 # `setTimeout` or `setInterval`: the timer's handle, its callback queued by
 # `Events.timer_requested`'s rules.
@@ -1651,8 +1672,7 @@ event_run! = |host, program, machine, index| {
 	match event.happening {
 		Timed({ timer, callback, every }) => {
 			firing = {
-				..taken,
-				budgeted: TimerCallback,
+				..budgeted_for(taken, TimerCallback),
 				events: Box.box(Events.with_firing(Box.unbox(taken.events), Firing(timer))),
 			}
 			after = answer_dropped(call_function!(host, program, firing, { callee: callback, arguments: [], at: event.site }))
@@ -1676,7 +1696,7 @@ event_run! = |host, program, machine, index| {
 			}
 		}
 		Framed(closure, number) => {
-			framing = { ..taken, budgeted: FrameCall }
+			framing = budgeted_for(taken, FrameCall)
 			after = answer_dropped(
 				closure_called!(
 					host,
@@ -1690,13 +1710,18 @@ event_run! = |host, program, machine, index| {
 		}
 		Clicked(x, y) => match Box.unbox(taken.events).on_click {
 			Handler({ handler, site }) => {
-				clicking = { ..taken, budgeted: ClickHandler }
+				clicking = budgeted_for(taken, ClickHandler)
 				answer_dropped(call_function!(host, program, clicking, { callee: handler, arguments: [Number(x), Number(y)], at: site }))
 			}
 			NoHandler => taken
 		}
 	}
 }
+
+# The machine with its budgets counted for `budgeted`.
+budgeted_for : Vm.Machine, Vm.Budgeted -> Vm.Machine
+budgeted_for = |machine, budgeted|
+	{ ..machine, budget: Box.box({ ..Box.unbox(machine.budget), budgeted: budgeted }) }
 
 # A callback's machine with its answer taken off the stack, unless it
 # stopped, leaving none.

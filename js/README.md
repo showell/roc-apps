@@ -15,8 +15,8 @@ Eight canvas samples are held to their logs of effects, one of them driven
 by scripted clicks alone and one by timers, restarted by a scripted click.
 The VM collects its garbage, so js/heaps/'s programs, which make an object
 a pass, hold about 1,024 cells and peak near 4 MB on the dev build. In the
-release build it runs fib(22) in 106 ms, and its release build takes
-110 s. The page builds into the dev channel; the unlisted copy at
+release build it runs fib(22) in 99 ms, and its release build takes
+91 s. The page builds into the dev channel; the unlisted copy at
 roc.lynrummy.com/js/ predates the gaps.
 
 ## The subset
@@ -313,18 +313,23 @@ backend fib(22) takes about 860 ms of CPU (best of three, with the
 collector's check before every instruction).
 
 **What the release build shows (2026-11-24, `js/bench`'s programs, the
-fastest of five, a quiet box):** fib(22) takes 106 ms, and the loops
-497 ms. The release controls (`js/controls.shale`, held to
+fastest of five, a quiet box):** fib(22) takes 99 ms, and the loops
+439 ms. The release controls (`js/controls.shale`, held to
 `expected.txt`) allocate nothing a pass but a call's argument list, a Map
 key's identity and a new object's property list. js-vm's release build
-takes 110 s. `memcpy` is 11% of fib's time; the next inline field of the
-machine to box is still to find (the collector's schedule, boxed, changed
-nothing).
+takes 91 s. `memcpy` doesn't show in fib's profile (`perf record`).
 
-**The machine keeps its event queue in a box.** Every instruction hands
-the machine back, so whatever the machine holds inline is copied on each
-one; only a timer's or a click's instruction touches the queue. Inline, the
-queue made fib(22) take 123 ms, a sixth of it in `memcpy`.
+**The machine stays at most 256 bytes inline (`Vm.Machine`); it is 248.**
+Every instruction hands the machine back, and a handler copies it on the
+way in. LLVM copies a record of up to 256 bytes with eight vector moves and
+calls `memcpy` for a bigger one, so a machine past 256 bytes pays a call on
+every instruction. So what an instruction doesn't write sits in a box: the
+event queue (inline, it made fib(22) take 123 ms), the turtle, the
+builtins, the collector's schedule and count, and the step and effect
+budgets. At 312 bytes, with the last three inline, `memcpy` took a sixth of
+fib's time, which ran in 110 ms and the loops in 495 ms (alternated with
+this build's runs). A field added inline counts against the 256: boxing one
+part alone, while the machine stays past the line, changes nothing.
 
 ## Why the heap is one value
 
@@ -487,7 +492,7 @@ across them is a write in place.
 - **The VM throws a RangeError at 400 nested calls**
   (`ValueRules.max_depth`), where node goes much deeper.
 - **Built on the dev backend,** js-vm runs `fib(22)` in about 0.86 s of
-  CPU, and in about 0.11 s in the release build (2026-11-24). Its release
+  CPU, and in about 0.10 s in the release build (2026-11-24). Its release
   build takes about two minutes on a 2-core box, so a round takes its
   release numbers once, never per step. The dev backend shows the code's
   shape, which is what the probes look at; a release build is for
