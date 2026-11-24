@@ -20,7 +20,7 @@
 
 import { loadRunner, unescaped } from "./js_runner.616b25312acc657c.js";
 import { isMark, makePainter, SIZE } from "./js_painter.c0990248c5833567.js";
-import { CANVAS_SAMPLES, FEATURED_SAMPLE } from "./js_samples.5ec617243aa81d07.js";
+import { CANVAS_SAMPLES, FEATURED_SAMPLE } from "./js_samples.26d742d93f264e2a.js";
 
 const FRAMES_PER_SECOND = 30;
 const SLOW_PAUSE_MS = 60;
@@ -39,38 +39,47 @@ const fs = [];
 for (let i = 0; i < 4; i++) fs.push(() => i * i);
 console.log(fs.map((f) => f()));
 ` },
-  { title: "Fibonacci", source: `function fib(n) {
+  { title: "Fibonacci", source: `const UP_TO = 15; // the last Fibonacci number printed
+
+function fib(n) {
   return n < 2 ? n : fib(n - 1) + fib(n - 2);
 }
 const out = [];
-for (let i = 0; i <= 15; i++) out.push(fib(i));
+for (let i = 0; i <= UP_TO; i++) out.push(fib(i));
 console.log(out);
 ` },
-  { title: "Word count", source: `const text = "the quick brown fox jumps over the lazy dog the fox";
+  { title: "Word count", source: `const TEXT = "the quick brown fox jumps over the lazy dog the fox"; // the words counted
+const TOP = 3; // how many of the most used words are printed
+
 const counts = {};
-for (const w of text.split(" ")) counts[w] = (counts[w] ?? 0) + 1;
+for (const w of TEXT.split(" ")) counts[w] = (counts[w] ?? 0) + 1;
 console.log(counts);
 const top = Object.entries(counts).sort((a, b) => b[1] - a[1]);
-console.log(top.slice(0, 3));
+console.log(top.slice(0, TOP));
 ` },
-  { title: "Quicksort", source: `function quicksort(xs) {
+  { title: "Quicksort", source: `const NUMBERS = [5, 3, 9, 1, 7, 2, 8, 6, 4, 0]; // the numbers sorted
+
+function quicksort(xs) {
   if (xs.length <= 1) return xs;
   const pivot = xs[0];
   const rest = xs.slice(1);
   return quicksort(rest.filter((x) => x < pivot))
     .concat([pivot], quicksort(rest.filter((x) => x >= pivot)));
 }
-console.log(quicksort([5, 3, 9, 1, 7, 2, 8, 6, 4, 0]));
+console.log(quicksort(NUMBERS));
 ` },
   { title: "Timers", source: `// Each callback runs when its time comes, on the page's frames.
+const TICKS = 3; // how many times the interval ticks before it's cleared
+const TICK_MS = 300; // milliseconds between ticks
+
 setTimeout(() => console.log("half a second"), 500);
 setTimeout(() => console.log("a tenth of a second"), 100);
 let n = 0;
 const every = setInterval(() => {
   n++;
   console.log("tick", n);
-  if (n === 3) clearInterval(every);
-}, 300);
+  if (n === TICKS) clearInterval(every);
+}, TICK_MS);
 console.log("the program's end comes first");
 ` },
   { title: "Maps, patterns and errors", source: `const scores = new Map([["ann", 3], ["bob", 5]]);
