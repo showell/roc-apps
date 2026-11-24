@@ -1,11 +1,10 @@
 #!/bin/bash
 # Every corpus program through basic-run, instrumented. For each: its wall
 # time, the process alone; the statements it executed, which basic-run reports
-# on stderr; the time a statement; and the statements the program has. Its
-# allocations are tools/alloc_ladder.shale's to count: on the
-# nightlies up to 09-22 each was an mmap, which strace counted here, and
-# RC1's default platform takes memory a few large pieces at a time, so mmap
-# says nothing now.
+# on stderr; the time a statement; the bytes it printed; and the statements
+# the program has. Its allocations are tools/alloc_ladder.shale's to count:
+# RC1's default platform takes memory a few large pieces at a time, so
+# strace's count of mmap calls says nothing about them.
 #
 #   basic/timings.sh              both suites
 #   basic/timings.sh nbs P134     named programs
