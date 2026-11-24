@@ -141,8 +141,11 @@ A page is a folder of the site: `site/live/<name>/` in staging, and
    needs a publish script of its own, in the shape of
    `site/publish_screensavers.shale`, `site/publish_safari_walk.shale` or
    `site/publish_markdown.shale` (a clean checkout, a PROVENANCE, the files
-   checked, relative URLs, one commit), and
-   then names it in `site/publish.shale`'s header, the staging line above
+   checked, relative URLs, one commit). A prebuilt input the page links that
+   git doesn't track, such as Safari Walk's Rocco web host, carries a stamp
+   of the commit it was built from, and the publish refuses one that doesn't
+   match (safari-walk's `scripts/check_web_host.shale`). Then name the
+   script in `site/publish.shale`'s header, the staging line above
    and the README's commands.
 4. **Give it a card on the landing page**, unless it is unlisted (as `js/`
    is). In `site/web/index.html`, a `<section class="feature">` (or a

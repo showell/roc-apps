@@ -7,6 +7,7 @@
 -- `shale site/publish.shale app=home` publishes, not this script.
 --
 --   cd <roc-apps checkout> && shale site/publish_safari_walk.shale
+--   shale site/publish_safari_walk.shale dry=1    (the checks before the build alone)
 --
 -- The page's sources stay in safari-walk, and the script refuses that
 -- checkout when it has changes of any kind, so what is published is always a
@@ -15,10 +16,17 @@
 -- that the walk builds on (FORK_BRANCH, walk/firefox-and-spots: our
 -- Firefox fixes plus Spot lights), and PROVENANCE says whether it is there.
 --
+-- Before it builds, it runs safari-walk's scripts/check_web_host.shale, which
+-- refuses the web host in rocco-engine/platform/targets/wasm32 unless its
+-- stamp says it was built from the rocco-engine commit safari-walk records
+-- (safari-walk's scripts/build_web_host.shale writes the stamp), and names
+-- the command that fixes it: `git submodule update -- rocco-engine` for a
+-- submodule out of step, the host build for a missing or stale stamp. A
+-- refusal, not a rebuild here, as for a checkout with changes: the host
+-- build takes about 50 s and its own tools, and belongs to safari-walk.
+--
 -- It builds the page there with safari-walk's own scripts/build_web.shale
--- (Rocco's rocco_web.py, against the release web host in
--- rocco-engine/platform/targets/wasm32, which scripts/build_web_host.shale
--- builds), checks the build left the checkout clean, copies build/web over
+-- (Rocco's rocco_web.py, against that web host), checks the build left the checkout clean, copies build/web over
 -- site/live/safari-walk/ whole, less the zip rocco_web.py writes beside the
 -- page (a download bundle of the same files, not part of the page), and
 -- writes a PROVENANCE: the safari-walk commit, rocco-engine's branch and
@@ -40,9 +48,19 @@
 -- alone, with its PROVENANCE in the message. This script does not push:
 -- site/deploy.shale pushes the branch (git_push) before it copies staging to
 -- prod, or push it sooner with git_push.
+--
+-- Options, for a proof that writes nothing:
+--
+--   dry=1                 run the checks that come before the build (the
+--                         web host's stamp, a clean safari-walk, roc-apps'
+--                         index), then stop
+--   walk=<Shale path>     the safari-walk checkout (repos:safari-walk unset);
+--                         any other needs dry=1, since a page is published
+--                         from the main checkout alone
 
-const WALK = "repos:safari-walk"
-const ENGINE = "repos:safari-walk/rocco-engine"
+const DRY = arg("dry", 0) == 1
+const WALK = arg("walk", "repos:safari-walk")
+const ENGINE = WALK .. "/rocco-engine"
 const FORK = "https://github.com/showell/rocco-engine.git"
 const FORK_BRANCH = "walk/firefox-and-spots"
 const LIVE = "site/live/safari-walk"
@@ -98,7 +116,7 @@ function provenance(walk, engine)
   local text = "published " .. stamp .. "\n"
   text = text .. "safari-walk " .. sub(walk, 1, 7) .. " (" .. walk .. "); the repo has no remote yet\n"
   text = text .. "rocco-engine " .. FORK_BRANCH .. " " .. sub(engine, 1, 7) .. " (" .. engine .. "), " .. fork_line(engine) .. "\n"
-  text = text .. "roc " .. roc_pin() .. "; web host built release (scripts/build_web_host.shale)\n"
+  text = text .. "roc " .. roc_pin() .. "; web host built release from rocco-engine " .. sub(engine, 1, 7) .. ", its stamp checked (scripts/build_web_host.shale, scripts/check_web_host.shale)\n"
   for f in PAGE_FILES do
     if f ~= "PROVENANCE" then text = text .. stat(LIVE .. "/" .. f).size .. " bytes  " .. f .. "\n" end
   end
@@ -147,12 +165,27 @@ function check_published()
   return nil
 end
 
+-- Stops the publish unless the web host was built from the engine commit
+-- safari-walk records; safari-walk's check names the fix.
+function refuse_stale_host()
+  local r = run({"shale", "scripts/check_web_host.shale"}, {cwd = WALK, timeout_ms = 120000, tail = 10})
+  print(trim(r.out))
+  if r.code ~= 0 then fail("publish_safari_walk: the web host in " .. ENGINE .. "/platform/targets/wasm32 is not the one its engine commit builds; the line above names the fix") end
+  return nil
+end
+
 function main()
+  if WALK ~= "repos:safari-walk" and not DRY then fail("publish_safari_walk: walk=" .. WALK .. " is not repos:safari-walk, the one checkout a page is published from; add dry=1") end
+  refuse_stale_host()
   refuse_changes(WALK, "before the build")
   local walk = head_of(WALK)
   local engine = head_of(ENGINE)
   local staged = run({"git", "diff", "--cached", "--quiet"}, {timeout_ms = 10000, tail = 5})
   if staged.code ~= 0 then fail("publish_safari_walk: roc-apps' index already holds staged changes; commit or unstage them first") end
+  if DRY then
+    print("dry run: the checks before the build passed; nothing built or written")
+    return nil
+  end
 
   local b = run({"shale", "scripts/build_web.shale"}, {cwd = WALK, timeout_ms = 300000, tail = 30})
   print(trim(b.out))
