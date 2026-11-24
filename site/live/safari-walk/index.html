@@ -138,20 +138,20 @@ var WALK_PACE = 6.4;
 // With the interior on (no ?interior=0 or ?tavern=0), the ride goes on into
 // the Roo's Roost, and the walk starts again at the visit's end, not the
 // road's. As game/Walk.roc places them, in metres on the walk's line: the
-// jeep's stop (10.6 s past the road's end), the doors key 7 jumps to, the
+// jeep's stop (7.8 s past the road's end), the cut to the porch that R and 7 jump to, the
 // walker past the doors, and the visit's end. `lights` is how many point
 // lights the room adds (Roost.point_lights), with the bar lamp's shadow
 // light besides.
 var WALK_ROOST = (function () {
 	var query = new URLSearchParams(location.search);
 	var on = query.get("interior") !== "0" && query.get("tavern") !== "0" && query.get("pipelines") !== "min";
-	return { on: on, road: 320, stopped: 388, doors: 452, inside: 482, end: on ? 848.8 : 320, lights: 22 };
+	return { on: on, road: 320, stopped: 370, doors: 380, inside: 402, end: on ? 764 : 320, lights: 23 };
 })();
 // Where each chapter starts, in metres on the walk's line: a copy of
 // game/Chapters.roc's, by the same names, which scripts/build_web.shale
 // checks. The keys B, Z, K and R jump there (main.roc), and the chapter key
 // marks the last start the walk has passed.
-var CHAPTER_STARTS = { begin: 0, zebra_and_ducks: 36, kangaroo: 83, approach_tavern: 423, roost_doors: 452, roost_sign: 150 };
+var CHAPTER_STARTS = { begin: 0, zebra_and_ducks: 36, kangaroo: 83, approach_tavern: 300, roost_doors: 380, roost_sign: 150 };
 var CHAPTERS = [
 	{ code: "KeyB", letter: "B", name: "Begin", at: CHAPTER_STARTS.begin },
 	{ code: "KeyZ", letter: "Z", name: "Zebra and ducks", at: CHAPTER_STARTS.zebra_and_ducks },
