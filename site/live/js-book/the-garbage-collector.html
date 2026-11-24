@@ -1,0 +1,150 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>The garbage collector · A JavaScript Interpreter in Roc</title>
+<link rel="icon" href="data:,">
+<link rel="stylesheet" href="book.css">
+<script src="copy.js" defer></script>
+</head>
+<body class="chapter">
+<nav class="book-nav" id="chapters" aria-label="Chapters">
+<a class="book-name" href="index.html">A JavaScript Interpreter in Roc</a>
+<ol>
+<li><a href="introduction.html"><span class="number">1</span>Introduction</a></li>
+<li><a href="motivation.html"><span class="number">2</span>Motivation</a></li>
+<li><a href="how-it-got-here.html"><span class="number">3</span>How it got here</a></li>
+<li><a href="the-pipeline-and-the-machine.html"><span class="number">4</span>The pipeline and the machine</a></li>
+<li class="here"><a href="the-garbage-collector.html"><span class="number">5</span>The garbage collector</a><ol class="sections"><li><a href="the-garbage-collector.html#what-it-does">What it does</a></li><li><a href="the-garbage-collector.html#around-the-copy-cliff">Around the copy cliff</a></li><li><a href="the-garbage-collector.html#its-roots-and-when-it-runs">Its roots, and when it runs</a></li></ol></li>
+<li><a href="the-rules-and-the-host.html"><span class="number">6</span>The rules and the host</a></li>
+<li><a href="what-copies.html"><span class="number">7</span>What copies</a></li>
+<li><a href="dev-and-release-builds-disagree.html"><span class="number">8</span>Dev and release builds disagree</a></li>
+<li><a href="build-times.html"><span class="number">9</span>Build times</a></li>
+<li><a href="how-it-is-tested.html"><span class="number">10</span>How it is tested</a></li>
+<li><a href="limitations.html"><span class="number">11</span>Limitations</a></li>
+<li><a href="appendix-a-the-playgrounds-samples.html">Appendix A: The playground&#39;s samples</a></li>
+<li><a href="appendix-b-the-tested-programs.html">Appendix B: The tested programs</a></li>
+</ol>
+</nav>
+<main>
+<p class="book-bar"><a href="index.html">A JavaScript Interpreter in Roc</a> <a href="#chapters">Chapters</a></p>
+<article>
+<p class="chapter-number">Chapter 5</p>
+<h1 id="the-garbage-collector">The garbage collector</h1>
+<h2 id="what-it-does">What it does <a class="section-link" href="#what-it-does" aria-label="Link to this section">§</a></h2>
+<p><code>Collector.roc</code> is the VM&#39;s garbage collector, a precise mark and sweep. The VM names its roots, <code>marked</code> follows every reference from them through the cells, and <code>swept</code> turns each unmarked cell into a <code>Freed</code> cell linked into the free list, which <code>Heap.allocated</code> takes from before it grows the heap. The collector leaves every live cell where it is: a JavaScript reference is a cell&#39;s index, and a live cell keeps its index, so every reference stays valid across a collection.</p>
+<p>The sweep is where memory comes back:</p>
+<figure class="listing"><figcaption>js/roc/Collector.roc, an excerpt</figcaption><pre><code class="language-roc">	<span class="syn-name">swept</span> : <span class="syn-type">List</span>(<span class="syn-type">Heap.Cell</span>), <span class="syn-type">List</span>(<span class="syn-type">Collector.Mark</span>) -&gt; <span class="syn-type">Collector.Swept</span>
+	<span class="syn-name">swept</span> = |cells, marks| {
+		count = cells.len()
+		<span class="syn-keyword">var</span> $cells = cells
+		<span class="syn-keyword">var</span> $free = <span class="syn-type">NoneFree</span>
+		<span class="syn-keyword">var</span> $live = <span class="syn-number">0</span>
+		<span class="syn-keyword">var</span> $at = count
+		<span class="syn-keyword">while</span> $at &gt; <span class="syn-number">0</span> {
+			$at = $at - <span class="syn-number">1</span>
+			<span class="syn-keyword">match</span> marks.get($at) {
+				<span class="syn-type">Ok</span>(<span class="syn-type">Reached</span>) =&gt; {
+					$live = $live + <span class="syn-number">1</span>
+				}
+				<span class="syn-type">Ok</span>(<span class="syn-type">Unreached</span>) =&gt; {
+					$cells = $cells.set($at, <span class="syn-type">Freed</span>($free)) ?? <span class="syn-keyword">crash</span> <span class="syn-string">&quot;Collector.swept: inside the cells&quot;</span>
+					$free = <span class="syn-type">FreeAt</span>($at)
+				}
+				<span class="syn-type">Err</span>(<span class="syn-type">OutOfBounds</span>) =&gt; <span class="syn-keyword">crash</span> <span class="syn-string">&quot;Collector.swept: a mark for every cell&quot;</span>
+			}
+		}
+		{ cells: $cells, free: $free, live: $live }
+</code></pre></figure><p>Writing <code>Freed</code> over a garbage cell drops the cell that was there, and Roc&#39;s reference counting returns what it held (an object&#39;s properties, an array&#39;s items, a closure&#39;s boxes) to the allocator at that write. The heap&#39;s list keeps its length; its freed places are taken again before it grows. That is how the programs in <code>js/heaps/</code> went from peaks of 40 to 164 MB to about 4 MB each (<code>62110109</code>).</p>
+<h2 id="around-the-copy-cliff">Around the copy cliff <a class="section-link" href="#around-the-copy-cliff" aria-label="Link to this section">§</a></h2>
+<p>The collector is shaped around Roc&#39;s copy cliff, where a write to a list that something else still refers to copies the whole list first (<code>docs/roc-notes.md</code> in roc-apps, &quot;Speed and copying&quot;):</p>
+<ul>
+<li><strong>The marks are a list of their own.</strong> <code>marked</code> reads the cells and writes only its marks and its stack of cells waiting to be visited, each in place, so every list it writes is its own. A mark bit inside each cell would make the first mark copy the heap.</li>
+<li><strong>The sweep owns the cells.</strong> <code>collected</code> takes the cells out of the machine with <code>lent</code> before it calls <code>swept</code>, so each <code>set</code> in the sweep is the list&#39;s only reference and writes in place:</li>
+</ul>
+<figure class="listing"><figcaption>js/roc/Vm.roc, the function collected</figcaption><pre><code class="language-roc"><span class="syn-comment"># The machine after a collection, every cell its roots don&#39;t reach freed and</span>
+<span class="syn-comment"># the next collection scheduled, and how many cells the roots reached.</span>
+<span class="syn-name">collected</span> : <span class="syn-type">Vm.Machine</span> -&gt; { machine : <span class="syn-type">Vm.Machine</span>, live : <span class="syn-type">U64</span> }
+<span class="syn-name">collected</span> = |machine| {
+	marks = <span class="syn-type">Collector</span>.marked(machine.cells, roots(machine))
+	{ cells, machine: rest } = lent(machine)
+	{ cells: swept, free, live } = <span class="syn-type">Collector</span>.swept(cells, marks)
+	before = <span class="syn-type">Box</span>.unbox(rest.collecting)
+	schedule = <span class="syn-keyword">match</span> before.schedule {
+		<span class="syn-type">Doubling</span>(_) =&gt; <span class="syn-type">Doubling</span>(<span class="syn-type">Collector</span>.least_threshold.max(<span class="syn-number">2</span> * live))
+		<span class="syn-type">EveryAllocation</span>(_) =&gt; <span class="syn-type">EveryAllocation</span>({ length: swept.len(), free: free })
+	}
+	collecting = <span class="syn-type">Box</span>.box({ schedule: schedule, collections: before.collections + <span class="syn-number">1</span> })
+	{
+		machine: { ..rest, cells: swept, free: free, collecting: collecting },
+		live: live,
+	}
+}
+</code></pre></figure><ul>
+<li><strong>The waiting stack reuses its places.</strong> A visited cell&#39;s place is written over by the next one pushed, so the stack grows only to the mark&#39;s deepest point.</li>
+</ul>
+<h2 id="its-roots-and-when-it-runs">Its roots, and when it runs <a class="section-link" href="#its-roots-and-when-it-runs" aria-label="Link to this section">§</a></h2>
+<p>The roots are the machine&#39;s data:</p>
+<figure class="listing"><figcaption>js/roc/Vm.roc, the function roots</figcaption><pre><code class="language-roc"><span class="syn-comment"># Every cell the machine names: the live stack&#39;s (each frame&#39;s slots, its</span>
+<span class="syn-comment"># boxes and the function it runs, the callers&#39; values waiting, a `finally`&#39;s</span>
+<span class="syn-comment"># throw held), the builtins&#39;, a throw&#39;s on its way to a handler, and the</span>
+<span class="syn-comment"># event queue&#39;s (each timer&#39;s callback, a frame&#39;s closure, the click handler).</span>
+<span class="syn-comment"># A handler or a waiting frame names only places on the stack.</span>
+<span class="syn-name">roots</span> : <span class="syn-type">Vm.Machine</span> -&gt; <span class="syn-type">List</span>(<span class="syn-type">U64</span>)
+<span class="syn-name">roots</span> = |machine| {
+	builtins = <span class="syn-type">Box</span>.unbox(machine.builtins)
+	<span class="syn-keyword">var</span> $ids = <span class="syn-type">List</span>.with_capacity(machine.top + builtins.len())
+	<span class="syn-keyword">var</span> $at = <span class="syn-number">0</span>
+	<span class="syn-keyword">while</span> $at &lt; machine.top {
+		$ids = <span class="syn-type">Collector</span>.with_value_root($ids, machine.stack.get($at) ?? <span class="syn-keyword">crash</span> <span class="syn-string">&quot;Vm.roots: below the stack&#39;s top&quot;</span>)
+		$at = $at + <span class="syn-number">1</span>
+	}
+	<span class="syn-keyword">for</span> builtin <span class="syn-keyword">in</span> builtins {
+		$ids = <span class="syn-type">Collector</span>.with_value_root($ids, builtin)
+	}
+	<span class="syn-keyword">match</span> machine.status {
+		<span class="syn-type">Thrown</span>(boxed) =&gt; {
+			$ids = <span class="syn-type">Collector</span>.with_value_root($ids, <span class="syn-type">Box</span>.unbox(boxed).value)
+		}
+		<span class="syn-type">Running</span> | <span class="syn-type">Finished</span> | <span class="syn-type">Faulted</span>(_) =&gt; {}
+	}
+	events = <span class="syn-type">Box</span>.unbox(machine.events)
+	<span class="syn-keyword">for</span> event <span class="syn-keyword">in</span> events.pending_events {
+		$ids = <span class="syn-keyword">match</span> event.happening {
+			<span class="syn-type">Timed</span>({ timer: _, callback, every: _ }) =&gt; <span class="syn-type">Collector</span>.with_value_root($ids, callback)
+			<span class="syn-type">Framed</span>(closure, _) =&gt; $ids.append(closure.scope)
+			<span class="syn-type">Clicked</span>(_, _) | <span class="syn-type">Collected</span>(_) =&gt; $ids
+		}
+	}
+	<span class="syn-keyword">match</span> events.on_click {
+		<span class="syn-type">Handler</span>({ handler, site: _ }) =&gt; {
+			$ids = <span class="syn-type">Collector</span>.with_value_root($ids, handler)
+		}
+		<span class="syn-type">NoHandler</span> =&gt; {}
+	}
+	<span class="syn-keyword">match</span> events.on_collect {
+		<span class="syn-type">Handler</span>({ handler, site: _ }) =&gt; {
+			$ids = <span class="syn-type">Collector</span>.with_value_root($ids, handler)
+		}
+		<span class="syn-type">NoHandler</span> =&gt; {}
+	}
+	$ids
+}
+</code></pre></figure><p>A collection is due when the free list is empty and the heap has reached its threshold. After each one, the threshold is twice what the collection kept, and at least 1,024 cells:</p>
+<figure class="listing"><figcaption>js/roc/Vm.roc, the function is_collection_due</figcaption><pre><code class="language-roc"><span class="syn-name">is_collection_due</span> : <span class="syn-type">Vm.Machine</span> -&gt; <span class="syn-type">Bool</span>
+<span class="syn-name">is_collection_due</span> = |machine|
+	<span class="syn-keyword">match</span> <span class="syn-type">Box</span>.unbox(machine.collecting).schedule {
+		<span class="syn-type">Doubling</span>(at) =&gt; machine.free == <span class="syn-type">NoneFree</span> <span class="syn-keyword">and</span> machine.cells.len() &gt;= at
+		<span class="syn-type">EveryAllocation</span>({ length, free }) =&gt; machine.cells.len() != length <span class="syn-keyword">or</span> machine.free != free
+	}
+</code></pre></figure><p>Between two instructions every value the program holds is in the machine. The one exception is a builtin that runs a callback, such as <code>filter</code> or <code>sort</code>: what it keeps across the callback waits on the stack, where the collections inside the callback see it. A live value that names a freed cell stops the run, since it means a root was missed.</p>
+
+</article>
+<nav class="turn-page" aria-label="Previous and next chapter">
+<a rel="prev" href="the-pipeline-and-the-machine.html"><small>Previous</small>The pipeline and the machine</a>
+<a rel="next" href="the-rules-and-the-host.html"><small>Next</small>The rules and the host</a>
+</nav>
+</main>
+</body>
+</html>
