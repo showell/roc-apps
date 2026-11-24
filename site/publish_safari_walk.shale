@@ -4,7 +4,7 @@
 -- site/publish_screensavers.shale does for roc-screensaver's pages. The
 -- landing page's Safari Walk card links it. The card's picture,
 -- site/web/shared/safari-walk.png, is the landing page's own file, which
--- `site/publish.sh home` publishes, not this script.
+-- `shale site/publish.shale app=home` publishes, not this script.
 --
 --   cd <roc-apps checkout> && shale site/publish_safari_walk.shale
 --

@@ -313,7 +313,7 @@ The build's stage is a folder of static files, and any static host serves it. Fo
 The Safari book happens to move through three channels, each run by a script in roc-apps:
 
 1. **Dev.** Every build writes to a stage of the dev channel, and a draft gets a stage of its own.
-2. **Staging.** `book.shale` builds into a trial folder, and `book_check.mjs` drives each page in headless Chromium. It stops on a console error, a failed request, a widget that fails to run, a diagram that fails to draw, a broken link, or a page that runs past the window at desktop, tablet or print width. A book that passes replaces the channel's copy, and `site/publish.sh tutorial` commits it to the roc-apps repository's `site/live/` folder, with a record of the compiler and the commit that built it.
+2. **Staging.** `book.shale` builds into a trial folder, and `book_check.mjs` drives each page in headless Chromium. It stops on a console error, a failed request, a widget that fails to run, a diagram that fails to draw, a broken link, or a page that runs past the window at desktop, tablet or print width. A book that passes replaces the channel's copy, and `shale site/publish.shale app=tutorial` commits it to the roc-apps repository's `site/live/` folder, with a record of the compiler and the commit that built it.
 3. **Public.** A deploy copies staging to [the public site](https://roc.lynrummy.com/tutorial/).
 
 ### Your own book

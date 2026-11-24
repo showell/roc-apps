@@ -39,14 +39,14 @@ next unchanged. The design is
 
 - **dev**: each app's `build.sh` writes it; `site/build.sh` writes the landing page
   (`site/web/index.html`) and the site's own folders of `site/web/`
-  (`shared/`, `notes/`, `syntax-color/` and the rest: its header names each).
+  (`site/site_folders.txt` lists them).
 - **staging**: `site/live/`, tracked, so a clone has the published site.
-  `site/publish.sh <app>` copies an app over from dev, with a `PROVENANCE`
-  file, and commits it; under Shale, `shale site/publish.shale app=<app>`
-  runs it and pushes with git_push, since a confined git cannot read ssh's key.
+  `shale site/publish.shale app=<app>` copies an app of
+  `site/published_apps.txt` over from dev, with a `PROVENANCE` file, commits
+  it and pushes with git_push, since a confined git cannot read ssh's key.
   `site/publish_screensavers.shale` publishes roc-screensaver's screensavers,
-  and `site/publish_safari_walk.shale` publishes safari-walk's page; each
-  builds from its own repo's checkout.
+  and `site/publish_safari_walk.shale` safari-walk's page; each builds from
+  its own repo's checkout.
 - **prod**: [roc.lynrummy.com](https://roc.lynrummy.com/), staging's files
   verbatim, copied by `site/deploy.shale`, which takes the droplet from
   the secret `keys:prod-ssh` so the repo names none.

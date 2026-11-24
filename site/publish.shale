@@ -1,39 +1,311 @@
--- THE SIGN-OFF UNDER SHALE: site/publish.sh, then its push by Shale's
--- git_push. Run it from roc-apps' root:
+-- budget: programs=400 steps=60000000 reads=50000 read_bytes=1000000000 arena_bytes=1000000000
+-- THE SIGN-OFF: this script moves what the dev channel shows into staging,
+-- one app at a time. Run it from roc-apps' root:
 --
---   shale site/publish.shale app=safari     an app, as `site/publish.sh safari`
---   shale site/publish.shale app=home       the landing page and the site's folders
---   shale site/publish.shale app=safari dry=1   PUBLISH_DRY_RUN=1: the app
---                                           copied over site/live/<app>/ with
---                                           its PROVENANCE, left uncommitted
+--   shale site/publish.shale app=safari       an app of site/published_apps.txt,
+--                                             published at site/live/<app>/
+--   shale site/publish.shale app=tutorial     the Safari Ride book, with every widget
+--                                             and app it frames (each published
+--                                             first, if staging differs)
+--   shale site/publish.shale app=shale-book   the Shale book, as book/build.shale built it
+--   shale site/publish.shale app=home         the landing page and the site's own
+--                                             folders (site/site_folders.txt)
 --
--- site/publish.sh does the whole sign-off (its header says what each app
--- publishes), with PUBLISH_NO_PUSH=1, so it commits and leaves the push out:
--- under Shale's confinement git cannot read ssh's key ("Load key ...
--- Permission denied"), so its own `git push` would fail after the commit has
--- landed. The push is then git_push's, unconfined over ssh to a remote of the
--- box's remotes file, and only when the script made a commit (staging that
--- already holds what dev shows, and a dry run, push nothing). The book's
--- frames that publish.sh publishes first are commits of their own, and the
--- one push takes them all.
--- budget: programs=200
+-- An app must be a name of site/published_apps.txt, and anything else is
+-- refused, naming the list. Its source is the folder of that name at the
+-- repository's top (basic, js), or under canvas_apps/ for a canvas app. The
+-- script copies build:roc-apps/next/<app>/ (what <app>'s build last wrote,
+-- and what :9210/<app>/ shows) over site/live/<app>/ whole, writes a
+-- PROVENANCE inside it, commits that folder alone, and pushes with git_push,
+-- which runs the push over ssh unconfined, to a remote of the box's remotes
+-- file. A canvas app must be a release build (`canvas_apps/build.sh <app>
+-- release`). `home` does the same for the landing page and the folders of
+-- site/site_folders.txt, which site/build.sh copies into dev from the same
+-- list; dev's `channel` file stays behind, so staging holds exactly what prod
+-- will.
+--
+-- Staging on :9200 serves the site/live/ of ~/showell_repos/roc-apps per
+-- request with no-store, so a publish there is live at once (a publish from
+-- another worktree is not on staging until it is merged there). Two other
+-- scripts write site/live/: site/publish_screensavers.shale writes
+-- roc-screensaver's folders (welcome-to-roc/, bubbles/, tides/), and
+-- site/publish_safari_walk.shale writes safari-walk/. markdown/ and
+-- user_uploads/ are roc-markdown's playground build, copied in and committed
+-- by hand (roc-markdown's TESTING.md says which files).
+--
+-- PROVENANCE records what the build read: the Roc compiler, the roc-apps
+-- commit (marked when the app's own tree has uncommitted changes), and a hash
+-- of each wasm. A build that recorded its own compiler (its BUILT) is
+-- believed; for an app whose build records none (basic, js), the compiler
+-- named is the pin, the prelude's pinned_roc, which that app's build also
+-- runs. A checkout an app needs and that is missing stops the publish before
+-- site/live/ is touched.
+--
+-- Options, for a proof against a scratch copy:
+--
+--   dry=1                 copy the app over its folder and write the
+--                         PROVENANCE, then stop before git, leaving the
+--                         folder changed and uncommitted
+--   next=<Shale path>     the dev channel to read (build:roc-apps/next unset)
+--   live=<Shale path>     staging to write (site/live unset); any other place
+--                         needs dry=1, since only site/live/ is committed
+--   shale_book=<path>     the Shale book's checkout (repos:lanes/shale-book unset)
 
 const APP = arg("app", "")
 const DRY = arg("dry", 0) == 1
+const NEXT = arg("next", "build:roc-apps/next")
+const LIVE = arg("live", "site/live")
+-- The Shale book is built by book/build.shale on the shale repository's book
+-- branch, not from a folder here, so its PROVENANCE names that checkout.
+const SHALE_BOOK = arg("shale_book", "repos:lanes/shale-book")
+const APPS_FILE = "site/published_apps.txt"
+const FOLDERS_FILE = "site/site_folders.txt"
+const STAGING = "http://localhost:9200/"
 
-if APP == "" then fail("publish: name the app, `shale site/publish.shale app=<app>` (or app=home)") end
-if not exists("site/publish.sh") then fail("publish: run it from roc-apps' root") end
-not_option("publish", "app", APP)
-
-local before = git_head(".")
-local env = {PUBLISH_NO_PUSH = "1"}
-if DRY then env.PUBLISH_DRY_RUN = "1" end
-local r = run({"site/publish.sh", APP}, {timeout_ms = 600000, tail = 80, env = env})
-print(trim(r.out))
-if get(r, "code", -1) ~= 0 then fail("publish: site/publish.sh " .. APP .. " exited " .. get(r, "code", -1) .. "; nothing pushed") end
-if git_head(".") == before then
-  print("no new commit, so nothing to push")
-else
-  git_push(".")
-  print("pushed " .. git_head(".") .. " (git_push)")
+-- The names of a list file: one a line, `#` lines and blank ones skipped.
+function list_file(p)
+  local names = {}
+  for l in lines(read(p)) do
+    local t = trim(l)
+    if t ~= "" and not starts_with(t, "#") then push(names, t) end
+  end
+  return names
 end
+
+-- Every entry below `dir` but those whose own name is in `skip`, as
+-- `<kind> <name under dir>`, sorted.
+function entries_under(dir, skip)
+  local names = {}
+  for e in walk_all(dir, {}) do
+    if not has_item(skip, basename(e.path)) then push(names, e.kind .. " " .. sub(e.path, #dir + 2, #e.path)) end
+  end
+  sort(names)
+  return names
+end
+
+-- Whether two trees hold the same entries with the same bytes, `diff -rq`'s
+-- answer with each name of `skip` left out wherever it is.
+function same_tree(a, b, skip)
+  if not is_dir(a) or not is_dir(b) then return false end
+  local ea = entries_under(a, skip)
+  if join(ea, "\n") ~= join(entries_under(b, skip), "\n") then return false end
+  for e in ea do
+    if starts_with(e, "file ") then
+      local name = sub(e, 6, #e)
+      if read(a .. "/" .. name) ~= read(b .. "/" .. name) then return false end
+    end
+  end
+  return true
+end
+
+-- The short hash of HEAD in `repo`, as `git rev-parse --short` gives it.
+function short_head(repo)
+  return trim(must(run({"git", "rev-parse", "--short", "HEAD"}, {cwd = repo, timeout_ms = 10000, tail = 2})).out)
+end
+
+-- " +uncommitted" when the tracked files under `path` in `repo` differ from
+-- HEAD, else "".
+function uncommitted(repo, path)
+  local r = run({"git", "diff", "--quiet", "HEAD", "--", path}, {cwd = repo, timeout_ms = 30000, tail = 5})
+  if r.code == 0 then return "" end
+  if r.code ~= 1 then fail("publish: `git diff --quiet HEAD -- " .. path .. "` in " .. repo .. " exited " .. r.code .. ": " .. trim(r.out)) end
+  return " +uncommitted"
+end
+
+-- The text with one newline at its end.
+function as_lines(text)
+  if text == "" or ends_with(text, "\n") then return text end
+  return text .. "\n"
+end
+
+-- The PROVENANCE of the app copied to `dest`, from `src`.
+function provenance(app, src, dest)
+  local stamp = trim(must(run({"date", "-u", "+%Y-%m-%dT%H:%M:%SZ"}, {timeout_ms = 5000, tail = 2})).out)
+  local text = "published " .. stamp .. "\n"
+  if app == "shale-book" then
+    local branch = trim(must(run({"git", "branch", "--show-current"}, {cwd = SHALE_BOOK, timeout_ms = 10000, tail = 2})).out)
+    text = text .. "shale " .. short_head(SHALE_BOOK) .. " " .. branch .. uncommitted(SHALE_BOOK, "book") .. "\n"
+  else
+    if exists(dest .. "/BUILT") then
+      text = text .. as_lines(read(dest .. "/BUILT"))
+    else
+      local said = trim(must(run({pinned_roc("publish"), "version"}, {timeout_ms = 30000, tail = 2, want = "roc-pin: roc-apps' pinned nightly"})).out)
+      text = text .. "roc " .. re_replace(said, "^Roc compiler version ", "") .. "\n"
+    end
+    text = text .. "roc-apps " .. short_head(".") .. uncommitted(".", src) .. "\n"
+  end
+  local wasms = {}
+  for e in walk_all(dest, {kind = "file", like = "*.wasm"}) do push(wasms, sub(e.path, #dest + 2, #e.path)) end
+  sort(wasms)
+  for w in wasms do
+    local p = dest .. "/" .. w
+    local sum = trim(must(run({"sha256sum", real(p)}, {timeout_ms = 30000, tail = 2})).out)
+    text = text .. "sha256 " .. sub(sum, 1, 16) .. "  " .. stat(p).size .. " bytes  " .. w .. "\n"
+  end
+  return text
+end
+
+-- `paths` committed alone with `msg`, unless staging already has them as
+-- they are. Answers whether a commit was made.
+function commit_paths(paths, what, msg)
+  local add = {"git", "add", "-A", "--"}
+  for p in paths do push(add, p) end
+  must(run(add, {timeout_ms = 60000, tail = 10}))
+  local check = {"git", "diff", "--cached", "--quiet", "--"}
+  for p in paths do push(check, p) end
+  local staged = run(check, {timeout_ms = 30000, tail = 5})
+  if staged.code == 0 then
+    print("staging already has " .. what .. " as dev shows it; nothing to publish")
+    return false
+  end
+  local commit = {"git", "commit", "-q", "-F", "-", "--"}
+  for p in paths do push(commit, p) end
+  must(run(commit, {timeout_ms = 60000, tail = 10, stdin = msg}))
+  print("committed " .. what)
+  return true
+end
+
+-- The folders the book's pages frame that staging lacks as dev has them,
+-- sorted. The book publishes only a build of
+-- canvas_apps/safari/tutorial/book.shale, whose BUILT says which chapters it
+-- holds, and a page staging has is never taken away, since its address is
+-- published. The widgets and apps the book frames ship with it: each one
+-- whose staged copy isn't the build the book was checked with is published
+-- first, from the dev channel, as an app of its own. The list comes from the
+-- built pages' own frames, so it can't go stale.
+function book_frames_to_publish()
+  local book = NEXT .. "/tutorial"
+  if not exists(book .. "/BUILT") or re_find(read(book .. "/BUILT"), "(^|\n)book: ") == nil then
+    fail("publish: " .. book .. " has no BUILT saying which chapters it holds, so it is not a book that canvas_apps/safari/tutorial/book.shale built")
+  end
+  if is_dir(LIVE .. "/tutorial") then
+    for e in walk_all(LIVE .. "/tutorial", {kind = "file", like = "*.html"}) do
+      local name = sub(e.path, #LIVE + 11, #e.path)
+      if find(name, "/") == nil and not exists(book .. "/" .. name) then
+        fail("publish: staging has tutorial/" .. name .. " and this book doesn't: a published page never goes away")
+      end
+    end
+  end
+  local framed = {}
+  for e in walk_all(book, {kind = "file", like = "*.html"}) do
+    if find(sub(e.path, #book + 2, #e.path), "/") == nil then
+      for m in re_find_all(read(e.path), [=[src="\.\./([a-z_]*)/]=]) do push(framed, m.group) end
+    end
+  end
+  framed = unique(framed)
+  sort(framed)
+  local stale = {}
+  for folder in framed do
+    if is_dir(LIVE .. "/" .. folder) and same_tree(NEXT .. "/" .. folder, LIVE .. "/" .. folder, {"BUILT", "PROVENANCE", "BOOK_INPUTS"}) then
+      print("the book frames " .. folder .. ", as staged")
+    else
+      print("the book frames " .. folder .. "; publishing it first")
+      push(stale, folder)
+    end
+  end
+  return stale
+end
+
+-- One app published: copied, given its PROVENANCE and committed. Answers
+-- whether a commit was made.
+function publish_app(app, apps)
+  if not has_item(apps, app) then
+    fail("publish: " .. app .. " is not an app this script publishes; " .. APPS_FILE .. " names them: " .. join(apps, ", ") .. " (and home, the landing page)")
+  end
+  local committed = false
+  local src = app
+  -- The book is built from safari's tutorial folder.
+  if app == "tutorial" then
+    src = "canvas_apps/safari/tutorial"
+    for folder in book_frames_to_publish() do
+      if publish_app(folder, apps) then committed = true end
+    end
+  end
+  if app == "shale-book" then
+    src = ""
+    local found = is_dir(SHALE_BOOK) and run({"git", "rev-parse", "--short", "HEAD"}, {cwd = SHALE_BOOK, timeout_ms = 10000, tail = 2}).code == 0
+    if not found then
+      fail("publish: " .. app .. " reads the Shale book, and there is no git checkout at " .. SHALE_BOOK .. "; set shale_book= to the checkout the build used")
+    end
+  else
+    if not is_dir(src) then src = "canvas_apps/" .. app end
+    if not is_dir(src) then fail("publish: " .. app .. " is neither an app nor a canvas app in this repository") end
+  end
+  local from = NEXT .. "/" .. app
+  local dest = LIVE .. "/" .. app
+  if not is_dir(from) then fail("publish: no dev build at " .. from .. "; run " .. app .. "'s build.sh first") end
+  if src == "canvas_apps/" .. app then
+    local release = exists(from .. "/BUILT") and re_find(read(from .. "/BUILT"), "(^|\n)opt speed(\n|$)") ~= nil
+    if not release then fail("publish: " .. from .. " is not a release build; run canvas_apps/build.sh " .. app .. " release first") end
+  end
+  if exists(dest) then remove_tree(dest) end
+  copy(from, dest)
+  local text = provenance(app, src, dest)
+  if exists(dest .. "/PROVENANCE") then remove(dest .. "/PROVENANCE") end
+  create(dest .. "/PROVENANCE", text)
+  -- Folded into PROVENANCE above; one record, not two. BOOK_INPUTS is
+  -- canvas_apps/safari/tutorial/build_widgets.shale's stamp on a page's dev
+  -- build, and means nothing in staging.
+  for f in {"BUILT", "BOOK_INPUTS"} do
+    if exists(dest .. "/" .. f) then remove(dest .. "/" .. f) end
+  end
+  print(trim(text))
+  if DRY then
+    print("dry run: nothing committed")
+    return committed
+  end
+  if commit_paths({dest}, app, "site: publish " .. app .. " to staging\n\n" .. text) then committed = true end
+  return committed
+end
+
+-- The landing page and the site's own folders published. Answers whether a
+-- commit was made.
+function publish_home()
+  if not exists(NEXT .. "/index.html") then fail("publish: no landing page at " .. NEXT .. "; run site/build.sh first") end
+  local folders = list_file(FOLDERS_FILE)
+  -- Dev must show the landing page as site/web has it, or this would publish
+  -- an older one and say nothing.
+  local stale = read("site/web/index.html") ~= read(NEXT .. "/index.html")
+  for dir in folders do
+    if not same_tree("site/web/" .. dir, NEXT .. "/" .. dir, {}) then stale = true end
+  end
+  if stale then fail("publish: dev's landing page is older than site/web/; run site/build.sh, look at http://localhost:9210/, then publish") end
+  if exists(LIVE .. "/index.html") then remove(LIVE .. "/index.html") end
+  copy(NEXT .. "/index.html", LIVE .. "/index.html")
+  local paths = {LIVE .. "/index.html"}
+  for dir in folders do
+    if exists(LIVE .. "/" .. dir) then remove_tree(LIVE .. "/" .. dir) end
+    copy(NEXT .. "/" .. dir, LIVE .. "/" .. dir)
+    push(paths, LIVE .. "/" .. dir)
+  end
+  if DRY then
+    print("dry run: nothing committed")
+    return false
+  end
+  return commit_paths(paths, "the landing page", "site: publish the landing page to staging\n")
+end
+
+function main()
+  if APP == "" then fail("publish: name the app, `shale site/publish.shale app=<app>` (or app=home)") end
+  if not exists(APPS_FILE) or not exists(FOLDERS_FILE) then fail("publish: run it from roc-apps' root") end
+  if LIVE ~= "site/live" and not DRY then fail("publish: live=" .. LIVE .. " is not site/live, which alone is committed; add dry=1") end
+  not_option("publish", "app", APP)
+  if not is_dir(LIVE) then mkdir(LIVE) end
+  local committed = false
+  local what = "the landing page"
+  if APP == "home" then
+    committed = publish_home()
+  else
+    what = APP
+    committed = publish_app(APP, list_file(APPS_FILE))
+  end
+  if DRY then return nil end
+  if committed then
+    git_push(".")
+    print("pushed " .. git_head(".") .. " (git_push)")
+    print("published " .. what .. " to staging: " .. STAGING)
+  end
+  return nil
+end
+
+main()

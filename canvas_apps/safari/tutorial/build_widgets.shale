@@ -21,7 +21,7 @@
 --     SAFARI_GATE_FILES.
 --
 -- Any other build of a page removes its stamp, as build.sh replaces the whole
--- folder. site/publish.sh drops the stamp from what it publishes.
+-- folder. site/publish.shale drops the stamp from what it publishes.
 --
 -- `look=1` says which pages are stale and why, and builds none. `show=FOLDER`
 -- lists what that page's build reads.

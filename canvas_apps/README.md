@@ -14,7 +14,7 @@ are fixed pictures. Each app's `<Name>App.roc` says what it is.
 own examples, by Luke Boswell, adapted to this scheme (below).
 
     canvas_apps/build.sh snake           the page, on the dev channel at :9210/snake/
-    canvas_apps/build.sh snake release   the page as --opt=speed wasm, which site/publish.sh requires
+    canvas_apps/build.sh snake release   the page as --opt=speed wasm, which site/publish.shale requires
 
     node canvas_apps/web/page_check.mjs snake
     KEYS=3:Space DRAG=200,100,200,500 node canvas_apps/web/page_check.mjs pong

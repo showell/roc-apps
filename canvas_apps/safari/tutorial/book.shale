@@ -82,7 +82,7 @@ const CHAPTERS = CHAPTERS_ARG ~= "" and tonumber(CHAPTERS_ARG) or nil
 if STAGE == DEST_NAME or STAGE == DEST_NAME .. ".replaced" or contains(STAGE, "/") then fail("book: stage=" .. STAGE .. " names the published book's folder or a path, and a stage is a folder of its own") end
 if not CHECK and STAGE == "" then fail("book: check=0 builds only a stage=, never the channel's book") end
 
--- What this build holds, for site/publish.sh to require of a book and fold
+-- What this build holds, for site/publish.shale to require of a book and fold
 -- into its PROVENANCE; the app reads the same line from chapters.txt.
 function built_record()
   if CHAPTERS == nil then return "book: every chapter\n" end

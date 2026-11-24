@@ -12,7 +12,7 @@
 --   cd <roc-apps checkout> && shale site/check_mobile.shale channel=dev page=roc-on-shale/
 --
 -- Run it on dev after changing a page in site/web/, and on staging after
--- `site/publish.sh home`. The shots it takes (each width's whole page and
+-- `shale site/publish.shale app=home`. The shots it takes (each width's whole page and
 -- first screen, and the page at 1280 px) go to a fresh folder under
 -- ~/build/roc-apps/, which it names; delete it once you've looked.
 

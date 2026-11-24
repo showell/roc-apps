@@ -1,0 +1,50 @@
+# The apps `shale site/publish.shale app=<name>` publishes, one name a line; a
+# line starting with # is a comment. publish.shale refuses any other name
+# (but `home`, the landing page and site/site_folders.txt's folders), so a
+# folder of this repository that isn't an app (docs, tools, glue, site) is
+# never published by mistake. Each is published at site/live/<name>/.
+#
+# A folder at the repository's top:
+basic
+delivery
+dog-park
+fasttrack
+js
+# A folder under canvas_apps/, published only as a release build:
+beacon_widget
+bend_animals_widget
+bends_widget
+bird_widget
+breakout
+camera
+cat_widget
+conifers_widget
+cow_widget
+eight_queens
+far_tree_widget
+frame_widget
+gaze_widget
+herd_widget
+kinds_widget
+knights_tour
+particles
+pipeline_widget
+pong
+rehearsal_widget
+route_widget
+safari
+shapes_widget
+sky_widget
+snake
+step_widget
+stills_widget
+thanksgiving
+trick_or_treat
+truck_widget
+workshop
+# The Safari Ride book, built from canvas_apps/safari/tutorial, with every
+# widget and app it frames:
+tutorial
+# The Shale book, built by book/build.shale on the shale repository's book
+# branch:
+shale-book

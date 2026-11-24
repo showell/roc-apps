@@ -1,0 +1,19 @@
+# The site's own folders: each is a folder of site/web/, copied whole into the
+# dev channel by site/build.sh and published to staging beside the landing
+# page by `shale site/publish.shale app=home`. Both read this list, one folder
+# a line; a line starting with # is a comment.
+#
+#   shared                      the script every page loads for its way home, and the cards' pictures
+#   notes                       short pages the landing page links at its foot
+#   syntax-color                roc-syntax-color's showcase
+#   roc-on-shale                site/build_roc_on_shale.shale writes it
+#   security-idioms             site/build_security_idioms.shale writes it
+#   release-candidate-compiles  site/build_rc1_article.shale writes it
+#   chess                       the chess toys' index, and the code page site/build_chess_code.shale writes
+shared
+notes
+syntax-color
+roc-on-shale
+security-idioms
+release-candidate-compiles
+chess

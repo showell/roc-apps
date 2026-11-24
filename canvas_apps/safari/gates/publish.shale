@@ -7,7 +7,7 @@
 -- It runs the merge gate from cold caches, then check.shale from a cold cache,
 -- then builds the book's published chapters, which builds safari's page and every widget's as
 -- release wasm, each from a cold cache, into the dev channel, where
--- site/publish.sh takes them. Safari's page must draw the hash the dev page
+-- site/publish.shale takes them. Safari's page must draw the hash the dev page
 -- draws. It moves nothing to staging. It takes about six minutes.
 
 const RUN = "canvas_apps/safari/gates/run.shale"
@@ -33,7 +33,7 @@ function main()
   remove_tree(cache)
   local book = {"shale", "--root", ".", BOOK, "chapters=" .. PUBLISHED_CHAPTERS}
   report_stage(run(book, {timeout_ms = 1800000, tail = 60}), "the book's first " .. PUBLISHED_CHAPTERS .. " chapters, with safari's page and every widget's as release")
-  print("safari publish: every stage passed; site/publish.sh takes each page from the dev channel")
+  print("safari publish: every stage passed; site/publish.shale takes each page from the dev channel")
   return nil
 end
 

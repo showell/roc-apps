@@ -1,6 +1,6 @@
 -- budget: steps=40000000 read_bytes=200000000
 -- This script publishes roc-screensaver's screensavers to staging, each in its
--- own folder of the site, as site/publish.sh does for an app of this
+-- own folder of the site, as site/publish.shale does for an app of this
 -- repository. The landing page's Platforms section links them.
 --
 --   cd <roc-apps checkout> && shale site/publish_screensavers.shale               # every one in SCREENSAVERS
@@ -149,7 +149,7 @@ function publish_one(s, head)
   if exists(live) then remove_tree(live) end
   copy(next, live)
   create(live .. "/PROVENANCE", provenance(s, live, head))
-  -- Folded into PROVENANCE, as site/publish.sh does: one record, not two.
+  -- Folded into PROVENANCE, as site/publish.shale does: one record, not two.
   remove(live .. "/BUILT")
   print(read(live .. "/PROVENANCE"))
 

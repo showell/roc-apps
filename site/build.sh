@@ -1,12 +1,8 @@
 #!/bin/bash
-# The site's own files into the DEV channel: the landing page, the script every
-# page loads for its way home, the site's own pages (notes/, short pages the
-# landing page links at its foot, syntax-color/, roc-syntax-color's
-# showcase, roc-on-shale/, which site/build_roc_on_shale.shale writes,
-# security-idioms/, which site/build_security_idioms.shale writes,
-# release-candidate-compiles/, which site/build_rc1_article.shale writes, and
-# chess/, the chess toys' index and the code page site/build_chess_code.shale
-# writes) and the channel's name. Each folder of site/web/ is copied whole.
+# The site's own files into the DEV channel: the landing page, the site's own
+# folders of site/web/ (site/site_folders.txt lists them and says what each
+# is; `shale site/publish.shale app=home` reads the same list), each copied
+# whole, and the channel's name.
 #
 #   site/build.sh
 #
@@ -17,9 +13,10 @@ HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 NEXT="$HOME/build/roc-apps/next"
 mkdir -p "$NEXT"
 cp "$HERE/web/index.html" "$NEXT/"
-for dir in shared notes syntax-color roc-on-shale security-idioms release-candidate-compiles chess; do
+while read -r dir; do
+    case "$dir" in ''|'#'*) continue ;; esac
     rm -rf "${NEXT:?}/$dir"
     cp -r "$HERE/web/$dir" "$NEXT/"
-done
+done < "$HERE/site_folders.txt"
 echo dev > "$NEXT/channel"
 echo "dev: http://localhost:9210/"

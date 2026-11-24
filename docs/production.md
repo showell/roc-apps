@@ -103,13 +103,13 @@ Apps"):
 
 - **dev** is what the build scripts last wrote, on this box's Caddy
   (`ops/Caddyfile`);
-- **staging** is `site/live/`, tracked, which `site/publish.sh`,
+- **staging** is `site/live/`, tracked, which `site/publish.shale`,
   `site/publish_screensavers.shale` and `site/publish_safari_walk.shale`
   write. The screensavers' sources are in roc-screensaver and Safari Walk's
   in safari-walk; they reach prod only through staging here. `markdown/`
-  and `user_uploads/` are roc-markdown's playground build, copied in and
-  committed by hand (roc-markdown's `TESTING.md`, "What the box
-  publishes");
+  and `user_uploads/` are roc-markdown's playground build (roc-markdown's
+  `TESTING.md`, "What the box publishes"), copied in and committed by
+  hand;
 - **prod** is staging's files verbatim.
 
 **Deploying** is `shale site/deploy.shale`, run on the owner's sign-off
@@ -135,14 +135,14 @@ A page is a folder of the site: `site/live/<name>/` in staging, and
    `canvas_apps/`, and adds its line to `apps.txt` (CLAUDE.md §3); a canvas
    app is published only as a release build (`canvas_apps/build.sh <name>
    release`).
-3. **Have a publish path.** `site/publish.sh` takes any folder of this repo
-   by its name, so an app here needs nothing more; add it to the app list
-   in `site/publish.sh`'s header. A page whose source is another repo's
+3. **Have a publish path.** `site/publish.shale` publishes an app of this
+   repo by its name once the name is a line of `site/published_apps.txt`,
+   and refuses any other, so an app here adds its line there. A page whose source is another repo's
    needs a publish script of its own, in the shape of
    `site/publish_screensavers.shale` or `site/publish_safari_walk.shale`
    (a clean checkout, a PROVENANCE, the files checked, one commit), and
-   then names it in `site/publish.sh`'s header, the staging line above and
-   the README's commands.
+   then names it in `site/publish.shale`'s header, the staging line above
+   and the README's commands.
 4. **Give it a card on the landing page**, unless it is unlisted (as `js/`
    is). In `site/web/index.html`, a `<section class="feature">` (or a
    `mini`) whose `data-app` is the folder's name, so the card shows the
@@ -151,8 +151,8 @@ A page is a folder of the site: `site/live/<name>/` in staging, and
    `site/web/shared/`. The `<meta name="description">` at the top names
    every program, so add it there too.
 5. **A folder of the site's own** (a page under `site/web/`, not an app)
-   goes in two lists kept the same by hand: the loop in `site/build.sh` and
-   `site_dirs` in `site/publish.sh`, with both headers.
+   adds its line to `site/site_folders.txt`, which `site/build.sh` and
+   `shale site/publish.shale app=home` both read.
 6. **Look at dev.** `site/build.sh`, then
    `shale site/check_mobile.shale channel=dev`, and the page itself at
    http://localhost:9210/.
