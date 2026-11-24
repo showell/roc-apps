@@ -11,7 +11,7 @@
 -- scripts: `js_page.<hash>.js`, `js.<hash>.wasm`, the hash the first 16 hex
 -- digits of the file's sha256. Each file's references to the others are
 -- rewritten to their hashed names before it is hashed itself, leaves first
--- (the wasm, js_runner.js and js_samples.js, then js_painter.js, which
+-- (the wasm, js_runner.js, js_samples.js and js_memory.js, then js_painter.js, which
 -- imports js_runner.js, then js_page.js, then index.html), so a changed
 -- file changes the name of every file that leads to it. A browser that kept
 -- an old script can't run it beside a new page: the new page names new
@@ -83,17 +83,20 @@ function write_hashed(dir)
   local runner = named_by_bytes(dir, "js_runner", "js")
   create(dir .. "/js_samples.js", samples_module())
   local samples = named_by_bytes(dir, "js_samples", "js")
+  create(dir .. "/js_memory.js", read("js/web/js_memory.js"))
+  local memory = named_by_bytes(dir, "js_memory", "js")
   create(dir .. "/js_painter.js", swapped(read("js/web/js_painter.js"), import_of("js_runner.js"), import_of(runner), "js_painter.js"))
   local painter = named_by_bytes(dir, "js_painter", "js")
   local page = read("js/web/js_page.js")
   page = swapped(page, import_of("js_runner.js"), import_of(runner), "js_page.js")
   page = swapped(page, import_of("js_painter.js"), import_of(painter), "js_page.js")
   page = swapped(page, import_of("js_samples.js"), import_of(samples), "js_page.js")
+  page = swapped(page, import_of("js_memory.js"), import_of(memory), "js_page.js")
   page = swapped(page, "fetch(\"js.wasm\")", "fetch(\"" .. wasm .. "\")", "js_page.js")
   create(dir .. "/js_page.js", page)
   local entry = named_by_bytes(dir, "js_page", "js")
   create(dir .. "/index.html", swapped(read("js/web/index.html"), "src=\"js_page.js\"", "src=\"" .. entry .. "\"", "index.html"))
-  print("hashed: " .. join({entry, runner, painter, samples, wasm}, ", "))
+  print("hashed: " .. join({entry, runner, painter, samples, memory, wasm}, ", "))
 end
 
 function main()

@@ -95,6 +95,8 @@ recording_host = |keys_down| {
 		echo!("read keyIsDown ${key} ${said}\n")
 		state
 	},
+	# A collection is no effect of the program's, so the log leaves it out.
+	collected!: |_heap| {},
 }
 
 Click : {

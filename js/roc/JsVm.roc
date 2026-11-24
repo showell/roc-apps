@@ -63,6 +63,7 @@ command_host = |{}| {
 		},
 	pointer!: |_axis| crash "js-vm: the core library has no mouseX or mouseY",
 	key!: |_key| crash "js-vm: the core library has no keyIsDown",
+	collected!: |_heap| {},
 }
 
 run_program! : Str, Options => Try({}, [Exit(I8)])

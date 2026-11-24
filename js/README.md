@@ -166,12 +166,21 @@ second. A program runs on for as long as something waits (an event queued,
 or a click handler), and the page stops calling it when nothing does.
 
 **Drawing is an effect, made when the program calls for it.** The
-interpreter hands each effect to its host (`Canvas.Host`, a record of three
-effectful functions: `emit!`, `pointer!` and `key!`) at the moment the
+interpreter hands each effect to its host (`Canvas.Host`, a record of four
+effectful functions: `emit!`, `pointer!`, `key!` and `collected!`) at the moment the
 program makes it, in program order, `console.log` included. So a draw, a
 log and another draw reach the host in that order, and a program that
 stops halfway has drawn what it drew before the stop. A read is asked of
 the host when the program asks for it.
+
+**The page's memory view.** A "memory" link beside the run controls opens a
+popup with the last run's heap over time and the memory strategy in a few
+sentences (`js/web/js_memory.js`). The VM tells its host of each collection
+once it has swept (`collected!`: the heap's cells and the live ones), which
+the page's host hands on as a line `memory collected <cells> <live>`, and
+each call into the program ends with `memory cells <cells>` (`JsApp.roc`).
+js_runner.js keeps those as a timeline, each point with the wasm memory's
+size, thinned past 1,200 points; the other hosts ignore `collected!`.
 
 Each effect has one written form, a line (`Canvas.line_of`), and there are
 three hosts:

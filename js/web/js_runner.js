@@ -15,8 +15,31 @@
 // "done", "faulted", "thrown" (a throw nothing caught, `why` the line js-vm
 // prints for it), "refused" or "crashed".
 //
+// **IT KEEPS A TIMELINE OF THE LAST RUN'S MEMORY** (`memory`). The wasm
+// hands it a line `memory collected <cells> <live>` after each collection and
+// `memory cells <cells>` at the end of each call that runs the program
+// (JsApp.roc); neither reaches `onLine`. Each becomes a point: its time since
+// `start`, the heap's cells (its list's length, the freed cells included),
+// the cells a collection found live, and the wasm memory's real size in
+// bytes. Past `MOST_POINTS` the points are thinned, every two made one, so a
+// run that goes on for good keeps a bounded timeline of all of itself.
+//
 // The page and page_check.mjs both use it, so the check drives the very
 // code the page runs.
+
+const MOST_POINTS = 1200;
+
+// A point and the one after it as one: the later's place, the collections
+// of both, and the live count of the last collection between them.
+function merged(a, b) {
+  return { ...b, collections: a.collections + b.collections, live: b.live ?? a.live };
+}
+
+function thinned(points) {
+  const kept = [points[0]];
+  for (let i = 1; i < points.length; i += 2) kept.push(i + 1 < points.length ? merged(points[i], points[i + 1]) : points[i]);
+  return kept;
+}
 
 export async function loadRunner(wasmBytes) {
   const encoder = new TextEncoder();
@@ -25,12 +48,22 @@ export async function loadRunner(wasmBytes) {
   let x = null;
   let onLine = () => {};
   let ended = null;
+  const memory = { points: [], started: 0 };
+  const now = () => globalThis.performance.now();
+  function sampled(cells, live) {
+    const point = { ms: now() - memory.started, cells, live, collections: live === null ? 0 : 1, bytes: x.memory.buffer.byteLength };
+    memory.points.push(point);
+    if (memory.points.length > MOST_POINTS) memory.points = thinned(memory.points);
+  }
   const text = (p, n) => decoder.decode(new Uint8Array(x.memory.buffer, p, n));
   const env = {
     js_emit(p, n) {
       const line = text(p, n);
       if (line.startsWith("end ")) ended = line;
-      else onLine(line);
+      else if (line.startsWith("memory ")) {
+        const [, kind, cells, live] = line.split(" ");
+        sampled(Number(cells), kind === "collected" ? Number(live) : null);
+      } else onLine(line);
     },
     js_pointer: (axis) => input.pointer(axis),
     js_key: (p, n) => (input.key(text(p, n)) ? 0 : 1),
@@ -56,7 +89,11 @@ export async function loadRunner(wasmBytes) {
 
   return {
     input,
+    memory,
     start(src, sink) {
+      memory.points = [];
+      memory.started = now();
+      memory.points.push({ ms: 0, cells: null, live: null, collections: 0, bytes: x.memory.buffer.byteLength });
       const bytes = encoder.encode(src);
       const at = x.sourcePtr(bytes.length);
       new Uint8Array(x.memory.buffer, at, bytes.length).set(bytes);

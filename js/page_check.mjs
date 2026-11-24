@@ -28,7 +28,12 @@
 //   loop;
 // - holds the page's column to its flow: on load, on a pick and after an
 //   edit, only the line saying the program hasn't run; on Run, the canvas
-//   (or a console sample's console); after Stop, the drawing still in view.
+//   (or a console sample's console); after Stop, the drawing still in view;
+// - holds the memory view to its flow: the "memory" link opens it, saying
+//   before any run that none has run; Escape, its Close button and a click
+//   outside it close it, a click inside doesn't; every sample's run records
+//   points the view draws, and a program that collects shows each collection
+//   as a mark.
 import { spawnSync } from "node:child_process";
 import { readFileSync, readdirSync } from "node:fs";
 import { join, resolve } from "node:path";
@@ -188,7 +193,7 @@ class Element {
   }
 }
 globalThis.window = { JS_PAGE_CHECK: true };
-globalThis.document = { head: new Element("head"), body: new Element("body"), createElement: (t) => new Element(t) };
+globalThis.document = Object.assign(new Element("document"), { head: new Element("head"), body: new Element("body"), createElement: (t) => new Element(t) });
 const frames = [];
 const env = { setTimeout: (f) => f(), requestAnimationFrame: (f) => frames.push(f) };
 const settled = () => new Promise((done) => setImmediate(done));
@@ -205,6 +210,27 @@ function shown() {
   return page.canvas.hidden ? "console" : "canvas";
 }
 if (shown() !== "not run") fail(`on load the page shows ${shown()}, where it must say the program hasn't run`);
+
+// The memory view before any run: it opens, says so, and each way to close
+// it closes it.
+const memoryOpen = () => !page.veil.hidden;
+if (page.memoryLink.textContent !== "memory") fail(`the memory link says \`${page.memoryLink.textContent}\``);
+if (memoryOpen()) fail("the memory view is open on load");
+page.memoryLink.fire("click");
+if (!memoryOpen()) fail("the memory link doesn't open the memory view");
+if (!page.memorySaid.textContent.startsWith("No program has run yet")) fail(`before any run the memory view says \`${page.memorySaid.textContent}\``);
+if (page.cellsChart.innerHTML !== "") fail("before any run the memory view draws a chart");
+document.fire("keydown", { key: "Escape" });
+if (memoryOpen()) fail("Escape doesn't close the memory view");
+page.memoryLink.fire("click");
+page.veil.fire("click", { target: page.veil.children[0] });
+if (!memoryOpen()) fail("a click inside the memory view closes it");
+page.veil.fire("click", { target: page.veil });
+if (memoryOpen()) fail("a click outside the memory view doesn't close it");
+page.memoryLink.fire("click");
+page.closeButton.fire("click");
+if (memoryOpen()) fail("the memory view's Close doesn't close it");
+let memoryChecks = 0;
 
 async function runSample(index) {
   page.editor.scrollTop = 500;
@@ -240,6 +266,17 @@ for (let i = 0; i < SAMPLES.length; i++) {
   else if (!wantRefused && !loops && r.said !== "ran to its end") fail(`sample ${s.title}: the status says \`${r.said}\``);
   if (r.printed === "" && r.calls.length <= 1) fail(`sample ${s.title}: the page printed nothing and drew nothing`);
   if (loops) looped++;
+  // Its run's memory: points with the heap's cells, drawn when the view opens.
+  if (!wantRefused) {
+    const cellsKept = runner.memory.points.filter((p) => p.cells !== null).length;
+    page.memoryLink.fire("click");
+    if (cellsKept === 0 || !page.cellsChart.innerHTML.includes("<polyline") || !page.bytesChart.innerHTML.includes("<polyline")) {
+      fail(`sample ${s.title}: its run kept ${cellsKept} points of the heap, and the memory view drew ${page.cellsChart.innerHTML.length} bytes of chart`);
+    }
+    if (!page.memorySaid.textContent.startsWith(`The last run, “${s.title}”: `)) fail(`sample ${s.title}: the memory view says \`${page.memorySaid.textContent}\``);
+    page.closeButton.fire("click");
+    memoryChecks++;
+  }
 }
 
 // Stop leaves the drawing in view; an edit goes back to the line.
@@ -252,6 +289,28 @@ for (let i = 0; i < SAMPLES.length; i++) {
   if (shown() !== "not run" || page.status.textContent !== "") fail(`after an edit the page shows ${shown()}, status \`${page.status.textContent}\``);
 }
 
+// A program that collects: the view counts its collections, marks each, and
+// draws a dot for what each found live.
+{
+  const collecting = "51-collector-roots.js";
+  page.editor.value = readFileSync(join(tests, collecting), "utf8");
+  page.editor.fire("input");
+  await page.runNow();
+  for (let k = 0; k < 300 && frames.length > 0; k++) {
+    frames.shift()(1e12 + k * 1000);
+    await settled();
+  }
+  page.memoryLink.fire("click");
+  const marks = (page.cellsChart.innerHTML.match(/class="gc"/g) ?? []).length;
+  const dots = (page.cellsChart.innerHTML.match(/class="live"/g) ?? []).length;
+  const counted = runner.memory.points.reduce((n, p) => n + p.collections, 0);
+  if (counted === 0 || marks === 0 || dots !== marks) fail(`${collecting}: ${counted} collections recorded, ${marks} marked and ${dots} live dots drawn`);
+  if (!page.memorySaid.textContent.startsWith("The last run, your program: ")) fail(`${collecting}: the memory view says \`${page.memorySaid.textContent}\``);
+  page.closeButton.fire("click");
+  memoryChecks++;
+  console.log(`page_check: ${collecting} on the page: ${page.memorySaid.textContent}`);
+}
+
 const total = programs.length + refused.length + goldens.length + SAMPLES.length + 3;
 if (failures > 0) { console.error(`page_check: ${failures} of ${total} failed`); process.exit(1); }
-console.log(`page_check: ${named.size} files, each linked and named by its bytes; ${programs.length} programs print what node prints, ${refused.length} refused, ${goldens.length} canvas samples match their logs, ${SAMPLES.length} samples run on the page (${looped} three frames on), each shown from its top, nothing shows before Run and Stop keeps the drawing`);
+console.log(`page_check: ${named.size} files, each linked and named by its bytes; ${programs.length} programs print what node prints, ${refused.length} refused, ${goldens.length} canvas samples match their logs, ${SAMPLES.length} samples run on the page (${looped} three frames on), each shown from its top, nothing shows before Run and Stop keeps the drawing; the memory view opens and closes each way, and ${memoryChecks} runs drew their memory, collections marked`);

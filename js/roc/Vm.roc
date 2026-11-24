@@ -302,6 +302,10 @@ Vm :: [].{
 
 	standing : Vm.Session -> Vm.Standing
 	standing = |session| standing_of(session.machine)
+
+	## How many cells the session's heap holds, the freed ones among them.
+	cell_count : Vm.Session -> U64
+	cell_count = |session| session.machine.cells.len()
 }
 
 standing_of : Vm.Machine -> Vm.Standing
@@ -364,7 +368,10 @@ loop! = |host, program, machine, floor| {
 	var $ops = code_of(program, $code).ops
 	while is_running($machine) and $machine.depth >= floor {
 		if is_collection_due($machine) {
-			$machine = collected($machine)
+			{ machine: swept, live } = collected($machine)
+			told! = host.collected!
+			told!({ cells: swept.cells.len(), live: live })
+			$machine = swept
 		}
 		if $machine.code != $code {
 			$code = $machine.code
@@ -644,9 +651,9 @@ is_collection_due = |machine|
 		EveryAllocation({ length, free }) => machine.cells.len() != length or machine.free != free
 	}
 
-# The machine after a collection: every cell its roots don't reach freed,
-# and the next collection scheduled.
-collected : Vm.Machine -> Vm.Machine
+# The machine after a collection, every cell its roots don't reach freed and
+# the next collection scheduled, and how many cells the roots reached.
+collected : Vm.Machine -> { machine : Vm.Machine, live : U64 }
 collected = |machine| {
 	marks = Collector.marked(machine.cells, roots(machine))
 	{ cells, machine: rest } = lent(machine)
@@ -655,7 +662,10 @@ collected = |machine| {
 		Doubling(_) => Doubling(Collector.least_threshold.max(2 * live))
 		EveryAllocation(_) => EveryAllocation({ length: swept.len(), free: free })
 	}
-	{ ..rest, cells: swept, free: free, schedule: schedule, collections: rest.collections + 1 }
+	{
+		machine: { ..rest, cells: swept, free: free, schedule: schedule, collections: rest.collections + 1 },
+		live: live,
+	}
 }
 
 # Every cell the machine names: the live stack's (each frame's slots, its

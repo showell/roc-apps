@@ -73,10 +73,14 @@ Canvas :: [].{
 	## The host's effects and reads, which the interpreter calls in program
 	## order. A record, not a reference into the machine, so passing it costs
 	## nothing and refers to no heap.
+	## `collected!` is told of each collection once it has swept: the heap's
+	## cells, the freed ones among them, and the cells its roots reached. It
+	## is no effect of the program's, so no budget counts it.
 	Host : {
 		emit! : Canvas.Effect => {},
 		pointer! : Canvas.Axis => F64,
 		key! : Str => Canvas.KeyState,
+		collected! : { cells : U64, live : U64 } => {},
 	}
 
 	## Where the turtle stands, the way it faces in degrees clockwise from up,
