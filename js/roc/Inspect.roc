@@ -76,6 +76,12 @@ Inspect :: [].{
 	}
 
 	# One value as `util.inspect` writes it.
+	# What a run that prints or lists a class instance stops with: node prints
+	# `C { x: 1 }`, and the instance holds its methods' closures beside its
+	# fields (`Parser`'s "classes"), so a listing would show them.
+	instance_listed : Str
+	instance_listed = "unsupported: printing or listing a class instance"
+
 	inspect : List(Heap.Cell), Heap.Value -> Try(Str, [Unsupported(Str)])
 	inspect = |cells, subject| {
 		formatted = Inspect.format_value(
@@ -126,8 +132,10 @@ Inspect :: [].{
 	format_cell = |context, id, recurse|
 		match Heap.cell_at(context.cells, id) {
 			Fun(closure) => {
-				name = closure.fun.unbox().name
-				if name == "" {
+				{ name, form, .. } = closure.fun.unbox()
+				if form == MakesInstances {
+					Err(Unsupported("unsupported: printing a class"))
+				} else if name == "" {
 					Ok(Inspect.plain(context, "[Function (anonymous)]"))
 				} else {
 					Ok(Inspect.plain(context, "[Function: ${name}]"))
@@ -143,6 +151,7 @@ Inspect :: [].{
 			TimerHandle(_) => Err(Unsupported("unsupported: printing a timer, what setTimeout and setInterval answer"))
 			Failure(_, _) => Err(Unsupported("unsupported: printing an error (node prints its stack)"))
 			Iteration(_) => Err(Unsupported("unsupported: printing an iterator"))
+			Instance(_, _) => Err(Unsupported(Inspect.instance_listed))
 			UnreadyVariable | Variable(_) | Environment(_) | Freed(_) => crash "Inspect.format_cell: no JavaScript value refers to a VM box, an environment or a freed cell"
 			MapOf(tables) => Inspect.format_table(
 				context,

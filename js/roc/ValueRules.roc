@@ -279,6 +279,7 @@ ValueRules :: [].{
 				}
 			}
 			Object(_) => Ok("[object Object]")
+			Instance(_, _) => Ok("[object Object]")
 			MapOf(_) => Ok("[object Map]")
 			SetOf(_) => Ok("[object Set]")
 			Failure(name, "") => Ok(Heap.error_name_text(name))
@@ -372,6 +373,7 @@ ValueRules :: [].{
 			Reference(id) => match Heap.cell_at(cells, id) {
 				Object(properties) => Ok(Inspect.properties_in_key_order(properties))
 				Array(items) => Ok(ValueRules.indexed_properties(items))
+				Instance(_, _) => Err(Unsupported(Inspect.instance_listed))
 				_ => Ok([])
 			}
 			Text(text) => {
@@ -603,7 +605,7 @@ ValueRules :: [].{
 		match subject {
 			Reference(id) => match Heap.cell_at(cells, id) {
 				Array(items) => Ok({ key: items.get(0) ?? Undefined, value: items.get(1) ?? Undefined })
-				Object(properties) => Ok({
+				Object(properties) | Instance(_, properties) => Ok({
 					key: Heap.property_value(properties, "0"),
 					value: Heap.property_value(properties, "1"),
 				})
@@ -869,6 +871,8 @@ ValueRules :: [].{
 		Function(_) => False
 		Destructure(_, _, _) => False
 		New(_, _, _) => False
+		Instance(_) => False
+		InstanceOf(_, _, _, _) => False
 		OptionalMember(left, _, _) => ValueRules.is_pure(left)
 		OptionalIndex(left, right, _) => ValueRules.is_pure(left) and ValueRules.is_pure(right)
 		OptionalCall(_, _, _) => False
@@ -906,6 +910,7 @@ ValueRules :: [].{
 				Object(properties) => Ok(
 					Inspect.properties_in_key_order(properties).keep_if(|p| !taken.contains(p.key)),
 				)
+				Instance(_, _) => Err(Unsupported(Inspect.instance_listed))
 				_ => refused
 			}
 			_ => refused
@@ -964,7 +969,7 @@ ValueRules :: [].{
 	property = |machine, object, key, site|
 		match object {
 			Reference(id) => match Heap.cell_at(machine.cells, id) {
-				Object(properties) => {
+				Object(properties) | Instance(_, properties) => {
 					if Heap.has_property(properties, key) {
 						{ machine: machine, value: Heap.property_value(properties, key) }
 					} else if ValueRules.is_prototype_name(key) {
@@ -1157,7 +1162,7 @@ ValueRules :: [].{
 	kind_of : List(Heap.Cell), U64 -> ValueRules.Kind
 	kind_of = |cells, id|
 		match Heap.cell_at(cells, id) {
-			Object(_) => ObjectKind
+			Object(_) | Instance(_, _) => ObjectKind
 			Array(items) => ArrayKind(items.len())
 			Fun(_) => FunctionKind
 			Builtin(_, _) => BuiltinKind
@@ -1329,7 +1334,7 @@ ValueRules :: [].{
 	array_like = |cells, source|
 		match source {
 			Reference(id) => match Heap.cell_at(cells, id) {
-				Object(properties) => match Heap.property_value(properties, "length") {
+				Object(properties) | Instance(_, properties) => match Heap.property_value(properties, "length") {
 					Number(length) if length >= 0.0 and length.div_trunc_by(1.0) == length and length <= 10000000.0 => {
 						count = length.to_u64_try() ?? 0
 						var $values = List.with_capacity(count)
@@ -1410,6 +1415,7 @@ ValueRules :: [].{
 		properties = match arguments.first() {
 			Ok(Reference(id)) => match Heap.cell_at(machine.cells, id) {
 				Object(listed) => Ok(Inspect.properties_in_key_order(listed))
+				Instance(_, _) => Err(Unsupported(Inspect.instance_listed))
 				Array(items) => {
 					var $listed = []
 					var $i = 0
@@ -1444,6 +1450,7 @@ ValueRules :: [].{
 				}
 				ValueRules.alloc($s, Array($values))
 			}
+			Err(Unsupported(why)) => ValueRules.fault_got(machine, "${why}${ValueRules.line_note(site)}")
 			Err(NotListed) => ValueRules.fault_got(
 				machine,
 				"unsupported: Object.keys, values or entries of anything but an object or an array${ValueRules.line_note(site)}",

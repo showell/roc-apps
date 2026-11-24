@@ -1264,6 +1264,12 @@ expression_compiled = |state, tree|
 				)
 			}
 		}
+		Instance(classes) => compiled(state, [Do(NewInstance(classes))])
+		InstanceOf(value, class, name, _) => {
+			first = expression_compiled(state, value)?
+			second = expression_compiled(first.state, class)?
+			compiled(second.state, List.concat(first.ops, second.ops).append(Do(InstanceOf(name))))
+		}
 		Chain(chain) => {
 			done = link_compiled(state, chain)?
 			end = done.ops.len()

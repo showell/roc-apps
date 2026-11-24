@@ -103,6 +103,11 @@ Bytecode :: [].{
 		AppendItem,
 		AppendSpread({ source : Ast.Expression, at : Ast.Where }),
 		NewObject,
+		# A class's fresh instance, marked with its classes' names (`Ast`'s
+		# `Instance`).
+		NewInstance(List(Str)),
+		# value class -> whether the value is an instance of the class named.
+		InstanceOf(Str),
 		SetField(Str),
 		SpreadFields(Ast.Where),
 		GetProperty(Str, Ast.Where),

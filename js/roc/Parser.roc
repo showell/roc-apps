@@ -29,6 +29,12 @@ Parser :: [].{
 		# The statements around the parser's place, innermost last, up to the
 		# function it is in, which a `break` or a `continue` may leave.
 		enclosing : List(Parser.Enclosure),
+		# Every class's name the program declares, found before the parse,
+		# and the classes parsed so far.
+		class_names : List(Str),
+		classes : List(Parser.ClassInfo),
+		# What `this` and `super` mean where the parser is.
+		receiver : Parser.Receiver,
 	}
 
 	Enclosure : [Looping, Switching, LoopLabel(Str), BlockLabel(Str)]
@@ -84,6 +90,9 @@ Parser :: [].{
 			at: 0,
 			functions: 0,
 			enclosing: [],
+			class_names: Parser.class_names_in(tokens)?,
+			classes: [],
+			receiver: NoReceiver,
 		}
 		var $statements = []
 		while !Parser.is_end($parser) {
@@ -263,6 +272,8 @@ Parser :: [].{
 			Name(text) => {
 				if Parser.is_reserved(text) {
 					Err(Parser.fault_here(parser, "`${text}` is a reserved word, not ${what}"))
+				} else if parser.class_names.contains(text) {
+					Err(Parser.fault_here(parser, Parser.class_redeclared(text)))
 				} else {
 					Ok({ parser: Parser.advance(parser), value: text })
 				}
@@ -314,14 +325,16 @@ Parser :: [].{
 		"undefined",
 	]
 
+	class_redeclared : Str -> Str
+	class_redeclared = |name| "unsupported: `${name}` declared again, a class's name"
+
 	is_reserved : Str -> Bool
 	is_reserved = |text| Parser.reserved_words.contains(text)
 
 	# The words that begin a form the subset leaves out, and what to say.
 	unsupported_word : Str -> Try(Str, [Supported])
 	unsupported_word = |text| match text {
-		"this" => Ok("unsupported: `this`")
-		"class" => Ok("unsupported: classes")
+		"class" => Ok("unsupported: class expressions")
 		"var" => Ok("unsupported: `var` (use `let` or `const`)")
 		"delete" => Ok("unsupported: `delete`")
 		"void" => Ok("unsupported: `void`")
@@ -331,7 +344,6 @@ Parser :: [].{
 		"await" => Ok("unsupported: `await`")
 		"yield" => Ok("unsupported: generators (`yield`)")
 		"with" => Ok("unsupported: `with`")
-		"super" => Ok("unsupported: `super`")
 		"eval" => Ok("unsupported: `eval`")
 		"arguments" => Ok("unsupported: `arguments`")
 		"debugger" => Ok("unsupported: `debugger`")
@@ -360,6 +372,9 @@ Parser :: [].{
 
 	statement : Parser.State -> Try(Parser.Parsed(Ast.Statement), Lexer.Fault)
 	statement = |parser| {
+		if Parser.is_word(parser, "class") {
+			return Parser.class_declaration(parser)
+		}
 		Parser.refuse_unsupported_word(parser)?
 		current = Parser.token(parser)
 		match current.kind {
@@ -466,7 +481,7 @@ Parser :: [].{
 	# declaration: its scope would be the statement alone.
 	body_statement : Parser.State -> Try(Parser.Parsed(Ast.Statement), Lexer.Fault)
 	body_statement = |parser|
-		if Parser.is_word(parser, "let") or Parser.is_word(parser, "const") {
+		if Parser.is_word(parser, "let") or Parser.is_word(parser, "const") or Parser.is_word(parser, "class") {
 			Err(
 				Parser.fault_here(
 					parser,
@@ -835,7 +850,7 @@ Parser :: [].{
 				}
 				Assigning => {
 					parsed = Parser.call_or_member(parser)?
-					target = Parser.target_of(parsed.value, site)?
+					target = Parser.target_here(parsed.parser, parsed.value, site)?
 					Ok({ parser: parsed.parser, value: Leaf(target) })
 				}
 			}
@@ -910,6 +925,7 @@ Parser :: [].{
 					Parser.pattern(Parser.advance(after), mode)?
 				} else {
 					match current.kind {
+						Name(text) if parser.class_names.contains(text) => return Err(Parser.fault_here($onward, Parser.class_redeclared(text)))
 						Name(text) if !Parser.is_reserved(text) => {
 							parser: after,
 							value: Leaf(ToName(text, Unresolved, site)),
@@ -1096,6 +1112,503 @@ Parser :: [].{
 		Ok({ parser: body.parser, value: ForOf(loop) })
 	}
 
+	# ---- classes ---------------------------------------------------------------
+	#
+	# A class is syntax sugar: the parser writes each class declaration as
+	# plain functions, so `Resolve`, `Compile` and the VM never meet a class,
+	# a `new` of one, `this` or `super`. `class C extends P { ... }` declares,
+	# in one `let`:
+	#
+	# - `#extends C`, P read, so P not yet declared throws as node throws;
+	# - `#install C`, a function of an instance, its parameter `this`: it
+	#   runs `#install P` on it, keeps each method of P's that C's methods
+	#   call through `super` (`super.m`), and sets each of C's methods on it,
+	#   a closure over `this`;
+	# - `#construct C`, the constructor as a function of the instance and
+	#   the constructor's parameters, its `super(...)` a call of `#construct
+	#   P(this, ...)`;
+	# - `C`, the function `new C(...)` calls: it makes the instance, marked
+	#   with the names of C and of the classes C extends (`Ast`'s
+	#   `Instance`), installs every method, constructs it and answers it;
+	# - `C.s` for each static method, C's own and those it inherits, which
+	#   `C.s` written after the class reads.
+	#
+	# No program can write those names, nor `this` as a name, so no program
+	# meets them. A class's name is declared once in a program and never
+	# assigned, so `C`, `C.s` and `#install C` name one class wherever they
+	# are written.
+
+	## A class parsed: its name, its name and the names of the classes it
+	## extends (nearest first), and its methods and static methods, its own
+	## and those it inherits.
+	ClassInfo : { name : Str, chain : List(Str), methods : List(Str), statics : List(Str) }
+
+	## What `this` and `super` mean where the parser is: nothing, outside a
+	## class; the instance, in a constructor or a method and the arrows
+	## inside them; refused, in a static method.
+	Receiver : [NoReceiver, Constructing(Parser.ClassCode), InMethod(Parser.ClassCode), InStatic]
+
+	## A constructor's or a method's class so far: what the class extends,
+	## and, for the checks a constructor is held to, how often `this` and
+	## `super(...)` were written, and the methods `super.m` named.
+	ClassCode : {
+		parent : [Base, Extends(Parser.ClassInfo)],
+		this_uses : U64,
+		super_calls : U64,
+		supers : List(Str),
+	}
+
+	# The members of a class's body, parsed.
+	ClassBody : {
+		constructor : [Default, Written(Ast.FunctionDefinition)],
+		methods : List(Ast.FunctionDefinition),
+		statics : List(Ast.FunctionDefinition),
+		supers : List(Str),
+	}
+
+	# Every name written after `class`, each declared once.
+	class_names_in : List(Lexer.Token) -> Try(List(Str), Lexer.Fault)
+	class_names_in = |tokens| {
+		var $names = []
+		var $after_class = False
+		for current in tokens {
+			match current.kind {
+				Name(text) if $after_class => {
+					if $names.contains(text) {
+						return Err({
+							why: "unsupported: two classes named `${text}`",
+							line: current.line,
+							column: current.column,
+						})
+					}
+					$names = $names.append(text)
+				}
+				_ => {}
+			}
+			$after_class = current.kind == Name("class")
+		}
+		Ok($names)
+	}
+
+	class_declaration : Parser.State -> Try(Parser.Parsed(Ast.Statement), Lexer.Fault)
+	class_declaration = |parser| {
+		site = Parser.here(parser)
+		named = Parser.advance(parser)
+		name = match Parser.token(named).kind {
+			Name(text) if !Parser.is_reserved(text) => Ok(text)
+			other => Err(Parser.fault_here(named, "expected a class's name, found ${Parser.token_text(other)}"))
+		}?
+		heading = Parser.class_parent(Parser.advance(named))?
+		body = Parser.class_body(Parser.expect_punct(heading.parser, "{")?, heading.value)?
+		{ info, declarators: written } = Parser.class_desugared({ name: name, parent: heading.value, body: body.value, at: site })?
+		Ok({
+			parser: {
+				..body.parser,
+				functions: body.parser.functions + 3,
+				classes: body.parser.classes.append(info),
+			},
+			value: Declare(Let, written),
+		})
+	}
+
+	class_parent : Parser.State -> Try(Parser.Parsed([Base, Extends(Parser.ClassInfo)]), Lexer.Fault)
+	class_parent = |parser|
+		if Parser.is_word(parser, "extends") {
+			onward = Parser.advance(parser)
+			refused = Err(Parser.fault_here(onward, "unsupported: `extends` of anything but a class declared above"))
+			match Parser.token(onward).kind {
+				Name(text) => match parser.classes.find_first(|info| info.name == text) {
+					Ok(info) => Ok({ parser: Parser.advance(onward), value: Extends(info) })
+					Err(NotFound) => refused
+				}
+				_ => refused
+			}
+		} else {
+			Ok({ parser: parser, value: Base })
+		}
+
+	# A class's members after its `{`: a constructor, methods and static
+	# methods, each a name, its parameters and its body.
+	class_body : Parser.State, [Base, Extends(Parser.ClassInfo)] -> Try(Parser.Parsed(Parser.ClassBody), Lexer.Fault)
+	class_body = |parser, parent| {
+		var $at = parser
+		var $constructor = Default
+		var $methods = []
+		var $statics = []
+		var $supers = []
+		while !Parser.is_punct($at, "}") {
+			if Parser.is_end($at) {
+				return Err(Parser.fault_here($at, "a class that never ends (expected `}`)"))
+			}
+			if Parser.is_punct($at, ";") {
+				$at = Parser.advance($at)
+			} else {
+				is_static = Parser.is_word($at, "static") and Parser.token_after($at).kind != Punct("(")
+				key_at = if is_static {
+					Parser.advance($at)
+				} else {
+					$at
+				}
+				key = Parser.method_key(key_at)?
+				code = { parent: parent, this_uses: 0, super_calls: 0, supers: [] }
+				receiver = if is_static {
+					InStatic
+				} else if key == "constructor" {
+					Constructing(code)
+				} else {
+					InMethod(code)
+				}
+				member_site = Parser.here(key_at)
+				after_key = Parser.advance(key_at)
+				parameters = Parser.parameter_list({ ..after_key, receiver: receiver })?
+				definition = Parser.function_body(
+					parameters.parser,
+					{
+						name: key,
+						parameters: parameters.value,
+						at: member_site,
+						before: after_key.functions,
+					},
+				)?
+				written = definition.value
+				ended = definition.parser.receiver
+				$at = { ..definition.parser, receiver: parser.receiver }
+				match ended {
+					Constructing(made) => {
+						match $constructor {
+							Written(_) => return Err(Parser.fault_at(member_site, "SyntaxError: A class may only have one constructor"))
+							Default => {}
+						}
+						Parser.constructor_checked(written, made, member_site)?
+						$constructor = Written(written)
+					}
+					InMethod(made) => {
+						$supers = List.concat($supers, made.supers)
+						$methods = $methods.append(written)
+					}
+					InStatic => {
+						if $statics.any(|each| each.name == key) {
+							return Err(Parser.fault_at(member_site, "unsupported: two static methods named `${key}`"))
+						}
+						$statics = $statics.append(written)
+					}
+					NoReceiver => crash "Parser.class_body: a member is parsed with its class's receiver"
+				}
+			}
+		}
+		Ok({
+			parser: Parser.advance($at),
+			value: {
+				constructor: $constructor,
+				methods: $methods,
+				statics: $statics,
+				supers: $supers,
+			},
+		})
+	}
+
+	# A method's name, before its parameters.
+	method_key : Parser.State -> Try(Str, Lexer.Fault)
+	method_key = |parser| {
+		after = Parser.token_after(parser)
+		refuse = |why| Err(Parser.fault_here(parser, why))
+		match Parser.token(parser).kind {
+			Name(text) if after.kind == Punct("(") => Ok(text)
+			Name(text) if text == "get" or text == "set" or text == "async" => refuse("unsupported: getters, setters and async methods")
+			Name(_) => {
+				if after.kind == Punct("=") or after.kind == Punct(";") or after.kind == Punct("}") or after.before == NewLine {
+					refuse("unsupported: class fields declared outside the constructor (set them on `this` in the constructor)")
+				} else {
+					Err(Parser.fault_here(Parser.advance(parser), "expected `(` after a method's name"))
+				}
+			}
+			Punct("#") => refuse("unsupported: private fields and methods (`#`)")
+			Punct("[") => refuse("unsupported: computed method names")
+			Punct("*") => refuse("unsupported: generators")
+			Punct("{") => refuse("unsupported: static blocks")
+			Text(_) | Number(_) => refuse("unsupported: a method named by anything but a name")
+			other => refuse("expected a method's name, found ${Parser.token_text(other)}")
+		}
+	}
+
+	# A constructor held to what its desugaring keeps: no value returned, and
+	# a derived class's `super(...)` called once, as a statement of its own in
+	# the constructor's body, before any `this`.
+	constructor_checked : Ast.FunctionDefinition, Parser.ClassCode, Ast.Where -> Try({}, Lexer.Fault)
+	constructor_checked = |definition, made, site|
+		if Parser.returns_a_value(definition.statements) {
+			Err(Parser.fault_at(site, "unsupported: a constructor that returns a value"))
+		} else {
+			match made.parent {
+				Base => Ok({})
+				Extends(_) => {
+					if made.super_calls == 0 {
+						Err(Parser.fault_at(site, "unsupported: a derived class's constructor that never calls `super(...)`"))
+					} else if !definition.statements.any(Parser.is_super_statement) {
+						Err(Parser.fault_at(site, "unsupported: `super(...)` anywhere but a statement of its own in the constructor's body"))
+					} else {
+						Ok({})
+					}
+				}
+			}
+		}
+
+	is_super_statement : Ast.Statement -> Bool
+	is_super_statement = |listed| match listed {
+		Expression(Call(Name(called, _, _), _, _)) => called.starts_with("#construct ")
+		_ => False
+	}
+
+	# Whether a `return` with a value is written in the statements, outside
+	# the functions inside them.
+	returns_a_value : List(Ast.Statement) -> Bool
+	returns_a_value = |statements| statements.any(Parser.statement_returns_a_value)
+
+	statement_returns_a_value : Ast.Statement -> Bool
+	statement_returns_a_value = |listed| match listed {
+		Return(Undefined) => False
+		Return(_) => True
+		If(_, yes, no) => Parser.statement_returns_a_value(yes) or Parser.statement_returns_a_value(no)
+		While(loop) => Parser.statement_returns_a_value(loop.body)
+		For(loop) => Parser.statement_returns_a_value(loop.body)
+		ForOf(loop) => Parser.statement_returns_a_value(loop.body)
+		BlockStatement(inner) => Parser.returns_a_value(inner.statements)
+		Try(tried) => {
+			caught = match tried.handler {
+				Caught(clause) => Parser.returns_a_value(clause.body.statements)
+				Uncaught => False
+			}
+			finally = match tried.finalizer {
+				Finally(final_block) => Parser.returns_a_value(final_block.statements)
+				NoFinally => False
+			}
+			Parser.returns_a_value(tried.block.statements) or caught or finally
+		}
+		Switch(switched) => switched.cases.any(|case| Parser.returns_a_value(case.statements))
+		Labelled(_, inner) => Parser.statement_returns_a_value(inner)
+		_ => False
+	}
+
+	# `super(...)` in a derived class's constructor, or `super.m` in a
+	# derived class's method.
+	super_expression : Parser.State -> Try(Parser.Parsed(Ast.Expression), Lexer.Fault)
+	super_expression = |parser| {
+		site = Parser.here(parser)
+		after = Parser.advance(parser)
+		unexpected = Err(Parser.fault_here(parser, "SyntaxError: 'super' keyword unexpected here"))
+		match parser.receiver {
+			Constructing(code) => match code.parent {
+				Extends(info) => {
+					if Parser.is_punct(after, ".") {
+						Err(Parser.fault_here(parser, "unsupported: `super.method` in a constructor"))
+					} else if !Parser.is_punct(after, "(") {
+						unexpected
+					} else if code.super_calls > 0 {
+						Err(Parser.fault_here(parser, "unsupported: `super(...)` called twice"))
+					} else if code.this_uses > 0 {
+						Err(Parser.fault_here(parser, "unsupported: `this` before `super(...)`"))
+					} else {
+						given = Parser.arguments(after)?
+						made = match given.parser.receiver {
+							Constructing(now) => now
+							_ => crash "Parser.super_expression: the arguments are parsed in the constructor"
+						}
+						if made.this_uses > 0 {
+							Err(Parser.fault_here(parser, "unsupported: `this` before `super(...)`"))
+						} else {
+							Ok({
+								parser: { ..given.parser, receiver: Constructing({ ..made, super_calls: made.super_calls + 1 }) },
+								value: Call(
+									Name("#construct ${info.name}", Unresolved, site),
+									List.concat([Single(Name("this", Unresolved, site))], given.value),
+									site,
+								),
+							})
+						}
+					}
+				}
+				Base => unexpected
+			}
+			InMethod(code) => match code.parent {
+				Extends(info) => {
+					if Parser.is_punct(after, ".") {
+						method = Parser.name_after_dot(Parser.advance(after))?
+						if info.methods.contains(method.value) {
+							Ok({
+								parser: { ..method.parser, receiver: InMethod({ ..code, supers: code.supers.append(method.value) }) },
+								value: Name("super.${method.value}", Unresolved, site),
+							})
+						} else {
+							Err(Parser.fault_here(parser, "unsupported: `super.${method.value}`, a method no class this one extends has"))
+						}
+					} else {
+						unexpected
+					}
+				}
+				Base => unexpected
+			}
+			InStatic => Err(Parser.fault_here(parser, "unsupported: `super` in a static method"))
+			NoReceiver => unexpected
+		}
+	}
+
+	# `this` in a constructor, a method or an arrow inside them.
+	this_expression : Parser.State -> Try(Parser.Parsed(Ast.Expression), Lexer.Fault)
+	this_expression = |parser| {
+		this = Name("this", Unresolved, Parser.here(parser))
+		after = Parser.advance(parser)
+		match parser.receiver {
+			Constructing(code) => Ok({ parser: { ..after, receiver: Constructing({ ..code, this_uses: code.this_uses + 1 }) }, value: this })
+			InMethod(_) => Ok({ parser: after, value: this })
+			InStatic => Err(Parser.fault_here(parser, "unsupported: `this` in a static method"))
+			NoReceiver => Err(Parser.fault_here(parser, "unsupported: `this` outside a class's constructor and methods"))
+		}
+	}
+
+	# The declarators a class declaration is written as (the section's top
+	# comment), and the class's record for the classes after it.
+	class_desugared : { name : Str, parent : [Base, Extends(Parser.ClassInfo)], body : Parser.ClassBody, at : Ast.Where } -> Try({ info : Parser.ClassInfo, declarators : List(Ast.Declarator) }, Lexer.Fault)
+	class_desugared = |{ name, parent, body, at }| {
+		named = |text| Name(text, Unresolved, at)
+		bound = |text| Leaf(ToName(text, Unresolved, at))
+		declared = |text, init| { pattern: bound(text), init: Initialized(init), at: at }
+		this = named("this")
+		inherited = match parent {
+			Extends(info) => info
+			Base => { name: "", chain: [], methods: [], statics: [] }
+		}
+		installs_parent = match parent {
+			Extends(info) => [Expression(Call(named("#install ${info.name}"), [Single(this)], at))]
+			Base => []
+		}
+		var $supers = []
+		for each in body.supers {
+			if !$supers.contains(each) {
+				$supers = $supers.append(each)
+			}
+		}
+		keeps_supers = $supers.map(|method| Declare(Const, [declared("super.${method}", Member(this, method, at))]))
+		sets_methods = body.methods.map(|method| Expression(Assign(ToMember(this, method.name), Set, Function(Box.box(method)), at)))
+		install_statements = List.concat(List.concat(installs_parent, keeps_supers), sets_methods)
+		install = {
+			name: "",
+			parameters: ["this"],
+			binding: Plain,
+			names: Parser.scope_names(["this"], install_statements)?,
+			statements: install_statements,
+			capture: if body.methods.is_empty() {
+				CapturesNothing
+			} else {
+				Captures
+			},
+			form: Ordinary,
+			at: at,
+		}
+		constructor = match body.constructor {
+			Written(written) => written
+			Default => match parent {
+				Base => {
+					name: "",
+					parameters: [],
+					binding: Plain,
+					names: [],
+					statements: [],
+					capture: CapturesNothing,
+					form: Ordinary,
+					at: at,
+				}
+				Extends(info) => {
+					name: "",
+					parameters: ["#arguments"],
+					binding: Patterned({ items: [], rest: RestOf(bound("#arguments")) }),
+					names: ["#arguments"],
+					statements: [
+						Expression(
+							Call(
+								named("#construct ${info.name}"),
+								[Single(this), Spread(named("#arguments"), at)],
+								at,
+							),
+						),
+					],
+					capture: CapturesNothing,
+					form: Ordinary,
+					at: at,
+				}
+			}
+		}
+		construct = {
+			..constructor,
+			name: "",
+			parameters: List.concat(["this"], constructor.parameters),
+			binding: match constructor.binding {
+				Plain => Plain
+				Patterned({ items, rest }) => Patterned({ items: List.concat([{ pattern: bound("this"), default: NoDefault }], items), rest: rest })
+			},
+			names: List.concat(["this"], constructor.names),
+		}
+		{ parameters, binding, forwarded } = match constructor.binding {
+			Plain => {
+				parameters: constructor.parameters,
+				binding: Plain,
+				forwarded: constructor.parameters.map(|parameter| Single(named(parameter))),
+			}
+			Patterned(_) => {
+				parameters: ["#arguments"],
+				binding: Patterned({ items: [], rest: RestOf(bound("#arguments")) }),
+				forwarded: [Spread(named("#arguments"), at)],
+			}
+		}
+		chain = List.concat([name], inherited.chain)
+		maker = {
+			name: name,
+			parameters: parameters,
+			binding: binding,
+			names: parameters.append("this"),
+			statements: [
+				Declare(Const, [declared("this", Instance(chain))]),
+				Expression(Call(named("#install ${name}"), [Single(this)], at)),
+				Expression(Call(named("#construct ${name}"), List.concat([Single(this)], forwarded), at)),
+				Return(this),
+			],
+			capture: CapturesNothing,
+			form: MakesInstances,
+			at: at,
+		}
+		own_statics = body.statics.map(|method| method.name)
+		statics = body.statics.map(|method| declared("${name}.${method.name}", Function(Box.box(method))))
+		inherited_statics = inherited.statics.drop_if(|each| own_statics.contains(each)).map(|each| declared("${name}.${each}", named("${inherited.name}.${each}")))
+		extends = match parent {
+			Extends(info) => [declared("#extends ${name}", named(info.name))]
+			Base => []
+		}
+		var $methods = inherited.methods
+		for method in body.methods {
+			if !$methods.contains(method.name) {
+				$methods = $methods.append(method.name)
+			}
+		}
+		Ok({
+			info: {
+				name: name,
+				chain: chain,
+				methods: $methods,
+				statics: List.concat(own_statics, inherited.statics.drop_if(|each| own_statics.contains(each))),
+			},
+			declarators: List.concat(
+				List.concat(
+					extends,
+					[
+						declared("#install ${name}", Function(Box.box(install))),
+						declared("#construct ${name}", Function(Box.box(construct))),
+						declared(name, Function(Box.box(maker))),
+					],
+				),
+				List.concat(statics, inherited_statics),
+			),
+		})
+	}
+
 	# ---- functions -------------------------------------------------------------
 
 	# How a function's name is written: a declaration must have one.
@@ -1137,8 +1650,9 @@ Parser :: [].{
 				Expressed => Ok({ parser: parser, value: "" })
 			}
 		}?
-		parameters = Parser.parameter_list(named_p.parser)?
-		Parser.function_body(
+		# `this` in a function inside a method is not the instance.
+		parameters = Parser.parameter_list({ ..named_p.parser, receiver: NoReceiver })?
+		made = Parser.function_body(
 			parameters.parser,
 			{
 				name: named_p.value,
@@ -1146,7 +1660,8 @@ Parser :: [].{
 				at: site,
 				before: named_p.parser.functions,
 			},
-		)
+		)?
+		Ok({ ..made, parser: { ..made.parser, receiver: parser.receiver } })
 	}
 
 	# The parameters in their parentheses: each a name or a pattern, with a
@@ -1216,6 +1731,7 @@ Parser :: [].{
 			names: Parser.scope_names(parameters.names, parsed_block.value.statements)?,
 			statements: parsed_block.value.statements,
 			capture: Parser.capture_since(parsed_block.parser, before),
+			form: Ordinary,
 			at: site,
 		}
 		Ok({
@@ -1306,6 +1822,7 @@ Parser :: [].{
 				names: parameters.value.names,
 				statements: [Return(parsed_expression.value)],
 				capture: Parser.capture_since(parsed_expression.parser, before),
+				form: Ordinary,
 				at: site,
 			}
 			Ok({
@@ -1363,6 +1880,27 @@ Parser :: [].{
 		_ => Err(Parser.fault_at(site, "this can't be assigned to"))
 	}
 
+	# What an assignment or an update writes, which may not be a class's
+	# name, a static method or `this` (the classes' section).
+	target_here : Parser.State, Ast.Expression, Ast.Where -> Try(Ast.Target, Lexer.Fault)
+	target_here = |parser, tree, site| {
+		target = Parser.target_of(tree, site)?
+		match target {
+			ToName(text, _, _) => {
+				if text == "this" {
+					Err(Parser.fault_at(site, "SyntaxError: Invalid left-hand side in assignment"))
+				} else if parser.class_names.contains(text) {
+					Err(Parser.fault_at(site, "unsupported: assigning to `${text}`, a class's name"))
+				} else if text.to_utf8().contains('.') {
+					Err(Parser.fault_at(site, "unsupported: assigning to a class's static method or to `super`'s"))
+				} else {
+					Ok(target)
+				}
+			}
+			_ => Ok(target)
+		}
+	}
+
 	assignment : Parser.State -> Try(Parser.Parsed(Ast.Expression), Lexer.Fault)
 	assignment = |parser|
 		if Parser.is_arrow_start(parser) {
@@ -1378,7 +1916,7 @@ Parser :: [].{
 			left = Parser.conditional(parser)?
 			match Parser.assignment_operator(Parser.token(left.parser).kind) {
 				Ok(operator) => {
-					target = Parser.target_of(left.value, site)?
+					target = Parser.target_here(left.parser, left.value, site)?
 					right = Parser.assignment(Parser.advance(left.parser))?
 					value = match target {
 						ToName(text, _, _) => Parser.with_name_given(right.value, text)
@@ -1507,8 +2045,18 @@ Parser :: [].{
 			],
 			Parser.additive,
 		)?
-		if Parser.is_word(parsed.parser, "in") or Parser.is_word(parsed.parser, "instanceof") {
-			Err(Parser.fault_here(parsed.parser, "unsupported: `in` and `instanceof`"))
+		if Parser.is_word(parsed.parser, "in") {
+			Err(Parser.fault_here(parsed.parser, "unsupported: `in`"))
+		} else if Parser.is_word(parsed.parser, "instanceof") {
+			site = Parser.here(parsed.parser)
+			class_at = Parser.advance(parsed.parser)
+			match Parser.token(class_at).kind {
+				Name(name) if class_at.class_names.contains(name) => Ok({
+					parser: Parser.advance(class_at),
+					value: InstanceOf(parsed.value, Name(name, Unresolved, Parser.here(class_at)), name, site),
+				})
+				_ => Err(Parser.fault_here(parsed.parser, "unsupported: `instanceof` of anything but a class's name"))
+			}
 		} else {
 			Parser.refuse_operator(
 				parsed.parser,
@@ -1572,7 +2120,7 @@ Parser :: [].{
 			}
 			Prefixed(step) => {
 				parsed = Parser.unary(Parser.advance(parser))?
-				target = Parser.target_of(parsed.value, site)?
+				target = Parser.target_here(parsed.parser, parsed.value, site)?
 				Ok({ parser: parsed.parser, value: Update(target, step, Prefix, site) })
 			}
 			NoOperator => Parser.postfix(parser)
@@ -1595,7 +2143,7 @@ Parser :: [].{
 		}
 		match step {
 			Stepped(direction) => {
-				target = Parser.target_of(parsed.value, site)?
+				target = Parser.target_here(parsed.parser, parsed.value, site)?
 				Ok({
 					parser: Parser.advance(parsed.parser),
 					value: Update(target, direction, Postfix, site),
@@ -1618,7 +2166,7 @@ Parser :: [].{
 			match current.kind {
 				Punct(".") => {
 					name_found = Parser.name_after_dot(Parser.advance($onward))?
-					$built = Member($built, name_found.value, site)
+					$built = Parser.member_of($onward, $built, name_found.value, site)
 					$onward = name_found.parser
 				}
 				Punct("?.") => {
@@ -1676,6 +2224,17 @@ Parser :: [].{
 			$built
 		}
 		Ok({ parser: $onward, value: chained })
+	}
+
+	# `object.key`, or a class's static method, `C.s`, which the class
+	# declares as a variable of its own (the classes' section).
+	member_of : Parser.State, Ast.Expression, Str, Ast.Where -> Ast.Expression
+	member_of = |parser, object, key, site| match object {
+		Name(class_name, _, _) => match parser.classes.find_first(|info| info.name == class_name) {
+			Ok(info) if info.statics.contains(key) => Name("${class_name}.${key}", Unresolved, site)
+			_ => Member(object, key, site)
+		}
+		_ => Member(object, key, site)
 	}
 
 	arguments : Parser.State -> Try(Parser.Parsed(List(Ast.Element)), Lexer.Fault)
@@ -1744,6 +2303,8 @@ Parser :: [].{
 		site = Parser.where_of(current)
 		after = Parser.advance(parser)
 		match current.kind {
+			Name("this") => Parser.this_expression(parser)
+			Name("super") => Parser.super_expression(parser)
 			Number(number) => Ok({ parser: after, value: Number(number) })
 			Text(text) => Ok({ parser: after, value: Text(text) })
 			TemplateWhole(text) => Ok({ parser: after, value: Template([text], []) })
@@ -1757,14 +2318,18 @@ Parser :: [].{
 					Err(Parser.fault_here(after, "unsupported: `new.target`"))
 				} else {
 					callee = Parser.new_callee(after)?
-					if Parser.is_punct(callee.parser, "(") {
-						call_arguments = Parser.arguments(callee.parser)?
-						Ok({
-							parser: call_arguments.parser,
-							value: New(callee.value, call_arguments.value, site),
-						})
+					given = if Parser.is_punct(callee.parser, "(") {
+						Parser.arguments(callee.parser)?
 					} else {
-						Ok({ parser: callee.parser, value: New(callee.value, [], site) })
+						{ parser: callee.parser, value: [] }
+					}
+					# `new C(...)` of a class calls the function it is written
+					# as (the classes' section); the VM's `new` takes the
+					# builtin constructors and refuses a function of the
+					# program.
+					match callee.value {
+						Name(name, _, _) if callee.parser.class_names.contains(name) => Ok({ parser: given.parser, value: Call(callee.value, given.value, site) })
+						_ => Ok({ parser: given.parser, value: New(callee.value, given.value, site) })
 					}
 				}
 			}
@@ -1943,7 +2508,8 @@ Parser :: [].{
 				value: { key: key, value: Parser.with_name_given(parsed_value.value, key) },
 			})
 		} else if Parser.is_punct(after, "(") {
-			parameters = Parser.parameter_list(after)?
+			# `this` in an object's method is not a class's instance.
+			parameters = Parser.parameter_list({ ..after, receiver: NoReceiver })?
 			definition = Parser.function_body(
 				parameters.parser,
 				{
@@ -1954,7 +2520,7 @@ Parser :: [].{
 				},
 			)?
 			Ok({
-				parser: definition.parser,
+				parser: { ..definition.parser, receiver: parser.receiver },
 				value: { key: key, value: Function(Box.box(definition.value)) },
 			})
 		} else {

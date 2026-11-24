@@ -54,6 +54,15 @@ Ast :: [].{
 		Destructure(Ast.Pattern, Ast.Expression, Ast.Where),
 		# `new` and what it calls: a builtin constructor and its arguments.
 		New(Ast.Expression, List(Ast.Element), Ast.Where),
+		# A class's fresh instance, marked with the names of its class and of
+		# each class that class extends, nearest first. The parser writes it
+		# inside the function a class declaration becomes (`Parser`'s
+		# "classes"); no program writes one.
+		Instance(List(Str)),
+		# `x instanceof C`, `C` a class's name: the value, then `C` read (so a
+		# class not yet declared throws as in node), then whether the value is
+		# an instance marked with that name.
+		InstanceOf(Ast.Expression, Ast.Expression, Str, Ast.Where),
 	]
 
 	## What a destructuring binds: a name or another target (`Leaf`), or the
@@ -244,6 +253,9 @@ Ast :: [].{
 		names : List(Str),
 		statements : List(Ast.Statement),
 		capture : Ast.Capture,
+		# A class is a function that makes its instances (`MakesInstances`),
+		# which console.log refuses to print, since node prints `[class C]`.
+		form : [Ordinary, MakesInstances],
 		at : Ast.Where,
 	}
 

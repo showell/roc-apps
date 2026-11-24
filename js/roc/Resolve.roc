@@ -329,6 +329,13 @@ Resolve :: [].{
 				arguments.map(|argument| Resolve.element(scopes, argument)),
 				site,
 			)
+			Instance(classes) => Instance(classes)
+			InstanceOf(value, class, name, site) => InstanceOf(
+				Resolve.expression(scopes, value),
+				Resolve.expression(scopes, class),
+				name,
+				site,
+			)
 			Destructure(assigned, value, site) => Destructure(
 				Resolve.pattern(scopes, assigned),
 				Resolve.expression(scopes, value),

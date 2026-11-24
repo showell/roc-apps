@@ -492,6 +492,8 @@ dispatch! = |host, program, machine, op|
 		AppendItem => item_appended(machine)
 		AppendSpread({ source, at }) => spread_appended(machine, source, at)
 		NewObject => allocated(machine, Object([]))
+		NewInstance(classes) => allocated(machine, Instance(classes, []))
+		InstanceOf(name) => replaced(machine, 2, Boolean(is_instance_of(machine, value_at(machine, 2), name)))
 		SetField(key) => field_set(machine, key)
 		SpreadFields(at) => fields_spread(machine, at)
 		GetProperty(key, at) => property_read(machine, key, at)
@@ -518,6 +520,18 @@ dispatch! = |host, program, machine, op|
 		Return => returned(machine)
 		Throw(at) => thrown(machine, at)
 		Finish => { ..machine, status: Finished }
+	}
+
+# Whether a value is an instance of the class named, or of a class that
+# extends it: every instance is marked with them all.
+is_instance_of : Vm.Machine, Heap.Value, Str -> Bool
+is_instance_of = |machine, value, name|
+	match value {
+		Reference(id) => match Heap.cell_at(machine.cells, id) {
+			Instance(classes, _) => classes.contains(name)
+			_ => False
+		}
+		_ => False
 	}
 
 code_of : Bytecode.Program, U64 -> Bytecode.Code
@@ -1237,7 +1251,7 @@ property_read = |machine, key, at| {
 	holder = value_at(machine, 1)
 	found = match holder {
 		Reference(id) => match Heap.cell_at(machine.cells, id) {
-			Object(properties) | Namespace(_, properties) => match properties.find_first(|property| property.key == key) {
+			Object(properties) | Instance(_, properties) | Namespace(_, properties) => match properties.find_first(|property| property.key == key) {
 				Ok(property) => Found(property.value)
 				Err(NotFound) => Elsewhere
 			}

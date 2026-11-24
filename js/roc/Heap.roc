@@ -122,6 +122,11 @@ Heap :: [].{
 
 	Cell : [
 		Object(List(Heap.Property)),
+		# A class's instance: an object marked with the names of its class and
+		# of each class that class extends, nearest first, which `instanceof`
+		# reads. Its properties are its fields and its methods' closures
+		# (`Parser`'s "classes"), so it is never printed or listed.
+		Instance(List(Str), List(Heap.Property)),
 		Array(List(Heap.Value)),
 		Fun(Heap.Closure),
 		# A builtin function, and the properties it carries (`String.fromCharCode`).
@@ -535,6 +540,7 @@ Heap :: [].{
 			id,
 			|cell| match cell {
 				Object(properties) => Object(Heap.properties_with(properties, key, value))
+				Instance(classes, properties) => Instance(classes, Heap.properties_with(properties, key, value))
 				_ => crash "Heap.with_property: the interpreter writes properties only to objects"
 			},
 		) ?? crash "Heap.with_property: a Ref names a cell the heap has"
