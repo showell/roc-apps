@@ -16,11 +16,11 @@
 # - `end done`: the program ran to its end and waits for nothing;
 # - `end faulted <why>`: the program stopped with a fault;
 # - `end thrown <line>`: the program stopped with a throw nothing caught,
-#   `<line>` what js-run prints for it (`Uncaught TypeError: ...`);
+#   `<line>` what js-vm prints for it (`Uncaught TypeError: ...`);
 # - `end refused <why>`: the parser or the compiler refused the program,
 #   before any of it ran.
 #
-# The `<why>` is what js-run's last line says after its `js: `.
+# The `<why>` is what js-vm's last line says after its `js: `.
 app [Model, program] { pf: platform "../wasm/platform/main.roc" }
 
 import pf.Host

@@ -1,29 +1,29 @@
-## This module holds the rules JavaScript's values follow, which both of the
-## subset's engines share, the tree walker (`Interp`) and the bytecode VM
-## (`Vm`): what a property read gives and a property write does, what an
+## This module holds the rules JavaScript's values follow, which the
+## bytecode VM (`Vm`) calls where its own fast paths stop: what a property
+## read gives and a property write does, what an
 ## operator makes of two values, the methods of strings, arrays, Maps and
 ## Sets, the builtins that make no effect and call nothing back, and the
 ## errors those throw and the faults they stop at, each message in its
-## words. None of them walks the tree, runs a function of the program or
-## reaches the host, so a message has one home whichever engine runs.
+## words. None of them runs a function of the program or reaches the host,
+## so a message has one home.
 ##
-## **AN ENGINE LENDS A RULE ITS CELLS.** A rule reads and writes the heap
+## **THE VM LENDS A RULE ITS CELLS.** A rule reads and writes the heap
 ## (`cells`) and the run's `status` (a fault, or a value thrown), and
 ## nothing else, so it takes a machine of those two (`ValueRules.Machine`):
-## an engine takes its cells out of its own machine, hands them over with
+## the VM takes its cells out of its own machine, hands them over with
 ## its status, and puts back what the rule gives, so the cells have one
-## owner while the rule writes them. A rule generic over the rest of an
-## engine's machine, an open record, would be shorter to call, but the dev
+## owner while the rule writes them. A rule generic over the rest of the
+## VM's machine, an open record, would be shorter to call, but the dev
 ## build copies the cells a rule writes through one.
 ##
-## **NOTHING HOLDS THE MACHINE BUT THE RULE.** As in the walker (`Interp`'s
-## header says why), a rule passes the cells straight from the record it
+## **NOTHING HOLDS THE MACHINE BUT THE RULE.** A rule passes the cells straight from the record it
 ## updates, takes every `Got` apart where it is answered, and asks
 ## `ValueRules.kind_of` what a cell is rather than matching it out of the
-## heap, so the heap stays unique and each write is made in place.
+## heap, so the heap stays unique and each write is made in place
+## (js/README.md, "Why the heap is one value").
 ##
-## **THE RULES TAKE SEVERAL ARGUMENTS, A NAMED EXCEPTION.** As the walker's
-## functions do, a rule takes the machine first, then the rest, where the
+## **THE RULES TAKE SEVERAL ARGUMENTS, A NAMED EXCEPTION.** As the VM's
+## handlers do, a rule takes the machine first, then the rest, where the
 ## style guide would take one record: a record holding the machine is a
 ## second reference to the heap. `array_method` and `collection_method`,
 ## the methods by name, follow it too.
@@ -34,7 +34,7 @@ import NumberText
 
 ValueRules :: [].{
 
-	## The part of an engine's machine a rule reads and writes: the heap, its
+	## The part of the VM's machine a rule reads and writes: the heap, its
 	## free cells, which an allocation takes first, and whether the run goes
 	## on.
 	Machine : { cells : List(Heap.Cell), free : Heap.Free, status : ValueRules.Status }
@@ -596,7 +596,7 @@ ValueRules :: [].{
 
 	# A Map's or a Set's method: a Map's `get` and `set`, a Set's `add`, and
 	# what both have, `has`, `delete`, `clear`, `forEach`, `keys`, `values`
-	# and `entries`; the engines run `forEach` themselves.
+	# and `entries`; the VM runs `forEach` itself.
 	collection_method : ValueRules.Machine, { id : U64, collection : ValueRules.Collection }, Str, List(Heap.Value), Ast.Where -> ValueRules.Got
 	collection_method = |machine, { id, collection }, name, arguments, site| {
 		key = arguments.first() ?? Undefined
@@ -637,7 +637,7 @@ ValueRules :: [].{
 				}
 			}
 			(_, "clear") => { machine: { ..machine, cells: Heap.cleared(machine.cells, id) }, value: Undefined }
-			(_, "forEach") => crash "ValueRules.collection_method: the engines run `forEach` themselves"
+			(_, "forEach") => crash "ValueRules.collection_method: the VM runs `forEach` itself"
 			(_, "keys") => ValueRules.alloc(machine, Iteration({ source: id, view: Keys, next: 0 }))
 			(_, "values") => ValueRules.alloc(machine, Iteration({ source: id, view: Values, next: 0 }))
 			(_, "entries") => ValueRules.alloc(machine, Iteration({ source: id, view: Entries, next: 0 }))
@@ -1434,7 +1434,7 @@ ValueRules :: [].{
 	}
 
 	## A builtin's answer, for the builtins that make no effect and call
-	## nothing back. The engines run the others themselves: `console.log`, the
+	## nothing back. The VM runs the others itself: `console.log`, the
 	## canvas's, the timers, `onClick`, and `Array.from` with a mapper.
 	native_called : ValueRules.Machine, Heap.Native, List(Heap.Value), Ast.Where -> ValueRules.Got
 	native_called = |machine, native, arguments, site|
@@ -1616,10 +1616,10 @@ ValueRules :: [].{
 				"Constructor ${Heap.native_name(native)} requires 'new'",
 				site,
 			)
-			ArrayFrom | Log | Paint(_) | Move(_) | Sense(_) | Timing(_) | OnClick => crash "ValueRules.native_called: the engines run a builtin that makes an effect or calls back themselves"
+			ArrayFrom | Log | Paint(_) | Move(_) | Sense(_) | Timing(_) | OnClick => crash "ValueRules.native_called: the VM runs a builtin that makes an effect or calls back itself"
 		}
 
-	# Whether `Array.from` is given a mapper, which an engine calls back.
+	# Whether `Array.from` is given a mapper, which the VM calls back.
 	is_mapped : List(Heap.Value) -> Bool
 	is_mapped = |arguments| match arguments.get(1) {
 		Ok(Undefined) | Err(OutOfBounds) => False
@@ -1747,8 +1747,8 @@ ValueRules :: [].{
 		$out
 	}
 
-	## An array's method, for the methods that call nothing back; the engines
-	## run the others themselves.
+	## An array's method, for the methods that call nothing back; the VM runs
+	## the others itself.
 	array_method : ValueRules.Machine, U64, Str, List(Heap.Value), Ast.Where -> ValueRules.Got
 	array_method = |
 		machine,
@@ -1973,7 +1973,7 @@ ValueRules :: [].{
 			"keys" => ValueRules.alloc(machine, Iteration({ source: id, view: Keys, next: 0 }))
 			"values" => ValueRules.alloc(machine, Iteration({ source: id, view: Values, next: 0 }))
 			"entries" => ValueRules.alloc(machine, Iteration({ source: id, view: Entries, next: 0 }))
-			"forEach" | "map" | "filter" | "some" | "every" | "find" | "findIndex" | "flatMap" | "findLast" | "findLastIndex" | "reduce" | "reduceRight" | "sort" => crash "ValueRules.array_method: the engines run the methods that call back themselves"
+			"forEach" | "map" | "filter" | "some" | "every" | "find" | "findIndex" | "flatMap" | "findLast" | "findLastIndex" | "reduce" | "reduceRight" | "sort" => crash "ValueRules.array_method: the VM runs the methods that call back itself"
 			_ => ValueRules.fault_got(
 				machine,
 				"unsupported: the array method `${name}`${ValueRules.line_note(site)}",
@@ -2335,7 +2335,7 @@ ValueRules :: [].{
 
 	## The builtins of `library`, made in `cells`: the cells after, and each
 	## builtin's value in the order `Resolve` places them
-	## (`Ast.global_names_of`), which an engine's outermost scope holds.
+	## (`Ast.global_names_of`), which the VM's outermost frame holds.
 	globals : List(Heap.Cell), Ast.Library -> { cells : List(Heap.Cell), values : List(Heap.Value) }
 	globals = |cells, library| {
 		var $s = { cells: cells, free: NoneFree, status: Running }

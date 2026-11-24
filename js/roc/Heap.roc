@@ -24,8 +24,7 @@
 ## (`Collector`) turns each cell no root reaches into a `Freed` cell, linked
 ## to the next free one, and an allocation (`allocated`) takes the first
 ## free cell before it grows the list. Nothing moves, so a reference stays
-## the index it was. The tree walker frees nothing: its heap has no free
-## cell, and each allocation appends.
+## the index it was.
 import Ast
 import NumberText
 

@@ -12,9 +12,9 @@
 // - runs every program in <tests-dir> through it, each held to what node
 //   itself prints for it (the program run by node, its timers waited for
 //   until none is left), node's report of a throw nothing caught written as
-//   the one line js-run writes, as js/oracle.shale writes it;
+//   the one line js-vm writes, as js/oracle.shale writes it;
 // - holds each program in <tests-dir>/refused to the message its first line
-//   names, but for one js-run stops on its budget of timer callbacks: the
+//   names, but for one js-vm stops on its budget of timer callbacks: the
 //   page has no such budget (an interval may animate for good), so that one
 //   must still be running after its ticks, as it would be in node;
 // - ticks each program's clock a frame at a time, as the page does, until
@@ -74,7 +74,7 @@ const runner = await loadRunner(readFileSync(join(dir, wasmFile)));
 // What node prints for a program, run as node runs a file, its timers on
 // node's own clock until none is left. Its report of a throw nothing caught,
 // on stderr (`<path>:<n>`, the line, a caret, then what was thrown past a
-// blank line when it is an error, and the stack), is the one line js-run
+// blank line when it is an error, and the stack), is the one line js-vm
 // writes: `Uncaught <the first line of what was thrown> (line <n>)`.
 function nodeOutput(file) {
   const path = resolve(file);

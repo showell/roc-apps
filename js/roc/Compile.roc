@@ -1350,8 +1350,8 @@ name_read = |state, { name, slot, at }| {
 	compiled(after, [Do(op)])
 }
 
-# The old value a compound assignment combines, read as the walker reads
-# it: an unready variable's is undefined, the error coming at the write.
+# The old value a compound assignment combines: an unready variable's is
+# undefined, the error coming at the write.
 name_peek : Compile.Reached -> Bytecode.Op
 name_peek = |reached| match reached {
 	Own({ place: _, kind: _, ready: False }) => PushUndefined

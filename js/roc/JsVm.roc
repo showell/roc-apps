@@ -1,6 +1,9 @@
-# The JavaScript subset on the bytecode VM, as a command: js-run's program
-# compiled (Compile.roc) and run on the VM (Vm.roc) in place of the tree
-# walker, built once on Roc's default platform.
+# The JavaScript subset as a command: one program's text in, what it
+# prints out. The program is compiled (Compile.roc) and run on the bytecode
+# VM (Vm.roc), built once on Roc's default platform. The command line is
+# all the input a program has, and what it logs leaves by `echo!` as it
+# logs it. It runs on JavaScript's own builtins alone, the library node
+# has, so node is its oracle.
 #
 #   js-vm "<program>" [--collect-at-every-allocation] [--counts]
 #
@@ -11,12 +14,11 @@
 # collections <n>`: the steps run, the heap's length, the cells still
 # reached at the end, and the collections run (js/heaps.shale reads it).
 #
-# It prints what js-run prints and ends as js-run ends: a program the
-# parser refuses, or one that stops with a fault, ends with a line
+# A program the parser refuses, or one that stops with a fault, ends with a line
 # `js: <why>` and exits 1; one that throws what nothing catches ends with a
 # line `Uncaught <what node prints first> (line <n>)` and exits 1. A
 # program using what the VM doesn't run yet ends with
-# `js: unsupported (vm): <what>`, never on the walker.
+# `js: unsupported (vm): <what>`.
 import Canvas
 import Compile
 import Parser
@@ -48,8 +50,10 @@ options_of = |words| {
 	$options
 }
 
-# The core library logs and does nothing else. A function for js-run's
-# reason (JsRun.roc's `command_host`).
+# The core library logs and does nothing else: it has no canvas builtin to
+# draw with and none that reads input. A function, not a constant: roc-types
+# at the pin panics ("a hosted procedure has no host binding") on a
+# top-level constant that holds an effectful lambda, which `roc` builds.
 command_host : {} -> Canvas.Host
 command_host = |{}| {
 	emit!: |effect|

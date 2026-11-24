@@ -1,8 +1,8 @@
 ## This module holds the one queue every callback goes through, and its
-## virtual clock, which both of the subset's engines share: a timer's
+## virtual clock: a timer's
 ## callback, the program's next `frame(t)` and a click are each an event,
 ## due at a time in milliseconds, and run earliest first, two at one time in
-## the order they were queued. The engines run the callbacks; this module
+## the order they were queued. The VM runs the callbacks; this module
 ## keeps the order, the clock and the timers' rules (`timer_requested`,
 ## `timer_named`), each message in its words.
 import Ast
@@ -234,7 +234,7 @@ Events :: [].{
 
 	## `setTimeout(callback, ms)` or `setInterval(callback, ms)`: the timer's
 	## handle, numbered `timer`, and its first event, `ms` on from `clock`, for
-	## the engine to queue; or the fault that refuses it. A delay below 1 ms,
+	## the VM to queue; or the fault that refuses it. A delay below 1 ms,
 	## past 2^31 - 1 or left out is 1 ms, as node makes it.
 	timer_requested : ValueRules.Machine,
 	{

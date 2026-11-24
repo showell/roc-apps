@@ -37,19 +37,17 @@
 ## stack beneath it, and the array `map` or `filter` builds is a cell the
 ## stack refers to.
 ##
-## **THE VALUE RULES ARE SHARED WITH THE WALKER.** What JavaScript gives for
-## a property read, an operator on mixed values, a string method, a builtin
-## that calls nothing back, and every message those make, lives once, in
-## `ValueRules`, which the walker calls too. Where the VM's own fast path
-## doesn't settle an instruction (two numbers added, an object's own
-## property read), it lends the cells to that rule (`lent`, `shell`) and
-## takes the cells, the value and any fault or throw back (`with_got`). None
-## of those rules walks the tree or calls a function, and the VM doesn't
-## import the walker at all.
+## **THE VALUE RULES LIVE IN A MODULE OF THEIR OWN.** What JavaScript gives
+## for a property read, an operator on mixed values, a string method, a
+## builtin that calls nothing back, and every message those make, lives
+## once, in `ValueRules`. Where the VM's own fast path doesn't settle an
+## instruction (two numbers added, an object's own property read), it lends
+## the cells to that rule (`lent`, `shell`) and takes the cells, the value
+## and any fault or throw back (`with_got`). None of those rules calls a
+## function of the program.
 ##
-## **THE HANDLERS TAKE SEVERAL ARGUMENTS, A NAMED EXCEPTION.** As the
-## walker's evaluator does, a handler takes the host, then the program, then
-## the machine, then the rest, where the style guide would take one record:
+## **THE HANDLERS TAKE SEVERAL ARGUMENTS, A NAMED EXCEPTION.** A handler
+## takes the host, then the program, then the machine, then the rest, where the style guide would take one record:
 ## a record holding the machine is a second reference to the heap.
 ##
 ## **A THROW LANDS AT A HANDLER THAT IS DATA.** A `try` pushes a handler
@@ -62,13 +60,13 @@
 ## callback's run, and the builtin that called it hands it to the loop
 ## beneath. One nothing catches ends the run as node ends it.
 ##
-## **EVERY CALLBACK RUNS AFTER THE PROGRAM, ON THE WALKER'S QUEUE.**
+## **EVERY CALLBACK RUNS AFTER THE PROGRAM, ON ONE QUEUE.**
 ## `setTimeout` and `setInterval` queue their callbacks by `Events`' rules,
 ## on its virtual clock, and so do a click and the canvas's `frame(t)`. Once
 ## the program finishes, its own frame stays at the bottom of the stack
 ## (`start!`), and each callback runs as a call from it: all of them in turn
 ## on the command line (`drained!`), or those due by a frame's time on the
-## page (`tick!`), as the walker's `drain!` and `tick!` run them.
+## page (`tick!`).
 ##
 ## **THE CANVAS'S EFFECTS GO TO THE HOST AS THEY ARE MADE** (`emitted!`),
 ## a log's among them, each counted against the budget of what is running.
@@ -764,7 +762,7 @@ box_copied = |machine, slot| {
 	with_slot(made, slot, Reference(id))
 }
 
-# ---- the walker's rules, borrowed ------------------------------------------
+# ---- the value rules, lent the cells ---------------------------------------
 
 # What a value rule reads and writes of the machine: the cells, the free
 # cells it allocates from, and a status the rule may set to a fault or a
@@ -790,11 +788,11 @@ lent = |machine| {
 # `place` on the stack, or its fault or throw taken on.
 with_got : Vm.Machine, ValueRules.Got, U64 -> Vm.Machine
 with_got = |machine, got, place| {
-	{ machine: walker, value } = got
-	match walker.status {
-		Running => with_result(with_rules(machine, walker), place, value)
-		Faulted(why) => { ..with_rules(machine, walker), status: Faulted(why) }
-		Thrown(boxed) => { ..with_rules(machine, walker), status: Thrown(boxed) }
+	{ machine: ruled, value } = got
+	match ruled.status {
+		Running => with_result(with_rules(machine, ruled), place, value)
+		Faulted(why) => { ..with_rules(machine, ruled), status: Faulted(why) }
+		Thrown(boxed) => { ..with_rules(machine, ruled), status: Thrown(boxed) }
 	}
 }
 
@@ -831,8 +829,8 @@ binary = |machine, operator, at| {
 	}
 }
 
-# Two values that aren't both numbers, combined as the walker combines them,
-# in place of the top two.
+# Two values that aren't both numbers, combined by the value rules, in place
+# of the top two.
 combined : Vm.Machine, { operator : Ast.BinaryOperator, left : Heap.Value, right : Heap.Value, at : Ast.Where } -> Vm.Machine
 combined = |machine, { operator, left, right, at }|
 	match operator {
@@ -857,7 +855,7 @@ template_joined = |machine, piece| {
 			grown = { ..machine, stack: taken.list }
 			replaced(grown, 2, Text(Str.concat(Str.concat(so_far, phrase), piece)))
 		}
-		# The walker's message, which names no line here.
+		# The value rules' message, which names no line here.
 		Err(Unsupported(why)) => with_fault(machine, why)
 	}
 }
@@ -1142,11 +1140,11 @@ spread_appended = |machine, source, at| {
 	id = reference_id(value_at(machine, 2))
 	given = value_at(machine, 1)
 	{ cells, machine: rest } = lent(machine)
-	{ machine: walker, values } = ValueRules.iterated(shell(cells, rest), given)
+	{ machine: ruled, values } = ValueRules.iterated(shell(cells, rest), given)
 	match values {
-		Ok(items) => dropped({ ..rest, cells: Heap.with_items_pushed(walker.cells, id, items), free: walker.free }, 1)
+		Ok(items) => dropped({ ..rest, cells: Heap.with_items_pushed(ruled.cells, id, items), free: ruled.free }, 1)
 		Err(NotIterable) => {
-			failed = ValueRules.with_not_iterable(walker, given, Written(source), at)
+			failed = ValueRules.with_not_iterable(ruled, given, Written(source), at)
 			with_got(rest, { machine: failed, value: Undefined }, rest.top - 1)
 		}
 	}
@@ -1176,7 +1174,7 @@ fields_spread = |machine, at| {
 }
 
 # An object's own property, a builtin object's, or an array's length, read
-# here; everything else as the walker reads it.
+# here; everything else by the value rules.
 property_read : Vm.Machine, Str, Ast.Where -> Vm.Machine
 property_read = |machine, key, at| {
 	holder = value_at(machine, 1)
@@ -1222,7 +1220,7 @@ index_read = |machine, at| {
 
 # The value on top stored at `key` of the holder beneath it, both replaced
 # by the value: an object's property or an array's item written here,
-# everything else as the walker writes it.
+# everything else by the value rules.
 stored : Vm.Machine, { key : Heap.Value, at : Ast.Where } -> Vm.Machine
 stored = |machine, { key, at }| {
 	holder = value_at(machine, 2)
@@ -1278,7 +1276,7 @@ Naming : [Written(Str), Shown]
 
 Calling : { count : U64, result_at : U64, naming : Naming, at : Ast.Where }
 
-# The deepest call the VM makes before it throws a RangeError, the walker's.
+# The deepest call the VM makes before it throws a RangeError.
 max_depth : U64
 max_depth = ValueRules.max_depth
 
@@ -1602,8 +1600,7 @@ timer_set = |machine, { repeats, arguments, calling }| {
 # The machine after every event left in its queue, earliest first, the clock
 # moved to each in turn, until none is left, the program stops, or
 # `Events.callback_limit` callbacks have run with more to come (a fault that
-# says so): the command line's run, after the program, as the walker's
-# `drain!` runs it.
+# says so): the command line's run, after the program.
 drained! : Canvas.Host, Bytecode.Program, Vm.Machine => Vm.Machine
 drained! = |host, program, machine| {
 	var $machine = machine
@@ -1796,8 +1793,8 @@ item_at = |machine, id, position| match Heap.cell_at(machine.cells, id) {
 	_ => crash "Vm.item_at: asked only of an array"
 }
 
-# An array's method: those that call a function back run here, the rest as
-# the walker runs them.
+# An array's method: those that call a function back run here, the rest by
+# the value rules.
 array_method! : Canvas.Host, Bytecode.Program, Vm.Machine, ArrayCall => Vm.Machine
 array_method! = |host, program, machine, call|
 	match call.name {

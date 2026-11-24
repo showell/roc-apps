@@ -581,8 +581,8 @@ field_taken_out_first = |i, steps, size, totals| {
 item_written : List(U64), U64, U64 -> List(U64)
 item_written = |items, j, i| items.set(j, i) ?? crash "item_written: in range"
 
-## A field handed to a helper inside its record's update, as the JS
-## interpreter's `{ ..st, scopes: Interp.with_var(st.scopes, ...) }`.
+## A field handed to a helper inside its record's update, as the JS VM's
+## `{ ..machine, cells: Heap.with_property(machine.cells, ...) }`.
 field_through_helper : U64, U64, U64, Totals -> U64
 field_through_helper = |i, steps, size, totals| {
 	if i >= steps {
@@ -759,8 +759,8 @@ nested_get_then_set = |i, steps, size, rows, sum| {
 }
 
 ## The inner list taken out with `replace`, written, and set back, its
-## write inside the outer set's own arguments: BASIC's Vec.set_in and the JS
-## interpreter's Interp.with_var write this way.
+## write inside the outer set's own arguments: BASIC's Vec.set_in writes
+## this way.
 nested_replace_then_set : U64, U64, U64, List(List(U64)), U64 -> U64
 nested_replace_then_set = |i, steps, size, rows, sum| {
 	if i >= steps {

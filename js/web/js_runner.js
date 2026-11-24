@@ -12,7 +12,7 @@
 // program asks: `input.pointer(axis)` (0 for x, 1 for y) and
 // `input.key(name)`, which the page sets. Each call's last line says how it ended (js/roc/JsApp.roc),
 // and the call answers it: { ending, why }, the ending one of "frame",
-// "done", "faulted", "thrown" (a throw nothing caught, `why` the line js-run
+// "done", "faulted", "thrown" (a throw nothing caught, `why` the line js-vm
 // prints for it), "refused" or "crashed".
 //
 // The page and page_check.mjs both use it, so the check drives the very
@@ -76,9 +76,9 @@ export function unescaped(words) {
   return words.replace(/\\(n|\\)/g, (_, c) => (c === "n" ? "\n" : "\\"));
 }
 
-// What console.log printed, from a run's lines, as js-run prints it; a run
+// What console.log printed, from a run's lines, as js-vm prints it; a run
 // that stopped ends with its `js: <why>` line, or a throw nothing caught
-// with its `Uncaught ...` line, as js-run's does.
+// with its `Uncaught ...` line, as js-vm's does.
 export function transcriptOf(lines, result) {
   let out = "";
   for (const line of lines) if (line.startsWith("log ")) out += unescaped(line.slice(4)) + "\n";
