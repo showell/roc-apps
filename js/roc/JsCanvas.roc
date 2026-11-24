@@ -26,6 +26,7 @@
 # A program the parser refuses, or one that stops with a fault, ends with a
 # line `js: <why>` and exits 1, as js-run's does.
 import Canvas
+import Events
 import Interp
 import NumberText
 import Parser
@@ -150,7 +151,7 @@ record_program! = |src, { frames, keys: key_frames, clicks }| {
 						$session = Interp.with_click($session, click.x, click.y)
 					}
 				}
-				seconds = Interp.frame_time($n)
+				seconds = Events.frame_time($n)
 				echo!("frame ${$n.to_str()} ${NumberText.text_for(seconds)}\n")
 				keys = text_or_none(key_frames, $n).split_on("+")
 				$session = Interp.tick!(

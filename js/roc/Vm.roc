@@ -52,11 +52,18 @@
 ## callback's run, and the builtin that called it hands it to the loop
 ## beneath. One nothing catches ends the run as node ends it.
 ##
-## What the VM doesn't run yet (the timers and the canvas) stops the run
-## with `unsupported (vm): ...`.
+## **THE TIMERS RUN AFTER THE PROGRAM, ON THE WALKER'S QUEUE.** `setTimeout`
+## and `setInterval` queue their callbacks by `Events`' rules, on its
+## virtual clock, and once the program finishes each runs in turn as a call
+## from the program's own frame (`drained!`), as the walker's `drain!` runs
+## them.
+##
+## What the VM doesn't run yet, the canvas, stops the run with
+## `unsupported (vm): ...`.
 import Ast
 import Bytecode
 import Canvas
+import Events
 import Heap
 import Inspect
 import ValueRules
@@ -72,6 +79,7 @@ Vm :: [].{
 		handlers : List(Vm.Handler),
 		# How many of `handlers` wait: the ones past it are spent.
 		handler_count : U64,
+		events : Events.Queue,
 		code : U64,
 		pc : U64,
 		base : U64,
@@ -122,6 +130,7 @@ Vm :: [].{
 			depth: 0,
 			handlers: [],
 			handler_count: 0,
+			events: Events.at_start,
 			code: program.main,
 			pc: 0,
 			base: 0,
@@ -134,7 +143,11 @@ Vm :: [].{
 		}
 		main = code_of(program, program.main)
 		entered = frame_filled(begun, { code: main, given: 0, boxes: [] })
-		ended = loop!(host, program, entered, 0)
+		finished = loop!(host, program, entered, 0)
+		ended = match finished.status {
+			Finished => drained!(host, program, { ..finished, status: Running })
+			_ => finished
+		}
 		match ended.status {
 			Running | Finished => Finished
 			Faulted(why) => Faulted(why)
@@ -1242,8 +1255,16 @@ native_called! = |host, program, machine, { native, calling }| {
 			}
 			Err(Unsupported(why)) => with_fault(machine, "${why}${ValueRules.line_note(at)}")
 		}
-		ArrayFrom if is_mapped(arguments) => array_from!(host, program, machine, { arguments: arguments, calling: calling })
-		Timing(_) => unsupported(machine, "timers", at)
+		ArrayFrom if ValueRules.is_mapped(arguments) => array_from!(host, program, machine, { arguments: arguments, calling: calling })
+		Timing(SetTimeout) => timer_set(machine, { repeats: Once, arguments: arguments, calling: calling })
+		Timing(SetInterval) => timer_set(machine, { repeats: Repeating, arguments: arguments, calling: calling })
+		Timing(ClearTimeout) | Timing(ClearInterval) => {
+			cleared = match Events.timer_named(machine.cells, arguments) {
+				Timer(number) => { ..machine, events: Events.without_timer(machine.events, number) }
+				NoTimer => machine
+			}
+			with_result(cleared, calling.result_at, Undefined)
+		}
 		OnClick | Paint(_) | Move(_) | Sense(_) => unsupported(machine, "the canvas", at)
 		_ => {
 			{ cells, machine: rest } = lent(machine)
@@ -1252,11 +1273,86 @@ native_called! = |host, program, machine, { native, calling }| {
 	}
 }
 
-# Whether `Array.from` is given a mapper, which the VM calls back.
-is_mapped : List(Heap.Value) -> Bool
-is_mapped = |arguments| match arguments.get(1) {
-	Ok(Undefined) | Err(OutOfBounds) => False
-	Ok(_) => True
+# `setTimeout` or `setInterval`: the timer's handle, its callback queued by
+# `Events.timer_requested`'s rules.
+timer_set : Vm.Machine, { repeats : [Once, Repeating], arguments : List(Heap.Value), calling : Calling } -> Vm.Machine
+timer_set = |machine, { repeats, arguments, calling }| {
+	{ cells, machine: rest } = lent(machine)
+	asked = { repeats: repeats, arguments: arguments, at: calling.at, timer: rest.events.made, clock: rest.events.clock }
+	{ machine: after, value, queued } = Events.timer_requested(shell(cells), asked)
+	back = match queued {
+		Queued(event) => { ..rest, events: Events.with_event(rest.events, event) }
+		Refused => rest
+	}
+	with_got(back, { machine: after, value: value }, calling.result_at)
+}
+
+# ---- the queue -------------------------------------------------------------
+
+# The machine after every event left in its queue, earliest first, the clock
+# moved to each in turn, until none is left, the program stops, or
+# `Events.callback_limit` callbacks have run with more to come (a fault that
+# says so): the command line's run, after the program, as the walker's
+# `drain!` runs it.
+drained! : Canvas.Host, Bytecode.Program, Vm.Machine => Vm.Machine
+drained! = |host, program, machine| {
+	var $machine = machine
+	var $ran = 0
+	var $going = True
+	while $going {
+		match Events.earliest($machine.events.pending_events, 1.0 / 0.0) {
+			At(index) if is_running($machine) => {
+				if $ran >= Events.callback_limit {
+					$machine = with_fault($machine, "the program ran past its budget of ${Events.callback_limit.to_str()} timer callbacks")
+					$going = False
+				} else {
+					$machine = event_run!(host, program, $machine, index)
+					$ran = $ran + 1
+				}
+			}
+			_ => {
+				$going = False
+			}
+		}
+	}
+	$machine
+}
+
+# The machine after one event's callback, taken off the queue with the
+# clock moved to its time: a timer's, queued again later when it is an
+# interval that didn't clear itself.
+event_run! : Canvas.Host, Bytecode.Program, Vm.Machine, U64 => Vm.Machine
+event_run! = |host, program, machine, index| {
+	event = machine.events.pending_events.get(index) ?? crash "Vm.event_run!: Events.earliest names an event the queue has"
+	taken = { ..machine, events: Events.with_event_taken(machine.events, index, event.due) }
+	match event.happening {
+		Timed({ timer, callback, every }) => {
+			firing = { ..taken, events: Events.with_firing(taken.events, Firing(timer)) }
+			called = call_function!(host, program, firing, { callee: callback, arguments: [], at: event.site })
+			after = if is_running(called) {
+				dropped(called, 1)
+			} else {
+				called
+			}
+			again = after.events.firing == Firing(timer)
+			idle = { ..after, events: Events.with_firing(after.events, Idle) }
+			match every {
+				Every(period) if again => {
+					..idle,
+					events: Events.with_event(
+						idle.events,
+						{
+							due: event.due + period,
+							site: event.site,
+							happening: Timed({ timer: timer, callback: callback, every: every }),
+						},
+					),
+				}
+				_ => idle
+			}
+		}
+		Framed(_, _) | Clicked(_, _) => crash "Vm.event_run!: the core library queues no frame and no click"
+	}
 }
 
 # A function called with `arguments`, by a builtin, its answer left on the
@@ -1288,15 +1384,10 @@ answered = |machine| {
 
 array_from! : Canvas.Host, Bytecode.Program, Vm.Machine, { arguments : List(Heap.Value), calling : Calling } => Vm.Machine
 array_from! = |host, program, machine, { arguments, calling }| {
-	source = arguments.first() ?? Undefined
 	mapper = arguments.get(1) ?? Undefined
 	{ cells, machine: rest } = lent(machine)
-	{ machine: walker, values: found } = ValueRules.iterated(shell(cells), source)
-	back = { ..rest, cells: walker.cells }
-	listed = match found {
-		Ok(values) => Ok(values)
-		Err(NotIterable) => ValueRules.array_like(back.cells, source)
-	}
+	{ machine: rules, listed } = ValueRules.array_from_values(shell(cells), arguments.first() ?? Undefined)
+	back = { ..rest, cells: rules.cells }
 	match listed {
 		Err(Unsupported(why)) => with_fault(back, "${why}${ValueRules.line_note(calling.at)}")
 		Ok(values) => {

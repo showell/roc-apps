@@ -151,7 +151,7 @@ page lists them:
   called 30 times a second, `t` being the frame's number over 30.
 
 **One queue, one clock.** A timer's callback, a click and the next
-`frame(t)` are each an event on the interpreter's queue (`Interp.Events`),
+`frame(t)` are each an event on the interpreter's queue (`Events.Queue`),
 due at a time on its virtual clock. The page ticks the clock a frame at a
 time (`Interp.tick!`), to the frame's own time, and each tick runs what is
 due by then: the clicks queued since the last tick, then the timers and the
@@ -206,6 +206,7 @@ columns, `Parser.roc` reads them into `Ast.roc`'s tree by recursive descent,
 laying out each scope's names, `Resolve.roc` places every name read or
 written in those layouts before the run, `Interp.roc` walks it, `ValueRules.roc` holds the
 rules JavaScript's values follow, which the walker and the VM share,
+`Events.roc` holds the queue of callbacks and its virtual clock, shared too,
 `Heap.roc` holds what JavaScript shares by
 reference, `Inspect.roc` is console.log's formatting (node's `util.inspect`,
 function for function), and `NumberText.roc` writes a number as `String(n)`
@@ -265,8 +266,11 @@ back on the walker.
   the innermost one, the frames and the stack above it given up. A
   `break`, a `continue` or a `return` that leaves a `try` runs its
   `finally` on the way, compiled where it stands.
-- **The VM leaves out** the timers and the canvas. Each stops the run with
-  `js: unsupported (vm): <what>`.
+- **The timers share the walker's queue** (`Events.roc`): the VM queues a
+  callback by its rules and, once the program finishes, runs each in turn
+  on the same virtual clock, as js-run does.
+- **The VM leaves out** the canvas, which stops the run with `js:
+  unsupported (vm): <what>`.
 - **Steps** count calls and loop passes, not statements; js-vm's budget is
   js-run's, 200,000,000.
 
