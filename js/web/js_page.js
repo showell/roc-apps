@@ -417,11 +417,19 @@ export function buildPage(runner, env = window) {
     say(`frame ${run.frame}${run.paused ? ", paused" : ""}`, false);
     if (!run.paused && queue.length === 0) schedule(run);
   });
+  // A program is read from its top: setting a textarea's value leaves the
+  // cursor at the end, and a browser scrolls the box to its cursor.
+  function fromTheTop() {
+    editor.setSelectionRange(0, 0);
+    editor.scrollTop = 0;
+  }
   picker.addEventListener("change", () => {
     stop();
     editor.value = SAMPLES[Number(picker.value)].source;
+    fromTheTop();
     notRun();
   });
+  fromTheTop();
   // An edited program hasn't run either, so the run on show stops with it.
   editor.addEventListener("input", () => {
     stop();

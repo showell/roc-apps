@@ -170,7 +170,9 @@ class Element {
   constructor(tag) {
     this.tag = tag; this.children = []; this.listeners = {}; this.textContent = ""; this.value = ""; this.className = "";
     this.scrollTop = 0; this.scrollHeight = 0; this.hidden = false;
+    this.selectionStart = 0; this.selectionEnd = 0;
   }
+  setSelectionRange(start, end) { this.selectionStart = start; this.selectionEnd = end; }
   appendChild(c) { this.children.push(c); return c; }
   addEventListener(kind, fn) { (this.listeners[kind] ??= []).push(fn); }
   fire(kind, event = {}) { for (const fn of this.listeners[kind] ?? []) fn(event); }
@@ -206,8 +208,13 @@ function shown() {
 if (shown() !== "not run") fail(`on load the page shows ${shown()}, where it must say the program hasn't run`);
 
 async function runSample(index, speed) {
+  page.editor.scrollTop = 500;
+  page.editor.selectionStart = page.editor.selectionEnd = 9999;
   page.picker.value = String(index);
   page.picker.fire("change");
+  if (page.editor.scrollTop !== 0 || page.editor.selectionStart !== 0 || page.editor.selectionEnd !== 0) {
+    fail(`sample ${SAMPLES[index].title}: once picked the program isn't shown from its top`);
+  }
   if (shown() !== "not run") fail(`sample ${SAMPLES[index].title}: once picked the page shows ${shown()}`);
   page.speed.value = String(speed);
   frames.length = 0;
