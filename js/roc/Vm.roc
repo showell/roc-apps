@@ -1337,6 +1337,15 @@ Calling : { count : U64, result_at : U64, naming : Naming, at : Ast.Where }
 max_depth : U64
 max_depth = ValueRules.max_depth
 
+# The deepest call from which a builtin runs a callback; past it the
+# callback's call throws the same RangeError. A callback's run is the loop
+# run again, a Roc call deeper (`call_function!`), and each such run stands
+# on at least one JavaScript call, so this bounds Roc's own stack. The dev
+# build's overflows at about 700 callbacks nested through `sort`, the
+# deepest of the builtins that call back.
+max_callback_depth : U64
+max_callback_depth = 400
+
 # A call of the value beneath the top `count`: a closure's frame entered, a
 # builtin's answer made, or a TypeError.
 called! : Canvas.Host, Bytecode.Program, Vm.Machine, Calling => Vm.Machine
@@ -1788,11 +1797,15 @@ closure_called! = |host, program, machine, { environment, arguments, at }| {
 	}
 	floor = $machine.depth + 1
 	calling = { count: arguments.len(), result_at: result_at, naming: Shown, at: at }
-	entered = closure_entered(program, $machine, { environment: environment, calling: calling })
-	if entered.depth >= floor {
-		loop!(host, program, entered, floor)
+	if $machine.depth >= max_callback_depth {
+		with_error($machine, RangeError, "Maximum call stack size exceeded", at)
 	} else {
-		entered
+		entered = closure_entered(program, $machine, { environment: environment, calling: calling })
+		if entered.depth >= floor {
+			loop!(host, program, entered, floor)
+		} else {
+			entered
+		}
 	}
 }
 
@@ -1806,11 +1819,15 @@ call_function! = |host, program, machine, { callee, arguments, at }| {
 		$machine = pushed($machine, argument)
 	}
 	floor = $machine.depth + 1
-	entered = called!(host, program, $machine, { count: arguments.len(), result_at: result_at, naming: Shown, at: at })
-	if entered.depth >= floor {
-		loop!(host, program, entered, floor)
+	if $machine.depth >= max_callback_depth {
+		with_error($machine, RangeError, "Maximum call stack size exceeded", at)
 	} else {
-		entered
+		entered = called!(host, program, $machine, { count: arguments.len(), result_at: result_at, naming: Shown, at: at })
+		if entered.depth >= floor {
+			loop!(host, program, entered, floor)
+		} else {
+			entered
+		}
 	}
 }
 

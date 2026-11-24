@@ -54,9 +54,10 @@ ValueRules :: [].{
 	Throw : { value : Heap.Value, site : Ast.Where }
 
 	# The deepest JavaScript call the interpreter makes before it reports a
-	# stack overflow, as node does, rather than overflow Roc's own stack.
+	# stack overflow, as node does near the same depth. A call is a frame of
+	# the VM's own stack, data, so it costs Roc's stack nothing.
 	max_depth : U64
-	max_depth = 400
+	max_depth = 10000
 
 	# What a throw nothing caught says: `Uncaught `, the first line node
 	# prints for the value (an error's name and message, or the value as

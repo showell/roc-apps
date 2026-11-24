@@ -7,7 +7,7 @@ holds the language to node.
 The code here was written by AI coding agents (Claude), with human
 supervision.
 
-**Status (2026-11-24):** 55 of 55 corpus programs print what node 22
+**Status (2026-11-24):** 56 of 56 corpus programs print what node 22
 prints, byte for byte, timers and uncaught throws included, and 44 of 44
 programs outside the subset are refused with the message they must give,
 on the VM's usual collection schedule and collecting at every allocation.
@@ -508,8 +508,15 @@ across them is a write in place.
 - **A turtle's trigonometry is exact only on the square headings,** so a
   turtle that walks a square ends where it began; at any other heading its
   positions carry a float's rounding, and the logs show it.
-- **The VM throws a RangeError at 400 nested calls**
-  (`ValueRules.max_depth`), where node goes much deeper.
+- **Calls nest 10,000 deep, but a builtin's callback only 400 deep.**
+  The VM throws node's RangeError at 10,000 nested calls
+  (`ValueRules.max_depth`), near node's own limit, since a call is a frame
+  of the VM's stack, data. A builtin that calls back (`map`, `sort`, a
+  Map's `forEach`) runs the loop again, a Roc call deeper, so a callback
+  called from 400 calls deep or more throws the same RangeError
+  (`Vm.max_callback_depth`), where node would go on: the dev build's own
+  stack overflows near 700 callbacks nested through `sort`
+  (`js/tests/56-call-depth.js`).
 - **Built on the dev backend,** js-vm runs `fib(22)` in about 0.86 s of
   CPU, and in about 0.10 s in the release build (2026-11-24). Its release
   build takes about 90 s on a 2-core box, so a round takes its
