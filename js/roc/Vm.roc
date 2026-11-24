@@ -79,7 +79,10 @@ Vm :: [].{
 		handlers : List(Vm.Handler),
 		# How many of `handlers` wait: the ones past it are spent.
 		handler_count : U64,
-		events : Events.Queue,
+		# The timers and the click handler, boxed: an instruction hands the
+		# machine back, and only a timer's or a click's touch the queue, so
+		# the box keeps every other instruction from copying it.
+		events : Box(Events.Queue),
 		code : U64,
 		pc : U64,
 		base : U64,
@@ -130,7 +133,7 @@ Vm :: [].{
 			depth: 0,
 			handlers: [],
 			handler_count: 0,
-			events: Events.at_start,
+			events: Box.box(Events.at_start),
 			code: program.main,
 			pc: 0,
 			base: 0,
@@ -1260,7 +1263,7 @@ native_called! = |host, program, machine, { native, calling }| {
 		Timing(SetInterval) => timer_set(machine, { repeats: Repeating, arguments: arguments, calling: calling })
 		Timing(ClearTimeout) | Timing(ClearInterval) => {
 			cleared = match Events.timer_named(machine.cells, arguments) {
-				Timer(number) => { ..machine, events: Events.without_timer(machine.events, number) }
+				Timer(number) => { ..machine, events: Box.box(Events.without_timer(Box.unbox(machine.events), number)) }
 				NoTimer => machine
 			}
 			with_result(cleared, calling.result_at, Undefined)
@@ -1278,10 +1281,10 @@ native_called! = |host, program, machine, { native, calling }| {
 timer_set : Vm.Machine, { repeats : [Once, Repeating], arguments : List(Heap.Value), calling : Calling } -> Vm.Machine
 timer_set = |machine, { repeats, arguments, calling }| {
 	{ cells, machine: rest } = lent(machine)
-	asked = { repeats: repeats, arguments: arguments, at: calling.at, timer: rest.events.made, clock: rest.events.clock }
+	asked = { repeats: repeats, arguments: arguments, at: calling.at, timer: Box.unbox(rest.events).made, clock: Box.unbox(rest.events).clock }
 	{ machine: after, value, queued } = Events.timer_requested(shell(cells), asked)
 	back = match queued {
-		Queued(event) => { ..rest, events: Events.with_event(rest.events, event) }
+		Queued(event) => { ..rest, events: Box.box(Events.with_event(Box.unbox(rest.events), event)) }
 		Refused => rest
 	}
 	with_got(back, { machine: after, value: value }, calling.result_at)
@@ -1300,7 +1303,7 @@ drained! = |host, program, machine| {
 	var $ran = 0
 	var $going = True
 	while $going {
-		match Events.earliest($machine.events.pending_events, 1.0 / 0.0) {
+		match Events.earliest(Box.unbox($machine.events).pending_events, 1.0 / 0.0) {
 			At(index) if is_running($machine) => {
 				if $ran >= Events.callback_limit {
 					$machine = with_fault($machine, "the program ran past its budget of ${Events.callback_limit.to_str()} timer callbacks")
@@ -1323,29 +1326,31 @@ drained! = |host, program, machine| {
 # interval that didn't clear itself.
 event_run! : Canvas.Host, Bytecode.Program, Vm.Machine, U64 => Vm.Machine
 event_run! = |host, program, machine, index| {
-	event = machine.events.pending_events.get(index) ?? crash "Vm.event_run!: Events.earliest names an event the queue has"
-	taken = { ..machine, events: Events.with_event_taken(machine.events, index, event.due) }
+	event = Box.unbox(machine.events).pending_events.get(index) ?? crash "Vm.event_run!: Events.earliest names an event the queue has"
+	taken = { ..machine, events: Box.box(Events.with_event_taken(Box.unbox(machine.events), index, event.due)) }
 	match event.happening {
 		Timed({ timer, callback, every }) => {
-			firing = { ..taken, events: Events.with_firing(taken.events, Firing(timer)) }
+			firing = { ..taken, events: Box.box(Events.with_firing(Box.unbox(taken.events), Firing(timer))) }
 			called = call_function!(host, program, firing, { callee: callback, arguments: [], at: event.site })
 			after = if is_running(called) {
 				dropped(called, 1)
 			} else {
 				called
 			}
-			again = after.events.firing == Firing(timer)
-			idle = { ..after, events: Events.with_firing(after.events, Idle) }
+			again = Box.unbox(after.events).firing == Firing(timer)
+			idle = { ..after, events: Box.box(Events.with_firing(Box.unbox(after.events), Idle)) }
 			match every {
 				Every(period) if again => {
 					..idle,
-					events: Events.with_event(
-						idle.events,
-						{
-							due: event.due + period,
-							site: event.site,
-							happening: Timed({ timer: timer, callback: callback, every: every }),
-						},
+					events: Box.box(
+						Events.with_event(
+							Box.unbox(idle.events),
+							{
+								due: event.due + period,
+								site: event.site,
+								happening: Timed({ timer: timer, callback: callback, every: every }),
+							},
+						),
 					),
 				}
 				_ => idle
