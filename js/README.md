@@ -11,7 +11,7 @@ supervision.
 prints, byte for byte, timers and uncaught throws included, and 44 of 44
 programs outside the subset are refused with the message they must give,
 on the VM's usual collection schedule and collecting at every allocation.
-Eight canvas samples are held to their logs of effects, one of them driven
+Nine canvas samples are held to their logs of effects, one of them driven
 by scripted clicks alone and one by timers, restarted by a scripted click.
 The VM collects its garbage, so js/heaps/'s programs, which make an object
 a pass, hold about 1,024 cells and peak near 4 MB on the dev build. In the
@@ -144,6 +144,18 @@ page lists them:
   and `onClick((x, y) => { ... })`, a handler called with each click on the
   canvas, in canvas units, in the next frame. A second `onClick` replaces
   the first.
+- **The collector, heard:** `onCollect(({ cells, live, before }) => {
+  ... })`, a playground extra like `onClick`, not JavaScript: a handler
+  called after each collection with the heap's cells, those it found live
+  and those in use just before it. The VM queues the call on the event
+  queue once the collection has swept, due at once, so it runs between
+  instructions as a timer does (after the program, or after the callback
+  the collection ran in), never inside the collection. A program without
+  one pays nothing for it. node has no collector to hear, so a program
+  using it is held as a canvas sample is, to its log
+  (`js/canvas/9-garbage-heard.js`), and js-vm, on the core library,
+  refuses it as it refuses every canvas builtin. A second `onCollect`
+  replaces the first.
 - **A frame loop:** a program that declares `function frame(t)` has it
   called 30 times a second, `t` being the frame's number over 30.
 

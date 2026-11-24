@@ -229,6 +229,7 @@ Ast :: [].{
 					"mouseY",
 					"keyIsDown",
 					"onClick",
+					"onCollect",
 				],
 			)
 		}

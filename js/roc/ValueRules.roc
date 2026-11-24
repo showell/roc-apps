@@ -1435,7 +1435,7 @@ ValueRules :: [].{
 
 	## A builtin's answer, for the builtins that make no effect and call
 	## nothing back. The VM runs the others itself: `console.log`, the
-	## canvas's, the timers, `onClick`, and `Array.from` with a mapper.
+	## canvas's, the timers, `onClick`, `onCollect`, and `Array.from` with a mapper.
 	native_called : ValueRules.Machine, Heap.Native, List(Heap.Value), Ast.Where -> ValueRules.Got
 	native_called = |machine, native, arguments, site|
 		match native {
@@ -1616,7 +1616,7 @@ ValueRules :: [].{
 				"Constructor ${Heap.native_name(native)} requires 'new'",
 				site,
 			)
-			ArrayFrom | Log | Paint(_) | Move(_) | Sense(_) | Timing(_) | OnClick => crash "ValueRules.native_called: the VM runs a builtin that makes an effect or calls back itself"
+			ArrayFrom | Log | Paint(_) | Move(_) | Sense(_) | Timing(_) | OnClick | OnCollect => crash "ValueRules.native_called: the VM runs a builtin that makes an effect or calls back itself"
 		}
 
 	# Whether `Array.from` is given a mapper, which the VM calls back.
@@ -2488,5 +2488,6 @@ ValueRules :: [].{
 		Sense(MouseY),
 		Sense(KeyIsDown),
 		OnClick,
+		OnCollect,
 	]
 }

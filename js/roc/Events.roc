@@ -35,6 +35,9 @@ Events :: [].{
 		Framed(Heap.Closure, U64),
 		# A click at x and y, for the program's `onClick` handler.
 		Clicked(F64, F64),
+		# A collection that has swept, for the program's `onCollect` handler:
+		# the heap's cells, those in use just before it and those it found live.
+		Collected({ cells : U64, before : U64, live : U64 }),
 	]
 
 	## The one queue every callback goes through, and its clock.
@@ -54,6 +57,8 @@ Events :: [].{
 		# The interval whose callback runs, and whether it cleared itself.
 		firing : [Firing(U64), Cleared, Idle],
 		on_click : [Handler({ handler : Heap.Value, site : Ast.Where }), NoHandler],
+		# The program's `onCollect` handler, a playground extra like `onClick`.
+		on_collect : [Handler({ handler : Heap.Value, site : Ast.Where }), NoHandler],
 	}
 
 	## A queue with nothing waiting, its clock at 0: a program's at its start.
@@ -64,6 +69,7 @@ Events :: [].{
 		made: 0,
 		firing: Idle,
 		on_click: NoHandler,
+		on_collect: NoHandler,
 	}
 
 	## The most timer callbacks `run!` runs after the program: an interval
@@ -88,7 +94,7 @@ Events :: [].{
 		happening : Events.Happening,
 	} -> Events.Queue
 	with_event = |events, { due, site, happening }| {
-		{ clock, pending_events, made, firing, on_click } = events
+		{ clock, pending_events, made, firing, on_click, on_collect } = events
 		{
 			clock: clock,
 			pending_events: pending_events.append({
@@ -100,13 +106,14 @@ Events :: [].{
 			made: made + 1,
 			firing: firing,
 			on_click: on_click,
+			on_collect: on_collect,
 		}
 	}
 
 	# The events with the clock at `time`, unless it is past it.
 	with_clock_at : Events.Queue, F64 -> Events.Queue
 	with_clock_at = |events, time| {
-		{ clock, pending_events, made, firing, on_click } = events
+		{ clock, pending_events, made, firing, on_click, on_collect } = events
 		{
 			clock: if time > clock {
 				time
@@ -117,6 +124,7 @@ Events :: [].{
 			made: made,
 			firing: firing,
 			on_click: on_click,
+			on_collect: on_collect,
 		}
 	}
 
@@ -152,7 +160,7 @@ Events :: [].{
 
 	with_event_taken : Events.Queue, U64, F64 -> Events.Queue
 	with_event_taken = |events, index, due| {
-		{ clock, pending_events, made, firing, on_click } = events
+		{ clock, pending_events, made, firing, on_click, on_collect } = events
 		{
 			clock: if due > clock {
 				due
@@ -163,6 +171,7 @@ Events :: [].{
 			made: made,
 			firing: firing,
 			on_click: on_click,
+			on_collect: on_collect,
 		}
 	}
 
@@ -175,6 +184,7 @@ Events :: [].{
 			made,
 			firing: _,
 			on_click,
+			on_collect,
 		} = events
 		{
 			clock: clock,
@@ -182,6 +192,7 @@ Events :: [].{
 			made: made,
 			firing: now_firing,
 			on_click: on_click,
+			on_collect: on_collect,
 		}
 	}
 
@@ -189,7 +200,7 @@ Events :: [].{
 	# interval clearing itself from its own callback not queued again.
 	without_timer : Events.Queue, U64 -> Events.Queue
 	without_timer = |events, timer| {
-		{ clock, pending_events, made, firing, on_click } = events
+		{ clock, pending_events, made, firing, on_click, on_collect } = events
 		{
 			clock: clock,
 			pending_events: pending_events.keep_if(
@@ -211,6 +222,7 @@ Events :: [].{
 				firing
 			},
 			on_click: on_click,
+			on_collect: on_collect,
 		}
 	}
 
@@ -222,6 +234,7 @@ Events :: [].{
 			made,
 			firing,
 			on_click: _,
+			on_collect,
 		} = events
 		{
 			clock: clock,
@@ -229,6 +242,29 @@ Events :: [].{
 			made: made,
 			firing: firing,
 			on_click: Handler(handling),
+			on_collect: on_collect,
+		}
+	}
+
+	## The events with `handling` called after each collection, an event
+	## queued for it once the collection has swept (`onCollect`).
+	with_collect_handler : Events.Queue, { handler : Heap.Value, site : Ast.Where } -> Events.Queue
+	with_collect_handler = |events, handling| {
+		{
+			clock,
+			pending_events,
+			made,
+			firing,
+			on_click,
+			on_collect: _,
+		} = events
+		{
+			clock: clock,
+			pending_events: pending_events,
+			made: made,
+			firing: firing,
+			on_click: on_click,
+			on_collect: Handler(handling),
 		}
 	}
 

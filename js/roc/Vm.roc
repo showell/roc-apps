@@ -128,7 +128,7 @@ Vm :: [].{
 	## queue runs.
 	Budget : { step_limit : U64, effect_limit : U64, budgeted : Vm.Budgeted }
 
-	Budgeted : [TheProgram, FrameCall, TimerCallback, ClickHandler]
+	Budgeted : [TheProgram, FrameCall, TimerCallback, ClickHandler, CollectHandler]
 
 	## A caller's place, kept while its callee runs: its code, the
 	## instruction after the call, its frame's base, and where on the stack
@@ -373,6 +373,7 @@ budgeted_text = |budgeted|
 		FrameCall => "frame(t)"
 		TimerCallback => "a timer's callback"
 		ClickHandler => "the click handler"
+		CollectHandler => "the collect handler"
 	}
 
 # ---- the loop --------------------------------------------------------------
@@ -388,9 +389,10 @@ loop! = |host, program, machine, floor| {
 		if is_collection_due($machine) {
 			before = Heap.in_use_count($machine.cells, $machine.free)
 			{ machine: swept, live } = collected($machine)
+			heard = { cells: swept.cells.len(), before: before, live: live }
 			told! = host.collected!
-			told!({ cells: swept.cells.len(), before: before, live: live })
-			$machine = swept
+			told!(heard)
+			$machine = with_collection_heard(swept, heard)
 		}
 		if $machine.code != $code {
 			$code = $machine.code
@@ -672,6 +674,21 @@ is_collection_due = |machine|
 		EveryAllocation({ length, free }) => machine.cells.len() != length or machine.free != free
 	}
 
+# The machine with a collection's event queued for the program's
+# `onCollect` handler, due now, so it runs between instructions as a timer
+# does, never inside the collection. With no handler, the machine as it is.
+with_collection_heard : Vm.Machine, { cells : U64, before : U64, live : U64 } -> Vm.Machine
+with_collection_heard = |machine, heard| {
+	queue = Box.unbox(machine.events)
+	match queue.on_collect {
+		Handler({ handler: _, site }) => {
+			held = Events.with_event(queue, { due: queue.clock, site: site, happening: Collected(heard) })
+			{ ..machine, events: Box.box(held) }
+		}
+		NoHandler => machine
+	}
+}
+
 # The machine after a collection, every cell its roots don't reach freed and
 # the next collection scheduled, and how many cells the roots reached.
 collected : Vm.Machine -> { machine : Vm.Machine, live : U64 }
@@ -719,10 +736,16 @@ roots = |machine| {
 		$ids = match event.happening {
 			Timed({ timer: _, callback, every: _ }) => Collector.with_value_root($ids, callback)
 			Framed(closure, _) => $ids.append(closure.scope)
-			Clicked(_, _) => $ids
+			Clicked(_, _) | Collected(_) => $ids
 		}
 	}
 	match events.on_click {
+		Handler({ handler, site: _ }) => {
+			$ids = Collector.with_value_root($ids, handler)
+		}
+		NoHandler => {}
+	}
+	match events.on_collect {
 		Handler({ handler, site: _ }) => {
 			$ids = Collector.with_value_root($ids, handler)
 		}
@@ -1586,6 +1609,13 @@ native_called! = |host, program, machine, { native, calling }| {
 			}
 			_ => with_fault(machine, "unsupported: onClick of anything but a function${ValueRules.line_note(at)}")
 		}
+		OnCollect => match arguments.first() {
+			Ok(handler) if ValueRules.is_callable(machine.cells, handler) => {
+				handled = Events.with_collect_handler(Box.unbox(machine.events), { handler: handler, site: at })
+				with_result({ ..machine, events: Box.box(handled) }, calling.result_at, Undefined)
+			}
+			_ => with_fault(machine, "unsupported: onCollect of anything but a function${ValueRules.line_note(at)}")
+		}
 		ArrayFrom if ValueRules.is_mapped(arguments) => array_from!(host, program, machine, { arguments: arguments, calling: calling })
 		Timing(SetTimeout) => timer_set(machine, { repeats: Once, arguments: arguments, calling: calling })
 		Timing(SetInterval) => timer_set(machine, { repeats: Repeating, arguments: arguments, calling: calling })
@@ -1712,6 +1742,18 @@ event_run! = |host, program, machine, index| {
 			Handler({ handler, site }) => {
 				clicking = budgeted_for(taken, ClickHandler)
 				answer_dropped(call_function!(host, program, clicking, { callee: handler, arguments: [Number(x), Number(y)], at: site }))
+			}
+			NoHandler => taken
+		}
+		Collected({ cells, before, live }) => match Box.unbox(taken.events).on_collect {
+			Handler({ handler, site }) => {
+				counts = [
+					{ key: "cells", value: Number(U64.to_f64(cells)) },
+					{ key: "live", value: Number(U64.to_f64(live)) },
+					{ key: "before", value: Number(U64.to_f64(before)) },
+				]
+				{ machine: made, id } = placed(budgeted_for(taken, CollectHandler), Object(counts))
+				answer_dropped(call_function!(host, program, made, { callee: handler, arguments: [Reference(id)], at: site }))
 			}
 			NoHandler => taken
 		}

@@ -75,6 +75,7 @@ Heap :: [].{
 		Sense(Heap.Sense),
 		Timing(Heap.Timing),
 		OnClick,
+		OnCollect,
 		# `Error`, `TypeError` and their kin, which `new` calls.
 		MakeError(Heap.ErrorName),
 		MakeMap,
@@ -423,6 +424,7 @@ Heap :: [].{
 			ClearInterval => "clearInterval"
 		}
 		OnClick => "onClick"
+		OnCollect => "onCollect"
 		MakeError(name) => Heap.error_name_text(name)
 		MakeMap => "Map"
 		MakeSet => "Set"

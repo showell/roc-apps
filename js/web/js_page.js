@@ -141,6 +141,7 @@ const BUILTINS = [
   ["penUp(), penDown(), goto(x, y)", "the turtle starts in the middle, facing up, its pen down"],
   ["mouseX(), mouseY(), keyIsDown(key)", "read when called; a key by its name, such as \"ArrowLeft\""],
   ["onClick((x, y) => { ... })", "called with each click on the canvas, at the next frame, in canvas units"],
+  ["onCollect(({ cells, live, before }) => { ... })", "called after each garbage collection, between instructions, with the heap's cells, those found live and those in use before"],
   ["setTimeout(f, ms), setInterval(f, ms)", "JavaScript's own: f called once after ms, or every ms; each answers a timer"],
   ["clearTimeout(timer), clearInterval(timer)", "the timer stops"],
   ["function frame(t) { ... }", "if the program declares it, called 30 times a second, t in seconds"],
