@@ -281,6 +281,8 @@ RC1's release builds were the project's slowest loop. The walker's release build
 
 The VM's release build was 670 s in its first round (`f4237b8a`), when it still imported the walker's module for the value rules. After the value rules moved into a module of their own and the VM dropped its import of the walker (`f9dd79d0`), it was 84 s (`3ad69676`, `2edd155a`), while `js-run` still took 481 s. The drop came after the split, and the commits leave the cause unstated. Later figures are 110 s after the collector (`de56943f`) and 91 s in `js/README.md`'s status line.
 
+The interpreter works RC1's release pipeline harder than most Roc projects do. Jack Scully profiled the compiler on this code at `762c7d3a` and opened three pull requests against RC1's SpecConstr pass: [#13408](https://github.com/roc-lang/roc/pull/13408) puts cheap checks ahead of its inlining queries, [#13409](https://github.com/roc-lang/roc/pull/13409) restructures the walk those queries run, and [#13410](https://github.com/roc-lang/roc/pull/13410) stops a recursive function from unrolling into its own body. On his machine, `js-run`'s release build took 271 s before them; each alone brought it to 166 s, 63 s and 83 s, and #13410 also ran `fib.js` 12% and `loops.js` 14% faster (the pull requests' descriptions). He put the three together at about 12 times faster for this repository's code specifically (Zulip, #off topic > LLVM). They are expected to merge after Roc 0.10, so every build time above is RC1's own.
+
 ## How it is tested
 
 A check is trusted once it has been seen to fail. Each check below holds the code to a fixed answer, and each count is exact.
