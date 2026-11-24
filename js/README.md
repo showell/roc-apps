@@ -16,8 +16,8 @@ by scripted clicks alone and one by timers, restarted by a scripted click.
 The VM collects its garbage, so js/heaps/'s programs, which make an object
 a pass, hold about 1,024 cells and peak near 4 MB on the dev build. In the
 release build it runs fib(22) in 99 ms, and its release build takes
-91 s. The page builds into the dev channel; the unlisted copy at
-roc.lynrummy.com/js/ predates the gaps.
+91 s. The page builds into the dev channel, and roc.lynrummy.com/js/ runs
+the same VM, memory view included.
 
 ## The subset
 
@@ -493,7 +493,7 @@ across them is a write in place.
   (`ValueRules.max_depth`), where node goes much deeper.
 - **Built on the dev backend,** js-vm runs `fib(22)` in about 0.86 s of
   CPU, and in about 0.10 s in the release build (2026-11-24). Its release
-  build takes about two minutes on a 2-core box, so a round takes its
+  build takes about 90 s on a 2-core box, so a round takes its
   release numbers once, never per step. The dev backend shows the code's
   shape, which is what the probes look at; a release build is for
   measuring speed.
