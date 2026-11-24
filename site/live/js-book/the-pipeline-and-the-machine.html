@@ -1,0 +1,241 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>The pipeline and the machine · A JavaScript Interpreter in Roc</title>
+<link rel="icon" href="data:,">
+<link rel="stylesheet" href="book.css">
+</head>
+<body class="chapter">
+<nav class="book-nav" id="chapters" aria-label="Chapters">
+<a class="book-name" href="index.html">A JavaScript Interpreter in Roc</a>
+<ol>
+<li><a href="introduction.html"><span class="number">1</span>Introduction</a></li>
+<li><a href="how-it-got-here.html"><span class="number">2</span>How it got here</a></li>
+<li class="here"><a href="the-pipeline-and-the-machine.html"><span class="number">3</span>The pipeline and the machine</a><ol class="sections"><li><a href="the-pipeline-and-the-machine.html#the-pipeline">The pipeline</a></li><li><a href="the-pipeline-and-the-machine.html#the-loop-only-dispatches">The loop only dispatches</a></li><li><a href="the-pipeline-and-the-machine.html#the-heap-is-one-roc-value">The heap is one Roc value</a></li><li><a href="the-pipeline-and-the-machine.html#the-machine">The machine</a></li><li><a href="the-pipeline-and-the-machine.html#slots-and-boxes">Slots and boxes</a></li></ol></li>
+<li><a href="the-collector-the-rules-and-the-host.html"><span class="number">4</span>The collector, the rules and the host</a></li>
+<li><a href="what-copies.html"><span class="number">5</span>What copies</a></li>
+<li><a href="dev-and-release-builds-disagree.html"><span class="number">6</span>Dev and release builds disagree</a></li>
+<li><a href="build-times.html"><span class="number">7</span>Build times</a></li>
+<li><a href="how-it-is-tested.html"><span class="number">8</span>How it is tested</a></li>
+<li><a href="what-is-left.html"><span class="number">9</span>What is left</a></li>
+</ol>
+</nav>
+<main>
+<p class="book-bar"><a href="index.html">A JavaScript Interpreter in Roc</a> <a href="#chapters">Chapters</a></p>
+<article>
+<p class="chapter-number">Chapter 3</p>
+<h1 id="the-pipeline-and-the-machine">The pipeline and the machine</h1>
+<p>A program&#39;s text becomes a run in five stages, each a module in <code>js/roc/</code>. This chapter follows a program through them, then looks at the one value the run works on: the machine.</p>
+<h2 id="the-pipeline">The pipeline <a class="section-link" href="#the-pipeline" aria-label="Link to this section">§</a></h2>
+<figure class="diagram"><svg class="diagram diagram-wide" role="img" aria-label="From the text to the run" width="588pt" height="44pt"
+ viewBox="0.00 0.00 588.00 44.00" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+<g id="graph0" class="graph" transform="scale(1 1) rotate(0) translate(4 40)">
+<polygon fill="white" stroke="transparent" points="-4,4 -4,-40 584,-40 584,4 -4,4"/>
+<g id="node1" class="node">
+<path fill="none" stroke="black" d="M42,-36C42,-36 12,-36 12,-36 6,-36 0,-30 0,-24 0,-24 0,-12 0,-12 0,-6 6,0 12,0 12,0 42,0 42,0 48,0 54,-6 54,-12 54,-12 54,-24 54,-24 54,-30 48,-36 42,-36"/>
+<text text-anchor="middle" x="27" y="-14.9" font-family="Times,serif" font-size="12.00">Lexer</text>
+</g>
+<g id="node2" class="node">
+<path fill="none" stroke="black" d="M174,-36C174,-36 140,-36 140,-36 134,-36 128,-30 128,-24 128,-24 128,-12 128,-12 128,-6 134,0 140,0 140,0 174,0 174,0 180,0 186,-6 186,-12 186,-12 186,-24 186,-24 186,-30 180,-36 174,-36"/>
+<text text-anchor="middle" x="157" y="-14.9" font-family="Times,serif" font-size="12.00">Parser</text>
+</g>
+<g id="edge1" class="edge">
+<path fill="none" stroke="black" d="M54.21,-18C72.4,-18 96.93,-18 117.35,-18"/>
+<polygon fill="black" stroke="black" points="117.6,-21.5 127.6,-18 117.6,-14.5 117.6,-21.5"/>
+<text text-anchor="middle" x="91" y="-21.2" font-family="Times,serif" font-size="11.00">tokens</text>
+</g>
+<g id="node3" class="node">
+<path fill="none" stroke="black" d="M294,-36C294,-36 253,-36 253,-36 247,-36 241,-30 241,-24 241,-24 241,-12 241,-12 241,-6 247,0 253,0 253,0 294,0 294,0 300,0 306,-6 306,-12 306,-12 306,-24 306,-24 306,-30 300,-36 294,-36"/>
+<text text-anchor="middle" x="273.5" y="-14.9" font-family="Times,serif" font-size="12.00">Resolve</text>
+</g>
+<g id="edge2" class="edge">
+<path fill="none" stroke="black" d="M186.01,-18C199.46,-18 215.85,-18 230.73,-18"/>
+<polygon fill="black" stroke="black" points="230.74,-21.5 240.74,-18 230.74,-14.5 230.74,-21.5"/>
+<text text-anchor="middle" x="213.5" y="-21.2" font-family="Times,serif" font-size="11.00">Ast</text>
+</g>
+<g id="node4" class="node">
+<path fill="none" stroke="black" d="M426,-36C426,-36 382,-36 382,-36 376,-36 370,-30 370,-24 370,-24 370,-12 370,-12 370,-6 376,0 382,0 382,0 426,0 426,0 432,0 438,-6 438,-12 438,-12 438,-24 438,-24 438,-30 432,-36 426,-36"/>
+<text text-anchor="middle" x="404" y="-14.9" font-family="Times,serif" font-size="12.00">Compile</text>
+</g>
+<g id="edge3" class="edge">
+<path fill="none" stroke="black" d="M306.26,-18C322.27,-18 341.92,-18 359.32,-18"/>
+<polygon fill="black" stroke="black" points="359.81,-21.5 369.81,-18 359.81,-14.5 359.81,-21.5"/>
+<text text-anchor="middle" x="338" y="-21.2" font-family="Times,serif" font-size="11.00">slots</text>
+</g>
+<g id="node5" class="node">
+<path fill="none" stroke="black" d="M568,-36C568,-36 538,-36 538,-36 532,-36 526,-30 526,-24 526,-24 526,-12 526,-12 526,-6 532,0 538,0 538,0 568,0 568,0 574,0 580,-6 580,-12 580,-12 580,-24 580,-24 580,-30 574,-36 568,-36"/>
+<text text-anchor="middle" x="553" y="-14.9" font-family="Times,serif" font-size="12.00">Vm</text>
+</g>
+<g id="edge4" class="edge">
+<path fill="none" stroke="black" d="M438.36,-18C461.28,-18 491.71,-18 515.31,-18"/>
+<polygon fill="black" stroke="black" points="515.62,-21.5 525.62,-18 515.62,-14.5 515.62,-21.5"/>
+<text text-anchor="middle" x="482" y="-21.2" font-family="Times,serif" font-size="11.00">Bytecode</text>
+</g>
+</g>
+</svg><svg class="diagram diagram-phone" role="img" aria-label="From the text to the run" width="89pt" height="324pt"
+ viewBox="0.00 0.00 89.00 324.00" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+<g id="graph0" class="graph" transform="scale(1 1) rotate(0) translate(4 320)">
+<polygon fill="white" stroke="transparent" points="-4,4 -4,-320 85,-320 85,4 -4,4"/>
+<g id="node1" class="node">
+<path fill="none" stroke="black" d="M44,-316C44,-316 14,-316 14,-316 8,-316 2,-310 2,-304 2,-304 2,-292 2,-292 2,-286 8,-280 14,-280 14,-280 44,-280 44,-280 50,-280 56,-286 56,-292 56,-292 56,-304 56,-304 56,-310 50,-316 44,-316"/>
+<text text-anchor="middle" x="29" y="-294.9" font-family="Times,serif" font-size="12.00">Lexer</text>
+</g>
+<g id="node2" class="node">
+<path fill="none" stroke="black" d="M44,-246C44,-246 14,-246 14,-246 8,-246 2,-240 2,-234 2,-234 2,-222 2,-222 2,-216 8,-210 14,-210 14,-210 44,-210 44,-210 50,-210 56,-216 56,-222 56,-222 56,-234 56,-234 56,-240 50,-246 44,-246"/>
+<text text-anchor="middle" x="29" y="-224.9" font-family="Times,serif" font-size="12.00">Parser</text>
+</g>
+<g id="edge1" class="edge">
+<path fill="none" stroke="black" d="M29,-279.84C29,-272.81 29,-264.49 29,-256.64"/>
+<polygon fill="black" stroke="black" points="32.5,-256.39 29,-246.39 25.5,-256.39 32.5,-256.39"/>
+<text text-anchor="middle" x="48" y="-260.2" font-family="Times,serif" font-size="11.00">tokens</text>
+</g>
+<g id="node3" class="node">
+<path fill="none" stroke="black" d="M44.5,-176C44.5,-176 13.5,-176 13.5,-176 7.5,-176 1.5,-170 1.5,-164 1.5,-164 1.5,-152 1.5,-152 1.5,-146 7.5,-140 13.5,-140 13.5,-140 44.5,-140 44.5,-140 50.5,-140 56.5,-146 56.5,-152 56.5,-152 56.5,-164 56.5,-164 56.5,-170 50.5,-176 44.5,-176"/>
+<text text-anchor="middle" x="29" y="-154.9" font-family="Times,serif" font-size="12.00">Resolve</text>
+</g>
+<g id="edge2" class="edge">
+<path fill="none" stroke="black" d="M29,-209.84C29,-202.81 29,-194.49 29,-186.64"/>
+<polygon fill="black" stroke="black" points="32.5,-186.39 29,-176.39 25.5,-186.39 32.5,-186.39"/>
+<text text-anchor="middle" x="38.5" y="-190.2" font-family="Times,serif" font-size="11.00">Ast</text>
+</g>
+<g id="node4" class="node">
+<path fill="none" stroke="black" d="M46,-106C46,-106 12,-106 12,-106 6,-106 0,-100 0,-94 0,-94 0,-82 0,-82 0,-76 6,-70 12,-70 12,-70 46,-70 46,-70 52,-70 58,-76 58,-82 58,-82 58,-94 58,-94 58,-100 52,-106 46,-106"/>
+<text text-anchor="middle" x="29" y="-84.9" font-family="Times,serif" font-size="12.00">Compile</text>
+</g>
+<g id="edge3" class="edge">
+<path fill="none" stroke="black" d="M29,-139.84C29,-132.81 29,-124.49 29,-116.64"/>
+<polygon fill="black" stroke="black" points="32.5,-116.39 29,-106.39 25.5,-116.39 32.5,-116.39"/>
+<text text-anchor="middle" x="43" y="-120.2" font-family="Times,serif" font-size="11.00">slots</text>
+</g>
+<g id="node5" class="node">
+<path fill="none" stroke="black" d="M44,-36C44,-36 14,-36 14,-36 8,-36 2,-30 2,-24 2,-24 2,-12 2,-12 2,-6 8,0 14,0 14,0 44,0 44,0 50,0 56,-6 56,-12 56,-12 56,-24 56,-24 56,-30 50,-36 44,-36"/>
+<text text-anchor="middle" x="29" y="-14.9" font-family="Times,serif" font-size="12.00">Vm</text>
+</g>
+<g id="edge4" class="edge">
+<path fill="none" stroke="black" d="M29,-69.84C29,-62.81 29,-54.49 29,-46.64"/>
+<polygon fill="black" stroke="black" points="32.5,-46.39 29,-36.39 25.5,-46.39 32.5,-46.39"/>
+<text text-anchor="middle" x="55" y="-50.2" font-family="Times,serif" font-size="11.00">Bytecode</text>
+</g>
+</g>
+</svg><figcaption>From the text to the run</figcaption></figure><ul>
+<li><strong><code>Lexer.roc</code></strong> makes tokens, each with its line and column.</li>
+<li><strong><code>Parser.roc</code></strong> reads them into <code>Ast.roc</code>&#39;s tree by recursive descent, and lays out each scope&#39;s names as it goes.</li>
+<li><strong><code>Resolve.roc</code></strong> places every name before the run: each read, write and declaration learns how many scopes out its variable lives and where it sits there. The interpreter then reads a variable by its place, and compares names only here.</li>
+<li><strong><code>Compile.roc</code></strong> lays out each function&#39;s frame and makes each function, and the program itself, a flat list of <code>Bytecode.roc</code>&#39;s instructions. Every jump is relative to the instruction after it, so a piece of compiled code means the same wherever it lands.</li>
+<li><strong><code>Vm.roc</code></strong> runs them on a stack machine.</li>
+</ul>
+<p>Beside them, <code>Inspect.roc</code> formats <code>console.log</code>&#39;s output as node&#39;s <code>util.inspect</code> does, function for function, and <code>NumberText.roc</code> writes a number as <code>String(n)</code> does.</p>
+<h2 id="the-loop-only-dispatches">The loop only dispatches <a class="section-link" href="#the-loop-only-dispatches" aria-label="Link to this section">§</a></h2>
+<p>The VM&#39;s loop fetches the next instruction and hands the machine to <code>dispatch!</code>, whose match calls one top-level handler an arm. Each handler is a small function of its own, so the language grows by adding handlers and every function stays small. Here is the heart of the loop, a collection first when one is due:</p>
+<figure class="listing"><figcaption>js/roc/Vm.roc, an excerpt</figcaption><pre><code class="language-roc">	<span class="syn-keyword">while</span> is_running($machine) <span class="syn-keyword">and</span> $machine.depth &gt;= floor {
+		<span class="syn-keyword">if</span> is_collection_due($machine) {
+			before = <span class="syn-type">Heap</span>.in_use_count($machine.cells, $machine.free)
+			{ machine: swept, live } = collected($machine)
+			heard = { cells: swept.cells.len(), before: before, live: live }
+			told! = host.collected!
+			told!(heard)
+			$machine = with_collection_heard(swept, heard)
+		}
+		<span class="syn-keyword">if</span> $machine.code != $code {
+			$code = $machine.code
+			$ops = code_of(program, $code).ops
+		}
+		op = $ops.get($machine.pc) ?? <span class="syn-keyword">crash</span> <span class="syn-string">&quot;Vm.loop!: every code ends in a return or a finish&quot;</span>
+		$machine = dispatch!(host, program, { ..$machine, pc: $machine.pc + <span class="syn-number">1</span> }, op)
+</code></pre></figure><h2 id="the-heap-is-one-roc-value">The heap is one Roc value <a class="section-link" href="#the-heap-is-one-roc-value" aria-label="Link to this section">§</a></h2>
+<p>JavaScript shares arrays, objects and closures by reference: two variables that hold one array see each other&#39;s writes. Roc has only values. So the interpreter keeps everything JavaScript shares in one list of cells, the heap, and a JavaScript reference is an index into it. A cell is one of these:</p>
+<figure class="listing"><figcaption>js/roc/Heap.roc, an excerpt</figcaption><pre><code class="language-roc">	<span class="syn-type">Cell</span> : [
+		<span class="syn-type">Object</span>(<span class="syn-type">List</span>(<span class="syn-type">Heap.Property</span>)),
+		<span class="syn-type">Array</span>(<span class="syn-type">List</span>(<span class="syn-type">Heap.Value</span>)),
+		<span class="syn-type">Fun</span>(<span class="syn-type">Heap.Closure</span>),
+		<span class="syn-comment"># A builtin function, and the properties it carries (`String.fromCharCode`).</span>
+		<span class="syn-type">Builtin</span>(<span class="syn-type">Heap.Native</span>, <span class="syn-type">List</span>(<span class="syn-type">Heap.Property</span>)),
+		<span class="syn-comment"># A builtin object such as `Math`, by its name.</span>
+		<span class="syn-type">Namespace</span>(<span class="syn-type">Str</span>, <span class="syn-type">List</span>(<span class="syn-type">Heap.Property</span>)),
+		<span class="syn-comment"># What `setTimeout` and `setInterval` answer: the timer&#39;s number, which</span>
+		<span class="syn-comment"># `clearTimeout` and `clearInterval` take. Node&#39;s is an object it can</span>
+		<span class="syn-comment"># print; ours can&#39;t be printed or read, so no program shows it.</span>
+		<span class="syn-type">TimerHandle</span>(<span class="syn-type">U64</span>),
+		<span class="syn-comment"># An error, thrown by JavaScript&#39;s own operations or made by `new</span>
+		<span class="syn-comment"># Error(message)`: its name and its message. Node prints an error with</span>
+		<span class="syn-comment"># its stack, so the subset never prints one.</span>
+		<span class="syn-type">Failure</span>(<span class="syn-type">Heap.ErrorName</span>, <span class="syn-type">Str</span>),
+		<span class="syn-comment"># A Map and a Set, each its table in a list of one: the table is big,</span>
+		<span class="syn-comment"># and kept out of line every cell stays the size of an object&#39;s, while</span>
+		<span class="syn-comment"># `List.update` still writes it in place.</span>
+		<span class="syn-type">MapOf</span>(<span class="syn-type">List</span>(<span class="syn-type">Heap.Table</span>)),
+		<span class="syn-type">SetOf</span>(<span class="syn-type">List</span>(<span class="syn-type">Heap.Table</span>)),
+		<span class="syn-comment"># What `keys()`, `values()` and `entries()` answer: the array, Map or</span>
+		<span class="syn-comment"># Set it walks, what of each entry it gives, and the next entry&#39;s place.</span>
+		<span class="syn-type">Iteration</span>({ source : <span class="syn-type">U64</span>, view : <span class="syn-type">Heap.View</span>, next : <span class="syn-type">U64</span> }),
+		<span class="syn-comment"># The bytecode VM&#39;s box for a variable a closure may capture, which the</span>
+		<span class="syn-comment"># frame that declares it and every closure that captures it share:</span>
+		<span class="syn-comment"># unready until its declaration runs, then its value. No JavaScript</span>
+		<span class="syn-comment"># value refers to a box; only the VM&#39;s frames and environments do.</span>
+		<span class="syn-type">UnreadyVariable</span>,
+		<span class="syn-type">Variable</span>(<span class="syn-type">Heap.Value</span>),
+		<span class="syn-comment"># What one of the VM&#39;s closures carries: the number of its compiled</span>
+		<span class="syn-comment"># code, and the boxes of the variables it captures, in the order the</span>
+		<span class="syn-comment"># code reads them. The closure&#39;s `Fun` cell names it by its `scope`.</span>
+		<span class="syn-type">Environment</span>({ code : <span class="syn-type">U64</span>, boxes : <span class="syn-type">List</span>(<span class="syn-type">U64</span>) }),
+		<span class="syn-comment"># A cell the collector freed, and the free cell after it, which the</span>
+		<span class="syn-comment"># next allocation after this cell&#39;s takes.</span>
+		<span class="syn-type">Freed</span>(<span class="syn-type">Heap.Free</span>),
+</code></pre></figure><p>Roc writes a list in place only while it is the list&#39;s sole owner, so a single stray reference to the heap makes every write copy the whole heap. <code>js/README.md</code>, &quot;Why the heap is one value&quot;, lists the shapes that keep the heap unique, each with a comment where it is used:</p>
+<ul>
+<li>a cell is written by <code>List.update</code>, which hands its function the cell as the sole owner;</li>
+<li>a writer gets the list straight from the record it updates, <code>{ ..machine, cells: Heap.with_property(machine.cells, ...) }</code>;</li>
+<li>a result is taken apart where it is answered, so its machine lives on alone;</li>
+<li>a writer asks what a cell is (<code>ValueRules.kind_of</code>), and leaves the cell in the heap;</li>
+<li>a stack place given up is cleared to <code>Null</code>;</li>
+<li>a loop over the machine is a <code>var $st</code> loop, so the machine stays out of every closure;</li>
+<li>the host travels as an argument of its own, beside the machine.</li>
+</ul>
+<h2 id="the-machine">The machine <a class="section-link" href="#the-machine" aria-label="Link to this section">§</a></h2>
+<p>Everything a run holds is one record, <code>Vm.Machine</code>, handed to each instruction&#39;s handler and handed back:</p>
+<figure class="listing"><figcaption>js/roc/Vm.roc, an excerpt</figcaption><pre><code class="language-roc">	<span class="syn-type">Machine</span> : {
+		cells : <span class="syn-type">List</span>(<span class="syn-type">Heap.Cell</span>),
+		stack : <span class="syn-type">List</span>(<span class="syn-type">Heap.Value</span>),
+		top : <span class="syn-type">U64</span>,
+		frames : <span class="syn-type">List</span>(<span class="syn-type">Vm.Frame</span>),
+		<span class="syn-comment"># How many of `frames` are callers waiting: the ones past it are spent.</span>
+		depth : <span class="syn-type">U64</span>,
+		handlers : <span class="syn-type">List</span>(<span class="syn-type">Vm.Handler</span>),
+		<span class="syn-comment"># How many of `handlers` wait: the ones past it are spent.</span>
+		handler_count : <span class="syn-type">U64</span>,
+		<span class="syn-comment"># The timers and the click handler, boxed: an instruction hands the</span>
+		<span class="syn-comment"># machine back, and only a timer&#39;s or a click&#39;s touch the queue, so</span>
+		<span class="syn-comment"># the box keeps every other instruction from copying it.</span>
+		events : <span class="syn-type">Box</span>(<span class="syn-type">Events.Queue</span>),
+		code : <span class="syn-type">U64</span>,
+		pc : <span class="syn-type">U64</span>,
+		base : <span class="syn-type">U64</span>,
+		<span class="syn-comment"># Boxed, as the queue is: made once, at the start.</span>
+		builtins : <span class="syn-type">Box</span>(<span class="syn-type">List</span>(<span class="syn-type">Heap.Value</span>)),
+		<span class="syn-comment"># The first free cell, which the next allocation takes.</span>
+		free : <span class="syn-type">Heap.Free</span>,
+		<span class="syn-comment"># Boxed: only a collection writes it.</span>
+		collecting : <span class="syn-type">Box</span>(<span class="syn-type">Vm.Collecting</span>),
+		status : <span class="syn-type">Vm.Status</span>,
+		steps : <span class="syn-type">U64</span>,
+		effects : <span class="syn-type">U64</span>,
+		<span class="syn-comment"># Boxed: only the start of a run or a callback writes it.</span>
+		budget : <span class="syn-type">Box</span>(<span class="syn-type">Vm.Budget</span>),
+		<span class="syn-comment"># Boxed, as the queue is: only a turtle&#39;s move touches it.</span>
+		turtle : <span class="syn-type">Box</span>(<span class="syn-type">Canvas.Turtle</span>),
+</code></pre></figure><p>The boxes are the subject of <a class="chapter-link" href="what-copies.html">“What copies”</a>: each boxed part is one that most instructions leave alone.</p>
+<h2 id="slots-and-boxes">Slots and boxes <a class="section-link" href="#slots-and-boxes" aria-label="Link to this section">§</a></h2>
+<p>A call&#39;s frame is a run of slots on the operand stack, starting at its base: its parameters, then the variables its blocks and loops declare, then the hidden slots its <code>for ... of</code> loops keep their place in, then the boxes of the variables it captures. An instruction names a slot by its place from the base, so reading a local is one index into the stack. The values a function is working on sit above its slots, and the callers&#39; frames wait in <code>frames</code>.</p>
+<p>A variable that a closure may capture lives in a box: a heap cell, <code>Variable</code>, that the frame and its closures share. The parser marks each scope that holds a function literal (<code>Ast.Capture</code>), and only those scopes box their variables; the rest stay plain slots. A closure&#39;s <code>Fun</code> cell names an <code>Environment</code> cell, which holds its code&#39;s number and the boxes it captures. A <code>for</code> loop whose body makes closures gives each pass a fresh box, as JavaScript&#39;s <code>let</code> requires.</p>
+<p>So everything a program holds is data: the stack, the frames and the cells. That is what lets a collector find it all.</p>
+
+</article>
+<nav class="turn-page" aria-label="Previous and next chapter">
+<a rel="prev" href="how-it-got-here.html"><small>Previous</small>How it got here</a>
+<a rel="next" href="the-collector-the-rules-and-the-host.html"><small>Next</small>The collector, the rules and the host</a>
+</nav>
+</main>
+</body>
+</html>

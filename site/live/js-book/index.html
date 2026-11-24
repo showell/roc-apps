@@ -1,0 +1,32 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>A JavaScript Interpreter in Roc</title>
+<link rel="icon" href="data:,">
+<link rel="stylesheet" href="book.css">
+</head>
+<body class="front">
+
+<main>
+<article>
+<h1 id="a-javascript-interpreter-in-roc">A JavaScript Interpreter in Roc</h1>
+<p>A small book about roc-apps&#39; <code>js/</code> project: a bytecode VM for a subset of JavaScript, written in Roc, and what building it taught about Roc&#39;s values, its two backends and its build times.</p>
+
+<h2 id="contents">Contents</h2>
+<ol class="contents">
+<li><a href="introduction.html"><span class="number">1</span>Introduction</a><ol class="sections"><li><a href="introduction.html#what-it-runs">What it runs</a></li><li><a href="introduction.html#who-judges-it">Who judges it</a></li><li><a href="introduction.html#where-the-numbers-come-from">Where the numbers come from</a></li></ol></li>
+<li><a href="how-it-got-here.html"><span class="number">2</span>How it got here</a><ol class="sections"><li><a href="how-it-got-here.html#a-tree-walker-first">A tree-walker first</a></li><li><a href="how-it-got-here.html#the-vm-in-three-rounds">The VM, in three rounds</a></li><li><a href="how-it-got-here.html#the-page-and-the-walkers-end">The page, and the walker&#39;s end</a></li><li><a href="how-it-got-here.html#garbage-you-can-watch">Garbage you can watch</a></li></ol></li>
+<li><a href="the-pipeline-and-the-machine.html"><span class="number">3</span>The pipeline and the machine</a><ol class="sections"><li><a href="the-pipeline-and-the-machine.html#the-pipeline">The pipeline</a></li><li><a href="the-pipeline-and-the-machine.html#the-loop-only-dispatches">The loop only dispatches</a></li><li><a href="the-pipeline-and-the-machine.html#the-heap-is-one-roc-value">The heap is one Roc value</a></li><li><a href="the-pipeline-and-the-machine.html#the-machine">The machine</a></li><li><a href="the-pipeline-and-the-machine.html#slots-and-boxes">Slots and boxes</a></li></ol></li>
+<li><a href="the-collector-the-rules-and-the-host.html"><span class="number">4</span>The collector, the rules and the host</a><ol class="sections"><li><a href="the-collector-the-rules-and-the-host.html#the-collector-and-its-roots">The collector and its roots</a></li><li><a href="the-collector-the-rules-and-the-host.html#valuerules-and-events">ValueRules and Events</a></li><li><a href="the-collector-the-rules-and-the-host.html#the-host-and-its-effects">The host and its effects</a></li><li><a href="the-collector-the-rules-and-the-host.html#the-page">The page</a></li></ol></li>
+<li><a href="what-copies.html"><span class="number">5</span>What copies</a><ol class="sections"><li><a href="what-copies.html#a-value-is-copied-when-it-is-handed-on">A value is copied when it is handed on</a></li><li><a href="what-copies.html#box-what-is-rarely-written">Box what is rarely written</a></li><li><a href="what-copies.html#stay-under-256-bytes">Stay under 256 bytes</a></li></ol></li>
+<li><a href="dev-and-release-builds-disagree.html"><span class="number">6</span>Dev and release builds disagree</a><ol class="sections"><li><a href="dev-and-release-builds-disagree.html#allocation-counts">Allocation counts</a></li><li><a href="dev-and-release-builds-disagree.html#copies-that-happen-only-in-dev">Copies that happen only in dev</a></li><li><a href="dev-and-release-builds-disagree.html#timings">Timings</a></li><li><a href="dev-and-release-builds-disagree.html#rails">Rails</a></li><li><a href="dev-and-release-builds-disagree.html#what-each-build-is-for">What each build is for</a></li></ol></li>
+<li><a href="build-times.html"><span class="number">7</span>Build times</a></li>
+<li><a href="how-it-is-tested.html"><span class="number">8</span>How it is tested</a><ol class="sections"><li><a href="how-it-is-tested.html#the-oracle-against-node">The oracle against node</a></li><li><a href="how-it-is-tested.html#controls-held-exactly">Controls held exactly</a></li><li><a href="how-it-is-tested.html#golden-logs-for-the-canvas">Golden logs for the canvas</a></li><li><a href="how-it-is-tested.html#page-check">page_check</a></li><li><a href="how-it-is-tested.html#planted-faults">Planted faults</a></li></ol></li>
+<li><a href="what-is-left.html"><span class="number">9</span>What is left</a></li>
+</ol>
+</article>
+</main>
+</body>
+</html>

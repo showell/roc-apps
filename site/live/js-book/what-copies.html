@@ -1,0 +1,72 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>What copies · A JavaScript Interpreter in Roc</title>
+<link rel="icon" href="data:,">
+<link rel="stylesheet" href="book.css">
+</head>
+<body class="chapter">
+<nav class="book-nav" id="chapters" aria-label="Chapters">
+<a class="book-name" href="index.html">A JavaScript Interpreter in Roc</a>
+<ol>
+<li><a href="introduction.html"><span class="number">1</span>Introduction</a></li>
+<li><a href="how-it-got-here.html"><span class="number">2</span>How it got here</a></li>
+<li><a href="the-pipeline-and-the-machine.html"><span class="number">3</span>The pipeline and the machine</a></li>
+<li><a href="the-collector-the-rules-and-the-host.html"><span class="number">4</span>The collector, the rules and the host</a></li>
+<li class="here"><a href="what-copies.html"><span class="number">5</span>What copies</a><ol class="sections"><li><a href="what-copies.html#a-value-is-copied-when-it-is-handed-on">A value is copied when it is handed on</a></li><li><a href="what-copies.html#box-what-is-rarely-written">Box what is rarely written</a></li><li><a href="what-copies.html#stay-under-256-bytes">Stay under 256 bytes</a></li></ol></li>
+<li><a href="dev-and-release-builds-disagree.html"><span class="number">6</span>Dev and release builds disagree</a></li>
+<li><a href="build-times.html"><span class="number">7</span>Build times</a></li>
+<li><a href="how-it-is-tested.html"><span class="number">8</span>How it is tested</a></li>
+<li><a href="what-is-left.html"><span class="number">9</span>What is left</a></li>
+</ol>
+</nav>
+<main>
+<p class="book-bar"><a href="index.html">A JavaScript Interpreter in Roc</a> <a href="#chapters">Chapters</a></p>
+<article>
+<p class="chapter-number">Chapter 5</p>
+<h1 id="what-copies">What copies</h1>
+<p>The project&#39;s performance work came down to three rules about Roc values.</p>
+<h2 id="a-value-is-copied-when-it-is-handed-on">A value is copied when it is handed on <a class="section-link" href="#a-value-is-copied-when-it-is-handed-on" aria-label="Link to this section">§</a></h2>
+<p>Every VM instruction takes the machine and hands it back, and a handler copies the machine record on the way in. A record update copies the record around the field it writes, inline sub-records included (<code>docs/roc-notes.md</code>, &quot;Speed and copying&quot;).</p>
+<h2 id="box-what-is-rarely-written">Box what is rarely written <a class="section-link" href="#box-what-is-rarely-written" aria-label="Link to this section">§</a></h2>
+<p>A part of the machine that most instructions leave alone costs a copy on every instruction if it sits inline. The event queue was the first example: only timers and clicks touch it, yet inline it made the release build&#39;s fib(22) take 123 ms; boxed, 82 ms (<code>3ad69676</code>). The inline queue cost about 50% more time. <code>docs/roc-notes.md</code> adds the qualification: a <code>Box</code> carried untouched is free, but every write re-boxes, one allocation per write, so a box suits a part that is rarely written after it is made.</p>
+<h2 id="stay-under-256-bytes">Stay under 256 bytes <a class="section-link" href="#stay-under-256-bytes" aria-label="Link to this section">§</a></h2>
+<p>LLVM copies a record of up to 256 bytes with eight vector moves, and calls <code>memcpy</code> for a bigger one. The collector&#39;s fields, the budget and the boxed turtle took the machine from 232 to 312 bytes, so every instruction paid a <code>memcpy</code> call. Boxing the collector&#39;s schedule alone left it at 288 bytes, still past the line, which is why that change left the times as they were. Boxing the builtins, the collector&#39;s schedule and count, and the step and effect budgets brought it to 248 bytes (<code>c1050677</code>):</p>
+<table>
+<thead>
+<tr>
+<th>release build, best of five, CPU</th>
+<th>312 bytes</th>
+<th>248 bytes</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>fib(22)</td>
+<td>110 ms</td>
+<td>99 ms</td>
+</tr>
+<tr>
+<td>nested loops</td>
+<td>495 ms</td>
+<td>439 ms</td>
+</tr>
+<tr>
+<td><code>memcpy</code> in fib&#39;s profile</td>
+<td>16%</td>
+<td>absent</td>
+</tr>
+</tbody>
+</table>
+<p>The lesson in <code>js/README.md</code> is that a field added inline counts against the 256, and boxing one part pays off only once the whole machine is back under the line. The line is a cliff: a machine past it pays the whole <code>memcpy</code>.</p>
+
+</article>
+<nav class="turn-page" aria-label="Previous and next chapter">
+<a rel="prev" href="the-collector-the-rules-and-the-host.html"><small>Previous</small>The collector, the rules and the host</a>
+<a rel="next" href="dev-and-release-builds-disagree.html"><small>Next</small>Dev and release builds disagree</a>
+</nav>
+</main>
+</body>
+</html>

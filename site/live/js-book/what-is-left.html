@@ -1,0 +1,47 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>What is left · A JavaScript Interpreter in Roc</title>
+<link rel="icon" href="data:,">
+<link rel="stylesheet" href="book.css">
+</head>
+<body class="chapter">
+<nav class="book-nav" id="chapters" aria-label="Chapters">
+<a class="book-name" href="index.html">A JavaScript Interpreter in Roc</a>
+<ol>
+<li><a href="introduction.html"><span class="number">1</span>Introduction</a></li>
+<li><a href="how-it-got-here.html"><span class="number">2</span>How it got here</a></li>
+<li><a href="the-pipeline-and-the-machine.html"><span class="number">3</span>The pipeline and the machine</a></li>
+<li><a href="the-collector-the-rules-and-the-host.html"><span class="number">4</span>The collector, the rules and the host</a></li>
+<li><a href="what-copies.html"><span class="number">5</span>What copies</a></li>
+<li><a href="dev-and-release-builds-disagree.html"><span class="number">6</span>Dev and release builds disagree</a></li>
+<li><a href="build-times.html"><span class="number">7</span>Build times</a></li>
+<li><a href="how-it-is-tested.html"><span class="number">8</span>How it is tested</a></li>
+<li class="here"><a href="what-is-left.html"><span class="number">9</span>What is left</a></li>
+</ol>
+</nav>
+<main>
+<p class="book-bar"><a href="index.html">A JavaScript Interpreter in Roc</a> <a href="#chapters">Chapters</a></p>
+<article>
+<p class="chapter-number">Chapter 9</p>
+<h1 id="what-is-left">What is left</h1>
+<p>These come from <code>js/README.md</code> and the record:</p>
+<ul>
+<li>02-closure-call&#39;s 112-byte dev allocation per call is still unexplained.</li>
+<li>The VM throws a RangeError at 400 nested calls, where node goes much deeper.</li>
+<li>A Map or a Set keeps a place for every key it ever held, so a table that many keys pass through grows with them.</li>
+<li><code>js-vm</code> takes the program as one command-line argument, limited to 128 KiB.</li>
+<li><code>onCollect</code> and the other canvas builtins are this project&#39;s own, so logs of effects judge them in place of node.</li>
+<li><code>this</code>, <code>new</code> on a program&#39;s function and classes remain outside the subset, for the reasons in <a class="chapter-link" href="introduction.html">“Introduction”</a>.</li>
+</ul>
+
+</article>
+<nav class="turn-page" aria-label="Previous and next chapter">
+<a rel="prev" href="how-it-is-tested.html"><small>Previous</small>How it is tested</a>
+<span></span>
+</nav>
+</main>
+</body>
+</html>

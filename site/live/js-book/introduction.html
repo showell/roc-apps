@@ -1,0 +1,62 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Introduction · A JavaScript Interpreter in Roc</title>
+<link rel="icon" href="data:,">
+<link rel="stylesheet" href="book.css">
+</head>
+<body class="chapter">
+<nav class="book-nav" id="chapters" aria-label="Chapters">
+<a class="book-name" href="index.html">A JavaScript Interpreter in Roc</a>
+<ol>
+<li class="here"><a href="introduction.html"><span class="number">1</span>Introduction</a><ol class="sections"><li><a href="introduction.html#what-it-runs">What it runs</a></li><li><a href="introduction.html#who-judges-it">Who judges it</a></li><li><a href="introduction.html#where-the-numbers-come-from">Where the numbers come from</a></li></ol></li>
+<li><a href="how-it-got-here.html"><span class="number">2</span>How it got here</a></li>
+<li><a href="the-pipeline-and-the-machine.html"><span class="number">3</span>The pipeline and the machine</a></li>
+<li><a href="the-collector-the-rules-and-the-host.html"><span class="number">4</span>The collector, the rules and the host</a></li>
+<li><a href="what-copies.html"><span class="number">5</span>What copies</a></li>
+<li><a href="dev-and-release-builds-disagree.html"><span class="number">6</span>Dev and release builds disagree</a></li>
+<li><a href="build-times.html"><span class="number">7</span>Build times</a></li>
+<li><a href="how-it-is-tested.html"><span class="number">8</span>How it is tested</a></li>
+<li><a href="what-is-left.html"><span class="number">9</span>What is left</a></li>
+</ol>
+</nav>
+<main>
+<p class="book-bar"><a href="index.html">A JavaScript Interpreter in Roc</a> <a href="#chapters">Chapters</a></p>
+<article>
+<p class="chapter-number">Chapter 1</p>
+<h1 id="introduction">Introduction</h1>
+<p>The <code>js/</code> project in <a href="https://github.com/showell/roc-apps">roc-apps</a> is an interpreter for a subset of JavaScript, written in <a href="https://www.roc-lang.org/">Roc</a>. It runs as a command-line program, <code>js-vm</code>, and in a browser playground at <a href="https://roc.lynrummy.com/js/">roc.lynrummy.com/js/</a>, where a program draws on a canvas as it runs and a memory view shows its heap over time.</p>
+<p>This book is for a reader who knows programming and is new to this codebase, and above all for one curious about writing a language&#39;s runtime in a language that has only values. AI coding agents (Claude) wrote the code, with human supervision, over two days, 2026-11-23 and 2026-11-24.</p>
+<h2 id="what-it-runs">What it runs <a class="section-link" href="#what-it-runs" aria-label="Link to this section">§</a></h2>
+<p>The subset is real JavaScript: numbers, strings, arrays, objects, closures, <code>let</code> and <code>const</code>, <code>try</code> and <code>finally</code>, <code>switch</code>, destructuring, optional chains, spread, Maps and Sets, and the timers. <code>this</code>, <code>new</code> on a program&#39;s own function, prototypes and classes stay outside it, and <code>js/README.md</code> says why: each would make every call carry a receiver or every property read walk a prototype chain, and each is a large step.</p>
+<p>Here is one of the playground&#39;s samples, a turtle drawing a spiral:</p>
+<figure class="listing"><figcaption>js/canvas/2-turtle-spiral.js, the whole file</figcaption><pre><code class="language-javascript"><span class="syn-comment">// A turtle spiral</span>
+<span class="syn-keyword">const</span> STEPS = <span class="syn-number">90</span>; <span class="syn-comment">// how many lines the turtle draws</span>
+<span class="syn-keyword">const</span> GROWTH = <span class="syn-number">2</span>; <span class="syn-comment">// how much longer each line is than the one before</span>
+<span class="syn-keyword">const</span> TURN = <span class="syn-number">89</span>; <span class="syn-comment">// degrees the turtle turns after each line</span>
+<span class="syn-keyword">const</span> HUE_STEP = <span class="syn-number">4</span>; <span class="syn-comment">// how far round the color wheel each line moves</span>
+<span class="syn-keyword">const</span> LINE_WIDTH = <span class="syn-number">2</span>; <span class="syn-comment">// the lines&#39; width, in pixels</span>
+
+background(<span class="syn-string">&quot;white&quot;</span>);
+<span class="syn-keyword">for</span> (<span class="syn-keyword">let</span> i = <span class="syn-number">0</span>; i &lt; STEPS; i++) {
+  stroke(<span class="syn-string">`hsl(</span>${i * HUE_STEP}<span class="syn-string">, 70%, 45%)`</span>, LINE_WIDTH);
+  forward(i * GROWTH);
+  turn(TURN);
+}
+console.log(<span class="syn-string">&quot;the turtle ends at heading&quot;</span>, (STEPS * TURN) % <span class="syn-number">360</span>);
+</code></pre></figure><h2 id="who-judges-it">Who judges it <a class="section-link" href="#who-judges-it" aria-label="Link to this section">§</a></h2>
+<p>Every program in the subset is real JavaScript, so node is a free oracle. <code>js/oracle.shale</code> runs each program in <code>js/tests/</code> through node 22 and through <code>js-vm</code>, and the two transcripts, exit codes included, must match byte for byte. A program outside the subset gets an error that names what it used: each program in <code>js/tests/refused/</code> names, on its first line, the message <code>js-vm</code> must end with. The corpus grew from 32 programs and 25 refusals on the first day (<code>cfe7c5fc</code>) to 55 and 44 (<code>js/README.md</code>, its status of 2026-11-24). Program 54, <code>54-big-daddy.js</code>, is a day in a small city that uses every feature of the subset, and it is also the playground&#39;s &quot;all features&quot; sample (<code>06ab1f8b</code>, <code>17977264</code>).</p>
+<h2 id="where-the-numbers-come-from">Where the numbers come from <a class="section-link" href="#where-the-numbers-come-from" aria-label="Link to this section">§</a></h2>
+<p>Each number in this book comes from a commit message in roc-apps, cited by its short hash, from <code>js/README.md</code>, or from another file of the repository, named where it is used. Code is quoted from the repository as it stands when the book is built.</p>
+<p><a class="chapter-link" href="how-it-got-here.html">“How it got here”</a> is the project&#39;s short history. The design starts at <a class="chapter-link" href="the-pipeline-and-the-machine.html">“The pipeline and the machine”</a>.</p>
+
+</article>
+<nav class="turn-page" aria-label="Previous and next chapter">
+<a rel="prev" href="index.html"><small>Previous</small>Contents</a>
+<a rel="next" href="how-it-got-here.html"><small>Next</small>How it got here</a>
+</nav>
+</main>
+</body>
+</html>

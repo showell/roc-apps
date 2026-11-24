@@ -1,0 +1,158 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>The collector, the rules and the host · A JavaScript Interpreter in Roc</title>
+<link rel="icon" href="data:,">
+<link rel="stylesheet" href="book.css">
+</head>
+<body class="chapter">
+<nav class="book-nav" id="chapters" aria-label="Chapters">
+<a class="book-name" href="index.html">A JavaScript Interpreter in Roc</a>
+<ol>
+<li><a href="introduction.html"><span class="number">1</span>Introduction</a></li>
+<li><a href="how-it-got-here.html"><span class="number">2</span>How it got here</a></li>
+<li><a href="the-pipeline-and-the-machine.html"><span class="number">3</span>The pipeline and the machine</a></li>
+<li class="here"><a href="the-collector-the-rules-and-the-host.html"><span class="number">4</span>The collector, the rules and the host</a><ol class="sections"><li><a href="the-collector-the-rules-and-the-host.html#the-collector-and-its-roots">The collector and its roots</a></li><li><a href="the-collector-the-rules-and-the-host.html#valuerules-and-events">ValueRules and Events</a></li><li><a href="the-collector-the-rules-and-the-host.html#the-host-and-its-effects">The host and its effects</a></li><li><a href="the-collector-the-rules-and-the-host.html#the-page">The page</a></li></ol></li>
+<li><a href="what-copies.html"><span class="number">5</span>What copies</a></li>
+<li><a href="dev-and-release-builds-disagree.html"><span class="number">6</span>Dev and release builds disagree</a></li>
+<li><a href="build-times.html"><span class="number">7</span>Build times</a></li>
+<li><a href="how-it-is-tested.html"><span class="number">8</span>How it is tested</a></li>
+<li><a href="what-is-left.html"><span class="number">9</span>What is left</a></li>
+</ol>
+</nav>
+<main>
+<p class="book-bar"><a href="index.html">A JavaScript Interpreter in Roc</a> <a href="#chapters">Chapters</a></p>
+<article>
+<p class="chapter-number">Chapter 4</p>
+<h1 id="the-collector-the-rules-and-the-host">The collector, the rules and the host</h1>
+<p>This chapter covers the parts around the loop: the collector that frees the heap&#39;s cells, the two modules every run shares, the host that carries the effects, and the page.</p>
+<h2 id="the-collector-and-its-roots">The collector and its roots <a class="section-link" href="#the-collector-and-its-roots" aria-label="Link to this section">§</a></h2>
+<p><code>Collector.roc</code> is a precise mark and sweep that keeps every live cell where it is. The VM names its roots, <code>marked</code> follows every reference from them through the cells, and <code>swept</code> turns each unmarked cell into a <code>Freed</code> cell linked into the free list, which <code>Heap.allocated</code> takes from before it grows the heap. A live cell keeps its place, so a reference stays the index it was.</p>
+<p>The roots are the machine&#39;s data:</p>
+<figure class="listing"><figcaption>js/roc/Vm.roc, the function roots</figcaption><pre><code class="language-roc"><span class="syn-comment"># Every cell the machine names: the live stack&#39;s (each frame&#39;s slots, its</span>
+<span class="syn-comment"># boxes and the function it runs, the callers&#39; values waiting, a `finally`&#39;s</span>
+<span class="syn-comment"># throw held), the builtins&#39;, a throw&#39;s on its way to a handler, and the</span>
+<span class="syn-comment"># event queue&#39;s (each timer&#39;s callback, a frame&#39;s closure, the click handler).</span>
+<span class="syn-comment"># A handler or a waiting frame names only places on the stack.</span>
+<span class="syn-name">roots</span> : <span class="syn-type">Vm.Machine</span> -&gt; <span class="syn-type">List</span>(<span class="syn-type">U64</span>)
+<span class="syn-name">roots</span> = |machine| {
+	builtins = <span class="syn-type">Box</span>.unbox(machine.builtins)
+	<span class="syn-keyword">var</span> $ids = <span class="syn-type">List</span>.with_capacity(machine.top + builtins.len())
+	<span class="syn-keyword">var</span> $at = <span class="syn-number">0</span>
+	<span class="syn-keyword">while</span> $at &lt; machine.top {
+		$ids = <span class="syn-type">Collector</span>.with_value_root($ids, machine.stack.get($at) ?? <span class="syn-keyword">crash</span> <span class="syn-string">&quot;Vm.roots: below the stack&#39;s top&quot;</span>)
+		$at = $at + <span class="syn-number">1</span>
+	}
+	<span class="syn-keyword">for</span> builtin <span class="syn-keyword">in</span> builtins {
+		$ids = <span class="syn-type">Collector</span>.with_value_root($ids, builtin)
+	}
+	<span class="syn-keyword">match</span> machine.status {
+		<span class="syn-type">Thrown</span>(boxed) =&gt; {
+			$ids = <span class="syn-type">Collector</span>.with_value_root($ids, <span class="syn-type">Box</span>.unbox(boxed).value)
+		}
+		<span class="syn-type">Running</span> | <span class="syn-type">Finished</span> | <span class="syn-type">Faulted</span>(_) =&gt; {}
+	}
+	events = <span class="syn-type">Box</span>.unbox(machine.events)
+	<span class="syn-keyword">for</span> event <span class="syn-keyword">in</span> events.pending_events {
+		$ids = <span class="syn-keyword">match</span> event.happening {
+			<span class="syn-type">Timed</span>({ timer: _, callback, every: _ }) =&gt; <span class="syn-type">Collector</span>.with_value_root($ids, callback)
+			<span class="syn-type">Framed</span>(closure, _) =&gt; $ids.append(closure.scope)
+			<span class="syn-type">Clicked</span>(_, _) | <span class="syn-type">Collected</span>(_) =&gt; $ids
+		}
+	}
+	<span class="syn-keyword">match</span> events.on_click {
+		<span class="syn-type">Handler</span>({ handler, site: _ }) =&gt; {
+			$ids = <span class="syn-type">Collector</span>.with_value_root($ids, handler)
+		}
+		<span class="syn-type">NoHandler</span> =&gt; {}
+	}
+	<span class="syn-keyword">match</span> events.on_collect {
+		<span class="syn-type">Handler</span>({ handler, site: _ }) =&gt; {
+			$ids = <span class="syn-type">Collector</span>.with_value_root($ids, handler)
+		}
+		<span class="syn-type">NoHandler</span> =&gt; {}
+	}
+	$ids
+}
+</code></pre></figure><p>A collection is due when the free list is empty and the heap has reached its threshold. After each one, the threshold is twice what the collection kept, and at least 1,024 cells:</p>
+<figure class="listing"><figcaption>js/roc/Vm.roc, the function is_collection_due</figcaption><pre><code class="language-roc"><span class="syn-name">is_collection_due</span> : <span class="syn-type">Vm.Machine</span> -&gt; <span class="syn-type">Bool</span>
+<span class="syn-name">is_collection_due</span> = |machine|
+	<span class="syn-keyword">match</span> <span class="syn-type">Box</span>.unbox(machine.collecting).schedule {
+		<span class="syn-type">Doubling</span>(at) =&gt; machine.free == <span class="syn-type">NoneFree</span> <span class="syn-keyword">and</span> machine.cells.len() &gt;= at
+		<span class="syn-type">EveryAllocation</span>({ length, free }) =&gt; machine.cells.len() != length <span class="syn-keyword">or</span> machine.free != free
+	}
+</code></pre></figure><p>Between two instructions every value the program holds is in the machine. The one exception is a builtin that runs a callback, such as <code>filter</code> or <code>sort</code>: what it keeps across the callback waits on the stack, where the collections inside the callback see it. A live value that names a freed cell stops the run, since it means a root was missed.</p>
+<h2 id="valuerules-and-events">ValueRules and Events <a class="section-link" href="#valuerules-and-events" aria-label="Link to this section">§</a></h2>
+<p>Two modules serve everything that runs a program.</p>
+<p><strong><code>ValueRules</code></strong> holds JavaScript&#39;s rules for values: property reads and writes, operators on mixed values, the methods of strings, arrays, Maps and Sets, and the errors they throw, each message in one place. The VM&#39;s fast paths settle the common cases (numbers, an object&#39;s own property, an array&#39;s item) and hand the rest to a rule. A rule takes a small machine of the cells and the run&#39;s status, <code>ValueRules.Machine</code>: the VM lends it the cells and takes back what the rule gives, so the cells have one owner while the rule writes them. The module was split out of the walker when the VM borrowed it (<code>f9dd79d0</code>), and for a while both engines used it.</p>
+<p><strong><code>Events</code></strong> holds the queue of callbacks and its virtual clock (<code>a43c8f46</code>). A timer&#39;s callback, a click, the canvas&#39;s next <code>frame(t)</code> and a collection <code>onCollect</code> hears are each an event, due at a time in milliseconds, run earliest first, and two at one time in the order they were queued. The clock reads 0 while the program runs and moves to each callback&#39;s time as it runs, so a program&#39;s output is the same on every run and the same as node&#39;s.</p>
+<h2 id="the-host-and-its-effects">The host and its effects <a class="section-link" href="#the-host-and-its-effects" aria-label="Link to this section">§</a></h2>
+<p>The interpreter reaches the world through a host, <code>Canvas.Host</code>, a record of four effectful functions:</p>
+<figure class="listing"><figcaption>js/roc/Canvas.roc, an excerpt</figcaption><pre><code class="language-roc">	<span class="syn-type">Host</span> : {
+		emit! : <span class="syn-type">Canvas.Effect</span> =&gt; {},
+		pointer! : <span class="syn-type">Canvas.Axis</span> =&gt; <span class="syn-type">F64</span>,
+		key! : <span class="syn-type">Str</span> =&gt; <span class="syn-type">Canvas.KeyState</span>,
+		collected! : { cells : <span class="syn-type">U64</span>, before : <span class="syn-type">U64</span>, live : <span class="syn-type">U64</span> } =&gt; {},
+</code></pre></figure><p>An effect happens when the program calls for it: the VM hands each one to <code>emit!</code> in program order, <code>console.log</code> included, so a program that stops halfway has drawn what it drew before the stop. A read, <code>pointer!</code> or <code>key!</code>, is asked of the host when the program asks. <code>collected!</code> hears of each collection once it has swept. Every effect has one written form, <code>Canvas.line_of</code>, so a sample&#39;s golden log is the very text the page paints from.</p>
+<figure class="diagram"><svg class="diagram" role="img" aria-label="Three hosts, one interpreter" width="242pt" height="201pt"
+ viewBox="0.00 0.00 242.00 201.00" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+<g id="graph0" class="graph" transform="scale(1 1) rotate(0) translate(4 197)">
+<polygon fill="white" stroke="transparent" points="-4,4 -4,-197 238,-197 238,4 -4,4"/>
+<g id="node1" class="node">
+<path fill="none" stroke="black" d="M140,-193C140,-193 110,-193 110,-193 104,-193 98,-187 98,-181 98,-181 98,-169 98,-169 98,-163 104,-157 110,-157 110,-157 140,-157 140,-157 146,-157 152,-163 152,-169 152,-169 152,-181 152,-181 152,-187 146,-193 140,-193"/>
+<text text-anchor="middle" x="125" y="-171.9" font-family="Times,serif" font-size="12.00">Vm</text>
+</g>
+<g id="node2" class="node">
+<path fill="none" stroke="black" d="M160.5,-109C160.5,-109 89.5,-109 89.5,-109 83.5,-109 77.5,-103 77.5,-97 77.5,-97 77.5,-85 77.5,-85 77.5,-79 83.5,-73 89.5,-73 89.5,-73 160.5,-73 160.5,-73 166.5,-73 172.5,-79 172.5,-85 172.5,-85 172.5,-97 172.5,-97 172.5,-103 166.5,-109 160.5,-109"/>
+<text text-anchor="middle" x="125" y="-87.9" font-family="Times,serif" font-size="12.00">Canvas.Host</text>
+</g>
+<g id="edge1" class="edge">
+<path fill="none" stroke="black" d="M125,-156.61C125,-145.77 125,-131.6 125,-119.29"/>
+<polygon fill="black" stroke="black" points="128.5,-119.08 125,-109.08 121.5,-119.08 128.5,-119.08"/>
+<text text-anchor="middle" x="144" y="-130.2" font-family="Times,serif" font-size="11.00">effects</text>
+</g>
+<g id="node3" class="node">
+<path fill="none" stroke="black" d="M58,-36C58,-36 12,-36 12,-36 6,-36 0,-30 0,-24 0,-24 0,-12 0,-12 0,-6 6,0 12,0 12,0 58,0 58,0 64,0 70,-6 70,-12 70,-12 70,-24 70,-24 70,-30 64,-36 58,-36"/>
+<text text-anchor="middle" x="35" y="-14.9" font-family="Times,serif" font-size="12.00">the page</text>
+</g>
+<g id="edge2" class="edge">
+<path fill="none" stroke="black" d="M103.21,-72.81C91.61,-63.66 77.16,-52.26 64.56,-42.32"/>
+<polygon fill="black" stroke="black" points="66.6,-39.47 56.59,-36.03 62.27,-44.97 66.6,-39.47"/>
+</g>
+<g id="node4" class="node">
+<path fill="none" stroke="black" d="M150,-36C150,-36 100,-36 100,-36 94,-36 88,-30 88,-24 88,-24 88,-12 88,-12 88,-6 94,0 100,0 100,0 150,0 150,0 156,0 162,-6 162,-12 162,-12 162,-24 162,-24 162,-30 156,-36 150,-36"/>
+<text text-anchor="middle" x="125" y="-14.9" font-family="Times,serif" font-size="12.00">js&#45;canvas</text>
+</g>
+<g id="edge3" class="edge">
+<path fill="none" stroke="black" d="M125,-72.81C125,-64.79 125,-55.05 125,-46.07"/>
+<polygon fill="black" stroke="black" points="128.5,-46.03 125,-36.03 121.5,-46.03 128.5,-46.03"/>
+</g>
+<g id="node5" class="node">
+<path fill="none" stroke="black" d="M222,-36C222,-36 192,-36 192,-36 186,-36 180,-30 180,-24 180,-24 180,-12 180,-12 180,-6 186,0 192,0 192,0 222,0 222,0 228,0 234,-6 234,-12 234,-12 234,-24 234,-24 234,-30 228,-36 222,-36"/>
+<text text-anchor="middle" x="207" y="-14.9" font-family="Times,serif" font-size="12.00">js&#45;vm</text>
+</g>
+<g id="edge4" class="edge">
+<path fill="none" stroke="black" d="M144.85,-72.81C155.33,-63.74 168.34,-52.48 179.74,-42.6"/>
+<polygon fill="black" stroke="black" points="182.06,-45.22 187.33,-36.03 177.48,-39.93 182.06,-45.22"/>
+</g>
+</g>
+</svg><figcaption>Three hosts, one interpreter</figcaption></figure><ul>
+<li><strong>The page&#39;s</strong> host (<code>JsApp.roc</code>, on the platform in <code>js/wasm/</code>) calls into the page&#39;s JavaScript while the Roc call runs.</li>
+<li><strong>The recording host,</strong> <code>js-canvas</code> (<code>JsCanvas.roc</code>), writes every effect and every read as a line, for the golden logs.</li>
+<li><strong><code>js-vm</code>&#39;s</strong> host prints each log as it is made.</li>
+</ul>
+<h2 id="the-page">The page <a class="section-link" href="#the-page" aria-label="Link to this section">§</a></h2>
+<p>The page is <code>js/web/</code>. <code>js_page.js</code> makes everything the page shows, its styles included, so the HTML is only a door: an editor, the canvas and the console. <code>js_runner.js</code> is the door onto <code>js.wasm</code>: it starts a program, then calls it a frame at a time, about 30 times a second, each frame a tick of the program&#39;s clock (<code>Vm.tick!</code>) that runs the clicks queued since the last tick, the timers due and <code>frame(t)</code>. <code>js_painter.js</code> paints each effect&#39;s line on a 2D canvas as it arrives, and the browser shows the canvas when the frame&#39;s call returns.</p>
+<p>The memory view, <code>js_memory.js</code>, is a popup with two small charts of the last run. The top one is the heap&#39;s cells in use, which climb as the program allocates and drop at each collection, a sawtooth; the bottom one is the wasm memory&#39;s size. The VM reports each collection through <code>collected!</code>, so the count lives in the host, outside the machine.</p>
+<p><code>js/build.shale</code> names every file but <code>index.html</code> by its bytes, so a browser always loads the scripts that match its page, and it replaces the page only after <code>js/page_check.mjs</code> passes.</p>
+
+</article>
+<nav class="turn-page" aria-label="Previous and next chapter">
+<a rel="prev" href="the-pipeline-and-the-machine.html"><small>Previous</small>The pipeline and the machine</a>
+<a rel="next" href="what-copies.html"><small>Next</small>What copies</a>
+</nav>
+</main>
+</body>
+</html>

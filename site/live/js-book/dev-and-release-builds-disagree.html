@@ -1,0 +1,149 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Dev and release builds disagree · A JavaScript Interpreter in Roc</title>
+<link rel="icon" href="data:,">
+<link rel="stylesheet" href="book.css">
+</head>
+<body class="chapter">
+<nav class="book-nav" id="chapters" aria-label="Chapters">
+<a class="book-name" href="index.html">A JavaScript Interpreter in Roc</a>
+<ol>
+<li><a href="introduction.html"><span class="number">1</span>Introduction</a></li>
+<li><a href="how-it-got-here.html"><span class="number">2</span>How it got here</a></li>
+<li><a href="the-pipeline-and-the-machine.html"><span class="number">3</span>The pipeline and the machine</a></li>
+<li><a href="the-collector-the-rules-and-the-host.html"><span class="number">4</span>The collector, the rules and the host</a></li>
+<li><a href="what-copies.html"><span class="number">5</span>What copies</a></li>
+<li class="here"><a href="dev-and-release-builds-disagree.html"><span class="number">6</span>Dev and release builds disagree</a><ol class="sections"><li><a href="dev-and-release-builds-disagree.html#allocation-counts">Allocation counts</a></li><li><a href="dev-and-release-builds-disagree.html#copies-that-happen-only-in-dev">Copies that happen only in dev</a></li><li><a href="dev-and-release-builds-disagree.html#timings">Timings</a></li><li><a href="dev-and-release-builds-disagree.html#rails">Rails</a></li><li><a href="dev-and-release-builds-disagree.html#what-each-build-is-for">What each build is for</a></li></ol></li>
+<li><a href="build-times.html"><span class="number">7</span>Build times</a></li>
+<li><a href="how-it-is-tested.html"><span class="number">8</span>How it is tested</a></li>
+<li><a href="what-is-left.html"><span class="number">9</span>What is left</a></li>
+</ol>
+</nav>
+<main>
+<p class="book-bar"><a href="index.html">A JavaScript Interpreter in Roc</a> <a href="#chapters">Chapters</a></p>
+<article>
+<p class="chapter-number">Chapter 6</p>
+<h1 id="dev-and-release-builds-disagree">Dev and release builds disagree</h1>
+<p>Roc has two backends. The dev backend (<code>--opt=dev</code>) compiles in about a second and emits code that is mostly stack moves. The release build (<code>--opt=speed</code>) goes through LLVM, runs much faster, and compiles slowly. The two builds disagree about allocations, about time and about copies, and this project met each disagreement.</p>
+<h2 id="allocation-counts">Allocation counts <a class="section-link" href="#allocation-counts" aria-label="Link to this section">§</a></h2>
+<p><code>js/controls/</code> holds nine small programs, each a loop that does one kind of write. <code>js/controls.shale</code> runs each at 1,000 and 10,000 passes, counts <code>roc_alloc</code>&#39;s calls exactly, and holds what one pass allocates to <code>expected.txt</code> (release) and <code>expected-dev.txt</code> (dev). A control left out of a file is held to 0.</p>
+<table>
+<thead>
+<tr>
+<th>control</th>
+<th>dev</th>
+<th>release</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>00-loop</td>
+<td>0</td>
+<td>0</td>
+</tr>
+<tr>
+<td>01-array-store</td>
+<td>1</td>
+<td>0</td>
+</tr>
+<tr>
+<td>02-closure-call</td>
+<td>1</td>
+<td>0</td>
+</tr>
+<tr>
+<td>03-string-building</td>
+<td>0</td>
+<td>0</td>
+</tr>
+<tr>
+<td>04-property-write</td>
+<td>1</td>
+<td>0</td>
+</tr>
+<tr>
+<td>05-array-push</td>
+<td>2</td>
+<td>1</td>
+</tr>
+<tr>
+<td>06-push-pop</td>
+<td>2</td>
+<td>1</td>
+</tr>
+<tr>
+<td>07-map-set</td>
+<td>4.08</td>
+<td>2.08</td>
+</tr>
+<tr>
+<td>08-garbage-in-a-call</td>
+<td>3.04</td>
+<td>1</td>
+</tr>
+</tbody>
+</table>
+<p>Most of the difference is one cause. The dev build lowers closures to boxes, so a <code>List.update</code> whose lambda captures a value that holds a reference count (a key, a value, a list) allocates once per write to box the capture. That allocation is a box and the list stays in place, and the release build makes it zero times (the files&#39; own comments say so line by line). One dev allocation remains unexplained: 02-closure-call&#39;s 112-byte list per call, which roc-alloc-trace puts down to <code>Vm.pushed</code> and which three rewrites left in place (<code>js/README.md</code>).</p>
+<p>This difference forced a decision. The walker&#39;s heap writers were first rewritten as <code>List.update</code> calls (<code>bece7bda</code>); the release build held every control, and four dev controls rose by one. The change was reverted (<code>63f8149b</code>), then brought back (<code>324756a6</code>) under the rule that Roc code should read well and play well with tooling, even at the cost of a little noise in dev builds. The dev expected file was rewritten, and every new line in it explains its allocation.</p>
+<h2 id="copies-that-happen-only-in-dev">Copies that happen only in dev <a class="section-link" href="#copies-that-happen-only-in-dev" aria-label="Link to this section">§</a></h2>
+<p>Some copies are made only by the dev build, at a helper&#39;s boundary: there a helper stays a call that owns its arguments, where the release build specializes it first. <code>docs/roc-notes.md</code> lists three such shapes. This project met two kinds:</p>
+<ul>
+<li><strong>A rule generic over the whole machine.</strong> When <code>ValueRules</code> was split out, a version that took the engine&#39;s whole machine as an open record came first. The dev build copied the cells a rule wrote through it (a probe measured 3 allocations a write against 1), and the walker&#39;s dev controls went red, 05-array-push rising from 3 to 12.73 a pass (<code>f9dd79d0</code>). The rules now take a small machine of the cells, which the VM lends and takes back.</li>
+<li><strong>A planted copy the release build optimized away.</strong> Twice, a <code>List.drop_last</code> was planted back into the walker&#39;s scope handling. Each time the dev ladder went red on 02-closure-call alone (15 to 16 in <code>76adf75b</code>, 3 to 4 in <code>b7d66601</code>) and the release ladder stayed green, because the release build makes zero copies there.</li>
+</ul>
+<p>The second case is why the dev ladder is useful: it sees copies the release build optimizes away, and those copies are often a sign of a shape that will copy in release once the code around it changes.</p>
+<h2 id="timings">Timings <a class="section-link" href="#timings" aria-label="Link to this section">§</a></h2>
+<p>Dev timings fail to predict release timings, even in direction.</p>
+<table>
+<thead>
+<tr>
+<th>change</th>
+<th>dev fib(22)</th>
+<th>release fib(22)</th>
+<th>source</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>walker: variables read by slot</td>
+<td>674 to 435 ms</td>
+<td>83 to 67 ms</td>
+<td><code>76adf75b</code></td>
+</tr>
+<tr>
+<td>walker: loops, same change</td>
+<td>4,387 to 2,105 ms</td>
+<td>486 to 475 ms</td>
+<td><code>76adf75b</code></td>
+</tr>
+<tr>
+<td>walker: the Map control&#39;s branch against master</td>
+<td>676 to 642 ms</td>
+<td>121 to 169 ms</td>
+<td><code>54be42fb</code></td>
+</tr>
+<tr>
+<td>VM today</td>
+<td>about 860 ms</td>
+<td>99 ms</td>
+<td><code>js/README.md</code></td>
+</tr>
+</tbody>
+</table>
+<p>The first two rows show a change that halved the dev time of the loops while moving the release time by 11 ms. The third shows a branch that was faster than master on dev and 40% slower in release. Today the release build runs fib(22) about nine times faster than the dev build (860 against 99 ms).</p>
+<h2 id="rails">Rails <a class="section-link" href="#rails" aria-label="Link to this section">§</a></h2>
+<p>The page runs a program on the browser&#39;s main thread, so it holds the program to step budgets: 3,000,000 steps before the first frame and 300,000 a frame. The walker counted statements; the VM counts calls and loop passes, so the same budget covers about twice the work. On the dev backend the walker took 1.1 s of CPU to run out a frame&#39;s budget and 5.2 s for a program&#39;s; the VM takes 2.0 s and 8.8 s (<code>a9a06e74</code>, <code>js/README.md</code>, &quot;Pitfalls&quot;).</p>
+<h2 id="what-each-build-is-for">What each build is for <a class="section-link" href="#what-each-build-is-for" aria-label="Link to this section">§</a></h2>
+<p>roc-apps&#39; <code>CLAUDE.md</code> (section 9) and <code>js/README.md</code> give each build its job. Screen on the dev build: allocation counts are deterministic, so a change that moves one shows on the dev ladder in seconds, and most trials end there. Measure on the release build, once per round, from one shared build (<code>tools/roc_build.shale</code> keys each build by its inputs, so a ladder, a timing and a heap probe of the same tree share it). A dev-build timing says little about the program.</p>
+
+</article>
+<nav class="turn-page" aria-label="Previous and next chapter">
+<a rel="prev" href="what-copies.html"><small>Previous</small>What copies</a>
+<a rel="next" href="build-times.html"><small>Next</small>Build times</a>
+</nav>
+</main>
+</body>
+</html>
