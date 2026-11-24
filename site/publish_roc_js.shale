@@ -1,0 +1,301 @@
+-- budget: programs=100 steps=100000000 read_bytes=200000000
+-- This script publishes roc-js-interpreter's two pages to staging: the
+-- JavaScript playground at site/live/js/ and its book, A JavaScript
+-- Interpreter in Roc, at site/live/js-book/, as site/publish_markdown.shale
+-- does for roc-markdown's playground. Both pages are unlisted: no card on the
+-- landing page links them.
+--
+--   cd <roc-apps checkout> && shale site/publish_roc_js.shale
+--   cd <roc-apps checkout> && shale site/publish_roc_js.shale dry=1
+--
+-- The sources stay in roc-js-interpreter (repos:roc-js-interpreter). The
+-- script refuses that checkout when it has changes of any kind (an untracked
+-- file included) or its HEAD is on no branch of GitHub's, so what is
+-- published is always a commit anyone can fetch. It builds there with the
+-- repository's own scripts, one after the other: js/build.shale writes the
+-- playground into the dev channel's build:roc-apps/next/js/, and
+-- js-book/book.shale the book into build:roc-apps/next/js-book/ (the book is
+-- built by the book builder of the roc-apps checkout at repos:roc-apps). A
+-- build that leaves the checkout changed is refused.
+--
+-- Each dev folder is copied over its staging folder whole, and each gets a
+-- PROVENANCE: the Roc compiler, the roc-js-interpreter commit, and for the
+-- playground a hash of its wasm. Then it checks what it copied: the
+-- playground must hold exactly its page's files (index.html and the six
+-- files js/build.shale names by their bytes), the book only pages, its
+-- stylesheet and copy.js, and no `src`, `href`, `fetch` or `url()` URL in
+-- either may start with `/`, and none but an `<a>`'s href may name a
+-- network scheme (`https://`), so the book's links out stay, and so does
+-- each page's empty icon, `data:,`. A failed check stops before git, leaving site/live/
+-- changed and uncommitted. The two folders are committed alone, as one
+-- commit with the PROVENANCE in its message, and pushed with git_push.
+-- site/deploy.shale takes them to prod with the rest.
+--
+-- Option, for a proof that touches no staging:
+--
+--   dry=1    build, copy into build:roc-apps/publish_roc_js.dry/ (replaced
+--            each run, left for reading), write the PROVENANCEs and check,
+--            then compare each folder with today's site/live/ file by file,
+--            PROVENANCE aside, and stop before git
+
+const JS = "repos:roc-js-interpreter"
+const REPO_URL = "https://github.com/showell/roc-js-interpreter"
+const DRY = arg("dry", 0) == 1
+const LIVE = "site/live"
+const DRY_DIR = "build:roc-apps/publish_roc_js.dry"
+const NEXT = "build:roc-apps/next"
+const STAGING = "http://localhost:9200/"
+-- The playground's files: index.html, and those js/build.shale names by
+-- their bytes, `<name>.<16 hex digits>.<ext>`.
+const PAGE_HASHED = {"js.wasm", "js_memory.js", "js_page.js", "js_painter.js", "js_runner.js", "js_samples.js"}
+const BOOK_FIXED = {"book.css", "copy.js", "index.html"}
+
+-- Stops the publish when roc-js-interpreter has a change of any kind.
+function refuse_changes(when)
+  if not git_is_clean(JS) then
+    for s in git_status(JS) do print(s.code .. " " .. s.path) end
+    fail("publish_roc_js: roc-js-interpreter has changes " .. when .. "; commit and push them first")
+  end
+  return nil
+end
+
+-- The roc-js-interpreter commit to publish, its full hash: clean, and on a
+-- branch of origin.
+function js_commit()
+  if not exists(JS .. "/js/build.shale") then fail("publish_roc_js: no roc-js-interpreter checkout at " .. JS) end
+  refuse_changes("before the build")
+  git_fetch(JS)
+  local head = trim(must(run({"git", "rev-parse", "HEAD"}, {cwd = JS, timeout_ms = 10000, tail = 2})).out)
+  local on = must(run({"git", "branch", "-r", "--contains", head}, {cwd = JS, timeout_ms = 10000, tail = 20}))
+  if trim(on.out) == "" then fail("publish_roc_js: roc-js-interpreter's HEAD " .. sub(head, 1, 7) .. " is on no branch of origin; push it first") end
+  return head
+end
+
+-- roc-js-interpreter's pin, checked against what its `roc version` says.
+function js_roc_pin()
+  local pin = trim(read(JS .. "/roc-version"))
+  local roc = "tools:roc-" .. pin .. "/roc"
+  if not exists(roc) then fail("publish_roc_js: no " .. roc .. ": install roc-js-interpreter's pin " .. pin .. " at ~/tools/roc-" .. pin .. "/") end
+  local said = trim(must(run({real(roc), "version"}, {timeout_ms = 30000, tail = 2, want = "roc-pin: roc-js-interpreter's pinned compiler"})).out)
+  if said ~= "Roc compiler version " .. pin then fail("publish_roc_js: " .. roc .. " is " .. said .. ", not " .. pin) end
+  return pin
+end
+
+-- One of roc-js-interpreter's build scripts, run from its root.
+function build(script)
+  local b = run({"shale", script}, {cwd = JS, timeout_ms = 1800000, tail = 30, nice = 19})
+  print(trim(b.out))
+  if b.code ~= 0 then fail("publish_roc_js: roc-js-interpreter's " .. script .. " failed") end
+  return nil
+end
+
+-- Every file below `dir`, by its name under it, sorted.
+function files_under(dir)
+  local names = {}
+  for e in walk_all(dir, {kind = "file"}) do push(names, sub(e.path, #dir + 2, #e.path)) end
+  sort(names)
+  return names
+end
+
+-- Each file's sha256 below `dir`, by its name under it, PROVENANCE aside.
+function sums_under(dir)
+  local names = {}
+  local argv = {"sha256sum"}
+  for f in files_under(dir) do
+    if f ~= "PROVENANCE" then
+      push(names, f)
+      push(argv, real(dir .. "/" .. f))
+    end
+  end
+  local sums = {}
+  if #names == 0 then return sums end
+  local said = lines(trim(must(run(argv, {timeout_ms = 60000, whole = 200000})).out))
+  for i = 1, #names do sums[names[i]] = sub(said[i], 1, 64) end
+  return sums
+end
+
+-- The playground's wasm, by its name under `page`.
+function page_wasm(page)
+  for f in files_under(page) do
+    if ends_with(f, ".wasm") then return f end
+  end
+  fail("publish_roc_js: " .. page .. " holds no wasm")
+end
+
+function provenance(head, pin, script, wasm_dir)
+  local stamp = trim(must(run({"date", "-u", "+%Y-%m-%dT%H:%M:%SZ"}, {timeout_ms = 5000, tail = 2})).out)
+  local text = "published " .. stamp .. "\n"
+  text = text .. "roc " .. pin .. "\n"
+  text = text .. "roc-js-interpreter " .. sub(head, 1, 8) .. " " .. REPO_URL .. "/commit/" .. head .. " (its " .. script .. ")\n"
+  if wasm_dir ~= nil then
+    local w = page_wasm(wasm_dir)
+    local sum = trim(must(run({"sha256sum", real(wasm_dir .. "/" .. w)}, {timeout_ms = 30000, tail = 2})).out)
+    text = text .. "sha256 " .. sub(sum, 1, 16) .. "  " .. stat(wasm_dir .. "/" .. w).size .. " bytes  " .. w .. "\n"
+  end
+  return text
+end
+
+-- One check's line; a failed one stops the publish.
+function check_line(name, ok, detail)
+  local verdict = "PASS"
+  if not ok then verdict = "FAIL" end
+  print(verdict .. "  " .. name .. ": " .. detail)
+  if not ok then fail("publish_roc_js: the check of " .. name .. " failed; the copy is changed and not committed") end
+  return nil
+end
+
+-- The playground holds PROVENANCE, index.html and each of PAGE_HASHED once,
+-- by its hashed name, and nothing else.
+function check_page_files(page)
+  local found = files_under(page)
+  local left = {}
+  for f in found do
+    if f ~= "PROVENANCE" and f ~= "index.html" then push(left, f) end
+  end
+  local named = 0
+  for want in PAGE_HASHED do
+    local dot = find(want, ".")
+    local pattern = "^" .. sub(want, 1, dot - 1) .. "\\.[0-9a-f]{16}\\." .. sub(want, dot + 1, #want) .. "$"
+    local hits = 0
+    for f in left do
+      if re_find(f, pattern) ~= nil then hits = hits + 1 end
+    end
+    if hits == 1 then named = named + 1 end
+  end
+  local ok = has_item(found, "PROVENANCE") and has_item(found, "index.html") and #left == #PAGE_HASHED and named == #PAGE_HASHED
+  check_line("files", ok, page .. " holds " .. join(found, " ") .. "; expected PROVENANCE, index.html and " .. join(PAGE_HASHED, ", ") .. ", each named by its bytes")
+  return nil
+end
+
+-- The book holds PROVENANCE, BOOK_FIXED and pages (`.html`), and nothing else.
+function check_book_files(book)
+  local found = files_under(book)
+  local other = {}
+  local pages = 0
+  for f in found do
+    if ends_with(f, ".html") then
+      pages = pages + 1
+    elseif f ~= "PROVENANCE" and not has_item(BOOK_FIXED, f) then
+      push(other, f)
+    end
+  end
+  local missing = {}
+  for f in BOOK_FIXED do
+    if not has_item(found, f) then push(missing, f) end
+  end
+  if not has_item(found, "PROVENANCE") then push(missing, "PROVENANCE") end
+  check_line("files", #other == 0 and #missing == 0, book .. " holds " .. pages .. " pages; missing: " .. join(missing, " ") .. "; unexpected: " .. join(other, " "))
+  return nil
+end
+
+-- No resource of the text files below `dir` is rooted at `/`, and none but
+-- an `<a>`'s href names a network scheme (`<scheme>://`).
+function check_relative(dir)
+  local rooted = 0
+  local schemed = 0
+  local files = 0
+  for f in files_under(dir) do
+    if ends_with(f, ".html") or ends_with(f, ".js") or ends_with(f, ".css") then
+      files = files + 1
+      local text = read(dir .. "/" .. f)
+      rooted = rooted + #re_find_all(text, [=[(?:src|href)\s*=\s*["']?/|fetch(?:ed)?\(\s*["'`]/|url\(\s*["']?/]=])
+      schemed = schemed + #re_find_all(text, [=[src\s*=\s*["']?[a-z]+://|<link[^>]*href\s*=\s*["']?[a-z]+://|fetch(?:ed)?\(\s*["'`][a-z]+://|url\(\s*["']?[a-z]+://]=])
+    end
+  end
+  check_line("relative URLs", rooted + schemed == 0, dir .. ": " .. rooted .. " src, href, fetch or url() URLs in its " .. files .. " text files start with /, and " .. schemed .. " resources name a network scheme")
+  return nil
+end
+
+-- A dry run's folder beside today's staging, file by file, PROVENANCE
+-- aside: each file only one side has, and each whose bytes differ.
+function compare(name, built, live)
+  local a = sums_under(built)
+  local b = sums_under(live)
+  local names = {}
+  for k in keys(a) do push(names, k) end
+  for k in keys(b) do
+    if not has_key(a, k) then push(names, k) end
+  end
+  sort(names)
+  local same = 0
+  local differ = 0
+  for f in names do
+    if not has_key(b, f) then
+      differ = differ + 1
+      print("  only in the build: " .. name .. "/" .. f)
+    elseif not has_key(a, f) then
+      differ = differ + 1
+      print("  only in site/live: " .. name .. "/" .. f)
+    elseif a[f] ~= b[f] then
+      differ = differ + 1
+      print("  differs: " .. name .. "/" .. f .. " (" .. stat(built .. "/" .. f).size .. " bytes built, " .. stat(live .. "/" .. f).size .. " in site/live)")
+    else
+      same = same + 1
+    end
+  end
+  if differ == 0 then
+    print("SAME  " .. name .. ": " .. same .. " files equal site/live/" .. name .. "'s, PROVENANCE aside")
+  else
+    print("DIFF  " .. name .. ": " .. differ .. " files differ from site/live/" .. name .. "'s, " .. same .. " equal, PROVENANCE aside")
+  end
+  return differ
+end
+
+function main()
+  local head = js_commit()
+  local pin = js_roc_pin()
+  print("roc-js-interpreter " .. sub(head, 1, 8) .. ", clean and on origin; roc " .. pin)
+  if not DRY then
+    local staged = run({"git", "diff", "--cached", "--quiet"}, {timeout_ms = 10000, tail = 5})
+    if staged.code ~= 0 then fail("publish_roc_js: roc-apps' index already holds staged changes; commit or unstage them first") end
+  end
+
+  build("js/build.shale")
+  build("js-book/book.shale")
+  refuse_changes("after the builds (one rewrote a tracked file or left an untracked one)")
+
+  local root = LIVE
+  if DRY then
+    if exists(DRY_DIR) then remove_tree(DRY_DIR) end
+    mkdir(DRY_DIR)
+    root = DRY_DIR
+  end
+  local page = root .. "/js"
+  local book = root .. "/js-book"
+  if exists(page) then remove_tree(page) end
+  if exists(book) then remove_tree(book) end
+  copy(NEXT .. "/js", page)
+  copy(NEXT .. "/js-book", book)
+  local page_text = provenance(head, pin, "js/build.shale", page)
+  local book_text = provenance(head, pin, "js-book/book.shale", nil)
+  create(page .. "/PROVENANCE", page_text)
+  create(book .. "/PROVENANCE", book_text)
+  print("js/PROVENANCE:\n" .. trim(page_text))
+  print("js-book/PROVENANCE:\n" .. trim(book_text))
+
+  check_page_files(page)
+  check_book_files(book)
+  check_relative(page)
+  check_relative(book)
+
+  if DRY then
+    compare("js", page, LIVE .. "/js")
+    compare("js-book", book, LIVE .. "/js-book")
+    print("dry run: nothing committed; the copy is at " .. DRY_DIR)
+    return nil
+  end
+
+  must(run({"git", "add", "-A", "--", page, book}, {timeout_ms = 30000, tail = 5}))
+  local same = run({"git", "diff", "--cached", "--quiet", "--", page, book}, {timeout_ms = 10000, tail = 5})
+  if same.code == 0 then
+    print("staging already has these pages; nothing to publish")
+    return nil
+  end
+  local msg = "site: publish js and js-book (roc-js-interpreter's playground and book) to staging\n\njs/PROVENANCE:\n" .. page_text .. "\njs-book/PROVENANCE:\n" .. book_text
+  must(run({"git", "commit", "-q", "-F", "-", "--", page, book}, {timeout_ms = 60000, tail = 10, stdin = msg}))
+  git_push(".")
+  print("published js and js-book to staging: " .. STAGING .. "js/ and " .. STAGING .. "js-book/")
+  return nil
+end
+
+main()

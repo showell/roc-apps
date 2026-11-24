@@ -104,12 +104,13 @@ Apps"):
 - **dev** is what the build scripts last wrote, on this box's Caddy
   (`ops/Caddyfile`);
 - **staging** is `site/live/`, tracked, which `site/publish.shale`,
-  `site/publish_screensavers.shale`, `site/publish_safari_walk.shale` and
-  `site/publish_markdown.shale` write. The screensavers' sources are in
-  roc-screensaver, Safari Walk's in safari-walk, and the markdown
-  playground's (`markdown/` and `user_uploads/`, roc-markdown's `TESTING.md`,
-  "What the box publishes") in roc-markdown; they reach prod only through
-  staging here;
+  `site/publish_screensavers.shale`, `site/publish_safari_walk.shale`,
+  `site/publish_markdown.shale` and `site/publish_roc_js.shale` write. The
+  screensavers' sources are in roc-screensaver, Safari Walk's in
+  safari-walk, the markdown playground's (`markdown/` and `user_uploads/`,
+  roc-markdown's `TESTING.md`, "What the box publishes") in roc-markdown,
+  and the JavaScript playground's and book's (`js/` and `js-book/`) in
+  roc-js-interpreter; they reach prod only through staging here;
 - **prod** is staging's files verbatim.
 
 **Deploying** is `shale site/deploy.shale`, run on the owner's sign-off
@@ -139,8 +140,8 @@ A page is a folder of the site: `site/live/<name>/` in staging, and
    repo by its name once the name is a line of `site/published_apps.txt`,
    and refuses any other, so an app here adds its line there. A page whose source is another repo's
    needs a publish script of its own, in the shape of
-   `site/publish_screensavers.shale`, `site/publish_safari_walk.shale` or
-   `site/publish_markdown.shale` (a clean checkout, a PROVENANCE, the files
+   `site/publish_screensavers.shale`, `site/publish_safari_walk.shale`,
+   `site/publish_markdown.shale` or `site/publish_roc_js.shale` (a clean checkout, a PROVENANCE, the files
    checked, relative URLs, one commit). A prebuilt input the page links that
    git doesn't track, such as Safari Walk's Rocco web host, carries a stamp
    of the commit it was built from, and the publish refuses one that doesn't
