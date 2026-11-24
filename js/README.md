@@ -7,7 +7,7 @@ canvas as it runs, and a corpus that holds the language to node.
 The code here was written by AI coding agents (Claude), with human
 supervision.
 
-**Status (2026-11-24): the language gaps closed.** 50 of 50
+**Status (2026-11-24): the language gaps closed.** 53 of 53
 corpus programs print what node 22 prints, byte for byte, timers and
 uncaught throws included, and 44 of 44 programs outside the subset are
 refused with the message they must give. Eight canvas samples are held to
@@ -25,10 +25,17 @@ the VM's first ("The bytecode VM", below).
 node does and gives all 44 refusals their messages, on the dev backend;
 only the canvas is left out. The value rules and the queue of callbacks
 are modules both engines share (`ValueRules.roc`, `Events.roc`), so the VM
-no longer links the walker, and its controls are held to files of their
-own in both builds. In the release build it runs fib(22) in 82 ms against
-the walker's 151, and its release build takes 84 s against the walker's
-481.
+doesn't link the walker, and its controls are held to files of their own
+in both builds. In the release build it runs fib(22) in 82 ms against the
+walker's 151, and its release build takes 84 s against the walker's 481.
+
+**Its third round (2026-11-24): the VM collects its garbage.** A precise
+mark and sweep (`Collector.roc`) frees every cell its roots don't reach,
+and allocation reuses them, so js/heaps/'s programs, which make an object a
+pass at the top level and inside a call, hold about 1,024 cells and peak
+near 4 MB on the dev build, where they peaked at 164 MB. js-vm runs the 53
+corpus programs and the 44 refusals as node does both on its usual
+schedule and collecting at every allocation; the dev build only, so far.
 
 ## The subset
 
@@ -219,7 +226,8 @@ rules JavaScript's values follow, which the walker and the VM share,
 reference, `Inspect.roc` is console.log's formatting (node's `util.inspect`,
 function for function), and `NumberText.roc` writes a number as `String(n)`
 does. The VM takes the same resolved tree: `Compile.roc` makes each
-function a list of `Bytecode.roc`'s instructions, `Vm.roc` runs them, and
+function a list of `Bytecode.roc`'s instructions, `Vm.roc` runs them,
+`Collector.roc` frees the cells its roots don't reach, and
 `JsVm.roc` is `js-vm`, js-run's command on the VM. `Canvas.roc` is the canvas library: its effects, their written form,
 the turtle and the host's type. `JsRun.roc` is `js-run`, the command;
 `JsCount.roc` is `js-count`, the same run followed by its counts;
@@ -247,6 +255,22 @@ back on the walker.
   it captures. A `for` loop whose body makes closures gives each pass a
   fresh box. So the roots a collector needs are the live stack, the frames
   and the cells, all data.
+- **The collector marks from the machine and sweeps onto a free list**
+  (`Collector.roc`, `Vm.roots`). Its roots are the stack up to its top
+  (each frame's slots, its boxes and the function it runs, a caller's
+  half-made values, a `finally`'s held throw), the builtins, a throw on its
+  way to a handler and the event queue's callbacks. It runs before an
+  instruction, once no cell is free and the heap holds twice what the last
+  collection kept (never under 1,024 cells), so a cell costs amortized
+  O(1). Between instructions no value lives in Roc's own locals, but for a
+  builtin that runs a callback: what it keeps across the callback (the
+  item `filter` keeps, the items `sort` orders) waits on the stack. A freed
+  cell stays in its place as a link of the free list, so a reference never
+  moves; the value rules allocate from the same list (`Heap.allocated`).
+  `js-vm --collect-at-every-allocation` collects after every instruction
+  that allocates, and `js/tests/51` to `53` hold values through each kind
+  of root while collections run, so a missed root shows as a wrong answer
+  or as the collector's own stop (a live value naming a freed cell).
 - **Control flow is jumps,** relative to the instruction after them; a loop
   makes its own `break`s and `continue`s jumps once it knows its end.
 - **A read before a declaration is decided when compiling** wherever it can
@@ -284,14 +308,15 @@ back on the walker.
 
 **What the dev controls show (2026-11-24, `js/controls.shale opt=dev
 engine=vm`, held to `js/controls/expected-vm-dev.txt`):** every control
-flat, and none above the walker's dev count: 0, 1, 1, 0, 1, 2, 2 and 4.08
-allocations a pass for 00 to 07 (the walker's 1, 1, 3, 0, 1, 3, 5 and
-5.08). The one a call makes is a list of 112 bytes, the same at every
+flat, and none above the walker's dev count: 0, 1, 1, 0, 1, 2, 2, 4.08 and
+3.04 allocations a pass for 00 to 08 (the walker's 1, 1, 3, 0, 1, 3, 5, 5.08
+and 8). 08-garbage-in-a-call makes an object a pass inside a call; its
+0.04 is the collector's own lists, made once a collection. The one a call makes is a list of 112 bytes, the same at every
 size, which roc-alloc-trace's `where` puts down to `Vm.pushed` (round
 one's run named `frames_with`; the lines it gives aren't Vm.roc's);
 rewriting the write three ways didn't move it. On the dev backend fib(22)
-takes about 660 ms of CPU against the walker's 600, and the loops 2.4 s
-against 2.8 s.
+takes about 860 ms of CPU against the walker's 700 (best of three, with the
+collector's check before every instruction).
 
 **What the release build shows (2026-11-24, `js/bench`'s programs, the
 fastest of three):** fib(22) takes 82 ms on the VM against the walker's
@@ -376,27 +401,23 @@ A block or function whose text holds no function literal can't have its
 scope captured, so its scope is dropped when it ends: a loop or a recursion
 without closures leaves the scope list as it found it.
 
-**Cells are never freed, and a collector isn't worth it yet**
-(`js/heaps.shale`, 2026-11-23, the release build). No corpus program holds
-more than 226 cells or peaks past 9 MB. A program that makes an object a
-pass holds them all: 400,000 objects peak at 146 MB, about 370 bytes each,
-the cell list and its growth about half of it and the objects' properties
-the rest. A closure's definition is boxed in the tree, so a closure's cell
-is no bigger than an object's; unboxed, every cell was the size of the
-biggest, and the same program peaked at 239 MB.
+**The walker frees no cell; the VM collects** (`js/heaps.shale`). On the
+walker (2026-11-23, the release build) no corpus program holds more than
+226 cells or peaks past 9 MB, and a program that makes an object a pass
+holds them all: 400,000 objects peak at 146 MB, about 370 bytes each, the
+cell list and its growth about half of it and the objects' properties the
+rest. A closure's definition is boxed in the tree, so a closure's cell is
+no bigger than an object's. The page's budget of 3,000,000 steps caps a
+walker's run near a million objects, about 370 MB.
 
-The simple collector, a mark from the live scopes and a sweep onto a free
-list, is safe only where no JavaScript value lives on Roc's own stack: at a
-statement outside every call, with any `for ... of` array pinned. Inside a
-call, the caller's half-made values (the left side of a `+`, the arguments
-made so far, the object a method is called on) live only on Roc's stack,
-and a collection there would free them. So it would free what a top-level
-loop drops (`heaps/1-object-a-pass.js`) and nothing a call drops
-(`heaps/2-object-a-pass-in-a-call.js`, the same garbage inside `main()`,
-146 MB too), which is where most programs make theirs. Freeing inside calls
-takes a root stack that each of those places pushes to, a full collector's
-cost and risk. The page's budget of 3,000,000 steps caps a run near a
-million objects, about 370 MB.
+The walker can't collect: inside a call, the caller's half-made values
+(the left side of a `+`, the arguments made so far, the object a method is
+called on) live only on Roc's stack, where no collector sees them. The VM
+keeps them on its operand stack, so it collects anywhere between two
+instructions ("The bytecode VM", above): on its dev build
+(`js/heaps.shale engine=vm opt=dev`, 2026-11-24) each js/heaps/ program,
+`heaps/2-object-a-pass-in-a-call.js` included, holds 1,024 cells and peaks
+at about 4 MB.
 
 **What the controls count (2026-11-23).** `js/controls.shale` runs each
 control in `js/controls/` (an empty loop, then the probes' six writes, one
@@ -429,12 +450,14 @@ linear: 59, 88 and 184 µs a store; 28, 35 and 86 µs a call; 22, 35 and
 
     shale js/oracle.shale      # js-run, then every program through node and js-run
     shale js/oracle.shale engine=vm   # the same with js-vm, the bytecode VM
+    shale js/oracle.shale engine=vm collect=every   # js-vm collecting at every allocation
     shale js/probes.shale      # js-count, then the copying probes at three sizes
     shale js/controls.shale    # js-run --opt=speed, then count each control's allocations
     shale js/controls.shale opt=dev engine=vm   # js-vm's, held to expected-vm-dev.txt
     shale check.shale js=1     # the controls in both builds, held to their expected counts
     shale js/bench.shale       # both builds, then time js/bench/'s programs
     shale js/heaps.shale       # js-count --opt=speed, then each program's cells, scopes and peak memory
+    shale js/heaps.shale engine=vm opt=dev   # js-vm's cells, live cells, collections and peak memory
     shale js/canvas.shale      # js-canvas, then hold every canvas sample to its log
     shale js/build.shale       # build the page into the dev channel, :9210/js/
 
@@ -501,12 +524,11 @@ across them is a write in place.
 - **A JavaScript call is several Roc calls deep,** so the interpreter
   reports a stack overflow at 400 nested calls, as node would much deeper,
   rather than overflow Roc's own stack.
-- **Built on the dev backend,** the walker runs `fib(22)` in about 0.4 s
+- **Built on the dev backend,** the walker runs `fib(22)` in about 0.7 s
   of CPU, and in about 0.15 s in the release build (`js/bench.shale`,
   2026-11-24).
-- **The walker's release build takes about 8 minutes** on a 2-core box,
-  and took up to 17 before its value rules moved out (2026-11-24), most of
-  it RC1's SpecConstr pass and the rest LLVM (`roc build --timings`; the
+- **The walker's release build takes about 8 minutes** on a 2-core box
+  (2026-11-24), most of it RC1's SpecConstr pass and the rest LLVM (`roc build --timings`; the
   tag `rc1-slow-release-build` reproduces it). js-vm's takes under a
   minute and a half. A round takes its release numbers once, never per
   step. The dev backend shows the
@@ -515,7 +537,7 @@ across them is a write in place.
 - **A Map or a Set keeps a place for every key it ever held.** A deleted
   entry stays, `Gone`, so a walk under way still meets the rest in order,
   and is never reused: a table many keys pass through grows with them.
-- **The host costs the dev build about a sixth.** With the walk carrying the
-  host and effectful, `fib(22)` on the dev backend took 471 ms of CPU
-  against 400 ms before (best of five each, 2026-11-23, with another lane
-  running); the release build wasn't measured.
+- **The host costs the walker's dev build about a sixth.** The walk
+  carries the host and is effectful, which makes `fib(22)` on the dev
+  backend about a sixth slower than the same walk without it (2026-11-23);
+  the release build wasn't measured.
