@@ -21,7 +21,7 @@ const OPT = arg("opt", "both")
 function busy()
   local seen = {}
   for p in procs() do
-    for name in {"basic-run", "js-run", "count_allocs", "roc", "zig", "node", "cc", "gcc", "chrome", "firefox", "tcc"} do
+    for name in {"basic-run", "js-run", "roc-alloc-trace", "roc", "zig", "node", "cc", "gcc", "chrome", "firefox", "tcc"} do
       if p.name == name then seen[name] = true end
     end
   end

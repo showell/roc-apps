@@ -43,7 +43,7 @@ use("./js_builds.shale")
 function busy()
   local seen = {}
   for p in procs() do
-    for name in {"basic-run", "basic-check", "strace", "count_allocs", "roc", "zig", "node", "chrome", "firefox"} do
+    for name in {"basic-run", "basic-check", "strace", "roc-alloc-trace", "roc", "zig", "node", "chrome", "firefox"} do
       if p.name == name then seen[name] = true end
     end
     if find(p.args, "controls") ~= nil and p.name ~= "shale" then seen["controls"] = true end
