@@ -1,3 +1,3 @@
-published 2026-11-24T19:04:07Z
+published 2026-11-24T19:42:31Z
 roc 0.1.0_RC1
-roc-apps 0c40ea0a
+roc-js-interpreter 994daf66 https://github.com/showell/roc-js-interpreter/commit/994daf66588caa0ec3f0fd957c2755b248c70fa9 (its js-book/book.shale)
