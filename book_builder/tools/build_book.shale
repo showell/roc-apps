@@ -4,6 +4,12 @@
 --
 --   cd <roc-apps checkout> && shale book_builder/tools/build_book.shale book=<folder> tests=N name=<name> folder=<read root> out=<pages> report=<file>
 --
+-- `app=` names the app's root as `zig build` reads it from book_builder/,
+-- `../<book>/app/main.roc` when it isn't given. A book outside this checkout
+-- names its own: `book=` is then a mount's path (`repos:<repo>/<book>`),
+-- which `zig build` can't read, and `app=` the same folder's path from
+-- book_builder/.
+--
 -- `roc test` runs the app's expects, `<book>/app/main.roc` from `<book>`,
 -- held to exactly `tests` and to the top-level `expect` lines of `<book>/app/`,
 -- each passed once; the packages' own are their gates' to hold. Then
@@ -23,6 +29,7 @@ const NAME = arg("name", "")
 const FOLDER = arg("folder", "")
 const OUT = arg("out", "")
 const REPORT = arg("report", "")
+const APP = arg("app", "")
 const BUILDER = "book_builder"
 const STYLESHEET = "book_builder/book.css"
 const COPY_SCRIPT = "book_builder/copy.js"
@@ -101,7 +108,9 @@ function main()
   test_app(env)
   local program = BUILDER .. "/zig-out/" .. NAME .. "/bin/book"
   if exists(program) then remove(program) end
-  local built = run({"zig", "build", "-Dapp=../" .. BOOK .. "/app/main.roc", "-p", "zig-out/" .. NAME}, {cwd = BUILDER, timeout_ms = 600000, tail = 40, env = env})
+  local app = APP
+  if app == "" then app = "../" .. BOOK .. "/app/main.roc" end
+  local built = run({"zig", "build", "-Dapp=" .. app, "-p", "zig-out/" .. NAME}, {cwd = BUILDER, timeout_ms = 600000, tail = 40, env = env})
   if built.code ~= 0 or #find_all(built.out, "── ✗") + #find_all(built.out, "── ●") > 0 or not exists(program) then
     print(built.out)
     fail("build_book: the book's program didn't build cleanly")
