@@ -35,6 +35,15 @@ canvas { display: block; background: #06080f; width: min(960px, 100%, calc(88vh 
 #loading .bar span { display: block; height: 100%; width: 3%; border-radius: 5px; background: #d19a3e; transition: width 0.4s; }
 #loading .note { margin-top: 10px; color: #8f8c84; font-size: 13px; }
 @media (max-width: 480px) { #loading .status { font-size: 17px; } #loading h1 { font-size: 22px; } }
+/* The chapter key: small, quiet text at the picture's top-right corner
+   (the script places it there), shown once the walk shows. It takes no
+   clicks or keys, so they reach the canvas, and it never animates: it
+   changes only when the chapter does, or C hides or shows it. */
+#chapters { display: none; position: absolute; margin: 0; padding: 5px 9px 5px 6px; list-style: none; background: rgba(0, 0, 0, 0.3); border-radius: 4px; color: rgba(226, 221, 206, 0.7); font: 12px/1.45 system-ui, sans-serif; text-shadow: 0 1px 2px #000; pointer-events: none; user-select: none; }
+#chapters .mark { display: inline-block; width: 0.9em; visibility: hidden; }
+#chapters .letter { display: inline-block; width: 1.2em; font: 600 11px monospace; }
+#chapters .now { color: #f2d999; }
+#chapters .now .mark { visibility: visible; }
 #rate { display: none; position: absolute; top: 8px; left: 8px; max-width: calc(100% - 32px); white-space: pre-wrap; padding: 4px 8px; background: rgba(0, 0, 0, 0.55); color: #eee; font: 13px monospace; pointer-events: none; }
 </style>
 </head>
@@ -54,6 +63,7 @@ canvas { display: block; background: #06080f; width: min(960px, 100%, calc(88vh 
 </article></div>
 <div id="message"></div>
 <div id="rate"></div>
+<ul id="chapters" aria-label="Chapters"></ul>
 <script src="rocco.js"></script>
 <script>
 // The loading screen says which stage the page is in, and stays up until
@@ -112,6 +122,17 @@ var WALK_ROOST = (function () {
 	var on = query.get("interior") !== "0" && query.get("tavern") !== "0" && query.get("pipelines") !== "min";
 	return { on: on, road: 320, stopped: 388, doors: 452, inside: 482, end: on ? 784.8 : 320, lights: 8 };
 })();
+// Where each chapter starts, in metres on the walk's line: a copy of
+// game/Chapters.roc's, by the same names, which scripts/build_web.shale
+// checks. The keys B, Z, K and R jump there (main.roc), and the chapter key
+// marks the last start the walk has passed.
+var CHAPTER_STARTS = { begin: 0, zebra_and_ducks: 36, kangaroo: 83, roost_doors: 452, roost_sign: 150 };
+var CHAPTERS = [
+	{ code: "KeyB", letter: "B", name: "Begin", at: CHAPTER_STARTS.begin },
+	{ code: "KeyZ", letter: "Z", name: "Zebra and ducks", at: CHAPTER_STARTS.zebra_and_ducks },
+	{ code: "KeyK", letter: "K", name: "Kangaroo", at: CHAPTER_STARTS.kangaroo },
+	{ code: "KeyR", letter: "R", name: "Roo's Roost", at: WALK_ROOST.on ? CHAPTER_STARTS.roost_doors : CHAPTER_STARTS.roost_sign },
+];
 (function () {
 	var stage = document.getElementById("stage");
 	var clock = document.getElementById("clock");
@@ -217,6 +238,8 @@ var WALK_ROOST = (function () {
 		box.textContent = text;
 		box.style.display = "block";
 		document.getElementById("canvas").style.display = "none";
+		// The chapter key goes with the walk (it is defined below).
+		window.walkChapterHide();
 		return box;
 	};
 })();
@@ -293,8 +316,8 @@ var walkView = (function () {
 	// The walk as the page follows it: whether the loading line is gone,
 	// whether Space has paused it, and how far down the road it is (the
 	// engine's clock, which takes at most a quarter second a frame, at the
-	// walk's 4 m/s; the keys 1 to 4 jump as the game does). Only the
-	// report's notes on the longest frames read the distance.
+	// walk's pace; the jump keys move it as the game does). The report's
+	// notes on the longest frames and the chapter key read the distance.
 	var walk = { shown: false, paused: false, held: false, skipNext: false, walked: 0, started: false };
 	// ?start= begins the walk farther down the road (Switches.roc).
 	var startAt = parseFloat(new URLSearchParams(location.search).get("start") || "0");
@@ -303,7 +326,9 @@ var walkView = (function () {
 	// Where the page reckons the walk is, for a probe that names its frames by it.
 	window.walkWalked = function () { return walk.walked; };
 	window.addEventListener("rocco:ready", function () { walk.started = true; });
-	var JUMPS = { Digit1: 44, Digit2: 170, Digit3: 215, Digit4: 95, Digit5: 36, Digit6: 83, Digit7: WALK_ROOST.on ? WALK_ROOST.doors : 150 };
+	// 5, 6 and 7 still jump as Z, K and R do.
+	var JUMPS = { Digit1: 44, Digit2: 170, Digit3: 215, Digit4: 95, Digit5: CHAPTERS[1].at, Digit6: CHAPTERS[2].at, Digit7: CHAPTERS[3].at };
+	CHAPTERS.forEach(function (chapter) { JUMPS[chapter.code] = chapter.at; });
 	window.addEventListener("keydown", function (event) {
 		if (event.repeat) return;
 		if (event.code === "Space") {
@@ -771,6 +796,62 @@ var walkView = (function () {
 		recent = [];
 		if (shown) { rate.textContent = "counting frames"; request(tick); }
 	}, true);
+})();
+// The chapter key, at the picture's top-right corner: B, Z, K and R with
+// their chapters, the one the walk is in marked, and C, which hides or
+// shows it. The walk's place is the page's own reckoning (walkWalked,
+// above: the engine's clock, kept from the frames and the keys), read four
+// times a second; the list changes only when the chapter does.
+(function () {
+	var list = document.getElementById("chapters");
+	var canvas = document.getElementById("canvas");
+	var items = CHAPTERS.map(function (chapter) {
+		var item = document.createElement("li");
+		item.innerHTML = '<span class="mark">▸</span><span class="letter"></span><span class="name"></span>';
+		item.querySelector(".letter").textContent = chapter.letter;
+		item.querySelector(".name").textContent = chapter.name;
+		list.appendChild(item);
+		return item;
+	});
+	var hide = document.createElement("li");
+	hide.innerHTML = '<span class="mark"></span><span class="letter">C</span><span class="name">hide this</span>';
+	list.appendChild(hide);
+	var shown = false, hidden = false, current = -1;
+	// The chapter the walk is in: the last whose start it has passed.
+	function chapterAt(walked) {
+		var at = 0;
+		CHAPTERS.forEach(function (chapter, i) { if (walked >= chapter.at) at = i; });
+		return at;
+	}
+	function mark() {
+		var now = chapterAt(window.walkWalked());
+		if (now === current) return;
+		if (current >= 0) items[current].classList.remove("now");
+		items[now].classList.add("now");
+		current = now;
+	}
+	// Placed by the canvas's own box, which moves only when the window resizes.
+	function place() {
+		var box = canvas.getBoundingClientRect();
+		list.style.top = Math.round(box.top + 8) + "px";
+		list.style.right = Math.round(document.documentElement.clientWidth - box.right + 8) + "px";
+	}
+	function update() { list.style.display = shown && !hidden ? "block" : "none"; }
+	window.walkChapter = function () { return { chapter: current < 0 ? null : CHAPTERS[current].name, shown: list.style.display === "block" }; };
+	window.addEventListener("walk:shown", function () {
+		shown = true;
+		place();
+		mark();
+		update();
+		setInterval(mark, 250);
+	});
+	window.addEventListener("resize", place);
+	window.addEventListener("keydown", function (event) {
+		if (event.code !== "KeyC" || event.repeat) return;
+		hidden = !hidden;
+		update();
+	}, true);
+	window.walkChapterHide = function () { shown = false; update(); };
 })();
 window.addEventListener("rocco:unsupported", function (event) { rocco_message(event.detail.message); });
 window.addEventListener("rocco:stopped", function (event) { rocco_message(event.detail.message); });
