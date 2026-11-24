@@ -2,7 +2,7 @@
 // prints a checksum, so any engine that runs it can be held to node's answer.
 // SIZE scales the work: the residents, the street map, the sieve and the
 // newsletter all grow with it.
-const SIZE = 30;
+const SIZE = 5;
 
 // ── Two tools every stage uses: a seeded random source and a checksum ──
 
@@ -195,7 +195,7 @@ console.log("eldest by district:", eldest);
 
 // ── Stage 4: the shortest walk from city hall to each district ──
 
-const WIDTH = 2 + Math.floor(SIZE / 3);
+const WIDTH = 4 + Math.floor(SIZE / 2);
 const corner = (x, y) => `${x},${y}`;
 const streets = new Map();
 const closed = new Set();
@@ -297,7 +297,7 @@ const NEWS = [
   "Teachers say the smith fixed the bell, and the bell rings again!",
 ];
 let newsletter = "";
-for (let issue = 1; issue <= SIZE; issue++) {
+for (let issue = 1; issue <= SIZE * 4; issue++) {
   const { name, district } = residents[random(residents.length)];
   newsletter += `${NEWS[issue % NEWS.length]} ${name.toUpperCase()} of ${district} writes in. `;
 }
