@@ -100,6 +100,18 @@ function walkWhen(now) {
 var STEADY_FRAMES = 30, STEADY_LIMIT_MS = 40;
 // The walk's pace in metres a second, as game/Walk.roc has it.
 var WALK_PACE = 6.4;
+// With the interior on (no ?interior=0 or ?tavern=0), the ride goes on into
+// the Roo's Roost, and the walk starts again at the visit's end, not the
+// road's. As game/Walk.roc places them, in metres on the walk's line: the
+// jeep's stop (10.6 s past the road's end), the doors key 7 jumps to, the
+// walker past the doors, and the visit's end. `lights` is how many point
+// lights the room adds (Roost.point_lights), with the bar lamp's shadow
+// light besides.
+var WALK_ROOST = (function () {
+	var query = new URLSearchParams(location.search);
+	var on = query.get("interior") !== "0" && query.get("tavern") !== "0" && query.get("pipelines") !== "min";
+	return { on: on, road: 320, stopped: 388, doors: 452, inside: 482, end: on ? 784.8 : 320, lights: 8 };
+})();
 (function () {
 	var stage = document.getElementById("stage");
 	var clock = document.getElementById("clock");
@@ -286,10 +298,12 @@ var walkView = (function () {
 	var walk = { shown: false, paused: false, held: false, skipNext: false, walked: 0, started: false };
 	// ?start= begins the walk farther down the road (Switches.roc).
 	var startAt = parseFloat(new URLSearchParams(location.search).get("start") || "0");
-	if (startAt >= 0 && startAt < 319) walk.walked = startAt;
+	if (startAt >= 0 && startAt < (WALK_ROOST.on ? WALK_ROOST.end - 1 : 319)) walk.walked = startAt;
 	window.addEventListener("walk:shown", function () { walk.shown = true; });
+	// Where the page reckons the walk is, for a probe that names its frames by it.
+	window.walkWalked = function () { return walk.walked; };
 	window.addEventListener("rocco:ready", function () { walk.started = true; });
-	var JUMPS = { Digit1: 44, Digit2: 170, Digit3: 215, Digit4: 95, Digit5: 36, Digit6: 83, Digit7: 150 };
+	var JUMPS = { Digit1: 44, Digit2: 170, Digit3: 215, Digit4: 95, Digit5: 36, Digit6: 83, Digit7: WALK_ROOST.on ? WALK_ROOST.doors : 150 };
 	window.addEventListener("keydown", function (event) {
 		if (event.repeat) return;
 		if (event.code === "Space") {
@@ -305,11 +319,15 @@ var walkView = (function () {
 	function happening(walked) {
 		var notes = [];
 		if (walked < 6) notes.push("the walk's first metres, fading in from black");
-		if (walked > 308) notes.push("the fade out at the road's end, before the walk starts again");
+		if (walked > 308 && !WALK_ROOST.on) notes.push("the fade out at the road's end, before the walk starts again");
+		if (walked > WALK_ROOST.road && walked < WALK_ROOST.stopped) notes.push("the jeep pulling up at the Roo's Roost");
+		if (walked >= WALK_ROOST.stopped && walked < WALK_ROOST.inside) notes.push("on foot to the Roost's doors and through them");
+		if (walked >= WALK_ROOST.inside) notes.push("inside the Roost");
+		if (WALK_ROOST.on && walked > WALK_ROOST.end - 20) notes.push("the fade out at the visit's end, before the walk starts again");
 		if (walked > 20 && walked < 62) notes.push("zebra 1 crossing ahead");
 		if (walked > 15 && walked < 85) notes.push("the duck pond ahead on the right");
 		if (walked > 80 && walked < 125) notes.push("the kangaroo crossing ahead");
-		if (walked > 150) notes.push("the tavern's neon sign ahead");
+		if (walked > 150 && walked <= WALK_ROOST.road) notes.push("the tavern's neon sign ahead");
 		if (walked > 150 && walked < 210) notes.push("zebra 2 crossing ahead");
 		if (walked > 47 && walked < 202) notes.push("sky blend re-blending (sunset)");
 		if (walked > 125 && walked < 160) notes.push("passing the near mast and its light");
@@ -539,7 +557,7 @@ var walkView = (function () {
 				var previous = lastSubmit;
 				if (lastSubmit > 0) frame.gap = frame.at - lastSubmit;
 				lastSubmit = frame.at;
-				if (frame.gap !== null && !walk.paused && !walk.held) walk.walked = (walk.walked + WALK_PACE * Math.min(frame.gap, 250) / 1000) % 320;
+				if (frame.gap !== null && !walk.paused && !walk.held) walk.walked = (walk.walked + WALK_PACE * Math.min(frame.gap, 250) / 1000) % WALK_ROOST.end;
 				frame.walked = walk.walked;
 				if (frame.gap !== null && frame.gap > STALL_MS && walkLoad.first_frame !== null) {
 					// The gap splits at the start of the animation frame
@@ -572,8 +590,21 @@ var walkView = (function () {
 		});
 	};
 
+	// The Roost's frames, inside past the doors, and the road's, since the
+	// page started, for the report's interior line.
+	var roostFrames = { inside: [], road: [] };
+	window.walkInteriorLine = function () {
+		if (!WALK_ROOST.on) return "interior: off, the walk fades out short of the tavern";
+		function sends(list) { return list.length === 0 ? "no frames yet" : Math.round(mean(list, "draws")) + " draws, " + thousands(mean(list, "instances")) + " instances, " + thousands(mean(list, "triangles")) + " triangles, " + Math.round(mean(list, "passes")) + " passes (" + list.length + " frames)"; }
+		return "interior: a frame inside the Roost (past " + WALK_ROOST.inside + " m) sends " + sends(roostFrames.inside) + "; on the road (under " + WALK_ROOST.road + " m), " + sends(roostFrames.road) +
+			"; the room's lights: " + WALK_ROOST.lights + " point lights and the bar lamp's shadow light (game/Roost.roc)";
+	};
 	function took(frame) {
 		if (shown) recent.push(frame);
+		if (frame.walked >= WALK_ROOST.inside) roostFrames.inside.push(frame);
+		else if (frame.walked < WALK_ROOST.road) roostFrames.road.push(frame);
+		if (roostFrames.inside.length > 2000) roostFrames.inside.shift();
+		if (roostFrames.road.length > 2000) roostFrames.road.shift();
 		reportFrames.push(frame);
 		var span = reportFrames.reduce(function (a, f) { return a + f.gap; }, 0);
 		if (span >= REPORT_MS) {
@@ -674,6 +705,7 @@ var walkView = (function () {
 		lines.push("switches: " + (walkView.switches.length ? walkView.switches.join(" ") : "none") + "; drawing scale " + walkView.scale);
 		lines.push(loadLine());
 		lines.push(window.walkProgramsLine());
+		lines.push(window.walkInteriorLine());
 		lines.push(madeLine());
 		lines.push("frames: " + gaps.length + " in " + (span / 1000).toFixed(1) + " s of walking = " + (gaps.length * 1000 / span).toFixed(1) + " fps (paused time, the first frame after each resume and the loading frames left out)");
 		lines.push("frame ms: p50 " + ms(percentile(sorted, 0.5)) + ", p90 " + ms(percentile(sorted, 0.9)) + ", p99 " + ms(percentile(sorted, 0.99)) + ", max " + ms(sorted[sorted.length - 1]));
