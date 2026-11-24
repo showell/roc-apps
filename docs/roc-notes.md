@@ -32,9 +32,7 @@ anyone writing or emitting Roc in this repository. How the Roc is *written*
   (`seed + 0 * List.len(args)`), or `roc check` plays the games -- and on 09-07
   crashed doing it.
 - **A headerless app runs on a built-in echo platform** whose `echo!` writes no
-  newline. Up to 09-22 its allocator mapped a page per allocation (#11335), so
-  an allocating program spent most of its time in the kernel. From 09-23 it
-  doesn't.
+  newline.
 - Older nightlies deleted every `roc-*` directory in the system temp root when
   they ran; the 10-29 pin doesn't (`roc check`, `roc test` and a build all left
   one alone). A scratch directory still shouldn't use that prefix. Roc honours
@@ -47,11 +45,6 @@ anyone writing or emitting Roc in this repository. How the Roc is *written*
   on a native build sees the same ids.
 - The default Linux runtime prints "overflowed its stack memory" for any
   SIGSEGV, a read after free included.
-- **Up to 09-22, the default platform gave every heap value its own `mmap`**
-  (roc-lang/roc#11335; from 09-23 it uses brk, above). On those nightlies
-  `strace -c` counts allocations exactly and `strace -k` names the builtin
-  that asked, and an allocation-heavy program runs several times slower than
-  on a C allocator.
 
 ## The language
 
