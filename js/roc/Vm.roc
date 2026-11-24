@@ -42,10 +42,18 @@
 ## the machine, then the rest, where the style guide would take one record:
 ## a record holding the machine is a second reference to the heap.
 ##
-## What the VM doesn't run yet (exceptions caught, timers, the canvas, Map
-## and Set methods, `for ... of` over anything but an array or a string)
-## stops the run with `unsupported (vm): ...`. A throw nothing can catch yet
-## ends the run as an uncaught one, as node ends it.
+## **A THROW LANDS AT A HANDLER THAT IS DATA.** A `try` pushes a handler
+## (`Handler`): its frame, where its `catch` or `finally` code starts, and
+## how high the stack stood. A throw, the program's or one of JavaScript's
+## own errors, sets `status`, and the loop takes the innermost handler when
+## its frame is one this run of the loop entered: the frames and the stack
+## above it are given up, and its code goes on with the value thrown on top
+## (`caught`). A throw a callback's own frames don't catch ends the
+## callback's run, and the builtin that called it hands it to the loop
+## beneath. One nothing catches ends the run as node ends it.
+##
+## What the VM doesn't run yet (the timers and the canvas) stops the run
+## with `unsupported (vm): ...`.
 import Ast
 import Bytecode
 import Canvas
@@ -61,6 +69,9 @@ Vm :: [].{
 		frames : List(Vm.Frame),
 		# How many of `frames` are callers waiting: the ones past it are spent.
 		depth : U64,
+		handlers : List(Vm.Handler),
+		# How many of `handlers` wait: the ones past it are spent.
+		handler_count : U64,
 		code : U64,
 		pc : U64,
 		base : U64,
@@ -77,6 +88,18 @@ Vm :: [].{
 	## the callee's answer goes, the place of the function called (or of its
 	## receiver, for a method).
 	Frame : { code : U64, pc : U64, base : U64, result_at : U64 }
+
+	## A `try`'s handler, waiting for a throw: the frame it is in (its depth,
+	## code and base), where its code goes on, how high the stack stood, and
+	## what it is for.
+	Handler : {
+		depth : U64,
+		code : U64,
+		pc : U64,
+		base : U64,
+		top : U64,
+		kind : Bytecode.Handling,
+	}
 
 	Status : [Running, Finished, Faulted(Str), Thrown(Box(ValueRules.Throw))]
 
@@ -97,6 +120,8 @@ Vm :: [].{
 			top: 0,
 			frames: [],
 			depth: 0,
+			handlers: [],
+			handler_count: 0,
 			code: program.main,
 			pc: 0,
 			base: 0,
@@ -137,9 +162,46 @@ loop! = |host, program, machine, floor| {
 		}
 		op = $ops.get($machine.pc) ?? crash "Vm.loop!: every code ends in a return or a finish"
 		$machine = dispatch!(host, program, { ..$machine, pc: $machine.pc + 1 }, op)
+		match $machine.status {
+			Thrown(boxed) => {
+				$machine = caught($machine, boxed, floor)
+			}
+			_ => {}
+		}
 	}
 	$machine
 }
+
+# The machine after a throw: at the innermost waiting handler, when that
+# handler's frame is one this run of the loop entered (at `floor` or
+# deeper), with the stack as it stood and what was thrown on top; else as
+# it is, for the loop that entered the handler's frame to catch.
+caught : Vm.Machine, Box(ValueRules.Throw), U64 -> Vm.Machine
+caught = |machine, boxed, floor|
+	if machine.handler_count == 0 {
+		machine
+	} else {
+		handler = machine.handlers.get(machine.handler_count - 1) ?? crash "Vm.caught: a handler waits"
+		if handler.depth < floor {
+			machine
+		} else {
+			{ value, site } = Box.unbox(boxed)
+			back = {
+				..machine,
+				status: Running,
+				handler_count: machine.handler_count - 1,
+				depth: handler.depth,
+				code: handler.code,
+				pc: handler.pc,
+				base: handler.base,
+			}
+			cleared = dropped(back, back.top - handler.top)
+			match handler.kind {
+				Catching => pushed(cleared, value)
+				Finishing => pushed(pushed(pushed(cleared, Number(site.line.to_f64())), Number(site.column.to_f64())), value)
+			}
+		}
+	}
 
 dispatch! : Canvas.Host, Bytecode.Program, Vm.Machine, Bytecode.Op => Vm.Machine
 dispatch! = |host, program, machine, op|
@@ -153,6 +215,8 @@ dispatch! = |host, program, machine, op|
 		Duplicate => pushed(machine, value_at(machine, 1))
 		DuplicatePair => duplicated_pair(machine)
 		Nip => nipped(machine)
+		Swap => swapped(machine)
+		Rotate => rotated(machine)
 		LoadLocal(slot) => pushed(machine, slot_value(machine, slot))
 		StoreLocal(slot) => with_slot(machine, slot, value_at(machine, 1))
 		SetLocal(slot) => local_set(machine, slot)
@@ -182,6 +246,9 @@ dispatch! = |host, program, machine, op|
 		SkipIfFalsy(count) => skipped_if(machine, count, Falsy)
 		SkipIfTruthy(count) => skipped_if(machine, count, Truthy)
 		SkipIfDefined(count) => skipped_if(machine, count, Defined)
+		SkipIfNotUndefined(count) => skipped_if(machine, count, NotUndefined)
+		JumpIfSame(count) => jumped_if_same(machine, count)
+		ShortIfNullish(count) => shorted_if_nullish(machine, count)
 		MakeArray(count) => array_made(machine, count)
 		NewArray => allocated(machine, Array([]))
 		AppendItem => item_appended(machine)
@@ -202,6 +269,14 @@ dispatch! = |host, program, machine, op|
 		Construct({ count, callee, at }) => constructed(machine, { count: count, callee: callee, at: at })
 		IterStart({ source, at }) => iteration_started(machine, source, at)
 		IterNext({ slot, exit }) => iterated(machine, slot, exit)
+		DestructureItems({ origin, at }) => items_destructured(machine, origin, at)
+		ItemOf(position) => replaced(machine, 1, item_at(machine, reference_id(value_at(machine, 1)), position))
+		ItemsFrom(position) => items_from(machine, position)
+		CheckDestructurable(checked) => destructurable_checked(machine, checked)
+		PropertiesLeft({ keys, at }) => properties_left(machine, keys, at)
+		EnterTry({ handler, kind }) => try_entered(machine, handler, kind)
+		LeaveTry => { ..machine, handler_count: machine.handler_count - 1 }
+		Rethrow => rethrown(machine)
 		Return => returned(machine)
 		Throw(at) => thrown(machine, at)
 		Finish => { ..machine, status: Finished }
@@ -298,6 +373,21 @@ duplicated_pair = |machine| {
 
 nipped : Vm.Machine -> Vm.Machine
 nipped = |machine| replaced(machine, 2, value_at(machine, 1))
+
+swapped : Vm.Machine -> Vm.Machine
+swapped = |machine| {
+	under = value_at(machine, 2)
+	over = value_at(machine, 1)
+	pushed(pushed(dropped(machine, 2), over), under)
+}
+
+rotated : Vm.Machine -> Vm.Machine
+rotated = |machine| {
+	first = value_at(machine, 3)
+	second = value_at(machine, 2)
+	third = value_at(machine, 1)
+	pushed(pushed(pushed(dropped(machine, 3), second), third), first)
+}
 
 slot_value : Vm.Machine, U64 -> Heap.Value
 slot_value = |machine, slot| machine.stack.get(machine.base + slot) ?? crash "Vm.slot_value: a slot of the frame"
@@ -500,13 +590,14 @@ jumped_if_false = |machine, count| {
 	}
 }
 
-skipped_if : Vm.Machine, U64, [Falsy, Truthy, Defined] -> Vm.Machine
+skipped_if : Vm.Machine, U64, [Falsy, Truthy, Defined, NotUndefined] -> Vm.Machine
 skipped_if = |machine, count, settles| {
 	subject = value_at(machine, 1)
 	settled = match settles {
 		Falsy => !ValueRules.is_truthy(subject)
 		Truthy => ValueRules.is_truthy(subject)
 		Defined => !ValueRules.is_nullish(subject)
+		NotUndefined => subject != Undefined
 	}
 	if settled {
 		{ ..machine, pc: machine.pc + count }
@@ -514,6 +605,120 @@ skipped_if = |machine, count, settles| {
 		dropped(machine, 1)
 	}
 }
+
+jumped_if_same : Vm.Machine, U64 -> Vm.Machine
+jumped_if_same = |machine, count| {
+	same = ValueRules.is_strictly_equal(value_at(machine, 2), value_at(machine, 1))
+	popped = dropped(machine, 2)
+	if same {
+		{ ..popped, pc: popped.pc + count }
+	} else {
+		popped
+	}
+}
+
+shorted_if_nullish : Vm.Machine, U64 -> Vm.Machine
+shorted_if_nullish = |machine, count|
+	if ValueRules.is_nullish(value_at(machine, 1)) {
+		shorted = replaced(machine, 1, Undefined)
+		{ ..shorted, pc: shorted.pc + count }
+	} else {
+		machine
+	}
+
+# ---- exceptions ------------------------------------------------------------
+
+try_entered : Vm.Machine, U64, Bytecode.Handling -> Vm.Machine
+try_entered = |machine, handler, kind| {
+	waiting = {
+		depth: machine.depth,
+		code: machine.code,
+		pc: machine.pc + handler,
+		base: machine.base,
+		top: machine.top,
+		kind: kind,
+	}
+	handlers = if machine.handler_count < machine.handlers.len() {
+		machine.handlers.set(machine.handler_count, waiting) ?? crash "Vm.try_entered: below the handlers' end"
+	} else {
+		machine.handlers.append(waiting)
+	}
+	{ ..machine, handlers: handlers, handler_count: machine.handler_count + 1 }
+}
+
+# A throw a `finally` held, thrown again from where it was first thrown.
+rethrown : Vm.Machine -> Vm.Machine
+rethrown = |machine| {
+	value = value_at(machine, 1)
+	site = { line: held_place(value_at(machine, 3)), column: held_place(value_at(machine, 2)) }
+	{ ..dropped(machine, 3), status: Thrown(Box.box({ value: value, site: site })) }
+}
+
+held_place : Heap.Value -> U64
+held_place = |held|
+	match held {
+		Number(number) => number.to_u64_try() ?? crash "Vm.held_place: a throw's line and column are whole numbers"
+		_ => crash "Vm.held_place: a finally holds a throw's line and column as numbers"
+	}
+
+# ---- patterns --------------------------------------------------------------
+
+# An array pattern's value as an array: an array as it is, read as the
+# pattern goes, anything else iterable as a new array of its values.
+items_destructured : Vm.Machine, ValueRules.Origin, Ast.Where -> Vm.Machine
+items_destructured = |machine, origin, at| {
+	given = value_at(machine, 1)
+	is_array = match given {
+		Reference(id) => ValueRules.is_array_cell(machine.cells, id)
+		_ => False
+	}
+	if is_array {
+		machine
+	} else {
+		{ cells, machine: rest } = lent(machine)
+		{ machine: rules, values } = ValueRules.iterated(shell(cells), given)
+		back = { ..rest, cells: rules.cells }
+		match values {
+			Ok(items) => {
+				id = back.cells.len()
+				replaced({ ..back, cells: back.cells.append(Array(items)) }, 1, Reference(id))
+			}
+			Err(NotIterable) => {
+				{ cells: held, machine: waiting } = lent(back)
+				failed = ValueRules.with_not_iterable(shell(held), given, origin, at)
+				with_got(waiting, { machine: failed, value: Undefined }, waiting.top - 1)
+			}
+		}
+	}
+}
+
+items_from : Vm.Machine, U64 -> Vm.Machine
+items_from = |machine, position| {
+	id = reference_id(value_at(machine, 1))
+	left = ValueRules.items_of(machine.cells, id).drop_first(position)
+	made = machine.cells.len()
+	replaced({ ..machine, cells: machine.cells.append(Array(left)) }, 1, Reference(made))
+}
+
+destructurable_checked : Vm.Machine, { properties : List(Ast.PropertyPattern), origin : ValueRules.Origin, at : Ast.Where } -> Vm.Machine
+destructurable_checked = |machine, { properties, origin, at }| {
+	given = value_at(machine, 1)
+	if ValueRules.is_nullish(given) {
+		with_error(machine, TypeError, ValueRules.destructure_message(given, properties, origin), at)
+	} else {
+		machine
+	}
+}
+
+properties_left : Vm.Machine, List(Str), Ast.Where -> Vm.Machine
+properties_left = |machine, keys, at|
+	match ValueRules.properties_left(machine.cells, value_at(machine, 1), keys) {
+		Ok(left) => {
+			id = machine.cells.len()
+			replaced({ ..machine, cells: machine.cells.append(Object(left)) }, 1, Reference(id))
+		}
+		Err(Unsupported(why)) => with_fault(machine, "${why}${ValueRules.line_note(at)}")
+	}
 
 # ---- assignments and updates -----------------------------------------------
 
@@ -865,15 +1070,32 @@ frames_with = |frames, depth, caller|
 # the boxes the code's entry makes.
 frame_filled : Vm.Machine, { code : Bytecode.Code, given : U64, boxes : List(U64) } -> Vm.Machine
 frame_filled = |machine, { code, given, boxes }| {
-	var $machine = if given > code.parameters {
-		dropped(machine, given - code.parameters)
-	} else {
-		machine
-	}
-	var $count = code.parameters.min(given)
-	while $count < code.frame_size {
-		$machine = pushed($machine, Undefined)
-		$count = $count + 1
+	var $machine = match code.arguments {
+		Each(parameters) => {
+			var $taken = if given > parameters {
+				dropped(machine, given - parameters)
+			} else {
+				machine
+			}
+			var $count = parameters.min(given)
+			while $count < code.frame_size {
+				$taken = pushed($taken, Undefined)
+				$count = $count + 1
+			}
+			$taken
+		}
+		Packed(slot) => {
+			arguments = arguments_of(machine, given)
+			cleared = dropped(machine, given)
+			id = cleared.cells.len()
+			var $taken = { ..cleared, cells: cleared.cells.append(Array(arguments)) }
+			var $count = 0
+			while $count < code.frame_size {
+				$taken = pushed($taken, Undefined)
+				$count = $count + 1
+			}
+			with_slot($taken, slot, Reference(id))
+		}
 	}
 	for entry in code.entry {
 		$machine = match entry {
@@ -969,7 +1191,8 @@ method_called! = |host, program, machine, { name, site }| {
 	method = match receiver {
 		Reference(id) => match ValueRules.kind_of(machine.cells, id) {
 			ArrayKind(_) => ArrayMethod(id)
-			MapKind | SetKind => CollectionMethod
+			MapKind => CollectionMethod({ id: id, collection: IsMap })
+			SetKind => CollectionMethod({ id: id, collection: IsSet })
 			_ => Held
 		}
 		Text(text) => TextMethod(text)
@@ -982,7 +1205,12 @@ method_called! = |host, program, machine, { name, site }| {
 			{ cells, machine: rest } = lent(machine)
 			with_got(rest, ValueRules.text_method(shell(cells), text, name, arguments, site.at), result_at)
 		}
-		CollectionMethod => unsupported(machine, "Map and Set methods", site.at)
+		CollectionMethod(place) if name == "forEach" => collection_walk!(host, program, machine, { id: place.id, count: count, result_at: result_at, at: site.at })
+		CollectionMethod(place) => {
+			arguments = arguments_of(machine, count)
+			{ cells, machine: rest } = lent(machine)
+			with_got(rest, ValueRules.collection_method(shell(cells), place, name, arguments, site.at), result_at)
+		}
 		Held => called!(host, program, machine, { count: count, result_at: result_at, naming: Written(site.written), at: site.at })
 	}
 }
@@ -1401,6 +1629,39 @@ ordering_of! = |host, program, machine, { compare, left, right, at }|
 		}
 	}
 
+# `forEach` on a Map or a Set: the callback given each entry's value, its key
+# (a Set's value again) and the collection, each entry read from the heap as
+# the walk comes to it.
+collection_walk! : Canvas.Host, Bytecode.Program, Vm.Machine, { id : U64, count : U64, result_at : U64, at : Ast.Where } => Vm.Machine
+collection_walk! = |host, program, machine, { id, count, result_at, at }| {
+	callback = if count == 0 {
+		Undefined
+	} else {
+		value_at(machine, count)
+	}
+	var $machine = machine
+	var $i = 0
+	var $going = True
+	while $going and is_running($machine) {
+		match ValueRules.step_at($machine.cells, id, Entries, $i) {
+			YieldPair(key, value) => {
+				{ machine: after, value: _ } = answered(call_function!(host, program, $machine, { callee: callback, arguments: [value, key, Reference(id)], at: at }))
+				$machine = after
+			}
+			Skip => {}
+			Yield(_) | Ended => {
+				$going = False
+			}
+		}
+		$i = $i + 1
+	}
+	if is_running($machine) {
+		with_result($machine, result_at, Undefined)
+	} else {
+		$machine
+	}
+}
+
 # ---- for ... of ------------------------------------------------------------
 
 iteration_started : Vm.Machine, Ast.Expression, Ast.Where -> Vm.Machine
@@ -1408,8 +1669,9 @@ iteration_started = |machine, source, at| {
 	given = value_at(machine, 1)
 	match given {
 		Reference(id) => match ValueRules.kind_of(machine.cells, id) {
-			ArrayKind(_) => machine
-			MapKind | SetKind | IteratorKind => unsupported(machine, "`for ... of` over a Map, a Set or an iterator", at)
+			ArrayKind(_) | IteratorKind => machine
+			MapKind => allocated(dropped(machine, 1), Iteration({ source: id, view: Entries, next: 0 }))
+			SetKind => allocated(dropped(machine, 1), Iteration({ source: id, view: Values, next: 0 }))
 			_ => not_iterable(machine, source, at)
 		}
 		Text(text) => {
@@ -1424,16 +1686,43 @@ iteration_started = |machine, source, at| {
 not_iterable : Vm.Machine, Ast.Expression, Ast.Where -> Vm.Machine
 not_iterable = |machine, source, at| with_error(machine, TypeError, "${ValueRules.source_text(source)} is not iterable", at)
 
+# The next item of a `for ... of`: an array's at its place in the slot after
+# its own, or the next entry of a Map's, a Set's or an iterator's walk, each
+# read from the heap as the loop comes to it, so an entry the body deletes
+# is skipped and one it adds is met. The walk keeps its place in its own
+# cell, so an iterator a loop leaves goes on from there.
 iterated : Vm.Machine, U64, U64 -> Vm.Machine
 iterated = |machine, slot, exit| {
 	id = reference_id(slot_value(machine, slot))
-	position = match slot_value(machine, slot + 1) {
-		Number(at) => at.to_u64_try() ?? crash "Vm.iterated: a `for ... of`'s place is a whole number"
-		_ => crash "Vm.iterated: a `for ... of`'s place is a number"
+	match ValueRules.kind_of(machine.cells, id) {
+		IteratorKind => walk_stepped(machine, id, exit)
+		_ => {
+			position = match slot_value(machine, slot + 1) {
+				Number(at) => at.to_u64_try() ?? crash "Vm.iterated: a `for ... of`'s place is a whole number"
+				_ => crash "Vm.iterated: a `for ... of`'s place is a number"
+			}
+			if position < item_count(machine, id) {
+				pushed(with_slot(machine, slot + 1, Number((position + 1).to_f64())), item_at(machine, id, position))
+			} else {
+				{ ..machine, pc: machine.pc + exit }
+			}
+		}
 	}
-	if position < item_count(machine, id) {
-		pushed(with_slot(machine, slot + 1, Number((position + 1).to_f64())), item_at(machine, id, position))
-	} else {
-		{ ..machine, pc: machine.pc + exit }
+}
+
+walk_stepped : Vm.Machine, U64, U64 -> Vm.Machine
+walk_stepped = |machine, id, exit| {
+	{ source, view, next } = ValueRules.iteration_of(machine.cells, id)
+	var $i = next
+	var $step = Skip
+	while $step == Skip {
+		$step = ValueRules.step_at(machine.cells, source, view, $i)
+		$i = $i + 1
+	}
+	moved = { ..machine, cells: Heap.with_iterator_at(machine.cells, id, $i) }
+	match $step {
+		Yield(value) => pushed(moved, value)
+		YieldPair(key, value) => allocated(moved, Array([key, value]))
+		Skip | Ended => { ..moved, pc: moved.pc + exit }
 	}
 }

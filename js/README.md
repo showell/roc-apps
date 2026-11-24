@@ -260,18 +260,20 @@ back on the walker.
   `sort` and their kin, `Array.from` with a mapper): it pushes the function
   and its arguments, runs until that frame returns, and takes the answer off
   the stack, the receiver and the array being built waiting on the stack.
-- **The round leaves out** `try` and `catch` (a throw ends the run, as an
-  uncaught one), `switch`, labels, destructuring and patterned parameters,
-  optional chains, Map and Set methods, `for ... of` over anything but an
-  array or a string, timers and the canvas. Each stops the run with `js:
-  unsupported (vm): <what>`, when compiling where the tree shows it.
+- **A `try` pushes a handler, which is data:** its frame, where its
+  `catch` or `finally` starts and how high the stack stood. A throw lands at
+  the innermost one, the frames and the stack above it given up. A
+  `break`, a `continue` or a `return` that leaves a `try` runs its
+  `finally` on the way, compiled where it stands.
+- **The VM leaves out** the timers and the canvas. Each stops the run with
+  `js: unsupported (vm): <what>`.
 - **Steps** count calls and loop passes, not statements; js-vm's budget is
   js-run's, 200,000,000.
 
 **What the dev controls show (2026-11-24, `js/controls.shale opt=dev
 engine=vm`, a report):** every control flat, and none above the walker's
-dev count: 0, 1, 1, 0, 1, 2 and 2 allocations a pass for 00 to 06 (the
-walker's 1, 1, 3, 0, 1, 3 and 5); 07-map-set is refused. The one a call
+dev count: 0, 1, 1, 0, 1, 2, 2 and 4.08 allocations a pass for 00 to 07
+(the walker's 1, 1, 3, 0, 1, 3, 5 and 5.08). The one a call
 makes is a list the dev build copies when a frame is entered, by
 roc-alloc-trace's `where`, which names `frames_with` (the lines it gives
 aren't Vm.roc's); rewriting the write three ways didn't move it. On the dev backend fib(22)

@@ -22,6 +22,7 @@
 ## other forward jumps skip `n` instructions, and `Loop(n)` goes back `n`,
 ## so a compiled piece of code means the same wherever it is placed.
 import Ast
+import ValueRules
 
 Bytecode :: [].{
 	Op := [
@@ -37,6 +38,10 @@ Bytecode :: [].{
 		DuplicatePair,
 		# a b -> b
 		Nip,
+		# a b -> b a
+		Swap,
+		# a b c -> b c a
+		Rotate,
 		LoadLocal(U64),
 		# A store keeps its value on the stack, an assignment's value; a set
 		# takes it, a declaration's.
@@ -83,6 +88,15 @@ Bytecode :: [].{
 		SkipIfFalsy(U64),
 		SkipIfTruthy(U64),
 		SkipIfDefined(U64),
+		# A default's jump: a value that isn't `undefined` is kept and the jump
+		# taken; `undefined` stays for the default's code to drop.
+		SkipIfNotUndefined(U64),
+		# A `switch`'s case: the two values on top compared by `===`, both
+		# dropped, and the jump taken when they are the same.
+		JumpIfSame(U64),
+		# An optional link: `null` or `undefined` on top ends its chain, which
+		# answers `undefined`, by a jump to the chain's end.
+		ShortIfNullish(U64),
 		MakeArray(U64),
 		# An array literal with a spread in it, built an element at a time.
 		NewArray,
@@ -123,6 +137,27 @@ Bytecode :: [].{
 		# The next item of the array in `slot`, its place in the slot after;
 		# past the end, a jump of `exit` instructions.
 		IterNext({ slot : U64, exit : U64 }),
+		# An array pattern's value made an array to read its items from: an
+		# array as it is, anything else iterable as its values.
+		DestructureItems({ origin : ValueRules.Origin, at : Ast.Where }),
+		# The item at a place of the array on top, in its place; `undefined`
+		# past the end.
+		ItemOf(U64),
+		# The items of the array on top from a place on, a new array in its place.
+		ItemsFrom(U64),
+		# An object pattern's value checked: `null` and `undefined` throw.
+		CheckDestructurable({ properties : List(Ast.PropertyPattern), origin : ValueRules.Origin, at : Ast.Where }),
+		# The own properties of the value on top but `keys`, a new object in
+		# its place: an object pattern's rest.
+		PropertiesLeft({ keys : List(Str), at : Ast.Where }),
+		# A `try`'s handler pushed: a throw before its `LeaveTry` lands `handler`
+		# instructions on, the stack as it was here, with the value thrown on
+		# top, and for a `finally`'s handler the throw's line and column under it.
+		EnterTry({ handler : U64, kind : Bytecode.Handling }),
+		LeaveTry,
+		# A throw a `finally` held, thrown again: its line, its column and the
+		# value, on the stack.
+		Rethrow,
 		Return,
 		Throw(Ast.Where),
 		Finish,
@@ -150,10 +185,20 @@ Bytecode :: [].{
 	## environment, by its place there.
 	Entry : [FreshBox(U64), FilledBox(U64), CapturedBox({ slot : U64, capture : U64 })]
 
+	## What a `try`'s handler is for: a `catch`, given the value thrown, or a
+	## `finally`, given the throw to finish once it has run.
+	Handling : [Catching, Finishing]
+
+	## How a call's arguments reach its frame: each to its parameter's slot,
+	## as many as the code has parameters, or all of them in an array in one
+	## slot, which a function with patterned, defaulted or rest parameters
+	## takes apart in its own code.
+	Arguments : [Each(U64), Packed(U64)]
+
 	Code : {
 		ops : List(Bytecode.Op),
 		frame_size : U64,
-		parameters : U64,
+		arguments : Bytecode.Arguments,
 		entry : List(Bytecode.Entry),
 	}
 

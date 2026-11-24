@@ -21,10 +21,18 @@
 ## to its ReferenceError (`ThrowUnready`), and only a read through a box,
 ## from a closure that may run at any time, checks at run time.
 ##
-## **A LOOP RESOLVES ITS OWN `break` AND `continue`.** The code a statement
-## compiles to may hold `Break` and `Continue` in place of jumps; the loop
-## around them, once it knows where its end and its next pass are, turns
-## them into jumps relative to where they sit.
+## **A BREAKABLE RESOLVES ITS OWN `break`S AND `continue`S.** The code a
+## statement compiles to may hold `Exit` and `Next` in place of jumps, each
+## naming the loop, `switch` or labelled statement it leaves by its place
+## among the function's; that statement, once it knows where its end and its
+## next pass are, turns them into jumps relative to where they sit. An
+## optional chain does the same with its links' `Short`s.
+##
+## **EVERY WAY OUT OF A `try` BUT A THROW RUNS ITS `finally` ON THE WAY.** A
+## `break`, a `continue` or a `return` inside a `try` takes off the handlers
+## of the `try`s it leaves and runs their `finally` blocks, compiled where it
+## stands, before its jump (`tries_left`); a throw reaches the `finally`
+## through its handler.
 ##
 ## What the VM doesn't run yet is refused here when the parser's tree shows
 ## it (`unsupported (vm): ...`), and by the VM when only a run does.
@@ -45,6 +53,8 @@ Compile :: [].{
 			codes: [],
 			functions: [no_function_yet],
 			scopes: [],
+			breakables: [],
+			tries: [],
 		}
 		entered = entered_scope(
 			begun,
@@ -57,19 +67,37 @@ Compile :: [].{
 			},
 		)
 		body = block_body(entered.state, tree.statements)?
-		code = finished_code(body.state, { ops: body.ops.append(Do(Finish)), parameters: 0 })
+		code = finished_code(body.state, { ops: body.ops.append(Do(Finish)), arguments: Each(0) })
 		Ok({ codes: body.state.codes.append(code), main: body.state.codes.len() })
 	}
 
 	## What the compiler knows as it goes: the code of every function
-	## finished so far, the functions being compiled (the innermost last), and
-	## the scopes around the code being compiled, innermost last, as
-	## `Resolve` counted them.
+	## finished so far, the functions being compiled (the innermost last), the
+	## scopes around the code being compiled, innermost last, as `Resolve`
+	## counted them, and, in the function being compiled, the statements a
+	## `break` or a `continue` may leave and the `try`s around the code.
 	State : {
 		codes : List(Bytecode.Code),
 		functions : List(Compile.Function),
 		scopes : List(Compile.Scope),
+		breakables : List(Compile.Breakable),
+		tries : List(Compile.TryRegion),
 	}
+
+	## A statement a `break` may leave, or a loop a `continue` may go on: its
+	## labels, and how many `try`s were around it, which a `break` out of it
+	## leaves first.
+	Breakable : { kind : [Loop, Switch, Labelled], labels : List(U64), tries : U64 }
+
+	## A `try` around the code being compiled: whether its handler waits on the
+	## VM's handler stack, its `finally`, which every way out of it runs, and
+	## how many scopes were around it, the scopes its `finally` is compiled in.
+	TryRegion : { handler : [Waiting, Gone], finally : [Finally(Ast.Block), NoFinally], scopes : U64 }
+
+	## How a pattern's leaves take their values: declared, or assigned as `=`
+	## assigns; what gave the value, for the message when it can't be taken
+	## apart; and where.
+	PatternBinding : { how : [Declaring, Assigning], origin : ValueRules.Origin, at : Ast.Where }
 
 	## A function being compiled: how many slots its frame has so far, the
 	## variables of enclosing functions it captures, and what its calls do
@@ -97,9 +125,11 @@ Compile :: [].{
 
 	Place : [Slot(U64), Boxed(U64)]
 
-	## An instruction, or a `break` or a `continue` its loop has yet to make
-	## a jump.
-	Emitted : [Do(Bytecode.Op), Break, Continue]
+	## An instruction, or a jump its statement has yet to place: a `break`
+	## out of the breakable at that place among the function's (`Exit`), a
+	## `continue` of the loop at that place (`Next`), or an optional link's
+	## end of its chain (`Short`).
+	Emitted : [Do(Bytecode.Op), Exit(U64), Next(U64), Short]
 
 	Compiled : { state : Compile.State, ops : List(Compile.Emitted) }
 
@@ -138,24 +168,26 @@ compiled = |state, ops| Ok({ state: state, ops: ops })
 ops_of : List(Bytecode.Op) -> List(Compile.Emitted)
 ops_of = |ops| ops.map(|op| Do(op))
 
-# A run's code from its emitted list: every `break` and `continue` has been
-# made a jump by its loop by the time its function is finished.
+# A run's code from its emitted list: every `break`, `continue` and optional
+# link has been made a jump by its statement or its chain by the time its
+# function is finished.
 finished_ops : List(Compile.Emitted) -> List(Bytecode.Op)
 finished_ops = |emitted|
 	emitted.map(
 		|each| match each {
 			Do(op) => op
-			Break | Continue => crash "Compile.finished_ops: a loop resolves every break and continue inside it"
+			Exit(_) | Next(_) => crash "Compile.finished_ops: a breakable resolves every break and continue inside it"
+			Short => crash "Compile.finished_ops: a chain resolves every optional link inside it"
 		},
 	)
 
-finished_code : Compile.State, { ops : List(Compile.Emitted), parameters : U64 } -> Bytecode.Code
-finished_code = |state, { ops, parameters }| {
+finished_code : Compile.State, { ops : List(Compile.Emitted), arguments : Bytecode.Arguments } -> Bytecode.Code
+finished_code = |state, { ops, arguments }| {
 	function = state.functions.last() ?? crash "Compile.finished_code: a function is being compiled"
 	{
 		ops: finished_ops(ops),
 		frame_size: function.slots,
-		parameters: parameters,
+		arguments: arguments,
 		entry: function.entry,
 	}
 }
@@ -345,18 +377,89 @@ jump_to = |from, to|
 		Loop(from + 1 - to)
 	}
 
-# A loop's code with its own `break`s and `continue`s made jumps: `ops`
-# starts at `offset` in the loop's code, whose end is `exit` and whose next
-# pass starts at `next`. A loop inside resolved its own before.
-resolved : List(Compile.Emitted), { offset : U64, exit : U64, next : U64 } -> List(Compile.Emitted)
-resolved = |ops, { offset, exit, next }|
+# A breakable's code with its own `break`s and `continue`s made jumps: `ops`
+# starts at `offset` in the breakable's code, whose end is `exit` and, for a
+# loop, whose next pass starts at `next`. The breakable is the one at
+# `target` among the function's; those inside resolved their own before, and
+# those around it resolve theirs after.
+resolved : List(Compile.Emitted), { offset : U64, exit : U64, next : [Continues(U64), NoContinue], target : U64 } -> List(Compile.Emitted)
+resolved = |ops, { offset, exit, next, target }|
 	ops.map_with_index(
 		|each, index| match each {
-			Break => Do(jump_to(offset + index, exit))
-			Continue => Do(jump_to(offset + index, next))
+			Exit(place) if place == target => Do(jump_to(offset + index, exit))
+			Next(place) if place == target => match next {
+				Continues(start) => Do(jump_to(offset + index, start))
+				NoContinue => crash "Compile.resolved: a continue names a loop"
+			}
 			done => done
 		},
 	)
+
+# The state inside one more breakable, and its place among the function's.
+breakable_entered : Compile.State, { kind : [Loop, Switch, Labelled], labels : List(U64) } -> { state : Compile.State, target : U64 }
+breakable_entered = |state, { kind, labels }| {
+	target = state.breakables.len()
+	breakable = { kind: kind, labels: labels, tries: state.tries.len() }
+	{ state: { ..state, breakables: state.breakables.append(breakable) }, target: target }
+}
+
+breakable_left : Compile.State -> Compile.State
+breakable_left = |state| { ..state, breakables: state.breakables.drop_last(1) }
+
+# The place among the function's breakables of the one a `break` or a
+# `continue` leaves: the innermost loop (or `switch`, for a `break`), or the
+# innermost with the label.
+exit_target : Compile.State, { leaving : [Breaking, Continuing], label : Ast.Label } -> U64
+exit_target = |state, { leaving, label }| {
+	var $found = NotFound
+	var $place = 0
+	for breakable in state.breakables {
+		fits = match (leaving, label) {
+			(Breaking, Unlabelled) => breakable.kind != Labelled
+			(Continuing, Unlabelled) => breakable.kind == Loop
+			(Breaking, Named(name)) => breakable.labels.contains(name)
+			(Continuing, Named(name)) => breakable.kind == Loop and breakable.labels.contains(name)
+		}
+		if fits {
+			$found = Found($place)
+		}
+		$place = $place + 1
+	}
+	match $found {
+		Found(place) => place
+		NotFound => crash "Compile.exit_target: Parser.statement refuses a break or a continue with nothing to leave"
+	}
+}
+
+# The code that leaves the `try`s around the code being compiled, from the
+# innermost out, down to the `down_to`th: each handler still waiting taken
+# off, and each `finally` run, compiled in the `try`s around it.
+tries_left : Compile.State, U64 -> Try(Compile.Compiled, [Unsupported(Str)])
+tries_left = |state, down_to| {
+	tries = state.tries
+	var $state = state
+	var $ops = []
+	var $at = tries.len()
+	while $at > down_to {
+		$at = $at - 1
+		region = tries.get($at) ?? crash "Compile.tries_left: a try around the code"
+		leave = match region.handler {
+			Waiting => [Do(LeaveTry)]
+			Gone => []
+		}
+		$ops = List.concat($ops, leave)
+		match region.finally {
+			Finally(final_block) => {
+				scopes = $state.scopes
+				done = block({ ..$state, tries: tries.take_first($at), scopes: scopes.take_first(region.scopes) }, final_block)?
+				$state = { ..done.state, tries: tries, scopes: scopes }
+				$ops = List.concat($ops, done.ops)
+			}
+			NoFinally => {}
+		}
+	}
+	compiled($state, $ops)
+}
 
 # ---- statements ------------------------------------------------------------
 
@@ -442,17 +545,23 @@ statement_compiled = |state, statement|
 		BlockStatement(tree_block) => block(state, tree_block)
 		Return(tree) => {
 			done = expression_compiled(state, tree)?
-			compiled(done.state, done.ops.append(Do(Return)))
+			leaving = tries_left(done.state, 0)?
+			compiled(leaving.state, List.concat(done.ops, leaving.ops).append(Do(Return)))
 		}
 		Throw(tree, site) => {
 			done = expression_compiled(state, tree)?
 			compiled(done.state, done.ops.append(Do(Throw(site))))
 		}
-		Try(_) => refusal("`try` statements")
-		Switch(_) => refusal("`switch` statements")
-		Break(Unlabelled) => compiled(state, [Break])
-		Continue(Unlabelled) => compiled(state, [Continue])
-		Break(Named(_)) | Continue(Named(_)) | Labelled(_, _) => refusal("labels")
+		Try(tree) => try_compiled(state, tree)
+		Switch(tree) => switch_compiled(state, tree)
+		Break(label) => exit_compiled(state, { leaving: Breaking, label: label })
+		Continue(label) => exit_compiled(state, { leaving: Continuing, label: label })
+		Labelled(label, inner) => {
+			{ state: inside, target } = breakable_entered(state, { kind: Labelled, labels: [label] })
+			done = statement_compiled(inside, inner)?
+			ops = resolved(done.ops, { offset: 0, exit: done.ops.len(), next: NoContinue, target: target })
+			compiled(breakable_left(done.state), ops)
+		}
 		Empty => compiled(state, [])
 	}
 
@@ -481,9 +590,9 @@ declarations = |state, declarators| {
 	var $state = state
 	var $ops = []
 	for declarator in declarators {
-		match declarator.pattern {
-			Leaf(ToName(_, slot, _)) => {
-				value = match declarator.init {
+		match (declarator.pattern, declarator.init) {
+			(Leaf(ToName(_, slot, _)), init) => {
+				value = match init {
 					Initialized(tree) => expression_compiled($state, tree)?
 					Uninitialized => { state: $state, ops: [Do(PushUndefined)] }
 				}
@@ -491,28 +600,38 @@ declarations = |state, declarators| {
 				$state = with_ready(declared.state, slot)
 				$ops = List.concat(List.concat($ops, value.ops), declared.ops)
 			}
-			_ => {
-				return refusal("destructuring${ValueRules.line_note(declarator.at)}")
+			(pattern, Initialized(tree)) => {
+				value = expression_compiled($state, tree)?
+				bound = pattern_bound(value.state, pattern, { how: Declaring, origin: Written(tree), at: declarator.at })?
+				$state = bound.state
+				$ops = List.concat(List.concat($ops, value.ops), bound.ops)
 			}
+			(_, Uninitialized) => crash "Compile.declarations: Parser.declarators gives every pattern a value"
 		}
 	}
 	compiled($state, $ops)
 }
 
-refused_labels : List(U64) -> Try({}, [Unsupported(Str)])
-refused_labels = |labels|
-	if labels.is_empty() {
-		Ok({})
-	} else {
-		refusal("labels")
+# A `break` or a `continue`: the `try`s between it and what it leaves left,
+# then the jump its breakable places.
+exit_compiled : Compile.State, { leaving : [Breaking, Continuing], label : Ast.Label } -> Try(Compile.Compiled, [Unsupported(Str)])
+exit_compiled = |state, { leaving, label }| {
+	target = exit_target(state, { leaving: leaving, label: label })
+	breakable = state.breakables.get(target) ?? crash "Compile.exit_compiled: a breakable the compiler has"
+	left = tries_left(state, breakable.tries)?
+	jump = match leaving {
+		Breaking => Exit(target)
+		Continuing => Next(target)
 	}
+	compiled(left.state, left.ops.append(jump))
+}
 
 # A `while`, its test before each pass, or a `do ... while`, after.
 while_loop : Compile.State, Ast.WhileLoop -> Try(Compile.Compiled, [Unsupported(Str)])
 while_loop = |state, { test, body, order, labels }| {
-	refused_labels(labels)?
 	tested = expression_compiled(state, test)?
-	passed = statement_compiled(tested.state, body)?
+	{ state: inside, target } = breakable_entered(tested.state, { kind: Loop, labels: labels })
+	passed = statement_compiled(inside, body)?
 	t = tested.ops.len()
 	b = passed.ops.len()
 	ops = match order {
@@ -521,24 +640,23 @@ while_loop = |state, { test, body, order, labels }| {
 			total = t + 1 + b + 1
 			List.concat(
 				tested.ops.append(Do(JumpIfFalse(b + 1))),
-				resolved(passed.ops, { offset: t + 1, exit: total, next: 0 }),
+				resolved(passed.ops, { offset: t + 1, exit: total, next: Continues(0), target: target }),
 			).append(Do(Loop(total)))
 		}
 		TestAfter => {
 			# body, test, JumpIfFalse, Loop
 			total = b + t + 2
 			List.concat(
-				resolved(passed.ops, { offset: 0, exit: total, next: b }),
+				resolved(passed.ops, { offset: 0, exit: total, next: Continues(b), target: target }),
 				tested.ops,
 			).append(Do(JumpIfFalse(1))).append(Do(Loop(total)))
 		}
 	}
-	compiled(passed.state, ops)
+	compiled(breakable_left(passed.state), ops)
 }
 
 for_loop : Compile.State, Ast.ForLoop -> Try(Compile.Compiled, [Unsupported(Str)])
 for_loop = |state, loop| {
-	refused_labels(loop.labels)?
 	entered = entered_scope(
 		state,
 		{
@@ -561,7 +679,9 @@ for_loop = |state, loop| {
 		Tested(done) => done.state
 		Always => begun.state
 	}
-	passed = statement_compiled(tested_state, loop.body)?
+	{ state: inside, target } = breakable_entered(tested_state, { kind: Loop, labels: loop.labels })
+	body_done = statement_compiled(inside, loop.body)?
+	passed = { ..body_done, state: breakable_left(body_done.state) }
 	# **EACH PASS HAS ITS OWN `let`**, as JavaScript gives a closure made in
 	# the body the pass's own variable: a boxed variable gets a fresh box
 	# holding its value before the update.
@@ -599,7 +719,7 @@ for_loop = |state, loop| {
 		test_ops.append(Do(JumpIfFalse(b + tail.len() + 1)))
 	}
 	ops = List.concat(
-		List.concat(check_ops, resolved(passed.ops, { offset: check, exit: total, next: check + b })),
+		List.concat(check_ops, resolved(passed.ops, { offset: check, exit: total, next: Continues(check + b), target: target })),
 		tail,
 	).append(Do(Loop(total)))
 	compiled(left_scope(updated.state), List.concat(head, ops))
@@ -607,11 +727,6 @@ for_loop = |state, loop| {
 
 for_of_loop : Compile.State, Ast.ForOfLoop -> Try(Compile.Compiled, [Unsupported(Str)])
 for_of_loop = |state, loop| {
-	refused_labels(loop.labels)?
-	slot = match loop.pattern {
-		Leaf(ToName(_, leaf, _)) => leaf
-		_ => return refusal("destructuring${ValueRules.line_note(loop.at)}")
-	}
 	walked = expression_compiled(state, loop.iterable)?
 	{ state: placed, slot: hidden } = with_hidden_slots(walked.state, 2)
 	head = List.concat(
@@ -633,17 +748,317 @@ for_of_loop = |state, loop| {
 			boxes: AtEntry,
 		},
 	)
-	declared = declaration_ops(entered.state, slot)
-	passed = statement_compiled(with_ready(declared.state, slot), loop.body)?
+	declared = pattern_bound(entered.state, loop.pattern, { how: Declaring, origin: Nested, at: loop.at })?
+	{ state: inside, target } = breakable_entered(declared.state, { kind: Loop, labels: loop.labels })
+	passed = statement_compiled(inside, loop.body)?
 	pass = List.concat(List.concat(entered.ops, declared.ops), passed.ops)
 	# IterNext, the pass, Loop
 	total = 1 + pass.len() + 1
 	start = List.concat(
 		[Do(IterNext({ slot: hidden, exit: pass.len() + 1 }))],
-		resolved(pass, { offset: 1, exit: total, next: 0 }),
+		resolved(pass, { offset: 1, exit: total, next: Continues(0), target: target }),
 	)
-	compiled(left_scope(passed.state), List.concat(head, start.append(Do(Loop(total)))))
+	compiled(left_scope(breakable_left(passed.state)), List.concat(head, start.append(Do(Loop(total)))))
 }
+
+# A `try`. Its block runs under a handler; a throw lands at the `catch`,
+# under a handler of its own when there is a `finally`, or at the
+# `finally`'s code for a throw, which holds the throw in three slots, runs,
+# and throws it again. Every way out of the block or the `catch` but a throw
+# runs the `finally`'s code on the way: the end of the block, a `return`, a
+# `break` or a `continue` (`tries_left`).
+#
+#     EnterTry(Catching), block, LeaveTry, Jump to the end's finally
+#     catch:   EnterTry(Finishing), bind, body, LeaveTry, Jump to it
+#     thrown:  the throw held, finally, the throw thrown again
+#     end:     finally
+try_compiled : Compile.State, Ast.TryStatement -> Try(Compile.Compiled, [Unsupported(Str)])
+try_compiled = |state, { block: tried, handler, finalizer }| {
+	outer = state.tries
+	has_finally = match finalizer {
+		Finally(_) => True
+		NoFinally => False
+	}
+	level = state.scopes.len()
+	tried_done = block({ ..state, tries: outer.append({ handler: Waiting, finally: finalizer, scopes: level }) }, tried)?
+	after_tried = { ..tried_done.state, tries: outer }
+	caught = match handler {
+		Caught(clause) => {
+			waiting = if has_finally {
+				Waiting
+			} else {
+				Gone
+			}
+			done = catch_compiled({ ..after_tried, tries: outer.append({ handler: waiting, finally: finalizer, scopes: level }) }, clause)?
+			Caught({ state: { ..done.state, tries: outer }, ops: done.ops })
+		}
+		Uncaught => Uncaught
+	}
+	after_caught = match caught {
+		Caught(done) => done.state
+		Uncaught => after_tried
+	}
+	match finalizer {
+		NoFinally => match caught {
+			Caught(done) => {
+				a = tried_done.ops
+				b = done.ops
+				ops = List.concat(
+					List.concat([Do(EnterTry({ handler: a.len() + 2, kind: Catching }))], a).append(Do(LeaveTry)).append(Do(Jump(b.len()))),
+					b,
+				)
+				compiled(after_caught, ops)
+			}
+			Uncaught => crash "Compile.try_compiled: Parser.statement gives a try a catch or a finally"
+		}
+		Finally(final_block) => {
+			{ state: placed, slot: held } = with_hidden_slots(after_caught, 3)
+			on_throw = block(placed, final_block)?
+			on_end = block(on_throw.state, final_block)?
+			thrown = List.concat(
+				ops_of([SetLocal(held + 2), SetLocal(held + 1), SetLocal(held)]),
+				on_throw.ops,
+			).append(Do(LoadLocal(held))).append(Do(LoadLocal(held + 1))).append(Do(LoadLocal(held + 2))).append(Do(Rethrow))
+			a = tried_done.ops
+			caught_ops = match caught {
+				Caught(done) => {
+					b = done.ops
+					List.concat([Do(EnterTry({ handler: b.len() + 2, kind: Finishing }))], b).append(Do(LeaveTry)).append(Do(Jump(thrown.len())))
+				}
+				Uncaught => []
+			}
+			first_kind = match caught {
+				Caught(_) => Catching
+				Uncaught => Finishing
+			}
+			tried_ops = List.concat([Do(EnterTry({ handler: a.len() + 2, kind: first_kind }))], a)
+				.append(Do(LeaveTry))
+				.append(Do(Jump(caught_ops.len() + thrown.len())))
+			ops = List.concat(List.concat(List.concat(tried_ops, caught_ops), thrown), on_end.ops)
+			compiled(on_end.state, ops)
+		}
+	}
+}
+
+# A `catch`, the value thrown on the stack: bound to its parameter in a
+# scope of its own, or dropped, then its body.
+catch_compiled : Compile.State, Ast.CatchClause -> Try(Compile.Compiled, [Unsupported(Str)])
+catch_compiled = |state, clause|
+	match clause.parameter {
+		Unbound => {
+			body = block(state, clause.body)?
+			compiled(body.state, List.concat([Do(Pop)], body.ops))
+		}
+		Bound(pattern) => {
+			entered = entered_scope(
+				state,
+				{
+					names: clause.names,
+					kinds: clause.names.map(|_| Mutable),
+					parameters: 0,
+					capture: clause.capture,
+					boxes: AtEntry,
+				},
+			)
+			bound = pattern_bound(entered.state, pattern, { how: Declaring, origin: Nested, at: clause.at })?
+			body = block(bound.state, clause.body)?
+			compiled(left_scope(body.state), List.concat(List.concat(entered.ops, bound.ops), body.ops))
+		}
+	}
+
+# A `switch`. The value compared is held in a slot; each case's test is
+# compared with it in order, and the first that is the same jumps to its
+# statements, or, where none is, the `default`'s, and the statements fall
+# through to the end.
+#
+# **A SWITCH'S VARIABLES ARE BOXED AND CHECKED WHEN THEY RUN.** A case may be
+# entered past the declarations of the cases before it, so a read after a
+# declaration in the text may still come before it at run time: each
+# variable of the switch's scope lives in a box, ready to read at the
+# compiler's word, which checks at run time.
+switch_compiled : Compile.State, Ast.SwitchStatement -> Try(Compile.Compiled, [Unsupported(Str)])
+switch_compiled = |state, switch| {
+	subject = expression_compiled(state, switch.discriminant)?
+	{ state: placed, slot: held } = with_hidden_slots(subject.state, 1)
+	statements = switch.cases.join_map(|each| each.statements)
+	entered = match switch.scoping {
+		Scoped(names) => entered_scope(
+			placed,
+			{
+				names: names,
+				kinds: kinds_of(names, statements),
+				parameters: names.len(),
+				capture: Captures,
+				boxes: AtEntry,
+			},
+		)
+		Unscoped => { state: placed, ops: [] }
+	}
+	hoisted = hoisted_functions(entered.state, statements)?
+	{ state: inside, target } = breakable_entered(hoisted.state, { kind: Switch, labels: [] })
+	var $state = inside
+	var $tests = []
+	for each in switch.cases {
+		match each.test {
+			Matches(tree) => {
+				done = expression_compiled($state, tree)?
+				$state = done.state
+				$tests = $tests.append(Tested(done.ops))
+			}
+			Otherwise => {
+				$tests = $tests.append(Default)
+			}
+		}
+	}
+	var $bodies = []
+	for each in switch.cases {
+		done = statement_list($state, each.statements)?
+		$state = done.state
+		$bodies = $bodies.append(done.ops)
+	}
+	bodies = $bodies
+	tests = $tests
+	# Each case's test: the held value, the test, a jump to its statements.
+	test_lengths = tests.map(
+		|test| match test {
+			Tested(ops) => ops.len() + 2
+			Default => 0
+		},
+	)
+	tests_length = test_lengths.sum() + 1
+	body_starts = bodies.map_with_index(
+		|_, index| bodies.take_first(index).map(|ops| ops.len()).sum(),
+	)
+	bodies_length = bodies.map(|ops| ops.len()).sum()
+	var $test_ops = []
+	var $at = 0
+	var $default = NoDefault
+	var $index = 0
+	for test in tests {
+		match test {
+			Tested(ops) => {
+				$at = $at + ops.len() + 2
+				start = tests_length + (body_starts.get($index) ?? crash "Compile.switch_compiled: a case's statements")
+				$test_ops = List.concat(List.concat($test_ops, [Do(LoadLocal(held))]), ops).append(Do(JumpIfSame(start - $at)))
+			}
+			Default => {
+				$default = DefaultAt(body_starts.get($index) ?? crash "Compile.switch_compiled: a case's statements")
+			}
+		}
+		$index = $index + 1
+	}
+	# Past the tests: to the default's statements, or past them all.
+	otherwise = match $default {
+		DefaultAt(start) => start
+		NoDefault => bodies_length
+	}
+	test_ops = $test_ops.append(Do(Jump(otherwise)))
+	body_ops = resolved(bodies.join_map(|ops| ops), { offset: 0, exit: bodies_length, next: NoContinue, target: target })
+	done_state = breakable_left($state)
+	left = match switch.scoping {
+		Scoped(_) => left_scope(done_state)
+		Unscoped => done_state
+	}
+	head = List.concat(List.concat(subject.ops, [Do(SetLocal(held))]), List.concat(entered.ops, hoisted.ops))
+	compiled(left, List.concat(List.concat(head, test_ops), body_ops))
+}
+
+# ---- patterns --------------------------------------------------------------
+
+# The value on the stack taken apart by `pattern`, its leaves bound as
+# `binding` says, and taken off the stack.
+pattern_bound : Compile.State, Ast.Pattern, Compile.PatternBinding -> Try(Compile.Compiled, [Unsupported(Str)])
+pattern_bound = |state, pattern, binding|
+	match pattern {
+		Leaf(target) => leaf_bound(state, target, binding)
+		ArrayPattern(items, rest) => {
+			{ state: placed, slot: walked } = with_hidden_slots(state, 1)
+			var $state = placed
+			var $ops = ops_of([DestructureItems({ origin: binding.origin, at: binding.at }), SetLocal(walked)])
+			var $i = 0
+			for item in items {
+				match item {
+					Hole => {}
+					Item(inner, default) => {
+						given = defaulted($state, default)?
+						bound = pattern_bound(given.state, inner, { ..binding, origin: Nested })?
+						$state = bound.state
+						$ops = List.concat(List.concat($ops, ops_of([LoadLocal(walked), ItemOf($i)])), List.concat(given.ops, bound.ops))
+					}
+				}
+				$i = $i + 1
+			}
+			match rest {
+				NoRest => compiled($state, $ops)
+				RestOf(inner) => {
+					bound = pattern_bound($state, inner, { ..binding, origin: Nested })?
+					compiled(bound.state, List.concat(List.concat($ops, ops_of([LoadLocal(walked), ItemsFrom($i)])), bound.ops))
+				}
+			}
+		}
+		ObjectPattern(properties, rest) => {
+			{ state: placed, slot: held } = with_hidden_slots(state, 1)
+			var $state = placed
+			var $ops = ops_of([
+				CheckDestructurable({ properties: properties, origin: binding.origin, at: binding.at }),
+				SetLocal(held),
+			])
+			for part in properties {
+				given = defaulted($state, part.default)?
+				bound = pattern_bound(given.state, part.pattern, { ..binding, origin: Nested })?
+				$state = bound.state
+				$ops = List.concat(List.concat($ops, ops_of([LoadLocal(held), GetProperty(part.key, binding.at)])), List.concat(given.ops, bound.ops))
+			}
+			match rest {
+				NoRest => compiled($state, $ops)
+				RestOf(inner) => {
+					bound = pattern_bound($state, inner, { ..binding, origin: Nested })?
+					left = PropertiesLeft({ keys: properties.map(|part| part.key), at: binding.at })
+					compiled(bound.state, List.concat(List.concat($ops, ops_of([LoadLocal(held), left])), bound.ops))
+				}
+			}
+		}
+	}
+
+# A default's code, the value given on the stack: kept unless it is
+# `undefined`, which `SkipIfNotUndefined` drops for the default's value to
+# take its place.
+defaulted : Compile.State, Ast.Default -> Try(Compile.Compiled, [Unsupported(Str)])
+defaulted = |state, default|
+	match default {
+		NoDefault => compiled(state, [])
+		Defaulted(tree) => {
+			done = expression_compiled(state, tree)?
+			compiled(done.state, List.concat([Do(SkipIfNotUndefined(done.ops.len()))], done.ops))
+		}
+	}
+
+leaf_bound : Compile.State, Ast.Target, Compile.PatternBinding -> Try(Compile.Compiled, [Unsupported(Str)])
+leaf_bound = |state, target, binding|
+	match (binding.how, target) {
+		(Declaring, ToName(_, slot, _)) => {
+			declared = declaration_ops(state, slot)
+			compiled(with_ready(declared.state, slot), declared.ops)
+		}
+		(Declaring, _) => crash "Compile.leaf_bound: Parser.pattern declares names alone"
+		(Assigning, ToName(name, slot, at)) => {
+			{ state: placed, reached } = reached_of(state, slot)
+			if reached == Undeclared {
+				compiled(placed, [Do(undeclared_refusal(name, at))])
+			} else {
+				compiled(placed, ops_of([name_write(reached, { name: name, at: at }), Pop]))
+			}
+		}
+		(Assigning, ToMember(object, key)) => {
+			holder = expression_compiled(state, object)?
+			compiled(holder.state, List.concat(holder.ops, ops_of([Swap, SetProperty(key, binding.at), Pop])))
+		}
+		(Assigning, ToIndex(object, key)) => {
+			holder = expression_compiled(state, object)?
+			keyed = expression_compiled(holder.state, key)?
+			compiled(keyed.state, List.concat(List.concat(holder.ops, keyed.ops), ops_of([Rotate, SetIndex(binding.at), Pop])))
+		}
+	}
 
 # ---- functions -------------------------------------------------------------
 
@@ -652,33 +1067,75 @@ for_of_loop = |state, loop| {
 function_made : Compile.State, Box(Ast.FunctionDefinition) -> Try({ state : Compile.State, op : Bytecode.Op }, [Unsupported(Str)])
 function_made = |state, boxed| {
 	definition = boxed.unbox()
-	parameters = match definition.binding {
+	ready = match definition.binding {
 		Plain => definition.parameters.len()
-		Patterned(_) => return refusal("parameter patterns, defaults and rest parameters${ValueRules.line_note(definition.at)}")
+		Patterned(_) => 0
 	}
-	inner = { ..state, functions: state.functions.append(no_function_yet) }
+	inner = { ..state, functions: state.functions.append(no_function_yet), breakables: [], tries: [] }
 	entered = entered_scope(
 		inner,
 		{
 			names: definition.names,
 			kinds: kinds_of(definition.names, definition.statements),
-			parameters: parameters,
+			parameters: ready,
 			capture: definition.capture,
 			boxes: AtCall,
 		},
 	)
-	body = block_body(entered.state, definition.statements)?
+	taken = match definition.binding {
+		Plain => { state: entered.state, ops: [], arguments: Each(ready) }
+		Patterned(patterns) => {
+			{ state: placed, slot: packed } = with_hidden_slots(entered.state, 1)
+			bound = parameters_bound(placed, { patterns: patterns, packed: packed, at: definition.at })?
+			{ state: bound.state, ops: bound.ops, arguments: Packed(packed) }
+		}
+	}
+	body = block_body(taken.state, definition.statements)?
 	done = body.state
-	code = finished_code(done, { ops: body.ops.append(Do(PushUndefined)).append(Do(Return)), parameters: parameters })
+	code = finished_code(
+		done,
+		{
+			ops: List.concat(taken.ops, body.ops).append(Do(PushUndefined)).append(Do(Return)),
+			arguments: taken.arguments,
+		},
+	)
 	function = done.functions.last() ?? crash "Compile.function_made: the function is being compiled"
 	Ok({
 		state: {
 			codes: done.codes.append(code),
 			functions: done.functions.drop_last(1),
 			scopes: done.scopes.drop_last(1),
+			breakables: state.breakables,
+			tries: state.tries,
 		},
 		op: MakeClosure({ code: done.codes.len(), captures: function.captures.map(|c| c.from), definition: boxed }),
 	})
+}
+
+# The code that binds a function's patterned parameters from its arguments,
+# which the call packed into an array in the slot `packed`: each pattern
+# given its argument, or its default where that is `undefined`, then the
+# rest parameter the arguments left. A failure names the function's own
+# line, where node points.
+parameters_bound : Compile.State, { patterns : { items : List(Ast.Parameter), rest : Ast.Rest }, packed : U64, at : Ast.Where } -> Try(Compile.Compiled, [Unsupported(Str)])
+parameters_bound = |state, { patterns, packed, at }| {
+	var $state = state
+	var $ops = []
+	var $i = 0
+	for item in patterns.items {
+		given = defaulted($state, item.default)?
+		bound = pattern_bound(given.state, item.pattern, { how: Declaring, origin: Argument, at: at })?
+		$state = bound.state
+		$ops = List.concat(List.concat($ops, ops_of([LoadLocal(packed), ItemOf($i)])), List.concat(given.ops, bound.ops))
+		$i = $i + 1
+	}
+	match patterns.rest {
+		NoRest => compiled($state, $ops)
+		RestOf(inner) => {
+			bound = pattern_bound($state, inner, { how: Declaring, origin: Nested, at: at })?
+			compiled(bound.state, List.concat(List.concat($ops, ops_of([LoadLocal(packed), ItemsFrom($i)])), bound.ops))
+		}
+	}
 }
 
 # ---- expressions -----------------------------------------------------------
@@ -800,9 +1257,23 @@ expression_compiled = |state, tree|
 				)
 			}
 		}
-		Chain(_) => refusal("optional chains (`?.`)")
+		Chain(chain) => {
+			done = link_compiled(state, chain)?
+			end = done.ops.len()
+			ops = done.ops.map_with_index(
+				|each, index| match each {
+					Short => Do(ShortIfNullish(end - index - 1))
+					other => other
+				},
+			)
+			compiled(done.state, ops)
+		}
 		OptionalMember(_, _, _) | OptionalIndex(_, _, _) | OptionalCall(_, _, _) => crash "Compile.expression_compiled: Parser.call_or_member puts an optional link inside a Chain"
-		Destructure(_, _, site) => refusal("destructuring${ValueRules.line_note(site)}")
+		Destructure(pattern, value, site) => {
+			made = expression_compiled(state, value)?
+			bound = pattern_bound(made.state, pattern, { how: Assigning, origin: Written(value), at: site })?
+			compiled(bound.state, List.concat(made.ops.append(Do(Duplicate)), bound.ops))
+		}
 	}
 
 skip_for : Ast.LogicalOperator, U64 -> Bytecode.Op
@@ -1048,6 +1519,95 @@ call_compiled = |state, { callee, arguments, at }| {
 				Call({ count: arguments.len(), written: written, at: at })
 			}
 			compiled(given.state, List.concat(function.ops, given.ops).append(Do(call)))
+		}
+	}
+}
+
+# ---- optional chains -------------------------------------------------------
+
+# One link of an optional chain, its object's links first: an optional link
+# whose object is `null` or `undefined` ends the chain (`Short`), which the
+# chain makes a jump to its end, where the chain's value is `undefined`.
+link_compiled : Compile.State, Ast.Expression -> Try(Compile.Compiled, [Unsupported(Str)])
+link_compiled = |state, tree|
+	match tree {
+		Member(object, key, site) | OptionalMember(object, key, site) => {
+			holder = link_compiled(state, object)?
+			compiled(holder.state, List.concat(holder.ops, short_if_optional(tree)).append(Do(GetProperty(key, site))))
+		}
+		Index(object, key, site) | OptionalIndex(object, key, site) => {
+			holder = link_compiled(state, object)?
+			keyed = expression_compiled(holder.state, key)?
+			compiled(keyed.state, List.concat(List.concat(holder.ops, short_if_optional(tree)), keyed.ops).append(Do(GetIndex(site))))
+		}
+		Call(callee, arguments, site) | OptionalCall(callee, arguments, site) => chain_call(
+			state,
+			{ callee: callee, arguments: arguments, optional: is_optional_link(tree), at: site },
+		)
+		_ => expression_compiled(state, tree)
+	}
+
+is_optional_link : Ast.Expression -> Bool
+is_optional_link = |tree|
+	match tree {
+		OptionalMember(_, _, _) | OptionalIndex(_, _, _) | OptionalCall(_, _, _) => True
+		_ => False
+	}
+
+short_if_optional : Ast.Expression -> List(Compile.Emitted)
+short_if_optional = |tree|
+	if is_optional_link(tree) {
+		[Short]
+	} else {
+		[]
+	}
+
+# A call in a chain. A method's object is the link before it, so `o?.f()`
+# ends where `o` is nothing; an optional call (`f?.()`, `o.f?.()`) ends where
+# the function is, and calls it as a plain call.
+chain_call : Compile.State, { callee : Ast.Expression, arguments : List(Ast.Element), optional : Bool, at : Ast.Where } -> Try(Compile.Compiled, [Unsupported(Str)])
+chain_call = |state, { callee, arguments, optional, at }| {
+	written = ValueRules.source_text(callee)
+	spreads = arguments.any(|argument| is_spread(argument))
+	plain_call = if spreads {
+		CallSpread({ written: written, at: at })
+	} else {
+		Call({ count: arguments.len(), written: written, at: at })
+	}
+	match callee {
+		Member(object, name, _) | OptionalMember(object, name, _) => {
+			holder = link_compiled(state, object)?
+			reached = List.concat(holder.ops, short_if_optional(callee))
+			given = if spreads {
+				elements_array(holder.state, arguments)?
+			} else {
+				singles(holder.state, arguments)?
+			}
+			if optional {
+				function = reached.append(Do(GetProperty(name, at))).append(Short)
+				compiled(given.state, List.concat(function, given.ops).append(Do(plain_call)))
+			} else {
+				call = if spreads {
+					CallMethodSpread({ name: name, written: written, at: at })
+				} else {
+					CallMethod({ name: name, site: { count: arguments.len(), written: written, at: at } })
+				}
+				compiled(given.state, List.concat(reached.append(Do(MethodLookup(name, at))), given.ops).append(Do(call)))
+			}
+		}
+		_ => {
+			function = link_compiled(state, callee)?
+			given = if spreads {
+				elements_array(function.state, arguments)?
+			} else {
+				singles(function.state, arguments)?
+			}
+			short = if optional {
+				[Short]
+			} else {
+				[]
+			}
+			compiled(given.state, List.concat(List.concat(function.ops, short), given.ops).append(Do(plain_call)))
 		}
 	}
 }
