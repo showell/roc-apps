@@ -323,11 +323,6 @@ Each of these runs in [the playground](https://roc.lynrummy.com/js/), where it c
 
 {{listing samples}}
 
-### The page's own console samples
-
-These are written in `js/web/js_page.js` itself, and the page offers them last.
-
-{{lines js/web/js_page.js from "const CONSOLE_SAMPLES = [" to "const asConsole = "}}
 
 ## Appendix B: The tested programs
 

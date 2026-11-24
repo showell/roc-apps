@@ -15,105 +15,11 @@
 
 import { loadRunner, unescaped } from "./js_runner.js";
 import { makePainter, SIZE } from "./js_painter.js";
-import { CANVAS_SAMPLES, FEATURED_SAMPLES } from "./js_samples.js";
+import { CANVAS_SAMPLES, CONSOLE_SAMPLES, FEATURED_SAMPLES } from "./js_samples.js";
 import { memoryView, MEMORY_CSS, STRATEGY } from "./js_memory.js";
 
 const FRAMES_PER_SECOND = 30;
 const OUTPUT_KEPT = 20000;
-
-const CONSOLE_SAMPLES = [
-  { title: "Closures", source: `function counter() {
-  let count = 0;
-  return { up: () => ++count, get: () => count };
-}
-const c = counter();
-c.up(); c.up(); c.up();
-console.log("count:", c.get());
-
-const fs = [];
-for (let i = 0; i < 4; i++) fs.push(() => i * i);
-console.log(fs.map((f) => f()));
-` },
-  { title: "Fibonacci", source: `const UP_TO = 15; // the last Fibonacci number printed
-
-// Recursive: the definition itself, short and slow for a big n.
-function fib(n) {
-  return n < 2 ? n : fib(n - 1) + fib(n - 2);
-}
-const out = [];
-for (let i = 0; i <= UP_TO; i++) out.push(fib(i));
-console.log("recursive:", out);
-
-// Iterative, two numbers a step: from a = F(n) and b = F(n + 1), the
-// next pair is F(n + 2) = a + b and F(n + 3) = a + 2 * b.
-const pairs = [];
-let [a, b] = [0, 1];
-while (pairs.length <= UP_TO) {
-  pairs.push(a, b);
-  [a, b] = [a + b, a + 2 * b];
-}
-console.log("iterative:", pairs.slice(0, UP_TO + 1));
-` },
-  { title: "Word count", source: `const TEXT = "the quick brown fox jumps over the lazy dog the fox"; // the words counted
-const TOP = 3; // how many of the most used words are printed
-
-const counts = {};
-for (const w of TEXT.split(" ")) counts[w] = (counts[w] ?? 0) + 1;
-console.log(counts);
-const top = Object.entries(counts).sort((a, b) => b[1] - a[1]);
-console.log(top.slice(0, TOP));
-` },
-  { title: "Quicksort", source: `const NUMBERS = [5, 3, 9, 1, 7, 2, 8, 6, 4, 0]; // the numbers sorted
-
-function quicksort(xs) {
-  if (xs.length <= 1) return xs;
-  const pivot = xs[0];
-  const rest = xs.slice(1);
-  return quicksort(rest.filter((x) => x < pivot))
-    .concat([pivot], quicksort(rest.filter((x) => x >= pivot)));
-}
-console.log(quicksort(NUMBERS));
-` },
-  { title: "Timers", source: `// Each callback runs when its time comes, on the page's frames.
-const TICKS = 3; // how many times the interval ticks before it's cleared
-const TICK_MS = 300; // milliseconds between ticks
-
-setTimeout(() => console.log("half a second"), 500);
-setTimeout(() => console.log("a tenth of a second"), 100);
-let n = 0;
-const every = setInterval(() => {
-  n++;
-  console.log("tick", n);
-  if (n === TICKS) clearInterval(every);
-}, TICK_MS);
-console.log("the program's end comes first");
-` },
-  { title: "Maps, patterns and errors", source: `const scores = new Map([["ann", 3], ["bob", 5]]);
-scores.set("cy", 4);
-for (const [name, score] of scores) console.log(name, score);
-
-const { ann = 0, dee = 0, ...others } = { ann: scores.get("ann"), bob: 5, cy: 4 };
-console.log(ann, dee, others);
-
-function best([first, ...rest], key = (x) => x) {
-  return rest.reduce((top, x) => (key(x) > key(top) ? x : top), first);
-}
-console.log(best([...scores], ([, score]) => score));
-
-try {
-  const nobody = null;
-  console.log(nobody.name);
-} catch (e) {
-  console.log(\`caught \${e.name}: \${e.message}\`);
-}
-console.log(new Set("mississippi"), scores.get("dee")?.length ?? "no dee");
-` },
-  { title: "Outside the subset", source: `class Point {
-  constructor(x, y) { this.x = x; this.y = y; }
-}
-console.log(new Point(1, 2));
-` },
-];
 
 // A console sample draws nothing, so the page hides the canvas for it and its
 // output sits at the top of the column. "all features" and "garbage

@@ -2,8 +2,9 @@
 -- js/roc/JsApp.roc into a wasm32 archive with the pinned Roc on the dev
 -- backend, linked by Zig with the host js/wasm/host.zig into js.wasm, beside
 -- the page's files from js/web/ and js_samples.js, which it writes from the
--- canvas samples in js/canvas/ (each sample's first line, a `// ` comment,
--- is its title) and the featured console samples, "all features" and
+-- canvas samples in js/canvas/ and the console samples in js/console/ (each
+-- sample's first line, a `// ` comment, is its title) and the featured
+-- console samples, "all features" and
 -- "garbage collection", which are the corpus programs js/tests/54-big-daddy.js
 -- and js/tests/55-garbage.js, so node holds them. The page is replaced only by
 -- a build that js/page_check.mjs passed.
@@ -38,23 +39,32 @@ const FEATURED = {
   {title = "garbage collection", file = "js/tests/55-garbage.js"},
 }
 
--- The canvas samples as a module the page imports, in their files' order,
--- and the featured console samples beside them.
-function samples_module()
+-- The samples of one folder as the items of a list, in their files' order,
+-- each titled by its first line, `// <title>`.
+function titled_samples(folder)
   local items = {}
-  for f in glob("js/canvas/*.js") do
+  for f in glob(folder .. "/*.js") do
     local source = read(f)
     local first = lines(source)[1]
     if not starts_with(first, "// ") then fail("js/build.shale: " .. f .. " has no first line `// <title>`") end
     push(items, "  { title: " .. json_write(sub(first, 4, #first)) .. ", source: " .. json_write(source) .. " },")
   end
+  return items
+end
+
+-- The canvas samples and the console samples as a module the page imports,
+-- each folder in its files' order, and the featured console samples beside
+-- them.
+function samples_module()
+  local items = titled_samples("js/canvas")
+  local console = titled_samples("js/console")
   local featured = {}
   local files = {}
   for s in FEATURED do
     push(featured, "  { title: " .. json_write(s.title) .. ", source: " .. json_write(read(s.file)) .. " },")
     push(files, s.file)
   end
-  return "// Written by js/build.shale from js/canvas/*.js, " .. join(files, " and ") .. "; not checked in.\nexport const CANVAS_SAMPLES = [\n" .. join(items, "\n") .. "\n];\nexport const FEATURED_SAMPLES = [\n" .. join(featured, "\n") .. "\n];\n"
+  return "// Written by js/build.shale from js/canvas/*.js, js/console/*.js, " .. join(files, " and ") .. "; not checked in.\nexport const CANVAS_SAMPLES = [\n" .. join(items, "\n") .. "\n];\nexport const CONSOLE_SAMPLES = [\n" .. join(console, "\n") .. "\n];\nexport const FEATURED_SAMPLES = [\n" .. join(featured, "\n") .. "\n];\n"
 end
 
 -- The first 16 hex digits of the file's sha256.

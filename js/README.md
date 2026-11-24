@@ -483,7 +483,7 @@ fails unless every program passes.
 
 `js/build.shale` builds `JsApp.roc` into a wasm32 archive, links it with
 Zig 0.16 and `js/wasm/host.zig` into `js.wasm`, writes `js_samples.js` from
-`js/canvas/`, and replaces the page only after `js/page_check.mjs` passes.
+`js/canvas/`, `js/console/` and the featured corpus programs, and replaces the page only after `js/page_check.mjs` passes.
 Every file but `index.html` is named by its bytes (`js_page.<hash>.js`,
 `js.<hash>.wasm`, the first 16 hex digits of its sha256), each file's
 references to the others rewritten first, so a deploy can't leave a browser

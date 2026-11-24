@@ -41,7 +41,7 @@ const CHECK_WANT = "script: book_check.mjs drives the staged pages in headless C
 
 -- The playground's order of its samples, as js/web/js_page.js lists them:
 -- the first canvas sample, the featured console samples, the other canvas
--- samples, then the console samples written in the page itself.
+-- samples, then the console samples of js/console/.
 const PAGE_ORDER = "  CANVAS_SAMPLES[0],\n  ...FEATURED_SAMPLES.map(asConsole),\n  ...CANVAS_SAMPLES.slice(1),\n  ...CONSOLE_SAMPLES.map(asConsole),\n];"
 
 -- The featured console samples, as js/build.shale's FEATURED names them.
@@ -61,23 +61,31 @@ function sample_section(title, file)
   return "### " .. title .. "\n\n{{file " .. file .. "}}\n"
 end
 
+-- The sections of a folder's samples, in their files' order, each titled by
+-- its first line, `// <title>`.
+function titled_sections(folder)
+  local sections = {}
+  for f in glob(folder .. "/*.js") do
+    local first = lines(read(f))[1]
+    if not starts_with(first, "// ") then fail("book: " .. f .. " has no first line `// <title>`") end
+    push(sections, sample_section(sub(first, 4, #first), f))
+  end
+  return sections
+end
+
 -- Writes listing-samples.md, listing-corpus.md and listing-refused.md, the
 -- lines the app puts in place of the manuscript's `{{listing NAME}}` lines:
--- every sample the playground offers from a file, in the page's order, each
--- titled by its first line as js/build.shale titles it; then every program of
+-- every sample the playground offers, in the page's order, each titled by
+-- its first line as js/build.shale titles it; then every program of
 -- js/tests/ and of js/tests/refused/. Each file is quoted by the builder's
 -- own include, so the book quotes it as it stands.
 function write_listings()
   if not contains(read("js/web/js_page.js"), PAGE_ORDER) then fail("book: js/web/js_page.js no longer lists its samples in the order write_listings follows") end
-  local canvas = {}
-  for f in glob("js/canvas/*.js") do
-    local first = lines(read(f))[1]
-    if not starts_with(first, "// ") then fail("book: " .. f .. " has no first line `// <title>`") end
-    push(canvas, sample_section(sub(first, 4, #first), f))
-  end
+  local canvas = titled_sections("js/canvas")
   local samples = {canvas[1]}
   for s in featured_samples() do push(samples, sample_section(s.title, s.file)) end
   for s in drop(canvas, 1) do push(samples, s) end
+  for s in titled_sections("js/console") do push(samples, s) end
   create(PREPARED .. "/listing-samples.md", join(samples, "\n"))
   local corpus = {}
   for f in glob("js/tests/*.js") do push(corpus, "{{file " .. f .. "}}\n") end
@@ -85,7 +93,7 @@ function write_listings()
   local refused = {}
   for f in glob("js/tests/refused/*.js") do push(refused, "{{file " .. f .. "}}\n") end
   create(PREPARED .. "/listing-refused.md", join(refused, "\n"))
-  print("book: the appendix lists " .. #samples .. " samples from files, " .. #corpus .. " programs and " .. #refused .. " refused")
+  print("book: the appendix lists " .. #samples .. " samples, " .. #corpus .. " programs and " .. #refused .. " refused")
 end
 
 function main()
