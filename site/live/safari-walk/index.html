@@ -146,7 +146,7 @@ var WALK_PACE = 6.4 * 1.2;
 var WALK_ROOST = (function () {
 	var query = new URLSearchParams(location.search);
 	var on = query.get("interior") !== "0" && query.get("tavern") !== "0" && query.get("pipelines") !== "min";
-	return { on: on, road: 320, stopped: 370, doors: 380, inside: 402, end: on ? 764 : 320, lights: 26 };
+	return { on: on, road: 320, stopped: 370, doors: 380, inside: 402, end: on ? 620 : 320, lights: 26 };
 })();
 // Where each chapter starts, in metres on the walk's line: a copy of
 // game/Chapters.roc's, by the same names, which scripts/build_web.shale
