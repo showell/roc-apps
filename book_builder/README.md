@@ -20,7 +20,10 @@ tag:
 text. `ReadFailed` covers the rest: an unreadable file, or one past the host's size cap.
 
 It builds the Safari tutorial (`canvas_apps/safari/tutorial/`), the books
-book (`building-books/`) and the JavaScript book (`js-book/`). Each has a `book.shale` whose pre-step does what
+book (`building-books/`) and the JavaScript book, which lives in
+[roc-js-interpreter](https://github.com/showell/roc-js-interpreter)'s
+`js-book/` and is built from a checkout of it beside this one, through
+`build_book.shale`'s `app=`. Each has a `book.shale` whose pre-step does what
 needs a program, such as quoting code through Roc's parser and drawing
 diagrams, then builds and publishes the book. Code is colored by
 [roc-syntax-color](https://github.com/showell/roc-syntax-color), checked out

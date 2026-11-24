@@ -43,8 +43,10 @@ The repository's own scripts, beside `check.shale` at its root.
   sizes and holds what one more iteration allocates to an expected file,
   as a check file of roc-alloc-trace's (github.com/showell/roc-alloc-trace,
   a checkout beside this one, built by `alloc_trace.shale`), which counts
-  `roc_alloc` calls with breakpoints. Its callers are `basic/controls.shale`, `js/controls.shale` and
-  `copy_shapes/copy_shapes.shale`.
+  `roc_alloc` calls with breakpoints. Its callers are `basic/controls.shale` and
+  `copy_shapes/copy_shapes.shale`. roc-js-interpreter keeps a copy of it,
+  and of `alloc_trace.shale`, `roc_build.shale` and `chromium.mjs`, for its
+  own controls and pages; each copy's header names its twin here.
 - `copy_oracle.shale` says where a Roc program copies, from the program
   itself: roc-alloc-trace's `where` breaks at roc_alloc and at each builtin's entry,
   so each allocation made inside a writing builtin (list_set, the appends,

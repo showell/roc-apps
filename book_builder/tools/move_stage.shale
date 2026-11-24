@@ -1,6 +1,7 @@
 -- This puts a staged book in the place of a folder of the dev channel, the last
 -- step of a book's publish (the Safari tutorial's book.shale, the books
--- book's and the JavaScript book's):
+-- book's, and the JavaScript book's in roc-js-interpreter, a checkout beside
+-- this one):
 --
 --   cd <roc-apps checkout> && shale book_builder/tools/move_stage.shale stage=tutorial.staging place=tutorial
 --

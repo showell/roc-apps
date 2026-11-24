@@ -9,7 +9,9 @@
 -- Its checkout sits beside this one, as roc-chat's roc-markdown does:
 -- `<this checkout>/../roc-alloc-trace`. Each caller builds it with the
 -- system's C compiler into its own `gen` folder, so a change to the tool
--- is measured by the next run.
+-- is measured by the next run. roc-js-interpreter keeps a copy, on
+-- purpose, as it does of alloc_ladder.shale: its tools/alloc_trace.shale is
+-- this file's twin, and a fix to one is a fix to look at in the other.
 
 const ALLOC_TRACE_WANT = "alloc-trace: roc-alloc-trace, built here from its sibling checkout, counts a Roc program's allocations by breakpoints"
 

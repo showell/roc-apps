@@ -13,7 +13,7 @@
 --
 -- An app must be a name of site/published_apps.txt, and anything else is
 -- refused, naming the list. Its source is the folder of that name at the
--- repository's top (basic, js), or under canvas_apps/ for a canvas app. The
+-- repository's top (basic), or under canvas_apps/ for a canvas app. The
 -- script copies build:roc-apps/next/<app>/ (what <app>'s build last wrote,
 -- and what :9210/<app>/ shows) over site/live/<app>/ whole, writes a
 -- PROVENANCE inside it, commits that folder alone, and pushes with git_push,
@@ -37,7 +37,7 @@
 -- PROVENANCE records what the build read: the Roc compiler, the roc-apps
 -- commit (marked when the app's own tree has uncommitted changes), and a hash
 -- of each wasm. A build that recorded its own compiler (its BUILT) is
--- believed; for an app whose build records none (basic, js), the compiler
+-- believed; for an app whose build records none (basic), the compiler
 -- named is the pin, the prelude's pinned_roc, which that app's build also
 -- runs. A checkout an app needs and that is missing stops the publish before
 -- site/live/ is touched.

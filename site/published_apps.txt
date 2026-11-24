@@ -9,8 +9,6 @@ basic
 delivery
 dog-park
 fasttrack
-js
-js-book
 # A folder under canvas_apps/, published only as a release build:
 beacon_widget
 bend_animals_widget

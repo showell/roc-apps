@@ -36,10 +36,7 @@
 -- roc-screensaver checkout beside this one. It runs
 -- site/deploy_test.shale, the prod deploy's refusals before it reaches prod,
 -- which needs a shale with `run`'s `secret_args` and asks 1.1.1.1 for
--- roc.lynrummy.com. And it runs js/oracle.shale, which grades the JavaScript
--- subset's bytecode VM against node on every program in js/tests/, and
--- js/canvas.shale, which holds each canvas sample in js/canvas/ to its
--- golden log of effects.
+-- roc.lynrummy.com.
 --
 -- `shale check.shale basic=1` is the BASIC tier instead, kept out of the
 -- default run for its time (about a minute and a half, half of it the
@@ -47,13 +44,6 @@
 -- tools/roc_build.shale already holds both builds of these inputs): basic/controls.shale holds the release build's
 -- allocations to basic/controls/expected.txt and the dev build's to
 -- expected-dev.txt.
---
--- `shale check.shale js=1` is the JavaScript subset's allocation tier, kept
--- out of the default run for its time (about two minutes when js-vm's
--- release build compiles; seconds when tools/roc_build.shale already holds
--- both builds of these inputs): js/controls.shale holds the VM's release
--- build's allocations a pass to js/controls/expected.txt and its dev
--- build's to expected-dev.txt.
 --
 -- `shale check.shale copy_shapes=1` is the copy shapes' tier, also kept out
 -- of the default run (about half a minute, 18 s with its builds reused): tools/copy_shapes/copy_shapes.shale
@@ -196,12 +186,6 @@ function all()
   local deploy = run({"shale", "--root", ".", "site/deploy_test.shale"}, {timeout_ms = 300000, tail = 40})
   print(trim(deploy.out))
   if deploy.code ~= 0 then push(failed, "the deploy's refusals") end
-  local js = run({"shale", "--root", ".", "js/oracle.shale"}, {timeout_ms = 600000, tail = 80, not_re = "^PASS "})
-  print(trim(js.out))
-  if js.code ~= 0 then push(failed, "the JavaScript subset against node") end
-  local canvas = run({"shale", "--root", ".", "js/canvas.shale"}, {timeout_ms = 600000, tail = 20, not_re = "^PASS "})
-  print(trim(canvas.out))
-  if canvas.code ~= 0 then push(failed, "the canvas samples against their logs") end
   local roc = pinned_roc("check")
   local files = roc_files(false)
   local fmt = {roc, "fmt", "--check"}
@@ -251,18 +235,6 @@ function basic_tier()
   print("check basic=1: the BASIC controls hold in both builds")
 end
 
--- The JavaScript tier: the controls in the release build, then in the dev
--- build.
-function js_tier()
-  local failed = {}
-  for opt in {"speed", "dev"} do
-    local r = tier_run("js/controls.shale", opt)
-    if r.code ~= 0 then push(failed, "the JavaScript controls, --opt=" .. opt) end
-  end
-  if #failed > 0 then fail("check: " .. join(failed, ", ") .. " failed") end
-  print("check js=1: the JavaScript controls hold in both builds")
-end
-
 -- The copy shapes' tier: the release, dev and boxy builds, each held to its
 -- expected file.
 function copy_shapes_tier()
@@ -277,12 +249,9 @@ end
 
 const PART = arg("part", "")
 const BASIC = arg("basic", false)
-const JS = arg("js", false)
 const COPY_SHAPES = arg("copy_shapes", false)
 if BASIC then
   basic_tier()
-elseif JS then
-  js_tier()
 elseif COPY_SHAPES then
   copy_shapes_tier()
 elseif PART == "" then

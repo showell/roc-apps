@@ -2,7 +2,10 @@
 -- measurement (a ladder, a timing, a probe). It builds an app with the
 -- pinned Roc and keeps the executable in a cache keyed by the hash of what
 -- went into it, so a second caller asking for the same build pays a hash,
--- not a compile. From roc-apps' root:
+-- not a compile. roc-js-interpreter keeps a copy, on purpose, since this
+-- reads its own repository's root: its tools/roc_build.shale is this file's
+-- twin, and a fix to one is a fix to look at in the other. From roc-apps'
+-- root:
 --
 --   shale tools/roc_build.shale app=basic/roc/BasicRun.roc name=basic-run mode=speed
 --   shale tools/roc_build.shale app=tools/copy_shapes/CopyShapes.roc name=copy-shapes mode=boxy flags=--debug

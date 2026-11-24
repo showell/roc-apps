@@ -148,10 +148,11 @@ A page is a folder of the site: `site/live/<name>/` in staging, and
    match (safari-walk's `scripts/check_web_host.shale`). Then name the
    script in `site/publish.shale`'s header, the staging line above
    and the README's commands.
-4. **Give it a card on the landing page**, unless it is unlisted (as `js/`
-   is). In `site/web/index.html`, a `<section class="feature">` (or a
-   `mini`) whose `data-app` is the folder's name, so the card shows the
-   date from the first line of the page's PROVENANCE (`published <date>`).
+4. **Give it a card on the landing page**, unless it is unlisted (as
+   roc-js-interpreter's playground, `js/`, is). In `site/web/index.html`, a
+   `<section class="feature">` (or a `mini`) whose `data-app` is the
+   folder's name, so the card shows the date from the first line of the
+   page's PROVENANCE (`published <date>`).
    Its picture is the build's `<name>/shot.png`, or a file in
    `site/web/shared/`. The `<meta name="description">` at the top names
    every program, so add it there too.

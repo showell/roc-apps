@@ -3,8 +3,11 @@
 -- iteration allocates, held to an expected file. It knows nothing of the
 -- interpreter: the caller builds it and hands this script a plan, a JSON
 -- file naming each control's two command lines. basic/controls.shale is
--- one caller; js/controls.shale and tools/copy_shapes/copy_shapes.shale are
--- the others.
+-- one caller and tools/copy_shapes/copy_shapes.shale the other.
+-- roc-js-interpreter (a checkout beside this one) keeps a copy, on purpose,
+-- for its own controls, until the ladder is a library both can share: its
+-- tools/alloc_ladder.shale is this file's twin, and a fix to one is a fix to
+-- look at in the other.
 --
 --   cd <roc-apps checkout> && shale tools/alloc_ladder.shale plan=<plan.json>
 --

@@ -17,19 +17,24 @@ Thanks to Damian Tedrow, whose [Cobblestone](https://github.com/damiant3/Cobbles
 | `fasttrack/` | Fast Track, the board game, ported from Steve's elm-fasttrack: the rules and the whole page in Roc |
 | `glue/` | `JsGlue.roc`, the `roc glue` spec that generates a page's frame reader from the compiler's type table |
 | `basic/` | a BASIC interpreter written in Roc, a web page that runs it, and the corpora that grade it |
-| `js/` | a subset of JavaScript run by a bytecode VM in Roc, graded against node, and a web page that runs it |
 | `book_builder/` | the book builder: a Roc platform and the package a book's app calls; it builds the Safari tutorial and the books book |
 | `building-books/` | the books book, *Building a Book with Claude*: how to build a book like the Safari tutorial, with Claude writing (`building-books/MISSION.md`) |
-| `js-book/` | *A JavaScript Interpreter in Roc*, a small book on `js/`: its design, what copies, and its dev and release builds |
 | `site/`, `ops/` | the site that serves the apps (below) |
 | `docs/` | `roc-style.md`, how Steve writes Roc; `roc-notes.md`, how the Roc nightly behaves |
 
 ## The books
 
 The book builder (`book_builder/`) builds the Safari tutorial
-(`canvas_apps/safari/tutorial/`), the books book (`building-books/`),
-which says how to build a book this way, and the JavaScript book
-(`js-book/`). A new book starts from the books book.
+(`canvas_apps/safari/tutorial/`) and the books book (`building-books/`),
+which says how to build a book this way. A new book starts from the books
+book.
+
+It also builds *A JavaScript Interpreter in Roc*, the book of
+[roc-js-interpreter](https://github.com/showell/roc-js-interpreter), from a
+checkout of that repo beside this one. roc-js-interpreter holds a subset of
+JavaScript run by a bytecode VM in Roc, graded against node, and a web page
+that runs it; `site/publish_roc_js.shale` publishes the page and the book
+here, at /js/ and /js-book/.
 
 ## The site: Steve's Roc Apps
 

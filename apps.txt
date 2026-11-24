@@ -48,7 +48,5 @@ delivery/roc/delivery.roc
 dog-park/roc/physics.roc
 fasttrack/web.roc
 glue/JsGlue.roc
-js-book/app/main.roc
-js/roc/JsApp.roc
 tools/color_code/main.roc
 tools/copy_shapes/CopyShapes.roc

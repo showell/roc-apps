@@ -27,7 +27,9 @@
 //   don't keep the crash reporter out of ~/.config.
 // - `--user-data-dir` is a folder of that one too, a fresh profile each time.
 // roc-screensaver's tools/web_shots.mjs keeps a copy of these flags and this
-// environment, on purpose, since it is another repository.
+// environment, on purpose, since it is another repository, and
+// roc-js-interpreter's tools/chromium.mjs is a copy of this whole file, its
+// twin: a fix to one is a fix to look at in the other.
 import { spawn } from "node:child_process";
 import { existsSync, mkdirSync, mkdtempSync, readdirSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";

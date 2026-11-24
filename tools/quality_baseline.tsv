@@ -327,19 +327,6 @@ glue	find_functions_and_parameters_that_dont_earn_their_keep	single	1
 glue	parse-key	glue	969d2d66bacfafc97d65caad749a29e7e8b63570
 glue	rewrite_module_calls_as_method_calls	rewritable	50
 glue	types-key	glue,roc-cache:compat-45bdde8085a5e8565916b61016dc35a6ffb509c01ec84ae7d4d71c2147f81e4c/src/compiler-platforms/glue/8299460a62ea245ea56e71d39a8b6c1e8cab9bd28bda79d68631e487b874b71f	9d3e8ca8779af1567cc4b2905d62d4b09cb37aad
-js	check_and_fix_group_stacking	long	19
-js	check_and_fix_group_stacking	stack	75
-js	check_and_fix_group_stacking	wide string	62
-js	check_how_failure_is_reported	number_fallback	2
-js	find_and_remove_extra_parentheses	lambda_if	1
-js	find_and_remove_extra_parentheses	paren_if	1
-js	find_calls_nested_three_deep	nested	1
-js	find_functions_and_parameters_that_dont_earn_their_keep	dead	2
-js	find_functions_and_parameters_that_dont_earn_their_keep	single	8
-js	find_names_that_differ_across_lookalike_modules	twin_name	2
-js	parse-key	js	0538235c91fb4f7e2906d446d0e944c57c984a38
-js	roc-types	unreached	2
-js	types-key	js	0538235c91fb4f7e2906d446d0e944c57c984a38
 site	check_and_fix_group_stacking	long	1
 site	find_and_remove_extra_parentheses	paren_if	1
 site	find_awkward_names	short_name	1
