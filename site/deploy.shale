@@ -173,8 +173,8 @@ if #odd > 0 then refuse(LIVE .. "/ holds " .. #odd .. " entries that are neither
 if not asks_prod("grep -qxF 'import /etc/caddy/sites/*.caddy' /etc/caddy/Caddyfile", "prod's Caddyfile") then
   refuse("prod's Caddyfile does not import /etc/caddy/sites/*.caddy")
 end
--- The site block imports `access_log` (metal-vmm QUEUE 221), which prod's
--- Caddyfile, angry-gopher's deploy/Caddyfile, defines.
+-- The site block imports `access_log`, which prod's Caddyfile,
+-- angry-gopher's deploy/Caddyfile, defines.
 if not asks_prod("grep -q '^(access_log) {' /etc/caddy/Caddyfile", "prod's Caddyfile") then
   refuse("prod's Caddyfile does not define the access_log snippet ops/" .. BLOCK .. " imports: install angry-gopher's deploy/Caddyfile first")
 end

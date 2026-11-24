@@ -3,7 +3,7 @@
 # https://roc.lynrummy.com, on the prod droplet (ops/roc.lynrummy.com.caddy).
 #
 #   :9210  dev      ~/build/roc-apps/next/, what the build scripts last wrote
-#   :9200  staging  roc-apps/site/live/, what site/publish.sh last moved there
+#   :9200  staging  roc-apps/site/live/, what the site/publish* scripts last moved there
 #
 # The ports announced before the site answer with redirects, 302 so that a
 # later change of target reaches a browser that followed one before: :9201

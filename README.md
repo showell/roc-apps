@@ -38,13 +38,15 @@ next unchanged. The design is
 [notes/roc-web-umbrella.md](https://github.com/showell/essay-repl-server/blob/master/notes/roc-web-umbrella.md).
 
 - **dev**: each app's `build.sh` writes it; `site/build.sh` writes the landing page
-  and the site's own pages: `site/web/notes/`, short pages linked at its foot, and
-  `site/web/syntax-color/`, roc-syntax-color's showcase.
+  (`site/web/index.html`) and the site's own folders of `site/web/`
+  (`shared/`, `notes/`, `syntax-color/` and the rest: its header names each).
 - **staging**: `site/live/`, tracked, so a clone has the published site.
   `site/publish.sh <app>` copies an app over from dev, with a `PROVENANCE`
   file, and commits it; under Shale, `shale site/publish.shale app=<app>`
-  runs it and pushes with git_push, since a confined git cannot read ssh's key. `site/publish_screensavers.shale` publishes
-  roc-screensaver's screensavers.
+  runs it and pushes with git_push, since a confined git cannot read ssh's key.
+  `site/publish_screensavers.shale` publishes roc-screensaver's screensavers,
+  and `site/publish_safari_walk.shale` publishes safari-walk's page; each
+  builds from its own repo's checkout.
 - **prod**: [roc.lynrummy.com](https://roc.lynrummy.com/), staging's files
   verbatim, copied by `site/deploy.shale`, which takes the droplet from
   the secret `keys:prod-ssh` so the repo names none.
@@ -55,12 +57,16 @@ canvas_apps/build.sh safari release   # an app's release build into dev
 shale site/check_mobile.shale channel=dev   # the landing page fits a phone
 shale site/publish.shale app=safari   # dev to staging, pushed by git_push
 shale site/publish.shale app=tutorial # the book, once each widget it frames is published
+shale site/publish.shale app=home     # the landing page and site/web/'s folders
 shale site/publish_screensavers.shale # roc-screensaver's screensavers to staging
+shale site/publish_safari_walk.shale  # safari-walk's page to staging (no push; deploy pushes)
 shale site/deploy.shale               # staging to prod (the droplet is the secret keys:prod-ssh)
 ```
 
 Staging changes only by a publish. Both channels send no-store, so each is
-live the moment its file is. Each script's header says the rest.
+live the moment its file is. Each script's header says the rest, and
+[docs/production.md](docs/production.md), "Adding a page to the portfolio",
+lists every step a new page takes.
 
 [docs/production.md](docs/production.md) is the map of everything served
 under lynrummy.com: the droplets, Caddy, each site and the repo that owns

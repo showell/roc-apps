@@ -1,8 +1,10 @@
 -- budget: steps=60000000 read_bytes=200000000
 -- This script publishes Safari Walk, the Rocco spike in the safari-walk repo
 -- (repos:safari-walk), to site/live/safari-walk/, as
--- site/publish_screensavers.shale does for roc-screensaver's pages. The page
--- is unlisted: no landing page or other page links it.
+-- site/publish_screensavers.shale does for roc-screensaver's pages. The
+-- landing page's Safari Walk card links it. The card's picture,
+-- site/web/shared/safari-walk.png, is the landing page's own file, which
+-- `site/publish.sh home` publishes, not this script.
 --
 --   cd <roc-apps checkout> && shale site/publish_safari_walk.shale
 --
@@ -19,7 +21,9 @@
 -- site/live/safari-walk/ whole, less the zip rocco_web.py writes beside the
 -- page (a download bundle of the same files, not part of the page), and
 -- writes a PROVENANCE: the safari-walk commit, rocco-engine's branch and
--- commit, the Roc pin, each file's size, and a hash of the wasm.
+-- commit, the Roc pin, each file's size, the models' credits, and a hash of
+-- the wasm. Its first line, `published <time>`, is what the landing page's
+-- card shows as the date.
 --
 -- The asset bundle, index.data, is the page's biggest file (about 5 MB), and
 -- Caddy's compression on the fly reaches only about 2.8 MB of it. So the
@@ -32,8 +36,9 @@
 -- http on :9200, where a browser gives a page no WebGPU, so the page can
 -- only show its "no WebGPU" message there. A failed check stops before git,
 -- leaving the new files in site/live/ uncommitted. The folder is committed
--- alone, with its PROVENANCE in the message. Push the branch after; the
--- site/deploy.shale run takes it to prod with the rest.
+-- alone, with its PROVENANCE in the message. This script does not push:
+-- site/deploy.shale pushes the branch (git_push) before it copies staging to
+-- prod, or push it sooner with git_push.
 
 const WALK = "repos:safari-walk"
 const ENGINE = "repos:safari-walk/rocco-engine"
@@ -165,7 +170,7 @@ function main()
   check_published()
 
   must(run({"git", "add", "-A", "--", LIVE}, {timeout_ms = 30000, tail = 5}))
-  git_commit("", "site: publish safari-walk, the Rocco spike, unlisted\n\n" .. read(LIVE .. "/PROVENANCE") .. "\nCo-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>\n")
+  git_commit("", "site: publish safari-walk, the Rocco spike, to staging\n\n" .. read(LIVE .. "/PROVENANCE") .. "\nCo-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>\n")
   print("committed " .. LIVE .. "; push the branch, then site/deploy.shale takes it to prod")
   return nil
 end

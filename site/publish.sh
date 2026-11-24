@@ -1,9 +1,13 @@
 #!/bin/bash
 # THE SIGN-OFF: move what the dev channel shows into staging, one app at a time.
 #
-#   site/publish.sh safari      an app: basic, fasttrack; or a
-#                               canvas app: safari, snake, pong, breakout, camera,
-#                               workshop, particles, trick_or_treat
+#   site/publish.sh safari      an app: any folder at the repository's top
+#                               (basic, fasttrack, js, delivery, dog-park) or
+#                               under canvas_apps/ (safari, snake, pong,
+#                               breakout, camera, workshop, particles,
+#                               trick_or_treat, thanksgiving, knights_tour,
+#                               eight_queens, and the book's *_widget pages),
+#                               published at site/live/<app>/
 #   site/publish.sh tutorial    the Safari Ride book, with every widget and app it
 #                               frames (each published first, if staging differs)
 #   site/publish.sh shale-book  the Shale book, as book/build.shale built it
@@ -14,28 +18,38 @@
 #
 # An app: copies ~/build/roc-apps/next/<app>/ (what <app>'s build.sh last wrote,
 # and what :9210/<app>/ shows) over site/live/<app>/ whole, writes a PROVENANCE
-# beside it, and commits and pushes that directory alone. A canvas app must be a
-# release build (`canvas_apps/build.sh <app> release`). `home` does the same
-# for the landing page and the site's own folders; dev's `channel` file stays behind, so
-# staging holds exactly what prod will. Staging on :9200 serves site/live/ per
-# request with no-store, so it is live at once. Nothing else writes site/live/
-# but site/publish_screensavers.shale, which writes roc-screensaver's folders
-# (welcome-to-roc/, bubbles/, tides/) alone.
+# inside it, and commits that directory alone, then pushes (below). A canvas app
+# must be a release build (`canvas_apps/build.sh <app> release`). `home` does
+# the same for the landing page and the site's own folders, whose list is
+# `site_dirs` here and the loop in site/build.sh, kept the same by hand; dev's
+# `channel` file stays behind, so staging holds exactly what prod will.
+# Staging on :9200 serves the site/live/ of ~/showell_repos/roc-apps per
+# request with no-store, so a publish there is live at once (a publish from
+# another worktree is not on staging until it is merged there). Two other
+# scripts write site/live/: site/publish_screensavers.shale writes
+# roc-screensaver's folders (welcome-to-roc/, bubbles/, tides/), and
+# site/publish_safari_walk.shale writes safari-walk/. markdown/ and
+# user_uploads/ are roc-markdown's playground build, copied in and committed by
+# hand (roc-markdown's TESTING.md says which files).
 #
 # PROVENANCE records what the build read: the Roc compiler, the roc-apps
 # commit (marked when the app's own tree has uncommitted changes), and a hash
 # of each wasm. A checkout an app needs and that is missing stops the publish
 # before site/live/ is touched.
 #
-# PUBLISH_DRY_RUN=1 writes the PROVENANCE and stops before git; with NEXT and
-# LIVE pointed at scratch copies it touches nothing tracked.
+# PUBLISH_DRY_RUN=1 still copies the app over site/live/<app>/ and writes the
+# PROVENANCE, then stops before git, leaving site/live/ changed and
+# uncommitted; with NEXT and LIVE pointed at scratch copies it touches nothing
+# tracked.
 #
-# Under Shale, publish with `shale site/publish.shale app=<app>`: it runs this
-# script with PUBLISH_NO_PUSH=1, which commits and leaves the push out (a
-# confined git cannot read ssh's key: "Load key ... Permission denied"), and
-# then pushes with Shale's git_push, unconfined to a remote of the box's
-# remotes file. Run by hand outside Shale, this script pushes itself, as
-# before.
+# On the development box, publish with `shale site/publish.shale app=<app>`.
+# It runs this script with PUBLISH_NO_PUSH=1, which commits and leaves the
+# push out, and then pushes with Shale's git_push, unconfined to a remote of
+# the box's remotes file. This script's own `git push` runs confined under
+# Shale and cannot read ssh's key ("Load key ... Permission denied"), so run
+# without PUBLISH_NO_PUSH it fails after the commit has landed; push that
+# commit with git_push. Outside Shale, on a machine whose git reaches its key,
+# the script's own push works.
 set -eu
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO="$(cd "$HERE/.." && pwd)"
@@ -97,8 +111,9 @@ if [ "$app" = home ]; then
     done
     what="the landing page"
 else
-    # An app is a directory of this repository -- at the top for the older
-    # ones, under canvas_apps/ for a canvas app.
+    # An app is a directory of this repository: at the top (basic/, js/), or
+    # under canvas_apps/ for a canvas app. Any such directory is taken, so
+    # the name must be one whose build wrote $NEXT/<app>.
     src="$app"
     # The book is built from safari's tutorial folder.
     if [ "$app" = tutorial ]; then src=canvas_apps/safari/tutorial; publish_book_frames; fi
@@ -117,8 +132,9 @@ else
     cp -r "$NEXT/$app" "$LIVE/$app"
     {
         echo "published $(date -u +%Y-%m-%dT%H:%M:%SZ)"
-        # A build that recorded its own compiler is believed; the older apps
-        # record none and are built by whatever `roc` points at.
+        # A build that recorded its own compiler (its BUILT) is believed; for
+        # an app whose build records none (basic, js), the compiler named is
+        # the pin, pinned-roc.sh's ROC, which that app's build also runs.
         if [ "$app" = shale-book ]; then
             echo "shale $(git -C "$SHALE_BOOK" rev-parse --short HEAD) $(git -C "$SHALE_BOOK" branch --show-current)$(git -C "$SHALE_BOOK" diff --quiet HEAD -- book || echo ' +uncommitted')"
         else

@@ -103,10 +103,13 @@ Apps"):
 
 - **dev** is what the build scripts last wrote, on this box's Caddy
   (`ops/Caddyfile`);
-- **staging** is `site/live/`, tracked, which only `site/publish.sh`,
+- **staging** is `site/live/`, tracked, which `site/publish.sh`,
   `site/publish_screensavers.shale` and `site/publish_safari_walk.shale`
   write. The screensavers' sources are in roc-screensaver and Safari Walk's
-  in safari-walk; they reach prod only through staging here;
+  in safari-walk; they reach prod only through staging here. `markdown/`
+  and `user_uploads/` are roc-markdown's playground build, copied in and
+  committed by hand (roc-markdown's `TESTING.md`, "What the box
+  publishes");
 - **prod** is staging's files verbatim.
 
 **Deploying** is `shale site/deploy.shale`, run on the owner's sign-off
@@ -119,6 +122,53 @@ uncommitted changes, copies `site/live/`
 with `rsync --delete`, proves every file's sha256, installs the site block
 when it changed, and checks the landing page over HTTPS. Its header lists
 every step.
+
+#### Adding a page to the portfolio
+
+A page is a folder of the site: `site/live/<name>/` in staging, and
+`https://roc.lynrummy.com/<name>/` in prod. These are the steps, in order.
+
+1. **Name the folder.** The name is the page's address for good, so pick it
+   once. Every URL in the page is relative, as every app's is.
+2. **Build it into dev.** Its build writes `~/build/roc-apps/next/<name>/`,
+   which :9210 serves. An app in this repo is a folder at the top or under
+   `canvas_apps/`, and adds its line to `apps.txt` (CLAUDE.md §3); a canvas
+   app is published only as a release build (`canvas_apps/build.sh <name>
+   release`).
+3. **Have a publish path.** `site/publish.sh` takes any folder of this repo
+   by its name, so an app here needs nothing more; add it to the app list
+   in `site/publish.sh`'s header. A page whose source is another repo's
+   needs a publish script of its own, in the shape of
+   `site/publish_screensavers.shale` or `site/publish_safari_walk.shale`
+   (a clean checkout, a PROVENANCE, the files checked, one commit), and
+   then names it in `site/publish.sh`'s header, the staging line above and
+   the README's commands.
+4. **Give it a card on the landing page**, unless it is unlisted (as `js/`
+   is). In `site/web/index.html`, a `<section class="feature">` (or a
+   `mini`) whose `data-app` is the folder's name, so the card shows the
+   date from the first line of the page's PROVENANCE (`published <date>`).
+   Its picture is the build's `<name>/shot.png`, or a file in
+   `site/web/shared/`. The `<meta name="description">` at the top names
+   every program, so add it there too.
+5. **A folder of the site's own** (a page under `site/web/`, not an app)
+   goes in two lists kept the same by hand: the loop in `site/build.sh` and
+   `site_dirs` in `site/publish.sh`, with both headers.
+6. **Look at dev.** `site/build.sh`, then
+   `shale site/check_mobile.shale channel=dev`, and the page itself at
+   http://localhost:9210/.
+7. **Publish the page, then the landing page,** so staging never links a
+   folder it lacks: `shale site/publish.shale app=<name>` (or the page's own
+   script), then `shale site/publish.shale app=home`. Publish from
+   `~/showell_repos/roc-apps`, whose `site/live/` is what :9200 serves; a
+   publish from another worktree reaches staging only once it is merged
+   there. Then `shale site/check_mobile.shale` on staging.
+8. **Deploy on the owner's sign-off.** `site/deploy.shale` copies the whole
+   of `site/live/` and proves every file, so a new folder needs no change
+   to it or to `ops/roc.lynrummy.com.caddy`, whose `file_server` serves all
+   of `/srv/roc-site/`. Only a new kind of large file may need the block's
+   `encode` list or a precompressed copy (as Safari Walk's `index.data`
+   has), and only a new subdomain needs a block of its own (below, "Security
+   headers and HSTS").
 
 ### dogpark.lynrummy.com: a redirect (this repo)
 

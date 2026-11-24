@@ -3,13 +3,14 @@
 --
 --   shale site/publish.shale app=safari     an app, as `site/publish.sh safari`
 --   shale site/publish.shale app=home       the landing page and the site's folders
---   shale site/publish.shale app=safari dry=1   PUBLISH_DRY_RUN=1: the
---                                           PROVENANCE, then nothing committed
+--   shale site/publish.shale app=safari dry=1   PUBLISH_DRY_RUN=1: the app
+--                                           copied over site/live/<app>/ with
+--                                           its PROVENANCE, left uncommitted
 --
 -- site/publish.sh does the whole sign-off (its header says what each app
 -- publishes), with PUBLISH_NO_PUSH=1, so it commits and leaves the push out:
 -- under Shale's confinement git cannot read ssh's key ("Load key ...
--- Permission denied"), so its own `git push` failed after the commit had
+-- Permission denied"), so its own `git push` would fail after the commit has
 -- landed. The push is then git_push's, unconfined over ssh to a remote of the
 -- box's remotes file, and only when the script made a commit (staging that
 -- already holds what dev shows, and a dry run, push nothing). The book's
