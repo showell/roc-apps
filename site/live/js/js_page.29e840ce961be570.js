@@ -476,6 +476,6 @@ export function buildPage(runner, env = window) {
 }
 
 if (typeof window !== "undefined" && !window.JS_PAGE_CHECK) {
-  const bytes = await (await fetch("js.e326735648ba87b2.wasm")).arrayBuffer();
+  const bytes = await (await fetch("js.dff9b9af07efdd87.wasm")).arrayBuffer();
   buildPage(await loadRunner(bytes));
 }
