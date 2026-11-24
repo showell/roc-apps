@@ -9,6 +9,16 @@
 ## environment are heap cells. So what a collector would start from is data:
 ## the live stack, the frames and the heap's cells.
 ##
+## **THE COLLECTOR RUNS BETWEEN INSTRUCTIONS.** Before each instruction the
+## loop asks whether a collection is due (`is_collection_due`), and if so
+## marks from the machine's roots and sweeps (`collected`, `Collector`). An
+## instruction's handler holds values in Roc's own locals only while it
+## runs, so between two instructions every value the program holds is in
+## the machine. The one exception is a builtin that runs the loop again for
+## a callback: what it needs after the callback returns waits on the stack
+## (the item `filter` keeps, the items `sort` orders), so the collections
+## inside the callback see it.
+##
 ## **THE LOOP ONLY DISPATCHES.** `run!` fetches the next instruction and
 ## calls `dispatch!`, whose match calls one top-level handler an arm, so no
 ## single function grows with the language. A handler answers the machine
@@ -63,6 +73,7 @@
 import Ast
 import Bytecode
 import Canvas
+import Collector
 import Events
 import Heap
 import Inspect
@@ -87,6 +98,10 @@ Vm :: [].{
 		pc : U64,
 		base : U64,
 		builtins : List(Heap.Value),
+		# The first free cell, which the next allocation takes.
+		free : Heap.Free,
+		schedule : Vm.Schedule,
+		collections : U64,
 		status : Vm.Status,
 		steps : U64,
 		step_limit : U64,
@@ -118,12 +133,26 @@ Vm :: [].{
 	## caught, written as the line node prints first.
 	Ending : [Finished, Faulted(Str), Uncaught(Str)]
 
-	## How far a run may go: the steps it takes and the effects it makes.
-	Limits : { steps : U64, effects : U64 }
+	## How a run goes: the steps it may take and the effects it may make, and
+	## when it collects: amortized, or at every allocation, which tests that
+	## no root is missed.
+	Settings : { steps : U64, effects : U64, collecting : [Doubling, EveryAllocation] }
+
+	## When the next collection is due, asked before each instruction:
+	## `Doubling(at)`, once no cell is free and the heap holds `at` cells,
+	## twice what the last collection kept and never under
+	## `Collector.least_threshold`, so a cell costs amortized O(1); or
+	## `EveryAllocation`, once the heap's length or its first free cell
+	## differs from what the last collection left.
+	Schedule : [Doubling(U64), EveryAllocation({ length : U64, free : Heap.Free })]
+
+	## How a run ended, with what it counted: its steps, the heap's length,
+	## the cells its roots reach at the end, and the collections it ran.
+	Outcome : { ending : Vm.Ending, steps : U64, cells : U64, live : U64, collections : U64 }
 
 	## A program run to its end, its effects handed to `host` as it runs.
-	run! : Canvas.Host, Bytecode.Program, Vm.Limits => Vm.Ending
-	run! = |host, program, limits| {
+	run! : Canvas.Host, Bytecode.Program, Vm.Settings => Vm.Outcome
+	run! = |host, program, settings| {
 		{ cells, values: builtins } = ValueRules.globals([], Core)
 		begun = {
 			cells: cells,
@@ -138,11 +167,17 @@ Vm :: [].{
 			pc: 0,
 			base: 0,
 			builtins: builtins,
+			free: NoneFree,
+			schedule: match settings.collecting {
+				Doubling => Doubling(Collector.least_threshold)
+				EveryAllocation => EveryAllocation({ length: cells.len(), free: NoneFree })
+			},
+			collections: 0,
 			status: Running,
 			steps: 0,
-			step_limit: limits.steps,
+			step_limit: settings.steps,
 			effects: 0,
-			effect_limit: limits.effects,
+			effect_limit: settings.effects,
 		}
 		main = code_of(program, program.main)
 		entered = frame_filled(begun, { code: main, given: 0, boxes: [] })
@@ -151,7 +186,7 @@ Vm :: [].{
 			Finished => drained!(host, program, { ..finished, status: Running })
 			_ => finished
 		}
-		match ended.status {
+		ending = match ended.status {
 			Running | Finished => Finished
 			Faulted(why) => Faulted(why)
 			Thrown(boxed) => {
@@ -159,6 +194,8 @@ Vm :: [].{
 				ValueRules.uncaught_ending(ended.cells, value, site)
 			}
 		}
+		live = Collector.reached_count(Collector.marked(ended.cells, roots(ended)))
+		{ ending: ending, steps: ended.steps, cells: ended.cells.len(), live: live, collections: ended.collections }
 	}
 }
 
@@ -172,6 +209,9 @@ loop! = |host, program, machine, floor| {
 	var $code = machine.code
 	var $ops = code_of(program, $code).ops
 	while is_running($machine) and $machine.depth >= floor {
+		if is_collection_due($machine) {
+			$machine = collected($machine)
+		}
 		if $machine.code != $code {
 			$code = $machine.code
 			$ops = code_of(program, $code).ops
@@ -316,16 +356,11 @@ with_fault = |machine, why| match machine.status {
 unsupported : Vm.Machine, Str, Ast.Where -> Vm.Machine
 unsupported = |machine, what, at| with_fault(machine, "unsupported (vm): ${what}${ValueRules.line_note(at)}")
 
-# The machine unwinding with one of JavaScript's own errors, which nothing
-# catches yet.
+# The machine unwinding with one of JavaScript's own errors.
 with_error : Vm.Machine, Heap.ErrorName, Str, Ast.Where -> Vm.Machine
 with_error = |machine, name, message, at| {
-	id = machine.cells.len()
-	{
-		..machine,
-		cells: machine.cells.append(Failure(name, message)),
-		status: Thrown(Box.box({ value: Reference(id), site: at })),
-	}
+	{ machine: made, id } = placed(machine, Failure(name, message))
+	{ ..made, status: Thrown(Box.box({ value: Reference(id), site: at })) }
 }
 
 # One more step counted, a call or a loop's pass, stopped past the budget.
@@ -431,10 +466,84 @@ arguments_of = |machine, count| {
 	$values
 }
 
+# A new cell in the heap, its reference pushed.
 allocated : Vm.Machine, Heap.Cell -> Vm.Machine
 allocated = |machine, cell| {
-	id = machine.cells.len()
-	pushed({ ..machine, cells: machine.cells.append(cell) }, Reference(id))
+	{ machine: made, id } = placed(machine, cell)
+	pushed(made, Reference(id))
+}
+
+# The machine with `cell` in its heap, and the cell's place: a free cell's
+# when one is free, else a new one at the end.
+Placed : { machine : Vm.Machine, id : U64 }
+
+placed : Vm.Machine, Heap.Cell -> Placed
+placed = |machine, cell| {
+	{ cells, machine: rest } = lent(machine)
+	made = Heap.allocated(cells, rest.free, cell)
+	{ machine: { ..rest, cells: made.cells, free: made.free }, id: made.id }
+}
+
+# ---- the collector ---------------------------------------------------------
+
+is_collection_due : Vm.Machine -> Bool
+is_collection_due = |machine|
+	match machine.schedule {
+		Doubling(at) => machine.free == NoneFree and machine.cells.len() >= at
+		EveryAllocation({ length, free }) => machine.cells.len() != length or machine.free != free
+	}
+
+# The machine after a collection: every cell its roots don't reach freed,
+# and the next collection scheduled.
+collected : Vm.Machine -> Vm.Machine
+collected = |machine| {
+	marks = Collector.marked(machine.cells, roots(machine))
+	{ cells, machine: rest } = lent(machine)
+	{ cells: swept, free, live } = Collector.swept(cells, marks)
+	schedule = match rest.schedule {
+		Doubling(_) => Doubling(Collector.least_threshold.max(2 * live))
+		EveryAllocation(_) => EveryAllocation({ length: swept.len(), free: free })
+	}
+	{ ..rest, cells: swept, free: free, schedule: schedule, collections: rest.collections + 1 }
+}
+
+# Every cell the machine names: the live stack's (each frame's slots, its
+# boxes and the function it runs, the callers' values waiting, a `finally`'s
+# throw held), the builtins', a throw's on its way to a handler, and the
+# event queue's (each timer's callback, a frame's closure, the click handler).
+# A handler or a waiting frame names only places on the stack.
+roots : Vm.Machine -> List(U64)
+roots = |machine| {
+	var $ids = List.with_capacity(machine.top + machine.builtins.len())
+	var $at = 0
+	while $at < machine.top {
+		$ids = Collector.with_value_root($ids, machine.stack.get($at) ?? crash "Vm.roots: below the stack's top")
+		$at = $at + 1
+	}
+	for builtin in machine.builtins {
+		$ids = Collector.with_value_root($ids, builtin)
+	}
+	match machine.status {
+		Thrown(boxed) => {
+			$ids = Collector.with_value_root($ids, Box.unbox(boxed).value)
+		}
+		Running | Finished | Faulted(_) => {}
+	}
+	events = Box.unbox(machine.events)
+	for event in events.pending_events {
+		$ids = match event.happening {
+			Timed({ timer: _, callback, every: _ }) => Collector.with_value_root($ids, callback)
+			Framed(closure, _) => $ids.append(closure.scope)
+			Clicked(_, _) => $ids
+		}
+	}
+	match events.on_click {
+		Handler({ handler, site: _ }) => {
+			$ids = Collector.with_value_root($ids, handler)
+		}
+		NoHandler => {}
+	}
+	$ids
 }
 
 # ---- boxes -----------------------------------------------------------------
@@ -488,8 +597,8 @@ boxed_set = |machine, slot| dropped(with_box(machine, box_of(machine, slot), val
 
 box_made : Vm.Machine, U64 -> Vm.Machine
 box_made = |machine, slot| {
-	id = machine.cells.len()
-	with_slot({ ..machine, cells: machine.cells.append(UnreadyVariable) }, slot, Reference(id))
+	{ machine: made, id } = placed(machine, UnreadyVariable)
+	with_slot(made, slot, Reference(id))
 }
 
 box_copied : Vm.Machine, U64 -> Vm.Machine
@@ -498,16 +607,21 @@ box_copied = |machine, slot| {
 		Holding(value) => Variable(value)
 		Unready => UnreadyVariable
 	}
-	id = machine.cells.len()
-	with_slot({ ..machine, cells: machine.cells.append(cell) }, slot, Reference(id))
+	{ machine: made, id } = placed(machine, cell)
+	with_slot(made, slot, Reference(id))
 }
 
 # ---- the walker's rules, borrowed ------------------------------------------
 
-# What a value rule reads and writes of the machine: the cells, and a status
-# the rule may set to a fault or a throw.
-shell : List(Heap.Cell) -> ValueRules.Machine
-shell = |cells| { cells: cells, status: Running }
+# What a value rule reads and writes of the machine: the cells, the free
+# cells it allocates from, and a status the rule may set to a fault or a
+# throw.
+shell : List(Heap.Cell), Vm.Machine -> ValueRules.Machine
+shell = |cells, rest| { cells: cells, free: rest.free, status: Running }
+
+# The machine with a rule's cells and free cells put back.
+with_rules : Vm.Machine, ValueRules.Machine -> Vm.Machine
+with_rules = |machine, rules| { ..machine, cells: rules.cells, free: rules.free }
 
 # The machine without its cells, which a borrowed rule takes: kept apart,
 # the cells have one owner while the rule writes them.
@@ -525,16 +639,16 @@ with_got : Vm.Machine, ValueRules.Got, U64 -> Vm.Machine
 with_got = |machine, got, place| {
 	{ machine: walker, value } = got
 	match walker.status {
-		Running => with_result({ ..machine, cells: walker.cells }, place, value)
-		Faulted(why) => { ..machine, cells: walker.cells, status: Faulted(why) }
-		Thrown(boxed) => { ..machine, cells: walker.cells, status: Thrown(boxed) }
+		Running => with_result(with_rules(machine, walker), place, value)
+		Faulted(why) => { ..with_rules(machine, walker), status: Faulted(why) }
+		Thrown(boxed) => { ..with_rules(machine, walker), status: Thrown(boxed) }
 	}
 }
 
 missing_name : Vm.Machine, Str, Ast.Where -> Vm.Machine
 missing_name = |machine, name, at| {
 	{ cells, machine: rest } = lent(machine)
-	with_got(rest, ValueRules.missing_name_got(shell(cells), name, at), rest.top)
+	with_got(rest, ValueRules.missing_name_got(shell(cells, rest), name, at), rest.top)
 }
 
 # ---- operators -------------------------------------------------------------
@@ -549,7 +663,7 @@ unary = |machine, operator, at| {
 		(Plus, Number(number)) => replaced(machine, 1, Number(number))
 		_ => {
 			{ cells, machine: rest } = lent(machine)
-			with_got(rest, ValueRules.unary(shell(cells), operator, operand, at), rest.top - 1)
+			with_got(rest, ValueRules.unary(shell(cells, rest), operator, operand, at), rest.top - 1)
 		}
 	}
 }
@@ -573,7 +687,7 @@ combined = |machine, { operator, left, right, at }|
 		StrictNotEqual => replaced(machine, 2, Boolean(!ValueRules.is_strictly_equal(left, right)))
 		_ => {
 			{ cells, machine: rest } = lent(machine)
-			with_got(rest, ValueRules.binary(shell(cells), operator, left, right, at), rest.top - 2)
+			with_got(rest, ValueRules.binary(shell(cells, rest), operator, left, right, at), rest.top - 2)
 		}
 	}
 
@@ -692,16 +806,16 @@ items_destructured = |machine, origin, at| {
 		machine
 	} else {
 		{ cells, machine: rest } = lent(machine)
-		{ machine: rules, values } = ValueRules.iterated(shell(cells), given)
-		back = { ..rest, cells: rules.cells }
+		{ machine: rules, values } = ValueRules.iterated(shell(cells, rest), given)
+		back = with_rules(rest, rules)
 		match values {
 			Ok(items) => {
-				id = back.cells.len()
-				replaced({ ..back, cells: back.cells.append(Array(items)) }, 1, Reference(id))
+				{ machine: made, id } = placed(back, Array(items))
+				replaced(made, 1, Reference(id))
 			}
 			Err(NotIterable) => {
 				{ cells: held, machine: waiting } = lent(back)
-				failed = ValueRules.with_not_iterable(shell(held), given, origin, at)
+				failed = ValueRules.with_not_iterable(shell(held, waiting), given, origin, at)
 				with_got(waiting, { machine: failed, value: Undefined }, waiting.top - 1)
 			}
 		}
@@ -712,8 +826,8 @@ items_from : Vm.Machine, U64 -> Vm.Machine
 items_from = |machine, position| {
 	id = reference_id(value_at(machine, 1))
 	left = ValueRules.items_of(machine.cells, id).drop_first(position)
-	made = machine.cells.len()
-	replaced({ ..machine, cells: machine.cells.append(Array(left)) }, 1, Reference(made))
+	{ machine: made, id: rest_id } = placed(machine, Array(left))
+	replaced(made, 1, Reference(rest_id))
 }
 
 destructurable_checked : Vm.Machine, { properties : List(Ast.PropertyPattern), origin : ValueRules.Origin, at : Ast.Where } -> Vm.Machine
@@ -730,8 +844,8 @@ properties_left : Vm.Machine, List(Str), Ast.Where -> Vm.Machine
 properties_left = |machine, keys, at|
 	match ValueRules.properties_left(machine.cells, value_at(machine, 1), keys) {
 		Ok(left) => {
-			id = machine.cells.len()
-			replaced({ ..machine, cells: machine.cells.append(Object(left)) }, 1, Reference(id))
+			{ machine: made, id } = placed(machine, Object(left))
+			replaced(made, 1, Reference(id))
 		}
 		Err(Unsupported(why)) => with_fault(machine, "${why}${ValueRules.line_note(at)}")
 	}
@@ -853,8 +967,8 @@ index_updated = |machine, step| {
 array_made : Vm.Machine, U64 -> Vm.Machine
 array_made = |machine, count| {
 	items = arguments_of(machine, count)
-	id = machine.cells.len()
-	replaced({ ..machine, cells: machine.cells.append(Array(items)) }, count, Reference(id))
+	{ machine: made, id } = placed(machine, Array(items))
+	replaced(made, count, Reference(id))
 }
 
 reference_id : Heap.Value -> U64
@@ -875,9 +989,9 @@ spread_appended = |machine, source, at| {
 	id = reference_id(value_at(machine, 2))
 	given = value_at(machine, 1)
 	{ cells, machine: rest } = lent(machine)
-	{ machine: walker, values } = ValueRules.iterated(shell(cells), given)
+	{ machine: walker, values } = ValueRules.iterated(shell(cells, rest), given)
 	match values {
-		Ok(items) => dropped({ ..rest, cells: Heap.with_items_pushed(walker.cells, id, items) }, 1)
+		Ok(items) => dropped({ ..rest, cells: Heap.with_items_pushed(walker.cells, id, items), free: walker.free }, 1)
 		Err(NotIterable) => {
 			failed = ValueRules.with_not_iterable(walker, given, Written(source), at)
 			with_got(rest, { machine: failed, value: Undefined }, rest.top - 1)
@@ -928,7 +1042,7 @@ property_read = |machine, key, at| {
 		Found(value) => replaced(machine, 1, value)
 		Elsewhere => {
 			{ cells, machine: rest } = lent(machine)
-			with_got(rest, ValueRules.property(shell(cells), holder, key, at), rest.top - 1)
+			with_got(rest, ValueRules.property(shell(cells, rest), holder, key, at), rest.top - 1)
 		}
 	}
 }
@@ -948,7 +1062,7 @@ index_read = |machine, at| {
 		Found(value) => replaced(machine, 2, value)
 		Elsewhere => {
 			{ cells, machine: rest } = lent(machine)
-			with_got(rest, ValueRules.indexed_value(shell(cells), holder, key, at), rest.top - 2)
+			with_got(rest, ValueRules.indexed_value(shell(cells, rest), holder, key, at), rest.top - 2)
 		}
 	}
 }
@@ -979,7 +1093,7 @@ stored = |machine, { key, at }| {
 		Item(id, position) => replaced({ ..machine, cells: Heap.with_item(machine.cells, id, position, value) }, 2, value)
 		Elsewhere => {
 			{ cells, machine: rest } = lent(machine)
-			with_got(rest, ValueRules.with_stored(shell(cells), holder, key, value, at), rest.top - 2)
+			with_got(rest, ValueRules.with_stored(shell(cells, rest), holder, key, value, at), rest.top - 2)
 		}
 	}
 }
@@ -1000,9 +1114,8 @@ index_written = |machine, at| {
 closure_made : Vm.Machine, { code : U64, captures : List(U64), definition : Box(Ast.FunctionDefinition) } -> Vm.Machine
 closure_made = |machine, { code, captures, definition }| {
 	boxes = captures.map(|slot| box_of(machine, slot))
-	environment = machine.cells.len()
-	cells = machine.cells.append(Environment({ code: code, boxes: boxes })).append(Fun({ fun: definition, scope: environment }))
-	pushed({ ..machine, cells: cells }, Reference(environment + 1))
+	{ machine: holding, id: environment } = placed(machine, Environment({ code: code, boxes: boxes }))
+	allocated(holding, Fun({ fun: definition, scope: environment }))
 }
 
 # How a call that finds no function names what it called: as the program
@@ -1102,9 +1215,8 @@ frame_filled = |machine, { code, given, boxes }| {
 		}
 		Packed(slot) => {
 			arguments = arguments_of(machine, given)
-			cleared = dropped(machine, given)
-			id = cleared.cells.len()
-			var $taken = { ..cleared, cells: cleared.cells.append(Array(arguments)) }
+			{ machine: packed, id } = placed(dropped(machine, given), Array(arguments))
+			var $taken = packed
 			var $count = 0
 			while $count < code.frame_size {
 				$taken = pushed($taken, Undefined)
@@ -1117,9 +1229,8 @@ frame_filled = |machine, { code, given, boxes }| {
 		$machine = match entry {
 			FreshBox(slot) => box_made($machine, slot)
 			FilledBox(slot) => {
-				id = $machine.cells.len()
-				value = slot_value($machine, slot)
-				with_slot({ ..$machine, cells: $machine.cells.append(Variable(value)) }, slot, Reference(id))
+				{ machine: made, id } = placed($machine, Variable(slot_value($machine, slot)))
+				with_slot(made, slot, Reference(id))
 			}
 			CapturedBox({ slot, capture }) => with_slot(
 				$machine,
@@ -1219,13 +1330,13 @@ method_called! = |host, program, machine, { name, site }| {
 		TextMethod(text) => {
 			arguments = arguments_of(machine, count)
 			{ cells, machine: rest } = lent(machine)
-			with_got(rest, ValueRules.text_method(shell(cells), text, name, arguments, site.at), result_at)
+			with_got(rest, ValueRules.text_method(shell(cells, rest), text, name, arguments, site.at), result_at)
 		}
 		CollectionMethod(place) if name == "forEach" => collection_walk!(host, program, machine, { id: place.id, count: count, result_at: result_at, at: site.at })
 		CollectionMethod(place) => {
 			arguments = arguments_of(machine, count)
 			{ cells, machine: rest } = lent(machine)
-			with_got(rest, ValueRules.collection_method(shell(cells), place, name, arguments, site.at), result_at)
+			with_got(rest, ValueRules.collection_method(shell(cells, rest), place, name, arguments, site.at), result_at)
 		}
 		Held => called!(host, program, machine, { count: count, result_at: result_at, naming: Written(site.written), at: site.at })
 	}
@@ -1236,7 +1347,7 @@ constructed = |machine, { count, callee, at }| {
 	maker = value_at(machine, count + 1)
 	arguments = arguments_of(machine, count)
 	{ cells, machine: rest } = lent(machine)
-	with_got(rest, ValueRules.constructed(shell(cells), maker, callee, arguments, at), rest.top - count - 1)
+	with_got(rest, ValueRules.constructed(shell(cells, rest), maker, callee, arguments, at), rest.top - count - 1)
 }
 
 # ---- builtins --------------------------------------------------------------
@@ -1271,7 +1382,7 @@ native_called! = |host, program, machine, { native, calling }| {
 		OnClick | Paint(_) | Move(_) | Sense(_) => unsupported(machine, "the canvas", at)
 		_ => {
 			{ cells, machine: rest } = lent(machine)
-			with_got(rest, ValueRules.native_called(shell(cells), native, arguments, at), calling.result_at)
+			with_got(rest, ValueRules.native_called(shell(cells, rest), native, arguments, at), calling.result_at)
 		}
 	}
 }
@@ -1282,7 +1393,7 @@ timer_set : Vm.Machine, { repeats : [Once, Repeating], arguments : List(Heap.Val
 timer_set = |machine, { repeats, arguments, calling }| {
 	{ cells, machine: rest } = lent(machine)
 	asked = { repeats: repeats, arguments: arguments, at: calling.at, timer: Box.unbox(rest.events).made, clock: Box.unbox(rest.events).clock }
-	{ machine: after, value, queued } = Events.timer_requested(shell(cells), asked)
+	{ machine: after, value, queued } = Events.timer_requested(shell(cells, rest), asked)
 	back = match queued {
 		Queued(event) => { ..rest, events: Box.box(Events.with_event(Box.unbox(rest.events), event)) }
 		Refused => rest
@@ -1391,13 +1502,17 @@ array_from! : Canvas.Host, Bytecode.Program, Vm.Machine, { arguments : List(Heap
 array_from! = |host, program, machine, { arguments, calling }| {
 	mapper = arguments.get(1) ?? Undefined
 	{ cells, machine: rest } = lent(machine)
-	{ machine: rules, listed } = ValueRules.array_from_values(shell(cells), arguments.first() ?? Undefined)
-	back = { ..rest, cells: rules.cells }
+	{ machine: rules, listed } = ValueRules.array_from_values(shell(cells, rest), arguments.first() ?? Undefined)
+	back = with_rules(rest, rules)
 	match listed {
 		Err(Unsupported(why)) => with_fault(back, "${why}${ValueRules.line_note(calling.at)}")
 		Ok(values) => {
-			out = back.cells.len()
-			var $machine = pushed({ ..back, cells: back.cells.append(Array([])) }, Reference(out))
+			# The values wait on the stack as an array of their own while the
+			# mapper runs: an iterable's entries are new pairs nothing else
+			# holds.
+			pinned = allocated(back, Array(values))
+			{ machine: building, id: out } = placed(pinned, Array([]))
+			var $machine = pushed(building, Reference(out))
 			var $i = 0
 			for value in values {
 				if is_running($machine) {
@@ -1456,7 +1571,7 @@ array_method! = |host, program, machine, call|
 		_ => {
 			arguments = arguments_of(machine, call.count)
 			{ cells, machine: rest } = lent(machine)
-			with_got(rest, ValueRules.array_method(shell(cells), call.id, call.name, arguments, call.at), call.result_at)
+			with_got(rest, ValueRules.array_method(shell(cells, rest), call.id, call.name, arguments, call.at), call.result_at)
 		}
 	}
 
@@ -1477,13 +1592,13 @@ array_walk! : Canvas.Host, Bytecode.Program, Vm.Machine, ArrayCall, Walk => Vm.M
 array_walk! = |host, program, machine, call, walk| {
 	callback = callback_of(machine, call)
 	count = item_count(machine, call.id)
-	builds = walk == Map or walk == Filter or walk == FlatMap
-	out = machine.cells.len()
-	var $machine = if builds {
-		pushed({ ..machine, cells: machine.cells.append(Array([])) }, Reference(out))
+	{ machine: started, building } = if walk == Map or walk == Filter or walk == FlatMap {
+		{ machine: made, id } = placed(machine, Array([]))
+		{ machine: pushed(made, Reference(id)), building: Into(id) }
 	} else {
-		machine
+		{ machine: machine, building: Answering }
 	}
+	var $machine = started
 	var $answer = match walk {
 		Some => Boolean(False)
 		Every => Boolean(True)
@@ -1494,19 +1609,22 @@ array_walk! = |host, program, machine, call, walk| {
 	var $going = True
 	while $going and $i < count and $i < item_count($machine, call.id) {
 		item = item_at($machine, call.id, $i)
-		{ machine: after, value } = answered(call_function!(host, program, $machine, { callee: callback, arguments: [item, Number($i.to_f64()), Reference(call.id)], at: call.at }))
-		$machine = after
-		if !is_running($machine) {
+		{ machine: after, value } = answered(call_function!(host, program, pushed($machine, item), { callee: callback, arguments: [item, Number($i.to_f64()), Reference(call.id)], at: call.at }))
+		if !is_running(after) {
+			$machine = after
 			$going = False
 		} else {
+			# The item waited on the stack beneath the call, since the callback
+			# may take it out of the array; `filter` and `find` keep it.
+			$machine = dropped(after, 1)
 			match walk {
 				ForEach => {}
 				Map => {
-					$machine = { ..$machine, cells: Heap.with_items_pushed($machine.cells, out, [value]) }
+					$machine = with_built($machine, building, [value])
 				}
 				Filter => {
 					if ValueRules.is_truthy(value) {
-						$machine = { ..$machine, cells: Heap.with_items_pushed($machine.cells, out, [item]) }
+						$machine = with_built($machine, building, [item])
 					}
 				}
 				Some => {
@@ -1541,16 +1659,15 @@ array_walk! = |host, program, machine, call, walk| {
 						}
 						_ => [value]
 					}
-					$machine = { ..$machine, cells: Heap.with_items_pushed($machine.cells, out, more) }
+					$machine = with_built($machine, building, more)
 				}
 			}
 		}
 		$i = $i + 1
 	}
-	answer = if builds {
-		Reference(out)
-	} else {
-		$answer
+	answer = match building {
+		Into(out) => Reference(out)
+		Answering => $answer
 	}
 	if is_running($machine) {
 		with_result($machine, call.result_at, answer)
@@ -1558,6 +1675,14 @@ array_walk! = |host, program, machine, call, walk| {
 		$machine
 	}
 }
+
+# The array `map`, `filter` or `flatMap` builds, with `values` pushed.
+with_built : Vm.Machine, [Into(U64), Answering], List(Heap.Value) -> Vm.Machine
+with_built = |machine, building, values|
+	match building {
+		Into(out) => { ..machine, cells: Heap.with_items_pushed(machine.cells, out, values) }
+		Answering => crash "Vm.with_built: only map, filter and flatMap build an array"
+	}
 
 # `findLast` and `findLastIndex`: the callback on each item from the last
 # back, until one passes.
@@ -1574,8 +1699,13 @@ array_walk_back! = |host, program, machine, call, walk| {
 	while $going and $k > 0 {
 		$k = $k - 1
 		item = item_at($machine, call.id, $k)
-		{ machine: after, value } = answered(call_function!(host, program, $machine, { callee: callback, arguments: [item, Number($k.to_f64()), Reference(call.id)], at: call.at }))
-		$machine = after
+		# The item waits on the stack beneath the call, as in `array_walk!`.
+		{ machine: after, value } = answered(call_function!(host, program, pushed($machine, item), { callee: callback, arguments: [item, Number($k.to_f64()), Reference(call.id)], at: call.at }))
+		$machine = if is_running(after) {
+			dropped(after, 1)
+		} else {
+			after
+		}
 		if is_running($machine) and ValueRules.is_truthy(value) {
 			$answer = match walk {
 				FindLast => item
@@ -1645,7 +1775,10 @@ array_sort! = |host, program, machine, call| {
 		_ => crash "Vm.array_sort!: asked only of an array"
 	}
 	compare = callback_of(machine, call)
-	{ machine: after, values } = merge_sorted!(host, program, machine, { items: items, compare: compare, at: call.at })
+	# The items wait on the stack as an array of their own while the
+	# comparison runs, since it may change the array being sorted.
+	pinned = allocated(machine, Array(items))
+	{ machine: after, values } = merge_sorted!(host, program, pinned, { items: items, compare: compare, at: call.at })
 	if is_running(after) {
 		with_result({ ..after, cells: Heap.with_items(after.cells, call.id, values) }, call.result_at, Reference(call.id))
 	} else {
@@ -1771,9 +1904,9 @@ iteration_started = |machine, source, at| {
 			_ => not_iterable(machine, source, at)
 		}
 		Text(text) => {
-			id = machine.cells.len()
 			characters = ValueRules.characters(text).map(|character| Text(character))
-			replaced({ ..machine, cells: machine.cells.append(Array(characters)) }, 1, Reference(id))
+			{ machine: made, id } = placed(machine, Array(characters))
+			replaced(made, 1, Reference(id))
 		}
 		_ => not_iterable(machine, source, at)
 	}

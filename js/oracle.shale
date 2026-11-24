@@ -10,6 +10,14 @@
 --   cd <roc-apps checkout> && shale js/oracle.shale            build js-run, then grade
 --   cd <roc-apps checkout> && shale js/oracle.shale only=11    the programs whose names start so
 --   cd <roc-apps checkout> && shale js/oracle.shale engine=vm  build js-vm, the bytecode VM, then grade it
+--   cd <roc-apps checkout> && shale js/oracle.shale engine=vm collect=every
+--                                                              the same, collecting at every allocation
+--
+-- `collect=every` runs js-vm with `--collect-at-every-allocation`, so its
+-- collector runs after each instruction that allocates: a root it misses
+-- frees a cell the program still holds, and the program's answer or the
+-- collector's own check (a live value naming a freed cell) shows it at
+-- once, where the doubling schedule would collect too seldom to see it.
 --
 -- It takes js-run from js/roc/JsRun.roc (js-vm from js/roc/JsVm.roc) on
 -- the dev backend from tools/roc_build.shale (js/js_builds.shale), which
@@ -27,6 +35,7 @@ const RUN_MS = 20000
 
 const ONLY = arg("only", "")
 const ENGINE = arg("engine", "walker")
+const COLLECT = arg("collect", "doubling")
 
 -- The command under test and its name in the lines below.
 function engine_command()
@@ -36,6 +45,15 @@ function engine_command()
 end
 
 const COMMAND = engine_command()
+
+-- What follows the program on the command line under test.
+function collect_arguments()
+  if COLLECT == "doubling" then return {} end
+  if COLLECT == "every" and ENGINE == "vm" then return {"--collect-at-every-allocation"} end
+  fail("js/oracle.shale: collect= is doubling, or every with engine=vm, not " .. COLLECT)
+end
+
+const COLLECT_ARGUMENTS = collect_arguments()
 
 -- Whether a transcript ends in the VM's refusal of what it doesn't run yet.
 function is_vm_refusal(out)
@@ -102,7 +120,9 @@ end
 
 -- The command under test, js-run or js-vm, on one program's text.
 function js_run(exe, src)
-  return run({exe, src}, {timeout_ms = RUN_MS, whole = 4000000, want = WANT_RUN})
+  local argv = {exe, src}
+  for a in COLLECT_ARGUMENTS do push(argv, a) end
+  return run(argv, {timeout_ms = RUN_MS, whole = 4000000, want = WANT_RUN})
 end
 
 function grade_oracle(exe)
@@ -163,7 +183,9 @@ function main()
   if ENGINE == "walker" then
     print("js oracle: " .. (o.n - o.bad) .. " of " .. o.n .. " match node; " .. (r.n - r.bad) .. " of " .. r.n .. " refused as they must be")
   else
-    print("js oracle (" .. ENGINE .. "): " .. (o.n - o.bad) .. " of " .. o.n .. " match node (" .. o.refused .. " refused by the VM, " .. (o.bad - o.refused) .. " wrong); "
+    local mode = ENGINE
+    if COLLECT ~= "doubling" then mode = mode .. ", collect=" .. COLLECT end
+    print("js oracle (" .. mode .. "): " .. (o.n - o.bad) .. " of " .. o.n .. " match node (" .. o.refused .. " refused by the VM, " .. (o.bad - o.refused) .. " wrong); "
       .. (r.n - r.bad) .. " of " .. r.n .. " refused as they must be (" .. r.refused .. " refused by the VM for another reason, " .. (r.bad - r.refused) .. " wrong)")
   end
   if o.bad + r.bad > 0 then fail("js/oracle.shale: " .. (o.bad + r.bad) .. " programs failed") end

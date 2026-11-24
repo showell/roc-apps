@@ -523,12 +523,13 @@ Interp :: [].{
 	lent : Interp.Machine -> Interp.Lent
 	lent = |machine| {
 		cells = machine.cells
-		{ rules: { cells: cells, status: machine.status }, rest: { ..machine, cells: [] } }
+		# The walker frees no cell, so its heap has none free.
+		{ rules: { cells: cells, free: NoneFree, status: machine.status }, rest: { ..machine, cells: [] } }
 	}
 
 	# The walker's machine after a rule: the rule's cells and status put back.
 	with_rules : Interp.Machine, ValueRules.Machine -> Interp.Machine
-	with_rules = |rest, { cells, status }| { ..rest, cells: cells, status: status }
+	with_rules = |rest, { cells, free: _, status }| { ..rest, cells: cells, status: status }
 
 	got_back : Interp.Machine, ValueRules.Got -> Interp.Got
 	got_back = |rest, { machine: rules, value }| { machine: Interp.with_rules(rest, rules), value: value }

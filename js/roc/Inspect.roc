@@ -143,7 +143,7 @@ Inspect :: [].{
 			TimerHandle(_) => Err(Unsupported("unsupported: printing a timer, what setTimeout and setInterval answer"))
 			Failure(_, _) => Err(Unsupported("unsupported: printing an error (node prints its stack)"))
 			Iteration(_) => Err(Unsupported("unsupported: printing an iterator"))
-			UnreadyVariable | Variable(_) | Environment(_) => crash "Inspect.format_cell: no JavaScript value refers to a VM box or environment"
+			UnreadyVariable | Variable(_) | Environment(_) | Freed(_) => crash "Inspect.format_cell: no JavaScript value refers to a VM box, an environment or a freed cell"
 			MapOf(tables) => Inspect.format_table(
 				context,
 				{ id: id, name: "Map", table: Inspect.first_table(tables), pairs: True },

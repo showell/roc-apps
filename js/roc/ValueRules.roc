@@ -34,9 +34,10 @@ import NumberText
 
 ValueRules :: [].{
 
-	## The part of an engine's machine a rule reads and writes: the heap, and
-	## whether the run goes on.
-	Machine : { cells : List(Heap.Cell), status : ValueRules.Status }
+	## The part of an engine's machine a rule reads and writes: the heap, its
+	## free cells, which an allocation takes first, and whether the run goes
+	## on.
+	Machine : { cells : List(Heap.Cell), free : Heap.Free, status : ValueRules.Status }
 
 	## A rule's value, and the machine after it.
 	Got : { machine : ValueRules.Machine, value : Heap.Value }
@@ -82,8 +83,9 @@ ValueRules :: [].{
 
 	alloc : ValueRules.Machine, Heap.Cell -> ValueRules.Got
 	alloc = |machine, cell| {
-		id = machine.cells.len()
-		{ machine: { ..machine, cells: machine.cells.append(cell) }, value: Reference(id) }
+		{ cells, free, status } = machine
+		made = Heap.allocated(cells, free, cell)
+		{ machine: { cells: made.cells, free: made.free, status: status }, value: Reference(made.id) }
 	}
 
 	is_running : ValueRules.Machine -> Bool
@@ -1003,7 +1005,7 @@ ValueRules :: [].{
 					machine,
 					"unsupported: an iterator's properties and methods (`${key}`)${ValueRules.line_note(site)}",
 				)
-				UnreadyVariable | Variable(_) | Environment(_) => crash "ValueRules.property: no JavaScript value refers to a VM box or environment"
+				UnreadyVariable | Variable(_) | Environment(_) | Freed(_) => crash "ValueRules.property: no JavaScript value refers to a VM box, an environment or a freed cell"
 				Failure(name, message) => match key {
 					"name" => { machine: machine, value: Text(Heap.error_name_text(name)) }
 					"message" => { machine: machine, value: Text(message) }
@@ -1144,7 +1146,7 @@ ValueRules :: [].{
 			MapOf(_) => MapKind
 			SetOf(_) => SetKind
 			Iteration(_) => IteratorKind
-			UnreadyVariable | Variable(_) | Environment(_) => crash "ValueRules.kind_of: no JavaScript value refers to a VM box or environment"
+			UnreadyVariable | Variable(_) | Environment(_) | Freed(_) => crash "ValueRules.kind_of: no JavaScript value refers to a VM box, an environment or a freed cell"
 		}
 
 	# A property or an item written: an object's property, an array's item
@@ -2333,7 +2335,7 @@ ValueRules :: [].{
 	## (`Ast.global_names_of`), which an engine's outermost scope holds.
 	globals : List(Heap.Cell), Ast.Library -> { cells : List(Heap.Cell), values : List(Heap.Value) }
 	globals = |cells, library| {
-		var $s = { cells: cells, status: Running }
+		var $s = { cells: cells, free: NoneFree, status: Running }
 		log = ValueRules.alloc($s, Builtin(Log, []))
 		$s = log.machine
 		console = ValueRules.alloc($s, Namespace("console", [{ key: "log", value: log.value }]))

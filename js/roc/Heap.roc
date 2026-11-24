@@ -20,8 +20,12 @@
 ## cell out and put it back by hand before, which the dev build didn't box,
 ## and read worse.
 ##
-## Cells are never freed: a run's heap holds every object it made
-## (js/README.md, "Cells are never freed", says why).
+## **A FREED CELL STAYS IN ITS PLACE.** The bytecode VM's collector
+## (`Collector`) turns each cell no root reaches into a `Freed` cell, linked
+## to the next free one, and an allocation (`allocated`) takes the first
+## free cell before it grows the list. Nothing moves, so a reference stays
+## the index it was. The tree walker frees nothing: its heap has no free
+## cell, and each allocation appends.
 import Ast
 import NumberText
 
@@ -150,7 +154,36 @@ Heap :: [].{
 		# code, and the boxes of the variables it captures, in the order the
 		# code reads them. The closure's `Fun` cell names it by its `scope`.
 		Environment({ code : U64, boxes : List(U64) }),
+		# A cell the collector freed, and the free cell after it, which the
+		# next allocation after this cell's takes.
+		Freed(Heap.Free),
 	]
+
+	## Where the free cells start, or go on from a free cell: a free cell's
+	## place, or none left.
+	Free : [FreeAt(U64), NoneFree]
+
+	## A cell put in the heap: the cells after, the free cells left, and the
+	## new cell's place.
+	Allocated : { cells : List(Heap.Cell), free : Heap.Free, id : U64 }
+
+	## The heap with `cell` in the first free cell's place, or at the end
+	## when none is free.
+	allocated : List(Heap.Cell), Heap.Free, Heap.Cell -> Heap.Allocated
+	allocated = |cells, free, cell|
+		match free {
+			NoneFree => {
+				id = cells.len()
+				{ cells: cells.append(cell), free: NoneFree, id: id }
+			}
+			FreeAt(id) => {
+				next = match Heap.cell_at(cells, id) {
+					Freed(after) => after
+					_ => crash "Heap.allocated: the free list names only freed cells"
+				}
+				{ cells: cells.set(id, cell) ?? crash "Heap.allocated: a free cell the heap has", free: next, id: id }
+			}
+		}
 
 	## A Map's or a Set's entries, in the order their keys were first set,
 	## each standing or `Gone` once deleted, so a walk that is under way when
