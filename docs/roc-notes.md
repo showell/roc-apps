@@ -12,9 +12,9 @@ anyone writing or emitting Roc in this repository. How the Roc is *written*
   literals, where the nightly's is linear.
 - **The repository builds with one Roc, the one `roc-version` names**
   (`0.1.0_RC1`, roc-lang/roc's release candidate, built from 15177e9),
-  installed at `~/tools/roc-<pin>/roc`. The
-  glue API that `glue/JsGlue.roc` follows changed at 09-22: provides entries
-  carry `exported`, and functions are `RocErasedCallable`.
+  installed at `~/tools/roc-<pin>/roc`. In the
+  glue API that `glue/JsGlue.roc` follows, provides entries carry
+  `exported`, and functions are `RocErasedCallable`.
 - **Judge a build on the ✗ mark, never the exit code.** A warning exits
   non-zero, and a type error compiles into a crash at its site while the rest of
   the program runs.
