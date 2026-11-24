@@ -7,7 +7,7 @@ canvas as it runs, and a corpus that holds the language to node.
 The code here was written by AI coding agents (Claude), with human
 supervision.
 
-**Status (2026-11-24): the language gaps closed.** 53 of 53
+**Status (2026-11-24): the language gaps closed.** 54 of 54
 corpus programs print what node 22 prints, byte for byte, timers and
 uncaught throws included, and 44 of 44 programs outside the subset are
 refused with the message they must give. Eight canvas samples are held to
@@ -33,7 +33,7 @@ walker's 151, and its release build takes 84 s against the walker's 481.
 mark and sweep (`Collector.roc`) frees every cell its roots don't reach,
 and allocation reuses them, so js/heaps/'s programs, which make an object a
 pass at the top level and inside a call, hold about 1,024 cells and peak
-near 4 MB on the dev build, where they peaked at 164 MB. js-vm runs the 53
+near 4 MB on the dev build, where they peaked at 164 MB. js-vm runs the 54
 corpus programs and the 44 refusals as node does both on its usual
 schedule and collecting at every allocation; the dev build only, so far.
 
@@ -164,6 +164,15 @@ page lists them:
   the first.
 - **A frame loop:** a program that declares `function frame(t)` has it
   called 30 times a second, `t` being the frame's number over 30.
+
+**The second sample, "all features,"** is the corpus program
+`js/tests/54-big-daddy.js`, which js/build.shale writes into the page's list,
+so node holds it: a day in a little city that uses every feature of the
+subset, in stages (a census parsed from text, a clerk's lookups that fail, a
+merge sort, Dijkstra's shortest walks, a prime sieve, a word count and an
+evening on the timers), each printing a checksum. Its `SIZE` scales the work;
+at its default, 5, node takes about 55 ms of CPU, 40 of them node's own start,
+and the walker runs about 24,000 statements.
 
 **One queue, one clock.** A timer's callback, a click and the next
 `frame(t)` are each an event on the interpreter's queue (`Events.Queue`),

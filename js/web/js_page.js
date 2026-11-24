@@ -20,7 +20,7 @@
 
 import { loadRunner, unescaped } from "./js_runner.js";
 import { isMark, makePainter, SIZE } from "./js_painter.js";
-import { CANVAS_SAMPLES } from "./js_samples.js";
+import { CANVAS_SAMPLES, FEATURED_SAMPLE } from "./js_samples.js";
 
 const FRAMES_PER_SECOND = 30;
 const SLOW_PAUSE_MS = 60;
@@ -101,8 +101,16 @@ console.log(new Point(1, 2));
 ];
 
 // A console sample draws nothing, so the page hides the canvas for it and its
-// output sits at the top of the column.
-export const SAMPLES = [...CANVAS_SAMPLES, ...CONSOLE_SAMPLES.map((s) => ({ ...s, console: true }))];
+// output sits at the top of the column. "all features" (js/tests/54-big-daddy.js,
+// written into js_samples.js by js/build.shale) comes second, after the first
+// canvas sample, which the page opens with.
+const asConsole = (s) => ({ ...s, console: true });
+export const SAMPLES = [
+  CANVAS_SAMPLES[0],
+  asConsole(FEATURED_SAMPLE),
+  ...CANVAS_SAMPLES.slice(1),
+  ...CONSOLE_SAMPLES.map(asConsole),
+];
 
 const SPEEDS = [
   { label: "Full speed", marks: 0 },
