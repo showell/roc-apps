@@ -12,20 +12,23 @@
 <a class="book-name" href="index.html">A JavaScript Interpreter in Roc</a>
 <ol>
 <li><a href="introduction.html"><span class="number">1</span>Introduction</a></li>
-<li><a href="how-it-got-here.html"><span class="number">2</span>How it got here</a></li>
-<li><a href="the-pipeline-and-the-machine.html"><span class="number">3</span>The pipeline and the machine</a></li>
-<li class="here"><a href="the-collector-the-rules-and-the-host.html"><span class="number">4</span>The collector, the rules and the host</a><ol class="sections"><li><a href="the-collector-the-rules-and-the-host.html#the-collector-and-its-roots">The collector and its roots</a></li><li><a href="the-collector-the-rules-and-the-host.html#valuerules-and-events">ValueRules and Events</a></li><li><a href="the-collector-the-rules-and-the-host.html#the-host-and-its-effects">The host and its effects</a></li><li><a href="the-collector-the-rules-and-the-host.html#the-page">The page</a></li></ol></li>
-<li><a href="what-copies.html"><span class="number">5</span>What copies</a></li>
-<li><a href="dev-and-release-builds-disagree.html"><span class="number">6</span>Dev and release builds disagree</a></li>
-<li><a href="build-times.html"><span class="number">7</span>Build times</a></li>
-<li><a href="how-it-is-tested.html"><span class="number">8</span>How it is tested</a></li>
-<li><a href="what-is-left.html"><span class="number">9</span>What is left</a></li>
+<li><a href="motivation.html"><span class="number">2</span>Motivation</a></li>
+<li><a href="how-it-got-here.html"><span class="number">3</span>How it got here</a></li>
+<li><a href="the-pipeline-and-the-machine.html"><span class="number">4</span>The pipeline and the machine</a></li>
+<li class="here"><a href="the-collector-the-rules-and-the-host.html"><span class="number">5</span>The collector, the rules and the host</a><ol class="sections"><li><a href="the-collector-the-rules-and-the-host.html#the-collector-and-its-roots">The collector and its roots</a></li><li><a href="the-collector-the-rules-and-the-host.html#valuerules-and-events">ValueRules and Events</a></li><li><a href="the-collector-the-rules-and-the-host.html#the-host-and-its-effects">The host and its effects</a></li><li><a href="the-collector-the-rules-and-the-host.html#the-page">The page</a></li></ol></li>
+<li><a href="what-copies.html"><span class="number">6</span>What copies</a></li>
+<li><a href="dev-and-release-builds-disagree.html"><span class="number">7</span>Dev and release builds disagree</a></li>
+<li><a href="build-times.html"><span class="number">8</span>Build times</a></li>
+<li><a href="how-it-is-tested.html"><span class="number">9</span>How it is tested</a></li>
+<li><a href="what-is-left.html"><span class="number">10</span>What is left</a></li>
+<li><a href="appendix-a-the-playgrounds-samples.html">Appendix A: The playground&#39;s samples</a></li>
+<li><a href="appendix-b-the-tested-programs.html">Appendix B: The tested programs</a></li>
 </ol>
 </nav>
 <main>
 <p class="book-bar"><a href="index.html">A JavaScript Interpreter in Roc</a> <a href="#chapters">Chapters</a></p>
 <article>
-<p class="chapter-number">Chapter 4</p>
+<p class="chapter-number">Chapter 5</p>
 <h1 id="the-collector-the-rules-and-the-host">The collector, the rules and the host</h1>
 <p>This chapter covers the parts around the loop: the collector that frees the heap&#39;s cells, the two modules every run shares, the host that carries the effects, and the page.</p>
 <h2 id="the-collector-and-its-roots">The collector and its roots <a class="section-link" href="#the-collector-and-its-roots" aria-label="Link to this section">§</a></h2>
@@ -144,7 +147,7 @@
 <li><strong><code>js-vm</code>&#39;s</strong> host prints each log as it is made.</li>
 </ul>
 <h2 id="the-page">The page <a class="section-link" href="#the-page" aria-label="Link to this section">§</a></h2>
-<p>The page is <code>js/web/</code>. <code>js_page.js</code> makes everything the page shows, its styles included, so the HTML is only a door: an editor, the canvas and the console. <code>js_runner.js</code> is the door onto <code>js.wasm</code>: it starts a program, then calls it a frame at a time, about 30 times a second, each frame a tick of the program&#39;s clock (<code>Vm.tick!</code>) that runs the clicks queued since the last tick, the timers due and <code>frame(t)</code>. <code>js_painter.js</code> paints each effect&#39;s line on a 2D canvas as it arrives, and the browser shows the canvas when the frame&#39;s call returns.</p>
+<p>The page is <code>js/web/</code>. <code>js_page.js</code> makes everything the page shows, its styles included, so the HTML is only a door: an editor, the canvas and the console. <code>js_runner.js</code> loads <code>js.wasm</code>, starts a program, then calls it a frame at a time, about 30 times a second, each frame a tick of the program&#39;s clock (<code>Vm.tick!</code>) that runs the clicks queued since the last tick, the timers due and <code>frame(t)</code>. <code>js_painter.js</code> paints each effect&#39;s line on a 2D canvas as it arrives, and the browser shows the canvas when the frame&#39;s call returns.</p>
 <p>The memory view, <code>js_memory.js</code>, is a popup with two small charts of the last run. The top one is the heap&#39;s cells in use, which climb as the program allocates and drop at each collection, a sawtooth; the bottom one is the wasm memory&#39;s size. The VM reports each collection through <code>collected!</code>, so the count lives in the host, outside the machine.</p>
 <p><code>js/build.shale</code> names every file but <code>index.html</code> by its bytes, so a browser always loads the scripts that match its page, and it replaces the page only after <code>js/page_check.mjs</code> passes.</p>
 

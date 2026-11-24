@@ -12,24 +12,27 @@
 <a class="book-name" href="index.html">A JavaScript Interpreter in Roc</a>
 <ol>
 <li><a href="introduction.html"><span class="number">1</span>Introduction</a></li>
-<li><a href="how-it-got-here.html"><span class="number">2</span>How it got here</a></li>
-<li><a href="the-pipeline-and-the-machine.html"><span class="number">3</span>The pipeline and the machine</a></li>
-<li><a href="the-collector-the-rules-and-the-host.html"><span class="number">4</span>The collector, the rules and the host</a></li>
-<li><a href="what-copies.html"><span class="number">5</span>What copies</a></li>
-<li><a href="dev-and-release-builds-disagree.html"><span class="number">6</span>Dev and release builds disagree</a></li>
-<li><a href="build-times.html"><span class="number">7</span>Build times</a></li>
-<li class="here"><a href="how-it-is-tested.html"><span class="number">8</span>How it is tested</a><ol class="sections"><li><a href="how-it-is-tested.html#the-oracle-against-node">The oracle against node</a></li><li><a href="how-it-is-tested.html#controls-held-exactly">Controls held exactly</a></li><li><a href="how-it-is-tested.html#golden-logs-for-the-canvas">Golden logs for the canvas</a></li><li><a href="how-it-is-tested.html#page-check">page_check</a></li><li><a href="how-it-is-tested.html#planted-faults">Planted faults</a></li></ol></li>
-<li><a href="what-is-left.html"><span class="number">9</span>What is left</a></li>
+<li><a href="motivation.html"><span class="number">2</span>Motivation</a></li>
+<li><a href="how-it-got-here.html"><span class="number">3</span>How it got here</a></li>
+<li><a href="the-pipeline-and-the-machine.html"><span class="number">4</span>The pipeline and the machine</a></li>
+<li><a href="the-collector-the-rules-and-the-host.html"><span class="number">5</span>The collector, the rules and the host</a></li>
+<li><a href="what-copies.html"><span class="number">6</span>What copies</a></li>
+<li><a href="dev-and-release-builds-disagree.html"><span class="number">7</span>Dev and release builds disagree</a></li>
+<li><a href="build-times.html"><span class="number">8</span>Build times</a></li>
+<li class="here"><a href="how-it-is-tested.html"><span class="number">9</span>How it is tested</a><ol class="sections"><li><a href="how-it-is-tested.html#the-oracle-against-node">The oracle against node</a></li><li><a href="how-it-is-tested.html#controls-held-exactly">Controls held exactly</a></li><li><a href="how-it-is-tested.html#golden-logs-for-the-canvas">Golden logs for the canvas</a></li><li><a href="how-it-is-tested.html#page-check">page_check</a></li><li><a href="how-it-is-tested.html#planted-faults">Planted faults</a></li></ol></li>
+<li><a href="what-is-left.html"><span class="number">10</span>What is left</a></li>
+<li><a href="appendix-a-the-playgrounds-samples.html">Appendix A: The playground&#39;s samples</a></li>
+<li><a href="appendix-b-the-tested-programs.html">Appendix B: The tested programs</a></li>
 </ol>
 </nav>
 <main>
 <p class="book-bar"><a href="index.html">A JavaScript Interpreter in Roc</a> <a href="#chapters">Chapters</a></p>
 <article>
-<p class="chapter-number">Chapter 8</p>
+<p class="chapter-number">Chapter 9</p>
 <h1 id="how-it-is-tested">How it is tested</h1>
 <p>A check is trusted once it has been seen to fail. Each check below holds the code to a fixed answer, and each count is exact.</p>
 <h2 id="the-oracle-against-node">The oracle against node <a class="section-link" href="#the-oracle-against-node" aria-label="Link to this section">§</a></h2>
-<p><code>js/oracle.shale</code>, a tier of the default <code>check.shale</code>, holds every corpus program&#39;s transcript and exit code to node&#39;s, 55 of them, and every refusal to its message. Every program runs, and the run fails if any one fails. It also runs with <code>collect=every</code>, which collects after every instruction that allocates, and programs 51 to 53 hold values through each kind of root while collections run.</p>
+<p><code>js/oracle.shale</code>, a tier of the default <code>check.shale</code>, holds every corpus program&#39;s transcript and exit code to node&#39;s, 57 of them, and every refusal to its message. Every program runs, and the run fails if any one fails. It also runs with <code>collect=every</code>, which collects after every instruction that allocates, and programs 51 to 53 hold values through each kind of root while collections run.</p>
 <h2 id="controls-held-exactly">Controls held exactly <a class="section-link" href="#controls-held-exactly" aria-label="Link to this section">§</a></h2>
 <p><code>check.shale js=1</code> runs the nine allocation controls of <a class="chapter-link" href="dev-and-release-builds-disagree.html">“Dev and release builds disagree”</a>, in both builds. A missing expected file fails the run (<code>6b13e927</code>).</p>
 <h2 id="golden-logs-for-the-canvas">Golden logs for the canvas <a class="section-link" href="#golden-logs-for-the-canvas" aria-label="Link to this section">§</a></h2>
@@ -37,7 +40,7 @@
 <h2 id="page-check">page_check <a class="section-link" href="#page-check" aria-label="Link to this section">§</a></h2>
 <p><code>js/page_check.mjs</code> drives the page&#39;s own JavaScript under node. It holds the wasm to node on every corpus program and refusal, holds the samples to their golden logs, and checks the memory view. The page is replaced only after it passes.</p>
 <h2 id="planted-faults">Planted faults <a class="section-link" href="#planted-faults" aria-label="Link to this section">§</a></h2>
-<p>The record has many plants, each reverted:</p>
+<p>The record lists five plants, each reverted:</p>
 <ul>
 <li>a line width of 72 instead of 80 turned one program red (<code>cfe7c5fc</code>);</li>
 <li>the event queue left out of the roots turned 52 red, and <code>filter</code>&#39;s item left off the stack turned 53 red (<code>2094d365</code>);</li>

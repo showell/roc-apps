@@ -12,22 +12,25 @@
 <a class="book-name" href="index.html">A JavaScript Interpreter in Roc</a>
 <ol>
 <li><a href="introduction.html"><span class="number">1</span>Introduction</a></li>
-<li><a href="how-it-got-here.html"><span class="number">2</span>How it got here</a></li>
-<li><a href="the-pipeline-and-the-machine.html"><span class="number">3</span>The pipeline and the machine</a></li>
-<li><a href="the-collector-the-rules-and-the-host.html"><span class="number">4</span>The collector, the rules and the host</a></li>
-<li><a href="what-copies.html"><span class="number">5</span>What copies</a></li>
-<li class="here"><a href="dev-and-release-builds-disagree.html"><span class="number">6</span>Dev and release builds disagree</a><ol class="sections"><li><a href="dev-and-release-builds-disagree.html#allocation-counts">Allocation counts</a></li><li><a href="dev-and-release-builds-disagree.html#copies-that-happen-only-in-dev">Copies that happen only in dev</a></li><li><a href="dev-and-release-builds-disagree.html#timings">Timings</a></li><li><a href="dev-and-release-builds-disagree.html#rails">Rails</a></li><li><a href="dev-and-release-builds-disagree.html#what-each-build-is-for">What each build is for</a></li></ol></li>
-<li><a href="build-times.html"><span class="number">7</span>Build times</a></li>
-<li><a href="how-it-is-tested.html"><span class="number">8</span>How it is tested</a></li>
-<li><a href="what-is-left.html"><span class="number">9</span>What is left</a></li>
+<li><a href="motivation.html"><span class="number">2</span>Motivation</a></li>
+<li><a href="how-it-got-here.html"><span class="number">3</span>How it got here</a></li>
+<li><a href="the-pipeline-and-the-machine.html"><span class="number">4</span>The pipeline and the machine</a></li>
+<li><a href="the-collector-the-rules-and-the-host.html"><span class="number">5</span>The collector, the rules and the host</a></li>
+<li><a href="what-copies.html"><span class="number">6</span>What copies</a></li>
+<li class="here"><a href="dev-and-release-builds-disagree.html"><span class="number">7</span>Dev and release builds disagree</a><ol class="sections"><li><a href="dev-and-release-builds-disagree.html#allocation-counts">Allocation counts</a></li><li><a href="dev-and-release-builds-disagree.html#copies-that-happen-only-in-dev">Copies that happen only in dev</a></li><li><a href="dev-and-release-builds-disagree.html#timings">Timings</a></li><li><a href="dev-and-release-builds-disagree.html#step-budgets">Step budgets</a></li><li><a href="dev-and-release-builds-disagree.html#what-each-build-is-for">What each build is for</a></li></ol></li>
+<li><a href="build-times.html"><span class="number">8</span>Build times</a></li>
+<li><a href="how-it-is-tested.html"><span class="number">9</span>How it is tested</a></li>
+<li><a href="what-is-left.html"><span class="number">10</span>What is left</a></li>
+<li><a href="appendix-a-the-playgrounds-samples.html">Appendix A: The playground&#39;s samples</a></li>
+<li><a href="appendix-b-the-tested-programs.html">Appendix B: The tested programs</a></li>
 </ol>
 </nav>
 <main>
 <p class="book-bar"><a href="index.html">A JavaScript Interpreter in Roc</a> <a href="#chapters">Chapters</a></p>
 <article>
-<p class="chapter-number">Chapter 6</p>
+<p class="chapter-number">Chapter 7</p>
 <h1 id="dev-and-release-builds-disagree">Dev and release builds disagree</h1>
-<p>Roc has two backends. The dev backend (<code>--opt=dev</code>) compiles in about a second and emits code that is mostly stack moves. The release build (<code>--opt=speed</code>) goes through LLVM, runs much faster, and compiles slowly. The two builds disagree about allocations, about time and about copies, and this project met each disagreement.</p>
+<p>Roc has two backends. The dev backend (<code>--opt=dev</code>) compiles in about a second and emits code that is mostly stack moves. The release build (<code>--opt=speed</code>) goes through LLVM, runs fib(22) about nine times faster, and compiles slowly. The two builds disagree about allocations, about time and about copies, and this project met each disagreement.</p>
 <h2 id="allocation-counts">Allocation counts <a class="section-link" href="#allocation-counts" aria-label="Link to this section">§</a></h2>
 <p><code>js/controls/</code> holds nine small programs, each a loop that does one kind of write. <code>js/controls.shale</code> runs each at 1,000 and 10,000 passes, counts <code>roc_alloc</code>&#39;s calls exactly, and holds what one pass allocates to <code>expected.txt</code> (release) and <code>expected-dev.txt</code> (dev). A control left out of a file is held to 0.</p>
 <table>
@@ -134,7 +137,7 @@
 </tbody>
 </table>
 <p>The first two rows show a change that halved the dev time of the loops while moving the release time by 11 ms. The third shows a branch that was faster than master on dev and 40% slower in release. Today the release build runs fib(22) about nine times faster than the dev build (860 against 99 ms).</p>
-<h2 id="rails">Rails <a class="section-link" href="#rails" aria-label="Link to this section">§</a></h2>
+<h2 id="step-budgets">Step budgets <a class="section-link" href="#step-budgets" aria-label="Link to this section">§</a></h2>
 <p>The page runs a program on the browser&#39;s main thread, so it holds the program to step budgets: 3,000,000 steps before the first frame and 300,000 a frame. The walker counted statements; the VM counts calls and loop passes, so the same budget covers about twice the work. On the dev backend the walker took 1.1 s of CPU to run out a frame&#39;s budget and 5.2 s for a program&#39;s; the VM takes 2.0 s and 8.8 s (<code>a9a06e74</code>, <code>js/README.md</code>, &quot;Pitfalls&quot;).</p>
 <h2 id="what-each-build-is-for">What each build is for <a class="section-link" href="#what-each-build-is-for" aria-label="Link to this section">§</a></h2>
 <p>roc-apps&#39; <code>CLAUDE.md</code> (section 9) and <code>js/README.md</code> give each build its job. Screen on the dev build: allocation counts are deterministic, so a change that moves one shows on the dev ladder in seconds, and most trials end there. Measure on the release build, once per round, from one shared build (<code>tools/roc_build.shale</code> keys each build by its inputs, so a ladder, a timing and a heap probe of the same tree share it). A dev-build timing says little about the program.</p>

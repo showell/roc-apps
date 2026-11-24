@@ -1,0 +1,907 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Appendix A: The playground&#39;s samples · A JavaScript Interpreter in Roc</title>
+<link rel="icon" href="data:,">
+<link rel="stylesheet" href="book.css">
+</head>
+<body class="chapter">
+<nav class="book-nav" id="chapters" aria-label="Chapters">
+<a class="book-name" href="index.html">A JavaScript Interpreter in Roc</a>
+<ol>
+<li><a href="introduction.html"><span class="number">1</span>Introduction</a></li>
+<li><a href="motivation.html"><span class="number">2</span>Motivation</a></li>
+<li><a href="how-it-got-here.html"><span class="number">3</span>How it got here</a></li>
+<li><a href="the-pipeline-and-the-machine.html"><span class="number">4</span>The pipeline and the machine</a></li>
+<li><a href="the-collector-the-rules-and-the-host.html"><span class="number">5</span>The collector, the rules and the host</a></li>
+<li><a href="what-copies.html"><span class="number">6</span>What copies</a></li>
+<li><a href="dev-and-release-builds-disagree.html"><span class="number">7</span>Dev and release builds disagree</a></li>
+<li><a href="build-times.html"><span class="number">8</span>Build times</a></li>
+<li><a href="how-it-is-tested.html"><span class="number">9</span>How it is tested</a></li>
+<li><a href="what-is-left.html"><span class="number">10</span>What is left</a></li>
+<li class="here"><a href="appendix-a-the-playgrounds-samples.html">Appendix A: The playground&#39;s samples</a><ol class="sections"><li><a href="appendix-a-the-playgrounds-samples.html#a-bouncing-ball">A bouncing ball</a></li><li><a href="appendix-a-the-playgrounds-samples.html#all-features">all features</a></li><li><a href="appendix-a-the-playgrounds-samples.html#garbage-collection">garbage collection</a></li><li><a href="appendix-a-the-playgrounds-samples.html#a-turtle-spiral">A turtle spiral</a></li><li><a href="appendix-a-the-playgrounds-samples.html#a-clock-that-ticks-once-a-second-on-a-chain-of-timeouts">A clock that ticks once a second, on a chain of timeouts</a></li><li><a href="appendix-a-the-playgrounds-samples.html#a-starfield-flown-through">A starfield, flown through</a></li><li><a href="appendix-a-the-playgrounds-samples.html#a-fractal-tree-each-branch-two-smaller-ones">A fractal tree, each branch two smaller ones</a></li><li><a href="appendix-a-the-playgrounds-samples.html#a-tiny-game-click-the-canvas-then-steer-with-the-arrow-keys">A tiny game: click the canvas, then steer with the arrow keys</a></li><li><a href="appendix-a-the-playgrounds-samples.html#click-to-place-dots">Click to place dots</a></li><li><a href="appendix-a-the-playgrounds-samples.html#a-countdown-on-timers">A countdown on timers</a></li><li><a href="appendix-a-the-playgrounds-samples.html#garbage-heard-by-oncollect">garbage, heard by onCollect</a></li><li><a href="appendix-a-the-playgrounds-samples.html#the-pages-own-console-samples">The page&#39;s own console samples</a></li></ol></li>
+<li><a href="appendix-b-the-tested-programs.html">Appendix B: The tested programs</a></li>
+</ol>
+</nav>
+<main>
+<p class="book-bar"><a href="index.html">A JavaScript Interpreter in Roc</a> <a href="#chapters">Chapters</a></p>
+<article>
+<h1 id="appendix-a-the-playgrounds-samples">Appendix A: The playground&#39;s samples</h1>
+<p>Each of these runs in <a href="https://roc.lynrummy.com/js/">the playground</a>, where it can be changed and run again.</p>
+<h2 id="a-bouncing-ball">A bouncing ball <a class="section-link" href="#a-bouncing-ball" aria-label="Link to this section">§</a></h2>
+<figure class="listing"><figcaption>js/canvas/1-bouncing-ball.js, the whole file</figcaption><pre><code class="language-javascript"><span class="syn-comment">// A bouncing ball</span>
+<span class="syn-comment">// Try changing these, then press Run:</span>
+<span class="syn-keyword">const</span> BALL_RADIUS = <span class="syn-number">20</span>; <span class="syn-comment">// the ball&#39;s size, in pixels: try 8, or 50</span>
+<span class="syn-keyword">const</span> BALL_COLOR = <span class="syn-string">&quot;tomato&quot;</span>; <span class="syn-comment">// any CSS color, like &quot;gold&quot; or &quot;#3a7&quot;</span>
+<span class="syn-keyword">const</span> SPEED_X = <span class="syn-number">4</span>; <span class="syn-comment">// pixels a frame across: try 10, or 0 to bounce straight up and down</span>
+<span class="syn-keyword">const</span> SPEED_Y = <span class="syn-number">3</span>; <span class="syn-comment">// pixels a frame down: try 1, or 0 to roll from side to side</span>
+<span class="syn-keyword">const</span> BACKGROUND = <span class="syn-string">&quot;#f4efe6&quot;</span>; <span class="syn-comment">// the color behind the ball: try &quot;black&quot;</span>
+
+<span class="syn-keyword">let</span> x = <span class="syn-number">60</span>, y = <span class="syn-number">80</span>;
+<span class="syn-keyword">let</span> dx = SPEED_X, dy = SPEED_Y;
+
+<span class="syn-keyword">function</span> <span class="syn-name">frame</span>(t) {
+  background(BACKGROUND);
+  noStroke();
+  fill(BALL_COLOR);
+  circle(x, y, BALL_RADIUS);
+  x += dx;
+  y += dy;
+  <span class="syn-keyword">if</span> (x &lt; BALL_RADIUS || x &gt; <span class="syn-number">400</span> - BALL_RADIUS) dx = -dx;
+  <span class="syn-keyword">if</span> (y &lt; BALL_RADIUS || y &gt; <span class="syn-number">400</span> - BALL_RADIUS) dy = -dy;
+}
+</code></pre></figure><h2 id="all-features">all features <a class="section-link" href="#all-features" aria-label="Link to this section">§</a></h2>
+<figure class="listing"><figcaption>js/tests/54-big-daddy.js, the whole file</figcaption><pre><code class="language-javascript"><span class="syn-comment">// all features: a day in a little simulated city, in stages. Each stage</span>
+<span class="syn-comment">// prints a checksum, so any engine that runs it can be held to node&#39;s answer.</span>
+<span class="syn-comment">// SIZE scales the work: the residents, the street map, the sieve and the</span>
+<span class="syn-comment">// newsletter all grow with it. Each `SUPPORTS` comment marks the first use</span>
+<span class="syn-comment">// of a feature of the subset (js/README.md, &quot;The subset&quot;).</span>
+<span class="syn-comment">// SUPPORTS let and const, with block scope</span>
+<span class="syn-keyword">const</span> SIZE = <span class="syn-number">5</span>;
+
+<span class="syn-comment">// ── Two tools every stage uses: a seeded random source and a checksum ──</span>
+
+<span class="syn-comment">// The same seed gives the same city on every run, in every engine.</span>
+<span class="syn-comment">// SUPPORTS function declarations</span>
+<span class="syn-keyword">function</span> <span class="syn-name">makeRandom</span>(seed) {
+  <span class="syn-keyword">let</span> state = seed;
+  <span class="syn-comment">// SUPPORTS arrow functions and closures: the arrow keeps `state`</span>
+  <span class="syn-keyword">return</span> (n) =&gt; {
+    <span class="syn-comment">// SUPPORTS arithmetic and assignment</span>
+    state = (state * <span class="syn-number">75</span> + <span class="syn-number">74</span>) % <span class="syn-number">65537</span>;
+    <span class="syn-keyword">return</span> state % n;
+  };
+}
+
+<span class="syn-comment">// A running hash of everything a stage adds to it, kept in a closure.</span>
+<span class="syn-comment">// SUPPORTS default parameters</span>
+<span class="syn-keyword">function</span> <span class="syn-name">makeChecksum</span>(seed = <span class="syn-number">7</span>) {
+  <span class="syn-keyword">let</span> sum = seed;
+  <span class="syn-comment">// SUPPORTS object literals, with methods</span>
+  <span class="syn-keyword">return</span> {
+    <span class="syn-comment">// SUPPORTS rest parameters</span>
+    add(...values) {
+      <span class="syn-comment">// SUPPORTS for ... of, over an array</span>
+      <span class="syn-keyword">for</span> (<span class="syn-keyword">const</span> value <span class="syn-keyword">of</span> values) {
+        <span class="syn-comment">// SUPPORTS String(x), and for ... of over a string</span>
+        <span class="syn-keyword">for</span> (<span class="syn-keyword">const</span> ch <span class="syn-keyword">of</span> String(value)) sum = (sum * <span class="syn-number">31</span> + ch.charCodeAt(<span class="syn-number">0</span>)) % <span class="syn-number">1000003</span>;
+      }
+    },
+    value: () =&gt; sum,
+  };
+}
+
+<span class="syn-keyword">const</span> random = makeRandom(<span class="syn-number">2026</span>);
+<span class="syn-keyword">const</span> checksum = makeChecksum();
+
+<span class="syn-comment">// ── Stage 1: the census, written as text and read back ──</span>
+
+<span class="syn-comment">// SUPPORTS array literals</span>
+<span class="syn-keyword">const</span> FIRST = [<span class="syn-string">&quot;ada&quot;</span>, <span class="syn-string">&quot;bo&quot;</span>, <span class="syn-string">&quot;cy&quot;</span>, <span class="syn-string">&quot;dee&quot;</span>, <span class="syn-string">&quot;eli&quot;</span>, <span class="syn-string">&quot;fay&quot;</span>, <span class="syn-string">&quot;gus&quot;</span>, <span class="syn-string">&quot;hal&quot;</span>, <span class="syn-string">&quot;ivy&quot;</span>, <span class="syn-string">&quot;jo&quot;</span>];
+<span class="syn-keyword">const</span> LAST = [<span class="syn-string">&quot;stone&quot;</span>, <span class="syn-string">&quot;brook&quot;</span>, <span class="syn-string">&quot;hill&quot;</span>, <span class="syn-string">&quot;marsh&quot;</span>, <span class="syn-string">&quot;wood&quot;</span>];
+<span class="syn-keyword">const</span> DISTRICTS = [<span class="syn-string">&quot;harbor&quot;</span>, <span class="syn-string">&quot;market&quot;</span>, <span class="syn-string">&quot;old town&quot;</span>, <span class="syn-string">&quot;uplands&quot;</span>];
+<span class="syn-keyword">const</span> JOBS = [<span class="syn-string">&quot;baker&quot;</span>, <span class="syn-string">&quot;nurse&quot;</span>, <span class="syn-string">&quot;doctor&quot;</span>, <span class="syn-string">&quot;teacher&quot;</span>, <span class="syn-string">&quot;smith&quot;</span>, <span class="syn-string">&quot;clerk&quot;</span>, <span class="syn-string">&quot;none&quot;</span>];
+
+<span class="syn-keyword">let</span> censusText = <span class="syn-string">&quot;&quot;</span>;
+<span class="syn-comment">// SUPPORTS the C-form for, and ++</span>
+<span class="syn-keyword">for</span> (<span class="syn-keyword">let</span> i = <span class="syn-number">0</span>; i &lt; SIZE * <span class="syn-number">20</span>; i++) {
+  <span class="syn-comment">// SUPPORTS template strings</span>
+  <span class="syn-keyword">const</span> name = <span class="syn-string">`</span>${FIRST[random(FIRST.length)]}<span class="syn-string"> </span>${LAST[random(LAST.length)]}<span class="syn-string">`</span>;
+  <span class="syn-keyword">const</span> district = DISTRICTS[random(DISTRICTS.length)];
+  <span class="syn-keyword">const</span> job = JOBS[random(JOBS.length)];
+  <span class="syn-comment">// A resident with no job leaves the last field out.</span>
+  <span class="syn-keyword">const</span> fields = [name, district, <span class="syn-number">18</span> + random(<span class="syn-number">70</span>), <span class="syn-number">1</span> + random(SIZE * <span class="syn-number">300</span>)];
+  <span class="syn-comment">// SUPPORTS if, and ===/!==</span>
+  <span class="syn-keyword">if</span> (job !== <span class="syn-string">&quot;none&quot;</span>) fields.push(job);
+  <span class="syn-comment">// SUPPORTS compound assignment, here joining strings</span>
+  censusText += <span class="syn-string">`  </span>${fields.join(<span class="syn-string">&quot; ; &quot;</span>)}<span class="syn-string">\n`</span>;
+}
+
+<span class="syn-comment">// The subset has no parseInt, so digits are read one at a time.</span>
+<span class="syn-keyword">function</span> <span class="syn-name">parseNumber</span>(text) {
+  <span class="syn-keyword">let</span> n = <span class="syn-number">0</span>;
+  <span class="syn-keyword">for</span> (<span class="syn-keyword">const</span> digit <span class="syn-keyword">of</span> text) n = n * <span class="syn-number">10</span> + (digit.charCodeAt(<span class="syn-number">0</span>) - <span class="syn-number">48</span>);
+  <span class="syn-keyword">return</span> n;
+}
+
+<span class="syn-keyword">const</span> residents = [];
+<span class="syn-keyword">for</span> (<span class="syn-keyword">const</span> line <span class="syn-keyword">of</span> censusText.split(<span class="syn-string">&quot;\n&quot;</span>)) {
+  <span class="syn-comment">// SUPPORTS continue</span>
+  <span class="syn-keyword">if</span> (line.trim() === <span class="syn-string">&quot;&quot;</span>) <span class="syn-keyword">continue</span>;
+  <span class="syn-comment">// SUPPORTS destructuring: an array pattern, with a default</span>
+  <span class="syn-keyword">const</span> [name, district, ageText, houseText, job = <span class="syn-string">&quot;retired&quot;</span>] = line.split(<span class="syn-string">&quot;;&quot;</span>).map((field) =&gt; field.trim());
+  <span class="syn-comment">// SUPPORTS shorthand properties</span>
+  residents.push({ id: residents.length, name, district, age: parseNumber(ageText), house: parseNumber(houseText), job });
+}
+
+<span class="syn-comment">// SUPPORTS hoisting: sectorOf is called here and declared below.</span>
+<span class="syn-comment">// SUPPORTS Map</span>
+<span class="syn-keyword">const</span> sectors = <span class="syn-keyword">new</span> Map();
+<span class="syn-comment">// SUPPORTS destructuring in for ... of: an object pattern</span>
+<span class="syn-keyword">for</span> (<span class="syn-keyword">const</span> { job } <span class="syn-keyword">of</span> residents) {
+  <span class="syn-keyword">const</span> sector = sectorOf(job);
+  <span class="syn-comment">// SUPPORTS ??</span>
+  sectors.set(sector, (sectors.get(sector) ?? <span class="syn-number">0</span>) + <span class="syn-number">1</span>);
+}
+
+<span class="syn-keyword">function</span> <span class="syn-name">sectorOf</span>(job) {
+  <span class="syn-comment">// SUPPORTS switch, with cases sharing a body and default anywhere</span>
+  <span class="syn-keyword">switch</span> (job) {
+    <span class="syn-keyword">case</span> <span class="syn-string">&quot;nurse&quot;</span>:
+    <span class="syn-keyword">case</span> <span class="syn-string">&quot;doctor&quot;</span>:
+      <span class="syn-keyword">return</span> <span class="syn-string">&quot;health&quot;</span>;
+    <span class="syn-keyword">case</span> <span class="syn-string">&quot;baker&quot;</span>:
+    <span class="syn-keyword">case</span> <span class="syn-string">&quot;smith&quot;</span>:
+      <span class="syn-keyword">return</span> <span class="syn-string">&quot;trade&quot;</span>;
+    <span class="syn-keyword">default</span>:
+      <span class="syn-keyword">return</span> <span class="syn-string">&quot;other&quot;</span>;
+    <span class="syn-keyword">case</span> <span class="syn-string">&quot;teacher&quot;</span>:
+      <span class="syn-keyword">return</span> <span class="syn-string">&quot;schools&quot;</span>;
+  }
+}
+
+<span class="syn-comment">// Health workers get both perks, teachers the second.</span>
+<span class="syn-comment">// SUPPORTS switch with fall-through</span>
+<span class="syn-keyword">function</span> <span class="syn-name">perksOf</span>(sector) {
+  <span class="syn-keyword">let</span> perks = <span class="syn-number">0</span>;
+  <span class="syn-keyword">switch</span> (sector) {
+    <span class="syn-keyword">case</span> <span class="syn-string">&quot;health&quot;</span>:
+      perks += <span class="syn-number">2</span>;
+    <span class="syn-keyword">case</span> <span class="syn-string">&quot;schools&quot;</span>:
+      perks += <span class="syn-number">1</span>;
+      <span class="syn-keyword">break</span>;
+    <span class="syn-keyword">default</span>:
+      perks = <span class="syn-number">0</span>;
+  }
+  <span class="syn-keyword">return</span> perks;
+}
+
+<span class="syn-keyword">const</span> byDistrict = <span class="syn-keyword">new</span> Map();
+<span class="syn-comment">// SUPPORTS null and booleans</span>
+<span class="syn-keyword">const</span> stats = { oldest: <span class="syn-keyword">null</span>, anyDoctor: <span class="syn-keyword">false</span>, allAdults: <span class="syn-keyword">true</span>, perks: <span class="syn-number">0</span> };
+<span class="syn-keyword">for</span> (<span class="syn-keyword">const</span> person <span class="syn-keyword">of</span> residents) {
+  <span class="syn-comment">// SUPPORTS rest in an object pattern</span>
+  <span class="syn-keyword">const</span> { district, age, ...rest } = person;
+  <span class="syn-keyword">const</span> entry = byDistrict.get(district) ?? { people: <span class="syn-number">0</span>, totalAge: <span class="syn-number">0</span> };
+  entry.people++;
+  entry.totalAge += age;
+  byDistrict.set(district, entry);
+
+  <span class="syn-comment">// SUPPORTS the logical assignments, ??=, ||= and &amp;&amp;=</span>
+  stats.oldest ??= person;
+  <span class="syn-keyword">if</span> (age &gt; stats.oldest.age) stats.oldest = person;
+  stats.anyDoctor ||= rest.job === <span class="syn-string">&quot;doctor&quot;</span>;
+  stats.allAdults &amp;&amp;= age &gt;= <span class="syn-number">18</span>;
+  stats.perks += perksOf(sectorOf(rest.job));
+}
+
+<span class="syn-comment">// SUPPORTS nested patterns, and for ... of over a Map</span>
+<span class="syn-keyword">for</span> (<span class="syn-keyword">const</span> [district, { people, totalAge }] <span class="syn-keyword">of</span> byDistrict) checksum.add(district, people, totalAge);
+<span class="syn-comment">// SUPPORTS iterators: a Map&#39;s entries()</span>
+<span class="syn-keyword">for</span> (<span class="syn-keyword">const</span> [sector, count] <span class="syn-keyword">of</span> sectors.entries()) checksum.add(sector, count);
+console.log(<span class="syn-string">`census: </span>${residents.length}<span class="syn-string"> residents in </span>${byDistrict.size}<span class="syn-string"> districts, checksum </span>${checksum.value()}<span class="syn-string">`</span>);
+<span class="syn-comment">// SUPPORTS console.log as node prints it, a Map included</span>
+console.log({
+  <span class="syn-comment">// SUPPORTS object spread</span>
+  oldest: { ...stats.oldest, sector: sectorOf(stats.oldest.job) },
+  sectors,
+  flags: [stats.anyDoctor, stats.allAdults, stats.perks],
+});
+
+<span class="syn-comment">// ── Stage 2: the clerk&#39;s office, where lookups can fail ──</span>
+
+<span class="syn-comment">// SUPPORTS a Map from entries, and the array methods (map here)</span>
+<span class="syn-keyword">const</span> registry = <span class="syn-keyword">new</span> Map(residents.map((r) =&gt; [r.id, r]));
+
+<span class="syn-keyword">function</span> <span class="syn-name">lookUp</span>(id) {
+  <span class="syn-keyword">const</span> person = registry.get(id) ?? <span class="syn-keyword">null</span>;
+  <span class="syn-comment">// SUPPORTS node&#39;s own errors: a TypeError, reading a property of null</span>
+  <span class="syn-keyword">return</span> person.name;
+}
+
+<span class="syn-keyword">function</span> <span class="syn-name">checkAge</span>(age) {
+  <span class="syn-comment">// SUPPORTS ||, throw, and new RangeError(message)</span>
+  <span class="syn-keyword">if</span> (age &lt; <span class="syn-number">0</span> || age &gt; <span class="syn-number">130</span>) <span class="syn-keyword">throw</span> <span class="syn-keyword">new</span> RangeError(<span class="syn-string">`no one is </span>${age}<span class="syn-string">`</span>);
+  <span class="syn-keyword">return</span> age;
+}
+
+<span class="syn-keyword">let</span> lookups = <span class="syn-number">0</span>;
+<span class="syn-keyword">let</span> missing = <span class="syn-number">0</span>;
+<span class="syn-keyword">let</span> lastMessage = <span class="syn-string">&quot;&quot;</span>;
+<span class="syn-keyword">for</span> (<span class="syn-keyword">const</span> id <span class="syn-keyword">of</span> [<span class="syn-number">3</span>, -<span class="syn-number">1</span>, residents.length, <span class="syn-number">7</span>]) {
+  <span class="syn-comment">// SUPPORTS try, catch and finally</span>
+  <span class="syn-keyword">try</span> {
+    checksum.add(lookUp(id));
+  } <span class="syn-keyword">catch</span> (e) {
+    <span class="syn-comment">// SUPPORTS throwing again what was caught</span>
+    <span class="syn-keyword">if</span> (e.name !== <span class="syn-string">&quot;TypeError&quot;</span>) <span class="syn-keyword">throw</span> e;
+    missing++;
+    lastMessage = e.message;
+  } <span class="syn-keyword">finally</span> {
+    lookups++;
+  }
+}
+<span class="syn-keyword">let</span> refused = <span class="syn-string">&quot;&quot;</span>;
+<span class="syn-comment">// SUPPORTS a catch pattern, below</span>
+<span class="syn-keyword">try</span> {
+  checkAge(stats.oldest.age + <span class="syn-number">100</span>);
+} <span class="syn-keyword">catch</span> ({ name, message }) {
+  refused = <span class="syn-string">`</span>${name}<span class="syn-string">: </span>${message}<span class="syn-string">`</span>;
+}
+checksum.add(lookups, missing, refused);
+console.log(<span class="syn-string">`clerk: </span>${lookups}<span class="syn-string"> lookups, </span>${missing}<span class="syn-string"> missing (&quot;</span>${lastMessage}<span class="syn-string">&quot;), </span>${refused}<span class="syn-string">, checksum </span>${checksum.value()}<span class="syn-string">`</span>);
+
+<span class="syn-comment">// ── Stage 3: the residents in order, by merge sort, checked by sort ──</span>
+
+<span class="syn-keyword">function</span> <span class="syn-name">byDistrictThenAge</span>(a, b) {
+  <span class="syn-comment">// SUPPORTS ?:, and &lt; on strings</span>
+  <span class="syn-keyword">if</span> (a.district !== b.district) <span class="syn-keyword">return</span> a.district &lt; b.district ? -<span class="syn-number">1</span> : <span class="syn-number">1</span>;
+  <span class="syn-keyword">if</span> (a.age !== b.age) <span class="syn-keyword">return</span> b.age - a.age;
+  <span class="syn-keyword">return</span> a.id - b.id;
+}
+
+<span class="syn-keyword">function</span> <span class="syn-name">mergeSort</span>(items, compare) {
+  <span class="syn-keyword">if</span> (items.length &lt;= <span class="syn-number">1</span>) <span class="syn-keyword">return</span> items;
+  <span class="syn-comment">// SUPPORTS Math</span>
+  <span class="syn-keyword">const</span> middle = Math.floor(items.length / <span class="syn-number">2</span>);
+  <span class="syn-keyword">const</span> left = mergeSort(items.slice(<span class="syn-number">0</span>, middle), compare);
+  <span class="syn-keyword">const</span> right = mergeSort(items.slice(middle), compare);
+  <span class="syn-keyword">const</span> merged = [];
+  <span class="syn-keyword">let</span> i = <span class="syn-number">0</span>;
+  <span class="syn-keyword">let</span> j = <span class="syn-number">0</span>;
+  <span class="syn-comment">// SUPPORTS while, and &amp;&amp;</span>
+  <span class="syn-keyword">while</span> (i &lt; left.length &amp;&amp; j &lt; right.length) {
+    <span class="syn-keyword">if</span> (compare(left[i], right[j]) &lt;= <span class="syn-number">0</span>) merged.push(left[i++]);
+    <span class="syn-keyword">else</span> merged.push(right[j++]);
+  }
+  <span class="syn-comment">// SUPPORTS spread into an array literal</span>
+  <span class="syn-keyword">return</span> [...merged, ...left.slice(i), ...right.slice(j)];
+}
+
+<span class="syn-keyword">const</span> ordered = mergeSort(residents, byDistrictThenAge);
+<span class="syn-comment">// SUPPORTS sort with a comparator</span>
+<span class="syn-keyword">const</span> expected = [...residents].sort(byDistrictThenAge);
+<span class="syn-keyword">const</span> agrees = ordered.every((r, k) =&gt; r === expected[k]);
+<span class="syn-keyword">for</span> (<span class="syn-keyword">const</span> [k, r] <span class="syn-keyword">of</span> ordered.entries()) <span class="syn-keyword">if</span> (k % <span class="syn-number">25</span> === <span class="syn-number">0</span>) checksum.add(r.id);
+<span class="syn-comment">// SUPPORTS optional chaining</span>
+<span class="syn-keyword">const</span> eldest = DISTRICTS.map((d) =&gt; ordered.find((r) =&gt; r.district === d)?.name ?? <span class="syn-string">&quot;nobody&quot;</span>);
+console.log(<span class="syn-string">`sort: </span>${ordered.length}<span class="syn-string"> sorted, agrees with sort: </span>${agrees}<span class="syn-string">, checksum </span>${checksum.value()}<span class="syn-string">`</span>);
+console.log(<span class="syn-string">&quot;eldest by district:&quot;</span>, eldest);
+
+<span class="syn-comment">// ── Stage 4: the shortest walk from city hall to each district ──</span>
+
+<span class="syn-keyword">const</span> WIDTH = <span class="syn-number">4</span> + Math.floor(SIZE / <span class="syn-number">2</span>);
+<span class="syn-keyword">const</span> corner = (x, y) =&gt; <span class="syn-string">`</span>${x}<span class="syn-string">,</span>${y}<span class="syn-string">`</span>;
+<span class="syn-keyword">const</span> streets = <span class="syn-keyword">new</span> Map();
+<span class="syn-comment">// SUPPORTS Set</span>
+<span class="syn-keyword">const</span> closed = <span class="syn-keyword">new</span> Set();
+<span class="syn-keyword">for</span> (<span class="syn-keyword">let</span> y = <span class="syn-number">0</span>; y &lt; WIDTH; y++) {
+  <span class="syn-keyword">for</span> (<span class="syn-keyword">let</span> x = <span class="syn-number">0</span>; x &lt; WIDTH; x++) {
+    <span class="syn-keyword">if</span> ((x + y) % <span class="syn-number">2</span> === <span class="syn-number">1</span> &amp;&amp; random(<span class="syn-number">9</span>) === <span class="syn-number">0</span>) closed.add(corner(x, y));
+  }
+}
+closed.delete(corner(<span class="syn-number">0</span>, <span class="syn-number">0</span>));
+
+<span class="syn-keyword">function</span> <span class="syn-name">connect</span>(a, b, length) {
+  <span class="syn-keyword">if</span> (closed.has(a) || closed.has(b)) <span class="syn-keyword">return</span>;
+  <span class="syn-keyword">for</span> (<span class="syn-keyword">const</span> [from, to] <span class="syn-keyword">of</span> [[a, b], [b, a]]) {
+    <span class="syn-keyword">if</span> (!streets.has(from)) streets.set(from, []);
+    streets.get(from).push({ to, length });
+  }
+}
+
+<span class="syn-keyword">for</span> (<span class="syn-keyword">let</span> y = <span class="syn-number">0</span>; y &lt; WIDTH; y++) {
+  <span class="syn-keyword">for</span> (<span class="syn-keyword">let</span> x = <span class="syn-number">0</span>; x &lt; WIDTH; x++) {
+    <span class="syn-keyword">if</span> (x + <span class="syn-number">1</span> &lt; WIDTH) connect(corner(x, y), corner(x + <span class="syn-number">1</span>, y), <span class="syn-number">1</span> + random(<span class="syn-number">5</span>));
+    <span class="syn-keyword">if</span> (y + <span class="syn-number">1</span> &lt; WIDTH) connect(corner(x, y), corner(x, y + <span class="syn-number">1</span>), <span class="syn-number">1</span> + random(<span class="syn-number">5</span>));
+  }
+}
+
+<span class="syn-comment">// Dijkstra&#39;s algorithm, picking the nearest open corner by a scan.</span>
+<span class="syn-keyword">function</span> <span class="syn-name">shortestWalks</span>(start) {
+  <span class="syn-keyword">const</span> distance = <span class="syn-keyword">new</span> Map([[start, <span class="syn-number">0</span>]]);
+  <span class="syn-keyword">const</span> previous = <span class="syn-keyword">new</span> Map();
+  <span class="syn-keyword">const</span> done = <span class="syn-keyword">new</span> Set();
+  <span class="syn-comment">// SUPPORTS break, out of a loop that never ends by itself</span>
+  <span class="syn-keyword">while</span> (<span class="syn-keyword">true</span>) {
+    <span class="syn-keyword">let</span> nearest = <span class="syn-keyword">null</span>;
+    <span class="syn-keyword">for</span> (<span class="syn-keyword">const</span> [place, d] <span class="syn-keyword">of</span> distance) {
+      <span class="syn-keyword">if</span> (!done.has(place) &amp;&amp; (nearest === <span class="syn-keyword">null</span> || d &lt; distance.get(nearest))) nearest = place;
+    }
+    <span class="syn-keyword">if</span> (nearest === <span class="syn-keyword">null</span>) <span class="syn-keyword">break</span>;
+    done.add(nearest);
+    <span class="syn-keyword">for</span> (<span class="syn-keyword">const</span> { to, length } <span class="syn-keyword">of</span> streets.get(nearest) ?? []) {
+      <span class="syn-keyword">const</span> through = distance.get(nearest) + length;
+      <span class="syn-keyword">if</span> (!distance.has(to) || through &lt; distance.get(to)) {
+        distance.set(to, through);
+        previous.set(to, nearest);
+      }
+    }
+  }
+  <span class="syn-keyword">return</span> { distance, previous };
+}
+
+<span class="syn-keyword">const</span> { distance, previous } = shortestWalks(corner(<span class="syn-number">0</span>, <span class="syn-number">0</span>));
+
+<span class="syn-comment">// The first closed corner, in reading order.</span>
+<span class="syn-keyword">let</span> firstClosed = <span class="syn-string">&quot;none&quot;</span>;
+<span class="syn-comment">// SUPPORTS labelled break</span>
+search: <span class="syn-keyword">for</span> (<span class="syn-keyword">let</span> y = <span class="syn-number">0</span>; y &lt; WIDTH; y++) {
+  <span class="syn-keyword">for</span> (<span class="syn-keyword">let</span> x = <span class="syn-number">0</span>; x &lt; WIDTH; x++) {
+    <span class="syn-keyword">if</span> (closed.has(corner(x, y))) {
+      firstClosed = corner(x, y);
+      <span class="syn-keyword">break</span> search;
+    }
+  }
+}
+
+<span class="syn-keyword">const</span> far = corner(WIDTH - <span class="syn-number">1</span>, WIDTH - <span class="syn-number">1</span>);
+<span class="syn-keyword">const</span> walk = [];
+<span class="syn-comment">// SUPPORTS undefined</span>
+<span class="syn-keyword">let</span> at = distance.has(far) ? far : <span class="syn-keyword">undefined</span>;
+<span class="syn-comment">// SUPPORTS do ... while</span>
+<span class="syn-keyword">do</span> {
+  <span class="syn-keyword">if</span> (at === <span class="syn-keyword">undefined</span>) <span class="syn-keyword">break</span>;
+  walk.unshift(at);
+  at = previous.get(at);
+} <span class="syn-keyword">while</span> (at !== <span class="syn-keyword">undefined</span>);
+
+<span class="syn-keyword">let</span> totalDistance = <span class="syn-number">0</span>;
+<span class="syn-keyword">for</span> (<span class="syn-keyword">const</span> d <span class="syn-keyword">of</span> distance.values()) totalDistance += d;
+<span class="syn-comment">// SUPPORTS **</span>
+<span class="syn-keyword">const</span> straight = Math.sqrt((WIDTH - <span class="syn-number">1</span>) ** <span class="syn-number">2</span> * <span class="syn-number">2</span>);
+checksum.add(distance.size, totalDistance, walk.length, firstClosed);
+console.log(<span class="syn-string">`streets: </span>${WIDTH}<span class="syn-string">x</span>${WIDTH}<span class="syn-string"> corners, </span>${closed.size}<span class="syn-string"> closed (first </span>${firstClosed}<span class="syn-string">), </span>${distance.size}<span class="syn-string"> reachable`</span>);
+console.log(<span class="syn-string">`  the far corner is </span>${distance.get(far) ?? <span class="syn-string">&quot;unreachable&quot;</span>}<span class="syn-string"> blocks away, </span>${Math.round(straight * <span class="syn-number">100</span>) / <span class="syn-number">100</span>}<span class="syn-string"> as the crow flies, </span>${walk.length}<span class="syn-string"> corners on the way`</span>);
+console.log(<span class="syn-string">`  checksum </span>${checksum.value()}<span class="syn-string">`</span>);
+
+<span class="syn-comment">// ── Stage 5: which house numbers are prime, by the sieve of Eratosthenes ──</span>
+
+<span class="syn-keyword">const</span> LIMIT = SIZE * <span class="syn-number">300</span>;
+<span class="syn-comment">// SUPPORTS Array.from, of an object with a length, with a mapper</span>
+<span class="syn-keyword">const</span> isPrime = Array.from({ length: LIMIT + <span class="syn-number">1</span> }, (_, n) =&gt; n &gt;= <span class="syn-number">2</span>);
+<span class="syn-keyword">for</span> (<span class="syn-keyword">let</span> p = <span class="syn-number">2</span>; p * p &lt;= LIMIT; p++) {
+  <span class="syn-comment">// SUPPORTS !</span>
+  <span class="syn-keyword">if</span> (!isPrime[p]) <span class="syn-keyword">continue</span>;
+  <span class="syn-keyword">for</span> (<span class="syn-keyword">let</span> multiple = p * p; multiple &lt;= LIMIT; multiple += p) isPrime[multiple] = <span class="syn-keyword">false</span>;
+}
+<span class="syn-keyword">let</span> primeCount = <span class="syn-number">0</span>;
+<span class="syn-keyword">for</span> (<span class="syn-keyword">let</span> n = <span class="syn-number">0</span>; n &lt;= LIMIT; n++) <span class="syn-keyword">if</span> (isPrime[n]) primeCount++;
+<span class="syn-comment">// SUPPORTS destructuring in parameters</span>
+<span class="syn-keyword">const</span> lucky = residents.filter(({ house }) =&gt; isPrime[house]);
+<span class="syn-keyword">const</span> largest = isPrime.lastIndexOf(<span class="syn-keyword">true</span>);
+checksum.add(primeCount, lucky.length, largest);
+console.log(<span class="syn-string">`sieve: </span>${primeCount}<span class="syn-string"> primes up to </span>${LIMIT}<span class="syn-string">, the largest </span>${largest}<span class="syn-string">; </span>${lucky.length}<span class="syn-string"> residents live at a prime, checksum </span>${checksum.value()}<span class="syn-string">`</span>);
+
+<span class="syn-comment">// ── Stage 6: the newsletter, and its words counted ──</span>
+
+<span class="syn-keyword">const</span> NEWS = [
+  <span class="syn-string">&quot;The market opens early, and the bakers sell bread by the harbor.&quot;</span>,
+  <span class="syn-string">&quot;A doctor and a nurse walk the uplands; the old town sleeps.&quot;</span>,
+  <span class="syn-string">&quot;Teachers say the smith fixed the bell, and the bell rings again!&quot;</span>,
+];
+<span class="syn-keyword">let</span> newsletter = <span class="syn-string">&quot;&quot;</span>;
+<span class="syn-keyword">for</span> (<span class="syn-keyword">let</span> issue = <span class="syn-number">1</span>; issue &lt;= SIZE * <span class="syn-number">4</span>; issue++) {
+  <span class="syn-keyword">const</span> { name, district } = residents[random(residents.length)];
+  newsletter += <span class="syn-string">`</span>${NEWS[issue % NEWS.length]}<span class="syn-string"> </span>${name.toUpperCase()}<span class="syn-string"> of </span>${district}<span class="syn-string"> writes in. `</span>;
+}
+
+<span class="syn-keyword">const</span> counts = <span class="syn-keyword">new</span> Map();
+<span class="syn-keyword">for</span> (<span class="syn-keyword">const</span> raw <span class="syn-keyword">of</span> newsletter.split(<span class="syn-string">&quot; &quot;</span>)) {
+  <span class="syn-keyword">let</span> word = raw.toLowerCase();
+  <span class="syn-comment">// SUPPORTS the string methods (replaceAll here)</span>
+  <span class="syn-keyword">for</span> (<span class="syn-keyword">const</span> mark <span class="syn-keyword">of</span> [<span class="syn-string">&quot;,&quot;</span>, <span class="syn-string">&quot;.&quot;</span>, <span class="syn-string">&quot;;&quot;</span>, <span class="syn-string">&quot;!&quot;</span>]) word = word.replaceAll(mark, <span class="syn-string">&quot;&quot;</span>);
+  <span class="syn-keyword">if</span> (word === <span class="syn-string">&quot;&quot;</span>) <span class="syn-keyword">continue</span>;
+  counts.set(word, (counts.get(word) ?? <span class="syn-number">0</span>) + <span class="syn-number">1</span>);
+}
+<span class="syn-comment">// SUPPORTS spread of a Map</span>
+<span class="syn-keyword">const</span> ranked = [...counts].sort(([a, m], [b, n]) =&gt; n - m || (a &lt; b ? -<span class="syn-number">1</span> : <span class="syn-number">1</span>));
+<span class="syn-comment">// SUPPORTS a Set from an iterator</span>
+<span class="syn-keyword">const</span> longest = [...<span class="syn-keyword">new</span> Set(counts.keys())].reduce((best, w) =&gt; (w.length &gt; best.length ? w : best), <span class="syn-string">&quot;&quot;</span>);
+<span class="syn-keyword">for</span> (<span class="syn-keyword">const</span> [word, n] <span class="syn-keyword">of</span> ranked.slice(<span class="syn-number">0</span>, <span class="syn-number">10</span>)) checksum.add(word, n);
+console.log(<span class="syn-string">`words: </span>${counts.size}<span class="syn-string"> distinct, the longest &quot;</span>${longest}<span class="syn-string">&quot;, checksum </span>${checksum.value()}<span class="syn-string">`</span>);
+console.log(<span class="syn-string">&quot;most used:&quot;</span>, ranked.slice(<span class="syn-number">0</span>, <span class="syn-number">4</span>));
+console.log(<span class="syn-string">`</span>${<span class="syn-string">&quot;headline:&quot;</span>.padEnd(<span class="syn-number">12</span>)}${newsletter.slice(<span class="syn-number">0</span>, newsletter.indexOf(<span class="syn-string">&quot;.&quot;</span>) + <span class="syn-number">1</span>)}<span class="syn-string">`</span>);
+
+<span class="syn-comment">// ── The finale: evening falls, on the timers ──</span>
+
+<span class="syn-comment">// Each home turns its lights on at an hour of its own, from 18:00 to 23:00.</span>
+<span class="syn-keyword">const</span> lit = (hour) =&gt; residents.filter((r) =&gt; <span class="syn-number">18</span> + (r.house % <span class="syn-number">6</span>) &lt;= hour).length;
+<span class="syn-comment">// SUPPORTS setTimeout and clearTimeout</span>
+<span class="syn-keyword">const</span> forgotten = setTimeout(() =&gt; console.log(<span class="syn-string">&quot;never: this timer is cleared&quot;</span>), <span class="syn-number">50</span>);
+clearTimeout(forgotten);
+
+<span class="syn-keyword">let</span> hour = <span class="syn-number">18</span>;
+<span class="syn-comment">// SUPPORTS setInterval and clearInterval</span>
+<span class="syn-keyword">const</span> clock = setInterval(() =&gt; {
+  hour++;
+  checksum.add(hour, lit(hour));
+  console.log(<span class="syn-string">`</span>${hour}<span class="syn-string">:00, lights on in </span>${lit(hour)}<span class="syn-string"> homes`</span>);
+  <span class="syn-keyword">if</span> (hour === <span class="syn-number">22</span>) clearInterval(clock);
+}, <span class="syn-number">250</span>);
+setTimeout(() =&gt; {
+  <span class="syn-comment">// SUPPORTS typeof</span>
+  <span class="syn-keyword">const</span> report = { hour, done: <span class="syn-keyword">typeof</span> checksum.value === <span class="syn-string">&quot;function&quot;</span>, final: checksum.value() };
+  console.log(<span class="syn-string">&quot;midnight:&quot;</span>, report);
+}, <span class="syn-number">1500</span>);
+console.log(<span class="syn-string">&quot;the city waits for evening&quot;</span>);
+</code></pre></figure><h2 id="garbage-collection">garbage collection <a class="section-link" href="#garbage-collection" aria-label="Link to this section">§</a></h2>
+<figure class="listing"><figcaption>js/tests/55-garbage.js, the whole file</figcaption><pre><code class="language-javascript"><span class="syn-comment">// garbage: makes plenty of short-lived garbage, so the VM&#39;s collector runs</span>
+<span class="syn-comment">// again and again, then points at the page&#39;s memory view. Each round builds</span>
+<span class="syn-comment">// and drops many small pieces (an object, an array and a closure each), and</span>
+<span class="syn-comment">// keeps a few of them alive; how many it keeps rises and then falls over the</span>
+<span class="syn-comment">// rounds, so each collection finds a different number of cells live. On the</span>
+<span class="syn-comment">// page, the memory link draws the heap: cells in use climb as a round makes</span>
+<span class="syn-comment">// garbage and drop at each collection. Each `SUPPORTS` comment marks the</span>
+<span class="syn-comment">// first use of a feature of the subset (js/README.md, &quot;The subset&quot;).</span>
+<span class="syn-comment">// SUPPORTS let and const</span>
+<span class="syn-keyword">const</span> ROUNDS = <span class="syn-number">12</span>; <span class="syn-comment">// how many rounds of garbage</span>
+<span class="syn-keyword">const</span> GARBAGE = <span class="syn-number">150</span>; <span class="syn-comment">// the pieces each round makes and drops</span>
+<span class="syn-keyword">const</span> MOST_KEPT = <span class="syn-number">60</span>; <span class="syn-comment">// about the most pieces kept alive at once, in the middle rounds</span>
+
+<span class="syn-comment">// One piece of garbage: an array, an object holding it, and a closure over</span>
+<span class="syn-comment">// the object.</span>
+<span class="syn-comment">// SUPPORTS function declarations</span>
+<span class="syn-keyword">function</span> <span class="syn-name">piece</span>(round, i) {
+  <span class="syn-comment">// SUPPORTS array literals</span>
+  <span class="syn-keyword">const</span> xs = [round, i, round * i];
+  <span class="syn-comment">// SUPPORTS object literals, with shorthand properties</span>
+  <span class="syn-keyword">const</span> point = { x: i % <span class="syn-number">17</span>, y: round, xs };
+  <span class="syn-comment">// SUPPORTS arrow functions and closures: the arrow keeps `point`</span>
+  <span class="syn-keyword">const</span> weight = () =&gt; point.x * point.y + point.xs.length;
+  <span class="syn-keyword">return</span> { point, weight };
+}
+
+<span class="syn-comment">// How many pieces stay alive after `round`: up to MOST_KEPT at the middle</span>
+<span class="syn-comment">// of the rounds, then back down.</span>
+<span class="syn-keyword">function</span> <span class="syn-name">keptAfter</span>(round) {
+  <span class="syn-keyword">const</span> middle = (ROUNDS + <span class="syn-number">1</span>) / <span class="syn-number">2</span>;
+  <span class="syn-comment">// SUPPORTS Math, and ?:</span>
+  <span class="syn-keyword">const</span> distance = Math.abs(round - middle);
+  <span class="syn-keyword">return</span> distance &gt;= middle ? <span class="syn-number">0</span> : Math.round((MOST_KEPT * (middle - distance)) / middle);
+}
+
+<span class="syn-keyword">const</span> kept = [];
+<span class="syn-keyword">let</span> made = <span class="syn-number">0</span>;
+<span class="syn-keyword">let</span> sum = <span class="syn-number">0</span>;
+<span class="syn-keyword">let</span> mostKept = <span class="syn-number">0</span>;
+<span class="syn-comment">// SUPPORTS the C-form for, and ++</span>
+<span class="syn-keyword">for</span> (<span class="syn-keyword">let</span> round = <span class="syn-number">1</span>; round &lt;= ROUNDS; round++) {
+  <span class="syn-keyword">for</span> (<span class="syn-keyword">let</span> i = <span class="syn-number">0</span>; i &lt; GARBAGE; i++) {
+    <span class="syn-keyword">const</span> p = piece(round, i);
+    made++;
+    <span class="syn-comment">// SUPPORTS compound assignment, and calling a closure</span>
+    sum = (sum + p.weight()) % <span class="syn-number">1000003</span>;
+    <span class="syn-comment">// Every fifth piece joins the live set; the rest are garbage at once.</span>
+    <span class="syn-comment">// SUPPORTS if, and ===</span>
+    <span class="syn-keyword">if</span> (i % <span class="syn-number">5</span> === <span class="syn-number">0</span>) kept.push(p);
+  }
+  <span class="syn-comment">// The live set trimmed from its oldest end to this round&#39;s size.</span>
+  <span class="syn-comment">// SUPPORTS splice</span>
+  <span class="syn-keyword">const</span> target = keptAfter(round);
+  <span class="syn-keyword">if</span> (kept.length &gt; target) kept.splice(<span class="syn-number">0</span>, kept.length - target);
+  mostKept = Math.max(mostKept, kept.length);
+}
+
+<span class="syn-comment">// SUPPORTS reduce, over what is still alive</span>
+<span class="syn-keyword">const</span> stillAlive = kept.reduce((total, p) =&gt; total + p.weight(), <span class="syn-number">0</span>);
+<span class="syn-comment">// SUPPORTS template strings</span>
+console.log(<span class="syn-string">`</span>${made}<span class="syn-string"> pieces made in </span>${ROUNDS}<span class="syn-string"> rounds, </span>${mostKept}<span class="syn-string"> kept alive at most`</span>);
+console.log(<span class="syn-string">`</span>${kept.length}<span class="syn-string"> alive at the end, weighing </span>${stillAlive}<span class="syn-string">; checksum </span>${sum}<span class="syn-string">`</span>);
+console.log(<span class="syn-string">&quot;Now look at the memory link above.&quot;</span>);
+</code></pre></figure><h2 id="a-turtle-spiral">A turtle spiral <a class="section-link" href="#a-turtle-spiral" aria-label="Link to this section">§</a></h2>
+<figure class="listing"><figcaption>js/canvas/2-turtle-spiral.js, the whole file</figcaption><pre><code class="language-javascript"><span class="syn-comment">// A turtle spiral</span>
+<span class="syn-keyword">const</span> STEPS = <span class="syn-number">90</span>; <span class="syn-comment">// how many lines the turtle draws</span>
+<span class="syn-keyword">const</span> GROWTH = <span class="syn-number">2</span>; <span class="syn-comment">// how much longer each line is than the one before</span>
+<span class="syn-keyword">const</span> TURN = <span class="syn-number">89</span>; <span class="syn-comment">// degrees the turtle turns after each line</span>
+<span class="syn-keyword">const</span> HUE_STEP = <span class="syn-number">4</span>; <span class="syn-comment">// how far round the color wheel each line moves</span>
+<span class="syn-keyword">const</span> LINE_WIDTH = <span class="syn-number">2</span>; <span class="syn-comment">// the lines&#39; width, in pixels</span>
+
+background(<span class="syn-string">&quot;white&quot;</span>);
+<span class="syn-keyword">for</span> (<span class="syn-keyword">let</span> i = <span class="syn-number">0</span>; i &lt; STEPS; i++) {
+  stroke(<span class="syn-string">`hsl(</span>${i * HUE_STEP}<span class="syn-string">, 70%, 45%)`</span>, LINE_WIDTH);
+  forward(i * GROWTH);
+  turn(TURN);
+}
+console.log(<span class="syn-string">&quot;the turtle ends at heading&quot;</span>, (STEPS * TURN) % <span class="syn-number">360</span>);
+</code></pre></figure><h2 id="a-clock-that-ticks-once-a-second-on-a-chain-of-timeouts">A clock that ticks once a second, on a chain of timeouts <a class="section-link" href="#a-clock-that-ticks-once-a-second-on-a-chain-of-timeouts" aria-label="Link to this section">§</a></h2>
+<figure class="listing"><figcaption>js/canvas/3-clock.js, the whole file</figcaption><pre><code class="language-javascript"><span class="syn-comment">// A clock that ticks once a second, on a chain of timeouts</span>
+<span class="syn-comment">// The face and its 60 marks are drawn once. Each tick repaints only the</span>
+<span class="syn-comment">// middle of the face, inside the marks, and the hands on top of it.</span>
+<span class="syn-keyword">const</span> BACKGROUND = <span class="syn-string">&quot;#20242c&quot;</span>; <span class="syn-comment">// the color around the clock</span>
+<span class="syn-keyword">const</span> FACE_COLOR = <span class="syn-string">&quot;#2c323d&quot;</span>; <span class="syn-comment">// the clock&#39;s face</span>
+<span class="syn-keyword">const</span> INK_COLOR = <span class="syn-string">&quot;#d8d4cc&quot;</span>; <span class="syn-comment">// the rim, the marks, the minute hand and the seconds</span>
+<span class="syn-keyword">const</span> SECOND_HAND_COLOR = <span class="syn-string">&quot;tomato&quot;</span>; <span class="syn-comment">// the second hand and the dot at the middle</span>
+<span class="syn-keyword">const</span> TICK_MS = <span class="syn-number">1000</span>; <span class="syn-comment">// milliseconds between ticks</span>
+<span class="syn-keyword">const</span> MINUTE_HAND_LENGTH = <span class="syn-number">90</span>; <span class="syn-comment">// in pixels</span>
+<span class="syn-keyword">const</span> SECOND_HAND_LENGTH = <span class="syn-number">140</span>; <span class="syn-comment">// in pixels, short of the marks, which start at 148</span>
+
+<span class="syn-keyword">function</span> <span class="syn-name">hand</span>(angle, length, color, width) {
+  stroke(color, width);
+  line(<span class="syn-number">200</span>, <span class="syn-number">200</span>, <span class="syn-number">200</span> + length * Math.sin(angle), <span class="syn-number">200</span> - length * Math.cos(angle));
+}
+
+<span class="syn-keyword">function</span> <span class="syn-name">drawFace</span>() {
+  background(BACKGROUND);
+  stroke(INK_COLOR, <span class="syn-number">3</span>);
+  fill(FACE_COLOR);
+  circle(<span class="syn-number">200</span>, <span class="syn-number">200</span>, <span class="syn-number">170</span>);
+  <span class="syn-keyword">for</span> (<span class="syn-keyword">let</span> i = <span class="syn-number">0</span>; i &lt; <span class="syn-number">60</span>; i++) {
+    <span class="syn-keyword">const</span> a = (i / <span class="syn-number">60</span>) * <span class="syn-number">2</span> * Math.PI;
+    <span class="syn-keyword">const</span> inner = i % <span class="syn-number">5</span> === <span class="syn-number">0</span> ? <span class="syn-number">148</span> : <span class="syn-number">158</span>;
+    stroke(INK_COLOR, i % <span class="syn-number">5</span> === <span class="syn-number">0</span> ? <span class="syn-number">3</span> : <span class="syn-number">1</span>);
+    line(<span class="syn-number">200</span> + inner * Math.sin(a), <span class="syn-number">200</span> - inner * Math.cos(a), <span class="syn-number">200</span> + <span class="syn-number">165</span> * Math.sin(a), <span class="syn-number">200</span> - <span class="syn-number">165</span> * Math.cos(a));
+  }
+}
+
+<span class="syn-keyword">function</span> <span class="syn-name">drawHands</span>(seconds) {
+  noStroke();
+  fill(FACE_COLOR);
+  circle(<span class="syn-number">200</span>, <span class="syn-number">200</span>, <span class="syn-number">146</span>);
+  hand((seconds / <span class="syn-number">3600</span>) * <span class="syn-number">2</span> * Math.PI, MINUTE_HAND_LENGTH, INK_COLOR, <span class="syn-number">6</span>);
+  hand((seconds / <span class="syn-number">60</span>) * <span class="syn-number">2</span> * Math.PI, SECOND_HAND_LENGTH, SECOND_HAND_COLOR, <span class="syn-number">2</span>);
+  noStroke();
+  fill(SECOND_HAND_COLOR);
+  circle(<span class="syn-number">200</span>, <span class="syn-number">200</span>, <span class="syn-number">6</span>);
+  fill(INK_COLOR);
+  text(<span class="syn-string">`</span>${seconds % <span class="syn-number">60</span>}<span class="syn-string"> s`</span>, <span class="syn-number">180</span>, <span class="syn-number">270</span>, <span class="syn-number">20</span>);
+}
+
+<span class="syn-keyword">let</span> seconds = <span class="syn-number">0</span>;
+
+<span class="syn-keyword">function</span> <span class="syn-name">tick</span>() {
+  drawHands(seconds);
+  seconds++;
+  setTimeout(tick, TICK_MS);
+}
+
+drawFace();
+tick();
+</code></pre></figure><h2 id="a-starfield-flown-through">A starfield, flown through <a class="section-link" href="#a-starfield-flown-through" aria-label="Link to this section">§</a></h2>
+<figure class="listing"><figcaption>js/canvas/4-starfield.js, the whole file</figcaption><pre><code class="language-javascript"><span class="syn-comment">// A starfield, flown through</span>
+<span class="syn-keyword">const</span> STAR_COUNT = <span class="syn-number">80</span>; <span class="syn-comment">// how many stars there are at once</span>
+<span class="syn-keyword">const</span> SPEED = <span class="syn-number">0.01</span>; <span class="syn-comment">// how fast the stars come closer, each frame</span>
+<span class="syn-keyword">const</span> STAR_SIZE = <span class="syn-number">3</span>; <span class="syn-comment">// a star&#39;s radius, in pixels, as it passes</span>
+<span class="syn-keyword">const</span> BACKGROUND = <span class="syn-string">&quot;black&quot;</span>; <span class="syn-comment">// the sky</span>
+<span class="syn-keyword">const</span> SEED = <span class="syn-number">42</span>; <span class="syn-comment">// a different number gives different stars</span>
+
+<span class="syn-keyword">let</span> seed = SEED;
+<span class="syn-keyword">function</span> <span class="syn-name">random</span>() {
+  seed = (seed * <span class="syn-number">16807</span>) % <span class="syn-number">2147483647</span>;
+  <span class="syn-keyword">return</span> seed / <span class="syn-number">2147483647</span>;
+}
+
+<span class="syn-keyword">const</span> stars = [];
+<span class="syn-keyword">for</span> (<span class="syn-keyword">let</span> i = <span class="syn-number">0</span>; i &lt; STAR_COUNT; i++) {
+  stars.push({ x: random() * <span class="syn-number">2</span> - <span class="syn-number">1</span>, y: random() * <span class="syn-number">2</span> - <span class="syn-number">1</span>, z: random() });
+}
+
+<span class="syn-keyword">function</span> <span class="syn-name">frame</span>(t) {
+  background(BACKGROUND);
+  noStroke();
+  <span class="syn-keyword">for</span> (<span class="syn-keyword">const</span> s <span class="syn-keyword">of</span> stars) {
+    s.z -= SPEED;
+    <span class="syn-keyword">if</span> (s.z &lt;= <span class="syn-number">0.02</span>) {
+      s.z = <span class="syn-number">1</span>;
+      s.x = random() * <span class="syn-number">2</span> - <span class="syn-number">1</span>;
+      s.y = random() * <span class="syn-number">2</span> - <span class="syn-number">1</span>;
+    }
+    <span class="syn-keyword">const</span> sx = <span class="syn-number">200</span> + (s.x / s.z) * <span class="syn-number">100</span>;
+    <span class="syn-keyword">const</span> sy = <span class="syn-number">200</span> + (s.y / s.z) * <span class="syn-number">100</span>;
+    <span class="syn-keyword">const</span> shade = Math.round(<span class="syn-number">255</span> * (<span class="syn-number">1</span> - s.z));
+    fill(<span class="syn-string">`rgb(</span>${shade}<span class="syn-string">, </span>${shade}<span class="syn-string">, </span>${shade}<span class="syn-string">)`</span>);
+    circle(sx, sy, (<span class="syn-number">1</span> - s.z) * STAR_SIZE);
+  }
+}
+</code></pre></figure><h2 id="a-fractal-tree-each-branch-two-smaller-ones">A fractal tree, each branch two smaller ones <a class="section-link" href="#a-fractal-tree-each-branch-two-smaller-ones" aria-label="Link to this section">§</a></h2>
+<figure class="listing"><figcaption>js/canvas/5-fractal-tree.js, the whole file</figcaption><pre><code class="language-javascript"><span class="syn-comment">// A fractal tree, each branch two smaller ones</span>
+<span class="syn-keyword">const</span> DEPTH = <span class="syn-number">9</span>; <span class="syn-comment">// how many times the branches split</span>
+<span class="syn-keyword">const</span> TRUNK_LENGTH = <span class="syn-number">95</span>; <span class="syn-comment">// in pixels</span>
+<span class="syn-keyword">const</span> SPREAD = <span class="syn-number">0.42</span>; <span class="syn-comment">// how far each branch turns from its parent, in radians</span>
+<span class="syn-keyword">const</span> SHRINK = <span class="syn-number">0.72</span>; <span class="syn-comment">// each branch&#39;s length over its parent&#39;s</span>
+<span class="syn-keyword">const</span> BARK_COLOR = <span class="syn-string">&quot;#6b4226&quot;</span>; <span class="syn-comment">// the trunk and the thick branches</span>
+<span class="syn-keyword">const</span> LEAF_COLOR = <span class="syn-string">&quot;#3a7d44&quot;</span>; <span class="syn-comment">// the thin branches at the tips</span>
+<span class="syn-keyword">const</span> BACKGROUND = <span class="syn-string">&quot;#eef4f8&quot;</span>; <span class="syn-comment">// the sky</span>
+
+<span class="syn-keyword">function</span> <span class="syn-name">branch</span>(x, y, angle, length, depth) {
+  <span class="syn-keyword">if</span> (depth === <span class="syn-number">0</span>) <span class="syn-keyword">return</span>;
+  <span class="syn-keyword">const</span> x2 = x + length * Math.sin(angle);
+  <span class="syn-keyword">const</span> y2 = y - length * Math.cos(angle);
+  stroke(depth &gt; <span class="syn-number">3</span> ? BARK_COLOR : LEAF_COLOR, depth);
+  line(x, y, x2, y2);
+  branch(x2, y2, angle - SPREAD, length * SHRINK, depth - <span class="syn-number">1</span>);
+  branch(x2, y2, angle + SPREAD, length * SHRINK, depth - <span class="syn-number">1</span>);
+}
+
+background(BACKGROUND);
+branch(<span class="syn-number">200</span>, <span class="syn-number">390</span>, <span class="syn-number">0</span>, TRUNK_LENGTH, DEPTH);
+</code></pre></figure><h2 id="a-tiny-game-click-the-canvas-then-steer-with-the-arrow-keys">A tiny game: click the canvas, then steer with the arrow keys <a class="section-link" href="#a-tiny-game-click-the-canvas-then-steer-with-the-arrow-keys" aria-label="Link to this section">§</a></h2>
+<figure class="listing"><figcaption>js/canvas/6-arrow-keys.js, the whole file</figcaption><pre><code class="language-javascript"><span class="syn-comment">// A tiny game: click the canvas, then steer with the arrow keys</span>
+<span class="syn-keyword">const</span> SPEED = <span class="syn-number">5</span>; <span class="syn-comment">// pixels the square moves a frame while a key is down</span>
+<span class="syn-keyword">const</span> PLAYER_COLOR = <span class="syn-string">&quot;#7fdbca&quot;</span>; <span class="syn-comment">// the square you steer</span>
+<span class="syn-keyword">const</span> COIN_COLOR = <span class="syn-string">&quot;gold&quot;</span>; <span class="syn-comment">// the coin</span>
+<span class="syn-keyword">const</span> BACKGROUND = <span class="syn-string">&quot;#1d2433&quot;</span>; <span class="syn-comment">// the field</span>
+<span class="syn-keyword">const</span> SEED = <span class="syn-number">7</span>; <span class="syn-comment">// a different number puts the coins in other places</span>
+
+<span class="syn-keyword">let</span> seed = SEED;
+<span class="syn-keyword">function</span> <span class="syn-name">random</span>(n) {
+  seed = (seed * <span class="syn-number">16807</span>) % <span class="syn-number">2147483647</span>;
+  <span class="syn-keyword">return</span> seed % n;
+}
+
+<span class="syn-keyword">let</span> px = <span class="syn-number">200</span>, py = <span class="syn-number">200</span>;
+<span class="syn-keyword">let</span> coinX = <span class="syn-number">40</span> + random(<span class="syn-number">320</span>), coinY = <span class="syn-number">40</span> + random(<span class="syn-number">320</span>);
+<span class="syn-keyword">let</span> score = <span class="syn-number">0</span>;
+
+<span class="syn-keyword">function</span> <span class="syn-name">frame</span>(t) {
+  <span class="syn-keyword">if</span> (keyIsDown(<span class="syn-string">&quot;ArrowLeft&quot;</span>)) px -= SPEED;
+  <span class="syn-keyword">if</span> (keyIsDown(<span class="syn-string">&quot;ArrowRight&quot;</span>)) px += SPEED;
+  <span class="syn-keyword">if</span> (keyIsDown(<span class="syn-string">&quot;ArrowUp&quot;</span>)) py -= SPEED;
+  <span class="syn-keyword">if</span> (keyIsDown(<span class="syn-string">&quot;ArrowDown&quot;</span>)) py += SPEED;
+  px = Math.max(<span class="syn-number">10</span>, Math.min(<span class="syn-number">390</span>, px));
+  py = Math.max(<span class="syn-number">10</span>, Math.min(<span class="syn-number">390</span>, py));
+  <span class="syn-keyword">if</span> (Math.abs(px - coinX) &lt; <span class="syn-number">18</span> &amp;&amp; Math.abs(py - coinY) &lt; <span class="syn-number">18</span>) {
+    score++;
+    console.log(<span class="syn-string">&quot;coin&quot;</span>, score, <span class="syn-string">&quot;at&quot;</span>, coinX, coinY);
+    coinX = <span class="syn-number">40</span> + random(<span class="syn-number">320</span>);
+    coinY = <span class="syn-number">40</span> + random(<span class="syn-number">320</span>);
+  }
+  background(BACKGROUND);
+  noStroke();
+  fill(COIN_COLOR);
+  circle(coinX, coinY, <span class="syn-number">9</span>);
+  fill(PLAYER_COLOR);
+  rect(px - <span class="syn-number">10</span>, py - <span class="syn-number">10</span>, <span class="syn-number">20</span>, <span class="syn-number">20</span>);
+  fill(<span class="syn-string">&quot;white&quot;</span>);
+  text(<span class="syn-string">`score </span>${score}<span class="syn-string">`</span>, <span class="syn-number">12</span>, <span class="syn-number">28</span>, <span class="syn-number">18</span>);
+}
+</code></pre></figure><h2 id="click-to-place-dots">Click to place dots <a class="section-link" href="#click-to-place-dots" aria-label="Link to this section">§</a></h2>
+<figure class="listing"><figcaption>js/canvas/7-click-dots.js, the whole file</figcaption><pre><code class="language-javascript"><span class="syn-comment">// Click to place dots</span>
+<span class="syn-comment">// Each click on the canvas adds a dot, joined to the last.</span>
+<span class="syn-keyword">const</span> DOT_COLORS = [<span class="syn-string">&quot;tomato&quot;</span>, <span class="syn-string">&quot;gold&quot;</span>, <span class="syn-string">&quot;#2a9d8f&quot;</span>, <span class="syn-string">&quot;orchid&quot;</span>, <span class="syn-string">&quot;#4a90d9&quot;</span>]; <span class="syn-comment">// the dots take these in turn</span>
+<span class="syn-keyword">const</span> DOT_RADIUS = <span class="syn-number">12</span>; <span class="syn-comment">// in pixels</span>
+<span class="syn-keyword">const</span> LINE_COLOR = <span class="syn-string">&quot;#8a8178&quot;</span>; <span class="syn-comment">// the lines joining the dots</span>
+<span class="syn-keyword">const</span> BACKGROUND = <span class="syn-string">&quot;#f4efe6&quot;</span>; <span class="syn-comment">// the paper</span>
+
+<span class="syn-keyword">let</span> dots = [];
+
+<span class="syn-keyword">function</span> <span class="syn-name">draw</span>() {
+  background(BACKGROUND);
+  stroke(LINE_COLOR, <span class="syn-number">2</span>);
+  <span class="syn-keyword">for</span> (<span class="syn-keyword">let</span> i = <span class="syn-number">1</span>; i &lt; dots.length; i++) {
+    line(dots[i - <span class="syn-number">1</span>][<span class="syn-number">0</span>], dots[i - <span class="syn-number">1</span>][<span class="syn-number">1</span>], dots[i][<span class="syn-number">0</span>], dots[i][<span class="syn-number">1</span>]);
+  }
+  noStroke();
+  <span class="syn-keyword">for</span> (<span class="syn-keyword">let</span> i = <span class="syn-number">0</span>; i &lt; dots.length; i++) {
+    fill(DOT_COLORS[i % DOT_COLORS.length]);
+    circle(dots[i][<span class="syn-number">0</span>], dots[i][<span class="syn-number">1</span>], DOT_RADIUS);
+  }
+  fill(<span class="syn-string">&quot;#333&quot;</span>);
+  text(dots.length === <span class="syn-number">0</span> ? <span class="syn-string">&quot;click the canvas&quot;</span> : <span class="syn-string">`</span>${dots.length}<span class="syn-string"> dot</span>${dots.length === <span class="syn-number">1</span> ? <span class="syn-string">&quot;&quot;</span> : <span class="syn-string">&quot;s&quot;</span>}<span class="syn-string">`</span>, <span class="syn-number">12</span>, <span class="syn-number">28</span>, <span class="syn-number">16</span>);
+}
+
+onClick((x, y) =&gt; {
+  dots.push([Math.round(x), Math.round(y)]);
+  console.log(<span class="syn-string">&quot;dot&quot;</span>, dots.length, <span class="syn-string">&quot;at&quot;</span>, Math.round(x), Math.round(y));
+  draw();
+});
+draw();
+</code></pre></figure><h2 id="a-countdown-on-timers">A countdown on timers <a class="section-link" href="#a-countdown-on-timers" aria-label="Link to this section">§</a></h2>
+<figure class="listing"><figcaption>js/canvas/8-countdown.js, the whole file</figcaption><pre><code class="language-javascript"><span class="syn-comment">// A countdown on timers</span>
+<span class="syn-comment">// setInterval ticks it down and a timeout rings after: no frame loop.</span>
+<span class="syn-comment">// A click once it has rung starts it again.</span>
+<span class="syn-keyword">const</span> COUNT_FROM = <span class="syn-number">3</span>; <span class="syn-comment">// the first number shown</span>
+<span class="syn-keyword">const</span> TICK_MS = <span class="syn-number">600</span>; <span class="syn-comment">// milliseconds between numbers</span>
+<span class="syn-keyword">const</span> GO_MS = <span class="syn-number">900</span>; <span class="syn-comment">// milliseconds &quot;go!&quot; stays up</span>
+<span class="syn-keyword">const</span> COUNT_COLOR = <span class="syn-string">&quot;#3a6ea5&quot;</span>; <span class="syn-comment">// the background while it counts</span>
+<span class="syn-keyword">const</span> GO_COLOR = <span class="syn-string">&quot;#2e8b57&quot;</span>; <span class="syn-comment">// the background behind &quot;go!&quot;</span>
+<span class="syn-keyword">const</span> DONE_COLOR = <span class="syn-string">&quot;#555&quot;</span>; <span class="syn-comment">// the background once it&#39;s done</span>
+
+<span class="syn-keyword">let</span> left = <span class="syn-number">0</span>;
+<span class="syn-keyword">let</span> counting = <span class="syn-keyword">false</span>;
+
+<span class="syn-keyword">function</span> <span class="syn-name">show</span>(words, color, size) {
+  background(color);
+  fill(<span class="syn-string">&quot;white&quot;</span>);
+  text(words, <span class="syn-number">40</span>, <span class="syn-number">220</span>, size);
+}
+
+<span class="syn-keyword">function</span> <span class="syn-name">countdown</span>() {
+  counting = <span class="syn-keyword">true</span>;
+  left = COUNT_FROM;
+  show(<span class="syn-string">`</span>${left}<span class="syn-string">...`</span>, COUNT_COLOR, <span class="syn-number">64</span>);
+  <span class="syn-keyword">const</span> tick = setInterval(() =&gt; {
+    left--;
+    console.log(<span class="syn-string">&quot;left&quot;</span>, left);
+    <span class="syn-keyword">if</span> (left &gt; <span class="syn-number">0</span>) {
+      show(<span class="syn-string">`</span>${left}<span class="syn-string">...`</span>, COUNT_COLOR, <span class="syn-number">64</span>);
+    } <span class="syn-keyword">else</span> {
+      clearInterval(tick);
+      show(<span class="syn-string">&quot;go!&quot;</span>, GO_COLOR, <span class="syn-number">64</span>);
+      setTimeout(() =&gt; {
+        show(<span class="syn-string">&quot;click to go again&quot;</span>, DONE_COLOR, <span class="syn-number">32</span>);
+        counting = <span class="syn-keyword">false</span>;
+      }, GO_MS);
+    }
+  }, TICK_MS);
+}
+
+<span class="syn-comment">// A click while it counts is ignored, so two intervals never run at once.</span>
+onClick(() =&gt; {
+  <span class="syn-keyword">if</span> (!counting) countdown();
+});
+countdown();
+</code></pre></figure><h2 id="garbage-heard-by-oncollect">garbage, heard by onCollect <a class="section-link" href="#garbage-heard-by-oncollect" aria-label="Link to this section">§</a></h2>
+<figure class="listing"><figcaption>js/canvas/9-garbage-heard.js, the whole file</figcaption><pre><code class="language-javascript"><span class="syn-comment">// garbage, heard by onCollect</span>
+<span class="syn-comment">// The garbage collection sample again, listening: onCollect(fn) is this</span>
+<span class="syn-comment">// page&#39;s own, like onClick, not JavaScript&#39;s. After each collection, between</span>
+<span class="syn-comment">// two instructions as a timer runs, fn is called with what the collection</span>
+<span class="syn-comment">// saw: the heap&#39;s cells, those it found live, and those in use just before.</span>
+<span class="syn-comment">// Each collection prints a line and draws a bar, its height the share of the</span>
+<span class="syn-comment">// heap found live.</span>
+<span class="syn-keyword">const</span> ROUNDS = <span class="syn-number">8</span>; <span class="syn-comment">// how many rounds of garbage</span>
+<span class="syn-keyword">const</span> GARBAGE = <span class="syn-number">150</span>; <span class="syn-comment">// the pieces each round makes and drops</span>
+<span class="syn-keyword">const</span> MOST_KEPT = <span class="syn-number">80</span>; <span class="syn-comment">// how many pieces stay alive by the last round, the newest</span>
+
+background(<span class="syn-string">&quot;#faf8f4&quot;</span>);
+noStroke();
+<span class="syn-keyword">let</span> heard = <span class="syn-number">0</span>;
+onCollect(({ cells, live }) =&gt; {
+  heard++;
+  console.log(<span class="syn-string">`collected: </span>${cells}<span class="syn-string"> cells, </span>${live}<span class="syn-string"> live`</span>);
+  <span class="syn-keyword">const</span> height = (live / cells) * <span class="syn-number">360</span>;
+  fill(<span class="syn-string">&quot;seagreen&quot;</span>);
+  rect(<span class="syn-number">12</span> + (heard - <span class="syn-number">1</span>) * <span class="syn-number">22</span>, <span class="syn-number">380</span> - height, <span class="syn-number">16</span>, height);
+});
+
+<span class="syn-comment">// One piece of garbage: an array, an object holding it, and a closure over it.</span>
+<span class="syn-keyword">function</span> <span class="syn-name">piece</span>(round, i) {
+  <span class="syn-keyword">const</span> point = { x: i % <span class="syn-number">17</span>, y: round, xs: [round, i] };
+  <span class="syn-keyword">return</span> () =&gt; point.x * point.y + point.xs.length;
+}
+
+<span class="syn-keyword">const</span> kept = [];
+<span class="syn-keyword">let</span> sum = <span class="syn-number">0</span>;
+<span class="syn-keyword">for</span> (<span class="syn-keyword">let</span> round = <span class="syn-number">1</span>; round &lt;= ROUNDS; round++) {
+  <span class="syn-keyword">for</span> (<span class="syn-keyword">let</span> i = <span class="syn-number">0</span>; i &lt; GARBAGE; i++) {
+    <span class="syn-keyword">const</span> weight = piece(round, i);
+    sum = (sum + weight()) % <span class="syn-number">1000003</span>;
+    kept.push(weight);
+    <span class="syn-comment">// The live set grows round by round, so each bar stands taller.</span>
+    <span class="syn-keyword">if</span> (kept.length &gt; (MOST_KEPT * round) / ROUNDS) kept.shift();
+  }
+}
+console.log(<span class="syn-string">`checksum </span>${sum}<span class="syn-string">; the collections are heard once the program ends`</span>);
+</code></pre></figure><h2 id="the-pages-own-console-samples">The page&#39;s own console samples <a class="section-link" href="#the-pages-own-console-samples" aria-label="Link to this section">§</a></h2>
+<p>These are written in <code>js/web/js_page.js</code> itself, and the page offers them last.</p>
+<figure class="listing"><figcaption>js/web/js_page.js, an excerpt</figcaption><pre><code class="language-javascript"><span class="syn-keyword">const</span> CONSOLE_SAMPLES = [
+  { title: <span class="syn-string">&quot;Closures&quot;</span>, source: <span class="syn-string">`function counter() {
+  let count = 0;
+  return { up: () =&gt; ++count, get: () =&gt; count };
+}
+const c = counter();
+c.up(); c.up(); c.up();
+console.log(&quot;count:&quot;, c.get());
+
+const fs = [];
+for (let i = 0; i &lt; 4; i++) fs.push(() =&gt; i * i);
+console.log(fs.map((f) =&gt; f()));
+`</span> },
+  { title: <span class="syn-string">&quot;Fibonacci&quot;</span>, source: <span class="syn-string">`const UP_TO = 15; // the last Fibonacci number printed
+
+// Recursive: the definition itself, short and slow for a big n.
+function fib(n) {
+  return n &lt; 2 ? n : fib(n - 1) + fib(n - 2);
+}
+const out = [];
+for (let i = 0; i &lt;= UP_TO; i++) out.push(fib(i));
+console.log(&quot;recursive:&quot;, out);
+
+// Iterative, two numbers a step: from a = F(n) and b = F(n + 1), the
+// next pair is F(n + 2) = a + b and F(n + 3) = a + 2 * b.
+const pairs = [];
+let [a, b] = [0, 1];
+while (pairs.length &lt;= UP_TO) {
+  pairs.push(a, b);
+  [a, b] = [a + b, a + 2 * b];
+}
+console.log(&quot;iterative:&quot;, pairs.slice(0, UP_TO + 1));
+`</span> },
+  { title: <span class="syn-string">&quot;Word count&quot;</span>, source: <span class="syn-string">`const TEXT = &quot;the quick brown fox jumps over the lazy dog the fox&quot;; // the words counted
+const TOP = 3; // how many of the most used words are printed
+
+const counts = {};
+for (const w of TEXT.split(&quot; &quot;)) counts[w] = (counts[w] ?? 0) + 1;
+console.log(counts);
+const top = Object.entries(counts).sort((a, b) =&gt; b[1] - a[1]);
+console.log(top.slice(0, TOP));
+`</span> },
+  { title: <span class="syn-string">&quot;Quicksort&quot;</span>, source: <span class="syn-string">`const NUMBERS = [5, 3, 9, 1, 7, 2, 8, 6, 4, 0]; // the numbers sorted
+
+function quicksort(xs) {
+  if (xs.length &lt;= 1) return xs;
+  const pivot = xs[0];
+  const rest = xs.slice(1);
+  return quicksort(rest.filter((x) =&gt; x &lt; pivot))
+    .concat([pivot], quicksort(rest.filter((x) =&gt; x &gt;= pivot)));
+}
+console.log(quicksort(NUMBERS));
+`</span> },
+  { title: <span class="syn-string">&quot;Timers&quot;</span>, source: <span class="syn-string">`// Each callback runs when its time comes, on the page&#39;s frames.
+const TICKS = 3; // how many times the interval ticks before it&#39;s cleared
+const TICK_MS = 300; // milliseconds between ticks
+
+setTimeout(() =&gt; console.log(&quot;half a second&quot;), 500);
+setTimeout(() =&gt; console.log(&quot;a tenth of a second&quot;), 100);
+let n = 0;
+const every = setInterval(() =&gt; {
+  n++;
+  console.log(&quot;tick&quot;, n);
+  if (n === TICKS) clearInterval(every);
+}, TICK_MS);
+console.log(&quot;the program&#39;s end comes first&quot;);
+`</span> },
+  { title: <span class="syn-string">&quot;Maps, patterns and errors&quot;</span>, source: <span class="syn-string">`const scores = new Map([[&quot;ann&quot;, 3], [&quot;bob&quot;, 5]]);
+scores.set(&quot;cy&quot;, 4);
+for (const [name, score] of scores) console.log(name, score);
+
+const { ann = 0, dee = 0, ...others } = { ann: scores.get(&quot;ann&quot;), bob: 5, cy: 4 };
+console.log(ann, dee, others);
+
+function best([first, ...rest], key = (x) =&gt; x) {
+  return rest.reduce((top, x) =&gt; (key(x) &gt; key(top) ? x : top), first);
+}
+console.log(best([...scores], ([, score]) =&gt; score));
+
+try {
+  const nobody = null;
+  console.log(nobody.name);
+} catch (e) {
+  console.log(\`caught \${e.name}: \${e.message}\`);
+}
+console.log(new Set(&quot;mississippi&quot;), scores.get(&quot;dee&quot;)?.length ?? &quot;no dee&quot;);
+`</span> },
+  { title: <span class="syn-string">&quot;Outside the subset&quot;</span>, source: <span class="syn-string">`class Point {
+  constructor(x, y) { this.x = x; this.y = y; }
+}
+console.log(new Point(1, 2));
+`</span> },
+];
+
+<span class="syn-comment">// A console sample draws nothing, so the page hides the canvas for it and its</span>
+<span class="syn-comment">// output sits at the top of the column. &quot;all features&quot; and &quot;garbage</span>
+<span class="syn-comment">// collection&quot; (js/tests/54-big-daddy.js and 55-garbage.js, written into</span>
+<span class="syn-comment">// js_samples.js by js/build.shale) come second and third, after the first</span>
+<span class="syn-comment">// canvas sample, which the page opens with.</span>
+<span class="syn-keyword">const</span> asConsole = (s) =&gt; ({ ...s, console: <span class="syn-keyword">true</span> });
+</code></pre></figure>
+</article>
+<nav class="turn-page" aria-label="Previous and next chapter">
+<a rel="prev" href="what-is-left.html"><small>Previous</small>What is left</a>
+<a rel="next" href="appendix-b-the-tested-programs.html"><small>Next</small>Appendix B: The tested programs</a>
+</nav>
+</main>
+</body>
+</html>

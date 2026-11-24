@@ -1,0 +1,47 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Motivation · A JavaScript Interpreter in Roc</title>
+<link rel="icon" href="data:,">
+<link rel="stylesheet" href="book.css">
+</head>
+<body class="chapter">
+<nav class="book-nav" id="chapters" aria-label="Chapters">
+<a class="book-name" href="index.html">A JavaScript Interpreter in Roc</a>
+<ol>
+<li><a href="introduction.html"><span class="number">1</span>Introduction</a></li>
+<li class="here"><a href="motivation.html"><span class="number">2</span>Motivation</a></li>
+<li><a href="how-it-got-here.html"><span class="number">3</span>How it got here</a></li>
+<li><a href="the-pipeline-and-the-machine.html"><span class="number">4</span>The pipeline and the machine</a></li>
+<li><a href="the-collector-the-rules-and-the-host.html"><span class="number">5</span>The collector, the rules and the host</a></li>
+<li><a href="what-copies.html"><span class="number">6</span>What copies</a></li>
+<li><a href="dev-and-release-builds-disagree.html"><span class="number">7</span>Dev and release builds disagree</a></li>
+<li><a href="build-times.html"><span class="number">8</span>Build times</a></li>
+<li><a href="how-it-is-tested.html"><span class="number">9</span>How it is tested</a></li>
+<li><a href="what-is-left.html"><span class="number">10</span>What is left</a></li>
+<li><a href="appendix-a-the-playgrounds-samples.html">Appendix A: The playground&#39;s samples</a></li>
+<li><a href="appendix-b-the-tested-programs.html">Appendix B: The tested programs</a></li>
+</ol>
+</nav>
+<main>
+<p class="book-bar"><a href="index.html">A JavaScript Interpreter in Roc</a> <a href="#chapters">Chapters</a></p>
+<article>
+<p class="chapter-number">Chapter 2</p>
+<h1 id="motivation">Motivation</h1>
+<p>The main reason is to push Roc on performance. An interpreter is a hard workload for a language of values: its heap must stay unique to be written in place, its machine record is handed on at every step, and it allocates all the time.</p>
+<p>It stress-tests Roc&#39;s toolchain too. RC1&#39;s release builds are slow, the work turned up list-copy bugs that went upstream, and compile-time evaluation can run a program during <code>roc check</code>.</p>
+<p>It teaches what copies. The three rules of <a class="chapter-link" href="what-copies.html">“What copies”</a> are meant for any Roc user&#39;s code.</p>
+<p>A pure functional language hosting a mutable, effectful one is a consequence of the project, not its goal. An underlying goal is to see how far AI coding agents, with human supervision, can take a Roc project. And it is fun to build things in Roc.</p>
+<p>It is not a production JavaScript engine, and it is not for running untrusted code. It is not a race either: node is the oracle for correctness, not the yardstick for speed. Classes, <code>this</code> and <code>new</code> are not there yet; they are wanted and planned.</p>
+<p>The book is written for the Roc community first.</p>
+
+</article>
+<nav class="turn-page" aria-label="Previous and next chapter">
+<a rel="prev" href="introduction.html"><small>Previous</small>Introduction</a>
+<a rel="next" href="how-it-got-here.html"><small>Next</small>How it got here</a>
+</nav>
+</main>
+</body>
+</html>

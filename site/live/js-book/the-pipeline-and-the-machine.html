@@ -12,20 +12,23 @@
 <a class="book-name" href="index.html">A JavaScript Interpreter in Roc</a>
 <ol>
 <li><a href="introduction.html"><span class="number">1</span>Introduction</a></li>
-<li><a href="how-it-got-here.html"><span class="number">2</span>How it got here</a></li>
-<li class="here"><a href="the-pipeline-and-the-machine.html"><span class="number">3</span>The pipeline and the machine</a><ol class="sections"><li><a href="the-pipeline-and-the-machine.html#the-pipeline">The pipeline</a></li><li><a href="the-pipeline-and-the-machine.html#the-loop-only-dispatches">The loop only dispatches</a></li><li><a href="the-pipeline-and-the-machine.html#the-heap-is-one-roc-value">The heap is one Roc value</a></li><li><a href="the-pipeline-and-the-machine.html#the-machine">The machine</a></li><li><a href="the-pipeline-and-the-machine.html#slots-and-boxes">Slots and boxes</a></li></ol></li>
-<li><a href="the-collector-the-rules-and-the-host.html"><span class="number">4</span>The collector, the rules and the host</a></li>
-<li><a href="what-copies.html"><span class="number">5</span>What copies</a></li>
-<li><a href="dev-and-release-builds-disagree.html"><span class="number">6</span>Dev and release builds disagree</a></li>
-<li><a href="build-times.html"><span class="number">7</span>Build times</a></li>
-<li><a href="how-it-is-tested.html"><span class="number">8</span>How it is tested</a></li>
-<li><a href="what-is-left.html"><span class="number">9</span>What is left</a></li>
+<li><a href="motivation.html"><span class="number">2</span>Motivation</a></li>
+<li><a href="how-it-got-here.html"><span class="number">3</span>How it got here</a></li>
+<li class="here"><a href="the-pipeline-and-the-machine.html"><span class="number">4</span>The pipeline and the machine</a><ol class="sections"><li><a href="the-pipeline-and-the-machine.html#the-pipeline">The pipeline</a></li><li><a href="the-pipeline-and-the-machine.html#the-loop-only-dispatches">The loop only dispatches</a></li><li><a href="the-pipeline-and-the-machine.html#the-heap-is-one-roc-value">The heap is one Roc value</a></li><li><a href="the-pipeline-and-the-machine.html#the-machine">The machine</a></li><li><a href="the-pipeline-and-the-machine.html#slots-and-boxes">Slots and boxes</a></li></ol></li>
+<li><a href="the-collector-the-rules-and-the-host.html"><span class="number">5</span>The collector, the rules and the host</a></li>
+<li><a href="what-copies.html"><span class="number">6</span>What copies</a></li>
+<li><a href="dev-and-release-builds-disagree.html"><span class="number">7</span>Dev and release builds disagree</a></li>
+<li><a href="build-times.html"><span class="number">8</span>Build times</a></li>
+<li><a href="how-it-is-tested.html"><span class="number">9</span>How it is tested</a></li>
+<li><a href="what-is-left.html"><span class="number">10</span>What is left</a></li>
+<li><a href="appendix-a-the-playgrounds-samples.html">Appendix A: The playground&#39;s samples</a></li>
+<li><a href="appendix-b-the-tested-programs.html">Appendix B: The tested programs</a></li>
 </ol>
 </nav>
 <main>
 <p class="book-bar"><a href="index.html">A JavaScript Interpreter in Roc</a> <a href="#chapters">Chapters</a></p>
 <article>
-<p class="chapter-number">Chapter 3</p>
+<p class="chapter-number">Chapter 4</p>
 <h1 id="the-pipeline-and-the-machine">The pipeline and the machine</h1>
 <p>A program&#39;s text becomes a run in five stages, each a module in <code>js/roc/</code>. This chapter follows a program through them, then looks at the one value the run works on: the machine.</p>
 <h2 id="the-pipeline">The pipeline <a class="section-link" href="#the-pipeline" aria-label="Link to this section">§</a></h2>
