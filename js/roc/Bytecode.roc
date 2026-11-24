@@ -202,6 +202,9 @@ Bytecode :: [].{
 		entry : List(Bytecode.Entry),
 	}
 
-	## Every function's code, and which of them is the program's own.
-	Program : { codes : List(Bytecode.Code), main : U64 }
+	## Every function's code, which of them is the program's own, and where
+	## the program's own frame keeps a variable named `frame`, if it declares
+	## one: on the canvas library, the function the page calls each frame,
+	## read once the program has run.
+	Program : { codes : List(Bytecode.Code), main : U64, frame : [Declared([Slot(U64), Boxed(U64)]), Undeclared] }
 }

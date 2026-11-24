@@ -62,14 +62,16 @@
 ## callback's run, and the builtin that called it hands it to the loop
 ## beneath. One nothing catches ends the run as node ends it.
 ##
-## **THE TIMERS RUN AFTER THE PROGRAM, ON THE WALKER'S QUEUE.** `setTimeout`
-## and `setInterval` queue their callbacks by `Events`' rules, on its
-## virtual clock, and once the program finishes each runs in turn as a call
-## from the program's own frame (`drained!`), as the walker's `drain!` runs
-## them.
+## **EVERY CALLBACK RUNS AFTER THE PROGRAM, ON THE WALKER'S QUEUE.**
+## `setTimeout` and `setInterval` queue their callbacks by `Events`' rules,
+## on its virtual clock, and so do a click and the canvas's `frame(t)`. Once
+## the program finishes, its own frame stays at the bottom of the stack
+## (`start!`), and each callback runs as a call from it: all of them in turn
+## on the command line (`drained!`), or those due by a frame's time on the
+## page (`tick!`), as the walker's `drain!` and `tick!` run them.
 ##
-## What the VM doesn't run yet, the canvas, stops the run with
-## `unsupported (vm): ...`.
+## **THE CANVAS'S EFFECTS GO TO THE HOST AS THEY ARE MADE** (`emitted!`),
+## a log's among them, each counted against the budget of what is running.
 import Ast
 import Bytecode
 import Canvas
@@ -107,7 +109,14 @@ Vm :: [].{
 		step_limit : U64,
 		effects : U64,
 		effect_limit : U64,
+		# What the budgets are counted for, for the message that says one ran
+		# out: the program, or the callback the queue runs.
+		budgeted : Vm.Budgeted,
+		# Boxed, as the queue is: only a turtle's move touches it.
+		turtle : Box(Canvas.Turtle),
 	}
+
+	Budgeted : [TheProgram, FrameCall, TimerCallback, ClickHandler]
 
 	## A caller's place, kept while its callee runs: its code, the
 	## instruction after the call, its frame's base, and where on the stack
@@ -133,10 +142,30 @@ Vm :: [].{
 	## caught, written as the line node prints first.
 	Ending : [Finished, Faulted(Str), Uncaught(Str)]
 
-	## How a run goes: the steps it may take and the effects it may make, and
-	## when it collects: amortized, or at every allocation, which tests that
-	## no root is missed.
-	Settings : { steps : U64, effects : U64, collecting : [Doubling, EveryAllocation] }
+	## How a run goes: the library its builtins come from, the steps it may
+	## take and the effects it may make before its end, and when it collects:
+	## amortized, or at every allocation, which tests that no root is missed.
+	Settings : {
+		library : Ast.Library,
+		steps : U64,
+		effects : U64,
+		collecting : [Doubling, EveryAllocation],
+	}
+
+	## How far one tick of a session may go: the steps and the effects of
+	## every callback it runs.
+	Limits : { steps : U64, effects : U64 }
+
+	## A program that may go on after its end: its machine, with the
+	## program's own frame kept at the bottom of the stack, as a page keeps a
+	## script's, so a later callback sees the variables the program declared;
+	## and its code.
+	Session : { machine : Vm.Machine, program : Bytecode.Program }
+
+	## How a session stands, as its host is told: running, stopped by a
+	## fault, or stopped by a throw nothing caught, written as the line node
+	## prints first.
+	Standing : [Running, Faulted(Str), Uncaught(Str)]
 
 	## When the next collection is due, asked before each instruction:
 	## `Doubling(at)`, once no cell is free and the heap holds `at` cells,
@@ -150,10 +179,28 @@ Vm :: [].{
 	## the cells its roots reach at the end, and the collections it ran.
 	Outcome : { ending : Vm.Ending, steps : U64, cells : U64, live : U64, collections : U64 }
 
-	## A program run to its end, its effects handed to `host` as it runs.
+	## A program run to its end, then every timer it left, in the order of
+	## their times (`drained!`), its effects handed to `host` as it runs.
 	run! : Canvas.Host, Bytecode.Program, Vm.Settings => Vm.Outcome
 	run! = |host, program, settings| {
-		{ cells, values: builtins } = ValueRules.globals([], Core)
+		{ machine: begun, program: _ } = Vm.start!(host, program, settings)
+		ended = drained!(host, program, begun)
+		ending = match standing_of(ended) {
+			Running => Finished
+			Faulted(why) => Faulted(why)
+			Uncaught(line) => Uncaught(line)
+		}
+		live = Collector.reached_count(Collector.marked(ended.cells, roots(ended)))
+		{ ending: ending, steps: ended.steps, cells: ended.cells.len(), live: live, collections: ended.collections }
+	}
+
+	## A program run to its end, its own frame kept for the callbacks it
+	## left. On the canvas library, a program that declares `frame` as a
+	## function has its first frame queued, at time 0, and each frame queues
+	## the next.
+	start! : Canvas.Host, Bytecode.Program, Vm.Settings => Vm.Session
+	start! = |host, program, settings| {
+		{ cells, values: builtins } = ValueRules.globals([], settings.library)
 		begun = {
 			cells: cells,
 			stack: [],
@@ -178,26 +225,135 @@ Vm :: [].{
 			step_limit: settings.steps,
 			effects: 0,
 			effect_limit: settings.effects,
+			budgeted: TheProgram,
+			turtle: Box.box(Canvas.turtle_start),
 		}
 		main = code_of(program, program.main)
 		entered = frame_filled(begun, { code: main, given: 0, boxes: [] })
 		finished = loop!(host, program, entered, 0)
-		ended = match finished.status {
-			Finished => drained!(host, program, { ..finished, status: Running })
+		machine = match finished.status {
+			Finished => {
+				going = { ..finished, status: Running }
+				match settings.library {
+					Canvas => first_frame_queued(going, program)
+					Core => going
+				}
+			}
 			_ => finished
 		}
-		ending = match ended.status {
-			Running | Finished => Finished
-			Faulted(why) => Faulted(why)
-			Thrown(boxed) => {
-				{ value, site } = Box.unbox(boxed)
-				ValueRules.uncaught_ending(ended.cells, value, site)
+		{ machine: machine, program: program }
+	}
+
+	## The session with its clock moved to `seconds`, every event due by
+	## then run in its order: the clicks the page queued, the timers, and the
+	## frame of that time. They share one budget, `limits`, afresh. A session
+	## that has stopped is answered as it is.
+	tick! : Canvas.Host, Vm.Session, F64, Vm.Limits => Vm.Session
+	tick! = |host, session, seconds, limits| {
+		{ machine: before, program } = session
+		if !is_running(before) {
+			{ machine: before, program: program }
+		} else {
+			until = seconds * 1000.0
+			var $machine = {
+				..before,
+				steps: 0,
+				step_limit: limits.steps,
+				effects: 0,
+				effect_limit: limits.effects,
+			}
+			var $going = True
+			while $going {
+				match Events.earliest(Box.unbox($machine.events).pending_events, until) {
+					At(index) if is_running($machine) => {
+						$machine = event_run!(host, program, $machine, index)
+					}
+					_ => {
+						$going = False
+					}
+				}
+			}
+			clocked = { ..$machine, events: Box.box(Events.with_clock_at(Box.unbox($machine.events), until)) }
+			{ machine: clocked, program: program }
+		}
+	}
+
+	## The session with a click queued for its `onClick` handler, due now, so
+	## the next `tick!` runs it. A session with no handler, or stopped, is
+	## answered as it is.
+	with_click : Vm.Session, F64, F64 -> Vm.Session
+	with_click = |session, x, y| {
+		{ machine, program } = session
+		queue = Box.unbox(machine.events)
+		match queue.on_click {
+			Handler({ handler: _, site }) if is_running(machine) => {
+				clicked = Events.with_event(queue, { due: queue.clock, site: site, happening: Clicked(x, y) })
+				{ machine: { ..machine, events: Box.box(clicked) }, program: program }
+			}
+			_ => { machine: machine, program: program }
+		}
+	}
+
+	## Whether the session has more to do: an event queued, or a click handler
+	## that a click would call. A host ticks a session while it waits.
+	waits : Vm.Session -> Bool
+	waits = |session| {
+		queue = Box.unbox(session.machine.events)
+		is_running(session.machine) and (!queue.pending_events.is_empty() or queue.on_click != NoHandler)
+	}
+
+	standing : Vm.Session -> Vm.Standing
+	standing = |session| standing_of(session.machine)
+}
+
+standing_of : Vm.Machine -> Vm.Standing
+standing_of = |machine|
+	match machine.status {
+		Running | Finished => Running
+		Faulted(why) => Faulted(why)
+		Thrown(boxed) => {
+			{ value, site } = Box.unbox(boxed)
+			match ValueRules.uncaught_ending(machine.cells, value, site) {
+				Uncaught(line) => Uncaught(line)
+				Faulted(why) => Faulted(why)
 			}
 		}
-		live = Collector.reached_count(Collector.marked(ended.cells, roots(ended)))
-		{ ending: ending, steps: ended.steps, cells: ended.cells.len(), live: live, collections: ended.collections }
+	}
+
+# The machine with the program's first `frame(t)` queued, at time 0, when
+# the program's own frame holds a function named `frame`.
+first_frame_queued : Vm.Machine, Bytecode.Program -> Vm.Machine
+first_frame_queued = |machine, program| {
+	held = match program.frame {
+		Declared(Slot(slot)) => Holding(slot_value(machine, slot))
+		Declared(Boxed(slot)) => box_content(machine, box_of(machine, slot))
+		Undeclared => Unready
+	}
+	closure = match held {
+		Holding(Reference(id)) => match Heap.cell_at(machine.cells, id) {
+			Fun(found) => Frame(found)
+			_ => NoFrame
+		}
+		_ => NoFrame
+	}
+	match closure {
+		Frame(found) => {
+			event = { due: Events.frame_due(0), site: found.fun.unbox().at, happening: Framed(found, 0) }
+			{ ..machine, events: Box.box(Events.with_event(Box.unbox(machine.events), event)) }
+		}
+		NoFrame => machine
 	}
 }
+
+# Whom a budget's message names as running past it.
+budgeted_text : Vm.Budgeted -> Str
+budgeted_text = |budgeted|
+	match budgeted {
+		TheProgram => "the program"
+		FrameCall => "frame(t)"
+		TimerCallback => "a timer's callback"
+		ClickHandler => "the click handler"
+	}
 
 # ---- the loop --------------------------------------------------------------
 
@@ -353,9 +509,6 @@ with_fault = |machine, why| match machine.status {
 	_ => machine
 }
 
-unsupported : Vm.Machine, Str, Ast.Where -> Vm.Machine
-unsupported = |machine, what, at| with_fault(machine, "unsupported (vm): ${what}${ValueRules.line_note(at)}")
-
 # The machine unwinding with one of JavaScript's own errors.
 with_error : Vm.Machine, Heap.ErrorName, Str, Ast.Where -> Vm.Machine
 with_error = |machine, name, message, at| {
@@ -367,7 +520,7 @@ with_error = |machine, name, message, at| {
 stepped : Vm.Machine -> Vm.Machine
 stepped = |machine|
 	if machine.steps >= machine.step_limit {
-		with_fault(machine, "the program ran past its budget of ${machine.step_limit.to_str()} steps")
+		with_fault(machine, "${budgeted_text(machine.budgeted)} ran past its budget of ${machine.step_limit.to_str()} steps")
 	} else {
 		{ ..machine, steps: machine.steps + 1 }
 	}
@@ -1358,16 +1511,48 @@ native_called! = |host, program, machine, { native, calling }| {
 	at = calling.at
 	match native {
 		Log => match Inspect.line_of(machine.cells, arguments) {
-			Ok(line) => {
-				if machine.effects >= machine.effect_limit {
-					with_fault(machine, "the program ran past its budget of ${machine.effect_limit.to_str()} effects")
-				} else {
-					emit! = host.emit!
-					emit!(Log(line))
-					with_result({ ..machine, effects: machine.effects + 1 }, calling.result_at, Undefined)
+			Ok(line) => emitted!(host, machine, { effect: Log(line), result_at: calling.result_at })
+			Err(Unsupported(why)) => with_fault(machine, "${why}${ValueRules.line_note(at)}")
+		}
+		Paint(paint) => match Canvas.effect_of(paint, { arguments: arguments, cells: machine.cells }) {
+			Ok(effect) => emitted!(host, machine, { effect: effect, result_at: calling.result_at })
+			Err(Unsupported(why)) => with_fault(machine, "${why}${ValueRules.line_note(at)}")
+		}
+		Move(move) => match Canvas.moved(Box.unbox(machine.turtle), { move: move, arguments: arguments }) {
+			Ok({ turtle, drawn }) => {
+				moved = { ..machine, turtle: Box.box(turtle) }
+				match drawn {
+					Drew(effect) => emitted!(host, moved, { effect: effect, result_at: calling.result_at })
+					Nothing => with_result(moved, calling.result_at, Undefined)
 				}
 			}
 			Err(Unsupported(why)) => with_fault(machine, "${why}${ValueRules.line_note(at)}")
+		}
+		Sense(MouseX) => {
+			pointer! = host.pointer!
+			with_result(machine, calling.result_at, Number(pointer!(X)))
+		}
+		Sense(MouseY) => {
+			pointer! = host.pointer!
+			with_result(machine, calling.result_at, Number(pointer!(Y)))
+		}
+		Sense(KeyIsDown) => match arguments.first() {
+			Ok(Text(key)) => {
+				key! = host.key!
+				down = match key!(key) {
+					Down => True
+					Up => False
+				}
+				with_result(machine, calling.result_at, Boolean(down))
+			}
+			_ => with_fault(machine, "unsupported: keyIsDown of anything but a key's name${ValueRules.line_note(at)}")
+		}
+		OnClick => match arguments.first() {
+			Ok(handler) if ValueRules.is_callable(machine.cells, handler) => {
+				handled = Events.with_click_handler(Box.unbox(machine.events), { handler: handler, site: at })
+				with_result({ ..machine, events: Box.box(handled) }, calling.result_at, Undefined)
+			}
+			_ => with_fault(machine, "unsupported: onClick of anything but a function${ValueRules.line_note(at)}")
 		}
 		ArrayFrom if ValueRules.is_mapped(arguments) => array_from!(host, program, machine, { arguments: arguments, calling: calling })
 		Timing(SetTimeout) => timer_set(machine, { repeats: Once, arguments: arguments, calling: calling })
@@ -1379,13 +1564,24 @@ native_called! = |host, program, machine, { native, calling }| {
 			}
 			with_result(cleared, calling.result_at, Undefined)
 		}
-		OnClick | Paint(_) | Move(_) | Sense(_) => unsupported(machine, "the canvas", at)
 		_ => {
 			{ cells, machine: rest } = lent(machine)
 			with_got(rest, ValueRules.native_called(shell(cells, rest), native, arguments, at), calling.result_at)
 		}
 	}
 }
+
+# The machine after one effect handed to the host, the call's answer
+# `undefined`, or stopped when the effect would pass its budget.
+emitted! : Canvas.Host, Vm.Machine, { effect : Canvas.Effect, result_at : U64 } => Vm.Machine
+emitted! = |host, machine, { effect, result_at }|
+	if machine.effects >= machine.effect_limit {
+		with_fault(machine, "${budgeted_text(machine.budgeted)} ran past its budget of ${machine.effect_limit.to_str()} effects")
+	} else {
+		emit! = host.emit!
+		emit!(effect)
+		with_result({ ..machine, effects: machine.effects + 1 }, result_at, Undefined)
+	}
 
 # `setTimeout` or `setInterval`: the timer's handle, its callback queued by
 # `Events.timer_requested`'s rules.
@@ -1434,20 +1630,20 @@ drained! = |host, program, machine| {
 
 # The machine after one event's callback, taken off the queue with the
 # clock moved to its time: a timer's, queued again later when it is an
-# interval that didn't clear itself.
+# interval that didn't clear itself; a frame's, the next frame queued; a
+# click's, handed to the handler.
 event_run! : Canvas.Host, Bytecode.Program, Vm.Machine, U64 => Vm.Machine
 event_run! = |host, program, machine, index| {
 	event = Box.unbox(machine.events).pending_events.get(index) ?? crash "Vm.event_run!: Events.earliest names an event the queue has"
 	taken = { ..machine, events: Box.box(Events.with_event_taken(Box.unbox(machine.events), index, event.due)) }
 	match event.happening {
 		Timed({ timer, callback, every }) => {
-			firing = { ..taken, events: Box.box(Events.with_firing(Box.unbox(taken.events), Firing(timer))) }
-			called = call_function!(host, program, firing, { callee: callback, arguments: [], at: event.site })
-			after = if is_running(called) {
-				dropped(called, 1)
-			} else {
-				called
+			firing = {
+				..taken,
+				budgeted: TimerCallback,
+				events: Box.box(Events.with_firing(Box.unbox(taken.events), Firing(timer))),
 			}
+			after = answer_dropped(call_function!(host, program, firing, { callee: callback, arguments: [], at: event.site }))
 			again = Box.unbox(after.events).firing == Firing(timer)
 			idle = { ..after, events: Box.box(Events.with_firing(Box.unbox(after.events), Idle)) }
 			match every {
@@ -1467,7 +1663,57 @@ event_run! = |host, program, machine, index| {
 				_ => idle
 			}
 		}
-		Framed(_, _) | Clicked(_, _) => crash "Vm.event_run!: the core library queues no frame and no click"
+		Framed(closure, number) => {
+			framing = { ..taken, budgeted: FrameCall }
+			after = answer_dropped(
+				closure_called!(
+					host,
+					program,
+					framing,
+					{ environment: closure.scope, arguments: [Number(Events.frame_time(number))], at: event.site },
+				),
+			)
+			next = { due: Events.frame_due(number + 1), site: event.site, happening: Framed(closure, number + 1) }
+			{ ..after, events: Box.box(Events.with_event(Box.unbox(after.events), next)) }
+		}
+		Clicked(x, y) => match Box.unbox(taken.events).on_click {
+			Handler({ handler, site }) => {
+				clicking = { ..taken, budgeted: ClickHandler }
+				answer_dropped(call_function!(host, program, clicking, { callee: handler, arguments: [Number(x), Number(y)], at: site }))
+			}
+			NoHandler => taken
+		}
+	}
+}
+
+# A callback's machine with its answer taken off the stack, unless it
+# stopped, leaving none.
+answer_dropped : Vm.Machine -> Vm.Machine
+answer_dropped = |machine|
+	if is_running(machine) {
+		dropped(machine, 1)
+	} else {
+		machine
+	}
+
+# The queue's `frame(t)`, called with `arguments`, its answer left on the
+# stack as `call_function!` leaves one. The queue holds the closure's
+# environment, not its cell, so the environment stands in the callee's place,
+# where the collector sees it while the frame runs.
+closure_called! : Canvas.Host, Bytecode.Program, Vm.Machine, { environment : U64, arguments : List(Heap.Value), at : Ast.Where } => Vm.Machine
+closure_called! = |host, program, machine, { environment, arguments, at }| {
+	result_at = machine.top
+	var $machine = pushed(machine, Reference(environment))
+	for argument in arguments {
+		$machine = pushed($machine, argument)
+	}
+	floor = $machine.depth + 1
+	calling = { count: arguments.len(), result_at: result_at, naming: Shown, at: at }
+	entered = closure_entered(program, $machine, { environment: environment, calling: calling })
+	if entered.depth >= floor {
+		loop!(host, program, entered, floor)
+	} else {
+		entered
 	}
 }
 

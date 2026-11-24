@@ -66,9 +66,16 @@ Compile :: [].{
 				boxes: AtCall,
 			},
 		)
+		frame = match names.find_first_index(|name| name == "frame") {
+			Ok(index) => {
+				scope = entered.state.scopes.last() ?? crash "Compile.program: the program's scope was just entered"
+				Declared(scope.places.get(index) ?? crash "Compile.program: a scope has a place for each of its names")
+			}
+			Err(NotFound) => Undeclared
+		}
 		body = block_body(entered.state, tree.statements)?
 		code = finished_code(body.state, { ops: body.ops.append(Do(Finish)), arguments: Each(0) })
-		Ok({ codes: body.state.codes.append(code), main: body.state.codes.len() })
+		Ok({ codes: body.state.codes.append(code), main: body.state.codes.len(), frame: frame })
 	}
 
 	## What the compiler knows as it goes: the code of every function

@@ -4,16 +4,17 @@
 #
 #   js-canvas <frames> "<program>" [<keys>] [<clicks>]
 #
-# It runs the program on the canvas library, held to the page's rails
-# (`Canvas.run_limits`, then `Canvas.frame_limits` for each frame), then ticks
-# its clock for the frames asked (`Interp.tick!`), as the page does: each
+# It compiles the program on the canvas library and runs it on the bytecode
+# VM (Vm.roc), held to the page's rails (`Canvas.run_limits`, then
+# `Canvas.frame_limits` for each frame), then ticks its clock for the frames
+# asked (`Vm.tick!`), as the page does: each
 # tick runs what is due by the frame's time, t being the frame's number over
 # `Canvas.frames_per_second`, the clicks first, then the timers and the
 # program's `frame(t)` in the order of their times. Each effect is its line
 # (`Canvas.line_of`); each read is a line too, `read mouseX 200` or
 # `read keyIsDown ArrowLeft up`, so a log holds every call the program made
 # of its host. A line `frame <n> <t>` starts each tick; the ticks end when
-# the program has nothing waiting (`Interp.waits`).
+# the program has nothing waiting (`Vm.waits`).
 #
 # The pointer rests at the canvas's middle. `<keys>` says which keys are down
 # in each frame: the frames' sets parted by commas, the keys in a set by `+`
@@ -23,13 +24,15 @@
 # frame: `<frame>:<x>:<y>`, parted by commas (`3:120:80,9:300:200`). Each is
 # a line `click <x> <y>`, before its frame's line.
 #
-# A program the parser refuses, or one that stops with a fault, ends with a
-# line `js: <why>` and exits 1, as js-run's does.
+# A program the parser or the compiler refuses, or one that stops with a
+# fault, ends with a line `js: <why>` and exits 1, as js-vm's does.
+import Bytecode
 import Canvas
+import Compile
 import Events
-import Interp
 import NumberText
 import Parser
+import Vm
 
 main! = |arguments| {
 	match (arguments.get(0), arguments.get(1)) {
@@ -141,41 +144,61 @@ record_program! : Str,
 } => Try({}, [Exit(I8)])
 record_program! = |src, { frames, keys: key_frames, clicks }| {
 	match Parser.program_of(src, Canvas) {
-		Ok(program) => {
-			var $session = Interp.start!(recording_host([]), program, Canvas, Canvas.run_limits)
-			var $n = 0
-			while $n < frames and Interp.waits($session) {
-				for click in clicks {
-					if click.frame == $n {
-						echo!("click ${NumberText.text_for(click.x)} ${NumberText.text_for(click.y)}\n")
-						$session = Interp.with_click($session, click.x, click.y)
-					}
-				}
-				seconds = Events.frame_time($n)
-				echo!("frame ${$n.to_str()} ${NumberText.text_for(seconds)}\n")
-				keys = text_or_none(key_frames, $n).split_on("+")
-				$session = Interp.tick!(
-					recording_host(keys),
-					$session,
-					seconds,
-					Canvas.frame_limits,
-				)
-				$n = $n + 1
-			}
-			match Interp.outcome_of($session.machine).status {
-				Running => Ok({})
-				Faulted(why) => {
-					echo!("js: ${why}\n")
-					Err(Exit(1))
-				}
-				Uncaught(line) => {
-					echo!("${line}\n")
-					Err(Exit(1))
-				}
+		Ok(tree) => match Compile.program(tree) {
+			Ok(program) => record_frames!(program, { frames: frames, keys: key_frames, clicks: clicks })
+			Err(Unsupported(why)) => {
+				echo!("js: ${why}\n")
+				Err(Exit(1))
 			}
 		}
 		Err(fault) => {
 			echo!("js: ${fault.why} (line ${fault.line.to_str()}, column ${fault.column.to_str()})\n")
+			Err(Exit(1))
+		}
+	}
+}
+
+record_frames! : Bytecode.Program,
+{
+	frames : U64,
+	keys : List(Str),
+	clicks : List(Click),
+} => Try({}, [Exit(I8)])
+record_frames! = |program, { frames, keys: key_frames, clicks }| {
+	settings = {
+		library: Canvas,
+		steps: Canvas.run_limits.steps,
+		effects: Canvas.run_limits.effects,
+		collecting: Doubling,
+	}
+	var $session = Vm.start!(recording_host([]), program, settings)
+	var $n = 0
+	while $n < frames and Vm.waits($session) {
+		for click in clicks {
+			if click.frame == $n {
+				echo!("click ${NumberText.text_for(click.x)} ${NumberText.text_for(click.y)}\n")
+				$session = Vm.with_click($session, click.x, click.y)
+			}
+		}
+		seconds = Events.frame_time($n)
+		echo!("frame ${$n.to_str()} ${NumberText.text_for(seconds)}\n")
+		keys = text_or_none(key_frames, $n).split_on("+")
+		$session = Vm.tick!(
+			recording_host(keys),
+			$session,
+			seconds,
+			Canvas.frame_limits,
+		)
+		$n = $n + 1
+	}
+	match Vm.standing($session) {
+		Running => Ok({})
+		Faulted(why) => {
+			echo!("js: ${why}\n")
+			Err(Exit(1))
+		}
+		Uncaught(line) => {
+			echo!("${line}\n")
 			Err(Exit(1))
 		}
 	}

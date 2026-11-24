@@ -69,7 +69,12 @@ run_program! = |src, options| {
 				outcome = Vm.run!(
 					command_host({}),
 					program,
-					{ steps: 200000000, effects: 1000000000000, collecting: options.collecting },
+					{
+						library: Core,
+						steps: 200000000,
+						effects: 1000000000000,
+						collecting: options.collecting,
+					},
 				)
 				match options.counting {
 					Counts => echo!("js-vm: steps ${outcome.steps.to_str()} cells ${outcome.cells.to_str()} live ${outcome.live.to_str()} collections ${outcome.collections.to_str()}\n")
