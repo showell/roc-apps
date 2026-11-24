@@ -2,8 +2,8 @@
 # basic-run and basic-check, built once: basic/roc/BasicRun.roc and
 # basic/roc/BasicCheck.roc compiled by the Roc compiler into native
 # executables on the default platform, with the dev backend.
-# **NO LLVM BUILDS.** The speed backend spent 650 s in LLVM on this
-# interpreter; what is slow here is the interpreter's shape, which the dev
+# **NO LLVM BUILDS.** The speed backend takes 60 to 90 s on this
+# interpreter, the dev backend a few; what is slow here is the interpreter's shape, which the dev
 # backend shows as well. The times reported are the Roc compiler's alone.
 #
 #   basic/build-run.sh
