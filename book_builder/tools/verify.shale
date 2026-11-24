@@ -17,6 +17,8 @@
 --     `full_tests`, and to the top-level `expect` lines of the files it
 --     reaches, each passed once; roc-markdown's are counted, not held
 --   zig fmt --check over build.zig and host/
+--   copy_test.cjs under node: copy.js's pure half, the text a Copy button
+--     copies and which way the copy goes, held to `copy_checks_expected`
 --   the glue snapshot (host/glue/platform_abi.zig) is what roc glue makes
 --     of platform/ now (tools/glue.shale check=1)
 --   zig build test, held to exactly `zig_tests_expected` tests
@@ -31,6 +33,7 @@
 const one_page_tests = 10
 const full_tests = 245
 const zig_tests_expected = 10
+const copy_checks_expected = 14
 const here = "book_builder"
 const book_want = "book-e2e: the book program this gate just built, untracked by design"
 -- The files the full example's tests reach, whose `expect` lines are the
@@ -143,6 +146,13 @@ line("roc test examples/full/main.roc", full_ok, inside .. " passed in book_buil
 r = run({"zig", "fmt", "--check", "build.zig", "host"}, {cwd = here, timeout_ms = 30000, tail = 20})
 if r.code ~= 0 then print(r.out) end
 line("zig fmt --check", r.code == 0, #glob(here .. "/host/**/*.zig") + 1 .. " files", r.ms)
+
+r = run({"node", "copy_test.cjs"}, {cwd = here, timeout_ms = 10000, tail = 20, want = "test: copy.js's pure half, under node"})
+local copy_checks = re_find(r.out, "(\\d+) checks passed")
+local copy_passed = 0
+if copy_checks ~= nil then copy_passed = parse_int(copy_checks.group) end
+if r.code ~= 0 or copy_passed ~= copy_checks_expected then print(r.out) end
+line("node copy_test.cjs", r.code == 0 and copy_passed == copy_checks_expected, copy_passed .. " checks passed, " .. copy_checks_expected .. " expected", r.ms)
 
 r = run({"shale", "book_builder/tools/glue.shale", "check=1"}, {timeout_ms = 100000, tail = 20})
 if r.code ~= 0 then print(r.out) end

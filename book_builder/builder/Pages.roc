@@ -483,6 +483,7 @@ page_html = |{ title, body_class, nav, main }, look| {
 		\\<title>${title}</title>
 		\\<link rel="icon" href="data:,">
 		\\<link rel="stylesheet" href="book.css">
+		\\<script src="copy.js" defer></script>
 		\\${head_end}</head>
 		\\<body class="${body_class}">
 		\\${body_start}${nav}
@@ -695,7 +696,7 @@ expect
 		Ok([front, one, two]) =>
 			front.html.contains("<title>Bo &amp; co</title>")
 				and front.html.contains("<p>Hello.</p>")
-				and front.html.contains("<link rel=\"stylesheet\" href=\"book.css\">\n<script src=\"a.js\"></script>\n</head>\n<body class=\"front\">\n<header>top</header>\n\n<main>")
+				and front.html.contains("<link rel=\"stylesheet\" href=\"book.css\">\n<script src=\"copy.js\" defer></script>\n<script src=\"a.js\"></script>\n</head>\n<body class=\"front\">\n<header>top</header>\n\n<main>")
 				and front.html.contains("<ol class=\"contents\">\n<li class=\"part\">P &amp; Q</li>\n<li class=\"category\">C</li><li><a href=\"first-one.html\">")
 				and front.html.ends_with("</main>\n\n</body>\n</html>")
 				and one.file == "first-one.html"
@@ -714,7 +715,7 @@ expect
 	}) {
 		Ok(
 			[front, ..],
-		) => front.html.contains("<link rel=\"stylesheet\" href=\"book.css\">\n</head>\n<body class=\"front\">\n\n<main>") and front.html.ends_with("</main>\n</body>\n</html>")
+		) => front.html.contains("<link rel=\"stylesheet\" href=\"book.css\">\n<script src=\"copy.js\" defer></script>\n</head>\n<body class=\"front\">\n\n<main>") and front.html.ends_with("</main>\n</body>\n</html>")
 		_ => Bool.False
 	}
 expect

@@ -138,6 +138,26 @@ pre {
 }
 pre code { font-size: inherit; }
 
+/* copy.js pins a Copy button to each code block's top right corner, the essay
+   surface's button in the book's colors. The pin has no height, so the block
+   below it lies as it would without one. */
+
+.copypin { position: relative; height: 0; }
+.copybtn {
+  position: absolute;
+  top: 0.35rem;
+  right: 0.35rem;
+  padding: 0.15rem 0.45rem;
+  border: 1px solid var(--rule);
+  border-radius: 4px;
+  background: var(--paper);
+  color: var(--quiet);
+  font: 600 0.72rem/1.2 var(--plain);
+  cursor: pointer;
+  opacity: 0.7;
+}
+.copybtn:hover, .copybtn:focus-visible { opacity: 1; color: var(--accent); border-color: var(--accent); }
+
 /* roc-syntax-color marks the code's runs. A few quiet colors are enough to read by. */
 
 .syn-comment { color: var(--quiet); }
@@ -303,7 +323,7 @@ ol.contents .sections a { color: var(--quiet); text-decoration: none; }
   :root { font-size: 11pt; --paper: #fff; --ink: #000; --quiet: #444; --accent: #000; }
   body.chapter { display: block; }
   body.chapter main, body.front main { max-width: none; padding: 0; }
-  .book-nav, .book-bar, .turn-page, .section-link { display: none; }
+  .book-nav, .book-bar, .turn-page, .section-link, .copypin { display: none; }
   article > *, article > table, article > figure.diagram, article > figure.listing { max-width: 100%; }
   h1, h2, h3 { break-after: avoid; }
   figure, tr { break-inside: avoid; }

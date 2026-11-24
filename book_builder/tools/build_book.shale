@@ -12,8 +12,8 @@
 -- report's marks. The program runs on `folder`, the root its reads are
 -- confined to, and prints every page or the gates' problems. The pages go to
 -- `out`, made afresh, with the builder's stylesheet, book.css, and the
--- program's report (each page's words of prose, the lint's counts) goes to
--- `report`. Roc's cache is build:roc-apps/book-cache, which every book shares.
+-- script that gives each code block its Copy button, copy.js; the program's
+-- report (each page's words of prose, the lint's counts) goes to `report`. Roc's cache is build:roc-apps/book-cache, which every book shares.
 --
 -- The Safari tutorial's book.shale, the books book's and the JavaScript
 -- book's run it.
@@ -25,6 +25,7 @@ const OUT = arg("out", "")
 const REPORT = arg("report", "")
 const BUILDER = "book_builder"
 const STYLESHEET = "book_builder/book.css"
+const COPY_SCRIPT = "book_builder/copy.js"
 const CACHE = "build:roc-apps/book-cache"
 const PAGE_MARK = "<!-- book page: "
 const REPORT_MARK = "<!-- book report -->"
@@ -84,6 +85,7 @@ function write_pages(output)
     count = count + 1
   end
   copy(STYLESHEET, OUT .. "/book.css")
+  copy(COPY_SCRIPT, OUT .. "/copy.js")
   replace(REPORT, halves[2])
   return count
 end

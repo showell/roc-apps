@@ -80,6 +80,10 @@ with the problems they print in `expected.txt`. `tools/` holds the gate and
 the steps every book's `book.shale` shares; each script's header says what it
 does.
 
+Every page links `book.css` and `copy.js`, which `tools/build_book.shale`
+copies beside the pages. `copy.js` gives each code block a Copy button, the
+essay surface's own, and `copy_test.cjs` holds its pure half under node.
+
 ## Pitfalls
 
 - **A provided function must have concrete types.** One whose type is still
