@@ -1,5 +1,13 @@
 # ops/prod: the deploy key's fences on prod (prepared, not installed)
 
+**Shelved (2026-11-24).** Prod runs everything as one account, whose one
+key also carries the owner's shell and angry-gopher's operations (its
+deploy, backup, watchdog and log reading), and the owner prefers it that
+way. Gating that key would end the shell from the development box and need
+every one of those commands in `deploy-gate.sh` first. The files stay here,
+and `check_deploy_gate.shale` keeps them in step with the two deploys, for a
+day when prod gets a deploy account of its own.
+
 Two files that narrow what the deploy key can do on the prod droplet, for the
 box's owner to install by hand. Neither is on prod yet, and nothing here
 names the droplet: its `user@address` is the secret `keys:prod-ssh`, as the
