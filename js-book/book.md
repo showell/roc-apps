@@ -26,6 +26,20 @@ Each number in this book comes from a commit message in roc-apps, cited by its s
 
 {{chapter How it got here}} is the project's short history. The design starts at {{chapter The pipeline and the machine}}.
 
+## Motivation
+
+The main reason is to push Roc on performance. An interpreter is a hard workload for a language of values: its heap must stay unique to be written in place, its machine record is handed on at every step, and it allocates all the time.
+
+It stress-tests Roc's toolchain too. RC1's release builds are slow, the work turned up list-copy bugs that went upstream, and compile-time evaluation can run a program during `roc check`.
+
+It teaches what copies. The three rules of {{chapter What copies}} are meant for any Roc user's code.
+
+A pure functional language hosting a mutable, effectful one is a consequence of the project, not its goal. An underlying goal is to see how far AI coding agents, with human supervision, can take a Roc project. And it is fun to build things in Roc.
+
+It is not a production JavaScript engine, and it is not for running untrusted code. It is not a race either: node is the oracle for correctness, not the yardstick for speed. Classes, `this` and `new` are not there yet; they are wanted and planned.
+
+The book is written for the Roc community first.
+
 ## How it got here
 
 This chapter is the history, kept brief. A reader who wants the design can skip ahead to {{chapter The pipeline and the machine}}.
