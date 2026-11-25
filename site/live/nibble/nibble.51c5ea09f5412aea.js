@@ -13,7 +13,7 @@ const LINES = ["an empty", "a one-line", "a two-line", "a three-line", "a four-l
 
 const [wasm, table] = await Promise.all([
   fetch("nibble.d9274e0bd105b936.wasm").then((r) => r.arrayBuffer()).then((b) => WebAssembly.instantiate(b)),
-  fetch("puzzles.1222ca6c7970459b.json").then((r) => r.json()),
+  fetch("puzzles.2410e765d3851828.json").then((r) => r.json()),
 ]).catch((e) => {
   const said = document.getElementById("loading");
   said.className = "err";
