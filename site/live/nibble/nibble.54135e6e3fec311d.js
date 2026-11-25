@@ -91,8 +91,21 @@ function drawNav() {
   }));
 }
 
+// The intro shows on the first puzzle; past it, Help shows or hides it.
+const intro = document.getElementById("intro");
+const help = document.getElementById("help");
+let helpOpen = false;
+function drawIntro() {
+  help.hidden = current === 0;
+  intro.hidden = current !== 0 && !helpOpen;
+  help.textContent = helpOpen ? "Hide help" : "Help";
+  help.setAttribute("aria-expanded", String(!intro.hidden));
+}
+help.addEventListener("click", () => { helpOpen = !helpOpen; drawIntro(); });
+
 function show(i) {
   current = i;
+  drawIntro();
   progress.at = PUZZLES[i].code;
   saveProgress();
   program = draftOf(i);
@@ -131,14 +144,17 @@ function drawPuzzle() {
   next.addEventListener("click", () => show(i + 1));
   const found = el("p", { class: "hint", id: "found" });
   if (isSolved(i)) found.textContent = foundText(p);
+  // The verdict and the buttons sit above the program, so a solve shows
+  // without scrolling; the trace, the longest part, goes last.
   panel.replaceChildren(
     el("h2", { id: "title", text: `Puzzle ${i + 1} of ${PUZZLES.length}: ${p.name}` }),
     el("p", { id: "goal", text: goal }),
     ...(p.lesson ? [el("p", { class: "lesson", id: "lesson", text: p.lesson })] : []),
     el("p", { class: "hint", id: "hint", text: hintText(p) }),
-    slots,
+    verdict, found,
     el("div", { class: "actions" }, clear, next),
-    trace, verdict, found,
+    slots,
+    trace,
   );
   // No Run button: the program runs on every pick.
   runAll(trace, verdict, next);

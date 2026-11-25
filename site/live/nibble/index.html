@@ -22,6 +22,9 @@ h1 { margin: 0 0 4px; font-size: 1.7rem; }
 h2 { margin: 0; font-size: 1.25rem; }
 p { margin: 8px 0; }
 code, .mono { font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace; }
+header { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; }
+.help { border: 0; background: none; padding: 0; color: var(--accent); font: inherit; text-decoration: underline; cursor: pointer; }
+.help[hidden], .intro[hidden] { display: none; }
 .intro { color: var(--muted); }
 .intro code { color: var(--fg); }
 nav { display: flex; flex-wrap: wrap; gap: 6px; margin: 16px 0; }
@@ -64,14 +67,14 @@ tr.end td { white-space: normal; font-size: 0.85rem; }
 </head>
 <body>
 <main>
-  <h1>Nibble puzzles</h1>
-  <p class="intro">Nibble is the language of a tiny machine. It has one register, <code>AX</code>, which holds 0, 1, 2 or 3, and a program is exactly six instructions. A run starts with <code>AX</code> set to the input. It accepts when <code>zero</code> finds <code>AX</code> at 0, and it rejects when <code>decr</code> finds <code>AX</code> at 0 or when it runs off the end. Each puzzle names a set of inputs: write a program that accepts exactly those. The first five puzzles teach you Nibble, one opcode at a time.</p>
+  <header><h1>Nibble puzzles</h1><button type="button" class="help" id="help" aria-expanded="false" aria-controls="intro">Help</button></header>
+  <p class="intro" id="intro">Nibble is the language of a tiny machine. It has one register, <code>AX</code>, which holds 0, 1, 2 or 3, and a program is exactly six instructions. A run starts with <code>AX</code> set to the input. It accepts when <code>zero</code> finds <code>AX</code> at 0, and it rejects when <code>decr</code> finds <code>AX</code> at 0 or when it runs off the end. Each puzzle names a set of inputs: write a program that accepts exactly those. The first five puzzles teach you Nibble, one opcode at a time.</p>
   <nav id="puzzles" aria-label="Puzzles"></nav>
   <section id="puzzle">
     <p id="loading">Loading the machine...</p>
   </section>
   <dl class="ops" id="ops"></dl>
 </main>
-<script type="module" src="nibble.745bff3605926c52.js"></script>
+<script type="module" src="nibble.54135e6e3fec311d.js"></script>
 </body>
 </html>
