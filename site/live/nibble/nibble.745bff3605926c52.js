@@ -12,7 +12,7 @@ const LINES = ["an empty", "a one-line", "a two-line", "a three-line", "a four-l
 
 const [wasm, table] = await Promise.all([
   fetch("nibble.d9274e0bd105b936.wasm").then((r) => r.arrayBuffer()).then((b) => WebAssembly.instantiate(b)),
-  fetch("puzzles.89d9bf622894fdcf.json").then((r) => r.json()),
+  fetch("puzzles.fed4c110692b5a0d.json").then((r) => r.json()),
 ]).catch((e) => {
   const said = document.getElementById("loading");
   said.className = "err";
@@ -29,20 +29,25 @@ const setText = (set) => `{${set.join(", ")}}`;
 const accepts = (puzzle, n) => puzzle.set.includes(n);
 
 // ── progress: which puzzles are solved, and with what; per viewer ────────
+// Everything is kept by language code, never by place in the order, so a
+// new order keeps each puzzle's progress: `at` is the code of the puzzle on
+// show (an older save's `current`, a place, is dropped).
 function loadProgress() {
   try {
     const saved = JSON.parse(localStorage.getItem(STORE) ?? "null");
-    if (saved && typeof saved.solved === "object") return { solved: saved.solved, current: Number(saved.current) || 0, drafts: saved.drafts ?? {} };
+    if (saved && typeof saved.solved === "object") return { solved: saved.solved, at: Number.isInteger(saved.at) ? saved.at : null, drafts: saved.drafts ?? {} };
   } catch { /* no storage, or none saved: start fresh */ }
-  return { solved: {}, current: 0, drafts: {} };
+  return { solved: {}, at: null, drafts: {} };
 }
 function saveProgress() {
   try { localStorage.setItem(STORE, JSON.stringify(progress)); } catch { /* storage refused: progress lasts this visit */ }
 }
 const progress = loadProgress();
 const isSolved = (i) => progress.solved[PUZZLES[i].code] !== undefined;
-const isOpen = (i) => i === 0 || isSolved(i - 1);
-if (!isOpen(progress.current) || progress.current >= PUZZLES.length) progress.current = 0;
+// A puzzle solved under an older order stays open.
+const isOpen = (i) => i === 0 || isSolved(i - 1) || isSolved(i);
+let current = PUZZLES.findIndex((p) => p.code === progress.at);
+if (current < 0 || !isOpen(current)) current = 0;
 
 // ── the page ─────────────────────────────────────────────────────────────
 const el = (tag, attrs = {}, ...kids) => {
@@ -61,16 +66,24 @@ for (const op of OPS) legend.append(el("dt", { text: op.name }), el("dd", { text
 
 let program = [];
 
+// A puzzle's lines past `lines` (its shortest program's length, but one
+// for the nada lesson) are locked to nada.
+const isLocked = (p, line) => line >= p.lines;
+// The program a puzzle opens with, `start`: all nada, but `zero` on the
+// nada lesson's one line, since all nada solves it.
+const startOf = (p) => Array.from({ length: STEPS }, (_, k) => Math.floor(p.start / 4 ** k) % 4);
+
 function draftOf(i) {
-  const code = PUZZLES[i].code;
-  const saved = progress.drafts[code] ?? progress.solved[code];
-  return Array.isArray(saved) && saved.length === STEPS ? saved.slice() : new Array(STEPS).fill(0);
+  const p = PUZZLES[i];
+  const saved = progress.drafts[p.code] ?? progress.solved[p.code];
+  const draft = Array.isArray(saved) && saved.length === STEPS ? saved.slice() : startOf(p);
+  return draft.map((op, line) => (isLocked(p, line) ? 0 : op));
 }
 
 function drawNav() {
   nav.replaceChildren(...PUZZLES.map((p, i) => {
     const b = el("button", { type: "button", "data-puzzle": String(i), title: p.name, text: String(i + 1) });
-    if (i === progress.current) b.classList.add("current");
+    if (i === current) b.classList.add("current");
     if (isSolved(i)) b.classList.add("solved");
     b.disabled = !isOpen(i);
     b.addEventListener("click", () => show(i));
@@ -79,7 +92,8 @@ function drawNav() {
 }
 
 function show(i) {
-  progress.current = i;
+  current = i;
+  progress.at = PUZZLES[i].code;
   saveProgress();
   program = draftOf(i);
   drawNav();
@@ -87,15 +101,17 @@ function show(i) {
 }
 
 function drawPuzzle() {
-  const i = progress.current;
+  const i = current;
   const p = PUZZLES[i];
   const rejected = INPUTS.filter((n) => !accepts(p, n));
   const goal = p.set.length === 0 ? "Reject every input." : `Accept ${setText(p.set)}${rejected.length ? `; reject ${setText(rejected)}` : ""}.`;
   const slots = el("div", { class: "slots" });
   program.forEach((op, line) => {
-    const row = el("div", { class: "slot" }, el("span", { class: "num", text: String(line + 1) }));
+    const locked = isLocked(p, line);
+    const row = el("div", { class: locked ? "slot locked" : "slot", "data-line": String(line) }, el("span", { class: "num", text: String(line + 1) }));
     OPS.forEach((o, code) => {
-      const b = el("button", { type: "button", class: o.name + (code === op ? " on" : ""), title: o.comment, "data-slot": String(line), "data-op": o.name, text: o.name });
+      const b = el("button", { type: "button", class: o.name + (code === op ? " on" : ""), title: locked ? "Locked to nada: this puzzle needs fewer lines." : o.comment, "data-slot": String(line), "data-op": o.name, text: o.name });
+      b.disabled = locked;
       b.addEventListener("click", () => {
         program[line] = code;
         progress.drafts[p.code] = program.slice();
@@ -106,55 +122,65 @@ function drawPuzzle() {
     });
     slots.append(row);
   });
-  const run = el("button", { type: "button", class: "primary", id: "run", text: "Run" });
   const clear = el("button", { type: "button", id: "clear", text: "Clear" });
-  const next = el("button", { type: "button", id: "next", text: "Next puzzle" });
+  const next = el("button", { type: "button", class: "primary", id: "next", text: "Next puzzle" });
   next.hidden = !(isSolved(i) && i + 1 < PUZZLES.length);
   const trace = el("div", { class: "trace", id: "trace" });
   const verdict = el("div", { class: "verdict", id: "verdict" });
-  run.addEventListener("click", () => runAll(trace, verdict, next));
-  clear.addEventListener("click", () => { program = new Array(STEPS).fill(0); delete progress.drafts[p.code]; saveProgress(); drawPuzzle(); });
+  clear.addEventListener("click", () => { program = startOf(p); delete progress.drafts[p.code]; saveProgress(); drawPuzzle(); });
   next.addEventListener("click", () => show(i + 1));
   const found = el("p", { class: "hint", id: "found" });
   if (isSolved(i)) found.textContent = foundText(p);
   panel.replaceChildren(
     el("h2", { id: "title", text: `Puzzle ${i + 1} of ${PUZZLES.length}: ${p.name}` }),
     el("p", { id: "goal", text: goal }),
-    el("p", { class: "hint", id: "hint", text: `This can be solved with ${LINES[p.shortest]} Nibble program${p.shortest === 0 ? " (all nada)" : ""}.` }),
+    ...(p.lesson ? [el("p", { class: "lesson", id: "lesson", text: p.lesson })] : []),
+    el("p", { class: "hint", id: "hint", text: hintText(p) }),
     slots,
-    el("div", { class: "actions" }, run, clear, next),
+    el("div", { class: "actions" }, clear, next),
     trace, verdict, found,
   );
+  // No Run button: the program runs on every pick.
+  runAll(trace, verdict, next);
 }
+
+const hintText = (p) => `This can be solved with ${LINES[p.lines]} Nibble program${lockedText(p.lines)}.`;
+const lockedText = (n) => n === STEPS ? "" : n === STEPS - 1 ? `, so line ${STEPS} is locked to nada` : `, so lines ${n + 1} to ${STEPS} are locked to nada`;
 
 const foundText = (p) => p.count === 1 ? "You found the one program, of all 4,096, that does this." : `You found one of ${p.count.toLocaleString("en-US")} programs that do this.`;
 
 // What a run ended as, in words.
-const endText = (s) => s === ACCEPTED ? "accepted" : s === REJECTED ? "rejected" : "rejected (ran off the end)";
+const endText = (s) => s === ACCEPTED ? "accept" : s === REJECTED ? "reject" : "reject: ran off the end";
 
+// The trace: a row a step, so it lines up with the program's lines, and a
+// column an input, which fits a phone's width. A cell is AX after that
+// step, or accept or reject where the run halted; the last two rows are how
+// each run ended and what the puzzle wants. A wrong input's column is marked.
 function runAll(trace, verdict, next) {
-  const i = progress.current;
+  const i = current;
   const p = PUZZLES[i];
   const code = codeOf(program);
-  const head = el("tr", {}, el("th", { text: "input" }), ...program.map((op, k) => el("th", { class: "mono", text: `${k + 1} ${OPS[op].name}` })), el("th", { text: "result" }), el("th", { text: "want" }));
-  const rows = [];
-  let wrong = null;
-  for (const n of INPUTS) {
-    const cells = [el("td", { class: "mono", text: String(n) })];
-    let haltedAt = -1;
-    for (let k = 1; k <= STEPS; k++) {
-      const m = unpack(machine.after(n, code, k));
-      if (m.halted && haltedAt < 0) { haltedAt = k; cells.push(el("td", { class: "mono", text: m.status === ACCEPTED ? "accept" : "reject" })); }
-      else if (m.halted) cells.push(el("td", { class: "halt", text: "" }));
-      else cells.push(el("td", { class: "mono", text: `AX=${m.ax}` }));
-    }
-    const status = machine.status(n, code);
-    const ok = (status === ACCEPTED) === accepts(p, n);
-    if (!ok && wrong === null) wrong = { n, status };
-    const row = el("tr", { "data-input": String(n) }, ...cells, el("td", { text: endText(status) }), el("td", { text: accepts(p, n) ? "accept" : "reject" }));
-    if (!ok) row.classList.add("wrong");
-    rows.push(row);
-  }
+  const status = INPUTS.map((n) => machine.status(n, code));
+  const ok = INPUTS.map((n) => (status[n] === ACCEPTED) === accepts(p, n));
+  const wrongAt = ok.indexOf(false);
+  const wrong = wrongAt < 0 ? null : { n: INPUTS[wrongAt], status: status[wrongAt] };
+  const cell = (tag, n, attrs) => {
+    const c = el(tag, { ...attrs, "data-input": String(n) });
+    if (!ok[n]) c.classList.add("wrong");
+    return c;
+  };
+  const head = el("tr", {}, el("th", { class: "step", text: "input" }), ...INPUTS.map((n) => cell("th", n, { class: "mono", text: String(n) })));
+  const rows = program.map((op, k) => el("tr", { "data-step": String(k + 1) },
+    el("th", { class: "step mono", text: `${k + 1} ${OPS[op].name}` }),
+    ...INPUTS.map((n) => {
+      const m = unpack(machine.after(n, code, k + 1));
+      const before = k === 0 ? null : unpack(machine.after(n, code, k));
+      if (m.halted && before?.halted) return cell("td", n, { class: "halt", text: "" });
+      if (m.halted) return cell("td", n, { class: "mono", text: m.status === ACCEPTED ? "accept" : "reject" });
+      return cell("td", n, { class: "mono", text: `AX=${m.ax}` });
+    })));
+  rows.push(el("tr", { class: "end", "data-row": "result" }, el("th", { class: "step", text: "result" }), ...INPUTS.map((n) => cell("td", n, { text: endText(status[n]) }))));
+  rows.push(el("tr", { class: "end", "data-row": "want" }, el("th", { class: "step", text: "want" }), ...INPUTS.map((n) => cell("td", n, { text: accepts(p, n) ? "accept" : "reject" }))));
   trace.replaceChildren(el("table", {}, el("thead", {}, head), el("tbody", {}, ...rows)));
   const found = document.getElementById("found");
   if (wrong === null) {
@@ -173,4 +199,4 @@ function runAll(trace, verdict, next) {
 }
 
 document.getElementById("loading")?.remove();
-show(progress.current);
+show(current);

@@ -41,13 +41,17 @@ section { background: var(--panel); border: 1px solid var(--line); border-radius
 .actions button { padding: 8px 18px; border-radius: 6px; border: 1px solid var(--accent); font: inherit; cursor: pointer; background: var(--panel); color: var(--accent); }
 .actions button.primary { background: var(--accent); color: var(--accent-fg); }
 .actions button[hidden] { display: none; }
+.slot.locked button { opacity: 0.45; cursor: default; }
+.lesson { margin: 8px 0; }
 .trace { overflow-x: auto; margin-top: 14px; }
-table { border-collapse: collapse; width: 100%; font-size: 0.92rem; }
-th, td { padding: 4px 6px; border-bottom: 1px solid var(--line); text-align: center; white-space: nowrap; }
+table { border-collapse: collapse; width: 100%; font-size: 0.92rem; table-layout: fixed; }
+th, td { padding: 4px 4px; border-bottom: 1px solid var(--line); text-align: center; white-space: nowrap; }
 th { color: var(--muted); font-weight: 500; }
-td.mono { font-family: ui-monospace, Menlo, Consolas, monospace; }
+th.step { text-align: left; width: 5.2rem; }
+th.mono, td.mono { font-family: ui-monospace, Menlo, Consolas, monospace; }
 td.halt { color: var(--muted); }
-tr.wrong td { background: var(--bad-bg); }
+tr.end td { white-space: normal; font-size: 0.85rem; }
+.wrong { background: var(--bad-bg); }
 .verdict { margin-top: 12px; padding: 10px 12px; border-radius: 6px; }
 .verdict.good { background: var(--good-bg); color: var(--good); }
 .verdict.bad { background: var(--bad-bg); color: var(--bad); }
@@ -61,13 +65,13 @@ tr.wrong td { background: var(--bad-bg); }
 <body>
 <main>
   <h1>Nibble puzzles</h1>
-  <p class="intro">Nibble is the language of a tiny machine. It has one register, <code>AX</code>, which holds 0, 1, 2 or 3, and a program is exactly six instructions. A run starts with <code>AX</code> set to the input. It accepts when <code>zero</code> finds <code>AX</code> at 0, and it rejects when <code>decr</code> finds <code>AX</code> at 0 or when it runs off the end. Each puzzle names a set of inputs: write a program that accepts exactly those.</p>
+  <p class="intro">Nibble is the language of a tiny machine. It has one register, <code>AX</code>, which holds 0, 1, 2 or 3, and a program is exactly six instructions. A run starts with <code>AX</code> set to the input. It accepts when <code>zero</code> finds <code>AX</code> at 0, and it rejects when <code>decr</code> finds <code>AX</code> at 0 or when it runs off the end. Each puzzle names a set of inputs: write a program that accepts exactly those. The first five puzzles teach you Nibble, one opcode at a time.</p>
   <nav id="puzzles" aria-label="Puzzles"></nav>
   <section id="puzzle">
     <p id="loading">Loading the machine...</p>
   </section>
   <dl class="ops" id="ops"></dl>
 </main>
-<script type="module" src="nibble.e0728d677ea51ce3.js"></script>
+<script type="module" src="nibble.745bff3605926c52.js"></script>
 </body>
 </html>
