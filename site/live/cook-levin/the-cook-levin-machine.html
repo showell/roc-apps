@@ -46,14 +46,14 @@ figure.scrolling pre { margin: 0; padding: 0.3rem 1rem 0.75rem; background: none
 <h1 id="the-cook-levin-machine">The Cook-Levin machine</h1>
 <p><a class="chapter-link" href="the-machine-as-a-circuit.html">“The machine as a circuit”</a> is a checker: hand it a language and a program, and it says true or false. Cook and Levin&#39;s idea is to run a checker backwards. Fix the language, leave the program unknown, pin the output to true, and ask which programs fit. The circuit does the same work as before; only the question changes.</p>
 <h2 id="the-circuit-turned-around">The circuit, turned around <a class="section-link" href="#the-circuit-turned-around" aria-label="Link to this section">§</a></h2>
-<p>The want register is fixed at the puzzle&#39;s bits. The program register becomes twelve unknown wires, <code>x1</code> to <code>x12</code>. The output wire is required to be 1. Everything in between is the same 24 step units and four comparators, and every wire in them is now an unknown too, tied to the wires feeding it by the rule of its gate.</p>
+<p>The want register is fixed at the puzzle&#39;s bits. The program register becomes twelve unknown wires, <code>v1</code> to <code>v12</code>. The output wire is required to be 1. Everything in between is the same 24 step units and four comparators, and every wire in them is now an unknown too, tied to the wires feeding it by the rule of its gate.</p>
 <figure class="diagram"><svg class="diagram" role="img" aria-label="The question the circuit now asks" width="256pt" height="188pt"
  viewBox="0.00 0.00 256.00 188.00" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
 <g id="graph0" class="graph" transform="scale(1 1) rotate(0) translate(4 184)">
 <polygon fill="white" stroke="transparent" points="-4,4 -4,-184 252,-184 252,4 -4,4"/>
 <g id="node1" class="node">
 <path fill="none" stroke="black" d="M118,-180C118,-180 12,-180 12,-180 6,-180 0,-174 0,-168 0,-168 0,-156 0,-156 0,-150 6,-144 12,-144 12,-144 118,-144 118,-144 124,-144 130,-150 130,-156 130,-156 130,-168 130,-168 130,-174 124,-180 118,-180"/>
-<text text-anchor="middle" x="65" y="-165.4" font-family="Times,serif" font-size="12.00">program: x1 .. x12</text>
+<text text-anchor="middle" x="65" y="-165.4" font-family="Times,serif" font-size="12.00">program: v1 .. v12</text>
 <text text-anchor="middle" x="65" y="-152.4" font-family="Times,serif" font-size="12.00">unknown</text>
 </g>
 <g id="node3" class="node">
