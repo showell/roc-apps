@@ -52,6 +52,8 @@ const legend = document.getElementById("ops");
 for (const op of OPS) legend.append(el("dt", { text: op.name }), el("dd", { text: op.comment.replace(/^# /, "") }));
 
 let program = [];
+// Whether the player brought the buttons back after a solve, on this puzzle.
+let reopened = false;
 
 // A puzzle's first `given` lines are locked to its start's ops; its lines
 // past `lines` (its shortest program's length, but one for grumpy, which all
@@ -88,6 +90,7 @@ help.addEventListener("click", () => { helpOpen = !helpOpen; drawIntro(); });
 // A puzzle opens at its start, a solved one too: it reopens as a puzzle.
 function show(i) {
   current = i;
+  reopened = false;
   drawIntro();
   program = startOf(PUZZLES[i]);
   drawNav();
@@ -102,7 +105,7 @@ function lockTitle(p, line, o) {
 function drawPuzzle() {
   const i = current;
   const p = PUZZLES[i];
-  const slots = el("div", { class: "slots" });
+  const slots = el("div", { class: "slots", id: "slots" });
   program.forEach((op, line) => {
     const locked = isLocked(p, line);
     const kind = isGiven(p, line) ? "slot locked given" : locked ? "slot locked" : "slot";
@@ -120,8 +123,13 @@ function drawPuzzle() {
   next.hidden = !(solved.has(i) && i + 1 < PUZZLES.length);
   const trace = el("div", { class: "trace", id: "trace" });
   const verdict = el("div", { class: "verdict", id: "verdict" });
+  // Once solved, the buttons fold away so the trace, the run's story, shows;
+  // "Change the program" brings them back.
+  const edit = el("button", { type: "button", id: "edit", text: "Change the program" });
+  edit.hidden = true;
   clear.addEventListener("click", () => { program = startOf(p); drawPuzzle(); });
   next.addEventListener("click", () => show(i + 1));
+  edit.addEventListener("click", () => { reopened = true; drawPuzzle(); });
   const found = el("p", { class: "hint", id: "found" });
   // The verdict and the buttons sit above the program, so a solve shows
   // without scrolling; the trace, the longest part, goes last.
@@ -131,7 +139,7 @@ function drawPuzzle() {
     ...(p.lesson ? [el("p", { class: "lesson", id: "lesson", text: p.lesson })] : []),
     el("p", { class: "hint", id: "hint", text: hintText(p) }),
     verdict, found,
-    el("div", { class: "actions" }, clear, next),
+    el("div", { class: "actions" }, clear, edit, next),
     slots,
     trace,
   );
@@ -191,6 +199,7 @@ function runAll(trace, verdict, next) {
     })));
   rows.push(el("tr", { class: "end", "data-row": "result" }, el("th", { class: "step", text: "result" }), ...INPUTS.map((n) => cell("td", n, { text: endText(code, n) }))));
   rows.push(el("tr", { class: "end", "data-row": "want" }, el("th", { class: "step", text: "want" }), ...INPUTS.map((n) => cell("td", n, { text: wantOf(p, n) }))));
+  rows.push(el("tr", { class: "end", "data-row": "outcome" }, el("th", { class: "step", text: "outcome" }), ...INPUTS.map((n) => cell("td", n, { text: ok[n] ? "Correct! 🎉" : "WRONG! ❌" }))));
   trace.replaceChildren(el("table", {}, el("thead", {}, head), el("tbody", {}, ...rows)));
   const found = document.getElementById("found");
   if (wrong === null) {
@@ -199,6 +208,11 @@ function runAll(trace, verdict, next) {
     verdict.textContent = i + 1 < PUZZLES.length ? "Solved! The next puzzle is open." : "Solved! That was the last puzzle.";
     found.textContent = foundText(p);
     next.hidden = i + 1 >= PUZZLES.length;
+    if (!reopened) {
+      document.getElementById("slots").hidden = true;
+      document.getElementById("clear").hidden = true;
+      document.getElementById("edit").hidden = false;
+    }
     drawNav();
   } else {
     verdict.className = "verdict bad";
