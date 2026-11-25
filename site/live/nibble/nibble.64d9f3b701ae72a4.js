@@ -13,7 +13,7 @@ const LINES = ["an empty", "a one-line", "a two-line", "a three-line", "a four-l
 
 const [wasm, table] = await Promise.all([
   fetch("nibble.d9274e0bd105b936.wasm").then((r) => r.arrayBuffer()).then((b) => WebAssembly.instantiate(b)),
-  fetch("puzzles.1e622fa72a79c00b.json").then((r) => r.json()),
+  fetch("puzzles.1222ca6c7970459b.json").then((r) => r.json()),
 ]).catch((e) => {
   const said = document.getElementById("loading");
   said.className = "err";
@@ -55,12 +55,13 @@ let program = [];
 // Whether the player brought the buttons back after a solve, on this puzzle.
 let reopened = false;
 
-// A puzzle's first `given` lines are locked to its start's ops; its lines
-// past `lines` (its shortest program's length, but one for grumpy, which all
-// nada solves) are locked to nada; the lines between are the player's.
-const isGiven = (p, line) => line < p.given;
-const isLocked = (p, line) => isGiven(p, line) || line >= p.lines;
-// The program a puzzle opens with, `start`: all nada but its given lines,
+// A puzzle's `fixed` lines (a bitmask, line k's bit 1 << k, from 0) are
+// locked to its start's ops; its lines past `lines` (its shortest program's
+// length, but one for grumpy, which all nada solves) are locked to nada; the
+// rest are the player's.
+const isFixed = (p, line) => ((p.fixed >> line) & 1) === 1;
+const isLocked = (p, line) => isFixed(p, line) || line >= p.lines;
+// The program a puzzle opens with, `start`: all nada but its fixed lines,
 // and grumpy's `zero` on line 1.
 const startOf = (p) => Array.from({ length: STEPS }, (_, k) => Math.floor(p.start / 4 ** k) % 4);
 
@@ -98,7 +99,7 @@ function show(i) {
 }
 
 function lockTitle(p, line, o) {
-  if (isGiven(p, line)) return `Given: line ${line + 1} is ${OPS[program[line]].name}.`;
+  if (isFixed(p, line)) return `Fixed: line ${line + 1} is ${OPS[program[line]].name}.`;
   return line >= p.lines ? "Locked to nada: this puzzle needs fewer lines." : o.comment;
 }
 
@@ -108,7 +109,7 @@ function drawPuzzle() {
   const slots = el("div", { class: "slots", id: "slots" });
   program.forEach((op, line) => {
     const locked = isLocked(p, line);
-    const kind = isGiven(p, line) ? "slot locked given" : locked ? "slot locked" : "slot";
+    const kind = isFixed(p, line) ? "slot locked given" : locked ? "slot locked" : "slot";
     const row = el("div", { class: kind, "data-line": String(line) }, el("span", { class: "num", text: String(line + 1) }));
     OPS.forEach((o, code) => {
       const b = el("button", { type: "button", class: o.name + (code === op ? " on" : ""), title: lockTitle(p, line, o), "data-slot": String(line), "data-op": o.name, text: o.name });
@@ -156,12 +157,28 @@ function goalText(p) {
 const span = (a, b) => (a === b ? `line ${a}` : `lines ${a} to ${b}`);
 const cap = (s) => s[0].toUpperCase() + s.slice(1);
 const lockedText = (n) => (n === STEPS ? "" : `${cap(span(n + 1, STEPS))} ${n + 1 === STEPS ? "is" : "are"} locked to nada.`);
+// Lines (from 0) as a hint says them: "line 4", "lines 1 to 3", "lines 1 and 3".
+function linesText(ks) {
+  const runs = [];
+  for (const k of ks) {
+    const last = runs[runs.length - 1];
+    if (last && last[1] === k - 1) last[1] = k; else runs.push([k, k]);
+  }
+  if (runs.length === 1) return span(runs[0][0] + 1, runs[0][1] + 1);
+  const parts = runs.map(([a, b]) => (a === b ? String(a + 1) : `${a + 1} to ${b + 1}`));
+  return `lines ${parts.slice(0, -1).join(", ")} and ${parts[parts.length - 1]}`;
+}
 function hintText(p) {
-  if (p.given === 0) return `This can be solved with ${LINES[p.lines]} Nibble program${p.lines === STEPS ? "" : `, so ${span(p.lines + 1, STEPS)} ${p.lines + 1 === STEPS ? "is" : "are"} locked to nada`}.`;
-  const ops = startOf(p).slice(0, p.given).map((op) => OPS[op].name).join(", ");
-  const given = `${cap(span(1, p.given))} ${p.given === 1 ? "is" : "are"} already fixed as ${ops}. Your job: fix ${span(p.given + 1, p.lines)}.`;
+  const fixed = Array.from({ length: p.lines }, (_, k) => k).filter((k) => isFixed(p, k));
+  if (fixed.length === 0) return `This can be solved with ${LINES[p.lines]} Nibble program${p.lines === STEPS ? "" : `, so ${span(p.lines + 1, STEPS)} ${p.lines + 1 === STEPS ? "is" : "are"} locked to nada`}.`;
+  const open = Array.from({ length: p.lines }, (_, k) => k).filter((k) => !isFixed(p, k));
+  const ops = fixed.map((k) => OPS[startOf(p)[k]].name).join(", ");
+  const parts = [`${cap(linesText(fixed))} ${fixed.length === 1 ? "is" : "are"} already fixed as ${ops}.`, `Your job: fix ${linesText(open)}.`];
+  // Past the lessons, the hint first says how short a program can be.
+  if (!p.lesson) parts.unshift(`This can be solved with ${LINES[p.lines]} Nibble program.`);
   const locked = lockedText(p.lines);
-  return locked ? `${given} ${locked}` : given;
+  if (locked) parts.push(locked);
+  return parts.join(" ");
 }
 
 const foundText = (p) => p.count === 1 ? "You found the one program, of all 4,096, that does this." : `You found one of ${p.count.toLocaleString("en-US")} programs that do this.`;
