@@ -7,7 +7,12 @@
 <link rel="icon" href="data:,">
 <link rel="stylesheet" href="book.css">
 <script src="copy.js" defer></script>
-</head>
+<style>
+figure.polynomial { margin: 1rem 0; background: var(--shade); border-radius: 4px; }
+figure.polynomial figcaption { padding: 0.5rem 1rem 0; color: var(--quiet); font: 0.72rem/1.5 var(--mono); }
+figure.polynomial pre { margin: 0; padding: 0.3rem 1rem 0.75rem; background: none; max-height: 16rem; overflow-x: hidden; overflow-y: auto; white-space: pre-wrap; overflow-wrap: anywhere; word-break: break-all; font-size: 0.72rem; }
+@media (max-width: 700px) { figure.polynomial { margin-inline: -0.5rem; } figure.polynomial figcaption, figure.polynomial pre { padding-inline: 0.6rem; } }
+</style></head>
 <body class="chapter">
 <nav class="book-nav" id="chapters" aria-label="Chapters">
 <a class="book-name" href="index.html">A riff on Cook-Levin</a>
@@ -21,10 +26,11 @@
 <li class="here"><a href="arithmetization.html"><span class="number">7</span>Arithmetization</a><ol class="sections"><li><a href="arithmetization.html#one-step">One step</a></li><li><a href="arithmetization.html#the-steps-sizes">The step&#39;s sizes</a></li><li><a href="arithmetization.html#the-stepper-as-a-second-machine">The stepper as a second machine</a></li></ol></li>
 <li><a href="why-composing-blew-up.html"><span class="number">8</span>Why composing blew up</a></li>
 <li><a href="six-steps-composed.html"><span class="number">9</span>Six steps composed</a></li>
-<li><a href="cook-levin-as-sat.html"><span class="number">10</span>Cook-Levin as SAT</a></li>
-<li><a href="the-oracles.html"><span class="number">11</span>The oracles</a></li>
-<li><a href="the-roc-port.html"><span class="number">12</span>The Roc port</a></li>
-<li><a href="what-comes-next.html"><span class="number">13</span>What comes next</a></li>
+<li><a href="the-polynomials-in-full.html"><span class="number">10</span>The polynomials, in full</a></li>
+<li><a href="cook-levin-as-sat.html"><span class="number">11</span>Cook-Levin as SAT</a></li>
+<li><a href="the-oracles.html"><span class="number">12</span>The oracles</a></li>
+<li><a href="the-roc-port.html"><span class="number">13</span>The Roc port</a></li>
+<li><a href="what-comes-next.html"><span class="number">14</span>What comes next</a></li>
 </ol>
 </nav>
 <main>
@@ -155,7 +161,7 @@
 	}
 }
 </code></pre></figure><h2 id="the-steps-sizes">The step&#39;s sizes <a class="section-link" href="#the-steps-sizes" aria-label="Link to this section">§</a></h2>
-<p>In Python&#39;s general polynomial ring, where x·x is x², the four polynomials come out large: hb&#39; has 786 terms and lb&#39; 2,979 (<code>README.md</code>, its layout&#39;s <code>src/stepper.c</code>). The C port prints them exactly as <code>stepper.py</code> does, held to <code>tests/golden/step_hb.txt</code> and its three siblings. In the Boolean ring of <a class="chapter-link" href="why-composing-blew-up.html">“Why composing blew up”</a> the same four have 7, 13, 17 and 33 terms, every coefficient 1 or -1, as an expect in <code>roc/Stepper.roc</code> holds.</p>
+<p>In Python&#39;s general polynomial ring, where x·x is x², the four polynomials come out large: hb&#39; has 786 terms and lb&#39; 2,979 (<code>README.md</code>, its layout&#39;s <code>src/stepper.c</code>). The C port prints them exactly as <code>stepper.py</code> does, held to <code>tests/golden/step_hb.txt</code> and its three siblings. In the Boolean ring of <a class="chapter-link" href="why-composing-blew-up.html">“Why composing blew up”</a> the same four have 7, 13, 17 and 33 terms, every coefficient 1 or -1, as an expect in <code>roc/Stepper.roc</code> holds. <a class="chapter-link" href="the-polynomials-in-full.html">“The polynomials, in full”</a> prints all eight whole.</p>
 <p>Here is <code>halted&#39;</code> in that ring. It says: halted already, or a <code>decr</code> at <code>AX</code> = 0 on a running machine.</p>
 <pre><code class="language-text">halted+op_hb+(-1)*hb*op_hb+(-1)*lb*op_hb+(-1)*halted*op_hb+(-1)*op_hb*op_lb
 +hb*lb*op_hb+hb*halted*op_hb+hb*op_hb*op_lb+lb*halted*op_hb+lb*op_hb*op_lb

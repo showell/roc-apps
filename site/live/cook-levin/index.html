@@ -7,7 +7,12 @@
 <link rel="icon" href="data:,">
 <link rel="stylesheet" href="book.css">
 <script src="copy.js" defer></script>
-</head>
+<style>
+figure.polynomial { margin: 1rem 0; background: var(--shade); border-radius: 4px; }
+figure.polynomial figcaption { padding: 0.5rem 1rem 0; color: var(--quiet); font: 0.72rem/1.5 var(--mono); }
+figure.polynomial pre { margin: 0; padding: 0.3rem 1rem 0.75rem; background: none; max-height: 16rem; overflow-x: hidden; overflow-y: auto; white-space: pre-wrap; overflow-wrap: anywhere; word-break: break-all; font-size: 0.72rem; }
+@media (max-width: 700px) { figure.polynomial { margin-inline: -0.5rem; } figure.polynomial figcaption, figure.polynomial pre { padding-inline: 0.6rem; } }
+</style></head>
 <body class="front">
 
 <main>
@@ -26,10 +31,11 @@
 <li><a href="arithmetization.html"><span class="number">7</span>Arithmetization</a><ol class="sections"><li><a href="arithmetization.html#one-step">One step</a></li><li><a href="arithmetization.html#the-steps-sizes">The step&#39;s sizes</a></li><li><a href="arithmetization.html#the-stepper-as-a-second-machine">The stepper as a second machine</a></li></ol></li>
 <li><a href="why-composing-blew-up.html"><span class="number">8</span>Why composing blew up</a><ol class="sections"><li><a href="why-composing-blew-up.html#the-general-ring">The general ring</a></li><li><a href="why-composing-blew-up.html#the-boolean-ring">The Boolean ring</a></li><li><a href="why-composing-blew-up.html#why-it-is-exact">Why it is exact</a></li></ol></li>
 <li><a href="six-steps-composed.html"><span class="number">9</span>Six steps composed</a><ol class="sections"><li><a href="six-steps-composed.html#the-sizes">The sizes</a></li><li><a href="six-steps-composed.html#the-proof">The proof</a></li></ol></li>
-<li><a href="cook-levin-as-sat.html"><span class="number">10</span>Cook-Levin as SAT</a><ol class="sections"><li><a href="cook-levin-as-sat.html#the-unrolling">The unrolling</a></li><li><a href="cook-levin-as-sat.html#the-proof-by-propagation">The proof by propagation</a></li><li><a href="cook-levin-as-sat.html#rocsat-as-an-oracle">rocsat as an oracle</a></li></ol></li>
-<li><a href="the-oracles.html"><span class="number">11</span>The oracles</a><ol class="sections"><li><a href="the-oracles.html#what-each-one-checks">What each one checks</a></li><li><a href="the-oracles.html#one-program-three-runners">One program, three runners</a></li><li><a href="the-oracles.html#why-so-many">Why so many</a></li></ol></li>
-<li><a href="the-roc-port.html"><span class="number">12</span>The Roc port</a><ol class="sections"><li><a href="the-roc-port.html#the-ring-as-operators">The ring as operators</a></li><li><a href="the-roc-port.html#substitution">Substitution</a></li><li><a href="the-roc-port.html#every-point-at-once">Every point at once</a></li><li><a href="the-roc-port.html#the-speed-honestly">The speed, honestly</a></li></ol></li>
-<li><a href="what-comes-next.html"><span class="number">13</span>What comes next</a></li>
+<li><a href="the-polynomials-in-full.html"><span class="number">10</span>The polynomials, in full</a><ol class="sections"><li><a href="the-polynomials-in-full.html#what-the-sizes-mean">What the sizes mean</a></li><li><a href="the-polynomials-in-full.html#one-step-as-the-python-printed-it">One step, as the Python printed it</a></li><li><a href="the-polynomials-in-full.html#the-same-step-with-x-x">The same step, with x² = x</a></li><li><a href="the-polynomials-in-full.html#the-whole-program">The whole program</a></li></ol></li>
+<li><a href="cook-levin-as-sat.html"><span class="number">11</span>Cook-Levin as SAT</a><ol class="sections"><li><a href="cook-levin-as-sat.html#the-unrolling">The unrolling</a></li><li><a href="cook-levin-as-sat.html#the-proof-by-propagation">The proof by propagation</a></li><li><a href="cook-levin-as-sat.html#rocsat-as-an-oracle">rocsat as an oracle</a></li></ol></li>
+<li><a href="the-oracles.html"><span class="number">12</span>The oracles</a><ol class="sections"><li><a href="the-oracles.html#what-each-one-checks">What each one checks</a></li><li><a href="the-oracles.html#one-program-three-runners">One program, three runners</a></li><li><a href="the-oracles.html#why-so-many">Why so many</a></li></ol></li>
+<li><a href="the-roc-port.html"><span class="number">13</span>The Roc port</a><ol class="sections"><li><a href="the-roc-port.html#the-ring-as-operators">The ring as operators</a></li><li><a href="the-roc-port.html#substitution">Substitution</a></li><li><a href="the-roc-port.html#every-point-at-once">Every point at once</a></li><li><a href="the-roc-port.html#the-speed-honestly">The speed, honestly</a></li></ol></li>
+<li><a href="what-comes-next.html"><span class="number">14</span>What comes next</a></li>
 </ol>
 </article>
 </main>

@@ -7,7 +7,12 @@
 <link rel="icon" href="data:,">
 <link rel="stylesheet" href="book.css">
 <script src="copy.js" defer></script>
-</head>
+<style>
+figure.polynomial { margin: 1rem 0; background: var(--shade); border-radius: 4px; }
+figure.polynomial figcaption { padding: 0.5rem 1rem 0; color: var(--quiet); font: 0.72rem/1.5 var(--mono); }
+figure.polynomial pre { margin: 0; padding: 0.3rem 1rem 0.75rem; background: none; max-height: 16rem; overflow-x: hidden; overflow-y: auto; white-space: pre-wrap; overflow-wrap: anywhere; word-break: break-all; font-size: 0.72rem; }
+@media (max-width: 700px) { figure.polynomial { margin-inline: -0.5rem; } figure.polynomial figcaption, figure.polynomial pre { padding-inline: 0.6rem; } }
+</style></head>
 <body class="chapter">
 <nav class="book-nav" id="chapters" aria-label="Chapters">
 <a class="book-name" href="index.html">A riff on Cook-Levin</a>
@@ -21,10 +26,11 @@
 <li><a href="arithmetization.html"><span class="number">7</span>Arithmetization</a></li>
 <li class="here"><a href="why-composing-blew-up.html"><span class="number">8</span>Why composing blew up</a><ol class="sections"><li><a href="why-composing-blew-up.html#the-general-ring">The general ring</a></li><li><a href="why-composing-blew-up.html#the-boolean-ring">The Boolean ring</a></li><li><a href="why-composing-blew-up.html#why-it-is-exact">Why it is exact</a></li></ol></li>
 <li><a href="six-steps-composed.html"><span class="number">9</span>Six steps composed</a></li>
-<li><a href="cook-levin-as-sat.html"><span class="number">10</span>Cook-Levin as SAT</a></li>
-<li><a href="the-oracles.html"><span class="number">11</span>The oracles</a></li>
-<li><a href="the-roc-port.html"><span class="number">12</span>The Roc port</a></li>
-<li><a href="what-comes-next.html"><span class="number">13</span>What comes next</a></li>
+<li><a href="the-polynomials-in-full.html"><span class="number">10</span>The polynomials, in full</a></li>
+<li><a href="cook-levin-as-sat.html"><span class="number">11</span>Cook-Levin as SAT</a></li>
+<li><a href="the-oracles.html"><span class="number">12</span>The oracles</a></li>
+<li><a href="the-roc-port.html"><span class="number">13</span>The Roc port</a></li>
+<li><a href="what-comes-next.html"><span class="number">14</span>What comes next</a></li>
 </ol>
 </nav>
 <main>
@@ -53,7 +59,7 @@
 </code></pre></figure><p><code>src/boolring.c</code> is the C&#39;s version (<code>0c233e3</code>), with a 32-bit mask and checked int64 coefficients.</p>
 <h2 id="why-it-is-exact">Why it is exact <a class="section-link" href="#why-it-is-exact" aria-label="Link to this section">§</a></h2>
 <p>The Boolean ring keeps every value the machine can see. Two polynomials that agree on every 0/1 point reduce to the same multilinear polynomial, and a multilinear polynomial is fixed by its values on {0, 1}^n. So reducing by x² = x keeps every value the machine can see, and the canonical form makes <code>==</code> equality of functions (<code>roc/BoolPoly.roc</code>&#39;s header).</p>
-<p>With the identity in place the step polynomials shrink from 786 and 2,979 terms to 7 and 13, and the composition of <a class="chapter-link" href="six-steps-composed.html">“Six steps composed”</a> takes a fraction of a second.</p>
+<p>With the identity in place the step polynomials shrink from 786 and 2,979 terms to 7 and 13, and the composition of <a class="chapter-link" href="six-steps-composed.html">“Six steps composed”</a> takes a fraction of a second. <a class="chapter-link" href="the-polynomials-in-full.html">“The polynomials, in full”</a> shows the step both ways, Python&#39;s 147,274 characters of lb&#39; beside its 230 in the Boolean ring.</p>
 
 </article>
 <nav class="turn-page" aria-label="Previous and next chapter">
