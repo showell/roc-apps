@@ -33,7 +33,8 @@ const outcomeOf = (code, n) => (machine.status(n, code) === ACCEPTED ? "accept" 
 
 // ── progress, for this visit only: the puzzles solved, by place ─────────
 const solved = new Set();
-const isOpen = (i) => i === 0 || solved.has(i - 1) || solved.has(i);
+// Every puzzle is open: a player may jump ahead to any of them.
+const isOpen = () => true;
 let current = 0;
 
 // ── the page ─────────────────────────────────────────────────────────────
