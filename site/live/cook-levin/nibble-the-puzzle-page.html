@@ -1,0 +1,158 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Nibble, the puzzle page · A riff on Cook-Levin</title>
+<link rel="icon" href="data:,">
+<link rel="stylesheet" href="book.css">
+<script src="copy.js" defer></script>
+</head>
+<body class="chapter">
+<nav class="book-nav" id="chapters" aria-label="Chapters">
+<a class="book-name" href="index.html">A riff on Cook-Levin</a>
+<ol>
+<li><a href="introduction.html"><span class="number">1</span>Introduction</a></li>
+<li><a href="how-it-got-here.html"><span class="number">2</span>How it got here</a></li>
+<li><a href="the-machine.html"><span class="number">3</span>The machine</a></li>
+<li><a href="programs-as-languages.html"><span class="number">4</span>Programs as languages</a></li>
+<li class="here"><a href="nibble-the-puzzle-page.html"><span class="number">5</span>Nibble, the puzzle page</a><ol class="sections"><li><a href="nibble-the-puzzle-page.html#what-runs-in-the-page">What runs in the page</a></li><li><a href="nibble-the-puzzle-page.html#playing-a-puzzle">Playing a puzzle</a></li><li><a href="nibble-the-puzzle-page.html#the-lessons">The lessons</a></li><li><a href="nibble-the-puzzle-page.html#the-ramp">The ramp</a></li><li><a href="nibble-the-puzzle-page.html#help-for-a-newcomer">Help for a newcomer</a></li></ol></li>
+<li><a href="arithmetization.html"><span class="number">6</span>Arithmetization</a></li>
+<li><a href="why-composing-blew-up.html"><span class="number">7</span>Why composing blew up</a></li>
+<li><a href="six-steps-composed.html"><span class="number">8</span>Six steps composed</a></li>
+<li><a href="cook-levin-as-sat.html"><span class="number">9</span>Cook-Levin as SAT</a></li>
+<li><a href="the-oracles.html"><span class="number">10</span>The oracles</a></li>
+<li><a href="the-roc-port.html"><span class="number">11</span>The Roc port</a></li>
+<li><a href="what-comes-next.html"><span class="number">12</span>What comes next</a></li>
+</ol>
+</nav>
+<main>
+<p class="book-bar"><a href="index.html">A riff on Cook-Levin</a> <a href="#chapters">Chapters</a></p>
+<article>
+<p class="chapter-number">Chapter 5</p>
+<h1 id="nibble-the-puzzle-page">Nibble, the puzzle page</h1>
+<p><a href="https://roc.lynrummy.com/nibble/">Nibble</a> is a puzzle page with one puzzle for each of the 16 languages: pick instructions until the program accepts exactly the puzzle&#39;s inputs and rejects the rest. The search of <a class="chapter-link" href="programs-as-languages.html">“Programs as languages”</a> says every puzzle has an answer, and how many programs are answers.</p>
+<h2 id="what-runs-in-the-page">What runs in the page <a class="section-link" href="#what-runs-in-the-page" aria-label="Link to this section">§</a></h2>
+<p>The page runs this repository&#39;s C. <code>web/nibble.c</code> is <code>src/vm.c</code> compiled to freestanding wasm by <code>zig cc</code>, and the puzzle table is printed by <code>web/puzzles.c</code>, which counts every program&#39;s language and finds each puzzle&#39;s shortest program (<code>README.md</code>, &quot;Playground&quot;). The JavaScript in the page draws; the machine&#39;s verdicts are the C&#39;s. The page&#39;s check, <code>web/page_check.mjs</code>, holds the wasm to the C on all 4,096 programs and all four inputs, then plays every puzzle in headless Chromium by clicks.</p>
+<h2 id="playing-a-puzzle">Playing a puzzle <a class="section-link" href="#playing-a-puzzle" aria-label="Link to this section">§</a></h2>
+<p>Every pick runs the program at once on all four inputs, so the trace always shows the program as it stands. A trace shows each input&#39;s <code>AX</code> after every step, then how each run ended, what the puzzle wants, and a row marking each input correct or wrong. A wrong program&#39;s verdict names every way it is wrong, as in &quot;Your program falsely accepts 0. It falsely rejects 1 and 3.&quot; When the program is right, the page says so above the program, folds the instruction buttons away so the whole trace shows, and says how many of the 4,096 programs solve the puzzle. Beside the buttons, the program&#39;s machine code shows its twelve bits, two a line, and its number. Each opcode button&#39;s tip says what it does to each <code>AX</code>: <code>decr</code> is &quot;0-&gt;R, 1-&gt;0, 2-&gt;1, 3-&gt;2&quot;. A reload starts fresh at puzzle 1.</p>
+<h2 id="the-lessons">The lessons <a class="section-link" href="#the-lessons" aria-label="Link to this section">§</a></h2>
+<p>The first four puzzles are lessons, one opcode each:</p>
+<ul>
+<li><strong><code>is_tiny</code></strong> ({0}): one line, <code>zero</code>.</li>
+<li><strong><code>is_one</code></strong> ({1}): line 1 is given as <code>decr</code>, and the player picks line 2.</li>
+<li><strong><code>is_even</code></strong> ({0, 2}): line 1 is given as <code>mod2</code>, and the player picks line 2.</li>
+<li><strong><code>grumpy</code></strong> ({ }), &quot;Reject all inputs&quot;: one line that opens as <code>zero</code>. Any of <code>nada</code>, <code>decr</code> or <code>mod2</code> solves it, since only <code>zero</code> ever accepts.</li>
+</ul>
+<p>A given line is drawn locked, in light blue, and the hint names it: &quot;Line 1 is already fixed as decr. Your job: fix line 2.&quot;</p>
+<h2 id="the-ramp">The ramp <a class="section-link" href="#the-ramp" aria-label="Link to this section">§</a></h2>
+<p>The other twelve ramp by effort: the length of the shortest program, with each <code>mod2</code> in it counted as one line more, since <code>mod2</code> takes more thought. A tie goes to the puzzle free of <code>mod2</code>, then to fewer <code>zero</code>s, then to more solutions. The table that <code>web/puzzles.c</code> prints puts them in this order:</p>
+<table>
+<thead>
+<tr>
+<th>#</th>
+<th>puzzle</th>
+<th>language</th>
+<th>shortest</th>
+<th>programs</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>5</td>
+<td><code>is_two</code></td>
+<td>{2}</td>
+<td>3</td>
+<td>248</td>
+</tr>
+<tr>
+<td>6</td>
+<td><code>is_small</code></td>
+<td>{0, 1}</td>
+<td>3</td>
+<td>172</td>
+</tr>
+<tr>
+<td>7</td>
+<td><code>is_huge</code></td>
+<td>{3}</td>
+<td>4</td>
+<td>63</td>
+</tr>
+<tr>
+<td>8</td>
+<td><code>is_middling</code></td>
+<td>{1, 2}</td>
+<td>4</td>
+<td>74</td>
+</tr>
+<tr>
+<td>9</td>
+<td><code>is_odd</code></td>
+<td>{1, 3}</td>
+<td>3</td>
+<td>520</td>
+</tr>
+<tr>
+<td>10</td>
+<td><code>is_big</code></td>
+<td>{2, 3}</td>
+<td>5</td>
+<td>13</td>
+</tr>
+<tr>
+<td>11</td>
+<td><code>is_extreme</code></td>
+<td>{0, 3}</td>
+<td>5</td>
+<td>12</td>
+</tr>
+<tr>
+<td>12</td>
+<td><code>is_not_huge</code></td>
+<td>{0, 1, 2}</td>
+<td>5</td>
+<td>13</td>
+</tr>
+<tr>
+<td>13</td>
+<td><code>is_not_two</code></td>
+<td>{0, 1, 3}</td>
+<td>4</td>
+<td>150</td>
+</tr>
+<tr>
+<td>14</td>
+<td><code>always_true</code></td>
+<td>{0, 1, 2, 3}</td>
+<td>4</td>
+<td>104</td>
+</tr>
+<tr>
+<td>15</td>
+<td><code>is_not_one</code></td>
+<td>{0, 2, 3}</td>
+<td>6</td>
+<td>1</td>
+</tr>
+<tr>
+<td>16</td>
+<td><code>is_not_tiny</code></td>
+<td>{1, 2, 3}</td>
+<td>5</td>
+<td>15</td>
+</tr>
+</tbody>
+</table>
+<p>A program&#39;s length is its instructions before its trailing <code>nada</code>s. Each puzzle says how short its best program is, and the lines past that are locked to <code>nada</code>. Past the lessons, every puzzle&#39;s last open line is fixed as <code>zero</code>, because an instruction after a program&#39;s last <code>zero</code> can only reject, as running off the end does, so every shortest program ends in <code>zero</code>. The last puzzle, <code>is_not_tiny</code>, also gives its <code>mod2</code> on line 2, the line where the solution folds 2 onto 0; the player still picks the <code>decr</code> on line 1.</p>
+<h2 id="help-for-a-newcomer">Help for a newcomer <a class="section-link" href="#help-for-a-newcomer" aria-label="Link to this section">§</a></h2>
+<p>The page&#39;s intro, behind a Help link after puzzle 1, says what a language is here, how the machine runs a program four times to find the language it recognizes, and works <code>decr, zero</code> through to {1}; the page&#39;s check holds that example to the machine.</p>
+
+</article>
+<nav class="turn-page" aria-label="Previous and next chapter">
+<a rel="prev" href="programs-as-languages.html"><small>Previous</small>Programs as languages</a>
+<a rel="next" href="arithmetization.html"><small>Next</small>Arithmetization</a>
+</nav>
+</main>
+</body>
+</html>

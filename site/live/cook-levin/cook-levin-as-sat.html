@@ -14,21 +14,22 @@
 <ol>
 <li><a href="introduction.html"><span class="number">1</span>Introduction</a></li>
 <li><a href="how-it-got-here.html"><span class="number">2</span>How it got here</a></li>
-<li><a href="the-machine-and-nibble.html"><span class="number">3</span>The machine and Nibble</a></li>
+<li><a href="the-machine.html"><span class="number">3</span>The machine</a></li>
 <li><a href="programs-as-languages.html"><span class="number">4</span>Programs as languages</a></li>
-<li><a href="arithmetization.html"><span class="number">5</span>Arithmetization</a></li>
-<li><a href="why-composing-blew-up.html"><span class="number">6</span>Why composing blew up</a></li>
-<li><a href="six-steps-composed.html"><span class="number">7</span>Six steps composed</a></li>
-<li class="here"><a href="cook-levin-as-sat.html"><span class="number">8</span>Cook-Levin as SAT</a><ol class="sections"><li><a href="cook-levin-as-sat.html#the-unrolling">The unrolling</a></li><li><a href="cook-levin-as-sat.html#the-proof-by-propagation">The proof by propagation</a></li><li><a href="cook-levin-as-sat.html#rocsat-as-an-oracle">rocsat as an oracle</a></li></ol></li>
-<li><a href="the-oracles.html"><span class="number">9</span>The oracles</a></li>
-<li><a href="the-roc-port.html"><span class="number">10</span>The Roc port</a></li>
-<li><a href="what-comes-next.html"><span class="number">11</span>What comes next</a></li>
+<li><a href="nibble-the-puzzle-page.html"><span class="number">5</span>Nibble, the puzzle page</a></li>
+<li><a href="arithmetization.html"><span class="number">6</span>Arithmetization</a></li>
+<li><a href="why-composing-blew-up.html"><span class="number">7</span>Why composing blew up</a></li>
+<li><a href="six-steps-composed.html"><span class="number">8</span>Six steps composed</a></li>
+<li class="here"><a href="cook-levin-as-sat.html"><span class="number">9</span>Cook-Levin as SAT</a><ol class="sections"><li><a href="cook-levin-as-sat.html#the-unrolling">The unrolling</a></li><li><a href="cook-levin-as-sat.html#the-proof-by-propagation">The proof by propagation</a></li><li><a href="cook-levin-as-sat.html#rocsat-as-an-oracle">rocsat as an oracle</a></li></ol></li>
+<li><a href="the-oracles.html"><span class="number">10</span>The oracles</a></li>
+<li><a href="the-roc-port.html"><span class="number">11</span>The Roc port</a></li>
+<li><a href="what-comes-next.html"><span class="number">12</span>What comes next</a></li>
 </ol>
 </nav>
 <main>
 <p class="book-bar"><a href="index.html">A riff on Cook-Levin</a> <a href="#chapters">Chapters</a></p>
 <article>
-<p class="chapter-number">Chapter 8</p>
+<p class="chapter-number">Chapter 9</p>
 <h1 id="cook-levin-as-sat">Cook-Levin as SAT</h1>
 <p><code>src/sat.c</code> writes each puzzle as a Boolean formula in DIMACS CNF, the input format of SAT solvers (<code>8de51b7</code>). This is the Cook-Levin construction itself: the question &quot;which six-instruction programs accept exactly this language?&quot; becomes one formula whose satisfying assignments are exactly those programs.</p>
 <h2 id="the-unrolling">The unrolling <a class="section-link" href="#the-unrolling" aria-label="Link to this section">§</a></h2>
