@@ -15,7 +15,7 @@
 <li><a href="introduction.html"><span class="number">1</span>Introduction</a></li>
 <li><a href="how-it-got-here.html"><span class="number">2</span>How it got here</a></li>
 <li><a href="the-machine.html"><span class="number">3</span>The machine</a></li>
-<li class="here"><a href="languages-and-machines.html"><span class="number">4</span>Languages and machines</a><ol class="sections"><li><a href="languages-and-machines.html#machines-that-decide">Machines that decide</a></li><li><a href="languages-and-machines.html#turings-machine">Turing&#39;s machine</a></li><li><a href="languages-and-machines.html#when-deciding-is-cheap-and-when-checking-is">When deciding is cheap, and when checking is</a></li><li><a href="languages-and-machines.html#this-books-machine">This book&#39;s machine</a></li></ol></li>
+<li class="here"><a href="languages-and-machines.html"><span class="number">4</span>Languages and machines</a><ol class="sections"><li><a href="languages-and-machines.html#machines-that-decide">Machines that decide</a></li><li><a href="languages-and-machines.html#turings-machine">Turing&#39;s machine</a></li><li><a href="languages-and-machines.html#a-simple-example">A simple example</a></li><li><a href="languages-and-machines.html#when-deciding-is-cheap-and-when-checking-is">When deciding is cheap, and when checking is</a></li><li><a href="languages-and-machines.html#this-books-machine">This book&#39;s machine</a></li></ol></li>
 <li><a href="programs-as-languages.html"><span class="number">5</span>Programs as languages</a></li>
 <li><a href="nibble-the-puzzle-page.html"><span class="number">6</span>Nibble, the puzzle page</a></li>
 <li><a href="arithmetization.html"><span class="number">7</span>Arithmetization</a></li>
@@ -37,6 +37,109 @@
 <p>A machine <em>decides</em> a language when, given any string, it halts, accepting the strings in the language and rejecting the rest. A program that decides the primes is a primality test; a compiler&#39;s parser decides the language of well-formed programs, and rejects the rest with an error.</p>
 <h2 id="turings-machine">Turing&#39;s machine <a class="section-link" href="#turings-machine" aria-label="Link to this section">§</a></h2>
 <p>In 1936 Alan Turing described a machine with a finite set of states and an unbounded tape, in &quot;On Computable Numbers, with an Application to the Entscheidungsproblem&quot;. It reads and writes the tape one cell at a time, and every algorithm anyone has written since can be carried out by such a machine; that claim is the Church-Turing thesis. Turing also showed that some languages are undecidable: whatever machine one builds for them, some string defeats it. The best known is the halting problem, the language of programs that halt on their input. A machine can <em>recognize</em> it, accepting every member by running it, but for some strings outside the language it runs forever, still waiting to answer.</p>
+<h2 id="a-simple-example">A simple example <a class="section-link" href="#a-simple-example" aria-label="Link to this section">§</a></h2>
+<p>Take the alphabet {a, b} and the language of strings with an even count of a&#39;s: <code>aba</code> and <code>bb</code> are in it, <code>ab</code> and <code>aaab</code> are out. A Turing machine decides it with two working states, <code>even</code> and <code>odd</code>, and a head that reads the tape left to right. The input is written on the tape, with blank cells after it, and the machine starts in <code>even</code> on the first symbol.</p>
+<table>
+<thead>
+<tr>
+<th>state</th>
+<th>reads</th>
+<th>writes</th>
+<th>moves</th>
+<th>next state</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>even</code></td>
+<td>a</td>
+<td>a</td>
+<td>right</td>
+<td><code>odd</code></td>
+</tr>
+<tr>
+<td><code>even</code></td>
+<td>b</td>
+<td>b</td>
+<td>right</td>
+<td><code>even</code></td>
+</tr>
+<tr>
+<td><code>even</code></td>
+<td>blank</td>
+<td>blank</td>
+<td>stays</td>
+<td>accept</td>
+</tr>
+<tr>
+<td><code>odd</code></td>
+<td>a</td>
+<td>a</td>
+<td>right</td>
+<td><code>even</code></td>
+</tr>
+<tr>
+<td><code>odd</code></td>
+<td>b</td>
+<td>b</td>
+<td>right</td>
+<td><code>odd</code></td>
+</tr>
+<tr>
+<td><code>odd</code></td>
+<td>blank</td>
+<td>blank</td>
+<td>stays</td>
+<td>reject</td>
+</tr>
+</tbody>
+</table>
+<p>Each row is one rule: in this state, reading this symbol, write this, move, and go to that state. The state remembers the one fact that matters, whether the a&#39;s seen so far are even, and the blank after the input is where the machine answers.</p>
+<p>A run on <code>aba</code>:</p>
+<table>
+<thead>
+<tr>
+<th>step</th>
+<th>state</th>
+<th>reading</th>
+<th>tape, head in brackets</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>1</td>
+<td><code>even</code></td>
+<td>a</td>
+<td>[a] b a _</td>
+</tr>
+<tr>
+<td>2</td>
+<td><code>odd</code></td>
+<td>b</td>
+<td>a [b] a _</td>
+</tr>
+<tr>
+<td>3</td>
+<td><code>odd</code></td>
+<td>a</td>
+<td>a b [a] _</td>
+</tr>
+<tr>
+<td>4</td>
+<td><code>even</code></td>
+<td>blank</td>
+<td>a b a [_]</td>
+</tr>
+<tr>
+<td></td>
+<td>accept</td>
+<td></td>
+<td></td>
+</tr>
+</tbody>
+</table>
+<p>And on <code>ab</code>: <code>even</code> reads a and moves to <code>odd</code>, <code>odd</code> reads b and stays <code>odd</code>, <code>odd</code> reads the blank and rejects. Every run takes one step per symbol and then halts, so the machine decides the language: it accepts exactly the strings with an even count of a&#39;s.</p>
+<p>This machine only reads and moves right, so it is also a finite automaton; Turing&#39;s machines earn their tape on harder languages, such as the strings of a&#39;s followed by the same number of b&#39;s, where the machine writes marks on the tape to pair each a with a b. The idea carries over unchanged: states, a rule table, a run that ends in accept or reject, and a language made of the strings accepted.</p>
 <h2 id="when-deciding-is-cheap-and-when-checking-is">When deciding is cheap, and when checking is <a class="section-link" href="#when-deciding-is-cheap-and-when-checking-is" aria-label="Link to this section">§</a></h2>
 <p>Decidable languages differ in cost. P is the class decided in time polynomial in the input&#39;s length. NP is the class whose members have short certificates that a machine can check in polynomial time: a formula is in SAT, the language of satisfiable Boolean formulas, when an assignment makes it true, and checking an assignment is quick. In 1971 Stephen Cook, in &quot;The Complexity of Theorem-Proving Procedures&quot;, and independently Leonid Levin, published in 1973, showed that SAT is as hard as anything in NP. Their proof takes the checking machine, which runs for a polynomial number of steps, and writes each step of its run as clauses: the whole run becomes one formula, satisfiable exactly when a certificate exists.</p>
 <h2 id="this-books-machine">This book&#39;s machine <a class="section-link" href="#this-books-machine" aria-label="Link to this section">§</a></h2>
