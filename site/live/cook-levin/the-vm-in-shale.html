@@ -1,0 +1,193 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>The VM in Shale · A riff on Cook-Levin</title>
+<link rel="icon" href="data:,">
+<link rel="stylesheet" href="book.css">
+<script src="copy.js" defer></script>
+<style>
+figure.scrolling { margin: 1rem 0; background: var(--shade); border-radius: 4px; }
+figure.scrolling figcaption { padding: 0.5rem 1rem 0; color: var(--quiet); font: 0.72rem/1.5 var(--mono); }
+figure.scrolling pre { margin: 0; padding: 0.3rem 1rem 0.75rem; background: none; max-height: 16rem; overflow-x: hidden; overflow-y: auto; white-space: pre-wrap; overflow-wrap: anywhere; word-break: break-all; font-size: 0.72rem; }
+@media (max-width: 700px) { figure.scrolling { margin-inline: -0.5rem; } figure.scrolling figcaption, figure.scrolling pre { padding-inline: 0.6rem; } }
+</style></head>
+<body class="chapter">
+<nav class="book-nav" id="chapters" aria-label="Chapters">
+<a class="book-name" href="index.html">A riff on Cook-Levin</a>
+<ol>
+<li><a href="introduction.html"><span class="number">1</span>Introduction</a></li>
+<li><a href="how-it-got-here.html"><span class="number">2</span>How it got here</a></li>
+<li><a href="the-machine.html"><span class="number">3</span>The machine</a></li>
+<li><a href="languages-and-machines.html"><span class="number">4</span>Languages and machines</a></li>
+<li><a href="programs-as-languages.html"><span class="number">5</span>Programs as languages</a></li>
+<li><a href="nibble-the-puzzle-page.html"><span class="number">6</span>Nibble, the puzzle page</a></li>
+<li><a href="arithmetization.html"><span class="number">7</span>Arithmetization</a></li>
+<li><a href="why-composing-blew-up.html"><span class="number">8</span>Why composing blew up</a></li>
+<li><a href="six-steps-composed.html"><span class="number">9</span>Six steps composed</a></li>
+<li><a href="the-polynomials-in-full.html"><span class="number">10</span>The polynomials, in full</a></li>
+<li><a href="the-machine-as-a-circuit.html"><span class="number">11</span>The machine as a circuit</a></li>
+<li><a href="the-cook-levin-machine.html"><span class="number">12</span>The Cook-Levin machine</a></li>
+<li><a href="cook-levin-as-sat.html"><span class="number">13</span>Cook-Levin as SAT</a></li>
+<li><a href="the-solvers-work-in-full.html"><span class="number">14</span>The solver&#39;s work, in full</a></li>
+<li><a href="the-oracles.html"><span class="number">15</span>The oracles</a></li>
+<li><a href="the-roc-port.html"><span class="number">16</span>The Roc port</a></li>
+<li><a href="what-is-shale.html"><span class="number">17</span>What is Shale?</a></li>
+<li class="here"><a href="the-vm-in-shale.html"><span class="number">18</span>The VM in Shale</a><ol class="sections"><li><a href="the-vm-in-shale.html#the-machine">The machine</a></li><li><a href="the-vm-in-shale.html#the-search">The search</a></li><li><a href="the-vm-in-shale.html#the-rings-times">The ring&#39;s times</a></li><li><a href="the-vm-in-shale.html#the-step-polynomials">The step polynomials</a></li><li><a href="the-vm-in-shale.html#the-composition">The composition</a></li><li><a href="the-vm-in-shale.html#the-check">The check</a></li><li><a href="the-vm-in-shale.html#what-the-port-cost">What the port cost</a></li></ol></li>
+<li><a href="what-comes-next.html"><span class="number">19</span>What comes next</a></li>
+</ol>
+</nav>
+<main>
+<p class="book-bar"><a href="index.html">A riff on Cook-Levin</a> <a href="#chapters">Chapters</a></p>
+<article>
+<p class="chapter-number">Chapter 18</p>
+<h1 id="the-vm-in-shale">The VM in Shale</h1>
+<p><code>shale/cook_levin.shale</code> is the machine, the search over all 4,096 programs, the step polynomials and the six-step composition once more, in Shale (<code>4942a49</code>). It follows <code>js/cook_levin.js</code> closely, and it prints the same two reports, byte for byte: <code>tests/golden/find_solutions.txt</code>, then <code>roc/golden/composition.txt</code>. <code>part=search</code> prints the first alone and <code>part=composition</code> the second.</p>
+<h2 id="the-machine">The machine <a class="section-link" href="#the-machine" aria-label="Link to this section">§</a></h2>
+<p>A machine&#39;s state is a map of two fields, its <code>AX</code> and how its run has ended so far, the three endings named by string constants. One step is the rule of <a class="chapter-link" href="the-machine.html">“The machine”</a>:</p>
+<figure class="listing"><figcaption>shale/cook_levin.shale, the function machine_step</figcaption><pre><code class="language-shale"><span class="syn-comment">-- The machine after one op: `{ax, ending}`, ending RUNNING until it halts.</span>
+<span class="syn-keyword">function</span> <span class="syn-name">machine_step</span>(m, op)
+  <span class="syn-keyword">if</span> m.ending ~= RUNNING <span class="syn-keyword">then</span> <span class="syn-keyword">return</span> m <span class="syn-keyword">end</span>
+  <span class="syn-keyword">if</span> op == ZERO <span class="syn-keyword">then</span>
+    <span class="syn-keyword">if</span> m.ax == <span class="syn-number">0</span> <span class="syn-keyword">then</span> <span class="syn-keyword">return</span> {ax = <span class="syn-number">0</span>, ending = ACCEPTED} <span class="syn-keyword">end</span>
+    <span class="syn-keyword">return</span> m
+  <span class="syn-keyword">end</span>
+  <span class="syn-keyword">if</span> op == DECR <span class="syn-keyword">then</span>
+    <span class="syn-keyword">if</span> m.ax == <span class="syn-number">0</span> <span class="syn-keyword">then</span> <span class="syn-keyword">return</span> {ax = <span class="syn-number">0</span>, ending = REJECTED} <span class="syn-keyword">end</span>
+    <span class="syn-keyword">return</span> {ax = m.ax - <span class="syn-number">1</span>, ending = RUNNING}
+  <span class="syn-keyword">end</span>
+  <span class="syn-keyword">if</span> op == MOD2 <span class="syn-keyword">then</span> <span class="syn-keyword">return</span> {ax = m.ax % <span class="syn-number">2</span>, ending = RUNNING} <span class="syn-keyword">end</span>
+  <span class="syn-keyword">return</span> m
+<span class="syn-keyword">end</span>
+</code></pre></figure><p>A program is a list of six opcodes, the base-4 digits of its number, lowest first (<code>disassemble</code>). A run starts with <code>AX</code> at the input and folds <code>machine_step</code> over the list.</p>
+<h2 id="the-search">The search <a class="section-link" href="#the-search" aria-label="Link to this section">§</a></h2>
+<p>The search runs each of the 4,096 programs on the four inputs, makes its language&#39;s code from the inputs it accepts, and files the program under that code. Lists count from 1, so language <code>y</code>&#39;s programs are at slot <code>y + 1</code>:</p>
+<figure class="listing"><figcaption>shale/cook_levin.shale, an excerpt</figcaption><pre><code class="language-shale"><span class="syn-keyword">function</span> <span class="syn-name">find_solutions</span>()
+  <span class="syn-keyword">local</span> programs = {}
+  <span class="syn-keyword">for</span> y = <span class="syn-number">1</span>, LANGUAGE_COUNT <span class="syn-keyword">do</span> push(programs, {}) <span class="syn-keyword">end</span>
+  <span class="syn-keyword">for</span> n = <span class="syn-number">0</span>, PROGRAM_COUNT - <span class="syn-number">1</span> <span class="syn-keyword">do</span> push(programs[accepted_code(disassemble(n)) + <span class="syn-number">1</span>], n) <span class="syn-keyword">end</span>
+  <span class="syn-keyword">for</span> y = <span class="syn-number">0</span>, LANGUAGE_COUNT - <span class="syn-number">1</span> <span class="syn-keyword">do</span>
+    <span class="syn-keyword">if</span> #programs[y + <span class="syn-number">1</span>] == <span class="syn-number">0</span> <span class="syn-keyword">then</span> fail(<span class="syn-string">&quot;no program accepts language &quot;</span> .. y) <span class="syn-keyword">end</span>
+</code></pre></figure><p>It then prints each language&#39;s count and first program, and runs that program on the step polynomials too, failing the run where they disagree with the machine.</p>
+<h2 id="the-rings-times">The ring&#39;s times <a class="section-link" href="#the-rings-times" aria-label="Link to this section">§</a></h2>
+<p>A polynomial of the Boolean ring is a map of two lists, <code>masks</code> and <code>coeffs</code>, its terms in ascending order of mask. A monomial is a set of variables, bit <code>i</code> of its mask for variable <code>i</code>, and the product of two monomials is the OR of their masks. Shale refuses the bitwise operators, so the OR comes from a table. Every mask is below 2^14, so it splits into two 7-bit halves, and a table of the OR of every two 7-bit numbers, 16,384 entries, is made once:</p>
+<figure class="listing"><figcaption>shale/cook_levin.shale, the function half_table</figcaption><pre><code class="language-shale"><span class="syn-comment">-- The OR (or, with `both`, the AND) of every two 7-bit numbers a and b, at</span>
+<span class="syn-comment">-- slot a * 128 + b + 1.</span>
+<span class="syn-keyword">function</span> <span class="syn-name">half_table</span>(both)
+  <span class="syn-keyword">local</span> out = {}
+  <span class="syn-keyword">for</span> a = <span class="syn-number">0</span>, HALF - <span class="syn-number">1</span> <span class="syn-keyword">do</span>
+    <span class="syn-keyword">for</span> b = <span class="syn-number">0</span>, HALF - <span class="syn-number">1</span> <span class="syn-keyword">do</span>
+      <span class="syn-keyword">local</span> bits = <span class="syn-number">0</span>
+      <span class="syn-keyword">local</span> x = a
+      <span class="syn-keyword">local</span> y = b
+      <span class="syn-keyword">for</span> i = <span class="syn-number">1</span>, <span class="syn-number">7</span> <span class="syn-keyword">do</span>
+        <span class="syn-keyword">local</span> on = x % <span class="syn-number">2</span> == <span class="syn-number">1</span> <span class="syn-keyword">or</span> y % <span class="syn-number">2</span> == <span class="syn-number">1</span>
+        <span class="syn-keyword">if</span> both <span class="syn-keyword">then</span> on = x % <span class="syn-number">2</span> == <span class="syn-number">1</span> <span class="syn-keyword">and</span> y % <span class="syn-number">2</span> == <span class="syn-number">1</span> <span class="syn-keyword">end</span>
+        <span class="syn-keyword">if</span> on <span class="syn-keyword">then</span> bits = bits + POW2[i] <span class="syn-keyword">end</span>
+        x = x // <span class="syn-number">2</span>
+        y = y // <span class="syn-number">2</span>
+      <span class="syn-keyword">end</span>
+      push(out, bits)
+    <span class="syn-keyword">end</span>
+  <span class="syn-keyword">end</span>
+  <span class="syn-keyword">return</span> out
+<span class="syn-keyword">end</span>
+</code></pre></figure><figure class="listing"><figcaption>shale/cook_levin.shale, the function or14</figcaption><pre><code class="language-shale"><span class="syn-keyword">function</span> <span class="syn-name">or14</span>(a, b)
+  <span class="syn-keyword">return</span> OR7[(a // HALF) * HALF + b // HALF + <span class="syn-number">1</span>] * HALF + OR7[(a % HALF) * HALF + b % HALF + <span class="syn-number">1</span>]
+<span class="syn-keyword">end</span>
+</code></pre></figure><p>The product of two polynomials takes every pair of terms. Like terms are summed in <code>SUMS</code>, one dense list of 16,384 slots indexed by mask, the Roc port&#39;s table, and <code>from_sums</code> reads it back in order and puts each slot back to 0. <code>q</code>&#39;s halves are split once, before the pairs, so each pair costs two reads of <code>OR7</code>:</p>
+<figure class="listing"><figcaption>shale/cook_levin.shale, the function times</figcaption><pre><code class="language-shale"><span class="syn-comment">-- Every pair of terms, masks ORed and coefficients multiplied, summed by</span>
+<span class="syn-comment">-- mask. The OR of a pair is two reads of OR7, one a 7-bit half, so q&#39;s</span>
+<span class="syn-comment">-- halves are split once, before the pairs.</span>
+<span class="syn-keyword">function</span> <span class="syn-name">times</span>(p, q)
+  <span class="syn-keyword">local</span> q_high = {}
+  <span class="syn-keyword">local</span> q_low = {}
+  <span class="syn-keyword">for</span> m <span class="syn-keyword">in</span> q.masks <span class="syn-keyword">do</span>
+    push(q_high, m // HALF + <span class="syn-number">1</span>)
+    push(q_low, m % HALF + <span class="syn-number">1</span>)
+  <span class="syn-keyword">end</span>
+  <span class="syn-keyword">local</span> q_coeffs = q.coeffs
+  <span class="syn-keyword">local</span> n = #q_coeffs
+  <span class="syn-keyword">for</span> i = <span class="syn-number">1</span>, #p.masks <span class="syn-keyword">do</span>
+    <span class="syn-keyword">local</span> a = p.masks[i]
+    <span class="syn-keyword">local</span> high = (a // HALF) * HALF
+    <span class="syn-keyword">local</span> low = (a % HALF) * HALF
+    <span class="syn-keyword">local</span> c = p.coeffs[i]
+    <span class="syn-keyword">for</span> j = <span class="syn-number">1</span>, n <span class="syn-keyword">do</span>
+      <span class="syn-keyword">local</span> k = OR7[high + q_high[j]] * HALF + OR7[low + q_low[j]] + <span class="syn-number">1</span>
+      SUMS[k] = SUMS[k] + c * q_coeffs[j]
+    <span class="syn-keyword">end</span>
+  <span class="syn-keyword">end</span>
+  <span class="syn-keyword">return</span> from_sums(or14(union_of(p), union_of(q)))
+<span class="syn-keyword">end</span>
+</code></pre></figure><h2 id="the-step-polynomials">The step polynomials <a class="section-link" href="#the-step-polynomials" aria-label="Link to this section">§</a></h2>
+<p>The step is built in the ring as <a class="chapter-link" href="arithmetization.html">“Arithmetization”</a> builds it: NOT x is 1 − x, x AND y is x·y and x OR y is x + y − x·y.</p>
+<figure class="listing"><figcaption>shale/cook_levin.shale, an excerpt</figcaption><pre><code class="language-shale"><span class="syn-keyword">function</span> <span class="syn-name">negation</span>(x) <span class="syn-keyword">return</span> minus(ONE_POLY, x) <span class="syn-keyword">end</span>
+<span class="syn-keyword">function</span> <span class="syn-name">either</span>(x, y) <span class="syn-keyword">return</span> minus(plus(x, y), times(x, y)) <span class="syn-keyword">end</span>
+</code></pre></figure><p><code>not</code> is a keyword, as in Lua, so the function is <code>negation</code>. <code>next_state</code> takes the six variables and builds the step from them, starting with which value <code>AX</code> holds and which opcode runs:</p>
+<figure class="listing"><figcaption>shale/cook_levin.shale, an excerpt</figcaption><pre><code class="language-shale">  <span class="syn-keyword">local</span> is0 = times(negation(hb), negation(lb))
+  <span class="syn-keyword">local</span> is1 = times(negation(hb), lb)
+  <span class="syn-keyword">local</span> is2 = times(hb, negation(lb))
+  <span class="syn-keyword">local</span> is3 = times(hb, lb)
+
+  <span class="syn-keyword">local</span> runs_pass = either(times(negation(op_hb), negation(op_lb)), halted)
+  <span class="syn-keyword">local</span> runs_check = times(times(negation(op_hb), op_lb), negation(halted))
+  <span class="syn-keyword">local</span> runs_decr = times(times(op_hb, negation(op_lb)), negation(halted))
+  <span class="syn-keyword">local</span> runs_mod2 = times(times(op_hb, op_lb), negation(halted))
+</code></pre></figure><p>Its four answers, at variables 0 to 5, are the step polynomials. Each one&#39;s value at all 64 points is computed once, so the stepper&#39;s step is four reads of those tables.</p>
+<h2 id="the-composition">The composition <a class="section-link" href="#the-composition" aria-label="Link to this section">§</a></h2>
+<p>After step k the state is four polynomials in 14 variables. The next step substitutes them into the step polynomials. Each monomial of the step&#39;s six variables becomes the product of its variables&#39; replacements, made from the product of the monomial less its highest variable and kept for the rest of the step. A list holding <code>nil</code> is refused, so <code>PRODUCTS</code> starts as 64 zeros and a second list, <code>MADE</code>, marks each slot that has been filled:</p>
+<figure class="listing"><figcaption>shale/cook_levin.shale, the function product_of</figcaption><pre><code class="language-shale"><span class="syn-keyword">function</span> <span class="syn-name">product_of</span>(mask, replacements)
+  <span class="syn-keyword">if</span> MADE[mask + <span class="syn-number">1</span>] == <span class="syn-number">1</span> <span class="syn-keyword">then</span> <span class="syn-keyword">return</span> PRODUCTS[mask + <span class="syn-number">1</span>] <span class="syn-keyword">end</span>
+  <span class="syn-keyword">local</span> product = ONE_POLY
+  <span class="syn-keyword">if</span> mask &gt; <span class="syn-number">0</span> <span class="syn-keyword">then</span>
+    <span class="syn-keyword">local</span> top = <span class="syn-number">5</span>
+    <span class="syn-keyword">while</span> POW2[top + <span class="syn-number">1</span>] &gt; mask <span class="syn-keyword">do</span> top = top - <span class="syn-number">1</span> <span class="syn-keyword">end</span>
+    product = times(product_of(mask - POW2[top + <span class="syn-number">1</span>], replacements), replacements[top + <span class="syn-number">1</span>])
+  <span class="syn-keyword">end</span>
+  PRODUCTS[mask + <span class="syn-number">1</span>] = product
+  MADE[mask + <span class="syn-number">1</span>] = <span class="syn-number">1</span>
+  <span class="syn-keyword">return</span> product
+<span class="syn-keyword">end</span>
+</code></pre></figure><p><code>substitute</code> is a builtin already, a text replacement, and a function by a builtin&#39;s name is refused, so the substitution is <code>substituted</code>. Every product is made first, since a product is itself summed in <code>SUMS</code>, and then each term&#39;s coefficient times its product is summed in:</p>
+<figure class="listing"><figcaption>shale/cook_levin.shale, the function substituted</figcaption><pre><code class="language-shale"><span class="syn-keyword">function</span> <span class="syn-name">substituted</span>(p, replacements)
+  <span class="syn-keyword">local</span> width = <span class="syn-number">0</span>
+  <span class="syn-keyword">for</span> r <span class="syn-keyword">in</span> replacements <span class="syn-keyword">do</span> width = or14(width, union_of(r)) <span class="syn-keyword">end</span>
+  <span class="syn-comment">-- Every product first: a product is summed in SUMS too.</span>
+  <span class="syn-keyword">for</span> m <span class="syn-keyword">in</span> p.masks <span class="syn-keyword">do</span> product_of(m, replacements) <span class="syn-keyword">end</span>
+  <span class="syn-keyword">for</span> i = <span class="syn-number">1</span>, #p.masks <span class="syn-keyword">do</span>
+    <span class="syn-keyword">local</span> product = product_of(p.masks[i], replacements)
+    <span class="syn-keyword">local</span> c = p.coeffs[i]
+    <span class="syn-keyword">for</span> j = <span class="syn-number">1</span>, #product.masks <span class="syn-keyword">do</span>
+      <span class="syn-keyword">local</span> k = product.masks[j] + <span class="syn-number">1</span>
+      SUMS[k] = SUMS[k] + c * product.coeffs[j]
+    <span class="syn-keyword">end</span>
+  <span class="syn-keyword">end</span>
+  <span class="syn-keyword">return</span> from_sums(width)
+<span class="syn-keyword">end</span>
+</code></pre></figure><p>The proof then takes each final polynomial&#39;s value at all 16,384 points by the zeta transform, as the Roc port does, and holds every point to the machine.</p>
+<h2 id="the-check">The check <a class="section-link" href="#the-check" aria-label="Link to this section">§</a></h2>
+<p><code>shale/check.shale</code> (<code>ac3ee9f</code>) runs the port twice, each run a child <code>shale</code> with <code>--verbose</code>, niced, and holds each run&#39;s output byte for byte to its golden, leaving out the runner&#39;s own lines. Its run for this book, on 2026-11-25, printed:</p>
+<ul>
+<li><code>part=search</code>: 4,712 bytes, the golden&#39;s, in 210 ms and 13,162,754 steps.</li>
+<li><code>part=composition</code>: 401 bytes, the golden&#39;s, in 5,002 ms and 396,539,820 steps, ending in the proof&#39;s line: 16,384 points, 0 differing.</li>
+</ul>
+<p>By <code>README.md</code>&#39;s breakdown, of the composition&#39;s 397 million steps, the tables and the step polynomials take about 8 million, steps 1 to 5 about 22 million, step 6 about 193 million, and the proof about 174 million, at about 70 million steps a second.</p>
+<h2 id="what-the-port-cost">What the port cost <a class="section-link" href="#what-the-port-cost" aria-label="Link to this section">§</a></h2>
+<ul>
+<li><strong>Memory.</strong> By <code>README.md</code>, a run&#39;s values are freed only when it ends, so every polynomial the composition makes on its way is held, and it needs between 100 and 300 MB of arena, against 16 MiB by default. The port&#39;s <code>-- budget:</code> line gives it 400 MB and a billion steps. Shale&#39;s <code>yield()</code> copies the values still reachable into an arena of their own, at most 256 MiB, and lets the rest go; the port has yet to try it.</li>
+<li><strong>Bits.</strong> The OR and AND of masks are two 16,384-entry tables and two reads each, and a single bit is a <code>//</code> and a <code>%</code>.</li>
+<li><strong>Lists.</strong> A list holds values only, so an unfilled slot is marked in a list beside it.</li>
+<li><strong>Names.</strong> <code>substitute</code> is a builtin and <code>not</code> a keyword, so the port&#39;s names are <code>substituted</code> and <code>negation</code>.</li>
+<li><strong>Time.</strong> The composition and the proof take about 5 s here, where the Roc release build takes about 30 ms (<a class="chapter-link" href="the-roc-port.html">“The Roc port”</a>) and node runs the JavaScript in about 0.3 s (<a class="chapter-link" href="the-oracles.html">“The oracles”</a>).</li>
+</ul>
+
+</article>
+<nav class="turn-page" aria-label="Previous and next chapter">
+<a rel="prev" href="what-is-shale.html"><small>Previous</small>What is Shale?</a>
+<a rel="next" href="what-comes-next.html"><small>Next</small>What comes next</a>
+</nav>
+</main>
+</body>
+</html>
