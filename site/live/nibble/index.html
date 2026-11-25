@@ -45,6 +45,7 @@ section { background: var(--panel); border: 1px solid var(--line); border-radius
 .actions button.primary { background: var(--accent); color: var(--accent-fg); }
 .actions button[hidden] { display: none; }
 .slot.locked button { opacity: 0.45; cursor: default; }
+.slot.given button.on { opacity: 1; }
 .lesson { margin: 8px 0; }
 .trace { overflow-x: auto; margin-top: 14px; }
 table { border-collapse: collapse; width: 100%; font-size: 0.92rem; table-layout: fixed; }
@@ -68,13 +69,13 @@ tr.end td { white-space: normal; font-size: 0.85rem; }
 <body>
 <main>
   <header><h1>Nibble puzzles</h1><button type="button" class="help" id="help" aria-expanded="false" aria-controls="intro">Help</button></header>
-  <p class="intro" id="intro">Nibble is the language of a tiny machine. It has one register, <code>AX</code>, which holds 0, 1, 2 or 3, and a program is exactly six instructions. A run starts with <code>AX</code> set to the input. It accepts when <code>zero</code> finds <code>AX</code> at 0, and it rejects when <code>decr</code> finds <code>AX</code> at 0 or when it runs off the end. Most puzzles name a set of inputs: write a program that accepts exactly those. A few ask instead how each input should end: accepted, rejected, or run off the end with <code>AX</code> at a given value. The first five puzzles teach you Nibble, one opcode at a time.</p>
+  <p class="intro" id="intro">Nibble is the language of a tiny machine. It has one register, <code>AX</code>, which holds 0, 1, 2 or 3, and a program is exactly six instructions. A run starts with <code>AX</code> set to the input. It accepts when <code>zero</code> finds <code>AX</code> at 0, and it rejects when <code>decr</code> finds <code>AX</code> at 0 or when it runs off the end. Each puzzle names a set of inputs: write a program that accepts exactly those and rejects the rest. The first four puzzles teach you Nibble, one opcode at a time.</p>
   <nav id="puzzles" aria-label="Puzzles"></nav>
   <section id="puzzle">
     <p id="loading">Loading the machine...</p>
   </section>
   <dl class="ops" id="ops"></dl>
 </main>
-<script type="module" src="nibble.9a9a8897ee70c43d.js"></script>
+<script type="module" src="nibble.56618570ce36528a.js"></script>
 </body>
 </html>
