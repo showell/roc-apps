@@ -45,6 +45,11 @@ section { background: var(--panel); border: 1px solid var(--line); border-radius
 .actions button { padding: 8px 18px; border-radius: 6px; border: 1px solid var(--accent); font: inherit; cursor: pointer; background: var(--panel); color: var(--accent); }
 .actions button.primary { background: var(--accent); color: var(--accent-fg); }
 .actions button[hidden] { display: none; }
+.actions { align-items: center; }
+.machine { display: inline-flex; align-items: center; gap: 6px; margin-left: auto; font-size: 0.85rem; color: var(--muted); }
+.machine code { white-space: pre; }
+.actions .code-help { padding: 0; width: 1.6rem; height: 1.6rem; border-radius: 50%; font-size: 0.85rem; }
+#code-explain[hidden] { display: none; }
 .slot.locked button { opacity: 0.45; cursor: default; }
 .lesson { margin: 8px 0; }
 .trace { overflow-x: auto; margin-top: 14px; }
@@ -77,6 +82,6 @@ tr[data-row="outcome"] td { font-size: 0.72rem; }
   </section>
   <dl class="ops" id="ops"></dl>
 </main>
-<script type="module" src="nibble.51c5ea09f5412aea.js"></script>
+<script type="module" src="nibble.51206afb54b71ccf.js"></script>
 </body>
 </html>

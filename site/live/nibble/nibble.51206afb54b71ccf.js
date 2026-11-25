@@ -54,6 +54,14 @@ for (const op of OPS) legend.append(el("dt", { text: op.name }), el("dd", { text
 let program = [];
 // Whether the player brought the buttons back after a solve, on this puzzle.
 let reopened = false;
+// Whether the machine code's explanation is open; it stays as the player left it.
+let codeHelpOpen = false;
+const CODE_EXPLAIN = "The machine code: each line's opcode in two bits, line 1 first (nada 00, zero 01, decr 10, mod2 11). "
+  + "Six lines make twelve bits, so there are 4,096 programs; read as a number, line 1 is the lowest digit in base 4.";
+
+// The program's twelve bits, line 1 first, and its number among the 4,096.
+const BITS = ["00", "01", "10", "11"];
+const machineCode = (prog) => `${prog.map((op) => BITS[op]).join(" ")}  (#${codeOf(prog)})`;
 
 // A puzzle's `fixed` lines (a bitmask, line k's bit 1 << k, from 0) are
 // locked to its start's ops; its lines past `lines` (its shortest program's
@@ -131,6 +139,11 @@ function drawPuzzle() {
   clear.addEventListener("click", () => { program = startOf(p); drawPuzzle(); });
   next.addEventListener("click", () => show(i + 1));
   edit.addEventListener("click", () => { reopened = true; drawPuzzle(); });
+  // The program as machine code: twelve bits, two a line, beside a "?".
+  const codeHelp = el("button", { type: "button", class: "code-help", id: "code-help", title: "What are these bits?", "aria-expanded": String(codeHelpOpen), text: "?" });
+  const codeExplain = el("p", { class: "hint", id: "code-explain", text: CODE_EXPLAIN });
+  codeExplain.hidden = !codeHelpOpen;
+  codeHelp.addEventListener("click", () => { codeHelpOpen = !codeHelpOpen; drawPuzzle(); });
   const found = el("p", { class: "hint", id: "found" });
   // The verdict and the buttons sit above the program, so a solve shows
   // without scrolling; the trace, the longest part, goes last.
@@ -140,7 +153,9 @@ function drawPuzzle() {
     ...(p.lesson ? [el("p", { class: "lesson", id: "lesson", text: p.lesson })] : []),
     el("p", { class: "hint", id: "hint", text: hintText(p) }),
     verdict, found,
-    el("div", { class: "actions" }, clear, edit, next),
+    el("div", { class: "actions" }, clear, edit, next,
+      el("span", { class: "machine" }, el("code", { id: "machine-code" }), codeHelp)),
+    codeExplain,
     slots,
     trace,
   );
@@ -195,6 +210,7 @@ function runAll(trace, verdict, next) {
   const i = current;
   const p = PUZZLES[i];
   const code = codeOf(program);
+  document.getElementById("machine-code").textContent = machineCode(program);
   const outcome = INPUTS.map((n) => outcomeOf(code, n));
   const ok = INPUTS.map((n) => outcome[n] === wantOf(p, n));
   const wrongAt = ok.indexOf(false);
