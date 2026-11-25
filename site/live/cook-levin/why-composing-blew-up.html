@@ -1,0 +1,63 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Why composing blew up · A riff on Cook-Levin</title>
+<link rel="icon" href="data:,">
+<link rel="stylesheet" href="book.css">
+<script src="copy.js" defer></script>
+</head>
+<body class="chapter">
+<nav class="book-nav" id="chapters" aria-label="Chapters">
+<a class="book-name" href="index.html">A riff on Cook-Levin</a>
+<ol>
+<li><a href="introduction.html"><span class="number">1</span>Introduction</a></li>
+<li><a href="how-it-got-here.html"><span class="number">2</span>How it got here</a></li>
+<li><a href="the-machine-and-nibble.html"><span class="number">3</span>The machine and Nibble</a></li>
+<li><a href="programs-as-languages.html"><span class="number">4</span>Programs as languages</a></li>
+<li><a href="arithmetization.html"><span class="number">5</span>Arithmetization</a></li>
+<li class="here"><a href="why-composing-blew-up.html"><span class="number">6</span>Why composing blew up</a><ol class="sections"><li><a href="why-composing-blew-up.html#the-general-ring">The general ring</a></li><li><a href="why-composing-blew-up.html#the-boolean-ring">The Boolean ring</a></li><li><a href="why-composing-blew-up.html#why-it-is-exact">Why it is exact</a></li></ol></li>
+<li><a href="six-steps-composed.html"><span class="number">7</span>Six steps composed</a></li>
+<li><a href="cook-levin-as-sat.html"><span class="number">8</span>Cook-Levin as SAT</a></li>
+<li><a href="the-oracles.html"><span class="number">9</span>The oracles</a></li>
+<li><a href="the-roc-port.html"><span class="number">10</span>The Roc port</a></li>
+<li><a href="what-comes-next.html"><span class="number">11</span>What comes next</a></li>
+</ol>
+</nav>
+<main>
+<p class="book-bar"><a href="index.html">A riff on Cook-Levin</a> <a href="#chapters">Chapters</a></p>
+<article>
+<p class="chapter-number">Chapter 6</p>
+<h1 id="why-composing-blew-up">Why composing blew up</h1>
+<p>A whole program is six steps. Composing them means substituting: step 1&#39;s four polynomials go in for the state variables of step 2, and so on, until the final state is four polynomials in 14 variables, the input&#39;s two bits and each instruction&#39;s two. One polynomial would then hold the whole machine.</p>
+<h2 id="the-general-ring">The general ring <a class="section-link" href="#the-general-ring" aria-label="Link to this section">§</a></h2>
+<p>In the general ring each substitution multiplies polynomials together, and every product raises powers: x·x is x², x²·x is x³. Terms of a state that will only ever see 0 and 1 are kept apart because their exponents differ, and products of sums of them multiply their coefficients. The Python harness measured it: step 1 in about 0.9 s, and step 2 past its 30 s cap (<a href="https://github.com/showell/virtual-machine/commit/1a5f6fa">1a5f6fa</a>&#39;s message). The general polynomial in this repository&#39;s C, <code>src/poly.c</code>, checks every coefficient&#39;s add and multiply in <code>src/ring_int.c</code> and stops the program on an int64 overflow, since Python&#39;s integers grow as large as they need and C&#39;s stop at 64 bits.</p>
+<h2 id="the-boolean-ring">The Boolean ring <a class="section-link" href="#the-boolean-ring" aria-label="Link to this section">§</a></h2>
+<p>The fix is one identity. Every variable here is only ever 0 or 1, and on those values x² = x. A ring where every x² is x is a Boolean ring: every polynomial in it is multilinear, each variable to the first power at most. A monomial is then a set of variables, kept as a bit mask, and the product of two monomials is the union of their sets, the OR of their masks.</p>
+<p><code>roc/BoolPoly.roc</code> is that ring. Its product, with like terms summed in a table indexed by mask:</p>
+<figure class="listing"><figcaption>roc/BoolPoly.roc, the function times</figcaption><pre><code class="language-roc"><span class="syn-comment">## Every pair of terms, masks ORed and coefficients multiplied, summed</span>
+<span class="syn-comment">## by mask.</span>
+<span class="syn-name">times</span> : <span class="syn-type">BoolPoly</span>, <span class="syn-type">BoolPoly</span> -&gt; <span class="syn-type">BoolPoly</span>
+<span class="syn-name">times</span> = |<span class="syn-type">BoolPoly</span>.(p), <span class="syn-type">BoolPoly</span>.(q)| {
+	<span class="syn-keyword">var</span> $sums = <span class="syn-type">List</span>.repeat(<span class="syn-number">0</span>, union_of(p).bitwise_or(union_of(q)) + <span class="syn-number">1</span>)
+	<span class="syn-keyword">for</span> a <span class="syn-keyword">in</span> p {
+		<span class="syn-keyword">for</span> b <span class="syn-keyword">in</span> q {
+			$sums = add_at($sums, { mask: a.mask.bitwise_or(b.mask), coeff: a.coeff * b.coeff })
+		}
+	}
+	from_sums($sums)
+}
+</code></pre></figure><p><code>src/boolring.c</code> is the C&#39;s version (<code>0c233e3</code>), with a 32-bit mask and checked int64 coefficients.</p>
+<h2 id="why-it-is-exact">Why it is exact <a class="section-link" href="#why-it-is-exact" aria-label="Link to this section">§</a></h2>
+<p>The Boolean ring keeps every value the machine can see. Two polynomials that agree on every 0/1 point reduce to the same multilinear polynomial, and a multilinear polynomial is fixed by its values on {0, 1}^n. So reducing by x² = x keeps every value the machine can see, and the canonical form makes <code>==</code> equality of functions (<code>roc/BoolPoly.roc</code>&#39;s header).</p>
+<p>With the identity in place the step polynomials shrink from 786 and 2,979 terms to 7 and 13, and the composition of <a class="chapter-link" href="six-steps-composed.html">“Six steps composed”</a> takes a fraction of a second.</p>
+
+</article>
+<nav class="turn-page" aria-label="Previous and next chapter">
+<a rel="prev" href="arithmetization.html"><small>Previous</small>Arithmetization</a>
+<a rel="next" href="six-steps-composed.html"><small>Next</small>Six steps composed</a>
+</nav>
+</main>
+</body>
+</html>

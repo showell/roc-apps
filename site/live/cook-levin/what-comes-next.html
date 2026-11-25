@@ -1,0 +1,48 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>What comes next · A riff on Cook-Levin</title>
+<link rel="icon" href="data:,">
+<link rel="stylesheet" href="book.css">
+<script src="copy.js" defer></script>
+</head>
+<body class="chapter">
+<nav class="book-nav" id="chapters" aria-label="Chapters">
+<a class="book-name" href="index.html">A riff on Cook-Levin</a>
+<ol>
+<li><a href="introduction.html"><span class="number">1</span>Introduction</a></li>
+<li><a href="how-it-got-here.html"><span class="number">2</span>How it got here</a></li>
+<li><a href="the-machine-and-nibble.html"><span class="number">3</span>The machine and Nibble</a></li>
+<li><a href="programs-as-languages.html"><span class="number">4</span>Programs as languages</a></li>
+<li><a href="arithmetization.html"><span class="number">5</span>Arithmetization</a></li>
+<li><a href="why-composing-blew-up.html"><span class="number">6</span>Why composing blew up</a></li>
+<li><a href="six-steps-composed.html"><span class="number">7</span>Six steps composed</a></li>
+<li><a href="cook-levin-as-sat.html"><span class="number">8</span>Cook-Levin as SAT</a></li>
+<li><a href="the-oracles.html"><span class="number">9</span>The oracles</a></li>
+<li><a href="the-roc-port.html"><span class="number">10</span>The Roc port</a></li>
+<li class="here"><a href="what-comes-next.html"><span class="number">11</span>What comes next</a></li>
+</ol>
+</nav>
+<main>
+<p class="book-bar"><a href="index.html">A riff on Cook-Levin</a> <a href="#chapters">Chapters</a></p>
+<article>
+<p class="chapter-number">Chapter 11</p>
+<h1 id="what-comes-next">What comes next</h1>
+<p>A few steps stand open, each small:</p>
+<ul>
+<li><strong>The DRAT proofs</strong> are written to <code>out/sat/</code> and left unchecked; a checker such as drat-trim would close that loop.</li>
+<li><strong>The C&#39;s dense table.</strong> The C composition could sum like terms in the Roc port&#39;s dense table, and its time would then measure the language.</li>
+<li><strong>The compiled JavaScript.</strong> Its slowness is unprofiled. <code>README.md</code> guesses that an array&#39;s items are values of unknown kind to the compiler, so each read and write passes the runtime&#39;s tag checks.</li>
+<li><strong>Nondeterminism.</strong> The machine is deterministic. The SAT encoding already treats the program as the unknown, which is the theorem&#39;s &quot;a certificate exists&quot;; a machine with choice instructions would make the riff closer to the theorem.</li>
+</ul>
+
+</article>
+<nav class="turn-page" aria-label="Previous and next chapter">
+<a rel="prev" href="the-roc-port.html"><small>Previous</small>The Roc port</a>
+<span></span>
+</nav>
+</main>
+</body>
+</html>

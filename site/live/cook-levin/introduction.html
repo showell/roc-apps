@@ -1,0 +1,49 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Introduction · A riff on Cook-Levin</title>
+<link rel="icon" href="data:,">
+<link rel="stylesheet" href="book.css">
+<script src="copy.js" defer></script>
+</head>
+<body class="chapter">
+<nav class="book-nav" id="chapters" aria-label="Chapters">
+<a class="book-name" href="index.html">A riff on Cook-Levin</a>
+<ol>
+<li class="here"><a href="introduction.html"><span class="number">1</span>Introduction</a><ol class="sections"><li><a href="introduction.html#what-the-book-covers">What the book covers</a></li><li><a href="introduction.html#why-the-name-fits">Why the name fits</a></li><li><a href="introduction.html#where-the-numbers-come-from">Where the numbers come from</a></li></ol></li>
+<li><a href="how-it-got-here.html"><span class="number">2</span>How it got here</a></li>
+<li><a href="the-machine-and-nibble.html"><span class="number">3</span>The machine and Nibble</a></li>
+<li><a href="programs-as-languages.html"><span class="number">4</span>Programs as languages</a></li>
+<li><a href="arithmetization.html"><span class="number">5</span>Arithmetization</a></li>
+<li><a href="why-composing-blew-up.html"><span class="number">6</span>Why composing blew up</a></li>
+<li><a href="six-steps-composed.html"><span class="number">7</span>Six steps composed</a></li>
+<li><a href="cook-levin-as-sat.html"><span class="number">8</span>Cook-Levin as SAT</a></li>
+<li><a href="the-oracles.html"><span class="number">9</span>The oracles</a></li>
+<li><a href="the-roc-port.html"><span class="number">10</span>The Roc port</a></li>
+<li><a href="what-comes-next.html"><span class="number">11</span>What comes next</a></li>
+</ol>
+</nav>
+<main>
+<p class="book-bar"><a href="index.html">A riff on Cook-Levin</a> <a href="#chapters">Chapters</a></p>
+<article>
+<p class="chapter-number">Chapter 1</p>
+<h1 id="introduction">Introduction</h1>
+<p>The machine in this book has one 2-bit register and four instructions, and every program is six instructions long. It is small enough that every program, every input and every step can be listed, so every claim about it can be checked by running all of them.</p>
+<p>Steve Howell wrote the first version by hand in Python, in <a href="https://github.com/showell/virtual-machine">virtual-machine</a>: the machine (<code>virtual_machine.py</code>), a general polynomial library (<code>poly.py</code>) and a stepper that writes one step of the machine as polynomials (<code>stepper.py</code>). In the cook-levin-riff repository, the code was written by AI coding agents (Claude), with human supervision, as its <code>README.md</code> says in its second line.</p>
+<h2 id="what-the-book-covers">What the book covers <a class="section-link" href="#what-the-book-covers" aria-label="Link to this section">§</a></h2>
+<p><a class="chapter-link" href="the-machine-and-nibble.html">“The machine and Nibble”</a> sets out the machine and its puzzle page. <a class="chapter-link" href="programs-as-languages.html">“Programs as languages”</a> is the search over all 4,096 programs. <a class="chapter-link" href="arithmetization.html">“Arithmetization”</a> turns one step into polynomials. <a class="chapter-link" href="why-composing-blew-up.html">“Why composing blew up”</a> and <a class="chapter-link" href="six-steps-composed.html">“Six steps composed”</a> take the step through a whole program. <a class="chapter-link" href="cook-levin-as-sat.html">“Cook-Levin as SAT”</a> turns the same machine into a formula for a SAT solver. <a class="chapter-link" href="the-oracles.html">“The oracles”</a> lines up every implementation that computes the answers, and <a class="chapter-link" href="the-roc-port.html">“The Roc port”</a> reads the mathematics in Roc.</p>
+<h2 id="why-the-name-fits">Why the name fits <a class="section-link" href="#why-the-name-fits" aria-label="Link to this section">§</a></h2>
+<p>The Cook-Levin theorem says that satisfiability of Boolean formulas is NP-complete: any problem whose answers a machine can check in polynomial time reduces to it. The proof unrolls the checking machine, step by step, into one formula. This repository does that unrolling on a toy instrument. It makes no claim about NP, and it reduces one machine&#39;s questions, never an arbitrary verifier&#39;s. It also goes one step past the formula, into arithmetic: the whole program becomes four polynomials with integer coefficients. &quot;A riff&quot; is the honest word for that.</p>
+<h2 id="where-the-numbers-come-from">Where the numbers come from <a class="section-link" href="#where-the-numbers-come-from" aria-label="Link to this section">§</a></h2>
+<p>Each number here comes from the repository: a commit, cited by its short hash, the <code>README.md</code>, a golden file, or a program run while the book was written, named where it is used. Code is quoted from the repository as it stands when the book is built. The Python repository&#39;s history is cited by links to its commits.</p>
+
+</article>
+<nav class="turn-page" aria-label="Previous and next chapter">
+<a rel="prev" href="index.html"><small>Previous</small>Contents</a>
+<a rel="next" href="how-it-got-here.html"><small>Next</small>How it got here</a>
+</nav>
+</main>
+</body>
+</html>

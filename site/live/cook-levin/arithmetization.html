@@ -1,0 +1,173 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Arithmetization · A riff on Cook-Levin</title>
+<link rel="icon" href="data:,">
+<link rel="stylesheet" href="book.css">
+<script src="copy.js" defer></script>
+</head>
+<body class="chapter">
+<nav class="book-nav" id="chapters" aria-label="Chapters">
+<a class="book-name" href="index.html">A riff on Cook-Levin</a>
+<ol>
+<li><a href="introduction.html"><span class="number">1</span>Introduction</a></li>
+<li><a href="how-it-got-here.html"><span class="number">2</span>How it got here</a></li>
+<li><a href="the-machine-and-nibble.html"><span class="number">3</span>The machine and Nibble</a></li>
+<li><a href="programs-as-languages.html"><span class="number">4</span>Programs as languages</a></li>
+<li class="here"><a href="arithmetization.html"><span class="number">5</span>Arithmetization</a><ol class="sections"><li><a href="arithmetization.html#one-step">One step</a></li><li><a href="arithmetization.html#the-steps-sizes">The step&#39;s sizes</a></li><li><a href="arithmetization.html#the-stepper-as-a-second-machine">The stepper as a second machine</a></li></ol></li>
+<li><a href="why-composing-blew-up.html"><span class="number">6</span>Why composing blew up</a></li>
+<li><a href="six-steps-composed.html"><span class="number">7</span>Six steps composed</a></li>
+<li><a href="cook-levin-as-sat.html"><span class="number">8</span>Cook-Levin as SAT</a></li>
+<li><a href="the-oracles.html"><span class="number">9</span>The oracles</a></li>
+<li><a href="the-roc-port.html"><span class="number">10</span>The Roc port</a></li>
+<li><a href="what-comes-next.html"><span class="number">11</span>What comes next</a></li>
+</ol>
+</nav>
+<main>
+<p class="book-bar"><a href="index.html">A riff on Cook-Levin</a> <a href="#chapters">Chapters</a></p>
+<article>
+<p class="chapter-number">Chapter 5</p>
+<h1 id="arithmetization">Arithmetization</h1>
+<p>The stepper writes one step of the machine as polynomials. Each bit of the state is a variable that is only ever 0 or 1, and logic becomes arithmetic:</p>
+<ul>
+<li>NOT x is 1 - x;</li>
+<li>x AND y is x·y;</li>
+<li>x OR y is x + y - x·y.</li>
+</ul>
+<p>On 0/1 values each of these gives 0 or 1, and the right one. In Roc (<code>roc/Stepper.roc</code>) the first and third read as they are written:</p>
+<figure class="listing"><figcaption>roc/Stepper.roc, the function complement</figcaption><pre><code class="language-roc"><span class="syn-comment">## NOT, as an indicator: 1 - x.</span>
+<span class="syn-name">complement</span> : <span class="syn-type">BoolPoly</span> -&gt; <span class="syn-type">BoolPoly</span>
+<span class="syn-name">complement</span> = |x| <span class="syn-type">BoolPoly</span>.one - x
+</code></pre></figure><figure class="listing"><figcaption>roc/Stepper.roc, the function either</figcaption><pre><code class="language-roc"><span class="syn-comment">## OR, as an indicator: x + y - x·y.</span>
+<span class="syn-name">either</span> : <span class="syn-type">BoolPoly</span>, <span class="syn-type">BoolPoly</span> -&gt; <span class="syn-type">BoolPoly</span>
+<span class="syn-name">either</span> = |x, y| x + y - x * y
+</code></pre></figure><h2 id="one-step">One step <a class="section-link" href="#one-step" aria-label="Link to this section">§</a></h2>
+<p>A step reads six bits: <code>AX</code>&#39;s high and low bits (<code>hb</code>, <code>lb</code>), the flags <code>halted</code> and <code>accepted</code>, and the instruction&#39;s two bits (<code>op_hb</code>, <code>op_lb</code>). It writes four: the next <code>hb</code>, <code>lb</code>, <code>halted</code> and <code>accepted</code>.</p>
+<figure class="diagram"><svg class="diagram diagram-wide" role="img" aria-label="One step of the machine" width="530pt" height="98pt"
+ viewBox="0.00 0.00 530.00 98.00" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+<g id="graph0" class="graph" transform="scale(1 1) rotate(0) translate(4 94)">
+<polygon fill="white" stroke="transparent" points="-4,4 -4,-94 526,-94 526,4 -4,4"/>
+<g id="node1" class="node">
+<path fill="none" stroke="black" d="M147,-90C147,-90 12,-90 12,-90 6,-90 0,-84 0,-78 0,-78 0,-66 0,-66 0,-60 6,-54 12,-54 12,-54 147,-54 147,-54 153,-54 159,-60 159,-66 159,-66 159,-78 159,-78 159,-84 153,-90 147,-90"/>
+<text text-anchor="middle" x="79.5" y="-68.9" font-family="Times,serif" font-size="12.00">hb, lb, halted, accepted</text>
+</g>
+<g id="node3" class="node">
+<path fill="none" stroke="black" d="M303,-63C303,-63 207,-63 207,-63 201,-63 195,-57 195,-51 195,-51 195,-39 195,-39 195,-33 201,-27 207,-27 207,-27 303,-27 303,-27 309,-27 315,-33 315,-39 315,-39 315,-51 315,-51 315,-57 309,-63 303,-63"/>
+<text text-anchor="middle" x="255" y="-41.9" font-family="Times,serif" font-size="12.00">step polynomials</text>
+</g>
+<g id="edge1" class="edge">
+<path fill="none" stroke="black" d="M159.13,-59.76C167.67,-58.43 176.32,-57.09 184.74,-55.78"/>
+<polygon fill="black" stroke="black" points="185.52,-59.2 194.87,-54.2 184.45,-52.28 185.52,-59.2"/>
+</g>
+<g id="node2" class="node">
+<path fill="none" stroke="black" d="M114.5,-36C114.5,-36 44.5,-36 44.5,-36 38.5,-36 32.5,-30 32.5,-24 32.5,-24 32.5,-12 32.5,-12 32.5,-6 38.5,0 44.5,0 44.5,0 114.5,0 114.5,0 120.5,0 126.5,-6 126.5,-12 126.5,-12 126.5,-24 126.5,-24 126.5,-30 120.5,-36 114.5,-36"/>
+<text text-anchor="middle" x="79.5" y="-14.9" font-family="Times,serif" font-size="12.00">op_hb, op_lb</text>
+</g>
+<g id="edge2" class="edge">
+<path fill="none" stroke="black" d="M126.54,-25.16C144.41,-27.95 165.25,-31.19 184.85,-34.24"/>
+<polygon fill="black" stroke="black" points="184.54,-37.73 194.96,-35.81 185.62,-30.82 184.54,-37.73"/>
+</g>
+<g id="node4" class="node">
+<path fill="none" stroke="black" d="M510,-63C510,-63 363,-63 363,-63 357,-63 351,-57 351,-51 351,-51 351,-39 351,-39 351,-33 357,-27 363,-27 363,-27 510,-27 510,-27 516,-27 522,-33 522,-39 522,-39 522,-51 522,-51 522,-57 516,-63 510,-63"/>
+<text text-anchor="middle" x="436.5" y="-41.9" font-family="Times,serif" font-size="12.00">hb&#39;, lb&#39;, halted&#39;, accepted&#39;</text>
+</g>
+<g id="edge3" class="edge">
+<path fill="none" stroke="black" d="M315.27,-45C323.49,-45 332.1,-45 340.77,-45"/>
+<polygon fill="black" stroke="black" points="340.96,-48.5 350.96,-45 340.96,-41.5 340.96,-48.5"/>
+</g>
+</g>
+</svg><svg class="diagram diagram-phone" role="img" aria-label="One step of the machine" width="135pt" height="204pt"
+ viewBox="0.00 0.00 134.50 204.00" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+<g id="graph0" class="graph" transform="scale(1 1) rotate(0) translate(4 200)">
+<polygon fill="white" stroke="transparent" points="-4,4 -4,-200 130.5,-200 130.5,4 -4,4"/>
+<g id="node1" class="node">
+<path fill="none" stroke="black" d="M51,-196C51,-196 12,-196 12,-196 6,-196 0,-190 0,-184 0,-184 0,-150 0,-150 0,-144 6,-138 12,-138 12,-138 51,-138 51,-138 57,-138 63,-144 63,-150 63,-150 63,-184 63,-184 63,-190 57,-196 51,-196"/>
+<text text-anchor="middle" x="31.5" y="-183.4" font-family="Times,serif" font-size="12.00">hb,</text>
+<text text-anchor="middle" x="31.5" y="-170.4" font-family="Times,serif" font-size="12.00">lb,</text>
+<text text-anchor="middle" x="31.5" y="-157.4" font-family="Times,serif" font-size="12.00">halted,</text>
+<text text-anchor="middle" x="31.5" y="-144.4" font-family="Times,serif" font-size="12.00">accepted</text>
+</g>
+<g id="node3" class="node">
+<path fill="none" stroke="black" d="M108.5,-116C108.5,-116 22.5,-116 22.5,-116 16.5,-116 10.5,-110 10.5,-104 10.5,-104 10.5,-92 10.5,-92 10.5,-86 16.5,-80 22.5,-80 22.5,-80 108.5,-80 108.5,-80 114.5,-80 120.5,-86 120.5,-92 120.5,-92 120.5,-104 120.5,-104 120.5,-110 114.5,-116 108.5,-116"/>
+<text text-anchor="middle" x="65.5" y="-94.9" font-family="Times,serif" font-size="12.00">step polynomials</text>
+</g>
+<g id="edge1" class="edge">
+<path fill="none" stroke="black" d="M45.72,-137.97C47.91,-133.66 50.16,-129.23 52.33,-124.96"/>
+<polygon fill="black" stroke="black" points="55.46,-126.52 56.87,-116.02 49.22,-123.35 55.46,-126.52"/>
+</g>
+<g id="node2" class="node">
+<path fill="none" stroke="black" d="M114.5,-185C114.5,-185 84.5,-185 84.5,-185 78.5,-185 72.5,-179 72.5,-173 72.5,-173 72.5,-161 72.5,-161 72.5,-155 78.5,-149 84.5,-149 84.5,-149 114.5,-149 114.5,-149 120.5,-149 126.5,-155 126.5,-161 126.5,-161 126.5,-173 126.5,-173 126.5,-179 120.5,-185 114.5,-185"/>
+<text text-anchor="middle" x="99.5" y="-170.4" font-family="Times,serif" font-size="12.00">op_hb,</text>
+<text text-anchor="middle" x="99.5" y="-157.4" font-family="Times,serif" font-size="12.00">op_lb</text>
+</g>
+<g id="edge2" class="edge">
+<path fill="none" stroke="black" d="M90.74,-148.75C87.16,-141.69 82.94,-133.36 78.98,-125.56"/>
+<polygon fill="black" stroke="black" points="81.99,-123.76 74.34,-116.43 75.75,-126.93 81.99,-123.76"/>
+</g>
+<g id="node4" class="node">
+<path fill="none" stroke="black" d="M86.5,-58C86.5,-58 44.5,-58 44.5,-58 38.5,-58 32.5,-52 32.5,-46 32.5,-46 32.5,-12 32.5,-12 32.5,-6 38.5,0 44.5,0 44.5,0 86.5,0 86.5,0 92.5,0 98.5,-6 98.5,-12 98.5,-12 98.5,-46 98.5,-46 98.5,-52 92.5,-58 86.5,-58"/>
+<text text-anchor="middle" x="65.5" y="-45.4" font-family="Times,serif" font-size="12.00">hb&#39;,</text>
+<text text-anchor="middle" x="65.5" y="-32.4" font-family="Times,serif" font-size="12.00">lb&#39;,</text>
+<text text-anchor="middle" x="65.5" y="-19.4" font-family="Times,serif" font-size="12.00">halted&#39;,</text>
+<text text-anchor="middle" x="65.5" y="-6.4" font-family="Times,serif" font-size="12.00">accepted&#39;</text>
+</g>
+<g id="edge3" class="edge">
+<path fill="none" stroke="black" d="M65.5,-79.75C65.5,-76.14 65.5,-72.21 65.5,-68.18"/>
+<polygon fill="black" stroke="black" points="69,-68.11 65.5,-58.11 62,-68.11 69,-68.11"/>
+</g>
+</g>
+</svg><figcaption>One step of the machine</figcaption></figure><p>The construction names each fact about the state with an indicator, a polynomial that is 1 when the fact holds: <code>AX</code> is 0, the instruction is <code>decr</code> and the machine is still running, and so on. The new state is what any of the four instructions would make of the old one:</p>
+<figure class="listing"><figcaption>roc/Stepper.roc, the function next_state</figcaption><pre><code class="language-roc"><span class="syn-comment">## The state after one step, from the state and the op&#39;s two bits.</span>
+<span class="syn-comment">## `pass`, `check`, `decr` and `mod2` say what each op does, as</span>
+<span class="syn-comment">## indicators of where AX goes and whether it accepts or halts; the</span>
+<span class="syn-comment">## new state is what any of them does.</span>
+<span class="syn-name">next_state</span> : { hb : <span class="syn-type">BoolPoly</span>, lb : <span class="syn-type">BoolPoly</span>, halted : <span class="syn-type">BoolPoly</span>, accepted : <span class="syn-type">BoolPoly</span>, op_hb : <span class="syn-type">BoolPoly</span>, op_lb : <span class="syn-type">BoolPoly</span> } -&gt; <span class="syn-type">Stepper.State</span>
+<span class="syn-name">next_state</span> = |{ hb, lb, halted, accepted, op_hb, op_lb }| {
+	is_0 = complement(hb) * complement(lb)
+	is_1 = complement(hb) * lb
+	is_2 = hb * complement(lb)
+	is_3 = hb * lb
+
+	runs_pass = either(complement(op_hb) * complement(op_lb), halted)
+	runs_check = complement(op_hb) * op_lb * complement(halted)
+	runs_decr = op_hb * complement(op_lb) * complement(halted)
+	runs_mod2 = op_hb * op_lb * complement(halted)
+
+	none = <span class="syn-type">BoolPoly</span>.zero
+	pass = { to_1: is_1 * runs_pass, to_2: is_2 * runs_pass, to_3: is_3 * runs_pass, accepts: none, halts: none }
+	check = { to_1: is_1 * runs_check, to_2: is_2 * runs_check, to_3: is_3 * runs_check, accepts: is_0 * runs_check, halts: none }
+	decr = { to_1: is_2 * runs_decr, to_2: is_3 * runs_decr, to_3: none, accepts: none, halts: is_0 * runs_decr }
+	mod2 = { to_1: either(is_3, is_1) * runs_mod2, to_2: none, to_3: none, accepts: none, halts: none }
+	ops = [pass, check, decr, mod2]
+
+	becomes_1 = any_of(ops.map(|op| op.to_1))
+	becomes_2 = any_of(ops.map(|op| op.to_2))
+	becomes_3 = any_of(ops.map(|op| op.to_3))
+	{
+		hb: either(becomes_3, becomes_2),
+		lb: either(becomes_3, becomes_1),
+		halted: either(halted, any_of(ops.map(|op| op.halts))),
+		accepted: either(accepted, any_of(ops.map(|op| op.accepts))),
+	}
+}
+</code></pre></figure><h2 id="the-steps-sizes">The step&#39;s sizes <a class="section-link" href="#the-steps-sizes" aria-label="Link to this section">§</a></h2>
+<p>In Python&#39;s general polynomial ring, where x·x is x², the four polynomials come out large: hb&#39; has 786 terms and lb&#39; 2,979 (<code>README.md</code>, its layout&#39;s <code>src/stepper.c</code>). The C port prints them exactly as <code>stepper.py</code> does, held to <code>tests/golden/step_hb.txt</code> and its three siblings. In the Boolean ring of <a class="chapter-link" href="why-composing-blew-up.html">“Why composing blew up”</a> the same four have 7, 13, 17 and 33 terms, every coefficient 1 or -1, as an expect in <code>roc/Stepper.roc</code> holds.</p>
+<p>Here is <code>halted&#39;</code> in that ring. It says: halted already, or a <code>decr</code> at <code>AX</code> = 0 on a running machine.</p>
+<pre><code class="language-text">halted+op_hb+(-1)*hb*op_hb+(-1)*lb*op_hb+(-1)*halted*op_hb+(-1)*op_hb*op_lb
++hb*lb*op_hb+hb*halted*op_hb+hb*op_hb*op_lb+lb*halted*op_hb+lb*op_hb*op_lb
++halted*op_hb*op_lb+(-1)*hb*lb*halted*op_hb+(-1)*hb*lb*op_hb*op_lb
++(-1)*hb*halted*op_hb*op_lb+(-1)*lb*halted*op_hb*op_lb+hb*lb*halted*op_hb*op_lb
+</code></pre>
+<h2 id="the-stepper-as-a-second-machine">The stepper as a second machine <a class="section-link" href="#the-stepper-as-a-second-machine" aria-label="Link to this section">§</a></h2>
+<p>Evaluated at the bits of a state and an instruction, the four polynomials give the next state&#39;s bits. So the stepper is a second implementation of the machine, written as algebra. <code>find_solutions</code> runs each example program on the stepper too, as the Python does, and <code>tests/test_stepper.c</code> holds the stepper to the interpreter on all 4,096 programs and all 4 inputs (<code>0921ec4</code>), where the Python checks the 16 examples.</p>
+
+</article>
+<nav class="turn-page" aria-label="Previous and next chapter">
+<a rel="prev" href="programs-as-languages.html"><small>Previous</small>Programs as languages</a>
+<a rel="next" href="why-composing-blew-up.html"><small>Next</small>Why composing blew up</a>
+</nav>
+</main>
+</body>
+</html>

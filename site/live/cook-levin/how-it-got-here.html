@@ -1,0 +1,49 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>How it got here · A riff on Cook-Levin</title>
+<link rel="icon" href="data:,">
+<link rel="stylesheet" href="book.css">
+<script src="copy.js" defer></script>
+</head>
+<body class="chapter">
+<nav class="book-nav" id="chapters" aria-label="Chapters">
+<a class="book-name" href="index.html">A riff on Cook-Levin</a>
+<ol>
+<li><a href="introduction.html"><span class="number">1</span>Introduction</a></li>
+<li class="here"><a href="how-it-got-here.html"><span class="number">2</span>How it got here</a><ol class="sections"><li><a href="how-it-got-here.html#the-python-2023">The Python, 2023</a></li><li><a href="how-it-got-here.html#the-composition-that-stalled-2026">The composition that stalled, 2026</a></li><li><a href="how-it-got-here.html#the-finish-2026-11-25">The finish, 2026-11-25</a></li></ol></li>
+<li><a href="the-machine-and-nibble.html"><span class="number">3</span>The machine and Nibble</a></li>
+<li><a href="programs-as-languages.html"><span class="number">4</span>Programs as languages</a></li>
+<li><a href="arithmetization.html"><span class="number">5</span>Arithmetization</a></li>
+<li><a href="why-composing-blew-up.html"><span class="number">6</span>Why composing blew up</a></li>
+<li><a href="six-steps-composed.html"><span class="number">7</span>Six steps composed</a></li>
+<li><a href="cook-levin-as-sat.html"><span class="number">8</span>Cook-Levin as SAT</a></li>
+<li><a href="the-oracles.html"><span class="number">9</span>The oracles</a></li>
+<li><a href="the-roc-port.html"><span class="number">10</span>The Roc port</a></li>
+<li><a href="what-comes-next.html"><span class="number">11</span>What comes next</a></li>
+</ol>
+</nav>
+<main>
+<p class="book-bar"><a href="index.html">A riff on Cook-Levin</a> <a href="#chapters">Chapters</a></p>
+<article>
+<p class="chapter-number">Chapter 2</p>
+<h1 id="how-it-got-here">How it got here</h1>
+<p>This chapter is the short history, as two git logs record it.</p>
+<h2 id="the-python-2023">The Python, 2023 <a class="section-link" href="#the-python-2023" aria-label="Link to this section">§</a></h2>
+<p>The virtual-machine log opens on 2023-03-11 with <a href="https://github.com/showell/virtual-machine/commit/f01c1c3">f01c1c3</a> and runs through 158 commits to 2023-04-08, all under Steve&#39;s address. The stepper arrived on its first day (<a href="https://github.com/showell/virtual-machine/commit/ba9388a">ba9388a</a>), the polynomial library from 2023-03-12 (<a href="https://github.com/showell/virtual-machine/commit/6bb7429">6bb7429</a>), and the step polynomials on 2023-03-14 (<a href="https://github.com/showell/virtual-machine/commit/a4e4765">a4e4765</a>), the same day as <code>MAX_STEPS</code> of 6. The last 2023 commits, on 2023-04-08, begin with &quot;Eliminate most poly-related stuff&quot; (<a href="https://github.com/showell/virtual-machine/commit/72bf4c4">72bf4c4</a>).</p>
+<h2 id="the-composition-that-stalled-2026">The composition that stalled, 2026 <a class="section-link" href="#the-composition-that-stalled-2026" aria-label="Link to this section">§</a></h2>
+<p>Five commits marked &quot;wip&quot; followed on 2026-01-28. On 2026-04-16 a measuring harness, <code>compose.py</code>, was added with Claude as co-author (<a href="https://github.com/showell/virtual-machine/commit/1a5f6fa">1a5f6fa</a>). Its message says that step 1 composed in about 0.9 s and that step 2 ran past 30 s in Python, and that those numbers motivated a port to Go. The same afternoon <code>compose.py</code> was removed, &quot;porting six-step composition to Go instead&quot; (<a href="https://github.com/showell/virtual-machine/commit/a2406b5">a2406b5</a>). The next day an essay Claude had written about the project was parked as <code>DEEP_READ.md</code> (<a href="https://github.com/showell/virtual-machine/commit/94c3d31">94c3d31</a>); it lists the six-step composition as the step the project stops before.</p>
+<p>The Go port lives in a repository of its own, outside this record. By Steve&#39;s account it drowned in big integers; that account is unchecked here.</p>
+<h2 id="the-finish-2026-11-25">The finish, 2026-11-25 <a class="section-link" href="#the-finish-2026-11-25" aria-label="Link to this section">§</a></h2>
+<p>The cook-levin-riff log covers one day. The C port of the machine and the search came first (<code>8051ce2</code>), then the general polynomial (<code>ccde4f8</code>) and the stepper (<code>5b14d74</code>). The Boolean ring came at 15:59 (<code>0c233e3</code>), and all six steps composed, proved on all 2^14 points, at 16:23 (<code>1146d43</code>). The Nibble page (<code>b1fe11f</code>), the Roc port (<code>6206236</code>), the SAT encoding (<code>8de51b7</code>), rocsat as an oracle (<code>f977bcc</code>) and the JavaScript port (<code>e996749</code>, <code>c251895</code>) followed. The first commit is stamped 15:32 and the last 19:21.</p>
+
+</article>
+<nav class="turn-page" aria-label="Previous and next chapter">
+<a rel="prev" href="introduction.html"><small>Previous</small>Introduction</a>
+<a rel="next" href="the-machine-and-nibble.html"><small>Next</small>The machine and Nibble</a>
+</nav>
+</main>
+</body>
+</html>
