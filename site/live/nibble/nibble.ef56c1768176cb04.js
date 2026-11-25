@@ -1,5 +1,6 @@
-// nibble.js: the Nibble puzzle page. The machine is src/vm.c compiled to
-// wasm (web/nibble.c); the puzzles, their counts and shortest lengths, and
+// nibble.js: the Nibble puzzle page. The machine is the Roc port's
+// roc/Machine.roc compiled to wasm (roc/NibbleWasm.roc on web/platform);
+// the puzzles, their counts and shortest lengths, and
 // the opcodes' comments come from web/puzzles.c's table, puzzles.json.
 // A puzzle is a language: accept exactly `set` and reject the rest.
 // Nothing is kept between visits: a reload starts at puzzle 1.
@@ -12,7 +13,7 @@ const NONE = 0, ACCEPTED = 1;
 const LINES = ["an empty", "a one-line", "a two-line", "a three-line", "a four-line", "a five-line", "a six-line"];
 
 const [wasm, table] = await Promise.all([
-  fetch("nibble.d9274e0bd105b936.wasm").then((r) => r.arrayBuffer()).then((b) => WebAssembly.instantiate(b)),
+  fetch("nibble.c9f85bcae2462a60.wasm").then((r) => r.arrayBuffer()).then((b) => WebAssembly.instantiate(b)),
   fetch("puzzles.60c40870ab0a98bf.json").then((r) => r.json()),
 ]).catch((e) => {
   const said = document.getElementById("loading");
