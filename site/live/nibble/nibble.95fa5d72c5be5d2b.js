@@ -75,7 +75,9 @@ const startOf = (p) => Array.from({ length: STEPS }, (_, k) => Math.floor(p.star
 
 function draftOf(i) {
   const p = PUZZLES[i];
-  const saved = progress.drafts[p.code] ?? progress.solved[p.code];
+  // A solved puzzle reopens as a puzzle: its start, not its solution. Only
+  // an unsolved puzzle's draft is kept.
+  const saved = isSolved(i) ? null : progress.drafts[p.code];
   const draft = Array.isArray(saved) && saved.length === STEPS ? saved.slice() : startOf(p);
   return draft.map((op, line) => (isLocked(p, line) ? 0 : op));
 }
@@ -143,7 +145,6 @@ function drawPuzzle() {
   clear.addEventListener("click", () => { program = startOf(p); delete progress.drafts[p.code]; saveProgress(); drawPuzzle(); });
   next.addEventListener("click", () => show(i + 1));
   const found = el("p", { class: "hint", id: "found" });
-  if (isSolved(i)) found.textContent = foundText(p);
   // The verdict and the buttons sit above the program, so a solve shows
   // without scrolling; the trace, the longest part, goes last.
   panel.replaceChildren(
@@ -201,6 +202,7 @@ function runAll(trace, verdict, next) {
   const found = document.getElementById("found");
   if (wrong === null) {
     progress.solved[p.code] = program.slice();
+    delete progress.drafts[p.code];
     saveProgress();
     verdict.className = "verdict good";
     verdict.textContent = i + 1 < PUZZLES.length ? "Solved! The next puzzle is open." : "Solved! That was the last puzzle.";
