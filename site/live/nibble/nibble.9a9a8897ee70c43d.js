@@ -1,6 +1,8 @@
 // nibble.js: the Nibble puzzle page. The machine is src/vm.c compiled to
 // wasm (web/nibble.c); the puzzles, their counts and shortest lengths, and
 // the opcodes' comments come from web/puzzles.c's table, puzzles.json.
+// A puzzle is a language puzzle (accept exactly `set`) or an AX puzzle
+// (each input's outcome is `want`: accept, reject, or AX=n off the end).
 // web/build.shale rewrites the two fetched names to their hashed ones.
 
 const STEPS = 6;
@@ -12,7 +14,7 @@ const LINES = ["an empty", "a one-line", "a two-line", "a three-line", "a four-l
 
 const [wasm, table] = await Promise.all([
   fetch("nibble.d9274e0bd105b936.wasm").then((r) => r.arrayBuffer()).then((b) => WebAssembly.instantiate(b)),
-  fetch("puzzles.fed4c110692b5a0d.json").then((r) => r.json()),
+  fetch("puzzles.adf9059141c0125f.json").then((r) => r.json()),
 ]).catch((e) => {
   const said = document.getElementById("loading");
   said.className = "err";
@@ -26,12 +28,23 @@ const { ops: OPS, puzzles: PUZZLES } = table;
 const codeOf = (program) => program.reduce((sum, op, i) => sum + op * 4 ** i, 0);
 const unpack = (word) => ({ ax: word & 3, halted: (word >> 2) & 1, status: (word >> 3) & 3 });
 const setText = (set) => `{${set.join(", ")}}`;
-const accepts = (puzzle, n) => puzzle.set.includes(n);
+const isAx = (puzzle) => puzzle.kind === "ax";
+// What the puzzle wants of input n, and what program `code` gave it, as
+// the trace says them: accept, reject, or (an AX puzzle's run off the end)
+// AX=n.
+const wantOf = (puzzle, n) => (isAx(puzzle) ? puzzle.want[n] : puzzle.set.includes(n) ? "accept" : "reject");
+function outcomeOf(puzzle, code, n) {
+  const status = machine.status(n, code);
+  if (status === ACCEPTED) return "accept";
+  if (status === REJECTED || !isAx(puzzle)) return "reject";
+  return `AX=${unpack(machine.after(n, code, STEPS)).ax}`;
+}
 
 // ── progress: which puzzles are solved, and with what; per viewer ────────
-// Everything is kept by language code, never by place in the order, so a
-// new order keeps each puzzle's progress: `at` is the code of the puzzle on
-// show (an older save's `current`, a place, is dropped).
+// Everything is kept by puzzle code (a language's, 0 to 15, or an AX
+// puzzle's, 16 to 18), never by place in the order, so a new order keeps
+// each puzzle's progress: `at` is the code of the puzzle on show (an older
+// save's `current`, a place, is dropped).
 function loadProgress() {
   try {
     const saved = JSON.parse(localStorage.getItem(STORE) ?? "null");
@@ -67,10 +80,10 @@ for (const op of OPS) legend.append(el("dt", { text: op.name }), el("dd", { text
 let program = [];
 
 // A puzzle's lines past `lines` (its shortest program's length, but one
-// for the nada lesson) are locked to nada.
+// for the two that all nada solves) are locked to nada.
 const isLocked = (p, line) => line >= p.lines;
-// The program a puzzle opens with, `start`: all nada, but `zero` on the
-// nada lesson's one line, since all nada solves it.
+// The program a puzzle opens with, `start`: all nada, but one op on line 1
+// of the two that all nada solves (`mod2` and `zero`).
 const startOf = (p) => Array.from({ length: STEPS }, (_, k) => Math.floor(p.start / 4 ** k) % 4);
 
 function draftOf(i) {
@@ -118,8 +131,7 @@ function show(i) {
 function drawPuzzle() {
   const i = current;
   const p = PUZZLES[i];
-  const rejected = INPUTS.filter((n) => !accepts(p, n));
-  const goal = p.set.length === 0 ? "Reject every input." : `Accept ${setText(p.set)}${rejected.length ? `; reject ${setText(rejected)}` : ""}.`;
+  const goal = isAx(p) ? p.goal : languageGoal(p);
   const slots = el("div", { class: "slots" });
   program.forEach((op, line) => {
     const locked = isLocked(p, line);
@@ -161,13 +173,22 @@ function drawPuzzle() {
   runAll(trace, verdict, next);
 }
 
+function languageGoal(p) {
+  const rejected = INPUTS.filter((n) => !p.set.includes(n));
+  return p.set.length === 0 ? "Reject every input." : `Accept ${setText(p.set)}${rejected.length ? `; reject ${setText(rejected)}` : ""}.`;
+}
+
 const hintText = (p) => `This can be solved with ${LINES[p.lines]} Nibble program${lockedText(p.lines)}.`;
 const lockedText = (n) => n === STEPS ? "" : n === STEPS - 1 ? `, so line ${STEPS} is locked to nada` : `, so lines ${n + 1} to ${STEPS} are locked to nada`;
 
 const foundText = (p) => p.count === 1 ? "You found the one program, of all 4,096, that does this." : `You found one of ${p.count.toLocaleString("en-US")} programs that do this.`;
 
-// What a run ended as, in words.
-const endText = (s) => s === ACCEPTED ? "accept" : s === REJECTED ? "reject" : "reject: ran off the end";
+// What a run ended as, in the result row: a language puzzle's run off the
+// end says why it rejects.
+const endText = (p, code, n) => (!isAx(p) && machine.status(n, code) === NONE ? "reject: ran off the end" : outcomeOf(p, code, n));
+// An outcome in the verdict, as wanted and as given.
+const shouldText = (o) => (o === "accept" ? "be accepted" : o === "reject" ? "be rejected" : `end with ${o}`);
+const gaveText = (o) => (o === "accept" ? "accepted it" : o === "reject" ? "rejected it" : `ended with ${o}`);
 
 // The trace: a row a step, so it lines up with the program's lines, and a
 // column an input, which fits a phone's width. A cell is AX after that
@@ -177,10 +198,10 @@ function runAll(trace, verdict, next) {
   const i = current;
   const p = PUZZLES[i];
   const code = codeOf(program);
-  const status = INPUTS.map((n) => machine.status(n, code));
-  const ok = INPUTS.map((n) => (status[n] === ACCEPTED) === accepts(p, n));
+  const outcome = INPUTS.map((n) => outcomeOf(p, code, n));
+  const ok = INPUTS.map((n) => outcome[n] === wantOf(p, n));
   const wrongAt = ok.indexOf(false);
-  const wrong = wrongAt < 0 ? null : { n: INPUTS[wrongAt], status: status[wrongAt] };
+  const wrong = wrongAt < 0 ? null : INPUTS[wrongAt];
   const cell = (tag, n, attrs) => {
     const c = el(tag, { ...attrs, "data-input": String(n) });
     if (!ok[n]) c.classList.add("wrong");
@@ -196,8 +217,8 @@ function runAll(trace, verdict, next) {
       if (m.halted) return cell("td", n, { class: "mono", text: m.status === ACCEPTED ? "accept" : "reject" });
       return cell("td", n, { class: "mono", text: `AX=${m.ax}` });
     })));
-  rows.push(el("tr", { class: "end", "data-row": "result" }, el("th", { class: "step", text: "result" }), ...INPUTS.map((n) => cell("td", n, { text: endText(status[n]) }))));
-  rows.push(el("tr", { class: "end", "data-row": "want" }, el("th", { class: "step", text: "want" }), ...INPUTS.map((n) => cell("td", n, { text: accepts(p, n) ? "accept" : "reject" }))));
+  rows.push(el("tr", { class: "end", "data-row": "result" }, el("th", { class: "step", text: "result" }), ...INPUTS.map((n) => cell("td", n, { text: endText(p, code, n) }))));
+  rows.push(el("tr", { class: "end", "data-row": "want" }, el("th", { class: "step", text: "want" }), ...INPUTS.map((n) => cell("td", n, { text: wantOf(p, n) }))));
   trace.replaceChildren(el("table", {}, el("thead", {}, head), el("tbody", {}, ...rows)));
   const found = document.getElementById("found");
   if (wrong === null) {
@@ -211,8 +232,10 @@ function runAll(trace, verdict, next) {
     drawNav();
   } else {
     verdict.className = "verdict bad";
-    const should = accepts(p, wrong.n) ? "accepted" : "rejected";
-    verdict.textContent = `Input ${wrong.n} should be ${should}, and your program ${wrong.status === ACCEPTED ? "accepted" : "rejected"} it.`;
+    // A language puzzle's verdict says "and"; an AX puzzle's, where the two
+    // outcomes can be anything, a semicolon.
+    const joint = isAx(p) ? ";" : ", and";
+    verdict.textContent = `Input ${wrong} should ${shouldText(wantOf(p, wrong))}${joint} your program ${gaveText(outcome[wrong])}.`;
   }
 }
 
