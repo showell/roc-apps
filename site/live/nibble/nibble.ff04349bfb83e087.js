@@ -60,13 +60,15 @@ const CODE_EXPLAIN = "The machine code: each line's opcode in two bits, line 1 f
   + "Six lines make twelve bits, so there are 4,096 programs; read as a number, line 1 is the lowest digit in base 4.";
 
 // A button's tip: what its op does to each AX, from the machine itself (the
-// op alone on line 1): decr is "0->R, 1->0, 2->1, 3->2", R a reject, A an accept.
+// op alone on line 1): decr is "0->R, 1->0, 2->1, 3->2 (R rejects)"; the key
+// names only the letters the tip uses.
 function opTip(op) {
   const to = INPUTS.map((n) => {
     const m = unpack(machine.after(n, op, 1));
     return `${n}->${m.halted ? (m.status === ACCEPTED ? "A" : "R") : m.ax}`;
   });
-  return `${OPS[op].name}: ${to.join(", ")} (A accepts, R rejects)`;
+  const keys = [to.some((t) => t.endsWith("A")) ? "A accepts" : null, to.some((t) => t.endsWith("R")) ? "R rejects" : null].filter(Boolean);
+  return `${OPS[op].name}: ${to.join(", ")}${keys.length ? ` (${keys.join(", ")})` : ""}`;
 }
 
 // The program's twelve bits, line 1 first, and its number among the 4,096.
