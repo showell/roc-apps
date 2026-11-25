@@ -18,31 +18,32 @@ figure.scrolling pre { margin: 0; padding: 0.3rem 1rem 0.75rem; background: none
 <a class="book-name" href="index.html">A riff on Cook-Levin</a>
 <ol>
 <li><a href="introduction.html"><span class="number">1</span>Introduction</a></li>
-<li><a href="how-it-got-here.html"><span class="number">2</span>How it got here</a></li>
-<li><a href="the-machine.html"><span class="number">3</span>The machine</a></li>
-<li class="here"><a href="languages-and-machines.html"><span class="number">4</span>Languages and machines</a><ol class="sections"><li><a href="languages-and-machines.html#machines-that-decide">Machines that decide</a></li><li><a href="languages-and-machines.html#turings-machine">Turing&#39;s machine</a></li><li><a href="languages-and-machines.html#a-simple-example">A simple example</a></li><li><a href="languages-and-machines.html#when-deciding-is-cheap-and-when-checking-is">When deciding is cheap, and when checking is</a></li><li><a href="languages-and-machines.html#this-books-machine">This book&#39;s machine</a></li></ol></li>
-<li><a href="programs-as-languages.html"><span class="number">5</span>Programs as languages</a></li>
-<li><a href="nibble-the-puzzle-page.html"><span class="number">6</span>Nibble, the puzzle page</a></li>
-<li><a href="arithmetization.html"><span class="number">7</span>Arithmetization</a></li>
-<li><a href="why-composing-blew-up.html"><span class="number">8</span>Why composing blew up</a></li>
-<li><a href="six-steps-composed.html"><span class="number">9</span>Six steps composed</a></li>
-<li><a href="the-polynomials-in-full.html"><span class="number">10</span>The polynomials, in full</a></li>
-<li><a href="the-machine-as-a-circuit.html"><span class="number">11</span>The machine as a circuit</a></li>
-<li><a href="the-cook-levin-machine.html"><span class="number">12</span>The Cook-Levin machine</a></li>
-<li><a href="the-tableau-filled-in.html"><span class="number">13</span>The tableau, filled in</a></li>
-<li><a href="cook-levin-as-sat.html"><span class="number">14</span>Cook-Levin as SAT</a></li>
-<li><a href="the-solvers-work-in-full.html"><span class="number">15</span>The solver&#39;s work, in full</a></li>
-<li><a href="the-oracles.html"><span class="number">16</span>The oracles</a></li>
-<li><a href="the-roc-port.html"><span class="number">17</span>The Roc port</a></li>
-<li><a href="what-is-shale.html"><span class="number">18</span>What is Shale?</a></li>
-<li><a href="the-vm-in-shale.html"><span class="number">19</span>The VM in Shale</a></li>
-<li><a href="what-comes-next.html"><span class="number">20</span>What comes next</a></li>
+<li class="part">Part I: the toy</li><li><a href="the-machine.html"><span class="number">2</span>The machine</a></li>
+<li class="here"><a href="languages-and-machines.html"><span class="number">3</span>Languages and machines</a><ol class="sections"><li><a href="languages-and-machines.html#machines-that-decide">Machines that decide</a></li><li><a href="languages-and-machines.html#turings-machine">Turing&#39;s machine</a></li><li><a href="languages-and-machines.html#a-simple-example">A simple example</a></li><li><a href="languages-and-machines.html#this-books-machine">This book&#39;s machine</a></li></ol></li>
+<li><a href="programs-as-languages.html"><span class="number">4</span>Programs as languages</a></li>
+<li><a href="nibble-the-puzzle-page.html"><span class="number">5</span>Nibble, the puzzle page</a></li>
+<li><a href="the-machine-as-a-circuit.html"><span class="number">6</span>The machine as a circuit</a></li>
+<li class="part">Part II: Cook-Levin</li><li><a href="how-it-got-here.html"><span class="number">7</span>How it got here</a></li>
+<li><a href="p-np-and-cook-levin.html"><span class="number">8</span>P, NP and Cook-Levin</a></li>
+<li><a href="arithmetization.html"><span class="number">9</span>Arithmetization</a></li>
+<li><a href="why-composing-blew-up.html"><span class="number">10</span>Why composing blew up</a></li>
+<li><a href="six-steps-composed.html"><span class="number">11</span>Six steps composed</a></li>
+<li><a href="the-polynomials-in-full.html"><span class="number">12</span>The polynomials, in full</a></li>
+<li><a href="the-cook-levin-machine.html"><span class="number">13</span>The Cook-Levin machine</a></li>
+<li><a href="the-tableau-filled-in.html"><span class="number">14</span>The tableau, filled in</a></li>
+<li><a href="cook-levin-as-sat.html"><span class="number">15</span>Cook-Levin as SAT</a></li>
+<li><a href="the-solvers-work-in-full.html"><span class="number">16</span>The solver&#39;s work, in full</a></li>
+<li class="part">Part III: the cross-checks</li><li><a href="the-oracles.html"><span class="number">17</span>The oracles</a></li>
+<li><a href="the-roc-port.html"><span class="number">18</span>The Roc port</a></li>
+<li><a href="what-is-shale.html"><span class="number">19</span>What is Shale?</a></li>
+<li><a href="the-vm-in-shale.html"><span class="number">20</span>The VM in Shale</a></li>
+<li><a href="what-comes-next.html"><span class="number">21</span>What comes next</a></li>
 </ol>
 </nav>
 <main>
 <p class="book-bar"><a href="index.html">A riff on Cook-Levin</a> <a href="#chapters">Chapters</a></p>
 <article>
-<p class="chapter-number">Chapter 4</p>
+<p class="chapter-number">Chapter 3</p>
 <h1 id="languages-and-machines">Languages and machines</h1>
 <p>In computer science a <em>language</em> is a set of strings. Pick an alphabet, say the digits 0 to 9, and any set of strings over it is a language: the decimal numerals of the primes, the palindromes, the strings that are valid Roc programs. A language is the cleanest way to state a decision question. &quot;Is 91 prime?&quot; becomes &quot;is the string <code>91</code> in the language of primes?&quot;</p>
 <h2 id="machines-that-decide">Machines that decide <a class="section-link" href="#machines-that-decide" aria-label="Link to this section">§</a></h2>
@@ -152,10 +153,8 @@ figure.scrolling pre { margin: 0; padding: 0.3rem 1rem 0.75rem; background: none
 </table>
 <p>And on <code>ab</code>: <code>even</code> reads a and moves to <code>odd</code>, <code>odd</code> reads b and stays <code>odd</code>, <code>odd</code> reads the blank and rejects. Every run takes one step per symbol and then halts, so the machine decides the language: it accepts exactly the strings with an even count of a&#39;s.</p>
 <p>This machine only reads and moves right, so it is also a finite automaton; Turing&#39;s machines earn their tape on harder languages, such as the strings of a&#39;s followed by the same number of b&#39;s, where the machine writes marks on the tape to pair each a with a b. The idea carries over unchanged: states, a rule table, a run that ends in accept or reject, and a language made of the strings accepted.</p>
-<h2 id="when-deciding-is-cheap-and-when-checking-is">When deciding is cheap, and when checking is <a class="section-link" href="#when-deciding-is-cheap-and-when-checking-is" aria-label="Link to this section">§</a></h2>
-<p>Decidable languages differ in cost. P is the class decided in time polynomial in the input&#39;s length. NP is the class whose members have short certificates that a machine can check in polynomial time: a formula is in SAT, the language of satisfiable Boolean formulas, when an assignment makes it true, and checking an assignment is quick. In 1971 Stephen Cook, in &quot;The Complexity of Theorem-Proving Procedures&quot;, and independently Leonid Levin, published in 1973, showed that SAT is as hard as anything in NP. Their proof takes the checking machine, which runs for a polynomial number of steps, and writes each step of its run as clauses: the whole run becomes one formula, satisfiable exactly when a certificate exists.</p>
 <h2 id="this-books-machine">This book&#39;s machine <a class="section-link" href="#this-books-machine" aria-label="Link to this section">§</a></h2>
-<p>The machine here is Turing&#39;s idea at its smallest. Its tape is one 2-bit register, its inputs are the four strings 0, 1, 2 and 3, and every run halts within six steps, so every question about it is decidable by trying everything. A language is a subset of {0, 1, 2, 3}, and there are 16. A program decides exactly one of them, the set of inputs it accepts. <a class="chapter-link" href="programs-as-languages.html">“Programs as languages”</a> asks which programs decide which languages, by running all of them. <a class="chapter-link" href="cook-levin-as-sat.html">“Cook-Levin as SAT”</a> does what Cook and Levin did: it writes the machine&#39;s six steps as clauses, so a puzzle&#39;s answer becomes a satisfying assignment.</p>
+<p>The machine here is Turing&#39;s idea at its smallest. Its tape is one 2-bit register, its inputs are the four strings 0, 1, 2 and 3, and every run halts within six steps, so every question about it is decidable by trying everything. A language is a subset of {0, 1, 2, 3}, and there are 16. A program decides exactly one of them, the set of inputs it accepts. <a class="chapter-link" href="programs-as-languages.html">“Programs as languages”</a> asks which programs decide which languages, by running all of them. The second part of the book asks what deciding costs when trying everything is out of reach, the question Cook and Levin answered.</p>
 
 </article>
 <nav class="turn-page" aria-label="Previous and next chapter">

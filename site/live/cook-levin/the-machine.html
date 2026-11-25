@@ -18,33 +18,64 @@ figure.scrolling pre { margin: 0; padding: 0.3rem 1rem 0.75rem; background: none
 <a class="book-name" href="index.html">A riff on Cook-Levin</a>
 <ol>
 <li><a href="introduction.html"><span class="number">1</span>Introduction</a></li>
-<li><a href="how-it-got-here.html"><span class="number">2</span>How it got here</a></li>
-<li class="here"><a href="the-machine.html"><span class="number">3</span>The machine</a><ol class="sections"><li><a href="the-machine.html#four-opcodes">Four opcodes</a></li><li><a href="the-machine.html#counting">Counting</a></li></ol></li>
-<li><a href="languages-and-machines.html"><span class="number">4</span>Languages and machines</a></li>
-<li><a href="programs-as-languages.html"><span class="number">5</span>Programs as languages</a></li>
-<li><a href="nibble-the-puzzle-page.html"><span class="number">6</span>Nibble, the puzzle page</a></li>
-<li><a href="arithmetization.html"><span class="number">7</span>Arithmetization</a></li>
-<li><a href="why-composing-blew-up.html"><span class="number">8</span>Why composing blew up</a></li>
-<li><a href="six-steps-composed.html"><span class="number">9</span>Six steps composed</a></li>
-<li><a href="the-polynomials-in-full.html"><span class="number">10</span>The polynomials, in full</a></li>
-<li><a href="the-machine-as-a-circuit.html"><span class="number">11</span>The machine as a circuit</a></li>
-<li><a href="the-cook-levin-machine.html"><span class="number">12</span>The Cook-Levin machine</a></li>
-<li><a href="the-tableau-filled-in.html"><span class="number">13</span>The tableau, filled in</a></li>
-<li><a href="cook-levin-as-sat.html"><span class="number">14</span>Cook-Levin as SAT</a></li>
-<li><a href="the-solvers-work-in-full.html"><span class="number">15</span>The solver&#39;s work, in full</a></li>
-<li><a href="the-oracles.html"><span class="number">16</span>The oracles</a></li>
-<li><a href="the-roc-port.html"><span class="number">17</span>The Roc port</a></li>
-<li><a href="what-is-shale.html"><span class="number">18</span>What is Shale?</a></li>
-<li><a href="the-vm-in-shale.html"><span class="number">19</span>The VM in Shale</a></li>
-<li><a href="what-comes-next.html"><span class="number">20</span>What comes next</a></li>
+<li class="part">Part I: the toy</li><li class="here"><a href="the-machine.html"><span class="number">2</span>The machine</a><ol class="sections"><li><a href="the-machine.html#steves-spec">Steve&#39;s spec</a></li><li><a href="the-machine.html#four-opcodes">Four opcodes</a></li><li><a href="the-machine.html#counting">Counting</a></li></ol></li>
+<li><a href="languages-and-machines.html"><span class="number">3</span>Languages and machines</a></li>
+<li><a href="programs-as-languages.html"><span class="number">4</span>Programs as languages</a></li>
+<li><a href="nibble-the-puzzle-page.html"><span class="number">5</span>Nibble, the puzzle page</a></li>
+<li><a href="the-machine-as-a-circuit.html"><span class="number">6</span>The machine as a circuit</a></li>
+<li class="part">Part II: Cook-Levin</li><li><a href="how-it-got-here.html"><span class="number">7</span>How it got here</a></li>
+<li><a href="p-np-and-cook-levin.html"><span class="number">8</span>P, NP and Cook-Levin</a></li>
+<li><a href="arithmetization.html"><span class="number">9</span>Arithmetization</a></li>
+<li><a href="why-composing-blew-up.html"><span class="number">10</span>Why composing blew up</a></li>
+<li><a href="six-steps-composed.html"><span class="number">11</span>Six steps composed</a></li>
+<li><a href="the-polynomials-in-full.html"><span class="number">12</span>The polynomials, in full</a></li>
+<li><a href="the-cook-levin-machine.html"><span class="number">13</span>The Cook-Levin machine</a></li>
+<li><a href="the-tableau-filled-in.html"><span class="number">14</span>The tableau, filled in</a></li>
+<li><a href="cook-levin-as-sat.html"><span class="number">15</span>Cook-Levin as SAT</a></li>
+<li><a href="the-solvers-work-in-full.html"><span class="number">16</span>The solver&#39;s work, in full</a></li>
+<li class="part">Part III: the cross-checks</li><li><a href="the-oracles.html"><span class="number">17</span>The oracles</a></li>
+<li><a href="the-roc-port.html"><span class="number">18</span>The Roc port</a></li>
+<li><a href="what-is-shale.html"><span class="number">19</span>What is Shale?</a></li>
+<li><a href="the-vm-in-shale.html"><span class="number">20</span>The VM in Shale</a></li>
+<li><a href="what-comes-next.html"><span class="number">21</span>What comes next</a></li>
 </ol>
 </nav>
 <main>
 <p class="book-bar"><a href="index.html">A riff on Cook-Levin</a> <a href="#chapters">Chapters</a></p>
 <article>
-<p class="chapter-number">Chapter 3</p>
+<p class="chapter-number">Chapter 2</p>
 <h1 id="the-machine">The machine</h1>
 <p>The machine holds one register, <code>AX</code>, of 2 bits, so <code>AX</code> is 0, 1, 2 or 3. A run starts with <code>AX</code> set to the input. Its program is six instructions, each one of four opcodes, and the machine&#39;s assembly language is called Nibble.</p>
+<h2 id="steves-spec">Steve&#39;s spec <a class="section-link" href="#steves-spec" aria-label="Link to this section">§</a></h2>
+<p>The toy&#39;s plain-English spec is the docstring at the top of Steve&#39;s <code>virtual_machine.py</code> (<a href="https://github.com/showell/virtual-machine/blob/94c3d31/virtual_machine.py#L10-L35">lines 10 to 35</a>, at commit <a href="https://github.com/showell/virtual-machine/commit/94c3d31">94c3d31</a>), quoted as it stands:</p>
+<pre><code class="language-text">    Every program is a sequence of these opcodes (aka instructions):
+
+        00 (nada):
+            (do nothing)
+
+        01 (zero):
+            AX = 3 -&gt; ignore and continue
+            AX = 2 -&gt; ignore and continue
+            AX = 1 -&gt; ignore and continue
+            AX = 0 -&gt; halt and accept input
+
+        10 (decr):
+            AX = 3 -&gt; AX = 2 and continue
+            AX = 2 -&gt; AX = 1 and continue
+            AX = 1 -&gt; AX = 0 and continue
+            AX = 0 -&gt; halt and reject input
+
+        11 (mod2):
+            AX = 3 -&gt; AX = 1
+            AX = 2 -&gt; AX = 0
+            AX = 1 -&gt; AX = 1
+            AX = 0 -&gt; AX = 0
+
+    Every program must include exactly six instructions.  If at the end
+    of that program you have not accepted the input, then the input is
+    implicitly rejected.
+</code></pre>
+<p>Every behaviour of the machine is in those 26 lines. The rest of this part only runs them.</p>
 <h2 id="four-opcodes">Four opcodes <a class="section-link" href="#four-opcodes" aria-label="Link to this section">§</a></h2>
 <p><code>src/vm.c</code> holds the rule, as <code>run_progam</code> and its one-step helper:</p>
 <figure class="listing"><figcaption>src/vm.c, an excerpt</figcaption><pre><code class="language-c">Machine <span class="syn-name">vm_step</span>(Machine m, Op op) {
@@ -80,7 +111,7 @@ figure.scrolling pre { margin: 0; padding: 0.3rem 1rem 0.75rem; background: none
 
 </article>
 <nav class="turn-page" aria-label="Previous and next chapter">
-<a rel="prev" href="how-it-got-here.html"><small>Previous</small>How it got here</a>
+<a rel="prev" href="introduction.html"><small>Previous</small>Introduction</a>
 <a rel="next" href="languages-and-machines.html"><small>Next</small>Languages and machines</a>
 </nav>
 </main>
