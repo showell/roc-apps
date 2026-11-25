@@ -6,15 +6,19 @@
 ##     {{lines PATH from "A" to "B"}}    the lines from the one holding A
 ##                                       through the one holding B, each text
 ##                                       in the file exactly once;
-##     {{function PATH NAME}}            one top-level definition of a Shale or
-##                                       a Roc file, with the comment lines
-##                                       right above it.
+##     {{function PATH NAME}}            one definition of a Shale or a Roc
+##                                       file, with the comment lines right
+##                                       above it.
 ##
 ## A Shale function runs from its `function NAME(` line through the first line
 ## that is exactly `end`. A Roc definition starts at the first line that begins
 ## `NAME :` or `NAME =`, and runs on through every line indented under it, a
 ## closing bracket at the line's start, and its `NAME =` after a signature;
-## a blank line between those stays in it.
+## a blank line between those stays in it. A Roc file with no such line at its
+## top level is looked in one tab deeper, where a type module's block holds its
+## functions (`Machine :: [].{`): the same rule, every line read after its
+## first tab. A name defined at both levels is the top level's. The block's
+## tab is taken off the quote, so it reads as top-level code does.
 ##
 ## Each becomes a fence with the path in its title, its language from the
 ## path's extension. The path is the book folder's, read through the
@@ -335,7 +339,9 @@ selection = |directive, file_lines| match directive {
 				_ => Err("a {{function}} include quotes a Shale or a Roc file, and ${path} is neither")
 			}?
 		Ok({
-			quoted: file_lines.sublist({ start: span.first, len: span.last - span.first + 1 }),
+			quoted: file_lines
+				.sublist({ start: span.first, len: span.last - span.first + 1 })
+				.map(|line| line.drop_prefix(span.indent)),
 			label: "${path}, the function ${name}",
 		})
 	}
@@ -344,34 +350,45 @@ selection = |directive, file_lines| match directive {
 
 ## The first and last index of a Shale function's lines: the comment lines
 ## right above `function NAME(`, through the first line that is `end`.
-shale_function_span : List(Str), Str -> Try({ first : U64, last : U64 }, Str)
+shale_function_span : List(Str), Str -> Try({ first : U64, last : U64, indent : Str }, Str)
 shale_function_span = |file_lines, name| {
 	start = file_lines.find_first_index(|line| line.starts_with("function ${name}(")) ? |_| "there is no top-level function ${name}"
 	ending = file_lines.drop_first(start).find_first_index(|line| line == "end") ? |_| "the function ${name} has no `end` at the start of a line"
-	Ok({ first: start - comments_above(file_lines, { start, opening: "--" }), last: start + ending })
+	Ok({ first: start - comments_above(file_lines, { start, opening: "--" }), last: start + ending, indent: "" })
 }
 
-## The first and last index of a Roc definition's lines: the comment lines
-## right above its first line, through the last line that belongs to it.
-roc_definition_span : List(Str), Str -> Try({ first : U64, last : U64 }, Str)
-roc_definition_span = |file_lines, name| {
-	is_head = |line| line.starts_with("${name} :") or line.starts_with("${name} =")
-	start = file_lines.find_first_index(is_head) ? |_| "there is no top-level definition ${name}"
+## The first and last index of a Roc definition's lines, and the indent its
+## head stands at: the top level's, else one tab into a block.
+roc_definition_span : List(Str), Str -> Try({ first : U64, last : U64, indent : Str }, Str)
+roc_definition_span = |file_lines, name|
+	match roc_definition_span_at(file_lines, { name, indent: "" }) {
+		Ok(span) => Ok(span)
+		Err(NotFound) =>
+			roc_definition_span_at(file_lines, { name, indent: "\t" })
+				.map_err(|_| "there is no definition ${name} at the top level or one tab into a block")
+	}
+
+## A Roc definition whose head stands at `indent`: the comment lines right
+## above its first line, through the last line that belongs to it.
+roc_definition_span_at : List(Str), { name : Str, indent : Str } -> Try({ first : U64, last : U64, indent : Str }, [NotFound])
+roc_definition_span_at = |file_lines, { name, indent }| {
+	is_head = |line| line.starts_with("${indent}${name} :") or line.starts_with("${indent}${name} =")
+	start = file_lines.find_first_index(is_head)?
 	var $last = start
 	var $at = start + 1
 	var $going = Bool.True
 	while $going and $at < file_lines.len() {
-		line = file_lines.get($at) ?? crash "Includes.roc_definition_span: the index is below the length"
+		line = file_lines.get($at) ?? crash "Includes.roc_definition_span_at: the index is below the length"
 		if line.trim().is_empty() {
 			$at = $at + 1
-		} else if is_roc_continuation(line, name) {
+		} else if line.starts_with(indent) and is_roc_continuation(line.drop_prefix(indent), name) {
 			$last = $at
 			$at = $at + 1
 		} else {
 			$going = Bool.False
 		}
 	}
-	Ok({ first: start - comments_above(file_lines, { start, opening: "#" }), last: $last })
+	Ok({ first: start - comments_above(file_lines, { start, opening: "${indent}#" }), last: $last, indent })
 }
 
 ## Whether a line goes on a Roc definition above it: indented under it, a
@@ -455,6 +472,7 @@ sample_files = [
 	{ path: "notes", text: Ok("plain") },
 	{ path: "tools/a.shale", text: Ok("x = 1\n-- Says hello.\n-- Twice.\nfunction greet(x)\n  return x\nend\nfunction greeting()\nend\nfunction open()\n") },
 	{ path: "lib/A.roc", text: Ok("x = 1\n\n## Adds one.\n# Kept.\nadd_one : U64 -> U64\nadd_one = |n| {\n\tm = n\n\n\tm + 1\n}\n\nexpect add_one(1) == 2\ndouble = |n| n * 2\nnext = 3\n") },
+	{ path: "lib/B.roc", text: Ok("B := [].{\n\t## Pushes one.\n\t# Kept.\n\tpushed : U64 -> U64\n\tpushed = |n| {\n\t\tm = n\n\n\t\tm + 1\n\t}\n\n\tboth = 1\n\tsibling = 3\n\t\tdeep = 4\n}\n\nboth = 0\n") },
 	{ path: "gone.txt", text: Err(NotFound) },
 	{ path: "up.txt", text: Err(OutsideTheBook) },
 ]
@@ -669,7 +687,16 @@ expect
 		== Err([
 			"book.md:1: {{function tools/a.shale gone}}: there is no top-level function gone",
 			"book.md:2: {{function tools/a.shale open}}: the function open has no `end` at the start of a line",
-			"book.md:3: {{function lib/A.roc gone}}: there is no top-level definition gone",
+			"book.md:3: {{function lib/A.roc gone}}: there is no definition gone at the top level or one tab into a block",
 			"book.md:4: {{function notes x}}: a {{function}} include quotes a Shale or a Roc file, and notes is neither",
 			"book.md:5: {{function gone.txt x}}: gone.txt is not there",
 		])
+expect
+	expand_sample("{{function lib/B.roc pushed}}\n")
+		== Ok("```roc lib/B.roc, the function pushed\n## Pushes one.\n# Kept.\npushed : U64 -> U64\npushed = |n| {\n\tm = n\n\n\tm + 1\n}\n```\n")
+expect
+	expand_sample("{{function lib/B.roc sibling}}\n{{function lib/B.roc both}}\n{{function lib/B.roc deep}}\n")
+		== Err(["book.md:3: {{function lib/B.roc deep}}: there is no definition deep at the top level or one tab into a block"])
+expect
+	expand_sample("{{function lib/B.roc sibling}}\n{{function lib/B.roc both}}\n")
+		== Ok("```roc lib/B.roc, the function sibling\nsibling = 3\n\tdeep = 4\n```\n```roc lib/B.roc, the function both\nboth = 0\n```\n")
