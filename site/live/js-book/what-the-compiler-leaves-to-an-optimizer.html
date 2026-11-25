@@ -1,0 +1,63 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>What the compiler leaves to an optimizer · A JavaScript Interpreter in Roc</title>
+<link rel="icon" href="data:,">
+<link rel="stylesheet" href="book.css">
+<script src="copy.js" defer></script>
+</head>
+<body class="chapter">
+<nav class="book-nav" id="chapters" aria-label="Chapters">
+<a class="book-name" href="index.html">A JavaScript Interpreter in Roc</a>
+<ol>
+<li><a href="introduction.html"><span class="number">1</span>Introduction</a></li>
+<li><a href="motivation.html"><span class="number">2</span>Motivation</a></li>
+<li><a href="how-it-got-here.html"><span class="number">3</span>How it got here</a></li>
+<li><a href="the-pipeline-and-the-machine.html"><span class="number">4</span>The pipeline and the machine</a></li>
+<li><a href="memory-strategy.html"><span class="number">5</span>Memory strategy</a></li>
+<li><a href="the-garbage-collector.html"><span class="number">6</span>The garbage collector</a></li>
+<li><a href="javascripts-rules-for-values.html"><span class="number">7</span>JavaScript&#39;s rules for values</a></li>
+<li><a href="a-canvas-in-the-browser.html"><span class="number">8</span>A canvas in the browser</a></li>
+<li><a href="what-copies.html"><span class="number">9</span>What copies</a></li>
+<li><a href="dev-and-release-builds-disagree.html"><span class="number">10</span>Dev and release builds disagree</a></li>
+<li><a href="build-times.html"><span class="number">11</span>Build times</a></li>
+<li><a href="how-it-is-tested.html"><span class="number">12</span>How it is tested</a></li>
+<li><a href="limitations.html"><span class="number">13</span>Limitations</a></li>
+<li><a href="the-compiler-to-x86-64.html"><span class="number">14</span>The compiler to x86-64</a></li>
+<li><a href="why-a-compiler-suits-roc.html"><span class="number">15</span>Why a compiler suits Roc</a></li>
+<li><a href="the-compiler-against-node.html"><span class="number">16</span>The compiler against node</a></li>
+<li class="here"><a href="what-the-compiler-leaves-to-an-optimizer.html"><span class="number">17</span>What the compiler leaves to an optimizer</a><ol class="sections"><li><a href="what-the-compiler-leaves-to-an-optimizer.html#three-ways-all-from-knowing">Three ways, all from knowing</a></li><li><a href="what-the-compiler-leaves-to-an-optimizer.html#the-plain-parts">The plain parts</a></li><li><a href="what-the-compiler-leaves-to-an-optimizer.html#where-an-optimizer-would-pay">Where an optimizer would pay</a></li><li><a href="what-the-compiler-leaves-to-an-optimizer.html#what-comes-next">What comes next</a></li></ol></li>
+<li><a href="appendix-a-the-playgrounds-samples.html">Appendix A: The playground&#39;s samples</a></li>
+<li><a href="appendix-b-the-tested-programs.html">Appendix B: The tested programs</a></li>
+</ol>
+</nav>
+<main>
+<p class="book-bar"><a href="index.html">A JavaScript Interpreter in Roc</a> <a href="#chapters">Chapters</a></p>
+<article>
+<p class="chapter-number">Chapter 17</p>
+<h1 id="what-the-compiler-leaves-to-an-optimizer">What the compiler leaves to an optimizer</h1>
+<p>The compiler&#39;s code is plain, and <a class="chapter-link" href="the-compiler-against-node.html">“The compiler against node”</a> measures what that costs against V8. This chapter says what the compiler does to make code cheaper, what it leaves undone, and what comes next.</p>
+<h2 id="three-ways-all-from-knowing">Three ways, all from knowing <a class="section-link" href="#three-ways-all-from-knowing" aria-label="Link to this section">§</a></h2>
+<p>The compiler makes code cheaper in three ways, and all three come from knowing something before the run (<code>x86/roc/Lowering.roc</code>&#39;s header, <code>x86/README.md</code>):</p>
+<ul>
+<li>a known kind skips the tag&#39;s test, so two known numbers add with one <code>addsd</code>;</li>
+<li>a function known by its code is called directly, and keeps the parameter kinds its calls give it;</li>
+<li>a function known before the program runs takes zero bytes in a slot, and becomes a closure record only where it is used as a value.</li>
+</ul>
+<h2 id="the-plain-parts">The plain parts <a class="section-link" href="#the-plain-parts" aria-label="Link to this section">§</a></h2>
+<p>Everything else is done the plainest way. Each function&#39;s frame is fixed: every slot, and every place on the bytecode&#39;s stack, has its own address below <code>rbp</code>, and an instruction loads its operands from there into <code>rax</code> or <code>xmm0</code>, works, and stores the result back. Each bytecode instruction becomes its own machine code, in order, and a call stays a call. A search of <code>x86/roc/</code> on 2026-11-25 finds zero mentions of inlining, constant folding, peephole passes or register allocation.</p>
+<h2 id="where-an-optimizer-would-pay">Where an optimizer would pay <a class="section-link" href="#where-an-optimizer-would-pay" aria-label="Link to this section">§</a></h2>
+<p>An optimizer would pay most on loops. The loops program has the widest gap, 6 to 8 times. A guess, unmeasured, as <code>x86/BENCH.md</code> gives it: a tight loop over a local array is where V8&#39;s registers and small integers help most, and where the executable&#39;s trips through memory cost most. A second guess, also unmeasured: loops and collatz both use <code>%</code>, which the executable lowers to <code>idiv</code>, one of the processor&#39;s slower instructions. The README&#39;s milestone 6, register allocation and type specialization for long numeric loops, is aimed at the first.</p>
+<h2 id="what-comes-next">What comes next <a class="section-link" href="#what-comes-next" aria-label="Link to this section">§</a></h2>
+<p>The compiler&#39;s own milestones say what follows (<code>x86/README.md</code>). Classes come first: four corpus programs stop at a class, and the parser already writes each class as plain functions, so the work is the <code>NewInstance</code> and <code>this</code> cells the VM&#39;s bytecode uses. Then milestone 4, the runtime in the subset: <code>console.log</code>&#39;s formatting, Map and Set, and number printing, which three corpus programs wait on (02, 30 and 54), written in the JavaScript subset and compiled by this compiler. Then milestone 5, the collector, with the shadow stack as its roots, so a program can outgrow the 1 GiB heap and the whole corpus can be held to node. Then milestone 6, the register allocation and type specialization the loops above ask for.</p>
+
+</article>
+<nav class="turn-page" aria-label="Previous and next chapter">
+<a rel="prev" href="the-compiler-against-node.html"><small>Previous</small>The compiler against node</a>
+<a rel="next" href="appendix-a-the-playgrounds-samples.html"><small>Next</small>Appendix A: The playground&#39;s samples</a>
+</nav>
+</main>
+</body>
+</html>

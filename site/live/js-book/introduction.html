@@ -25,6 +25,10 @@
 <li><a href="build-times.html"><span class="number">11</span>Build times</a></li>
 <li><a href="how-it-is-tested.html"><span class="number">12</span>How it is tested</a></li>
 <li><a href="limitations.html"><span class="number">13</span>Limitations</a></li>
+<li><a href="the-compiler-to-x86-64.html"><span class="number">14</span>The compiler to x86-64</a></li>
+<li><a href="why-a-compiler-suits-roc.html"><span class="number">15</span>Why a compiler suits Roc</a></li>
+<li><a href="the-compiler-against-node.html"><span class="number">16</span>The compiler against node</a></li>
+<li><a href="what-the-compiler-leaves-to-an-optimizer.html"><span class="number">17</span>What the compiler leaves to an optimizer</a></li>
 <li><a href="appendix-a-the-playgrounds-samples.html">Appendix A: The playground&#39;s samples</a></li>
 <li><a href="appendix-b-the-tested-programs.html">Appendix B: The tested programs</a></li>
 </ol>
@@ -35,7 +39,7 @@
 <p class="chapter-number">Chapter 1</p>
 <h1 id="introduction">Introduction</h1>
 <p>The <code>js/</code> folder of roc-js-interpreter holds an interpreter for a subset of JavaScript, written in <a href="https://www.roc-lang.org/">Roc</a>. It runs as a command-line program, <code>js-vm</code>, and in a browser playground at <a href="https://roc.lynrummy.com/js/">roc.lynrummy.com/js/</a>, where a program draws on a canvas as it runs and a memory view shows its heap over time.</p>
-<p>This book is for a reader who knows programming and is new to this codebase, and above all for one curious about writing a language&#39;s runtime in a language that has only values. AI coding agents (Claude) wrote the code, with human supervision, over two days, 2026-11-23 and 2026-11-24.</p>
+<p>This book is for a reader who knows programming and is new to this codebase, and above all for one curious about writing a language&#39;s runtime in a language that has only values. AI coding agents (Claude) wrote the code, with human supervision, over three days, 2026-11-23 to 2026-11-25.</p>
 <h2 id="what-it-runs">What it runs <a class="section-link" href="#what-it-runs" aria-label="Link to this section">§</a></h2>
 <p>The subset is real JavaScript: numbers, strings, arrays, objects, closures, <code>let</code> and <code>const</code>, <code>try</code> and <code>finally</code>, <code>switch</code>, destructuring, optional chains, spread, Maps and Sets, and the timers. Classes run too, as syntax sugar the parser writes as plain functions (<code>0b6d8deb</code>). <code>this</code> outside a class&#39;s code, <code>new</code> on a program&#39;s own function and prototypes stay outside it, and <code>js/README.md</code> says why: each would make every call carry a receiver or every property read walk a prototype chain.</p>
 <p>Here is one of the playground&#39;s samples, a turtle drawing a spiral:</p>
@@ -57,7 +61,7 @@ console.log(<span class="syn-string">&quot;the turtle ends at heading&quot;</spa
 <p>Every program in the subset is real JavaScript, so node is a free oracle. <code>js/oracle.shale</code> runs each program in <code>js/tests/</code> through node 22 and through <code>js-vm</code>, and the two transcripts, exit codes included, must match byte for byte. A program outside the subset gets an error that names what it used: each program in <code>js/tests/refused/</code> names, on its first line, the message <code>js-vm</code> must end with. The corpus grew from 32 programs and 25 refusals on the first day (<code>278631d8</code>) to 61 and 76 (<code>js/README.md</code>, its status of 2026-11-24). Program 54, <code>54-big-daddy.js</code>, is a day in a small city that uses every feature of the subset, and it is also the playground&#39;s &quot;all features&quot; sample (<code>7d6a472f</code>, <code>cc904c2a</code>).</p>
 <h2 id="where-the-numbers-come-from">Where the numbers come from <a class="section-link" href="#where-the-numbers-come-from" aria-label="Link to this section">§</a></h2>
 <p>The project began as a folder of <a href="https://github.com/showell/roc-apps">roc-apps</a> and moved to its own repository with its history on 2026-11-24, so a commit from before then may name a file that only roc-apps holds. Each number in this book comes from a commit message, cited by its short hash (a commit of roc-js-interpreter, or one of roc-apps&#39; linked there), from <code>js/README.md</code>, or from another file of the repository, named where it is used. Code is quoted from the repository as it stands when the book is built.</p>
-<p><a class="chapter-link" href="how-it-got-here.html">“How it got here”</a> is the project&#39;s short history. The design starts at <a class="chapter-link" href="the-pipeline-and-the-machine.html">“The pipeline and the machine”</a>.</p>
+<p><a class="chapter-link" href="how-it-got-here.html">“How it got here”</a> is the project&#39;s short history. The design starts at <a class="chapter-link" href="the-pipeline-and-the-machine.html">“The pipeline and the machine”</a>. The compiler to x86-64 has four chapters of its own, from <a class="chapter-link" href="the-compiler-to-x86-64.html">“The compiler to x86-64”</a> to <a class="chapter-link" href="what-the-compiler-leaves-to-an-optimizer.html">“What the compiler leaves to an optimizer”</a>.</p>
 
 </article>
 <nav class="turn-page" aria-label="Previous and next chapter">
