@@ -1,0 +1,202 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>The tableau, filled in · A riff on Cook-Levin</title>
+<link rel="icon" href="data:,">
+<link rel="stylesheet" href="book.css">
+<script src="copy.js" defer></script>
+<style>
+figure.scrolling { margin: 1rem 0; background: var(--shade); border-radius: 4px; }
+figure.scrolling figcaption { padding: 0.5rem 1rem 0; color: var(--quiet); font: 0.72rem/1.5 var(--mono); }
+figure.scrolling pre { margin: 0; padding: 0.3rem 1rem 0.75rem; background: none; max-height: 16rem; overflow-x: hidden; overflow-y: auto; white-space: pre-wrap; overflow-wrap: anywhere; word-break: break-all; font-size: 0.72rem; }
+@media (max-width: 700px) { figure.scrolling { margin-inline: -0.5rem; } figure.scrolling figcaption, figure.scrolling pre { padding-inline: 0.6rem; } }
+</style></head>
+<body class="chapter">
+<nav class="book-nav" id="chapters" aria-label="Chapters">
+<a class="book-name" href="index.html">A riff on Cook-Levin</a>
+<ol>
+<li><a href="introduction.html"><span class="number">1</span>Introduction</a></li>
+<li><a href="how-it-got-here.html"><span class="number">2</span>How it got here</a></li>
+<li><a href="the-machine.html"><span class="number">3</span>The machine</a></li>
+<li><a href="languages-and-machines.html"><span class="number">4</span>Languages and machines</a></li>
+<li><a href="programs-as-languages.html"><span class="number">5</span>Programs as languages</a></li>
+<li><a href="nibble-the-puzzle-page.html"><span class="number">6</span>Nibble, the puzzle page</a></li>
+<li><a href="arithmetization.html"><span class="number">7</span>Arithmetization</a></li>
+<li><a href="why-composing-blew-up.html"><span class="number">8</span>Why composing blew up</a></li>
+<li><a href="six-steps-composed.html"><span class="number">9</span>Six steps composed</a></li>
+<li><a href="the-polynomials-in-full.html"><span class="number">10</span>The polynomials, in full</a></li>
+<li><a href="the-machine-as-a-circuit.html"><span class="number">11</span>The machine as a circuit</a></li>
+<li><a href="the-cook-levin-machine.html"><span class="number">12</span>The Cook-Levin machine</a></li>
+<li class="here"><a href="the-tableau-filled-in.html"><span class="number">13</span>The tableau, filled in</a><ol class="sections"><li><a href="the-tableau-filled-in.html#the-tableau-of-one-program">The tableau of one program</a></li><li><a href="the-tableau-filled-in.html#the-tableau-of-every-program">The tableau of every program</a></li></ol></li>
+<li><a href="cook-levin-as-sat.html"><span class="number">14</span>Cook-Levin as SAT</a></li>
+<li><a href="the-solvers-work-in-full.html"><span class="number">15</span>The solver&#39;s work, in full</a></li>
+<li><a href="the-oracles.html"><span class="number">16</span>The oracles</a></li>
+<li><a href="the-roc-port.html"><span class="number">17</span>The Roc port</a></li>
+<li><a href="what-is-shale.html"><span class="number">18</span>What is Shale?</a></li>
+<li><a href="the-vm-in-shale.html"><span class="number">19</span>The VM in Shale</a></li>
+<li><a href="what-comes-next.html"><span class="number">20</span>What comes next</a></li>
+</ol>
+</nav>
+<main>
+<p class="book-bar"><a href="index.html">A riff on Cook-Levin</a> <a href="#chapters">Chapters</a></p>
+<article>
+<p class="chapter-number">Chapter 13</p>
+<h1 id="the-tableau-filled-in">The tableau, filled in</h1>
+<p><a class="chapter-link" href="the-cook-levin-machine.html">“The Cook-Levin machine”</a> describes Cook&#39;s grid; this chapter prints it, once for one program and once for every program at once.</p>
+<h2 id="the-tableau-of-one-program">The tableau of one program <a class="section-link" href="#the-tableau-of-one-program" aria-label="Link to this section">§</a></h2>
+<p>Here is the tableau filled in for <code>is_not_tiny</code>&#39;s answer, <code>decr, mod2, zero, decr, zero, nada</code>: each cell is the state after that row&#39;s line, from the stepper&#39;s compiled step (<code>src/tableau_main.c</code>, which the book&#39;s build runs and holds these tables to).</p>
+<table>
+<thead>
+<tr>
+<th>step</th>
+<th>line</th>
+<th>core 0</th>
+<th>core 1</th>
+<th>core 2</th>
+<th>core 3</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>start</td>
+<td></td>
+<td>AX=0</td>
+<td>AX=1</td>
+<td>AX=2</td>
+<td>AX=3</td>
+</tr>
+<tr>
+<td>1</td>
+<td><code>decr</code></td>
+<td>AX=0, halted</td>
+<td>AX=0</td>
+<td>AX=1</td>
+<td>AX=2</td>
+</tr>
+<tr>
+<td>2</td>
+<td><code>mod2</code></td>
+<td>AX=0, halted</td>
+<td>AX=0</td>
+<td>AX=1</td>
+<td>AX=0</td>
+</tr>
+<tr>
+<td>3</td>
+<td><code>zero</code></td>
+<td>AX=0, halted</td>
+<td>AX=0, accepted</td>
+<td>AX=1</td>
+<td>AX=0, accepted</td>
+</tr>
+<tr>
+<td>4</td>
+<td><code>decr</code></td>
+<td>AX=0, halted</td>
+<td>AX=0, accepted, halted</td>
+<td>AX=0</td>
+<td>AX=0, accepted, halted</td>
+</tr>
+<tr>
+<td>5</td>
+<td><code>zero</code></td>
+<td>AX=0, halted</td>
+<td>AX=0, accepted, halted</td>
+<td>AX=0, accepted</td>
+<td>AX=0, accepted, halted</td>
+</tr>
+<tr>
+<td>6</td>
+<td><code>nada</code></td>
+<td>AX=0, halted</td>
+<td>AX=0, accepted, halted</td>
+<td>AX=0, accepted</td>
+<td>AX=0, accepted, halted</td>
+</tr>
+</tbody>
+</table>
+<p>The bottom row&#39;s <code>accepted</code> flags read 0, 1, 1, 1, which is {1, 2, 3}, the language. One detail of the circuit shows here: an accept leaves the core running, since only <code>decr</code> at 0 sets <code>halted</code>. Cores 1 and 3 accept on line 3 and halt on line 4, and <code>accepted</code> stays 1, because the flags only ever turn on. The interpreter stops at the accept instead; the bottom row agrees either way.</p>
+<h2 id="the-tableau-of-every-program">The tableau of every program <a class="section-link" href="#the-tableau-of-every-program" aria-label="Link to this section">§</a></h2>
+<p>Now leave the program free. The same grid, as the SAT encoding builds it for {1, 2, 3}, names in each cell the formula&#39;s literals for the four state wires, <code>hb lb halted accepted</code>. A 1 or 0 is a constant, and <code>xN</code> is the formula&#39;s variable N. Variables 1 to 12 are the program&#39;s bits, two per line.</p>
+<table>
+<thead>
+<tr>
+<th>step</th>
+<th>line&#39;s bits</th>
+<th>core 0</th>
+<th>core 1</th>
+<th>core 2</th>
+<th>core 3</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>start</td>
+<td></td>
+<td>0 0 0 0</td>
+<td>0 1 0 0</td>
+<td>1 0 0 0</td>
+<td>1 1 0 0</td>
+</tr>
+<tr>
+<td>1</td>
+<td>x1 x2</td>
+<td>0 0 x15 x14</td>
+<td>0 x68 0 0</td>
+<td>x67 x15 0 0</td>
+<td>x272 x68 0 0</td>
+</tr>
+<tr>
+<td>2</td>
+<td>x3 x4</td>
+<td>0 0 x26 x25</td>
+<td>0 x75 x72 x71</td>
+<td>x150 x151 x141 x138</td>
+<td>x295 x296 x286 x283</td>
+</tr>
+<tr>
+<td>3</td>
+<td>x5 x6</td>
+<td>0 0 x36 x35</td>
+<td>0 x88 x86 x85</td>
+<td>x180 x181 x173 x172</td>
+<td>x325 x326 x318 x317</td>
+</tr>
+<tr>
+<td>4</td>
+<td>x7 x8</td>
+<td>0 0 x46 x45</td>
+<td>0 x101 x99 x98</td>
+<td>x210 x211 x203 x202</td>
+<td>x355 x356 x348 x347</td>
+</tr>
+<tr>
+<td>5</td>
+<td>x9 x10</td>
+<td>0 0 x56 x55</td>
+<td>0 x114 x112 x111</td>
+<td>x240 x241 x233 x232</td>
+<td>x385 x386 x378 x377</td>
+</tr>
+<tr>
+<td>6</td>
+<td>x11 x12</td>
+<td>0 0 x66 x65</td>
+<td>0 x127 x125 x124</td>
+<td>x270 x271 x263 x262</td>
+<td>x415 x416 x408 x407</td>
+</tr>
+</tbody>
+</table>
+<p>Each variable here is a gate&#39;s output, and its three clauses tie it to the cell above and to its row&#39;s two program bits. Some cells are constants the whole way down, and the constants carry facts. Core 0 starts at <code>AX</code> = 0, and every opcode keeps 0 at 0 or halts, so its <code>AX</code> bits are the constant 0 in every row, and the encoder folds them away. Core 1 starts at 1, and its <code>hb</code> stays 0 because <code>AX</code> can only fall. Some literals repeat across cores: <code>x15</code> is core 0&#39;s <code>halted</code> after line 1 and core 2&#39;s <code>lb</code>, since both are the same function of <code>x1</code> and <code>x2</code>: line 1 is <code>decr</code>. The encoder builds that gate once and reuses it. Setting <code>x1</code> to <code>x12</code> to the program above and propagating fills every cell with the first table&#39;s values; the last four clauses then require the bottom row&#39;s <code>accepted</code> literals, <code>x65</code>, <code>x124</code>, <code>x262</code> and <code>x407</code>, to be 0, 1, 1 and 1.</p>
+
+</article>
+<nav class="turn-page" aria-label="Previous and next chapter">
+<a rel="prev" href="the-cook-levin-machine.html"><small>Previous</small>The Cook-Levin machine</a>
+<a rel="next" href="cook-levin-as-sat.html"><small>Next</small>Cook-Levin as SAT</a>
+</nav>
+</main>
+</body>
+</html>
