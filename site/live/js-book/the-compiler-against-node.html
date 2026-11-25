@@ -27,7 +27,7 @@
 <li><a href="limitations.html"><span class="number">13</span>Limitations</a></li>
 <li><a href="the-compiler-to-x86-64.html"><span class="number">14</span>The compiler to x86-64</a></li>
 <li><a href="why-a-compiler-suits-roc.html"><span class="number">15</span>Why a compiler suits Roc</a></li>
-<li class="here"><a href="the-compiler-against-node.html"><span class="number">16</span>The compiler against node</a><ol class="sections"><li><a href="the-compiler-against-node.html#where-the-numbers-come-from">Where the numbers come from</a></li><li><a href="the-compiler-against-node.html#the-table">The table</a></li><li><a href="the-compiler-against-node.html#small-programs-the-win-is-start-up">Small programs: the win is start-up</a></li><li><a href="the-compiler-against-node.html#large-programs-warm-node-wins">Large programs: warm node wins</a></li></ol></li>
+<li class="here"><a href="the-compiler-against-node.html"><span class="number">16</span>The compiler against node</a><ol class="sections"><li><a href="the-compiler-against-node.html#where-the-numbers-come-from">Where the numbers come from</a></li><li><a href="the-compiler-against-node.html#the-table">The table</a></li><li><a href="the-compiler-against-node.html#small-programs-the-win-is-start-up">Small programs: the win is start-up</a></li><li><a href="the-compiler-against-node.html#large-programs-warm-node-wins">Large programs: warm node wins</a></li><li><a href="the-compiler-against-node.html#the-fib-race">The fib race</a></li></ol></li>
 <li><a href="what-the-compiler-leaves-to-an-optimizer.html"><span class="number">17</span>What the compiler leaves to an optimizer</a></li>
 <li><a href="appendix-a-the-playgrounds-samples.html">Appendix A: The playground&#39;s samples</a></li>
 <li><a href="appendix-b-the-tested-programs.html">Appendix B: The tested programs</a></li>
@@ -40,7 +40,7 @@
 <h1 id="the-compiler-against-node">The compiler against node</h1>
 <p>The executables beat <code>node file.js</code> on small programs, and most of that win is node&#39;s start-up. This chapter asks the harder question: once node&#39;s JIT has had time to warm up, how do the executables do? On the four programs timed, node wins at the large sizes, by 1.2 to 8 times.</p>
 <h2 id="where-the-numbers-come-from">Where the numbers come from <a class="section-link" href="#where-the-numbers-come-from" aria-label="Link to this section">§</a></h2>
-<p>Every number in this chapter is from <code>x86/BENCH.md</code> (<code>68f420b</code>), which <code>shale x86/bench.shale</code> measures; the one from <code>x86/README.md</code> says so. The timings stay outside <code>check.shale</code>, since the box is too noisy to gate on. They are one sample from one day, 2026-11-25, on the 2-core development box with node v22.23.2, and the book quotes them as recorded there.</p>
+<p>Every number in this chapter is from <code>x86/BENCH.md</code> (<code>68f420b</code>), which <code>shale x86/bench.shale</code> measures; the one from <code>x86/README.md</code> says so. The timings stay outside <code>check.shale</code>, since the box is too noisy to gate on. They are one sample from one day, 2026-11-25, on the 2-core development box with node v22.23.2, and the book quotes them as recorded there. They were taken before the in-line paths of <a class="chapter-link" href="what-the-compiler-leaves-to-an-optimizer.html">“What the compiler leaves to an optimizer”</a> (<code>17cb2b0</code>, <code>d6ecebd</code>), and the four programs are unmeasured since.</p>
 <p>Each program in <code>x86/bench/</code> defines <code>work(n)</code>:</p>
 <ul>
 <li><strong>fib</strong>: a recursive <code>fib(n)</code>, so the cost is mostly calls.</li>
@@ -152,6 +152,8 @@
 </ul>
 <p>One-shot node, start-up included, is faster at the large sizes too: in the table its time is below the executable&#39;s on all four, and fib&#39;s difference, 222 against 213 ms, is well inside the spread between runs.</p>
 <p><strong>Most of V8&#39;s warm-up happens inside the first call.</strong> At the large sizes the first run is already close to the steady time, because V8 optimizes a hot loop while it is still running (on-stack replacement). collatz&#39;s steady time came out slower than its first run in both runs, about 475 ms against about 370; <code>x86/BENCH.md</code> leaves the cause unexplored.</p>
+<h2 id="the-fib-race">The fib race <a class="section-link" href="#the-fib-race" aria-label="Link to this section">§</a></h2>
+<p><code>x86/race/</code> races the two for 20 seconds on iterative Fibonacci over arrays of base-10^7 limbs, each answer checked against BigInt&#39;s. Before the in-line paths, the executable reached F(129808) and node F(348552), about seven times the work, since the work grows as n squared; after them, F(179933) against F(358271), about four times (<code>x86/race/README.md</code>, one run each).</p>
 
 </article>
 <nav class="turn-page" aria-label="Previous and next chapter">

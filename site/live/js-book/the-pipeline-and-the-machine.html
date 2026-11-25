@@ -132,7 +132,7 @@
 </g>
 </svg><figcaption>From the text to the run</figcaption></figure><ul>
 <li><strong><code>Lexer.roc</code></strong> makes tokens, each with its line and column.</li>
-<li><strong><code>Parser.roc</code></strong> reads them into <code>Ast.roc</code>&#39;s tree by recursive descent, and lays out each scope&#39;s names as it goes. It also writes each class as plain functions, so the stages after it see only functions.</li>
+<li><strong><code>Parser.roc</code></strong> reads them into <code>Ast.roc</code>&#39;s tree by recursive descent, and lays out each scope&#39;s names as it goes. It also writes each class as plain functions, through <code>ClassDesugaring.roc</code>, so the stages after it see only functions.</li>
 <li><strong><code>Resolve.roc</code></strong> places every name before the run: each read, write and declaration learns how many scopes out its variable lives and where it sits there. The interpreter then reads a variable by its place, and compares names only here.</li>
 <li><strong><code>Compile.roc</code></strong> lays out each function&#39;s frame and makes each function, and the program itself, a flat list of <code>Bytecode.roc</code>&#39;s instructions. Every jump is relative to the instruction after it, so a piece of compiled code means the same wherever it lands.</li>
 <li><strong><code>Vm.roc</code></strong> runs them on a stack machine.</li>
@@ -158,7 +158,7 @@
 </code></pre></figure><h2 id="the-heap-is-one-roc-value">The heap is one Roc value <a class="section-link" href="#the-heap-is-one-roc-value" aria-label="Link to this section">§</a></h2>
 <p>JavaScript shares arrays, objects and closures by reference, and Roc has only values. So the interpreter keeps everything JavaScript shares in one list of cells, the heap, and a JavaScript reference is an index into it. <a class="chapter-link" href="memory-strategy.html">“Memory strategy”</a> lays out the heap, the stack and what each operation costs.</p>
 <h2 id="the-machine">The machine <a class="section-link" href="#the-machine" aria-label="Link to this section">§</a></h2>
-<p>Everything a run holds is one record, <code>Vm.Machine</code>, handed to each instruction&#39;s handler and handed back:</p>
+<p>Everything a run holds is one record, <code>Machine.Machine</code>, handed to each instruction&#39;s handler and handed back:</p>
 <figure class="listing"><figcaption>js/roc/Machine.roc, an excerpt</figcaption><pre><code class="language-roc">	<span class="syn-type">Machine</span> : {
 		cells : <span class="syn-type">List</span>(<span class="syn-type">Heap.Cell</span>),
 		stack : <span class="syn-type">List</span>(<span class="syn-type">Heap.Value</span>),
