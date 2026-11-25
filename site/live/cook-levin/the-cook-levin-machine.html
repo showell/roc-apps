@@ -1,0 +1,151 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>The Cook-Levin machine · A riff on Cook-Levin</title>
+<link rel="icon" href="data:,">
+<link rel="stylesheet" href="book.css">
+<script src="copy.js" defer></script>
+<style>
+figure.scrolling { margin: 1rem 0; background: var(--shade); border-radius: 4px; }
+figure.scrolling figcaption { padding: 0.5rem 1rem 0; color: var(--quiet); font: 0.72rem/1.5 var(--mono); }
+figure.scrolling pre { margin: 0; padding: 0.3rem 1rem 0.75rem; background: none; max-height: 16rem; overflow-x: hidden; overflow-y: auto; white-space: pre-wrap; overflow-wrap: anywhere; word-break: break-all; font-size: 0.72rem; }
+@media (max-width: 700px) { figure.scrolling { margin-inline: -0.5rem; } figure.scrolling figcaption, figure.scrolling pre { padding-inline: 0.6rem; } }
+</style></head>
+<body class="chapter">
+<nav class="book-nav" id="chapters" aria-label="Chapters">
+<a class="book-name" href="index.html">A riff on Cook-Levin</a>
+<ol>
+<li><a href="introduction.html"><span class="number">1</span>Introduction</a></li>
+<li><a href="how-it-got-here.html"><span class="number">2</span>How it got here</a></li>
+<li><a href="the-machine.html"><span class="number">3</span>The machine</a></li>
+<li><a href="languages-and-machines.html"><span class="number">4</span>Languages and machines</a></li>
+<li><a href="programs-as-languages.html"><span class="number">5</span>Programs as languages</a></li>
+<li><a href="nibble-the-puzzle-page.html"><span class="number">6</span>Nibble, the puzzle page</a></li>
+<li><a href="arithmetization.html"><span class="number">7</span>Arithmetization</a></li>
+<li><a href="why-composing-blew-up.html"><span class="number">8</span>Why composing blew up</a></li>
+<li><a href="six-steps-composed.html"><span class="number">9</span>Six steps composed</a></li>
+<li><a href="the-polynomials-in-full.html"><span class="number">10</span>The polynomials, in full</a></li>
+<li><a href="the-machine-as-a-circuit.html"><span class="number">11</span>The machine as a circuit</a></li>
+<li class="here"><a href="the-cook-levin-machine.html"><span class="number">12</span>The Cook-Levin machine</a><ol class="sections"><li><a href="the-cook-levin-machine.html#the-circuit-turned-around">The circuit, turned around</a></li><li><a href="the-cook-levin-machine.html#the-tableau">The tableau</a></li><li><a href="the-cook-levin-machine.html#the-gates-counted">The gates, counted</a></li></ol></li>
+<li><a href="cook-levin-as-sat.html"><span class="number">13</span>Cook-Levin as SAT</a></li>
+<li><a href="the-solvers-work-in-full.html"><span class="number">14</span>The solver&#39;s work, in full</a></li>
+<li><a href="the-oracles.html"><span class="number">15</span>The oracles</a></li>
+<li><a href="the-roc-port.html"><span class="number">16</span>The Roc port</a></li>
+<li><a href="what-comes-next.html"><span class="number">17</span>What comes next</a></li>
+</ol>
+</nav>
+<main>
+<p class="book-bar"><a href="index.html">A riff on Cook-Levin</a> <a href="#chapters">Chapters</a></p>
+<article>
+<p class="chapter-number">Chapter 12</p>
+<h1 id="the-cook-levin-machine">The Cook-Levin machine</h1>
+<p><a class="chapter-link" href="the-machine-as-a-circuit.html">“The machine as a circuit”</a> is a checker: hand it a language and a program, and it says true or false. Cook and Levin&#39;s idea is to run a checker backwards. Fix the language, leave the program unknown, pin the output to true, and ask which programs fit. The circuit does the same work as before; only the question changes.</p>
+<h2 id="the-circuit-turned-around">The circuit, turned around <a class="section-link" href="#the-circuit-turned-around" aria-label="Link to this section">§</a></h2>
+<p>The want register is fixed at the puzzle&#39;s bits. The program register becomes twelve unknown wires, <code>x1</code> to <code>x12</code>. The output wire is required to be 1. Everything in between is the same 24 step units and four comparators, and every wire in them is now an unknown too, tied to the wires feeding it by the rule of its gate.</p>
+<figure class="diagram"><svg class="diagram" role="img" aria-label="The question the circuit now asks" width="256pt" height="188pt"
+ viewBox="0.00 0.00 256.00 188.00" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+<g id="graph0" class="graph" transform="scale(1 1) rotate(0) translate(4 184)">
+<polygon fill="white" stroke="transparent" points="-4,4 -4,-184 252,-184 252,4 -4,4"/>
+<g id="node1" class="node">
+<path fill="none" stroke="black" d="M118,-180C118,-180 12,-180 12,-180 6,-180 0,-174 0,-168 0,-168 0,-156 0,-156 0,-150 6,-144 12,-144 12,-144 118,-144 118,-144 124,-144 130,-150 130,-156 130,-156 130,-168 130,-168 130,-174 124,-180 118,-180"/>
+<text text-anchor="middle" x="65" y="-165.4" font-family="Times,serif" font-size="12.00">program: x1 .. x12</text>
+<text text-anchor="middle" x="65" y="-152.4" font-family="Times,serif" font-size="12.00">unknown</text>
+</g>
+<g id="node3" class="node">
+<path fill="none" stroke="black" d="M199,-108C199,-108 63,-108 63,-108 57,-108 51,-102 51,-96 51,-96 51,-84 51,-84 51,-78 57,-72 63,-72 63,-72 199,-72 199,-72 205,-72 211,-78 211,-84 211,-84 211,-96 211,-96 211,-102 205,-108 199,-108"/>
+<text text-anchor="middle" x="131" y="-93.4" font-family="Times,serif" font-size="12.00">the same circuit</text>
+<text text-anchor="middle" x="131" y="-80.4" font-family="Times,serif" font-size="12.00">every wire an unknown</text>
+</g>
+<g id="edge1" class="edge">
+<path fill="none" stroke="black" d="M81.31,-143.7C89.31,-135.22 99.07,-124.86 107.82,-115.58"/>
+<polygon fill="black" stroke="black" points="110.56,-117.78 114.87,-108.1 105.47,-112.98 110.56,-117.78"/>
+</g>
+<g id="node2" class="node">
+<path fill="none" stroke="black" d="M236,-180C236,-180 160,-180 160,-180 154,-180 148,-174 148,-168 148,-168 148,-156 148,-156 148,-150 154,-144 160,-144 160,-144 236,-144 236,-144 242,-144 248,-150 248,-156 248,-156 248,-168 248,-168 248,-174 242,-180 236,-180"/>
+<text text-anchor="middle" x="198" y="-165.4" font-family="Times,serif" font-size="12.00">want register</text>
+<text text-anchor="middle" x="198" y="-152.4" font-family="Times,serif" font-size="12.00">fixed</text>
+</g>
+<g id="edge2" class="edge">
+<path fill="none" stroke="black" d="M181.44,-143.7C173.32,-135.22 163.41,-124.86 154.53,-115.58"/>
+<polygon fill="black" stroke="black" points="156.81,-112.91 147.37,-108.1 151.76,-117.75 156.81,-112.91"/>
+</g>
+<g id="node4" class="node">
+<path fill="none" stroke="black" d="M163,-36C163,-36 99,-36 99,-36 93,-36 87,-30 87,-24 87,-24 87,-12 87,-12 87,-6 93,0 99,0 99,0 163,0 163,0 169,0 175,-6 175,-12 175,-12 175,-24 175,-24 175,-30 169,-36 163,-36"/>
+<text text-anchor="middle" x="131" y="-21.4" font-family="Times,serif" font-size="12.00">decides = 1</text>
+<text text-anchor="middle" x="131" y="-8.4" font-family="Times,serif" font-size="12.00">required</text>
+</g>
+<g id="edge3" class="edge">
+<path fill="none" stroke="black" d="M131,-71.7C131,-63.98 131,-54.71 131,-46.11"/>
+<polygon fill="black" stroke="black" points="134.5,-46.1 131,-36.1 127.5,-46.1 134.5,-46.1"/>
+</g>
+</g>
+</svg><figcaption>The question the circuit now asks</figcaption></figure><p>A setting of the twelve unknowns that satisfies every gate&#39;s rule and lights the output is a program that decides the language. The circuit has a satisfying setting exactly when the puzzle has an answer.</p>
+<h2 id="the-tableau">The tableau <a class="section-link" href="#the-tableau" aria-label="Link to this section">§</a></h2>
+<p>Cook&#39;s proof draws the run of a checking machine as a grid, the tableau: one row for each moment of the run, each row the machine&#39;s whole state, and each row fixed by the row above it through a small local rule. Here the grid has seven rows, the start and the six steps, and four columns, one per core. Each cell is a state of four bits, <code>hb</code>, <code>lb</code>, <code>halted</code> and <code>accepted</code>. The top row is known, since core <code>i</code> starts with <code>AX</code> = <code>i</code> and both flags 0, and each cell below it is one step unit applied to the cell above and to that row&#39;s line of the unknown program. The local rule is the step unit of <a class="chapter-link" href="the-machine-as-a-circuit.html">“The machine as a circuit”</a>.</p>
+<p>For a general checker the grid is as wide as its tape and as tall as its running time, and when the time is polynomial in the input&#39;s length, the grid and its rules are polynomial in size too. That is the whole of the theorem&#39;s construction: any question a fast checker can answer becomes the question of whether such a grid can be filled in consistently.</p>
+<h2 id="the-gates-counted">The gates, counted <a class="section-link" href="#the-gates-counted" aria-label="Link to this section">§</a></h2>
+<p>The step unit&#39;s gates as the repository builds them, in <code>sat_step</code> (<code>src/sat.c</code>):</p>
+<figure class="listing"><figcaption>src/sat.c, an excerpt</figcaption><pre><code class="language-c">    Lit is_3 = <span class="syn-name">AND</span>(hb, lb);
+    Lit is_2 = <span class="syn-name">AND</span>(hb, <span class="syn-name">NOT</span>(lb));
+    Lit is_1 = <span class="syn-name">AND</span>(<span class="syn-name">NOT</span>(hb), lb);
+    Lit is_0 = <span class="syn-name">AND</span>(<span class="syn-name">NOT</span>(hb), <span class="syn-name">NOT</span>(lb));
+
+    Lit is_pass = <span class="syn-name">AND</span>(<span class="syn-name">NOT</span>(op_hb), <span class="syn-name">NOT</span>(op_lb));
+    Lit is_check = <span class="syn-name">AND</span>(<span class="syn-name">NOT</span>(op_hb), op_lb);
+    Lit is_decr = <span class="syn-name">AND</span>(op_hb, <span class="syn-name">NOT</span>(op_lb));
+    Lit is_mod2 = <span class="syn-name">AND</span>(op_hb, op_lb);
+
+    Lit runs_pass = <span class="syn-name">OR</span>(is_pass, halted);
+    Lit runs_check = <span class="syn-name">AND</span>(is_check, <span class="syn-name">NOT</span>(halted));
+    Lit runs_decr = <span class="syn-name">AND</span>(is_decr, <span class="syn-name">NOT</span>(halted));
+    Lit runs_mod2 = <span class="syn-name">AND</span>(is_mod2, <span class="syn-name">NOT</span>(halted));
+
+    Lit pass1 = <span class="syn-name">AND</span>(is_1, runs_pass);
+    Lit pass2 = <span class="syn-name">AND</span>(is_2, runs_pass);
+    Lit pass3 = <span class="syn-name">AND</span>(is_3, runs_pass);
+    Lit pass_accepts = FALSE;
+    Lit pass_halts = FALSE;
+
+    Lit check1 = <span class="syn-name">AND</span>(is_1, runs_check);
+    Lit check2 = <span class="syn-name">AND</span>(is_2, runs_check);
+    Lit check3 = <span class="syn-name">AND</span>(is_3, runs_check);
+    Lit check_accepts = <span class="syn-name">AND</span>(is_0, runs_check);
+    Lit check_halts = FALSE;
+
+    Lit decr1 = <span class="syn-name">AND</span>(is_2, runs_decr);
+    Lit decr2 = <span class="syn-name">AND</span>(is_3, runs_decr);
+    Lit decr3 = FALSE;
+    Lit decr_accepts = FALSE;
+    Lit decr_halts = <span class="syn-name">AND</span>(is_0, runs_decr);
+
+    Lit mod1 = <span class="syn-name">AND</span>(<span class="syn-name">OR</span>(is_3, is_1), runs_mod2);
+    Lit mod2 = FALSE;
+    Lit mod3 = FALSE;
+    Lit mod_accepts = FALSE;
+    Lit mod_halts = FALSE;
+
+    Lit newly_accepted = <span class="syn-name">sat_or4</span>(c, pass_accepts, check_accepts, decr_accepts, mod_accepts);
+    Lit accepted_out = <span class="syn-name">OR</span>(accepted, newly_accepted);
+
+    Lit newly_halted = <span class="syn-name">sat_or4</span>(c, pass_halts, check_halts, decr_halts, mod_halts);
+    Lit halted_out = <span class="syn-name">OR</span>(halted, newly_halted);
+
+    Lit becomes_1 = <span class="syn-name">sat_or4</span>(c, pass1, check1, decr1, mod1);
+    Lit becomes_2 = <span class="syn-name">sat_or4</span>(c, pass2, check2, decr2, mod2);
+    Lit becomes_3 = <span class="syn-name">sat_or4</span>(c, pass3, check3, decr3, mod3);
+
+    Lit hb_set = <span class="syn-name">OR</span>(becomes_3, becomes_2);
+    Lit lb_set = <span class="syn-name">OR</span>(becomes_3, becomes_1);
+</code></pre></figure><p><code>tests/test_sat.c</code> holds these gates to the machine&#39;s step on all 64 settings of the unit&#39;s six input wires. A unit is 34 gates when all six inputs are unknown, so 24 units would be 816. The top row&#39;s constants fold many away, since each core&#39;s <code>AX</code> is known at the start and both flags are 0, and a gate already built from the same two inputs is reused. The whole circuit comes to 404 gates over the 12 unknown program bits.</p>
+<p><a class="chapter-link" href="cook-levin-as-sat.html">“Cook-Levin as SAT”</a> takes the last step: each gate becomes three clauses, the required output becomes four more, and the circuit becomes one formula for a SAT solver.</p>
+
+</article>
+<nav class="turn-page" aria-label="Previous and next chapter">
+<a rel="prev" href="the-machine-as-a-circuit.html"><small>Previous</small>The machine as a circuit</a>
+<a rel="next" href="cook-levin-as-sat.html"><small>Next</small>Cook-Levin as SAT</a>
+</nav>
+</main>
+</body>
+</html>

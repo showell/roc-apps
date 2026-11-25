@@ -27,12 +27,13 @@ figure.scrolling pre { margin: 0; padding: 0.3rem 1rem 0.75rem; background: none
 <li><a href="why-composing-blew-up.html"><span class="number">8</span>Why composing blew up</a></li>
 <li><a href="six-steps-composed.html"><span class="number">9</span>Six steps composed</a></li>
 <li><a href="the-polynomials-in-full.html"><span class="number">10</span>The polynomials, in full</a></li>
-<li class="here"><a href="the-machine-as-a-circuit.html"><span class="number">11</span>The machine as a circuit</a><ol class="sections"><li><a href="the-machine-as-a-circuit.html#the-whole-circuit">The whole circuit</a></li><li><a href="the-machine-as-a-circuit.html#one-core">One core</a></li><li><a href="the-machine-as-a-circuit.html#inside-a-step-unit">Inside a step unit</a></li><li><a href="the-machine-as-a-circuit.html#each-opcode-as-gates">Each opcode as gates</a></li><li><a href="the-machine-as-a-circuit.html#a-program-through-it">A program through it</a></li><li><a href="the-machine-as-a-circuit.html#why-the-circuit-matters">Why the circuit matters</a></li></ol></li>
-<li><a href="cook-levin-as-sat.html"><span class="number">12</span>Cook-Levin as SAT</a></li>
-<li><a href="the-solvers-work-in-full.html"><span class="number">13</span>The solver&#39;s work, in full</a></li>
-<li><a href="the-oracles.html"><span class="number">14</span>The oracles</a></li>
-<li><a href="the-roc-port.html"><span class="number">15</span>The Roc port</a></li>
-<li><a href="what-comes-next.html"><span class="number">16</span>What comes next</a></li>
+<li class="here"><a href="the-machine-as-a-circuit.html"><span class="number">11</span>The machine as a circuit</a><ol class="sections"><li><a href="the-machine-as-a-circuit.html#the-whole-circuit">The whole circuit</a></li><li><a href="the-machine-as-a-circuit.html#one-core">One core</a></li><li><a href="the-machine-as-a-circuit.html#inside-a-step-unit">Inside a step unit</a></li><li><a href="the-machine-as-a-circuit.html#each-opcode-as-gates">Each opcode as gates</a></li><li><a href="the-machine-as-a-circuit.html#a-program-through-it">A program through it</a></li></ol></li>
+<li><a href="the-cook-levin-machine.html"><span class="number">12</span>The Cook-Levin machine</a></li>
+<li><a href="cook-levin-as-sat.html"><span class="number">13</span>Cook-Levin as SAT</a></li>
+<li><a href="the-solvers-work-in-full.html"><span class="number">14</span>The solver&#39;s work, in full</a></li>
+<li><a href="the-oracles.html"><span class="number">15</span>The oracles</a></li>
+<li><a href="the-roc-port.html"><span class="number">16</span>The Roc port</a></li>
+<li><a href="what-comes-next.html"><span class="number">17</span>What comes next</a></li>
 </ol>
 </nav>
 <main>
@@ -40,7 +41,7 @@ figure.scrolling pre { margin: 0; padding: 0.3rem 1rem 0.75rem; background: none
 <article>
 <p class="chapter-number">Chapter 11</p>
 <h1 id="the-machine-as-a-circuit">The machine as a circuit</h1>
-<p>The polynomials say that a run of the machine is arithmetic. The same fact can be drawn as hardware: a circuit that takes a language and a program and lights one wire, &quot;decides&quot;, exactly when the program decides the language. It is combinational: the whole run is laid out in space, and every wire settles at once.</p>
+<p>This chapter builds the machine as hardware, a plain digital circuit with two inputs and one output. Its inputs are a language and a program, and its output is true when the program decides the language and false otherwise. It is combinational: the whole run is laid out in space, and every wire settles at once. <a class="chapter-link" href="the-cook-levin-machine.html">“The Cook-Levin machine”</a> then puts the same circuit to Cook and Levin&#39;s use.</p>
 <h2 id="the-whole-circuit">The whole circuit <a class="section-link" href="#the-whole-circuit" aria-label="Link to this section">§</a></h2>
 <p>The circuit has two registers on its left. The <em>want</em> register holds four bits, one per input, saying which inputs the language accepts: {1, 2, 3} is <code>0111</code>, input 0&#39;s bit first. The <em>program</em> register holds the twelve bits of a program, two per line. The program goes to four cores side by side, one per input, and each core answers whether its input is accepted. Four comparators check each answer against its want bit, and a final AND joins them.</p>
 <figure class="diagram"><svg class="diagram diagram-wide" role="img" aria-label="The circuit, end to end" width="356pt" height="349pt"
@@ -298,9 +299,9 @@ figure.scrolling pre { margin: 0; padding: 0.3rem 1rem 0.75rem; background: none
 <polygon fill="black" stroke="black" points="47,-46 43.5,-36 40,-46 47,-46"/>
 </g>
 </g>
-</svg><figcaption>One core: six step units in a chain</figcaption></figure><p>Each step unit is the step of <a class="chapter-link" href="arithmetization.html">“Arithmetization”</a> built from gates: six wires in (<code>hb</code>, <code>lb</code>, <code>halted</code>, <code>accepted</code> and the line&#39;s <code>op_hb</code>, <code>op_lb</code>), four wires out, and between them the gates for complement, AND and OR that the step polynomials spell as 1 - x, xy and x + y - xy. Four cores of six units make 24 step units in all, every one the same.</p>
+</svg><figcaption>One core: six step units in a chain</figcaption></figure><p>Each step unit has six wires in (<code>hb</code> and <code>lb</code>, the two bits of <code>AX</code>, the flags <code>halted</code> and <code>accepted</code>, and the line&#39;s <code>op_hb</code>, <code>op_lb</code>) and four wires out, the same four state wires for the next unit. Four cores of six units make 24 step units in all, every one the same.</p>
 <h2 id="inside-a-step-unit">Inside a step unit <a class="section-link" href="#inside-a-step-unit" aria-label="Link to this section">§</a></h2>
-<p>A step unit is built from two-input AND and OR gates and inverters, and its layout is a classic one: decode, compute every opcode at once, select. Its gates are exactly <code>sat_step</code> in <code>src/sat.c</code>, and <code>tests/test_sat.c</code> holds them to the machine&#39;s step on all 64 settings of the unit&#39;s six input wires.</p>
+<p>A step unit is built from two-input AND and OR gates and inverters, and its layout is a classic one: decode, compute every opcode at once, select.</p>
 <figure class="diagram"><svg class="diagram diagram-wide" role="img" aria-label="One step unit" width="344pt" height="272pt"
  viewBox="0.00 0.00 343.50 272.00" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
 <g id="graph0" class="graph" transform="scale(1 1) rotate(0) translate(4 268)">
@@ -458,7 +459,7 @@ figure.scrolling pre { margin: 0; padding: 0.3rem 1rem 0.75rem; background: none
 </tr>
 </tbody>
 </table>
-<p>Read across a row and the opcode&#39;s rule appears. <code>nada</code> passes the value through. <code>zero</code> passes it through too and adds one gate that fires on 0. <code>decr</code> shifts each wire down one place, 2 to 1 and 3 to 2, lets 1 fall to 0, and turns 0 into a halt. <code>mod2</code> sends both odd values to 1 and lets 2 fall to 0. The whole unit is 34 two-input gates as written, and the four cores&#39; constants (<code>AX</code> fixed per core, <code>halted</code> and <code>accepted</code> 0 at the start) fold many of them away: the full circuit of 24 units comes to the 404 gates that <a class="chapter-link" href="cook-levin-as-sat.html">“Cook-Levin as SAT”</a> counts.</p>
+<p>Read across a row and the opcode&#39;s rule appears. <code>nada</code> passes the value through. <code>zero</code> passes it through too and adds one gate that fires on 0. <code>decr</code> shifts each wire down one place, 2 to 1 and 3 to 2, lets 1 fall to 0, and turns 0 into a halt. <code>mod2</code> sends both odd values to 1 and lets 2 fall to 0. The whole unit is 34 two-input gates.</p>
 <figure class="diagram"><svg class="diagram diagram-wide" role="img" aria-label="`decr`, the busiest module, drawn alone" width="322pt" height="98pt"
  viewBox="0.00 0.00 322.00 98.00" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
 <g id="graph0" class="graph" transform="scale(1 1) rotate(0) translate(4 94)">
@@ -541,59 +542,7 @@ figure.scrolling pre { margin: 0; padding: 0.3rem 1rem 0.75rem; background: none
 <polygon fill="black" stroke="black" points="180.69,-43.5 190.69,-40 180.69,-36.5 180.69,-43.5"/>
 </g>
 </g>
-</svg><figcaption><code>decr</code>, the busiest module, drawn alone</figcaption></figure><p>The gates in the code, as the SAT encoding builds them:</p>
-<figure class="listing"><figcaption>src/sat.c, an excerpt</figcaption><pre><code class="language-c">    Lit is_3 = <span class="syn-name">AND</span>(hb, lb);
-    Lit is_2 = <span class="syn-name">AND</span>(hb, <span class="syn-name">NOT</span>(lb));
-    Lit is_1 = <span class="syn-name">AND</span>(<span class="syn-name">NOT</span>(hb), lb);
-    Lit is_0 = <span class="syn-name">AND</span>(<span class="syn-name">NOT</span>(hb), <span class="syn-name">NOT</span>(lb));
-
-    Lit is_pass = <span class="syn-name">AND</span>(<span class="syn-name">NOT</span>(op_hb), <span class="syn-name">NOT</span>(op_lb));
-    Lit is_check = <span class="syn-name">AND</span>(<span class="syn-name">NOT</span>(op_hb), op_lb);
-    Lit is_decr = <span class="syn-name">AND</span>(op_hb, <span class="syn-name">NOT</span>(op_lb));
-    Lit is_mod2 = <span class="syn-name">AND</span>(op_hb, op_lb);
-
-    Lit runs_pass = <span class="syn-name">OR</span>(is_pass, halted);
-    Lit runs_check = <span class="syn-name">AND</span>(is_check, <span class="syn-name">NOT</span>(halted));
-    Lit runs_decr = <span class="syn-name">AND</span>(is_decr, <span class="syn-name">NOT</span>(halted));
-    Lit runs_mod2 = <span class="syn-name">AND</span>(is_mod2, <span class="syn-name">NOT</span>(halted));
-
-    Lit pass1 = <span class="syn-name">AND</span>(is_1, runs_pass);
-    Lit pass2 = <span class="syn-name">AND</span>(is_2, runs_pass);
-    Lit pass3 = <span class="syn-name">AND</span>(is_3, runs_pass);
-    Lit pass_accepts = FALSE;
-    Lit pass_halts = FALSE;
-
-    Lit check1 = <span class="syn-name">AND</span>(is_1, runs_check);
-    Lit check2 = <span class="syn-name">AND</span>(is_2, runs_check);
-    Lit check3 = <span class="syn-name">AND</span>(is_3, runs_check);
-    Lit check_accepts = <span class="syn-name">AND</span>(is_0, runs_check);
-    Lit check_halts = FALSE;
-
-    Lit decr1 = <span class="syn-name">AND</span>(is_2, runs_decr);
-    Lit decr2 = <span class="syn-name">AND</span>(is_3, runs_decr);
-    Lit decr3 = FALSE;
-    Lit decr_accepts = FALSE;
-    Lit decr_halts = <span class="syn-name">AND</span>(is_0, runs_decr);
-
-    Lit mod1 = <span class="syn-name">AND</span>(<span class="syn-name">OR</span>(is_3, is_1), runs_mod2);
-    Lit mod2 = FALSE;
-    Lit mod3 = FALSE;
-    Lit mod_accepts = FALSE;
-    Lit mod_halts = FALSE;
-
-    Lit newly_accepted = <span class="syn-name">sat_or4</span>(c, pass_accepts, check_accepts, decr_accepts, mod_accepts);
-    Lit accepted_out = <span class="syn-name">OR</span>(accepted, newly_accepted);
-
-    Lit newly_halted = <span class="syn-name">sat_or4</span>(c, pass_halts, check_halts, decr_halts, mod_halts);
-    Lit halted_out = <span class="syn-name">OR</span>(halted, newly_halted);
-
-    Lit becomes_1 = <span class="syn-name">sat_or4</span>(c, pass1, check1, decr1, mod1);
-    Lit becomes_2 = <span class="syn-name">sat_or4</span>(c, pass2, check2, decr2, mod2);
-    Lit becomes_3 = <span class="syn-name">sat_or4</span>(c, pass3, check3, decr3, mod3);
-
-    Lit hb_set = <span class="syn-name">OR</span>(becomes_3, becomes_2);
-    Lit lb_set = <span class="syn-name">OR</span>(becomes_3, becomes_1);
-</code></pre></figure><h2 id="a-program-through-it">A program through it <a class="section-link" href="#a-program-through-it" aria-label="Link to this section">§</a></h2>
+</svg><figcaption><code>decr</code>, the busiest module, drawn alone</figcaption></figure><h2 id="a-program-through-it">A program through it <a class="section-link" href="#a-program-through-it" aria-label="Link to this section">§</a></h2>
 <p>Load the want register with <code>0111</code> and the program register with <code>decr, mod2, zero, decr, zero, nada</code>, the five-line answer to <code>is_not_tiny</code>, whose bits are <code>10 11 01 10 01 00</code>. The four cores settle like this:</p>
 <table>
 <thead>
@@ -637,13 +586,11 @@ figure.scrolling pre { margin: 0; padding: 0.3rem 1rem 0.75rem; background: none
 </tbody>
 </table>
 <p>All four comparators say yes, so the AND lights &quot;decides&quot;. Change one program bit and some core&#39;s answer flips, its comparator reports a mismatch, and the light goes out.</p>
-<h2 id="why-the-circuit-matters">Why the circuit matters <a class="section-link" href="#why-the-circuit-matters" aria-label="Link to this section">§</a></h2>
-<p>Fix the want register and leave the program register&#39;s twelve bits free, and the circuit asks a question: is there a setting of these twelve inputs that lights the output? That is circuit satisfiability, and <a class="chapter-link" href="cook-levin-as-sat.html">“Cook-Levin as SAT”</a> writes this very circuit as clauses, gate by gate, for a SAT solver to answer.</p>
 
 </article>
 <nav class="turn-page" aria-label="Previous and next chapter">
 <a rel="prev" href="the-polynomials-in-full.html"><small>Previous</small>The polynomials, in full</a>
-<a rel="next" href="cook-levin-as-sat.html"><small>Next</small>Cook-Levin as SAT</a>
+<a rel="next" href="the-cook-levin-machine.html"><small>Next</small>The Cook-Levin machine</a>
 </nav>
 </main>
 </body>
