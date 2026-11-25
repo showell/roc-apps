@@ -34,7 +34,8 @@
 <article>
 <p class="chapter-number">Chapter 7</p>
 <h1 id="javascripts-rules-for-values">JavaScript&#39;s rules for values</h1>
-<p>In JavaScript, one operator means different things for different values. <code>1 + 2</code> adds, and gives <code>3</code>. <code>&quot;a&quot; + 1</code> turns the number into text, and gives <code>&quot;a1&quot;</code>. <code>&quot;5&quot; * 2</code> asks for a string to become a number. A property read varies too: with <code>o</code> holding <code>{ x: 1 }</code>, <code>o.x</code> gives <code>1</code>, <code>o.y</code> gives <code>undefined</code>, and <code>[1, 2].length</code> reads a property every array has. Every interpreter carries all of this meaning somewhere.</p>
+<p>This chapter is about the interpreter, the bytecode VM in <code>js/roc/</code>. The compiler to x86-64 in <code>x86/</code> gives values the same meanings in its runtime&#39;s machine code, as <code>x86/README.md</code> describes.</p>
+<p>In JavaScript, one operator means different things for different values. <code>1 + 2</code> adds, and gives <code>3</code>. <code>&quot;a&quot; + 1</code> turns the number into text, and gives <code>&quot;a1&quot;</code>. <code>&quot;5&quot; * 2</code> asks for a string to become a number. A property read varies too: with <code>o</code> holding <code>{ x: 1 }</code>, <code>o.x</code> gives <code>1</code>, <code>o.y</code> gives <code>undefined</code>, and <code>[1, 2].length</code> reads a property every array has.</p>
 <p>Here it is carried by plain Roc functions, one for each piece of meaning: what <code>+</code> makes of two values, what a property read gives, what a store does, and the words of each error. The project calls each of these functions a rule. A rule takes values and gives back a value, or stops the run with a message, or throws. The rules live in <code>ValueRules.roc</code> and four modules built on it, so each piece of meaning, and each message, has one home.</p>
 <h2 id="the-common-cases-and-the-rest">The common cases, and the rest <a class="section-link" href="#the-common-cases-and-the-rest" aria-label="Link to this section">§</a></h2>
 <p>Most operations in a running program are the common cases: two numbers added, an object&#39;s own property read, an array&#39;s item read. A call to a rule for each would cost more than the work. So each instruction&#39;s handler, in <code>Instructions.roc</code>, first checks for its common case and does it inline. Everything else goes to a rule.</p>
@@ -83,94 +84,67 @@
 			_ =&gt; <span class="syn-type">Instructions</span>.combined(machine, { operator: operator, left: left, right: right, at: at })
 </code></pre></figure><h2 id="a-1"><code>&quot;a&quot; + 1</code> <a class="section-link" href="#a-1" aria-label="Link to this section">§</a></h2>
 <p>The left value is a <code>Text</code>, so the match falls through to <code>Instructions.combined</code>, which calls <code>ValueRules.binary</code>, whose <code>Add</code> arm calls <code>ValueRules.add</code>. There a string on either side makes both sides text. <code>ValueRules.text_of</code> writes the number 1 as <code>&quot;1&quot;</code>, as <code>String(1)</code> does, and the two join into <code>Text(&quot;a1&quot;)</code>. The VM puts that value in place of the two operands.</p>
-<p>The same rules mark the edge of the subset. <code>true + 1</code> and <code>&quot;5&quot; * 2</code> reach them too, and each stops the run with a message that names the coercion.</p>
+<p><code>true + 1</code> and <code>&quot;5&quot; * 2</code> reach the same rules, which mark the subset&#39;s edge: each stops the run with a message naming the coercion.</p>
 <h2 id="a-missing-property">A missing property <a class="section-link" href="#a-missing-property" aria-label="Link to this section">§</a></h2>
 <p>For <code>o.y</code>, <code>Instructions.property_read</code> looks through the object&#39;s own properties, finds <code>x</code> alone, and hands the read to <code>ValueRules.property</code>. For an object, that rule gives <code>Undefined</code> for a missing name, so <code>console.log(o.y)</code> prints <code>undefined</code>, as node does.</p>
-<p>That rule guards the subset&#39;s edge as well. The eight names of <code>Object.prototype</code> that <code>ValueRules.is_prototype_name</code> lists, <code>toString</code>, <code>hasOwnProperty</code> and six others, stop the run with a message naming the name, since the subset leaves prototypes out.</p>
+<p>The eight names of <code>Object.prototype</code> in <code>ValueRules.is_prototype_name</code>, such as <code>toString</code>, stop the run with a message, since the subset leaves prototypes out.</p>
 <h2 id="the-cells-are-lent">The cells are lent <a class="section-link" href="#the-cells-are-lent" aria-label="Link to this section">§</a></h2>
-<p>Some rules write the heap: a method that makes a new array allocates a cell, and a store that reaches a rule may set a property. So a rule needs the cells, the one list where every shared value lives (<a class="chapter-link" href="memory-strategy.html">“Memory strategy”</a>).</p>
-<p>Roc writes a list in place only while one value refers to it, and copies the whole list otherwise (<a class="chapter-link" href="what-copies.html">“What copies”</a>). If the VM&#39;s machine and the rule both held the cells, each write a rule made would copy the whole heap. So the VM lends the cells: it takes them out of its own machine, hands them to the rule, and takes them back after.</p>
-<p><code>Machine.lent</code> takes them out, and leaves an empty list in their place:</p>
+<p>A Roc value stays as it was made, so a write to a list makes a new list. Roc makes that fast with one trick: while exactly one value refers to the list, the write changes it in place. While two do, Roc first copies the whole list, since the other holder must still see the old one. That copy is the copy cliff of <a class="chapter-link" href="what-copies.html">“What copies”</a>.</p>
+<p>The heap is one list of cells, and the VM&#39;s machine record holds it (<a class="chapter-link" href="memory-strategy.html">“Memory strategy”</a>). Some rules write it: <code>a.push(1)</code> reaches <code>ArrayRules.array_method</code>, which writes the array&#39;s cell, and a method that makes a new array allocates a cell.</p>
+<p>If a rule received the cells while the machine still held them, two values would refer to the heap, and the rule&#39;s first write would copy all of it. Every <code>push</code> would cost the whole heap.</p>
+<p>So the VM takes the cells out of its machine, which is left holding an empty list, and hands them to the rule as their one holder. The rule writes in place, and the VM puts back the cells the rule returns. That is all lending means: a hand-off of the only reference, for one call. <code>Machine.lent</code> takes the cells out:</p>
 <figure class="listing"><figcaption>js/roc/Machine.roc, the function lent</figcaption><pre><code class="language-roc"><span class="syn-name">lent</span> : <span class="syn-type">Machine.Machine</span> -&gt; <span class="syn-type">Machine.Lent</span>
 <span class="syn-name">lent</span> = |machine| {
 	cells = machine.cells
 	{ cells: cells, machine: { ..machine, cells: [] } }
 }
-</code></pre></figure><p>The rule gets a small machine of three fields, <code>ValueRules.Machine</code>: the cells, the free list, and the run&#39;s status, which the rule may set to a fault or a thrown value. <code>Machine.shell</code> builds it. The rule answers a <code>ValueRules.Got</code>, its value and the small machine after it. <code>Machine.with_got</code> puts the cells and the free list back into the VM&#39;s machine, and the value on the stack, or takes on the fault or the throw.</p>
-<figure class="diagram"><svg class="diagram diagram-wide" role="img" aria-label="The VM lends the cells to a rule" width="482pt" height="46pt"
- viewBox="0.00 0.00 482.00 46.03" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
-<g id="graph0" class="graph" transform="scale(1 1) rotate(0) translate(4 42.03)">
-<polygon fill="white" stroke="transparent" points="-4,4 -4,-42.03 478,-42.03 478,4 -4,4"/>
+</code></pre></figure><p><code>Machine.shell</code> makes what the rule receives, a <code>ValueRules.Machine</code> of three fields: the cells, the free list, and the run&#39;s status, which the rule may set to a fault or a thrown value:</p>
+<figure class="listing"><figcaption>js/roc/Machine.roc, the function shell</figcaption><pre><code class="language-roc"><span class="syn-comment"># What a value rule reads and writes of the machine: the cells, the free</span>
+<span class="syn-comment"># cells it allocates from, and a status the rule may set to a fault or a</span>
+<span class="syn-comment"># throw.</span>
+<span class="syn-name">shell</span> : <span class="syn-type">List</span>(<span class="syn-type">Heap.Cell</span>), <span class="syn-type">Machine.Machine</span> -&gt; <span class="syn-type">ValueRules.Machine</span>
+<span class="syn-name">shell</span> = |cells, rest| { cells: cells, free: rest.free, status: <span class="syn-type">Running</span> }
+</code></pre></figure><p>The rule answers a <code>ValueRules.Got</code>, its value and that record after it. <code>Machine.with_got</code> puts the cells and the free list back, and the value on the stack, or takes on the fault or the throw.</p>
+<figure class="diagram"><svg class="diagram" role="img" aria-label="Who holds the cells around a rule" width="202pt" height="212pt"
+ viewBox="0.00 0.00 202.00 212.00" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+<g id="graph0" class="graph" transform="scale(1 1) rotate(0) translate(4 208)">
+<polygon fill="white" stroke="transparent" points="-4,4 -4,-208 198,-208 198,4 -4,4"/>
 <g id="node1" class="node">
-<path fill="none" stroke="black" d="M114,-38.03C114,-38.03 12,-38.03 12,-38.03 6,-38.03 0,-32.03 0,-26.03 0,-26.03 0,-14.03 0,-14.03 0,-8.03 6,-2.03 12,-2.03 12,-2.03 114,-2.03 114,-2.03 120,-2.03 126,-8.03 126,-14.03 126,-14.03 126,-26.03 126,-26.03 126,-32.03 120,-38.03 114,-38.03"/>
-<text text-anchor="middle" x="63" y="-16.93" font-family="Times,serif" font-size="12.00">the VM&#39;s machine</text>
+<path fill="none" stroke="black" d="M151.5,-204C151.5,-204 36.5,-204 36.5,-204 30.5,-204 24.5,-198 24.5,-192 24.5,-192 24.5,-180 24.5,-180 24.5,-174 30.5,-168 36.5,-168 36.5,-168 151.5,-168 151.5,-168 157.5,-168 163.5,-174 163.5,-180 163.5,-180 163.5,-192 163.5,-192 163.5,-198 157.5,-204 151.5,-204"/>
+<text text-anchor="middle" x="94" y="-189.4" font-family="Times,serif" font-size="12.00">before: the machine</text>
+<text text-anchor="middle" x="94" y="-176.4" font-family="Times,serif" font-size="12.00">holds the cells</text>
 </g>
 <g id="node2" class="node">
-<path fill="none" stroke="black" d="M304,-38.03C304,-38.03 274,-38.03 274,-38.03 268,-38.03 262,-32.03 262,-26.03 262,-26.03 262,-14.03 262,-14.03 262,-8.03 268,-2.03 274,-2.03 274,-2.03 304,-2.03 304,-2.03 310,-2.03 316,-8.03 316,-14.03 316,-14.03 316,-26.03 316,-26.03 316,-32.03 310,-38.03 304,-38.03"/>
-<text text-anchor="middle" x="289" y="-16.93" font-family="Times,serif" font-size="12.00">a rule</text>
+<path fill="none" stroke="black" d="M176,-120C176,-120 12,-120 12,-120 6,-120 0,-114 0,-108 0,-108 0,-96 0,-96 0,-90 6,-84 12,-84 12,-84 176,-84 176,-84 182,-84 188,-90 188,-96 188,-96 188,-108 188,-108 188,-114 182,-120 176,-120"/>
+<text text-anchor="middle" x="94" y="-105.4" font-family="Times,serif" font-size="12.00">during: the machine holds []</text>
+<text text-anchor="middle" x="94" y="-92.4" font-family="Times,serif" font-size="12.00">the rule holds the cells</text>
 </g>
 <g id="edge1" class="edge">
-<path fill="none" stroke="black" d="M126.1,-20.03C166.41,-20.03 217.55,-20.03 251.45,-20.03"/>
-<polygon fill="black" stroke="black" points="251.82,-23.53 261.82,-20.03 251.82,-16.53 251.82,-23.53"/>
-<text text-anchor="middle" x="194" y="-23.23" font-family="Times,serif" font-size="11.00">Machine.lent</text>
-</g>
-<g id="edge2" class="edge">
-<path fill="none" stroke="black" d="M261.89,-8.85C256.1,-6.85 249.92,-5.07 244,-4.03 208.86,2.16 169.41,-0.3 136.43,-4.96"/>
-<polygon fill="black" stroke="black" points="135.77,-1.52 126.41,-6.47 136.82,-8.44 135.77,-1.52"/>
-<text text-anchor="middle" x="194" y="-7.23" font-family="Times,serif" font-size="11.00">Machine.with_got</text>
+<path fill="none" stroke="black" d="M94,-167.61C94,-156.77 94,-142.6 94,-130.29"/>
+<polygon fill="black" stroke="black" points="97.5,-130.08 94,-120.08 90.5,-130.08 97.5,-130.08"/>
+<text text-anchor="middle" x="131" y="-141.2" font-family="Times,serif" font-size="11.00">Machine.lent</text>
 </g>
 <g id="node3" class="node">
-<path fill="none" stroke="black" d="M462,-38.03C462,-38.03 413,-38.03 413,-38.03 407,-38.03 401,-32.03 401,-26.03 401,-26.03 401,-14.03 401,-14.03 401,-8.03 407,-2.03 413,-2.03 413,-2.03 462,-2.03 462,-2.03 468,-2.03 474,-8.03 474,-14.03 474,-14.03 474,-26.03 474,-26.03 474,-32.03 468,-38.03 462,-38.03"/>
-<text text-anchor="middle" x="437.5" y="-16.93" font-family="Times,serif" font-size="12.00">the stack</text>
-</g>
-<g id="edge3" class="edge">
-<path fill="none" stroke="black" d="M316.19,-20.03C336.86,-20.03 366.2,-20.03 390.72,-20.03"/>
-<polygon fill="black" stroke="black" points="390.9,-23.53 400.9,-20.03 390.9,-16.53 390.9,-23.53"/>
-<text text-anchor="middle" x="358.5" y="-23.23" font-family="Times,serif" font-size="11.00">its value</text>
-</g>
-</g>
-</svg><svg class="diagram diagram-phone" role="img" aria-label="The VM lends the cells to a rule" width="198pt" height="184pt"
- viewBox="0.00 0.00 198.00 184.00" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
-<g id="graph0" class="graph" transform="scale(1 1) rotate(0) translate(4 180)">
-<polygon fill="white" stroke="transparent" points="-4,4 -4,-180 194,-180 194,4 -4,4"/>
-<g id="node1" class="node">
-<path fill="none" stroke="black" d="M104,-176C104,-176 12,-176 12,-176 6,-176 0,-170 0,-164 0,-164 0,-152 0,-152 0,-146 6,-140 12,-140 12,-140 104,-140 104,-140 110,-140 116,-146 116,-152 116,-152 116,-164 116,-164 116,-170 110,-176 104,-176"/>
-<text text-anchor="middle" x="58" y="-154.9" font-family="Times,serif" font-size="12.00">the VM&#39;s machine</text>
-</g>
-<g id="node2" class="node">
-<path fill="none" stroke="black" d="M73,-106C73,-106 43,-106 43,-106 37,-106 31,-100 31,-94 31,-94 31,-82 31,-82 31,-76 37,-70 43,-70 43,-70 73,-70 73,-70 79,-70 85,-76 85,-82 85,-82 85,-94 85,-94 85,-100 79,-106 73,-106"/>
-<text text-anchor="middle" x="58" y="-84.9" font-family="Times,serif" font-size="12.00">a rule</text>
-</g>
-<g id="edge1" class="edge">
-<path fill="none" stroke="black" d="M25.76,-139.9C22.25,-136.74 19.17,-133.12 17,-129 13,-121.42 16.34,-114.4 22.54,-108.43"/>
-<polygon fill="black" stroke="black" points="25.13,-110.85 30.86,-101.94 20.83,-105.33 25.13,-110.85"/>
-<text text-anchor="middle" x="54" y="-120.2" font-family="Times,serif" font-size="11.00">Machine.lent</text>
+<path fill="none" stroke="black" d="M164.5,-36C164.5,-36 23.5,-36 23.5,-36 17.5,-36 11.5,-30 11.5,-24 11.5,-24 11.5,-12 11.5,-12 11.5,-6 17.5,0 23.5,0 23.5,0 164.5,0 164.5,0 170.5,0 176.5,-6 176.5,-12 176.5,-12 176.5,-24 176.5,-24 176.5,-30 170.5,-36 164.5,-36"/>
+<text text-anchor="middle" x="94" y="-21.4" font-family="Times,serif" font-size="12.00">after: the machine holds</text>
+<text text-anchor="middle" x="94" y="-8.4" font-family="Times,serif" font-size="12.00">the rule&#39;s cells</text>
 </g>
 <g id="edge2" class="edge">
-<path fill="none" stroke="black" d="M82.11,-106.12C88.46,-112.8 92.64,-120.81 89,-129 88.61,-129.87 88.19,-130.72 87.72,-131.56"/>
-<polygon fill="black" stroke="black" points="84.7,-129.76 81.58,-139.89 90.33,-133.91 84.7,-129.76"/>
-<text text-anchor="middle" x="140" y="-120.2" font-family="Times,serif" font-size="11.00">Machine.with_got</text>
-</g>
-<g id="node3" class="node">
-<path fill="none" stroke="black" d="M77.5,-36C77.5,-36 38.5,-36 38.5,-36 32.5,-36 26.5,-30 26.5,-24 26.5,-24 26.5,-12 26.5,-12 26.5,-6 32.5,0 38.5,0 38.5,0 77.5,0 77.5,0 83.5,0 89.5,-6 89.5,-12 89.5,-12 89.5,-24 89.5,-24 89.5,-30 83.5,-36 77.5,-36"/>
-<text text-anchor="middle" x="58" y="-14.9" font-family="Times,serif" font-size="12.00">the stack</text>
-</g>
-<g id="edge3" class="edge">
-<path fill="none" stroke="black" d="M58,-69.84C58,-62.81 58,-54.49 58,-46.64"/>
-<polygon fill="black" stroke="black" points="61.5,-46.39 58,-36.39 54.5,-46.39 61.5,-46.39"/>
-<text text-anchor="middle" x="82.5" y="-50.2" font-family="Times,serif" font-size="11.00">its value</text>
+<path fill="none" stroke="black" d="M94,-83.61C94,-72.77 94,-58.6 94,-46.29"/>
+<polygon fill="black" stroke="black" points="97.5,-46.08 94,-36.08 90.5,-46.08 97.5,-46.08"/>
+<text text-anchor="middle" x="144" y="-57.2" font-family="Times,serif" font-size="11.00">Machine.with_got</text>
 </g>
 </g>
-</svg><figcaption>The VM lends the cells to a rule</figcaption></figure><p>While the rule runs, its small machine is the one value that refers to the cells, so each write it makes is in place. <code>ValueRules.roc</code>&#39;s header records a shorter design that was set aside: a rule that takes the VM&#39;s whole machine, as an open record, is shorter to call, but the dev build (<a class="chapter-link" href="dev-and-release-builds-disagree.html">“Dev and release builds disagree”</a>) copies the cells a rule writes through one.</p>
+</svg><figcaption>Who holds the cells around a rule</figcaption></figure><p>The allocation controls check it (<a class="chapter-link" href="dev-and-release-builds-disagree.html">“Dev and release builds disagree”</a>). 05-array-push pushes through this path, and the release build is held to exactly one allocation a pass, its list of arguments (<code>js/controls/expected.txt</code>); a copy of the heap at each push would be a second.</p>
 <h2 id="the-four-modules-on-it">The four modules on it <a class="section-link" href="#the-four-modules-on-it" aria-label="Link to this section">§</a></h2>
-<p><code>ValueRules</code> holds the operators, the property reads and writes, and the patterns. Four modules hold the rest, one kind of value each, and each takes the lent machine first and answers a <code>Got</code>:</p>
+<p><code>ValueRules</code> holds the operators, the property reads and writes, and the patterns. Four modules hold the rest, one kind of value each, and each takes the lent cells and answers a <code>Got</code>:</p>
 <ul>
-<li><strong><code>StringRules</code></strong> holds the methods of strings (<code>text_method</code>). Those that count by position take ASCII text alone, since JavaScript counts UTF-16 units and the interpreter&#39;s strings are UTF-8.</li>
-<li><strong><code>ArrayRules</code></strong> holds <code>push</code>, <code>pop</code>, <code>splice</code> and the other array methods that take only values (<code>array_method</code>). The methods that call a function of the program, <code>map</code>, <code>filter</code>, <code>sort</code> and the rest, run the VM&#39;s loop, so the VM runs them itself.</li>
-<li><strong><code>CollectionRules</code></strong> holds the walks over arrays, strings, Maps and Sets that a spread, a pattern and <code>for ... of</code> make, and the methods of Maps and Sets.</li>
-<li><strong><code>BuiltinRules</code></strong> holds the globals a program starts with, what <code>new</code> makes, and the builtins that give a value alone. <code>console.log</code>, the canvas&#39;s calls and the timers make an effect or call back, and the VM runs them.</li>
+<li><strong><code>StringRules</code></strong>: the methods of strings (<code>text_method</code>), those that count by position on ASCII text alone.</li>
+<li><strong><code>ArrayRules</code></strong>: <code>push</code>, <code>pop</code>, <code>splice</code> and the other array methods that take only values. <code>map</code>, <code>filter</code>, <code>sort</code> and the others that call the program back run the VM&#39;s loop, so the VM runs them.</li>
+<li><strong><code>CollectionRules</code></strong>: the walks that a spread, a pattern and <code>for ... of</code> make, and the methods of Maps and Sets.</li>
+<li><strong><code>BuiltinRules</code></strong>: the starting globals, what <code>new</code> makes, and the builtins that give a value alone.</li>
 </ul>
-<p>The program&#39;s own functions and the host stay with the VM.</p>
+<p><code>console.log</code>, the canvas, the timers, the program&#39;s own functions and the host stay with the VM.</p>
 
 </article>
 <nav class="turn-page" aria-label="Previous and next chapter">

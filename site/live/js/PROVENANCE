@@ -1,4 +1,4 @@
-published 2026-11-25T15:23:00Z
+published 2026-11-25T15:49:29Z
 roc 0.1.0_RC1
-roc-js-interpreter 14754384 https://github.com/showell/roc-js-interpreter/commit/147543844cafc8bf16950eaa35546cb32a2c3497 (its js/build.shale)
+roc-js-interpreter 0a04d2f7 https://github.com/showell/roc-js-interpreter/commit/0a04d2f7197ef47b7b6469a62490867b3396b176 (its js/build.shale)
 sha256 592f01801d8fdb43  2548786 bytes  js.592f01801d8fdb43.wasm
