@@ -13,7 +13,7 @@ const LINES = ["an empty", "a one-line", "a two-line", "a three-line", "a four-l
 
 const [wasm, table] = await Promise.all([
   fetch("nibble.d9274e0bd105b936.wasm").then((r) => r.arrayBuffer()).then((b) => WebAssembly.instantiate(b)),
-  fetch("puzzles.2410e765d3851828.json").then((r) => r.json()),
+  fetch("puzzles.60c40870ab0a98bf.json").then((r) => r.json()),
 ]).catch((e) => {
   const said = document.getElementById("loading");
   said.className = "err";
@@ -184,23 +184,26 @@ function goalText(p) {
 const span = (a, b) => (a === b ? `line ${a}` : `lines ${a} to ${b}`);
 const cap = (s) => s[0].toUpperCase() + s.slice(1);
 const lockedText = (n) => (n === STEPS ? "" : `${cap(span(n + 1, STEPS))} ${n + 1 === STEPS ? "is" : "are"} locked to nada.`);
-// Lines (from 0) as a hint says them: "line 4", "lines 1 to 3", "lines 1 and 3".
+// Lines (from 0) as a hint says them: "line 4", "lines 1 to 3", or, with a
+// gap, each one: "lines 1, 3 and 4".
 function linesText(ks) {
-  const runs = [];
-  for (const k of ks) {
-    const last = runs[runs.length - 1];
-    if (last && last[1] === k - 1) last[1] = k; else runs.push([k, k]);
-  }
-  if (runs.length === 1) return span(runs[0][0] + 1, runs[0][1] + 1);
-  const parts = runs.map(([a, b]) => (a === b ? String(a + 1) : `${a + 1} to ${b + 1}`));
-  return `lines ${parts.slice(0, -1).join(", ")} and ${parts[parts.length - 1]}`;
+  if (ks[ks.length - 1] - ks[0] === ks.length - 1) return span(ks[0] + 1, ks[ks.length - 1] + 1);
+  const names = ks.map((k) => String(k + 1));
+  return `lines ${names.slice(0, -1).join(", ")} and ${names[names.length - 1]}`;
+}
+// The fixed lines, each with its op: "Line 2 is already fixed as mod2, and
+// line 5 as zero."
+function fixedText(p, fixed) {
+  const each = fixed.map((k) => `line ${k + 1} as ${OPS[startOf(p)[k]].name}`);
+  const first = `Line ${fixed[0] + 1} is already fixed as ${OPS[startOf(p)[fixed[0]]].name}`;
+  if (each.length === 1) return `${first}.`;
+  return `${first}, ${each.slice(1, -1).map((s) => `${s}, `).join("")}and ${each[each.length - 1]}.`;
 }
 function hintText(p) {
   const fixed = Array.from({ length: p.lines }, (_, k) => k).filter((k) => isFixed(p, k));
   if (fixed.length === 0) return `This can be solved with ${LINES[p.lines]} Nibble program${p.lines === STEPS ? "" : `, so ${span(p.lines + 1, STEPS)} ${p.lines + 1 === STEPS ? "is" : "are"} locked to nada`}.`;
   const open = Array.from({ length: p.lines }, (_, k) => k).filter((k) => !isFixed(p, k));
-  const ops = fixed.map((k) => OPS[startOf(p)[k]].name).join(", ");
-  const parts = [`${cap(linesText(fixed))} ${fixed.length === 1 ? "is" : "are"} already fixed as ${ops}.`, `Your job: fix ${linesText(open)}.`];
+  const parts = [fixedText(p, fixed), `Your job: fix ${linesText(open)}.`];
   // Past the lessons, the hint first says how short a program can be.
   if (!p.lesson) parts.unshift(`This can be solved with ${LINES[p.lines]} Nibble program.`);
   const locked = lockedText(p.lines);

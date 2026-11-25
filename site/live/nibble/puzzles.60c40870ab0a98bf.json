@@ -15,5 +15,5 @@
   {"code": 11, "name": "is_not_two", "set": [0, 1, 3], "count": 150, "shortest": 4, "example": 109, "lines": 4, "fixed": 8, "start": 64},
   {"code": 15, "name": "always_true", "set": [0, 1, 2, 3], "count": 104, "shortest": 4, "example": 103, "lines": 4, "fixed": 8, "start": 64},
   {"code": 13, "name": "is_not_one", "set": [0, 2, 3], "count": 1, "shortest": 6, "example": 1641, "lines": 6, "fixed": 32, "start": 1024},
-  {"code": 14, "name": "is_not_tiny", "set": [1, 2, 3], "count": 15, "shortest": 5, "example": 414, "lines": 5, "fixed": 16, "start": 256}
+  {"code": 14, "name": "is_not_tiny", "set": [1, 2, 3], "count": 15, "shortest": 5, "example": 414, "lines": 5, "fixed": 18, "start": 268}
 ]}
