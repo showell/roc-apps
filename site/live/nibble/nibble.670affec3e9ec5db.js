@@ -150,7 +150,8 @@ const cap = (s) => s[0].toUpperCase() + s.slice(1);
 const lockedText = (n) => (n === STEPS ? "" : `${cap(span(n + 1, STEPS))} ${n + 1 === STEPS ? "is" : "are"} locked to nada.`);
 function hintText(p) {
   if (p.given === 0) return `This can be solved with ${LINES[p.lines]} Nibble program${p.lines === STEPS ? "" : `, so ${span(p.lines + 1, STEPS)} ${p.lines + 1 === STEPS ? "is" : "are"} locked to nada`}.`;
-  const given = `${cap(span(1, p.given))} ${p.given === 1 ? "is" : "are"} given; pick ${span(p.given + 1, p.lines)}.`;
+  const ops = startOf(p).slice(0, p.given).map((op) => OPS[op].name).join(", ");
+  const given = `${cap(span(1, p.given))} ${p.given === 1 ? "is" : "are"} already fixed as ${ops}. Your job: fix ${span(p.given + 1, p.lines)}.`;
   const locked = lockedText(p.lines);
   return locked ? `${given} ${locked}` : given;
 }
