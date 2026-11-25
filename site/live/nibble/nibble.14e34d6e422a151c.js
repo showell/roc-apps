@@ -59,6 +59,16 @@ let codeHelpOpen = false;
 const CODE_EXPLAIN = "The machine code: each line's opcode in two bits, line 1 first (nada 00, zero 01, decr 10, mod2 11). "
   + "Six lines make twelve bits, so there are 4,096 programs; read as a number, line 1 is the lowest digit in base 4.";
 
+// A button's tip: what its op does to each AX, from the machine itself (the
+// op alone on line 1): decr is "0->R, 1->0, 2->1, 3->2", R a reject, A an accept.
+function opTip(op) {
+  const to = INPUTS.map((n) => {
+    const m = unpack(machine.after(n, op, 1));
+    return `${n}->${m.halted ? (m.status === ACCEPTED ? "A" : "R") : m.ax}`;
+  });
+  return `${OPS[op].name}: ${to.join(", ")} (A accepts, R rejects)`;
+}
+
 // The program's twelve bits, line 1 first, and its number among the 4,096.
 const BITS = ["00", "01", "10", "11"];
 const machineCode = (prog) => `${prog.map((op) => BITS[op]).join(" ")}  (#${codeOf(prog)})`;
@@ -108,7 +118,7 @@ function show(i) {
 
 function lockTitle(p, line, o) {
   if (isFixed(p, line)) return `Fixed: line ${line + 1} is ${OPS[program[line]].name}.`;
-  return line >= p.lines ? "Locked to nada: this puzzle needs fewer lines." : o.comment;
+  return line >= p.lines ? "Locked to nada: this puzzle needs fewer lines." : opTip(OPS.indexOf(o));
 }
 
 function drawPuzzle() {
