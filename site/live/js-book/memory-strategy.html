@@ -18,7 +18,7 @@
 <li><a href="the-pipeline-and-the-machine.html"><span class="number">4</span>The pipeline and the machine</a></li>
 <li class="here"><a href="memory-strategy.html"><span class="number">5</span>Memory strategy</a><ol class="sections"><li><a href="memory-strategy.html#a-reference-is-an-index">A reference is an index</a></li><li><a href="memory-strategy.html#the-free-list">The free list</a></li><li><a href="memory-strategy.html#slots-and-boxes">Slots and boxes</a></li><li><a href="memory-strategy.html#what-each-operation-costs">What each operation costs</a></li><li><a href="memory-strategy.html#one-line-of-javascript">One line of JavaScript</a></li></ol></li>
 <li><a href="the-garbage-collector.html"><span class="number">6</span>The garbage collector</a></li>
-<li><a href="the-shared-rules.html"><span class="number">7</span>The shared rules</a></li>
+<li><a href="javascripts-rules-for-values.html"><span class="number">7</span>JavaScript&#39;s rules for values</a></li>
 <li><a href="a-canvas-in-the-browser.html"><span class="number">8</span>A canvas in the browser</a></li>
 <li><a href="what-copies.html"><span class="number">9</span>What copies</a></li>
 <li><a href="dev-and-release-builds-disagree.html"><span class="number">10</span>Dev and release builds disagree</a></li>
@@ -204,12 +204,12 @@
 </g>
 </svg><figcaption>Two references into the heap, and its free list</figcaption></figure><h2 id="slots-and-boxes">Slots and boxes <a class="section-link" href="#slots-and-boxes" aria-label="Link to this section">§</a></h2>
 <p>A call&#39;s frame is a run of slots on the operand stack, from its base: its parameters, the variables its blocks declare, the hidden places of its <code>for ... of</code> loops, then the boxes it captures. An instruction names a slot by its place from the base, so a local is one index into the stack. The values being worked on sit above the slots, and the callers wait in <code>frames</code>. A push writes the place at <code>top</code>, and appends only past the stack&#39;s end:</p>
-<figure class="listing"><figcaption>js/roc/Vm.roc, the function pushed</figcaption><pre><code class="language-roc"><span class="syn-name">pushed</span> : <span class="syn-type">Vm.Machine</span>, <span class="syn-type">Heap.Value</span> -&gt; <span class="syn-type">Vm.Machine</span>
+<figure class="listing"><figcaption>js/roc/Machine.roc, the function pushed</figcaption><pre><code class="language-roc"><span class="syn-name">pushed</span> : <span class="syn-type">Machine.Machine</span>, <span class="syn-type">Heap.Value</span> -&gt; <span class="syn-type">Machine.Machine</span>
 <span class="syn-name">pushed</span> = |machine, value|
 	<span class="syn-keyword">if</span> machine.top &lt; machine.stack.len() {
 		{
 			..machine,
-			stack: machine.stack.set(machine.top, value) ?? <span class="syn-keyword">crash</span> <span class="syn-string">&quot;Vm.pushed: below the stack&#39;s end&quot;</span>,
+			stack: machine.stack.set(machine.top, value) ?? <span class="syn-keyword">crash</span> <span class="syn-string">&quot;Machine.pushed: below the stack&#39;s end&quot;</span>,
 			top: machine.top + <span class="syn-number">1</span>,
 		}
 	} <span class="syn-keyword">else</span> {

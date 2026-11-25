@@ -18,8 +18,8 @@
 <li><a href="the-pipeline-and-the-machine.html"><span class="number">4</span>The pipeline and the machine</a></li>
 <li><a href="memory-strategy.html"><span class="number">5</span>Memory strategy</a></li>
 <li><a href="the-garbage-collector.html"><span class="number">6</span>The garbage collector</a></li>
-<li><a href="the-shared-rules.html"><span class="number">7</span>The shared rules</a></li>
-<li class="here"><a href="a-canvas-in-the-browser.html"><span class="number">8</span>A canvas in the browser</a><ol class="sections"><li><a href="a-canvas-in-the-browser.html#what-a-program-sees">What a program sees</a></li><li><a href="a-canvas-in-the-browser.html#the-page">The page</a></li><li><a href="a-canvas-in-the-browser.html#how-an-effect-travels">How an effect travels</a></li></ol></li>
+<li><a href="javascripts-rules-for-values.html"><span class="number">7</span>JavaScript&#39;s rules for values</a></li>
+<li class="here"><a href="a-canvas-in-the-browser.html"><span class="number">8</span>A canvas in the browser</a><ol class="sections"><li><a href="a-canvas-in-the-browser.html#what-a-program-sees">What a program sees</a></li><li><a href="a-canvas-in-the-browser.html#the-page">The page</a></li><li><a href="a-canvas-in-the-browser.html#how-an-effect-travels">How an effect travels</a></li><li><a href="a-canvas-in-the-browser.html#the-queue-and-its-clock">The queue and its clock</a></li></ol></li>
 <li><a href="what-copies.html"><span class="number">9</span>What copies</a></li>
 <li><a href="dev-and-release-builds-disagree.html"><span class="number">10</span>Dev and release builds disagree</a></li>
 <li><a href="build-times.html"><span class="number">11</span>Build times</a></li>
@@ -171,10 +171,48 @@ draw();
 <li><strong>The recording host,</strong> <code>js-canvas</code> (<code>JsCanvas.roc</code>), writes every effect and every read as a line, for the golden logs.</li>
 <li><strong><code>js-vm</code>&#39;s</strong> host prints each log as it is made.</li>
 </ul>
+<h2 id="the-queue-and-its-clock">The queue and its clock <a class="section-link" href="#the-queue-and-its-clock" aria-label="Link to this section">§</a></h2>
+<p><code>Events.roc</code> holds the one queue every callback goes through. A timer&#39;s callback, a click, the canvas&#39;s next <code>frame(t)</code> and a call of the <code>onCollect</code> handler after a collection are each an event, due at a time in milliseconds. The earliest runs first, and of two due at one time, the one queued first.</p>
+<p>The clock is virtual. It reads 0 while the program&#39;s own code runs, and moves to each event&#39;s time as that event runs: on the page, a tick moves it on to the frame&#39;s time (<code>Vm.tick!</code>), and <code>js-vm</code> moves it from event to event until the queue is empty. So the order of the callbacks follows from the program alone, and a program prints the same on every run, and the same as node. Take this program:</p>
+<pre><code class="language-js">setTimeout(function f() { console.log(&quot;f&quot;); }, 10);
+setTimeout(function g() { console.log(&quot;g&quot;); }, 0);
+console.log(&quot;x&quot;);
+</code></pre>
+<table>
+<thead>
+<tr>
+<th>step</th>
+<th>the clock</th>
+<th>what runs</th>
+<th>it prints</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>the program</td>
+<td>0</td>
+<td>queues <code>f</code> due at 10 and <code>g</code> due at 1, then logs</td>
+<td><code>x</code></td>
+</tr>
+<tr>
+<td>the first event</td>
+<td>1</td>
+<td><code>g</code></td>
+<td><code>g</code></td>
+</tr>
+<tr>
+<td>the second event</td>
+<td>10</td>
+<td><code>f</code></td>
+<td><code>f</code></td>
+</tr>
+</tbody>
+</table>
+<p><code>g</code> is due at 1: <code>Events.timer_requested</code> raises a delay below 1 ms to 1 ms, as node does. Node 22 and the dev build of <code>js-vm</code> each print <code>x</code>, <code>g</code>, <code>f</code> for it, run side by side for this chapter on 2026-11-25. The clock&#39;s column is read from <code>Events.roc</code>: an event is due at the clock plus its delay, and <code>with_event_taken</code> moves the clock to the due time of the event it takes.</p>
 
 </article>
 <nav class="turn-page" aria-label="Previous and next chapter">
-<a rel="prev" href="the-shared-rules.html"><small>Previous</small>The shared rules</a>
+<a rel="prev" href="javascripts-rules-for-values.html"><small>Previous</small>JavaScript&#39;s rules for values</a>
 <a rel="next" href="what-copies.html"><small>Next</small>What copies</a>
 </nav>
 </main>

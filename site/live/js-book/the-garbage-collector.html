@@ -18,7 +18,7 @@
 <li><a href="the-pipeline-and-the-machine.html"><span class="number">4</span>The pipeline and the machine</a></li>
 <li><a href="memory-strategy.html"><span class="number">5</span>Memory strategy</a></li>
 <li class="here"><a href="the-garbage-collector.html"><span class="number">6</span>The garbage collector</a><ol class="sections"><li><a href="the-garbage-collector.html#what-it-does">What it does</a></li><li><a href="the-garbage-collector.html#around-the-copy-cliff">Around the copy cliff</a></li><li><a href="the-garbage-collector.html#its-roots-and-when-it-runs">Its roots, and when it runs</a></li></ol></li>
-<li><a href="the-shared-rules.html"><span class="number">7</span>The shared rules</a></li>
+<li><a href="javascripts-rules-for-values.html"><span class="number">7</span>JavaScript&#39;s rules for values</a></li>
 <li><a href="a-canvas-in-the-browser.html"><span class="number">8</span>A canvas in the browser</a></li>
 <li><a href="what-copies.html"><span class="number">9</span>What copies</a></li>
 <li><a href="dev-and-release-builds-disagree.html"><span class="number">10</span>Dev and release builds disagree</a></li>
@@ -65,12 +65,12 @@
 <li><strong>The marks are a list of their own.</strong> <code>marked</code> reads the cells and writes only its marks and its stack of cells waiting to be visited, each in place, so every list it writes is its own. A mark bit inside each cell would make the first mark copy the heap.</li>
 <li><strong>The sweep owns the cells.</strong> <code>collected</code> takes the cells out of the machine with <code>lent</code> before it calls <code>swept</code>, so each <code>set</code> in the sweep is the list&#39;s only reference and writes in place:</li>
 </ul>
-<figure class="listing"><figcaption>js/roc/Vm.roc, the function collected</figcaption><pre><code class="language-roc"><span class="syn-comment"># The machine after a collection, every cell its roots don&#39;t reach freed and</span>
+<figure class="listing"><figcaption>js/roc/Machine.roc, the function collected</figcaption><pre><code class="language-roc"><span class="syn-comment"># The machine after a collection, every cell its roots don&#39;t reach freed and</span>
 <span class="syn-comment"># the next collection scheduled, and how many cells the roots reached.</span>
-<span class="syn-name">collected</span> : <span class="syn-type">Vm.Machine</span> -&gt; { machine : <span class="syn-type">Vm.Machine</span>, live : <span class="syn-type">U64</span> }
+<span class="syn-name">collected</span> : <span class="syn-type">Machine.Machine</span> -&gt; { machine : <span class="syn-type">Machine.Machine</span>, live : <span class="syn-type">U64</span> }
 <span class="syn-name">collected</span> = |machine| {
-	marks = <span class="syn-type">Collector</span>.marked(machine.cells, roots(machine))
-	{ cells, machine: rest } = lent(machine)
+	marks = <span class="syn-type">Collector</span>.marked(machine.cells, <span class="syn-type">Machine</span>.roots(machine))
+	{ cells, machine: rest } = <span class="syn-type">Machine</span>.lent(machine)
 	{ cells: swept, free, live } = <span class="syn-type">Collector</span>.swept(cells, marks)
 	before = <span class="syn-type">Box</span>.unbox(rest.collecting)
 	schedule = <span class="syn-keyword">match</span> before.schedule {
@@ -89,18 +89,18 @@
 <p>A count holds these three only loosely. On the dev build, 08-garbage-in-a-call&#39;s collections allocate 0.04 a pass, about one collection every thousand passes (<code>js/controls/expected-dev.txt</code>); one copy of the heap at each collection would add about a thousandth a pass, inside the ladder&#39;s tolerance of 0.05 a pass (<code>tools/alloc_ladder.shale</code>). So the guards are unchecked as copies; the heap programs&#39; peaks of about 4 MB (<code>62110109</code>) are the nearest measure.</p>
 <h2 id="its-roots-and-when-it-runs">Its roots, and when it runs <a class="section-link" href="#its-roots-and-when-it-runs" aria-label="Link to this section">§</a></h2>
 <p>The roots are the machine&#39;s data:</p>
-<figure class="listing"><figcaption>js/roc/Vm.roc, the function roots</figcaption><pre><code class="language-roc"><span class="syn-comment"># Every cell the machine names: the live stack&#39;s (each frame&#39;s slots, its</span>
+<figure class="listing"><figcaption>js/roc/Machine.roc, the function roots</figcaption><pre><code class="language-roc"><span class="syn-comment"># Every cell the machine names: the live stack&#39;s (each frame&#39;s slots, its</span>
 <span class="syn-comment"># boxes and the function it runs, the callers&#39; values waiting, a `finally`&#39;s</span>
 <span class="syn-comment"># throw held), the builtins&#39;, a throw&#39;s on its way to a handler, and the</span>
 <span class="syn-comment"># event queue&#39;s (each timer&#39;s callback, a frame&#39;s closure, the click handler).</span>
 <span class="syn-comment"># A handler or a waiting frame names only places on the stack.</span>
-<span class="syn-name">roots</span> : <span class="syn-type">Vm.Machine</span> -&gt; <span class="syn-type">List</span>(<span class="syn-type">U64</span>)
+<span class="syn-name">roots</span> : <span class="syn-type">Machine.Machine</span> -&gt; <span class="syn-type">List</span>(<span class="syn-type">U64</span>)
 <span class="syn-name">roots</span> = |machine| {
 	builtins = <span class="syn-type">Box</span>.unbox(machine.builtins)
 	<span class="syn-keyword">var</span> $ids = <span class="syn-type">List</span>.with_capacity(machine.top + builtins.len())
 	<span class="syn-keyword">var</span> $at = <span class="syn-number">0</span>
 	<span class="syn-keyword">while</span> $at &lt; machine.top {
-		$ids = <span class="syn-type">Collector</span>.with_value_root($ids, machine.stack.get($at) ?? <span class="syn-keyword">crash</span> <span class="syn-string">&quot;Vm.roots: below the stack&#39;s top&quot;</span>)
+		$ids = <span class="syn-type">Collector</span>.with_value_root($ids, machine.stack.get($at) ?? <span class="syn-keyword">crash</span> <span class="syn-string">&quot;Machine.roots: below the stack&#39;s top&quot;</span>)
 		$at = $at + <span class="syn-number">1</span>
 	}
 	<span class="syn-keyword">for</span> builtin <span class="syn-keyword">in</span> builtins {
@@ -135,18 +135,18 @@
 	$ids
 }
 </code></pre></figure><p>A collection is due when the free list is empty and the heap has reached its threshold. After each one, the threshold is twice what the collection kept, and at least 1,024 cells, so a collection&#39;s cost, O(heap), comes to amortized O(1) a cell allocated (unchecked by a timing):</p>
-<figure class="listing"><figcaption>js/roc/Vm.roc, the function is_collection_due</figcaption><pre><code class="language-roc"><span class="syn-name">is_collection_due</span> : <span class="syn-type">Vm.Machine</span> -&gt; <span class="syn-type">Bool</span>
+<figure class="listing"><figcaption>js/roc/Machine.roc, the function is_collection_due</figcaption><pre><code class="language-roc"><span class="syn-name">is_collection_due</span> : <span class="syn-type">Machine.Machine</span> -&gt; <span class="syn-type">Bool</span>
 <span class="syn-name">is_collection_due</span> = |machine|
 	<span class="syn-keyword">match</span> <span class="syn-type">Box</span>.unbox(machine.collecting).schedule {
 		<span class="syn-type">Doubling</span>(at) =&gt; machine.free == <span class="syn-type">NoneFree</span> <span class="syn-keyword">and</span> machine.cells.len() &gt;= at
-		<span class="syn-type">EveryAllocation</span>({ length, free }) =&gt; machine.cells.len() != length <span class="syn-keyword">or</span> machine.free != free
+		<span class="syn-type">EveryAllocation</span>(left) =&gt; machine.cells.len() != left.length <span class="syn-keyword">or</span> machine.free != left.free
 	}
 </code></pre></figure><p>Between two instructions every value the program holds is in the machine. The one exception is a builtin that runs a callback, such as <code>filter</code> or <code>sort</code>: what it keeps across the callback waits on the stack, where the collections inside the callback see it. A live value that names a freed cell stops the run, since it means a root was missed.</p>
 
 </article>
 <nav class="turn-page" aria-label="Previous and next chapter">
 <a rel="prev" href="memory-strategy.html"><small>Previous</small>Memory strategy</a>
-<a rel="next" href="the-shared-rules.html"><small>Next</small>The shared rules</a>
+<a rel="next" href="javascripts-rules-for-values.html"><small>Next</small>JavaScript&#39;s rules for values</a>
 </nav>
 </main>
 </body>

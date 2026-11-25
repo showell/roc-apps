@@ -18,7 +18,7 @@
 <li class="here"><a href="the-pipeline-and-the-machine.html"><span class="number">4</span>The pipeline and the machine</a><ol class="sections"><li><a href="the-pipeline-and-the-machine.html#the-pipeline">The pipeline</a></li><li><a href="the-pipeline-and-the-machine.html#the-loop-only-dispatches">The loop only dispatches</a></li><li><a href="the-pipeline-and-the-machine.html#the-heap-is-one-roc-value">The heap is one Roc value</a></li><li><a href="the-pipeline-and-the-machine.html#the-machine">The machine</a></li></ol></li>
 <li><a href="memory-strategy.html"><span class="number">5</span>Memory strategy</a></li>
 <li><a href="the-garbage-collector.html"><span class="number">6</span>The garbage collector</a></li>
-<li><a href="the-shared-rules.html"><span class="number">7</span>The shared rules</a></li>
+<li><a href="javascripts-rules-for-values.html"><span class="number">7</span>JavaScript&#39;s rules for values</a></li>
 <li><a href="a-canvas-in-the-browser.html"><span class="number">8</span>A canvas in the browser</a></li>
 <li><a href="what-copies.html"><span class="number">9</span>What copies</a></li>
 <li><a href="dev-and-release-builds-disagree.html"><span class="number">10</span>Dev and release builds disagree</a></li>
@@ -136,18 +136,18 @@
 <p>Beside them, <code>Inspect.roc</code> formats <code>console.log</code>&#39;s output as node&#39;s <code>util.inspect</code> does, function for function, and <code>NumberText.roc</code> writes a number as <code>String(n)</code> does.</p>
 <h2 id="the-loop-only-dispatches">The loop only dispatches <a class="section-link" href="#the-loop-only-dispatches" aria-label="Link to this section">§</a></h2>
 <p>The VM&#39;s loop fetches the next instruction and hands the machine to <code>dispatch!</code>, whose match calls one top-level handler an arm. Each handler is a small function of its own, so the language grows by adding handlers and every function stays small. Here is the heart of the loop, a collection first when one is due:</p>
-<figure class="listing"><figcaption>js/roc/Vm.roc, an excerpt</figcaption><pre><code class="language-roc">	<span class="syn-keyword">while</span> is_running($machine) <span class="syn-keyword">and</span> $machine.depth &gt;= floor {
-		<span class="syn-keyword">if</span> is_collection_due($machine) {
+<figure class="listing"><figcaption>js/roc/Vm.roc, an excerpt</figcaption><pre><code class="language-roc">	<span class="syn-keyword">while</span> <span class="syn-type">Machine</span>.is_running($machine) <span class="syn-keyword">and</span> $machine.depth &gt;= floor {
+		<span class="syn-keyword">if</span> <span class="syn-type">Machine</span>.is_collection_due($machine) {
 			before = <span class="syn-type">Heap</span>.in_use_count($machine.cells, $machine.free)
-			{ machine: swept, live } = collected($machine)
+			{ machine: swept, live } = <span class="syn-type">Machine</span>.collected($machine)
 			heard = { cells: swept.cells.len(), before: before, live: live }
 			told! = host.collected!
 			told!(heard)
-			$machine = with_collection_heard(swept, heard)
+			$machine = <span class="syn-type">Machine</span>.with_collection_heard(swept, heard)
 		}
 		<span class="syn-keyword">if</span> $machine.code != $code {
 			$code = $machine.code
-			$ops = code_of(program, $code).ops
+			$ops = <span class="syn-type">Machine</span>.code_of(program, $code).ops
 		}
 		op = $ops.get($machine.pc) ?? <span class="syn-keyword">crash</span> <span class="syn-string">&quot;Vm.loop!: every code ends in a return or a finish&quot;</span>
 		$machine = dispatch!(host, program, { ..$machine, pc: $machine.pc + <span class="syn-number">1</span> }, op)
@@ -155,14 +155,14 @@
 <p>JavaScript shares arrays, objects and closures by reference, and Roc has only values. So the interpreter keeps everything JavaScript shares in one list of cells, the heap, and a JavaScript reference is an index into it. <a class="chapter-link" href="memory-strategy.html">“Memory strategy”</a> lays out the heap, the stack and what each operation costs.</p>
 <h2 id="the-machine">The machine <a class="section-link" href="#the-machine" aria-label="Link to this section">§</a></h2>
 <p>Everything a run holds is one record, <code>Vm.Machine</code>, handed to each instruction&#39;s handler and handed back:</p>
-<figure class="listing"><figcaption>js/roc/Vm.roc, an excerpt</figcaption><pre><code class="language-roc">	<span class="syn-type">Machine</span> : {
+<figure class="listing"><figcaption>js/roc/Machine.roc, an excerpt</figcaption><pre><code class="language-roc">	<span class="syn-type">Machine</span> : {
 		cells : <span class="syn-type">List</span>(<span class="syn-type">Heap.Cell</span>),
 		stack : <span class="syn-type">List</span>(<span class="syn-type">Heap.Value</span>),
 		top : <span class="syn-type">U64</span>,
-		frames : <span class="syn-type">List</span>(<span class="syn-type">Vm.Frame</span>),
+		frames : <span class="syn-type">List</span>(<span class="syn-type">Machine.Frame</span>),
 		<span class="syn-comment"># How many of `frames` are callers waiting: the ones past it are spent.</span>
 		depth : <span class="syn-type">U64</span>,
-		handlers : <span class="syn-type">List</span>(<span class="syn-type">Vm.Handler</span>),
+		handlers : <span class="syn-type">List</span>(<span class="syn-type">Machine.Handler</span>),
 		<span class="syn-comment"># How many of `handlers` wait: the ones past it are spent.</span>
 		handler_count : <span class="syn-type">U64</span>,
 		<span class="syn-comment"># The timers and the click handler, boxed: an instruction hands the</span>
@@ -177,12 +177,12 @@
 		<span class="syn-comment"># The first free cell, which the next allocation takes.</span>
 		free : <span class="syn-type">Heap.Free</span>,
 		<span class="syn-comment"># Boxed: only a collection writes it.</span>
-		collecting : <span class="syn-type">Box</span>(<span class="syn-type">Vm.Collecting</span>),
-		status : <span class="syn-type">Vm.Status</span>,
+		collecting : <span class="syn-type">Box</span>(<span class="syn-type">Machine.Collecting</span>),
+		status : <span class="syn-type">Machine.Status</span>,
 		steps : <span class="syn-type">U64</span>,
 		effects : <span class="syn-type">U64</span>,
 		<span class="syn-comment"># Boxed: only the start of a run or a callback writes it.</span>
-		budget : <span class="syn-type">Box</span>(<span class="syn-type">Vm.Budget</span>),
+		budget : <span class="syn-type">Box</span>(<span class="syn-type">Machine.Budget</span>),
 		<span class="syn-comment"># Boxed, as the queue is: only a turtle&#39;s move touches it.</span>
 		turtle : <span class="syn-type">Box</span>(<span class="syn-type">Canvas.Turtle</span>),
 </code></pre></figure><p>The boxes in it are the subject of <a class="chapter-link" href="what-copies.html">“What copies”</a>: each boxed part is one that most instructions leave alone.</p>
